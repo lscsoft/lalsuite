@@ -146,15 +146,6 @@ if test "x$condor" = "xtrue"; then
     AC_MSG_RESULT([yes])
     LD=/usr/bin/ld
   fi
-
-  # https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=697382
-  AC_CHECK_PROGS([LSB_RELEASE],[lsb_release])
-  AS_IF([test "x$LSB_RELEASE" != "x"],[
-    AC_MSG_CHECKING([Platform])
-    PLATFORM=`$LSB_RELEASE -s -i`
-    AC_MSG_RESULT([$PLATFORM])])
-  AS_CASE(["$PLATFORM"],
-    [Debian],LALSUITE_ADD_FLAGS([C],[],[-llzma]),)
 fi
 CONDOR_ENABLE_VAL="`eval test x$condor = xtrue && echo "ENABLED" || echo "DISABLED"`"
 AM_CONDITIONAL([CONDOR_ENABLED],[test "$CONDOR_ENABLE_VAL" = "ENABLED"])
