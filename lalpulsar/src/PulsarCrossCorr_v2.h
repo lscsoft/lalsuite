@@ -106,18 +106,18 @@ extern "C" {
 
 int XLALGetDopplerShiftedFrequencyInfo
 (
-   REAL8Vector        *shiftedFreqs,
-   UINT4Vector          *lowestBins,
-   REAL8Vector        *signalPhases,
-   REAL8VectorSequence    *sincList,
-   REAL8VectorSequence     *dataAmp,
-   REAL8VectorSequence   *dataPhase,
-   UINT4                    numBins,
-   PulsarDopplerParams        *dopp,
-   SFTIndexList               *sfts,
-   MultiSFTVector        *inputSFTs,
-   MultiSSBtimes        *multiTimes,
-   REAL8                       Tsft
+   REAL8Vector            *shiftedFreqs,
+   UINT4Vector              *lowestBins,
+   COMPLEX8Vector      *expSignalPhases,
+   REAL8VectorSequence        *sincList,
+   REAL8VectorSequence         *dataAmp,
+   COMPLEX8VectorSequence *expDataPhase,
+   UINT4                        numBins,
+   PulsarDopplerParams            *dopp,
+   SFTIndexList                   *sfts,
+   MultiSFTVector            *inputSFTs,
+   MultiSSBtimes            *multiTimes,
+   REAL8                           Tsft
    )
   ;
 
@@ -149,19 +149,19 @@ int XLALCalculateAveCurlyGAmpUnshifted
 
 int XLALCalculatePulsarCrossCorrStatistic
   (
-   REAL8                   *ccStat,
-   REAL8                *evSquared,
-   REAL8Vector          *curlyGAmp,
-   REAL8Vector       *SignalPhases,
-   UINT4Vector         *lowestBins,
-   REAL8VectorSequence   *sincList,
-   REAL8VectorSequence    *dataAmp,
-   REAL8VectorSequence  *dataPhase,
-   SFTPairIndexList      *sftPairs,
-   SFTIndexList        *sftIndices,
-   MultiSFTVector       *inputSFTs,
-   MultiNoiseWeights *multiWeights,
-   UINT4                   numBins
+   REAL8                         *ccStat,
+   REAL8                      *evSquared,
+   REAL8Vector                *curlyGAmp,
+   COMPLEX8Vector       *expSignalPhases,
+   UINT4Vector               *lowestBins,
+   REAL8VectorSequence         *sincList,
+   REAL8VectorSequence          *dataAmp,
+   COMPLEX8VectorSequence  *expDataPhase,
+   SFTPairIndexList            *sftPairs,
+   SFTIndexList              *sftIndices,
+   MultiSFTVector             *inputSFTs,
+   MultiNoiseWeights       *multiWeights,
+   UINT4                         numBins
    )
   ;
 
