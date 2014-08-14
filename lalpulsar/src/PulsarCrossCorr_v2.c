@@ -101,7 +101,7 @@ int XLALGetDopplerShiftedFrequencyInfo
       phiByTwoPi += dopp->fkdot[k] * factor;
     }
 
-    signalPhases->data[sftNum] = fmod (phiByTwoPi , 1.0);
+    signalPhases->data[sftNum] = fmod(phiByTwoPi , 1.0);
     shiftedFreqs->data[sftNum] = fhat * times->Tdot->data[sftInd];
     REAL8 fminusf0 = shiftedFreqs->data[sftNum] - inputSFTs->data[detInd]->data[sftInd].f0;
     lowestBins->data[sftNum] = ceil( fminusf0 * Tsft - 0.5*numBins );
@@ -113,8 +113,15 @@ int XLALGetDopplerShiftedFrequencyInfo
 		 "Loop would run off end of array:\n lowestBin1=%d, numBins=%d, len(dataArray1)=%d\n",
 		 lowestBin, numBins, lenDataArray );
 
-    for (UINT8 l=0; l < numBins; l++) {
-      sincList->data[sftNum*numBins + l] = gsl_sf_sinc( (lowestBins->data[sftNum]) - fminusf0 * Tsft + l); /* Normalized sinc, i.e., sin(pi*x)/(pi*x) */
+    for (UINT8 l = 0; l < numBins; l++) {
+      REAL4 sinPiX, cosPiX;
+      REAL8 X;
+      X = (lowestBins->data[sftNum]) - fminusf0 * Tsft + l;
+      if(XLALSinCos2PiLUT(&sinPiX, &cosPiX, 0.5 * X )!= XLAL_SUCCESS){
+	LogPrintf ( LOG_CRITICAL, "%s: XLALSinCos2PiLUT() failed with errno=%d in XLALGetDopplerShiftedFrequencyInfo\n", __func__, xlalErrno );
+	XLAL_ERROR( XLAL_EFUNC );
+      }
+      sincList->data[sftNum*numBins + l] = sinPiX / (LAL_PI * X); /* Normalized sinc, i.e., sin(pi*x)/(pi*x) */
       COMPLEX8 data = inputSFTs->data[detInd]->data[sftInd].data->data[(lowestBins->data[sftNum]) + l]; /* make best bins SFT into polar form */
       dataAmp->data[sftNum*numBins + l] = cabs(data); /* cabs return amplitude*/
       dataPhase->data[sftNum*numBins + l] = 0.5 * LAL_1_PI * carg(data); /* the return value of carg is [-pi,pi] so need to be devided by 2\pi*/
@@ -325,11 +332,11 @@ int XLALCalculatePulsarCrossCorrStatistic
     XLALPrintError("Lengths of pair-indexed lists don't match!");
     XLAL_ERROR(XLAL_EBADLEN );
   }
-  REAL8 nume=0;
-  REAL8 curlyGSqr=0;
+  REAL8 nume = 0;
+  REAL8 curlyGSqr = 0;
   *ccStat = 0.0;
   *evSquared = 0.0;
-  for (UINT8 alpha=0; alpha < numPairs; alpha++) {
+  for (UINT8 alpha = 0; alpha < numPairs; alpha++) {
     UINT8 sftNum1 = sftPairs->data[alpha].sftNum[0];
     UINT8 sftNum2 = sftPairs->data[alpha].sftNum[1];
 
@@ -363,11 +370,11 @@ int XLALCalculatePulsarCrossCorrStatistic
       baseCCSign = -1;
     }
 
-    for (UINT8 j=0; j < numBins; j++) {
+    for (UINT8 j = 0; j < numBins; j++) {
 
       INT4 ccSign = baseCCSign;
 
-      for (UINT8 k=0; k < numBins; k++) {
+      for (UINT8 k = 0; k < numBins; k++) {
 	REAL8 sincFactor =1;
 	REAL4 cosPhaseFactor, sinPhaseFactor;
 	REAL8 totalPhaseDiff =  signalPhases->data[sftNum1] - signalPhases->data[sftNum2]
