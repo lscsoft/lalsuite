@@ -332,17 +332,11 @@ static void LT_FindNearestPoint(
       //       i = n + 1 - (n + 1)*floor(z_t + 0.5)
       //     should instead read
       //       i = n + 1 - floor((n + 1)*(z_t + 0.5))
-      //   * We also convert the floor() operation into a round():
-      //       floor(x) = round(x - 0.5)
-      //     so that lattice points themselves will fall in the middle
-      //     of the rounded interval, and will therefore be mapped back
-      //     to themselves robustly (i.e. against numerical errors),
-      //     while points furthest from the lattice bound are at the
-      //     edges of the rounded interval, where it is acceptable for
-      //     them to be rounded to different nearest lattice points.
-      //     Line 6 then simplifies to:
-      //       i = n + 1 - round((n + 1)*(z_t + 0.5) - 0.5)
-      //         = round((n + 1)*(0.5 - z_t) + 0.5)
+      //   * We also convert the floor() operation into an lround():
+      //       i = n + 1 - lround((n + 1)*(z_t + 0.5) - 0.5)
+      //     to avoid a casting operation. Rewriting the line as:
+      //       i = lround((n + 1)*(0.5 - z_t) + 0.5)
+      //     appears to improve numerical robustness in some cases.
       for (size_t t = 1; t <= n + 1; ++t) {
         const size_t i = lround((n + 1)*(0.5 - z[t-1]) + 0.5);
         link[t-1] = bucket[i-1];
