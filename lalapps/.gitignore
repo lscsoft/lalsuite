@@ -131,6 +131,7 @@ src/inspiral/posterior/ChiSquare_test
 src/inspiral/posterior/SPINspiral/lalapps_spinspiral
 src/inspiral/posterior/lalapps_coherence_test
 src/inspiral/posterior/lalapps_combine_evidence
+src/inspiral/posterior/lalapps_compute_roq_weights
 src/inspiral/posterior/lalapps_followupMcmc
 src/inspiral/posterior/lalapps_inspnest
 src/inspiral/posterior/lalapps_merge_nested_sampling_runs
