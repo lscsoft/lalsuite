@@ -33,6 +33,7 @@
 #include <lal/TimeSeries.h>
 #include <lal/FrequencySeries.h>
 #include <lal/TimeFreqFFT.h>
+#include <lal/BandPassTimeSeries.h>
 #include <lal/Units.h>
 #include <lal/SphericalHarmonics.h>
 #include <lal/LALSimBlackHoleRingdown.h>
@@ -2300,6 +2301,211 @@ int XLALSimInspiralChooseFDWaveform(
     if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
 
     return ret;
+}
+
+
+/**
+ * @brief Generates an time domain inspiral waveform using the specified approximant; the
+ * resulting waveform is appropriately conditioned and suitable for injection into data.
+ *
+ * For spinning waveforms, all known spin effects up to given PN order are included
+ *
+ * This routine can generate FD approximants and transform them into the time domain.
+ * Waveforms are generated beginning at a slightly lower starting frequency and tapers
+ * are put in this early region so that the waveform smoothly turns on.  Artifacts at
+ * the very end of the waveform are also tapered.  The resulting waveform is high-pass
+ * filtered at frequency f_min so that it should have little content at lower frequencies.
+ *
+ * This routine has one additional parameter relative to XLALSimInspiralChooseTDWaveform.
+ * The additional parameter is the redshift, z, of the waveform.  This should be set to
+ * zero for sources in the nearby universe (that are nearly at rest relative to the
+ * earth).  For sources at cosmological distances, the mass parameters m1 and m2 should
+ * be interpreted as the physical (source frame) masses of the bodies and the distance
+ * parameter r is the comoving (transverse) distance.  If the calling routine has already
+ * applied cosmological "corrections" to m1 and m2 and regards r as a luminosity distance
+ * then the redshift factor should again be set to zero.
+ * 
+ * @note The parameters passed must be in SI units.
+ */
+int XLALSimInspiralTD(
+    REAL8TimeSeries **hplus,                    /**< +-polarization waveform */
+    REAL8TimeSeries **hcross,                   /**< x-polarization waveform */
+    REAL8 phiRef,                               /**< reference orbital phase (rad) */
+    REAL8 deltaT,                               /**< sampling interval (s) */
+    REAL8 m1,                                   /**< mass of companion 1 (kg) */
+    REAL8 m2,                                   /**< mass of companion 2 (kg) */
+    REAL8 S1x,                                  /**< x-component of the dimensionless spin of object 1 */
+    REAL8 S1y,                                  /**< y-component of the dimensionless spin of object 1 */
+    REAL8 S1z,                                  /**< z-component of the dimensionless spin of object 1 */
+    REAL8 S2x,                                  /**< x-component of the dimensionless spin of object 2 */
+    REAL8 S2y,                                  /**< y-component of the dimensionless spin of object 2 */
+    REAL8 S2z,                                  /**< z-component of the dimensionless spin of object 2 */
+    REAL8 f_min,                                /**< starting GW frequency (Hz) */
+    REAL8 f_ref,                                /**< reference GW frequency (Hz) */
+    REAL8 r,                                    /**< distance of source (m) */
+    REAL8 z,                                    /**< redshift of source frame relative to observer frame */
+    REAL8 i,                                    /**< inclination of source (rad) */
+    REAL8 lambda1,                              /**< (tidal deformability of mass 1) / m1^5 (dimensionless) */
+    REAL8 lambda2,                              /**< (tidal deformability of mass 2) / m2^5 (dimensionless) */
+    LALSimInspiralWaveformFlags *waveFlags,     /**< Set of flags to control special behavior of some waveform families. Pass in NULL (or None in python) for default flags */
+    LALSimInspiralTestGRParam *nonGRparams, 	/**< Linked list of non-GR parameters. Pass in NULL (or None in python) for standard GR waveforms */
+    int amplitudeO,                             /**< twice post-Newtonian amplitude order */
+    int phaseO,                                 /**< twice post-Newtonian order */
+    Approximant approximant                     /**< post-Newtonian approximant to use for waveform production */
+    )
+{
+    const double extra_time_fraction = 0.1; /* fraction of waveform duration to add as extra time for tapering */
+    const double extra_time_seconds = 1.0; /* extra time to add for waveform tapering */
+    const size_t end_taper_samples = 8; /* samples at end to taper off to make sure waveform ends at zero */
+    LALSimulationDomain domain = LAL_SIM_DOMAIN_TIME;
+    double tchirp, textra, fstart;
+    int retval;
+
+    /* decide if this is a TD or an FD approximant */
+    if (XLALSimInspiralImplementedTDApproximants(approximant))
+        domain = LAL_SIM_DOMAIN_TIME;
+    else if (XLALSimInspiralImplementedFDApproximants(approximant))
+        domain = LAL_SIM_DOMAIN_FREQUENCY;
+    else
+        XLAL_ERROR(XLAL_EINVAL, "Invalid approximant");
+
+    /* apply redshift correction to dimensionful source-frame quantities */
+    if (z != 0.0) {
+        m1 *= (1.0 + z);
+        m2 *= (1.0 + z);
+        r *= (1.0 + z);  /* change from comoving (transverse) distance to luminosity distance */
+    }
+
+    /* rough estimate of chirp time from f_min based on 0 PN term */
+    tchirp = XLALSimInspiralTaylorF2ReducedSpinChirpTime(f_min, m1, m2, 0, 0);
+    textra = extra_time_fraction * tchirp + extra_time_seconds;
+
+    /* we start the waveform at a lower frequency so we can put tapers in */
+    {
+        /* this should be the inverse of XLALSimInspiralTaylorF2ReducedSpinChirpTime */
+        /* perhaps there should be an actual routine to do this? */
+        double M = m1 + m2;
+        double mu = m1 * m2 / M;
+        double nu = mu / M;
+        double theta = pow(nu * (tchirp + textra) * pow(LAL_C_SI, 3) / (5.0 * LAL_G_SI * M), -1.0 / 8.0);
+        fstart = pow(theta * LAL_C_SI, 3) / (8.0 * M_PI * LAL_G_SI * M);
+    }
+
+    switch (domain) {
+    case LAL_SIM_DOMAIN_TIME: {
+        size_t j, nextra;
+        /* generate the waveform starting at fstart */
+        retval = XLALSimInspiralChooseTDWaveform(hplus, hcross, phiRef, deltaT, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, fstart, f_ref, r, i, lambda1, lambda2, waveFlags, nonGRparams, amplitudeO, phaseO, approximant);
+        if (retval < 0)
+            XLAL_ERROR(XLAL_EFUNC);
+
+        /* extra time for tapers */
+        nextra = round(textra / deltaT);
+
+        /* sanity check on our crudely estimated duration */
+        if (nextra > (*hplus)->data->length / 2) {
+            /* compute textra more accurately */
+            REAL8TimeSeries *dummyplus = NULL;
+            REAL8TimeSeries *dummycross = NULL;
+            retval = XLALSimInspiralChooseTDWaveform(&dummyplus, &dummycross, phiRef, deltaT, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_ref, r, i, lambda1, lambda2, waveFlags, nonGRparams, amplitudeO, phaseO, approximant);
+            if (retval < 0)
+                XLAL_ERROR(XLAL_EFUNC);
+            nextra = (*hplus)->data->length - dummyplus->data->length;
+        }
+        
+        /* taper early part of waveform */
+        for (j = 0; j < nextra; ++j) {
+            double w = 0.5 - 0.5 * cos(M_PI * j / (double)nextra);
+            (*hplus)->data->data[j] *= w;
+            (*hcross)->data->data[j] *= w;
+        }
+
+	break;
+    }
+
+    case LAL_SIM_DOMAIN_FREQUENCY: {
+        COMPLEX16FrequencySeries *htildeplus;
+        COMPLEX16FrequencySeries *htildecross;
+        REAL8FFTPlan *plan;
+        double chirplen, df;
+        int chirplen_exp;
+        size_t k, k0, k1;
+
+        /* need a long enough segment to hold a whole chirp */
+        /* length of the chirp in samples */
+        chirplen = (tchirp + textra) / deltaT;
+        /* make chirplen next power of two */
+        frexp(chirplen, &chirplen_exp);
+        chirplen = ldexp(1.0, chirplen_exp);
+        /* frequency resolution */
+        df = 1.0 / (chirplen * deltaT);
+        
+        /* generate the waveform in the frequency domain starting at fstart */
+        retval = XLALSimInspiralChooseFDWaveform(&htildeplus, &htildecross, phiRef, df, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, fstart, 0.5/deltaT, f_ref, r, i, lambda1, lambda2, waveFlags, nonGRparams, amplitudeO, phaseO, approximant);
+        if (retval < 0)
+            XLAL_ERROR(XLAL_EFUNC);
+
+        /* taper frequencies between fstart and f_min */
+        k = k0 = round(fstart / htildeplus->deltaF);
+        k1 = round(f_min / htildeplus->deltaF);
+        for ( ; k < k1; ++k) {
+            double w = 0.5 - 0.5 * cos(M_PI * (k - k0) / (double)(k1 - k0));
+            htildeplus->data->data[k] *= w;
+            htildecross->data->data[k] *= w;
+        }
+
+        /* to avoid the end of the waveform wrapping around to the beginning: */
+        /* shift waveform backwards in time; compensate in the epoch */
+        for (k = 0; k < htildeplus->data->length; ++k) {
+            double complex phasefac = cexp(2.0 * M_PI * I * k * df * extra_time_seconds);
+            htildeplus->data->data[k] *= phasefac;
+            htildecross->data->data[k] *= phasefac;
+        }
+        XLALGPSAdd(&htildeplus->epoch, extra_time_seconds);
+        XLALGPSAdd(&htildecross->epoch, extra_time_seconds);
+
+        /* transform the waveform into the time domain */
+        *hplus = XLALCreateREAL8TimeSeries("H_PLUS", &htildeplus->epoch, 0.0, deltaT, &lalStrainUnit, (size_t) chirplen);
+        *hcross = XLALCreateREAL8TimeSeries("H_CROSS", &htildecross->epoch, 0.0, deltaT, &lalStrainUnit, (size_t) chirplen);
+        plan = XLALCreateReverseREAL8FFTPlan((size_t) chirplen, 0);
+        if (!(*hplus) || !(*hcross) || !plan) {
+            XLALDestroyREAL8TimeSeries(*hcross);
+            XLALDestroyREAL8TimeSeries(*hplus);
+            XLALDestroyREAL8FFTPlan(plan);
+            XLAL_ERROR(XLAL_EFUNC);
+        }
+        XLALREAL8FreqTimeFFT(*hcross, htildecross, plan);
+        XLALREAL8FreqTimeFFT(*hplus, htildeplus, plan);
+
+	    /* snip off extra time at the end */
+        XLALResizeREAL8TimeSeries(*hplus, 0, (*hplus)->data->length - round(extra_time_seconds/deltaT));
+        XLALResizeREAL8TimeSeries(*hplus, 0, (*hcross)->data->length - round(extra_time_seconds/deltaT));
+
+        /* clean up */
+        XLALDestroyREAL8FFTPlan(plan);
+        XLALDestroyCOMPLEX16FrequencySeries(htildeplus);
+        XLALDestroyCOMPLEX16FrequencySeries(htildecross);
+
+	break;
+    }
+
+    default: /* can never get here: exhausted enum list */
+	XLAL_ERROR(XLAL_EERR, "Not reached.");
+    }
+
+    /* common stage of conditioning: taper end samples and high-pass filter */
+    if ((*hplus)->data->length > end_taper_samples) {
+        size_t j;
+        for (j = (*hplus)->data->length - end_taper_samples; j < (*hplus)->data->length; ++j) {
+            double w = 0.5 + 0.5 * cos(M_PI * (j - (*hplus)->data->length + end_taper_samples) / (double)end_taper_samples);
+            (*hplus)->data->data[j] *= w;
+            (*hcross)->data->data[j] *= w;
+        }
+    }
+    XLALHighPassREAL8TimeSeries(*hplus, f_min, 0.9, 8);
+    XLALHighPassREAL8TimeSeries(*hcross, f_min, 0.9, 8);
+
+    return 0;
 }
 
 

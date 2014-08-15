@@ -163,7 +163,12 @@ int main(int argc, char *argv[])
     } else {
         REAL8TimeSeries *h_plus = NULL;
         REAL8TimeSeries *h_cross = NULL;
-        create_td_waveform(&h_plus, &h_cross, p);
+        if (p.condition) { /* use stock conditioning element */
+            double redshift = 0.0;
+            XLALSimInspiralTD(&h_plus, &h_cross, p.phiRef, 1.0 / p.srate, p.m1, p.m2, p.s1x, p.s1y, p.s1z, p.s2x, p.s2y, p.s2z, p.f_min, p.fRef, p.distance, redshift, p.inclination, p.lambda1, p.lambda2, p.waveFlags, p.nonGRparams, p.ampO, p.phaseO, p.approx);
+        } else { /* use our custom routine */
+            create_td_waveform(&h_plus, &h_cross, p);
+        }
         output_td_waveform(h_plus, h_cross, p);
         XLALDestroyREAL8TimeSeries(h_cross);
         XLALDestroyREAL8TimeSeries(h_plus);
