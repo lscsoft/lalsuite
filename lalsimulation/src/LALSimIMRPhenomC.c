@@ -243,9 +243,9 @@ int XLALSimIMRPhenomCGenerateTD(
 		XLAL_ERROR(XLAL_EFUNC);
 	}
 
-	/* generate hcross, which is hplus w/ GW phase shifted by pi/2
-	 * <==> orb. phase shifted by pi/4 */
-	IMRPhenomCGenerateTD(hcross, LAL_PI_4, &ind_t0, deltaT, m1, m2, f_min, f_max_prime, distance, params);
+	/* generate hcross, which is hplus w/ GW phase shifted by -pi/2
+	 * <==> orb. phase shifted by -pi/4 */
+	IMRPhenomCGenerateTD(hcross, -LAL_PI_4, &ind_t0, deltaT, m1, m2, f_min, f_max_prime, distance, params);
 	if (!(*hcross)) {
 		XLALDestroyREAL8TimeSeries(*hplus);
 		*hplus = NULL;
@@ -589,7 +589,7 @@ static size_t find_instant_freq(const REAL8TimeSeries *hp, const REAL8TimeSeries
 	for (; k > 0 /*< n*/; k--) {
 		const REAL8 hpDot = (hp->data->data[k+1] - hp->data->data[k-1]) / (2 * hp->deltaT);
 		const REAL8 hcDot = (hc->data->data[k+1] - hc->data->data[k-1]) / (2 * hc->deltaT);
-		REAL8 f = -hcDot * hp->data->data[k] + hpDot * hc->data->data[k];
+		REAL8 f = hcDot * hp->data->data[k] - hpDot * hc->data->data[k];
 		f /= LAL_TWOPI;
 		f /= hp->data->data[k] * hp->data->data[k] + hc->data->data[k] * hc->data->data[k];
 		if (f <= target){
