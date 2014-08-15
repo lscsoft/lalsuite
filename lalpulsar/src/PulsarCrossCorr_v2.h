@@ -69,6 +69,7 @@ extern "C" {
 #include <lal/Sequence.h>
 #include <lal/CWFastMath.h>
 #include <lal/LogPrintf.h>
+
 /* ******************************************************************
  *  Structure, enum, union, etc., typdefs.
  */
@@ -110,8 +111,6 @@ int XLALGetDopplerShiftedFrequencyInfo
    UINT4Vector              *lowestBins,
    COMPLEX8Vector      *expSignalPhases,
    REAL8VectorSequence        *sincList,
-   REAL8VectorSequence         *dataAmp,
-   COMPLEX8VectorSequence *expDataPhase,
    UINT4                        numBins,
    PulsarDopplerParams            *dopp,
    SFTIndexList                   *sfts,
@@ -155,8 +154,6 @@ int XLALCalculatePulsarCrossCorrStatistic
    COMPLEX8Vector       *expSignalPhases,
    UINT4Vector               *lowestBins,
    REAL8VectorSequence         *sincList,
-   REAL8VectorSequence          *dataAmp,
-   COMPLEX8VectorSequence  *expDataPhase,
    SFTPairIndexList            *sftPairs,
    SFTIndexList              *sftIndices,
    MultiSFTVector             *inputSFTs,
