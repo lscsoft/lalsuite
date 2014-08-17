@@ -901,6 +901,7 @@ INT4 XLALSimIMREOBFinalMassSpin(
       *finalSpin = 3.464102 * eta - 2.9 * eta2;
       break;
     case SEOBNRv2:
+      /* See page 3 of the dcc document T1400476-v3, quantities MFinal and aFinal, for expressions below. */
       a1     = spin1[2];
       a2     = spin2[2];
       q      = mass1 / mass2;
