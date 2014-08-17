@@ -198,9 +198,9 @@ int XLALSimIMRPhenomAGenerateTD(
       XLAL_ERROR(XLAL_EFUNC);
   }
 
-  /* generate hcross, which is hplus w/ GW phase shifted by pi/2
-   * <==> orb. phase shifted by pi/4 */
-  IMRPhenomAGenerateTD(hcross, LAL_PI_4, deltaT, m1, m2, f_min, f_max_prime, distance, params);
+  /* generate hcross, which is hplus w/ GW phase shifted by -pi/2
+   * <==> orb. phase shifted by -pi/4 */
+  IMRPhenomAGenerateTD(hcross, -LAL_PI_4, deltaT, m1, m2, f_min, f_max_prime, distance, params);
   XLALFree(params);
   if (!(*hcross)) {
       XLALDestroyREAL8TimeSeries(*hplus);
@@ -328,9 +328,9 @@ int XLALSimIMRPhenomBGenerateTD(
       XLAL_ERROR(XLAL_EFUNC);
   }
 
-  /* generate hcross, which is hplus w/ GW phase shifted by pi/2
-   * <==> orb. phase shifted by pi/4 */
-  IMRPhenomBGenerateTD(hcross, LAL_PI_4, deltaT, m1, m2, chi, f_min, f_max_prime, distance, params);
+  /* generate hcross, which is hplus w/ GW phase shifted by -pi/2
+   * <==> orb. phase shifted by -pi/4 */
+  IMRPhenomBGenerateTD(hcross, -LAL_PI_4, deltaT, m1, m2, chi, f_min, f_max_prime, distance, params);
   XLALFree(params);
   if (!(*hcross)) {
       XLALDestroyREAL8TimeSeries(*hplus);
@@ -918,13 +918,13 @@ static size_t find_instant_freq(const REAL8TimeSeries *hp, const REAL8TimeSeries
   size_t k = start + 1;
   const size_t n = hp->data->length - 1;
 
-  /* complex_h := hp - i hc := A e^{i \phi}. Hence \phi = arctan(-hc/hp) 
-  and F = d \phi/dt = (-hp hc' + hc hp') / (2 \pi A^2)
+  /* complex_h := hp + i hc := A e^{-i \phi}. Hence \phi = arctan(-hc/hp)
+  and F = d \phi/dt = (hp hc' - hc hp') / (2 \pi A^2)
   We use first order finite difference to compute the derivatives hp' and hc'*/
   for (; k < n; k++) {
     const REAL8 hpDot = (hp->data->data[k+1] - hp->data->data[k-1]) / (2 * hp->deltaT);
     const REAL8 hcDot = (hc->data->data[k+1] - hc->data->data[k-1]) / (2 * hc->deltaT);
-    REAL8 f = -hcDot * hp->data->data[k] + hpDot * hc->data->data[k];
+    REAL8 f = hcDot * hp->data->data[k] - hpDot * hc->data->data[k];
     f /= LAL_TWOPI;
     f /= hp->data->data[k] * hp->data->data[k] + hc->data->data[k] * hc->data->data[k];
     if (f >= target) return k - 1;

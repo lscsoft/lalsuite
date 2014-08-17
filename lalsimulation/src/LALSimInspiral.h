@@ -1004,6 +1004,56 @@ int XLALSimInspiralChooseFDWaveform(
     );
 
 /**
+ * @brief Generates an time domain inspiral waveform using the specified approximant; the
+ * resulting waveform is appropriately conditioned and suitable for injection into data.
+ *
+ * For spinning waveforms, all known spin effects up to given PN order are included
+ *
+ * This routine can generate FD approximants and transform them into the time domain.
+ * Waveforms are generated beginning at a slightly lower starting frequency and tapers
+ * are put in this early region so that the waveform smoothly turns on.  Artifacts at
+ * the very end of the waveform are also tapered.  The resulting waveform is high-pass
+ * filtered at frequency f_min so that it should have little content at lower frequencies.
+ *
+ * This routine has one additional parameter relative to XLALSimInspiralChooseTDWaveform.
+ * The additional parameter is the redshift, z, of the waveform.  This should be set to
+ * zero for sources in the nearby universe (that are nearly at rest relative to the
+ * earth).  For sources at cosmological distances, the mass parameters m1 and m2 should
+ * be interpreted as the physical (source frame) masses of the bodies and the distance
+ * parameter r is the comoving (transverse) distance.  If the calling routine has already
+ * applied cosmological "corrections" to m1 and m2 and regards r as a luminosity distance
+ * then the redshift factor should again be set to zero.
+ * 
+ * @note The parameters passed must be in SI units.
+ */
+int XLALSimInspiralTD(
+    REAL8TimeSeries **hplus,                    /**< +-polarization waveform */
+    REAL8TimeSeries **hcross,                   /**< x-polarization waveform */
+    REAL8 phiRef,                               /**< reference orbital phase (rad) */
+    REAL8 deltaT,                               /**< sampling interval (s) */
+    REAL8 m1,                                   /**< mass of companion 1 (kg) */
+    REAL8 m2,                                   /**< mass of companion 2 (kg) */
+    REAL8 S1x,                                  /**< x-component of the dimensionless spin of object 1 */
+    REAL8 S1y,                                  /**< y-component of the dimensionless spin of object 1 */
+    REAL8 S1z,                                  /**< z-component of the dimensionless spin of object 1 */
+    REAL8 S2x,                                  /**< x-component of the dimensionless spin of object 2 */
+    REAL8 S2y,                                  /**< y-component of the dimensionless spin of object 2 */
+    REAL8 S2z,                                  /**< z-component of the dimensionless spin of object 2 */
+    REAL8 f_min,                                /**< starting GW frequency (Hz) */
+    REAL8 f_ref,                                /**< reference GW frequency (Hz) */
+    REAL8 r,                                    /**< distance of source (m) */
+    REAL8 z,                                    /**< redshift of source frame relative to observer frame */
+    REAL8 i,                                    /**< inclination of source (rad) */
+    REAL8 lambda1,                              /**< (tidal deformability of mass 1) / m1^5 (dimensionless) */
+    REAL8 lambda2,                              /**< (tidal deformability of mass 2) / m2^5 (dimensionless) */
+    LALSimInspiralWaveformFlags *waveFlags,     /**< Set of flags to control special behavior of some waveform families. Pass in NULL (or None in python) for default flags */
+    LALSimInspiralTestGRParam *nonGRparams, 	/**< Linked list of non-GR parameters. Pass in NULL (or None in python) for standard GR waveforms */
+    int amplitudeO,                             /**< twice post-Newtonian amplitude order */
+    int phaseO,                                 /**< twice post-Newtonian order */
+    Approximant approximant                     /**< post-Newtonian approximant to use for waveform production */
+    );
+
+/**
  * Interface to compute a set of -2 spin-weighted spherical harmonic modes
  * for a binary inspiral of any available amplitude and phase PN order.
  * The phasing is computed with any of the TaylorT1, T2, T3, T4 methods.
@@ -1710,12 +1760,14 @@ typedef struct tagPNPhasingSeries
 }
 PNPhasingSeries;
 
-int XLALSimInspiralTaylorF2Phasing(
+int XLALSimInspiralTaylorF2AlignedPhasing(
 	PNPhasingSeries **pfa,
 	const REAL8 m1,
 	const REAL8 m2,
-	const REAL8 chi1L,
-	const REAL8 chi2L,
+	const REAL8 chi1,
+	const REAL8 chi2,
+	const REAL8 qm_def1,
+	const REAL8 qm_def2,
 	const LALSimInspiralSpinOrder spinO
 	);
 
@@ -1738,6 +1790,8 @@ int XLALSimInspiralTaylorF2(
 		const REAL8 fEnd,               /**< highest GW frequency (Hz) of waveform generation - if 0, end at Schwarzschild ISCO */
         const REAL8 f_ref,              /**< Reference GW frequency at which phi_ref is defined */
 		const REAL8 r,                  /**< distance of source (m) */
+        const REAL8 quadparam1,                /**< quadrupole deformation parameter of body 1 (dimensionless, 1 for BH) */
+        const REAL8 quadparam2,                /**< quadrupole deformation parameter of body 2 (dimensionless, 1 for BH) */
 		const REAL8 lambda1,            /**< (tidal deformation of body 1)/(mass of body 1)^5 */
 		const REAL8 lambda2,            /**< (tidal deformation of body 2)/(mass of body 2)^5 */
 		const LALSimInspiralSpinOrder spinO,  /**< twice PN order of spin effects */

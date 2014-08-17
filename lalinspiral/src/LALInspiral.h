@@ -771,6 +771,21 @@ int XLALSimInspiralChooseWaveformFromSimInspiral(
     );
 
 /**
+ * Generate the plus and cross polarizations for a conditioned waveform
+ * form a row of the sim_inspiral table.
+ *
+ * Parses a row from the sim_inspiral table and passes the appropriate members
+ * to XLALSimInspiralTD().
+ *
+ */
+int XLALInspiralTDWaveformFromSimInspiral(
+    REAL8TimeSeries **hplus,	/**< +-polarization waveform */
+    REAL8TimeSeries **hcross,	/**< x-polarization waveform */
+    SimInspiralTable *thisRow,	/**< row from the sim_inspiral table containing waveform parameters */
+    REAL8 deltaT		/**< time step (s) */
+    );
+
+/**
  * Generate the plus and cross polarizations for a waveform
  * form a row of the InspiralTemplate structure.
  *

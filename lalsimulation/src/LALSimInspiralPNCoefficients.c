@@ -206,6 +206,48 @@ XLALSimInspiralPNFlux_4PNCoeff(
 }
 
 static REAL8 UNUSED
+XLALSimInspiralPNFlux_4PNS1S2Coeff(
+    REAL8 eta)
+{
+    return -103./48./eta;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralPNFlux_4PNS1S2LCoeff(
+    REAL8 eta)
+{
+    return 289./48./eta;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralPNFlux_4PNQM2SCoeff(
+    REAL8 mByM)
+{
+    return -1./mByM/mByM;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralPNFlux_4PNQM2SOCoeff(
+    REAL8 mByM)
+{
+    return 3./mByM/mByM;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralPNFlux_4PNSelf2SCoeff(
+    REAL8 mByM)
+{
+    return 7./96./mByM/mByM;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralPNFlux_4PNSelf2SOCoeff(
+    REAL8 mByM)
+{
+    return -1./96./mByM/mByM;
+}
+
+static REAL8 UNUSED
 XLALSimInspiralPNFlux_5PNCoeff(
 	REAL8 eta)
 {
@@ -285,12 +327,17 @@ XLALSimInspiralPNFlux_12PNTidalCoeff(
 }
 
 static void UNUSED
-XLALSimInspiralPNPhasing_F2WithSO(
+XLALSimInspiralPNPhasing_F2(
 	PNPhasingSeries *pfa,
 	const REAL8 m1,
 	const REAL8 m2,
 	const REAL8 chi1L,
 	const REAL8 chi2L,
+	const REAL8 chi1sq,
+	const REAL8 chi2sq,
+	const REAL8 chi1dotchi2,
+	const REAL8 qm_def1,
+	const REAL8 qm_def2,
 	const LALSimInspiralSpinOrder spinO
 	)
 {
@@ -328,6 +375,15 @@ XLALSimInspiralPNPhasing_F2WithSO(
     /* Spin-orbit terms - can be derived from arXiv:1303.7412, Eq. 3.15-16 */
     const REAL8 pn_gamma = (732985.L/2268.L - 24260.L/81.L * eta - 340.L/9.L * eta * eta ) * xs + (732985.L/2268.L +140.L/9.0L * eta) * xa * d;
 
+    /* Compute 2.0PN SS, QM, and self-spin */
+    // See Eq. (6.24) in arXiv:0810.5336
+    // 9b,c,d in arXiv:astro-ph/0504538
+    REAL8 pn_sigma = eta * (721.L/48.L*chi1L*chi2L - 247.L/48.L*chi1dotchi2);
+    pn_sigma += (720.L*qm_def1 - 1.L)/96.0L * m1M * m1M * chi1L * chi1L;
+    pn_sigma += (720.L*qm_def2 - 1.L)/96.0L * m2M * m2M * chi2L * chi2L;
+    pn_sigma -= (240.L*qm_def1 - 7.L)/96.0L * m1M * m1M * chi1sq;
+    pn_sigma -= (240.L*qm_def2 - 7.L)/96.0L * m2M * m2M * chi2sq;
+
     switch( spinO )
     {
         case LAL_SIM_INSPIRAL_SPIN_ORDER_ALL:
@@ -341,7 +397,7 @@ XLALSimInspiralPNPhasing_F2WithSO(
             pfa->v[5] += -1.L * pn_gamma;
             pfa->vlogv[5] += -3.L * pn_gamma;
         case LAL_SIM_INSPIRAL_SPIN_ORDER_2PN:
-            /* At least for now, handle spin-spin term in following function */
+            pfa->v[4] += -10.L * pn_sigma;
         case LAL_SIM_INSPIRAL_SPIN_ORDER_15PN:
             pfa->v[3] += 4.L * ( (113.L/12.L- 19.L/3.L * eta) * xs + 113.L/12.L * d * xa);
         case LAL_SIM_INSPIRAL_SPIN_ORDER_1PN:
@@ -361,58 +417,6 @@ XLALSimInspiralPNPhasing_F2WithSO(
         pfa->v[ii] *= pfaN;
         pfa->vlogv[ii] *= pfaN;
         pfa->vlogvsq[ii] *= pfaN;
-    }
-}
-
-static void UNUSED
-XLALSimInspiralPNPhasing_F2AddSS(
-	PNPhasingSeries *pfa,
-	const REAL8 m1,
-	const REAL8 m2,
-	const REAL8 chi1L,
-	const REAL8 chi2L,
-	const REAL8 chi1sq,
-	const REAL8 chi2sq,
-    const REAL8 chi1dotchi2,
-    const REAL8 qm_def1,
-    const REAL8 qm_def2,
-    const LALSimInspiralSpinOrder spinO
-	)
-{
-    const REAL8 mtot = m1 + m2;
-    const REAL8 eta = m1*m2/mtot/mtot;
-    const REAL8 m1Msq = m1*m1/mtot/mtot;
-    const REAL8 m2Msq = m2*m2/mtot/mtot;
-
-    const REAL8 pfaN = 3.L/(128.L * eta);
-    REAL8 pn_sigma;
-
-    /* Compute 2.0PN SS, QM, and self-spin */
-    // See Eq. (6.24) in arXiv:0810.5336
-    // 9b,c,d in arXiv:astro-ph/0504538
-    pn_sigma = eta * (721.L/48.L *chi1L*chi2L-247.L/48.L*chi1dotchi2);
-    pn_sigma += (720.L*qm_def1 - 1.L)/96.0L * m1Msq * chi1L * chi1L;
-    pn_sigma += (720.L*qm_def2 - 1.L)/96.0L * m2Msq * chi2L * chi2L;
-    pn_sigma -= (240.L*qm_def1 - 7.L)/96.0L * m1Msq * chi1sq;
-    pn_sigma -= (240.L*qm_def2 - 7.L)/96.0L * m2Msq * chi2sq;
-
-    switch( spinO )
-    {
-        case LAL_SIM_INSPIRAL_SPIN_ORDER_ALL:
-        case LAL_SIM_INSPIRAL_SPIN_ORDER_35PN:
-        case LAL_SIM_INSPIRAL_SPIN_ORDER_3PN:
-        case LAL_SIM_INSPIRAL_SPIN_ORDER_25PN:
-        case LAL_SIM_INSPIRAL_SPIN_ORDER_2PN:
-            pfa->v[4] += -10.L * pfaN * pn_sigma;
-        case LAL_SIM_INSPIRAL_SPIN_ORDER_15PN:
-        case LAL_SIM_INSPIRAL_SPIN_ORDER_1PN:
-        case LAL_SIM_INSPIRAL_SPIN_ORDER_05PN:
-        case LAL_SIM_INSPIRAL_SPIN_ORDER_0PN:
-            break;
-        default:
-            XLALPrintError("XLAL Error - %s: Invalid spin PN order %s\n",
-                    __func__, spinO );
-            XLAL_ERROR_VOID(XLAL_EINVAL);
     }
 }
 
@@ -506,6 +510,139 @@ XLALSimInspiralTaylorT2Phasing_7PNCoeff(
 {
 	return (77.096675/2.032128 + 37.8515/1.2096 * eta - 74.045/6.048 * eta*eta) * LAL_PI;
 }
+
+/*
+ * TaylorT2 derivatives dt/dv
+ */
+
+/* The expression for dt/dv has an extra factor of M not implemented here */
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_0PNCoeff(
+    REAL8 eta)
+{
+    return 5./(32.*eta);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_2PNCoeff(
+    REAL8 eta)
+{
+    return 743./336. + 11.*eta/4.;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_3PNCoeff(
+    REAL8 UNUSED eta)
+{
+    return -4.*LAL_PI;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_4PNCoeff(
+    REAL8 eta)
+{
+    return 3058673./1016064. + 5429.*eta/1008. + 617.*eta*eta/144.;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_5PNCoeff(
+    REAL8 eta)
+{
+    return (-7729./672.+13.*eta/8.)*LAL_PI;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_6PNCoeff(
+    REAL8 eta)
+{
+    return -10817850546611./93884313600. + 32.*LAL_PI*LAL_PI/3.
+            + 1712.*LAL_GAMMA/105.
+            + (3147553127./12192768. - 451.*LAL_PI*LAL_PI/48.)*eta
+            - 15211.*eta*eta/6912. + 25565.*eta*eta*eta/5184.
+            + 856.*log(16.)/105.;
+}
+
+/* The convention here is that this is the coefficient in front of v^6 log(v)
+ * in the dt/dv expansion, NOT the one proportional to v^6 log(16 v^2).
+ * Hence the term above containing log(16).
+ */
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_6PNLogCoeff(
+    REAL8 UNUSED eta)
+{
+    return 1712./105.;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_7PNCoeff(
+    REAL8 eta)
+{
+    return LAL_PI*(-15419335./1016064. -75703.*eta/6048. + 14809.*eta*eta/3024);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_3PNSOCoeff(
+    REAL8 mByM)
+{
+    return 19./6. + 25./mByM/4.;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_5PNSOCoeff(
+    REAL8 mByM)
+{
+    return -17.*mByM*mByM/4. + 5.*mByM + 1249./36. + 8349./mByM/224.;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_6PNSOCoeff(
+    REAL8 mByM)
+{
+    return LAL_PI*( -13. - 149./mByM/6.);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_7PNSOCoeff(
+    REAL8 mByM)
+{
+    const REAL8 mByMsq = mByM*mByM;
+    return 1069.*mByMsq*mByMsq/288. - 1741.*mByMsq*mByM/192. + 176383.*mByMsq/12096. + 707767.*mByM/3456. + 133100377./6096384. + 34195607./mByM/193536.;
+}
+
+/* At 2 PN there are several spin^2 terms; see arXiv:astro-ph/0504538
+ * The dt/dv spin^2 term at 2 PN is just -sigma (Eq. 9b-9d)
+ * The terms 4PNSS and 4PNSSL are spin1-spin1 terms, and also depend
+ * on qm_def, the dimensionless quadrupole-monopole deformation
+ * parameter (1 for BH, larger for NS
+ */
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_4PNS1S2Coeff(
+    REAL8 eta)
+{
+    return 247./48./eta;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_4PNS1S2LCoeff(
+    REAL8 eta)
+{
+    return -721./48./eta;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_4PNSSCoeff(
+    REAL8 mByM, REAL8 qm_def)
+{
+    return (5.*qm_def/2. - 7./96.)/mByM/mByM;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_4PNSSLCoeff(
+    REAL8 mByM, REAL8 qm_def)
+{
+    return (-15.*qm_def/2. + 1./96.)/mByM/mByM;
+}
+
 
 /*
  * Tidal correction coefficients to Phasing

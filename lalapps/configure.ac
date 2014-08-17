@@ -256,6 +256,7 @@ LALSUITE_ENABLE_MODULE([METAIO])
 
 # check for libxml2
 if test "$lalxml" = "true"; then
+  AC_SEARCH_LIBS([lzma_code],[lzma])
   PKG_CHECK_MODULES([LIBXML2],[libxml-2.0 >= 2.6],[true],[false])
   lal_pre_libxml2_LIBS="$LIBS"
   LALSUITE_ADD_FLAGS([C],[],[${LIBXML2_LIBS}])

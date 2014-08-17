@@ -67,6 +67,8 @@ extern "C" {
 #include <gsl/gsl_sf_trig.h>
 #include <lal/FrequencySeries.h>
 #include <lal/Sequence.h>
+#include <lal/CWFastMath.h>
+#include <lal/LogPrintf.h>
 
 /* ******************************************************************
  *  Structure, enum, union, etc., typdefs.
@@ -105,76 +107,74 @@ extern "C" {
 
 int XLALGetDopplerShiftedFrequencyInfo
 (
-   REAL8Vector        *shiftedFreqs,
-   UINT4Vector          *lowestBins,
-   REAL8Vector         *kappaValues,
-   COMPLEX8Vector   *expSignalPhases,
-   REAL8VectorSequence    *sincList,
-   UINT4                    numBins,
-   PulsarDopplerParams        *dopp,
-   SFTIndexList               *sfts,
-   MultiSFTVector        *inputSFTs,
-   MultiSSBtimes        *multiTimes,
-   REAL8                       Tsft
+   REAL8Vector            *shiftedFreqs,
+   UINT4Vector              *lowestBins,
+   COMPLEX8Vector      *expSignalPhases,
+   REAL8VectorSequence        *sincList,
+   UINT4                        numBins,
+   PulsarDopplerParams            *dopp,
+   SFTIndexList                   *sfts,
+   MultiSFTVector            *inputSFTs,
+   MultiSSBtimes            *multiTimes,
+   REAL8                           Tsft
    )
   ;
 
 int XLALCreateSFTIndexListFromMultiSFTVect
 (
    SFTIndexList        **indexList,
-   MultiSFTVector      *sfts
+   MultiSFTVector            *sfts
  )
   ;
 
 int XLALCreateSFTPairIndexList
 (
    SFTPairIndexList  **pairIndexList,
-   SFTIndexList       *indexList,
-   MultiSFTVector     *sfts,
-   REAL8               maxLag,
-   BOOLEAN             inclAutoCorr
+   SFTIndexList           *indexList,
+   MultiSFTVector              *sfts,
+   REAL8                      maxLag,
+   BOOLEAN              inclAutoCorr
    )
   ;
 
 int XLALCalculateAveCurlyGAmpUnshifted
   (
-   REAL8Vector      **G_alpha,
+   REAL8Vector            **G_alpha,
    SFTPairIndexList  *pairIndexList,
-   SFTIndexList      *indexList,
-   MultiAMCoeffs     *multiCoeffs
+   SFTIndexList          *indexList,
+   MultiAMCoeffs       *multiCoeffs
   )
  ;
 
 int XLALCalculatePulsarCrossCorrStatistic
   (
-   REAL8              *ccStat,
-   REAL8           *evSquared,
-   REAL8Vector     *curlyGAmp,
-   COMPLEX8Vector  *expSignalPhases,
-   UINT4Vector    *lowestBins,
-   REAL8Vector   *kappaValues,
-   REAL8VectorSequence      *sincList,
-   SFTPairIndexList *sftPairs,
-   SFTIndexList   *sftIndices,
-   MultiSFTVector  *inputSFTs,
-   MultiNoiseWeights *multiWeights,
-      UINT4              numBins
-  )
- ;
+   REAL8                         *ccStat,
+   REAL8                      *evSquared,
+   REAL8Vector                *curlyGAmp,
+   COMPLEX8Vector       *expSignalPhases,
+   UINT4Vector               *lowestBins,
+   REAL8VectorSequence         *sincList,
+   SFTPairIndexList            *sftPairs,
+   SFTIndexList              *sftIndices,
+   MultiSFTVector             *inputSFTs,
+   MultiNoiseWeights       *multiWeights,
+   UINT4                         numBins
+   )
+  ;
 
 int XLALFindLMXBCrossCorrDiagMetric
   (
-   REAL8             *hSens,
-   REAL8             *g_ff,
-   REAL8             *g_aa,
-   REAL8             *g_TT,
+   REAL8                      *hSens,
+   REAL8                       *g_ff,
+   REAL8                       *g_aa,
+   REAL8                       *g_TT,
    PulsarDopplerParams DopplerParams,
-   REAL8Vector       *G_alpha,
-   SFTPairIndexList  *pairIndexList,
-   SFTIndexList      *indexList,
-   MultiSFTVector    *sfts
-   /* REAL8Vector       *kappaValues*/
-   /*REAL8             *g_pp,*/
+   REAL8Vector              *G_alpha,
+   SFTPairIndexList   *pairIndexList,
+   SFTIndexList           *indexList,
+   MultiSFTVector              *sfts
+   /* REAL8Vector       *kappaValues */
+   /*REAL8                     *g_pp,*/
    )
   ;
 

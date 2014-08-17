@@ -27,17 +27,16 @@
 /* Also returns the signal phase according to eqn 2.4 */
 int XLALGetDopplerShiftedFrequencyInfo
   (
-   REAL8Vector        *shiftedFreqs, /**< Output list of shifted frequencies */
-   UINT4Vector          *lowestBins, /**< Output list of bin indices */
-   REAL8Vector         *kappaValues, /**< Output list of bin offsets */
-   COMPLEX8Vector  *expSignalPhases, /**< Output list of signal phases */
-   REAL8VectorSequence    *sincList, /**< Output list of sinc factors */
-   UINT4                    numBins, /**< Number of frequency bins to use */
-   PulsarDopplerParams        *dopp, /**< Doppler parameters for signal */
-   SFTIndexList         *sftIndices, /**< List of indices for SFTs */
-   MultiSFTVector        *inputSFTs, /**< SFT data (needed for f0) */
-   MultiSSBtimes        *multiTimes, /**< SSB or Binary times */
-   REAL8                       Tsft  /**< SFT duration */
+   REAL8Vector             *shiftedFreqs, /**< Output list of shifted frequencies */
+   UINT4Vector               *lowestBins, /**< Output list of bin indices */
+   COMPLEX8Vector       *expSignalPhases, /**< Output list of signal phases */
+   REAL8VectorSequence         *sincList, /**< Output list of sinc factors */
+   UINT4                         numBins, /**< Number of frequency bins to use */
+   PulsarDopplerParams             *dopp, /**< Doppler parameters for signal */
+   SFTIndexList              *sftIndices, /**< List of indices for SFTs */
+   MultiSFTVector             *inputSFTs, /**< SFT data (needed for f0) */
+   MultiSSBtimes             *multiTimes, /**< SSB or Binary times */
+   REAL8                            Tsft  /**< SFT duration */
   )
 {
   UINT8 numSFTs;
@@ -48,8 +47,7 @@ int XLALGetDopplerShiftedFrequencyInfo
   if ( expSignalPhases->length !=numSFTs
        || shiftedFreqs->length !=numSFTs
        || lowestBins->length !=numSFTs
-       || kappaValues->length !=numSFTs
-       || sincList->length !=numSFTs ) {
+       || sincList->length !=numSFTs) {
     XLALPrintError("Lengths of SFT-indexed lists don't match!");
     XLAL_ERROR(XLAL_EBADLEN );
   }
@@ -92,21 +90,35 @@ int XLALGetDopplerShiftedFrequencyInfo
     fhat = dopp->fkdot[0]; /* initialization */
     phiByTwoPi = fmod ( fhat * timeDiff , 1.0 );
     factor = timeDiff;
+
     for (k = 1;  k < PULSAR_MAX_SPINS; k++) {
       fhat += dopp->fkdot[k] * factor;
       factor *= timeDiff / (k+1);
       phiByTwoPi += dopp->fkdot[k] * factor;
     }
-    expSignalPhases->data[sftNum] = cexp(I * LAL_TWOPI * fmod ( phiByTwoPi , 1.0 ));
+    REAL4 sinPhi, cosPhi; /*Phi -> Phase of each SFT*/
+    if(XLALSinCos2PiLUT(&sinPhi, &cosPhi, phiByTwoPi)!= XLAL_SUCCESS){
+      LogPrintf ( LOG_CRITICAL, "%s: XLALSinCos2PiLUT() failed with errno=%d in XLALGetDopplerShiftedFrequencyInfo\n", __func__, xlalErrno );
+      XLAL_ERROR( XLAL_EFUNC );
+    }
+    expSignalPhases->data[sftNum] = cosPhi + I * sinPhi;
     shiftedFreqs->data[sftNum] = fhat * times->Tdot->data[sftInd];
     REAL8 fminusf0 = shiftedFreqs->data[sftNum] - inputSFTs->data[detInd]->data[sftInd].f0;
-    lowestBins->data[sftNum]
-      = ceil( fminusf0 * Tsft - 0.5*numBins );
-    kappaValues->data[sftNum] = lowestBins->data[sftNum] - fminusf0 * Tsft;
+    lowestBins->data[sftNum] = ceil( fminusf0 * Tsft - 0.5*numBins );
+#define SINC_SAFETY 1e-5
+    for (UINT8 l = 0; l < numBins; l++) {
+      REAL4 sinPiX, cosPiX;
+      REAL8 X;  /* Normalized sinc, i.e., sin(pi*x)/(pi*x) */
+      X =  lowestBins->data[sftNum] - fminusf0 * Tsft + l;
+      if(X > SINC_SAFETY || (X < - SINC_SAFETY)){
+	     XLAL_CHECK( XLALSinCos2PiLUT( &sinPiX, &cosPiX, 0.5 * X ) == XLAL_SUCCESS, XLAL_EFUNC ); /*sin(2*pi*0.5*x)=sin(pi*x)*/
+	     sincList->data[sftNum*numBins + l] = LAL_1_PI * sinPiX / X;/*1/(pi*x) =1/pi*1/x*/
+	   }
+	   else{
+	     sincList->data[sftNum*numBins + l] = 1;
+	   }
+    }
 
-    for (UINT8 l=0; l < numBins; l++) {
-      sincList->data[sftNum*numBins + l] = gsl_sf_sinc(kappaValues->data[sftNum]+l);
-      }
     /* printf("f=%.7f, f0=%.7f, Tsft=%g, numbins=%d, lowestbin=%d, kappa=%g\n",
 	   shiftedFreqs->data[sftNum],
 	   inputSFTs->data[detInd]->data[sftInd].f0,
@@ -124,7 +136,7 @@ int XLALGetDopplerShiftedFrequencyInfo
 int XLALCreateSFTIndexListFromMultiSFTVect
   (
    SFTIndexList        **indexList,   /* Output: flat list of indices to locate SFTs */
-   MultiSFTVector      *sfts         /* Input: set of per-detector SFT vectors */
+   MultiSFTVector            *sfts    /* Input: set of per-detector SFT vectors */
   )
 {
   SFTIndexList *ret = NULL;
@@ -169,11 +181,11 @@ int XLALCreateSFTIndexListFromMultiSFTVect
 /* Allocates memory as well */
 int XLALCreateSFTPairIndexList
   (
-   SFTPairIndexList  **pairIndexList,  /* Output: list of SFT pairs */
-   SFTIndexList       *indexList,      /* Input: list of indices to locate SFTs */
-   MultiSFTVector     *sfts,           /* Input: set of per-detector SFT vectors */
-   REAL8               maxLag,         /* Maximum allowed lag time */
-   BOOLEAN             inclAutoCorr    /* Flag indicating whether a "pair" of an SFT with itself is allowed */
+   SFTPairIndexList  **pairIndexList, /* Output: list of SFT pairs */
+   SFTIndexList           *indexList, /* Input: list of indices to locate SFTs */
+   MultiSFTVector              *sfts, /* Input: set of per-detector SFT vectors */
+   REAL8                      maxLag, /* Maximum allowed lag time */
+   BOOLEAN              inclAutoCorr  /* Flag indicating whether a "pair" of an SFT with itself is allowed */
   )
 {
   SFTPairIndexList *ret = NULL;
@@ -243,10 +255,10 @@ int XLALCreateSFTPairIndexList
 /* Allocates memory as well */
 int XLALCalculateAveCurlyGAmpUnshifted
   (
-   REAL8Vector      **G_alpha,       /* Output: vector of sigma_alpha values */
+   REAL8Vector            **G_alpha, /* Output: vector of sigma_alpha values */
    SFTPairIndexList  *pairIndexList, /* Input: list of SFT pairs */
-   SFTIndexList      *indexList,     /* Input: list of SFTs */
-   MultiAMCoeffs     *multiCoeffs    /* Input: AM coefficients */
+   SFTIndexList          *indexList, /* Input: list of SFTs */
+   MultiAMCoeffs       *multiCoeffs  /* Input: AM coefficients */
   )
 {
 
@@ -281,26 +293,24 @@ int XLALCalculateAveCurlyGAmpUnshifted
 /* This assumes rectangular or nearly-rectangular windowing */
 int XLALCalculatePulsarCrossCorrStatistic
 (
- REAL8              *ccStat,   /* Output: cross-correlation statistic rho */
- REAL8           *evSquared,   /* Output: (E[rho]/h0^2)^2 */
- REAL8Vector     *curlyGAmp,   /* Input: Amplitude of curly G for each pair */
- COMPLEX8Vector  *expSignalPhases,   /* Input: Phase of signal for each SFT */
- UINT4Vector    *lowestBins,   /* Input: Bin index to start with for each SFT */
- REAL8Vector   *kappaValues,   /* Input: Fractional offset of signal freq from best bin center */
- REAL8VectorSequence  *sincList,   /* Input: input the sinc factors*/
- SFTPairIndexList *sftPairs,   /* Input: flat list of SFT pairs */
- SFTIndexList   *sftIndices,   /* Input: flat list of SFTs */
- MultiSFTVector  *inputSFTs,   /* Input: SFT data */
- MultiNoiseWeights *multiWeights,  /* Input: nomalizeation factor S^-1 & weights for each SFT */
- UINT4              numBins   /**Input Number of frequency bins to be taken into calc */
+ REAL8                         *ccStat, /* Output: cross-correlation statistic rho */
+ REAL8                      *evSquared, /* Output: (E[rho]/h0^2)^2 */
+ REAL8Vector                *curlyGAmp, /* Input: Amplitude of curly G for each pair */
+ COMPLEX8Vector       *expSignalPhases, /* Input: Phase of signal for each SFT */
+ UINT4Vector               *lowestBins, /* Input: Bin index to start with for each SFT */
+ REAL8VectorSequence         *sincList, /* Input: input the sinc factors*/
+ SFTPairIndexList            *sftPairs, /* Input: flat list of SFT pairs */
+ SFTIndexList              *sftIndices, /* Input: flat list of SFTs */
+ MultiSFTVector             *inputSFTs, /* Input: SFT data */
+ MultiNoiseWeights       *multiWeights, /* Input: nomalizeation factor S^-1 & weights for each SFT */
+ UINT4                         numBins  /* Input Number of frequency bins to be taken into calc */
  )
 {
 
   UINT8 numSFTs = sftIndices->length;
   if ( expSignalPhases->length !=numSFTs
        || lowestBins->length !=numSFTs
-       || kappaValues->length !=numSFTs
-       || sincList->length !=numSFTs ) {
+       || sincList->length !=numSFTs) {
     XLALPrintError("Lengths of SFT-indexed lists don't match!");
     XLAL_ERROR(XLAL_EBADLEN );
   }
@@ -310,11 +320,11 @@ int XLALCalculatePulsarCrossCorrStatistic
     XLALPrintError("Lengths of pair-indexed lists don't match!");
     XLAL_ERROR(XLAL_EBADLEN );
   }
-  REAL8 nume=0;
-  REAL8 curlyGSqr=0;
+  REAL8 nume = 0;
+  REAL8 curlyGSqr = 0;
   *ccStat = 0.0;
   *evSquared = 0.0;
-  for (UINT8 alpha=0; alpha < numPairs; alpha++) {
+  for (UINT8 alpha = 0; alpha < numPairs; alpha++) {
     UINT8 sftNum1 = sftPairs->data[alpha].sftNum[0];
     UINT8 sftNum2 = sftPairs->data[alpha].sftNum[1];
 
@@ -347,7 +357,9 @@ int XLALCalculatePulsarCrossCorrStatistic
     COMPLEX8 *dataArray2 = inputSFTs->data[detInd2]->data[sftInd2].data->data;
     UINT4 lenDataArray1 = inputSFTs->data[detInd1]->data[sftInd1].data->length;
     UINT4 lenDataArray2 = inputSFTs->data[detInd2]->data[sftInd2].data->length;
-    COMPLEX8 GalphaCC = curlyGAmp->data[alpha] * (expSignalPhases->data[sftNum1]/expSignalPhases->data[sftNum2]);
+    COMPLEX8 GalphaCC = curlyGAmp->data[alpha]
+      * expSignalPhases->data[sftNum1]
+      * conj( expSignalPhases->data[sftNum2] );
     INT4 baseCCSign = 1; /* Alternating sign is (-1)**(k1-k2) */
     if ( ( (lowestBins->data[sftNum1]-lowestBins->data[sftNum2]) % 2) != 0 ) {
       baseCCSign = -1;
@@ -358,21 +370,25 @@ int XLALCalculatePulsarCrossCorrStatistic
 		 XLAL_EINVAL,
 		 "Loop would run off end of array:\n lowestBin1=%d, numBins=%d, len(dataArray1)=%d\n",
 		 lowestBin1, numBins, lenDataArray1 );
-    for (UINT8 j=0; j < numBins; j++) {
+    for (UINT8 j = 0; j < numBins; j++) {
       COMPLEX8 data1 = dataArray1[lowestBin1+j];
-      /* Normalized sinc, i.e., sin(pi*x)/(pi*x) */
+
       INT4 ccSign = baseCCSign;
       UINT4 lowestBin2 = lowestBins->data[sftNum2];
       XLAL_CHECK ( ((lowestBin2 + numBins - 1) < lenDataArray2),
 		   XLAL_EINVAL,
 		   "Loop would run off end of array:\n lowestBin2=%d, numBins=%d, len(dataArray2)=%d\n",
 		   lowestBin2, numBins, lenDataArray2 );
-      for (UINT8 k=0; k < numBins; k++) {
+      for (UINT8 k = 0; k < numBins; k++) {
 	COMPLEX8 data2 = dataArray2[lowestBins->data[sftNum2]+k];
 	REAL8 sincFactor =1;
-	sincFactor = sincList->data[sftNum1 * numBins + k] * sincList->data[sftNum2 * numBins + k];
-	nume +=  ccSign * sincFactor * creal ( GalphaCC * conj(data1) * data2 ); /*multiWeights->data[detInd1]->data[sftNum1] *  multiWeights->data[detInd2]->data[sftNum2] **/
-	REAL8 GalphaAmp = curlyGAmp->data[alpha] * sincFactor ; /** multiWeights->data[detInd1]->data[sftNum1] *  multiWeights->data[detInd2]->data[sftNum2]*/
+
+	sincFactor = sincList->data[sftNum1 * numBins + j] * sincList->data[sftNum2 * numBins + k];
+	nume +=  ccSign * sincFactor * creal(GalphaCC * conj(data1) * data2);
+	/*nume += creal ( GalphaCC * ccSign * sincFactor * conj(data1) * data2 );=> abs(GalphaCC)*abs(data1)*abs(data2) * cos(arg(GalphaCC)-arg(data1)+arg(data2))*/
+	/*multiWeights->data[detInd1]->data[sftNum1] *  multiWeights->data[detInd2]->data[sftNum2] **/
+	REAL8 GalphaAmp = curlyGAmp->data[alpha] * sincFactor ;
+	/** multiWeights->data[detInd1]->data[sftNum1] *  multiWeights->data[detInd2]->data[sftNum2]*/
 	curlyGSqr += SQUARE( GalphaAmp );
 	ccSign *= -1;
       }
@@ -386,19 +402,18 @@ int XLALCalculatePulsarCrossCorrStatistic
 /*calculate metric diagnol components, also include the estimation of sensitivity E[rho]/(h_0)^2*/
 int XLALFindLMXBCrossCorrDiagMetric
   (
-   REAL8             *hSens,         /*Output:sensitivity*/
-   REAL8             *g_ff,          /*Output:metric elements */
-   REAL8             *g_aa,          /*binary projected semimajor axis*/
-   REAL8             *g_TT,          /*reference time*/
-   PulsarDopplerParams DopplerParams, /* Input: pulsar/binary orbit paramaters*/
-   REAL8Vector       *G_alpha,        /* Input: vector of curlyGunshifted values */
-   SFTPairIndexList  *pairIndexList,  /* Input: list of SFT pairs */
-   SFTIndexList      *indexList,      /* Input: list of SFTs */
-   MultiSFTVector    *sfts            /* Input: set of per-detector SFT vectors */
-   /* REAL8Vector       *kappaValues */    /* Input: Fractional offset of signal freq from best bin center */
-
-   /*REAL8             *devTsq,  */   /*Output: mean time deviation^2*/
-   /*REAL8             *g_pp,*/
+   REAL8                      *hSens, /* Output: sensitivity*/
+   REAL8                       *g_ff, /* Output: Diagonal frequency metric element */
+   REAL8                       *g_aa, /* Output: Diagonal binary projected semimajor axis metric element*/
+   REAL8                       *g_TT, /* Output: Diagonal reference time metric element*/
+   PulsarDopplerParams DopplerParams, /*  Input: pulsar/binary orbit paramaters*/
+   REAL8Vector              *G_alpha, /*  Input: vector of curlyGunshifted values */
+   SFTPairIndexList   *pairIndexList, /*  Input: list of SFT pairs */
+   SFTIndexList           *indexList, /*  Input: list of SFTs */
+   MultiSFTVector              *sfts  /*  Input: set of per-detector SFT vectors */
+   /* REAL8Vector     *kappaValues */ /*  Input: Fractional offset of signal freq from best bin center */
+   /*REAL8                 *devTsq,*/ /* Output: mean time deviation^2*/
+   /*REAL8                   *g_pp,*/ /* Output: Diagonal orbital period metric element */
    )
 {
   UINT8 sftNum1=0;
@@ -431,22 +446,22 @@ int XLALFindLMXBCrossCorrDiagMetric
     UINT8 sftInd2 = indexList->data[sftNum2].sftInd;
     T1 = &(sfts->data[detInd1]->data[sftInd1].epoch);
     T2 = &(sfts->data[detInd2]->data[sftInd2].epoch);
-    T = XLALGPSDiff( T1, T2 );
-    REAL8 sqrG_alpha = SQUARE(G_alpha->data[j]);/*(curlyG_\alpha)^2*/
-    sinSquare += sqrG_alpha*SQUARE(sin(LAL_PI*T/(DopplerParams.period)));/*(G_\alpha)^2*(sin(\pi*T/T_orbit))^2*/
+    T = XLALGPSDiff(T1, T2);
+    REAL8 sqrG_alpha = SQUARE(G_alpha->data[j]); /*(curlyG_\alpha)^2*/
+    sinSquare += sqrG_alpha*SQUARE(sin(LAL_PI*T/(DopplerParams.period))); /*(G_\alpha)^2*(sin(\pi*T/T_orbit))^2*/
     tSquare += sqrG_alpha*SQUARE(T); /*(\curlyg_alpha*)^2*T^2*/
-    denom += sqrG_alpha;                               /*calculate the denominator*/
+    denom += sqrG_alpha; /*calculate the denominator*/
     rhosum += 2*sqrG_alpha;
     /*hfT=0.5*T;
       Tmean=XLALGPSAdd(&T2, hfT);*/
-    /*muT +=Tmean/numalpha;*/                            /*calculate the average of Tmean*/
+    /*muT +=Tmean/numalpha;*/ /*calculate the average of Tmean*/
       }
   TSquaWeightedAve =(tSquare/denom);
   SinSquaWeightedAve =(sinSquare/denom);
   *hSens = sqrt(rhosum);
-  *g_ff= TSquaWeightedAve* 2 * SQUARE(LAL_PI);
-  *g_aa= SinSquaWeightedAve* SQUARE(LAL_PI*DopplerParams.fkdot[0]);
-  *g_TT= SinSquaWeightedAve* SQUARE(2*SQUARE(LAL_PI)*(DopplerParams.fkdot[0])*(DopplerParams.asini)/(DopplerParams.period));
+  *g_ff = TSquaWeightedAve * 2 * SQUARE(LAL_PI);
+  *g_aa = SinSquaWeightedAve * SQUARE(LAL_PI * DopplerParams.fkdot[0]);
+  *g_TT = SinSquaWeightedAve * SQUARE(2 * SQUARE(LAL_PI) * (DopplerParams.fkdot[0]) * (DopplerParams.asini)/(DopplerParams.period));
 
 
   return XLAL_SUCCESS;

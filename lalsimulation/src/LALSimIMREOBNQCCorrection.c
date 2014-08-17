@@ -3412,7 +3412,7 @@ UNUSED static int XLALSimIMRGetEOBCalibratedSpinNQC3D(
   coeffs->b1 = - coeffs->b1;
   coeffs->b2 = - coeffs->b2;
 
-  REAL8 dM  = abs(m1 - m2)/(m1+m2);
+  REAL8 dM  = fabs(m1 - m2)/(m1+m2);
   REAL8 chiA = chiAin;
   if ( m2 > m1 )
   {
@@ -3965,8 +3965,8 @@ UNUSED static int XLALSimIMRSpinEOBCalculateNQCCoefficients(
      coeffs->b4  = gsl_vector_get( bCoeff, 1 );
      break;
    case 2:
-     coeffs->b3  = gsl_vector_get( bCoeff, 0 );
-     coeffs->b4  = gsl_vector_get( bCoeff, 1 );
+     //coeffs->b3  = gsl_vector_get( bCoeff, 0 );
+     //coeffs->b4  = gsl_vector_get( bCoeff, 1 );
      break;
    default:
      XLALPrintError( "XLAL Error - %s: Unknown SEOBNR version!\nAt present only v1 and v2 are available.\n", __func__);

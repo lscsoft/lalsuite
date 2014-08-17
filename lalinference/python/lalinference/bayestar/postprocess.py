@@ -149,6 +149,98 @@ def adaptive_healpix_histogram(theta, phi, max_samples_per_pixel, nside=-1, max_
     return p
 
 
+def _interpolate_level(m):
+    """Recursive multi-resolution interpolation. Modifies `m` in place."""
+    # Determine resolution.
+    npix = len(m)
+
+    if npix > 12:
+        # Determine which pixels comprise multi-pixel tiles.
+        ipix = np.flatnonzero(
+            (m[0::4] == m[1::4]) &
+            (m[0::4] == m[2::4]) &
+            (m[0::4] == m[3::4]))
+
+        if len(ipix):
+            ipix = (4 * ipix +
+                np.expand_dims(np.arange(4, dtype=np.intp), 1)).T.flatten()
+
+            nside = hp.npix2nside(npix)
+
+            # Downsample.
+            m_lores = hp.ud_grade(
+                m, nside // 2, order_in='NESTED', order_out='NESTED')
+
+            # Interpolate recursively.
+            _interpolate_level(m_lores)
+
+            # Record interpolated multi-pixel tiles.
+            m[ipix] = hp.get_interp_val(
+                m_lores, *hp.pix2ang(nside, ipix, nest=True), nest=True)
+
+
+def interpolate_nested(m, nest=False):
+    """
+    Apply bilinear interpolation to a multiresolution HEALPix map, assuming
+    that runs of pixels containing identical values are nodes of the tree. This
+    smooths out the stair-step effect that may be noticeable in contour plots.
+
+    Here is how it works. Consider a coarse tile surrounded by base tiles, like
+    this:
+
+                +---+---+
+                |   |   |
+                +-------+
+                |   |   |
+        +---+---+---+---+---+---+
+        |   |   |       |   |   |
+        +-------+       +-------+
+        |   |   |       |   |   |
+        +---+---+---+---+---+---+
+                |   |   |
+                +-------+
+                |   |   |
+                +---+---+
+
+    The value within the central coarse tile is computed by downsampling the
+    sky map (averaging the fine tiles), upsampling again (with bilinear
+    interpolation), and then finally copying the interpolated values within the
+    coarse tile back to the full-resolution sky map. This process is applied
+    recursively at all successive HEALPix resolutions.
+
+    Note that this method suffers from a minor discontinuity artifact at the
+    edges of regions of coarse tiles, because it temporarily treats the
+    bordering fine tiles as constant. However, this artifact seems to have only
+    a minor effect on generating contour plots.
+
+    Parameters
+    ----------
+
+    m: `~numpy.ndarray`
+        a HEALPix array
+
+    nest: bool, default: False
+        Whether the input array is stored in the `NESTED` indexing scheme (True)
+        or the `RING` indexing scheme (False).
+
+    """
+    # Convert to nest indexing if necessary, and make sure that we are working
+    # on a copy.
+    if nest:
+        m = m.copy()
+    else:
+        m = hp.reorder(m, r2n=True)
+
+    _interpolate_level(m)
+
+    # Convert to back ring indexing if necessary
+    if not nest:
+        m = hp.reorder(m, n2r=True)
+
+    # Done!
+    return m
+
+
 def flood_fill(nside, ipix, m, nest=False):
     """Stack-based flood fill algorithm in HEALPix coordinates.
     Based on <http://en.wikipedia.org/w/index.php?title=Flood_fill&oldid=566525693#Alternative_implementations>.

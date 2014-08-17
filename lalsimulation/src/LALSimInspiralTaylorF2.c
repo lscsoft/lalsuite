@@ -34,12 +34,17 @@
 #include <lal/XLALError.h>
 #include "LALSimInspiralPNCoefficients.c"
 
-int XLALSimInspiralTaylorF2Phasing(
+/* This function allows SWIG to wrap the TaylorF2 phasing coefficients
+ * for use in external Python code
+ */
+int XLALSimInspiralTaylorF2AlignedPhasing(
         PNPhasingSeries **pn,
         const REAL8 m1,
         const REAL8 m2,
-        const REAL8 chi1L,
-        const REAL8 chi2L,
+        const REAL8 chi1,
+        const REAL8 chi2,
+        const REAL8 qm_def1,
+        const REAL8 qm_def2,
         const LALSimInspiralSpinOrder spinO
 	)
 {
@@ -51,7 +56,7 @@ int XLALSimInspiralTaylorF2Phasing(
 
     pfa = (PNPhasingSeries *) LALMalloc(sizeof(PNPhasingSeries));
 
-    XLALSimInspiralPNPhasing_F2WithSO(pfa, m1, m2, chi1L, chi2L, spinO);
+    XLALSimInspiralPNPhasing_F2(pfa, m1, m2, chi1, chi2, chi1*chi1, chi2*chi2, chi1*chi2, qm_def1, qm_def2, spinO);
 
     *pn = pfa;
 
@@ -73,6 +78,8 @@ int XLALSimInspiralTaylorF2Phasing(
  * See arXiv:0810.5336 and arXiv:astro-ph/0504538 for spin corrections
  * to the phasing.
  * See arXiv:1303.7412 for spin-orbit phasing corrections at 3 and 3.5PN order
+ *
+ * The spin and tidal order enums are defined in LALSimInspiralWaveformFlags.h
  */
 int XLALSimInspiralTaylorF2(
         COMPLEX16FrequencySeries **htilde_out, /**< FD waveform */
@@ -86,6 +93,8 @@ int XLALSimInspiralTaylorF2(
         const REAL8 fEnd,                      /**< highest GW frequency (Hz) of waveform generation - if 0, end at Schwarzschild ISCO */
         const REAL8 f_ref,                     /**< Reference GW frequency (Hz) - if 0 reference point is coalescence */
         const REAL8 r,                         /**< distance of source (m) */
+        const REAL8 quadparam1,                /**< quadrupole deformation parameter of body 1 (dimensionless, 1 for BH) */
+        const REAL8 quadparam2,                /**< quadrupole deformation parameter of body 2 (dimensionless, 1 for BH) */
         const REAL8 lambda1,                   /**< (tidal deformation of body 1)/(mass of body 1)^5 */
         const REAL8 lambda2,                   /**< (tidal deformation of body 2)/(mass of body 2)^5 */
         const LALSimInspiralSpinOrder spinO,  /**< twice PN order of spin effects */
@@ -112,10 +121,7 @@ int XLALSimInspiralTaylorF2(
 
     /* phasing coefficients */
     PNPhasingSeries pfa;
-    XLALSimInspiralPNPhasing_F2WithSO(&pfa, m1, m2, S1z, S2z, spinO);
-    /* FIXME: Cannot yet set QM constant in ChooseFDWaveform interface */
-    XLALSimInspiralPNPhasing_F2AddSS(&pfa, m1, m2, S1z, S2z,
-            S1z*S1z, S2z*S2z, S1z*S2z, 1., 1., spinO);
+    XLALSimInspiralPNPhasing_F2(&pfa, m1, m2, S1z, S2z, S1z*S1z, S2z*S2z, S1z*S2z, quadparam1, quadparam2, spinO);
 
     REAL8 pfaN = 0.;
     REAL8 pfa2 = 0.; REAL8 pfa3 = 0.; REAL8 pfa4 = 0.;
@@ -140,6 +146,8 @@ int XLALSimInspiralTaylorF2(
             pfa3 = pfa.v[3];
         case 2:
             pfa2 = pfa.v[2];
+	case 1:
+	    XLALPrintWarning( "There is no 0.5PN phase coefficient, returning Newtonian-order phase.\n" );
         case 0:
             pfaN = pfa.v[0];
             break;
@@ -169,12 +177,14 @@ int XLALSimInspiralTaylorF2(
             XLAL_ERROR(XLAL_ETYPE, "Invalid amplitude PN order %s", amplitudeO);
     }
 
-    /* Tidal coefficients for phasing */
+    /* Generate tidal terms separately.
+     * Enums specifying tidal order are in LALSimInspiralWaveformFlags.h
+     */
     REAL8 pft10 = 0.;
     REAL8 pft12 = 0.;
     switch( tideO )
     {
-        case LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL:
+	    case LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL:
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_6PN:
             pft12 = pfaN * ( XLALSimInspiralTaylorF2Phasing_12PNTidalCoeff(m1OverM, lambda1)
                             + XLALSimInspiralTaylorF2Phasing_12PNTidalCoeff(m2OverM, lambda2) );
@@ -186,6 +196,8 @@ int XLALSimInspiralTaylorF2(
         default:
             XLAL_ERROR(XLAL_EINVAL, "Invalid tidal PN order %s", tideO);
     }
+
+    /* The flux and energy coefficients below are used to compute SPA amplitude corrections */
 
     /* flux coefficients */
     const REAL8 FTaN = XLALSimInspiralPNFlux_0PNCoeff(eta);
@@ -266,16 +278,10 @@ int XLALSimInspiralTaylorF2(
         ref_phasing += pfa2 * v2ref;
         ref_phasing += pfaN;
 
-        switch( tideO )
-        {
-            case LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL:
-            case LAL_SIM_INSPIRAL_TIDAL_ORDER_6PN:
-                ref_phasing += pft12 * v12ref;
-            case LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN:
-                ref_phasing += pft10 * v10ref;
-            case LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN:
-                ;
-        }
+        /* Tidal terms in reference phasing */
+        ref_phasing += pft12 * v12ref;
+        ref_phasing += pft10 * v10ref;
+
         ref_phasing /= v5ref;
     } /* End of if(f_ref != 0) block */
 
@@ -307,9 +313,20 @@ int XLALSimInspiralTaylorF2(
         phasing += pfa2 * v2;
         phasing += pfaN;
 
-        switch (amplitudeO)
+        /* Tidal terms in phasing */
+        phasing += pft12 * v12;
+        phasing += pft10 * v10;
+
+    /* WARNING! Amplitude orders beyond 0 have NOT been reviewed!
+     * Use at your own risk. The default is to turn them off.
+     * These do not currently include spin corrections.
+     * Note that these are not higher PN corrections to the amplitude.
+     * They are the corrections to the leading-order amplitude arising
+     * from the stationary phase approximation. See for instance
+     * Eq 6.9 of arXiv:0810.5336
+     */
+	switch (amplitudeO)
         {
-            case -1:
             case 7:
                 flux += FTa7 * v7;
             case 6:
@@ -325,20 +342,10 @@ int XLALSimInspiralTaylorF2(
             case 2:
                 flux += FTa2 * v2;
                 dEnergy += dETa1 * v2;
+            case -1: /* Default to no SPA amplitude corrections */
             case 0:
                 flux += 1.;
                 dEnergy += 1.;
-        }
-
-        switch( tideO )
-        {
-            case LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL:
-            case LAL_SIM_INSPIRAL_TIDAL_ORDER_6PN:
-                phasing += pft12 * v12;
-            case LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN:
-                phasing += pft10 * v10;
-            case LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN:
-                ;
         }
 
         phasing /= v5;

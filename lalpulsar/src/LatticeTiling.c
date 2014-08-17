@@ -110,9 +110,9 @@ static void LT_ZeroStrictUpperTriangle(gsl_matrix* A) {
 }
 
 ///
-/// Exchange all rows and columns of the matrix A
+/// Reverse the order of both the rows and columns of the matrix A
 ///
-static void LT_ExchangeRowsCols(gsl_matrix* A) {
+static void LT_ReverseOrderRowsCols(gsl_matrix* A) {
   for (size_t i = 0; i < A->size1 / 2; ++i) {
     gsl_matrix_swap_rows(A, i, A->size1 - i - 1);
   }
@@ -332,17 +332,11 @@ static void LT_FindNearestPoint(
       //       i = n + 1 - (n + 1)*floor(z_t + 0.5)
       //     should instead read
       //       i = n + 1 - floor((n + 1)*(z_t + 0.5))
-      //   * We also convert the floor() operation into a round():
-      //       floor(x) = round(x - 0.5)
-      //     so that lattice points themselves will fall in the middle
-      //     of the rounded interval, and will therefore be mapped back
-      //     to themselves robustly (i.e. against numerical errors),
-      //     while points furthest from the lattice bound are at the
-      //     edges of the rounded interval, where it is acceptable for
-      //     them to be rounded to different nearest lattice points.
-      //     Line 6 then simplifies to:
-      //       i = n + 1 - round((n + 1)*(z_t + 0.5) - 0.5)
-      //         = round((n + 1)*(0.5 - z_t) + 0.5)
+      //   * We also convert the floor() operation into an lround():
+      //       i = n + 1 - lround((n + 1)*(z_t + 0.5) - 0.5)
+      //     to avoid a casting operation. Rewriting the line as:
+      //       i = lround((n + 1)*(0.5 - z_t) + 0.5)
+      //     appears to improve numerical robustness in some cases.
       for (size_t t = 1; t <= n + 1; ++t) {
         const size_t i = lround((n + 1)*(0.5 - z[t-1]) + 0.5);
         link[t-1] = bucket[i-1];
@@ -568,16 +562,16 @@ gsl_matrix* XLALComputeLatticeGenerator(
     //   G(:, 2:end) = Gp = Q * L
     // where Q is an orthogonal matrix and L an lower triangular matrix.
     // This is found using the more commonly implemented QR decomposition by:
-    // - exchanging the rows/columns of Gp
+    // - reverse the order of the rows/columns of Gp
     // - decomposing Gp = Qp * Lp, where Lp is upper triangular
-    // - exchanging the rows/columns of Qp to give Q
-    // - exchanging the rows/columns of Lp to give L
+    // - reverse the order of the rows/columns of Qp to give Q
+    // - reverse the order of the rows/columns of Lp to give L
     gsl_matrix_view Gp = gsl_matrix_submatrix(G, 0, 1, n + 1, n);
-    LT_ExchangeRowsCols(&Gp.matrix);
+    LT_ReverseOrderRowsCols(&Gp.matrix);
     GCALL_NULL(gsl_linalg_QR_decomp(&Gp.matrix, tau));
     GCALL_NULL(gsl_linalg_QR_unpack(&Gp.matrix, tau, Q, L));
-    LT_ExchangeRowsCols(Q);
-    LT_ExchangeRowsCols(L);
+    LT_ReverseOrderRowsCols(Q);
+    LT_ReverseOrderRowsCols(L);
 
     // Discard the first row of L, which is zero, to get the generator in n dimensions
     gsl_matrix_view L_view = gsl_matrix_submatrix(L, 1, 0, n, n);

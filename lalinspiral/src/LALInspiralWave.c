@@ -214,6 +214,66 @@ int XLALSimInspiralChooseWaveformFromSimInspiral(
 }
 
 /**
+ * Generate the plus and cross polarizations for a conditioned waveform
+ * form a row of the sim_inspiral table.
+ *
+ * Parses a row from the sim_inspiral table and passes the appropriate members
+ * to XLALSimInspiralTD().
+ *
+ */
+int XLALInspiralTDWaveformFromSimInspiral(
+    REAL8TimeSeries **hplus,	/**< +-polarization waveform */
+    REAL8TimeSeries **hcross,	/**< x-polarization waveform */
+    SimInspiralTable *thisRow,	/**< row from the sim_inspiral table containing waveform parameters */
+    REAL8 deltaT		/**< time step (s) */
+    )
+{
+   int ret;
+   LALPNOrder order;
+   Approximant approximant;
+   REAL8 phi0 = thisRow->coa_phase;
+   REAL8 m1 = thisRow->mass1 * LAL_MSUN_SI;
+   REAL8 m2 = thisRow->mass2 * LAL_MSUN_SI;
+   REAL8 S1x = thisRow->spin1x;
+   REAL8 S1y = thisRow->spin1y;
+   REAL8 S1z = thisRow->spin1z;
+   REAL8 S2x = thisRow->spin2x;
+   REAL8 S2y = thisRow->spin2y;
+   REAL8 S2z = thisRow->spin2z;
+   REAL8 f_min = thisRow->f_lower;
+   REAL8 f_ref = 0.;
+   REAL8 r = thisRow->distance * LAL_PC_SI * 1e6;
+   REAL8 i = thisRow->inclination;
+   REAL8 lambda1 = 0.; /* FIXME:0 turns these terms off, these should be obtained by some other means */
+   REAL8 lambda2 = 0.; /* FIXME:0 turns these terms off, these should be obtained by some other means */
+   LALSimInspiralWaveformFlags *waveFlags=XLALSimInspiralCreateWaveformFlags();
+   LALSimInspiralTestGRParam *nonGRparams = NULL;
+   int amplitudeO = thisRow->amp_order;
+
+   /* get approximant */
+   approximant = XLALGetApproximantFromString(thisRow->waveform);
+   if ( (int) approximant == XLAL_FAILURE)
+      XLAL_ERROR(XLAL_EFUNC);
+
+   /* get phase PN order; this is an enum such that the value is twice the PN order */
+   order = XLALGetOrderFromString(thisRow->waveform);
+   if ( (int) order == XLAL_FAILURE)
+      XLAL_ERROR(XLAL_EFUNC);
+
+   /* note: the condition waveform already does tapering... ignore any request to do so get taper option */
+   /* taper = XLALGetTaperFromString(thisRow->taper); */
+
+   /* generate +,x waveforms */
+   ret = XLALSimInspiralChooseTDWaveform(hplus, hcross, phi0, deltaT, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_ref, r, i, lambda1, lambda2, waveFlags, nonGRparams, amplitudeO, order, approximant);
+   XLALSimInspiralDestroyWaveformFlags(waveFlags);
+   XLALSimInspiralDestroyTestGRParam(nonGRparams);
+   if( ret == XLAL_FAILURE )
+     XLAL_ERROR(XLAL_EFUNC);
+
+   return XLAL_SUCCESS;
+}
+
+/**
  * Generate the plus and cross polarizations for a waveform
  * form a row of the InspiralTemplate structure.
  *

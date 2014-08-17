@@ -115,10 +115,8 @@ int main(int argc, char *argv[]){
   SFTPairIndexList *sftPairs = NULL;
   REAL8Vector *shiftedFreqs = NULL;
   UINT4Vector *lowestBins = NULL;
-  REAL8Vector *kappaValues = NULL;
   COMPLEX8Vector *expSignalPhases = NULL;
-  REAL8VectorSequence *sincValueList = NULL;
-
+  REAL8VectorSequence *sincList = NULL;
   PulsarDopplerParams XLAL_INIT_DECL(dopplerpos);
   PulsarDopplerParams thisBinaryTemplate, binaryTemplateSpacings;
   PulsarDopplerParams minBinaryTemplate, maxBinaryTemplate;
@@ -144,7 +142,7 @@ int main(int argc, char *argv[]){
   CrossCorrBinaryOutputEntry thisCandidate;
   UINT4 checksum;
 
-  LogPrintf (LOG_CRITICAL, "Starting time\n", 0);/*for debug convenience to record calculating time*/
+  LogPrintf (LOG_CRITICAL, "Starting time\n", 0); /*for debug convenience to record calculating time*/
   /* initialize and register user variables */
   if ( XLALInitUserVars( &uvar ) != XLAL_SUCCESS ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALInitUserVars() failed with errno=%d\n", __func__, xlalErrno );
@@ -355,7 +353,7 @@ int main(int argc, char *argv[]){
     fclose(fp);
   }
 
-  else if(XLALUserVarWasSet(&uvar.sftListInputFilename)){/*do a sanity check of the order of SFTs list if the name of input SFT list is given*/
+  else if(XLALUserVarWasSet(&uvar.sftListInputFilename)){ /*do a sanity check of the order of SFTs list if the name of input SFT list is given*/
     UINT4 numofsft=0;
     fp = fopen(uvar.sftListInputFilename,"r");
     if (fscanf(fp, PCC_SFT_HEADER, &numofsft)==EOF){
@@ -430,7 +428,7 @@ int main(int argc, char *argv[]){
   thisBinaryTemplate.fkdot[0]=0.5*(minBinaryTemplate.fkdot[0] + maxBinaryTemplate.fkdot[0]);
 
   /*Get metric diagonal components, also estimate sensitivity i.e. E[rho]/(h0)^2 (4.13)*/
-  if ( (XLALFindLMXBCrossCorrDiagMetric(&estSens, &diagff, &diagaa, &diagTT, thisBinaryTemplate, curlyGUnshifted, sftPairs, sftIndices, inputSFTs/*, kappaValues*/)  != XLAL_SUCCESS ) ) {
+  if ( (XLALFindLMXBCrossCorrDiagMetric(&estSens, &diagff, &diagaa, &diagTT, thisBinaryTemplate, curlyGUnshifted, sftPairs, sftIndices, inputSFTs /*, kappaValues*/)  != XLAL_SUCCESS ) ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALFindLMXBCrossCorrDiagMetric() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
@@ -439,7 +437,7 @@ int main(int argc, char *argv[]){
   XLALGPSSetREAL8(&dopplerpos.refTime, uvar.refTime);
   dopplerpos.Alpha = uvar.alphaRad;
   dopplerpos.Delta = uvar.deltaRad;
-  dopplerpos.fkdot[0] = uvar.fStart - sqrt(uvar.mismatchF / diagff);/*minus a  frequency spacing for testing convenience to search at true parameter, may need to modify*/
+  dopplerpos.fkdot[0] = uvar.fStart - sqrt(uvar.mismatchF / diagff); /*minus a  frequency spacing for testing convenience to search at true parameter, may need to modify*/
   /* set all spindowns to zero */
   for (k=1; k < PULSAR_MAX_SPINS; k++)
     dopplerpos.fkdot[k] = 0.0;
@@ -487,16 +485,13 @@ int main(int argc, char *argv[]){
     LogPrintf ( LOG_CRITICAL, "%s: XLALCreateUINT4Vector() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
-  if ((kappaValues = XLALCreateREAL8Vector ( numSFTs ) ) == NULL){
-    LogPrintf ( LOG_CRITICAL, "%s: XLALCreateREAL8Vector() failed with errno=%d\n", __func__, xlalErrno );
-    XLAL_ERROR( XLAL_EFUNC );
-  }
+
   if ((expSignalPhases = XLALCreateCOMPLEX8Vector ( numSFTs ) ) == NULL){
     LogPrintf ( LOG_CRITICAL, "%s: XLALCreateREAL8Vector() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
-  if ((sincValueList = XLALCreateREAL8VectorSequence ( numSFTs, uvar.numBins ) ) == NULL){
-    LogPrintf ( LOG_CRITICAL, "%s: XLALCreateREAL8Vector() failed with errno=%d\n", __func__, xlalErrno );
+  if ((sincList = XLALCreateREAL8VectorSequence ( numSFTs, uvar.numBins ) ) == NULL){
+    LogPrintf ( LOG_CRITICAL, "%s: XLALCreateREAL8VectorSequence() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
 
@@ -515,12 +510,12 @@ int main(int argc, char *argv[]){
 	  }
 	}
 
-      if ( (XLALGetDopplerShiftedFrequencyInfo( shiftedFreqs, lowestBins, kappaValues, expSignalPhases, sincValueList, uvar.numBins, &dopplerpos, sftIndices, inputSFTs, multiBinaryTimes, Tsft )  != XLAL_SUCCESS ) ) {
+      if ( (XLALGetDopplerShiftedFrequencyInfo( shiftedFreqs, lowestBins, expSignalPhases, sincList, uvar.numBins, &dopplerpos, sftIndices, inputSFTs, multiBinaryTimes, Tsft )  != XLAL_SUCCESS ) ) {
 	LogPrintf ( LOG_CRITICAL, "%s: XLALGetDopplerShiftedFrequencyInfo() failed with errno=%d\n", __func__, xlalErrno );
 	XLAL_ERROR( XLAL_EFUNC );
       }
 
-      if ( (XLALCalculatePulsarCrossCorrStatistic( &ccStat, &evSquared, curlyGUnshifted, expSignalPhases, lowestBins, kappaValues, sincValueList, sftPairs, sftIndices, inputSFTs, multiWeights, uvar.numBins)  != XLAL_SUCCESS ) ) {
+      if ( (XLALCalculatePulsarCrossCorrStatistic( &ccStat, &evSquared, curlyGUnshifted, expSignalPhases, lowestBins, sincList, sftPairs, sftIndices, inputSFTs, multiWeights, uvar.numBins)  != XLAL_SUCCESS ) ) {
 	LogPrintf ( LOG_CRITICAL, "%s: XLALCalculateAveCrossCorrStatistic() failed with errno=%d\n", __func__, xlalErrno );
 	XLAL_ERROR( XLAL_EFUNC );
       }
@@ -549,10 +544,9 @@ int main(int argc, char *argv[]){
 
 
   XLALDestroyCOMPLEX8Vector ( expSignalPhases );
-  XLALDestroyREAL8Vector ( kappaValues );
   XLALDestroyUINT4Vector ( lowestBins );
   XLALDestroyREAL8Vector ( shiftedFreqs );
-  XLALDestroyREAL8VectorSequence ( sincValueList );
+  XLALDestroyREAL8VectorSequence ( sincList );
   XLALDestroyMultiSSBtimes ( multiBinaryTimes );
   XLALDestroyMultiSSBtimes ( multiSSBTimes );
   XLALDestroyREAL8Vector ( curlyGUnshifted );
