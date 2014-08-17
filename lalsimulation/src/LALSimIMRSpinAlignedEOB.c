@@ -62,7 +62,7 @@
 #include "LALSimIMRSpinEOBFactorizedWaveform.c"
 #include "LALSimIMRSpinEOBFactorizedFlux.c"
 
-#define debugOutput 0 
+#define debugOutput 0
 
 int debugPK = 1;
 
@@ -307,6 +307,15 @@ int XLALSimIMRSpinAlignedEOBWaveform(
 
   amp0 = mTotal * LAL_MRSUN_SI / r;
 
+  if (pow(LAL_PI*fMin*mTScaled,-2./3.) < 10.0)
+  {
+    printf(" ==========\n");
+    printf("|| WARNING: Waveform generation may fail due to high starting frequency.\n");
+    printf("|| The starting frequency corresponds to a small initial radius of %.2fM.\n",pow(LAL_PI*fMin*mTScaled,-2./3.));
+    printf("|| We recommend a lower starting frequency that corresponds to an estimated starting radius > 10M.\n");
+    printf(" ==========\n");
+  }
+ 
   /* TODO: Insert potentially necessary checks on the arguments */
 
   /* Calculate the time we will need to step back for ringdown */
@@ -630,6 +639,12 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   fclose( out );
   #endif
 
+  if (tStepBack > retLen*deltaT)
+  {
+    tStepBack = 0.5*retLen*deltaT; //YPnote: if 100M of step back > actual time of evolution, step back 50% of the later
+    nStepBack = ceil( tStepBack / deltaT );
+  }
+ 
   /*
    * STEP 3) Step back in time by tStepBack and volve EOB trajectory again 
    *         using high sampling rate, stop at 0.3M out of the "EOB horizon".
@@ -703,7 +718,9 @@ int XLALSimIMRSpinAlignedEOBWaveform(
     values->data[2] = prHi.data[i];
     values->data[3] = pPhiHi.data[i];
 
-    omegaHi->data[i] = omega = XLALSimIMRSpinAlignedEOBCalcOmega( values->data, &seobParams );
+    omega = XLALSimIMRSpinAlignedEOBCalcOmega( values->data, &seobParams );
+    if (omega < 1.0e-15) omega = 1.0e-9; //YPnote: make sure omega>0 during very-late evolution when numerical errors are huge.
+    omegaHi->data[i] = omega;            //YPnote: omega<0 is extremely rare and had only happenned after relevant time interval.  
     v = cbrt( omega );
 
     /* Calculate the value of the Hamiltonian */
