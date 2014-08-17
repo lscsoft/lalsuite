@@ -2040,7 +2040,7 @@ int XLALSimInspiralChooseFDWaveform(
     int ret;
     unsigned int j;
     REAL8 pfac, cfac;
-    REAL8 quadparam1 = 1., quadparam2 = 1.; /* FIXME: This cannot yet be set in the interface
+    REAL8 quadparam1 = 1., quadparam2 = 1.; /* FIXME: This cannot yet be set in the interface */
 
     /* General sanity checks that will abort
      *
