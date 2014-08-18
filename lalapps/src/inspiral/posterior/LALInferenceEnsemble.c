@@ -182,10 +182,13 @@ void LALInferenceInitEnsemble(LALInferenceRunState *state) {
     /* Initialize starting likelihood and prior */
     state->currentPriors = XLALMalloc(nwalkers_per_thread * sizeof(REAL8));
     state->currentLikelihoods = XLALMalloc(nwalkers_per_thread * sizeof(REAL8));
-    for (walker = 0; walker < nwalkers_per_thread; walker++)
+    for (walker = 0; walker < nwalkers_per_thread; walker++) {
         state->currentPriors[walker] = state->prior(state,
                                                     state->currentParamArray[walker],
                                                     state->modelArray[walker]);
+
+        state->currentLikelihoods[walker] = 0.0;
+    }
 
     /* Distribute ensemble according to prior */
     sample_prior(state);
@@ -557,10 +560,6 @@ int main(int argc, char *argv[]){
                 __FILE__, __LINE__);
         exit(1);
     }
-    MPI_Barrier(MPI_COMM_WORLD);
-
-    /* Ensure ensemble distributed according to prior */
-    sample_prior(runState);
 
     /* Call MCMC algorithm */
     runState->algorithm(runState);

@@ -3780,6 +3780,7 @@ void LALInferenceAddClusteredKDEProposalToSet(LALInferenceRunState *runState, LA
  */
 void LALInferenceDestroyClusteredKDEProposal(LALInferenceClusteredKDE *proposal) {
     if (proposal != NULL) {
+        LALInferenceClearVariables(proposal->params);
         LALInferenceKmeansDestroy(proposal->kmeans);
         XLALFree(proposal->params);
     }
