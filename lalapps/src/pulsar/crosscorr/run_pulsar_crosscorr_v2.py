@@ -54,6 +54,11 @@ program_args += ['--fStart=%f' % fStart]
 program_args += ['--fBand=%f' % fBand]
 program_args += ['--toplistFilename=%s' % toplistName]
 
-program = 'lalapps_pulsar_crosscorr_v2'
+# Check if program was specified
+if cp.has_section('program') and cp.has_option('program','executable'):
+    program = cp.get('program','executable')
+else:
+    program = 'lalapps_pulsar_crosscorr_v2'
+
 check_call(([program]+program_args))
 
