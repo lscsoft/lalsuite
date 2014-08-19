@@ -371,7 +371,7 @@ def autocorrelation(
         None, None, amplitude_order, phase_order, approximant)
 
     # Force `plus' and `cross' waveform to be in quadrature.
-    h = 0.5 * (hplus.data.data - 1j * hcross.data.data)
+    h = 0.5 * (hplus.data.data + 1j * hcross.data.data)
 
     # Determine length of IFFT; round up to a power of 2.
     nsamples = 2 * int(ceil_pow_2(len(h)))
