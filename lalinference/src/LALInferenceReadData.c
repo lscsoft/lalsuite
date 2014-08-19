@@ -2356,11 +2356,7 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
  fprintf(stdout,"Injection will run using Approximant %i (%s), phase order %i, amp order %i, spin order %i, tidal order %i, in the frequency domain.\n",approximant,XLALGetStringFromApproximant(approximant),phase_order,amp_order,(int) spinO,(int) tideO);
    fprintf(stdout,"---\t\t ---\n\n");
 
-  COMPLEX16FrequencySeries *hctilde=NULL;
-  hctilde=XLALCreateCOMPLEX16FrequencySeries("freqDatahC",&(IFOdata->timeData->epoch),0.0,deltaF,&lalDimensionlessUnit,IFOdata->freqData->data->length);
-  COMPLEX16FrequencySeries *hptilde=NULL;
-  hptilde=XLALCreateCOMPLEX16FrequencySeries("freqDatahP",&(IFOdata->timeData->epoch),0.0,deltaF,&lalDimensionlessUnit,IFOdata->freqData->data->length);
-
+  COMPLEX16FrequencySeries *hptilde=NULL, *hctilde=NULL;
 
   XLALSimInspiralChooseFDWaveform(&hptilde, &hctilde, inj_table->coa_phase, deltaF,
                                   inj_table->mass1*LAL_MSUN_SI, inj_table->mass2*LAL_MSUN_SI, inj_table->spin1x,
@@ -2388,7 +2384,7 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
   REAL8 chisquared;
   REAL8 timedelay;  /* time delay b/w iterferometer & geocenter w.r.t. sky location */
   REAL8 timeshift;  /* time shift (not necessarily same as above)                   */
-  REAL8 twopit, f, re, im;
+  REAL8 twopit, f, re, im, dre, dim, newRe, newIm;
   INT4 i, lower, upper;
 
   REAL8 temp=0.0;
@@ -2416,9 +2412,9 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
 
     /* (negative timedelay means signal arrives earlier at Ifo than at geocenter, etc.) */
     /* amount by which to time-shift template (not necessarily same as above "timedelay"): */
-    REAL8 current_time = hptilde->epoch.gpsSeconds + 1e-9*hptilde->epoch.gpsNanoSeconds;
+    REAL8 instant = dataPtr->timeData->epoch.gpsSeconds + 1e-9*dataPtr->timeData->epoch.gpsNanoSeconds;
 
-    timeshift =  (injtime - current_time) + timedelay;
+    timeshift = (injtime - instant) + timedelay;
     twopit    = LAL_TWOPI * (timeshift);
 
     dataPtr->fPlus = Fplus;
@@ -2434,22 +2430,33 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
     upper = (UINT4)floor(dataPtr->fHigh / deltaF);
     chisquared = 0.0;
 
+    re = cos(twopit * deltaF * lower);
+    im = -sin(twopit * deltaF * lower);
     for (i=lower; i<=upper; ++i){
       /* derive template (involving location/orientation parameters) from given plus/cross waveforms: */
-      plainTemplateReal = Fplus * creal(hptilde->data->data[i])
-                          +  Fcross * creal(hctilde->data->data[i]);
-      plainTemplateImag = Fplus * cimag(hptilde->data->data[i])
-                          +  Fcross * cimag(hctilde->data->data[i]);
+      if (i < hptilde->data->length) {
+          plainTemplateReal = Fplus * creal(hptilde->data->data[i])
+                              +  Fcross * creal(hctilde->data->data[i]);
+          plainTemplateImag = Fplus * cimag(hptilde->data->data[i])
+                              +  Fcross * cimag(hctilde->data->data[i]);
+      } else {
+          plainTemplateReal = 0.0;
+          plainTemplateImag = 0.0;
+      }
 
       /* do time-shifting...             */
       /* (also un-do 1/deltaT scaling): */
-      f = ((double) i) * deltaF;
       /* real & imag parts of  exp(-2*pi*i*f*deltaT): */
-      re = cos(twopit * f);
-      im = - sin(twopit * f);
       templateReal = (plainTemplateReal*re - plainTemplateImag*im);
       templateImag = (plainTemplateReal*im + plainTemplateImag*re);
 
+      /* Incremental values, using cos(theta) - 1 = -2*sin(theta/2)^2 */
+      dim = -sin(twopit*deltaF);
+      dre = -2.0*sin(0.5*twopit*deltaF)*sin(0.5*twopit*deltaF);
+      newRe = re + re*dre - im * dim;
+      newIm = im + re*dim + im*dre;
+      re = newRe;
+      im = newIm;
 
       fprintf(outInj,"%lf %e %e %e\n",i*deltaF ,templateReal,templateImag,1.0/dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
       dataPtr->freqData->data->data[i] += crect( templateReal, templateImag );
