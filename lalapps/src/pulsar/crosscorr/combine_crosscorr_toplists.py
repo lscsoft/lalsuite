@@ -32,15 +32,9 @@ estSens_col = 6
 evSquared_col = 7
 rho_col = 8
 
-def read_and_sort_toplist(filename,max_cands=-1,dropped_rho=0):
-    data = np.loadtxt(filename,usecols=(freq_col,tp_col,asini_col,rho_col))
-
-    my_freq_col = 0
-    my_tp_col = 1
-    my_asini_col = 2
-    my_rho_col = 3
-
-    rho = data[:,my_rho_col]
+def read_and_sort_toplist(filename,max_cands=-1,dropped_rho=float("-inf")):
+    data = np.loadtxt(filename)
+    rho = data[:,rho_col]
     sorted_inds = rho.argsort()[::-1]
     # If the toplist is longer than the maximum number of candidates,
     # truncate it and record the highest SNR value we discarded
@@ -49,21 +43,30 @@ def read_and_sort_toplist(filename,max_cands=-1,dropped_rho=0):
             dropped_rho = rho[sorted_inds[max_cands]]
         sorted_inds = sorted_inds[:max_cands]
 
-    rho = rho[sorted_inds]
-    freq = data[sorted_inds,my_freq_col]
-    tp = data[sorted_inds,my_tp_col]
-    asini = data[sorted_inds,my_asini_col]
-
-    return freq, tp, asini, rho, dropped_rho
+    return data[sorted_inds,:], dropped_rho
 
 parser = ArgumentParser()
-parser.add_argument("--input-toplist-files", action="store", nargs="*"
+parser.add_argument("--input-toplist-files", action="store", nargs="+",
+                    required=True,
                     help='A space-separated list of toplist files to combine')
-parser.add_argument("--output-toplist-files", action="store",
+parser.add_argument("--output-toplist-file", action="store", required=True,
                     help='Filename for output toplist')
 parser.add_argument("--max-cands-per-toplist", action="store", type=int,
+                    default=-1,
                     help='Maximum number of candidates to keep from each toplist')
 
 args = parser.parse_args()
 
-data = parse_data(args.data_file)
+dropped_rho = float("-inf")
+
+outfile = open(args.output_toplist_file,'w')
+for filename in args.input_toplist_files:
+    (data,
+     dropped_rho) = read_and_sort_toplist(filename=filename,
+                                          max_cands=args.max_cands_per_toplist,
+                                          dropped_rho=dropped_rho)
+    for line in data:
+        outfile.write("%.10f %.10f %.10g %.10f %.10g %.5f %.10f %.10g %.10g\n"
+                      % tuple(line))
+print "Highest discarded candidate SNR was %10.g" % dropped_rho
+outfile.close()
