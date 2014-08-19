@@ -86,7 +86,7 @@ s3_transientStartTime=701230229
 s3_transientTauDays=0.5
 # --------------------
 
-injString="Alpha=${s1_Alpha};Delta=${s1_Delta};refTime=${s1_refTime};Freq=${s1_Freq};f1dot=${s1_f1dot};f2dot=${s1_f2dot};h0=${s1_h0};cosi=${s1_cosi};psi=${s1_psi};phi0=${s1_phi0};"
+injString="{Alpha=${s1_Alpha};Delta=${s1_Delta};refTime=${s1_refTime};Freq=${s1_Freq};f1dot=${s1_f1dot};f2dot=${s1_f2dot};h0=${s1_h0};cosi=${s1_cosi};psi=${s1_psi};phi0=${s1_phi0};}"
 
 ## ---------- signal file 1 ----------
 injFile1=${testDIR}/injectionS1.dat
@@ -215,7 +215,7 @@ mfdv5_CL="$mfdv5_CODE ${mfdv5_extra} --outSingleSFT --outSFTdir=${testDIR} --fmi
 
 echo "----- Method 1: single multi-IFO, multi-signal call"
 outIFOs="--IFOs=${IFO1},${IFO2} --timestampsFiles=${timestamps1},${timestamps2} --sqrtSX=${sqrtSn1},${sqrtSn2} --randSeed=1"
-sig13="--injectionSources='@${injFile1};${injFile2}'"
+sig13="--injectionSources='${injFile1},${injFile2}'"
 cmdline="$mfdv5_CL ${outIFOs} ${sig13}"
 echo $cmdline;
 if ! eval $cmdline; then
@@ -227,7 +227,7 @@ echo
 echo "----- Method 2: and again the same, using different input methods"
 outIFOs="--IFOs=${IFO1},${IFO2} --timestampsFiles=${timestamps1},${timestamps2} --sqrtSX=${sqrtSn1},${sqrtSn2} --randSeed=1"
 sig1="--injectionSources='${injString}'"
-sig23="--injectionSources='@${injFile2}'"
+sig23="--injectionSources='${injFile2}'"
 cmdline1="$mfdv5_CL ${outIFOs} ${sig1} --outLabel='mfdv5_meth2'"
 echo $cmdline1;
 if ! eval $cmdline1; then
