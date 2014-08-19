@@ -14,7 +14,8 @@ lalapps_pulsar_crosscorr_v2_SOURCES = pulsar_crosscorr_v2.c\
 	../FDS_isolated/HeapToplist.c ../FDS_isolated/HeapToplist.h
 
 EXTRA_DIST = testPulsarCrossCorr_v2.sh \
-             run_pulsar_crosscorr_v2.py test_Sco_X1.ini
+             run_pulsar_crosscorr_v2.py test_Sco_X1.ini \
+             combine_crosscorr_toplists.py
 
 TESTS = testPulsarCrossCorr_v2.sh
 
