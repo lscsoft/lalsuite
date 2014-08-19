@@ -100,6 +100,7 @@ import lalsimulation
 import pylal.progress
 
 # BAYESTAR imports.
+from lalinference.bayestar import ligolw as ligolw_bayestar
 from lalinference.bayestar import filter
 from lalinference.bayestar import timing
 
@@ -128,7 +129,8 @@ summary = ligolw_search_summary.append_search_summary(out_xmldoc, process,
 
 # Read PSDs.
 progress.update(-1, 'reading ' + opts.reference_psd)
-xmldoc = ligolw_utils.load_filename(opts.reference_psd)
+xmldoc = ligolw_utils.load_filename(
+    opts.reference_psd, contenthandler=lal.series.PSDContentHandler)
 psds = lal.series.read_psd_xmldoc(xmldoc)
 psds = dict(
     (key, timing.InterpolatedPSD(filter.abscissa(psd), psd.data.data))
@@ -136,7 +138,8 @@ psds = dict(
 
 # Read injection file.
 progress.update(-1, 'reading ' + infilename)
-xmldoc = ligolw_utils.load_filename(infilename)
+xmldoc = ligolw_utils.load_filename(
+    infilename, contenthandler=ligolw_bayestar.LSCTablesContentHandler)
 
 # Extract simulation table from injection file.
 sim_inspiral_table = ligolw_table.get_table(xmldoc,

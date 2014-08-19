@@ -65,6 +65,7 @@ import lalinspiral.sbank.tau0tau3
 import lalsimulation
 
 # BAYESTAR imports.
+from lalinference.bayestar import ligolw as ligolw_bayestar
 from lalinference.bayestar import timing
 
 # Other imports.

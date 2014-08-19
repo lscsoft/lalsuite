@@ -68,7 +68,8 @@ from lalinference import bayestar.ligolw
 
 
 # Read input file.
-xmldoc = ligolw_utils.load_filename(infilename)
+xmldoc = ligolw_utils.load_filename(,
+    infilename, contenthandler=bayestar.ligolw.LSCTablesContentHandler)
 
 # Write process metadata to output file.
 process = ligolw_process.register_to_xmldoc(xmldoc, parser.get_prog_name(),

@@ -29,7 +29,9 @@ import operator
 # LIGO-LW XML imports.
 from pylal import ligolw_inspinjfind
 from glue.ligolw.utils import process as ligolw_process
+from glue.ligolw import ligolw
 from glue.ligolw import table as ligolw_table
+from glue.ligolw import array as ligolw_array
 from pylal import ligolw_thinca
 from glue.ligolw import lsctables
 
@@ -150,3 +152,8 @@ def psd_filenames_by_process_id_for_xmldoc(xmldoc):
         for process_param
         in ligolw_table.get_table(xmldoc, lsctables.ProcessParamsTable.tableName)
         if process_param.param == '--reference-psd')
+
+
+@lsctables.use_in
+class LSCTablesContentHandler(ligolw.LIGOLWContentHandler):
+	"""Content handler for reading LIGO-LW XML files with LSC table schema."""

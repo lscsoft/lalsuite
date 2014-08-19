@@ -140,7 +140,8 @@ summary = ligolw_search_summary.append_search_summary(out_xmldoc, process,
 
 # Read template bank file.
 progress.update(-1, 'reading ' + opts.template_bank)
-xmldoc = ligolw_utils.load_filename(opts.template_bank)
+xmldoc = ligolw_utils.load_filename(
+    opts.template_bank, contenthandler=ligolw_bayestar.LSCTablesContentHandler)
 
 # Determine the low frequency cutoff from the template bank file.
 template_bank_f_low = ligolw_bayestar.get_temlate_bank_f_low(xmldoc)
@@ -150,7 +151,8 @@ template_bank = ligolw_table.get_table(xmldoc,
 
 # Read injection file.
 progress.update(-1, 'reading ' + infilename)
-xmldoc = ligolw_utils.load_filename(infilename)
+xmldoc = ligolw_utils.load_filename(
+    infilename, contenthandler=ligolw_bayestar.LSCTablesContentHandler)
 
 # Extract simulation table from injection file.
 sim_inspiral_table = ligolw_table.get_table(xmldoc,
@@ -194,7 +196,8 @@ out_xmldoc.childNodes[0].appendChild(coinc_inspiral_table)
 
 # Read PSD file.
 progress.update(-1, 'reading ' + opts.reference_psd)
-xmldoc = ligolw_utils.load_filename(opts.reference_psd)
+xmldoc = ligolw_utils.load_filename(
+    opts.reference_psd, contenthandler=lal.series.PSDContentHandler)
 psds = lal.series.read_psd_xmldoc(xmldoc)
 psds = dict(
     (key, timing.InterpolatedPSD(filter.abscissa(psd), psd.data.data))

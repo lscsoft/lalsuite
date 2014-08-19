@@ -270,6 +270,7 @@ def gracedb_sky_map(
         coinc_file, psd_file, waveform, f_low, min_distance=None,
         max_distance=None, prior_distance_power=None, nside=-1):
     # LIGO-LW XML imports.
+    from . import ligolw
     from glue.ligolw import table as ligolw_table
     from glue.ligolw import utils as ligolw_utils
     from glue.ligolw import lsctables
@@ -280,7 +281,8 @@ def gracedb_sky_map(
         timing.get_approximant_and_orders_from_string(waveform)
 
     # Read input file.
-    xmldoc, _ = ligolw_utils.load_fileobj(coinc_file)
+    xmldoc, _ = ligolw_utils.load_fileobj(
+        coinc_file, contenthandler=ligolw.LSCTablesContentHandler)
 
     # Locate the tables that we need.
     coinc_inspiral_table = ligolw_table.get_table(xmldoc,
@@ -303,7 +305,8 @@ def gracedb_sky_map(
     if psd_file is None:
         psds = None
     else:
-        xmldoc, _ = ligolw_utils.load_fileobj(psd_file)
+        xmldoc, _ = ligolw_utils.load_fileobj(
+            psd_file, contenthandler=lal.series.PSDContentHandler)
         psds = lal.series.read_psd_xmldoc(xmldoc)
 
         # Rearrange PSDs into the same order as the sngl_inspirals.

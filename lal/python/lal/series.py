@@ -236,3 +236,14 @@ def read_psd_xmldoc(xmldoc):
         if len(out[k].data.data) == 0:
             out[k] = None
     return out
+
+
+@ligolw_array.use_in
+@ligolw_param.use_in
+class PSDContentHandler(ligolw.LIGOLWContentHandler):
+    """A content handler suitable for reading PSD documents. Use like this:
+
+    >>> from glue.ligolw.utils import load_filename
+    >>> xmldoc = load_filename('psd.xml', contenthandler=PSDContentHandler)
+    >>> psds = read_psd_xmldoc(xmldoc)
+    """

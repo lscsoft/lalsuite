@@ -58,6 +58,7 @@ from glue.ligolw import lsctables
 import lalsimulation
 
 # BAYESTAR imports.
+from lalinference.bayestar import ligolw as ligolw_bayestar
 from lalinference.bayestar import timing
 
 
@@ -83,7 +84,8 @@ class TaylorF2RedSpinIntrinsicParams(namedtuple('intrinsic_params', _fields)):
 
 
 # Read injection file.
-xmldoc = ligolw_utils.load_filename(infilename)
+xmldoc = ligolw_utils.load_filename(
+    infilename, contenthandler=ligolw_bayestar.LSCTablesContentHandler)
 
 # Extract simulation table from injection file.
 sim_inspiral_table = ligolw_table.get_table(xmldoc,

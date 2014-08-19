@@ -114,13 +114,15 @@ import numpy as np
 
 # Read coinc file.
 log.info('%s:reading input XML file', infilename)
-xmldoc = ligolw_utils.load_filename(infilename)
+xmldoc = ligolw_utils.load_filename(
+    infilename, contenthandler=ligolw_bayestar.LSCTablesContentHandler)
 
 reference_psd_filenames_by_process_id = ligolw_bayestar.psd_filenames_by_process_id_for_xmldoc(xmldoc)
 
 @memoized
 def reference_psds_for_filename(filename):
-    xmldoc = ligolw_utils.load_filename(filename)
+    xmldoc = ligolw_utils.load_filename(
+        filename, contenthandler=lal.series.PSDContentHandler)
     psds = lal.series.read_psd_xmldoc(xmldoc)
     return dict(
         (key, timing.InterpolatedPSD(filter.abscissa(psd), psd.data.data))
