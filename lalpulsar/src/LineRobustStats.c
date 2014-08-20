@@ -57,7 +57,7 @@ XLALCreateLRstatSetup ( const UINT4 numDetectors,			//!< [in] number of detector
                         )
 {
   // check input
-  XLAL_CHECK_NULL ( (numDetectors >= 2) && (numDetectors <= PULSAR_MAX_DETECTORS), XLAL_EDOM );
+  XLAL_CHECK_NULL ( (numDetectors >= 2) && (numDetectors <= PULSAR_MAX_DETECTORS), XLAL_EDOM, "numDetectors = %d not within [2,%d]\n", numDetectors, PULSAR_MAX_DETECTORS );
   for ( UINT4 X = 0; X < numDetectors; X ++ ) {
     XLAL_CHECK_NULL ( (oLGX == NULL) || (oLGX[X] >= 0), XLAL_EDOM );
   }

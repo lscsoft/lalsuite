@@ -190,7 +190,7 @@ outfile_cfs="${testDir}/CFS.dat";
 
 if [ ! -r "$outfile_cfs" ]; then
     tmpfile_cfs="${testDir}/__tmp_CFS.dat";
-    cfs_CL_common=" --Alpha=$Alpha --Delta=$Delta --Freq=$Freq --f1dot=$f1dot --f2dot=$f2dot --outputLoudest=$tmpfile_cfs --refTime=$refTime --Dterms=$Dterms --RngMedWindow=$RngMedWindow --computeLV "
+    cfs_CL_common=" --Alpha=$Alpha --Delta=$Delta --Freq=$Freq --f1dot=$f1dot --f2dot=$f2dot --outputLoudest=$tmpfile_cfs --refTime=$refTime --Dterms=$Dterms --RngMedWindow=$RngMedWindow --outputSingleFstats"
     if [ "$sqrtSh" = "0" ]; then
         cfs_CL_common="$cfs_CL_common --SignalOnly";
     fi

@@ -116,7 +116,7 @@ typedef struct {
   COMPLEX16 Fa;				/**< complex amplitude Fa */
   COMPLEX16 Fb;				/**< complex amplitude Fb */
   AntennaPatternMatrix Mmunu;		/**< antenna-pattern matrix Mmunu = (h_mu|h_nu) */
-  REAL4 LVstat;				/**< Line Veto statistic */
+  REAL4 LRstat;				/**< Line-robust statistic =log10(B_SGL) */
 } FstatCandidate;
 
 /**
@@ -160,7 +160,7 @@ typedef struct
 typedef enum {
   RANKBY_2F  = 0, 	/**< rank candidates by F-statistic */
   RANKBY_NC = 1,	/**< HierarchSearchGCT also has RANKBY_NC = 1, not applicable here */
-  RANKBY_LV = 2  	/**< rank candidates by LV-statistic */
+  RANKBY_LR = 2  	/**< rank candidates by LR-statistic */
 } RankingStat_t;
 
 
@@ -189,9 +189,8 @@ typedef struct {
   CHAR *VCSInfoString;                      /**< LAL + LALapps Git version string */
   CHAR *logstring;                          /**< log containing max-info on the whole search setup */
   transientWindowRange_t transientWindowRange; /**< search range parameters for transient window */
-  REAL8 LVlogRhoTerm;                       /**< log(rho^4/70) of LV line-prior amplitude 'rho' */
-  REAL8Vector *LVloglX;                     /**< vector of line-prior ratios per detector {l1, l2, ... } */
-  RankingStat_t RankingStatistic;           /**< rank candidates according to F or LV */
+  LRstatSetup *LRsetup;                     /**< pre-computed setup for LineRobust statistics (LRstat) */
+  RankingStat_t RankingStatistic;           /**< rank candidates according to F or LR */
   BOOLEAN useResamp;
   FstatMethodType FstatMethod;
 } ConfigVariables;
@@ -291,12 +290,13 @@ typedef struct {
   CHAR *outputFstatAtoms;	/**< output per-SFT, per-IFO 'atoms', ie quantities required to compute F-stat */
 
   BOOLEAN outputSingleFstats;	/**< in multi-detector case, also output single-detector F-stats */
-  BOOLEAN computeLV;		/**< get single-IFO F-stats and compute Line Veto stat */
-  CHAR *RankingStatistic;	/**< rank candidates according to F or LV */
-  BOOLEAN LVuseAllTerms;	/**< Use only leading term or all terms in Line Veto computation */
-  REAL8   LVrho;		/**< Prior parameter rho_max_line for LineVeto statistic */
-  LALStringVector *LVlX;	/**< Line-to-gauss prior ratios lX for LineVeto statistic */
-  REAL8 LVthreshold;		/**< output threshold on LV */
+  CHAR *RankingStatistic;	/**< rank candidates according to F or LR */
+
+  BOOLEAN computeLR;		/**< get single-IFO F-stats and compute Line-robust statistic */
+  BOOLEAN LR_useLogCorrection;	/**< compute log-correction in LRstat (slower) or not (faster) */
+  REAL8   LR_Fstar0;		/**< Prior parameter 'Fstar0', see documentation for XLALCreateLRstatSetup() for details */
+  LALStringVector *LR_oLGX;	/**< prior per-detector line-vs-Gauss odds ratios 'oLGX', see  XLALCreateLRstatSetup() for details */
+  REAL8 LR_threshold;		/**< output threshold on LRstat */
 
   CHAR *outputTransientStats;	/**< output file for transient B-stat values */
   CHAR *transient_WindowType;	/**< name of transient window ('none', 'rect', 'exp',...) */
@@ -330,7 +330,7 @@ int write_FstatCandidate_to_fp ( FILE *fp, const FstatCandidate *thisFCand );
 int write_PulsarCandidate_to_fp ( FILE *fp,  const PulsarCandidate *pulsarParams, const FstatCandidate *Fcand );
 
 int compareFstatCandidates ( const void *candA, const void *candB );
-int compareFstatCandidates_LV ( const void *candA, const void *candB );
+int compareFstatCandidates_LR ( const void *candA, const void *candB );
 
 void WriteFStatLog ( LALStatus *status, const CHAR *log_fname, const CHAR *logstr );
 CHAR *XLALGetLogString ( const ConfigVariables *cfg );
@@ -450,12 +450,12 @@ int main(int argc,char *argv[])
       char column_headings_string[column_headings_string_length];
       XLAL_INIT_MEM( column_headings_string );
       strcat ( column_headings_string, colum_headings_string_base );
-      if ( uvar.computeLV )
+      if ( uvar.computeLR )
         {
           const UINT4 numDetectors = GV.detectorIDs->length;
           column_headings_string_length += numDetectors*6; /* 6 per detector for " 2F_XY" */
-          column_headings_string_length += 3; /* 3 for " LV"*/
-          strcat ( column_headings_string, " LV" );
+          column_headings_string_length += 3; /* 3 for " LR"*/
+          strcat ( column_headings_string, " LR" );
           for ( UINT4 X = 0; X < numDetectors ; X ++ )
             {
               char headingX[7];
@@ -646,37 +646,33 @@ int main(int argc,char *argv[])
 	  return -1;
 	}
 
-      if ( uvar.computeLV )
+      if ( uvar.computeLR )
         {
-          REAL8* LVlogLX = NULL;
-          if ( GV.LVloglX ) {
-            LVlogLX = GV.LVloglX->data;
-          }
-          thisFCand.LVstat = XLALComputeLineVetoArray ( thisFCand.twoF, thisFCand.numDetectors, thisFCand.twoFX, GV.LVlogRhoTerm, LVlogLX, uvar.LVuseAllTerms );
+          thisFCand.LRstat = XLALComputeLRstat ( thisFCand.twoF, thisFCand.twoFX, GV.LRsetup );
           if ( xlalErrno ) {
-            XLALPrintError ("%s: XLALComputeLineVetoArray() failed with errno=%d\n", __func__, xlalErrno );
+            XLALPrintError ("%s: XLALComputeLRstat() failed with errno=%d\n", __func__, xlalErrno );
             return xlalErrno;
           }
         }
       else
         {
-          thisFCand.LVstat = LAL_NAN; /* in non-LV case, block field with NAN, needed for output checking in write_PulsarCandidate_to_fp() */
+          thisFCand.LRstat = LAL_NAN; /* in non-LR case, block field with NAN, needed for output checking in write_PulsarCandidate_to_fp() */
         }
 
       /* push new value onto scan-line buffer */
       XLALAdvanceScanlineWindow ( &thisFCand, GV.scanlineWindow );
 
-      /* two types of threshold: fixed (TwoF- and/or LV-threshold) and dynamic (NumCandidatesToKeep) */
+      /* two types of threshold: fixed (TwoF- and/or LR-threshold) and dynamic (NumCandidatesToKeep) */
       BOOLEAN is1DlocalMax = FALSE;
       if ( XLALCenterIsLocalMax ( GV.scanlineWindow, GV.RankingStatistic ) ) /* must be 1D local maximum */
         is1DlocalMax = TRUE;
       BOOLEAN isOver2FThreshold = FALSE; /* will always be checked, so start at 'FALSE' */
       if ( GV.scanlineWindow->center->twoF >= uvar.TwoFthreshold ) /* fixed 2F threshold */
         isOver2FThreshold = TRUE;
-      BOOLEAN isOverLVThreshold = TRUE;  /* will not be checked in non-LV case, so start at 'TRUE' */
-      if ( uvar.computeLV && ( GV.scanlineWindow->center->LVstat < uvar.LVthreshold ) ) /* fixed LV threshold */
-        isOverLVThreshold = FALSE;
-      if ( is1DlocalMax && isOver2FThreshold && isOverLVThreshold )
+      BOOLEAN isOverLRThreshold = TRUE;  /* will not be checked in non-LR case, so start at 'TRUE' */
+      if ( uvar.computeLR && ( GV.scanlineWindow->center->LRstat < uvar.LR_threshold ) ) /* fixed LR threshold */
+        isOverLRThreshold = FALSE;
+      if ( is1DlocalMax && isOver2FThreshold && isOverLRThreshold )
         {
 	  FstatCandidate *writeCand = GV.scanlineWindow->center;
 
@@ -685,13 +681,13 @@ int main(int argc,char *argv[])
 	    {
 	      if ( insert_into_toplist(GV.FstatToplist, (void*)writeCand ) ) {
 		LogPrintf ( LOG_DETAIL, "Added new candidate into toplist: 2F = %f", writeCand->twoF );
-		if ( uvar.computeLV )
-		  LogPrintfVerbatim ( LOG_DETAIL, ", 2F_H1 = %f, 2F_L1 = %f, LV = %f", writeCand->twoFX[0], writeCand->twoFX[1], writeCand->LVstat );
+		if ( uvar.computeLR )
+		  LogPrintfVerbatim ( LOG_DETAIL, ", 2F_H1 = %f, 2F_L1 = %f, LR = %f", writeCand->twoFX[0], writeCand->twoFX[1], writeCand->LRstat );
 	      }
 	      else {
 		LogPrintf ( LOG_DETAIL, "NOT added the candidate into toplist: 2F = %f", writeCand->twoF );
-		if ( uvar.computeLV )
-		  LogPrintfVerbatim ( LOG_DETAIL, ", 2F_H1 = %f, 2F_L1 = %f, LV = %f", writeCand->twoFX[0], writeCand->twoFX[1], writeCand->LVstat );
+		if ( uvar.computeLR )
+		  LogPrintfVerbatim ( LOG_DETAIL, ", 2F_H1 = %f, 2F_L1 = %f, LR = %f", writeCand->twoFX[0], writeCand->twoFX[1], writeCand->LRstat );
 	      }
 	      LogPrintfVerbatim ( LOG_DETAIL, "\n" );
 	    }
@@ -713,12 +709,12 @@ int main(int argc,char *argv[])
           if ( thisFCand.twoF > loudestFCand.twoF )
             loudestFCand = thisFCand;
           break;
-        case RANKBY_LV:
-          if ( thisFCand.LVstat > loudestFCand.LVstat )
+        case RANKBY_LR:
+          if ( thisFCand.LRstat > loudestFCand.LRstat )
             loudestFCand = thisFCand;
           break;
         default:
-          XLAL_ERROR ( XLAL_EINVAL, "Invalid ranking statistic '%d', supported are 'F=0', and 'LV=2'\n", GV.RankingStatistic );
+          XLAL_ERROR ( XLAL_EINVAL, "Invalid ranking statistic '%d', supported are 'F=0', and 'LR=2'\n", GV.RankingStatistic );
           break;
         }
 
@@ -898,10 +894,10 @@ int main(int argc,char *argv[])
       LogPrintf ( LOG_DEBUG, "Sorting toplist ... ");
       if ( GV.RankingStatistic == RANKBY_2F )
         qsort_toplist ( GV.FstatToplist, compareFstatCandidates );
-      else if ( GV.RankingStatistic == RANKBY_LV )
-        qsort_toplist ( GV.FstatToplist, compareFstatCandidates_LV );
+      else if ( GV.RankingStatistic == RANKBY_LR )
+        qsort_toplist ( GV.FstatToplist, compareFstatCandidates_LR );
       else
-        XLAL_ERROR ( XLAL_EINVAL, "Ranking statistic '%d' undefined here, allowed are 'F=0' and 'LV=2'\n", GV.RankingStatistic );
+        XLAL_ERROR ( XLAL_EINVAL, "Ranking statistic '%d' undefined here, allowed are 'F=0' and 'LR=2'\n", GV.RankingStatistic );
       LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
 
       for ( el=0; el < GV.FstatToplist->elems; el ++ )
@@ -1099,14 +1095,15 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   uvar->FstatMethod = XLALStringDuplicate("DemodBest");	// default to guessed 'best' demod hotloop variant
 
   uvar->outputSingleFstats = FALSE;
-  uvar->computeLV = FALSE;
   #define DEFAULT_RANKINGSTATISTIC "F"
   uvar->RankingStatistic = LALCalloc (1, strlen(DEFAULT_RANKINGSTATISTIC)+1);
   strcpy (uvar->RankingStatistic, DEFAULT_RANKINGSTATISTIC);
-  uvar->LVuseAllTerms = TRUE;
-  uvar->LVrho = 0.0;
-  uvar->LVlX = NULL;       /* NULL is intepreted as LVlX[X] = 1.0 for all X by XLALComputeLineVeto(Array) */
-  uvar->LVthreshold = - LAL_REAL8_MAX;
+
+  uvar->computeLR = FALSE;
+  uvar->LR_useLogCorrection = TRUE;
+  uvar->LR_Fstar0 = 0.0;
+  uvar->LR_oLGX = NULL;       /* NULL is intepreted as oLGX[X] = 1.0/Ndet for all X */
+  uvar->LR_threshold = - LAL_REAL8_MAX;
 
 #define DEFAULT_TRANSIENT "none"
   uvar->transient_WindowType = LALMalloc(strlen(DEFAULT_TRANSIENT)+1);
@@ -1178,11 +1175,15 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
 
   LALregSTRINGUserStruct(status,outputFstatAtoms,0,  UVAR_OPTIONAL, "Output filename *base* for F-statistic 'atoms' {a,b,Fa,Fb}_alpha. One file per doppler-point.");
   LALregBOOLUserStruct(status,  outputSingleFstats,0,  UVAR_OPTIONAL, "In multi-detector case, also output single-detector F-stats?");
-  LALregBOOLUserStruct(status,  computeLV,	0,  UVAR_OPTIONAL, "Get single-detector F-stats and compute Line Veto statistic.");
-  LALregSTRINGUserStruct(status,RankingStatistic,0,  UVAR_DEVELOPER, "Rank toplist candidates according to 'F' or 'LV' statistic");
-  LALregREALUserStruct(status,  LVrho,		0,  UVAR_OPTIONAL, "LineVeto: Prior rho_max_line, must be >=0");
-  LALregLISTUserStruct(status,  LVlX,		0,  UVAR_OPTIONAL, "LineVeto: line-to-gauss prior ratios lX for different detectors X, length must be numDetectors. Defaults to lX=1,1,..");
-  LALregREALUserStruct(status, 	LVthreshold,	0,  UVAR_OPTIONAL, "Set the threshold for selection of LV");
+  LALregSTRINGUserStruct(status,RankingStatistic,0,  UVAR_DEVELOPER, "Rank toplist candidates according to 'F' or 'LR' statistic");
+
+  // ----- Line robust stats parameters ----------
+  LALregBOOLUserStruct(status,  computeLR,	0,  UVAR_OPTIONAL, "Compute LineRobust statistic (LRstat) using single-IFO F-stats");
+  LALregREALUserStruct(status,  LR_Fstar0,	0,  UVAR_OPTIONAL, "LineRobustStat: Prior parameter 'Fstar0'");
+  LALregLISTUserStruct(status,  LR_oLGX,	0,  UVAR_OPTIONAL, "LineRobustStat: Prior per-detector line-vs-Gauss odds ratios 'oLGX' (Defaults to oLGX=1/Ndet)");
+  LALregBOOLUserStruct(status,  LR_useLogCorrection,0,UVAR_DEVELOPER,"LineRobustStat: include log-correction terms (slower) or not (faster)");
+  LALregREALUserStruct(status, 	LR_threshold,	0,  UVAR_OPTIONAL, "LineRobustStat: Output threshold for candidate selection");
+  // --------------------------------------------
 
   LALregSTRINGUserStruct(status,outputTransientStats,0,  UVAR_OPTIONAL, "TransientCW: Output filename for transient-CW statistics.");
   LALregSTRINGUserStruct(status, transient_WindowType,0,UVAR_OPTIONAL,  "TransientCW: Type of transient signal window to use. ('none', 'rect', 'exp').");
@@ -1225,8 +1226,6 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   XLALregBOOLUserStruct ( transient_useFReg,   	 0,  UVAR_DEVELOPER, "FALSE: use 'standard' e^F for marginalization, if TRUE: use e^FReg = (1/D)*e^F (BAD)");
 
   XLALregSTRINGUserStruct( outputTiming,         0,  UVAR_DEVELOPER, "Append timing measurements and parameters into this file");
-
-  LALregBOOLUserStruct(status,LVuseAllTerms,	 0,  UVAR_DEVELOPER, "Use only leading term or all terms in Line Veto computation?");
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -1620,23 +1619,23 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   if ( toplist_length > 0 ) {
     if ( strcmp(uvar->RankingStatistic, "F") == 0 )
      cfg->RankingStatistic = RANKBY_2F;
-    else if ( strcmp(uvar->RankingStatistic, "LV") == 0 )
+    else if ( strcmp(uvar->RankingStatistic, "LR") == 0 )
       {
-        if ( !uvar->computeLV ) {
-          XLALPrintError ("\nERROR: Ranking by LV-stat only possible if --computeLV given.\n\n");
+        if ( !uvar->computeLR ) {
+          XLALPrintError ("\nERROR: Ranking by LR-stat only possible if --computeLR given.\n\n");
           ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT );
         }
-        cfg->RankingStatistic = RANKBY_LV;
+        cfg->RankingStatistic = RANKBY_LR;
       }
     else
       {
-        XLALPrintError ("\nERROR: Invalid value specified for candidate ranking - supported are 'F' and 'LV'.\n\n");
+        XLALPrintError ("\nERROR: Invalid value specified for candidate ranking - supported are 'F' and 'LR'.\n\n");
         ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT );
       }
 
-    if ( cfg->RankingStatistic == RANKBY_LV )
+    if ( cfg->RankingStatistic == RANKBY_LR )
       {
-        if ( create_toplist( &(cfg->FstatToplist), toplist_length, sizeof(FstatCandidate), compareFstatCandidates_LV) != 0 )
+        if ( create_toplist( &(cfg->FstatToplist), toplist_length, sizeof(FstatCandidate), compareFstatCandidates_LR) != 0 )
           ABORT (status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM );
       }
     else // rank by F-stat
@@ -1690,49 +1689,37 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     cfg->Fstat_what |= FSTATQ_ATOMS_PER_DET;
   }
 
-  /* return single-IFO Fstat values for Line-veto statistic */
-  if ( uvar->outputSingleFstats || uvar->computeLV ) {
+  /* return single-IFO Fstat values for Line-robust statistic */
+  if ( uvar->outputSingleFstats || uvar->computeLR ) {
     cfg->Fstat_what |= FSTATQ_2F_PER_DET;
   }
 
-  /* ---------- prepare Line Veto statistics parameters ---------- */
-  if ( uvar->LVrho < 0.0 ) {
-    XLALPrintError("Invalid LV prior rho (given rho=%f, need rho>=0)!\n", uvar->LVrho);
-    ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
-  }
-  else if ( uvar->LVrho > 0.0 )
-    cfg->LVlogRhoTerm = 4.0 * log(uvar->LVrho) - log(70.0);
-  else /* if uvar.LVrho == 0.0, logRhoTerm should become irrelevant in summation */
-    cfg->LVlogRhoTerm = - LAL_REAL8_MAX;
-
-  if ( uvar->computeLV && uvar->LVlX )
+  /* ---------- prepare Line-robust statistics parameters ---------- */
+  if ( uvar->computeLR )
     {
-      const UINT4 numDetectors = multiIFO->length;
-      if (  uvar->LVlX->length != numDetectors ) {
-        XLALPrintError( "Length of LV prior ratio vector does not match number of detectors! (%d != %d)\n", uvar->LVlX->length, numDetectors);
-        ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
-      }
-      if ( (cfg->LVloglX = XLALCreateREAL8Vector ( numDetectors )) == NULL ) {
-        XLALPrintError ("Failed to XLALCreateREAL8Vector ( %d )\n", numDetectors );
-        ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
-      }
-      for (UINT4 X = 0; X < numDetectors; X++)
+      UINT4 numDetectors = multiIFO->length;
+      /* take LR user input and pre-compute the corresponding LRsetup */
+      REAL4 *oLGX_p = NULL;
+      REAL4 oLGX[PULSAR_MAX_DETECTORS];
+      if ( uvar->LR_oLGX != NULL )
         {
-          REAL4 LVlX;
-          if ( 1 != sscanf ( uvar->LVlX->data[X], "%" LAL_REAL4_FORMAT, &LVlX ) ) {
-            XLALPrintError ( "Illegal REAL4 commandline argument to --LVlX[%d]: '%s'\n", X, uvar->LVlX->data[X]);
+          if ( uvar->LR_oLGX->length != numDetectors ) {
+            XLALPrintError ( "Invalid input: length(LR_oLGX) = %d differs from number of detectors (%d)'\n", uvar->LR_oLGX->length, numDetectors );
             ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
           }
-          if ( LVlX < 0.0 ) {
-            XLALPrintError ( "Negative input prior-ratio for detector X=%d lX[X]=%f\n", X, LVlX );
+          if ( XLALParseLinePriors ( &oLGX[0], uvar->LR_oLGX ) != XLAL_SUCCESS ) {
+            XLALPrintError ( "Invalid input LR_oLGX'\n" );
             ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
           }
-          else if ( LVlX > 0.0 )
-            cfg->LVloglX->data[X] = log ( LVlX );
-          else /* if zero prior ratio, approximate log(0)=-inf by -LAL_REA4_MAX to avoid raising underflow exceptions */
-            cfg->LVloglX->data[X] = - LAL_REAL8_MAX;
-        } /* for X < numDetectors */
-    } /* if ( uvar.computeLV && uvar.LVlX ) */
+          oLGX_p = &oLGX[0];
+        } // if uvar->LR_oLGX != NULL
+
+      cfg->LRsetup = XLALCreateLRstatSetup ( numDetectors, uvar->LR_Fstar0, oLGX_p, uvar->LR_useLogCorrection );
+      if ( cfg->LRsetup == NULL ) {
+        XLALPrintError ( "XLALCreateLRstatSetup() failed\n");
+        ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
+      }
+    } // if uvar_computeLR
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -1871,8 +1858,7 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
   if ( cfg->logstring )
     LALFree ( cfg->logstring );
 
-  if ( cfg->LVloglX )
-    XLALDestroyREAL8Vector ( cfg->LVloglX );
+  XLALFree ( cfg->LRsetup );
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -2194,9 +2180,9 @@ write_PulsarCandidate_to_fp ( FILE *fp,  const PulsarCandidate *pulsarParams, co
   UINT4 X, numDet = Fcand->numDetectors;
   for ( X = 0; X < numDet ; X ++ )
     fprintf (fp, "twoF%d    = % .6g;\n", X, Fcand->twoFX[X] );
-  /* LVstat */
-  if ( !XLALIsREAL4FailNaN(Fcand->LVstat) ) /* if --computeLV=FALSE, the LV field was initialised to NAN - do not output LV */
-    fprintf (fp, "LV       = % .6g;\n", Fcand->LVstat );
+  /* LRstat */
+  if ( !XLALIsREAL4FailNaN(Fcand->LRstat) ) /* if --computeLR=FALSE, the LR field was initialised to NAN - do not output LR */
+    fprintf (fp, "LR       = % .6g;\n", Fcand->LRstat );
 
   fprintf (fp, "\nAmpFisher = \\\n" );
   XLALfprintfGSLmatrix ( fp, "%.9g",pulsarParams->AmpFisherMatrix );
@@ -2220,20 +2206,20 @@ compareFstatCandidates ( const void *candA, const void *candB )
 
 } /* compareFstatCandidates() */
 
-/** comparison function for our candidates toplist with alternate LV sorting statistic */
+/** comparison function for our candidates toplist with alternate LR sorting statistic */
 int
-compareFstatCandidates_LV ( const void *candA, const void *candB )
+compareFstatCandidates_LR ( const void *candA, const void *candB )
 {
-  REAL8 LV1 = ((const FstatCandidate *)candA)->LVstat;
-  REAL8 LV2 = ((const FstatCandidate *)candB)->LVstat;
-  if ( LV1 < LV2 )
+  REAL8 LR1 = ((const FstatCandidate *)candA)->LRstat;
+  REAL8 LR2 = ((const FstatCandidate *)candB)->LRstat;
+  if ( LR1 < LR2 )
     return 1;
-  else if ( LV1 > LV2 )
+  else if ( LR1 > LR2 )
     return -1;
   else
     return 0;
 
-} /* compareFstatCandidates_LV() */
+} /* compareFstatCandidates_LR() */
 
 /**
  * write one 'FstatCandidate' (i.e. only Doppler-params + Fstat) into file 'fp'.
@@ -2249,9 +2235,9 @@ write_FstatCandidate_to_fp ( FILE *fp, const FstatCandidate *thisFCand )
   /* add extra output-field containing per-detector FX if non-NULL */
   char extraStatsStr[256] = "";     /* defaults to empty */
   char buf0[256];
-  /* LVstat */
-  if ( !XLALIsREAL4FailNaN(thisFCand->LVstat) ) { /* if --computeLV=FALSE, the LV field was initialised to NAN - do not output LV */
-      snprintf ( extraStatsStr, sizeof(extraStatsStr), " %.9g", thisFCand->LVstat );
+  /* LRstat */
+  if ( !XLALIsREAL4FailNaN(thisFCand->LRstat) ) { /* if --computeLR=FALSE, the LR field was initialised to NAN - do not output LR */
+      snprintf ( extraStatsStr, sizeof(extraStatsStr), " %.9g", thisFCand->LRstat );
   }
   if ( thisFCand->numDetectors > 0 )
     {
@@ -2366,19 +2352,19 @@ XLALCenterIsLocalMax ( const scanlineWindow_t *scanWindow, const UINT4 rankingSt
 
     }
 
-  else if ( rankingStatistic == RANKBY_LV ) /* LV statistic */
+  else if ( rankingStatistic == RANKBY_LR ) /* LR statistic */
     {
 
-      REAL8 LV0 = scanWindow->center->LVstat;
+      REAL8 LR0 = scanWindow->center->LRstat;
 
       for ( UINT4 i=0; i < scanWindow->length; i ++ )
-        if ( scanWindow->window[i].LVstat > LV0 )
+        if ( scanWindow->window[i].LRstat > LR0 )
          return FALSE;
 
     }
   else
     {
-      XLALPrintError ("Unsupported ranking statistic '%d' ! Supported: 'F=0' and 'LV=2'.\n", rankingStatistic );
+      XLALPrintError ("Unsupported ranking statistic '%d' ! Supported: 'F=0' and 'LR=2'.\n", rankingStatistic );
       return FALSE;
     }
 

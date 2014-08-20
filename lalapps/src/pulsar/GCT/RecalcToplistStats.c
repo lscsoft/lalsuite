@@ -133,7 +133,7 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
       }
 
       /*  recalculate multi- and single-IFO Fstats for all segments for this candidate */
-      LRScomponents XLAL_INIT_DECL(recalcStats); /* struct containing multi-detector Fstat, single-detector Fstats, LR-stat */
+      LRcomponents XLAL_INIT_DECL(recalcStats); /* struct containing multi-detector Fstat, single-detector Fstats, LR-stat */
       XLAL_CHECK ( XLALComputeExtraStatsSemiCoherent( &recalcStats, &candidateDopplerParams, Fstat_in_vec, detectorIDs, startTstack, singleSegStatsFile ) == XLAL_SUCCESS, XLAL_EFUNC, "Failed call to XLALComputeExtraStatsSemiCoherent()." );
 
       /* save values in toplist */
@@ -169,7 +169,7 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
 /**
  * XLAL Function to recalculate single-IFO Fstats for all semicoherent search segments, and use them to compute line-robust statistics
  */
-int XLALComputeExtraStatsSemiCoherent ( LRScomponents *recalcStats,                                 /**< [out] structure containing multi TwoF, single TwoF, LRS stat */
+int XLALComputeExtraStatsSemiCoherent ( LRcomponents *recalcStats,                                 /**< [out] structure containing multi TwoF, single TwoF, LR stat */
 					const PulsarDopplerParams *dopplerParams,               /**< sky position, frequency and fdot for a given candidate */
 					const FstatInputVector *Fstat_in_vec,               /**< vector of input data for XLALComputeFstat() */
 					const LALStringVector *detectorIDs,                     /**< detector name vector with all detectors present in any data sements */

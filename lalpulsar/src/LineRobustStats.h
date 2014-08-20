@@ -53,12 +53,12 @@ typedef struct tagLRstatSetup LRstatSetup;	///< internal storage for setup and p
 /*---------- exported types ----------*/
 
 /** Type containing multi- and single-detector \f$ \mathcal{F} \f$-statistics and line-robust statistic */
-typedef struct tagLRScomponents {
+typedef struct tagLRcomponents {
   REAL4 TwoF;				/**< multi-detector \f$ \mathcal{F} \f$-statistic value */
   REAL4 TwoFX[PULSAR_MAX_DETECTORS];	/**< fixed-size array of single-detector \f$ \mathcal{F} \f$-statistic values */
   UINT4 numDetectors;			/**< number of detectors, numDetectors=0 should make all code ignore the TwoFX field. */
-  REAL4 LRS;				/**< multi-detector line-robust statistic value */
-} LRScomponents;
+  REAL4 LRstat;				/**< multi-detector line-robust statistic value */
+} LRcomponents;
 
 /*---------- exported Global variables ----------*/
 
