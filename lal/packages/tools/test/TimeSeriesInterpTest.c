@@ -191,7 +191,7 @@ int main(void)
 	 * error.  interpolate three cycles this time.
 	 */
 
-	f = 6500.;	/* bbout 80% of Nyquist */
+	f = 6500.;	/* about 80% of Nyquist */
 
 	src = new_series(1.0 / 16384, 256);
 	add_sine(src, src->epoch, 1.0, f);
