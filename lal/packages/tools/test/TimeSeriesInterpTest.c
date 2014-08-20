@@ -34,7 +34,9 @@ static LIGOTimeGPS gps_zero = LIGOTIMEGPSZERO;
 
 static REAL8TimeSeries *new_series(double deltaT, unsigned length)
 {
-	return XLALCreateREAL8TimeSeries("blah", &gps_zero, 0.0, deltaT, &lalDimensionlessUnit, length);
+	REAL8TimeSeries *new = XLALCreateREAL8TimeSeries("blah", &gps_zero, 0.0, deltaT, &lalDimensionlessUnit, length);
+	memset(new->data->data, 0, new->data->length * sizeof(*new->data->data));
+	return new;
 }
 
 
@@ -243,6 +245,40 @@ int main(void)
 	XLALDestroyREAL8TimeSeries(src);
 	XLALDestroyREAL8TimeSeries(dst);
 	XLALDestroyREAL8TimeSeries(mdl);
+
+	/*
+	 * test behaviour in last sample.  allocate series 1 sample longer
+	 * than we need it to be so we can control the value of the data
+	 * beyond the end of the array, and make sure the interpolator
+	 * doesn't return that value.
+	 */
+
+	src = new_series(1.0 / 16384, 257);
+	src->data->length--;
+	src->data->data[src->data->length] = 1;
+
+	interp = XLALREAL8TimeSeriesInterpCreate(src, 9);
+	{
+	LIGOTimeGPS t = src->epoch;
+	double result;
+	XLALGPSAdd(&t, src->data->length * src->deltaT);
+	/* this should fail */
+	result = XLALREAL8TimeSeriesInterpEval(interp, &t);
+	if(!XLAL_IS_REAL8_FAIL_NAN(result)) {
+		fprintf(stderr, "error:  interpolator failed to report error beyond end of array\n");
+		exit(1);
+	}
+	/* this should work and return 0., not 1. */
+	XLALGPSAdd(&t, -1e-9);
+	result = XLALREAL8TimeSeriesInterpEval(interp, &t);
+	if(result != 0.) {
+		fprintf(stderr, "error:  interpolator failed in final sample (expected %.16g got %.16g)\n", 0., result);
+		exit(1);
+	}
+	}
+	XLALREAL8TimeSeriesInterpDestroy(interp);
+
+	XLALDestroyREAL8TimeSeries(src);
 
 	/*
 	 * success
