@@ -43,7 +43,7 @@ typedef struct {
   REAL8 Delta;/**< skyposition: latitude */
   REAL4 sumTwoF;  /**< sum of 2F-values */
   UINT4 nc;       /**< number count */
-  REAL4 LV;       /**< Line Veto statistic */
+  REAL4 LRstat;     /**< Line-robust statistic */
   UINT4 numDetectors; /**< number of detectors for optional sumTwoFX arrays */
   REAL4 sumTwoFX[PULSAR_MAX_DETECTORS]; /**< fixed-size array of single-detector 2F-values */
   REAL4 sumTwoFrecalc;  /**< sum of 2F-values as recomputed by recalcToplistStats */
@@ -51,13 +51,13 @@ typedef struct {
   BOOLEAN have_f3dot; /**< output F3dot value */
 } GCTtopOutputEntry;
 
-/// enumerate all toplist-sorting options: by F (0), number-count (1), LV-stat (2), "dual" toplists F + LV (3)
+/// enumerate all toplist-sorting options: by F (0), number-count (1), LR-stat (2), "dual" toplists F + LR (3)
 typedef enum
   {
     SORTBY_F 		= 0,	//< sort by multi-IFO F-stat (averaged over segments)
     SORTBY_NC 		= 1,	//< sort by number-count 'nc'
-    SORTBY_LV 		= 2,	//< sort by line-veto statistic 'LV'
-    SORTBY_DUAL_F_LV 	= 3,	//< dual toplists: one sorted by F, one by LV
+    SORTBY_LR 		= 2,	//< sort by line-robust statistic 'LR'
+    SORTBY_DUAL_F_LR 	= 3,	//< dual toplists: one sorted by F, one by LR
     SORTBY_LAST			//< end-marker
   } SortBy_t;
 
