@@ -276,7 +276,8 @@ int main(int argc,char *argv[])
   /* ----- prepare LR-stat computation */
   LRstatSetup *LRSsetup = NULL;
   if ( uvar.computeLRS ) {
-    XLAL_CHECK ( ( LRSsetup = XLALCreateLRstatSetup ( numDetectors, uvar.Fstar0, cfg.oLGX ) ) != NULL, XLAL_EFUNC );
+    BOOLEAN useLogCorrection = TRUE;
+    XLAL_CHECK ( ( LRSsetup = XLALCreateLRstatSetup ( numDetectors, uvar.Fstar0, cfg.oLGX, useLogCorrection ) ) != NULL, XLAL_EFUNC );
   }
 
   /* ----- main MC loop over numDraws trials ---------- */
@@ -317,8 +318,7 @@ int main(int argc,char *argv[])
       }
 
       if ( uvar.computeLRS ) {
-        BOOLEAN useAllTerms = TRUE;
-        synthStats.LRS = XLALComputeLRstat ( synthStats.TwoF, synthStats.TwoFX, LRSsetup, useAllTerms );
+        synthStats.LRS = XLALComputeLRstat ( synthStats.TwoF, synthStats.TwoFX, LRSsetup );
         XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "XLALComputeLRstat() failed with xlalErrno = %d\n", xlalErrno );
       }
 

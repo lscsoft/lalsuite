@@ -67,14 +67,14 @@ typedef struct tagLRScomponents {
 LRstatSetup *
 XLALCreateLRstatSetup ( const UINT4 numDetectors,
 			const REAL4 Fstar0,
-			const REAL4 oLGX[PULSAR_MAX_DETECTORS]
+			const REAL4 oLGX[PULSAR_MAX_DETECTORS],
+                        const BOOLEAN useLogCorrection
 );
 
 REAL4
 XLALComputeLRstat ( const REAL4 twoF,
 		    const REAL4 twoFX[PULSAR_MAX_DETECTORS],
-		    const LRstatSetup *setup,
-		    const BOOLEAN useAllTerms
+		    const LRstatSetup *setup
 );
 
 

@@ -165,16 +165,18 @@ XLALCompareLRSComputations ( const REAL4 TwoF,			/**< multi-detector  Fstat */
   LRS_extcomp_notallterms += log(1+1/oLG);
 
   /* faster version: use only the leading term of the LRS denominator sum */
-  LRstatSetup *setup;
-  XLAL_CHECK ( (setup = XLALCreateLRstatSetup ( numDetectors, Fstar0, oLGX )) != NULL, XLAL_EFUNC );
-  REAL4 LRS_XLAL_notallterms = XLALComputeLRstat ( TwoF, TwoFX->data, setup, FALSE ) / LAL_LOG10E;
+  LRstatSetup *setup_noLogCorrection;
+  XLAL_CHECK ( (setup_noLogCorrection = XLALCreateLRstatSetup ( numDetectors, Fstar0, oLGX, FALSE )) != NULL, XLAL_EFUNC );
+  REAL4 LRS_XLAL_notallterms = XLALComputeLRstat ( TwoF, TwoFX->data, setup_noLogCorrection ) / LAL_LOG10E;
   XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "XLALComputeLRstat() failed with xlalErrno = %d\n", xlalErrno );
+  XLALFree ( setup_noLogCorrection ); setup_noLogCorrection = NULL;
 
   /* more precise version: use all terms of the LRS denominator sum */
-  REAL4 LRS_XLAL_allterms = XLALComputeLRstat ( TwoF, TwoFX->data, setup, TRUE ) / LAL_LOG10E;
+  LRstatSetup *setup_withLogCorrection;
+  XLAL_CHECK ( (setup_withLogCorrection = XLALCreateLRstatSetup ( numDetectors, Fstar0, oLGX, TRUE )) != NULL, XLAL_EFUNC );
+  REAL4 LRS_XLAL_allterms = XLALComputeLRstat ( TwoF, TwoFX->data, setup_withLogCorrection ) / LAL_LOG10E;
   XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "XLALComputeLRstat() failed with xlalErrno = %d\n", xlalErrno );
-
-  XLALFree ( setup ); setup = NULL;
+  XLALFree ( setup_withLogCorrection ); setup_withLogCorrection = NULL;
 
   /* compute relative deviations */
   REAL4 diff_allterms              = fabs( LRS_XLAL_allterms             - LRS_extcomp_allterms    ) / ( 0.5 * ( LRS_XLAL_allterms             + LRS_extcomp_allterms    ));

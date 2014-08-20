@@ -35,6 +35,7 @@ struct tagLRstatSetup {
   REAL4 oLGX[PULSAR_MAX_DETECTORS];
   REAL4 C;				// C  = Fstar0 + log(1-pL)
   REAL4 CX[PULSAR_MAX_DETECTORS];	// CX = log( pL rX / Ndet )
+  BOOLEAN useLogCorrection;
 };
 
 /*==================== FUNCTION DEFINITIONS ====================*/
@@ -51,7 +52,8 @@ struct tagLRstatSetup {
 LRstatSetup *
 XLALCreateLRstatSetup ( const UINT4 numDetectors,			//!< [in] number of detectors \f$\Ndet\f$
                         const REAL4 Fstar0,				//!< [in] prior parameter \f$\Ftho\f$
-                        const REAL4 oLGX[PULSAR_MAX_DETECTORS]		//!< [in] prior per-detector line odds \f$\{\oLGX\}\f$, if NULL: interpreted as \f$\oLGX=\frac{1}{\Ndet} \forall X\f$
+                        const REAL4 oLGX[PULSAR_MAX_DETECTORS],		//!< [in] prior per-detector line odds \f$\{\oLGX\}\f$, if NULL: interpreted as \f$\oLGX=\frac{1}{\Ndet} \forall X\f$
+                        const BOOLEAN useLogCorrection			//!< [in] include log-term correction [slower] or not [faster, less accurate]
                         )
 {
   // check input
@@ -87,6 +89,8 @@ XLALCreateLRstatSetup ( const UINT4 numDetectors,			//!< [in] number of detector
       }
     } // for X < numDetectors
 
+  setup->useLogCorrection = useLogCorrection;
+
   return setup;
 
 } // XLALCreateLRstatSetup()
@@ -121,7 +125,7 @@ XLALCreateLRstatSetup ( const UINT4 numDetectors,			//!< [in] number of detector
  * \f{equation}{
  * \ln B_\SGL = \F - \FpMax - \ln\left( e^{C - \FpMax} + \sum_X e^{\F^X + C^X - \FpMax} \right) \,,
  * \f}
- * where \c useLogCorrection controls whether or not to include the (usually small) log-correction of the last term,
+ * where \c setup->useLogCorrection controls whether or not to include the (usually small) log-correction of the last term,
  * and we defined
  * \f{equation}{ \FpMax \equiv \max\left[ C, \{ \F^X + C^X \} \right] \f}
  * and \f$C,\{C^X\}\f$ are the prior quantities pre-computed in XLALCreateLRstatSetup(), namely
@@ -140,8 +144,7 @@ XLALCreateLRstatSetup ( const UINT4 numDetectors,			//!< [in] number of detector
 REAL4
 XLALComputeLRstat ( const REAL4 twoF,				//!< [in] multi-detector Fstat \f$2\F\f$ (coherent or semi-coherent sum(!))
                     const REAL4 twoFX[PULSAR_MAX_DETECTORS],	//!< [in] per-detector Fstats \f$\{2\F^X\}\f$ (coherent or semi-coherent sum(!))
-                    const LRstatSetup *setup,			//!< [in] pre-computed setup from XLALCreateLRstatSetup()
-                    const BOOLEAN useLogCorrection		//!< [in] include log-term correction [slower] or not [faster, less accurate]
+                    const LRstatSetup *setup			//!< [in] pre-computed setup from XLALCreateLRstatSetup()
                     )
 {
   XLAL_CHECK ( setup != NULL, XLAL_EINVAL );
@@ -158,7 +161,7 @@ XLALComputeLRstat ( const REAL4 twoF,				//!< [in] multi-detector Fstat \f$2\F\f
 
   REAL4 ln_BSGL = 0.5 * twoF - FpMax; // approximate result without log-correction term
 
-  if ( !useLogCorrection ) {
+  if ( !setup->useLogCorrection ) {
     return ln_BSGL * LAL_LOG10E; // return log10(B_SGL)
   }
 
