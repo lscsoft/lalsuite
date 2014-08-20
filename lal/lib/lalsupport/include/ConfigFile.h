@@ -197,6 +197,7 @@ int XLALCheckConfigReadComplete (const LALParsedDataFile *cfgdata, ConfigStrictn
 int XLALParseStringValueToINT8 ( INT8 *valINT8, const char *valString );
 int XLALParseStringValueToINT4 ( INT4 *valINT4, const char *valString );
 int XLALParseStringValueToREAL8 ( REAL8 *valREAL8, const char *valString );
+int XLALParseStringValueToREAL4 ( REAL4 *valREAL4, const char *valString );
 int XLALParseStringValueToBOOLEAN ( BOOLEAN *valBOOLEAN, const char *valString );
 
 /* ========== DEPRECATED LAL INTERFACE FUNCTIONS, which have been replaced by XLAL functions,

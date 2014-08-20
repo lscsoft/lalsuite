@@ -834,6 +834,28 @@ XLALParseStringValueToREAL8 ( REAL8 *valREAL8,         //!< [out] return REAL8 v
 } // XLALParseStringValueToREAL8()
 
 
+//! Parse a string into a REAL4.
+//! This ignores initial whitespace, but throws an error on _any_ non-converted trailing characters (including whitespace)
+int
+XLALParseStringValueToREAL4 ( REAL4 *valREAL4,         //!< [out] return REAL4 value
+                              const char *valString    //!< [in]  input string value
+                              )
+{
+  XLAL_CHECK ( (valREAL4 != NULL) && (valString != NULL ), XLAL_EINVAL );
+
+  errno = 0;
+  char *endptr;
+  float valFloat = strtof ( valString, &endptr );
+  XLAL_CHECK ( errno == 0, XLAL_EFAILED, "strtof() failed to convert '%s' into a float!\n", valString );
+  XLAL_CHECK ( (*endptr) == '\0', XLAL_EFAILED, "strtof(): trailing garbage '%s' found after float-conversion of '%s'\n", endptr, valString );
+
+  (*valREAL4) = (REAL4)valFloat;
+
+  return XLAL_SUCCESS;
+
+} // XLALParseStringValueToREAL8()
+
+
 //! Parse a string into a BOOLEAN
 //! Allowed string-values are (case-insensitive):
 //! {"yes", "true", "1"} --> TRUE

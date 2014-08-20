@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2011-2014 David Keitel
+ * Copyright (C) 2014 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -20,7 +21,7 @@
 /**
  * \defgroup LineRobustStats_h Header LineRobustStats.h
  * \ingroup pkg_pulsarCommon
- * \author David Keitel
+ * \author David Keitel, Reinhard Prix
  *
  * \brief Functions to compute line-robust CW statistics
  */
@@ -76,6 +77,14 @@ XLALComputeLRstat ( const REAL4 twoF,
 		    const BOOLEAN useAllTerms
 );
 
+
+int
+XLALParseLinePriors ( REAL4 oLGX[PULSAR_MAX_DETECTORS],
+		      const LALStringVector *oLGX_string
+);
+
+
+// ----- deprecated API ----------
 REAL4
 XLALComputeLineVeto ( const REAL4 TwoF,
 		      const REAL4Vector *TwoFX,
@@ -93,15 +102,6 @@ XLALComputeLineVetoArray ( const REAL4 TwoF,
 			   const BOOLEAN useAllTerms
 );
 
-int
-XLALParseLinePriors ( REAL4 *oLGX_REAL4,
-		      const LALStringVector *oLGX_string
-);
-
-int
-XLALParseStringValueToREAL4 ( REAL4 *valREAL4,
-			      const char *valString
-);
 
 // @}
 

@@ -1,5 +1,6 @@
 /*
  *  Copyright (C) 2011-2014 David Keitel
+ *  Copyright (C) 2014 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -32,8 +33,8 @@ struct tagLRstatSetup {
   UINT4 numDetectors;
   REAL4 Fstar0;
   REAL4 oLGX[PULSAR_MAX_DETECTORS];
-  REAL4 Fstar0_plus_log_1_minus_pL;	/* Fstar0 + log(1-pL) */
-  REAL4 logCX[PULSAR_MAX_DETECTORS];	/* precomputed term which is added to FX in denominator: logCX = log( pL rX / Ndet ) */
+  REAL4 C;				// C  = Fstar0 + log(1-pL)
+  REAL4 CX[PULSAR_MAX_DETECTORS];	// CX = log( pL rX / Ndet )
 };
 
 /*==================== FUNCTION DEFINITIONS ====================*/
@@ -45,61 +46,50 @@ struct tagLRstatSetup {
  * \newcommand{\Ftho}{\F_*^{(0)}}
  * \newcommand{\oLGX}{o_{\mathrm{LG}}^X}
  * \f]
- *
  * Pre-compute the 'setup' for XLALComputeLRstat() for given prior parameters \f$\Ftho\f$ and \f$\{\oLGX\}\f$.
  */
 LRstatSetup *
-XLALCreateLRstatSetup ( const UINT4 numDetectors,			/**< [in] number of detectors \f$\Ndet\f$ */
-                        const REAL4 Fstar0,				/**< [in] prior parameter \f$\Ftho\f$ */
-                        const REAL4 oLGX[PULSAR_MAX_DETECTORS]		/**< [in] prior per-detector line odds \f$\{\oLGX\}\f$, can be NULL, which is interpreted as \f$\oLGX=\frac{1}{\Ndet} \forall X\f$ */
+XLALCreateLRstatSetup ( const UINT4 numDetectors,			//!< [in] number of detectors \f$\Ndet\f$
+                        const REAL4 Fstar0,				//!< [in] prior parameter \f$\Ftho\f$
+                        const REAL4 oLGX[PULSAR_MAX_DETECTORS]		//!< [in] prior per-detector line odds \f$\{\oLGX\}\f$, if NULL: interpreted as \f$\oLGX=\frac{1}{\Ndet} \forall X\f$
                         )
 {
-
-  /* check input */
+  // check input
   XLAL_CHECK_NULL ( (numDetectors >= 2) && (numDetectors <= PULSAR_MAX_DETECTORS), XLAL_EDOM );
-  if ( oLGX ) {
-    for ( UINT4 X = 0; X < numDetectors; X ++ ) {
-      XLAL_CHECK_NULL ( oLGX[X] >= 0, XLAL_EDOM );
-    }
-  } /* if ( oLGX ) */
+  for ( UINT4 X = 0; X < numDetectors; X ++ ) {
+    XLAL_CHECK_NULL ( (oLGX == NULL) || (oLGX[X] >= 0), XLAL_EDOM );
+  }
 
-  /* create setup struct */
+  // create setup struct
   LRstatSetup *setup;
   XLAL_CHECK_NULL ( (setup = XLALCalloc( 1, sizeof(*setup) )) != NULL, XLAL_ENOMEM );
   setup->numDetectors = numDetectors;
   setup->Fstar0       = Fstar0;
 
-  /* oLG from Eq.(22) */
+  // Compute oLG from Eq.(22)
   REAL4 oLG = 0.0;
-  if ( oLGX ) {
-    for ( UINT4 X = 0; X < numDetectors; X ++ ) {
-      setup->oLGX[X] = oLGX[X];
-      oLG += oLGX[X];
+  REAL4 oLGX_default = 1.0/numDetectors;  // 'even odds': use oLGX=1/numDetectors for all X ==> oLG=1, rX=1, pL=0.5
+  for ( UINT4 X = 0; X < numDetectors; X ++ )
+    {
+      setup->oLGX[X] = (oLGX != NULL) ? oLGX[X] : oLGX_default;
+      oLG += setup->oLGX[X];
     }
-  } else { /* assume oLGX=1/numDetectors for all X ==> oLG=1, rX=1, pL=0.5 = */
-    oLG = 1.0;
-    for ( UINT4 X = 0; X < numDetectors; X ++ ) {
-      setup->oLGX[X] = 1.0/numDetectors;
-    }
-  } /* if ( oLGX ) */
 
-  /* constant transition scale term */
-  REAL4 log_1_plus_oLG = log( 1.0 + oLG ); /* ln(1+oLG) */
-  setup->Fstar0_plus_log_1_minus_pL = Fstar0 - log_1_plus_oLG; /* Fstar0 + ln(1-pL) = Fstar0 - ln(1+oLG) */
+  // constant transition scale term
+  REAL4 log_1_plus_oLG = log ( 1.0 + oLG ); 	// ln(1+oLG)
+  setup->C = Fstar0 - log_1_plus_oLG; 		// Fstar0 + ln(1-pL) = Fstar0 - ln(1+oLG)
 
-  for (UINT4 X = 0; X < numDetectors; X++) {
-
-    if ( setup->oLGX[X] > 0 ) {
-      setup->logCX[X] = log ( setup->oLGX[X]) - log_1_plus_oLG; /* ln(oLGX) - log(1+oLG) */
-    } else {
-      setup->logCX[X] = -LAL_REAL4_MAX; /* approximate log(0) by -LAL_REAL4_MAX to avoid raising underflow */
-    } /* if ( setup->oLGX[X] > 0 ) */
-
-  } /* for X < numDetectors */
+  for (UINT4 X = 0; X < numDetectors; X++)
+    {
+      setup->CX[X] = -LAL_REAL4_MAX; // fallback if oLGX==0 to avoid raising underflow
+      if ( setup->oLGX[X] > 0 ) {
+        setup->CX[X] = log ( setup->oLGX[X] ) - log_1_plus_oLG; // ln(oLGX) - log(1+oLG)
+      }
+    } // for X < numDetectors
 
   return setup;
 
-} /* XLALCreateLRstatSetup() */
+} // XLALCreateLRstatSetup()
 
 
 /**
@@ -120,18 +110,18 @@ XLALCreateLRstatSetup ( const UINT4 numDetectors,			/**< [in] number of detector
  * \newcommand{\pL}{p_\Line}
  * \newcommand{\logten}{\log_{10}}
  * \f]
- * Compute the "line-robust" statistic 'LRstat' from multi-detector \f$2\F\f$ and single-detector \f$2\{\F^X\}\f$ 'Fstat' values
+ * Compute the "line-robust" statistic 'LRstat' from multi-detector \f$2\F\f$ and single-detector \f$\{2\F^X\}\f$ 'Fstat' values
  * (coherent or semi-coherent sum) and a pre-computed 'setup' from XLALCreateLRstatSetup().
  *
  * The line-robust statistic is defined as \f$\mathrm{LRstat} = \logten B_\SGL\f$, where \f$B_\SGL\f$ is the BayesFactor[Signal-vs-Gauss_OR_Line], i.e.
  * \f$B_\SGL \equiv \frac{P(\data | \text{Signal})}{P(\data | \text{Gauss or Line})}\f$, which is related to the odds ratio
  * via \f$\OSGL = B_\SGL\,\oSGL\f$ in terms of the prior odds \f$\oSGL\f$.
  *
- * Here we use the odds ratio derived in Eq.(36) of \cite KPPLS2014, from which we can obtain
+ * Here we use the odds ratio derived in Eq.(36) (and Eq.(55)) of \cite KPPLS2014, from which we can obtain
  * \f{equation}{
  * \ln B_\SGL = \F - \FpMax - \ln\left( e^{C - \FpMax} + \sum_X e^{\F^X + C^X - \FpMax} \right) \,,
  * \f}
- * where \c useAllTerms controls whether or not to include the (usually small) log-correction of the last term,
+ * where \c useLogCorrection controls whether or not to include the (usually small) log-correction of the last term,
  * and we defined
  * \f{equation}{ \FpMax \equiv \max\left[ C, \{ \F^X + C^X \} \right] \f}
  * and \f$C,\{C^X\}\f$ are the prior quantities pre-computed in XLALCreateLRstatSetup(), namely
@@ -148,44 +138,72 @@ XLALCreateLRstatSetup ( const UINT4 numDetectors,			/**< [in] number of detector
  *
  */
 REAL4
-XLALComputeLRstat ( const REAL4 twoF,				/**< [in] multi-detector Fstat \f$2\F\f$ (coherent or semi-coherent sum(!)) */
-                    const REAL4 twoFX[PULSAR_MAX_DETECTORS],	/**< [in] per-detector Fstats \f$\{2\F^X\}\f$ (coherent or semi-coherent sum(!)) */
-                    const LRstatSetup *setup,			/**< [in] pre-computed setup from XLALCreateLRstatSetup() */
-                    const BOOLEAN useAllTerms			/**< [in] include log-term correction [slower] or not [faster, less accurate] */
+XLALComputeLRstat ( const REAL4 twoF,				//!< [in] multi-detector Fstat \f$2\F\f$ (coherent or semi-coherent sum(!))
+                    const REAL4 twoFX[PULSAR_MAX_DETECTORS],	//!< [in] per-detector Fstats \f$\{2\F^X\}\f$ (coherent or semi-coherent sum(!))
+                    const LRstatSetup *setup,			//!< [in] pre-computed setup from XLALCreateLRstatSetup()
+                    const BOOLEAN useLogCorrection		//!< [in] include log-term correction [slower] or not [faster, less accurate]
                     )
 {
-
   XLAL_CHECK ( setup != NULL, XLAL_EINVAL );
 
-  REAL4 FpMax = setup -> Fstar0_plus_log_1_minus_pL; /* keep track of log of maximal denominator sum-term */
+  REAL4 FpMax = setup->C; // used to keep track of log of maximal denominator sum-term
 
-  /* per-detector contributions, including line weights */
+  // per-detector contributions, including line weights
   REAL4 Xterm[PULSAR_MAX_DETECTORS];
-  for ( UINT4 X=0; X < setup->numDetectors; X ++ ) {
-    Xterm[X] = 0.5 * twoFX[X] + setup -> logCX[X]; /* FX + ln (pL rX / numDetectors ) */
-    FpMax = fmax ( FpMax, Xterm[X] );
+  for ( UINT4 X=0; X < setup->numDetectors; X ++ )
+    {
+      Xterm[X] = 0.5 * twoFX[X] + setup->CX[X]; 	// FX + CX
+      FpMax = fmax ( FpMax, Xterm[X] );
   }
 
-  REAL4 ln_BSGL = 0.5 * twoF - FpMax; /* approximate result without log-correction term */
+  REAL4 ln_BSGL = 0.5 * twoF - FpMax; // approximate result without log-correction term
 
-  if ( !useAllTerms ) {
-    return ln_BSGL * LAL_LOG10E; /* log10(B_SGL) */
+  if ( !useLogCorrection ) {
+    return ln_BSGL * LAL_LOG10E; // return log10(B_SGL)
   }
 
-  /* if useAllTerms: extraSum = e^(Fstar0+ln(1-pL) - FpMax) + sum_X e^( Xterm[X] - FpMax ) */
-  REAL4 extraSum = exp ( setup -> Fstar0_plus_log_1_minus_pL - FpMax );
+  // if useLogCorrection: extraSum = e^(Fstar0+ln(1-pL) - FpMax) + sum_X e^( Xterm[X] - FpMax )
+  REAL4 extraSum = exp ( setup->C  - FpMax );
 
-  /* ... and add all FX-contributions */
-  for ( UINT4 X = 0; X < setup->numDetectors; X++ ) {
-    extraSum += exp ( Xterm[X] - FpMax );
-  }
+  // ... and add all FX-contributions
+  for ( UINT4 X = 0; X < setup->numDetectors; X++ )
+    {
+      extraSum += exp ( Xterm[X] - FpMax );
+    }
 
-  ln_BSGL -= log ( extraSum ); /* F - FpMax - ln( ... ) */
+  ln_BSGL -= log ( extraSum ); // F - FpMax - ln( ... )
 
-  return ln_BSGL * LAL_LOG10E; /* log10(B_SGL) */
+  return ln_BSGL * LAL_LOG10E; // return log10(B_SGL)
 
-} /* XLALComputeLRstat() */
+} // XLALComputeLRstat()
 
+
+/**
+ * Parse string-vectors (typically input by user) of N per-detector line-to-Gaussian prior ratios
+ * \f$ o_{LG}^X = \frac{P(H_L^X)}{P(H_G^X)} \f$ to a flat array of REAL4s.
+ */
+int
+XLALParseLinePriors ( REAL4 oLGX[PULSAR_MAX_DETECTORS],		//!< [out] array of parsed \f$ o_{LG}^X \f$ values
+                      const LALStringVector *oLGX_string	//!< [in] string-list of \f$ o_{LG}^X \f$ values
+                    )
+{
+  XLAL_CHECK ( oLGX != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( oLGX_string != NULL, XLAL_EINVAL );
+  UINT4 numDetectors = oLGX_string->length;
+  XLAL_CHECK ( (numDetectors > 0) && (numDetectors <= PULSAR_MAX_DETECTORS), XLAL_EINVAL );
+
+  // parse input string
+  for ( UINT4 X = 0; X < numDetectors; X ++ )
+    {
+      XLAL_CHECK ( XLALParseStringValueToREAL4 ( &oLGX[X], oLGX_string->data[X] ) == XLAL_SUCCESS, XLAL_EFUNC );
+    } // for X < numDetectors
+
+  return XLAL_SUCCESS;
+
+} // XLALParseLinePriors()
+
+
+// ---------- OLD API functions [deprecated!] ------------------------------
 
 /**
  * Deprecated function to compute Line Veto statistics from multi- and single-detector \f$ \mathcal{F} \f$-stats,
@@ -323,51 +341,3 @@ XLALComputeLineVetoArray ( const REAL4 TwoF,		/**< multi-detector \f$ \mathcal{F
   return LV;
 
 } /* XLALComputeLineVetoArray() */
-
-
-/**
- * Parse string-vectors (typically input by user) of N per-detector line-to-Gaussian prior ratios \f$ o_{LG}^X = \frac{P(H_L^X)}{P(H_G^X)} \f$ to a flat array of REAL4s.
- */
-int
-XLALParseLinePriors ( REAL4 *oLGX_REAL4,			/**< [out] array of parsed \f$ o_{LG}^X \f$ values */
-                      const LALStringVector *oLGX_string	/**< [in] string-list of \f$ o_{LG}^X \f$ values */
-                    )
-{
-
-  XLAL_CHECK ( oLGX_REAL4 != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( oLGX_string != NULL, XLAL_EINVAL );
-  UINT4 numDetectors = oLGX_string->length;
-  XLAL_CHECK ( (numDetectors > 0) && (numDetectors <= PULSAR_MAX_DETECTORS), XLAL_EINVAL );
-
-  /* parse input string */
-  for ( UINT4 X = 0; X < numDetectors; X ++ ) {
-
-    XLAL_CHECK ( XLALParseStringValueToREAL4 ( &oLGX_REAL4[X], oLGX_string->data[X] ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  } /* for X < numDetectors */
-
-  return XLAL_SUCCESS;
-
-} /* XLALParseLinePriors() */
-
-
-//! Parse a string into a REAL4.
-//! This ignores initial whitespace, but throws an error on _any_ non-converted trailing characters (including whitespace)
-int
-XLALParseStringValueToREAL4 ( REAL4 *valREAL4,         //!< [out] return REAL4 value
-                              const char *valString    //!< [in]  input string value
-                              )
-{
-  XLAL_CHECK ( (valREAL4 != NULL) && (valString != NULL ), XLAL_EINVAL );
-
-  errno = 0;
-  char *endptr;
-  double valFloat = strtof ( valString, &endptr );
-  XLAL_CHECK ( errno == 0, XLAL_EFAILED, "strtod() failed to convert '%s' into a double!\n", valString );
-  XLAL_CHECK ( (*endptr) == '\0', XLAL_EFAILED, "strtod(): trailing garbage '%s' found after double-conversion of '%s'\n", endptr, valString );
-
-  (*valREAL4) = (REAL4)valFloat;
-
-  return XLAL_SUCCESS;
-
-} // XLALParseStringValueToREAL8()
