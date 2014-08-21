@@ -1,5 +1,6 @@
 /*
-*  Copyright (C) 2007 Duncan Brown, Kipp Cannon
+*  Copyright (C) 2007 Jolien Creighton, Kipp Cannon, Josh Willis, Duncan Brown
+*            (C) 2014 Larne Pekowsky
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -17,464 +18,187 @@
 *  MA  02111-1307  USA
 */
 
-/*-----------------------------------------------------------------------
- *
- * File Name: IntelRealFFT.c
- *
- * Author: Brown D. A.
- *
- *
- *-----------------------------------------------------------------------
- */
-
 #include <config.h>
+
+#include <complex.h>
 #include <mkl_dfti.h>
+
 #include <lal/LALStdlib.h>
 #include <lal/SeqFactories.h>
 #include <lal/RealFFT.h>
 
-extern int dummy_have_qthread;
 
-struct
-tagRealFFTPlan
-{
-  INT4       sign;
-  UINT4      size;
-  DFTI_DESCRIPTOR *plan;
-  REAL4     *tmp;
-};
+#define CHECKINTELFFTSTATUS( fstat )               \
+  if ( (fstat) != DFTI_NO_ERROR )                  \
+  {                                                \
+    char *errmsg = DftiErrorMessage( fftStat );    \
+    XLAL_ERROR( REALFFTH_EINTL, errmsg );          \
+  }                                                \
+  else (void)(0)
 
+#define CHECKINTELFFTSTATUS_NULL( fstat )          \
+  if ( (fstat) != DFTI_NO_ERROR )                  \
+  {                                                \
+    char *errmsg = DftiErrorMessage( fftStat );    \
+    XLAL_ERROR_NULL( REALFFTH_EINTL, errmsg );     \
+  }                                                \
+  else (void)(0)
 
-#define CHECKINTELFFTSTATUS( fstat )                    \
-  if ( (fstat) != DFTI_NO_ERROR )                       \
-  {                                                     \
-    char *errmsg = DftiErrorMessage( fftStat );         \
-    LALPrintError( errmsg );                            \
-    ABORT( status, REALFFTH_EINTL, REALFFTH_MSGEINTL ); \
-  }                                                     \
+#define CHECKINTELFFTSTATUS_VOID( fstat )          \
+  if ( (fstat) != DFTI_NO_ERROR )                  \
+  {                                                \
+    char *errmsg = DftiErrorMessage( fftStat );    \
+    XLAL_ERROR_VOID( REALFFTH_EINTL, errmsg );     \
+  }                                                \
   else (void)(0)
 
 
-/* NOTE: this function declaration, and others in this file, are overridden by
- * a macros in RealFFT.h.  If you expect to use these functions, you'll first
- * need to sort out the header file so that calls to these functions are not
- * redirected by the macros.  The recommended course of action would be to
- * rename them "Real" --> "REAL4", following the names of the equivalent
- * functions in RealFFT.h */
-void
-LALCreateForwardRealFFTPlan(
-    LALStatus    *status,
-    RealFFTPlan **plan,
-    UINT4         size,
-    INT4          measure
-    )
+
+/**
+ * \addtogroup RealFFT_h
+ *
+ * \section sec_RealFFT_LAL LAL-style functions [DEPRECATED]
+ *
+ * This package also provides a (deprecated!) LAL-style interface with the FFTW fast Fourier
+ * transform package \cite fj_1998.
+ *
+ * The routines LALCreateForwardRealFFTPlan() and
+ * LALCreateReverseRealFFTPlan() create plans for computing the
+ * forward (real-to-complex) and reverse (complex-to-real) FFTs of a specified
+ * size.  The optimum plan is either estimated (reasonably fast) if the measure
+ * flag is zero, or measured (can be time-consuming, but gives better
+ * performance) if the measure flag is non-zero.  The routine
+ * LALDestroyRealFFTPlan() destroys any of these flavours of plans.
+ *
+ * The routines LALForwardRealFFT() and LALReverseRealFFT()
+ * perform the forward (real-to-complex) and reverse (complex-to-real) FFTs
+ * using the plans.  The discrete Fourier transform \f$H_k\f$,
+ * \f$k=0\ldots\lfloor{n/2}\rfloor\f$ (\f$n/2\f$ rounded down), of a vector \f$h_j\f$,
+ * \f$j=0\ldots n-1\f$, of length \f$n\f$ is defined by
+ * \f[
+ * H_k = \sum_{j=0}^{n-1} h_j e^{-2\pi ijk/n}
+ * \f]
+ * and, similarly, the \e inverse Fourier transform is defined by
+ * \f[
+ * h_j = \frac{1}{n} \sum_{k=0}^{n-1} H_k e^{2\pi ijk/n}
+ * \f]
+ * where \f$H_k\f$ for \f$\lfloor{n/2}\rfloor<k<n\f$ can be obtained from the relation
+ * \f$H_k=H_{n-k}^\ast\f$.  The present implementation of the \e reverse FFT
+ * omits the factor of \f$1/n\f$.
+ *
+ * The routines in this package require that the vector \f$h_j\f$, \f$j=0\ldots n-1\f$
+ * be real; consequently, \f$H_k=H_{n-k}^\ast\f$ (\f$0\le k\le\lfloor n/2\rfloor\f$),
+ * i.e., the negative frequency Fourier components are the complex conjugate of
+ * the positive frequency Fourier components when the data is real.  Therefore,
+ * one need compute and store only the first \f$\lfloor n/2\rfloor+1\f$ components
+ * of \f$H_k\f$; only the values of \f$H_k\f$ for \f$k=0\ldots \lfloor n/2\rfloor\f$ are
+ * returned (integer division is rounded down, e.g., \f$\lfloor 7/2\rfloor=3\f$).
+ *
+ * The routine LALRealPowerSpectrum() computes the power spectrum
+ * \f$P_k=2|H_k|^2\f$, \f$k=1\ldots \lfloor (n-1)/2\rfloor\f$,
+ * \f$P_0=|H_0|^2\f$, and \f$P_{n/2}=|H_{n/2}|^2\f$ if \f$n\f$ is even, of the data \f$h_j\f$,
+ * \f$j=0\ldots n-1\f$.  The factor of two except at DC and Nyquist accounts for
+ * the power in negative frequencies.
+ *
+ * The routine LALREAL4VectorFFT() is essentially a direct calls to
+ * FFTW routines without any re-packing of the data.  This routine should not
+ * be used unless the user understands the packing used in FFTW.
+ *
+ * \subsection ss_RealFFT_OP Operating Instructions
+ *
+ * \code
+ * const UINT4 n = 32;
+ * static LALStatus status;
+ * RealFFTPlan            *pfwd = NULL;
+ * RealFFTPlan            *prev = NULL;
+ * REAL4Vector            *hvec = NULL;
+ * COMPLEX8Vector         *Hvec = NULL;
+ * REAL4Vector            *Pvec = NULL;
+ *
+ * LALCreateForwardRealFFTPlan( &status, &pfwd, n );
+ * LALCreateReverseRealFFTPlan( &status, &prev, n );
+ * LALSCreateVector( &status, &hvec, n );
+ * LALCCreateVector( &status, &Hvec, n/2 + 1 );
+ * LALSCreateVector( &status, &Pvec, n/2 + 1 );
+ *
+ * <assign data>
+ *
+ * LALRealPowerSpectrum( &status, Pvec, hvec, pfwd );
+ * LALForwardRealFFT( &status, Hvec, hvec, pfwd );
+ * LALReverseRealFFT( &status, hvec, Hvec, pinv );
+ *
+ * LALDestroyRealFFTPlan( &status, &pfwd );
+ * LALDestroyRealFFTPlan( &status, &pinv );
+ * LALSDestroyVector( &status, &hvec );
+ * LALCDestroyVector( &status, &Hvec );
+ * LALSDestroyVector( &status, &Pvec );
+ * \endcode
+ *
+ * ### Algorithm ###
+ *
+ * The FFTW \cite fj_1998 is used.
+ *
+ * ### Uses ###
+ *
+ *
+ * ### Notes ###
+ *
+ * <ol>
+ * <li> The sign convention used here is the opposite of
+ * <em>Numerical Recipes</em> \cite ptvf1992, but agrees with the one used
+ * by FFTW \cite fj_1998 and the other LIGO software components.
+ * </li>
+ * <li> The result of the reverse FFT must be multiplied by \f$1/n\f$ to recover
+ * the original vector.  This is unlike the <em>Numerical
+ * Recipes</em> \cite ptvf1992 convension where the factor is \f$2/n\f$ for real
+ * FFTs.  This is different from the \c datacondAPI where the
+ * normalization constant is applied by default.
+ * </li>
+ * <li> The size \f$n\f$ of the transform can be any positive integer; the
+ * performance is \f$O(n\log n)\f$.  However, better performance is obtained if \f$n\f$
+ * is the product of powers of 2, 3, 5, 7, and zero or one power of either 11
+ * or 13.  Transforms when \f$n\f$ is a power of 2 are especially fast.  See
+ * \cite fj_1998.
+ * </li>
+ * <li> All of these routines leave the input array undamaged.  (Except for LALREAL4VectorFFT().)
+ * </li>
+ * <li> LALMalloc() is used by all the fftw routines.
+ * </li>
+ * </ol>
+ *
+ */
+/*@{*/
+
+
+/**
+ * \brief Plan to perform FFT of REAL4 data.
+ */
+struct
+tagREAL4FFTPlan
 {
-  INT8  fftStat;
+  INT4       sign; /**< sign in transform exponential, -1 for forward, +1 for reverse */
+  UINT4      size; /**< length of the real data vector for this plan */
+  DFTI_DESCRIPTOR *plan; /**< the MKL plan */
+  REAL4     *tmp;
+};
 
-#ifdef LAL_QTHREAD
-  dummy_have_qthread = 0;
-#endif
-
-  INITSTATUS(status);
-  XLAL_PRINT_DEPRECATION_WARNING("XLALCreateForwardRealFFTPlan");
-
-  ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
-  ASSERT( ! *plan, status, REALFFTH_ENNUL, REALFFTH_MSGENNUL );
-  ASSERT( size > 0, status, REALFFTH_ESIZE, REALFFTH_MSGESIZE );
-
-  /* allocate memory */
-  *plan = LALMalloc( sizeof( **plan ) );
-  if ( ! *plan )
-  {
-    ABORT( status, REALFFTH_EALOC, REALFFTH_MSGEALOC );
-  }
-
-  /* assign plan fields */
-  (*plan)->size = size;
-  (*plan)->sign = -1;
-
-  /* make the intel fft descriptor */
-  fftStat = DftiCreateDescriptor( &((*plan)->plan),
-      DFTI_SINGLE, DFTI_REAL, 1, size);
-  CHECKINTELFFTSTATUS( fftStat );
-
-  /* configure intel fft descriptor */
-  fftStat = DftiSetValue( (*plan)->plan, DFTI_PLACEMENT,
-      DFTI_NOT_INPLACE );
-  CHECKINTELFFTSTATUS( fftStat );
-  fftStat = DftiSetValue( (*plan)->plan, DFTI_PACKED_FORMAT,
-      DFTI_PACK_FORMAT );
-  CHECKINTELFFTSTATUS( fftStat );
-
-  /* commit the intel fft descriptor */
-  fftStat = DftiCommitDescriptor( (*plan)->plan );
-  CHECKINTELFFTSTATUS( fftStat );
-
-  /* create workspace to do the fft into */
-  (*plan)->tmp = LALMalloc( size * sizeof( REAL4 ) );
-  if ( ! (*plan)->tmp )
-  {
-    LALFree( *plan );
-    *plan = NULL;
-    ABORT( status, REALFFTH_EALOC, REALFFTH_MSGEALOC );
-  }
-
-  RETURN( status );
-}
-
-
-void
-LALCreateReverseRealFFTPlan(
-    LALStatus    *status,
-    RealFFTPlan **plan,
-    UINT4         size,
-    INT4          measure
-    )
+/**
+ * \brief Plan to perform FFT of REAL8 data.
+ */
+struct
+tagREAL8FFTPlan
 {
-  INT8  fftStat;
+  INT4       sign; /**< sign in transform exponential, -1 for forward, +1 for reverse */
+  UINT4      size; /**< length of the real data vector for this plan */
+  DFTI_DESCRIPTOR *plan; /**< the MKL plan */
+  REAL8     *tmp;
+};
 
-#ifdef LAL_QTHREAD
-  dummy_have_qthread = 0;
-#endif
 
-  INITSTATUS(status);
-  XLAL_PRINT_DEPRECATION_WARNING("XLALCreateReverseRealFFTPlan");
 
-  ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
-  ASSERT( ! *plan, status, REALFFTH_ENNUL, REALFFTH_MSGENNUL );
-  ASSERT( size > 0, status, REALFFTH_ESIZE, REALFFTH_MSGESIZE );
+/* single- and double-precision routines */
 
-  /* allocate memory */
-  *plan = LALMalloc( sizeof( **plan ) );
-  if ( ! *plan )
-  {
-    ABORT( status, REALFFTH_EALOC, REALFFTH_MSGEALOC );
-  }
-
-  /* assign plan fields */
-  (*plan)->size = size;
-  (*plan)->sign = 1;
-
-  /* make the intel fft descriptor */
-  fftStat = DftiCreateDescriptor( &((*plan)->plan),
-      DFTI_SINGLE, DFTI_REAL, 1, size);
-  CHECKINTELFFTSTATUS( fftStat );
-
-  /* configure intel fft descriptor */
-  fftStat = DftiSetValue( (*plan)->plan, DFTI_PLACEMENT,
-      DFTI_NOT_INPLACE );
-  CHECKINTELFFTSTATUS( fftStat );
-  fftStat = DftiSetValue( (*plan)->plan, DFTI_PACKED_FORMAT,
-      DFTI_PACK_FORMAT );
-  CHECKINTELFFTSTATUS( fftStat );
-
-  /* commit the intel fft descriptor */
-  fftStat = DftiCommitDescriptor( (*plan)->plan );
-  CHECKINTELFFTSTATUS( fftStat );
-
-  /* create workspace to do the fft into */
-  (*plan)->tmp = LALMalloc( size * sizeof( REAL4 ) );
-  if ( ! (*plan)->tmp )
-  {
-    LALFree( *plan );
-    *plan = NULL;
-    ABORT( status, REALFFTH_EALOC, REALFFTH_MSGEALOC );
-  }
-
-  RETURN( status );
-}
-
-
-void
-LALDestroyRealFFTPlan(
-    LALStatus    *status,
-    RealFFTPlan **plan
-    )
-{
-  INT8  fftStat;
-
-#ifdef LAL_QTHREAD
-  dummy_have_qthread = 0;
-#endif
-
-  INITSTATUS(status);
-  XLAL_PRINT_DEPRECATION_WARNING("XLALDestroyRealFFTPlan");
-
-  ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
-  ASSERT( *plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
-
-  /* destroy intel fft descriptor */
-  fftStat = DftiFreeDescriptor( &((*plan)->plan) );
-  CHECKINTELFFTSTATUS( fftStat );
-
-  LALFree( (*plan)->tmp );
-
-  LALFree( *plan );
-  *plan = NULL;
-
-  RETURN( status );
-}
-
-
-void
-LALForwardRealFFT(
-    LALStatus      *status,
-    COMPLEX8Vector *output,
-    REAL4Vector    *input,
-    RealFFTPlan    *plan
-    )
-{
-  INT8 fftStat;
-  UINT4 n;
-  UINT4 k;
-
-#ifdef LAL_QTHREAD
-  dummy_have_qthread = 0;
-#endif
-
-  INITSTATUS(status);
-  XLAL_PRINT_DEPRECATION_WARNING("XLALForwardRealFFT");
-  ASSERT( output, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
-  ASSERT( input, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
-  ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
-
-  ASSERT( output->data, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
-  ASSERT( input->data, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
-  ASSERT( plan->plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
-  ASSERT( plan->tmp, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
-
-  n = plan->size;
-  ASSERT( n > 0, status, REALFFTH_ESIZE, REALFFTH_MSGESIZE );
-  ASSERT( input->length == n, status, REALFFTH_ESZMM, REALFFTH_MSGESZMM );
-  ASSERT( output->length == n / 2 + 1, status,
-      REALFFTH_ESZMM, REALFFTH_MSGESZMM );
-
-  ASSERT( plan->sign == -1, status, REALFFTH_ESIGN, REALFFTH_MSGESIGN );
-
-  /* execute intel fft */
-  fftStat = DftiComputeForward( plan->plan, input->data, plan->tmp );
-  CHECKINTELFFTSTATUS( fftStat );
-
-  /* dc component */
-  output->data[0].re = plan->tmp[0];
-  output->data[0].im = 0;
-
-  /* other components */
-  for ( k = 1; k < ( n + 1 ) / 2; ++k ) /* k < n/2 rounded up */
-  {
-    output->data[k].re = plan->tmp[2 * k - 1];
-    output->data[k].im = plan->tmp[2 * k];
-  }
-
-  /* Nyquist frequency */
-  if ( n % 2 == 0 ) /* n is even */
-  {
-    output->data[n / 2].re = plan->tmp[n - 1];
-    output->data[n / 2].im = 0;
-  }
-
-  RETURN( status );
-}
-
-
-void
-LALReverseRealFFT(
-    LALStatus      *status,
-    REAL4Vector    *output,
-    COMPLEX8Vector *input,
-    RealFFTPlan    *plan
-    )
-{
-  INT8 fftStat;
-  UINT4 n;
-  UINT4 k;
-
-#ifdef LAL_QTHREAD
-  dummy_have_qthread = 0;
-#endif
-
-  INITSTATUS(status);
-  XLAL_PRINT_DEPRECATION_WARNING("XLALReverseRealFFT");
-
-  ASSERT( output, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
-  ASSERT( input, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
-  ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
-
-  ASSERT( output->data, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
-  ASSERT( input->data, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
-  ASSERT( plan->plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
-  ASSERT( plan->tmp, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
-
-  n = plan->size;
-  ASSERT( n > 0, status, REALFFTH_ESIZE, REALFFTH_MSGESIZE );
-  ASSERT( input->length == n / 2 + 1, status,
-      REALFFTH_ESZMM, REALFFTH_MSGESZMM );
-  ASSERT( output->length == n, status, REALFFTH_ESZMM, REALFFTH_MSGESZMM );
-
-  ASSERT( plan->sign == 1, status, REALFFTH_ESIGN, REALFFTH_MSGESIGN );
-
-  /* make sure that Nyquist is purely real if number of points is even */
-  ASSERT( n % 2 || input->data[n / 2].im == 0, status,
-      REALFFTH_EDATA, REALFFTH_MSGEDATA );
-
-  /* dc component */
-  plan->tmp[0] = input->data[0].re;
-
-  /* other components */
-  for ( k = 1; k < ( n + 1 ) / 2; ++k ) /* k < n / 2 rounded up */
-  {
-    plan->tmp[2 * k - 1] = input->data[k].re;
-    plan->tmp[2 * k]     = input->data[k].im;
-  }
-
-  /* Nyquist component */
-  if ( n % 2 == 0 ) /* n is even */
-  {
-    plan->tmp[n - 1] = input->data[n / 2].re;
-  }
-
-  /* execute intel fft */
-  fftStat = DftiComputeBackward( plan->plan, plan->tmp, output->data );
-  CHECKINTELFFTSTATUS( fftStat );
-
-  RETURN( status );
-}
-
-
-void
-LALRealPowerSpectrum (
-    LALStatus   *status,
-    REAL4Vector *spec,
-    REAL4Vector *data,
-    RealFFTPlan *plan
-    )
-{
-  INT8  fftStat;
-  UINT4 n;
-  UINT4 k;
-
-#ifdef LAL_QTHREAD
-  dummy_have_qthread = 0;
-#endif
-
-  INITSTATUS(status);
-  XLAL_PRINT_DEPRECATION_WARNING("XLALREAL4PowerSpectrum");
-
-  ASSERT( spec, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
-  ASSERT( data, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
-  ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
-
-  ASSERT( spec->data, status, REALFFTH_ENNUL, REALFFTH_MSGENNUL );
-  ASSERT( data->data, status, REALFFTH_ENNUL, REALFFTH_MSGENNUL );
-  ASSERT( plan->plan, status, REALFFTH_ENNUL, REALFFTH_MSGENNUL );
-  ASSERT( plan->tmp, status, REALFFTH_ENNUL, REALFFTH_MSGENNUL );
-
-  n = plan->size;
-  ASSERT( n > 0, status, REALFFTH_ESIZE, REALFFTH_MSGESIZE );
-  ASSERT( data->length == n, status, REALFFTH_ESZMM, REALFFTH_MSGESZMM );
-  ASSERT( spec->length == n/2 + 1, status, REALFFTH_ESZMM, REALFFTH_MSGESZMM );
-
-  /* execute intel fft */
-  fftStat = DftiComputeForward( plan->plan, data->data, plan->tmp );
-  CHECKINTELFFTSTATUS( fftStat );
-
-  /* dc component */
-  spec->data[0] = plan->tmp[0] * plan->tmp[0];
-
-  /* other components */
-  for (k = 1; k < (n + 1)/2; ++k) /* k < n/2 rounded up */
-  {
-    REAL4 re = plan->tmp[2 * k - 1];
-    REAL4 im = plan->tmp[2 * k];
-    spec->data[k] = re * re + im * im;
-  }
-
-  /* Nyquist frequency */
-  if (n % 2 == 0) /* n is even */
-    spec->data[n / 2] = plan->tmp[n / 2] * plan->tmp[n / 2];
-
-  RETURN( status );
-}
-
-
-void
-LALREAL4VectorFFT(
-    LALStatus   *status,
-    REAL4Vector *output,
-    REAL4Vector *input,
-    RealFFTPlan *plan
-    )
-{
-  INT8 fftStat;
-  UINT4 n;
-  UINT4 k;
-
-#ifdef LAL_QTHREAD
-  dummy_have_qthread = 0;
-#endif
-
-  INITSTATUS(status);
-  XLAL_PRINT_DEPRECATION_WARNING("XLALREAL4VectorFFT");
-
-  ASSERT( output, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
-  ASSERT( input, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
-  ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
-
-  ASSERT( output->data, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
-  ASSERT( input->data, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
-  ASSERT( plan->plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
-  ASSERT( plan->tmp, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
-
-  /* make sure that it is not the same data! */
-  ASSERT( output->data != input->data, status,
-      REALFFTH_ESAME, REALFFTH_MSGESAME );
-
-  n = plan->size;
-  ASSERT( n > 0, status, REALFFTH_ESIZE, REALFFTH_MSGESIZE );
-  ASSERT( output->length == n, status, REALFFTH_ESZMM, REALFFTH_MSGESZMM );
-  ASSERT( input->length == n, status, REALFFTH_ESZMM, REALFFTH_MSGESZMM );
-
-  /* complex intel fft */
-  if ( plan->sign == -1 )
-  {
-    fftStat = DftiComputeForward( plan->plan, input->data, plan->tmp );
-    CHECKINTELFFTSTATUS( fftStat );
-
-    output->data[0] = plan->tmp[0];
-    for ( k = 1 ; k < (n + 1) / 2 ; ++k ) /* k < n/2 rounded up */
-    {
-      output->data[k]     = plan->tmp[2 * k - 1];
-      output->data[n - k] = plan->tmp[2 * k];
-    }
-    if ( n % 2 == 0) /* n is even */
-    {
-      output->data[n / 2] = plan->tmp[n - 1];
-    }
-  }
-  else if ( plan->sign = 1 )
-  {
-    plan->tmp[0] = input->data[0];
-    for ( k = 1 ; k < (n + 1) / 2 ; ++k ) /* k < n/2 rounded up */
-    {
-      plan->tmp[2 * k - 1] = input->data[k];
-      plan->tmp[2 * k]     = input->data[n - k];
-    }
-    if ( n % 2 == 0) /* n is even */
-    {
-      plan->tmp[n - 1] = input->data[n / 2];
-    }
-
-    fftStat = DftiComputeBackward( plan->plan, plan->tmp, output->data );
-    CHECKINTELFFTSTATUS( fftStat );
-  }
-  else
-  {
-    ABORT( status, REALFFTH_ESIGN, REALFFTH_MSGESIGN );
-  }
-
-  RETURN( status );
-}
-
-/* double precision routines */
-
-#undef CHECKINTELFFTSTATUS
+#define SINGLE_PRECISION
+#include "IntelRealFFT_source.c"
+#undef SINGLE_PRECISION
+#include "IntelRealFFT_source.c"
