@@ -2307,11 +2307,11 @@ void UpdateSemiCohToplists ( LALStatus *status,
                              FineGrid *in,
                              REAL8 f1dot_fg,
                              REAL8 f2dot_fg,
-							 REAL8 f3dot_fg,
+                             REAL8 f3dot_fg,
                              UsefulStageVariables *usefulparams,
                              REAL4 NSegmentsInv,
                              REAL4 *NSegmentsInvX,
-							 BOOLEAN have_f3dot
+                             BOOLEAN have_f3dot
                              )
 {
 
@@ -2338,22 +2338,25 @@ void UpdateSemiCohToplists ( LALStatus *status,
     line.F2dot = f2dot_fg;
     line.F3dot = f3dot_fg;
     line.nc = in->nc[ifreq_fg];
-    line.sumTwoF = in->sumTwoF[ifreq_fg]; /* here it's still the summed 2F value over segments, not the average */
+    line.avTwoF = 0.0; /* will be set to average over segments later */
     line.numDetectors = in->numDetectors;
     for (UINT4 X = 0; X < PULSAR_MAX_DETECTORS; X++) { /* initialise single-IFO F-stat arrays to zero */
-      line.sumTwoFX[X] = 0.0;
-      line.sumTwoFXrecalc[X] = 0.0;
+      line.avTwoFX[X] = 0.0;
+      line.avTwoFXrecalc[X] = 0.0;
     }
-    line.sumTwoFrecalc = -1.0; /* initialise this to -1.0, so that it only gets written out by print_gctFStatline_to_str if later overwritten in recalcToplistStats step */
+    line.avTwoFrecalc = -1.0; /* initialise this to -1.0, so that it only gets written out by print_gctFStatline_to_str if later overwritten in recalcToplistStats step */
     line.have_f3dot = have_f3dot;
 
+    /* local placeholders for summed 2F value over segments, not averages yet */
+    REAL4 sumTwoF = in->sumTwoF[ifreq_fg];
+    REAL4 sumTwoFX[PULSAR_MAX_DETECTORS];
     if ( in->sumTwoFX ) { /* if we already have FX values from the main loop, insert these, and calculate BSGL here */
       for (UINT4 X = 0; X < in->numDetectors; X++) {
-        line.sumTwoFX[X] = in->sumTwoFX[FG_FX_INDEX(*in, X, ifreq_fg)]; /* here it's still the summed 2F value over segments, not the average */
+        sumTwoFX[X] = in->sumTwoFX[FG_FX_INDEX(*in, X, ifreq_fg)]; /* here it's still the summed 2F value over segments, not the average */
       }
       xlalErrno = 0;
 
-      line.log10BSGL = XLALComputeBSGL ( line.sumTwoF, line.sumTwoFX, usefulparams->BSGLsetup );
+      line.log10BSGL = XLALComputeBSGL ( sumTwoF, sumTwoFX, usefulparams->BSGLsetup );
       if ( xlalErrno != 0 ) {
         XLALPrintError ("%s line %d : XLALComputeBSGL() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
         ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
@@ -2366,10 +2369,10 @@ void UpdateSemiCohToplists ( LALStatus *status,
     }
 
     /* take F-stat averages over segments */
-    line.sumTwoF *= NSegmentsInv; /* average multi-2F by full number of segments */
+    line.avTwoF = sumTwoF*NSegmentsInv; /* average multi-2F by full number of segments */
     if ( in->sumTwoFX ) {
       for (UINT4 X = 0; X < in->numDetectors; X++) {
-        line.sumTwoFX[X] *= NSegmentsInvX[X]; /* average single-2F by per-IFO number of segments */
+        line.avTwoFX[X] = sumTwoFX[X]*NSegmentsInvX[X]; /* average single-2F by per-IFO number of segments */
       }
     }
 

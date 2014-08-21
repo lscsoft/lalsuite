@@ -76,7 +76,7 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
 
   UINT4 j;
   UINT4 numElements = list->elems;
-  /* loop over toplist: re-compute sumTwoF and sumTwoFX for all candidates */
+  /* loop over toplist: re-compute TwoF and TwoFX for all candidates (average over segments) */
   for (j = 0; j < numElements; j++ )
     {
       /* set up file for individual-segment Fstat output */
@@ -140,15 +140,15 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
       if ( listEntryType == 1 ) {
           GCTtopOutputEntry *elem = elemV;
           elem->numDetectors = numDetectors;
-          elem->sumTwoFrecalc  = recalcStats.TwoF;
+          elem->avTwoFrecalc = recalcStats.TwoF; /* average over segments */
           for ( X = 0; X < numDetectors; X ++ ) {
-            elem->sumTwoFXrecalc[X]  = recalcStats.TwoFX[X];
+            elem->avTwoFXrecalc[X] = recalcStats.TwoFX[X];
           }
       }
       else if ( listEntryType == 2 ) {
           HoughFStatOutputEntry *elem = elemV;
 
-          elem->sumTwoF         = recalcStats.TwoF;
+          elem->sumTwoF = recalcStats.TwoF; /* this is also the average over segments, the field is only called "sumTwoF" due to Hough legacy */
           for ( X = 0; X < numDetectors; X ++ ) {
             elem->sumTwoFX->data[X]  = recalcStats.TwoFX[X];
           }
@@ -167,7 +167,8 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
 
 
 /**
- * XLAL Function to recalculate single-IFO Fstats for all semicoherent search segments, and use them to compute line-robust statistics
+ * XLAL Function to recalculate multi-IFO F-stat 2F and single-IFO 2FX for all semicoherent search segments
+ * This returns AVERAGE F-stats over segments, not sums.
  */
 int XLALComputeExtraStatsSemiCoherent ( BSGLComponents *recalcStats,                      /**< [out] structure containing multi TwoF, single TwoF, BSGL */
 					const PulsarDopplerParams *dopplerParams,           /**< sky position, frequency and fdot for a given candidate */

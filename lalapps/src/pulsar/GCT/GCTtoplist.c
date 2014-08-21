@@ -124,17 +124,17 @@ static int gctFStat_result_order(const void *a, const void *b) {
     return 0;
 }
 
-/* ordering function defining the toplist: SORT BY sumTwoF */
+/* ordering function defining the toplist: SORT BY avTwoF */
 static int gctFStat_smaller(const void*a, const void*b) {
 #ifdef DEBUG_SORTING
   if(debugfp)
     fprintf(debugfp,"%20lf  %20lf\n%20u  %20u\n\n",
-	    ((const GCTtopOutputEntry*)a)->sumTwoF,  ((const GCTtopOutputEntry*)b)->sumTwoF,
+	    ((const GCTtopOutputEntry*)a)->avTwoF,  ((const GCTtopOutputEntry*)b)->avTwoF,
 	    ((const GCTtopOutputEntry*)a)->nc, ((const GCTtopOutputEntry*)b)->nc);
 #endif
-  if      (((const GCTtopOutputEntry*)a)->sumTwoF < ((const GCTtopOutputEntry*)b)->sumTwoF)
+  if      (((const GCTtopOutputEntry*)a)->avTwoF < ((const GCTtopOutputEntry*)b)->avTwoF)
     return 1;
-  else if (((const GCTtopOutputEntry*)a)->sumTwoF > ((const GCTtopOutputEntry*)b)->sumTwoF)
+  else if (((const GCTtopOutputEntry*)a)->avTwoF > ((const GCTtopOutputEntry*)b)->avTwoF)
     return -1;
   else if (((const GCTtopOutputEntry*)a)->nc < ((const GCTtopOutputEntry*)b)->nc)
     return 1;
@@ -150,16 +150,16 @@ static int gctNC_smaller(const void*a, const void*b) {
 #ifdef DEBUG_SORTING
   if(debugfp)
     fprintf(debugfp,"%20lf  %20lf\n%20u  %20u\n\n",
-	    ((const GCTtopOutputEntry*)a)->sumTwoF,  ((const GCTtopOutputEntry*)b)->sumTwoF,
+	    ((const GCTtopOutputEntry*)a)->avTwoF,  ((const GCTtopOutputEntry*)b)->avTwoF,
 	    ((const GCTtopOutputEntry*)a)->nc, ((const GCTtopOutputEntry*)b)->nc);
 #endif
   if      (((const GCTtopOutputEntry*)a)->nc < ((const GCTtopOutputEntry*)b)->nc)
     return 1;
   else if (((const GCTtopOutputEntry*)a)->nc > ((const GCTtopOutputEntry*)b)->nc)
     return -1;
-  else if (((const GCTtopOutputEntry*)a)->sumTwoF < ((const GCTtopOutputEntry*)b)->sumTwoF)
+  else if (((const GCTtopOutputEntry*)a)->avTwoF < ((const GCTtopOutputEntry*)b)->avTwoF)
     return 1;
-  else if (((const GCTtopOutputEntry*)a)->sumTwoF > ((const GCTtopOutputEntry*)b)->sumTwoF)
+  else if (((const GCTtopOutputEntry*)a)->avTwoF > ((const GCTtopOutputEntry*)b)->avTwoF)
     return -1;
   else
     return(gctFStat_result_order(a,b));
@@ -171,16 +171,16 @@ static int gctBSGL_smaller(const void*a, const void*b) {
 #ifdef DEBUG_SORTING
   if(debugfp)
     fprintf(debugfp,"%20lf  %20lf\n%20lf  %20lf\n\n",
-	    ((const GCTtopOutputEntry*)a)->sumTwoF,  ((const GCTtopOutputEntry*)b)->sumTwoF,
+	    ((const GCTtopOutputEntry*)a)->avTwoF,  ((const GCTtopOutputEntry*)b)->avTwoF,
 	    ((const GCTtopOutputEntry*)a)->log10BSGL, ((const GCTtopOutputEntry*)b)->log10BSGL);
 #endif
   if      (((const GCTtopOutputEntry*)a)->log10BSGL < ((const GCTtopOutputEntry*)b)->log10BSGL)
     return 1;
   else if (((const GCTtopOutputEntry*)a)->log10BSGL > ((const GCTtopOutputEntry*)b)->log10BSGL)
     return -1;
-  else if (((const GCTtopOutputEntry*)a)->sumTwoF < ((const GCTtopOutputEntry*)b)->sumTwoF)
+  else if (((const GCTtopOutputEntry*)a)->avTwoF < ((const GCTtopOutputEntry*)b)->avTwoF)
     return 1;
-  else if (((const GCTtopOutputEntry*)a)->sumTwoF > ((const GCTtopOutputEntry*)b)->sumTwoF)
+  else if (((const GCTtopOutputEntry*)a)->avTwoF > ((const GCTtopOutputEntry*)b)->avTwoF)
     return -1;
   else
     return(gctFStat_result_order(a,b));
@@ -252,7 +252,7 @@ static int print_gctFStatline_to_str(GCTtopOutputEntry fline, char* buf, int buf
       snprintf ( BSGLstr, sizeof(BSGLstr), " %.6f", fline.log10BSGL );
       for ( UINT4 X = 0; X < fline.numDetectors ; X ++ )
         {
-          snprintf ( buf0, sizeof(buf0), " %.6f", fline.sumTwoFX[X] );
+          snprintf ( buf0, sizeof(buf0), " %.6f", fline.avTwoFX[X] );
           UINT4 len1 = strlen ( BSGLstr ) + strlen ( buf0 ) + 1;
           if ( len1 > sizeof ( BSGLstr ) ) {
             XLALPrintError ("%s: assembled output string too long! (%d > %d)\n", fn, len1, sizeof(BSGLstr ));
@@ -264,13 +264,13 @@ static int print_gctFStatline_to_str(GCTtopOutputEntry fline, char* buf, int buf
     } /* if fline.log10BSGL */
   /* add extra output fields for recalculated F-stats */
   char recalcStr[256] = "";	/* defaults to empty */
-  if ( fline.sumTwoFrecalc >= 0.0 ) /* this was initialised to -1.0 and is only >= 0.0 if actually recomputed in recalcToplistStats step */
+  if ( fline.avTwoFrecalc >= 0.0 ) /* this was initialised to -1.0 and is only >= 0.0 if actually recomputed in recalcToplistStats step */
     {
       char buf0[256];
-      snprintf ( recalcStr, sizeof(recalcStr), " %.6f", fline.sumTwoFrecalc );
+      snprintf ( recalcStr, sizeof(recalcStr), " %.6f", fline.avTwoFrecalc );
       for ( UINT4 X = 0; X < fline.numDetectors ; X ++ )
         {
-          snprintf ( buf0, sizeof(buf0), " %.6f", fline.sumTwoFXrecalc[X] );
+          snprintf ( buf0, sizeof(buf0), " %.6f", fline.avTwoFXrecalc[X] );
           UINT4 len1 = strlen ( recalcStr ) + strlen ( buf0 ) + 1;
           if ( len1 > sizeof ( recalcStr ) ) {
             XLALPrintError ("%s: assembled output string too long! (%d > %d)\n", fn, len1, sizeof(recalcStr ));
@@ -279,7 +279,7 @@ static int print_gctFStatline_to_str(GCTtopOutputEntry fline, char* buf, int buf
           strcat ( recalcStr, buf0 );
         } /* for X < numDet */
 
-    } /* if sumTwoFX */
+    } /* if avTwoFX */
 
   int len;
   if (fline.have_f3dot){
@@ -298,7 +298,7 @@ static int print_gctFStatline_to_str(GCTtopOutputEntry fline, char* buf, int buf
                      fline.F2dot,
                      fline.F3dot,
                      fline.nc,
-                     fline.sumTwoF,
+                     fline.avTwoF,
                      BSGLstr,
                      recalcStr
                  );
@@ -318,7 +318,7 @@ static int print_gctFStatline_to_str(GCTtopOutputEntry fline, char* buf, int buf
                      fline.F1dot,
                      fline.F2dot,
                      fline.nc,
-                     fline.sumTwoF,
+                     fline.avTwoF,
                      BSGLstr,
                      recalcStr
                  );
