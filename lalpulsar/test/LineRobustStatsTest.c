@@ -47,6 +47,25 @@ XLALCheckBSGLDifferences ( const REAL4 diff,
 			  const CHAR *casestring
 			);
 
+// ----- deprecated API, kept here locally for comparisob -----
+
+REAL4
+XLALComputeLineVeto ( const REAL4 TwoF,
+		      const REAL4Vector *TwoFX,
+		      const REAL8 rhomaxline,
+		      const REAL8Vector *lX,
+		      const BOOLEAN useAllTerms
+);
+
+REAL4
+XLALComputeLineVetoArray ( const REAL4 TwoF,
+			   const UINT4 numDetectors,
+			   const REAL4 *TwoFX,
+			   const REAL8 logRhoTerm,
+			   const REAL8 *loglX,
+			   const BOOLEAN useAllTerms
+);
+
 /* ###################################  MAIN  ################################### */
 
 int main( int argc, char *argv[]) {
@@ -254,7 +273,6 @@ XLALCheckBSGLDifferences ( const REAL4 diff,
 
 } /* XLALCheckBSGLDifferences() */
 
-
 // ---------- OLD API functions - deprecated, but kept here locally for comparison ------------------------------
 
 /**
@@ -389,4 +407,3 @@ XLALComputeLineVetoArray ( const REAL4 TwoF,		/**< multi-detector \f$ \mathcal{F
   return LV;
 
 } /* XLALComputeLineVetoArray() */
-

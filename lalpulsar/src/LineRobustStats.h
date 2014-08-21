@@ -84,25 +84,6 @@ XLALParseLinePriors ( REAL4 oLGX[PULSAR_MAX_DETECTORS],
 );
 
 
-// ----- deprecated API ----------
-REAL4
-XLALComputeLineVeto ( const REAL4 TwoF,
-		      const REAL4Vector *TwoFX,
-		      const REAL8 rhomaxline,
-		      const REAL8Vector *lX,
-		      const BOOLEAN useAllTerms
-);
-
-REAL4
-XLALComputeLineVetoArray ( const REAL4 TwoF,
-			   const UINT4 numDetectors,
-			   const REAL4 *TwoFX,
-			   const REAL8 logRhoTerm,
-			   const REAL8 *loglX,
-			   const BOOLEAN useAllTerms
-);
-
-
 // @}
 
 #ifdef  __cplusplus
