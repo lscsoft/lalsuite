@@ -46,35 +46,35 @@ extern "C" {
 #include <math.h>
 
 /* additional includes */
-typedef struct tagLRstatSetup LRstatSetup;	///< internal storage for setup and pre-computed LRstat quantities
+typedef struct tagBSGLSetup BSGLSetup;	///< internal storage for setup and pre-computed BSGL quantities
 
 /*---------- exported DEFINES ----------*/
 
 /*---------- exported types ----------*/
 
 /** Type containing multi- and single-detector \f$ \mathcal{F} \f$-statistics and line-robust statistic */
-typedef struct tagLRcomponents {
+typedef struct tagBSGLComponents {
   REAL4 TwoF;				/**< multi-detector \f$ \mathcal{F} \f$-statistic value */
   REAL4 TwoFX[PULSAR_MAX_DETECTORS];	/**< fixed-size array of single-detector \f$ \mathcal{F} \f$-statistic values */
   UINT4 numDetectors;			/**< number of detectors, numDetectors=0 should make all code ignore the TwoFX field. */
-  REAL4 LRstat;				/**< multi-detector line-robust statistic value */
-} LRcomponents;
+  REAL4 log10BSGL;			/**< line-robust statistic \f$ \log_{10}B_{\mathrm{SGL}} \f$ */
+} BSGLComponents;
 
 /*---------- exported Global variables ----------*/
 
 /*---------- exported prototypes [API] ----------*/
 
-LRstatSetup *
-XLALCreateLRstatSetup ( const UINT4 numDetectors,
-			const REAL4 Fstar0,
-			const REAL4 oLGX[PULSAR_MAX_DETECTORS],
-                        const BOOLEAN useLogCorrection
+BSGLSetup *
+XLALCreateBSGLSetup ( const UINT4 numDetectors,
+                      const REAL4 Fstar0,
+                      const REAL4 oLGX[PULSAR_MAX_DETECTORS],
+                      const BOOLEAN useLogCorrection
 );
 
 REAL4
-XLALComputeLRstat ( const REAL4 twoF,
-		    const REAL4 twoFX[PULSAR_MAX_DETECTORS],
-		    const LRstatSetup *setup
+XLALComputeBSGL ( const REAL4 twoF,
+                  const REAL4 twoFX[PULSAR_MAX_DETECTORS],
+                  const BSGLSetup *setup
 );
 
 

@@ -166,17 +166,17 @@ static int gctNC_smaller(const void*a, const void*b) {
 }
 
 
-/* ordering function defining the toplist: SORT BY LRstat */
-static int gctLR_smaller(const void*a, const void*b) {
+/* ordering function defining the toplist: SORT BY BSGL */
+static int gctBSGL_smaller(const void*a, const void*b) {
 #ifdef DEBUG_SORTING
   if(debugfp)
     fprintf(debugfp,"%20lf  %20lf\n%20lf  %20lf\n\n",
 	    ((const GCTtopOutputEntry*)a)->sumTwoF,  ((const GCTtopOutputEntry*)b)->sumTwoF,
-	    ((const GCTtopOutputEntry*)a)->LRstat, ((const GCTtopOutputEntry*)b)->LRstat);
+	    ((const GCTtopOutputEntry*)a)->log10BSGL, ((const GCTtopOutputEntry*)b)->log10BSGL);
 #endif
-  if      (((const GCTtopOutputEntry*)a)->LRstat < ((const GCTtopOutputEntry*)b)->LRstat)
+  if      (((const GCTtopOutputEntry*)a)->log10BSGL < ((const GCTtopOutputEntry*)b)->log10BSGL)
     return 1;
-  else if (((const GCTtopOutputEntry*)a)->LRstat > ((const GCTtopOutputEntry*)b)->LRstat)
+  else if (((const GCTtopOutputEntry*)a)->log10BSGL > ((const GCTtopOutputEntry*)b)->log10BSGL)
     return -1;
   else if (((const GCTtopOutputEntry*)a)->sumTwoF < ((const GCTtopOutputEntry*)b)->sumTwoF)
     return 1;
@@ -207,7 +207,7 @@ int create_gctFStat_toplist(toplist_t**tl, UINT8 length, UINT4 whatToSortBy) {
     return( create_toplist(tl, length, sizeof(GCTtopOutputEntry), gctNC_smaller) );
   }
   else if (whatToSortBy==2) {
-    return( create_toplist(tl, length, sizeof(GCTtopOutputEntry), gctLR_smaller) );
+    return( create_toplist(tl, length, sizeof(GCTtopOutputEntry), gctBSGL_smaller) );
   }
   else {
     return( create_toplist(tl, length, sizeof(GCTtopOutputEntry), gctFStat_smaller) );
@@ -244,38 +244,39 @@ void sort_gctFStat_toplist(toplist_t*l) {
 static int print_gctFStatline_to_str(GCTtopOutputEntry fline, char* buf, int buflen) {
   const char *fn = __func__;
 
-  /* add extra output-field containing fields of LRstats struct, if non-NULL */
-  char LRstatStr[256] = "";	/* defaults to empty */
-  if ( fline.LRstat > -LAL_REAL4_MAX*0.2 ) /* if --computeLR=FALSE, the LRstat field was initialised to -LAL_REAL4_MAX. if --computeLR=TRUE, it is at least -LAL_REAL4_MAX*0.1 */
+  /* add extra output field for line-robust statistic BSGL */
+  char BSGLstr[256] = "";	/* defaults to empty */
+  if ( fline.log10BSGL > -LAL_REAL4_MAX*0.2 ) /* if --computeBSGL=FALSE, the log10BSGL field was initialised to -LAL_REAL4_MAX; if --computeBSGL=TRUE, it is at least -LAL_REAL4_MAX*0.1 */
     {
       char buf0[256];
-      snprintf ( LRstatStr, sizeof(LRstatStr), " %.6f", fline.LRstat );
+      snprintf ( BSGLstr, sizeof(BSGLstr), " %.6f", fline.log10BSGL );
       for ( UINT4 X = 0; X < fline.numDetectors ; X ++ )
         {
           snprintf ( buf0, sizeof(buf0), " %.6f", fline.sumTwoFX[X] );
-          UINT4 len1 = strlen ( LRstatStr ) + strlen ( buf0 ) + 1;
-          if ( len1 > sizeof ( LRstatStr ) ) {
-            XLALPrintError ("%s: assembled output string too long! (%d > %d)\n", fn, len1, sizeof(LRstatStr ));
+          UINT4 len1 = strlen ( BSGLstr ) + strlen ( buf0 ) + 1;
+          if ( len1 > sizeof ( BSGLstr ) ) {
+            XLALPrintError ("%s: assembled output string too long! (%d > %d)\n", fn, len1, sizeof(BSGLstr ));
             break;	/* we can't really terminate with error in this function, but at least we avoid crashing */
           }
-          strcat ( LRstatStr, buf0 );
+          strcat ( BSGLstr, buf0 );
         } /* for X < numDet */
 
-    } /* if fline.LRstat */
-  char LRRecalcStr[256] = "";	/* defaults to empty */
+    } /* if fline.log10BSGL */
+  /* add extra output fields for recalculated F-stats */
+  char recalcStr[256] = "";	/* defaults to empty */
   if ( fline.sumTwoFrecalc >= 0.0 ) /* this was initialised to -1.0 and is only >= 0.0 if actually recomputed in recalcToplistStats step */
     {
       char buf0[256];
-      snprintf ( LRRecalcStr, sizeof(LRRecalcStr), " %.6f", fline.sumTwoFrecalc );
+      snprintf ( recalcStr, sizeof(recalcStr), " %.6f", fline.sumTwoFrecalc );
       for ( UINT4 X = 0; X < fline.numDetectors ; X ++ )
         {
           snprintf ( buf0, sizeof(buf0), " %.6f", fline.sumTwoFXrecalc[X] );
-          UINT4 len1 = strlen ( LRRecalcStr ) + strlen ( buf0 ) + 1;
-          if ( len1 > sizeof ( LRRecalcStr ) ) {
-            XLALPrintError ("%s: assembled output string too long! (%d > %d)\n", fn, len1, sizeof(LRRecalcStr ));
+          UINT4 len1 = strlen ( recalcStr ) + strlen ( buf0 ) + 1;
+          if ( len1 > sizeof ( recalcStr ) ) {
+            XLALPrintError ("%s: assembled output string too long! (%d > %d)\n", fn, len1, sizeof(recalcStr ));
             break;	/* we can't really terminate with error in this function, but at least we avoid crashing */
           }
-          strcat ( LRRecalcStr, buf0 );
+          strcat ( recalcStr, buf0 );
         } /* for X < numDet */
 
     } /* if sumTwoFX */
@@ -298,8 +299,8 @@ static int print_gctFStatline_to_str(GCTtopOutputEntry fline, char* buf, int buf
                      fline.F3dot,
                      fline.nc,
                      fline.sumTwoF,
-                     LRstatStr,
-                     LRRecalcStr
+                     BSGLstr,
+                     recalcStr
                  );
   }
   else {
@@ -318,8 +319,8 @@ static int print_gctFStatline_to_str(GCTtopOutputEntry fline, char* buf, int buf
                      fline.F2dot,
                      fline.nc,
                      fline.sumTwoF,
-                     LRstatStr,
-                     LRRecalcStr
+                     BSGLstr,
+                     recalcStr
                  );
 }
   return len;
@@ -473,8 +474,8 @@ static int _atomic_write_gctFStat_toplist_to_file(toplist_t *l, const char *file
         sortstat = "<2F>";
       else if ( l->smaller == gctNC_smaller )
         sortstat = "nc";
-      else if ( l->smaller == gctLR_smaller )
-        sortstat = "LR";
+      else if ( l->smaller == gctBSGL_smaller )
+        sortstat = "BSGL";
       else {
         LogPrintf (LOG_CRITICAL, "Failed to write toplist sorting line, toplist is sorted by unknowns statistic.\n");
         length = -1;

@@ -28,8 +28,8 @@
 // ---------- internal types ----------
 // ----- module-internal global variables ----------
 
-// opaque internal setup structure for XLALComputeLRstat()
-struct tagLRstatSetup {
+// opaque internal setup structure for XLALComputeBSGL()
+struct tagBSGLSetup {
   UINT4 numDetectors;
   REAL4 Fstar0;
   REAL4 oLGX[PULSAR_MAX_DETECTORS];
@@ -47,14 +47,14 @@ struct tagLRstatSetup {
  * \newcommand{\Ftho}{\F_*^{(0)}}
  * \newcommand{\oLGX}{o_{\mathrm{LG}}^X}
  * \f]
- * Pre-compute the 'setup' for XLALComputeLRstat() for given prior parameters \f$\Ftho\f$ and \f$\{\oLGX\}\f$.
+ * Pre-compute the 'setup' for XLALComputeBSGL() for given prior parameters \f$\Ftho\f$ and \f$\{\oLGX\}\f$.
  */
-LRstatSetup *
-XLALCreateLRstatSetup ( const UINT4 numDetectors,			//!< [in] number of detectors \f$\Ndet\f$
-                        const REAL4 Fstar0,				//!< [in] prior parameter \f$\Ftho\f$
-                        const REAL4 oLGX[PULSAR_MAX_DETECTORS],		//!< [in] prior per-detector line odds \f$\{\oLGX\}\f$, if NULL: interpreted as \f$\oLGX=\frac{1}{\Ndet} \forall X\f$
-                        const BOOLEAN useLogCorrection			//!< [in] include log-term correction [slower] or not [faster, less accurate]
-                        )
+BSGLSetup *
+XLALCreateBSGLSetup ( const UINT4 numDetectors,			//!< [in] number of detectors \f$\Ndet\f$
+                      const REAL4 Fstar0,				//!< [in] prior parameter \f$\Ftho\f$
+                      const REAL4 oLGX[PULSAR_MAX_DETECTORS],		//!< [in] prior per-detector line odds \f$\{\oLGX\}\f$, if NULL: interpreted as \f$\oLGX=\frac{1}{\Ndet} \forall X\f$
+                      const BOOLEAN useLogCorrection			//!< [in] include log-term correction [slower] or not [faster, less accurate]
+                      )
 {
   // check input
   XLAL_CHECK_NULL ( (numDetectors >= 2) && (numDetectors <= PULSAR_MAX_DETECTORS), XLAL_EDOM, "numDetectors = %d not within [2,%d]\n", numDetectors, PULSAR_MAX_DETECTORS );
@@ -63,7 +63,7 @@ XLALCreateLRstatSetup ( const UINT4 numDetectors,			//!< [in] number of detector
   }
 
   // create setup struct
-  LRstatSetup *setup;
+  BSGLSetup *setup;
   XLAL_CHECK_NULL ( (setup = XLALCalloc( 1, sizeof(*setup) )) != NULL, XLAL_ENOMEM );
   setup->numDetectors = numDetectors;
   setup->Fstar0       = Fstar0;
@@ -93,14 +93,14 @@ XLALCreateLRstatSetup ( const UINT4 numDetectors,			//!< [in] number of detector
 
   return setup;
 
-} // XLALCreateLRstatSetup()
+} // XLALCreateBSGLSetup()
 
 
 /**
  * \f[
  * \newcommand{\F}{\mathcal{F}}
  * \newcommand{\Ftho}{\F_*^{(0)}}
- * \newcommand{\FpMax}{\F'_{\mathrm{max}}}
+ * \newcommand{\FpMax}{\F^{\#}_{\mathrm{max}}}
  * \newcommand{\Ndet}{N_{\mathrm{det}}}
  * \newcommand{\Signal}{\mathrm{S}}
  * \newcommand{\Gauss}{\mathrm{G}}
@@ -113,22 +113,23 @@ XLALCreateLRstatSetup ( const UINT4 numDetectors,			//!< [in] number of detector
  * \newcommand{\data}{\mathrm{data}}
  * \newcommand{\pL}{p_\Line}
  * \newcommand{\logten}{\log_{10}}
+ * \newcommand{\BSGL}{B_{\SGL}}
  * \f]
- * Compute the "line-robust" statistic 'LRstat' from multi-detector \f$2\F\f$ and single-detector \f$\{2\F^X\}\f$ 'Fstat' values
- * (coherent or semi-coherent sum) and a pre-computed 'setup' from XLALCreateLRstatSetup().
+ * Compute the 'line-robust statistic' \f$\logten \BSGL\f$ from multi-detector \f$2\F\f$ and single-detector \f$\{2\F^X\}\f$ 'F-stat values'
+ * (coherent or semi-coherent sum) and a pre-computed 'setup' from XLALCreateBSGLSetup().
  *
- * The line-robust statistic is defined as \f$\mathrm{LRstat} = \logten B_\SGL\f$, where \f$B_\SGL\f$ is the BayesFactor[Signal-vs-Gauss_OR_Line], i.e.
- * \f$B_\SGL \equiv \frac{P(\data | \text{Signal})}{P(\data | \text{Gauss or Line})}\f$, which is related to the odds ratio
- * via \f$\OSGL = B_\SGL\,\oSGL\f$ in terms of the prior odds \f$\oSGL\f$.
+ * \f$\BSGL\f$ is the BayesFactor[Signal-vs-Gauss_OR_Line], i.e.
+ * \f$\BSGL \equiv \frac{P(\data | \text{Signal})}{P(\data | \text{Gauss or Line})}\f$, which is related to the odds ratio
+ * via \f$\OSGL = \oSGL\,\BSGL\f$ in terms of the prior odds \f$\oSGL\f$.
  *
  * Here we use the odds ratio derived in Eq.(36) (and Eq.(55)) of \cite KPPLS2014, from which we can obtain
  * \f{equation}{
- * \ln B_\SGL = \F - \FpMax - \ln\left( e^{C - \FpMax} + \sum_X e^{\F^X + C^X - \FpMax} \right) \,,
+ * \ln \BSGL = \F - \FpMax - \ln\left( e^{C - \FpMax} + \sum_X e^{\F^X + C^X - \FpMax} \right) \,,
  * \f}
  * where \c setup->useLogCorrection controls whether or not to include the (usually small) log-correction of the last term,
  * and we defined
  * \f{equation}{ \FpMax \equiv \max\left[ C, \{ \F^X + C^X \} \right] \f}
- * and \f$C,\{C^X\}\f$ are the prior quantities pre-computed in XLALCreateLRstatSetup(), namely
+ * and \f$C,\{C^X\}\f$ are the prior quantities pre-computed in XLALCreateBSGLSetup(), namely
  * \f{align}{
  * C &\equiv \Ftho + \ln(1-\pL) = \Ftho - \ln(1+\oLG)\,,\\
  * C^X &\equiv \ln\frac{\pL\,r^X}{\Ndet} = \ln \oLGX - \ln(1+\oLG)\,,
@@ -138,14 +139,16 @@ XLALCreateLRstatSetup ( const UINT4 numDetectors,			//!< [in] number of detector
  * \f$ r^X = \frac{\oLGX\, \Ndet}{\oLG} \;\f$ [Eq.(23)],
  * and \f$\pL = \frac{\oLG}{1 + \oLG} \;\f$ [Eq.(37)].
  *
+ * Here, \f$\FpMax\f$ differs from \f$\F''_{\mathrm{max}}\f$ from [Eq.(41)] by \f$\ln\Ndet\f$, due to summation instead of an average over detectors.
+ *
  * \return NOTE: return is \f$\logten B_\SGL = \ln B_\SGL \, \logten e\f$
  *
  */
 REAL4
-XLALComputeLRstat ( const REAL4 twoF,				//!< [in] multi-detector Fstat \f$2\F\f$ (coherent or semi-coherent sum(!))
-                    const REAL4 twoFX[PULSAR_MAX_DETECTORS],	//!< [in] per-detector Fstats \f$\{2\F^X\}\f$ (coherent or semi-coherent sum(!))
-                    const LRstatSetup *setup			//!< [in] pre-computed setup from XLALCreateLRstatSetup()
-                    )
+XLALComputeBSGL ( const REAL4 twoF,				//!< [in] multi-detector Fstat \f$2\F\f$ (coherent or semi-coherent sum(!))
+                  const REAL4 twoFX[PULSAR_MAX_DETECTORS],	//!< [in] per-detector Fstats \f$\{2\F^X\}\f$ (coherent or semi-coherent sum(!))
+                  const BSGLSetup *setup			//!< [in] pre-computed setup from XLALCreateBSGLSetup()
+                  )
 {
   XLAL_CHECK ( setup != NULL, XLAL_EINVAL );
 
@@ -178,7 +181,7 @@ XLALComputeLRstat ( const REAL4 twoF,				//!< [in] multi-detector Fstat \f$2\F\f
 
   return ln_BSGL * LAL_LOG10E; // return log10(B_SGL)
 
-} // XLALComputeLRstat()
+} // XLALComputeBSGL()
 
 
 /**

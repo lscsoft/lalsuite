@@ -23,7 +23,7 @@
  * \author R. Prix, D. Keitel
  * \file
  * \brief
- * Generate N samples of various statistics (F-stat, LR-stat,...) drawn from their
+ * Generate N samples of various statistics (F-stat, BSGL,...) drawn from their
  * respective distributions, assuming Gaussian noise, and drawing signal params from
  * their (given) priors
  *
@@ -112,9 +112,9 @@ typedef struct {
   INT4 dataDuration;	/**< data-span to generate */
   INT4 TAtom;		/**< Fstat atoms time baseline */
 
-  BOOLEAN computeLR;	/**< also compute line-robust statistic */
-  REAL8 LR_Fstar0;	/**< transition scale parameter F*(0) for line-robust statistic */
-  LALStringVector* LR_oLGX; /**< Line-to-gauss prior ratios oLGX for line-robust statistic */
+  BOOLEAN computeBSGL;	/**< also compute line-robust statistic (BSGL) */
+  REAL8 Fstar0;		/**< transition-scale parameter F*(0) for line-robust statistic */
+  LALStringVector* oLGX; /**< Line-to-gauss prior odds oLGX for line-robust statistic */
 
   LALStringVector* sqrtSX; /**< per-detector noise PSD sqrt(SX) */
 
@@ -166,7 +166,7 @@ int XLALInitUserVars ( UserInput_t *uvar );
 int XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar );
 int XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior, const UserInput_t *uvar );
 MultiLIGOTimeGPSVector * XLALCreateMultiLIGOTimeGPSVector ( UINT4 numDetectors );
-int write_LR_candidate_to_fp ( FILE *fp, const LRcomponents *stats, const LALStringVector *IFOs, const InjParams_t *injParams, const BOOLEAN haveLR );
+int write_BSGL_candidate_to_fp ( FILE *fp, const BSGLComponents *stats, const LALStringVector *IFOs, const InjParams_t *injParams, const BOOLEAN haveBSGL );
 MultiNoiseWeights * XLALComputeConstantMultiNoiseWeightsFromNoiseFloor (const MultiNoiseFloor *multiNoiseFloor, const MultiLIGOTimeGPSVector *multiTS, const UINT4 Tsft );
 
 /* exportable API */
@@ -251,7 +251,7 @@ int main(int argc,char *argv[])
 	  XLAL_ERROR ( XLAL_EIO );
 	}
       fprintf (fpStats, "%s", cfg.logString );		/* write search log comment */
-      if ( write_LR_candidate_to_fp ( fpStats, NULL, uvar.IFOs, NULL, uvar.computeLR ) != XLAL_SUCCESS ) { /* write header-line comment */
+      if ( write_BSGL_candidate_to_fp ( fpStats, NULL, uvar.IFOs, NULL, uvar.computeBSGL ) != XLAL_SUCCESS ) { /* write header-line comment */
         XLAL_ERROR ( XLAL_EFUNC );
       }
     } /* if outputStats */
@@ -273,21 +273,21 @@ int main(int argc,char *argv[])
 
   multiAMBuffer_t XLAL_INIT_DECL(multiAMBuffer);      /* prepare AM-buffer */
 
-  /* ----- prepare LR-stat computation */
-  LRstatSetup *LRsetup = NULL;
-  if ( uvar.computeLR )
+  /* ----- prepare BSGL computation */
+  BSGLSetup *BSGLsetup = NULL;
+  if ( uvar.computeBSGL )
     {
       BOOLEAN useLogCorrection = TRUE;
       REAL4 *oLGX_p = NULL;
       REAL4 oLGX[PULSAR_MAX_DETECTORS];
-      if ( uvar.LR_oLGX != NULL )
+      if ( uvar.oLGX != NULL )
         {
-          XLAL_CHECK ( uvar.LR_oLGX->length == numDetectors, XLAL_EINVAL, "Invalid input: length(LR_oLGX) = %d differs from number of detectors (%d)'\n", uvar.LR_oLGX->length, numDetectors );
-          XLAL_CHECK ( XLALParseLinePriors ( &oLGX[0], uvar.LR_oLGX ) == XLAL_SUCCESS, XLAL_EFUNC );
+          XLAL_CHECK ( uvar.oLGX->length == numDetectors, XLAL_EINVAL, "Invalid input: length(oLGX) = %d differs from number of detectors (%d)'\n", uvar.oLGX->length, numDetectors );
+          XLAL_CHECK ( XLALParseLinePriors ( &oLGX[0], uvar.oLGX ) == XLAL_SUCCESS, XLAL_EFUNC );
           oLGX_p = &oLGX[0];
         }
-      XLAL_CHECK ( ( LRsetup = XLALCreateLRstatSetup ( numDetectors, uvar.LR_Fstar0, oLGX_p, useLogCorrection ) ) != NULL, XLAL_EFUNC );
-    } // if computeLR
+      XLAL_CHECK ( ( BSGLsetup = XLALCreateBSGLSetup ( numDetectors, uvar.Fstar0, oLGX_p, useLogCorrection ) ) != NULL, XLAL_EFUNC );
+    } // if computeBSGL
 
   /* ----- main MC loop over numDraws trials ---------- */
   INT4 i;
@@ -306,11 +306,11 @@ int main(int argc,char *argv[])
         XLAL_ERROR ( XLAL_EFUNC );
       } /* if fpInjParams & failure*/
 
-      /* initialise LRcomponents structure and allocate memory */
-      LRcomponents XLAL_INIT_DECL(synthStats); /* struct containing multi-detector Fstat, single-detector Fstats, line-robust stat */
+      /* initialise BSGLComponents structure and allocate memory */
+      BSGLComponents XLAL_INIT_DECL(synthStats); /* struct containing multi-detector Fstat, single-detector Fstats, line-robust stat */
       synthStats.numDetectors = numDetectors;
 
-      /* compute F- and LR-statistics from atoms */
+      /* compute F- and BSGListics from atoms */
       UINT4 X;
       for ( X=0; X < numDetectors; X++ )    {
         synthStats.TwoFX[X] = XLALComputeFstatFromAtoms ( multiAtoms, X );
@@ -326,9 +326,9 @@ int main(int argc,char *argv[])
         XLAL_ERROR ( XLAL_EFUNC );
       }
 
-      if ( uvar.computeLR ) {
-        synthStats.LRstat = XLALComputeLRstat ( synthStats.TwoF, synthStats.TwoFX, LRsetup );
-        XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "XLALComputeLRstat() failed with xlalErrno = %d\n", xlalErrno );
+      if ( uvar.computeBSGL ) {
+        synthStats.log10BSGL = XLALComputeBSGL ( synthStats.TwoF, synthStats.TwoFX, BSGLsetup );
+        XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "XLALComputeBSGL() failed with xlalErrno = %d\n", xlalErrno );
       }
 
       /* ----- if requested, output atoms-vector into file */
@@ -361,7 +361,7 @@ int main(int argc,char *argv[])
 
 
       /* ----- if requested, output transient-cand statistics */
-      if ( fpStats && write_LR_candidate_to_fp ( fpStats, &synthStats, uvar.IFOs, &injParamsDrawn, uvar.computeLR ) != XLAL_SUCCESS ) {
+      if ( fpStats && write_BSGL_candidate_to_fp ( fpStats, &synthStats, uvar.IFOs, &injParamsDrawn, uvar.computeBSGL ) != XLAL_SUCCESS ) {
         XLALPrintError ( "%s: write_transientCandidate_to_fp() failed.\n", __func__ );
         XLAL_ERROR ( XLAL_EFUNC );
       }
@@ -386,8 +386,8 @@ int main(int argc,char *argv[])
   XLALDestroyPDF1D ( cfg.AmpPrior.pdf_psi );
   XLALDestroyPDF1D ( cfg.AmpPrior.pdf_phi0 );
 
-  XLALFree ( LRsetup );
-  LRsetup = NULL;
+  XLALFree ( BSGLsetup );
+  BSGLsetup = NULL;
 
   if ( cfg.logString ) {
     XLALFree ( cfg.logString );
@@ -429,9 +429,9 @@ XLALInitUserVars ( UserInput_t *uvar )
   uvar->numDraws = 1;
   uvar->TAtom = 1800;
 
-  uvar->computeLR = 1;
-  uvar->LR_Fstar0 = -LAL_REAL4_MAX; /* corresponding to OSL limit */
-  uvar->LR_oLGX = NULL;
+  uvar->computeBSGL = 1;
+  uvar->Fstar0 = -LAL_REAL4_MAX; /* corresponding to OSL limit */
+  uvar->oLGX = NULL;
 
   uvar->sqrtSX = NULL;
   uvar->useFReg = 0;
@@ -475,9 +475,9 @@ XLALInitUserVars ( UserInput_t *uvar )
   XLALregINTUserStruct ( dataDuration,	 	 0,  UVAR_OPTIONAL, "data-span to generate (in seconds)");
 
   /* misc params */
-  XLALregBOOLUserStruct ( computeLR,		 0, UVAR_OPTIONAL, "Also compute line-robust statistic");
-  XLALregREALUserStruct ( LR_Fstar0,		 0, UVAR_OPTIONAL, "transition scale parameter F*(0) for line-robust statistic");
-  XLALregLISTUserStruct ( LR_oLGX,		 0, UVAR_OPTIONAL, "line-to-gauss prior ratios for different detectors X, length must be numDetectors. (Defaults to oLGX=1/Ndet)");
+  XLALregBOOLUserStruct ( computeBSGL,		 0, UVAR_OPTIONAL, "Compute line-robust statistic (BSGL)");
+  XLALregREALUserStruct ( Fstar0,		 0, UVAR_OPTIONAL, "BSGL: transition-scale parameter 'Fstar0'");
+  XLALregLISTUserStruct ( oLGX,			 0, UVAR_OPTIONAL, "BSGL: prior per-detector line-vs-Gauss odds, length must be numDetectors. (Defaults to oLGX=1/Ndet)");
 
   XLALregLISTUserStruct ( sqrtSX,		 0, UVAR_OPTIONAL, "Per-detector noise PSD sqrt(SX). Only ratios relevant to compute noise weights. Defaults to 1,1,...");
 
@@ -794,13 +794,13 @@ XLALCreateMultiLIGOTimeGPSVector ( UINT4 numDetectors )
 
 
 /**
- * Write one line for given LR candidate into output file.
+ * Write one line for given BSGL candidate into output file.
  *
  * NOTE: input stats and injParams can be NULL pointers, then writes header comment instead
  *
  */
 int
-write_LR_candidate_to_fp ( FILE *fp, const LRcomponents *stats, const LALStringVector *IFOs, const InjParams_t *injParams, const BOOLEAN haveLR )
+write_BSGL_candidate_to_fp ( FILE *fp, const BSGLComponents *stats, const LALStringVector *IFOs, const InjParams_t *injParams, const BOOLEAN haveBSGL )
 {
 
   XLAL_CHECK ( fp, XLAL_EINVAL, "Invalid NULL filepointer input." );
@@ -817,8 +817,8 @@ write_LR_candidate_to_fp ( FILE *fp, const LRcomponents *stats, const LALStringV
       XLAL_CHECK ( len1 <= sizeof ( stat_header_string ), XLAL_EBADLEN, "Assembled output string too long! (%d > %d)", len1, sizeof(stat_header_string));
       strcat ( stat_header_string, buf0 );
     }
-    if ( haveLR ) {
-      snprintf ( buf0, sizeof(buf0), "     LR" );
+    if ( haveBSGL ) {
+      snprintf ( buf0, sizeof(buf0), "     log10BSGL" );
       strcat ( stat_header_string, buf0 );
     }
     fprintf(fp, "%%%% freq  alpha    delta    f1dot    %s\n", stat_header_string);
@@ -841,8 +841,8 @@ write_LR_candidate_to_fp ( FILE *fp, const LRcomponents *stats, const LALStringV
     XLAL_CHECK ( len1 <= sizeof ( statString ), XLAL_EBADLEN, "Assembled output string too long! (%d > %d)", len1, sizeof(statString));
     strcat ( statString, buf0 );
   } /* for X < IFOs->length */
-  if ( haveLR ) {
-    snprintf ( buf0, sizeof(buf0), " %.6f", stats->LRstat );
+  if ( haveBSGL ) {
+    snprintf ( buf0, sizeof(buf0), " %.6f", stats->log10BSGL );
     strcat ( statString, buf0 );
   }
   fprintf (fp, "%.6f %.6f %.6f %.6f %s\n",
@@ -855,7 +855,7 @@ write_LR_candidate_to_fp ( FILE *fp, const LRcomponents *stats, const LALStringV
 
   return XLAL_SUCCESS;
 
-} /* write_LR_candidate_to_fp() */
+} /* write_BSGL_candidate_to_fp() */
 
 
 /**

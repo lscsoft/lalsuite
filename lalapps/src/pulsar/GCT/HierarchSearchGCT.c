@@ -135,7 +135,7 @@ typedef struct {
   REAL8 tStack;                    /**< duration of stacks */
   UINT4 nStacks;                   /**< number of stacks */
   LALSegList *segmentList;         /**< parsed segment list read from user-specified input file --segmentList */
-  LRstatSetup *LRsetup;            /**< pre-computed setup for LineRobust statistics (LRstat) */
+  BSGLSetup *BSGLsetup;           /**< pre-computed setup for line-robust statistic BSGL */
   REAL8 dFreqStack;                /**< frequency resolution of Fstat calculation */
   REAL8 df1dot;                    /**< coarse grid resolution in spindown */
   REAL8 df2dot;                    /**< coarse grid resolution in 2nd spindown */
@@ -306,7 +306,7 @@ int MAIN( int argc, char *argv[]) {
 
   /* fstat candidate structure for candidate toplist*/
   toplist_t *semiCohToplist=NULL;
-  toplist_t *semiCohToplist2=NULL;	// only used for SORTBY_DUAL_F_LR: 1st toplist sorted by 'F', 2nd one by 'LR'
+  toplist_t *semiCohToplist2=NULL;	// only used for SORTBY_DUAL_F_BSGL: 1st toplist sorted by 'F', 2nd one by 'BSGL'
 
   /* template and grid variables */
   static DopplerSkyScanInit scanInit;   /* init-structure for DopperScanner */
@@ -344,10 +344,10 @@ int MAIN( int argc, char *argv[]) {
   BOOLEAN uvar_recalcToplistStats = FALSE; 	/* Do additional analysis for all toplist candidates, output F, FXvector for postprocessing */
 
   // ----- Line robust stats parameters ----------
-  BOOLEAN uvar_computeLR = FALSE;          	/* In Fstat loop, compute LineRobust statistic (LRstat) using single-IFO F-stats */
-  BOOLEAN uvar_LR_useLogCorrection = FALSE;	/* compute log-correction in LRstat (slower) or not (faster) */
-  REAL8   uvar_LR_Fstar0 = 0.0;           	/* Prior parameter 'Fstar0', see documentation for XLALCreateLRstatSetup() for details */
-  LALStringVector *uvar_LR_oLGX = NULL;       	/* prior per-detector line-vs-Gauss odds ratios 'oLGX', see  XLALCreateLRstatSetup() for details */
+  BOOLEAN uvar_computeBSGL = FALSE;          	/* In Fstat loop, compute line-robust statistic (BSGL=log10BSGL) using single-IFO F-stats */
+  BOOLEAN uvar_BSGLlogcorr = FALSE;		/* compute log-correction in line-robust statistic BSGL (slower) or not (faster) */
+  REAL8   uvar_Fstar0 = 0.0;			/* BSGL transition-scale parameter 'Fstar0', see documentation for XLALCreateBSGLSetup() for details */
+  LALStringVector *uvar_oLGX = NULL;       	/* prior per-detector line-vs-Gauss odds ratios 'oLGX', see XLALCreateBSGLSetup() for details */
   // --------------------------------------------
 
   CHAR *uvar_outputSingleSegStats = NULL; /* Additionally output single-segment Fstats for each final toplist candidate */
@@ -491,11 +491,10 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "recalcToplistStats", 0, UVAR_OPTIONAL, "Additional analysis for toplist candidates, recalculate 2F, 2FX at finegrid", &uvar_recalcToplistStats), &status);
 
   // ----- Line robust stats parameters ----------
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "computeLR",    0, UVAR_OPTIONAL,  "Compute LineRobust statistic (LRstat) using single-IFO F-stats", &uvar_computeLR), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "LR_Fstar0",    0, UVAR_OPTIONAL,  "LineRobustStat: Prior parameter 'Fstar0'", &uvar_LR_Fstar0 ), &status);
-  LAL_CALL( LALRegisterLISTUserVar(   &status, "LR_oLGX",      0, UVAR_OPTIONAL,  "LineRobustStat: Prior per-detector line-vs-Gauss odds ratios 'oLGX' (Defaults to oLGX=1/Ndet)", &uvar_LR_oLGX), &status);
-
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "LR_useLogCorrection",0, UVAR_DEVELOPER, "LineRobustStat: include log-correction terms (slower) or not (faster)", &uvar_LR_useLogCorrection), &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "computeBSGL",   0, UVAR_OPTIONAL, "Compute and output line-robust statistic (BSGL)", &uvar_computeBSGL), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "Fstar0",       0, UVAR_OPTIONAL,  "BSGL: transition-scale parameter 'Fstar0'", &uvar_Fstar0 ), &status);
+  LAL_CALL( LALRegisterLISTUserVar(   &status, "oLGX",         0, UVAR_OPTIONAL,  "BSGL: prior per-detector line-vs-Gauss odds 'oLGX' (Defaults to oLGX=1/Ndet)", &uvar_oLGX), &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "BSGLlogcorr",  0, UVAR_DEVELOPER, "BSGL: include log-correction terms (slower) or not (faster)", &uvar_BSGLlogcorr), &status);
   // --------------------------------------------
 
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "FstatMethod",  0, UVAR_OPTIONAL, XLALFstatMethodHelpString(), &uvar_FstatMethod ), &status);
@@ -505,7 +504,7 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterINTUserVar(    &status, "Dterms",       0, UVAR_DEVELOPER, "No. of terms to keep in Dirichlet Kernel", &uvar_Dterms ), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "skyPointIndex",0, UVAR_DEVELOPER, "Only analyze this skypoint in grid", &uvar_skyPointIndex ), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "dopplerMax",   0, UVAR_DEVELOPER, "Max Doppler shift",  &uvar_dopplerMax), &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "SortToplist",  0, UVAR_DEVELOPER, "Sort toplist by: 0=avg2F, 1=numbercount, 2=LRstat, 3=dual-toplists 'avg2F+LR'",  &uvar_SortToplist), &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "SortToplist",  0, UVAR_DEVELOPER, "Sort toplist by: 0=avg2F, 1=numbercount, 2=BSGL, 3=dual-toplists 'avg2F+BSGL'",  &uvar_SortToplist), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "outputSingleSegStats", 0,  UVAR_DEVELOPER, "Base filename for single-segment Fstat output (1 file per final toplist candidate!)", &uvar_outputSingleSegStats),  &status);
 
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "outputTiming", 0, UVAR_DEVELOPER, "Append timing information into this file", &uvar_outputTiming), &status);
@@ -585,21 +584,21 @@ int MAIN( int argc, char *argv[]) {
     XLALPrintError ( "Invalid value %d specified for toplist sorting, must be within [0, %d]\n", uvar_SortToplist, SORTBY_LAST - 1 );
     return( HIERARCHICALSEARCH_EBAD );
   }
-  if ( (uvar_SortToplist == SORTBY_LR || uvar_SortToplist == SORTBY_DUAL_F_LR) && !uvar_computeLR ) {
-    fprintf(stderr, "Toplist sorting by LR-stat only possible if --computeLR given.\n");
+  if ( (uvar_SortToplist == SORTBY_BSGL || uvar_SortToplist == SORTBY_DUAL_F_BSGL) && !uvar_computeBSGL ) {
+    fprintf(stderr, "Toplist sorting by BSGL only possible if --computeBSGL given.\n");
     return( HIERARCHICALSEARCH_EBAD );
   }
 
   /* create toplist -- semiCohToplist has the same structure
      as a fstat candidate, so treat it as a fstat candidate */
-  if ( uvar_SortToplist == SORTBY_DUAL_F_LR )	// special treatement of 'dual' toplists: 1st one sorted by 'F', 2nd one by 'LR'
+  if ( uvar_SortToplist == SORTBY_DUAL_F_BSGL )	// special treatement of 'dual' toplists: 1st one sorted by 'F', 2nd one by 'BSGL'
     {
       XLAL_CHECK ( 0 == create_gctFStat_toplist ( &semiCohToplist, uvar_nCand1, SORTBY_F ),
                    XLAL_EFUNC, "create_gctFStat_toplist() failed for nCand=%d and sortBy=%d\n", uvar_nCand1, SORTBY_F );
-      XLAL_CHECK ( 0 == create_gctFStat_toplist ( &semiCohToplist2, uvar_nCand1, SORTBY_LR ),
-                   XLAL_EFUNC, "create_gctFStat_toplist() failed for nCand=%d and sortBy=%d\n", uvar_nCand1, SORTBY_LR );
+      XLAL_CHECK ( 0 == create_gctFStat_toplist ( &semiCohToplist2, uvar_nCand1, SORTBY_BSGL ),
+                   XLAL_EFUNC, "create_gctFStat_toplist() failed for nCand=%d and sortBy=%d\n", uvar_nCand1, SORTBY_BSGL );
     }
-  else	// 'normal' single-sorting toplist cases (sortby 'F', 'nc' or 'LR')
+  else	// 'normal' single-sorting toplist cases (sortby 'F', 'nc' or 'BSGL')
     {
       XLAL_CHECK ( 0 == create_gctFStat_toplist ( &semiCohToplist, uvar_nCand1, uvar_SortToplist),
                    XLAL_EFUNC, "create_gctFStat_toplist() failed for nCand=%d and sortBy=%d\n", uvar_nCand1, uvar_SortToplist );
@@ -996,32 +995,32 @@ int MAIN( int argc, char *argv[]) {
   const UINT4 numDetectors = detectorIDs->length;
 
   // compute single-IFO F-statistics for line-robust stats
-  if ( uvar_computeLR )
+  if ( uvar_computeBSGL )
     {
       Fstat_what |= FSTATQ_2F_PER_DET;
 
-      /* take LR user vars and pre-compute the corresponding LRsetup */
+      /* take BSGL user vars and pre-compute the corresponding BSGLsetup */
       REAL4 *oLGX_p = NULL;
       REAL4 oLGX[PULSAR_MAX_DETECTORS];
-      if ( uvar_LR_oLGX != NULL )
+      if ( uvar_oLGX != NULL )
         {
-          if ( uvar_LR_oLGX->length != numDetectors ) {
-            fprintf ( stderr, "Invalid input: length(LR_oLGX) = %d differs from number of detectors (%d)'\n", uvar_LR_oLGX->length, numDetectors );
+          if ( uvar_oLGX->length != numDetectors ) {
+            fprintf ( stderr, "Invalid input: length(oLGX) = %d differs from number of detectors (%d)'\n", uvar_oLGX->length, numDetectors );
             return( HIERARCHICALSEARCH_EBAD );
           }
-          if ( XLALParseLinePriors ( &oLGX[0], uvar_LR_oLGX ) != XLAL_SUCCESS ) {
-            fprintf(stderr, "Invalid input LR_oLGX'\n" );
+          if ( XLALParseLinePriors ( &oLGX[0], uvar_oLGX ) != XLAL_SUCCESS ) {
+            fprintf(stderr, "Invalid input oLGX'\n" );
             return( HIERARCHICALSEARCH_EBAD );
           }
           oLGX_p = &oLGX[0];
-        } // if uvar_LR_oLGX != NULL
+        } // if uvar_oLGX != NULL
 
-      usefulParams.LRsetup = XLALCreateLRstatSetup ( numDetectors, uvar_LR_Fstar0, oLGX_p, uvar_LR_useLogCorrection );
-      if ( usefulParams.LRsetup == NULL ) {
-        fprintf(stderr, "XLALCreateLRstatSetup() failed\n");
+      usefulParams.BSGLsetup = XLALCreateBSGLSetup ( numDetectors, uvar_Fstar0, oLGX_p, uvar_BSGLlogcorr );
+      if ( usefulParams.BSGLsetup == NULL ) {
+        fprintf(stderr, "XLALCreateBSGLSetup() failed\n");
         return( HIERARCHICALSEARCH_EBAD );
       }
-    } // if uvar_computeLR
+    } // if uvar_computeBSGL
 
   /* assemble column headings string for output file */
   CHAR colum_headings_string_base[256];
@@ -1033,8 +1032,8 @@ int MAIN( int argc, char *argv[]) {
   }
 
   UINT4 column_headings_string_length = sizeof(colum_headings_string_base);
-  if ( uvar_computeLR ) {
-    column_headings_string_length += 3 + numDetectors*8; /* 3 for " LR" and 8 per detector for " <2F_XY>" */
+  if ( uvar_computeBSGL ) {
+    column_headings_string_length += 10 + numDetectors*8; /* 10 for " log10BSGL" and 8 per detector for " <2F_XY>" */
   }
   if ( uvar_recalcToplistStats ) {
     column_headings_string_length += 6 + numDetectors*9; /* 6 for " <2Fr>" and 9 per detector for " <2Fr_XY>" */
@@ -1045,8 +1044,8 @@ int MAIN( int argc, char *argv[]) {
   char column_headings_string[column_headings_string_length];
   XLAL_INIT_MEM( column_headings_string );
   strcat ( column_headings_string, colum_headings_string_base );
-  if ( uvar_computeLR ) {
-    strcat ( column_headings_string, " LR" );
+  if ( uvar_computeBSGL ) {
+    strcat ( column_headings_string, " log10BSGL" );
     for ( UINT4 X = 0; X < numDetectors ; X ++ ) {
       char headingX[9];
       snprintf ( headingX, sizeof(headingX), " <2F_%s>", detectorIDs->data[X] );
@@ -1213,7 +1212,7 @@ int MAIN( int argc, char *argv[]) {
 
           /* allocate memory for coarsegrid */
           coarsegrid.TwoF = (REAL4 *)LALRealloc( coarsegrid.TwoF, coarsegrid.length * sizeof(REAL4));
-	  if ( uvar_computeLR ) {
+	  if ( uvar_computeBSGL ) {
             coarsegrid.TwoFX = (REAL4 *)LALRealloc( coarsegrid.TwoFX, coarsegrid.numDetectors * coarsegrid.length * sizeof(REAL4));
           }
           coarsegrid.Uindex = (UINT4 *)LALRealloc( coarsegrid.Uindex, coarsegrid.length * sizeof(UINT4));
@@ -1312,7 +1311,7 @@ int MAIN( int argc, char *argv[]) {
 
           finegrid.nc = (FINEGRID_NC_T *)ALRealloc( finegrid.nc, finegrid.length * sizeof(FINEGRID_NC_T));
           finegrid.sumTwoF = (REAL4 *)ALRealloc( finegrid.sumTwoF, finegrid.length * sizeof(REAL4));
-	  if ( uvar_computeLR ) {
+	  if ( uvar_computeBSGL ) {
             finegrid.sumTwoFX = (REAL4 *)ALRealloc( finegrid.sumTwoFX, finegrid.numDetectors * finegrid.freqlengthAL * sizeof(REAL4));
           }
 
@@ -1346,7 +1345,7 @@ int MAIN( int argc, char *argv[]) {
               /* initialize the entire finegrid ( 2F-sum and number count set to 0 ) */
               memset( finegrid.nc, 0, finegrid.length * sizeof(FINEGRID_NC_T) );
               memset( finegrid.sumTwoF, 0, finegrid.length * sizeof(REAL4) );
-	      if ( uvar_computeLR ) {
+	      if ( uvar_computeBSGL ) {
                 memset( finegrid.sumTwoFX, 0, finegrid.numDetectors * finegrid.freqlengthAL * sizeof(REAL4) );
               }
 
@@ -1485,7 +1484,7 @@ int MAIN( int argc, char *argv[]) {
 
                     /* ============ Copy the *2F* value ============ */
                     coarsegrid.TwoF[CG_INDEX(coarsegrid, k, ifreq)] = Fstat_res->twoF[ifreq];
-                    if ( uvar_computeLR ) {
+                    if ( uvar_computeBSGL ) {
                       for (UINT4 X = 0; X < coarsegrid.numDetectors; X++) {
                         INT4 detid = -1;
                         for (UINT4 Y = 0; Y < Fstat_res->numDetectors; Y++) { /* look for matching detector ID in this segment */
@@ -1499,7 +1498,7 @@ int MAIN( int argc, char *argv[]) {
                           coarsegrid.TwoFX[CG_FX_INDEX(coarsegrid, X, k, ifreq)] = Fstat_res->twoFPerDet[detid][ifreq];
                         }
                       } /* for X < numDetectors */
-                    } /* if ( uvar_computeLR ) */
+                    } /* if ( uvar_computeBSGL ) */
 
                   } /* END: Loop over coarse-grid frequency bins (ifreq) */
 
@@ -1556,7 +1555,7 @@ int MAIN( int argc, char *argv[]) {
 #else
                 gc_hotloop_no_nc ( fgrid2F, cgrid2F, finegrid.freqlength );
 #endif
-                if ( uvar_computeLR ) {
+                if ( uvar_computeBSGL ) {
                   for (UINT4 X = 0; X < finegrid.numDetectors; X++) {
                     REAL4 * cgrid2FX = coarsegrid.TwoFX + CG_FX_INDEX(coarsegrid, X, k, U1idx);
                     REAL4 * fgrid2FX = finegrid.sumTwoFX + FG_FX_INDEX(finegrid, X, 0);
@@ -1573,7 +1572,7 @@ int MAIN( int argc, char *argv[]) {
                   fgrid2F++;
                   cgrid2F++;
                 }
-                if ( uvar_computeLR ) {
+                if ( uvar_computeBSGL ) {
                   for (UINT4 X = 0; X < finegrid.numDetectors; X++) {
                     REAL4 * cgrid2FX = coarsegrid.TwoFX + CG_FX_INDEX(coarsegrid, X, k, U1idx);
                     REAL4 * fgrid2FX = finegrid.sumTwoFX + FG_FX_INDEX(finegrid, X, 0);
@@ -1717,14 +1716,14 @@ int MAIN( int argc, char *argv[]) {
 
   LogPrintf ( LOG_DEBUG, "Writing output ... ");
   XLAL_CHECK ( write_hfs_oputput(uvar_fnameout, semiCohToplist) != -1, XLAL_EFAILED, "write_hfs_oputput('%s', toplist) failed.!\n", uvar_fnameout );
-  // output optional second toplist, if it exists, into "<uvar_fnameout>-LR"
+  // output optional second toplist, if it exists, into "<uvar_fnameout>-BSGL"
   if ( semiCohToplist2 )
     {
       LogPrintf ( LOG_DEBUG, "toplist2 ... ");
       UINT4 newlen = strlen(uvar_fnameout) + 10;
       CHAR *fname2;
       XLAL_CHECK ( (fname2 = XLALCalloc ( 1, newlen )) != NULL, XLAL_ENOMEM, "Failed to XLALCalloc(1, %d)\n\n", newlen );
-      sprintf ( fname2, "%s-LR", uvar_fnameout );
+      sprintf ( fname2, "%s-BSGL", uvar_fnameout );
       XLAL_CHECK ( write_hfs_oputput ( fname2, semiCohToplist2) != -1, XLAL_EFAILED, "write_hfs_oputput('%s', toplist2) failed for 2nd toplist!\n", fname2 );
       XLALFree ( fname2 );
     }
@@ -1792,7 +1791,7 @@ int MAIN( int argc, char *argv[]) {
   free_gctFStat_toplist ( &semiCohToplist );
   if ( semiCohToplist2 ) free_gctFStat_toplist ( &semiCohToplist2 );
 
-  XLALFree ( usefulParams.LRsetup );
+  XLALFree ( usefulParams.BSGLsetup );
 
   LAL_CALL (LALDestroyUserVars(&status), &status);
 
@@ -2348,22 +2347,22 @@ void UpdateSemiCohToplists ( LALStatus *status,
     line.sumTwoFrecalc = -1.0; /* initialise this to -1.0, so that it only gets written out by print_gctFStatline_to_str if later overwritten in recalcToplistStats step */
     line.have_f3dot = have_f3dot;
 
-    if ( in->sumTwoFX ) { /* if we already have FX values from the main loop, insert these, and calculate LRstat here */
+    if ( in->sumTwoFX ) { /* if we already have FX values from the main loop, insert these, and calculate BSGL here */
       for (UINT4 X = 0; X < in->numDetectors; X++) {
         line.sumTwoFX[X] = in->sumTwoFX[FG_FX_INDEX(*in, X, ifreq_fg)]; /* here it's still the summed 2F value over segments, not the average */
       }
       xlalErrno = 0;
 
-      line.LRstat = XLALComputeLRstat ( line.sumTwoF, line.sumTwoFX, usefulparams->LRsetup );
+      line.log10BSGL = XLALComputeBSGL ( line.sumTwoF, line.sumTwoFX, usefulparams->BSGLsetup );
       if ( xlalErrno != 0 ) {
-        XLALPrintError ("%s line %d : XLALComputeLRstat() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
+        XLALPrintError ("%s line %d : XLALComputeBSGL() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
         ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
       }
-      if ( line.LRstat < -LAL_REAL4_MAX*0.1 )
-        line.LRstat = -LAL_REAL4_MAX*0.1; /* avoid minimum value, needed for output checking in print_gctFStatline_to_str() */
+      if ( line.log10BSGL < -LAL_REAL4_MAX*0.1 )
+        line.log10BSGL = -LAL_REAL4_MAX*0.1; /* avoid minimum value, needed for output checking in print_gctFStatline_to_str() */
     }
     else {
-      line.LRstat = -LAL_REAL4_MAX; /* in non-LR case, block field with minimal value, needed for output checking in print_gctFStatline_to_str() */
+      line.log10BSGL = -LAL_REAL4_MAX; /* in non-BSGL case, block field with minimal value, needed for output checking in print_gctFStatline_to_str() */
     }
 
     /* take F-stat averages over segments */

@@ -116,7 +116,7 @@ typedef struct {
   COMPLEX16 Fa;				/**< complex amplitude Fa */
   COMPLEX16 Fb;				/**< complex amplitude Fb */
   AntennaPatternMatrix Mmunu;		/**< antenna-pattern matrix Mmunu = (h_mu|h_nu) */
-  REAL4 LRstat;				/**< Line-robust statistic =log10(B_SGL) */
+  REAL4 log10BSGL;			/**< Line-robust statistic \f$\log_{10}B_{\mathrm{SGL}}\f$ */
 } FstatCandidate;
 
 /**
@@ -160,7 +160,7 @@ typedef struct
 typedef enum {
   RANKBY_2F  = 0, 	/**< rank candidates by F-statistic */
   RANKBY_NC = 1,	/**< HierarchSearchGCT also has RANKBY_NC = 1, not applicable here */
-  RANKBY_LR = 2  	/**< rank candidates by LR-statistic */
+  RANKBY_BSGL = 2  	/**< rank candidates by BSGListic */
 } RankingStat_t;
 
 
@@ -189,8 +189,8 @@ typedef struct {
   CHAR *VCSInfoString;                      /**< LAL + LALapps Git version string */
   CHAR *logstring;                          /**< log containing max-info on the whole search setup */
   transientWindowRange_t transientWindowRange; /**< search range parameters for transient window */
-  LRstatSetup *LRsetup;                     /**< pre-computed setup for LineRobust statistics (LRstat) */
-  RankingStat_t RankingStatistic;           /**< rank candidates according to F or LR */
+  BSGLSetup *BSGLsetup;                    /**< pre-computed setup for line-robust statistic */
+  RankingStat_t RankingStatistic;           /**< rank candidates according to F or BSGL */
   BOOLEAN useResamp;
   FstatMethodType FstatMethod;
 } ConfigVariables;
@@ -290,13 +290,13 @@ typedef struct {
   CHAR *outputFstatAtoms;	/**< output per-SFT, per-IFO 'atoms', ie quantities required to compute F-stat */
 
   BOOLEAN outputSingleFstats;	/**< in multi-detector case, also output single-detector F-stats */
-  CHAR *RankingStatistic;	/**< rank candidates according to F or LR */
+  CHAR *RankingStatistic;	/**< rank candidates according to F-stat or BSGL */
 
-  BOOLEAN computeLR;		/**< get single-IFO F-stats and compute Line-robust statistic */
-  BOOLEAN LR_useLogCorrection;	/**< compute log-correction in LRstat (slower) or not (faster) */
-  REAL8   LR_Fstar0;		/**< Prior parameter 'Fstar0', see documentation for XLALCreateLRstatSetup() for details */
-  LALStringVector *LR_oLGX;	/**< prior per-detector line-vs-Gauss odds ratios 'oLGX', see  XLALCreateLRstatSetup() for details */
-  REAL8 LR_threshold;		/**< output threshold on LRstat */
+  BOOLEAN computeBSGL;		/**< get single-IFO F-stats and compute line-robust statistic */
+  BOOLEAN BSGLlogcorr;		/**< BSGL: compute log-correction (slower) or not (faster) */
+  REAL8   Fstar0;		/**< BSGL: transition-scale parameter 'Fstar0', see documentation for XLALCreateBSGLSetup() for details */
+  LALStringVector *oLGX;	/**< BSGL: prior per-detector line-vs-Gauss odds 'oLGX', see XLALCreateBSGLSetup() for details */
+  REAL8 BSGLthreshold;		/**< output threshold on BSGL */
 
   CHAR *outputTransientStats;	/**< output file for transient B-stat values */
   CHAR *transient_WindowType;	/**< name of transient window ('none', 'rect', 'exp',...) */
@@ -330,7 +330,7 @@ int write_FstatCandidate_to_fp ( FILE *fp, const FstatCandidate *thisFCand );
 int write_PulsarCandidate_to_fp ( FILE *fp,  const PulsarCandidate *pulsarParams, const FstatCandidate *Fcand );
 
 int compareFstatCandidates ( const void *candA, const void *candB );
-int compareFstatCandidates_LR ( const void *candA, const void *candB );
+int compareFstatCandidates_BSGL ( const void *candA, const void *candB );
 
 void WriteFStatLog ( LALStatus *status, const CHAR *log_fname, const CHAR *logstr );
 CHAR *XLALGetLogString ( const ConfigVariables *cfg );
@@ -450,12 +450,12 @@ int main(int argc,char *argv[])
       char column_headings_string[column_headings_string_length];
       XLAL_INIT_MEM( column_headings_string );
       strcat ( column_headings_string, colum_headings_string_base );
-      if ( uvar.computeLR )
+      if ( uvar.computeBSGL )
         {
           const UINT4 numDetectors = GV.detectorIDs->length;
           column_headings_string_length += numDetectors*6; /* 6 per detector for " 2F_XY" */
-          column_headings_string_length += 3; /* 3 for " LR"*/
-          strcat ( column_headings_string, " LR" );
+          column_headings_string_length += 10; /* 3 for " log10BSGL"*/
+          strcat ( column_headings_string, " log10BSGL" );
           for ( UINT4 X = 0; X < numDetectors ; X ++ )
             {
               char headingX[7];
@@ -646,33 +646,33 @@ int main(int argc,char *argv[])
 	  return -1;
 	}
 
-      if ( uvar.computeLR )
+      if ( uvar.computeBSGL )
         {
-          thisFCand.LRstat = XLALComputeLRstat ( thisFCand.twoF, thisFCand.twoFX, GV.LRsetup );
+          thisFCand.log10BSGL = XLALComputeBSGL ( thisFCand.twoF, thisFCand.twoFX, GV.BSGLsetup );
           if ( xlalErrno ) {
-            XLALPrintError ("%s: XLALComputeLRstat() failed with errno=%d\n", __func__, xlalErrno );
+            XLALPrintError ("%s: XLALComputeBSGL() failed with errno=%d\n", __func__, xlalErrno );
             return xlalErrno;
           }
         }
       else
         {
-          thisFCand.LRstat = LAL_NAN; /* in non-LR case, block field with NAN, needed for output checking in write_PulsarCandidate_to_fp() */
+          thisFCand.log10BSGL = LAL_NAN; /* in non-BSGL case, block field with NAN, needed for output checking in write_PulsarCandidate_to_fp() */
         }
 
       /* push new value onto scan-line buffer */
       XLALAdvanceScanlineWindow ( &thisFCand, GV.scanlineWindow );
 
-      /* two types of threshold: fixed (TwoF- and/or LR-threshold) and dynamic (NumCandidatesToKeep) */
+      /* two types of threshold: fixed (TwoF- and/or BSGL-threshold) and dynamic (NumCandidatesToKeep) */
       BOOLEAN is1DlocalMax = FALSE;
       if ( XLALCenterIsLocalMax ( GV.scanlineWindow, GV.RankingStatistic ) ) /* must be 1D local maximum */
         is1DlocalMax = TRUE;
       BOOLEAN isOver2FThreshold = FALSE; /* will always be checked, so start at 'FALSE' */
       if ( GV.scanlineWindow->center->twoF >= uvar.TwoFthreshold ) /* fixed 2F threshold */
         isOver2FThreshold = TRUE;
-      BOOLEAN isOverLRThreshold = TRUE;  /* will not be checked in non-LR case, so start at 'TRUE' */
-      if ( uvar.computeLR && ( GV.scanlineWindow->center->LRstat < uvar.LR_threshold ) ) /* fixed LR threshold */
-        isOverLRThreshold = FALSE;
-      if ( is1DlocalMax && isOver2FThreshold && isOverLRThreshold )
+      BOOLEAN isOverBSGLthreshold = TRUE;  /* will not be checked in non-BSGL case, so start at 'TRUE' */
+      if ( uvar.computeBSGL && ( GV.scanlineWindow->center->log10BSGL < uvar.BSGLthreshold ) ) /* fixed threshold on log10BSGL */
+        isOverBSGLthreshold = FALSE;
+      if ( is1DlocalMax && isOver2FThreshold && isOverBSGLthreshold )
         {
 	  FstatCandidate *writeCand = GV.scanlineWindow->center;
 
@@ -681,13 +681,13 @@ int main(int argc,char *argv[])
 	    {
 	      if ( insert_into_toplist(GV.FstatToplist, (void*)writeCand ) ) {
 		LogPrintf ( LOG_DETAIL, "Added new candidate into toplist: 2F = %f", writeCand->twoF );
-		if ( uvar.computeLR )
-		  LogPrintfVerbatim ( LOG_DETAIL, ", 2F_H1 = %f, 2F_L1 = %f, LR = %f", writeCand->twoFX[0], writeCand->twoFX[1], writeCand->LRstat );
+		if ( uvar.computeBSGL )
+		  LogPrintfVerbatim ( LOG_DETAIL, ", 2F_H1 = %f, 2F_L1 = %f, log10BSGL = %f", writeCand->twoFX[0], writeCand->twoFX[1], writeCand->log10BSGL );
 	      }
 	      else {
 		LogPrintf ( LOG_DETAIL, "NOT added the candidate into toplist: 2F = %f", writeCand->twoF );
-		if ( uvar.computeLR )
-		  LogPrintfVerbatim ( LOG_DETAIL, ", 2F_H1 = %f, 2F_L1 = %f, LR = %f", writeCand->twoFX[0], writeCand->twoFX[1], writeCand->LRstat );
+		if ( uvar.computeBSGL )
+		  LogPrintfVerbatim ( LOG_DETAIL, ", 2F_H1 = %f, 2F_L1 = %f, log10BSGL = %f", writeCand->twoFX[0], writeCand->twoFX[1], writeCand->log10BSGL );
 	      }
 	      LogPrintfVerbatim ( LOG_DETAIL, "\n" );
 	    }
@@ -709,12 +709,12 @@ int main(int argc,char *argv[])
           if ( thisFCand.twoF > loudestFCand.twoF )
             loudestFCand = thisFCand;
           break;
-        case RANKBY_LR:
-          if ( thisFCand.LRstat > loudestFCand.LRstat )
+        case RANKBY_BSGL:
+          if ( thisFCand.log10BSGL > loudestFCand.log10BSGL )
             loudestFCand = thisFCand;
           break;
         default:
-          XLAL_ERROR ( XLAL_EINVAL, "Invalid ranking statistic '%d', supported are 'F=0', and 'LR=2'\n", GV.RankingStatistic );
+          XLAL_ERROR ( XLAL_EINVAL, "Invalid ranking statistic '%d', supported are 'F=0', and 'BSGL=2'\n", GV.RankingStatistic );
           break;
         }
 
@@ -894,10 +894,10 @@ int main(int argc,char *argv[])
       LogPrintf ( LOG_DEBUG, "Sorting toplist ... ");
       if ( GV.RankingStatistic == RANKBY_2F )
         qsort_toplist ( GV.FstatToplist, compareFstatCandidates );
-      else if ( GV.RankingStatistic == RANKBY_LR )
-        qsort_toplist ( GV.FstatToplist, compareFstatCandidates_LR );
+      else if ( GV.RankingStatistic == RANKBY_BSGL )
+        qsort_toplist ( GV.FstatToplist, compareFstatCandidates_BSGL );
       else
-        XLAL_ERROR ( XLAL_EINVAL, "Ranking statistic '%d' undefined here, allowed are 'F=0' and 'LR=2'\n", GV.RankingStatistic );
+        XLAL_ERROR ( XLAL_EINVAL, "Ranking statistic '%d' undefined here, allowed are 'F=0' and 'BSGL=2'\n", GV.RankingStatistic );
       LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
 
       for ( el=0; el < GV.FstatToplist->elems; el ++ )
@@ -1099,11 +1099,11 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   uvar->RankingStatistic = LALCalloc (1, strlen(DEFAULT_RANKINGSTATISTIC)+1);
   strcpy (uvar->RankingStatistic, DEFAULT_RANKINGSTATISTIC);
 
-  uvar->computeLR = FALSE;
-  uvar->LR_useLogCorrection = TRUE;
-  uvar->LR_Fstar0 = 0.0;
-  uvar->LR_oLGX = NULL;       /* NULL is intepreted as oLGX[X] = 1.0/Ndet for all X */
-  uvar->LR_threshold = - LAL_REAL8_MAX;
+  uvar->computeBSGL = FALSE;
+  uvar->BSGLlogcorr = TRUE;
+  uvar->Fstar0 = 0.0;
+  uvar->oLGX = NULL;       /* NULL is intepreted as oLGX[X] = 1.0/Ndet for all X */
+  uvar->BSGLthreshold = - LAL_REAL8_MAX;
 
 #define DEFAULT_TRANSIENT "none"
   uvar->transient_WindowType = LALMalloc(strlen(DEFAULT_TRANSIENT)+1);
@@ -1175,14 +1175,14 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
 
   LALregSTRINGUserStruct(status,outputFstatAtoms,0,  UVAR_OPTIONAL, "Output filename *base* for F-statistic 'atoms' {a,b,Fa,Fb}_alpha. One file per doppler-point.");
   LALregBOOLUserStruct(status,  outputSingleFstats,0,  UVAR_OPTIONAL, "In multi-detector case, also output single-detector F-stats?");
-  LALregSTRINGUserStruct(status,RankingStatistic,0,  UVAR_DEVELOPER, "Rank toplist candidates according to 'F' or 'LR' statistic");
+  LALregSTRINGUserStruct(status,RankingStatistic,0,  UVAR_DEVELOPER, "Rank toplist candidates according to 'F' or 'BSGL' statistic");
 
   // ----- Line robust stats parameters ----------
-  LALregBOOLUserStruct(status,  computeLR,	0,  UVAR_OPTIONAL, "Compute LineRobust statistic (LRstat) using single-IFO F-stats");
-  LALregREALUserStruct(status,  LR_Fstar0,	0,  UVAR_OPTIONAL, "LineRobustStat: Prior parameter 'Fstar0'");
-  LALregLISTUserStruct(status,  LR_oLGX,	0,  UVAR_OPTIONAL, "LineRobustStat: Prior per-detector line-vs-Gauss odds ratios 'oLGX' (Defaults to oLGX=1/Ndet)");
-  LALregBOOLUserStruct(status,  LR_useLogCorrection,0,UVAR_DEVELOPER,"LineRobustStat: include log-correction terms (slower) or not (faster)");
-  LALregREALUserStruct(status, 	LR_threshold,	0,  UVAR_OPTIONAL, "LineRobustStat: Output threshold for candidate selection");
+  LALregBOOLUserStruct(status,  computeBSGL,	0,  UVAR_OPTIONAL, "Compute and output line-robust statistic BSGL ");
+  LALregREALUserStruct(status,  Fstar0,		0,  UVAR_OPTIONAL, "BSGL: transition-scale parameter 'Fstar0'");
+  LALregLISTUserStruct(status,  oLGX,		0,  UVAR_OPTIONAL, "BSGL: prior per-detector line-vs-Gauss odds 'oLGX' (Defaults to oLGX=1/Ndet)");
+  LALregBOOLUserStruct(status,  BSGLlogcorr,	0,  UVAR_DEVELOPER,"BSGL: include log-correction terms (slower) or not (faster)");
+  LALregREALUserStruct(status, 	BSGLthreshold,	0,  UVAR_OPTIONAL, "BSGL threshold for candidate output");
   // --------------------------------------------
 
   LALregSTRINGUserStruct(status,outputTransientStats,0,  UVAR_OPTIONAL, "TransientCW: Output filename for transient-CW statistics.");
@@ -1619,23 +1619,23 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   if ( toplist_length > 0 ) {
     if ( strcmp(uvar->RankingStatistic, "F") == 0 )
      cfg->RankingStatistic = RANKBY_2F;
-    else if ( strcmp(uvar->RankingStatistic, "LR") == 0 )
+    else if ( strcmp(uvar->RankingStatistic, "BSGL") == 0 )
       {
-        if ( !uvar->computeLR ) {
-          XLALPrintError ("\nERROR: Ranking by LR-stat only possible if --computeLR given.\n\n");
+        if ( !uvar->computeBSGL ) {
+          XLALPrintError ("\nERROR: Ranking by BSGL only possible if --computeBSGL given.\n\n");
           ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT );
         }
-        cfg->RankingStatistic = RANKBY_LR;
+        cfg->RankingStatistic = RANKBY_BSGL;
       }
     else
       {
-        XLALPrintError ("\nERROR: Invalid value specified for candidate ranking - supported are 'F' and 'LR'.\n\n");
+        XLALPrintError ("\nERROR: Invalid value specified for candidate ranking - supported are 'F' and 'BSGL'.\n\n");
         ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT );
       }
 
-    if ( cfg->RankingStatistic == RANKBY_LR )
+    if ( cfg->RankingStatistic == RANKBY_BSGL )
       {
-        if ( create_toplist( &(cfg->FstatToplist), toplist_length, sizeof(FstatCandidate), compareFstatCandidates_LR) != 0 )
+        if ( create_toplist( &(cfg->FstatToplist), toplist_length, sizeof(FstatCandidate), compareFstatCandidates_BSGL) != 0 )
           ABORT (status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM );
       }
     else // rank by F-stat
@@ -1690,36 +1690,36 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   }
 
   /* return single-IFO Fstat values for Line-robust statistic */
-  if ( uvar->outputSingleFstats || uvar->computeLR ) {
+  if ( uvar->outputSingleFstats || uvar->computeBSGL ) {
     cfg->Fstat_what |= FSTATQ_2F_PER_DET;
   }
 
   /* ---------- prepare Line-robust statistics parameters ---------- */
-  if ( uvar->computeLR )
+  if ( uvar->computeBSGL )
     {
       UINT4 numDetectors = multiIFO->length;
-      /* take LR user input and pre-compute the corresponding LRsetup */
+      /* take BSGL user input and pre-compute the corresponding BSGLsetup */
       REAL4 *oLGX_p = NULL;
       REAL4 oLGX[PULSAR_MAX_DETECTORS];
-      if ( uvar->LR_oLGX != NULL )
+      if ( uvar->oLGX != NULL )
         {
-          if ( uvar->LR_oLGX->length != numDetectors ) {
-            XLALPrintError ( "Invalid input: length(LR_oLGX) = %d differs from number of detectors (%d)'\n", uvar->LR_oLGX->length, numDetectors );
+          if ( uvar->oLGX->length != numDetectors ) {
+            XLALPrintError ( "Invalid input: length(oLGX) = %d differs from number of detectors (%d)'\n", uvar->oLGX->length, numDetectors );
             ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
           }
-          if ( XLALParseLinePriors ( &oLGX[0], uvar->LR_oLGX ) != XLAL_SUCCESS ) {
-            XLALPrintError ( "Invalid input LR_oLGX'\n" );
+          if ( XLALParseLinePriors ( &oLGX[0], uvar->oLGX ) != XLAL_SUCCESS ) {
+            XLALPrintError ( "Invalid input oLGX'\n" );
             ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
           }
           oLGX_p = &oLGX[0];
-        } // if uvar->LR_oLGX != NULL
+        } // if uvar->oLGX != NULL
 
-      cfg->LRsetup = XLALCreateLRstatSetup ( numDetectors, uvar->LR_Fstar0, oLGX_p, uvar->LR_useLogCorrection );
-      if ( cfg->LRsetup == NULL ) {
-        XLALPrintError ( "XLALCreateLRstatSetup() failed\n");
+      cfg->BSGLsetup = XLALCreateBSGLSetup ( numDetectors, uvar->Fstar0, oLGX_p, uvar->BSGLlogcorr );
+      if ( cfg->BSGLsetup == NULL ) {
+        XLALPrintError ( "XLALCreateBSGLSetup() failed\n");
         ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
       }
-    } // if uvar_computeLR
+    } // if uvar_computeBSGL
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -1858,7 +1858,7 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
   if ( cfg->logstring )
     LALFree ( cfg->logstring );
 
-  XLALFree ( cfg->LRsetup );
+  XLALFree ( cfg->BSGLsetup );
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -2172,17 +2172,17 @@ write_PulsarCandidate_to_fp ( FILE *fp,  const PulsarCandidate *pulsarParams, co
   fprintf (fp, "Sinv_Tsft= % .6g;\n", Fcand->Mmunu.Sinv_Tsft );
   fprintf (fp, "\n");
 
-  /* Fstat-values */
+  /* F-stat-values */
   fprintf (fp, "Fa       = % .6g  %+.6gi;\n", creal(Fcand->Fa), cimag(Fcand->Fa) );
   fprintf (fp, "Fb       = % .6g  %+.6gi;\n", creal(Fcand->Fb), cimag(Fcand->Fb) );
   fprintf (fp, "twoF     = % .6g;\n", Fcand->twoF );
-  /* single-IFO Fstat-values, if present */
+  /* single-IFO F-stat values, if present */
   UINT4 X, numDet = Fcand->numDetectors;
   for ( X = 0; X < numDet ; X ++ )
     fprintf (fp, "twoF%d    = % .6g;\n", X, Fcand->twoFX[X] );
-  /* LRstat */
-  if ( !XLALIsREAL4FailNaN(Fcand->LRstat) ) /* if --computeLR=FALSE, the LR field was initialised to NAN - do not output LR */
-    fprintf (fp, "LR       = % .6g;\n", Fcand->LRstat );
+  /* BSGL */
+  if ( !XLALIsREAL4FailNaN(Fcand->log10BSGL) ) /* if --computeBSGL=FALSE, the log10BSGL field was initialised to NAN - do not output it */
+    fprintf (fp, "log10BSGL = % .6g;\n", Fcand->log10BSGL );
 
   fprintf (fp, "\nAmpFisher = \\\n" );
   XLALfprintfGSLmatrix ( fp, "%.9g",pulsarParams->AmpFisherMatrix );
@@ -2206,20 +2206,20 @@ compareFstatCandidates ( const void *candA, const void *candB )
 
 } /* compareFstatCandidates() */
 
-/** comparison function for our candidates toplist with alternate LR sorting statistic */
+/** comparison function for our candidates toplist with alternate sorting statistic BSGL=log10BSGL */
 int
-compareFstatCandidates_LR ( const void *candA, const void *candB )
+compareFstatCandidates_BSGL ( const void *candA, const void *candB )
 {
-  REAL8 LR1 = ((const FstatCandidate *)candA)->LRstat;
-  REAL8 LR2 = ((const FstatCandidate *)candB)->LRstat;
-  if ( LR1 < LR2 )
+  REAL8 BSGL1 = ((const FstatCandidate *)candA)->log10BSGL;
+  REAL8 BSGL2 = ((const FstatCandidate *)candB)->log10BSGL;
+  if ( BSGL1 < BSGL2 )
     return 1;
-  else if ( LR1 > LR2 )
+  else if ( BSGL1 > BSGL2 )
     return -1;
   else
     return 0;
 
-} /* compareFstatCandidates_LR() */
+} /* compareFstatCandidates_BSGL() */
 
 /**
  * write one 'FstatCandidate' (i.e. only Doppler-params + Fstat) into file 'fp'.
@@ -2235,9 +2235,9 @@ write_FstatCandidate_to_fp ( FILE *fp, const FstatCandidate *thisFCand )
   /* add extra output-field containing per-detector FX if non-NULL */
   char extraStatsStr[256] = "";     /* defaults to empty */
   char buf0[256];
-  /* LRstat */
-  if ( !XLALIsREAL4FailNaN(thisFCand->LRstat) ) { /* if --computeLR=FALSE, the LR field was initialised to NAN - do not output LR */
-      snprintf ( extraStatsStr, sizeof(extraStatsStr), " %.9g", thisFCand->LRstat );
+  /* BSGL */
+  if ( !XLALIsREAL4FailNaN(thisFCand->log10BSGL) ) { /* if --computeBSGL=FALSE, the log10BSGL field was initialised to NAN - do not output it */
+      snprintf ( extraStatsStr, sizeof(extraStatsStr), " %.9g", thisFCand->log10BSGL );
   }
   if ( thisFCand->numDetectors > 0 )
     {
@@ -2341,7 +2341,7 @@ XLALCenterIsLocalMax ( const scanlineWindow_t *scanWindow, const UINT4 rankingSt
   if ( !scanWindow || !scanWindow->center )
     return FALSE;
 
-  if ( rankingStatistic == RANKBY_2F ) /* F statistic */
+  if ( rankingStatistic == RANKBY_2F ) /* F-statistic */
     {
 
       REAL8 twoF0 = scanWindow->center->twoF;
@@ -2352,19 +2352,19 @@ XLALCenterIsLocalMax ( const scanlineWindow_t *scanWindow, const UINT4 rankingSt
 
     }
 
-  else if ( rankingStatistic == RANKBY_LR ) /* LR statistic */
+  else if ( rankingStatistic == RANKBY_BSGL ) /* line-robust statistic log10BSGL */
     {
 
-      REAL8 LR0 = scanWindow->center->LRstat;
+      REAL8 BSGL0 = scanWindow->center->log10BSGL;
 
       for ( UINT4 i=0; i < scanWindow->length; i ++ )
-        if ( scanWindow->window[i].LRstat > LR0 )
+        if ( scanWindow->window[i].log10BSGL > BSGL0 )
          return FALSE;
 
     }
   else
     {
-      XLALPrintError ("Unsupported ranking statistic '%d' ! Supported: 'F=0' and 'LR=2'.\n", rankingStatistic );
+      XLALPrintError ("Unsupported ranking statistic '%d' ! Supported: 'F=0' and 'BSGL=2'.\n", rankingStatistic );
       return FALSE;
     }
 
