@@ -72,8 +72,8 @@ min_offset = np.min(combined)
 max_offset = np.max(combined)
 combined = np.concatenate([dataset['runtime'] for dataset in datasets_])
 if np.any(np.isfinite(combined)):
-    min_runtime = np.min(combined)
-    max_runtime = np.max(combined)
+    min_runtime = np.nanmin(combined)
+    max_runtime = np.nanmax(combined)
 if opts.group_by == 'far':
     combined = np.concatenate([dataset['far'] for dataset in datasets_])
     log10_min_far = int(np.ceil(np.log10(np.min(combined))))
