@@ -137,7 +137,7 @@ int main(int argc, char *argv[]){
   REAL8 ccStat = 0;
   REAL8 evSquared=0;
   REAL8 estSens=0; /*estimated sensitivity(4.13)*/
-  BOOLEAN dopplerShiftFlag = FALSE;
+  BOOLEAN dopplerShiftFlag = TRUE;
   toplist_t *ccToplist=NULL;
   CrossCorrBinaryOutputEntry thisCandidate;
   UINT4 checksum;
@@ -420,7 +420,7 @@ int main(int argc, char *argv[]){
   maxBinaryTemplate.period = uvar.orbitPSec;
   maxBinaryTemplate.fkdot[0] = uvar.fStart + uvar.fBand;
   /*fill in thisBinaryTemplate*/
-  XLALGPSSetREAL8( &thisBinaryTemplate.tp, uvar.orbitTimeAsc);
+  XLALGPSSetREAL8( &thisBinaryTemplate.tp, 0.5*(XLALGPSGetREAL8(XLALGPSAddGPS(&minBinaryTemplate.tp, &maxBinaryTemplate.tp))));
   thisBinaryTemplate.argp = 0.0;
   thisBinaryTemplate.asini = 0.5*(minBinaryTemplate.asini + maxBinaryTemplate.asini);
   thisBinaryTemplate.ecc = 0.0;
@@ -437,7 +437,7 @@ int main(int argc, char *argv[]){
   XLALGPSSetREAL8(&dopplerpos.refTime, uvar.refTime);
   dopplerpos.Alpha = uvar.alphaRad;
   dopplerpos.Delta = uvar.deltaRad;
-  dopplerpos.fkdot[0] = uvar.fStart - sqrt(uvar.mismatchF / diagff); /*minus a  frequency spacing for testing convenience to search at true parameter, may need to modify*/
+  dopplerpos.fkdot[0] = uvar.fStart;
   /* set all spindowns to zero */
   for (k=1; k < PULSAR_MAX_SPINS; k++)
     dopplerpos.fkdot[k] = 0.0;
@@ -496,6 +496,12 @@ int main(int argc, char *argv[]){
   }
 
   /* args should be : spacings, min and max doppler params */
+  if ( (XLALAddMultiBinaryTimes( &multiBinaryTimes, multiSSBTimes, &dopplerpos )  != XLAL_SUCCESS ) ) {
+    LogPrintf ( LOG_CRITICAL, "%s: XLALAddMultiBinaryTimes() failed with errno=%d\n", __func__, xlalErrno );
+    XLAL_ERROR( XLAL_EFUNC );
+  }
+  /*Need to apply additional doppler shifting before looping over all templates, or we will lose the first point in parameter space, especially important for one point search*/
+  dopplerpos.fkdot[0] -= binaryTemplateSpacings.fkdot[0]; /*shift the initial searching frequency by a -fSpacing, in order to start from the initial value(GetNextCrossCorrTemplate will add a fSpacing first)*/
   while ( (GetNextCrossCorrTemplate(&dopplerShiftFlag, &dopplerpos, &binaryTemplateSpacings, &minBinaryTemplate, &maxBinaryTemplate) == 0) )
     {
       /* do useful stuff here*/
