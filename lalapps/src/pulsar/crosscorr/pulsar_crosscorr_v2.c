@@ -79,6 +79,8 @@ typedef struct{
   CHAR    *sftListOutputFilename;  /**< output filename to write list of sfts */
   CHAR    *sftListInputFilename;   /**< input filename to read in the  list of sfts and check the order of SFTs */
   CHAR    *toplistFilename;   /**< output filename containing candidates in toplist */
+  BOOLEAN version;            /**<output version information*/
+  CHAR    *logFilename;       /**< name of log file*/
 } UserInput_t;
 
 /* struct to store useful variables */
@@ -428,7 +430,7 @@ int main(int argc, char *argv[]){
   thisBinaryTemplate.fkdot[0]=0.5*(minBinaryTemplate.fkdot[0] + maxBinaryTemplate.fkdot[0]);
 
   /*Get metric diagonal components, also estimate sensitivity i.e. E[rho]/(h0)^2 (4.13)*/
-  if ( (XLALFindLMXBCrossCorrDiagMetric(&estSens, &diagff, &diagaa, &diagTT, thisBinaryTemplate, curlyGUnshifted, sftPairs, sftIndices, inputSFTs /*, kappaValues*/)  != XLAL_SUCCESS ) ) {
+  if ( (XLALFindLMXBCrossCorrDiagMetric(&estSens, &diagff, &diagaa, &diagTT, thisBinaryTemplate, curlyGUnshifted, sftPairs, sftIndices, inputSFTs, multiWeights /*, kappaValues*/)  != XLAL_SUCCESS ) ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALFindLMXBCrossCorrDiagMetric() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
@@ -535,7 +537,7 @@ int main(int argc, char *argv[]){
       thisCandidate.period = dopplerpos.period;
       thisCandidate.rho = ccStat;
       thisCandidate.evSquared = evSquared;
-      thisCandidate.estSens = estSens * estSens;
+      thisCandidate.estSens = estSens;
 
       insert_into_crossCorrBinary_toplist(ccToplist, thisCandidate);
 
@@ -547,6 +549,23 @@ int main(int argc, char *argv[]){
   /* add error checking */
 
   final_write_crossCorrBinary_toplist_to_file( ccToplist, uvar.toplistFilename, &checksum);
+
+  REAL8 h0Sens = sqrt((10 / sqrt(estSens))); /*for a SNR=10 signal, the h0 we can detect*/
+  /* make a meta-data file*/
+  if(XLALUserVarWasSet(&uvar.logFilename)){
+    fp = fopen(uvar.logFilename,"w");
+    fprintf(fp, "#The metric element g_ff = %.9f\n", diagff );
+    fprintf(fp, "#The metric element g_aa = %.9f\n", diagaa );
+    fprintf(fp, "#The metric element g_TT = %.9f\n", diagTT );
+    fprintf(fp, "#The average template (E[rho]/h0^2)^2 = %.9g\n", estSens);
+    fprintf(fp, "#The h0_min = %.9g for SNR = 10\n", h0Sens);
+    fprintf(fp, "#The frequency spacing used was %.9g\n", binaryTemplateSpacings.fkdot[0]);
+    fprintf(fp, "#The Tasc spacing used was %.9g\n", XLALGPSGetREAL8(&binaryTemplateSpacings.tp));
+    fprintf(fp, "#The asini spacing used was %.9g\n", binaryTemplateSpacings.asini);
+    fprintf(fp, "#The period spacing used wass 0 (didn't search over orbital period)\n");
+    fclose(fp);
+
+  }
 
 
   XLALDestroyCOMPLEX8Vector ( expSignalPhases );
@@ -577,11 +596,10 @@ int main(int argc, char *argv[]){
   /* check memory leaks if we forgot to de-allocate anything */
   LALCheckMemoryLeaks();
 
-  LogPrintf (LOG_CRITICAL, "The metric element g_ff=%.9f\n", diagff, 0);
-  LogPrintf (LOG_CRITICAL, "The metric element g_aa=%.9f\n", diagaa, 0);
-  LogPrintf (LOG_CRITICAL, "The metric element g_TT=%.9f\n", diagTT, 0);
   LogPrintf (LOG_CRITICAL, "End time\n", 0);/*for debug convenience to record calculating time*/
+
   return 0;
+
 
 } /* main */
 
@@ -631,7 +649,7 @@ int XLALInitUserVars (UserInput_t *uvar)
   /* initialize number of candidates in toplist -- default is just to return the single best candidate */
   uvar->numCand = 1;
   uvar->toplistFilename = XLALStringDuplicate("toplist_crosscorr.dat");
-
+  uvar->version = FALSE;
 
   /* register  user-variables */
   XLALregBOOLUserStruct  ( help, 	   'h',  UVAR_HELP, "Print this message");
@@ -666,7 +684,7 @@ int XLALInitUserVars (UserInput_t *uvar)
   XLALregSTRINGUserStruct( sftListOutputFilename, 0,  UVAR_OPTIONAL, "Name of file to which to write list of SFTs (for sanity checks)");
   XLALregSTRINGUserStruct( sftListInputFilename, 0,  UVAR_OPTIONAL, "Name of file to which to read in list of SFTs (for sanity checks)");
   XLALregSTRINGUserStruct( toplistFilename, 0,  UVAR_OPTIONAL, "Output filename containing candidates in toplist");
-
+  XLALregSTRINGUserStruct( logFilename, 0,  UVAR_OPTIONAL, "Output a meta-data file for the search");
   if ( xlalErrno ) {
     XLALPrintError ("%s: user variable initialization failed with errno = %d.\n", __func__, xlalErrno );
     XLAL_ERROR ( XLAL_EFUNC );

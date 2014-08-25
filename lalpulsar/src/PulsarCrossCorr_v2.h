@@ -172,7 +172,8 @@ int XLALFindLMXBCrossCorrDiagMetric
    REAL8Vector              *G_alpha,
    SFTPairIndexList   *pairIndexList,
    SFTIndexList           *indexList,
-   MultiSFTVector              *sfts
+   MultiSFTVector              *sfts,
+   MultiNoiseWeights   *multiWeights
    /* REAL8Vector       *kappaValues */
    /*REAL8                     *g_pp,*/
    )

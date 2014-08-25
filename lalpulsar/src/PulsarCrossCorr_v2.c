@@ -410,7 +410,8 @@ int XLALFindLMXBCrossCorrDiagMetric
    REAL8Vector              *G_alpha, /*  Input: vector of curlyGunshifted values */
    SFTPairIndexList   *pairIndexList, /*  Input: list of SFT pairs */
    SFTIndexList           *indexList, /*  Input: list of SFTs */
-   MultiSFTVector              *sfts  /*  Input: set of per-detector SFT vectors */
+   MultiSFTVector              *sfts, /*  Input: set of per-detector SFT vectors */
+   MultiNoiseWeights   *multiWeights  /*  Input: Input: nomalizeation factor S^-1 & weights for each SFT*/
    /* REAL8Vector     *kappaValues */ /*  Input: Fractional offset of signal freq from best bin center */
    /*REAL8                 *devTsq,*/ /* Output: mean time deviation^2*/
    /*REAL8                   *g_pp,*/ /* Output: Diagonal orbital period metric element */
@@ -458,7 +459,7 @@ int XLALFindLMXBCrossCorrDiagMetric
       }
   TSquaWeightedAve =(tSquare/denom);
   SinSquaWeightedAve =(sinSquare/denom);
-  *hSens = sqrt(rhosum);
+  *hSens = 4 * SQUARE(multiWeights->Sinv_Tsft) * rhosum;
   *g_ff = TSquaWeightedAve * 2 * SQUARE(LAL_PI);
   *g_aa = SinSquaWeightedAve * SQUARE(LAL_PI * DopplerParams.fkdot[0]);
   *g_TT = SinSquaWeightedAve * SQUARE(2 * SQUARE(LAL_PI) * (DopplerParams.fkdot[0]) * (DopplerParams.asini)/(DopplerParams.period));
