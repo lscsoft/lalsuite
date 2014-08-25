@@ -232,6 +232,8 @@ int XLALSimInspiralTaylorF2(
         f_max = fISCO;
     else // End at user-specified freq.
         f_max = fEnd;
+    if (f_max <= fStart) XLAL_ERROR(XLAL_EDOM);
+
     n = (size_t) (f_max / deltaF + 1);
     XLALGPSAdd(&tC, -1 / deltaF);  /* coalesce at t=0 */
     htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", &tC, 0.0, deltaF, &lalStrainUnit, n);
