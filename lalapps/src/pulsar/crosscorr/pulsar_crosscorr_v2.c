@@ -160,12 +160,6 @@ int main(int argc, char *argv[]){
   if (uvar.help)	/* if help was requested, then exit */
     return 0;
 
-  /* configure useful variables based on user input */
-  if ( XLALInitializeConfigVars ( &config, &uvar) != XLAL_SUCCESS ) {
-    LogPrintf ( LOG_CRITICAL, "%s: XLALInitUserVars() failed with errno=%d\n", __func__, xlalErrno );
-    XLAL_ERROR( XLAL_EFUNC );
-  }
-
   /*If the version information was requested, output it and exit*/
   if ( uvar.version ){
     CHAR    *VCSInfoString;     /**<LAL + LALapps Vsersion string*/
@@ -173,6 +167,12 @@ int main(int argc, char *argv[]){
     XLAL_CHECK ( VCSInfoString != NULL, XLAL_EFUNC, "XLALGetVersionString(0) failed.\n" );
     printf ("%s\n", VCSInfoString );
     exit (0);
+  }
+
+  /* configure useful variables based on user input */
+  if ( XLALInitializeConfigVars ( &config, &uvar) != XLAL_SUCCESS ) {
+    LogPrintf ( LOG_CRITICAL, "%s: XLALInitUserVars() failed with errno=%d\n", __func__, xlalErrno );
+    XLAL_ERROR( XLAL_EFUNC );
   }
 
   deltaF = config.catalog->data[0].header.deltaF;
