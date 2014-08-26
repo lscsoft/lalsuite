@@ -465,44 +465,32 @@ gsl_matrix* XLALComputeMetricOrthoBasis(
 
   // Allocate memory
   gsl_matrix* GAMAT_NULL(basis, n, n);
-  gsl_vector* GAVEC_NULL(temp, n);
+  gsl_matrix* GAMAT_NULL(U, n, n);
 
-  // Initialise basis to the identity matrix
+  // Compute a modified Cholesky decomposition:
+  //   metric = U * U^T
+  // where U is an upper triangular matrix.
+  // This is found using the usual (lower) Cholesky decomposition by:
+  // - reversing the order of the rows/columns of metric
+  // - decomposing metric = L * L^T where L is a lower triangular matrix
+  // - reversing the order of the rows/columns of L to give U
+  gsl_matrix_memcpy(U, metric);
+  LT_ReverseOrderRowsCols(U);
+  GCALL_NULL(gsl_linalg_cholesky_decomp(U), "'metric' is not positive definite");
+  LT_ReverseOrderRowsCols(U);
+
+  // We want to find basis such that:
+  //   basis^T * metric * basis = I
+  // Substituting metric = U * U^T gives us:
+  //   basic = inv(U)^T
   gsl_matrix_set_identity(basis);
-
-  // Orthonormalise the columns of 'basis' using numerically stabilised Gram-Schmidt
-  for (ssize_t i = n - 1; i >= 0; --i) {
-    gsl_vector_view col_i = gsl_matrix_column(basis, i);
-    for (ssize_t j = n - 1; j > i; --j) {
-      gsl_vector_view col_j = gsl_matrix_column(basis, j);
-
-      // Compute inner product of (j)th and (i)th columns with the metric
-      gsl_blas_dgemv(CblasNoTrans, 1.0, metric, &col_j.vector, 0.0, temp);
-      double inner_prod = 0.0;
-      gsl_blas_ddot(&col_i.vector, temp, &inner_prod);
-
-      // Subtract component of (j)th column from (i)th column
-      gsl_vector_memcpy(temp, &col_j.vector);
-      gsl_vector_scale(temp, inner_prod);
-      gsl_vector_sub(&col_i.vector, temp);
-
-    }
-
-    // Compute inner product of (i)th column with itself
-    gsl_blas_dgemv(CblasNoTrans, 1.0, metric, &col_i.vector, 0.0, temp);
-    double inner_prod = 0.0;
-    gsl_blas_ddot(&col_i.vector, temp, &inner_prod);
-
-    // Normalise (i)th column
-    gsl_vector_scale(&col_i.vector, 1.0 / sqrt(inner_prod));
-
-  }
+  gsl_blas_dtrsm(CblasLeft, CblasUpper, CblasTrans, CblasNonUnit, 1.0, U, basis);
 
   // Matrix will be lower triangular, so zero out upper triangle
   LT_ZeroStrictUpperTriangle(basis);
 
   // Cleanup
-  GFVEC(temp);
+  GFMAT(U);
 
   return basis;
 
@@ -941,11 +929,6 @@ int XLALSetLatticeTypeAndMetric(
       }
     }
 
-    // Check tiled metric is positive definite, by trying to compute its Cholesky decomposition
-    gsl_matrix* GAMAT(t_metric_copy, tn, tn);
-    gsl_matrix_memcpy(t_metric_copy, t_metric);
-    GCALL(gsl_linalg_cholesky_decomp(t_metric_copy), "tiled metric is not positive definite");
-
     // Compute a lower triangular basis matrix whose columns are orthonormal with respect to the tiled metric
     gsl_matrix* t_basis = XLALComputeMetricOrthoBasis(t_metric);
     XLAL_CHECK(t_basis != NULL, XLAL_EFUNC);
@@ -1011,7 +994,7 @@ int XLALSetLatticeTypeAndMetric(
     }
 
     // Cleanup
-    GFMAT(t_basis, t_generator, t_int_from_norm, t_metric, t_metric_copy, t_norm_from_int);
+    GFMAT(t_basis, t_generator, t_int_from_norm, t_metric, t_norm_from_int);
     GFVEC(t_bbox, t_norm);
 
   }
