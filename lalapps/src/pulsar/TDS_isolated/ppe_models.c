@@ -243,6 +243,8 @@ void pulsar_model( BinaryPulsarParams params, LALInferenceIFOModel *ifo ){
     if ( varyphase ){
       /* check whether to recompute the full phase or not */
       if( LALInferenceCheckVariable( ifo->params, "downsampled_times" ) ){
+        /* FIXME: This section needs to be thoroughly checked to make sure that it
+         * is doing what it is supposed to! At the moment I think it is wrong. */
         REAL8Vector *dsdphi1 = NULL, *dsdphi2 = NULL;
         LIGOTimeGPSVector *downst =
           *(LIGOTimeGPSVector **)LALInferenceGetVariable( ifo->params, "downsampled_times" );
@@ -686,8 +688,8 @@ void get_triaxial_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOModel
  * pinning axis of its pinned superfluid component.
  *
  * Unlike the standard triaxial model, this model has emission at f and 2f, therefore this model function processes two
- * sets of data per detector. In this model the \f$\phi_0\f$ parameter is the initial rotational phase, rather than the
- * GW phase as in the triaxial model.
+ * sets of data per detector. In this model the \f$\phi_0\f$ parameter is the initial phase for the \f$l=m=2\f$ harmonic
+ * (i.e. equivalent to the phase at 2f for the triaxial model).
  *
  * As for the standard triaxial model, the antenna pattern functions are contained in a 2D lookup table, so within this
  * function the correct value for the given time and \f$\psi\f$ are interpolated from this lookup table using bilinear
@@ -737,9 +739,9 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOModel *i
   /* get the sidereal time since the initial data point % sidereal day */
   sidDayFrac1 = *(REAL8Vector**)LALInferenceGetVariable( ifo->params, "siderealDay" );
 
-  /* phi0 here is rotational phase not GW phase */
-  ePhi = cexp( pars.phi0 * I );
-  e2Phi = cexp( 2. * pars.phi0 * I );
+  /* phi0 here the GW phase for the l=m=2 mode */
+  ePhi = cexp( 0.5 * pars.phi0 * I );
+  e2Phi = cexp( pars.phi0 * I );
 
   XLAL_CHECK_VOID( XLALSinCosLUT( &sinlambda, &coslambda, pars.lambda ) == XLAL_SUCCESS, XLAL_EFUNC );
 
