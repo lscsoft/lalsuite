@@ -562,10 +562,10 @@ gsl_matrix* XLALComputeLatticeGenerator(
     //   G(:, 2:end) = Gp = Q * L
     // where Q is an orthogonal matrix and L an lower triangular matrix.
     // This is found using the more commonly implemented QR decomposition by:
-    // - reverse the order of the rows/columns of Gp
+    // - reversing the order of the rows/columns of Gp
     // - decomposing Gp = Qp * Lp, where Lp is upper triangular
-    // - reverse the order of the rows/columns of Qp to give Q
-    // - reverse the order of the rows/columns of Lp to give L
+    // - reversing the order of the rows/columns of Qp to give Q
+    // - reversing the order of the rows/columns of Lp to give L
     gsl_matrix_view Gp = gsl_matrix_submatrix(G, 0, 1, n + 1, n);
     LT_ReverseOrderRowsCols(&Gp.matrix);
     GCALL_NULL(gsl_linalg_QR_decomp(&Gp.matrix, tau));
