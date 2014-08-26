@@ -436,8 +436,8 @@ gsl_vector* XLALMetricEllipseBoundingBox(
 
   // Compute metric inverse
   int LU_sign = 0;
-  GCALL_NULL(gsl_linalg_LU_decomp(LU_decomp, LU_perm, &LU_sign));
-  GCALL_NULL(gsl_linalg_LU_invert(LU_decomp, LU_perm, inverse));
+  GCALL_NULL(gsl_linalg_LU_decomp(LU_decomp, LU_perm, &LU_sign), "'metric' cannot be LU-decomposed");
+  GCALL_NULL(gsl_linalg_LU_invert(LU_decomp, LU_perm, inverse), "'metric' cannot be inverted");
 
   // Compute bounding box, and reverse diagonal scaling
   for (size_t i = 0; i < n; ++i) {
@@ -568,8 +568,8 @@ gsl_matrix* XLALComputeLatticeGenerator(
     // - reversing the order of the rows/columns of Lp to give L
     gsl_matrix_view Gp = gsl_matrix_submatrix(G, 0, 1, n + 1, n);
     LT_ReverseOrderRowsCols(&Gp.matrix);
-    GCALL_NULL(gsl_linalg_QR_decomp(&Gp.matrix, tau));
-    GCALL_NULL(gsl_linalg_QR_unpack(&Gp.matrix, tau, Q, L));
+    GCALL_NULL(gsl_linalg_QR_decomp(&Gp.matrix, tau), "'G' cannot be QR-decomposed");
+    gsl_linalg_QR_unpack(&Gp.matrix, tau, Q, L);
     LT_ReverseOrderRowsCols(Q);
     LT_ReverseOrderRowsCols(L);
 
@@ -607,7 +607,7 @@ gsl_matrix* XLALComputeLatticeGenerator(
   // Compute generator LU decomposition
   gsl_matrix_memcpy(LU_decomp, generator);
   int LU_sign = 0;
-  GCALL_NULL(gsl_linalg_LU_decomp(LU_decomp, LU_perm, &LU_sign));
+  GCALL_NULL(gsl_linalg_LU_decomp(LU_decomp, LU_perm, &LU_sign), "'generator' cannot be LU-decomposed");
 
   // Compute generator determinant
   const double generator_determinant = gsl_linalg_LU_det(LU_decomp, LU_sign);
