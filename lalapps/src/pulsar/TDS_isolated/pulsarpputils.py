@@ -1757,7 +1757,7 @@ def convert_model_parameters(pardict):
 # a function to create the signal model for a heterodyned pinned superfluid
 # model pulsar a signal GPS start time, signal duration (in seconds),
 # sample interval (seconds), detector, and the parameters I21, I31,
-# cos(theta), lambda, cos(iota), psi (rads), initial phase phi0 (rads), right
+# cos(theta), lambda, cos(iota), psi (rads), initial phase phi0 (for l=m=2 mode in rads), right
 # ascension (rads), declination (rads), distance (kpc) and frequency (f0) in a
 # dictionary. The list of time stamps, and the real and imaginary parts of the
 # 1f and 2f signals are returned in an array
@@ -1771,8 +1771,8 @@ def heterodyned_pinsf_pulsar(starttime, duration, dt, detector, pardict):
   coslambda = math.cos(pardict['lambda'])
   sin2lambda = math.sin( 2.0*pardict['lambda'] )
 
-  ePhi = cmath.exp( pardict['phi0'] * 1j )
-  e2Phi = cmath.exp( 2. * pardict['phi0'] * 1j )
+  ePhi = cmath.exp( 0.5 * pardict['phi0'] * 1j )
+  e2Phi = cmath.exp( pardict['phi0'] * 1j )
 
   f2_r = pardict['f0']**2 / pardict['dist']
 
