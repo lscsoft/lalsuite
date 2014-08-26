@@ -946,17 +946,6 @@ int XLALSetLatticeTypeAndMetric(
     gsl_matrix_memcpy(t_metric_copy, t_metric);
     GCALL(gsl_linalg_cholesky_decomp(t_metric_copy), "tiled metric is not positive definite");
 
-    // Compute metric ellipse bounding box
-    gsl_vector* t_bbox = XLALMetricEllipseBoundingBox(t_metric, max_mismatch);
-    XLAL_CHECK(t_bbox != NULL, XLAL_EFUNC);
-
-    // Copy bounding box in physical coordinates to tiled dimensions
-    for (size_t ti = 0; ti < tn; ++ti) {
-      const size_t i = gsl_vector_uint_get(tiling->tiled, ti);
-      const double t_norm_ti = gsl_vector_get(t_norm, ti);
-      gsl_vector_set(tiling->phys_bbox, i, gsl_vector_get(t_bbox, ti) / t_norm_ti);
-    }
-
     // Compute a lower triangular basis matrix whose columns are orthonormal with respect to the tiled metric
     gsl_matrix* t_basis = XLALComputeMetricOrthoBasis(t_metric);
     XLAL_CHECK(t_basis != NULL, XLAL_EFUNC);
@@ -1008,6 +997,17 @@ int XLALSetLatticeTypeAndMetric(
       const double phys_from_int_i_ti = gsl_matrix_get(tiling->phys_from_int, i, ti);
       const double phys_offset_i = gsl_vector_get(tiling->phys_offset, i);
       gsl_vector_set(tiling->phys_offset, i, phys_offset_i + 0.5 * phys_from_int_i_ti);
+    }
+
+    // Compute metric ellipse bounding box
+    gsl_vector* t_bbox = XLALMetricEllipseBoundingBox(t_metric, max_mismatch);
+    XLAL_CHECK(t_bbox != NULL, XLAL_EFUNC);
+
+    // Copy bounding box in physical coordinates to tiled dimensions
+    for (size_t ti = 0; ti < tn; ++ti) {
+      const size_t i = gsl_vector_uint_get(tiling->tiled, ti);
+      const double t_norm_ti = gsl_vector_get(t_norm, ti);
+      gsl_vector_set(tiling->phys_bbox, i, gsl_vector_get(t_bbox, ti) / t_norm_ti);
     }
 
     // Cleanup
