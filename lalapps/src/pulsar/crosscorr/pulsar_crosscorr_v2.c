@@ -166,6 +166,15 @@ int main(int argc, char *argv[]){
     XLAL_ERROR( XLAL_EFUNC );
   }
 
+  /*If the version information was requested, output it and exit*/
+  if ( uvar.version ){
+    CHAR    *VCSInfoString;     /**<LAL + LALapps Vsersion string*/
+    VCSInfoString = XLALGetVersionString(0);
+    XLAL_CHECK ( VCSInfoString != NULL, XLAL_EFUNC, "XLALGetVersionString(0) failed.\n" );
+    printf ("%s\n", VCSInfoString );
+    exit (0);
+  }
+
   deltaF = config.catalog->data[0].header.deltaF;
   REAL8 Tsft = 1.0 / deltaF;
 
@@ -559,10 +568,10 @@ int main(int argc, char *argv[]){
     fprintf(fp, "#The metric element g_TT = %.9f\n", diagTT );
     fprintf(fp, "#The average template (E[rho]/h0^2)^2 = %.9g\n", estSens);
     fprintf(fp, "#The h0_min = %.9g for SNR = 10\n", h0Sens);
-    fprintf(fp, "#The frequency spacing used was %.9g\n", binaryTemplateSpacings.fkdot[0]);
-    fprintf(fp, "#The Tasc spacing used was %.9g\n", XLALGPSGetREAL8(&binaryTemplateSpacings.tp));
-    fprintf(fp, "#The asini spacing used was %.9g\n", binaryTemplateSpacings.asini);
-    fprintf(fp, "#The period spacing used wass 0 (didn't search over orbital period)\n");
+    fprintf(fp, "#The frequency spacing used was %.9g Hz\n", binaryTemplateSpacings.fkdot[0]);
+    fprintf(fp, "#The Tasc spacing used was %.9g GPSSec\n", XLALGPSGetREAL8(&binaryTemplateSpacings.tp));
+    fprintf(fp, "#The asini spacing used was %.9g s\n", binaryTemplateSpacings.asini);
+    fprintf(fp, "#The period spacing used was 0 (didn't search over orbital period)\n");
     fclose(fp);
 
   }
@@ -685,6 +694,7 @@ int XLALInitUserVars (UserInput_t *uvar)
   XLALregSTRINGUserStruct( sftListInputFilename, 0,  UVAR_OPTIONAL, "Name of file to which to read in list of SFTs (for sanity checks)");
   XLALregSTRINGUserStruct( toplistFilename, 0,  UVAR_OPTIONAL, "Output filename containing candidates in toplist");
   XLALregSTRINGUserStruct( logFilename, 0,  UVAR_OPTIONAL, "Output a meta-data file for the search");
+  XLALregBOOLUserStruct  ( version, 	   'V',  UVAR_SPECIAL, "Output version(VCS) information");
   if ( xlalErrno ) {
     XLALPrintError ("%s: user variable initialization failed with errno = %d.\n", __func__, xlalErrno );
     XLAL_ERROR ( XLAL_EFUNC );
