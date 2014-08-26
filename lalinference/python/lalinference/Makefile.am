@@ -1,6 +1,6 @@
 BUILT_SOURCES =
 MOSTLYCLEANFILES =
-EXTRA_DIST = cylon.py
+EXTRA_DIST =
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
 include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
 
@@ -27,6 +27,10 @@ endif
 dist_pymodule_DATA = \
 	cylon.csv \
 	ne_simplified_coastline.json \
+	$(END_OF_LIST)
+
+EXTRA_DIST += \
+	cylon.py \
 	$(END_OF_LIST)
 
 #
