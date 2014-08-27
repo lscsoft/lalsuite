@@ -73,6 +73,10 @@ typedef struct{
   REAL8   mismatchA;          /**< mismatch for spacing in semi-major axis */
   REAL8   mismatchT;          /**< mismatch for spacing in time of periapse passage */
   REAL8   mismatchP;          /**< mismatch for spacing in period */
+  REAL8   spacingF;           /**< spacing in frequency */
+  REAL8   spacingA;           /**< spacing in semi-major axis*/
+  REAL8   spacingT;           /**< spacing in time of periapse passage*/
+  REAL8   spacingP;           /**< spacing in period*/
   INT4    numCand;            /**< number of candidates to keep in output toplist */
   CHAR    *pairListInputFilename;  /**< input filename containing list of sft index pairs (if not provided, determine list of pairs */
   CHAR    *pairListOutputFilename; /**< output filename to write list of sft index pairs */
@@ -97,7 +101,7 @@ typedef struct{
 int XLALInitUserVars ( UserInput_t *uvar );
 int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar);
 int XLALDestroyConfigVars (ConfigVariables *config);
-int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, PulsarDopplerParams *dopplerpos, PulsarDopplerParams *binaryTemplateSpacings, PulsarDopplerParams *minBinaryTemplate, PulsarDopplerParams *maxBinaryTemplate);
+int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, PulsarDopplerParams *dopplerpos, PulsarDopplerParams *binaryTemplateSpacings, PulsarDopplerParams *minBinaryTemplate, PulsarDopplerParams *maxBinaryTemplate, UINT8 *fCount, UINT8 *aCount, UINT8 *tCount, UINT8 fSpacingNum, UINT8 aSpacingNum, UINT8 tSpacingNum);
 
 
 int main(int argc, char *argv[]){
@@ -475,13 +479,28 @@ int main(int argc, char *argv[]){
   dopplerpos.argp = thisBinaryTemplate.argp;
 
   /* spacing in frequency from diagff */ /* set spacings in new dopplerparams struct */
-  binaryTemplateSpacings.fkdot[0] = sqrt(uvar.mismatchF / diagff);
-  binaryTemplateSpacings.asini = sqrt(uvar.mismatchA / diagaa);
+  if (XLALUserVarWasSet(&uvar.spacingF)) /* If spacing was given by CMD line, use it, else calculate spacing by mismatch*/
+    binaryTemplateSpacings.fkdot[0] = uvar.spacingF;
+  else
+    binaryTemplateSpacings.fkdot[0] = sqrt(uvar.mismatchF / diagff);
+
+  if (XLALUserVarWasSet(&uvar.spacingA))
+    binaryTemplateSpacings.asini = uvar.spacingA;
+  else
+    binaryTemplateSpacings.asini = sqrt(uvar.mismatchA / diagaa);
   binaryTemplateSpacings.period = sqrt(uvar.mismatchP / diagpp);
   /* this is annoying: tp is a GPS time while we want a difference
      in time which should be just REAL8 */
-  XLALGPSSetREAL8( &binaryTemplateSpacings.tp, sqrt(uvar.mismatchT / diagTT));
+  if (XLALUserVarWasSet(&uvar.spacingT))
+    XLALGPSSetREAL8( &binaryTemplateSpacings.tp, uvar.spacingT);
+  else
+    XLALGPSSetREAL8( &binaryTemplateSpacings.tp, sqrt(uvar.mismatchT / diagTT));
   /* metric elements for eccentric case not considered? */
+
+  UINT8 fCount = 0, aCount = 0, tCount = 0;
+  const UINT8 fSpacingNum = floor( uvar.fBand / binaryTemplateSpacings.fkdot[0]) + 1;/*+1 for one point search*/
+  const UINT8 aSpacingNum = floor( uvar.orbitAsiniSecBand / binaryTemplateSpacings.asini);
+  const UINT8 tSpacingNum = floor( uvar.orbitTimeAscBand / XLALGPSGetREAL8(&binaryTemplateSpacings.tp));
 
   /* Calculate SSB times (can do this once since search is currently only for one sky position, and binary doppler shift is added later) */
   if ((multiSSBTimes = XLALGetMultiSSBtimes ( multiStates, skyPos, dopplerpos.refTime, SSBPREC_RELATIVISTICOPT )) == NULL){
@@ -521,7 +540,7 @@ int main(int argc, char *argv[]){
   }
   /*Need to apply additional doppler shifting before looping over all templates, or we will lose the first point in parameter space, especially important for one point search*/
   dopplerpos.fkdot[0] -= binaryTemplateSpacings.fkdot[0]; /*shift the initial searching frequency by a -fSpacing, in order to start from the initial value(GetNextCrossCorrTemplate will add a fSpacing first)*/
-  while ( (GetNextCrossCorrTemplate(&dopplerShiftFlag, &dopplerpos, &binaryTemplateSpacings, &minBinaryTemplate, &maxBinaryTemplate) == 0) )
+  while ( (GetNextCrossCorrTemplate(&dopplerShiftFlag, &dopplerpos, &binaryTemplateSpacings, &minBinaryTemplate, &maxBinaryTemplate, &fCount, &aCount, &tCount, fSpacingNum, aSpacingNum, tSpacingNum) == 0) )
     {
       /* do useful stuff here*/
 
@@ -707,6 +726,10 @@ int XLALInitUserVars (UserInput_t *uvar)
   XLALregREALUserStruct  ( mismatchA,       0,  UVAR_OPTIONAL, "Desired mismatch for asini spacing");
   XLALregREALUserStruct  ( mismatchT,       0,  UVAR_OPTIONAL, "Desired mismatch for periapse passage time spacing");
   XLALregREALUserStruct  ( mismatchP,       0,  UVAR_OPTIONAL, "Desired mismatch for period spacing");
+  XLALregREALUserStruct  ( spacingF,       0,  UVAR_OPTIONAL, "Desired frequency spacing");
+  XLALregREALUserStruct  ( spacingA,       0,  UVAR_OPTIONAL, "Desired asini spacing");
+  XLALregREALUserStruct  ( spacingT,       0,  UVAR_OPTIONAL, "Desired periapse passage time spacing");
+  XLALregREALUserStruct  ( spacingP,       0,  UVAR_OPTIONAL, "Desired period spacing");
   XLALregINTUserStruct   ( numCand,         0,  UVAR_OPTIONAL, "Number of candidates to keep in toplist");
   XLALregSTRINGUserStruct( pairListInputFilename, 0,  UVAR_OPTIONAL, "Name of file from which to read list of SFT pairs");
   XLALregSTRINGUserStruct( pairListOutputFilename, 0,  UVAR_OPTIONAL, "Name of file to which to write list of SFT pairs");
@@ -777,13 +800,8 @@ int XLALDestroyConfigVars (ConfigVariables *config)
 /** FIXME: spacings and min, max values of binary parameters are not used yet */
 
 
-int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, PulsarDopplerParams *dopplerpos, PulsarDopplerParams *binaryTemplateSpacings, PulsarDopplerParams *minBinaryTemplate, PulsarDopplerParams *maxBinaryTemplate)
+int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, PulsarDopplerParams *dopplerpos, PulsarDopplerParams *binaryTemplateSpacings, PulsarDopplerParams *minBinaryTemplate, PulsarDopplerParams *maxBinaryTemplate, UINT8 *fCount, UINT8 *aCount, UINT8 *tCount, UINT8 fSpacingNum, UINT8 aSpacingNum, UINT8 tSpacingNum)
 {
-
-  REAL8 new_freq = dopplerpos->fkdot[0];
-  REAL8 new_asini = dopplerpos->asini;
-  REAL8 new_tp = XLALGPSGetREAL8(&(dopplerpos->tp));
-  REAL8 tp_hi = XLALGPSGetREAL8(&(maxBinaryTemplate->tp));
 
   /* basic sanity checks */
   if (binaryTemplateSpacings == NULL)
@@ -797,35 +815,35 @@ int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, PulsarDopplerParams *dop
 
   /* check spacings not negative */
 
-  if (new_freq < maxBinaryTemplate->fkdot[0])    /*loop over f at first*/
+  if ( *fCount < fSpacingNum)    /*loop over f at first*/
     {
-      new_freq = dopplerpos->fkdot[0] + binaryTemplateSpacings->fkdot[0];
-      dopplerpos->fkdot[0] = new_freq;
+      dopplerpos->fkdot[0] = minBinaryTemplate->fkdot[0] + (*fCount) * binaryTemplateSpacings->fkdot[0];;
       *binaryParamsFlag = FALSE;
+      *fCount += 1;
       return 0;
     }
   else
     {
-      if (new_asini < maxBinaryTemplate->asini)  /*after looping all f, initialize f and loop over a_p*/
+      if ( *aCount < aSpacingNum )  /*after looping all f, initialize f and loop over a_p*/
 	{
-	  new_asini = dopplerpos->asini + binaryTemplateSpacings->asini;
-	  dopplerpos->asini = new_asini;
-	  new_freq = minBinaryTemplate->fkdot[0];
-	  dopplerpos->fkdot[0] = new_freq;
+	  dopplerpos->asini = minBinaryTemplate->asini + (*aCount) * binaryTemplateSpacings->asini;;
+	  dopplerpos->fkdot[0] = minBinaryTemplate->fkdot[0];
+	  *fCount = 0;
 	  *binaryParamsFlag = TRUE;
+	  *aCount += 1;
 	  return 0;
 	}
       else
 	{
-	  if (new_tp < tp_hi)                    /*after looping the plane of f and a_p, initialize f, a_p and loop over T*/
+	  if ( *tCount < tSpacingNum) /*after looping the plane of f and a_p, initialize f, a_p and loop over T*/
 	    {
-	      new_tp = XLALGPSGetREAL8(XLALGPSAddGPS(&(dopplerpos->tp), &(binaryTemplateSpacings->tp)));
-	      XLALGPSSetREAL8(&(dopplerpos->tp),new_tp);
-	      new_asini = minBinaryTemplate->asini;
-	      dopplerpos->asini = new_asini;
-	      new_freq = minBinaryTemplate->fkdot[0];
-	      dopplerpos->fkdot[0] = new_freq;
+	      XLALGPSSetREAL8( &dopplerpos->tp, XLALGPSGetREAL8(&minBinaryTemplate->tp) + (*tCount) *  XLALGPSGetREAL8(&binaryTemplateSpacings->tp) );
+	      dopplerpos->fkdot[0] =  minBinaryTemplate->fkdot[0];
+	      *fCount = 0;
+	      dopplerpos->asini = minBinaryTemplate->asini;
+              *aCount = 0;
 	      *binaryParamsFlag = TRUE;
+	      *tCount += 1;
 	      return 0;
 	    }
 	  else
