@@ -50,6 +50,16 @@ extern "C" {
 
 /*---------- exported types ----------*/
 
+/** Type containing multi- and single-detector \f$ \mathcal{F} \f$-statistics and line-robust statistic */
+typedef struct tagRecalcStatComponents {
+  REAL4 avTwoF;				/**< multi-detector \f$ \mathcal{F} \f$-statistic, averaged over segments */
+  REAL4 avTwoFX[PULSAR_MAX_DETECTORS];	/**< fixed-size array of single-detector \f$ \mathcal{F} \f$-statistics, averaged over segments */
+  UINT4 numDetectors;			/**< number of detectors, numDetectors=0 should make all code ignore the TwoFX field. */
+  REAL4 log10BSGL;			/**< line-robust statistic \f$ \log_{10}B_{\mathrm{SGL}} \f$ */
+  REAL4 avTwoFWithoutLoudestSeg;	/**< average \f$ \mathcal{F} \f$-stat with loudest segment removed */
+  INT4 loudestSeg;			/**< index of the segment with the largest contribution to avTwoF */
+} RecalcStatComponents;
+
 /*---------- exported Global variables ----------*/
 /* empty init-structs for the types defined in here */
 
@@ -61,16 +71,18 @@ XLALComputeExtraStatsForToplist ( toplist_t *list,
 				  const LALStringVector *detectorIDs,
 				  const LIGOTimeGPSVector *startTstack,
 				  const LIGOTimeGPS refTimeGPS,
-				  const BSGLSetup *BSGLsetup
+				  const BSGLSetup *BSGLsetup,
+				  const BOOLEAN loudestSegOutput
 				);
 
 int
-XLALComputeExtraStatsSemiCoherent ( BSGLComponents *stats,
+XLALComputeExtraStatsSemiCoherent ( RecalcStatComponents *stats,
 				    const PulsarDopplerParams *dopplerParams,
 				    const FstatInputVector *Fstat_in_vec,
 				    const LALStringVector *detectorIDs,
 				    const LIGOTimeGPSVector *startTstack,
-				    const BSGLSetup *BSGLsetup
+				    const BSGLSetup *BSGLsetup,
+				    const BOOLEAN loudestSegOutput
 				  );
 
 // @}

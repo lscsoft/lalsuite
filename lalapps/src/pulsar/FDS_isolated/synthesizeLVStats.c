@@ -85,6 +85,14 @@
 /*----- Macros ----- */
 
 /* ---------- local types ---------- */
+/** Type containing multi- and single-detector \f$ \mathcal{F} \f$-statistics and line-robust statistic */
+typedef struct tagBSGLComponents {
+  REAL4 TwoF;				/**< multi-detector \f$ \mathcal{F} \f$-statistic value */
+  REAL4 TwoFX[PULSAR_MAX_DETECTORS];	/**< fixed-size array of single-detector \f$ \mathcal{F} \f$-statistic values */
+  UINT4 numDetectors;			/**< number of detectors, numDetectors=0 should make all code ignore the TwoFX field. */
+  REAL4 log10BSGL;			/**< line-robust statistic \f$ \log_{10}B_{\mathrm{SGL}} \f$ */
+} BSGLComponents;
+
 
 /** User-variables: can be set from config-file or command-line */
 typedef struct {

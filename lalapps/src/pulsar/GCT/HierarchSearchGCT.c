@@ -341,6 +341,7 @@ int MAIN( int argc, char *argv[]) {
   BOOLEAN uvar_SignalOnly = FALSE;     /* if Signal-only case (for SFT normalization) */
 
   BOOLEAN uvar_recalcToplistStats = FALSE; 	/* Do additional analysis for all toplist candidates, output F, FXvector for postprocessing */
+  BOOLEAN uvar_loudestSegOutput = FALSE; 	/* output extra info about loudest segment; requires recalcToplistStats */
 
   // ----- Line robust stats parameters ----------
   BOOLEAN uvar_computeBSGL = FALSE;          	/* In Fstat loop, compute line-robust statistic (BSGL=log10BSGL) using single-IFO F-stats */
@@ -485,6 +486,7 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterREALUserVar(   &status, "tStack",      'T', UVAR_OPTIONAL, "Duration of segments (sec)", &uvar_tStack ),&status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "segmentList",  0, UVAR_OPTIONAL, "ALTERNATIVE: file containing a segment list: lines of form <startGPS endGPS duration[h] NumSFTs>", &uvar_segmentList),  &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "recalcToplistStats", 0, UVAR_OPTIONAL, "Additional analysis for toplist candidates, recalculate 2F, 2FX at finegrid", &uvar_recalcToplistStats), &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "loudestSegOutput", 0, UVAR_OPTIONAL, "Output extra info about loudest segment; (requires --recalcToplistStats)", &uvar_loudestSegOutput), &status);
 
   // ----- Line robust stats parameters ----------
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "computeBSGL",   0, UVAR_OPTIONAL, "Compute and output line-robust statistic (BSGL)", &uvar_computeBSGL), &status);
@@ -1036,6 +1038,9 @@ int MAIN( int argc, char *argv[]) {
     if (XLALUserVarWasSet(&uvar_f3dot)) {
       column_headings_string_length += 1;
     }
+    if ( uvar_loudestSegOutput ) {
+      column_headings_string_length += 15; /* for " <2F>\lseg lseg" */
+    }
   }
   char column_headings_string[column_headings_string_length];
   XLAL_INIT_MEM( column_headings_string );
@@ -1058,6 +1063,9 @@ int MAIN( int argc, char *argv[]) {
       snprintf ( headingX, sizeof(headingX), " <2Fr_%s>", detectorIDs->data[X] );
       strcat ( column_headings_string, headingX );
     } /* for X < numDet */
+    if ( uvar_loudestSegOutput ) {
+    strcat ( column_headings_string, " <2F>\\lseg lseg" );
+    }
   }
   global_column_headings_stringp = column_headings_string;
 
@@ -1663,13 +1671,13 @@ int MAIN( int argc, char *argv[]) {
     LogPrintf( LOG_NORMAL, "Recalculating statistics for the final toplist...\n");
 
     XLAL_CHECK ( XLAL_SUCCESS == XLALComputeExtraStatsForToplist ( semiCohToplist, "GCTtop", Fstat_in_vec, usefulParams.detectorIDs,
-                                                                   usefulParams.startTstack, refTimeGPS, usefulParams.BSGLsetup ),
+                                                                   usefulParams.startTstack, refTimeGPS, usefulParams.BSGLsetup, uvar_loudestSegOutput ),
                  HIERARCHICALSEARCH_EXLAL, "XLALComputeExtraStatsForToplist() failed with xlalErrno = %d.\n\n", xlalErrno
                  );
     // also recalc optional 2nd toplist if present
     if ( semiCohToplist2 )
       XLAL_CHECK ( XLAL_SUCCESS == XLALComputeExtraStatsForToplist ( semiCohToplist2, "GCTtop", Fstat_in_vec, usefulParams.detectorIDs,
-                                                                     usefulParams.startTstack, refTimeGPS, usefulParams.BSGLsetup ),
+                                                                     usefulParams.startTstack, refTimeGPS, usefulParams.BSGLsetup, uvar_loudestSegOutput ),
                    HIERARCHICALSEARCH_EXLAL, "XLALComputeExtraStatsForToplist() failed for 2nd toplist with xlalErrno = %d.\n\n", xlalErrno
                    );
 
@@ -2338,6 +2346,8 @@ void UpdateSemiCohToplists ( LALStatus *status,
     line.avTwoFrecalc = -1.0; /* initialise this to -1.0, so that it only gets written out by print_gctFStatline_to_str if later overwritten in recalcToplistStats step */
     line.log10BSGLrecalc = -LAL_REAL4_MAX; /* for now, block field with minimal value, needed for output checking in print_gctFStatline_to_str() */
     line.have_f3dot = have_f3dot;
+    line.avTwoFWithoutLoudestSeg = -1.0;
+    line.loudestSeg = -1;
 
     /* local placeholders for summed 2F value over segments, not averages yet */
     REAL4 sumTwoF = in->sumTwoF[ifreq_fg];

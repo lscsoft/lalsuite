@@ -283,7 +283,11 @@ static int print_gctFStatline_to_str(GCTtopOutputEntry fline, char* buf, int buf
           }
           strcat ( recalcStr, buf0 );
         } /* for X < numDet */
-
+      if ( fline.avTwoFWithoutLoudestSeg >= 0.0 ) /* this was initialised to -1.0 and is only >= 0.0 if actually recomputed in recalcToplistStats step */
+      {
+        snprintf ( buf0, sizeof(buf0), " %.6f %d", fline.avTwoFWithoutLoudestSeg, fline.loudestSeg );
+        strcat ( recalcStr, buf0 );
+      }
     } /* if avTwoFX */
 
   int len;

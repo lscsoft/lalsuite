@@ -55,6 +55,8 @@ typedef struct {
   REAL4 avTwoFXrecalc[PULSAR_MAX_DETECTORS];  /**< fixed-size array of single-detector \f$2\F^X\f$-values as recomputed by recalcToplistStats */
   REAL4 log10BSGLrecalc; /**< Line-robust statistic \f$\log_{10} B_{\mathrm{SGL}}\f$ recomputed by recalcToplistStats */
   BOOLEAN have_f3dot; /**< output F3dot value */
+  REAL4 avTwoFWithoutLoudestSeg; /**< average of F-stat values with loudest segment removed */
+  INT4 loudestSeg; /**< index of the segment with the largest contribution to avTwoF */
 } GCTtopOutputEntry;
 
 /// enumerate all toplist-sorting options: by F (0), number-count (1), BSGL (2), "dual" toplists F + BSGL (3)
