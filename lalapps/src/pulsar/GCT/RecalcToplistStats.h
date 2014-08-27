@@ -60,16 +60,14 @@ XLALComputeExtraStatsForToplist ( toplist_t *list,
 				  const FstatInputVector *Fstat_in_vec,
 				  const LALStringVector *detectorIDs,
 				  const LIGOTimeGPSVector *startTstack,
-				  const LIGOTimeGPS refTimeGPS,
-				  const char* outputSingleSegStats );
+				  const LIGOTimeGPS refTimeGPS );
 
 int
 XLALComputeExtraStatsSemiCoherent ( BSGLComponents *stats,
 				    const PulsarDopplerParams *dopplerParams,
 				    const FstatInputVector *Fstat_in_vec,
 				    const LALStringVector *detectorIDs,
-				    const LIGOTimeGPSVector *startTstack,
-				    FILE *singleSegStatsFile );
+				    const LIGOTimeGPSVector *startTstack );
 
 // @}
 

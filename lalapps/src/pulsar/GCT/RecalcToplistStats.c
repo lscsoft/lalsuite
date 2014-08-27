@@ -40,13 +40,12 @@
 
 
 /** XLAL function to go through a (Hough or GCT) toplist and compute line-robust statistics for each candidate */
-int XLALComputeExtraStatsForToplist ( toplist_t *list,                                        /**< list of cancidates with f, sky position etc. - no output so far */
-				      const char *listEntryTypeName,                          /**< type of toplist entries, give as name string */
-				      const FstatInputVector *Fstat_in_vec,               /**< vector of input data for XLALComputeFstat() */
-				      const LALStringVector *detectorIDs,                     /**< detector name vector with all detectors present in any data sements */
-				      const LIGOTimeGPSVector *startTstack,                   /**< starting GPS time of each stack */
-				      const LIGOTimeGPS refTimeGPS,                           /**< reference time for fkdot values in toplist */
-				      const char* outputSingleSegStats                        /**< base filename to output Fstats for each segment individually */
+int XLALComputeExtraStatsForToplist ( toplist_t *list,				/**< list of cancidates with f, sky position etc. - no output so far */
+				      const char *listEntryTypeName,		/**< type of toplist entries, give as name string */
+				      const FstatInputVector *Fstat_in_vec,	/**< vector of input data for XLALComputeFstat() */
+				      const LALStringVector *detectorIDs,	/**< detector name vector with all detectors present in any data sements */
+				      const LIGOTimeGPSVector *startTstack,	/**< starting GPS time of each stack */
+				      const LIGOTimeGPS refTimeGPS		/**< reference time for fkdot values in toplist */
 				    )
 {
 
@@ -79,26 +78,6 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
   /* loop over toplist: re-compute TwoF and TwoFX for all candidates (average over segments) */
   for (j = 0; j < numElements; j++ )
     {
-      /* set up file for individual-segment Fstat output */
-      FILE *singleSegStatsFile = NULL;
-      if ( outputSingleSegStats ) {
-        char jstring[16];
-        snprintf ( jstring, sizeof(jstring), "%d", j );
-        char *singleSegStatsFileName = NULL;
-        singleSegStatsFileName = LALCalloc( strlen(outputSingleSegStats) + 6 +  strlen(jstring) + 4 + 1, sizeof(CHAR) );
-        strcpy(singleSegStatsFileName, outputSingleSegStats);
-        strcat(singleSegStatsFileName, "_cand_");
-        strcat(singleSegStatsFileName, jstring);
-        strcat(singleSegStatsFileName, ".dat");
-        /* open the file for writing */
-        if ((singleSegStatsFile = fopen(singleSegStatsFileName, "wb")) == NULL) {
-          fprintf(stderr, "Unable to open file %s for writing\n", singleSegStatsFileName);
-          LALFree(singleSegStatsFile);
-          /*exit*/
-          XLAL_ERROR ( XLAL_EIO );
-        }
-        LALFree(singleSegStatsFileName);
-      } /* if outputSingleSegStats */
 
       void *elemV = NULL;
       if ( listEntryType == 1 ) {
@@ -126,15 +105,9 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
         /* no 2nd spindown in HoughFStatOutputEntry */
       } /* if listEntryType 2 */
 
-      /* write header information into segment-Fstats file */
-      if ( singleSegStatsFile ) {
-        fprintf ( singleSegStatsFile, "%%%% Freq: %.16g\n%%%% RA: %.13g\n%%%% Dec: %.13g\n%%%% f1dot: %.13g\n%%%% f2dot: %.13g\n%%%% reftime: %d\n",
-                  candidateDopplerParams.fkdot[0], candidateDopplerParams.Alpha, candidateDopplerParams.Delta, candidateDopplerParams.fkdot[1], candidateDopplerParams.fkdot[2], refTimeGPS.gpsSeconds );
-      }
-
       /*  recalculate multi- and single-IFO Fstats for all segments for this candidate */
       BSGLComponents XLAL_INIT_DECL(recalcStats); /* struct containing multi-detector F-stat, single-detector F-stats, BSGL */
-      XLAL_CHECK ( XLALComputeExtraStatsSemiCoherent( &recalcStats, &candidateDopplerParams, Fstat_in_vec, detectorIDs, startTstack, singleSegStatsFile ) == XLAL_SUCCESS, XLAL_EFUNC, "Failed call to XLALComputeExtraStatsSemiCoherent()." );
+      XLAL_CHECK ( XLALComputeExtraStatsSemiCoherent( &recalcStats, &candidateDopplerParams, Fstat_in_vec, detectorIDs, startTstack ) == XLAL_SUCCESS, XLAL_EFUNC, "Failed call to XLALComputeExtraStatsSemiCoherent()." );
 
       /* save values in toplist */
       if ( listEntryType == 1 ) {
@@ -154,11 +127,6 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
           }
       }
 
-      /* close single-segment Fstat file */
-      if ( singleSegStatsFile ) {
-        fclose (singleSegStatsFile);
-      }
-
     } /* for j < numElements */
 
   return (XLAL_SUCCESS);
@@ -170,12 +138,11 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
  * XLAL Function to recalculate multi-IFO F-stat 2F and single-IFO 2FX for all semicoherent search segments
  * This returns AVERAGE F-stats over segments, not sums.
  */
-int XLALComputeExtraStatsSemiCoherent ( BSGLComponents *recalcStats,                      /**< [out] structure containing multi TwoF, single TwoF, BSGL */
-					const PulsarDopplerParams *dopplerParams,           /**< sky position, frequency and fdot for a given candidate */
-					const FstatInputVector *Fstat_in_vec,               /**< vector of input data for XLALComputeFstat() */
-					const LALStringVector *detectorIDs,                 /**< detector name vector with all detectors present in any data sements */
-					const LIGOTimeGPSVector *startTstack,               /**< starting GPS time of each stack */
-					FILE *singleSegStatsFile                            /**< pointer to file to output Fstats for each segment individually */
+int XLALComputeExtraStatsSemiCoherent ( BSGLComponents *recalcStats,			/**< [out] structure containing multi TwoF, single TwoF, BSGL */
+					const PulsarDopplerParams *dopplerParams,	/**< sky position, frequency and fdot for a given candidate */
+					const FstatInputVector *Fstat_in_vec,		/**< vector of input data for XLALComputeFstat() */
+					const LALStringVector *detectorIDs,		/**< detector name vector with all detectors present in any data sements */
+					const LIGOTimeGPSVector *startTstack		/**< starting GPS time of each stack */
 				      )
 {
 
@@ -227,16 +194,9 @@ int XLALComputeExtraStatsSemiCoherent ( BSGLComponents *recalcStats,            
       XLAL_CHECK ( XLALExtrapolatePulsarSpins( dopplerParams_temp.fkdot, dopplerParams->fkdot, deltaTau ) == XLAL_SUCCESS, XLAL_EFUNC, "XLALExtrapolatePulsarSpins() failed." );
 
       /* recompute multi-detector Fstat and atoms */
-      if ( singleSegStatsFile ) {
-        fprintf ( singleSegStatsFile, "%%%% Reftime: %d %%%% Freq: %.16g %%%% RA: %.13g %%%% Dec: %.13g %%%% f1dot: %.13g %%%% f2dot: %.13g\n", dopplerParams_temp.refTime.gpsSeconds, dopplerParams_temp.fkdot[0], dopplerParams_temp.Alpha, dopplerParams_temp.Delta, dopplerParams_temp.fkdot[1], dopplerParams_temp.fkdot[2] );
-      }
       XLAL_CHECK ( XLALComputeFstat(&Fstat_res, Fstat_in_vec->data[k], &dopplerParams_temp, 0.0, 1, FSTATQ_2F | FSTATQ_2F_PER_DET) == XLAL_SUCCESS, XLAL_EFUNC, "XLALComputeFstat() failed with errno=%d", xlalErrno );
 
       recalcStats->TwoF  += Fstat_res->twoF[0]; /* sum up multi-detector Fstat for this segment*/
-
-      if ( singleSegStatsFile ) {
-        fprintf ( singleSegStatsFile, "%.6f", Fstat_res->twoF[0] );
-      }
 
       /* for each segment, number of detectors with data might be smaller than overall number */
       const UINT4 numDetectorsSeg = Fstat_res->numDetectors;
@@ -264,13 +224,6 @@ int XLALComputeExtraStatsSemiCoherent ( BSGLComponents *recalcStats,            
           recalcStats->TwoFX[detid]  += twoFXseg[detid]; /* sum up single-detector Fstat for this segment*/
 
         } /* for X < numDetectorsSeg */
-
-      if ( singleSegStatsFile ) {
-        for (UINT4 X = 0; X < numDetectors; X++) {
-          fprintf ( singleSegStatsFile, " %.6f",twoFXseg[X] );
-        }
-        fprintf ( singleSegStatsFile, "\n" );
-      }
 
     } /* for k < numSegments */
 

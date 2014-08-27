@@ -394,7 +394,6 @@ int MAIN( int argc, char *argv[]) {
   CHAR *uvar_fnameout = NULL;
   CHAR *uvar_DataFiles1 = NULL;
   BOOLEAN uvar_version = 0;
-  CHAR *uvar_outputSingleSegStats = NULL; /* Additionally output single-segment Fstats for each final toplist candidate */
 
   CHAR *uvar_followupList = NULL;	/* Hough candidate list to be 'followed up': compute Hough top-cand, F1, F2, multi-F */
   REAL8 uvar_WU_Freq = 0;	/* if given, use to compute frequency-correction of input-candidates coming from HS-code */
@@ -470,7 +469,6 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterREALUserVar(   &status, "dopplerMax",   0, UVAR_DEVELOPER, "Max Doppler shift",  &uvar_dopplerMax), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "GPUready",     0, UVAR_DEVELOPER, "Use single-precision 'GPU-ready' core routines", &uvar_GPUready), &status);
   LAL_CALL ( LALRegisterBOOLUserVar(  &status, "version",     'V', UVAR_SPECIAL,  "Output version information", &uvar_version), &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "outputSingleSegStats", 0,  UVAR_OPTIONAL, "Base filename for single-segment Fstat output (1 file per final toplist candidate!)", &uvar_outputSingleSegStats),  &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "correctFreqs", 0, UVAR_DEVELOPER, "Correct candidate output frequencies (ie fix bug #147). Allows reproducing 'historical results'", &uvar_correctFreqs), &status);
 
   /* read all command line variables */
@@ -984,7 +982,7 @@ int MAIN( int argc, char *argv[]) {
 
     xlalErrno = 0;
     XLALComputeExtraStatsForToplist ( semiCohToplist, "HoughFStat", Fstat_in_vec, usefulParams.detectorIDs,
-                                      usefulParams.startTstack, refTimeGPS,  uvar_outputSingleSegStats );
+                                      usefulParams.startTstack, refTimeGPS );
     if ( xlalErrno != 0 ) {
       XLALPrintError ("%s line %d : XLALComputeExtraStatsForToplist() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
       return(HIERARCHICALSEARCH_EBAD);
