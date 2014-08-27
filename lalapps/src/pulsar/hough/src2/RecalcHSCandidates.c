@@ -982,7 +982,7 @@ int MAIN( int argc, char *argv[]) {
 
     xlalErrno = 0;
     XLALComputeExtraStatsForToplist ( semiCohToplist, "HoughFStat", Fstat_in_vec, usefulParams.detectorIDs,
-                                      usefulParams.startTstack, refTimeGPS );
+                                      usefulParams.startTstack, refTimeGPS, NULL ); /* no support for BSGL here */
     if ( xlalErrno != 0 ) {
       XLALPrintError ("%s line %d : XLALComputeExtraStatsForToplist() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
       return(HIERARCHICALSEARCH_EBAD);

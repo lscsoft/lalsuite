@@ -1029,10 +1029,13 @@ int MAIN( int argc, char *argv[]) {
     column_headings_string_length += 10 + numDetectors*8; /* 10 for " log10BSGL" and 8 per detector for " <2F_XY>" */
   }
   if ( uvar_recalcToplistStats ) {
-    column_headings_string_length += 6 + numDetectors*9; /* 6 for " <2Fr>" and 9 per detector for " <2Fr_XY>" */
-    if (XLALUserVarWasSet(&uvar_f3dot)){
-		column_headings_string_length += 1;
-	}
+    column_headings_string_length += 6 + 11 + numDetectors*9; /* 6 for " <2Fr>" and 9 per detector for " <2Fr_XY>" */
+    if ( uvar_computeBSGL) {
+      column_headings_string_length += 11; /* for " log10BSGLr" */
+    }
+    if (XLALUserVarWasSet(&uvar_f3dot)) {
+      column_headings_string_length += 1;
+    }
   }
   char column_headings_string[column_headings_string_length];
   XLAL_INIT_MEM( column_headings_string );
@@ -1047,6 +1050,9 @@ int MAIN( int argc, char *argv[]) {
   }
   if ( uvar_recalcToplistStats ) {
     strcat ( column_headings_string, " <2Fr>" );
+    if ( uvar_computeBSGL) {
+      strcat ( column_headings_string, " log10BSGLr" );
+    }
     for ( UINT4 X = 0; X < numDetectors ; X ++ ) {
       char headingX[10];
       snprintf ( headingX, sizeof(headingX), " <2Fr_%s>", detectorIDs->data[X] );
@@ -1657,13 +1663,13 @@ int MAIN( int argc, char *argv[]) {
     LogPrintf( LOG_NORMAL, "Recalculating statistics for the final toplist...\n");
 
     XLAL_CHECK ( XLAL_SUCCESS == XLALComputeExtraStatsForToplist ( semiCohToplist, "GCTtop", Fstat_in_vec, usefulParams.detectorIDs,
-                                                                   usefulParams.startTstack, refTimeGPS ),
+                                                                   usefulParams.startTstack, refTimeGPS, usefulParams.BSGLsetup ),
                  HIERARCHICALSEARCH_EXLAL, "XLALComputeExtraStatsForToplist() failed with xlalErrno = %d.\n\n", xlalErrno
                  );
     // also recalc optional 2nd toplist if present
     if ( semiCohToplist2 )
       XLAL_CHECK ( XLAL_SUCCESS == XLALComputeExtraStatsForToplist ( semiCohToplist2, "GCTtop", Fstat_in_vec, usefulParams.detectorIDs,
-                                                                     usefulParams.startTstack, refTimeGPS ),
+                                                                     usefulParams.startTstack, refTimeGPS, usefulParams.BSGLsetup ),
                    HIERARCHICALSEARCH_EXLAL, "XLALComputeExtraStatsForToplist() failed for 2nd toplist with xlalErrno = %d.\n\n", xlalErrno
                    );
 
@@ -2330,6 +2336,7 @@ void UpdateSemiCohToplists ( LALStatus *status,
       line.avTwoFXrecalc[X] = 0.0;
     }
     line.avTwoFrecalc = -1.0; /* initialise this to -1.0, so that it only gets written out by print_gctFStatline_to_str if later overwritten in recalcToplistStats step */
+    line.log10BSGLrecalc = -LAL_REAL4_MAX; /* for now, block field with minimal value, needed for output checking in print_gctFStatline_to_str() */
     line.have_f3dot = have_f3dot;
 
     /* local placeholders for summed 2F value over segments, not averages yet */

@@ -286,8 +286,8 @@ resGCT_RS=$(echo $topline | awk '{print $7}')
 resGCT_RS_H1=$(echo $topline | awk '{print $9}')
 resGCT_RS_L1=$(echo $topline | awk '{print $10}')
 resGCT_RSr=$(echo $topline  | awk '{print $11}')
-resGCT_RSr_H1=$(echo $topline  | awk '{print $12}')
-resGCT_RSr_L1=$(echo $topline  | awk '{print $13}')
+resGCT_RSr_H1=$(echo $topline  | awk '{print $13}')
+resGCT_RSr_L1=$(echo $topline  | awk '{print $14}')
 
 echo
 echo "----------------------------------------------------------------------------------------------------"
@@ -318,8 +318,8 @@ resGCT_DM_H1=$(echo $topline  | awk '{print $9}')
 resGCT_DM_L1=$(echo $topline  | awk '{print $10}')
 freqGCT_DM=$(echo $topline | awk '{print $1}')
 resGCT_DMr=$(echo $topline  | awk '{print $11}')
-resGCT_DMr_H1=$(echo $topline  | awk '{print $12}')
-resGCT_DMr_L1=$(echo $topline  | awk '{print $13}')
+resGCT_DMr_H1=$(echo $topline  | awk '{print $13}')
+resGCT_DMr_L1=$(echo $topline  | awk '{print $14}')
 
 echo
 echo "----------------------------------------------------------------------------------------------------"

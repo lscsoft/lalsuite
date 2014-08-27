@@ -45,7 +45,8 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,				/**< list of cancidate
 				      const FstatInputVector *Fstat_in_vec,	/**< vector of input data for XLALComputeFstat() */
 				      const LALStringVector *detectorIDs,	/**< detector name vector with all detectors present in any data sements */
 				      const LIGOTimeGPSVector *startTstack,	/**< starting GPS time of each stack */
-				      const LIGOTimeGPS refTimeGPS		/**< reference time for fkdot values in toplist */
+				      const LIGOTimeGPS refTimeGPS,		/**< reference time for fkdot values in toplist */
+				      const BSGLSetup *BSGLsetup		/**< pre-computed setup for line-robust statistic BSGL */
 				    )
 {
 
@@ -107,7 +108,8 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,				/**< list of cancidate
 
       /*  recalculate multi- and single-IFO Fstats for all segments for this candidate */
       BSGLComponents XLAL_INIT_DECL(recalcStats); /* struct containing multi-detector F-stat, single-detector F-stats, BSGL */
-      XLAL_CHECK ( XLALComputeExtraStatsSemiCoherent( &recalcStats, &candidateDopplerParams, Fstat_in_vec, detectorIDs, startTstack ) == XLAL_SUCCESS, XLAL_EFUNC, "Failed call to XLALComputeExtraStatsSemiCoherent()." );
+      recalcStats.log10BSGL = -LAL_REAL4_MAX; /* proper initialization here is not 0 */
+      XLAL_CHECK ( XLALComputeExtraStatsSemiCoherent( &recalcStats, &candidateDopplerParams, Fstat_in_vec, detectorIDs, startTstack, BSGLsetup ) == XLAL_SUCCESS, XLAL_EFUNC, "Failed call to XLALComputeExtraStatsSemiCoherent()." );
 
       /* save values in toplist */
       if ( listEntryType == 1 ) {
@@ -117,6 +119,7 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,				/**< list of cancidate
           for ( X = 0; X < numDetectors; X ++ ) {
             elem->avTwoFXrecalc[X] = recalcStats.TwoFX[X];
           }
+          elem->log10BSGLrecalc = recalcStats.log10BSGL;
       }
       else if ( listEntryType == 2 ) {
           HoughFStatOutputEntry *elem = elemV;
@@ -142,7 +145,8 @@ int XLALComputeExtraStatsSemiCoherent ( BSGLComponents *recalcStats,			/**< [out
 					const PulsarDopplerParams *dopplerParams,	/**< sky position, frequency and fdot for a given candidate */
 					const FstatInputVector *Fstat_in_vec,		/**< vector of input data for XLALComputeFstat() */
 					const LALStringVector *detectorIDs,		/**< detector name vector with all detectors present in any data sements */
-					const LIGOTimeGPSVector *startTstack		/**< starting GPS time of each stack */
+					const LIGOTimeGPSVector *startTstack,		/**< starting GPS time of each stack */
+					const BSGLSetup *BSGLsetup			/**< pre-computed setup for line-robust statistic BSGL */
 				      )
 {
 
@@ -226,6 +230,12 @@ int XLALComputeExtraStatsSemiCoherent ( BSGLComponents *recalcStats,			/**< [out
         } /* for X < numDetectorsSeg */
 
     } /* for k < numSegments */
+
+  if ( BSGLsetup )
+    {
+      recalcStats->log10BSGL = XLALComputeBSGL ( recalcStats->TwoF, recalcStats->TwoFX, BSGLsetup );
+      XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "XLALComputeBSGL() failed with xlalErrno = %d\n", xlalErrno );
+    }
 
   /* get average stats over all segments */
   recalcStats->TwoF /= numSegments;

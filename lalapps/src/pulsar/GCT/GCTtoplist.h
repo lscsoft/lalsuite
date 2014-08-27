@@ -53,6 +53,7 @@ typedef struct {
   REAL4 avTwoFX[PULSAR_MAX_DETECTORS]; /**< fixed-size array of single-detector average \f$2\F^X\f$-values */
   REAL4 avTwoFrecalc;  /**< average of \f$2\F\f$-values as recomputed by recalcToplistStats */
   REAL4 avTwoFXrecalc[PULSAR_MAX_DETECTORS];  /**< fixed-size array of single-detector \f$2\F^X\f$-values as recomputed by recalcToplistStats */
+  REAL4 log10BSGLrecalc; /**< Line-robust statistic \f$\log_{10} B_{\mathrm{SGL}}\f$ recomputed by recalcToplistStats */
   BOOLEAN have_f3dot; /**< output F3dot value */
 } GCTtopOutputEntry;
 

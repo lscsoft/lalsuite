@@ -262,12 +262,17 @@ static int print_gctFStatline_to_str(GCTtopOutputEntry fline, char* buf, int buf
         } /* for X < numDet */
 
     } /* if fline.log10BSGL */
-  /* add extra output fields for recalculated F-stats */
+  /* add extra output fields for recalculated statistics */
   char recalcStr[256] = "";	/* defaults to empty */
   if ( fline.avTwoFrecalc >= 0.0 ) /* this was initialised to -1.0 and is only >= 0.0 if actually recomputed in recalcToplistStats step */
     {
       char buf0[256];
       snprintf ( recalcStr, sizeof(recalcStr), " %.6f", fline.avTwoFrecalc );
+      if ( fline.log10BSGLrecalc > -LAL_REAL4_MAX*0.2 ) /* if --computeBSGL=FALSE, the log10BSGLrecalc field was initialised to -LAL_REAL4_MAX; if --computeBSGL=TRUE, it is at least -LAL_REAL4_MAX*0.1 */
+        {
+          snprintf ( buf0, sizeof(buf0), " %.6f", fline.log10BSGLrecalc );
+          strcat ( recalcStr, buf0 );
+        } /* if ( fline.log10BSGL > -LAL_REAL4_MAX*0.2 ) */
       for ( UINT4 X = 0; X < fline.numDetectors ; X ++ )
         {
           snprintf ( buf0, sizeof(buf0), " %.6f", fline.avTwoFXrecalc[X] );
