@@ -1669,20 +1669,24 @@ int MAIN( int argc, char *argv[]) {
   if ( uvar_recalcToplistStats ) {
 
     LogPrintf( LOG_NORMAL, "Recalculating statistics for the final toplist...\n");
-
-    XLAL_CHECK ( XLAL_SUCCESS == XLALComputeExtraStatsForToplist ( semiCohToplist, "GCTtop", Fstat_in_vec, usefulParams.detectorIDs,
-                                                                   usefulParams.startTstack, refTimeGPS, usefulParams.BSGLsetup, uvar_loudestSegOutput ),
+    RecalcStatsParams XLAL_INIT_DECL(recalcParams);
+    recalcParams.listEntryTypeName = "GCTtop";
+    recalcParams.Fstat_in_vec		= Fstat_in_vec;
+    recalcParams.detectorIDs		= usefulParams.detectorIDs;
+    recalcParams.startTstack		= usefulParams.startTstack;
+    recalcParams.refTimeGPS		= refTimeGPS;
+    recalcParams.BSGLsetup		= usefulParams.BSGLsetup;
+    recalcParams.loudestSegOutput	= uvar_loudestSegOutput;
+    XLAL_CHECK ( XLAL_SUCCESS == XLALComputeExtraStatsForToplist ( semiCohToplist, &recalcParams ),
                  HIERARCHICALSEARCH_EXLAL, "XLALComputeExtraStatsForToplist() failed with xlalErrno = %d.\n\n", xlalErrno
                  );
     // also recalc optional 2nd toplist if present
     if ( semiCohToplist2 )
-      XLAL_CHECK ( XLAL_SUCCESS == XLALComputeExtraStatsForToplist ( semiCohToplist2, "GCTtop", Fstat_in_vec, usefulParams.detectorIDs,
-                                                                     usefulParams.startTstack, refTimeGPS, usefulParams.BSGLsetup, uvar_loudestSegOutput ),
+      XLAL_CHECK ( XLAL_SUCCESS == XLALComputeExtraStatsForToplist ( semiCohToplist2, &recalcParams ),
                    HIERARCHICALSEARCH_EXLAL, "XLALComputeExtraStatsForToplist() failed for 2nd toplist with xlalErrno = %d.\n\n", xlalErrno
                    );
 
     LogPrintf( LOG_NORMAL, "Finished recalculating toplist statistics.\n");
-
   }
 
   if ( uvar_outputTiming )

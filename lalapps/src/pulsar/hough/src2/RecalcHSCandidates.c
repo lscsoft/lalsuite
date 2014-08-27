@@ -979,10 +979,14 @@ int MAIN( int argc, char *argv[]) {
     /*   multiNoiseWeightsPointer = &stackMultiNoiseWeights; */
     /* else */
     /*   multiNoiseWeightsPointer = NULL; */
-
+    RecalcStatsParams XLAL_INIT_DECL(recalcToplistParams);
+    recalcToplistParams.listEntryTypeName	= "HoughFStat";
+    recalcToplistParams.Fstat_in_vec		= Fstat_in_vec;
+    recalcToplistParams.detectorIDs		= usefulParams.detectorIDs;
+    recalcToplistParams.startTstack		= usefulParams.startTstack;
+    recalcToplistParams.refTimeGPS		= refTimeGPS;
     xlalErrno = 0;
-    XLALComputeExtraStatsForToplist ( semiCohToplist, "HoughFStat", Fstat_in_vec, usefulParams.detectorIDs,
-                                      usefulParams.startTstack, refTimeGPS, NULL, FALSE ); /* no support for BSGL here */
+    XLALComputeExtraStatsForToplist ( semiCohToplist, &recalcToplistParams ); /* no support for BSGL here */
     if ( xlalErrno != 0 ) {
       XLALPrintError ("%s line %d : XLALComputeExtraStatsForToplist() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
       return(HIERARCHICALSEARCH_EBAD);

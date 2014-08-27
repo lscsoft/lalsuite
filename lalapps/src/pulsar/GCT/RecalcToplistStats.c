@@ -41,27 +41,21 @@
 
 /** XLAL function to go through a (Hough or GCT) toplist and compute line-robust statistics for each candidate */
 int XLALComputeExtraStatsForToplist ( toplist_t *list,				/**< list of cancidates with f, sky position etc. - no output so far */
-				      const char *listEntryTypeName,		/**< type of toplist entries, give as name string */
-				      const FstatInputVector *Fstat_in_vec,	/**< vector of input data for XLALComputeFstat() */
-				      const LALStringVector *detectorIDs,	/**< detector name vector with all detectors present in any data sements */
-				      const LIGOTimeGPSVector *startTstack,	/**< starting GPS time of each stack */
-				      const LIGOTimeGPS refTimeGPS,		/**< reference time for fkdot values in toplist */
-				      const BSGLSetup *BSGLsetup,		/**< pre-computed setup for line-robust statistic BSGL */
-				      const BOOLEAN loudestSegOutput		/**< return extra info about loudest segment */
+				      const RecalcStatsParams *recalcParams	/**< additional input values and parameters */
 				    )
 {
 
   /* check input parameters and report errors */
-  XLAL_CHECK ( list && listEntryTypeName && Fstat_in_vec && detectorIDs, XLAL_EFAULT, "Empty pointer as input parameter." );
+  XLAL_CHECK ( list && recalcParams->listEntryTypeName && recalcParams->Fstat_in_vec && recalcParams->detectorIDs, XLAL_EFAULT, "Empty pointer as input parameter." );
   XLAL_CHECK ( list->data && list->heap, XLAL_EFAULT, "Input toplist has no elements." );
   XLAL_CHECK ( list->elems > 0, XLAL_EBADLEN, "Input toplist has zero length." );
 
   /* check listEntryTypeName only once by strcmp, afterwards by int, to be faster */
   UINT4 listEntryType = 0;
-  if (strcmp(listEntryTypeName, "GCTtop") == 0 ) {
+  if (strcmp(recalcParams->listEntryTypeName, "GCTtop") == 0 ) {
     listEntryType = 1;
   }
-  if (strcmp(listEntryTypeName, "HoughFStat") == 0 ) {
+  if (strcmp(recalcParams->listEntryTypeName, "HoughFStat") == 0 ) {
     listEntryType = 2;
   }
   XLAL_CHECK ( listEntryType != 0, XLAL_EBADLEN, "Unsupported entry type for input toplist! Supported types currently are: GCTtop, HoughFStat." );
@@ -71,9 +65,9 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,				/**< list of cancidate
   UINT4 X;
 
   /* initialize doppler parameters */
-  candidateDopplerParams.refTime = refTimeGPS;  /* spin parameters in toplist refer to this refTime */
+  candidateDopplerParams.refTime = recalcParams->refTimeGPS;  /* spin parameters in toplist refer to this refTime */
 
-  UINT4 numDetectors = detectorIDs->length;
+  UINT4 numDetectors = recalcParams->detectorIDs->length;
 
   UINT4 j;
   UINT4 numElements = list->elems;
@@ -108,9 +102,9 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,				/**< list of cancidate
       } /* if listEntryType 2 */
 
       /*  recalculate multi- and single-IFO Fstats for all segments for this candidate */
-      RecalcStatComponents XLAL_INIT_DECL(recalcStats); /* struct containing multi-detector F-stat, single-detector F-stats, BSGL */
+      RecalcStatsComponents XLAL_INIT_DECL(recalcStats); /* struct containing multi-detector F-stat, single-detector F-stats, BSGL */
       recalcStats.log10BSGL = -LAL_REAL4_MAX; /* proper initialization here is not 0 */
-      XLAL_CHECK ( XLALComputeExtraStatsSemiCoherent( &recalcStats, &candidateDopplerParams, Fstat_in_vec, detectorIDs, startTstack, BSGLsetup, loudestSegOutput ) == XLAL_SUCCESS, XLAL_EFUNC, "Failed call to XLALComputeExtraStatsSemiCoherent()." );
+      XLAL_CHECK ( XLALComputeExtraStatsSemiCoherent( &recalcStats, &candidateDopplerParams, recalcParams ) == XLAL_SUCCESS, XLAL_EFUNC, "Failed call to XLALComputeExtraStatsSemiCoherent()." );
 
       /* save values in toplist */
       if ( listEntryType == 1 ) {
@@ -121,7 +115,7 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,				/**< list of cancidate
             elem->avTwoFXrecalc[X] = recalcStats.avTwoFX[X];
           }
           elem->log10BSGLrecalc = recalcStats.log10BSGL;
-          if ( loudestSegOutput ) {
+          if ( recalcParams->loudestSegOutput ) {
             elem->avTwoFWithoutLoudestSeg = recalcStats.avTwoFWithoutLoudestSeg;
             elem->loudestSeg = recalcStats.loudestSeg;
           }
@@ -146,21 +140,17 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,				/**< list of cancidate
  * XLAL Function to recalculate multi-IFO F-stat 2F and single-IFO 2FX for all semicoherent search segments
  * This returns AVERAGE F-stats over segments, not sums.
  */
-int XLALComputeExtraStatsSemiCoherent ( RecalcStatComponents *recalcStats,		/**< [out] structure containing multi TwoF, single TwoF, BSGL */
+int XLALComputeExtraStatsSemiCoherent ( RecalcStatsComponents *recalcStats,		/**< [out] structure containing multi TwoF, single TwoF, BSGL */
 					const PulsarDopplerParams *dopplerParams,	/**< sky position, frequency and fdot for a given candidate */
-					const FstatInputVector *Fstat_in_vec,		/**< vector of input data for XLALComputeFstat() */
-					const LALStringVector *detectorIDs,		/**< detector name vector with all detectors present in any data sements */
-					const LIGOTimeGPSVector *startTstack,		/**< starting GPS time of each stack */
-					const BSGLSetup *BSGLsetup,			/**< pre-computed setup for line-robust statistic BSGL */
-					const BOOLEAN loudestSegOutput			/**< return extra info about loudest segment */
+					const RecalcStatsParams *recalcParams		/**< additional input values and parameters */
 				      )
 {
 
   /* check input parameters and report errors */
-  XLAL_CHECK ( recalcStats && recalcStats->avTwoFX && dopplerParams && Fstat_in_vec && detectorIDs && startTstack, XLAL_EFAULT, "Empty pointer as input parameter." );
+  XLAL_CHECK ( recalcStats && recalcStats->avTwoFX && dopplerParams && recalcParams->Fstat_in_vec && recalcParams->detectorIDs && recalcParams->startTstack, XLAL_EFAULT, "Empty pointer as input parameter." );
 
-  UINT4 numSegments  = Fstat_in_vec->length;
-  UINT4 numDetectors = detectorIDs->length;
+  UINT4 numSegments  = recalcParams->Fstat_in_vec->length;
+  UINT4 numDetectors = recalcParams->detectorIDs->length;
 
   recalcStats->numDetectors = numDetectors;
 
@@ -192,17 +182,17 @@ int XLALComputeExtraStatsSemiCoherent ( RecalcStatComponents *recalcStats,		/**<
     {
 
       /* starttime of segment */
-      dopplerParams_temp.refTime = startTstack->data[k];
+      dopplerParams_temp.refTime = recalcParams->startTstack->data[k];
       /* convert LIGOTimeGPS into real number difference for XLALExtrapolatePulsarSpins */
       REAL8 deltaTau = XLALGPSDiff( &dopplerParams_temp.refTime, &dopplerParams->refTime );
       /* extrapolate pulsar spins to correct time for this segment */
       XLAL_CHECK ( XLALExtrapolatePulsarSpins( dopplerParams_temp.fkdot, dopplerParams->fkdot, deltaTau ) == XLAL_SUCCESS, XLAL_EFUNC, "XLALExtrapolatePulsarSpins() failed." );
 
       /* recompute multi-detector Fstat and atoms */
-      XLAL_CHECK ( XLALComputeFstat(&Fstat_res, Fstat_in_vec->data[k], &dopplerParams_temp, 0.0, 1, FSTATQ_2F | FSTATQ_2F_PER_DET) == XLAL_SUCCESS, XLAL_EFUNC, "XLALComputeFstat() failed with errno=%d", xlalErrno );
+      XLAL_CHECK ( XLALComputeFstat(&Fstat_res, recalcParams->Fstat_in_vec->data[k], &dopplerParams_temp, 0.0, 1, FSTATQ_2F | FSTATQ_2F_PER_DET) == XLAL_SUCCESS, XLAL_EFUNC, "XLALComputeFstat() failed with errno=%d", xlalErrno );
 
       sumTwoF  += Fstat_res->twoF[0]; /* sum up multi-detector Fstat for this segment*/
-      if ( loudestSegOutput && ( Fstat_res->twoF[0] > twoFfromLoudestSeg ) )
+      if ( recalcParams->loudestSegOutput && ( Fstat_res->twoF[0] > twoFfromLoudestSeg ) )
         {
           twoFfromLoudestSeg = Fstat_res->twoF[0];
           recalcStats->loudestSeg = k;
@@ -218,7 +208,7 @@ int XLALComputeExtraStatsSemiCoherent ( RecalcStatComponents *recalcStats,		/**<
           /* match detector ID in this segment to one from detectorIDs list, sum up the corresponding twoFX */
           detid = -1;
           for (UINT4 Y = 0; Y < numDetectors; Y++) {
-            if ( strcmp( Fstat_res->detectorNames[X], detectorIDs->data[Y] ) == 0 ) {
+            if ( strcmp( Fstat_res->detectorNames[X], recalcParams->detectorIDs->data[Y] ) == 0 ) {
               detid = Y;
             }
           }
@@ -235,15 +225,15 @@ int XLALComputeExtraStatsSemiCoherent ( RecalcStatComponents *recalcStats,		/**<
 
     } /* for k < numSegments */
 
-  if ( BSGLsetup )
+  if ( recalcParams->BSGLsetup )
     {
-      recalcStats->log10BSGL = XLALComputeBSGL ( sumTwoF, sumTwoFX, BSGLsetup );
+      recalcStats->log10BSGL = XLALComputeBSGL ( sumTwoF, sumTwoFX, recalcParams->BSGLsetup );
       XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "XLALComputeBSGL() failed with xlalErrno = %d\n", xlalErrno );
     }
 
   /* get average stats over all segments */
   recalcStats->avTwoF = sumTwoF/numSegments;
-  if ( loudestSegOutput ) {
+  if ( recalcParams->loudestSegOutput ) {
     recalcStats->avTwoFWithoutLoudestSeg = (sumTwoF - twoFfromLoudestSeg)/(numSegments-1);
   }
   for (UINT4 X = 0; X < numDetectors; X++) {
