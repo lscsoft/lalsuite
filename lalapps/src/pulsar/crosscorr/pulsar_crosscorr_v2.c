@@ -160,10 +160,9 @@ int main(int argc, char *argv[]){
   if (uvar.help)	/* if help was requested, then exit */
     return 0;
 
+  CHAR *VCSInfoString = XLALGetVersionString(0);     /**<LAL + LALapps Vsersion string*/
   /*If the version information was requested, output it and exit*/
   if ( uvar.version ){
-    CHAR    *VCSInfoString;     /**<LAL + LALapps Vsersion string*/
-    VCSInfoString = XLALGetVersionString(0);
     XLAL_CHECK ( VCSInfoString != NULL, XLAL_EFUNC, "XLALGetVersionString(0) failed.\n" );
     printf ("%s\n", VCSInfoString );
     exit (0);
@@ -347,7 +346,10 @@ int main(int argc, char *argv[]){
   }
 
   if (XLALUserVarWasSet(&uvar.pairListOutputFilename)) { /* Write the list of pairs to a file, if a name was provided */
-    fp = fopen(uvar.pairListOutputFilename,"w");
+    if((fp = fopen(uvar.pairListOutputFilename, "w")) == NULL){
+      LogPrintf ( LOG_CRITICAL, "Can't write in SFT-pair list \n", 0);
+      XLAL_ERROR( XLAL_EFUNC );
+    }
     fprintf(fp,PCC_SFTPAIR_HEADER, sftPairs->length ); /*output the length of SFT-pair list to the header*/
     for(j = 0; j < sftPairs->length; j++){
       fprintf(fp,PCC_SFTPAIR_BODY, sftPairs->data[j].sftNum[0], sftPairs->data[j].sftNum[1]);
@@ -356,7 +358,10 @@ int main(int argc, char *argv[]){
   }
 
   if (XLALUserVarWasSet(&uvar.sftListOutputFilename)) { /* Write the list of SFTs to a file for sanity-checking purposes */
-    fp = fopen(uvar.sftListOutputFilename,"w");
+    if((fp = fopen(uvar.sftListOutputFilename, "w")) == NULL){
+      LogPrintf ( LOG_CRITICAL, "Can't write in flat SFT list \n", 0);
+      XLAL_ERROR( XLAL_EFUNC );
+    }
     fprintf(fp,PCC_SFT_HEADER, sftIndices->length ); /*output the length of SFT list to the header*/
     for(j = 0; j < sftIndices->length; j++){ /*output the SFT list */
       fprintf(fp,PCC_SFT_BODY, inputSFTs->data[sftIndices->data[j].detInd]->data[sftIndices->data[j].sftInd].name, inputSFTs->data[sftIndices->data[j].detInd]->data[sftIndices->data[j].sftInd].epoch.gpsSeconds, inputSFTs->data[sftIndices->data[j].detInd]->data[sftIndices->data[j].sftInd].epoch.gpsNanoSeconds);
@@ -366,7 +371,10 @@ int main(int argc, char *argv[]){
 
   else if(XLALUserVarWasSet(&uvar.sftListInputFilename)){ /*do a sanity check of the order of SFTs list if the name of input SFT list is given*/
     UINT4 numofsft=0;
-    fp = fopen(uvar.sftListInputFilename,"r");
+    if((fp = fopen(uvar.sftListInputFilename, "r")) == NULL){
+      LogPrintf ( LOG_CRITICAL, "Can't read in flat SFT list \n", 0);
+      XLAL_ERROR( XLAL_EFUNC );
+    }
     if (fscanf(fp, PCC_SFT_HEADER, &numofsft)==EOF){
       LogPrintf ( LOG_CRITICAL, "can't read in the length of SFT list from header\n", 0);
       XLAL_ERROR( XLAL_EFUNC );
@@ -562,7 +570,17 @@ int main(int argc, char *argv[]){
   REAL8 h0Sens = sqrt((10 / sqrt(estSens))); /*for a SNR=10 signal, the h0 we can detect*/
   /* make a meta-data file*/
   if(XLALUserVarWasSet(&uvar.logFilename)){
-    fp = fopen(uvar.logFilename,"w");
+    CHAR *CMDInputStr = XLALUserVarGetLog ( UVAR_LOGFMT_CFGFILE );
+    if ((fp = fopen(uvar.logFilename,"w"))==NULL){
+    LogPrintf ( LOG_CRITICAL, "Can't write in logfile", 0);
+    XLAL_ERROR( XLAL_EFUNC );
+    }
+    fprintf(fp, "##Log File for lalapps_pulsar_crosscorr_v2\n\n");
+    fprintf(fp, "#User Input:\n");
+    fprintf(fp, "\n#--------------------------------------------------------------------------#\n\n");
+    fprintf(fp, "%s\n", CMDInputStr);
+    fprintf(fp, "\n#--------------------------------------------------------------------------#\n\n");
+    fprintf(fp, "#Metric components & spacing in parameter space:\n");
     fprintf(fp, "#The metric element g_ff = %.9f\n", diagff );
     fprintf(fp, "#The metric element g_aa = %.9f\n", diagaa );
     fprintf(fp, "#The metric element g_TT = %.9f\n", diagTT );
@@ -571,12 +589,14 @@ int main(int argc, char *argv[]){
     fprintf(fp, "#The frequency spacing used was %.9g Hz\n", binaryTemplateSpacings.fkdot[0]);
     fprintf(fp, "#The Tasc spacing used was %.9g GPSSec\n", XLALGPSGetREAL8(&binaryTemplateSpacings.tp));
     fprintf(fp, "#The asini spacing used was %.9g s\n", binaryTemplateSpacings.asini);
-    fprintf(fp, "#The period spacing used was 0 (didn't search over orbital period)\n");
+    fprintf(fp, "#The period spacing used was 0 (didn't search over orbital period)\n\n");
+    fprintf(fp, "\n#--------------------------------------------------------------------------#\n\n");
+    fprintf(fp, "#LAL & LALAPPS version:\n%s\n",  VCSInfoString);
     fclose(fp);
-
+    XLALFree(CMDInputStr);
   }
 
-
+  XLALFree(VCSInfoString);
   XLALDestroyCOMPLEX8Vector ( expSignalPhases );
   XLALDestroyUINT4Vector ( lowestBins );
   XLALDestroyREAL8Vector ( shiftedFreqs );
