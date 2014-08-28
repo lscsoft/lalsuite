@@ -465,32 +465,20 @@ gsl_matrix* XLALComputeMetricOrthoBasis(
 
   // Allocate memory
   gsl_matrix* GAMAT_NULL(basis, n, n);
-  gsl_matrix* GAMAT_NULL(U, n, n);
 
-  // Compute a modified Cholesky decomposition:
-  //   metric = U * U^T
-  // where U is an upper triangular matrix.
-  // This is found using the usual (lower) Cholesky decomposition by:
-  // - reversing the order of the rows/columns of metric
-  // - decomposing metric = L * L^T where L is a lower triangular matrix
-  // - reversing the order of the rows/columns of L to give U
-  gsl_matrix_memcpy(U, metric);
-  LT_ReverseOrderRowsCols(U);
-  GCALL_NULL(gsl_linalg_cholesky_decomp(U), "'metric' is not positive definite");
-  LT_ReverseOrderRowsCols(U);
-
-  // We want to find basis such that:
+  // We want to find a lower-triangular basis such that:
   //   basis^T * metric * basis = I
-  // Substituting metric = U * U^T gives us:
-  //   basic = inv(U)^T
-  gsl_matrix_set_identity(basis);
-  gsl_blas_dtrsm(CblasLeft, CblasUpper, CblasTrans, CblasNonUnit, 1.0, U, basis);
+  // This is rearranged to give:
+  //   metric^-1 = basis * basis^T
+  // Hence basis is the Cholesky decomposition of metric^-1
+  gsl_matrix_memcpy(basis, metric);
+  GCALL_NULL(gsl_linalg_cholesky_decomp(basis), "'metric' is not positive definite");
+  GCALL_NULL(gsl_linalg_cholesky_invert(basis), "'metric' cannot be inverted");
+  GCALL_NULL(gsl_linalg_cholesky_decomp(basis), "Inverse of 'metric' is not positive definite");
 
-  // Matrix will be lower triangular, so zero out upper triangle
+  // gsl_linalg_cholesky_decomp() stores both basis and basis^T
+  // in the same matrix; zero out upper triangle to get basis
   LT_ZeroStrictUpperTriangle(basis);
-
-  // Cleanup
-  GFMAT(U);
 
   return basis;
 
