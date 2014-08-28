@@ -2158,7 +2158,7 @@ int XLALSimInspiralChooseFDWaveform(
             /* Call the waveform driver routine */
             ret = XLALSimInspiralSpinTaylorF2(hptilde, hctilde, phiRef, deltaF,
                     m1, m2, S1x, S1y, S1z, LNhatx, LNhaty, LNhatz,
-                    f_min, 0., f_min, r, /* FIXME Deal with f_ref properly */
+                    f_min, f_max, f_ref, r,
                     nonGRparams, XLALSimInspiralGetSpinOrder(waveFlags), phaseO, amplitudeO);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             break;

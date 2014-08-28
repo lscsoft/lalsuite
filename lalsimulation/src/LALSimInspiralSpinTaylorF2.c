@@ -303,7 +303,6 @@ int XLALSimInspiralSpinTaylorF2(
     const REAL8 m_sec = m * LAL_MTSUN_SI;  /* total mass in seconds */
     const REAL8 eta = m1 * m2 / (m * m);
     const REAL8 piM = LAL_PI * m_sec;
-    const REAL8 v_ref = cbrt(piM*f_ref);
     const REAL8 vISCO = 1. / sqrt(6.);
     const REAL8 fISCO = vISCO * vISCO * vISCO / piM;
     REAL8 shft, amp0, f_max;
@@ -311,6 +310,9 @@ int XLALSimInspiralSpinTaylorF2(
     COMPLEX16 *data_plus = NULL;
     COMPLEX16 *data_cross = NULL;
     LIGOTimeGPS tC = {0, 0};
+
+    /* If f_ref = 0, use f_ref = f_low for everything except the phase offset */
+    const REAL8 v_ref = f_ref > 0. ? cbrt(piM*f_ref) : cbrt(piM*fStart);
 
     REAL8 alpha, alpha_ref;
     COMPLEX16 prec_plus, prec_cross, phasing_fac;
@@ -456,17 +458,16 @@ int XLALSimInspiralSpinTaylorF2(
     data_cross = hcross->data->data;
 
     /* Compute the SPA phase at the reference point */
-    const REAL8 vref = v_ref; /* FIXME How should we do f_ref = 0 case? */
     REAL8 ref_phasing = 0.;
-    if (v_ref > 0.)
+    if (f_ref > 0.)
     {
         const REAL8 logvref = log(v_ref);
         const REAL8 v2ref = v_ref * v_ref;
         const REAL8 v3ref = v_ref * v2ref;
         const REAL8 v4ref = v_ref * v3ref;
         const REAL8 v5ref = v_ref * v4ref;
-        ref_phasing = (pfaN + pfa2 * v2ref + pfa3 * v3ref + pfa4 * v4ref) / v5ref + (pfa5 + pfl5 * logvref) + (pfa6 + pfl6 * logvref) * vref + pfa7 * v2ref + pfa8 * v3ref;
-    }
+        ref_phasing = (pfaN + pfa2 * v2ref + pfa3 * v3ref + pfa4 * v4ref) / v5ref + (pfa5 + pfl5 * logvref) + (pfa6 + pfl6 * logvref) * v_ref + pfa7 * v2ref + pfa8 * v3ref;
+    } /* end of if (f_ref > 0.) */
 
     #pragma omp parallel for
     for (i = iStart; i < n; i++) {
