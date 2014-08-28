@@ -3857,8 +3857,9 @@ void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceRunState *runState
  * chooses at random a KDE-estimate from a linked list.
  * @param      runState      The current LALInferenceRunState.
  * @param[out] proposedParam The proposed parameters.
+ * @return proposal_ratio    The (log) proposal ratio for maintaining detailed balance
  */
-void LALInferenceClusteredKDEProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
+REAL8 LALInferenceClusteredKDEProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
     const char *propName = (const char *) clusteredKDEProposalName;
     REAL8 cumulativeWeight, totalWeight;
 
@@ -3914,10 +3915,11 @@ void LALInferenceClusteredKDEProposal(LALInferenceRunState *runState, LALInferen
     /* Calculate the proposal ratio */
     REAL8 logCurrentP = LALInferenceKmeansPDF(kde->kmeans, current);
     REAL8 logProposedP = LALInferenceKmeansPDF(kde->kmeans, proposed);
-    LALInferenceSetLogProposalRatio(runState, logCurrentP-logProposedP);
 
     XLALFree(current);
     XLALFree(proposed);
+
+    return logCurrentP-logProposedP;
 }
 
 
