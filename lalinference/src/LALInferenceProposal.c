@@ -262,9 +262,9 @@ LALInferenceCyclicProposal(LALInferenceRunState *runState, LALInferenceVariables
   /* Call proposal. */
   REAL8 logPropRatio = (cycle[i])(runState, currentParams, proposedParams);
 
-      /* Increment counter for the next time around. */
-      i = (i+1) % length;
-  }
+  /* Increment counter for the next time around. */
+  i = (i+1) % length;
+
   LALInferenceSetVariable(propArgs, cycleArrayCounterName, &i);
   
   return logPropRatio;
