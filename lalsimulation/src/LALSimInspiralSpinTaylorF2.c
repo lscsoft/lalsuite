@@ -56,7 +56,7 @@ REAL8 safe_atan2(REAL8 val1, REAL8 val2);
 
 void XLALSimInspiralSF2CalculateOrientation(
     LALSimInspiralSF2Orientation *orientation,
-    REAL8 m1, REAL8 m2, REAL8 f_ref,
+    REAL8 m1, REAL8 m2, REAL8 v_ref,
     REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz,
     REAL8 s1x, REAL8 s1y, REAL8 s1z);
 
@@ -324,7 +324,7 @@ int XLALSimInspiralSpinTaylorF2(
 
     LALSimInspiralSF2Coeffs coeffs;
     XLALSimInspiralSF2CalculateCoeffs(&coeffs, m1, m2, orientation.chi, orientation.kappa);
-    enable_precession = orientation.chi != 0. && orientation.kappa != 1.;
+    enable_precession = orientation.chi != 0. && orientation.kappa != 1. && orientation.kappa != -1.;
 
     alpha_ref = enable_precession ? XLALSimInspiralSF2Alpha(v_ref, coeffs) - orientation.alpha0 : 0.;
 
