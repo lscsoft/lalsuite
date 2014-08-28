@@ -180,28 +180,20 @@ double m1,m2,mc,eta,q,iota=0;
   double plusCoef  = 0.5 * (1.0 + cosiota*cosiota);
   double crossCoef = cosiota;
   /* external: SI; internal: solar masses */
-  //const REAL8 m1 = *(REAL8*) LALInferenceGetVariable(model->params, "mass1"); //m1_SI / LAL_MSUN_SI;
-  //const REAL8 m2 = *(REAL8*) LALInferenceGetVariable(model->params, "mass2");//m2_SI / LAL_MSUN_SI;
-  /* external: SI; internal: solar masses */
   const REAL8 m = m1 + m2;
   const REAL8 m_sec = m * LAL_MTSUN_SI;  /* total mass in seconds */
-  //const REAL8 eta = m1 * m2 / (m * m);
   const REAL8 etap2 = eta * eta;
   const REAL8 etap3 = etap2 * eta;
   const REAL8 piM = LAL_PI * m_sec;
   const REAL8 mSevenBySix = -7./6.;
   const REAL8 phic = *(REAL8 *)LALInferenceGetVariable(model->params,"phase");
-  //const REAL8 vISCO = 1. / sqrt(6.);
   const REAL8 r = 1e6*LAL_PC_SI;
-  //REAL8 v0 = cbrt(piM * IFOdata->fLow);
   REAL8 logv0 = log(1.); //the standard tf2 definition is log(v0), but I've changed it to reflect Scott's convention
   REAL8 shft, amp0;//, f_max;
   REAL8 psiNewt, psi2, psi3, psi4, psi5, psi6, psi6L, psi7, psi3S, psi4S, psi5S;
   REAL8 eta_fac = -113. + 76. * eta;
   REAL8 chi=0; //NOTE: chi isn't used here yet, so we just set it to zero
   gsl_complex h_i;
-  //LIGOTimeGPS tStart = {0, 0};
-  //XLALGPSAdd(&tStart, -1 / deltaF);  /* coalesce at t=0 */
 
   /* extrinsic parameters */
   amp0 = -pow(m_sec, 5./6.) * sqrt(5.*eta / 24.) / (Pi_p2by3 * r / LAL_C_SI);

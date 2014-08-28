@@ -261,10 +261,6 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams,
   gsl_complex gsl_fplus;
   gsl_complex gsl_fcross;
   
-  //gsl_complex exp_i_pi;
-  //gsl_complex cross_factor;
-  //gsl_complex total_scale_factor;
-  
   if(data==NULL) {XLAL_ERROR_REAL8(XLAL_EINVAL,"ERROR: Encountered NULL data pointer in likelihood\n");}
   
   logDistFlag=LALInferenceCheckVariable(currentParams, "logdistance");
@@ -350,7 +346,6 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams,
     /* signal arrival time (relative to geocenter); */
     timedelay = XLALTimeDelayFromEarthCenter(dataPtr->detector->location, ra, dec, &GPSlal);
     time_requested =  GPSdouble + timedelay;
-    //printf("time_requested = %f\n", time_requested);
     /* include distance (overall amplitude) effect in Fplus/Fcross: */
     FplusScaled  = Fplus  / distMpc;
     FcrossScaled = Fcross / distMpc;
@@ -370,12 +365,6 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams,
     gsl_fplus = gsl_complex_rect(FplusScaled,0.0);
     gsl_fcross = gsl_complex_rect(FcrossScaled,0.0);
     
-    //exp_i_pi = gsl_complex_polar (0, M_PI);
-    //cross_factor = gsl_complex_mul_real(exp_i_pi, FcrossScaled);
-    //total_scale_factor = gsl_complex_add_real (cross_factor, FplusScaled); //ONLY VALID FOR non-precessing, dominant mode only templates
-    
-    //gsl_blas_zscal (total_scale_factor, model->roqData->hplus);
- 
     gsl_vector_complex_set_zero(model->roq->hstrain);
     
     gsl_blas_zaxpy(gsl_fplus,model->roq->hplus,model->roq->hstrain);
@@ -384,20 +373,14 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams,
     time_step = (float)dataPtr->roq->time_weights_width / (float)dataPtr->roq->weights->size2;
     time_min = model->roq->trigtime - 0.5*dataPtr->roq->time_weights_width;
     
-    //printf("time_step=%f\n",time_step);
-    //printf("time_min=%f\n",time_min);
-    
     time_requested -= time_min;
     
     time_requested /= time_step;
     time_requested = floor(time_requested + 0.5);
     
-    //time_requested *= time_step;
-
     // then set tc in MCMC to be one of the discrete values
     weight_index = (unsigned int) (time_requested);
     
-    //printf("rounded time requested and index: %f %d\n", time_requested, weight_index);
     gsl_vector_complex_view weights_row = gsl_matrix_complex_column(dataPtr->roq->weights, weight_index);
  
     // compute h_dot_h and d_dot_h
@@ -409,10 +392,6 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams,
     dataPtr->loglikelihood += -0.5*h_dot_h;
     
     loglikeli += dataPtr->loglikelihood;
-    
-    //printf("GSL_REAL(complex_d_dot_h)=%e\n",GSL_REAL(complex_d_dot_h));
-    //printf("h_dot_h=%e\n",h_dot_h);
-    //printf("loglikeli=%e\n",loglikeli);
     
     dataPtr = dataPtr->next;
   }

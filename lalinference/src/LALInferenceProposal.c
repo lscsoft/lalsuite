@@ -333,7 +333,6 @@ void LALInferenceSetupDefaultNSProposal(LALInferenceRunState *runState, LALInfer
 
     if(!LALInferenceGetProcParamVal(runState->commandLine,"--margphi") && !LALInferenceGetProcParamVal(runState->commandLine, "--margtimephi"))
         if(LALInferenceCheckVariableNonFixed(proposedParams,"phase")) {
-          //LALInferenceAddProposalToCycle(runState, orbitalPhaseJumpName, &LALInferenceOrbitalPhaseJump, TINYWEIGHT);
           if (!LALInferenceGetProcParamVal(runState->commandLine,"--noProposalCorrPsiPhi"))
             LALInferenceAddProposalToCycle(runState, polarizationCorrPhaseJumpName, &LALInferenceCorrPolarizationPhaseJump, SMALLWEIGHT);
         }
@@ -376,15 +375,6 @@ void LALInferenceSetupDefaultNSProposal(LALInferenceRunState *runState, LALInfer
   {
     LALInferenceAddProposalToCycle (runState, PSDFitJumpName, *LALInferencePSDFitJump, SMALLWEIGHT);
   }
-
-
-
-  /********** TURNED OFF - very small acceptance with nested sampling, slows everything down ****************/
-  /*
-  if (!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-kdtree")) {
-    LALInferenceAddProposalToCycle(runState, KDNeighborhoodProposalName, &LALInferenceKDNeighborhoodProposal, SMALLWEIGHT);
-  }
-  */
 
   LALInferenceRandomizeProposalCycle(runState);
   LALInferenceZeroProposalStats(runState);
@@ -508,7 +498,6 @@ static void
 SetupRapidSkyLocProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams) {
   LALInferenceCopyVariables(currentParams, proposedParams);
   LALInferenceAddProposalToCycle(runState, singleAdaptProposalName, &LALInferenceSingleAdaptProposal, 100);
-  //LALInferenceAddProposalToCycle(runState, skyLocWanderJumpName, &LALInferenceSkyLocWanderJump, 1);
   if (!LALInferenceGetProcParamVal(runState->commandLine, "--margphi") && !LALInferenceGetProcParamVal(runState->commandLine, "--margtimephi"))
     LALInferenceAddProposalToCycle(runState, polarizationPhaseJumpName, &LALInferencePolarizationPhaseJump, 1);
 
@@ -520,13 +509,6 @@ SetupRapidSkyLocProposal(LALInferenceRunState *runState, LALInferenceVariables *
   if (nDet >= 3 && !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-extrinsicparam") && frame == LALINFERENCE_FRAME_RADIATION && !LALInferenceGetProcParamVal(runState->commandLine,"--margtime") && !LALInferenceGetProcParamVal(runState->commandLine,"--margtimephi")) {
     LALInferenceAddProposalToCycle(runState, extrinsicParamProposalName, &LALInferenceExtrinsicParamProposal, 20);
   }
-
-  /*
-  UINT4 nDet = numDetectorsUniquePositions(runState);
-  if (nDet == 3) {
-    LALInferenceAddProposalToCycle(runState, skyReflectDetPlaneName, &LALInferenceSkyReflectDetPlane, 1);
-  }
-  */
 
   if (!LALInferenceGetProcParamVal(runState->commandLine, "--noDifferentialEvolution")) {
     LALInferenceAddProposalToCycle(runState, differentialEvolutionFullName, &LALInferenceDifferentialEvolutionFull, 10);
@@ -2017,7 +1999,6 @@ REAL8 LALInferencePSDFitJump(LALInferenceRunState *runState, LALInferenceVariabl
   INT4 N;
 
   REAL8 draw=0.0;
-  //REAL8 var = *(REAL8 *)(LALInferenceGetVariable(runState->proposalArgs, "psdsigma"));
   REAL8Vector *var = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, "psdsigma"));
 
   //Get current state of chain into workable form
@@ -2151,23 +2132,11 @@ static void phase_blind_time_shift(REAL8 *corr, REAL8 *corrf, COMPLEX16Vector *d
   //convolution of signal & template
   for (i=0; i < N2; i++)
   {
-    /*
-		corrFD->data->data[i].real_FIXME	= 0.0;
-		corrFD->data->data[i].imag_FIXME	= 0.0;
-    corrfFD->data->data[i].real_FIXME = 0.0;
-    corrfFD->data->data[i].imag_FIXME = 0.0;
-    */
     corrFD->data->data[i]  = crect(0.0,0.0);
     corrfFD->data->data[i] = crect(0.0,0.0);
 
     if(i>lower && i<upper)
     {
-      /*
-      corrFD->data->data[i].real_FIXME	= ( creal(data1->data[i])*creal(data2->data[i]) + cimag(data1->data[i])*cimag(data2->data[i])) / psd->data[i];
-      corrFD->data->data[i].imag_FIXME	= ( cimag(data1->data[i])*creal(data2->data[i]) - creal(data1->data[i])*cimag(data2->data[i])) / psd->data[i];
-      corrfFD->data->data[i].real_FIXME = ( creal(data1->data[i])*cimag(data2->data[i]) - cimag(data1->data[i])*creal(data2->data[i])) / psd->data[i];
-      corrfFD->data->data[i].imag_FIXME = ( cimag(data1->data[i])*cimag(data2->data[i]) + creal(data1->data[i])*creal(data2->data[i])) / psd->data[i];
-      */
       corrFD->data->data[i]	 = crect( ( creal(data1->data[i])*creal(data2->data[i]) + cimag(data1->data[i])*cimag(data2->data[i])) / psd->data[i], ( cimag(data1->data[i])*creal(data2->data[i]) - creal(data1->data[i])*cimag(data2->data[i])) / psd->data[i] );
       corrfFD->data->data[i] = crect( ( creal(data1->data[i])*cimag(data2->data[i]) - cimag(data1->data[i])*creal(data2->data[i])) / psd->data[i], ( cimag(data1->data[i])*cimag(data2->data[i]) + creal(data1->data[i])*creal(data2->data[i])) / psd->data[i] );
     }
@@ -2190,7 +2159,7 @@ static void phase_blind_time_shift(REAL8 *corr, REAL8 *corrf, COMPLEX16Vector *d
   XLALDestroyCOMPLEX16FrequencySeries(corrfFD);
 }
 
-static void MaximizeGlitchParameters(LALInferenceVariables *currentParams, LALInferenceRunState *runState, int ifo, int n)//int N, int NI, double Tobs, COMPLEX16Vector **s, COMPLEX16Vector **h, double *params, REAL8Vector **Sn)
+static void MaximizeGlitchParameters(LALInferenceVariables *currentParams, LALInferenceRunState *runState, int ifo, int n)
 {
   UINT4 i;
 
@@ -2249,20 +2218,12 @@ static void MaximizeGlitchParameters(LALInferenceVariables *currentParams, LALIn
     hIm = 0.0;
     gRe = 0.0;
     gIm = 0.0;
-    /*
-    r->data[i].real_FIXME = 0.0;
-    r->data[i].imag_FIXME = 0.0;
-    */
     r->data[i] = crect(0.0,0.0);
 
     if(i>lower && i<upper)
     {
       hRe = sqTwoDeltaToverN * gsl_matrix_get(hmatrix,ifo,2*i);
       hIm = sqTwoDeltaToverN * gsl_matrix_get(hmatrix,ifo,2*i+1);
-      /*
-      h->data[i].real_FIXME = hRe;
-      h->data[i].imag_FIXME = hIm;
-      */
       h->data[i] = crect(hRe,hIm);
       //compute SNR of new wavelet
       rho += (hRe*hRe + hIm*hIm) / Sn->data[i];
@@ -2273,10 +2234,6 @@ static void MaximizeGlitchParameters(LALInferenceVariables *currentParams, LALIn
         gRe = gsl_matrix_get(glitchFD,ifo,2*i);
         gIm = gsl_matrix_get(glitchFD,ifo,2*i+1);
       }
-      /*
-      r->data[i].real_FIXME = sqTwoDeltaToverN * (creal(s->data[i])/deltaT-gRe);
-      r->data[i].imag_FIXME = sqTwoDeltaToverN * (cimag(s->data[i])/deltaT-gIm);
-      */
       r->data[i] = crect(sqTwoDeltaToverN * (creal(s->data[i])/deltaT-gRe),sqTwoDeltaToverN * (cimag(s->data[i])/deltaT-gIm));
     }
   }
@@ -2327,7 +2284,6 @@ static void MaximizeGlitchParameters(LALInferenceVariables *currentParams, LALIn
   else               dTime = ( ( (double)imax-(double)N )/(double)N )*Tobs;
 
   /* Shift template parameters accordingly */
-  //printf("%g %g %g %g %g %g\n",dTime,dPhase,dAmplitude,max/rho, max, rho);
   t0  += dTime;
   Amp *= dAmplitude;
   ph0 -= dPhase;
@@ -2569,8 +2525,6 @@ REAL8 LALInferenceGlitchMorletReverseJump(LALInferenceRunState *runState, LALInf
   REAL8 pForward; //combined p() & q() probabilities for ...
   REAL8 pReverse; //...RJMCMC hastings ratio
 
-  //REAL8 temperature = *(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "temperature");
-
   gsl_matrix *params = NULL;
 
   /* Copy parameter structures and get local pointers to glitch parameters */
@@ -2604,26 +2558,6 @@ REAL8 LALInferenceGlitchMorletReverseJump(LALInferenceRunState *runState, LALInf
     case 1:
 
       //Add new wavelet to glitch model
-//      flag=0;
-//      while(flag==0)
-//      {
-//        /* Rejection sample on time and frequency */
-//
-//        t = draw_flat(runState, "morlet_t0_prior");
-//        f = draw_flat(runState, "morlet_f0_prior");
-//
-//        //find TF pixel
-//        j = floor( log(f*T)/log(2.) );
-//        i = floor( int_pow(2,j)*t/T );
-//        k = int_pow(2,j) + i;
-//        //draw U[0,max_power]
-//        draw = -10.0;//gsl_rng_uniform(runState->GSLrandom)*max->data[ifo];
-//
-//        //if draw<max_power[ifo][k] exit loop
-//        printf("%g %g\n",draw,gsl_matrix_get(power,ifo,k));
-//        if(draw < gsl_matrix_get(power,ifo,k)) flag=1;
-//        printf("here\n");
-//      }
       t = draw_flat(runState, "morlet_t0_prior");
       f = draw_flat(runState, "morlet_f0_prior");
 
@@ -2699,16 +2633,11 @@ REAL8 LALInferenceGlitchMorletReverseJump(LALInferenceRunState *runState, LALInf
 
       //Compute reverse probability of drawing parameters
       //find TF pixel
-//      j = floor( log(f*T)/log(2.) );
-//      i = floor( int_pow(2,j)*t/T );
-//      k = int_pow(2,j) + i;
 
       qx = evaluate_morlet_proposal(runState,currentParams,ifo,n);// + log(gsl_matrix_get(power,ifo,k));
 
       //Compute forward probability of dismissing k
       qyx = 0.0;//-log((double)runState->data->freqData->data->length);//0.0;//-log( (REAL8)nx );
-
-      //if(adapting) qx += 5.0;//temperature;
 
       break;
 
@@ -2724,13 +2653,6 @@ REAL8 LALInferenceGlitchMorletReverseJump(LALInferenceRunState *runState, LALInf
   //Re-package prior and proposal ratios into runState
   pForward = qxy + qx;
   pReverse = qyx + qy;
-
-  /*
-   fprintf(stdout," Trying %i->%i\n",nx,ny);
-   fprintf(stdout,"  pForward = %g = %g + %g\n",pForward,qx,qxy);
-   fprintf(stdout,"  pReverse = %g = %g + %g\n",pReverse,qy,qyx);
-   fprintf(stdout,"  qxyRatio = %g\n",pForward-pReverse);
-  */
 
   REAL8 logPropRatio = pForward-pReverse;
 
@@ -3427,8 +3349,6 @@ void LALInferenceUpdateAdaptiveJumps(LALInferenceRunState *runState, INT4 accept
 
                         *sigma = (*sigma > dprior ? dprior : *sigma);
                         *sigma = (*sigma < DBL_MIN ? DBL_MIN : *sigma);
-
-                        //printf("Adapting step size for %s to %lf\n", name, *sigma);
 
                         /* Make sure we don't do this again until we take another adaptable step.*/
                 }
