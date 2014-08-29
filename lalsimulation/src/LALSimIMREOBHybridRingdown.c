@@ -560,9 +560,6 @@ static INT4 XLALSimIMREOBHybridAttachRingdown(
           // The last line of T1400476-v3
           matchrange->data[0] -= sh;
           matchrange->data[1] -= sh;
-          // Move ringdown comb boundaries to sampling points to avoid numerical artifacts. 
-          matchrange->data[0] -= fmod( matchrange->data[0], dt/mTot);
-          matchrange->data[1] -= fmod( matchrange->data[1], dt/mTot);
 /*
 modefreqs->data[7] = 0.38068371/mTot + I/1.4677128/mTot;
 modefreqs->data[6] = 0.37007703/mTot + I/1.3359367/mTot;
@@ -577,7 +574,10 @@ printf("w3 = %f, t3 = %f\n",creal(modefreqs->data[4])*mTot, 1./cimag(modefreqs->
 printf("w4 = %f, t4 = %f\n",creal(modefreqs->data[5])*mTot, 1./cimag(modefreqs->data[5])/mTot);
 */
       }
-      /*for (j = 0; j < nmodes; j++)
+      // Move ringdown comb boundaries to sampling points to avoid numerical artifacts. 
+      matchrange->data[0] -= fmod( matchrange->data[0], dt/mTot);
+      matchrange->data[1] -= fmod( matchrange->data[1], dt/mTot);
+     /*for (j = 0; j < nmodes; j++)
       {
         printf("QNM frequencies: %d %d %d %f %f\n",l,m,j,creal(modefreqs->data[j])*mTot,1./cimag(modefreqs->data[j])/mTot);
       }*/
