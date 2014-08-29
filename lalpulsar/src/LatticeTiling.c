@@ -436,8 +436,8 @@ gsl_vector* XLALMetricEllipseBoundingBox(
 
   // Compute metric inverse
   int LU_sign = 0;
-  GCALL_NULL(gsl_linalg_LU_decomp(LU_decomp, LU_perm, &LU_sign));
-  GCALL_NULL(gsl_linalg_LU_invert(LU_decomp, LU_perm, inverse));
+  GCALL_NULL(gsl_linalg_LU_decomp(LU_decomp, LU_perm, &LU_sign), "'metric' cannot be LU-decomposed");
+  GCALL_NULL(gsl_linalg_LU_invert(LU_decomp, LU_perm, inverse), "'metric' cannot be inverted");
 
   // Compute bounding box, and reverse diagonal scaling
   for (size_t i = 0; i < n; ++i) {
@@ -465,44 +465,20 @@ gsl_matrix* XLALComputeMetricOrthoBasis(
 
   // Allocate memory
   gsl_matrix* GAMAT_NULL(basis, n, n);
-  gsl_vector* GAVEC_NULL(temp, n);
 
-  // Initialise basis to the identity matrix
-  gsl_matrix_set_identity(basis);
+  // We want to find a lower-triangular basis such that:
+  //   basis^T * metric * basis = I
+  // This is rearranged to give:
+  //   metric^-1 = basis * basis^T
+  // Hence basis is the Cholesky decomposition of metric^-1
+  gsl_matrix_memcpy(basis, metric);
+  GCALL_NULL(gsl_linalg_cholesky_decomp(basis), "'metric' is not positive definite");
+  GCALL_NULL(gsl_linalg_cholesky_invert(basis), "'metric' cannot be inverted");
+  GCALL_NULL(gsl_linalg_cholesky_decomp(basis), "Inverse of 'metric' is not positive definite");
 
-  // Orthonormalise the columns of 'basis' using numerically stabilised Gram-Schmidt
-  for (ssize_t i = n - 1; i >= 0; --i) {
-    gsl_vector_view col_i = gsl_matrix_column(basis, i);
-    for (ssize_t j = n - 1; j > i; --j) {
-      gsl_vector_view col_j = gsl_matrix_column(basis, j);
-
-      // Compute inner product of (j)th and (i)th columns with the metric
-      gsl_blas_dgemv(CblasNoTrans, 1.0, metric, &col_j.vector, 0.0, temp);
-      double inner_prod = 0.0;
-      gsl_blas_ddot(&col_i.vector, temp, &inner_prod);
-
-      // Subtract component of (j)th column from (i)th column
-      gsl_vector_memcpy(temp, &col_j.vector);
-      gsl_vector_scale(temp, inner_prod);
-      gsl_vector_sub(&col_i.vector, temp);
-
-    }
-
-    // Compute inner product of (i)th column with itself
-    gsl_blas_dgemv(CblasNoTrans, 1.0, metric, &col_i.vector, 0.0, temp);
-    double inner_prod = 0.0;
-    gsl_blas_ddot(&col_i.vector, temp, &inner_prod);
-
-    // Normalise (i)th column
-    gsl_vector_scale(&col_i.vector, 1.0 / sqrt(inner_prod));
-
-  }
-
-  // Matrix will be lower triangular, so zero out upper triangle
+  // gsl_linalg_cholesky_decomp() stores both basis and basis^T
+  // in the same matrix; zero out upper triangle to get basis
   LT_ZeroStrictUpperTriangle(basis);
-
-  // Cleanup
-  GFVEC(temp);
 
   return basis;
 
@@ -562,14 +538,14 @@ gsl_matrix* XLALComputeLatticeGenerator(
     //   G(:, 2:end) = Gp = Q * L
     // where Q is an orthogonal matrix and L an lower triangular matrix.
     // This is found using the more commonly implemented QR decomposition by:
-    // - reverse the order of the rows/columns of Gp
+    // - reversing the order of the rows/columns of Gp
     // - decomposing Gp = Qp * Lp, where Lp is upper triangular
-    // - reverse the order of the rows/columns of Qp to give Q
-    // - reverse the order of the rows/columns of Lp to give L
+    // - reversing the order of the rows/columns of Qp to give Q
+    // - reversing the order of the rows/columns of Lp to give L
     gsl_matrix_view Gp = gsl_matrix_submatrix(G, 0, 1, n + 1, n);
     LT_ReverseOrderRowsCols(&Gp.matrix);
-    GCALL_NULL(gsl_linalg_QR_decomp(&Gp.matrix, tau));
-    GCALL_NULL(gsl_linalg_QR_unpack(&Gp.matrix, tau, Q, L));
+    GCALL_NULL(gsl_linalg_QR_decomp(&Gp.matrix, tau), "'G' cannot be QR-decomposed");
+    gsl_linalg_QR_unpack(&Gp.matrix, tau, Q, L);
     LT_ReverseOrderRowsCols(Q);
     LT_ReverseOrderRowsCols(L);
 
@@ -607,7 +583,7 @@ gsl_matrix* XLALComputeLatticeGenerator(
   // Compute generator LU decomposition
   gsl_matrix_memcpy(LU_decomp, generator);
   int LU_sign = 0;
-  GCALL_NULL(gsl_linalg_LU_decomp(LU_decomp, LU_perm, &LU_sign));
+  GCALL_NULL(gsl_linalg_LU_decomp(LU_decomp, LU_perm, &LU_sign), "'generator' cannot be LU-decomposed");
 
   // Compute generator determinant
   const double generator_determinant = gsl_linalg_LU_det(LU_decomp, LU_sign);
@@ -941,22 +917,6 @@ int XLALSetLatticeTypeAndMetric(
       }
     }
 
-    // Check tiled metric is positive definite, by trying to compute its Cholesky decomposition
-    gsl_matrix* GAMAT(t_metric_copy, tn, tn);
-    gsl_matrix_memcpy(t_metric_copy, t_metric);
-    GCALL(gsl_linalg_cholesky_decomp(t_metric_copy), "tiled metric is not positive definite");
-
-    // Compute metric ellipse bounding box
-    gsl_vector* t_bbox = XLALMetricEllipseBoundingBox(t_metric, max_mismatch);
-    XLAL_CHECK(t_bbox != NULL, XLAL_EFUNC);
-
-    // Copy bounding box in physical coordinates to tiled dimensions
-    for (size_t ti = 0; ti < tn; ++ti) {
-      const size_t i = gsl_vector_uint_get(tiling->tiled, ti);
-      const double t_norm_ti = gsl_vector_get(t_norm, ti);
-      gsl_vector_set(tiling->phys_bbox, i, gsl_vector_get(t_bbox, ti) / t_norm_ti);
-    }
-
     // Compute a lower triangular basis matrix whose columns are orthonormal with respect to the tiled metric
     gsl_matrix* t_basis = XLALComputeMetricOrthoBasis(t_metric);
     XLAL_CHECK(t_basis != NULL, XLAL_EFUNC);
@@ -1010,8 +970,19 @@ int XLALSetLatticeTypeAndMetric(
       gsl_vector_set(tiling->phys_offset, i, phys_offset_i + 0.5 * phys_from_int_i_ti);
     }
 
+    // Compute metric ellipse bounding box
+    gsl_vector* t_bbox = XLALMetricEllipseBoundingBox(t_metric, max_mismatch);
+    XLAL_CHECK(t_bbox != NULL, XLAL_EFUNC);
+
+    // Copy bounding box in physical coordinates to tiled dimensions
+    for (size_t ti = 0; ti < tn; ++ti) {
+      const size_t i = gsl_vector_uint_get(tiling->tiled, ti);
+      const double t_norm_ti = gsl_vector_get(t_norm, ti);
+      gsl_vector_set(tiling->phys_bbox, i, gsl_vector_get(t_bbox, ti) / t_norm_ti);
+    }
+
     // Cleanup
-    GFMAT(t_basis, t_generator, t_int_from_norm, t_metric, t_metric_copy, t_norm_from_int);
+    GFMAT(t_basis, t_generator, t_int_from_norm, t_metric, t_norm_from_int);
     GFVEC(t_bbox, t_norm);
 
   }

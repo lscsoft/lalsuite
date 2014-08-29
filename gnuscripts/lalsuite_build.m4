@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 90
+# serial 91
 
 # not present in older versions of pkg.m4
 m4_pattern_allow([^PKG_CONFIG(_(PATH|LIBDIR|SYSROOT_DIR|ALLOW_SYSTEM_(CFLAGS|LIBS)))?$])
@@ -474,7 +474,7 @@ AC_DEFUN([LALSUITE_CHECK_LIB],[
   fi
 
   # add system include flags to LAL_SYSTEM_INCLUDES
-  if test -n "$PKG_CONFIG"; then
+  if test -n "$PKG_CONFIG" -a "$LALSUITE_BUILD" != "true"; then
     # use pkg-config to get system paths
     PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1
     export PKG_CONFIG_ALLOW_SYSTEM_CFLAGS

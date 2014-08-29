@@ -23,4 +23,4 @@ TESTS_ENVIRONMENT = \
 	LAL_DEBUG_LEVEL=msglvl1,memdbg; export LAL_DEBUG_LEVEL; \
 	LAL_DATA_PATH="$(LAL_DATA_PATH)"; export LAL_DATA_PATH;
 
-CLEANFILES = toplist_crosscorr.dat SFTpairlist.dat SFTlist.dat
+CLEANFILES = toplist_crosscorr.dat
