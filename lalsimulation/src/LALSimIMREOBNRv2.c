@@ -1213,7 +1213,7 @@ XLALSimIMREOBNRv2Generator(
    phiVec.data  = dynamics->data+2*retLen;
    prVec.data   = dynamics->data+3*retLen;
    pPhiVec.data = dynamics->data+4*retLen;
-
+printf("high sampling time: %f\n",hiSRndx*dt/m);
    dt = dt/(REAL8)resampFac;
    values->data[0] = rVec.data[hiSRndx];
    values->data[1] = phiVec.data[hiSRndx];
@@ -1421,6 +1421,7 @@ XLALSimIMREOBNRv2Generator(
 
   for ( currentMode = 0; currentMode < nModes; currentMode++ )
   {
+printf("dt = %e\n",deltaT);
      sigMode = XLALCreateCOMPLEX16TimeSeries( "H_MODE", &epoch, 0.0, deltaT,
          &lalStrainUnit, hiSRndx - startIdx + lengthHiSR / resampFac );
 
@@ -1472,6 +1473,7 @@ XLALSimIMREOBNRv2Generator(
 
     /* Now create the (low-sampled) part of the waveform */
     i = startIdx;
+printf("startIndex = %d",startIdx);
     while ( i < hiSRndx )
     {
        omega = XLALCalculateOmega( eta, rVec.data[i], prVec.data[i], pPhiVec.data[i], &aCoeffs );
@@ -1574,10 +1576,11 @@ XLALSimIMREOBNRv2Generator(
      rdMatchPoint->data[0] = combSize < timePeak + nrPeakDeltaT ? timePeak + nrPeakDeltaT - combSize : 0;
      rdMatchPoint->data[1] = timePeak + nrPeakDeltaT;
      rdMatchPoint->data[2] = dynamicsHi->data[finalIdx];
-
+printf("t0 = %f, t1 = %f\n",rdMatchPoint->data[0],rdMatchPoint->data[1]);
      rdMatchPoint->data[0] -= fmod( rdMatchPoint->data[0], dt/m );
      rdMatchPoint->data[1] -= fmod( rdMatchPoint->data[1], dt/m );
-
+printf("t0 = %f, t1 = %f\n",rdMatchPoint->data[0],rdMatchPoint->data[1]);
+ 
      xlalStatus = XLALSimIMREOBHybridAttachRingdown(sigReHi, sigImHi,
                    modeL, modeM, dt, mass1, mass2, 0, 0, 0, 0, 0, 0, &tVecHi, rdMatchPoint, EOBNRv2 );
      if (xlalStatus != XLAL_SUCCESS )
@@ -1621,8 +1624,10 @@ XLALSimIMREOBNRv2Generator(
        if (flag_fLower_extend == 1) // Find where 1st mode (2,2) hits fLower
        {
          cut_ind = find_instant_freq_hlm(sigMode, fLower, 1);
+printf("len = %d\n",sigMode->data->length);
          sigMode = XLALResizeCOMPLEX16TimeSeries(sigMode, cut_ind,
              sigMode->data->length - cut_ind);
+printf("len = %d\n",sigMode->data->length);
          if (!sigMode )
            XLAL_ERROR(XLAL_EFUNC);
        }
@@ -1655,9 +1660,11 @@ XLALSimIMREOBNRv2Generator(
     {
       cut_ind = find_instant_freq(*hplus, *hcross, fLower, 1, 0); 
     }
+printf("len = %d\n",(*hplus)->data->length);
     *hplus = XLALResizeREAL8TimeSeries(*hplus, cut_ind, (*hplus)->data->length - cut_ind);
     *hcross = XLALResizeREAL8TimeSeries(*hcross, cut_ind, (*hcross)->data->length - cut_ind);
-    if (!(*hplus) || !(*hcross))
+printf("len = %d\n",(*hplus)->data->length);
+     if (!(*hplus) || !(*hcross))
       XLAL_ERROR(XLAL_EFUNC);
   }
 
