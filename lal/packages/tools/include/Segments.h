@@ -134,6 +134,9 @@ extern "C" {
 /*@{*/
 
 /*------------------- Compile-time parameters -------------------*/
+
+#ifndef SWIG /* exclude from SWIG interface */
+
 #define SEGMENTSH_ALLOCBLOCK 64  /**< Initial number of LALSeg spaces to
                                   * allocate in memory at one time; this is
                                   * intended to reduce the number of memory
@@ -148,6 +151,8 @@ extern "C" {
                                            * check that the structure was
                                            * properly initialized. */
 
+#endif /* SWIG */
+
 /*------------------- Data structure definitions -------------------*/
 
 /** Struct holding a single segment */
@@ -161,6 +166,9 @@ tagLALSeg
 LALSeg;
 
 /** Struct holding a segment list */
+#ifdef SWIG /* SWIG interface directives */
+SWIGLAL(IGNORE_MEMBERS(tagLALSegList, initMagic, lastFound));
+#endif // SWIG
 typedef struct
 tagLALSegList
 {
@@ -190,11 +198,19 @@ XLALGPSInSeg( const void *gps, const void *seg );
 int
 XLALSegCmp( const void *seg0, const void *seg1 );
 
+LALSegList *
+XLALSegListCreate( void );
+
+#ifndef SWIG /* exclude from SWIG interface */
 int
 XLALSegListInit( LALSegList *seglist );
+#endif /* SWIG */
 
 int
 XLALSegListClear( LALSegList *seglist );
+
+int
+XLALSegListFree( LALSegList *seglist );
 
 int
 XLALSegListAppend( LALSegList *seglist, const LALSeg *seg );

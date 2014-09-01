@@ -227,6 +227,22 @@ XLALSegCmp( const void *pseg0, const void *pseg1 )
 /*---------------------------------------------------------------------------*/
 
 /**
+ * This function allocates memory for a new segment list structure,
+ * initializes the segment list, and returns a pointer to it.
+ */
+LALSegList *
+XLALSegListCreate( void )
+{
+  LALSegList *seglist = XLALMalloc(sizeof(*seglist));
+  XLAL_CHECK_NULL( seglist != NULL, XLAL_ENOMEM );
+  XLAL_CHECK_NULL( XLALSegListInit( seglist ) == XLAL_SUCCESS, XLAL_EFUNC );
+  return seglist;
+}
+
+
+/*---------------------------------------------------------------------------*/
+
+/**
  * This function must be called to initialize a segment
  * list structure before that structure can be used.
  */
@@ -314,6 +330,22 @@ XLALSegListClear( LALSegList *seglist )
   seglist->lastFound = NULL;
 
   /* Return with success status code */
+  return XLAL_SUCCESS;
+}
+
+
+/*---------------------------------------------------------------------------*/
+
+/**
+ * This function frees a segment list created with XLALSegListCreate().
+ */
+int
+XLALSegListFree( LALSegList *seglist )
+{
+  if ( seglist ) {
+    XLAL_CHECK( XLALSegListClear( seglist ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLALFree( seglist );
+  }
   return XLAL_SUCCESS;
 }
 
