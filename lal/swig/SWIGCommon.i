@@ -131,6 +131,11 @@ MACRO(A, B, C, X);
 %warnfilter(WARNING) NSPACE::NAME;
 %enddef
 
+// Ignore a symbol.
+%define %swiglal_ignore_nspace(NSPACE, NAME)
+%ignore NSPACE::NAME;
+%enddef
+
 // Macros for allocating/copying new instances and arrays
 // Analogous to SWIG macros but using XLAL memory functions
 #define %swiglal_new_instance(TYPE...) %reinterpret_cast(XLALMalloc(sizeof(TYPE)), TYPE*)
@@ -1099,6 +1104,13 @@ if (strides[I-1] == 0) {
 %swiglal_map_abc(%swiglal_feature_nspace, "immutable", "1", TAGNAME, __VA_ARGS__);
 %enddef
 #define %swiglal_public_clear_IMMUTABLE_MEMBERS(...)
+
+// The SWIGLAL(IGNORE_MEMBERS(TAGNAME, ...)) macro can be used to
+// ignore the listed members of the struct TAGNAME.
+%define %swiglal_public_IGNORE_MEMBERS(TAGNAME, ...)
+%swiglal_map_a(%swiglal_ignore_nspace, TAGNAME, __VA_ARGS__);
+%enddef
+#define %swiglal_public_clear_IGNORE_MEMBERS(...)
 
 // Typemap for functions which return 'int'. If these functions also return
 // other output arguments (via 'argout' typemaps), the 'int' return value is
