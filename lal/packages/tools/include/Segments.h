@@ -201,10 +201,8 @@ XLALSegCmp( const void *seg0, const void *seg1 );
 LALSegList *
 XLALSegListCreate( void );
 
-#ifndef SWIG /* exclude from SWIG interface */
 int
 XLALSegListInit( LALSegList *seglist );
-#endif /* SWIG */
 
 int
 XLALSegListClear( LALSegList *seglist );
