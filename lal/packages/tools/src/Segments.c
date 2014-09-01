@@ -83,10 +83,9 @@
  * i.e. the end time is later than or equal to the start time;
  * an error occurs if this condition is not true.
  */
-INT4
+int
 XLALSegSet( LALSeg *seg, const LIGOTimeGPS *start, const LIGOTimeGPS *end,
-	    const INT4 id )
-
+            const INT4 id )
 {
 
   /* Make sure a non-null pointer was passed for the segment to be set */
@@ -130,8 +129,7 @@ XLALSegSet( LALSeg *seg, const LIGOTimeGPS *start, const LIGOTimeGPS *end,
  */
 LALSeg *
 XLALSegCreate( const LIGOTimeGPS *start, const LIGOTimeGPS *end,
-	       const INT4 id )
-
+               const INT4 id )
 {
   LALSeg *segptr;
 
@@ -182,7 +180,6 @@ XLALSegCreate( const LIGOTimeGPS *start, const LIGOTimeGPS *end,
  */
 int
 XLALGPSInSeg( const void *pgps, const void *pseg )
-
 {
   /* if time is < start of segment, return -1 */
   if ( XLALGPSCmp( (const LIGOTimeGPS *) pgps, &((const LALSeg *) pseg)->start ) < 0 )
@@ -210,7 +207,6 @@ XLALGPSInSeg( const void *pgps, const void *pseg )
  */
 int
 XLALSegCmp( const void *pseg0, const void *pseg1 )
-
 {
   const LALSeg *seg0 = pseg0;
   const LALSeg *seg1 = pseg1;
@@ -234,9 +230,8 @@ XLALSegCmp( const void *pseg0, const void *pseg1 )
  * This function must be called to initialize a segment
  * list structure before that structure can be used.
  */
-INT4
+int
 XLALSegListInit( LALSegList *seglist )
-
 {
   /* Make sure a non-null pointer was passed for the segment list */
   if ( ! seglist ) {
@@ -283,9 +278,8 @@ XLALSegListInit( LALSegList *seglist )
  * but it is OK to do so.  If you do call XLALSegListInit() again,
  * you must do so \e after calling XLALSegListClear() !
  */
-INT4
+int
 XLALSegListClear( LALSegList *seglist )
-
 {
   /* Make sure a non-null pointer was passed for the segment list */
   if ( ! seglist ) {
@@ -340,9 +334,8 @@ XLALSegListClear( LALSegList *seglist )
  * segments are appended in ascending time order and do not overlap, it retains
  * those properties.
  */
-INT4
+int
 XLALSegListAppend( LALSegList *seglist, const LALSeg *seg )
-
 {
   LALSeg *segptr;
   LALSeg *prev;
@@ -418,13 +411,13 @@ XLALSegListAppend( LALSegList *seglist, const LALSeg *seg )
       seglist->dplaces = 9;
     } else if ( seglist->dplaces < 6 ) {
       if ( ns1 % 1000000 || ns2 % 1000000 ) {
-	/* 3 decimal places are not enough */
-	seglist->dplaces = 6;
+        /* 3 decimal places are not enough */
+        seglist->dplaces = 6;
       } else if ( seglist->dplaces < 3 ) {
-	if ( ns1 || ns2 ) {
-	  /* At least one of the times does have a decimal part */
-	  seglist->dplaces = 3;
-	}
+        if ( ns1 || ns2 ) {
+          /* At least one of the times does have a decimal part */
+          seglist->dplaces = 3;
+        }
       }
     }
   }
@@ -457,9 +450,8 @@ XLALSegListAppend( LALSegList *seglist, const LALSeg *seg )
  * into forward time order.  If the list is already sorted, then this function
  * returns promptly.
  */
-INT4
+int
 XLALSegListSort( LALSegList *seglist )
-
 {
   /* Make sure a non-null pointer was passed for the segment list */
   if ( ! seglist ) {
@@ -511,9 +503,8 @@ XLALSegListSort( LALSegList *seglist )
  * assigned the \c id value taken from the first segment in the input list
  * (after it has been sorted) among those which were joined to make it.
  */
-INT4
+int
 XLALSegListCoalesce( LALSegList *seglist )
-
 {
   LALSeg *rp, *wp;   /* Read and write pointers for stepping through array */
   size_t newLength;
@@ -552,7 +543,7 @@ XLALSegListCoalesce( LALSegList *seglist )
       /* Segment at read pointer touches or overlaps segment at write pointer*/
       /* So extend the segment at the write pointer if necessary */
       if ( XLALGPSCmp(&(wp->end),&(rp->end)) < 0 ) {
-	wp->end = rp->end;
+        wp->end = rp->end;
       }
     }
   }
@@ -642,7 +633,6 @@ XLALSegListCoalesce( LALSegList *seglist )
  */
 LALSeg *
 XLALSegListSearch( LALSegList *seglist, const LIGOTimeGPS *gps )
-
 {
   int cmp;
   LALSeg *bstart = NULL;
@@ -695,44 +685,44 @@ XLALSegListSearch( LALSegList *seglist, const LIGOTimeGPS *gps )
       cmp = XLALGPSInSeg( gps, seglist->lastFound );
 
       if ( cmp == 0 ) {
-	return seglist->lastFound;
+        return seglist->lastFound;
 
       } else if ( cmp < 0 ) {
-	/* Do a binary search from the beginning of the list up to here */
-	bstart = seglist->segs;
-	bcount = ( seglist->lastFound - seglist->segs );
-	/* If there are no earlier segments, just return */
-	if ( bcount == 0 ) {
-	  return NULL;
-	}
+        /* Do a binary search from the beginning of the list up to here */
+        bstart = seglist->segs;
+        bcount = ( seglist->lastFound - seglist->segs );
+        /* If there are no earlier segments, just return */
+        if ( bcount == 0 ) {
+          return NULL;
+        }
 
       } else {
-	/* The time is later than the last segment found */
+        /* The time is later than the last segment found */
 
-	/* If there are no later segments, just return */
-	if ( seglist->lastFound == seglist->segs + seglist->length - 1 ) {
-	  return NULL;
-	}
+        /* If there are no later segments, just return */
+        if ( seglist->lastFound == seglist->segs + seglist->length - 1 ) {
+          return NULL;
+        }
 
-	/* Check whether the time lies within the next later segment */
-	cmp = XLALGPSInSeg( gps, seglist->lastFound+1 );
-	if ( cmp == 0 ) {
-	  /* We found a match, so update lastFound and return */
-	  seglist->lastFound++;
-	  return seglist->lastFound;
-	} else if ( cmp < 0 ) {
-	  /* The time lies between the two segments */
-	  return NULL;
-	} else {
-	  /* The time is later than this segment, so search to end of list */
-	  bstart = seglist->lastFound+2;
-	  bcount = ( seglist->segs - seglist->lastFound
-		     + seglist->length-2 );
-	  /* If there are no later segments, just return */
-	  if ( bcount == 0 ) {
-	    return NULL;
-	  }
-	}
+        /* Check whether the time lies within the next later segment */
+        cmp = XLALGPSInSeg( gps, seglist->lastFound+1 );
+        if ( cmp == 0 ) {
+          /* We found a match, so update lastFound and return */
+          seglist->lastFound++;
+          return seglist->lastFound;
+        } else if ( cmp < 0 ) {
+          /* The time lies between the two segments */
+          return NULL;
+        } else {
+          /* The time is later than this segment, so search to end of list */
+          bstart = seglist->lastFound+2;
+          bcount = ( seglist->segs - seglist->lastFound
+                     + seglist->length-2 );
+          /* If there are no later segments, just return */
+          if ( bcount == 0 ) {
+            return NULL;
+          }
+        }
 
       }
 
@@ -756,25 +746,25 @@ XLALSegListSearch( LALSegList *seglist, const LIGOTimeGPS *gps )
       cmp = XLALGPSInSeg( gps, seglist->lastFound );
 
       if ( cmp == 0 ) {
-	return seglist->lastFound;
+        return seglist->lastFound;
 
       } else if ( cmp < 0 ) {
-	/* Do a linear search, starting from the beginning of the list.
-	   If the list is sorted, then we already know that we only have to
-	   search up to the lastFound segment, but the actual search is
-	   guaranteed to bail out at that point, so we can go ahead and set
-	   the search parameters as if the whole list would be searched. */
-	l1start = seglist->segs;
-	l1end = seglist->segs + seglist->length;
-	l2start = l2end = NULL;
+        /* Do a linear search, starting from the beginning of the list.
+           If the list is sorted, then we already know that we only have to
+           search up to the lastFound segment, but the actual search is
+           guaranteed to bail out at that point, so we can go ahead and set
+           the search parameters as if the whole list would be searched. */
+        l1start = seglist->segs;
+        l1end = seglist->segs + seglist->length;
+        l2start = l2end = NULL;
 
       } else {
-	/* First search from here to the end of the list, then wrap around
-	   and search from the beginning of the list up to here */
-	l1start = seglist->lastFound + 1;
-	l1end = seglist->segs + seglist->length;
-	l2start = seglist->segs;
-	l2end = seglist->lastFound;
+        /* First search from here to the end of the list, then wrap around
+           and search from the beginning of the list up to here */
+        l1start = seglist->lastFound + 1;
+        l1end = seglist->segs + seglist->length;
+        l2start = seglist->segs;
+        l2end = seglist->lastFound;
 
       }
 
@@ -792,7 +782,7 @@ XLALSegListSearch( LALSegList *seglist, const LIGOTimeGPS *gps )
        bsearch expects the comparison function passed to it to take void
        pointers as arguments.  Oh well. */
     segp = bsearch( (const void *) gps, (const void *) bstart,
-		    bcount, sizeof(LALSeg), XLALGPSInSeg );
+                    bcount, sizeof(LALSeg), XLALGPSInSeg );
     /* If we found a match, update lastFound and return the pointer.
        Otherwise, return NULL. */
     if ( segp ) {
@@ -809,11 +799,11 @@ XLALSegListSearch( LALSegList *seglist, const LIGOTimeGPS *gps )
     for ( segp=l1start; segp<l1end; segp++ ) {
       cmp = XLALGPSInSeg( gps, segp );
       if ( cmp == 0 ) {
-	seglist->lastFound = segp;
-	return segp;
+        seglist->lastFound = segp;
+        return segp;
       } else if ( cmp < 0 ) {
-	/* This segment is beyond the target time, so we can bail out */
-	break;
+        /* This segment is beyond the target time, so we can bail out */
+        break;
       }
     }
     /* Set the lastFound pointer to the last segment which is not beyond the
@@ -825,8 +815,8 @@ XLALSegListSearch( LALSegList *seglist, const LIGOTimeGPS *gps )
        comparison value will never be negative. */
     for ( segp=l2start; segp<l2end; segp++ ) {
       if ( XLALGPSInSeg(gps,segp) == 0 ) {
-	seglist->lastFound = segp;
-	return segp;
+        seglist->lastFound = segp;
+        return segp;
       }
     }
 
@@ -838,8 +828,8 @@ XLALSegListSearch( LALSegList *seglist, const LIGOTimeGPS *gps )
     /* Do a linear search, looking for a match */
     for ( segp=l1start; segp<l1end; segp++ ) {
       if ( XLALGPSInSeg(gps,segp) == 0 ) {
-	seglist->lastFound = segp;
-	return segp;
+        seglist->lastFound = segp;
+        return segp;
       }
     }
 
@@ -847,8 +837,8 @@ XLALSegListSearch( LALSegList *seglist, const LIGOTimeGPS *gps )
        of the list and going up to lastFound. */
     for ( segp=l2start; segp<l2end; segp++ ) {
       if ( XLALGPSInSeg(gps,segp) == 0 ) {
-	seglist->lastFound = segp;
-	return segp;
+        seglist->lastFound = segp;
+        return segp;
       }
     }
 
@@ -867,9 +857,8 @@ XLALSegListSearch( LALSegList *seglist, const LIGOTimeGPS *gps )
 /**
  * UNDOCUMENTED
  */
-INT4
+int
 XLALSegListShift(  LALSegList *seglist, const LIGOTimeGPS *shift )
-
 {
   unsigned i;
 
@@ -905,9 +894,8 @@ XLALSegListShift(  LALSegList *seglist, const LIGOTimeGPS *shift )
 /**
  * UNDOCUMENTED
  */
-INT4
+int
 XLALSegListKeep(  LALSegList *seglist, const LIGOTimeGPS *start, const LIGOTimeGPS *end )
-
 {
   LALSegList workspace;
   unsigned i;
@@ -1074,13 +1062,12 @@ XLALSegList2String ( const LALSegList *seglist )
  */
 LALSeg *
 XLALSegListGet( LALSegList *seglist, UINT4 indx )
-
 {
-	if( indx >= seglist->length ){
-		return NULL;
-	}
-	LALSeg* tmp = LALMalloc(sizeof(LALSeg));
-	memcpy(tmp, &seglist->segs[indx], sizeof(LALSeg));
-	return tmp;
+        if( indx >= seglist->length ){
+                return NULL;
+        }
+        LALSeg* tmp = LALMalloc(sizeof(LALSeg));
+        memcpy(tmp, &seglist->segs[indx], sizeof(LALSeg));
+        return tmp;
 
 }  /* XLALSegListGet() */

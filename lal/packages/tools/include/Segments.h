@@ -135,18 +135,18 @@ extern "C" {
 
 /*------------------- Compile-time parameters -------------------*/
 #define SEGMENTSH_ALLOCBLOCK 64  /**< Initial number of LALSeg spaces to
-				  * allocate in memory at one time; this is
-				  * intended to reduce the number of memory
-				  * reallocation calls needing to be made to
-				  * build up a segment list.  For a large
-				  * segment list, the reallocation size
-				  * switches over to a multiplicative factor.
-				  */
+                                  * allocate in memory at one time; this is
+                                  * intended to reduce the number of memory
+                                  * reallocation calls needing to be made to
+                                  * build up a segment list.  For a large
+                                  * segment list, the reallocation size
+                                  * switches over to a multiplicative factor.
+                                  */
 
 #define SEGMENTSH_INITMAGICVAL 729415386  /**< Distinctive value set in the
-					   * 'initMagic' field to provide a
-					   * check that the structure was
-					   * properly initialized. */
+                                           * 'initMagic' field to provide a
+                                           * check that the structure was
+                                           * properly initialized. */
 
 /*------------------- Data structure definitions -------------------*/
 
@@ -176,13 +176,13 @@ tagLALSegList
 LALSegList;
 
 /*----------------------- Function prototypes ----------------------*/
-INT4
+int
 XLALSegSet( LALSeg *seg, const LIGOTimeGPS *start, const LIGOTimeGPS *end,
-	    const INT4 id );
+            const INT4 id );
 
 LALSeg *
 XLALSegCreate( const LIGOTimeGPS *start, const LIGOTimeGPS *end,
-	       const INT4 id );
+               const INT4 id );
 
 int
 XLALGPSInSeg( const void *gps, const void *seg );
@@ -190,28 +190,28 @@ XLALGPSInSeg( const void *gps, const void *seg );
 int
 XLALSegCmp( const void *seg0, const void *seg1 );
 
-INT4
+int
 XLALSegListInit( LALSegList *seglist );
 
-INT4
+int
 XLALSegListClear( LALSegList *seglist );
 
-INT4
+int
 XLALSegListAppend( LALSegList *seglist, const LALSeg *seg );
 
-INT4
+int
 XLALSegListSort( LALSegList *seglist );
 
-INT4
+int
 XLALSegListCoalesce( LALSegList *seglist );
 
 LALSeg *
 XLALSegListSearch( LALSegList *seglist, const LIGOTimeGPS *gps );
 
-INT4
+int
 XLALSegListShift( LALSegList *seglist, const LIGOTimeGPS *shift );
 
-INT4
+int
 XLALSegListKeep(  LALSegList *seglist, const LIGOTimeGPS *start, const LIGOTimeGPS *end );
 
 LALSeg *
