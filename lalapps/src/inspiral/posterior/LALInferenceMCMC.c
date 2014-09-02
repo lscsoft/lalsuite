@@ -288,7 +288,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
     fprintf(stdout, " ==== LALInferenceInjectInspiralSignal(): finished. ====\n");
 
     fprintf(stdout, " ==== LALInferenceSetupROQ(): started. ====\n");
-    LALInferenceSetupROQ(irs->data,commandLine);
+    LALInferenceSetupROQ(irs->data, irs->model, commandLine);
     fprintf(stdout, " ==== LALInferenceSetupROQ(): finished. ====\n");
     
     ifoPtr = irs->data;
