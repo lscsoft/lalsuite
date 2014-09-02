@@ -314,6 +314,38 @@ void LALInferencePrintVariables(LALInferenceVariables *var);
 /** Check for equality in two variables */
 int LALInferenceCompareVariables(LALInferenceVariables *var1, LALInferenceVariables *var2);
 
+/** Computes the factor relating the physical waveform to a measured
+    waveform for a spline-fit calibration model in amplitude and
+    phase.  The spline points can be arbitrary frequencies, and the
+    values of the calibration offset at these points can be arbitary,
+    too.  For amplitude offset, \f$\delta A\f$, and phase offset,
+    \f$\delta \phi\f$, the measured waveform is related to the
+    physical waveform via
+
+    \f\[
+      h_\mathrm{meas} = h_\mathrm{phys} \left(1 + \delta A \right) \frac{2 + i \delta \phi}{2 - i \delta \phi}
+    \f\]
+
+    The phase factor takes the form above rather than the more obvious
+    \f$\exp(i \delta \phi)\f$ or \f$1 + \delta \phi\f$ because it is
+    faster to compute than the former (but, for small \f$\phi\f$,
+    equivalent through second order in \f$\delta \phi\f$) and, unlike
+    the latter, it ensures that the complex amplitude of the
+    correction is always 1.  (A similar technique is used when using
+    finite-difference approximations to solve the multi-dimensional
+    Schrodinger equation to ensure that the evolution remains
+    unitary.)  Note that this implies that the phase calibration
+    parameter ranges over \f$\delta \phi \in [-\infty, \infty]\f$.
+
+    The values of \f$\delta A\f$ and \f$\delta \phi\f$ at arbitrary
+    frequency are obtained by a spline curve that passes through the
+    given values at the given frequencies.
+
+*/
+int LALInferenceSplineCalibrationFactor(REAL8Vector *freqs, 
+					REAL8Vector *deltaAmps, 
+					REAL8Vector *deltaPhases, 
+					COMPLEX16FrequencySeries *calFactor);
 
 //Wrapper for template computation 
 //(relies on LAL libraries for implementation) <- could be a #DEFINE ?

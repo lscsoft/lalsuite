@@ -35,6 +35,7 @@
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_eigen.h>
+#include <gsl/gsl_interp.h>
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
@@ -3218,4 +3219,75 @@ CHAR* LALInferenceGetstringVariable(LALInferenceVariables * vars, const char * n
 
 void LALInferenceSetstringVariable(LALInferenceVariables* vars,const char* name,CHAR* value){
   LALInferenceSetVariable(vars,name,(void*)&value);
+}
+
+int LALInferenceSplineCalibrationFactor(REAL8Vector *freqs, 
+					REAL8Vector *deltaAmps, 
+					REAL8Vector *deltaPhases, 
+					COMPLEX16FrequencySeries *calFactor) {
+  size_t i = 0;
+  gsl_interp_accel *ampAcc = NULL, *phaseAcc = NULL;
+  gsl_interp *ampInterp = NULL, *phaseInterp = NULL;
+
+  int status = XLAL_SUCCESS;
+  const char *fmt = "";
+
+  size_t N = 0;
+
+  if (freqs == NULL || deltaAmps == NULL || deltaPhases == NULL || calFactor == NULL) {
+    status = XLAL_EINVAL;
+    fmt = "bad input";
+    goto cleanup;
+  }
+
+  if (freqs->length != deltaAmps->length || deltaAmps->length != deltaPhases->length) {
+    status = XLAL_EINVAL;
+    fmt = "input lengths differ";
+    goto cleanup;
+  }
+
+  N = freqs->length;
+
+  ampInterp = gsl_interp_alloc(gsl_interp_cspline, N);
+  phaseInterp = gsl_interp_alloc(gsl_interp_cspline, N);
+  
+  if (ampInterp == NULL || phaseInterp == NULL) {
+    status = XLAL_ENOMEM;
+    fmt = "could not allocate GSL interpolation objects";
+    goto cleanup;
+  }
+
+  ampAcc = gsl_interp_accel_alloc();
+  phaseAcc = gsl_interp_accel_alloc();
+
+  if (ampAcc == NULL || phaseAcc == NULL) {
+    status = XLAL_ENOMEM;
+    fmt = "could not allocate interpolation acceleration objects";
+    goto cleanup;
+  }
+
+  gsl_interp_init(ampInterp, freqs->data, deltaAmps->data, N);
+  gsl_interp_init(phaseInterp, freqs->data, deltaPhases->data, N);
+
+  for (i = 0; i < N; i++) {
+    REAL8 dA = 0.0, dPhi = 0.0;
+    REAL8 f = calFactor->deltaF*i;
+
+    dA = gsl_interp_eval(ampInterp, freqs->data, deltaAmps->data, f, ampAcc);
+    dPhi = gsl_interp_eval(phaseInterp, freqs->data, deltaPhases->data, f, phaseAcc);
+
+    calFactor->data->data[i] = (1.0 + dA)*(2.0 + I*dPhi)/(2.0 - I*dPhi);
+  }
+
+ cleanup:
+  if (ampInterp != NULL) gsl_interp_free(ampInterp);
+  if (phaseInterp != NULL) gsl_interp_free(phaseInterp);
+  if (ampAcc != NULL) gsl_interp_accel_free(ampAcc);
+  if (phaseAcc != NULL) gsl_interp_accel_free(phaseAcc);
+
+  if (status == XLAL_SUCCESS) {
+    return status;
+  } else {
+    XLAL_ERROR(status, fmt);
+  }
 }
