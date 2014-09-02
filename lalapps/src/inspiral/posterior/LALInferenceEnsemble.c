@@ -546,7 +546,7 @@ int main(int argc, char *argv[]){
     memset(runState->currentParams, 0, sizeof(LALInferenceVariables));
     LALInferenceCopyVariables(runState->model->params, runState->currentParams);
   
-    /* Set template function in runState, since it's sometime used */
+    /* Set template function in runState, since it's sometimes used */
     runState->templt = runState->model->templt;
 
     /* Choose the likelihood */
