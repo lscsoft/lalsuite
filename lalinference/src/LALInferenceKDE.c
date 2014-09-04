@@ -58,14 +58,12 @@ LALInferenceKDE *LALInferenceNewKDE(REAL8 *pts, UINT4 npts, UINT4 dim, UINT4 *ma
     UINT4 i,j;
 
     /* Determine the total number of samples */
-    UINT4 count = 0;
+    UINT4 count = npts;
     if (mask != NULL) {
         for (i = 0; i < npts; i++) {
-            if (mask[i])
-                count++;
+            if (!mask[i])
+                count--;
         }
-    } else {
-        count = npts;
     }
 
     /* Initialize KDE */
@@ -104,14 +102,12 @@ LALInferenceKDE *LALInferenceNewKDEfromMat(gsl_matrix *data, UINT4 *mask) {
     UINT4 dim = data->size2;
 
     /* Determine the total number of samples */
-    UINT4 count = 0;
+    UINT4 count = npts;
     if (mask != NULL) {
         for (i = 0; i < npts; i++) {
-            if (mask[i])
-                count++;
+            if (!mask[i])
+                count--;
         }
-    } else {
-        count = npts;
     }
 
     /* Initialize KDE */
@@ -270,44 +266,48 @@ void LALInferenceSetKDEBandwidth(LALInferenceKDE *kde) {
 REAL8 LALInferenceKDEEvaluatePoint(LALInferenceKDE *kde, REAL8 *point) {
     UINT4 dim = kde->dim;
     UINT4 npts = kde->npts;
-    UINT4 i, j;
+    UINT4 i;
+
+    gsl_vector *diff, *tdiff;
 
     /* If the normalization is infinite, don't bother calculating anything */
     if (isinf(kde->log_norm_factor))
         return -INFINITY;
 
     gsl_vector_view x = gsl_vector_view_array(point, dim);
-    gsl_vector_view d;
-
-    /* Vectors that will hold the difference and transformed distance */
-    gsl_vector *diff = gsl_vector_alloc(dim);
-    gsl_vector *tdiff = gsl_vector_alloc(dim);
 
     /* Loop over points in KDE dataset, using the Cholesky decomposition
      * of the covariance to avoid ever inverting the covariance matrix */
-    REAL8 energy;
     REAL8* results = XLALMalloc(npts * sizeof(REAL8));
 
-    #pragma omp parallel for schedule(static)
-    for (i=0; i<npts; i++) {
-        d = gsl_matrix_row(kde->data, i);
-        gsl_vector_memcpy(diff, &d.vector);
+    #pragma omp parallel private(diff, tdiff)
+    {
+        /* Vectors that will hold the difference and transformed distance */
+        gsl_vector *diff = gsl_vector_alloc(dim);
+        gsl_vector *tdiff = gsl_vector_alloc(dim);
 
-        gsl_vector_sub(diff, &x.vector);
-        gsl_linalg_cholesky_solve(kde->cholesky_decomp_cov, diff, tdiff);
-        gsl_vector_mul(diff, tdiff);
+        #pragma omp for schedule(static)
+        for (i=0; i<npts; i++) {
+            gsl_vector_view d = gsl_matrix_row(kde->data, i);
+            gsl_vector_memcpy(diff, &d.vector);
 
-        energy = 0.;
-        for (j=0; j<dim; j++)
-            energy += gsl_vector_get(diff, j);
-        results[i] = -energy/2.;
+            gsl_vector_sub(diff, &x.vector);
+            gsl_linalg_cholesky_solve(kde->cholesky_decomp_cov, diff, tdiff);
+            gsl_vector_mul(diff, tdiff);
+
+            REAL8 energy = 0.;
+            for (UINT4 j=0; j<dim; j++)
+                energy += gsl_vector_get(diff, j);
+            results[i] = -energy/2.;
+        }
+
+        gsl_vector_free(diff);
+        gsl_vector_free(tdiff);
     }
 
     /* Normalize the result and return */
     REAL8 result = log_add_exps(results, npts) - kde->log_norm_factor;
 
-    gsl_vector_free(diff);
-    gsl_vector_free(tdiff);
     XLALFree(results);
 
     return result;
