@@ -2625,7 +2625,7 @@ void LALInferencePrintInjectionSample(LALInferenceRunState *runState)
     while(data)
     {
         char tmpName[50];
-        REAL8 tmp=data->loglikelihood - data->nullloglikelihood;
+        REAL8 tmp=runState->model->loglikelihood - data->nullloglikelihood;
         sprintf(tmpName,"deltalogl%s",data->name);
         LALInferenceAddVariable(runState->currentParams,tmpName,&tmp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
         data=data->next;

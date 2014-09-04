@@ -1243,7 +1243,7 @@ INT4 LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
             }
             while(data)
             {
-               tmp=data->loglikelihood - data->nullloglikelihood;
+               tmp=runState->model->loglikelihood - data->nullloglikelihood;
                sprintf(tmpName,"deltalogl%s",data->name);
                LALInferenceAddVariable(runState->currentParams,tmpName,&tmp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
                data=data->next;
@@ -1269,7 +1269,7 @@ INT4 LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
             }
             while(data)
             {
-               tmp=data->loglikelihood - data->nullloglikelihood;
+               tmp=runState->model->loglikelihood - data->nullloglikelihood;
                sprintf(tmpName,"deltalogl%s",data->name);
                LALInferenceAddVariable(runState->currentParams,tmpName,&tmp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
                data=data->next;

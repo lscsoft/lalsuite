@@ -1360,6 +1360,10 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state)
                                                 &lalDimensionlessUnit,
                                                 state->data->freqData->data->length);
 
+  /* Create arrays for holding single-IFO likelihoods, etc. */
+  model->ifo_loglikelihoods = XLALCalloc(nifo, sizeof(REAL8));
+  model->ifo_SNRs = XLALCalloc(nifo, sizeof(REAL8));
+
   /* Choose proper template */
   model->templt = LALInferenceInitCBCTemplate(state);
 

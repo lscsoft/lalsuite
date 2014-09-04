@@ -239,7 +239,6 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams,
   double Fplus, Fcross;
   double h_dot_h=0;
   double FplusScaled, FcrossScaled;
-  REAL8 loglikeli=0;
   unsigned int weight_index;
   LALInferenceIFOData *dataPtr;
   double ra, dec, psi, distMpc, gmst;
@@ -297,8 +296,14 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams,
   
   intrinsicParams = LALInferenceGetInstrinsicParams(currentParams);
   
+  REAL8 loglikelihood = 0.0;
+
+  /* Reset SNR */
+  model->SNR = 0.0;
+
   /* loop over data (different interferometers): */
   dataPtr = data;
+  UINT4 ifo = 0;
   
   while (dataPtr != NULL) {
     /* The parameters the Likelihood function can handle by itself   */
@@ -308,8 +313,9 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams,
     /* t_c corresponds to the "time" parameter in                    */
     /* model->params (set, e.g., from the trigger value).            */
     
-    /* Reset log-likelihood */
-    dataPtr->loglikelihood = 0.0;
+    /* Reset likelihood and SNR */
+    model->ifo_loglikelihoods[ifo] = 0.0;
+    model->ifo_SNRs[ifo] = 0.0;
     
     /* Compare parameter values with parameter values corresponding  */
     /* to currently stored template; ignore "time" variable:         */
@@ -388,16 +394,17 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams,
   
     h_dot_h = (*(model->roq->amp_squared)) * (pow(dataPtr->fPlus*plusCoef, 2.) + pow(dataPtr->fCross*crossCoef, 2.)) * dataPtr->roq->int_f_7_over_3;
     
-    dataPtr->loglikelihood = GSL_REAL(complex_d_dot_h);
-    dataPtr->loglikelihood += -0.5*h_dot_h;
+    model->ifo_loglikelihoods[ifo] = GSL_REAL(complex_d_dot_h);
+    model->ifo_loglikelihoods[ifo] += -0.5*h_dot_h;
     
-    loglikeli += dataPtr->loglikelihood;
+    loglikelihood += model->ifo_loglikelihoods[ifo];
     
     dataPtr = dataPtr->next;
+    ifo++;
   }
 
   LALInferenceClearVariables(&intrinsicParams);
-  return(loglikeli);
+  return(loglikelihood);
 }
 
 
@@ -419,10 +426,9 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
   double diffRe, diffIm, diffSquared;
   double dataReal, dataImag;
   double glitchReal=0.0, glitchImag=0.0;
-  REAL8 loglikeli;
   REAL8 plainTemplateReal, plainTemplateImag;
   REAL8 templateReal=0.0, templateImag=0.0;
-  int i, j, lower, upper, ifo;
+  int i, j, lower, upper;
   LALInferenceIFOData *dataPtr;
   double ra=0.0, dec=0.0, psi=0.0, gmst=0.0;
   double GPSdouble=0.0;
@@ -531,9 +537,14 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
   }
 
   chisquared = 0.0;
+  REAL8 loglikelihood = 0.0;
+
+  /* Reset SNR */
+  model->SNR = 0.0;
+
   /* loop over data (different interferometers): */
   dataPtr = data;
-  ifo=0;
+  UINT4 ifo=0;
 
   while (dataPtr != NULL) {
     /* The parameters the Likelihood function can handle by itself   */
@@ -544,7 +555,8 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
 	/* model->params (set, e.g., from the trigger value).     */
     
     /* Reset log-likelihood */
-    dataPtr->loglikelihood = 0.0;
+    model->ifo_loglikelihoods[ifo] = 0.0;
+    model->ifo_SNRs[ifo] = 0.0;
 
     if(signalFlag){
       
@@ -723,7 +735,7 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
       if(LALInferenceLineSwitch(lineFlag, Nlines, lines_array, widths_array, i))
       {
         chisquared  += temp;
-        dataPtr->loglikelihood -= temp;
+        model->ifo_loglikelihoods[ifo] -= temp;
       }
  
       /* Now update re and im for the next iteration. */
@@ -735,12 +747,11 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
       im = newIm;
       }
     }
-    dataPtr->currentSNR = sqrt(signal2noise);
     ifo++; //increment IFO counter for noise parameters
     dataPtr = dataPtr->next;
   }
-  loglikeli = -1.0 * chisquared; // note (again): the log-likelihood is unnormalised!
-  return(loglikeli);
+  loglikelihood = -1.0 * chisquared; // note (again): the log-likelihood is unnormalised!
+  return(loglikelihood);
 }
 
 /***************************************************************/
@@ -780,7 +791,6 @@ REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *current
   double Fplus, Fcross;
   double diffRe, diffIm, diffSquared;
   double dataReal, dataImag;
-  REAL8 loglikeli;
   REAL8 plainTemplateReal, plainTemplateImag;
   REAL8 templateReal, templateImag;
   int i, lower, upper;
@@ -788,7 +798,7 @@ REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *current
   double ra, dec, psi, gmst,mc;
   double GPSdouble;
   LIGOTimeGPS GPSlal;
-  double chisquared;
+  double single_chisquared, chisquared;
   double timedelay;  /* time delay b/w iterferometer & geocenter w.r.t. sky location */
   double timeshift;  /* time shift (not necessarily same as above)                   */
   double deltaT, FourDeltaToverN, deltaF, twopit, re, im, singleFreqBinTerm, dre, dim, newRe, newIm;
@@ -821,8 +831,14 @@ REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *current
   gmst=XLALGreenwichMeanSiderealTime(&GPSlal);
 
   chisquared = 0.0;
+  REAL8 loglikelihood = 0.0;
+
+  /* Reset SNR */
+  model->SNR = 0.0;
+
   /* loop over data (different interferometers): */
   dataPtr = data;
+  UINT4 ifo = 0;
 
   while (dataPtr != NULL) {
     /* The parameters the Likelihood function can handle by itself    */
@@ -833,9 +849,11 @@ REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *current
     /* model->params (set, e.g., from the trigger value).      */
     
     /* Reset log-likelihood */
-    dataPtr->loglikelihood = 0.0;
+    model->ifo_loglikelihoods[ifo] = 0.0;
+    model->ifo_SNRs[ifo] = 0.0;
 
-    
+    single_chisquared = 0.0;
+
     /* Check to see if this buffer has already been filled with the signal.
      Different dataPtrs can share the same signal buffer to avoid repeated
      calls to template */
@@ -945,8 +963,8 @@ REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *current
       diffIm       = dataImag - templateImag;         /* ...and imaginary parts, and...                  */
       diffSquared  = diffRe*diffRe + diffIm*diffIm ;  /* ...squared difference of the 2 complex figures. */
       singleFreqBinTerm = ((nu+2.0)/2.0) * log(1.0 + (FourDeltaToverN * diffSquared) / (nu * dataPtr->oneSidedNoisePowerSpectrum->data->data[i]));
-      chisquared  += singleFreqBinTerm;   /* (This is a sum-of-squares, or chi^2, term in the Gaussian case, not so much in the Student-t case...)  */
-      dataPtr->loglikelihood -= singleFreqBinTerm;
+      single_chisquared  += singleFreqBinTerm;   /* (This is a sum-of-squares, or chi^2, term in the Gaussian case, not so much in the Student-t case...)  */
+      model->ifo_loglikelihoods[ifo] -= singleFreqBinTerm;
 
       /* Now update re and im for the next iteration. */
       newRe = re + re*dre - im*dim;
@@ -955,11 +973,13 @@ REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *current
       re = newRe;
       im = newIm;
     }
+    chisquared += single_chisquared;
 
     dataPtr = dataPtr->next;
+    ifo++;
   }
-  loglikeli = -1.0 * chisquared; /* note (again): the log-likelihood is unnormalised! */
-  return(loglikeli);
+  loglikelihood = -1.0 * chisquared; /* note (again): the log-likelihood is unnormalised! */
+  return(loglikelihood);
 }
 
 REAL8 LALInferenceFreqDomainLogLikelihood(LALInferenceVariables *currentParams,
@@ -978,14 +998,14 @@ REAL8 LALInferenceFreqDomainLogLikelihood(LALInferenceVariables *currentParams,
 /*   - "time"            (REAL8, GPS sec.)                     */
 /***************************************************************/
 {
-  REAL8 loglikeli, totalChiSquared=0.0;
+  REAL8 loglikelihood=0.0, totalChiSquared=0.0;
   LALInferenceIFOData *ifoPtr=data;
+  UINT4 ifo = 0;
   COMPLEX16Vector *freqModelResponse=NULL;
+
 
   /* loop over data (different interferometers): */
   while (ifoPtr != NULL) {
-    ifoPtr->loglikelihood = 0.0;
-
 	if(freqModelResponse==NULL)
 		freqModelResponse= XLALCreateCOMPLEX16Vector(ifoPtr->freqData->data->length);
 	else
@@ -996,13 +1016,14 @@ REAL8 LALInferenceFreqDomainLogLikelihood(LALInferenceVariables *currentParams,
           -2.0*LALInferenceComputeFrequencyDomainOverlap(ifoPtr, ifoPtr->freqData->data, freqModelResponse)
           +LALInferenceComputeFrequencyDomainOverlap(ifoPtr, freqModelResponse, freqModelResponse);
 	totalChiSquared+=temp;
-        ifoPtr->loglikelihood -= 0.5*temp;
+        model->ifo_loglikelihoods[ifo] = -0.5*temp;
 
     ifoPtr = ifoPtr->next;
+    ifo++;
   }
-  loglikeli = -0.5 * totalChiSquared; // note (again): the log-likelihood is unnormalised!
+  loglikelihood = -0.5 * totalChiSquared; // note (again): the log-likelihood is unnormalised!
   XLALDestroyCOMPLEX16Vector(freqModelResponse);
-  return(loglikeli);
+  return(loglikelihood);
 }
 
 REAL8 LALInferenceChiSquareTest(LALInferenceVariables *currentParams,
@@ -1314,7 +1335,7 @@ REAL8 LALInferenceComputeFrequencyDomainOverlap(LALInferenceIFOData * dataPtr,
 REAL8 LALInferenceNullLogLikelihood(LALInferenceIFOData *data)
 /*Identical to FreqDomainNullLogLikelihood                        */
 {
-	REAL8 loglikeli, totalChiSquared=0.0;
+	REAL8 loglikelihood, totalChiSquared=0.0;
 	LALInferenceIFOData *ifoPtr=data;
 	
 	/* loop over data (different interferometers): */
@@ -1325,8 +1346,8 @@ REAL8 LALInferenceNullLogLikelihood(LALInferenceIFOData *data)
           ifoPtr->nullloglikelihood -= 0.5*temp;
 		ifoPtr = ifoPtr->next;
 	}
-	loglikeli = -0.5 * totalChiSquared; // note (again): the log-likelihood is unnormalised!
-	return(loglikeli);
+	loglikelihood = -0.5 * totalChiSquared; // note (again): the log-likelihood is unnormalised!
+	return(loglikelihood);
 }
 
 static void extractDimensionlessVariableVector(LALInferenceVariables *currentParams, REAL8 *x, INT4 mode) {
@@ -1635,7 +1656,7 @@ REAL8 LALInferenceMarginalisedPhaseLogLikelihood(LALInferenceVariables *currentP
 {
   double Fplus, Fcross;
   double dataReal, dataImag;
-  REAL8 loglikeli=0.0;
+  REAL8 loglikelihood=0.0;
   REAL8 plainTemplateReal, plainTemplateImag;
   REAL8 templateReal, templateImag;
   int i, lower, upper;
@@ -1727,6 +1748,9 @@ REAL8 LALInferenceMarginalisedPhaseLogLikelihood(LALInferenceVariables *currentP
     }
   }
   
+  /* Reset SNR */
+  model->SNR = 0.0;
+
   /* determine source's sky location & orientation parameters: */
   ra        = *(REAL8*) LALInferenceGetVariable(currentParams, "rightascension"); /* radian      */
   dec       = *(REAL8*) LALInferenceGetVariable(currentParams, "declination");    /* radian      */
@@ -1756,8 +1780,8 @@ REAL8 LALInferenceMarginalisedPhaseLogLikelihood(LALInferenceVariables *currentP
     /* model->params (set, e.g., from the trigger value).     */
     
     /* Reset log-likelihood */
-    dataPtr->loglikelihood = 0.0;
-    
+    model->ifo_loglikelihoods[ifo] = 0.0;
+    model->ifo_SNRs[ifo] = 0.0;
     
     /* Check to see if this buffer has already been filled with the signal.
      Different dataPtrs can share the same signal buffer to avoid repeated
@@ -1923,6 +1947,7 @@ REAL8 LALInferenceMarginalisedPhaseLogLikelihood(LALInferenceVariables *currentP
       im = newIm;
     }
     dataPtr = dataPtr->next;
+    ifo++;
   }
   R=2.0*sqrt(Rre*Rre+Rim*Rim);
   gsl_sf_result result;
@@ -1934,8 +1959,8 @@ REAL8 LALInferenceMarginalisedPhaseLogLikelihood(LALInferenceVariables *currentP
   else printf("ERROR: Cannot calculate I0(%lf)\n",R);
   /* This is marginalised over phase only for now */
   REAL8 thislogL=-(S+D) + log(I0x) + R ;
-  loglikeli=thislogL;
-  return(loglikeli);
+  loglikelihood=thislogL;
+  return(loglikelihood);
 }
 
 /** Integrate interpolated log, returns the mean index in *imax if it
@@ -2150,6 +2175,9 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
 
   loglike = 0.0;
 
+  /* Reset SNR */
+  model->SNR = 0.0;
+
   ifo=0;
 
   while (dataPtr != NULL) {
@@ -2165,7 +2193,8 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
     /* Reset log-likelihood.  Marginalization over time ruins the
        relationship that log(L) = sum_i log(L_i), so just set detector
        log(L) to 0.0 */
-    dataPtr->loglikelihood = 0.0;
+    model->ifo_loglikelihoods[ifo] = 0.0;
+    model->ifo_SNRs[ifo] = 0.0;
     chisquared = 0.0;
 
     
@@ -2353,7 +2382,6 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
     }
 
     loglike -= 0.5 * chisquared;
-    dataPtr->currentSNR = sqrt(signal2noise);
 
     ifo++; //increment IFO counter for noise parameters
     dataPtr = dataPtr->next;
@@ -2405,8 +2433,7 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
 
 void LALInferenceNetworkSNR(LALInferenceVariables *currentParams,
                             LALInferenceIFOData *data,
-                            LALInferenceModel *model,
-                            REAL8 *SNRs)
+                            LALInferenceModel *model)
 /***************************************************************/
 /* Calculate the SNR across the network.                       */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -2443,17 +2470,19 @@ void LALInferenceNetworkSNR(LALInferenceVariables *currentParams,
   if(LALInferenceCheckVariable(currentParams, "signalModelFlag"))
     signalFlag = *((INT4 *)LALInferenceGetVariable(currentParams, "signalModelFlag"));
 
+  /* Reset SNRs in model struct */
+  model->SNR = 0.0;
+
   dataPtr = data;
-  if (!signalFlag) {
-      ifo = 0;
-      while (dataPtr != NULL) {
-          SNRs[ifo] = 0.0;
-          dataPtr->currentSNR = SNRs[ifo];
-          ifo++;
-          dataPtr = dataPtr->next;
-      }
-      return;
+  ifo = 0;
+  while (dataPtr != NULL) {
+      model->ifo_SNRs[ifo] = 0.0;
+      ifo++;
+      dataPtr = dataPtr->next;
   }
+
+  if (!signalFlag)
+      return;
 
   if(LALInferenceCheckVariable(currentParams, "logdistance")){
     REAL8 distMpc = exp(*(REAL8*)LALInferenceGetVariable(currentParams,"logdistance"));
@@ -2483,13 +2512,6 @@ void LALInferenceNetworkSNR(LALInferenceVariables *currentParams,
   XLALGPSSetREAL8(&GPSlal, GPSdouble);
   gmst=XLALGreenwichMeanSiderealTime(&GPSlal);
 
-  /* loop over data (different interferometers): */
-  INT4 nifos=0;
-  while (dataPtr != NULL) {
-      nifos++;
-      dataPtr = dataPtr->next;
-  }
-
   ifo=0;
   dataPtr = data;
   while (dataPtr != NULL) {
@@ -2500,8 +2522,6 @@ void LALInferenceNetworkSNR(LALInferenceVariables *currentParams,
 	/* t_c corresponds to the "time" parameter in                    */
 	/* model->params (set, e.g., from the trigger value).     */
     
-    signal2noise = 0.0;
-
     /* Check to see if this buffer has already been filled with the signal.
      Different dataPtrs can share the same signal buffer to avoid repeated
      calls to template */
@@ -2552,12 +2572,15 @@ void LALInferenceNetworkSNR(LALInferenceVariables *currentParams,
                           +  Fcross * cimag(model->freqhCross->data->data[i]);
 
       /* un-do 1/deltaT scaling: */
-      signal2noise += 2.0 * TwoOverNDeltaT * ( plainTemplateReal*plainTemplateReal + plainTemplateImag*plainTemplateImag ) / dataPtr->oneSidedNoisePowerSpectrum->data->data[i];
+      model->ifo_SNRs[ifo] += 2.0 * TwoOverNDeltaT * ( plainTemplateReal*plainTemplateReal + plainTemplateImag*plainTemplateImag ) / dataPtr->oneSidedNoisePowerSpectrum->data->data[i];
     }
 
-    SNRs[ifo] = sqrt(signal2noise);
-    dataPtr->currentSNR = SNRs[ifo];
+    model->SNR += model->ifo_SNRs[ifo];
+    model->ifo_SNRs[ifo] = sqrt(model->ifo_SNRs[ifo]);
+
     ifo++; //increment IFO counter for noise parameters
     dataPtr = dataPtr->next;
   }
+
+  model->SNR = sqrt(model->SNR);
 }

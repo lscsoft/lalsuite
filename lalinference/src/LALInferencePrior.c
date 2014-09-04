@@ -2705,22 +2705,18 @@ UINT4 within_malmquist(LALInferenceRunState *runState, LALInferenceVariables *pa
         ifo = ifo->next;
     }
 
-    REAL8 *SNRs = XLALMalloc(nifo * sizeof(REAL8));
-    LALInferenceNetworkSNR(params, runState->data, model, SNRs);
-    REAL8 loudest_snr=0.0, second_loudest_snr=0.0, network_snr=0.0;
+    LALInferenceNetworkSNR(params, runState->data, model);
+    REAL8 loudest_snr=0.0, second_loudest_snr=0.0;
     for (i=0; i<nifo; i++) {
-        if (SNRs[i] > second_loudest_snr) {
-            if (SNRs[i] > loudest_snr) {
+        if (model->ifo_SNRs[i] > second_loudest_snr) {
+            if (model->ifo_SNRs[i] > loudest_snr) {
                 second_loudest_snr = loudest_snr;
-                loudest_snr = SNRs[i];
+                loudest_snr = model->ifo_SNRs[i];
             } else {
-                second_loudest_snr = SNRs[i];
+                second_loudest_snr = model->ifo_SNRs[i];
             }
         }
-        network_snr += SNRs[i]*SNRs[i];
     }
-    XLALFree(SNRs);
-    network_snr = sqrt(network_snr);
 
     REAL8 malmquist_loudest = (*(REAL8 *)LALInferenceGetVariable(runState->priorArgs,"malmquist_loudest_snr"));
     REAL8 malmquist_second_loudest = (*(REAL8 *)LALInferenceGetVariable(runState->priorArgs,"malmquist_second_loudest_snr"));
@@ -2728,7 +2724,7 @@ UINT4 within_malmquist(LALInferenceRunState *runState, LALInferenceVariables *pa
 
     if (loudest_snr < malmquist_loudest
           || second_loudest_snr < malmquist_second_loudest
-          || network_snr < malmquist_network)
+          || model->SNR < malmquist_network)
         return(0);
     else
         return(1);

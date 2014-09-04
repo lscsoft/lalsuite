@@ -378,6 +378,12 @@ typedef struct tagLALInferenceModel
   LALSimulationDomain          domain; /** Domain of model */
   LALInferenceTemplateFunction templt; /** The template generation function */
 
+  REAL8                        logprior; /** Prior value at *params* */
+  REAL8                        loglikelihood; /** Likelihood value at *params* */
+  REAL8                        SNR; /** Network SNR at *params* */
+  REAL8*                       ifo_loglikelihoods; /** Array of single-IFO likelihoods at *params* */
+  REAL8*                       ifo_SNRs; /** Array of single-IFO SNRs at *params* */
+
   REAL8                        fLow;   /** Start frequency for waveform generation */
   REAL8                        deltaT, deltaF;   /** Sampling rate information */
   INT4                         freqLength; /* Length of freq-domain buffer */
@@ -495,7 +501,7 @@ tagLALInferenceIFOData
      model in freqModel... or timeModel....  When a jump is accepted,
      that value is copied into acceptedloglikelihood, which is the
      quantity that is actually output in the output files. */
-  REAL8                      nullloglikelihood, loglikelihood, acceptedloglikelihood, currentSNR, acceptedSNR; 
+  REAL8                      nullloglikelihood; 
   REAL8                      fPlus, fCross; /** Detector responses */
   REAL8                      timeshift;     /** What is this? */
   COMPLEX16FrequencySeries  *freqData,      /** Buffer for frequency domain data */

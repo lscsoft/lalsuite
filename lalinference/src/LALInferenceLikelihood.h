@@ -233,7 +233,7 @@ LALInferenceVariables LALInferenceGetInstrinsicParams(LALInferenceVariables *cur
 INT4 LALInferenceLineSwitch(INT4 lineFlag, INT4 Nlines, INT4 *lines_array, INT4 *widths_array, INT4 i);
 
 /** Calculate the SNR across the network */
-void LALInferenceNetworkSNR(LALInferenceVariables *currentParams, LALInferenceIFOData *data, LALInferenceModel *model, REAL8 *SNRs);
+void LALInferenceNetworkSNR(LALInferenceVariables *currentParams, LALInferenceIFOData *data, LALInferenceModel *model);
 /*@}*/
 
 #endif
