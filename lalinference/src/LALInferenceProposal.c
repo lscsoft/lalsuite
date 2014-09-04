@@ -3607,20 +3607,8 @@ void LALInferenceInitClusteredKDEProposal(LALInferenceRunState *runState, LALInf
     strcpy(kde->name, name);
     INT4 dim = LALInferenceGetVariableDimensionNonFixed(params);
 
-    /* Downsample to avoid proposal becoming too expensive */
-    INT4 nDownsample = 2000;
-    INT4 step = (INT4)((REAL8)nSamps/(REAL8)nDownsample);
-    if (step == 0) step = 1;
-    INT4 downsampled_size = (INT4)ceil((REAL8)nSamps/(REAL8)step);
-
     gsl_matrix_view mview = gsl_matrix_view_array(array, nSamps, dim);
-    gsl_matrix *downsampled_array = gsl_matrix_alloc(downsampled_size, dim);
-    for (i=0; i<downsampled_size; i++) {
-        gsl_vector_view row = gsl_matrix_row(&mview.matrix, i*step);
-        gsl_matrix_set_row(downsampled_array, i, &row.vector);
-    }
-
-    kde->kmeans = (*cluster_method)(downsampled_array, ntrials, runState->GSLrandom);
+    kde->kmeans = (*cluster_method)(&mview.matrix, ntrials, runState->GSLrandom);
 
     /* Return if kmeans setup failed */
     if (!kde->kmeans)
@@ -3637,6 +3625,7 @@ void LALInferenceInitClusteredKDEProposal(LALInferenceRunState *runState, LALInf
         char outp_name[256];
         char outp_draws_name[256];
         UINT4 chain = 0;
+        UINT4 ndraws = 1000;
 
         if (LALInferenceCheckVariable(runState->algorithmParams, "MPIrank"))
             chain = *(UINT4 *)LALInferenceGetVariable(runState->algorithmParams, "MPIrank");
@@ -3644,11 +3633,9 @@ void LALInferenceInitClusteredKDEProposal(LALInferenceRunState *runState, LALInf
 
         sprintf(outp_name, "clustered_samples.%2.2d", chain);
         sprintf(outp_draws_name, "clustered_draws.%2.2d", chain);
-        LALInferenceDumpClusteredKDE(kde, outp_name, downsampled_array->data);
-        LALInferenceDumpClusteredKDEDraws(kde, outp_draws_name, 1000);
+        LALInferenceDumpClusteredKDE(kde, outp_name, array);
+        LALInferenceDumpClusteredKDEDraws(kde, outp_draws_name, ndraws);
     }
-
-    gsl_matrix_free(downsampled_array);
 }
 
 
@@ -3860,8 +3847,11 @@ void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceRunState *runState
     /* Only add the kmeans was successfully setup */
     if (proposal->kmeans)
         LALInferenceAddClusteredKDEProposalToSet(runState, proposal);
-    else
+    else {
+        LALInferenceClearVariables(clusterParams);
+        XLALFree(clusterParams);
         XLALFree(proposal);
+    }
 
     LALInferenceClearVariables(backwardClusterParams);
     XLALFree(backwardClusterParams);

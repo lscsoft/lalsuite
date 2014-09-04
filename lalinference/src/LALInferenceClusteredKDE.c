@@ -555,7 +555,7 @@ LALInferenceKmeans *LALInferenceCreateKmeans(UINT4 k, gsl_matrix *data, gsl_rng 
         return NULL;
     }
 
-   /* Zero out upper right triangle of decomposed covariance matrix, which contains the transpose */
+    /* Zero out upper right triangle of decomposed matrices, which contain the transposes */
     UINT4 i, j;
     for (i = 0; i < kmeans->dim; i++) {
         for (j = i+1; j < kmeans->dim; j++) {
@@ -945,10 +945,16 @@ gsl_matrix * LALInferenceWhitenSamples(gsl_matrix *samples) {
     status = LALInferenceCholeskyDecompose(cholesky_decomp_cov);
 
     /* If data couldn't be whitened, return NULL */
-    if (status)
-        return NULL;
+    if (status) {
+        gsl_matrix_free(whitened_samples);
+        gsl_vector_free(mean);
+        gsl_matrix_free(cov);
+        gsl_matrix_free(cholesky_decomp_cov);
 
-    /* Zero out upper right triangle of decomposed covariance matrix, which contains the transpose */
+        return NULL;
+    }
+
+    /* Zero out upper right triangle of decomposed matrix, which contains the transpose */
     for (i = 0; i < dim; i++) {
         for (j = i+1; j < dim; j++)
             gsl_matrix_set(cholesky_decomp_cov, i, j, 0.);
