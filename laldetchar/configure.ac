@@ -20,6 +20,7 @@ AC_CONFIG_FILES([ \
   python/laldetchar/__init__.py \
   python/laldetchar/triggers/Makefile \
   python/laldetchar/hveto/Makefile \
+  python/laldetchar/idq/Makefile \
   swig/Makefile \
   test/Makefile
 ])
