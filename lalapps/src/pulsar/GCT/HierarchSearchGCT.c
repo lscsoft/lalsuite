@@ -1971,11 +1971,11 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
 
   /* set wings of sfts to be read */
   REAL8 minCoverFreq, maxCoverFreq;
-  REAL8 asiniMax = 0, PeriodMin = 0;
+  REAL8 asiniMax = 0, PeriodMin = 0, maxEcc = 0;
   // NOTE: *must* use spin-range at *mid-time* (not reftime), which is where the GCT code sets up its
   // template bank. This is potentially 'wider' than the physically-requested template bank, and
   // can therefore also require more SFT frequency bins!
-  XLALCWSignalCoveringBand ( &minCoverFreq, &maxCoverFreq, &tStartGPS, &tEndGPS, &(in->spinRange_midTime), asiniMax, PeriodMin );
+  XLALCWSignalCoveringBand ( &minCoverFreq, &maxCoverFreq, &tStartGPS, &tEndGPS, &(in->spinRange_midTime), asiniMax, PeriodMin, maxEcc );
 
   REAL8 freqmin = minCoverFreq - in->extraBinsFstat * in->dFreqStack;
   REAL8 freqmax = maxCoverFreq + in->extraBinsFstat * in->dFreqStack;
