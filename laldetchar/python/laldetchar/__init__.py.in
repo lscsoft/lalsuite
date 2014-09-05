@@ -15,6 +15,5 @@ detector charaterisation purposes.
 #@{
 #	\defgroup pkg_py_laldetchar_triggers	Triggers
 #	\defgroup pkg_py_laldetchar_hveto	hveto utility modules
-#       \defgroup pkg_py_laldetchar_idq         iDQ pipeline
 #@}
 #
