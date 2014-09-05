@@ -46,6 +46,9 @@ fStart = fMin + args.jobNum * fBand
 toplistPattern = cp.get('filename-patterns','toplist_name')
 toplistName = toplistPattern % (args.jobNum,args.numJobs)
 
+logfilePattern = cp.get('filename-patterns','logfile_name')
+logfileName = logfilePattern % (args.jobNum,args.numJobs)
+
 # Pass along the arguments from the ini file
 program_args = ['--%s=%s' % a for a in cp.items('raw-program-arguments')]
 
@@ -53,6 +56,7 @@ program_args = ['--%s=%s' % a for a in cp.items('raw-program-arguments')]
 program_args += ['--fStart=%f' % fStart]
 program_args += ['--fBand=%f' % fBand]
 program_args += ['--toplistFilename=%s' % toplistName]
+program_args += ['--logFilename=%s' % logfileName]
 
 # Check if program was specified
 if cp.has_section('program') and cp.has_option('program','executable'):
