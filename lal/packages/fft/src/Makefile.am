@@ -11,6 +11,7 @@ if INTELFFT
 FFTSRC = \
 	IntelComplexFFT.c \
 	IntelRealFFT.c \
+	FFTWMutex.c \
 	$(QTHREADSRC)
 FFTHDR =
 FFTCXXSRC =
