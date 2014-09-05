@@ -477,6 +477,9 @@ tagLALInferenceRunState
 							 point; this
 							 counter
 							 stores n */
+  REAL8*        currentIFOSNRs; /** Array storing single-IFO SNRs of current sample */
+  REAL8*        currentIFOLikelihoods; /** Array storing single-IFO likelihoods of current sample */
+  REAL8         currentSNR; /** Array storing network SNR of current sample */
   REAL8			currentLikelihood;  /** This should be removed, can be given as an algorithmParams or proposalParams entry */
   REAL8                 currentPrior;       /** This should be removed, can be given as an algorithmParams entry */
   gsl_rng               *GSLrandom;         /** A pointer to a GSL random number generator */

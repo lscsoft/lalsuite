@@ -828,20 +828,19 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
       LALInferencePrintSampleNonFixed(chainoutput,runState->currentParams);
       fprintf(chainoutput,"%f\t",runState->currentLikelihood - nullLikelihood);
 
+      UINT4 ifo = 0;
       LALInferenceIFOData *headIFO = runState->data;
       while (headIFO != NULL) {
-        fprintf(chainoutput, "%f\t", runState->currentLikelihood - headIFO->nullloglikelihood);
+        fprintf(chainoutput, "%f\t", runState->currentIFOLikelihoods[ifo] - headIFO->nullloglikelihood);
+        ifo++;
         headIFO = headIFO->next;
       }
 
       if (LALInferenceGetProcParamVal(runState->commandLine, "--output-SNRs")) {
-          /* Calculate SNR it not already done */
-          if (runState->model->SNR == 0.0)
-              LALInferenceNetworkSNR(runState->currentParams, runState->data, runState->model);
           headIFO = runState->data;
           UINT4 ifo = 0;
           while (headIFO != NULL) {
-            fprintf(chainoutput, "%f\t", runState->model->ifo_SNRs[ifo]);
+            fprintf(chainoutput, "%f\t", runState->currentIFOSNRs[ifo]);
             headIFO = headIFO->next;
             ifo++;
           }
@@ -1022,6 +1021,29 @@ INT4 PTMCMCOneStep(LALInferenceRunState *runState)
     LALInferenceCopyVariables(&proposedParams, runState->currentParams);
     runState->currentLikelihood = logLikelihoodProposed;
     runState->currentPrior = logPriorProposed;
+
+    /* Calculate SNR if requested, and not already calculated by prior */
+    LALInferenceIFOData *ifoPtr = runState->data;
+    UINT4 ifo = 0;
+    if (LALInferenceGetProcParamVal(runState->commandLine, "--output-SNRs")) {
+      if (runState->model->SNR == 0.0)
+        LALInferenceNetworkSNR(runState->currentParams, runState->data, runState->model);
+      runState->currentSNR = runState->model->SNR;
+      while (ifoPtr) {
+        runState->currentIFOSNRs[ifo] = runState->model->ifo_SNRs[ifo];
+        ifo++;
+        ifoPtr = ifoPtr->next;
+      }
+    }
+
+    ifoPtr = runState->data;
+    ifo = 0;
+    while (ifoPtr) {
+      runState->currentIFOLikelihoods[ifo] = runState->model->ifo_loglikelihoods[ifo];
+      ifo++;
+      ifoPtr = ifoPtr->next;
+    }
+
     acceptanceCount++;
     accepted = 1;
     LALInferenceSetVariable(runState->proposalArgs, "acceptanceCount", &acceptanceCount);

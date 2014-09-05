@@ -1208,6 +1208,7 @@ INT4 LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
     REAL8 logLnew=0.0;
     UINT4 sub_iter=0;
     UINT4 tries=0;
+    UINT4 ifo=0;
     REAL8 counter=1.;
     UINT4 BAILOUT=100*testnumber; /* If no acceptance after 100 tries, will exit and the sampler will try a different starting point */
     do{
@@ -1241,11 +1242,13 @@ INT4 LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
                tmp=logLnew-*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logZnoise");
                LALInferenceAddVariable(runState->currentParams,"deltalogL",(void *)&tmp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
             }
+            ifo=0;
             while(data)
             {
-               tmp=runState->model->loglikelihood - data->nullloglikelihood;
+               tmp=runState->model->ifo_loglikelihoods[ifo] - data->nullloglikelihood;
                sprintf(tmpName,"deltalogl%s",data->name);
                LALInferenceAddVariable(runState->currentParams,tmpName,&tmp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+               ifo++;
                data=data->next;
             }
             LALInferenceCopyVariables(runState->currentParams,&oldParams);
@@ -1267,11 +1270,13 @@ INT4 LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
                tmp=logLnew-*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logZnoise");
                LALInferenceAddVariable(runState->currentParams,"deltalogL",(void *)&tmp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
             }
+            ifo=0;
             while(data)
             {
-               tmp=runState->model->loglikelihood - data->nullloglikelihood;
+               tmp=runState->model->ifo_loglikelihoods[ifo] - data->nullloglikelihood;
                sprintf(tmpName,"deltalogl%s",data->name);
                LALInferenceAddVariable(runState->currentParams,tmpName,&tmp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+               ifo++;
                data=data->next;
             }
     }
