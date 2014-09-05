@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008 J. Creighton, S. Fairhurst, B. Krishnan, L. Santamaria, D. Keppel, Evan Ochsner, C. Pankow
+ * Copyright (C) 2008 J. Creighton, S. Fairhurst, B. Krishnan, L. Santamaria, D. Keppel, Evan Ochsner, C. Pankow, 2014 A. Klein
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1227,6 +1227,355 @@ int XLALSimInspiralPrecessingPolarizationWaveforms(
     return XLAL_SUCCESS;
 }
 
+
+
+
+
+/**
+ * Computes polarizations h+ and hx for a spinning, precessing binary
+ * when provided a single value of all the dynamical quantities.
+ * Amplitude can be chosen between 1.5PN and Newtonian orders (inclusive).
+ *
+ * Based on K.G. Arun, Alesssandra Buonanno, Guillaume Faye and Evan Ochsner
+ * \"Higher-order spin effects in the amplitude and phase of gravitational
+ * waveforms emitted by inspiraling compact binaries: Ready-to-use
+ * gravitational waveforms\", Phys Rev. D 79, 104023 (2009), arXiv:0810.5336
+ *
+ * HOWEVER, the formulae have been adapted to use the output of the so-called
+ * \"Frameless\" convention for evolving precessing binary dynamics,
+ * which is not susceptible to hitting coordinate singularities.
+ *
+ * This has been written to reproduce XLALSimInspiralPrecessingPolarizationWaveforms.
+ * If hplus and hcross are the output of XLALSimInspiralPrecessingPolarizationWaveforms,
+ * and hp(n) and hc(n) the output of this function for a given harmonic number, then
+ *
+ * hplus = sum_{n=0}^5 hp(n)*exp(-i*n*Phi) + c.c.
+ * hcross = sum_{n=0}^5 hc(n)*exp(-i*n*Phi) + c.c.
+ *
+ * NOTE: The vectors MUST be given in the so-called radiation frame where
+ * Z is the direction of propagation, X is the principal '+' axis and Y = Z x X
+ * For different convention (Z is the direction of initial total angular
+ * momentum, useful for GRB and comparison to NR, see XLALSimSpinInspiralGenerator())
+ */
+int XLALSimInspiralPrecessingPolarizationWaveformHarmonic(
+        COMPLEX16 *hplus,  /**< +-polarization waveform [returned] */
+        COMPLEX16 *hcross, /**< x-polarization waveform [returned] */
+        REAL8 v,       /**< post-Newtonian parameter */
+        REAL8 s1x,     /**< Spin1 vector x component */
+        REAL8 s1y,     /**< Spin1 vector y component */
+        REAL8 s1z,     /**< Spin1 vector z component */
+        REAL8 s2x,     /**< Spin2 vector x component */
+        REAL8 s2y,     /**< Spin2 vector y component */
+        REAL8 s2z,     /**< Spin2 vector z component */
+        REAL8 lnhx,  /**< unit orbital ang. mom. x comp. */
+        REAL8 lnhy,  /**< unit orbital ang. mom. y comp. */
+        REAL8 lnhz,  /**< unit orbital ang. mom. z comp. */
+        REAL8 e1x,     /**< orbital plane basis vector x comp. */
+        REAL8 e1y,     /**< orbital plane basis vector y comp. */
+        REAL8 e1z,     /**< orbital plane basis vector z comp. */
+        REAL8 dm,                 /**< dimensionless mass difference (m1 - m2)/(m1 + m2) > 0 */
+        REAL8 eta,                /**< symmetric mass ratio m1*m2/(m1 + m2)^2 */
+        REAL8 v0,                 /**< tail-term gauge choice (default = 1) */
+        INT4 n,                   /**< harmonic number */
+        INT4 ampO                 /**< twice amp. post-Newtonian order */
+        )
+{
+  /* E2 = LNhat x E1 */
+  REAL8 e2x = lnhy*e1z - lnhz*e1y;
+  REAL8 e2y = lnhz*e1x - lnhx*e1z;
+  REAL8 e2z = lnhx*e1y - lnhy*e1x;
+
+  REAL8 v2 = v*v;
+  REAL8 v3 = v2*v;
+  REAL8 v4 = v3*v;
+  REAL8 v5 = v4*v;
+
+  REAL8 twom1 = (1. + dm);
+  REAL8 twom2 = (1. - dm);
+
+  REAL8 a1x = s1x*twom1;
+  REAL8 a1y = s1y*twom1;
+  REAL8 a1z = s1z*twom1;
+  REAL8 a2x = s2x*twom2;
+  REAL8 a2y = s2y*twom2;
+  REAL8 a2z = s2z*twom2;
+
+  REAL8 logfac;
+
+  /*
+   * First set all h+/x coefficients to 0. Then use a switch to
+   * set proper non-zero values up to order ampO. Note we
+   * fall through the PN orders and break only after Newt. order
+   */
+  *hplus = 0.;
+  *hcross = 0.;
+
+  REAL8 fact1, fact2, fact3, fact4, fact5, fact6, fact7, fact8, fact9;
+
+  REAL8 e1xe1x = e1x*e1x;
+  REAL8 e1xe1y = e1x*e1y;
+  REAL8 e1xe1z = e1x*e1z;
+  REAL8 e1ye1y = e1y*e1y;
+  REAL8 e1ye1z = e1y*e1z;
+  REAL8 e1ze1z = e1z*e1z;
+
+  REAL8 e2xe2x = e2x*e2x;
+  REAL8 e2xe2y = e2x*e2y;
+  REAL8 e2xe2z = e2x*e2z;
+  REAL8 e2ye2y = e2y*e2y;
+  REAL8 e2ye2z = e2y*e2z;
+  REAL8 e2ze2z = e2z*e2z;
+
+  REAL8 e1xe2x = e1x*e2x;
+  REAL8 e1xe2y = e1x*e2y;
+  REAL8 e1ye2x = e1y*e2x;
+  REAL8 e1xe2z = e1x*e2z;
+  REAL8 e1ze2x = e1z*e2x;
+  REAL8 e1ye2y = e1y*e2y;
+  REAL8 e1ye2z = e1y*e2z;
+  REAL8 e1ze2y = e1z*e2y;
+  REAL8 e1ze2z = e1z*e2z;
+
+  switch(n) // harmonic number
+  {
+    case 0:
+      switch( ampO )
+      {
+        case -1: /* Use highest known PN order - move if new orders added */
+        case 3:
+        case 2:
+        case 1:
+          fact1 = v3*0.125;
+          fact2 = 7. + dm;
+          fact3 = 7. - dm;
+          fact4 = a1x*fact2 + a2x*fact3;
+          fact5 = a1y*fact2 + a2y*fact3;
+          fact6 = lnhx*fact4;
+          fact7 = lnhy*fact5;
+          fact8 = lnhz*(a1z*fact2 + a2z*fact3);
+          fact9 = fact6 + fact7 + fact8;
+
+          *hplus += fact1*(fact4*lnhx - fact5*lnhy + fact9*(e1xe1x - e1ye1y
+          + e2xe2x - e2ye2y));
+          *hcross += fact1*(fact4*lnhy - fact5*lnhx + fact9*(e1xe1y + e2xe2y));
+        case 0:
+          break;
+        default:
+          XLALPrintError("XLAL Error - %s: Invalid amp. PN order %s, highest is %d\n", __func__, ampO, 3 );
+          break;
+      }
+      break;
+
+    case 1: // harmonic number
+      switch( ampO )
+      {
+        case -1: /* Use highest known PN order - move if new orders added */
+        case 3:
+          fact1 = 1. - 2.*eta;
+          fact2 = 8. + fact1*(30. + 9.*e1ze1z + 19.*e2ze2z);
+          fact3 = 72. + fact1*(6. + e2ze2z - 9.*e1ze1z);
+          fact4 = 40. + fact1*(18. + 15.*e2ze2z + 5.*e1ze1z);
+          fact5 = 8. + fact1*(30. + 9.*e2ze2z + 19.*e1ze1z);
+          fact6 = 72. + fact1*(6. + e1ze1z - 9.*e2ze2z);
+          fact7 = 40. + fact1*(18. + 15.*e1ze1z + 5.*e2ze2z);
+          fact8 = v5*dm/384.;
+
+          *hplus += fact8*(((e1xe1x - e1ye1y)*e2z*fact2 - (e2xe2x
+          - e2ye2y)*e2z*fact3 + 2.*e1z*(e1ye2y - e1xe2x)*fact4) + I*((-(e2xe2x
+          - e2ye2y)*fact5 + (e1xe1x - e1ye1y)*fact6)*e1z - 2.*e2z*(e1ye2y
+          - e1xe2x)*fact7));
+          *hcross += (2.*fact8)*((-e2xe2y*e2z*fact3 + e1xe2z*e1y*fact2
+          - e1z*(e1xe2y + e1ye2x)*fact4) + I*((e1xe2y + e1ye2x)*e2z*fact7
+          + (e1xe1y*fact6 - e2xe2y*fact5)*e1z));
+        case 2:
+          fact1 = v4*0.25;
+
+          *hplus += fact1*(((a2y - a1y)*e1x - (a1x - a2x)*e1y) + I*((a2y
+          - a1y)*e2x - (a1x - a2x)*e2y));
+          *hcross += fact1*(((a1x - a2x)*e1x - (a1y - a2y)*e1y) + I*((a1x
+          - a2x)*e2x - (a1y - a2y)*e2y));
+        case 1:
+          fact1 = e1xe2x - e1ye2y;
+          fact2 = e1ye1y - e1xe1x;
+          fact3 = e2xe2x - e2ye2y;
+          fact4 = e1xe2y + e1ye2x;
+          fact5 = e1xe1y;
+          fact6 = e2xe2y;
+          fact7 = dm*v3*0.0625;
+
+          *hplus += fact7*((6.*e1z*fact1 + e2z*(5.*fact2 + fact3))
+          + I*(e1z*(fact2 + 5.*fact3) - 6.*e2z*fact1));
+          *hcross += (2.*fact7)*((3.*e1z*fact4 + e2z*(-5.*fact5 + fact6))
+          + I*(e1z*(5.*fact6 - fact5) - 3.*e2z*fact4));
+        case 0:
+          break;
+        default:
+          XLALPrintError("XLAL Error - %s: Invalid amp. PN order %s, highest is %d\n", __func__, ampO, 3 );
+          break;
+      }
+      break;
+
+    case 2: // harmonic number
+      switch( ampO )
+      {
+        case -1: /* Use highest known PN order - move if new orders added */
+        case 3:
+          logfac = log(v/v0);
+          fact1 = e1xe2x - e1ye2y;
+          fact2 = -e1xe1x + e1ye1y + e2xe2x - e2ye2y;
+          fact3 = e1ye2x + e1xe2y;
+          fact4 = -e1xe1y + e2xe2y;
+
+          *hplus += v5*((12.*fact1*logfac + fact2*LAL_PI) + I*(6.*fact2*logfac
+          - 2.*fact1*LAL_PI));
+          *hcross += v5*((2.*(6.*fact3*logfac + fact4*LAL_PI))
+          + I*(2.*(6.*fact4*logfac - fact3*LAL_PI)));
+
+          fact1 = a1x*(7. + dm) + a2x*(7. - dm);
+          fact2 = a1y*(7. + dm) + a2y*(7. - dm);
+          fact3 = a1z*(11. - 3.*dm) + a2z*(11. + 3.*dm);
+          fact4 = a1x*(41. - dm) + a2x*(41. + dm);
+          fact5 = a1y*(41. - dm) + a2y*(41. + dm);
+          fact6 = a1z*(41. - dm) + a2z*(41. + dm);
+          fact7 = lnhx*fact4 + lnhy*fact5 + lnhz*fact6;
+          fact8 = e1xe1x - e1ye1y - (e2xe2x - e2ye2y);
+          fact9 = v5/48.;
+
+          *hplus += fact9*((3.*(e1ye2z + e1ze2y)*fact1 + 3.*(e1xe2z
+          + e1ze2x)*fact2 - 6.*(e1ye2x + e1xe2y)*fact3 + fact8*fact7)
+          + I*(-3.*(e1ye1z - e2ye2z)*fact1 - 3.*(e1xe1z - e2xe2z)*fact2
+          + 6.*(e1xe1y - e2xe2y)*fact3 + 2.*(e1xe2x - e1ye2y)*fact7));
+          *hcross += fact9*((-3.*(e1ze2x + e1xe2z)*fact1 + 3.*(e1ze2y
+          + e1ye2z)*fact2 + 6.*(e1xe2x - e1ye2y)*fact3 + 2.*(e1xe1y
+          - e2xe2y)*fact7) + I*(3.*(e1xe1z - e2xe2z)*fact1 - 3.*(e1ye1z
+          - e2ye2z)*fact2 - 3.*fact8*fact3 + 2.*(e1ye2x + e1xe2y)*fact7));
+
+        case 2:
+          fact5 = -1. + 3.*eta;
+          fact1 = -13. + eta + (6.*e2ze2z + 2.*e1ze1z)*fact5;
+          fact2 = -13. + eta + (6.*e1ze1z + 2.*e2ze2z)*fact5;
+          fact3 = e1ze2z*fact5;
+          fact4 = -13. + eta + 4.*(e1ze1z + e2ze2z)*fact5;
+          fact6 = v4/6.;
+
+          *hplus += fact6*((((e1ye1y - e1xe1x)*fact1 + (e2xe2x
+          - e2ye2y)*fact2)*0.5) + I*(2.*(e1xe1x - e1ye1y + e2xe2x
+          - e2ye2y)*fact3 + (e1ye2y - e1xe2x)*fact4));
+          *hcross += fact6*((-e1xe1y*fact1 + e2xe2y*fact2) + I*(4.*(e1xe1y
+          + e2xe2y)*fact3 - (e1ye2x + e1xe2y)*fact4));
+        case 1:
+        case 0:
+          *hplus += v2*(0.5*(e1ye1y - e2ye2y + e2xe2x - e1xe1x) + I*(e1ye2y
+          - e1xe2x));
+          *hcross += v2*((e2xe2y - e1xe1y) - I*(e1ye2x + e1xe2y));
+          break;
+        default:
+          XLALPrintError("XLAL Error - %s: Invalid amp. PN order %s, highest is %d\n", __func__, ampO, 3 );
+          break;
+      }
+      break;
+
+    case 3: // harmonic number
+      switch( ampO )
+      {
+        case -1: /* Use highest known PN order - move if new orders added */
+        case 3:
+          fact1 = v5*dm*9./256.;
+          fact2 = 1. - 2.*eta;
+          fact3 = 48. + fact2*(4. + 33.*e1ze1z + 9.*e2ze2z);
+          fact4 = 48. + fact2*(4. + 15.*e1ze1z + 15.*e2ze2z);
+          fact5 = 48. + fact2*(4. - 3.*e1ze1z + 21.*e2ze2z);
+          fact6 = 48. + fact2*(4. + 33.*e2ze2z + 9.*e1ze1z);
+          fact7 = 48. + fact2*(4. - 3.*e2ze2z + 21.*e1ze1z);
+
+          *hplus += fact1*(((e2xe2x - e2ye2y)*e2z*fact3 + 2.*e1z*(e1ye2y
+          - e1xe2x)*fact4 - (e1xe1x - e1ye1y)*e2z*fact5) + I*(2.*(e1ye2y
+          - e1xe2x)*e2z*fact4 + (e1xe1x - e1ye1y)*e1z*fact6 - e1z*(e2xe2x
+          - e2ye2y)*fact7));
+          *hcross += fact1*((2.*(e2xe2y*e2z*fact3 - (e1xe2y + e1ye2x)*e1z*fact4
+          - e1xe1y*e2z*fact5)) + I*(2.*(-e1z*e2xe2y*fact7 + e1xe1y*e1z*fact6
+          - (e1xe2y + e1ye2x)*e2z*fact4)));
+        case 2:
+        case 1:
+          fact1 = v3*dm*9./16.;
+          fact2 = 2.*(e1xe2x - e1ye2y);
+          fact3 = e1xe1x - e1ye1y - (e2xe2x - e2ye2y);
+          fact4 = 2.*(e1xe2y + e1ye2x);
+          fact5 = 2.*(e1xe1y - e2xe2y);
+
+          *hplus += fact1*((e1z*fact2 + e2z*fact3) - I*(e1z*fact3 - e2z*fact2));
+          *hcross += fact1*((e1z*fact4 + e2z*fact5) + I*(-e1z*fact5
+          + e2z*fact4));
+        case 0:
+          break;
+        default:
+          XLALPrintError("XLAL Error - %s: Invalid amp. PN order %s, highest is %d\n", __func__, ampO, 3 );
+          break;
+      }
+      break;
+
+    case 4: // harmonic number
+      switch( ampO )
+      {
+        case -1: /* Use highest known PN order - move if new orders added */
+        case 3:
+        case 2:
+          fact1 = v4*4.*(1. - 3.*eta)/3.;
+          fact2 = e1xe2x - e1ye2y;
+          fact3 = e1xe1x - e1ye1y - (e2xe2x - e2ye2y);
+          fact4 = e1ze1z - e2ze2z;
+          fact5 = e1xe1y - e2xe2y;
+          fact6 = e1ye2x + e1xe2y;
+
+          *hplus = fact1*((0.5*fact4*fact3 - 2.*e1ze2z*fact2) + I*(fact4*fact2
+          + e1ze2z*fact3));
+          *hcross = fact1*((fact4*fact5 - 2.*e1ze2z*fact6) + I*(fact4*fact6
+          + 2.*e1ze2z*fact5));
+        case 1:
+        case 0:
+          break;
+        default:
+          XLALPrintError("XLAL Error - %s: Invalid amp. PN order %s, highest is %d\n", __func__, ampO, 3 );
+          break;
+      }
+      break;
+
+    case 5: // harmonic number
+      switch( ampO )
+      {
+        case -1: /* Use highest known PN order - move if new orders added */
+        case 3:
+          fact1 = -v5*dm*(1. - 2.*eta)*625./384.;
+          fact2 = e1xe2x - e1ye2y;
+          fact3 = e1xe1x - e1ye1y - (e2xe2x - e2ye2y);
+          fact4 = e1z*(e1ze1z - 3.*e2ze2z);
+          fact5 = e2z*(e2ze2z - 3.*e1ze1z);
+          fact6 = e1ye2x + e1xe2y;
+          fact7 = e1xe1y - e2xe2y;
+
+          *hplus += (fact1)*((fact4*fact2 - 0.5*fact5*fact3) - I*(fact5*fact2
+          + 0.5*fact4*fact3));
+          *hcross += (fact1)*((fact4*fact6 - fact5*fact7) - I*(fact4*fact7
+          + fact5*fact6));
+        case 2:
+        case 1:
+        case 0:
+          break;
+        default:
+          XLALPrintError("XLAL Error - %s: Invalid amp. PN order %s, highest is %d\n", __func__, ampO, 3 );
+          break;
+      }
+      break;
+
+    default: // harmonic number. zero at this order
+      break;
+  }
+  return XLAL_SUCCESS;
+}
+
+
+
+
 /**
  * Compute the physical template family "Q" vectors for a spinning, precessing
  * binary when provided time series of all the dynamical quantities.
@@ -2037,10 +2386,14 @@ int XLALSimInspiralChooseFDWaveform(
     )
 {
     REAL8 LNhatx, LNhaty, LNhatz;
+    REAL8 E1x, E1y, E1z;
+    REAL8 kMax;
+    REAL8 v0, fStart;
     int ret;
     unsigned int j;
     REAL8 pfac, cfac;
     REAL8 quadparam1 = 1., quadparam2 = 1.; /* FIXME: This cannot yet be set in the interface */
+    INT4 phiRefAtEnd;
 
     /* General sanity checks that will abort
      *
@@ -2295,6 +2648,79 @@ int XLALSimInspiralChooseFDWaveform(
               m1+m2, r, alpha0, phiRef, deltaF, f_min, f_max, f_ref);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             break;
+
+        case SpinTaylorT4Fourier:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralFrameAxisIsDefault(
+                    XLALSimInspiralGetFrameAxis(waveFlags) ) )
+                ABORT_NONDEFAULT_FRAME_AXIS(waveFlags);
+            if( !XLALSimInspiralModesChoiceIsDefault(
+                    XLALSimInspiralGetModesChoice(waveFlags) ) )
+                ABORT_NONDEFAULT_MODES_CHOICE(waveFlags);
+            LNhatx = sin(i);
+            LNhaty = 0.;
+            LNhatz = cos(i);
+            E1x = cos(i);
+            E1y = 0.;
+            E1z = -sin(i);
+            // default kMax = 3
+            kMax = 3;
+            // default v0 = 1
+            v0 = 1.;
+            // default fStart = 0.9*fMin
+            fStart = 0.9*f_min;
+            phiRefAtEnd = 0;
+            // if f_ref = 0, set it to f_min, and tell the driver routine that we came from there
+            if(f_ref == 0)
+            {
+              f_ref = f_min;
+              phiRefAtEnd = 1;
+            }
+            // default quadparams are for black holes. Replace by ~2-12 for neutron stars
+            quadparam1 = 1.;
+            quadparam2 = 1.;
+            /* Call the waveform driver routine */
+            ret = XLALSimInspiralSpinTaylorT4Fourier(hptilde, hctilde,
+              f_min, f_max, deltaF, kMax, phiRef, v0, m1, m2, fStart, f_ref, r, S1x, S1y, S1z, S2x, S2y, S2z, LNhatx, LNhaty, LNhatz, E1x, E1y, E1z, lambda1, lambda2, quadparam1, quadparam2, XLALSimInspiralGetSpinOrder(waveFlags), XLALSimInspiralGetTidalOrder(waveFlags), phaseO, amplitudeO, phiRefAtEnd);
+            if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
+            break;
+
+        case SpinTaylorT2Fourier:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralFrameAxisIsDefault(
+                    XLALSimInspiralGetFrameAxis(waveFlags) ) )
+                ABORT_NONDEFAULT_FRAME_AXIS(waveFlags);
+            if( !XLALSimInspiralModesChoiceIsDefault(
+                    XLALSimInspiralGetModesChoice(waveFlags) ) )
+                ABORT_NONDEFAULT_MODES_CHOICE(waveFlags);
+            LNhatx = sin(i);
+            LNhaty = 0.;
+            LNhatz = cos(i);
+            E1x = cos(i);
+            E1y = 0.;
+            E1z = -sin(i);
+            // default kMax = 3
+            kMax = 3;
+            // default v0 = 1
+            v0 = 1.;
+            // default fStart = 0.9*fMin
+            fStart = 0.9*f_min;
+            phiRefAtEnd = 0;
+            // if f_ref = 0, set it to f_min, and tell the driver routine that we came from there
+            if(f_ref == 0)
+            {
+              f_ref = f_min;
+              phiRefAtEnd = 1;
+            }
+            // default quadparams are for black holes. Replace by ~2-12 for neutron stars
+            quadparam1 = 1.;
+            quadparam2 = 1.;
+            /* Call the waveform driver routine */
+            ret = XLALSimInspiralSpinTaylorT2Fourier(hptilde, hctilde,
+              f_min, f_max, deltaF, kMax, phiRef, v0, m1, m2, fStart, f_ref, r, S1x, S1y, S1z, S2x, S2y, S2z, LNhatx, LNhaty, LNhatz, E1x, E1y, E1z, lambda1, lambda2, quadparam1, quadparam2, XLALSimInspiralGetSpinOrder(waveFlags), XLALSimInspiralGetTidalOrder(waveFlags), phaseO, amplitudeO, phiRefAtEnd);
+            if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
+            break;
+
 
         default:
             XLALPrintError("FD version of approximant not implemented in lalsimulation\n");
@@ -2850,6 +3276,8 @@ int XLALSimInspiralImplementedFDApproximants(
         case SpinTaylorF2:
         case TaylorF2RedSpin:
         case TaylorF2RedSpinTidal:
+        case SpinTaylorT4Fourier:
+        case SpinTaylorT2Fourier:
             return 1;
 
         default:
@@ -2895,6 +3323,14 @@ int XLALGetApproximantFromString(const CHAR *inString)
   else if ( strstr(inString, "PhenSpinTaylor" ) )
   {
     return PhenSpinTaylor;
+  }
+  else if ( strstr(inString, "SpinTaylorT2Fourier" ) )
+  {
+    return SpinTaylorT2Fourier;
+  }
+  else if ( strstr(inString, "SpinTaylorT4Fourier" ) )
+  {
+    return SpinTaylorT4Fourier;
   }
   else if ( strstr(inString, "SpinTaylorT2" ) )
   {
@@ -3167,6 +3603,10 @@ char* XLALGetStringFromApproximant(Approximant approximant)
       return strdup("FrameFile");
     case Eccentricity:
       return strdup("Eccentricity");
+    case SpinTaylorT2Fourier:
+      return strdup("SpinTaylorT2Fourier");
+    case SpinTaylorT4Fourier:
+      return strdup("SpinTaylorT4Fourier");
     case SpinDominatedWf:
       return strdup("SpinDominatedWf");
     default:
@@ -3331,6 +3771,8 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case PhenSpinTaylorRD:
     case SpinTaylorT3:
     case IMRPhenomP:
+    case SpinTaylorT2Fourier:
+    case SpinTaylorT4Fourier:
     case SpinDominatedWf:
       spin_support=LAL_SIM_INSPIRAL_PRECESSINGSPIN;
       break;
@@ -3419,6 +3861,8 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case IMRPhenomC:
     case IMRPhenomP:
     case IMRPhenomFC:
+    case SpinTaylorT2Fourier:
+    case SpinTaylorT4Fourier:
     case TaylorEt:
     case TaylorT4:
     case TaylorN:
