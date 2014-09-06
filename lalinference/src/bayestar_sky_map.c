@@ -752,7 +752,6 @@ double *bayestar_sky_map_toa_phoa_snr(
     (void)adaptive_sky_map_refine;
     (void)adaptive_sky_map_alloc;
     (void)adaptive_sky_map_rasterize;
-    (void)logaddexp;
     GSL_ERROR_NULL("requires GSL >= 1.15", GSL_EFAILED);
 #endif /* GSL_MINOR_VERSION >= 15 */
 }
@@ -1069,7 +1068,6 @@ static void test_signal_amplitude_model(
 }
 
 
-#if GSL_MINOR_VERSION >= 15 /* FIXME: add dependency on GSL >= 1.15 */
 static void test_toa_phoa_snr_log_radial_integral(
     double expected, double tol, double r1, double r2, double p2, double b, int k)
 {
@@ -1093,7 +1091,6 @@ static void test_toa_phoa_snr_log_radial_integral(
         result, expected, tol, "testing toa_phoa_snr_log_radial_integral("
         "r1=%g, r2=%g, p2=%g, b=%g, k=%d)", r1, r2, p2, b, k);
 }
-#endif /* GSL_MINOR_VERSION >= 1.15 */
 
 
 int bayestar_test(void)
@@ -1125,7 +1122,6 @@ int bayestar_test(void)
                     for (unsigned long epoch = 1000000000000000000; epoch <= 1000086400000000000; epoch += 3600000000000)
                         test_signal_amplitude_model(ra, dec, inc, pol, epoch, "H1");
 
-#if GSL_MINOR_VERSION >= 15 /* FIXME: add dependency on GSL >= 1.15 */
     /* Tests of radial integrand with p2=0, b=0. */
     test_toa_phoa_snr_log_radial_integral(0, 0, 0, 1, 0, 0, 0);
     test_toa_phoa_snr_log_radial_integral(0, 0, exp(1), exp(2), 0, 0, -1);
@@ -1147,7 +1143,6 @@ int bayestar_test(void)
     test_toa_phoa_snr_log_radial_integral(-2.43264, 1e-5, 0, 1, 1, 1, 2);
     test_toa_phoa_snr_log_radial_integral(-2.43808, 1e-5, 0.5, 1, 1, 1, 2);
     test_toa_phoa_snr_log_radial_integral(-0.707038, 1e-5, 1, 1.5, 1, 1, 2);
-#endif /* GSL_MINOR_VERSION >= 1.15 */
 
     return gsl_test_summary();
 }
