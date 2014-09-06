@@ -945,7 +945,8 @@ static void SuperSkySpinBound(
 
   // Get bounds data
   const double* sky_offsets = ((const double*) data);
-  *bound = ((const double*) data)[3];
+  const double padding_scale = ((const double*) data)[3];
+  *bound = ((const double*) data)[4];
 
   // Add the inner product of the sky offsets with the aligned sky
   // position to the super-sky bound to get the reduced super-sky bound
@@ -953,11 +954,11 @@ static void SuperSkySpinBound(
   SSM_ReducedToAligned(as, point);
   *bound += DOT3(sky_offsets, as);
 
-  // Add sufficient padding to the reduced super-sky bound to cover any
+  // Add sufficient extra padding to the reduced super-sky bound to cover any
   // mismatch in sky position, within the bounding box around each sky point
   const double bboxA = gsl_vector_get(bbox, 0);
   const double bboxB = gsl_vector_get(bbox, 1);
-  *padding += fabs(sky_offsets[0]) * bboxA  + fabs(sky_offsets[1]) * bboxB;
+  *padding += padding_scale * (fabs(sky_offsets[0]) * bboxA + fabs(sky_offsets[1]) * bboxB);
 
 }
 
@@ -966,7 +967,8 @@ int XLALSetLatticeSuperSkySpinBound(
   const gsl_matrix* rssky_transf,
   const size_t s,
   const double bound1,
-  const double bound2
+  const double bound2,
+  bool extra_padding
   )
 {
 
@@ -982,7 +984,7 @@ int XLALSetLatticeSuperSkySpinBound(
   XLAL_CHECK(dimension < XLALLatticeDimensions(tiling), XLAL_ESIZE);
 
   // Allocate memory
-  const size_t data_len = 4 * sizeof(double);
+  const size_t data_len = 5 * sizeof(double);
   double* data_lower = XLALMalloc(data_len);
   XLAL_CHECK(data_lower != NULL, XLAL_ENOMEM);
   double* data_upper = XLALMalloc(data_len);
@@ -993,9 +995,12 @@ int XLALSetLatticeSuperSkySpinBound(
     data_lower[j] = data_upper[j] = gsl_matrix_get(rssky_transf, dimension + 1, j);
   }
 
+  // Indicate whether to use extra padding to cover sky position mismatch
+  data_lower[3] = data_upper[3] = (extra_padding ? 1.0 : 0.0);
+
   // Set the parameter-space bound on (untransformed) super-sky frequency/spindown coordinate
-  data_lower[3] = GSL_MIN(bound1, bound2);
-  data_upper[3] = GSL_MAX(bound1, bound2);
+  data_lower[4] = GSL_MIN(bound1, bound2);
+  data_upper[4] = GSL_MAX(bound1, bound2);
   XLAL_CHECK(XLALSetLatticeBound(tiling, dimension, SuperSkySpinBound, data_len, data_lower, data_upper) == XLAL_SUCCESS, XLAL_EFUNC);
 
   return XLAL_SUCCESS;
