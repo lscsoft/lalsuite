@@ -477,7 +477,8 @@ fail2r=$(echo $reldev_RSr     $Tolerance | awk "$awk_isgtr")
 fail3r=$(echo $reldev_RSr_H1  $Tolerance | awk "$awk_isgtr")
 fail4r=$(echo $reldev_RSr_L1  $Tolerance | awk "$awk_isgtr")
 if [ "$fail2r" -o "$fail3r" -o "$fail4r" ]; then
-    echo " ==> *FAILED* BUT ACCEPTED FOR NOW: FIXME!"
+    echo " ==> *FAILED*"
+    retstatus=1
 else
     echo " ==> OK"
 fi
