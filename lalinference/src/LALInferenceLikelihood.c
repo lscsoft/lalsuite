@@ -1531,8 +1531,8 @@ REAL8 LALInferenceCorrelatedAnalyticLogLikelihood(LALInferenceVariables *current
                                                   LALInferenceIFOData UNUSED *data, 
                                                   LALInferenceModel UNUSED *model) {
   const INT4 DIM = 15;
-  static gsl_matrix *LUCM = NULL;
-  static gsl_permutation *LUCMPerm = NULL;
+  gsl_matrix *LUCM = NULL;
+  gsl_permutation *LUCMPerm = NULL;
   INT4 mode = 0;
   
   REAL8 x[DIM];
@@ -1574,8 +1574,8 @@ REAL8 LALInferenceBimodalCorrelatedAnalyticLogLikelihood(LALInferenceVariables *
   INT4 i, mode;
   REAL8 sum = 0.0;
   REAL8 a, b;
-  static gsl_matrix *LUCM = NULL;
-  static gsl_permutation *LUCMPerm = NULL;
+  gsl_matrix *LUCM = NULL;
+  gsl_permutation *LUCMPerm = NULL;
   gsl_vector_view xView;
 
   REAL8 x[DIM];
