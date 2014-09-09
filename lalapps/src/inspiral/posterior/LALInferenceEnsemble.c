@@ -168,7 +168,7 @@ void LALInferenceInitEnsemble(LALInferenceRunState *state) {
 
         /* Restore cache to data structure */
         while (headData != NULL) {
-            headData->nullloglikelihood = headData->loglikelihood;
+            headData->nullloglikelihood = state->modelArray[0]->loglikelihood;
             headData = headData->next;
         }
         state->modelArray[0]->waveformCache = cache;
@@ -199,12 +199,6 @@ void LALInferenceInitEnsemble(LALInferenceRunState *state) {
         state->currentLikelihoods[walker] = state->likelihood(state->currentParamArray[walker],
                                                                  state->data,
                                                                  state->modelArray[walker]);
-
-    headData = state->data;
-    while (headData != NULL) {
-        headData->acceptedloglikelihood = headData->loglikelihood;
-        headData = headData->next;
-    }
 }
 
 LALInferenceRunState *initialize(ProcessParamsTable *commandLine)

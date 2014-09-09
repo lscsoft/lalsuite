@@ -119,7 +119,6 @@ INT4 walker_step(LALInferenceRunState *runState,
     REAL8 log_proposal_ratio = 0.0;
     REAL8 log_acceptance_probability;
     INT4 accepted = 0;
-    LALInferenceIFOData *headData;
 
     /* Propose a new sample */
     LALInferenceClearVariables(proposedParams);
@@ -137,8 +136,7 @@ INT4 walker_step(LALInferenceRunState *runState,
 
     /* Find jump acceptance probability */
     log_acceptance_probability = (log_prior_proposed + log_likelihood_proposed)
-                                - (*currentPrior +
-                                    *currentLikelihood)
+                                - (*currentPrior + *currentLikelihood)
                                 + log_proposal_ratio;
 
     /* Accept the jump with the calculated probability */
@@ -148,12 +146,6 @@ INT4 walker_step(LALInferenceRunState *runState,
         *currentPrior = log_prior_proposed;
         *currentLikelihood = log_likelihood_proposed;
 
-        headData = runState->data;
-        while (headData != NULL) {
-            headData->acceptedloglikelihood = headData->loglikelihood;
-            headData->acceptedSNR = headData->currentSNR;
-            headData = headData->next;
-        }
         accepted = 1;
     }
 
@@ -277,31 +269,13 @@ void LALInferencePrintEnsembleSample(LALInferenceRunState *runState,
     fprintf(walker_output, "%d\t", step);
     fprintf(walker_output, "%f\t",
             (currentLikelihoods[walker] - null_likelihood) + currentPriors[walker]);
-    fprintf(walker_output, "%f\t", currentPriors[walker]);
 
     /* Print the non-fixed parameter values */
     LALInferencePrintSampleNonFixed(walker_output, runState->currentParamArray[walker]);
 
-    /* Print network and single-IFO likelihoods */
+    /* Print prior and likelihood  */
+    fprintf(walker_output, "%f\t", currentPriors[walker]);
     fprintf(walker_output, "%f\t", currentLikelihoods[walker] - null_likelihood);
-
-    LALInferenceIFOData *ifo_data = runState->data;
-    while (ifo_data != NULL) {
-        normed_logl = ifo_data->acceptedloglikelihood-ifo_data->nullloglikelihood;
-        fprintf(walker_output, "%f\t", normed_logl);
-        ifo_data = ifo_data->next;
-    }
-
-    /* Print network and single-IFO SNRs */
-    networkSNR = 0.0;
-    ifo_data = runState->data;
-    while (ifo_data != NULL) {
-        fprintf(walker_output, "%f\t", ifo_data->acceptedSNR);
-        networkSNR += ifo_data->acceptedSNR * ifo_data->acceptedSNR;
-        ifo_data = ifo_data->next;
-    }
-    networkSNR = sqrt(networkSNR);
-    fprintf(walker_output, "%f\t", networkSNR);
 
     benchmark = *(UINT4 *) LALInferenceGetVariable(runState->algorithmParams, "benchmark");
     if (benchmark) {
@@ -429,26 +403,11 @@ void LALInferencePrintEnsembleHeader(LALInferenceRunState *runState,
     fprintf(walker_output, "\n\n\n");
 
     /* These are the actual column headers for the samples to be output */
-    fprintf(walker_output, "cycle\tlogpost\tlogprior\t");
+    fprintf(walker_output, "cycle\tlogpost\t");
 
     LALInferenceFprintParameterNonFixedHeaders(walker_output, currentParamArray[walker]);
 
-    fprintf(walker_output, "logl\t");
-    ifo_data = runState->data;
-    while (ifo_data != NULL) {
-        fprintf(walker_output, "logl");
-        fprintf(walker_output, "%s", ifo_data->name);
-        fprintf(walker_output, "\t");
-        ifo_data = ifo_data->next;
-    }
-    ifo_data = runState->data;
-    while (ifo_data != NULL) {
-        fprintf(walker_output, "SNR");
-        fprintf(walker_output, "%s", ifo_data->name);
-        fprintf(walker_output, "\t");
-        ifo_data = ifo_data->next;
-    }
-    fprintf(walker_output, "SNR\t");
+    fprintf(walker_output, "logprior\tlogl\t");
 
     if (benchmark)
         fprintf(walker_output, "timestamp\t");
@@ -456,19 +415,14 @@ void LALInferencePrintEnsembleHeader(LALInferenceRunState *runState,
 
     /* Print starting values as 0th iteration */
     normed_logl = runState->currentLikelihoods[walker]-null_likelihood;
-    fprintf(walker_output, "%d\t%f\t%f\t", 0,
-            runState->currentPriors[walker] + normed_logl,
-            runState->currentPriors[walker]);
+    fprintf(walker_output, "%d\t%f\t", 0,
+            runState->currentPriors[walker] + normed_logl);
 
     LALInferencePrintSampleNonFixed(walker_output, currentParamArray[walker]);
 
-    fprintf(walker_output, "%f\t", runState->currentLikelihoods[walker] - null_likelihood);
-    ifo_data = runState->data;
-    while (ifo_data != NULL) {
-        normed_logl = ifo_data->acceptedloglikelihood-ifo_data->nullloglikelihood;
-        fprintf(walker_output, "%f\t", normed_logl);
-        ifo_data = ifo_data->next;
-    }
+    fprintf(walker_output, "%f\t%f\t",
+            runState->currentPriors[walker],
+            runState->currentLikelihoods[walker] - null_likelihood);
 
     if (benchmark) {
         gettimeofday(&tv, NULL);
