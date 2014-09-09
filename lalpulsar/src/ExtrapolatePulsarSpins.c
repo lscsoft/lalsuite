@@ -228,9 +228,9 @@ XLALCWSignalCoveringBand ( REAL8 *minCoverFreq,                          /**< [o
                            const LIGOTimeGPS *time1,                     /**< [in] One end of the GPS time range */
                            const LIGOTimeGPS *time2,                     /**< [in] The other end of the GPS time range */
                            const PulsarSpinRange *spinRange,             /**< [in] Frequency and spindown range of the CW signals */
-                           const REAL8 binaryMaxAsini,                   /**< [in] For binary signals, maximum value of projected, normalized
-                                                                          *        orbital semi-major axis (s); =0 for isolated signals */
-                           const REAL8 binaryMinPeriod                   /**< [in] For binary signals, minimum orbital period (s); =0 for isolated signals */
+                           const REAL8 binaryMaxAsini,                   /**< [in] Maximum projected semi-major axis a*sini/c (= 0 for isolated sources) */
+                           const REAL8 binaryMinPeriod,                  /**< [in] Minimum orbital period (s); must be 0 for isolated signals */
+                           const REAL8 binaryMaxEcc                      /**< [in] Maximal binary eccentricity: must be 0 for isolated signals */
                            )
 {
   // Check input
@@ -240,7 +240,9 @@ XLALCWSignalCoveringBand ( REAL8 *minCoverFreq,                          /**< [o
   XLAL_CHECK( time2 != NULL, XLAL_EFAULT );
   XLAL_CHECK( spinRange != NULL, XLAL_EFAULT );
   XLAL_CHECK( binaryMaxAsini >= 0, XLAL_EINVAL );
-  XLAL_CHECK( binaryMinPeriod >= 0, XLAL_EINVAL );
+
+  XLAL_CHECK( (binaryMaxAsini > 0)  || ((binaryMinPeriod == 0) && (binaryMaxEcc == 0)), XLAL_EINVAL );	// if isolated: required P=0 and e=0
+  XLAL_CHECK( (binaryMaxAsini == 0) || ((binaryMinPeriod > 0) && (binaryMaxEcc >= 0) && (binaryMaxEcc<1)), XLAL_EINVAL );	// if binary: P>0, 0<=e<1
 
   // Extrapolate frequency and spindown range to each end of GPS time range
   PulsarSpinRange spin1, spin2;
@@ -258,15 +260,17 @@ XLALCWSignalCoveringBand ( REAL8 *minCoverFreq,                          /**< [o
   REAL8 extraPerFreq = 1.05 * LAL_TWOPI / LAL_C_SI * ( (LAL_AU_SI/LAL_YRSID_SI) + (LAL_REARTH_SI/LAL_DAYSID_SI) );
 
   // Extra frequency range needed due to binary orbital motion, per unit frequency
-  // * Maximum value of the time derivative of the small-eccentricity-limit binary phase, plus 5% for luck
-  if (binaryMaxAsini > 0) {
-    XLAL_CHECK( binaryMinPeriod > 0, XLAL_EINVAL );
-    extraPerFreq += 1.05 * LAL_TWOPI * binaryMaxAsini / binaryMinPeriod;
+  // Upper bound on maximum value, derived from time derivative of binary-CW phase,
+  // see https://bugs.ligo.org/redmine/issues/1567
+  if ( binaryMaxAsini > 0 )
+    {
+      REAL8 maxOmega = LAL_TWOPI / binaryMinPeriod;
+      extraPerFreq += sqrt(2) * maxOmega * binaryMaxAsini / ( 1.0 - binaryMaxEcc );
   }
 
   // Expand frequency range
-  *minCoverFreq *= 1.0 - extraPerFreq;
-  *maxCoverFreq *= 1.0 + extraPerFreq;
+  (*minCoverFreq) *= 1.0 - extraPerFreq;
+  (*maxCoverFreq) *= 1.0 + extraPerFreq;
 
   return XLAL_SUCCESS;
 

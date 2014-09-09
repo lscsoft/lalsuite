@@ -101,6 +101,31 @@ int XLALAdaptiveRungeKutta4Hermite( ark4GSLIntegrator *integrator,
                                     REAL8Array **yout
                                     );
 
+
+/**
+ * Fourth-order Runge-Kutta ODE integrator using Runge-Kutta-Fehlberg (RKF45)
+ * steps with adaptive step size control.  Intended for use in Fourier domain
+ * waveform generation routines based on SpinTaylorTN models.
+ *
+ * The method is described in
+ *
+ * Abramowitz & Stegun, Handbook of Mathematical Functions, Tenth Printing,
+ * National Bureau of Standards, Washington, DC, 1972
+ * (available online at http://people.math.sfu.ca/~cbm/aands/ )
+ *
+ * This method is equivalent to XLALAdaptiveRungeKutta4 and
+ * XLALAdaptiveRungeKutta4Hermite, but does not includes any interpolation.
+ *
+ * Memory is allocated in steps of LAL_MAX_RK4_STEPS.
+ */
+int XLALAdaptiveRungeKutta4IrregularIntervals( ark4GSLIntegrator *integrator,      /**< struct holding dydt, stopping test, stepper, etc. */
+                                    void *params,                       /**< params struct used to compute dydt and stopping test */
+                                    REAL8 *yinit,                       /**< pass in initial values of all variables - overwritten to final values */
+                                    REAL8 tinit,                        /**< integration start time */
+                                    REAL8 tend_in,                      /**< maximum integration time */
+                                    REAL8Array **yout                   /**< array holding the unevenly sampled output */
+                                    );
+
 /*@}*/
 
 #if 0

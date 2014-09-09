@@ -197,6 +197,10 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
   /* if some correlated priors exist allocate corVals */
   if ( corlist ) { corVals = XLALCreateREAL8Vector( corlist->length ); }
 
+  /* I31 and I21 values required to check/set I31 >= I21 */
+  REAL8 I31 = -INFINITY;
+  REAL8 I21 = -INFINITY;
+
   for(; item; item = item->next ){
     /* get scale factor */
     CHAR scalePar[VARNAME_MAX] = "";
@@ -216,16 +220,22 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
       if ( LALInferenceCheckGaussianPrior(runState->priorArgs, item->name) ){
         LALInferenceGetGaussianPrior( runState->priorArgs, item->name, &mu, &sigma );
 
-       value = (*(REAL8 *)item->value) * scale + scaleMin;
-       mu += scaleMin;
-       sigma *= scale;
-       prior -= log(sqrt(2.*LAL_PI)*sigma);
-       prior -= (value - mu)*(value - mu) / (2.*sigma*sigma);
+        value = (*(REAL8 *)item->value) * scale + scaleMin;
+        mu += scaleMin;
+        sigma *= scale;
+        prior -= log(sqrt(2.*LAL_PI)*sigma);
+        prior -= (value - mu)*(value - mu) / (2.*sigma*sigma);
+
+        if ( !strcmp(item->name, "I21") ){ I21 = value; }
+        if ( !strcmp(item->name, "I31") ){ I31 = value; }
       }
       /* check for a flat prior */
       else if( LALInferenceCheckMinMaxPrior(runState->priorArgs, item->name) ){
         LALInferenceGetMinMaxPrior( runState->priorArgs, item->name, &min, &max );
         prior -= log( (max - min) * scale );
+
+        if ( !strcmp(item->name, "I21") ){ I21 = (*(REAL8 *)item->value) * scale + scaleMin; }
+        if ( !strcmp(item->name, "I31") ){ I31 = (*(REAL8 *)item->value) * scale + scaleMin; }
       }
       else if( LALInferenceCheckCorrelatedPrior(runState->priorArgs, item->name) && corlist ){
         /* set item in correct position given the order of the correlation matrix given by corlist */
@@ -240,6 +250,11 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
         XLALPrintError("Error... no prior specified!\n");
         XLAL_ERROR_REAL8( XLAL_EFUNC );
       }
+    }
+
+    /* check if the I21 and I31 value have been set, and if so set the prior I31 >= I21 */
+    if ( I21 != -INFINITY && I31 != -INFINITY ){
+      if ( I31 < I21 ) { return -DBL_MAX; }
     }
   }
 

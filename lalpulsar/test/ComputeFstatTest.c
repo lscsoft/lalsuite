@@ -95,9 +95,9 @@ main ( int argc, char *argv[] )
   sources->data[0].Amp.psi  = 0.1;
   sources->data[0].Amp.phi0 = 1.2;
 
-  REAL8 asini = 1.4;
-  REAL8 Period = 19 * 3600;	// sco-X1 like
-
+  REAL8 asini = 1.4;	// sco-X1 like
+  REAL8 Period = 19 * 3600;// sco-X1 like
+  REAL8 ecc = 0.1;	// much larger than ScoX1
   PulsarDopplerParams XLAL_INIT_DECL(Doppler);
   Doppler.Alpha = 0.5;
   Doppler.Delta = -0.5;
@@ -106,7 +106,7 @@ main ( int argc, char *argv[] )
   Doppler.refTime = refTime;
 
   Doppler.asini = asini;
-  Doppler.ecc = 0.1;
+  Doppler.ecc = ecc;
   Doppler.tp = startTime;
   Doppler.period = Period;
   Doppler.argp = 0.5;
@@ -134,7 +134,7 @@ main ( int argc, char *argv[] )
   Doppler.fkdot[0] -= 0.4 * spinRange.fkdotBand[0];
 
   REAL8 minCoverFreq, maxCoverFreq;
-  XLAL_CHECK ( XLALCWSignalCoveringBand ( &minCoverFreq, &maxCoverFreq, &startTime, &endTime, &spinRange, asini, Period ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALCWSignalCoveringBand ( &minCoverFreq, &maxCoverFreq, &startTime, &endTime, &spinRange, asini, Period, ecc ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // ----- setup extra Fstat method params
   FstatExtraParams XLAL_INIT_DECL(extraParams);
@@ -256,8 +256,8 @@ compareFstatResults ( const FstatResults *result1, const FstatResults *result2 )
   // ----- set tolerance levels for comparisons ----------
   VectorComparison XLAL_INIT_DECL(tol);
   tol.relErr_L1 	= 5.3e-2;
-  tol.relErr_L2		= 4.2e-2;
-  tol.angleV 		= 0.04;  // rad
+  tol.relErr_L2		= 5e-2;
+  tol.angleV 		= 0.05;  // rad
   tol.relErr_atMaxAbsx 	= 6e-2;
   tol.relErr_atMaxAbsy  = 6e-2;
 

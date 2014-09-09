@@ -265,7 +265,10 @@ int main(int argc, char *argv[])
       PulsarParamsVector *injectionSources = NULL;
       //If injection sources then read them and make signal sfts
       if (args_info.injectionSources_given) {
-         XLAL_CHECK( (injectionSources =  XLALPulsarParamsFromUserInput(args_info.injectionSources_arg)) != NULL, XLAL_EFUNC );
+         LALStringVector *injectionSources_arglist;
+         XLAL_CHECK ( (injectionSources_arglist = XLALParseCSV2StringVector ( args_info.injectionSources_arg )) != NULL, XLAL_EFUNC );
+         XLAL_CHECK( (injectionSources =  XLALPulsarParamsFromUserInput(injectionSources_arglist)) != NULL, XLAL_EFUNC );
+         XLALDestroyStringVector ( injectionSources_arglist );
 
          fprintf(stderr, "Injecting %d signals... ", (INT4)injectionSources->length);
 

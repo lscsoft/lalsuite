@@ -204,12 +204,14 @@ def rename_symbols(symbol_kind, symbols, symbol_names, symbol_prefixes):
         if symbol_name in renames and renames[symbol_name] != None:
             fail("duplicate symbols '%s' in interface" % symbol_key)
 
-        # strip prefix from symbol key to get re-name
+        # strip prefix from symbol key to get re-name,
+        # so long as re-name would not start with a digit or '_'
+        symbol_rename = symbol_key
         rank = rename_rank[symbol_key]
         if rank < len(symbol_prefixes):
-            symbol_rename = symbol_key[len(symbol_prefixes[rank]):]
-        else:
-            symbol_rename = symbol_key
+            prefix_len = len(symbol_prefixes[rank])
+            if not symbol_key[prefix_len] in "0123456789_":
+                symbol_rename = symbol_key[prefix_len:]
 
         # if re-name has already been taken
         if symbol_rename in rename_kind:

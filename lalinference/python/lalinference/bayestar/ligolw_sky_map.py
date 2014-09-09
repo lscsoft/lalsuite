@@ -47,7 +47,9 @@ def toa_phoa_snr_log_prior(
         else -np.inf)
 
 
-def emcee_sky_map(logl, loglargs, logp, logpargs, xmin, xmax, nside=-1, kde=False):
+def emcee_sky_map(
+        logl, loglargs, logp, logpargs, xmin, xmax,
+        nside=-1, kde=False, chain_dump=None):
     # Set up sampler
     import emcee
     ntemps = 20
@@ -65,21 +67,22 @@ def emcee_sky_map(logl, loglargs, logp, logpargs, xmin, xmax, nside=-1, kde=Fals
 
     # Collect samples. The .copy() is important because PTSampler.sample()
     # reuses p on every iteration.
-    ra, sin_dec = np.vstack([
-        p[0, :, :2].copy() for p, _, _
+    chain = np.vstack([
+        p[0, :, :].copy() for p, _, _
         in itertools.islice(
             sampler.sample(p0, iterations=niter, storechain=False),
             nburnin, niter, nthin
-        )]).T
+        )])
 
-    # Bin samples
-    theta = np.arccos(sin_dec)
-    phi = ra
+    # Extract polar coordinates. For all likelihoodds, the first two parameters
+    # are ra, sin(dec).
+    theta = np.arccos(chain[:, 1])
+    phi = chain[:, 0]
 
     # Do adaptive histogram binning if the user has not selected the KDE,
     # or if the user has selected the KDE but we need to guess the resolution.
     if nside == -1 or not kde:
-        samples_per_bin = int(np.ceil(0.005 * len(theta)))
+        samples_per_bin = int(np.ceil(0.005 * len(chain)))
         prob = postprocess.adaptive_healpix_histogram(
             theta, phi, samples_per_bin, nside=nside, nest=True)
 
@@ -95,6 +98,12 @@ def emcee_sky_map(logl, loglargs, logp, logpargs, xmin, xmax, nside=-1, kde=Fals
         # Pass a random subset of 1000 points to the KDE, to save time.
         pts = np.random.permutation(pts)[:1000, :]
         prob = ClusteredKDEPosterior(pts).as_healpix(nside)
+
+    # Optionally save posterior sample chain to file.
+    # Read back in with np.load().
+    if chain_dump:
+        names = 'ra sin_dec distance cos_inclination twopsi time'.split()[:ndim]
+        np.save(chain_dump, np.rec.fromrecords(chain, names=names))
 
     # Done!
     return prob
@@ -243,7 +252,7 @@ def ligolw_sky_map(
                 max_abs_t),
             xmin=[0, -1, min_distance, -1, 0, -max_abs_t],
             xmax=[2*np.pi, 1, max_distance, 1, 2*np.pi, max_abs_t],
-            nside=nside, kde=kde)
+            nside=nside, kde=kde, chain_dump=chain_dump)
     elif method == "toa_phoa_snr_mcmc":
         prob = emcee_sky_map(
             logl=sky_map.log_likelihood_toa_phoa_snr,
@@ -254,7 +263,7 @@ def ligolw_sky_map(
                 max_abs_t),
             xmin=[0, -1, min_distance, -1, 0, -max_abs_t],
             xmax=[2*np.pi, 1, max_distance, 1, 2*np.pi, max_abs_t],
-            nside=nside, kde=kde)
+            nside=nside, kde=kde, chain_dump=chain_dump)
     else:
         raise ValueError("Unrecognized method: %s" % method)
     end_time = time.time()
