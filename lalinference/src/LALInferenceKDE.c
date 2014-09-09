@@ -268,8 +268,6 @@ REAL8 LALInferenceKDEEvaluatePoint(LALInferenceKDE *kde, REAL8 *point) {
     UINT4 npts = kde->npts;
     UINT4 i;
 
-    gsl_vector *diff, *tdiff;
-
     /* If the normalization is infinite, don't bother calculating anything */
     if (isinf(kde->log_norm_factor))
         return -INFINITY;
@@ -280,7 +278,7 @@ REAL8 LALInferenceKDEEvaluatePoint(LALInferenceKDE *kde, REAL8 *point) {
      * of the covariance to avoid ever inverting the covariance matrix */
     REAL8* results = XLALMalloc(npts * sizeof(REAL8));
 
-    #pragma omp parallel private(diff, tdiff)
+    #pragma omp parallel
     {
         /* Vectors that will hold the difference and transformed distance */
         gsl_vector *diff = gsl_vector_alloc(dim);
