@@ -1039,7 +1039,7 @@ int MAIN( int argc, char *argv[]) {
       column_headings_string_length += 1;
     }
     if ( uvar_loudestSegOutput ) {
-      column_headings_string_length += 15; /* for " <2F>\lseg lseg" */
+      column_headings_string_length += 9 + numDetectors*7; /* for " lseg 2Fl" and 7 per detector for " 2Fl_XY" */
     }
   }
   char column_headings_string[column_headings_string_length];
@@ -1064,7 +1064,12 @@ int MAIN( int argc, char *argv[]) {
       strcat ( column_headings_string, headingX );
     } /* for X < numDet */
     if ( uvar_loudestSegOutput ) {
-    strcat ( column_headings_string, " <2F>\\lseg lseg" );
+      strcat ( column_headings_string, " lseg 2Fl" );
+      for ( UINT4 X = 0; X < numDetectors ; X ++ ) {
+        char headingX[10];
+        snprintf ( headingX, sizeof(headingX), " 2Fl_%s", detectorIDs->data[X] );
+        strcat ( column_headings_string, headingX );
+      }
     }
   }
   global_column_headings_stringp = column_headings_string;
@@ -2350,8 +2355,11 @@ void UpdateSemiCohToplists ( LALStatus *status,
     line.avTwoFrecalc = -1.0; /* initialise this to -1.0, so that it only gets written out by print_gctFStatline_to_str if later overwritten in recalcToplistStats step */
     line.log10BSGLrecalc = -LAL_REAL4_MAX; /* for now, block field with minimal value, needed for output checking in print_gctFStatline_to_str() */
     line.have_f3dot = have_f3dot;
-    line.avTwoFWithoutLoudestSeg = -1.0;
     line.loudestSeg = -1;
+    line.twoFloudestSeg = -1.0;
+    for (UINT4 X = 0; X < PULSAR_MAX_DETECTORS; X++) {
+      line.twoFXloudestSeg[X] = -1.0;
+    }
 
     /* local placeholders for summed 2F value over segments, not averages yet */
     REAL4 sumTwoF = in->sumTwoF[ifreq_fg];

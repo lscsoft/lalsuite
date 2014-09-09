@@ -283,11 +283,21 @@ static int print_gctFStatline_to_str(GCTtopOutputEntry fline, char* buf, int buf
           }
           strcat ( recalcStr, buf0 );
         } /* for X < numDet */
-      if ( fline.avTwoFWithoutLoudestSeg >= 0.0 ) /* this was initialised to -1.0 and is only >= 0.0 if actually recomputed in recalcToplistStats step */
+      if ( fline.twoFloudestSeg >= 0.0 ) /* this was initialised to -1.0 and is only >= 0.0 if actually recomputed in recalcToplistStats step */
       {
-        snprintf ( buf0, sizeof(buf0), " %.6f %d", fline.avTwoFWithoutLoudestSeg, fline.loudestSeg );
+        snprintf ( buf0, sizeof(buf0), " %d %.6f", fline.loudestSeg, fline.twoFloudestSeg );
         strcat ( recalcStr, buf0 );
-      }
+        for ( UINT4 X = 0; X < fline.numDetectors ; X ++ )
+          {
+            snprintf ( buf0, sizeof(buf0), " %.6f", fline.twoFXloudestSeg[X] );
+            UINT4 len1 = strlen ( recalcStr ) + strlen ( buf0 ) + 1;
+            if ( len1 > sizeof ( recalcStr ) ) {
+              XLALPrintError ("%s: assembled output string too long! (%d > %d)\n", fn, len1, sizeof(recalcStr ));
+              break;	/* we can't really terminate with error in this function, but at least we avoid crashing */
+            }
+            strcat ( recalcStr, buf0 );
+          } /* for X < numDet */
+      } /* if ( fline.twoFloudestSeg >= 0.0 ) */
     } /* if avTwoFX */
 
   int len;

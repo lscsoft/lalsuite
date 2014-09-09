@@ -116,8 +116,11 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,				/**< list of cancidate
           }
           elem->log10BSGLrecalc = recalcStats.log10BSGL;
           if ( recalcParams->loudestSegOutput ) {
-            elem->avTwoFWithoutLoudestSeg = recalcStats.avTwoFWithoutLoudestSeg;
-            elem->loudestSeg = recalcStats.loudestSeg;
+            elem->loudestSeg      = recalcStats.loudestSeg;
+            elem->twoFloudestSeg  = recalcStats.twoFloudestSeg;
+            for ( X = 0; X < numDetectors; X ++ ) {
+              elem->twoFXloudestSeg[X] = recalcStats.twoFXloudestSeg[X];
+            }
           }
       } /* if ( listEntryType == 1 ) */
       else if ( listEntryType == 2 ) {
@@ -172,8 +175,9 @@ int XLALComputeExtraStatsSemiCoherent ( RecalcStatsComponents *recalcStats,		/**
   REAL4 sumTwoFX[numDetectors];
   for (UINT4 X = 0; X < numDetectors; X++) {
     sumTwoFX[X] = 0.0;
+    recalcStats->twoFXloudestSeg[X] = 0.0;
   }
-  REAL4 twoFfromLoudestSeg = 0.0;
+  recalcStats->twoFloudestSeg = 0.0;
 
   /* compute single- and multi-detector Fstats for each data segment and sum up */
   UINT4 k;
@@ -192,10 +196,13 @@ int XLALComputeExtraStatsSemiCoherent ( RecalcStatsComponents *recalcStats,		/**
       XLAL_CHECK ( XLALComputeFstat(&Fstat_res, recalcParams->Fstat_in_vec->data[k], &dopplerParams_temp, 0.0, 1, FSTATQ_2F | FSTATQ_2F_PER_DET) == XLAL_SUCCESS, XLAL_EFUNC, "XLALComputeFstat() failed with errno=%d", xlalErrno );
 
       sumTwoF  += Fstat_res->twoF[0]; /* sum up multi-detector Fstat for this segment*/
-      if ( recalcParams->loudestSegOutput && ( Fstat_res->twoF[0] > twoFfromLoudestSeg ) )
+
+      BOOLEAN update_loudest = FALSE;
+      if ( recalcParams->loudestSegOutput && ( Fstat_res->twoF[0] > recalcStats->twoFloudestSeg ) )
         {
-          twoFfromLoudestSeg = Fstat_res->twoF[0];
+          update_loudest = TRUE;
           recalcStats->loudestSeg = k;
+          recalcStats->twoFloudestSeg = Fstat_res->twoF[0];
         }
 
       /* for each segment, number of detectors with data might be smaller than overall number */
@@ -221,6 +228,10 @@ int XLALComputeExtraStatsSemiCoherent ( RecalcStatsComponents *recalcStats,		/**
 
           sumTwoFX[detid] += Fstat_res->twoFPerDet[X][0]; /* sum up single-detector Fstat for this segment*/
 
+          if ( update_loudest ) {
+            recalcStats->twoFXloudestSeg[X] = Fstat_res->twoFPerDet[X][0];
+          }
+
         } /* for X < numDetectorsSeg */
 
     } /* for k < numSegments */
@@ -233,9 +244,6 @@ int XLALComputeExtraStatsSemiCoherent ( RecalcStatsComponents *recalcStats,		/**
 
   /* get average stats over all segments */
   recalcStats->avTwoF = sumTwoF/numSegments;
-  if ( recalcParams->loudestSegOutput ) {
-    recalcStats->avTwoFWithoutLoudestSeg = (sumTwoF - twoFfromLoudestSeg)/(numSegments-1);
-  }
   for (UINT4 X = 0; X < numDetectors; X++) {
     recalcStats->avTwoFX[X] = sumTwoFX[X]/numSegmentsX[X];
   }
