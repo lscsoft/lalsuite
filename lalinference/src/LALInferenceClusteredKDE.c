@@ -454,33 +454,43 @@ void LALInferenceKmeansRun(LALInferenceKmeans *kmeans) {
  */
 LALInferenceKmeans *LALInferenceKmeansRunBestOf(UINT4 k, gsl_matrix *samples, UINT4 ntrials, gsl_rng *rng) {
     UINT4 i;
-    REAL8 error = -INFINITY;
 
-    LALInferenceKmeans *kmeans;
     LALInferenceKmeans *best_kmeans = NULL;
-    REAL8 bic = 0;
     REAL8 best_bic = -INFINITY;
-    for (i = 0; i < ntrials; i++) {
-        kmeans = LALInferenceCreateKmeans(k, samples, rng);
-        if (!kmeans)
-            continue;
 
-        LALInferenceKmeansForgyInitialize(kmeans);
-        LALInferenceKmeansRun(kmeans);
+    #pragma omp parallel
+    {
+        LALInferenceKmeans *kmeans;
+        REAL8 bic = 0;
+        REAL8 error = -INFINITY;
 
-        /* Assume BIC hasn't changed if error (summed-dist^2 from assigned centroids) hasn't */
-        if (error != kmeans->error) {
-            error = kmeans->error;
-            bic = LALInferenceKmeansBIC(kmeans);
-        }
+        #pragma omp for
+        for (i = 0; i < ntrials; i++) {
+            kmeans = LALInferenceCreateKmeans(k, samples, rng);
+            if (!kmeans)
+                continue;
 
-        if (bic > best_bic) {
-            if (best_kmeans)
-                LALInferenceKmeansDestroy(best_kmeans);
-            best_bic = bic;
-            best_kmeans = kmeans;
-        } else {
-            LALInferenceKmeansDestroy(kmeans);
+            LALInferenceKmeansForgyInitialize(kmeans);
+            LALInferenceKmeansRun(kmeans);
+
+            /* Assume BIC hasn't changed if
+             * error (summed-dist^2 from assigned centroids) hasn't */
+            if (error != kmeans->error) {
+                error = kmeans->error;
+                bic = LALInferenceKmeansBIC(kmeans);
+            }
+
+            #pragma omp critical
+            {
+                if (bic > best_bic) {
+                    if (best_kmeans)
+                        LALInferenceKmeansDestroy(best_kmeans);
+                    best_bic = bic;
+                    best_kmeans = kmeans;
+                } else {
+                    LALInferenceKmeansDestroy(kmeans);
+                }
+            }
         }
     }
 
