@@ -3624,15 +3624,19 @@ void LALInferenceInitClusteredKDEProposal(LALInferenceRunState *runState, LALInf
     if (LALInferenceGetProcParamVal(runState->commandLine,"--cluster-verbose")) {
         char outp_name[256];
         char outp_draws_name[256];
-        UINT4 chain = 0;
+        UINT4 chain = 0, out_num = 0;
         UINT4 ndraws = 1000;
 
         if (LALInferenceCheckVariable(runState->algorithmParams, "MPIrank"))
             chain = *(UINT4 *)LALInferenceGetVariable(runState->algorithmParams, "MPIrank");
         printf("Chain %i found %i clusters.\n", chain, kde->kmeans->k);
 
-        sprintf(outp_name, "clustered_samples.%2.2d", chain);
-        sprintf(outp_draws_name, "clustered_draws.%2.2d", chain);
+        if (LALInferenceCheckVariable(runState->algorithmParams, "step"))
+            out_num = *(UINT4 *)LALInferenceGetVariable(runState->algorithmParams, "step");
+
+        sprintf(outp_name, "clustered_samples_%2.2d.%2.2d", out_num, chain);
+        sprintf(outp_draws_name, "clustered_draws_%2.2d.%2.2d", out_num, chain);
+
         LALInferenceDumpClusteredKDE(kde, outp_name, array);
         LALInferenceDumpClusteredKDEDraws(kde, outp_draws_name, ndraws);
     }

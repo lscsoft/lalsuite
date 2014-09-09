@@ -367,7 +367,6 @@ void initializeMCMC(LALInferenceRunState *runState) {
         verbose=1;
 
     /* Determine number of walkers */
-
     INT4 nwalkers = MPIsize;
     INT4 nwalkers_per_thread = 1;
     ppt = LALInferenceGetProcParamVal(commandLine, "--nwalkers");
@@ -389,6 +388,7 @@ void initializeMCMC(LALInferenceRunState *runState) {
     }
 
     /* Number of steps between ensemble updates */
+    UINT4 step = 0;
     UINT4 nsteps = 100000;
     ppt = LALInferenceGetProcParamVal(commandLine, "--nsteps");
     if (ppt)
@@ -478,6 +478,9 @@ void initializeMCMC(LALInferenceRunState *runState) {
                             LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
 
     LALInferenceAddVariable(runState->algorithmParams, "random_seed", &randomseed,
+                            LALINFERENCE_UINT4_t,LALINFERENCE_PARAM_OUTPUT);
+
+    LALInferenceAddVariable(runState->algorithmParams, "step", &step,
                             LALINFERENCE_UINT4_t,LALINFERENCE_PARAM_OUTPUT);
 
    /* Now make sure that everyone is running with un-correlated

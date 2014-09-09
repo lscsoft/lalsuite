@@ -39,6 +39,7 @@ void ensemble_sampler(struct tagLALInferenceRunState *runState) {
     INT4 walker, nwalkers_per_thread, nsteps;
     INT4 skip, update_interval, verbose;
     INT4 i,t,c;
+    INT4 *step;
     char **walker_output_names = NULL;
 
     /* Initialize LIGO status */
@@ -55,6 +56,7 @@ void ensemble_sampler(struct tagLALInferenceRunState *runState) {
     skip = *(INT4*) LALInferenceGetVariable(algorithmParams, "skip");
     update_interval = *(INT4*) LALInferenceGetVariable(algorithmParams, "update_interval");
     verbose = *(INT4*) LALInferenceGetVariable(algorithmParams, "verbose");
+    step = (INT4*) LALInferenceGetVariable(algorithmParams, "step");
 
     /* Initialize walker outputs, closing due to the large numbers that are likley */
     walker_output_names = XLALMalloc(nwalkers_per_thread * sizeof(char*));
@@ -66,12 +68,14 @@ void ensemble_sampler(struct tagLALInferenceRunState *runState) {
     /* Setup clustered-KDE proposal from the inital state of the ensemble */
     ensemble_update(runState);
 
-    UINT4 step = 0;
-    while (step < nsteps) {
-        step++;
+    /* Main sampling loop */
+    while (*step < nsteps) {
+
+        /* Update step counters */
+        (*step)++;
 
         /* Update the proposal from the current state of the ensemble */
-        if ((step % update_interval) == 0)
+        if ((*step % update_interval) == 0)
             ensemble_update(runState);
 
         /* Update all walkers on this MPI-thread */
@@ -89,8 +93,8 @@ void ensemble_sampler(struct tagLALInferenceRunState *runState) {
                                     &(runState->currentLikelihoods[walker]));
 
             /* Don't print every sample to file */
-            if ((step % skip) == 0) {
-                LALInferencePrintEnsembleSample(runState, walker_output_names, walker, step);
+            if ((*step % skip) == 0) {
+                LALInferencePrintEnsembleSample(runState, walker_output_names, walker);
                 if (verbose)
                     LALInferencePrintProposedSample(runState, &proposedParams, walker, accepted);
             }
@@ -98,9 +102,12 @@ void ensemble_sampler(struct tagLALInferenceRunState *runState) {
         }
     }
 
+    /* Clean up */
     for (walker=0; walker<nwalkers_per_thread; walker++)
         XLALFree(walker_output_names[walker]);
     XLALFree(walker_output_names);
+
+    return;
 }
 
 INT4 walker_step(LALInferenceRunState *runState,
@@ -184,7 +191,7 @@ void ensemble_update(LALInferenceRunState *runState) {
     UINT4 ntrials = 50;  // Number of trials to optimize clustering at fixed-k
     LALInferenceSetupClusteredKDEProposalFromRun(runState, samples, nwalkers, ntrials);
 
-    /* Cleanup */
+    /* Clean up */
     XLALFree(param_array);
     XLALFree(samples);
 }
@@ -252,17 +259,18 @@ char *LALInferenceInitializeEnsembleOutput(LALInferenceRunState *runState,
 
 void LALInferencePrintEnsembleSample(LALInferenceRunState *runState,
                                         char **walker_output_names,
-                                        UINT4 walker,
-                                        INT4 step) {
+                                        UINT4 walker) {
     REAL8 null_likelihood, timestamp, timestamp_epoch;
     REAL8 networkSNR, normed_logl;
     REAL8 *currentPriors, *currentLikelihoods;
+    INT4 step;
     UINT4 benchmark;
     FILE *walker_output;
 
     walker_output = fopen(walker_output_names[walker], "a");
     currentPriors = runState->currentPriors;
     currentLikelihoods = runState->currentLikelihoods;
+    step = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "step");
 
     /* Print step number, log(posterior), and log(prior) */
     null_likelihood = *(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "nullLikelihood");

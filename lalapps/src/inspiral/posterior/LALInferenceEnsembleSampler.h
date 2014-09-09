@@ -44,6 +44,6 @@ void ensemble_update(LALInferenceRunState *runState);
 
 /* Data IO routines */
 char *LALInferenceInitializeEnsembleOutput(LALInferenceRunState *runState, INT4 walker, INT4 walker_offset, INT4 verbose);
-void LALInferencePrintEnsembleSample(LALInferenceRunState *runState, char **walker_output_names, UINT4 walker, INT4 step);
+void LALInferencePrintEnsembleSample(LALInferenceRunState *runState, char **walker_output_names, UINT4 walker);
 void LALInferencePrintProposedSample(LALInferenceRunState *runState, LALInferenceVariables *proposedParams, INT4 walker, INT4 accepted);
 void LALInferencePrintEnsembleHeader(LALInferenceRunState *runState, FILE *walker_output, INT4 walker);
