@@ -3328,3 +3328,55 @@ int LALInferenceSplineCalibrationFactor(REAL8Vector *freqs,
     XLAL_ERROR(status, fmt);
   }
 }
+
+void LALInferenceFprintSplineCalibrationHeader(FILE *output, LALInferenceRunState *runState) {
+  LALInferenceIFOData *ifo = runState->data;
+
+  do {
+    char parname[VARNAME_MAX];
+    size_t i;
+    UINT4 ncal = *(UINT4 *)LALInferenceGetVariable(runState->currentParams, "spcal_npts");
+    
+    for (i = 0; i < ncal; i++) {
+      snprintf(parname, VARNAME_MAX, "%sspcalamp%02ld", ifo->name, i);
+      fprintf(output, "%s\t", parname);
+    }
+
+    for (i = 0; i < ncal; i++) {
+      snprintf(parname, VARNAME_MAX, "%sspcalphase%02ld", ifo->name, i);
+      fprintf(output, "%s\t", parname);
+    }
+
+    ifo = ifo->next;
+  } while (ifo);
+}
+
+void LALInferencePrintSplineCalibration(FILE *output, LALInferenceRunState *runState) {
+  LALInferenceIFOData *ifo = runState->data;
+
+  do {
+    size_t i;
+
+    char ampVarName[VARNAME_MAX];
+    char phaseVarName[VARNAME_MAX];
+
+    REAL8Vector *amp = NULL;
+    REAL8Vector *phase = NULL;
+
+    snprintf(ampVarName, VARNAME_MAX, "%s_spcal_amp", ifo->name);
+    snprintf(phaseVarName, VARNAME_MAX, "%s_spcal_phase", ifo->name);
+
+    amp = LALInferenceGetVariable(runState->currentParams, ampVarName);
+    phase = LALInferenceGetVariable(runState->currentParams, phaseVarName);
+
+    for (i = 0; i < amp->length; i++) {
+      fprintf(output, "%g\t", amp->data[i]);
+    }
+
+    for (i = 0; i < phase->length; i++) {
+      fprintf(output, "%g\t", phase->data[i]);
+    }
+
+    ifo = ifo->next;
+  } while (ifo);
+}

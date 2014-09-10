@@ -201,6 +201,7 @@ static void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState,
   LALInferenceAddVariable(runState->priorArgs, "spcal_phase_uncertainty", &phaseUncertaintyPrior,
 			  LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
   LALInferenceAddVariable(currentParams, "spcal_active", &calOn, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+  LALInferenceAddVariable(currentParams, "spcal_npts", &ncal, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
 
   ifo = runState->data;
   do {
@@ -401,8 +402,7 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
                (--enable-spline-calibration)            Enable cubic-spline calibration error model.\n\
                (--spline-calibration-nodes N)           Set the number of spline nodes per detector (default 5)\n\
                (--spline-calibration-amp-uncertainty X) Set the prior on relative amplitude uncertainty (default 0.05)\n\
-               (--spline-calibration-phase-uncertainty X) Set the prior on phase uncertanity in degrees (default 10)\n\
-               (--dump-spline-calibration)              Output the spline calibration parameters.\n";
+               (--spline-calibration-phase-uncertainty X) Set the prior on phase uncertanity in degrees (default 10)\n";
 
 
   /* Print command line arguments if state was not allocated */

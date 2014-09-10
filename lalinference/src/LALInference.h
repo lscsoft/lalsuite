@@ -602,6 +602,9 @@ void LALInferencePrintSample(FILE *fp,LALInferenceVariables *sample);
 /** Output only non-fixed parameters */
 void LALInferencePrintSampleNonFixed(FILE *fp,LALInferenceVariables *sample);
 
+/** Output spline calibration parameters */
+void LALInferencePrintSplineCalibration(FILE *fp, LALInferenceRunState *state);
+
 /** Read in the non-fixed parameters from the given file (position in
     the file must be arranged properly before calling this
     function). */
@@ -930,6 +933,11 @@ void LALInferenceAddstringVariable(LALInferenceVariables * vars, const char * na
 CHAR* LALInferenceGetstringVariable(LALInferenceVariables * vars, const char * name);
 
 void LALInferenceSetstringVariable(LALInferenceVariables* vars,const char* name,CHAR* value);
+
+/**
+ * Print spline calibration parameter names as tab-separated ASCII
+ */
+void LALInferenceFprintSplineCalibrationHeader(FILE *out, LALInferenceRunState *state);
 
 /*@}*/
 

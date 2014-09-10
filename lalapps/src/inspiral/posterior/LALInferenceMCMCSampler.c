@@ -1648,6 +1648,9 @@ void LALInferencePrintPTMCMCHeaderFile(LALInferenceRunState *runState, FILE *cha
     fprintf(chainoutput, "\n\n%31s\n","");
     fprintf(chainoutput, "cycle\tlogpost\tlogprior\t");
     LALInferenceFprintParameterNonFixedHeaders(chainoutput, runState->currentParams);
+    if (LALInferenceCheckVariable(runState->currentParams, "spcal_active") && (*(UINT4 *)LALInferenceGetVariable(runState->currentParams, "spcal_active"))) {
+      LALInferenceFprintSplineCalibrationHeader(chainoutput, runState);
+    }
     fprintf(chainoutput, "logl\t");
     LALInferenceIFOData *headIFO = runState->data;
     while (headIFO != NULL) {
@@ -1670,6 +1673,9 @@ void LALInferencePrintPTMCMCHeaderFile(LALInferenceRunState *runState, FILE *cha
     fprintf(chainoutput,"\n");
     fprintf(chainoutput, "%d\t%f\t%f\t", 0, (runState->currentLikelihood - nullLikelihood)+runState->currentPrior, runState->currentPrior);
     LALInferencePrintSampleNonFixed(chainoutput,runState->currentParams);
+    if (LALInferenceCheckVariable(runState->currentParams, "spcal_active") && (*(UINT4 *)LALInferenceGetVariable(runState->currentParams, "spcal_active"))) {
+      LALInferencePrintSplineCalibration(chainoutput, runState);
+    }
     fprintf(chainoutput,"%f\t",runState->currentLikelihood - nullLikelihood);
     headIFO = runState->data;
     while (headIFO != NULL) {
