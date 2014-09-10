@@ -3411,11 +3411,18 @@ void LALInferencePrintProposalTracking(FILE *fp, LALInferenceVariables *propArgs
 void LALInferenceSplineCalibrationProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
   const char *proposalName = splineCalibrationProposalName;
   LALInferenceIFOData *ifo = NULL;
+  UINT4 nifo = 0;
   REAL8 ampWidth = *(REAL8 *)LALInferenceGetVariable(runState->priorArgs, "spcal_amp_uncertainty");
   REAL8 phaseWidth = *(REAL8 *)LALInferenceGetVariable(runState->priorArgs, "spcal_phase_uncertainty");
 
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
   LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &proposalName);
+
+  ifo = runState->data;
+  do {
+    nifo++;
+    ifo = ifo->next;
+  } while (ifo);
 
   ifo = runState->data;
   do {
@@ -3434,8 +3441,8 @@ void LALInferenceSplineCalibrationProposal(LALInferenceRunState *runState, LALIn
     phases = *(REAL8Vector **)LALInferenceGetVariable(proposedParams, phaseName);
 
     for (i = 0; i < amps->length; i++) {
-      amps->data[i] += ampWidth*gsl_ran_ugaussian(runState->GSLrandom);
-      phases->data[i] += phaseWidth*gsl_ran_ugaussian(runState->GSLrandom);
+      amps->data[i] += ampWidth*gsl_ran_ugaussian(runState->GSLrandom)/sqrt(nifo*amps->length);
+      phases->data[i] += phaseWidth*gsl_ran_ugaussian(runState->GSLrandom)/sqrt(nifo*amps->length);
     }
 
     ifo = ifo->next;
