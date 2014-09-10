@@ -198,7 +198,7 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
       return -DBL_MAX;
 
   /* Calibration priors. */
-  logPrior += LALInferenceSplineCalibrationPrior(runState, priorParams);
+  logPrior += LALInferenceSplineCalibrationPrior(runState, params);
 
   return(logPrior);
 }
@@ -961,7 +961,7 @@ REAL8 LALInferenceInspiralSkyLocPrior(LALInferenceRunState *runState, LALInferen
   }
 
   /* Calibration parameters */
-  logPrior += LALInferenceSplineCalibrationPrior(runState, priorParams);
+  logPrior += LALInferenceSplineCalibrationPrior(runState, params);
 
   return(logPrior);
 }
@@ -1820,7 +1820,7 @@ LALInferenceVariableItem *item=params->head;
         }//if(item->type!=LALINFERENCE_REAL8_t....
     }//for(;item;item=item->next)
 
-    logPrior += LALInferenceSplineCalibrationPrior(runState, priorParams);
+    logPrior += LALInferenceSplineCalibrationPrior(runState, params);
 
     return(logPrior);
 }

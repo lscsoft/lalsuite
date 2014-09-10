@@ -170,7 +170,7 @@ void LALInferenceInitGlitchVariables(LALInferenceRunState *runState, LALInferenc
 
 }
 
-static void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState, LALInferenceVariables *currentParams) {
+static void LALInferenceInitSplineCalibrationVariables(LALInferenceRunState *runState, LALInferenceVariables *currentParams) {
   UINT4 ncal = 5; /* Number of calibration nodes, log-distributed
 		     between fmin and fmax. */
   UINT4 calOn = 1;
@@ -1272,7 +1272,7 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
   if(LALInferenceGetProcParamVal(commandLine, "--glitchFit")) LALInferenceInitGlitchVariables(state, currentParams);
 
   /* Handle, if present, requests for calibration parameters. */
-  LALInferenceInitCalibrationVariables(state, currentParams);
+  LALInferenceInitSplineCalibrationVariables(state, currentParams);
 
   UINT4 signal_flag=1;
   ppt = LALInferenceGetProcParamVal(commandLine, "--noiseonly");

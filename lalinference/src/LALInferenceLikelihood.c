@@ -249,6 +249,11 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
   memset(&status,0,sizeof(status));
   LALInferenceVariables intrinsicParams;
   
+  UINT4 spcal_active = 0;
+  if (LALInferenceCheckVariable(currentParams, "spcal_active") && (*(UINT4 *)LALInferenceGetVariable(currentParams, "spcal_active"))) {
+    spcal_active = 1;
+  }
+
   gsl_complex complex_d_dot_h;
   
   gsl_complex gsl_fplus;
@@ -338,7 +343,7 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
     }
     
     /* Cannot handle calibration yet! */
-    if (LALInferenceCheckVariable(currentParams, "spcal_active") && (*(UINT4 *)LALInferenceGetVariable(currentParams, "spcal_active"))) {
+    if (spcal_active) {
       XLAL_ERROR_REAL8(XLAL_FAILURE, "calibration does not yet play nicely with ROQ");
     }
 
@@ -463,6 +468,11 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
   REAL8Vector *freqs = NULL;
   REAL8Vector *amps = NULL;
   REAL8Vector *phases = NULL;
+
+  UINT4 spcal_active = 0;
+  if (LALInferenceCheckVariable(currentParams, "spcal_active") && (*(UINT4 *)LALInferenceGetVariable(currentParams, "spcal_active"))) {
+    spcal_active = 1;
+  }
 
   LALStatus status;
   memset(&status,0,sizeof(status));
@@ -607,14 +617,14 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
         /* Template is now in dataPtr->timeFreqModelhPlus and hCross */
 
 	/* Calibration stuff if necessary */
-	if (LALInferenceCheckVariable(currentParams, "spcal_active") && (*(UINT4 *)LALInferenceGetVariable(currentParams, "spcal_active"))) {
+	if (spcal_active) {
 	  snprintf(freqVarName, VARNAME_MAX, "%s_spcal_freq", dataPtr->name);
 	  snprintf(ampVarName, VARNAME_MAX, "%s_spcal_amp", dataPtr->name);
 	  snprintf(phaseVarName, VARNAME_MAX, "%s_spcal_phase", dataPtr->name);
 
-	  freqs = LALInferenceGetVariable(currentParams, freqVarName);
-	  amps = LALInferenceGetVariable(currentParams, ampVarName);
-	  phases = LALInferenceGetVariable(currentParams, phaseVarName);
+	  freqs = *(REAL8Vector **)LALInferenceGetVariable(currentParams, freqVarName);
+	  amps = *(REAL8Vector **)LALInferenceGetVariable(currentParams, ampVarName);
+	  phases = *(REAL8Vector **)LALInferenceGetVariable(currentParams, phaseVarName);
 
 	  if (calFactor == NULL) {
 	    calFactor = XLALCreateCOMPLEX16FrequencySeries("calibration factors", 
@@ -737,7 +747,7 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
       signal2noise += 2.0 * TwoDeltaToverN * ( templateReal*templateReal + templateImag*templateImag ) / dataPtr->oneSidedNoisePowerSpectrum->data->data[i];
 
       /* Apply Calibration if necessary */
-      if (LALInferenceCheckVariable(currentParams, "spcal_active") && (*(UINT4 *)LALInferenceGetVariable(currentParams, "spcal_active"))) {
+      if (spcal_active) {
 	REAL8 tempRe = templateReal;
 	REAL8 tempIm = templateImag;
 
@@ -877,6 +887,11 @@ REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *current
   REAL8Vector *amps = NULL;
   REAL8Vector *phases = NULL;
 
+  UINT4 spcal_active = 0;
+  if (LALInferenceCheckVariable(currentParams, "spcal_active") && (*(UINT4 *)LALInferenceGetVariable(currentParams, "spcal_active"))) {
+    spcal_active = 1;
+  }
+
   LALStatus status;
   memset(&status,0,sizeof(status));
   int Nifos=0;
@@ -947,14 +962,14 @@ REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *current
     /* Template is now in dataPtr->freqModelhPlus hCross. */
 
     /* Calibration stuff if necessary */
-      if (LALInferenceCheckVariable(currentParams, "spcal_active") && (*(UINT4 *)LALInferenceGetVariable(currentParams, "spcal_active"))) {
+    if (spcal_active) {
       snprintf(freqVarName, VARNAME_MAX, "%s_spcal_freq", dataPtr->name);
       snprintf(ampVarName, VARNAME_MAX, "%s_spcal_amp", dataPtr->name);
       snprintf(phaseVarName, VARNAME_MAX, "%s_spcal_phase", dataPtr->name);
 
-      freqs = LALInferenceGetVariable(currentParams, freqVarName);
-      amps = LALInferenceGetVariable(currentParams, ampVarName);
-      phases = LALInferenceGetVariable(currentParams, phaseVarName);
+      freqs = *(REAL8Vector **)LALInferenceGetVariable(currentParams, freqVarName);
+      amps = *(REAL8Vector **)LALInferenceGetVariable(currentParams, ampVarName);
+      phases = *(REAL8Vector **)LALInferenceGetVariable(currentParams, phaseVarName);
 
       if (calFactor == NULL) {
 	calFactor = XLALCreateCOMPLEX16FrequencySeries("calibration factors", 
@@ -1044,7 +1059,7 @@ REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *current
       templateImag = (plainTemplateReal*im + plainTemplateImag*re) / deltaT;
 
       /* Apply Calibration if necessary */
-      if (LALInferenceCheckVariable(currentParams, "spcal_active") && (*(UINT4 *)LALInferenceGetVariable(currentParams, "spcal_active"))) {
+      if (spcal_active) {
 	REAL8 tempRe = templateReal;
 	REAL8 tempIm = templateImag;
 

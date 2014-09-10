@@ -835,6 +835,9 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
       fseek(chainoutput, 0L, SEEK_END);
       fprintf(chainoutput, "%d\t%f\t%f\t", i,(runState->currentLikelihood - nullLikelihood)+runState->currentPrior,runState->currentPrior);
       LALInferencePrintSampleNonFixed(chainoutput,runState->currentParams);
+      if (LALInferenceCheckVariable(runState->currentParams, "spcal_active") && (*(UINT4 *)LALInferenceGetVariable(runState->currentParams, "spcal_active"))) {
+	LALInferencePrintSplineCalibration(chainoutput, runState);
+      }
       fprintf(chainoutput,"%f\t",runState->currentLikelihood - nullLikelihood);
 
       LALInferenceIFOData *headIFO = runState->data;
