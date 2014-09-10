@@ -676,7 +676,7 @@ void LALInferencePrintSampleNonFixed(FILE *fp,LALInferenceVariables *sample){
 	LALInferenceVariableItem *ptr=sample->head;
 	if(fp==NULL) return;
 	while(ptr!=NULL) {
-		if (ptr->vary != LALINFERENCE_PARAM_FIXED && ptr->type != LALINFERENCE_gslMatrix_t ) {
+		if (ptr->vary != LALINFERENCE_PARAM_FIXED && ptr->type != LALINFERENCE_gslMatrix_t && ptr->type != LALINFERENCE_REAL8Vector_t) {
 			switch (ptr->type) {
 				case LALINFERENCE_INT4_t:
 					fprintf(fp, "%"LAL_INT4_FORMAT, *(INT4 *) ptr->value);
