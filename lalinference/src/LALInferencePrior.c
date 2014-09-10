@@ -37,6 +37,46 @@ static double qInnerIntegrand(double M2, void *viData);
 static double etaInnerIntegrand(double M2, void *viData);
 static double outerIntegrand(double M1, void *voData);
 
+static REAL8 LALInferenceSplineCalibrationPrior(LALInferenceRunState *runState, LALInferenceVariables *params) {
+  LALInferenceIFOData *ifo = NULL;
+  REAL8 ampWidth = -1.0;
+  REAL8 phaseWidth = -1.0;
+  REAL8 logPrior = 0.0;
+
+  if (!(LALInferenceGetProcParamVal(runState->commandLine, "--enable-spline-calibration"))) {
+    return logPrior;
+  }
+
+  ampWidth = *(REAL8 *)LALInferenceGetVariable(runState->priorArgs, "spcal_amp_uncertainty");
+  phaseWidth = *(REAL8 *)LALInferenceGetVariable(runState->priorArgs, "spcal_phase_uncertainty");
+
+  ifo = runState->data;
+  do {
+    size_t i;
+
+    char ampVarName[VARNAME_MAX];
+    char phaseVarName[VARNAME_MAX];
+
+    REAL8Vector *amps = NULL;
+    REAL8Vector *phase = NULL;
+
+    snprintf(ampVarName, VARNAME_MAX, "%s_spcal_amp", ifo->name);
+    snprintf(phaseVarName, VARNAME_MAX, "%s_spcal_phase", ifo->name);
+
+    amps = *(REAL8Vector **)LALInferenceGetVariable(params, ampVarName);
+    phase = *(REAL8Vector **)LALInferenceGetVariable(params, phaseVarName);
+
+    for (i = 0; i < amps->length; i++) {
+      logPrior += -log(2.0*M_PI) - log(ampWidth) - 0.5*amps->data[i]*amps->data[i]/ampWidth/ampWidth;
+      logPrior += -log(2.0*M_PI) - log(phaseWidth) - 0.5*phase->data[i]*phase->data[i]/phaseWidth/phaseWidth;
+    }
+
+    ifo = ifo->next;
+  } while (ifo);
+
+  return logPrior;
+}
+
 /* Return the log Prior of the variables specified, for the non-spinning/spinning inspiral signal case */
 REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVariables *params)
 {
@@ -156,6 +196,9 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
         *(UINT4 *)LALInferenceGetVariable(priorParams,"malmquist") &&
         !within_malmquist(runState, params))
       return -DBL_MAX;
+
+  /* Calibration priors. */
+  logPrior += LALInferenceSplineCalibrationPrior(runState, priorParams);
 
   return(logPrior);
 }
@@ -916,6 +959,9 @@ REAL8 LALInferenceInspiralSkyLocPrior(LALInferenceRunState *runState, LALInferen
     }
     logPrior+=prior;
   }
+
+  /* Calibration parameters */
+  logPrior += LALInferenceSplineCalibrationPrior(runState, priorParams);
 
   return(logPrior);
 }
@@ -1773,6 +1819,8 @@ LALInferenceVariableItem *item=params->head;
 
         }//if(item->type!=LALINFERENCE_REAL8_t....
     }//for(;item;item=item->next)
+
+    logPrior += LALInferenceSplineCalibrationPrior(runState, priorParams);
 
     return(logPrior);
 }
