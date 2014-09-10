@@ -202,6 +202,8 @@ static void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState,
 
   ifo = runState->data;
   do {
+    size_t i;
+
     char freqVarName[VARNAME_MAX];
     char ampVarName[VARNAME_MAX];
     char phaseVarName[VARNAME_MAX];
@@ -210,6 +212,13 @@ static void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState,
     REAL8Vector *amps = NULL;
     REAL8Vector *phase = NULL;
 
+    REAL8 fMin = ifo->fLow;
+    REAL8 fMax = ifo->fHigh;
+    REAL8 logFMin = log(fMin);
+    REAL8 logFMax = log(fMax);
+    REAL8 dLogF = (logFMax - logFMin)/(ncal-1);
+    
+
     snprintf(freqVarName, VARNAME_MAX, "%s_spcal_freq", ifo->name);
     snprintf(ampVarName, VARNAME_MAX, "%s_spcal_amp", ifo->name);
     snprintf(phaseVarName, VARNAME_MAX, "%s_spcal_phase", ifo->name);
@@ -217,6 +226,12 @@ static void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState,
     freqs = XLALCreateREAL8Vector(ncal);
     amps = XLALCreateREAL8Vector(ncal);
     phase = XLALCreateREAL8Vector(ncal);
+
+    for (i = 0; i < ncal; i++) {
+      freqs->data[i] = exp(logFMin + i*dLogF);
+      amps->data[i] = 0.0;
+      phase->data[i] = 0.0;
+    }
 
     LALInferenceAddVariable(currentParams, freqVarName, &freqs, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
     LALInferenceAddVariable(currentParams, ampVarName, &amps, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_LINEAR);
