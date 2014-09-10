@@ -458,6 +458,10 @@ LALInferenceKmeans *LALInferenceKmeansRunBestOf(UINT4 k, gsl_matrix *samples, UI
     LALInferenceKmeans *best_kmeans = NULL;
     REAL8 best_bic = -INFINITY;
 
+    /* Don't bother with multiple trials if k=1 */
+    if (k == 1)
+        ntrials = 1;
+
     #pragma omp parallel
     {
         LALInferenceKmeans *kmeans;
