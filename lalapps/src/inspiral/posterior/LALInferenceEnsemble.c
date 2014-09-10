@@ -53,87 +53,73 @@ void LALInferenceInitEnsemble(LALInferenceRunState *state) {
     INT4 nwalkers_per_thread = *(INT4 *) LALInferenceGetVariable(state->algorithmParams, "nwalkers_per_thread");
 
     INT4 ndim = LALInferenceGetVariableDimensionNonFixed(state->currentParamArray[0]);
-    INT4 *col_order = XLALMalloc(ndim *sizeof(INT4));
 
     ppt = LALInferenceGetProcParamVal(state->commandLine, "--init-samples");
     if (ppt) {
-        if (MPIrank == 0) {
-            char *infile = ppt->value;
-            FILE *input = fopen(infile, "r");
+        char *infile = ppt->value;
+        FILE *input = fopen(infile, "r");
 
-            char params[128][128];
-            UINT4 ncols, nsamps;
+        char params[128][128];
+        INT4 *col_order = XLALMalloc(ndim *sizeof(INT4));
+        UINT4 ncols;
 
-            /* Parse parameter names */
-            LALInferenceReadAsciiHeader(input, params, &ncols);
+        /* Parse parameter names */
+        LALInferenceReadAsciiHeader(input, params, &ncols);
 
-            LALInferenceVariables *backward_params = XLALCalloc(1, sizeof(LALInferenceVariables));
+        /* Only cluster parameters that are being sampled */
+        UINT4 nvalid_cols=0, j=0;
+        UINT4 *valid_cols = XLALMalloc(ncols * sizeof(UINT4));
 
-            /* Only cluster parameters that are being sampled */
-            UINT4 nvalid_cols=0, j=0;
-            UINT4 *valid_cols = XLALMalloc(ncols * sizeof(UINT4));
-            for (j = 0; j < ncols; j++)
-                valid_cols[j] = 0;
+        for (j = 0; j < ncols; j++) {
+            char* internal_param_name = XLALMalloc(512*sizeof(char));
+            LALInferenceTranslateExternalToInternalParamName(internal_param_name, params[j]);
 
-            UINT4 logl_idx;
-            for (j = 0; j < ncols; j++) {
-                char* internal_param_name = XLALMalloc(512*sizeof(char));
-                LALInferenceTranslateExternalToInternalParamName(internal_param_name, params[j]);
-
-                i=0;
-                for (item = state->currentParams->head; item; item = item->next) {
-                    if (LALInferenceCheckVariableNonFixed(state->currentParams, item->name)) {
-                        if (!strcmp(item->name, internal_param_name)) {
-                            col_order[i] = nvalid_cols;
-                            nvalid_cols++;
-                            valid_cols[j] = 1;
-                            LALInferenceAddVariable(backward_params, item->name, item->value, item->type, item->vary);
-                            break;
-                        }
-                        i++;
+            i=0;
+            valid_cols[j] = 0;
+            for (item = state->currentParamArray[0]->head; item; item = item->next) {
+                if (LALInferenceCheckVariableNonFixed(state->currentParamArray[0], item->name)) {
+                    if (!strcmp(item->name, internal_param_name)) {
+                        col_order[i] = nvalid_cols;
+                        nvalid_cols++;
+                        valid_cols[j] = 1;
+                        break;
                     }
+                    i++;
                 }
             }
 
-            /* Double check dimensions */
-            if (nvalid_cols != ndim) {
-                fprintf(stderr, "Inconsistent dimensions for starting state!\n");
-                fprintf(stderr, "Sampling in %i dimensions, %i read from file!\n", ndim, nvalid_cols);
-                exit(1);
-            }
-
-            /* LALInferenceAddVariable() builds the array backwards, so reverse it. */
-            LALInferenceVariables *input_params = XLALCalloc(1, sizeof(LALInferenceVariables));
-
-            for (item = backward_params->head; item; item = item->next)
-                LALInferenceAddVariable(input_params, item->name, item->value, item->type, item->vary);
-
-            sampleArray = LALInferenceParseDelimitedAscii(input, ncols, valid_cols, &nsamps);
-
-            /* Choose unique samples to intialize ensemble */
-            gsl_ran_shuffle(state->GSLrandom, sampleArray, nsamps, ndim*sizeof(REAL8));
-
-            /* Cleanup */
-            LALInferenceClearVariables(backward_params);
-            XLALFree(backward_params);
+            XLALFree(internal_param_name);
         }
 
-        /* Broadcast parameter order */
-        MPI_Bcast(col_order, ndim, MPI_INT, 0, MPI_COMM_WORLD);
+        /* Double check dimensions */
+        if (nvalid_cols != ndim) {
+            fprintf(stderr, "Inconsistent dimensions for starting state!\n");
+            fprintf(stderr, "Sampling in %i dimensions, %i read from file!\n", ndim, nvalid_cols);
+            exit(1);
+        }
+
+        /* Give a different chunk of samples to each MPI thread */
+        INT4 ch, nsamples = 0;
+        while ( nsamples < MPIrank*nwalkers_per_thread &&
+                (ch = getc(input)) != EOF) {
+            if (ch=='\n')
+                ++nsamples;
+        }
+
+        sampleArray = LALInferenceParseDelimitedAscii(input, ncols, valid_cols, &nwalkers_per_thread);
 
         REAL8 *parameters = XLALMalloc(ndim * sizeof(REAL8));
-        MPI_Scatter(sampleArray, ndim, MPI_DOUBLE, parameters, ndim, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        for (walker = 0; walker < nwalkers_per_thread; walker++) {
+            for (i = 0; i < ndim; i++)
+                parameters[i] = sampleArray[walker*ndim + col_order[i]];
+            LALInferenceCopyArrayToVariables(parameters, state->currentParamArray[walker]);
+        }
 
-        REAL8 *reordered_parameters = XLALMalloc(ndim * sizeof(REAL8));
-        for (i = 0; i < ndim; i++)
-            reordered_parameters[i] = parameters[col_order[i]];
-
-        LALInferenceCopyArrayToVariables(reordered_parameters, state->currentParams);
-
+        /* Cleanup */
+        XLALFree(col_order);
+        XLALFree(valid_cols);
         XLALFree(parameters);
-        XLALFree(reordered_parameters);
-        if (MPIrank == 0)
-            XLALFree(sampleArray);
+        XLALFree(sampleArray);
     } else {
         #pragma omp parallel for
         for (walker = 0; walker < nwalkers_per_thread; walker++) {
@@ -190,8 +176,9 @@ void LALInferenceInitEnsemble(LALInferenceRunState *state) {
         state->currentLikelihoods[walker] = 0.0;
     }
 
-    /* Distribute ensemble according to prior */
-    sample_prior(state);
+    /* Distribute ensemble according to prior when randomly initializing */
+    if (!LALInferenceGetProcParamVal(state->commandLine, "--init-samples"))
+        sample_prior(state);
 
     /* Set starting likelihood values (prior function hasn't changed) */
     #pragma omp parallel for

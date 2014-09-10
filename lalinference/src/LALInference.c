@@ -730,7 +730,8 @@ void LALInferenceReadSampleNonFixed(FILE *fp, LALInferenceVariables *p) {
  * @param[in]  input       Input stream to be parsed.
  * @param[in]  nCols       Number of total columns in the input stream.
  * @param[in]  wantedCols  Array of 0/1 flags (should be \a nCols long), indicating desired columns.
- * @param[out] nLines      Total number of lines read.
+ * @param      nLines      If 0, read until end of file and set to be number of lines
+ *                             read.  If > 0, only read \a nLines.
  * @return A REAL8 array containing the parsed data.
  */
 REAL8 *LALInferenceParseDelimitedAscii(FILE *input, UINT4 nCols, UINT4 *wantedCols, UINT4 *nLines) {
@@ -745,14 +746,16 @@ REAL8 *LALInferenceParseDelimitedAscii(FILE *input, UINT4 nCols, UINT4 *wantedCo
 
     // Determine number of samples to be read
     unsigned long starting_pos = ftell(input);
-    UINT4 nSamples=0;
+    UINT4 nSamples = *nLines;
 
-    INT4 ch;
-    while ( (ch = getc(input)) != EOF) {
-        if (ch=='\n')
-            ++nSamples;
+    if (nSamples == 0) {
+        INT4 ch;
+        while ( (ch = getc(input)) != EOF) {
+            if (ch=='\n')
+                ++nSamples;
+        }
+        fseek(input,starting_pos,SEEK_SET);
     }
-    fseek(input,starting_pos,SEEK_SET);
 
     // Read in samples
     REAL8 *sampleArray;
