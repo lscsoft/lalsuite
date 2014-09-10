@@ -357,7 +357,6 @@ LALInferenceKmeans *LALInferenceRecursiveKmeans(gsl_matrix *data, UINT4 ntrials,
 
     /* Take the final centroids and make a fully self-consistent kmeans */
     gsl_matrix *centroids = split_kmeans->recursive_centroids;
-    LALInferenceKmeansDestroy(split_kmeans);
 
     k = centroids->size1;
     LALInferenceKmeans *kmeans = LALInferenceCreateKmeans(k, data, rng);
@@ -368,6 +367,7 @@ LALInferenceKmeans *LALInferenceRecursiveKmeans(gsl_matrix *data, UINT4 ntrials,
     gsl_matrix_memcpy(kmeans->centroids, centroids);
     LALInferenceKmeansRun(kmeans);
 
+    LALInferenceKmeansDestroy(split_kmeans);
     return kmeans;
 }
 
