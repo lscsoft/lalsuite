@@ -173,6 +173,7 @@ void LALInferenceInitGlitchVariables(LALInferenceRunState *runState, LALInferenc
 static void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState, LALInferenceVariables *currentParams) {
   UINT4 ncal = 5; /* Number of calibration nodes, log-distributed
 		     between fmin and fmax. */
+  UINT4 calOn = 1;
   REAL8 ampUncertaintyPrior = 0.05; /* 5% amplitude */
   REAL8 phaseUncertaintyPrior = 10.0*M_PI/180.0; /* 10 degrees phase */
   ProcessParamsTable *ppt = NULL;
@@ -199,6 +200,7 @@ static void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState,
 			  LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
   LALInferenceAddVariable(runState->priorArgs, "spcal_phase_uncertainty", &phaseUncertaintyPrior,
 			  LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+  LALInferenceAddVariable(currentParams, "spcal_active", &calOn, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
 
   ifo = runState->data;
   do {
