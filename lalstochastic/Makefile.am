@@ -40,8 +40,6 @@ user_environment = \
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = lalstochastic.pc
-noinst_DATA = lalstochastic-uninstalled.pc
-BUILT_SOURCES += lalstochastic-uninstalled.pc
 
 all-local:
 	@echo "";\

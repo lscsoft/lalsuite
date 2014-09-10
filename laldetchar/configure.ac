@@ -7,7 +7,6 @@ AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
   laldetchar.spec \
   laldetchar.pc \
-  laldetchar-uninstalled.pc \
   Makefile \
   debian/Makefile \
   include/Makefile \

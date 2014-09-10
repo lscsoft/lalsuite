@@ -7,7 +7,6 @@ AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
   lalxml.spec \
   lalxml.pc \
-  lalxml-uninstalled.pc \
   Makefile \
   debian/Makefile \
   include/Makefile \

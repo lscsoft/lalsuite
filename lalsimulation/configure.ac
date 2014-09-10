@@ -7,7 +7,6 @@ AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
   lalsimulation.spec \
   lalsimulation.pc \
-  lalsimulation-uninstalled.pc \
   Makefile \
   debian/Makefile \
   include/Makefile \

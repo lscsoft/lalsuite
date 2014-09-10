@@ -7,9 +7,7 @@ AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
   lal.spec \
   lal.pc \
-  lal-uninstalled.pc \
   lalsupport.pc \
-  lalsupport-uninstalled.pc \
   Makefile \
   debian/Makefile \
   include/Makefile \
