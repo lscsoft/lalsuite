@@ -39,22 +39,26 @@
 
 
 /**
- * Allocate, fill, and tune a Gaussian kernel density estimate given an array of points.
+ * Allocate, fill, and tune a Gaussian kernel density estimate from
+ *  an array of samples.
  *
- * Given a set of points, the distribution from which the points were sampled from is
- * estimated by a kernel density estimate (KDE), using a Gaussian kernal.  This routine
- * initializes a new KDE and sets the bandwidth according to Scott's rule.  From this
- * it is possible to both evaluate the estimate of the probability density function at
- * an arbitrary location, and generate more samples from the estimated distribution. A
- * mask can be provided to select a subset of the provided data, otherwise all data is
- * used.
- * @param[in] pts  A REAL8 array containing the points to estimate the distribution of.
+ * Given a set of points, the distribution from which the points were sampled
+ *  from is estimated by a kernel density estimate (KDE), using a Gaussian
+ *  kernal.  This routine initializes a new KDE and sets the bandwidth according
+ *  to Scott's rule.  From this it is possible to both evaluate the estimate of
+ *  the probability density function at an arbitrary location, and generate more
+ *  samples from the estimated distribution. A mask can be provided to select a
+ *  subset of the provided data, otherwise all data is used.
+ * @param[in] pts  Array containing the points to estimate the distribution of.
  * @param[in] npts The total number of points contained in \a pts.
  * @param[in] dim  The number of dimensions of the points contained in \a pts.
  * @param[in] mask An optional \a npts long 0/1 array to mask points in \a pts.
  * @return A LALInferenceKDE structure containing the KDE of the distribution.
  */
-LALInferenceKDE *LALInferenceNewKDE(REAL8 *pts, UINT4 npts, UINT4 dim, UINT4 *mask) {
+LALInferenceKDE *LALInferenceNewKDE(REAL8 *pts,
+                                    UINT4 npts,
+                                    UINT4 dim,
+                                    UINT4 *mask) {
     UINT4 i,j;
 
     /* Determine the total number of samples */
@@ -87,11 +91,12 @@ LALInferenceKDE *LALInferenceNewKDE(REAL8 *pts, UINT4 npts, UINT4 dim, UINT4 *ma
 
 
 /**
- * Allocate, fill, and tune a Gaussian kernel density estimate given a matrix of points.
+ * Allocate, fill, and tune a Gaussian kernel density estimate from
+ *  a matrix of points.
  *
- * Estimate the underlying distribution of points in a GSL matrix using a Gaussian
- * KDE.
- * @param[in] data A GSL matrix with rows containing samples from a target distribution.
+ * Estimate the underlying distribution of samples in a GSL matrix using a
+ *  Gaussian KDE.
+ * @param[in] data GSL matrix with rows of samples from a target distribution.
  * @param[in] mask An optional \a npts long 0/1 array to mask points in \a pts.
  * @return A LALInferenceKDE structure containing the KDE of the distribution.
  * \sa LALInferenceNewKDE()
@@ -133,9 +138,12 @@ LALInferenceKDE *LALInferenceNewKDEfromMat(gsl_matrix *data, UINT4 *mask) {
 /**
  * Construct an empty KDE structure.
  *
- * Create an empty LALInferenceKDE structure, allocated to handle the given size and dimension.
- * @param[in] npts The number of samples that will be used to estimate the distribution.
- * @param[in] dim  The number of dimensions that the probability density function will be estimated in.
+ * Create an empty LALInferenceKDE structure, allocated to handle the given size
+ *  and dimension.
+ * @param[in] npts Number of samples that will be used to estimate
+ *                  the distribution.
+ * @param[in] dim  Number of dimensions that the probability density function
+ *                  will be estimated in.
  * @return An allocated, empty LALInferenceKDE structure.
  * \sa LALInferenceKDE, LALInferenceSetKDEBandwidth()
  */
@@ -167,7 +175,9 @@ void LALInferenceDestroyKDE(LALInferenceKDE *kde) {
     if (kde) {
         if (kde->mean) gsl_vector_free(kde->mean);
         if (kde->cholesky_decomp_cov) gsl_matrix_free(kde->cholesky_decomp_cov);
-        if (kde->cholesky_decomp_cov_lower) gsl_matrix_free(kde->cholesky_decomp_cov_lower);
+        if (kde->cholesky_decomp_cov_lower)
+            gsl_matrix_free(kde->cholesky_decomp_cov_lower);
+
         if (kde->npts > 0) gsl_matrix_free(kde->data);
 
         if (kde->cov != NULL) gsl_matrix_free(kde->cov);
@@ -191,12 +201,14 @@ INT4 LALInferenceCholeskyDecompose(gsl_matrix *mat) {
 
     /* Turn off default GSL error handling (i.e. aborting), and catch
      * errors decomposing due to non-positive definite covariance matrices */
-    gsl_error_handler_t *default_gsl_error_handler = gsl_set_error_handler_off();
+    gsl_error_handler_t *default_gsl_error_handler =
+        gsl_set_error_handler_off();
 
     status = gsl_linalg_cholesky_decomp(mat);
     if (status) {
         if (status != GSL_EDOM) {
-            fprintf(stderr, "ERROR: Unexpected problem Cholesky-decomposing matrix.\n");
+            fprintf(stderr, "ERROR: Unexpected problem \
+                    Cholesky-decomposing matrix.\n");
             exit(-1);
         }
     }
@@ -210,7 +222,8 @@ INT4 LALInferenceCholeskyDecompose(gsl_matrix *mat) {
 /**
  * Calculate the bandwidth and normalization factor for a KDE.
  *
- * Use Scott's rule to determine the bandwidth, and corresponding normalization factor, for a KDE.
+ * Use Scott's rule to determine the bandwidth, and corresponding normalization
+ *  factor, for a KDE.
  * @param[in] KDE The kernel density estimate to estimate the bandwidth of.
  */
 void LALInferenceSetKDEBandwidth(LALInferenceKDE *kde) {
@@ -250,7 +263,10 @@ void LALInferenceSetKDEBandwidth(LALInferenceKDE *kde) {
     }
 
     det_cov = LALInferenceMatrixDet(kde->cov);
-    kde->log_norm_factor = log(kde->npts * sqrt(pow(2*LAL_PI, kde->dim) * det_cov));
+    kde->log_norm_factor =
+        log(kde->npts * sqrt(pow(2*LAL_PI, kde->dim) * det_cov));
+
+    return;
 }
 
 
@@ -317,7 +333,7 @@ REAL8 LALInferenceKDEEvaluatePoint(LALInferenceKDE *kde, REAL8 *point) {
  *
  * Draw a sample from a distribution, as estimated by a kernel density estimator.
  * @param[in] KDE The kernel density estimate to draw \a point from.
- * @param[in] rng A GSL random number generator to use for random number generation.
+ * @param[in] rng GSL random number generator to use.
  * @return The sample drawn from the distribution.
  */
 REAL8 *LALInferenceDrawKDESample(LALInferenceKDE *kde, gsl_rng *rng) {
@@ -341,7 +357,9 @@ REAL8 *LALInferenceDrawKDESample(LALInferenceKDE *kde, gsl_rng *rng) {
     }
 
     /* Scale and shift the uncorrelated unit-width sample */
-    gsl_blas_dgemv(CblasNoTrans, 1.0, kde->cholesky_decomp_cov_lower, unit_draw, 1.0, &pt.vector);
+    gsl_blas_dgemv(CblasNoTrans, 1.0,
+                    kde->cholesky_decomp_cov_lower, unit_draw,
+                    1.0, &pt.vector);
 
     gsl_vector_free(unit_draw);
     return point;
@@ -450,9 +468,9 @@ void LALInferenceComputeCovariance(gsl_matrix *cov, gsl_matrix *data) {
 /**
  * Determine the log of the sum of an array of exponentials.
  *
- * Utility for calculating the log of the sum of an array of exponentials.  Useful
- * for avoiding overflows.
- * @param[in] vals Array containing the values to be exponentiated, summed, and logged.
+ * Utility for calculating the log of the sum of an array of exponentials.
+ *  Useful for avoiding overflows.
+ * @param[in] vals Array of values to be exponentiated, summed, and logged.
  * @param[in] size Number of elements in \a vals.
  * @return The log of the sum of elements in \a vals.
  */
