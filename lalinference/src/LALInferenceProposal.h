@@ -307,6 +307,10 @@ void LALInferenceEnsembleWalkFull(LALInferenceRunState *runState, LALInferenceVa
 void LALInferenceEnsembleWalkIntrinsic(LALInferenceRunState *runState, LALInferenceVariables *pp);
 void LALInferenceEnsembleWalkExtrinsic(LALInferenceRunState *runState, LALInferenceVariables *pp);
 void LALInferenceEnsembleWalkNames(LALInferenceRunState *runState, LALInferenceVariables *ppi, const char **names);
+
+/** Proposes jumps in the spline calibration parameters, if present. */
+void LALInferenceSplineCalibrationProposal(LALInferenceRunState *runState, LALInferenceVariables *pp);
+
 /*@}*/
 
 #endif
