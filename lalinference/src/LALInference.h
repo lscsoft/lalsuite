@@ -152,6 +152,16 @@ extern size_t LALInferenceTypeSize[13];
  * This should only be accessed using the accessor functions below
  * Implementation may change to hash table so please use only the
  * accessor functions below.
+ *
+ * A note on memory ownership: each LALInferenceVariableItem() owns
+ * the memory for its contents.  This means after calling
+ * LALInferenceAddVariable() or LALInferenceSetVariable(), you should
+ * not free the memory assoicated with the new variable's value.  In
+ * fact, you should not access this memory through its original
+ * pointer again (access through pointers returned by
+ * LALInferenceGetVariable() is OK); the object may not be live in
+ * memory if its variable has been overwritten through another call to
+ * LALInferenceSetVariable().
  */
 typedef struct
 tagVariableItem

@@ -219,11 +219,29 @@ void LALInferenceSetVariable(LALInferenceVariables * vars, const char * name, vo
     XLAL_ERROR_VOID(XLAL_EINVAL, "Entry \"%s\" not found.", name);
   }
   if (item->vary==LALINFERENCE_PARAM_FIXED) return;
+
+  /* We own the memory for each of these types, and it's about to be
+     replaced by the new inputs. */
+  switch (item->type) {
+  case LALINFERENCE_gslMatrix_t:
+    gsl_matrix_free(*(gsl_matrix **)item->value);
+    break;
+  case LALINFERENCE_REAL8Vector_t:
+    XLALDestroyREAL8Vector(*(REAL8Vector **)item->value);
+    break;
+  case LALINFERENCE_UINT4Vector_t:
+    XLALDestroyUINT4Vector(*(UINT4Vector **)item->value);
+    break;
+  default:
+    /* Do nothing for the other cases.  Possibly should deal with
+       string_t, runphase_ptr_t and void_ptr_t, too, but these cases
+       are too complicated to handle! */
+    break;
+  }
+
   memcpy(item->value,value,LALInferenceTypeSize[item->type]);
   return;
 }
-
-
 
 void LALInferenceAddVariable(LALInferenceVariables * vars, const char * name, void *value, LALInferenceVariableType type, LALInferenceParamVaryType vary)
 /* Add the variable name with type type and value value to vars */
@@ -281,6 +299,25 @@ void LALInferenceRemoveVariable(LALInferenceVariables *vars,const char *name)
   }
   if(!parent) vars->head=this->next;
   else parent->next=this->next;
+
+  /* We own the memory for these types, so have to free. */
+  switch (this->type) {
+  case LALINFERENCE_gslMatrix_t:
+    gsl_matrix_free(*(gsl_matrix **)this->value);
+    break;
+  case LALINFERENCE_REAL8Vector_t:
+    XLALDestroyREAL8Vector(*(REAL8Vector **)this->value);
+    break;
+  case LALINFERENCE_UINT4Vector_t:
+    XLALDestroyUINT4Vector(*(UINT4Vector **)this->value);
+    break;
+  default:
+    /* Do nothing for the other cases.  Possibly should deal with
+       string_t, runphase_ptr_t and void_ptr_t, too, but these cases
+       are too complicated to handle! */
+    break;
+  }
+
   XLALFree(this->value);
   this->value=NULL;
   XLALFree(this);
