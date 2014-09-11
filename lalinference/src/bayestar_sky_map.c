@@ -88,7 +88,6 @@
 #include <gsl/gsl_sf_expint.h>
 #include <gsl/gsl_sf_gamma.h>
 #include <gsl/gsl_test.h>
-#include <gsl/gsl_version.h> /* FIXME: remove, depend on GSL >= 1.15 */
 
 #include "logaddexp.h"
 
@@ -294,7 +293,6 @@ static const unsigned int nglfixed = 10;
 static const unsigned int ntwopsi = 10;
 
 
-#if GSL_MINOR_VERSION >= 15 /* FIXME: add dependency on GSL >= 1.15 */
 static double toa_phoa_snr_log_radial_integral(
     double r1, double r2, double p2, double p, double b, int k,
     const gsl_integration_glfixed_table *gltable)
@@ -384,7 +382,6 @@ static double toa_phoa_snr_log_radial_integral(
 
     return result;
 }
-#endif /* GSL_MINOR_VERSION >= 1.15 */
 
 
 static double complex exp_i(double phi) {
@@ -580,7 +577,6 @@ double *bayestar_sky_map_toa_phoa_snr(
     const double *phoas,            /* Phases on arrival */
     const double *snrs              /* SNRs */
 ) {
-#if GSL_MINOR_VERSION >= 15 /* FIXME: add dependency on GSL >= 1.15 */
     double complex exp_i_phoas[nifos];
     for (unsigned int iifo = 0; iifo < nifos; iifo ++)
         exp_i_phoas[iifo] = exp_i(phoas[iifo]);
@@ -728,33 +724,6 @@ double *bayestar_sky_map_toa_phoa_snr(
 
     /* Done! */
     return P;
-#else /* GSL_MINOR_VERSION < 15 */
-    /* Unused arguments */
-    (void)inout_npix,
-    (void)min_distance;
-    (void)max_distance;
-    (void)prior_distance_power;
-    (void)gmst;
-    (void)nifos;
-    (void)nsamples;
-    (void)sample_rate;
-    (void)acors;
-    (void)responses;
-    (void)locations;
-    (void)horizons;
-    (void)toas;
-    (void)phoas;
-    (void)snrs;
-    /* Unused functions */
-    (void)my_gsl_error;
-    (void)ignore_underflow;
-    (void)adaptive_sky_map_sort;
-    (void)adaptive_sky_map_refine;
-    (void)adaptive_sky_map_alloc;
-    (void)adaptive_sky_map_rasterize;
-    (void)logaddexp;
-    GSL_ERROR_NULL("requires GSL >= 1.15", GSL_EFAILED);
-#endif /* GSL_MINOR_VERSION >= 15 */
 }
 
 
@@ -1069,7 +1038,6 @@ static void test_signal_amplitude_model(
 }
 
 
-#if GSL_MINOR_VERSION >= 15 /* FIXME: add dependency on GSL >= 1.15 */
 static void test_toa_phoa_snr_log_radial_integral(
     double expected, double tol, double r1, double r2, double p2, double b, int k)
 {
@@ -1093,7 +1061,6 @@ static void test_toa_phoa_snr_log_radial_integral(
         result, expected, tol, "testing toa_phoa_snr_log_radial_integral("
         "r1=%g, r2=%g, p2=%g, b=%g, k=%d)", r1, r2, p2, b, k);
 }
-#endif /* GSL_MINOR_VERSION >= 1.15 */
 
 
 int bayestar_test(void)
@@ -1125,7 +1092,6 @@ int bayestar_test(void)
                     for (unsigned long epoch = 1000000000000000000; epoch <= 1000086400000000000; epoch += 3600000000000)
                         test_signal_amplitude_model(ra, dec, inc, pol, epoch, "H1");
 
-#if GSL_MINOR_VERSION >= 15 /* FIXME: add dependency on GSL >= 1.15 */
     /* Tests of radial integrand with p2=0, b=0. */
     test_toa_phoa_snr_log_radial_integral(0, 0, 0, 1, 0, 0, 0);
     test_toa_phoa_snr_log_radial_integral(0, 0, exp(1), exp(2), 0, 0, -1);
@@ -1147,7 +1113,6 @@ int bayestar_test(void)
     test_toa_phoa_snr_log_radial_integral(-2.43264, 1e-5, 0, 1, 1, 1, 2);
     test_toa_phoa_snr_log_radial_integral(-2.43808, 1e-5, 0.5, 1, 1, 1, 2);
     test_toa_phoa_snr_log_radial_integral(-0.707038, 1e-5, 1, 1.5, 1, 1, 2);
-#endif /* GSL_MINOR_VERSION >= 1.15 */
 
     return gsl_test_summary();
 }

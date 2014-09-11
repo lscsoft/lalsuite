@@ -7,7 +7,6 @@ AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
   lalframe.spec \
   lalframe.pc \
-  lalframe-uninstalled.pc \
   Makefile \
   debian/Makefile \
   include/Makefile \

@@ -40,8 +40,6 @@ user_environment = \
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = lalinspiral.pc
-noinst_DATA = lalinspiral-uninstalled.pc
-BUILT_SOURCES += lalinspiral-uninstalled.pc
 
 all-local:
 	@echo "";\

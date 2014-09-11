@@ -39,8 +39,6 @@ user_environment = \
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = lalxml.pc
-noinst_DATA = lalxml-uninstalled.pc
-BUILT_SOURCES += lalxml-uninstalled.pc
 
 all-local:
 	@echo "";\

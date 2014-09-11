@@ -39,8 +39,6 @@ user_environment = \
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = laldetchar.pc
-noinst_DATA = laldetchar-uninstalled.pc
-BUILT_SOURCES += laldetchar-uninstalled.pc
 
 all-local:
 	@echo "";\

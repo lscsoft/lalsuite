@@ -39,8 +39,6 @@ user_environment = \
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = lalsimulation.pc
-noinst_DATA = lalsimulation-uninstalled.pc
-BUILT_SOURCES += lalsimulation-uninstalled.pc
 
 all-local:
 	@echo "";\

@@ -42,8 +42,6 @@ user_environment = \
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = lal.pc lalsupport.pc
-noinst_DATA = lal-uninstalled.pc lalsupport-uninstalled.pc
-BUILT_SOURCES += lal-uninstalled.pc lalsupport-uninstalled.pc
 
 all-local:
 	@echo "";\

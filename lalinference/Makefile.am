@@ -39,8 +39,6 @@ user_environment = \
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = lalinference.pc
-noinst_DATA = lalinference-uninstalled.pc
-BUILT_SOURCES += lalinference-uninstalled.pc
 
 all-local:
 	@echo "";\
