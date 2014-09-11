@@ -876,10 +876,10 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
         for(LALInferenceVariableItem *item=runState->currentParams->head;item;item=item->next){
             char tmpname[MAX_STRLEN]=""; 
             sprintf(tmpname,"%s_%s",item->name,ACCEPTSUFFIX);
-            REAL8 *accepted=(REAL8 *)LALInferenceGetVariable(runState->proposalArgs,tmpname); 
+            REAL8 *naccepted=(REAL8 *)LALInferenceGetVariable(runState->proposalArgs,tmpname); 
             sprintf(tmpname,"%s_%s",item->name,PROPOSEDSUFFIX);
-            REAL8 *proposed=(REAL8 *)LALInferenceGetVariable(runState->proposalArgs,tmpname); 
-              fprintf(statfile,"%f\t",*accepted/( *proposed==0 ? 1.0 : *proposed ));
+            REAL8 *nproposed=(REAL8 *)LALInferenceGetVariable(runState->proposalArgs,tmpname); 
+              fprintf(statfile,"%f\t",*naccepted/( *nproposed==0 ? 1.0 : *nproposed ));
         }
         fprintf(statfile,"\n");
         fflush(statfile);
