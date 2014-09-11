@@ -38,7 +38,6 @@ void ensemble_sampler(struct tagLALInferenceRunState *runState) {
     INT4 MPIrank, MPIsize;
     INT4 walker, nwalkers_per_thread, nsteps;
     INT4 skip, update_interval, verbose;
-    INT4 i,t,c;
     INT4 *step;
     char **walker_output_names = NULL;
 
@@ -201,7 +200,6 @@ char *LALInferenceInitializeEnsembleOutput(LALInferenceRunState *runState,
     char *outfile_name = NULL;
     char *prop_name = NULL;
     FILE *walker_output = NULL;
-    FILE *prop_output = NULL;
 
     /* Randomseed used to prevent overwriting when peforming multiple analyses */
     randomseed = *(UINT4*) LALInferenceGetVariable(runState->algorithmParams,"random_seed");
@@ -253,7 +251,6 @@ void LALInferencePrintEnsembleSample(LALInferenceRunState *runState,
                                         char **walker_output_names,
                                         UINT4 walker) {
     REAL8 null_likelihood, timestamp, timestamp_epoch;
-    REAL8 networkSNR, normed_logl;
     REAL8 *currentPriors, *currentLikelihoods;
     INT4 step;
     UINT4 benchmark;
@@ -326,9 +323,9 @@ void LALInferencePrintEnsembleHeader(LALInferenceRunState *runState,
     REAL8TimeSeries *time_data;
     INT4 ndim, int_pn_order, waveform = 0;
     UINT4 nifo, randomseed, benchmark;
-    REAL8 null_likelihood, normed_logl, pn_order;
+    REAL8 null_likelihood, normed_logl, pn_order=-1.0;
     REAL8 network_snr, sampling_rate;
-    REAL8 delta_t, timestamp, f_ref = 0.0;
+    REAL8 timestamp, f_ref = 0.0;
     struct timeval tv;
     char *cmd_str;
 
@@ -356,9 +353,10 @@ void LALInferencePrintEnsembleHeader(LALInferenceRunState *runState,
         waveform = *(INT4 *) LALInferenceGetVariable(currentParamArray[walker], "LAL_APPROXIMANT");
 
     /* Determine post-Newtonian (pN) order (half of the integer stored in currentParams) */
-    if (LALInferenceCheckVariable(currentParamArray[walker], "LAL_PNORDER"))
+    if (LALInferenceCheckVariable(currentParamArray[walker], "LAL_PNORDER")) {
         int_pn_order = *(INT4*)LALInferenceGetVariable(currentParamArray[walker], "LAL_PNORDER");
-    pn_order = int_pn_order/2.0;
+        pn_order = int_pn_order/2.0;
+    }
 
     /* Calculated the network signal-to-noise ratio if an injection was done */
     ifo_data = runState->data;
@@ -392,12 +390,12 @@ void LALInferencePrintEnsembleHeader(LALInferenceRunState *runState,
     ifo_data=runState->data;
     while(ifo_data){
         time_data = ifo_data->timeData;
-        delta_t = time_data->deltaT;
+        sampling_rate = 1.0/time_data->deltaT;
         fprintf(walker_output,
-                "%16s\t%16.8lf\t%10.2lf\t%10.2lf\t%15.7lf\t%12d\n",
+                "%16s\t%16.8lf\t%10.2lf\t%10.2lf\t%15.7lf\t%12d\t%10.2lf\n",
                 ifo_data->detector->frDetector.name,
                 ifo_data->SNR, ifo_data->fLow, ifo_data->fHigh,
-                XLALGPSGetREAL8(&(ifo_data->epoch)), time_data->data->length);
+                XLALGPSGetREAL8(&(ifo_data->epoch)), time_data->data->length, sampling_rate);
         ifo_data=ifo_data->next;
     }
     fprintf(walker_output, "\n\n\n");

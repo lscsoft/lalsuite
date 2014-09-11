@@ -3602,7 +3602,6 @@ void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runSta
  * @param[in]  ntrials  Number of kmeans attempts at fixed k to find optimal BIC.
  */
 void LALInferenceInitClusteredKDEProposal(LALInferenceRunState *runState, LALInferenceClusteredKDE *kde, REAL8 *array, UINT4 nSamps, LALInferenceVariables *params, const char *name, REAL8 weight, LALInferenceKmeans* (*cluster_method)(gsl_matrix*, UINT4, gsl_rng*), UINT4 ntrials) {
-    INT4 i;
 
     strcpy(kde->name, name);
     INT4 dim = LALInferenceGetVariableDimensionNonFixed(params);

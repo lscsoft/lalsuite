@@ -56,7 +56,7 @@ void LALInferenceInitEnsemble(LALInferenceRunState *state) {
                                             "nwalkers_per_thread");
 
     current_param = state->currentParamArray[0];
-    INT4 ndim =
+    UINT4 ndim =
         LALInferenceGetVariableDimensionNonFixed(current_param);
 
     ppt = LALInferenceGetProcParamVal(state->commandLine, "--init-samples");
@@ -65,7 +65,7 @@ void LALInferenceInitEnsemble(LALInferenceRunState *state) {
         FILE *input = fopen(infile, "r");
 
         char params[128][128];
-        INT4 *col_order = XLALMalloc(ndim *sizeof(INT4));
+        UINT4 *col_order = XLALMalloc(ndim *sizeof(INT4));
         UINT4 ncols;
 
         /* Parse parameter names */
@@ -114,9 +114,10 @@ void LALInferenceInitEnsemble(LALInferenceRunState *state) {
                 ++nsamples;
         }
 
+        UINT4 nlines = (UINT4) nwalkers_per_thread;
         sampleArray = LALInferenceParseDelimitedAscii(input,
                                                         ncols, valid_cols,
-                                                        &nwalkers_per_thread);
+                                                        &nlines);
 
         REAL8 *parameters = XLALMalloc(ndim * sizeof(REAL8));
         for (walker = 0; walker < nwalkers_per_thread; walker++) {
@@ -302,7 +303,6 @@ void initializeMCMC(LALInferenceRunState *runState) {
         return;
     }
 
-    INT4 tmpi=0;
     unsigned int randomseed=0;
     ProcessParamsTable *commandLine = runState->commandLine;
     ProcessParamsTable *ppt = NULL;
@@ -546,7 +546,6 @@ void initializeMCMC(LALInferenceRunState *runState) {
 /* Ensure ensemble distributed according to prior */
 void sample_prior(LALInferenceRunState *runState) {
     INT4 update_interval, nprior_steps, nsteps;
-    INT4 walker, nwalkers_per_thread;
 
     LALInferenceVariables *algorithmParams = runState->algorithmParams;
 
@@ -555,10 +554,6 @@ void sample_prior(LALInferenceRunState *runState) {
     update_interval =
         *(INT4 *) LALInferenceGetVariable(algorithmParams,
                                             "update_interval");
-
-    nwalkers_per_thread =
-        *(INT4 *) LALInferenceGetVariable(algorithmParams,
-                                            "nwalkers_per_thread");
 
     nprior_steps = 2 * update_interval - 1;
     LALInferenceSetVariable(algorithmParams, "nsteps", &nprior_steps);
