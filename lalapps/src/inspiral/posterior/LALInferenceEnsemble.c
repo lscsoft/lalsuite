@@ -41,6 +41,7 @@ void sample_prior(LALInferenceRunState *runState);
 /* Read samples from file as initial state of ensemble */
 void LALInferenceInitEnsemble(LALInferenceRunState *state);
 void LALInferenceInitEnsemble(LALInferenceRunState *state) {
+    LALInferenceVariables *current_param;
     LALInferenceVariableItem *item;
     LALInferenceIFOData *headData;
     ProcessParamsTable *ppt;
@@ -50,9 +51,13 @@ void LALInferenceInitEnsemble(LALInferenceRunState *state) {
     INT4 MPIrank, MPIsize, walker;
     MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
     MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
-    INT4 nwalkers_per_thread = *(INT4 *) LALInferenceGetVariable(state->algorithmParams, "nwalkers_per_thread");
+    INT4 nwalkers_per_thread =
+        *(INT4 *) LALInferenceGetVariable(state->algorithmParams,
+                                            "nwalkers_per_thread");
 
-    INT4 ndim = LALInferenceGetVariableDimensionNonFixed(state->currentParamArray[0]);
+    current_param = state->currentParamArray[0];
+    INT4 ndim =
+        LALInferenceGetVariableDimensionNonFixed(current_param);
 
     ppt = LALInferenceGetProcParamVal(state->commandLine, "--init-samples");
     if (ppt) {
@@ -71,14 +76,16 @@ void LALInferenceInitEnsemble(LALInferenceRunState *state) {
         UINT4 *valid_cols = XLALMalloc(ncols * sizeof(UINT4));
 
         for (j = 0; j < ncols; j++) {
-            char* internal_param_name = XLALMalloc(512*sizeof(char));
-            LALInferenceTranslateExternalToInternalParamName(internal_param_name, params[j]);
+            char* internal_pname = XLALMalloc(512*sizeof(char));
+            LALInferenceTranslateExternalToInternalParamName(internal_pname,
+                                                                params[j]);
 
             i=0;
             valid_cols[j] = 0;
-            for (item = state->currentParamArray[0]->head; item; item = item->next) {
-                if (LALInferenceCheckVariableNonFixed(state->currentParamArray[0], item->name)) {
-                    if (!strcmp(item->name, internal_param_name)) {
+            for (item = current_param->head; item; item = item->next) {
+                if (LALInferenceCheckVariableNonFixed(current_param,
+                                                        item->name)) {
+                    if (!strcmp(item->name, internal_pname)) {
                         col_order[i] = nvalid_cols;
                         nvalid_cols++;
                         valid_cols[j] = 1;
@@ -88,13 +95,14 @@ void LALInferenceInitEnsemble(LALInferenceRunState *state) {
                 }
             }
 
-            XLALFree(internal_param_name);
+            XLALFree(internal_pname);
         }
 
         /* Double check dimensions */
         if (nvalid_cols != ndim) {
             fprintf(stderr, "Inconsistent dimensions for starting state!\n");
-            fprintf(stderr, "Sampling in %i dimensions, %i read from file!\n", ndim, nvalid_cols);
+            fprintf(stderr, "Sampling in %i dimensions, %i read from file!\n",
+                    ndim, nvalid_cols);
             exit(1);
         }
 
@@ -106,13 +114,17 @@ void LALInferenceInitEnsemble(LALInferenceRunState *state) {
                 ++nsamples;
         }
 
-        sampleArray = LALInferenceParseDelimitedAscii(input, ncols, valid_cols, &nwalkers_per_thread);
+        sampleArray = LALInferenceParseDelimitedAscii(input,
+                                                        ncols, valid_cols,
+                                                        &nwalkers_per_thread);
 
         REAL8 *parameters = XLALMalloc(ndim * sizeof(REAL8));
         for (walker = 0; walker < nwalkers_per_thread; walker++) {
             for (i = 0; i < ndim; i++)
                 parameters[i] = sampleArray[walker*ndim + col_order[i]];
-            LALInferenceCopyArrayToVariables(parameters, state->currentParamArray[walker]);
+
+            LALInferenceCopyArrayToVariables(parameters,
+                                              state->currentParamArray[walker]);
         }
 
         /* Cleanup */
@@ -123,34 +135,47 @@ void LALInferenceInitEnsemble(LALInferenceRunState *state) {
     } else {
         #pragma omp parallel for
         for (walker = 0; walker < nwalkers_per_thread; walker++) {
-            LALInferenceDrawApproxPrior(state, state->currentParamArray[walker], state->currentParamArray[walker]);
-            while (state->prior(state, state->currentParamArray[walker], state->modelArray[walker]) <= -DBL_MAX)
-                LALInferenceDrawApproxPrior(state, state->currentParamArray[walker], state->currentParamArray[walker]);
+            LALInferenceDrawApproxPrior(state,
+                                        state->currentParamArray[walker],
+                                        state->currentParamArray[walker]);
+            while (state->prior(state,
+                                state->currentParamArray[walker],
+                                state->modelArray[walker]) <= -DBL_MAX) {
+                LALInferenceDrawApproxPrior(state,
+                                            state->currentParamArray[walker],
+                                            state->currentParamArray[walker]);
+            }
         }
     }
 
-    /* Determine null loglikelihood that will be subtracted from printed likelihoods */
+    /* Determine null loglikelihood to be subtracted from printed likelihoods */
     REAL8 null_likelihood = 0.0;
     if (state->likelihood==&LALInferenceUndecomposedFreqDomainLogLikelihood ||
-            state->likelihood==&LALInferenceFreqDomainLogLikelihood){
+        state->likelihood==&LALInferenceFreqDomainLogLikelihood){
+
         null_likelihood = LALInferenceNullLogLikelihood(state->data);
 
-    /* If no simple null likelihood method exists, scale signal into nothingness */
-    } else if (state->likelihood == &LALInferenceFreqDomainStudentTLogLikelihood || 
+    /* If no simple null likelihood method exists, scale signal away */
+    } else if (state->likelihood == &LALInferenceFreqDomainStudentTLogLikelihood ||
                 (state->likelihood == &LALInferenceMarginalisedTimeLogLikelihood &&
                 (!LALInferenceGetProcParamVal(state->commandLine, "--malmquistPrior") ||
                 !(LALInferenceGetProcParamVal(state->commandLine,"--psdFit") ||
                   LALInferenceGetProcParamVal(state->commandLine,"--glitchFit"))))) {
+
         headData = state->data;
-        REAL8 d = *(REAL8 *)LALInferenceGetVariable(state->currentParamArray[0], "distance");
+        REAL8 d = *(REAL8 *)LALInferenceGetVariable(state->currentParamArray[0],
+                                                    "distance");
         REAL8 bigD = INFINITY;
 
         /* Don't store to cache, since distance scaling won't work */
-        LALSimInspiralWaveformCache *cache = state->modelArray[0]->waveformCache;
+        LALSimInspiralWaveformCache *cache =
+            state->modelArray[0]->waveformCache;
         state->modelArray[0]->waveformCache = NULL;
 
         LALInferenceSetVariable(state->currentParamArray[0], "distance", &bigD);
-        null_likelihood = state->likelihood(state->currentParamArray[0], state->data, state->modelArray[0]);
+        null_likelihood = state->likelihood(state->currentParamArray[0],
+                                            state->data,
+                                            state->modelArray[0]);
 
         /* Restore cache to data structure */
         while (headData != NULL) {
@@ -162,16 +187,19 @@ void LALInferenceInitEnsemble(LALInferenceRunState *state) {
         /* Replace finite distance */
         LALInferenceSetVariable(state->currentParamArray[0], "distance", &d);
     }
-    LALInferenceAddVariable(state->proposalArgs, "nullLikelihood", &null_likelihood,
-                            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+
+    LALInferenceAddVariable(state->proposalArgs, "nullLikelihood",
+                            &null_likelihood, LALINFERENCE_REAL8_t,
+                            LALINFERENCE_PARAM_FIXED);
 
     /* Initialize starting likelihood and prior */
     state->currentPriors = XLALMalloc(nwalkers_per_thread * sizeof(REAL8));
     state->currentLikelihoods = XLALMalloc(nwalkers_per_thread * sizeof(REAL8));
     for (walker = 0; walker < nwalkers_per_thread; walker++) {
-        state->currentPriors[walker] = state->prior(state,
-                                                    state->currentParamArray[walker],
-                                                    state->modelArray[walker]);
+        state->currentPriors[walker] =
+            state->prior(state,
+                            state->currentParamArray[walker],
+                            state->modelArray[walker]);
 
         state->currentLikelihoods[walker] = 0.0;
     }
@@ -183,9 +211,10 @@ void LALInferenceInitEnsemble(LALInferenceRunState *state) {
     /* Set starting likelihood values (prior function hasn't changed) */
     #pragma omp parallel for
     for (walker = 0; walker < nwalkers_per_thread; walker++)
-        state->currentLikelihoods[walker] = state->likelihood(state->currentParamArray[walker],
-                                                                 state->data,
-                                                                 state->modelArray[walker]);
+        state->currentLikelihoods[walker] =
+            state->likelihood(state->currentParamArray[walker],
+                                state->data,
+                                state->modelArray[walker]);
 }
 
 LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
@@ -311,7 +340,10 @@ void initializeMCMC(LALInferenceRunState *runState) {
     } else if (LALInferenceGetProcParamVal(commandLine, "--malmquistprior")) {
         printf("Using malmquist prior.\n");
         malmquist = 1;
-        LALInferenceAddVariable(runState->priorArgs, "malmquist", &malmquist, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
+        LALInferenceAddVariable(runState->priorArgs,
+                                "malmquist", &malmquist,
+                                LALINFERENCE_UINT4_t,
+                                LALINFERENCE_PARAM_OUTPUT);
         runState->prior=&LALInferenceInspiralPrior;
     } else {
         runState->prior=&LALInferenceInspiralPriorNormalised;
@@ -322,24 +354,38 @@ void initializeMCMC(LALInferenceRunState *runState) {
         REAL8 malmquist_second_loudest = 5.0;
         REAL8 malmquist_network = 0.0;
 
-        ppt = LALInferenceGetProcParamVal(commandLine,"--malmquist-loudest-snr");
+        ppt = LALInferenceGetProcParamVal(commandLine,
+                                            "--malmquist-loudest-snr");
         if (ppt)
             malmquist_loudest = atof(ppt->value);
 
-        ppt = LALInferenceGetProcParamVal(commandLine,"--malmquist-second-loudest-snr");
+        ppt = LALInferenceGetProcParamVal(commandLine,
+                                            "--malmquist-second-loudest-snr");
         if (ppt)
             malmquist_second_loudest = atof(ppt->value);
 
-        ppt = LALInferenceGetProcParamVal(commandLine,"--malmquist-network-snr");
+        ppt = LALInferenceGetProcParamVal(commandLine,
+                                            "--malmquist-network-snr");
         if (ppt)
             malmquist_network = atof(ppt->value);
 
-        LALInferenceAddVariable(runState->priorArgs, "malmquist_loudest_snr",
-                &malmquist_loudest, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
-        LALInferenceAddVariable(runState->priorArgs, "malmquist_second_loudest_snr",
-                &malmquist_second_loudest, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
-        LALInferenceAddVariable(runState->priorArgs, "malmquist_network_snr",
-                &malmquist_network, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
+        LALInferenceAddVariable(runState->priorArgs,
+                                "malmquist_loudest_snr",
+                                &malmquist_loudest,
+                                LALINFERENCE_REAL8_t,
+                                LALINFERENCE_PARAM_OUTPUT);
+
+        LALInferenceAddVariable(runState->priorArgs,
+                                "malmquist_second_loudest_snr",
+                                &malmquist_second_loudest,
+                                LALINFERENCE_REAL8_t,
+                                LALINFERENCE_PARAM_OUTPUT);
+
+        LALInferenceAddVariable(runState->priorArgs,
+                                "malmquist_network_snr",
+                                &malmquist_network,
+                                LALINFERENCE_REAL8_t,
+                                LALINFERENCE_PARAM_OUTPUT);
     }
 
     /* Print more stuff */
@@ -355,7 +401,9 @@ void initializeMCMC(LALInferenceRunState *runState) {
         INT4 requested_nwalkers = atoi(ppt->value);
 
         /* Round up to have consistent number of walkers across MPI threads */
-        REAL8 requested_nwalkers_per_thread =  floor((REAL8)requested_nwalkers / (REAL8)MPIsize);
+        REAL8 requested_nwalkers_per_thread =
+            floor((REAL8)requested_nwalkers / (REAL8)MPIsize);
+
         if (requested_nwalkers % MPIsize != 0.0) {
             nwalkers_per_thread = (INT4)requested_nwalkers_per_thread + 1;
             nwalkers = MPIsize * nwalkers_per_thread;
@@ -421,48 +469,66 @@ void initializeMCMC(LALInferenceRunState *runState) {
     gsl_rng_set(runState->GSLrandom, randomseed);
 
      /* Set up CBC model and parameter array */
-    runState->modelArray = XLALMalloc(nwalkers_per_thread * sizeof(LALInferenceModel*));
-    runState->currentParamArray = XLALMalloc(nwalkers_per_thread * sizeof(LALInferenceVariables*));
+    runState->modelArray =
+        XLALMalloc(nwalkers_per_thread * sizeof(LALInferenceModel*));
+
+    runState->currentParamArray =
+        XLALMalloc(nwalkers_per_thread * sizeof(LALInferenceVariables*));
 
     for (walker = 0; walker < nwalkers_per_thread; walker++) {
         runState->modelArray[walker] = LALInferenceInitCBCModel(runState);
 
-        runState->currentParamArray[walker] = XLALMalloc(sizeof(LALInferenceVariables));
-        memset(runState->currentParamArray[walker], 0, sizeof(LALInferenceVariables));
-        LALInferenceCopyVariables(runState->modelArray[walker]->params, runState->currentParamArray[walker]);
+        runState->currentParamArray[walker] =
+            XLALMalloc(sizeof(LALInferenceVariables));
+
+        memset(runState->currentParamArray[walker], 0,
+                sizeof(LALInferenceVariables));
+
+        LALInferenceCopyVariables(runState->modelArray[walker]->params,
+                                    runState->currentParamArray[walker]);
     }
 
-    /* Have currentParams in runState point to the first parameter set, since currentParams
-     *   is often used to count dimensions, determine variable names, etc. */
+    /* Have currentParams in runState point to the first parameter set,
+     *  since currentParams is often used to count dimensions, determine
+     *  variable names, etc. */
     runState->currentParams = runState->currentParamArray[0];
 
     /* Store flags to keep from checking the command line all the time */
-    LALInferenceAddVariable(runState->algorithmParams,"verbose", &verbose,
+    LALInferenceAddVariable(runState->algorithmParams,
+                            "verbose", &verbose,
                             LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
 
-    LALInferenceAddVariable(runState->algorithmParams, "nwalkers_per_thread", &nwalkers_per_thread,
+    LALInferenceAddVariable(runState->algorithmParams,
+                            "nwalkers_per_thread", &nwalkers_per_thread,
                             LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
 
-    LALInferenceAddVariable(runState->algorithmParams, "nwalkers", &nwalkers,
+    LALInferenceAddVariable(runState->algorithmParams,
+                            "nwalkers", &nwalkers,
                             LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
 
-    LALInferenceAddVariable(runState->algorithmParams, "nsteps", &nsteps,
+    LALInferenceAddVariable(runState->algorithmParams,
+                            "nsteps", &nsteps,
                             LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
 
-    LALInferenceAddVariable(runState->algorithmParams, "skip", &skip,
+    LALInferenceAddVariable(runState->algorithmParams,
+                            "skip", &skip,
                             LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
 
-    LALInferenceAddVariable(runState->algorithmParams, "update_interval", &update_interval,
+    LALInferenceAddVariable(runState->algorithmParams,
+                            "update_interval", &update_interval,
                             LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
 
-    LALInferenceAddVariable(runState->algorithmParams, "benchmark", &benchmark,
+    LALInferenceAddVariable(runState->algorithmParams,
+                            "benchmark", &benchmark,
                             LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
 
-    LALInferenceAddVariable(runState->algorithmParams, "random_seed", &randomseed,
-                            LALINFERENCE_UINT4_t,LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddVariable(runState->algorithmParams,
+                            "random_seed", &randomseed,
+                            LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
 
-    LALInferenceAddVariable(runState->algorithmParams, "step", &step,
-                            LALINFERENCE_UINT4_t,LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddVariable(runState->algorithmParams,
+                            "step", &step,
+                            LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
 
    /* Now make sure that everyone is running with un-correlated
        jumps!  We re-seed rank i process with the ith output of
@@ -477,15 +543,22 @@ void initializeMCMC(LALInferenceRunState *runState) {
 }
 
 
+/* Ensure ensemble distributed according to prior */
 void sample_prior(LALInferenceRunState *runState) {
     INT4 update_interval, nprior_steps, nsteps;
     INT4 walker, nwalkers_per_thread;
+
     LALInferenceVariables *algorithmParams = runState->algorithmParams;
 
-    /* Ensure ensemble distributed according to prior */
     nsteps = *(INT4 *) LALInferenceGetVariable(algorithmParams, "nsteps");
-    update_interval = *(INT4 *) LALInferenceGetVariable(algorithmParams, "update_interval");
-    nwalkers_per_thread = *(INT4 *) LALInferenceGetVariable(algorithmParams, "nwalkers_per_thread");
+
+    update_interval =
+        *(INT4 *) LALInferenceGetVariable(algorithmParams,
+                                            "update_interval");
+
+    nwalkers_per_thread =
+        *(INT4 *) LALInferenceGetVariable(algorithmParams,
+                                            "nwalkers_per_thread");
 
     nprior_steps = 2 * update_interval - 1;
     LALInferenceSetVariable(algorithmParams, "nsteps", &nprior_steps);
@@ -510,7 +583,8 @@ int main(int argc, char *argv[]){
     INT4 MPIrank;
     MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
 
-    if (MPIrank == 0) fprintf(stdout," ========== lalinference_ensemble ==========\n");
+    if (MPIrank == 0)
+        fprintf(stdout," ========== lalinference_ensemble ==========\n");
 
     /* Read command line and parse */
     ProcessParamsTable *procParams=LALInferenceParseCommandLine(argc,argv);
@@ -524,7 +598,8 @@ int main(int argc, char *argv[]){
     /* Set up structures for MCMC */
     initializeMCMC(runState);
 
-    /* Set up model struct and set currentVariables to match the initialized model params */
+    /* Set up model struct and set currentVariables to match the
+     *  initialized model params */
     runState->model = LALInferenceInitCBCModel(runState);
     runState->currentParams = XLALMalloc(sizeof(LALInferenceVariables));
     memset(runState->currentParams, 0, sizeof(LALInferenceVariables));
@@ -548,7 +623,8 @@ int main(int argc, char *argv[]){
     /* Call MCMC algorithm */
     runState->algorithm(runState);
 
-    if (MPIrank == 0) printf(" ========== main(): finished. ==========\n");
+    if (MPIrank == 0)
+        printf(" ========== main(): finished. ==========\n");
 
     MPI_Finalize();
     return 0;
