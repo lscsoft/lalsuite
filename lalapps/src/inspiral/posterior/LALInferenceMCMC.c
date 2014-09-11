@@ -253,7 +253,6 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 /* and initializes other variables accordingly.                     */
 {
   LALInferenceRunState *irs=NULL;
-  LALInferenceIFOData *ifoPtr, *ifoListStart;
   unsigned int n_basis, n_samples, time_steps;
   n_basis = 965;//TODO: have it read from file or from command line.
   
@@ -291,9 +290,6 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
     LALInferenceSetupROQ(irs->data, irs->model, commandLine);
     fprintf(stdout, " ==== LALInferenceSetupROQ(): finished. ====\n");
     
-    ifoPtr = irs->data;
-    ifoListStart = irs->data;
-
     irs->currentLikelihood=LALInferenceNullLogLikelihood(irs->data);
     printf("Injection Null Log Likelihood: %g\n", irs->currentLikelihood);
   }
