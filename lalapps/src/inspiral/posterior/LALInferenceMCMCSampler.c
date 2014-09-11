@@ -838,7 +838,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
       if (LALInferenceGetProcParamVal(runState->commandLine, "--output-SNRs")) {
           headIFO = runState->data;
-          UINT4 ifo = 0;
+          ifo = 0;
           while (headIFO != NULL) {
             fprintf(chainoutput, "%f\t", runState->currentIFOSNRs[ifo]);
             headIFO = headIFO->next;

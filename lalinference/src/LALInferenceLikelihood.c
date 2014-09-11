@@ -2451,7 +2451,6 @@ void LALInferenceNetworkSNR(LALInferenceVariables *currentParams,
   double ra=0.0, dec=0.0, psi=0.0, gmst=0.0;
   double GPSdouble=0.0;
   LIGOTimeGPS GPSlal;
-  double signal2noise=0.0;
   double deltaT, TwoOverNDeltaT, deltaF;
   double timeTmp;
   double mc;
