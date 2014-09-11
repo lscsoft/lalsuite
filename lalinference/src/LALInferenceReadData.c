@@ -2318,8 +2318,8 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
   REAL8 chisquared;
   REAL8 timedelay;  /* time delay b/w iterferometer & geocenter w.r.t. sky location */
   REAL8 timeshift;  /* time shift (not necessarily same as above)                   */
-  REAL8 twopit, f, re, im, dre, dim, newRe, newIm;
-  INT4 i, lower, upper;
+  REAL8 twopit, re, im, dre, dim, newRe, newIm;
+  UINT4 i, lower, upper;
 
   REAL8 temp=0.0;
   REAL8 NetSNR=0.0;

@@ -1131,7 +1131,7 @@ void LALInferenceProjectSampleOntoEigenvectors(LALInferenceVariables *params, gs
 /* Cache wrapper around another sampler */
 INT4 LALInferenceNestedSamplingCachedSampler(LALInferenceRunState *runState)
 {
-  INT4 Naccept;
+  INT4 Naccept=0;
   if(!LALInferenceCheckVariable(runState->algorithmParams,"proposalcache") || !LALInferenceCheckVariable(runState->algorithmParams,"proposalcachesize"))
   {
     fprintf(stderr,"Adding cache variables in the sampler\n");
