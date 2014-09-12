@@ -2696,6 +2696,10 @@ void LALInferenceSetupROQ(LALInferenceIFOData *IFOdata, LALInferenceModel *model
   FILE *out;
 	char tmp[128];
 
+  if (model->roq != NULL)
+      XLALFree(model->roq);
+
+  model->roq = XLALMalloc(sizeof(LALInferenceROQModel));
   
   while(thisData){
     thisData=thisData->next;
@@ -2767,6 +2771,11 @@ void LALInferenceSetupROQ(LALInferenceIFOData *IFOdata, LALInferenceModel *model
 	}
 
   model->roq->frequencyNodes = gsl_vector_calloc(n_basis);
+  model->roq->hplus = gsl_vector_complex_calloc(n_basis);
+  model->roq->hcross = gsl_vector_complex_calloc(n_basis);
+  model->roq->hstrain = gsl_vector_complex_calloc(n_basis);
+  model->roq->amp_squared = XLALMalloc(sizeof(REAL8));
+
   ppt=LALInferenceGetProcParamVal(commandLine,"--roqnodes");
   tempfp = fopen(ppt->value, "rb");
   gsl_vector_fread(tempfp, model->roq->frequencyNodes);
@@ -2781,7 +2790,7 @@ void LALInferenceSetupROQ(LALInferenceIFOData *IFOdata, LALInferenceModel *model
   if(LALInferenceGetProcParamVal(commandLine,"--roqnodes")){
     thisData=IFOdata;
     while (thisData) {
-      thisData->roq = XLALCalloc(1, sizeof(LALInferenceROQData));
+      thisData->roq = XLALMalloc(sizeof(LALInferenceROQData));
 
       sprintf(tmp, "--%s-roqweights", thisData->name);
       ppt = LALInferenceGetProcParamVal(commandLine,tmp);
