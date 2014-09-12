@@ -1114,7 +1114,8 @@ int XLALFrameUFrChanVectorCompress_FrameL_(LALFrameUFrChan * channel, int compre
     vect = XLALFrameUFrChanVectorPtr(channel);
     if (!vect)
         XLAL_ERROR(XLAL_EFUNC);
-    FrVectCompress(vect, compressLevel, 0);
+    /* gzip level -1 is default compression */
+    FrVectCompress(vect, compressLevel, -1);
     return 0;
 }
 
