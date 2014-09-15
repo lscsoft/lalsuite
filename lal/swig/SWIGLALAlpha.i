@@ -111,35 +111,35 @@ typedef struct {
 %typemap(in, noblock=1) const gsl_vector##NAME* (void *argp = 0, int res = 0, gsl_vector##NAME##_view temp, void *temp_data = 0) %{
   res = SWIG_ConvertPtr($input, &argp, $descriptor, 0 /*$disown*/ | %convertptr_flags);
   if (!SWIG_IsOK(res)) {
-#if !($disown)
-    size_t numel = 0;
-    size_t dims[] = {0};
-    void *data = NULL;
-    // swiglal_array_typeid input type: TYPE*
-    res = %swiglal_array_viewin(TYPE*)(swiglal_no_self(), $input, %as_voidptrptr(&data),
-                                       sizeof(TYPE), 1, &numel, dims,
-                                       $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
-                                       $disown | %convertptr_flags);
-    if (!SWIG_IsOK(res)) {
-      temp_data = data = XLALMalloc(numel * sizeof(TYPE));
-      size_t strides[] = {1};
-      res = %swiglal_array_copyin(TYPE*)(swiglal_no_self(), $input, %as_voidptr(data),
-                                         sizeof(TYPE), 1, dims, strides,
+    if (!($disown)) {
+      size_t numel = 0;
+      size_t dims[] = {0};
+      void *data = NULL;
+      // swiglal_array_typeid input type: TYPE*
+      res = %swiglal_array_viewin(TYPE*)(swiglal_no_self(), $input, %as_voidptrptr(&data),
+                                         sizeof(TYPE), 1, &numel, dims,
                                          $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
                                          $disown | %convertptr_flags);
       if (!SWIG_IsOK(res)) {
-        %argument_fail(res, "$type", $symname, $argnum);
+        temp_data = data = XLALMalloc(numel * sizeof(TYPE));
+        size_t strides[] = {1};
+        res = %swiglal_array_copyin(TYPE*)(swiglal_no_self(), $input, %as_voidptr(data),
+                                           sizeof(TYPE), 1, dims, strides,
+                                           $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
+                                           $disown | %convertptr_flags);
+        if (!SWIG_IsOK(res)) {
+          %argument_fail(res, "$type", $symname, $argnum);
+        } else {
+          temp = gsl_vector##NAME##_view_array(%reinterpret_cast(data, BASETYPE*), dims[0]);
+          argp = &temp.vector;
+        }
       } else {
         temp = gsl_vector##NAME##_view_array(%reinterpret_cast(data, BASETYPE*), dims[0]);
         argp = &temp.vector;
-      }
-    } else {
-      temp = gsl_vector##NAME##_view_array(%reinterpret_cast(data, BASETYPE*), dims[0]);
-      argp = &temp.vector;
     }
-#else
-    %argument_fail(res, "$type", $symname, $argnum);
-#endif
+    } else {
+      %argument_fail(res, "$type", $symname, $argnum);
+    }
   }
   $1 = %reinterpret_cast(argp, $ltype);
 %}
@@ -153,24 +153,24 @@ typedef struct {
 %typemap(in, noblock=1) gsl_vector##NAME* SWIGLAL_VIEWIN_STRUCT (void *argp = 0, int res = 0, gsl_vector##NAME##_view temp) %{
   res = SWIG_ConvertPtr($input, &argp, $descriptor, 0 /*$disown*/ | %convertptr_flags);
   if (!SWIG_IsOK(res)) {
-#if !($disown)
-    size_t numel = 0;
-    size_t dims[] = {0};
-    void *data = NULL;
-    // swiglal_array_typeid input type: TYPE*
-    res = %swiglal_array_viewin(TYPE*)(swiglal_no_self(), $input, %as_voidptrptr(&data),
-                                       sizeof(TYPE), 1, &numel, dims,
-                                       $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
-                                       $disown | %convertptr_flags);
-    if (!SWIG_IsOK(res)) {
-      %argument_fail(res, "$type", $symname, $argnum);
+    if (!($disown)) {
+      size_t numel = 0;
+      size_t dims[] = {0};
+      void *data = NULL;
+      // swiglal_array_typeid input type: TYPE*
+      res = %swiglal_array_viewin(TYPE*)(swiglal_no_self(), $input, %as_voidptrptr(&data),
+                                         sizeof(TYPE), 1, &numel, dims,
+                                         $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
+                                         $disown | %convertptr_flags);
+      if (!SWIG_IsOK(res)) {
+        %argument_fail(res, "$type", $symname, $argnum);
+      } else {
+        temp = gsl_vector##NAME##_view_array(%reinterpret_cast(data, BASETYPE*), dims[0]);
+        argp = &temp.vector;
+      }
     } else {
-      temp = gsl_vector##NAME##_view_array(%reinterpret_cast(data, BASETYPE*), dims[0]);
-      argp = &temp.vector;
+      %argument_fail(res, "$type", $symname, $argnum);
     }
-#else
-    %argument_fail(res, "$type", $symname, $argnum);
-#endif
   }
   $1 = %reinterpret_cast(argp, $ltype);
 %}
@@ -199,35 +199,35 @@ typedef struct {
 %typemap(in, noblock=1) const gsl_matrix##NAME* (void *argp = 0, int res = 0, gsl_matrix##NAME##_view temp, void *temp_data = 0) %{
   res = SWIG_ConvertPtr($input, &argp, $descriptor, 0 /*$disown*/ | %convertptr_flags);
   if (!SWIG_IsOK(res)) {
-#if !($disown)
-    size_t numel = 0;
-    size_t dims[] = {0, 0};
-    void *data = NULL;
-    // swiglal_array_typeid input type: TYPE*
-    res = %swiglal_array_viewin(TYPE*)(swiglal_no_self(), $input, %as_voidptrptr(&data),
-                                       sizeof(TYPE), 2, &numel, dims,
-                                       $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
-                                       $disown | %convertptr_flags);
-    if (!SWIG_IsOK(res)) {
-      temp_data = data = XLALMalloc(numel * sizeof(TYPE));
-      size_t strides[] = {dims[1], 1};
-      res = %swiglal_array_copyin(TYPE*)(swiglal_no_self(), $input, %as_voidptr(data),
-                                         sizeof(TYPE), 2, dims, strides,
+    if (!($disown)) {
+      size_t numel = 0;
+      size_t dims[] = {0, 0};
+      void *data = NULL;
+      // swiglal_array_typeid input type: TYPE*
+      res = %swiglal_array_viewin(TYPE*)(swiglal_no_self(), $input, %as_voidptrptr(&data),
+                                         sizeof(TYPE), 2, &numel, dims,
                                          $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
                                          $disown | %convertptr_flags);
       if (!SWIG_IsOK(res)) {
-        %argument_fail(res, "$type", $symname, $argnum);
+        temp_data = data = XLALMalloc(numel * sizeof(TYPE));
+        size_t strides[] = {dims[1], 1};
+        res = %swiglal_array_copyin(TYPE*)(swiglal_no_self(), $input, %as_voidptr(data),
+                                           sizeof(TYPE), 2, dims, strides,
+                                           $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
+                                           $disown | %convertptr_flags);
+        if (!SWIG_IsOK(res)) {
+          %argument_fail(res, "$type", $symname, $argnum);
+        } else {
+          temp = gsl_matrix##NAME##_view_array(%reinterpret_cast(data, BASETYPE*), dims[0], dims[1]);
+          argp = &temp.matrix;
+        }
       } else {
         temp = gsl_matrix##NAME##_view_array(%reinterpret_cast(data, BASETYPE*), dims[0], dims[1]);
         argp = &temp.matrix;
       }
     } else {
-      temp = gsl_matrix##NAME##_view_array(%reinterpret_cast(data, BASETYPE*), dims[0], dims[1]);
-      argp = &temp.matrix;
+      %argument_fail(res, "$type", $symname, $argnum);
     }
-#else
-    %argument_fail(res, "$type", $symname, $argnum);
-#endif
   }
   $1 = %reinterpret_cast(argp, $ltype);
 %}
@@ -241,24 +241,24 @@ typedef struct {
 %typemap(in, noblock=1) gsl_matrix##NAME* SWIGLAL_VIEWIN_STRUCT (void *argp = 0, int res = 0, gsl_matrix##NAME##_view temp) %{
   res = SWIG_ConvertPtr($input, &argp, $descriptor, 0 /*$disown*/ | %convertptr_flags);
   if (!SWIG_IsOK(res)) {
-#if !($disown)
-    size_t numel = 0;
-    size_t dims[] = {0, 0};
-    void *data = NULL;
-    // swiglal_array_typeid input type: TYPE*
-    res = %swiglal_array_viewin(TYPE*)(swiglal_no_self(), $input, %as_voidptrptr(&data),
-                                       sizeof(TYPE), 2, &numel, dims,
-                                       $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
-                                       $disown | %convertptr_flags);
-    if (!SWIG_IsOK(res)) {
-      %argument_fail(res, "$type", $symname, $argnum);
+    if (!($disown)) {
+      size_t numel = 0;
+      size_t dims[] = {0, 0};
+      void *data = NULL;
+      // swiglal_array_typeid input type: TYPE*
+      res = %swiglal_array_viewin(TYPE*)(swiglal_no_self(), $input, %as_voidptrptr(&data),
+                                         sizeof(TYPE), 2, &numel, dims,
+                                         $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
+                                         $disown | %convertptr_flags);
+      if (!SWIG_IsOK(res)) {
+        %argument_fail(res, "$type", $symname, $argnum);
+      } else {
+        temp = gsl_matrix##NAME##_view_array(%reinterpret_cast(data, BASETYPE*), dims[0], dims[1]);
+        argp = &temp.matrix;
+      }
     } else {
-      temp = gsl_matrix##NAME##_view_array(%reinterpret_cast(data, BASETYPE*), dims[0], dims[1]);
-      argp = &temp.matrix;
+      %argument_fail(res, "$type", $symname, $argnum);
     }
-#else
-    %argument_fail(res, "$type", $symname, $argnum);
-#endif
   }
   $1 = %reinterpret_cast(argp, $ltype);
 %}

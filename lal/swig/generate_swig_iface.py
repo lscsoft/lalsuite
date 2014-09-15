@@ -345,28 +345,6 @@ for function_name in sorted(functions):
     if func_retn_1starg_regexp.match(func_decl_type) != None:
         f.write('%%header %%{#define swiglal_return_1starg_%s%%}\n' % function_name)
 
-# perform operations on structs
-for struct_name in sorted(tdstructs):
-
-    # skip ignored structs
-    if renames.get(struct_name, '') == None:
-        continue
-
-    # skip opaque structs
-    struct_tagname = tdstruct_names[struct_name]
-    if not struct_tagname in structs:
-        continue
-
-    # count the number of fields the struct contains
-    field_count = 0
-    for cdecl in structs[struct_tagname].findall('cdecl'):
-        cdecl_name = get_swig_attr(cdecl, 'name')
-        if not cdecl_name in ['__swiglal__', '__swiglal_clear__']:
-            field_count += 1
-
-    # record the number of fields
-    f.write('%%header %%{#define swiglal_field_count_%s %i%%}\n' % (struct_name, field_count))
-
 # include interface headers, and clear SWIGLAL() macros afterwards
 f.write('%%include <lal/SWIG%sAlpha.i>\n' % package_name)
 for header_name in ordered_headers:
