@@ -221,14 +221,16 @@ int XLALSimIMRPhenomPCalculateModelParameters(
     (rather than the negative) x-axis and the projection of J0, since this is a more natural definition of the angle.
     We have also renamed the angle from psiJ to phiJ. */
 
-  /* Rotate Lnhat back to frame where J is along z, to figure out initial alpha */
-  /* Note: We have flipped the sign of the sin(phiJ) terms to rotate by -phiJ in agreement with our definition of phiJ above. */
-  const REAL8 rotLx = lnhatx*cos(*thetaJ)*cos(*phiJ) + lnhaty*cos(*thetaJ)*sin(*phiJ) + lnhatz*sin(*thetaJ);
-  const REAL8 rotLy = -lnhatx*sin(*phiJ) + lnhaty*cos(*phiJ);
-  /* AB: this rotation sends the line of sight to the xz plane so that, if we want to interpret the
-     value of alpha0 that we calculate below as an initial orientation in this new frame we have to
-     compute our Ylms at yphi=0. In addition, in XLALSimIMRPhenomP I use the fact that the waveform
-     only depends on yphi-alpha0 and shortcut the alpha0 dependence by putting it in the Ylm. */
+  /* Rotate Lnhat back to frame where J is along z and the line of sight in the Oxz plane with >0 projection in x, to figure out initial alpha */
+  /* The rotation matrix is
+    {
+      {-cos(thetaJ)*cos(phiJ), -cos(thetaJ)*sin(phiJ), sin(thetaJ)},
+      {sin(phiJ), -cos(phiJ), 0},
+      {cos(phiJ)*sin(thetaJ), sin(thetaJ)*sin(phiJ),cos(thetaJ)}
+    }
+  */
+  const REAL8 rotLx = -lnhatx*cos(*thetaJ)*cos(*phiJ) - lnhaty*cos(*thetaJ)*sin(*phiJ) + lnhatz*sin(*thetaJ);
+  const REAL8 rotLy = lnhatx*sin(*phiJ) - lnhaty*cos(*phiJ);
   if (rotLx == 0.0 && rotLy == 0.0)
     *alpha0 = 0.0;
   else
@@ -645,17 +647,12 @@ void WignerdCoefficients(
   REAL8 *cos_beta_half, /**< Output: cos(beta/2) */
   REAL8 *sin_beta_half) /**< Output: sin(beta/2) */
 {
-  /* cos(beta) = \hat J . \hat L = (1 + (Sp / (L + SL)) )^(-1/2) */
-  /* We compute
-      cos(beta/2) = ((1 + cos(beta))/2)^(1/2)
-      sin(beta/2) = ((1 - cos(beta))/2)^(1/2)
-    by Taylor expanding in the parameter s (see below) up to third order.
-  */
+  /* cos(beta) = \hat J . \hat L = (1 + (Sp / (L + SL))^2 )^(-1/2) */
+  /* We use the expression cos(beta/2) \approx (1 + s^2 / 4 )^(-1/2) where s := Sp / (L + SL) */
   REAL8 s = Sp / (L2PNR(v, eta) + SL);  /* s := Sp / (L + SL) */
   REAL8 s2 = s*s;
-  REAL8 s3 = s2*s;
-  *cos_beta_half = 1.0 - s2/8.0;            /* cos(beta/2) */
-  *sin_beta_half = s/2.0 - (3.0*s3)/16.0;   /* sin(beta/2) */
+  *cos_beta_half = 1.0/sqrt(1.0 + s2/4.0);           /* cos(beta/2) */
+  *sin_beta_half = sqrt(1.0 - 1.0/(1.0 + s2/4.0));   /* sin(beta/2) */
 }
 
 REAL8 FinalSpinBarausse2009_all_spin_on_larger_BH(

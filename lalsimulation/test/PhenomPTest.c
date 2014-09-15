@@ -187,8 +187,8 @@ static void Test_alpha_epsilon(void) {
                       + angcoeffs.epsiloncoeff4*logomega
                       + angcoeffs.epsiloncoeff5*omega_cbrt);
 
-  const REAL8 alpha_expected = -11.8196;
-  const REAL8 epsilon_expected = -11.936;
+  const REAL8 alpha_expected = -11.8195574;
+  const REAL8 epsilon_expected = -11.9359726;
 
   print_difference("alpha", alpha, alpha_expected);
   print_difference("epsilon", epsilon, epsilon_expected);
@@ -243,11 +243,11 @@ static void Test_XLALSimIMRPhenomPCalculateModelParameters(void) {
       s2z);               /**< Initial value of s2z: dimensionless spin of larger BH */
 
   REAL8 eta_expected = 0.16;
-  REAL8 chi_eff_expected = 0.437843;
-  REAL8 chip_expected = 0.175238;
-  REAL8 thetaJ_expected = 0.298553;
+  REAL8 chi_eff_expected = 0.4378425;
+  REAL8 chip_expected = 0.17523825;
+  REAL8 thetaJ_expected = 0.298552787;
   REAL8 phiJ_expected = 0;
-  REAL8 alpha0_expected = 0;
+  REAL8 alpha0_expected = LAL_PI;
 
   print_difference("eta", eta, eta_expected);
   print_difference("chi_eff", chi_eff, chi_eff_expected);
@@ -368,8 +368,8 @@ static void Test_PhenomPCore(void) {
   prC("hp", hp);
   prC("hc", hc);
 
-  COMPLEX16 hp_expected = 2.07045e-23 - I*9.29274e-23;
-  COMPLEX16 hc_expected = -9.2936e-23 - I*2.06686e-23;
+  COMPLEX16 hp_expected = 2.06987e-23 - I*9.29351e-23;
+  COMPLEX16 hc_expected = -9.29438e-23 - I*2.06629e-23;
   const REAL8 eps = 1e-5;
 
   assert(
@@ -452,8 +452,8 @@ static void Test_XLALSimIMRPhenomP(void) {
   prC("hp", hp);
   prC("hc", hc);
 
-  COMPLEX16 hp_expected = 9.89892e-24 - I*5.42442e-23;
-  COMPLEX16 hc_expected = -5.40428e-23 - I*9.89086e-24;
+  COMPLEX16 hp_expected = 1.00825e-23 - I*5.79215e-23;
+  COMPLEX16 hc_expected = -5.7913e-23 - I*1.00782e-23;
   const REAL8 eps = 1e-5;
 
   assert(
