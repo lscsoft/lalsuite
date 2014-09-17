@@ -106,7 +106,7 @@ AC_DEFUN([LALAPPS_ENABLE_PSS],
 
 AC_DEFUN([LALAPPS_ENABLE_GDS],
 [AC_ARG_ENABLE(
-  [pss],
+  [gds],
   AC_HELP_STRING([--enable-gds],[compile code that requires GSD library [default=no]]),
   [ case "${enableval}" in
       yes) gds=true;;
