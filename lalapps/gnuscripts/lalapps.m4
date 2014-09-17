@@ -1,6 +1,6 @@
 # lalapps.m4 - lalapps specific autoconf macros
 #
-# serial 14
+# serial 15
 
 AC_DEFUN([LALAPPS_ENABLE_CONDOR],
 [AC_ARG_ENABLE(
