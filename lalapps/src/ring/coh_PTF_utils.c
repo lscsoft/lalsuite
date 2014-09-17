@@ -599,9 +599,9 @@ void coh_PTF_create_time_slide_table(
   UINT4 shortSlideCount = 0;
   INT4 i;
   UINT4 ui,uj,ifoNumber,ifoNum,lastStartPoint,wrapPoint,currId,ifoCount;
-  UINT4 slideSegmentCount;
+  UINT4 slideSegmentCount, calculatedFlag;
   REAL8 currBaseOffset,currBaseIfoOffset[LAL_NUM_IFO],wrapTime,currIfoOffset;
-  LIGOTimeGPS slideStartTime,slideEndTime;
+  LIGOTimeGPS slideStartTime,slideEndTime, tmpSlideStartTime, tmpSlideEndTime;
 
   /* First construct the list of long slides */
   for (i = 0 ; i < numSegments ; i++)
@@ -826,12 +826,37 @@ void coh_PTF_create_time_slide_table(
       currId = slideIDList[i]*shortSlideCount;
       currId += shortTimeSlideList[uj].timeSlideID;
       /* Construct the segment start and end times */
+      calculatedFlag = 0;
       for (ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
       {
         if (params->haveTrig[ifoNumber])
         {
-          slideStartTime = segments[ifoNumber]->sgmnt[i].epoch; 
-          slideEndTime = segments[ifoNumber]->sgmnt[i].epoch;
+          tmpSlideStartTime = segments[ifoNumber]->sgmnt[i].epoch; 
+          tmpSlideEndTime = segments[ifoNumber]->sgmnt[i].epoch;
+          XLALGPSAdd(&tmpSlideStartTime, \
+                     timeSlideVectors[ifoNumber*params->numOverlapSegments+i]);
+          XLALGPSAdd(&tmpSlideEndTime, \
+                     timeSlideVectors[ifoNumber*params->numOverlapSegments+i]);
+          if (calculatedFlag)
+          {
+            if (! XLALGPSCmp(&tmpSlideStartTime, &slideStartTime))
+            {
+              error("Error long slide epochs not agreeing with the slid times. This suggests broken code, please contact a developer.");
+
+            }
+            if (! XLALGPSCmp(&tmpSlideEndTime, &slideEndTime))
+            {
+              error("Error long slide epochs not agreeing with the slid times. This suggests broken code, please contact a developer.");
+            }
+          }
+          else
+          {
+            slideStartTime.gpsSeconds=tmpSlideStartTime.gpsSeconds;
+            slideStartTime.gpsNanoSeconds=tmpSlideStartTime.gpsNanoSeconds;
+            slideEndTime.gpsSeconds=tmpSlideEndTime.gpsSeconds;
+            slideEndTime.gpsNanoSeconds=tmpSlideEndTime.gpsNanoSeconds;
+            calculatedFlag = 1;
+          }
         }
       }
       XLALGPSAdd(&slideStartTime, \
