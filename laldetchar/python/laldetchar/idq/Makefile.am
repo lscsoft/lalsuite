@@ -4,7 +4,7 @@ EXTRA_DIST =
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
 
 # FIXME: install this to pkgdata
-EXTRA_DIST = \
+EXTRA_DIST += \
 	laldetchar-idq.ini
 
 if HAVE_PYTHON
