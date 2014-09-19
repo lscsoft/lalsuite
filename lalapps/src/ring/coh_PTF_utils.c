@@ -839,13 +839,17 @@ void coh_PTF_create_time_slide_table(
                      timeSlideVectors[ifoNumber*params->numOverlapSegments+i]);
           if (calculatedFlag)
           {
-            if (! XLALGPSCmp(&tmpSlideStartTime, &slideStartTime))
+            if (XLALGPSCmp(&tmpSlideStartTime, &slideStartTime))
             {
-              error("Error long slide epochs not agreeing with the slid times. This suggests broken code, please contact a developer.");
+              fprintf(stderr, "1: %d %d\n", tmpSlideStartTime.gpsSeconds, slideStartTime.gpsSeconds);
+              fprintf(stderr, "1: %d %d\n", tmpSlideStartTime.gpsNanoSeconds, slideStartTime.gpsNanoSeconds);
+              error("Error long slide epochs not agreeing with the slid times. This suggests broken code, please contact a developer.\n");
 
             }
-            if (! XLALGPSCmp(&tmpSlideEndTime, &slideEndTime))
+            if (XLALGPSCmp(&tmpSlideEndTime, &slideEndTime))
             {
+              fprintf(stderr, "2: %d %d\n", tmpSlideEndTime.gpsSeconds, slideEndTime.gpsSeconds);
+              fprintf(stderr, "2: %d %d\n", tmpSlideEndTime.gpsNanoSeconds, slideEndTime.gpsNanoSeconds);          
               error("Error long slide epochs not agreeing with the slid times. This suggests broken code, please contact a developer.");
             }
           }
