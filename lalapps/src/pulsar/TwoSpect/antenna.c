@@ -18,23 +18,50 @@
 */
 
 #include <math.h>
+#include <lal/SSBtimes.h>
 #include "antenna.h"
 
-//Compute the number of integer bin shifts per SFT
-// bin shift = f0*v*Tcoh
-// where f0 is frequency, v is velocity in units of c, and Tcoh is the SFT coherence length
-// an optional dopplerMultiplier value could be multiplied if desired (default value is 1.0)
+/**
+ * \brief Compute the number of integer bin shifts per SFT
+ *
+ * bin shift = f0*v*Tcoh, where f0 is frequency, v is velocity in units of c, and Tcoh is the SFT coherence length.
+ * An optional dopplerMultiplier value could be multiplied if desired (default value is 1.0)
+ * \param [out] output            Pointer to INT4Vector of bin shift values
+ * \param [in]  freq              Frequency from which to compute the bin shifts
+ * \param [in]  velocities        Pointer to REAL4Vector of detector velocities with respect to a sky location
+ * \param [in]  Tcoh              Coherence length of the SFTs
+ * \param [in]  dopplerMultiplier Multiplicative factor to increase or decrease the bin shifts (standard physics = 1.0)
+ * \return Status value
+ */
 INT4 CompBinShifts(INT4Vector *output, REAL8 freq, REAL4Vector *velocities, REAL8 Tcoh, REAL4 dopplerMultiplier)
 {
    XLAL_CHECK( output != NULL && velocities != NULL, XLAL_EINVAL );
    for (INT4 ii=0; ii<(INT4)velocities->length; ii++) output->data[ii] = (INT4)round(dopplerMultiplier*freq*velocities->data[ii]*Tcoh);
    return XLAL_SUCCESS;
 } /* CompBinShifts() */
+INT4 CompBinShifts2(INT4Vector *output, SSBtimes *ssbTimes, REAL8 freq, REAL8 Tsft, REAL4 dopplerMultiplier)
+{
+   for (INT4 ii=0; ii<(INT4)output->length; ii++) output->data[ii] = (INT4)round(dopplerMultiplier*(ssbTimes->Tdot->data[ii]-1.0)*freq*Tsft);
+   return XLAL_SUCCESS;
+}
 
-
-//Compute the antenna pattern weights
-//If linPolOn = 1, then the output weights are Fplus*Fplus for the given polarization angle
-//If linPolOn = 0, then the output weights are Fplus*Fplus + Fcross*Fcross
+/**
+ * \brief Compute the antenna pattern weights
+ *
+ * If linPolOn = 0, then the output weights are Fplus*Fplus + Fcross*Fcross,
+ * or if linPolOn = 1, then the output weights are Fplus*Fplus for the given polarization angle
+ * \param [out] output     Pointer to REAL4Vector of antenna pattern weights
+ * \param [in]  ra         Right ascension value (radians)
+ * \param [in]  dec        Declination value (radians)
+ * \param [in]  t0         Start time (GPS seconds)
+ * \param [in]  Tcoh       Coherence length of the SFTs (in seconds)
+ * \param [in]  SFToverlap Overlap of the SFTs (in seconds)
+ * \param [in]  Tobs       Observation time (in seconds)
+ * \param [in]  linPolOn   Flag for linear polarizations (linPolOn = 0 is circular polarization weights, linPolOn = 1 is linear polarization weights)
+ * \param [in]  polAngle   Only used for when linPolOn = 1. Polarization angle from which to compute the antenna pattern weights
+ * \param [in]  det        A LALDetector struct
+ * \return Status value
+ */
 INT4 CompAntennaPatternWeights(REAL4Vector *output, REAL4 ra, REAL4 dec, REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, INT4 linPolOn, REAL8 polAngle, LALDetector det)
 {
 
@@ -64,7 +91,19 @@ INT4 CompAntennaPatternWeights(REAL4Vector *output, REAL4 ra, REAL4 dec, REAL8 t
 } /* CompAntennaPatternWeights() */
 
 
-//Compute the antenna velocity
+/**
+ * Compute the antenna velocity
+ * \param [out] output     Pointer to REAL4Vector of antenna velocities
+ * \param [in]  ra         Right ascension value (radians)
+ * \param [in]  dec        Declination value (radians)
+ * \param [in]  t0         Start time (GPS seconds)
+ * \param [in]  Tcoh       Coherence length of the SFTs (in seconds)
+ * \param [in]  SFToverlap Overlap of the SFTs (in seconds)
+ * \param [in]  Tobs       Observation time (in seconds)
+ * \param [in]  det        A LALDetector struct
+ * \param [in]  edat       Pointer to EphemerisData
+ * \return Status value
+ */
 INT4 CompAntennaVelocity(REAL4Vector *output, REAL4 ra, REAL4 dec, REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, LALDetector det, EphemerisData *edat)
 {
 
@@ -93,7 +132,16 @@ INT4 CompAntennaVelocity(REAL4Vector *output, REAL4 ra, REAL4 dec, REAL8 t0, REA
 } /* CompAntennaVelocity() */
 
 
-//Determine the maximum change in velocity
+/**
+ * Compute the maximum change in antenna velocity
+ * \param [in]  t0         Start time (GPS seconds)
+ * \param [in]  Tcoh       Coherence length of the SFTs (in seconds)
+ * \param [in]  SFToverlap Overlap of the SFTs (in seconds)
+ * \param [in]  Tobs       Observation time (in seconds)
+ * \param [in]  det        A LALDetector struct
+ * \param [in]  edat       Pointer to EphemerisData
+ * \return Maximum change in antenna velocity
+ */
 REAL4 CompDetectorDeltaVmax(REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, LALDetector det, EphemerisData *edat)
 {
 
@@ -132,7 +180,16 @@ REAL4 CompDetectorDeltaVmax(REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, 
 } /* CompDetectorDeltaVmax() */
 
 
-//From a given t0 start time, determine the maximum velocity over the observation time
+/**
+ * Compute the largest magnitude of antenna velocity
+ * \param [in]  t0         Start time (GPS seconds)
+ * \param [in]  Tcoh       Coherence length of the SFTs (in seconds)
+ * \param [in]  SFToverlap Overlap of the SFTs (in seconds)
+ * \param [in]  Tobs       Observation time (in seconds)
+ * \param [in]  det        A LALDetector struct
+ * \param [in]  edat       Pointer to EphemerisData
+ * \return Maximum magnitude of antenna velocity
+ */
 REAL4 CompDetectorVmax(REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, LALDetector det, EphemerisData *edat)
 {
 

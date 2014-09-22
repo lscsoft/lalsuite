@@ -27,6 +27,9 @@ Base directory to store the job subdirectories [R]
 =item B<jobnum:>
 Job number, also the base directory/subdirectory path [R]
 
+=item B<twospectExe:>
+Path and filename of TwoSpect executable [R]
+
 =item B<fmin:>
 Minimum frequency in Hz of injection [R]
 
@@ -49,10 +52,10 @@ Constant strain value to inject
 Polarizations, 0 = linear, 1 = random, 2 = circular (2)
 
 =item B<injskyra:>
-Right ascension of injection (0)
+Right ascension of injection
 
 =item B<injskydec:>
-Declination of injection (0)
+Declination of injection
 
 =item B<injPmin:>
 Minimum period of injection (7200)
@@ -102,7 +105,7 @@ Coherence length of each SFT (1800)
 =item B<SFToverlap:>
 Overlap of each SFT in seconds (900)
 
-=item B<sftFile:>
+=item B<inputSFTs:>
 Use noise from SFTs (may be multple)
 
 =item B<gaussianNoiseWithSFTGaps:>
@@ -150,13 +153,17 @@ Maximum length of a template (500)
 =item B<markBadSFTs:>
 Mark and remove bad SFTs (flag, off)
 
+=item B<keepOnlyTopNumIHS:>
+Keep only the top N number of IHS outliers
+
 =cut
 
 my $help = 0;
 
+my $twospectExe = '';
 my $jobnum = 0;
 
-my @sftFile = ();
+my @inputSFTs = ();
 my $gaussianNoiseWithSFTGaps = 0;
 my @timestampsfile = ();
 my @segmentfile = ();
@@ -178,8 +185,8 @@ my $h0min = '';
 my $h0max = '';
 my $h0dist = 1;
 my $h0val = '';
-my $injskyra = 0;
-my $injskydec = 0;
+my $injskyra = '';
+my $injskydec = '';
 my $injPmin = 7200;
 my $injPmax = 0.2*$dur;
 my $periodDist = 0;
@@ -189,7 +196,7 @@ my $injDfExpansionAllowance = 1.0;
 my $scox1switch = 0;
 
 my @ifo = ();
-my @t0 = (); 
+my $t0 = 0;
 my $skylocations = 0;
 my $ihsfactor = 5;
 my $seedstart = 42;
@@ -201,6 +208,7 @@ my $ihsfomfar = 1.0;
 my $tmplfar = 1.0;
 my $tmplLength = 500;
 my $markBadSFTs = 0;
+my $keepOnlyTopNumIHS = -1;
 my $directory = '';
 
 #H1 t0 = 931081500
@@ -208,9 +216,10 @@ my $directory = '';
 #V1 t0 = 931131900
 
 GetOptions('help' => \$help,
+           'twospectExe=s' => \$twospectExe,
            'dir=s' => \$directory,
            'jobnum=i' => \$jobnum,
-           'sftFile:s' => \@sftFile,
+           'inputSFTs:s' => \@inputSFTs,
            'gaussianNoiseWithSFTGaps' => \$gaussianNoiseWithSFTGaps,
            'injPol:i' => \$injPol,
            'minEcc:f' => \$minEcc,
@@ -220,7 +229,7 @@ GetOptions('help' => \$help,
            'maxSpindown:f' => \$maxSpindown, 
            'spindownDist:i' => \$spindownDist, 
            'ifo=s' => \@ifo,
-           't0=f' => \@t0,
+           't0=f' => \$t0,
            'Tobs:f' => \$dur,
            'Tsft:f' => \$Tsft,
            'SFToverlap:f' => \$SFToverlap,
@@ -234,7 +243,7 @@ GetOptions('help' => \$help,
            'timestampsfile:s' => \@timestampsfile, 
            'segmentfile:s' => \@segmentfile, 
            'injskyra:f' => \$injskyra, 
-           'injskydec:f' => \$injskydec, 
+           'injskydec:f' => \$injskydec,
            'injPmin:f' => \$injPmin,
            'injPmax:f' => \$injPmax, 
            'periodDist:i' => $periodDist,
@@ -251,27 +260,26 @@ GetOptions('help' => \$help,
            'ihsfomfar:f' => \$ihsfomfar, 
            'tmplfar:f' => \$tmplfar, 
            'tmplLength:i' => \$tmplLength, 
-           'markBadSFTs' => \$markBadSFTs) or pod2usage(2);
+           'markBadSFTs' => \$markBadSFTs,
+           'keepOnlyTopNumIHS:i' => \$keepOnlyTopNumIHS) or pod2usage(2);
 pod2usage(1) if $help;
 
 my $numIFOs = @ifo;
 my $numberTimestampFiles = @timestampsfile;
 my $numberSegmentFiles = @segmentfile;
-my $numberSFTfiles = @sftFile;
-my $numberT0 = @t0;
+my $numberSFTfiles = @inputSFTs;
 
-die "Number of IFOs and concatenated SFT files must be the same" if $numIFOs!=$numberSFTfiles;
+die "Number of IFOs and concatenated SFT files must be the same" if $numberSFTfiles>0 && $numIFOs!=$numberSFTfiles;
 die "Must provide SFT file when gaussianNoiseWithSFTGaps is specifed" if $numberSFTfiles<1 && $gaussianNoiseWithSFTGaps!=0;
 die "Only choose sftFile OR sftFile and gaussianNoiseWithSFTgaps OR timestampsfile OR segmentfile" if (($numberSFTfiles>0 && ($numberTimestampFiles>0 || $numberSegmentFiles>0)) || ($numberTimestampFiles>0 && $numberSegmentFiles>0));
-die "Number of IFOs and timestamp files must be the same" if $numIFOs!=$numberTimestampFiles;
-die "Number of IFOs and segment files must be the same" if $numIFOs!=$numberSegmentFiles;
+die "Number of IFOs and timestamp files must be the same" if $numberTimestampFiles>0 && $numIFOs!=$numberTimestampFiles;
+die "Number of IFOs and segment files must be the same" if $numberSegmentFiles>0 && $numIFOs!=$numberSegmentFiles;
 die "injPol must be 0, 1, or 2" if $injPol<0 || $injPol>2;
 die "Minimum eccentricity must be 0 or larger" if $minEcc<0.0;
 die "Maximum eccentricity must be smaller than 1" if $maxEcc>=1.0;
 die "eccDist must be 0, 1, or -1" if $eccDist<-1 || $eccDist>1;
 die "spindownDist must be 0" if $spindownDist!=0;
 die "Number of IFOs must be 3 or less" if $numIFOs>3;
-die "Number of IFOs and t0 must be the same" if $numIFOs!=$numberT0;
 die "Must specify both h0min and h0max" if (($h0min ne "" && $h0max eq "") || ($h0max ne "" && $h0min eq ""));
 die "h0dist must be 0, 1, or -1" if $h0dist<-1 || $h0dist>1;
 die "h0val cannot be specified with h0min or h0max" if ($h0val ne "" && ($h0min ne "" || $h0max ne ""));
@@ -296,7 +304,8 @@ die "mkdir failed: $?" if $?;
 
 my @ifokey = ();
 my @ifos = ();
-my @skygridfile = ();
+my $skygridfile = '';
+my $skygridCreated = 0;
 foreach my $ifoval (@ifo) {
    if ($ifoval eq "LHO" || $ifoval eq "H1") {
       push(@ifos, "LHO");
@@ -309,10 +318,11 @@ foreach my $ifoval (@ifo) {
       push(@ifokey, "V1");
    } else { die "Interferometer not recognized!"; }
 
-   if ($skylocations>=1) {
-      push(@skygridfile, "/local/user/egoetz/$$/skygrid-$ifokey[-1].dat");
-      system("/atlas/user/atlas3/egoetz/lalsuite-master/lalapps/src/pulsar/TwoSpect/skygridsetup --fmin=$fmin --fspan=$fspan --IFO=$ifokey[-1] --Tcoh=$Tsft --SFToverlap=$SFToverlap --t0=$t0[-1] --Tobs=$dur --v2 --outfilename=$skygridfile[-1]");
+   if ($skylocations>=1 && $skygridCreated!=1) {
+      $skygridfile = "/local/user/egoetz/$$/skygrid-$ifokey[-1].dat";
+      system("/atlas/user/atlas3/egoetz/lalsuite-master/lalapps/src/pulsar/TwoSpect/skygridsetup --fmin=$fmin --fspan=$fspan --IFO=$ifokey[-1] --Tcoh=$Tsft --SFToverlap=$SFToverlap --t0=$t0 --Tobs=$dur --v2 --outfilename=$skygridfile");
       die "skygridsetup failed: $?" if $?;
+      $skygridCreated = 1;
    }
 }
 
@@ -324,7 +334,7 @@ if ($scox1switch!=0) {
    $Pmin = $dur/(int($dur/$scoX1P+0.5)+1.0);
    $Pmax = $dur/(int($dur/$scoX1P+0.5)-1.0);
    $dfmin = 2*pi*$fmin*($scoX1asini-3.0*0.18)/($scoX1P+3.0*.0432);
-   $dfmax = 2*pi*($fmin+0.25)*($scoX1asini+3.0*0.18)/($scoX1P-3.0*.0432);
+   $dfmax = 2*pi*($fmin+$fspan)*($scoX1asini+3.0*0.18)/($scoX1P-3.0*.0432);
 }
 
 for(my $ii=0; $ii<10; $ii++) {
@@ -346,7 +356,7 @@ for(my $ii=0; $ii<10; $ii++) {
       else { $h0 = ($h0max + $h0min) - 10**((log10($h0max)-log10($h0min))*random_uniform()) * $h0min; }
    }
 
-   my $psi = 0.5*pi*random_uniform()-0.25*pi;
+   my $psi = pi*random_uniform();
    my $phi0 = 2.0*pi*random_uniform();
 
    if ($injskyra eq "" && $injskydec eq "") {
@@ -414,11 +424,11 @@ EOF
    print INJECTION "$alpha $delta $h0 $cosi $psi $phi0 $f0 $asini $ecc $P $argp $f1dot $df\n";
    close(INJECTION);
 
-   for (my $jj=0; $jj<$numIFOs; $jj++) {
-      open(TWOSPECTCONFIG, ">/local/user/egoetz/$$/twospectconfig") or die "Cannot write to /local/user/egoetz/$$/twospectconfig $!";
-      print TWOSPECTCONFIG<<EOF;
+   open(TWOSPECTCONFIG, ">/local/user/egoetz/$$/twospectconfig") or die "Cannot write to /local/user/egoetz/$$/twospectconfig $!";
+   print TWOSPECTCONFIG<<EOF;
 fmin $fmin
 fspan $fspan
+t0 $t0
 Tobs $dur
 Tcoh $Tsft
 SFToverlap $SFToverlap
@@ -429,72 +439,76 @@ Pmin $Pmin
 Pmax $Pmax
 dfmin $dfmin
 dfmax $dfmax
-t0 $t0[$jj]
 blksize 101
 avesqrtSh 1.0e-23
 minTemplateLength 1
 maxTemplateLength $tmplLength
 outdirectory $directory/$jobnum
-IFO $ifokey[$jj]
+ephemEarth /home/egoetz/opt/lscsoft-master/share/lalpulsar/earth00-19-DE405.dat.gz
+ephemSun /home/egoetz/opt/lscsoft-master/share/lalpulsar/sun00-19-DE405.dat.gz
 FFTplanFlag 1
 fastchisqinv
 useSSE
-outfilename ${ifokey[$jj]}logfile_$ii.txt
-ULfilename ${ifokey[$jj]}uls_$ii.dat
-configCopy ${ifokey[$jj]}input_copy_$ii.conf
+outfilename logfile_$ii.txt
+ULfilename uls_$ii.dat
+configCopy input_copy_$ii.conf
 injectionSources \@/local/user/egoetz/$$/mfdconfig
 ihsfactor $ihsfactor
 EOF
 
-      if ($numberSFTfiles>0) { print TWOSPECTCONFIG "sftFile $sftFile[$jj]\n"; }
-      elsif ($timestampsfile[$jj] ne "") { print TWOSPECTCONFIG "timestampsFile $timestampsfile[$jj]\n"; } 
-      elsif ($segmentfile[$jj] ne "") { print TWOSPECTCONFIG "segmentFile $segmentfile[$jj]\n"; }
-
-      if ($numberSFTfiles==0) {
-         my $mfdrandseed = random_uniform_integer(1, 0, 1000000);
-         print TWOSPECTCONFIG "injRandSeed $mfdrandseed\n";
-      }
-
-      if ($markBadSFTs!=0) { print TWOSPECTCONFIG "markBadSFTs\n"; }
-      if ($weightedIHS!=0) { print TWOSPECTCONFIG "weightedIHS\n"; }
-      if ($ulonly!=0) { print TWOSPECTCONFIG "IHSonly\n"; }
-
-      if ($skylocations==0) { print TWOSPECTCONFIG "skyRegion ($alpha,$delta)\n"; }
-      elsif ($skylocations>0) {
-         print TWOSPECTCONFIG "skyRegionFile /local/user/egoetz/$$/skygrid2.dat\n";
-
-         open(SKYFILE, $skygridfile[$jj]) or die "Cannot open $skygridfile[$jj] $!";
-         my @distances = ();
-         my @ras = ();
-         my @decs = ();
-         while (my $line=<SKYFILE>) {
-            if ($line =~ /^(\d+.\d+) (-?\d+.\d+)/) {
-               my $dist = acos(sin(abs($2-0.5*pi))*sin(abs($delta-0.5*pi))*cos($1-$alpha)+cos(abs($2-0.5*pi))*cos(abs($delta-0.5*pi)));
-               push(@ras, $1);
-               push(@decs, $2);
-               push(@distances, $dist);
-            }
-         }
-         close(SKYFILE);
-         my @sortedindexvalues = sort {$distances[$a] <=> $distances[$b]} 0 .. $#distances;
-
-         open(SKYFILE2,">/local/user/egoetz/$$/skygrid2.dat") or die "Cannot write to /local/user/egoetz/$$/skygrid2.dat $!";
-         for (my $kk=0; $kk<$skylocations; $kk++) { print SKYFILE2 "$ras[$sortedindexvalues[$kk]] $decs[$sortedindexvalues[$kk]]\n"; }
-         close(SKYFILE2);
-      }
-
-      if ($templateTest!=0) {
-         print TWOSPECTCONFIG "bruteForceTemplateTest\n";
-         print TWOSPECTCONFIG "templateTestF $f0\n";
-         print TWOSPECTCONFIG "templateTestP $P\n";
-         print TWOSPECTCONFIG "templateTestDf $df\n";
-      }
-
-      close(TWOSPECTCONFIG);
-   
-      system("/home/egoetz/opt/lscsoft-master/bin/lalapps_TwoSpect --config=/local/user/egoetz/$$/twospectconfig");
-      die "system lalapps_TwoSpect failed: $?" if $?;
+   if ($numberSFTfiles==0) {
+      my $mfdrandseed = random_uniform_integer(1, 0, 1000000);
+      print TWOSPECTCONFIG "injRandSeed $mfdrandseed\n";
    }
+
+   if ($markBadSFTs!=0) { print TWOSPECTCONFIG "markBadSFTs\n"; }
+   if ($weightedIHS!=0) { print TWOSPECTCONFIG "weightedIHS\n"; }
+   if ($ulonly!=0) { print TWOSPECTCONFIG "IHSonly\n"; }
+   if ($keepOnlyTopNumIHS>-1) { print TWOSPECTCONFIG "keepOnlyTopNumIHS $keepOnlyTopNumIHS\n"; }
+
+   if ($skylocations==0) { print TWOSPECTCONFIG "skyRegion ($alpha,$delta)\n"; }
+   elsif ($skylocations>0) {
+      print TWOSPECTCONFIG "skyRegionFile /local/user/egoetz/$$/skygrid2.dat\n";
+
+      open(SKYFILE, $skygridfile) or die "Cannot open $skygridfile $!";
+      my @distances = ();
+      my @ras = ();
+      my @decs = ();
+      while (my $line=<SKYFILE>) {
+         if ($line =~ /^(\d+.\d+) (-?\d+.\d+)/) {
+            my $dist = acos(sin(abs($2-0.5*pi))*sin(abs($delta-0.5*pi))*cos($1-$alpha)+cos(abs($2-0.5*pi))*cos(abs($delta-0.5*pi)));
+            push(@ras, $1);
+            push(@decs, $2);
+            push(@distances, $dist);
+         }
+      }
+      close(SKYFILE);
+      my @sortedindexvalues = sort {$distances[$a] <=> $distances[$b]} 0 .. $#distances;
+
+      open(SKYFILE2,">/local/user/egoetz/$$/skygrid2.dat") or die "Cannot write to /local/user/egoetz/$$/skygrid2.dat $!";
+      for (my $kk=0; $kk<$skylocations; $kk++) { print SKYFILE2 "$ras[$sortedindexvalues[$kk]] $decs[$sortedindexvalues[$kk]]\n"; }
+      close(SKYFILE2);
+   }
+
+   if ($templateTest!=0) {
+      print TWOSPECTCONFIG "bruteForceTemplateTest\n";
+      print TWOSPECTCONFIG "templateTestF $f0\n";
+      print TWOSPECTCONFIG "templateTestP $P\n";
+      print TWOSPECTCONFIG "templateTestDf $df\n";
+   }
+
+   for (my $jj=0; $jj<$numIFOs; $jj++) {
+      if ($numberSFTfiles>0) { print TWOSPECTCONFIG "inputSFTs $inputSFTs[$jj]\n"; }
+      elsif ($numberTimestampFiles>0) { print TWOSPECTCONFIG "timestampsFile $timestampsfile[$jj]\n"; }
+      elsif ($numberSegmentFiles>0) { print TWOSPECTCONFIG "segmentFile $segmentfile[$jj]\n"; }
+
+      print TWOSPECTCONFIG "IFO $ifokey[$jj]\n";
+   }
+
+   close(TWOSPECTCONFIG);
+
+   system("$twospectExe --config=/local/user/egoetz/$$/twospectconfig");
+   die "system lalapps_TwoSpect failed: $?" if $?;
 
 }
 

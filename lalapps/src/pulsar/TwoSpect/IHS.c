@@ -35,8 +35,12 @@
 #include "TwoSpect.h"
 
 
-//////////////////////////////////////////////////////////////
-// Create vectors for IHS maxima struct
+/**
+ * Create vectors for IHS maxima struct
+ * \param [in] fbins Number of frequency bins
+ * \param [in] rows  Number of neighboring rows to be summed
+ * \return Pointer to a newly created ihsMaximaStruct
+ */
 ihsMaximaStruct * new_ihsMaxima(INT4 fbins, INT4 rows)
 {
 
@@ -61,8 +65,10 @@ ihsMaximaStruct * new_ihsMaxima(INT4 fbins, INT4 rows)
 } /* new_ihsMaxima() */
 
 
-//////////////////////////////////////////////////////////////
-// Destroy vectors for IHS maxima struct
+/**
+ * Destroy vectors and the IHS maxima struct
+ * \param [in] data Pointer to an ihsMaximaStruct to be freed
+ */
 void free_ihsMaxima(ihsMaximaStruct *data)
 {
 
@@ -76,8 +82,17 @@ void free_ihsMaxima(ihsMaximaStruct *data)
 } /* free_ihsMaxima() */
 
 
-//////////////////////////////////////////////////////////////
-// Run the IHS algorithm
+/**
+ * Run the IHS algorithm
+ * \param [out] output      Pointer to the ihsMaximaStruct
+ * \param [in]  input       Pointer to the ffdataStruct
+ * \param [in]  ihsfarinput Pointer to the ihsfarStruct
+ * \param [in]  params      Pointer to inputParamsStruct
+ * \param [in]  rows        Number of neighboring rows to be summed
+ * \param [in]  aveNoise    Pointer to a REAL4Vector of 2nd FFT background powers
+ * \param [in]  FbinMean    Pointer to a REAL4Vector of normalized SFT background powers
+ * \return Status value
+ */
 INT4 runIHS(ihsMaximaStruct *output, ffdataStruct *input, ihsfarStruct *ihsfarinput, inputParamsStruct *params, INT4 rows, REAL4Vector *aveNoise, REAL4Vector *FbinMean)
 {
 
@@ -148,8 +163,10 @@ INT4 runIHS(ihsMaximaStruct *output, ffdataStruct *input, ihsfarStruct *ihsfarin
 } /* runIHS() */
 
 
-//////////////////////////////////////////////////////////////
-// Allocate memory for ihsVals struct
+/**
+ * Allocate memory for ihsVals struct
+ * \return Pointer to a newly created ihsVals structure
+ */
 ihsVals * new_ihsVals(void)
 {
    ihsVals *ihsvals = NULL;
@@ -157,16 +174,24 @@ ihsVals * new_ihsVals(void)
    return ihsvals;
 } /* new_ihsVals() */
 
-//////////////////////////////////////////////////////////////
-// Destroy ihsVals struct
+
+/**
+ * Destroy ihsVals struct
+ * \param [in] Pointer to an ihsVals structure to be freed
+ */
 void free_ihsVals(ihsVals *ihsvals)
 {
    XLALFree((ihsVals*)ihsvals);
 } /* free_ihsVals() */
 
 
-//////////////////////////////////////////////////////////////
-// Compute the IHS sum maximum
+/**
+ * Compute the IHS sum maximum
+ * \param [out] output    Pointer to the ihsVals structure
+ * \param [in]  input     Pointer to a REAL4Vector
+ * \param [in]  ihsfactor Number of folds of the 2nd FFT
+ * \return Status value
+ */
 INT4 incHarmSum(ihsVals *output, REAL4Vector *input, INT4 ihsfactor)
 {
 
@@ -195,8 +220,13 @@ INT4 incHarmSum(ihsVals *output, REAL4Vector *input, INT4 ihsfactor)
 } /* incHarmSum() */
 
 
-//////////////////////////////////////////////////////////////
-// Compute the IHS vector -- does not compute the maximum value
+/**
+ * Compute the IHS vector -- does not compute the maximum value
+ * \param [out] output    Pointer to a REAL4Vector to contain the folded values
+ * \param [in]  input     Pointer to a REAL4Vector for the input to the IHS
+ * \param [in]  ihsfactor Number of folds of the 2nd FFT
+ * \return Status value
+ */
 INT4 incHarmSumVector(REAL4Vector *output, REAL4Vector *input, INT4 ihsfactor)
 {
 
@@ -218,6 +248,14 @@ INT4 incHarmSumVector(REAL4Vector *output, REAL4Vector *input, INT4 ihsfactor)
 } /* incHarmSumVector() */
 
 
+/**
+ * Compute the noise weighted IHS vector -- does not compute the maximum value
+ * \param [out] output    Pointer to a REAL4Vector to contain the folded values
+ * \param [in]  input     Pointer to a REAL4Vector for the input to the IHS
+ * \param [in]  aveNoise  Pointer to a REAL4Vector of 2nd FFT background powers
+ * \param [in]  ihsfactor Number of folds of the 2nd FFT
+ * \return Status value
+ */
 INT4 incHarmSumVectorWeighted(REAL4Vector *output, REAL4Vector *input, REAL4Vector *aveNoise, INT4 ihsfactor)
 {
 
@@ -242,8 +280,12 @@ INT4 incHarmSumVectorWeighted(REAL4Vector *output, REAL4Vector *input, REAL4Vect
 } /* incHarmSumVectorWeighted() */
 
 
-//////////////////////////////////////////////////////////////
-// Allocate memory for ihsfarStruct struct
+/**
+ * Allocate memory for ihsfarStruct struct
+ * \param [in] rows   Number of neighbors to sum
+ * \param [in] params Pointer to inputParamsStruct
+ * \return Pointer to a newly allocated ihsfarStruct
+ */
 ihsfarStruct * new_ihsfarStruct(INT4 rows, inputParamsStruct *params)
 {
 
@@ -267,8 +309,10 @@ ihsfarStruct * new_ihsfarStruct(INT4 rows, inputParamsStruct *params)
 } /* new_ihsfarStruct() */
 
 
-//////////////////////////////////////////////////////////////
-// Destroy ihsfarStruct struct
+/**
+ * Destroy ihsfarStruct struct
+ * \param [in] ihsfarstruct Pointer to the ihsfarStruct to be destroyed
+ */
 void free_ihsfarStruct(ihsfarStruct *ihsfarstruct)
 {
    XLALDestroyREAL4Vector(ihsfarstruct->ihsfar);
@@ -282,8 +326,14 @@ void free_ihsfarStruct(ihsfarStruct *ihsfarstruct)
 } /* free_ihsfarStruct() */
 
 
-//////////////////////////////////////////////////////////////
-// Compute the IHS FAR for a sum of a number of rows
+/**
+ * Compute the IHS FAR for a sum of a number of rows
+ * \param [out] output Pointer to the output ihsfarStruct
+ * \param [in]  params Pointer to inputParamsStruct
+ * \param [in]  rows   Number of neighbors to sum
+ * \param [in]  aveNoise Pointer to REAL4Vector of 2nd FFT background powers
+ * \return Status value
+ */
 INT4 genIhsFar(ihsfarStruct *output, inputParamsStruct *params, INT4 rows, REAL4Vector *aveNoise)
 {
 
@@ -389,10 +439,15 @@ INT4 genIhsFar(ihsfarStruct *output, inputParamsStruct *params, INT4 rows, REAL4
 } /* genIhsFar() */
 
 
-
-//////////////////////////////////////////////////////////////
-// Compute the IHS sums for a number of rows used for the FAR calculation
-// This is a bit complicated, so read the comments through the function
+/**
+ * Compute the IHS sums for a number of rows used for the FAR calculation
+ * \param [out] outputfar         Pointer to the output ihsfarStruct
+ * \param [in]  ihsvectorsequence Pointer to REAL4VectorSequence to be summed
+ * \param [in]  rows              Number of neighbors to sum
+ * \param [in]  FbinMean          Pointer to REAL4Vector of normalized SFT background powers
+ * \param [in]  params            Pointer to inputParamsStruct
+ * \return Status value
+ */
 INT4 sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorsequence, INT4 rows, REAL4Vector *FbinMean, inputParamsStruct *params)
 {
 
@@ -493,8 +548,7 @@ INT4 sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
          XLAL_CHECK( (sampledtempihsvals = XLALCreateREAL4Vector((ihsvectorsequence->length-(ii-1))*ihsvectorsequence->vectorLength)) != NULL, XLAL_EFUNC );
          memcpy(sampledtempihsvals->data, tworows->data, sizeof(REAL4)*sampledtempihsvals->length);
          outputfar->ihsdistMean->data[ii-2] = calcMean_ignoreZeros(sampledtempihsvals);  //Calculate the mean value (remember, don't accept zeros)
-         outputfar->ihsdistSigma->data[ii-2] = calcStddev_ignoreZeros(sampledtempihsvals);  //We also calculate the standard deviation
-         XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
+         XLAL_CHECK( calcStddev_ignoreZeros(&(outputfar->ihsdistSigma->data[ii-2]), sampledtempihsvals) == XLAL_SUCCESS, XLAL_EFUNC );  //We also calculate the standard deviation
       }
 
       //If the user has specified the IHS FAR == 1.0, then we don't need to compute the threshold (it is = 0.0)
@@ -553,9 +607,19 @@ INT4 sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
 } /*sumIHSSequenceFAR() */
 
 
-// We are going to find the nearest neighbor sums from some minimum up to a maximum given by rows
-// In the function we will select the the location which is the **maximum above the noise**
-// The sumIHSSequenceFAR() function is based on this one, and is complicated, so read comments carefully
+/**
+ * \brief Compute the IHS sums for a number of rows
+ *
+ * In the function we will select the the location which is the maximum above the noise
+ *
+ * \param [out] output            Pointer to the output ihsMaximaStruct
+ * \param [in]  inputfar          Pointer to ihsfarStruct
+ * \param [in]  ihsvectorsequence Pointer to REAL4VectorSequence to be summed
+ * \param [in]  rows              Number of neighbors to sum
+ * \param [in]  FbinMean          Pointer to REAL4Vector of normalized SFT background powers
+ * \param [in]  params            Pointer to inputParamsStruct
+ * \return Status value
+ */
 INT4 sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4VectorSequence *ihsvectorsequence, INT4 rows, REAL4Vector *FbinMean, inputParamsStruct *params)
 {
 
@@ -703,17 +767,12 @@ INT4 sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
 } /*sumIHSSequence() */
 
 
-//Sum a specific vector to another specific vector in two vector sequences
-//not as quick as the fastSSVectorSequenceSum() function or the sseSSVectorSequenceSum function()
-void SSVectorSequenceSum(REAL4VectorSequence *output, REAL4VectorSequence *input1, REAL4VectorSequence *input2, INT4 vectorpos1, INT4 vectorpos2, INT4 outputvectorpos)
-{
-   INT4 ii, vec1 = vectorpos1*input1->vectorLength, vec2 = vectorpos2*input2->vectorLength, outvec = outputvectorpos*output->vectorLength;
-   for (ii=0; ii<(INT4)input1->vectorLength; ii++) output->data[outvec + ii] = input1->data[vec1 + ii] + input2->data[vec2 + ii];
-}
-
-
-//////////////////////////////////////////////////////////////
-// Calculate the IHS FOM for a number of rows
+/**
+ * Calculate the IHS FOM for a number of rows
+ * \param [in] locs    Pointer to INT4Vector of location values
+ * \param [in] fomnorm Normalization value and is the number of XXX
+ * \return IHS FOM value
+ */
 REAL4 ihsFOM(INT4Vector *locs, INT4 fomnorm)
 {
 
@@ -729,7 +788,17 @@ REAL4 ihsFOM(INT4Vector *locs, INT4 fomnorm)
 } /* ihsFOM() */
 
 
-//Finds IHS candidates above thresholds
+/**
+ * Find IHS candidates above thresholds
+ * \param [out] candlist     Pointer to a pointer containing the candidate list
+ * \param [in]  ihsfarstruct Pointer to ihsfarStruct
+ * \param [in]  params       Pointer to inputParamsStruct
+ * \param [in]  ffdata       Pointer to ffdataStruct
+ * \param [in]  ihsmaxima    Pointer to ihsMaximaStruct containing the data to be tested above thresholds
+ * \param [in]  fbinavgs     Pointer to REAL4Vector of normalized SFT background powers
+ * \param [in]  trackedlines Pointer to REAL4VectorSequence of lines (allowed to be NULL)
+ * \return Status value
+ */
 INT4 findIHScandidates(candidateVector **candlist, ihsfarStruct *ihsfarstruct, inputParamsStruct *params, ffdataStruct *ffdata, ihsMaximaStruct *ihsmaxima, REAL4Vector *fbinavgs, REAL4VectorSequence *trackedlines)
 {
 
@@ -996,6 +1065,12 @@ INT4 findIHScandidates(candidateVector **candlist, ihsfarStruct *ihsfarstruct, i
 } /* findIHScandidates() */
 
 
+/**
+ * Convert the IHS statistic to an estimated h0, based on injections
+ * \param [in] ihsval The IHS statistic value
+ * \param [in] params Pointer to inputParamsStruct
+ * \return Estimated h0
+ */
 REAL8 ihs2h0(REAL8 ihsval, inputParamsStruct *params)
 {
 

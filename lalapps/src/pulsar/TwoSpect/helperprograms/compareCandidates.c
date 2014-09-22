@@ -24,19 +24,62 @@
 #include <gsl/gsl_sort.h>
 #include <gsl/gsl_roots.h>
 
+#include <lal/UserInput.h>
 #include <lal/LALStdlib.h>
 #include <lal/SeqFactories.h>
 
-#include "cmdline_compareCandidates.h"
-
-REAL8 f_diff(double indexval, void *params);
-INT4 readInCoincidentOutliers(double **output, int **output_job, int *output_numOutliers, const char *infilename);
-INT4 readInIFOoutliersAndSort(double **output, int **output_job, int *output_numCoincident, const char *infilename);
+typedef struct
+{
+   BOOLEAN help;		/**< Print this help/usage message */
+   CHAR *infile1;
+   CHAR *infile2;
+   CHAR *outfile1;
+   CHAR *outfile2;
+   CHAR *outfile3;
+   CHAR *finalOutfile;
+   REAL8 Tobs;
+   REAL8 Tcoh;
+   REAL8 fdiff_allowed;
+   REAL8 dfdiff_allowed;
+   REAL8 skydiff_allowed;
+} UserVariables_t;
 
 struct solver_params {
    double fvalue;
    double *data_array;
 };
+
+INT4 InitUserVars(UserVariables_t *uvar, int argc, char *argv[]);
+REAL8 f_diff(double indexval, void *params);
+INT4 readInCoincidentOutliers(double **output, int **output_job, int *output_numOutliers, const char *infilename);
+INT4 readInIFOoutliersAndSort(double **output, int **output_job, int *output_numCoincident, const char *infilename);
+
+INT4 InitUserVars(UserVariables_t *uvar, int argc, char *argv[])
+{
+   XLAL_CHECK ( uvar != NULL, XLAL_EINVAL, "Invalid NULL input 'uvar'\n");
+   XLAL_CHECK ( argv != NULL, XLAL_EINVAL, "Invalid NULL input 'argv'\n");
+
+   uvar->Tcoh = 1800;
+
+   XLALregBOOLUserStruct(  help,           'h', UVAR_HELP    , "Print this help/usage message");
+   XLALregSTRINGUserStruct(infile1,         0 , UVAR_REQUIRED, "Input file 1");
+   XLALregSTRINGUserStruct(infile2,         0 , UVAR_REQUIRED, "Input file 2");
+   XLALregSTRINGUserStruct(outfile1,        0 , UVAR_REQUIRED, "Temporary output file with all coincident candidates");
+   XLALregSTRINGUserStruct(outfile2,        0 , UVAR_REQUIRED, "Temporary output file with subset of coincient outliers");
+   XLALregSTRINGUserStruct(outfile3,        0 , UVAR_REQUIRED, "Temporary output file with alternate subset of coincident outliers");
+   XLALregSTRINGUserStruct(finalOutfile,    0 , UVAR_REQUIRED, "Final output file of coincident outliers");
+   XLALregREALUserStruct(  Tobs,            0 , UVAR_REQUIRED, "Total observation time (in seconds)");
+   XLALregREALUserStruct(  Tcoh,            0 , UVAR_OPTIONAL, "SFT coherence time (in seconds)");
+   XLALregREALUserStruct(  fdiff_allowed,   0 , UVAR_REQUIRED, "Difference in frequencies allowed (in Hz)");
+   XLALregREALUserStruct(  dfdiff_allowed,  0 , UVAR_REQUIRED, "Difference in modulation depth allowed (in Hz)");
+   XLALregREALUserStruct(  skydiff_allowed, 0 , UVAR_REQUIRED, "Difference in sky location allowed (in radians) at fiducial frequency 200 Hz");
+
+   XLAL_CHECK( XLALUserVarReadAllInput(argc, argv) == XLAL_SUCCESS, XLAL_EFUNC );
+
+   if ( uvar->help ) exit (0);
+
+   return XLAL_SUCCESS;
+}
 double f_diff(double indexval, void *params) {
    struct solver_params *p = (struct solver_params *)params;
    return p->fvalue - p->data_array[(int)round(indexval)*9];
@@ -110,24 +153,18 @@ INT4 main(int argc, char *argv[]) {
    //Turn off gsl error handler
    gsl_set_error_handler_off();
 
-   struct gengetopt_args_info args_info;
-   struct cmdline_parser_params *configparams;
-   configparams = cmdline_parser_params_create();
-   configparams->check_required = 0;  //don't check for required values at the step
-   cmdline_parser_ext(argc, argv, &args_info, configparams);
-   configparams->initialize = 0;  //don't reinitialize the parameters structure
-   if (args_info.config_given) cmdline_parser_config_file(args_info.config_arg, &args_info, configparams);
-   cmdline_parser_required(&args_info, argv[0]);
+   UserVariables_t XLAL_INIT_DECL(uvar);
+   XLAL_CHECK ( InitUserVars(&uvar, argc, argv) == XLAL_SUCCESS, XLAL_EFUNC );
 
    double *allIFO1cands_sorted = NULL, *allIFO2cands_sorted = NULL;
    int *allIFO1cands_job_sorted = NULL, *allIFO2cands_job_sorted = NULL;
    int ifo1count = 0, ifo2count = 0;
-   XLAL_CHECK( readInIFOoutliersAndSort(&allIFO1cands_sorted, &allIFO1cands_job_sorted, &ifo1count, args_info.infile1_arg) == XLAL_SUCCESS, XLAL_EFUNC );
-   XLAL_CHECK( readInIFOoutliersAndSort(&allIFO2cands_sorted, &allIFO2cands_job_sorted, &ifo2count, args_info.infile2_arg) == XLAL_SUCCESS, XLAL_EFUNC );
+   XLAL_CHECK( readInIFOoutliersAndSort(&allIFO1cands_sorted, &allIFO1cands_job_sorted, &ifo1count, uvar.infile1) == XLAL_SUCCESS, XLAL_EFUNC );
+   XLAL_CHECK( readInIFOoutliersAndSort(&allIFO2cands_sorted, &allIFO2cands_job_sorted, &ifo2count, uvar.infile2) == XLAL_SUCCESS, XLAL_EFUNC );
 
    //Open a file to save the output data
    FILE *CANDS = NULL;
-   XLAL_CHECK( (CANDS = fopen(args_info.outfile1_arg,"w")) != NULL, XLAL_EIO, "Can't fopen %s", args_info.outfile1_arg );
+   XLAL_CHECK( (CANDS = fopen(uvar.outfile1,"w")) != NULL, XLAL_EIO, "Can't fopen %s", uvar.outfile1 );
 
    //Setup and allocate the solver
    int status = GSL_CONTINUE;
@@ -140,11 +177,11 @@ INT4 main(int argc, char *argv[]) {
    gsl_root_fsolver *s = NULL;
    XLAL_CHECK( (s = gsl_root_fsolver_alloc(T)) != NULL, XLAL_EFUNC );
 
-   double tobs = args_info.Tobs_arg;
-   double fdiff_allowed = args_info.fdiff_allowed_arg;
-   double dfdiff_allowed = args_info.dfdiff_allowed_arg;
-   double skydiff_allowed = args_info.skydiff_allowed_arg*200.0;
-   double periodTcohFactor = 2.7*(args_info.Tcoh_arg/1800.0) + 1.8;
+   double tobs = uvar.Tobs;
+   double fdiff_allowed = uvar.fdiff_allowed;
+   double dfdiff_allowed = uvar.dfdiff_allowed;
+   double skydiff_allowed = uvar.skydiff_allowed*200.0;
+   double periodTcohFactor = 2.7*(uvar.Tcoh/1800.0) + 1.8;
    int numpassingf = 0, numpassingdf = 0, numpassingP = 0, numpassingskyloc = 0;
    INT4 ii, jj;
    for (ii=0; ii<ifo1count; ii++) {
@@ -343,7 +380,7 @@ INT4 main(int argc, char *argv[]) {
    double *allcands = NULL;
    int *allcands_job = NULL;
    int count = 0;
-   XLAL_CHECK( readInCoincidentOutliers(&allcands, &allcands_job, &count, args_info.outfile1_arg) == XLAL_SUCCESS, XLAL_EFUNC );
+   XLAL_CHECK( readInCoincidentOutliers(&allcands, &allcands_job, &count, uvar.outfile1) == XLAL_SUCCESS, XLAL_EFUNC );
 
    //Allocate usedvalue array
    INT4Vector *usedvalue = NULL;
@@ -352,7 +389,7 @@ INT4 main(int argc, char *argv[]) {
 
    //Open a file to save the output data
    FILE *NEWCANDS = NULL;
-   XLAL_CHECK( (NEWCANDS = fopen(args_info.outfile2_arg,"w")) != NULL, XLAL_EIO, "Couldn't fopen %s\n", args_info.outfile2_arg );
+   XLAL_CHECK( (NEWCANDS = fopen(uvar.outfile2,"w")) != NULL, XLAL_EIO, "Couldn't fopen %s\n", uvar.outfile2 );
 
    for (ii=0; ii<count; ii++) {
       if (!usedvalue->data[ii]) {
@@ -384,13 +421,13 @@ INT4 main(int argc, char *argv[]) {
 
    /// PART THREE: ///
 
-   XLAL_CHECK( readInCoincidentOutliers(&allcands, &allcands_job, &count, args_info.outfile2_arg) == XLAL_SUCCESS, XLAL_EFUNC );
+   XLAL_CHECK( readInCoincidentOutliers(&allcands, &allcands_job, &count, uvar.outfile2) == XLAL_SUCCESS, XLAL_EFUNC );
 
    XLAL_CHECK( (usedvalue = XLALCreateINT4Vector(count)) != NULL, XLAL_EFUNC );
    memset(usedvalue->data, 0, sizeof(INT4)*count);
 
    //Open a file to save the output data
-   XLAL_CHECK( (NEWCANDS = fopen(args_info.finalOutfile_arg,"w")) != NULL, XLAL_EIO, "Couldn't fopen %s\n", args_info.finalOutfile_arg );
+   XLAL_CHECK( (NEWCANDS = fopen(uvar.finalOutfile,"w")) != NULL, XLAL_EIO, "Couldn't fopen %s\n", uvar.finalOutfile );
 
    for (ii=0; ii<count; ii++) {
       if (!usedvalue->data[ii]) {
@@ -421,13 +458,13 @@ INT4 main(int argc, char *argv[]) {
 
 
    //PART FOUR: Swap input values
-   XLAL_CHECK( readInCoincidentOutliers(&allcands, &allcands_job, &count, args_info.outfile1_arg) == XLAL_SUCCESS, XLAL_EFUNC );
+   XLAL_CHECK( readInCoincidentOutliers(&allcands, &allcands_job, &count, uvar.outfile1) == XLAL_SUCCESS, XLAL_EFUNC );
 
    XLAL_CHECK( (usedvalue = XLALCreateINT4Vector(count)) != NULL, XLAL_EFUNC );
    memset(usedvalue->data, 0, sizeof(INT4)*count);
 
    //Open a file to save the output data
-   XLAL_CHECK( (NEWCANDS = fopen(args_info.outfile3_arg,"w")) != NULL, XLAL_EIO, "Couldn't fopen %s\n", args_info.outfile3_arg );
+   XLAL_CHECK( (NEWCANDS = fopen(uvar.outfile3,"w")) != NULL, XLAL_EIO, "Couldn't fopen %s\n", uvar.outfile3 );
 
    for (ii=0; ii<count; ii++) {
       if (!usedvalue->data[ii]) {
@@ -458,13 +495,13 @@ INT4 main(int argc, char *argv[]) {
    XLALDestroyINT4Vector(usedvalue);
 
 
-   XLAL_CHECK( readInCoincidentOutliers(&allcands, &allcands_job, &count, args_info.outfile3_arg) == XLAL_SUCCESS, XLAL_EFUNC );
+   XLAL_CHECK( readInCoincidentOutliers(&allcands, &allcands_job, &count, uvar.outfile3) == XLAL_SUCCESS, XLAL_EFUNC );
 
    XLAL_CHECK( (usedvalue = XLALCreateINT4Vector(count)) != NULL, XLAL_EFUNC );
    memset(usedvalue->data, 0, sizeof(INT4)*count);
 
    //Open a file to save the output data
-   XLAL_CHECK( (NEWCANDS = fopen(args_info.finalOutfile_arg,"a")) != NULL, XLAL_EIO, "Couldn't fopen %s\n", args_info.finalOutfile_arg );
+   XLAL_CHECK( (NEWCANDS = fopen(uvar.finalOutfile,"a")) != NULL, XLAL_EIO, "Couldn't fopen %s\n", uvar.finalOutfile );
 
    for (ii=0; ii<count; ii++) {
       if (!usedvalue->data[ii]) {
@@ -493,6 +530,8 @@ INT4 main(int argc, char *argv[]) {
    XLALFree(allcands);
    XLALFree(allcands_job);
    XLALDestroyINT4Vector(usedvalue);
+
+   XLALDestroyUserVars();
 
    return 0;
 }
