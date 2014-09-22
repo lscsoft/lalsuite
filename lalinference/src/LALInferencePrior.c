@@ -40,7 +40,7 @@ static double outerIntegrand(double M1, void *voData);
 /* Return the log Prior of the variables specified, for the non-spinning/spinning inspiral signal case */
 REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVariables *params, LALInferenceModel *model)
 {
-  if (runState->priorArgs == NULL || params == NULL)
+  if (runState == NULL || runState->priorArgs == NULL || params == NULL)
     XLAL_ERROR_REAL8(XLAL_EFAULT, "Null arguments received.");
 
   REAL8 logPrior=0.0;
@@ -150,7 +150,8 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
     if(*(REAL8 *)LALInferenceGetVariable(priorParams,"MTotMax") < m1+m2)
       return -DBL_MAX;
 
-  if(LALInferenceCheckVariable(priorParams,"malmquist") &&
+  if(model != NULL &&
+        LALInferenceCheckVariable(priorParams,"malmquist") &&
         *(UINT4 *)LALInferenceGetVariable(priorParams,"malmquist") &&
         !within_malmquist(runState, params, model))
       return -DBL_MAX;
@@ -622,7 +623,8 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
         if(*(REAL8 *)LALInferenceGetVariable(priorParams,"MTotMax") < m1+m2)
             return 0;
 
-    if(LALInferenceCheckVariable(priorParams,"malmquist") &&
+    if(model != NULL &&
+        LALInferenceCheckVariable(priorParams,"malmquist") &&
         *(UINT4 *)LALInferenceGetVariable(priorParams,"malmquist") &&
         !within_malmquist(runState, params, model))
       return 0;
