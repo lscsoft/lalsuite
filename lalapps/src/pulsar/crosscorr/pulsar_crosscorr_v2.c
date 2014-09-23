@@ -601,23 +601,22 @@ int main(int argc, char *argv[]){
     LogPrintf ( LOG_CRITICAL, "Can't write in logfile", 0);
     XLAL_ERROR( XLAL_EFUNC );
     }
-    fprintf(fp, "##Log File for lalapps_pulsar_crosscorr_v2\n\n");
-    fprintf(fp, "#User Input:\n");
-    fprintf(fp, "\n#--------------------------------------------------------------------------#\n\n");
+    fprintf(fp, "#Log File for lalapps_pulsar_crosscorr_v2\n\n");
+    fprintf(fp, "#[User Input]\n\n");
     fprintf(fp, "%s\n", CMDInputStr);
-    fprintf(fp, "\n#--------------------------------------------------------------------------#\n\n");
-    fprintf(fp, "#Metric components & spacing in parameter space:\n");
-    fprintf(fp, "#The metric element g_ff = %.9f\n", diagff );
-    fprintf(fp, "#The metric element g_aa = %.9f\n", diagaa );
-    fprintf(fp, "#The metric element g_TT = %.9f\n", diagTT );
-    fprintf(fp, "#The average template (E[rho]/h0^2)^2 = %.9g\n", estSens);
-    fprintf(fp, "#The h0_min = %.9g for SNR = 10\n", h0Sens);
-    fprintf(fp, "#The frequency spacing used was %.9g Hz\n", binaryTemplateSpacings.fkdot[0]);
-    fprintf(fp, "#The Tasc spacing used was %.9g GPSSec\n", XLALGPSGetREAL8(&binaryTemplateSpacings.tp));
-    fprintf(fp, "#The asini spacing used was %.9g s\n", binaryTemplateSpacings.asini);
-    fprintf(fp, "#The period spacing used was 0 (didn't search over orbital period)\n\n");
-    fprintf(fp, "\n#--------------------------------------------------------------------------#\n\n");
-    fprintf(fp, "#LAL & LALAPPS version:\n%s\n",  VCSInfoString);
+    fprintf(fp, "#[Metric components & spacing in parameter space]\n\n");
+    fprintf(fp, "g_ff = %.9f\n", diagff );
+    fprintf(fp, "g_aa = %.9f\n", diagaa );
+    fprintf(fp, "g_TT = %.9f\n", diagTT );
+    fprintf(fp, "FSpacing = %.9g\n", binaryTemplateSpacings.fkdot[0]);
+    fprintf(fp, "ASpacing = %.9g\n", binaryTemplateSpacings.asini);
+    fprintf(fp, "TSpacing = %.9g\n", XLALGPSGetREAL8(&binaryTemplateSpacings.tp));
+    fprintf(fp, "Sens = %.9g\n", estSens);/*(E[rho]/h0^2)^2*/
+    fprintf(fp, "h0_min = %.9g\n", h0Sens);
+    fprintf(fp, "#for SNR = 10\n");
+    /* fprintf(fp, "PSpacing = %.9g\n", binaryTemplateSpacings.period );*/
+    fprintf(fp, "\n#[LAL & LALAPPS version]\n\n");
+    fprintf(fp, "%s",  VCSInfoString);
     fclose(fp);
     XLALFree(CMDInputStr);
   }
