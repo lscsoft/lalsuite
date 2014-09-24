@@ -2727,6 +2727,19 @@ void LALInferencePrintInjectionSample(LALInferenceRunState *runState)
     Approximant *approx=LALInferenceGetVariable(&backup,"LAL_APPROXIMANT");
     /* Fill named variables */
     LALInferenceInjectionToVariables(theEventTable,runState->currentParams);
+
+    /* If the time prior is stored in currentParams for the margtime likelihood, this will copy its range over */
+    if(LALInferenceCheckVariable(&backup,"time_min"))
+    {
+            REAL8 time_min=LALInferenceGetREAL8Variable(&backup,"time_min");
+            LALInferenceAddVariable(runState->currentParams,"time_min",&time_min,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
+    }
+    if(LALInferenceCheckVariable(&backup,"time_max"))
+    {
+            REAL8 time_max=LALInferenceGetREAL8Variable(&backup,"time_max");
+            LALInferenceAddVariable(runState->currentParams,"time_max",&time_max,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
+    }
+
     if(order && approx){
       /* Set the waveform to the one used in the analysis */
       LALInferenceRemoveVariable(runState->currentParams,"LAL_APPROXIMANT");
