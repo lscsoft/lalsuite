@@ -601,10 +601,9 @@ int main(int argc, char *argv[]){
     LogPrintf ( LOG_CRITICAL, "Can't write in logfile", 0);
     XLAL_ERROR( XLAL_EFUNC );
     }
-    fprintf(fp, "#Log File for lalapps_pulsar_crosscorr_v2\n\n");
-    fprintf(fp, "#[User Input]\n\n");
+    fprintf(fp, "[UserInput]\n\n");
     fprintf(fp, "%s\n", CMDInputStr);
-    fprintf(fp, "#[Metric components & spacing in parameter space]\n\n");
+    fprintf(fp, "[CalculatedValues]\n\n");
     fprintf(fp, "g_ff = %.9f\n", diagff );
     fprintf(fp, "g_aa = %.9f\n", diagaa );
     fprintf(fp, "g_TT = %.9f\n", diagTT );
@@ -612,10 +611,9 @@ int main(int argc, char *argv[]){
     fprintf(fp, "ASpacing = %.9g\n", binaryTemplateSpacings.asini);
     fprintf(fp, "TSpacing = %.9g\n", XLALGPSGetREAL8(&binaryTemplateSpacings.tp));
     fprintf(fp, "Sens = %.9g\n", estSens);/*(E[rho]/h0^2)^2*/
-    fprintf(fp, "h0_min = %.9g\n", h0Sens);
-    fprintf(fp, "#for SNR = 10\n");
+    fprintf(fp, "h0_min_SNR10 = %.9g\n", h0Sens);/*for rho = 10 in our pipeline*/
     /* fprintf(fp, "PSpacing = %.9g\n", binaryTemplateSpacings.period );*/
-    fprintf(fp, "\n#[LAL & LALAPPS version]\n\n");
+    fprintf(fp, "\n[Version]\n\n");
     fprintf(fp, "%s",  VCSInfoString);
     fclose(fp);
     XLALFree(CMDInputStr);
