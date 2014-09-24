@@ -54,6 +54,10 @@ cp.readfp(open(inifile))
 if opts.run_path is not None:
   cp.set('paths','basedir',os.path.abspath(opts.run_path))
 
+if not cp.has_option('paths','basedir'):
+  print 'Error: Must specify a directory with --run-path DIR'
+  sys.exit(1)
+
 if opts.daglog_path is not None:
   cp.set('paths','daglogdir',os.path.abspath(opts.daglog_path))
 elif opts.run_path is not None:
