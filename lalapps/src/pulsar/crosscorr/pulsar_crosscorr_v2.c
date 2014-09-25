@@ -611,11 +611,11 @@ int main(int argc, char *argv[]){
     fprintf(fp, "ASpacing = %.9g\n", binaryTemplateSpacings.asini);
     fprintf(fp, "TSpacing = %.9g\n", XLALGPSGetREAL8(&binaryTemplateSpacings.tp));
     /* fprintf(fp, "PSpacing = %.9g\n", binaryTemplateSpacings.period );*/
-    fprintf(fp, "TemplatenumF = %lu\n", (fSpacingNum + 1));
-    fprintf(fp, "TemplatenumA = %lu\n", (aSpacingNum + 1));
-    fprintf(fp, "TemplatenumT = %lu\n", (tSpacingNum + 1));
-    fprintf(fp, "TemplatenumP = %lu\n", (pSpacingNum + 1));
-    fprintf(fp, "TemplatenumTotal = %lu\n",(fSpacingNum + 1) * (aSpacingNum + 1) * (tSpacingNum + 1) * (pSpacingNum + 1));
+    fprintf(fp, "TemplatenumF = %" LAL_UINT8_FORMAT "\n", (fSpacingNum + 1));
+    fprintf(fp, "TemplatenumA = %" LAL_UINT8_FORMAT "\n", (aSpacingNum + 1));
+    fprintf(fp, "TemplatenumT = %" LAL_UINT8_FORMAT "\n", (tSpacingNum + 1));
+    fprintf(fp, "TemplatenumP = %" LAL_UINT8_FORMAT "\n", (pSpacingNum + 1));
+    fprintf(fp, "TemplatenumTotal = %" LAL_UINT8_FORMAT "\n",(fSpacingNum + 1) * (aSpacingNum + 1) * (tSpacingNum + 1) * (pSpacingNum + 1));
     fprintf(fp, "Sens = %.9g\n", estSens);/*(E[rho]/h0^2)^2*/
     fprintf(fp, "h0_min_SNR10 = %.9g\n", h0Sens);/*for rho = 10 in our pipeline*/
     fprintf(fp, "\n[Version]\n\n");
