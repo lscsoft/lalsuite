@@ -834,9 +834,9 @@ void coh_PTF_create_time_slide_table(
           tmpSlideStartTime = segments[ifoNumber]->sgmnt[i].epoch; 
           tmpSlideEndTime = segments[ifoNumber]->sgmnt[i].epoch;
           XLALGPSAdd(&tmpSlideStartTime, \
-                     timeSlideVectors[ifoNumber*params->numOverlapSegments+i]);
+                    -timeSlideVectors[ifoNumber*params->numOverlapSegments+i]);
           XLALGPSAdd(&tmpSlideEndTime, \
-                     timeSlideVectors[ifoNumber*params->numOverlapSegments+i]);
+                    -timeSlideVectors[ifoNumber*params->numOverlapSegments+i]);
           if (calculatedFlag)
           {
             if (XLALGPSCmp(&tmpSlideStartTime, &slideStartTime))

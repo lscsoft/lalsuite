@@ -541,7 +541,7 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
     # setup onoff node
     if timeSlides:
       node = trig_combiner_setup(job, tag, ifotag, usertag, grb, None,\
-                                 grbdir, numtrials, outdir,slidetag=zlString,\
+                                 grbdir, numtrials, outdir, slidetag=zlString,\
                                  timeslidecache=onoffcache)
     else:
       node = trig_combiner_setup(job, tag, ifotag, usertag, grb, onoffcache,\
@@ -552,6 +552,8 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
     if timeSlides:
       # setup long slide nodes
       for slideTag in slideStrings:
+        if slideTag == zlString:
+          continue
         node = trig_combiner_setup(job, tag, ifotag, usertag, grb, None,\
                                    grbdir, numtrials, outdir,slidetag=slideTag,\
                                    timeslidecache=timeSlidesCache,)
