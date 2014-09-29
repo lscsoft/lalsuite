@@ -228,40 +228,30 @@ class GraceDb(GsiRest):
         return self.service_info.get('templates')
 
     @property
-    def analysis_types(self):
-        return self.service_info.get('analysis-types')
-
-    @property
     def groups(self):
         return self.service_info.get('groups')
+    
+    @property
+    def pipelines(self):
+        return self.service_info.get('pipelines')
+
+    @property
+    def searches(self):
+        return self.service_info.get('searches')
 
     def request(self, method, *args, **kwargs):
         if method.lower() in ['post', 'put']:
             kwargs['priming_url'] = self.service_url
         return GsiRest.request(self, method, *args, **kwargs)
 
-    def _analysisTypeCode(self, analysis_type):
-        """Check if analysis_type is valid.
-           Return coded version of type if it is"""
-        # types is dict of { code : descriptive_name }
-        types = self.analysis_types
-        if analysis_type in types.keys():
-            # Already coded
-            return analysis_type
-        if not analysis_type in types.values():
-            # Not valid
-            return None
-        return [code
-                for code, name in types.items()
-                if name == analysis_type][0]
-
-    def createEvent(self, group, analysis_type, filename, filecontents=None):
+    def createEvent(self, group, pipeline, search, filename, filecontents=None):
         errors = []
-        analysis_type_code = self._analysisTypeCode(analysis_type)
         if group not in self.groups:
             errors += ["bad group"]
-        if not analysis_type_code:
-            errors += ["bad type"]
+        if pipeline not in self.pipelines:
+            errors += ["bad pipeline"]
+        if search and search not in self.searches:
+            errors += ["bad search"]
         if errors:
             # XXX Terrible error messages / weak exception type
             raise Exception(str(errors))
@@ -273,8 +263,10 @@ class GraceDb(GsiRest):
                 filecontents = open(filename, 'rb').read() 
         fields = [
                   ('group', group),
-                  ('type', analysis_type_code),
+                  ('pipeline', pipeline),
                  ]
+        if search:
+            fields.append(('search', search))
         files = [('eventFile', filename, filecontents)]
         # Python httplib bug?  unicode link
         uri = str(self.links['events'])
