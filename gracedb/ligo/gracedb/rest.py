@@ -367,21 +367,6 @@ class GraceDb(GsiRest):
         uri = template.format(graceid=graceid, label=label)
         return self.delete(uri)
 
-    def slot(self, graceid, slotname, raw=False):
-        template = self.templates['slot-template']
-        uri = template.format(graceid=graceid, slotname=slotname)
-        return self.get(uri)
-
-    def createSlot(self, graceid, slotname, filename):
-        template = self.templates['slot-template']
-        uri = template.format(graceid=graceid, slotname=slotname)
-        return self.put(uri, body={'filename' : filename})
-
-    def deleteSlot(self, graceid, slotname):
-        template = self.templates['slot-template']
-        uri = template.format(graceid=graceid, slotname=slotname)
-        return self.delete(uri)
-
     def tags(self, graceid, n):
         template = self.templates['taglist-template']
         uri = template.format(graceid=graceid, n=n)
