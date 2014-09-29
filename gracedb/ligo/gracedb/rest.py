@@ -244,7 +244,8 @@ class GraceDb(GsiRest):
             kwargs['priming_url'] = self.service_url
         return GsiRest.request(self, method, *args, **kwargs)
 
-    def createEvent(self, group, pipeline, search, filename, filecontents=None):
+    # Search and filecontents are optional when creating an event.
+    def createEvent(self, group, pipeline, filename, search=None, filecontents=None):
         errors = []
         if group not in self.groups:
             errors += ["bad group"]

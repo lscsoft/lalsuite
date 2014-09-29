@@ -25,7 +25,7 @@ DEFAULT_SERVICE_URL = "https://gracedb.ligo.org/gracedb/api"
 
 GIT_TAG = 'gracedb-1.14-1'
 
-DEFAULT_COLUMNS = "graceid,labels,group,analysisType,far,gpstime,created,dataurl"
+DEFAULT_COLUMNS = "graceid,labels,group,pipeline,search,far,gpstime,created,dataurl"
  
 #-----------------------------------------------------------------
 # Util routines
@@ -120,14 +120,20 @@ class Client(GraceDb):
 
 
 def main():
-    usage ="""%%prog [options] GROUP TYPE EVENTFILE
+    usage ="""%%prog [options] GROUP PIPELINE SEARCH EVENTFILE
    where GROUP is one of %(groups)s
-         TYPE is one of %(types)s
+         PIPELINE is one of %(pipelines)s
+         SEARCH (optional) is one of %(searches)s
          EVENTFILE is file containing event data. '-' indicates stdin.
+    NOTE: the groups, pipelines and searches in this docstring may not
+    be up top date. To see an accurate list, do:
+
+    %%prog list groups
+    %%prog list pipelines
+    %%prog list searches
 
 %%prog [options] replace GRACEID EVENTFILE
    where GROUP is one of %(groups)s
-         TYPE is one of %(types)s
          EVENTFILE is file containing event data. '-' indicates stdin.
 
 %%prog [options] ping
@@ -190,8 +196,9 @@ Credentials are looked for in this order:
 
 Note that comments can only be 200 characters long.
 Longer strings will be truncated.""" % {
-        'groups' : 'CBC, Burst, Stochastic, Coherent, Test, External',
-        'types'  : ", ".join(validTypes),
+        'groups'     : 'CBC, Burst, Stochastic, Coherent, Test, External',
+        'pipelines'  : 'MBTAOnline, gstlal, gstlal-spiir, HardwareInjection, Fermi, Swift, CWB, CWB2G',
+        'searches'   : 'AllSky, LowMass, HighMass, GRB, Test',
     }
 
     from optparse import OptionParser
@@ -266,9 +273,25 @@ Longer strings will be truncated.""" % {
         op.error("not enough arguments")
     elif args[0] == 'ping':
         response = client.ping()
+        output("Client groups: %s" % client.groups)
+        output("Client pipelines: %s" % client.pipelines)
+        output("Client searches: %s" % client.searches)
         if response.status==200:
             output("%s: 200 OK" % service)
             exit(0)
+    elif args[0] == 'list':
+        if args[1] == 'groups':
+            output(client.groups)
+            exit(0)
+        elif args[1] == 'pipelines':
+            output(client.pipelines)
+            exit(0)
+        elif args[1] == 'searches':
+            output(client.searches)
+            exit(0)
+        else:
+            output("Unknown list object. Please use 'groups', 'pipelines', or 'searches.'")
+            exit(1)
     elif args[0] == 'upload':
         if len(args) < 3:
             op.error("not enough arguments for upload")
@@ -392,32 +415,37 @@ Longer strings will be truncated.""" % {
         graceid = args[1]
         filename = args[2]
         response = client.replaceEvent(graceid, filename)
-    elif len(args) == 3:
+    elif len(args) in [3,4]:
         # Create a new event.
         group = args[0]
-        type = args[1]
-        filename = args[2]
+        pipeline = args[1]
+        if len(args)==3:
+            search = None
+            filename = args[2]
+        else:
+            search = args[2]
+            filename = args[3]
 
-        # Check that the group and type are known to the API.
-        # NB: the dictionary returned by the API has keys and values
-        # reversed w.r.t. the typeCodeMap above.
-        foundType = False
-        for key, value in client.analysis_types.items():
-            if type==str(value):
-                type = key
-                foundType = True
-        if not foundType:
-            error("Type must be one of: ", ", ".join(client.analysis_types.values()))
-            sys.exit(1)
-
+        # Check that the group, search, and pipeline are known to the API.
         foundGroup = True if (unicode(group) in client.groups) else False
         if not foundGroup:
             error("Group must be one of: ", ", ".join(client.groups))
             sys.exit(1)
 
-        response = client.createEvent(group, type, filename)
+        foundPipeline = True if (unicode(pipeline) in client.pipelines) else False
+        if not foundPipeline:
+            error("Pipeline must be one of: ", ", ".join(client.pipelines))
+            sys.exit(1)
+
+        if search:
+            foundSearch = True if (unicode(search) in client.searches) else False
+            if not foundSearch:
+                error("Search must be one of: ", ", ".join(client.searches))
+                sys.exit(1)
+
+        response = client.createEvent(group, pipeline, filename, search)
         if not response:
-            error("There was a problem.  Did you do grid-proxy-init -rfc?")
+            error("There was a problem.  Did you do ligo-proxy-init?")
             sys.exit(1)
 
         # XXX Must output graceid for consistency with earlier client.

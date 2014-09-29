@@ -14,7 +14,7 @@ from ligo.gracedb.rest import GraceDb
 #  Environment Variables:
 #
 #     TEST_SERVICE
-#       defaults to https://moe.phys.uwm.edu/gracedb/api/
+#       defaults to https://moe.phys.uwm.edu/branson/api/
 #       live site would be https://gracedb.ligo.org/api/
 #
 #     TEST_DATA_DIR
@@ -36,7 +36,7 @@ from ligo.gracedb.rest import GraceDb
 #     X509_USER_KEY
 
 
-TEST_SERVICE = "https://moe.phys.uwm.edu/gracedb/api/"
+TEST_SERVICE = "https://moe.phys.uwm.edu/branson/api/"
 
 class TestGracedb(unittest.TestCase):
     """
@@ -163,7 +163,7 @@ class TestGracedb(unittest.TestCase):
         self.assertEqual(r.status, 201) # CREATED
         cwb_event = r.json()
         self.assertEqual(cwb_event['group'], "Test")
-        self.assertEqual(cwb_event['analysisType'], "CWB")
+        self.assertEqual(cwb_event['pipeline'], "CWB")
         self.assertEqual(cwb_event['gpstime'], 1042312876)
 
     def test_create_lowmass(self):
@@ -177,9 +177,9 @@ class TestGracedb(unittest.TestCase):
         """cbc-mbta.gwf"""
         eventFile = os.path.join(testdatadir, "cbc-mbta.gwf")
         mbta_event = gracedb.createEvent(
-                "Test", "MBTA", eventFile).json()
+                "Test", "MBTAOnline", eventFile).json()
         self.assertEqual(mbta_event['group'], "Test")
-        self.assertEqual(mbta_event['analysisType'], "MBTAOnline")
+        self.assertEqual(mbta_event['pipeline'], "MBTAOnline")
         self.assertEqual(mbta_event['gpstime'], 1011992635)
         self.assertEqual(mbta_event['far'], 0.000245980441198379)
 
@@ -188,7 +188,7 @@ class TestGracedb(unittest.TestCase):
 
         old_event = gracedb.event(graceid).json()
         self.assertEqual(old_event['group'], "Test")
-        self.assertEqual(old_event['analysisType'], "LowMass")
+        self.assertEqual(old_event['search'], "LowMass")
         self.assertEqual(old_event['gpstime'], 971609248)
 
         replacementFile = os.path.join(testdatadir, "cbc-lm2.xml")
@@ -198,7 +198,7 @@ class TestGracedb(unittest.TestCase):
 
         new_event = gracedb.event(graceid).json()
         self.assertEqual(new_event['group'], "Test")
-        self.assertEqual(new_event['analysisType'], "LowMass")
+        self.assertEqual(new_event['search'], "LowMass")
         self.assertEqual(new_event['gpstime'], 971609249)
 
     def test_upload_binary(self):
@@ -300,7 +300,7 @@ if __name__ == "__main__":
 
     eventFile = os.path.join(testdatadir, "cbc-lm.xml")
     createdEvent = gracedb.createEvent(
-            "Test", "LowMass", eventFile).json()
+            "Test", "gstlal", eventFile, "LowMass").json()
     eventId = createdEvent["graceid"]
 
     unittest.main()
