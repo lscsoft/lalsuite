@@ -948,6 +948,7 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
    /* Use GSL to compute the ACF */
    for(UINT4 lag=0;ACF>=ACF_TOLERANCE&&lag<max_iterations/2;lag++){
       ACF=(REAL8) gsl_stats_correlation(&data_array[i][0], 1, &data_array[i][lag], 1, max_iterations-lag);
+      if(isnan(ACF)) ACF=1.;
       acf_array[i][lag]=ACF;
       ACL+=2.0*ACF;
       if((ACF<ACF_TOLERANCE && startflag) || lag==max_iterations/2-1){
