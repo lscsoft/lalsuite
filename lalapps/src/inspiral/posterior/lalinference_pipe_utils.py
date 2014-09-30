@@ -1195,6 +1195,10 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
         self.add_ini_opts(cp,'engine')
     self.set_stdout_file(os.path.join(logdir,'lalinference-$(cluster)-$(process)-$(node).out'))
     self.set_stderr_file(os.path.join(logdir,'lalinference-$(cluster)-$(process)-$(node).err'))
+    if cp.has_option('engine','resume'):
+        self.resume=True
+    else:
+        self.resume=False
  
   def set_grid_site(self,site=None):
     """
@@ -1471,6 +1475,8 @@ class LALInferenceNestNode(EngineNode):
     self.add_output_file(self.Bfilename)
     self.headerfile=self.nsfile+'_params.txt'
     self.add_output_file(self.headerfile)
+    if self.job().resume:
+        self.add_checkpoint_file(self.nsfile+'_resume')
 
   def get_B_file(self):
     return self.Bfilename
