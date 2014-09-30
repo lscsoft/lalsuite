@@ -38,7 +38,6 @@ from lalinspiral.sbank.bank import Bank
 from lalinspiral.sbank.tau0tau3 import proposals
 from lalinspiral.sbank.psds import noise_models, read_psd, get_PSD
 from lalinspiral.sbank.waveforms import waveforms
-from pylal.xlal.constants import LAL_PI, LAL_MTSUN_SI
 
 import lal
 
@@ -258,7 +257,7 @@ else:
 
     # update mchirp bounds
     # FIXME store boundaries in metadata of bank seed file
-    A0 = 5. / (256 * (LAL_PI * opts.flow)**(8./3)) # eqn B3
+    A0 = 5. / (256 * (lal.PI * opts.flow)**(8./3)) # eqn B3
     if opts.mchirp_min is None:
         opts.mchirp_min = min([b._mchirp for b in bank])
     if opts.mchirp_max is None:
