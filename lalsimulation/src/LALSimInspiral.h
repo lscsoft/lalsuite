@@ -105,6 +105,21 @@ typedef enum {
    NumApproximants	/**< Number of elements in enum, useful for checking bounds */
  } Approximant;
 
+/** Enum of various frequency functions */
+typedef enum {
+    fSchwarzISCO, /**< Schwarzschild ISCO */
+    fIMRPhenomAFinal, /**< Final frequency of IMRPhenomA */
+    fIMRPhenomBFinal, /**< Final of IMRPhenomB */
+    fIMRPhenomCFinal, /**< Final of IMRPhenomC */
+    fEOBNRv2RD, /**< Ringdown frequency of EOBNRv2 */
+    fEOBNRv2HMRD, /**< Ringdown frequency of highest harmonic in EOBNRv2HM */
+    fSEOBNRv1Peak, /**< Frequency of the peak amplitude in SEOBNRv1 */
+    fSEOBNRv1RD, /**< Dominant ringdown frequency in SEOBNRv1 */
+    fSEOBNRv2Peak, /**< Frequency of the peak amplitude in SEOBNRv2 */
+    fSEOBNRv2RD, /**< Dominant ringdown frequency in SEOBNRv2 */
+    NumFreqFunctions /**< Number of elements in the enum */
+ } FrequencyFunction;
+
 /** Enum of possible values to use for post-Newtonian order. */
 typedef enum {
   LAL_PNORDER_NEWTONIAN,	/**< Newtonain (leading) order */
@@ -151,6 +166,22 @@ int XLALSimInspiralREAL8WaveTaper(
 		LALSimInspiralApplyTaper  bookends	/**< taper type enumerator */
 		);
 
+
+/**
+ * Gives the value of the desired frequency given some physical parameters
+ *
+ */
+double XLALSimInspiralGetFrequency(
+    REAL8 m1,                   /**< mass of companion 1 (kg) */
+    REAL8 m2,                   /**< mass of companion 2 (kg) */
+    const REAL8 S1x,            /**< x-component of the dimensionless spin of object 1 */
+    const REAL8 S1y,            /**< y-component of the dimensionless spin of object 1 */
+    const REAL8 S1z,            /**< z-component of the dimensionless spin of object 1 */
+    const REAL8 S2x,            /**< x-component of the dimensionless spin of object 2 */
+    const REAL8 S2y,            /**< y-component of the dimensionless spin of object 2 */
+    const REAL8 S2z,            /**< z-component of the dimensionless spin of object 2 */
+    FrequencyFunction freqFunc  /**< name of the function to use */
+    );
 
 /**
  * Gives the default ending frequencies of the given approximant.

@@ -156,6 +156,86 @@ XLALSpinAlignedHiSRStopCondition(double UNUSED t,  /**< UNUSED */
   return GSL_SUCCESS;
 }
 
+
+/**
+ * This function returns the frequency at which the peak amplitude occurs
+ * in SEOBNRv(x)
+ *
+ */
+double XLALSimIMRSpinAlignedEOBPeakFrequency(
+    REAL8 m1SI,                 /**< mass of companion 1 (kg) */
+    REAL8 m2SI,                 /**< mass of companion 2 (kg) */
+    const REAL8 spin1z,         /**< z-component of the dimensionless spin of object 1 */
+    const REAL8 spin2z,         /**< z-component of the dimensionless spin of object 2 */
+    UINT4 SpinAlignedEOBversion /**< 1 for SEOBNRv1, 2 for SEOBNRv2 */
+    )
+{
+
+  /* The return variable, frequency in Hz */
+  double retFreq;
+
+  REAL8 nrOmega;
+
+  /* The mode to use; currently, only l=2, m=2 is supported */
+  INT4  ll = 2;
+  INT4  mm = 2;
+
+  /* Mass parameters (we'll work in units of solar mass) */
+  REAL8  m1 = m1SI / LAL_MSUN_SI;
+  REAL8  m2 = m2SI / LAL_MSUN_SI;
+  REAL8  Mtotal = m1+m2;
+  REAL8  eta = m1*m2 / (Mtotal * Mtotal);
+
+  /* We need spin vectors for the SigmaKerr function */
+  REAL8Vector *sigmaKerr = XLALCreateREAL8Vector( 3 );
+  int ii;
+  REAL8  aa;
+
+  REAL8Vector s1Vec, s2Vec;
+  s1Vec.length = s2Vec.length = 3;
+  REAL8 spin1[3] = {0., 0., spin1z};
+  REAL8 spin2[3] = {0., 0., spin2z};
+  s1Vec.data = spin1;
+  s2Vec.data = spin2;
+  /* the SigmaKerr function uses spins, not chis */
+  for( ii = 0; ii < 3; ii++ )
+  {
+    s1Vec.data[ii] *= m1*m1;
+    s2Vec.data[ii] *= m2*m2;
+  }
+
+  /* Calculate the normalized spin of the deformed-Kerr background */ 
+  if ( XLALSimIMRSpinEOBCalculateSigmaKerr( sigmaKerr, m1, m2, &s1Vec, &s2Vec ) == XLAL_FAILURE )
+  {
+    XLALDestroyREAL8Vector( sigmaKerr );
+    XLAL_ERROR( XLAL_EFUNC );
+  }
+
+  aa = sigmaKerr->data[2];
+
+ /* Now get the frequency at the peak amplitude */
+  switch ( SpinAlignedEOBversion )
+  {
+   case 1:
+     nrOmega = GetNRSpinPeakOmega( ll, mm, eta, aa );
+     break;
+   case 2:
+     nrOmega = GetNRSpinPeakOmegav2( ll, mm, eta, aa );
+     break;
+   default:
+     XLALPrintError( "XLAL Error - %s: Unknown SEOBNR version!\nAt present only v1 and v2 are available.\n", __func__);
+     XLAL_ERROR( XLAL_EINVAL );
+     break;
+  }
+
+  retFreq = nrOmega / (2 * LAL_PI * Mtotal * LAL_MTSUN_SI);
+
+  /* Free memory */
+  XLALDestroyREAL8Vector( sigmaKerr );
+
+  return retFreq;
+}
+
 /**
  * This function generates spin-aligned SEOBNRv1 waveforms h+ and hx.
  * Currently, only the h22 harmonic is available.

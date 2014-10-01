@@ -241,6 +241,123 @@ static int checkTidesZero(REAL8 lambda1, REAL8 lambda2)
 	} while (0)
 
 /**
+ * Function that gives the value of the desired frequency given some physical parameters
+ *
+ */
+double XLALSimInspiralGetFrequency(
+    REAL8 m1,                   /**< mass of companion 1 (kg) */
+    REAL8 m2,                   /**< mass of companion 2 (kg) */
+    const REAL8 S1x,            /**< x-component of the dimensionless spin of object 1 */
+    const REAL8 S1y,            /**< y-component of the dimensionless spin of object 1 */
+    const REAL8 S1z,            /**< z-component of the dimensionless spin of object 1 */
+    const REAL8 S2x,            /**< x-component of the dimensionless spin of object 2 */
+    const REAL8 S2y,            /**< y-component of the dimensionless spin of object 2 */
+    const REAL8 S2z,            /**< z-component of the dimensionless spin of object 2 */
+    FrequencyFunction freqFunc  /**< name of the function to use */
+    )
+{
+
+    double freq; /* The return value */
+
+    /* Variables needed for fIMRPhenom(x) */
+    double chi;
+    double m1Msun = m1 / LAL_MSUN_SI;
+    double m2Msun = m2 / LAL_MSUN_SI;
+
+    /* Variables needed for f(S)EOBNRv(x) */
+    UINT4 SpinAlignedEOBVersion;
+    Approximant approximant;
+    REAL8 spin1[3];
+    REAL8 spin2[3];
+    int     modeL;
+    int     modeM;
+    COMPLEX16Vector modefreqVec;
+    COMPLEX16      modeFreq;
+
+    switch (freqFunc)
+    {
+        case fSchwarzISCO: 
+            /* Schwarzschild ISCO */
+	        freq = pow(LAL_C_SI,3) / (pow(6.,3./2.)*LAL_PI*(m1+m2)*LAL_G_SI);
+            break;
+        case fIMRPhenomAFinal:
+            freq = XLALSimIMRPhenomAGetFinalFreq(m1Msun, m2Msun);
+            break;
+        case fIMRPhenomBFinal:
+            chi = XLALSimIMRPhenomBComputeChi(m1Msun, m2Msun, S1z, S2z);
+            freq = XLALSimIMRPhenomBGetFinalFreq(m1Msun, m2Msun, chi);
+            break;
+        case fIMRPhenomCFinal:
+            chi = XLALSimIMRPhenomBComputeChi(m1Msun, m2Msun, S1z, S2z);
+            freq = XLALSimIMRPhenomCGetFinalFreq(m1Msun, m2Msun, chi);
+            break;
+
+        /* EOBNR ringdown frequencies all come from the same code,
+         * just with different inputs */
+        case fEOBNRv2HMRD:
+        case fEOBNRv2RD:
+        case fSEOBNRv1RD:
+        case fSEOBNRv2RD:
+            // FIXME: Probably shouldn't hard code the modes.
+            if ( freqFunc == fEOBNRv2HMRD )
+            {
+                modeL = 5;
+                modeM = 5;
+                approximant = EOBNRv2HM;
+            }
+            else
+            {
+                modeL = 2;
+                modeM = 2;
+                if (freqFunc == fEOBNRv2RD) approximant = EOBNRv2;
+                if (freqFunc == fSEOBNRv1RD) approximant = SEOBNRv1;
+                if (freqFunc == fSEOBNRv2RD) approximant = SEOBNRv2;
+            }
+            if ( freqFunc == fEOBNRv2RD || freqFunc == fEOBNRv2HMRD )
+            {
+                /* Check that spins are zero */
+                if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
+                {
+                    XLALPrintError("Non-zero spins were given, but EOBNRv2 ringdown frequencies do not depend on spin.\n");
+                    XLAL_ERROR(XLAL_EINVAL);
+                spin1[0] = 0.; spin1[1] = 0.; spin1[2] = 0.;
+                spin2[0] = 0.; spin2[1] = 0.; spin2[2] = 0.;
+                }
+            }
+            else
+            {
+                spin1[0] = S1x; spin1[1] = S1y; spin1[2] = S1z;
+                spin2[0] = S2x; spin2[1] = S2y; spin2[2] = S2z;
+            }
+
+            modefreqVec.length = 1;
+            modefreqVec.data   = &modeFreq;
+            if ( XLALSimIMREOBGenerateQNMFreqV2( &modefreqVec, m1Msun, m2Msun, spin1, spin2, modeL, modeM, 1, approximant) != XLAL_SUCCESS )
+            {
+                XLAL_ERROR( XLAL_EFUNC );
+            }
+
+            freq = creal(modeFreq) / (2 * LAL_PI);
+            break;
+
+        case fSEOBNRv1Peak:
+        case fSEOBNRv2Peak:
+            if ( freqFunc == fSEOBNRv1Peak ) SpinAlignedEOBVersion = 1;
+            if ( freqFunc == fSEOBNRv2Peak ) SpinAlignedEOBVersion = 2;
+            freq = XLALSimIMRSpinAlignedEOBPeakFrequency(m1, m2, S1z, S2z,
+                    SpinAlignedEOBVersion);
+            break;
+
+        default:
+            XLALPrintError("Unsupported approximant\n");
+            XLAL_ERROR(XLAL_EINVAL);
+    }
+
+    return freq;
+}
+
+
+/**
  * Function that gives the default ending frequencies of the given approximant.
  *
  */
@@ -256,24 +373,9 @@ double XLALSimInspiralGetFinalFreq(
     Approximant approximant                 /**< post-Newtonian approximant to use for waveform production */
     )
 {
-    double  freq;   /* The return value */
+    FrequencyFunction freqFunc;
 
-    /* internal variables */
-    /* we will use m1, m2 in solar masses */
-    m1 /= LAL_MSUN_SI;
-    m2 /= LAL_MSUN_SI;
-
-    /* needed for Phenom */
-    double chi;
-
-    /* Needed for EOBNR */
-    REAL8 spin1[3];
-    REAL8 spin2[3];
-    int     modeL;
-    int     modeM;
-    COMPLEX16Vector modefreqVec;
-    COMPLEX16      modeFreq;
-
+    /* select the frequency function that is associated with each approximant */ 
     switch (approximant)
     {
         /* non-spinning inspiral-only models */
@@ -298,57 +400,48 @@ double XLALSimInspiralGetFinalFreq(
                 XLAL_ERROR(XLAL_EINVAL);
             }
             /* Schwarzschild ISCO */
-	        freq = pow(LAL_C_SI,3) / (pow(6.,3./2.)*LAL_PI*(m1+m2)*LAL_MSUN_SI*LAL_G_SI);
+            freqFunc = fSchwarzISCO;
             break;
 
         /* IMR models */
-        /* EOBNR models all call the same code, just with different inputs */
         case EOBNRv2HM:
+            /* Check that spins are zero */
+            if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
+            {
+                XLALPrintError("Non-zero spins were given, but this is a non-spinning approximant.\n");
+                XLAL_ERROR(XLAL_EINVAL);
+            }
+            freqFunc = fEOBNRv2HMRD;
+            break;
+
         case EOBNRv2:
+            /* Check that spins are zero */
+            if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
+            {
+                XLALPrintError("Non-zero spins were given, but this is a non-spinning approximant.\n");
+                XLAL_ERROR(XLAL_EINVAL);
+            }
+            freqFunc = fEOBNRv2RD;
+            break;
+
         case SEOBNRv1:
+            /* Check that the transverse spins are zero */
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+            {
+                XLALPrintError("Non-zero transverse spins were given, but this is a non-precessing approximant.\n");
+                XLAL_ERROR(XLAL_EINVAL);
+            }
+            freqFunc = fSEOBNRv1RD;
+            break;
+
         case SEOBNRv2:
-            // FIXME: Probably shouldn't hard code the modes.
-            if ( approximant == EOBNRv2HM )
+            /* Check that the transverse spins are zero */
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
             {
-                modeL = 5;
-                modeM = 5;
+                XLALPrintError("Non-zero transverse spins were given, but this is a non-precessing approximant.\n");
+                XLAL_ERROR(XLAL_EINVAL);
             }
-            else
-            {
-                modeL = 2;
-                modeM = 2;
-            }
-            if ( approximant == EOBNRv2 || approximant == EOBNRv2HM )
-            {
-                /* Check that spins are zero */
-                if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
-                {
-                    XLALPrintError("Non-zero spins were given, but this is a non-spinning approximant.\n");
-                    XLAL_ERROR(XLAL_EINVAL);
-                spin1[0] = 0.; spin1[1] = 0.; spin1[2] = 0.;
-                spin2[0] = 0.; spin2[1] = 0.; spin2[2] = 0.;
-                }
-            }
-            else
-            {
-                /* Check that the transverse spins are zero */
-                if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
-                {
-                    XLALPrintError("Non-zero transverse spins were given, but this is a non-precessing approximant.\n");
-                    XLAL_ERROR(XLAL_EINVAL);
-                }
-                spin1[0] = S1x; spin1[1] = S1y; spin1[2] = S1z;
-                spin2[0] = S2x; spin2[1] = S2y; spin2[2] = S2z;
-            }
-
-            modefreqVec.length = 1;
-            modefreqVec.data   = &modeFreq;
-            if ( XLALSimIMREOBGenerateQNMFreqV2( &modefreqVec, m1, m2, spin1, spin2, modeL, modeM, 1, approximant) != XLAL_SUCCESS )
-            {
-                XLAL_ERROR( XLAL_EFUNC );
-            }
-
-            freq = creal(modeFreq) / (2 * LAL_PI);
+            freqFunc = fSEOBNRv2RD;
             break;
 
         case IMRPhenomA:
@@ -358,7 +451,7 @@ double XLALSimInspiralGetFinalFreq(
                 XLALPrintError("Non-zero spins were given, but this is a non-spinning approximant.\n");
                 XLAL_ERROR(XLAL_EINVAL);
             }
-            freq = XLALSimIMRPhenomAGetFinalFreq(m1, m2);
+            freqFunc = fIMRPhenomAFinal;
             break;
 
         case IMRPhenomB:
@@ -367,8 +460,7 @@ double XLALSimInspiralGetFinalFreq(
                 XLALPrintError("Non-zero transverse spins were given, but this is a non-precessing approximant.\n");
                 XLAL_ERROR(XLAL_EINVAL);
             }
-            chi = XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z);
-            freq = XLALSimIMRPhenomBGetFinalFreq(m1, m2, chi);
+            freqFunc = fIMRPhenomBFinal;
             break;
 
         case IMRPhenomC:
@@ -377,8 +469,7 @@ double XLALSimInspiralGetFinalFreq(
                 XLALPrintError("Non-zero transverse spins were given, but this is a non-precessing approximant.\n");
                 XLAL_ERROR(XLAL_EINVAL);
             }
-            chi = XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z);
-            freq = XLALSimIMRPhenomCGetFinalFreq(m1, m2, chi);
+            freqFunc = fIMRPhenomCFinal;
             break;
 
 
@@ -401,7 +492,7 @@ double XLALSimInspiralGetFinalFreq(
             XLAL_ERROR(XLAL_EINVAL);
     }
 
-    return freq;
+    return XLALSimInspiralGetFrequency(m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, freqFunc);
 }
     
 
