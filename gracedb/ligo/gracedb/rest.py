@@ -239,10 +239,40 @@ class GraceDb(GsiRest):
     def searches(self):
         return self.service_info.get('searches')
 
+    @property
+    def em_facilities(self):
+        return self.service_info.get('em-facilities')
+
+    @property
+    def wavebands(self):
+        return self.service_info.get('wavebands')
+
+    @property
+    def eel_statuses(self):
+        return self.service_info.get('eel-statuses')
+
+    @property
+    def obs_statuses(self):
+        return self.service_info.get('obs-statuses')
+
     def request(self, method, *args, **kwargs):
         if method.lower() in ['post', 'put']:
             kwargs['priming_url'] = self.service_url
         return GsiRest.request(self, method, *args, **kwargs)
+
+    def _getCode(self, input_value, code_dict):
+        """Check if input is valid.
+           Return coded version if it is"""
+        #  code_dict is dict of { code : descriptive_name }
+        if input_value in code_dict.keys():
+            # Already coded
+            return input_value
+        if not input_value in code_dict.values():
+            # Not valid
+            return None
+        return [code
+                for code, name in code_dict.items()
+                if name == input_value][0]
 
     # Search and filecontents are optional when creating an event.
     def createEvent(self, group, pipeline, filename, search=None, filecontents=None):
@@ -352,6 +382,61 @@ class GraceDb(GsiRest):
 
         return self.post(uri, body={'message' : message, 'tagname': tagname, 
             'displayName': displayName}, files=files)
+
+    def eels(self, graceid):
+        """
+        Return a list of EMBB log entries. 
+        """
+    
+        template = self.templates['embb-event-log-template']
+        uri = template.format(graceid=graceid)
+        return self.get(uri)
+
+    def writeEel(self, graceid, facility, waveband, eel_status, 
+            obs_status, **kwargs):
+        """
+        Write an EMBB event log entry. The following arguments are required:
+            graceid, facility, waveband, eel_status, obs_status.
+
+        Additional keyword arguments may be passed in to be sent in the POST
+        data. Only the following kwargs are recognized:
+            ra
+            dec
+            raWidth
+            decWidth
+            gpstime
+            duration
+            comment
+            extra_info_dict
+
+        Any other kwargs will be ignored.
+        """ 
+        # validate facility, waveband, eel_status, and obs_status
+        if not facility in self.em_facilities:
+            raise ValueError("facility must be one of %s" % self.em_facilities)
+        
+        if not waveband in self.wavebands.keys():
+            raise ValueError("waveband must be one of %s" % self.wavebands.keys())
+
+        eel_status = self._getCode(eel_status, self.eel_statuses)
+        if not eel_status:
+            raise ValueError("EEL status must be one of %s" % self.eel_statuses.values())
+
+        obs_status = self._getCode(obs_status, self.obs_statuses)
+        if not obs_status:
+            raise ValueError("Observation status must be one of %s" % self.obs_statuses.values())
+
+        template = self.templates['embb-event-log-template']
+        uri = template.format(graceid=graceid)
+
+        body = {
+            'facility' : facility, 
+            'waveband' : waveband,
+            'eel_status' : eel_status,
+            'obs_status' : obs_status,
+        }
+        body.update(**kwargs)
+        return self.post(uri, body=body)
 
     def labels(self, graceid, label=""):
         template = self.templates['event-label-template']

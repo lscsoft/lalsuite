@@ -80,6 +80,23 @@ class TestGracedb(unittest.TestCase):
         self.assertTrue('numRows' in logs)
         pass
 
+    def test_create_embb_log(self):
+        """Create an EMBB log entry."""
+        comment = "Message is {0}".format(random.random())
+        resp = gracedb.writeEel(eventId, 'Test', 'em.gamma',
+            'FO', 'TE', comment=comment)
+        self.assertEqual(resp.status, 201)
+        new_embb_log_uri = resp.getheader('Location')
+        new_embb_log = resp.json()
+        self.assertEqual(new_embb_log_uri, new_embb_log['self'])
+        check_new_embb_log = gracedb.get(new_embb_log_uri).json()
+        self.assertEqual(check_new_embb_log['comment'], comment)
+
+    def test_get_embb_log(self):
+        """Retrieve EMBB event log"""
+        eels = gracedb.eels(eventId).json()
+        self.assertTrue('numRows' in eels)
+
     def test_upload_large_file(self):
         """Upload a large file.  Issue https://bugs.ligo.org/redmine/issues/951"""
 
