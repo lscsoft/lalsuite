@@ -288,10 +288,6 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
     LALInferenceInjectInspiralSignal(irs->data,commandLine);
     fprintf(stdout, " ==== LALInferenceInjectInspiralSignal(): finished. ====\n");
 
-    fprintf(stdout, " ==== LALInferenceSetupROQ(): started. ====\n");
-    LALInferenceSetupROQ(irs->data, irs->model, commandLine);
-    fprintf(stdout, " ==== LALInferenceSetupROQ(): finished. ====\n");
-    
     ifoPtr = irs->data;
     while (ifoPtr) {
         nifo++;
@@ -828,6 +824,11 @@ int main(int argc, char *argv[]){
   runState->currentParams = XLALMalloc(sizeof(LALInferenceVariables));
   memset(runState->currentParams, 0, sizeof(LALInferenceVariables));
   LALInferenceCopyVariables(runState->model->params, runState->currentParams);
+
+  /* Setup ROQ */
+  fprintf(stdout, " ==== LALInferenceSetupROQ(): started. ====\n");
+  LALInferenceSetupROQ(runState->data, runState->model, procParams);
+  fprintf(stdout, " ==== LALInferenceSetupROQ(): finished. ====\n");
 
   /* Set template function in runState, since it's sometime used */
   runState->templt = runState->model->templt;

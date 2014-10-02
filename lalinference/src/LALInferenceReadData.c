@@ -2696,9 +2696,6 @@ void LALInferenceSetupROQ(LALInferenceIFOData *IFOdata, LALInferenceModel *model
   FILE *out;
 	char tmp[128];
 
-  if (model->roq != NULL)
-      XLALFree(model->roq);
-
   model->roq = XLALMalloc(sizeof(LALInferenceROQModel));
   
   while(thisData){
@@ -2776,10 +2773,6 @@ void LALInferenceSetupROQ(LALInferenceIFOData *IFOdata, LALInferenceModel *model
   model->roq->hstrain = gsl_vector_complex_calloc(n_basis);
   model->roq->amp_squared = XLALMalloc(sizeof(REAL8));
 
-  ppt=LALInferenceGetProcParamVal(commandLine,"--roqnodes");
-  tempfp = fopen(ppt->value, "rb");
-  gsl_vector_fread(tempfp, model->roq->frequencyNodes);
- 
   model->roq->trigtime = endtime;
 
   printf("endtime = %f, timeMin = %f, timeMax = %f\n", endtime, timeMin, timeMax);
@@ -2788,6 +2781,10 @@ void LALInferenceSetupROQ(LALInferenceIFOData *IFOdata, LALInferenceModel *model
   double deltaF = IFOdata[0].oneSidedNoisePowerSpectrum->deltaF; //assumes same deltaF for all IFOs
 
   if(LALInferenceGetProcParamVal(commandLine,"--roqnodes")){
+    ppt=LALInferenceGetProcParamVal(commandLine,"--roqnodes");
+    tempfp = fopen(ppt->value, "rb");
+    gsl_vector_fread(tempfp, model->roq->frequencyNodes);
+
     thisData=IFOdata;
     while (thisData) {
       thisData->roq = XLALMalloc(sizeof(LALInferenceROQData));
