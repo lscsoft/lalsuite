@@ -131,7 +131,10 @@ class SignalModel(object):
         """Create a TaylorF2 signal model with the given masses, PSD function
         S(f), PN amplitude order, and low-frequency cutoff."""
 
-        if approximant == lalsimulation.TaylorF2:
+        if approximant in (
+                    lalsimulation.TaylorF2,
+                    lalsimulation.SpinTaylorT4Fourier,
+                    lalsimulation.SpinTaylorT2Fourier):
             # Frequency-domain post-Newtonian inspiral waveform.
             h, _ = lalsimulation.SimInspiralChooseFDWaveform(
                 phiRef=0,
