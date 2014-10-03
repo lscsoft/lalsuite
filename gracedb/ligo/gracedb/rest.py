@@ -240,8 +240,8 @@ class GraceDb(GsiRest):
         return self.service_info.get('searches')
 
     @property
-    def em_facilities(self):
-        return self.service_info.get('em-facilities')
+    def em_groups(self):
+        return self.service_info.get('em-groups')
 
     @property
     def wavebands(self):
@@ -392,11 +392,11 @@ class GraceDb(GsiRest):
         uri = template.format(graceid=graceid)
         return self.get(uri)
 
-    def writeEel(self, graceid, facility, waveband, eel_status, 
+    def writeEel(self, graceid, group, waveband, eel_status, 
             obs_status, **kwargs):
         """
         Write an EMBB event log entry. The following arguments are required:
-            graceid, facility, waveband, eel_status, obs_status.
+            graceid, group, waveband, eel_status, obs_status.
 
         Additional keyword arguments may be passed in to be sent in the POST
         data. Only the following kwargs are recognized:
@@ -412,8 +412,8 @@ class GraceDb(GsiRest):
         Any other kwargs will be ignored.
         """ 
         # validate facility, waveband, eel_status, and obs_status
-        if not facility in self.em_facilities:
-            raise ValueError("facility must be one of %s" % self.em_facilities)
+        if not group in self.em_groups:
+            raise ValueError("group must be one of %s" % self.em_groups)
         
         if not waveband in self.wavebands.keys():
             raise ValueError("waveband must be one of %s" % self.wavebands.keys())
@@ -430,7 +430,7 @@ class GraceDb(GsiRest):
         uri = template.format(graceid=graceid)
 
         body = {
-            'facility' : facility, 
+            'group' : group,
             'waveband' : waveband,
             'eel_status' : eel_status,
             'obs_status' : obs_status,

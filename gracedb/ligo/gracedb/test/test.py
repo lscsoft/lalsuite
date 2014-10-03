@@ -84,7 +84,7 @@ class TestGracedb(unittest.TestCase):
         """Create an EMBB log entry."""
         comment = "Message is {0}".format(random.random())
         resp = gracedb.writeEel(eventId, 'Test', 'em.gamma',
-            'FO', 'TE', comment=comment)
+            'FO', 'TE', comment=comment, instrument='Test')
         self.assertEqual(resp.status, 201)
         new_embb_log_uri = resp.getheader('Location')
         new_embb_log = resp.json()
