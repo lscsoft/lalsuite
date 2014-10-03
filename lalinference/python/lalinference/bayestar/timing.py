@@ -133,10 +133,29 @@ class SignalModel(object):
 
         if approximant == lalsimulation.TaylorF2:
             # Frequency-domain post-Newtonian inspiral waveform.
-            h, _ = lalsimulation.SimInspiralChooseFDWaveform(0, 1,
-                mass1 * lal.MSUN_SI, mass2 * lal.MSUN_SI,
-                0, 0, 0, 0, 0, 0, f_low, 0, 0, 1e6 * lal.PC_SI,
-                0, 0, 0, None, None, amplitude_order, 0, approximant)
+            h, _ = lalsimulation.SimInspiralChooseFDWaveform(
+                phiRef=0,
+                deltaT=1,
+                m1=mass1*lal.MSUN_SI,
+                m2=mass2*lal.MSUN_SI,
+                s1x=0,
+                s1y=0,
+                s1z=0,
+                s2x=0,
+                s2y=0,
+                s2z=0,
+                f_min=f_low,
+                f_max=0,
+                f_ref=0,
+                r=1e6 * lal.PC_SI,
+                i=0,
+                lambda1=0,
+                lambda2=0,
+                waveFlags=None,
+                nonGRparams=None,
+                amplitudeO=amplitude_order,
+                phaseO=0,
+                approximant=approximant)
 
             # Find indices of first and last nonzero samples.
             nonzero = np.nonzero(h.data.data)[0]
@@ -144,10 +163,28 @@ class SignalModel(object):
             last_nonzero = nonzero[-1]
         elif approximant == lalsimulation.TaylorT4:
             # Time-domain post-Newtonian inspiral waveform.
-            hplus, hcross = lalsimulation.SimInspiralChooseTDWaveform(0,
-                1 / 4096, mass1 * lal.MSUN_SI, mass2 * lal.MSUN_SI,
-                0, 0, 0, 0, 0, 0, f_low, f_low, 1e6 * lal.PC_SI,
-                0, 0, 0, None, None, amplitude_order, phase_order, approximant)
+            hplus, hcross = lalsimulation.SimInspiralChooseTDWaveform(
+                phiRef=0,
+                deltaT=1/4096,
+                m1=mass1*lal.MSUN_SI,
+                m2=mass2*lal.MSUN_SI,
+                s1x=0,
+                s1y=0,
+                s1z=0,
+                s2x=0,
+                s2y=0,
+                s2z=0,
+                f_min=f_low,
+                f_ref=f_low,
+                r=1e6*lal.PC_SI,
+                i=0,
+                lambda1=0,
+                lambda2=0,
+                waveFlags=None,
+                nonGRparams=None,
+                amplitudeO=amplitude_order,
+                phaseO=phase_order,
+                approximant=approximant)
 
             hplus.data.data += hcross.data.data
             hplus.data.data /= np.sqrt(2)
