@@ -1,0 +1,8 @@
+#!/bin/sh
+pypath="/home/reed.essick/local/src/lscsoft/lalsuite/laldetchar/python:/home/reed.essick/local/src/lscsoft/lalsuite/laldetchar/python:/home/reed.essick/local/src/lscsoft/lalsuite/lalburst/python:/home/reed.essick/local/src/lscsoft/lalsuite/lalsimulation/python:/home/reed.essick/local/src/lscsoft/lalsuite/lalmetaio/python:/home/reed.essick/local/src/lscsoft/lalsuite/lal/python"
+pyscript="/home/reed.essick/local/src/lscsoft/lalsuite/laldetchar/python/laldetchar-idq-convertkwtosb.py"
+PYTHONPATH=`echo "${PYTHONPATH}" | /bin/sed -e "s|${pypath}:||g;"`
+PYTHONPATH="${pypath}:${PYTHONPATH}"
+export PYTHONPATH
+exec /usr/bin/python "${pyscript}" "$@"
+exit 1

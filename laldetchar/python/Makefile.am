@@ -26,6 +26,8 @@ pybin_scripts = \
 	laldetchar-idq-svm-evaluate \
 	laldetchar-idq-svm-train \
 	laldetchar-idq-train \
+	laldetchar-idq-build-auxmvc-vectors \
+	laldetchar-idq-convertkwtosb \
 	laldetchar-segments-from-data \
 	$(END_OF_LIST)
 
