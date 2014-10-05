@@ -1480,7 +1480,10 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 	Ninj=SimInspiralTableFromLIGOLw(&injTable,LALInferenceGetProcParamVal(commandLine,"--inj")->value,0,0);
 	REPORTSTATUS(&status);
 	printf("Ninj %d\n", Ninj);
-	if(Ninj<event) fprintf(stderr,"Error reading event %d from %s\n",event,LALInferenceGetProcParamVal(commandLine,"--inj")->value);
+	if(Ninj<=event){
+          fprintf(stderr,"Error reading event %d from %s\n",event,LALInferenceGetProcParamVal(commandLine,"--inj")->value);
+          exit(1);
+        }
 	while(i<event) {i++; injTable = injTable->next;} /* Select event */
 	injEvent = injTable;
 	injEvent->next = NULL;
