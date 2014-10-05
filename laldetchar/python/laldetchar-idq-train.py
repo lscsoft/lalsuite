@@ -33,8 +33,6 @@ import numpy
 
 from laldetchar import git_version
 
-#===================================================================================================
-
 __author__ = \
     'Lindy Blackburn (<lindy.blackburn@ligo.org>), Reed Essick (<reed.essick@ligo.org>), Ruslan Vaulin (<ruslan.vaulin@ligo.org>)'
 __version__ = git_version.id
@@ -43,34 +41,27 @@ __date__ = git_version.date
 description = \
     """This program performs periodic training of the classifiers used in iDQ pipeline. Some intensive training jobs are submitted to cluster using condor. """
 
-#===================================================================================================
-
 parser = OptionParser(version='Name: %%prog\n%s'
                       % git_version.verbose_msg, usage='%prog [options]'
                       , description=description)
-parser.add_option('-c', '--config', default='idq.ini', type='string', help='configuration file')
-
-parser.add_option('-s', '--gps-start', default=False, type='int', help='a GPS start time for the analysis. If default, gpsstart is calculated from the current time.')
-parser.add_option('-e', '--gps-stop', default=False, type='int', help='a GPS stop time for the analysis. If default, gpsstop is calculated from the current time.')
-parser.add_option('-b', '--lookback', default='0', type='string', help="Number of strides to look back and get data for training. Default is zero.\
-	Can be either positive integer or 'infinity'. In the latter case, the lookback will be incremented at every stride and all data after --gps-start will be used in every training.")
-
-parser.add_option('-l', '--log-file', default='idq_train.log', type='string', help='log file')
-
-parser.add_option('-f','--force',default=False, action='store_true', help="forces classifiers to be trained, \
-	and if errors are recovered it passes them along. Intended for use when we must have a trained classifier or else we should raise an error. \
-	This may produce an infinite loop if the condor dags get lost (for mla classifiers). Use with caution.")
-
-parser.add_option("", "--no-robot-cert", default=False, action="store_true", help="does not set up robot certificate. This can cause jobs to fail because of expired certificates")
-
-parser.add_option("", "--ignore-science-segments", default=False, action="store_true", help="ignores science segments and trains over all available data within range")
-
-parser.add_option("", "--no-sngl_chan-xml", default=False, action="store_true", help="skip conversion of single channel trg files to xml tables. This is just here for speed when testing")
-
+parser.add_option('-c', '--config', default='idq.ini', type='string',
+                  help='configuration file')
+parser.add_option('-s', '--gps-start', default=False, type='int',
+                  help='a GPS start time for the analysis. If default, gpsstart is calculated from the current time.'
+                  )
+parser.add_option('-e', '--gps-stop', default=False, type='int',
+                  help='a GPS stop time for the analysis. If default, gpsstop is calculated from the current time.'
+                  )
+parser.add_option('-b', '--lookback', default='0', type='string',
+                  help="Number of strides to look back and get data for training. Default is zero.\
+	Can be either positive integer or 'infinity'. In the latter case, the lookback will be incremented at every stride and all data will be used in training."
+                  )
+parser.add_option('-l', '--log-file', default='idq_train.log',
+                  type='string', help='log file')
 (opts, args) = parser.parse_args()
 
-#===================================================================================================
-### setup logger to record processes
+# logging setup
+
 logger = logging.getLogger('idq_logger')
 logger.setLevel(logging.INFO)
 formatter = logging.Formatter('%(asctime)s %(message)s')
@@ -83,58 +74,61 @@ hdlr2.setFormatter(formatter)
 hdlr2.setLevel(logging.INFO)
 logger.addHandler(hdlr2)
 
-### redirect stdout and stderr into logger
+# redirect stdout and stderr into logger
+
 sys.stdout = idq.LogFile(logger)
 sys.err = idq.LogFile(logger)
 
-#===================================================================================================
-### read global configuration file
+# read global configuration file
 
 config = ConfigParser.SafeConfigParser()
 config.read(opts.config)
 
 ifo = config.get('general', 'ifo')
-
-### figure out which classifiers are present
 classifiers = config.get('general', 'classifiers').split(' ')
-ovl = "ovl" in classifiers
-mvsc = "mvsc" in classifiers
-svm = "svm" in classifiers
+mla = 'mvsc' in classifiers or 'svm' in classifiers  # label whether machine-learning algorithms are present
 
-mla = mvsc or svm  ### label whether machine-learning algorithms are present
+# setting paths for input and output data
 
-#=================================================
-### setting paths for input and output data
+# config file for kw pipeline
 
-kw_config_path = config.get('general', 'kwconfig') ### config file for kw pipeline
-kwtrgdir = config.get('general', 'kwtrgdir') ### kw triggers directory
-realtimedir = config.get('general', 'realtimedir') ### realtime predictions directory
-traindir = config.get('general', 'traindir') ### training directory
-snglchndir = config.get('general', 'snglchndir') ### single channels trigger directory
-                                                 ### required for ovl training
+kw_config_path = config.get('general', 'kwconfig')
 
-#=================================================
-### figure out if we need to train the classifiers before begining evaluation
+# kw triggers directory
+
+kwtrgdir = config.get('general', 'kwtrgdir')
+
+# realtime predictions directory
+
+realtimedir = config.get('general', 'realtimedir')
+
+# training directory
+
+traindir = config.get('general', 'traindir')
+
+# single channels trigger directory
+
+snglchndir = config.get('general', 'snglchndir')
+
+build_auxmvc_vectors = False
 
 # training cache files
-if ovl:
-    ovl_cache = config.get('general', 'ovl_train_cache') ### cache file storing locations of trained classifier files
+
+if 'ovl' in classifiers:
+    ovl_cache = config.get('general', 'ovl_train_cache')
     if not os.path.exists(ovl_cache):
-        if not os.path.exists(os.path.split(ovl_cache)[0]): ### make directory if needed
+        if not os.path.exists(os.path.split(ovl_cache)[0]):
             os.makedirs(os.path.split(ovl_cache)[0])
         os.mknod(ovl_cache, 0644)
-
-build_auxmvc_vectors = mla and (not os.path.exists(realtimedir)) ### if realtimedir does not exist, we cannot rely on patfiles from the realtime job
-                                                                 ### we need to build our own auxmvc_vectors
-if mvsc:
+if 'mvsc' in classifiers:
     mvsc_cache = config.get('general', 'mvsc_train_cache')
     if not os.path.exists(mvsc_cache):
         if not os.path.exists(os.path.split(mvsc_cache)[0]):
             os.makedirs(os.path.split(mvsc_cache)[0])
         os.mknod(mvsc_cache, 0644)
-        build_auxmvc_vectors = True ### we need to build auxmvc vectors because we cannot rely on existence of patfiles
+        build_auxmvc_vectors = True
 
-if svm:
+if 'svm' in classifiers:
     svm_cache = config.get('general', 'svm_train_cache')
     if not os.path.exists(svm_cache):
         if not os.path.exists(os.path.split(svm_cache)[0]):
@@ -142,208 +136,226 @@ if svm:
         os.mknod(svm_cache, 0644)
         build_auxmvc_vectors = True
 
-#=================================================
-### parameters for training jobs
+# get minimum number of samples a training set should have
 
-min_mvsc_samples = config.getint('idq_train', 'min_mvsc_samples') ### minimum number of samples a training set should have
+min_mvsc_samples = config.getint('idq_train', 'min_mvsc_samples')
 min_svm_samples = config.getint('idq_train', 'min_svm_samples')
 min_ovl_samples = config.getint('ovl_train', 'min_num_glitches')
 
-stride = int(config.get('idq_train', 'stride')) ### stride for training job
-delay = int(config.get('idq_train', 'delay')) ### delay for training job
-                                              ### provides a buffer for prediction jobs to finish, etc
+# setting stride and delay
 
-#==================================================
-### current time and boundaries
+stride = int(config.get('idq_train', 'stride'))
+delay = int(config.get('idq_train', 'delay'))
+
+# current time and boundaries
 
 t = int(idq.nowgps())
-if not opts.gps_stop: ### stop time of this analysis
-    logger.info('computing gpsstop from current time')
-    gpsstop = ( (t - delay) / stride ) * stride  # require boundaries to be integer multiples of stride
-
+if not opts.gps_stop:
+    print 'computing gpsstop from current time'
+    gpsstop = (t - delay) / stride * stride  # gpsstop time for this analysis
 else:
-    gpsstop = ( opts.gps_stop / stride ) * stride
-
+    gpsstop = opts.gps_stop / stride * stride
 if not opts.gps_start:
-    logger.info('computing gpsstart from gpsstop')
+    print 'computing gpsstart from gpsstop'
     gpsstart = gpsstop - stride
 else:
-    gpsstart = ( opts.gps_start / stride ) * stride # require boundaries to be integer multiples of stride
+    gpsstart = opts.gps_start / stride * stride
 
-### setting look-back time
-### this is how many strides back we look in time to gather triggers
-### useful if glitch rate is low but training cadence is high
-if opts.lookback == 'infinity': ### we always look back to the beginning of the job (~opts.gps_start)
+# setting look-back time
+
+if opts.lookback == 'infinity':
     lookback = -1
 else:
     lookback = int(opts.lookback)
 
-### create condorlogs directory if needed
+# create condor logs  directory if it does not exist
+
 if not os.path.exists(config.get('idq_train', 'condorlogs')):
     os.makedirs(config.get('idq_train', 'condorlogs'))
 
-#=================================================
-### set up ROBOT certificates
-### IF ligolw_segement_query FAILS, THIS IS A LIKELY CAUSE
-if not opts.no_robot_cert:
-    ### unset ligo-proxy just in case
-    del os.environ['X509_USER_PROXY']
-
-    ### get cert and key from ini file
-    robot_cert = config.get('ldg_certificate', 'robot_certificate')
-    robot_key = config.get('ldg_certificate', 'robot_key')
-
-    ### set cert and key
-    os.environ['X509_USER_CERT'] = robot_cert
-    os.environ['X509_USER_KEY'] = robot_key
-
-#===================================================================================================
-#
+#######
 # MAIN
-#
-#===================================================================================================
+#######
 
-### wait until all jobs are finished
+logger.info('----------------------------------------------------')
+
+# logger.info('beginning stride %d-%d' % (t, t+stride))
+
+# wait until all jobs are finished
+
 wait = gpsstop + delay - t
-if wait > 0:
-    logger.info('----------------------------------------------------')
+if __name__ == '__main__' and wait > 0:
     logger.info('waiting %.1f seconds for jobs to finish' % wait)
     time.sleep(wait)
 
-### iterate over all ranges
-while gpsstart < gpsstop:
-    logger.info('----------------------------------------------------')
+# iterate over all ranges
 
-    launch_gps_time = idq.nowgps()
+while __name__ == '__main__' and gpsstart < gpsstop:
 
-    ### increment lookback time if it is set to infinity
-    ### this forces the job to pick up all data since opts.gps_start
+    # increment lookback time if it is set to infinity
+
     if opts.lookback == 'infinity':
         lookback += 1
+    logger.info('\nprocessing data in [%d, %d]' % (gpsstart - lookback
+                * stride, gpsstart + stride))
+    launch_gps_time = idq.nowgps()
 
-    logger.info('\nprocessing data in [%d, %d]' % (gpsstart - lookback * stride, gpsstart + stride))
+    # where to output traning data
 
-    ### directory into which we write data
     output_dir = traindir + '/' + str(gpsstart) + '_' + str(gpsstart
             + stride) + '/'
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    #===============================================================================================
-    ### generate science times/CAT1 vetoes
-    #===============================================================================================
-    if opts.ignore_science_segments:
-        logger.info('ignoring science segemnts')
-        if ovl:
-            ovlsegs = False  ### required for OVL input
-            vetosegs = False
+    # define dictionary to hold dags
 
-    else:
-        logger.info('generating science segments')
-        try: ### query database
-            ### this returns a string
-            seg_xml_file = idq.segment_query(config, gpsstart - lookback * stride, gpsstart + stride,
-                    url=config.get('get_science_segments', 'segdb'))
+    dags = {}
 
-            ### load xml document
-            ### converts string to an object
-            xmldoc = utils.load_fileobj(seg_xml_file)[0]
+    # #######################
+    # generate science times/CAT1 vetoes
 
-            ### science segments xml filename
-            seg_file = "%sscience_segments-%d-%d.xml.gz"%(output_dir, int(gpsstart - lookback * stride), int((lookback+1)*stride))
+    logger.info('generating science segments')
 
-            logger.info('writing science segments to file : '+seg_file)
-            utils.write_filename(xmldoc, seg_file, gz=True)
+    # We are switching to robot certificates no need for finding and validating proxy certificate
+    # We only neet to set environment to use the robot certificate.
 
-        except Exception as e:
+    # unset ligo-proxy just in case
+
+    del os.environ['X509_USER_PROXY']
+
+    # get cert and key from ini file
+
+    robot_cert = config.get('ldg_certificate', 'robot_certificate')
+    robot_key = config.get('ldg_certificate', 'robot_key')
+
+    # set cert and key
+
+    os.environ['X509_USER_CERT'] = robot_cert
+    os.environ['X509_USER_KEY'] = robot_key
+
+    # find a valid LDG grid certificate and replace with it the current if it is expired
+    # try:
+    # ....valid_cert = idq.findCredential()[0]
+    # ....os.putenv('X509_USER_PROXY', valid_cert)
+    # ....os.environ['X509_USER_PROXY'] = valid_cert
+    # except:
+    # ....traceback.print_exc()
+    # ....logger.info('ERROR: Could not find a valid LDG grid certificate. Skipping this training period.')
+    # ....gpsstart += stride
+    # ....continue
+
+    try:
+
+        # scisegs = get_science_segments(gpsstart, gpsstart+stride)
+
+        seg_xml_file = idq.segment_query(config, gpsstart - lookback
+                * stride, gpsstart + stride,
+                url=config.get('get_science_segments', 'segdb'))
+
+        # load xml document
+
+        xmldoc = utils.load_fileobj(seg_xml_file)[0]
+
+        # set the name for science segments xml file
+
+        seg_file = output_dir + 'science_segments-' + str(int(gpsstart
+                - lookback * stride)) + '-' + str(int(stride + lookback
+                * stride)) + '.xml.gz'
+
+        logger.info('writing science segments to file')
+        utils.write_filename(xmldoc, seg_file, gz=True)
+    except:
+        traceback.print_exc()
+        logger.info('ERROR: segment generation failed. Skipping this training period.'
+                    )
+        gpsstart += stride
+        continue
+
+    # FIX ME: writing ascii segment file for OVL, in the future will switch to xml file?
+    # scisegs = get_science_segments(gpsstart, gpsstart+stride)
+
+    try:
+        (scisegs, coveredseg) = idq.extract_dq_segments(seg_file,
+                config.get('get_science_segments', 'include'))
+        sciseg_path = output_dir + 'science_segments-' \
+            + str(int(gpsstart - lookback * stride)) + '-' \
+            + str(int(stride + lookback * stride)) + '.seg'
+        logger.info('writing idq segments to file')
+        f = open(sciseg_path, 'w')
+        for line in scisegs:
+            print >> f, line[0], line[1]
+        f.close()
+        ovlsegs = sciseg_path
+    except:
+        traceback.print_exc()
+        logger.info('WARNING: conversion from xml to ASCII segment file failed.'
+                    )
+
+    # generate iDQ segments from realtime filenames (for OVL)
+    # run it only if pat files already exist
+    # FIXME: this step is troubling, it relies on existence of *pat files.
+    # FIXME: Also we may need to rewise definition of segments on which OVL should be trained.
+    # FIXME: Why not to use science segments from the previous step?
+
+    if not build_auxmvc_vectors:
+        try:
+            realtime_segs = idq.get_idq_segments(realtimedir, gpsstart
+                    - lookback * stride, gpsstart + stride,
+                    suffix='.pat')
+            idqseg_path = output_dir + '/idq_segments-' \
+                + str(int(gpsstart - lookback * stride)) + '-' \
+                + str(int(stride + lookback * stride)) + '.seg'
+            f = open(idqseg_path, 'w')
+            for seg in realtime_segs:
+                print >> f, seg[0], seg[1]
+            f.close()
+
+            # use idq segments for ovl
+
+            ovlsegs = idqseg_path
+        except:
             traceback.print_exc()
-            logger.info('ERROR: segment generation failed. Skipping this training period.')
+            logger.info('WARNING: failed to generate iDQ segments from realtime output.'
+                        )
 
-            if opts.force: ### we are require successful training or else we want errors
-                logger.info(traceback.print_exc())
-                raise e
+    # NOTHING implemented for vetosegs
 
-            else: ### we don't care if any particular training job fails
-                gpsstart += stride
-                continue
+    vetosegs = False
+    logger.info('Done.')
 
-        if ovl:
-            ### FIXME: writing ascii segment file for OVL, in the future will switch to xml file?
-            if build_auxmvc_vectors or (not os.path.exists(realtimedir)): ### mla will use science segments, so we need to write those for ovl
-                                                                          ### if realtimedir doesn't exits, we need to use queried scisegs
-                try:
-                    ### read in segments from xml file
-                    (scisegs, coveredseg) = idq.extract_dq_segments(seg_file, config.get('get_science_segments', 'include'))
+    # ######################
 
-                    ### write segments to ascii list
-                    sciseg_path = "%sscience_segments-%d-%d.seg"%(output_dir, int(gpsstart - lookback * stride), int((lookback+1)*stride))
-                    logger.info('writing science segments to file : '+sciseg_path)
-                    f = open(sciseg_path, 'w')
-                    for line in scisegs:
-                        print >> f, line[0], line[1]
-                    f.close()
-                    ovlsegs = sciseg_path
+    # #############################
+    #   preparing training auxmvc samples
+    # ########################
 
-                except Exception as e:
-                    traceback.print_exc()
-                    logger.info('WARNING: conversion from xml to ASCII segment file failed.')
-    
-                    if opts.force:
-                        raise e
+    logger.info('preparing training auxmvc samples')
 
-             ### if we aren't building auxmvc vectors, we re-use pat files from realtime job
-            ### this requires us to redefine the 'science-segments' as the intersection of scisegs with realtime segs
-            ### currently, we assume realtime only runs when completely in science time, so the intersection is identical to realtime segs
-            else:
-                try:
-                    ### determine segments from realtime filenames
-                    realtime_segs = idq.get_idq_segments(realtimedir, gpsstart - lookback * stride, gpsstart + stride, suffix='.pat')
+    # check if auxmvc vectors needs to be build first
+    # should be necessary only at the very first training cycle
 
-                    ### write segment file
-                    idqseg_path = "%s/idq_segements-%d-%d.seg"%(output_dir, int(gpsstart - lookback * stride), int((lookback+1) * stride))
-                    f = open(idqseg_path, 'w')
-                    for seg in realtime_segs:
-                        print >> f, seg[0], seg[1]
-                    f.close()
-
-                    ovlsegs = idqseg_path
-
-                except Exception as e:
-                    traceback.print_exc()
-                    logger.info('WARNING: failed to generate iDQ segments from realtime output.')
-
-                    if opts.force:
-                        raise e
-
-            ### NOTHING implemented for vetosegs
-            ### these are only used by ovl
-            vetosegs = False
-            logger.info('Done.')
-
-    #===============================================================================================
-    # preparing auxmvc training samples
-    #===============================================================================================
-
-    if mla:
-        logger.info('preparing training auxmvc samples')
-
-    ### check if auxmvc vectors needs to be build first
-    ### should be necessary only at the very first training cycle
     if build_auxmvc_vectors:
-        logger.info('WARNING: building auxmvc vectors, this should be necessary only at the very first training cycle')
+        logger.info('WARNING: building auxmvc vectors, this should be necessary only at the very first training cycle'
+                    )
 
-        ptas_execute_dir = output_dir ### execution directory
+        # set directory where the job will be executed
 
-        ### output file for training samples
-        ptas_output_file = "%s%s-auxmvc_training_samples-%d-%d.pat"%(output_dir, ifo, int(gpsstart - lookback*stride), int((lookback+1)*stride))
+        ptas_execute_dir = output_dir
 
-        current_dir = os.getcwd() ### remember current directory
+        # set output file for training samples
 
-        ### pull out pointers to lists of channels
+        ptas_output_file = output_dir + ifo + '-' \
+            + 'auxmvc_training_samples' + '-' + str(int(gpsstart
+                - lookback * stride)) + '-' + str(int(stride + lookback
+                * stride)) + '.pat'
+
+        # get current directory
+
+        current_dir = os.getcwd()
+
         selected_channels = config.get('general', 'selected-channels')
         unsafe_channels = config.get('general', 'unsafe-channels')
 
-        ### launch job that builds auxmvc_vectors
         (ptas_exit_status, training_samples_file) = \
             idq.execute_build_auxmvc_vectors(
             config,
@@ -360,22 +372,33 @@ while gpsstart < gpsstop:
                     'include'),
             )
 
-        os.chdir(current_dir) ### go back to starting directory
+        # set build_auxmvc_vectors to False. In the next strides we will use samples built by realtime process.
 
-        ### In the next strides we will use samples built by realtime process.
-        ### we leave build_auxmvc_vectors=True so that the training jobs can run without an instance of the realtime job
-        ### this is NOT the expected use case, but this won't interfere with how the job is launched from the realtime process
-#        build_auxmvc_vectors = False 
+        build_auxmvc_vectors = False
 
-    elif mla: ### we cat together pat files instead of building vectors from scratch
-        ptas_execute_dir = output_dir ### excecution directory
+        # switch back to the current directory
 
-        ### output file for training samples
-        ptas_output_file = "%s%s-auxmvc_training_samples-%d-%d.pat"%(output_dir, ifo, int(gpsstart - lookback*strid), int((lookback+1)*stride))
+        os.chdir(current_dir)
+    elif mla:
 
-        current_dir = os.getcwd() ### remember current directory
+              # check that machine-learning algorithms are present
+        # set directory where the job will be executed
 
-        ### run job that prepares training samples
+        ptas_execute_dir = output_dir
+
+        # set output file for training samples
+
+        ptas_output_file = output_dir + ifo + '-' \
+            + 'auxmvc_training_samples' + '-' + str(int(gpsstart
+                - lookback * stride)) + '-' + str(int(stride + lookback
+                * stride)) + '.pat'
+
+        # get current directory
+
+        current_dir = os.getcwd()
+
+        # run job that prepares training samples
+
         (ptas_exit_status, training_samples_file) = \
             idq.execute_prepare_training_auxmvc_samples(
             ptas_execute_dir,
@@ -389,101 +412,114 @@ while gpsstart < gpsstop:
                     'include'),
             )
 
-        os.chdir(current_dir) ### go back to starting directory
+        # switch back to the current directory
 
+        os.chdir(current_dir)
     else:
+
         ptas_exit_status = 0  # never generated, so it was successful....
 
     # check if process has been executed correctly
 
-    if ptas_exit_status != 0: ### check that process executed correctly
+    if ptas_exit_status != 0:
         logger.info('WARNING: Preparing training auxmvc samples failed')
-        if opts.force:
-            raise StandardError, "auxmvc samples required for successful training"
-        else:
-            logger.info('WARNING: skipping re-training the MLA classifiers')
-
+        logger.info('WARNING: skipping re-training the MLA classifiers')
     logger.info('Done.')
 
-    if (ptas_exit_status==0) and mla: ### only load this if it's going to be used
-        ### load auxmvc vector samples
-        auxmvc_samples = auxmvc_utils.ReadMVSCTriggers([training_samples_file], Classified=False)
+    if ptas_exit_status == 0:
 
-        ### get numbers of samples
-#        random_samples = auxmvc_samples[numpy.nonzero(auxmvc_samples['i']==0)[0], :])
-#        N_clean = len(auxmvc_utils.get_clean_samples(random_samples))
+        # load auxmvc vector samples
 
-        N_clean = len(auxmvc_samples[numpy.nonzero(auxmvc_samples['i']==0)[0], :])
-        N_glitch = len(auxmvc_samples[numpy.nonzero(auxmvc_samples['i']==1)[0], :])
+        auxmvc_samples = \
+            auxmvc_utils.ReadMVSCTriggers([training_samples_file],
+                Classified=False)
 
+        # get clean and glitch samples
 
-    #===============================================================================================
-    # launch training jobs
-    #===============================================================================================
+        random_samples = auxmvc_samples[numpy.nonzero(auxmvc_samples['i'
+                ] == 0)[0], :]
+        N_clean = len(auxmvc_utils.get_clean_samples(random_samples))
+        N_glitch = len(auxmvc_samples[numpy.nonzero(auxmvc_samples['i']
+                       == 1)[0], :])
 
-    dags = {} ### dictionary that holds the dags submitted for each classifier
-
-    #=============================================
+    # ##############
     # mvsc training
-    #=============================================
+    # #############
 
-    if mvsc and (ptas_exit_status==0):
-        if opts.force or ((N_clean >= min_mvsc_samples) and (N_glitch >= min_mvsc_samples)):
+    if 'mvsc' in classifiers and ptas_exit_status == 0:
+        if N_clean >= min_mvsc_samples and N_glitch >= min_mvsc_samples:
             logger.info('submitting  MVSC training dag')
 
-            mvsc_train_dir = output_dir + 'mvsc/' ### execution directory
+            # set directory where the mvsc training job will be executed
+
+            mvsc_train_dir = output_dir + 'mvsc/'
+
+            # create this directory if it does not exist
+
             if not os.path.exists(mvsc_train_dir):
                 os.makedirs(mvsc_train_dir)
 
-            current_dir = os.getcwd() ### remember current directory
+            # get current directory
 
-            ### submit mvsc training job
-            (mvsc_submit_dag_exit_status, mvsc_dag_file, trained_mvsc_file) = \
+            current_dir = os.getcwd()
+
+            # submit mvsc training job
+
+            (mvsc_submit_dag_exit_status, mvsc_dag_file,
+             trained_mvsc_file) = \
                 idq.execute_forest_train(training_samples_file,
                     mvsc_cache, config, mvsc_train_dir)
 
-            os.chdir(current_dir) ### switch back to the current directory
+            # switch back to the current directory
 
-            ### check whether dag was submitted succesfully and add it to dictionary of dags
+            os.chdir(current_dir)
+
+            # check if dag was submitted succesfully and add it to dictionary of dags
+
             if mvsc_submit_dag_exit_status != 0:
-                logger.info('WARNING: Was not able to submit MVSC training dag')
+                logger.info('WARNING: Was not able to submit MVSC training dag'
+                            )
                 dags[mvsc_train_dir + mvsc_dag_file] = 'submit failed'
-                if opts.force:
-                    raise StandardError, "submission of MVSC training dag failed"
-
             else:
                 dags[mvsc_train_dir + mvsc_dag_file] = 'incomplete'
-                logger.info('dag file %s' % (mvsc_train_dir + mvsc_dag_file))
-
+                logger.info('dag file %s' % (mvsc_train_dir
+                            + mvsc_dag_file))
             logger.info('Done.')
-
         else:
-            logger.info('WARNING: Either number of clean or glitch samples in the training set is less than %d'%min_mvsc_samples)
-            logger.info('WARNING: Not enough samples in the training set. Skip MVSC training.')
-          
+            logger.info('WARNING: Either number of clean or glitch samples in the training set is less than '
+                         + str(min_mvsc_samples))
+            logger.info('WARNING: Not enough samples in the training set. Skip MVSC training.'
+                        )
 
-    #=============================================
+    # #################
     # SVM training
-    #=============================================
-    if svm and (ptas_exit_status==0):
-        if opts.force or ((N_clean >= min_svm_samples) and (N_glitch >= min_svm_samples)):
+    # ##################
+
+    if 'svm' in classifiers and ptas_exit_status == 0:
+        if N_clean >= min_svm_samples and N_glitch >= min_svm_samples:
             logger.info('submitting SVM training dag')
 
-            svm_train_dir = output_dir + 'svm/' ### excecution directory
+            # set directory where the mvsc training job will be executed
+
+            svm_train_dir = output_dir + 'svm/'
+
+            # create this directory if it does not exist
+
             if not os.path.exists(svm_train_dir):
                 os.makedirs(svm_train_dir)
 
-            current_dir = os.getcwd() ### remember current directory
+            # get current directory
+
+            current_dir = os.getcwd()
 
             # auxmvc_pat_file_name = training_samples_file   # not check the generated data for svm training
             # auxmvc_pat_file_name = "/home/yingsheng.ji/development/svm_test/train_data/svm_train.pat"   # train data file
             # svm_model_dir = config.get("svm_evaluate", "svm_model_dir")
 
-            ### auxiliary files required for SVM training
-            svm_range_file = "%s/%s.range"%(svm_train_dir, os.path.split(training_samples_file)[1])
-            svm_model_file = "%s/%s.model"%(svm_train_dir, os.path.split(training_samples_file)[1])
-           
-            ### submit SVM training job
+            svm_range_file = svm_train_dir + '/' \
+                + os.path.split(training_samples_file)[1] + '.range'
+            svm_model_file = svm_train_dir + '/' \
+                + os.path.split(training_samples_file)[1] + '.model'
             (svm_submit_dag_exit_status, svm_dag_file,
              svm_output_files) = idq.execute_svm_train(
                 config,
@@ -494,39 +530,35 @@ while gpsstart < gpsstop:
                 svm_train_dir,
                 )
 
-            os.chdir(current_dir) ### switch back to the current directory
+            # switch back to the current directory
 
-            ### check whether dag was submitted succesfully and add it to dictionary of dags
+            os.chdir(current_dir)
+
+            # check if dag was submitted succesfully and add it to dictionary of dags
+
             if svm_submit_dag_exit_status != 0:
-                logger.info('WARNING: Was not able to submit SVM training dag')
+                logger.info('WARNING: Was not able to submit SVM training dag'
+                            )
                 dags[svm_train_dir + svm_dag_file] = 'submit failed'
-                if opts.force:
-                    raise StandardError, "submission of SVM training dag failed"
-
             else:
                 dags[svm_train_dir + svm_dag_file] = 'incomplete'
-                logger.info('dag file %s' % (svm_train_dir + svm_dag_file))
-
+                logger.info('dag file %s' % (svm_train_dir
+                            + svm_dag_file))
             logger.info('Done.')
-
         else:
-            logger.info('WARNING: Either number of clean or glitch samples in the training set is less than %d'%min_svm_samples)
-            logger.info('WARNING: Not enough samples in the training set. Skip SVM training.')
+            logger.info('WARNING: Either number of clean or glitch samples in the training set is less than '
+                         + str(min_svm_samples))
+            logger.info('WARNING: Not enough samples in the training set. Skip SVM training.'
+                        )
 
-    #=============================================
+    # ######################
     # OVL training
-    #=============================================
-    ### we launch this last because it runs on the head node (not through condor)
-    ### therefore, all MLA algorithms should be launched before we start the OVL job
+    # ######################
 
-    if ovl: 
+    if 'ovl' in classifiers:
 
-        #=========================================
-        # prepare trigger files so OVL can read them
-        #=========================================
+        # single channel summary files
 
-        ### OVL reads triggers from single channel summary files
-        ### these are not produced in low latency, so we build them now
         logger.info('generating single-channel summary files')
         new_dirs = idq.collect_sngl_chan_kw(
             gpsstart,
@@ -537,125 +569,128 @@ while gpsstart < gpsstop:
             output_dir=snglchndir,
             )
 
-        ### we collect the single channel trg files into xml files
-        ### this shouldn't be necessary for OVL training and i doubt these files
-        ### will be used by anyone else...
-        ### FIXME: WE MAY WANT TO REMOVE THIS STEP
-        if not opts.no_sngl_chan_xml:
-            logger.info('launching conversion from .trg to .xml files')
-            for dir in new_dirs:
-                current_dir = os.getcwd()
-                trg_to_xml_exit_code = \
-                    idq.submit_command([config.get('condor', 'convertkwtosb'
-                                      ), dir], process_name='convertkwtosb'
-                                      , dir=dir)
-                os.chdir(current_dir)
-                if trg_to_xml_exit_code != 0:
-                    logger.info('WARNING: Conversion from single-channel KW trig files to xml failed in '+ dir)
+        # collection into .xml files
 
+        logger.info('launching conversion from .trg to .xml files')
+        for dir in new_dirs:
+            current_dir = os.getcwd()
+            trg_to_xml_exit_code = \
+                idq.submit_command([config.get('condor', 'convertkwtosb'
+                                   ), dir], process_name='convertkwtosb'
+                                   , dir=dir)
+            os.chdir(current_dir)
+            if trg_to_xml_exit_code != 0:
+                logger.info('WARNING: Conversion from single-channel KW trig files to xml failed in '
+                             + dir)
         logger.info('Done.')
 
-        #=========================================
-        # actual ovl training job
-        #=========================================
+        # ################################################
+
+        # ovl training job
+
         logger.info('launching ovl training job')
-
-        ### launch ovl training job
-        if ovlsegs: ### silly formatting thing
-          ovlsegs = [ovlsegs]
-
-        logger.info('idq.ovl_train( %d, %d, %s, scisegs=%s, vetosegs=False, output_dir=%s)'%(gpsstart - lookback * stride, gpsstart + stride, opts.config, str(ovlsegs), output_dir))
 
         vetolists = idq.ovl_train(
             gpsstart - lookback * stride,
             gpsstart + stride,
             config,
-            scisegs=ovlsegs,
+            scisegs=[ovlsegs],
             vetosegs=vetosegs,
             output_dir=output_dir,
             )
         logger.info('Done.')
 
-        vetolist = vetolists[0] ### there should only be one vetolist
+        # append training cache
 
-        ### append new vetolist to training cache
-	if opts.force: ### force us to append
-		go_ahead_and_append = True
-	else:
-	        go_ahead_and_append = False
-        	f = open(vetolists[0], 'r')
-	        for line in f:
-        	    if line[0] != '#': ### the first un-commented line will contain the total number of gwtriggers
-                	# require certain number of glitches for this to be a good training set
-	                go_ahead_and_append = float(line.strip().split()[idq.ovl.vD['#gwtrg']]) >= min_ovl_samples
-	                break
-        	f.close()
-	
+        go_ahead_and_append = False
+        f = open(vetolists[0], 'r')
+        for line in f:
+            if line[0] != '#':
+
+                # require certain number of glitches for this to be a good training set
+
+                go_ahead_and_append = \
+                    float(line.strip().split()[idq.ovl.vD['#gwtrg']]) \
+                    >= min_ovl_samples
+                break
+        f.close()
         if go_ahead_and_append:
-            ### make sure the path doesn't contain any "//" elements............
-            vetolist = vetolist.replace("//","/")
 
-            ### append file
-            logger.info('appending ovl_train.cache')
+            # make sure the path doesn't contain any "//" elements............
+
+            v = [l for l in vetolists[-1].split('/') if l != '']
+            vetolist = '/'
+            for V in v[:-1]:
+                vetolist += V + '/'
+            vetolist += v[-1]
+
+            # append file
 
             f = open(ovl_cache, 'a')
             print >> f, vetolist
             f.close()
-
+            logger.info('appending ovl_train.cache')
         else:
-            logger.info('WARNING: number glitches in the training set is less than ' + str(min_ovl_samples))
-            logger.info('WARNING: Not enough glitches in the training set. Skip OVL training.')
-
+            logger.info('WARNING: number glitches in the training set is less than '
+                         + str(min_ovl_samples))
+            logger.info('WARNING: Not enough glitches in the training set. Skip OVL training.'
+                        )
         logger.info('Done.')
 
-    #===============================================================================================
-    # jobs completion checkpoint (for dags)
-    #===============================================================================================
+        # #################################################
 
-    if len(dags): ### dags is not empty
+    # ####################################################
+    # jobs completion checkpoint
+    # #####################################################
 
-        print "dag"
-
+    if dags:
         list_of_dags = dags.keys()
         list_of_dags.sort()
 
-        ### loop until either all dags are complete or gpsstop+stride time is reached
+        # loop until either all dags are complete or gpsstop+stride time is reached
+
         incompleted_dags = []
+        while idq.nowgps() < gpsstop + stride or idq.nowgps() \
+            < launch_gps_time + stride:
+            for dag in list_of_dags:
 
-        ### if opts.force, we wait for all jobs to finish
-        ### otherwise, we wait for some amount of time before proceeding
-        while opts.force or (idq.nowgps() < gpsstop + stride) or (idq.nowgps() < launch_gps_time + stride):
-
-            for dag in list_of_dags: ### check dag status
+                # check dag status
 
                 dag_status = idq.get_condor_dag_status(dag)
                 dags[dag] = dag_status
-
                 if dag_status == 0:
                     logger.info('%s completed' % dag)
                 else:
                     incompleted_dags.append(dag)
-
             list_of_dags = incompleted_dags
             incompleted_dags = []
 
-            if 'incomplete' in dags.values(): ### check if any of the dags are still incomplete
-                logger.info('WARNING: Some dags have not been completed.')
-                time.sleep(300) ### wait 600 seconds before continue the loop
-                                ### 600 is a magic number, although 10 min. should be much shorter than stride
-            else: ### no incomplete dags, break the loop
+            # check if any of the dags are still incomplete
+
+            if 'incomplete' in dags.values():
+
+                # wait 600 seconds before continue the loop
+
+                time.sleep(300)
+            else:
+
+                # no incomplete dags, break the loop
+
                 break
 
-        ### print warnings for dags that failed or are incomplete
+        # check if some dags are still incomplete
+
+        if 'incomplete' in dags.values():
+            logger.info('WARNING: Some dags have not been completed.')
+
+        # print warnings for dags that failed or are incomplete
+
         for dag in list_of_dags:
-            if dags[dag] != 0:
+            if not dags[dag] == 0:
                 if dags[dag] == 'incomplete':
                     logger.info('WARNING: %s was  not complete' % dag)
                 else:
-                    logger.info('WARNING: %s failed with exit status %s'% (dag, str(dags[dag])))
-                    if opts.force:
-                       raise StandardError, "%s failed with exit status %s"%(dag, str(dags[dag]))
+                    logger.info('WARNING: %s failed with exit status %s'
+                                 % (dag, str(dags[dag])))
 
-    ### continue onto the next stride
     gpsstart += stride
-

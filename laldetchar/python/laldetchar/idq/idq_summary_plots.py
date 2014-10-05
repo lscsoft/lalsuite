@@ -31,10 +31,8 @@ import matplotlib
 matplotlib.use('Agg')
 
 # import matplotlib.pyplot as plt
+
 import pylab as plt
-
-plt.rcParams.update({"text.usetex":True})
-
 import glob
 import matplotlib.cm
 from matplotlib import mpl
