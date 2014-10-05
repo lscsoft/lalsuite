@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 # Copyright (C) 2013 Ruslan Vaulin
 #
 # This program is free software; you can redistribute it and/or modify it
@@ -32,8 +30,8 @@ from pylal import auxmvc_utils
 #from pylal import git_version
 import numpy
 import random
-import event
-import idq
+from laldetchar.idq import event
+from laldetchar.idq import idq
 #import idq_daily
 
 ######################################################################################
