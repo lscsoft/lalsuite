@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2014
 #
-# serial 68
+# serial 69
 
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
   # $0: check the version of $1, and store it in ${swig_version}
@@ -60,11 +60,10 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG],[
     ]
   )
   swig_build_any=false
-  python_min_version=
   LALSUITE_ENABLE_SWIG_LANGUAGE([Octave],[false],[LALSUITE_REQUIRE_CXX])
   LALSUITE_ENABLE_SWIG_LANGUAGE([Python],[false],[LALSUITE_REQUIRE_PYTHON([2.6])])
   AS_IF([test "${swig_generate}" = true],[
-    # require Python for running generate_swig_iface.py
+    # Python is required for running generate_swig_iface.py
     LALSUITE_REQUIRE_PYTHON([2.6])
     SWIG_GENERATE_ENABLE_VAL=ENABLED
   ],[
@@ -110,23 +109,29 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
   # $0: configure enabled SWIG bindings
   AS_IF([test "${swig_build_any}" = true],[
 
+    # configure SWIG binding languages
+    swig_min_version=2.0.11
+    swig_min_version_info=""
+    swig_dep_files=""
+    LALSUITE_USE_SWIG_OCTAVE
+    LALSUITE_USE_SWIG_PYTHON
+
     # if SWIG bindings are being generated, check for SWIG binary
-    # with version >= ${swig_min_version}; use value of ${SWIG} if
-    # set, otherwise check common SWIG binary names
+    # with version ${swig_min_version} or later; use value of
+    # ${SWIG} if set, otherwise check common SWIG binary names
     AC_SUBST([SWIG])
     AS_IF([test "${swig_generate}" = true],[
-      swig_min_version=2.0.11
       AS_IF([test "x${SWIG}" != x],[
-        AC_MSG_CHECKING([if ${SWIG} version >= ${swig_min_version}])
+        AC_MSG_CHECKING([if ${SWIG} version is at least ${swig_min_version}])
         _LALSUITE_CHECK_SWIG_VERSION([${SWIG}])
         LALSUITE_VERSION_COMPARE([${swig_version}],[<],[${swig_min_version}],[
           AC_MSG_RESULT([no (${swig_version})])
-          AC_MSG_ERROR([require SWIG with version >= ${swig_min_version}])
+          AC_MSG_ERROR([SWIG version ${swig_min_version} or later is required ${swig_min_version_info}])
         ])
         AC_MSG_RESULT([yes (${swig_version})])
       ],[
         AC_PATH_PROGS_FEATURE_CHECK([SWIG],[swig swig2.0],[
-          AC_MSG_CHECKING([if ${ac_path_SWIG} version >= ${swig_min_version}])
+          AC_MSG_CHECKING([if ${ac_path_SWIG} version is at least ${swig_min_version}])
           _LALSUITE_CHECK_SWIG_VERSION([${ac_path_SWIG}])
           LALSUITE_VERSION_COMPARE([${swig_version}],[>=],[${swig_min_version}],[
             ac_path_SWIG_found=true
@@ -137,7 +142,7 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
             AC_MSG_RESULT([no (${swig_version})])
           ])
         ],[
-          AC_MSG_ERROR([require SWIG with version >= ${swig_min_version}])
+          AC_MSG_ERROR([SWIG version ${swig_min_version} or later is required ${swig_min_version_info}])
         ])
         SWIG="${ac_cv_path_SWIG}"
       ])
@@ -216,11 +221,6 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
       swig_dep_files="${swig_dep_files}"
     ])
 
-    # configure SWIG binding languages
-    swig_dep_files=""
-    LALSUITE_USE_SWIG_OCTAVE
-    LALSUITE_USE_SWIG_PYTHON
-
   ])
   AM_CONDITIONAL([SWIG_BUILD],[test "${swig_build_any}" = true])
   AM_CONDITIONAL([SWIG_GENERATE],[test "${swig_generate}" = true])
@@ -281,7 +281,11 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
     ])
     AC_MSG_RESULT([${octave_version}])
     LALSUITE_VERSION_COMPARE([${octave_version}],[<],[${octave_min_version}],[
-      AC_MSG_ERROR([require Octave version >= ${octave_min_version}])
+      AC_MSG_ERROR([Octave version ${octave_min_version} or later is required])
+    ])
+    LALSUITE_VERSION_COMPARE([${octave_version}],[>=],[3.8.0],[
+      swig_min_version=2.0.12
+      swig_min_version_info="for Octave version ${octave_version}"
     ])
 
     # determine where to install Octave bindings: take versioned site .oct file directory given by octave-config,
@@ -386,7 +390,7 @@ EOD`]
     # check NumPy version
     AC_MSG_CHECKING([NumPy version])
     LALSUITE_VERSION_COMPARE([${numpy_version}],[<],[${numpy_min_version}],[
-      AC_MSG_ERROR([require NumPy version >= ${numpy_min_version}])
+      AC_MSG_ERROR([NumPy version ${numpy_min_version} or later is required])
     ])
     AC_MSG_RESULT([${numpy_version}])
 

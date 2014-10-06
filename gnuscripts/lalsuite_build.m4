@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 93
+# serial 94
 
 # not present in older versions of pkg.m4
 m4_pattern_allow([^PKG_CONFIG(_(PATH|LIBDIR|SYSROOT_DIR|ALLOW_SYSTEM_(CFLAGS|LIBS)))?$])
@@ -365,7 +365,7 @@ AC_DEFUN([LALSUITE_CHECK_PYTHON],[
       AS_IF([test "x${lalsuite_require_pyvers}" = x],[
         PYTHON=false
       ],[
-        AC_MSG_ERROR([Python version ${lalsuite_pyvers} or higher is required])
+        AC_MSG_ERROR([Python version ${lalsuite_pyvers} or later is required])
       ])
     ])
   ])
