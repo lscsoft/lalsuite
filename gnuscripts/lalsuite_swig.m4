@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2014
 #
-# serial 69
+# serial 70
 
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
   # $0: check the version of $1, and store it in ${swig_version}
@@ -53,7 +53,7 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG],[
         [generate],[swig_build_all=true; swig_generate=true],
         [yes],[swig_build_all=true],
         [no],[swig_build_all=false],
-        [*],[AC_MSG_ERROR([invalid value "${enableval}" for --enable-swig])]
+        [AC_MSG_ERROR([invalid value "${enableval}" for --enable-swig])]
       )
     ],[
       swig_build_all=
@@ -86,7 +86,7 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG_LANGUAGE],[
         [generate],[swig_build_]lowercase[=true; swig_generate=true],
         [yes],[swig_build_]lowercase[=true],
         [no],[swig_build_]lowercase[=false],
-        [*],[AC_MSG_ERROR([invalid value "${enableval}" for --enable-swig-]]lowercase[)]
+        [AC_MSG_ERROR([invalid value "${enableval}" for --enable-swig-]]lowercase[)]
       )
     ],[
       swig_build_]lowercase[=${swig_build_all:-$2}

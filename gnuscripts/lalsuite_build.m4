@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 94
+# serial 95
 
 # not present in older versions of pkg.m4
 m4_pattern_allow([^PKG_CONFIG(_(PATH|LIBDIR|SYSROOT_DIR|ALLOW_SYSTEM_(CFLAGS|LIBS)))?$])
@@ -191,7 +191,7 @@ AC_DEFUN([LALSUITE_VERSION_COMPARE],[
   # $0: compare versions using the given operator
   m4_case([$2],[<],,[<=],,[=],,[>=],,[>],,[m4_fatal([$0: invalid operator $2])])
   AS_VERSION_COMPARE([$1],[$3],[lalsuite_op='<'],[lalsuite_op='='],[lalsuite_op='>'])
-  AS_CASE(['$2'],[*${lalsuite_op}*],[m4_default([$4],[:])],[*],[m4_default([$5],[:])])
+  AS_CASE(['$2'],[*${lalsuite_op}*],[m4_default([$4],[:])],[m4_default([$5],[:])])
   # end $0
 ])
 
