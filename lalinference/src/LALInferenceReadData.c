@@ -382,6 +382,7 @@ void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, ProcessPar
  --psdstart GPStime             GPS start time of PSD estimation data\n\
  --psdlength length             length of PSD estimation data in seconds\n\
  --seglen length                length of segments for PSD estimation and analysis in seconds\n\
+(--dont-dump-psd                If given, no ascii file with the PSD will be generated\n\
 (--trigtime GPStime)            GPS time of the trigger to analyse (optional when using --margtime or --margtimephi)\n\
 (--segment-start)               GPS time of the start of the segment (optional when --trigtime given, default is seglen-2 s before --trigtime)\n\
 (--srate rate)                  Downsample data to rate in Hz (4096.0,)\n\
@@ -1223,29 +1224,37 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
             fclose(in);
         }
 
+        /* Save to file the PSDs so that they can be used in the PP pages */
+        const UINT4 nameLength=FILENAME_MAX;
+        char filename[nameLength];
+        FILE *out;
+        ppt=LALInferenceGetProcParamVal(commandLine,"--dont-dump-psd");
+        if (!ppt){
+          ppt=LALInferenceGetProcParamVal(commandLine,"--outfile");
+          if(ppt) {
+            snprintf(filename, nameLength, "%s-%s-PSD.dat", ppt->value, IFOdata[i].name);
+          }
+          else
+            snprintf(filename, nameLength, "%.3f_%s-PSD.dat",GPStrig.gpsSeconds+1e-9*GPStrig.gpsNanoSeconds, IFOdata[i].name);
+            
+          out = fopen(filename, "w");
+          if(!out){
+            fprintf(stderr,"Unable to open the path %s for writing PSD files\n",filename);
+            exit(1);
+          }
+          for (j = 0; j < IFOdata[i].oneSidedNoisePowerSpectrum->data->length; j++) {
+              REAL8 f = IFOdata[i].oneSidedNoisePowerSpectrum->deltaF*j;
+              REAL8 psd = IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j];
+
+              fprintf(out, "%g %g\n", f, psd);
+          }
+          fclose(out);
+        }
         if (LALInferenceGetProcParamVal(commandLine, "--data-dump")) {
             pptdatadump=LALInferenceGetProcParamVal(commandLine,"--data-dump");
-            const UINT4 nameLength=FILENAME_MAX;
-            char filename[nameLength];
-            FILE *out;
+            
             ppt=LALInferenceGetProcParamVal(commandLine,"--outfile");
-            if(ppt) {
-            	snprintf(filename, nameLength, "%s-%s-PSD.dat", ppt->value, IFOdata[i].name);
-            }
-            else if(strcmp(pptdatadump->value,"")) {
-              snprintf(filename, nameLength, "%s/%s-PSD.dat", pptdatadump->value, IFOdata[i].name);
-            }
-            else
-                snprintf(filename, nameLength, "%s-PSD.dat", IFOdata[i].name);
-            out = fopen(filename, "w");
-            for (j = 0; j < IFOdata[i].oneSidedNoisePowerSpectrum->data->length; j++) {
-                REAL8 f = IFOdata[i].oneSidedNoisePowerSpectrum->deltaF*j;
-                REAL8 psd = IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j];
-
-                fprintf(out, "%g %g\n", f, psd);
-            }
-            fclose(out);
-          
+            
             if(ppt) {
               snprintf(filename, nameLength, "%s-%s-timeData.dat", ppt->value, IFOdata[i].name);
             }
