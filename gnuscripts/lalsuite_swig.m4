@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2014
 #
-# serial 67
+# serial 68
 
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
   # $0: check the version of $1, and store it in ${swig_version}
@@ -119,7 +119,7 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
       AS_IF([test "x${SWIG}" != x],[
         AC_MSG_CHECKING([if ${SWIG} version >= ${swig_min_version}])
         _LALSUITE_CHECK_SWIG_VERSION([${SWIG}])
-        AS_VERSION_COMPARE([${swig_version}],[${swig_min_version}],[
+        LALSUITE_VERSION_COMPARE([${swig_version}],[<],[${swig_min_version}],[
           AC_MSG_RESULT([no (${swig_version})])
           AC_MSG_ERROR([require SWIG with version >= ${swig_min_version}])
         ])
@@ -128,12 +128,12 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
         AC_PATH_PROGS_FEATURE_CHECK([SWIG],[swig swig2.0],[
           AC_MSG_CHECKING([if ${ac_path_SWIG} version >= ${swig_min_version}])
           _LALSUITE_CHECK_SWIG_VERSION([${ac_path_SWIG}])
-          ac_path_SWIG_found=true
-          AS_VERSION_COMPARE([${swig_version}],[${swig_min_version}],[ac_path_SWIG_found=false])
-          AS_IF([${ac_path_SWIG_found}],[
+          LALSUITE_VERSION_COMPARE([${swig_version}],[>=],[${swig_min_version}],[
+            ac_path_SWIG_found=true
             AC_MSG_RESULT([yes (${swig_version})])
             ac_cv_path_SWIG="${ac_path_SWIG}"
           ],[
+            ac_path_SWIG_found=false
             AC_MSG_RESULT([no (${swig_version})])
           ])
         ],[
@@ -280,7 +280,7 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
       AC_MSG_ERROR([could not determine ${OCTAVE} version])
     ])
     AC_MSG_RESULT([${octave_version}])
-    AS_VERSION_COMPARE([${octave_min_version}],[${octave_version}],[],[],[
+    LALSUITE_VERSION_COMPARE([${octave_version}],[<],[${octave_min_version}],[
       AC_MSG_ERROR([require Octave version >= ${octave_min_version}])
     ])
 
@@ -385,7 +385,7 @@ EOD`]
 
     # check NumPy version
     AC_MSG_CHECKING([NumPy version])
-    AS_VERSION_COMPARE([${numpy_min_version}],[${numpy_version}],[],[],[
+    LALSUITE_VERSION_COMPARE([${numpy_version}],[<],[${numpy_min_version}],[
       AC_MSG_ERROR([require NumPy version >= ${numpy_min_version}])
     ])
     AC_MSG_RESULT([${numpy_version}])

@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 92
+# serial 93
 
 # not present in older versions of pkg.m4
 m4_pattern_allow([^PKG_CONFIG(_(PATH|LIBDIR|SYSROOT_DIR|ALLOW_SYSTEM_(CFLAGS|LIBS)))?$])
@@ -187,6 +187,14 @@ AC_DEFUN([LALSUITE_ADD_PATH],[
   # end $0
 ])
 
+AC_DEFUN([LALSUITE_VERSION_COMPARE],[
+  # $0: compare versions using the given operator
+  m4_case([$2],[<],,[<=],,[=],,[>=],,[>],,[m4_fatal([$0: invalid operator $2])])
+  AS_VERSION_COMPARE([$1],[$3],[lalsuite_op='<'],[lalsuite_op='='],[lalsuite_op='>'])
+  AS_CASE(['$2'],[*${lalsuite_op}*],[m4_default([$4],[:])],[*],[m4_default([$5],[:])])
+  # end $0
+])
+
 AC_DEFUN([LALSUITE_CHECK_GIT_REPO],[
   # $0: check for git
   AC_PATH_PROGS([GIT],[git],[false])
@@ -337,7 +345,7 @@ AC_DEFUN([LALSUITE_REQUIRE_PYTHON],[
   AS_IF([test "x${lalsuite_require_pyvers}" = x],[
     lalsuite_require_pyvers="$1"
   ],[
-    AS_VERSION_COMPARE([${lalsuite_require_pyvers}],[$1],[
+    LALSUITE_VERSION_COMPARE([$1],[>],[${lalsuite_require_pyvers}],[
       lalsuite_require_pyvers="$1"
     ])
   ])
@@ -348,7 +356,7 @@ AC_DEFUN([LALSUITE_CHECK_PYTHON],[
   # $0: check for Python
   lalsuite_pyvers="$1"
   AS_IF([test "x${lalsuite_require_pyvers}" != x],[
-    AS_VERSION_COMPARE([${lalsuite_pyvers}],[${lalsuite_require_pyvers}],[
+    LALSUITE_VERSION_COMPARE([${lalsuite_require_pyvers}],[>],[${lalsuite_pyvers}],[
       lalsuite_pyvers="${lalsuite_require_pyvers}"
     ])
   ])
