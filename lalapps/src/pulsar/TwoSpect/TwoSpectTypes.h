@@ -94,7 +94,7 @@ typedef struct {
    BOOLEAN followUpOutsideULrange;
    LALStringVector *timestampsFile;
    LALStringVector *segmentFile;
-   CHAR *injectionSources;
+   LALStringVector *injectionSources;
    REAL8 injFmin;
    REAL8 injBand;
    INT4 injRandSeed;
