@@ -321,7 +321,7 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   runState.prior = &priorFunction;
 
   /* set signal model/template */
-  runState.templt = get_pulsar_model;
+  runState.model.templt = get_pulsar_model;
 
   /* Generate the lookup tables and read parameters from par file */
   setupFromParFile( &runState );
@@ -1254,6 +1254,10 @@ void setupFromParFile( LALInferenceRunState *runState )
 
   /* Setup lookup tables for amplitudes */
   setupLookupTables( runState, &psr );
+
+  runState->model = XLALCalloc( 1, sizeof(LALInferenceModel) );
+  runState->model->params = XLALCalloc( 1, sizeof(LALInferenceVariables) );
+  runState->model->domain = LAL_SIM_DOMAIN_TIME;
 
   runState->currentParams = XLALCalloc( 1, sizeof(LALInferenceVariables) );
 
@@ -3444,7 +3448,7 @@ void get_loudest_snr( LALInferenceRunState *runState ){
   LALInferenceCopyVariables( runState->livePoints[Nlive-1], loudestParams );
 
   /* make sure that the signal model in runState->data is that of the loudest signal */
-  REAL8 logLnew = runState->likelihood( loudestParams, runState->data, runState->templt );
+  REAL8 logLnew = runState->likelihood( loudestParams, runState->data, runState->model );
 
   if ( logLnew != *(REAL8 *)LALInferenceGetVariable(
     runState->livePoints[Nlive-1], "logL" ) ){

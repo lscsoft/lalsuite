@@ -24,119 +24,120 @@
  *
  * Note: Any additional models should be added into this function.
  *
+ * \param model [in] The model structure hold model information and current parameter info
  * \param data [in] The data structure hold data and current parameter info
  *
  * \sa rescale_parameter
  * \sa pulsar_model
  */
-void get_pulsar_model( LALInferenceIFOData *data ){
+void get_pulsar_model( LALInferenceModel *model, LALInferenceIFOData *data ){
   BinaryPulsarParams XLAL_INIT_DECL(pars); /* initialise as empty */
 
   /* set model parameters (including rescaling) */
-  //pars.h0 = rescale_parameter( data, "h0" );
-  pars.cosiota = rescale_parameter( data, "cosiota" );
+  //pars.h0 = rescale_parameter( model, data, "h0" );
+  pars.cosiota = rescale_parameter( model, data, "cosiota" );
 
   /* check whether new psi-phi0 coordinates are used */
-  //if ( LALInferenceCheckVariable( data->modelParams, "psiprime" ) &&
-  //     LALInferenceCheckVariable( data->modelParams, "phi0prime" ) ){
-  //  REAL8 phi0prime = rescale_parameter( data, "phi0prime" );
-  //  REAL8 psiprime = rescale_parameter( data, "psiprime" );
+  //if ( LALInferenceCheckVariable( model->params, "psiprime" ) &&
+  //     LALInferenceCheckVariable( model->params, "phi0prime" ) ){
+  //  REAL8 phi0prime = rescale_parameter( model, data, "phi0prime" );
+  //  REAL8 psiprime = rescale_parameter( model, data, "psiprime" );
 
   //  /* convert phi0' and psi' into phi0 and psi */
   //  inverse_phi0_psi_transform( phi0prime, psiprime, &pars.phi0, &pars.psi );
   //}
   //else{
-  pars.psi = rescale_parameter( data, "psi" );
-  //  pars.phi0 = rescale_parameter( data, "phi0" );
+  pars.psi = rescale_parameter( model, data, "psi" );
+  //  pars.phi0 = rescale_parameter( model, data, "phi0" );
   //}
 
   if( LALInferenceCheckVariable( data->dataParams, "jones-model" ) ){
     /* use parameterisation from Ian Jones's original model */
-    pars.I21 = rescale_parameter( data, "I21" );
-    pars.I31 = rescale_parameter( data, "I31" );
-    pars.lambda = rescale_parameter( data, "lambda" );
-    pars.costheta = rescale_parameter( data, "costheta" );
-    pars.phi0 = rescale_parameter( data, "phi0" );
+    pars.I21 = rescale_parameter( model, data, "I21" );
+    pars.I31 = rescale_parameter( model, data, "I31" );
+    pars.lambda = rescale_parameter( model, data, "lambda" );
+    pars.costheta = rescale_parameter( model, data, "costheta" );
+    pars.phi0 = rescale_parameter( model, data, "phi0" );
 
     invert_source_params( &pars );
   }
   else{
-    pars.C21 = rescale_parameter( data, "C21" );
-    pars.C22 = rescale_parameter( data, "C22" );
-    pars.phi21 = rescale_parameter( data, "phi21" );
+    pars.C21 = rescale_parameter( model, data, "C21" );
+    pars.C22 = rescale_parameter( model, data, "C22" );
+    pars.phi21 = rescale_parameter( model, data, "phi21" );
 
     if( LALInferenceCheckVariable( data->dataParams, "biaxial" ) ){
       /* use complex amplitude parameterisation, but set up for a biaxial star */
       pars.phi22 = 2.*pars.phi21;
     }
     else{
-      pars.phi22 = rescale_parameter( data, "phi22" );
+      pars.phi22 = rescale_parameter( model, data, "phi22" );
     }
   }
 
   /* set the potentially variable parameters */
-  pars.pepoch = rescale_parameter( data, "pepoch" );
-  pars.posepoch = rescale_parameter( data, "posepoch" );
+  pars.pepoch = rescale_parameter( model, data, "pepoch" );
+  pars.posepoch = rescale_parameter( model, data, "posepoch" );
 
-  pars.ra = rescale_parameter( data, "ra" );
-  pars.pmra = rescale_parameter( data, "pmra" );
-  pars.dec = rescale_parameter( data, "dec" );
-  pars.pmdec = rescale_parameter( data, "pmdec" );
+  pars.ra = rescale_parameter( model, data, "ra" );
+  pars.pmra = rescale_parameter( model, data, "pmra" );
+  pars.dec = rescale_parameter( model, data, "dec" );
+  pars.pmdec = rescale_parameter( model, data, "pmdec" );
 
-  pars.f0 = rescale_parameter( data, "f0" );
-  pars.f1 = rescale_parameter( data, "f1" );
-  pars.f2 = rescale_parameter( data, "f2" );
-  pars.f3 = rescale_parameter( data, "f3" );
-  pars.f4 = rescale_parameter( data, "f4" );
-  pars.f5 = rescale_parameter( data, "f5" );
+  pars.f0 = rescale_parameter( model, data, "f0" );
+  pars.f1 = rescale_parameter( model, data, "f1" );
+  pars.f2 = rescale_parameter( model, data, "f2" );
+  pars.f3 = rescale_parameter( model, data, "f3" );
+  pars.f4 = rescale_parameter( model, data, "f4" );
+  pars.f5 = rescale_parameter( model, data, "f5" );
 
   /* speed of GWs as a fraction of speed of light LAL_C_SI */
-  pars.cgw = rescale_parameter( data, "cgw" );
+  pars.cgw = rescale_parameter( model, data, "cgw" );
 
   /* check if there are binary parameters */
-  if( LALInferenceCheckVariable(data->modelParams, "model") ){
+  if( LALInferenceCheckVariable(model->params, "model") ){
     /* binary system model - NOT pulsar model */
-    pars.model = *(CHAR**)LALInferenceGetVariable( data->modelParams, "model" );
+    pars.model = *(CHAR**)LALInferenceGetVariable( model->params, "model" );
 
-    pars.e = rescale_parameter( data, "e" );
-    pars.w0 = rescale_parameter( data, "w0" );
-    pars.Pb = rescale_parameter( data, "Pb" );
-    pars.x = rescale_parameter( data, "x" );
-    pars.T0 = rescale_parameter( data, "T0" );
+    pars.e = rescale_parameter( model, data, "e" );
+    pars.w0 = rescale_parameter( model, data, "w0" );
+    pars.Pb = rescale_parameter( model, data, "Pb" );
+    pars.x = rescale_parameter( model, data, "x" );
+    pars.T0 = rescale_parameter( model, data, "T0" );
 
-    pars.e2 = rescale_parameter( data, "e2" );
-    pars.w02 = rescale_parameter( data, "w02" );
-    pars.Pb2 = rescale_parameter( data, "Pb2" );
-    pars.x2 = rescale_parameter( data, "x2" );
-    pars.T02 = rescale_parameter( data, "T02" );
+    pars.e2 = rescale_parameter( model, data, "e2" );
+    pars.w02 = rescale_parameter( model, data, "w02" );
+    pars.Pb2 = rescale_parameter( model, data, "Pb2" );
+    pars.x2 = rescale_parameter( model, data, "x2" );
+    pars.T02 = rescale_parameter( model, data, "T02" );
 
-    pars.e3 = rescale_parameter( data, "e3" );
-    pars.w03 = rescale_parameter( data, "w03" );
-    pars.Pb3 = rescale_parameter( data, "Pb3" );
-    pars.x3 = rescale_parameter( data, "x3" );
-    pars.T03 = rescale_parameter( data, "T03" );
+    pars.e3 = rescale_parameter( model, data, "e3" );
+    pars.w03 = rescale_parameter( model, data, "w03" );
+    pars.Pb3 = rescale_parameter( model, data, "Pb3" );
+    pars.x3 = rescale_parameter( model, data, "x3" );
+    pars.T03 = rescale_parameter( model, data, "T03" );
 
-    pars.xpbdot = rescale_parameter( data, "xpbdot" );
-    pars.eps1 = rescale_parameter( data, "eps1" );
-    pars.eps2 = rescale_parameter( data, "eps2" );
-    pars.eps1dot = rescale_parameter( data, "eps1dot" );
-    pars.eps2dot = rescale_parameter( data, "eps2dot" );
-    pars.Tasc = rescale_parameter( data, "Tasc" );
+    pars.xpbdot = rescale_parameter( model, data, "xpbdot" );
+    pars.eps1 = rescale_parameter( model, data, "eps1" );
+    pars.eps2 = rescale_parameter( model, data, "eps2" );
+    pars.eps1dot = rescale_parameter( model, data, "eps1dot" );
+    pars.eps2dot = rescale_parameter( model, data, "eps2dot" );
+    pars.Tasc = rescale_parameter( model, data, "Tasc" );
 
-    pars.wdot = rescale_parameter( data, "wdot" );
-    pars.gamma = rescale_parameter( data, "gamma" );
-    pars.Pbdot = rescale_parameter( data, "Pbdot" );
-    pars.xdot = rescale_parameter( data, "xdot" );
-    pars.edot = rescale_parameter( data, "edot" );
+    pars.wdot = rescale_parameter( model, data, "wdot" );
+    pars.gamma = rescale_parameter( model, data, "gamma" );
+    pars.Pbdot = rescale_parameter( model, data, "Pbdot" );
+    pars.xdot = rescale_parameter( model, data, "xdot" );
+    pars.edot = rescale_parameter( model, data, "edot" );
 
-    pars.s = rescale_parameter( data, "s" );
-    pars.dr = rescale_parameter( data, "dr" );
-    pars.dth = rescale_parameter( data, "dth" );
-    pars.a0 = rescale_parameter( data, "a0" );
-    pars.b0 = rescale_parameter( data, "b0" );
+    pars.s = rescale_parameter( model, data, "s" );
+    pars.dr = rescale_parameter( model, data, "dr" );
+    pars.dth = rescale_parameter( model, data, "dth" );
+    pars.a0 = rescale_parameter( model, data, "a0" );
+    pars.b0 = rescale_parameter( model, data, "b0" );
 
-    pars.M = rescale_parameter( data, "M" );
-    pars.m2 = rescale_parameter( data, "m2" );
+    pars.M = rescale_parameter( model, data, "M" );
+    pars.m2 = rescale_parameter( model, data, "m2" );
   }
 
   /* now get pulsar model */
@@ -150,12 +151,13 @@ void get_pulsar_model( LALInferenceIFOData *data ){
  *
  * This function will rescale a parameter to its true value using the scale factor and minimum scale value.
  *
+ * \param model [in] model structure containing parameter information
  * \param data [in] data structure containing parameter information
  * \param parname [in] name of the parameter requiring rescaling
  *
  * \return Rescaled parameter value
  */
-REAL8 rescale_parameter( LALInferenceIFOData *data, const CHAR *parname ){
+REAL8 rescale_parameter( LALInferenceModel *model, LALInferenceIFOData *data, const CHAR *parname ){
   REAL8 par = 0., scale = 0., offset = 0.;
   CHAR scaleName[VARNAME_MAX] = "";
   CHAR offsetName[VARNAME_MAX] = "";
@@ -166,7 +168,7 @@ REAL8 rescale_parameter( LALInferenceIFOData *data, const CHAR *parname ){
   scale = *(REAL8*)LALInferenceGetVariable( data->dataParams, scaleName );
   offset = *(REAL8*)LALInferenceGetVariable( data->dataParams, offsetName );
 
-  par = *(REAL8*)LALInferenceGetVariable( data->modelParams, parname );
+  par = *(REAL8*)LALInferenceGetVariable( model->params, parname );
 
   par = par*scale + offset;
 

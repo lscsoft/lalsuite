@@ -36,9 +36,9 @@ extern "C" {
 static const REAL8 inv_fact[7] = { 1.0, 1.0, (1.0/2.0), (1.0/6.0), (1.0/24.0), (1.0/120.0), (1.0/720.0) };
 
 /* model functions */
-void get_pulsar_model( LALInferenceIFOData *data );
+void get_pulsar_model( LALInferenceModel *model, LALInferenceIFOData *data );
 
-REAL8 rescale_parameter( LALInferenceIFOData *data, const CHAR *parname );
+REAL8 rescale_parameter( LALInferenceModel *model, LALInferenceIFOData *data, const CHAR *parname );
 
 void pulsar_model( BinaryPulsarParams params, LALInferenceIFOData *data );
 

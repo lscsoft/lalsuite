@@ -40,12 +40,12 @@
  *
  * \param vars [in] The parameter values
  * \param data [in] The detector data and initial signal phase template
- * \param get_model [in] The signal template/model function
+ * \param get_model [in] The signal model structure
  *
  * \return The natural logarithm of the likelihood function
  */
 REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *data,
-                             LALInferenceTemplateFunction get_model){
+                             LALInferenceModel *get_model){
   REAL8 loglike = 0.; /* the log likelihood */
   UINT4 i = 0;
   REAL8Vector *freqFactors = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams, "freqfactors" );
@@ -54,13 +54,13 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
 
   /* copy model parameters to data parameters */
   while( datatemp1 ){
-    LALInferenceCopyVariables( vars, datatemp1->modelParams );
+    LALInferenceCopyVariables( vars, get_model->params );
     datatemp1 = datatemp1->next;
   }
 
   /* get pulsar model */
   while( datatemp2 ){
-    get_model( datatemp2 );
+    get_model->templt( datatemp2 );
 
     for( i = 0; i < freqFactors->length; i++ ) { datatemp2 = datatemp2->next; }
   }
@@ -101,7 +101,7 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
       for( j = i ; j < cl ; j++ ){
         B = datatemp3->compTimeData->data->data[j];
 
-        M = datatemp3->compModelData->data->data[j];
+        M = get_model->compSignal->data->data[j];
 
         /* sum over the model */
         sumModel += creal(M)*creal(M) + cimag(M)*cimag(M);
@@ -137,7 +137,7 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
  *
  * \return The natural logarithm of the prior value for a set of parameters
  */
-REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *params ){
+REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *params, LALInferenceModel *model ){
   LALInferenceIFOData *data = runState->data;
   (void)runState;
   LALInferenceVariableItem *item = params->head;
