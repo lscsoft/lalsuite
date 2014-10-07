@@ -1103,37 +1103,12 @@ REAL8 calculate_lalsim_snr(SimInspiralTable *inj, char *IFOname, REAL8FrequencyS
   approx=XLALGetApproximantFromString(inj->waveform);
   LALSimulationDomain modelDomain;
 
-  switch(approx)
+  if(XLALSimInspiralImplementedFDApproximants(approx)) modelDomain = LAL_SIM_DOMAIN_FREQUENCY;
+  else if(XLALSimInspiralImplementedTDApproximants(approx)) modelDomain = LAL_SIM_DOMAIN_TIME;
+  else
   {
-    case GeneratePPN:
-    case TaylorT1:
-    case TaylorT2:
-    case TaylorT3:
-    case TaylorT4:
-    case EOB:
-    case EOBNR:
-    case EOBNRv2:
-    case EOBNRv2HM:
-    case SpinTaylor:
-    case SpinTaylorT4:
-    case SpinQuadTaylor:
-    case SpinTaylorFrameless:
-    case PhenSpinTaylorRD:
-    case NumRel:
-      modelDomain=LAL_SIM_DOMAIN_TIME;
-      break;
-    case TaylorF1:
-    case TaylorF2:
-    case TaylorF2RedSpin:
-    case TaylorF2RedSpinTidal:
-    case IMRPhenomA:
-    case IMRPhenomB:
-      modelDomain=LAL_SIM_DOMAIN_FREQUENCY;
-      break;
-    default:
       fprintf(stderr,"ERROR. Unknown approximant number %i. Unable to choose time or frequency domain model.",approx);
       exit(1);
-      break;
   }
 
   REAL8 m1,m2, s1x,s1y,s1z,s2x,s2y,s2z,phi0,f_min,f_max,iota,polarization,
