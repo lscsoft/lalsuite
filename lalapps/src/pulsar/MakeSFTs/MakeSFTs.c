@@ -1926,7 +1926,7 @@ int WriteSFT(struct CommandLineArgsTag CLA)
 	* cimagf(fftDataSingle->data[k+firstbin]);
       /* 06/26/07 gam; use finite to check that data does not contains a non-FINITE (+/- Inf, NaN) values */
       #if CHECKFORINFINITEANDNANS
-        if (!finite(rpw) || !finite(ipw)) {
+        if (!isfinite(rpw) || !isfinite(ipw)) {
           fprintf(stderr, "Infinite or NaN data at freq bin %d.\n", k);
           return 7;
         }
@@ -1952,7 +1952,7 @@ int WriteSFT(struct CommandLineArgsTag CLA)
 	* cimag(fftDataDouble->data[k+firstbin]);
       /* 06/26/07 gam; use finite to check that data does not contains a non-FINITE (+/- Inf, NaN) values */
       #if CHECKFORINFINITEANDNANS
-        if (!finite(rpw) || !finite(ipw)) {
+        if (!isfinite(rpw) || !isfinite(ipw)) {
           fprintf(stderr, "Infinite or NaN data at freq bin %d.\n", k);
           return 7;
         }
@@ -2063,7 +2063,7 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
       oneSFT->data->data[k] = (((REAL4) singleDeltaT) * fftDataSingle->data[k+firstbin]);
       /* 06/26/07 gam; use finite to check that data does not contains a non-FINITE (+/- Inf, NaN) values */
       #if CHECKFORINFINITEANDNANS
-        if (!finite(crealf(oneSFT->data->data[k])) || !finite(cimagf(oneSFT->data->data[k]))) {
+        if (!isfinite(crealf(oneSFT->data->data[k])) || !isfinite(cimagf(oneSFT->data->data[k]))) {
           fprintf(stderr, "Infinite or NaN data at freq bin %d.\n", k);
           return 7;
         }
@@ -2085,7 +2085,7 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
       oneSFT->data->data[k] = crectf( doubleDeltaT*creal(fftDataDouble->data[k+firstbin]), doubleDeltaT*cimag(fftDataDouble->data[k+firstbin]) );
       /* 06/26/07 gam; use finite to check that data does not contains a non-FINITE (+/- Inf, NaN) values */
       #if CHECKFORINFINITEANDNANS
-        if (!finite(crealf(oneSFT->data->data[k])) || !finite(cimagf(oneSFT->data->data[k]))) {
+        if (!isfinite(crealf(oneSFT->data->data[k])) || !isfinite(cimagf(oneSFT->data->data[k]))) {
           fprintf(stderr, "Infinite or NaN data at freq bin %d.\n", k);
           return 7;
         }
