@@ -75,9 +75,9 @@ if args.command == 'start':
                 '--password',
                 'rusldg',
                 '--config-file',
-                './idq_lvalert_config.ini'
+                '/home/vaulin/development/idq_gdb_testing/idq_lvalert_config.ini'
                 ]
-    pid = subprocess.Popen(lvalert_launch_command).pid
+    pid = subprocess.Popen(lvalert_launch_command, stdout=open('lvalert_listen.out', 'a')).pid
 
     print "lvalert_listen is launched with process id " + str(pid)
     sys.exit(0)

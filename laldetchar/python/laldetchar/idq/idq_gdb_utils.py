@@ -37,6 +37,7 @@ __date__ = git_version.date
 import numpy as np
 import re as re
 from laldetchar.idq import event
+from laldetchar.idq import idq
 
 
 def combine_ts(filenames):
@@ -101,4 +102,54 @@ def stats_ts(ts):
     return (np.min(ts), np.max(ts), np.mean(ts), np.var(ts) ** 0.5)
 
 
+
+def execute_gdb_timeseries(
+    gps_start, 
+    gps_end, 
+    gps,
+    gracedb_id,
+    ifo, 
+	classifier,
+    cp, 
+    input_dir, 
+    exec_prog, 
+    usertag=''):
+    """ Function that sets up and runs idq-gdb-timeseries script as one of the tasks of idq-gdb-processor."""
+    # form the command line
+    cmd_line = [exec_prog, '-s', gps_start, '-e', gps_end, '--gps', gps, '-g', gracedb_id, '--ifo', ifo, '-c', classifier, '-i', input_dir, '-t', usertag]
+	
+    # add extra options from config file
+    for (option,value) in cp.items('gdb-time-series'):
+        cmd_line.extend([option, value])
+	print cmd_line
+    exit_status = idq.submit_command(cmd_line, 'gdb_timeseries', verbose=True)
+	
+    return exit_status
+	
+	
+	
+def execute_gdb_glitch_tables(
+    gps_start, 
+    gps_end, 
+    gracedb_id,
+    ifo, 
+	classifier,
+    cp, 
+    input_dir, 
+    exec_prog, 
+    usertag=''):
+    """ Function that sets up and runs idq-gdb-timeseries script as one of the tasks of idq-gdb-processor."""
+    # form the command line
+    cmd_line = [exec_prog, '-s', gps_start, '-e', gps_end, '-g', gracedb_id, '--ifo', ifo, '-c', classifier, '-i', input_dir, '-t', usertag]
+	
+    # add extra options from config file
+    for (option,value) in cp.items('gdb-glitch-tables'):
+        cmd_line.extend([option, value])
+	print cmd_line
+    exit_status = idq.submit_command(cmd_line, 'gdb_glitch_tables', verbose=True)
+	
+    return exit_status	
+	
+
 ##@}
+

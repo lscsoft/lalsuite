@@ -20,6 +20,7 @@ description = \
 import numpy as np
 import re as re
 from laldetchar.idq import event
+from ligo.gracedb.rest import GraceDb
 
 from laldetchar import git_version
 __author__ = 'Reed Essick <reed.essick@ligo.org>'
@@ -53,7 +54,7 @@ if __name__ == '__main__':
         '--gps-start',
         dest='start',
         default=0,
-        type='int',
+        type='float',
         help='the gps start time of the time range of interest',
         )
     parser.add_option(
@@ -61,7 +62,7 @@ if __name__ == '__main__':
         '--gps-end',
         dest='end',
         default=0,
-        type='int',
+        type='float',
         help='the gps end time of the time range of interest',
         )
 
@@ -69,6 +70,8 @@ if __name__ == '__main__':
                       help='the timestamp of interest within [start, end]. eg: coalescence time of CBC trigger'
                       )
 
+    parser.add_option('-g', '--gracedb-id', default=None, type='string',
+                      help='GraceDB ID')
     parser.add_option('-c', '--classifier', default='ovl', type='string'
                       ,
                       help='the classifier used to generate the timeseries data. Default="ovl"'
@@ -88,7 +91,8 @@ if __name__ == '__main__':
                       ,
                       help='user tag'
                       )
-
+    parser.add_option('', '--skip-gracedb-upload', default=False,
+                      action='store_true', help='skip steps involving communication with GraceDB')
     (opts, args) = parser.parse_args()
 
     if not opts.ifo:
@@ -96,6 +100,14 @@ if __name__ == '__main__':
 
     if opts.tag != '':
         opts.tag = opts.tag + '-'
+		
+    if not opts.skip_gracedb_upload:
+	    # initialize instance of gracedb interface 
+        gracedb = GraceDb()
+		# check that gracedb id is given
+        if not opts.gracedb_id:
+            print "GraceDB ID must be specified for enabling correct uploading of the data. Please use --gracedb-id option."
+            sys.exit(1)
 
     # ## define plot
 
@@ -149,7 +161,7 @@ if __name__ == '__main__':
     max_rank = -np.infty
     max_rank_segNo = 0
     segNo = 0
-    end = False
+    end = opts.start
     dur = 0.0
     for (t, ts) in zip(r_times, r_timeseries):
 
@@ -169,7 +181,7 @@ if __name__ == '__main__':
 
         # ## WARNING: assumes rank segments are the same as FAP segments
 
-        if not end:  # shade areas where there is no data
+        if (end!=_start):  # shade areas where there is no data
             r_ax.fill_between(
                 [end - opts.start, _start - opts.start],
                 np.zeros((2, )),
@@ -182,13 +194,13 @@ if __name__ == '__main__':
 
         # write merged timeseries file
 
-        merged_rank_filename = '%s/%s_idq_%s-rank-%s%d-%d.npy.gz' % (
+        merged_rank_filename = '%s/%s_idq_%s_rank_%s%d-%d.npy.gz' % (
             opts.output_dir,
             opts.ifo,
             opts.classifier,
             opts.tag,
-            _start,
-            _dur,
+            int(_start),
+            int(_dur),
             )
         if opts.verbose:
             print '\twriting ' + merged_rank_filename
@@ -212,6 +224,13 @@ if __name__ == '__main__':
             ])
 
         segNo += 1
+
+    if not opts.skip_gracedb_upload:
+        # write log messages to gracedb and upload rank files
+        #FIXME: we should upload all rankfiles at once to avoid multiple log entries in case there are gaps in the data.
+        for filename in merged_rank_filenames:
+            gracedb.writeLog(opts.gracedb_id, message="iDQ glitch-rank timeseries at "+opts.ifo+":", filename=filename)
+
 
     # #########################################
     # ## FAP
@@ -265,13 +284,13 @@ if __name__ == '__main__':
 
         # write merged timeseries file
 
-        merged_fap_filename = '%s/%s_idq_%s-fap-%s%d-%d.npy.gz' % (
+        merged_fap_filename = '%s/%s_idq_%s_fap_%s%d-%d.npy.gz' % (
             opts.output_dir,
             opts.ifo,
             opts.classifier,
             opts.tag,
-            _start,
-            _end - _start,
+            int(_start),
+            int(_end - _start),
             )
         if opts.verbose:
             print '\twriting ' + merged_fap_filename
@@ -295,6 +314,18 @@ if __name__ == '__main__':
             ])
 
         segNo += 1
+
+
+    if not opts.skip_gracedb_upload:
+        # write log messages to gracedb and upload fap files
+        #FIXME: we should upload all fapfiles at once to avoid multiple log entries in case there are gaps in the data.
+        for filename in merged_fap_filenames:
+            gracedb.writeLog(opts.gracedb_id, message="iDQ fap timeseries at "+opts.ifo+":", filename=filename)
+
+
+
+
+
 
     # ## finish plot
 
@@ -324,28 +355,33 @@ if __name__ == '__main__':
 
     plt.setp(fig, figwidth=10, figheight=4)
 
-    figname = '%s/%s_idq_%s_rank-fap-%s%d-%d.png' % (
+    figname = '%s/%s_idq_%s_rank_fap_%s%d-%d.png' % (
         opts.output_dir,
         opts.ifo,
         opts.classifier,
         opts.tag,
-        opts.start,
-        opts.end - opts.start,
+        int(opts.start),
+        int(opts.end - opts.start),
         )
     if opts.verbose:
         print '\tsaving ' + figname
     fig.savefig(figname)
     plt.close(fig)
 
+    if not opts.skip_gracedb_upload:
+        #write log message to gracedb and upload file
+        gracedb.writeLog(opts.gracedb_id, message="iDQ fap and glitch-rank timeseries plot for "+opts.ifo+":", filename=figname, tagname='data_quality')
+
+
     # ## write summary file
 
-    summary_filename = '%s/%s_idq_%s-summary-%s%d-%d.txt' % (
+    summary_filename = '%s/%s_idq_%s_summary_%s%d-%d.txt' % (
         opts.output_dir,
         opts.ifo,
         opts.classifier,
         opts.tag,
-        opts.start,
-        opts.end - opts.start,
+        int(opts.start),
+        int(opts.end - opts.start),
         )
     if opts.verbose:
         print '\twriting ' + summary_filename
@@ -401,6 +437,11 @@ if __name__ == '__main__':
         print >> summary_file, '\tstdv fap : %f' % f_stdv
 
     summary_file.close()
+
+    if not opts.skip_gracedb_upload:
+        #write log message to gracedb and upload file
+        gracedb.writeLog(opts.gracedb_id, message="iDQ timeseries summary for "+opts.ifo+":", filename=summary_filename)
+
 
     if opts.verbose:
         print 'Done'
