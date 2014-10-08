@@ -46,8 +46,7 @@ def getProcessData():
 description = \
     """This program manages lvalert listener for idq pipeline. It can start, check status or stop listening process(es). The logic is similar to that of gdb_processor."""
 
-parser = argparse.ArgumentParser(usage='%%prog [options] [arguments]',
-                               description=description)
+parser = argparse.ArgumentParser(usage='%%prog [options] [arguments]', description=description)
 parser.add_argument(
     'command',
     choices = ['start', 'status', 'stop'],
@@ -63,7 +62,7 @@ parser.add_argument(
 	
 args = parser.parse_args()
 
-# if command is start, then run launch lvalert listener. 
+# if command is start, then run launch lvalert listener.
 if args.command == 'start':
 
     print "Launching lvalert listener ..."

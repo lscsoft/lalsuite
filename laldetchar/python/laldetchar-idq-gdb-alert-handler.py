@@ -27,7 +27,7 @@ import traceback
 
 from laldetchar import git_version
 from sys import stdin
-# get_LVAdata_from_stdin will be depricate starting from ER6, we might need it only for pre-ER6 testing. 
+# get_LVAdata_from_stdin will be depricate starting from ER6, we might need it only for pre-ER6 testing.
 #from ligo.lvalert.utils import get_LVAdata_from_stdin
 # json will be used instead of get_LVAdata_from_stdin. We will use it as default here.
 import json
@@ -55,8 +55,13 @@ parser.add_option(
     default='idq_gdb.ini',
     )
 	
-parser.add_option('-l', '--log-file', default='idq_gdb.log',
-                  type='string', help='log file')
+parser.add_option(
+    '-l',
+    '--log-file',
+    default='idq_gdb.log',
+    type='string',
+    help='log file')
+	
 (options, args) = parser.parse_args()
 
 
@@ -98,8 +103,8 @@ description = eventdata['description']
 #pipeline = event['Pipeline']
 #search = event['Search']
 
-# The above event attributes could be useful in the future if we decide to code up logic 
-# that differentiates between gracedb entries based on their type, search, description etc. 
+# The above event attributes could be useful in the future if we decide to code up logic
+# that differentiates between gracedb entries based on their type, search, description etc.
 
 # for now we treat all events in the same way
 
@@ -126,7 +131,7 @@ sys.err = idq.LogFile(logger)
 
 
 # check that this is a new event. Exit if it is not ( not further processing is needed).
-if not alert_type == 'new': 
+if not alert_type == 'new':
    sys.exit(0)
 
 logger.info("New event. GraceDB ID %s." % (gdb_id))
@@ -155,7 +160,7 @@ os.environ['X509_USER_CERT'] = robot_cert
 os.environ['X509_USER_KEY'] = robot_key
 
 
-# initialize instance of gracedb interface 
+# initialize instance of gracedb interface
 gracedb = GraceDb()
 
 # connect to gracedb and get event gps time
@@ -170,7 +175,7 @@ except:
 event_gps_time = gdb_entry['gpstime']
 
 # set the gps time range around the candidate for which idq data will be requested
-# here we might want to code up some logic distinguishing event/search types e.g. Burst from CBC triggers 
+# here we might want to code up some logic distinguishing event/search types e.g. Burst from CBC triggers
 gps_start = event_gps_time - float(config.get('event', 'time_before'))
 gps_end = event_gps_time + float(config.get('event', 'time_after'))
 

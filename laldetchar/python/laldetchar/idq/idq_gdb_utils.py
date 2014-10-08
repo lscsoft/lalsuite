@@ -75,7 +75,7 @@ def combine_ts(filenames):
                                * _dur / len(_ts))))
         else:
 
-              # gap in the data!
+            # gap in the data!
 
             times.append(t)  # put old continuous data into lists
             timeseries.append(ts)
@@ -104,19 +104,21 @@ def stats_ts(ts):
 
 
 def execute_gdb_timeseries(
-    gps_start, 
-    gps_end, 
+    gps_start,
+    gps_end,
     gps,
     gracedb_id,
-    ifo, 
-	classifier,
-    cp, 
-    input_dir, 
-    exec_prog, 
+    ifo,
+    classifier,
+    cp,
+    input_dir,
+    exec_prog,
     usertag=''):
     """ Function that sets up and runs idq-gdb-timeseries script as one of the tasks of idq-gdb-processor."""
     # form the command line
-    cmd_line = [exec_prog, '-s', gps_start, '-e', gps_end, '--gps', gps, '-g', gracedb_id, '--ifo', ifo, '-c', classifier, '-i', input_dir, '-t', usertag]
+    cmd_line = [exec_prog, '-s', gps_start, '-e', gps_end, '--gps', gps,\
+        '-g', gracedb_id, '--ifo', ifo, '-c', classifier, '-i', input_dir,\
+        '-t', usertag]
 	
     # add extra options from config file
     for (option,value) in cp.items('gdb-time-series'):
@@ -129,18 +131,19 @@ def execute_gdb_timeseries(
 	
 	
 def execute_gdb_glitch_tables(
-    gps_start, 
-    gps_end, 
+    gps_start,
+    gps_end,
     gracedb_id,
-    ifo, 
-	classifier,
-    cp, 
-    input_dir, 
-    exec_prog, 
+    ifo,
+    classifier,
+    cp,
+    input_dir,
+    exec_prog,
     usertag=''):
     """ Function that sets up and runs idq-gdb-timeseries script as one of the tasks of idq-gdb-processor."""
     # form the command line
-    cmd_line = [exec_prog, '-s', gps_start, '-e', gps_end, '-g', gracedb_id, '--ifo', ifo, '-c', classifier, '-i', input_dir, '-t', usertag]
+    cmd_line = [exec_prog, '-s', gps_start, '-e', gps_end, '-g', gracedb_id,\
+        '--ifo', ifo, '-c', classifier, '-i', input_dir, '-t', usertag]
 	
     # add extra options from config file
     for (option,value) in cp.items('gdb-glitch-tables'):
@@ -149,7 +152,5 @@ def execute_gdb_glitch_tables(
     exit_status = idq.submit_command(cmd_line, 'gdb_glitch_tables', verbose=True)
 	
     return exit_status	
-	
-
 ##@}
 
