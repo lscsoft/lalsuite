@@ -321,7 +321,7 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   runState.prior = &priorFunction;
 
   /* set signal model/template */
-  runState.model.templt = get_pulsar_model;
+  runState.model->templt = &get_pulsar_model;
 
   /* Generate the lookup tables and read parameters from par file */
   setupFromParFile( &runState );
@@ -887,8 +887,6 @@ detectors specified (no. dets =\%d)\n", ml, ml, numDets);
     randomParams = XLALCreateRandomParams( seed+i );
 
     ifodata = XLALCalloc( 1, sizeof(LALInferenceIFOData) );
-    ifodata->modelParams = XLALCalloc( 1, sizeof(LALInferenceVariables) );
-    ifodata->modelDomain = LAL_SIM_DOMAIN_TIME;
     ifodata->next = NULL;
     ifodata->dataParams = XLALCalloc( 1, sizeof(LALInferenceVariables) );
 

@@ -128,7 +128,7 @@ void gridOutput( LALInferenceRunState *runState ){
     LALInferenceSetVariable( runState->currentParams, parname, &h0val );
     
     logL->data[i] = runState->likelihood( runState->currentParams,
-                                          runState->data, runState->templt );
+                                          runState->data, runState.model.templt );
     
     if ( logL->data[i] < minL ) minL = logL->data[i];
   }
@@ -179,8 +179,7 @@ void gridOutput( LALInferenceRunState *runState ){
  */
 REAL8 test_gaussian_log_likelihood( LALInferenceVariables *vars,
                                     LALInferenceIFOData *data,
-                                    LALInferenceTemplateFunction UNUSED
-                                      get_model ){
+                                    UNUSED LALInferenceModel *get_model ){
   REAL8 loglike = 0.; /* the log likelihood */
   
   REAL8 like_mean = 0.5;

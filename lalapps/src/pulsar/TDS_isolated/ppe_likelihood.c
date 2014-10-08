@@ -137,7 +137,7 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
  *
  * \return The natural logarithm of the prior value for a set of parameters
  */
-REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *params, LALInferenceModel *model ){
+REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *params, UNUSED LALInferenceModel *model ){
   LALInferenceIFOData *data = runState->data;
   (void)runState;
   LALInferenceVariableItem *item = params->head;
