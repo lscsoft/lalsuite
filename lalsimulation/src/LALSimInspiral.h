@@ -1144,6 +1144,71 @@ int XLALSimInspiralTD(
     );
 
 /**
+ * @brief Generates a frequency domain inspiral waveform using the specified approximant; the
+ * resulting waveform is appropriately conditioned and suitable for injection into data.
+ *
+ * For spinning waveforms, all known spin effects up to given PN order are included.
+ *
+ * This routine can generate TD approximants and transform them into the frequency domain.
+ * Waveforms are generated beginning at a slightly lower starting frequency and tapers
+ * are put in this early region so that the waveform smoothly turns on.
+ *
+ * If an FD approximant is used, this routine applies tapers in the frequency domain
+ * between the slightly-lower frequency and the requested f_min.  Also, the phase of the
+ * waveform is adjusted to introduce a time shift.  This time shift should allow the
+ * resulting waveform to be Fourier transformed into the time domain without wrapping
+ * the end of the waveform to the beginning.
+ *
+ * This routine has a few parameters that differ from XLALSimInspiralChooseFDWaveform.
+ * Rather than f_max, this routine takes deltaT, the sampling interval of the corresponding
+ * time domain waveform.  The Nyquist frequency, 2/deltaT, thus determines the maximum
+ * frequency for the FD waveform.  Also, this routine does not take a deltaF parameter,
+ * and instead computes the necessary value of deltaF based on the duration of the
+ * corresponding time domain waveform, deltaF <= 1/duration.  The total number of points
+ * in the FD waveform is a power of two plus one (the Nyquist frequency).  Thus, the FD
+ * waveform returned could be directly Fourier transformed to the time domain without
+ * further manipulation.
+ *
+ * This routine has one additional parameter relative to XLALSimInspiralChooseFDWaveform.
+ * The additional parameter is the redshift, z, of the waveform.  This should be set to
+ * zero for sources in the nearby universe (that are nearly at rest relative to the
+ * earth).  For sources at cosmological distances, the mass parameters m1 and m2 should
+ * be interpreted as the physical (source frame) masses of the bodies and the distance
+ * parameter r is the comoving (transverse) distance.  If the calling routine has already
+ * applied cosmological "corrections" to m1 and m2 and regards r as a luminosity distance
+ * then the redshift factor should again be set to zero.
+ *
+ * 
+ * @note The parameters passed must be in SI units.
+ */
+int XLALSimInspiralFD(
+    COMPLEX16FrequencySeries **hptilde,         /**< +-polarization waveform */
+    COMPLEX16FrequencySeries **hcross,          /**< x-polarization waveform */
+    REAL8 phiRef,                               /**< reference orbital phase (rad) */
+    REAL8 deltaT,                               /**< sampling interval (s) */
+    REAL8 m1,                                   /**< mass of companion 1 (kg) */
+    REAL8 m2,                                   /**< mass of companion 2 (kg) */
+    REAL8 S1x,                                  /**< x-component of the dimensionless spin of object 1 */
+    REAL8 S1y,                                  /**< y-component of the dimensionless spin of object 1 */
+    REAL8 S1z,                                  /**< z-component of the dimensionless spin of object 1 */
+    REAL8 S2x,                                  /**< x-component of the dimensionless spin of object 2 */
+    REAL8 S2y,                                  /**< y-component of the dimensionless spin of object 2 */
+    REAL8 S2z,                                  /**< z-component of the dimensionless spin of object 2 */
+    REAL8 f_min,                                /**< starting GW frequency (Hz) */
+    REAL8 f_ref,                                /**< reference GW frequency (Hz) */
+    REAL8 r,                                    /**< distance of source (m) */
+    REAL8 z,                                    /**< redshift of source frame relative to observer frame */
+    REAL8 i,                                    /**< inclination of source (rad) */
+    REAL8 lambda1,                              /**< (tidal deformability of mass 1) / m1^5 (dimensionless) */
+    REAL8 lambda2,                              /**< (tidal deformability of mass 2) / m2^5 (dimensionless) */
+    LALSimInspiralWaveformFlags *waveFlags,     /**< Set of flags to control special behavior of some waveform families. Pass in NULL (or None in python) for default flags */
+    LALSimInspiralTestGRParam *nonGRparams, 	/**< Linked list of non-GR parameters. Pass in NULL (or None in python) for standard GR waveforms */
+    int amplitudeO,                             /**< twice post-Newtonian amplitude order */
+    int phaseO,                                 /**< twice post-Newtonian order */
+    Approximant approximant                     /**< post-Newtonian approximant to use for waveform production */
+    );
+
+/**
  * Interface to compute a set of -2 spin-weighted spherical harmonic modes
  * for a binary inspiral of any available amplitude and phase PN order.
  * The phasing is computed with any of the TaylorT1, T2, T3, T4 methods.
