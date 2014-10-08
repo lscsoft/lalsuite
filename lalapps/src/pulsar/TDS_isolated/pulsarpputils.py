@@ -275,7 +275,7 @@ float_keys = ["F", "F0", "F1", "F2", "F3", "F4", "F5", "F6",
               "FB0", "FB1", "FB2", "ELAT", "ELONG", "PMRA", "PMDEC", "DIST",
               # GW PARAMETERS
               "H0", "COSIOTA", "PSI", "PHI0", "THETA", "I21", "I31", "C22",
-              "C21", "PHI22", "PHI21", "SNR"]
+              "C21", "PHI22", "PHI21", "SNR", "COSTHETA", "IOTA"]
 str_keys = ["FILE", "PSR", "PSRJ", "NAME", "RAJ", "DECJ", "RA", "DEC", "EPHEM",
             "CLK", "BINARY", "UNITS"]
 
