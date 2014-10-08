@@ -103,7 +103,9 @@ LALInferenceKmeans *LALInferenceIncrementalKmeans(gsl_matrix *data, UINT4 ntrial
 LALInferenceKmeans *LALInferenceOptimizedKmeans(gsl_matrix *data, UINT4 ntrials, gsl_rng *rng) {
     UINT4 k, low_k = 1, mid_k = 2, high_k = 4;
     REAL8 bic, low_bic, mid_bic, high_bic;
-    LALInferenceKmeans *low_kmeans, *mid_kmeans, *high_kmeans;
+    LALInferenceKmeans *low_kmeans;
+    LALInferenceKmeans *mid_kmeans = NULL;
+    LALInferenceKmeans *high_kmeans = NULL;
 
     /* Calculate starting clusters and BICs */
     low_kmeans = LALInferenceKmeansRunBestOf(low_k, data, ntrials, rng);
@@ -248,7 +250,8 @@ LALInferenceKmeans *LALInferenceXmeans(gsl_matrix *data, UINT4 ntrials, gsl_rng 
     REAL8 starting_bic, ending_bic;
     REAL8 old_bic, new_bic;
 
-    LALInferenceKmeans *sub_kmeans, *new_kmeans;
+    LALInferenceKmeans *sub_kmeans;
+    LALInferenceKmeans *new_kmeans = NULL;
 
     LALInferenceKmeans *kmeans = LALInferenceCreateKmeans(2, data, rng);
 
@@ -621,7 +624,7 @@ void LALInferenceKmeansAssignment(LALInferenceKmeans *kmeans) {
         gsl_vector_view x = gsl_matrix_row(kmeans->data, i);
         gsl_vector_view c;
 
-        UINT4 best_cluster;
+        UINT4 best_cluster = 0;
         REAL8 best_dist = INFINITY;
         REAL8 dist;
 

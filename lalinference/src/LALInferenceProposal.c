@@ -3500,7 +3500,7 @@ void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runSta
             for (j=0; j<nCols; j++)
                 validCols[j] = 0;
 
-            UINT4 logl_idx;
+            UINT4 logl_idx = 0;
             for (j=0; j<nCols; j++) {
                 if (!strcmp("logl", params[j])) {
                     logl_idx = j;
@@ -3859,7 +3859,7 @@ void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceRunState *runState
  * @param[out] proposedParam The proposed parameters.
  * @return proposal_ratio    The (log) proposal ratio for maintaining detailed balance
  */
-REAL8 LALInferenceClusteredKDEProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
+REAL8 LALInferenceClusteredKDEProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams) {
     const char *propName = (const char *) clusteredKDEProposalName;
     REAL8 cumulativeWeight, totalWeight;
 
@@ -3868,10 +3868,10 @@ REAL8 LALInferenceClusteredKDEProposal(LALInferenceRunState *runState, LALInfere
 
     if (!LALInferenceCheckVariable(propArgs, clusteredKDEProposalName)) {
         LALInferenceClearVariables(proposedParams);
-        return; /* Quit now, since there is no proposal to call */
+        return 0.0; /* Quit now, since there is no proposal to call */
     }
 
-    LALInferenceCopyVariables(runState->currentParams, proposedParams);
+    LALInferenceCopyVariables(currentParams, proposedParams);
 
     /* Clustered KDE estimates are stored in a linked list, with possibly different weights */
     LALInferenceClusteredKDE *kdes = *((LALInferenceClusteredKDE **)LALInferenceGetVariable(propArgs, clusteredKDEProposalName));
@@ -3906,7 +3906,7 @@ REAL8 LALInferenceClusteredKDEProposal(LALInferenceRunState *runState, LALInfere
     UINT4 i=0;
     for (item = kde->params->head; item; item = item->next) {
         if (item->vary != LALINFERENCE_PARAM_FIXED && item->vary != LALINFERENCE_PARAM_OUTPUT) {
-            current[i] = *(REAL8 *) LALInferenceGetVariable(runState->currentParams, item->name);
+            current[i] = *(REAL8 *) LALInferenceGetVariable(currentParams, item->name);
             LALInferenceSetVariable(proposedParams, item->name, &(proposed[i]));
             i++;
         }

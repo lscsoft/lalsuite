@@ -181,7 +181,7 @@ BcastDifferentialEvolutionPoints(LALInferenceRunState *runState, INT4 sourceTemp
 
 void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 {
-  INT4 i,t,c; //indexes for for() loops
+  INT4 i,t; //indexes for for() loops
   INT4 nChain;
   INT4 MPIrank, MPIsize;
   MPI_Status MPIstatus;
@@ -210,7 +210,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   INT4 Neff = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Neff");
   INT4 Nskip = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Nskip");
   UINT4 randomseed = *(UINT4*) LALInferenceGetVariable(runState->algorithmParams,"random_seed");
-  INT4 acl=INFINITY, PTacl=INFINITY;
+  INT4 acl=(INT4)INFINITY, PTacl=(INT4)INFINITY;
   INT4 iEff=0;
   REAL8 ladderMin,ladderMax;
   REAL8 timestamp,timestamp_epoch=0.0;
@@ -878,7 +878,6 @@ INT4 PTMCMCOneStep(LALInferenceRunState *runState)
   REAL8 targetAcceptance = 0.234;
   INT4 acceptanceCount;
   INT4 accepted = 0;
-  INT4 burnin = 0;
 
   // current values:
   logPriorCurrent      = runState->currentPrior;

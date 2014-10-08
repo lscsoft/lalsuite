@@ -820,7 +820,7 @@ void LALInferenceDiscardPTMCMCHeader(FILE *filestream) {
     char row[COL_MAX][VARNAME_MAX];
     const char *delimiters = " \t";
     UINT4 nCols;
-    INT4 last_line;
+    INT4 last_line = 0;
 
     fgets(str, sizeof(str), filestream);
     parseLine(str, delimiters, row, &nCols);
