@@ -170,6 +170,7 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
     strcpy(header,"");
     char *timeID = &info[2][0];
     int i = 0;
+    char varname[20];
 
     // latitude
     if (LALInferenceCheckVariable(params, "declination"))
@@ -182,7 +183,9 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
             Cube[i] = lat;
             logPrior += log(fabs(cos(lat)));
             i++;
-            strcat(header,"dec ");
+            varname = LALInferenceTranslateInternalToExternalParamName("declination");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -197,7 +200,9 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
             LALInferenceSetVariable(params, "rightascension", &longitude);
             Cube[i] = longitude;
             i++;
-            strcat(header,"RA ");
+            varname = LALInferenceTranslateInternalToExternalParamName("rightascension");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -213,7 +218,9 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
             Cube[i] = iota;
             logPrior += log(fabs(sin(iota)));
             i++;
-            strcat(header,"iota ");
+            varname = LALInferenceTranslateInternalToExternalParamName("inclination");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -228,7 +235,9 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
             LALInferenceSetVariable(params, "phase", &phi);
             Cube[i] = phi;
             i++;
-            strcat(header,"phi0 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("phase");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -243,7 +252,9 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
             LALInferenceSetVariable(params, "polarisation", &psi);
             Cube[i] = psi;
             i++;
-            strcat(header,"psi ");
+            varname = LALInferenceTranslateInternalToExternalParamName("polarisation");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -259,7 +270,9 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
             Cube[i] = tc;
             sprintf(timeID,"%d",i);
             i++;
-            strcat(header,"time ");
+            varname = LALInferenceTranslateInternalToExternalParamName("time");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -278,7 +291,9 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
             Cube[i] = mc;
             logPrior -= 5.0/6.0*logmc;
             i++;
-            strcat(header,"mchirp ");
+            varname = LALInferenceTranslateInternalToExternalParamName("chirpmass");
+            strcat(header,varname);
+            strcat(header," ");
         }
         else
         {
@@ -296,7 +311,9 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
             Cube[i] = mc;
             logPrior -= 5.0/6.0*log(mc);
             i++;
-            strcat(header,"mchirp ");
+            varname = LALInferenceTranslateInternalToExternalParamName("chirpmass");
+            strcat(header,varname);
+            strcat(header," ");
         }
         else
         {
@@ -314,9 +331,11 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
             LALInferenceGetMinMaxPrior(runState->priorArgs, "massratio", (void *)&min, (void *)&max);
             eta = LALInferenceCubeToFlatPrior(Cube[i], min, max);
             Cube[i]=eta;
-            i++;
-            strcat(header,"eta ");
             LALInferenceSetVariable(params, "massratio", &eta);
+            i++;
+            varname = LALInferenceTranslateInternalToExternalParamName("massratio");
+            strcat(header,varname);
+            strcat(header," ");
         }
         else
         {
@@ -334,9 +353,11 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
             LALInferenceMcEta2Masses(mc,eta,&m1,&m2);
             q=m2/m1;
             Cube[i]=q;
-            i++;
-            strcat(header,"q ");
             LALInferenceSetVariable(params, "asym_massratio", &q);
+            i++;
+            varname = LALInferenceTranslateInternalToExternalParamName("asym_massratio");
+            strcat(header,varname);
+            strcat(header," ");
         }
         else
         {
@@ -360,7 +381,9 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
             Cube[i] = dist;
             logPrior += 2.0*logdist;
             i++;
-            strcat(header,"dist ");
+            varname = LALInferenceTranslateInternalToExternalParamName("distance");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
     else if( LALInferenceCheckVariable(params,"distance") )
@@ -374,7 +397,9 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
             Cube[i] = dist;
             logPrior += 2.0*log(dist);
             i++;
-            strcat(header,"dist ");
+            varname = LALInferenceTranslateInternalToExternalParamName("distance");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -389,7 +414,9 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
             LALInferenceSetVariable(params, "a_spin1", &a_spin1);
             Cube[i] = a_spin1;
             i++;
-            strcat(header,"a1 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("a_spin1");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
     else if(LALInferenceCheckVariable(params,"spin1"))
@@ -402,7 +429,9 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
             LALInferenceSetVariable(params, "spin1", &a_spin1);
             Cube[i] = a_spin1;
             i++;
-            strcat(header,"a1 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("a_spin1");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -418,7 +447,9 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
             Cube[i] = theta_spin1;
             logPrior += log(fabs(sin(theta_spin1)));
             i++;
-            strcat(header,"theta1 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("theta_spin1");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -433,7 +464,9 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
             LALInferenceSetVariable(params, "phi_spin1", &phi_spin1);
             Cube[i] = phi_spin1;
             i++;
-            strcat(header,"phi1 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("phi_spin1");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -448,7 +481,9 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
             LALInferenceSetVariable(params, "a_spin2", &a_spin2);
             Cube[i] = a_spin2;
             i++;
-            strcat(header,"a2 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("a_spin2");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
     else if(LALInferenceCheckVariable(params,"spin2"))
@@ -461,7 +496,9 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
             LALInferenceSetVariable(params, "spin2", &a_spin2);
             Cube[i] = a_spin2;
             i++;
-            strcat(header,"a2 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("a_spin2");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -477,7 +514,9 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
             Cube[i] = theta_spin2;
             logPrior += log(fabs(sin(theta_spin2)));
             i++;
-            strcat(header,"theta2 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("theta_spin2");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -492,7 +531,9 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
             LALInferenceSetVariable(params, "phi_spin2", &phi_spin2);
             Cube[i] = phi_spin2;
             i++;
-            strcat(header,"phi2 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("phi_spin2");
+            strcat(header,varname);
+            strcat(header," ");
         }
 
     }
@@ -508,7 +549,9 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
             LALInferenceSetVariable(params, "theta_JN", &theta_JN);
             Cube[i] = theta_JN;
             i++;
-            strcat(header,"theta_JN ");
+            varname = LALInferenceTranslateInternalToExternalParamName("theta_JN");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -523,7 +566,9 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
             LALInferenceSetVariable(params, "phi_JL", &phi_JL);
             Cube[i] = phi_JL;
             i++;
-            strcat(header,"phi_JL ");
+            varname = LALInferenceTranslateInternalToExternalParamName("phi_JL");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -538,7 +583,9 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
             LALInferenceSetVariable(params, "tilt_spin1", &tilt_spin1);
             Cube[i] = tilt_spin1;
             i++;
-            strcat(header,"tilt_spin1 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("tilt_spin1");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -553,7 +600,9 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
             LALInferenceSetVariable(params, "tilt_spin2", &tilt_spin2);
             Cube[i] = tilt_spin2;
             i++;
-            strcat(header,"tilt_spin2 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("tilt_spin2");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -568,27 +617,43 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
             LALInferenceSetVariable(params, "phi12", &phi12);
             Cube[i] = phi12;
             i++;
-            strcat(header,"phi12 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("phi12");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
     LALInferenceVariables *priorParams=runState->priorArgs;
     INT4 ScaleTest = LALInferenceCubeToPSDScaleParams(priorParams, params, &i, Cube, context);
 
-    Cube[i] = m1; i++; strcat(header,"m1 ");
-    Cube[i] = m2; i++; strcat(header,"m2 ");
+    Cube[i] = m1; i++;
+    varname = LALInferenceTranslateInternalToExternalParamName("m1");
+    strcat(header,varname);
+    strcat(header," ");
+    Cube[i] = m2; i++;
+    varname = LALInferenceTranslateInternalToExternalParamName("m2");
+    strcat(header,varname);
+    strcat(header," ");
+
     Cube[i] = LALInferenceInspiralPrior(runState,params,runState->model);
-    i++; strcat(header,"logprior ");
+    i++;
+    varname = LALInferenceTranslateInternalToExternalParamName("logprior");
+    strcat(header,varname);
+    strcat(header," ");
 
     // fRef for system-frame parameters
     if(LALInferenceCheckVariable(params,"fRef"))
     {
         Cube[i] = *(REAL8 *)LALInferenceGetVariable(params,"fRef");
         i++;
-        strcat(header,"f_ref ");
+        varname = LALInferenceTranslateInternalToExternalParamName("fRef");
+        strcat(header,varname);
+        strcat(header," ");
     }
 
-    strcat(header,"logl");
+    varname = LALInferenceTranslateInternalToExternalParamName("logl");
+    strcat(header,varname);
+    strcat(header," ");
 
     /* Check boundaries */
     if (ScaleTest==0) return 0;
@@ -938,7 +1003,9 @@ UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALI
             Cube[i] = lat;
             logPrior += log(fabs(cos(lat)));
             i++;
-            strcat(header,"dec ");
+            varname = LALInferenceTranslateInternalToExternalParamName("declination");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -953,7 +1020,9 @@ UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALI
             LALInferenceSetVariable(params, "rightascension", &longitude);
             Cube[i] = longitude;
             i++;
-            strcat(header,"RA ");
+            varname = LALInferenceTranslateInternalToExternalParamName("rightascension");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -969,7 +1038,9 @@ UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALI
             Cube[i] = iota;
             logPrior += log(fabs(sin(iota)));
             i++;
-            strcat(header,"iota ");
+            varname = LALInferenceTranslateInternalToExternalParamName("inclination");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -984,7 +1055,9 @@ UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALI
             LALInferenceSetVariable(params, "phase", &phi);
             Cube[i] = phi;
             i++;
-            strcat(header,"phi0 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("phase");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -999,7 +1072,9 @@ UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALI
             LALInferenceSetVariable(params, "polarisation", &psi);
             Cube[i] = psi;
             i++;
-            strcat(header,"psi ");
+            varname = LALInferenceTranslateInternalToExternalParamName("polarisation");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -1015,7 +1090,9 @@ UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALI
             Cube[i] = tc;
             sprintf(timeID,"%d",i);
             i++;
-            strcat(header,"time ");
+            varname = LALInferenceTranslateInternalToExternalParamName("time");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -1081,9 +1158,13 @@ UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALI
             mc = pow(eta,0.6) * m;
             q = m2 / m1; // asymmetric mass ratio, m1 >= m2
             Cube[i] = mc; i++;
-            strcat(header,"mchirp ");
+            varname = LALInferenceTranslateInternalToExternalParamName("chirpmass");
+            strcat(header,varname);
+            strcat(header," ");
             Cube[i] = eta; i++;
-            strcat(header,"eta ");
+            varname = LALInferenceTranslateInternalToExternalParamName("massratio");
+            strcat(header,varname);
+            strcat(header," ");
         }
 
         // chirp mass and eta/q
@@ -1121,7 +1202,9 @@ UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALI
             Cube[i] = dist;
             logPrior -= logdist;
             i++;
-            strcat(header,"dist ");
+            varname = LALInferenceTranslateInternalToExternalParamName("distance");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
     else if( LALInferenceCheckVariable(params,"distance") )
@@ -1135,7 +1218,9 @@ UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALI
             Cube[i] = dist;
             logPrior -= log(dist);
             i++;
-            strcat(header,"dist ");
+            varname = LALInferenceTranslateInternalToExternalParamName("distance");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -1150,7 +1235,9 @@ UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALI
             LALInferenceSetVariable(params, "a_spin1", &a_spin1);
             Cube[i] = a_spin1;
             i++;
-            strcat(header,"a1 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("a_spin1");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
     else if(LALInferenceCheckVariable(params,"spin1"))
@@ -1163,7 +1250,9 @@ UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALI
             LALInferenceSetVariable(params, "spin1", &a_spin1);
             Cube[i] = a_spin1;
             i++;
-            strcat(header,"a1 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("a_spin1");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -1179,7 +1268,9 @@ UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALI
             Cube[i] = theta_spin1;
             logPrior += log(fabs(sin(theta_spin1)));
             i++;
-            strcat(header,"theta1 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("theta_spin1");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -1194,7 +1285,9 @@ UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALI
             LALInferenceSetVariable(params, "phi_spin1", &phi_spin1);
             Cube[i] = phi_spin1;
             i++;
-            strcat(header,"phi1 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("phi_spin1");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -1209,7 +1302,9 @@ UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALI
             LALInferenceSetVariable(params, "a_spin2", &a_spin2);
             Cube[i] = a_spin2;
             i++;
-            strcat(header,"a2 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("a_spin2");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
     else if(LALInferenceCheckVariable(params,"spin2"))
@@ -1222,7 +1317,9 @@ UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALI
             LALInferenceSetVariable(params, "spin2", &a_spin2);
             Cube[i] = a_spin2;
             i++;
-            strcat(header,"a2 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("a_spin2");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -1238,7 +1335,9 @@ UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALI
             Cube[i] = theta_spin2;
             logPrior += log(fabs(sin(theta_spin2)));
             i++;
-            strcat(header,"theta2 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("theta_spin2");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -1253,7 +1352,9 @@ UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALI
             LALInferenceSetVariable(params, "phi_spin2", &phi_spin2);
             Cube[i] = phi_spin2;
             i++;
-            strcat(header,"phi2 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("phi_spin2");
+            strcat(header,varname);
+            strcat(header," ");
         }
 
     }
@@ -1269,7 +1370,9 @@ UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALI
             LALInferenceSetVariable(params, "theta_JN", &theta_JN);
             Cube[i] = theta_JN;
             i++;
-            strcat(header,"theta_JN ");
+            varname = LALInferenceTranslateInternalToExternalParamName("theta_JN");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -1284,7 +1387,9 @@ UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALI
             LALInferenceSetVariable(params, "phi_JL", &phi_JL);
             Cube[i] = phi_JL;
             i++;
-            strcat(header,"phi_JL ");
+            varname = LALInferenceTranslateInternalToExternalParamName("phi_JL");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -1299,7 +1404,9 @@ UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALI
             LALInferenceSetVariable(params, "tilt_spin1", &tilt_spin1);
             Cube[i] = tilt_spin1;
             i++;
-            strcat(header,"tilt_spin1 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("tilt_spin1");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -1314,7 +1421,9 @@ UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALI
             LALInferenceSetVariable(params, "tilt_spin2", &tilt_spin2);
             Cube[i] = tilt_spin2;
             i++;
-            strcat(header,"tilt_spin2 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("tilt_spin2");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -1329,26 +1438,41 @@ UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALI
             LALInferenceSetVariable(params, "phi12", &phi12);
             Cube[i] = phi12;
             i++;
-            strcat(header,"phi12 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("phi12");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
     INT4 ScaleTest = LALInferenceCubeToPSDScaleParams(priorParams, params, &i, Cube, context);
 
-    Cube[i] = m1; i++; strcat(header,"m1 ");
-    Cube[i] = m2; i++; strcat(header,"m2 ");
+    Cube[i] = m1; i++;
+    varname = LALInferenceTranslateInternalToExternalParamName("m1");
+    strcat(header,varname);
+    strcat(header," ");
+    Cube[i] = m2; i++;
+    varname = LALInferenceTranslateInternalToExternalParamName("m2");
+    strcat(header,varname);
+    strcat(header," ");
     Cube[i] = LALInferenceInspiralSkyLocPrior(runState,params,model);
-    i++; strcat(header,"logprior ");
+    i++;
+    varname = LALInferenceTranslateInternalToExternalParamName("logprior");
+    strcat(header,varname);
+    strcat(header," ");
 
     // fRef for system-frame parameters
     if(LALInferenceCheckVariable(params,"fRef"))
     {
         Cube[i] = *(REAL8 *)LALInferenceGetVariable(params,"fRef");
         i++;
-        strcat(header,"f_ref ");
+        varname = LALInferenceTranslateInternalToExternalParamName("fRef");
+        strcat(header,varname);
+        strcat(header," ");
     }
 
-    strcat(header,"logl");
+    varname = LALInferenceTranslateInternalToExternalParamName("logl");
+    strcat(header,varname);
+    strcat(header," ");
 
     /* Check boundaries */
     if (ScaleTest==0) return 0;
@@ -1782,7 +1906,9 @@ UINT4 LALInferenceInspiralPriorNormalisedCubeToPrior(LALInferenceRunState *runSt
             Cube[i] = lat;
             logPrior += log(fabs(cos(lat)));
             i++;
-            strcat(header,"dec ");
+            varname = LALInferenceTranslateInternalToExternalParamName("declination");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -1797,7 +1923,9 @@ UINT4 LALInferenceInspiralPriorNormalisedCubeToPrior(LALInferenceRunState *runSt
             LALInferenceSetVariable(params, "rightascension", &longitude);
             Cube[i] = longitude;
             i++;
-            strcat(header,"RA ");
+            varname = LALInferenceTranslateInternalToExternalParamName("rightascension");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -1813,7 +1941,9 @@ UINT4 LALInferenceInspiralPriorNormalisedCubeToPrior(LALInferenceRunState *runSt
             Cube[i] = iota;
             logPrior += log(fabs(sin(iota)));
             i++;
-            strcat(header,"iota ");
+            varname = LALInferenceTranslateInternalToExternalParamName("inclination");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -1828,7 +1958,9 @@ UINT4 LALInferenceInspiralPriorNormalisedCubeToPrior(LALInferenceRunState *runSt
             LALInferenceSetVariable(params, "phase", &phi);
             Cube[i] = phi;
             i++;
-            strcat(header,"phi0 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("phase");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -1843,7 +1975,9 @@ UINT4 LALInferenceInspiralPriorNormalisedCubeToPrior(LALInferenceRunState *runSt
             LALInferenceSetVariable(params, "polarisation", &psi);
             Cube[i] = psi;
             i++;
-            strcat(header,"psi ");
+            varname = LALInferenceTranslateInternalToExternalParamName("polarisation");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -1859,7 +1993,9 @@ UINT4 LALInferenceInspiralPriorNormalisedCubeToPrior(LALInferenceRunState *runSt
             Cube[i] = tc;
             sprintf(timeID,"%d",i);
             i++;
-            strcat(header,"time ");
+            varname = LALInferenceTranslateInternalToExternalParamName("time");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -1925,9 +2061,13 @@ UINT4 LALInferenceInspiralPriorNormalisedCubeToPrior(LALInferenceRunState *runSt
             mc = pow(eta,0.6) * m;
             q = m2/m1; // asymmetric mass ratio, m1 >= m2
             Cube[i] = mc; i++;
-            strcat(header,"mchirp ");
+            varname = LALInferenceTranslateInternalToExternalParamName("chirpmass");
+            strcat(header,varname);
+            strcat(header," ");
             Cube[i] = eta; i++;
-            strcat(header,"eta ");
+            varname = LALInferenceTranslateInternalToExternalParamName("massratio");
+            strcat(header,varname);
+            strcat(header," ");
         }
 
         // chirp mass and eta/q
@@ -1965,7 +2105,9 @@ UINT4 LALInferenceInspiralPriorNormalisedCubeToPrior(LALInferenceRunState *runSt
             Cube[i] = dist;
             logPrior += 2.0*logdist;
             i++;
-            strcat(header,"dist ");
+            varname = LALInferenceTranslateInternalToExternalParamName("distance");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
     else if( LALInferenceCheckVariable(params,"distance") )
@@ -1979,7 +2121,9 @@ UINT4 LALInferenceInspiralPriorNormalisedCubeToPrior(LALInferenceRunState *runSt
             Cube[i] = dist;
             logPrior += 2.0*log(dist);
             i++;
-            strcat(header,"dist ");
+            varname = LALInferenceTranslateInternalToExternalParamName("distance");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -1994,7 +2138,9 @@ UINT4 LALInferenceInspiralPriorNormalisedCubeToPrior(LALInferenceRunState *runSt
             LALInferenceSetVariable(params, "a_spin1", &a_spin1);
             Cube[i] = a_spin1;
             i++;
-            strcat(header,"a1 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("a_spin1");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
     else if(LALInferenceCheckVariable(params,"spin1"))
@@ -2007,7 +2153,9 @@ UINT4 LALInferenceInspiralPriorNormalisedCubeToPrior(LALInferenceRunState *runSt
             LALInferenceSetVariable(params, "spin1", &a_spin1);
             Cube[i] = a_spin1;
             i++;
-            strcat(header,"a1 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("a_spin1");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -2023,7 +2171,9 @@ UINT4 LALInferenceInspiralPriorNormalisedCubeToPrior(LALInferenceRunState *runSt
             Cube[i] = theta_spin1;
             logPrior += log(fabs(sin(theta_spin1)));
             i++;
-            strcat(header,"theta1 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("theta_spin1");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -2038,7 +2188,9 @@ UINT4 LALInferenceInspiralPriorNormalisedCubeToPrior(LALInferenceRunState *runSt
             LALInferenceSetVariable(params, "phi_spin1", &phi_spin1);
             Cube[i] = phi_spin1;
             i++;
-            strcat(header,"phi1 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("phi_spin1");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -2053,7 +2205,9 @@ UINT4 LALInferenceInspiralPriorNormalisedCubeToPrior(LALInferenceRunState *runSt
             LALInferenceSetVariable(params, "a_spin2", &a_spin2);
             Cube[i] = a_spin2;
             i++;
-            strcat(header,"a2 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("a_spin2");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
     else if(LALInferenceCheckVariable(params,"spin2"))
@@ -2066,7 +2220,9 @@ UINT4 LALInferenceInspiralPriorNormalisedCubeToPrior(LALInferenceRunState *runSt
             LALInferenceSetVariable(params, "spin2", &a_spin2);
             Cube[i] = a_spin2;
             i++;
-            strcat(header,"a2 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("a_spin2");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -2082,7 +2238,9 @@ UINT4 LALInferenceInspiralPriorNormalisedCubeToPrior(LALInferenceRunState *runSt
             Cube[i] = theta_spin2;
             logPrior += log(fabs(sin(theta_spin2)));
             i++;
-            strcat(header,"theta2 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("theta_spin2");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -2097,7 +2255,9 @@ UINT4 LALInferenceInspiralPriorNormalisedCubeToPrior(LALInferenceRunState *runSt
             LALInferenceSetVariable(params, "phi_spin2", &phi_spin2);
             Cube[i] = phi_spin2;
             i++;
-            strcat(header,"phi2 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("phi_spin2");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -2112,7 +2272,9 @@ UINT4 LALInferenceInspiralPriorNormalisedCubeToPrior(LALInferenceRunState *runSt
             LALInferenceSetVariable(params, "theta_JN", &theta_JN);
             Cube[i] = theta_JN;
             i++;
-            strcat(header,"theta_JN ");
+            varname = LALInferenceTranslateInternalToExternalParamName("theta_JN");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -2127,7 +2289,9 @@ UINT4 LALInferenceInspiralPriorNormalisedCubeToPrior(LALInferenceRunState *runSt
             LALInferenceSetVariable(params, "phi_JL", &phi_JL);
             Cube[i] = phi_JL;
             i++;
-            strcat(header,"phi_JL ");
+            varname = LALInferenceTranslateInternalToExternalParamName("phi_JL");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -2142,7 +2306,9 @@ UINT4 LALInferenceInspiralPriorNormalisedCubeToPrior(LALInferenceRunState *runSt
             LALInferenceSetVariable(params, "tilt_spin1", &tilt_spin1);
             Cube[i] = tilt_spin1;
             i++;
-            strcat(header,"tilt_spin1 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("tilt_spin1");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -2157,7 +2323,9 @@ UINT4 LALInferenceInspiralPriorNormalisedCubeToPrior(LALInferenceRunState *runSt
             LALInferenceSetVariable(params, "tilt_spin2", &tilt_spin2);
             Cube[i] = tilt_spin2;
             i++;
-            strcat(header,"tilt_spin2 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("tilt_spin2");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -2172,26 +2340,42 @@ UINT4 LALInferenceInspiralPriorNormalisedCubeToPrior(LALInferenceRunState *runSt
             LALInferenceSetVariable(params, "phi12", &phi12);
             Cube[i] = phi12;
             i++;
-            strcat(header,"phi12 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("phi12");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
     INT4 ScaleTest = LALInferenceCubeToPSDScaleParams(priorParams, params, &i, Cube, context);
 
-    Cube[i] = m1; i++; strcat(header,"m1 ");
-    Cube[i] = m2; i++; strcat(header,"m2 ");
+    Cube[i] = m1; i++;
+    varname = LALInferenceTranslateInternalToExternalParamName("m1");
+    strcat(header,varname);
+    strcat(header," ");
+    Cube[i] = m2; i++;
+    varname = LALInferenceTranslateInternalToExternalParamName("m2");
+    strcat(header,varname);
+    strcat(header," ");
+
     Cube[i] = LALInferenceInspiralPriorNormalised(runState,params,model);
-    i++; strcat(header,"logprior ");
+    i++;
+    varname = LALInferenceTranslateInternalToExternalParamName("logprior");
+    strcat(header,varname);
+    strcat(header," ");
 
     // fRef for system-frame parameters
     if(LALInferenceCheckVariable(params,"fRef"))
     {
         Cube[i] = *(REAL8 *)LALInferenceGetVariable(params,"fRef");
         i++;
-        strcat(header,"f_ref ");
+        varname = LALInferenceTranslateInternalToExternalParamName("fRef");
+        strcat(header,varname);
+        strcat(header," ");
     }
 
-    strcat(header,"logl");
+    varname = LALInferenceTranslateInternalToExternalParamName("logl");
+    strcat(header,varname);
+    strcat(header," ");
 
     /* Check boundaries */
     if (ScaleTest==0) return 0;
@@ -2788,7 +2972,9 @@ UINT4 LALInferenceAnalyticCubeToPrior(LALInferenceRunState *runState, LALInferen
             LALInferenceSetVariable(params, "m1", &m1);
             Cube[i] = m1; i++;
             logPrior -= log(max-min);
-            strcat(header,"m1 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("m1");
+            strcat(header,varname);
+            strcat(header," ");
         }
         else
         {
@@ -2804,7 +2990,9 @@ UINT4 LALInferenceAnalyticCubeToPrior(LALInferenceRunState *runState, LALInferen
             LALInferenceSetVariable(params, "m2", &m2);
             Cube[i] = m2; i++;
             logPrior -= log(max-min);
-            strcat(header,"m2 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("m2");
+            strcat(header,varname);
+            strcat(header," ");
         }
         else
         {
@@ -2826,7 +3014,9 @@ UINT4 LALInferenceAnalyticCubeToPrior(LALInferenceRunState *runState, LALInferen
             Cube[i] = inclination;
             i++;
             logPrior -= log(max-min);
-            strcat(header,"iota ");
+            varname = LALInferenceTranslateInternalToExternalParamName("inclination");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -2841,7 +3031,9 @@ UINT4 LALInferenceAnalyticCubeToPrior(LALInferenceRunState *runState, LALInferen
             Cube[i] = phase;
             i++;
             logPrior -= log(max-min);
-            strcat(header,"phi0 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("phase");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -2856,7 +3048,9 @@ UINT4 LALInferenceAnalyticCubeToPrior(LALInferenceRunState *runState, LALInferen
             Cube[i] = polarisation;
             i++;
             logPrior -= log(max-min);
-            strcat(header,"psi ");
+            varname = LALInferenceTranslateInternalToExternalParamName("polarisation");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -2871,7 +3065,9 @@ UINT4 LALInferenceAnalyticCubeToPrior(LALInferenceRunState *runState, LALInferen
             Cube[i] = rightascension;
             i++;
             logPrior -= log(max-min);
-            strcat(header,"RA ");
+            varname = LALInferenceTranslateInternalToExternalParamName("rightascension");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -2886,7 +3082,9 @@ UINT4 LALInferenceAnalyticCubeToPrior(LALInferenceRunState *runState, LALInferen
             Cube[i] = declination;
             i++;
             logPrior -= log(max-min);
-            strcat(header,"dec ");
+            varname = LALInferenceTranslateInternalToExternalParamName("declination");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -2901,7 +3099,9 @@ UINT4 LALInferenceAnalyticCubeToPrior(LALInferenceRunState *runState, LALInferen
             Cube[i] = distance;
             i++;
             logPrior -= log(max-min);
-            strcat(header,"dist ");
+            varname = LALInferenceTranslateInternalToExternalParamName("distance");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -2915,9 +3115,11 @@ UINT4 LALInferenceAnalyticCubeToPrior(LALInferenceRunState *runState, LALInferen
             LALInferenceSetVariable(params, "time", &tc);
             Cube[i] = tc;
             sprintf(timeID,"%d",i);
-        i++;
+            i++;
             logPrior -= log(max-min);
-            strcat(header,"time ");
+            varname = LALInferenceTranslateInternalToExternalParamName("time");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -2932,7 +3134,9 @@ UINT4 LALInferenceAnalyticCubeToPrior(LALInferenceRunState *runState, LALInferen
             Cube[i] = a_spin1;
             i++;
             logPrior -= log(max-min);
-            strcat(header,"a1 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("a_spin1");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
     else if(LALInferenceCheckVariable(params,"spin1"))
@@ -2946,7 +3150,9 @@ UINT4 LALInferenceAnalyticCubeToPrior(LALInferenceRunState *runState, LALInferen
             Cube[i] = a_spin1;
             i++;
             logPrior -= log(max-min);
-            strcat(header,"a1 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("a_spin1");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -2961,7 +3167,9 @@ UINT4 LALInferenceAnalyticCubeToPrior(LALInferenceRunState *runState, LALInferen
             Cube[i] = a_spin2;
             i++;
             logPrior -= log(max-min);
-            strcat(header,"a2 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("a_spin2");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
     else if(LALInferenceCheckVariable(params,"spin2"))
@@ -2975,7 +3183,9 @@ UINT4 LALInferenceAnalyticCubeToPrior(LALInferenceRunState *runState, LALInferen
             Cube[i] = a_spin2;
             i++;
             logPrior -= log(max-min);
-            strcat(header,"a2 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("a_spin2");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -2990,7 +3200,9 @@ UINT4 LALInferenceAnalyticCubeToPrior(LALInferenceRunState *runState, LALInferen
             Cube[i] = theta_spin1;
             i++;
             logPrior -= log(max-min);
-            strcat(header,"theta1 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("theta_spin1");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -3003,9 +3215,11 @@ UINT4 LALInferenceAnalyticCubeToPrior(LALInferenceRunState *runState, LALInferen
             double theta_spin2 = LALInferenceCubeToFlatPrior(Cube[i], min, max);
             LALInferenceSetVariable(params, "theta_spin2", &theta_spin2);
             Cube[i] = theta_spin2;
-              i++;
-              logPrior -= log(max-min);
-            strcat(header,"theta2 ");
+            i++;
+            logPrior -= log(max-min);
+            varname = LALInferenceTranslateInternalToExternalParamName("theta_spin2");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -3020,7 +3234,9 @@ UINT4 LALInferenceAnalyticCubeToPrior(LALInferenceRunState *runState, LALInferen
             Cube[i] = phi_spin1;
             i++;
             logPrior -= log(max-min);
-            strcat(header,"phi1 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("phi_spin1");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
@@ -3035,19 +3251,33 @@ UINT4 LALInferenceAnalyticCubeToPrior(LALInferenceRunState *runState, LALInferen
             Cube[i] = phi_spin2;
             i++;
             logPrior -= log(max-min);
-            strcat(header,"phi2 ");
+            varname = LALInferenceTranslateInternalToExternalParamName("phi_spin2");
+            strcat(header,varname);
+            strcat(header," ");
         }
     }
 
     LALInferenceVariables *priorParams=runState->priorArgs;
     INT4 ScaleTest = LALInferenceCubeToPSDScaleParams(priorParams, params, &i, Cube, context);
 
-    Cube[i] = mc; i++; strcat(header,"mchirp ");
-    Cube[i] = eta; i++; strcat(header,"eta ");
+    Cube[i] = mc; i++;
+    varname = LALInferenceTranslateInternalToExternalParamName("chirpmass");
+    strcat(header,varname);
+    strcat(header," ");
+    Cube[i] = eta; i++;
+    varname = LALInferenceTranslateInternalToExternalParamName("massratio");
+    strcat(header,varname);
+    strcat(header," ");
+    
     Cube[i] = LALInferenceAnalyticNullPrior(runState,params,model);
-    i++; strcat(header,"logprior ");
+    i++;
+    varname = LALInferenceTranslateInternalToExternalParamName("logprior");
+    strcat(header,varname);
+    strcat(header," ");
 
-    strcat(header,"logl");
+    varname = LALInferenceTranslateInternalToExternalParamName("logl");
+    strcat(header,varname);
+    strcat(header," ");
 
     if (ScaleTest==0) return 0;
     else return 1;
