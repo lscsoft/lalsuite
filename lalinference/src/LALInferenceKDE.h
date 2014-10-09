@@ -45,6 +45,11 @@ tagKDE
                                                   covariance matrix, containing both terms
                                                   as returned by gsl_linalg_cholesky_decomp(). */
     gsl_matrix * cholesky_decomp_cov_lower; /**< Just the lower portion of \a cholesky_decomp_cov. */
+
+    LALInferenceParamVaryType * lower_bound_types; /**< Array of param boundary types */
+    LALInferenceParamVaryType * upper_bound_types; /**< Array of param boundary types */
+    REAL8 * lower_bounds;              /**< Lower param bounds */
+    REAL8 * upper_bounds;              /**< Upper param bounds */
 } LALInferenceKDE;
 
 /* Allocate, fill, and tune a Gaussian kernel density estimate given an array of points. */

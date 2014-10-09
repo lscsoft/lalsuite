@@ -38,6 +38,7 @@
 #include <lal/LALDatatypes.h>
 
 #include <lal/LALInference.h>
+#include <lal/LALInferencePrior.h>
 #include <lal/LALInferenceKDE.h>
 #include <lal/LALInferenceClusteredKDE.h>
 
@@ -828,6 +829,96 @@ LALInferenceKmeans *LALInferenceKmeansExtractCluster(LALInferenceKmeans *kmeans,
     return sub_kmeans;
 }
 
+
+/**
+ * Selectively impose cyclic/reflective boundaries on KDEs.
+ *
+ * Draw samples from each cluster.  If too many samples lie outside of the
+ * prior, impose a cyclic/reflective bound for the offending parameter(s).
+ *
+ */
+void LALInferenceKmeansImposeCyclicReflectiveBounds(LALInferenceKmeans *kmeans,
+                                                    LALInferenceVariables *params,
+                                                    LALInferenceVariables *priorArgs) {
+    INT4 i, p, dim;
+    INT4 n_below, n_above;
+    INT4 ndraws, n_thresh;
+    UINT4 c;
+    REAL8 min, max, threshold;
+    REAL8 mean, std;
+    LALInferenceVariableItem *param=NULL;
+
+    dim = kmeans->dim;
+
+    ndraws = 1000;      // Number of draws from the KDE to check
+    threshold = 0.01;   // Fraction outside boundary to make it cyclic/reflective
+    n_thresh = (INT4)(threshold * ndraws);
+
+    REAL8 *draws = XLALMalloc(ndraws * dim * sizeof(REAL8));
+    for (c = 0; c < kmeans->k; c++) {
+        for (i = 0; i < ndraws; i++) {
+            /* Draw a whitened sample from the cluster's KDE */
+            REAL8 *point =
+                LALInferenceDrawKDESample(kmeans->KDEs[c], kmeans->rng);
+
+            memcpy(&(draws[i*dim]), point, dim*sizeof(REAL8));
+            XLALFree(point);
+        }
+
+        p = 0;
+        for (param = params->head; param; param = param->next) {
+            if (LALInferenceCheckVariableNonFixed(params, param->name)) {
+                /* Whiten prior boundaries */
+                LALInferenceGetMinMaxPrior(priorArgs, param->name, &min, &max);
+                mean = gsl_vector_get(kmeans->mean, p);
+                std = gsl_vector_get(kmeans->std, p);
+                min = (min - mean)/std;
+                max = (max - mean)/std;
+
+                kmeans->KDEs[c]->lower_bounds[p] = min;
+                kmeans->KDEs[c]->upper_bounds[p] = max;
+
+                n_below = 0;
+                n_above = 0;
+                for (i = 0; i < ndraws; i++) {
+                    if (draws[i*dim + p] < min)
+                        n_below++;
+                    else if (draws[i*dim + p] > max)
+                        n_above++;
+                }
+
+                printf("%s nbelow=%i nabove=%i\n", param->name, n_below, n_above);
+                if (n_below > n_thresh) {
+                    /* Impose cyclic boundaries on both sides */
+                    if (param->vary == LALINFERENCE_PARAM_CIRCULAR) {
+                        printf("Imposing cyclic boundaries for %s.\n", param->name);
+                        kmeans->KDEs[c]->lower_bound_types[p] = param->vary;
+                        kmeans->KDEs[c]->upper_bound_types[p] = param->vary;
+                    } else {
+                        printf("Imposing lower reflective boundary for %s.\n", param->name);
+                        kmeans->KDEs[c]->lower_bound_types[p] = param->vary;
+                    }
+                } else
+                    kmeans->KDEs[c]->lower_bound_types[p] = LALINFERENCE_PARAM_FIXED;
+
+                if (n_above > n_thresh) {
+                    /* Impose cyclic boundaries on both sides */
+                    if (param->vary == LALINFERENCE_PARAM_CIRCULAR) {
+                        printf("Imposing cyclic boundaries for %s.\n", param->name);
+                        kmeans->KDEs[c]->lower_bound_types[p] = param->vary;
+                        kmeans->KDEs[c]->upper_bound_types[p] = param->vary;
+                    } else {
+                        kmeans->KDEs[c]->upper_bound_types[p] = param->vary;
+                        printf("Imposing upper reflective boundary for %s.\n", param->name);
+                    }
+                } else
+                    kmeans->KDEs[c]->upper_bound_types[p] = LALINFERENCE_PARAM_FIXED;
+
+                p++;
+            }
+        }
+    }
+}
 
 /**
  * Generate a new matrix by masking an existing one.
