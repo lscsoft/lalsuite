@@ -552,7 +552,7 @@ LALInferenceKmeans *LALInferenceKmeansRunBestOf(UINT4 k,
 LALInferenceKmeans *LALInferenceCreateKmeans(UINT4 k,
                                                 gsl_matrix *data,
                                                 gsl_rng *rng) {
-    INT4 status;
+    UINT4 i;
 
     /* Return nothing if given empty dataset */
     if (!data)
@@ -567,9 +567,9 @@ LALInferenceKmeans *LALInferenceCreateKmeans(UINT4 k,
 
     /* Allocate GSL matrices and vectors */
     kmeans->mean = gsl_vector_alloc(kmeans->dim);
+    kmeans->cov  = gsl_matrix_alloc(kmeans->dim, kmeans->dim);
+    kmeans->std  = gsl_vector_alloc(kmeans->dim);
     kmeans->data = gsl_matrix_alloc(kmeans->npts, kmeans->dim);
-    kmeans->chol_dec_cov = gsl_matrix_alloc(kmeans->dim, kmeans->dim);
-    kmeans->unwhitened_chol_dec_cov = gsl_matrix_alloc(kmeans->dim,kmeans->dim);
     kmeans->centroids = gsl_matrix_alloc(kmeans->k, kmeans->dim);
     kmeans->recursive_centroids = NULL;
 
@@ -584,8 +584,12 @@ LALInferenceKmeans *LALInferenceCreateKmeans(UINT4 k,
     kmeans->dist = &euclidean_dist_squared;
     kmeans->centroid = &euclidean_centroid;
 
-    /* Store the unwhitened mean for later transformations */
+    /* Store the unwhitened mean and covariance matrix for later transformations */
     LALInferenceComputeMean(kmeans->mean, data);
+    LALInferenceComputeCovariance(kmeans->cov, data);
+
+    for (i = 0; i < kmeans->dim; i++)
+        gsl_vector_set(kmeans->std, i, sqrt(gsl_matrix_get(kmeans->cov, i, i)));
 
     /* Whiten the data */
     kmeans->data = LALInferenceWhitenSamples(data);
@@ -595,36 +599,10 @@ LALInferenceKmeans *LALInferenceCreateKmeans(UINT4 k,
         return NULL;
     }
 
-    LALInferenceComputeCovariance(kmeans->unwhitened_chol_dec_cov, data);
-    LALInferenceComputeCovariance(kmeans->chol_dec_cov, kmeans->data);
-
-    /* Cholesky decompose the covariance matrix and decorrelate the data */
-    status = LALInferenceCholeskyDecompose(kmeans->unwhitened_chol_dec_cov);
-    if (status) {
-        fprintf(stderr, "Unwhitened covariance matrix not positive-definite.");
-        fprintf(stderr, " No proposal has been built.\n");
-        return NULL;
-    }
-
-    status = LALInferenceCholeskyDecompose(kmeans->chol_dec_cov);
-    if (status) {
-        fprintf(stderr, "Whitened covariance matrix not positive-definite.");
-        fprintf(stderr, " No proposal has been built.\n");
-        return NULL;
-    }
-
-    /* Zero out upper right triangle of decomposed matrices,
-     *  which contain the transposes */
-    UINT4 i, j;
-    for (i = 0; i < kmeans->dim; i++) {
-        for (j = i+1; j < kmeans->dim; j++) {
-            gsl_matrix_set(kmeans->unwhitened_chol_dec_cov, i, j, 0.);
-            gsl_matrix_set(kmeans->chol_dec_cov, i, j, 0.);
-        }
-    }
 
     return kmeans;
 }
+
 
 /**
  * A 'k-means++'-like seeded initialization of centroids for a kmeans run.
@@ -962,22 +940,15 @@ REAL8 *LALInferenceKmeansDraw(LALInferenceKmeans *kmeans) {
         cumulativeWeight += kmeans->weights[cluster];
     }
 
-    /* Draw a sample from the chosen cluster's KDE */
-    REAL8 *white_point =
+    /* Draw a whitened sample from the chosen cluster's KDE */
+    REAL8 *point =
         LALInferenceDrawKDESample(kmeans->KDEs[cluster], kmeans->rng);
-    gsl_vector_view white_pt = gsl_vector_view_array(white_point, kmeans->dim);
-
-    /* Create an empty array to contain the unwhitened sample */
-    REAL8 *point = XLALMalloc(kmeans->dim * sizeof(REAL8));
-    gsl_vector_view pt = gsl_vector_view_array(point, kmeans->dim);
-    gsl_vector_memcpy(&pt.vector, kmeans->mean);
 
     /* Recolor the sample */
-    gsl_blas_dgemv(CblasNoTrans, 1.0,
-                    kmeans->unwhitened_chol_dec_cov, &white_pt.vector,
-                    1.0, &pt.vector);
+    gsl_vector_view pt = gsl_vector_view_array(point, kmeans->dim);
+    gsl_vector_mul(&pt.vector, kmeans->std);
+    gsl_vector_add(&pt.vector, kmeans->mean);
 
-    XLALFree(white_point);
     return point;
 }
 
@@ -1002,15 +973,10 @@ REAL8 LALInferenceKmeansPDF(LALInferenceKmeans *kmeans, REAL8 *pt) {
 
     /* Subtract the mean from the point */
     gsl_vector_sub(y, kmeans->mean);
+    gsl_vector_div(y, kmeans->std);
 
-    /* Householder solver destroys the matrix, so don't give it the original */
-    gsl_matrix *A = gsl_matrix_alloc(kmeans->dim, kmeans->dim);
-    gsl_matrix_memcpy(A, kmeans->unwhitened_chol_dec_cov);
-    gsl_linalg_HH_svx(A, y);
-    
     REAL8 result = LALInferenceWhitenedKmeansPDF(kmeans, y->data);
 
-    gsl_matrix_free(A);
     gsl_vector_free(y);
 
     return result;
@@ -1054,10 +1020,9 @@ REAL8 LALInferenceWhitenedKmeansPDF(LALInferenceKmeans *kmeans, REAL8 *pt) {
  * @return A whitened data set with samples corresponding to \a samples.
  */
 gsl_matrix * LALInferenceWhitenSamples(gsl_matrix *samples) {
-    UINT4 i, j;
+    UINT4 i;
     UINT4 npts = samples->size1;
     UINT4 dim = samples->size2;
-    INT4 status;
 
     gsl_matrix *whitened_samples = gsl_matrix_alloc(npts, dim);
     gsl_matrix_memcpy(whitened_samples, samples);
@@ -1065,47 +1030,24 @@ gsl_matrix * LALInferenceWhitenSamples(gsl_matrix *samples) {
     /* Calculate the mean and covariance matrix */
     gsl_vector *mean = gsl_vector_alloc(dim);
     gsl_matrix *cov = gsl_matrix_alloc(dim, dim);
+    gsl_vector *std = gsl_vector_alloc(dim);
     LALInferenceComputeMean(mean, samples);
     LALInferenceComputeCovariance(cov, samples);
 
-    /* Cholesky decompose the covariance matrix and decorrelate the data */
-    gsl_matrix *cholesky_decomp_cov = gsl_matrix_alloc(dim, dim);
-    gsl_matrix_memcpy(cholesky_decomp_cov, cov);
-    status = LALInferenceCholeskyDecompose(cholesky_decomp_cov);
-
-    /* If data couldn't be whitened, return NULL */
-    if (status) {
-        gsl_matrix_free(whitened_samples);
-        gsl_vector_free(mean);
-        gsl_matrix_free(cov);
-        gsl_matrix_free(cholesky_decomp_cov);
-
-        return NULL;
-    }
-
-    /* Zero out upper right triangle of decomposed matrix, which contains the
-     *  transpose */
-    for (i = 0; i < dim; i++) {
-        for (j = i+1; j < dim; j++)
-            gsl_matrix_set(cholesky_decomp_cov, i, j, 0.);
-    }
+    for (i = 0; i < dim; i++)
+        gsl_vector_set(std, i, sqrt(gsl_matrix_get(cov, i, i)));
 
     /* Decorrelate the data */
     gsl_vector_view y;
-    gsl_matrix *A = gsl_matrix_alloc(dim, dim);
     for (i=0; i<npts; i++) {
         y = gsl_matrix_row(whitened_samples, i);
         gsl_vector_sub(&y.vector, mean);
-
-        /* Householder solver destroys the matrix; don't give it the original */
-        gsl_matrix_memcpy(A, cholesky_decomp_cov);
-        gsl_linalg_HH_svx(A, &y.vector);
+        gsl_vector_div(&y.vector, std);
     }
 
-    gsl_matrix_free(cholesky_decomp_cov);
-    gsl_matrix_free(A);
     gsl_vector_free(mean);
     gsl_matrix_free(cov);
+    gsl_vector_free(std);
 
     return whitened_samples;
 }
@@ -1281,8 +1223,6 @@ void LALInferenceKmeansDestroy(LALInferenceKmeans *kmeans) {
     if (kmeans) {
         /* Free GSL matrices and vectors */
         gsl_vector_free(kmeans->mean);
-        gsl_matrix_free(kmeans->chol_dec_cov);
-        gsl_matrix_free(kmeans->unwhitened_chol_dec_cov);
         gsl_matrix_free(kmeans->centroids);
         if (kmeans->data) gsl_matrix_free(kmeans->data);
         if (kmeans->recursive_centroids)

@@ -50,8 +50,8 @@ tagkmeans
     UINT4 *mask;                         /**< Mask used to select data from individual clusters */
     REAL8 *weights;                      /**< Fraction of data points in each cluster */
     gsl_vector *mean;                    /**< Mean of unwhitened data (for tranforming points) */
-    gsl_matrix *unwhitened_chol_dec_cov; /**< Cholesky decomposition of the unwhitened covariance matrix */
-    gsl_matrix *chol_dec_cov;            /**< Cholesky decomposition of the covariance matrix */
+    gsl_vector *std;                     /**< Std deviations of unwhitened data */
+    gsl_matrix *cov;                     /**< Covariance matrix of data */
     gsl_matrix *centroids;               /**< Array with rows containing cluster centroids */
     gsl_matrix *recursive_centroids;     /**< Matrix used to accumulate tested centroids */
     gsl_rng *rng;                        /**< Random number generator */
