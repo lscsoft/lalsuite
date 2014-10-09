@@ -50,22 +50,23 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
   UINT4 i = 0;
   REAL8Vector *freqFactors = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams, "freqfactors" );
 
-  LALInferenceIFOData *datatemp1 = data, *datatemp2 = data, *datatemp3 = data;
+  LALInferenceIFOModel *ifomodeltemp1 = get_model->ifo, *ifomodeltemp2 = get_model->ifo, *ifomodeltemp3 = get_model->ifo;
+  LALInferenceIFOData *tempdata = data;
 
   /* copy model parameters to data parameters */
-  while( datatemp1 ){
+  while( ifomodeltemp1 ){
     LALInferenceCopyVariables( vars, get_model->params );
-    datatemp1 = datatemp1->next;
+    ifomodeltemp1 = ifomodeltemp1->next;
   }
 
   /* get pulsar model */
-  while( datatemp2 ){
-    get_model->templt( datatemp2 );
+  while( ifomodeltemp2 ){
+    get_model->templt( get_model );
 
-    for( i = 0; i < freqFactors->length; i++ ) { datatemp2 = datatemp2->next; }
+    for( i = 0; i < freqFactors->length; i++ ) { ifomodeltemp2 = ifomodeltemp2->next; }
   }
 
-  while ( datatemp3 ){
+  while ( tempdata ){
     UINT4 j = 0, count = 0, cl = 0;
     UINT4 length = 0, chunkMin;
     REAL8 chunkLength = 0.;
@@ -78,11 +79,11 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
     REAL8Vector *sumDat = NULL;
     UINT4Vector *chunkLengths = NULL;
 
-    sumDat = *(REAL8Vector **)LALInferenceGetVariable( datatemp3->dataParams, "sumData" );
-    chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( datatemp3->dataParams, "chunkLength" );
-    chunkMin = *(INT4*)LALInferenceGetVariable( datatemp3->dataParams, "chunkMin" );
+    sumDat = *(REAL8Vector **)LALInferenceGetVariable( ifomodeltemp3->params, "sumData" );
+    chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( ifomodeltemp3->params, "chunkLength" );
+    chunkMin = *(INT4*)LALInferenceGetVariable( ifomodeltemp3->params, "chunkMin" );
 
-    length = datatemp3->compTimeData->data->length;
+    length = tempdata->compTimeData->data->length;
 
     for( i = 0 ; i < length ; i += chunkLength ){
       chunkLength = (REAL8)chunkLengths->data[count];
@@ -99,9 +100,9 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
       cl = i + (INT4)chunkLength;
 
       for( j = i ; j < cl ; j++ ){
-        B = datatemp3->compTimeData->data->data[j];
+        B = tempdata->compTimeData->data->data[j];
 
-        M = get_model->compSignal->data->data[j];
+        M = get_model->ifo->compTimeSignal->data->data[j];
 
         /* sum over the model */
         sumModel += creal(M)*creal(M) + cimag(M)*cimag(M);
@@ -119,7 +120,8 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
       count++;
     }
     loglike += logliketmp;
-    datatemp3 = datatemp3->next;
+    tempdata = tempdata->next;
+    ifomodeltemp3 = ifomodeltemp3->next;
   }
   return loglike;
 }

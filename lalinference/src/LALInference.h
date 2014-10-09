@@ -370,11 +370,37 @@ typedef UINT4 (*LALInferenceCubeToPriorFunction) (struct tagLALInferenceRunState
   LALInferenceVariables *params, struct tagLALInferenceModel *model, double *cube, void *context);
 
 /**
+ * Detector-dependent buffers and parameters
+ * A linked list meant for parameters and buffers that are separately specified for
+ * each detector.  The list ordering should be the same as the IFO linked list.
+ */
+typedef struct
+tagLALInferenceIFOModel
+{
+  LALInferenceVariables       *params; /** Parameters used when filling the buffers - template functions should copy to here */
+
+  LIGOTimeGPSVector           *times; /** Vector of time stamps for time domain data */
+
+  LALDetector                 *detector; /** LALDetector structure for where this data came from */
+  EphemerisData               *ephem;  /** Ephemeris data */
+  TimeCorrectionData          *tdat; /** Einstein delay time correction data */
+  TimeCorrectionType           ttype; /** The time correction type e.g. TDB, TCB */
+
+  REAL8TimeSeries             *timehPlus, *timehCross; /** Time series model buffers */
+  COMPLEX16FrequencySeries    *freqhPlus, *freqhCross; /** Freq series model buffers */
+  COMPLEX16TimeSeries         *compTimeSignal; /** Complex time series signal buffer */
+  REAL8TimeSeries             *timeData; /** Time series model buffer */
+
+  struct tagLALInferenceIFOModel *next; /** A pointer to the next set of parameters for linked list */
+} LALInferenceIFOModel;
+
+/**
  * Structure to constain a model and its parameters.
  */
 typedef struct tagLALInferenceModel
 {
   LALInferenceVariables       *params; /** Parameters used when filling the buffers - template functions should copy to here */
+  LALInferenceIFOModel        *ifo; /** IFO-dependent parameters and buffers */
   LALSimulationDomain          domain; /** Domain of model */
   LALInferenceTemplateFunction templt; /** The template generation function */
 
@@ -509,8 +535,7 @@ tagLALInferenceIFOData
   REAL8                      timeshift;     /** What is this? */
   COMPLEX16FrequencySeries  *freqData,      /** Buffer for frequency domain data */
                             *whiteFreqData; /* Over-white. */
-  COMPLEX16TimeSeries       *compTimeData, *compModelData; /** Complex time series data buffers */
-  LIGOTimeGPSVector         *dataTimes;     /** Vector of time stamps for time domain data */
+  COMPLEX16TimeSeries       *compTimeData;  /** Complex time series data buffers */
   LALInferenceVariables     *dataParams;    /* Optional data parameters */
   REAL8FrequencySeries      *oneSidedNoisePowerSpectrum;  /** one-sided Noise Power Spectrum */
   REAL8FrequencySeries      *noiseASD;  /** (one-sided Noise Power Spectrum)^{-1/2} */
@@ -520,9 +545,6 @@ tagLALInferenceIFOData
   REAL8                     fLow, fHigh;	/** integration limits for overlap integral in F-domain */
   LALDetector               *detector;          /** LALDetector structure for where this data came from */
   BarycenterInput           *bary;              /** Barycenter information */
-  EphemerisData             *ephem;             /** Ephemeris data */
-  TimeCorrectionData        *tdat; /** Einstein delay time correction data */
-  TimeCorrectionType        ttype; /** The time correction type e.g. TDB, TCB */
   LIGOTimeGPS		    epoch;              /** The epoch of this observation (the time of the first sample) */
   REAL8                     SNR;                /** IF INJECTION ONLY, E(SNR) of the injection in the detector.*/
   REAL8                     STDOF;              /** Degrees of freedom for IFO to be used in Student-T Likelihood. */

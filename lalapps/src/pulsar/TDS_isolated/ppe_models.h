@@ -36,13 +36,13 @@ extern "C" {
 static const REAL8 inv_fact[7] = { 1.0, 1.0, (1.0/2.0), (1.0/6.0), (1.0/24.0), (1.0/120.0), (1.0/720.0) };
 
 /* model functions */
-void get_pulsar_model( LALInferenceModel *model, LALInferenceIFOData *data );
+void get_pulsar_model( LALInferenceModel *model );
 
-REAL8 rescale_parameter( LALInferenceModel *model, LALInferenceIFOData *data, const CHAR *parname );
+REAL8 rescale_parameter( LALInferenceModel *model, LALInferenceIFOModel *ifo, const CHAR *parname );
 
-void pulsar_model( BinaryPulsarParams params, LALInferenceIFOData *data );
+void pulsar_model( BinaryPulsarParams params, LALInferenceIFOModel *ifo );
 
-REAL8Vector *get_phase_model( BinaryPulsarParams params, LALInferenceIFOData *data, REAL8 freqFactor,
+REAL8Vector *get_phase_model( BinaryPulsarParams params, LALInferenceIFOModel *ifo, REAL8 freqFactor,
                               UINT4 downsampled );
 
 REAL8Vector *get_ssb_delay( BinaryPulsarParams pars, LIGOTimeGPSVector *datatimes, EphemerisData *ephem,
@@ -52,11 +52,11 @@ REAL8Vector *get_ssb_delay( BinaryPulsarParams pars, LIGOTimeGPSVector *datatime
 REAL8Vector *get_bsb_delay( BinaryPulsarParams pars, LIGOTimeGPSVector *datatimes, REAL8Vector *dts,
                             EphemerisData *ephem );
 
-void get_triaxial_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *data );
+void get_triaxial_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOModel *ifo );
 
-void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *data );
+void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOModel *ifo );
 
-void get_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *data );
+void get_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOModel *ifo );
 
 REAL8 noise_only_model( LALInferenceRunState *runState );
 

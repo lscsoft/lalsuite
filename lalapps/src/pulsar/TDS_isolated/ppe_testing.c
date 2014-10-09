@@ -128,7 +128,7 @@ void gridOutput( LALInferenceRunState *runState ){
     LALInferenceSetVariable( runState->currentParams, parname, &h0val );
     
     logL->data[i] = runState->likelihood( runState->currentParams,
-                                          runState->data, runState.model.templt );
+                                          runState->data, runState->model );
     
     if ( logL->data[i] < minL ) minL = logL->data[i];
   }
