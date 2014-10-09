@@ -278,7 +278,7 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
             Cube[i] = mc;
             logPrior -= 5.0/6.0*logmc;
             i++;
-            strcat(header,"mchirp ");
+            strcat(header,"mc ");
         }
         else
         {
@@ -296,7 +296,7 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
             Cube[i] = mc;
             logPrior -= 5.0/6.0*log(mc);
             i++;
-            strcat(header,"mchirp ");
+            strcat(header,"mc ");
         }
         else
         {
@@ -1081,7 +1081,7 @@ UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALI
             mc = pow(eta,0.6) * m;
             q = m2 / m1; // asymmetric mass ratio, m1 >= m2
             Cube[i] = mc; i++;
-            strcat(header,"mchirp ");
+            strcat(header,"mc ");
             Cube[i] = eta; i++;
             strcat(header,"eta ");
         }
@@ -1925,7 +1925,7 @@ UINT4 LALInferenceInspiralPriorNormalisedCubeToPrior(LALInferenceRunState *runSt
             mc = pow(eta,0.6) * m;
             q = m2/m1; // asymmetric mass ratio, m1 >= m2
             Cube[i] = mc; i++;
-            strcat(header,"mchirp ");
+            strcat(header,"mc ");
             Cube[i] = eta; i++;
             strcat(header,"eta ");
         }
@@ -3042,7 +3042,7 @@ UINT4 LALInferenceAnalyticCubeToPrior(LALInferenceRunState *runState, LALInferen
     LALInferenceVariables *priorParams=runState->priorArgs;
     INT4 ScaleTest = LALInferenceCubeToPSDScaleParams(priorParams, params, &i, Cube, context);
 
-    Cube[i] = mc; i++; strcat(header,"mchirp ");
+    Cube[i] = mc; i++; strcat(header,"mc ");
     Cube[i] = eta; i++; strcat(header,"eta ");
     Cube[i] = LALInferenceAnalyticNullPrior(runState,params,model);
     i++; strcat(header,"logprior ");
