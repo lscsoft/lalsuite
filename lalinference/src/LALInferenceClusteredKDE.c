@@ -27,6 +27,7 @@
 #include <float.h>
 
 #include <gsl/gsl_randist.h>
+#include <gsl/gsl_sort_vector_double.h>
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_linalg.h>
@@ -512,7 +513,7 @@ LALInferenceKmeans *LALInferenceKmeansRunBestOf(UINT4 k,
             if (!kmeans)
                 continue;
 
-            LALInferenceKmeansForgyInitialize(kmeans);
+            LALInferenceKmeansSeededInitialize(kmeans);
             LALInferenceKmeansRun(kmeans);
 
             /* Assume BIC hasn't changed if
@@ -623,6 +624,61 @@ LALInferenceKmeans *LALInferenceCreateKmeans(UINT4 k,
     }
 
     return kmeans;
+}
+
+/**
+ * A 'k-means++'-like seeded initialization of centroids for a kmeans run.
+ * @param kmeans The kmeans to initialize the centroids of.
+ */
+void LALInferenceKmeansSeededInitialize(LALInferenceKmeans *kmeans) {
+    UINT4 i, j;
+    UINT4 u = 0;
+    REAL8 dist, norm, randomDraw;
+    gsl_vector_view c, x;
+
+    gsl_vector *dists = gsl_vector_alloc(kmeans->npts);
+    gsl_permutation *p = gsl_permutation_alloc(kmeans->npts);
+
+    /* Choose first centroid randomly from data */
+    i = gsl_rng_uniform_int(kmeans->rng, kmeans->npts);
+
+    for (j = 0; j < kmeans->dim; j++)
+        gsl_matrix_set(kmeans->centroids, u, j,
+                        gsl_matrix_get(kmeans->data, i, j));
+
+    u++;
+    while (u < kmeans->k) {
+        /* Calculate distances from centroid */
+        norm = 0.0;
+        c = gsl_matrix_row(kmeans->centroids, u-1);
+        for (i = 0; i < kmeans->npts; i++) {
+            x = gsl_matrix_row(kmeans->data, i);
+            dist = kmeans->dist(&x.vector, &c.vector);
+
+            gsl_vector_set(dists, i, dist);
+            norm += dist;
+        }
+
+        gsl_vector_scale(dists, 1.0/norm);
+        gsl_sort_vector_index(p, dists);
+
+        randomDraw = gsl_rng_uniform(kmeans->rng);
+
+        i = 0;
+        dist = gsl_vector_get(dists, p->data[i]);
+        while (dist < randomDraw) {
+            i++;
+            dist += gsl_vector_get(dists, p->data[i]);
+        }
+
+        for (j = 0; j < kmeans->dim; j++)
+            gsl_matrix_set(kmeans->centroids, u, j,
+                            gsl_matrix_get(kmeans->data, i, j));
+
+        u++;
+    }
+
+    gsl_permutation_free(p);
 }
 
 

@@ -85,6 +85,9 @@ LALInferenceKmeans *LALInferenceKmeansRunBestOf(UINT4 k, gsl_matrix *samples, UI
 /* Generate a new kmeans struct from a set of data. */
 LALInferenceKmeans * LALInferenceCreateKmeans(UINT4 k, gsl_matrix *data, gsl_rng *rng);
 
+/* A 'k-means++'-like seeded initialization of centroids for a kmeans run. */
+void LALInferenceKmeansSeededInitialize(LALInferenceKmeans *kmeans);
+
 /* Randomly select points from the data as initial centroids for a kmeans run. */
 void LALInferenceKmeansForgyInitialize(LALInferenceKmeans *kmeans);
 
