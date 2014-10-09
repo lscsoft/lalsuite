@@ -3619,6 +3619,9 @@ void LALInferenceInitClusteredKDEProposal(LALInferenceRunState *runState, LALInf
     kde->weight = weight;
     kde->next = NULL;
 
+    /* Selectivey impose cyclic and reflective bounds where KDEs lie on boundaries */
+    LALInferenceKmeansImposeCyclicReflectiveBounds(kde->kmeans, params, runState->priorArgs);
+
     /* Print out clustered samples, assignments, and PDF values if requested */
     if (LALInferenceGetProcParamVal(runState->commandLine,"--cluster-verbose")) {
         char outp_name[256];
@@ -3658,13 +3661,13 @@ void LALInferenceDumpClusteredKDE(LALInferenceClusteredKDE *kde, char *outp_name
 
     outp = fopen(outp_name, "w");
     LALInferenceFprintParameterNonFixedHeaders(outp, kde->params);
-    fprintf(outp, "cluster\tPDF\n");
+    fprintf(outp, "cluster\tweight\tPDF\n");
 
     for (i=0; i<kde->kmeans->npts; i++) {
         PDF = LALInferenceKmeansPDF(kde->kmeans, array + i*kde->dimension);
         for (j=0; j<kde->dimension; j++)
             fprintf(outp, "%g\t", array[i*kde->dimension + j]);
-        fprintf(outp, "%i\t%g\n", kde->kmeans->assignments[i], PDF);
+        fprintf(outp, "%i\t%f\t%g\n", kde->kmeans->assignments[i], kde->kmeans->weights[kde->kmeans->assignments[i]], PDF);
     }
     fclose(outp);
 }
