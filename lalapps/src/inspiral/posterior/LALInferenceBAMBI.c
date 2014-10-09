@@ -306,7 +306,7 @@ void LALInferenceMultiNestAlgorithm(LALInferenceRunState *runState)
         double like = runState->likelihood(runState->currentParams,runState->data,runState->model);
         like -= (*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams, "logZnoise"));
         fprintf(stdout,"LOG-LIKELIHOOD VALUE RETURNED = %g\n",like);
-        double prior = runState->prior(runState,runState->currentParams);
+        double prior = runState->prior(runState,runState->currentParams,runState->model);
         fprintf(stdout,"LOG-PRIOR VALUE RETURNED = %g\n",prior);
         fprintf(stdout,"LOG-POSTERIOR VALUE RETURNED = %g\n",like+prior);
         return;
@@ -451,7 +451,6 @@ Initialisation arguments:\n\
 (--verbose [N])\tOutput more info. N=1: errors, N=2 (default): warnings, N=3: info \n\
 (--randomseed seed           Random seed)\n\n";
     LALInferenceRunState *irs=NULL;
-    LALInferenceIFOData *ifoPtr, *ifoListStart;
     ProcessParamsTable *ppt=NULL;
 
     irs = XLALCalloc(1, sizeof(LALInferenceRunState));
@@ -517,8 +516,6 @@ Initialisation arguments:\n\
         LALInferenceInjectInspiralSignal(irs->data,commandLine);
         fprintf(stdout, " LALInferenceInjectInspiralSignal(): finished.\n");
 
-        ifoPtr = irs->data;
-        ifoListStart = irs->data;
         irs->currentLikelihood=LALInferenceNullLogLikelihood(irs->data);
         printf("Null Log Likelihood: %g\n", irs->currentLikelihood);
     }
@@ -764,8 +761,8 @@ Student T Likelihood Arguments:\n\
     state->likelihood = &LALInferenceFreqDomainStudentTLogLikelihood;
 
     /* Set the noise model evidence to the student t model value */
-    LALInferenceTemplateNullFreqdomain(state->data);
-    REAL8 noiseZ=LALInferenceFreqDomainStudentTLogLikelihood(state->currentParams,state->data,&LALInferenceTemplateNullFreqdomain);
+    LALInferenceTemplateNullFreqdomain(state->model);
+    REAL8 noiseZ=LALInferenceFreqDomainStudentTLogLikelihood(state->currentParams,state->data,state->model);
     LALInferenceAddVariable(state->algorithmParams,"logZnoise",&noiseZ,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
     fprintf(stdout,"Student-t Noise evidence %lf\n",noiseZ);
 
@@ -810,9 +807,9 @@ Arguments for each section follow:\n\n";
     else
         state->model = LALInferenceInitCBCModel(state);
 
-    state->currentParams = XLALMallou(sizeof(LALInferenceVariables));
-    memset(runState->currentParams, 0, sizeof(LALInferenceVariables));
-    LALInferenceCopyVariables(model->params, state->currentParams);
+    state->currentParams = XLALMalloc(sizeof(LALInferenceVariables));
+    memset(state->currentParams, 0, sizeof(LALInferenceVariables));
+    LALInferenceCopyVariables(state->model->params, state->currentParams);
     state->templt = state->model->templt;
 
     /* Choose the likelihood */
