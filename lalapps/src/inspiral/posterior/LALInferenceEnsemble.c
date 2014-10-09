@@ -159,9 +159,7 @@ void LALInferenceInitEnsemble(LALInferenceRunState *state) {
     /* If no simple null likelihood method exists, scale signal away */
     } else if (state->likelihood == &LALInferenceFreqDomainStudentTLogLikelihood ||
                 (state->likelihood == &LALInferenceMarginalisedTimeLogLikelihood &&
-                (!LALInferenceGetProcParamVal(state->commandLine, "--malmquistPrior") ||
-                !(LALInferenceGetProcParamVal(state->commandLine,"--psdFit") ||
-                  LALInferenceGetProcParamVal(state->commandLine,"--glitchFit"))))) {
+                !(LALInferenceGetProcParamVal(state->commandLine,"--psdFit")))) {
 
         headData = state->data;
         REAL8 d = *(REAL8 *)LALInferenceGetVariable(state->currentParamArray[0],
@@ -254,9 +252,9 @@ void initializeMCMC(LALInferenceRunState *runState) {
                 ---------------------------------------------------------------------------------------------------\n\
                  --- General Algorithm Parameters ------------------------------------------------------------------\n\
                  ---------------------------------------------------------------------------------------------------\n\
-                 (--nsteps n)                     Total number of steps for all walkers to make (100000).\n\
-                 (--skip n)                       Number of steps between writes to file (100).\n\
-                 (--update-interval n)            Number of steps between ensemble updates (1000).\n\
+                 (--nsteps n)                     Total number of steps for all walkers to make (10000).\n\
+                 (--skip n)                       Number of steps between writing samples to file (100).\n\
+                 (--update-interval n)            Number of steps between ensemble updates (100).\n\
                  (--randomseed seed)              Random seed of sampling distribution (random).\n\
                  \n\
                  ---------------------------------------------------------------------------------------------------\n\
@@ -418,7 +416,7 @@ void initializeMCMC(LALInferenceRunState *runState) {
 
     /* Number of steps between ensemble updates */
     UINT4 step = 0;
-    UINT4 nsteps = 100000;
+    UINT4 nsteps = 10000;
     ppt = LALInferenceGetProcParamVal(commandLine, "--nsteps");
     if (ppt)
         nsteps = atoi(ppt->value);
