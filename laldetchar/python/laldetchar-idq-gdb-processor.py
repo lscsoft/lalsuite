@@ -21,6 +21,8 @@ import subprocess
 import argparse
 import sys
 
+import ConfigParser
+
 from laldetchar import git_version
 
 __author__ = \
@@ -59,8 +61,22 @@ parser.add_argument(
     % git_version.verbose_msg,
     help = 'show code version'
     )
-	
+
+parser.add_argument(
+    '--config',
+    help = "the config file for the LVAlert process",
+    default = "idq_gdb.ini",
+    )
+
 args = parser.parse_args()
+
+### get required data from config 
+config = ConfigParser.SafeConfigParser()
+config.read(args.config)
+
+username = config.get("lvalert_listener", "username")
+password = config.get("lvalert_listener", "password")
+lvalert_config = config.get("lvalert_listener", "lvalert_config")
 
 # if command is start, then run launch lvalert listener.
 if args.command == 'start':
@@ -70,16 +86,17 @@ if args.command == 'start':
                 'nohup',
                 'lvalert_listen',
                 '--username',
-                'ruslan.vaulin',
+                username,
                 '--password',
-                'rusldg',
+                password,
                 '--config-file',
-                '/home/vaulin/development/idq_gdb_testing/idq_lvalert_config.ini'
+                lvalert_config
                 ]
     pid = subprocess.Popen(lvalert_launch_command, stdout=open('lvalert_listen.out', 'a')).pid
 
     print "lvalert_listen is launched with process id " + str(pid)
     sys.exit(0)
+
 # if command is status, get currently running idq lvalert listening process(es)and print basic status information.
 elif args.command == 'status':
 

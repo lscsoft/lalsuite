@@ -60,18 +60,75 @@ __date__ = git_version.date
 # idq-specific rountines should go here
 # generic event processing should go in event.py
 
+#=================================================
+# timing utilities
+#=================================================
 gpsref = time.mktime(time.strptime('Tue Jan 06 00:00:00 1980')) \
     - time.timezone  # GPS ref in UNIX time
 
 
-# return current GPS time, assume 16 leap-seconds
-
+### return current GPS time, assume 16 leap-seconds
 def nowgps():
     return time.time() - gpsref + 16  # add in leap-seconds
 
+def cluster(
+    glitches,
+    columns,
+    cluster_key='signif',
+    cluster_window=1.0,
+    ):
+    """
+        Clustering performed with the sliding window cluster_window keeping trigger with the highest rank;
+        glitches is an array of glitches, and we sort it to be in ascending order (by GPS time)
+        Clustering algorithm is borrowed from pylal.CoincInspiralUtils cluster method.
+        """
 
-# try to set lockfile, die if cannot establish lock
+    # sort glitches so they are in the propper order
 
+    glitches.sort(key=lambda line: line[columns['GPS']])
+
+    # initialize some indices (could work with just one)
+    # but with two it is easier to read
+
+    this_index = 0
+    next_index = 1
+    while next_index < len(glitches):
+
+        # get the time for both indices
+
+        thisTime = glitches[this_index][columns['GPS']]
+        nextTime = glitches[next_index][columns['GPS']]
+
+        # are the two coincs within the time-window?
+
+        if nextTime - thisTime < cluster_window:
+
+            # get the ranks
+
+            this_rank = glitches[this_index][columns[cluster_key]]
+            next_rank = glitches[next_index][columns[cluster_key]]
+
+            # and remove the trigger which has the lower rank
+
+            if next_rank > this_rank:
+                del glitches[this_index]  # glitches = numpy.delete(glitches, this_index, 0)
+            else:
+                del glitches[next_index]  # glitches = numpy.delete(glitches, next_index, 0)
+        else:
+
+            # NOTE: we don't increment this_index and next_index if we've removed glitches
+            # the two triggers are NOT in the time-window
+            # so must increase index
+
+            this_index += 1
+            next_index += 1
+
+    return glitches
+
+#=================================================
+# lock-file utilities
+#=================================================
+### try to set lockfile, die if cannot establish lock
 def dieiflocked(lockfile='.idq.lock'):
     import fcntl
     global lockfp
@@ -141,6 +198,9 @@ Please run 'grid-proxy-init -rfc' and try again.
     raise RuntimeError(rfc_proxy_msg)
 
 
+#=================================================
+# logfile object for use with logging module
+#=================================================
 class LogFile(object):
 
     """File-like object to log text using the `logging` module."""
@@ -157,7 +217,119 @@ class LogFile(object):
         for handler in self.logger.handlers:
             handler.flush()
 
+#=================================================
+# logfile status and file manipulation, general I/O
+#=================================================
+def start_of_line(file_obj, byte_stride=80):
+    """
+    moves back one line in the file and returns both that line and the number of bytes moved
+    if you are the beginning of a line, this returns "" and leaves you where you are
+    otherwise this moves you to the beginning of the line
+    """
+    current_byte = file_obj.tell()
+    tell = file_obj.tell()
+    while tell > 0:
+        if tell < byte_stride: ### can't go before the beginning
+            stride = tell
+        else:
+            stride = byte_stride
 
+        ### move back one stride
+        file_obj.seek(-stride, 1)
+
+        ### read that stride
+        line = file_obj.read(stride)
+
+        ### is there at least one line break
+        if "\n" in line: # yes!
+            file_obj.seek( -len(line.split("\n")[-1]), 1) ### move back just enough to put you after the line break
+            tell = file_obj.tell() ### update current position
+            break ### exit loop
+        else:
+            ### move all back again and continue to next epoch
+            file_obj.seek(-stride, 1)
+
+        tell = file_obj.tell() ### update current position
+
+    return current_byte - tell ### return the number of bytes we moved back
+
+###
+def most_recent_realtime_stride(file_obj):
+    """
+    works backward through file_obj until it finds realtime-stride information
+    returns the stride information (start, stop) and returns to the position in the file at when
+    this process was launched
+    """
+    starting_tell = file_obj.tell()
+    tell = starting_tell
+    bytes = 0
+	
+    while tell > 0: ### not at the beginning of the file
+        ### move to the start of this line
+        ### blocksize is the number of bytes moved
+        blocksize = start_of_line(file_obj)
+        bytes += blocksize ### count the number of bytes we moved back
+        tell = file_obj.tell()
+
+        ### read this line
+        line = file_obj.readline()
+
+        ### parse line for realtime stride information
+        if "Begin: stride " in line: ### FIXME? this is fragile and could break if we change the logger statements
+            ### find the stride start
+            stride_start, stride_end = [float(l) for l in  line.strip().split("Begin: stride ")[-1].split("-")]
+            break
+
+        ### if we're still in the loop, we must have NOT found a summary stride
+        if tell: ### we did not move to the beginning of the file
+            ### move back to start of this line
+            file_obj.seek(-(len(line)+1), 1)
+            bytes += 1
+            tell = file_obj.tell()
+
+#        else:
+#            file_obj.seek(0,0) ### we're at the beginnig of the file
+
+    else: ### reached beginning of file without finding realtime stride. We now look forward
+        stride_start = -np.infty ### we wait until we find a new stride or time out
+        stride_end = -np.infty
+
+    file_obj.seek(starting_tell, 0) ### go back to where we started
+
+    return (stride_start, stride_end)
+
+###
+def block_until(t, file_obj, max_wait=600, timeout=600, wait=0.1):
+    """
+    this function blocks until the stride_start information from file_obj (which should be an open realtime logger file object) shows that the realtime process has passed "t"
+    we wait a maximum of "max_wait" seconds for the realtime job to pass this t (only checked after we determine the first realtime_stride)
+    we wait at most "timeout" seconds between lines printed to file_obj, otherwise we assume the job has died
+    between requesting new lines from file_obj, we wait "wait" seconds
+    """
+    file_obj.seek(0,2) ### go to end of file
+
+    stride_start, _ = most_recent_realtime_stride(file_obj) ### delegate to find most recent stride
+
+    to = time.time()
+    waited = 0.0
+    while (stride_start < t) and (time.time()-to < max_wait) and (waited < timeout):
+        line = file_obj.readline() ### get next line
+
+        if not line: ### nothing new to report
+            time.sleep( wait )
+            waited += wait
+
+        elif "Begin: stride " in line: ### FIXME? this is fragile and could break if we change the logger statements
+            ### find the stride start
+            stride_start = float( line.split("Begin: stride ")[-1].split("-")[-1] )
+
+        waited = 0.0 ### we found a new line, so re-set this counter
+
+    ### return statement conditioned on how the loop exited
+    return stride_start > t, time.time()-to > max_wait, waited > timeout
+
+
+###
 def get_condor_dag_status(dag):
     """
 ....Check on status of the condor dag by parsing the last line of .dagman.out file.
@@ -175,7 +347,41 @@ def get_condor_dag_status(dag):
 
     return exit_status
 
+# load *.dat files
+def slim_load_datfile(file, skip_lines=1, columns=[]):
+    """ 
+....loads only the given columns from a *.dat file. assumes the variable names are given by the first line after skip_lines 
+....left so that if an element in columns is not in the variables list, an error will be raised
+...."""
 
+    output = dict([(c, []) for c in columns])
+
+    f_lines = open(file).readlines()[skip_lines:]
+
+    if f_lines:
+
+        # find variable names
+
+        variables = dict([(line, i) for (i, line) in
+                         enumerate(f_lines[0].strip('\n').split())])
+
+        # fill in output
+
+        for line in f_lines[1:]:
+            if line[0] != '#' and line != '':
+                line = line.strip('\n').split()
+                for c in columns:
+                    output[c].append(line[variables[c]])
+        return output
+    else:
+
+        # file is empty, return empty dictionary
+
+        return output
+
+#=================================================
+# subprocess wrappers
+#=================================================
 def submit_command(
     command,
     process_name='unspecified process',
@@ -272,7 +478,9 @@ def extract_dq_segments(xmlfile, dq_name):
             == result_id]
     return (good, covered)
 
-
+#=================================================
+# segment manipulations
+#=================================================
 def extract_lldq_segments(xmlfiles, lldq_name, hoft_name):
     """
 ....Loads the low-latency science and hoft segments from xml files.
@@ -405,12 +613,34 @@ def segment_query(
 
     return xmlfileobj
 
+def get_idq_segments(
+    realtimedir,
+    start,
+    stop,
+    suffix='.pat',
+    ):
+    import re
+    matchfile = re.compile('.*-([0-9]*)-([0-9]*)\%s$' % suffix)
+
+       # (dirname, starttime, endtime, pad=0, suffix='.xml')
+
+    ls = get_all_files_in_range(realtimedir, start, stop, suffix=suffix)
+    fileseg = []
+    for file in ls:
+        m = matchfile.match(file)
+        (st, dur) = (int(m.group(1)), int(m.group(2)))
+        fileseg.append([st, st + dur])
+    fileseg = event.fixsegments(fileseg)
+    return event.andsegments([[start, stop]], fileseg)
+
+#=================================================
+# trigger generation algorithm interfaces
+#=================================================
 
 # load in KW configuration file as dictionary
 # note that nothing will be converted to numerical values, they will all be saved as string values
 # also produce list of channel_flow_fhigh names
 # original order of channels is preserved
-
 def loadkwconfig(file):
     table = event.loadstringtable(file)
     kwconfig = dict()
@@ -435,8 +665,10 @@ def loadkwconfig(file):
     return kwconfig
 
 
+#=================================================
+# file discovery methods
+#=================================================
 # this is a modified (bugfix, efficiency fix, suffix option) version from the original in glue
-
 def get_all_files_in_range(
     dirname,
     starttime,
@@ -500,27 +732,6 @@ def get_all_files_in_range(
     return ret
 
 
-def get_idq_segments(
-    realtimedir,
-    start,
-    stop,
-    suffix='.pat',
-    ):
-    import re
-    matchfile = re.compile('.*-([0-9]*)-([0-9]*)\%s$' % suffix)
-
-       # (dirname, starttime, endtime, pad=0, suffix='.xml')
-
-    ls = get_all_files_in_range(realtimedir, start, stop, suffix=suffix)
-    fileseg = []
-    for file in ls:
-        m = matchfile.match(file)
-        (st, dur) = (int(m.group(1)), int(m.group(2)))
-        fileseg.append([st, st + dur])
-    fileseg = event.fixsegments(fileseg)
-    return event.andsegments([[start, stop]], fileseg)
-
-
 def gather_trig_files(
     source_dir,
     gps_start_time,
@@ -568,42 +779,7 @@ def gather_trig_files(
     return files_in_segment
 
 
-# load *.dat files
-
-def slim_load_datfile(file, skip_lines=1, columns=[]):
-    """ 
-....loads only the given columns from a *.dat file. assumes the variable names are given by the first line after skip_lines 
-....left so that if an element in columns is not in the variables list, an error will be raised
-...."""
-
-    output = dict([(c, []) for c in columns])
-
-    f_lines = open(file).readlines()[skip_lines:]
-
-    if f_lines:
-
-        # find variable names
-
-        variables = dict([(line, i) for (i, line) in
-                         enumerate(f_lines[0].strip('\n').split())])
-
-        # fill in output
-
-        for line in f_lines[1:]:
-            if line[0] != '#' and line != '':
-                line = line.strip('\n').split()
-                for c in columns:
-                    output[c].append(line[variables[c]])
-        return output
-    else:
-
-        # file is empty, return empty dictionary
-
-        return output
-
-
 # find *.dat files within a certain time range. looks at just the files in the specified directory
-
 def gather_datfiles(
     gpsstart,
     gpsstop,
@@ -639,62 +815,9 @@ def gather_datfiles(
 
     return files
 
-
-def cluster(
-    glitches,
-    columns,
-    cluster_key='signif',
-    cluster_window=1.0,
-    ):
-    """
-        Clustering performed with the sliding window cluster_window keeping trigger with the highest rank;
-        glitches is an array of glitches, and we sort it to be in ascending order (by GPS time)
-        Clustering algorithm is borrowed from pylal.CoincInspiralUtils cluster method.
-        """
-
-    # sort glitches so they are in the propper order
-
-    glitches.sort(key=lambda line: line[columns['GPS']])
-
-    # initialize some indices (could work with just one)
-    # but with two it is easier to read
-
-    this_index = 0
-    next_index = 1
-    while next_index < len(glitches):
-
-        # get the time for both indices
-
-        thisTime = glitches[this_index][columns['GPS']]
-        nextTime = glitches[next_index][columns['GPS']]
-
-        # are the two coincs within the time-window?
-
-        if nextTime - thisTime < cluster_window:
-
-            # get the ranks
-
-            this_rank = glitches[this_index][columns[cluster_key]]
-            next_rank = glitches[next_index][columns[cluster_key]]
-
-            # and remove the trigger which has the lower rank
-
-            if next_rank > this_rank:
-                del glitches[this_index]  # glitches = numpy.delete(glitches, this_index, 0)
-            else:
-                del glitches[next_index]  # glitches = numpy.delete(glitches, next_index, 0)
-        else:
-
-            # NOTE: we don't increment this_index and next_index if we've removed glitches
-            # the two triggers are NOT in the time-window
-            # so must increase index
-
-            this_index += 1
-            next_index += 1
-
-    return glitches
-
-
+#=================================================
+# methods that convert datfiles into other data products
+#=================================================
 def datarray_to_roc(
     datarray,
     columns,

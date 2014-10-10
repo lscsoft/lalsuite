@@ -137,7 +137,7 @@ if __name__ == '__main__':
     if not gchxml_filenames:
         # no files found, print the message, and exit
         if not opts.skip_gracedb_upload:
-            gracedb.writeLog(opts.gracedb_id, message="No iDQ glitch tables data available for the candidate  at "+opts.ifo)
+            gracedb.writeLog(opts.gracedb_id, message="No iDQ glitch tables data from "+opts.classifier+" available for the candidate  at "+opts.ifo)
         print "No glitch files found, exiting."
         sys.exit(0)
 

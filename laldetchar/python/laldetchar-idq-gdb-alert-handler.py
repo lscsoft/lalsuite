@@ -25,14 +25,17 @@ from laldetchar.idq import idq
 from laldetchar.idq import idq_gdb_utils
 import traceback
 
+import time
+
 from laldetchar import git_version
 from sys import stdin
+
 # get_LVAdata_from_stdin will be depricate starting from ER6, we might need it only for pre-ER6 testing.
 #from ligo.lvalert.utils import get_LVAdata_from_stdin
 # json will be used instead of get_LVAdata_from_stdin. We will use it as default here.
 import json
 
-
+#===================================================================================================
 
 __author__ = \
     'Lindy Blackburn (<lindy.blackburn@ligo.org>), Reed Essick (<reed.essick@ligo.org>), Ruslan Vaulin (<ruslan.vaulin@ligo.org>)'
@@ -40,7 +43,10 @@ __version__ = git_version.id
 __date__ = git_version.date
 
 description = \
-    """ This program is launched by lvalert_listen upon receiving the alert about a new event submitted to GraceDB. It gets necessary information about the event and runs idq tasks that upload relevant data quality information to GraceDB."""
+    """ This program is launched by lvalert_listen upon receiving the alert about a new event submitted to GraceDB. \
+It gets necessary information about the event and runs idq tasks that upload relevant data quality information to GraceDB."""
+
+#===================================================================================================
 
 parser = optparse.OptionParser(version='Name: %%prog\n%s'
                                % git_version.verbose_msg,
@@ -61,54 +67,64 @@ parser.add_option(
     default='idq_gdb.log',
     type='string',
     help='log file')
+
+parser.add_option(
+    "", "--no-robot-cert",
+    default=False,
+    action="store_true")
 	
 (options, args) = parser.parse_args()
 
+#===================================================================================================
 
-# read global configuration file
-
+### read global configuration file
 config = ConfigParser.SafeConfigParser()
 config.read(options.config_file)
 
-# get general settings from config file
-
+### get general settings from config file
 ifo = config.get('general', 'ifo')
 classifiers = config.get('general', 'classifiers').split(' ')
 usertag = config.get('general', 'usertag')
 idq_dir = config.get('general', 'idqdir')
 
-# local gdb directory where script will run and store its output
-
+#=================================================
+### local gdb directory where script will run and store its output
 idq_gdb_main_dir = config.get('general', 'main_gdb_dir')
 if not os.path.exists(idq_gdb_main_dir):
     os.makedirs(idq_gdb_main_dir)
 
-# cd into this directory
+### cd into this directory
 os.chdir(idq_gdb_main_dir)
 
-# read gracedb id for event and other attributes from stdin
+#=================================================
+### read gracedb id for event and other attributes from stdin
 
-# get_LVAdata_from_stdin is used pre-ER6, see comments at the top.
+### get_LVAdata_from_stdin is used pre-ER6, see comments at the top.
 #streamdata = get_LVAdata_from_stdin(stdin, as_dict=True)
 eventdata = json.loads(stdin.read())
 
 gdb_id = eventdata['uid']
-#gdb_id = 'T121250'
 alert_type = eventdata['alert_type']
-#alert_type = 'new'
 description = eventdata['description']
 
-# to appear in ER6
+#=================================================
+# LOGIC TO SKIP EVENTS BASED ON MESSAGE DATA
+#=================================================
+if not alert_type=='new': ### only process new events
+    sys.exit(0)
+
+### more specific logicals based on the following
 #group = event['Group']
 #pipeline = event['Pipeline']
 #search = event['Search']
 
+event_type = None
+
 # The above event attributes could be useful in the future if we decide to code up logic
 # that differentiates between gracedb entries based on their type, search, description etc.
 
-# for now we treat all events in the same way
-
-# logging setup
+#=================================================
+### logging setup
 
 logger = logging.getLogger('idq_gdb_logger')
 logger.setLevel(logging.INFO)
@@ -122,48 +138,45 @@ hdlr2.setFormatter(formatter)
 hdlr2.setLevel(logging.INFO)
 logger.addHandler(hdlr2)
 
-# redirect stdout and stderr into logger
-
+### redirect stdout and stderr into logger
 sys.stdout = idq.LogFile(logger)
 sys.err = idq.LogFile(logger)
 
+#========================
+# digest event type and pull the correct params from config file
+#========================
+if event_type not in config.sections():
+    logger.info("Warning: event type not found. Defaulting to \"default_event\" settings in %s"%options.config_file)
+    event_type = 'default_event'
 
+time_before = config.getfloat(event_type, 'time_before')
+time_after = config.getfloat(event_type, 'time_after')
+max_wait = config.getfloat(event_type,'max_wait')
+delay = config.getfloat(event_type, 'delay') ### the amount of extra time we wait for jobs to finish
 
-
-# check that this is a new event. Exit if it is not ( not further processing is needed).
-if not alert_type == 'new':
-   sys.exit(0)
-
+#=================================================
+### process the event in full
 logger.info("New event. GraceDB ID %s." % (gdb_id))
 logger.info("Alert type: %s. Description: %s." % (alert_type,description))
 
-# make new directory for this event
-#event_dir = gdb_id
-#if not os.path.exists(event_dir):
-#    os.makedirs(event_dir)
+### set up robot cert if needed
+if not options.no_robot_cert:
+    ### unset ligo-proxy just in case
+    del os.environ['X509_USER_PROXY']
 
-# We are using robot certificate, no need for finding and validating proxy certificate
-# We only need to set environment to use the robot certificate.
+    ### get cert and key from ini file
+    robot_cert = config.get('ldg_certificate', 'robot_certificate')
+    robot_key = config.get('ldg_certificate', 'robot_key')
 
-#unset ligo-proxy just in case
-
-del os.environ['X509_USER_PROXY']
-
-# get cert and key from ini file
-
-robot_cert = config.get('ldg_certificate', 'robot_certificate')
-robot_key = config.get('ldg_certificate', 'robot_key')
-
-# set cert and key
-
-os.environ['X509_USER_CERT'] = robot_cert
-os.environ['X509_USER_KEY'] = robot_key
+    ### set cert and key
+    os.environ['X509_USER_CERT'] = robot_cert
+    os.environ['X509_USER_KEY'] = robot_key
 
 
-# initialize instance of gracedb interface
+### initialize instance of gracedb interface
 gracedb = GraceDb()
 
-# connect to gracedb and get event gps time
+### connect to gracedb and get event gps time
 try: 
     gdb_entry = json.loads(gracedb.event(gdb_id).read())
 except:
@@ -173,27 +186,45 @@ except:
     sys.exit(1)
 
 event_gps_time = gdb_entry['gpstime']
+gps_start = event_gps_time - time_before
+gps_end = event_gps_time + time_after
 
-# set the gps time range around the candidate for which idq data will be requested
-# here we might want to code up some logic distinguishing event/search types e.g. Burst from CBC triggers
-gps_start = event_gps_time - float(config.get('event', 'time_before'))
-gps_end = event_gps_time + float(config.get('event', 'time_after'))
+gracedb.writeLog(gdb_id, message="searching for iDQ information within [%.3f, %.3f] at %s"%(gps_start, gps_end, ifo))
 
+#=================================================
+# LOGIC for waiting for idq data 
+#=================================================
+### figure out if we need to wait for time to pass
+wait = gps_end - (idq.nowgps()+delay)
+if wait > 0:
+    logger.info("waiting %.2f seconds until we pass gps=%.3f"%(wait, gps_end))
+    time.sleep(wait)
 
-# run idq-gdb-timeseries for each classifier
-for classifier in classifiers:
-    logger.info("    Begin: executing idq-gdb-timeseries for " + classifier + " ...")
-    exit_status = idq_gdb_utils.execute_gdb_timeseries(str(gps_start), str(gps_end), str(event_gps_time), gdb_id, ifo, classifier, config, idq_dir, config.get('executables', 'idq_gdb_timeseries'), usertag = str(gdb_id)+'_'+usertag)
+### now we need to parse the realtime log to figure out where the realtime job is
+realtime_logname = config.get("general","realtime_log")
+logger.info("parsing %s to extract idq-realtime state"%realtime_logname)
 
-    if exit_status != 0:
-        logger.info("    WARNING: idq-gdb-timeseries failed for " + classifier)
-        gracedb.writeLog(gdb_id, message="iDQ glitch-rank timeseries task failed for " + classifier + " at " + ifo)
-    else:
-        logger.info("    Done: idq-gdb-timeseries for " + classifier + ".")
+realtime_log = open(realtime_logname, "r") ### open realtime log for reading
+realtime_log.seek(0, 2) ### go to end of file
 
+### wait until realtime has passed gps_end+delay
+past, dead, timed_out = idq.block_until(gps_end+delay, realtime_log, max_wait=max_wait, timeout=2*max_wait)
 
-	
-# run idq-gdb-glitch-tables for each classifier
+if past:
+    logger.info("found realtime stride starting after t=%.3f"%(gps_end+delay))
+
+elif timed_out:
+    logger.info("WARNING: could not find a recent enough stride in %s after searching for %.1f seconds. Realtime process may be behind"%(realtime_logname, 2*max_wait))
+    gracedb.writeLog(gdb_id, message="WARNING: iDQ data quality coverage was not complete and no new information was reported after waiting %.1f seconds. Data quality information at %s may not be complete."%(2*max_wait, ifo))
+
+else: # dead
+    logger.info("WARNING: no new iDQ information was reported to %s after waiting %.1f seconds. Realtime process may be dead."%(realtime_logname, max_wait))
+    gracedb.writeLog(gdb_id, message="WARNING: iDQ data quality coverage was not complete and no new information was reported after waiting %.1f seconds. Data quality information at %s may not be complete."%(max_wait, ifo))
+
+#=================================================
+# launch the actual processes
+#=================================================
+### run idq-gdb-glitch-tables for each classifier
 for classifier in classifiers:
     logger.info("    Begin: executing idq-gdb-glitch-tables for " + classifier + " ...")
     exit_status = idq_gdb_utils.execute_gdb_glitch_tables(str(gps_start), str(gps_end), gdb_id, ifo, classifier, config, idq_dir, config.get('executables', 'idq_gdb_glitch_tables'), usertag = str(gdb_id)+'_'+usertag)
@@ -204,23 +235,15 @@ for classifier in classifiers:
     else:
         logger.info("    Done: idq-gdb-glitch-tables for " + classifier + ".")
 
+#=================================================
+### run idq-gdb-timeseries for each classifier
+for classifier in classifiers:
+    logger.info("    Begin: executing idq-gdb-timeseries for " + classifier + " ...")
+    exit_status = idq_gdb_utils.execute_gdb_timeseries(str(gps_start), str(gps_end), str(event_gps_time), gdb_id, ifo, classifier, config, idq_dir, config.get('executables', 'idq_gdb_timeseries'), usertag = str(gdb_id)+'_'+usertag)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    if exit_status != 0:
+        logger.info("    WARNING: idq-gdb-timeseries failed for " + classifier)
+        gracedb.writeLog(gdb_id, message="iDQ glitch-rank timeseries task failed for " + classifier + " at " + ifo)
+    else:
+        logger.info("    Done: idq-gdb-timeseries for " + classifier + ".")
 

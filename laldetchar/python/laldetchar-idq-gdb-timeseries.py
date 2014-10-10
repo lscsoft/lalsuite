@@ -17,6 +17,7 @@
 description = \
     """ Program generates a summary of iDQ glitch-rank time-series during a short time period, generating figures and summary files"""
 
+import sys
 import numpy as np
 import re as re
 from laldetchar.idq import event
@@ -148,6 +149,11 @@ if __name__ == '__main__':
     rank_filenames.sort()
     fap_filenames.sort()
 
+    if (not rank_filenames) or (not fap_filenames): ### we couldn't find either rank or fap files
+        ### exit gracefully
+        gracedb.writeLog(opts.gracedb_id, message="No iDQ timeseries from %s at %s"%(opts.classifier, opts.ifo))
+        sys.exit(0)
+
     # #########################################
     # ## RANK
     # #########################################
@@ -242,7 +248,7 @@ if __name__ == '__main__':
         # write log messages to gracedb and upload rank files
         #FIXME: we should upload all rankfiles at once to avoid multiple log entries in case there are gaps in the data.
         for filename in merged_rank_filenames:
-            gracedb.writeLog(opts.gracedb_id, message="iDQ glitch-rank timeseries at "+opts.ifo+":", filename=filename)
+            gracedb.writeLog(opts.gracedb_id, message="iDQ glitch-rank timeseries from "+opts.classifier+" at "+opts.ifo+":", filename=filename)
 
 
     # #########################################
@@ -331,11 +337,7 @@ if __name__ == '__main__':
         # write log messages to gracedb and upload fap files
         #FIXME: we should upload all fapfiles at once to avoid multiple log entries in case there are gaps in the data.
         for filename in merged_fap_filenames:
-            gracedb.writeLog(opts.gracedb_id, message="iDQ fap timeseries at "+opts.ifo+":", filename=filename)
-
-
-
-
+            gracedb.writeLog(opts.gracedb_id, message="iDQ fap timeseries for %s at %s:"%(opts.classifier, opts.ifo), filename=filename)
 
 
     # ## finish plot
@@ -380,7 +382,7 @@ if __name__ == '__main__':
 
     if not opts.skip_gracedb_upload:
         #write log message to gracedb and upload file
-        gracedb.writeLog(opts.gracedb_id, message="iDQ fap and glitch-rank timeseries plot for "+opts.ifo+":", filename=figname, tagname='data_quality')
+        gracedb.writeLog(opts.gracedb_id, message="iDQ fap and glitch-rank timeseries plot for "+opts.classifier+" at "+opts.ifo+":", filename=figname, tagname='data_quality')
 
 
     # ## write summary file
@@ -449,7 +451,7 @@ if __name__ == '__main__':
 
     if not opts.skip_gracedb_upload:
         #write log message to gracedb and upload file
-        gracedb.writeLog(opts.gracedb_id, message="iDQ timeseries summary for "+opts.ifo+":", filename=summary_filename)
+        gracedb.writeLog(opts.gracedb_id, message="iDQ timeseries summary for "+opts.classifier+" at "+opts.ifo+":", filename=summary_filename)
 
 
     if opts.verbose:

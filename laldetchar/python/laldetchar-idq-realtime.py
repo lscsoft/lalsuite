@@ -162,6 +162,11 @@ parser.add_option("", "--no-robot-cert",
     help="do not use robot cert with segment query in training jobs"
     )
 
+parser.add_option("", "--offline",
+    default=False, action="store_true",
+    help="wait for training and summary jobs to finish before continuing. Only meant for offline analysis"
+    )
+
 (options, args) = parser.parse_args()
 
 #===================================================================================================
@@ -490,11 +495,8 @@ while t + stride < options.endgps:
         ### launch idq_train
         # check if we are in a catch-up mode
 
-        if abs(int(idq.nowgps()) - t) > 3600: ### 3600 is a magic number. 
-                                              ### If training is launched more than 1 hour after it should have, we're in "catch-up" mode
-
-            ### catching-up, wait for training job to complete before proceeding with evaluation
-            logger.info('Running in catch-up mode, will wait until training is complete before proceeding with evaluation')
+        if options.offline: ### running in "offline mode"
+            logger.info('Running in OFFLINE mode, will wait until training is complete before proceeding with evaluation')
             subprocess.call(training_command,
                             stdout=open('idq_train.out', 'a'),
                             stderr=open('idq_train.err', 'a')) ### call blocks until the process to finishes
@@ -539,7 +541,14 @@ while t + stride < options.endgps:
         logger.info('Submiting idq_summary script with the following options:')
         logger.info(summary_command)
 
-        summary_pid = subprocess.Popen(summary_command,
+        if options.offline:
+            logger.info("Running in OFFLINE mode, will wait until summary is complete before proceeding with evaluation")
+            subprocess.call(summary_command, 
+                stdout=open("idq_summary.out", "a"), 
+                stderr=open("idq_summary.err", "a"))
+
+        else:                                              
+            summary_pid = subprocess.Popen(summary_command,
                 stdout=open('idq_summary.out', 'a'),
                 stderr=open('idq_summary.err', 'a')).pid ### only remember the pid, let the process float
 
@@ -900,7 +909,6 @@ while t + stride < options.endgps:
             ### convert rank time-series into FAP time-series
             fap_ts = mvsc_FAPmap(ts)
             fap_ts_filename = "%s/%s_idq_mvsc_%s_fap_%s-%d-%d.npy.gz"%(this_output_dir, ifo, mvsc_trained_range, usertag, t, stride)
-            fap_ts_filename = this_output_dir + '/' + ifo \
             
             ### save file to disk
             idq.numpy.save(event.gzopen(fap_ts_filename, 'w'), fap_ts)
@@ -921,7 +929,7 @@ while t + stride < options.endgps:
                 )
 
             ### write documents
-            gchxml_filename = "%s/%s_idq_mvsc_%s_glitche_%s_%d_%d.xml.gz"%(this_output_dir, ifo, mvsc_trained_range, usertag, t, stride)
+            gchxml_filename = "%s/%s_idq_mvsc_%s_glitch_%s-%d-%d.xml.gz"%(this_output_dir, ifo, mvsc_trained_range, usertag, t, stride)
             logger.info('    --> writing ' + gchxml_filename)
             idq.ligolw_utils.write_filename(gchxml_doc, gchxml_filename, gz=gchxml_filename.endswith('.gz'))
 
