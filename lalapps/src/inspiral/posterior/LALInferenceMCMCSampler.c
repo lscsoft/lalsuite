@@ -799,6 +799,9 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     INT4 accepted = runState->evolve(runState); //evolve the chain at temperature ladder[t]
     acceptanceCount = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "acceptanceCount");
 
+    if (propStats)
+        LALInferenceTrackProposalAcceptance(runState, accepted);
+
     if (i==1){
       if (propStats) {
           fprintf(propstatfile, "cycle\t");
