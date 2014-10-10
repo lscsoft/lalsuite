@@ -157,9 +157,9 @@ XLALCompareBSGLComputations ( const REAL4 TwoF,			/**< multi-detector  Fstat */
    * explicit formula for numDet=2:
    * log10 BSGL = F - log ( e^F* + e^{F1}*oLG1/oLG + e^{F2}*oLG2/oLG )
    */
-  REAL4 BSGL_extcomp_terms[3];
+  REAL8 BSGL_extcomp_terms[3];
   BSGL_extcomp_terms[0] = exp(Fstar0)/oLG;
-  REAL4 BSGL_extcomp_maxterm = BSGL_extcomp_terms[0];
+  REAL8 BSGL_extcomp_maxterm = BSGL_extcomp_terms[0];
   for (UINT4 X = 0; X < numDetectors; X++) {
     BSGL_extcomp_terms[1+X] = exp(0.5*TwoFX->data[X]);
     if ( oLGX ) {
@@ -172,78 +172,89 @@ XLALCompareBSGLComputations ( const REAL4 TwoF,			/**< multi-detector  Fstat */
       BSGL_extcomp_maxterm = BSGL_extcomp_terms[1+X];
     }
   }
-  REAL4 BSGL_extcomp_notallterms = 0.5*TwoF - log(BSGL_extcomp_maxterm);
-  REAL4 BSGL_extcomp_denom = 0.0;
+  REAL4 log10BSGL_extcomp_notallterms = 0.5*TwoF - log(BSGL_extcomp_maxterm);
+  REAL8 BSGL_extcomp_denom = 0.0;
   for (UINT4 X = 0; X < 1+numDetectors; X++) {
     BSGL_extcomp_denom += BSGL_extcomp_terms[X];
   }
-  REAL4 BSGL_extcomp_allterms = 0.5*TwoF - log( BSGL_extcomp_denom );
+  REAL4 log10BSGL_extcomp_allterms = 0.5*TwoF - log( BSGL_extcomp_denom );
 
   /* these are not the log-Bayes-factor, as computed by XLALComputeBSGL(), so need to correct by log(1+1/oLG) */
-  BSGL_extcomp_allterms    += log(1+1/oLG);
-  BSGL_extcomp_notallterms += log(1+1/oLG);
+  log10BSGL_extcomp_allterms    += log(1+1/oLG);
+  log10BSGL_extcomp_notallterms += log(1+1/oLG);
+  /* and actually switch to log10 */
+  log10BSGL_extcomp_allterms    *= LAL_LOG10E;
+  log10BSGL_extcomp_notallterms *= LAL_LOG10E;
 
   /* faster version: use only the leading term of the BSGL denominator sum */
   BSGLSetup *setup_noLogCorrection;
   XLAL_CHECK ( (setup_noLogCorrection = XLALCreateBSGLSetup ( numDetectors, Fstar0, oLGX, FALSE )) != NULL, XLAL_EFUNC );
-  REAL4 BSGL_XLAL_notallterms = XLALComputeBSGL ( TwoF, TwoFX->data, setup_noLogCorrection ) / LAL_LOG10E;
+  REAL4 log10BSGL_XLAL_notallterms = XLALComputeBSGL ( TwoF, TwoFX->data, setup_noLogCorrection );
   XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "XLALComputeBSGL() failed with xlalErrno = %d\n", xlalErrno );
   XLALFree ( setup_noLogCorrection ); setup_noLogCorrection = NULL;
 
   /* more precise version: use all terms of the BSGL denominator sum */
   BSGLSetup *setup_withLogCorrection;
   XLAL_CHECK ( (setup_withLogCorrection = XLALCreateBSGLSetup ( numDetectors, Fstar0, oLGX, TRUE )) != NULL, XLAL_EFUNC );
-  REAL4 BSGL_XLAL_allterms = XLALComputeBSGL ( TwoF, TwoFX->data, setup_withLogCorrection ) / LAL_LOG10E;
+  REAL4 log10BSGL_XLAL_allterms = XLALComputeBSGL ( TwoF, TwoFX->data, setup_withLogCorrection );
   XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "XLALComputeBSGL() failed with xlalErrno = %d\n", xlalErrno );
   XLALFree ( setup_withLogCorrection ); setup_withLogCorrection = NULL;
 
   /* compute relative deviations */
-  REAL4 diff_allterms              = fabs( BSGL_XLAL_allterms             - BSGL_extcomp_allterms    ) / ( 0.5 * ( BSGL_XLAL_allterms             + BSGL_extcomp_allterms    ));
-  REAL4 diff_notallterms           = fabs( BSGL_XLAL_notallterms          - BSGL_extcomp_notallterms ) / ( 0.5 * ( BSGL_XLAL_notallterms          + BSGL_extcomp_notallterms ));
+  REAL4 diff_allterms    = fabs( log10BSGL_XLAL_allterms    - log10BSGL_extcomp_allterms    ) / ( 0.5 * ( log10BSGL_XLAL_allterms    + log10BSGL_extcomp_allterms    ));
+  REAL4 diff_notallterms = fabs( log10BSGL_XLAL_notallterms - log10BSGL_extcomp_notallterms ) / ( 0.5 * ( log10BSGL_XLAL_notallterms + log10BSGL_extcomp_notallterms ));
 
   /* output results and deviations and return with error when tolerances are violated */
-  printf ( "Externally recomputed       with  allterms: BSGL=%f\n", BSGL_extcomp_allterms );
-  printf ( "Externally recomputed       with !allterms: BSGL=%f\n", BSGL_extcomp_notallterms );
-  printf ( "XLALComputeBSGL()         with  allterms: BSGL=%f (rel. dev.: %f)", BSGL_XLAL_allterms,             diff_allterms );
-  XLAL_CHECK ( XLALCheckBSGLDifferences ( diff_allterms,             tolerance, "XLALComputeBSGL() with useAllTerms=TRUE" )  == XLAL_SUCCESS, XLAL_EFUNC );
-  printf ( "XLALComputeBSGL()         with !allterms: BSGL=%f (rel. dev.: %f)", BSGL_XLAL_notallterms,          diff_notallterms );
-  XLAL_CHECK ( XLALCheckBSGLDifferences ( diff_notallterms,          tolerance, "XLALComputeBSGL() with useAllTerms=TRUE" )  == XLAL_SUCCESS, XLAL_EFUNC );
+  printf ( "Externally recomputed     with  allterms: log10BSGL=%f\n",               log10BSGL_extcomp_allterms );
+  printf ( "Externally recomputed     with !allterms: log10BSGL=%f\n",               log10BSGL_extcomp_notallterms );
+  printf ( "XLALComputeBSGL()         with  allterms: log10BSGL=%f (rel. dev.: %f)", log10BSGL_XLAL_allterms,    diff_allterms );
+  XLAL_CHECK ( XLALCheckBSGLDifferences ( diff_allterms,    tolerance, "XLALComputeBSGL() with useAllTerms=TRUE" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  printf ( "XLALComputeBSGL()         with !allterms: log10BSGL=%f (rel. dev.: %f)", log10BSGL_XLAL_notallterms, diff_notallterms );
+  XLAL_CHECK ( XLALCheckBSGLDifferences ( diff_notallterms, tolerance, "XLALComputeBSGL() with useAllTerms=TRUE" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* also test against deprecated rho-notation functions for consistency
    * need to correct for different prior parametrization,
-   * BSGL_new=LV_old+numDetectors*log(1+oLG)
+   * log(BSGL_new)=LV_old+log(1+oLG)
    */
   REAL4 old_LV_corr = log(1+oLG);
 
   xlalErrno = 0;
-  REAL4 BSGL_XLAL_rho_notallterms      = XLALComputeLineVeto       ( TwoF, TwoFX, LVrho, oLGXREAL8, FALSE ) + old_LV_corr;
+  REAL4 log10BSGL_XLAL_rho_notallterms      = XLALComputeLineVeto      ( TwoF, TwoFX, LVrho, oLGXREAL8, FALSE );
   XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "XLALComputeLineVeto() failed with xlalErrno = %d\n", xlalErrno );
+  log10BSGL_XLAL_rho_notallterms += old_LV_corr;
+  log10BSGL_XLAL_rho_notallterms *= LAL_LOG10E;
 
   xlalErrno = 0;
-  REAL4 BSGL_XLAL_rhoarray_notallterms = XLALComputeLineVetoArray  ( TwoF, numDetectors, TwoFX->data, logRhoTerm, logoLGX, FALSE ) + old_LV_corr;
+  REAL4 log10BSGL_XLAL_rhoarray_notallterms = XLALComputeLineVetoArray ( TwoF, numDetectors, TwoFX->data, logRhoTerm, logoLGX, FALSE );
   XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "XLALComputeLineVetoArray() failed with xlalErrno = %d\n", xlalErrno );
+  log10BSGL_XLAL_rhoarray_notallterms += old_LV_corr;
+  log10BSGL_XLAL_rhoarray_notallterms *= LAL_LOG10E;
 
   xlalErrno = 0;
-  REAL4 BSGL_XLAL_rho_allterms         = XLALComputeLineVeto       ( TwoF, TwoFX, LVrho, oLGXREAL8, TRUE ) + old_LV_corr;
+  REAL4 log10BSGL_XLAL_rho_allterms         = XLALComputeLineVeto      ( TwoF, TwoFX, LVrho, oLGXREAL8, TRUE );
   XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "XLALComputeLineVeto() failed with xlalErrno = %d\n", xlalErrno );
+  log10BSGL_XLAL_rho_allterms += old_LV_corr;
+  log10BSGL_XLAL_rho_allterms *= LAL_LOG10E;
 
   xlalErrno = 0;
-  REAL4 BSGL_XLAL_rhoarray_allterms    = XLALComputeLineVetoArray  ( TwoF, numDetectors, TwoFX->data, logRhoTerm, logoLGX, TRUE ) + old_LV_corr;
+  REAL4 log10BSGL_XLAL_rhoarray_allterms    = XLALComputeLineVetoArray ( TwoF, numDetectors, TwoFX->data, logRhoTerm, logoLGX, TRUE );
   XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "XLALComputeLineVetoArray() failed with xlalErrno = %d\n", xlalErrno );
+  log10BSGL_XLAL_rhoarray_allterms += old_LV_corr;
+  log10BSGL_XLAL_rhoarray_allterms *= LAL_LOG10E;
 
-  REAL4 diff_rho_allterms          = fabs( BSGL_XLAL_rho_allterms         - BSGL_extcomp_allterms    ) / ( 0.5 * ( BSGL_XLAL_rho_allterms         + BSGL_extcomp_allterms ));
-  REAL4 diff_rhoarray_allterms     = fabs( BSGL_XLAL_rhoarray_allterms    - BSGL_extcomp_allterms    ) / ( 0.5 * ( BSGL_XLAL_rhoarray_allterms    + BSGL_extcomp_allterms ));
-  REAL4 diff_rho_notallterms       = fabs( BSGL_XLAL_rho_notallterms      - BSGL_extcomp_notallterms ) / ( 0.5 * ( BSGL_XLAL_rho_notallterms      + BSGL_extcomp_notallterms ));
-  REAL4 diff_rhoarray_notallterms  = fabs( BSGL_XLAL_rhoarray_notallterms - BSGL_extcomp_notallterms ) / ( 0.5 * ( BSGL_XLAL_rhoarray_notallterms + BSGL_extcomp_notallterms ));
+  REAL4 diff_rho_allterms         = fabs( log10BSGL_XLAL_rho_allterms         - log10BSGL_extcomp_allterms    ) / ( 0.5 * ( log10BSGL_XLAL_rho_allterms         + log10BSGL_extcomp_allterms ));
+  REAL4 diff_rhoarray_allterms    = fabs( log10BSGL_XLAL_rhoarray_allterms    - log10BSGL_extcomp_allterms    ) / ( 0.5 * ( log10BSGL_XLAL_rhoarray_allterms    + log10BSGL_extcomp_allterms ));
+  REAL4 diff_rho_notallterms      = fabs( log10BSGL_XLAL_rho_notallterms      - log10BSGL_extcomp_notallterms ) / ( 0.5 * ( log10BSGL_XLAL_rho_notallterms      + log10BSGL_extcomp_notallterms ));
+  REAL4 diff_rhoarray_notallterms = fabs( log10BSGL_XLAL_rhoarray_notallterms - log10BSGL_extcomp_notallterms ) / ( 0.5 * ( log10BSGL_XLAL_rhoarray_notallterms + log10BSGL_extcomp_notallterms ));
 
   printf( "Legacy functions with rho-notation, corrected as BSGL_new=LV_old+log(1+oLG)=LV_old+%f:\n", old_LV_corr );
-  printf ( "XLALComputeLineVeto()       with  allterms: BSGL=%f (rel. dev.: %f)", BSGL_XLAL_rho_allterms,         diff_rho_allterms );
+  printf ( "XLALComputeLineVeto()       with  allterms: BSGL=%f (rel. dev.: %f)", log10BSGL_XLAL_rho_allterms,         diff_rho_allterms );
   XLAL_CHECK ( XLALCheckBSGLDifferences ( diff_rho_allterms,         tolerance, "XLALComputeLineVeto()       with useAllTerms=TRUE" )  == XLAL_SUCCESS, XLAL_EFUNC );
-  printf ( "XLALComputeLineVetoArray()  with  allterms: BSGL=%f (rel. dev.: %f)", BSGL_XLAL_rhoarray_allterms,    diff_rhoarray_allterms );
+  printf ( "XLALComputeLineVetoArray()  with  allterms: BSGL=%f (rel. dev.: %f)", log10BSGL_XLAL_rhoarray_allterms,    diff_rhoarray_allterms );
   XLAL_CHECK ( XLALCheckBSGLDifferences ( diff_rhoarray_allterms,    tolerance, "XLALComputeLineVetoArray()  with useAllTerms=TRUE" )  == XLAL_SUCCESS, XLAL_EFUNC );
-  printf ( "XLALComputeLineVeto()       with !allterms: BSGL=%f (rel. dev.: %f)", BSGL_XLAL_rho_notallterms,      diff_rho_notallterms );
+  printf ( "XLALComputeLineVeto()       with !allterms: BSGL=%f (rel. dev.: %f)", log10BSGL_XLAL_rho_notallterms,      diff_rho_notallterms );
   XLAL_CHECK ( XLALCheckBSGLDifferences ( diff_rho_notallterms,      tolerance, "XLALComputeLineVeto()       with useAllTerms=FALSE" ) == XLAL_SUCCESS, XLAL_EFUNC );
-  printf ( "XLALComputeLineVetoArray()  with !allterms: BSGL=%f (rel. dev.: %f)", BSGL_XLAL_rhoarray_notallterms, diff_rhoarray_notallterms );
+  printf ( "XLALComputeLineVetoArray()  with !allterms: BSGL=%f (rel. dev.: %f)", log10BSGL_XLAL_rhoarray_notallterms, diff_rhoarray_notallterms );
   XLAL_CHECK ( XLALCheckBSGLDifferences ( diff_rhoarray_notallterms, tolerance, "XLALComputeLineVetoArray()  with useAllTerms=FALSE" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   XLALDestroyREAL8Vector(oLGXREAL8);
