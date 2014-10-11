@@ -331,6 +331,8 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams,
     
     if (different) { /* template needs to be re-computed: */
       LALInferenceCopyVariables(&intrinsicParams, model->params);
+	  // Remove time variable so it can be over-written (if it was pinned)
+	  if(LALInferenceCheckVariable(model->params,"time")) LALInferenceRemoveVariable(model->params,"time");
       LALInferenceAddVariable(model->params, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
       model->templt(model);
       LALInferenceTemplateROQ_amp_squared(model);
@@ -343,6 +345,8 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams,
       }
     }
     else { /* no re-computation necessary. Return back "time" value, do nothing else: */
+	  // Remove time variable so it can be over-written (if it was pinned)
+	  if(LALInferenceCheckVariable(model->params,"time")) LALInferenceRemoveVariable(model->params,"time");
       LALInferenceAddVariable(model->params, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
     }
     
@@ -574,6 +578,8 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
 				else timeTmp = GPSdouble;
 
 				LALInferenceCopyVariables(currentParams, model->params);
+				// Remove time variable so it can be over-written (if it was pinned)
+				if(LALInferenceCheckVariable(model->params,"time")) LALInferenceRemoveVariable(model->params,"time");
 				LALInferenceAddVariable(model->params, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
 
 				model->templt(model);
@@ -868,6 +874,8 @@ REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *current
 			else timeTmp = GPSdouble;
 
 			LALInferenceCopyVariables(currentParams, model->params);
+			// Remove time variable so it can be over-written (if it was pinned)
+		    if(LALInferenceCheckVariable(model->params,"time")) LALInferenceRemoveVariable(model->params,"time");
 			LALInferenceAddVariable(model->params, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
 			model->templt(model);
 			if(XLALGetBaseErrno()==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
@@ -1222,7 +1230,9 @@ void LALInferenceComputeFreqDomainResponse(LALInferenceVariables *currentParams,
     else timeTmp = GPSdouble;
 
     LALInferenceCopyVariables(currentParams, model->params);
-    LALInferenceAddVariable(model->params, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
+	// Remove time variable so it can be over-written (if it was pinned)
+	if(LALInferenceCheckVariable(model->params,"time")) LALInferenceRemoveVariable(model->params,"time");
+	LALInferenceAddVariable(model->params, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
     model->templt(model);
 
     if (model->domain == LAL_SIM_DOMAIN_TIME) {
@@ -1797,6 +1807,8 @@ REAL8 LALInferenceMarginalisedPhaseLogLikelihood(LALInferenceVariables *currentP
 			else timeTmp = GPSdouble;
 
 			LALInferenceCopyVariables(currentParams, model->params);
+			// Remove time variable so it can be over-written (if it was pinned)
+			if(LALInferenceCheckVariable(model->params,"time")) LALInferenceRemoveVariable(model->params,"time");
 			LALInferenceAddVariable(model->params, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
 			model->templt(model);
 			if(XLALGetBaseErrno()==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
@@ -2204,6 +2216,8 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
     if(!checkItemAndAdd((void *)(model->freqhPlus), generatedFreqModels))
 	{
 			LALInferenceCopyVariables(currentParams, model->params);
+			// Remove time variable so it can be over-written (if it was pinned)
+			if(LALInferenceCheckVariable(model->params,"time")) LALInferenceRemoveVariable(model->params,"time");
 			LALInferenceAddVariable(model->params, "time", &desired_tc, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
 			if (margphi) {
 					double pi2 = M_PI / 2.0;
@@ -2534,6 +2548,8 @@ void LALInferenceNetworkSNR(LALInferenceVariables *currentParams,
 			else timeTmp = GPSdouble;
 
 			LALInferenceCopyVariables(currentParams, model->params);
+			// Remove time variable so it can be over-written (if it was pinned)
+			if(LALInferenceCheckVariable(model->params,"time")) LALInferenceRemoveVariable(model->params,"time");
 			LALInferenceAddVariable(model->params, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
 			if (!LALInferenceCheckVariable(model->params, "phase")) {
 					double pi2 = M_PI / 2.0;
