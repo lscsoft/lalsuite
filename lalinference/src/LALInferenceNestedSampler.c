@@ -1061,10 +1061,7 @@ UINT4 LALInferenceMCMCSamplePrior(LALInferenceRunState *runState)
     }
     
     logProposalRatio = runState->proposal(runState,runState->currentParams,&proposedParams);
-    runState->proposal(runState,runState->currentParams,&proposedParams);
     REAL8 logPriorNew=runState->prior(runState, &proposedParams, runState->model);
-    if(LALInferenceCheckVariable(runState->proposalArgs,"logProposalRatio"))
-       logProposalRatio=*(REAL8 *)LALInferenceGetVariable(runState->proposalArgs,"logProposalRatio");
     if(logPriorNew==-DBL_MAX || isnan(logPriorNew) || log(gsl_rng_uniform(runState->GSLrandom)) > (logPriorNew-logPriorOld) + logProposalRatio) 
     {
 	/* Reject - don't need to copy new params back to currentParams */
