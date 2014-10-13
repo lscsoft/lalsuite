@@ -174,7 +174,12 @@ if not options.no_robot_cert:
 
 
 ### initialize instance of gracedb interface
-gracedb = GraceDb()
+if config.has_option("general","gdb_url"):
+    gdb_url = config.get('general', 'gdb_url')
+    gracedb = GraceDb( gdb_url )
+else:
+    gdb_url = None
+    gracedb = GraceDb()
 
 ### connect to gracedb and get event gps time
 try: 
@@ -189,7 +194,9 @@ event_gps_time = gdb_entry['gpstime']
 gps_start = event_gps_time - time_before
 gps_end = event_gps_time + time_after
 
-gracedb.writeLog(gdb_id, message="searching for iDQ information within [%.3f, %.3f] at %s"%(gps_start, gps_end, ifo))
+
+logger.info("Started searching for iDQ information within [%.3f, %.3f] at %s"%(gps_start, gps_end, ifo))
+gracedb.writeLog(gdb_id, message="Started searching for iDQ information within [%.3f, %.3f] at %s"%(gps_start, gps_end, ifo))
 
 #=================================================
 # LOGIC for waiting for idq data 
@@ -246,4 +253,9 @@ for classifier in classifiers:
         gracedb.writeLog(gdb_id, message="iDQ glitch-rank timeseries task failed for " + classifier + " at " + ifo)
     else:
         logger.info("    Done: idq-gdb-timeseries for " + classifier + ".")
+
+#=================================================
+### print clean-up statements
+logger.info("Finished searching for iDQ information within [%.3f, %.3f] at %s"%(gps_start, gps_end, ifo))
+gracedb.writeLog(gdb_id, message="Finished searching for iDQ information within [%.3f, %.3f] at %s"%(gps_start, gps_end, ifo))
 

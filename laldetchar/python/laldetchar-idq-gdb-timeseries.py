@@ -109,6 +109,9 @@ if __name__ == '__main__':
         default=False,
         action='store_true',
         help='skip steps involving communication with GraceDB')
+
+    parser.add_option("","--gdb-url", default=False, type="string")
+
     (opts, args) = parser.parse_args()
 
     if not opts.ifo:
@@ -119,7 +122,10 @@ if __name__ == '__main__':
 		
     if not opts.skip_gracedb_upload:
         # initialize instance of gracedb interface
-        gracedb = GraceDb()
+        if opts.gdb_url:
+            gracedb = GraceDb(opts.gdb_url)
+        else:
+            gracedb = GraceDb()
         # check that gracedb id is given
         if not opts.gracedb_id:
             print "GraceDB ID must be specified for enabling correct uploading of the data. Please use --gracedb-id option."

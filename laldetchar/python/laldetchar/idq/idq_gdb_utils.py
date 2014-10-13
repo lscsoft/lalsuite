@@ -121,6 +121,8 @@ def execute_gdb_timeseries(
         '-t', usertag]
 	
     # add extra options from config file
+    if cp.has_option("general","gdb_url"):
+        cmd_line += ["--gdb-url", cp.get("general","gdb_url")]
     for (option,value) in cp.items('gdb-time-series'):
         cmd_line.extend([option, value])
 	print cmd_line
@@ -146,6 +148,8 @@ def execute_gdb_glitch_tables(
         '--ifo', ifo, '-c', classifier, '-i', input_dir, '-t', usertag]
 	
     # add extra options from config file
+    if cp.has_option("general","gdb_url"):
+        cmd_line += ["--gdb-url", cp.get("general","gdb_url")]
     for (option,value) in cp.items('gdb-glitch-tables'):
         cmd_line.extend([option, value])
 	print cmd_line
