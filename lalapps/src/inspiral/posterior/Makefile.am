@@ -11,19 +11,6 @@ SUBDIRS = \
 if LALINSPIRAL
 if LALFRAME
 
-if LALMETAIO
-metaio_progs = \
-	lalapps_inspnest
-lalapps_inspnest_SOURCES = \
-	lalnest.c \
-	LALInspiralMCMC.c \
-	LALInspiralMCMCUser.c \
-	nest_calc.c \
-	nest_calc.h \
-	LALInspiralMCMC.h \
-	LALInspiralMCMCUser.h
-endif # metaio
-
 if LALPULSAR
 if LALINFERENCE
 pulsar_progs = lalinference_nest ChiSquare_test #lalinference_mcmcmpi
