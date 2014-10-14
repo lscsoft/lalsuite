@@ -20,6 +20,7 @@
 #include <lal/FFTWMutex.h>
 
 #if defined(LAL_PTHREAD_LOCK) && defined(LAL_FFTW3_ENABLED)
+#include <pthread.h>
 static pthread_mutex_t lalFFTWMutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
