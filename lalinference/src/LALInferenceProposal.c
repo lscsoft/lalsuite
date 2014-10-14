@@ -271,6 +271,10 @@ LALInferenceCyclicProposal(LALInferenceRunState *runState, LALInferenceVariables
       /* Increment counter for the next time around. */
       i = (i+1) % length;
   }
+
+  /* Increment counter for the next time around. */
+  i = (i+1) % length;
+
   LALInferenceSetVariable(propArgs, cycleArrayCounterName, &i);
   
   return logPropRatio;
