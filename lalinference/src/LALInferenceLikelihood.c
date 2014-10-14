@@ -1773,7 +1773,6 @@ REAL8 LALInferenceMarginalisedPhaseLogLikelihood(LALInferenceVariables *currentP
   XLALGPSSetREAL8(&GPSlal, GPSdouble);
   gmst=XLALGreenwichMeanSiderealTime(&GPSlal);
   
-  LALInferenceAddVariable(currentParams, "phase",&phi0,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
   
   /* loop over data (different interferometers): */
   dataPtr = data;
@@ -1807,6 +1806,9 @@ REAL8 LALInferenceMarginalisedPhaseLogLikelihood(LALInferenceVariables *currentP
 			else timeTmp = GPSdouble;
 
 			LALInferenceCopyVariables(currentParams, model->params);
+			// Add phase parameter set to 0 for calculation
+			if(LALInferenceCheckVariable(model->params,"phase")) LALInferenceRemoveVariable(model->params,"phase");
+  			LALInferenceAddVariable(model->params, "phase",&phi0,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 			// Remove time variable so it can be over-written (if it was pinned)
 			if(LALInferenceCheckVariable(model->params,"time")) LALInferenceRemoveVariable(model->params,"time");
 			LALInferenceAddVariable(model->params, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
@@ -1962,6 +1964,8 @@ REAL8 LALInferenceMarginalisedPhaseLogLikelihood(LALInferenceVariables *currentP
     ifo++;
   }
   R=2.0*sqrt(Rre*Rre+Rim*Rim);
+  REAL8 phase_maxL = atan2(Rim,Rre);
+  LALInferenceAddVariable(currentParams,"phase_maxl",&phase_maxL,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
   gsl_sf_result result;
   REAL8 I0x=0.0;
   if(GSL_SUCCESS==gsl_sf_bessel_I0_scaled_e(R, &result))
@@ -2430,16 +2434,20 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
   REAL8 imean;
   loglike += integrate_interpolated_log(deltaT, dh_S->data + istart, n, &imean, &imax) - log(n*deltaT);
 
+  REAL8 max_time=t0+((REAL8) imax + istart)*deltaT;
+  REAL8 mean_time=t0+(imean+(double)istart)*deltaT;
+  if(margphi){
+    REAL8 phase_maxl=atan2(dh_S_im->data[imax+istart],dh_S->data[imax+istart]);
+    LALInferenceAddVariable(currentParams,"phase_maxl",&phase_maxl,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+  }
+  LALInferenceAddVariable(currentParams,"time_maxl",&max_time,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+  LALInferenceAddVariable(currentParams,"time_mean",&mean_time,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
   XLALDestroyCOMPLEX16Vector(dh_S_tilde);
   XLALDestroyREAL8Vector(dh_S);
   if (margphi) {
     XLALDestroyCOMPLEX16Vector(dh_S_tilde_im);
     XLALDestroyREAL8Vector(dh_S_im);
   }
-  REAL8 max_time=t0+((REAL8) imax + istart)*deltaT;
-  REAL8 mean_time=t0+(imean+(double)istart)*deltaT;
-  LALInferenceAddVariable(currentParams,"time_maxl",&max_time,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
-  LALInferenceAddVariable(currentParams,"time_mean",&mean_time,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 
   return(loglike);
 }
