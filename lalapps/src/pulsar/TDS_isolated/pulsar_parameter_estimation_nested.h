@@ -269,7 +269,7 @@ TimeCorrectionType XLALAutoSetEphemerisFiles( CHAR *efile, CHAR *sfile,
                                               BinaryPulsarParams pulsar,
                                               INT4 gpsstart, INT4 gpsend );
 
-void remove_variable_and_prior( LALInferenceRunState *runState, LALInferenceIFOData *data, const CHAR *var );
+void remove_variable_and_prior( LALInferenceRunState *runState, LALInferenceIFOModel *data, const CHAR *var );
 
 void samples_prior( LALInferenceRunState *runState );
 

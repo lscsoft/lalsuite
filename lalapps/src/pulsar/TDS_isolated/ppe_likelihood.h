@@ -35,6 +35,9 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars,
                              LALInferenceIFOData *data,
                              LALInferenceModel *get_pulsar_model );
 
+/* noise only likelihood */
+REAL8 noise_only_likelihood( LALInferenceRunState *runState );
+
 /* prior function */
 REAL8 priorFunction( LALInferenceRunState *runState,
 		     LALInferenceVariables *params,

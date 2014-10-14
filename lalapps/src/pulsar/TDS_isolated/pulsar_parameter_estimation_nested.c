@@ -338,7 +338,7 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   gridOutput( &runState );
 
   /* get noise likelihood and add as variable to runState */
-  logZnoise = noise_only_model( &runState );
+  logZnoise = noise_only_likelihood( &runState );
   LALInferenceAddVariable( runState.algorithmParams, "logZnoise", &logZnoise, LALINFERENCE_REAL8_t,
                            LALINFERENCE_PARAM_FIXED );
 
@@ -831,6 +831,9 @@ number of detectors specified (no. dets =\%d)\n", ml, ml, numDets);
     fprintf(stderr, USAGE, commandLine->program);
     exit(0);
   }
+
+  runState->model->ifo_loglikelihoods = XLALMalloc( sizeof(REAL8)*ml*numDets );
+  runState->model->ifo_SNRs = XLALMalloc( sizeof(REAL8)*ml*numDets );
 
   ppt = LALInferenceGetProcParamVal( commandLine,"--input-files" );
   if( ppt ) { inputfile = XLALStringDuplicate( ppt->value ); }
@@ -1524,6 +1527,16 @@ void add_initial_variables( LALInferenceVariables *ini,  LALInferenceVariables *
   add_variable_scale( ini, scaleFac, "phi22", pars.phi22 );
   add_variable_scale( ini, scaleFac, "phi21", pars.phi21 );
 
+  /* in case phi0 is set to a non-zero value, but phi22 is not equivalently set then
+     make sure phi22 gets set from the value of phi0 */
+  REAL8 phi0check = *(REAL8*)LALInferenceGetVariable( ini, "phi0" );
+  REAL8 phi22check = *(REAL8*)LALInferenceGetVariable( ini, "phi22" );
+  if ( fabs( phi22check-phi0check ) != LAL_PI  && phi0check != 0. && phi22check == 0. ){
+    REAL8 phi22val = (phi0check - LAL_PI) - LAL_TWOPI*floor((phi0check - LAL_PI)/LAL_TWOPI);
+    LALInferenceRemoveVariable( ini, "phi22" );
+    LALInferenceAddVariable( ini, "phi22", &phi22val, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
+  }
+
   /***** phase model parameters ******/
   /* frequency */
   add_variable_scale( ini, scaleFac, "f0", pars.f0 );
@@ -1660,7 +1673,7 @@ void initialisePrior( LALInferenceRunState *runState )
   CHAR tempPar[VARNAME_MAX] = "", tempPrior[VARNAME_MAX] = "";
   REAL8 low, high;
 
-  LALInferenceIFOData *data = runState->data;
+  LALInferenceIFOModel *ifo = runState->model->ifo;
 
   /* parameters in correlation matrix */
   LALStringVector *corParams = NULL;
@@ -1693,7 +1706,7 @@ void initialisePrior( LALInferenceRunState *runState )
     CHAR tempParScaleMin[VARNAME_MAX] = "";
     CHAR tempParPrior[VARNAME_MAX] = "";
 
-    LALInferenceIFOData *datatemp = data;
+    LALInferenceIFOModel *ifotemp = ifo;
 
     LALInferenceParamVaryType varyType;
 
@@ -1747,15 +1760,15 @@ void initialisePrior( LALInferenceRunState *runState )
     //  if ( scale/LAL_PI_2 > 0.99 && scale/LAL_PI_2 < 1.01 ) psidef = 1;
 
     /* set the scale factor to be the width of the prior */
-    while( datatemp ){
-      scaleType = LALInferenceGetVariableType( datatemp->dataParams, tempParScale );
-      LALInferenceRemoveVariable( datatemp->dataParams, tempParScale );
-      LALInferenceRemoveVariable( datatemp->dataParams, tempParScaleMin );
+    while( ifotemp ){
+      scaleType = LALInferenceGetVariableType( ifotemp->params, tempParScale );
+      LALInferenceRemoveVariable( ifotemp->params, tempParScale );
+      LALInferenceRemoveVariable( ifotemp->params, tempParScaleMin );
 
-      LALInferenceAddVariable( datatemp->dataParams, tempParScale, &scale, scaleType, LALINFERENCE_PARAM_FIXED );
-      LALInferenceAddVariable( datatemp->dataParams, tempParScaleMin, &scaleMin, scaleType, LALINFERENCE_PARAM_FIXED );
+      LALInferenceAddVariable( ifotemp->params, tempParScale, &scale, scaleType, LALINFERENCE_PARAM_FIXED );
+      LALInferenceAddVariable( ifotemp->params, tempParScaleMin, &scaleMin, scaleType, LALINFERENCE_PARAM_FIXED );
 
-      datatemp = datatemp->next;
+      ifotemp = ifotemp->next;
     }
 
     /* scale variable and priors */
@@ -1806,14 +1819,14 @@ void initialisePrior( LALInferenceRunState *runState )
   /* If source physical parameters (rather than amplitude/phase parameters) have been defined in the prior file then
    * convert to amplitude/phase parameters. Only do this for the l=m=2 model of emission at 2f for a triaxial star.
    * For other modes the phase/amplitude parameters must be defined in the prior file. */
-  REAL8Vector *freqFactors = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams, "freqfactors" );
+  REAL8Vector *freqFactors = *(REAL8Vector **)LALInferenceGetVariable( ifo->params, "freqfactors" );
 
   if ( freqFactors->length == 1 && freqFactors->data[0] == 2. ){
     if ( LALInferenceGetVariableVaryType( runState->currentParams, "h0" ) == LALINFERENCE_PARAM_LINEAR &&
          LALInferenceGetVariableVaryType( runState->currentParams, "C22" ) == LALINFERENCE_PARAM_FIXED ){
       REAL8 h0 = *(REAL8*)LALInferenceGetVariable( runState->currentParams, "h0" );
-      REAL8 h0scale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "h0_scale" );
-      REAL8 h0min = *(REAL8*)LALInferenceGetVariable( data->dataParams, "h0_scale_min" );
+      REAL8 h0scale = *(REAL8*)LALInferenceGetVariable( ifo->params, "h0_scale" );
+      REAL8 h0min = *(REAL8*)LALInferenceGetVariable( ifo->params, "h0_scale_min" );
       REAL8 C22 = h0 / 2.;
       REAL8 C22scale = h0scale / 2.;
       REAL8 C22scalemin = h0min / 2.;
@@ -1822,17 +1835,17 @@ void initialisePrior( LALInferenceRunState *runState )
       LALInferenceRemoveVariable( runState->currentParams, "C22" );
       LALInferenceAddVariable( runState->currentParams, "C22", &C22, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR );
 
-      LALInferenceIFOData *datatemp = data;
-      while( datatemp ){
-        LALInferenceRemoveVariable( datatemp->dataParams, "C22_scale" );
-        LALInferenceRemoveVariable( datatemp->dataParams, "C22_scale_min" );
+      LALInferenceIFOModel *ifotemp = ifo;
+      while( ifotemp ){
+        LALInferenceRemoveVariable( ifotemp->params, "C22_scale" );
+        LALInferenceRemoveVariable( ifotemp->params, "C22_scale_min" );
 
-        LALInferenceAddVariable( datatemp->dataParams, "C22_scale", &C22scale, LALINFERENCE_REAL8_t,
+        LALInferenceAddVariable( ifotemp->params, "C22_scale", &C22scale, LALINFERENCE_REAL8_t,
                                  LALINFERENCE_PARAM_FIXED );
-        LALInferenceAddVariable( datatemp->dataParams, "C22_scale_min", &C22scalemin, LALINFERENCE_REAL8_t,
+        LALInferenceAddVariable( ifotemp->params, "C22_scale_min", &C22scalemin, LALINFERENCE_REAL8_t,
                                  LALINFERENCE_PARAM_FIXED );
 
-        datatemp = datatemp->next;
+        ifotemp = ifotemp->next;
       }
 
       if ( LALInferenceCheckGaussianPrior( runState->priorArgs, "h0" ) ){
@@ -1847,34 +1860,29 @@ void initialisePrior( LALInferenceRunState *runState )
 
     if ( LALInferenceGetVariableVaryType( runState->currentParams, "phi0" ) != LALINFERENCE_PARAM_FIXED &&
          LALInferenceGetVariableVaryType( runState->currentParams, "phi22" ) == LALINFERENCE_PARAM_FIXED ){
-      REAL8 phi0 = *(REAL8*)LALInferenceGetVariable( runState->currentParams, "phi0" );
-      REAL8 phi0scale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "phi0_scale" );
-      REAL8 phi0min = *(REAL8*)LALInferenceGetVariable( data->dataParams, "phi0_scale_min" );
-      REAL8 phi22;
+      REAL8 phi22 = *(REAL8*)LALInferenceGetVariable( runState->currentParams, "phi22" );
+      REAL8 phi0scale = *(REAL8*)LALInferenceGetVariable( ifo->params, "phi0_scale" );
+      REAL8 phi0min = *(REAL8*)LALInferenceGetVariable( ifo->params, "phi0_scale_min" );
       REAL8 phi22scale = phi0scale;
       REAL8 phi22scalemin = phi0min;
       low = 0., high = 1.;
-
-      phi22 = phi0*phi0scale + phi0min - LAL_PI;
-      phi22 = phi22 - LAL_TWOPI*floor(phi22/LAL_TWOPI); /* modulo 2*pi */
-      phi22 /= phi22scale;
 
       LALInferenceParamVaryType vary = LALInferenceGetVariableVaryType( runState->currentParams, "phi0" );
 
       LALInferenceRemoveVariable( runState->currentParams, "phi22" );
       LALInferenceAddVariable( runState->currentParams, "phi22", &phi22, LALINFERENCE_REAL8_t, vary );
 
-      LALInferenceIFOData *datatemp = data;
-      while( datatemp ){
-        LALInferenceRemoveVariable( datatemp->dataParams, "phi22_scale" );
-        LALInferenceRemoveVariable( datatemp->dataParams, "phi22_scale_min" );
+      LALInferenceIFOModel *ifotemp = ifo;
+      while( ifotemp ){
+        LALInferenceRemoveVariable( ifotemp->params, "phi22_scale" );
+        LALInferenceRemoveVariable( ifotemp->params, "phi22_scale_min" );
 
-        LALInferenceAddVariable( datatemp->dataParams, "phi22_scale", &phi22scale, LALINFERENCE_REAL8_t,
+        LALInferenceAddVariable( ifotemp->params, "phi22_scale", &phi22scale, LALINFERENCE_REAL8_t,
                                  LALINFERENCE_PARAM_FIXED );
-        LALInferenceAddVariable( datatemp->dataParams, "phi22_scale_min", &phi22scalemin, LALINFERENCE_REAL8_t,
+        LALInferenceAddVariable( ifotemp->params, "phi22_scale_min", &phi22scalemin, LALINFERENCE_REAL8_t,
                                  LALINFERENCE_PARAM_FIXED );
 
-        datatemp = datatemp->next;
+        ifotemp = ifotemp->next;
       }
 
       if ( LALInferenceCheckGaussianPrior( runState->priorArgs, "phi0" ) ){
@@ -1892,11 +1900,11 @@ void initialisePrior( LALInferenceRunState *runState )
          LALInferenceGetVariableVaryType( runState->currentParams, "C22" ) != LALINFERENCE_PARAM_FIXED ){
       LALInferenceRemoveVariable( runState->currentParams, "h0" );
 
-      LALInferenceIFOData *datatemp = data;
-      while( datatemp ){
-        LALInferenceRemoveVariable( datatemp->dataParams, "h0_scale" );
-        LALInferenceRemoveVariable( datatemp->dataParams, "h0_scale_min" );
-        datatemp = datatemp->next;
+      LALInferenceIFOModel *ifotemp = ifo;
+      while( ifotemp ){
+        LALInferenceRemoveVariable( ifotemp->params, "h0_scale" );
+        LALInferenceRemoveVariable( ifotemp->params, "h0_scale_min" );
+        ifotemp = ifotemp->next;
       }
 
       if ( LALInferenceCheckGaussianPrior( runState->priorArgs, "h0" ) ){
@@ -1910,11 +1918,11 @@ void initialisePrior( LALInferenceRunState *runState )
          LALInferenceGetVariableVaryType( runState->currentParams, "phi22" ) != LALINFERENCE_PARAM_FIXED ){
       LALInferenceRemoveVariable( runState->currentParams, "phi0" );
 
-      LALInferenceIFOData *datatemp = data;
-      while( datatemp ){
-        LALInferenceRemoveVariable( datatemp->dataParams, "phi0_scale" );
-        LALInferenceRemoveVariable( datatemp->dataParams, "phi0_scale_min" );
-        datatemp = datatemp->next;
+      LALInferenceIFOModel *ifotemp = ifo;
+      while( ifotemp ){
+        LALInferenceRemoveVariable( ifotemp->params, "phi0_scale" );
+        LALInferenceRemoveVariable( ifotemp->params, "phi0_scale_min" );
+        ifotemp = ifotemp->next;
       }
 
       if ( LALInferenceCheckGaussianPrior( runState->priorArgs, "phi0" ) ){
@@ -1927,26 +1935,26 @@ void initialisePrior( LALInferenceRunState *runState )
   if( freqFactors->length == 2 ){
     if( LALInferenceGetProcParamVal( runState->commandLine, "--jones-model" ) ){
       /* if using Jones (2010) model then remove superfluous parameters */
-      remove_variable_and_prior( runState, data, "h0" );
-      remove_variable_and_prior( runState, data, "C22" );
-      remove_variable_and_prior( runState, data, "C21" );
-      remove_variable_and_prior( runState, data, "phi22" );
-      remove_variable_and_prior( runState, data, "phi21" );
+      remove_variable_and_prior( runState, ifo, "h0" );
+      remove_variable_and_prior( runState, ifo, "C22" );
+      remove_variable_and_prior( runState, ifo, "C21" );
+      remove_variable_and_prior( runState, ifo, "phi22" );
+      remove_variable_and_prior( runState, ifo, "phi21" );
     }
     else if( LALInferenceGetVariableVaryType( runState->currentParams, "phi22" ) == LALINFERENCE_PARAM_FIXED &&
       *(REAL8*)LALInferenceGetVariable( runState->currentParams, "phi22" ) == 0. &&
       ( LALInferenceGetVariableVaryType( runState->currentParams, "phi21" ) == LALINFERENCE_PARAM_CIRCULAR ||
         LALInferenceGetVariableVaryType( runState->currentParams, "phi21" ) == LALINFERENCE_PARAM_LINEAR ) ){
       /* check if using a prior range that corresponds to a biaxial star */
-      remove_variable_and_prior( runState, data, "phi22" );
+      remove_variable_and_prior( runState, ifo, "phi22" );
 
       /* add biaxial variable */
-      LALInferenceIFOData *datatemp = data;
-      while( datatemp ){
+      LALInferenceIFOModel *ifotemp = ifo;
+      while( ifotemp ){
         UINT4 biaxial = 1;
-        LALInferenceAddVariable( datatemp->dataParams, "biaxial", &biaxial, LALINFERENCE_UINT4_t,
+        LALInferenceAddVariable( ifotemp->params, "biaxial", &biaxial, LALINFERENCE_UINT4_t,
                                  LALINFERENCE_PARAM_FIXED );
-        datatemp = datatemp->next;
+        ifotemp = ifotemp->next;
       }
     }
   }
@@ -3674,7 +3682,7 @@ TimeCorrectionType XLALAutoSetEphemerisFiles( CHAR *efile, CHAR *sfile, CHAR *tf
  * \param var [in] The variable to remove
  *
  */
-void remove_variable_and_prior( LALInferenceRunState *runState, LALInferenceIFOData *data, const CHAR *var ){
+void remove_variable_and_prior( LALInferenceRunState *runState, LALInferenceIFOModel *ifo, const CHAR *var ){
   /* remove variable from currentParams */
   if( LALInferenceCheckVariable( runState->currentParams, var ) ){
     LALInferenceRemoveVariable( runState->currentParams, var );
@@ -3685,13 +3693,13 @@ void remove_variable_and_prior( LALInferenceRunState *runState, LALInferenceIFOD
   }
 
   /* remove variable scale parameters from data */
-  LALInferenceIFOData *datatemp = data;
-  while ( datatemp ){
+  LALInferenceIFOModel *ifotemp = ifo;
+  while ( ifotemp ){
     CHAR *varscale = XLALStringDuplicate( var );
     varscale = XLALStringAppend( varscale, "_scale" );
 
-    if( LALInferenceCheckVariable( datatemp->dataParams, varscale ) ){
-      LALInferenceRemoveVariable( datatemp->dataParams, varscale );
+    if( LALInferenceCheckVariable( ifotemp->params, varscale ) ){
+      LALInferenceRemoveVariable( ifotemp->params, varscale );
     }
     else{
       fprintf(stderr, "Error... variable %s cannot be removed as it does not exist!\n", varscale);
@@ -3699,15 +3707,15 @@ void remove_variable_and_prior( LALInferenceRunState *runState, LALInferenceIFOD
     }
 
     varscale = XLALStringAppend( varscale, "_min" );
-    if( LALInferenceCheckVariable( datatemp->dataParams, varscale ) ){
-      LALInferenceRemoveVariable( datatemp->dataParams, varscale );
+    if( LALInferenceCheckVariable( ifotemp->params, varscale ) ){
+      LALInferenceRemoveVariable( ifotemp->params, varscale );
     }
     else{
       fprintf(stderr, "Error... variable %s cannot be removed as it does not exist!\n", varscale);
       exit(3);
     }
 
-    datatemp = datatemp->next;
+    ifotemp = ifotemp->next;
   }
 
   /* remove prior */
