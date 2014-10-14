@@ -1965,6 +1965,7 @@ REAL8 LALInferenceMarginalisedPhaseLogLikelihood(LALInferenceVariables *currentP
   }
   R=2.0*sqrt(Rre*Rre+Rim*Rim);
   REAL8 phase_maxL = atan2(Rim,Rre);
+  if(phase_maxL<0.0) phase_maxL=LAL_TWOPI+phase_maxL;
   LALInferenceAddVariable(currentParams,"phase_maxl",&phase_maxL,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
   gsl_sf_result result;
   REAL8 I0x=0.0;
@@ -2437,8 +2438,9 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
   REAL8 max_time=t0+((REAL8) imax + istart)*deltaT;
   REAL8 mean_time=t0+(imean+(double)istart)*deltaT;
   if(margphi){
-    REAL8 phase_maxl=atan2(dh_S_im->data[imax+istart],dh_S->data[imax+istart]);
-    LALInferenceAddVariable(currentParams,"phase_maxl",&phase_maxl,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+    REAL8 phase_maxL=atan2(dh_S_im->data[imax+istart],dh_S->data[imax+istart]);
+    if(phase_maxL<0.0) phase_maxL=LAL_TWOPI+phase_maxL;
+    LALInferenceAddVariable(currentParams,"phase_maxl",&phase_maxL,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
   }
   LALInferenceAddVariable(currentParams,"time_maxl",&max_time,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
   LALInferenceAddVariable(currentParams,"time_mean",&mean_time,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
