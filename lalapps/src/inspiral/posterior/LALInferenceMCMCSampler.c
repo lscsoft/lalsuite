@@ -699,8 +699,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     INT4 accepted = runState->evolve(runState); //evolve the chain at temperature ladder[t]
     acceptanceCount = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "acceptanceCount");
 
-    if (propStats)
-        LALInferenceTrackProposalAcceptance(runState, accepted);
+    LALInferenceTrackProposalAcceptance(runState, accepted);
 
     /* Print proposal tracking headers now that the proposal cycle should be built. */
     if (i==1){
@@ -740,8 +739,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
       }
 
       if (diffEvo) {
-	if (i % (runState->differentialPointsSkip) == 0) 
-	  accumulateDifferentialEvolutionSample(runState);
+	    if (i % (runState->differentialPointsSkip) == 0)
+	      accumulateDifferentialEvolutionSample(runState);
       }
 
       if (LALInferenceGetProcParamVal(runState->commandLine, "--kDTree") || LALInferenceGetProcParamVal(runState->commandLine, "--kdtree")) {
@@ -810,7 +809,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
       if (propStats){
         fprintf(propstatfile, "%d\t", i);
-        LALInferencePrintProposalStats(propstatfile,runState->proposalStats);
+        LALInferencePrintProposalStats(propstatfile, propStats);
         fflush(propstatfile);
       }
 
@@ -956,7 +955,6 @@ INT4 PTMCMCOneStep(LALInferenceRunState *runState)
     LALInferenceAddVariable(runState->proposalArgs, "logProposalRatio", &logProposalRatio, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
   LALInferenceSetVariable(runState->proposalArgs, "logProposalRatio", &logProposalRatio);
 
-  LALInferenceTrackProposalAcceptance(runState, accepted);
   LALInferenceUpdateAdaptiveJumps(runState, accepted, targetAcceptance);
   LALInferenceClearVariables(&proposedParams);
 

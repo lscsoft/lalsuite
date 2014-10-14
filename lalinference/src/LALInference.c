@@ -975,15 +975,18 @@ int LALInferencePrintProposalStatsHeader(FILE *fp,LALInferenceVariables *propSta
 }
 
 void LALInferencePrintProposalStats(FILE *fp,LALInferenceVariables *propStats){
-  REAL4 accepted = 0;
-  REAL4 proposed = 0;
-  REAL4 acceptanceRate = 0;
+  REAL8 accepted = 0;
+  REAL8 proposed = 0;
+  REAL8 acceptanceRate = 0;
+  LALInferenceProposalStatistics *propStat;
 
   if(propStats==NULL || fp==NULL) return;
   LALInferenceVariableItem *ptr=propStats->head;
   while(ptr!=NULL) {
-    accepted = (REAL4) (*(LALInferenceProposalStatistics *) ptr->value).accepted;
-    proposed = (REAL4) (*(LALInferenceProposalStatistics *) ptr->value).proposed;
+    propStat = ((LALInferenceProposalStatistics *) LALInferenceGetVariable(propStats, ptr->name));
+
+    accepted = (REAL8) propStat->accepted;
+    proposed = (REAL8) propStat->proposed;
     acceptanceRate = accepted/(proposed==0 ? 1.0 : proposed);
     fprintf(fp, "%9.5f\t", acceptanceRate);
     ptr=ptr->next;
