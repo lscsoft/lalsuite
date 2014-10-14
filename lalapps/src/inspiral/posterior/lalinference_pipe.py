@@ -116,13 +116,14 @@ dag.write_script()
 os.chdir(olddir)
 # End of program
 print 'Successfully created DAG file.'
-print 'Now run condor_submit_dag %s\n'%(dag.get_dag_file())
+fulldagpath=os.path.join(cp.get('paths','basedir'),dag.get_dag_file())
+print 'Now run condor_submit_dag %s\n'%(fulldagpath)
 
 if opts.condor_submit:
     import subprocess
     from subprocess import Popen
            
-    x = subprocess.Popen(['condor_submit_dag',dag.get_dag_file()])
+    x = subprocess.Popen(['condor_submit_dag',fulldagpath])
     x.wait()
     if x.returncode==0:
       print 'Submitted DAG file'
