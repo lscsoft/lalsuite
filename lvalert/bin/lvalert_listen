@@ -123,6 +123,11 @@ def parse_command_line():
       default=False, help="be verbose as you process the request" )
   parser.add_option("-g","--debug",action="store_true",\
       default=False, help="should  print out lots of information" )
+
+  # options about message handling
+  parser.add_option("", "--dont-wait",action="store_true",\
+      default=False, help="if supplied, jobs will be launched \
+      as soon as they arrive, rather than blocking")
   
   (options,args) = parser.parse_args()
 
@@ -138,10 +143,11 @@ class LVAlertHandler(object):
 
     implements(IMessageHandlersProvider)
     
-    def __init__(self, client, actions):
+    def __init__(self, client, actions, wait=True):
         """Just remember who created this."""
         self.client = client
         self.actions = actions
+        self.wait = wait
     
     def get_message_handlers(self):
         """Return list of (message_type, message_handler) tuples.
@@ -159,6 +165,9 @@ class LVAlertHandler(object):
         --show option is set, then it will also print the contents of
         the alert.
 
+        if self.wait: blocks until this processes terminates and prints the returned string
+        else: does not block, and multiple events will be launched and processed as soon as they are read
+
         :returns: `True` to indicate, that the stanza should not be processed
         any further."""
         e=self.get_entry(stanza)
@@ -168,9 +177,24 @@ class LVAlertHandler(object):
                 action = self.actions[n]
                 if action == 'stdout' or action == '-':
                     sys.stdout.write(str(e))
-                else:
+                #===================================================================
+                ### changes made by R. Essick (ressick@mit.edu) and R. Vaulin (vaulin@ligo.org)
+                ###
+                ### this avoids using p.communicate(), which blocks and prevents the 
+                ### alert handler from launching another processes until this one finishes
+                ### we use "spooled" tempfiles because they exist only in memory (if small enought)
+                ### max_size=1000 (bytes?) should be larger than most expected lvalert messages?
+                elif self.wait:
                     p = Popen([self.actions[n]], stdin=PIPE, stdout=PIPE)
                     print p.communicate(e)[0]
+                else:
+                    import tempfile
+                    file_obj = tempfile.SpooledTemporaryFile(mode="w+r", max_size=1000)
+                    file_obj.write(e)
+                    file_obj.seek(0, 0)
+                    p = Popen([self.actions[n]], stdin=file_obj)
+                    file_obj.close()
+                #===================================================================
                 sys.stdout.flush()
             else:
                 print "Payload received at %s" % (datetime.datetime.now().ctime())
@@ -196,7 +220,7 @@ class LVAlertHandler(object):
         return None
 
 class MyClient(Client):
-    def __init__(self, jid, password,actions):
+    def __init__(self, jid, password,actions, wait=True):
         # if bare JID is provided add a resource -- it is required
         if not jid.resource:
             jid=JID(jid.node, jid.domain, "listener")
@@ -214,7 +238,7 @@ class MyClient(Client):
 
         # add the separate components
         self.interface_providers = [
-            LVAlertHandler(self,actions),
+            LVAlertHandler(self,actions, wait=wait),
             ]
 
     def stream_state_changed(self,state,arg):
@@ -252,7 +276,7 @@ if not opts.password:
     mypassword = getpass.getpass()
 else:
     mypassword = opts.password
-s=MyClient(myjid,mypassword,actions)
+s=MyClient(myjid,mypassword,actions, wait=not opts.dont_wait)
 
 if opts.verbose:
     print "connecting..."

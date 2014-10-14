@@ -113,7 +113,9 @@ def execute_gdb_timeseries(
     cp,
     input_dir,
     exec_prog,
-    usertag=''):
+    usertag='',
+    gch_xml=[],
+    cln_xml=[]):
     """ Function that sets up and runs idq-gdb-timeseries script as one of the tasks of idq-gdb-processor."""
     # form the command line
     cmd_line = [exec_prog, '-s', gps_start, '-e', gps_end, '--gps', gps,\
@@ -123,6 +125,11 @@ def execute_gdb_timeseries(
     # add extra options from config file
     if cp.has_option("general","gdb_url"):
         cmd_line += ["--gdb-url", cp.get("general","gdb_url")]
+    for gch in gch_xml:
+        cmd_line += ["--gch-xml", gch]
+    for cln in cln_xml:
+        cmd_line += ["--cln-xml", cln]
+
     for (option,value) in cp.items('gdb-time-series'):
         cmd_line.extend([option, value])
 	print cmd_line

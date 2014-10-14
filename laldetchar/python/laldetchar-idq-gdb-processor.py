@@ -68,18 +68,25 @@ parser.add_argument(
     default = "idq_gdb.ini",
     )
 
+parser.add_argument(
+    '--dont-wait',
+    help = "do not wait for jobs to finish before launching new jobs",
+    default=False,
+    action="store_true"
+    )
+
 args = parser.parse_args()
-
-### get required data from config 
-config = ConfigParser.SafeConfigParser()
-config.read(args.config)
-
-username = config.get("lvalert_listener", "username")
-password = config.get("lvalert_listener", "password")
-lvalert_config = config.get("lvalert_listener", "lvalert_config")
 
 # if command is start, then run launch lvalert listener.
 if args.command == 'start':
+
+    ### get required data from config 
+    config = ConfigParser.SafeConfigParser()
+    config.read(args.config)
+
+    username = config.get("lvalert_listener", "username")
+    password = config.get("lvalert_listener", "password")
+    lvalert_config = config.get("lvalert_listener", "lvalert_config")
 
     print "Launching lvalert listener ..."
     lvalert_launch_command = [
@@ -92,6 +99,8 @@ if args.command == 'start':
                 '--config-file',
                 lvalert_config
                 ]
+    if args.dont_wait:
+        lvalert_launch_command.insert(2, "--dont-wait" )
     pid = subprocess.Popen(lvalert_launch_command, stdout=open('lvalert_listen.out', 'a')).pid
 
     print "lvalert_listen is launched with process id " + str(pid)

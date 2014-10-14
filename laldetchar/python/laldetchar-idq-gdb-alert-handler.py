@@ -15,6 +15,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import os
+import glob
 import sys
 import logging
 import optparse
@@ -246,7 +247,7 @@ for classifier in classifiers:
 ### run idq-gdb-timeseries for each classifier
 for classifier in classifiers:
     logger.info("    Begin: executing idq-gdb-timeseries for " + classifier + " ...")
-    exit_status = idq_gdb_utils.execute_gdb_timeseries(str(gps_start), str(gps_end), str(event_gps_time), gdb_id, ifo, classifier, config, idq_dir, config.get('executables', 'idq_gdb_timeseries'), usertag = str(gdb_id)+'_'+usertag)
+    exit_status = idq_gdb_utils.execute_gdb_timeseries(str(gps_start), str(gps_end), str(event_gps_time), gdb_id, ifo, classifier, config, idq_dir, config.get('executables', 'idq_gdb_timeseries'), usertag = str(gdb_id)+'_'+usertag) #, gch_xml=glob.glob("%s/*glitch*%s*.xml*"%(idq_gdb_main_dir, gdb_id))) ### un-comment when adding tables is not broken!
 
     if exit_status != 0:
         logger.info("    WARNING: idq-gdb-timeseries failed for " + classifier)
