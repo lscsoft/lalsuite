@@ -219,10 +219,10 @@ realtime_log = open(realtime_logname, "r") ### open realtime log for reading
 realtime_log.seek(0, 2) ### go to end of file
 
 ### wait until realtime has passed gps_end+delay
-past, dead, timed_out = idq.block_until(gps_end+delay, realtime_log, max_wait=max_wait, timeout=2*max_wait)
+past, dead, timed_out = idq.block_until(gps_end, realtime_log, max_wait=max_wait, timeout=2*max_wait)
 
 if past:
-    logger.info("found realtime stride starting after t=%.3f"%(gps_end+delay))
+    logger.info("found realtime stride starting after t=%.3f"%(gps_end))
 
 elif timed_out:
     logger.info("WARNING: could not find a recent enough stride in %s after searching for %.1f seconds. Realtime process may be behind"%(realtime_logname, 2*max_wait))

@@ -312,12 +312,13 @@ def block_until(t, file_obj, max_wait=600, timeout=600, wait=0.1):
 
     to = time.time()
     waited = 0.0
-    while (stride_start < t) and (time.time()-to < max_wait) and (waited < timeout):
+    while (stride_start < t) and (waited < max_wait) and (time.time()-to < timeout):
         line = file_obj.readline() ### get next line
 
         if not line: ### nothing new to report
             time.sleep( wait )
             waited += wait
+            continue
 
         elif "Begin: stride " in line: ### FIXME? this is fragile and could break if we change the logger statements
             ### find the stride start
@@ -326,7 +327,7 @@ def block_until(t, file_obj, max_wait=600, timeout=600, wait=0.1):
         waited = 0.0 ### we found a new line, so re-set this counter
 
     ### return statement conditioned on how the loop exited
-    return stride_start > t, time.time()-to > max_wait, waited > timeout
+    return stride_start > t, waited > max_wait, time.time()-to > timeout
 
 
 ###
