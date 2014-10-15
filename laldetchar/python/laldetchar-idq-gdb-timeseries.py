@@ -529,6 +529,10 @@ if not opts.skip_gracedb_upload:
             ### generate and write summary statistics
             (f_min, f_max, f_mean, f_stdv) = idq_gdb_utils.stats_ts(ts)
 
+            ### update min_fap
+            if min_fap > f_min:
+                min_fap = f_min
+
     ### upload minimum fap observed within opts.start, opts.end
     b = np.log10(min_fap)
     a = min_fap*(10**b)
