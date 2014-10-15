@@ -1226,33 +1226,39 @@ void invert_source_params( BinaryPulsarParams *params ){
   REAL8 theta, sintheta, costheta, costheta2, sintheta2, sin2theta;
   REAL8 phi0 = params->phi0;
 
-  sinlambda = sin( params->lambda );
-  coslambda = cos( params->lambda );
-  sin2lambda = sin( 2. * params->lambda );
-  sinlambda2 = SQUARE( sinlambda );
-  coslambda2 = SQUARE( coslambda );
+  if ( params->h0 != 0.){
+    params->C22 = 0.5 * params->h0;
+    params->phi22 = params->phi0 - LAL_PI;
+    params->phi22 = params->phi22 - LAL_TWOPI*floor(params->phi22/LAL_TWOPI);
+  }
+  else{
+    sinlambda = sin( params->lambda );
+    coslambda = cos( params->lambda );
+    sin2lambda = sin( 2. * params->lambda );
+    sinlambda2 = SQUARE( sinlambda );
+    coslambda2 = SQUARE( coslambda );
 
-  theta = acos( params->costheta );
-  sintheta = sin( theta );
-  costheta = params->costheta;
-  sin2theta = sin( 2. * theta );
-  sintheta2 = SQUARE( sintheta );
-  costheta2 = SQUARE( costheta );
+    theta = acos( params->costheta );
+    sintheta = sin( theta );
+    costheta = params->costheta;
+    sin2theta = sin( 2. * theta );
+    sintheta2 = SQUARE( sintheta );
+    costheta2 = SQUARE( costheta );
 
-  REAL8 A22 = params->I21 * ( sinlambda2 - coslambda2 * costheta2 ) - params->I31 * sintheta2;
-  REAL8 B22 = params->I21 * sin2lambda * costheta;
-  REAL8 A222 = SQUARE( A22 );
-  REAL8 B222 = SQUARE( B22 );
+    REAL8 A22 = params->I21 * ( sinlambda2 - coslambda2 * costheta2 ) - params->I31 * sintheta2;
+    REAL8 B22 = params->I21 * sin2lambda * costheta;
+    REAL8 A222 = SQUARE( A22 );
+    REAL8 B222 = SQUARE( B22 );
 
-  REAL8 A21 = params->I21 * sin2lambda * sintheta;
-  REAL8 B21 = sin2theta * ( params->I21 * coslambda2 - params->I31 );
-  REAL8 A212 = SQUARE( A21 );
-  REAL8 B212 = SQUARE( B21 );
+    REAL8 A21 = params->I21 * sin2lambda * sintheta;
+    REAL8 B21 = sin2theta * ( params->I21 * coslambda2 - params->I31 );
+    REAL8 A212 = SQUARE( A21 );
+    REAL8 B212 = SQUARE( B21 );
 
-  params->C22 = 2.*sqrt( A222 + B222 );
-  params->C21 = 2.*sqrt( A212 + B212 );
+    params->C22 = 2.*sqrt( A222 + B222 );
+    params->C21 = 2.*sqrt( A212 + B212 );
 
-  params->phi22 = fmod( phi0 - atan2( B22, A22 ), LAL_TWOPI );
-  params->phi21 = fmod( ( phi0/2. ) - atan2( B21, A21 ), LAL_TWOPI );
+    params->phi22 = fmod( phi0 - atan2( B22, A22 ), LAL_TWOPI );
+    params->phi21 = fmod( ( phi0/2. ) - atan2( B21, A21 ), LAL_TWOPI );
+  }
 }
-
