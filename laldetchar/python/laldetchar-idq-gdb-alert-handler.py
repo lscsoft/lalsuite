@@ -163,7 +163,10 @@ logger.info("Alert type: %s. Description: %s." % (alert_type,description))
 ### set up robot cert if needed
 if not options.no_robot_cert:
     ### unset ligo-proxy just in case
-    del os.environ['X509_USER_PROXY']
+    try:
+        del os.environ['X509_USER_PROXY']
+    except KeyError:
+        pass 
 
     ### get cert and key from ini file
     robot_cert = config.get('ldg_certificate', 'robot_certificate')
