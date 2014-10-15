@@ -315,34 +315,82 @@ static INT4 getDataOptionsByDetectors(ProcessParamsTable *commandLine, char ***i
 void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, ProcessParamsTable *commandLine);
 void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, ProcessParamsTable *commandLine){
   
+  LALStatus status;
+  memset(&status,0,sizeof(status));
   UINT4 Nifo=0,i,j;
   LALInferenceIFOData *thisData=IFOdata;
-  ProcessParamsTable *ppt=NULL;
-  ProcessParamsTable *pptdatadump=NULL;
+  UINT4 q=0;
+  UINT4 event=0;
+  char *chartmp=NULL;
+  ProcessParamsTable *procparam=NULL,*ppt=NULL;
+  SimInspiralTable *injTable=NULL;
+  //ProcessParamsTable *pptdatadump=NULL;
+  LIGOTimeGPS GPStrig;
   while(thisData){
     thisData=thisData->next;
     Nifo++;
   }
   
+  procparam=LALInferenceGetProcParamVal(commandLine,"--inj");
+  if(procparam){
+    SimInspiralTableFromLIGOLw(&injTable,procparam->value,0,0);
+    if(!injTable){
+      fprintf(stderr,"Unable to open injection file(LALInferenceReadData) %s\n",procparam->value);
+      exit(1);
+    }
+    procparam=LALInferenceGetProcParamVal(commandLine,"--event");
+    if(procparam) {
+      event=atoi(procparam->value);
+      while(q<event) {q++; injTable=injTable->next;}
+    }
+    else if ((procparam=LALInferenceGetProcParamVal(commandLine,"--event-id")))
+    {
+      while(injTable)
+      {
+        if(injTable->event_id->id == (UINT4)atoi(procparam->value)) break;
+        else injTable=injTable->next;
+      }
+      if(!injTable){
+        fprintf(stderr,"Error, cannot find simulation id %s in injection file\n",procparam->value);
+        exit(1);
+      }
+    }
+  }
   
+  if(LALInferenceGetProcParamVal(commandLine,"--trigtime")){
+    procparam=LALInferenceGetProcParamVal(commandLine,"--trigtime");
+    LALStringToGPS(&status,&GPStrig,procparam->value,&chartmp);
+  }
+  else{
+    if(injTable) memcpy(&GPStrig,&(injTable->geocent_end_time),sizeof(GPStrig));
+    else {
+      fprintf(stderr,"Error: No trigger time specifed and no injection given \n");
+      exit(1);
+    }
+  }
+    
   if (LALInferenceGetProcParamVal(commandLine, "--data-dump")) {
-    pptdatadump=LALInferenceGetProcParamVal(commandLine,"--data-dump");
+    //pptdatadump=LALInferenceGetProcParamVal(commandLine,"--data-dump");
     const UINT4 nameLength=FILENAME_MAX;
     char filename[nameLength];
     FILE *out;
     
     for (i=0;i<Nifo;i++) {
-      
+        
       ppt=LALInferenceGetProcParamVal(commandLine,"--outfile");
       if(ppt) {
-        snprintf(filename, nameLength, "%s-%s-timeDataWithInjection.dat", ppt->value, IFOdata[i].name);
+        snprintf(filename, nameLength, "%s%s-timeDataWithInjection.dat", ppt->value, IFOdata[i].name);
       }
-      else if(strcmp(pptdatadump->value,"")) {
-        snprintf(filename, nameLength, "%s/%s-timeDataWithInjection.dat", pptdatadump->value, IFOdata[i].name);
-      }
+      //else if(strcmp(pptdatadump->value,"")) {
+      //  snprintf(filename, nameLength, "%s/%s-timeDataWithInjection.dat", pptdatadump->value, IFOdata[i].name);
+      //}
       else
-        snprintf(filename, nameLength, "%s-timeDataWithInjection.dat", IFOdata[i].name);
+        snprintf(filename, nameLength, "%.3f_%s-timeDataWithInjection.dat", GPStrig.gpsSeconds+1e-9*GPStrig.gpsNanoSeconds, IFOdata[i].name);
       out = fopen(filename, "w");
+      if(!out){
+        fprintf(stderr,"Unable to open the path %s for writing time data with injection files\n",filename);
+        exit(1);
+      }
       for (j = 0; j < IFOdata[i].timeData->data->length; j++) {
         REAL8 t = XLALGPSGetREAL8(&(IFOdata[i].timeData->epoch)) +
         j * IFOdata[i].timeData->deltaT;
@@ -354,14 +402,18 @@ void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, ProcessPar
       
       ppt=LALInferenceGetProcParamVal(commandLine,"--outfile");
       if(ppt) {
-        snprintf(filename, nameLength, "%s-%s-freqDataWithInjection.dat", ppt->value, IFOdata[i].name);
+        snprintf(filename, nameLength, "%s%s-freqDataWithInjection.dat", ppt->value, IFOdata[i].name);
       }
-      else if(strcmp(pptdatadump->value,"")) {
-        snprintf(filename, nameLength, "%s/%s-freqDataWithInjection.dat", pptdatadump->value, IFOdata[i].name);
-      }
+      //else if(strcmp(pptdatadump->value,"")) {
+      //  snprintf(filename, nameLength, "%s/%s-freqDataWithInjection.dat", pptdatadump->value, IFOdata[i].name);
+      //}
       else
-        snprintf(filename, nameLength, "%s-freqDataWithInjection.dat", IFOdata[i].name);
+        snprintf(filename, nameLength, "%.3f_%s-freqDataWithInjection.dat", GPStrig.gpsSeconds+1e-9*GPStrig.gpsNanoSeconds, IFOdata[i].name);
       out = fopen(filename, "w");
+      if(!out){
+        fprintf(stderr,"Unable to open the path %s for writing freq data with injection files\n",filename);
+        exit(1);
+      }
       for (j = 0; j < IFOdata[i].freqData->data->length; j++) {
         REAL8 f = IFOdata[i].freqData->deltaF * j;
         REAL8 dre = creal(IFOdata[i].freqData->data->data[j]);
@@ -408,7 +460,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
     INT4 dataseed=0;
     memset(&status,0,sizeof(status));
     ProcessParamsTable *procparam=NULL,*ppt=NULL;
-    ProcessParamsTable *pptdatadump=NULL;
+    //ProcessParamsTable *pptdatadump=NULL;
     LALInferenceIFOData *headIFO=NULL,*IFOdata=NULL;
     REAL8 SampleRate=4096.0,SegmentLength=0;
     if(LALInferenceGetProcParamVal(commandLine,"--srate")) SampleRate=atof(LALInferenceGetProcParamVal(commandLine,"--srate")->value);
@@ -1232,7 +1284,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
         if (!ppt){
           ppt=LALInferenceGetProcParamVal(commandLine,"--outfile");
           if(ppt) {
-            snprintf(filename, nameLength, "%s-%s-PSD.dat", ppt->value, IFOdata[i].name);
+            snprintf(filename, nameLength, "%s%s-PSD.dat", ppt->value, IFOdata[i].name);
           }
           else
             snprintf(filename, nameLength, "%.3f_%s-PSD.dat",GPStrig.gpsSeconds+1e-9*GPStrig.gpsNanoSeconds, IFOdata[i].name);
@@ -1251,19 +1303,23 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
           fclose(out);
         }
         if (LALInferenceGetProcParamVal(commandLine, "--data-dump")) {
-            pptdatadump=LALInferenceGetProcParamVal(commandLine,"--data-dump");
+            //pptdatadump=LALInferenceGetProcParamVal(commandLine,"--data-dump");
             
             ppt=LALInferenceGetProcParamVal(commandLine,"--outfile");
             
             if(ppt) {
-              snprintf(filename, nameLength, "%s-%s-timeData.dat", ppt->value, IFOdata[i].name);
+              snprintf(filename, nameLength, "%s%s-timeData.dat", ppt->value, IFOdata[i].name);
             }
-            else if(strcmp(pptdatadump->value,"")) {
-              snprintf(filename, nameLength, "%s/%s-timeData.dat", pptdatadump->value, IFOdata[i].name);
-            }
+            //else if(strcmp(pptdatadump->value,"")) {
+            //  snprintf(filename, nameLength, "%s/%s-timeData.dat", pptdatadump->value, IFOdata[i].name);
+            //}
             else
-              snprintf(filename, nameLength, "%s-timeData.dat", IFOdata[i].name);
+              snprintf(filename, nameLength, "%.3f_%s-timeData.dat",GPStrig.gpsSeconds+1e-9*GPStrig.gpsNanoSeconds, IFOdata[i].name);
             out = fopen(filename, "w");
+            if(!out){
+                fprintf(stderr,"Unable to open the path %s for writing time data files\n",filename);
+                exit(1);
+            }
             for (j = 0; j < IFOdata[i].timeData->data->length; j++) {
                 REAL8 t = XLALGPSGetREAL8(&(IFOdata[i].timeData->epoch)) + 
                     j * IFOdata[i].timeData->deltaT;
@@ -1275,14 +1331,18 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
           
             ppt=LALInferenceGetProcParamVal(commandLine,"--outfile");
             if(ppt) {
-              snprintf(filename, nameLength, "%s-%s-freqData.dat", ppt->value, IFOdata[i].name);
+              snprintf(filename, nameLength, "%s%s-freqData.dat", ppt->value, IFOdata[i].name);
             }
-            else if(strcmp(pptdatadump->value,"")) {
-              snprintf(filename, nameLength, "%s/%s-freqData.dat", pptdatadump->value, IFOdata[i].name);
-            }
+            //else if(strcmp(pptdatadump->value,"")) {
+            //  snprintf(filename, nameLength, "%s/%s-freqData.dat", pptdatadump->value, IFOdata[i].name);
+            //}
             else
-              snprintf(filename, nameLength, "%s-freqData.dat", IFOdata[i].name);
+              snprintf(filename, nameLength, "%.3f_%s-freqData.dat",GPStrig.gpsSeconds+1e-9*GPStrig.gpsNanoSeconds, IFOdata[i].name);
             out = fopen(filename, "w");
+            if(!out){
+                fprintf(stderr,"Unable to open the path %s for writing freq data files\n",filename);
+                exit(1);
+            }
             for (j = 0; j < IFOdata[i].freqData->data->length; j++) {
                 REAL8 f = IFOdata[i].freqData->deltaF * j;
                 REAL8 dre = creal(IFOdata[i].freqData->data->data[j]);
@@ -2809,8 +2869,21 @@ void LALInferenceSetupROQ(LALInferenceIFOData *IFOdata, LALInferenceModel *model
           
           /*** compute the weights ***/
           if (LALInferenceGetProcParamVal(commandLine, "--data-dump")) {
-            snprintf(filename, nameLength, "%s-ROQWeights.dat", thisData->name);
+            ppt=LALInferenceGetProcParamVal(commandLine,"--outfile");
+
+            if(ppt) {
+                snprintf(filename, nameLength, "%s%s-ROQWeights.dat", ppt->value, thisData->name);
+            }
+            //else if(strcmp(pptdatadump->value,"")) {
+            //  snprintf(filename, nameLength, "%s/%s-timeData.dat", pptdatadump->value, IFOdata[i].name);
+            //}
+            else
+              snprintf(filename, nameLength, "%.3f_%s-ROQWeights.dat",GPStrig.gpsSeconds+1e-9*GPStrig.gpsNanoSeconds, thisData->name);
             out = fopen(filename, "w");
+            if(!out){
+                fprintf(stderr,"Unable to open the path %s for writing ROQ weights files\n",filename);
+                exit(1);
+            }
             for(unsigned int size2 = 0; size2 < thisData->roq->weights->size2; size2++){
               for(unsigned int size1 = 0; size1 < thisData->roq->weights->size1; size1++){
                 fprintf(out,"(%g+%gj)\t",GSL_REAL(gsl_matrix_complex_get(thisData->roq->weights,size1,size2)),GSL_IMAG(gsl_matrix_complex_get(thisData->roq->weights,size1,size2)));

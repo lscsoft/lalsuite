@@ -875,7 +875,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     romweightsnode={}
     prenode=self.EngineNode(self.preengine_job)
     node=self.EngineNode(self.engine_jobs[tuple(ifos)])
-    roqeventpath=os.path.join(self.preengine_job.roqpath,str(event.event_id))
+    roqeventpath=os.path.join(self.preengine_job.roqpath,str(event.event_id)+'/')
     if self.config.has_option('lalinference','roq'):
       mkdirs(roqeventpath)
     node.set_trig_time(end_time)
@@ -943,7 +943,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       prenode.set_padding(self.config.getint('input','padding'))
       #prenode[ifo].set_output_file('/dev/null')
       prenode.add_var_arg('--Niter 1')
-      prenode.add_var_arg('--data-dump '+roqeventpath)
+      prenode.add_var_arg('--outfile '+roqeventpath)
+      prenode.add_var_arg('--data-dump')
       if self.config.has_option('lalinference','seglen'):
         prenode.set_seglen(self.config.getint('lalinference','seglen'))
       elif self.config.has_option('engine','seglen'):
@@ -1500,7 +1501,7 @@ class ResultsPageNode(pipeline.CondorDAGNode):
         pathroot=node.posfile
       st=""
       for i in node.ifos:
-        st+="%s-%s-PSD.dat,"%(pathroot,i)
+        st+="%s%s-PSD.dat,"%(pathroot,i)
       st=st[:-1]
       self.add_var_arg('--psdfiles %s'%st)
       
