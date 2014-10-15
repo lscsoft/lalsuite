@@ -534,9 +534,9 @@ if not opts.skip_gracedb_upload:
                 min_fap = f_min
 
     ### upload minimum fap observed within opts.start, opts.end
-    b = np.log10(min_fap)
-    a = min_fap*(10**b)
-    gracedb.writeLog(opts.gracedb_id, message="minimum glitch-FAP for "+opts.classifier+" at "+opts.ifo+" within [%.3f, %.3f] is %fe%d"%(opts.start, opts.end, a,b), tagname='data_quality')
+    b = int(np.floor(np.log10(min_fap)))
+    a = min_fap*(10**-b)
+    gracedb.writeLog(opts.gracedb_id, message="minimum glitch-FAP for "+opts.classifier+" at "+opts.ifo+" within [%.3f, %.3f] is %.3fe%d"%(opts.start, opts.end, a,b), tagname='data_quality')
 
 if opts.verbose:
     print 'Done'
