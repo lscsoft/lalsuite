@@ -56,6 +56,4 @@ SUBDIRS += online
 endif
 endif
 
-if LALFRAME
 SUBDIRS += hwinjection
-endif
