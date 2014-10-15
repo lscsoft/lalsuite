@@ -101,6 +101,9 @@ if args.command == 'start':
                 ]
     if args.dont_wait:
         lvalert_launch_command.insert(2, "--dont-wait" )
+    if config.has_option("lvalert_listener","resource_name"):
+        lvalert_launch_command += ["-r", config.get("lvalert_listener","resource_name")]
+
     pid = subprocess.Popen(lvalert_launch_command, stdout=open('lvalert_listen.out', 'a')).pid
 
     print "lvalert_listen is launched with process id " + str(pid)
