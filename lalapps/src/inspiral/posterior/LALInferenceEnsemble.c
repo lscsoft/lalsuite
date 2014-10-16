@@ -204,7 +204,8 @@ void LALInferenceInitEnsemble(LALInferenceRunState *state) {
     }
 
     /* Distribute ensemble according to prior when randomly initializing */
-    if (!LALInferenceGetProcParamVal(state->commandLine, "--init-samples"))
+    if (!LALInferenceGetProcParamVal(state->commandLine, "--init-samples") &&
+            !LALInferenceGetProcParamVal(state->commandLine, "--skip-prior"))
         sample_prior(state);
 
     /* Set starting likelihood values (prior function hasn't changed) */
