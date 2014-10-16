@@ -45,6 +45,9 @@ __date__ = git_version.date
 # =============================================================================
 #
 
+
+GlitchID = ilwd.get_ilwdchar_class(u"glitch", u"event_id")
+
 class GlitchTable(table.Table):
 
     tableName = 'glitch:table'
@@ -57,7 +60,7 @@ class GlitchTable(table.Table):
         'fap': 'real_4',
         'likelihood': 'real_4',
         }
-
+    next_id = GlitchID(0)
 
 class Glitch(object):
 
@@ -75,6 +78,8 @@ GlitchTable.RowType = Glitch
 # =============================================================================
 #
 
+OVLDataID = ilwd.get_ilwdchar_class(u"ovl_data", u"event_id")
+
 class OVLDataTable(table.Table):
 
     tableName = 'ovl_data:table'
@@ -85,7 +90,7 @@ class OVLDataTable(table.Table):
         'veto_thr': 'real_4',
         'veto_win': 'real_4',
         }
-
+    next_id = OVLDataID(0)
 
 class OVLData(object):
 
