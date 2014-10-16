@@ -1499,6 +1499,8 @@ class ResultsPageNode(pipeline.CondorDAGNode):
       except:
         #mcmc and nest in postfile
         pathroot=node.posfile
+        if pathroot[-3:]=='.00':
+          pathroot=pathroot[:-3]
       st=""
       for i in node.ifos:
         st+="%s%s-PSD.dat,"%(pathroot,i)
