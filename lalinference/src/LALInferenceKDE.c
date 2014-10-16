@@ -321,12 +321,12 @@ REAL8 LALInferenceKDEEvaluatePoint(LALInferenceKDE *kde, REAL8 *point) {
     gsl_matrix *points = gsl_matrix_alloc(n_evals, dim);
     gsl_matrix_set_row(points, 0, &x.vector);
 
-    i = 1;
     p = 0;
-    while (i < n_evals) {
+    i = 1;
+    while (p < dim) {
         min = kde->lower_bounds[p];
         max = kde->upper_bounds[p];
-        val = gsl_matrix_get(points, i, p);
+        val = gsl_vector_get(&x.vector, p);
 
         if (kde->lower_bound_types[p] == LALINFERENCE_PARAM_LINEAR) {
             gsl_matrix_set_row(points, i, &x.vector);
