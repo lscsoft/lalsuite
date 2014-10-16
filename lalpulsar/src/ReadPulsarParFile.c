@@ -450,7 +450,7 @@ void PulsarSetParam( PulsarParameters* pars, const CHAR *name, void *value ){
 
 
 /* Set the value of parameter name error in the pars structure to value */
-void PulsarSetParamErr( PulsarParameters* pars, const CHAR *name, void *value, UINT4 fitFlag, UINT4 nfits ){
+void PulsarSetParamErr( PulsarParameters* pars, const CHAR *name, void *value, UINT4 fitFlag, UINT4 nfits, UINT4 len ){
   PulsarParam *item;
 
   /* convert name to uppercase */
@@ -467,7 +467,7 @@ void PulsarSetParamErr( PulsarParameters* pars, const CHAR *name, void *value, U
     }
   }
 
-  if ( nfits > 1 ){ item->fitFlag = XLALRealloc( item->fitFlag, sizeof(UINT4)*nfits ); }
+  if ( nfits > 1 && nfits > len-1 ){ item->fitFlag = XLALRealloc( item->fitFlag, sizeof(UINT4)*nfits ); }
   item->fitFlag[nfits-1] = fitFlag;
 
   memcpy( item->err, value, PulsarTypeSize[item->type] );
@@ -851,7 +851,7 @@ static INT4 ParseParLine( PulsarParameters *par, const CHAR *name, FILE *fp ){
 
           ptr->data[num] = *(REAL8 *)val;
 
-          PulsarSetParamErr( par, pc[i].name, &ptr, isFit, num+1 );
+          PulsarSetParamErr( par, pc[i].name, &ptr, isFit, num+1, ptr->length );
         }
         else{
           if ( nread == 2 ) { pc[i].converrfunc( str2, val ); }
@@ -860,7 +860,7 @@ static INT4 ParseParLine( PulsarParameters *par, const CHAR *name, FILE *fp ){
             pc[i].converrfunc( str3, val );
           }
 
-          PulsarSetParamErr( par, pc[i].name, val, isFit, num+1 );
+          PulsarSetParamErr( par, pc[i].name, val, isFit, num+1, 1 );
         }
 
         XLALFree( val );

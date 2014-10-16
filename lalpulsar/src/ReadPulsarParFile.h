@@ -426,7 +426,7 @@ void PulsarSetParam( PulsarParameters* pars, const CHAR *name, void *value );
  * TEMPO(2) fitting procedure) then that must be input as the fit flag (this can be a vector for e.g. FB
  * values with multiple parameters, in which case \c nfits will be the number of values in that vector).
  */
-void PulsarSetParamErr( PulsarParameters* pars, const CHAR *name, void *value, UINT4 fitFlag, UINT4 nfits );
+void PulsarSetParamErr( PulsarParameters* pars, const CHAR *name, void *value, UINT4 fitFlag, UINT4 nfits, UINT4 len );
 
 /** \brief Check for the existence of the parameter \c name in the \c PulsarParameters structure */
 int PulsarCheckParam( PulsarParameters *pars, const CHAR *name );
