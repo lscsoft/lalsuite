@@ -931,7 +931,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
           return SWIG_ValueError;
         }
       }
-      else if (val.ndims() != ndims) {
+      else if (val.ndims() != %reinterpret_cast(ndims, octave_idx_type)) {
         return SWIG_ValueError;
       }
 
