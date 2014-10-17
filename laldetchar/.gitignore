@@ -26,9 +26,13 @@ octave/
 python/laldetchar-hveto
 python/laldetchar-hveto-summary-page
 python/laldetchar-idq-add-excluded-vars
+python/laldetchar-idq-build-auxmvc-vectors
+python/laldetchar-idq-convertkwtosb
 python/laldetchar-idq-evaluate-times
 python/laldetchar-idq-fap-calibration
+python/laldetchar-idq-gdb-alert-handler
 python/laldetchar-idq-gdb-glitch-tables
+python/laldetchar-idq-gdb-processor
 python/laldetchar-idq-gdb-timeseries
 python/laldetchar-idq-prepare-training-auxmvc-samples
 python/laldetchar-idq-realtime
