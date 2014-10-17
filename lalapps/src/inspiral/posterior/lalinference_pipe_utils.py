@@ -1123,12 +1123,16 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     self.set_sub_file(os.path.abspath(submitFile))
     if self.engine=='lalinferencemcmc' or self.engine=='lalinferencebambimpi':
       #openmpipath=cp.get('condor','openmpi')
-      if ispreengine is False:
-        self.machine_count=cp.get('mpi','machine-count')
-        self.machine_memory=cp.get('mpi','machine-memory')
+      if cp.has_section('mpi'):
+        if ispreengine is False:
+          self.machine_count=cp.get('mpi','machine-count')
+          self.machine_memory=cp.get('mpi','machine-memory')
+        else:
+          self.machine_count=str(1)
+          self.machine_memory=cp.get('mpi','machine-memory')
       else:
         self.machine_count=str(1)
-        self.machine_memory=cp.get('mpi','machine-memory')
+        self.machine_memory=str(1024) # default value if the user did not specify something
       #self.add_condor_cmd('machine_count',machine_count)
       #self.add_condor_cmd('environment','CONDOR_MPI_PATH=%s'%(openmpipath))
       try:
