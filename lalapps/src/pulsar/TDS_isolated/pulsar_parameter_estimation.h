@@ -82,6 +82,7 @@ typedef struct tagIntrinsicPulsarVariables{
   REAL8 Xcsinphi_2; /* 0.5*Xcross*sin(phi) */
   REAL8 Xpcosphi_2; /* 0.5*Xplus*cos(phi) */
   REAL8 Xccosphi_2; /* 0.5*Xcross*cos(phi) */
+  REAL8 Xcpsphicphi_2; /* 0.5*Xplus*Xcross*cos(phi)*sin(phi) */
 
   REAL8 Aplus;      /* 0.5*h0*(1+cos^2(iota)) */
   REAL8 Across;     /* h0*cos(iota) */
@@ -133,7 +134,7 @@ typedef struct tagPriorVals{
   REAL8Vector *h0vals, *civals;
   REAL8 **h0cipdf;
   REAL8 minh0ci, maxh0ci; /* minimum and maximum prior values */
-  
+
   IntrinsicPulsarVariables vars;
 
   /* for gaussian prior pass in the mean and standard deviation */
@@ -150,7 +151,7 @@ typedef struct tagInputParams{
   CHAR parFile[256];   /* pulsar parameter file */
   CHAR *matrixFile;    /* pulsar parameter covariance matrix file */
   UINT4 usecov;        /* set whether or not to use a covariance matrix prior */
-  
+
   CHAR inputDir[256];
   CHAR outputDir[256];
 
@@ -186,8 +187,7 @@ typedef struct tagInputParams{
 
 /* a detector response function lookup table structure */
 typedef struct tagDetRespLookupTable{
-  LALDetAMResponse **lookupTable; /* array containing the lookup table */
-  INT4 psiSteps;                   /* number of steps across psi range */
+  LALDetAMResponse *lookupTable;   /* array containing the lookup table */
   INT4 timeSteps;                  /* number of steps across a day */
 }DetRespLookupTable;
 
@@ -204,6 +204,15 @@ typedef struct tagDataStructure{
                                Im(y)^2) not including the h0 scaling */
   REAL8Vector *sumDataModel; /* sum over the model and data for each chunk
                                (Re(B)*Re(y) + Im(B)*Im(y)) */
+
+  REAL8Vector *sumA;         /* sum over the a(t)^2 antenna pattern function for each chunk */
+  REAL8Vector *sumB;         /* sum over the b(t)^2 antenna pattern function for each chunk */
+  REAL8Vector *sumAB;        /* sum over a(t)*b(t) for each chunk */
+  REAL8Vector *sumRealDataA; /* sum over real part of the data times a(t) for each chunk */
+  REAL8Vector *sumImagDataA; /* sum over imaginary part of the data times a(t) for each chunk */
+  REAL8Vector *sumRealDataB; /* sum over real part of the data times b(t) for each chunk */
+  REAL8Vector *sumImagDataB; /* sum over imaginary part of the data times b(t) for each chunk */
+
   DetRespLookupTable *lookupTable;
 }DataStructure;
 
@@ -217,7 +226,7 @@ typedef struct tagOutputParams{
   INT4 outPost;      /* flag for whether to output the full posterior 1=yes,
                        0=no */
   REAL8 dob;       /* the degree-of-belief for an upper limits calculation -
-                       don't perform calc if set to zero */ 
+                       don't perform calc if set to zero */
 }OutputParams;
 
 
@@ -247,10 +256,10 @@ void get_input_args(InputParams *inputParams, INT4 argc, CHAR *argv[]);
 REAL8 ****allocate_likelihood_memory(MeshGrid mesh);
 
 /* function to create a log likelihood array over the parameter grid */
-REAL8 create_likelihood_grid(DataStructure data, REAL8 ****logLike, 
+REAL8 create_likelihood_grid(DataStructure data, REAL8 ****logLike,
   MeshGrid mesh);
 
-/* a function to compute the log likelihood of the data given some parameters 
+/* a function to compute the log likelihood of the data given some parameters
 - this function loops over the h0 part of the likelihood array for speed */
 REAL8 log_likelihood(REAL8 *likeArray, DataStructure data,
   IntrinsicPulsarVariables vars, MeshGrid mesh, REAL8Vector *dphi);
@@ -268,7 +277,7 @@ REAL8 log_posterior(REAL8 ****logLike, PriorVals prior, MeshGrid mesh,
 
 /* marginalise posterior over requested parameter and output the Results if
 requested */
-Results marginalise_posterior(REAL8 ****logPost, MeshGrid mesh, 
+Results marginalise_posterior(REAL8 ****logPost, MeshGrid mesh,
   OutputParams output);
 
 /* detector response lookup table function  - this function will output a lookup
@@ -281,15 +290,15 @@ void response_lookup_table(REAL8 t0, LALDetAndSource detAndSource,
 REAL8 log_factorial(INT4 num);
 
 /* function to combine log likelihoods to give a joint likelihood */
-void combine_likelihoods(REAL8 ****logLike1, REAL8 ****logLike2, 
+void combine_likelihoods(REAL8 ****logLike1, REAL8 ****logLike2,
   MeshGrid mesh);
 
-/* function to calculate the upper limit - use quadratic spline interpolation 
+/* function to calculate the upper limit - use quadratic spline interpolation
   between points around the upper limit */
 REAL8 get_upper_limit(REAL8 *cumsum, REAL8 limit, MeshGrid mesh);
 
 /* function to perform the MCMC parameter estimation */
-void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets, 
+void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
   CHAR *det, LALDetector *detpos, EphemerisData *edat,
   TimeCorrectionData *tdat, TimeCorrectionType ttype);
 
@@ -303,10 +312,10 @@ void get_chunk_lengths(DataStructure data);
 
 REAL8Array *cholesky_decomp( REAL8Array *M, const CHAR* uOrl );
 
-REAL8Array *read_correlation_matrix( CHAR *matrixFile, 
+REAL8Array *read_correlation_matrix( CHAR *matrixFile,
   BinaryPulsarParams params, ParamData *data );
 
-REAL8Array *create_covariance_matrix( ParamData *data, REAL8Array *corMat, 
+REAL8Array *create_covariance_matrix( ParamData *data, REAL8Array *corMat,
   INT4 isinv );
 
 REAL8Array *check_positive_definite( REAL8Array *matrix );

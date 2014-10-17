@@ -436,15 +436,9 @@ defined!\n");
     detAndSource.pDetector = &detPos[i];
 
     /* create memory for the lookup table */
-    data[k].lookupTable->lookupTable = XLALCalloc(inputs.mesh.psiRangeSteps,
-      sizeof(LALDetAMResponse *));
+    data[k].lookupTable->lookupTable = XLALCalloc(inputs.mesh.timeRangeSteps,
+      sizeof(LALDetAMResponse));
 
-    for( j = 0 ; j < inputs.mesh.psiRangeSteps ; j++ ){
-      data[k].lookupTable->lookupTable[j] =
-        XLALCalloc(inputs.mesh.timeRangeSteps, sizeof(LALDetAMResponse));
-    }
-
-    data[k].lookupTable->psiSteps = inputs.mesh.psiRangeSteps;
     data[k].lookupTable->timeSteps = inputs.mesh.timeRangeSteps;
 
     /* create lookup table */
@@ -1153,6 +1147,24 @@ REAL8 create_likelihood_grid(DataStructure data, REAL8 ****logLike,
   data.sumData = NULL;
   data.sumData = XLALCreateREAL8Vector(data.chunkLengths->length);
 
+  data.sumA = NULL;
+  data.sumA = XLALCreateREAL8Vector(data.chunkLengths->length);
+
+  data.sumB = NULL;
+  data.sumB = XLALCreateREAL8Vector(data.chunkLengths->length);
+
+  data.sumAB = NULL;
+  data.sumAB = XLALCreateREAL8Vector(data.chunkLengths->length);
+
+  data.sumRealDataA = NULL;
+  data.sumRealDataA = XLALCreateREAL8Vector(data.chunkLengths->length);
+  data.sumImagDataA = NULL;
+  data.sumImagDataA = XLALCreateREAL8Vector(data.chunkLengths->length);
+  data.sumRealDataB = NULL;
+  data.sumRealDataB = XLALCreateREAL8Vector(data.chunkLengths->length);
+  data.sumImagDataB = NULL;
+  data.sumImagDataB = XLALCreateREAL8Vector(data.chunkLengths->length);
+
   /* get the sum over the data */
   sum_data(data);
 
@@ -1174,6 +1186,7 @@ REAL8 create_likelihood_grid(DataStructure data, REAL8 ****logLike,
       vars.Xcsinphi_2 = 0.5*vars.Xcross*sinphi;
       vars.Xpcosphi_2 = 0.5*vars.Xplus*cosphi;
       vars.Xccosphi_2 = 0.5*vars.Xcross*cosphi;
+      vars.Xcpsphicphi_2 = 0.5*vars.Xplus*vars.Xcross*cosphi*sinphi;
 
       for( k = 0 ; k < mesh.psiSteps ; k++ ){
         vars.psi = mesh.minVals.psi + (REAL8)k*mesh.delta.psi;
@@ -1198,18 +1211,46 @@ void sum_data(DataStructure data){
   INT4 chunkLength=0, length=0, i=0, j=0, count=0;
   COMPLEX16 B;
 
+  REAL8 tsteps = (REAL8)data.lookupTable->timeSteps;
+  REAL8 tstart = data.times->data[0]; /* time of first B_k */
+  REAL8 a = 0., b = 0., T = 0.;
+  INT4 timebin = 0;
+
   length = data.data->length + 1 -
            data.chunkLengths->data[data.chunkLengths->length-1];
 
   for( i = 0 ; i < length ; i+= chunkLength ){
     chunkLength = data.chunkLengths->data[count];
     data.sumData->data[count] = 0.;
+    data.sumA->data[count] = 0.;
+    data.sumB->data[count] = 0.;
+    data.sumAB->data[count] = 0.;
+    data.sumRealDataA->data[count] = 0.;
+    data.sumRealDataB->data[count] = 0.;
+    data.sumImagDataA->data[count] = 0.;
+    data.sumImagDataB->data[count] = 0.;
 
     for( j = i ; j < i + chunkLength ; j++){
       B = data.data->data[j];
 
+      /* set the time bin for the lookup table */
+      /* sidereal day in secs*/
+      T = fmod(data.times->data[j] - tstart, LAL_DAYSID_SI);
+      timebin = (INT4)fmod( ROUND(T*tsteps/LAL_DAYSID_SI), tsteps );
+
+      a = data.lookupTable->lookupTable[timebin].plus;
+      b = data.lookupTable->lookupTable[timebin].cross;
+
       /* sum up the data */
       data.sumData->data[count] += (creal(B)*creal(B) + cimag(B)*cimag(B));
+
+      data.sumA->data[count] += a*a;
+      data.sumB->data[count] += b*b;
+      data.sumAB->data[count] += a*b;
+      data.sumRealDataA->data[count] += creal(B)*a;
+      data.sumRealDataB->data[count] += creal(B)*b;
+      data.sumImagDataA->data[count] += cimag(B)*a;
+      data.sumImagDataB->data[count] += cimag(B)*b;
     }
 
     count++;
@@ -1229,7 +1270,7 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
   REAL8 tstart=0., T=0.;
 
   COMPLEX16 model;
-  INT4 psibin=0, timebin=0;
+  INT4 timebin=0;
 
   REAL8 plus=0., cross=0.;
   REAL8 sumModel=0., sumDataModel=0.;
@@ -1243,8 +1284,10 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
 
   INT4 first=0, through=0;
 
-  REAL8 psteps = (REAL8)data.lookupTable->psiSteps;
   REAL8 tsteps = (REAL8)data.lookupTable->timeSteps;
+
+  REAL4 sin2psi = 0., cos2psi = 0.;
+  REAL8 sin2psi2 = 0., cos2psi2 = 0., c2s2 = 0.;
 
   //likeArray[0] = 0.;
   //return noiseEvidence;
@@ -1253,8 +1296,10 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
   for( i = 0 ; i < data.chunkMax+1 ; i++ )
     exclamation[i] = log_factorial(i);
 
-  /* set the psi bin for the lookup table */
-  psibin = (INT4)ROUND( ( vars.psi + LAL_PI/4. ) * ( psteps-1. )/LAL_PI_2 );
+  XLAL_CHECK( XLALSinCosLUT( &sin2psi, &cos2psi, 2.*vars.psi ) == XLAL_SUCCESS, XLAL_EFUNC );
+  sin2psi2 = sin2psi*sin2psi;
+  cos2psi2 = cos2psi*cos2psi;
+  c2s2 = cos2psi*sin2psi;
 
   length = (INT4)data.data->length + 1 -
            data.chunkLengths->data[(INT4)data.chunkLengths->length-1];
@@ -1278,20 +1323,22 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
     sumDataModel = 0.;
 
     for( j = i ; j < i + chunkLength ; j++){
-      /* set the time bin for the lookup table */
-      /* sidereal day in secs*/
-      T = fmod(data.times->data[j] - tstart, LAL_DAYSID_SI);
-      timebin = (INT4)fmod( ROUND(T*tsteps/LAL_DAYSID_SI), tsteps );
-
-      plus = data.lookupTable->lookupTable[psibin][timebin].plus;
-      cross = data.lookupTable->lookupTable[psibin][timebin].cross;
-
       B = data.data->data[j];
 
       /*********************************************************/
       /* stuff for phase offset due to parameter uncertainties - MCMC only */
       if( dphi != NULL ){
         REAL4 cphi=0., sphi=0.;
+
+        /* set the time bin for the lookup table */
+        /* sidereal day in secs*/
+        T = fmod(data.times->data[j] - tstart, LAL_DAYSID_SI);
+        timebin = (INT4)fmod( ROUND(T*tsteps/LAL_DAYSID_SI), tsteps );
+
+        plus = cos2psi*data.lookupTable->lookupTable[timebin].plus +
+               sin2psi*data.lookupTable->lookupTable[timebin].cross;
+        cross = cos2psi*data.lookupTable->lookupTable[timebin].cross -
+                sin2psi*data.lookupTable->lookupTable[timebin].plus;
 
         /* create the signal model */
         XLAL_CHECK( XLALSinCos2PiLUT( &sphi, &cphi, -dphi->data[j] ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -1300,19 +1347,37 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
           (cross*vars.Xccosphi_2 - plus*vars.Xpsinphi_2)*sphi) +
           I * ((plus*vars.Xpsinphi_2 - cross*vars.Xccosphi_2)*cphi +
           (cross*vars.Xcsinphi_2 + plus*vars.Xpcosphi_2)*sphi);
+
+        /* sum over the model */
+        sumModel += creal(model)*creal(model) + cimag(model)*cimag(model);
+
+        /* sum over that data and model */
+        sumDataModel += creal(B)*creal(model) + cimag(B)*cimag(model);
       }
       /*********************************************************/
-      else{
-        /* create the signal model */
-        model = (plus*vars.Xpcosphi_2 + cross*vars.Xcsinphi_2) +
-          I * (plus*vars.Xpsinphi_2 - cross*vars.Xccosphi_2);
-      }
+    }
 
-      /* sum over the model */
-      sumModel += creal(model)*creal(model) + cimag(model)*cimag(model);
+    /* if there's no time dependent phase changes then we can use the pre-summed factors */
+    if ( dphi == NULL ){
+      REAL8 sA = data.sumA->data[count];
+      REAL8 sB = data.sumB->data[count];
+      REAL8 sC = data.sumAB->data[count];
+      REAL8 rDA = data.sumRealDataA->data[count];
+      REAL8 iDA = data.sumImagDataA->data[count];
+      REAL8 rDB = data.sumRealDataB->data[count];
+      REAL8 iDB = data.sumImagDataB->data[count];
 
-      /* sum over that data and model */
-      sumDataModel += creal(B)*creal(model) + cimag(B)*cimag(model);
+      sumModel = (vars.Xpcosphi_2*vars.Xpcosphi_2)*(sA*cos2psi2 + sB*sin2psi2 + 2.*sC*c2s2) +
+                 (vars.Xcsinphi_2*vars.Xcsinphi_2)*(sB*cos2psi2 + sA*sin2psi2 - 2.*sC*c2s2) +
+                 (vars.Xcpsphicphi_2*(sC*(cos2psi2 - sin2psi2) - sA*c2s2 + sB*c2s2)) +
+                 (vars.Xpsinphi_2*vars.Xpsinphi_2)*(sA*cos2psi2 + sB*sin2psi2 + 2.*sC*c2s2) +
+                 (vars.Xccosphi_2*vars.Xccosphi_2)*(sB*cos2psi2 + sA*sin2psi2 - 2.*sC*c2s2) -
+                 (vars.Xcpsphicphi_2*(sC*(cos2psi2 - sin2psi2) - sA*c2s2 + sB*c2s2));
+
+      sumDataModel = vars.Xpcosphi_2*( rDA*cos2psi + rDB*sin2psi ) +
+                     vars.Xcsinphi_2*( rDB*cos2psi - rDA*sin2psi ) +
+                     vars.Xpsinphi_2*( iDA*cos2psi + iDB*sin2psi ) -
+                     vars.Xccosphi_2*( iDB*cos2psi - iDA*sin2psi );
     }
 
     for( k = 0 ; k < mesh.h0Steps ; k++ ){
@@ -1521,7 +1586,7 @@ REAL8 log_posterior(REAL8 ****logLike, PriorVals prior, MeshGrid mesh,
             maxPost = mP;
 
           if( output.outPost == 1 && fp != NULL )
-            fprintf(fp, "%le\n", mP);
+            fprintf(fp, "%.12le\n", mP);
         }
       }
     }
@@ -1821,39 +1886,33 @@ dval1) - evSum4);
 
 
 /* detector response lookup table function  - this function will output a lookup
-table of points in time and psi, covering a sidereal day from the start time
-(t0) and from -pi/4 to pi/4 in psi */
-void response_lookup_table(REAL8 t0, LALDetAndSource detAndSource,
-  DetRespLookupTable *lookupTable){
+table of points in time  */
+void response_lookup_table(REAL8 t0, LALDetAndSource detAndSource, DetRespLookupTable *lookupTable){
   LIGOTimeGPS gps;
   REAL8 T=0;
 
   REAL8 fplus=0., fcross=0.;
-  REAL8 psteps = (REAL8)lookupTable->psiSteps;
   REAL8 tsteps = (REAL8)lookupTable->timeSteps;
 
-  INT4 i=0, j=0;
+  INT4 j=0;
 
-  for( i = 0 ; i < lookupTable->psiSteps ; i++ ){
-    detAndSource.pSource->orientation = -(LAL_PI/4.) +
-        (REAL8)i*(LAL_PI/2.) / ( psteps - 1. );
+  detAndSource.pSource->orientation = 0.;
 
-    for( j = 0 ; j < lookupTable->timeSteps ; j++ ){
-      T = t0 + (REAL8)j*LAL_DAYSID_SI / tsteps;
+  for( j = 0 ; j < lookupTable->timeSteps ; j++ ){
+    T = t0 + (REAL8)j*LAL_DAYSID_SI / tsteps;
 
-      gps.gpsSeconds = (INT4)floor(T);
-      gps.gpsNanoSeconds = (INT4)floor((fmod(T,1.0)*1.e9));
+    gps.gpsSeconds = (INT4)floor(T);
+    gps.gpsNanoSeconds = (INT4)floor((fmod(T,1.0)*1.e9));
 
-      XLALComputeDetAMResponse(&fplus, &fcross,
-        detAndSource.pDetector->response,
-        detAndSource.pSource->equatorialCoords.longitude,
-        detAndSource.pSource->equatorialCoords.latitude,
-        detAndSource.pSource->orientation,
-        XLALGreenwichMeanSiderealTime(&gps));
+    XLALComputeDetAMResponse(&fplus, &fcross,
+      detAndSource.pDetector->response,
+      detAndSource.pSource->equatorialCoords.longitude,
+      detAndSource.pSource->equatorialCoords.latitude,
+      detAndSource.pSource->orientation,
+      XLALGreenwichMeanSiderealTime(&gps));
 
-      lookupTable->lookupTable[i][j].plus = fplus;
-      lookupTable->lookupTable[i][j].cross = fcross;
-    }
+    lookupTable->lookupTable[j].plus = fplus;
+    lookupTable->lookupTable[j].cross = fcross;
   }
 }
 
@@ -2179,6 +2238,31 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
         glitchData[i][j].sumData =
           XLALCreateREAL8Vector(glitchData[i][j].chunkLengths->length);
 
+        glitchData[i][j].sumA = NULL;
+        glitchData[i][j].sumA =
+          XLALCreateREAL8Vector(glitchData[i][j].chunkLengths->length);
+
+        glitchData[i][j].sumB = NULL;
+        glitchData[i][j].sumB =
+          XLALCreateREAL8Vector(glitchData[i][j].chunkLengths->length);
+
+        glitchData[i][j].sumAB = NULL;
+        glitchData[i][j].sumAB =
+          XLALCreateREAL8Vector(glitchData[i][j].chunkLengths->length);
+
+        glitchData[i][j].sumRealDataA = NULL;
+        glitchData[i][j].sumRealDataA =
+          XLALCreateREAL8Vector(glitchData[i][j].chunkLengths->length);
+        glitchData[i][j].sumImagDataA = NULL;
+        glitchData[i][j].sumImagDataA =
+          XLALCreateREAL8Vector(glitchData[i][j].chunkLengths->length);
+        glitchData[i][j].sumRealDataB = NULL;
+        glitchData[i][j].sumRealDataB =
+          XLALCreateREAL8Vector(glitchData[i][j].chunkLengths->length);
+        glitchData[i][j].sumImagDataB = NULL;
+        glitchData[i][j].sumImagDataB =
+          XLALCreateREAL8Vector(glitchData[i][j].chunkLengths->length);
+
         sum_data(glitchData[i][j]);
 
         /* set lookup tables */
@@ -2319,6 +2403,7 @@ paramData ) ) == NULL ){
   vars.Xcsinphi_2 = 0.5*vars.Xcross*sin(vars.phi0);
   vars.Xpcosphi_2 = 0.5*vars.Xplus*cos(vars.phi0);
   vars.Xccosphi_2 = 0.5*vars.Xcross*cos(vars.phi0);
+  vars.Xcpsphicphi_2 = 0.5*vars.Xcross*vars.Xplus*sin(vars.phi0)*cos(vars.phi0);
 
   for( i = 0 ; i < nGlitches ; i++ ){
     extraVars[i].h0 = vars.h0;
@@ -2326,6 +2411,7 @@ paramData ) ) == NULL ){
     extraVars[i].Xcsinphi_2 = 0.5*vars.Xcross * sin(extraVars[i].phi0);
     extraVars[i].Xpcosphi_2 = 0.5*vars.Xplus * cos(extraVars[i].phi0);
     extraVars[i].Xccosphi_2 = 0.5*vars.Xcross * cos(extraVars[i].phi0);
+    extraVars[i].Xcpsphicphi_2 = 0.5*vars.Xcross*vars.Xplus*sin(extraVars[i].phi0)*cos(extraVars[i].phi0);
     extraVars[i].psi = vars.psi;
   }
 
@@ -2347,6 +2433,24 @@ paramData ) ) == NULL ){
       /* allocate memory for summations */
       data[k].sumData = NULL;
       data[k].sumData = XLALCreateREAL8Vector(data[k].chunkLengths->length);
+
+      data[k].sumA = NULL;
+      data[k].sumA = XLALCreateREAL8Vector(data[k].chunkLengths->length);
+
+      data[k].sumB = NULL;
+      data[k].sumB = XLALCreateREAL8Vector(data[k].chunkLengths->length);
+
+      data[k].sumAB = NULL;
+      data[k].sumAB = XLALCreateREAL8Vector(data[k].chunkLengths->length);
+
+      data[k].sumRealDataA = NULL;
+      data[k].sumRealDataA = XLALCreateREAL8Vector(data[k].chunkLengths->length);
+      data[k].sumImagDataA = NULL;
+      data[k].sumImagDataA = XLALCreateREAL8Vector(data[k].chunkLengths->length);
+      data[k].sumRealDataB = NULL;
+      data[k].sumRealDataB = XLALCreateREAL8Vector(data[k].chunkLengths->length);
+      data[k].sumImagDataB = NULL;
+      data[k].sumImagDataB = XLALCreateREAL8Vector(data[k].chunkLengths->length);
 
       sum_data(data[k]);
     }
@@ -2566,6 +2670,7 @@ paramData ) ) == NULL ){
     varsNew.Xcsinphi_2 = 0.5*varsNew.Xcross*sp;
     varsNew.Xpcosphi_2 = 0.5*varsNew.Xplus*cp;
     varsNew.Xccosphi_2 = 0.5*varsNew.Xcross*cp;
+    varsNew.Xcpsphicphi_2 = 0.5*varsNew.Xcross*varsNew.Xplus*cp*sp;
 
     for( j = 0 ; j < nGlitches ; j++ ){
       XLAL_CHECK_VOID( XLALSinCosLUT( &sp, &cp, extraVarsNew[j].phi0 ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -2574,6 +2679,7 @@ paramData ) ) == NULL ){
       extraVarsNew[j].Xcsinphi_2 = 0.5*varsNew.Xcross * sp;
       extraVarsNew[j].Xpcosphi_2 = 0.5*varsNew.Xplus * cp;
       extraVarsNew[j].Xccosphi_2 = 0.5*varsNew.Xcross * cp;
+      extraVarsNew[j].Xcpsphicphi_2 = 0.5*varsNew.Xcross*varsNew.Xplus*cp*sp;
       extraVarsNew[j].psi = varsNew.psi;
     }
 
@@ -2854,6 +2960,13 @@ paramData ) ) == NULL ){
       XLALDestroyREAL8Vector(glitchData[i][j].times);
       XLALDestroyINT4Vector(glitchData[i][j].chunkLengths);
       XLALDestroyREAL8Vector(glitchData[i][j].sumData);
+      XLALDestroyREAL8Vector(glitchData[i][j].sumA);
+      XLALDestroyREAL8Vector(glitchData[i][j].sumB);
+      XLALDestroyREAL8Vector(glitchData[i][j].sumAB);
+      XLALDestroyREAL8Vector(glitchData[i][j].sumRealDataA);
+      XLALDestroyREAL8Vector(glitchData[i][j].sumImagDataA);
+      XLALDestroyREAL8Vector(glitchData[i][j].sumRealDataB);
+      XLALDestroyREAL8Vector(glitchData[i][j].sumImagDataB);
     }
   }
 
