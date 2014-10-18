@@ -130,7 +130,6 @@ typedef struct {
   UINT4 blocksRngMed;              /**< blocksize for running median noise floor estimation */
   UINT4 Dterms;                    /**< size of Dirichlet kernel for Fstat calculation */
   BOOLEAN SignalOnly;              /**< FALSE: estimate noise-floor from data, TRUE: assume Sh=1 */
-  REAL8 dopplerMax;                /**< extra sft wings for doppler motion */
   /* parameters describing the coherent data-segments */
   REAL8 tStack;                    /**< duration of stacks */
   UINT4 nStacks;                   /**< number of stacks */
@@ -373,7 +372,6 @@ int MAIN( int argc, char *argv[]) {
 
   REAL8 uvar_minStartTime1 = 0;
   REAL8 uvar_maxStartTime1 = LAL_INT4_MAX;
-  REAL8 uvar_dopplerMax = 1.05e-4;
 
   REAL8 uvar_refTime = 0;
   INT4 uvar_nCand1 = NCAND1; /* number of candidates to be followed up from first stage */
@@ -503,7 +501,6 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterINTUserVar (   &status, "SSBprecision", 0, UVAR_DEVELOPER, "Precision for SSB transform.", &uvar_SSBprecision),    &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "Dterms",       0, UVAR_DEVELOPER, "No. of terms to keep in Dirichlet Kernel", &uvar_Dterms ), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "skyPointIndex",0, UVAR_DEVELOPER, "Only analyze this skypoint in grid", &uvar_skyPointIndex ), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "dopplerMax",   0, UVAR_DEVELOPER, "Max Doppler shift",  &uvar_dopplerMax), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "SortToplist",  0, UVAR_DEVELOPER, "Sort toplist by: 0=avg2F, 1=numbercount, 2=BSGL, 3=dual-toplists 'avg2F+BSGL'",  &uvar_SortToplist), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "outputSingleSegStats", 0,  UVAR_DEVELOPER, "Base filename for single-segment Fstat output (1 file per final toplist candidate!)", &uvar_outputSingleSegStats),  &status);
 
@@ -741,7 +738,6 @@ int MAIN( int argc, char *argv[]) {
   usefulParams.blocksRngMed = uvar_blocksRngMed;
   usefulParams.Dterms = uvar_Dterms;
   usefulParams.SignalOnly = uvar_SignalOnly;
-  usefulParams.dopplerMax = uvar_dopplerMax;
   usefulParams.SSBprec = uvar_SSBprecision;
 
   if ( XLALParseFstatMethodString ( &usefulParams.Fmethod, uvar_FstatMethod ) != XLAL_SUCCESS ) {
