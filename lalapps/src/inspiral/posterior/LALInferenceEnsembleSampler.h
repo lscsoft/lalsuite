@@ -34,16 +34,37 @@
 #include <lal/LALInference.h>
 
 /** The sampling algorithm */
-void ensemble_sampler(struct tagLALInferenceRunState *runState);
+void ensemble_sampler(LALInferenceRunState *run_state);
+
 
 /** Evolve a walker a single step */
-INT4 walker_step(LALInferenceRunState *runState, LALInferenceModel *model, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams, REAL8 *currentPrior, REAL8 *currentLikelihood);
+INT4 walker_step(LALInferenceRunState *run_state,
+                    LALInferenceModel *model,
+                    LALInferenceVariables *current_params,
+                    LALInferenceVariables *proposed_params,
+                    REAL8 *current_prior,
+                    REAL8 *current_likelihood);
+
 
 /** Update the ensemble proposal from the ensemble's current state */
-void ensemble_update(LALInferenceRunState *runState);
+void ensemble_update(LALInferenceRunState *run_state);
+
 
 /* Data IO routines */
-char *LALInferenceInitializeEnsembleOutput(LALInferenceRunState *runState, INT4 walker, INT4 walker_offset, INT4 verbose);
-void LALInferencePrintEnsembleSample(LALInferenceRunState *runState, char **walker_output_names, UINT4 walker);
-void LALInferencePrintProposedSample(LALInferenceRunState *runState, LALInferenceVariables *proposedParams, INT4 walker, INT4 accepted);
-void LALInferencePrintEnsembleHeader(LALInferenceRunState *runState, FILE *walker_output, INT4 walker);
+char *init_ensemble_output(LALInferenceRunState *run_state,
+                            INT4 walker,
+                            INT4 walker_offset,
+                            INT4 verbose);
+
+void print_ensemble_sample(LALInferenceRunState *run_state,
+                            char **walker_output_names,
+                            UINT4 walker);
+
+void print_proposed_sample(LALInferenceRunState *run_state,
+                            LALInferenceVariables *proposed_params,
+                            INT4 walker,
+                            INT4 accepted);
+
+void print_ensemble_header(LALInferenceRunState *run_state,
+                            FILE *walker_output,
+                            INT4 walker);
