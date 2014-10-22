@@ -290,7 +290,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state)
                (--inclination-max MAX)                 Maximum inclination angle (pi).\n\
                (--distance-min MIN)                    Minimum distance in Mpc (1).\n\
                (--distance-max MAX)                    Maximum distance in Mpc (100).\n\
-               (--dt time)                             Width of time prior, centred around trigger (0.1s).\n\
+               (--dt time)                             Width of time prior, centred around trigger (0.2s).\n\
                (--malmquistPrior)                      Rejection sample based on SNR of template \n\
                Equation of state parameters:\n\
                (--lambda1-min)                         Minimum lambda1 (0).\n\
@@ -375,7 +375,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state)
   REAL8 phiMin=0.0,phiMax=LAL_TWOPI;
 
 
-  REAL8 dt=0.1;            /* Width of time prior */
+  REAL8 dt=0.1;            /* Half the width of time prior */
   REAL8 lambda1Min=0.0;
   REAL8 lambda1Max=3000.0;
   REAL8 lambda2Min=0.0;
