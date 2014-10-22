@@ -63,6 +63,9 @@ XLALCreateBSGLSetup ( const UINT4 numDetectors,
                       const BOOLEAN useLogCorrection
 );
 
+void
+XLALDestroyBSGLSetup ( BSGLSetup * setup );
+
 REAL4
 XLALComputeBSGL ( const REAL4 twoF,
                   const REAL4 twoFX[PULSAR_MAX_DETECTORS],

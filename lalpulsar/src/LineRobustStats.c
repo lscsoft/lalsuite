@@ -95,6 +95,12 @@ XLALCreateBSGLSetup ( const UINT4 numDetectors,			//!< [in] number of detectors 
 
 } // XLALCreateBSGLSetup()
 
+void
+XLALDestroyBSGLSetup ( BSGLSetup * setup )
+{
+  XLALFree ( setup );
+  return;
+} // XLALDestroyBSGLSetup()
 
 /**
  * \f[

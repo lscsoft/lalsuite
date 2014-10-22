@@ -1794,7 +1794,7 @@ int MAIN( int argc, char *argv[]) {
   free_gctFStat_toplist ( &semiCohToplist );
   if ( semiCohToplist2 ) free_gctFStat_toplist ( &semiCohToplist2 );
 
-  XLALFree ( usefulParams.BSGLsetup );
+  XLALDestroyBSGLSetup ( usefulParams.BSGLsetup );
 
   LAL_CALL (LALDestroyUserVars(&status), &status);
 
