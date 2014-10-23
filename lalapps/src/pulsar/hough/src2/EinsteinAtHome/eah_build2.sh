@@ -66,7 +66,7 @@ boinc_rev=current_gw_apps
 #previous:-r22844 -r22825 -r22804 -r22794 -r22784 -r22561 -r22503 -r22363 -r21777 -r'{2008-12-01}'
 retries=1
 
-gsl=gsl-1.15
+gsl=gsl-1.16
 fftw=fftw-3.3.3
 zlib=zlib-1.2.8
 binutils=binutils-2.19
@@ -381,7 +381,7 @@ if test -z "$rebuild" && pkg-config --exists gsl; then
     log_and_show "using existing gsl source"
 elif test -z "$noupdate"; then
     log_and_show "retrieving $gsl"
-    download $gsl.tar.gz
+    download ftp://ftp.fu-berlin.de/unix/gnu/gsl $gsl.tar.gz
     log_and_do tar xzf "$gsl.tar.gz"
 fi
 
