@@ -43,7 +43,8 @@ INT4 walker_step(LALInferenceRunState *run_state,
                     LALInferenceVariables *current_params,
                     LALInferenceVariables *proposed_params,
                     REAL8 *current_prior,
-                    REAL8 *current_likelihood);
+                    REAL8 *current_likelihood,
+                    REAL8 *current_prop_density);
 
 
 /** Update the ensemble proposal from the ensemble's current state */

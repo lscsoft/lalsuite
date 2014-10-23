@@ -480,7 +480,11 @@ void init_sampler(LALInferenceRunState *run_state) {
     run_state->currentParamArray =
         XLALMalloc(nwalkers_per_thread * sizeof(LALInferenceVariables*));
 
+    run_state->currentPropDensityArray =
+        XLALMalloc(nwalkers_per_thread * sizeof(REAL8));
+
     for (walker = 0; walker < nwalkers_per_thread; walker++) {
+        run_state->currentPropDensityArray[walker] = -DBL_MAX;
         run_state->modelArray[walker] = LALInferenceInitCBCModel(run_state);
 
         run_state->currentParamArray[walker] =

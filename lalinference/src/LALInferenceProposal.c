@@ -3871,8 +3871,8 @@ void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceRunState *runState
 /**
  * A proposal based on the clustered kernal density estimate of a set of samples.
  *
- * Proposes samples from the estimated distribution of a sample of points.  The
- * distribution is estimated with a clustered kernel density estimator.  This
+ * Proposes samples from the estimated distribution of a collection of points.
+ * The distribution is estimated with a clustered kernel density estimator.  This
  * proposal is added to the proposal cycle with a specified weight, and in turn
  * chooses at random a KDE-estimate from a linked list.
  * @param      runState      The current LALInferenceRunState.
@@ -3881,6 +3881,28 @@ void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceRunState *runState
  * @return proposal_ratio    The (log) proposal ratio for maintaining detailed balance
  */
 REAL8 LALInferenceClusteredKDEProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams) {
+    REAL8 logPropRatio;
+
+    logPropRatio = LALInferenceStoredClusterKDEProposal(runState, currentParams, proposedParams, NULL);
+
+    return logPropRatio;
+}
+
+/**
+ * An interface to the KDE proposal that avoids a KDE evaluation if possible.
+ *
+ * If the value of the KDE at the current location is known, use it.  Otherwise
+ * calculate and return.
+ * @param      runState      The current LALInferenceRunState.
+ * @param      currentParams The current parameters.
+ * @param[out] proposedParam The proposed parameters.
+ * @param      propDensity   If input is not NULL or >-DBL_MAX, assume this is the
+ *                              proposal density at \a currentParams, otherwise
+ *                              calculate.  It is then replaced with the proposal
+ *                              density at \a proposedParams.
+ * @return proposal_ratio    The (log) proposal ratio for maintaining detailed balance
+ */
+REAL8 LALInferenceStoredClusterKDEProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams, REAL8 *propDensity) {
     const char *propName = (const char *) clusteredKDEProposalName;
     REAL8 cumulativeWeight, totalWeight;
     REAL8 logPropRatio = 0.0;
@@ -3935,15 +3957,30 @@ REAL8 LALInferenceClusteredKDEProposal(LALInferenceRunState *runState, LALInfere
     }
 
     /* Calculate the proposal ratio */
-    REAL8 logCurrentP = LALInferenceKmeansPDF(kde->kmeans, current);
+    REAL8 logCurrentP;
+    if (propDensity == NULL || *propDensity == -DBL_MAX)
+        logCurrentP = LALInferenceKmeansPDF(kde->kmeans, current);
+    else
+        logCurrentP = *propDensity;
+
     REAL8 logProposedP = LALInferenceKmeansPDF(kde->kmeans, proposed);
+
     logPropRatio = logCurrentP - logProposedP;
+
+    if (propDensity != NULL)
+        *propDensity = logProposedP;
 
     XLALFree(current);
     XLALFree(proposed);
 
     return logPropRatio;
 }
+
+
+/**
+ * A wrapper for the KDE proposal that doesn't store KDE evaluations.
+ *
+ */
 
 
 /**

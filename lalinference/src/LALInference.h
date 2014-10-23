@@ -481,6 +481,7 @@ tagLALInferenceRunState
   LALInferenceModel        **modelArray; /** Array containing multiple models */
   struct tagLALInferenceIFOData      *data; /** The data from the interferometers */
   LALInferenceVariables **currentParamArray;         /** Array containing multiple currentParams */
+  REAL8 *currentPropDensityArray;         /** Array containing multiple proposal densities */
   LALInferenceVariables              *currentParams, /** The current parameters */
     *priorArgs,                                      /** Any special arguments for the prior function */
     *proposalArgs,                                   /** Any special arguments for the proposal function */

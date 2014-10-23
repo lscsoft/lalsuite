@@ -93,7 +93,8 @@ void ensemble_sampler(struct tagLALInferenceRunState *run_state) {
                                     run_state->currentParamArray[walker],
                                     &proposed_params,
                                     &(run_state->currentPriors[walker]),
-                                    &(run_state->currentLikelihoods[walker]));
+                                    &(run_state->currentLikelihoods[walker]),
+                                    &(run_state->currentPropDensityArray[walker]));
 
             /* Output sample to file */
             if ((*step % skip) == 0) {
@@ -106,7 +107,7 @@ void ensemble_sampler(struct tagLALInferenceRunState *run_state) {
         }
     }
 
-    /* Sampling complet, so clean up and return */
+    /* Sampling complete, so clean up and return */
     for (walker=0; walker<nwalkers_per_thread; walker++)
         XLALFree(walker_output_names[walker]);
     XLALFree(walker_output_names);
@@ -118,37 +119,41 @@ INT4 walker_step(LALInferenceRunState *run_state,
                     LALInferenceModel *model,
                     LALInferenceVariables *current_params,
                     LALInferenceVariables *proposed_params,
-                    REAL8 *current_prior, REAL8 *currentLikelihood) {
-    REAL8 log_prior_proposed, log_likelihood_proposed;
-    REAL8 log_proposal_ratio = 0.0;
-    REAL8 log_acceptance_probability;
+                    REAL8 *current_prior, REAL8 *current_likelihood,
+                    REAL8 *current_prop_density) {
+    REAL8 proposed_prior = -INFINITY;
+    REAL8 proposed_likelihood = -INFINITY;
+    REAL8 proposal_ratio, acceptance_probability;
     INT4 accepted = 0;
 
     /* Propose a new sample */
     LALInferenceClearVariables(proposed_params);
 
     /* Get the probability of proposing the reverse jump */
-    log_proposal_ratio = run_state->proposal(run_state, current_params, proposed_params);
+    REAL8 prop_density = *current_prop_density;
+    proposal_ratio = LALInferenceSmartClusteredKDEProposal(run_state,
+                                                            current_params,
+                                                            proposed_params,
+                                                            &prop_density);
 
     /* Only bother calculating likelihood if within prior boundaries */
-    log_prior_proposed = run_state->prior(run_state, proposed_params, model);
-    if (log_prior_proposed > -DBL_MAX)
-        log_likelihood_proposed =
+    proposed_prior = run_state->prior(run_state, proposed_params, model);
+    if (proposed_prior > -DBL_MAX)
+        proposed_likelihood =
             run_state->likelihood(proposed_params, run_state->data, model);
-    else
-        log_likelihood_proposed = -INFINITY;
 
     /* Find jump acceptance probability */
-    log_acceptance_probability = (log_prior_proposed + log_likelihood_proposed)
-                                - (*current_prior + *currentLikelihood)
-                                + log_proposal_ratio;
+    acceptance_probability = (proposed_prior + proposed_likelihood)
+                            - (*current_prior + *current_likelihood)
+                            + proposal_ratio;
 
     /* Accept the jump with the calculated probability */
-    if (log_acceptance_probability > 0
-            || (log(gsl_rng_uniform(run_state->GSLrandom)) < log_acceptance_probability)) {
+    if (acceptance_probability > 0
+            || (log(gsl_rng_uniform(run_state->GSLrandom)) < acceptance_probability)) {
         LALInferenceCopyVariables(proposed_params, current_params);
-        *current_prior = log_prior_proposed;
-        *currentLikelihood = log_likelihood_proposed;
+        *current_prior = proposed_prior;
+        *current_likelihood = proposed_likelihood;
+        *current_prop_density = prop_density;
 
         accepted = 1;
     }
