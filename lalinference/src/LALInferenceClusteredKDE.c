@@ -887,15 +887,12 @@ void LALInferenceKmeansImposeCyclicReflectiveBounds(LALInferenceKmeans *kmeans,
                         n_above++;
                 }
 
-                printf("%s nbelow=%i nabove=%i\n", param->name, n_below, n_above);
                 if (n_below > n_thresh) {
                     /* Impose cyclic boundaries on both sides */
                     if (param->vary == LALINFERENCE_PARAM_CIRCULAR) {
-                        printf("Imposing cyclic boundaries for %s.\n", param->name);
                         kmeans->KDEs[c]->lower_bound_types[p] = param->vary;
                         kmeans->KDEs[c]->upper_bound_types[p] = param->vary;
                     } else {
-                        printf("Imposing lower reflective boundary for %s.\n", param->name);
                         kmeans->KDEs[c]->lower_bound_types[p] = param->vary;
                     }
                 } else
@@ -904,12 +901,10 @@ void LALInferenceKmeansImposeCyclicReflectiveBounds(LALInferenceKmeans *kmeans,
                 if (n_above > n_thresh) {
                     /* Impose cyclic boundaries on both sides */
                     if (param->vary == LALINFERENCE_PARAM_CIRCULAR) {
-                        printf("Imposing cyclic boundaries for %s.\n", param->name);
                         kmeans->KDEs[c]->lower_bound_types[p] = param->vary;
                         kmeans->KDEs[c]->upper_bound_types[p] = param->vary;
                     } else {
                         kmeans->KDEs[c]->upper_bound_types[p] = param->vary;
-                        printf("Imposing upper reflective boundary for %s.\n", param->name);
                     }
                 } else
                     kmeans->KDEs[c]->upper_bound_types[p] = LALINFERENCE_PARAM_FIXED;

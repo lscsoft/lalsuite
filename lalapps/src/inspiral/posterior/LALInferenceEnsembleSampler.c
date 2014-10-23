@@ -131,7 +131,7 @@ INT4 walker_step(LALInferenceRunState *run_state,
 
     /* Get the probability of proposing the reverse jump */
     REAL8 prop_density = *current_prop_density;
-    proposal_ratio = LALInferenceSmartClusteredKDEProposal(run_state,
+    proposal_ratio = LALInferenceStoredClusterKDEProposal(run_state,
                                                             current_params,
                                                             proposed_params,
                                                             &prop_density);
