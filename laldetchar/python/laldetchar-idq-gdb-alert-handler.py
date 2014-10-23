@@ -242,7 +242,7 @@ for classifier in classifiers:
 
     if exit_status != 0:
         logger.info("    WARNING: idq-gdb-glitch-tables failed for " + classifier)
-        gracedb.writeLog(gdb_id, message="iDQ glitch tables task failed for " + classifier + " at " + ifo)
+        gracedb.writeLog(gdb_id, message="FAILED: iDQ glitch tables for " + classifier + " at " + ifo)
     else:
         logger.info("    Done: idq-gdb-glitch-tables for " + classifier + ".")
 
@@ -254,7 +254,7 @@ for classifier in classifiers:
 
     if exit_status != 0:
         logger.info("    WARNING: idq-gdb-timeseries failed for " + classifier)
-        gracedb.writeLog(gdb_id, message="iDQ glitch-rank timeseries task failed for " + classifier + " at " + ifo)
+        gracedb.writeLog(gdb_id, message="FAILED: iDQ glitch-rank timeseries for " + classifier + " at " + ifo)
     else:
         logger.info("    Done: idq-gdb-timeseries for " + classifier + ".")
 

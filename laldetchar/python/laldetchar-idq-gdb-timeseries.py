@@ -182,7 +182,7 @@ fap_filenames.sort()
 
 if (not rank_filenames) or (not fap_filenames): ### we couldn't find either rank or fap files
     ### exit gracefully
-    gracedb.writeLog(opts.gracedb_id, message="No iDQ timeseries from %s at %s"%(opts.classifier, opts.ifo))
+    gracedb.writeLog(opts.gracedb_id, message="No iDQ timeseries for %s at %s"%(opts.classifier, opts.ifo))
     sys.exit(0)
 
 #=================================================
@@ -290,7 +290,7 @@ r_ax.fill_between( [end-opts.plotting_gps_start, opts.plotting_gps_end-opts.plot
 if not opts.skip_gracedb_upload:
     ### write log messages to gracedb and upload rank files
     for filename in merged_rank_filenames:
-        gracedb.writeLog(opts.gracedb_id, message="iDQ glitch-rank timeseries from "+opts.classifier+" at "+opts.ifo+":", filename=filename)
+        gracedb.writeLog(opts.gracedb_id, message="iDQ glitch-rank timeseries for"+opts.classifier+" at "+opts.ifo+":", filename=filename)
 
 #=================================================
 # FAP
