@@ -187,7 +187,7 @@ void ensemble_update(LALInferenceRunState *run_state) {
                     MPI_DOUBLE, MPI_COMM_WORLD);
 
     /* Update the KDE proposal */
-    UINT4 ntrials = 50;  // k-means initialization trials to optimize clustering at fixed-k
+    UINT4 ntrials = 10;  // k-means initialization trials to optimize clustering at fixed-k
     LALInferenceSetupClusteredKDEProposalFromRun(run_state, samples, nwalkers, ntrials);
 
     /* Clean up */
