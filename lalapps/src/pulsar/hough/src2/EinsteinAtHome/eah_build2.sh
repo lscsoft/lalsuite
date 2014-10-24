@@ -635,7 +635,7 @@ log_and_do "$SOURCE/lalsuite/lalapps/configure" $lalsuite_copts
 log_and_show "building Apps"
 
 log_and_do cd "$BUILD/lalapps/src/lalapps"
-log_and_do make LALAppsVCSInfo.h liblalapps.la
+log_and_do make LALAppsVCSInfo.h LALAppsVCSInfoHeader.h liblalapps.la
 
 log_and_do cd "$BUILD/lalapps/src/pulsar/GCT"
 log_and_dont_fail make gitID
