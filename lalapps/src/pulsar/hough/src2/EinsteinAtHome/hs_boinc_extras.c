@@ -1187,19 +1187,6 @@ static void worker (void) {
     res = HIERARCHICALSEARCH_EFILE;
   }
 
-
-#if DEBUG_COMMAND_LINE_MANGLING
-  /* debug: dump the modified command line */
-  {
-    int i;
-    fputs("command line:",stderr);
-    for(i=0;i<rargc;i++)
-      fprintf(stderr," %s",rargv[i]);
-    fprintf(stderr,"\n");
-  }
-#endif
-
-
   LogPrintf (LOG_DEBUG, "Flags: "
 #ifdef LAL_NDEBUG
 	  "LAL_NDEBUG"
@@ -1336,6 +1323,17 @@ static void worker (void) {
 	myltoa(second_outfile ? current_config_file*2 : current_config_file, &wu_result_file[rlen-1], MAX_PATH_LEN-rlen);
 	*config_file_arg = config_files[current_config_file];
       }
+
+#if DEBUG_COMMAND_LINE_MANGLING
+      /* debug: dump the modified command line */
+      {
+	int i;
+	fputs("command line:",stderr);
+	for(i=0;i<rargc;i++)
+	  fprintf(stderr," %s",rargv[i]);
+	fprintf(stderr,"\n");
+      }
+#endif
 
       /* CALL WORKER's MAIN()
        */
