@@ -163,8 +163,8 @@ LALInferenceKDE *LALInferenceInitKDE(UINT4 npts, UINT4 dim) {
     kde->upper_bounds = XLALCalloc(dim, sizeof(REAL8));
 
     for (p = 0; p < dim; p++) {
-        kde->lower_bound_types[p] = LALINFERENCE_PARAM_FIXED;
-        kde->upper_bound_types[p] = LALINFERENCE_PARAM_FIXED;
+        kde->lower_bound_types[p] = LALINFERENCE_PARAM_OUTPUT;
+        kde->upper_bound_types[p] = LALINFERENCE_PARAM_OUTPUT;
     }
 
     if (npts > 0)
@@ -183,14 +183,12 @@ LALInferenceKDE *LALInferenceInitKDE(UINT4 npts, UINT4 dim) {
  */
 void LALInferenceDestroyKDE(LALInferenceKDE *kde) {
     if (kde) {
-        if (kde->mean) gsl_vector_free(kde->mean);
-        if (kde->cholesky_decomp_cov) gsl_matrix_free(kde->cholesky_decomp_cov);
-        if (kde->cholesky_decomp_cov_lower)
-            gsl_matrix_free(kde->cholesky_decomp_cov_lower);
+        gsl_vector_free(kde->mean);
+        gsl_matrix_free(kde->cholesky_decomp_cov);
+        gsl_matrix_free(kde->cholesky_decomp_cov_lower);
+        gsl_matrix_free(kde->cov);
 
         if (kde->npts > 0) gsl_matrix_free(kde->data);
-
-        if (kde->cov != NULL) gsl_matrix_free(kde->cov);
 
         XLALFree(kde->lower_bound_types);
         XLALFree(kde->upper_bound_types);
@@ -297,7 +295,7 @@ void LALInferenceSetKDEBandwidth(LALInferenceKDE *kde) {
 REAL8 LALInferenceKDEEvaluatePoint(LALInferenceKDE *kde, REAL8 *point) {
     UINT4 dim = kde->dim;
     UINT4 npts = kde->npts;
-    UINT4 i, p;
+    UINT4 i, j, p;
     UINT4 n_evals = 1;  // Number of evaluations to be done
     REAL8 min, max, val;
 
@@ -306,6 +304,19 @@ REAL8 LALInferenceKDEEvaluatePoint(LALInferenceKDE *kde, REAL8 *point) {
         return -INFINITY;
 
     gsl_vector_view x = gsl_vector_view_array(point, dim);
+
+    /* If the point is outside the bounding box, return */
+    for (p = 0; p < dim; p++) {
+        val = gsl_vector_get(&x.vector, p);
+        min = kde->lower_bounds[p];
+        max = kde->upper_bounds[p];
+
+        if ((kde->lower_bound_types[p] == LALINFERENCE_PARAM_FIXED &&
+                    val < min) ||
+            (kde->upper_bound_types[p] == LALINFERENCE_PARAM_FIXED &&
+                    val > max))
+            return -INFINITY;
+    }
 
     /* Repeat point across any imposed cyclic or reflective boundaries */
     for (p = 0; p < dim; p++) {
@@ -358,7 +369,10 @@ REAL8 LALInferenceKDEEvaluatePoint(LALInferenceKDE *kde, REAL8 *point) {
     REAL8* results = XLALMalloc(npts * sizeof(REAL8));
     REAL8* eval_results = XLALMalloc(n_evals * sizeof(REAL8));
 
+    /* Loop over reflected and cycled set of points */
     for (i = 0; i < n_evals; i++) {
+        gsl_vector_view pt = gsl_matrix_row(points, i);
+
         /* Loop over points in KDE dataset, using the Cholesky decomposition
          * of the covariance to avoid ever inverting the covariance matrix */
         #pragma omp parallel
@@ -368,18 +382,18 @@ REAL8 LALInferenceKDEEvaluatePoint(LALInferenceKDE *kde, REAL8 *point) {
             gsl_vector *tdiff = gsl_vector_alloc(dim);
 
             #pragma omp for schedule(static)
-            for (i=0; i<npts; i++) {
-                gsl_vector_view d = gsl_matrix_row(kde->data, i);
+            for (j = 0; j < npts; j++) {
+                gsl_vector_view d = gsl_matrix_row(kde->data, j);
                 gsl_vector_memcpy(diff, &d.vector);
 
-                gsl_vector_sub(diff, &x.vector);
+                gsl_vector_sub(diff, &pt.vector);
                 gsl_linalg_cholesky_solve(kde->cholesky_decomp_cov, diff, tdiff);
                 gsl_vector_mul(diff, tdiff);
 
                 REAL8 energy = 0.;
-                for (UINT4 j=0; j<dim; j++)
-                    energy += gsl_vector_get(diff, j);
-                results[i] = -energy/2.;
+                for (UINT4 k=0; k<dim; k++)
+                    energy += gsl_vector_get(diff, k);
+                results[j] = -energy/2.;
             }
 
             gsl_vector_free(diff);
@@ -393,6 +407,7 @@ REAL8 LALInferenceKDEEvaluatePoint(LALInferenceKDE *kde, REAL8 *point) {
     /* Accumulate probability after accounting for all boundaries */
     REAL8 result = log_add_exps(eval_results, n_evals);
 
+    gsl_matrix_free(points);
     XLALFree(results);
     XLALFree(eval_results);
 
@@ -413,44 +428,56 @@ REAL8 *LALInferenceDrawKDESample(LALInferenceKDE *kde, gsl_rng *rng) {
     UINT4 j, p;
     REAL8 min, max;
     REAL8 val, offset;
+    INT4 within_bounds = 0;
+
+    gsl_vector *unit_draw = gsl_vector_alloc(dim);
 
     REAL8 *point = XLALMalloc(dim * sizeof(REAL8));
     gsl_vector_view pt = gsl_vector_view_array(point, dim);
 
-    /* Draw a random sample from KDE dataset */
-    UINT4 ind = gsl_rng_uniform_int(rng, kde->npts);
-    gsl_vector_view d = gsl_matrix_row(kde->data, ind);
-    gsl_vector_memcpy(&pt.vector, &d.vector); 
+    /* Draw samples until one is within the bounding box */
+    while (!within_bounds) {
+        within_bounds = 1;
 
-    /* Draw individual parameters from 1D unit Gaussians */
-    gsl_vector *unit_draw = gsl_vector_alloc(dim);
-    for (j = 0; j < dim; j++) {
-        val = gsl_ran_ugaussian(rng);
-        gsl_vector_set(unit_draw, j, val);
-    }
+        /* Draw a random sample from KDE dataset */
+        UINT4 ind = gsl_rng_uniform_int(rng, kde->npts);
+        gsl_vector_view d = gsl_matrix_row(kde->data, ind);
+        gsl_vector_memcpy(&pt.vector, &d.vector);
 
-    /* Scale and shift the uncorrelated unit-width sample */
-    gsl_blas_dgemv(CblasNoTrans, 1.0,
-                    kde->cholesky_decomp_cov_lower, unit_draw,
-                    1.0, &pt.vector);
+        /* Draw individual parameters from 1D unit Gaussians */
+        for (j = 0; j < dim; j++) {
+            val = gsl_ran_ugaussian(rng);
+            gsl_vector_set(unit_draw, j, val);
+        }
 
-    /* Apply any imposed cyclic or reflective boundaries */
-    for (p = 0; p < dim; p++) {
-        min = kde->lower_bounds[p];
-        max = kde->upper_bounds[p];
+        /* Scale and shift the uncorrelated unit-width sample */
+        gsl_blas_dgemv(CblasNoTrans, 1.0,
+                        kde->cholesky_decomp_cov_lower, unit_draw,
+                        1.0, &pt.vector);
 
-        if (point[p] < min) {
-            offset = min - point[p];
-            if (kde->lower_bound_types[p] == LALINFERENCE_PARAM_CIRCULAR)
-                point[p] = max - offset;
-            else if (kde->lower_bound_types[p] == LALINFERENCE_PARAM_LINEAR)
-                point[p] = min + offset;
-        } else if (point[p] > max) {
-            offset = point[p] - max;
-            if (kde->upper_bound_types[p] == LALINFERENCE_PARAM_CIRCULAR)
-                point[p] = min + offset;
-            else if (kde->upper_bound_types[p] == LALINFERENCE_PARAM_LINEAR)
-                point[p] = max - offset;
+        /* Apply any imposed cyclic or reflective boundaries */
+        for (p = 0; p < dim; p++) {
+            min = kde->lower_bounds[p];
+            max = kde->upper_bounds[p];
+
+            if (point[p] < min) {
+                offset = min - point[p];
+                if (kde->lower_bound_types[p] == LALINFERENCE_PARAM_CIRCULAR)
+                    point[p] = max - offset;
+                else if (kde->lower_bound_types[p] == LALINFERENCE_PARAM_LINEAR)
+                    point[p] = min + offset;
+                else if (kde->lower_bound_types[p] == LALINFERENCE_PARAM_FIXED)
+                    within_bounds = 0;
+
+            } else if (point[p] > max) {
+                offset = point[p] - max;
+                if (kde->upper_bound_types[p] == LALINFERENCE_PARAM_CIRCULAR)
+                    point[p] = min + offset;
+                else if (kde->upper_bound_types[p] == LALINFERENCE_PARAM_LINEAR)
+                    point[p] = max - offset;
+                else if (kde->upper_bound_types[p] == LALINFERENCE_PARAM_FIXED)
+                    within_bounds = 0;
+            }
         }
     }
 

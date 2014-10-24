@@ -3623,8 +3623,8 @@ void LALInferenceInitClusteredKDEProposal(LALInferenceRunState *runState, LALInf
     kde->weight = weight;
     kde->next = NULL;
 
-    /* Selectivey impose cyclic and reflective bounds where KDEs lie on boundaries */
-    LALInferenceKmeansImposeCyclicReflectiveBounds(kde->kmeans, params, runState->priorArgs);
+    /* Selectivey impose bounds on KDEs */
+    LALInferenceKmeansImposeBounds(kde->kmeans, params, runState->priorArgs);
 
     /* Print out clustered samples, assignments, and PDF values if requested */
     if (LALInferenceGetProcParamVal(runState->commandLine,"--cluster-verbose")) {

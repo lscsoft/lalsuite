@@ -831,20 +831,24 @@ LALInferenceKmeans *LALInferenceKmeansExtractCluster(LALInferenceKmeans *kmeans,
 
 
 /**
- * Selectively impose cyclic/reflective boundaries on KDEs.
+ * Impose boundaries on individual KDEs.
  *
  * Draw samples from each cluster.  If too many samples lie outside of the
  * prior, impose a cyclic/reflective bound for the offending parameter(s).
+ * If boundaries aren't incountered, box in the cluster using the samples
+ * drawn.  This avoids needing to evaluate KDEs that are too far away.
  *
  */
-void LALInferenceKmeansImposeCyclicReflectiveBounds(LALInferenceKmeans *kmeans,
-                                                    LALInferenceVariables *params,
-                                                    LALInferenceVariables *priorArgs) {
+void LALInferenceKmeansImposeBounds(LALInferenceKmeans *kmeans,
+                                    LALInferenceVariables *params,
+                                    LALInferenceVariables *priorArgs) {
     INT4 i, p, dim;
     INT4 n_below, n_above;
     INT4 ndraws, n_thresh;
     UINT4 c;
+    REAL8 draw;
     REAL8 min, max, threshold;
+    REAL8 drawn_min = INFINITY, drawn_max = -INFINITY;
     REAL8 mean, std;
     LALInferenceVariableItem *param=NULL;
 
@@ -875,16 +879,19 @@ void LALInferenceKmeansImposeCyclicReflectiveBounds(LALInferenceKmeans *kmeans,
                 min = (min - mean)/std;
                 max = (max - mean)/std;
 
-                kmeans->KDEs[c]->lower_bounds[p] = min;
-                kmeans->KDEs[c]->upper_bounds[p] = max;
-
                 n_below = 0;
                 n_above = 0;
                 for (i = 0; i < ndraws; i++) {
-                    if (draws[i*dim + p] < min)
+                    draw = draws[i*dim + p];
+                    if (draw < min)
                         n_below++;
-                    else if (draws[i*dim + p] > max)
+                    else if (draw > max)
                         n_above++;
+
+                    if (draw < drawn_min)
+                        drawn_min = draw;
+                    else if (draw > drawn_max)
+                        drawn_max = draw;
                 }
 
                 if (n_below > n_thresh) {
@@ -895,8 +902,10 @@ void LALInferenceKmeansImposeCyclicReflectiveBounds(LALInferenceKmeans *kmeans,
                     } else {
                         kmeans->KDEs[c]->lower_bound_types[p] = param->vary;
                     }
-                } else
+                } else {
+                    min = drawn_min;
                     kmeans->KDEs[c]->lower_bound_types[p] = LALINFERENCE_PARAM_FIXED;
+                }
 
                 if (n_above > n_thresh) {
                     /* Impose cyclic boundaries on both sides */
@@ -906,8 +915,13 @@ void LALInferenceKmeansImposeCyclicReflectiveBounds(LALInferenceKmeans *kmeans,
                     } else {
                         kmeans->KDEs[c]->upper_bound_types[p] = param->vary;
                     }
-                } else
+                } else {
+                    max = drawn_max;
                     kmeans->KDEs[c]->upper_bound_types[p] = LALINFERENCE_PARAM_FIXED;
+                }
+
+                kmeans->KDEs[c]->lower_bounds[p] = min;
+                kmeans->KDEs[c]->upper_bounds[p] = max;
 
                 p++;
             }

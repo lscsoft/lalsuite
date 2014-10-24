@@ -106,8 +106,8 @@ void LALInferenceKmeansConstructMask(LALInferenceKmeans *kmeans, UINT4 *mask, UI
 /* Extract a single cluster from an existing kmeans as a new 1-means. */
 LALInferenceKmeans *LALInferenceKmeansExtractCluster(LALInferenceKmeans *kmeans, UINT4 cluster_id);
 
-/* Selectively impose cyclic/reflective boundaries on KDEs. */
-void LALInferenceKmeansImposeCyclicReflectiveBounds(LALInferenceKmeans *kmeans, LALInferenceVariables *params, LALInferenceVariables *priorArgs);
+/* Impose boundaries on KDEs. */
+void LALInferenceKmeansImposeBounds(LALInferenceKmeans *kmeans, LALInferenceVariables *params, LALInferenceVariables *priorArgs);
 
 /* Generate a new matrix by masking an existing one. */
 gsl_matrix *mask_data(gsl_matrix *data, UINT4 *mask);
