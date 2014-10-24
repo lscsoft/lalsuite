@@ -245,7 +245,7 @@ int MAIN( int argc, char *argv[]) {
   static LIGOTimeGPS minStartTimeGPS, maxStartTimeGPS;
 
   /* some useful variables for each stage */
-  UsefulStageVariables usefulParams;
+  UsefulStageVariables XLAL_INIT_DECL(usefulParams);
 
   /* F-statistic computation related stuff */
   FstatInputVector* Fstat_in_vec = NULL;		// Vector of Fstat input data structures for XLALComputeFstat(), one per stack
