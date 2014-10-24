@@ -81,6 +81,11 @@ void ensemble_sampler(struct tagLALInferenceRunState *run_state) {
         if ((*step % update_interval) == 0)
             ensemble_update(run_state);
 
+        /* Clear out stored proposal densities */
+        if (((*step-1) % update_interval) == 0)
+            for (walker=0; walker<nwalkers_per_thread; walker++)
+                run_state->currentPropDensityArray[walker] = -DBL_MAX;
+
         /* Update all walkers on this MPI-thread */
         #pragma omp parallel for
         for (walker=0; walker<nwalkers_per_thread; walker++) {
@@ -108,8 +113,10 @@ void ensemble_sampler(struct tagLALInferenceRunState *run_state) {
     }
 
     /* Sampling complete, so clean up and return */
-    for (walker=0; walker<nwalkers_per_thread; walker++)
+    for (walker=0; walker<nwalkers_per_thread; walker++) {
+        run_state->currentPropDensityArray[walker] = -DBL_MAX;
         XLALFree(walker_output_names[walker]);
+    }
     XLALFree(walker_output_names);
 
     return;
