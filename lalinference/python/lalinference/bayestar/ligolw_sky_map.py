@@ -49,7 +49,7 @@ def toa_phoa_snr_log_prior(
 
 def emcee_sky_map(
         logl, loglargs, logp, logpargs, xmin, xmax,
-        nside=-1, kde=False, chain_dump=None):
+        nside=-1, kde=False, chain_dump=None, max_horizon=1.0):
     # Set up sampler
     import emcee
     ntemps = 20
@@ -102,6 +102,8 @@ def emcee_sky_map(
     # Optionally save posterior sample chain to file.
     # Read back in with np.load().
     if chain_dump:
+        # Undo numerical conditioning of distances; convert back to Mpc
+        chain[:, 2] *= max_horizon
         names = 'ra sin_dec distance cos_inclination twopsi time'.split()[:ndim]
         np.save(chain_dump, np.rec.fromrecords(chain, names=names))
 
@@ -252,7 +254,8 @@ def ligolw_sky_map(
                 max_abs_t),
             xmin=[0, -1, min_distance, -1, 0, -max_abs_t],
             xmax=[2*np.pi, 1, max_distance, 1, 2*np.pi, max_abs_t],
-            nside=nside, kde=kde, chain_dump=chain_dump)
+            nside=nside, kde=kde, chain_dump=chain_dump,
+            max_horizon=max_horizon)
     elif method == "toa_phoa_snr_mcmc":
         prob = emcee_sky_map(
             logl=sky_map.log_likelihood_toa_phoa_snr,
@@ -263,7 +266,8 @@ def ligolw_sky_map(
                 max_abs_t),
             xmin=[0, -1, min_distance, -1, 0, -max_abs_t],
             xmax=[2*np.pi, 1, max_distance, 1, 2*np.pi, max_abs_t],
-            nside=nside, kde=kde, chain_dump=chain_dump)
+            nside=nside, kde=kde, chain_dump=chain_dump,
+            max_horizon=max_horizon)
     else:
         raise ValueError("Unrecognized method: %s" % method)
     end_time = time.time()
