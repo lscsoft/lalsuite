@@ -39,6 +39,7 @@ void ensemble_sampler(struct tagLALInferenceRunState *run_state) {
     INT4 walker, nwalkers_per_thread, nsteps;
     INT4 skip, update_interval, verbose;
     INT4 *step;
+    INT4 *naccepts;
     char **walker_output_names = NULL;
 
     /* Initialize LIGO status */
@@ -61,12 +62,15 @@ void ensemble_sampler(struct tagLALInferenceRunState *run_state) {
     update_interval =
         *(INT4*) LALInferenceGetVariable(algorithm_params, "update_interval");
 
-    /* Initialize walker outputs
+    /* Initialize walker acceptance rate tracking and outputs.
      * Files are closed to avoid hitting system I/O limits */
-    walker_output_names = XLALMalloc(nwalkers_per_thread * sizeof(char*));
-    for (walker=0; walker<nwalkers_per_thread; walker++)
+    naccepts = XLALCalloc(nwalkers_per_thread, sizeof(INT4));
+    walker_output_names = XLALCalloc(nwalkers_per_thread, sizeof(char*));
+    for (walker=0; walker<nwalkers_per_thread; walker++) {
+        naccepts[walker] = 0.;
         walker_output_names[walker] =
             init_ensemble_output(run_state, walker, mpi_rank*nwalkers_per_thread, verbose);
+    }
 
     /* Setup clustered-KDE proposal from the current state of the ensemble */
     ensemble_update(run_state);
@@ -81,15 +85,12 @@ void ensemble_sampler(struct tagLALInferenceRunState *run_state) {
         if ((*step % update_interval) == 0)
             ensemble_update(run_state);
 
-        /* Clear out stored proposal densities */
-        if (((*step-1) % update_interval) == 0)
-            for (walker=0; walker<nwalkers_per_thread; walker++)
-                run_state->currentPropDensityArray[walker] = -DBL_MAX;
-
         /* Update all walkers on this MPI-thread */
         #pragma omp parallel for
         for (walker=0; walker<nwalkers_per_thread; walker++) {
             INT4 accepted;
+            REAL8 acceptance_rate = 1./(*step);
+
             LALInferenceVariables proposed_params;
             proposed_params.head = NULL;
             proposed_params.dimension = 0;
@@ -101,15 +102,23 @@ void ensemble_sampler(struct tagLALInferenceRunState *run_state) {
                                     &(run_state->currentLikelihoods[walker]),
                                     &(run_state->currentPropDensityArray[walker]));
 
+            /* Track acceptance rates */
+            naccepts[walker] += accepted;
+            acceptance_rate *= naccepts[walker];
+
             /* Output sample to file */
             if ((*step % skip) == 0) {
                 print_ensemble_sample(run_state, walker_output_names, walker);
                 if (verbose)
-                    print_proposed_sample(run_state, &proposed_params, walker, accepted);
+                    print_proposed_sample(run_state, &proposed_params,
+                                            walker, accepted);
             }
 
             LALInferenceClearVariables(&proposed_params);
         }
+
+        if (verbose)
+            print_acceptance_rate(run_state, naccepts, *step);
     }
 
     /* Sampling complete, so clean up and return */
@@ -179,10 +188,10 @@ void ensemble_update(LALInferenceRunState *run_state) {
 
     /* Prepare array to constain samples */
     ndim = LALInferenceGetVariableDimensionNonFixed(run_state->currentParamArray[0]);
-    samples = (REAL8*) XLALMalloc(nwalkers * ndim * sizeof(REAL8));
+    samples = XLALCalloc(nwalkers * ndim, sizeof(REAL8));
 
     /* Get this thread's walkers' locations */
-    param_array = XLALMalloc(nwalkers_per_thread * ndim * sizeof(REAL8));
+    param_array = XLALCalloc(nwalkers_per_thread * ndim, sizeof(REAL8));
     for (walker=0; walker<nwalkers_per_thread; walker++) {
         parameters = &(param_array[ndim*walker]);
         LALInferenceCopyVariablesToArray(run_state->currentParamArray[walker], parameters);
@@ -217,20 +226,24 @@ char *init_ensemble_output(LALInferenceRunState *run_state,
     FILE *walker_output = NULL;
 
     /* Randomseed used to prevent overwriting when peforming multiple analyses */
-    randomseed = *(UINT4*) LALInferenceGetVariable(run_state->algorithmParams, "random_seed");
+    randomseed =
+        *(UINT4*) LALInferenceGetVariable(run_state->algorithmParams, "random_seed");
 
     /* Decide on file name(s) and open */
     ppt = LALInferenceGetProcParamVal(run_state->commandLine, "--outfile");
     if (ppt) {
         outfile_name = (char*) XLALCalloc(strlen(ppt->value)+255, sizeof(char*));
-        sprintf(outfile_name, "%s.%2.2d", ppt->value, walker);
+        sprintf(outfile_name, "%s.%i", ppt->value, walker);
     } else {
         outfile_name = (char*) XLALCalloc(255, sizeof(char*));
-        sprintf(outfile_name, "ensemble.output.%u.%2.2d", randomseed, walker_offset+walker);
-        if (verbose) {
-            prop_name = (char*) XLALCalloc(255, sizeof(char*));
-            sprintf(prop_name, "ensemble.proposed.%u.%2.2d", randomseed, walker_offset+walker);
-        }
+        sprintf(outfile_name,
+                "ensemble.output.%u.%i", randomseed, walker_offset+walker);
+    }
+
+    if (verbose) {
+        prop_name = (char*) XLALCalloc(255, sizeof(char*));
+        sprintf(prop_name, "ensemble.proposed.%u.%i",
+                randomseed, walker_offset+walker);
     }
 
     walker_output = fopen(outfile_name, "w");
@@ -317,17 +330,49 @@ void print_proposed_sample(LALInferenceRunState *run_state,
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);    // This thread's index
 
     LALInferenceVariables *algorithm_params = run_state->algorithmParams;
-    nwalkers_per_thread = *(INT4*) LALInferenceGetVariable(algorithm_params, "nwalkers_per_thread");
     randomseed = *(UINT4*) LALInferenceGetVariable(algorithm_params,"random_seed");
-    sprintf(outname, "ensemble.proposed.%u.%2.2d", randomseed, nwalkers_per_thread*mpi_rank+walker);
+    nwalkers_per_thread =
+        *(INT4*) LALInferenceGetVariable(algorithm_params, "nwalkers_per_thread");
+
+    sprintf(outname, "ensemble.proposed.%u.%2.2d",
+            randomseed, nwalkers_per_thread*mpi_rank+walker);
 
     output = fopen(outname, "a");
     LALInferencePrintSampleNonFixed(output, proposed_params);
     fprintf(output, "%i\n", accepted);
-    fclose(output);
 
+    fclose(output);
     XLALFree(outname);
 }
+
+
+void print_acceptance_rate(LALInferenceRunState *run_state,
+                            INT4 *naccepts,
+                            INT4 step) {
+    INT4 mpi_rank, walker;
+    INT4 nwalkers_per_thread;
+    UINT4 randomseed;
+    FILE *output = NULL;
+    char *outname = (char*) XLALCalloc(255, sizeof(char*));
+
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);    // This thread's index
+
+    LALInferenceVariables *algorithm_params = run_state->algorithmParams;
+    randomseed = *(UINT4*) LALInferenceGetVariable(algorithm_params,"random_seed");
+    nwalkers_per_thread =
+        *(INT4*) LALInferenceGetVariable(algorithm_params, "nwalkers_per_thread");
+
+    sprintf(outname, "ensemble.rates.%u.%i", randomseed, mpi_rank);
+
+    output = fopen(outname, "a");
+    for (walker = 0; walker < nwalkers_per_thread; walker++)
+        fprintf(output, "%f\t", naccepts[walker]/((REAL8) step));
+    fprintf(output, "\n");
+
+    fclose(output);
+    XLALFree(outname);
+}
+
 
 void print_ensemble_header(LALInferenceRunState *run_state,
                             FILE *walker_output,

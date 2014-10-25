@@ -66,6 +66,10 @@ void print_proposed_sample(LALInferenceRunState *run_state,
                             INT4 walker,
                             INT4 accepted);
 
+void print_acceptance_rate(LALInferenceRunState *run_state,
+                            INT4 *naccepts,
+                            INT4 step);
+
 void print_ensemble_header(LALInferenceRunState *run_state,
                             FILE *walker_output,
                             INT4 walker);
