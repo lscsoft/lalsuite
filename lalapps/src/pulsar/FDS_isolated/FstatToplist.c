@@ -56,10 +56,6 @@ extern int _doserrno;
 /* errno */
 #include <errno.h>
 
-/* this is defined in C99 and *should* be in math.h. Long term
-   protect this with a HAVE_FINITE */
-int finite(double);
-
 #endif  /* MSC */
 
 
@@ -211,11 +207,11 @@ int read_fstat_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxby
 	if (
 	    items != 6 ||
 
-	    !finite(FstatLine.Freq)	||
-	    !finite(FstatLine.f1dot)	||
-	    !finite(FstatLine.Alpha)	||
-	    !finite(FstatLine.Delta)	||
-	    !finite(FstatLine.Fstat)	||
+	    !isfinite(FstatLine.Freq)	||
+	    !isfinite(FstatLine.f1dot)	||
+	    !isfinite(FstatLine.Alpha)	||
+	    !isfinite(FstatLine.Delta)	||
+	    !isfinite(FstatLine.Fstat)	||
 
 	    FstatLine.Freq  < 0.0                    ||
 	    FstatLine.Alpha <         0.0 - epsilon  ||
