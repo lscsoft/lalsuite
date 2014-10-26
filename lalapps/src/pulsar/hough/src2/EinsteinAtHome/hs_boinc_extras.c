@@ -1329,9 +1329,15 @@ static void worker (void) {
       {
 	int i;
 	fputs("command line:",stderr);
-	for(i=0;i<rargc;i++)
-	  fprintf(stderr," %s",rargv[i]);
-	fprintf(stderr,"\n");
+	for(i=0;i<rargc;i++) {
+	  if (rargv[i]) {
+	    fputs(" ", stderr);
+	    fputs(rargv[i],stderr);
+	  } else {
+	    fputs(" [NULL]", stderr);
+	  }
+	}
+	fputs("\n",stderr);
       }
 #endif
 
