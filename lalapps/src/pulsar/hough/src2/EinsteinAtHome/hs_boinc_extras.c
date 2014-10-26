@@ -1109,6 +1109,7 @@ static void worker (void) {
 
     /* record if there will be a second output file */
     else if (!strcmp("--SortToplist=3",argv[arg])) {
+      rargv[rarg] = argv[arg];
       second_outfile = -1;
     }
 
