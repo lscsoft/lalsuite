@@ -7,7 +7,7 @@ test_programs += LALCorrelationTest
 test_programs += LALMomentTest
 
 # Add shell, Python, etc. test scripts to this variable
-test_scripts += LALMarcumQTest.py
+test_scripts +=
 
 # Add any helper programs required by tests to this variable
 test_helpers +=

@@ -4,7 +4,6 @@ noinst_LTLIBRARIES = libstats.la
 
 libstats_la_SOURCES = \
 	LALMoment.c \
-	LALCorrelation.c \
-	XLALMarcumQ.c
+	LALCorrelation.c
 
 noinst_HEADERS = LALMoment_source.c
