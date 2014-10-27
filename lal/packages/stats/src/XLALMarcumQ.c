@@ -29,7 +29,7 @@
  */
 
 
-#pragma GCC diagnostic ignore "-Wshadow"
+#pragma GCC diagnostic ignored "-Wshadow"
 
 
 /*
