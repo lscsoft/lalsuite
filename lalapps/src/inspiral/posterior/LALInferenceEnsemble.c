@@ -207,8 +207,16 @@ void init_ensemble(LALInferenceRunState *run_state) {
 
     /* Distribute ensemble according to prior when randomly initializing */
     if (!LALInferenceGetProcParamVal(command_line, "--init-samples") &&
-            !LALInferenceGetProcParamVal(command_line, "--skip-prior"))
+            !LALInferenceGetProcParamVal(command_line, "--skip-prior")) {
+
+        if (mpi_rank == 0)
+            printf("Distributing ensemble according to prior.\n");
+
         sample_prior(run_state);
+
+        if (mpi_rank == 0)
+            printf("Completed prior sampling.\n");
+    }
 
     /* Set starting likelihood values (prior function hasn't changed) */
     #pragma omp parallel for
@@ -238,7 +246,6 @@ LALInferenceRunState *initialize(ProcessParamsTable *command_line)
         LALInferenceInjectInspiralSignal(run_state->data,command_line);
         run_state->currentLikelihood=LALInferenceNullLogLikelihood(run_state->data);
     } else {
-        fprintf(stdout, " initialize(): no data read.\n");
         run_state = NULL;
         return(run_state);
     }
@@ -304,7 +311,8 @@ void init_sampler(LALInferenceRunState *run_state) {
 
     /* Print command line arguments if run_state was not allocated */
     if(run_state==NULL) {
-        fprintf(stdout,"%s",help);
+        if (mpi_rank == 0)
+            fprintf(stdout, "%s", help);
         return;
     }
 
@@ -316,7 +324,8 @@ void init_sampler(LALInferenceRunState *run_state) {
 
     /* Print command line arguments if help requested */
     if (LALInferenceGetProcParamVal(command_line,"--help")) {
-        fprintf(stdout,"%s",help);
+        if (mpi_rank == 0)
+            fprintf(stdout, "%s", help);
         return;
     }
 
@@ -343,7 +352,6 @@ void init_sampler(LALInferenceRunState *run_state) {
     } else if (LALInferenceGetProcParamVal(command_line, "--nullprior")) {
         run_state->prior=&LALInferenceNullPrior;
     } else if (LALInferenceGetProcParamVal(command_line, "--malmquistprior")) {
-        printf("Using malmquist prior.\n");
         malmquist = 1;
         LALInferenceAddVariable(run_state->priorArgs,
                                 "malmquist", &malmquist,
@@ -412,9 +420,11 @@ void init_sampler(LALInferenceRunState *run_state) {
         if (requested_nwalkers % mpi_size != 0.0) {
             nwalkers_per_thread = (INT4)requested_nwalkers_per_thread + 1;
             nwalkers = mpi_size * nwalkers_per_thread;
-            printf("Rounding up number of walkers to %i to provide \
-                    consistent performance across the %i available \
-                    MPI threads.\n", nwalkers, mpi_size);
+
+            if (mpi_rank == 0)
+                printf("Rounding up number of walkers to %i to provide \
+                        consistent performance across the %i available \
+                        MPI threads.\n", nwalkers, mpi_size);
         } else {
             nwalkers = requested_nwalkers;
             nwalkers_per_thread = (INT4) requested_nwalkers_per_thread;
@@ -469,7 +479,8 @@ void init_sampler(LALInferenceRunState *run_state) {
         }
     }
 
-    fprintf(stdout, " initialize(): random seed: %u\n", randomseed);
+    if (mpi_rank == 0)
+        fprintf(stdout, " initialize(): random seed: %u\n", randomseed);
 
     gsl_rng_set(run_state->GSLrandom, randomseed);
 
@@ -564,14 +575,11 @@ void sample_prior(LALInferenceRunState *run_state) {
     run_state->likelihood = &LALInferenceZeroLogLikelihood;
 
     /* Run the sampler to completion */
-    printf("Distributing ensemble according to prior.\n");
     run_state->algorithm(run_state);
 
     /* Restore algorithm parameters and likelihood function */
     LALInferenceSetVariable(algorithm_params, "nsteps", &nsteps);
     LALInferenceInitLikelihood(run_state);
-
-    printf("Completed prior sampling.\n");
 }
 
 int main(int argc, char *argv[]){
