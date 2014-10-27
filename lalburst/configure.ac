@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALBurst],[1.2.2.1],[lal-discuss@ligo.org])
+AC_INIT([LALBurst],[1.2.3.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h src/LALBurstConfig.h])
 AC_CONFIG_SRCDIR([src/EPSearch.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
