@@ -66,7 +66,7 @@ void ensemble_sampler(struct tagLALInferenceRunState *run_state) {
      * Files are closed to avoid hitting system I/O limits */
     naccepts = XLALCalloc(nwalkers_per_thread, sizeof(INT4));
     walker_output_names = XLALCalloc(nwalkers_per_thread, sizeof(char*));
-    for (walker=0; walker<nwalkers_per_thread; walker++) {
+    for (walker = 0; walker < nwalkers_per_thread; walker++) {
         naccepts[walker] = 0.;
         walker_output_names[walker] =
             init_ensemble_output(run_state, walker, mpi_rank*nwalkers_per_thread, verbose);
@@ -184,15 +184,16 @@ void ensemble_update(LALInferenceRunState *run_state) {
 
     LALInferenceVariables *algorithm_params = run_state->algorithmParams;
     nwalkers = *(INT4 *) LALInferenceGetVariable(algorithm_params, "nwalkers");
-    nwalkers_per_thread = *(INT4*) LALInferenceGetVariable(algorithm_params, "nwalkers_per_thread");
+    nwalkers_per_thread =
+        *(INT4*) LALInferenceGetVariable(algorithm_params, "nwalkers_per_thread");
 
-    /* Prepare array to constain samples */
+    /* Prepare array to contain samples */
     ndim = LALInferenceGetVariableDimensionNonFixed(run_state->currentParamArray[0]);
     samples = XLALCalloc(nwalkers * ndim, sizeof(REAL8));
 
     /* Get this thread's walkers' locations */
     param_array = XLALCalloc(nwalkers_per_thread * ndim, sizeof(REAL8));
-    for (walker=0; walker<nwalkers_per_thread; walker++) {
+    for (walker = 0; walker < nwalkers_per_thread; walker++) {
         parameters = &(param_array[ndim*walker]);
         LALInferenceCopyVariablesToArray(run_state->currentParamArray[walker], parameters);
     }

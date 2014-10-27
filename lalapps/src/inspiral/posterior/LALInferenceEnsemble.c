@@ -223,8 +223,8 @@ void init_ensemble(LALInferenceRunState *run_state) {
     for (walker = 0; walker < nwalkers_per_thread; walker++)
         run_state->currentLikelihoods[walker] =
             run_state->likelihood(run_state->currentParamArray[walker],
-                                run_state->data,
-                                run_state->modelArray[walker]);
+                                    run_state->data,
+                                    run_state->modelArray[walker]);
 }
 
 LALInferenceRunState *initialize(ProcessParamsTable *command_line)
@@ -243,8 +243,8 @@ LALInferenceRunState *initialize(ProcessParamsTable *command_line)
   
     /* Perform injections if data successful read or created */
     if (run_state->data != NULL) {
-        LALInferenceInjectInspiralSignal(run_state->data,command_line);
-        run_state->currentLikelihood=LALInferenceNullLogLikelihood(run_state->data);
+        LALInferenceInjectInspiralSignal(run_state->data, command_line);
+        run_state->currentLikelihood = LALInferenceNullLogLikelihood(run_state->data);
     } else {
         run_state = NULL;
         return(run_state);
@@ -304,15 +304,16 @@ void init_sampler(LALInferenceRunState *run_state) {
                  (--data-dump)                    Output waveforms to file.\n\
                  (--outfile file)                 Write output files <file>.<chain_number> (ensemble.output.<random_seed>.<walker_number>).\n";
 
-    INT4 i, walker;
+    INT4 i, j, walker;
     INT4 mpi_rank, mpi_size;
+
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
 
     /* Print command line arguments if run_state was not allocated */
-    if(run_state==NULL) {
+    if (run_state == NULL) {
         if (mpi_rank == 0)
-            fprintf(stdout, "%s", help);
+            printf("%s", help);
         return;
     }
 
@@ -323,9 +324,9 @@ void init_sampler(LALInferenceRunState *run_state) {
     struct timeval tv;
 
     /* Print command line arguments if help requested */
-    if (LALInferenceGetProcParamVal(command_line,"--help")) {
+    if (LALInferenceGetProcParamVal(command_line, "--help")) {
         if (mpi_rank == 0)
-            fprintf(stdout, "%s", help);
+            printf("%s", help);
         return;
     }
 
@@ -342,7 +343,7 @@ void init_sampler(LALInferenceRunState *run_state) {
     LALInferenceInitCBCTemplate(run_state);
 
     UINT4 malmquist = 0;
-    if(LALInferenceGetProcParamVal(command_line,"--skyLocPrior")){
+    if (LALInferenceGetProcParamVal(command_line,"--skyLocPrior")){
         run_state->prior=&LALInferenceInspiralSkyLocPrior;
     } else if (LALInferenceGetProcParamVal(command_line, "--correlatedGaussianLikelihood") || 
                LALInferenceGetProcParamVal(command_line, "--bimodalGaussianLikelihood") ||
@@ -402,9 +403,9 @@ void init_sampler(LALInferenceRunState *run_state) {
     }
 
     /* Print more stuff */
-    UINT4 verbose=0;
+    UINT4 verbose = 0;
     if (LALInferenceGetProcParamVal(command_line, "--verbose"))
-        verbose=1;
+        verbose = 1;
 
     /* Determine number of walkers */
     INT4 nwalkers = mpi_size;
@@ -479,10 +480,18 @@ void init_sampler(LALInferenceRunState *run_state) {
         }
     }
 
-    if (mpi_rank == 0)
-        fprintf(stdout, " initialize(): random seed: %u\n", randomseed);
+   /* Now make sure each MPI-thread is running with un-correlated
+       jumps. Re-seed this process with the ith output of
+       the RNG stream from the rank 0 thread. Otherwise the
+       random stream is the same across all threads. */
+    for (i = 0; i < mpi_rank; i++)
+        for (j = 0; j < (INT4)nsteps * nwalkers_per_thread; j++)
+            randomseed = gsl_rng_get(run_state->GSLrandom);
 
     gsl_rng_set(run_state->GSLrandom, randomseed);
+
+    if (mpi_rank == 0)
+        printf(" initialize(): random seed: %u\n", randomseed);
 
     /* Set up CBC model and parameter array */
     run_state->modelArray =
@@ -543,15 +552,6 @@ void init_sampler(LALInferenceRunState *run_state) {
     LALInferenceAddVariable(algorithm_params, "step", &step,
                             LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
 
-   /* Now make sure each MPI-thread is running with un-correlated
-       jumps. Re-seed this process with the ith output of
-       the RNG stream from the rank 0 thread. Otherwise the
-       random stream is the same across all threads. */
-    for (i = 0; i < mpi_rank; i++)
-        randomseed = gsl_rng_get(run_state->GSLrandom);
-
-    gsl_rng_set(run_state->GSLrandom, randomseed);
-
     return;
 }
 
@@ -590,7 +590,7 @@ int main(int argc, char *argv[]){
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
 
     if (mpi_rank == 0)
-        fprintf(stdout," ========== lalinference_ensemble ==========\n");
+        printf(" ========== lalinference_ensemble ==========\n");
 
     /* Read command line and parse */
     ProcessParamsTable *proc_params = LALInferenceParseCommandLine(argc,argv);
@@ -599,14 +599,18 @@ int main(int argc, char *argv[]){
      *   memory, reading data, and performing any injections specified. */
     LALInferenceRunState *run_state = initialize(proc_params);
 
-    if(run_state==NULL) {
-        fprintf(stderr, "run_state not allocated (%s, line %d).\n",
-                __FILE__, __LINE__);
-        exit(1);
-    }
-
     /* Read arguments and set up sampler */
     init_sampler(run_state);
+
+    if (run_state == NULL) {
+        if (!LALInferenceGetProcParamVal(proc_params, "--help")) {
+            fprintf(stderr, "run_state not allocated (%s, line %d).\n",
+                    __FILE__, __LINE__);
+            exit(1);
+        } else {
+            exit(0);
+        }
+    }
 
     /* Setup model struct and set current variables to match the
      *  initialized model params */
@@ -629,7 +633,7 @@ int main(int argc, char *argv[]){
     run_state->algorithm(run_state);
 
     if (mpi_rank == 0)
-        fprintf(stdout," ==========  sampling complete ==========\n");
+        printf(" ==========  sampling complete ==========\n");
 
     /* Close down MPI parallelization and return */
     MPI_Finalize();
