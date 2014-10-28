@@ -690,7 +690,7 @@ double XLALMarcumQmodified(double M, double x, double y)
 	}
 
 	if(Q < 0. || Q > 1.)
-		XLAL_ERROR_REAL8(XLAL_ERANGE, "%s(%.16g, %.16g, %.16g) = %.16g", __func__, M, x, y, Q);
+		XLAL_ERROR_REAL8(XLAL_ERANGE, "%s(%.17g, %.17g, %.17g) = %.17g", __func__, M, x, y, Q);
 
 	return Q;
 }
