@@ -32,6 +32,11 @@ try:
 except ImportError:
 	print "WARNING:  lal module not found.  test disabled"
 	sys.exit(0)
+try:
+	lal.MarcumQmodified
+except AttributeError:
+	print "WARNING:  lal module does not correspond to this source tree.  test disabled"
+	sys.exit(0)
 
 
 #
