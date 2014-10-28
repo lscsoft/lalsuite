@@ -346,7 +346,7 @@ static double MarcumQ_large_xy(double M, double x, double y, double xi)
 	double rho = sqrt(y / x);
 
 	double rho_to_M_over_root_8_pi = pow(y / x, M / 2.) / sqrt(8. * LAL_PI);
-	double e_to_neg_sigma_xi = exp(-root_y_minus_root_x * root_y_minus_root_x);
+	double e_to_neg_sigma_xi_over_xi_to_n_minus_half = exp(-root_y_minus_root_x * root_y_minus_root_x) * sqrt(xi);
 
 	/* Phi_{0}.  equation (35).  NOTE:  that in (35) they show
 	 * \sqrt{\sigma \xi} being replaced by \sqrt{y} - \sqrt{x}, but it
@@ -429,9 +429,10 @@ static double MarcumQ_large_xy(double M, double x, double y, double xi)
 		 * of (-1)^n, so we flip its sign here, too.  */
 		n++;
 		rho_to_M_over_root_8_pi = -rho_to_M_over_root_8_pi;
+		e_to_neg_sigma_xi_over_xi_to_n_minus_half /= xi;
 
 		/* Phi_{n} from Phi_{n - 1}.  equation (36) */
-		Phi = (e_to_neg_sigma_xi * pow(xi, .5 - n) - sigma * Phi) / (n - .5);
+		Phi = (e_to_neg_sigma_xi_over_xi_to_n_minus_half - sigma * Phi) / (n - .5);
 
 		/* Psi_{n} from Phi_{n}.  equation (38) */
 		double lnA_n_M_minus_1 = lnA(n, M - 1.);
