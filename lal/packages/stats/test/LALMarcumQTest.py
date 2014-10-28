@@ -26,6 +26,7 @@
 #
 
 
+import random
 import sys
 import lal
 
@@ -109,3 +110,20 @@ print
 print lal.MarcumQmodified(1., 31.99999, 32.00001), lal.MarcumQmodified(1., 32.00001, 31.99999)
 print lal.MarcumQmodified(1., 31.9999999999, 32.0000000001), lal.MarcumQmodified(1., 32.0000000001, 31.9999999999)
 print lal.MarcumQmodified(1., 32., 32.), lal.MarcumQmodified(1., 32., 32.)
+
+
+#
+# =============================================================================
+#
+#                                 Random Input
+#
+# =============================================================================
+#
+
+
+for i in xrange(100000):
+	M, x, y = random.uniform(1, 10000), random.uniform(0, 10000), random.uniform(0, 10000)
+	if x + M - (4.*x + 2.*M)**.5 < y < x + M + (4.*x + 2.*M)**.5 and M >= 135:
+		continue
+	print "trying XLALMarcumQmodified(%.17g, %.17g, %.17g)" % (M, x, y)
+	lal.MarcumQmodified(M, x, y)
