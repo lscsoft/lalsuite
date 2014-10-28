@@ -438,6 +438,14 @@ static double MarcumQ_large_xy(double M, double x, double y, double xi)
 		Psi = rho_to_M_over_root_8_pi * exp(lnA_n_M_minus_1) * (1. - exp(lnA(n, M) - lnA_n_M_minus_1) / rho) * Phi;
 	} while(1);
 
+	/*
+	 * for very small probabilities, improper cancellation can leave us
+	 * with a small negative number.  nudge back into the allowed range
+	 */
+
+	if(-1e-200 < sum && sum < 0.)
+		sum = 0.;
+
 	return sum;
 }
 
@@ -688,6 +696,15 @@ double XLALMarcumQmodified(double M, double x, double y)
 
 		Q = MarcumQ_quadrature(M, x / M, y / M, xi / M);
 	}
+
+	/*
+	 * we're generally only correct to 12 digits, and the error can
+	 * result in an impossible probability.  nudge back into the
+	 * allowed range.
+	 */
+
+	if(1. < Q && Q < 1. + 1e-12)
+		Q = 1.;
 
 	if(Q < 0. || Q > 1.)
 		XLAL_ERROR_REAL8(XLAL_ERANGE, "%s(%.17g, %.17g, %.17g) = %.17g", __func__, M, x, y, Q);
