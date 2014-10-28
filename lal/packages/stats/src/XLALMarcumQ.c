@@ -321,7 +321,7 @@ static double MarcumQ_small_x(double M, double x, double y)
 	do {
 		double term = x_to_n_over_n_factorial * Q(M + n, y);
 		sum += term;
-		if(term < 1e-17 * sum)
+		if(term <= 1e-17 * sum)
 			break;
 		n++;
 		x_to_n_over_n_factorial *= x / n;
@@ -422,7 +422,7 @@ static double MarcumQ_large_xy(double M, double x, double y, double xi)
 	do {
 		/* equation (37) */
 		sum += Psi;
-		if(fabs(Psi) < 1e-17 * sum)
+		if(fabs(Psi) <= 1e-17 * fabs(sum))
 			break;
 
 		/* next n.  rho_to_M_over_root_8_pi is providing the factor
@@ -505,7 +505,7 @@ static double MarcumQ_large_M(double M, double x, double y)
 			Bk += /* FIXME:  need f(j, k - j) * */ Psi[j] / pow(M, k - j);
 
 		sum += Bk;
-		if(Bk < 1e-17 * sum)
+		if(Bk <= 1e-17 * sum)
 			break;
 
 		/* next k */
