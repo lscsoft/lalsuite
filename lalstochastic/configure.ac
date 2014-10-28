@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALStochastic],[1.1.11.1],[lal-discuss@ligo.org])
+AC_INIT([LALStochastic],[1.1.12.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h src/LALStochasticConfig.h])
 AC_CONFIG_SRCDIR([src/StochasticOmegaGW.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
