@@ -1,3 +1,10 @@
+lalinference (1.4.1-1) unstable; urgency=low
+
+  * LALInference 1.4.1
+  * correctly package SWIG bindings
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 28 Oct 2014 12:45:05 -0500
+
 lalinference (1.4.0-1) unstable; urgency=low
 
   * LALInference 1.4.0
