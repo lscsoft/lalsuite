@@ -265,8 +265,7 @@ static double f(double theta, double y, double xi)
 	double r_minus_cos_theta = r_ - cos(theta);
 	double sin_theta = sin(theta);
 
-	double result = (r_primed_sin_theta(theta, y, xi) - r_minus_cos_theta * r_) / (r_minus_cos_theta * r_minus_cos_theta + sin_theta * sin_theta);
-	return result;
+	return (r_primed_sin_theta(theta, y, xi) - r_minus_cos_theta * r_) / (r_minus_cos_theta * r_minus_cos_theta + sin_theta * sin_theta);
 }
 
 
