@@ -27,7 +27,11 @@
 
 
 import sys
-import lal
+try:
+	import lal
+except ImportError:
+	print "WARNING:  lal module not found.  test disabled"
+	sys.exit(0)
 
 
 #
