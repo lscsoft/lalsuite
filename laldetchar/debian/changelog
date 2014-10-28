@@ -1,3 +1,10 @@
+laldetchar (0.2.1-1) unstable; urgency=low
+
+  * LALDetChar 0.2.1
+  * correctly package SWIG bindings
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 28 Oct 2014 12:38:28 -0500
+
 laldetchar (0.2.0-1) unstable; urgency=low
 
   * LALDetchar 0.2.0
