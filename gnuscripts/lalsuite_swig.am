@@ -133,7 +133,7 @@ swig-python-clean-local:
 install-exec-hook: swig-python-install-hook
 swig-python-install-hook:
 	cd $(DESTDIR)$(pkgpyexecdir) && \
-	rm -f swiglal_python.la _swig_$(PACKAGE)$(SWIG_SOEXT)* && \
+	rm -f swiglal_python.la _$(PACKAGE)$(SWIG_SOEXT)* && \
 	mv -f swiglal_python$(SWIG_SOEXT) _$(PACKAGE)$(SWIG_SOEXT)
 
 uninstall-hook: swig-python-uninstall-hook
