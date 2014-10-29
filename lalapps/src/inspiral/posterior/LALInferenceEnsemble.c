@@ -49,9 +49,9 @@ void init_ensemble(LALInferenceRunState *run_state) {
 
     /* Determine number of MPI threads, and the
      *   number of walkers run by each thread */
-    INT4 mpi_rank, mpi_size, walker;
+    INT4 mpi_rank, walker;
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+
     INT4 nwalkers_per_thread =
         LALInferenceGetINT4Variable(run_state->algorithmParams,
                                     "nwalkers_per_thread");
