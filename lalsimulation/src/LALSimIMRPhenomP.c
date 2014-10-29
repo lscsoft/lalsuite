@@ -142,8 +142,7 @@ int XLALSimIMRPhenomPCalculateModelParameters(
     REAL8 *chip,                    /**< Output: Effective spin in the orbital plane */
     REAL8 *eta,                     /**< Output: Symmetric mass-ratio */
     REAL8 *thetaJ,                  /**< Output: Angle between J0 and line of sight (z-direction) */
-    REAL8 *phiJ,                    /**< Output: Angle of J0 in the plane of the sky */
-    REAL8 *alpha0,                  /**< Output: Initial value of alpha angle */
+    REAL8 *alpha0,                  /**< Output: Initial value of alpha angle (azimuthal precession angle) */
     const REAL8 m1_SI,              /**< Mass of companion 1 (kg) */
     const REAL8 m2_SI,              /**< Mass of companion 2 (kg) */
     const REAL8 f_ref,              /**< Reference GW frequency (Hz) */
@@ -157,12 +156,14 @@ int XLALSimIMRPhenomPCalculateModelParameters(
     const REAL8 s2y,                /**< Initial value of s2y: dimensionless spin of BH 2 */
     const REAL8 s2z)                /**< Initial value of s2z: dimensionless spin of BH 2 */
 {
-  /* Check inputs for sanity */
+  // See Fig. 1. in arxiv:1408.1810 for diagram of the angles.
+  // Note that the angle phiJ defined below and alpha0 are degenerate. Therefore we do not output phiJ.
+
+  /* Check arguments for sanity */
   if (!chi_eff)  XLAL_ERROR(XLAL_EFAULT);
   if (!chip)     XLAL_ERROR(XLAL_EFAULT);
   if (!eta)      XLAL_ERROR(XLAL_EFAULT);
   if (!thetaJ)   XLAL_ERROR(XLAL_EFAULT);
-  if (!phiJ)     XLAL_ERROR(XLAL_EFAULT);
   if (!alpha0)   XLAL_ERROR(XLAL_EFAULT);
 
   if (f_ref <= 0) {
@@ -213,10 +214,11 @@ int XLALSimIMRPhenomPCalculateModelParameters(
   const REAL8 J0 = sqrt(Jx0*Jx0 + Jy0*Jy0 + Jz0*Jz0);
 
   *thetaJ = acos(Jz0 / J0); /* Angle between J0 and line of sight (z-direction) */
+  REAL8 phiJ; // We only use this angle internally since it is degenerate with alpha0.
   if (Jx0 == 0.0 && Jy0 == 0.0)
-    *phiJ = 0;
+    phiJ = 0;
   else
-    *phiJ = atan2(Jy0, Jx0); /* Angle of J0 in the plane of the sky */
+    phiJ = atan2(Jy0, Jx0); /* Angle of J0 in the plane of the sky */
     /* Note: Compared to the similar code in SpinTaylorF2 we have defined phiJ as the angle between the positive
     (rather than the negative) x-axis and the projection of J0, since this is a more natural definition of the angle.
     We have also renamed the angle from psiJ to phiJ. */
@@ -229,8 +231,8 @@ int XLALSimIMRPhenomPCalculateModelParameters(
       {cos(phiJ)*sin(thetaJ), sin(thetaJ)*sin(phiJ),cos(thetaJ)}
     }
   */
-  const REAL8 rotLx = -lnhatx*cos(*thetaJ)*cos(*phiJ) - lnhaty*cos(*thetaJ)*sin(*phiJ) + lnhatz*sin(*thetaJ);
-  const REAL8 rotLy = lnhatx*sin(*phiJ) - lnhaty*cos(*phiJ);
+  const REAL8 rotLx = -lnhatx*cos(*thetaJ)*cos(phiJ) - lnhaty*cos(*thetaJ)*sin(phiJ) + lnhatz*sin(*thetaJ);
+  const REAL8 rotLy = lnhatx*sin(phiJ) - lnhaty*cos(phiJ);
   if (rotLx == 0.0 && rotLy == 0.0)
     *alpha0 = 0.0;
   else
@@ -246,16 +248,19 @@ int XLALSimIMRPhenomP(
   const REAL8 chip,                     /**< Effective spin in the orbital plane */
   const REAL8 eta,                      /**< Symmetric mass-ratio */
   const REAL8 thetaJ,                   /**< Angle between J0 and line of sight (z-direction) */
-  const REAL8 phiJ,                     /**< Angle of J0 in the plane of the sky */
   const REAL8 Mtot_SI,                  /**< Total mass of binary (kg) */
   const REAL8 distance,                 /**< Distance of source (m) */
-  const REAL8 alpha0,                   /**< Initial value of alpha angle */
+  const REAL8 alpha0,                   /**< Initial value of alpha angle (azimuthal precession angle) */
   const REAL8 phic,                     /**< Orbital phase at the peak of the underlying non precessing model (rad) */
   const REAL8 deltaF,                   /**< Sampling frequency (Hz) */
   const REAL8 f_min,                    /**< Starting GW frequency (Hz) */
   const REAL8 f_max,                    /**< End frequency; 0 defaults to ringdown cutoff freq */
   const REAL8 f_ref)                    /**< Reference frequency */
 {
+  // See Fig. 1. in arxiv:1408.1810 for diagram of the angles.
+  // Note that the angles phiJ which is calculated internally in XLALSimIMRPhenomPCalculateModelParameters
+  // and alpha0 are degenerate. Therefore phiJ is not passed to this function.
+
   const REAL8 M = Mtot_SI / LAL_MSUN_SI;  /* External units: SI; internal units: solar masses */
   const REAL8 m_sec = M * LAL_MTSUN_SI;   /* Total mass in seconds */
   const REAL8 q = (1.0 + sqrt(1.0 - 4.0*eta) - 2.0*eta)/(2.0*eta); /* Mass-ratio */
@@ -370,7 +375,6 @@ int XLALSimIMRPhenomP(
   XLALPrintInfo("chi: %g\n", chi_eff);
   XLALPrintInfo("chip: %g\n", chip);
   XLALPrintInfo("thetaJ: %g\n", thetaJ);
-  XLALPrintInfo("phiJ: %g\n", phiJ);
   XLALPrintInfo("ind_mix = (int)(f_mix / deltaF) = %d\n", (int)(f_min / deltaF));
   XLALPrintInfo("ind_max = (int)(f_max / deltaF) = %d\n", (int)(f_max_prime / deltaF));
 
@@ -431,7 +435,7 @@ int PhenomPCore(
   BBHPhenomCParams *PCparams,             /**< Internal PhenomC parameters */
   NNLOanglecoeffs *angcoeffs,  		  /**< Struct with PN coeffs for the NNLO angles */
   SpinWeightedSphericalHarmonic_l2 *Y2m,  /**< Struct of l=2 spherical harmonics of spin weight -2 */
-  const REAL8 alphaoffset,                /**< f_ref dependent offset for alpha angle */
+  const REAL8 alphaoffset,                /**< f_ref dependent offset for alpha angle (azimuthal precession angle) */
   const REAL8 epsilonoffset,              /**< f_ref dependent offset for epsilon angle */
   COMPLEX16 *hp,                          /**< Output: \tilde h_+ */
   COMPLEX16 *hc)                          /**< Output: \tilde h_+ */

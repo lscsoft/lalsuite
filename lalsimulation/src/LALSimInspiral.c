@@ -2744,18 +2744,18 @@ int XLALSimInspiralChooseFDWaveform(
             LNhaty = 0.;
             LNhatz = cos(i);
             /* Tranform to model parameters */
-            REAL8 chi_eff, chip, eta, thetaJ, phiJ, alpha0;
+            REAL8 chi_eff, chip, eta, thetaJ, alpha0;
             if(f_ref==0.0)
                 f_ref = f_min; /* Default reference frequency is minimum frequency */
             XLALSimIMRPhenomPCalculateModelParameters(
-                &chi_eff, &chip, &eta, &thetaJ, &phiJ, &alpha0,
+                &chi_eff, &chip, &eta, &thetaJ, &alpha0,
                 m1, m2, f_ref,
                 LNhatx, LNhaty, LNhatz,
                 S1x, S1y, S1z,
                 S2x, S2y, S2z);
             /* Call the waveform driver routine */
             ret = XLALSimIMRPhenomP(hptilde, hctilde,
-              chi_eff, chip, eta, thetaJ, phiJ,
+              chi_eff, chip, eta, thetaJ,
               m1+m2, r, alpha0, phiRef, deltaF, f_min, f_max, f_ref);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             break;
