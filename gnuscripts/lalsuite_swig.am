@@ -257,10 +257,10 @@ swig-distclean-generate-local:
 else # !SWIG_GENERATE
 
 swiglal_octave.cpp swiglal_python.c:
-	@printf "\nERROR: you are trying to re-create the SWIG-generated source file" >&2; \
-	printf "\n   $@\nbut $(PACKAGE_NAME) was not configured with SWIG generation enabled." >&2; \
-	printf "\nPlease ensure SWIG is installed and re-run ./configure with either" >&2; \
-	printf "\nthe --enable-swig=generate or --enable-swig-<lang>=generate options.\n\n" >&2; \
+	@printf "\nERROR: these dependencies of $@ have changed:\n   $?\n" >&2; \
+	printf "but SWIG is not available to re-generate $@.\n" >&2; \
+	printf "Please ensure SWIG is installed and re-run ./configure with\n" >&2; \
+	printf "either --enable-swig=generate or --enable-swig-<lang>=generate.\n\n" >&2; \
 	exit 1
 
 endif # SWIG_GENERATE
