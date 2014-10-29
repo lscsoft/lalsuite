@@ -135,6 +135,14 @@ int XLALSimIMRPhenomCGenerateFD(
   }
 
   status = IMRPhenomCGenerateFD(htilde, phi0, deltaF, m1, m2, f_min, f_max_prime, distance, params);
+
+  if (f_max_prime < f_max) {
+    // The user has requested a higher f_max than Mf=params->fCut.
+    // Resize the frequency series to fill with zeros to fill with zeros beyond the cutoff frequency.
+    size_t n_full = NextPow2(f_max / deltaF) + 1; // we actually want to have the length be a power of 2 + 1
+    *htilde = XLALResizeCOMPLEX16FrequencySeries(*htilde, 0, n_full);
+  }
+
   LALFree(params);
   return status;
 }

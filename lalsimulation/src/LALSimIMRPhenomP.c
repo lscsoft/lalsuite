@@ -358,6 +358,8 @@ int XLALSimIMRPhenomP(
   /* Allocate hp, hc */
   XLALPrintInfo("f_max / deltaF = %g\n", f_max_prime / deltaF);
   size_t n = NextPow2(f_max_prime / deltaF) + 1; /* Note: Should explain why the length is one plus a power of 2. */
+  if (f_max_prime < f_max)                       /* Resize waveform if user wants f_max larger than cutoff frequency */
+    n = NextPow2(f_max / deltaF) + 1;
   XLALPrintInfo("n = %d\n", (int)(n));
   *hptilde = XLALCreateCOMPLEX16FrequencySeries("hptilde: FD waveform", &ligotimegps_zero, 0.0, deltaF, &lalStrainUnit, n);
   *hctilde = XLALCreateCOMPLEX16FrequencySeries("hctilde: FD waveform", &ligotimegps_zero, 0.0, deltaF, &lalStrainUnit, n);
