@@ -374,6 +374,8 @@ void LALInferenceMultiNestAlgorithm(LALInferenceRunState *runState)
     if (netfilestr!=NULL)
         strcpy(networkinputs,netfilestr);
     int rseed = -1;
+    ppt=LALInferenceGetProcParamVal(runState->commandLine,"--randomseed");
+    if(ppt) rseed = atoi(ppt->value);
     int fb = verbose;
     int bresume = resval;
     int outfile = 1;
