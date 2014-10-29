@@ -53,8 +53,8 @@ void init_ensemble(LALInferenceRunState *run_state) {
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
     INT4 nwalkers_per_thread =
-        *(INT4 *) LALInferenceGetVariable(run_state->algorithmParams,
-                                            "nwalkers_per_thread");
+        LALInferenceGetINT4Variable(run_state->algorithmParams,
+                                    "nwalkers_per_thread");
 
     current_param = run_state->currentParamArray[0];
     UINT4 ndim =
@@ -164,8 +164,8 @@ void init_ensemble(LALInferenceRunState *run_state) {
                 !(LALInferenceGetProcParamVal(command_line,"--psdFit")))) {
 
         headData = run_state->data;
-        REAL8 d = *(REAL8 *)LALInferenceGetVariable(run_state->currentParamArray[0],
-                                                    "distance");
+        REAL8 d = LALInferenceGetREAL8Variable(run_state->currentParamArray[0],
+                                                "distance");
         REAL8 bigD = INFINITY;
 
         /* Don't store to cache, since distance scaling won't work */
@@ -194,8 +194,8 @@ void init_ensemble(LALInferenceRunState *run_state) {
                             LALINFERENCE_PARAM_FIXED);
 
     /* Initialize starting likelihood and prior */
-    run_state->currentPriors = XLALMalloc(nwalkers_per_thread * sizeof(REAL8));
-    run_state->currentLikelihoods = XLALMalloc(nwalkers_per_thread * sizeof(REAL8));
+    run_state->currentPriors = XLALCalloc(nwalkers_per_thread, sizeof(REAL8));
+    run_state->currentLikelihoods = XLALCalloc(nwalkers_per_thread, sizeof(REAL8));
     for (walker = 0; walker < nwalkers_per_thread; walker++) {
         run_state->currentPriors[walker] =
             run_state->prior(run_state,
@@ -232,7 +232,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *command_line)
 /* and initializes other variables accordingly.                     */
 {
     LALInferenceRunState *run_state = NULL;
-    run_state = XLALCalloc(1, sizeof(LALInferenceRunState));
+    run_state = XLALMalloc(sizeof(LALInferenceRunState));
 
     /* Check that command line is consistent first */
     LALInferenceCheckOptionsConsistency(command_line);
@@ -304,7 +304,7 @@ void init_sampler(LALInferenceRunState *run_state) {
                  (--data-dump)                    Output waveforms to file.\n\
                  (--outfile file)                 Write output files <file>.<chain_number> (ensemble.output.<random_seed>.<walker_number>).\n";
 
-    INT4 i, j, walker;
+    INT4 i, walker;
     INT4 mpi_rank, mpi_size;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
@@ -317,7 +317,7 @@ void init_sampler(LALInferenceRunState *run_state) {
         return;
     }
 
-    unsigned int randomseed=0;
+    UINT4 randomseed = 0;
     ProcessParamsTable *command_line = run_state->commandLine;
     ProcessParamsTable *ppt = NULL;
     FILE *devrandom;
@@ -330,37 +330,35 @@ void init_sampler(LALInferenceRunState *run_state) {
         return;
     }
 
-    /* Initialise parameters structure */
-    run_state->algorithmParams = XLALCalloc(1,sizeof(LALInferenceVariables));
-    run_state->priorArgs = XLALCalloc(1,sizeof(LALInferenceVariables));
-    run_state->proposalArgs = XLALCalloc(1,sizeof(LALInferenceVariables));
+    /* Initialize parameters structure */
+    run_state->algorithmParams = XLALMalloc(sizeof(LALInferenceVariables));
+    run_state->priorArgs = XLALMalloc(sizeof(LALInferenceVariables));
+    run_state->proposalArgs = XLALMalloc(sizeof(LALInferenceVariables));
 
     /* Set up the appropriate functions for the MCMC algorithm */
     run_state->algorithm = &ensemble_sampler;
-    run_state->proposal = &LALInferenceClusteredKDEProposal;
 
     /* Choose the template generator for inspiral signals */
     LALInferenceInitCBCTemplate(run_state);
 
     UINT4 malmquist = 0;
-    if (LALInferenceGetProcParamVal(command_line,"--skyLocPrior")){
-        run_state->prior=&LALInferenceInspiralSkyLocPrior;
-    } else if (LALInferenceGetProcParamVal(command_line, "--correlatedGaussianLikelihood") || 
+    if (LALInferenceGetProcParamVal(command_line, "--correlatedGaussianLikelihood") || 
                LALInferenceGetProcParamVal(command_line, "--bimodalGaussianLikelihood") ||
                LALInferenceGetProcParamVal(command_line, "--rosenbrockLikelihood") ||
                LALInferenceGetProcParamVal(command_line, "--analyticnullprior")) {
-        run_state->prior=&LALInferenceAnalyticNullPrior;
+        run_state->prior = &LALInferenceAnalyticNullPrior;
     } else if (LALInferenceGetProcParamVal(command_line, "--nullprior")) {
-        run_state->prior=&LALInferenceNullPrior;
+        run_state->prior = &LALInferenceNullPrior;
     } else if (LALInferenceGetProcParamVal(command_line, "--malmquistprior")) {
         malmquist = 1;
         LALInferenceAddVariable(run_state->priorArgs,
                                 "malmquist", &malmquist,
                                 LALINFERENCE_UINT4_t,
                                 LALINFERENCE_PARAM_OUTPUT);
-        run_state->prior=&LALInferenceInspiralPrior;
+
+        run_state->prior = &LALInferenceInspiralPrior;
     } else {
-        run_state->prior=&LALInferenceInspiralPriorNormalised;
+        run_state->prior = &LALInferenceInspiralPriorNormalised;
     }
 
     if (malmquist) {
@@ -470,38 +468,28 @@ void init_sampler(LALInferenceRunState *run_state) {
                 gettimeofday(&tv, 0);
                 randomseed = tv.tv_sec + tv.tv_usec;
             }
-            MPI_Bcast(&randomseed, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
         } else {
             if (mpi_rank == 0) {
                 fread(&randomseed, sizeof(randomseed), 1, devrandom);
                 fclose(devrandom);
             }
-            MPI_Bcast(&randomseed, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
         }
+
+        MPI_Bcast(&randomseed, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
     }
-
-   /* Now make sure each MPI-thread is running with un-correlated
-       jumps. Re-seed this process with the ith output of
-       the RNG stream from the rank 0 thread. Otherwise the
-       random stream is the same across all threads. */
-    for (i = 0; i < mpi_rank; i++)
-        for (j = 0; j < (INT4)nsteps * nwalkers_per_thread; j++)
-            randomseed = gsl_rng_get(run_state->GSLrandom);
-
-    gsl_rng_set(run_state->GSLrandom, randomseed);
 
     if (mpi_rank == 0)
         printf(" initialize(): random seed: %u\n", randomseed);
 
     /* Set up CBC model and parameter array */
     run_state->modelArray =
-        XLALMalloc(nwalkers_per_thread * sizeof(LALInferenceModel*));
+        XLALCalloc(nwalkers_per_thread, sizeof(LALInferenceModel*));
 
     run_state->currentParamArray =
-        XLALMalloc(nwalkers_per_thread * sizeof(LALInferenceVariables*));
+        XLALCalloc(nwalkers_per_thread, sizeof(LALInferenceVariables*));
 
     run_state->currentPropDensityArray =
-        XLALMalloc(nwalkers_per_thread * sizeof(REAL8));
+        XLALCalloc(nwalkers_per_thread, sizeof(REAL8));
 
     for (walker = 0; walker < nwalkers_per_thread; walker++) {
         run_state->currentPropDensityArray[walker] = -DBL_MAX;
@@ -517,10 +505,11 @@ void init_sampler(LALInferenceRunState *run_state) {
                                     run_state->currentParamArray[walker]);
     }
 
-    /* Have currentParams in run_state point to the first parameter set.
-     *  This isn't used explicitly by the ensemble sampler, but it is often
-     *  used to count dimensions, determine variable names, etc. */
+    /* Have currentParams and model in run_state point to the first elements
+     *  of the respective arrays.  Neither are used explicitly by the ensemble
+     *  sampler, but are sometimes used to count dimensions, etc. */
     run_state->currentParams = run_state->currentParamArray[0];
+    run_state->model = run_state->modelArray[0];
 
     /* Store flags to keep from checking the command line all the time */
     LALInferenceVariables *algorithm_params = run_state->algorithmParams;
@@ -552,6 +541,15 @@ void init_sampler(LALInferenceRunState *run_state) {
     LALInferenceAddVariable(algorithm_params, "step", &step,
                             LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
 
+   /* Now make sure each MPI-thread is running with un-correlated
+       jumps. Re-seed this process with the ith output of
+       the RNG stream from the rank 0 thread. Otherwise the
+       random stream is the same across all threads. */
+    for (i = 0; i < mpi_rank; i++)
+        randomseed = gsl_rng_get(run_state->GSLrandom);
+
+    gsl_rng_set(run_state->GSLrandom, randomseed);
+
     return;
 }
 
@@ -563,9 +561,8 @@ void sample_prior(LALInferenceRunState *run_state) {
     LALInferenceVariables *algorithm_params = run_state->algorithmParams;
 
     /* Store old algorithm parameters for later restoration */
-    nsteps = *(INT4 *) LALInferenceGetVariable(algorithm_params, "nsteps");
-    update_interval =
-        *(INT4 *) LALInferenceGetVariable(algorithm_params, "update_interval");
+    nsteps = LALInferenceGetINT4Variable(algorithm_params, "nsteps");
+    update_interval = LALInferenceGetINT4Variable(algorithm_params, "update_interval");
 
     /* Sample prior for two update intervals */
     nprior_steps = 2 * update_interval - 1;
@@ -612,13 +609,6 @@ int main(int argc, char *argv[]){
         }
     }
 
-    /* Setup model struct and set current variables to match the
-     *  initialized model params */
-    run_state->model = LALInferenceInitCBCModel(run_state);
-    run_state->currentParams = XLALMalloc(sizeof(LALInferenceVariables));
-    memset(run_state->currentParams, 0, sizeof(LALInferenceVariables));
-    LALInferenceCopyVariables(run_state->model->params, run_state->currentParams);
-  
     /* Set template function in run_state.  This is already specified in the model,
      *   but it is sometimes looked for in the run_state itself */
     run_state->templt = run_state->model->templt;
