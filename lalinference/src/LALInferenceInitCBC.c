@@ -388,10 +388,6 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state)
   REAL8 endtime=0.0, timeParam=0.0;
   REAL8 timeMin=endtime-dt,timeMax=endtime+dt;
 
-  LALInferenceModel *model = XLALMalloc(sizeof(LALInferenceModel));
-  model->params = XLALCalloc(1, sizeof(LALInferenceVariables));
-  memset(model->params, 0, sizeof(LALInferenceVariables));
-
   /* Over-ride prior bounds if analytic test */
   if (LALInferenceGetProcParamVal(commandLine, "--correlatedGaussianLikelihood"))
   {
@@ -405,6 +401,10 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state)
   {
     return(LALInferenceInitModelReviewEvidence_banana(state));
   }
+
+  LALInferenceModel *model = XLALMalloc(sizeof(LALInferenceModel));
+  model->params = XLALCalloc(1, sizeof(LALInferenceVariables));
+  memset(model->params, 0, sizeof(LALInferenceVariables));
 
   if(LALInferenceGetProcParamVal(commandLine,"--malmquistPrior"))
   {
