@@ -3,7 +3,6 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 datarootdir=@datarootdir@
-LALDETCHAR_DATA_PATH=@datadir@/@PACKAGE@
 LALDETCHAR_OCTAVE_PATH=@octexecdir@
 LADETCHARL_PYTHON_PATH=@pyexecdir@
 

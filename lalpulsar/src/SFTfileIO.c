@@ -48,6 +48,7 @@
 #endif
 
 #include <lal/LALStdio.h>
+#include <lal/LALString.h>
 #include <lal/FileIO.h>
 #include <lal/SFTfileIO.h>
 #include <lal/StringVector.h>
@@ -2482,17 +2483,10 @@ XLALFindFiles (const CHAR *globstring)
     LALParsedDataFile *list = NULL;
     CHAR* listfname = NULL;
 
-    /* create list file name
-       prefix with "./" if not an absolute file name (see LALOpenDataFile()) */
-    if ((listfname = LALCalloc(1, strlen(globstring) + 3)) == NULL) {
+    /* extract list file name */
+    if ((listfname = XLALStringDuplicate(globstring + strlen(LIST_PREFIX))) == NULL) {
       XLAL_ERROR_NULL ( XLAL_ENOMEM ) ;
     }
-    ptr1 = globstring + strlen(LIST_PREFIX);
-    if (*ptr1 == '/')
-      *listfname = '\0';
-    else
-      strcpy(listfname, "./");
-    strcat(listfname, ptr1);
 #undef LIST_PREFIX
 
     /* read list of file names from file */

@@ -3,7 +3,6 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 datarootdir=@datarootdir@
-LALINSPIRAL_DATA_PATH=@datadir@/@PACKAGE@
 LALINSPIRAL_OCTAVE_PATH=@octexecdir@
 LALINSPIRAL_PYTHON_PATH=@pyexecdir@
 

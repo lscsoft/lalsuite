@@ -44,8 +44,6 @@ extern "C" {
  */
 /*@{*/
 
-FILE *LALOpenDataFile( const char* );
-
 typedef struct tagLALFILE LALFILE;
 
 LALFILE *lalstdin(void);

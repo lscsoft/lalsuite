@@ -3,7 +3,6 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 datarootdir=@datarootdir@
-LALMETAIO_DATA_PATH=@datadir@/@PACKAGE@
 LALMETAIO_OCTAVE_PATH=@octexecdir@
 LALMETAIO_PYTHON_PATH=@pyexecdir@
 

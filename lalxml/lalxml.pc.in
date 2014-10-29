@@ -3,7 +3,6 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 datarootdir=@datarootdir@
-LALXML_DATA_PATH=@datadir@/@PACKAGE@
 LALXML_OCTAVE_PATH=@octexecdir@
 LALXML_PYTHON_PATH=@pyexecdir@
 

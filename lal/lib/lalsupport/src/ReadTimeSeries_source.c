@@ -44,7 +44,7 @@ FUNC ( LALStatus* status,
 
   /* if (filename == NULL) return; */
   
-  fp = LALOpenDataFile( filename );
+  fp = LALFopen( filename, "r" );
   if (fp == NULL) 
   {
     ABORT( status, READFTSERIESH_EFILENOTFOUND,

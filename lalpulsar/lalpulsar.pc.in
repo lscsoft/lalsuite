@@ -3,7 +3,6 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 datarootdir=@datarootdir@
-LALPULSAR_DATA_PATH=@datadir@/@PACKAGE@
 LALPULSAR_OCTAVE_PATH=@octexecdir@
 LALPULSAR_PYTHON_PATH=@pyexecdir@
 

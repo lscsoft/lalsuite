@@ -3,7 +3,6 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 datarootdir=@datarootdir@
-LALINFERENCE_DATA_PATH=@datadir@/@PACKAGE@
 LALINFERENCE_OCTAVE_PATH=@octexecdir@
 LALINFERENCE_PYTHON_PATH=@pyexecdir@
 

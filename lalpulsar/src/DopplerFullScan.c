@@ -820,7 +820,7 @@ loadFullGridFile ( LALStatus *status,
     } /* for s < max_spins */
 
   /* open input data file */
-  if ( (fp = LALOpenDataFile (init->gridFile)) == NULL) {
+  if ( (fp = LALFopen (init->gridFile, "r")) == NULL) {
     XLALPrintError ("Could not open data-file: `%s`\n\n", init->gridFile);
     ABORT (status, CONFIGFILEH_EFILE, CONFIGFILEH_MSGEFILE);
   }

@@ -922,7 +922,7 @@ LALReadSFTheader (LALStatus  *status,			/**< pointer to LALStatus structure */
   ASSERT (fname,  status, SFTFILEIO_ENULL,  SFTFILEIO_MSGENULL);
 
   /* opening the SFT binary file */
-  fp = LALOpenDataFile( fname );
+  fp = LALFopen( fname, "rb" );
   if (fp == NULL) {
     ABORT (status, SFTFILEIO_EFILE,  SFTFILEIO_MSGEFILE);
   }
@@ -1072,7 +1072,7 @@ LALReadSFTdata(LALStatus *status,			/**< pointer to LALStatus structure */
   offset = fminBinIndex - header.fminBinIndex;
 
   /* open file for reading */
-  if ( (fp = LALOpenDataFile( fname )) == NULL) {
+  if ( (fp = LALFopen( fname, "rb" )) == NULL) {
     ABORT (status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE);
   }
 

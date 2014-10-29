@@ -17,51 +17,6 @@
  *  MA  02111-1307  USA
  */
 
-/**
- * \addtogroup FileIO_h
- *
- * ### Obsolete LAL Prototypes ###
- *
- * \code
- * FILE *LALFopen( const char *path, const char *mode );
- * int LALFclose( FILE *stream );
- * \endcode
- *
- * ### Description ###
- *
- * The routines <tt>LALFopen()</tt> and <tt>LALFclose()</tt> are macro defined to be
- * the same as the standard C routines <tt>LALFopen()</tt> and <tt>fclose()</tt>.  These
- * should only be used in test programs.
- *
- * The routine <tt>LALOpenDataFile()</tt> is used to open a data file for reading.
- * This routine is also to be used in test programs only.  Unless the data file
- * is specified with an absolute path (beginning with a <tt>/</tt>), or a specific
- * path (beginning with a <tt>./</tt> or a <tt>../</tt>), the directory
- * that the file is in is obtained from the environment variable
- * \c LAL_DATA_PATH, which must be set at run-time.  (If the environment
- * variable is not set, the default path is <tt>.</tt> --- i.e., the current
- * directory.)
- *
- * \c LAL_DATA_PATH should typically be set to
- * <tt>/usr/local/share/lal</tt>, or wherever LAL data is installed in your system
- * (which may be different if you used a <tt>--prefix</tt> argument when
- * configuring LAL), but when the test suite is run with <tt>make check</tt>, the
- * variable \c LAL_DATA_PATH is set to the current source directory.  If the
- * filename (including the directory path) is too long (more than 256
- * characters), <tt>LALOpenDataFile()</tt> returns \c NULL and sets
- * \c errno to \c ENAMETOOLONG.
- *
- * \c LAL_DATA_PATH can be any colon-delimeted list of directories, which
- * are searched in order (just like the \c PATH environment variable).
- * An extra colon inserts the default data directory
- * (\f$\langle\f$prefix\f$\rangle\f$<tt>/share/lal</tt>) into the search path at that
- * point.  E.g., a leading/trailing colon will look for the default data
- * directory at the start/end of the list of directories.
- *
- * It is strongly recommended that <tt>LALOpenDataFile()</tt> be used when writing test code.
- *
- */
-
 #include <config.h>
 
 #include <stdarg.h>
@@ -109,120 +64,12 @@ LALFILE *lalstderr( void )
   return &_lalstderr;
 }
 
-#define STR( x ) #x
-#define XSTR( x ) STR( x )
-#define INFOMSG( msg, file ) ( ( lalDebugLevel & LALINFO ) ? \
-                               LALPrintError( "Info: function LALOpenDataFile, file " __FILE__ ", line " \
-                                              XSTR( __LINE__ ) ", $Id$\n\t%s %s\n", msg, file ) : 0 )
-#define ERRORMSG( file ) ( ( lalDebugLevel & LALERROR ) ? \
-                           LALPrintError( "Info: function LALOpenDataFile, file " __FILE__ ", line " \
-                                          XSTR( __LINE__ ) ", $Id$\n\tCould not open data file %s\n", file ) : 0 )
-
-#ifndef LAL_PREFIX
-#define LAL_PREFIX "/usr/local"
-#endif
-
-
-
-FILE *
-LALOpenDataFile( const char *fname )
-{
-  FILE *fp;
-  const char *path;
-  char *datapath;	/* locally allocated copy of env-var LAL_DATA_PATH */
-  const char *p0;       /* pointer to current sub-path of datapath*/
-  char *p1;		/* pointer to next sub-path */
-  char  fdata[32768];
-  int   n;
-
-  XLAL_PRINT_DEPRECATION_WARNING("XLALFileResolvePathLong");
-
-  if ( (fname==NULL) || ( strlen(fname)==0) ) {
-    return NULL;
-  }
-
-  if ( *fname == '/' ) /* absolute path is given */
-  {
-    fp = LALFopen( fname, "r" );
-    if ( ! fp )
-      ERRORMSG( fname );
-    else
-      INFOMSG( "Opening data file", fname );
-    return fp;
-  }
-
-  n = strlen( fname );
-  if ( *fname == '.' && n > 0 && ( fname[1] == '/' || ( n > 1 && fname[1] == '.'
-                                                        && fname[2] == '/' ) ) ) /* specific path is given */
-  {
-    fp = LALFopen( fname, "r" );
-    if ( ! fp )
-      ERRORMSG( fname );
-    else
-      INFOMSG( "Opening data file", fname );
-    return fp;
-  }
-
-  path = getenv( "LAL_DATA_PATH" );
-
-  if ( ! path || ! strlen( path ) ) /* path is NULL or empty */
-  {
-    fp = LALFopen( fname, "r" );
-    if ( ! fp )
-      ERRORMSG( fname );
-    else
-      INFOMSG( "Opening data file", fname );
-    return fp;
-  }
-
-  /* scan through all directories in colon-delmited list of directories */
-  if ( (datapath = LALCalloc (strlen(path)+1, 1)) == NULL)	/* we need local copy */
-  {
-    ERRORMSG( fname );
-    return NULL;
-  }
-  strcpy (datapath, path);
-  p0 = datapath;
-  do {
-    p1 = strchr( p0, ':' ); /* look for additional directories */
-    if ( p1 ) /* there are more things in the list */
-      *p1++ = 0; /* NUL-terminate current directory */
-    if ( ! strlen( p0 ) ) /* this directory is empty */
-      p0 = LAL_PREFIX "/share/lal"; /* default data directory */
-
-    n = snprintf( fdata, sizeof(fdata), "%s/%s", p0 ? p0 : ".", fname );
-    if ( n > (int) sizeof( fdata ) ) /* data file name too long */
-    {
-      errno = ENAMETOOLONG;
-      LALFree (datapath);
-      return NULL;
-    }
-
-    INFOMSG( "Looking for file", fdata );
-    fp = LALFopen( fdata, "r" );
-    if ( fp ) /* we've found it! */
-    {
-      INFOMSG( "Opening data file", fdata );
-      LALFree (datapath);
-      return fp;
-    }
-
-    p0 = p1;
-  }
-  while ( p0 );
-
-  LALFree (datapath);
-  ERRORMSG( fname );
-  return NULL;
-}
-
 /** 'Resolve' a given filename 'fname', returning a file path where the
  *  file can successfully be opened by fopen() using mode='rb'.
  *
  * Return: successful file-path or NULL if failed.
  *
- * Resolving follows an algorithm similar to what LALOpenDataFile() did,
- * namely if 'fname' contains a
+ * Resolving uses the following algorithm: if 'fname' contains a
  * i) (relative or absolute) path: only tries to open that path directly
  * ii) pure filename: try 1) local dir, then 2) search LAL_DATA_PATH, then 3) try fallbackdir
  *                    return first successful hit

@@ -269,21 +269,21 @@ main(int argc, char **argv)
   if ( eigenfile ) {
 
     /* Read input files into vector sequences. */
-    if ( !( fp = LALOpenDataFile( eigenfile ) ) ) {
+    if ( !( fp = fopen( eigenfile, "r" ) ) ) {
       ERROR( FLATMESHTESTC_EFILE, "- " FLATMESHTESTC_MSGEFILE,
 	     eigenfile );
       return FLATMESHTESTC_EFILE;
     }
     SUB( LALSReadVectorSequence( &stat, &matrix, fp ), &stat );
     fclose( fp );
-    if ( !( fp = LALOpenDataFile( inversefile ) ) ) {
+    if ( !( fp = fopen( inversefile, "r" ) ) ) {
       ERROR( FLATMESHTESTC_EFILE, "- " FLATMESHTESTC_MSGEFILE,
 	     inversefile );
       return FLATMESHTESTC_EFILE;
     }
     SUB( LALSReadVectorSequence( &stat, &matrixInv, fp ), &stat );
     fclose( fp );
-    if ( !( fp = LALOpenDataFile( rangefile ) ) ) {
+    if ( !( fp = fopen( rangefile, "r" ) ) ) {
       ERROR( FLATMESHTESTC_EFILE, "- " FLATMESHTESTC_MSGEFILE,
 	     rangefile );
       return FLATMESHTESTC_EFILE;

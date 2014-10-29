@@ -3,7 +3,6 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 datarootdir=@datarootdir@
-LALSTOCHASTIC_DATA_PATH=@datadir@/@PACKAGE@
 LALSTOCHASTIC_OCTAVE_PATH=@octexecdir@
 LALSTOCHASTIC_PYTHON_PATH=@pyexecdir@
 

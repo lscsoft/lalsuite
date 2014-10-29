@@ -103,7 +103,7 @@ LALReadNoiseSpectrum(LALStatus *stat, REAL4FrequencySeries *spectrum, CHAR *fnam
     ATTATCHSTATUSPTR(stat);
 
     /* this is the file containing the spectrum data */
-    if ( !(fp = LALOpenDataFile( fname )) )
+    if ( !(fp = LALFopen( fname, "r" )) )
     {
         ABORT(stat, LALREADNOISESPECTRUMH_EOPEN, LALREADNOISESPECTRUMH_MSGEOPEN);
     }

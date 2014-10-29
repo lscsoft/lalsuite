@@ -188,8 +188,6 @@
  * \code
  * lalDebugLevel
  * LALMalloc()
- * LALFopen()
- * LALFclose()
  * LALSCreateVector()
  * LALCreateRandomParams()
  * LALNormalDeviates()
@@ -354,7 +352,7 @@ int main(int argc, char **argv)
       {
 	strcpy(basicInputsFile, argv[++arg]);
 	arg++;
-	if(LALOpenDataFile(basicInputsFile)==NULL)
+	if(fopen(basicInputsFile, "r")==NULL)
 	  {
 	    ERROR(LALDEMODH_ENOFILE, LALDEMODH_MSGENOFILE, 0);
 	    XLALPrintError(USAGE, *argv);
@@ -392,7 +390,7 @@ int main(int argc, char **argv)
     /* default: no input file specified */
     else if(basicInputsFile==NULL)
       {
-	bif=LALOpenDataFile("in.data");
+	bif=fopen("in.data", "r");
       }
 
     /* erroneous command line argument */
@@ -427,7 +425,7 @@ int main(int argc, char **argv)
 
   /***** GET INPUTS FROM FILES *****/
 
-  bif=LALOpenDataFile(basicInputsFile);
+  bif=fopen(basicInputsFile, "r");
 
   fscanf(bif, "%lf\n%lf\n%lf\n%lf\n%lf\n%lf\n%lf\n%lf\n%d\n%le\n%le\n%le\n%le\n%le\n%lf\n"
 	 " %lf\n%d\n%le\n%le\n%le\n%le\n%le\n%lf\n%lf\n",
@@ -443,7 +441,7 @@ int main(int argc, char **argv)
 	 &templateParams->spind->spParams[4],
 	 &templateParams->skyP->alpha, &templateParams->skyP->delta);
 
-  LALFclose(bif);
+  fclose(bif);
 
   /***** END FILE INPUT *****/
 

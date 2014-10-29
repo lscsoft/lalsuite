@@ -29,7 +29,7 @@ SUBDIRS = \
 
 user_environment = \
 	set $(PACKAGE)_PREFIX $(prefix); \
-	prepend LAL_DATA_PATH $(pkgdatadir); \
+	set $(PACKAGE)_DATADIR $(pkgdatadir); \
 	prepend MANPATH $(mandir); \
 	prepend PATH $(bindir); \
 	prepend PYTHONPATH $(pyexecdir) $(pythondir); \

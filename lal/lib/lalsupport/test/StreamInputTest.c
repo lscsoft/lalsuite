@@ -382,7 +382,7 @@ main(int argc, char **argv)
 
   /* Open input and output files. */
   if ( strcmp( infile, "stdin" ) ) {
-    if ( !( fpIn = LALOpenDataFile( infile ) ) ) {
+    if ( !( fpIn = fopen( infile, "r" ) ) ) {
       ERROR( STREAMINPUTTESTC_EFILE, "- " STREAMINPUTTESTC_MSGEFILE,
 	     infile );
       return STREAMINPUTTESTC_EFILE;
