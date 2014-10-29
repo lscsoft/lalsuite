@@ -579,7 +579,7 @@ void show_progress(REAL8 rac,   /**< right ascension */
 		   REAL8 freq,  /**< base frequency */
 		   REAL8 fband  /**< frequency bandwidth */
 		   ) {
-  double fraction = count / total * (current_config_file + 1) / (bundle_size + 1);
+  double fraction = count / total * (current_config_file + 1) / (bundle_size ? bundle_size : 1);
 
   /* set globals to be written into next checkpoint */
   last_count = count;
