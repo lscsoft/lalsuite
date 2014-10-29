@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2014
 #
-# serial 71
+# serial 72
 
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
   # $0: check the version of $1, and store it in ${swig_version}
@@ -148,6 +148,35 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
       ])
     ],[
       SWIG=false
+    ])
+
+    # if SWIG bindings are not being generated, check that the SWIG version
+    # used to generate the bindings satisfies ${swig_min_version}
+    srcfile_swig_version_regex='s/^#.*define *SWIGVERSION *0x\([0-9][0-9]\)\([0-9][0-9]\)\([0-9][0-9]\).*$/\1 \2 \3/p'
+    AS_IF([test "${swig_generate}" != true],[
+      for file in ${swig_dep_files}; do
+        depfile="${srcdir}/swig/${file}"
+        AS_IF([test "${swig_generate}" = true],[
+          test -f "swig/${file}" || echo '#empty' > "swig/${file}"
+        ],[test -f "${depfile}"],[
+          srcfilename=`cat "${depfile}" | ${SED} -n -e '1p' | ${SED} -e 's/:.*$//'`
+          srcfile="${srcdir}/swig/${srcfilename}"
+          AS_IF([test -f "${srcfile}"],[
+            AC_MSG_CHECKING([if SWIG version ${swig_min_version} or later generated ${srcfilename}])
+            srcfile_swig_verargs=[`${SED} -n -e "${srcfile_swig_version_regex}" "${srcfile}"`]
+            srcfile_swig_version=[`printf '%d.%d.%d' ${srcfile_swig_verargs}`]
+            LALSUITE_VERSION_COMPARE([${srcfile_swig_version}],[<],[${swig_min_version}],[
+              AC_MSG_RESULT([no (${srcfile_swig_version})])
+              AC_MSG_ERROR([SWIG version ${swig_min_version} or later is required ${swig_min_version_info}])
+            ])
+            AC_MSG_RESULT([yes (${srcfile_swig_version})])
+          ],[
+            AC_MSG_ERROR([could not determine source file from ${depfile}])
+          ])
+        ],[
+          AC_MSG_ERROR([${depfile} does not exist])
+        ])
+      done
     ])
 
     # extract -I and -D flags from LALSuite library preprocessor flags
