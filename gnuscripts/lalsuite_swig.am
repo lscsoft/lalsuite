@@ -17,8 +17,8 @@ include $(top_srcdir)/gnuscripts/lalsuite_test.am
 .PHONY: swig-python-uninstall-hook
 
 swig_iface = swig$(PACKAGE).i
-swig_preproc_flags = -MP -MD -Wextra -Werror -I$(top_builddir)/include -includeall -ignoremissing -xml -xmllite
-swig_flags = -MP -MD -Wextra -Werror -I$(top_builddir)/include $(SWIG_CPPFLAGS) $(LAL_SYSTEM_INCLUDES)
+swig_preproc_flags = -MP -MMD -Wextra -Werror -I$(top_builddir)/include -includeall -ignoremissing -xml -xmllite
+swig_flags = -MP -MMD -Wextra -Werror -I$(top_builddir)/include $(SWIG_CPPFLAGS) $(LAL_SYSTEM_INCLUDES)
 swig_cppflags = -shared -I. -I$(top_builddir)/include $(SWIG_CPPFLAGS)
 swig_ldflags = -module -avoid-version -version-info 0:0:0 $(SWIG_LDFLAGS)
 swig_libtoolflags = --tag=disable-static
