@@ -257,6 +257,10 @@ extern int gpu_device_id;
  */
 static double estimated_flops = -1.0;
 
+/** how many workunits are bundled */
+int bundle_size = 0;
+/** number of current WU in bundle (or config file on command line during parsing) */
+int current_config_file = 0;
 
 /** worker() doesn't take arguments, so we have to pass it argv/c as global vars :-( */
 int global_argc;
@@ -575,7 +579,7 @@ void show_progress(REAL8 rac,   /**< right ascension */
 		   REAL8 freq,  /**< base frequency */
 		   REAL8 fband  /**< frequency bandwidth */
 		   ) {
-  double fraction = count / total;
+  double fraction = count / total * (current_config_file + 1) / (bundle_size + 1);
 
   /* set globals to be written into next checkpoint */
   last_count = count;
@@ -812,8 +816,6 @@ static void worker (void) {
   int test_snan = 0;
   int test_sqrt = 0;
 
-  int bundle_size = 0;           /**< how many workunits are bundled */
-  int current_config_file = 0;   /**< number of current WU in bundle (or config file on command line during parsing) */
   char**config_files = NULL;     /**< list of (boinc-resolved) config files, omne for each WU in bundle */
   char**config_file_arg = NULL;  /**< points to a placeholder for the config file in the command-line paased to MAIN() */
   char wu_result_file[MAX_PATH_LEN];
