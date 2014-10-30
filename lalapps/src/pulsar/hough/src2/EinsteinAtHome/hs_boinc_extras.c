@@ -65,8 +65,6 @@ extern int boinc_resolve_filename(const char*, char*, int len);
 #include <string.h>
 #include <time.h>
 #include <sys/time.h>
-#include <errno.h>
-#include <zlib.h>
 
 /* for finding out and logging the glibc version */
 #ifdef __GLIBC__
@@ -875,53 +873,6 @@ static void worker (void) {
       rargv[rarg][0] = '@';
       if (boinc_resolve_filename(argv[arg]+1,rargv[rarg]+1,MAX_PATH_LEN-1)) {
         LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve config file '%s'\n", argv[arg]+1);
-      }
-      unsigned int len = strlen(argv[arg]);
-      /* if the config file is compressed, uncompress it locally in the slot directory */
-      if (!strcmp(&argv[arg][len-3],".gz")) {
-	char unc [MAX_PATH_LEN];
-	char buf [8192];
-	int bytes;
-	strncpy(unc,argv[arg]+1,len-4);
-	errno = 0;
-	fp = fopen(unc,"r");
-	if (fp) {
-	  /* if the uncompressed file exists, uncompressing is already done. Just point the CLA to it. */
-	  fclose(fp);
-	  strncpy(rargv[rarg], argv[arg], len - 3);
-	} else if (errno == ENOENT) {
-	  /* uncompress the config file in CWD (slot directory) */
-	  gzFile in = gzopen(rargv[rarg]+1,"rb");
-	  if (!in) {
-	    LogPrintf(LOG_CRITICAL, "Error trying to open file '%s': %d\n", rargv[rarg]+1, errno);
-	    boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EFILE);
-	  }
-	  fp = fopen("config.uc","wb");
-	  if (!fp) {
-	    LogPrintf(LOG_CRITICAL, "Error trying to open file '%s' for writing: %d\n", unc, errno);
-	    boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EFILE);
-	  }
-	  while ((bytes = gzread(in, buf, sizeof(buf))) > 0) {
-	    if (fwrite(buf, 1, bytes, fp) != bytes) {
-	      LogPrintf(LOG_CRITICAL, "Error writing to file 'config.uc': %d\n", errno);
-	      boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EFILE);
-	    }
-	  }
-	  if (bytes < 0) {
-	    LogPrintf(LOG_CRITICAL, "Error reading from file '%s': %d\n", rargv[rarg]+1, errno);
-	    boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EFILE);
-	  }
-	  gzclose(in);
-	  fclose(fp);
-	  if (boinc_rename("config.uc", unc)) { /* atomic rename */
-	    LogPrintf(LOG_CRITICAL, "Error renaming file 'config.uc' to '%s': %d\n", unc, errno);
-	    boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EFILE);
-	  }
-	  strncpy(rargv[rarg], argv[arg], len - 3);
-	} else {
-	  LogPrintf(LOG_CRITICAL, "Error trying to open file %s: %d\n", unc, errno);
-	  boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EFILE);
-	}
       }
       if (bundle_size) {
 	config_files = realloc(config_files, sizeof(char*) * (current_config_file + 1));
