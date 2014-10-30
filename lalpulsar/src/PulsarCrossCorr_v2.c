@@ -461,8 +461,8 @@ int XLALFindLMXBCrossCorrDiagMetric
   SinSquaWeightedAve =(sinSquare/denom);
   *hSens = 4 * SQUARE(multiWeights->Sinv_Tsft) * rhosum;
   *g_ff = TSquaWeightedAve * 2 * SQUARE(LAL_PI);
-  *g_aa = SinSquaWeightedAve * SQUARE(LAL_PI * DopplerParams.fkdot[0]);
-  *g_TT = SinSquaWeightedAve * SQUARE(2 * SQUARE(LAL_PI) * (DopplerParams.fkdot[0]) * (DopplerParams.asini)/(DopplerParams.period));
+  *g_aa = SinSquaWeightedAve * SQUARE(2.*LAL_PI * DopplerParams.fkdot[0]);
+  *g_TT = SinSquaWeightedAve * SQUARE(SQUARE(2.*LAL_PI) * (DopplerParams.fkdot[0]) * (DopplerParams.asini)/(DopplerParams.period));
 
 
   return XLAL_SUCCESS;
