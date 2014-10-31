@@ -36,7 +36,7 @@ class HTTPError(Exception):
         Exception.__init__(self, (status, reason+" / "+message))
 
 #-----------------------------------------------------------------
-# HTTP/S Proxy classses
+# HTTP/S Proxy classes
 # Taken from: http://code.activestate.com/recipes/456195/
 
 class ProxyHTTPConnection(httplib.HTTPConnection):
@@ -76,7 +76,7 @@ class ProxyHTTPConnection(httplib.HTTPConnection):
             raise socket.error, "Proxy connection failed: %d %s" % (code, message.strip())
         #eat up header block from proxy....
         while True:
-            #should not use directly fp probablu
+            #should not use directly fp probably
             line = response.fp.readline()
             if line == '\r\n': break
 
@@ -205,7 +205,18 @@ class GsiRest(object):
 # Example Gracedb REST client.
 
 class GraceDb(GsiRest):
-    """docstring for GraceDb"""
+    """Example GraceDb REST client
+    
+    The GraceDB service URL may be passed to the constructor
+    if an alternate GraceDb instance is desired:
+
+        >>> g = GraceDb("https://alternate.gracedb.edu/api/")
+        >>> r = g.ping()
+
+    The proxy_host and proxy_port may also be passed in if accessing
+    GraceDB behind a proxy. For other kwargs accepted by the constructor,
+    consult the source code.
+    """
     def __init__(self, service_url=DEFAULT_SERVICE_URL, 
             proxy_host=None, proxy_port=3128, *args, **kwargs):
         GsiRest.__init__(self, service_url, proxy_host, proxy_port, *args, **kwargs)
@@ -276,6 +287,24 @@ class GraceDb(GsiRest):
 
     # Search and filecontents are optional when creating an event.
     def createEvent(self, group, pipeline, filename, search=None, filecontents=None):
+        """Create a new GraceDB event
+
+        Required args: group, pipeline, filename
+
+        Optional args: search, filecontents
+
+        The filename is the path to a file containing information about the event.
+        The values for 'group', 'pipeline', and 'search' are restricted to those
+        stored in the database.
+
+        Example:
+
+            >>> g = GraceDb()
+            >>> r = g.createEvent('CBC', 'gstlal', '/path/to/something.xml', 'LowMass')
+            >>> r.status
+            201
+
+        """
         errors = []
         if group not in self.groups:
             errors += ["bad group"]
@@ -304,6 +333,19 @@ class GraceDb(GsiRest):
         return self.post(uri, fields, files=files)
 
     def replaceEvent(self, graceid, filename, filecontents=None):
+        """Replace an existing GraceDB event
+
+        Required args: graceid, filename
+
+        This function uploads a new event file, hence changing the basic details
+        of an existing event. 
+        
+        Example:
+
+            >>> g = GraceDb()
+            >>> r = g.replaceEvent('T101383', '/path/to/new/something.xml') 
+
+        """
         if filecontents is None:
             # Note: not allowing filename '-' here.  We want the event datafile
             # to be versioned.
@@ -313,10 +355,36 @@ class GraceDb(GsiRest):
                 files=[('eventFile', filename, filecontents)])
 
     def event(self, graceid):
+        """Get information about a specific event
+
+        Args: graceid 
+
+        Example:
+
+            >>> g = GraceDb()
+            >>> event_dict = g.event('T101383').json()
+
+        """
         return self.get(
                 self.templates['event-detail-template'].format(graceid=graceid))
 
     def events(self, query=None, orderby=None, count=None, columns=None):
+        """Get a iterator of events in response to a query
+
+        This function returns an iterator which yields event dictionaries.
+        Optional arguments are query, orderby, count, and columns. The 
+        columns argument is a comma separated list of attributes that the 
+        user would like in each event dictionary. If columns are not specified,
+        all attributes of the events are returned.
+
+        Example:
+
+            >>> g = GraceDb()
+            >>> for event in g.events('ER5 submitter: "gstlalcbc"', columns='graceid,far,gpstime'):
+            ...     print "%s %e %d" % (event['graceid'], event['far'], event['gpstime'])
+
+
+        """
         uri = self.links['events']
         qdict = {}
         if query:   qdict['query'] = query
@@ -333,17 +401,65 @@ class GraceDb(GsiRest):
                  yield event
 
     def numEvents(self, query=None):
+        """Get the number of events satisfying a query 
+
+        Example:
+
+            >>> g = GraceDb()
+            >>> g.numEvents('ER5 submitter: "gstlalcbc"')
+            213
+
+        """
         uri = self.links['events']
         if query:
             uri += "?" + urllib.urlencode({'query': query})
         return self.get(uri).json()['numRows']
 
     def files(self, graceid, filename=None, raw=False):
+        """Files for a particular event
+
+        Required args: graceid
+
+        Given a graceid, this function fetches a dictionary of the form
+        { 'filename': 'file url' }
+
+        Example:
+
+            >>> g = GraceDb()
+            >>> event_files = g.files('T101383').json()
+            >>> for filename in event_files.keys():
+            ...     # do something
+            ...     pass
+
+        This function can also be used to download a particular file:
+
+            >>> outfile = open('my_skymap.png', 'w')
+            >>> r = g.files('T101383', 'skymap.png')
+            >>> outfile.write(r.read())
+            >>> outfile.close()
+
+        """
         template = self.templates['files-template']
         uri = template.format(graceid=graceid, filename=filename or "")
         return self.get(uri)
 
     def writeFile(self, graceid, filename, filecontents=None):
+        """Upload a file
+
+        Required args: graceid, filename
+
+        This method creates a new log message with your file attached. It is 
+        strongly preferred to use writeLog() instead of writeFile() so that you
+        can add a more suitable comment. That will make it easier for other 
+        users to know what your file contains.
+
+        Example:
+
+            >>> g = GraceDb()
+            >>> r = g.writeFile('T101383', '/path/to/my_interesting_plot.png')
+            >>> print r.status
+
+        """
         template = self.templates['files-template']
         uri = template.format(graceid=graceid, filename=os.path.basename(filename))
         if filecontents is None:
@@ -359,12 +475,46 @@ class GraceDb(GsiRest):
         return self.put(uri, files=files)
 
     def logs(self, graceid):
+        """Get all log messages associated with an event
+
+        Required args: graceid
+
+        This function returns a JSON representation of all of an event's
+        log messages. 
+
+        Example:
+
+            >>> g = GraceDb()
+            >>> response_dict = g.logs('T101383').json()
+            >>> print "Num logs = %d" % response_dict['numRows']
+            >>> log_list = response_dict['log']
+            >>> for log in log_list:
+            ...     print log['comment']
+
+        """
         template = self.templates['event-log-template']
         uri = template.format(graceid=graceid)
         return self.get(uri)
 
     def writeLog(self, graceid, message, filename=None, filecontents=None, 
             tagname=None, displayName=None):
+        """Create a new log message
+
+        Required args: graceid, message
+        Optional: filename, tagname
+
+        If only graceid and message are provided, a text comment will be created
+        in the event log. If a filename is also specified, the file will be attached 
+        to the log message and displayed along side the message text. If a tagname 
+        is provided, the message will be tagged.
+
+        Example:
+
+            >>> g = GraceDb()
+            >>> r = g.writeLog('T101383', 'Good stuff.', '/path/to/my_interesting_plot.png', tagname='analyst_comments')
+            >>> print r.status
+
+        """
         template = self.templates['event-log-template']
         uri = template.format(graceid=graceid)
         files = None
@@ -384,8 +534,15 @@ class GraceDb(GsiRest):
             'displayName': displayName}, files=files)
 
     def eels(self, graceid):
-        """
-        Return a list of EMBB log entries. 
+        """Given a GraceID, get a list of EMBB log entries 
+
+        Example:
+        
+            >>> g = GraceDb()       
+            >>> r = g.eels('T101383') 
+            >>> full_dictionary = r.json()            # Convert the response to a dictionary
+            >>> eel_list = full_dictionary['embblog'] # Pull out a list of EEL dicts
+
         """
     
         template = self.templates['embb-event-log-template']
@@ -394,9 +551,12 @@ class GraceDb(GsiRest):
 
     def writeEel(self, graceid, group, waveband, eel_status, 
             obs_status, **kwargs):
-        """
-        Write an EMBB event log entry. The following arguments are required:
-            graceid, group, waveband, eel_status, obs_status.
+        """Write an EMBB event log entry 
+        
+        Required args: graceid, group, waveband, eel_status, obs_status
+
+        (Note that 'group' here is the name of the EM MOU group, not 
+        the LVC data analysis group responsible for the original detection.)
 
         Additional keyword arguments may be passed in to be sent in the POST
         data. Only the following kwargs are recognized:
@@ -408,6 +568,10 @@ class GraceDb(GsiRest):
             duration
             comment
             extra_info_dict
+
+        Most of these are self-explanatory, but the 'extra_info_dict' is meant
+        to be a JSON string containing any additional information the user may
+        wish to convey.
 
         Any other kwargs will be ignored.
         """ 
@@ -439,36 +603,131 @@ class GraceDb(GsiRest):
         return self.post(uri, body=body)
 
     def labels(self, graceid, label=""):
+        """Get a list of labels for an event
+
+        Example:
+
+            >>> g = GraceDb()
+            >>> label_list = g.labels('T101383').json()['labels']
+            >>> for label in label_list:
+            ...     print label['name']
+
+        """
+
         template = self.templates['event-label-template']
         uri = template.format(graceid=graceid, label=label)
         return self.get(uri)
 
     def writeLabel(self, graceid, label):
+        """Add a new label to an event
+
+        Required args:  graceid, label name
+
+        The label name must correspond to one of the existing 
+        GraceDB labels, else an error will result.
+
+        Example:
+
+            >>> g = GraceDb()
+            >>> r = g.writeLabel('T101383', 'DQV')
+            >>> r.status
+            201
+
+        """
         template = self.templates['event-label-template']
         uri = template.format(graceid=graceid, label=label)
         return self.put(uri)
 
     def removeLabel(self, graceid, label):
+        """Remove a label from an event
+
+        Required args: graceid, label name
+
+        Warning: This was not implemented on the server side as of October, 2014.
+        It is unlikely to be implemented unless people ask for it.
+
+        Example:
+
+            >>> g = GraceDb()
+            >>> r = g.removeLabel('T101383', 'DQV')
+            >>> r.status
+            501
+
+        """
         template = self.templates['event-label-template']
         uri = template.format(graceid=graceid, label=label)
         return self.delete(uri)
 
     def tags(self, graceid, n):
+        """Get a list of tags associated with a particular log message
+
+        Required arguments: graceid, n (the number of the log message)
+
+        The dictionary returned contains a list of URLs for each tag.
+
+        Example:
+
+            >>> g = GraceDb()
+            >>> tag_list = g.tags('T101383', 56).json()['tags']
+            >>> print "Number of tags for message 56: %d" % len(tag_list)
+
+        """
         template = self.templates['taglist-template']
         uri = template.format(graceid=graceid, n=n)
         return self.get(uri)
 
     def createTag(self, graceid, n, tagname, displayName=None):
+        """Add a new tag to a log message
+
+        Required arguments: graceid, n (the number of the log message)
+        and the tagname. If a displayName is provided (and if the tag
+        doesn't already exist), a new tag will be created with the 
+        provided display name.
+
+        Example:
+
+            >>> g = GraceDb()
+            >>> r = g.createTag('T101383', 56, 'sky_loc')
+            >>> r.status
+            201
+
+        """
         template = self.templates['tag-template']
         uri = template.format(graceid=graceid, n=n, tagname=tagname)
         return self.put(uri, body={'displayName': displayName})
 
     def deleteTag(self, graceid, n, tagname):
+        """Remove a tag from a given log message
+
+        Required arguments: graceid, n (the number of the log message)
+        and the tagname.        
+
+        Example:
+            
+            >>> g = GraceDb()
+            >>> r = g.deleteTag('T101383', 56, 'sky_loc')
+            >>> r.status
+            200
+
+        """
         template = self.templates['tag-template']
         uri = template.format(graceid=graceid, n=n, tagname=tagname)
         return self.delete(uri)
 
     def ping(self):
+        """Ping the server
+
+        If you get back an HTTPResponse object, it's alive.
+        The JSON content is the service info, which is normally not of
+        interest. But you can use it to get the known Groups, Searches,
+        Pipelines, etc.
+
+        Example:
+
+            >>> g = GraceDb()
+            >>> groups = g.ping().json()['groups']
+
+        """
         return self.get(self.links['self'])
 
 #-----------------------------------------------------------------
