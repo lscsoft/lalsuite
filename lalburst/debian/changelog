@@ -1,6 +1,6 @@
 lalburst (1.2.4-1) unstable; urgency=low
 
-  * LALBurst
+  * LALBurst 1.2.4
   * correctly package SWIG bindings
 
  -- Adam Mercer <adam.mercer@ligo.org>  Tue, 28 Oct 2014 12:35:38 -0500
