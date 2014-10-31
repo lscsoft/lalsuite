@@ -43,6 +43,45 @@
 #include <lal/LALFrameU.h>
 #include "LALFrameUFrameL.h"
 
+static const char * XLALFrameLErrorMessage(FRERROR frerror)
+{
+    switch (frerror) {
+    case FR_OK:
+        return "FR_OK";
+    case FR_ERROR_NO_FRAME:
+        return "FR_ERROR_NO_FRAME";
+    case FR_ERROR_NO_FILE:
+        return "FR_ERROR_NO_FILE";
+    case FR_ERROR_MALLOC_FAILED:
+        return "FR_ERROR_MALLOC_FAILED";
+    case FR_ERROR_BUFF_OVERFLOW:
+        return "FR_ERROR_BUFF_OVERFLOW";
+    case FR_ERROR_WRITE_ERROR:
+        return "FR_ERROR_WRITE_ERROR";
+    case FR_ERROR_READ_ERROR:
+        return "FR_ERROR_READ_ERROR";
+    case FR_ERROR_FRSET:
+        return "FR_ERROR_FRSET";
+    case FR_ERROR_WRONG_CHAR_LENGTH:
+        return "FR_ERROR_WRONG_CHAR_LENGTH";
+    case FR_ERROR_BAD_END_OF_FRAME:
+        return "FR_ERROR_BAD_END_OF_FRAME";
+    case FR_ERROR_OPEN_ERROR:
+        return "FR_ERROR_OPEN_ERROR";
+    case FR_ERROR_CHECKSUM:
+        return "FR_ERROR_CHECKSUM";
+    case FR_ERROR_BAD_NEVENT:
+        return "FR_ERROR_BAD_NEVENT";
+    case FR_ERROR_BAD_NSTAT:
+        return "FR_ERROR_BAD_NSTAT";
+    case FR_ERROR_TOO_LONG_STRING:
+        return "FR_ERROR_TOO_LONG_STRING";
+    default:
+        return "Unrecognized FrameL error code";
+    }
+    return "Invalid FrameL error code";
+}
+
 enum { XLAL_FRAMEU_FR_FILE_MODE_R, XLAL_FRAMEU_FR_FILE_MODE_W };
 struct tagLALFrameUFrFile {
     int mode;
@@ -136,8 +175,10 @@ LALFrameUFrFile *XLALFrameUFrFileOpen_FrameL_(const char *filename, const char *
             stream->handle = FrFileINew(fname.s);
         if (!stream->handle) {
             LALFree(stream);
-            XLAL_ERROR_NULL(XLAL_EIO, "FrFileINew failed.");
+            XLAL_ERROR_NULL(XLAL_EIO, "FrFileINew failed with code %s.", XLALFrameLErrorMessage(stream->handle->error));
         }
+        /* turn on structure checksum checking */
+        stream->handle->chkSumFrFlag = FR_YES;
         stream->mode = XLAL_FRAMEU_FR_FILE_MODE_R;
     } else {
         if (filename == NULL || strcmp(filename, "-") == 0) {
@@ -154,7 +195,7 @@ LALFrameUFrFile *XLALFrameUFrFileOpen_FrameL_(const char *filename, const char *
             stream->handle = FrFileONew(fname.s, -1);   /* -1: don't alter compression */
         if (!stream->handle) {
             LALFree(stream);
-            XLAL_ERROR_NULL(XLAL_EIO, "FrFileONew failed.");
+            XLAL_ERROR_NULL(XLAL_EIO, "FrFileONew failed with error code %s.", XLALFrameLErrorMessage(stream->handle->error));
         }
         stream->handle->noTOCts = FR_NO;
         stream->mode = XLAL_FRAMEU_FR_FILE_MODE_W;
@@ -352,16 +393,16 @@ LALFrameUFrameH *XLALFrameUFrameHRead_FrameL_(LALFrameUFrFile * stream, int pos)
     /* make sure the TOC is read */
     if (stream->handle->toc == NULL)
         if (FrTOCReadFull(stream->handle) == NULL)
-            XLAL_ERROR_NULL(XLAL_EIO, "FrTOCReadFull failed");
+            XLAL_ERROR_NULL(XLAL_EIO, "FrTOCReadFull failed with error code %s.", XLALFrameLErrorMessage(stream->handle->error));
 
     /* go to the right position */
     if (FrFileIOSet(stream->handle, stream->handle->toc->positionH[pos]) == -1)
-        XLAL_ERROR_NULL(XLAL_EIO, "FrFileIOSet failed");
+        XLAL_ERROR_NULL(XLAL_EIO, "FrFileIOSet failed with error code %s.", XLALFrameLErrorMessage(stream->handle->error));
 
     /* get the frame */
     frame = FrameRead(stream->handle);
     if (!frame)
-        XLAL_ERROR_NULL(XLAL_EIO, "FrameRead failed");
+        XLAL_ERROR_NULL(XLAL_EIO, "FrameRead failed with error code %s.", XLALFrameLErrorMessage(stream->handle->error));
 
     copy = FrameHCopy(frame);
     FrSetIni(stream->handle);
@@ -374,7 +415,7 @@ LALFrameUFrameH *XLALFrameUFrameHRead_FrameL_(LALFrameUFrFile * stream, int pos)
 int XLALFrameUFrameHWrite_FrameL_(LALFrameUFrFile * stream, LALFrameUFrameH * frame)
 {
     if (FrameWrite(frame, stream->handle) != FR_OK)
-        XLAL_ERROR(XLAL_EIO, "FrameWrite failed");
+        XLAL_ERROR(XLAL_EIO, "FrameWrite failed with error code %s.", XLALFrameLErrorMessage(stream->handle->error));
     return 0;
 }
 
@@ -666,7 +707,7 @@ int XLALFrameUFrameHFrHistoryAdd_FrameL_(LALFrameUFrameH * frame, LALFrameUFrHis
     FrHistory *copy;
     copy = FrHistoryNew(history->name ? history->name : frame->name, history->time, history->comment);
     if (!copy)
-        XLAL_ERROR(XLAL_EIO, "FrHistoryNew failed");
+        XLAL_ERROR(XLAL_EIO, "FrHistoryNew failed.");
     copy->next = frame->history;
     frame->history = copy;
     return 0;
@@ -754,7 +795,7 @@ LALFrameUFrChan *XLALFrameUFrChanRead_FrameL_(LALFrameUFrFile * stream, const ch
     if (!toc)
         toc = FrTOCReadFull(stream->handle);
     if (!toc)
-        XLAL_ERROR_NULL(XLAL_EIO, "FrTOCReadFull failed");
+        XLAL_ERROR_NULL(XLAL_EIO, "FrTOCReadFull failed with error code %s.", XLALFrameLErrorMessage(stream->handle->error));
     if (pos >= (size_t) toc->nFrame)
         XLAL_ERROR_NULL(XLAL_EINVAL, "pos = %zu out of range");
 
@@ -821,7 +862,10 @@ LALFrameUFrChan *XLALFrameUFrChanRead_FrameL_(LALFrameUFrFile * stream, const ch
     /* couldn't find channel */
   failure:
     LALFree(channel);
-    XLAL_ERROR_NULL(XLAL_ENAME, "Channel %s not found", name);
+    if (stream->handle->error == FR_OK)
+        XLAL_ERROR_NULL(XLAL_ENAME, "Channel %s not found", name);
+    else
+        XLAL_ERROR_NULL(XLAL_EIO, "Channel %s could not be read: error code %s", name, XLALFrameLErrorMessage(stream->handle->error));
 }
 
 /* stripped-down copy of FrAdcDataNewF */
