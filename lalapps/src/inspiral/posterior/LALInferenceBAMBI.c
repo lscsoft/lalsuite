@@ -440,7 +440,8 @@ void LALInferenceMultiNestAlgorithm(LALInferenceRunState *runState)
     BAMBIRun(mmodal, ceff, nlive, mntol, efr, ndims, nPar, nClsPar, maxModes, updInt, Ztol, root, rseed, pWrap, fb,
     bresume, outfile, initMPI, logZero, maxiter, LogLike, dumper, bambi, context);
 
-    free(info[1]);free(info[0]);free(info);free(root);free(networkinputs);
+    free(info[2]);free(info[1]);free(info[0]);free(info);
+    free(root);free(networkinputs);
 }
 
 

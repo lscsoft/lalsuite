@@ -604,6 +604,24 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
         }
     }
 
+    /* Check for real mass values */
+    if(LALInferenceCheckVariable(params,"logmc"))
+        if(isnan(*(REAL8 *)LALInferenceGetVariable(params,"logmc")))
+            return 0;
+    if(LALInferenceCheckVariable(params,"chirpmass"))
+        if(isnan(*(REAL8 *)LALInferenceGetVariable(params,"chirpmass")))
+            return 0;
+    if(LALInferenceCheckVariable(params,"massratio"))
+        if(isnan(*(REAL8 *)LALInferenceGetVariable(params,"massratio"))
+           ||*(REAL8 *)LALInferenceGetVariable(params,"massratio") < 0.0
+           || *(REAL8 *)LALInferenceGetVariable(params,"massratio") > 0.25)
+            return 0;
+    if(LALInferenceCheckVariable(params,"asym_massratio"))
+        if(isnan(*(REAL8 *)LALInferenceGetVariable(params,"asym_massratio"))
+           ||*(REAL8 *)LALInferenceGetVariable(params,"asym_massratio") < 0.0
+           || *(REAL8 *)LALInferenceGetVariable(params,"asym_massratio") > 1.0)
+            return 0;
+
     /* Check for component masses in range, if specified */
     if(LALInferenceCheckVariable(priorParams,"component_min"))
         if(*(REAL8 *)LALInferenceGetVariable(priorParams,"component_min") > m1
@@ -1363,6 +1381,24 @@ UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALI
             if(*(REAL8 *) item->value < min || *(REAL8 *)item->value > max) return 0 ;
         }
     }
+
+    /* Check for real mass values */
+    if(LALInferenceCheckVariable(params,"logmc"))
+        if(isnan(*(REAL8 *)LALInferenceGetVariable(params,"logmc")))
+            return 0;
+    if(LALInferenceCheckVariable(params,"chirpmass"))
+        if(isnan(*(REAL8 *)LALInferenceGetVariable(params,"chirpmass")))
+            return 0;
+    if(LALInferenceCheckVariable(params,"massratio"))
+        if(isnan(*(REAL8 *)LALInferenceGetVariable(params,"massratio"))
+           ||*(REAL8 *)LALInferenceGetVariable(params,"massratio") < 0.0
+           || *(REAL8 *)LALInferenceGetVariable(params,"massratio") > 0.25)
+            return 0;
+    if(LALInferenceCheckVariable(params,"asym_massratio"))
+        if(isnan(*(REAL8 *)LALInferenceGetVariable(params,"asym_massratio"))
+           ||*(REAL8 *)LALInferenceGetVariable(params,"asym_massratio") < 0.0
+           || *(REAL8 *)LALInferenceGetVariable(params,"asym_massratio") > 1.0)
+            return 0;
 
     /* Check for component masses in range, if specified */
     if(LALInferenceCheckVariable(priorParams,"component_min"))
@@ -2207,6 +2243,24 @@ UINT4 LALInferenceInspiralPriorNormalisedCubeToPrior(LALInferenceRunState *runSt
             if(*(REAL8 *) item->value < min || *(REAL8 *)item->value > max) return 0 ;
         }
     }
+
+    /* Check for real mass values */
+    if(LALInferenceCheckVariable(params,"logmc"))
+        if(isnan(*(REAL8 *)LALInferenceGetVariable(params,"logmc")))
+            return 0;
+    if(LALInferenceCheckVariable(params,"chirpmass"))
+        if(isnan(*(REAL8 *)LALInferenceGetVariable(params,"chirpmass")))
+            return 0;
+    if(LALInferenceCheckVariable(params,"massratio"))
+        if(isnan(*(REAL8 *)LALInferenceGetVariable(params,"massratio"))
+           ||*(REAL8 *)LALInferenceGetVariable(params,"massratio") < 0.0
+           || *(REAL8 *)LALInferenceGetVariable(params,"massratio") > 0.25)
+            return 0;
+    if(LALInferenceCheckVariable(params,"asym_massratio"))
+        if(isnan(*(REAL8 *)LALInferenceGetVariable(params,"asym_massratio"))
+           ||*(REAL8 *)LALInferenceGetVariable(params,"asym_massratio") < 0.0
+           || *(REAL8 *)LALInferenceGetVariable(params,"asym_massratio") > 1.0)
+            return 0;
 
     /* Check for component masses in range, if specified */
     if(LALInferenceCheckVariable(priorParams,"component_min"))
