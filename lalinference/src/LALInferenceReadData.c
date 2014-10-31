@@ -24,6 +24,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
@@ -83,7 +84,7 @@ struct fvec {
 
 #define LALINFERENCE_DEFAULT_FLOW "40.0"
 
-char *SNRpath = NULL;
+static char SNRpath[FILENAME_MAX];
 
 struct fvec *interpFromFile(char *filename);
 
@@ -1487,8 +1488,7 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 	}
         if(LALInferenceGetProcParamVal(commandLine,"--snrpath")){
                 ppt = LALInferenceGetProcParamVal(commandLine,"--snrpath");
-		SNRpath = XLALCalloc(strlen(ppt->value)+1,sizeof(char));
-		memcpy(SNRpath,ppt->value,strlen(ppt->value)+1);
+		sprintf(SNRpath,"%s",ppt->value);
                 fprintf(stdout,"Writing SNRs in %s\n",SNRpath)     ;
 
 	}
@@ -2486,7 +2486,6 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
 
 
 static void PrintSNRsToFile(LALInferenceIFOData *IFOdata , SimInspiralTable *inj_table){
-  char SnrName[200];
   char ListOfIFOs[10]="";
   REAL8 NetSNR=0.0;
   LALInferenceIFOData *thisData=IFOdata;
@@ -2500,11 +2499,11 @@ static void PrintSNRsToFile(LALInferenceIFOData *IFOdata , SimInspiralTable *inj
 
   (void) ListOfIFOs;
   (void) inj_table;
-  sprintf(SnrName,"%s/snr_IMR.dat",SNRpath);
-  FILE * snrout = fopen(SnrName,"a");
+  FILE * snrout = fopen(SNRpath,"a");
   if(!snrout){
     fprintf(stderr,"Unable to open the path %s for writing SNR files\n",SNRpath);
-    exit(1);
+    fprintf(stderr,"Error code %i: %s\n",errno,strerror(errno));
+    exit(errno);
   }
 
   thisData=IFOdata; // restart from the first IFO
