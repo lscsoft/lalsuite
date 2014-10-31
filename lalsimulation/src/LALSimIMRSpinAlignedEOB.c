@@ -1109,7 +1109,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
 
 
 
-#if 0
+#if 1
 
 /** ********************************************************************
  *  THE FOLLOWING HAS FUNCTIONS FOR THE PRECESSING EOB MODEL
