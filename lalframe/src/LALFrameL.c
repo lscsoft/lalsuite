@@ -175,7 +175,7 @@ LALFrameUFrFile *XLALFrameUFrFileOpen_FrameL_(const char *filename, const char *
             stream->handle = FrFileINew(fname.s);
         if (!stream->handle) {
             LALFree(stream);
-            XLAL_ERROR_NULL(XLAL_EIO, "FrFileINew failed with code %s.", XLALFrameLErrorMessage(stream->handle->error));
+            XLAL_ERROR_NULL(XLAL_EIO, "FrFileINew failed.");
         }
         /* turn on structure checksum checking */
         stream->handle->chkSumFrFlag = FR_YES;
@@ -195,7 +195,7 @@ LALFrameUFrFile *XLALFrameUFrFileOpen_FrameL_(const char *filename, const char *
             stream->handle = FrFileONew(fname.s, -1);   /* -1: don't alter compression */
         if (!stream->handle) {
             LALFree(stream);
-            XLAL_ERROR_NULL(XLAL_EIO, "FrFileONew failed with error code %s.", XLALFrameLErrorMessage(stream->handle->error));
+            XLAL_ERROR_NULL(XLAL_EIO, "FrFileONew failed.");
         }
         stream->handle->noTOCts = FR_NO;
         stream->mode = XLAL_FRAMEU_FR_FILE_MODE_W;
@@ -392,7 +392,7 @@ LALFrameUFrameH *XLALFrameUFrameHRead_FrameL_(LALFrameUFrFile * stream, int pos)
 
     /* make sure the TOC is read */
     if (stream->handle->toc == NULL)
-        if (FrTOCReadFull(stream->handle) == NULL)
+        if (FrTOCReadFull(stream->handle) == NULL || stream->handle->error != FR_OK)
             XLAL_ERROR_NULL(XLAL_EIO, "FrTOCReadFull failed with error code %s.", XLALFrameLErrorMessage(stream->handle->error));
 
     /* go to the right position */
@@ -401,7 +401,7 @@ LALFrameUFrameH *XLALFrameUFrameHRead_FrameL_(LALFrameUFrFile * stream, int pos)
 
     /* get the frame */
     frame = FrameRead(stream->handle);
-    if (!frame)
+    if (!frame || stream->handle->error != FR_OK)
         XLAL_ERROR_NULL(XLAL_EIO, "FrameRead failed with error code %s.", XLALFrameLErrorMessage(stream->handle->error));
 
     copy = FrameHCopy(frame);
@@ -794,7 +794,7 @@ LALFrameUFrChan *XLALFrameUFrChanRead_FrameL_(LALFrameUFrFile * stream, const ch
     toc = stream->handle->toc;
     if (!toc)
         toc = FrTOCReadFull(stream->handle);
-    if (!toc)
+    if (!toc || stream->handle->error != FR_OK)
         XLAL_ERROR_NULL(XLAL_EIO, "FrTOCReadFull failed with error code %s.", XLALFrameLErrorMessage(stream->handle->error));
     if (pos >= (size_t) toc->nFrame)
         XLAL_ERROR_NULL(XLAL_EINVAL, "pos = %zu out of range");
@@ -820,6 +820,8 @@ LALFrameUFrChan *XLALFrameUFrChanRead_FrameL_(LALFrameUFrFile * stream, const ch
             gtime += adc->timeOffset;
             //adc->next = NULL;
             adc->data = FrVectReadNext(stream->handle, gtime, adc->name);
+            if (stream->handle->error != FR_OK)
+                goto failure;
             channel->handle.adc = adc;
             channel->type = XLAL_FRAMEU_FR_CHAN_TYPE_ADC;
             return channel;
@@ -837,6 +839,8 @@ LALFrameUFrChan *XLALFrameUFrChanRead_FrameL_(LALFrameUFrFile * stream, const ch
             gtime += proc->timeOffset;
             proc->next = NULL;
             proc->data = FrVectReadNext(stream->handle, gtime, proc->name);
+            if (stream->handle->error != FR_OK)
+                goto failure;
             channel->handle.proc = proc;
             channel->type = XLAL_FRAMEU_FR_CHAN_TYPE_PROC;
             return channel;
@@ -854,6 +858,8 @@ LALFrameUFrChan *XLALFrameUFrChanRead_FrameL_(LALFrameUFrFile * stream, const ch
             gtime += sim->timeOffset;
             sim->next = NULL;
             sim->data = FrVectReadNext(stream->handle, gtime, sim->name);
+            if (stream->handle->error != FR_OK)
+                goto failure;
             channel->handle.sim = sim;
             channel->type = XLAL_FRAMEU_FR_CHAN_TYPE_SIM;
             return channel;
