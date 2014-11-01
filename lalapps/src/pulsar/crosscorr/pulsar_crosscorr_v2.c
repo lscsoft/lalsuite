@@ -457,28 +457,6 @@ int main(int argc, char *argv[]){
     XLAL_ERROR( XLAL_EFUNC );
   }
 
-  /* initialize the doppler scan struct which stores the current template information */
-  XLALGPSSetREAL8(&dopplerpos.refTime, uvar.refTime);
-  dopplerpos.Alpha = uvar.alphaRad;
-  dopplerpos.Delta = uvar.deltaRad;
-  dopplerpos.fkdot[0] = uvar.fStart;
-  /* set all spindowns to zero */
-  for (k=1; k < PULSAR_MAX_SPINS; k++)
-    dopplerpos.fkdot[k] = 0.0;
-
-  /* now set the initial values of binary parameters */
-  thisBinaryTemplate.asini = uvar.orbitAsiniSec;
-  thisBinaryTemplate.period = uvar.orbitPSec;
-  XLALGPSSetREAL8( &thisBinaryTemplate.tp, uvar.orbitTimeAsc);
-  thisBinaryTemplate.ecc = 0.0;
-  thisBinaryTemplate.argp = 0.0;
-  /* copy to dopplerpos */
-  dopplerpos.asini = thisBinaryTemplate.asini;
-  dopplerpos.period = thisBinaryTemplate.period;
-  dopplerpos.tp = thisBinaryTemplate.tp;
-  dopplerpos.ecc = thisBinaryTemplate.ecc;
-  dopplerpos.argp = thisBinaryTemplate.argp;
-
   /* spacing in frequency from diagff */ /* set spacings in new dopplerparams struct */
   if (XLALUserVarWasSet(&uvar.spacingF)) /* If spacing was given by CMD line, use it, else calculate spacing by mismatch*/
     binaryTemplateSpacings.fkdot[0] = uvar.spacingF;
@@ -508,6 +486,35 @@ int main(int argc, char *argv[]){
   const UINT8 aSpacingNum = floor( uvar.orbitAsiniSecBand / binaryTemplateSpacings.asini);
   const UINT8 tSpacingNum = floor( uvar.orbitTimeAscBand / XLALGPSGetREAL8(&binaryTemplateSpacings.tp));
   const UINT8 pSpacingNum = floor( uvar.orbitPSecBand / binaryTemplateSpacings.period);
+
+  /*reset minbinaryOrbitParams to shift the first point a factor so as to make the center of all seaching points centers at the center of searching band*/
+  minBinaryTemplate.fkdot[0] = uvar.fStart + 0.5 * (uvar.fBand - fSpacingNum * binaryTemplateSpacings.fkdot[0]);
+  minBinaryTemplate.asini = uvar.orbitAsiniSec + 0.5 * (uvar.orbitAsiniSecBand - aSpacingNum * binaryTemplateSpacings.asini);
+  XLALGPSSetREAL8( &minBinaryTemplate.tp, uvar.orbitTimeAsc + 0.5 * (uvar.orbitTimeAscBand - tSpacingNum * XLALGPSGetREAL8(&binaryTemplateSpacings.tp)));
+  minBinaryTemplate.period = uvar.orbitPSec + 0.5 * (uvar.orbitPSecBand - pSpacingNum * binaryTemplateSpacings.period);
+
+  /* initialize the doppler scan struct which stores the current template information */
+  XLALGPSSetREAL8(&dopplerpos.refTime, uvar.refTime);
+  dopplerpos.Alpha = uvar.alphaRad;
+  dopplerpos.Delta = uvar.deltaRad;
+  dopplerpos.fkdot[0] = minBinaryTemplate.fkdot[0];
+  /* set all spindowns to zero */
+  for (k=1; k < PULSAR_MAX_SPINS; k++)
+    dopplerpos.fkdot[k] = 0.0;
+  dopplerpos.asini = minBinaryTemplate.asini;
+  dopplerpos.period = minBinaryTemplate.period;
+  dopplerpos.tp = minBinaryTemplate.tp;
+  dopplerpos.ecc = minBinaryTemplate.ecc;
+  dopplerpos.argp = minBinaryTemplate.argp;
+
+  /* now set the initial values of binary parameters */
+  /*  thisBinaryTemplate.asini = uvar.orbitAsiniSec;
+  thisBinaryTemplate.period = uvar.orbitPSec;
+  XLALGPSSetREAL8( &thisBinaryTemplate.tp, uvar.orbitTimeAsc);
+  thisBinaryTemplate.ecc = 0.0;
+  thisBinaryTemplate.argp = 0.0;*/
+  /* copy to dopplerpos */
+
 
   /* Calculate SSB times (can do this once since search is currently only for one sky position, and binary doppler shift is added later) */
   if ((multiSSBTimes = XLALGetMultiSSBtimes ( multiStates, skyPos, dopplerpos.refTime, SSBPREC_RELATIVISTICOPT )) == NULL){
