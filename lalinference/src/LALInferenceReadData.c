@@ -84,7 +84,6 @@ struct fvec {
 
 #define LALINFERENCE_DEFAULT_FLOW "40.0"
 
-static char SNRpath[FILENAME_MAX];
 
 struct fvec *interpFromFile(char *filename);
 
@@ -178,7 +177,7 @@ static const LALUnit strainPerCount={0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
 
 static REAL8TimeSeries *readTseries(LALCache *cache, CHAR *channel, LIGOTimeGPS start, REAL8 length);
 static void makeWhiteData(LALInferenceIFOData *IFOdata);
-static void PrintSNRsToFile(LALInferenceIFOData *IFOdata , SimInspiralTable *inj_table);
+static void PrintSNRsToFile(LALInferenceIFOData *IFOdata , char SNRpath[] );
 
 
 static LALCache *GlobFramesPWD( char *ifo);
@@ -1464,16 +1463,16 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 	REAL8 bufferLength = 2048.0; /* Default length of buffer for injections (seconds) */
 	UINT4 bufferN=0;
 	LIGOTimeGPS bufferStart;
-
 	
 	LALInferenceIFOData *thisData=IFOdata->next;
 	REAL8 minFlow=IFOdata->fLow;
 	REAL8 MindeltaT=IFOdata->timeData->deltaT;
-  REAL8 InjSampleRate=1.0/MindeltaT;
+    REAL8 InjSampleRate=1.0/MindeltaT;
 	REAL4TimeSeries *injectionBuffer=NULL;
-  REAL8 padding=0.4; //default, set in LALInferenceReadData()
-	
-  
+    REAL8 padding=0.4; //default, set in LALInferenceReadData()
+	UINT4 SNR_flag=0; // Print SNRs to file
+    char SNRpath[FILENAME_MAX]="";
+
 	while(thisData){
           minFlow   = minFlow>thisData->fLow ? thisData->fLow : minFlow;
           MindeltaT = MindeltaT>thisData->timeData->deltaT ? thisData->timeData->deltaT : MindeltaT;
@@ -1486,11 +1485,12 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
     event= atoi(LALInferenceGetProcParamVal(commandLine,"--event")->value);
     fprintf(stdout,"Injecting event %d\n",event);
 	}
-        if(LALInferenceGetProcParamVal(commandLine,"--snrpath")){
+    
+	if(LALInferenceGetProcParamVal(commandLine,"--snrpath")){
                 ppt = LALInferenceGetProcParamVal(commandLine,"--snrpath");
-		sprintf(SNRpath,"%s",ppt->value);
-                fprintf(stdout,"Writing SNRs in %s\n",SNRpath)     ;
-
+                sprintf(SNRpath,"%s",ppt->value);
+				SNR_flag=1;
+				fprintf(stdout,"Writing SNRs in %s\n",SNRpath);
 	}
 	Ninj=SimInspiralTableFromLIGOLw(&injTable,LALInferenceGetProcParamVal(commandLine,"--inj")->value,0,0);
 	REPORTSTATUS(&status);
@@ -1768,8 +1768,8 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
       XLALDestroyCOMPLEX16FrequencySeries(injF);
       thisData=thisData->next;
     }
-     if (!(SNRpath==NULL)){ /* If the user provided a path with --snrpath store a file with injected SNRs */
-      PrintSNRsToFile(IFOdata , injTable);
+     if (SNR_flag){ /* If the user provided a path with --snrpath store a file with injected SNRs */
+      PrintSNRsToFile(IFOdata , SNRpath);
     }
 
     NetworkSNR=sqrt(NetworkSNR);
@@ -2285,6 +2285,16 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
   LALStatus status;
   memset(&status,0,sizeof(LALStatus));
   INT4 errnum;
+  char SNRpath[FILENAME_MAX];
+  char SNR_flag=0;
+  ProcessParamsTable *ppt=NULL;
+
+  if(LALInferenceGetProcParamVal(commandLine,"--snrpath")){
+                ppt = LALInferenceGetProcParamVal(commandLine,"--snrpath");
+                sprintf(SNRpath,"%s",ppt->value);
+				SNR_flag=1;
+				fprintf(stdout,"Writing SNRs in %s\n",SNRpath);
+  }
 
   Approximant approximant = XLALGetApproximantFromString(inj_table->waveform);
   if( (int) approximant == XLAL_FAILURE)
@@ -2476,8 +2486,8 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
   }
   printf("injected Network SNR %.1f \n",sqrt(NetSNR));
 
-  if (!(SNRpath==NULL)){ /* If the user provided a path with --snrpath store a file with injected SNRs */
-    PrintSNRsToFile(IFOdata , inj_table);
+  if (SNR_flag){ /* If the user provided a path with --snrpath store a file with injected SNRs */
+    PrintSNRsToFile(IFOdata , SNRpath);
   }
 
   XLALDestroyCOMPLEX16FrequencySeries(hctilde);
@@ -2485,20 +2495,10 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
 }
 
 
-static void PrintSNRsToFile(LALInferenceIFOData *IFOdata , SimInspiralTable *inj_table){
-  char ListOfIFOs[10]="";
+static void PrintSNRsToFile(LALInferenceIFOData *IFOdata , char SNRpath[] ){
   REAL8 NetSNR=0.0;
   LALInferenceIFOData *thisData=IFOdata;
-  int nIFO=0;
 
-  while(thisData){
-       sprintf(ListOfIFOs,"%s%s",ListOfIFOs,thisData->name);
-       thisData=thisData->next;
-  nIFO++;
-      }
-
-  (void) ListOfIFOs;
-  (void) inj_table;
   FILE * snrout = fopen(SNRpath,"a");
   if(!snrout){
     fprintf(stderr,"Unable to open the path %s for writing SNR files\n",SNRpath);
