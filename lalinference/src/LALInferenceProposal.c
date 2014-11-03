@@ -395,6 +395,13 @@ void LALInferenceSetupDefaultNSProposal(LALInferenceRunState *runState, LALInfer
     LALInferenceAddProposalToCycle (runState, PSDFitJumpName, *LALInferencePSDFitJump, SMALLWEIGHT);
   }
 
+  if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-kde")){
+      LALInferenceAddProposalToCycle(runState, clusteredKDEProposalName, &LALInferenceClusteredKDEProposal, BIGWEIGHT);
+      if (LALInferenceGetProcParamVal(runState->commandLine,"--ptmcmc-samples") || LALInferenceGetProcParamVal(runState->commandLine,"--ascii-samples")) {
+          LALInferenceSetupClusteredKDEProposalsFromFile(runState);
+      }
+  }
+
   LALInferenceRandomizeProposalCycle(runState);
   LALInferenceZeroProposalStats(runState);
 }
@@ -509,6 +516,13 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *curr
     LALInferenceAddProposalToCycle(runState, GlitchMorletReverseJumpName, *LALInferenceGlitchMorletReverseJump, SMALLWEIGHT);
   }
 
+  if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-kde")){
+      LALInferenceAddProposalToCycle(runState, clusteredKDEProposalName, &LALInferenceClusteredKDEProposal, BIGWEIGHT);
+      if (LALInferenceGetProcParamVal(runState->commandLine,"--ptmcmc-samples") || LALInferenceGetProcParamVal(runState->commandLine,"--ascii-samples")) {
+          LALInferenceSetupClusteredKDEProposalsFromFile(runState);
+      }
+  }
+
   LALInferenceRandomizeProposalCycle(runState);
   LALInferenceZeroProposalStats(runState);
 }
@@ -552,6 +566,9 @@ SetupPostPTProposal(LALInferenceRunState *runState, LALInferenceVariables *curre
     LALInferenceAddProposalToCycle(runState, differentialEvolutionIntrinsicName, &LALInferenceDifferentialEvolutionIntrinsic, 4);
     LALInferenceAddProposalToCycle(runState, differentialEvolutionExtrinsicName, &LALInferenceDifferentialEvolutionExtrinsic, 4);
   }
+
+  if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-kde"))
+      LALInferenceAddProposalToCycle(runState, clusteredKDEProposalName, &LALInferenceClusteredKDEProposal, 5);
 
   LALInferenceRandomizeProposalCycle(runState);
 }
