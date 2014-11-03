@@ -1,3 +1,10 @@
+lalxml (1.1.13-1) unstable; urgency=low
+
+  * LALXML 1.1.13
+  * more SWIG binding packaging fixes
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Mon, 03 Nov 2014 11:45:54 -0600
+
 lalxml (1.1.12-1) unstable; urgency=low
 
   * LALXML 1.1.12
