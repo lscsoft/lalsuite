@@ -1,3 +1,10 @@
+lalpulsar (1.10.2-1) unstable; urgency=low
+
+  * LALPulsar 1.10.2
+  * more SWIG binding packaging fixes
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Mon, 03 Nov 2014 11:53:23 -0600
+
 lalpulsar (1.10.1-1) unstable; urgency=low
 
   * LALPulsar 1.10.1
