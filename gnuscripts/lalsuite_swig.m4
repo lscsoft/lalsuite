@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2014
 #
-# serial 73
+# serial 74
 
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
   # $0: check the version of $1, and store it in ${swig_version}
@@ -315,7 +315,9 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
     # determine Octave compiler flags
     AC_SUBST([SWIG_OCTAVE_CXXFLAGS],[])
     for arg in CXXPICFLAG ALL_CXXFLAGS; do
-      SWIG_OCTAVE_CXXFLAGS="${SWIG_OCTAVE_CXXFLAGS} "`${mkoctfile} -p ${arg} 2>/dev/null`
+      for flag in `${mkoctfile} -p ${arg} 2>/dev/null`; do
+        SWIG_OCTAVE_CXXFLAGS="${SWIG_OCTAVE_CXXFLAGS} ${flag}"
+      done
     done
     AC_LANG_PUSH([C++])
     _LALSUITE_SWIG_CHECK_COMPILER_FLAGS([SWIG_OCTAVE_CXXFLAGS],[
@@ -328,7 +330,12 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
     # determine Octave linker flags
     AC_SUBST([SWIG_OCTAVE_LDFLAGS],[])
     for arg in LFLAGS LIBOCTINTERP LIBOCTAVE LIBCRUFT OCT_LINK_OPTS OCT_LINK_DEPS; do
-      SWIG_OCTAVE_LDFLAGS="${SWIG_OCTAVE_LDFLAGS} "`${mkoctfile} -p ${arg} 2>/dev/null`
+      for flag in `${mkoctfile} -p ${arg} 2>/dev/null`; do
+        AS_CASE([${flag}],
+          [-L/usr/lib|-L/usr/lib64],[:],
+          [SWIG_OCTAVE_LDFLAGS="${SWIG_OCTAVE_LDFLAGS} ${flag}"]
+        )
+      done
     done
 
     # check for Octave headers
@@ -393,7 +400,9 @@ EOD`]
     AS_IF([test $? -ne 0],[
       AC_MSG_ERROR([could not determine Python preprocessor flags])
     ])
-    SWIG_PYTHON_CPPFLAGS="${SWIG_PYTHON_CPPFLAGS} ${python_out}"
+    for flag in ${python_out}; do
+      SWIG_PYTHON_CPPFLAGS="${SWIG_PYTHON_CPPFLAGS} ${flag}"
+    done
 
     # determine Python compiler flags
     AC_SUBST([SWIG_PYTHON_CFLAGS],[])
@@ -407,7 +416,9 @@ EOD`]
     AS_IF([test $? -ne 0],[
       AC_MSG_ERROR([could not determine Python compiler flags])
     ])
-    SWIG_PYTHON_CFLAGS="${SWIG_PYTHON_CFLAGS} ${python_out}"
+    for flag in ${python_out}; do
+      SWIG_PYTHON_CFLAGS="${SWIG_PYTHON_CFLAGS} ${flag}"
+    done
     AC_LANG_PUSH([C])
     _LALSUITE_SWIG_CHECK_COMPILER_FLAGS([SWIG_PYTHON_CFLAGS],[
       -Wno-uninitialized -Wno-unused-variable -Wno-unused-but-set-variable
@@ -429,7 +440,12 @@ EOD`]
     AS_IF([test $? -ne 0],[
       AC_MSG_ERROR([could not determine Python linker flags])
     ])
-    SWIG_PYTHON_LDFLAGS="${SWIG_PYTHON_LDFLAGS} ${python_out}"
+    for flag in ${python_out}; do
+      AS_CASE([${flag}],
+        [-L/usr/lib|-L/usr/lib64],[:],
+        [SWIG_PYTHON_LDFLAGS="${SWIG_PYTHON_LDFLAGS} ${flag}"]
+      )
+    done
 
     # check for Python and NumPy headers
     AC_LANG_PUSH([C])
