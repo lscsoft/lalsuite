@@ -25,6 +25,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/LALDatatypes.h>
+#include <lal/LALInference.h>
 
 struct tagkmeans;
 
