@@ -73,7 +73,7 @@ LALInferenceTemplateFunction LALInferenceInitCBCTemplate(LALInferenceRunState *r
                     --template LAL (for frequency-domain templates)\n");
   }
   else if(LALInferenceGetProcParamVal(commandLine,"--roq")){
-  runState->templt=&LALInferenceTemplateROQ;
+  templt=&LALInferenceTemplateROQ;
   }
   else {
     fprintf(stdout,"Template function called is \"LALInferenceTemplateXLALSimInspiralChooseWaveform\"\n");
