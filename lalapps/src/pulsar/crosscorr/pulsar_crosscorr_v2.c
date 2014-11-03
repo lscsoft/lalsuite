@@ -551,7 +551,7 @@ int main(int argc, char *argv[]){
   }
 
   /* args should be : spacings, min and max doppler params */
-  BOOLEAN firstPoint = TRUE; /* a boolean to help to search at the beggining point in parameter space, after the search it is set to be FALSE to end the loop*/
+  BOOLEAN firstPoint = TRUE; /* a boolean to help to search at the beginning point in parameter space, after the search it is set to be FALSE to end the loop*/
   if ( (XLALAddMultiBinaryTimes( &multiBinaryTimes, multiSSBTimes, &dopplerpos )  != XLAL_SUCCESS ) ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALAddMultiBinaryTimes() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
@@ -596,7 +596,6 @@ int main(int argc, char *argv[]){
 
     } /* end while loop over templates */
 
-  XLALGPSTimeNow (&computingEndGPSTime); /*record the rough end time*/
   /* write candidates to file */
   sort_crossCorrBinary_toplist( ccToplist );
   /* add error checking */
@@ -604,6 +603,9 @@ int main(int argc, char *argv[]){
   final_write_crossCorrBinary_toplist_to_file( ccToplist, uvar.toplistFilename, &checksum);
 
   REAL8 h0Sens = sqrt((10 / sqrt(estSens))); /*for a SNR=10 signal, the h0 we can detect*/
+
+  XLALGPSTimeNow (&computingEndGPSTime); /*record the rough end time*/
+  REAL8 computingTime = XLALGPSGetREAL8(&computingEndGPSTime) - XLALGPSGetREAL8(&computingStartGPSTime);
   /* make a meta-data file*/
   if(XLALUserVarWasSet(&uvar.logFilename)){
     CHAR *CMDInputStr = XLALUserVarGetLog ( UVAR_LOGFMT_CFGFILE );
@@ -628,7 +630,7 @@ int main(int argc, char *argv[]){
     fprintf(fp, "TemplatenumTotal = %" LAL_UINT8_FORMAT "\n",(fSpacingNum + 1) * (aSpacingNum + 1) * (tSpacingNum + 1) * (pSpacingNum + 1));
     fprintf(fp, "Sens = %.9g\n", estSens);/*(E[rho]/h0^2)^2*/
     fprintf(fp, "h0_min_SNR10 = %.9g\n", h0Sens);/*for rho = 10 in our pipeline*/
-    fprintf(fp, "Sens = %.9f\n", XLALGPSGetREAL8(&computingEndGPSTime) - XLALGPSGetREAL8(&computingStartGPSTime) );/*total time in sec*/
+    fprintf(fp, "computingTime = %.9f\n", computingTime );/*total time in sec*/
     fprintf(fp, "\n[Version]\n\n");
     fprintf(fp, "%s",  VCSInfoString);
     fclose(fp);
