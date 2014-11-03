@@ -151,6 +151,9 @@ int main(int argc, char *argv[]){
 
   LogPrintf (LOG_CRITICAL, "Starting time\n", 0); /*for debug convenience to record calculating time*/
   /* initialize and register user variables */
+  LIGOTimeGPS computingStartGPSTime, computingEndGPSTime;
+  XLALGPSTimeNow (&computingStartGPSTime); /* record the rough starting GPS time*/
+
   if ( XLALInitUserVars( &uvar ) != XLAL_SUCCESS ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALInitUserVars() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
@@ -593,7 +596,7 @@ int main(int argc, char *argv[]){
 
     } /* end while loop over templates */
 
-
+  XLALGPSTimeNow (&computingEndGPSTime); /*record the rough end time*/
   /* write candidates to file */
   sort_crossCorrBinary_toplist( ccToplist );
   /* add error checking */
@@ -625,6 +628,7 @@ int main(int argc, char *argv[]){
     fprintf(fp, "TemplatenumTotal = %" LAL_UINT8_FORMAT "\n",(fSpacingNum + 1) * (aSpacingNum + 1) * (tSpacingNum + 1) * (pSpacingNum + 1));
     fprintf(fp, "Sens = %.9g\n", estSens);/*(E[rho]/h0^2)^2*/
     fprintf(fp, "h0_min_SNR10 = %.9g\n", h0Sens);/*for rho = 10 in our pipeline*/
+    fprintf(fp, "Sens = %.9f\n", XLALGPSGetREAL8(&computingEndGPSTime) - XLALGPSGetREAL8(&computingStartGPSTime) );/*total time in sec*/
     fprintf(fp, "\n[Version]\n\n");
     fprintf(fp, "%s",  VCSInfoString);
     fclose(fp);
