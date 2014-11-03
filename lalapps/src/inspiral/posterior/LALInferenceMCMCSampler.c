@@ -651,7 +651,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
           BcastDifferentialEvolutionPoints(runState, 0);
 
         /* Build KDE proposal */
-        if (!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-kde")) {
+        if (!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-kde")) {
             if (MPIrank!=0)
               LALInferenceSetupClusteredKDEProposalFromDEBuffer(runState);
           last_kde_update = 0;
@@ -719,7 +719,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     if ((i % Nskip) == 0) {
 
       /* Update clustered-KDE proposal every time the buffer is expanded */
-      if (!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-kde")
+      if (!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-kde")
           && (iEff > kde_update_start)
           && (((iEff - last_kde_update) > kde_update_interval) ||
               ((last_kde_update - iEff) > kde_update_interval))) {

@@ -395,7 +395,7 @@ void LALInferenceSetupDefaultNSProposal(LALInferenceRunState *runState, LALInfer
     LALInferenceAddProposalToCycle (runState, PSDFitJumpName, *LALInferencePSDFitJump, SMALLWEIGHT);
   }
 
-  if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-kde")){
+  if(LALInferenceGetProcParamVal(runState->commandLine,"--proposal-kde")){
       LALInferenceAddProposalToCycle(runState, clusteredKDEProposalName, &LALInferenceClusteredKDEProposal, BIGWEIGHT);
       if (LALInferenceGetProcParamVal(runState->commandLine,"--ptmcmc-samples") || LALInferenceGetProcParamVal(runState->commandLine,"--ascii-samples")) {
           LALInferenceSetupClusteredKDEProposalsFromFile(runState);
@@ -516,7 +516,7 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *curr
     LALInferenceAddProposalToCycle(runState, GlitchMorletReverseJumpName, *LALInferenceGlitchMorletReverseJump, SMALLWEIGHT);
   }
 
-  if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-kde")){
+  if(LALInferenceGetProcParamVal(runState->commandLine,"--proposal-kde")){
       LALInferenceAddProposalToCycle(runState, clusteredKDEProposalName, &LALInferenceClusteredKDEProposal, BIGWEIGHT);
       if (LALInferenceGetProcParamVal(runState->commandLine,"--ptmcmc-samples") || LALInferenceGetProcParamVal(runState->commandLine,"--ascii-samples")) {
           LALInferenceSetupClusteredKDEProposalsFromFile(runState);
@@ -567,7 +567,7 @@ SetupPostPTProposal(LALInferenceRunState *runState, LALInferenceVariables *curre
     LALInferenceAddProposalToCycle(runState, differentialEvolutionExtrinsicName, &LALInferenceDifferentialEvolutionExtrinsic, 4);
   }
 
-  if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-kde"))
+  if(LALInferenceGetProcParamVal(runState->commandLine,"--proposal-kde"))
       LALInferenceAddProposalToCycle(runState, clusteredKDEProposalName, &LALInferenceClusteredKDEProposal, 5);
 
   LALInferenceRandomizeProposalCycle(runState);
