@@ -2,6 +2,7 @@ prefix=@prefix@
 exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
+datarootdir=@datarootdir@
 LALSUPPORT_DATA_PATH=@datadir@/@PACKAGE@
 LALSUPPORT_OCTAVE_PATH=@octexecdir@
 LALSUPPORT_PYTHON_PATH=@pyexecdir@
