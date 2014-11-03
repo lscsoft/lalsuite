@@ -786,6 +786,20 @@ XLALSnglInspiralStat(
   {
     statValue = snglInspiral->snr * snglInspiral->snr / snglInspiral->chisq;
   }
+  else if ( snglStat == new_snr )
+  {
+    REAL4 rchisq = 0.;
+    rchisq = snglInspiral->chisq / (2. * snglInspiral->chisq_dof - 2.);
+
+    if ( rchisq <= 1. )
+      { statValue = snglInspiral->snr; }
+    else
+    {
+      /* newsnr formula with standard choice q=6 from arXiv:1111.7314      */
+      /* \hat{\rho} = \rho / [(1 + \chi^2_r^3) / 2]^(1/6) for \chi^2_r > 1 */
+      statValue = snglInspiral->snr / pow((1. + rchisq*rchisq*rchisq) / 2., (1. / 6.));
+    }
+  }
   else
   {
     statValue = 0;

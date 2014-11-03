@@ -17,7 +17,7 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
+/*-----------------------------------------------------------------------
  * 
  * File Name: sire.c
  *
@@ -122,7 +122,7 @@ static void print_usage(char *program)
       " [--sort-triggers]             time sort the inspiral triggers\n"\
       " [--cluster-time]   clust_time cluster triggers with clust_time ms window\n"\
       " [--cluster-algorithm] clust   use trigger clustering algorithm clust\n"\
-      "                               [ snrsq_over_chisq | snr ]\n"\
+      "                               [ snr_and_chisq | snrsq_over_chisq | new_snr | snr ]\n"\
       "\n"\
       "Injection analysis:\n"\
       " [--injection-file]   inj_file read injection parameters from inj_file\n"\
@@ -454,25 +454,29 @@ int main( int argc, char *argv[] )
 
       case 'C':
         /* choose the clustering algorithm */
-        {        
+        {
           if ( ! strcmp( "snr_and_chisq", optarg ) )
           {
             clusterchoice = snr_and_chisq;
           }
-          else if ( ! strcmp( "snrsq_over_chisq", optarg) )
+          else if ( ! strcmp( "snrsq_over_chisq", optarg ) )
           {
             clusterchoice = snrsq_over_chisq;
           }
-          else if ( ! strcmp( "snr", optarg) )
+          else if ( ! strcmp( "snr", optarg ) )
           {
             clusterchoice = snr;
-          }        
+          }
+          else if ( ! strcmp( "new_snr", optarg ) )
+          {
+            clusterchoice = new_snr;
+          }
           else
           {
             fprintf( stderr, "invalid argument to  --%s:\n"
                 "unknown clustering specified:\n "
                 "%s (must be one of: snr_and_chisq, \n"
-                "   snrsq_over_chisq or snr)\n",
+                "   snrsq_over_chisq, new_snr or snr)\n",
                 long_options[option_index].name, optarg);
             exit( 1 );
           }
@@ -486,7 +490,7 @@ int main( int argc, char *argv[] )
         if ( cluster_dt <= 0 )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
-              "custer window must be > 0: "
+              "cluster window must be > 0: "
               "(%" LAL_INT8_FORMAT " specified)\n",
               long_options[option_index].name, cluster_dt );
           exit( 1 );
@@ -578,7 +582,7 @@ int main( int argc, char *argv[] )
       default:
         fprintf( stderr, "unknown error while parsing options\n" );
         exit( 1 );
-    }   
+    }
   }
 
 
@@ -631,7 +635,7 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
-  /* check that if the rsq veto is being preformed,
+  /* check that if the rsq veto is being performed,
                          we have the required options */
   if ( ( (rsqVetoThresh > 0) || (rsqMaxSnr > 0) ) && ( (rsqVetoThresh < 0)
     || (rsqMaxSnr < 0) ) )
@@ -654,7 +658,7 @@ int main( int argc, char *argv[] )
       "must be specified if --rsq-power is given\n" );
     exit( 1 );
   }
-  
+
   /* check that we have all the options to do injections */
   if ( injectFileName && injectWindowNS < 0 )
   {
@@ -711,11 +715,11 @@ int main( int argc, char *argv[] )
   /* save the sort triggers flag */
   if ( sortTriggers )
   {
-    this_proc_param = this_proc_param->next = (ProcessParamsTable *) 
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
       calloc( 1, sizeof(ProcessParamsTable) ); 
     snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s",
         PROGRAM_NAME ); 
-    snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+    snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX,
         "--sort-triggers" );
     snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" ); 
     snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
@@ -726,7 +730,7 @@ int main( int argc, char *argv[] )
   if ( vetoFileName )
   {
     XLALSegListInit( &vetoSegs );
-    LAL_CALL( LALSegListRead( &status, &vetoSegs, vetoFileName, NULL ), 
+    LAL_CALL( LALSegListRead( &status, &vetoSegs, vetoFileName, NULL ),
         &status );
     XLALSegListCoalesce( &vetoSegs );
   }
@@ -749,6 +753,10 @@ int main( int argc, char *argv[] )
   /* read in the triggers */
   for( j = optind; j < argc; ++j )
   {
+    if ( vrbflg ) 
+    { 
+      fprintf( stdout, "Reading triggers from file %s\n", argv[j] );
+    }
     INT4 numFileTriggers = 0;
     SnglInspiralTable   *inspiralFileList = NULL;
     SnglInspiralTable   *thisFileTrigger  = NULL;
@@ -768,21 +776,21 @@ int main( int argc, char *argv[] )
     {
       if ( vrbflg )
       {
-        fprintf(stdout, "Read %d reading triggers from file %s\n",
+        fprintf(stdout, "Read %d triggers from file %s\n",
             numFileTriggers, argv[j]);
       }
     }
 
     /* read the summ value table as well. */
     XLALReadSummValueFile(&summValueList, argv[j]);
-    
+
 
     /*
      *
      *  keep only relevant triggers
      *
      */
-    
+
 
     /* Do playground_only or exclude_play cut */
     if ( dataType != all_data )
@@ -799,7 +807,7 @@ int main( int argc, char *argv[] )
     }
     numEventsKept += numFileTriggers;
 
-    
+
     /*  keep only events from requested ifo  */
     if ( ifoName )
     {
@@ -835,7 +843,7 @@ int main( int argc, char *argv[] )
             massRangeLow, massRangeHigh );
       numEventsInMassRange += numFileTriggers;
     }
-    
+
     /*  Do snr cut */
     if ( snrStar > 0 )
     {
@@ -861,7 +869,7 @@ int main( int argc, char *argv[] )
           numFileTriggers );
       numEventsBelowRsqThresh += numFileTriggers;
     }
-   
+
     /* veto events */
     if ( vetoFileName )
     {
@@ -873,8 +881,7 @@ int main( int argc, char *argv[] )
       numEventsSurvivingVeto += numFileTriggers;
 
     }
-  
-      
+
     /* If there are any remaining triggers ... */
     if ( inspiralFileList )
     {
@@ -936,8 +943,10 @@ int main( int argc, char *argv[] )
 
   if ( injectFileName || sortTriggers )
   {
+    if ( vrbflg ) { fprintf( stdout, "Sorting triggers... " ); }
     inspiralEventList = XLALSortSnglInspiral( inspiralEventList, 
         *LALCompareSnglInspiralByTime );
+    if ( vrbflg ) { fprintf( stdout, "done\n" ); }
   }
 
   /*
@@ -1202,7 +1211,7 @@ int main( int argc, char *argv[] )
       fprintf( fp, "the number of triggers below the R-squared veto are: %d \n",
           numEventsBelowRsqThresh);
     }
-   
+
     if ( vetoFileName )
     {
       fprintf( fp, "number of triggers not vetoed by %s: %d \n",
@@ -1300,13 +1309,13 @@ int main( int argc, char *argv[] )
     thisSummValue = summValueList;
     summValueList = summValueList->next;
     LALFree( thisSummValue );
-  } 
+  }
 
   if ( vetoFileName )
   {
     XLALSegListClear( &vetoSegs );
   }
-  
+
 
   if ( vrbflg ) fprintf( stdout, "checking memory leaks and exiting\n" );
   LALCheckMemoryLeaks();

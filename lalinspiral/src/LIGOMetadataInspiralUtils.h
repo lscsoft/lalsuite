@@ -124,32 +124,36 @@ CoincInspiralStatParams;
 
 
 /**
- * The \c SnglInspiralClusterChoice provides three choices for clustering
+ * The \c SnglInspiralClusterChoice provides statistic choices for clustering
  * a single inspiral table.  The\c snr clustering returns the trigger
  * with the greatest signal to noise ratio; \c snr_and_chisq replaces
  * the existing trigger if the new trigger has \e both a greater snr and
  * a smaller chi squared value; \c snrsq_over_chisq selects the trigger
- * with the largest value of snr squared divided by the chi squared.
+ * with the largest value of snr squared divided by the chi squared; new_snr
+ * selects the trigger with the largest value of re-weighted SNR as defined
+ * in arXiv:1111.7314.
  */
 typedef enum
 {
   none,
   snr_and_chisq,
   snrsq_over_chisq,
+  new_snr,
   snr
 }
 SnglInspiralClusterChoice;
 
 
 /**
- * The \c CoincInspiralStatistic provides two choices for clustering
- * a single inspiral table.  The\c snrsq clustering returns the trigger
- * with the greatest summed snr\f$^{2}\f$ from all instruments.  The
- * \c snr_chi_stat replaces selects the trigger
- * with the largest value of the snr and chisq statistic and the \c bitten_l
- * returns the minimum among the summed snr\f$^{2}\f$ from all instruments and the
- * \f$a\times snr_i - b\f$ in each detector. The parameters  \f$a\f$ and \f$b\f$ must be
- * provided by the user.
+ * The \c CoincInspiralStatistic provides choices for clustering a single 
+ * inspiral table representing coincident events.  The \c snrsq clustering 
+ * returns the trigger with the greatest summed snr\f$^{2}\f$ over all 
+ * instruments.  The \c snr_chi_stat replaces selects the trigger with the 
+ * largest value of the (S3) snr and chisq statistic and the \c bitten_l 
+ * returns the minimum among the summed snr\f$^{2}\f$ from all instruments and 
+ * the \f$a\times snr_i - b\f$ in each detector.  The parameters \f$a\f$ and 
+ * \f$b\f$ must be provided by the user.  Other choices: \c effective_snrsq,
+ * \c new_snrsq, \c bitten_lsq, \c ifar.
  */
 typedef enum
 {
