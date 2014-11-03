@@ -1,3 +1,11 @@
+lal (6.13.2-1) unstable; urgency=low
+
+  * LAL 6.13.2
+  * more SWIG binding packaging fixes
+  * don't ignore --datarootdir in lalsupport.pc.in
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Mon, 03 Nov 2014 11:43:23 -0600
+
 lal (6.13.1-1) unstable; urgency=low
 
   * LAL 6.13.1
