@@ -605,7 +605,7 @@ int main(int argc, char *argv[]){
   REAL8 h0Sens = sqrt((10 / sqrt(estSens))); /*for a SNR=10 signal, the h0 we can detect*/
 
   XLALGPSTimeNow (&computingEndGPSTime); /*record the rough end time*/
-  REAL8 computingTime = XLALGPSGetREAL8(&computingEndGPSTime) - XLALGPSGetREAL8(&computingStartGPSTime);
+  UINT4 computingTime = computingEndGPSTime.gpsSeconds - computingStartGPSTime.gpsSeconds;
   /* make a meta-data file*/
   if(XLALUserVarWasSet(&uvar.logFilename)){
     CHAR *CMDInputStr = XLALUserVarGetLog ( UVAR_LOGFMT_CFGFILE );
@@ -630,7 +630,9 @@ int main(int argc, char *argv[]){
     fprintf(fp, "TemplatenumTotal = %" LAL_UINT8_FORMAT "\n",(fSpacingNum + 1) * (aSpacingNum + 1) * (tSpacingNum + 1) * (pSpacingNum + 1));
     fprintf(fp, "Sens = %.9g\n", estSens);/*(E[rho]/h0^2)^2*/
     fprintf(fp, "h0_min_SNR10 = %.9g\n", h0Sens);/*for rho = 10 in our pipeline*/
-    fprintf(fp, "computingTime = %.9f\n", computingTime );/*total time in sec*/
+    fprintf(fp, "startTime = %" LAL_INT4_FORMAT "\n", computingStartGPSTime.gpsSeconds );/*start time in GPS-time*/
+    fprintf(fp, "endTime = %" LAL_INT4_FORMAT "\n", computingEndGPSTime.gpsSeconds );/*end time in GPS-time*/
+    fprintf(fp, "computingTime = %" LAL_UINT4_FORMAT "\n", computingTime );/*total time in sec*/
     fprintf(fp, "\n[Version]\n\n");
     fprintf(fp, "%s",  VCSInfoString);
     fclose(fp);
