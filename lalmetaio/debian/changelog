@@ -1,3 +1,10 @@
+lalmetaio (1.2.3-1) unstable; urgency=low
+
+  * LALMetaIO 1.2.3
+  * more SWIG binding packaging fixes
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Mon, 03 Nov 2014 11:44:44 -0600
+
 lalmetaio (1.2.2-1) unstable; urgency=low
 
   * LALMetaIO 1.2.2
