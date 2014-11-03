@@ -1773,7 +1773,7 @@ printf("times, deltaT = %.16e, mTScaled = %.16e, dt = %.16e\n",deltaT,mTScaled,d
   REAL8 chi1J, chi2J, chiJ, kappaJL;
   REAL8 JframeEx[3], JframeEy[3], JframeEz[3];
   REAL8 LframeEx[3], LframeEy[3], LframeEz[3];
-
+  combSize = 7.5;
   /* WaveStep 1
    * Locate merger point (max omega), calculate J, chi and kappa at merger, and construct final J frame
    */
