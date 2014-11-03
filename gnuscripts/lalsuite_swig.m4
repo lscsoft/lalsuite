@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2014
 #
-# serial 72
+# serial 73
 
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
   # $0: check the version of $1, and store it in ${swig_version}
@@ -112,7 +112,7 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
     # configure SWIG binding languages
     swig_min_version=2.0.11
     swig_min_version_info=""
-    swig_dep_files=""
+    swig_src_files=""
     LALSUITE_USE_SWIG_OCTAVE
     LALSUITE_USE_SWIG_PYTHON
 
@@ -152,29 +152,21 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
 
     # if SWIG bindings are not being generated, check that the SWIG version
     # used to generate the bindings satisfies ${swig_min_version}
-    srcfile_swig_version_regex='s/^#.*define *SWIGVERSION *0x\([0-9][0-9]\)\([0-9][0-9]\)\([0-9][0-9]\).*$/\1 \2 \3/p'
+    src_file_swig_version_regex='s/^#.*define *SWIGVERSION *0x\([0-9][0-9]\)\([0-9][0-9]\)\([0-9][0-9]\).*$/\1 \2 \3/p'
     AS_IF([test "${swig_generate}" != true],[
-      for file in ${swig_dep_files}; do
-        depfile="${srcdir}/swig/${file}"
-        AS_IF([test "${swig_generate}" = true],[
-          test -f "swig/${file}" || echo '#empty' > "swig/${file}"
-        ],[test -f "${depfile}"],[
-          srcfilename=`cat "${depfile}" | ${SED} -n -e '1p' | ${SED} -e 's/:.*$//'`
-          srcfile="${srcdir}/swig/${srcfilename}"
-          AS_IF([test -f "${srcfile}"],[
-            AC_MSG_CHECKING([if SWIG version ${swig_min_version} or later generated ${srcfilename}])
-            srcfile_swig_verargs=[`${SED} -n -e "${srcfile_swig_version_regex}" "${srcfile}"`]
-            srcfile_swig_version=[`printf '%d.%d.%d' ${srcfile_swig_verargs}`]
-            LALSUITE_VERSION_COMPARE([${srcfile_swig_version}],[<],[${swig_min_version}],[
-              AC_MSG_RESULT([no (${srcfile_swig_version})])
-              AC_MSG_ERROR([SWIG version ${swig_min_version} or later is required ${swig_min_version_info}])
-            ])
-            AC_MSG_RESULT([yes (${srcfile_swig_version})])
-          ],[
-            AC_MSG_ERROR([could not determine source file from ${depfile}])
+      for file in ${swig_src_files}; do
+        src_file="${srcdir}/swig/${file}"
+        AS_IF([test -f "${src_file}"],[
+          AC_MSG_CHECKING([if SWIG version ${swig_min_version} or later generated ${src_file}])
+          src_file_swig_verargs=[`${SED} -n -e "${src_file_swig_version_regex}" "${src_file}"`]
+          src_file_swig_version=[`printf '%d.%d.%d' ${src_file_swig_verargs}`]
+          LALSUITE_VERSION_COMPARE([${src_file_swig_version}],[<],[${swig_min_version}],[
+            AC_MSG_RESULT([no (${src_file_swig_version})])
+            AC_MSG_ERROR([SWIG version ${swig_min_version} or later is required ${swig_min_version_info}])
           ])
+          AC_MSG_RESULT([yes (${src_file_swig_version})])
         ],[
-          AC_MSG_ERROR([${depfile} does not exist])
+          AC_MSG_ERROR([${src_file} does not exist])
         ])
       done
     ])
@@ -214,42 +206,6 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
       AC_MSG_RESULT([${SWIG_DEPENDENCIES}])
     ])
 
-    # substitute command to import SWIG make dependency files
-    AS_IF([test "${swig_generate}" = true],[
-      SWIG_include_deps='include .'
-    ],[
-      SWIG_include_deps='include $(srcdir)'
-    ])
-    AC_SUBST([SWIG_include_deps])
-    AM_SUBST_NOTMAKE([SWIG_include_deps])
-
-    # make sure SWIG make dependency files exist, and that
-    # SWIG sources, if distributed, have new timestamps
-    AC_CONFIG_COMMANDS([swig_depfiles],[
-      AS_IF([test "${swig_generate}" = true],[
-        test -f "swig/swiglal_preproc.deps" || echo '#empty' > "swig/swiglal_preproc.deps"
-      ])
-      for file in ${swig_dep_files}; do
-        depfile="${srcdir}/swig/${file}"
-        AS_IF([test "${swig_generate}" = true],[
-          test -f "swig/${file}" || echo '#empty' > "swig/${file}"
-        ],[test -f "${depfile}"],[
-          srcfilename=`cat "${depfile}" | ${SED} -n -e '1p' | ${SED} -e 's/:.*$//'`
-          srcfile="${srcdir}/swig/${srcfilename}"
-          AS_IF([test -f "${srcfile}"],[
-            touch "${srcfile}"
-          ],[
-            AC_MSG_ERROR([could not determine source file from ${depfile}])
-          ])
-        ],[
-          AC_MSG_ERROR([${depfile} does not exist])
-        ])
-      done
-    ],[
-      swig_generate="${swig_generate}"
-      swig_dep_files="${swig_dep_files}"
-    ])
-
   ])
   AM_CONDITIONAL([SWIG_BUILD],[test "${swig_build_any}" = true])
   AM_CONDITIONAL([SWIG_GENERATE],[test "${swig_generate}" = true])
@@ -261,9 +217,9 @@ AC_DEFUN([LALSUITE_USE_SWIG_LANGUAGE],[
   m4_pushdef([uppercase],m4_translit([$1],[a-z],[A-Z]))
   m4_pushdef([lowercase],m4_translit([$1],[A-Z],[a-z]))
   AS_IF([test "${swig_build_]lowercase[}" = true],[
-    $2
     swig_build=true
-    swig_dep_files="${swig_dep_files} swiglal_[]lowercase[].deps"
+    swig_src_files="${swig_src_files} swiglal_[]lowercase[].$2"
+    $3
   ])
   m4_popdef([uppercase])
   m4_popdef([lowercase])
@@ -272,7 +228,7 @@ AC_DEFUN([LALSUITE_USE_SWIG_LANGUAGE],[
 
 AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
   # $0: configure SWIG Octave bindings
-  LALSUITE_USE_SWIG_LANGUAGE([Octave],[
+  LALSUITE_USE_SWIG_LANGUAGE([Octave],[cpp],[
 
     # check for Octave
     AC_PATH_PROG(OCTAVE,[octave],[],[])
@@ -393,7 +349,7 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
 
 AC_DEFUN([LALSUITE_USE_SWIG_PYTHON],[
   # $0: configure SWIG Python bindings
-  LALSUITE_USE_SWIG_LANGUAGE([Python],[
+  LALSUITE_USE_SWIG_LANGUAGE([Python],[c],[
 
     # check for distutils
     AC_MSG_CHECKING([for distutils])

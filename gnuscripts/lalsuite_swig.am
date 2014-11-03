@@ -22,7 +22,6 @@ swig_flags = -MP -MD -Wextra -Werror -I$(top_builddir)/include $(SWIG_CPPFLAGS) 
 swig_cppflags = -shared -I. -I$(top_builddir)/include $(SWIG_CPPFLAGS)
 swig_ldflags = -module -avoid-version -version-info 0:0:0 $(SWIG_LDFLAGS)
 swig_libtoolflags = --tag=disable-static
-swig_deps_filter = $(SED) -e '/^  *swiglal[a-z0-9_]*\.[a-z0-9][a-z0-9]*  *\\$$/d'
 swig_octave_flags = $(swig_flags) -octave -globals . -DSWIG_CPLUSPLUS_CAST
 swig_python_flags = $(swig_flags) -python -O -builtin -globals globalvar
 
@@ -57,8 +56,6 @@ CLEANFILES += \
 	$(END_OF_LIST)
 
 if SWIG_BUILD_OCTAVE
-
-@SWIG_include_deps@/swiglal_octave.deps
 
 octexec_LTLIBRARIES = swiglal_octave.la
 nodist_swiglal_octave_la_SOURCES = swiglal_octave.cpp
@@ -95,14 +92,11 @@ test_scripts += SWIGTest$(PACKAGE_NAME)Octave.m
 
 EXTRA_DIST += \
 	swiglal_octave.cpp \
-	swiglal_octave.deps \
 	$(END_OF_LIST)
 
 endif # SWIG_BUILD_OCTAVE
 
 if SWIG_BUILD_PYTHON
-
-@SWIG_include_deps@/swiglal_python.deps
 
 pkgpyexec_LTLIBRARIES = swiglal_python.la
 nodist_pkgpyexec_PYTHON = swiglal_python/$(PACKAGE).py
@@ -145,15 +139,12 @@ test_scripts += SWIGTest$(PACKAGE_NAME)Python.py
 
 EXTRA_DIST += \
 	swiglal_python.c \
-	swiglal_python.deps \
 	swiglal_python/$(PACKAGE).py \
 	$(END_OF_LIST)
 
 endif # SWIG_BUILD_PYTHON
 
 if SWIG_GENERATE
-
-@SWIG_include_deps@/swiglal_preproc.deps
 
 # swiglal_preproc.i.tmp is always generated, but replaces swiglal_preproc.i only if they differ
 swiglal_preproc.i: force-swig-preproc-generation
@@ -193,12 +184,14 @@ swiglal_preproc.i: force-swig-preproc-generation
 		mv -f $@.tmp $@; \
 	fi
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/swiglal_preproc.deps@am__quote@
+
 swiglal_preproc.xml: swiglal_preproc.i Makefile
-	$(AM_V_GEN)if $(SWIG) -MF swiglal_preproc.deps.tmp $(swig_preproc_flags) -o $@ $<; then \
-		mv -f swiglal_preproc.deps.tmp swiglal_preproc.deps; \
+	$(AM_V_GEN)if $(SWIG) -MF ./$(DEPDIR)/swiglal_preproc.deps.tmp $(swig_preproc_flags) -o $@ $<; then \
+		mv -f ./$(DEPDIR)/swiglal_preproc.deps.tmp ./$(DEPDIR)/swiglal_preproc.deps; \
 		exit 0; \
 	else \
-		rm -f swiglal_preproc.deps.tmp $@; \
+		rm -f ./$(DEPDIR)/swiglal_preproc.deps.tmp $@; \
 		exit 1; \
 	fi
 
@@ -212,25 +205,27 @@ $(swig_iface): swiglal_preproc.xml $(srcdir)/generate_swig_iface.py
 		exit 1; \
 	fi
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/swiglal_octave.deps@am__quote@
+
 swiglal_octave.cpp: $(swig_iface) swiglal_config.h
 	$(AM_V_GEN)$(MKDIR_P) swiglal_octave/ && \
-	if $(SWIG) -MF swiglal_octave.deps.tmp -outdir swiglal_octave/ $(swig_octave_flags) -o $@ $<; then \
-		$(swig_deps_filter) swiglal_octave.deps.tmp > swiglal_octave.deps; \
-		rm -f swiglal_octave.deps.tmp; \
+	if $(SWIG) -MF ./$(DEPDIR)/swiglal_octave.deps.tmp -outdir swiglal_octave/ $(swig_octave_flags) -o $@ $<; then \
+		mv -f ./$(DEPDIR)/swiglal_octave.deps.tmp ./$(DEPDIR)/swiglal_octave.deps; \
 		exit 0; \
 	else \
-		rm -f swiglal_octave.deps.tmp $@; \
+		rm -f ./$(DEPDIR)/swiglal_octave.deps.tmp $@; \
 		exit 1; \
 	fi
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/swiglal_python.deps@am__quote@
+
 swiglal_python.c: $(swig_iface) swiglal_config.h
 	$(AM_V_GEN)$(MKDIR_P) swiglal_python/ && \
-	if $(SWIG) -MF swiglal_python.deps.tmp -outdir swiglal_python/ $(swig_python_flags) -o $@ $<; then \
-		$(swig_deps_filter) swiglal_python.deps.tmp > swiglal_python.deps; \
-		rm -f swiglal_python.deps.tmp; \
+	if $(SWIG) -MF ./$(DEPDIR)/swiglal_python.deps.tmp -outdir swiglal_python/ $(swig_python_flags) -o $@ $<; then \
+		mv -f ./$(DEPDIR)/swiglal_python.deps.tmp ./$(DEPDIR)/swiglal_python.deps; \
 		exit 0; \
 	else \
-		rm -f swiglal_python.deps.tmp $@; \
+		rm -f ./$(DEPDIR)/swiglal_python.deps.tmp $@; \
 		exit 1; \
 	fi
 
@@ -249,19 +244,6 @@ CLEANFILES += \
 	swiglal_python.c \
 	swiglal_python/$(PACKAGE).py \
 	$(END_OF_LIST)
-
-distclean-local: swig-distclean-generate-local
-swig-distclean-generate-local:
-	-rm -f swig_*.deps
-
-else # !SWIG_GENERATE
-
-swiglal_octave.cpp swiglal_python.c:
-	@printf "\nERROR: these dependencies of $@ have changed:\n   $?\n" >&2; \
-	printf "but SWIG is not available to re-generate $@.\n" >&2; \
-	printf "Please ensure SWIG is installed and re-run ./configure with\n" >&2; \
-	printf "either --enable-swig=generate or --enable-swig-<lang>=generate.\n\n" >&2; \
-	exit 1
 
 endif # SWIG_GENERATE
 
