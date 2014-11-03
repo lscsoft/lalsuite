@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LAL],[6.13.1.1],[lal-discuss@ligo.org])
+AC_INIT([LAL],[6.13.2.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([include/config.h lib/lal/LALConfig.h])
 AC_CONFIG_SRCDIR([packages/std/include/LALStdio.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
