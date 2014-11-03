@@ -731,11 +731,11 @@ write_InjParams_to_fp ( FILE * fp,			/**< [in] file-pointer to output file */
     if ( outputMmunuX ) {
       char buf0[256];
       for ( UINT4 X = 0; X < numDetectors ; X ++ ) {
-        snprintf ( buf0, sizeof(buf0), "   AdX[%d]   BdX[%d]   CdX[%d]   DdX[%d]", X, X, X, X );
+        snprintf ( buf0, sizeof(buf0), "      AdX[%d]     BdX[%d]     CdX[%d]     DdX[%d]", X, X, X, X );
         strcat ( M_mu_nu_X_header_string, buf0 );
       }
     }
-    ret = fprintf(fp, "%%%%Alpha Delta      SNR       h0   cosi    psi   phi0          A1       A2       A3       A4         Ad       Bd       Cd       Dd       t0[d]     tau[d] type   (detMp)^(1/8)%s\n", M_mu_nu_X_header_string);
+    ret = fprintf(fp, "%%%%Alpha Delta      SNR       h0   cosi    psi   phi0        A1        A2        A3        A4         Ad         Bd         Cd         Dd        t0[d]      tau[d]   type (detMp)^(1/8)%s\n", M_mu_nu_X_header_string);
     if ( ret < 0 ) {
       XLALPrintError ("%s: failed to fprintf() to given file-pointer 'fp'.\n", __func__ );
       XLAL_ERROR ( XLAL_EIO );
@@ -754,16 +754,16 @@ write_InjParams_to_fp ( FILE * fp,			/**< [in] file-pointer to output file */
       XLALPrintError ("%s: length of multiAM different than numDetectors (%d!=%d).\n", __func__, par->multiAM.length, numDetectors );
       XLAL_ERROR ( XLAL_EINVAL );
     }
-    strcat ( M_mu_nu_X_string, "     ");
+    strcat ( M_mu_nu_X_string, "        ");
     char buf0[256];
     for ( UINT4 X = 0; X < numDetectors ; X ++ ) {
-      snprintf ( buf0, sizeof(buf0), " %8.3g %8.3g %8.3g %8.3g", par->multiAM.data[X]->A, par->multiAM.data[X]->B, par->multiAM.data[X]->C, par->multiAM.data[X]->D );
+      snprintf ( buf0, sizeof(buf0), " %10.5g %10.5g %10.5g %10.5g", par->multiAM.data[X]->A, par->multiAM.data[X]->B, par->multiAM.data[X]->C, par->multiAM.data[X]->D );
       strcat ( M_mu_nu_X_string, buf0 );
     }
   }
 
   /* if injParams given, output them to the file */
-  ret = fprintf ( fp, " %5.3f %6.3f   %6.3f  %7.3g %6.3f %6.3f %6.3f    %8.3g %8.3g %8.3g %8.3g   %8.3g %8.3g %8.3g %8.3g    %8.3f  %8.3f    %1d   %8.3g%s\n",
+  ret = fprintf ( fp, " %5.3f %6.3f   %6.3f  %7.3g %6.3f %6.3f %6.3f % 9.3g % 9.3g % 9.3g % 9.3g %10.5g %10.5g %10.5g %10.5g    %9.3f  %9.3f    %1d %9.3g%s\n",
                   par->skypos.longitude, par->skypos.latitude,						/* skypos */
                   par->SNR,										/* SNR */
                   par->ampParams.h0, par->ampParams.cosi, par->ampParams.psi, par->ampParams.phi0,	/* amplitude params {h0,cosi,psi,phi0}*/

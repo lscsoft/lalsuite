@@ -50,26 +50,42 @@ extern "C" {
 
 /*---------- exported types ----------*/
 
+/** Type containing multi- and single-detector \f$ \mathcal{F} \f$-statistics and line-robust statistic */
+typedef struct tagRecalcStatsComponents {
+  REAL4 avTwoF;					/**< multi-detector \f$ \mathcal{F} \f$-statistic, averaged over segments */
+  REAL4 avTwoFX[PULSAR_MAX_DETECTORS];		/**< fixed-size array of single-detector \f$ \mathcal{F} \f$-statistics, averaged over segments */
+  UINT4 numDetectors;				/**< number of detectors, numDetectors=0 should make all code ignore the TwoFX field. */
+  REAL4 log10BSGL;				/**< line-robust statistic \f$ \log_{10}B_{\mathrm{SGL}} \f$ */
+  INT4 loudestSeg;				/**< index of the segment with the highest multi-detector \f$ \mathcal{F} \f$-statistic */
+  REAL4 twoFloudestSeg;				/**< loudest single-segment, multi-detector \f$ \mathcal{F} \f$-stat  */
+  REAL4 twoFXloudestSeg[PULSAR_MAX_DETECTORS];	/**< single-IFO \f$ \mathcal{F}^X \f$-stat values from the loudest segment in multi-\f$ \mathcal{F} \f$ */
+} RecalcStatsComponents;
+
+/** Type containing input arguments for XLALComputeExtraStatsForToplist() */
+typedef struct tagRecalcStatsParams {
+  const char *listEntryTypeName;		/**< type of toplist entries, give as name string */
+  FstatInputVector *Fstat_in_vec;	/**< vector of input data for XLALComputeFstat() */
+  LALStringVector *detectorIDs;		/**< detector name vector with all detectors present in any data sements */
+  LIGOTimeGPSVector *startTstack;	/**< starting GPS time of each stack */
+  LIGOTimeGPS refTimeGPS;		/**< reference time for fkdot values in toplist */
+  BSGLSetup *BSGLsetup;			/**< pre-computed setup for line-robust statistic BSGL */
+  BOOLEAN loudestSegOutput;		/**< return extra info about loudest segment */
+} RecalcStatsParams;
+
 /*---------- exported Global variables ----------*/
 /* empty init-structs for the types defined in here */
 
 /*---------- exported prototypes [API] ----------*/
 int
 XLALComputeExtraStatsForToplist ( toplist_t *list,
-				  const char *listEntryTypeName,
-				  const FstatInputVector *Fstat_in_vec,
-				  const LALStringVector *detectorIDs,
-				  const LIGOTimeGPSVector *startTstack,
-				  const LIGOTimeGPS refTimeGPS,
-				  const char* outputSingleSegStats );
+				  const RecalcStatsParams *recalcParams
+				);
 
 int
-XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,
+XLALComputeExtraStatsSemiCoherent ( RecalcStatsComponents *stats,
 				    const PulsarDopplerParams *dopplerParams,
-				    const FstatInputVector *Fstat_in_vec,
-				    const LALStringVector *detectorIDs,
-				    const LIGOTimeGPSVector *startTstack,
-				    FILE *singleSegStatsFile );
+				    const RecalcStatsParams *recalcParams
+				  );
 
 // @}
 

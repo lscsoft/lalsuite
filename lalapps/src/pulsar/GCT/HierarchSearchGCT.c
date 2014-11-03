@@ -130,14 +130,11 @@ typedef struct {
   UINT4 blocksRngMed;              /**< blocksize for running median noise floor estimation */
   UINT4 Dterms;                    /**< size of Dirichlet kernel for Fstat calculation */
   BOOLEAN SignalOnly;              /**< FALSE: estimate noise-floor from data, TRUE: assume Sh=1 */
-  REAL8 dopplerMax;                /**< extra sft wings for doppler motion */
   /* parameters describing the coherent data-segments */
   REAL8 tStack;                    /**< duration of stacks */
   UINT4 nStacks;                   /**< number of stacks */
   LALSegList *segmentList;         /**< parsed segment list read from user-specified input file --segmentList */
-  BOOLEAN LVuseAllTerms;           /**< which terms to use in LineVeto computation - FALSE: only leading term, TRUE: all terms */
-  REAL8 LVlogRhoTerm;              /**< For LineVeto statistic: extra term coming from prior normalization: log(rho_max_line^4/70) */
-  REAL8Vector *LVloglX;            /**< For LineVeto statistic: vector of logs of line prior ratios lX per detector */
+  BSGLSetup *BSGLsetup;           /**< pre-computed setup for line-robust statistic BSGL */
   REAL8 dFreqStack;                /**< frequency resolution of Fstat calculation */
   REAL8 df1dot;                    /**< coarse grid resolution in spindown */
   REAL8 df2dot;                    /**< coarse grid resolution in 2nd spindown */
@@ -248,7 +245,7 @@ int MAIN( int argc, char *argv[]) {
   static LIGOTimeGPS minStartTimeGPS, maxStartTimeGPS;
 
   /* some useful variables for each stage */
-  UsefulStageVariables usefulParams;
+  UsefulStageVariables XLAL_INIT_DECL(usefulParams);
 
   /* F-statistic computation related stuff */
   FstatInputVector* Fstat_in_vec = NULL;		// Vector of Fstat input data structures for XLALComputeFstat(), one per stack
@@ -308,7 +305,7 @@ int MAIN( int argc, char *argv[]) {
 
   /* fstat candidate structure for candidate toplist*/
   toplist_t *semiCohToplist=NULL;
-  toplist_t *semiCohToplist2=NULL;	// only used for SORTBY_DUAL_F_LV: 1st toplist sorted by 'F', 2nd one by 'LV'
+  toplist_t *semiCohToplist2=NULL;	// only used for SORTBY_DUAL_F_BSGL: 1st toplist sorted by 'F', 2nd one by 'BSGL'
 
   /* template and grid variables */
   static DopplerSkyScanInit scanInit;   /* init-structure for DopperScanner */
@@ -342,12 +339,16 @@ int MAIN( int argc, char *argv[]) {
   BOOLEAN uvar_printFstat1 = FALSE;
   BOOLEAN uvar_semiCohToplist = TRUE; /* if overall first stage candidates are to be output */
   BOOLEAN uvar_SignalOnly = FALSE;     /* if Signal-only case (for SFT normalization) */
-  BOOLEAN uvar_recalcToplistStats = FALSE; /* Do additional analysis for all toplist candidates, output F, FXvector for postprocessing */
-  BOOLEAN uvar_computeLV = FALSE;          /* In Fstat loop, get single-IFO F-stats [and, in future, compute Line Veto stat] */
-  BOOLEAN uvar_LVuseAllTerms = TRUE;       /* Use only leading term or all terms in Line Veto computation */
-  REAL8 uvar_LVrho = 0.0;                  /* Prior parameter rho_max_line for LineVeto statistic */
-  LALStringVector *uvar_LVlX = NULL;       /* Line-to-gauss prior ratios lX for LineVeto statistic */
-  CHAR *uvar_outputSingleSegStats = NULL; /* Additionally output single-segment Fstats for each final toplist candidate */
+
+  BOOLEAN uvar_recalcToplistStats = FALSE; 	/* Do additional analysis for all toplist candidates, output F, FXvector for postprocessing */
+  BOOLEAN uvar_loudestSegOutput = FALSE; 	/* output extra info about loudest segment; requires recalcToplistStats */
+
+  // ----- Line robust stats parameters ----------
+  BOOLEAN uvar_computeBSGL = FALSE;          	/* In Fstat loop, compute line-robust statistic (BSGL=log10BSGL) using single-IFO F-stats */
+  BOOLEAN uvar_BSGLlogcorr = FALSE;		/* compute log-correction in line-robust statistic BSGL (slower) or not (faster) */
+  REAL8   uvar_Fstar0 = 0.0;			/* BSGL transition-scale parameter 'Fstar0', see documentation for XLALCreateBSGLSetup() for details */
+  LALStringVector *uvar_oLGX = NULL;       	/* prior per-detector line-vs-Gauss odds ratios 'oLGX', see XLALCreateBSGLSetup() for details */
+  // --------------------------------------------
 
   REAL8 uvar_dAlpha = DALPHA;   /* resolution for flat or isotropic grids -- coarse grid*/
   REAL8 uvar_dDelta = DDELTA;
@@ -370,7 +371,6 @@ int MAIN( int argc, char *argv[]) {
 
   REAL8 uvar_minStartTime1 = 0;
   REAL8 uvar_maxStartTime1 = LAL_INT4_MAX;
-  REAL8 uvar_dopplerMax = 1.05e-4;
 
   REAL8 uvar_refTime = 0;
   INT4 uvar_nCand1 = NCAND1; /* number of candidates to be followed up from first stage */
@@ -463,7 +463,7 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterREALUserVar(   &status, "f2dotBand",    0,  UVAR_OPTIONAL, "2nd spindown Range", &uvar_f2dotBand), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "f3dot",        0,  UVAR_OPTIONAL, "3rd spindown parameter", &uvar_f3dot), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "df3dot",       0,  UVAR_OPTIONAL, "3rd spindown resolution (default \\propto 1/Tstack^4)", &uvar_df3dot), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "f3dotBand",    0,  UVAR_OPTIONAL, "3rd spindown Range", &uvar_f3dotBand), &status);  
+  LAL_CALL( LALRegisterREALUserVar(   &status, "f3dotBand",    0,  UVAR_OPTIONAL, "3rd spindown Range", &uvar_f3dotBand), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "peakThrF",     0,  UVAR_OPTIONAL, "Fstat Threshold", &uvar_ThrF), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "mismatch1",   'm', UVAR_OPTIONAL, "1st stage mismatch", &uvar_mismatch1), &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "gridType1",    0,  UVAR_OPTIONAL, "0=flat,1=isotropic,2=metric,3=file", &uvar_gridType1),  &status);
@@ -486,9 +486,14 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterREALUserVar(   &status, "tStack",      'T', UVAR_OPTIONAL, "Duration of segments (sec)", &uvar_tStack ),&status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "segmentList",  0, UVAR_OPTIONAL, "ALTERNATIVE: file containing a segment list: lines of form <startGPS endGPS duration[h] NumSFTs>", &uvar_segmentList),  &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "recalcToplistStats", 0, UVAR_OPTIONAL, "Additional analysis for toplist candidates, recalculate 2F, 2FX at finegrid", &uvar_recalcToplistStats), &status);
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "computeLV",    0, UVAR_OPTIONAL,  "Compute LineVeto stat for all candidates from single- and multi-IFO F-stats, can be used as main toplist statistic", &uvar_computeLV), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "LVrho",        0, UVAR_OPTIONAL,  "LineVeto: Prior rho_max_line, must be >=0", &uvar_LVrho), &status);
-  LAL_CALL( LALRegisterLISTUserVar(   &status, "LVlX",         0, UVAR_OPTIONAL,  "LineVeto: line-to-gauss prior ratios lX for different detectors X, length must be numDetectors. Defaults to lX=1,1,..", &uvar_LVlX), &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "loudestSegOutput", 0, UVAR_OPTIONAL, "Output extra info about loudest segment; (requires --recalcToplistStats)", &uvar_loudestSegOutput), &status);
+
+  // ----- Line robust stats parameters ----------
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "computeBSGL",   0, UVAR_OPTIONAL, "Compute and output line-robust statistic (BSGL)", &uvar_computeBSGL), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "Fstar0",       0, UVAR_OPTIONAL,  "BSGL: transition-scale parameter 'Fstar0'", &uvar_Fstar0 ), &status);
+  LAL_CALL( LALRegisterLISTUserVar(   &status, "oLGX",         0, UVAR_OPTIONAL,  "BSGL: prior per-detector line-vs-Gauss odds 'oLGX' (Defaults to oLGX=1/Ndet)", &uvar_oLGX), &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "BSGLlogcorr",  0, UVAR_DEVELOPER, "BSGL: include log-correction terms (slower) or not (faster)", &uvar_BSGLlogcorr), &status);
+  // --------------------------------------------
 
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "FstatMethod",  0, UVAR_OPTIONAL, XLALFstatMethodHelpString(), &uvar_FstatMethod ), &status);
   /* developer user variables */
@@ -496,10 +501,7 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterINTUserVar (   &status, "SSBprecision", 0, UVAR_DEVELOPER, "Precision for SSB transform.", &uvar_SSBprecision),    &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "Dterms",       0, UVAR_DEVELOPER, "No. of terms to keep in Dirichlet Kernel", &uvar_Dterms ), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "skyPointIndex",0, UVAR_DEVELOPER, "Only analyze this skypoint in grid", &uvar_skyPointIndex ), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "dopplerMax",   0, UVAR_DEVELOPER, "Max Doppler shift",  &uvar_dopplerMax), &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "SortToplist",  0, UVAR_DEVELOPER, "Sort toplist by: 0=avg2F, 1=numbercount, 2=LV-stat, 3=dual-toplists 'avg2F+LV'",  &uvar_SortToplist), &status);
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "LVuseAllTerms",0, UVAR_DEVELOPER, "LineVeto: which terms to include - FALSE: only leading term, TRUE: all terms", &uvar_LVuseAllTerms), &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "outputSingleSegStats", 0,  UVAR_DEVELOPER, "Base filename for single-segment Fstat output (1 file per final toplist candidate!)", &uvar_outputSingleSegStats),  &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "SortToplist",  0, UVAR_DEVELOPER, "Sort toplist by: 0=avg2F, 1=numbercount, 2=BSGL, 3=dual-toplists 'avg2F+BSGL'",  &uvar_SortToplist), &status);
 
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "outputTiming", 0, UVAR_DEVELOPER, "Append timing information into this file", &uvar_outputTiming), &status);
 
@@ -563,7 +565,7 @@ int MAIN( int argc, char *argv[]) {
     fprintf(stderr, "Invalid value of F-statistic threshold\n");
     return( HIERARCHICALSEARCH_EBAD );
   }
-  
+
   if ( uvar_f3dotBand != 0 && ( !LALUserVarWasSet(&uvar_gammaRefine) || !LALUserVarWasSet(&uvar_gammaRefine) || uvar_gammaRefine != 1 || uvar_gamma2Refine != 1 )){
 	fprintf(stderr, "Search over 3rd spindown is available only with gammaRefine AND gamma2Refine manually set to 1!\n");
 	return( HIERARCHICALSEARCH_EVAL );
@@ -578,38 +580,21 @@ int MAIN( int argc, char *argv[]) {
     XLALPrintError ( "Invalid value %d specified for toplist sorting, must be within [0, %d]\n", uvar_SortToplist, SORTBY_LAST - 1 );
     return( HIERARCHICALSEARCH_EBAD );
   }
-  if ( (uvar_SortToplist == SORTBY_LV || uvar_SortToplist == SORTBY_DUAL_F_LV) && !uvar_computeLV ) {
-    fprintf(stderr, "Toplist sorting by LV-stat only possible if --computeLV given.\n");
+  if ( (uvar_SortToplist == SORTBY_BSGL || uvar_SortToplist == SORTBY_DUAL_F_BSGL) && !uvar_computeBSGL ) {
+    fprintf(stderr, "Toplist sorting by BSGL only possible if --computeBSGL given.\n");
     return( HIERARCHICALSEARCH_EBAD );
   }
-
-  // compute single-IFO F-statistics for line veto
-  if ( uvar_computeLV ) {
-    Fstat_what |= FSTATQ_2F_PER_DET;
-  }
-
-  /* take LV user vars and save them in usefulParams */
-  usefulParams.LVuseAllTerms = uvar_LVuseAllTerms;
-  usefulParams.LVloglX = NULL;
-  if ( uvar_LVrho < 0.0 ) {
-    fprintf(stderr, "Invalid LV prior rho (given rho=%f, need rho>=0)!\n", uvar_LVrho);
-    return( HIERARCHICALSEARCH_EBAD );
-  }
-  else if ( uvar_LVrho > 0.0 )
-    usefulParams.LVlogRhoTerm = 4.0 * log(uvar_LVrho) - log(70.0);
-  else /* if uvar_LVrho == 0.0, logRhoTerm should become irrelevant in summation */
-    usefulParams.LVlogRhoTerm = - LAL_REAL4_MAX;
 
   /* create toplist -- semiCohToplist has the same structure
      as a fstat candidate, so treat it as a fstat candidate */
-  if ( uvar_SortToplist == SORTBY_DUAL_F_LV )	// special treatement of 'dual' toplists: 1st one sorted by 'F', 2nd one by 'LV'
+  if ( uvar_SortToplist == SORTBY_DUAL_F_BSGL )	// special treatement of 'dual' toplists: 1st one sorted by 'F', 2nd one by 'BSGL'
     {
       XLAL_CHECK ( 0 == create_gctFStat_toplist ( &semiCohToplist, uvar_nCand1, SORTBY_F ),
                    XLAL_EFUNC, "create_gctFStat_toplist() failed for nCand=%d and sortBy=%d\n", uvar_nCand1, SORTBY_F );
-      XLAL_CHECK ( 0 == create_gctFStat_toplist ( &semiCohToplist2, uvar_nCand1, SORTBY_LV ),
-                   XLAL_EFUNC, "create_gctFStat_toplist() failed for nCand=%d and sortBy=%d\n", uvar_nCand1, SORTBY_LV );
+      XLAL_CHECK ( 0 == create_gctFStat_toplist ( &semiCohToplist2, uvar_nCand1, SORTBY_BSGL ),
+                   XLAL_EFUNC, "create_gctFStat_toplist() failed for nCand=%d and sortBy=%d\n", uvar_nCand1, SORTBY_BSGL );
     }
-  else	// 'normal' single-sorting toplist cases (sortby 'F', 'nc' or 'LV')
+  else	// 'normal' single-sorting toplist cases (sortby 'F', 'nc' or 'BSGL')
     {
       XLAL_CHECK ( 0 == create_gctFStat_toplist ( &semiCohToplist, uvar_nCand1, uvar_SortToplist),
                    XLAL_EFUNC, "create_gctFStat_toplist() failed for nCand=%d and sortBy=%d\n", uvar_nCand1, uvar_SortToplist );
@@ -752,7 +737,6 @@ int MAIN( int argc, char *argv[]) {
   usefulParams.blocksRngMed = uvar_blocksRngMed;
   usefulParams.Dterms = uvar_Dterms;
   usefulParams.SignalOnly = uvar_SignalOnly;
-  usefulParams.dopplerMax = uvar_dopplerMax;
   usefulParams.SSBprec = uvar_SSBprecision;
 
   if ( XLALParseFstatMethodString ( &usefulParams.Fmethod, uvar_FstatMethod ) != XLAL_SUCCESS ) {
@@ -1005,6 +989,34 @@ int MAIN( int argc, char *argv[]) {
   LALStringVector *detectorIDs = usefulParams.detectorIDs;
   const UINT4 numDetectors = detectorIDs->length;
 
+  // compute single-IFO F-statistics for line-robust stats
+  if ( uvar_computeBSGL )
+    {
+      Fstat_what |= FSTATQ_2F_PER_DET;
+
+      /* take BSGL user vars and pre-compute the corresponding BSGLsetup */
+      REAL4 *oLGX_p = NULL;
+      REAL4 oLGX[PULSAR_MAX_DETECTORS];
+      if ( uvar_oLGX != NULL )
+        {
+          if ( uvar_oLGX->length != numDetectors ) {
+            fprintf ( stderr, "Invalid input: length(oLGX) = %d differs from number of detectors (%d)'\n", uvar_oLGX->length, numDetectors );
+            return( HIERARCHICALSEARCH_EBAD );
+          }
+          if ( XLALParseLinePriors ( &oLGX[0], uvar_oLGX ) != XLAL_SUCCESS ) {
+            fprintf(stderr, "Invalid input oLGX'\n" );
+            return( HIERARCHICALSEARCH_EBAD );
+          }
+          oLGX_p = &oLGX[0];
+        } // if uvar_oLGX != NULL
+
+      usefulParams.BSGLsetup = XLALCreateBSGLSetup ( numDetectors, uvar_Fstar0, oLGX_p, uvar_BSGLlogcorr );
+      if ( usefulParams.BSGLsetup == NULL ) {
+        fprintf(stderr, "XLALCreateBSGLSetup() failed\n");
+        return( HIERARCHICALSEARCH_EBAD );
+      }
+    } // if uvar_computeBSGL
+
   /* assemble column headings string for output file */
   CHAR colum_headings_string_base[256];
   if (XLALUserVarWasSet(&uvar_f3dot)) {
@@ -1013,22 +1025,28 @@ int MAIN( int argc, char *argv[]) {
   else {
 		sprintf(colum_headings_string_base,"freq alpha delta f1dot f2dot nc <2F>");
   }
-  
+
   UINT4 column_headings_string_length = sizeof(colum_headings_string_base);
-  if ( uvar_computeLV ) {
-    column_headings_string_length += 3 + numDetectors*8; /* 3 for " LV" and 8 per detector for " <2F_XY>" */
+  if ( uvar_computeBSGL ) {
+    column_headings_string_length += 10 + numDetectors*8; /* 10 for " log10BSGL" and 8 per detector for " <2F_XY>" */
   }
   if ( uvar_recalcToplistStats ) {
-    column_headings_string_length += 6 + numDetectors*9; /* 6 for " <2Fr>" and 9 per detector for " <2Fr_XY>" */
-    if (XLALUserVarWasSet(&uvar_f3dot)){
-		column_headings_string_length += 1;
-	}
+    column_headings_string_length += 6 + 11 + numDetectors*9; /* 6 for " <2Fr>" and 9 per detector for " <2Fr_XY>" */
+    if ( uvar_computeBSGL) {
+      column_headings_string_length += 11; /* for " log10BSGLr" */
+    }
+    if (XLALUserVarWasSet(&uvar_f3dot)) {
+      column_headings_string_length += 1;
+    }
+    if ( uvar_loudestSegOutput ) {
+      column_headings_string_length += 9 + numDetectors*7; /* for " lseg 2Fl" and 7 per detector for " 2Fl_XY" */
+    }
   }
   char column_headings_string[column_headings_string_length];
   XLAL_INIT_MEM( column_headings_string );
   strcat ( column_headings_string, colum_headings_string_base );
-  if ( uvar_computeLV ) {
-    strcat ( column_headings_string, " LV" );
+  if ( uvar_computeBSGL ) {
+    strcat ( column_headings_string, " log10BSGL" );
     for ( UINT4 X = 0; X < numDetectors ; X ++ ) {
       char headingX[9];
       snprintf ( headingX, sizeof(headingX), " <2F_%s>", detectorIDs->data[X] );
@@ -1037,43 +1055,27 @@ int MAIN( int argc, char *argv[]) {
   }
   if ( uvar_recalcToplistStats ) {
     strcat ( column_headings_string, " <2Fr>" );
+    if ( uvar_computeBSGL) {
+      strcat ( column_headings_string, " log10BSGLr" );
+    }
     for ( UINT4 X = 0; X < numDetectors ; X ++ ) {
       char headingX[10];
       snprintf ( headingX, sizeof(headingX), " <2Fr_%s>", detectorIDs->data[X] );
       strcat ( column_headings_string, headingX );
     } /* for X < numDet */
+    if ( uvar_loudestSegOutput ) {
+      strcat ( column_headings_string, " lseg 2Fl" );
+      for ( UINT4 X = 0; X < numDetectors ; X ++ ) {
+        char headingX[10];
+        snprintf ( headingX, sizeof(headingX), " 2Fl_%s", detectorIDs->data[X] );
+        strcat ( column_headings_string, headingX );
+      }
+    }
   }
   global_column_headings_stringp = column_headings_string;
 
   /* get effective inverse number of segments per detector (needed for correct averaging in single-IFO F calculation) */
   REAL4 NSegmentsInv = 1.0 / nStacks; /* also need this for multi-detector F-stat averaging later on */
-
-  /* set up line prior ratios: either given by user, then convert from string to REAL4 vector; else, pass NULL, which is interpreted as lX=1.0 for all X */
-  usefulParams.LVloglX = NULL;
-  if ( uvar_computeLV && uvar_LVlX ) {
-    if (  uvar_LVlX->length != numDetectors ) {
-      fprintf(stderr, "Length of LV prior ratio vector does not match number of detectors! (%d != %d)\n", uvar_LVlX->length, numDetectors);
-      return( HIERARCHICALSEARCH_EBAD );
-    }
-    if ( (usefulParams.LVloglX = XLALCreateREAL8Vector ( numDetectors )) == NULL ) {
-      fprintf(stderr, "Failed call to XLALCreateREAL8Vector( %d )\n", numDetectors );
-      return( HIERARCHICALSEARCH_EXLAL );
-    }
-    for (UINT4 X = 0; X < numDetectors; X++) {
-      if ( 1 != sscanf ( uvar_LVlX->data[X], "%" LAL_REAL8_FORMAT, &usefulParams.LVloglX->data[X] ) ) {
-        fprintf(stderr, "Illegal REAL8 commandline argument to --LVlX[%d]: '%s'\n", X, uvar_LVlX->data[X]);
-        return ( HIERARCHICALSEARCH_EBAD );
-      }
-      if ( usefulParams.LVloglX->data[X] < 0.0 ) {
-        fprintf(stderr, "Negative input prior-ratio for detector X=%d lX[X]=%f\n", X, usefulParams.LVloglX->data[X] );
-        return( HIERARCHICALSEARCH_EBAD );
-      }
-      else if ( usefulParams.LVloglX->data[X] > 0.0 )
-        usefulParams.LVloglX->data[X] = log(usefulParams.LVloglX->data[X]);
-      else /* if zero prior ratio, approximate log(0)=-inf by -LAL_REA4_MAX to avoid raising underflow exceptions */
-        usefulParams.LVloglX->data[X] = - LAL_REAL8_MAX;
-    } /* for X < numDetectors */
-  } /* if ( computeLV && uvar_LVlX ) */
 
   /*-----------Create template grid for first stage ---------------*/
   /* prepare initialization of DopplerSkyScanner to step through paramter space */
@@ -1222,8 +1224,9 @@ int MAIN( int argc, char *argv[]) {
 
           /* allocate memory for coarsegrid */
           coarsegrid.TwoF = (REAL4 *)LALRealloc( coarsegrid.TwoF, coarsegrid.length * sizeof(REAL4));
-	  if ( uvar_computeLV )
+	  if ( uvar_computeBSGL ) {
             coarsegrid.TwoFX = (REAL4 *)LALRealloc( coarsegrid.TwoFX, coarsegrid.numDetectors * coarsegrid.length * sizeof(REAL4));
+          }
           coarsegrid.Uindex = (UINT4 *)LALRealloc( coarsegrid.Uindex, coarsegrid.length * sizeof(UINT4));
 
           if ( coarsegrid.TwoF == NULL || coarsegrid.Uindex == NULL) {
@@ -1320,8 +1323,9 @@ int MAIN( int argc, char *argv[]) {
 
           finegrid.nc = (FINEGRID_NC_T *)ALRealloc( finegrid.nc, finegrid.length * sizeof(FINEGRID_NC_T));
           finegrid.sumTwoF = (REAL4 *)ALRealloc( finegrid.sumTwoF, finegrid.length * sizeof(REAL4));
-	  if ( uvar_computeLV )
+	  if ( uvar_computeBSGL ) {
             finegrid.sumTwoFX = (REAL4 *)ALRealloc( finegrid.sumTwoFX, finegrid.numDetectors * finegrid.freqlengthAL * sizeof(REAL4));
+          }
 
           if ( finegrid.nc == NULL || finegrid.sumTwoF == NULL) {
             fprintf(stderr, "ERROR: Memory allocation [HierarchSearchGCT.c %d]\n" , __LINE__);
@@ -1353,8 +1357,9 @@ int MAIN( int argc, char *argv[]) {
               /* initialize the entire finegrid ( 2F-sum and number count set to 0 ) */
               memset( finegrid.nc, 0, finegrid.length * sizeof(FINEGRID_NC_T) );
               memset( finegrid.sumTwoF, 0, finegrid.length * sizeof(REAL4) );
-	      if ( uvar_computeLV )
+	      if ( uvar_computeBSGL ) {
                 memset( finegrid.sumTwoFX, 0, finegrid.numDetectors * finegrid.freqlengthAL * sizeof(REAL4) );
+              }
 
               /* compute F-statistic values for coarse grid the first time through fine grid fdots loop */
               const BOOLEAN doComputeFstats = ( (if1dot_fg == 0) && (if2dot_fg == 0) && (if3dot_fg == 0));
@@ -1491,7 +1496,7 @@ int MAIN( int argc, char *argv[]) {
 
                     /* ============ Copy the *2F* value ============ */
                     coarsegrid.TwoF[CG_INDEX(coarsegrid, k, ifreq)] = Fstat_res->twoF[ifreq];
-                    if ( uvar_computeLV ) {
+                    if ( uvar_computeBSGL ) {
                       for (UINT4 X = 0; X < coarsegrid.numDetectors; X++) {
                         INT4 detid = -1;
                         for (UINT4 Y = 0; Y < Fstat_res->numDetectors; Y++) { /* look for matching detector ID in this segment */
@@ -1505,7 +1510,7 @@ int MAIN( int argc, char *argv[]) {
                           coarsegrid.TwoFX[CG_FX_INDEX(coarsegrid, X, k, ifreq)] = Fstat_res->twoFPerDet[detid][ifreq];
                         }
                       } /* for X < numDetectors */
-                    } /* if ( uvar_computeLV ) */
+                    } /* if ( uvar_computeBSGL ) */
 
                   } /* END: Loop over coarse-grid frequency bins (ifreq) */
 
@@ -1562,7 +1567,7 @@ int MAIN( int argc, char *argv[]) {
 #else
                 gc_hotloop_no_nc ( fgrid2F, cgrid2F, finegrid.freqlength );
 #endif
-                if ( uvar_computeLV ) {
+                if ( uvar_computeBSGL ) {
                   for (UINT4 X = 0; X < finegrid.numDetectors; X++) {
                     REAL4 * cgrid2FX = coarsegrid.TwoFX + CG_FX_INDEX(coarsegrid, X, k, U1idx);
                     REAL4 * fgrid2FX = finegrid.sumTwoFX + FG_FX_INDEX(finegrid, X, 0);
@@ -1579,7 +1584,7 @@ int MAIN( int argc, char *argv[]) {
                   fgrid2F++;
                   cgrid2F++;
                 }
-                if ( uvar_computeLV ) {
+                if ( uvar_computeBSGL ) {
                   for (UINT4 X = 0; X < finegrid.numDetectors; X++) {
                     REAL4 * cgrid2FX = coarsegrid.TwoFX + CG_FX_INDEX(coarsegrid, X, k, U1idx);
                     REAL4 * fgrid2FX = finegrid.sumTwoFX + FG_FX_INDEX(finegrid, X, 0);
@@ -1665,32 +1670,28 @@ int MAIN( int argc, char *argv[]) {
 
   LogPrintf( LOG_NORMAL, "Finished main analysis.\n");
 
-  /* Also compute F, FX (for line veto statistics) for all candidates in final toplist */
+  /* Also compute F, FX (for line-robust statistics) for all candidates in final toplist */
   if ( uvar_recalcToplistStats ) {
 
     LogPrintf( LOG_NORMAL, "Recalculating statistics for the final toplist...\n");
-
-    /* need pre-sorted toplist to have right segment-Fstat file numbers (do not rely on this feature, could be messed up by precision issues in sorting!) */
-    if ( uvar_outputSingleSegStats )
-      {
-        sort_gctFStat_toplist(semiCohToplist);
-        if ( semiCohToplist2 )
-          sort_gctFStat_toplist(semiCohToplist2);
-      }
-
-    XLAL_CHECK ( XLAL_SUCCESS == XLALComputeExtraStatsForToplist ( semiCohToplist, "GCTtop", Fstat_in_vec, usefulParams.detectorIDs,
-                                                                   usefulParams.startTstack, refTimeGPS, uvar_outputSingleSegStats ),
+    RecalcStatsParams XLAL_INIT_DECL(recalcParams);
+    recalcParams.listEntryTypeName = "GCTtop";
+    recalcParams.Fstat_in_vec		= Fstat_in_vec;
+    recalcParams.detectorIDs		= usefulParams.detectorIDs;
+    recalcParams.startTstack		= usefulParams.startTstack;
+    recalcParams.refTimeGPS		= refTimeGPS;
+    recalcParams.BSGLsetup		= usefulParams.BSGLsetup;
+    recalcParams.loudestSegOutput	= uvar_loudestSegOutput;
+    XLAL_CHECK ( XLAL_SUCCESS == XLALComputeExtraStatsForToplist ( semiCohToplist, &recalcParams ),
                  HIERARCHICALSEARCH_EXLAL, "XLALComputeExtraStatsForToplist() failed with xlalErrno = %d.\n\n", xlalErrno
                  );
     // also recalc optional 2nd toplist if present
     if ( semiCohToplist2 )
-      XLAL_CHECK ( XLAL_SUCCESS == XLALComputeExtraStatsForToplist ( semiCohToplist2, "GCTtop", Fstat_in_vec, usefulParams.detectorIDs,
-                                                                     usefulParams.startTstack, refTimeGPS, uvar_outputSingleSegStats ),
+      XLAL_CHECK ( XLAL_SUCCESS == XLALComputeExtraStatsForToplist ( semiCohToplist2, &recalcParams ),
                    HIERARCHICALSEARCH_EXLAL, "XLALComputeExtraStatsForToplist() failed for 2nd toplist with xlalErrno = %d.\n\n", xlalErrno
                    );
 
     LogPrintf( LOG_NORMAL, "Finished recalculating toplist statistics.\n");
-
   }
 
   if ( uvar_outputTiming )
@@ -1723,14 +1724,14 @@ int MAIN( int argc, char *argv[]) {
 
   LogPrintf ( LOG_DEBUG, "Writing output ... ");
   XLAL_CHECK ( write_hfs_oputput(uvar_fnameout, semiCohToplist) != -1, XLAL_EFAILED, "write_hfs_oputput('%s', toplist) failed.!\n", uvar_fnameout );
-  // output optional second toplist, if it exists, into "<uvar_fnameout>-LV"
+  // output optional second toplist, if it exists, into "<uvar_fnameout>-BSGL"
   if ( semiCohToplist2 )
     {
       LogPrintf ( LOG_DEBUG, "toplist2 ... ");
       UINT4 newlen = strlen(uvar_fnameout) + 10;
       CHAR *fname2;
       XLAL_CHECK ( (fname2 = XLALCalloc ( 1, newlen )) != NULL, XLAL_ENOMEM, "Failed to XLALCalloc(1, %d)\n\n", newlen );
-      sprintf ( fname2, "%s-LV", uvar_fnameout );
+      sprintf ( fname2, "%s-BSGL", uvar_fnameout );
       XLAL_CHECK ( write_hfs_oputput ( fname2, semiCohToplist2) != -1, XLAL_EFAILED, "write_hfs_oputput('%s', toplist2) failed for 2nd toplist!\n", fname2 );
       XLALFree ( fname2 );
     }
@@ -1798,7 +1799,7 @@ int MAIN( int argc, char *argv[]) {
   free_gctFStat_toplist ( &semiCohToplist );
   if ( semiCohToplist2 ) free_gctFStat_toplist ( &semiCohToplist2 );
 
-  XLALDestroyREAL8Vector ( usefulParams.LVloglX );
+  XLALDestroyBSGLSetup ( usefulParams.BSGLsetup );
 
   LAL_CALL (LALDestroyUserVars(&status), &status);
 
@@ -1978,11 +1979,11 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
 
   /* set wings of sfts to be read */
   REAL8 minCoverFreq, maxCoverFreq;
-  REAL8 asiniMax = 0, PeriodMin = 0;
+  REAL8 asiniMax = 0, PeriodMin = 0, maxEcc = 0;
   // NOTE: *must* use spin-range at *mid-time* (not reftime), which is where the GCT code sets up its
   // template bank. This is potentially 'wider' than the physically-requested template bank, and
   // can therefore also require more SFT frequency bins!
-  XLALCWSignalCoveringBand ( &minCoverFreq, &maxCoverFreq, &tStartGPS, &tEndGPS, &(in->spinRange_midTime), asiniMax, PeriodMin );
+  XLALCWSignalCoveringBand ( &minCoverFreq, &maxCoverFreq, &tStartGPS, &tEndGPS, &(in->spinRange_midTime), asiniMax, PeriodMin, maxEcc );
 
   REAL8 freqmin = minCoverFreq - in->extraBinsFstat * in->dFreqStack;
   REAL8 freqmax = maxCoverFreq + in->extraBinsFstat * in->dFreqStack;
@@ -2314,11 +2315,11 @@ void UpdateSemiCohToplists ( LALStatus *status,
                              FineGrid *in,
                              REAL8 f1dot_fg,
                              REAL8 f2dot_fg,
-							 REAL8 f3dot_fg,
+                             REAL8 f3dot_fg,
                              UsefulStageVariables *usefulparams,
                              REAL4 NSegmentsInv,
                              REAL4 *NSegmentsInvX,
-							 BOOLEAN have_f3dot
+                             BOOLEAN have_f3dot
                              )
 {
 
@@ -2343,44 +2344,49 @@ void UpdateSemiCohToplists ( LALStatus *status,
     line.Delta = in->delta;
     line.F1dot = f1dot_fg;
     line.F2dot = f2dot_fg;
-	line.F3dot = f3dot_fg;
+    line.F3dot = f3dot_fg;
     line.nc = in->nc[ifreq_fg];
-    line.sumTwoF = in->sumTwoF[ifreq_fg]; /* here it's still the summed 2F value over segments, not the average */
+    line.avTwoF = 0.0; /* will be set to average over segments later */
     line.numDetectors = in->numDetectors;
     for (UINT4 X = 0; X < PULSAR_MAX_DETECTORS; X++) { /* initialise single-IFO F-stat arrays to zero */
-      line.sumTwoFX[X] = 0.0;
-      line.sumTwoFXrecalc[X] = 0.0;
+      line.avTwoFX[X] = 0.0;
+      line.avTwoFXrecalc[X] = 0.0;
     }
-    line.sumTwoFrecalc = -1.0; /* initialise this to -1.0, so that it only gets written out by print_gctFStatline_to_str if later overwritten in recalcToplistStats step */
+    line.avTwoFrecalc = -1.0; /* initialise this to -1.0, so that it only gets written out by print_gctFStatline_to_str if later overwritten in recalcToplistStats step */
+    line.log10BSGLrecalc = -LAL_REAL4_MAX; /* for now, block field with minimal value, needed for output checking in print_gctFStatline_to_str() */
     line.have_f3dot = have_f3dot;
-    
-    if ( in->sumTwoFX ) { /* if we already have FX values from the main loop, insert these, and calculate LV-stat here */
-      for (UINT4 X = 0; X < in->numDetectors; X++)
-        line.sumTwoFX[X] = in->sumTwoFX[FG_FX_INDEX(*in, X, ifreq_fg)]; /* here it's still the summed 2F value over segments, not the average */
+    line.loudestSeg = -1;
+    line.twoFloudestSeg = -1.0;
+    for (UINT4 X = 0; X < PULSAR_MAX_DETECTORS; X++) {
+      line.twoFXloudestSeg[X] = -1.0;
+    }
+
+    /* local placeholders for summed 2F value over segments, not averages yet */
+    REAL4 sumTwoF = in->sumTwoF[ifreq_fg];
+    REAL4 sumTwoFX[PULSAR_MAX_DETECTORS];
+    if ( in->sumTwoFX ) { /* if we already have FX values from the main loop, insert these, and calculate BSGL here */
+      for (UINT4 X = 0; X < in->numDetectors; X++) {
+        sumTwoFX[X] = in->sumTwoFX[FG_FX_INDEX(*in, X, ifreq_fg)]; /* here it's still the summed 2F value over segments, not the average */
+      }
       xlalErrno = 0;
 
-      REAL8 *loglX = NULL;
-      if ( usefulparams->LVloglX )
-        loglX = usefulparams->LVloglX->data;
-
-      line.LV = XLALComputeLineVetoArray ( line.sumTwoF, line.numDetectors, line.sumTwoFX, usefulparams->LVlogRhoTerm, loglX, usefulparams->LVuseAllTerms );
-      line.LV *= NSegmentsInv; /* normalize by number of segments */
-
+      line.log10BSGL = XLALComputeBSGL ( sumTwoF, sumTwoFX, usefulparams->BSGLsetup );
       if ( xlalErrno != 0 ) {
-        XLALPrintError ("%s line %d : XLALComputeLineVetoArray() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
+        XLALPrintError ("%s line %d : XLALComputeBSGL() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
         ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
       }
-      if ( line.LV < -LAL_REAL4_MAX*0.1 )
-        line.LV = -LAL_REAL4_MAX*0.1; /* avoid minimum value, needed for output checking in print_gctFStatline_to_str() */
+      if ( line.log10BSGL < -LAL_REAL4_MAX*0.1 )
+        line.log10BSGL = -LAL_REAL4_MAX*0.1; /* avoid minimum value, needed for output checking in print_gctFStatline_to_str() */
     }
-    else
-      line.LV = -LAL_REAL4_MAX; /* in non-LV case, block field with minimal value, needed for output checking in print_gctFStatline_to_str() */
+    else {
+      line.log10BSGL = -LAL_REAL4_MAX; /* in non-BSGL case, block field with minimal value, needed for output checking in print_gctFStatline_to_str() */
+    }
 
     /* take F-stat averages over segments */
-    line.sumTwoF *= NSegmentsInv; /* average multi-2F by full number of segments */
+    line.avTwoF = sumTwoF*NSegmentsInv; /* average multi-2F by full number of segments */
     if ( in->sumTwoFX ) {
       for (UINT4 X = 0; X < in->numDetectors; X++) {
-        line.sumTwoFX[X] *= NSegmentsInvX[X]; /* average single-2F by per-IFO number of segments */
+        line.avTwoFX[X] = sumTwoFX[X]*NSegmentsInvX[X]; /* average single-2F by per-IFO number of segments */
       }
     }
 

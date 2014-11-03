@@ -28,7 +28,11 @@
 #include "IHS.h"
 
 
-//Allocate memory for a new upperLimitVector of specified length
+/**
+ * Allocate a new UpperLimitVector
+ * \param [in] length Length of the vector
+ * \return Pointer to newly allocated UpperLimitVector
+ */
 UpperLimitVector * new_UpperLimitVector(UINT4 length)
 {
 
@@ -49,8 +53,12 @@ UpperLimitVector * new_UpperLimitVector(UINT4 length)
 } /* new_UpperLimitVector() */
 
 
-//Resize the upperLimitVector to specified length
-//length = 0 frees the upperLimitVector and returns NULL
+/**
+ * Resize an UpperLimitVector
+ * \param [in,out] vector Pointer to UpperLimitVector to resize
+ * \param [in]     length New length of the vector
+ * \return Pointer to reallocated UpperLimitVector
+ */
 UpperLimitVector * resize_UpperLimitVector(UpperLimitVector *vector, UINT4 length)
 {
 
@@ -72,7 +80,10 @@ UpperLimitVector * resize_UpperLimitVector(UpperLimitVector *vector, UINT4 lengt
 } /* resize_UpperLimitVector() */
 
 
-//Free memory allocated to the upperLimitVector
+/**
+ * Free an UpperLimitVector
+ * \param [in] vector Pointer to an UpperLimitVector
+ */
 void free_UpperLimitVector(UpperLimitVector *vector)
 {
 
@@ -91,7 +102,10 @@ void free_UpperLimitVector(UpperLimitVector *vector)
 } /* free_UpperLimitVector() */
 
 
-// Reset the upperLimitStruct
+/**
+ * Reset an UpperLimitStruct
+ * \param [in] ul Pointer to an UpperLimit structure
+ */
 void reset_UpperLimitStruct(UpperLimit *ul)
 {
    ul->fsig = NULL;
@@ -101,7 +115,11 @@ void reset_UpperLimitStruct(UpperLimit *ul)
    ul->effSNRval = NULL;
 } /* reset_UpperLimitStruct() */
 
-//Free an upperLimitStruct
+
+/**
+ * Free an UpperLimit structure
+ * \param [in] ul Pointer to an UpperLimit structure
+ */
 void free_UpperLimitStruct(UpperLimit *ul)
 {
    if (ul->fsig) XLALDestroyREAL8Vector(ul->fsig);
@@ -112,7 +130,16 @@ void free_UpperLimitStruct(UpperLimit *ul)
 } /* free_UpperLimitStruct() */
 
 
-//Determine the 95% confidence level upper limit at a particular sky location from the loudest IHS value
+/**
+ * Determine the 95% confidence level upper limit at a particular sky location from the loudest IHS value
+ * \param [out] ul        Pointer to an UpperLimit struct
+ * \param [in]  params    Pointer to inputParamsStruct
+ * \param [in]  ffdata    Pointer to ffdataStruct
+ * \param [in]  ihsmaxima Pointer to an ihsMaximaStruct
+ * \param [in]  ihsfar    Pointer to an ihsfarStruct
+ * \param [in]  fbinavgs  Pointer to a REAL4Vector of the 2nd FFT background powers
+ * \return Status value
+ */
 INT4 skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdata, ihsMaximaStruct *ihsmaxima, ihsfarStruct *ihsfar, REAL4Vector *fbinavgs)
 {
 
@@ -313,7 +340,13 @@ REAL8 ncx2cdf_float_withouttinyprob_withmatlabchi2cdf_solver(REAL8 x, void *p)
 }
 
 
-//Output the highest upper limit to a file unless printAllULvalues==1 in which case, all UL values are printed to a file
+/**
+ * Output the highest upper limit to a file unless printAllULvalues==1 in which case, all UL values are printed to a file
+ * \param [in] outputfile       String of the filename
+ * \param [in] ul               UpperLimit structure to print to file
+ * \param [in] printAllULvalues Option flag to print all UL values from a sky location (1) or only the largest (0)
+ * \return Status value
+ */
 INT4 outputUpperLimitToFile(CHAR *outputfile, UpperLimit ul, INT4 printAllULvalues)
 {
 

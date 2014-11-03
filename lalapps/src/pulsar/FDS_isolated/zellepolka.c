@@ -144,8 +144,6 @@ If defined, it does:
 #ifdef _MSC_VER
 #include <float.h>
 #define finite _finite
-#else
-int finite(double);
 #endif
 
 
@@ -2141,18 +2139,18 @@ ReadCandidateListFromZipFile( LALStatus *lalStatus,
 	/* ------------------------------------------------------------------------- */
 	/* check that values that are read in are sensible */
 	if (
-	    cl->FileID < 0                        ||
-	    cl->f < 0.0                        ||
-	    cl->TwoF < 0.0                        ||
-	    cl->Alpha <         0.0 - epsilon  ||
-	    cl->Alpha >   LAL_TWOPI + epsilon  ||
-	    cl->Delta < -0.5*LAL_PI - epsilon  ||
-	    cl->Delta >  0.5*LAL_PI + epsilon  ||
-	    !finite(cl->FileID)                     ||                                                                 
-	    !finite(cl->f)                     ||
-	    !finite(cl->Alpha)                 ||
-	    !finite(cl->Delta)                 ||
-	    !finite(cl->TwoF)
+            cl->FileID < 0                     ||
+            cl->f < 0.0                        ||
+            cl->TwoF < 0.0                     ||
+            cl->Alpha <         0.0 - epsilon  ||
+            cl->Alpha >   LAL_TWOPI + epsilon  ||
+            cl->Delta < -0.5*LAL_PI - epsilon  ||
+            cl->Delta >  0.5*LAL_PI + epsilon  ||
+            !isfinite(cl->FileID)              ||
+            !isfinite(cl->f)                   ||
+            !isfinite(cl->Alpha)               ||
+            !isfinite(cl->Delta)               ||
+            !isfinite(cl->TwoF)
 	    ) {
 	  XLALPrintError(
 			"Line %d of file %s has invalid values.\n"
@@ -2390,12 +2388,12 @@ ReadOneCandidateFileV2( LALStatus *lalStatus,
           cl->Alpha >   LAL_TWOPI + epsilon  ||
           cl->Delta < -0.5*LAL_PI - epsilon  ||
           cl->Delta >  0.5*LAL_PI + epsilon  ||
-	  !finite(cl->FileID)                ||                                                                 
-          !finite(cl->f)                     ||
-          !finite(cl->Alpha)                 ||
-	  !finite(cl->F1dot)                 ||
-          !finite(cl->Delta)                 ||
-          !finite(cl->TwoF)
+          !isfinite(cl->FileID)              ||
+          !isfinite(cl->f)                   ||
+          !isfinite(cl->Alpha)               ||
+          !isfinite(cl->F1dot)               ||
+          !isfinite(cl->Delta)               ||
+          !isfinite(cl->TwoF)
           ) {
           XLALPrintError(
                   "Line %d of file %s has invalid values.\n"
@@ -2663,12 +2661,12 @@ ReadOneCandidateFile( LALStatus *lalStatus, 	/**< LALStatus pointer */
           cl->Alpha >   LAL_TWOPI + epsilon  ||
           cl->Delta < -0.5*LAL_PI - epsilon  ||
           cl->Delta >  0.5*LAL_PI + epsilon  ||
-	  !finite(cl->FileID)                ||                                                                 
-          !finite(cl->f)                     ||
-          !finite(cl->Alpha)                 ||
-          !finite(cl->Delta)                 ||
-	  !finite(cl->F1dot)                 ||
-	  !finite(cl->TwoF)
+          !isfinite(cl->FileID)              ||
+          !isfinite(cl->f)                   ||
+          !isfinite(cl->Alpha)               ||
+          !isfinite(cl->Delta)               ||
+          !isfinite(cl->F1dot)               ||
+          !isfinite(cl->TwoF)
           ) {
           XLALPrintError(
                   "Line %d of file %s has invalid values.\n"

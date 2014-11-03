@@ -684,6 +684,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     enginenodes=[]
     for i in range(Npar):
       n=self.add_engine_node(event)
+      if i>0:
+        n.add_var_arg('--dont-dump-psd')
       if n is not None: enginenodes.append(n)
     if len(enginenodes)==0:
       return False
@@ -707,8 +709,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         else:
           zipfilename=None
         respagenode=self.add_results_page_node(resjob=self.cotest_results_page_job,outdir=pagedir,parent=mergenode,gzip_output=zipfilename)
-        if self.config.has_option('input','injection-file') and event.event_id is not None:
-            respagenode.set_injection(self.config.get('input','injection-file'),event.event_id)
+        respagenode.set_psd_files(enginenodes[0])
         mkdirs(os.path.join(self.basepath,'coherence_test'))
         par_mergenodes=[]
         for ifo in enginenodes[0].ifos:
@@ -716,6 +717,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             for co in cotest_nodes:
               co.set_psdstart(enginenodes[0].GPSstart)
               co.set_psdlength(enginenodes[0].psdlength)
+              if co!=cotest_nodes[0]:
+                co.add_var_arg('--dont-dump-psd')
             pmergenode=MergeNSNode(self.merge_job,parents=cotest_nodes)
             pmergenode.set_pos_output_file(os.path.join(self.posteriorpath,'posterior_%s_%s.dat'%(ifo,evstring)))
             self.add_node(pmergenode)
@@ -724,6 +727,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             mkdirs(presultsdir)
             pzipfilename='postproc_'+evstring+'_'+ifo+'.tar.gz'
             subresnode=self.add_results_page_node(outdir=presultsdir,parent=pmergenode, gzip_output=pzipfilename)
+            subresnode.set_psd_files(cotest_nodes[0])
             subresnode.set_bayes_coherent_noise(pmergenode.get_B_file())
             if self.config.has_option('input','injection-file') and event.event_id is not None:
                 subresnode.set_injection(self.config.get('input','injection-file'),event.event_id)
@@ -739,6 +743,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         else:
           zipfilename=None
         respagenode=self.add_results_page_node(outdir=pagedir,parent=mergenode,gzip_output=zipfilename)
+        respagenode.set_psd_files(enginenodes[0])
     respagenode.set_bayes_coherent_noise(mergenode.get_B_file())
     if self.config.has_option('input','injection-file') and event.event_id is not None:
         respagenode.set_injection(self.config.get('input','injection-file'),event.event_id)
@@ -758,10 +763,13 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     enginenodes=[]
     for i in range(Npar):
         enginenodes.append(self.add_engine_node(event))
+        if i>0:
+            enginenodes[-1].add_var_arg('--dont-dump-psd')
     myifos=enginenodes[0].get_ifos()
     pagedir=os.path.join(self.webdir,evstring,myifos)
     mkdirs(pagedir)
     respagenode=self.add_results_page_node(outdir=pagedir)
+    respagenode.set_psd_files(enginenodes[0])
     if self.config.has_option('input','injection-file') and event.event_id is not None:
         respagenode.set_injection(self.config.get('input','injection-file'),event.event_id)
     map(respagenode.add_engine_parent, enginenodes)
@@ -784,6 +792,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     pagedir=os.path.join(self.webdir,evstring,myifos)
     mkdirs(pagedir)
     respagenode=self.add_results_page_node(outdir=pagedir)
+    respagenode.set_psd_files(enginenodes[0])
     respagenode.set_bayes_coherent_noise(enginenodes[0].get_B_file())
     respagenode.set_header_file(enginenodes[0].get_header_file())
     if self.config.has_option('input','injection-file') and event.event_id is not None:
@@ -866,7 +875,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     romweightsnode={}
     prenode=self.EngineNode(self.preengine_job)
     node=self.EngineNode(self.engine_jobs[tuple(ifos)])
-    roqeventpath=os.path.join(self.preengine_job.roqpath,str(event.event_id))
+    roqeventpath=os.path.join(self.preengine_job.roqpath,str(event.event_id)+'/')
     if self.config.has_option('lalinference','roq'):
       mkdirs(roqeventpath)
     node.set_trig_time(end_time)
@@ -934,7 +943,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       prenode.set_padding(self.config.getint('input','padding'))
       #prenode[ifo].set_output_file('/dev/null')
       prenode.add_var_arg('--Niter 1')
-      prenode.add_var_arg('--data-dump '+roqeventpath)
+      prenode.add_var_arg('--outfile '+roqeventpath)
+      prenode.add_var_arg('--data-dump')
       if self.config.has_option('lalinference','seglen'):
         prenode.set_seglen(self.config.getint('lalinference','seglen'))
       elif self.config.has_option('engine','seglen'):
@@ -1113,12 +1123,16 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     self.set_sub_file(os.path.abspath(submitFile))
     if self.engine=='lalinferencemcmc' or self.engine=='lalinferencebambimpi':
       #openmpipath=cp.get('condor','openmpi')
-      if ispreengine is False:
-        self.machine_count=cp.get('mpi','machine-count')
-        self.machine_memory=cp.get('mpi','machine-memory')
+      if cp.has_section('mpi'):
+        if ispreengine is False:
+          self.machine_count=cp.get('mpi','machine-count')
+          self.machine_memory=cp.get('mpi','machine-memory')
+        else:
+          self.machine_count=str(1)
+          self.machine_memory=cp.get('mpi','machine-memory')
       else:
         self.machine_count=str(1)
-        self.machine_memory=cp.get('mpi','machine-memory')
+        self.machine_memory=str(1024) # default value if the user did not specify something
       #self.add_condor_cmd('machine_count',machine_count)
       #self.add_condor_cmd('environment','CONDOR_MPI_PATH=%s'%(openmpipath))
       try:
@@ -1234,7 +1248,14 @@ class EngineNode(pipeline.CondorDAGNode):
     ifos=''
     for i in self.ifos: ifos='%s%s'%(ifos,i)
     return os.path.join(self.job.snrpath,'snr_%s_%10.1f.dat'%(ifos,float(self.get_trig_time())))
-  
+
+  def get_psd_files(self):
+    #not used
+    st=""
+    for i in self.ifos:
+      st+='%s/%.3f_%s-PSD.dat,'%('PSDs',float(self.get_trig_time()),i)  
+    return st[:-1]
+
   def set_trig_time(self,time):
     """
     Set the end time of the signal for the centre of the prior in time
@@ -1379,6 +1400,7 @@ class LALInferenceNestNode(EngineNode):
     
   def set_output_file(self,filename):
     self.nsfile=filename+'.dat'
+    self.posfile=self.nsfile
     self.add_file_opt(self.outfilearg,self.nsfile,file_is_output_file=True)
     self.Bfilename=self.nsfile+'_B.txt'
     self.add_output_file(self.Bfilename)
@@ -1472,6 +1494,23 @@ class ResultsPageNode(pipeline.CondorDAGNode):
         if event is not None:
             self.__event=int(event)
             self.add_var_arg('--eventnum '+str(event))
+            
+    def set_psd_files(self,node):
+      #if node.psdspath is not None:
+      try:
+        #bambi store the outfile in fileroot
+        pathroot=node.fileroot
+      except:
+        #mcmc and nest in postfile
+        pathroot=node.posfile
+        if pathroot[-3:]=='.00':
+          pathroot=pathroot[:-3]
+      st=""
+      for i in node.ifos:
+        st+="%s%s-PSD.dat,"%(pathroot,i)
+      st=st[:-1]
+      self.add_var_arg('--psdfiles %s'%st)
+      
     def add_engine_parent(self,node):
       """
       Add a parent node which is one of the engine nodes

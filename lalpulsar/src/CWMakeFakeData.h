@@ -103,11 +103,13 @@ XLALGenerateCWSignalTS ( const PulsarParams *pulsarParams, const LALDetector *si
 
 int XLALReadPulsarParams ( PulsarParams *pulsarParams, const LALParsedDataFile *cfgdata, const CHAR *secName );
 PulsarParamsVector *XLALPulsarParamsFromFile ( const char *fname );
-PulsarParamsVector *XLALPulsarParamsFromUserInput ( const char *UserInput );
+PulsarParamsVector *XLALPulsarParamsFromUserInput ( const LALStringVector *UserInput );
 
 PulsarParamsVector *XLALCreatePulsarParamsVector ( UINT4 numPulsars );
+PulsarParamsVector * XLALPulsarParamsVectorAppend ( PulsarParamsVector *list, const PulsarParamsVector *add );
 
 void XLALDestroyPulsarParamsVector ( PulsarParamsVector *ppvect );
+
 void XLALDestroyPulsarParams ( PulsarParams *params );
 
 

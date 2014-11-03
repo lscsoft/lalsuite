@@ -100,8 +100,6 @@ int myPrintError( const char *fmt, ... )
 #ifdef _MSC_VER
 #include <float.h>
 #define finite _finite
-#else
-int finite(double);
 #endif
 
 #define UBERPOLKA_EXIT_ERRCLINE 31
@@ -733,13 +731,13 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
           cl->Alpha >   LAL_TWOPI + epsilon  ||
           cl->Delta < -0.5*LAL_PI - epsilon  ||
           cl->Delta >  0.5*LAL_PI + epsilon  ||                                                                 
-          !finite(cl->f)                     ||
-          !finite(cl->Alpha)                 ||
-          !finite(cl->Delta)                 ||
-          !finite(dmp1)                      ||
-          !finite(dmp2)                      ||
-          !finite(dmp3)                      ||
-          !finite(cl->F)
+          !isfinite(cl->f)                   ||
+          !isfinite(cl->Alpha)               ||
+          !isfinite(cl->Delta)               ||
+          !isfinite(dmp1)                    ||
+          !isfinite(dmp2)                    ||
+          !isfinite(dmp3)                    ||
+          !isfinite(cl->F)
           ) {
           myPrintError(
                   "Line %d of file %s has invalid values.\n"

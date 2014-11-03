@@ -131,6 +131,11 @@ MACRO(A, B, C, X);
 %warnfilter(WARNING) NSPACE::NAME;
 %enddef
 
+// Ignore a symbol.
+%define %swiglal_ignore_nspace(NSPACE, NAME)
+%ignore NSPACE::NAME;
+%enddef
+
 // Macros for allocating/copying new instances and arrays
 // Analogous to SWIG macros but using XLAL memory functions
 #define %swiglal_new_instance(TYPE...) %reinterpret_cast(XLALMalloc(sizeof(TYPE)), TYPE*)
@@ -840,35 +845,36 @@ if (strides[I-1] == 0) {
 %typemap(in, noblock=1) const NAME* (void *argp = 0, int res = 0, NAME temp, void *temp_data = 0) %{
   res = SWIG_ConvertPtr($input, &argp, $descriptor, 0 /*$disown*/ | %convertptr_flags);
   if (!SWIG_IsOK(res)) {
-#if !($disown) && (swiglal_field_count_##NAME == 2)
-    size_t numel = 0;
-    size_t dims[] = {0};
-    temp.DATA = NULL;
-    // swiglal_array_typeid input type: TYPE*
-    res = %swiglal_array_viewin(TYPE*)(swiglal_no_self(), $input, %as_voidptrptr(&temp.DATA),
-                                       sizeof(TYPE), 1, &numel, dims,
-                                       $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
-                                       $disown | %convertptr_flags);
-    if (!SWIG_IsOK(res)) {
-      temp_data = temp.DATA = %reinterpret_cast(XLALMalloc(numel * sizeof(TYPE)), TYPE*);
-      size_t strides[] = {1};
-      res = %swiglal_array_copyin(TYPE*)(swiglal_no_self(), $input, %as_voidptr(temp.DATA),
-                                         sizeof(TYPE), 1, dims, strides,
+    typedef struct { SIZET NI; TYPE* DATA; } sizchk_t;
+    if (!($disown) && sizeof(sizchk_t) == sizeof(NAME)) {
+      size_t numel = 0;
+      size_t dims[] = {0};
+      temp.DATA = NULL;
+      // swiglal_array_typeid input type: TYPE*
+      res = %swiglal_array_viewin(TYPE*)(swiglal_no_self(), $input, %as_voidptrptr(&temp.DATA),
+                                         sizeof(TYPE), 1, &numel, dims,
                                          $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
                                          $disown | %convertptr_flags);
       if (!SWIG_IsOK(res)) {
-        %argument_fail(res, "$type", $symname, $argnum);
+        temp_data = temp.DATA = %reinterpret_cast(XLALMalloc(numel * sizeof(TYPE)), TYPE*);
+        size_t strides[] = {1};
+        res = %swiglal_array_copyin(TYPE*)(swiglal_no_self(), $input, %as_voidptr(temp.DATA),
+                                           sizeof(TYPE), 1, dims, strides,
+                                           $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
+                                           $disown | %convertptr_flags);
+        if (!SWIG_IsOK(res)) {
+          %argument_fail(res, "$type", $symname, $argnum);
+        } else {
+          temp.NI = dims[0];
+          argp = &temp;
+        }
       } else {
         temp.NI = dims[0];
         argp = &temp;
       }
     } else {
-      temp.NI = dims[0];
-      argp = &temp;
+      %argument_fail(res, "$type", $symname, $argnum);
     }
-#else
-    %argument_fail(res, "$type", $symname, $argnum);
-#endif
   }
   $1 = %reinterpret_cast(argp, $ltype);
 %}
@@ -882,24 +888,25 @@ if (strides[I-1] == 0) {
 %typemap(in, noblock=1) NAME* SWIGLAL_VIEWIN_STRUCT (void *argp = 0, int res = 0, NAME temp) %{
   res = SWIG_ConvertPtr($input, &argp, $descriptor, 0 /*$disown*/ | %convertptr_flags);
   if (!SWIG_IsOK(res)) {
-#if !($disown) && (swiglal_field_count_##NAME == 2)
-    size_t numel = 0;
-    size_t dims[] = {0};
-    temp.DATA = NULL;
-    // swiglal_array_typeid input type: TYPE*
-    res = %swiglal_array_viewin(TYPE*)(swiglal_no_self(), $input, %as_voidptrptr(&temp.DATA),
-                                       sizeof(TYPE), 1, &numel, dims,
-                                       $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
-                                       $disown | %convertptr_flags);
-    if (!SWIG_IsOK(res)) {
-      %argument_fail(res, "$type", $symname, $argnum);
+    typedef struct { SIZET NI; TYPE* DATA; } sizchk_t;
+    if (!($disown) && sizeof(sizchk_t) == sizeof(NAME)) {
+      size_t numel = 0;
+      size_t dims[] = {0};
+      temp.DATA = NULL;
+      // swiglal_array_typeid input type: TYPE*
+      res = %swiglal_array_viewin(TYPE*)(swiglal_no_self(), $input, %as_voidptrptr(&temp.DATA),
+                                         sizeof(TYPE), 1, &numel, dims,
+                                         $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
+                                         $disown | %convertptr_flags);
+      if (!SWIG_IsOK(res)) {
+        %argument_fail(res, "$type", $symname, $argnum);
+      } else {
+        temp.NI = dims[0];
+        argp = &temp;
+      }
     } else {
-      temp.NI = dims[0];
-      argp = &temp;
+      %argument_fail(res, "$type", $symname, $argnum);
     }
-#else
-    %argument_fail(res, "$type", $symname, $argnum);
-#endif
   }
   $1 = %reinterpret_cast(argp, $ltype);
 %}
@@ -912,37 +919,38 @@ if (strides[I-1] == 0) {
 %typemap(in, noblock=1) const NAME* (void *argp = 0, int res = 0, NAME temp, void *temp_data = 0) %{
   res = SWIG_ConvertPtr($input, &argp, $descriptor, 0 /*$disown*/ | %convertptr_flags);
   if (!SWIG_IsOK(res)) {
-#if !($disown) && (swiglal_field_count_##NAME == 3)
-    size_t numel = 0;
-    size_t dims[] = {0, 0};
-    temp.DATA = NULL;
-    // swiglal_array_typeid input type: TYPE*
-    res = %swiglal_array_viewin(TYPE*)(swiglal_no_self(), $input, %as_voidptrptr(&temp.DATA),
-                                       sizeof(TYPE), 2, &numel, dims,
-                                       $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
-                                       $disown | %convertptr_flags);
-    if (!SWIG_IsOK(res)) {
-      temp_data = temp.DATA = %reinterpret_cast(XLALMalloc(numel * sizeof(TYPE)), TYPE*);
-      size_t strides[] = {dims[1], 1};
-      res = %swiglal_array_copyin(TYPE*)(swiglal_no_self(), $input, %as_voidptr(temp.DATA),
-                                         sizeof(TYPE), 2, dims, strides,
+    typedef struct { SIZET NI; SIZET NJ; TYPE* DATA; } sizchk_t;
+    if (!($disown) && sizeof(sizchk_t) == sizeof(NAME)) {
+      size_t numel = 0;
+      size_t dims[] = {0, 0};
+      temp.DATA = NULL;
+      // swiglal_array_typeid input type: TYPE*
+      res = %swiglal_array_viewin(TYPE*)(swiglal_no_self(), $input, %as_voidptrptr(&temp.DATA),
+                                         sizeof(TYPE), 2, &numel, dims,
                                          $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
                                          $disown | %convertptr_flags);
       if (!SWIG_IsOK(res)) {
-        %argument_fail(res, "$type", $symname, $argnum);
+        temp_data = temp.DATA = %reinterpret_cast(XLALMalloc(numel * sizeof(TYPE)), TYPE*);
+        size_t strides[] = {dims[1], 1};
+        res = %swiglal_array_copyin(TYPE*)(swiglal_no_self(), $input, %as_voidptr(temp.DATA),
+                                           sizeof(TYPE), 2, dims, strides,
+                                           $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
+                                           $disown | %convertptr_flags);
+        if (!SWIG_IsOK(res)) {
+          %argument_fail(res, "$type", $symname, $argnum);
+        } else {
+          temp.NI = dims[0];
+          temp.NJ = dims[1];
+          argp = &temp;
+        }
       } else {
         temp.NI = dims[0];
         temp.NJ = dims[1];
         argp = &temp;
       }
     } else {
-      temp.NI = dims[0];
-      temp.NJ = dims[1];
-      argp = &temp;
+      %argument_fail(res, "$type", $symname, $argnum);
     }
-#else
-    %argument_fail(res, "$type", $symname, $argnum);
-#endif
   }
   $1 = %reinterpret_cast(argp, $ltype);
 %}
@@ -956,25 +964,26 @@ if (strides[I-1] == 0) {
 %typemap(in, noblock=1) NAME* SWIGLAL_VIEWIN_STRUCT (void *argp = 0, int res = 0, NAME temp) %{
   res = SWIG_ConvertPtr($input, &argp, $descriptor, 0 /*$disown*/ | %convertptr_flags);
   if (!SWIG_IsOK(res)) {
-#if !($disown) && (swiglal_field_count_##NAME == 3)
-    size_t numel = 0;
-    size_t dims[] = {0, 0};
-    temp.DATA = NULL;
-    // swiglal_array_typeid input type: TYPE*
-    res = %swiglal_array_viewin(TYPE*)(swiglal_no_self(), $input, %as_voidptrptr(&temp.DATA),
-                                       sizeof(TYPE), 2, &numel, dims,
-                                       $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
-                                       $disown | %convertptr_flags);
-    if (!SWIG_IsOK(res)) {
-      %argument_fail(res, "$type", $symname, $argnum);
+    typedef struct { SIZET NI; SIZET NJ; TYPE* DATA; } sizchk_t;
+    if (!($disown) && sizeof(sizchk_t) == sizeof(NAME)) {
+      size_t numel = 0;
+      size_t dims[] = {0, 0};
+      temp.DATA = NULL;
+      // swiglal_array_typeid input type: TYPE*
+      res = %swiglal_array_viewin(TYPE*)(swiglal_no_self(), $input, %as_voidptrptr(&temp.DATA),
+                                         sizeof(TYPE), 2, &numel, dims,
+                                         $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
+                                         $disown | %convertptr_flags);
+      if (!SWIG_IsOK(res)) {
+        %argument_fail(res, "$type", $symname, $argnum);
+      } else {
+        temp.NI = dims[0];
+        temp.NJ = dims[1];
+        argp = &temp;
+      }
     } else {
-      temp.NI = dims[0];
-      temp.NJ = dims[1];
-      argp = &temp;
+      %argument_fail(res, "$type", $symname, $argnum);
     }
-#else
-    %argument_fail(res, "$type", $symname, $argnum);
-#endif
   }
   $1 = %reinterpret_cast(argp, $ltype);
 %}
@@ -1099,6 +1108,13 @@ if (strides[I-1] == 0) {
 %swiglal_map_abc(%swiglal_feature_nspace, "immutable", "1", TAGNAME, __VA_ARGS__);
 %enddef
 #define %swiglal_public_clear_IMMUTABLE_MEMBERS(...)
+
+// The SWIGLAL(IGNORE_MEMBERS(TAGNAME, ...)) macro can be used to
+// ignore the listed members of the struct TAGNAME.
+%define %swiglal_public_IGNORE_MEMBERS(TAGNAME, ...)
+%swiglal_map_a(%swiglal_ignore_nspace, TAGNAME, __VA_ARGS__);
+%enddef
+#define %swiglal_public_clear_IGNORE_MEMBERS(...)
 
 // Typemap for functions which return 'int'. If these functions also return
 // other output arguments (via 'argout' typemaps), the 'int' return value is

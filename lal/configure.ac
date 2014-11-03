@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LAL],[6.12.0.1],[lal-discuss@ligo.org])
+AC_INIT([LAL],[6.13.1.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([include/config.h lib/lal/LALConfig.h])
 AC_CONFIG_SRCDIR([packages/std/include/LALStdio.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -7,9 +7,7 @@ AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
   lal.spec \
   lal.pc \
-  lal-uninstalled.pc \
   lalsupport.pc \
-  lalsupport-uninstalled.pc \
   Makefile \
   debian/Makefile \
   include/Makefile \
@@ -112,7 +110,7 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[8])
+AC_SUBST([LIBCURRENT],[9])
 AC_SUBST([LIBREVISION],[0])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
@@ -131,9 +129,9 @@ AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT_SUPPORT],[4])
-AC_SUBST([LIBREVISION_SUPPORT],[1])
-AC_SUBST([LIBAGE_SUPPORT],[0])
+AC_SUBST([LIBCURRENT_SUPPORT],[5])
+AC_SUBST([LIBREVISION_SUPPORT],[0])
+AC_SUBST([LIBAGE_SUPPORT],[1])
 AC_SUBST([LIBVERSION_SUPPORT],[${LIBCURRENT_SUPPORT}:${LIBREVISION_SUPPORT}:${LIBAGE_SUPPORT}])
 
 LAL_ENABLE_INTELFFT

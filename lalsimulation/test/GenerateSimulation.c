@@ -100,6 +100,8 @@ const char * usage =
 "                             TaylorF2\n"
 "                             SpinTaylorF2\n"
 "                             TaylorR2F4\n"
+"                             SpinTaylorT4Fourier\n"
+"                             SpinTaylorT2Fourier\n"
 "                             TaylorF2RedSpin\n"
 "                             TaylorF2RedSpinTidal\n"
 "                           NOTE: Other approximants may be available if the\n"

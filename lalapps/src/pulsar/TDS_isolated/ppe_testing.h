@@ -52,7 +52,7 @@ void gridOutput( LALInferenceRunState *runState );
 
 REAL8 test_gaussian_log_likelihood( LALInferenceVariables *vars,
                                     LALInferenceIFOData *data,
-                                    LALInferenceTemplateFunction get_model );
+                                    LALInferenceModel *get_model );
 
 void outputPriorSamples( LALInferenceRunState *runState );
 

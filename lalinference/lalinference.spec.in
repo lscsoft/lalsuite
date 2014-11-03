@@ -13,7 +13,7 @@ URL: https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 BuildRequires: swig python-devel octave-devel
-Requires: chealpix healpy gsl libmetaio lal lalmetaio lalsimulation lalinspiral lalpulsar
+Requires: chealpix healpy gsl >= 1.15 libmetaio lal lalmetaio lalsimulation lalinspiral lalpulsar
 Prefix: %{_prefix}
 
 %description
@@ -25,7 +25,7 @@ that use the LAL Inference library.
 Summary: Files and documentation needed for compiling programs that use LAL Inference
 Group: LAL
 Requires: %{name} = %{version}
-Requires: chealpix-devel gsl-devel libmetaio-devel lal-devel lalmetaio-devel lalsimulation-devel lalinspiral-devel lalpulsar-devel
+Requires: chealpix-devel gsl-devel >= 1.15 libmetaio-devel lal-devel lalmetaio-devel lalsimulation-devel lalinspiral-devel lalpulsar-devel
 %description devel
 The LSC Algorithm Inference Library for gravitational wave data analysis. This
 package contains files needed build applications that use the LAL Inference

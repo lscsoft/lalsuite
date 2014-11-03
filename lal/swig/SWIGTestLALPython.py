@@ -15,6 +15,8 @@ if hasattr(numpy, "ComplexWarning"):
 print("checking module load ...")
 import lal
 from lal import globalvar as lalglobalvar
+lal_c_si = lal.C_SI;
+lal_180_pi = lal.LAL_180_PI;
 print("PASSED module load")
 
 # check memory allocation

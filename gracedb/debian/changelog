@@ -1,3 +1,9 @@
+ligo-gracedb (1.15-1) unstable; urgency=low
+  * Features for EMBB Event Log upload and retrieval
+  * Changes for (Group,Type) -> (Group,Pipeline,Search) transition
+  * Added docstrings
+ -- Branson Stephens <branson.stephens@ligo.org>  Fri, 31 Oct 2014 11:00:00 -0500
+
 ligo-gracedb (1.14-1) unstable; urgency=low
   * Fixed 10 and 1000 event limits. Issues 986 and 787.
  -- Branson Stephens <branson.stephens@ligo.org>  Wed, 18 Dec 2013 11:18:00 -0500

@@ -194,7 +194,7 @@ typedef struct tagMultiFstatAtomVector {
 /// XLALComputeFstat() computed results structure.
 ///
 #ifdef SWIG // SWIG interface directives
-SWIGLAL(IMMUTABLE_MEMBERS(tagFstatResults, internalalloclen));
+SWIGLAL(IGNORE_MEMBERS(tagFstatResults, internalalloclen));
 SWIGLAL(ARRAY_MULTIPLE_LENGTHS(tagFstatResults, numFreqBins, numDetectors));
 #endif // SWIG
 typedef struct tagFstatResults {

@@ -49,6 +49,7 @@ pkginclude_HEADERS = \
 	PulsarDataTypes.h \
 	PulsarSimulateCoherentGW.h \
 	PulsarTimes.h \
+	ReadPulsarParFile.h \
 	SFTClean.h \
 	SFTfileIO-LAL.h \
 	SFTfileIO.h \
@@ -115,6 +116,7 @@ liblalpulsar_la_SOURCES = \
 	PulsarCrossCorr.c \
 	PulsarCrossCorr_v2.c \
 	PulsarSimulateCoherentGW.c \
+	ReadPulsarParFile.c \
 	SFTClean.c \
 	SFTfileIO.c \
 	SFTutils.c \

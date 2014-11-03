@@ -177,7 +177,11 @@ enum {
 	LAL_EXPLORER_DETECTOR	=	9,
 	LAL_NIOBE_DETECTOR	=	10,
 	LAL_NAUTILUS_DETECTOR	=	11,
-	LAL_NUM_DETECTORS	=	12
+	LAL_ET1_DETECTOR	=	12,
+	LAL_ET2_DETECTOR	=	13,
+	LAL_ET3_DETECTOR	=	14,
+	LAL_ET0_DETECTOR	=	15,
+	LAL_NUM_DETECTORS	=	16
 };
 
 /** Detector DQ bit assignments (2 bits per detector) */
@@ -192,7 +196,11 @@ enum {
 	LAL_ALLEGRO_DETECTOR_BIT 	=	1 << 2 * LAL_ALLEGRO_DETECTOR,
 	LAL_AURIGA_DETECTOR_BIT  	=	1 << 2 * LAL_AURIGA_DETECTOR,
 	LAL_NIOBE_DETECTOR_BIT   	=	1 << 2 * LAL_NIOBE_DETECTOR,
-	LAL_NAUTILUS_DETECTOR_BIT	=	1 << 2 * LAL_NAUTILUS_DETECTOR
+	LAL_NAUTILUS_DETECTOR_BIT	=	1 << 2 * LAL_NAUTILUS_DETECTOR,
+	LAL_ET1_DETECTOR_BIT     	=	1 << 2 * LAL_ET1_DETECTOR,
+	LAL_ET2_DETECTOR_BIT     	=	1 << 2 * LAL_ET2_DETECTOR,
+	LAL_ET3_DETECTOR_BIT     	=	1 << 2 * LAL_ET3_DETECTOR,
+	LAL_ET0_DETECTOR_BIT     	=	1 << 2 * LAL_ET0_DETECTOR
 };
 
 
@@ -507,6 +515,106 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 /*@}*/
 
 
+/**
+ * \name Einstein Telescop 10km Interferometric Detector constants
+ * The following constants describe the locations and geometrys of the
+ * three 10km Interferometric Detectors for the planned third generation
+ * Einstein Telescop detector as well as the theoretical null stream.
+ * See T1400308 
+ */
+/*@}*/
+#define LAL_ET1_DETECTOR_NAME                  	"ET1_T1400308"	/**< ET1 detector name string */
+#define LAL_ET1_DETECTOR_PREFIX                	"E1"	/**< ET1 detector prefix string */
+#define LAL_ET1_DETECTOR_LONGITUDE_RAD         	0.18333805213	/**< ET1 vertex longitude (rad) */
+#define LAL_ET1_DETECTOR_LATITUDE_RAD          	0.76151183984	/**< ET1 vertex latitude (rad) */
+#define LAL_ET1_DETECTOR_ELEVATION_SI          	51.884	/**< ET1 vertex elevation (m) */
+#define LAL_ET1_DETECTOR_ARM_X_AZIMUTH_RAD     	0.33916285222	/**< ET1 x arm azimuth (rad) */
+#define LAL_ET1_DETECTOR_ARM_Y_AZIMUTH_RAD     	5.05155183261	/**< ET1 y arm azimuth (rad) */
+#define LAL_ET1_DETECTOR_ARM_X_ALTITUDE_RAD    	0.00000000000	/**< ET1 x arm altitude (rad) */
+#define LAL_ET1_DETECTOR_ARM_Y_ALTITUDE_RAD    	0.00000000000	/**< ET1 y arm altitude (rad) */
+#define LAL_ET1_DETECTOR_ARM_X_MIDPOINT_SI     	5000.00000000000	/**< ET1 x arm midpoint (m) */
+#define LAL_ET1_DETECTOR_ARM_Y_MIDPOINT_SI     	5000.00000000000	/**< ET1 y arm midpoint (m) */
+#define LAL_ET1_VERTEX_LOCATION_X_SI           	4.54637409900e+06	/**< ET1 x-component of vertex location in Earth-centered frame (m) */
+#define LAL_ET1_VERTEX_LOCATION_Y_SI           	8.42989697626e+05	/**< ET1 y-component of vertex location in Earth-centered frame (m) */
+#define LAL_ET1_VERTEX_LOCATION_Z_SI           	4.37857696241e+06	/**< ET1 z-component of vertex location in Earth-centered frame (m) */
+#define LAL_ET1_ARM_X_DIRECTION_X              	-0.70045821479	/**< ET1 x-component of unit vector pointing along x arm in Earth-centered frame */
+#define LAL_ET1_ARM_X_DIRECTION_Y              	0.20848948619	/**< ET1 y-component of unit vector pointing along x arm in Earth-centered frame */
+#define LAL_ET1_ARM_X_DIRECTION_Z              	0.68256166277	/**< ET1 z-component of unit vector pointing along x arm in Earth-centered frame */
+#define LAL_ET1_ARM_Y_DIRECTION_X              	-0.39681482542	/**< ET1 x-component of unit vector pointing along y arm in Earth-centered frame */
+#define LAL_ET1_ARM_Y_DIRECTION_Y              	-0.73500471881	/**< ET1 y-component of unit vector pointing along y arm in Earth-centered frame */
+#define LAL_ET1_ARM_Y_DIRECTION_Z              	0.54982366052	/**< ET1 z-component of unit vector pointing along y arm in Earth-centered frame */
+/*@}*/
+
+/*@}*/
+#define LAL_ET2_DETECTOR_NAME                  	"ET2_T1400308"	/**< ET2 detector name string */
+#define LAL_ET2_DETECTOR_PREFIX                	"E2"	/**< ET2 detector prefix string */
+#define LAL_ET2_DETECTOR_LONGITUDE_RAD         	0.18405858870	/**< ET2 vertex longitude (rad) */
+#define LAL_ET2_DETECTOR_LATITUDE_RAD          	0.76299307990	/**< ET2 vertex latitude (rad) */
+#define LAL_ET2_DETECTOR_ELEVATION_SI          	59.735	/**< ET2 vertex elevation (m) */
+#define LAL_ET2_DETECTOR_ARM_X_AZIMUTH_RAD     	4.52795305701	/**< ET2 x arm azimuth (rad) */
+#define LAL_ET2_DETECTOR_ARM_Y_AZIMUTH_RAD     	3.48075550581	/**< ET2 y arm azimuth (rad) */
+#define LAL_ET2_DETECTOR_ARM_X_ALTITUDE_RAD    	0.00000000000	/**< ET2 x arm altitude (rad) */
+#define LAL_ET2_DETECTOR_ARM_Y_ALTITUDE_RAD    	0.00000000000	/**< ET2 y arm altitude (rad) */
+#define LAL_ET2_DETECTOR_ARM_X_MIDPOINT_SI     	5000.00000000000	/**< ET2 x arm midpoint (m) */
+#define LAL_ET2_DETECTOR_ARM_Y_MIDPOINT_SI     	5000.00000000000	/**< ET2 y arm midpoint (m) */
+#define LAL_ET2_VERTEX_LOCATION_X_SI           	4.53936951685e+06	/**< ET2 x-component of vertex location in Earth-centered frame (m) */
+#define LAL_ET2_VERTEX_LOCATION_Y_SI           	8.45074592488e+05	/**< ET2 y-component of vertex location in Earth-centered frame (m) */
+#define LAL_ET2_VERTEX_LOCATION_Z_SI           	4.38540257904e+06	/**< ET2 z-component of vertex location in Earth-centered frame (m) */
+#define LAL_ET2_ARM_X_DIRECTION_X              	0.30364338937	/**< ET2 x-component of unit vector pointing along x arm in Earth-centered frame */
+#define LAL_ET2_ARM_X_DIRECTION_Y              	-0.94349420500	/**< ET2 y-component of unit vector pointing along x arm in Earth-centered frame */
+#define LAL_ET2_ARM_X_DIRECTION_Z              	-0.13273800225	/**< ET2 z-component of unit vector pointing along x arm in Earth-centered frame */
+#define LAL_ET2_ARM_Y_DIRECTION_X              	0.70045821479	/**< ET2 x-component of unit vector pointing along y arm in Earth-centered frame */
+#define LAL_ET2_ARM_Y_DIRECTION_Y              	-0.20848948619	/**< ET2 y-component of unit vector pointing along y arm in Earth-centered frame */
+#define LAL_ET2_ARM_Y_DIRECTION_Z              	-0.68256166277	/**< ET2 z-component of unit vector pointing along y arm in Earth-centered frame */
+/*@}*/
+
+/*@}*/
+#define LAL_ET3_DETECTOR_NAME                  	"ET3_T1400308"	/**< ET3 detector name string */
+#define LAL_ET3_DETECTOR_PREFIX                	"E3"	/**< ET3 detector prefix string */
+#define LAL_ET3_DETECTOR_LONGITUDE_RAD         	0.18192996730	/**< ET3 vertex longitude (rad) */
+#define LAL_ET3_DETECTOR_LATITUDE_RAD          	0.76270463257	/**< ET3 vertex latitude (rad) */
+#define LAL_ET3_DETECTOR_ELEVATION_SI          	59.727	/**< ET3 vertex elevation (m) */
+#define LAL_ET3_DETECTOR_ARM_X_AZIMUTH_RAD     	2.43355795462	/**< ET3 x arm azimuth (rad) */
+#define LAL_ET3_DETECTOR_ARM_Y_AZIMUTH_RAD     	1.38636040342	/**< ET3 y arm azimuth (rad) */
+#define LAL_ET3_DETECTOR_ARM_X_ALTITUDE_RAD    	0.00000000000	/**< ET3 x arm altitude (rad) */
+#define LAL_ET3_DETECTOR_ARM_Y_ALTITUDE_RAD    	0.00000000000	/**< ET3 y arm altitude (rad) */
+#define LAL_ET3_DETECTOR_ARM_X_MIDPOINT_SI     	5000.00000000000	/**< ET3 x arm midpoint (m) */
+#define LAL_ET3_DETECTOR_ARM_Y_MIDPOINT_SI     	5000.00000000000	/**< ET3 y arm midpoint (m) */
+#define LAL_ET3_VERTEX_LOCATION_X_SI           	4.54240595075e+06	/**< ET3 x-component of vertex location in Earth-centered frame (m) */
+#define LAL_ET3_VERTEX_LOCATION_Y_SI           	8.35639650438e+05	/**< ET3 y-component of vertex location in Earth-centered frame (m) */
+#define LAL_ET3_VERTEX_LOCATION_Z_SI           	4.38407519902e+06	/**< ET3 z-component of vertex location in Earth-centered frame (m) */
+#define LAL_ET3_ARM_X_DIRECTION_X              	0.39681482542	/**< ET3 x-component of unit vector pointing along x arm in Earth-centered frame */
+#define LAL_ET3_ARM_X_DIRECTION_Y              	0.73500471881	/**< ET3 y-component of unit vector pointing along x arm in Earth-centered frame */
+#define LAL_ET3_ARM_X_DIRECTION_Z              	-0.54982366052	/**< ET3 z-component of unit vector pointing along x arm in Earth-centered frame */
+#define LAL_ET3_ARM_Y_DIRECTION_X              	-0.30364338937	/**< ET3 x-component of unit vector pointing along y arm in Earth-centered frame */
+#define LAL_ET3_ARM_Y_DIRECTION_Y              	0.94349420500	/**< ET3 y-component of unit vector pointing along y arm in Earth-centered frame */
+#define LAL_ET3_ARM_Y_DIRECTION_Z              	0.13273800225	/**< ET3 z-component of unit vector pointing along y arm in Earth-centered frame */
+/*@}*/
+
+/*@}*/
+#define LAL_ET0_DETECTOR_NAME                  	"ET0_T1400308"	/**< ET0 detector name string */
+#define LAL_ET0_DETECTOR_PREFIX                	"E0"	/**< ET0 detector prefix string */
+#define LAL_ET0_DETECTOR_LONGITUDE_RAD         	0.18192996730	/**< ET0 vertex longitude (rad) */
+#define LAL_ET0_DETECTOR_LATITUDE_RAD          	0.76270463257	/**< ET0 vertex latitude (rad) */
+#define LAL_ET0_DETECTOR_ELEVATION_SI          	59.727	/**< ET0 vertex elevation (m) */
+#define LAL_ET0_DETECTOR_ARM_X_AZIMUTH_RAD     	0.00000000000	/**< ET0 x arm azimuth (rad) */
+#define LAL_ET0_DETECTOR_ARM_Y_AZIMUTH_RAD     	0.00000000000	/**< ET0 y arm azimuth (rad) */
+#define LAL_ET0_DETECTOR_ARM_X_ALTITUDE_RAD    	0.00000000000	/**< ET0 x arm altitude (rad) */
+#define LAL_ET0_DETECTOR_ARM_Y_ALTITUDE_RAD    	0.00000000000	/**< ET0 y arm altitude (rad) */
+#define LAL_ET0_DETECTOR_ARM_X_MIDPOINT_SI     	0.00000000000	/**< ET0 x arm midpoint (m) */
+#define LAL_ET0_DETECTOR_ARM_Y_MIDPOINT_SI     	0.00000000000	/**< ET0 y arm midpoint (m) */
+#define LAL_ET0_VERTEX_LOCATION_X_SI           	4.54240595075e+06	/**< ET0 x-component of vertex location in Earth-centered frame (m) */
+#define LAL_ET0_VERTEX_LOCATION_Y_SI           	8.35639650438e+05	/**< ET0 y-component of vertex location in Earth-centered frame (m) */
+#define LAL_ET0_VERTEX_LOCATION_Z_SI           	4.38407519902e+06	/**< ET0 z-component of vertex location in Earth-centered frame (m) */
+#define LAL_ET0_ARM_X_DIRECTION_X              	0.00000000000	/**< ET0 x-component of unit vector pointing along x arm in Earth-centered frame */
+#define LAL_ET0_ARM_X_DIRECTION_Y              	0.00000000000	/**< ET0 y-component of unit vector pointing along x arm in Earth-centered frame */
+#define LAL_ET0_ARM_X_DIRECTION_Z              	0.00000000000	/**< ET0 z-component of unit vector pointing along x arm in Earth-centered frame */
+#define LAL_ET0_ARM_Y_DIRECTION_X              	0.00000000000	/**< ET0 x-component of unit vector pointing along y arm in Earth-centered frame */
+#define LAL_ET0_ARM_Y_DIRECTION_Y              	0.00000000000	/**< ET0 y-component of unit vector pointing along y arm in Earth-centered frame */
+#define LAL_ET0_ARM_Y_DIRECTION_Z              	0.00000000000	/**< ET0 z-component of unit vector pointing along y arm in Earth-centered frame */
+/*@}*/
+
+
 /* Resonant Mass (Bar) Detectors */
 
 
@@ -567,7 +675,7 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
  */
 /*@{*/
 #define LAL_EXPLORER_DETECTOR_NAME               	"EXPLORER"	/**< EXPLORER detector name string */
-#define LAL_EXPLORER_DETECTOR_PREFIX             	"E1"	/**< EXPLORER detector prefix string */
+#define LAL_EXPLORER_DETECTOR_PREFIX             	"X1"	/**< EXPLORER detector prefix string */
 #define LAL_EXPLORER_DETECTOR_LONGITUDE_RAD      	0.10821041362	/**< EXPLORER vertex longitude (rad) */
 #define LAL_EXPLORER_DETECTOR_LATITUDE_RAD       	0.81070543755	/**< EXPLORER vertex latitude (rad) */
 #define LAL_EXPLORER_DETECTOR_ELEVATION_SI       	0	/**< EXPLORER vertex elevation (m) */

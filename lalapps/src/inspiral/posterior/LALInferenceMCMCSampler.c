@@ -478,19 +478,15 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     REAL8 bigD = INFINITY;
 
     /* Don't store to cache, since distance scaling won't work */
-    LALSimInspiralWaveformCache *cache = headData->waveformCache;
-    while (headData != NULL) {
-      headData->waveformCache = NULL;
-      headData = headData->next;
-    }
-    headData = runState->data;
+    LALSimInspiralWaveformCache *cache = runState->model->waveformCache;
+    runState->model->waveformCache = NULL;
 
     LALInferenceSetVariable(runState->currentParams, "distance", &bigD);
-    nullLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->templt);
+    nullLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->model);
 
+    runState->model->waveformCache = cache;
     while (headData != NULL) {
-      headData->nullloglikelihood = headData->loglikelihood;
-      headData->waveformCache = cache;
+      headData->nullloglikelihood = runState->model->loglikelihood;
       headData = headData->next;
     }
 
@@ -604,13 +600,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   }
 
   // initialize starting likelihood value:
-  runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->templt);
-  LALInferenceIFOData *headData = runState->data;
-  while (headData != NULL) {
-    headData->acceptedloglikelihood = headData->loglikelihood;
-    headData = headData->next;
-  }
-  runState->currentPrior = runState->prior(runState, runState->currentParams);
+  runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->model);
+  runState->currentPrior = runState->prior(runState, runState->currentParams, runState->model);
 
   REAL8 logLAtAdaptStart = runState->currentLikelihood;
   LALInferenceSetVariable(runState->proposalArgs, "logLAtAdaptStart", &(logLAtAdaptStart));
@@ -665,10 +656,10 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     printf("%f\t", runState->currentLikelihood - nullLikelihood);
     printf("\n");
 
-    /* Print to file the contents of ->freqModelhPlus->data->length. */
+    /* Print to file the contents of model->freqhPlus. */
     ppt = LALInferenceGetProcParamVal(runState->commandLine, "--data-dump");
     if (ppt) {
-      LALInferenceDataDump(runState);
+      LALInferenceDataDump(runState->data, runState->model);
     }
   }
 
@@ -805,8 +796,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
       }
     } //if (*runPhase_p==SINGLE_CHAIN)
 
-    runState->evolve(runState); //evolve the chain at temperature ladder[t]
+    INT4 accepted = runState->evolve(runState); //evolve the chain at temperature ladder[t]
     acceptanceCount = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "acceptanceCount");
+
+    if (propStats)
+        LALInferenceTrackProposalAcceptance(runState, accepted);
 
     if (i==1){
       if (propStats) {
@@ -837,21 +831,24 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
       LALInferencePrintSampleNonFixed(chainoutput,runState->currentParams);
       fprintf(chainoutput,"%f\t",runState->currentLikelihood - nullLikelihood);
 
+      UINT4 ifo = 0;
       LALInferenceIFOData *headIFO = runState->data;
       while (headIFO != NULL) {
-        fprintf(chainoutput, "%f\t", headIFO->acceptedloglikelihood - headIFO->nullloglikelihood);
+        fprintf(chainoutput, "%f\t", runState->currentIFOLikelihoods[ifo] - headIFO->nullloglikelihood);
+        ifo++;
         headIFO = headIFO->next;
       }
 
-      REAL8 networkSNR = 0.0;
-      headIFO = runState->data;
-      while (headIFO != NULL) {
-        fprintf(chainoutput, "%f\t", headIFO->acceptedSNR);
-        networkSNR += headIFO->acceptedSNR * headIFO->acceptedSNR;
-        headIFO = headIFO->next;
+      if (LALInferenceGetProcParamVal(runState->commandLine, "--output-SNRs")) {
+          headIFO = runState->data;
+          ifo = 0;
+          while (headIFO != NULL) {
+            fprintf(chainoutput, "%f\t", runState->currentIFOSNRs[ifo]);
+            headIFO = headIFO->next;
+            ifo++;
+          }
+          fprintf(chainoutput, "%f\t", runState->model->SNR);
       }
-      networkSNR = sqrt(networkSNR);
-      fprintf(chainoutput, "%f\t", networkSNR);
 
       if (benchmark) {
         gettimeofday(&tv, NULL);
@@ -880,10 +877,10 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
         for(LALInferenceVariableItem *item=runState->currentParams->head;item;item=item->next){
             char tmpname[MAX_STRLEN]=""; 
             sprintf(tmpname,"%s_%s",item->name,ACCEPTSUFFIX);
-            REAL8 *accepted=(REAL8 *)LALInferenceGetVariable(runState->proposalArgs,tmpname); 
+            REAL8 *naccepted=(REAL8 *)LALInferenceGetVariable(runState->proposalArgs,tmpname); 
             sprintf(tmpname,"%s_%s",item->name,PROPOSEDSUFFIX);
-            REAL8 *proposed=(REAL8 *)LALInferenceGetVariable(runState->proposalArgs,tmpname); 
-              fprintf(statfile,"%f\t",*accepted/( *proposed==0 ? 1.0 : *proposed ));
+            REAL8 *nproposed=(REAL8 *)LALInferenceGetVariable(runState->proposalArgs,tmpname); 
+              fprintf(statfile,"%f\t",*naccepted/( *nproposed==0 ? 1.0 : *nproposed ));
         }
         fprintf(statfile,"\n");
         fflush(statfile);
@@ -896,8 +893,9 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
       }
 
       if (propTrack) {
+        REAL8 logProposalRatio = *(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "logProposalRatio");
         fprintf(proptrackfile, "%d\t", i);
-        LALInferencePrintProposalTracking(proptrackfile, runState->proposalArgs, runState->preProposalParams, runState->proposedParams);
+        LALInferencePrintProposalTracking(proptrackfile, runState->proposalArgs, runState->preProposalParams, runState->proposedParams, logProposalRatio, accepted);
       }
     }
 
@@ -970,7 +968,7 @@ void acknowledgePhase(LALInferenceRunState *runState)
     MPI_Irecv(runPhase, 1, MPI_INT, MPI_ANY_SOURCE, RUN_PHASE_COM, MPI_COMM_WORLD, &MPIrequest);
 }
 
-void PTMCMCOneStep(LALInferenceRunState *runState)
+INT4 PTMCMCOneStep(LALInferenceRunState *runState)
   // Metropolis-Hastings sampler.
 {
   int MPIrank;
@@ -996,14 +994,12 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
   proposedParams.head = NULL;
   proposedParams.dimension = 0;
 
-  runState->proposal(runState, &proposedParams);
-  if (LALInferenceCheckVariable(runState->proposalArgs, "logProposalRatio"))
-    logProposalRatio = *(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "logProposalRatio");
+  logProposalRatio = runState->proposal(runState, runState->currentParams, &proposedParams);
 
   // compute prior & likelihood:
-  logPriorProposed = runState->prior(runState, &proposedParams);
+  logPriorProposed = runState->prior(runState, &proposedParams, runState->model);
   if (logPriorProposed > -DBL_MAX)
-    logLikelihoodProposed = runState->likelihood(&proposedParams, runState->data, runState->templt);
+    logLikelihoodProposed = runState->likelihood(&proposedParams, runState->data, runState->model);
   else
     logLikelihoodProposed = -DBL_MAX;
 
@@ -1027,13 +1023,30 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
       || (log(gsl_rng_uniform(runState->GSLrandom)) < logAcceptanceProbability)) {   //accept
     LALInferenceCopyVariables(&proposedParams, runState->currentParams);
     runState->currentLikelihood = logLikelihoodProposed;
-    LALInferenceIFOData *headData = runState->data;
-    while (headData != NULL) {
-      headData->acceptedloglikelihood = headData->loglikelihood;
-      headData->acceptedSNR = headData->currentSNR;
-      headData = headData->next;
-    }
     runState->currentPrior = logPriorProposed;
+
+    /* Calculate SNR if requested, and not already calculated by prior */
+    LALInferenceIFOData *ifoPtr = runState->data;
+    UINT4 ifo = 0;
+    if (LALInferenceGetProcParamVal(runState->commandLine, "--output-SNRs")) {
+      if (runState->model->SNR == 0.0)
+        LALInferenceNetworkSNR(runState->currentParams, runState->data, runState->model);
+      runState->currentSNR = runState->model->SNR;
+      while (ifoPtr) {
+        runState->currentIFOSNRs[ifo] = runState->model->ifo_SNRs[ifo];
+        ifo++;
+        ifoPtr = ifoPtr->next;
+      }
+    }
+
+    ifoPtr = runState->data;
+    ifo = 0;
+    while (ifoPtr) {
+      runState->currentIFOLikelihoods[ifo] = runState->model->ifo_loglikelihoods[ifo];
+      ifo++;
+      ifoPtr = ifoPtr->next;
+    }
+
     acceptanceCount++;
     accepted = 1;
     LALInferenceSetVariable(runState->proposalArgs, "acceptanceCount", &acceptanceCount);
@@ -1043,8 +1056,14 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
   if (LALInferenceCheckVariable(runState->proposalArgs, "accepted"))
     LALInferenceSetVariable(runState->proposalArgs, "accepted", &accepted);
 
+  if (!LALInferenceCheckVariable(runState->proposalArgs, "logProposalRatio"))
+    LALInferenceAddVariable(runState->proposalArgs, "logProposalRatio", &logProposalRatio, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+  LALInferenceSetVariable(runState->proposalArgs, "logProposalRatio", &logProposalRatio);
+
   LALInferenceUpdateAdaptiveJumps(runState, accepted, targetAcceptance);
   LALInferenceClearVariables(&proposedParams);
+
+  return accepted;
 }
 
 
@@ -1237,8 +1256,8 @@ void LALInferenceLadderUpdate(LALInferenceRunState *runState, INT4 sourceChainFl
     LALInferenceCopyArrayToVariables(params, runState->currentParams);
 
     /* Update prior and likelihood */
-    runState->currentPrior = runState->prior(runState, runState->currentParams);
-    runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->templt);
+    runState->currentPrior = runState->prior(runState, runState->currentParams, runState->model);
+    runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->model);
 
     /* Restart adaptation to tune for the current location */
     LALInferenceAdaptationRestart(runState, cycle);
@@ -1305,7 +1324,7 @@ UINT4 LALInferenceMCMCMCswap(LALInferenceRunState *runState, REAL8 *ladder, INT4
     XLALDestroyREAL8Vector(adjParameters);
 
     /* Calculate likelihood at adjacent parameters and send */
-    lowLikeHighParams = runState->likelihood(adjCurrentParams, runState->data, runState->templt);
+    lowLikeHighParams = runState->likelihood(adjCurrentParams, runState->data, runState->model);
     MPI_Send(&lowLikeHighParams, 1, MPI_DOUBLE, MPIrank+1, PT_COM, MPI_COMM_WORLD);
 
     /* Determine if swap was accepted */
@@ -1331,7 +1350,7 @@ UINT4 LALInferenceMCMCMCswap(LALInferenceRunState *runState, REAL8 *ladder, INT4
 
     if (swapAccepted) {
       /* Calculate prior at new values */
-      runState->currentPrior = runState->prior(runState, runState->currentParams);
+      runState->currentPrior = runState->prior(runState, runState->currentParams, runState->model);
     }
   }
 
@@ -1367,7 +1386,7 @@ UINT4 LALInferenceMCMCMCswap(LALInferenceRunState *runState, REAL8 *ladder, INT4
       XLALDestroyREAL8Vector(adjParameters);
 
       /* Calculate likelihood at adjacent parameters */
-      highLikeLowParams = runState->likelihood(adjCurrentParams, runState->data, runState->templt);
+      highLikeLowParams = runState->likelihood(adjCurrentParams, runState->data, runState->model);
 
       /* Recieve likelihood from adjacent chain */
       MPI_Recv(&lowLikeHighParams, 1, MPI_DOUBLE, MPIrank-1, PT_COM, MPI_COMM_WORLD, &MPIstatus);
@@ -1409,7 +1428,7 @@ UINT4 LALInferenceMCMCMCswap(LALInferenceRunState *runState, REAL8 *ladder, INT4
 
       if (swapAccepted) {
         /* Calculate prior at new values */
-        runState->currentPrior = runState->prior(runState, runState->currentParams);
+        runState->currentPrior = runState->prior(runState, runState->currentParams, runState->model);
       }
     }
   }
@@ -1656,14 +1675,16 @@ void LALInferencePrintPTMCMCHeaderFile(LALInferenceRunState *runState, FILE *cha
       fprintf(chainoutput, "\t");
       headIFO = headIFO->next;
     }
-    headIFO = runState->data;
-    while (headIFO != NULL) {
-      fprintf(chainoutput, "SNR");
-      fprintf(chainoutput, "%s",headIFO->name);
-      fprintf(chainoutput, "\t");
-      headIFO = headIFO->next;
+    if (LALInferenceGetProcParamVal(runState->commandLine, "--output-SNRs")) {
+        headIFO = runState->data;
+        while (headIFO != NULL) {
+          fprintf(chainoutput, "SNR");
+          fprintf(chainoutput, "%s",headIFO->name);
+          fprintf(chainoutput, "\t");
+          headIFO = headIFO->next;
+        }
+        fprintf(chainoutput, "SNR\t");
     }
-    fprintf(chainoutput, "SNR\t");
 
     if (benchmark)
       fprintf(chainoutput, "timestamp\t");
@@ -1673,7 +1694,7 @@ void LALInferencePrintPTMCMCHeaderFile(LALInferenceRunState *runState, FILE *cha
     fprintf(chainoutput,"%f\t",runState->currentLikelihood - nullLikelihood);
     headIFO = runState->data;
     while (headIFO != NULL) {
-      fprintf(chainoutput, "%f\t", headIFO->acceptedloglikelihood - headIFO->nullloglikelihood);
+      fprintf(chainoutput, "%f\t", runState->currentLikelihood - headIFO->nullloglikelihood);
       headIFO = headIFO->next;
     }
     if(benchmark) {
@@ -1683,16 +1704,6 @@ void LALInferencePrintPTMCMCHeaderFile(LALInferenceRunState *runState, FILE *cha
       fprintf(chainoutput, "%f\t", 0.0);
     }
     fprintf(chainoutput,"\n");
-}
-
-static void setIFOAcceptedLikelihoods(LALInferenceRunState *runState) {
-  LALInferenceIFOData *data = runState->data;
-  LALInferenceIFOData *ifo = NULL;
-
-  for (ifo = data; ifo != NULL; ifo = ifo->next) {
-    ifo->acceptedloglikelihood = ifo->loglikelihood;
-    ifo->acceptedSNR = ifo->currentSNR;
-  }
 }
 
 void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
@@ -1842,9 +1853,8 @@ void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
       LALInferenceSetVariable(runState->currentParams, "phi_spin2", &phi_spin2);
     }
 
-    runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->templt);
-    runState->currentPrior = runState->prior(runState, runState->currentParams);
-    setIFOAcceptedLikelihoods(runState);
+    runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->model);
+    runState->currentPrior = runState->prior(runState, runState->currentParams, runState->model);
     LALInferencePrintPTMCMCHeaderFile(runState, out);
     fclose(out);
 
@@ -1859,9 +1869,8 @@ void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
     }
 
     LALInferenceCopyVariables(saveParams, runState->currentParams);
-    runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->templt);
-    runState->currentPrior = runState->prior(runState, runState->currentParams);
-    setIFOAcceptedLikelihoods(runState);    
+    runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->model);
+    runState->currentPrior = runState->prior(runState, runState->currentParams, runState->model);
 
     XLALFree(fname);
     LALInferenceClearVariables(saveParams);
@@ -1869,85 +1878,82 @@ void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
   }
 }
 
-void LALInferenceDataDump(LALInferenceRunState *runState){
+void LALInferenceDataDump(LALInferenceIFOData *data, LALInferenceModel *model){
 
   const UINT4 nameLength=256;
   char filename[nameLength];
   FILE *out;
-  LALInferenceIFOData *headData = runState->data;
   UINT4 ui;
 
-  while (headData != NULL) {
+  snprintf(filename, nameLength, "freqTemplatehPlus.dat");
+  out = fopen(filename, "w");
+  for (ui = 0; ui < model->freqhPlus->data->length; ui++) {
+    REAL8 f = model->freqhPlus->deltaF * ui;
+    COMPLEX16 d = model->freqhPlus->data->data[ui];
 
-    snprintf(filename, nameLength, "%s-freqTemplatehPlus.dat", headData->name);
+    fprintf(out, "%g %g %g\n", f, creal(d), cimag(d));
+  }
+  fclose(out);
+
+  snprintf(filename, nameLength, "freqTemplatehCross.dat");
+  out = fopen(filename, "w");
+  for (ui = 0; ui < model->freqhCross->data->length; ui++) {
+    REAL8 f = model->freqhCross->deltaF * ui;
+    COMPLEX16 d = model->freqhCross->data->data[ui];
+
+    fprintf(out, "%g %g %g\n", f, creal(d), cimag(d));
+  }
+  fclose(out);
+
+  while (data != NULL) {
+    snprintf(filename, nameLength, "%s-freqTemplateStrain.dat", data->name);
     out = fopen(filename, "w");
-    for (ui = 0; ui < headData->freqModelhPlus->data->length; ui++) {
-      REAL8 f = headData->freqModelhPlus->deltaF * ui;
-      COMPLEX16 d = headData->freqModelhPlus->data->data[ui];
-
-      fprintf(out, "%g %g %g\n", f, creal(d), cimag(d));
-    }
-    fclose(out);
-
-    snprintf(filename, nameLength, "%s-freqTemplatehCross.dat", headData->name);
-    out = fopen(filename, "w");
-    for (ui = 0; ui < headData->freqModelhCross->data->length; ui++) {
-      REAL8 f = headData->freqModelhCross->deltaF * ui;
-      COMPLEX16 d = headData->freqModelhCross->data->data[ui];
-
-      fprintf(out, "%g %g %g\n", f, creal(d), cimag(d));
-    }
-    fclose(out);
-
-    snprintf(filename, nameLength, "%s-freqTemplateStrain.dat", headData->name);
-    out = fopen(filename, "w");
-    for (ui = 0; ui < headData->freqModelhCross->data->length; ui++) {
-      REAL8 f = headData->freqModelhCross->deltaF * ui;
+    for (ui = 0; ui < model->freqhCross->data->length; ui++) {
+      REAL8 f = model->freqhCross->deltaF * ui;
       COMPLEX16 d;
-      d = headData->fPlus * headData->freqModelhPlus->data->data[ui] +
-             headData->fCross * headData->freqModelhCross->data->data[ui];
+      d = data->fPlus * model->freqhPlus->data->data[ui] +
+             data->fCross * model->freqhCross->data->data[ui];
 
       fprintf(out, "%g %g %g\n", f, creal(d), cimag(d) );
     }
     fclose(out);
 
-    snprintf(filename, nameLength, "%s-timeTemplatehPlus.dat", headData->name);
+    snprintf(filename, nameLength, "%s-timeTemplateStrain.dat", data->name);
     out = fopen(filename, "w");
-    for (ui = 0; ui < headData->timeModelhPlus->data->length; ui++) {
-      REAL8 tt = XLALGPSGetREAL8(&(headData->timeModelhPlus->epoch)) +
-        ui * headData->timeModelhPlus->deltaT;
-      REAL8 d = headData->timeModelhPlus->data->data[ui];
+    for (ui = 0; ui < model->timehCross->data->length; ui++) {
+      REAL8 tt = XLALGPSGetREAL8(&(model->timehCross->epoch)) +
+        data->timeshift + ui*model->timehCross->deltaT;
+      REAL8 d = data->fPlus*model->timehPlus->data->data[ui] +
+        data->fCross*model->timehCross->data->data[ui];
 
       fprintf(out, "%.6f %g\n", tt, d);
     }
     fclose(out);
 
-    snprintf(filename, nameLength, "%s-timeTemplatehCross.dat", headData->name);
+    snprintf(filename, nameLength, "%s-timeTemplatehPlus.dat", data->name);
     out = fopen(filename, "w");
-    for (ui = 0; ui < headData->timeModelhCross->data->length; ui++) {
-      REAL8 tt = XLALGPSGetREAL8(&(headData->timeModelhCross->epoch)) +
-        ui * headData->timeModelhCross->deltaT;
-      REAL8 d = headData->timeModelhCross->data->data[ui];
+    for (ui = 0; ui < model->timehPlus->data->length; ui++) {
+      REAL8 tt = XLALGPSGetREAL8(&(model->timehPlus->epoch)) +
+        ui * model->timehPlus->deltaT;
+      REAL8 d = model->timehPlus->data->data[ui];
 
       fprintf(out, "%.6f %g\n", tt, d);
     }
     fclose(out);
 
-    snprintf(filename, nameLength, "%s-timeTemplateStrain.dat", headData->name);
+    snprintf(filename, nameLength, "%s-timeTemplatehCross.dat", data->name);
     out = fopen(filename, "w");
-    for (ui = 0; ui < headData->timeModelhCross->data->length; ui++) {
-      REAL8 tt = XLALGPSGetREAL8(&(headData->timeModelhCross->epoch)) +
-        headData->timeshift + ui*headData->timeModelhCross->deltaT;
-      REAL8 d = headData->fPlus*headData->timeModelhPlus->data->data[ui] +
-        headData->fCross*headData->timeModelhCross->data->data[ui];
+    for (ui = 0; ui < model->timehCross->data->length; ui++) {
+      REAL8 tt = XLALGPSGetREAL8(&(model->timehCross->epoch)) +
+        ui * model->timehCross->deltaT;
+      REAL8 d = model->timehCross->data->data[ui];
 
       fprintf(out, "%.6f %g\n", tt, d);
     }
     fclose(out);
 
-    headData = headData->next;
+    data = data->next;
   }
-
 }
 
 void LALInferenceMCMCResumeRead(LALInferenceRunState *runState, FILE *resumeFile) {

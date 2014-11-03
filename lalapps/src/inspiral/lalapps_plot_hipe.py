@@ -26,7 +26,7 @@ from glue import pipeline
 
 from lalapps import inspiral
 from lalapps import inspiralutils
-from inspiralutils import determine_sieve_patterns
+from lalapps.inspiralutils import determine_sieve_patterns
 ##############################
 # Convert ifo list to string
 def combo2str(combo):

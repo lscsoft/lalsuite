@@ -146,7 +146,21 @@ do
     fi
 done
 
+# Test FD precessing, tidal approximants
+approx="SpinTaylorT2Fourier SpinTaylorT4Fourier"
 
+for i in $approx;
+do
+    cmd="./GenerateSimulation --domain $dom --approximant $i --outname simulation-$dom-$i.dat --m1 $m1 --m2 $m2 --spin1x $s1x --spin1y $s1y --spin1z $s1z --spin2x $s2x --spin2y $s2y --spin2z $s2z --tidal-lambda1 $lam1 --tidal-lambda2 $lam2 --f-min $fmin --phase-order -1 --amp-order -1"
+    echo Running: $cmd
+    $cmd
+    if [ $? = 0 ]; then
+        echo Success.
+    else
+        echo Error occurred. Return code: $?
+        exit 1
+    fi
+done
 
 # Test FD precessing, non-tidal approximants
 approx="IMRPhenomP"

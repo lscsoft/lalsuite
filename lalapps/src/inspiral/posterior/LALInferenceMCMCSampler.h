@@ -45,7 +45,7 @@
 /** Implements the parallel tempered MCMC algorithm. Designes to use PTMCMCOneStep() as the runstate->evolve function */
 void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState);
 /** Implements one MCMC step forward, updating the sigma values for the jump proposals if required.*/
-void PTMCMCOneStep(LALInferenceRunState *runState);
+INT4 PTMCMCOneStep(LALInferenceRunState *runState);
 
 /* MPI communications */
 typedef enum {
@@ -80,7 +80,7 @@ void LALInferenceLadderUpdate(LALInferenceRunState *runState, INT4 sourceChainFl
 FILE* LALInferencePrintPTMCMCHeaderOrResume(LALInferenceRunState *runState);
 void LALInferencePrintPTMCMCHeaderFile(LALInferenceRunState *runState, FILE *file);
 void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState);
-void LALInferenceDataDump(LALInferenceRunState *runState);
+void LALInferenceDataDump(LALInferenceIFOData *data, LALInferenceModel *model);
 
 /** Reads final parameter values from the given output file, and
     stores them in the current params to try to continue the run. */

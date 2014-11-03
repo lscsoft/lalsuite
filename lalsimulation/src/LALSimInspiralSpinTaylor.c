@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 E. Ochsner
+ * Copyright (C) 2011 E. Ochsner, 2014 A. Klein
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 #include <lal/LALSimInspiral.h>
 #include <lal/LALAdaptiveRungeKutta4.h>
 #include <lal/TimeSeries.h>
+#include <lal/FrequencySeries.h>
 #include "check_series_macros.h"
 
 #define UNUSED(expr) do { (void)(expr); } while (0)
@@ -131,7 +132,157 @@ static int XLALSimInspiralSpinTaylorDriver(REAL8TimeSeries **hplus,
     REAL8 lambda1, REAL8 lambda2, REAL8 quadparam1, REAL8 quadparam2,
     LALSimInspiralSpinOrder spinO, LALSimInspiralTidalOrder tideO,
     int phaseO, int amplitudeO, Approximant approx);
+static int XLALSimInspiralSpinTaylorPNEvolveOrbitIrregularIntervals(
+    REAL8Array **yout, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fEnd, REAL8 s1x,
+    REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z, REAL8 lnhatx,
+    REAL8 lnhaty, REAL8 lnhatz, REAL8 e1x, REAL8 e1y, REAL8 e1z, REAL8 lambda1,
+    REAL8 lambda2, REAL8 quadparam1, REAL8 quadparam2,
+    LALSimInspiralSpinOrder spinO, LALSimInspiralTidalOrder tideO, INT4 phaseO,
+    Approximant approx);
+static int XLALSimInspiralSpinTaylorDriverFourier(
+    COMPLEX16FrequencySeries **hplus, COMPLEX16FrequencySeries **hcross,
+    REAL8 fMin, REAL8 fMax, REAL8 deltaF, INT4 kMax, REAL8 phiRef, REAL8 v0,
+    REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fRef, REAL8 r, REAL8 s1x,
+    REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z, REAL8 lnhatx,
+    REAL8 lnhaty, REAL8 lnhatz, REAL8 e1x, REAL8 e1y, REAL8 e1z, REAL8 lambda1,
+    REAL8 lambda2, REAL8 quadparam1, REAL8 quadparam2,
+    LALSimInspiralSpinOrder spinO, LALSimInspiralTidalOrder tideO, INT4 phaseO,
+    INT4 amplitudeO, Approximant approx, INT4 phiRefAtEnd);
 
+
+
+/* Appends the start and end time series together. Frees start and end before
+ * returning a pointer to the result. The last point of start can be the
+ * first point of end, and if so it removes the duplicate point.
+ */
+static REAL8Array *appendTAandFree(REAL8Array *start,
+        REAL8Array *end, REAL8Array* combined) {
+  UINT4 len1 = start->dimLength->data[1];
+  UINT4 len2 = end->dimLength->data[1];
+  UINT4 lenTot;
+
+  UINT4 nParams = start->dimLength->data[0];
+
+  if(end->dimLength->data[0] != nParams)
+  {
+    XLALPrintError("XLAL Error - %s: cannot append series with different numbers of parameters %d and %d.\n", __func__, nParams, end->dimLength->data[0]);
+    XLAL_ERROR_NULL(XLAL_EINVAL);
+  }
+
+  UINT4 i;
+  UINT4 doRemove;
+
+  if(start->data[len1-1] != end->data[0])
+  {
+    doRemove = 0;
+    lenTot = len1 + len2;
+  }
+  else
+  {
+    doRemove = 1;
+    lenTot = len1 + len2 - 1;
+  }
+  combined = XLALCreateREAL8ArrayL(2, nParams, lenTot);
+
+  for(i = 0; i < nParams; i++)
+  {
+    memcpy(&(combined->data[i*lenTot]), &(start->data[i*len1]), sizeof(REAL8)*len1);
+    if(doRemove)
+    {
+      memcpy(&(combined->data[i*lenTot + len1]), &(end->data[i*len2+1]), sizeof(REAL8)*(len2-1));
+      if(i && start->data[i*len1 + len1-1] != end->data[i*len2])
+      {
+        XLALPrintWarning("XLAL Warning - %s: time series inconsistent: parameter %d is %f or %f at the same time.\n", __func__, i, start->data[i*len1 + len1-1], end->data[i*len2]);
+      }
+    }
+    else
+    {
+      memcpy(&(combined->data[i*lenTot + len1]), &(end->data[i*len2]), sizeof(REAL8)*(len2));
+    }
+  }
+
+  XLALDestroyREAL8Array(start);
+  XLALDestroyREAL8Array(end);
+
+  return combined;
+}
+
+
+/* Remove duplicates if the time is constant.
+   The time has to be the first parameter.
+ */
+static REAL8Array *removeDuplicates(REAL8Array *series) {
+  UINT4 lenTot = series->dimLength->data[1];
+  UINT4 newLen = lenTot;
+
+  UINT4 nParams = series->dimLength->data[0];
+  UINT4 i, j, k;
+  UINT4 nDuplicates;
+
+  if(nParams < 1)
+  {
+    XLALPrintError("XLAL Error - %s: bad time series, has %d parameters.\n", __func__, nParams);
+    XLAL_ERROR_NULL(XLAL_EINVAL);
+  }
+
+  REAL8Array *temp;
+  temp = XLALCreateREAL8ArrayL(2, nParams, lenTot);
+
+  REAL8Array *mean;
+  mean = XLALCreateREAL8ArrayL(1, nParams);
+
+  for(i = 0, k = 0; i < lenTot; i++, k++)
+  {
+    nDuplicates = 0;
+    if(i < lenTot && series->data[i] == series->data[i+1])
+    {
+      for(j = 1; j < nParams; j++)
+      {
+        mean->data[j] = series->data[j*lenTot + i];
+      }
+      while(i < lenTot && series->data[i] == series->data[i+1])
+      {
+        nDuplicates++;
+        i++;
+        mean->data[0] = series->data[i];
+        for(j = 1; j < nParams; j++)
+        {
+          mean->data[j] += series->data[j*lenTot + i];
+        }
+      }
+      for(j = 1; j < nParams; j++)
+      {
+        mean->data[j] /= nDuplicates+1;
+      }
+      newLen -= nDuplicates;
+      for(j = 0; j < nParams; j++)
+      {
+        temp->data[j*lenTot + k] = mean->data[j];
+      }
+    }
+    else
+    {
+      for(j = 0; j < nParams; j++)
+      {
+        temp->data[j*lenTot + k] = series->data[j*lenTot + i];
+      }
+    }
+  }
+
+  if(newLen != lenTot)
+  {
+    XLALDestroyREAL8Array(series);
+    series = XLALCreateREAL8ArrayL(2, nParams, newLen);
+    for(j = 0; j < nParams; j++)
+    {
+      memcpy(&series->data[j*newLen], &temp->data[j*lenTot], sizeof(REAL8)*newLen);
+    }
+  }
+
+  XLALDestroyREAL8Array(temp);
+  XLALDestroyREAL8Array(mean);
+  return series;
+}
 
 
 static int XLALSimInspiralSpinTaylorT2Setup(
@@ -1916,3 +2067,1339 @@ int XLALSimInspiralSpinTaylorT4PTFQVecs(
 }
 
 
+
+
+
+
+
+
+/**
+ * This function evolves the orbital equations for a precessing binary using
+ * the \"TaylorT2/T4\" approximant for solving the orbital dynamics
+ * (see arXiv:0907.0700 for a review of the various PN approximants).
+ *
+ * It returns time series of the \"orbital velocity\", orbital phase,
+ * and components for both individual spin vectors, the \"Newtonian\"
+ * orbital angular momentum (which defines the instantaneous plane)
+ * and "E1", a basis vector in the instantaneous orbital plane, as well as
+ * the time derivative of the orbital frequency.
+ * Note that LNhat and E1 completely specify the instantaneous orbital plane.
+ *
+ * For input, the function takes the two masses, the initial orbital phase,
+ * Values of S1, S2, LNhat, E1 vectors at starting time,
+ * the desired time step size, the starting GW frequency,
+ * and PN order at which to evolve the phase,
+ *
+ * NOTE: All vectors are given in the so-called "radiation frame",
+ * where the direction of propagation is the z-axis, the principal "+"
+ * polarization axis is the x-axis, and the y-axis is given by the RH rule.
+ * You must give the initial values in this frame, and the time series of the
+ * vector components will also be returned in this frame
+ */
+static int XLALSimInspiralSpinTaylorPNEvolveOrbitIrregularIntervals(
+        REAL8Array **yout,              /**< array holding the unevenly sampled output [returned] */
+        REAL8 m1,                       /**< mass of companion 1 (kg) */
+        REAL8 m2,                       /**< mass of companion 2 (kg) */
+        REAL8 fStart,                   /**< starting GW frequency */
+        REAL8 fEnd,                     /**< ending GW frequency, fEnd=0 means integrate as far forward as possible */
+        REAL8 s1x,                      /**< initial value of S1x */
+        REAL8 s1y,                      /**< initial value of S1y */
+        REAL8 s1z,                      /**< initial value of S1z */
+        REAL8 s2x,                      /**< initial value of S2x */
+        REAL8 s2y,                      /**< initial value of S2y */
+        REAL8 s2z,                      /**< initial value of S2z */
+        REAL8 lnhatx,                   /**< initial value of LNhatx */
+        REAL8 lnhaty,                   /**< initial value of LNhaty */
+        REAL8 lnhatz,                   /**< initial value of LNhatz */
+        REAL8 e1x,                      /**< initial value of E1x */
+        REAL8 e1y,                      /**< initial value of E1y */
+        REAL8 e1z,                      /**< initial value of E1z */
+        REAL8 lambda1,                  /**< (tidal deformability of mass 1) / (mass of body 1)^5 (dimensionless) */
+        REAL8 lambda2,                  /**< (tidal deformability of mass 2) / (mass of body 2)^5 (dimensionless) */
+        REAL8 quadparam1,               /**< phenom. parameter describing induced quad. moment of body 1 (=1 for BHs, ~2-12 for NSs) */
+        REAL8 quadparam2,               /**< phenom. parameter describing induced quad. moment of body 2 (=1 for BHs, ~2-12 for NSs) */
+        LALSimInspiralSpinOrder spinO,  /**< twice PN order of spin effects */
+        LALSimInspiralTidalOrder tideO, /**< twice PN order of tidal effects */
+        INT4 phaseO,                    /**< twice post-Newtonian order */
+    Approximant approx              /**< PN approximant (SpinTaylorT1/T2/T4) */
+        )
+{
+    INT4 intreturn;
+    void * params;
+    ark4GSLIntegrator *integrator = NULL;     /* GSL integrator object */
+    REAL8 yinit[LAL_NUM_ST4_VARIABLES];       /* initial values of parameters */
+    REAL8Array *y;    /* time series of variables returned from integrator */
+    /* intermediate variables */
+    UINT4 cutlen, len;
+//     int sgn, offset;
+    REAL8 norm, dtStart, dtEnd, lengths, m1sec, m2sec, Msec, Mcsec, fTerm;
+//     LIGOTimeGPS tStart = LIGOTIMEGPSZERO;
+
+    /* Check start and end frequencies are positive */
+    if( fStart <= 0. )
+    {
+        XLALPrintError("XLAL Error - %s: fStart = %f must be > 0.\n",
+                __func__, fStart );
+        XLAL_ERROR(XLAL_EINVAL);
+    }
+    if( fEnd < 0. ) /* fEnd = 0 allowed as special case */
+    {
+        XLALPrintError("XLAL Error - %s: fEnd = %f must be >= 0.\n",
+                __func__, fEnd );
+        XLAL_ERROR(XLAL_EINVAL);
+    }
+
+//     /* Set sign of time step according to direction of integration */
+//     if( fEnd < fStart && fEnd != 0. )
+//         sgn = -1;
+//     else
+//         sgn = 1;
+
+    /* Check start and end frequencies are positive */
+    if( fStart <= 0. )
+    {
+        XLALPrintError("XLAL Error - %s: fStart = %f must be > 0.\n",
+                __func__, fStart );
+        XLAL_ERROR(XLAL_EINVAL);
+    }
+    if( fEnd < 0. ) /* fEnd = 0 allowed as special case */
+    {
+        XLALPrintError("XLAL Error - %s: fEnd = %f must be >= 0.\n",
+                __func__, fEnd );
+        XLAL_ERROR(XLAL_EINVAL);
+    }
+
+    // Fill params struct with values of constant coefficients of the model
+    if( approx == SpinTaylorT4 )
+    {
+        XLALSimInspiralSpinTaylorTxCoeffs paramsT4;
+        XLALSimInspiralSpinTaylorT4Setup(&paramsT4, m1, m2, fStart, fEnd,
+                lambda1, lambda2, quadparam1, quadparam2, spinO, tideO, phaseO);
+        params = (void *) &paramsT4;
+    }
+    else if( approx == SpinTaylorT2 )
+    {
+        XLALSimInspiralSpinTaylorTxCoeffs paramsT2;
+        XLALSimInspiralSpinTaylorT2Setup(&paramsT2, m1, m2, fStart, fEnd,
+                lambda1, lambda2, quadparam1, quadparam2, spinO, tideO, phaseO);
+        params = (void *) &paramsT2;
+    }
+    else if( approx == SpinTaylorT1 )
+    {
+        //XLALSimInspiralSpinTaylorT1Coeffs paramsT1;
+        //XLALSimInspiralSpinTaylorT1Setup(&paramsT1, m1, m2, fStart, fEnd,
+        //        lambda1, lambda2, quadparam1, quadparam2, spinO, tideO, phaseO);
+        //params = (void *) &paramsT1;
+        XLALPrintError("XLAL Error - %s: SpinTaylorT1 not implemented yet!\n",
+                __func__);
+        XLAL_ERROR(XLAL_EINVAL);
+    }
+    else
+    {
+        XLALPrintError("XLAL Error - %s: Approximant must be one of SpinTaylorT1, SpinTaylorT2, SpinTaylorT4, but %i provided\n",
+                __func__, approx);
+        XLAL_ERROR(XLAL_EINVAL);
+
+    }
+    m1sec = m1 * LAL_G_SI / pow(LAL_C_SI, 3.0);
+    m2sec = m2 * LAL_G_SI / pow(LAL_C_SI, 3.0);
+    Msec = m1sec + m2sec;
+    Mcsec = Msec * pow( m1sec*m2sec/Msec/Msec, 0.6);
+
+    /* Estimate length of waveform using Newtonian t(f) formula */
+    /* Time from freq. = fStart to infinity */
+    dtStart = (5.0/256.0) * pow(LAL_PI,-8.0/3.0)
+            * pow(Mcsec * fStart,-5.0/3.0) / fStart;
+    /* Time from freq. = fEnd to infinity. Set to zero if fEnd=0 */
+    dtEnd = (fEnd == 0. ? 0. : (5.0/256.0) * pow(LAL_PI,-8.0/3.0)
+            * pow(Mcsec * fEnd,-5.0/3.0) / fEnd);
+    /* Time in sec from fStart to fEnd. Note it can be positive or negative */
+    lengths = dtStart - dtEnd;
+
+    /* Put initial values into a single array for the integrator */
+    yinit[0] = 0.; /* without loss of generality, set initial orbital phase=0 */
+    yinit[1] = LAL_PI * Msec * fStart;  /* \hat{omega} = (pi M f) */
+    /* LNh(x,y,z) */
+    yinit[2] = lnhatx;
+    yinit[3] = lnhaty;
+    yinit[4] = lnhatz;
+    /* S1(x,y,z) */
+    norm = m1sec * m1sec / Msec / Msec;
+    yinit[5] = norm * s1x;
+    yinit[6] = norm * s1y;
+    yinit[7] = norm * s1z;
+    /* S2(x,y,z) */
+    norm = m2sec * m2sec / Msec / Msec;
+    yinit[8] = norm * s2x;
+    yinit[9] = norm * s2y;
+    yinit[10]= norm * s2z;
+    /* E1(x,y,z) */
+    yinit[11] = e1x;
+    yinit[12] = e1y;
+    yinit[13] = e1z;
+
+    /* initialize the integrator */
+    if( approx == SpinTaylorT4 )
+        integrator = XLALAdaptiveRungeKutta4Init(LAL_NUM_ST4_VARIABLES,
+                XLALSimInspiralSpinTaylorT4Derivatives,
+                XLALSimInspiralSpinTaylorStoppingTest,
+                LAL_ST4_ABSOLUTE_TOLERANCE, LAL_ST4_RELATIVE_TOLERANCE);
+    else if( approx == SpinTaylorT2 )
+        integrator = XLALAdaptiveRungeKutta4Init(LAL_NUM_ST4_VARIABLES,
+                XLALSimInspiralSpinTaylorT2Derivatives,
+                XLALSimInspiralSpinTaylorStoppingTest,
+                LAL_ST4_ABSOLUTE_TOLERANCE, LAL_ST4_RELATIVE_TOLERANCE);
+    else if( approx == SpinTaylorT1 )
+    {
+        //integrator = XLALAdaptiveRungeKutta4Init(LAL_NUM_ST4_VARIABLES,
+        //        XLALSimInspiralSpinTaylorT1Derivatives,
+        //        XLALSimInspiralSpinTaylorStoppingTest,
+        //        LAL_ST4_ABSOLUTE_TOLERANCE, LAL_ST4_RELATIVE_TOLERANCE);
+        XLALPrintError("XLAL Error - %s: SpinTaylorT1 not implemented yet!\n",
+                __func__);
+        XLAL_ERROR(XLAL_EINVAL);
+    }
+    else
+    {
+        XLALPrintError("XLAL Error - %s: Approximant must be one of SpinTaylorT1, SpinTaylorT2, SpinTaylorT4, but %i provided\n",
+                __func__, approx);
+        XLAL_ERROR(XLAL_EINVAL);
+
+    }
+    if( !integrator )
+    {
+        XLALPrintError("XLAL Error - %s: Cannot allocate integrator\n",
+                __func__);
+        XLAL_ERROR(XLAL_EFUNC);
+    }
+
+    /* stop the integration only when the test is true */
+    integrator->stopontestonly = 1;
+
+    /* run the integration; note: time is measured in \hat{t} = t / M */
+    //len = XLALAdaptiveRungeKutta4Hermite(integrator, (void *) &params, yinit,
+    len = XLALAdaptiveRungeKutta4IrregularIntervals(integrator, params, yinit,
+            0.0, lengths/Msec, &y);
+
+    intreturn = integrator->returncode;
+    XLALAdaptiveRungeKutta4Free(integrator);
+
+    if (!len)
+    {
+        XLALPrintError("XLAL Error - %s: integration failed with errorcode %d.\n", __func__, intreturn);
+        XLAL_ERROR(XLAL_EFUNC);
+    }
+
+    /* Print warning about abnormal termination */
+    if (intreturn != 0 && intreturn != LALSIMINSPIRAL_ST_TEST_ENERGY
+            && intreturn != LALSIMINSPIRAL_ST_TEST_FREQBOUND)
+    {
+        XLALPrintWarning("XLAL Warning - %s: integration terminated with code %d.\n Waveform parameters were m1 = %e, m2 = %e, s1 = (%e,%e,%e), s2 = (%e,%e,%e), inc = %e.\n",
+        __func__, intreturn, m1 * pow(LAL_C_SI, 3.0) / LAL_G_SI / LAL_MSUN_SI,
+        m2 * pow(LAL_C_SI, 3.0) / LAL_G_SI / LAL_MSUN_SI, s1x, s1y, s1z, s2x,
+        s2y, s2z, acos(lnhatz));
+    }
+
+    cutlen = len;
+
+    // Report termination condition and final frequency
+    // Will only report this info if '4' bit of lalDebugLevel is 1
+    fTerm = y->data[2*len+cutlen-1] / LAL_PI / Msec;
+    XLALPrintInfo("XLAL Info - %s: integration terminated with code %d. The final GW frequency reached was %g\n", __func__, intreturn, fTerm);
+
+    *yout = y;
+
+    return XLAL_SUCCESS;
+}
+
+
+
+
+
+
+/**
+ * Internal driver function to generate any of SpinTaylorT2/T4 in the Fourier domain.
+ */
+static int XLALSimInspiralSpinTaylorDriverFourier(
+        COMPLEX16FrequencySeries **hplus,        /**< +-polarization waveform */
+        COMPLEX16FrequencySeries **hcross,       /**< x-polarization waveform */
+        REAL8 fMin,                     /**< minimum frequency of the returned series */
+        REAL8 fMax,                     /**< maximum frequency of the returned series */
+        REAL8 deltaF,                   /**< frequency interval of the returned series */
+        INT4 kMax,                      /**< k_max as described in arXiv: 1408.5158 (min 0, max 10). */
+        REAL8 phiRef,                   /**< orbital phase at reference pt. */
+        REAL8 v0,                       /**< tail gauge term (default = 1) */
+        REAL8 m1,                       /**< mass of companion 1 (kg) */
+        REAL8 m2,                       /**< mass of companion 2 (kg) */
+        REAL8 fStart,                   /**< start GW frequency (Hz) */
+        REAL8 fRef,                     /**< reference GW frequency (Hz) */
+        REAL8 r,                        /**< distance of source (m) */
+        REAL8 s1x,                      /**< initial value of S1x */
+        REAL8 s1y,                      /**< initial value of S1y */
+        REAL8 s1z,                      /**< initial value of S1z */
+        REAL8 s2x,                      /**< initial value of S2x */
+        REAL8 s2y,                      /**< initial value of S2y */
+        REAL8 s2z,                      /**< initial value of S2z */
+        REAL8 lnhatx,                   /**< initial value of LNhatx */
+        REAL8 lnhaty,                   /**< initial value of LNhaty */
+        REAL8 lnhatz,                   /**< initial value of LNhatz */
+        REAL8 e1x,                      /**< initial value of E1x */
+        REAL8 e1y,                      /**< initial value of E1y */
+        REAL8 e1z,                      /**< initial value of E1z */
+        REAL8 lambda1,                  /**< (tidal deformability of mass 1) / (mass of body 1)^5 (dimensionless) */
+        REAL8 lambda2,                  /**< (tidal deformability of mass 2) / (mass of body 2)^5 (dimensionless) */
+        REAL8 quadparam1,               /**< phenom. parameter describing induced quad. moment of body 1 (=1 for BHs, ~2-12 for NSs) */
+        REAL8 quadparam2,               /**< phenom. parameter describing induced quad. moment of body 2 (=1 for BHs, ~2-12 for NSs) */
+        LALSimInspiralSpinOrder spinO,  /**< twice PN order of spin effects */
+        LALSimInspiralTidalOrder tideO, /**< twice PN order of tidal effects */
+        INT4 phaseO,                    /**< twice PN phase order */
+        INT4 amplitudeO,                /**< twice PN amplitude order */
+        Approximant approx,             /**< PN approximant (SpinTaylorT1/T2/T4) */
+        INT4 phiRefAtEnd                /**< whether phiRef corresponds to the end of the inspiral */
+        )
+{
+    REAL8Array* y = 0;
+    INT4 n;
+    UINT4 i, j;
+    UINT4 iRefPhi;
+    REAL8 fS, fE, phiShift;
+    /* The Schwarzschild ISCO frequency - for sanity checking fRef, and default maximum frequency */
+    REAL8 fISCO = pow(LAL_C_SI,3) / (pow(6.,3./2.)*LAL_PI*(m1+m2)*LAL_G_SI);
+
+
+    if(kMax < 0)
+    {
+        XLALPrintError("XLAL Error - %s: kMax = %f must be >= 0\n",
+                __func__, kMax);
+        XLAL_ERROR(XLAL_EINVAL);
+    }
+
+    if(kMax > 10)
+    {
+        XLALPrintError("XLAL Error - %s: kMax = %f not implemented. Must be <= 10\n",
+                __func__, kMax);
+        XLAL_ERROR(XLAL_EINVAL);
+    }
+
+
+
+    /* Sanity check fRef value */
+    if( fRef < 0. )
+    {
+        XLALPrintError("XLAL Error - %s: fRef = %f must be >= 0\n",
+                __func__, fRef);
+        XLAL_ERROR(XLAL_EINVAL);
+    }
+    if( fRef != 0. && fRef < fStart )
+    {
+        XLALPrintError("XLAL Error - %s: fRef = %f must be > fStart = %f\n",
+                __func__, fRef, fStart);
+        XLAL_ERROR(XLAL_EINVAL);
+    }
+    if( fRef >= fISCO )
+    {
+        XLALPrintError("XLAL Error - %s: fRef = %f must be < Schwar. ISCO=%f\n",
+                __func__, fRef, fISCO);
+        XLAL_ERROR(XLAL_EINVAL);
+    }
+
+
+    /* if fRef=0, just integrate from start to end. Let phiRef=phiC */
+    if( fRef < LAL_REAL4_EPS)
+    {
+        fS = fStart;
+        fE = 0.;
+        /* Evolve the dynamical variables */
+        n = XLALSimInspiralSpinTaylorPNEvolveOrbitIrregularIntervals(&y,
+                m1, m2, fS, fE, s1x, s1y, s1z, s2x, s2y, s2z,
+                lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, lambda1, lambda2,
+                quadparam1, quadparam2, spinO, tideO, phaseO, approx);
+        if( n < 0 )
+            XLAL_ERROR(XLAL_EFUNC);
+
+        /* Apply phase shift so orbital phase ends with desired value */
+        iRefPhi = ((y->dimLength->data[1])<<1)-1;
+        phiShift = phiRef - y->data[iRefPhi];
+        for( i = y->dimLength->data[1]; i <= iRefPhi; i++)
+        {
+            y->data[i] += phiShift;
+        }
+    }
+    /* if fRef=fStart, just integrate from start to end. Let phiRef=phiStart */
+    else if( fabs(fRef - fStart) < LAL_REAL4_EPS )
+    {
+        fS = fStart;
+        fE = 0.;
+        /* Evolve the dynamical variables */
+        n = XLALSimInspiralSpinTaylorPNEvolveOrbitIrregularIntervals(&y,
+                m1, m2, fS, fE, s1x, s1y, s1z, s2x, s2y, s2z,
+                lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, lambda1, lambda2,
+                quadparam1, quadparam2, spinO, tideO, phaseO, approx);
+        if( n < 0 )
+            XLAL_ERROR(XLAL_EFUNC);
+
+        /* Apply phase shift so orbital phase starts with desired value */
+        iRefPhi = ((y->dimLength->data[1])<<1)-1;
+        phiShift = phiRef - y->data[y->dimLength->data[1]];
+        for( i = y->dimLength->data[1]; i <= iRefPhi; i++)
+        {
+            y->data[i] += phiShift;
+        }
+    }
+    else /* Start in middle, integrate backward and forward, stitch together */
+    {
+        REAL8Array *yStart=NULL, *yEnd=NULL;
+
+        /* Integrate backward to fStart */
+        fS = fRef;
+        fE = fStart;
+        n = XLALSimInspiralSpinTaylorPNEvolveOrbitIrregularIntervals(&yStart,
+                m1, m2, fS, fE, s1x, s1y, s1z, s2x, s2y,
+                s2z, lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, lambda1, lambda2,
+                quadparam1, quadparam2, spinO, tideO, phaseO, approx);
+
+        /* Apply phase shift so orbital phase has desired value at fRef */
+        iRefPhi = ((yStart->dimLength->data[1])<<1)-1;
+        phiShift = phiRef - yStart->data[iRefPhi];
+        for( i = yStart->dimLength->data[1]; i <= iRefPhi; i++)
+        {
+            yStart->data[i] += phiShift;
+        }
+
+        /* Integrate forward to end of waveform */
+        fS = fRef;
+        fE = 0.;
+        n = XLALSimInspiralSpinTaylorPNEvolveOrbitIrregularIntervals(&yEnd,
+                m1, m2, fS, fE, s1x, s1y, s1z, s2x, s2y,
+                s2z, lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, lambda1, lambda2,
+                quadparam1, quadparam2, spinO, tideO, phaseO, approx);
+
+        /* Apply phase shift so orbital phase has desired value at fRef */
+        iRefPhi = ((yEnd->dimLength->data[1])<<1)-1;
+        phiShift = phiRef - yEnd->data[yEnd->dimLength->data[1]];
+        for( i = yEnd->dimLength->data[1]; i <= iRefPhi; i++)
+        {
+            yEnd->data[i] += phiShift;
+        }
+
+        /* Stitch 2nd set of vectors onto 1st set. Free 'em. */
+        y = appendTAandFree(yStart, yEnd, y);
+    }
+
+    /* if phiRefAtEnd, let phiRef=phiC (to be compatible with TaylorT4 in ChooseFDWaveform). */
+    if(phiRefAtEnd)
+    {
+      iRefPhi = ((y->dimLength->data[1])<<1)-1;
+      phiShift = phiRef - y->data[iRefPhi];
+      for( i = y->dimLength->data[1]; i <= iRefPhi; i++)
+      {
+        y->data[i] += phiShift;
+      }
+    }
+
+    // We can now use the interpolation formulas to create the Fourier series
+
+    REAL8 cSiDbl, Msec, M;
+
+    cSiDbl = LAL_C_SI;
+    M = m1 + m2;
+    Msec = M*LAL_G_SI/(cSiDbl*cSiDbl*cSiDbl);
+
+    UINT4 length = y->dimLength->data[1];
+    UINT4 nParams = y->dimLength->data[0];
+
+    /** minimum index for the a_k's adefined in Eq. (40) of arXiv: 1408.5158. */
+    const INT4 iMinKMax[11] = {
+      0,
+      1,
+      3,
+      6,
+      10,
+      15,
+      21,
+      28,
+      36,
+      45,
+      55
+    };
+
+    /** constants a_k defined in Eq. (40) of arXiv: 1408.5158. */
+    const COMPLEX16 akCsts[66] = {
+      1. + I*(0.), // 0
+      1. + I*(1.), // 1
+      0. + I*(- 1./2.),
+      1./4. + I*(5./4.), // 2
+      1./2. + I*(-2./3.),
+      -1./8. + I*(1./24.),
+      -1./6. + I*(17./18.), // 3
+      13./16. + I*(-7./16.),
+      -1./4. + I*(-1./20.),
+      1./48. + I*(11./720.),
+      -23./96. + I*(185./288.), // 4
+      209./240. + I*(-47./240.),
+      -67./240. + I*(-41./240.),
+      7./240. + I*(251./5040.),
+      -1./960. + I*(-29./6720.),
+      -23./120. + I*(1669./3600.), // 5
+      2393./2880. + I*(-3./64.),
+      -323./1260. + I*(-43./168.),
+      277./13440. + I*(659./8064.),
+      13./15120. + I*(-23./2016.),
+      -23./120960. + I*(143./201600.),
+      -683./5400. + I*(16003./43200.), // 6
+      26041./33600. + I*(19./576.),
+      -31./140. + I*(-4933./16128.),
+      1847./362880. + I*(7541./72576.),
+      139./25200. + I*(-437./24192.),
+      -209./201600. + I*(12769./6652800.),
+      1./14175. + I*(-23./228096.),
+      -2153./30240. + I*(341101./1058400.), // 7
+      878963./1209600. + I*(36349./483840.),
+      -343247./1814400. + I*(-121187./362880.),
+      -40043./3628800. + I*(171209./1451520.),
+      113557./9979200. + I*(-46247./1995840.),
+      -19979./7983360. + I*(255173./79833600.),
+      5909./19958400. + I*(-15427./51891840.),
+      -643./39916800. + I*(20389./1452971520.),
+      -1940303./67737600. + I*(6696113./22579200.), // 8
+      13123063./19051200. + I*(426691./4354560.),
+      -17712403./108864000. + I*(-1523929./4354560.),
+      -2542391./99792000. + I*(20431./161280.),
+      8333153./479001600. + I*(-2568281./95800320.),
+      -3389161./778377600. + I*(13435997./3113510400.),
+      5033293./7264857600. + I*(-4129./7687680.),
+      -235007./3405402000. + I*(200537./4358914560.),
+      2882417./871782912000. + I*(-181./90574848.),
+      662159./182891520. + I*(387137501./1371686400.), // 9
+      4022350847./6096384000. + I*(15021619./135475200.),
+      -593412859./4191264000. + I*(-16734271./46569600.),
+      -181044539./4790016000. + I*(379801511./2874009600.),
+      359342129./15567552000. + I*(-461261./15724800.),
+      -778483./121927680. + I*(50534819./9686476800.),
+      6114053./4953312000. + I*(-12709559./16345929600.),
+      -297352897./1743565824000. + I*(320849./3522355200.),
+      511381./33530112000. + I*(-601231./82335052800.),
+      -3471163./5230697472000. + I*(15721091./53353114214400.),
+      1110580187./39191040000. + I*(1503012587./5486745600.), // 10
+      76930217647./120708403200. + I*(529444847./4470681600.),
+      -10037362331./80472268800. + I*(-543929527./1490227200.),
+      -12597360953./261534873600. + I*(35472685841./261534873600.),
+      7393112329./261534873600. + I*(-50167081./1614412800.),
+      -55307796493./6538371840000. + I*(578597./97843200.),
+      3938740549./2092278988800. + I*(-94645351./95103590400.),
+      -820761239./2540624486400. + I*(93730183./658680422400.),
+      2169874009./53353114214400. + I*(-15647627./988020633600.),
+      -178160027./53353114214400. + I*(1209449069/1013709170073600.),
+      356885411./2667655710720000. + I*(-1686571./37544784076800.)
+    };
+
+
+    INT4 status;
+
+
+    REAL8 dm = (m1 - m2)/M;
+    REAL8 eta = m1*m2/(M*M);
+
+    // Construct cubic spline interpolation structures
+    gsl_spline *interp[nParams-1];
+    gsl_interp_accel *accel = NULL;
+    gsl_interp_accel *accel_k = NULL;
+    gsl_spline* interp_t_of_f;
+
+
+    INT4 kMaxCur = kMax;
+    INT4 k, iK;
+
+    REAL8 tCur;
+    REAL8 fCur;
+    REAL8 omegaHatCur;
+
+    REAL8 freqToOmegaHat = LAL_TWOPI*Msec;
+
+    REAL8 dydt, T, phiOrb;
+
+    REAL8 tK;
+
+    REAL8 prefac = 2.*sqrt(LAL_TWOPI)*Msec*Msec*eta*cSiDbl/r;
+
+    REAL8 vCur, lnhatxCur, lnhatyCur, lnhatzCur, s1xCur, s1yCur, s1zCur, s2xCur,
+    s2yCur, s2zCur, E1xCur, E1yCur, E1zCur, TCur;
+
+    INT4 nHarmonic, minHarmonic, maxHarmonic;
+
+    COMPLEX16 htPlusHarmonic, htCrossHarmonic, htPlusTemp, htCrossTemp, cPhase;
+
+    // compute ISCO orbital frequency
+    REAL8 omegaHatISCO = 1./sqrt(216.);
+    REAL8 tISCO;
+
+    // Set the minimum and maximum harmonic needed for the amplitude PN order
+    switch(amplitudeO)
+    {
+      case 0:
+        minHarmonic = 2;
+        maxHarmonic = 2;
+        break;
+      case 1:
+        minHarmonic = 1;
+        maxHarmonic = 3;
+        break;
+      case 2:
+        minHarmonic = 1;
+        maxHarmonic = 4;
+        break;
+      case -1: /* Use highest known PN order - move if new orders added */
+      case 3:
+        minHarmonic = 1;
+        maxHarmonic = 5;
+        break;
+      default:
+        XLALPrintError("XLAL Error - %s: Invalid amp. PN order %s\n",
+        __func__, amplitudeO );
+        XLAL_ERROR(XLAL_EINVAL);
+        break;
+    }
+
+
+    XLAL_BEGINGSL;
+
+    // The TaylorT2 version sometimes returns duplicate time steps (i.e. two different steps happen at the same time, because df/dt is too large near the end)
+    // So if this happens, we have to remove the duplicates and try again. If it fails then, there is another problem and the function exits with an error.
+    UINT4 weHadAProblem = 0;
+
+    accel = gsl_interp_accel_alloc();
+    accel_k = gsl_interp_accel_alloc();
+    interp_t_of_f = gsl_spline_alloc(gsl_interp_cspline,
+                                     length);
+    status = gsl_spline_init(interp_t_of_f, &y->data[length*2],
+                             y->data, length);
+    if(status != GSL_SUCCESS)
+    {
+      weHadAProblem = 1;
+    }
+
+    // initiate interpolation objects
+    for(i = 1; i < nParams; i++) {
+      interp[i-1] = gsl_spline_alloc(gsl_interp_cspline,
+                                     length);
+      status = gsl_spline_init(interp[i-1], y->data,
+                               &y->data[length*i], length);
+      if(status != GSL_SUCCESS)
+      {
+        weHadAProblem = 1;
+      }
+    }
+
+    if(weHadAProblem)
+    {
+      y = removeDuplicates(y);
+      length = y->dimLength->data[1];
+
+      gsl_spline_free(interp_t_of_f);
+
+      for(i = 0; i < nParams-1; i++) {
+        gsl_spline_free(interp[i]);
+      }
+
+      interp_t_of_f = gsl_spline_alloc(gsl_interp_cspline,
+                                       length);
+      status = gsl_spline_init(interp_t_of_f, &y->data[length*2],
+                               y->data, length);
+      if(status != GSL_SUCCESS)
+      {
+        XLALPrintError("XLAL Error - %s: spline interpolation returned with error code %d\n",
+                       __func__, status );
+        XLAL_ERROR(XLAL_EFUNC);
+      }
+
+      // initiate interpolation objects
+      for(i = 1; i < nParams; i++) {
+        interp[i-1] = gsl_spline_alloc(gsl_interp_cspline,
+                                       length);
+        status = gsl_spline_init(interp[i-1], y->data,
+                                 &y->data[length*i], length);
+        if(status != GSL_SUCCESS)
+        {
+          XLALPrintError("XLAL Error - %s: spline interpolation returned with error code %d\n",
+                         __func__, status );
+          XLAL_ERROR(XLAL_EFUNC);
+        }
+      }
+    }
+
+    // compute tISCO
+    status = gsl_spline_eval_e(interp_t_of_f, omegaHatISCO,
+                               accel, &tISCO);
+    if(status != GSL_SUCCESS)
+    {
+      // if ISCO not reached, set t=0 at the end of tthe simulation
+      tISCO = y->data[length-1];
+    }
+
+    // set tStart so that tISCO corresponds to t=0.
+    LIGOTimeGPS tStart = LIGOTIMEGPSZERO;
+    REAL8 omegaHatMin = LAL_PI*Msec*fMin;
+    REAL8 tMin;
+    status = gsl_spline_eval_e(interp_t_of_f, omegaHatMin,
+                               accel, &tMin);
+    tMin -= tISCO;
+    tMin *= Msec;
+    tStart.gpsSeconds += (INT4)floor(tMin);
+    tStart.gpsNanoSeconds += (INT4)floor(1.e9*(tMin - tStart.gpsSeconds));
+
+    // number of samples
+    UINT4 nFreqSamples, iFirstSample;
+    fMin = deltaF*floor(nextafter(fMin, INFINITY)/deltaF);
+    if(fMax > fMin)
+    {
+      nFreqSamples = (UINT4)ceil((fMax - fMin)/deltaF);
+    }
+    else
+    {
+      nFreqSamples = (UINT4)ceil((fISCO - fMin)/deltaF);
+    }
+    iFirstSample = fMin/deltaF;
+
+    *hplus = XLALCreateCOMPLEX16FrequencySeries("PLUS POLARIZATION", &tStart,
+    0., deltaF, &lalSecondUnit, iFirstSample+nFreqSamples);
+    *hcross = XLALCreateCOMPLEX16FrequencySeries("CROSS POLARIZATION", &tStart,
+    0., deltaF, &lalSecondUnit, iFirstSample+nFreqSamples);
+
+    COMPLEX16FrequencySeries* hplustilde = *hplus;
+    COMPLEX16FrequencySeries* hcrosstilde = *hcross;
+
+    memset(hplustilde->data->data, 0, sizeof(COMPLEX16)*(iFirstSample+nFreqSamples));
+    memset(hcrosstilde->data->data, 0, sizeof(COMPLEX16)*(iFirstSample+nFreqSamples));
+
+    //     If nFreqSamples > length, better interpolate A(t), t(f), and Psi(f)
+    //     If nFreqSamples < length, better interpolate everything
+    if(nFreqSamples < length)
+    {
+      // We interpolate every quantity at each frequency sample of the output
+
+      for(i = 0, j = iFirstSample; i < nFreqSamples; i++, j++) // loop over frequency samples
+      {
+        fCur = j*deltaF;
+
+        for(nHarmonic = minHarmonic; nHarmonic <= maxHarmonic; nHarmonic++) // loop over relevant harmonics
+        {
+          htPlusHarmonic = 0.;
+          htCrossHarmonic = 0.;
+
+          omegaHatCur = freqToOmegaHat*fCur/nHarmonic;
+
+          status = gsl_spline_eval_e(interp_t_of_f, omegaHatCur,
+          accel, &tCur);
+          // if return is non-zero, then the harmonic contributes nothing
+          if(status == GSL_SUCCESS)
+          {
+            status = gsl_spline_eval_e(interp[14], tCur, accel,
+            &dydt);
+            status = gsl_spline_eval_e(interp[0], tCur, accel,
+            &phiOrb);
+
+            T = 1./sqrt(fabs(nHarmonic*dydt));
+
+            // k = 0
+            iK = iMinKMax[kMaxCur];
+
+            status = gsl_spline_eval_e(interp[1], tCur, accel_k,
+            &omegaHatCur);
+            if(status != GSL_SUCCESS)
+            {
+              continue;
+            }
+            status = gsl_spline_eval_e(interp[2], tCur, accel_k,
+            &lnhatxCur);
+            status = gsl_spline_eval_e(interp[3], tCur, accel_k,
+            &lnhatyCur);
+            status = gsl_spline_eval_e(interp[4], tCur, accel_k,
+            &lnhatzCur);
+            // if the amplitude PN order is too low, no need to interpolate the spin orientation
+            if(amplitudeO > 1 || amplitudeO == -1)
+            {
+              status = gsl_spline_eval_e(interp[5], tCur, accel_k,
+              &s1xCur);
+              status = gsl_spline_eval_e(interp[6], tCur, accel_k,
+              &s1yCur);
+              status = gsl_spline_eval_e(interp[7], tCur, accel_k,
+              &s1zCur);
+              status = gsl_spline_eval_e(interp[8], tCur, accel_k,
+              &s2xCur);
+              status = gsl_spline_eval_e(interp[9], tCur, accel_k,
+              &s2yCur);
+              status = gsl_spline_eval_e(interp[10], tCur,
+              accel_k, &s2zCur);
+            }
+            status = gsl_spline_eval_e(interp[11], tCur, accel_k,
+            &E1xCur);
+            status = gsl_spline_eval_e(interp[12], tCur, accel_k,
+            &E1yCur);
+            status = gsl_spline_eval_e(interp[13], tCur, accel_k,
+            &E1zCur);
+
+            vCur = cbrt(omegaHatCur);
+
+            XLALSimInspiralPrecessingPolarizationWaveformHarmonic(&htPlusTemp,
+            &htCrossTemp, vCur, s1xCur, s1yCur, s1zCur, s2xCur, s2yCur, s2zCur,
+            lnhatxCur, lnhatyCur, lnhatzCur, E1xCur, E1yCur, E1zCur, dm, eta,
+            v0, nHarmonic, amplitudeO);
+
+            htPlusHarmonic += akCsts[iK]*T*htPlusTemp;
+            htCrossHarmonic += akCsts[iK]*T*htCrossTemp;
+
+            for(k = 1, iK++; k <= kMaxCur; k++, iK++) // loop over k != 0
+            {
+              tK = tCur + k*T;
+
+              status = gsl_spline_eval_e(interp[1], tK, accel_k,
+              &omegaHatCur);
+              // if return is non-zero, then the k value contributes nothing
+              if(status == GSL_SUCCESS)
+              {
+                status = gsl_spline_eval_e(interp[2], tK, accel_k,
+                &lnhatxCur);
+                status = gsl_spline_eval_e(interp[3], tK, accel_k,
+                &lnhatyCur);
+                status = gsl_spline_eval_e(interp[4], tK, accel_k,
+                &lnhatzCur);
+                // if the amplitude PN order is too low, no need to interpolate the spin orientation
+                if(amplitudeO > 1 || amplitudeO == -1)
+                {
+                  status = gsl_spline_eval_e(interp[5], tK,
+                  accel_k, &s1xCur);
+                  status = gsl_spline_eval_e(interp[6], tK,
+                  accel_k, &s1yCur);
+                  status = gsl_spline_eval_e(interp[7], tK,
+                  accel_k, &s1zCur);
+                  status = gsl_spline_eval_e(interp[8], tK,
+                  accel_k, &s2xCur);
+                  status = gsl_spline_eval_e(interp[9], tK,
+                  accel_k, &s2yCur);
+                  status = gsl_spline_eval_e(interp[10], tK,
+                  accel_k, &s2zCur);
+                }
+                status = gsl_spline_eval_e(interp[11], tK,
+                accel_k, &E1xCur);
+                status = gsl_spline_eval_e(interp[12], tK,
+                accel_k, &E1yCur);
+                status = gsl_spline_eval_e(interp[13], tK,
+                accel_k, &E1zCur);
+                status = gsl_spline_eval_e(interp[14], tK,
+                accel_k, &dydt);
+
+                vCur = cbrt(omegaHatCur);
+                TCur = 1./sqrt(fabs(nHarmonic*dydt));
+
+                XLALSimInspiralPrecessingPolarizationWaveformHarmonic(
+                &htPlusTemp, &htCrossTemp, vCur, s1xCur, s1yCur, s1zCur,
+                s2xCur, s2yCur, s2zCur, lnhatxCur, lnhatyCur, lnhatzCur, E1xCur,
+                E1yCur, E1zCur, dm, eta, v0, nHarmonic, amplitudeO);
+
+                htPlusHarmonic += akCsts[iK]*TCur*htPlusTemp;
+                htCrossHarmonic += akCsts[iK]*TCur*htCrossTemp;
+              }
+
+              tK = tCur - k*T;
+
+              status = gsl_spline_eval_e(interp[1], tK, accel_k,
+              &omegaHatCur);
+              // if return is non-zero, then the -k value contributes nothing
+              if(status == GSL_SUCCESS)
+              {
+                status = gsl_spline_eval_e(interp[2], tK,
+                accel_k, &lnhatxCur);
+                status = gsl_spline_eval_e(interp[3], tK,
+                accel_k, &lnhatyCur);
+                status = gsl_spline_eval_e(interp[4], tK,
+                accel_k, &lnhatzCur);
+                // if the amplitude PN order is too low, no need to interpolate the spin orientation
+                if(amplitudeO > 1 || amplitudeO == -1)
+                {
+                  status = gsl_spline_eval_e(interp[5], tK,
+                  accel_k, &s1xCur);
+                  status = gsl_spline_eval_e(interp[6], tK,
+                  accel_k, &s1yCur);
+                  status = gsl_spline_eval_e(interp[7], tK,
+                  accel_k, &s1zCur);
+                  status = gsl_spline_eval_e(interp[8], tK,
+                  accel_k, &s2xCur);
+                  status = gsl_spline_eval_e(interp[9], tK,
+                  accel_k, &s2yCur);
+                  status = gsl_spline_eval_e(interp[10], tK,
+                  accel_k, &s2zCur);
+                }
+                status = gsl_spline_eval_e(interp[11], tK,
+                accel_k, &E1xCur);
+                status = gsl_spline_eval_e(interp[12], tK,
+                accel_k, &E1yCur);
+                status = gsl_spline_eval_e(interp[13], tK,
+                accel_k, &E1zCur);
+                status = gsl_spline_eval_e(interp[14], tK,
+                accel_k, &dydt);
+
+                vCur = cbrt(omegaHatCur);
+                TCur = 1./sqrt(fabs(nHarmonic*dydt));
+
+                XLALSimInspiralPrecessingPolarizationWaveformHarmonic(
+                &htPlusTemp, &htCrossTemp, vCur, s1xCur, s1yCur, s1zCur, s2xCur,
+                s2yCur, s2zCur, lnhatxCur, lnhatyCur, lnhatzCur, E1xCur, E1yCur,
+                E1zCur, dm, eta, v0, nHarmonic, amplitudeO);
+
+                htPlusHarmonic += akCsts[iK]*TCur*htPlusTemp;
+                htCrossHarmonic += akCsts[iK]*TCur*htCrossTemp;
+              }
+            }
+
+            // apply phase factor for the particular harmonic
+            cPhase = prefac*cexp(I*(freqToOmegaHat*fCur*(tCur - tISCO) - nHarmonic*phiOrb
+            - LAL_PI_4));
+            hplustilde->data->data[j] += conj(htPlusHarmonic*cPhase);
+            hcrosstilde->data->data[j] += conj(htCrossHarmonic*cPhase);
+          }
+        }
+      }
+    }
+    else
+    {
+      // if(nFreqSamples > length)
+      // We compute the amplitude and phase of each harmonic for each sample of the Runge-Kutta, and then interpolate between them
+
+      REAL8Array* freq = XLALCreateREAL8ArrayL(2, 5, length);
+      REAL8Array* hPlusAmpRe = XLALCreateREAL8ArrayL(2, 5, length);
+      REAL8Array* hPlusAmpIm = XLALCreateREAL8ArrayL(2, 5, length);
+      REAL8Array* hCrossAmpRe = XLALCreateREAL8ArrayL(2, 5, length);
+      REAL8Array* hCrossAmpIm = XLALCreateREAL8ArrayL(2, 5, length);
+      REAL8Array* TArray = XLALCreateREAL8ArrayL(2, 5, length);
+      REAL8Array* phase = XLALCreateREAL8ArrayL(2, 5, length);
+
+      gsl_spline *interpHPlusRe[5];
+      gsl_spline *interpHPlusIm[5];
+      gsl_spline *interpHCrossRe[5];
+      gsl_spline *interpHCrossIm[5];
+      gsl_spline *interpPhase[5];
+      gsl_spline *interpT[5];
+
+      for(i = 0; i < length; i++) // loop over the samples output by the Runge-Kutta
+      {
+        tCur = y->data[i];
+        omegaHatCur = y->data[2*length+i];
+        vCur = cbrt(omegaHatCur);
+        phiOrb = y->data[length+i];
+        dydt = y->data[15*length+i];
+
+        // create the series for the frequency, the phase, and the time derivative of the orbital frequency
+        for(nHarmonic = minHarmonic; nHarmonic <= maxHarmonic; nHarmonic++)
+        {
+          freq->data[length*(nHarmonic-1)+i] = nHarmonic*omegaHatCur/
+          freqToOmegaHat;
+          phase->data[length*(nHarmonic-1)+i] = nHarmonic*(omegaHatCur*(tCur - tISCO)
+          - phiOrb) - LAL_PI_4;
+          TArray->data[length*(nHarmonic-1)+i] = 1./sqrt(fabs(nHarmonic*dydt));
+        }
+
+        for(nHarmonic = minHarmonic; nHarmonic <= maxHarmonic; nHarmonic++) // loop over the harmonic number
+        {
+          lnhatxCur = y->data[3*length+i];
+          lnhatyCur = y->data[4*length+i];
+          lnhatzCur = y->data[5*length+i];
+          // if the amplitude PN order is too low, no need to take the spin orientation into account
+          if(amplitudeO > 1 || amplitudeO == -1)
+          {
+            s1xCur = y->data[6*length+i];
+            s1yCur = y->data[7*length+i];
+            s1zCur = y->data[8*length+i];
+            s2xCur = y->data[9*length+i];
+            s2yCur = y->data[10*length+i];
+            s2zCur = y->data[11*length+i];
+          }
+          E1xCur = y->data[12*length+i];
+          E1yCur = y->data[13*length+i];
+          E1zCur = y->data[14*length+i];
+
+          XLALSimInspiralPrecessingPolarizationWaveformHarmonic(&htPlusTemp,
+          &htCrossTemp, vCur, s1xCur, s1yCur, s1zCur, s2xCur, s2yCur, s2zCur,
+          lnhatxCur, lnhatyCur, lnhatzCur, E1xCur, E1yCur, E1zCur, dm, eta, v0,
+          nHarmonic, amplitudeO);
+
+          htPlusHarmonic = (prefac*TArray->data[length*(nHarmonic-1)+i])*
+          htPlusTemp;
+          htCrossHarmonic = (prefac*TArray->data[length*(nHarmonic-1)+i])*
+          htCrossTemp;
+
+          // create the series for the amplitude
+          hPlusAmpRe->data[length*(nHarmonic-1)+i] = creal(htPlusHarmonic);
+          hPlusAmpIm->data[length*(nHarmonic-1)+i] = cimag(htPlusHarmonic);
+          hCrossAmpRe->data[length*(nHarmonic-1)+i] = creal(htCrossHarmonic);
+          hCrossAmpIm->data[length*(nHarmonic-1)+i] = cimag(htCrossHarmonic);
+        }
+      }
+
+      //initiate the interpolation structures
+      for(nHarmonic = minHarmonic; nHarmonic <= maxHarmonic; nHarmonic++)
+      {
+        interpHPlusRe[nHarmonic-1] =
+        gsl_spline_alloc(gsl_interp_cspline, length);
+        status = gsl_spline_init(interpHPlusRe[nHarmonic-1],
+        y->data, &hPlusAmpRe->data[length*(nHarmonic-1)], length);
+        if(status != GSL_SUCCESS)
+        {
+          XLALPrintError("XLAL Error - %s: spline interpolation returned with error code %d\n",
+          __func__, status );
+          XLAL_ERROR(XLAL_EFUNC);
+        }
+
+        interpHPlusIm[nHarmonic-1] =
+        gsl_spline_alloc(gsl_interp_cspline, length);
+        status = gsl_spline_init(interpHPlusIm[nHarmonic-1],
+        y->data, &hPlusAmpIm->data[length*(nHarmonic-1)], length);
+        if(status != GSL_SUCCESS)
+        {
+          XLALPrintError("XLAL Error - %s: spline interpolation returned with error code %d\n",
+          __func__, status );
+          XLAL_ERROR(XLAL_EFUNC);
+        }
+
+        interpHCrossRe[nHarmonic-1] =
+        gsl_spline_alloc(gsl_interp_cspline, length);
+        status = gsl_spline_init(interpHCrossRe[nHarmonic-1],
+        y->data, &hCrossAmpRe->data[length*(nHarmonic-1)], length);
+        if(status != GSL_SUCCESS)
+        {
+          XLALPrintError("XLAL Error - %s: spline interpolation returned with error code %d\n",
+          __func__, status );
+          XLAL_ERROR(XLAL_EFUNC);
+        }
+
+        interpHCrossIm[nHarmonic-1] =
+        gsl_spline_alloc(gsl_interp_cspline, length);
+        status = gsl_spline_init(interpHCrossIm[nHarmonic-1],
+        y->data, &hCrossAmpIm->data[length*(nHarmonic-1)], length);
+        if(status != GSL_SUCCESS)
+        {
+          XLALPrintError("XLAL Error - %s: spline interpolation returned with error code %d\n",
+          __func__, status );
+          XLAL_ERROR(XLAL_EFUNC);
+        }
+
+        interpPhase[nHarmonic-1] =
+        gsl_spline_alloc(gsl_interp_cspline, length);
+        status = gsl_spline_init(interpPhase[nHarmonic-1],
+        &freq->data[length*(nHarmonic-1)], &phase->data[length*(nHarmonic-1)],
+        length);
+        if(status != GSL_SUCCESS)
+        {
+          XLALPrintError("XLAL Error - %s: spline interpolation returned with error code %d\n",
+          __func__, status );
+          XLAL_ERROR(XLAL_EFUNC);
+        }
+
+        interpT[nHarmonic-1] =
+        gsl_spline_alloc(gsl_interp_cspline, length);
+        status = gsl_spline_init(interpT[nHarmonic-1],
+        &freq->data[length*(nHarmonic-1)], &TArray->data[length*(nHarmonic-1)],
+        length);
+        if(status != GSL_SUCCESS)
+        {
+          XLALPrintError("XLAL Error - %s: spline interpolation returned with error code %d\n",
+          __func__, status );
+          XLAL_ERROR(XLAL_EFUNC);
+        }
+      }
+
+      REAL8 Psi = 0.;
+      REAL8 htPlusRe = 0.;
+      REAL8 htPlusIm = 0.;
+      REAL8 htCrossRe = 0.;
+      REAL8 htCrossIm = 0.;
+
+      for(i = 0, j = iFirstSample; i < nFreqSamples; i++, j++) // loop over the output frequencies
+      {
+        fCur = j*deltaF;
+
+        for(nHarmonic = minHarmonic; nHarmonic <= maxHarmonic; nHarmonic++) // loop over the harmonic number
+        {
+          omegaHatCur = freqToOmegaHat*fCur/nHarmonic;
+
+          status = gsl_spline_eval_e(interp_t_of_f, omegaHatCur,
+          accel, &tCur);
+          // if return is non-zero, then the harmonic contributes nothing
+          if(status == GSL_SUCCESS)
+          {
+            status = gsl_spline_eval_e(interpPhase[nHarmonic-1],
+            fCur, accel, &Psi);
+            status = gsl_spline_eval_e(interpT[nHarmonic-1],
+            fCur, accel, &T);
+
+            // k = 0
+            iK = iMinKMax[kMaxCur];
+
+            status = gsl_spline_eval_e(interpHPlusRe[nHarmonic-1], tCur,
+            accel_k, &htPlusRe);
+            status = gsl_spline_eval_e(interpHPlusIm[nHarmonic-1], tCur,
+            accel_k, &htPlusIm);
+            status = gsl_spline_eval_e(interpHCrossRe[nHarmonic-1], tCur,
+            accel_k, &htCrossRe);
+            status = gsl_spline_eval_e(interpHCrossIm[nHarmonic-1], tCur,
+            accel_k, &htCrossIm);
+
+            htPlusHarmonic = akCsts[iK]*(htPlusRe + I*htPlusIm);
+            htCrossHarmonic = akCsts[iK]*(htCrossRe + I*htCrossIm);
+
+            for(k = 1, iK++; k <= kMaxCur; k++, iK++) // loop over k
+            {
+              tK = tCur + k*T;
+
+              status =
+              gsl_spline_eval_e(interpHPlusRe[nHarmonic-1], tK,
+              accel_k, &htPlusRe);
+              // if return is non-zero, then the k value contributes nothing
+              if(status == GSL_SUCCESS)
+              {
+                status =
+                gsl_spline_eval_e(interpHPlusIm[nHarmonic-1], tK,
+                accel_k, &htPlusIm);
+                status =
+                gsl_spline_eval_e(interpHCrossRe[nHarmonic-1], tK, accel_k,
+                &htCrossRe);
+                status =
+                gsl_spline_eval_e(interpHCrossIm[nHarmonic-1], tK, accel_k,
+                &htCrossIm);
+
+                htPlusHarmonic += akCsts[iK]*(htPlusRe + I*htPlusIm);
+                htCrossHarmonic += akCsts[iK]*(htCrossRe + I*htCrossIm);
+              }
+
+              tK = tCur - k*T;
+
+              status = gsl_spline_eval_e(interpHPlusRe[nHarmonic-1], tK,
+                accel_k, &htPlusRe);
+              // if return is non-zero, then the -k value contributes nothing
+              if(status == GSL_SUCCESS)
+              {
+                status = gsl_spline_eval_e(interpHPlusIm[nHarmonic-1], tK,
+                accel_k, &htPlusIm);
+                status = gsl_spline_eval_e(interpHCrossRe[nHarmonic-1], tK,
+                accel_k, &htCrossRe);
+                status = gsl_spline_eval_e(interpHCrossIm[nHarmonic-1], tK,
+                accel_k, &htCrossIm);
+
+                htPlusHarmonic += akCsts[iK]*(htPlusRe + I*htPlusIm);
+                htCrossHarmonic += akCsts[iK]*(htCrossRe + I*htCrossIm);
+              }
+            }
+
+            cPhase = cexp(I*Psi);
+
+            hplustilde->data->data[j] += conj(htPlusHarmonic*cPhase);
+            hcrosstilde->data->data[j] += conj(htCrossHarmonic*cPhase);
+          }
+        }
+      }
+
+      for(nHarmonic = minHarmonic; nHarmonic <= maxHarmonic; nHarmonic++) // free the interpolatin objects
+      {
+        gsl_spline_free(interpHPlusRe[nHarmonic-1]);
+        gsl_spline_free(interpHPlusIm[nHarmonic-1]);
+        gsl_spline_free(interpHCrossRe[nHarmonic-1]);
+        gsl_spline_free(interpHCrossIm[nHarmonic-1]);
+        gsl_spline_free(interpT[nHarmonic-1]);
+        gsl_spline_free(interpPhase[nHarmonic-1]);
+      }
+
+      XLALDestroyREAL8Array(freq);
+      XLALDestroyREAL8Array(hPlusAmpRe);
+      XLALDestroyREAL8Array(hPlusAmpIm);
+      XLALDestroyREAL8Array(hCrossAmpRe);
+      XLALDestroyREAL8Array(hCrossAmpIm);
+      XLALDestroyREAL8Array(TArray);
+      XLALDestroyREAL8Array(phase);
+    }
+
+
+
+    gsl_interp_accel_free(accel);
+    gsl_interp_accel_free(accel_k);
+    gsl_spline_free(interp_t_of_f);
+
+    for(i = 0; i < nParams-1; i++) {
+      gsl_spline_free(interp[i]);
+    }
+
+    XLAL_ENDGSL;
+
+
+    XLALDestroyREAL8Array(y);
+
+    return XLAL_SUCCESS;
+}
+
+
+
+
+
+
+/**
+ * Driver routine to compute a precessing post-Newtonian inspiral waveform in the Fourier domain
+ * with phasing computed from energy balance using the so-called \"T4\" method.
+ *
+ * This routine allows the user to specify different pN orders
+ * for the phasing and amplitude of the waveform.
+ *
+ * The reference frequency fRef is used as follows:
+ * 1) if fRef = 0: The initial values of s1, s2, lnhat and e1 will be the
+ * values at frequency fStart. The orbital phase of the last sample is set
+ * to phiRef (i.e. phiRef is the "coalescence phase", roughly speaking).
+ * THIS IS THE DEFAULT BEHAVIOR CONSISTENT WITH OTHER APPROXIMANTS
+ *
+ * 2) If fRef = fStart: The initial values of s1, s2, lnhat and e1 will be the
+ * values at frequency fStart. phiRef is used to set the orbital phase
+ * of the first sample at fStart.
+ *
+ * 3) If fRef > fStart: The initial values of s1, s2, lnhat and e1 will be the
+ * values at frequency fRef. phiRef is used to set the orbital phase at fRef.
+ * The code will integrate forwards and backwards from fRef and stitch the
+ * two together to create a complete waveform. This allows one to specify
+ * the orientation of the binary in-band (or at any arbitrary point).
+ * Otherwise, the user can only directly control the initial orientation.
+ *
+ * 4) fRef < 0 or fRef >= Schwarz. ISCO are forbidden and the code will abort.
+ *
+ * It is recommended, but not necessary to set fStart slightly smaller than fMin,
+ * e.g. fStart = 9.5 for fMin = 10.
+ *
+ * The returned Fourier series are set so that the Schwarzschild ISCO frequency
+ * corresponds to t = 0 as closely as possible.
+ *
+ */
+int XLALSimInspiralSpinTaylorT4Fourier(
+        COMPLEX16FrequencySeries **hplus,        /**< +-polarization waveform */
+        COMPLEX16FrequencySeries **hcross,       /**< x-polarization waveform */
+        REAL8 fMin,                     /**< minimum frequency of the returned series */
+        REAL8 fMax,                     /**< maximum frequency of the returned series */
+        REAL8 deltaF,                   /**< frequency interval of the returned series */
+        INT4 kMax,                      /**< k_max as described in defined arXiv: 1408.5158 (min 0, max 10). */
+        REAL8 phiRef,                   /**< orbital phase at reference pt. */
+        REAL8 v0,                       /**< tail gauge term (default = 1) */
+        REAL8 m1,                       /**< mass of companion 1 (kg) */
+        REAL8 m2,                       /**< mass of companion 2 (kg) */
+        REAL8 fStart,                   /**< start GW frequency (Hz) */
+        REAL8 fRef,                     /**< reference GW frequency (Hz) */
+        REAL8 r,                        /**< distance of source (m) */
+        REAL8 s1x,                      /**< initial value of S1x */
+        REAL8 s1y,                      /**< initial value of S1y */
+        REAL8 s1z,                      /**< initial value of S1z */
+        REAL8 s2x,                      /**< initial value of S2x */
+        REAL8 s2y,                      /**< initial value of S2y */
+        REAL8 s2z,                      /**< initial value of S2z */
+        REAL8 lnhatx,                   /**< initial value of LNhatx */
+        REAL8 lnhaty,                   /**< initial value of LNhaty */
+        REAL8 lnhatz,                   /**< initial value of LNhatz */
+        REAL8 e1x,                      /**< initial value of E1x */
+        REAL8 e1y,                      /**< initial value of E1y */
+        REAL8 e1z,                      /**< initial value of E1z */
+        REAL8 lambda1,                  /**< (tidal deformability of mass 1) / (mass of body 1)^5 (dimensionless) */
+        REAL8 lambda2,                  /**< (tidal deformability of mass 2) / (mass of body 2)^5 (dimensionless) */
+        REAL8 quadparam1,               /**< phenom. parameter describing induced quad. moment of body 1 (=1 for BHs, ~2-12 for NSs) */
+        REAL8 quadparam2,               /**< phenom. parameter describing induced quad. moment of body 2 (=1 for BHs, ~2-12 for NSs) */
+        LALSimInspiralSpinOrder spinO,  /**< twice PN order of spin effects */
+        LALSimInspiralTidalOrder tideO, /**< twice PN order of tidal effects */
+        INT4 phaseO,                     /**< twice PN phase order */
+        INT4 amplitudeO,                /**< twice PN amplitude order */
+        INT4 phiRefAtEnd                /**< whether phiRef corresponds to the end of the inspiral */
+        )
+{
+    Approximant approx = SpinTaylorT4;
+    int n = XLALSimInspiralSpinTaylorDriverFourier(hplus, hcross, fMin, fMax,
+            deltaF, kMax, phiRef, v0,
+            m1, m2, fStart, fRef, r, s1x, s1y, s1z, s2x, s2y, s2z,
+            lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, lambda1, lambda2,
+            quadparam1, quadparam2, spinO, tideO, phaseO, amplitudeO, approx, phiRefAtEnd);
+
+    return n;
+}
+
+
+
+
+
+
+/**
+ * Driver routine to compute a precessing post-Newtonian inspiral waveform in the Fourier domain
+ * with phasing computed from energy balance using the so-called \"T2\" method.
+ *
+ * This routine allows the user to specify different pN orders
+ * for the phasing and amplitude of the waveform.
+ *
+ * The reference frequency fRef is used as follows:
+ * 1) if fRef = 0: The initial values of s1, s2, lnhat and e1 will be the
+ * values at frequency fStart. The orbital phase of the last sample is set
+ * to phiRef (i.e. phiRef is the "coalescence phase", roughly speaking).
+ * THIS IS THE DEFAULT BEHAVIOR CONSISTENT WITH OTHER APPROXIMANTS
+ *
+ * 2) If fRef = fStart: The initial values of s1, s2, lnhat and e1 will be the
+ * values at frequency fStart. phiRef is used to set the orbital phase
+ * of the first sample at fStart.
+ *
+ * 3) If fRef > fStart: The initial values of s1, s2, lnhat and e1 will be the
+ * values at frequency fRef. phiRef is used to set the orbital phase at fRef.
+ * The code will integrate forwards and backwards from fRef and stitch the
+ * two together to create a complete waveform. This allows one to specify
+ * the orientation of the binary in-band (or at any arbitrary point).
+ * Otherwise, the user can only directly control the initial orientation.
+ *
+ * 4) fRef < 0 or fRef >= Schwarz. ISCO are forbidden and the code will abort.
+ *
+ * It is recommended, but not necessary to set fStart slightly smaller than fMin,
+ * e.g. fStart = 9.5 for fMin = 10.
+ *
+ * The returned Fourier series are set so that the Schwarzschild ISCO frequency
+ * corresponds to t = 0 as closely as possible.
+ *
+ */
+int XLALSimInspiralSpinTaylorT2Fourier(
+        COMPLEX16FrequencySeries **hplus,        /**< +-polarization waveform */
+        COMPLEX16FrequencySeries **hcross,       /**< x-polarization waveform */
+        REAL8 fMin,                     /**< minimum frequency of the returned series */
+        REAL8 fMax,                     /**< maximum frequency of the returned series */
+        REAL8 deltaF,                   /**< frequency interval of the returned series */
+        INT4 kMax,                      /**< k_max as described in arXiv: 1408.5158 (min 0, max 10). */
+        REAL8 phiRef,                   /**< orbital phase at reference pt. */
+        REAL8 v0,                       /**< tail gauge term (default = 1) */
+        REAL8 m1,                       /**< mass of companion 1 (kg) */
+        REAL8 m2,                       /**< mass of companion 2 (kg) */
+        REAL8 fStart,                   /**< start GW frequency (Hz) */
+        REAL8 fRef,                     /**< reference GW frequency (Hz) */
+        REAL8 r,                        /**< distance of source (m) */
+        REAL8 s1x,                      /**< initial value of S1x */
+        REAL8 s1y,                      /**< initial value of S1y */
+        REAL8 s1z,                      /**< initial value of S1z */
+        REAL8 s2x,                      /**< initial value of S2x */
+        REAL8 s2y,                      /**< initial value of S2y */
+        REAL8 s2z,                      /**< initial value of S2z */
+        REAL8 lnhatx,                   /**< initial value of LNhatx */
+        REAL8 lnhaty,                   /**< initial value of LNhaty */
+        REAL8 lnhatz,                   /**< initial value of LNhatz */
+        REAL8 e1x,                      /**< initial value of E1x */
+        REAL8 e1y,                      /**< initial value of E1y */
+        REAL8 e1z,                      /**< initial value of E1z */
+        REAL8 lambda1,                  /**< (tidal deformability of mass 1) / (mass of body 1)^5 (dimensionless) */
+        REAL8 lambda2,                  /**< (tidal deformability of mass 2) / (mass of body 2)^5 (dimensionless) */
+        REAL8 quadparam1,               /**< phenom. parameter describing induced quad. moment of body 1 (=1 for BHs, ~2-12 for NSs) */
+        REAL8 quadparam2,               /**< phenom. parameter describing induced quad. moment of body 2 (=1 for BHs, ~2-12 for NSs) */
+        LALSimInspiralSpinOrder spinO,  /**< twice PN order of spin effects */
+        LALSimInspiralTidalOrder tideO, /**< twice PN order of tidal effects */
+        INT4 phaseO,                     /**< twice PN phase order */
+        INT4 amplitudeO,                /**< twice PN amplitude order */
+        INT4 phiRefAtEnd                /**< whether phiRef corresponds to the end of the inspiral */
+        )
+{
+    Approximant approx = SpinTaylorT2;
+    int n = XLALSimInspiralSpinTaylorDriverFourier(hplus, hcross, fMin,
+            fMax, deltaF, kMax, phiRef, v0,
+            m1, m2, fStart, fRef, r, s1x, s1y, s1z, s2x, s2y, s2z,
+            lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, lambda1, lambda2,
+            quadparam1, quadparam2, spinO, tideO, phaseO, amplitudeO, approx, phiRefAtEnd);
+
+    return n;
+}

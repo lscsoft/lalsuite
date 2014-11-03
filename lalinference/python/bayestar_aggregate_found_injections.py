@@ -52,7 +52,7 @@ if __name__ == '__main__':
                 help="Number of threads [default: %default]"),
             Option("-p", "--contour", default=[], action="append",
                 type=float, metavar="PERCENT",
-                help="Report the area of the smallest contour and the number of modes"
+                help="Report the area of the smallest contour and the number of modes "
                 + "containing this much probability. Can be repeated mulitple times"),
             Option("--modes", default=False, action="store_true",
                 help="Compute number of disjoint modes [default: %default]")

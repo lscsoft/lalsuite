@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALMetaIO],[1.2.0.1],[lal-discuss@ligo.org])
+AC_INIT([LALMetaIO],[1.2.2.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h src/LALMetaIOConfig.h])
 AC_CONFIG_SRCDIR([src/LIGOLwXML.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -7,7 +7,6 @@ AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
   lalmetaio.spec \
   lalmetaio.pc \
-  lalmetaio-uninstalled.pc \
   Makefile \
   debian/Makefile \
   include/Makefile \
@@ -45,7 +44,7 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
 AC_SUBST([LIBCURRENT],[4])
-AC_SUBST([LIBREVISION],[0])
+AC_SUBST([LIBREVISION],[1])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 
@@ -100,8 +99,8 @@ AC_CHECK_LIB([metaio],[MetaioOpen],,[AC_MSG_ERROR([could not find the metaio lib
 AC_CHECK_HEADERS([metaio.h],,[AC_MSG_ERROR([could not find the metaio.h header])])
 
 # check for lal libraries and headers
-LALSUITE_CHECK_LIB([LAL],[6.12.0],[LALVersion],[lal/LALStdio.h])
-LALSUITE_CHECK_LIB([LALSupport],[6.12.0],[XLALCacheImport],[lal/LALCache.h])
+LALSUITE_CHECK_LIB([LAL],[6.13.0],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSupport],[6.13.0],[XLALCacheImport],[lal/LALCache.h])
 
 # configure SWIG wrapping modules
 LALSUITE_USE_SWIG

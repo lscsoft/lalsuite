@@ -1103,37 +1103,12 @@ REAL8 calculate_lalsim_snr(SimInspiralTable *inj, char *IFOname, REAL8FrequencyS
   approx=XLALGetApproximantFromString(inj->waveform);
   LALSimulationDomain modelDomain;
 
-  switch(approx)
+  if(XLALSimInspiralImplementedFDApproximants(approx)) modelDomain = LAL_SIM_DOMAIN_FREQUENCY;
+  else if(XLALSimInspiralImplementedTDApproximants(approx)) modelDomain = LAL_SIM_DOMAIN_TIME;
+  else
   {
-    case GeneratePPN:
-    case TaylorT1:
-    case TaylorT2:
-    case TaylorT3:
-    case TaylorT4:
-    case EOB:
-    case EOBNR:
-    case EOBNRv2:
-    case EOBNRv2HM:
-    case SpinTaylor:
-    case SpinTaylorT4:
-    case SpinQuadTaylor:
-    case SpinTaylorFrameless:
-    case PhenSpinTaylorRD:
-    case NumRel:
-      modelDomain=LAL_SIM_DOMAIN_TIME;
-      break;
-    case TaylorF1:
-    case TaylorF2:
-    case TaylorF2RedSpin:
-    case TaylorF2RedSpinTidal:
-    case IMRPhenomA:
-    case IMRPhenomB:
-      modelDomain=LAL_SIM_DOMAIN_FREQUENCY;
-      break;
-    default:
       fprintf(stderr,"ERROR. Unknown approximant number %i. Unable to choose time or frequency domain model.",approx);
       exit(1);
-      break;
   }
 
   REAL8 m1,m2, s1x,s1y,s1z,s2x,s2y,s2z,phi0,f_min,f_max,iota,polarization,
@@ -1267,22 +1242,27 @@ REAL8 calculate_lalsim_snr(SimInspiralTable *inj, char *IFOname, REAL8FrequencyS
     REAL8TimeSeries *hcross=NULL;
     REAL8TimeSeries *timeHplus=NULL;
     REAL8TimeSeries *timeHcross=NULL;
-
+    REAL8 padding =0.4;//seconds
+    REAL8Window *window=XLALCreateTukeyREAL8Window(seglen,(REAL8)2.0*padding*srate/(REAL8)seglen);
+    REAL4 WinNorm = sqrt(window->sumofsquares/window->data->length);
     timeHcross=XLALCreateREAL8TimeSeries("timeModelhCross",
       &epoch,
       0.0,
       deltaT,
-      &lalDimensionlessUnit,
+      &lalStrainUnit,
       seglen
     );
     timeHplus=XLALCreateREAL8TimeSeries("timeModelhplus",
       &epoch,
       0.0,
       deltaT,
-      &lalDimensionlessUnit,
+      &lalStrainUnit,
       seglen
     );
-
+    for (j=0;j<(UINT4) timeHcross->data->length;++j)
+      timeHcross->data->data[j]=0.0;
+    for (j=0;j<(UINT4) timeHplus->data->length;++j)
+      timeHplus->data->data[j]=0.0;
     XLAL_TRY(ret=XLALSimInspiralChooseTDWaveform(&hplus, &hcross, phi0, deltaT,
         m1, m2, s1x, s1y, s1z, s2x, s2y, s2z, f_min, 0., LAL_PC_SI*1.0e6,
         iota, lambda1, lambda2, waveFlags, nonGRparams, amporder, order, approx),
@@ -1294,11 +1274,13 @@ REAL8 calculate_lalsim_snr(SimInspiralTable *inj, char *IFOname, REAL8FrequencyS
       exit(1);
     }
 
-    memset(timeHplus->data->data, 0, sizeof (REAL8)*timeHplus->data->length);
-    memset(timeHcross->data->data, 0, sizeof (REAL8)*timeHcross->data->length);
-    memcpy(timeHplus->data->data, hplus->data->data,hplus->data->length*sizeof(REAL8));
-    memcpy(timeHcross->data->data, hcross->data->data ,hplus->data->length*sizeof(REAL8));
-
+    XLALSimAddInjectionREAL8TimeSeries(timeHplus, hplus, NULL);
+    XLALSimAddInjectionREAL8TimeSeries(timeHcross, hcross, NULL);
+    for (j=0; j<(UINT4) timeHplus->data->length; ++j)
+      timeHplus->data->data[j]*=window->data->data[j];
+    for (j=0; j<(UINT4) timeHcross->data->length; ++j)
+      timeHcross->data->data[j]*=window->data->data[j];
+      
     for (j=0; j<(UINT4) freqHplus->data->length; ++j)
     {
       freqHplus->data->data[j]=0.0+I*0.0;
@@ -1308,14 +1290,18 @@ REAL8 calculate_lalsim_snr(SimInspiralTable *inj, char *IFOname, REAL8FrequencyS
     /* FFT into freqHplus and freqHcross */
     XLALREAL8TimeFreqFFT(freqHplus,timeHplus,timeToFreqFFTPlan);
     XLALREAL8TimeFreqFFT(freqHcross,timeHcross,timeToFreqFFTPlan);
-
+    for (j=0; j<(UINT4) freqHplus->data->length; ++j)
+    {
+      freqHplus->data->data[j]/=WinNorm;
+      freqHcross->data->data[j]/=WinNorm;
+    }
     /* Clean... */
     if ( hplus ) XLALDestroyREAL8TimeSeries(hplus);
     if ( hcross ) XLALDestroyREAL8TimeSeries(hcross);
     if ( timeHplus ) XLALDestroyREAL8TimeSeries(timeHplus);
     if ( timeHcross ) XLALDestroyREAL8TimeSeries(timeHcross);
     if (timeToFreqFFTPlan) LALFree(timeToFreqFFTPlan);
-
+    if (window) XLALDestroyREAL8Window(window);
   }
 
   /* The WF has been generated and is in freqHplus/cross. Now project into the IFO frame */

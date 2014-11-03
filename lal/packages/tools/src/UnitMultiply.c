@@ -44,7 +44,7 @@
  * \frac{N_1}{1+D_1} + \frac{N_2}{1+D_2} =
  * \frac{N_1 (1+D_2) +  N_2(1+D_1)}{1 + (1+D_1)(1+D_2)-1}
  * \f]
- * and then calls <tt>LALUnitNormalize()</tt> to bring the result into
+ * and then calls <tt>XLALUnitNormalize()</tt> to bring the result into
  * standard form.
  *
  */
@@ -116,34 +116,4 @@ LALUnit * XLALUnitDivide( LALUnit *output, const LALUnit *unit1, const LALUnit *
   return output;
 }
 
-/**
- * DEPRECATED.
- * \deprecated Use XLALUnitMultiply() instead.
- */
-void
-LALUnitMultiply (LALStatus *status, LALUnit *output, const LALUnitPair *input)
-
-{
-  XLAL_PRINT_DEPRECATION_WARNING("XLALUnitMultiply");
-  INITSTATUS(status);
-
-  ASSERT( input != NULL, status, UNITSH_ENULLPIN, UNITSH_MSGENULLPIN );
-
-  ASSERT( output != NULL, status, UNITSH_ENULLPOUT, UNITSH_MSGENULLPOUT );
-
-
-  if ( ! XLALUnitMultiply( output, input->unitOne, input->unitTwo ) )
-  {
-    int code = xlalErrno;
-    XLALClearErrno();
-    switch ( code )
-    {
-      case XLAL_ERANGE:
-        ABORT(status, UNITSH_EOVERFLOW, UNITSH_MSGEOVERFLOW);
-      default:
-        ABORTXLAL(status);
-    }
-  }
-  RETURN(status);
-}
 /*@}*/

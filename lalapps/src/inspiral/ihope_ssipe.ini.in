@@ -732,9 +732,9 @@ param-name = combined_far
 param-ranges = !0
 ;rank-range = !1
 ;Which injection mapping to use; if using injfind:
-map-label = 'sim_inspiral<-->coinc_event coincidences (nearby)'
+;map-label = 'sim_inspiral<-->coinc_event coincidences (nearby)'
 ; if using dbinjfind
-;map-label= 'nearby_insp'
+map-label = 'insp_nearby'
 
 [printmissed]
 ;   set static options for printmissed jobs
@@ -743,9 +743,9 @@ recovery-table = coinc_inspiral
 livetime-program = inspiral
 limit = 10
 ;Which injection mapping to use; if using injfind:
-map-label = 'sim_inspiral<-->coinc_event coincidences (nearby)'
+;map-label = 'sim_inspiral<-->coinc_event coincidences (nearby)'
 ; if using dbinjfind
-;map-label= 'nearby_insp
+map-label = 'insp_nearby'
 
 [plotfm]
 ; establish what plotfm jobs to do; the following options
@@ -770,9 +770,9 @@ simulation-table = sim_inspiral
 recovery-table = coinc_inspiral
 livetime-program = inspiral
 ;Which injection mapping to use; if using injfind:
-map-label = 'sim_inspiral<-->coinc_event coincidences (nearby)'
+;map-label = 'sim_inspiral<-->coinc_event coincidences (nearby)'
 ; if using dbinjfind
-;map-label= 'nearby_insp'
+map-label = 'insp_nearby'
 
 [fm_dist_v_end_time]
 ; plot injected decisive distance vs end_time in days
@@ -789,9 +789,9 @@ simulation-table = sim_inspiral
 recovery-table = coinc_inspiral
 livetime-program = inspiral
 ;Which injection mapping to use; if using injfind:
-map-label = 'sim_inspiral<-->coinc_event coincidences (nearby)'
+;map-label = 'sim_inspiral<-->coinc_event coincidences (nearby)'
 ; if using dbinjfind
-;map-label= 'nearby_insp'
+map-label = 'insp_nearby'
 
 [fm_dist_v_dt]
 ; plot injected decisive distance v. difference in recovered/injected end-times
@@ -805,9 +805,9 @@ simulation-table = sim_inspiral
 recovery-table = coinc_inspiral
 livetime-program = inspiral
 ;Which injection mapping to use; if using injfind:
-map-label = 'sim_inspiral<-->coinc_event coincidences (nearby)'
+;map-label = 'sim_inspiral<-->coinc_event coincidences (nearby)'
 ; if using dbinjfind
-;map-label= 'nearby_insp'
+map-label = 'insp_nearby'
 
 [fm_lin_plots]
 ; plot linear fm plots
@@ -820,9 +820,9 @@ simulation-table = sim_inspiral
 recovery-table = coinc_inspiral
 livetime-program = inspiral
 ;Which injection mapping to use; if using injfind:
-map-label = 'sim_inspiral<-->coinc_event coincidences (nearby)'
+;map-label = 'sim_inspiral<-->coinc_event coincidences (nearby)'
 ; if using dbinjfind
-;map-label= 'nearby_insp'
+map-label = 'insp_nearby'
 
 [minifollowups]
 ;   set static options for minifollowup jobs
@@ -902,8 +902,8 @@ all-instruments = H1,L1,V1
 number = 10
 ;apply-weights =
 ;check-weights =
-exact-tag = exact_insp
-nearby-tag = nearby_insp
+exact-tag = insp_exact
+nearby-tag = insp_nearby
 ;start-time = 0
 ;end-time  = 999999999
 

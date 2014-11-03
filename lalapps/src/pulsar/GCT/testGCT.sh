@@ -154,7 +154,7 @@ FreqStep=`echo $mfd_FreqBand $numFreqBands |  awk '{print $1 / $2}'`
 mfd_fBand=`echo $FreqStep $Tsft |  awk '{print ($1 - 1.5 / $2)}'`	## reduce by 1/2 a bin to avoid including last freq-bins
 
 # construct common MFD cmd
-mfd_CL_common="--Band=${mfd_fBand} --injectionSources=\"Freq=$Freq; f1dot=$f1dot; f2dot=$f2dot; Alpha=$Alpha; Delta=$Delta; psi=$psi; phi0=$phi0; h0=$h0; cosi=$cosi; refTime=$refTime\" --Tsft=$Tsft --randSeed=1000 --outSingleSFT --IFOs=H1,L1 --timestampsFiles=${tsFile_H1},${tsFile_L1}"
+mfd_CL_common="--Band=${mfd_fBand} --injectionSources=\"{Freq=$Freq; f1dot=$f1dot; f2dot=$f2dot; Alpha=$Alpha; Delta=$Delta; psi=$psi; phi0=$phi0; h0=$h0; cosi=$cosi; refTime=$refTime}\" --Tsft=$Tsft --randSeed=1000 --outSingleSFT --IFOs=H1,L1 --timestampsFiles=${tsFile_H1},${tsFile_L1}"
 
 if [ "$sqrtSh" != "0" ]; then
     mfd_CL_common="$mfd_CL_common --sqrtSX=${sqrtSh},${sqrtSh}";
@@ -164,7 +164,7 @@ iFreq=1
 while [ $iFreq -le $numFreqBands ]; do
     mfd_fi=`echo $mfd_fmin $iFreq $FreqStep | awk '{print $1 + ($2 - 1) * $3}'`
 
-    cmdline="$mfd_code $mfd_CL_common --fmin=$mfd_fi --outSFTdir=${SFTdir}"
+    cmdline="$mfd_code $mfd_CL_common --fmin=$mfd_fi --outSFTdir=${SFTdir} --outLabel=freqBand$iFreq"
     if [ -n "$DEBUG" ]; then
         cmdline="$cmdline"
     else
@@ -190,7 +190,7 @@ outfile_cfs="${testDir}/CFS.dat";
 
 if [ ! -r "$outfile_cfs" ]; then
     tmpfile_cfs="${testDir}/__tmp_CFS.dat";
-    cfs_CL_common=" --Alpha=$Alpha --Delta=$Delta --Freq=$Freq --f1dot=$f1dot --f2dot=$f2dot --outputLoudest=$tmpfile_cfs --refTime=$refTime --Dterms=$Dterms --RngMedWindow=$RngMedWindow --computeLV "
+    cfs_CL_common=" --Alpha=$Alpha --Delta=$Delta --Freq=$Freq --f1dot=$f1dot --f2dot=$f2dot --outputLoudest=$tmpfile_cfs --refTime=$refTime --Dterms=$Dterms --RngMedWindow=$RngMedWindow --outputSingleFstats"
     if [ "$sqrtSh" = "0" ]; then
         cfs_CL_common="$cfs_CL_common --SignalOnly";
     fi
@@ -257,7 +257,7 @@ if [ "$sqrtSh" = "0" ]; then
     gct_CL_common="$gct_CL_common --SignalOnly";
 fi
 
-LV_flags="--computeLV --LVrho=5.0 --LVlX='0.5,0.5' --recalcToplistStats"
+BSGL_flags="--computeBSGL --Fstar0=10 --oLGX='0.5,0.5' --recalcToplistStats"
 
 echo
 echo "----------------------------------------------------------------------------------------------------"
@@ -269,7 +269,7 @@ rm -f checkpoint.cpt # delete checkpoint to start correctly
 outfile_GCT_RS="${testDir}/GCT_RS.dat"
 timingsfile_RS="${testDir}/timing_RS.dat"
 
-cmdline="$gct_code $gct_CL_common --FstatMethod=ResampGeneric --fnameout='$outfile_GCT_RS' --outputTiming='$timingsfile_RS' --recalcToplistStats ${LV_flags}"
+cmdline="$gct_code $gct_CL_common --FstatMethod=ResampGeneric --fnameout='$outfile_GCT_RS' --outputTiming='$timingsfile_RS' --recalcToplistStats ${BSGL_flags}"
 if [ -n "$DEBUG" ]; then
     cmdline="$cmdline"
 else
@@ -286,8 +286,8 @@ resGCT_RS=$(echo $topline | awk '{print $7}')
 resGCT_RS_H1=$(echo $topline | awk '{print $9}')
 resGCT_RS_L1=$(echo $topline | awk '{print $10}')
 resGCT_RSr=$(echo $topline  | awk '{print $11}')
-resGCT_RSr_H1=$(echo $topline  | awk '{print $12}')
-resGCT_RSr_L1=$(echo $topline  | awk '{print $13}')
+resGCT_RSr_H1=$(echo $topline  | awk '{print $13}')
+resGCT_RSr_L1=$(echo $topline  | awk '{print $14}')
 
 echo
 echo "----------------------------------------------------------------------------------------------------"
@@ -299,7 +299,7 @@ rm -f checkpoint.cpt # delete checkpoint to start correctly
 outfile_GCT_DM="${testDir}/GCT_DM.dat"
 timingsfile_DM="${testDir}/timing_DM.dat"
 
-cmdline="$gct_code $gct_CL_common --FstatMethod=DemodOptC --fnameout='$outfile_GCT_DM' --outputTiming='$timingsfile_DM' ${LV_flags}"
+cmdline="$gct_code $gct_CL_common --FstatMethod=DemodOptC --fnameout='$outfile_GCT_DM' --outputTiming='$timingsfile_DM' ${BSGL_flags}"
 if [ -n "$DEBUG" ]; then
     cmdline="$cmdline"
 else
@@ -318,20 +318,20 @@ resGCT_DM_H1=$(echo $topline  | awk '{print $9}')
 resGCT_DM_L1=$(echo $topline  | awk '{print $10}')
 freqGCT_DM=$(echo $topline | awk '{print $1}')
 resGCT_DMr=$(echo $topline  | awk '{print $11}')
-resGCT_DMr_H1=$(echo $topline  | awk '{print $12}')
-resGCT_DMr_L1=$(echo $topline  | awk '{print $13}')
+resGCT_DMr_H1=$(echo $topline  | awk '{print $13}')
+resGCT_DMr_L1=$(echo $topline  | awk '{print $14}')
 
 echo
 echo "----------------------------------------------------------------------------------------------------"
-echo " STEP 5: run HierarchSearchGCT using LALDemod (perfect match) and --tStack and --nStacksMax and --computeLV"
+echo " STEP 5: run HierarchSearchGCT using LALDemod (perfect match) and --tStack and --nStacksMax and --computeBSGL"
 echo "----------------------------------------------------------------------------------------------------"
 echo
 
 rm -f checkpoint.cpt # delete checkpoint to start correctly
-outfile_GCT_DM_LV="${testDir}/GCT_DM_LV.dat"
-timingsfile_DM_LV="${testDir}/timing_DM_LV.dat"
+outfile_GCT_DM_BSGL="${testDir}/GCT_DM_BSGL.dat"
+timingsfile_DM_BSGL="${testDir}/timing_DM_BSGL.dat"
 
-cmdline="$gct_code $gct_CL_common --FstatMethod=DemodOptC ${LV_flags} --SortToplist=2 --fnameout='$outfile_GCT_DM_LV' --outputTiming='$timingsfile_DM_LV'"
+cmdline="$gct_code $gct_CL_common --FstatMethod=DemodOptC ${BSGL_flags} --SortToplist=2 --fnameout='$outfile_GCT_DM_BSGL' --outputTiming='$timingsfile_DM_BSGL'"
 if [ -n "$DEBUG" ]; then
     cmdline="$cmdline"
 else
@@ -344,15 +344,15 @@ if ! eval "$cmdline"; then
     exit 1
 fi
 
-topline=$(sort -nr -k7,7 $outfile_GCT_DM_LV | head -1)
-resGCT_DM_LV=$(echo $topline  | awk '{print $7}')
-resGCT_DM_H1_LV=$(echo $topline  | awk '{print $9}')
-resGCT_DM_L1_LV=$(echo $topline  | awk '{print $10}')
-freqGCT_DM_LV=$(echo $topline | awk '{print $1}')
+topline=$(sort -nr -k7,7 $outfile_GCT_DM_BSGL | head -1)
+resGCT_DM_BSGL=$(echo $topline  | awk '{print $7}')
+resGCT_DM_H1_BSGL=$(echo $topline  | awk '{print $9}')
+resGCT_DM_L1_BSGL=$(echo $topline  | awk '{print $10}')
+freqGCT_DM_BSGL=$(echo $topline | awk '{print $1}')
 
 echo
 echo "----------------------------------------------------------------------------------------------------"
-echo " STEP 6: run HierarchSearchGCT using LALDemod (perfect match) with 'dual' toplist: 1st=F, 2nd=LV "
+echo " STEP 6: run HierarchSearchGCT using LALDemod (perfect match) with 'dual' toplist: 1st=F, 2nd=BSGL"
 echo "----------------------------------------------------------------------------------------------------"
 echo
 
@@ -360,7 +360,7 @@ rm -f checkpoint.cpt # delete checkpoint to start correctly
 outfile_GCT_DM_DUAL="${testDir}/GCT_DM_DUAL.dat"
 timingsfile_DM_DUAL="${testDir}/timing_DM_DUAL.dat"
 
-cmdline="$gct_code $gct_CL_common --FstatMethod=DemodOptC --SortToplist=3 ${LV_flags} --fnameout='$outfile_GCT_DM_DUAL' --outputTiming='$timingsfile_DM_DUAL'"
+cmdline="$gct_code $gct_CL_common --FstatMethod=DemodOptC --SortToplist=3 ${BSGL_flags} --fnameout='$outfile_GCT_DM_DUAL' --outputTiming='$timingsfile_DM_DUAL'"
 if [ -n "$DEBUG" ]; then
     cmdline="$cmdline"
 else
@@ -374,9 +374,9 @@ if ! eval "$cmdline"; then
 fi
 
 diff_F=`diff -I "[%][%].*" ${outfile_GCT_DM} ${outfile_GCT_DM_DUAL}`
-diff_LV=`diff -I "[%][%].*" ${outfile_GCT_DM_LV} ${outfile_GCT_DM_DUAL}-LV`
-if [ -n "${diff_F}" -o -n "${diff_LV}" ]; then
-    echo "Error: 'dual' toplist handling seems to differ from indidual 'F' or 'LV'-sorted toplists"
+diff_BSGL=`diff -I "[%][%].*" ${outfile_GCT_DM_BSGL} ${outfile_GCT_DM_DUAL}-BSGL`
+if [ -n "${diff_F}" -o -n "${diff_BSGL}" ]; then
+    echo "Error: 'dual' toplist handling seems to differ from indidual 'F' or 'BSGL'-sorted toplists"
     exit 1
 fi
 
@@ -401,10 +401,10 @@ reldev_DMr_H1=$(echo $TwoFAvg_H1 $resGCT_DMr_H1 | awk "$awk_reldev")
 reldev_DMr_L1=$(echo $TwoFAvg_L1 $resGCT_DMr_L1 | awk "$awk_reldev")
 
 freqreldev_DM=$(echo $Freq $freqGCT_DM | awk "$awk_reldev")
-reldev_DM_LV=$(echo $TwoFAvg $resGCT_DM_LV | awk "$awk_reldev")
-reldev_DM_H1_LV=$(echo $TwoFAvg_H1 $resGCT_DM_H1_LV | awk "$awk_reldev")
-reldev_DM_L1_LV=$(echo $TwoFAvg_L1 $resGCT_DM_L1_LV | awk "$awk_reldev")
-freqreldev_DM_LV=$(echo $Freq $freqGCT_DM_LV | awk "$awk_reldev")
+reldev_DM_BSGL=$(echo $TwoFAvg $resGCT_DM_BSGL | awk "$awk_reldev")
+reldev_DM_H1_BSGL=$(echo $TwoFAvg_H1 $resGCT_DM_H1_BSGL | awk "$awk_reldev")
+reldev_DM_L1_BSGL=$(echo $TwoFAvg_L1 $resGCT_DM_L1_BSGL | awk "$awk_reldev")
+freqreldev_DM_BSGL=$(echo $Freq $freqGCT_DM_BSGL | awk "$awk_reldev")
 
 # ---------- Check relative deviations against tolerance, report results ----------
 retstatus=0
@@ -414,11 +414,11 @@ echo
 echo "--------- Timings ------------------------------------------------------------------------------------------------"
 awk_timing='{printf "c0ic = %-6.1e s, c1co = %-6.1e s, c0Demod = %-6.1e s,  (%s)", $8, $9, $10, $11, $12}'
 timing_DM=$(sed '/^%.*/d' $timingsfile_DM | awk "$awk_timing")
-timing_DM_LV=$(sed '/^%.*/d' $timingsfile_DM_LV | awk "$awk_timing")
+timing_DM_BSGL=$(sed '/^%.*/d' $timingsfile_DM_BSGL | awk "$awk_timing")
 timing_RS=$(sed '/^%.*/d' $timingsfile_RS | awk "$awk_timing")
-echo " GCT-LALDemod:     $timing_DM"
-echo " GCT-LALDemod-LV:  $timing_DM_LV"
-echo " GCT-Resamp:       $timing_RS"
+echo " GCT-LALDemod:      $timing_DM"
+echo " GCT-LALDemod-BSGL:  $timing_DM_BSGL"
+echo " GCT-Resamp:        $timing_RS"
 
 echo
 echo "--------- Compare results ----------------------------------------------------------------------------------------"
@@ -448,11 +448,11 @@ else
     echo " ==> OK"
 fi
 
-echo -n "==>  GCT-LALDemodLV:	$resGCT_DM_LV 	$resGCT_DM_H1_LV	$resGCT_DM_L1_LV	 @ $freqGCT_DM_LV 	($reldev_DM_LV, $reldev_DM_H1_LV, $reldev_DM_L1_LV, $freqreldev_DM_LV)"
-fail1=$(echo $freqreldev_DM_LV $Tolerance | awk "$awk_isgtr")
-fail2=$(echo $reldev_DM_LV $Tolerance     | awk "$awk_isgtr")
-fail3=$(echo $reldev_DM_H1_LV $Tolerance  | awk "$awk_isgtr")
-fail4=$(echo $reldev_DM_L1_LV $Tolerance  | awk "$awk_isgtr")
+echo -n "==>  GCT-LALDemodBSGL:	$resGCT_DM_BSGL 	$resGCT_DM_H1_BSGL	$resGCT_DM_L1_BSGL	 @ $freqGCT_DM_BSGL 	($reldev_DM_BSGL, $reldev_DM_H1_BSGL, $reldev_DM_L1_BSGL, $freqreldev_DM_BSGL)"
+fail1=$(echo $freqreldev_DM_BSGL $Tolerance | awk "$awk_isgtr")
+fail2=$(echo $reldev_DM_BSGL $Tolerance     | awk "$awk_isgtr")
+fail3=$(echo $reldev_DM_H1_BSGL $Tolerance  | awk "$awk_isgtr")
+fail4=$(echo $reldev_DM_L1_BSGL $Tolerance  | awk "$awk_isgtr")
 if [ "$fail1" -o "$fail2" -o "$fail3" -o "$fail4" ]; then
     echo " ==> *FAILED*"
     retstatus=1
@@ -477,7 +477,8 @@ fail2r=$(echo $reldev_RSr     $Tolerance | awk "$awk_isgtr")
 fail3r=$(echo $reldev_RSr_H1  $Tolerance | awk "$awk_isgtr")
 fail4r=$(echo $reldev_RSr_L1  $Tolerance | awk "$awk_isgtr")
 if [ "$fail2r" -o "$fail3r" -o "$fail4r" ]; then
-    echo " ==> *FAILED* BUT ACCEPTED FOR NOW: FIXME!"
+    echo " ==> *FAILED*"
+    retstatus=1
 else
     echo " ==> OK"
 fi

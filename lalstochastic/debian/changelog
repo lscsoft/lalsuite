@@ -1,3 +1,16 @@
+lalstochastic (1.1.12-1) unstable; urgency=low
+
+  * LALStochastic 1.1.12
+  * correctly package SWIG bindings
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 28 Oct 2014 12:44:20 -0500
+
+lalstochastic (1.1.11-1) unstable; urgency=low
+
+  * LALStochastic 1.1.11
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Mon, 27 Oct 2014 15:29:59 -0500
+
 lalstochastic (1.1.10-1) unstable; urgency=low
 
   * LALStochastic 1.1.10

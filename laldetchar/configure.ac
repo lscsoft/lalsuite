@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALDetChar],[0.1.0.1],[lal-discuss@ligo.org])
+AC_INIT([LALDetChar],[0.2.1.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h src/LALDetCharConfig.h])
 AC_CONFIG_SRCDIR([src/LALDetChar.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -7,7 +7,6 @@ AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
   laldetchar.spec \
   laldetchar.pc \
-  laldetchar-uninstalled.pc \
   Makefile \
   debian/Makefile \
   include/Makefile \
@@ -20,6 +19,7 @@ AC_CONFIG_FILES([ \
   python/laldetchar/__init__.py \
   python/laldetchar/triggers/Makefile \
   python/laldetchar/hveto/Makefile \
+  python/laldetchar/idq/Makefile \
   swig/Makefile \
   test/Makefile
 ])
@@ -46,7 +46,7 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[1])
+AC_SUBST([LIBCURRENT],[2])
 AC_SUBST([LIBREVISION],[0])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
@@ -117,10 +117,10 @@ LALSUITE_ADD_FLAGS([C],[${METAIO_CFLAGS}],[${METAIO_LIBS}])
 AC_CHECK_LIB([metaio],[MetaioOpen],,[AC_MSG_ERROR([could not find the metaio library])])
 
 # check for lal libraries and headers
-LALSUITE_CHECK_LIB([LAL],[6.12.0],[LALVersion],[lal/LALStdio.h])
-LALSUITE_CHECK_LIB([LALSupport],[6.12.0],[XLALCacheImport],[lal/LALCache.h])
+LALSUITE_CHECK_LIB([LAL],[6.13.0],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSupport],[6.13.0],[XLALCacheImport],[lal/LALCache.h])
 LALSUITE_CHECK_LIB([LALMetaIO],[1.2.0],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
-LALSUITE_CHECK_LIB([LALSimulation],[1.1.0],[XLALSimDetectorStrainREAL8TimeSeries],[lal/LALSimulation.h])
+LALSUITE_CHECK_LIB([LALSimulation],[1.2.0],[XLALSimDetectorStrainREAL8TimeSeries],[lal/LALSimulation.h])
 LALSUITE_CHECK_LIB([LALBurst],[1.2.0],[XLALEPSearch],[lal/EPSearch.h])
 
 # configure SWIG wrapping modules

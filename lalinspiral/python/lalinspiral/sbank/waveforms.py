@@ -23,7 +23,7 @@ np.seterr(all="ignore")
 import lal
 import lalsimulation as lalsim
 from lal import MSUN_SI, MTSUN_SI, PC_SI, PI, CreateREAL8Vector, CreateCOMPLEX8FrequencySeries
-from lalsimulation import SimInspiralTaylorF2RedSpinComputeNoiseMoments, SimInspiralTaylorF2RedSpinMetricChirpTimes
+from lalsimulation import SimInspiralTaylorF2RedSpinComputeNoiseMoments, SimInspiralTaylorF2RedSpinMetricChirpTimes, SimIMRPhenomPCalculateModelParameters
 from lalinspiral import InspiralSBankComputeMatch
 from lalinspiral.sbank.psds import get_neighborhood_PSD
 from lalinspiral.sbank.tau0tau3 import m1m2_to_tau0tau3
@@ -402,21 +402,22 @@ class PrecessingTemplate(Template):
         return cls(sim.mass1, sim.mass2, sim.spin1x, sim.spin1y, sim.spin1z, sim.spin2x, sim.spin2y, sim.spin2z, np.pi/2 - sim.latitude, sim.longitude, sim.inclination, sim.polarization, bank)
 
 
-
 class IMRPhenomPTemplate(PrecessingTemplate):
     """
     IMRPhenomP precessing IMR model.
     """
 
-    __slots__ = PrecessingTemplate.param_names + ("bank", "_chieff", "_chipre", "_f_final", "_dur", "_mchirp")
+    __slots__ = PrecessingTemplate.param_names + ("bank", "chieff", "chipre", "_f_final", "_dur", "_mchirp")
+    param_names = ("m1", "m2", "chieff", "chipre")
+    param_formats = ("%.2f", "%.2f", "%.2f", "%.2f")
 
     def __init__(self, m1, m2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, theta, phi, iota, psi, bank):
 
         PrecessingTemplate.__init__(self, m1, m2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, theta, phi, iota, psi, bank)
         # derived quantities
-        self._chieff = lalsim.SimIMRPhenomBComputeChi( self.m1, self.m2, self.spin1z, self.spin2z )
-        self._chipre = None # FIXME! What is the formula for this quantity?
-        self._f_final = spawaveform.imrffinal(m1, m2, self._chieff)
+        self.chieff, self.chipre = SimIMRPhenomPCalculateModelParameters(self.m1, self.m2, self.bank.flow, np.sin(self.iota), float(0), np.cos(self.iota), float(self.spin1x), float(self.spin1y), float(self.spin1z), float(self.spin2x), float(self.spin2y), float(self.spin2z))[:2] # FIXME are the other four parameters informative?
+
+        self._f_final = spawaveform.imrffinal(m1, m2, self.chieff)
         self._dur = self._imrdur()
         # FIXME: is this ffinal and dur appropriate for PhenomP?
 
@@ -427,7 +428,7 @@ class IMRPhenomPTemplate(PrecessingTemplate):
         estimate for the length of a full IMR waveform.
         """
         return lalsim.SimInspiralTaylorF2ReducedSpinChirpTime(self.bank.flow,
-            self.m1 * MSUN_SI, self.m2 * MSUN_SI, self._chieff,
+            self.m1 * MSUN_SI, self.m2 * MSUN_SI, self.chieff,
             7) + 1000 * (self.m1 + self.m2) * MTSUN_SI
 
     def _compute_waveform(self, df, f_final):
@@ -442,7 +443,7 @@ class IMRPhenomPTemplate(PrecessingTemplate):
             self.m1*MSUN_SI, self.m2*MSUN_SI,
             self.spin1x, self.spin1y, self.spin1z, self.spin2x, self.spin2y, self.spin2z,
             self.bank.flow, f_final,
-            self.bank.flow, # reference frequency, related to phi0. Is this the right input?
+            40.0, # reference frequency, want it to be fixed to a constant value always and forever
             1e6*PC_SI, # irrelevant parameter for banks/banksims
             self.iota,
             lmbda1, lmbda2, # irrelevant parameters for BBH
@@ -453,99 +454,8 @@ class IMRPhenomPTemplate(PrecessingTemplate):
         return project_hplus_hcross(hplus_fd, hcross_fd, self.theta, self.phi, self.psi)
 
 
-class PrecessingTemplate(Template):
-    """
-    A generic class for precessing templates. These models require the
-    full fifteen-dimensional parameter space to specify the observed
-    signal in the detector.
-    """
-    param_names = ("m1", "m2", "spin1x", "spin1y", "spin1z", "spin2x", "spin2y", "spin2z", "theta", "phi", "iota", "psi")
-    param_formats = ("%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f")
-    __slots__ = param_names + ("bank","_f_final","_dur","_mchirp")
 
-    def __init__(self, m1, m2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, theta, phi, iota, psi, bank):
-
-        Template.__init__(self)
-        self.m1 = m1
-        self.m2 = m2
-        self.spin1x = spin1x
-        self.spin1y = spin1y
-        self.spin1z = spin1z
-        self.spin2x = spin2x
-        self.spin2y = spin2y
-        self.spin2z = spin2z
-        self.theta = theta
-        self.phi = phi
-        self.iota = iota
-        self.psi = psi
-        self.bank = bank
-
-        # derived quantities
-        self._mchirp = compute_mchirp(m1, m2)
-
-    @property
-    def params(self):
-        return tuple(getattr(self, attr) for attr in self.param_names)
-
-    @classmethod
-    def from_sim(cls, sim, bank):
-        # theta = polar angle wrt overhead
-        #       = pi/2 - latitude (which is 0 on the horizon)
-        return cls(sim.mass1, sim.mass2, sim.spin1x, sim.spin1y, sim.spin1z, sim.spin2x, sim.spin2y, sim.spin2z, np.pi/2 - sim.latitude, sim.longitude, sim.inclination, sim.polarization, bank)
-
-
-
-class IMRPhenomPTemplate(PrecessingTemplate):
-    """
-    IMRPhenomP precessing IMR model.
-    """
-
-    __slots__ = PrecessingTemplate.param_names + ("bank", "_chieff", "_chipre", "_f_final", "_dur", "_mchirp")
-
-    def __init__(self, m1, m2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, theta, phi, iota, psi, bank):
-
-        PrecessingTemplate.__init__(self, m1, m2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, theta, phi, iota, psi, bank)
-        # derived quantities
-        self._chieff = lalsim.SimIMRPhenomBComputeChi( self.m1, self.m2, self.spin1z, self.spin2z )
-        self._chipre = None # FIXME! What is the formula for this quantity?
-        self._f_final = spawaveform.imrffinal(m1, m2, self._chieff)
-        self._dur = self._imrdur()
-        # FIXME: is this ffinal and dur appropriate for PhenomP?
-
-
-    def _imrdur(self):
-        """
-        Ajith gave us the heuristic that chirp + 1000 M is a conservative
-        estimate for the length of a full IMR waveform.
-        """
-        return lalsim.SimInspiralTaylorF2ReducedSpinChirpTime(self.bank.flow,
-            self.m1 * MSUN_SI, self.m2 * MSUN_SI, self._chieff,
-            7) + 1000 * (self.m1 + self.m2) * MTSUN_SI
-
-    def _compute_waveform(self, df, f_final):
-
-        approx = lalsim.GetApproximantFromString( "IMRPhenomP" )
-        phi0 = 0  # what is phi0?
-        lmbda1 = lmbda2 = 0
-        ampO = 3
-        phaseO = 7 # are these PN orders correct for PhenomP?
-        hplus_fd, hcross_fd = lalsim.SimInspiralChooseFDWaveform(
-            phi0, df,
-            self.m1*MSUN_SI, self.m2*MSUN_SI,
-            self.spin1x, self.spin1y, self.spin1z, self.spin2x, self.spin2y, self.spin2z,
-            self.bank.flow, f_final,
-            self.bank.flow, # reference frequency, related to phi0. Is this the right input?
-            1e6*PC_SI, # irrelevant parameter for banks/banksims
-            self.iota,
-            lmbda1, lmbda2, # irrelevant parameters for BBH
-            None, None, # non-GR parameters
-            ampO, phaseO, approx)
-
-        # project onto detector
-        return project_hplus_hcross(hplus_fd, hcross_fd, self.theta, self.phi, self.psi)
-
-
-class SEOBNRv1Template(Template):
+class SEOBNRv2Template(Template):
     param_names = ("m1", "m2", "spin1z", "spin2z")
     param_formats = ("%.2f", "%.2f", "%.2f", "%.2f")
 
@@ -581,15 +491,15 @@ class SEOBNRv1Template(Template):
         # get hplus
         hplus, hcross = lalsim.SimIMRSpinAlignedEOBWaveform(
             0., dt, self.m1 * MSUN_SI, self.m2 * MSUN_SI,
-            self.bank.flow, 1e6*PC_SI, 0., self.spin1z, self.spin2z)
+            self.bank.flow, 1e6*PC_SI, 0., self.spin1z, self.spin2z, 2) # last argument is SEOBNR version
         # zero-pad up to 1/df
         N = int(sample_rate / df)
         hplus = lal.ResizeREAL8TimeSeries(hplus, 0, N)
         # taper
-        lalsim.SimInspiralREAL8WaveTaper(hplus.data, lalsim.LAL_SIM_INSPIRAL_TAPER_START)
+        lalsim.SimInspiralREAL8WaveTaper(hplus.data, lalsim.SIM_INSPIRAL_TAPER_START)
 
         # create vector to hold output and plan
-        htilde = lal.CreateCOMPLEX16FrequencySeries("h(f)", hplus.epoch, hplus.f0, df, lal.lalHertzUnit, int(N/2 + 1))
+        htilde = lal.CreateCOMPLEX16FrequencySeries("h(f)", hplus.epoch, hplus.f0, df, lal.HertzUnit, int(N/2 + 1))
         fftplan = lal.CreateForwardREAL8FFTPlan(N, 0)
 
         # do the fft
@@ -672,10 +582,10 @@ class EOBNRv2Template(Template):
         N = int(sample_rate / df)
         hplus = lal.ResizeREAL8TimeSeries(hplus, 0, N)
         # taper
-        lalsim.SimInspiralREAL8WaveTaper(hplus.data, lalsim.LAL_SIM_INSPIRAL_TAPER_START)
+        lalsim.SimInspiralREAL8WaveTaper(hplus.data, lalsim.SIM_INSPIRAL_TAPER_START)
 
         # create vector to hold output and plan
-        htilde = lal.CreateCOMPLEX16FrequencySeries("h(f)", hplus.epoch, hplus.f0, df, lal.lalHertzUnit, int(N/2 + 1))
+        htilde = lal.CreateCOMPLEX16FrequencySeries("h(f)", hplus.epoch, hplus.f0, df, lal.HertzUnit, int(N/2 + 1))
         fftplan = lal.CreateForwardREAL8FFTPlan(N, 0)
 
         # do the fft
@@ -796,7 +706,7 @@ class SpinTaylorT4Template(Template):
         lalsim.SimInspiralREAL8WaveTaper(hoft.data, lalsim.SIM_INSPIRAL_TAPER_STARTEND)
 
         # create vector to hold output and plan
-        htilde = lal.CreateCOMPLEX16FrequencySeries("h(f)", hoft.epoch, hoft.f0, df, lal.lalHertzUnit, int(N/2 + 1))
+        htilde = lal.CreateCOMPLEX16FrequencySeries("h(f)", hoft.epoch, hoft.f0, df, lal.HertzUnit, int(N/2 + 1))
         fftplan = lal.CreateForwardREAL8FFTPlan(N, 0)
 
         # do the fft
@@ -874,10 +784,10 @@ class SpinTaylorT5Template(Template):
         hoft = lal.ResizeREAL8TimeSeries(hoft, 0, N)
 
         # taper
-        lalsim.SimInspiralREAL8WaveTaper(hoft.data, lalsim.LAL_SIM_INSPIRAL_TAPER_STARTEND)
+        lalsim.SimInspiralREAL8WaveTaper(hoft.data, lalsim.SIM_INSPIRAL_TAPER_STARTEND)
 
         # create vector to hold output and plan
-        htilde = lal.CreateCOMPLEX16FrequencySeries("h(f)", hoft.epoch, hoft.f0, df, lal.lalHertzUnit, int(N/2 + 1))
+        htilde = lal.CreateCOMPLEX16FrequencySeries("h(f)", hoft.epoch, hoft.f0, df, lal.HertzUnit, int(N/2 + 1))
         fftplan = lal.CreateForwardREAL8FFTPlan(N, 0)
 
         # do the fft
@@ -897,7 +807,7 @@ waveforms = {
     "IMRPhenomB": IMRPhenomBTemplate,
     "IMRPhenomC": IMRPhenomCTemplate,
     "IMRPhenomP": IMRPhenomPTemplate,
-    "SEOBNRv1": SEOBNRv1Template,
+    "SEOBNRv2": SEOBNRv2Template,
     "EOBNRv2": EOBNRv2Template,
     "SpinTaylorT4": SpinTaylorT4Template,
     "SpinTaylorT5": SpinTaylorT5Template,

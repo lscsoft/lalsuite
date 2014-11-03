@@ -51,6 +51,7 @@ test/EOBNRv2Test
 test/GRFlagsTest
 test/GenerateSimulation
 test/OpenMPTest
+test/PNCoefficients
 test/PhenomPTest
 test/PhenomP_Test*dat
 test/PrecessWaveformEOBNRTest

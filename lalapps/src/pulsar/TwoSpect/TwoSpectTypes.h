@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2010, 2011 Evan Goetz
+*  Copyright (C) 2010, 2011, 2014 Evan Goetz
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -22,7 +22,8 @@
 
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
-#include <lal/LALDetectors.h>
+#include <lal/DetectorStates.h>
+#include <lal/PulsarDataTypes.h>
 
 #include <gsl/gsl_rng.h>
 
@@ -35,6 +36,92 @@ typedef struct
    INT4 numfbins;
    INT4 numfprbins;
 } ffdataStruct;
+
+typedef struct {
+   BOOLEAN help;
+   REAL8 Tobs;
+   REAL8 Tcoh;
+   REAL8 SFToverlap;
+   REAL8 t0;
+   REAL8 fmin;
+   REAL8 fspan;
+   LALStringVector *IFO;
+   REAL8 avesqrtSh;
+   INT4 blksize;
+   CHAR *outdirectory;
+   CHAR *outfilename;
+   CHAR *configCopy;
+   CHAR *ULfilename;
+   CHAR *inputSFTs;
+   CHAR *ephemEarth;
+   CHAR *ephemSun;
+   BOOLEAN gaussNoiseWithSFTgaps;
+   REAL8 Pmin;
+   REAL8 Pmax;
+   REAL8 dfmin;
+   REAL8 dfmax;
+   CHAR *skyRegion;
+   CHAR *skyRegionFile;
+   REAL8 linPolAngle;
+   INT4 harmonicNumToSearch;
+   INT4 periodHarmToCheck;
+   INT4 periodFracToCheck;
+   BOOLEAN templateSearch;
+   REAL8 templateSearchP;
+   REAL8 templateSearchAsini;
+   REAL8 templateSearchAsiniSigma;
+   REAL8 assumeNScosi;
+   REAL8 assumeNSpsi;
+   INT4 ihsfactor;
+   REAL8 ihsfar;
+   REAL8 ihsfom;
+   REAL8 ihsfomfar;
+   INT4 keepOnlyTopNumIHS;
+   REAL8 tmplfar;
+   INT4 minTemplateLength;
+   INT4 maxTemplateLength;
+   REAL8 ULfmin;
+   REAL8 ULfspan;
+   REAL8 ULminimumDeltaf;
+   REAL8 ULmaximumDeltaf;
+   BOOLEAN allULvalsPerSkyLoc;
+   BOOLEAN markBadSFTs;
+   REAL8 lineDetection;
+   INT4 FFTplanFlag;
+   BOOLEAN fastchisqinv;
+   BOOLEAN useSSE;
+   BOOLEAN useAVX;
+   BOOLEAN followUpOutsideULrange;
+   LALStringVector *timestampsFile;
+   LALStringVector *segmentFile;
+   LALStringVector *injectionSources;
+   REAL8 injFmin;
+   REAL8 injBand;
+   INT4 injRandSeed;
+   BOOLEAN weightedIHS;
+   BOOLEAN signalOnly;
+   BOOLEAN templateTest;
+   REAL8 templateTestF;
+   REAL8 templateTestP;
+   REAL8 templateTestDf;
+   BOOLEAN bruteForceTemplateTest;
+   INT4 ULsolver;
+   REAL8 dopplerMultiplier;
+   BOOLEAN IHSonly;
+   BOOLEAN noNotchHarmonics;
+   BOOLEAN calcRthreshold;
+   BOOLEAN antennaOff;
+   BOOLEAN noiseWeightOff;
+   BOOLEAN gaussTemplatesOnly;
+   BOOLEAN ULoff;
+   BOOLEAN printSFTtimes;
+   BOOLEAN printData;
+   BOOLEAN BrentsMethod;
+   CHAR *printSignalData;
+   CHAR *printMarginalizedSignalData;
+   INT4 randSeed;
+   BOOLEAN chooseSeed;
+} UserInput_t;
 
 typedef struct
 {
@@ -69,7 +156,8 @@ typedef struct
    INT4 maxtemplatelength;
    INT4 rootFindingMethod;
    INT4 numofIFOs;
-   LALDetector *det;
+   MultiLALDetector *detectors;
+   CHAR *inputSFTs;
    INT4 markBadSFTs;
    INT4 FFTplanFlag;
    INT4 calcRthreshold;

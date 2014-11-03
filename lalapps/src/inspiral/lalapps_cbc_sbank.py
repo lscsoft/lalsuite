@@ -38,7 +38,6 @@ from lalinspiral.sbank.bank import Bank
 from lalinspiral.sbank.tau0tau3 import proposals
 from lalinspiral.sbank.psds import noise_models, read_psd, get_PSD
 from lalinspiral.sbank.waveforms import waveforms
-from pylal.xlal.constants import LAL_PI, LAL_MTSUN_SI
 
 import lal
 
@@ -204,13 +203,13 @@ def parse_command_line():
 
     if opts.mchirp_boundaries_file:
         boundaries = [float(line) for line in open(opts.mchirp_boundaries_file)]
-        if opts.mchirp_boundaries_index + 1 > len(boundaries):
+        if opts.mchirp_boundaries_index > len(boundaries):
             raise ValueError("mchirp boundaries file not long enough for requested index")
 
         if opts.mchirp_boundaries_index > 0:
-            opts.mchirp_min = float(boundaries[opts.mchirp_boundaries_index])
+            opts.mchirp_min = float(boundaries[opts.mchirp_boundaries_index - 1])
         if opts.mchirp_boundaries_index + 1 < len(boundaries):
-            opts.mchirp_max = float(boundaries[opts.mchirp_boundaries_index + 1])
+            opts.mchirp_max = float(boundaries[opts.mchirp_boundaries_index])
 
     return opts, args
 
@@ -258,7 +257,7 @@ else:
 
     # update mchirp bounds
     # FIXME store boundaries in metadata of bank seed file
-    A0 = 5. / (256 * (LAL_PI * opts.flow)**(8./3)) # eqn B3
+    A0 = 5. / (256 * (lal.PI * opts.flow)**(8./3)) # eqn B3
     if opts.mchirp_min is None:
         opts.mchirp_min = min([b._mchirp for b in bank])
     if opts.mchirp_max is None:

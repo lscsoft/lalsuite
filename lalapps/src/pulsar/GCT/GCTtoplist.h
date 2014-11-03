@@ -33,7 +33,12 @@ extern int global_argc;
 }
 #endif
 
-/** Type to hold the fields that will be kept in a "toplist"  */
+/**
+ * \f[
+ * \newcommand{\F}{\mathcal{F}}
+ * \f]
+ * Type to hold the fields that will be kept in a "toplist"
+ */
 typedef struct {
   REAL8 Freq;  /**< frequency */
   REAL8 F1dot;/**< spindown value f1dot = df/dt */
@@ -41,23 +46,27 @@ typedef struct {
   REAL8 F3dot;/**< spindown value f2dot = d2f/dt2 */
   REAL8 Alpha; /**< skyposition: longitude in equatorial coords, radians */
   REAL8 Delta;/**< skyposition: latitude */
-  REAL4 sumTwoF;  /**< sum of 2F-values */
+  REAL4 avTwoF;  /**< average of F-statistic values \f$2\F\f$ over segments */
   UINT4 nc;       /**< number count */
-  REAL4 LV;       /**< Line Veto statistic */
-  UINT4 numDetectors; /**< number of detectors for optional sumTwoFX arrays */
-  REAL4 sumTwoFX[PULSAR_MAX_DETECTORS]; /**< fixed-size array of single-detector 2F-values */
-  REAL4 sumTwoFrecalc;  /**< sum of 2F-values as recomputed by recalcToplistStats */
-  REAL4 sumTwoFXrecalc[PULSAR_MAX_DETECTORS];  /**< fixed-size array of single-detector 2F-values as recomputed by recalcToplistStats */
+  REAL4 log10BSGL;    /**< Line-robust statistic \f$\log_{10} B_{\mathrm{SGL}}\f$ */
+  UINT4 numDetectors; /**< number of detectors for optional avTwoFX arrays */
+  REAL4 avTwoFX[PULSAR_MAX_DETECTORS]; /**< fixed-size array of single-detector average \f$2\F^X\f$-values */
+  REAL4 avTwoFrecalc;  /**< average of \f$2\F\f$-values as recomputed by recalcToplistStats */
+  REAL4 avTwoFXrecalc[PULSAR_MAX_DETECTORS];  /**< fixed-size array of single-detector \f$2\F^X\f$-values as recomputed by recalcToplistStats */
+  REAL4 log10BSGLrecalc; /**< Line-robust statistic \f$\log_{10} B_{\mathrm{SGL}}\f$ recomputed by recalcToplistStats */
   BOOLEAN have_f3dot; /**< output F3dot value */
+  INT4 loudestSeg; /**< index of the loudest segment in multi-F */
+  REAL4 twoFloudestSeg; /**< loudest single-segment multi-IFO F-stat value */
+  REAL4 twoFXloudestSeg[PULSAR_MAX_DETECTORS]; /**< single-IFO F-stat values from the loudest segment in multi-F */
 } GCTtopOutputEntry;
 
-/// enumerate all toplist-sorting options: by F (0), number-count (1), LV-stat (2), "dual" toplists F + LV (3)
+/// enumerate all toplist-sorting options: by F (0), number-count (1), BSGL (2), "dual" toplists F + BSGL (3)
 typedef enum
   {
     SORTBY_F 		= 0,	//< sort by multi-IFO F-stat (averaged over segments)
     SORTBY_NC 		= 1,	//< sort by number-count 'nc'
-    SORTBY_LV 		= 2,	//< sort by line-veto statistic 'LV'
-    SORTBY_DUAL_F_LV 	= 3,	//< dual toplists: one sorted by F, one by LV
+    SORTBY_BSGL 		= 2,	//< sort by line-robust statistic (BSGL)
+    SORTBY_DUAL_F_BSGL 	= 3,	//< dual toplists: one sorted by F, one by BSGL
     SORTBY_LAST			//< end-marker
   } SortBy_t;
 

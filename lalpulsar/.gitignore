@@ -74,6 +74,7 @@ test/OutHough.asc
 test/Peak2PHMDTest
 test/PtoleMeshTest
 test/PtoleMetricTest
+test/ReadTEMPOFileTest
 test/ResampleTest
 test/SFTCleanTest
 test/SFTfileIOTest

@@ -8,6 +8,8 @@ expected_exception = 0;
 disp("checking module load ...");
 lal;
 assert(exist("lal", "var"));
+lal_c_si = LAL_C_SI;
+lal_180_pi = LAL_180_PI;
 disp("PASSED module load");
 
 ## check memory allocation

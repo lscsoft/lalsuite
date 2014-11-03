@@ -56,7 +56,7 @@ parameterInfo = [['domain', 'string', 'TD', 'Generate either a time (TD) or ' +
         ['m2', 'float', 1.4, 'Mass of second object in solar masses'+defstr,
         'M2'],
         ['distance', 'float', 100., 'Distance in Mpc'+defstr, 'DIST'],
-        ['inclination', 'float', lal.LAL_PI/3., 'Inclination of binary to ' +
+        ['inclination', 'float', lal.PI/3., 'Inclination of binary to ' +
         'line of sight [default: PI/3]', 'INCL'],
         ['spin1x', 'float', 0., 'Vector components for spin of mass1 ' +
         '(default all 0)', 'S1X'],
@@ -152,9 +152,9 @@ if opts.infile:
 # Prepare waveform generation
 optsDict = {p['name']: eval('opts.'+p['name']) for p in parameterDicts}
 inputpar = copy.deepcopy(optsDict)
-inputpar['m1'] *= lal.LAL_MSUN_SI
-inputpar['m2'] *= lal.LAL_MSUN_SI
-inputpar['distance'] *= (1.e6 * lal.LAL_PC_SI)
+inputpar['m1'] *= lal.MSUN_SI
+inputpar['m2'] *= lal.MSUN_SI
+inputpar['distance'] *= (1.e6 * lal.PC_SI)
 inputpar['approximant'] = lalsim.GetApproximantFromString(
         inputpar['approximant'])
 inputpar.update({'nonGRparams': None, 'waveformFlags': None})

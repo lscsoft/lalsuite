@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# usage: appends a file names to a cache file.
+# example: idq_append_file_to_cache.sh  cachefile file1 file2 ...
+# file1 is the full path to the file1 to be appended to cache file
+# cachefile is the full path to the cache file
+for i in ${@:2}
+do
+  echo $i >> $1
+done

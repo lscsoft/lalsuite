@@ -22,14 +22,14 @@ from glue.ligolw import lsctables
 from glue.ligolw import utils
 from glue.ligolw.utils import process as ligolw_process
 from pylal.datatypes import LIGOTimeGPS
-
+import numpy
 
 def parse_command_line():
     parser = OptionParser()
     parser.add_option("-o", "--output-path", metavar = "path", default = ".", help = "Set the path to the directory where output files will be written.  Default is \".\".")
     parser.add_option("-t", "--user-tag", metavar = "tag", default = ".", help = "Make me feel special with a custom tag.")
     parser.add_option("-n", "--nbanks", metavar = "count", type = "int", help = "Set the number of subbanks to split the input bank. All output banks will have the same number of templates (within 1, with the excess templates are spread evenly across the banks).")
-    parser.add_option("-s", "--sort-by", metavar = "{mchirp|ffinal|chirptime|chi}", help = "Select the template sort order (required).")
+    parser.add_option("-s", "--sort-by", default="mchirp", metavar = "{mchirp|ffinal|chirptime|chi}", help = "Select the template sort order.")
     parser.add_option("-i", "--instrument", metavar = "ifo", type="string", help = "override the instrument")
     parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
     options, filenames = parser.parse_args()
@@ -81,17 +81,13 @@ for fname in filenames:
 	        options.instrument = row.value
 
     # split into disjoint sub-banks
-    ntemplates = len(sngl_inspiral_table)/options.nbanks
-    remain = len(sngl_inspiral_table)%options.nbanks
+    weights = [row.tau0*row.f_final for row in sngl_inspiral_table]
+    weights_cum = numpy.array(weights).cumsum()
+
     first_row = 0
     for bank in range(options.nbanks):
 
-        if remain > 0:
-            last_row = first_row + ntemplates + 1
-            remain -= 1
-        else:
-            last_row = first_row + ntemplates
-
+        last_row = numpy.searchsorted(weights_cum, (bank+1)*weights_cum[-1]/options.nbanks)
         sngl_inspiral_table_split[:] = sngl_inspiral_table[first_row:last_row]
         first_row = last_row
 

@@ -671,6 +671,7 @@ static void print_usage(char *program)
       " [--snr-distr]             use a distribution over expected (optimal) network SNR\n"\
       "                           uniform: uniform in SNR, log10: uniform in log10(SNR)\n"\
       "                           volume: uniform in 1/SNR^3\n"\
+      "                           ( Setting max-snr == min-snr will allow you to choose a fixed SNR )\n"\
       " [--ninja-snr]             use a NINJA waveform SNR calculation (if not set, use LALSimulation)\n"\
       " [--min-snr] SMIN          set the minimum network snr\n"\
       " [--max-snr] SMAX          set the maximum network snr\n"\
@@ -3061,7 +3062,7 @@ int main( int argc, char *argv[] )
     if (tmp) LALFree(tmp);
     if (ifo) LALFree(ifo);
 
-    if ( maxSNR <= minSNR )
+    if ( maxSNR < minSNR )
     {
       fprintf( stderr, "max SNR must be greater than min SNR\n");
       exit( 1 );
@@ -3410,11 +3411,11 @@ int main( int argc, char *argv[] )
 
   if ( spinInjections==1 && spinAligned==1 && strncmp(waveform, "IMRPhenomB", 10)
     && strncmp(waveform, "IMRPhenomC", 10) && strncmp(waveform, "SpinTaylor", 10)
-    && strncmp(waveform, "SEOBNR", 6) )
+    && strncmp(waveform, "IMRPhenomP", 10) && strncmp(waveform, "SEOBNR", 6) )
   {
     fprintf( stderr,
         "Sorry, I only know to make spin aligned injections for SEOBNR, \n"
-        "IMRPhenomB/C, SpinTaylor and SpinTaylorFrameless waveforms.\n" );
+        "IMRPhenomB/C/P, SpinTaylor and SpinTaylorFrameless waveforms.\n" );
     exit( 1 );
   }
 
@@ -3797,7 +3798,8 @@ int main( int argc, char *argv[] )
              !strncmp(waveform, "SpinTaylorT5", 12) ||
              !strncmp(waveform, "SEOBNR", 6) )
           alignInj = alongzAxis;
-        else if ( !strncmp(waveform, "SpinTaylor", 10) )
+        else if ( !strncmp(waveform, "SpinTaylor", 10) ||
+                  !strncmp(waveform, "IMRPhenomP", 10) )
           alignInj = inxzPlane;
         else
         {

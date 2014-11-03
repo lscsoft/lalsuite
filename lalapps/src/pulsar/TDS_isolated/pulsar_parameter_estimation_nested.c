@@ -321,7 +321,7 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   runState.prior = &priorFunction;
 
   /* set signal model/template */
-  runState.templt = get_pulsar_model;
+  runState.model->templt = &get_pulsar_model;
 
   /* Generate the lookup tables and read parameters from par file */
   setupFromParFile( &runState );
@@ -338,7 +338,7 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   gridOutput( &runState );
 
   /* get noise likelihood and add as variable to runState */
-  logZnoise = noise_only_model( &runState );
+  logZnoise = noise_only_likelihood( &runState );
   LALInferenceAddVariable( runState.algorithmParams, "logZnoise", &logZnoise, LALINFERENCE_REAL8_t,
                            LALINFERENCE_PARAM_FIXED );
 
@@ -576,6 +576,9 @@ void readPulsarData( LALInferenceRunState *runState ){
   LALInferenceIFOData *ifodata = NULL;
   LALInferenceIFOData *prev = NULL;
 
+  LALInferenceIFOModel *ifomodel = NULL;
+  LALInferenceIFOModel *prevmodel = NULL;
+
   UINT4 seed = 0; /* seed for data generation */
   RandomParams *randomParams = NULL;
 
@@ -587,6 +590,9 @@ void readPulsarData( LALInferenceRunState *runState ){
   BinaryPulsarParams pulsar;
 
   runState->data = NULL;
+
+  /* Initialize the model, as it will hold IFO params and signal buffers */
+  runState->model = XLALMalloc(sizeof(LALInferenceModel));
 
   /* check pulsar model required by getting the frequency harmonics */
   ppt = LALInferenceGetProcParamVal( commandLine, "--harmonics" );
@@ -826,6 +832,9 @@ number of detectors specified (no. dets =\%d)\n", ml, ml, numDets);
     exit(0);
   }
 
+  runState->model->ifo_loglikelihoods = XLALMalloc( sizeof(REAL8)*ml*numDets );
+  runState->model->ifo_SNRs = XLALMalloc( sizeof(REAL8)*ml*numDets );
+
   ppt = LALInferenceGetProcParamVal( commandLine,"--input-files" );
   if( ppt ) { inputfile = XLALStringDuplicate( ppt->value ); }
 
@@ -868,7 +877,7 @@ detectors specified (no. dets =\%d)\n", ml, ml, numDets);
   if ( !ppt2 ) { filestr = XLALStringDuplicate( inputfile ); }
 
   /* read in data, needs to read in two sets of data for each ifo for pinsf model */
-  for( i = 0, prev=NULL ; i < ml*numDets ; i++, prev=ifodata ){
+  for( i = 0, prev=NULL, prevmodel=NULL ; i < ml*numDets ; i++, prev=ifodata, prevmodel=ifomodel ){
     CHAR *datafile = NULL;
     REAL8 times = 0;
     LIGOTimeGPS gpstime;
@@ -887,28 +896,36 @@ detectors specified (no. dets =\%d)\n", ml, ml, numDets);
     randomParams = XLALCreateRandomParams( seed+i );
 
     ifodata = XLALCalloc( 1, sizeof(LALInferenceIFOData) );
-    ifodata->modelParams = XLALCalloc( 1, sizeof(LALInferenceVariables) );
-    ifodata->modelDomain = LAL_SIM_DOMAIN_TIME;
     ifodata->next = NULL;
-    ifodata->dataParams = XLALCalloc( 1, sizeof(LALInferenceVariables) );
+
+    ifomodel = XLALMalloc(sizeof(LALInferenceIFOModel));
+    ifomodel->params = XLALCalloc(1, sizeof(LALInferenceVariables) );
+    ifomodel->next = NULL;
 
     /* add the pulsar model */
-    /* LALInferenceAddVariable( ifodata->dataParams, "modeltype", &modeltype, LALINFERENCE_string_t,
+    /* LALInferenceAddVariable( ifomodel->params, "modeltype", &modeltype, LALINFERENCE_string_t,
                              LALINFERENCE_PARAM_FIXED ); */
 
     /* add data sample interval */
-    /*LALInferenceAddVariable( ifodata->dataParams, "dt", &fdt[i],
+    /*LALInferenceAddVariable( ifomodel->params, "dt", &fdt[i],
                              LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );*/
 
     /* add frequency factors variable */
-    LALInferenceAddVariable( ifodata->dataParams, "freqfactors", &modelFreqFactors, LALINFERENCE_REAL8Vector_t,
+    LALInferenceAddVariable( ifomodel->params, "freqfactors", &modelFreqFactors, LALINFERENCE_REAL8Vector_t,
                              LALINFERENCE_PARAM_FIXED );
 
-    if( i == 0 ) { runState->data = ifodata; }
-    if( i > 0 ) { prev->next = ifodata; }
+    if( i == 0 ) {
+        runState->data = ifodata;
+        runState->model->ifo = ifomodel;
+    }
+    if( i > 0 ) {
+        prev->next = ifodata;
+        prevmodel->next = ifomodel;
+    }
 
     /* set detector */
     ifodata->detector = XLALGetSiteInfo( dets[FACTOR(i,ml)] );
+    ifomodel->detector = XLALGetSiteInfo( dets[FACTOR(i,ml)] );
     snprintf(ifodata->name, sizeof(char)*DETNAMELEN, "%s", dets[FACTOR(i,ml)]);
 
     /* set dummy initial time */
@@ -920,8 +937,8 @@ detectors specified (no. dets =\%d)\n", ml, ml, numDets);
     ifodata->compTimeData = XLALCreateCOMPLEX16TimeSeries( "", &gpstime, 0., 1., &lalSecondUnit, 1 );
 
     /* allocate time domain model */
-    ifodata->compModelData = NULL;
-    ifodata->compModelData = XLALCreateCOMPLEX16TimeSeries( "", &gpstime, 0., 1., &lalSecondUnit, 1 );
+    ifomodel->compTimeSignal = NULL;
+    ifomodel->compTimeSignal = XLALCreateCOMPLEX16TimeSeries( "", &gpstime, 0., 1., &lalSecondUnit, 1 );
 
     /*============================ GET DATA ==================================*/
     /* get i'th filename from the comma separated list */
@@ -1015,7 +1032,7 @@ detectors specified (no. dets =\%d)\n", ml, ml, numDets);
         /* dynamically allocate more memory */
         ifodata->compTimeData = XLALResizeCOMPLEX16TimeSeries( ifodata->compTimeData, 0, counter );
 
-        ifodata->compModelData = XLALResizeCOMPLEX16TimeSeries( ifodata->compModelData, 0, counter );
+        ifomodel->compTimeSignal = XLALResizeCOMPLEX16TimeSeries( ifomodel->compTimeSignal, 0, counter );
 
         temptimes = XLALResizeREAL8Vector( temptimes, counter );
 
@@ -1033,13 +1050,13 @@ detectors specified (no. dets =\%d)\n", ml, ml, numDets);
       datalength = counter;
 
       /* allocate data time stamps */
-      ifodata->dataTimes = NULL;
-      ifodata->dataTimes = XLALCreateTimestampVector( datalength );
+      ifomodel->times = NULL;
+      ifomodel->times = XLALCreateTimestampVector( datalength );
 
       /* fill in time stamps as LIGO Time GPS Vector */
       REAL8 sampledt = INFINITY; /* sample interval */
       for ( k = 0; k < datalength; k++ ) {
-        XLALGPSSetREAL8( &ifodata->dataTimes->data[k], temptimes->data[k] );
+        XLALGPSSetREAL8( &ifomodel->times->data[k], temptimes->data[k] );
 
         if ( k > 0 ){
           /* get sample interval from the minimum time difference in the data */
@@ -1049,15 +1066,15 @@ detectors specified (no. dets =\%d)\n", ml, ml, numDets);
         }
       }
 
-      ifodata->compTimeData->epoch = ifodata->dataTimes->data[0];
-      ifodata->compModelData->epoch = ifodata->dataTimes->data[0];
+      ifodata->compTimeData->epoch = ifomodel->times->data[0];
+      ifomodel->compTimeSignal->epoch = ifomodel->times->data[0];
 
       /* add data sample interval */
       ppt = LALInferenceGetProcParamVal( commandLine, "--sample-interval" );
       if( ppt ){
         sampledt = atof( ppt->value );
       }
-      LALInferenceAddVariable( ifodata->dataParams, "dt", &sampledt, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
+      LALInferenceAddVariable( ifomodel->params, "dt", &sampledt, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
 
       XLALDestroyREAL8Vector( temptimes );
     }
@@ -1071,16 +1088,16 @@ detectors specified (no. dets =\%d)\n", ml, ml, numDets);
       REAL8 psdscale = 0.;
 
       /* allocate data time stamps */
-      ifodata->dataTimes = NULL;
-      ifodata->dataTimes = XLALCreateTimestampVector( (UINT4)datalength );
+      ifomodel->times = NULL;
+      ifomodel->times = XLALCreateTimestampVector( (UINT4)datalength );
 
       /* add data sample interval */
-      LALInferenceAddVariable( ifodata->dataParams, "dt", &fdt[0], LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
+      LALInferenceAddVariable( ifomodel->params, "dt", &fdt[0], LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
 
       /* resize the data and model times series */
       ifodata->compTimeData = XLALResizeCOMPLEX16TimeSeries( ifodata->compTimeData, 0, datalength );
 
-      ifodata->compModelData = XLALResizeCOMPLEX16TimeSeries( ifodata->compModelData, 0, datalength );
+      ifomodel->compTimeSignal = XLALResizeCOMPLEX16TimeSeries( ifomodel->compTimeSignal, 0, datalength );
 
       /* create data drawn from normal distribution with zero mean and unit variance */
       realdata = XLALCreateREAL4Vector( datalength );
@@ -1095,21 +1112,21 @@ detectors specified (no. dets =\%d)\n", ml, ml, numDets);
       /* create time stamps and scale data with the PSD */
       for( k = 0; k < datalength; k++ ){
         /* set time stamp */
-        XLALGPSSetREAL8( &ifodata->dataTimes->data[k], fstarts[i] + fdt[i] * (REAL8)k );
+        XLALGPSSetREAL8( &ifomodel->times->data[k], fstarts[i] + fdt[i] * (REAL8)k );
 
         ifodata->compTimeData->data->data[k] = (REAL8)realdata->data[k] * psdscale +
           I * (REAL8)imagdata->data[k] * psdscale;
       }
 
-      ifodata->compTimeData->epoch = ifodata->dataTimes->data[0];
-      ifodata->compModelData->epoch = ifodata->dataTimes->data[0];
+      ifodata->compTimeData->epoch = ifomodel->times->data[0];
+      ifomodel->compTimeSignal->epoch = ifomodel->times->data[0];
 
       XLALDestroyREAL4Vector( realdata );
       XLALDestroyREAL4Vector( imagdata );
     }
 
     /* set ephemeris data */
-    ifodata->ephem = XLALMalloc( sizeof(EphemerisData) );
+    ifomodel->ephem = XLALMalloc( sizeof(EphemerisData) );
 
     /* get ephemeris files */
     ppte = LALInferenceGetProcParamVal( commandLine, "--ephem-earth" );
@@ -1137,7 +1154,7 @@ detectors specified (no. dets =\%d)\n", ml, ml, numDets);
       CHAR efiletmp[1024], sfiletmp[1024], tfiletmp[1024];
 
       if( !( ttype = XLALAutoSetEphemerisFiles( efiletmp, sfiletmp, tfiletmp, pulsar,
-            ifodata->dataTimes->data[0].gpsSeconds, ifodata->dataTimes->data[datalength-1].gpsSeconds ) ) ){
+            ifomodel->times->data[0].gpsSeconds, ifomodel->times->data[datalength-1].gpsSeconds ) ) ){
         fprintf(stderr, "Error... not been able to set ephemeris files!\n");
         exit(3);
       }
@@ -1154,10 +1171,10 @@ detectors specified (no. dets =\%d)\n", ml, ml, numDets);
     }
 
     /* set up ephemeris information */
-    XLAL_CHECK_VOID( (ifodata->ephem = XLALInitBarycenter( efile, sfile ) ) != NULL, XLAL_EFUNC );
-    if( tfile ){ XLAL_CHECK_VOID( (ifodata->tdat = XLALInitTimeCorrections( tfile ) ) != NULL, XLAL_EFUNC ); }
-    else { ifodata->tdat = NULL; }
-    ifodata->ttype = ttype;
+    XLAL_CHECK_VOID( (ifomodel->ephem = XLALInitBarycenter( efile, sfile ) ) != NULL, XLAL_EFUNC );
+    if( tfile ){ XLAL_CHECK_VOID( (ifomodel->tdat = XLALInitTimeCorrections( tfile ) ) != NULL, XLAL_EFUNC ); }
+    else { ifomodel->tdat = NULL; }
+    ifomodel->ttype = ttype;
 
     XLALDestroyRandomParams( randomParams );
 
@@ -1255,6 +1272,9 @@ void setupFromParFile( LALInferenceRunState *runState )
   /* Setup lookup tables for amplitudes */
   setupLookupTables( runState, &psr );
 
+  runState->model->params = XLALCalloc( 1, sizeof(LALInferenceVariables) );
+  runState->model->domain = LAL_SIM_DOMAIN_TIME;
+
   runState->currentParams = XLALCalloc( 1, sizeof(LALInferenceVariables) );
 
   scaletemp = XLALCalloc( 1, sizeof(LALInferenceVariables) );
@@ -1263,15 +1283,17 @@ void setupFromParFile( LALInferenceRunState *runState )
   add_initial_variables( runState->currentParams, scaletemp, pulsar );
 
   /* Setup initial phase, and barycentring delays */
+  LALInferenceIFOModel *ifo_model = runState->model->ifo;
   while( data ){
+
     REAL8Vector *freqFactors = NULL;
     UINT4 j = 0;
-    REAL8 dt = XLALGPSGetREAL8( &data->dataTimes->data[data->dataTimes->length-1] ) -
-      XLALGPSGetREAL8( &data->dataTimes->data[0] );
+    REAL8 dt = XLALGPSGetREAL8( &ifo_model->times->data[ifo_model->times->length-1] ) -
+      XLALGPSGetREAL8( &ifo_model->times->data[0] );
 
     if ( dt > DeltaT ){ DeltaT = dt; }
 
-    freqFactors = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams,
+    freqFactors = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params,
                                                             "freqfactors" );
 
     for( j = 0; j < freqFactors->length; j++ ){
@@ -1282,31 +1304,31 @@ void setupFromParFile( LALInferenceRunState *runState )
       /* check whether using original Jones (2010) signal model */
       if ( freqFactors->length == 2 && LALInferenceGetProcParamVal( runState->commandLine, "--jones-model" ) ){
         UINT4 jones = 1;
-        LALInferenceAddVariable( data->dataParams, "jones-model", &jones, LALINFERENCE_UINT4_t,
+        LALInferenceAddVariable( ifo_model->params, "jones-model", &jones, LALINFERENCE_UINT4_t,
                                  LALINFERENCE_PARAM_FIXED );
       }
 
-      dts = get_ssb_delay( pulsar, data->dataTimes, data->ephem, data->tdat, data->ttype, data->detector, 0. );
+      dts = get_ssb_delay( pulsar, ifo_model->times, ifo_model->ephem, ifo_model->tdat, ifo_model->ttype, data->detector, 0. );
 
-      LALInferenceAddVariable( data->dataParams, "ssb_delays", &dts, LALINFERENCE_REAL8Vector_t,
+      LALInferenceAddVariable( ifo_model->params, "ssb_delays", &dts, LALINFERENCE_REAL8Vector_t,
                                LALINFERENCE_PARAM_FIXED );
 
-      bdts = get_bsb_delay( pulsar, data->dataTimes, dts, data->ephem );
+      bdts = get_bsb_delay( pulsar, ifo_model->times, dts, ifo_model->ephem );
 
-      LALInferenceAddVariable( data->dataParams, "bsb_delays", &bdts, LALINFERENCE_REAL8Vector_t,
+      LALInferenceAddVariable( ifo_model->params, "bsb_delays", &bdts, LALINFERENCE_REAL8Vector_t,
                                LALINFERENCE_PARAM_FIXED );
 
-      phase_vector = get_phase_model( pulsar, data, freqFactors->data[j], 0 );
+      phase_vector = get_phase_model( pulsar, ifo_model, freqFactors->data[j], 0 );
 
-      data->timeData = NULL;
-      data->timeData = XLALCreateREAL8TimeSeries( "", &data->dataTimes->data[0], 0., 1., &lalSecondUnit,
+      ifo_model->timeData = NULL;
+      ifo_model->timeData = XLALCreateREAL8TimeSeries( "", &ifo_model->times->data[0], 0., 1., &lalSecondUnit,
                                                   phase_vector->length );
 
-      for ( i=0; i<phase_vector->length; i++ ) { data->timeData->data->data[i] = phase_vector->data[i]; }
+      for ( i=0; i<phase_vector->length; i++ ) { ifo_model->timeData->data->data[i] = phase_vector->data[i]; }
 
-      /* add the scale factors from scaletemp into the data->dataParams structure */
+      /* add the scale factors from scaletemp into the ifo_model->params structure */
       for( ; scaleitem; scaleitem = scaleitem->next ){
-        LALInferenceAddVariable( data->dataParams, scaleitem->name, scaleitem->value, scaleitem->type,
+        LALInferenceAddVariable( ifo_model->params, scaleitem->name, scaleitem->value, scaleitem->type,
                                  scaleitem->vary );
       }
 
@@ -1324,21 +1346,22 @@ void setupFromParFile( LALInferenceRunState *runState )
         }
 
         for( k = 1; k < downst->length+1; k++ ){
-          downst->data[k-1] = data->dataTimes->data[(k-1)*mmfactor];
+          downst->data[k-1] = ifo_model->times->data[(k-1)*mmfactor];
           dsphase->data[k-1] = 0.;
         }
 
-        LALInferenceAddVariable( data->dataParams, "downsampled_times", &downst, LALINFERENCE_void_ptr_t,
+        LALInferenceAddVariable( ifo_model->params, "downsampled_times", &downst, LALINFERENCE_void_ptr_t,
                                  LALINFERENCE_PARAM_FIXED );
 
-        LALInferenceAddVariable( data->dataParams, "ds_phase", &dsphase, LALINFERENCE_REAL8Vector_t,
+        LALInferenceAddVariable( ifo_model->params, "ds_phase", &dsphase, LALINFERENCE_REAL8Vector_t,
                                  LALINFERENCE_PARAM_FIXED );
 
-        LALInferenceAddVariable( data->dataParams, "mismatch", &mm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
+        LALInferenceAddVariable( ifo_model->params, "mismatch", &mm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
       }
-
-      data = data->next;
     }
+
+    data = data->next;
+    ifo_model = ifo_model->next;
   }
 
   /* set frequency bin step from longest data time span */
@@ -1389,6 +1412,7 @@ void setupLookupTables( LALInferenceRunState *runState, LALSource *source ){
   else { chunkMax = CHUNKMAX; } /* default maximum chunk length */
 
   LALInferenceIFOData *data = runState->data;
+  LALInferenceIFOModel *ifo_model = runState->model->ifo;
 
   gsl_matrix *LUfplus = NULL;
   gsl_matrix *LUfcross = NULL;
@@ -1406,25 +1430,25 @@ void setupLookupTables( LALInferenceRunState *runState, LALSource *source ){
   if( ppt ) { timeBins = atoi( ppt->value ); }
   else { timeBins = TIMEBINS; } /* default time bins */
 
-  while(data){
+  while(ifo_model){
     UINT4Vector *chunkLength = NULL;
     REAL8Vector *sidDayFrac = NULL;
     UINT4 i = 0;
 
-    LALInferenceAddVariable( data->dataParams, "psiSteps", &psiBins, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
-    LALInferenceAddVariable( data->dataParams, "timeSteps", &timeBins, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
+    LALInferenceAddVariable( ifo_model->params, "psiSteps", &psiBins, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
+    LALInferenceAddVariable( ifo_model->params, "timeSteps", &timeBins, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
 
-    t0 = XLALGPSGetREAL8( &data->dataTimes->data[0] );
+    t0 = XLALGPSGetREAL8( &ifo_model->times->data[0] );
 
-    sidDayFrac = XLALCreateREAL8Vector( data->dataTimes->length );
+    sidDayFrac = XLALCreateREAL8Vector( ifo_model->times->length );
 
     /* set the time in sidereal days since the first data point (mod 1 sidereal
        day) */
-    for( i = 0; i < data->dataTimes->length; i++ ){
-      sidDayFrac->data[i] = fmod( XLALGPSGetREAL8(&data->dataTimes->data[i]) - t0, LAL_DAYSID_SI );
+    for( i = 0; i < ifo_model->times->length; i++ ){
+      sidDayFrac->data[i] = fmod( XLALGPSGetREAL8(&ifo_model->times->data[i]) - t0, LAL_DAYSID_SI );
     }
 
-    LALInferenceAddVariable( data->dataParams, "siderealDay", &sidDayFrac, LALINFERENCE_REAL8Vector_t,
+    LALInferenceAddVariable( ifo_model->params, "siderealDay", &sidDayFrac, LALINFERENCE_REAL8Vector_t,
                              LALINFERENCE_PARAM_FIXED );
 
     detAndSource.pDetector = data->detector;
@@ -1436,31 +1460,32 @@ void setupLookupTables( LALInferenceRunState *runState, LALSource *source ){
 
     response_lookup_table( t0, detAndSource, timeBins, psiBins, LUfplus, LUfcross );
 
-    LALInferenceAddVariable( data->dataParams, "LU_Fplus", &LUfplus, LALINFERENCE_gslMatrix_t,
+    LALInferenceAddVariable( ifo_model->params, "LU_Fplus", &LUfplus, LALINFERENCE_gslMatrix_t,
                              LALINFERENCE_PARAM_FIXED );
-    LALInferenceAddVariable( data->dataParams, "LU_Fcross", &LUfcross, LALINFERENCE_gslMatrix_t,
+    LALInferenceAddVariable( ifo_model->params, "LU_Fcross", &LUfcross, LALINFERENCE_gslMatrix_t,
                              LALINFERENCE_PARAM_FIXED );
 
-    LALInferenceAddVariable( data->dataParams, "chunkMin", &chunkMin, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
-    LALInferenceAddVariable( data->dataParams, "chunkMax", &chunkMax, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
+    LALInferenceAddVariable( ifo_model->params, "chunkMin", &chunkMin, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
+    LALInferenceAddVariable( ifo_model->params, "chunkMax", &chunkMax, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
 
     ppt = LALInferenceGetProcParamVal( commandLine, "--oldChunks" );
     if ( ppt ){ /* use old style quasi-fixed data chunk lengths */
       /* if a chunk max wasn't set use 30 mins by default */
       if ( !LALInferenceGetProcParamVal( commandLine, "--chunk-max" ) ){
         chunkMax = 30;
-        LALInferenceSetVariable( data->dataParams, "chunkMax", &chunkMax );
+        LALInferenceSetVariable( ifo_model->params, "chunkMax", &chunkMax );
       }
 
-      chunkLength = get_chunk_lengths( data, chunkMax );
+      chunkLength = get_chunk_lengths( ifo_model, chunkMax );
     }
     /* use new change points analysis to get chunks */
     else { chunkLength = chop_n_merge( data, chunkMin, chunkMax ); }
 
-    LALInferenceAddVariable( data->dataParams, "chunkLength", &chunkLength, LALINFERENCE_UINT4Vector_t,
+    LALInferenceAddVariable( ifo_model->params, "chunkLength", &chunkLength, LALINFERENCE_UINT4Vector_t,
                              LALINFERENCE_PARAM_FIXED );
 
     data = data->next;
+    ifo_model = ifo_model->next;
   }
 
   return;
@@ -1501,6 +1526,16 @@ void add_initial_variables( LALInferenceVariables *ini,  LALInferenceVariables *
   add_variable_scale( ini, scaleFac, "C21", pars.C21 );
   add_variable_scale( ini, scaleFac, "phi22", pars.phi22 );
   add_variable_scale( ini, scaleFac, "phi21", pars.phi21 );
+
+  /* in case phi0 is set to a non-zero value, but phi22 is not equivalently set then
+     make sure phi22 gets set from the value of phi0 */
+  REAL8 phi0check = *(REAL8*)LALInferenceGetVariable( ini, "phi0" );
+  REAL8 phi22check = *(REAL8*)LALInferenceGetVariable( ini, "phi22" );
+  if ( fabs( phi22check-phi0check ) != LAL_PI  && phi0check != 0. && phi22check == 0. ){
+    REAL8 phi22val = (phi0check - LAL_PI) - LAL_TWOPI*floor((phi0check - LAL_PI)/LAL_TWOPI);
+    LALInferenceRemoveVariable( ini, "phi22" );
+    LALInferenceAddVariable( ini, "phi22", &phi22val, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
+  }
 
   /***** phase model parameters ******/
   /* frequency */
@@ -1638,7 +1673,7 @@ void initialisePrior( LALInferenceRunState *runState )
   CHAR tempPar[VARNAME_MAX] = "", tempPrior[VARNAME_MAX] = "";
   REAL8 low, high;
 
-  LALInferenceIFOData *data = runState->data;
+  LALInferenceIFOModel *ifo = runState->model->ifo;
 
   /* parameters in correlation matrix */
   LALStringVector *corParams = NULL;
@@ -1671,7 +1706,7 @@ void initialisePrior( LALInferenceRunState *runState )
     CHAR tempParScaleMin[VARNAME_MAX] = "";
     CHAR tempParPrior[VARNAME_MAX] = "";
 
-    LALInferenceIFOData *datatemp = data;
+    LALInferenceIFOModel *ifotemp = ifo;
 
     LALInferenceParamVaryType varyType;
 
@@ -1725,15 +1760,15 @@ void initialisePrior( LALInferenceRunState *runState )
     //  if ( scale/LAL_PI_2 > 0.99 && scale/LAL_PI_2 < 1.01 ) psidef = 1;
 
     /* set the scale factor to be the width of the prior */
-    while( datatemp ){
-      scaleType = LALInferenceGetVariableType( datatemp->dataParams, tempParScale );
-      LALInferenceRemoveVariable( datatemp->dataParams, tempParScale );
-      LALInferenceRemoveVariable( datatemp->dataParams, tempParScaleMin );
+    while( ifotemp ){
+      scaleType = LALInferenceGetVariableType( ifotemp->params, tempParScale );
+      LALInferenceRemoveVariable( ifotemp->params, tempParScale );
+      LALInferenceRemoveVariable( ifotemp->params, tempParScaleMin );
 
-      LALInferenceAddVariable( datatemp->dataParams, tempParScale, &scale, scaleType, LALINFERENCE_PARAM_FIXED );
-      LALInferenceAddVariable( datatemp->dataParams, tempParScaleMin, &scaleMin, scaleType, LALINFERENCE_PARAM_FIXED );
+      LALInferenceAddVariable( ifotemp->params, tempParScale, &scale, scaleType, LALINFERENCE_PARAM_FIXED );
+      LALInferenceAddVariable( ifotemp->params, tempParScaleMin, &scaleMin, scaleType, LALINFERENCE_PARAM_FIXED );
 
-      datatemp = datatemp->next;
+      ifotemp = ifotemp->next;
     }
 
     /* scale variable and priors */
@@ -1784,14 +1819,14 @@ void initialisePrior( LALInferenceRunState *runState )
   /* If source physical parameters (rather than amplitude/phase parameters) have been defined in the prior file then
    * convert to amplitude/phase parameters. Only do this for the l=m=2 model of emission at 2f for a triaxial star.
    * For other modes the phase/amplitude parameters must be defined in the prior file. */
-  REAL8Vector *freqFactors = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams, "freqfactors" );
+  REAL8Vector *freqFactors = *(REAL8Vector **)LALInferenceGetVariable( ifo->params, "freqfactors" );
 
   if ( freqFactors->length == 1 && freqFactors->data[0] == 2. ){
     if ( LALInferenceGetVariableVaryType( runState->currentParams, "h0" ) == LALINFERENCE_PARAM_LINEAR &&
          LALInferenceGetVariableVaryType( runState->currentParams, "C22" ) == LALINFERENCE_PARAM_FIXED ){
       REAL8 h0 = *(REAL8*)LALInferenceGetVariable( runState->currentParams, "h0" );
-      REAL8 h0scale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "h0_scale" );
-      REAL8 h0min = *(REAL8*)LALInferenceGetVariable( data->dataParams, "h0_scale_min" );
+      REAL8 h0scale = *(REAL8*)LALInferenceGetVariable( ifo->params, "h0_scale" );
+      REAL8 h0min = *(REAL8*)LALInferenceGetVariable( ifo->params, "h0_scale_min" );
       REAL8 C22 = h0 / 2.;
       REAL8 C22scale = h0scale / 2.;
       REAL8 C22scalemin = h0min / 2.;
@@ -1800,17 +1835,17 @@ void initialisePrior( LALInferenceRunState *runState )
       LALInferenceRemoveVariable( runState->currentParams, "C22" );
       LALInferenceAddVariable( runState->currentParams, "C22", &C22, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR );
 
-      LALInferenceIFOData *datatemp = data;
-      while( datatemp ){
-        LALInferenceRemoveVariable( datatemp->dataParams, "C22_scale" );
-        LALInferenceRemoveVariable( datatemp->dataParams, "C22_scale_min" );
+      LALInferenceIFOModel *ifotemp = ifo;
+      while( ifotemp ){
+        LALInferenceRemoveVariable( ifotemp->params, "C22_scale" );
+        LALInferenceRemoveVariable( ifotemp->params, "C22_scale_min" );
 
-        LALInferenceAddVariable( datatemp->dataParams, "C22_scale", &C22scale, LALINFERENCE_REAL8_t,
+        LALInferenceAddVariable( ifotemp->params, "C22_scale", &C22scale, LALINFERENCE_REAL8_t,
                                  LALINFERENCE_PARAM_FIXED );
-        LALInferenceAddVariable( datatemp->dataParams, "C22_scale_min", &C22scalemin, LALINFERENCE_REAL8_t,
+        LALInferenceAddVariable( ifotemp->params, "C22_scale_min", &C22scalemin, LALINFERENCE_REAL8_t,
                                  LALINFERENCE_PARAM_FIXED );
 
-        datatemp = datatemp->next;
+        ifotemp = ifotemp->next;
       }
 
       if ( LALInferenceCheckGaussianPrior( runState->priorArgs, "h0" ) ){
@@ -1825,34 +1860,29 @@ void initialisePrior( LALInferenceRunState *runState )
 
     if ( LALInferenceGetVariableVaryType( runState->currentParams, "phi0" ) != LALINFERENCE_PARAM_FIXED &&
          LALInferenceGetVariableVaryType( runState->currentParams, "phi22" ) == LALINFERENCE_PARAM_FIXED ){
-      REAL8 phi0 = *(REAL8*)LALInferenceGetVariable( runState->currentParams, "phi0" );
-      REAL8 phi0scale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "phi0_scale" );
-      REAL8 phi0min = *(REAL8*)LALInferenceGetVariable( data->dataParams, "phi0_scale_min" );
-      REAL8 phi22;
+      REAL8 phi22 = *(REAL8*)LALInferenceGetVariable( runState->currentParams, "phi22" );
+      REAL8 phi0scale = *(REAL8*)LALInferenceGetVariable( ifo->params, "phi0_scale" );
+      REAL8 phi0min = *(REAL8*)LALInferenceGetVariable( ifo->params, "phi0_scale_min" );
       REAL8 phi22scale = phi0scale;
       REAL8 phi22scalemin = phi0min;
       low = 0., high = 1.;
-
-      phi22 = phi0*phi0scale + phi0min - LAL_PI;
-      phi22 = phi22 - LAL_TWOPI*floor(phi22/LAL_TWOPI); /* modulo 2*pi */
-      phi22 /= phi22scale;
 
       LALInferenceParamVaryType vary = LALInferenceGetVariableVaryType( runState->currentParams, "phi0" );
 
       LALInferenceRemoveVariable( runState->currentParams, "phi22" );
       LALInferenceAddVariable( runState->currentParams, "phi22", &phi22, LALINFERENCE_REAL8_t, vary );
 
-      LALInferenceIFOData *datatemp = data;
-      while( datatemp ){
-        LALInferenceRemoveVariable( datatemp->dataParams, "phi22_scale" );
-        LALInferenceRemoveVariable( datatemp->dataParams, "phi22_scale_min" );
+      LALInferenceIFOModel *ifotemp = ifo;
+      while( ifotemp ){
+        LALInferenceRemoveVariable( ifotemp->params, "phi22_scale" );
+        LALInferenceRemoveVariable( ifotemp->params, "phi22_scale_min" );
 
-        LALInferenceAddVariable( datatemp->dataParams, "phi22_scale", &phi22scale, LALINFERENCE_REAL8_t,
+        LALInferenceAddVariable( ifotemp->params, "phi22_scale", &phi22scale, LALINFERENCE_REAL8_t,
                                  LALINFERENCE_PARAM_FIXED );
-        LALInferenceAddVariable( datatemp->dataParams, "phi22_scale_min", &phi22scalemin, LALINFERENCE_REAL8_t,
+        LALInferenceAddVariable( ifotemp->params, "phi22_scale_min", &phi22scalemin, LALINFERENCE_REAL8_t,
                                  LALINFERENCE_PARAM_FIXED );
 
-        datatemp = datatemp->next;
+        ifotemp = ifotemp->next;
       }
 
       if ( LALInferenceCheckGaussianPrior( runState->priorArgs, "phi0" ) ){
@@ -1870,11 +1900,11 @@ void initialisePrior( LALInferenceRunState *runState )
          LALInferenceGetVariableVaryType( runState->currentParams, "C22" ) != LALINFERENCE_PARAM_FIXED ){
       LALInferenceRemoveVariable( runState->currentParams, "h0" );
 
-      LALInferenceIFOData *datatemp = data;
-      while( datatemp ){
-        LALInferenceRemoveVariable( datatemp->dataParams, "h0_scale" );
-        LALInferenceRemoveVariable( datatemp->dataParams, "h0_scale_min" );
-        datatemp = datatemp->next;
+      LALInferenceIFOModel *ifotemp = ifo;
+      while( ifotemp ){
+        LALInferenceRemoveVariable( ifotemp->params, "h0_scale" );
+        LALInferenceRemoveVariable( ifotemp->params, "h0_scale_min" );
+        ifotemp = ifotemp->next;
       }
 
       if ( LALInferenceCheckGaussianPrior( runState->priorArgs, "h0" ) ){
@@ -1888,11 +1918,11 @@ void initialisePrior( LALInferenceRunState *runState )
          LALInferenceGetVariableVaryType( runState->currentParams, "phi22" ) != LALINFERENCE_PARAM_FIXED ){
       LALInferenceRemoveVariable( runState->currentParams, "phi0" );
 
-      LALInferenceIFOData *datatemp = data;
-      while( datatemp ){
-        LALInferenceRemoveVariable( datatemp->dataParams, "phi0_scale" );
-        LALInferenceRemoveVariable( datatemp->dataParams, "phi0_scale_min" );
-        datatemp = datatemp->next;
+      LALInferenceIFOModel *ifotemp = ifo;
+      while( ifotemp ){
+        LALInferenceRemoveVariable( ifotemp->params, "phi0_scale" );
+        LALInferenceRemoveVariable( ifotemp->params, "phi0_scale_min" );
+        ifotemp = ifotemp->next;
       }
 
       if ( LALInferenceCheckGaussianPrior( runState->priorArgs, "phi0" ) ){
@@ -1905,26 +1935,26 @@ void initialisePrior( LALInferenceRunState *runState )
   if( freqFactors->length == 2 ){
     if( LALInferenceGetProcParamVal( runState->commandLine, "--jones-model" ) ){
       /* if using Jones (2010) model then remove superfluous parameters */
-      remove_variable_and_prior( runState, data, "h0" );
-      remove_variable_and_prior( runState, data, "C22" );
-      remove_variable_and_prior( runState, data, "C21" );
-      remove_variable_and_prior( runState, data, "phi22" );
-      remove_variable_and_prior( runState, data, "phi21" );
+      remove_variable_and_prior( runState, ifo, "h0" );
+      remove_variable_and_prior( runState, ifo, "C22" );
+      remove_variable_and_prior( runState, ifo, "C21" );
+      remove_variable_and_prior( runState, ifo, "phi22" );
+      remove_variable_and_prior( runState, ifo, "phi21" );
     }
     else if( LALInferenceGetVariableVaryType( runState->currentParams, "phi22" ) == LALINFERENCE_PARAM_FIXED &&
       *(REAL8*)LALInferenceGetVariable( runState->currentParams, "phi22" ) == 0. &&
       ( LALInferenceGetVariableVaryType( runState->currentParams, "phi21" ) == LALINFERENCE_PARAM_CIRCULAR ||
         LALInferenceGetVariableVaryType( runState->currentParams, "phi21" ) == LALINFERENCE_PARAM_LINEAR ) ){
       /* check if using a prior range that corresponds to a biaxial star */
-      remove_variable_and_prior( runState, data, "phi22" );
+      remove_variable_and_prior( runState, ifo, "phi22" );
 
       /* add biaxial variable */
-      LALInferenceIFOData *datatemp = data;
-      while( datatemp ){
+      LALInferenceIFOModel *ifotemp = ifo;
+      while( ifotemp ){
         UINT4 biaxial = 1;
-        LALInferenceAddVariable( datatemp->dataParams, "biaxial", &biaxial, LALINFERENCE_UINT4_t,
+        LALInferenceAddVariable( ifotemp->params, "biaxial", &biaxial, LALINFERENCE_UINT4_t,
                                  LALINFERENCE_PARAM_FIXED );
-        datatemp = datatemp->next;
+        ifotemp = ifotemp->next;
       }
     }
   }
@@ -2186,6 +2216,7 @@ void add_correlation_matrix( LALInferenceVariables *ini, LALInferenceVariables *
  */
 void injectSignal( LALInferenceRunState *runState ){
   LALInferenceIFOData *data = runState->data;
+  LALInferenceIFOModel *ifo_model = runState->model->ifo;
 
   CHAR *injectfile = NULL, *snrfile = NULL;
   ProcessParamsTable *ppt;
@@ -2235,7 +2266,7 @@ void injectSignal( LALInferenceRunState *runState ){
     return;
   }
 
-  freqFactors = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams, "freqfactors" );
+  freqFactors = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "freqfactors" );
 
   /* get the SNR scale factor if required */
   ppt = LALInferenceGetProcParamVal( commandLine, "--scale-snr" );
@@ -2248,26 +2279,31 @@ void injectSignal( LALInferenceRunState *runState ){
     UINT4 varyphasetmp = varyphase;
     varyphase = 1;
 
-    pulsar_model( injpars, data );
+    pulsar_model( injpars, ifo_model );
 
     /* reset varyphase to its original value */
     varyphase = varyphasetmp;
 
     data = data->next;
+    ifo_model = ifo_model->next;
 
     /* If model uses more than one data stream need to advance data on to next, so this loop only runs once if there
      * is only 1 det */
-    for ( k = 1; k < (INT4)freqFactors->length; k++ ){ data = data->next; }
+    for ( k = 1; k < (INT4)freqFactors->length; k++ ){
+        data = data->next;
+        ifo_model = ifo_model->next;
+    }
   }
 
   /* reset data to head */
   data = runState->data;
+  ifo_model = runState->model->ifo;
 
   fprintf(fpsnr, "# Injected SNR\n");
 
   /* calculate SNRs */
   while ( data ){
-    REAL8 snrval = calculate_time_domain_snr( data );
+    REAL8 snrval = calculate_time_domain_snr( data, ifo_model );
 
     snrmulti += SQUARE(snrval);
 
@@ -2280,6 +2316,7 @@ void injectSignal( LALInferenceRunState *runState ){
     }
 
     data = data->next;
+    ifo_model = ifo_model->next;
 
     ndats++;
   }
@@ -2293,28 +2330,30 @@ void injectSignal( LALInferenceRunState *runState ){
   }
   else{
     /* rescale the signal and calculate the SNRs */
-    data = runState->data;
+    ifo_model = runState->model->ifo;
+
     snrscale /= snrmulti;
 
     injpars.C22 *= snrscale;
     injpars.C21 *= snrscale;
 
     /* recreate the signal with scaled amplitude */
-    while( data ){
+    while( ifo_model ){
       UINT4 varyphasetmp = varyphase;
       varyphase = 1;
 
-      pulsar_model( injpars, data );
+      pulsar_model( injpars, ifo_model );
 
       /* reset varyphase to its original value */
       varyphase = varyphasetmp;
 
-      data = data->next;
+      ifo_model = ifo_model->next;
 
       for ( k = 1; k < (INT4)freqFactors->length; k++ ) { data = data->next; }
     }
 
     data = runState->data;
+    ifo_model = runState->model->ifo;
 
     /* get new snrs */
     snrmulti = 0;
@@ -2324,13 +2363,14 @@ void injectSignal( LALInferenceRunState *runState ){
       REAL8 snrval = 0.;
 
       /* recalculate the SNR */
-      snrval = calculate_time_domain_snr( data );
+      snrval = calculate_time_domain_snr( data, ifo_model );
 
       snrmulti += SQUARE(snrval);
 
       fprintf(fpsnr, "%s\t%.3lf\t%le\n", data->name, freqFactors->data[ndats%(INT4)freqFactors->length], snrval);
 
       data = data->next;
+      ifo_model = ifo_model->next;
 
       ndats++;
     }
@@ -2347,12 +2387,13 @@ void injectSignal( LALInferenceRunState *runState ){
 
   /* reset data to head */
   data = runState->data;
+  ifo_model = runState->model->ifo;
 
   /* add signal to data */
   while( data ){
     FILE *fp = NULL, *fpso = NULL;
     ProcessParamsTable *ppt2 = LALInferenceGetProcParamVal( commandLine, "--inject-output" );
-    INT4 i = 0, length = data->dataTimes->length;
+    INT4 i = 0, length = ifo_model->times->length;
 
     /* check whether to output the data */
     if ( ppt2 ){
@@ -2386,17 +2427,17 @@ void injectSignal( LALInferenceRunState *runState ){
 
     /* add the signal to the data */
     for ( i = 0; i < length; i++ ){
-      data->compTimeData->data->data[i] += data->compModelData->data->data[i];
+      data->compTimeData->data->data[i] += ifo_model->compTimeSignal->data->data[i];
 
       /* write out injection to file */
       if( fp != NULL && fpso != NULL ){
         /* print out data - time stamp, real and imaginary parts of data (injected signal + noise) */
-        fprintf(fp, "%.5lf\t%le\t%le\n", XLALGPSGetREAL8( &data->dataTimes->data[i] ),
+        fprintf(fp, "%.5lf\t%le\t%le\n", XLALGPSGetREAL8( &ifo_model->times->data[i] ),
                 creal(data->compTimeData->data->data[i]), cimag(data->compTimeData->data->data[i]) );
 
         /* print signal only data - time stamp, real and imaginary parts of signal */
-        fprintf(fpso, "%.5lf\t%le\t%le\n", XLALGPSGetREAL8( &data->dataTimes->data[i] ),
-                creal(data->compModelData->data->data[i]), cimag(data->compModelData->data->data[i]) );
+        fprintf(fpso, "%.5lf\t%le\t%le\n", XLALGPSGetREAL8( &ifo_model->times->data[i] ),
+                creal(ifo_model->compTimeSignal->data->data[i]), cimag(ifo_model->compTimeSignal->data->data[i]) );
       }
     }
 
@@ -2404,6 +2445,7 @@ void injectSignal( LALInferenceRunState *runState ){
     if ( fpso != NULL ) { fclose( fpso ); }
 
     data = data->next;
+    ifo_model = ifo_model->next;
     j++;
   }
 }
@@ -2429,7 +2471,7 @@ void injectSignal( LALInferenceRunState *runState ){
  *
  * \return A vector of chunk/segment lengths
  */
-UINT4Vector *get_chunk_lengths( LALInferenceIFOData *data, INT4 chunkMax ){
+UINT4Vector *get_chunk_lengths( LALInferenceIFOModel *ifo, INT4 chunkMax ){
   INT4 i = 0, j = 0, count = 0;
   INT4 length;
 
@@ -2437,11 +2479,11 @@ UINT4Vector *get_chunk_lengths( LALInferenceIFOData *data, INT4 chunkMax ){
 
   UINT4Vector *chunkLengths = NULL;
 
-  length = data->dataTimes->length;
+  length = ifo->times->length;
 
   chunkLengths = XLALCreateUINT4Vector( length );
 
-  REAL8 dt = *(REAL8*)LALInferenceGetVariable( data->dataParams, "dt" );
+  REAL8 dt = *(REAL8*)LALInferenceGetVariable( ifo->params, "dt" );
 
   /* create vector of data segment length */
   while( 1 ){
@@ -2457,8 +2499,8 @@ UINT4Vector *get_chunk_lengths( LALInferenceIFOData *data, INT4 chunkMax ){
 
     i++;
 
-    t1 = XLALGPSGetREAL8( &data->dataTimes->data[i-1 ]);
-    t2 = XLALGPSGetREAL8( &data->dataTimes->data[i] );
+    t1 = XLALGPSGetREAL8( &ifo->times->data[i-1 ]);
+    t2 = XLALGPSGetREAL8( &ifo->times->data[i] );
 
     /* if consecutive points are within two sample times of each other count as in the same chunk */
     if( t2 - t1 > 2.*dt || count == chunkMax ){
@@ -2972,6 +3014,7 @@ void merge_data( COMPLEX16Vector *data, UINT4Vector *segs ){
  */
 void sumData( LALInferenceRunState *runState ){
   LALInferenceIFOData *data = runState->data;
+  LALInferenceIFOModel *ifomodel = runState->model->ifo;
 
   while( data ){
     REAL8Vector *sumdat = NULL;
@@ -2981,9 +3024,9 @@ void sumData( LALInferenceRunState *runState ){
 
     UINT4Vector *chunkLengths;
 
-    chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( data->dataParams, "chunkLength" );
+    chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( ifomodel->params, "chunkLength" );
 
-    length = data->dataTimes->length + 1 - chunkLengths->data[chunkLengths->length - 1];
+    length = runState->model->ifo->times->length + 1 - chunkLengths->data[chunkLengths->length - 1];
 
     sumdat = XLALCreateREAL8Vector( chunkLengths->length );
 
@@ -3002,10 +3045,11 @@ void sumData( LALInferenceRunState *runState ){
       count++;
     }
 
-    LALInferenceAddVariable( data->dataParams, "sumData", &sumdat, LALINFERENCE_REAL8Vector_t,
+    LALInferenceAddVariable( ifomodel->params, "sumData", &sumdat, LALINFERENCE_REAL8Vector_t,
                              LALINFERENCE_PARAM_FIXED );
 
     data = data->next;
+    ifomodel = ifomodel->next;
   }
 
   return;
@@ -3153,10 +3197,10 @@ void rescaleOutput( LALInferenceRunState *runState ){
         sprintf(scalename, "%s_scale", paramsStr->data[i]);
         sprintf(scaleminname, "%s_scale_min", paramsStr->data[i]);
 
-        if ( LALInferenceCheckVariable( runState->data->dataParams, scalename ) &&
-          LALInferenceCheckVariable( runState->data->dataParams, scaleminname ) ){
-          scalefac = *(REAL8 *)LALInferenceGetVariable( runState->data->dataParams, scalename );
-          scalemin = *(REAL8 *)LALInferenceGetVariable( runState->data->dataParams, scaleminname );
+        if ( LALInferenceCheckVariable( runState->model->ifo->params, scalename ) &&
+          LALInferenceCheckVariable( runState->model->ifo->params, scaleminname ) ){
+          scalefac = *(REAL8 *)LALInferenceGetVariable( runState->model->ifo->params, scalename );
+          scalemin = *(REAL8 *)LALInferenceGetVariable( runState->model->ifo->params, scaleminname );
 
           fprintf(fptemp, "%.12le\t", atof(value)*scalefac + scalemin);
         }
@@ -3226,10 +3270,10 @@ void rescaleOutput( LALInferenceRunState *runState ){
         sprintf(scaleminname, "%s_scale_min", scaleitem->name);
 
         /* check if scale values are present */
-        if ( LALInferenceCheckVariable( runState->data->dataParams, scalename ) &&
-          LALInferenceCheckVariable( runState->data->dataParams, scaleminname ) ){
-          scalefac = *(REAL8 *)LALInferenceGetVariable( runState->data->dataParams, scalename );
-          scalemin = *(REAL8 *)LALInferenceGetVariable( runState->data->dataParams, scaleminname );
+        if ( LALInferenceCheckVariable( runState->model->ifo->params, scalename ) &&
+          LALInferenceCheckVariable( runState->model->ifo->params, scaleminname ) ){
+          scalefac = *(REAL8 *)LALInferenceGetVariable( runState->model->ifo->params, scalename );
+          scalemin = *(REAL8 *)LALInferenceGetVariable( runState->model->ifo->params, scaleminname );
 
           /* get the value and scale it */
           value = *(REAL8 *)LALInferenceGetVariable( &output_array[i], scaleitem->name );
@@ -3351,10 +3395,11 @@ INT4 recognised_parameter( CHAR *parname ){
  * \c chunkLength vector and the SNR from each segment is added in quadrature.
  *
  * \param data [in] A data pointer containing detector data and the signal model
+ * \param ifo_model [in] A model structure containing detector parameters and buffers
  *
  * \return The optimal matched filter signal-to-noise ratio
  */
-REAL8 calculate_time_domain_snr( LALInferenceIFOData *data ){
+REAL8 calculate_time_domain_snr( LALInferenceIFOData *data, LALInferenceIFOModel *ifo_model ){
   REAL8 snrval = 0., chunkLength;
 
   INT4 i = 0, j = 0, length = 0, cl = 0;
@@ -3367,8 +3412,8 @@ REAL8 calculate_time_domain_snr( LALInferenceIFOData *data ){
   meddata = subtract_running_median( data->compTimeData->data );
 
   UINT4Vector *chunkLengths = NULL;
-  chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( data->dataParams, "chunkLength" );
-  chunkMin = *(INT4*)LALInferenceGetVariable( data->dataParams, "chunkMin" );
+  chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( ifo_model->params, "chunkLength" );
+  chunkMin = *(INT4*)LALInferenceGetVariable( ifo_model->params, "chunkMin" );
 
   length = data->compTimeData->data->length;
 
@@ -3391,8 +3436,8 @@ REAL8 calculate_time_domain_snr( LALInferenceIFOData *data ){
       variIm += SQUARE( cimag(meddata->data[j]) );
 
       /* calculate optimal signal power */
-      snrcRe += SQUARE( creal(data->compModelData->data->data[j]) );
-      snrcIm += SQUARE( cimag(data->compModelData->data->data[j]) );
+      snrcRe += SQUARE( creal(ifo_model->compTimeSignal->data->data[j]) );
+      snrcIm += SQUARE( cimag(ifo_model->compTimeSignal->data->data[j]) );
     }
 
     variRe /= (chunkLength - 1.);
@@ -3437,6 +3482,7 @@ void get_loudest_snr( LALInferenceRunState *runState ){
 
   LALInferenceVariables *loudestParams = NULL;
   LALInferenceIFOData *data;
+  LALInferenceIFOModel *ifo_model;
 
   loudestParams = calloc( 1, sizeof(LALInferenceVariables) );
 
@@ -3444,7 +3490,7 @@ void get_loudest_snr( LALInferenceRunState *runState ){
   LALInferenceCopyVariables( runState->livePoints[Nlive-1], loudestParams );
 
   /* make sure that the signal model in runState->data is that of the loudest signal */
-  REAL8 logLnew = runState->likelihood( loudestParams, runState->data, runState->templt );
+  REAL8 logLnew = runState->likelihood( loudestParams, runState->data, runState->model );
 
   if ( logLnew != *(REAL8 *)LALInferenceGetVariable(
     runState->livePoints[Nlive-1], "logL" ) ){
@@ -3472,25 +3518,26 @@ void get_loudest_snr( LALInferenceRunState *runState ){
 
   /* get SNR of loudest point and print out to file */
   data = runState->data;
+  ifo_model = runState->model->ifo;
 
   //FILE *fp = NULL;
   //fp = fopen("max_like_signal.txt", "w");
 
   fprintf(fpsnr, "# Recovered SNR\n");
 
-  freqFactors = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams, "freqfactors" );
+  freqFactors = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "freqfactors" );
 
   while( data ){
-    REAL8 snrval = calculate_time_domain_snr( data );
+    REAL8 snrval = calculate_time_domain_snr( data, ifo_model );
 
-    //UINT4 length = data->compModelData->data->length;
+    //UINT4 length = ifo_model->compTimeData->data->length;
 
     /* print out maxlikelihood template */
     //for ( UINT4 j=0; j < length; j++ ){
     //  fprintf(fp, "%lf\t%le\t%le\n",
-    //          XLALGPSGetREAL8( &data->dataTimes->data[j] ),
-    //          data->compModelData->data->data[j].re,
-    //          data->compModelData->data->data[j].im );
+    //          XLALGPSGetREAL8( &ifo_model->times->data[j] ),
+    //          ifo_model->compTimeSignal->data->data[j].re,
+    //          ifo_model->compTimeSignal->data->data[j].im );
     //}
 
     snrmulti += SQUARE( snrval );
@@ -3501,6 +3548,7 @@ void get_loudest_snr( LALInferenceRunState *runState ){
     ndats++;
 
     data = data->next;
+    ifo_model = ifo_model->next;
   }
 
   //fclose(fp);
@@ -3634,7 +3682,7 @@ TimeCorrectionType XLALAutoSetEphemerisFiles( CHAR *efile, CHAR *sfile, CHAR *tf
  * \param var [in] The variable to remove
  *
  */
-void remove_variable_and_prior( LALInferenceRunState *runState, LALInferenceIFOData *data, const CHAR *var ){
+void remove_variable_and_prior( LALInferenceRunState *runState, LALInferenceIFOModel *ifo, const CHAR *var ){
   /* remove variable from currentParams */
   if( LALInferenceCheckVariable( runState->currentParams, var ) ){
     LALInferenceRemoveVariable( runState->currentParams, var );
@@ -3645,13 +3693,13 @@ void remove_variable_and_prior( LALInferenceRunState *runState, LALInferenceIFOD
   }
 
   /* remove variable scale parameters from data */
-  LALInferenceIFOData *datatemp = data;
-  while ( datatemp ){
+  LALInferenceIFOModel *ifotemp = ifo;
+  while ( ifotemp ){
     CHAR *varscale = XLALStringDuplicate( var );
     varscale = XLALStringAppend( varscale, "_scale" );
 
-    if( LALInferenceCheckVariable( datatemp->dataParams, varscale ) ){
-      LALInferenceRemoveVariable( datatemp->dataParams, varscale );
+    if( LALInferenceCheckVariable( ifotemp->params, varscale ) ){
+      LALInferenceRemoveVariable( ifotemp->params, varscale );
     }
     else{
       fprintf(stderr, "Error... variable %s cannot be removed as it does not exist!\n", varscale);
@@ -3659,15 +3707,15 @@ void remove_variable_and_prior( LALInferenceRunState *runState, LALInferenceIFOD
     }
 
     varscale = XLALStringAppend( varscale, "_min" );
-    if( LALInferenceCheckVariable( datatemp->dataParams, varscale ) ){
-      LALInferenceRemoveVariable( datatemp->dataParams, varscale );
+    if( LALInferenceCheckVariable( ifotemp->params, varscale ) ){
+      LALInferenceRemoveVariable( ifotemp->params, varscale );
     }
     else{
       fprintf(stderr, "Error... variable %s cannot be removed as it does not exist!\n", varscale);
       exit(3);
     }
 
-    datatemp = datatemp->next;
+    ifotemp = ifotemp->next;
   }
 
   /* remove prior */

@@ -70,7 +70,6 @@ Initialisation arguments:\n\
 (--randomseed seed           Random seed for Nested Sampling)\
 (--resume)\tAllow non-condor checkpointing every 4 hours. If give will check for OUTFILE_resume and continue if possible\n\n";
 	LALInferenceRunState *irs=NULL;
-	LALInferenceIFOData *ifoPtr, *ifoListStart;
 	ProcessParamsTable *ppt=NULL;
 	unsigned long int randomseed;
 	struct timeval tv;
@@ -134,34 +133,6 @@ Initialisation arguments:\n\
 		LALInferenceInjectInspiralSignal(irs->data,commandLine);
 		fprintf(stdout, " LALInferenceInjectInspiralSignal(): finished.\n");
 		
-		ifoPtr = irs->data;
-		ifoListStart = irs->data;
-		while (ifoPtr != NULL) {
-			/*If two IFOs have the same sampling rate, they should have the same timeModelh*,
-			 freqModelh*, and modelParams variables to avoid excess computation 
-			 in model waveform generation in the future*/
-			LALInferenceIFOData * ifoPtrCompare=ifoListStart;
-			int foundIFOwithSameSampleRate=0;
-			while(ifoPtrCompare != NULL && ifoPtrCompare!=ifoPtr) {
-				if(ifoPtrCompare->timeData->deltaT == ifoPtr->timeData->deltaT){
-					ifoPtr->timeModelhPlus=ifoPtrCompare->timeModelhPlus;
-					ifoPtr->freqModelhPlus=ifoPtrCompare->freqModelhPlus;
-					ifoPtr->timeModelhCross=ifoPtrCompare->timeModelhCross;				
-					ifoPtr->freqModelhCross=ifoPtrCompare->freqModelhCross;				
-					ifoPtr->modelParams=ifoPtrCompare->modelParams;	
-					foundIFOwithSameSampleRate=1;	
-					break;
-				}
-			}
-			if(!foundIFOwithSameSampleRate){
-				ifoPtr->timeModelhPlus  = XLALCreateREAL8TimeSeries("timeModelhPlus",&(ifoPtr->timeData->epoch),0.0,ifoPtr->timeData->deltaT,&lalDimensionlessUnit,ifoPtr->timeData->data->length);
-				ifoPtr->timeModelhCross = XLALCreateREAL8TimeSeries("timeModelhCross",&(ifoPtr->timeData->epoch),0.0,	ifoPtr->timeData->deltaT,&lalDimensionlessUnit,ifoPtr->timeData->data->length);
-				ifoPtr->freqModelhPlus = XLALCreateCOMPLEX16FrequencySeries("freqModelhPlus",&(ifoPtr->freqData->epoch),0.0,ifoPtr->freqData->deltaF,&lalDimensionlessUnit,ifoPtr->freqData->data->length);
-				ifoPtr->freqModelhCross = XLALCreateCOMPLEX16FrequencySeries("freqModelhCross",&(ifoPtr->freqData->epoch), 0.0, ifoPtr->freqData->deltaF, &lalDimensionlessUnit,ifoPtr->freqData->data->length);
-				ifoPtr->modelParams = XLALCalloc(1, sizeof(LALInferenceVariables));
-			}
-			ifoPtr = ifoPtr->next;
-		}
 		irs->currentLikelihood=LALInferenceNullLogLikelihood(irs->data);
 		printf("Null Log Likelihood: %g\n", irs->currentLikelihood);
 	}
@@ -414,22 +385,23 @@ Arguments for each section follow:\n\n";
 	/* Set up structures for nested sampling */
 	initializeNS(state);
 	
-	/* Set template function */
-	LALInferenceInitCBCTemplate(state);
-
 	/* Set up currentParams with variables to be used */
 	/* Review task needs special priors */
-	LALInferenceInitVariablesFunction initVarsFunc=NULL;
+	LALInferenceInitModelFunction initModelFunc=NULL;
 	if(LALInferenceGetProcParamVal(procParams,"--correlatedGaussianLikelihood"))
-		initVarsFunc=&LALInferenceInitVariablesReviewEvidence;
+		initModelFunc=&LALInferenceInitModelReviewEvidence;
         else if(LALInferenceGetProcParamVal(procParams,"--bimodalGaussianLikelihood"))
-                initVarsFunc=&LALInferenceInitVariablesReviewEvidence_bimod;
+                initModelFunc=&LALInferenceInitModelReviewEvidence_bimod;
         else if(LALInferenceGetProcParamVal(procParams,"--rosenbrockLikelihood"))
-                initVarsFunc=&LALInferenceInitVariablesReviewEvidence_banana;
+                initModelFunc=&LALInferenceInitModelReviewEvidence_banana;
 	else
-		initVarsFunc=&LALInferenceInitCBCVariables;
-	state->initVariables=initVarsFunc;
-	state->currentParams = initVarsFunc(state);
+		initModelFunc=&LALInferenceInitCBCModel;
+	state->initModel=initModelFunc;
+	state->model = initModelFunc(state);
+    state->currentParams = XLALMalloc(sizeof(LALInferenceVariables));
+    memset(state->currentParams, 0, sizeof(LALInferenceVariables));
+    LALInferenceCopyVariables(state->model->params, state->currentParams);
+    state->templt = state->model->templt;
 
         /* Choose the likelihood */
         LALInferenceInitLikelihood(state);
@@ -444,7 +416,7 @@ Arguments for each section follow:\n\n";
 	/* Call setupLivePointsArray() to populate live points structures */
 	LALInferenceSetupLivePointsArray(state);
 
-	LALInferenceSetupDefaultNSProposal(state,state->currentParams);
+	LALInferenceSetupDefaultNSProposal(state,state->currentParams,state->currentParams);
 	
 	/* write injection with noise evidence information from algorithm */
 	LALInferencePrintInjectionSample(state);

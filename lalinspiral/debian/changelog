@@ -1,3 +1,16 @@
+lalinspiral (1.6.1-1) unstable; urgency=low
+
+  * LALInspiral 1.6.1
+  * correctly package SWIG bindings
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 28 Oct 2014 12:40:04 -0500
+
+lalinspiral (1.6.0-1) unstable; urgency=low
+
+  * LALInspiral 1.6.0
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Mon, 27 Oct 2014 15:25:30 -0500
+
 lalinspiral (1.5.3-1) unstable; urgency=low
 
   * LALInspiral 1.5.3

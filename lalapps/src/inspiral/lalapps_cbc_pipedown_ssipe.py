@@ -33,7 +33,10 @@ def get_veto_cat_from_tag( tag ):
   nothing for N=1.
   """
   if 'VETO' in tag:
-    cat_num = int(tag.split('_')[-2])
+    try:
+      cat_num = int(tag.split('_')[-2])
+    except:
+      cat_num = int(tag.split('_')[-3])
   else:
     # is category 1 veto
     cat_num = 1

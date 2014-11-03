@@ -40,8 +40,6 @@ user_environment = \
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = lalpulsar.pc
-noinst_DATA = lalpulsar-uninstalled.pc
-BUILT_SOURCES += lalpulsar-uninstalled.pc
 
 all-local:
 	@echo "";\

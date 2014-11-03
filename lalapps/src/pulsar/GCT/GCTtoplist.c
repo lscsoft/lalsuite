@@ -124,17 +124,17 @@ static int gctFStat_result_order(const void *a, const void *b) {
     return 0;
 }
 
-/* ordering function defining the toplist: SORT BY sumTwoF */
+/* ordering function defining the toplist: SORT BY avTwoF */
 static int gctFStat_smaller(const void*a, const void*b) {
 #ifdef DEBUG_SORTING
   if(debugfp)
     fprintf(debugfp,"%20lf  %20lf\n%20u  %20u\n\n",
-	    ((const GCTtopOutputEntry*)a)->sumTwoF,  ((const GCTtopOutputEntry*)b)->sumTwoF,
+	    ((const GCTtopOutputEntry*)a)->avTwoF,  ((const GCTtopOutputEntry*)b)->avTwoF,
 	    ((const GCTtopOutputEntry*)a)->nc, ((const GCTtopOutputEntry*)b)->nc);
 #endif
-  if      (((const GCTtopOutputEntry*)a)->sumTwoF < ((const GCTtopOutputEntry*)b)->sumTwoF)
+  if      (((const GCTtopOutputEntry*)a)->avTwoF < ((const GCTtopOutputEntry*)b)->avTwoF)
     return 1;
-  else if (((const GCTtopOutputEntry*)a)->sumTwoF > ((const GCTtopOutputEntry*)b)->sumTwoF)
+  else if (((const GCTtopOutputEntry*)a)->avTwoF > ((const GCTtopOutputEntry*)b)->avTwoF)
     return -1;
   else if (((const GCTtopOutputEntry*)a)->nc < ((const GCTtopOutputEntry*)b)->nc)
     return 1;
@@ -150,37 +150,37 @@ static int gctNC_smaller(const void*a, const void*b) {
 #ifdef DEBUG_SORTING
   if(debugfp)
     fprintf(debugfp,"%20lf  %20lf\n%20u  %20u\n\n",
-	    ((const GCTtopOutputEntry*)a)->sumTwoF,  ((const GCTtopOutputEntry*)b)->sumTwoF,
+	    ((const GCTtopOutputEntry*)a)->avTwoF,  ((const GCTtopOutputEntry*)b)->avTwoF,
 	    ((const GCTtopOutputEntry*)a)->nc, ((const GCTtopOutputEntry*)b)->nc);
 #endif
   if      (((const GCTtopOutputEntry*)a)->nc < ((const GCTtopOutputEntry*)b)->nc)
     return 1;
   else if (((const GCTtopOutputEntry*)a)->nc > ((const GCTtopOutputEntry*)b)->nc)
     return -1;
-  else if (((const GCTtopOutputEntry*)a)->sumTwoF < ((const GCTtopOutputEntry*)b)->sumTwoF)
+  else if (((const GCTtopOutputEntry*)a)->avTwoF < ((const GCTtopOutputEntry*)b)->avTwoF)
     return 1;
-  else if (((const GCTtopOutputEntry*)a)->sumTwoF > ((const GCTtopOutputEntry*)b)->sumTwoF)
+  else if (((const GCTtopOutputEntry*)a)->avTwoF > ((const GCTtopOutputEntry*)b)->avTwoF)
     return -1;
   else
     return(gctFStat_result_order(a,b));
 }
 
 
-/* ordering function defining the toplist: SORT BY LVstat */
-static int gctLV_smaller(const void*a, const void*b) {
+/* ordering function defining the toplist: SORT BY BSGL */
+static int gctBSGL_smaller(const void*a, const void*b) {
 #ifdef DEBUG_SORTING
   if(debugfp)
     fprintf(debugfp,"%20lf  %20lf\n%20lf  %20lf\n\n",
-	    ((const GCTtopOutputEntry*)a)->sumTwoF,  ((const GCTtopOutputEntry*)b)->sumTwoF,
-	    ((const GCTtopOutputEntry*)a)->LV, ((const GCTtopOutputEntry*)b)->LV);
+	    ((const GCTtopOutputEntry*)a)->avTwoF,  ((const GCTtopOutputEntry*)b)->avTwoF,
+	    ((const GCTtopOutputEntry*)a)->log10BSGL, ((const GCTtopOutputEntry*)b)->log10BSGL);
 #endif
-  if      (((const GCTtopOutputEntry*)a)->LV < ((const GCTtopOutputEntry*)b)->LV)
+  if      (((const GCTtopOutputEntry*)a)->log10BSGL < ((const GCTtopOutputEntry*)b)->log10BSGL)
     return 1;
-  else if (((const GCTtopOutputEntry*)a)->LV > ((const GCTtopOutputEntry*)b)->LV)
+  else if (((const GCTtopOutputEntry*)a)->log10BSGL > ((const GCTtopOutputEntry*)b)->log10BSGL)
     return -1;
-  else if (((const GCTtopOutputEntry*)a)->sumTwoF < ((const GCTtopOutputEntry*)b)->sumTwoF)
+  else if (((const GCTtopOutputEntry*)a)->avTwoF < ((const GCTtopOutputEntry*)b)->avTwoF)
     return 1;
-  else if (((const GCTtopOutputEntry*)a)->sumTwoF > ((const GCTtopOutputEntry*)b)->sumTwoF)
+  else if (((const GCTtopOutputEntry*)a)->avTwoF > ((const GCTtopOutputEntry*)b)->avTwoF)
     return -1;
   else
     return(gctFStat_result_order(a,b));
@@ -207,7 +207,7 @@ int create_gctFStat_toplist(toplist_t**tl, UINT8 length, UINT4 whatToSortBy) {
     return( create_toplist(tl, length, sizeof(GCTtopOutputEntry), gctNC_smaller) );
   }
   else if (whatToSortBy==2) {
-    return( create_toplist(tl, length, sizeof(GCTtopOutputEntry), gctLV_smaller) );
+    return( create_toplist(tl, length, sizeof(GCTtopOutputEntry), gctBSGL_smaller) );
   }
   else {
     return( create_toplist(tl, length, sizeof(GCTtopOutputEntry), gctFStat_smaller) );
@@ -244,41 +244,61 @@ void sort_gctFStat_toplist(toplist_t*l) {
 static int print_gctFStatline_to_str(GCTtopOutputEntry fline, char* buf, int buflen) {
   const char *fn = __func__;
 
-  /* add extra output-field containing fields of LVstats struct, if non-NULL */
-  char LVStr[256] = "";	/* defaults to empty */
-  if ( fline.LV > -LAL_REAL4_MAX*0.2 ) /* if --computeLV=FALSE, the LV field was initialised to -LAL_REAL4_MAX. if --computeLV=TRUE, it is at least -LAL_REAL4_MAX*0.1 */
+  /* add extra output field for line-robust statistic BSGL */
+  char BSGLstr[256] = "";	/* defaults to empty */
+  if ( fline.log10BSGL > -LAL_REAL4_MAX*0.2 ) /* if --computeBSGL=FALSE, the log10BSGL field was initialised to -LAL_REAL4_MAX; if --computeBSGL=TRUE, it is at least -LAL_REAL4_MAX*0.1 */
     {
       char buf0[256];
-      snprintf ( LVStr, sizeof(LVStr), " %.6f", fline.LV );
+      snprintf ( BSGLstr, sizeof(BSGLstr), " %.6f", fline.log10BSGL );
       for ( UINT4 X = 0; X < fline.numDetectors ; X ++ )
         {
-          snprintf ( buf0, sizeof(buf0), " %.6f", fline.sumTwoFX[X] );
-          UINT4 len1 = strlen ( LVStr ) + strlen ( buf0 ) + 1;
-          if ( len1 > sizeof ( LVStr ) ) {
-            XLALPrintError ("%s: assembled output string too long! (%d > %d)\n", fn, len1, sizeof(LVStr ));
+          snprintf ( buf0, sizeof(buf0), " %.6f", fline.avTwoFX[X] );
+          UINT4 len1 = strlen ( BSGLstr ) + strlen ( buf0 ) + 1;
+          if ( len1 > sizeof ( BSGLstr ) ) {
+            XLALPrintError ("%s: assembled output string too long! (%d > %d)\n", fn, len1, sizeof(BSGLstr ));
             break;	/* we can't really terminate with error in this function, but at least we avoid crashing */
           }
-          strcat ( LVStr, buf0 );
+          strcat ( BSGLstr, buf0 );
         } /* for X < numDet */
 
-    } /* if fline.LVstats */
-  char LVRecalcStr[256] = "";	/* defaults to empty */
-  if ( fline.sumTwoFrecalc >= 0.0 ) /* this was initialised to -1.0 and is only >= 0.0 if actually recomputed in recalcToplistStats step */
+    } /* if fline.log10BSGL */
+  /* add extra output fields for recalculated statistics */
+  char recalcStr[256] = "";	/* defaults to empty */
+  if ( fline.avTwoFrecalc >= 0.0 ) /* this was initialised to -1.0 and is only >= 0.0 if actually recomputed in recalcToplistStats step */
     {
       char buf0[256];
-      snprintf ( LVRecalcStr, sizeof(LVRecalcStr), " %.6f", fline.sumTwoFrecalc );
+      snprintf ( recalcStr, sizeof(recalcStr), " %.6f", fline.avTwoFrecalc );
+      if ( fline.log10BSGLrecalc > -LAL_REAL4_MAX*0.2 ) /* if --computeBSGL=FALSE, the log10BSGLrecalc field was initialised to -LAL_REAL4_MAX; if --computeBSGL=TRUE, it is at least -LAL_REAL4_MAX*0.1 */
+        {
+          snprintf ( buf0, sizeof(buf0), " %.6f", fline.log10BSGLrecalc );
+          strcat ( recalcStr, buf0 );
+        } /* if ( fline.log10BSGL > -LAL_REAL4_MAX*0.2 ) */
       for ( UINT4 X = 0; X < fline.numDetectors ; X ++ )
         {
-          snprintf ( buf0, sizeof(buf0), " %.6f", fline.sumTwoFXrecalc[X] );
-          UINT4 len1 = strlen ( LVRecalcStr ) + strlen ( buf0 ) + 1;
-          if ( len1 > sizeof ( LVRecalcStr ) ) {
-            XLALPrintError ("%s: assembled output string too long! (%d > %d)\n", fn, len1, sizeof(LVRecalcStr ));
+          snprintf ( buf0, sizeof(buf0), " %.6f", fline.avTwoFXrecalc[X] );
+          UINT4 len1 = strlen ( recalcStr ) + strlen ( buf0 ) + 1;
+          if ( len1 > sizeof ( recalcStr ) ) {
+            XLALPrintError ("%s: assembled output string too long! (%d > %d)\n", fn, len1, sizeof(recalcStr ));
             break;	/* we can't really terminate with error in this function, but at least we avoid crashing */
           }
-          strcat ( LVRecalcStr, buf0 );
+          strcat ( recalcStr, buf0 );
         } /* for X < numDet */
-
-    } /* if sumTwoFX */
+      if ( fline.twoFloudestSeg >= 0.0 ) /* this was initialised to -1.0 and is only >= 0.0 if actually recomputed in recalcToplistStats step */
+      {
+        snprintf ( buf0, sizeof(buf0), " %d %.6f", fline.loudestSeg, fline.twoFloudestSeg );
+        strcat ( recalcStr, buf0 );
+        for ( UINT4 X = 0; X < fline.numDetectors ; X ++ )
+          {
+            snprintf ( buf0, sizeof(buf0), " %.6f", fline.twoFXloudestSeg[X] );
+            UINT4 len1 = strlen ( recalcStr ) + strlen ( buf0 ) + 1;
+            if ( len1 > sizeof ( recalcStr ) ) {
+              XLALPrintError ("%s: assembled output string too long! (%d > %d)\n", fn, len1, sizeof(recalcStr ));
+              break;	/* we can't really terminate with error in this function, but at least we avoid crashing */
+            }
+            strcat ( recalcStr, buf0 );
+          } /* for X < numDet */
+      } /* if ( fline.twoFloudestSeg >= 0.0 ) */
+    } /* if avTwoFX */
 
   int len;
   if (fline.have_f3dot){
@@ -295,11 +315,11 @@ static int print_gctFStatline_to_str(GCTtopOutputEntry fline, char* buf, int buf
                      fline.Delta,
                      fline.F1dot,
                      fline.F2dot,
-					 fline.F3dot,
+                     fline.F3dot,
                      fline.nc,
-                     fline.sumTwoF,
-                     LVStr,
-                     LVRecalcStr
+                     fline.avTwoF,
+                     BSGLstr,
+                     recalcStr
                  );
   }
   else {
@@ -317,10 +337,10 @@ static int print_gctFStatline_to_str(GCTtopOutputEntry fline, char* buf, int buf
                      fline.F1dot,
                      fline.F2dot,
                      fline.nc,
-                     fline.sumTwoF,
-                     LVStr,
-                     LVRecalcStr
-                 );	  
+                     fline.avTwoF,
+                     BSGLstr,
+                     recalcStr
+                 );
 }
   return len;
 
@@ -473,8 +493,8 @@ static int _atomic_write_gctFStat_toplist_to_file(toplist_t *l, const char *file
         sortstat = "<2F>";
       else if ( l->smaller == gctNC_smaller )
         sortstat = "nc";
-      else if ( l->smaller == gctLV_smaller )
-        sortstat = "LV";
+      else if ( l->smaller == gctBSGL_smaller )
+        sortstat = "BSGL";
       else {
         LogPrintf (LOG_CRITICAL, "Failed to write toplist sorting line, toplist is sorted by unknowns statistic.\n");
         length = -1;

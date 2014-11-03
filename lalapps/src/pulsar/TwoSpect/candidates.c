@@ -23,7 +23,11 @@
 #include "templates.h"
 
 
-//Allocate a candidateVector
+/**
+ * Allocate a candidateVector
+ * \param [in] length Length of the candidateVector
+ * \return Pointer to the allocated candidateVector
+ */
 candidateVector * new_candidateVector(UINT4 length)
 {
 
@@ -40,7 +44,12 @@ candidateVector * new_candidateVector(UINT4 length)
 } /* new_candidateVector() */
 
 
-//Resize a candidateVector
+/**
+ * Resize a candidateVector
+ * \param [in] vector Pointer of vector to resize
+ * \param [in] length New length of candidateVector
+ * \return Pointer to resized vector
+ */
 candidateVector * resize_candidateVector(candidateVector *vector, UINT4 length)
 {
 
@@ -59,7 +68,10 @@ candidateVector * resize_candidateVector(candidateVector *vector, UINT4 length)
 } /* resize_candidateVector() */
 
 
-//Free a candidateVector
+/**
+ * Free a candidateVector
+ * \param [in] vector Pointer of candidateVector to be freed
+ */
 void free_candidateVector(candidateVector *vector)
 {
 
@@ -70,12 +82,23 @@ void free_candidateVector(candidateVector *vector)
    XLALFree((candidateVector*)vector);
    return;
 
-} /* delete_candidateVector() */
+} /* free_candidateVector() */
 
 
-
-//////////////////////////////////////////////////////////////
-// Load candidate data
+/**
+ * Load candidate data
+ * \param [out] output        Pointer to candidate
+ * \param [in]  fsig          Frequency of candidate
+ * \param [in]  period        Orbital period of candidate
+ * \param [in]  moddepth      Modulation depth of candidate
+ * \param [in]  ra            Right ascension of candidate
+ * \param [in]  dec           Declination of candidate
+ * \param [in]  statval       Detection statistic
+ * \param [in]  h0            Estimated strain amplitude
+ * \param [in]  prob          False alarm probability
+ * \param [in]  proberrcode   Davies' method error code
+ * \param [in]  normalization Time-frequency normalization
+ */
 void loadCandidateData(candidate* output, REAL8 fsig, REAL8 period, REAL8 moddepth, REAL4 ra, REAL4 dec, REAL8 statval, REAL8 h0, REAL8 prob, INT4 proberrcode, REAL8 normalization)
 {
 
@@ -93,10 +116,18 @@ void loadCandidateData(candidate* output, REAL8 fsig, REAL8 period, REAL8 moddep
 } /* loadCandidateData() */
 
 
-//////////////////////////////////////////////////////////////
-// Cluster candidates by frequency and period using templates:
-// option = 0 uses Gaussian templates (default)
-// option = 1 uses exact templates
+/**
+ * Cluster candidates by frequency, period, and modulation depth using templates
+ * \param [out] output        Pointer to pointer of a candidateVector
+ * \param [in]  input         Pointer to a candidateVector
+ * \param [in]  ffdata        Pointer to ffdataStruct
+ * \param [in]  params        Pointer to inputParamsStruct
+ * \param [in]  ffplanenoise  Pointer to REAL4Vector of 2nd FFT background powers
+ * \param [in]  fbinaveratios Pointer to REAL4Vector of normalized SFT background
+ * \param [in]  sftexist      Pointer to INT4Vector of existing SFTs
+ * \param [in]  option        Flag to use Gaussian templates (0) or exact templates (1)
+ * \return Status value
+ */
 INT4 clusterCandidates(candidateVector **output, candidateVector *input, ffdataStruct *ffdata, inputParamsStruct *params, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios, INT4Vector *sftexist, INT4 option)
 {
 
@@ -295,8 +326,18 @@ INT4 clusterCandidates(candidateVector **output, candidateVector *input, ffdataS
 } /* clusterCandidates() */
 
 
-
-//Big function to test the IHS candidates against Gaussian templates
+/**
+ * Function to test the IHS candidates against Gaussian templates
+ * \param [out] output                 Pointer to pointer of a candidateVector
+ * \param [in]  ihsCandidates          Pointer to candidateVector of IHS candidates
+ * \param [in]  ffdata                 Pointer to ffdataStruct
+ * \param [in]  aveNoise               Pointer to REAL4Vector of 2nd FFT background powers
+ * \param [in]  aveTFnoisePerFbinRatio Pointer to REAL4Vector of normalized SFT background spectra
+ * \param [in]  alpha                  Right ascension (radians)
+ * \param [in]  delta                  Declination (radians)
+ * \param [in]  params                 Pointer to inputParamsStruct
+ * \return Status value
+ */
 INT4 testIHScandidates(candidateVector **output, candidateVector *ihsCandidates, ffdataStruct *ffdata, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, REAL4 alpha, REAL4 delta, inputParamsStruct *params)
 {
 
@@ -429,7 +470,12 @@ INT4 testIHScandidates(candidateVector **output, candidateVector *ihsCandidates,
 } /* testIHScandidates() */
 
 
-//Keep the most significant candidates, potentially reducing the number of candidates if there are more than allowed
+/**
+ * Keep the most significant candidates, potentially reducing the number of candidates if there are more than allowed
+ * \param [in] input  Pointer to input candidateVector
+ * \param [in] params Pointer to inputParamsStruct
+ * \return Pointer to newly allocated candidateVector containing reduced number of candidates
+ */
 candidateVector * keepMostSignificantCandidates(candidateVector *input, inputParamsStruct *params)
 {
 
@@ -484,8 +530,14 @@ candidateVector * keepMostSignificantCandidates(candidateVector *input, inputPar
 } /* keepMostSignificantCandidates() */
 
 
-//////////////////////////////////////////////////////////////
-// Calculate the R statistic
+/**
+ * Calculate the R statistic from equation 13 of E. Goetz and K. Riles (2011)
+ * \param [in] ffdata Pointer to REAL4Vector of the 2nd FFT data
+ * \param [in] templateStruct Pointer to the templateStruct containing the template
+ * \param [in] noise Pointer to the REAL4Vector containing the background 2nd FFT powers
+ * \param [in] fbinaveratios Pointer to the REAL4Vector of normalized SFT background powers
+ * \return Value of the R statistic
+ */
 REAL8 calculateR(REAL4Vector *ffdata, templateStruct *templatestruct, REAL4Vector *noise, REAL4Vector *fbinaveratios)
 {
 
@@ -510,8 +562,12 @@ REAL8 calculateR(REAL4Vector *ffdata, templateStruct *templatestruct, REAL4Vecto
 } /* calculateR() */
 
 
-//////////////////////////////////////////////////////////////
-// Calculates maximum modulation depth allowed
+/**
+ * Calculates maximum modulation depth allowed, equation 6 of E. Goetz and K. Riles (2011)
+ * \param [in] period  Orbital period value
+ * \param [in] cohtime SFT coherence length
+ * \return Maximum modulation depth allowed
+ */
 REAL8 maxModDepth(REAL8 period, REAL8 cohtime)
 {
    REAL8 maxB = 0.5*period/(cohtime*cohtime);
@@ -519,8 +575,12 @@ REAL8 maxModDepth(REAL8 period, REAL8 cohtime)
 } /* maxModDepth() */
 
 
-//////////////////////////////////////////////////////////////
-// Calculates minimum period allowable for modulation depth and Tcoh
+/**
+ * Calculates minimum period allowed, equation 6 of E. Goetz and K. Riles (2011)
+ * \param [in] moddepth Modulation depth value
+ * \param [in] cohtime  SFT coherence length
+ * \return Maximum modulation depth allowed
+ */
 REAL8 minPeriod(REAL8 moddepth, REAL8 cohtime)
 {
    REAL8 minP = 2.0*moddepth*cohtime*cohtime;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008 J. Creighton, S. Fairhurst, B. Krishnan, L. Santamaria, D. Keppel, Evan Ochsner, C. Pankow
+ * Copyright (C) 2008 J. Creighton, S. Fairhurst, B. Krishnan, L. Santamaria, D. Keppel, Evan Ochsner, C. Pankow, 2014 A. Klein
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -241,6 +241,123 @@ static int checkTidesZero(REAL8 lambda1, REAL8 lambda2)
 	} while (0)
 
 /**
+ * Function that gives the value of the desired frequency given some physical parameters
+ *
+ */
+double XLALSimInspiralGetFrequency(
+    REAL8 m1,                   /**< mass of companion 1 (kg) */
+    REAL8 m2,                   /**< mass of companion 2 (kg) */
+    const REAL8 S1x,            /**< x-component of the dimensionless spin of object 1 */
+    const REAL8 S1y,            /**< y-component of the dimensionless spin of object 1 */
+    const REAL8 S1z,            /**< z-component of the dimensionless spin of object 1 */
+    const REAL8 S2x,            /**< x-component of the dimensionless spin of object 2 */
+    const REAL8 S2y,            /**< y-component of the dimensionless spin of object 2 */
+    const REAL8 S2z,            /**< z-component of the dimensionless spin of object 2 */
+    FrequencyFunction freqFunc  /**< name of the function to use */
+    )
+{
+
+    double freq; /* The return value */
+
+    /* Variables needed for fIMRPhenom(x) */
+    double chi;
+    double m1Msun = m1 / LAL_MSUN_SI;
+    double m2Msun = m2 / LAL_MSUN_SI;
+
+    /* Variables needed for f(S)EOBNRv(x) */
+    UINT4 SpinAlignedEOBVersion;
+    Approximant approximant;
+    REAL8 spin1[3];
+    REAL8 spin2[3];
+    int     modeL;
+    int     modeM;
+    COMPLEX16Vector modefreqVec;
+    COMPLEX16      modeFreq;
+
+    switch (freqFunc)
+    {
+        case fSchwarzISCO: 
+            /* Schwarzschild ISCO */
+	        freq = pow(LAL_C_SI,3) / (pow(6.,3./2.)*LAL_PI*(m1+m2)*LAL_G_SI);
+            break;
+        case fIMRPhenomAFinal:
+            freq = XLALSimIMRPhenomAGetFinalFreq(m1Msun, m2Msun);
+            break;
+        case fIMRPhenomBFinal:
+            chi = XLALSimIMRPhenomBComputeChi(m1Msun, m2Msun, S1z, S2z);
+            freq = XLALSimIMRPhenomBGetFinalFreq(m1Msun, m2Msun, chi);
+            break;
+        case fIMRPhenomCFinal:
+            chi = XLALSimIMRPhenomBComputeChi(m1Msun, m2Msun, S1z, S2z);
+            freq = XLALSimIMRPhenomCGetFinalFreq(m1Msun, m2Msun, chi);
+            break;
+
+        /* EOBNR ringdown frequencies all come from the same code,
+         * just with different inputs */
+        case fEOBNRv2HMRD:
+        case fEOBNRv2RD:
+        case fSEOBNRv1RD:
+        case fSEOBNRv2RD:
+            // FIXME: Probably shouldn't hard code the modes.
+            if ( freqFunc == fEOBNRv2HMRD )
+            {
+                modeL = 5;
+                modeM = 5;
+                approximant = EOBNRv2HM;
+            }
+            else
+            {
+                modeL = 2;
+                modeM = 2;
+                if (freqFunc == fEOBNRv2RD) approximant = EOBNRv2;
+                if (freqFunc == fSEOBNRv1RD) approximant = SEOBNRv1;
+                if (freqFunc == fSEOBNRv2RD) approximant = SEOBNRv2;
+            }
+            if ( freqFunc == fEOBNRv2RD || freqFunc == fEOBNRv2HMRD )
+            {
+                /* Check that spins are zero */
+                if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
+                {
+                    XLALPrintError("Non-zero spins were given, but EOBNRv2 ringdown frequencies do not depend on spin.\n");
+                    XLAL_ERROR(XLAL_EINVAL);
+                spin1[0] = 0.; spin1[1] = 0.; spin1[2] = 0.;
+                spin2[0] = 0.; spin2[1] = 0.; spin2[2] = 0.;
+                }
+            }
+            else
+            {
+                spin1[0] = S1x; spin1[1] = S1y; spin1[2] = S1z;
+                spin2[0] = S2x; spin2[1] = S2y; spin2[2] = S2z;
+            }
+
+            modefreqVec.length = 1;
+            modefreqVec.data   = &modeFreq;
+            if ( XLALSimIMREOBGenerateQNMFreqV2( &modefreqVec, m1Msun, m2Msun, spin1, spin2, modeL, modeM, 1, approximant) != XLAL_SUCCESS )
+            {
+                XLAL_ERROR( XLAL_EFUNC );
+            }
+
+            freq = creal(modeFreq) / (2 * LAL_PI);
+            break;
+
+        case fSEOBNRv1Peak:
+        case fSEOBNRv2Peak:
+            if ( freqFunc == fSEOBNRv1Peak ) SpinAlignedEOBVersion = 1;
+            if ( freqFunc == fSEOBNRv2Peak ) SpinAlignedEOBVersion = 2;
+            freq = XLALSimIMRSpinAlignedEOBPeakFrequency(m1, m2, S1z, S2z,
+                    SpinAlignedEOBVersion);
+            break;
+
+        default:
+            XLALPrintError("Unsupported approximant\n");
+            XLAL_ERROR(XLAL_EINVAL);
+    }
+
+    return freq;
+}
+
+
+/**
  * Function that gives the default ending frequencies of the given approximant.
  *
  */
@@ -256,24 +373,9 @@ double XLALSimInspiralGetFinalFreq(
     Approximant approximant                 /**< post-Newtonian approximant to use for waveform production */
     )
 {
-    double  freq;   /* The return value */
+    FrequencyFunction freqFunc;
 
-    /* internal variables */
-    /* we will use m1, m2 in solar masses */
-    m1 /= LAL_MSUN_SI;
-    m2 /= LAL_MSUN_SI;
-
-    /* needed for Phenom */
-    double chi;
-
-    /* Needed for EOBNR */
-    REAL8 spin1[3];
-    REAL8 spin2[3];
-    int     modeL;
-    int     modeM;
-    COMPLEX16Vector modefreqVec;
-    COMPLEX16      modeFreq;
-
+    /* select the frequency function that is associated with each approximant */ 
     switch (approximant)
     {
         /* non-spinning inspiral-only models */
@@ -298,57 +400,48 @@ double XLALSimInspiralGetFinalFreq(
                 XLAL_ERROR(XLAL_EINVAL);
             }
             /* Schwarzschild ISCO */
-	        freq = pow(LAL_C_SI,3) / (pow(6.,3./2.)*LAL_PI*(m1+m2)*LAL_MSUN_SI*LAL_G_SI);
+            freqFunc = fSchwarzISCO;
             break;
 
         /* IMR models */
-        /* EOBNR models all call the same code, just with different inputs */
         case EOBNRv2HM:
+            /* Check that spins are zero */
+            if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
+            {
+                XLALPrintError("Non-zero spins were given, but this is a non-spinning approximant.\n");
+                XLAL_ERROR(XLAL_EINVAL);
+            }
+            freqFunc = fEOBNRv2HMRD;
+            break;
+
         case EOBNRv2:
+            /* Check that spins are zero */
+            if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
+            {
+                XLALPrintError("Non-zero spins were given, but this is a non-spinning approximant.\n");
+                XLAL_ERROR(XLAL_EINVAL);
+            }
+            freqFunc = fEOBNRv2RD;
+            break;
+
         case SEOBNRv1:
+            /* Check that the transverse spins are zero */
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+            {
+                XLALPrintError("Non-zero transverse spins were given, but this is a non-precessing approximant.\n");
+                XLAL_ERROR(XLAL_EINVAL);
+            }
+            freqFunc = fSEOBNRv1RD;
+            break;
+
         case SEOBNRv2:
-            // FIXME: Probably shouldn't hard code the modes.
-            if ( approximant == EOBNRv2HM )
+            /* Check that the transverse spins are zero */
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
             {
-                modeL = 5;
-                modeM = 5;
+                XLALPrintError("Non-zero transverse spins were given, but this is a non-precessing approximant.\n");
+                XLAL_ERROR(XLAL_EINVAL);
             }
-            else
-            {
-                modeL = 2;
-                modeM = 2;
-            }
-            if ( approximant == EOBNRv2 || approximant == EOBNRv2HM )
-            {
-                /* Check that spins are zero */
-                if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
-                {
-                    XLALPrintError("Non-zero spins were given, but this is a non-spinning approximant.\n");
-                    XLAL_ERROR(XLAL_EINVAL);
-                spin1[0] = 0.; spin1[1] = 0.; spin1[2] = 0.;
-                spin2[0] = 0.; spin2[1] = 0.; spin2[2] = 0.;
-                }
-            }
-            else
-            {
-                /* Check that the transverse spins are zero */
-                if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
-                {
-                    XLALPrintError("Non-zero transverse spins were given, but this is a non-precessing approximant.\n");
-                    XLAL_ERROR(XLAL_EINVAL);
-                }
-                spin1[0] = S1x; spin1[1] = S1y; spin1[2] = S1z;
-                spin2[0] = S2x; spin2[1] = S2y; spin2[2] = S2z;
-            }
-
-            modefreqVec.length = 1;
-            modefreqVec.data   = &modeFreq;
-            if ( XLALSimIMREOBGenerateQNMFreqV2( &modefreqVec, m1, m2, spin1, spin2, modeL, modeM, 1, approximant) != XLAL_SUCCESS )
-            {
-                XLAL_ERROR( XLAL_EFUNC );
-            }
-
-            freq = creal(modeFreq) / (2 * LAL_PI);
+            freqFunc = fSEOBNRv2RD;
             break;
 
         case IMRPhenomA:
@@ -358,7 +451,7 @@ double XLALSimInspiralGetFinalFreq(
                 XLALPrintError("Non-zero spins were given, but this is a non-spinning approximant.\n");
                 XLAL_ERROR(XLAL_EINVAL);
             }
-            freq = XLALSimIMRPhenomAGetFinalFreq(m1, m2);
+            freqFunc = fIMRPhenomAFinal;
             break;
 
         case IMRPhenomB:
@@ -367,8 +460,7 @@ double XLALSimInspiralGetFinalFreq(
                 XLALPrintError("Non-zero transverse spins were given, but this is a non-precessing approximant.\n");
                 XLAL_ERROR(XLAL_EINVAL);
             }
-            chi = XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z);
-            freq = XLALSimIMRPhenomBGetFinalFreq(m1, m2, chi);
+            freqFunc = fIMRPhenomBFinal;
             break;
 
         case IMRPhenomC:
@@ -377,8 +469,7 @@ double XLALSimInspiralGetFinalFreq(
                 XLALPrintError("Non-zero transverse spins were given, but this is a non-precessing approximant.\n");
                 XLAL_ERROR(XLAL_EINVAL);
             }
-            chi = XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z);
-            freq = XLALSimIMRPhenomCGetFinalFreq(m1, m2, chi);
+            freqFunc = fIMRPhenomCFinal;
             break;
 
 
@@ -401,7 +492,7 @@ double XLALSimInspiralGetFinalFreq(
             XLAL_ERROR(XLAL_EINVAL);
     }
 
-    return freq;
+    return XLALSimInspiralGetFrequency(m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, freqFunc);
 }
     
 
@@ -1226,6 +1317,355 @@ int XLALSimInspiralPrecessingPolarizationWaveforms(
     } /* end of loop over time samples, idx */
     return XLAL_SUCCESS;
 }
+
+
+
+
+
+/**
+ * Computes polarizations h+ and hx for a spinning, precessing binary
+ * when provided a single value of all the dynamical quantities.
+ * Amplitude can be chosen between 1.5PN and Newtonian orders (inclusive).
+ *
+ * Based on K.G. Arun, Alesssandra Buonanno, Guillaume Faye and Evan Ochsner
+ * \"Higher-order spin effects in the amplitude and phase of gravitational
+ * waveforms emitted by inspiraling compact binaries: Ready-to-use
+ * gravitational waveforms\", Phys Rev. D 79, 104023 (2009), arXiv:0810.5336
+ *
+ * HOWEVER, the formulae have been adapted to use the output of the so-called
+ * \"Frameless\" convention for evolving precessing binary dynamics,
+ * which is not susceptible to hitting coordinate singularities.
+ *
+ * This has been written to reproduce XLALSimInspiralPrecessingPolarizationWaveforms.
+ * If hplus and hcross are the output of XLALSimInspiralPrecessingPolarizationWaveforms,
+ * and hp(n) and hc(n) the output of this function for a given harmonic number, then
+ *
+ * hplus = sum_{n=0}^5 hp(n)*exp(-i*n*Phi) + c.c.
+ * hcross = sum_{n=0}^5 hc(n)*exp(-i*n*Phi) + c.c.
+ *
+ * NOTE: The vectors MUST be given in the so-called radiation frame where
+ * Z is the direction of propagation, X is the principal '+' axis and Y = Z x X
+ * For different convention (Z is the direction of initial total angular
+ * momentum, useful for GRB and comparison to NR, see XLALSimSpinInspiralGenerator())
+ */
+int XLALSimInspiralPrecessingPolarizationWaveformHarmonic(
+        COMPLEX16 *hplus,  /**< +-polarization waveform [returned] */
+        COMPLEX16 *hcross, /**< x-polarization waveform [returned] */
+        REAL8 v,       /**< post-Newtonian parameter */
+        REAL8 s1x,     /**< Spin1 vector x component */
+        REAL8 s1y,     /**< Spin1 vector y component */
+        REAL8 s1z,     /**< Spin1 vector z component */
+        REAL8 s2x,     /**< Spin2 vector x component */
+        REAL8 s2y,     /**< Spin2 vector y component */
+        REAL8 s2z,     /**< Spin2 vector z component */
+        REAL8 lnhx,  /**< unit orbital ang. mom. x comp. */
+        REAL8 lnhy,  /**< unit orbital ang. mom. y comp. */
+        REAL8 lnhz,  /**< unit orbital ang. mom. z comp. */
+        REAL8 e1x,     /**< orbital plane basis vector x comp. */
+        REAL8 e1y,     /**< orbital plane basis vector y comp. */
+        REAL8 e1z,     /**< orbital plane basis vector z comp. */
+        REAL8 dm,                 /**< dimensionless mass difference (m1 - m2)/(m1 + m2) > 0 */
+        REAL8 eta,                /**< symmetric mass ratio m1*m2/(m1 + m2)^2 */
+        REAL8 v0,                 /**< tail-term gauge choice (default = 1) */
+        INT4 n,                   /**< harmonic number */
+        INT4 ampO                 /**< twice amp. post-Newtonian order */
+        )
+{
+  /* E2 = LNhat x E1 */
+  REAL8 e2x = lnhy*e1z - lnhz*e1y;
+  REAL8 e2y = lnhz*e1x - lnhx*e1z;
+  REAL8 e2z = lnhx*e1y - lnhy*e1x;
+
+  REAL8 v2 = v*v;
+  REAL8 v3 = v2*v;
+  REAL8 v4 = v3*v;
+  REAL8 v5 = v4*v;
+
+  REAL8 twom1 = (1. + dm);
+  REAL8 twom2 = (1. - dm);
+
+  REAL8 a1x = s1x*twom1;
+  REAL8 a1y = s1y*twom1;
+  REAL8 a1z = s1z*twom1;
+  REAL8 a2x = s2x*twom2;
+  REAL8 a2y = s2y*twom2;
+  REAL8 a2z = s2z*twom2;
+
+  REAL8 logfac;
+
+  /*
+   * First set all h+/x coefficients to 0. Then use a switch to
+   * set proper non-zero values up to order ampO. Note we
+   * fall through the PN orders and break only after Newt. order
+   */
+  *hplus = 0.;
+  *hcross = 0.;
+
+  REAL8 fact1, fact2, fact3, fact4, fact5, fact6, fact7, fact8, fact9;
+
+  REAL8 e1xe1x = e1x*e1x;
+  REAL8 e1xe1y = e1x*e1y;
+  REAL8 e1xe1z = e1x*e1z;
+  REAL8 e1ye1y = e1y*e1y;
+  REAL8 e1ye1z = e1y*e1z;
+  REAL8 e1ze1z = e1z*e1z;
+
+  REAL8 e2xe2x = e2x*e2x;
+  REAL8 e2xe2y = e2x*e2y;
+  REAL8 e2xe2z = e2x*e2z;
+  REAL8 e2ye2y = e2y*e2y;
+  REAL8 e2ye2z = e2y*e2z;
+  REAL8 e2ze2z = e2z*e2z;
+
+  REAL8 e1xe2x = e1x*e2x;
+  REAL8 e1xe2y = e1x*e2y;
+  REAL8 e1ye2x = e1y*e2x;
+  REAL8 e1xe2z = e1x*e2z;
+  REAL8 e1ze2x = e1z*e2x;
+  REAL8 e1ye2y = e1y*e2y;
+  REAL8 e1ye2z = e1y*e2z;
+  REAL8 e1ze2y = e1z*e2y;
+  REAL8 e1ze2z = e1z*e2z;
+
+  switch(n) // harmonic number
+  {
+    case 0:
+      switch( ampO )
+      {
+        case -1: /* Use highest known PN order - move if new orders added */
+        case 3:
+        case 2:
+        case 1:
+          fact1 = v3*0.125;
+          fact2 = 7. + dm;
+          fact3 = 7. - dm;
+          fact4 = a1x*fact2 + a2x*fact3;
+          fact5 = a1y*fact2 + a2y*fact3;
+          fact6 = lnhx*fact4;
+          fact7 = lnhy*fact5;
+          fact8 = lnhz*(a1z*fact2 + a2z*fact3);
+          fact9 = fact6 + fact7 + fact8;
+
+          *hplus += fact1*(fact4*lnhx - fact5*lnhy + fact9*(e1xe1x - e1ye1y
+          + e2xe2x - e2ye2y));
+          *hcross += fact1*(fact4*lnhy - fact5*lnhx + fact9*(e1xe1y + e2xe2y));
+        case 0:
+          break;
+        default:
+          XLALPrintError("XLAL Error - %s: Invalid amp. PN order %s, highest is %d\n", __func__, ampO, 3 );
+          break;
+      }
+      break;
+
+    case 1: // harmonic number
+      switch( ampO )
+      {
+        case -1: /* Use highest known PN order - move if new orders added */
+        case 3:
+          fact1 = 1. - 2.*eta;
+          fact2 = 8. + fact1*(30. + 9.*e1ze1z + 19.*e2ze2z);
+          fact3 = 72. + fact1*(6. + e2ze2z - 9.*e1ze1z);
+          fact4 = 40. + fact1*(18. + 15.*e2ze2z + 5.*e1ze1z);
+          fact5 = 8. + fact1*(30. + 9.*e2ze2z + 19.*e1ze1z);
+          fact6 = 72. + fact1*(6. + e1ze1z - 9.*e2ze2z);
+          fact7 = 40. + fact1*(18. + 15.*e1ze1z + 5.*e2ze2z);
+          fact8 = v5*dm/384.;
+
+          *hplus += fact8*(((e1xe1x - e1ye1y)*e2z*fact2 - (e2xe2x
+          - e2ye2y)*e2z*fact3 + 2.*e1z*(e1ye2y - e1xe2x)*fact4) + I*((-(e2xe2x
+          - e2ye2y)*fact5 + (e1xe1x - e1ye1y)*fact6)*e1z - 2.*e2z*(e1ye2y
+          - e1xe2x)*fact7));
+          *hcross += (2.*fact8)*((-e2xe2y*e2z*fact3 + e1xe2z*e1y*fact2
+          - e1z*(e1xe2y + e1ye2x)*fact4) + I*((e1xe2y + e1ye2x)*e2z*fact7
+          + (e1xe1y*fact6 - e2xe2y*fact5)*e1z));
+        case 2:
+          fact1 = v4*0.25;
+
+          *hplus += fact1*(((a2y - a1y)*e1x - (a1x - a2x)*e1y) + I*((a2y
+          - a1y)*e2x - (a1x - a2x)*e2y));
+          *hcross += fact1*(((a1x - a2x)*e1x - (a1y - a2y)*e1y) + I*((a1x
+          - a2x)*e2x - (a1y - a2y)*e2y));
+        case 1:
+          fact1 = e1xe2x - e1ye2y;
+          fact2 = e1ye1y - e1xe1x;
+          fact3 = e2xe2x - e2ye2y;
+          fact4 = e1xe2y + e1ye2x;
+          fact5 = e1xe1y;
+          fact6 = e2xe2y;
+          fact7 = dm*v3*0.0625;
+
+          *hplus += fact7*((6.*e1z*fact1 + e2z*(5.*fact2 + fact3))
+          + I*(e1z*(fact2 + 5.*fact3) - 6.*e2z*fact1));
+          *hcross += (2.*fact7)*((3.*e1z*fact4 + e2z*(-5.*fact5 + fact6))
+          + I*(e1z*(5.*fact6 - fact5) - 3.*e2z*fact4));
+        case 0:
+          break;
+        default:
+          XLALPrintError("XLAL Error - %s: Invalid amp. PN order %s, highest is %d\n", __func__, ampO, 3 );
+          break;
+      }
+      break;
+
+    case 2: // harmonic number
+      switch( ampO )
+      {
+        case -1: /* Use highest known PN order - move if new orders added */
+        case 3:
+          logfac = log(v/v0);
+          fact1 = e1xe2x - e1ye2y;
+          fact2 = -e1xe1x + e1ye1y + e2xe2x - e2ye2y;
+          fact3 = e1ye2x + e1xe2y;
+          fact4 = -e1xe1y + e2xe2y;
+
+          *hplus += v5*((12.*fact1*logfac + fact2*LAL_PI) + I*(6.*fact2*logfac
+          - 2.*fact1*LAL_PI));
+          *hcross += v5*((2.*(6.*fact3*logfac + fact4*LAL_PI))
+          + I*(2.*(6.*fact4*logfac - fact3*LAL_PI)));
+
+          fact1 = a1x*(7. + dm) + a2x*(7. - dm);
+          fact2 = a1y*(7. + dm) + a2y*(7. - dm);
+          fact3 = a1z*(11. - 3.*dm) + a2z*(11. + 3.*dm);
+          fact4 = a1x*(41. - dm) + a2x*(41. + dm);
+          fact5 = a1y*(41. - dm) + a2y*(41. + dm);
+          fact6 = a1z*(41. - dm) + a2z*(41. + dm);
+          fact7 = lnhx*fact4 + lnhy*fact5 + lnhz*fact6;
+          fact8 = e1xe1x - e1ye1y - (e2xe2x - e2ye2y);
+          fact9 = v5/48.;
+
+          *hplus += fact9*((3.*(e1ye2z + e1ze2y)*fact1 + 3.*(e1xe2z
+          + e1ze2x)*fact2 - 6.*(e1ye2x + e1xe2y)*fact3 + fact8*fact7)
+          + I*(-3.*(e1ye1z - e2ye2z)*fact1 - 3.*(e1xe1z - e2xe2z)*fact2
+          + 6.*(e1xe1y - e2xe2y)*fact3 + 2.*(e1xe2x - e1ye2y)*fact7));
+          *hcross += fact9*((-3.*(e1ze2x + e1xe2z)*fact1 + 3.*(e1ze2y
+          + e1ye2z)*fact2 + 6.*(e1xe2x - e1ye2y)*fact3 + 2.*(e1xe1y
+          - e2xe2y)*fact7) + I*(3.*(e1xe1z - e2xe2z)*fact1 - 3.*(e1ye1z
+          - e2ye2z)*fact2 - 3.*fact8*fact3 + 2.*(e1ye2x + e1xe2y)*fact7));
+
+        case 2:
+          fact5 = -1. + 3.*eta;
+          fact1 = -13. + eta + (6.*e2ze2z + 2.*e1ze1z)*fact5;
+          fact2 = -13. + eta + (6.*e1ze1z + 2.*e2ze2z)*fact5;
+          fact3 = e1ze2z*fact5;
+          fact4 = -13. + eta + 4.*(e1ze1z + e2ze2z)*fact5;
+          fact6 = v4/6.;
+
+          *hplus += fact6*((((e1ye1y - e1xe1x)*fact1 + (e2xe2x
+          - e2ye2y)*fact2)*0.5) + I*(2.*(e1xe1x - e1ye1y + e2xe2x
+          - e2ye2y)*fact3 + (e1ye2y - e1xe2x)*fact4));
+          *hcross += fact6*((-e1xe1y*fact1 + e2xe2y*fact2) + I*(4.*(e1xe1y
+          + e2xe2y)*fact3 - (e1ye2x + e1xe2y)*fact4));
+        case 1:
+        case 0:
+          *hplus += v2*(0.5*(e1ye1y - e2ye2y + e2xe2x - e1xe1x) + I*(e1ye2y
+          - e1xe2x));
+          *hcross += v2*((e2xe2y - e1xe1y) - I*(e1ye2x + e1xe2y));
+          break;
+        default:
+          XLALPrintError("XLAL Error - %s: Invalid amp. PN order %s, highest is %d\n", __func__, ampO, 3 );
+          break;
+      }
+      break;
+
+    case 3: // harmonic number
+      switch( ampO )
+      {
+        case -1: /* Use highest known PN order - move if new orders added */
+        case 3:
+          fact1 = v5*dm*9./256.;
+          fact2 = 1. - 2.*eta;
+          fact3 = 48. + fact2*(4. + 33.*e1ze1z + 9.*e2ze2z);
+          fact4 = 48. + fact2*(4. + 15.*e1ze1z + 15.*e2ze2z);
+          fact5 = 48. + fact2*(4. - 3.*e1ze1z + 21.*e2ze2z);
+          fact6 = 48. + fact2*(4. + 33.*e2ze2z + 9.*e1ze1z);
+          fact7 = 48. + fact2*(4. - 3.*e2ze2z + 21.*e1ze1z);
+
+          *hplus += fact1*(((e2xe2x - e2ye2y)*e2z*fact3 + 2.*e1z*(e1ye2y
+          - e1xe2x)*fact4 - (e1xe1x - e1ye1y)*e2z*fact5) + I*(2.*(e1ye2y
+          - e1xe2x)*e2z*fact4 + (e1xe1x - e1ye1y)*e1z*fact6 - e1z*(e2xe2x
+          - e2ye2y)*fact7));
+          *hcross += fact1*((2.*(e2xe2y*e2z*fact3 - (e1xe2y + e1ye2x)*e1z*fact4
+          - e1xe1y*e2z*fact5)) + I*(2.*(-e1z*e2xe2y*fact7 + e1xe1y*e1z*fact6
+          - (e1xe2y + e1ye2x)*e2z*fact4)));
+        case 2:
+        case 1:
+          fact1 = v3*dm*9./16.;
+          fact2 = 2.*(e1xe2x - e1ye2y);
+          fact3 = e1xe1x - e1ye1y - (e2xe2x - e2ye2y);
+          fact4 = 2.*(e1xe2y + e1ye2x);
+          fact5 = 2.*(e1xe1y - e2xe2y);
+
+          *hplus += fact1*((e1z*fact2 + e2z*fact3) - I*(e1z*fact3 - e2z*fact2));
+          *hcross += fact1*((e1z*fact4 + e2z*fact5) + I*(-e1z*fact5
+          + e2z*fact4));
+        case 0:
+          break;
+        default:
+          XLALPrintError("XLAL Error - %s: Invalid amp. PN order %s, highest is %d\n", __func__, ampO, 3 );
+          break;
+      }
+      break;
+
+    case 4: // harmonic number
+      switch( ampO )
+      {
+        case -1: /* Use highest known PN order - move if new orders added */
+        case 3:
+        case 2:
+          fact1 = v4*4.*(1. - 3.*eta)/3.;
+          fact2 = e1xe2x - e1ye2y;
+          fact3 = e1xe1x - e1ye1y - (e2xe2x - e2ye2y);
+          fact4 = e1ze1z - e2ze2z;
+          fact5 = e1xe1y - e2xe2y;
+          fact6 = e1ye2x + e1xe2y;
+
+          *hplus = fact1*((0.5*fact4*fact3 - 2.*e1ze2z*fact2) + I*(fact4*fact2
+          + e1ze2z*fact3));
+          *hcross = fact1*((fact4*fact5 - 2.*e1ze2z*fact6) + I*(fact4*fact6
+          + 2.*e1ze2z*fact5));
+        case 1:
+        case 0:
+          break;
+        default:
+          XLALPrintError("XLAL Error - %s: Invalid amp. PN order %s, highest is %d\n", __func__, ampO, 3 );
+          break;
+      }
+      break;
+
+    case 5: // harmonic number
+      switch( ampO )
+      {
+        case -1: /* Use highest known PN order - move if new orders added */
+        case 3:
+          fact1 = -v5*dm*(1. - 2.*eta)*625./384.;
+          fact2 = e1xe2x - e1ye2y;
+          fact3 = e1xe1x - e1ye1y - (e2xe2x - e2ye2y);
+          fact4 = e1z*(e1ze1z - 3.*e2ze2z);
+          fact5 = e2z*(e2ze2z - 3.*e1ze1z);
+          fact6 = e1ye2x + e1xe2y;
+          fact7 = e1xe1y - e2xe2y;
+
+          *hplus += (fact1)*((fact4*fact2 - 0.5*fact5*fact3) - I*(fact5*fact2
+          + 0.5*fact4*fact3));
+          *hcross += (fact1)*((fact4*fact6 - fact5*fact7) - I*(fact4*fact7
+          + fact5*fact6));
+        case 2:
+        case 1:
+        case 0:
+          break;
+        default:
+          XLALPrintError("XLAL Error - %s: Invalid amp. PN order %s, highest is %d\n", __func__, ampO, 3 );
+          break;
+      }
+      break;
+
+    default: // harmonic number. zero at this order
+      break;
+  }
+  return XLAL_SUCCESS;
+}
+
+
+
 
 /**
  * Compute the physical template family "Q" vectors for a spinning, precessing
@@ -2057,10 +2497,14 @@ int XLALSimInspiralChooseFDWaveform(
     )
 {
     REAL8 LNhatx, LNhaty, LNhatz;
+    REAL8 E1x, E1y, E1z;
+    REAL8 kMax;
+    REAL8 v0, fStart;
     int ret;
     unsigned int j;
     REAL8 pfac, cfac;
     REAL8 quadparam1 = 1., quadparam2 = 1.; /* FIXME: This cannot yet be set in the interface */
+    INT4 phiRefAtEnd;
 
     /* General sanity checks that will abort
      *
@@ -2178,7 +2622,7 @@ int XLALSimInspiralChooseFDWaveform(
             /* Call the waveform driver routine */
             ret = XLALSimInspiralSpinTaylorF2(hptilde, hctilde, phiRef, deltaF,
                     m1, m2, S1x, S1y, S1z, LNhatx, LNhaty, LNhatz,
-                    f_min, 0., f_min, r, /* FIXME Deal with f_ref properly */
+                    f_min, f_max, f_ref, r,
                     nonGRparams, XLALSimInspiralGetSpinOrder(waveFlags), phaseO, amplitudeO);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             break;
@@ -2315,6 +2759,79 @@ int XLALSimInspiralChooseFDWaveform(
               m1+m2, r, alpha0, phiRef, deltaF, f_min, f_max, f_ref);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             break;
+
+        case SpinTaylorT4Fourier:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralFrameAxisIsDefault(
+                    XLALSimInspiralGetFrameAxis(waveFlags) ) )
+                ABORT_NONDEFAULT_FRAME_AXIS(waveFlags);
+            if( !XLALSimInspiralModesChoiceIsDefault(
+                    XLALSimInspiralGetModesChoice(waveFlags) ) )
+                ABORT_NONDEFAULT_MODES_CHOICE(waveFlags);
+            LNhatx = sin(i);
+            LNhaty = 0.;
+            LNhatz = cos(i);
+            E1x = cos(i);
+            E1y = 0.;
+            E1z = -sin(i);
+            // default kMax = 3
+            kMax = 3;
+            // default v0 = 1
+            v0 = 1.;
+            // default fStart = 0.9*fMin
+            fStart = 0.9*f_min;
+            phiRefAtEnd = 0;
+            // if f_ref = 0, set it to f_min, and tell the driver routine that we came from there
+            if(f_ref == 0)
+            {
+              f_ref = f_min;
+              phiRefAtEnd = 1;
+            }
+            // default quadparams are for black holes. Replace by ~2-12 for neutron stars
+            quadparam1 = 1.;
+            quadparam2 = 1.;
+            /* Call the waveform driver routine */
+            ret = XLALSimInspiralSpinTaylorT4Fourier(hptilde, hctilde,
+              f_min, f_max, deltaF, kMax, phiRef, v0, m1, m2, fStart, f_ref, r, S1x, S1y, S1z, S2x, S2y, S2z, LNhatx, LNhaty, LNhatz, E1x, E1y, E1z, lambda1, lambda2, quadparam1, quadparam2, XLALSimInspiralGetSpinOrder(waveFlags), XLALSimInspiralGetTidalOrder(waveFlags), phaseO, amplitudeO, phiRefAtEnd);
+            if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
+            break;
+
+        case SpinTaylorT2Fourier:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralFrameAxisIsDefault(
+                    XLALSimInspiralGetFrameAxis(waveFlags) ) )
+                ABORT_NONDEFAULT_FRAME_AXIS(waveFlags);
+            if( !XLALSimInspiralModesChoiceIsDefault(
+                    XLALSimInspiralGetModesChoice(waveFlags) ) )
+                ABORT_NONDEFAULT_MODES_CHOICE(waveFlags);
+            LNhatx = sin(i);
+            LNhaty = 0.;
+            LNhatz = cos(i);
+            E1x = cos(i);
+            E1y = 0.;
+            E1z = -sin(i);
+            // default kMax = 3
+            kMax = 3;
+            // default v0 = 1
+            v0 = 1.;
+            // default fStart = 0.9*fMin
+            fStart = 0.9*f_min;
+            phiRefAtEnd = 0;
+            // if f_ref = 0, set it to f_min, and tell the driver routine that we came from there
+            if(f_ref == 0)
+            {
+              f_ref = f_min;
+              phiRefAtEnd = 1;
+            }
+            // default quadparams are for black holes. Replace by ~2-12 for neutron stars
+            quadparam1 = 1.;
+            quadparam2 = 1.;
+            /* Call the waveform driver routine */
+            ret = XLALSimInspiralSpinTaylorT2Fourier(hptilde, hctilde,
+              f_min, f_max, deltaF, kMax, phiRef, v0, m1, m2, fStart, f_ref, r, S1x, S1y, S1z, S2x, S2y, S2z, LNhatx, LNhaty, LNhatz, E1x, E1y, E1z, lambda1, lambda2, quadparam1, quadparam2, XLALSimInspiralGetSpinOrder(waveFlags), XLALSimInspiralGetTidalOrder(waveFlags), phaseO, amplitudeO, phiRefAtEnd);
+            if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
+            break;
+
 
         default:
             XLALPrintError("FD version of approximant not implemented in lalsimulation\n");
@@ -2516,7 +3033,9 @@ int XLALSimInspiralTD(
 	XLAL_ERROR(XLAL_EERR, "Not reached.");
     }
 
-    /* common stage of conditioning: taper end samples and high-pass filter */
+    /* common stage of conditioning: high-pass filter and taper end samples */
+    XLALHighPassREAL8TimeSeries(*hplus, f_min, 0.9, 8);
+    XLALHighPassREAL8TimeSeries(*hcross, f_min, 0.9, 8);
     if ((*hplus)->data->length > end_taper_samples) {
         size_t j;
         for (j = (*hplus)->data->length - end_taper_samples; j < (*hplus)->data->length; ++j) {
@@ -2525,8 +3044,213 @@ int XLALSimInspiralTD(
             (*hcross)->data->data[j] *= w;
         }
     }
-    XLALHighPassREAL8TimeSeries(*hplus, f_min, 0.9, 8);
-    XLALHighPassREAL8TimeSeries(*hcross, f_min, 0.9, 8);
+
+    return 0;
+}
+
+/**
+ * @brief Generates a frequency domain inspiral waveform using the specified approximant; the
+ * resulting waveform is appropriately conditioned and suitable for injection into data.
+ *
+ * For spinning waveforms, all known spin effects up to given PN order are included.
+ *
+ * This routine can generate TD approximants and transform them into the frequency domain.
+ * Waveforms are generated beginning at a slightly lower starting frequency and tapers
+ * are put in this early region so that the waveform smoothly turns on.
+ *
+ * If an FD approximant is used, this routine applies tapers in the frequency domain
+ * between the slightly-lower frequency and the requested f_min.  Also, the phase of the
+ * waveform is adjusted to introduce a time shift.  This time shift should allow the
+ * resulting waveform to be Fourier transformed into the time domain without wrapping
+ * the end of the waveform to the beginning.
+ *
+ * This routine has a few parameters that differ from XLALSimInspiralChooseFDWaveform.
+ * Rather than f_max, this routine takes deltaT, the sampling interval of the corresponding
+ * time domain waveform.  The Nyquist frequency, 2/deltaT, thus determines the maximum
+ * frequency for the FD waveform.  Also, this routine does not take a deltaF parameter,
+ * and instead computes the necessary value of deltaF based on the duration of the
+ * corresponding time domain waveform, deltaF <= 1/duration.  The total number of points
+ * in the FD waveform is a power of two plus one (the Nyquist frequency).  Thus, the FD
+ * waveform returned could be directly Fourier transformed to the time domain without
+ * further manipulation.
+ *
+ * This routine has one additional parameter relative to XLALSimInspiralChooseFDWaveform.
+ * The additional parameter is the redshift, z, of the waveform.  This should be set to
+ * zero for sources in the nearby universe (that are nearly at rest relative to the
+ * earth).  For sources at cosmological distances, the mass parameters m1 and m2 should
+ * be interpreted as the physical (source frame) masses of the bodies and the distance
+ * parameter r is the comoving (transverse) distance.  If the calling routine has already
+ * applied cosmological "corrections" to m1 and m2 and regards r as a luminosity distance
+ * then the redshift factor should again be set to zero.
+ *
+ * 
+ * @note The parameters passed must be in SI units.
+ */
+int XLALSimInspiralFD(
+    COMPLEX16FrequencySeries **hptilde,         /**< +-polarization waveform */
+    COMPLEX16FrequencySeries **hctilde,         /**< x-polarization waveform */
+    REAL8 phiRef,                               /**< reference orbital phase (rad) */
+    REAL8 deltaT,                               /**< sampling interval (s) */
+    REAL8 m1,                                   /**< mass of companion 1 (kg) */
+    REAL8 m2,                                   /**< mass of companion 2 (kg) */
+    REAL8 S1x,                                  /**< x-component of the dimensionless spin of object 1 */
+    REAL8 S1y,                                  /**< y-component of the dimensionless spin of object 1 */
+    REAL8 S1z,                                  /**< z-component of the dimensionless spin of object 1 */
+    REAL8 S2x,                                  /**< x-component of the dimensionless spin of object 2 */
+    REAL8 S2y,                                  /**< y-component of the dimensionless spin of object 2 */
+    REAL8 S2z,                                  /**< z-component of the dimensionless spin of object 2 */
+    REAL8 f_min,                                /**< starting GW frequency (Hz) */
+    REAL8 f_ref,                                /**< reference GW frequency (Hz) */
+    REAL8 r,                                    /**< distance of source (m) */
+    REAL8 z,                                    /**< redshift of source frame relative to observer frame */
+    REAL8 i,                                    /**< inclination of source (rad) */
+    REAL8 lambda1,                              /**< (tidal deformability of mass 1) / m1^5 (dimensionless) */
+    REAL8 lambda2,                              /**< (tidal deformability of mass 2) / m2^5 (dimensionless) */
+    LALSimInspiralWaveformFlags *waveFlags,     /**< Set of flags to control special behavior of some waveform families. Pass in NULL (or None in python) for default flags */
+    LALSimInspiralTestGRParam *nonGRparams, 	/**< Linked list of non-GR parameters. Pass in NULL (or None in python) for standard GR waveforms */
+    int amplitudeO,                             /**< twice post-Newtonian amplitude order */
+    int phaseO,                                 /**< twice post-Newtonian order */
+    Approximant approximant                     /**< post-Newtonian approximant to use for waveform production */
+    )
+{
+    const double extra_time_fraction = 0.1; /* fraction of waveform duration to add as extra time for tapering */
+    const double extra_time_seconds = 1.0; /* extra time to add for waveform tapering */
+    LALSimulationDomain domain = LAL_SIM_DOMAIN_FREQUENCY;
+    double tchirp, textra, fstart;
+    double chirplen, df;
+    int chirplen_exp;
+    int retval;
+
+    /* decide if this is a TD or an FD approximant */
+    if (XLALSimInspiralImplementedFDApproximants(approximant))
+        domain = LAL_SIM_DOMAIN_FREQUENCY;
+    else if (XLALSimInspiralImplementedTDApproximants(approximant))
+        domain = LAL_SIM_DOMAIN_TIME;
+    else
+        XLAL_ERROR(XLAL_EINVAL, "Invalid approximant");
+
+    /* apply redshift correction to dimensionful source-frame quantities */
+    if (z != 0.0) {
+        m1 *= (1.0 + z);
+        m2 *= (1.0 + z);
+        r *= (1.0 + z);  /* change from comoving (transverse) distance to luminosity distance */
+    }
+
+    /* rough estimate of chirp time from f_min based on 0 PN term */
+    tchirp = XLALSimInspiralTaylorF2ReducedSpinChirpTime(f_min, m1, m2, 0, 0);
+    textra = extra_time_fraction * tchirp + extra_time_seconds;
+
+    /* we start the waveform at a lower frequency so we can put tapers in */
+    {
+        /* this should be the inverse of XLALSimInspiralTaylorF2ReducedSpinChirpTime */
+        /* perhaps there should be an actual routine to do this? */
+        double M = m1 + m2;
+        double mu = m1 * m2 / M;
+        double nu = mu / M;
+        double theta = pow(nu * (tchirp + textra) * pow(LAL_C_SI, 3) / (5.0 * LAL_G_SI * M), -1.0 / 8.0);
+        fstart = pow(theta * LAL_C_SI, 3) / (8.0 * M_PI * LAL_G_SI * M);
+    }
+
+    /* need a long enough segment to hold a whole chirp */
+    /* length of the chirp in samples */
+    chirplen = (tchirp + textra) / deltaT;
+    /* make chirplen next power of two */
+    frexp(chirplen, &chirplen_exp);
+    chirplen = ldexp(1.0, chirplen_exp);
+    /* frequency resolution */
+    df = 1.0 / (chirplen * deltaT);
+
+    switch (domain) {
+    case LAL_SIM_DOMAIN_TIME: {
+        REAL8TimeSeries *hplus = NULL;
+        REAL8TimeSeries *hcross = NULL;
+        REAL8FFTPlan *plan;
+        size_t j, nextra;
+
+        /* generate the waveform starting at fstart */
+        retval = XLALSimInspiralChooseTDWaveform(&hplus, &hcross, phiRef, deltaT, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, fstart, f_ref, r, i, lambda1, lambda2, waveFlags, nonGRparams, amplitudeO, phaseO, approximant);
+        if (retval < 0)
+            XLAL_ERROR(XLAL_EFUNC);
+
+        /* extra time for tapers */
+        nextra = round(textra / deltaT);
+
+        /* sanity check on our crudely estimated duration */
+        if (nextra > hplus->data->length / 2) {
+            /* compute textra more accurately */
+            REAL8TimeSeries *dummyplus = NULL;
+            REAL8TimeSeries *dummycross = NULL;
+            retval = XLALSimInspiralChooseTDWaveform(&dummyplus, &dummycross, phiRef, deltaT, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_ref, r, i, lambda1, lambda2, waveFlags, nonGRparams, amplitudeO, phaseO, approximant);
+            if (retval < 0)
+                XLAL_ERROR(XLAL_EFUNC);
+            nextra = hplus->data->length - dummyplus->data->length;
+            XLALDestroyREAL8TimeSeries(dummycross);
+            XLALDestroyREAL8TimeSeries(dummyplus);
+        }
+        
+        /* taper early part of waveform */
+        for (j = 0; j < nextra; ++j) {
+            double w = 0.5 - 0.5 * cos(M_PI * j / (double)nextra);
+            hplus->data->data[j] *= w;
+            hcross->data->data[j] *= w;
+        }
+
+        /* resize waveforms to the required length */
+        XLALResizeREAL8TimeSeries(hplus, hplus->data->length - (size_t) chirplen, (size_t) chirplen);
+        XLALResizeREAL8TimeSeries(hcross, hcross->data->length - (size_t) chirplen, (size_t) chirplen);
+
+        /* put the waveform in the frequency domain */
+        /* (the units will correct themselves) */
+        *hptilde = XLALCreateCOMPLEX16FrequencySeries("FD H_PLUS", &hplus->epoch, 0.0, deltaT, &lalDimensionlessUnit, (size_t) chirplen / 2 + 1);
+        *hctilde = XLALCreateCOMPLEX16FrequencySeries("FD H_CROSS", &hcross->epoch, 0.0, deltaT, &lalDimensionlessUnit, (size_t) chirplen / 2 + 1);
+        plan = XLALCreateForwardREAL8FFTPlan((size_t) chirplen, 0);
+        XLALREAL8TimeFreqFFT(*hctilde, hcross, plan);
+        XLALREAL8TimeFreqFFT(*hptilde, hplus, plan);
+
+        /* clean up */
+        XLALDestroyREAL8FFTPlan(plan);
+        XLALDestroyREAL8TimeSeries(hcross);
+        XLALDestroyREAL8TimeSeries(hplus);
+
+	break;
+    }
+
+    case LAL_SIM_DOMAIN_FREQUENCY: {
+        size_t k, k0, k1;
+        
+        /* generate the waveform in the frequency domain starting at fstart */
+        retval = XLALSimInspiralChooseFDWaveform(hptilde, hctilde, phiRef, df, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, fstart, 0.5/deltaT, f_ref, r, i, lambda1, lambda2, waveFlags, nonGRparams, amplitudeO, phaseO, approximant);
+        if (retval < 0)
+            XLAL_ERROR(XLAL_EFUNC);
+
+        /* taper frequencies between fstart and f_min */
+        k = k0 = round(fstart / (*hptilde)->deltaF);
+        k1 = round(f_min / (*hptilde)->deltaF);
+        for ( ; k < k1; ++k) {
+            double w = 0.5 - 0.5 * cos(M_PI * (k - k0) / (double)(k1 - k0));
+            (*hptilde)->data->data[k] *= w;
+            (*hctilde)->data->data[k] *= w;
+        }
+
+        /* we want to make sure that this waveform will give something
+         * sensible if it is later transformed into the time domain:
+         * to avoid the end of the waveform wrapping around to the beginning,
+         * we shift waveform backwards in time and compensate for this
+         * shift by adjusting the epoch */
+        for (k = 0; k < (*hptilde)->data->length; ++k) {
+            double complex phasefac = cexp(2.0 * M_PI * I * k * df * extra_time_seconds);
+            (*hptilde)->data->data[k] *= phasefac;
+            (*hctilde)->data->data[k] *= phasefac;
+        }
+        XLALGPSAdd(&(*hptilde)->epoch, extra_time_seconds);
+        XLALGPSAdd(&(*hctilde)->epoch, extra_time_seconds);
+
+	break;
+    }
+
+    default: /* can never get here: exhausted enum list */
+	XLAL_ERROR(XLAL_EERR, "Not reached.");
+    }
 
     return 0;
 }
@@ -2871,6 +3595,8 @@ int XLALSimInspiralImplementedFDApproximants(
         case SpinTaylorF2:
         case TaylorF2RedSpin:
         case TaylorF2RedSpinTidal:
+        case SpinTaylorT4Fourier:
+        case SpinTaylorT2Fourier:
             return 1;
 
         default:
@@ -2916,6 +3642,14 @@ int XLALGetApproximantFromString(const CHAR *inString)
   else if ( strstr(inString, "PhenSpinTaylor" ) )
   {
     return PhenSpinTaylor;
+  }
+  else if ( strstr(inString, "SpinTaylorT2Fourier" ) )
+  {
+    return SpinTaylorT2Fourier;
+  }
+  else if ( strstr(inString, "SpinTaylorT4Fourier" ) )
+  {
+    return SpinTaylorT4Fourier;
   }
   else if ( strstr(inString, "SpinTaylorT2" ) )
   {
@@ -3194,6 +3928,10 @@ char* XLALGetStringFromApproximant(Approximant approximant)
       return strdup("FrameFile");
     case Eccentricity:
       return strdup("Eccentricity");
+    case SpinTaylorT2Fourier:
+      return strdup("SpinTaylorT2Fourier");
+    case SpinTaylorT4Fourier:
+      return strdup("SpinTaylorT4Fourier");
     case SpinDominatedWf:
       return strdup("SpinDominatedWf");
     default:
@@ -3358,6 +4096,8 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case PhenSpinTaylorRD:
     case SpinTaylorT3:
     case IMRPhenomP:
+    case SpinTaylorT2Fourier:
+    case SpinTaylorT4Fourier:
     case SpinDominatedWf:
       spin_support=LAL_SIM_INSPIRAL_PRECESSINGSPIN;
       break;
@@ -3448,6 +4188,8 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case IMRPhenomC:
     case IMRPhenomP:
     case IMRPhenomFC:
+    case SpinTaylorT2Fourier:
+    case SpinTaylorT4Fourier:
     case TaylorEt:
     case TaylorT4:
     case TaylorN:

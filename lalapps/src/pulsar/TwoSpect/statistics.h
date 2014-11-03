@@ -55,7 +55,7 @@ REAL4 calcMean(REAL4Vector *vector);
 REAL4 calcMean_ignoreZeros(REAL4Vector *vector);
 INT4 calcHarmonicMean(REAL4 *harmonicMean, REAL4Vector *vector, INT4 numfbins, INT4 numffts);
 INT4 calcStddev(REAL4 *sigma, REAL4Vector *vector);
-REAL4 calcStddev_ignoreZeros(REAL4Vector *vector);
+INT4 calcStddev_ignoreZeros(REAL4 *sigma, REAL4Vector *vector);
 INT4 calcRms(REAL4 *rms, REAL4Vector *vector);
 INT4 calcMedian(REAL4 *median, REAL4Vector *vector);
 

@@ -25,6 +25,7 @@ __version__ = '$Revision$'
 # 01/14/07 gam; Add -u option to specify frame struct and type; add -i option to specify IFO name.
 # 07/24/07 gam; Add in -q option to read in list of nodes on which to output SFTs, -Q option to give node path, and -R option for number of jobs per node.
 # 04/XX/13 eag; Add -y option to synchronize the start times of SFTs.
+# 07/24/14 eag; Change default to version 2 SFTs
 
 # import standard modules and append the lalapps prefix to the python path
 import sys, os
@@ -70,7 +71,7 @@ Usage: MakeSFTDAG [options]
   -o, --sub-log-path         (optional) path to log file to give in datafind.sub and MakeSFTs.sub (default is $PWD/logs; this directory must exist and usually should be under a local file system.)
   -N, --channel-name         name of input time-domain channel to read from frames
   -i, --ifo                  (optional) Name of IFO, i.e., H1, H2, L1, or G1; use if channel name begins with H0, L0, or G0; default: use first two characters from channel name.
-  -v, --sft-version          (optional) sft version to output (1 or 2; default is 1)
+  -v, --sft-version          (optional) sft version to output (1 or 2; default is 2)
   -c, --comment-field        (optional) comment for version 2 SFT header.
   -F, --start-freq           (optional) start frequency of the SFTs (default is 48 Hz).
   -B, --band                 (optional) frequency band of the SFTs (default is 2000 Hz).
@@ -111,7 +112,7 @@ def writeToDag(dagFID, nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, c
   dagFID.write('JOB %s MakeSFTs.sub\n' % MakeSFTs)
   dagFID.write('RETRY %s 5\n' % MakeSFTs)
   argList = '-f %s -t %s -p %s -C %s -s %s -e %s -N %s' %(filterKneeFreq, timeBaseline, outputSFTPath, cacheFile, startTimeThisNode, endTimeThisNode, channelName)
-  if sftVersion != 1: argList = argList + ' -v %s' % sftVersion
+  if sftVersion != 2: argList = argList + ' -v %s' % sftVersion
   if IFO != None: argList = argList + ' -i %s' % IFO
   if commentField != None: argList = argList + ' -c %s' % commentField
   if frameStructType != None: argList = argList + ' -u %s' % frameStructType
@@ -203,7 +204,7 @@ channelName = None
 IFO = None
 windowType = 1
 overlapFraction = 0.0
-sftVersion = 1
+sftVersion = 2
 commentField = None
 frameStructType = None
 startFreq = 48.0

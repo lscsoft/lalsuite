@@ -17,7 +17,6 @@
 from __future__ import division
 
 # standard
-import itertools
 from math import sqrt
 
 import numpy
@@ -149,7 +148,6 @@ def set_default_constraints(constraints):
         mtotal_max = mcmax * ((1+qmax)**2/qmax)**(3./5)
     constraints['mtotal'] = (mtotal_min, mtotal_max)
 
-
     return constraints
 
 def m1m2_to_mratio(m1,m2):
@@ -278,32 +276,6 @@ def tau0tau3_bound(flow, **constraints):
     return lims_tau0, lims_tau3
 
 
-def urand_mtotal_generator(mtotal_min, mtotal_max):
-    """
-    This is a generator for random total mass values corresponding to a
-    uniform distribution of mass pairs in (tau0, tau3) space.  See also
-    urand_eta_generator(), and see LIGO-T1300127 for details.
-    """
-    alpha = mtotal_min*(1-(mtotal_min/mtotal_max)**(7./3.))**(-3./7.)
-    beta = (mtotal_min/mtotal_max)**(7./3.)/(1-(mtotal_min/mtotal_max)**(7./3.))
-    n = -3./7.
-    while 1:   # NB: "while 1" is inexplicably much faster than "while True"
-        yield alpha*(uniform(0, 1)+beta)**n
-
-
-def urand_eta_generator(eta_min, eta_max):
-    """
-    This is a generator for random eta (symmetric mass ratio) values
-    corresponding to a uniform distribution of mass pairs in (tau0, tau3)
-    space.  See also urand_mtotal_generator(), and see LIGO-T1300127 for
-    details.
-    """
-    alpha = eta_min/sqrt(1-(eta_min/eta_max)**2)
-    beta = (eta_min/eta_max)**2/(1-(eta_min/eta_max)**2)
-    while 1:   # NB: "while 1" is inexplicably much faster than "while True"
-        yield alpha/sqrt(uniform(0, 1)+beta)
-
-
 def urand_tau0tau3_generator(flow, **constraints):
     """
     This is a generator for random (m1, m2) pairs that are uniformly
@@ -329,25 +301,48 @@ def urand_tau0tau3_generator(flow, **constraints):
     # check that minimal constraints are set and set defaults
     constraints = set_default_constraints(constraints)
 
+    # draw a box around the parameter space in tau0-tau3 coords
+    lims_tau0, lims_tau3 = tau0tau3_bound(flow, **constraints)
+    tau0_min, tau0_max = lims_tau0
+    tau3_min, tau3_max = lims_tau3
+
     # avoid repetitive lookups
     mass1_min, mass1_max = constraints['mass1']
     mass2_min, mass2_max = constraints['mass2']
-    mchirp_min, mchirp_max = constraints['mchirp']
+    mtotal_min, mtotal_max = constraints['mtotal']
     qmin, qmax = constraints['mratio']
-    eta_min = qmax/(1+qmax)**2
-    eta_max = qmin/(1+qmin)**2
 
-    for mtot, eta in itertools.izip(urand_mtotal_generator(*constraints['mtotal']), urand_eta_generator(eta_min, eta_max)):
+    # precompute useful coefficients
+    _A0 = A0(flow)
+    _A3 = A3(flow)
+    A0_A3 = _A0 / _A3
+
+    # The first part of the while loop can be the tight inner loop for
+    # high-mass banks. Let's go crazy optimizing.
+    # FIXME: This can be coded without discards if someone is willing to do
+    # the math on the non-linear shape of the tau0, tau3 boundaries.
+    from numpy.random.mtrand import uniform
+    minus_five_thirds = -5. / 3.
+
+    while 1:   # NB: "while 1" is inexplicably much faster than "while True"
+        tau0 = uniform(tau0_min, tau0_max)
+
+        mtot = A0_A3 * uniform(tau3_min, tau3_max) / tau0  # seconds
+        eta = _A0 / tau0 * mtot**minus_five_thirds
+        if eta > 0.25: continue
+
+        mtot /= MTSUN_SI  # back to solar masses
         mass1 = mtot * (0.5 + sqrt(0.25 - eta)) # mass1 is the larger component
         mass2 = mtot - mass1
 
-        if mass1_min <= mass1 <= mass1_max and \
+        if mtotal_min < mtot < mtotal_max and \
+                mass1_min <= mass1 <= mass1_max and \
                 mass2_min <= mass2 <= mass2_max and \
-                mchirp_min <= m1m2_to_mchirp(mass1, mass2) <= mchirp_max:
+                qmin < mass1/mass2 < qmax:
             yield mass1, mass2
 
 
-def IMRPhenomBC_param_generator(flow, **kwargs):
+def IMRPhenomB_param_generator(flow, **kwargs):
     """
     Specify the min and max mass of the bigger component, then
     the min and max mass of the total mass. This function includes
@@ -386,6 +381,37 @@ def IMRPhenomBC_param_generator(flow, **kwargs):
         yield mass1, mass2, spin1, spin2
 
 
+def IMRPhenomC_param_generator(flow, **kwargs):
+    """
+    Generate random parameters for the IMRPhenomC waveform model.
+    Specify the min and max mass of the bigger component, then the min
+    and max mass of the total mass. This function includes
+    restrictions on q and chi based on IMRPhenomC's range of
+    believability, namely q <=20 and |chi| <= 0.9.
+
+    @param flow: low frequency cutoff
+    @param kwargs: constraints on waveform parameters. See urand_tau0tau3_generator for more usage help. If no spin limits are specified, the IMRPhenomC limits will be used.
+    """
+
+    # get spin limits. IMRPhenomC has special bounds on chi, so we
+    # will silently truncate
+    s1min, s1max = kwargs.pop('spin1', (-0.9, 0.9))
+    s2min, s2max = kwargs.pop('spin2', (s1min, s1max))
+    s1min, s1max = (max(-0.9, s1min), min(0.9, s1max))
+    s2min, s2max = (max(-0.9, s2min), min(0.9, s2max))
+
+    for mass1, mass2 in urand_tau0tau3_generator(flow, **kwargs):
+
+        q = max(mass1/mass2, mass2/mass1)
+        if q <= 20:
+            spin1 = uniform(s1min, s1max)
+            spin2 = uniform(s2min, s2max)
+        else:
+            raise ValueError("mass ratio out of range")
+
+        yield mass1, mass2, spin1, spin2
+
+
 def aligned_spin_param_generator(flow, **kwargs):
     """
     Specify the min and max mass of the bigger component, the min and
@@ -407,8 +433,8 @@ def SpinTaylorT4_param_generator(flow, **kwargs):
     # FIXME implement!
     raise NotImplementedError
 
-proposals = {"IMRPhenomB":IMRPhenomBC_param_generator,
-             "IMRPhenomC":IMRPhenomBC_param_generator,
+proposals = {"IMRPhenomB":IMRPhenomB_param_generator,
+             "IMRPhenomC":IMRPhenomC_param_generator,
              "TaylorF2RedSpin":aligned_spin_param_generator,
              "EOBNRv2":urand_tau0tau3_generator,
              "SEOBNRv1":aligned_spin_param_generator,

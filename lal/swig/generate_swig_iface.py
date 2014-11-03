@@ -204,12 +204,14 @@ def rename_symbols(symbol_kind, symbols, symbol_names, symbol_prefixes):
         if symbol_name in renames and renames[symbol_name] != None:
             fail("duplicate symbols '%s' in interface" % symbol_key)
 
-        # strip prefix from symbol key to get re-name
+        # strip prefix from symbol key to get re-name,
+        # so long as re-name would not start with a digit or '_'
+        symbol_rename = symbol_key
         rank = rename_rank[symbol_key]
         if rank < len(symbol_prefixes):
-            symbol_rename = symbol_key[len(symbol_prefixes[rank]):]
-        else:
-            symbol_rename = symbol_key
+            prefix_len = len(symbol_prefixes[rank])
+            if not symbol_key[prefix_len] in "0123456789_":
+                symbol_rename = symbol_key[prefix_len:]
 
         # if re-name has already been taken
         if symbol_rename in rename_kind:
@@ -342,28 +344,6 @@ for function_name in sorted(functions):
     func_decl_type = func_decl + func_type
     if func_retn_1starg_regexp.match(func_decl_type) != None:
         f.write('%%header %%{#define swiglal_return_1starg_%s%%}\n' % function_name)
-
-# perform operations on structs
-for struct_name in sorted(tdstructs):
-
-    # skip ignored structs
-    if renames.get(struct_name, '') == None:
-        continue
-
-    # skip opaque structs
-    struct_tagname = tdstruct_names[struct_name]
-    if not struct_tagname in structs:
-        continue
-
-    # count the number of fields the struct contains
-    field_count = 0
-    for cdecl in structs[struct_tagname].findall('cdecl'):
-        cdecl_name = get_swig_attr(cdecl, 'name')
-        if not cdecl_name in ['__swiglal__', '__swiglal_clear__']:
-            field_count += 1
-
-    # record the number of fields
-    f.write('%%header %%{#define swiglal_field_count_%s %i%%}\n' % (struct_name, field_count))
 
 # include interface headers, and clear SWIGLAL() macros afterwards
 f.write('%%include <lal/SWIG%sAlpha.i>\n' % package_name)

@@ -305,6 +305,14 @@ SphHarmTimeSeries *XLALSimIMREOBNRv2Modes(
         const REAL8 distance /**< Distance to sources (m) */
         );
 
+double XLALSimIMRSpinAlignedEOBPeakFrequency( 
+    REAL8 m1SI,            /**< mass of companion 1 (kg) */
+    REAL8 m2SI,            /**< mass of companion 2 (kg) */
+    const REAL8 spin1z,    /**< z-component of the dimensionless spin of object 1 */
+    const REAL8 spin2z,    /**< z-component of the dimensionless spin of object 2 */
+    UINT4 SpinAlignedEOBversion   /**< 1 for SEOBNRv1, 2 for SEOBNRv2 */
+    );
+
 int XLALSimIMRSpinAlignedEOBWaveform(
         REAL8TimeSeries **hplus,
         REAL8TimeSeries **hcross,

@@ -17,8 +17,8 @@ include $(top_srcdir)/gnuscripts/lalsuite_test.am
 .PHONY: swig-python-uninstall-hook
 
 swig_iface = swig$(PACKAGE).i
-swig_preproc_flags = -MP -MD -Wextra -Werror -I$(top_builddir)/include -includeall -ignoremissing -xml -xmllite
-swig_flags = -MP -MD -Wextra -Werror -I$(top_builddir)/include $(SWIG_CPPFLAGS) $(LAL_SYSTEM_INCLUDES)
+swig_preproc_flags = -MP -MMD -Wextra -Werror -I$(top_builddir)/include -includeall -ignoremissing -xml -xmllite
+swig_flags = -MP -MMD -Wextra -Werror -I$(top_builddir)/include $(SWIG_CPPFLAGS) $(LAL_SYSTEM_INCLUDES)
 swig_cppflags = -shared -I. -I$(top_builddir)/include $(SWIG_CPPFLAGS)
 swig_ldflags = -module -avoid-version -version-info 0:0:0 $(SWIG_LDFLAGS)
 swig_libtoolflags = --tag=disable-static
@@ -133,7 +133,7 @@ swig-python-clean-local:
 install-exec-hook: swig-python-install-hook
 swig-python-install-hook:
 	cd $(DESTDIR)$(pkgpyexecdir) && \
-	rm -f swiglal_python.la _swig_$(PACKAGE)$(SWIG_SOEXT)* && \
+	rm -f swiglal_python.la _$(PACKAGE)$(SWIG_SOEXT)* && \
 	mv -f swiglal_python$(SWIG_SOEXT) _$(PACKAGE)$(SWIG_SOEXT)
 
 uninstall-hook: swig-python-uninstall-hook
@@ -257,10 +257,10 @@ swig-distclean-generate-local:
 else # !SWIG_GENERATE
 
 swiglal_octave.cpp swiglal_python.c:
-	@printf "\nERROR: you are trying to re-create the SWIG-generated source file" >&2; \
-	printf "\n   $@\nbut $(PACKAGE_NAME) was not configured with SWIG generation enabled." >&2; \
-	printf "\nPlease ensure SWIG is installed and re-run ./configure with either" >&2; \
-	printf "\nthe --enable-swig=generate or --enable-swig-<lang>=generate options.\n\n" >&2; \
+	@printf "\nERROR: these dependencies of $@ have changed:\n   $?\n" >&2; \
+	printf "but SWIG is not available to re-generate $@.\n" >&2; \
+	printf "Please ensure SWIG is installed and re-run ./configure with\n" >&2; \
+	printf "either --enable-swig=generate or --enable-swig-<lang>=generate.\n\n" >&2; \
 	exit 1
 
 endif # SWIG_GENERATE

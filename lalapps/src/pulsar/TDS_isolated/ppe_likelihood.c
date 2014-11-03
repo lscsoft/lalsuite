@@ -40,32 +40,33 @@
  *
  * \param vars [in] The parameter values
  * \param data [in] The detector data and initial signal phase template
- * \param get_model [in] The signal template/model function
+ * \param get_model [in] The signal model structure
  *
  * \return The natural logarithm of the likelihood function
  */
 REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *data,
-                             LALInferenceTemplateFunction get_model){
+                             LALInferenceModel *get_model){
   REAL8 loglike = 0.; /* the log likelihood */
-  UINT4 i = 0;
-  REAL8Vector *freqFactors = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams, "freqfactors" );
+  UINT4 i = 0, ifo = 0;
+  REAL8Vector *freqFactors = *(REAL8Vector **)LALInferenceGetVariable( get_model->ifo->params, "freqfactors" );
 
-  LALInferenceIFOData *datatemp1 = data, *datatemp2 = data, *datatemp3 = data;
+  LALInferenceIFOModel *ifomodeltemp1 = get_model->ifo, *ifomodeltemp2 = get_model->ifo, *ifomodeltemp3 = get_model->ifo;
+  LALInferenceIFOData *tempdata = data;
 
   /* copy model parameters to data parameters */
-  while( datatemp1 ){
-    LALInferenceCopyVariables( vars, datatemp1->modelParams );
-    datatemp1 = datatemp1->next;
+  while( ifomodeltemp1 ){
+    LALInferenceCopyVariables( vars, get_model->params );
+    ifomodeltemp1 = ifomodeltemp1->next;
   }
 
   /* get pulsar model */
-  while( datatemp2 ){
-    get_model( datatemp2 );
+  while( ifomodeltemp2 ){
+    get_model->templt( get_model );
 
-    for( i = 0; i < freqFactors->length; i++ ) { datatemp2 = datatemp2->next; }
+    for( i = 0; i < freqFactors->length; i++ ) { ifomodeltemp2 = ifomodeltemp2->next; }
   }
 
-  while ( datatemp3 ){
+  while ( tempdata ){
     UINT4 j = 0, count = 0, cl = 0;
     UINT4 length = 0, chunkMin;
     REAL8 chunkLength = 0.;
@@ -78,11 +79,13 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
     REAL8Vector *sumDat = NULL;
     UINT4Vector *chunkLengths = NULL;
 
-    sumDat = *(REAL8Vector **)LALInferenceGetVariable( datatemp3->dataParams, "sumData" );
-    chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( datatemp3->dataParams, "chunkLength" );
-    chunkMin = *(INT4*)LALInferenceGetVariable( datatemp3->dataParams, "chunkMin" );
+    get_model->ifo_loglikelihoods[ifo] = 0.0;
 
-    length = datatemp3->compTimeData->data->length;
+    sumDat = *(REAL8Vector **)LALInferenceGetVariable( ifomodeltemp3->params, "sumData" );
+    chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( ifomodeltemp3->params, "chunkLength" );
+    chunkMin = *(INT4*)LALInferenceGetVariable( ifomodeltemp3->params, "chunkMin" );
+
+    length = tempdata->compTimeData->data->length;
 
     for( i = 0 ; i < length ; i += chunkLength ){
       chunkLength = (REAL8)chunkLengths->data[count];
@@ -99,9 +102,9 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
       cl = i + (INT4)chunkLength;
 
       for( j = i ; j < cl ; j++ ){
-        B = datatemp3->compTimeData->data->data[j];
+        B = tempdata->compTimeData->data->data[j];
 
-        M = datatemp3->compModelData->data->data[j];
+        M = get_model->ifo->compTimeSignal->data->data[j];
 
         /* sum over the model */
         sumModel += creal(M)*creal(M) + cimag(M)*cimag(M);
@@ -118,11 +121,97 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
 
       count++;
     }
+
+    get_model->ifo_loglikelihoods[ifo] = logliketmp;
+
     loglike += logliketmp;
-    datatemp3 = datatemp3->next;
+    tempdata = tempdata->next;
+    ifomodeltemp3 = ifomodeltemp3->next;
+    ifo++;
   }
   return loglike;
 }
+
+
+/**
+ * \brief Calculate the natural logarithm of the evidence that the data consists of only Gaussian noise
+ * The function will calculate the natural logarithm of the evidence that the data (from one or more detectors) consists
+ * of stationary segments/chunks described by a Gaussian with zero mean and unknown variance.
+ *
+ * The evidence is obtained from the joint likelihood given in \c pulsar_log_likelihood with the model term \f$y\f$ set
+ * to zero.
+ *
+ * \param runState [in] The algorithm run state
+ *
+ * \return The natural logarithm of the noise only evidence
+ */
+REAL8 noise_only_likelihood( LALInferenceRunState *runState ){
+  LALInferenceIFOData *data = runState->data;
+  LALInferenceIFOModel *ifo = runState->model->ifo;
+
+  REAL8 logL = 0.0;
+  UINT4 i = 0;
+  INT4 k = 0;
+
+  REAL8Vector *freqFactors = NULL;
+  FILE *fp = NULL;
+  CHAR *Znoisefile = NULL;
+  ProcessParamsTable *ppt;
+  ProcessParamsTable *commandLine = runState->commandLine;
+  /*-----------------------------*/
+  /*get the outfile name*/
+  ppt = LALInferenceGetProcParamVal( commandLine, "--outfile" );
+
+  freqFactors = *(REAL8Vector **)LALInferenceGetVariable( ifo->params, "freqfactors" );
+
+  /* open the file to output noise evidence (or null signal evidence) for each individual data stream */
+  /* set the Znoise filename to the outfile name with "_Znoise" appended */
+  Znoisefile = XLALStringDuplicate( ppt->value );
+  Znoisefile = XLALStringAppend( Znoisefile, "_Znoise" );
+
+  if( (fp = fopen(Znoisefile, "w")) == NULL ){
+    fprintf(stderr, "Error... cannot open output Znoise file!\n");
+    exit(0);
+  }
+
+  /*calculate the evidence */
+  while ( ifo ){
+    UINT4Vector *chunkLengths = NULL;
+    REAL8Vector *sumDat = NULL;
+
+    REAL8 chunkLength = 0.;
+    REAL8 logLtmp = 0.;
+
+    chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( ifo->params,  "chunkLength" );
+    sumDat = *(REAL8Vector **)LALInferenceGetVariable( ifo->params, "sumData" );
+    /*Sum the logL over the datachunks*/
+    for (i=0; i<chunkLengths->length; i++){
+      chunkLength = (REAL8)chunkLengths->data[i];
+
+      logLtmp -= chunkLength * log(sumDat->data[i]) + LAL_LN2 * (chunkLength-1.) + gsl_sf_lnfact(chunkLength);
+    }
+
+    data->nullloglikelihood = logLtmp;
+
+    logL += logLtmp;
+
+    /* output the noise evidence for each data stream for each detector  */
+    fprintf(fp, "%s\t%.3lf\t%.16le\n", data->name, freqFactors->data[k], logLtmp);
+
+    k += 1; /* advance counter now, as freqfactors array index starts at zero.*/
+
+    /* reset k, freqfactor counter once all datastreamns for a detector are done */
+    if( k >= (INT4)freqFactors->length ) { k = 0; }
+
+    data = data->next;
+    ifo = ifo->next;
+  }
+
+  fclose(fp);
+
+  return logL;
+}
+
 
 /**
  * \brief The prior function
@@ -137,8 +226,8 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
  *
  * \return The natural logarithm of the prior value for a set of parameters
  */
-REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *params ){
-  LALInferenceIFOData *data = runState->data;
+REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *params, UNUSED LALInferenceModel *model ){
+  LALInferenceIFOModel *ifo = runState->model->ifo;
   (void)runState;
   LALInferenceVariableItem *item = params->head;
   REAL8 min, max, mu, sigma, prior = 0, value = 0.;
@@ -197,6 +286,10 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
   /* if some correlated priors exist allocate corVals */
   if ( corlist ) { corVals = XLALCreateREAL8Vector( corlist->length ); }
 
+  /* I31 and I21 values required to check/set I31 >= I21 */
+  REAL8 I31 = -INFINITY;
+  REAL8 I21 = -INFINITY;
+
   for(; item; item = item->next ){
     /* get scale factor */
     CHAR scalePar[VARNAME_MAX] = "";
@@ -206,26 +299,32 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
     if( item->vary == LALINFERENCE_PARAM_FIXED || item->vary == LALINFERENCE_PARAM_OUTPUT ){ continue; }
 
     sprintf(scalePar, "%s_scale", item->name);
-    scale = *(REAL8 *)LALInferenceGetVariable( data->dataParams, scalePar );
+    scale = *(REAL8 *)LALInferenceGetVariable( ifo->params, scalePar );
 
     sprintf(scaleMinPar, "%s_scale_min", item->name);
-    scaleMin = *(REAL8 *)LALInferenceGetVariable( data->dataParams, scaleMinPar );
+    scaleMin = *(REAL8 *)LALInferenceGetVariable( ifo->params, scaleMinPar );
 
     if( item->vary == LALINFERENCE_PARAM_LINEAR || item->vary == LALINFERENCE_PARAM_CIRCULAR ){
       /* Check for a gaussian */
       if ( LALInferenceCheckGaussianPrior(runState->priorArgs, item->name) ){
         LALInferenceGetGaussianPrior( runState->priorArgs, item->name, &mu, &sigma );
 
-       value = (*(REAL8 *)item->value) * scale + scaleMin;
-       mu += scaleMin;
-       sigma *= scale;
-       prior -= log(sqrt(2.*LAL_PI)*sigma);
-       prior -= (value - mu)*(value - mu) / (2.*sigma*sigma);
+        value = (*(REAL8 *)item->value) * scale + scaleMin;
+        mu += scaleMin;
+        sigma *= scale;
+        prior -= log(sqrt(2.*LAL_PI)*sigma);
+        prior -= (value - mu)*(value - mu) / (2.*sigma*sigma);
+
+        if ( !strcmp(item->name, "I21") ){ I21 = value; }
+        if ( !strcmp(item->name, "I31") ){ I31 = value; }
       }
       /* check for a flat prior */
       else if( LALInferenceCheckMinMaxPrior(runState->priorArgs, item->name) ){
         LALInferenceGetMinMaxPrior( runState->priorArgs, item->name, &min, &max );
         prior -= log( (max - min) * scale );
+
+        if ( !strcmp(item->name, "I21") ){ I21 = (*(REAL8 *)item->value) * scale + scaleMin; }
+        if ( !strcmp(item->name, "I31") ){ I31 = (*(REAL8 *)item->value) * scale + scaleMin; }
       }
       else if( LALInferenceCheckCorrelatedPrior(runState->priorArgs, item->name) && corlist ){
         /* set item in correct position given the order of the correlation matrix given by corlist */
@@ -240,6 +339,11 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
         XLALPrintError("Error... no prior specified!\n");
         XLAL_ERROR_REAL8( XLAL_EFUNC );
       }
+    }
+
+    /* check if the I21 and I31 value have been set, and if so set the prior I31 >= I21 */
+    if ( I21 != -INFINITY && I31 != -INFINITY ){
+      if ( I31 < I21 ) { return -DBL_MAX; }
     }
   }
 
@@ -487,9 +591,9 @@ void create_kdtree_prior( LALInferenceRunState *runState ){
       REAL8 scale = 0., scaleMin = 0.;
 
       sprintf(scalePar, "%s_scale", samp->name);
-      scale = *(REAL8 *)LALInferenceGetVariable( runState->data->dataParams, scalePar );
+      scale = *(REAL8 *)LALInferenceGetVariable( runState->model->ifo->params, scalePar );
       sprintf(scaleMinPar, "%s_scale_min", samp->name);
-      scaleMin = *(REAL8 *)LALInferenceGetVariable( runState->data->dataParams, scaleMinPar );
+      scaleMin = *(REAL8 *)LALInferenceGetVariable( runState->model->ifo->params, scaleMinPar );
 
       for ( UINT4 k = 0; k < nsamp; k++ ){
         REAL8 val = *(REAL8 *)LALInferenceGetVariable( posterior[k], samp->name );
@@ -555,7 +659,7 @@ void create_kdtree_prior( LALInferenceRunState *runState ){
 
       /* change the prior ranges, the scale factors and the current params */
       if( change != 0 ){
-        LALInferenceIFOData *data = runState->data;
+        LALInferenceIFOModel *ifo = runState->model->ifo;
         fprintf(stderr, "Here\n");
         REAL8 newscale = high[cnt] - low[cnt], newscaleMin = low[cnt];
 
@@ -567,7 +671,7 @@ void create_kdtree_prior( LALInferenceRunState *runState ){
 
         /* now change the current param to reflect new ranges */
         REAL8 var = *(REAL8 *)LALInferenceGetVariable( runState->currentParams, samp->name );
-        while( data ){
+        while( ifo ){
           /* rescale current parameter value */
           if ( ii == 0 ){
             ii++;
@@ -579,15 +683,15 @@ void create_kdtree_prior( LALInferenceRunState *runState ){
           }
 
           /* change the scale factors */
-          LALInferenceRemoveVariable( data->dataParams, scalePar );
-          LALInferenceRemoveVariable( data->dataParams, scaleMinPar );
+          LALInferenceRemoveVariable( ifo->params, scalePar );
+          LALInferenceRemoveVariable( ifo->params, scaleMinPar );
 
-          LALInferenceAddVariable( data->dataParams, scalePar, &newscale, LALINFERENCE_REAL8_t,
+          LALInferenceAddVariable( ifo->params, scalePar, &newscale, LALINFERENCE_REAL8_t,
                                    LALINFERENCE_PARAM_FIXED );
-          LALInferenceAddVariable( data->dataParams, scaleMinPar, &newscaleMin, LALINFERENCE_REAL8_t,
+          LALInferenceAddVariable( ifo->params, scaleMinPar, &newscaleMin, LALINFERENCE_REAL8_t,
                                    LALINFERENCE_PARAM_FIXED );
 
-          data = data->next;
+          ifo = ifo->next;
         }
 
         /* reset (or add) priorArgs */
