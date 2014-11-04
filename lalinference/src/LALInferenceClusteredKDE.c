@@ -58,9 +58,9 @@
  * @result A kmeans structure containing the clustering that maximizes the BIC.
  */
 LALInferenceKmeans *LALInferenceIncrementalKmeans(gsl_matrix *data,
-                                                    UINT4 ntrials,
+                                                    INT4 ntrials,
                                                     gsl_rng *rng) {
-    UINT4 k = 1;
+    INT4 k = 1;
     REAL8 best_bic = -INFINITY;
     REAL8 bic;
 
@@ -108,9 +108,9 @@ LALInferenceKmeans *LALInferenceIncrementalKmeans(gsl_matrix *data,
  * @result A kmeans structure containing the clustering that maximizes the BIC.
  */
 LALInferenceKmeans *LALInferenceOptimizedKmeans(gsl_matrix *data,
-                                                UINT4 ntrials,
+                                                INT4 ntrials,
                                                 gsl_rng *rng) {
-    UINT4 k, low_k = 1, mid_k = 2, high_k = 4;
+    INT4 k, low_k = 1, mid_k = 2, high_k = 4;
     REAL8 bic, low_bic, mid_bic, high_bic;
     LALInferenceKmeans *low_kmeans = NULL;
     LALInferenceKmeans *mid_kmeans = NULL;
@@ -257,11 +257,11 @@ LALInferenceKmeans *LALInferenceOptimizedKmeans(gsl_matrix *data,
  * @result A kmeans structure containing the clustering that maximizes the BIC.
  */
 LALInferenceKmeans *LALInferenceXmeans(gsl_matrix *data,
-                                        UINT4 ntrials,
+                                        INT4 ntrials,
                                         gsl_rng *rng) {
-    UINT4 kmax = 50;
-    UINT4 split_size = 2;
-    UINT4 c,k;
+    INT4 kmax = 50;
+    INT4 split_size = 2;
+    INT4 c,k;
     REAL8 starting_bic, ending_bic;
     REAL8 old_bic, new_bic;
 
@@ -369,9 +369,9 @@ LALInferenceKmeans *LALInferenceXmeans(gsl_matrix *data,
  * @result A kmeans structure containing the clustering that maximizes the BIC.
  */
 LALInferenceKmeans *LALInferenceRecursiveKmeans(gsl_matrix *data,
-                                                UINT4 ntrials,
+                                                INT4 ntrials,
                                                 gsl_rng *rng) {
-    UINT4 k;
+    INT4 k;
 
     /* Perform recursive splitting.  Return NULL if kmeans creation fails */
     LALInferenceKmeans *split_kmeans = LALInferenceCreateKmeans(1, data, rng);
@@ -410,11 +410,11 @@ LALInferenceKmeans *LALInferenceRecursiveKmeans(gsl_matrix *data,
  * \sa LALInferenceRecursiveKmeans()
  */
 void LALInferenceKmeansRecursiveSplit(LALInferenceKmeans *kmeans,
-                                        UINT4 ntrials,
+                                        INT4 ntrials,
                                         gsl_rng *rng) {
     LALInferenceKmeansRun(kmeans);
-    UINT4 cluster, i;
-    UINT4 split_size = 2;
+    INT4 cluster, i;
+    INT4 split_size = 2;
     REAL8 current_bic, new_bic;
 
     LALInferenceKmeans *new_kmeans =
@@ -432,7 +432,7 @@ void LALInferenceKmeansRecursiveSplit(LALInferenceKmeans *kmeans,
             if (sub_kmeans)
                 LALInferenceKmeansRecursiveSplit(sub_kmeans, ntrials, rng);
 
-            UINT4 n_new_centroids = sub_kmeans->recursive_centroids->size1;
+            INT4 n_new_centroids = sub_kmeans->recursive_centroids->size1;
             for (i = 0; i < n_new_centroids ; i++) {
                 gsl_vector_view centroid =
                     gsl_matrix_row(sub_kmeans->recursive_centroids, i);
@@ -462,7 +462,7 @@ void LALInferenceKmeansRecursiveSplit(LALInferenceKmeans *kmeans,
  * @param kmeans The initialized kmeans to run.
  */
 void LALInferenceKmeansRun(LALInferenceKmeans *kmeans) {
-    UINT4 i;
+    INT4 i;
 
     while (kmeans->has_changed) {
         kmeans->has_changed = 0;
@@ -489,11 +489,11 @@ void LALInferenceKmeansRun(LALInferenceKmeans *kmeans) {
  *                      initializations.
  * @return The kmeans with the highest BIC of \a ntrials attempts.
  */
-LALInferenceKmeans *LALInferenceKmeansRunBestOf(UINT4 k,
+LALInferenceKmeans *LALInferenceKmeansRunBestOf(INT4 k,
                                                 gsl_matrix *samples,
-                                                UINT4 ntrials,
+                                                INT4 ntrials,
                                                 gsl_rng *rng) {
-    UINT4 i;
+    INT4 i;
 
     LALInferenceKmeans *best_kmeans = NULL;
     REAL8 best_bic = -INFINITY;
@@ -550,10 +550,10 @@ LALInferenceKmeans *LALInferenceKmeansRunBestOf(UINT4 k,
  * @param[in] data The unwhitened data to be clustered.
  * @param[in] rng  A GSL random number generator used for initialization.
  */
-LALInferenceKmeans *LALInferenceCreateKmeans(UINT4 k,
+LALInferenceKmeans *LALInferenceCreateKmeans(INT4 k,
                                                 gsl_matrix *data,
                                                 gsl_rng *rng) {
-    UINT4 i;
+    INT4 i;
 
     /* Return nothing if given empty dataset */
     if (!data)
@@ -575,9 +575,9 @@ LALInferenceKmeans *LALInferenceCreateKmeans(UINT4 k,
     kmeans->recursive_centroids = NULL;
 
     /* Allocate everything else */
-    kmeans->assignments = XLALMalloc(kmeans->npts * sizeof(UINT4));
-    kmeans->sizes = XLALMalloc(kmeans->k * sizeof(UINT4));
-    kmeans->mask = XLALMalloc(kmeans->npts * sizeof(UINT4));
+    kmeans->assignments = XLALMalloc(kmeans->npts * sizeof(INT4));
+    kmeans->sizes = XLALMalloc(kmeans->k * sizeof(INT4));
+    kmeans->mask = XLALMalloc(kmeans->npts * sizeof(INT4));
     kmeans->weights = XLALMalloc(kmeans->k * sizeof(REAL8));
     kmeans->KDEs = NULL;
 
@@ -610,8 +610,8 @@ LALInferenceKmeans *LALInferenceCreateKmeans(UINT4 k,
  * @param kmeans The kmeans to initialize the centroids of.
  */
 void LALInferenceKmeansSeededInitialize(LALInferenceKmeans *kmeans) {
-    UINT4 i, j;
-    UINT4 u = 0;
+    INT4 i, j;
+    INT4 u = 0;
     REAL8 dist, norm, randomDraw;
     gsl_vector_view c, x;
 
@@ -666,7 +666,7 @@ void LALInferenceKmeansSeededInitialize(LALInferenceKmeans *kmeans) {
  * @param kmeans The kmeans to initialize the centroids of.
  */
 void LALInferenceKmeansForgyInitialize(LALInferenceKmeans *kmeans) {
-    UINT4 i, j, u;
+    INT4 i, j, u;
 
     gsl_permutation *p = gsl_permutation_alloc(kmeans->npts);
 
@@ -690,8 +690,8 @@ void LALInferenceKmeansForgyInitialize(LALInferenceKmeans *kmeans) {
  * @param kmeans The kmeans to initialize the centroids of.
  */
 void LALInferenceKmeansRandomPartitionInitialize(LALInferenceKmeans *kmeans) {
-    UINT4 i;
-    UINT4 cluster_id;
+    INT4 i;
+    INT4 cluster_id;
 
     for (i = 0; i < kmeans->npts; i++) {
         cluster_id = gsl_rng_uniform_int(kmeans->rng, kmeans->k);
@@ -711,7 +711,7 @@ void LALInferenceKmeansRandomPartitionInitialize(LALInferenceKmeans *kmeans) {
  * @param kmeans The kmeans to peform the assignment step on.
  */
 void LALInferenceKmeansAssignment(LALInferenceKmeans *kmeans) {
-    UINT4 i, j;
+    INT4 i, j;
 
     kmeans->error = 0.;
 
@@ -719,7 +719,7 @@ void LALInferenceKmeansAssignment(LALInferenceKmeans *kmeans) {
         gsl_vector_view x = gsl_matrix_row(kmeans->data, i);
         gsl_vector_view c;
 
-        UINT4 best_cluster = 0;
+        INT4 best_cluster = 0;
         REAL8 best_dist = INFINITY;
         REAL8 dist;
 
@@ -735,7 +735,7 @@ void LALInferenceKmeansAssignment(LALInferenceKmeans *kmeans) {
         }
 
         /* Check if the point's assignment has changed */
-        UINT4 current_cluster = kmeans->assignments[i];
+        INT4 current_cluster = kmeans->assignments[i];
         if (best_cluster != current_cluster) {
             kmeans->has_changed = 1;
             kmeans->assignments[i] = best_cluster;
@@ -759,7 +759,7 @@ void LALInferenceKmeansAssignment(LALInferenceKmeans *kmeans) {
  * @param kmeans The kmeans to perform the update step on.
  */
 void LALInferenceKmeansUpdate(LALInferenceKmeans *kmeans) {
-    UINT4 i;
+    INT4 i;
 
     for (i = 0; i < kmeans->k; i ++) {
         LALInferenceKmeansConstructMask(kmeans, kmeans->mask, i);
@@ -783,9 +783,9 @@ void LALInferenceKmeansUpdate(LALInferenceKmeans *kmeans) {
  *                          that are assigned to.
  */
 void LALInferenceKmeansConstructMask(LALInferenceKmeans *kmeans,
-                                        UINT4 *mask,
-                                        UINT4 cluster_id) {
-    UINT4 i;
+                                        INT4 *mask,
+                                        INT4 cluster_id) {
+    INT4 i;
     for (i = 0; i < kmeans->npts; i++) {
         if (kmeans->assignments[i] == cluster_id)
             mask[i] = 1;
@@ -807,7 +807,7 @@ void LALInferenceKmeansConstructMask(LALInferenceKmeans *kmeans,
  *          \a cluster_id from \a kmeans.
  */
 LALInferenceKmeans *LALInferenceKmeansExtractCluster(LALInferenceKmeans *kmeans,
-                                                        UINT4 cluster_id) {
+                                                        INT4 cluster_id) {
     /* Construct a mask to select only the cluster requested */
     LALInferenceKmeansConstructMask(kmeans, kmeans->mask, cluster_id);
     gsl_matrix *masked_data = mask_data(kmeans->data, kmeans->mask);
@@ -845,7 +845,7 @@ void LALInferenceKmeansImposeBounds(LALInferenceKmeans *kmeans,
     INT4 i, p, dim;
     INT4 n_below, n_above;
     INT4 ndraws, n_thresh;
-    UINT4 c;
+    INT4 c;
     REAL8 draw;
     REAL8 min, max, threshold;
     REAL8 drawn_min = INFINITY, drawn_max = -INFINITY;
@@ -938,13 +938,13 @@ void LALInferenceKmeansImposeBounds(LALInferenceKmeans *kmeans,
  * @param[in] mask 0/1 array with length equal to the number of rows in \a data.
  * @return A new GSL matrix constaining only the masked data.
  */
-gsl_matrix *mask_data(gsl_matrix *data, UINT4 *mask) {
-    UINT4 i;
-    UINT4 N = data->size1;
-    UINT4 dim = data->size2;
+gsl_matrix *mask_data(gsl_matrix *data, INT4 *mask) {
+    INT4 i;
+    INT4 N = data->size1;
+    INT4 dim = data->size2;
 
     /* Calculate how big the resulting matrix will be */
-    UINT4 new_N = 0;
+    INT4 new_N = 0;
     for (i = 0; i < N; i++)
         new_N += mask[i];
  
@@ -957,7 +957,7 @@ gsl_matrix *mask_data(gsl_matrix *data, UINT4 *mask) {
 
     gsl_vector_view source, target;
 
-    UINT4 idx = 0;
+    INT4 idx = 0;
     for (i = 0; i < N; i++) {
         if (mask[i]) {
             source = gsl_matrix_row(data, i);
@@ -1001,8 +1001,8 @@ void accumulate_vectors(gsl_matrix **mat_ptr, gsl_vector *vec) {
  */
 void append_vec_to_mat(gsl_matrix **mat_ptr, gsl_vector *vec) {
     gsl_matrix *mat = *mat_ptr;
-    UINT4 rows = mat->size1;
-    UINT4 cols = mat->size2;
+    INT4 rows = mat->size1;
+    INT4 cols = mat->size2;
 
     gsl_matrix *new_mat = gsl_matrix_alloc(rows+1, cols);
 
@@ -1033,7 +1033,7 @@ REAL8 *LALInferenceKmeansDraw(LALInferenceKmeans *kmeans) {
     /* Draw a cluster at random, using the weights assigned to each cluster */
     REAL8 randomDraw = gsl_rng_uniform(kmeans->rng);
 
-    UINT4 cluster = 0;
+    INT4 cluster = 0;
     REAL8 cumulativeWeight = kmeans->weights[cluster];
     while (cumulativeWeight < randomDraw) {
         cluster++;
@@ -1095,7 +1095,7 @@ REAL8 LALInferenceKmeansPDF(LALInferenceKmeans *kmeans, REAL8 *pt) {
  * @return The estimated value of the PDF at \a pt.
  */
 REAL8 LALInferenceWhitenedKmeansPDF(LALInferenceKmeans *kmeans, REAL8 *pt) {
-    UINT4 j;
+    INT4 j;
 
     if (kmeans->KDEs == NULL)
         LALInferenceKmeansBuildKDE(kmeans);
@@ -1120,9 +1120,9 @@ REAL8 LALInferenceWhitenedKmeansPDF(LALInferenceKmeans *kmeans, REAL8 *pt) {
  * @return A whitened data set with samples corresponding to \a samples.
  */
 gsl_matrix * LALInferenceWhitenSamples(gsl_matrix *samples) {
-    UINT4 i;
-    UINT4 npts = samples->size1;
-    UINT4 dim = samples->size2;
+    INT4 i;
+    INT4 npts = samples->size1;
+    INT4 dim = samples->size2;
 
     gsl_matrix *whitened_samples = gsl_matrix_alloc(npts, dim);
     gsl_matrix_memcpy(whitened_samples, samples);
@@ -1160,7 +1160,7 @@ gsl_matrix * LALInferenceWhitenSamples(gsl_matrix *samples) {
  * @return The squared Euclidean distance between \a x and \a y.
  */
 REAL8 euclidean_dist_squared(gsl_vector *x, gsl_vector *y) {
-    UINT4 i;
+    size_t i;
 
     REAL8 dist = 0.;
     for (i = 0; i < x->size; i++) {
@@ -1180,11 +1180,11 @@ REAL8 euclidean_dist_squared(gsl_vector *x, gsl_vector *y) {
  * @param[in] mask Mask to select which samples in \a data to calculate the
  *                  centroid of.
  */
-void euclidean_centroid(gsl_vector *centroid, gsl_matrix *data, UINT4 *mask) {
-    UINT4 npts = data->size1;
-    UINT4 dim = data->size2;
-    UINT4 i;
-    UINT4 count = 0;
+void euclidean_centroid(gsl_vector *centroid, gsl_matrix *data, INT4 *mask) {
+    INT4 npts = data->size1;
+    INT4 dim = data->size2;
+    INT4 i;
+    INT4 count = 0;
 
     for (i = 0; i < dim; i++)
         gsl_vector_set(centroid, i, 0.);
@@ -1210,7 +1210,7 @@ void euclidean_centroid(gsl_vector *centroid, gsl_matrix *data, UINT4 *mask) {
  * @param kmeans The kmeans to estimate the cluster distributions of.
  */
 void LALInferenceKmeansBuildKDE(LALInferenceKmeans *kmeans) {
-    UINT4 i;
+    INT4 i;
 
     if (kmeans->KDEs == NULL)
         kmeans->KDEs = XLALMalloc(kmeans->k * sizeof(LALInferenceKDE*));
@@ -1232,7 +1232,7 @@ void LALInferenceKmeansBuildKDE(LALInferenceKmeans *kmeans) {
  * @return The maximum likelihood estimate of the \a kmeans clustering.
  */
 REAL8 LALInferenceKmeansMaxLogL(LALInferenceKmeans *kmeans) {
-    UINT4 i, j;
+    INT4 i, j;
 
     REAL8 n_c;
     REAL8 N = (REAL8) kmeans->npts;
@@ -1285,7 +1285,7 @@ REAL8 LALInferenceKmeansBIC(LALInferenceKmeans *kmeans) {
     if (!kmeans)
         return -INFINITY;
 
-    UINT4 i;
+    INT4 i;
     REAL8 log_l;
     REAL8 k = (REAL8) kmeans->k;
     REAL8 N = (REAL8) kmeans->npts;
@@ -1336,7 +1336,7 @@ void LALInferenceKmeansDestroy(LALInferenceKmeans *kmeans) {
 
         /* If KDEs are defined, free all of them */
         if (kmeans->KDEs != NULL) {
-            UINT4 k;
+            INT4 k;
             for (k=0; k<kmeans->k; k++)
                 if (kmeans->KDEs[k]) LALInferenceDestroyKDE(kmeans->KDEs[k]);
             XLALFree(kmeans->KDEs);

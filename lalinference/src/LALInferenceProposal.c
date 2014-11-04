@@ -3561,7 +3561,7 @@ void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runSta
             }
 
             /* Build the KDE estimate and add to the KDE proposal set */
-            UINT4 ntrials = 50;  // Number of trials at fixed-k to find optimal BIC
+            INT4 ntrials = 50;  // Number of trials at fixed-k to find optimal BIC
             LALInferenceInitClusteredKDEProposal(runState, kde, sampleArray, nInSamps, clusterParams, propName, weight, LALInferenceOptimizedKmeans, ntrials);
 
             /* If kmeans construction failed, halt the run */
@@ -3605,7 +3605,7 @@ void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runSta
  * @param[in]  cluster_method A pointer to the clustering function to be used.
  * @param[in]  ntrials  Number of kmeans attempts at fixed k to find optimal BIC.
  */
-void LALInferenceInitClusteredKDEProposal(LALInferenceRunState *runState, LALInferenceClusteredKDE *kde, REAL8 *array, UINT4 nSamps, LALInferenceVariables *params, const char *name, REAL8 weight, LALInferenceKmeans* (*cluster_method)(gsl_matrix*, UINT4, gsl_rng*), UINT4 ntrials) {
+void LALInferenceInitClusteredKDEProposal(LALInferenceRunState *runState, LALInferenceClusteredKDE *kde, REAL8 *array, INT4 nSamps, LALInferenceVariables *params, const char *name, REAL8 weight, LALInferenceKmeans* (*cluster_method)(gsl_matrix*, INT4, gsl_rng*), INT4 ntrials) {
 
     strcpy(kde->name, name);
     INT4 dim = LALInferenceGetVariableDimensionNonFixed(params);
@@ -3630,15 +3630,15 @@ void LALInferenceInitClusteredKDEProposal(LALInferenceRunState *runState, LALInf
     if (LALInferenceGetProcParamVal(runState->commandLine,"--cluster-verbose")) {
         char outp_name[256];
         char outp_draws_name[256];
-        UINT4 chain = 0, out_num = 0;
-        UINT4 ndraws = 1000;
+        INT4 chain = 0, out_num = 0;
+        INT4 ndraws = 1000;
 
         if (LALInferenceCheckVariable(runState->algorithmParams, "MPIrank"))
-            chain = *(UINT4 *)LALInferenceGetVariable(runState->algorithmParams, "MPIrank");
+            chain = *(INT4 *)LALInferenceGetVariable(runState->algorithmParams, "MPIrank");
         printf("Chain %i found %i clusters.\n", chain, kde->kmeans->k);
 
         if (LALInferenceCheckVariable(runState->algorithmParams, "step"))
-            out_num = *(UINT4 *)LALInferenceGetVariable(runState->algorithmParams, "step");
+            out_num = *(INT4 *)LALInferenceGetVariable(runState->algorithmParams, "step");
 
         sprintf(outp_name, "clustered_samples_%2.2d.%2.2d", out_num, chain);
         sprintf(outp_draws_name, "clustered_draws_%2.2d.%2.2d", out_num, chain);
@@ -3661,7 +3661,7 @@ void LALInferenceInitClusteredKDEProposal(LALInferenceRunState *runState, LALInf
 void LALInferenceDumpClusteredKDE(LALInferenceClusteredKDE *kde, char *outp_name, REAL8 *array) {
     FILE *outp;
     REAL8 PDF;
-    UINT4 i, j;
+    INT4 i, j;
 
     outp = fopen(outp_name, "w");
     LALInferenceFprintParameterNonFixedHeaders(outp, kde->params);
@@ -3686,9 +3686,9 @@ void LALInferenceDumpClusteredKDE(LALInferenceClusteredKDE *kde, char *outp_name
  * @param[in] outp_name  The name of the file to write to.
  * @param[in] nSamps     The number of draws to write.
  */
-void LALInferenceDumpClusteredKDEDraws(LALInferenceClusteredKDE *kde, char *outp_name, UINT4 nSamps) {
+void LALInferenceDumpClusteredKDEDraws(LALInferenceClusteredKDE *kde, char *outp_name, INT4 nSamps) {
     FILE *outp;
-    UINT4 i, j;
+    INT4 i, j;
     REAL8 *draw, PDF;
 
     outp = fopen(outp_name, "w");
@@ -3818,7 +3818,7 @@ void LALInferenceSetupClusteredKDEProposalFromDEBuffer(LALInferenceRunState *run
 
     LALInferenceThinnedBufferToArray(runState, DEsamples, step);
 
-    UINT4 ntrials = 5;
+    INT4 ntrials = 5;
     LALInferenceSetupClusteredKDEProposalFromRun(runState, DEsamples[0], nPoints, ntrials);
 
     /* The proposal copies the data, so the local array can be freed */
@@ -3837,7 +3837,7 @@ void LALInferenceSetupClusteredKDEProposalFromDEBuffer(LALInferenceRunState *run
  * @param size     Number of samples in \a samples.
  * @param ntrials  Number of tirals at fixed-k to find optimal BIC
  */
-void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceRunState *runState, REAL8 *samples, INT4 size, UINT4 ntrials) {
+void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceRunState *runState, REAL8 *samples, INT4 size, INT4 ntrials) {
     LALInferenceClusteredKDE *proposal = XLALMalloc(sizeof(LALInferenceClusteredKDE));
     REAL8 weight=2.;
 
@@ -3947,7 +3947,7 @@ REAL8 LALInferenceStoredClusterKDEProposal(LALInferenceRunState *runState, LALIn
     REAL8 *current = XLALMalloc(kde->dimension * sizeof(REAL8));
     REAL8 *proposed = LALInferenceKmeansDraw(kde->kmeans);
 
-    UINT4 i=0;
+    INT4 i=0;
     for (item = kde->params->head; item; item = item->next) {
         if (item->vary != LALINFERENCE_PARAM_FIXED && item->vary != LALINFERENCE_PARAM_OUTPUT) {
             current[i] = *(REAL8 *) LALInferenceGetVariable(currentParams, item->name);

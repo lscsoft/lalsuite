@@ -296,7 +296,7 @@ tagLALInferenceClusteredKDEProposal
     char name[VARNAME_MAX];
     LALInferenceKmeans *kmeans;
     REAL8 weight;
-    UINT4 dimension;
+    INT4 dimension;
     LALInferenceVariables *params;
     struct tagLALInferenceClusteredKDEProposal *next;
 } LALInferenceClusteredKDE;
@@ -314,20 +314,20 @@ void LALInferenceDestroyClusteredKDEProposal(LALInferenceClusteredKDE *proposal)
 void LALInferenceSetupClusteredKDEProposalFromDEBuffer(LALInferenceRunState *runState);
 
 /* Setup a clustered-KDE proposal from the parameters in a run. */
-void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceRunState *runState, REAL8 *samples, INT4 size, UINT4 ntrials);
+void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceRunState *runState, REAL8 *samples, INT4 size, INT4 ntrials);
 
 /* A proposal based on the clustered kernal density estimate of a set of samples. */
 REAL8 LALInferenceClusteredKDEProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 REAL8 LALInferenceStoredClusterKDEProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams, REAL8 *propDensity);
 
 /* Initialize a clustered-KDE proposal. */
-void LALInferenceInitClusteredKDEProposal(LALInferenceRunState *runState, LALInferenceClusteredKDE *kde, REAL8 *array, UINT4 nSamps, LALInferenceVariables *params, const char *name, REAL8 weight, LALInferenceKmeans* (*cluster_method)(gsl_matrix*, UINT4, gsl_rng*), UINT4 ntrials);
+void LALInferenceInitClusteredKDEProposal(LALInferenceRunState *runState, LALInferenceClusteredKDE *kde, REAL8 *array, INT4 nSamps, LALInferenceVariables *params, const char *name, REAL8 weight, LALInferenceKmeans* (*cluster_method)(gsl_matrix*, INT4, gsl_rng*), INT4 ntrials);
 
 /* Dump clustered KDE information to file. */
 void LALInferenceDumpClusteredKDE(LALInferenceClusteredKDE *kde, char *outp_name, REAL8 *array);
 
 /* Dump draws from a KDE to file. */
-void LALInferenceDumpClusteredKDEDraws(LALInferenceClusteredKDE *kde, char *outp_name, UINT4 nSamps);
+void LALInferenceDumpClusteredKDEDraws(LALInferenceClusteredKDE *kde, char *outp_name, INT4 nSamps);
 
 /* Compute the maximum ACL from the differential evolution buffer. */
 void LALInferenceComputeMaxAutoCorrLenFromDE(LALInferenceRunState *runState, INT4* maxACL);

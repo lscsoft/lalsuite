@@ -56,13 +56,13 @@
  * @return A LALInferenceKDE structure containing the KDE of the distribution.
  */
 LALInferenceKDE *LALInferenceNewKDE(REAL8 *pts,
-                                    UINT4 npts,
-                                    UINT4 dim,
-                                    UINT4 *mask) {
-    UINT4 i,j;
+                                    INT4 npts,
+                                    INT4 dim,
+                                    INT4 *mask) {
+    INT4 i,j;
 
     /* Determine the total number of samples */
-    UINT4 count = npts;
+    INT4 count = npts;
     if (mask != NULL) {
         for (i = 0; i < npts; i++) {
             if (!mask[i])
@@ -74,7 +74,7 @@ LALInferenceKDE *LALInferenceNewKDE(REAL8 *pts,
     LALInferenceKDE *kde = LALInferenceInitKDE(count, dim);
 
     /* Fill in samples */
-    UINT4 idx = 0;
+    INT4 idx = 0;
     for (i = 0; i < npts; i++) {
         if (mask == NULL || mask[i]) {
             for (j = 0; j < dim; j++)
@@ -101,13 +101,13 @@ LALInferenceKDE *LALInferenceNewKDE(REAL8 *pts,
  * @return A LALInferenceKDE structure containing the KDE of the distribution.
  * \sa LALInferenceNewKDE()
  */
-LALInferenceKDE *LALInferenceNewKDEfromMat(gsl_matrix *data, UINT4 *mask) {
-    UINT4 i,j;
-    UINT4 npts = data->size1;
-    UINT4 dim = data->size2;
+LALInferenceKDE *LALInferenceNewKDEfromMat(gsl_matrix *data, INT4 *mask) {
+    INT4 i,j;
+    INT4 npts = data->size1;
+    INT4 dim = data->size2;
 
     /* Determine the total number of samples */
-    UINT4 count = npts;
+    INT4 count = npts;
     if (mask != NULL) {
         for (i = 0; i < npts; i++) {
             if (!mask[i])
@@ -119,7 +119,7 @@ LALInferenceKDE *LALInferenceNewKDEfromMat(gsl_matrix *data, UINT4 *mask) {
     LALInferenceKDE *kde = LALInferenceInitKDE(count, dim);
 
     /* Fill in samples */
-    UINT4 idx = 0;
+    INT4 idx = 0;
     for (i = 0; i < npts; i++) {
         if (mask == NULL || mask[i]) {
             for (j = 0; j < dim; j++)
@@ -147,8 +147,8 @@ LALInferenceKDE *LALInferenceNewKDEfromMat(gsl_matrix *data, UINT4 *mask) {
  * @return An allocated, empty LALInferenceKDE structure.
  * \sa LALInferenceKDE, LALInferenceSetKDEBandwidth()
  */
-LALInferenceKDE *LALInferenceInitKDE(UINT4 npts, UINT4 dim) {
-    UINT4 p;
+LALInferenceKDE *LALInferenceInitKDE(INT4 npts, INT4 dim) {
+    INT4 p;
     LALInferenceKDE *kde = XLALMalloc(sizeof(LALInferenceKDE));
     kde->dim = dim;
     kde->npts = npts;
@@ -242,7 +242,7 @@ INT4 LALInferenceCholeskyDecompose(gsl_matrix *mat) {
 void LALInferenceSetKDEBandwidth(LALInferenceKDE *kde) {
     /* Use Scott's Bandwidth method */
     REAL8 det_cov, cov_factor;
-    UINT4 i, j;
+    INT4 i, j;
     INT4 status;
 
     /* If data set is empty, set the normalization to infinity */
@@ -293,10 +293,10 @@ void LALInferenceSetKDEBandwidth(LALInferenceKDE *kde) {
  * @return The value of the estimated probability density function at \a point.
  */
 REAL8 LALInferenceKDEEvaluatePoint(LALInferenceKDE *kde, REAL8 *point) {
-    UINT4 dim = kde->dim;
-    UINT4 npts = kde->npts;
-    UINT4 i, j, p;
-    UINT4 n_evals = 1;  // Number of evaluations to be done
+    INT4 dim = kde->dim;
+    INT4 npts = kde->npts;
+    INT4 i, j, p;
+    INT4 n_evals = 1;  // Number of evaluations to be done
     REAL8 min, max, val;
 
     /* If the normalization is infinite, don't bother calculating anything */
@@ -391,7 +391,7 @@ REAL8 LALInferenceKDEEvaluatePoint(LALInferenceKDE *kde, REAL8 *point) {
                 gsl_vector_mul(diff, tdiff);
 
                 REAL8 energy = 0.;
-                for (UINT4 k=0; k<dim; k++)
+                for (INT4 k=0; k<dim; k++)
                     energy += gsl_vector_get(diff, k);
                 results[j] = -energy/2.;
             }
@@ -424,8 +424,8 @@ REAL8 LALInferenceKDEEvaluatePoint(LALInferenceKDE *kde, REAL8 *point) {
  * @return The sample drawn from the distribution.
  */
 REAL8 *LALInferenceDrawKDESample(LALInferenceKDE *kde, gsl_rng *rng) {
-    UINT4 dim = kde->dim;
-    UINT4 j, p;
+    INT4 dim = kde->dim;
+    INT4 j, p;
     REAL8 min, max;
     REAL8 val, offset;
     INT4 within_bounds = 0;
@@ -440,7 +440,7 @@ REAL8 *LALInferenceDrawKDESample(LALInferenceKDE *kde, gsl_rng *rng) {
         within_bounds = 1;
 
         /* Draw a random sample from KDE dataset */
-        UINT4 ind = gsl_rng_uniform_int(rng, kde->npts);
+        INT4 ind = gsl_rng_uniform_int(rng, kde->npts);
         gsl_vector_view d = gsl_matrix_row(kde->data, ind);
         gsl_vector_memcpy(&pt.vector, &d.vector);
 
@@ -497,7 +497,7 @@ REAL8 LALInferenceMatrixDet(gsl_matrix *mat) {
     REAL8 det=0.0;
     INT4 sign=0;
     INT4 * signum = &sign;
-    UINT4 dim = mat->size1;
+    INT4 dim = mat->size1;
 
     gsl_permutation * p = gsl_permutation_calloc(dim);
     gsl_matrix * tmp_ptr = gsl_matrix_calloc(dim, dim);
@@ -522,11 +522,11 @@ REAL8 LALInferenceMatrixDet(gsl_matrix *mat) {
  * @param[in]  data GSL matrix data set to compute the mean of.
  */
 void LALInferenceComputeMean(gsl_vector *mean, gsl_matrix *data) {
-    UINT4 i;
-    UINT4 npts = data->size1;
+    INT4 i;
+    INT4 npts = data->size1;
 
     /* Zero out mean vector */
-    for (i = 0; i < mean->size; i++)
+    for (i = 0; i < (INT4)mean->size; i++)
         gsl_vector_set(mean, i, 0.0);
 
     gsl_vector_view x;
@@ -548,11 +548,11 @@ void LALInferenceComputeMean(gsl_vector *mean, gsl_matrix *data) {
  * @param[in]  data GSL matrix data set to compute the covariance matrix of.
  */
 void LALInferenceComputeCovariance(gsl_matrix *cov, gsl_matrix *data) {
-    UINT4 i, j, k;
+    INT4 i, j, k;
     REAL8 var;
 
-    UINT4 npts = data->size1;
-    UINT4 dim = data->size2;
+    INT4 npts = data->size1;
+    INT4 dim = data->size2;
 
     gsl_vector *adiff = gsl_vector_alloc(npts);
     gsl_vector *bdiff = gsl_vector_alloc(npts);
@@ -594,8 +594,8 @@ void LALInferenceComputeCovariance(gsl_matrix *cov, gsl_matrix *data) {
  * @param[in] size Number of elements in \a vals.
  * @return The log of the sum of elements in \a vals.
  */
-REAL8 log_add_exps(REAL8 *vals, UINT4 size) {
-    UINT4 i;
+REAL8 log_add_exps(REAL8 *vals, INT4 size) {
+    INT4 i;
 
     REAL8 max_comp = 0.;
     for (i = 0; i < size; i++) {

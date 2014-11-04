@@ -36,8 +36,8 @@ typedef struct
 tagKDE
 {
     gsl_matrix *data;                       /**< Data to estimate the underlying distribution of */
-    UINT4 dim;                              /**< Dimension of points in \a data. */
-    UINT4 npts;                             /**< Number of points in \a data. */
+    INT4 dim;                               /**< Dimension of points in \a data. */
+    INT4 npts;                              /**< Number of points in \a data. */
     REAL8 bandwidth;                        /**< Bandwidth of kernels. */
     REAL8 log_norm_factor;                  /**< Normalization factor of the KDE. */
     gsl_vector * mean;                      /**< The mean of \a data */
@@ -54,13 +54,13 @@ tagKDE
 } LALInferenceKDE;
 
 /* Allocate, fill, and tune a Gaussian kernel density estimate given an array of points. */
-LALInferenceKDE *LALInferenceNewKDE(REAL8 *pts, UINT4 npts, UINT4 dim, UINT4 *mask);
+LALInferenceKDE *LALInferenceNewKDE(REAL8 *pts, INT4 npts, INT4 dim, INT4 *mask);
 
 /* Allocate, fill, and tune a Gaussian kernel density estimate given a matrix of points. */
-LALInferenceKDE *LALInferenceNewKDEfromMat(gsl_matrix *data, UINT4 *mask);
+LALInferenceKDE *LALInferenceNewKDEfromMat(gsl_matrix *data, INT4 *mask);
 
 /* Allocate, fill, and tune a Gaussian kernel density estimate given a matrix of points. */
-LALInferenceKDE *LALInferenceInitKDE(UINT4 npts, UINT4 dim);
+LALInferenceKDE *LALInferenceInitKDE(INT4 npts, INT4 dim);
 
 /* Free an allocated KDE structure. */
 void LALInferenceDestroyKDE(LALInferenceKDE *kde);
@@ -87,6 +87,6 @@ void LALInferenceComputeMean(gsl_vector *mean, gsl_matrix *points);
 REAL8 LALInferenceMatrixDet(gsl_matrix *mat);
 
 /* Determine the log of the sum of an array of exponentials. */
-REAL8 log_add_exps(REAL8 *vals, UINT4 size);
+REAL8 log_add_exps(REAL8 *vals, INT4 size);
 
 #endif

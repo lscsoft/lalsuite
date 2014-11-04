@@ -37,17 +37,17 @@ typedef struct
 tagkmeans
 {
     gsl_matrix *data;                    /**< Data to be clustered (typically whitened) */
-    UINT4 dim;                           /**< Dimension of data */
-    UINT4 npts;                          /**< Number of points being clustered */
-    UINT4 k;                             /**< Number of clusters */
-    UINT4 has_changed;                   /**< Flag indicating a change to cluster assignmens */
+    INT4 dim;                            /**< Dimension of data */
+    INT4 npts;                           /**< Number of points being clustered */
+    INT4 k;                              /**< Number of clusters */
+    INT4 has_changed;                    /**< Flag indicating a change to cluster assignmens */
 
     REAL8 (*dist) (gsl_vector *x, gsl_vector *y);                           /**< Distance funtion */
-    void (*centroid) (gsl_vector *centroid, gsl_matrix *data, UINT4 *mask); /**< Find centroid */
+    void (*centroid) (gsl_vector *centroid, gsl_matrix *data, INT4 *mask); /**< Find centroid */
 
-    UINT4 *assignments;                  /**< Cluster assignments */
-    UINT4 *sizes;                        /**< Cluster sizes */
-    UINT4 *mask;                         /**< Mask used to select data from individual clusters */
+    INT4 *assignments;                   /**< Cluster assignments */
+    INT4 *sizes;                         /**< Cluster sizes */
+    INT4 *mask;                          /**< Mask used to select data from individual clusters */
     REAL8 *weights;                      /**< Fraction of data points in each cluster */
     gsl_vector *mean;                    /**< Mean of unwhitened data (for tranforming points) */
     gsl_vector *std;                     /**< Std deviations of unwhitened data */
@@ -62,28 +62,28 @@ tagkmeans
 } LALInferenceKmeans;
 
 /* Kmeans cluster data, increasing k until the Bayes Information Criteria stop increasing. */
-LALInferenceKmeans *LALInferenceIncrementalKmeans(gsl_matrix *data, UINT4 ntrials, gsl_rng *rng);
+LALInferenceKmeans *LALInferenceIncrementalKmeans(gsl_matrix *data, INT4 ntrials, gsl_rng *rng);
 
 /* Kmeans cluster data, find k that maximizes BIC assuming BIC(k) is concave-down. */
-LALInferenceKmeans *LALInferenceOptimizedKmeans(gsl_matrix *data, UINT4 ntrials, gsl_rng *rng);
+LALInferenceKmeans *LALInferenceOptimizedKmeans(gsl_matrix *data, INT4 ntrials, gsl_rng *rng);
 
 /* Xmeans cluster data, splitting centroids in kmeans according to the Bayes Information Criteria. */
-LALInferenceKmeans *LALInferenceXmeans(gsl_matrix *data, UINT4 ntrials, gsl_rng *rng);
+LALInferenceKmeans *LALInferenceXmeans(gsl_matrix *data, INT4 ntrials, gsl_rng *rng);
 
 /* Run kmeans recursively, splitting each centroid recursively, accepting if the BIC increases. */
-LALInferenceKmeans *LALInferenceRecursiveKmeans(gsl_matrix *data, UINT4 ntrials, gsl_rng *rng);
+LALInferenceKmeans *LALInferenceRecursiveKmeans(gsl_matrix *data, INT4 ntrials, gsl_rng *rng);
 
 /* Recursively split a k=1 kmeans. */
-void LALInferenceKmeansRecursiveSplit(LALInferenceKmeans *kmeans, UINT4 ntrials, gsl_rng *rng);
+void LALInferenceKmeansRecursiveSplit(LALInferenceKmeans *kmeans, INT4 ntrials, gsl_rng *rng);
 
 /* Run the kmeans algorithm until cluster assignments don't change. */
 void LALInferenceKmeansRun(LALInferenceKmeans *kmeans);
 
 /* Run a kmeans several times and return the best. */
-LALInferenceKmeans *LALInferenceKmeansRunBestOf(UINT4 k, gsl_matrix *samples, UINT4 ntrials, gsl_rng *rng);
+LALInferenceKmeans *LALInferenceKmeansRunBestOf(INT4 k, gsl_matrix *samples, INT4 ntrials, gsl_rng *rng);
 
 /* Generate a new kmeans struct from a set of data. */
-LALInferenceKmeans * LALInferenceCreateKmeans(UINT4 k, gsl_matrix *data, gsl_rng *rng);
+LALInferenceKmeans * LALInferenceCreateKmeans(INT4 k, gsl_matrix *data, gsl_rng *rng);
 
 /* A 'k-means++'-like seeded initialization of centroids for a kmeans run. */
 void LALInferenceKmeansSeededInitialize(LALInferenceKmeans *kmeans);
@@ -101,16 +101,16 @@ void LALInferenceKmeansAssignment(LALInferenceKmeans *kmeans);
 void LALInferenceKmeansUpdate(LALInferenceKmeans *kmeans);
 
 /* Construct a mask to select only the data assigned to a single cluster. */
-void LALInferenceKmeansConstructMask(LALInferenceKmeans *kmeans, UINT4 *mask, UINT4 cluster_id);
+void LALInferenceKmeansConstructMask(LALInferenceKmeans *kmeans, INT4 *mask, INT4 cluster_id);
 
 /* Extract a single cluster from an existing kmeans as a new 1-means. */
-LALInferenceKmeans *LALInferenceKmeansExtractCluster(LALInferenceKmeans *kmeans, UINT4 cluster_id);
+LALInferenceKmeans *LALInferenceKmeansExtractCluster(LALInferenceKmeans *kmeans, INT4 cluster_id);
 
 /* Impose boundaries on KDEs. */
 void LALInferenceKmeansImposeBounds(LALInferenceKmeans *kmeans, LALInferenceVariables *params, LALInferenceVariables *priorArgs);
 
 /* Generate a new matrix by masking an existing one. */
-gsl_matrix *mask_data(gsl_matrix *data, UINT4 *mask);
+gsl_matrix *mask_data(gsl_matrix *data, INT4 *mask);
 
 /* Add a vector to the end of a matrix, allocating if necessary. */
 void accumulate_vectors(gsl_matrix **mat_ptr, gsl_vector *vec);
@@ -134,7 +134,7 @@ gsl_matrix * LALInferenceWhitenSamples(gsl_matrix *samples);
 REAL8 euclidean_dist_squared(gsl_vector *x, gsl_vector *y);
 
 /* Find the centroid of a masked data set. */
-void euclidean_centroid(gsl_vector *centroid, gsl_matrix *data, UINT4 *mask);
+void euclidean_centroid(gsl_vector *centroid, gsl_matrix *data, INT4 *mask);
 
 /* Build the kernel density estimate from a kmeans clustering. */
 void LALInferenceKmeansBuildKDE(LALInferenceKmeans *kmeans);
