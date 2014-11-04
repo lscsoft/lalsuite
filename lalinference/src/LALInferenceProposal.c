@@ -3838,7 +3838,6 @@ void LALInferenceSetupClusteredKDEProposalFromDEBuffer(LALInferenceRunState *run
  * @param ntrials  Number of tirals at fixed-k to find optimal BIC
  */
 void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceRunState *runState, REAL8 *samples, INT4 size, INT4 ntrials) {
-    LALInferenceClusteredKDE *proposal = XLALCalloc(1, sizeof(LALInferenceClusteredKDE));
     REAL8 weight=2.;
 
     /* Keep track of clustered parameter names */
@@ -3852,6 +3851,7 @@ void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceRunState *runState
         LALInferenceAddVariable(clusterParams, item->name, item->value, item->type, item->vary);
 
     /* Build the proposal */
+    LALInferenceClusteredKDE *proposal = XLALCalloc(1, sizeof(LALInferenceClusteredKDE));
     LALInferenceInitClusteredKDEProposal(runState, proposal, samples, size, clusterParams, clusteredKDEProposalName, weight, LALInferenceOptimizedKmeans, ntrials);
 
     /* Only add the kmeans was successfully setup */

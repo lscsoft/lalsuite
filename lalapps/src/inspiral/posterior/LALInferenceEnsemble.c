@@ -231,7 +231,7 @@ LALInferenceRunState *init_runstate(ProcessParamsTable *command_line)
 /* calls the "ReadData()" function to gather data & PSD from files, */
 /* and initializes other variables accordingly.                     */
 {
-    LALInferenceRunState *run_state = XLALMalloc(sizeof(LALInferenceRunState));
+    LALInferenceRunState *run_state = XLALCalloc(1, sizeof(LALInferenceRunState));
 
     /* Check that command line is consistent first */
     LALInferenceCheckOptionsConsistency(command_line);
