@@ -1166,10 +1166,13 @@ int MAIN( int argc, char *argv[]) {
   /* ################## loop over SKY coarse-grid points ################## */
   while(thisScan.state != STATE_FINISHED)
     {
+#ifdef EAH_BOINC
       SHOW_PROGRESS_RESERVE(dopplerpos.Alpha, dopplerpos.Delta,
                     skyGridCounter * nf1dot + f1dotGridCounter,
                     thisScan.numSkyGridPoints * nf1dot, uvar_Freq, uvar_FreqBand);
 
+      fprintf(stderr, "\nSky%d/%d", skyGridCounter, thisScan.numSkyGridPoints);
+#endif
       /*------------- calculate F-Statistic for each segment --------------*/
 
       /* normalize skyposition: correctly map into [0,2pi]x[-pi/2,pi/2] */
@@ -1218,7 +1221,11 @@ int MAIN( int argc, char *argv[]) {
         while ( if3dot < nf3dot ) {
 
           /* show progress */
+#ifndef EAH_BOINC
           LogPrintf( LOG_NORMAL, "Coarse grid sky:%d/%d f1dot:%d/%d f2dot:%d/%d f3dot:%d/%d\n", skyGridCounter+1, thisScan.numSkyGridPoints, ifdot+1, nf1dot, if2dot+1, nf2dot, if3dot+1, nf3dot );
+#else
+	  fprintf(stderr, ".");
+#endif
 
           /* ------------- Set up coarse grid --------------------------------------*/
           coarsegrid.freqlength = (UINT4) (binsFstat1);
@@ -1658,6 +1665,9 @@ int MAIN( int argc, char *argv[]) {
       }
 
     } /* ######## End of while loop over 1st stage SKY coarse-grid points ############ */
+#ifdef EAH_BOINC
+      fprintf(stderr, "\n");
+#endif
   /*---------------------------------------------------------------------------------*/
   timeLoopEnd = XLALGetTimeOfDay();
   costLoop = (timeLoopEnd - timeLoopStart);
