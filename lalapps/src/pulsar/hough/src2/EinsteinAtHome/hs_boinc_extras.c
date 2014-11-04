@@ -1283,8 +1283,15 @@ static void worker (void) {
 	char buf[20];
 	unsigned int rlen = strlen(resultfile);
 	strcpy(wu_result_file, resultfile);
-	strcpy(&wu_result_file[rlen-1], myltoa(second_outfile ? current_config_file*2 : current_config_file, buf, 20));
+	strcpy(&wu_result_file[rlen-1], myltoa(second_outfile ? current_config_file * 2 : current_config_file, buf, 20));
 	*config_file_arg = config_files[current_config_file];
+
+	if (fp = boinc_fopen(wu_result_file,"r")) {
+	  fclose(fp);
+	  LogPrintf (LOG_NORMAL, "WARNING: Resultfile '%s' present - skipping subWU#%d\n", wu_result_file, current_config_file);
+	  current_config_file ++;
+	  continue;
+	}
       }
 
       /* copy the modified command line, dump it when DEBUG_COMMAND_LINE_MANGLING */
