@@ -1757,10 +1757,7 @@ int MAIN( int argc, char *argv[]) {
                 skyGridCounter * nf1dot,
                 uvar_Freq, uvar_FreqBand);
 
-  // in BOINC App the checkpoint is left behind to be cleaned up by the Core Client
-#ifndef EAH_BOINC
   clear_gct_checkpoint (uvar_fnameChkPoint);
-#endif
 
   /*------------ free all remaining memory -----------*/
 
