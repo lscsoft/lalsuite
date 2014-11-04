@@ -819,7 +819,7 @@ void parseLine(char *record, const char *delim, char arr[][VARNAME_MAX], INT4 *c
  * @param filestream The PTMCMC input stream to discard the header of.
  */
 void LALInferenceDiscardPTMCMCHeader(FILE *filestream) {
-    char str[STR_MAX];
+    char *str = XLALCalloc(STR_MAX, sizeof(char));
     char row[COL_MAX][VARNAME_MAX];
     const char *delimiters = " \t";
     INT4 nCols;
@@ -836,6 +836,8 @@ void LALInferenceDiscardPTMCMCHeader(FILE *filestream) {
     if (str == NULL) {
         fprintf(stderr, "Couldn't find column headers in PTMCMC file.\n");
         exit(1);
+    } else {
+        XLALFree(str);
     }
 
     fseek(filestream, last_line, SEEK_SET);
@@ -853,7 +855,7 @@ void LALInferenceDiscardPTMCMCHeader(FILE *filestream) {
  * @return The cycle to be used for burnin.
  */
 void LALInferenceBurninPTMCMC(FILE *filestream, INT4 logl_idx, INT4 nPar) {
-    char str[STR_MAX];
+    char *str = XLALCalloc(STR_MAX, sizeof(char));
     char row[COL_MAX][VARNAME_MAX];
     const char *delimiters = " \t";
     INT4 nCols;
@@ -887,6 +889,8 @@ void LALInferenceBurninPTMCMC(FILE *filestream, INT4 logl_idx, INT4 nPar) {
     if (str == NULL) {
         fprintf(stderr, "Error burning in PTMCMC file.\n");
         exit(1);
+    } else {
+        XLALFree(str);
     }
 }
 
@@ -899,15 +903,19 @@ void LALInferenceBurninPTMCMC(FILE *filestream, INT4 logl_idx, INT4 nPar) {
  * @param[in] burnin     Number of lines to read past in \a filestream.
  */
 void LALInferenceBurninStream(FILE *filestream, INT4 burnin) {
-    char str[STR_MAX];
+    char *str = XLALCalloc(STR_MAX, sizeof(char));
     INT4 i=0;
 
     for (i=0; i<burnin; i++)
         fgets(str, sizeof(str), filestream);
 
-    if (str == NULL && burnin > 0) {
-        fprintf(stderr, "Error burning in file.\n");
-        exit(1);
+    if (str == NULL) {
+        if (burnin > 0) {
+            fprintf(stderr, "Error burning in file.\n");
+            exit(1);
+        }
+    } else {
+        XLALFree(str);
     }
 }
 
@@ -921,7 +929,7 @@ void LALInferenceBurninStream(FILE *filestream, INT4 burnin) {
  */
 void LALInferenceReadAsciiHeader(FILE *input, char params[][VARNAME_MAX], INT4 *nCols) {
     INT4 i;
-    char str[STR_MAX];
+    char *str = XLALCalloc(STR_MAX, sizeof(char));
     char row[COL_MAX][VARNAME_MAX];
     const char *delimiters = " \n\t";
     INT4 col_count=0;
@@ -933,6 +941,7 @@ void LALInferenceReadAsciiHeader(FILE *input, char params[][VARNAME_MAX], INT4 *
         strcpy(params[i], row[i]);
 
     *nCols = col_count;
+    XLALFree(str);
 }
 
 
