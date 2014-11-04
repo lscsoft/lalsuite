@@ -1272,9 +1272,10 @@ static void worker (void) {
     do {
 
       if (bundle_size) {
+	char buf[20];
 	unsigned int rlen = strlen(resultfile);
 	strcpy(wu_result_file, resultfile);
-	myltoa(second_outfile ? current_config_file*2 : current_config_file, &wu_result_file[rlen-1], MAX_PATH_LEN-rlen);
+	strcpy(&wu_result_file[rlen-1], myltoa(second_outfile ? current_config_file*2 : current_config_file, buf, 20));
 	*config_file_arg = config_files[current_config_file];
       }
 
