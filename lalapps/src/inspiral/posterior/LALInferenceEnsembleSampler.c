@@ -180,13 +180,15 @@ INT4 walker_step(LALInferenceRunState *run_state,
 
 
 void ensemble_update(LALInferenceRunState *run_state) {
-    INT4 nwalkers, nwalkers_per_thread, walker, ndim;
+    INT4 nwalkers, nwalkers_per_thread, walker, ndim, cyclic_reflective;
     REAL8 *parameters, *samples, *param_array;
 
     LALInferenceVariables *algorithm_params = run_state->algorithmParams;
     nwalkers = LALInferenceGetINT4Variable(algorithm_params, "nwalkers");
     nwalkers_per_thread =
         LALInferenceGetINT4Variable(algorithm_params, "nwalkers_per_thread");
+    cyclic_reflective =
+        LALInferenceGetINT4Variable(algorithm_params, "cyclic_reflective");
 
     /* Prepare array to contain samples */
     ndim = LALInferenceGetVariableDimensionNonFixed(run_state->currentParamArray[0]);
@@ -206,7 +208,8 @@ void ensemble_update(LALInferenceRunState *run_state) {
 
     /* Update the KDE proposal */
     INT4 ntrials = 10;  // k-means initialization trials to optimize clustering at fixed-k
-    LALInferenceSetupClusteredKDEProposalFromRun(run_state, samples, nwalkers, ntrials);
+    LALInferenceSetupClusteredKDEProposalFromRun(run_state, samples,
+                                                    nwalkers, cyclic_reflective, ntrials);
 
     /* Clean up */
     XLALFree(param_array);

@@ -840,7 +840,7 @@ LALInferenceKmeans *LALInferenceKmeansExtractCluster(LALInferenceKmeans *kmeans,
  * @param[in] kmeans             kmeans to cycle through the clusters of.
  * @param[in] params             Parameters to impose bounds on.
  * @param[in] priorArgs          Variables containing prior boundaries.
- * @param[in] cyclic_reflective  Flag to check for cyclic/reflective bounds
+ * @param[in] cyclic_reflective  Flag to check for cyclic/reflective bounds.
  *
  */
 void LALInferenceKmeansImposeBounds(LALInferenceKmeans *kmeans,

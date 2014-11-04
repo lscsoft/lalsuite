@@ -3412,6 +3412,7 @@ void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runSta
     INT4 nBurnins=0, nWeights=0, nPostEsts=0;
     INT4 inChain;
     INT4 burnin;
+    INT4 cyclic_reflective = 0;
     REAL8 weight;
     ProcessParamsTable *command;
 
@@ -3420,7 +3421,8 @@ void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runSta
         chain = *(INT4 *)LALInferenceGetVariable(runState->algorithmParams, "MPIrank");
 
     /* Loop once to get number of sample files and sanity check.
-     *   If PTMCMC files, only load this chain's file */
+     *   If PTMCMC files, only load this chain's file.  Also check
+     *   if cyclic/reflective bounds have been requested */
     nPostEsts=0;
     for(command=runState->commandLine; command; command=command->next) {
         if(!strcmp(command->param, "--ptmcmc-samples")) {
@@ -3428,6 +3430,8 @@ void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runSta
             if (chain == inChain) nPostEsts++;
         } else if (!strcmp(command->param, "--ascii-samples")) {
             nPostEsts++;
+        } else if (!strcmp(command->param, "--cyclic-reflective-kde")) {
+            cyclic_reflective = 1;
         }
     }
 
@@ -3562,7 +3566,7 @@ void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runSta
 
             /* Build the KDE estimate and add to the KDE proposal set */
             INT4 ntrials = 50;  // Number of trials at fixed-k to find optimal BIC
-            LALInferenceInitClusteredKDEProposal(runState, kde, sampleArray, nInSamps, clusterParams, propName, weight, LALInferenceOptimizedKmeans, ntrials);
+            LALInferenceInitClusteredKDEProposal(runState, kde, sampleArray, nInSamps, clusterParams, propName, weight, LALInferenceOptimizedKmeans, cyclic_reflective, ntrials);
 
             /* If kmeans construction failed, halt the run */
             if (!kde->kmeans) {
@@ -3603,9 +3607,10 @@ void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runSta
  * @param[in]  name     The name of the proposal being constructed.
  * @param[in]  weight   The relative weight this proposal is to have against other KDE proposals.
  * @param[in]  cluster_method A pointer to the clustering function to be used.
+ * @param[in]  cyclic_reflective Flag to check for cyclic/reflective bounds.
  * @param[in]  ntrials  Number of kmeans attempts at fixed k to find optimal BIC.
  */
-void LALInferenceInitClusteredKDEProposal(LALInferenceRunState *runState, LALInferenceClusteredKDE *kde, REAL8 *array, INT4 nSamps, LALInferenceVariables *params, const char *name, REAL8 weight, LALInferenceKmeans* (*cluster_method)(gsl_matrix*, INT4, gsl_rng*), INT4 ntrials) {
+void LALInferenceInitClusteredKDEProposal(LALInferenceRunState *runState, LALInferenceClusteredKDE *kde, REAL8 *array, INT4 nSamps, LALInferenceVariables *params, const char *name, REAL8 weight, LALInferenceKmeans* (*cluster_method)(gsl_matrix*, INT4, gsl_rng*), INT4 cyclic_reflective, INT4 ntrials) {
 
     strcpy(kde->name, name);
     INT4 dim = LALInferenceGetVariableDimensionNonFixed(params);
@@ -3624,7 +3629,7 @@ void LALInferenceInitClusteredKDEProposal(LALInferenceRunState *runState, LALInf
     kde->next = NULL;
 
     /* Selectivey impose bounds on KDEs */
-    LALInferenceKmeansImposeBounds(kde->kmeans, params, runState->priorArgs, 0);
+    LALInferenceKmeansImposeBounds(kde->kmeans, params, runState->priorArgs, cyclic_reflective);
 
     /* Print out clustered samples, assignments, and PDF values if requested */
     if (LALInferenceGetProcParamVal(runState->commandLine,"--cluster-verbose")) {
@@ -3818,8 +3823,13 @@ void LALInferenceSetupClusteredKDEProposalFromDEBuffer(LALInferenceRunState *run
 
     LALInferenceThinnedBufferToArray(runState, DEsamples, step);
 
+    /* Check if imposing cyclic reflective bounds */
+    INT4 cyclic_reflective = 0;
+    if (LALInferenceGetProcParamVal(runState->commandLine, "--cyclic-reflective-kde"))
+        cyclic_reflective = 1;
+
     INT4 ntrials = 5;
-    LALInferenceSetupClusteredKDEProposalFromRun(runState, DEsamples[0], nPoints, ntrials);
+    LALInferenceSetupClusteredKDEProposalFromRun(runState, DEsamples[0], nPoints, cyclic_reflective, ntrials);
 
     /* The proposal copies the data, so the local array can be freed */
     XLALFree(temp);
@@ -3835,9 +3845,10 @@ void LALInferenceSetupClusteredKDEProposalFromDEBuffer(LALInferenceRunState *run
  * @param samples  The samples to estimate the distribution of.  Column order expected to match
  *                     the order in \a runState->currentParams.
  * @param size     Number of samples in \a samples.
+ * @param cyclic_reflective Flag to check for cyclic/reflective bounds.
  * @param ntrials  Number of tirals at fixed-k to find optimal BIC
  */
-void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceRunState *runState, REAL8 *samples, INT4 size, INT4 ntrials) {
+void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceRunState *runState, REAL8 *samples, INT4 size, INT4 cyclic_reflective, INT4 ntrials) {
     REAL8 weight=2.;
 
     /* Keep track of clustered parameter names */
@@ -3852,7 +3863,7 @@ void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceRunState *runState
 
     /* Build the proposal */
     LALInferenceClusteredKDE *proposal = XLALCalloc(1, sizeof(LALInferenceClusteredKDE));
-    LALInferenceInitClusteredKDEProposal(runState, proposal, samples, size, clusterParams, clusteredKDEProposalName, weight, LALInferenceOptimizedKmeans, ntrials);
+    LALInferenceInitClusteredKDEProposal(runState, proposal, samples, size, clusterParams, clusteredKDEProposalName, weight, LALInferenceOptimizedKmeans, cyclic_reflective, ntrials);
 
     /* Only add the kmeans was successfully setup */
     if (proposal->kmeans)

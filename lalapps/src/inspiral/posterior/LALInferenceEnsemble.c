@@ -396,6 +396,11 @@ void init_sampler(LALInferenceRunState *run_state) {
     if (LALInferenceGetProcParamVal(command_line, "--verbose"))
         verbose = 1;
 
+    /* Impose cyclic/reflective bounds in KDE */
+    INT4 cyclic_reflective = 0;
+    if (LALInferenceGetProcParamVal(command_line, "--cyclic-reflective-kde"))
+        cyclic_reflective = 1;
+
     /* Determine number of walkers */
     INT4 nwalkers = 1000;
     INT4 nwalkers_per_thread = nwalkers;
@@ -499,6 +504,9 @@ void init_sampler(LALInferenceRunState *run_state) {
     LALInferenceVariables *algorithm_params = run_state->algorithmParams;
 
     LALInferenceAddVariable(algorithm_params, "verbose", &verbose,
+                            LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
+
+    LALInferenceAddVariable(algorithm_params, "cyclic_reflective", &cyclic_reflective,
                             LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
 
     LALInferenceAddVariable(algorithm_params, "nwalkers_per_thread", &nwalkers_per_thread,
