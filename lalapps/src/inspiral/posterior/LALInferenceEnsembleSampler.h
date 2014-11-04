@@ -59,7 +59,7 @@ char *init_ensemble_output(LALInferenceRunState *run_state,
 
 void print_ensemble_sample(LALInferenceRunState *run_state,
                             char **walker_output_names,
-                            UINT4 walker);
+                            INT4 walker);
 
 void print_proposed_sample(LALInferenceRunState *run_state,
                             LALInferenceVariables *proposed_params,

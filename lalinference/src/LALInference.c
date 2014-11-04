@@ -734,19 +734,19 @@ void LALInferenceReadSampleNonFixed(FILE *fp, LALInferenceVariables *p) {
  *                             read.  If > 0, only read \a nLines.
  * @return A REAL8 array containing the parsed data.
  */
-REAL8 *LALInferenceParseDelimitedAscii(FILE *input, UINT4 nCols, UINT4 *wantedCols, UINT4 *nLines) {
-    UINT4 nread;
-    UINT4 i=0, par=0, col=0;
+REAL8 *LALInferenceParseDelimitedAscii(FILE *input, INT4 nCols, INT4 *wantedCols, INT4 *nLines) {
+    INT4 nread;
+    INT4 i=0, par=0, col=0;
     REAL8 val=0;
 
     // Determine the number of wanted columns
-    UINT4 nWantedCols = 0;
+    INT4 nWantedCols = 0;
     for (col = 0; col < nCols; col++)
         nWantedCols += wantedCols[col];
 
     // Determine number of samples to be read
     unsigned long starting_pos = ftell(input);
-    UINT4 nSamples = *nLines;
+    INT4 nSamples = *nLines;
 
     if (nSamples == 0) {
         INT4 ch;
@@ -792,7 +792,7 @@ REAL8 *LALInferenceParseDelimitedAscii(FILE *input, UINT4 nCols, UINT4 *wantedCo
  * @param[out] arr    Parsed string.
  * @param[out] cnt    Total number of fields read.
  */
-void parseLine(char *record, const char *delim, char arr[][VARNAME_MAX], UINT4 *cnt) {
+void parseLine(char *record, const char *delim, char arr[][VARNAME_MAX], INT4 *cnt) {
     // Discard newline character at end of line to avoid including it in a field
     char *newline = strchr(record, '\n');
     if (newline)
@@ -822,7 +822,7 @@ void LALInferenceDiscardPTMCMCHeader(FILE *filestream) {
     char str[STR_MAX];
     char row[COL_MAX][VARNAME_MAX];
     const char *delimiters = " \t";
-    UINT4 nCols;
+    INT4 nCols;
     INT4 last_line = 0;
 
     fgets(str, sizeof(str), filestream);
@@ -852,11 +852,11 @@ void LALInferenceDiscardPTMCMCHeader(FILE *filestream) {
  * @param[in] logl_idx    The column containing logl values.
  * @return The cycle to be used for burnin.
  */
-void LALInferenceBurninPTMCMC(FILE *filestream, UINT4 logl_idx, UINT4 nPar) {
+void LALInferenceBurninPTMCMC(FILE *filestream, INT4 logl_idx, INT4 nPar) {
     char str[STR_MAX];
     char row[COL_MAX][VARNAME_MAX];
     const char *delimiters = " \t";
-    UINT4 nCols;
+    INT4 nCols;
     REAL8 loglike, maxLogL=-INFINITY;
 
     // Determine number of samples to be read
@@ -898,9 +898,9 @@ void LALInferenceBurninPTMCMC(FILE *filestream, UINT4 logl_idx, UINT4 nPar) {
  * @param     filestream The filestream to be burned in.
  * @param[in] burnin     Number of lines to read past in \a filestream.
  */
-void LALInferenceBurninStream(FILE *filestream, UINT4 burnin) {
+void LALInferenceBurninStream(FILE *filestream, INT4 burnin) {
     char str[STR_MAX];
-    UINT4 i=0;
+    INT4 i=0;
 
     for (i=0; i<burnin; i++)
         fgets(str, sizeof(str), filestream);
@@ -919,12 +919,12 @@ void LALInferenceBurninStream(FILE *filestream, UINT4 burnin) {
  * @param[out] params The column names found in the header.
  * @param[out] nCols  Number of columns found in the header.
  */
-void LALInferenceReadAsciiHeader(FILE *input, char params[][VARNAME_MAX], UINT4 *nCols) {
-    UINT4 i;
+void LALInferenceReadAsciiHeader(FILE *input, char params[][VARNAME_MAX], INT4 *nCols) {
+    INT4 i;
     char str[STR_MAX];
     char row[COL_MAX][VARNAME_MAX];
     const char *delimiters = " \n\t";
-    UINT4 col_count=0;
+    INT4 col_count=0;
 
     fgets(str, sizeof(str), input);
     parseLine(str, delimiters, row, &col_count);
@@ -947,8 +947,8 @@ void LALInferenceReadAsciiHeader(FILE *input, char params[][VARNAME_MAX], UINT4 
  * @param[in]  selCols  Array of column numbers to be extracted from \a inarray.
  * @returns An array containing the requested columns in the order specified in \a selCols.
  */
-REAL8 **LALInferenceSelectColsFromArray(REAL8 **inarray, UINT4 nRows, UINT4 nCols, UINT4 nSelCols, UINT4 *selCols) {
-    UINT4 i,j;
+REAL8 **LALInferenceSelectColsFromArray(REAL8 **inarray, INT4 nRows, INT4 nCols, INT4 nSelCols, INT4 *selCols) {
+    INT4 i,j;
 
     REAL8 **array = (REAL8**) XLALMalloc(nRows * sizeof(REAL8*));
     for (i = 0; i < nRows; i++) {
@@ -1267,7 +1267,7 @@ INT4 LALInferenceBufferToArray(LALInferenceRunState *state, REAL8** DEarray) {
 }
 
 
-void LALInferenceArrayToBuffer(LALInferenceRunState *runState, REAL8** DEarray, UINT4 nPoints) {
+void LALInferenceArrayToBuffer(LALInferenceRunState *runState, REAL8** DEarray, INT4 nPoints) {
   LALInferenceVariableItem *ptr;
   UINT4 i=0,p=0;
 
@@ -1282,14 +1282,14 @@ void LALInferenceArrayToBuffer(LALInferenceRunState *runState, REAL8** DEarray, 
 
   /* Expand DE buffer */
   size_t newSize = 1;
-  while (nPoints > newSize)
+  while ((size_t)nPoints > newSize)
     newSize *= 2;
 
   runState->differentialPoints = XLALCalloc(newSize, sizeof(LALInferenceVariables *));
   runState->differentialPointsLength = nPoints;
   runState->differentialPointsSize = newSize;
 
-  for (i=0; i<nPoints; i++) {
+  for (i=0; i<(UINT4)nPoints; i++) {
     runState->differentialPoints[i] = XLALCalloc(1, sizeof(LALInferenceVariables));
     LALInferenceCopyVariables(&templateParamSet, runState->differentialPoints[i]);
     p = 0;

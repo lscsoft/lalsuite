@@ -3408,16 +3408,16 @@ void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runSta
     fprintf(stdout, "Setting up cluster proposal...\n");
     fflush(stdout);
     LALInferenceVariableItem *item;
-    UINT4 i=0, j=0, k=0;
-    UINT4 nBurnins=0, nWeights=0, nPostEsts=0;
-    UINT4 inChain;
-    UINT4 burnin;
+    INT4 i=0, j=0, k=0;
+    INT4 nBurnins=0, nWeights=0, nPostEsts=0;
+    INT4 inChain;
+    INT4 burnin;
     REAL8 weight;
     ProcessParamsTable *command;
 
-    UINT4 chain = 0;
+    INT4 chain = 0;
     if (LALInferenceCheckVariable(runState->algorithmParams, "MPIrank"))
-        chain = *(UINT4 *)LALInferenceGetVariable(runState->algorithmParams, "MPIrank");
+        chain = *(INT4 *)LALInferenceGetVariable(runState->algorithmParams, "MPIrank");
 
     /* Loop once to get number of sample files and sanity check.
      *   If PTMCMC files, only load this chain's file */
@@ -3431,8 +3431,8 @@ void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runSta
         }
     }
 
-    UINT4 *burnins = XLALCalloc(nPostEsts, sizeof(UINT4));
-    UINT4 *weights = XLALCalloc(nPostEsts, sizeof(UINT4));
+    INT4 *burnins = XLALCalloc(nPostEsts, sizeof(INT4));
+    INT4 *weights = XLALCalloc(nPostEsts, sizeof(INT4));
 
     /* Get burnins and weights */
     for(command=runState->commandLine; command; command=command->next) {
@@ -3468,7 +3468,7 @@ void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runSta
     i=0;
     for(command=runState->commandLine; command; command=command->next) {
         if(!strcmp(command->param, "--ptmcmc-samples") || !strcmp(command->param, "--ascii-samples")) {
-            UINT4 ptmcmc = 0;
+            INT4 ptmcmc = 0;
             if (!strcmp(command->param, "--ptmcmc-samples")) {
                 inChain = atoi(strrchr(command->value, '.')+1);
                 if (inChain != chain)
@@ -3491,8 +3491,8 @@ void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runSta
             char *propName = XLALMalloc(512*sizeof(char));
             sprintf(propName, "%s_%s", clusteredKDEProposalName, infilename);
 
-            UINT4 nInSamps;
-            UINT4 nCols;
+            INT4 nInSamps;
+            INT4 nCols;
             REAL8 *sampleArray;
 
             if (ptmcmc)
@@ -3504,12 +3504,12 @@ void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runSta
             LALInferenceVariables *backwardClusterParams = XLALCalloc(1, sizeof(LALInferenceVariables));
 
             /* Only cluster parameters that are being sampled */
-            UINT4 nValidCols=0;
-            UINT4 *validCols = XLALMalloc(nCols * sizeof(UINT4));
+            INT4 nValidCols=0;
+            INT4 *validCols = XLALMalloc(nCols * sizeof(INT4));
             for (j=0; j<nCols; j++)
                 validCols[j] = 0;
 
-            UINT4 logl_idx = 0;
+            INT4 logl_idx = 0;
             for (j=0; j<nCols; j++) {
                 if (!strcmp("logl", params[j])) {
                     logl_idx = j;
@@ -3548,7 +3548,7 @@ void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runSta
             if (ptmcmc) {
                 INT4 acl = (INT4)LALInferenceComputeMaxAutoCorrLen(sampleArray, nInSamps, nValidCols);
                 if (acl < 1) acl = 1;
-                UINT4 downsampled_size = ceil((REAL8)nInSamps/acl);
+                INT4 downsampled_size = ceil((REAL8)nInSamps/acl);
                 REAL8 *downsampled_array = (REAL8 *)XLALMalloc(downsampled_size * nValidCols * sizeof(REAL8));
                 printf("Chain %i downsampling to achieve %i samples.\n", chain, downsampled_size);
                 for (k=0; k < downsampled_size; k++) {
