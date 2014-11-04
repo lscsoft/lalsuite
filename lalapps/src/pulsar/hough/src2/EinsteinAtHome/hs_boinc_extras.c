@@ -1259,11 +1259,19 @@ static void worker (void) {
 #endif
 
   /* if the program was called to output the version, output the BOINC revision, too */
-  if(output_version)
+  if(output_version) {
 #ifdef BUILD_INFO
     printf("%%%% " BUILD_INFO "\n");
 #endif
     printf("%%%% BOINC: " SVN_VERSION "\n");
+  }
+
+  /* rrargv will hold a copy of rargv, since apparently MAIN() / UserInput modifies the argv passed */
+  char**rrargv = (char**)malloc(rargc * sizeof(char*));
+  if(!rrargv){
+    LogPrintf(LOG_CRITICAL, "Out of memory\n");
+    boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EMEM);
+  }
 
   if (output_help || output_version || !resultfile_present) {
 
@@ -1279,26 +1287,31 @@ static void worker (void) {
 	*config_file_arg = config_files[current_config_file];
       }
 
-#if DEBUG_COMMAND_LINE_MANGLING
-      /* debug: dump the modified command line */
+      /* copy the modified command line, dump it when DEBUG_COMMAND_LINE_MANGLING */
       {
 	int i;
+#if DEBUG_COMMAND_LINE_MANGLING
 	fputs("command line:",stderr);
+#endif
 	for(i=0;i<rargc;i++) {
-	  if (rargv[i]) {
+	  rrargv[i] = rargv[i];
+#if DEBUG_COMMAND_LINE_MANGLING
+	  if (rrargv[i]) {
 	    fputs(" ", stderr);
-	    fputs(rargv[i],stderr);
+	    fputs(rrargv[i],stderr);
 	  } else {
 	    fputs(" [NULL]", stderr);
 	  }
-	}
-	fputs("\n",stderr);
-      }
 #endif
+	}
+#if DEBUG_COMMAND_LINE_MANGLING
+	fputs("\n",stderr);
+#endif
+      }
 
       /* CALL WORKER's MAIN()
        */
-      res = MAIN(rargc,rargv);
+      res = MAIN(rargc,rrargv);
       if (res) {
 	LogPrintf (LOG_CRITICAL, "ERROR: MAIN() returned with error '%d'\n",res);
       }
