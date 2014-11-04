@@ -39,26 +39,26 @@
 
 #define PRINT_GSL_1D(type, name, fmt) \
   do { \
-    printf("%s:%i ", strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') : __FILE__, __LINE__); \
-    printf("%s = [", #name); \
+    fprintf(stderr, "%s:%i ", strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') : __FILE__, __LINE__); \
+    fprintf(stderr, "%s = [", #name); \
     for (size_t GH_i = 0; (name) != NULL && GH_i < (name)->size; ++GH_i) { \
-      printf(" "fmt, gsl_##type##_get(name, GH_i)); \
+      fprintf(stderr, " "fmt, gsl_##type##_get(name, GH_i)); \
     } \
-    printf(" ]\n"); \
+    fprintf(stderr, " ]\n"); \
   } while (0)
 
 #define PRINT_GSL_2D(type, name, fmt) \
   do { \
-    printf("%s:%i ", strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') : __FILE__, __LINE__); \
-    printf("%s = [\n", #name); \
+    fprintf(stderr, "%s:%i ", strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') : __FILE__, __LINE__); \
+    fprintf(stderr, "%s = [\n", #name); \
     for (size_t GH_i = 0; (name) != NULL && GH_i < (name)->size1; ++GH_i) { \
-      printf("  "); \
+      fprintf(stderr, "  "); \
       for (size_t GH_j = 0; GH_j < (name)->size2; ++GH_j) { \
-        printf(" "fmt, gsl_##type##_get(name, GH_i, GH_j)); \
+        fprintf(stderr, " "fmt, gsl_##type##_get(name, GH_i, GH_j)); \
       } \
-      printf(";\n"); \
+      fprintf(stderr, ";\n"); \
     } \
-    printf("]\n"); \
+    fprintf(stderr, "]\n"); \
   } while (0)
 
 #define FREE_GSL(type, ...) \
