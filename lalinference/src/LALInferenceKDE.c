@@ -432,7 +432,7 @@ REAL8 *LALInferenceDrawKDESample(LALInferenceKDE *kde, gsl_rng *rng) {
 
     gsl_vector *unit_draw = gsl_vector_alloc(dim);
 
-    REAL8 *point = XLALMalloc(dim * sizeof(REAL8));
+    REAL8 *point = XLALCalloc(dim, sizeof(REAL8));
     gsl_vector_view pt = gsl_vector_view_array(point, dim);
 
     /* Draw samples until one is within the bounding box */
