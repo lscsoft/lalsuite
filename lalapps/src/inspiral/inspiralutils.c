@@ -698,7 +698,7 @@ REAL8 start_freq_from_frame_url(CHAR  *url)
   if (path == NULL)
     path = url;
   else
-    path++; /* skip the ':' -- now on the path */
+    path+=strlen("://localhost"); /* skip the '://localhost' -- now on the path */
 
   frFile =  FrFileINew( path );
   frame = FrameRead (frFile);
