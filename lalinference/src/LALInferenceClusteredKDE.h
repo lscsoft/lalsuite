@@ -107,7 +107,7 @@ void LALInferenceKmeansConstructMask(LALInferenceKmeans *kmeans, INT4 *mask, INT
 LALInferenceKmeans *LALInferenceKmeansExtractCluster(LALInferenceKmeans *kmeans, INT4 cluster_id);
 
 /* Impose boundaries on KDEs. */
-void LALInferenceKmeansImposeBounds(LALInferenceKmeans *kmeans, LALInferenceVariables *params, LALInferenceVariables *priorArgs);
+void LALInferenceKmeansImposeBounds(LALInferenceKmeans *kmeans, LALInferenceVariables *params, LALInferenceVariables *priorArgs, INT4 cyclic_reflective);
 
 /* Generate a new matrix by masking an existing one. */
 gsl_matrix *mask_data(gsl_matrix *data, INT4 *mask);

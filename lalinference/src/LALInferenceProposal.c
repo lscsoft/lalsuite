@@ -3477,7 +3477,7 @@ void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runSta
                 ptmcmc = 1;
             }
 
-            LALInferenceClusteredKDE *kde = XLALMalloc(sizeof(LALInferenceClusteredKDE));
+            LALInferenceClusteredKDE *kde = XLALCalloc(1, sizeof(LALInferenceClusteredKDE));
 
             weight = weights[i];
             if (nBurnins > 0)
@@ -3488,7 +3488,7 @@ void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runSta
             char *infilename = command->value;
             FILE *input = fopen(infilename, "r");
 
-            char *propName = XLALMalloc(512*sizeof(char));
+            char *propName = XLALCalloc(512, sizeof(char));
             sprintf(propName, "%s_%s", clusteredKDEProposalName, infilename);
 
             INT4 nInSamps;
@@ -3505,7 +3505,7 @@ void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runSta
 
             /* Only cluster parameters that are being sampled */
             INT4 nValidCols=0;
-            INT4 *validCols = XLALMalloc(nCols * sizeof(INT4));
+            INT4 *validCols = XLALCalloc(nCols, sizeof(INT4));
             for (j=0; j<nCols; j++)
                 validCols[j] = 0;
 
@@ -3516,7 +3516,7 @@ void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runSta
                     continue;
                 }
 
-                char* internal_param_name = XLALMalloc(512*sizeof(char));
+                char* internal_param_name = XLALCalloc(512, sizeof(char));
                 LALInferenceTranslateExternalToInternalParamName(internal_param_name, params[j]);
 
                 for (item = runState->currentParams->head; item; item = item->next) {
@@ -3549,7 +3549,7 @@ void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runSta
                 INT4 acl = (INT4)LALInferenceComputeMaxAutoCorrLen(sampleArray, nInSamps, nValidCols);
                 if (acl < 1) acl = 1;
                 INT4 downsampled_size = ceil((REAL8)nInSamps/acl);
-                REAL8 *downsampled_array = (REAL8 *)XLALMalloc(downsampled_size * nValidCols * sizeof(REAL8));
+                REAL8 *downsampled_array = (REAL8 *)XLALCalloc(downsampled_size * nValidCols, sizeof(REAL8));
                 printf("Chain %i downsampling to achieve %i samples.\n", chain, downsampled_size);
                 for (k=0; k < downsampled_size; k++) {
                     for (j=0; j < nValidCols; j++)
@@ -3624,7 +3624,7 @@ void LALInferenceInitClusteredKDEProposal(LALInferenceRunState *runState, LALInf
     kde->next = NULL;
 
     /* Selectivey impose bounds on KDEs */
-    LALInferenceKmeansImposeBounds(kde->kmeans, params, runState->priorArgs);
+    LALInferenceKmeansImposeBounds(kde->kmeans, params, runState->priorArgs, 0);
 
     /* Print out clustered samples, assignments, and PDF values if requested */
     if (LALInferenceGetProcParamVal(runState->commandLine,"--cluster-verbose")) {
@@ -3811,8 +3811,8 @@ void LALInferenceSetupClusteredKDEProposalFromDEBuffer(LALInferenceRunState *run
 
     /* Get points to be clustered from the differential evolution buffer. */
     INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
-    REAL8** DEsamples = (REAL8**) XLALMalloc(nPoints * sizeof(REAL8*));
-    REAL8*  temp = (REAL8*) XLALMalloc(nPoints * nPar * sizeof(REAL8));
+    REAL8** DEsamples = (REAL8**) XLALCalloc(nPoints, sizeof(REAL8*));
+    REAL8*  temp = (REAL8*) XLALCalloc(nPoints * nPar, sizeof(REAL8));
     for (i=0; i < nPoints; i++)
       DEsamples[i] = temp + (i*nPar);
 
@@ -3838,7 +3838,7 @@ void LALInferenceSetupClusteredKDEProposalFromDEBuffer(LALInferenceRunState *run
  * @param ntrials  Number of tirals at fixed-k to find optimal BIC
  */
 void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceRunState *runState, REAL8 *samples, INT4 size, INT4 ntrials) {
-    LALInferenceClusteredKDE *proposal = XLALMalloc(sizeof(LALInferenceClusteredKDE));
+    LALInferenceClusteredKDE *proposal = XLALCalloc(1, sizeof(LALInferenceClusteredKDE));
     REAL8 weight=2.;
 
     /* Keep track of clustered parameter names */
@@ -3944,7 +3944,7 @@ REAL8 LALInferenceStoredClusterKDEProposal(LALInferenceRunState *runState, LALIn
     }
 
     /* Draw a sample and fill the proposedParams variable with the parameters described by the KDE */
-    REAL8 *current = XLALMalloc(kde->dimension * sizeof(REAL8));
+    REAL8 *current = XLALCalloc(1, kde->dimension * sizeof(REAL8));
     REAL8 *proposed = LALInferenceKmeansDraw(kde->kmeans);
 
     INT4 i=0;
@@ -4005,8 +4005,8 @@ void LALInferenceComputeMaxAutoCorrLenFromDE(LALInferenceRunState *runState, INT
       Nskip = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Nskip");
 
   /* Prepare 2D array for DE points */
-  DEarray = (REAL8**) XLALMalloc(nPoints * sizeof(REAL8*));
-  temp = (REAL8*) XLALMalloc(nPoints * nPar * sizeof(REAL8));
+  DEarray = (REAL8**) XLALCalloc(nPoints, sizeof(REAL8*));
+  temp = (REAL8*) XLALCalloc(nPoints * nPar, sizeof(REAL8));
   for (i=0; i < nPoints; i++)
     DEarray[i] = temp + (i*nPar);
 

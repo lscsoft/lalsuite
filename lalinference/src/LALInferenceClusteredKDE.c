@@ -834,14 +834,19 @@ LALInferenceKmeans *LALInferenceKmeansExtractCluster(LALInferenceKmeans *kmeans,
  * Impose boundaries on individual KDEs.
  *
  * Draw samples from each cluster.  If too many samples lie outside of the
- * prior, impose a cyclic/reflective bound for the offending parameter(s).
- * If boundaries aren't incountered, box in the cluster using the samples
- * drawn.  This avoids needing to evaluate KDEs that are too far away.
+ * prior, impose a cyclic/reflective bound for the offending parameter(s) if
+ * requested.  If boundaries aren't incountered, box in the cluster using the
+ * samples drawn.  This avoids needing to evaluate KDEs that are too far away.
+ * @param[in] kmeans             kmeans to cycle through the clusters of.
+ * @param[in] params             Parameters to impose bounds on.
+ * @param[in] priorArgs          Variables containing prior boundaries.
+ * @param[in] cyclic_reflective  Flag to check for cyclic/reflective bounds
  *
  */
 void LALInferenceKmeansImposeBounds(LALInferenceKmeans *kmeans,
                                     LALInferenceVariables *params,
-                                    LALInferenceVariables *priorArgs) {
+                                    LALInferenceVariables *priorArgs,
+                                    INT4 cyclic_reflective) {
     INT4 i, p, dim;
     INT4 n_below, n_above;
     INT4 ndraws, n_thresh;
@@ -894,7 +899,7 @@ void LALInferenceKmeansImposeBounds(LALInferenceKmeans *kmeans,
                         drawn_max = draw;
                 }
 
-                if (n_below > n_thresh) {
+                if (cyclic_reflective && n_below > n_thresh) {
                     /* Impose cyclic boundaries on both sides */
                     if (param->vary == LALINFERENCE_PARAM_CIRCULAR) {
                         kmeans->KDEs[c]->lower_bound_types[p] = param->vary;
@@ -907,7 +912,7 @@ void LALInferenceKmeansImposeBounds(LALInferenceKmeans *kmeans,
                     kmeans->KDEs[c]->lower_bound_types[p] = LALINFERENCE_PARAM_FIXED;
                 }
 
-                if (n_above > n_thresh) {
+                if (cyclic_reflective && n_above > n_thresh) {
                     /* Impose cyclic boundaries on both sides */
                     if (param->vary == LALINFERENCE_PARAM_CIRCULAR) {
                         kmeans->KDEs[c]->lower_bound_types[p] = param->vary;
