@@ -559,7 +559,7 @@ LALInferenceKmeans *LALInferenceCreateKmeans(INT4 k,
     if (!data)
         return NULL;
 
-    LALInferenceKmeans *kmeans = XLALMalloc(sizeof(LALInferenceKmeans));
+    LALInferenceKmeans *kmeans = XLALCalloc(1, sizeof(LALInferenceKmeans));
     kmeans->k = k;
     kmeans->npts = data->size1;
     kmeans->dim = data->size2;
@@ -575,10 +575,10 @@ LALInferenceKmeans *LALInferenceCreateKmeans(INT4 k,
     kmeans->recursive_centroids = NULL;
 
     /* Allocate everything else */
-    kmeans->assignments = XLALMalloc(kmeans->npts * sizeof(INT4));
-    kmeans->sizes = XLALMalloc(kmeans->k * sizeof(INT4));
-    kmeans->mask = XLALMalloc(kmeans->npts * sizeof(INT4));
-    kmeans->weights = XLALMalloc(kmeans->k * sizeof(REAL8));
+    kmeans->assignments = XLALCalloc(kmeans->npts, sizeof(INT4));
+    kmeans->sizes = XLALCalloc(kmeans->k, sizeof(INT4));
+    kmeans->mask = XLALCalloc(kmeans->npts, sizeof(INT4));
+    kmeans->weights = XLALCalloc(kmeans->k, sizeof(REAL8));
     kmeans->KDEs = NULL;
 
     /* Set distance and centroid calculators */
@@ -708,7 +708,7 @@ void LALInferenceKmeansRandomPartitionInitialize(LALInferenceKmeans *kmeans) {
  * Assign all data to the closest centroid and calculate the error, defined
  * as the cumulative sum of the distance between all points and their closest
  * centroid.
- * @param kmeans The kmeans to peform the assignment step on.
+ * @param kmeans The kmeans to perform the assignment step on.
  */
 void LALInferenceKmeansAssignment(LALInferenceKmeans *kmeans) {
     INT4 i, j;
@@ -863,7 +863,7 @@ void LALInferenceKmeansImposeBounds(LALInferenceKmeans *kmeans,
     threshold = 0.01;   // Fraction outside boundary to make it cyclic/reflective
     n_thresh = (INT4)(threshold * ndraws);
 
-    REAL8 *draws = XLALMalloc(ndraws * dim * sizeof(REAL8));
+    REAL8 *draws = XLALCalloc(ndraws * dim, sizeof(REAL8));
     for (c = 0; c < kmeans->k; c++) {
         /* Skip empty clusters */
         if (kmeans->npts == 0)
@@ -1110,7 +1110,7 @@ REAL8 LALInferenceWhitenedKmeansPDF(LALInferenceKmeans *kmeans, REAL8 *pt) {
     if (kmeans->KDEs == NULL)
         LALInferenceKmeansBuildKDE(kmeans);
 
-    REAL8* cluster_pdfs = XLALMalloc(kmeans->k * sizeof(REAL8));
+    REAL8* cluster_pdfs = XLALCalloc(kmeans->k, sizeof(REAL8));
     for (j = 0; j < kmeans->k; j++)
         cluster_pdfs[j] = log(kmeans->weights[j]) +
                             LALInferenceKDEEvaluatePoint(kmeans->KDEs[j], pt);
@@ -1223,7 +1223,7 @@ void LALInferenceKmeansBuildKDE(LALInferenceKmeans *kmeans) {
     INT4 i;
 
     if (kmeans->KDEs == NULL)
-        kmeans->KDEs = XLALMalloc(kmeans->k * sizeof(LALInferenceKDE*));
+        kmeans->KDEs = XLALCalloc(kmeans->k, sizeof(LALInferenceKDE*));
 
     for (i = 0; i < kmeans->k; i++) {
         LALInferenceKmeansConstructMask(kmeans, kmeans->mask, i);
