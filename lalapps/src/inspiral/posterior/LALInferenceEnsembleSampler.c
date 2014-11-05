@@ -222,7 +222,8 @@ void parallel_incremental_kmeans(LALInferenceRunState *run_state,
                                     REAL8 *samples,
                                     INT4 nwalkers,
                                     INT4 cyclic_reflective) {
-    INT4 i, k, ndim, kmax = 10;
+    INT4 i, ndim;
+    INT4 k = 0, kmax = 10;
     INT4 mpi_rank, mpi_size, best_rank;
     REAL8 bic = -INFINITY;
     REAL8 best_bic = -INFINITY;
@@ -288,7 +289,8 @@ void parallel_incremental_kmeans(LALInferenceRunState *run_state,
     }
 
     /* Send the winning k-size to everyone */
-    k = best_clustering->k;
+    if (best_clustering)
+        k = best_clustering->k;
     MPI_Bcast(&best_rank, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&k, 1, MPI_INT, best_rank, MPI_COMM_WORLD);
 
