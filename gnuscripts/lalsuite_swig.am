@@ -197,17 +197,18 @@ swiglal_preproc.xml: swiglal_preproc.i Makefile
 
 $(swig_iface): swiglal_preproc.xml $(srcdir)/generate_swig_iface.py
 	$(AM_V_GEN)if $(PYTHON) $(srcdir)/generate_swig_iface.py '$(PACKAGE_NAME)' '$(SWIG_DEPENDENCIES)' '$(swig_function_prefixes)' $< $@; then \
-		rm -f $(top_builddir)/include/lal/$(swig_iface); \
-		$(LN_S) $(abs_top_builddir)/swig/$(swig_iface) $(top_builddir)/include/lal/$(swig_iface); \
 		exit 0; \
 	else \
 		rm -f $@; \
 		exit 1; \
 	fi
 
+$(top_builddir)/include/lal/$(swig_iface): $(swig_iface)
+	$(AM_V_at)rm -f $@ && $(LN_S) $(abs_top_builddir)/swig/$< $@
+
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/swiglal_octave.deps@am__quote@
 
-swiglal_octave.cpp: $(swig_iface) swiglal_config.h
+swiglal_octave.cpp: $(top_builddir)/include/lal/$(swig_iface) swiglal_config.h
 	$(AM_V_GEN)$(MKDIR_P) swiglal_octave/ && \
 	if $(SWIG) -MF ./$(DEPDIR)/swiglal_octave.deps.tmp -outdir swiglal_octave/ $(swig_octave_flags) -o $@ $<; then \
 		mv -f ./$(DEPDIR)/swiglal_octave.deps.tmp ./$(DEPDIR)/swiglal_octave.deps; \
@@ -219,7 +220,7 @@ swiglal_octave.cpp: $(swig_iface) swiglal_config.h
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/swiglal_python.deps@am__quote@
 
-swiglal_python.c: $(swig_iface) swiglal_config.h
+swiglal_python.c: $(top_builddir)/include/lal/$(swig_iface) swiglal_config.h
 	$(AM_V_GEN)$(MKDIR_P) swiglal_python/ && \
 	if $(SWIG) -MF ./$(DEPDIR)/swiglal_python.deps.tmp -outdir swiglal_python/ $(swig_python_flags) -o $@ $<; then \
 		mv -f ./$(DEPDIR)/swiglal_python.deps.tmp ./$(DEPDIR)/swiglal_python.deps; \
