@@ -24,6 +24,7 @@
 #include <lal/LALInference.h>
 #include "LALInferenceEnsembleSampler.h"
 #include <lal/LALInferenceProposal.h>
+#include <lal/LALInferenceClusteredKDE.h>
 
 #include <LALAppsVCSInfo.h>
 
@@ -207,13 +208,119 @@ void ensemble_update(LALInferenceRunState *run_state) {
                     MPI_DOUBLE, MPI_COMM_WORLD);
 
     /* Update the KDE proposal */
-    INT4 ntrials = 10;  // k-means initialization trials to optimize clustering at fixed-k
-    LALInferenceSetupClusteredKDEProposalFromRun(run_state, samples,
-                                                    nwalkers, cyclic_reflective, ntrials);
+    parallel_incremental_kmeans(run_state, samples, nwalkers, cyclic_reflective);
 
     /* Clean up */
     XLALFree(param_array);
     XLALFree(samples);
+}
+
+
+/* This is a temporary, messy solution for now.
+TODO: When MPI is enables in lalinference, move this routine over and clean up */
+void parallel_incremental_kmeans(LALInferenceRunState *run_state,
+                                    REAL8 *samples,
+                                    INT4 nwalkers,
+                                    INT4 cyclic_reflective) {
+    INT4 i, k, ndim;
+    INT4 mpi_rank, mpi_size, best_rank;
+    REAL8 bic = -INFINITY;
+    REAL8 best_bic = -INFINITY;
+    REAL8 *bics;
+
+    LALInferenceKmeans *kmeans;
+    LALInferenceKmeans *best_clustering = NULL;
+
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+
+    bics = XLALCalloc(mpi_size, sizeof(REAL8));
+
+    ndim = LALInferenceGetVariableDimensionNonFixed(run_state->currentParamArray[0]);
+    gsl_matrix_view mview = gsl_matrix_view_array(samples, nwalkers, ndim);
+
+    /* Keep track of clustered parameter names */
+    LALInferenceVariables *backward_params =
+        XLALCalloc(1, sizeof(LALInferenceVariables));
+    LALInferenceVariables *cluster_params =
+        XLALCalloc(1, sizeof(LALInferenceVariables));
+    LALInferenceVariableItem *item;
+    for (item = run_state->currentParamArray[0]->head; item; item = item->next)
+        if (LALInferenceCheckVariableNonFixed(run_state->currentParamArray[0], item->name))
+            LALInferenceAddVariable(backward_params, item->name,
+                                    item->value, item->type, item->vary);
+
+    for (item = backward_params->head; item; item = item->next)
+        LALInferenceAddVariable(cluster_params, item->name,
+                                item->value, item->type, item->vary);
+
+    /* Have each MPI thread handle a fixed-k clustering */
+    k = mpi_rank + 1;
+    while (1) {
+        kmeans =
+            LALInferenceKmeansRunBestOf(k, &mview.matrix, 8, run_state->GSLrandom);
+        bic = -INFINITY;
+        if (kmeans)
+            bic = LALInferenceKmeansBIC(kmeans);
+        if (bic > best_bic) {
+            if (best_clustering)
+                LALInferenceKmeansDestroy(best_clustering);
+            best_clustering = kmeans;
+            best_bic = bic;
+        } else {
+            LALInferenceKmeansDestroy(kmeans);
+            break;
+        }
+    }
+
+    MPI_Gather(&best_bic, 1, MPI_DOUBLE, bics, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+    if (mpi_rank == 0) {
+        best_bic = -INFINITY;
+        for (i = 0; i < mpi_size; i++) {
+           if (bics[i] > best_bic) {
+               best_bic = bics[i];
+               best_rank = i;
+           }
+        }
+    }
+
+    /* Send the winning k-size to everyone */
+    k = best_clustering->k;
+    MPI_Bcast(&best_rank, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&k, 1, MPI_INT, best_rank, MPI_COMM_WORLD);
+
+    /* Create a kmeans instance with the winning k */
+    if (mpi_rank != best_rank) {
+        if (best_clustering)
+            LALInferenceKmeansDestroy(best_clustering);
+        best_clustering =
+                LALInferenceKmeansRunBestOf(k, &mview.matrix, 8, run_state->GSLrandom);
+    }
+
+    /* Broadcast cluster assignments */
+    MPI_Bcast(best_clustering->assignments, nwalkers,
+                MPI_INT, best_rank, MPI_COMM_WORLD);
+
+    /* Calculate centroids, the run to compute sizes and weights */
+    LALInferenceKmeansUpdate(best_clustering);
+    LALInferenceKmeansRun(best_clustering);
+
+    LALInferenceClusteredKDE *proposal =
+        XLALCalloc(1, sizeof(LALInferenceClusteredKDE));
+
+    proposal->kmeans = best_clustering;
+
+    LALInferenceInitClusteredKDEProposal(run_state, proposal,
+                                            samples, nwalkers,
+                                            cluster_params, "ClusteredKDEProposal",
+                                            1.0, NULL, cyclic_reflective, 0);
+
+    LALInferenceAddClusteredKDEProposalToSet(run_state, proposal);
+
+    LALInferenceClearVariables(backward_params);
+    XLALFree(backward_params);
+    XLALFree(bics);
 }
 
 

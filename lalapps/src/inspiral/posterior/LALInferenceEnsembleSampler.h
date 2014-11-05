@@ -50,6 +50,10 @@ INT4 walker_step(LALInferenceRunState *run_state,
 /** Update the ensemble proposal from the ensemble's current state */
 void ensemble_update(LALInferenceRunState *run_state);
 
+void parallel_incremental_kmeans(LALInferenceRunState *run_state,
+                                    REAL8 *samples,
+                                    INT4 nwalkers,
+                                    INT4 cyclic_reflective);
 
 /* Data IO routines */
 char *init_ensemble_output(LALInferenceRunState *run_state,

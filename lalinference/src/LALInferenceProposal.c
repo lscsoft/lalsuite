@@ -3490,8 +3490,11 @@ void LALInferenceInitClusteredKDEProposal(LALInferenceRunState *runState, LALInf
     strcpy(kde->name, name);
     INT4 dim = LALInferenceGetVariableDimensionNonFixed(params);
 
-    gsl_matrix_view mview = gsl_matrix_view_array(array, nSamps, dim);
-    kde->kmeans = (*cluster_method)(&mview.matrix, ntrials, runState->GSLrandom);
+    /* If kmeans is already assigned, assume it was calculated elsewhere */
+    if (!kde->kmeans) {
+        gsl_matrix_view mview = gsl_matrix_view_array(array, nSamps, dim);
+        kde->kmeans = (*cluster_method)(&mview.matrix, ntrials, runState->GSLrandom);
+    }
 
     /* Return if kmeans setup failed */
     if (!kde->kmeans)
