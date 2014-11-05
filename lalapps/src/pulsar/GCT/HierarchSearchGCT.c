@@ -1171,7 +1171,7 @@ int MAIN( int argc, char *argv[]) {
                     skyGridCounter * nf1dot + f1dotGridCounter,
                     thisScan.numSkyGridPoints * nf1dot, uvar_Freq, uvar_FreqBand);
 
-      fprintf(stderr, "\nSky%d/%d", skyGridCounter, thisScan.numSkyGridPoints);
+      fprintf(stderr, "\n%d", skyGridCounter);
 #endif
       /*------------- calculate F-Statistic for each segment --------------*/
 
