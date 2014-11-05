@@ -20,9 +20,14 @@ from optparse import OptionParser
 from pylal import spawaveform
 from glue.ligolw import lsctables
 from glue.ligolw import utils
+from glue.ligolw import ligolw
 from glue.ligolw.utils import process as ligolw_process
 from pylal.datatypes import LIGOTimeGPS
 import numpy
+
+class ContentHandler(ligolw.LIGOLWContentHandler):
+    pass
+lsctables.use_in(ContentHandler)
 
 def parse_command_line():
     parser = OptionParser()
@@ -53,7 +58,7 @@ opts_dict = dict((k, v) for k, v in options.__dict__.iteritems() if v is not Fal
 
 for fname in filenames:
 
-    xmldoc=utils.load_filename(fname, gz=fname.endswith(".gz"), verbose = options.verbose)
+    xmldoc=utils.load_filename(fname, gz=fname.endswith(".gz"), verbose = options.verbose, contenthandler=ContentHandler)
     sngl_inspiral_table=lsctables.table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
     process_params_table = lsctables.table.get_table(xmldoc, lsctables.ProcessParamsTable.tableName)
 

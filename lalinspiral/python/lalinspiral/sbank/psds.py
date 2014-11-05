@@ -131,4 +131,4 @@ def psd_instrument_dict(elem):
     return out
 
 def read_psd(filename, verbose = False):
-    return psd_instrument_dict(utils.load_filename(filename, verbose = verbose))
+    return psd_instrument_dict(utils.load_filename(filename, verbose = verbose, contenthandler=lalseries.LIGOLWContentHandler))

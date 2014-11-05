@@ -41,6 +41,10 @@ from lalinspiral.sbank.waveforms import waveforms
 
 import lal
 
+class ContentHandler(ligolw.LIGOLWContentHandler):
+    pass
+lsctables.use_in(ContentHandler)
+
 usage = """
 
 lalapps_cbc_sbank: This program generates a template bank for compact
@@ -251,7 +255,7 @@ else:
     # for overcoverage, but take it as is
     if opts.verbose:
         print>>sys.stdout,"Seeding the template bank..."
-    tmpdoc = utils.load_filename(opts.bank_seed)
+    tmpdoc = utils.load_filename(opts.bank_seed, contenthandler=ContentHandler)
     sngl_inspiral = table.get_table(tmpdoc, lsctables.SnglInspiralTable.tableName)
     bank = Bank.from_sngls(sngl_inspiral, waveform, noise_model, opts.flow, opts.use_metric)
 
