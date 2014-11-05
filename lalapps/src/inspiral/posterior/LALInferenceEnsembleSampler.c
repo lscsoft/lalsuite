@@ -222,7 +222,7 @@ void parallel_incremental_kmeans(LALInferenceRunState *run_state,
                                     REAL8 *samples,
                                     INT4 nwalkers,
                                     INT4 cyclic_reflective) {
-    INT4 i, k, ndim;
+    INT4 i, k, ndim, kmax = 10;
     INT4 mpi_rank, mpi_size, best_rank;
     REAL8 bic = -INFINITY;
     REAL8 best_bic = -INFINITY;
@@ -256,7 +256,7 @@ void parallel_incremental_kmeans(LALInferenceRunState *run_state,
 
     /* Have each MPI thread handle a fixed-k clustering */
     k = mpi_rank + 1;
-    while (1) {
+    while (k < kmax) {
         kmeans =
             LALInferenceKmeansRunBestOf(k, &mview.matrix, 8, run_state->GSLrandom);
         bic = -INFINITY;
@@ -271,6 +271,8 @@ void parallel_incremental_kmeans(LALInferenceRunState *run_state,
             LALInferenceKmeansDestroy(kmeans);
             break;
         }
+
+        k += mpi_size;
     }
 
     MPI_Gather(&best_bic, 1, MPI_DOUBLE, bics, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
