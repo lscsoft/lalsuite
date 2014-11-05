@@ -45,6 +45,10 @@ params = {'axes.labelsize'  : 12,
 
 pylab.rcParams.update(params)
 
+class DefaultContentHandler(ligolw.LIGOLWContentHandler):
+    pass
+lsctables.use_in(DefaultContentHandler)
+
 ###############
 # Page template
 ###############
@@ -457,7 +461,7 @@ def make_veto_files(engine, config, ifo, category, cluster, start_time, end_time
     veto_definers = []
 
     for f in config['veto_definer_file'].split(','):
-        xmldoc  = utils.load_url(f)
+        xmldoc  = utils.load_url(f, contenthandler=DefaultContentHandler)
 
         veto_definers += table.get_table(xmldoc, lsctables.VetoDefTable.tableName)
 
@@ -1254,17 +1258,18 @@ def plot_bank_veto(config, ifo, veto_level, cluster, start_time, end_time):
             cont_dof = 1
 
         if bank_dof == 0:
-            bank_dof = 1
+            bank_dof = 1.5
 
         snrs.append(rho)
         bank_chisqs.append(bank_chisq / (2 * bank_dof - 2))
         cont_chisqs.append(cont_chisq / cont_dof)
 
     pylab.figure(0)
-    pylab.plot(snrs,bank_chisqs,'rx')
     pylab.yscale('log')
 
-    if snrs:
+    if snrs and max(bank_chisqs)>0:
+        pylab.plot(snrs,bank_chisqs,'rx')
+
         if max(snrs) > 11:
             pylab.xscale('log')
 
@@ -1273,19 +1278,18 @@ def plot_bank_veto(config, ifo, veto_level, cluster, start_time, end_time):
 
     pylab.grid()
     pylab.xlabel('snr')
-    pylab.ylabel('bank_chisq / (2p-2)')
+    pylab.ylabel(r'bank\_chisq / (2p-2)')
     pylab.title(make_title(ifo, veto_level, cluster, start_time))
 
     pylab.savefig('%s/%s_%d_%s_bank_veto.png' % (config['out_dir'], ifo, veto_level, cluster))
     pylab.close()
 
     pylab.figure(1)
-    pylab.plot(snrs,cont_chisqs,'rx')
+    pylab.yscale('log')
 
-    if cont_chisqs and max(cont_chisqs) > 0:
-        pylab.yscale('log')
+    if snrs and max(cont_chisqs)>0:
+        pylab.plot(snrs,cont_chisqs,'rx')
 
-    if snrs:
         if max(snrs) > 11:
             pylab.xscale('log')
 
@@ -1301,10 +1305,11 @@ def plot_bank_veto(config, ifo, veto_level, cluster, start_time, end_time):
     pylab.close()
 
     pylab.figure(2)
-    pylab.plot(snrs,chisqs,'rx')
     pylab.yscale('log')
 
-    if snrs:
+    if snrs and max(chisqs)>0:
+        pylab.plot(snrs,chisqs,'rx')
+
         if max(snrs) > 11:
             pylab.xscale('log')
 
