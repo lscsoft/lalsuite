@@ -153,8 +153,7 @@ void init_ensemble(LALInferenceRunState *run_state) {
 
     /* Determine null loglikelihood to be subtracted from printed likelihoods */
     REAL8 null_likelihood = 0.0;
-    if (run_state->likelihood==&LALInferenceUndecomposedFreqDomainLogLikelihood ||
-        run_state->likelihood==&LALInferenceFreqDomainLogLikelihood){
+    if (run_state->likelihood==&LALInferenceUndecomposedFreqDomainLogLikelihood){
 
         null_likelihood = LALInferenceNullLogLikelihood(run_state->data);
 
@@ -349,7 +348,7 @@ void init_sampler(LALInferenceRunState *run_state) {
 
         run_state->prior = &LALInferenceInspiralPrior;
     } else {
-        run_state->prior = &LALInferenceInspiralPriorNormalised;
+        run_state->prior = &LALInferenceInspiralPrior;
     }
 
     if (malmquist) {

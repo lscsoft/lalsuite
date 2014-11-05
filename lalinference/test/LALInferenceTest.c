@@ -1025,23 +1025,23 @@ printf("Likelihood %g NullLikelihood %g RelativeLikelihood %g\n", likelihood, nu
 void SingleIFOLikelihoodTest(void)
 {
 	fprintf(stdout, "Single IFO likelihood test\n");
-	COMPLEX16Vector *freqModel1=XLALCreateCOMPLEX16Vector(runstate->data->freqData->data->length);
-	COMPLEX16Vector *freqModel2=XLALCreateCOMPLEX16Vector(runstate->data->freqData->data->length);
+	//COMPLEX16Vector *freqModel1=XLALCreateCOMPLEX16Vector(runstate->data->freqData->data->length);
+	//COMPLEX16Vector *freqModel2=XLALCreateCOMPLEX16Vector(runstate->data->freqData->data->length);
 	numberI4 = LAL_PNORDER_TWO;
     LALInferenceSetVariable(&currentParams, "LAL_PNORDER",     &numberI4);	
 	numberI4 = TaylorT1;
     LALInferenceSetVariable(&currentParams, "LAL_APPROXIMANT", &numberI4);														  																  
-	LALInferenceComputeFreqDomainResponse(&currentParams, runstate->data, runstate->model, freqModel1);
-	freqModel2=runstate->data->freqData->data;
+    //LALInferenceComputeFreqDomainResponse(&currentParams, runstate->data, runstate->model, freqModel1);
+    //freqModel2=runstate->data->freqData->data;
 	//ComputeFreqDomainResponse(&currentParams, runstate->data, templateLAL, freqModel2);
-	FILE * freqModelFile=fopen("freqModelFile.dat", "w");
-	for(i=0; i<(int)runstate->data->freqData->data->length; i++){
+	//FILE * freqModelFile=fopen("freqModelFile.dat", "w");
+	/*for(i=0; i<(int)runstate->data->freqData->data->length; i++){
 		fprintf(freqModelFile, "%g\t %g\t %g\t %g\t %g\t %g\n", 
 		((double)i)*1.0/ (((double)runstate->data->timeData->data->length) * runstate->data->timeData->deltaT),
 		creal(freqModel1->data[i]), cimag(freqModel1->data[i]), creal(freqModel2->data[i]), cimag(freqModel2->data[i]),
 		runstate->data->oneSidedNoisePowerSpectrum->data->data[i]);
-	}
-	fprintf(stdout, "overlap=%g\n", 
+		}*/
+	/*fprintf(stdout, "overlap=%g\n", 
 		LALInferenceComputeFrequencyDomainOverlap(runstate->data, freqModel1, freqModel2));
 	fprintf(stdout, "<d|d>=%g, <d|h>=%g, <h|h>=%g, <d|h>-1/2<h|h>=%g\n", 
 		LALInferenceComputeFrequencyDomainOverlap(runstate->data, freqModel2, freqModel2),
@@ -1049,15 +1049,15 @@ void SingleIFOLikelihoodTest(void)
 		LALInferenceComputeFrequencyDomainOverlap(runstate->data, freqModel1, freqModel1),
 		LALInferenceComputeFrequencyDomainOverlap(runstate->data, freqModel2, freqModel1)
 			-0.5*LALInferenceComputeFrequencyDomainOverlap(runstate->data, freqModel1, freqModel1)
-		);				
-	fprintf(stdout, "likelihood %g\n",
-		LALInferenceFreqDomainLogLikelihood(&currentParams, runstate->data, runstate->model));
+			);*/				
+	//fprintf(stdout, "likelihood %g\n",
+	//	LALInferenceFreqDomainLogLikelihood(&currentParams, runstate->data, runstate->model));
 	fprintf(stdout, "undecomposed likelihood %g \n", 
 		LALInferenceUndecomposedFreqDomainLogLikelihood(&currentParams, runstate->data, runstate->model));
 	fprintf(stdout, "null likelihood %g decomposed null likelihood %g\n",
 		LALInferenceNullLogLikelihood(runstate->data),
 		LALInferenceNullLogLikelihood(runstate->data));
-    XLALDestroyCOMPLEX16Vector(freqModel1);
+	//XLALDestroyCOMPLEX16Vector(freqModel1);
     //	XLALDestroyCOMPLEX16Vector(freqModel2);
 }
 
@@ -1180,7 +1180,8 @@ void PTMCMCTest(void)
 	runstate->proposalArgs = XLALMalloc(sizeof(LALInferenceVariables));
 	runstate->proposalArgs->head=NULL;
 	runstate->proposalArgs->dimension=0;
-	runstate->likelihood=LALInferenceFreqDomainLogLikelihood;
+	//runstate->likelihood=LALInferenceFreqDomainLogLikelihood;
+	runstate->likelihood=LALInferenceUndecomposedFreqDomainLogLikelihood;
 	//runstate->likelihood=GaussianLikelihood;
 	runstate->model->templt=LALInferenceTemplateXLALSimInspiralChooseWaveform;
 	

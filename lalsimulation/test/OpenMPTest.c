@@ -95,6 +95,8 @@ static void GenerateOMPWaveform(OpenMPCapableWaveforms wf, COMPLEX16FrequencySer
   REAL8 phi_ref = 0;
   REAL8 deltaF = 1. / 1024;
   REAL8 distance = 1e6 * LAL_PC_SI;
+  REAL8 quadpar1 = 1.;
+  REAL8 quadpar2 = 1.;
   REAL8 lambda1 = 0;
   REAL8 lambda2 = 0;
   LALSimInspiralSpinOrder spinO = LAL_SIM_INSPIRAL_SPIN_ORDER_0PN;
@@ -110,6 +112,7 @@ static void GenerateOMPWaveform(OpenMPCapableWaveforms wf, COMPLEX16FrequencySer
           &hptilde, phi_ref, deltaF,
           m1_SI, m2_SI,
           s1z, s2z, f_min, f_max, f_ref, distance,
+	  quadpar1, quadpar2,
           lambda1, lambda2,
           spinO,
           tidalO,

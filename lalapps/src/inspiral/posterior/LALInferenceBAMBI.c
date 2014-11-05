@@ -656,9 +656,6 @@ void initializeMN(LALInferenceRunState *runState)
     if(LALInferenceGetProcParamVal(commandLine,"--skyLocPrior")){
         runState->prior=&LALInferenceInspiralSkyLocPrior;
         runState->CubeToPrior = &LALInferenceInspiralSkyLocCubeToPrior;
-    } else if (LALInferenceGetProcParamVal(commandLine, "--S6Prior")) {
-        runState->prior=&LALInferenceInspiralPriorNormalised;
-        runState->CubeToPrior = &LALInferenceInspiralPriorNormalisedCubeToPrior;
     } else if (LALInferenceGetProcParamVal(commandLine, "--AnalyticPrior")) {
         runState->prior = &LALInferenceAnalyticNullPrior;
         runState->CubeToPrior = &LALInferenceAnalyticCubeToPrior;

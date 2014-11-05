@@ -261,14 +261,14 @@ Nested sampling arguments:\n\
 	/* Default likelihood is the frequency domain one */
 	runState->likelihood=&LALInferenceUndecomposedFreqDomainLogLikelihood;
 
-    /* Check whether to use the SkyLocalization prior. Otherwise uses the default LALInferenceInspiralPriorNormalised. That should probably be replaced with a swhich over the possible priors. */
+    /* Check whether to use the SkyLocalization prior. Otherwise uses the default LALInferenceInspiralPrior. That should probably be replaced with a swhich over the possible priors. */
     ppt=LALInferenceGetProcParamVal(commandLine,"--prior");
     if(ppt){
       if(!strcmp(ppt->value,"SkyLoc")) runState->prior = &LALInferenceInspiralSkyLocPrior;
       if(!strcmp(ppt->value,"malmquist")) initializeMalmquistPrior(runState);
     }
     else{
-      runState->prior = &LALInferenceInspiralPriorNormalised;
+      runState->prior = &LALInferenceInspiralPrior;
     }
     /* For Compatibility with MCMC command line */
     if(LALInferenceGetProcParamVal(commandLine,"--malmquist-prior")) initializeMalmquistPrior(runState);
