@@ -125,7 +125,6 @@ static void GenerateOMPWaveform(OpenMPCapableWaveforms wf, COMPLEX16FrequencySer
           &chip,              /**< Output: Effective spin in the orbital plane */
           &eta,               /**< Output: Symmetric mass-ratio */
           &thetaJ,            /**< Output: Angle between J0 and line of sight (z-direction) */
-          &phiJ,              /**< Output: Angle of J0 in the plane of the sky */
           &alpha0,            /**< Output: Initial value of alpha angle */
           m1_SI,              /**< Mass of companion 1 (kg) */
           m2_SI,              /**< Mass of companion 2 (kg) */
@@ -146,7 +145,6 @@ static void GenerateOMPWaveform(OpenMPCapableWaveforms wf, COMPLEX16FrequencySer
           chip,               /**< Effective spin in the orbital plane */
           eta,                /**< Symmetric mass-ratio */
           thetaJ,             /**< Angle between J0 and line of sight (z-direction) */
-          phiJ,               /**< Angle of J0 in the plane of the sky */
           m1_SI + m2_SI,      /**< Total mass of binary (kg) */
           distance,           /**< Distance of source (m) */
           alpha0,             /**< Initial value of alpha angle */
