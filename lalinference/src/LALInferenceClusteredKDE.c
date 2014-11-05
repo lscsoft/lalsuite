@@ -865,6 +865,10 @@ void LALInferenceKmeansImposeBounds(LALInferenceKmeans *kmeans,
 
     REAL8 *draws = XLALMalloc(ndraws * dim * sizeof(REAL8));
     for (c = 0; c < kmeans->k; c++) {
+        /* Skip empty clusters */
+        if (kmeans->npts == 0)
+            continue;
+
         for (i = 0; i < ndraws; i++) {
             /* Draw a whitened sample from the cluster's KDE */
             REAL8 *point =
