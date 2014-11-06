@@ -87,10 +87,8 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %{_libdir}/python*/site-packages/lalmetaio/*.pyc
 %{_libdir}/python*/site-packages/lalmetaio/_lalmetaio.so*
 %exclude %{_libdir}/python*/site-packages/lalmetaio/*.pyo
-%exclude %{_libdir}/python*/site-packages/lalmetaio/*.la
 
 %files octave
 %defattr(-,root,root)
 %{_libexecdir}/octave/*/site/oct/*/lalmetaio.oct*
-%exclude %{_libexecdir}/octave/*/site/oct/*/lalmetaio.la
 
