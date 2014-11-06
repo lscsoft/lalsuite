@@ -887,7 +887,7 @@ INT4 XLALSimIMREOBFinalMassSpin(
   eta = mass1 * mass2 / (totalMass*totalMass);
   eta2 = eta * eta;
   eta3 = eta2 * eta;
-printf("Approximant: %d\n",approximant);
+//printf("Approximant: %d\n",approximant);
 
   switch ( approximant )
   {
@@ -978,7 +978,7 @@ printf("Approximant: %d\n",approximant);
       XLAL_ERROR( XLAL_EINVAL );
   }
 
-  printf( "Final mass = %e, Final spin = %e\n", *finalMass, *finalSpin );
+  //printf( "Final mass = %e, Final spin = %e\n", *finalMass, *finalSpin );
   return XLAL_SUCCESS;
 }
 
