@@ -24,6 +24,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
@@ -83,7 +84,6 @@ struct fvec {
 
 #define LALINFERENCE_DEFAULT_FLOW "40.0"
 
-char *SNRpath = NULL;
 
 struct fvec *interpFromFile(char *filename);
 
@@ -125,7 +125,6 @@ REAL8 interpolate(struct fvec *fvec, REAL8 f){
 	REAL8 delta=0.0;
 	if(f<fvec[0].f) return(0.0);
 	while(fvec[i].f<f && (fvec[i].x!=0.0 )){i++;}; //&& fvec[i].f!=0.0)){i++;};
-  //printf("%d\t%lg\t%lg\t%lg\n",i,fvec[i].f,f,fvec[i].x);
 	if (fvec[i].f==0.0 && fvec[i].x==0.0) /* Frequency above moximum */
 	{
 		return (fvec[i-1].x);
@@ -178,7 +177,7 @@ static const LALUnit strainPerCount={0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
 
 static REAL8TimeSeries *readTseries(LALCache *cache, CHAR *channel, LIGOTimeGPS start, REAL8 length);
 static void makeWhiteData(LALInferenceIFOData *IFOdata);
-static void PrintSNRsToFile(LALInferenceIFOData *IFOdata , SimInspiralTable *inj_table);
+static void PrintSNRsToFile(LALInferenceIFOData *IFOdata , char SNRpath[] );
 
 
 static LALCache *GlobFramesPWD( char *ifo);
@@ -216,7 +215,6 @@ static LALCache *GlobFramesPWD(char *ifo)
         for(UINT4 i=0;i<frInCache->length;i++)
             fprintf(stderr,"(%s,%s,%s)\n",frInCache->list[i].src,frInCache->list[i].dsc,frInCache->list[i].url);
     }
-    //XLALDestroyCache(frGlobCache);
     
     return(frGlobCache);
 }
@@ -317,34 +315,82 @@ static INT4 getDataOptionsByDetectors(ProcessParamsTable *commandLine, char ***i
 void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, ProcessParamsTable *commandLine);
 void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, ProcessParamsTable *commandLine){
   
+  LALStatus status;
+  memset(&status,0,sizeof(status));
   UINT4 Nifo=0,i,j;
   LALInferenceIFOData *thisData=IFOdata;
-  ProcessParamsTable *ppt=NULL;
-  ProcessParamsTable *pptdatadump=NULL;
+  UINT4 q=0;
+  UINT4 event=0;
+  char *chartmp=NULL;
+  ProcessParamsTable *procparam=NULL,*ppt=NULL;
+  SimInspiralTable *injTable=NULL;
+  //ProcessParamsTable *pptdatadump=NULL;
+  LIGOTimeGPS GPStrig;
   while(thisData){
     thisData=thisData->next;
     Nifo++;
   }
   
+  procparam=LALInferenceGetProcParamVal(commandLine,"--inj");
+  if(procparam){
+    SimInspiralTableFromLIGOLw(&injTable,procparam->value,0,0);
+    if(!injTable){
+      fprintf(stderr,"Unable to open injection file(LALInferenceReadData) %s\n",procparam->value);
+      exit(1);
+    }
+    procparam=LALInferenceGetProcParamVal(commandLine,"--event");
+    if(procparam) {
+      event=atoi(procparam->value);
+      while(q<event) {q++; injTable=injTable->next;}
+    }
+    else if ((procparam=LALInferenceGetProcParamVal(commandLine,"--event-id")))
+    {
+      while(injTable)
+      {
+        if(injTable->event_id->id == (UINT4)atoi(procparam->value)) break;
+        else injTable=injTable->next;
+      }
+      if(!injTable){
+        fprintf(stderr,"Error, cannot find simulation id %s in injection file\n",procparam->value);
+        exit(1);
+      }
+    }
+  }
   
+  if(LALInferenceGetProcParamVal(commandLine,"--trigtime")){
+    procparam=LALInferenceGetProcParamVal(commandLine,"--trigtime");
+    LALStringToGPS(&status,&GPStrig,procparam->value,&chartmp);
+  }
+  else{
+    if(injTable) memcpy(&GPStrig,&(injTable->geocent_end_time),sizeof(GPStrig));
+    else {
+      fprintf(stderr,"Error: No trigger time specifed and no injection given \n");
+      exit(1);
+    }
+  }
+    
   if (LALInferenceGetProcParamVal(commandLine, "--data-dump")) {
-    pptdatadump=LALInferenceGetProcParamVal(commandLine,"--data-dump");
+    //pptdatadump=LALInferenceGetProcParamVal(commandLine,"--data-dump");
     const UINT4 nameLength=FILENAME_MAX;
     char filename[nameLength];
     FILE *out;
     
     for (i=0;i<Nifo;i++) {
-      
+        
       ppt=LALInferenceGetProcParamVal(commandLine,"--outfile");
       if(ppt) {
-        snprintf(filename, nameLength, "%s-%s-timeDataWithInjection.dat", ppt->value, IFOdata[i].name);
+        snprintf(filename, nameLength, "%s%s-timeDataWithInjection.dat", ppt->value, IFOdata[i].name);
       }
-      else if(strcmp(pptdatadump->value,"")) {
-        snprintf(filename, nameLength, "%s/%s-timeDataWithInjection.dat", pptdatadump->value, IFOdata[i].name);
-      }
+      //else if(strcmp(pptdatadump->value,"")) {
+      //  snprintf(filename, nameLength, "%s/%s-timeDataWithInjection.dat", pptdatadump->value, IFOdata[i].name);
+      //}
       else
-        snprintf(filename, nameLength, "%s-timeDataWithInjection.dat", IFOdata[i].name);
+        snprintf(filename, nameLength, "%.3f_%s-timeDataWithInjection.dat", GPStrig.gpsSeconds+1e-9*GPStrig.gpsNanoSeconds, IFOdata[i].name);
       out = fopen(filename, "w");
+      if(!out){
+        fprintf(stderr,"Unable to open the path %s for writing time data with injection files\n",filename);
+        exit(1);
+      }
       for (j = 0; j < IFOdata[i].timeData->data->length; j++) {
         REAL8 t = XLALGPSGetREAL8(&(IFOdata[i].timeData->epoch)) +
         j * IFOdata[i].timeData->deltaT;
@@ -356,14 +402,18 @@ void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, ProcessPar
       
       ppt=LALInferenceGetProcParamVal(commandLine,"--outfile");
       if(ppt) {
-        snprintf(filename, nameLength, "%s-%s-freqDataWithInjection.dat", ppt->value, IFOdata[i].name);
+        snprintf(filename, nameLength, "%s%s-freqDataWithInjection.dat", ppt->value, IFOdata[i].name);
       }
-      else if(strcmp(pptdatadump->value,"")) {
-        snprintf(filename, nameLength, "%s/%s-freqDataWithInjection.dat", pptdatadump->value, IFOdata[i].name);
-      }
+      //else if(strcmp(pptdatadump->value,"")) {
+      //  snprintf(filename, nameLength, "%s/%s-freqDataWithInjection.dat", pptdatadump->value, IFOdata[i].name);
+      //}
       else
-        snprintf(filename, nameLength, "%s-freqDataWithInjection.dat", IFOdata[i].name);
+        snprintf(filename, nameLength, "%.3f_%s-freqDataWithInjection.dat", GPStrig.gpsSeconds+1e-9*GPStrig.gpsNanoSeconds, IFOdata[i].name);
       out = fopen(filename, "w");
+      if(!out){
+        fprintf(stderr,"Unable to open the path %s for writing freq data with injection files\n",filename);
+        exit(1);
+      }
       for (j = 0; j < IFOdata[i].freqData->data->length; j++) {
         REAL8 f = IFOdata[i].freqData->deltaF * j;
         REAL8 dre = creal(IFOdata[i].freqData->data->data[j]);
@@ -384,6 +434,7 @@ void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, ProcessPar
  --psdstart GPStime             GPS start time of PSD estimation data\n\
  --psdlength length             length of PSD estimation data in seconds\n\
  --seglen length                length of segments for PSD estimation and analysis in seconds\n\
+(--dont-dump-psd                If given, no ascii file with the PSD will be generated\n\
 (--trigtime GPStime)            GPS time of the trigger to analyse (optional when using --margtime or --margtimephi)\n\
 (--segment-start)               GPS time of the start of the segment (optional when --trigtime given, default is seglen-2 s before --trigtime)\n\
 (--srate rate)                  Downsample data to rate in Hz (4096.0,)\n\
@@ -393,7 +444,7 @@ void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, ProcessPar
 (--IFO1-channel chan1 [--IFO2-channel chan2 ...])   Specify channel names when reading cache files\n\
 (--dataseed number)             Specify random seed to use when generating data\n\
 (--lalinspiralinjection)      Enables injections via the LALInspiral package\n\
-(--inj-fref)                    Reference frequency for parameters in injection XML\n\
+(--inj-fref)                    Reference frequency for parameters in injection XML (default 100Hz)\n\
 (--inj-lambda1)                 value of lambda1 to be injected, LALSimulation only (0)\n\
 (--inj-lambda2)                 value of lambda1 to be injected, LALSimulation only (0)\n\
 (--inj-spinOrder PNorder)           Specify twice the PN order (e.g. 5 <==> 2.5PN) of spin effects to use, only for LALSimulation (default: -1 <==> Use all spin effects).\n\
@@ -409,7 +460,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
     INT4 dataseed=0;
     memset(&status,0,sizeof(status));
     ProcessParamsTable *procparam=NULL,*ppt=NULL;
-    ProcessParamsTable *pptdatadump=NULL;
+    //ProcessParamsTable *pptdatadump=NULL;
     LALInferenceIFOData *headIFO=NULL,*IFOdata=NULL;
     REAL8 SampleRate=4096.0,SegmentLength=0;
     if(LALInferenceGetProcParamVal(commandLine,"--srate")) SampleRate=atof(LALInferenceGetProcParamVal(commandLine,"--srate")->value);
@@ -635,7 +686,6 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
         if(!strcmp(IFOnames[i],"GEO")||!strcmp(IFOnames[i],"G1")) {
             memcpy(IFOdata[i].detector,&lalCachedDetectors[LALDetectorIndexGEO600DIFF],sizeof(LALDetector));
             if(!Nchannel) sprintf((channels[i]),"G1:DER_DATA_H"); continue;}
-        /*		if(!strcmp(IFOnames[i],"TAMA")||!strcmp(IFOnames[i],"T1")) {memcpy(IFOdata[i].detector,&lalCachedDetectors[LALDetectorIndexTAMA300DIFF]); continue;}*/
 
         if(!strcmp(IFOnames[i],"E1")){
             memcpy(IFOdata[i].detector,&dE1,sizeof(LALDetector));
@@ -863,7 +913,6 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
         /* Check if fake data is requested */
        if( (globFrames)?0:(interpFlag || (!(strcmp(caches[i],"LALLIGO") && strcmp(caches[i],"LALVirgo") && strcmp(caches[i],"LALGEO") && strcmp(caches[i],"LALEGO") && strcmp(caches[i],"LALSimLIGO") && strcmp(caches[i],"LALSimAdLIGO") && strcmp(caches[i],"LALSimVirgo") && strcmp(caches[i],"LALSimAdVirgo") && strcmp(caches[i],"LALAdLIGO")))))
         {
-            //FakeFlag=1; - set but not used
             if (!LALInferenceGetProcParamVal(commandLine,"--dataseed")){
                 fprintf(stderr,"Error: You need to specify a dataseed when generating data with --dataseed <number>.\n\
                         (--dataseed 0 uses a non-reproducible number from the system clock, and no parallel run is then possible.)\n" );
@@ -891,14 +940,12 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
             if(!strcmp(caches[i],"LALSimAdLIGO")) {XLALSimNoisePSD(IFOdata[i].oneSidedNoisePowerSpectrum,IFOdata[i].fLow,XLALSimNoisePSDaLIGOZeroDetHighPower ) ;LALSimPsd=1;}
             if(!strcmp(caches[i],"LALSimAdVirgo")) {XLALSimNoisePSD(IFOdata[i].oneSidedNoisePowerSpectrum,IFOdata[i].fLow,XLALSimNoisePSDAdvVirgo) ;LALSimPsd=1;}
             if(interpFlag) {PSD=NULL; scalefactor=1.0;}
-            //if(!strcmp(caches[i],"LAL2kLIGO")) {PSD = &LALAdvLIGOPsd; scalefactor = 36E-46;}
             if(PSD==NULL && !(interpFlag|| LALSimPsd)) {fprintf(stderr,"Error: unknown simulated PSD: %s\n",caches[i]); exit(-1);}
 
             if(LALSimPsd==0){
                 for(j=0;j<IFOdata[i].oneSidedNoisePowerSpectrum->data->length;j++)
                 {
                     MetaNoiseFunc(&status,&(IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]),j*IFOdata[i].oneSidedNoisePowerSpectrum->deltaF,interp,PSD);
-                    //PSD(&status,&(IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]),j*IFOdata[i].oneSidedNoisePowerSpectrum->deltaF);
                     IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]*=scalefactor;
                 }
             }
@@ -1130,7 +1177,6 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 
                 if (LALInferenceGetProcParamVal(commandLine, "--xcorrbands")){
 
-                    //double deltaF = IFOdata[i].oneSidedNoisePowerSpectrum->deltaF;
                     int lengthF = IFOdata[i].oneSidedNoisePowerSpectrum->data->length;
 
                     REAL8 *pvalues;
@@ -1148,13 +1194,6 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 
                     snprintf(filename, nameLength, "%s-XCorrBands.dat", IFOdata[i].name);
                     out = fopen(filename, "w");
-                    /*
-                    for (int k = 0; k < lengthF; ++k ) {
-                        if (pvalues[k] < 0.001) {
-                            fprintf(out,"%g %g\n",((double) k) * deltaF,lines_width);
-                        }
-                    }
-                    */
                     fprintf(out,"%g %g\n",10.0,75.0);
                     fprintf(out,"%g %g\n",16.0,40.0);
                     fprintf(out,"%g %g\n",40.0,330.0);
@@ -1175,14 +1214,6 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
             IFOdata[i].timeData=readTseries(cache,channels[i],segStart,SegmentLength);
             segStart=truesegstart;
             if(Ntimeslides) IFOdata[i].timeData->epoch=truesegstart;
-            /* FILE *out; */
-            /* char fileName[256]; */
-            /* snprintf(fileName, 256, "readTimeData-%d.dat", i); */
-            /* out = fopen(fileName, "w"); */
-            /* for (j = 0; j < IFOdata[i].timeData->data->length; j++) { */
-            /*   fprintf(out, "%g %g\n", j*IFOdata[i].timeData->deltaT, IFOdata[i].timeData->data->data[j]); */
-            /* } */
-            /* fclose(out); */
 
             if(!IFOdata[i].timeData) {
                 XLALPrintError("Error reading segment data for %s at %i\n",IFOnames[i],segStart.gpsSeconds);
@@ -1205,18 +1236,6 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
         XLALDestroyCache(cache); // Clean up cache
         } /* End of data reading process */
 
-        //		/* Now that the PSD is set up, make the TDW. */
-        //    IFOdata[i].timeDomainNoiseWeights = 
-        //                  (REAL8TimeSeries *)XLALCreateREAL8TimeSeries("time domain weights", 
-        //                                                               &(IFOdata[i].oneSidedNoisePowerSpectrum->epoch),
-        //                                                               0.0,
-        //                                                               1.0/SampleRate,
-        //                                                               &lalDimensionlessUnit,
-        //                                                               seglen);
-        //		if(!IFOdata[i].timeDomainNoiseWeights) XLAL_ERROR_NULL(XLAL_EFUNC);
-        //		LALInferencePSDToTDW(IFOdata[i].timeDomainNoiseWeights, IFOdata[i].oneSidedNoisePowerSpectrum, IFOdata[i].freqToTimeFFTPlan,
-        //                         IFOdata[i].fLow, IFOdata[i].fHigh);
-
         makeWhiteData(&(IFOdata[i]));
 
       /* Store ASD of noise spectrum to whiten glitch model */
@@ -1226,8 +1245,6 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 
         if (LALInferenceGetProcParamVal(commandLine, "--spinspiralPSD")) {
             FILE *in;
-            //char fileNameIn[256];
-            //snprintf(fileNameIn, 256, spinspiralPSD);
             double freq_temp, psd_temp, temp;
             int n=0;
             int k=0;
@@ -1235,16 +1252,10 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
             char buffer[256];
             char * line=buffer;
 
-            //in = fopen(fileNameIn, "r");
             in = fopen(spinspiralPSD[i], "r");
             while(fgets(buffer, 256, in)){
                 templen++;
             }
-
-            // REAL8 *tempPSD = NULL;
-            // REAL8 *tempfreq = NULL;
-            // tempPSD=XLALCalloc(sizeof(REAL8),templen+1);
-            // tempfreq=XLALCalloc(sizeof(REAL8),templen+1);
 
             rewind(in);
             IFOdata[i].oneSidedNoisePowerSpectrum->data->data[0] = 1.0;
@@ -1258,49 +1269,57 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
                 sscanf(line, "%lg%n", &temp,&n);
                 line+=n;
 
-                // tempfreq[k]=freq_temp;
-                // tempPSD[k]=psd_temp*psd_temp;
-
                 IFOdata[i].oneSidedNoisePowerSpectrum->data->data[k+1]=psd_temp*psd_temp;
 
                 k++;
-                //fprintf(stdout, "%g %g \n",freq_temp, psd_temp); fflush(stdout);
             }
             fclose(in);
         }
 
-        if (LALInferenceGetProcParamVal(commandLine, "--data-dump")) {
-            pptdatadump=LALInferenceGetProcParamVal(commandLine,"--data-dump");
-            const UINT4 nameLength=FILENAME_MAX;
-            char filename[nameLength];
-            FILE *out;
-            ppt=LALInferenceGetProcParamVal(commandLine,"--outfile");
-            if(ppt) {
-            	snprintf(filename, nameLength, "%s-%s-PSD.dat", ppt->value, IFOdata[i].name);
-            }
-            else if(strcmp(pptdatadump->value,"")) {
-              snprintf(filename, nameLength, "%s/%s-PSD.dat", pptdatadump->value, IFOdata[i].name);
-            }
-            else
-                snprintf(filename, nameLength, "%s-PSD.dat", IFOdata[i].name);
-            out = fopen(filename, "w");
-            for (j = 0; j < IFOdata[i].oneSidedNoisePowerSpectrum->data->length; j++) {
-                REAL8 f = IFOdata[i].oneSidedNoisePowerSpectrum->deltaF*j;
-                REAL8 psd = IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j];
+        /* Save to file the PSDs so that they can be used in the PP pages */
+        const UINT4 nameLength=FILENAME_MAX;
+        char filename[nameLength];
+        FILE *out;
+        ppt=LALInferenceGetProcParamVal(commandLine,"--dont-dump-psd");
+        if (!ppt){
+          ppt=LALInferenceGetProcParamVal(commandLine,"--outfile");
+          if(ppt) {
+            snprintf(filename, nameLength, "%s%s-PSD.dat", ppt->value, IFOdata[i].name);
+          }
+          else
+            snprintf(filename, nameLength, "%.3f_%s-PSD.dat",GPStrig.gpsSeconds+1e-9*GPStrig.gpsNanoSeconds, IFOdata[i].name);
+            
+          out = fopen(filename, "w");
+          if(!out){
+            fprintf(stderr,"Unable to open the path %s for writing PSD files\n",filename);
+            exit(1);
+          }
+          for (j = 0; j < IFOdata[i].oneSidedNoisePowerSpectrum->data->length; j++) {
+              REAL8 f = IFOdata[i].oneSidedNoisePowerSpectrum->deltaF*j;
+              REAL8 psd = IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j];
 
-                fprintf(out, "%g %g\n", f, psd);
-            }
-            fclose(out);
-          
+              fprintf(out, "%g %g\n", f, psd);
+          }
+          fclose(out);
+        }
+        if (LALInferenceGetProcParamVal(commandLine, "--data-dump")) {
+            //pptdatadump=LALInferenceGetProcParamVal(commandLine,"--data-dump");
+            
+            ppt=LALInferenceGetProcParamVal(commandLine,"--outfile");
+            
             if(ppt) {
-              snprintf(filename, nameLength, "%s-%s-timeData.dat", ppt->value, IFOdata[i].name);
+              snprintf(filename, nameLength, "%s%s-timeData.dat", ppt->value, IFOdata[i].name);
             }
-            else if(strcmp(pptdatadump->value,"")) {
-              snprintf(filename, nameLength, "%s/%s-timeData.dat", pptdatadump->value, IFOdata[i].name);
-            }
+            //else if(strcmp(pptdatadump->value,"")) {
+            //  snprintf(filename, nameLength, "%s/%s-timeData.dat", pptdatadump->value, IFOdata[i].name);
+            //}
             else
-              snprintf(filename, nameLength, "%s-timeData.dat", IFOdata[i].name);
+              snprintf(filename, nameLength, "%.3f_%s-timeData.dat",GPStrig.gpsSeconds+1e-9*GPStrig.gpsNanoSeconds, IFOdata[i].name);
             out = fopen(filename, "w");
+            if(!out){
+                fprintf(stderr,"Unable to open the path %s for writing time data files\n",filename);
+                exit(1);
+            }
             for (j = 0; j < IFOdata[i].timeData->data->length; j++) {
                 REAL8 t = XLALGPSGetREAL8(&(IFOdata[i].timeData->epoch)) + 
                     j * IFOdata[i].timeData->deltaT;
@@ -1312,14 +1331,18 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
           
             ppt=LALInferenceGetProcParamVal(commandLine,"--outfile");
             if(ppt) {
-              snprintf(filename, nameLength, "%s-%s-freqData.dat", ppt->value, IFOdata[i].name);
+              snprintf(filename, nameLength, "%s%s-freqData.dat", ppt->value, IFOdata[i].name);
             }
-            else if(strcmp(pptdatadump->value,"")) {
-              snprintf(filename, nameLength, "%s/%s-freqData.dat", pptdatadump->value, IFOdata[i].name);
-            }
+            //else if(strcmp(pptdatadump->value,"")) {
+            //  snprintf(filename, nameLength, "%s/%s-freqData.dat", pptdatadump->value, IFOdata[i].name);
+            //}
             else
-              snprintf(filename, nameLength, "%s-freqData.dat", IFOdata[i].name);
+              snprintf(filename, nameLength, "%.3f_%s-freqData.dat",GPStrig.gpsSeconds+1e-9*GPStrig.gpsNanoSeconds, IFOdata[i].name);
             out = fopen(filename, "w");
+            if(!out){
+                fprintf(stderr,"Unable to open the path %s for writing freq data files\n",filename);
+                exit(1);
+            }
             for (j = 0; j < IFOdata[i].freqData->data->length; j++) {
                 REAL8 f = IFOdata[i].freqData->deltaF * j;
                 REAL8 dre = creal(IFOdata[i].freqData->data->data[j]);
@@ -1348,9 +1371,6 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
     if(IFOnames) XLALFree(IFOnames);
     if(fLows) XLALFree(fLows);
     if(fHighs) XLALFree(fHighs);
-
-    LALSimInspiralWaveformCache *cache=XLALCreateSimInspiralWaveformCache();
-    for(i=0;i<Nifo;i++) IFOdata[i].waveformCache=cache;
 
     return headIFO;
 }
@@ -1433,67 +1453,62 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 	UINT4 event=0;
 	UINT4 i=0,j=0;
     REAL8 responseScale=1.0;
-	//CoherentGW InjectGW;
-	//PPNParamStruc InjParams;
 	LIGOTimeGPS injstart;
 	REAL8 SNR=0,NetworkSNR=0;
 	DetectorResponse det;
 	memset(&injstart,0,sizeof(LIGOTimeGPS));
-	//memset(&InjParams,0,sizeof(PPNParamStruc));
 	COMPLEX16FrequencySeries *injF=NULL;
 	FILE *rawWaveform=NULL;
 	ProcessParamsTable *ppt=NULL;
 	REAL8 bufferLength = 2048.0; /* Default length of buffer for injections (seconds) */
 	UINT4 bufferN=0;
 	LIGOTimeGPS bufferStart;
-
 	
 	LALInferenceIFOData *thisData=IFOdata->next;
 	REAL8 minFlow=IFOdata->fLow;
 	REAL8 MindeltaT=IFOdata->timeData->deltaT;
-  REAL8 InjSampleRate=1.0/MindeltaT;
+    REAL8 InjSampleRate=1.0/MindeltaT;
 	REAL4TimeSeries *injectionBuffer=NULL;
-  REAL8 padding=0.4; //default, set in LALInferenceReadData()
-	
-  
+    REAL8 padding=0.4; //default, set in LALInferenceReadData()
+	UINT4 SNR_flag=0; // Print SNRs to file
+    char SNRpath[FILENAME_MAX]="";
+
 	while(thisData){
           minFlow   = minFlow>thisData->fLow ? thisData->fLow : minFlow;
           MindeltaT = MindeltaT>thisData->timeData->deltaT ? thisData->timeData->deltaT : MindeltaT;
           thisData  = thisData->next;
 	}
 	thisData=IFOdata;
-	//InjParams.deltaT = MindeltaT;
-	//InjParams.fStartIn=(REAL4)minFlow;
 
 	if(!LALInferenceGetProcParamVal(commandLine,"--inj")) {fprintf(stdout,"No injection file specified, not injecting\n"); return;}
 	if(LALInferenceGetProcParamVal(commandLine,"--event")){
     event= atoi(LALInferenceGetProcParamVal(commandLine,"--event")->value);
     fprintf(stdout,"Injecting event %d\n",event);
 	}
-        if(LALInferenceGetProcParamVal(commandLine,"--snrpath")){
+    
+	if(LALInferenceGetProcParamVal(commandLine,"--snrpath")){
                 ppt = LALInferenceGetProcParamVal(commandLine,"--snrpath");
-		SNRpath = XLALCalloc(strlen(ppt->value)+1,sizeof(char));
-		memcpy(SNRpath,ppt->value,strlen(ppt->value)+1);
-                fprintf(stdout,"Writing SNRs in %s\n",SNRpath)     ;
-
+                sprintf(SNRpath,"%s",ppt->value);
+				SNR_flag=1;
+				fprintf(stdout,"Writing SNRs in %s\n",SNRpath);
 	}
 	Ninj=SimInspiralTableFromLIGOLw(&injTable,LALInferenceGetProcParamVal(commandLine,"--inj")->value,0,0);
 	REPORTSTATUS(&status);
 	printf("Ninj %d\n", Ninj);
-	if(Ninj<event) fprintf(stderr,"Error reading event %d from %s\n",event,LALInferenceGetProcParamVal(commandLine,"--inj")->value);
+	if(Ninj<=event){
+          fprintf(stderr,"Error reading event %d from %s\n",event,LALInferenceGetProcParamVal(commandLine,"--inj")->value);
+          exit(1);
+        }
 	while(i<event) {i++; injTable = injTable->next;} /* Select event */
 	injEvent = injTable;
 	injEvent->next = NULL;
   enforce_m1_larger_m2(injEvent);
-	//memset(&InjectGW,0,sizeof(InjectGW));
 	Approximant injapprox;
 	injapprox = XLALGetApproximantFromString(injTable->waveform);
         if( (int) injapprox == XLAL_FAILURE)
           ABORTXLAL(&status);
 	printf("Injecting approximant %i: %s\n", injapprox, injTable->waveform);
 	REPORTSTATUS(&status);
-	//LALGenerateInspiral(&status,&InjectGW,injTable,&InjParams);
-	//if(status.statusCode!=0) {fprintf(stderr,"Error generating injection!\n"); REPORTSTATUS(&status); }
 
 	/* Check for frequency domain injection. All aproximants supported by XLALSimInspiralImplementedFDApproximants will work.
    * CAVEAT: FD spinning approximants will refer the spin to the lower frequency as given in the xml table. Templates instead will refer it to the lower cutoff of the likelihood integral. This means *different* values of spin will be recovered if one doesn't pay attention! */
@@ -1552,15 +1567,11 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 		INT4 realStartSample=(INT4)((thisData->timeData->epoch.gpsSeconds - injectionBuffer->epoch.gpsSeconds)/thisData->timeData->deltaT);
 		realStartSample+=(INT4)((thisData->timeData->epoch.gpsNanoSeconds - injectionBuffer->epoch.gpsNanoSeconds)*1e-9/thisData->timeData->deltaT);
 
-		/*LALSimulateCoherentGW(&status,injWave,&InjectGW,&det);*/
-    //LALFindChirpInjectSignals(&status,injectionBuffer,injEvent,resp);
-
     if(LALInferenceGetProcParamVal(commandLine,"--lalinspiralinjection")){
       if ( approximant == NumRelNinja2) {
         XLALSimInjectNinjaSignals(injectionBuffer, thisData->name, 1./responseScale, injEvent);
       } else {
         /* Use this custom version for extra sites - not currently maintained */
-        // LALInferenceLALFindChirpInjectSignals (&status,injectionBuffer,injEvent,resp,det.site);
 	      /* Normal find chirp simulation cannot handle the extra sites */
 	      LALFindChirpInjectSignals (&status,injectionBuffer,injEvent,resp);
       }
@@ -1606,7 +1617,6 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
       injectionBuffer=(REAL4TimeSeries *)XLALCutREAL4TimeSeries(injectionBuffer,realStartSample,thisData->timeData->data->length);
       if (!injectionBuffer) XLAL_ERROR_VOID(XLAL_EFUNC);
       if(status.statusCode) REPORTSTATUS(&status);
-      /*		for(j=0;j<injWave->data->length;j++) printf("%f\n",injWave->data->data[j]);*/
       for(i=0;i<injectionBuffer->data->length;i++) inj8Wave->data->data[i]=(REAL8)injectionBuffer->data->data[i];
     }else{
       printf("Using LALSimulation for injection\n");
@@ -1692,8 +1702,6 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
       /* So we can adjust the epoch so that the end time is as desired */
       XLALGPSAddGPS(&(hplus->epoch), &(injEvent->geocent_end_time));
       XLALGPSAddGPS(&(hcross->epoch), &(injEvent->geocent_end_time));
-      //XLALGPSAdd(&(hplus->epoch), -(REAL8)hplus->data->length*hplus->deltaT);
-      //XLALGPSAdd(&(hcross->epoch), -(REAL8)hcross->data->length*hplus->deltaT);
       
       signalvecREAL8=XLALSimDetectorStrainREAL8TimeSeries(hplus, hcross, injEvent->longitude, injEvent->latitude, injEvent->polarization, det.site);
       if (!signalvecREAL8) XLAL_ERROR_VOID(XLAL_EFUNC);
@@ -1728,7 +1736,6 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
     REAL4 WinNorm = sqrt(thisData->window->sumofsquares/thisData->window->data->length);
         for(j=0;j<inj8Wave->data->length;j++) inj8Wave->data->data[j]*=thisData->window->data->data[j]; /* /WinNorm; */ /* Window normalisation applied only in freq domain */
     XLALREAL8TimeFreqFFT(injF,inj8Wave,thisData->timeToFreqFFTPlan);
-    /*for(j=0;j<injF->data->length;j++) printf("%lf\n",injF->data->data[j].re);*/
     if(thisData->oneSidedNoisePowerSpectrum){
       for(SNR=0.0,j=thisData->fLow/injF->deltaF;j<thisData->fHigh/injF->deltaF;j++){
         SNR += pow(creal(injF->data->data[j]), 2.0)/thisData->oneSidedNoisePowerSpectrum->data->data[j];
@@ -1761,8 +1768,8 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
       XLALDestroyCOMPLEX16FrequencySeries(injF);
       thisData=thisData->next;
     }
-     if (!(SNRpath==NULL)){ /* If the user provided a path with --snrpath store a file with injected SNRs */
-      PrintSNRsToFile(IFOdata , injTable);
+     if (SNR_flag){ /* If the user provided a path with --snrpath store a file with injected SNRs */
+      PrintSNRsToFile(IFOdata , SNRpath);
     }
 
     NetworkSNR=sqrt(NetworkSNR);
@@ -1823,7 +1830,6 @@ LALInferenceLALFindChirpInjectSignals (
   REAL8TimeSeries       *hplus=NULL;
   REAL8TimeSeries       *hcross=NULL;
   REAL8TimeSeries       *signalvecREAL8=NULL;
- // REAL4TimeSeries       *signalvecREAL4=NULL;
   
   INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
@@ -2279,166 +2285,98 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
   LALStatus status;
   memset(&status,0,sizeof(LALStatus));
   INT4 errnum;
-  REAL8 mc=0.0;
-  Approximant injapprox;
-  LALPNOrder phase_order=-1;
-  LALPNOrder amp_order=-1;
-  injapprox = XLALGetApproximantFromString(inj_table->waveform);
-  if( (int) injapprox == XLAL_FAILURE)
+  char SNRpath[FILENAME_MAX];
+  char SNR_flag=0;
+  ProcessParamsTable *ppt=NULL;
+
+  if(LALInferenceGetProcParamVal(commandLine,"--snrpath")){
+                ppt = LALInferenceGetProcParamVal(commandLine,"--snrpath");
+                sprintf(SNRpath,"%s",ppt->value);
+				SNR_flag=1;
+				fprintf(stdout,"Writing SNRs in %s\n",SNRpath);
+  }
+
+  Approximant approximant = XLALGetApproximantFromString(inj_table->waveform);
+  if( (int) approximant == XLAL_FAILURE)
       ABORTXLAL(&status);
-  phase_order = XLALGetOrderFromString(inj_table->waveform);
+
+  LALPNOrder phase_order = XLALGetOrderFromString(inj_table->waveform);
   if ( (int) phase_order == XLAL_FAILURE)
       ABORTXLAL(&status);
-  REAL8 eta =0.0;
-  REAL8 startPhase = 0.0;
-  REAL8 inclination = 0.0;
-  REAL8 distance=0.0;
-  REAL8 longitude=0.0;
-  REAL8 latitude=0.0;
-  REAL8 polarization=0.0;
-  REAL8 injtime=0.0;
-  // The injection is done in the radiation frame as it is easier to convert the xml cartesian components to the components the spins in this frame...
-  LALInferenceFrame frame = LALINFERENCE_FRAME_RADIATION;
 
-  IFOdata->modelParams=XLALCalloc(1,sizeof(LALInferenceVariables));
-  memset(IFOdata->modelParams,0,sizeof(LALInferenceVariables));
+  LALPNOrder amp_order = (LALPNOrder) inj_table->amp_order;
 
   enforce_m1_larger_m2(inj_table);
-  eta = inj_table->eta;
-  mc=inj_table->mchirp;
-  startPhase = inj_table->coa_phase;
-  inclination = inj_table->inclination;
-  distance=inj_table->distance;
-  longitude=inj_table->longitude;
-  latitude=inj_table->latitude;
-  polarization=inj_table->polarization;
-  injtime=(REAL8) inj_table->geocent_end_time.gpsSeconds + (REAL8) inj_table->geocent_end_time.gpsNanoSeconds*1.0e-9;
-  amp_order=(LALPNOrder) inj_table->amp_order;
 
-  LALInferenceAddVariable(IFOdata->modelParams, "chirpmass",&mc,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
-  LALInferenceAddVariable(IFOdata->modelParams, "phase",&startPhase,LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
-  LALInferenceAddVariable(IFOdata->modelParams, "rightascension",&longitude,LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
-  LALInferenceAddVariable(IFOdata->modelParams, "declination",&latitude,LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
-  LALInferenceAddVariable(IFOdata->modelParams, "polarisation",&polarization,LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
-  LALInferenceAddVariable(IFOdata->modelParams, "time",&injtime,LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-  LALInferenceAddVariable(IFOdata->modelParams, "massratio",&eta,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
-  LALInferenceAddVariable(IFOdata->modelParams, "distance",&distance,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
-  LALInferenceAddVariable(IFOdata->modelParams, "LAL_APPROXIMANT",&injapprox,LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
-  LALInferenceAddVariable(IFOdata->modelParams, "LAL_PNORDER",&phase_order,LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
-  LALInferenceAddVariable(IFOdata->modelParams, "LAL_AMPORDER",&amp_order,LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
-  frame = LALINFERENCE_FRAME_RADIATION;
-  LALInferenceAddVariable(IFOdata->modelParams, "LALINFERENCE_FRAME", &frame, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
-  LALInferenceAddVariable(IFOdata->modelParams, "inclination",&inclination,LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+  REAL8 injtime=0.0;
+  injtime=(REAL8) inj_table->geocent_end_time.gpsSeconds + (REAL8) inj_table->geocent_end_time.gpsNanoSeconds*1.0e-9;
 
   REAL8 lambda1 = 0.;
   if(LALInferenceGetProcParamVal(commandLine,"--inj-lambda1")) {
     lambda1= atof(LALInferenceGetProcParamVal(commandLine,"--inj-lambda1")->value);
     fprintf(stdout,"Injection lambda1 set to %f\n",lambda1);
-    LALInferenceAddVariable(IFOdata->modelParams, "lambda1",&lambda1,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
   }
+
   REAL8 lambda2 = 0.;
   if(LALInferenceGetProcParamVal(commandLine,"--inj-lambda2")) {
     lambda2= atof(LALInferenceGetProcParamVal(commandLine,"--inj-lambda2")->value);
     fprintf(stdout,"Injection lambda2 set to %f\n",lambda2);
-    LALInferenceAddVariable(IFOdata->modelParams, "lambda2",&lambda2,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
   }
+
   REAL8 lambdaT = 0.;
   REAL8 dLambdaT = 0.;
+
   if(LALInferenceGetProcParamVal(commandLine,"--inj-lambdaT")&&LALInferenceGetProcParamVal(commandLine,"--inj-dLambdaT")) {
     lambdaT= atof(LALInferenceGetProcParamVal(commandLine,"--inj-lambdaT")->value);
     dLambdaT= atof(LALInferenceGetProcParamVal(commandLine,"--inj-dLambdaT")->value);
-    LALInferenceLambdaTsEta2Lambdas(lambdaT,dLambdaT,eta,&lambda1,&lambda2);
+    LALInferenceLambdaTsEta2Lambdas(lambdaT, dLambdaT, inj_table->eta, &lambda1, &lambda2);
     fprintf(stdout,"Injection lambdaT set to %f\n",lambdaT);
     fprintf(stdout,"Injection dLambdaT set to %f\n",dLambdaT);
     fprintf(stdout,"lambda1 set to %f\n",lambda1);
     fprintf(stdout,"lambda2 set to %f\n",lambda2);
-    LALInferenceAddVariable(IFOdata->modelParams, "lambdaT",&lambdaT,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
-    LALInferenceAddVariable(IFOdata->modelParams, "dLambdaT",&dLambdaT,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
   }
 
-  LALSimInspiralSpinOrder spinO = LAL_SIM_INSPIRAL_SPIN_ORDER_ALL;
+  /* Set up wave flags */
+  LALSimInspiralWaveformFlags *waveFlags = XLALSimInspiralCreateWaveformFlags();
 
+  LALSimInspiralSpinOrder spinO = LAL_SIM_INSPIRAL_SPIN_ORDER_ALL;
   if(LALInferenceGetProcParamVal(commandLine, "--inj-spinOrder")) {
-      spinO = atoi(LALInferenceGetProcParamVal(commandLine, "--inj-spinOrder")->value);
-      LALInferenceAddVariable(IFOdata->modelParams, "spinO", &spinO,   LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
+    spinO = atoi(LALInferenceGetProcParamVal(commandLine, "--inj-spinOrder")->value);
+    XLALSimInspiralSetSpinOrder(waveFlags, spinO);
   }
 
   LALSimInspiralTidalOrder tideO = LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL;
-
   if(LALInferenceGetProcParamVal(commandLine, "--inj-tidalOrder")) {
-      tideO = atoi(LALInferenceGetProcParamVal(commandLine, "--inj-tidalOrder")->value);
-      LALInferenceAddVariable(IFOdata->modelParams, "tideO", &tideO,   LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
+    tideO = atoi(LALInferenceGetProcParamVal(commandLine, "--inj-tidalOrder")->value);
+    XLALSimInspiralSetTidalOrder(waveFlags, tideO);
   }
 
-  REAL8 a1=0.0,theta1=0.0,phi1=0.0,a2=0.0,theta2=0.0,phi2=0.0;
-  int spin_aligned=0;
+  REAL8 deltaT = IFOdata->timeData->deltaT;
+  REAL8 deltaF = IFOdata->freqData->deltaF;
 
-  if (inj_table->spin1x==0.0 && inj_table->spin1y==0.0 && inj_table->spin1z!=0.0){
-    spin_aligned=1;
-    a1=inj_table->spin1z;
-    }
-  if (inj_table->spin2x==0.0 && inj_table->spin2y==0.0&& inj_table->spin2z!=0.0){
-    spin_aligned=1;
-    a2=inj_table->spin2z;
-    }
-  if (spin_aligned==0){
-    a1=sqrt(inj_table->spin1x*inj_table->spin1x+inj_table->spin1y*inj_table->spin1y+inj_table->spin1z*inj_table->spin1z);
-    if (a1>0.0){
-     REAL8 tmp=inj_table->spin1z/a1;
-     theta1=acos(tmp);
-    }
-    if (a1>0.0){
-      phi1=atan2( inj_table->spin1y,inj_table->spin1x);
-      if (phi1<0.0)
-        phi1+=LAL_PI*2.0;
-    }
+  REAL8 f_min = fLow2fStart(inj_table->f_lower, amp_order, approximant);
+  REAL8 f_max = 0.0;
 
-    a2=sqrt(inj_table->spin2x*inj_table->spin2x+inj_table->spin2y*inj_table->spin2y+inj_table->spin2z*inj_table->spin2z);
-    if (a2>0.0){
-     REAL8 tmp= inj_table->spin2z/a2;
-    theta2=acos(tmp);
-    }
-    if (a2>0.0){
-      phi2=atan2( inj_table->spin2y,inj_table->spin2x);
-      if (phi2<0.0)
-        phi2+=LAL_PI*2.0;
-    }
+  REAL8 fref = 100.;
+  if(LALInferenceGetProcParamVal(commandLine,"--inj-fref")) {
+    fref = atoi(LALInferenceGetProcParamVal(commandLine,"--inj-fref")->value);
   }
-  
-  if (spin_aligned>0){
-    if (a1!=0.0)
-      LALInferenceAddVariable(IFOdata->modelParams, "spin1",&a1,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
-    if (a2!=0.0)
-      LALInferenceAddVariable(IFOdata->modelParams, "spin2",&a2,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
-    }
-  else{
-    if (a1>0){
-      LALInferenceAddVariable(IFOdata->modelParams, "theta_spin1",&theta1,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
-      LALInferenceAddVariable(IFOdata->modelParams, "phi_spin1",&phi1,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_CIRCULAR);
-      LALInferenceAddVariable(IFOdata->modelParams, "a_spin1",&a1,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
-    }
-    if (a2>0){
-      LALInferenceAddVariable(IFOdata->modelParams, "a_spin2",&a2,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
-      LALInferenceAddVariable(IFOdata->modelParams, "theta_spin2",&theta2,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
-      LALInferenceAddVariable(IFOdata->modelParams, "phi_spin2",&phi2,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_CIRCULAR);
-    }
-  }
-  REAL8 flow=inj_table->f_lower;
-  LALInferenceAddVariable(IFOdata->modelParams, "fLow",&flow,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
 
- /* Print a line with information about approximant, amporder, phaseorder, tide order and spin order */
+  LALSimInspiralTestGRParam *nonGRparams = NULL;
+
+ /* Print a line with information about approximant, amp_order, phaseorder, tide order and spin order */
   fprintf(stdout,"\n\n---\t\t ---\n");
- fprintf(stdout,"Injection will run using Approximant %i (%s), phase order %i, amp order %i, spin order %i, tidal order %i, in the frequency domain.\n",injapprox,XLALGetStringFromApproximant(injapprox),phase_order,amp_order,(int) spinO,(int) tideO);
+ fprintf(stdout,"Injection will run using Approximant %i (%s), phase order %i, amp order %i, spin order %i, tidal order %i, in the frequency domain.\n",approximant,XLALGetStringFromApproximant(approximant),phase_order,amp_order,(int) spinO,(int) tideO);
    fprintf(stdout,"---\t\t ---\n\n");
 
-  COMPLEX16FrequencySeries *freqModelhCross=NULL;
- freqModelhCross=XLALCreateCOMPLEX16FrequencySeries("freqDatahC",&(IFOdata->timeData->epoch),0.0,IFOdata->freqData->deltaF,&lalDimensionlessUnit,IFOdata->freqData->data->length);
-  COMPLEX16FrequencySeries *freqModelhPlus=NULL;
-  freqModelhPlus=XLALCreateCOMPLEX16FrequencySeries("freqDatahP",&(IFOdata->timeData->epoch),0.0,IFOdata->freqData->deltaF,&lalDimensionlessUnit,IFOdata->freqData->data->length);
-  IFOdata->freqModelhPlus=freqModelhPlus;
-  IFOdata->freqModelhCross=freqModelhCross;
-  IFOdata->modelDomain = LAL_SIM_DOMAIN_FREQUENCY;
-  LALInferenceTemplateXLALSimInspiralChooseWaveform(IFOdata);
+  COMPLEX16FrequencySeries *hptilde=NULL, *hctilde=NULL;
+
+  XLALSimInspiralChooseFDWaveform(&hptilde, &hctilde, inj_table->coa_phase, deltaF,
+                                  inj_table->mass1*LAL_MSUN_SI, inj_table->mass2*LAL_MSUN_SI, inj_table->spin1x,
+                                  inj_table->spin1y, inj_table->spin1z, inj_table->spin2x, inj_table->spin2y,
+                                  inj_table->spin2z, f_min, f_max, fref, inj_table->distance*LAL_PC_SI * 1.0e6,
+                                  inj_table->inclination, lambda1, lambda2, waveFlags,
+                                  nonGRparams, amp_order, phase_order, approximant);
 
   /* Fail if injection waveform generation was not successful */
   errnum = *XLALGetErrnoPtr();
@@ -2447,25 +2385,23 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
     exit(1);
   }
 
-  double Fplus, Fcross;
+  XLALSimInspiralDestroyWaveformFlags(waveFlags);
+  XLALSimInspiralDestroyTestGRParam(nonGRparams);
+
+  LALInferenceIFOData *dataPtr;
+  REAL8 Fplus, Fcross;
   REAL8 plainTemplateReal, plainTemplateImag;
   REAL8 templateReal, templateImag;
-  int i, lower, upper;
-  LALInferenceIFOData *dataPtr;
-  double ra, dec, psi, gmst;
   LIGOTimeGPS GPSlal;
-  double chisquared;
-  double timedelay;  /* time delay b/w iterferometer & geocenter w.r.t. sky location */
-  double timeshift;  /* time shift (not necessarily same as above)                   */
-  double deltaT, deltaF, twopit, f, re, im;
+  REAL8 gmst;
+  REAL8 chisquared;
+  REAL8 timedelay;  /* time delay b/w iterferometer & geocenter w.r.t. sky location */
+  REAL8 timeshift;  /* time shift (not necessarily same as above)                   */
+  REAL8 twopit, re, im, dre, dim, newRe, newIm;
+  UINT4 i, lower, upper;
 
   REAL8 temp=0.0;
   REAL8 NetSNR=0.0;
-
-  /* determine source's sky location & orientation parameters: */
-  ra        = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "rightascension"); /* radian      */
-  dec       = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "declination");    /* radian      */
-  psi       = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "polarisation");   /* radian      */
 
   /* figure out GMST: */
   XLALGPSSetREAL8(&GPSlal, injtime);
@@ -2475,125 +2411,117 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
   dataPtr = IFOdata;
 
   while (dataPtr != NULL) {
+    /*-- WF to inject is now in hptilde and hctilde. --*/
+    /* determine beam pattern response (Fplus and Fcross) for given Ifo: */
+    XLALComputeDetAMResponse(&Fplus, &Fcross,
+                                (const REAL4(*)[3])dataPtr->detector->response,
+                                inj_table->longitude, inj_table->latitude,
+                                inj_table->polarization, gmst);
 
-    if (IFOdata->modelDomain == LAL_SIM_DOMAIN_TIME) {
-  printf("There is a problem. You seem to be using a time domain model into the frequency domain injection function!. Exiting....\n");
-    exit(1);
-  }
+    /* signal arrival time (relative to geocenter); */
+    timedelay = XLALTimeDelayFromEarthCenter(dataPtr->detector->location,
+                                                inj_table->longitude, inj_table->latitude,
+                                                &GPSlal);
 
-  /*-- WF to inject is now in dataPtr->freqModelhPlus and dataPtr->freqModelhCross. --*/
-  /* determine beam pattern response (F_plus and F_cross) for given Ifo: */
-  XLALComputeDetAMResponse(&Fplus, &Fcross,
-                           (const REAL4(*)[3])dataPtr->detector->response,
-         ra, dec, psi, gmst);
-  /* signal arrival time (relative to geocenter); */
-  timedelay = XLALTimeDelayFromEarthCenter(dataPtr->detector->location,
-                                           ra, dec, &GPSlal);
-  /* (negative timedelay means signal arrives earlier at Ifo than at geocenter, etc.) */
-  /* amount by which to time-shift template (not necessarily same as above "timedelay"): */
-  timeshift =  (injtime - (*(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "time"))) + timedelay;
-  twopit    = LAL_TWOPI * (timeshift);
+    /* (negative timedelay means signal arrives earlier at Ifo than at geocenter, etc.) */
+    /* amount by which to time-shift template (not necessarily same as above "timedelay"): */
+    REAL8 instant = dataPtr->timeData->epoch.gpsSeconds + 1e-9*dataPtr->timeData->epoch.gpsNanoSeconds;
 
-  dataPtr->fPlus = Fplus;
-  dataPtr->fCross = Fcross;
-  dataPtr->timeshift = timeshift;
+    timeshift = (injtime - instant) + timedelay;
+    twopit    = LAL_TWOPI * (timeshift);
 
-  char InjFileName[50];
-        sprintf(InjFileName,"injection_%s.dat",dataPtr->name);
-        FILE *outInj=fopen(InjFileName,"w");
+    dataPtr->fPlus = Fplus;
+    dataPtr->fCross = Fcross;
+    dataPtr->timeshift = timeshift;
 
-   /* determine frequency range & loop over frequency bins: */
-  deltaT = dataPtr->timeData->deltaT;
-  deltaF = 1.0 / (((double)dataPtr->timeData->data->length) * deltaT);
-  lower = (UINT4)ceil(dataPtr->fLow / deltaF);
-  upper = (UINT4)floor(dataPtr->fHigh / deltaF);
-   chisquared = 0.0;
-  for (i=lower; i<=upper; ++i){
-    /* derive template (involving location/orientation parameters) from given plus/cross waveforms: */
-    plainTemplateReal = Fplus * creal(IFOdata->freqModelhPlus->data->data[i])
-                        +  Fcross * creal(IFOdata->freqModelhCross->data->data[i]);
-    plainTemplateImag = Fplus * cimag(IFOdata->freqModelhPlus->data->data[i])
-                        +  Fcross * cimag(IFOdata->freqModelhCross->data->data[i]);
+    char InjFileName[50];
+    sprintf(InjFileName,"injection_%s.dat",dataPtr->name);
+    FILE *outInj=fopen(InjFileName,"w");
 
-    /* do time-shifting...             */
-    /* (also un-do 1/deltaT scaling): */
-    f = ((double) i) * deltaF;
-    /* real & imag parts of  exp(-2*pi*i*f*deltaT): */
-    re = cos(twopit * f);
-    im = - sin(twopit * f);
-    templateReal = (plainTemplateReal*re - plainTemplateImag*im);
-    templateImag = (plainTemplateReal*im + plainTemplateImag*re);
+     /* determine frequency range & loop over frequency bins: */
+    lower = (UINT4)ceil(dataPtr->fLow / deltaF);
+    upper = (UINT4)floor(dataPtr->fHigh / deltaF);
+    chisquared = 0.0;
 
+    re = cos(twopit * deltaF * lower);
+    im = -sin(twopit * deltaF * lower);
+    for (i=lower; i<=upper; ++i){
+      /* derive template (involving location/orientation parameters) from given plus/cross waveforms: */
+      if (i < hptilde->data->length) {
+          plainTemplateReal = Fplus * creal(hptilde->data->data[i])
+                              +  Fcross * creal(hctilde->data->data[i]);
+          plainTemplateImag = Fplus * cimag(hptilde->data->data[i])
+                              +  Fcross * cimag(hctilde->data->data[i]);
+      } else {
+          plainTemplateReal = 0.0;
+          plainTemplateImag = 0.0;
+      }
 
-     fprintf(outInj,"%lf %e %e %e\n",i*deltaF ,templateReal,templateImag,1.0/dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
-    dataPtr->freqData->data->data[i] += crect( templateReal, templateImag );
+      /* do time-shifting...             */
+      /* (also un-do 1/deltaT scaling): */
+      /* real & imag parts of  exp(-2*pi*i*f*deltaT): */
+      templateReal = (plainTemplateReal*re - plainTemplateImag*im);
+      templateImag = (plainTemplateReal*im + plainTemplateImag*re);
 
-    temp = ((2.0/( deltaT*(double) dataPtr->timeData->data->length) * (templateReal*templateReal+templateImag*templateImag)) / dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
-    chisquared  += temp;
-  }
-  printf("injected SNR %.1f in IFO %s\n",sqrt(2.0*chisquared),dataPtr->name);
-  NetSNR+=2.0*chisquared;
-  dataPtr->SNR=sqrt(2.0*chisquared);
-  dataPtr = dataPtr->next;
+      /* Incremental values, using cos(theta) - 1 = -2*sin(theta/2)^2 */
+      dim = -sin(twopit*deltaF);
+      dre = -2.0*sin(0.5*twopit*deltaF)*sin(0.5*twopit*deltaF);
+      newRe = re + re*dre - im * dim;
+      newIm = im + re*dim + im*dre;
+      re = newRe;
+      im = newIm;
 
-  fclose(outInj);
+      fprintf(outInj,"%lf %e %e %e\n",i*deltaF ,templateReal,templateImag,1.0/dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
+      dataPtr->freqData->data->data[i] += crect( templateReal, templateImag );
+
+      temp = ((2.0/( deltaT*(double) dataPtr->timeData->data->length) * (templateReal*templateReal+templateImag*templateImag)) / dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
+      chisquared  += temp;
+    }
+    printf("injected SNR %.1f in IFO %s\n",sqrt(2.0*chisquared),dataPtr->name);
+    NetSNR+=2.0*chisquared;
+    dataPtr->SNR=sqrt(2.0*chisquared);
+    dataPtr = dataPtr->next;
+
+    fclose(outInj);
   }
   printf("injected Network SNR %.1f \n",sqrt(NetSNR));
 
-  if (!(SNRpath==NULL)){ /* If the user provided a path with --snrpath store a file with injected SNRs */
-  PrintSNRsToFile(IFOdata , inj_table);
-  }
-  XLALDestroyCOMPLEX16FrequencySeries(freqModelhCross);
-  XLALDestroyCOMPLEX16FrequencySeries(freqModelhPlus);
-
-  LALInferenceClearVariables(IFOdata->modelParams);
-  XLALFree(IFOdata->modelParams);
+  if (SNR_flag){ /* If the user provided a path with --snrpath store a file with injected SNRs */
+    PrintSNRsToFile(IFOdata , SNRpath);
   }
 
+  XLALDestroyCOMPLEX16FrequencySeries(hctilde);
+  XLALDestroyCOMPLEX16FrequencySeries(hptilde);
+}
 
-  static void PrintSNRsToFile(LALInferenceIFOData *IFOdata , SimInspiralTable *inj_table){
-  char SnrName[200];
-  char ListOfIFOs[10]="";
+
+static void PrintSNRsToFile(LALInferenceIFOData *IFOdata , char SNRpath[] ){
   REAL8 NetSNR=0.0;
-  // sprintf(ListOfIFOs,"");
   LALInferenceIFOData *thisData=IFOdata;
-  int nIFO=0;
 
-  while(thisData){
-       sprintf(ListOfIFOs,"%s%s",ListOfIFOs,thisData->name);
-       thisData=thisData->next;
-  nIFO++;
-      }
-
-  //sprintf(SnrName,"%s/snr_%s_%10.1f.dat",SNRpath,ListOfIFOs,(REAL8) inj_table->geocent_end_time.gpsSeconds+ (REAL8) inj_table->geocent_end_time.gpsNanoSeconds*1.0e-9);
-  (void) ListOfIFOs;
-  (void) inj_table;
-  sprintf(SnrName,"%s/snr_IMR.dat",SNRpath);
-  FILE * snrout = fopen(SnrName,"a");
+  FILE * snrout = fopen(SNRpath,"a");
   if(!snrout){
     fprintf(stderr,"Unable to open the path %s for writing SNR files\n",SNRpath);
-    exit(1);
+    fprintf(stderr,"Error code %i: %s\n",errno,strerror(errno));
+    exit(errno);
   }
 
   thisData=IFOdata; // restart from the first IFO
   while(thisData){
-    //  fprintf(snrout,"%s:\t %4.2f\n",thisData->name,thisData->SNR);
       NetSNR+=(thisData->SNR*thisData->SNR);
       thisData=thisData->next;
   }
-  //if (nIFO>1){  //fprintf(snrout,"Network:\t");
 
   fprintf(snrout,"%4.2f\n",sqrt(NetSNR));
-  //}
   fclose(snrout);
-  }
+}
 
-  /**
-  * Fill the variables passed in vars with the parameters of the injection passed in event
-  * will over-write and destroy any existing parameters. Param vary type will be fixed
-  */
-  void LALInferenceInjectionToVariables(SimInspiralTable *theEventTable, LALInferenceVariables *vars)
-  {
+/**
+* Fill the variables passed in vars with the parameters of the injection passed in event
+* will over-write and destroy any existing parameters. Param vary type will be fixed
+*/
+void LALInferenceInjectionToVariables(SimInspiralTable *theEventTable, LALInferenceVariables *vars)
+{
   UINT4 spinCheck=0;
   if(!vars) {
   XLALPrintError("Encountered NULL variables pointer");
@@ -2722,11 +2650,23 @@ void LALInferencePrintInjectionSample(LALInferenceRunState *runState)
 
     /* Save old variables */
     LALInferenceCopyVariables(runState->currentParams,&backup);
-    //LALInferenceClearVariables(runState->currentParams);
     LALPNOrder *order=LALInferenceGetVariable(&backup,"LAL_PNORDER");
     Approximant *approx=LALInferenceGetVariable(&backup,"LAL_APPROXIMANT");
     /* Fill named variables */
     LALInferenceInjectionToVariables(theEventTable,runState->currentParams);
+
+    /* If the time prior is stored in currentParams for the margtime likelihood, this will copy its range over */
+    if(LALInferenceCheckVariable(&backup,"time_min"))
+    {
+            REAL8 time_min=LALInferenceGetREAL8Variable(&backup,"time_min");
+            LALInferenceAddVariable(runState->currentParams,"time_min",&time_min,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
+    }
+    if(LALInferenceCheckVariable(&backup,"time_max"))
+    {
+            REAL8 time_max=LALInferenceGetREAL8Variable(&backup,"time_max");
+            LALInferenceAddVariable(runState->currentParams,"time_max",&time_max,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
+    }
+
     if(order && approx){
       /* Set the waveform to the one used in the analysis */
       LALInferenceRemoveVariable(runState->currentParams,"LAL_APPROXIMANT");
@@ -2734,12 +2674,12 @@ void LALInferencePrintInjectionSample(LALInferenceRunState *runState)
       LALInferenceAddVariable(runState->currentParams,"LAL_PNORDER",order,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
       LALInferenceAddVariable(runState->currentParams,"LAL_APPROXIMANT",approx,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
     }
-    REAL8 injPrior = runState->prior(runState,runState->currentParams);
+    REAL8 injPrior = runState->prior(runState,runState->currentParams,runState->model);
     LALInferenceAddVariable(runState->currentParams,"logPrior",&injPrior,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
     int errnum=0;
     REAL8 injL=0.;
     if ( (int) *approx == XLALGetApproximantFromString(theEventTable->waveform)){
-      XLAL_TRY(injL = runState->likelihood(runState->currentParams, runState->data, runState->templt), errnum);
+      XLAL_TRY(injL = runState->likelihood(runState->currentParams, runState->data, runState->model), errnum);
       if(errnum){
           fprintf(stderr,"ERROR: Cannot print injection sample. Received error code %s\n",XLALErrorString(errnum));
       }
@@ -2753,7 +2693,7 @@ void LALInferencePrintInjectionSample(LALInferenceRunState *runState)
     while(data)
     {
         char tmpName[50];
-        REAL8 tmp=data->loglikelihood - data->nullloglikelihood;
+        REAL8 tmp=runState->model->loglikelihood - data->nullloglikelihood;
         sprintf(tmpName,"deltalogl%s",data->name);
         LALInferenceAddVariable(runState->currentParams,tmpName,&tmp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
         data=data->next;
@@ -2768,9 +2708,6 @@ void LALInferencePrintInjectionSample(LALInferenceRunState *runState)
     LALInferencePrintSample(outfile,runState->currentParams);
     fclose(outfile);
     
-    /* Set things back the way they were */    
-    //LALInferenceCopyVariables(&backup,runState->currentParams);
-    //if(runState->currentParams && runState->currentParams->head) runState->likelihood(runState->currentParams,runState->data,runState->templt);
     return;
 }
 
@@ -2802,13 +2739,12 @@ void enforce_m1_larger_m2(SimInspiralTable* injEvent){
     return ;
 }
 
-void LALInferenceSetupROQ(LALInferenceIFOData *IFOdata, ProcessParamsTable *commandLine){
+void LALInferenceSetupROQ(LALInferenceIFOData *IFOdata, LALInferenceModel *model, ProcessParamsTable *commandLine){
   
   LALStatus status;
   memset(&status,0,sizeof(status));
   UINT4 Nifo=0;
   LALInferenceIFOData *thisData=IFOdata;
-  UINT4 i;
   UINT4 q=0;
   UINT4 event=0;
   char *chartmp=NULL;
@@ -2820,7 +2756,6 @@ void LALInferenceSetupROQ(LALInferenceIFOData *IFOdata, ProcessParamsTable *comm
   n_samples = 31489;
   REAL8 delta_tc = 0.0001;
   REAL8 dt=0.1;
-  //REAL8 tc=0;
   LIGOTimeGPS GPStrig;
   REAL8 endtime=0.0;
   REAL8 timeMin=0.0,timeMax=0.0;
@@ -2829,6 +2764,7 @@ void LALInferenceSetupROQ(LALInferenceIFOData *IFOdata, ProcessParamsTable *comm
   FILE *out;
 	char tmp[128];
 
+  model->roq = XLALMalloc(sizeof(LALInferenceROQModel));
   
   while(thisData){
     thisData=thisData->next;
@@ -2899,165 +2835,72 @@ void LALInferenceSetupROQ(LALInferenceIFOData *IFOdata, ProcessParamsTable *comm
 		fscanf (tempfp, "%u", &n_samples);
 	}
 
+  model->roq->frequencyNodes = gsl_vector_calloc(n_basis);
+  model->roq->hplus = gsl_vector_complex_calloc(n_basis);
+  model->roq->hcross = gsl_vector_complex_calloc(n_basis);
+  model->roq->hstrain = gsl_vector_complex_calloc(n_basis);
+  model->roq->amp_squared = XLALMalloc(sizeof(REAL8));
+
+  model->roq->trigtime = endtime;
+
   printf("endtime = %f, timeMin = %f, timeMax = %f\n", endtime, timeMin, timeMax);
   printf("time steps = %d\n", time_steps);
   
   double deltaF = IFOdata[0].oneSidedNoisePowerSpectrum->deltaF; //assumes same deltaF for all IFOs
-  /*
-  gsl_matrix_complex *vandermonde_matrix=NULL;
-  gsl_matrix_complex *rb_matrix=NULL;
-  
-  gsl_matrix_complex *whitened_data_matrix = gsl_matrix_complex_calloc(n_samples, time_steps); //IFO data / PSD
-  gsl_vector_complex *whitened_data = gsl_vector_complex_calloc(n_samples);
-  gsl_matrix_complex *E_matrix = gsl_matrix_complex_calloc(n_basis, time_steps);
-  gsl_vector_complex *exp_2pi_i_f_tc = gsl_vector_complex_calloc(n_samples);
-  gsl_complex alpha;
-  gsl_complex beta;
-  gsl_complex wd; // element of whiteFreqData
-  gsl_complex shifted_data_element;
-  */
-  
-  /*
-  if(LALInferenceGetProcParamVal(commandLine,"--roqvandermonde")){
-    ppt=LALInferenceGetProcParamVal(commandLine,"--roqvandermonde");
-    
-    vandermonde_matrix = gsl_matrix_complex_calloc(n_basis, n_basis);
-    tempfp = fopen(ppt->value, "rb");
-    gsl_matrix_complex_fread(tempfp, vandermonde_matrix);
-  }
-  
-  if(LALInferenceGetProcParamVal(commandLine,"--roqrb")){
-    ppt=LALInferenceGetProcParamVal(commandLine,"--roqrb");
-    
-    rb_matrix = gsl_matrix_complex_calloc(n_samples, n_basis);
-    tempfp = fopen(ppt->value, "rb");
-    gsl_matrix_complex_fread(tempfp, rb_matrix);
-  }
-  */
-  
-  //if(LALInferenceGetProcParamVal(commandLine,"--roqnodes") && LALInferenceGetProcParamVal(commandLine,"--roqvandermonde") && LALInferenceGetProcParamVal(commandLine,"--roqrb")){
+
   if(LALInferenceGetProcParamVal(commandLine,"--roqnodes")){
-    
     ppt=LALInferenceGetProcParamVal(commandLine,"--roqnodes");
-    for (i=0;i<Nifo;i++) {
-			IFOdata[i].roqData = XLALCalloc(1, sizeof(LALInferenceROQData));
-      IFOdata[i].roqData->frequencyNodes = gsl_vector_calloc(n_basis);
-      tempfp = fopen(ppt->value, "rb");
-      gsl_vector_fread(tempfp, IFOdata[i].roqData->frequencyNodes);
-    }
-    
-    //printf("n_basis=%d\ttime_steps=%d\n", n_basis, time_steps);
-		
-    //ppt=LALInferenceGetProcParamVal(commandLine,"--roqweights");
-    for (i=0;i<Nifo;i++) {
-			sprintf(tmp,"--%s-roqweights",IFOdata[i].name);
-			ppt=LALInferenceGetProcParamVal(commandLine,tmp);
-      IFOdata[i].roqData->weights = gsl_matrix_complex_calloc(n_basis, time_steps);
-      tempfp = fopen(ppt->value, "rb");
-      gsl_matrix_complex_fread(tempfp, IFOdata[i].roqData->weights);
-    }
-    
-    //printf("time steps = %d\n", (int)IFOdata[0].roqData->weights->size2);
-  
-    for (i=0;i<Nifo;i++) {
-      
-      IFOdata[i].roqData->trigtime = endtime;
-      IFOdata[i].roqData->time_weights_width = timeMax-timeMin;
-      
-      /*** compute the weights ***/
-      /*
-      GSL_SET_COMPLEX(&alpha, 4.*IFOdata[i].oneSidedNoisePowerSpectrum->deltaF, 0);
-      GSL_SET_COMPLEX(&beta, 0, 0);
-      
-      
+    tempfp = fopen(ppt->value, "rb");
+    gsl_vector_fread(tempfp, model->roq->frequencyNodes);
 
-      snprintf(filename, nameLength, "%s-ROQFreqData.dat", IFOdata[i].name);
-      out = fopen(filename, "w");
-      for(unsigned int k = 0; k < n_samples; k++){
-            fprintf(out,"%g %g %g\n", IFOdata[i].freqData->deltaF*(k + (unsigned int)(IFOdata[i].fLow/deltaF)),
-              creal(IFOdata[i].freqData->data->data[k + (unsigned int)(IFOdata[i].fLow/deltaF)]),
-              cimag(IFOdata[i].freqData->data->data[k + (unsigned int)(IFOdata[i].fLow/deltaF)]));
-      }
-      fclose(out);
-      //REAL8 deltaT = IFOdata[i].timeData->deltaT;
+    thisData=IFOdata;
+    while (thisData) {
+      thisData->roq = XLALMalloc(sizeof(LALInferenceROQData));
+
+      sprintf(tmp, "--%s-roqweights", thisData->name);
+      ppt = LALInferenceGetProcParamVal(commandLine,tmp);
+      thisData->roq->weights = gsl_matrix_complex_calloc(n_basis, time_steps);
+      tempfp = fopen(ppt->value, "rb");
+      gsl_matrix_complex_fread(tempfp, thisData->roq->weights);
+        
       
-      for(unsigned int jj = 0; jj < time_steps; jj++){
-        
-        tc = timeMin + 2.0*(dt+0.022)*jj / time_steps;
-        //printf("%f = %f + 2*%f*%d / %d;\n",tc,timeMin,dt,jj,time_steps);
-        
-        for(unsigned int ii=0; ii < n_samples; ii++){
-          gsl_vector_complex_set(exp_2pi_i_f_tc, ii, gsl_complex_polar (1, (IFOdata[i].fLow/deltaF+ii)*deltaF*tc*2*LAL_PI));
-        }
-        
-        for(unsigned int k = 0; k < n_samples; k++){
+      thisData->roq->time_weights_width = timeMax-timeMin;
           
-          if(!isnan(creal(IFOdata[i].freqData->data->data[k + (unsigned int)(IFOdata[i].fLow/deltaF)])) &&
-             IFOdata[i].oneSidedNoisePowerSpectrum->data->data[k + (unsigned int)(IFOdata[i].fLow/deltaF)] != 0.0 ){
-            //GSL_SET_COMPLEX(&wd, creal(IFOdata[i].whiteFreqData->data->data[k + (unsigned int)(IFOdata[i].fLow/deltaF)]), cimag(IFOdata[i].whiteFreqData->data->data[k + (unsigned int)(IFOdata[i].fLow/deltaF)]));
-            GSL_SET_COMPLEX(&wd, creal(IFOdata[i].freqData->data->data[k + (unsigned int)(IFOdata[i].fLow/deltaF)])/
-                                       IFOdata[i].oneSidedNoisePowerSpectrum->data->data[k + (unsigned int)(IFOdata[i].fLow/deltaF)],
-                            cimag(IFOdata[i].freqData->data->data[k + (unsigned int)(IFOdata[i].fLow/deltaF)])/
-                                  IFOdata[i].oneSidedNoisePowerSpectrum->data->data[k + (unsigned int)(IFOdata[i].fLow/deltaF)]);
-          }else{
-            GSL_SET_COMPLEX(&wd, 0.0, 0.0);
+          /*** compute the weights ***/
+          if (LALInferenceGetProcParamVal(commandLine, "--data-dump")) {
+            ppt=LALInferenceGetProcParamVal(commandLine,"--outfile");
+
+            if(ppt) {
+                snprintf(filename, nameLength, "%s%s-ROQWeights.dat", ppt->value, thisData->name);
+            }
+            //else if(strcmp(pptdatadump->value,"")) {
+            //  snprintf(filename, nameLength, "%s/%s-timeData.dat", pptdatadump->value, IFOdata[i].name);
+            //}
+            else
+              snprintf(filename, nameLength, "%.3f_%s-ROQWeights.dat",GPStrig.gpsSeconds+1e-9*GPStrig.gpsNanoSeconds, thisData->name);
+            out = fopen(filename, "w");
+            if(!out){
+                fprintf(stderr,"Unable to open the path %s for writing ROQ weights files\n",filename);
+                exit(1);
+            }
+            for(unsigned int size2 = 0; size2 < thisData->roq->weights->size2; size2++){
+              for(unsigned int size1 = 0; size1 < thisData->roq->weights->size1; size1++){
+                fprintf(out,"(%g+%gj)\t",GSL_REAL(gsl_matrix_complex_get(thisData->roq->weights,size1,size2)),GSL_IMAG(gsl_matrix_complex_get(thisData->roq->weights,size1,size2)));
+              }
+              fprintf(out,"\n");
+            }
+          fclose(out);
           }
           
-          shifted_data_element = gsl_complex_mul (wd, gsl_vector_complex_get(exp_2pi_i_f_tc, k));
-          
-          //take conjugate
-          shifted_data_element = gsl_complex_conjugate (shifted_data_element);
-          
-          gsl_vector_complex_set (whitened_data, k, shifted_data_element);
-          
-        }
-        
-        gsl_matrix_complex_set_col (whitened_data_matrix, jj, whitened_data);
-        
-      }
-      
-      printf("Computing weights for %s\n",IFOdata[i].name);
-      
-      gsl_blas_zgemm (CblasTrans, CblasNoTrans, alpha, rb_matrix, whitened_data_matrix, beta, E_matrix);
-      
-      GSL_SET_COMPLEX (&alpha, 1, 0);
-      
-      gsl_blas_zgemm (CblasTrans, CblasNoTrans, alpha, vandermonde_matrix, E_matrix, beta, IFOdata[i].roqData->weights);
-      
-      printf("Weights have been computed for %s\n",IFOdata[i].name);
-      */
-
-      if (LALInferenceGetProcParamVal(commandLine, "--data-dump")) {
-        snprintf(filename, nameLength, "%s-ROQWeights.dat", IFOdata[i].name);
-        out = fopen(filename, "w");
-        for(unsigned int size2 = 0; size2 < IFOdata[i].roqData->weights->size2; size2++){
-          for(unsigned int size1 = 0; size1 < IFOdata[i].roqData->weights->size1; size1++){
-            fprintf(out,"(%g+%gj)\t",GSL_REAL(gsl_matrix_complex_get(IFOdata[i].roqData->weights,size1,size2)),GSL_IMAG(gsl_matrix_complex_get(IFOdata[i].roqData->weights,size1,size2)));
+          // compute int_f_7_over_3
+          thisData->roq->int_f_7_over_3 = 0;
+          for(unsigned int kk = 0; kk < n_samples; kk++){
+            if(thisData->oneSidedNoisePowerSpectrum->data->data[kk + (unsigned int)(thisData->fLow/deltaF)] != 0.0){
+              thisData->roq->int_f_7_over_3 += 4.*deltaF*pow((thisData->fLow + kk*deltaF), -7./3.) / thisData->oneSidedNoisePowerSpectrum->data->data[kk + (unsigned int)(thisData->fLow/deltaF)];
+            }
           }
-          fprintf(out,"\n");
-        }
-      fclose(out);
-      }
-      //printf("IFOdata[%d].whiteFreqData->epoch=%e\n",i,XLALGPSGetREAL8(&IFOdata[i].whiteFreqData->epoch));
-      //printf("timeMin=%e\tendtime=%e\ttimeMax=%e\n",timeMin,endtime,timeMax);
-      //printf("---------\n");
-      
-      // compute int_f_7_over_3
-      IFOdata[i].roqData->int_f_7_over_3 = 0;
-      for(unsigned int kk = 0; kk < n_samples; kk++){
-        if(IFOdata[i].oneSidedNoisePowerSpectrum->data->data[kk + (unsigned int)(IFOdata[i].fLow/deltaF)] != 0.0){
-          IFOdata[i].roqData->int_f_7_over_3 += 4.*deltaF*pow((IFOdata[i].fLow + kk*deltaF), -7./3.) / IFOdata[i].oneSidedNoisePowerSpectrum->data->data[kk + (unsigned int)(IFOdata[i].fLow/deltaF)];
-        }
-      }
+        
+      thisData = thisData->next;
     }
-    
   }
-  
-  //if(vandermonde_matrix) gsl_matrix_complex_free(vandermonde_matrix);
-  //if(rb_matrix) gsl_matrix_complex_free(rb_matrix);
-  //if(rb_matrix){
-  //  gsl_matrix_complex_free(whitened_data_matrix);
-  //  gsl_matrix_complex_free(E_matrix);
-  //}
-  
 }

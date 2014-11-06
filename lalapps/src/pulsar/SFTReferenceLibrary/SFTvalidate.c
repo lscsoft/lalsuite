@@ -104,7 +104,7 @@ int main(int argc, char** argv) {
       }
 
       for (j=0; j<info.nsamples; j++) {
-	if (!finite(data[2*j]) || !finite(data[2*j+1])) {
+	if (!isfinite(data[2*j]) || !isfinite(data[2*j+1])) {
 	  fprintf(stderr, "%s is not a valid SFT (data infinite at freq bin %d)\n", argv[i], j+info.firstfreqindex);
 	  return SFTNOTFINITE;
 	}

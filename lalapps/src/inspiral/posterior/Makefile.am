@@ -11,23 +11,9 @@ SUBDIRS = \
 if LALINSPIRAL
 if LALFRAME
 
-if LALMETAIO
-metaio_progs = \
-	lalapps_inspnest
-lalapps_inspnest_SOURCES = \
-	lalnest.c \
-	LALInspiralMCMC.c \
-	LALInspiralMCMCUser.c \
-	nest_calc.c \
-	nest_calc.h \
-	LALInspiralMCMC.h \
-	LALInspiralMCMCUser.h
-endif # metaio
-
 if LALPULSAR
 if LALINFERENCE
-pulsar_progs = lalinference_nest ChiSquare_test #lalinference_mcmcmpi
-ChiSquare_test_SOURCES = ChiSquare_test.c
+pulsar_progs = lalinference_nest #lalinference_mcmcmpi
 lalinference_nest_SOURCES = LALInferenceNest.c
 if HAVE_BAMBI
 if !HAVE_BAMBI_MPI
@@ -81,4 +67,6 @@ endif
 
 EXTRA_DIST += \
 	LALInferenceMCMCSampler.c \
-	LALInferenceMCMCSampler.h
+	LALInferenceMCMCSampler.h \
+	LALInferenceEnsembleSampler.c \
+	LALInferenceEnsembleSampler.h

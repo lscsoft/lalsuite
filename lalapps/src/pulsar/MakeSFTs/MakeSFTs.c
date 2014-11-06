@@ -56,6 +56,7 @@
 /* 06/26/07 gam; Write all command line arguments to commentField of version 2 SFTs, based on /lalapps/src/calibration/ComputeStrainDriver.c */
 /* 06/26/07 gam; Use finite to check that data does not contains a non-FINITE (+/- Inf, NaN) values, based on sftlib/SFTvalidate.c */
 /* 10/05/12 gam; Add to version 2 normalization one over the root mean square of the window function (defined here as winFncRMS) as per RedMine LALSuite CW Bug #560*/
+/* 24/07/14 eag; Change default SFT output to version 2 per RedMine LALSuite CW patch #1518 */
 
 #include <config.h>
 #if !defined HAVE_LIBGSL || !defined HAVE_LIBLALFRAME
@@ -543,10 +544,13 @@ int main(int argc,char *argv[])
       if(CreateSFT(CommandLineArgs)) return 6;
 
       /* write out sft */
-      if (CommandLineArgs.sftVersion==2) {
-        if(WriteVersion2SFT(CommandLineArgs)) return 7;
+      if (CommandLineArgs.sftVersion==1) {
+        if(WriteSFT(CommandLineArgs)) return 7;
+      } else if (CommandLineArgs.sftVersion==2) {
+        if(WriteVersion2SFT(CommandLineArgs)) return 7; /* default now is to output version 2 SFTs */
       } else {
-        if(WriteSFT(CommandLineArgs)) return 7;  /* default is to output version 1 SFTs */
+        fprintf( stderr, "Invalid input for 'sft-version = %d', must be either '1' or '2'\n", CommandLineArgs.sftVersion );
+        return 0;;
       }
 
       gpsepoch.gpsSeconds = gpsepoch.gpsSeconds + (INT4)((1.0 - CommandLineArgs.overlapFraction)*((REAL8)CommandLineArgs.T));
@@ -615,7 +619,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->GPSStart=0;
   CLA->GPSEnd=0;
   CLA->makeGPSDirs=0; /* 12/27/05 gam; add option to make directories based on gps time */
-  CLA->sftVersion=1;  /* 12/28/05 gam; output SFT version; default is version 1 SFTs */
+  CLA->sftVersion=2;  /* 07/24/14 eag; output SFT version; default is version 2 SFTs */
   CLA->ChannelName=NULL;
   CLA->IFO=NULL;        /* 01/14/07 gam */
   CLA->SFTpath=NULL;
@@ -697,7 +701,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       CLA->makeGPSDirs=atof(optarg);
       break;
     case 'v':
-      /* 12/28/05 gam; output SFT version; default is version 1 SFTs */
+      /* 07/24/14 eag; output SFT version; default is version 2 SFTs */
       CLA->sftVersion=atoi(optarg);
       break;
     case 'c':
@@ -772,7 +776,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\tgps-end-time (-e)\tINT\t GPS end time of segment.\n");
       fprintf(stdout,"\tchannel-name (-N)\tSTRING\t Name of channel to read within a frame.\n");
       fprintf(stdout,"\tifo (-i)\t\tSTRING\t (optional) Name of IFO, i.e., H1, H2, L1, or G1; use if channel name begins with H0, L0, or G0; default: use first two characters from channel name.\n");
-      fprintf(stdout,"\tsft-version (-v)\tINT\t (optional) SFT version (1 = default = output version 1 SFTs; 2 = output version 2 SFTs.\n");
+      fprintf(stdout,"\tsft-version (-v)\tINT\t (optional) SFT version (1 = output version 1 SFTs; 2 = default = output version 2 SFTs.\n");
       fprintf(stdout,"\tcomment-field (-c)\tSTRING\t (optional) Comment for version 2 SFT header.\n");
       fprintf(stdout,"\tstart-freq (-F) \tFLOAT\t (optional) Start frequency of the SFTs (default is 48 Hz).\n");
       fprintf(stdout,"\tband (-B)       \tFLOAT\t (optional) Frequency band of the SFTs (default is 2000 Hz).\n");
@@ -1926,7 +1930,7 @@ int WriteSFT(struct CommandLineArgsTag CLA)
 	* cimagf(fftDataSingle->data[k+firstbin]);
       /* 06/26/07 gam; use finite to check that data does not contains a non-FINITE (+/- Inf, NaN) values */
       #if CHECKFORINFINITEANDNANS
-        if (!finite(rpw) || !finite(ipw)) {
+        if (!isfinite(rpw) || !isfinite(ipw)) {
           fprintf(stderr, "Infinite or NaN data at freq bin %d.\n", k);
           return 7;
         }
@@ -1952,7 +1956,7 @@ int WriteSFT(struct CommandLineArgsTag CLA)
 	* cimag(fftDataDouble->data[k+firstbin]);
       /* 06/26/07 gam; use finite to check that data does not contains a non-FINITE (+/- Inf, NaN) values */
       #if CHECKFORINFINITEANDNANS
-        if (!finite(rpw) || !finite(ipw)) {
+        if (!isfinite(rpw) || !isfinite(ipw)) {
           fprintf(stderr, "Infinite or NaN data at freq bin %d.\n", k);
           return 7;
         }
@@ -2063,7 +2067,7 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
       oneSFT->data->data[k] = (((REAL4) singleDeltaT) * fftDataSingle->data[k+firstbin]);
       /* 06/26/07 gam; use finite to check that data does not contains a non-FINITE (+/- Inf, NaN) values */
       #if CHECKFORINFINITEANDNANS
-        if (!finite(crealf(oneSFT->data->data[k])) || !finite(cimagf(oneSFT->data->data[k]))) {
+        if (!isfinite(crealf(oneSFT->data->data[k])) || !isfinite(cimagf(oneSFT->data->data[k]))) {
           fprintf(stderr, "Infinite or NaN data at freq bin %d.\n", k);
           return 7;
         }
@@ -2085,7 +2089,7 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
       oneSFT->data->data[k] = crectf( doubleDeltaT*creal(fftDataDouble->data[k+firstbin]), doubleDeltaT*cimag(fftDataDouble->data[k+firstbin]) );
       /* 06/26/07 gam; use finite to check that data does not contains a non-FINITE (+/- Inf, NaN) values */
       #if CHECKFORINFINITEANDNANS
-        if (!finite(crealf(oneSFT->data->data[k])) || !finite(cimagf(oneSFT->data->data[k]))) {
+        if (!isfinite(crealf(oneSFT->data->data[k])) || !isfinite(cimagf(oneSFT->data->data[k]))) {
           fprintf(stderr, "Infinite or NaN data at freq bin %d.\n", k);
           return 7;
         }

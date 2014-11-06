@@ -5,7 +5,7 @@
 
 : ${GRACEDB:="gracedb"}
 : ${TEST_DATA_DIR:=$(dirname $0)/data}
-: ${GRACEDB_SERVICE_URL:="https://moe.phys.uwm.edu/gracedb/api/"}
+: ${GRACEDB_SERVICE_URL:="https://moe.phys.uwm.edu/branson/api/"}
 
 export GRACEDB_SERVICE_URL
 
@@ -46,9 +46,9 @@ recordTest "ping" "$?" "$OUT"
 # Try creating events of various types
 #
 
-OUT="$(${GRACEDB} Test LowMass $TEST_DATA_DIR/cbc-lm.xml 2>&1)"
+OUT="$(${GRACEDB} Test gstlal LowMass $TEST_DATA_DIR/cbc-lm.xml 2>&1)"
 RETCODE=$?
-recordTest "create LowMass" "$RETCODE" "$OUT"
+recordTest "create gstlal" "$RETCODE" "$OUT"
 
 # Remember the LM event.  We will use it later
 #

@@ -83,8 +83,8 @@ REAL8 fLow2fStart(REAL8 fLow, INT4 ampOrder, INT4 approximant);
  * File contains real & imaginary parts of plus & cross components.
  * Template amplitude is (usually) scaled to 1 Mpc luminosity distance.
  */
-void LALInferenceDumptemplateFreqDomain(LALInferenceVariables *currentParams, LALInferenceIFOData * data, 
-                            LALInferenceTemplateFunction templt, const char *filename);
+void LALInferenceDumptemplateFreqDomain(LALInferenceVariables *currentParams, LALInferenceModel *model, 
+                                        const char *filename);
 
 
 /**
@@ -92,22 +92,22 @@ void LALInferenceDumptemplateFreqDomain(LALInferenceVariables *currentParams, LA
  * File contains time series of plus & cross components.
  * Template amplitude is (usually) scaled to 1 Mpc luminosity distance.
  */
-void LALInferenceDumptemplateTimeDomain(LALInferenceVariables *currentParams, LALInferenceIFOData * data, 
-                            LALInferenceTemplateFunction templt, const char *filename);
+void LALInferenceDumptemplateTimeDomain(LALInferenceVariables *currentParams, LALInferenceModel *model, 
+                                        const char *filename);
 
 
 /**
  * Returns a frequency-domain 'null' template
  * (all zeroes, implying no signal present).
  */
-void LALInferenceTemplateNullFreqdomain(LALInferenceIFOData *IFOdata);
+void LALInferenceTemplateNullFreqdomain(LALInferenceModel *model);
 
 
 /**
  * Returns a time-domain 'null' template
  * (all zeroes, implying no signal present).
  */
-void LALInferenceTemplateNullTimedomain(LALInferenceIFOData *IFOdata);
+void LALInferenceTemplateNullTimedomain(LALInferenceModel *model);
 
 
 /**
@@ -127,13 +127,11 @@ void LALInferenceTemplateNullTimedomain(LALInferenceIFOData *IFOdata);
  * - \c "phase"      (REAL8, phase \f$ \phi \f$ (at time \f$ \mu \f$), radians)
  * - \c "amplitude"  (REAL8, amplitude \f$ a \f$)
  */
+void LALInferenceTemplateSineGaussian(LALInferenceModel *model);
 
-void LALInferenceTemplateROQ(LALInferenceIFOData *IFOdata);
+void LALInferenceTemplateROQ(LALInferenceModel *model);
 
-void LALInferenceTemplateROQ_amp_squared(LALInferenceIFOData *IFOdata);
-
-void LALInferenceTemplateSineGaussian(LALInferenceIFOData *IFOdata);
-
+void LALInferenceTemplateROQ_amp_squared(LALInferenceModel *model);
 
 /**
  * Damped Sinusoid template.
@@ -150,7 +148,7 @@ void LALInferenceTemplateSineGaussian(LALInferenceIFOData *IFOdata);
  * - \c "frequency"  (REAL8, frequency \f$ f \f$ of the sine part, Hertz)
  * - \c "amplitude"  (REAL8, amplitude \f$ a \f$)
  */
-void LALInferenceTemplateDampedSinusoid(LALInferenceIFOData *IFOdata);
+void LALInferenceTemplateDampedSinusoid(LALInferenceModel *model);
 
 
 /**
@@ -167,7 +165,7 @@ void LALInferenceTemplateDampedSinusoid(LALInferenceIFOData *IFOdata);
  * - \c "frequency"  (REAL8, frequency \f$ f \f$ of the sine part, Hertz)
  * - \c "amplitude"  (REAL8, amplitude \f$ a \f$)
  */
-void LALInferenceTemplateSinc(LALInferenceIFOData *IFOdata);
+void LALInferenceTemplateSinc(LALInferenceModel *model);
 
 
 /**
@@ -177,7 +175,7 @@ void LALInferenceTemplateSinc(LALInferenceIFOData *IFOdata);
  * - \c "A"       (REAL8, dimensionless amplitude)
  * - \c "Omega"   (REAL8, frequency, radians/sec)
  */
-void LALInferenceTemplateASinOmegaT(LALInferenceIFOData *IFOdata);
+void LALInferenceTemplateASinOmegaT(LALInferenceModel *model);
 
 
 /**
@@ -202,7 +200,7 @@ void LALInferenceTemplateASinOmegaT(LALInferenceIFOData *IFOdata);
  * THIS IMPLEMENTATION IS NOT THREAD SAFE !!! (previous inclination value is stored as a static)
  *
  */
-void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOdata);
+void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model);
 
 
 /*@}*/

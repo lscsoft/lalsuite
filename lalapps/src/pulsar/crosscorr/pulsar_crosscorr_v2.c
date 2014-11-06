@@ -151,6 +151,9 @@ int main(int argc, char *argv[]){
 
   LogPrintf (LOG_CRITICAL, "Starting time\n", 0); /*for debug convenience to record calculating time*/
   /* initialize and register user variables */
+  LIGOTimeGPS computingStartGPSTime, computingEndGPSTime;
+  XLALGPSTimeNow (&computingStartGPSTime); /* record the rough starting GPS time*/
+
   if ( XLALInitUserVars( &uvar ) != XLAL_SUCCESS ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALInitUserVars() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
@@ -457,28 +460,6 @@ int main(int argc, char *argv[]){
     XLAL_ERROR( XLAL_EFUNC );
   }
 
-  /* initialize the doppler scan struct which stores the current template information */
-  XLALGPSSetREAL8(&dopplerpos.refTime, uvar.refTime);
-  dopplerpos.Alpha = uvar.alphaRad;
-  dopplerpos.Delta = uvar.deltaRad;
-  dopplerpos.fkdot[0] = uvar.fStart;
-  /* set all spindowns to zero */
-  for (k=1; k < PULSAR_MAX_SPINS; k++)
-    dopplerpos.fkdot[k] = 0.0;
-
-  /* now set the initial values of binary parameters */
-  thisBinaryTemplate.asini = uvar.orbitAsiniSec;
-  thisBinaryTemplate.period = uvar.orbitPSec;
-  XLALGPSSetREAL8( &thisBinaryTemplate.tp, uvar.orbitTimeAsc);
-  thisBinaryTemplate.ecc = 0.0;
-  thisBinaryTemplate.argp = 0.0;
-  /* copy to dopplerpos */
-  dopplerpos.asini = thisBinaryTemplate.asini;
-  dopplerpos.period = thisBinaryTemplate.period;
-  dopplerpos.tp = thisBinaryTemplate.tp;
-  dopplerpos.ecc = thisBinaryTemplate.ecc;
-  dopplerpos.argp = thisBinaryTemplate.argp;
-
   /* spacing in frequency from diagff */ /* set spacings in new dopplerparams struct */
   if (XLALUserVarWasSet(&uvar.spacingF)) /* If spacing was given by CMD line, use it, else calculate spacing by mismatch*/
     binaryTemplateSpacings.fkdot[0] = uvar.spacingF;
@@ -508,6 +489,35 @@ int main(int argc, char *argv[]){
   const UINT8 aSpacingNum = floor( uvar.orbitAsiniSecBand / binaryTemplateSpacings.asini);
   const UINT8 tSpacingNum = floor( uvar.orbitTimeAscBand / XLALGPSGetREAL8(&binaryTemplateSpacings.tp));
   const UINT8 pSpacingNum = floor( uvar.orbitPSecBand / binaryTemplateSpacings.period);
+
+  /*reset minbinaryOrbitParams to shift the first point a factor so as to make the center of all seaching points centers at the center of searching band*/
+  minBinaryTemplate.fkdot[0] = uvar.fStart + 0.5 * (uvar.fBand - fSpacingNum * binaryTemplateSpacings.fkdot[0]);
+  minBinaryTemplate.asini = uvar.orbitAsiniSec + 0.5 * (uvar.orbitAsiniSecBand - aSpacingNum * binaryTemplateSpacings.asini);
+  XLALGPSSetREAL8( &minBinaryTemplate.tp, uvar.orbitTimeAsc + 0.5 * (uvar.orbitTimeAscBand - tSpacingNum * XLALGPSGetREAL8(&binaryTemplateSpacings.tp)));
+  minBinaryTemplate.period = uvar.orbitPSec + 0.5 * (uvar.orbitPSecBand - pSpacingNum * binaryTemplateSpacings.period);
+
+  /* initialize the doppler scan struct which stores the current template information */
+  XLALGPSSetREAL8(&dopplerpos.refTime, uvar.refTime);
+  dopplerpos.Alpha = uvar.alphaRad;
+  dopplerpos.Delta = uvar.deltaRad;
+  dopplerpos.fkdot[0] = minBinaryTemplate.fkdot[0];
+  /* set all spindowns to zero */
+  for (k=1; k < PULSAR_MAX_SPINS; k++)
+    dopplerpos.fkdot[k] = 0.0;
+  dopplerpos.asini = minBinaryTemplate.asini;
+  dopplerpos.period = minBinaryTemplate.period;
+  dopplerpos.tp = minBinaryTemplate.tp;
+  dopplerpos.ecc = minBinaryTemplate.ecc;
+  dopplerpos.argp = minBinaryTemplate.argp;
+
+  /* now set the initial values of binary parameters */
+  /*  thisBinaryTemplate.asini = uvar.orbitAsiniSec;
+  thisBinaryTemplate.period = uvar.orbitPSec;
+  XLALGPSSetREAL8( &thisBinaryTemplate.tp, uvar.orbitTimeAsc);
+  thisBinaryTemplate.ecc = 0.0;
+  thisBinaryTemplate.argp = 0.0;*/
+  /* copy to dopplerpos */
+
 
   /* Calculate SSB times (can do this once since search is currently only for one sky position, and binary doppler shift is added later) */
   if ((multiSSBTimes = XLALGetMultiSSBtimes ( multiStates, skyPos, dopplerpos.refTime, SSBPREC_RELATIVISTICOPT )) == NULL){
@@ -541,7 +551,7 @@ int main(int argc, char *argv[]){
   }
 
   /* args should be : spacings, min and max doppler params */
-  BOOLEAN firstPoint = TRUE; /* a boolean to help to search at the beggining point in parameter space, after the search it is set to be FALSE to end the loop*/
+  BOOLEAN firstPoint = TRUE; /* a boolean to help to search at the beginning point in parameter space, after the search it is set to be FALSE to end the loop*/
   if ( (XLALAddMultiBinaryTimes( &multiBinaryTimes, multiSSBTimes, &dopplerpos )  != XLAL_SUCCESS ) ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALAddMultiBinaryTimes() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
@@ -586,7 +596,6 @@ int main(int argc, char *argv[]){
 
     } /* end while loop over templates */
 
-
   /* write candidates to file */
   sort_crossCorrBinary_toplist( ccToplist );
   /* add error checking */
@@ -594,6 +603,9 @@ int main(int argc, char *argv[]){
   final_write_crossCorrBinary_toplist_to_file( ccToplist, uvar.toplistFilename, &checksum);
 
   REAL8 h0Sens = sqrt((10 / sqrt(estSens))); /*for a SNR=10 signal, the h0 we can detect*/
+
+  XLALGPSTimeNow (&computingEndGPSTime); /*record the rough end time*/
+  UINT4 computingTime = computingEndGPSTime.gpsSeconds - computingStartGPSTime.gpsSeconds;
   /* make a meta-data file*/
   if(XLALUserVarWasSet(&uvar.logFilename)){
     CHAR *CMDInputStr = XLALUserVarGetLog ( UVAR_LOGFMT_CFGFILE );
@@ -601,23 +613,28 @@ int main(int argc, char *argv[]){
     LogPrintf ( LOG_CRITICAL, "Can't write in logfile", 0);
     XLAL_ERROR( XLAL_EFUNC );
     }
-    fprintf(fp, "##Log File for lalapps_pulsar_crosscorr_v2\n\n");
-    fprintf(fp, "#User Input:\n");
-    fprintf(fp, "\n#--------------------------------------------------------------------------#\n\n");
+    fprintf(fp, "[UserInput]\n\n");
     fprintf(fp, "%s\n", CMDInputStr);
-    fprintf(fp, "\n#--------------------------------------------------------------------------#\n\n");
-    fprintf(fp, "#Metric components & spacing in parameter space:\n");
-    fprintf(fp, "#The metric element g_ff = %.9f\n", diagff );
-    fprintf(fp, "#The metric element g_aa = %.9f\n", diagaa );
-    fprintf(fp, "#The metric element g_TT = %.9f\n", diagTT );
-    fprintf(fp, "#The average template (E[rho]/h0^2)^2 = %.9g\n", estSens);
-    fprintf(fp, "#The h0_min = %.9g for SNR = 10\n", h0Sens);
-    fprintf(fp, "#The frequency spacing used was %.9g Hz\n", binaryTemplateSpacings.fkdot[0]);
-    fprintf(fp, "#The Tasc spacing used was %.9g GPSSec\n", XLALGPSGetREAL8(&binaryTemplateSpacings.tp));
-    fprintf(fp, "#The asini spacing used was %.9g s\n", binaryTemplateSpacings.asini);
-    fprintf(fp, "#The period spacing used was 0 (didn't search over orbital period)\n\n");
-    fprintf(fp, "\n#--------------------------------------------------------------------------#\n\n");
-    fprintf(fp, "#LAL & LALAPPS version:\n%s\n",  VCSInfoString);
+    fprintf(fp, "[CalculatedValues]\n\n");
+    fprintf(fp, "g_ff = %.9f\n", diagff );
+    fprintf(fp, "g_aa = %.9f\n", diagaa );
+    fprintf(fp, "g_TT = %.9f\n", diagTT );
+    fprintf(fp, "FSpacing = %.9g\n", binaryTemplateSpacings.fkdot[0]);
+    fprintf(fp, "ASpacing = %.9g\n", binaryTemplateSpacings.asini);
+    fprintf(fp, "TSpacing = %.9g\n", XLALGPSGetREAL8(&binaryTemplateSpacings.tp));
+    /* fprintf(fp, "PSpacing = %.9g\n", binaryTemplateSpacings.period );*/
+    fprintf(fp, "TemplatenumF = %" LAL_UINT8_FORMAT "\n", (fSpacingNum + 1));
+    fprintf(fp, "TemplatenumA = %" LAL_UINT8_FORMAT "\n", (aSpacingNum + 1));
+    fprintf(fp, "TemplatenumT = %" LAL_UINT8_FORMAT "\n", (tSpacingNum + 1));
+    fprintf(fp, "TemplatenumP = %" LAL_UINT8_FORMAT "\n", (pSpacingNum + 1));
+    fprintf(fp, "TemplatenumTotal = %" LAL_UINT8_FORMAT "\n",(fSpacingNum + 1) * (aSpacingNum + 1) * (tSpacingNum + 1) * (pSpacingNum + 1));
+    fprintf(fp, "Sens = %.9g\n", estSens);/*(E[rho]/h0^2)^2*/
+    fprintf(fp, "h0_min_SNR10 = %.9g\n", h0Sens);/*for rho = 10 in our pipeline*/
+    fprintf(fp, "startTime = %" LAL_INT4_FORMAT "\n", computingStartGPSTime.gpsSeconds );/*start time in GPS-time*/
+    fprintf(fp, "endTime = %" LAL_INT4_FORMAT "\n", computingEndGPSTime.gpsSeconds );/*end time in GPS-time*/
+    fprintf(fp, "computingTime = %" LAL_UINT4_FORMAT "\n", computingTime );/*total time in sec*/
+    fprintf(fp, "\n[Version]\n\n");
+    fprintf(fp, "%s",  VCSInfoString);
     fclose(fp);
     XLALFree(CMDInputStr);
   }

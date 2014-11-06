@@ -43,6 +43,9 @@
 #define UNUSED
 #endif
 
+#define COL_MAX 128
+#define STR_MAX 2048
+
 size_t LALInferenceTypeSize[] = {sizeof(INT4),
                                    sizeof(INT8),
                                    sizeof(UINT4),
@@ -676,7 +679,7 @@ void LALInferencePrintSampleNonFixed(FILE *fp,LALInferenceVariables *sample){
 	LALInferenceVariableItem *ptr=sample->head;
 	if(fp==NULL) return;
 	while(ptr!=NULL) {
-		if (ptr->vary != LALINFERENCE_PARAM_FIXED && ptr->type != LALINFERENCE_gslMatrix_t && ptr->type != LALINFERENCE_REAL8Vector_t) {
+		if (LALInferenceCheckVariableNonFixed(sample, ptr->name) && ptr->type != LALINFERENCE_gslMatrix_t ) {
 			switch (ptr->type) {
 				case LALINFERENCE_INT4_t:
 					fprintf(fp, "%"LAL_INT4_FORMAT, *(INT4 *) ptr->value);
@@ -701,14 +704,14 @@ void LALInferencePrintSampleNonFixed(FILE *fp,LALInferenceVariables *sample){
 					fprintf(fp, "%e + i*%e",
 							(REAL8) creal(*(COMPLEX16 *) ptr->value), (REAL8) cimag(*(COMPLEX16 *) ptr->value));
 					break;
-        case LALINFERENCE_UINT4Vector_t:
-          v = *((UINT4Vector **)ptr->value);
-          for(i=0;i<v->length;i++)
-          {
-            fprintf(fp,"%11.7f",(REAL8)v->data[i]);
-            if( i!=(UINT4)(v->length-1) )fprintf(fp,"\t");
-          }
-          break;
+                case LALINFERENCE_UINT4Vector_t:
+                    v = *((UINT4Vector **)ptr->value);
+                    for(i=0;i<v->length;i++)
+                    {
+                        fprintf(fp,"%11.7f",(REAL8)v->data[i]);
+                        if( i!=(UINT4)(v->length-1) )fprintf(fp,"\t");
+                    }
+                    break;
           /*
 				case LALINFERENCE_gslMatrix_t:
                     m = *((gsl_matrix **)ptr->value);
@@ -764,6 +767,256 @@ void LALInferenceReadSampleNonFixed(FILE *fp, LALInferenceVariables *p) {
   }
 }
 
+/**
+ * Utility for readling in delimited ASCII files.
+ *
+ * Reads in an ASCII (delimited) file, and returns the results in a REAL8 array.
+ * @param[in]  input       Input stream to be parsed.
+ * @param[in]  nCols       Number of total columns in the input stream.
+ * @param[in]  wantedCols  Array of 0/1 flags (should be \a nCols long), indicating desired columns.
+ * @param      nLines      If 0, read until end of file and set to be number of lines
+ *                             read.  If > 0, only read \a nLines.
+ * @return A REAL8 array containing the parsed data.
+ */
+REAL8 *LALInferenceParseDelimitedAscii(FILE *input, INT4 nCols, INT4 *wantedCols, INT4 *nLines) {
+    INT4 nread;
+    INT4 i=0, par=0, col=0;
+    REAL8 val=0;
+
+    // Determine the number of wanted columns
+    INT4 nWantedCols = 0;
+    for (col = 0; col < nCols; col++)
+        nWantedCols += wantedCols[col];
+
+    // Determine number of samples to be read
+    unsigned long starting_pos = ftell(input);
+    INT4 nSamples = *nLines;
+
+    if (nSamples == 0) {
+        INT4 ch;
+        while ( (ch = getc(input)) != EOF) {
+            if (ch=='\n')
+                ++nSamples;
+        }
+        fseek(input,starting_pos,SEEK_SET);
+    }
+
+    // Read in samples
+    REAL8 *sampleArray;
+    sampleArray = (REAL8*) XLALMalloc(nSamples*nWantedCols*sizeof(REAL8));
+
+    for (i = 0; i < nSamples; i++) {
+        par=0;
+        for (col = 0; col < nCols; col++) {
+            nread = fscanf(input, "%lg", &val);
+            if (nread != 1) {
+                fprintf(stderr, "Cannot read sample from file (in %s, line %d)\n",
+                __FILE__, __LINE__);
+                exit(1);
+            }
+
+            if (wantedCols[col]) {
+                sampleArray[i*nWantedCols + par] = val;
+                par++;
+            }
+        }
+    }
+
+    *nLines = nSamples;
+    return sampleArray;
+}
+
+
+/**
+ * Parse a single line of delimited ASCII.
+ *
+ * Splits a line using \a delim into an array of strings.
+ * @param[in]  record Line to be parsed.
+ * @param[in]  delim  Delimiter to split on.
+ * @param[out] arr    Parsed string.
+ * @param[out] cnt    Total number of fields read.
+ */
+void parseLine(char *record, const char *delim, char arr[][VARNAME_MAX], INT4 *cnt) {
+    // Discard newline character at end of line to avoid including it in a field
+    char *newline = strchr(record, '\n');
+    if (newline)
+        *newline=0;
+
+    INT4 i=0;
+    char *p = strtok(record, delim);
+    while (p) {
+        strcpy(arr[i], p);
+        i++;
+        p = strtok(NULL, delim);
+    }
+    *cnt = i;
+}
+
+
+/**
+ * Discard the standard header of a PTMCMC chain file.
+ *
+ * Reads a PTMCMC input stream, moving foward until it finds a line beginning
+ * with "cycle", which is typically the line containing the column names of a
+ * PTMCMC output file.  The final stream points to the line containing the
+ * column names.
+ * @param filestream The PTMCMC input stream to discard the header of.
+ */
+void LALInferenceDiscardPTMCMCHeader(FILE *filestream) {
+    char *str = XLALCalloc(STR_MAX, sizeof(char));
+    char row[COL_MAX][VARNAME_MAX];
+    const char *delimiters = " \t";
+    INT4 nCols;
+    INT4 last_line = 0;
+
+    fgets(str, sizeof(str), filestream);
+    parseLine(str, delimiters, row, &nCols);
+    while (strcmp(row[0], "cycle") && str != NULL) {
+        last_line = ftell(filestream);
+        fgets(str, sizeof(str), filestream);
+        parseLine(str, delimiters, row, &nCols);
+    }
+
+    if (str == NULL) {
+        fprintf(stderr, "Couldn't find column headers in PTMCMC file.\n");
+        exit(1);
+    } else {
+        XLALFree(str);
+    }
+
+    fseek(filestream, last_line, SEEK_SET);
+    return;
+}
+
+
+/**
+ * Determine burnin cycle from delta-logl criteria.
+ *
+ * Find the cycle where the log(likelihood) is within nPar/2 of the
+ * maximum log(likelihood) sampled by the chain.
+ * @param     filestream  The PTMCMC input stream to be burned in.
+ * @param[in] logl_idx    The column containing logl values.
+ * @return The cycle to be used for burnin.
+ */
+void LALInferenceBurninPTMCMC(FILE *filestream, INT4 logl_idx, INT4 nPar) {
+    char *str = XLALCalloc(STR_MAX, sizeof(char));
+    char row[COL_MAX][VARNAME_MAX];
+    const char *delimiters = " \t";
+    INT4 nCols;
+    REAL8 loglike, maxLogL=-INFINITY;
+
+    // Determine number of samples to be read
+    unsigned long startPostBurnin = ftell(filestream);
+
+    /* One pass to find max logl */
+    while (fgets(str, sizeof(str), filestream) != NULL) {
+        parseLine(str, delimiters, row, &nCols);
+        loglike = (REAL8) atof(row[logl_idx]);
+        if (loglike > maxLogL)
+            maxLogL = loglike;
+    }
+
+    /* Reset stream */
+    fseek(filestream, startPostBurnin, SEEK_SET);
+
+    /* Assume nCol = nPar.  Burnin can be crude */
+    REAL8 deltaLogL = maxLogL - (REAL8)nPar/2.0;
+
+    /* Find the cycle where logl gets within nPar/2 of max */
+    while (fgets(str, sizeof(str), filestream) != NULL) {
+        parseLine(str, delimiters, row, &nCols);
+        loglike = (REAL8) atof(row[logl_idx]);
+        if (loglike > deltaLogL)
+            break;
+    }
+
+    if (str == NULL) {
+        fprintf(stderr, "Error burning in PTMCMC file.\n");
+        exit(1);
+    } else {
+        XLALFree(str);
+    }
+}
+
+
+/**
+ * Burn-in a generic ASCII stream.
+ *
+ * Reads past the desired number of lines of a filestream.
+ * @param     filestream The filestream to be burned in.
+ * @param[in] burnin     Number of lines to read past in \a filestream.
+ */
+void LALInferenceBurninStream(FILE *filestream, INT4 burnin) {
+    char *str = XLALCalloc(STR_MAX, sizeof(char));
+    INT4 i=0;
+
+    for (i=0; i<burnin; i++)
+        fgets(str, sizeof(str), filestream);
+
+    if (str == NULL) {
+        if (burnin > 0) {
+            fprintf(stderr, "Error burning in file.\n");
+            exit(1);
+        }
+    } else {
+        XLALFree(str);
+    }
+}
+
+/**
+ * Read column names from an ASCII file.
+ *
+ * Reads the column names for an output file.
+ * @param[in]  input  The input files stream to parse.
+ * @param[out] params The column names found in the header.
+ * @param[out] nCols  Number of columns found in the header.
+ */
+void LALInferenceReadAsciiHeader(FILE *input, char params[][VARNAME_MAX], INT4 *nCols) {
+    INT4 i;
+    char *str = XLALCalloc(STR_MAX, sizeof(char));
+    char row[COL_MAX][VARNAME_MAX];
+    const char *delimiters = " \n\t";
+    INT4 col_count=0;
+
+    fgets(str, sizeof(str), input);
+    parseLine(str, delimiters, row, &col_count);
+
+    for (i=0; i<col_count; i++)
+        strcpy(params[i], row[i]);
+
+    *nCols = col_count;
+    XLALFree(str);
+}
+
+
+/**
+ * Utility for selecting columns from an array, in the specified order.
+ *
+ * Selects a subset of columns from an existing array and create a new array with them.
+ * @param[in]  inarray  The array to select columns from.
+ * @param[in]  nRows    Number of rows in \a inarray.
+ * @param[in]  nCols    Number of columns in \a inarray.
+ * @param[in]  nSelCols Number of columns being extracted.
+ * @param[in]  selCols  Array of column numbers to be extracted from \a inarray.
+ * @returns An array containing the requested columns in the order specified in \a selCols.
+ */
+REAL8 **LALInferenceSelectColsFromArray(REAL8 **inarray, INT4 nRows, INT4 nCols, INT4 nSelCols, INT4 *selCols) {
+    INT4 i,j;
+
+    REAL8 **array = (REAL8**) XLALMalloc(nRows * sizeof(REAL8*));
+    for (i = 0; i < nRows; i++) {
+        array[i] = XLALMalloc(nSelCols * sizeof(REAL8));
+
+        for (j = 0; j < nSelCols; j++) {
+            if (selCols[j] > nCols) {
+                XLAL_ERROR_NULL(XLAL_FAILURE, "Requesting a column number that is out of bounds.");
+            }
+            array[i][j] = inarray[i][selCols[j]];
+        }
+    }
+    return array;
+}
+
 int LALInferencePrintProposalStatsHeader(FILE *fp,LALInferenceVariables *propStats) {
   LALInferenceVariableItem *head = propStats->head;
   while (head != NULL) {
@@ -775,15 +1028,18 @@ int LALInferencePrintProposalStatsHeader(FILE *fp,LALInferenceVariables *propSta
 }
 
 void LALInferencePrintProposalStats(FILE *fp,LALInferenceVariables *propStats){
-  REAL4 accepted = 0;
-  REAL4 proposed = 0;
-  REAL4 acceptanceRate = 0;
+  REAL8 accepted = 0;
+  REAL8 proposed = 0;
+  REAL8 acceptanceRate = 0;
+  LALInferenceProposalStatistics *propStat;
 
   if(propStats==NULL || fp==NULL) return;
   LALInferenceVariableItem *ptr=propStats->head;
   while(ptr!=NULL) {
-    accepted = (REAL4) (*(LALInferenceProposalStatistics *) ptr->value).accepted;
-    proposed = (REAL4) (*(LALInferenceProposalStatistics *) ptr->value).proposed;
+    propStat = ((LALInferenceProposalStatistics *) LALInferenceGetVariable(propStats, ptr->name));
+
+    accepted = (REAL8) propStat->accepted;
+    proposed = (REAL8) propStat->proposed;
     acceptanceRate = accepted/(proposed==0 ? 1.0 : proposed);
     fprintf(fp, "%9.5f\t", acceptanceRate);
     ptr=ptr->next;
@@ -867,6 +1123,10 @@ void LALInferenceTranslateExternalToInternalParamName(char *outName, const char 
     strcpy(outName, "polarisation");
   } else if (!strcmp(inName, "iota")) {
     strcpy(outName, "inclination");
+  } else if (!strcmp(inName, "theta_jn")) {
+    strcpy(outName, "theta_JN");
+  } else if (!strcmp(inName, "phi_jl")) {
+    strcpy(outName, "phi_JL");
   } else if (!strcmp(inName, "dist")) {
     strcpy(outName, "distance");
   } else if (!strcmp(inName, "f_ref")) {
@@ -913,7 +1173,7 @@ int LALInferenceFprintParameterNonFixedHeaders(FILE *out, LALInferenceVariables 
   //gsl_matrix *matrix = NULL;
   UINT4Vector *vector = NULL;
   while (head != NULL) {
-    if (head->vary != LALINFERENCE_PARAM_FIXED) {
+    if (LALInferenceCheckVariableNonFixed(params, head->name)) {
       if(head->type==LALINFERENCE_gslMatrix_t)
       {
         /*
@@ -1030,57 +1290,62 @@ int LALInferenceCompareVariables(LALInferenceVariables *var1, LALInferenceVariab
   return(result);
 }
 
-INT4 LALInferenceBufferToArray(LALInferenceRunState *state, INT4 startCycle, INT4 endCycle, REAL8** DEarray) {
+
+/* Move every *step* entry from the buffer to an array */
+INT4 LALInferenceThinnedBufferToArray(LALInferenceRunState *state, REAL8** DEarray, INT4 step) {
   LALInferenceVariableItem *ptr;
   INT4 i=0,p=0;
 
-  INT4 Nskip = *(INT4*) LALInferenceGetVariable(state->algorithmParams, "Nskip");
-  INT4 totalPoints = state->differentialPointsLength;
-  INT4 start = (INT4)ceil((REAL8)startCycle/(REAL8)Nskip);
-  INT4 end = (INT4)floor((REAL8)endCycle/(REAL8)Nskip);
-  /* Include last point */
-  if (end > totalPoints-1)
-    end = totalPoints-1;
-
-  for (i = start; i <= end; i++) {
+  INT4 nPoints = state->differentialPointsLength;
+  for (i = 0; i < nPoints; i+=step) {
     ptr=state->differentialPoints[i]->head;
     p=0;
     while(ptr!=NULL) {
       if (LALInferenceCheckVariableNonFixed(state->differentialPoints[i], ptr->name) && ptr->type == LALINFERENCE_REAL8_t) {
-        DEarray[i-start][p]=*(REAL8 *)ptr->value;
+        DEarray[i/step][p]=*(REAL8 *)ptr->value;
         p++;
       }
       ptr=ptr->next;
     }
   }
-  return end-start+1;
+
+  return nPoints/step;
 }
 
-void LALInferenceArrayToBuffer(LALInferenceRunState *runState, REAL8** DEarray) {
+
+/* Move the entire buffer to an array */
+INT4 LALInferenceBufferToArray(LALInferenceRunState *state, REAL8** DEarray) {
+  INT4 step = 1;
+  return LALInferenceThinnedBufferToArray(state, DEarray, step);
+}
+
+
+void LALInferenceArrayToBuffer(LALInferenceRunState *runState, REAL8** DEarray, INT4 nPoints) {
   LALInferenceVariableItem *ptr;
   UINT4 i=0,p=0;
-  UINT4 nPoints = sizeof(DEarray) / sizeof(REAL8*);
 
   /* Save last LALInferenceVariables item from buffer to keep fixed params consistent for chain */
   LALInferenceVariables templateParamSet;
   LALInferenceCopyVariables(runState->differentialPoints[runState->differentialPointsLength-1], &templateParamSet);
 
   /* Free old DE buffer */
+  for (i = 0; i < runState->differentialPointsLength; i++)
+      XLALFree(runState->differentialPoints[i]);
   XLALFree(runState->differentialPoints);
 
   /* Expand DE buffer */
-  size_t newSize = runState->differentialPointsSize;
-  while (nPoints > newSize) {
-    newSize = newSize*2;
-  }
+  size_t newSize = 1;
+  while ((size_t)nPoints > newSize)
+    newSize *= 2;
 
   runState->differentialPoints = XLALCalloc(newSize, sizeof(LALInferenceVariables *));
   runState->differentialPointsLength = nPoints;
   runState->differentialPointsSize = newSize;
 
-  for (i=0; i<nPoints; i++) {
+  for (i=0; i<(UINT4)nPoints; i++) {
     runState->differentialPoints[i] = XLALCalloc(1, sizeof(LALInferenceVariables));
     LALInferenceCopyVariables(&templateParamSet, runState->differentialPoints[i]);
+    p = 0;
     ptr = runState->differentialPoints[i]->head;
     while(ptr!=NULL) {
       if (LALInferenceCheckVariableNonFixed(runState->differentialPoints[i], ptr->name) && ptr->type == LALINFERENCE_REAL8_t) {
@@ -1093,15 +1358,14 @@ void LALInferenceArrayToBuffer(LALInferenceRunState *runState, REAL8** DEarray) 
 }
 
 
-REAL8Vector *LALInferenceCopyVariablesToArray(LALInferenceVariables *origin) {
-  INT4 nPar = LALInferenceGetVariableDimensionNonFixed(origin);
-  REAL8Vector * parameters = NULL;
+void LALInferenceCopyVariablesToArray(LALInferenceVariables *origin, REAL8 *target) {
   gsl_matrix *m = NULL; //for dealing with noise parameters
   UINT4Vector *v = NULL; //for dealing with dimension parameters
   REAL8Vector *v8 = NULL;
   UINT4 j,k;
 
-  parameters = XLALCreateREAL8Vector(nPar);
+  /* Make sure the structure is initialised */
+  if (!target) XLAL_ERROR_VOID(XLAL_EFAULT, "Unable to copy to uninitialised array.");
 
   LALInferenceVariableItem *ptr=origin->head;
   INT4 p=0;
@@ -1115,7 +1379,7 @@ REAL8Vector *LALInferenceCopyVariablesToArray(LALInferenceVariables *origin) {
         {
           for(k=0; k<m->size2; k++)
           {
-            parameters->data[p]=gsl_matrix_get(m,j,k);
+            target[p]=gsl_matrix_get(m,j,k);
             p++;
           }
         }
@@ -1125,7 +1389,7 @@ REAL8Vector *LALInferenceCopyVariablesToArray(LALInferenceVariables *origin) {
         v = *(UINT4Vector **)ptr->value;
         for(j=0; j<v->length; j++)
         {
-          parameters->data[p]=v->data[j];
+          target[p]=v->data[j];
           p++;
         }
       }
@@ -1139,17 +1403,15 @@ REAL8Vector *LALInferenceCopyVariablesToArray(LALInferenceVariables *origin) {
       }
       else
       {
-        parameters->data[p]=*(REAL8 *)ptr->value;
+        target[p]=*(REAL8 *)ptr->value;
         p++;
       }
     }
     ptr=ptr->next;
   }
-
-  return parameters;
 }
 
-void LALInferenceCopyArrayToVariables(REAL8Vector *origin, LALInferenceVariables *target) {
+void LALInferenceCopyArrayToVariables(REAL8 *origin, LALInferenceVariables *target) {
   gsl_matrix *m = NULL; //for dealing with noise parameters
   UINT4Vector *v = NULL; //for dealing with dimension parameters
   REAL8Vector *v8 = NULL;
@@ -1168,7 +1430,7 @@ void LALInferenceCopyArrayToVariables(REAL8Vector *origin, LALInferenceVariables
         {
           for(k=0; k<m->size2; k++)
           {
-            gsl_matrix_set(m,j,k,origin->data[p]);
+            gsl_matrix_set(m,j,k,origin[p]);
             p++;
           }
         }
@@ -1178,7 +1440,7 @@ void LALInferenceCopyArrayToVariables(REAL8Vector *origin, LALInferenceVariables
         v = *(UINT4Vector **)ptr->value;
         for(j=0; j<v->length; j++)
         {
-          v->data[j] = origin->data[p];
+          v->data[j] = origin[p];
           p++;
         }
       }
@@ -1193,7 +1455,7 @@ void LALInferenceCopyArrayToVariables(REAL8Vector *origin, LALInferenceVariables
       }
       else
       {
-        memcpy(ptr->value,&(origin->data[p]),LALInferenceTypeSize[ptr->type]);
+        memcpy(ptr->value,&(origin[p]),LALInferenceTypeSize[ptr->type]);
         p++;
       }
     }
@@ -1375,10 +1637,10 @@ char* LALInferencePrintCommandLine(ProcessParamsTable *procparams)
   return str;
 }
 
-void LALInferenceExecuteFT(LALInferenceIFOData *IFOdata)
+void LALInferenceExecuteFT(LALInferenceModel *model)
 /* Execute (forward, time-to-freq) Fourier transform.  Contents of
-IFOdata->timeModelh... are windowed and FT'ed, results go into
-IFOdata->freqModelh...  
+model->timeh... are windowed and FT'ed, results go into
+model->freqh...  
 
 NOTE: the windowing is performed *in-place*, so do not call more than
 once on a given timeModel!
@@ -1388,131 +1650,113 @@ once on a given timeModel!
   double norm;
   int errnum; 
   
-  if (IFOdata==NULL) {
-    fprintf(stderr," ERROR: IFOdata is a null pointer at LALInferenceExecuteFT, exiting!.\n");
+  if (model==NULL) {
+    fprintf(stderr," ERROR: model is a null pointer at LALInferenceExecuteFT, exiting!.\n");
     XLAL_ERROR_VOID(XLAL_EFAULT);
   }
 
-  else if(!IFOdata->timeData && IFOdata->timeData){				
-    XLALPrintError("timeData is NULL at LALInferenceExecuteFT, exiting!");
-    XLAL_ERROR_VOID(XLAL_EFAULT);	
+  if(!model->freqhPlus && !model->timehPlus){
+    XLALPrintError("freqhPlus and timeqhPlus are NULL at LALInferenceExecuteFT, exiting!");
+    XLAL_ERROR_VOID(XLAL_EFAULT);
   }
-
-  else if(!IFOdata->freqData && IFOdata->timeData){
-    XLALPrintError("freqData is NULL at LALInferenceExecuteFT, exiting!");
-    XLAL_ERROR_VOID(XLAL_EFAULT);	
-  }
-
-  else if(!IFOdata->freqData && !IFOdata->timeData){
-    XLALPrintError("timeData and freqData are NULL at LALInferenceExecuteFT, exiting!");
+  else if(!model->freqhCross && !model->timehCross){
+    XLALPrintError("freqhCross and timeqhCross are NULL at LALInferenceExecuteFT, exiting!");
     XLAL_ERROR_VOID(XLAL_EFAULT);
   }
  
-  else if(!IFOdata->freqData->data->length){
-    XLALPrintError("Frequency series length is not set, exiting!");
+  /* h+ */
+  if(!model->freqhPlus){     
+      XLAL_TRY(model->freqhPlus=(COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("freqData",&(model->timehPlus->epoch),0.0,model->deltaF,&lalDimensionlessUnit,model->freqLength),errnum);
+
+    if (errnum){
+      XLALPrintError("Could not create COMPLEX16FrequencySeries in LALInferenceExecuteFT");
+      XLAL_ERROR_VOID(errnum);
+    }
+  }
+
+  if (!model->window || !model->window->data){
+    XLALPrintError("model->window is NULL at LALInferenceExecuteFT: Exiting!");
     XLAL_ERROR_VOID(XLAL_EFAULT);
   }
 
-  for(;IFOdata;IFOdata=IFOdata->next){
-    /* h+ */
-    if(!IFOdata->freqModelhPlus){     
-	
-      XLAL_TRY(IFOdata->freqModelhPlus=(COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("freqData",&(IFOdata->timeData->epoch),0.0,IFOdata->freqData->deltaF,&lalDimensionlessUnit,IFOdata->freqData->data->length),errnum);
+  XLAL_TRY(XLALDDVectorMultiply(model->timehPlus->data, model->timehPlus->data, model->window->data), errnum);
 
-      if (errnum){
-	XLALPrintError("Could not create COMPLEX16FrequencySeries in LALInferenceExecuteFT");
-	XLAL_ERROR_VOID(errnum);
-      }
-    }
-    if (!IFOdata->window || !IFOdata->window->data){
-      XLALPrintError("IFOdata->window is NULL at LALInferenceExecuteFT: Exiting!");
-      XLAL_ERROR_VOID(XLAL_EFAULT);
-    }
+  if (errnum){
+    XLALPrintError("Could not window time-series in LALInferenceExecuteFT");
+    XLAL_ERROR_VOID(errnum);
+  }
+  	
+  if (!model->timeToFreqFFTPlan){
+    XLALPrintError("model->timeToFreqFFTPlan is NULL at LALInferenceExecuteFT: Exiting!");
+    XLAL_ERROR_VOID(XLAL_EFAULT);
+  }
 
-    XLAL_TRY(XLALDDVectorMultiply(IFOdata->timeModelhPlus->data,IFOdata->timeModelhPlus->data,IFOdata->window->data),errnum);
-
-    if (errnum){
-      XLALPrintError("Could not window time-series in LALInferenceExecuteFT");
-      XLAL_ERROR_VOID(errnum);
+  XLAL_TRY(XLALREAL8TimeFreqFFT(model->freqhPlus, model->timehPlus, model->timeToFreqFFTPlan), errnum);
+  
+  if (errnum){
+    XLALPrintError("Could not h_plus FFT time-series");
+    XLAL_ERROR_VOID(errnum);
+  }
+  			    
+  /* hx */
+  if(!model->freqhCross){ 
+    XLAL_TRY(model->freqhCross=(COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("freqData",&(model->timehCross->epoch),0.0,model->deltaF,&lalDimensionlessUnit,model->freqLength),errnum);
+  
+    if (errnum){	
+      XLALPrintError("Could not create COMPLEX16FrequencySeries in LALInferenceExecuteFT");
+      XLAL_ERROR_VOID(errnum);		
     }
-   		
-    if (!IFOdata->timeToFreqFFTPlan){
-      XLALPrintError("IFOdata->timeToFreqFFTPlan is NULL at LALInferenceExecuteFT: Exiting!");
-      XLAL_ERROR_VOID(XLAL_EFAULT);
-    }
+  }
 
-    XLAL_TRY(XLALREAL8TimeFreqFFT(IFOdata->freqModelhPlus,IFOdata->timeModelhPlus,IFOdata->timeToFreqFFTPlan),errnum);
-	
-    if (errnum){
-      XLALPrintError("Could not h_plus FFT time-series");
-      XLAL_ERROR_VOID(errnum);
-    }
-    			    
-    /* hx */
-    if(!IFOdata->freqModelhCross){ 
+  XLAL_TRY(XLALDDVectorMultiply(model->timehCross->data, model->timehCross->data, model->window->data), errnum);
 
-      XLAL_TRY(IFOdata->freqModelhCross=(COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("freqData",&(IFOdata->timeData->epoch),0.0,IFOdata->freqData->deltaF,&lalDimensionlessUnit,IFOdata->freqData->data->length),errnum);
-	
-      if (errnum){	
-	XLALPrintError("Could not create COMPLEX16FrequencySeries in LALInferenceExecuteFT");
-	XLAL_ERROR_VOID(errnum);		
-      }
-    }
+  if (errnum){
+    XLALPrintError("Could not window time-series in LALInferenceExecuteFT");
+    XLAL_ERROR_VOID(errnum);
+  }
+  	 
+  XLAL_TRY(XLALREAL8TimeFreqFFT(model->freqhCross, model->timehCross, model->timeToFreqFFTPlan), errnum);
+  
+  if (errnum){
+    XLALPrintError("Could not FFT h_cross time-series");
+    XLAL_ERROR_VOID(errnum);
+  }   
 
-    XLAL_TRY(XLALDDVectorMultiply(IFOdata->timeModelhCross->data,IFOdata->timeModelhCross->data,IFOdata->window->data),errnum);
-
-    if (errnum){
-      XLALPrintError("Could not window time-series in LALInferenceExecuteFT");
-      XLAL_ERROR_VOID(errnum);
-    }
-		 
-    XLAL_TRY(XLALREAL8TimeFreqFFT(IFOdata->freqModelhCross,IFOdata->timeModelhCross,IFOdata->timeToFreqFFTPlan),errnum);
-	
-    if (errnum){
-      XLALPrintError("Could not FFT h_cross time-series");
-      XLAL_ERROR_VOID(errnum);
-    }   
-
-    norm=sqrt(IFOdata->window->data->length/IFOdata->window->sumofsquares);
-    
-    for(i=0;i<IFOdata->freqModelhPlus->data->length;i++){
-      IFOdata->freqModelhPlus->data->data[i] *= ((REAL8) norm);
-      IFOdata->freqModelhCross->data->data[i] *= ((REAL8) norm);
-    }
+  norm=sqrt(model->window->data->length/model->window->sumofsquares);
+  
+  for(i=0;i<model->freqhPlus->data->length;i++){
+    model->freqhPlus->data->data[i] *= ((REAL8) norm);
+    model->freqhCross->data->data[i] *= ((REAL8) norm);
   }
 }
 
-void LALInferenceExecuteInvFT(LALInferenceIFOData *IFOdata)
+void LALInferenceExecuteInvFT(LALInferenceModel *model)
 /* Execute inverse (freq-to-time) Fourier transform. */
-/* Results go into 'IFOdata->timeModelh...'          */
+/* Results go into 'model->timeh...'                 */
 {
-  while (IFOdata != NULL) {
-    if (IFOdata->freqToTimeFFTPlan==NULL) {
-      XLAL_ERROR_VOID(XLAL_EFAULT, "Encountered unallocated \"freqToTimeFFTPlan\".");
-    }
-
-    /*  h+ :  */
-    if (IFOdata->timeModelhPlus==NULL) {
-      XLAL_ERROR_VOID(XLAL_EFAULT, "Encountered unallocated \"timeModelhPlus\".");
-    }
-    if (IFOdata->freqModelhPlus==NULL) {
-      XLAL_ERROR_VOID(XLAL_EFAULT, "Encountered unallocated \"freqModelhPlus\".");
-    }
-
-    XLALREAL8FreqTimeFFT(IFOdata->timeModelhPlus, IFOdata->freqModelhPlus, IFOdata->freqToTimeFFTPlan);
-
-    /*  hx :  */
-    if (IFOdata->timeModelhCross==NULL) {
-      XLAL_ERROR_VOID(XLAL_EFAULT, "Encountered unallocated \"timeModelhCross\".");
-    }
-    if (IFOdata->freqModelhCross==NULL) {
-      XLAL_ERROR_VOID(XLAL_EFAULT, "Encountered unallocated \"freqModelhCross\".");
-    }
-
-    XLALREAL8FreqTimeFFT(IFOdata->timeModelhCross, IFOdata->freqModelhCross, IFOdata->freqToTimeFFTPlan);
-
-    IFOdata=IFOdata->next;
+  if (model->freqToTimeFFTPlan==NULL) {
+    XLAL_ERROR_VOID(XLAL_EFAULT, "Encountered unallocated \"freqToTimeFFTPlan\".");
   }
+
+  /*  h+ :  */
+  if (model->timehPlus==NULL) {
+    XLAL_ERROR_VOID(XLAL_EFAULT, "Encountered unallocated \"timehPlus\".");
+  }
+  if (model->freqhPlus==NULL) {
+    XLAL_ERROR_VOID(XLAL_EFAULT, "Encountered unallocated \"freqhPlus\".");
+  }
+
+  XLALREAL8FreqTimeFFT(model->timehPlus, model->freqhPlus, model->freqToTimeFFTPlan);
+
+  /*  hx :  */
+  if (model->timehCross==NULL) {
+    XLAL_ERROR_VOID(XLAL_EFAULT, "Encountered unallocated \"timehCross\".");
+  }
+  if (model->freqhCross==NULL) {
+    XLAL_ERROR_VOID(XLAL_EFAULT, "Encountered unallocated \"freqhCross\".");
+  }
+
+  XLALREAL8FreqTimeFFT(model->timehCross, model->freqhCross, model->freqToTimeFFTPlan);
 }
 
 void LALInferenceProcessParamLine(FILE *inp, char **headers, LALInferenceVariables *vars) {
@@ -2625,14 +2869,6 @@ INT4 LALInferenceSanityCheck(LALInferenceRunState *state)
       fprintf(stderr,"Checking timeData: ");
       if(!(retcode|=checkREAL8TimeSeries(data->timeData))) fprintf(stderr," OK\n");
     }
-    if(data->timeModelhPlus) {
-      fprintf(stderr,"Checking timeModelhPlus: ");
-      if(!(retcode|=checkREAL8TimeSeries(data->timeModelhPlus))) fprintf(stderr," OK\n");
-    }
-    if(data->timeModelhCross) {
-      fprintf(stderr,"Checking timeModelhCross: ");
-      if(!(retcode|=checkREAL8TimeSeries(data->timeModelhCross))) fprintf(stderr," OK\n");
-    }
     if(data->whiteTimeData) {
       fprintf(stderr,"Checking whiteTimeData: ");
       if(!(retcode|=checkREAL8TimeSeries(data->whiteTimeData))) fprintf(stderr," OK\n");
@@ -2645,14 +2881,6 @@ INT4 LALInferenceSanityCheck(LALInferenceRunState *state)
       fprintf(stderr,"Checking freqData: ");
       if(!(retcode|=checkCOMPLEX16FrequencySeries(data->freqData))) fprintf(stderr," OK\n");
     }
-    if(data->freqModelhPlus) {
-      fprintf(stderr,"Checking freqModelhPlus: ");
-      if(!(retcode|=checkCOMPLEX16FrequencySeries(data->freqModelhPlus))) fprintf(stderr," OK\n");
-    }
-    if(data->freqModelhCross) {
-      fprintf(stderr,"Checking freqModelhCross: ");
-      if(!(retcode|=checkCOMPLEX16FrequencySeries(data->freqModelhCross))) fprintf(stderr," OK\n");
-    }
     if(data->whiteFreqData) {
       fprintf(stderr,"Checking whiteFreqData: ");
       if(!(retcode|=checkCOMPLEX16FrequencySeries(data->whiteFreqData))) fprintf(stderr," OK\n");
@@ -2663,6 +2891,29 @@ INT4 LALInferenceSanityCheck(LALInferenceRunState *state)
     }
     data=data->next;
   }
+
+  LALInferenceModel *model = state->model;
+  if(!model) {
+	fprintf(stderr,"NULL model pointer!\n");
+        return(1);
+  }
+  if(model->timehPlus) {
+    fprintf(stderr,"Checking timehPlus: ");
+    if(!(retcode|=checkREAL8TimeSeries(model->timehPlus))) fprintf(stderr," OK\n");
+  }
+  if(model->timehCross) {
+    fprintf(stderr,"Checking timehCross: ");
+    if(!(retcode|=checkREAL8TimeSeries(model->timehCross))) fprintf(stderr," OK\n");
+  }
+  if(model->freqhPlus) {
+    fprintf(stderr,"Checking freqhPlus: ");
+    if(!(retcode|=checkCOMPLEX16FrequencySeries(model->freqhPlus))) fprintf(stderr," OK\n");
+  }
+  if(model->freqhCross) {
+    fprintf(stderr,"Checking freqhCross: ");
+    if(!(retcode|=checkCOMPLEX16FrequencySeries(model->freqhCross))) fprintf(stderr," OK\n");
+  }
+
   return(retcode);
 }
 
@@ -2730,7 +2981,7 @@ static INT4 checkREAL8Value(REAL8 val)
   return 0;
 }
 
-void LALInferenceDumpWaveforms(LALInferenceRunState *state, const char *basefilename)
+void LALInferenceDumpWaveforms(LALInferenceModel *model, const char *basefilename)
 {
     UINT4 i;
     FILE *dumpfile=NULL;
@@ -2740,27 +2991,24 @@ void LALInferenceDumpWaveforms(LALInferenceRunState *state, const char *basefile
     {
         sprintf(basename,"%s",basefilename);
     }
-    LALInferenceIFOData *data=state->data;
-    while(data){
-        if(data->timeModelhPlus && data->timeModelhCross){
-            sprintf(filename,"%s_%s_time.txt",basename,data->name);
-            dumpfile=fopen(filename,"w");
-            REAL8 epoch = data->timeModelhPlus->epoch.gpsSeconds + 1e-9*data->timeModelhPlus->epoch.gpsNanoSeconds;
-            REAL8 dt=data->timeModelhPlus->deltaT;
-            for(i=0;i<data->timeModelhPlus->data->length;i++) fprintf(dumpfile,"%10.20e %10.20e %10.20e\n",epoch+i*dt,data->timeModelhPlus->data->data[i],data->timeModelhCross->data->data[i]);
-            fclose(dumpfile);
-            fprintf(stdout,"Dumped file %s\n",filename);
-        }
-        if(data->freqModelhPlus && data->freqModelhCross){
-            sprintf(filename,"%s_%s_freq.txt",basename,data->name);
-            dumpfile=fopen(filename,"w");
-            REAL8 fLow=data->freqModelhPlus->f0;
-            REAL8 df=data->freqModelhPlus->deltaF;
-            for(i=0;i<data->freqModelhPlus->data->length;i++) fprintf(dumpfile,"%10.20e %10.20e %10.20e %10.20e %10.20e\n",fLow+i*df,creal(data->freqModelhPlus->data->data[i]), cimag(data->freqModelhPlus->data->data[i]),creal(data->freqModelhCross->data->data[i]), cimag(data->freqModelhCross->data->data[i]));
-            fclose(dumpfile);
-            fprintf(stdout,"Dumped file %s\n",filename);
-        }
-        data=data->next;
+
+    if(model->timehPlus && model->timehCross){
+        sprintf(filename,"%s_time.txt",basename);
+        dumpfile=fopen(filename,"w");
+        REAL8 epoch = model->timehPlus->epoch.gpsSeconds + 1e-9*model->timehPlus->epoch.gpsNanoSeconds;
+        REAL8 dt=model->timehPlus->deltaT;
+        for(i=0;i<model->timehPlus->data->length;i++) fprintf(dumpfile,"%10.20e %10.20e %10.20e\n",epoch+i*dt,model->timehPlus->data->data[i],model->timehCross->data->data[i]);
+        fclose(dumpfile);
+        fprintf(stdout,"Dumped file %s\n",filename);
+    }
+    if(model->freqhPlus && model->freqhCross){
+        sprintf(filename,"%s_freq.txt",basename);
+        dumpfile=fopen(filename,"w");
+        REAL8 fLow=model->freqhPlus->f0;
+        REAL8 df=model->freqhPlus->deltaF;
+        for(i=0;i<model->freqhPlus->data->length;i++) fprintf(dumpfile,"%10.20e %10.20e %10.20e %10.20e %10.20e\n",fLow+i*df,creal(model->freqhPlus->data->data[i]), cimag(model->freqhPlus->data->data[i]),creal(model->freqhCross->data->data[i]), cimag(model->freqhCross->data->data[i]));
+        fclose(dumpfile);
+        fprintf(stdout,"Dumped file %s\n",filename);
     }
 }
 

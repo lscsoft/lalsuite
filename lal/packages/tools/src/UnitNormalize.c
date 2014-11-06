@@ -41,9 +41,9 @@
  *
  * ### Notes ###
  *
- * Note that the functions <tt>LALUnitRaise()</tt>,
- * <tt>LALUnitMultiply()</tt>, and <tt>LALUnitCompare()</tt> all call
- * <tt>LALUnitNormalize()</tt> themselves, so there is usually no need to
+ * Note that the functions <tt>XLALUnitRaiseRAT4()</tt>,
+ * <tt>XLALUnitMultiply()</tt>, and <tt>XLALUnitCompare()</tt> all call
+ * <tt>XLALUnitNormalize()</tt> themselves, so there is usually no need to
  * call it explicitly.
  *
  */
@@ -88,27 +88,4 @@ int XLALUnitNormalize( LALUnit *unit )
 }
 
 
-/**
- * Reduce all the rational powers in an LALUnit structure
- * \deprecated Use XLALUnitNormalize() instead.
- */
-void
-LALUnitNormalize (LALStatus *status, LALUnit *output, const LALUnit *input)
-{
-  XLAL_PRINT_DEPRECATION_WARNING("XLALUnitNormalize");
-
-  INITSTATUS(status);
-
-  ASSERT( input != NULL, status, UNITSH_ENULLPIN, UNITSH_MSGENULLPIN );
-
-  ASSERT( output != NULL, status, UNITSH_ENULLPOUT, UNITSH_MSGENULLPOUT );
-
-  *output = *input;
-  if ( XLALUnitNormalize( output ) == XLAL_FAILURE )
-  {
-    ABORTXLAL( status );
-  }
-
-  RETURN( status );
-}
 /*@}*/

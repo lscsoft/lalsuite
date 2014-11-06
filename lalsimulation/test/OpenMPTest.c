@@ -95,6 +95,8 @@ static void GenerateOMPWaveform(OpenMPCapableWaveforms wf, COMPLEX16FrequencySer
   REAL8 phi_ref = 0;
   REAL8 deltaF = 1. / 1024;
   REAL8 distance = 1e6 * LAL_PC_SI;
+  REAL8 quadpar1 = 1.;
+  REAL8 quadpar2 = 1.;
   REAL8 lambda1 = 0;
   REAL8 lambda2 = 0;
   LALSimInspiralSpinOrder spinO = LAL_SIM_INSPIRAL_SPIN_ORDER_0PN;
@@ -102,7 +104,7 @@ static void GenerateOMPWaveform(OpenMPCapableWaveforms wf, COMPLEX16FrequencySer
   INT4 phaseO = LAL_PNORDER_THREE_POINT_FIVE;
   INT4 amplitudeO = LAL_PNORDER_THREE_POINT_FIVE;
 
-  REAL8 eta, chi_eff, chip, thetaJ, phiJ, alpha0;
+  REAL8 eta, chi_eff, chip, thetaJ, alpha0;
 
   switch (wf) {
     case OMP_TaylorF2:
@@ -110,6 +112,7 @@ static void GenerateOMPWaveform(OpenMPCapableWaveforms wf, COMPLEX16FrequencySer
           &hptilde, phi_ref, deltaF,
           m1_SI, m2_SI,
           s1z, s2z, f_min, f_max, f_ref, distance,
+	  quadpar1, quadpar2,
           lambda1, lambda2,
           spinO,
           tidalO,
@@ -122,7 +125,6 @@ static void GenerateOMPWaveform(OpenMPCapableWaveforms wf, COMPLEX16FrequencySer
           &chip,              /**< Output: Effective spin in the orbital plane */
           &eta,               /**< Output: Symmetric mass-ratio */
           &thetaJ,            /**< Output: Angle between J0 and line of sight (z-direction) */
-          &phiJ,              /**< Output: Angle of J0 in the plane of the sky */
           &alpha0,            /**< Output: Initial value of alpha angle */
           m1_SI,              /**< Mass of companion 1 (kg) */
           m2_SI,              /**< Mass of companion 2 (kg) */
@@ -143,7 +145,6 @@ static void GenerateOMPWaveform(OpenMPCapableWaveforms wf, COMPLEX16FrequencySer
           chip,               /**< Effective spin in the orbital plane */
           eta,                /**< Symmetric mass-ratio */
           thetaJ,             /**< Angle between J0 and line of sight (z-direction) */
-          phiJ,               /**< Angle of J0 in the plane of the sky */
           m1_SI + m2_SI,      /**< Total mass of binary (kg) */
           distance,           /**< Distance of source (m) */
           alpha0,             /**< Initial value of alpha angle */

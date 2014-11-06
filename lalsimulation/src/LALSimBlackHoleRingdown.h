@@ -199,7 +199,7 @@ INT4 XLALSimIMREOBGenerateQNMFreqV2(
   const REAL8      spin1[3],  /**<< The spin of the 1st object; only needed for spin waveforms */
   const REAL8      spin2[3],  /**<< The spin of the 2nd object; only needed for spin waveforms */
   UINT4            l,         /**<< The l value of the mode in question */
-  UINT4            m,         /**<< The m value of the mode in question */
+  INT4             m,         /**<< The m value of the mode in question */
   UINT4            nmodes,    /**<< The number of overtones that should be included (max 8) */
   Approximant      approximant/**<< The waveform approximant being used */
   );

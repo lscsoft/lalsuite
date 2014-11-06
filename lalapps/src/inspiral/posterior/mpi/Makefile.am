@@ -8,6 +8,7 @@ LIBS += $(MPILIBS)
 if LALINFERENCE
 if MPI
 mpi_progs = lalinference_mcmc
+mpi_progs += lalinference_ensemble
 if HAVE_BAMBI
 if HAVE_BAMBI_MPI
 mpi_progs += lalinference_bambi
@@ -24,5 +25,10 @@ lalinference_mcmc_SOURCES = \
 	$(srcdir)/../LALInferenceMCMC.c \
 	$(srcdir)/../LALInferenceMCMCSampler.c \
 	$(srcdir)/../LALInferenceMCMCSampler.h
+
+lalinference_ensemble_SOURCES = \
+	$(srcdir)/../LALInferenceEnsemble.c \
+	$(srcdir)/../LALInferenceEnsembleSampler.c \
+	$(srcdir)/../LALInferenceEnsembleSampler.h
 
 bin_PROGRAMS = $(mpi_progs)

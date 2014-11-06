@@ -260,6 +260,9 @@ INT4 remove_outliers(COMPLEX16TimeSeries *data, REAL8Vector *times, REAL8 stddev
 
 FilterResponse *create_filter_response( REAL8 filterKnee );
 
+/* free memory for filter response structure */
+void destroy_filter_response( FilterResponse *filtresp );
+
 #ifdef  __cplusplus
 }
 #endif

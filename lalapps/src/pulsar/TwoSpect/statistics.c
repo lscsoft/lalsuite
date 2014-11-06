@@ -35,8 +35,12 @@
 #include "fastchisqinv.h"
 
 
-//////////////////////////////////////////////////////////////
-// Create a exponentially distributed noise value  -- done
+/**
+ * Create a exponentially distributed noise value
+ * \param [in] mu             Mean value of the distribution
+ * \param [in] ptrToGenerator Pointer to a gsl_rng generator
+ * \return A random value drawn from the exponential distribution
+ */
 REAL8 expRandNum(REAL8 mu, gsl_rng *ptrToGenerator)
 {
    XLAL_CHECK_REAL8( mu > 0.0 && ptrToGenerator != NULL, XLAL_EINVAL );
@@ -44,25 +48,42 @@ REAL8 expRandNum(REAL8 mu, gsl_rng *ptrToGenerator)
 } /* expRandNum() */
 
 
-//Compute the CDF P value at value x of a chi squared PDF with nu degrees of freedom
-//Rougly REAL4 precision
+/**
+ * Compute the CDF P value at value x of a chi squared distribution with nu degrees of freedom
+ * Rougly REAL4 precision
+ * \param [in] x  CDF value at value x
+ * \param [in] nu Number of degrees of freedom
+ * \return CDF value
+ */
 REAL8 twospect_cdf_chisq_P(REAL8 x, REAL8 nu)
 {
    REAL8 val = cdf_gamma_P(x, 0.5*nu, 2.0);
    XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
    return val;
-}
+} /* twospect_cdf_chisq_P() */
 
-//Compute the CDF P value at value x of a chi squared PDF with nu degrees of freedom using the Matlab-based function
+
+/**
+ * Compute the CDF P value at value x of a chi squared distrubution with nu degrees of freedom using the Matlab-based function
+ * \param [in] x  CDF value at value x
+ * \param [in] nu Number of degrees of freedom
+ * \return CDF value
+ */
 REAL8 matlab_cdf_chisq_P(REAL8 x, REAL8 nu)
 {
    REAL8 val = cdf_gamma_P_usingmatlab(x, 0.5*nu, 2.0);
    XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
    return val;
-}
+} /* matlab_cdf_chisq_P() */
 
 
-//Matlab's version of the non-central chi-squared CDF with nu degrees of freedom and non-centrality delta at value x.
+/**
+ * Matlab's version of the non-central chi-squared CDF with nu degrees of freedom and non-centrality delta at value x
+ * \param [in] x     Value at which to compute the CDF
+ * \param [in] dof   Number of degrees of freedom
+ * \param [in] delta Non-centrality parameter
+ * \return CDF value
+ */
 REAL8 ncx2cdf(REAL8 x, REAL8 dof, REAL8 delta)
 {
 
@@ -111,7 +132,7 @@ REAL8 ncx2cdf(REAL8 x, REAL8 dof, REAL8 delta)
 
    return fmin(prob, 1.0);
 
-}
+} /* ncx2cdf() */
 
 //Matlab's sumseries function
 void sumseries(REAL8 *computedprob, REAL8 P, REAL8 C, REAL8 E, INT8 counter, REAL8 x, REAL8 dof, REAL8 halfdelta, REAL8 err, INT4 countdown)
@@ -153,7 +174,7 @@ void sumseries(REAL8 *computedprob, REAL8 P, REAL8 C, REAL8 E, INT8 counter, REA
       }
    }
 
-}
+} /* sumseries() */
 
 
 //Evan's sumseries function based on matlab's sumseries() version above, but faster
@@ -204,7 +225,7 @@ void sumseries_eg(REAL8 *computedprob, REAL8 P, REAL8 C, REAL8 E, INT8 counter, 
       }
    }
 
-}
+} /* sumseries_eg() */
 
 //Matlab's non-central chi square CDF up to REAL4 precision
 REAL4 ncx2cdf_float(REAL4 x, REAL4 dof, REAL4 delta)
@@ -257,7 +278,7 @@ REAL4 ncx2cdf_float(REAL4 x, REAL4 dof, REAL4 delta)
 
    return (REAL4)fmin(prob, 1.0);
 
-}
+} /* ncx2cdf_float() */
 
 //Matlab's non-central chi-square tries to compute very small probabilities. We don't normally need this,
 //so this function leaves out the last part to compute small probabilities.
@@ -287,7 +308,7 @@ REAL8 ncx2cdf_withouttinyprob(REAL8 x, REAL8 dof, REAL8 delta)
 
    return fmin(prob, 1.0);
 
-}
+} /* ncx2cdf_withouttinyprob() */
 
 //Without small probabilities up to REAL4 precision
 REAL4 ncx2cdf_float_withouttinyprob(REAL4 x, REAL4 dof, REAL4 delta)
@@ -317,7 +338,7 @@ REAL4 ncx2cdf_float_withouttinyprob(REAL4 x, REAL4 dof, REAL4 delta)
 
    return (REAL4)fmin(prob, 1.0);
 
-}
+} /* ncx2cdf_float_withouttinyprob() */
 
 
 //This is ncx2cdf function like in Matlab, but using the Matlab version of the central chi square calculation instead of the GSL version
@@ -348,7 +369,7 @@ REAL8 ncx2cdf_withouttinyprob_withmatlabchi2cdf(REAL8 x, REAL8 dof, REAL8 delta)
 
    return fmin(prob, 1.0);
 
-}
+} /* ncx2cdf_withouttinyprob_withmatlabchi2cdf() */
 
 //This is ncx2cdf function like in Matlab, but using the Matlab version of the central chi square calculation instead of the GSL version; up to REAL4 precision
 REAL4 ncx2cdf_float_withouttinyprob_withmatlabchi2cdf(REAL4 x, REAL4 dof, REAL4 delta)
@@ -378,7 +399,7 @@ REAL4 ncx2cdf_float_withouttinyprob_withmatlabchi2cdf(REAL4 x, REAL4 dof, REAL4 
 
    return (REAL4)fmin(prob, 1.0);
 
-}
+} /* ncx2cdf_float_withouttinyprob_withmatlabchi2cdf() */
 
 
 //Like Matlabs ncx2pdf
@@ -399,29 +420,20 @@ REAL8 ncx2pdf(REAL8 x, REAL8 dof, REAL8 delta)
    //Scaled Bessel function?
    gsl_sf_result sbes = {0,0};
    INT4 status = gsl_sf_bessel_Inu_scaled_e(dofint, delta1*x1, &sbes);
-   //if (!XLAL_IS_REAL8_FAIL_NAN(sbes) && sbes>0) {
-   if (status==GSL_SUCCESS && sbes.val>0.0) {
-      return exp(-LAL_LN2 - 0.5*(x1-delta1)*(x1-delta1) + dofint*log(x1/delta1))*sbes.val;
-   }
+   if (status==GSL_SUCCESS && sbes.val>0.0) return exp(-LAL_LN2 - 0.5*(x1-delta1)*(x1-delta1) + dofint*log(x1/delta1))*sbes.val;
 
    //Bessel function without scaling?
    gsl_sf_result bes;
    status = gsl_sf_bessel_Inu_e(dofint, delta1*x1, &bes);
-   //if (!XLAL_IS_REAL8_FAIL_NAN(bes) && bes>0) {
-   if (status==GSL_SUCCESS && bes.val>0.0) {
-      return exp(-LAL_LN2 - 0.5*(x+delta) + dofint*log(x1/delta1))*bes.val;
-   }
+   if (status==GSL_SUCCESS && bes.val>0.0) return exp(-LAL_LN2 - 0.5*(x+delta) + dofint*log(x1/delta1))*bes.val;
 
    //Okay, now recursion
    REAL8 lnsr2pi = log(sqrt(LAL_TWOPI));
    REAL8 dx = delta*x*0.25;
    INT8 K = GSL_MAX_INT(0, (INT8)floor(0.5*(sqrt(dofint*dofint+4.0*dx) - dofint)));
    REAL8 lntK = 0.0;
-   if (K==0) {
-      lntK = -lnsr2pi - 0.5*(delta+log(dofint)) - (lgamma(dofint+1)-0.5*log(LAL_TWOPI*dofint)+dofint*log(dofint)-dofint) - binodeviance(dofint, 0.5*x);
-   } else {
-      lntK = -2.0*lnsr2pi - 0.5*(log(K) + log(dofint+K)) - (lgamma(K+1)-0.5*log(LAL_TWOPI*K)+K*log(K)-K) - (lgamma(dofint+K+1)-0.5*log(LAL_TWOPI*(dofint+K))+(dofint+K)*log(dofint+K)-(dofint+K)) - binodeviance(K, 0.5*delta) - binodeviance(dofint+K, 0.5*x);
-   }
+   if (K==0) lntK = -lnsr2pi - 0.5*(delta+log(dofint)) - (lgamma(dofint+1)-0.5*log(LAL_TWOPI*dofint)+dofint*log(dofint)-dofint) - binodeviance(dofint, 0.5*x);
+   else lntK = -2.0*lnsr2pi - 0.5*(log(K) + log(dofint+K)) - (lgamma(K+1)-0.5*log(LAL_TWOPI*K)+K*log(K)-K) - (lgamma(dofint+K+1)-0.5*log(LAL_TWOPI*(dofint+K))+(dofint+K)*log(dofint+K)-(dofint+K)) - binodeviance(K, 0.5*delta) - binodeviance(dofint+K, 0.5*x);
    REAL8 sumK = 1.0;
    INT4 keep = 0;
    if (K>0) keep = 1;
@@ -444,7 +456,7 @@ REAL8 ncx2pdf(REAL8 x, REAL8 dof, REAL8 delta)
    }
    return 0.5*exp(lntK + log(sumK));
 
-}
+} /* ncx2pdf() */
 
 //Matlab's binodeviance, a "hidden" function
 REAL8 binodeviance(REAL8 x, REAL8 np)
@@ -460,17 +472,14 @@ REAL8 binodeviance(REAL8 x, REAL8 np)
          ej *= v*v;
          jj++;
          s1 = s + ej/(2.0*jj+1.0);
-         if (s1!=s) {
-            s = s1;
-         } else {
-            ok = 0;
-         }
+         if (s1!=s) s = s1;
+         else ok = 0;
       }
       return s;
    } else {
       return x*log(x/np)+np-x;
    }
-}
+} /* binodeviance() */
 
 //Matlab's eps function for REAL8, but written in C
 REAL8 epsval(REAL8 val)
@@ -481,7 +490,7 @@ REAL8 epsval(REAL8 val)
    frexp(absval, &exponentval);
    exponentval -= LAL_REAL8_MANT;
    return ldexp(1.0, exponentval);
-}
+} /* epsval() */
 
 //Matlab's eps function for REAL4, but written in C
 REAL4 epsval_float(REAL4 val)
@@ -492,9 +501,16 @@ REAL4 epsval_float(REAL4 val)
    frexpf(absval, &exponentval);
    exponentval -= LAL_REAL4_MANT;
    return ldexpf(1.0, exponentval);
-}
+} /* epsval_float() */
 
-//Matlab's ncx2inv() function
+
+/**
+ * Matlab's ncx2inv function
+ * \param [in] p     CDF P value from which to compute the inversion
+ * \param [in] dof   Number of degrees of freedom
+ * \param [in] delta Non-centrality parameter
+ * \return The x value that corresponds to the P value
+ */
 REAL8 ncx2inv(REAL8 p, REAL8 dof, REAL8 delta)
 {
 
@@ -542,7 +558,7 @@ REAL8 ncx2inv(REAL8 p, REAL8 dof, REAL8 delta)
    fprintf(stderr, "%s: Warning! ncx2inv(%g, %g, %g) failed to converge!\n", __func__, p, dof, delta);
    return xk;
 
-}
+} /* ncx2inv() */
 
 
 //Matlab's ncx2inv() function to REAL4 precision
@@ -593,14 +609,14 @@ REAL4 ncx2inv_float(REAL8 p, REAL8 dof, REAL8 delta)
    fprintf(stderr, "%s: Warning! ncx2inv_float() failed to converge!\n", __func__);
    return xk;
 
-}
+} /* ncx2inv_float() */
 
 
 //Matlab's norminv function
 REAL8 norminv(REAL8 p, REAL8 mu, REAL8 sigma)
 {
    return mu - sigma*gsl_cdf_ugaussian_Qinv(p);
-}
+} /* norminv() */
 
 
 //For the normal distribution, what is the SNR of a given value
@@ -608,7 +624,7 @@ REAL8 unitGaussianSNR(REAL8 value, REAL8 dof)
 {
    REAL8 snr = (value - dof) / sqrt(2.0*dof);
    return snr;
-}
+} /* unitGaussianSNR() */
 
 
 
@@ -622,6 +638,13 @@ REAL8 unitGaussianSNR(REAL8 value, REAL8 dof)
  n       10      20      30      40      50      60      80      n>80
  .409    .294    .242    .210    .188    .172    .150    1.358/(sqrt(n)+0.12+0.11/sqrt(n))
  */
+
+/**
+ * KS test of data against an expected exponential distribution
+ * \param [out] ksvalue Pointer to the KS value
+ * \param [in]  vector  Pointer to the REAL4Vector to compare against an exponential distribution
+ * \return Status value
+ */
 INT4 ks_test_exp(REAL8 *ksvalue, REAL4Vector *vector)
 {
 
@@ -629,7 +652,7 @@ INT4 ks_test_exp(REAL8 *ksvalue, REAL4Vector *vector)
 
    //First the mean value needs to be calculated from the median value
    REAL4Vector *tempvect = NULL;
-   XLAL_CHECK_REAL8( (tempvect = XLALCreateREAL4Vector(vector->length)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (tempvect = XLALCreateREAL4Vector(vector->length)) != NULL, XLAL_EFUNC );
    memcpy(tempvect->data, vector->data, sizeof(REAL4)*vector->length);
    sort_float_ascend(tempvect);  //tempvect becomes sorted
    REAL4 vector_median = 0.0;
@@ -654,7 +677,7 @@ INT4 ks_test_exp(REAL8 *ksvalue, REAL4Vector *vector)
 
    return XLAL_SUCCESS;
 
-}
+} /* ks_test_exp() */
 
 
 /* Critical values of Kuiper's test using root finding by E.G.
@@ -665,13 +688,20 @@ n                                                               n>80
 alpha=0.1
 n                                                               n>80
                                                                 1.620/(sqrt(n)+0.155+0.24/sqrt(n)) */
+
+/**
+ * Kuiper's test of data against an expected exponential distribution
+ * \param [out] kuipervalue Pointer to the Kuiper's test value
+ * \param [in]  vector      Pointer to the REAL4Vector to compare against an exponential distribution
+ * \return Status value
+ */
 INT4 kuipers_test_exp(REAL8 *kuipervalue, REAL4Vector *vector)
 {
 
    INT4 ii;
 
    REAL4Vector *tempvect = NULL;
-   XLAL_CHECK_REAL8( (tempvect = XLALCreateREAL4Vector(vector->length)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (tempvect = XLALCreateREAL4Vector(vector->length)) != NULL, XLAL_EFUNC );
 
    memcpy(tempvect->data, vector->data, sizeof(REAL4)*vector->length);
 
@@ -702,10 +732,15 @@ INT4 kuipers_test_exp(REAL8 *kuipervalue, REAL4Vector *vector)
 
    return XLAL_SUCCESS;
 
-}
+} /* kuipers_test_exp() */
 
 
-//Sort a REAL4Vector, keeping the smallest of the values in the output vector
+/**
+ * Sort a REAL4Vector, keeping the smallest of the values in the output vector
+ * \param [out] output Pointer to a REAL4Vector containing the output vector
+ * \param [in]  input  Pointer to the REAL4Vector from which to find the smallest values
+ * \return Status value
+ */
 INT4 sort_float_smallest(REAL4Vector *output, REAL4Vector *input)
 {
    //Copy of the input vector
@@ -722,114 +757,156 @@ INT4 sort_float_smallest(REAL4Vector *output, REAL4Vector *input)
 
    return XLAL_SUCCESS;
 
-}
+} /* sort_float_smallest() */
 
 
-//Sort a REAL8Vector from lowest to highest
-/* !!!!This modifies the input vector!!!! */
+/**
+ * Sort a REAL8Vector in ascending order, modifying the input vector
+ * \param [in,out] vector Pointer to a REAL8Vector to be sorted
+ * \return Status value
+ */
 void sort_double_ascend(REAL8Vector *vector)
 {
    qsort(vector->data, vector->length, sizeof(REAL8), qsort_REAL8_compar);
-}
+} /* sort_double_ascend() */
 
 
-//Sort a REAL4Vector from lowest to highest
-/* !!!!This modifies the input vector!!!! */
+/**
+ * Sort a REAL4Vector in ascending order, modifying the input vector
+ * \param [in,out] vector Pointer to a REAL4Vector to be sorted
+ * \return Status value
+ */
 void sort_float_ascend(REAL4Vector *vector)
 {
    qsort(vector->data, vector->length, sizeof(REAL4), qsort_REAL4_compar);
-}
+} /* sort_float_ascend() */
 
 
-//Sample a number (sampleSize) of values from a REAL4Vector (input) randomly
+/**
+ * Sample a number (sampleSize) of values from a REAL4Vector (input) randomly
+ * \param [in] input      Pointer to a REAL4Vector to be sampled from
+ * \param [in] sampleSize Integer value for the length of the output vector
+ * \param [in] rng        Pointer to a gsl_rng generator
+ * \return Newly allocated REAL4Vector of sampled values from the input vector
+ */
 REAL4Vector * sampleREAL4Vector(REAL4Vector *input, INT4 sampleSize, gsl_rng *rng)
 {
 
    REAL4Vector *output = NULL;
    XLAL_CHECK_NULL( (output = XLALCreateREAL4Vector(sampleSize)) != NULL, XLAL_EFUNC );
 
-   INT4 ii;
-   for (ii=0; ii<sampleSize; ii++) output->data[ii] = input->data[(INT4)floor(gsl_rng_uniform(rng)*input->length)];
+   for (INT4 ii=0; ii<sampleSize; ii++) output->data[ii] = input->data[(INT4)floor(gsl_rng_uniform(rng)*input->length)];
 
    return output;
 
-}
+} /* sampleREAL4Vector() */
 
-//Sample a number (sampleSize) of values from a REAL4VectorSequence (input) randomly from vector 0 up to numberofvectors
-//Needs this numberofvectors limit because of the IHS algorithm
+
+/**
+ * Sample a number (sampleSize) of values from a REAL4VectorSequence (input) randomly from vector 0 up to numberofvectors
+ * Needs this numberofvectors limit because of the IHS algorithm
+ * \param [in] input           Pointer to a REAL4VectorSequence to be sampled from
+ * \param [in] numberofvectors Number of vectors from the start from which to sample from
+ * \param [in] sampleSize      Integer value for the length of the output vector
+ * \param [in] rng             Pointer to a gsl_rng generator
+ * \return Newly allocated REAL4Vector of sampled values from the input vector
+ */
 REAL4Vector * sampleREAL4VectorSequence(REAL4VectorSequence *input, INT4 numberofvectors, INT4 sampleSize, gsl_rng *rng)
 {
 
    REAL4Vector *output = NULL;
    XLAL_CHECK_NULL( (output = XLALCreateREAL4Vector(sampleSize)) != NULL, XLAL_EFUNC );
 
-   INT4 ii;
-   for (ii=0; ii<sampleSize; ii++) output->data[ii] = input->data[(INT4)floor(gsl_rng_uniform(rng)*numberofvectors*input->vectorLength)];
+   for (INT4 ii=0; ii<sampleSize; ii++) output->data[ii] = input->data[(INT4)floor(gsl_rng_uniform(rng)*numberofvectors*input->vectorLength)];
 
    return output;
 
-}
+} /* sampleREAL4VectorSequence() */
 
-//Sample a number (sampleSize) of values from a REAL4VectorSequence (input) randomly from vector 0 up to numberofvectors
-//Needs this numberofvectors limit because of the IHS algorithm
-//This function doesn't accept zeros in the samples
+
+/**
+ * Sample a number (sampleSize) of values from a REAL4VectorSequence (input) randomly from vector 0 up to numberofvectors without accepting any values of zero
+ * Needs this numberofvectors limit because of the IHS algorithm
+ * \param [in] input           Pointer to a REAL4VectorSequence to be sampled from
+ * \param [in] numberofvectors Number of vectors from the start from which to sample from
+ * \param [in] sampleSize      Integer value for the length of the output vector
+ * \param [in] rng             Pointer to a gsl_rng generator
+ * \return Newly allocated REAL4Vector of sampled values from the input vector
+ */
 REAL4Vector * sampleREAL4VectorSequence_nozerosaccepted(REAL4VectorSequence *input, INT4 numberofvectors, INT4 sampleSize, gsl_rng *rng)
 {
 
    REAL4Vector *output = NULL;
    XLAL_CHECK_NULL( (output = XLALCreateREAL4Vector(sampleSize)) != NULL, XLAL_EFUNC );
 
-   INT4 ii;
-   for (ii=0; ii<sampleSize; ii++) {
+   for (INT4 ii=0; ii<sampleSize; ii++) {
       output->data[ii] = input->data[(INT4)floor(gsl_rng_uniform(rng)*numberofvectors*input->vectorLength)];
       while (output->data[ii]==0.0) output->data[ii] = input->data[(INT4)floor(gsl_rng_uniform(rng)*numberofvectors*input->vectorLength)];
    }
 
    return output;
 
-}
+} /* sampleREAL4VectorSequence_nozerosaccepted() */
 
 
-//////////////////////////////////////////////////////////////
-// Compute the mean value of a vector of values
+/**
+ * Compute the mean value of a REAL4Vector, computed via recursion like in GSL
+ * \param [in] vector Pointer to a REAL4Vector of values
+ * \return The mean value
+ */
 REAL4 calcMean(REAL4Vector *vector)
 {
 
    //Calculate mean from recurrance relation. Same as GSL
-   INT4 ii;
    REAL8 meanval = 0.0;
-   for (ii=0; ii<(INT4)vector->length; ii++) meanval += (vector->data[ii] - meanval)/(ii+1);
+   for (INT4 ii=0; ii<(INT4)vector->length; ii++) meanval += (vector->data[ii] - meanval)/(ii+1);
 
    return (REAL4)meanval;
 
 } /* calcMean() */
 
 
+/**
+ * Compute the mean value of a REAL4Vector without accepting values of zero
+ * \param [in] vector Pointer to a REAL4Vector of values
+ * \return The mean value
+ */
 REAL4 calcMean_ignoreZeros(REAL4Vector *vector)
 {
 
-   INT4 ii, values = 0;
+   INT4 values = 0;
    REAL8 meanval = 0.0;
-   for (ii=0; ii<(INT4)vector->length; ii++) {
+   for (INT4 ii=0; ii<(INT4)vector->length; ii++) {
       if (vector->data[ii]!=0.0) {
          meanval += vector->data[ii];
          values++;
       }
    }
 
-   return (REAL4)(meanval/values);
+   if (values>0) return (REAL4)(meanval/values);
+   else return 0.0;
 
 } /* calcMean_ignoreZeros() */
 
 
+/**
+ * \brief Compute the harmonic mean value of a REAL4Vector of SFT values
+ *
+ * The harmonic mean is computed from the mean values of the SFTs
+ * \param [out] harmonicMean Pointer to the output REAL4 harmonic mean value
+ * \param [in]  vector       Pointer to a REAL4Value from which to compute the harmonic mean
+ * \param [in]  numfbins     Number of frequency bins in the SFTs
+ * \param [in]  numffts      Number of SFTs during the observation time
+ * \return Status value
+ */
 INT4 calcHarmonicMean(REAL4 *harmonicMean, REAL4Vector *vector, INT4 numfbins, INT4 numffts)
 {
 
-   INT4 ii, values = 0;
+   INT4 values = 0;
    REAL4Vector *tempvect = NULL;
-   XLAL_CHECK_REAL4( (tempvect = XLALCreateREAL4Vector(numfbins)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (tempvect = XLALCreateREAL4Vector(numfbins)) != NULL, XLAL_EFUNC );
 
-   for (ii=0; ii<numffts; ii++) {
+   for (INT4 ii=0; ii<numffts; ii++) {
       if (vector->data[ii*numfbins]!=0.0) {
          memcpy(tempvect->data, &(vector->data[ii*numfbins]), sizeof(REAL4)*numfbins);
          *harmonicMean += 1.0/calcMean(tempvect);
@@ -837,63 +914,83 @@ INT4 calcHarmonicMean(REAL4 *harmonicMean, REAL4Vector *vector, INT4 numfbins, I
       }
    }
    if (values>0) *harmonicMean = (REAL4)values/(*harmonicMean);
+   else *harmonicMean = 0.0;
 
    XLALDestroyREAL4Vector(tempvect);
 
    return XLAL_SUCCESS;
 
-}
+} /* calcHarmonicMean() */
 
 
-//////////////////////////////////////////////////////////////
-// Compute the standard deviation of a vector of values
+/**
+ * Compute the standard deviation of a REAL4Vector
+ * \param [out] sigma  Pointer to the output standard deviation value
+ * \param [in]  vector Pointer to a REAL4Vector of values
+ * \return Status value
+ */
 INT4 calcStddev(REAL4 *sigma, REAL4Vector *vector)
 {
 
-   INT4 ii;
-
    double *gslarray = NULL;
-   XLAL_CHECK_REAL4( (gslarray = XLALMalloc(sizeof(double)*vector->length)) != NULL, XLAL_ENOMEM );
-   for (ii=0; ii<(INT4)vector->length; ii++) gslarray[ii] = (double)vector->data[ii];
-   REAL4 stddev = (REAL4)gsl_stats_sd(gslarray, 1, vector->length);
+   XLAL_CHECK( (gslarray = XLALMalloc(sizeof(double)*vector->length)) != NULL, XLAL_ENOMEM );
+   for (INT4 ii=0; ii<(INT4)vector->length; ii++) gslarray[ii] = (double)vector->data[ii];
+   *sigma = (REAL4)gsl_stats_sd(gslarray, 1, vector->length);
 
    XLALFree((double*)gslarray);
-
-   *sigma = stddev;
 
    return XLAL_SUCCESS;
 
 } /* calcStddev() */
 
 
-REAL4 calcStddev_ignoreZeros(REAL4Vector *vector)
+/**
+ * Compute the standard deviation of a REAL4Vector ignoring zero values
+ * \param [out] sigma  Pointer to the output standard deviation value
+ * \param [in]  vector Pointer to a REAL4Vector of values
+ * \return Status value
+ */
+INT4 calcStddev_ignoreZeros(REAL4 *sigma, REAL4Vector *vector)
 {
 
    REAL4 meanval = calcMean_ignoreZeros(vector);
-   INT4 ii, values = 0;
+   if (meanval==0.0) {
+      *sigma = 0.0;
+      return XLAL_SUCCESS;
+   }
+
+   INT4 values = 0;
    REAL8 sumtotal = 0.0;
-   for (ii=0; ii<(INT4)vector->length; ii++) {
+   for (INT4 ii=0; ii<(INT4)vector->length; ii++) {
       if (vector->data[ii]!=0.0) {
          sumtotal += (vector->data[ii] - meanval)*(vector->data[ii] - meanval);
          values++;
       }
    }
-   REAL4 stddev = sqrtf((REAL4)(sumtotal/(values-1)));
 
-   return stddev;
+   if (values>1) {
+      *sigma = sqrtf((REAL4)(sumtotal/(values-1)));
+      return XLAL_SUCCESS;
+   }
+   else if (values==1) XLAL_ERROR( XLAL_EFPDIV0 );
+   else XLAL_ERROR( XLAL_EFPINVAL );
 
-} /* calcStddev() */
+} /* calcStddev_ignoreZeros() */
 
 
-//////////////////////////////////////////////////////////////
-// Compute the RMS of a vector of values
+/**
+ * Compute the RMS value of a REAL4Vector
+ * \param [out] rms    Pointer to the output RMS value
+ * \param [in]  vector Pointer to a REAL4Vector of values
+ * \return Status value
+ */
 INT4 calcRms(REAL4 *rms, REAL4Vector *vector)
 {
 
    REAL4Vector *sqvector = NULL;
-   XLAL_CHECK_REAL4( (sqvector = XLALCreateREAL4Vector(vector->length)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (sqvector = XLALCreateREAL4Vector(vector->length)) != NULL, XLAL_EFUNC );
    sqvector = XLALSSVectorMultiply(sqvector, vector, vector);
-   XLAL_CHECK_REAL4( xlalErrno == 0, XLAL_EFUNC );
+   XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
    *rms = sqrtf(calcMean(sqvector));
 
    XLALDestroyREAL4Vector(sqvector);
@@ -903,9 +1000,11 @@ INT4 calcRms(REAL4 *rms, REAL4Vector *vector)
 } /* calcRms() */
 
 
-
-//////////////////////////////////////////////////////////////
-// Compute the mean value of a vector of REAL8 values
+/**
+ * Compute the mean value of a REAL8Vector
+ * \param [in] vector Pointer to a REAL8Vector of values
+ * \return Mean value
+ */
 REAL8 calcMeanD(REAL8Vector *vector)
 {
    REAL8 meanval = gsl_stats_mean((double*)vector->data, 1, vector->length);
@@ -913,8 +1012,11 @@ REAL8 calcMeanD(REAL8Vector *vector)
 } /* calcMeanD() */
 
 
-//////////////////////////////////////////////////////////////
-// Compute the standard deviation of a vector of REAL8 values
+/**
+ * Compute the standard deviation of a REAL8Vector
+ * \param [in] vector Pointer to a REAL8Vector of values
+ * \return Standard deviation value
+ */
 REAL8 calcStddevD(REAL8Vector *vector)
 {
    REAL8 stddev = gsl_stats_sd((double*)vector->data, 1, vector->length);
@@ -922,14 +1024,18 @@ REAL8 calcStddevD(REAL8Vector *vector)
 } /* calcStddevD() */
 
 
-//Return the index value of the maximum value in a REAL4Vector
+/**
+ * Determine the index value of the maximum value in a REAL4Vector
+ * \param [in] vector Pointer to REAL4Vector of values
+ * \return Index value of the largest element
+ */
 INT4 max_index(REAL4Vector *vector)
 {
 
-   INT4 ii = 0, indexval = 0;
+   INT4 indexval = 0;
    REAL4 maxval = vector->data[0];
 
-   for (ii=1; ii<(INT4)vector->length; ii++) {
+   for (INT4 ii=1; ii<(INT4)vector->length; ii++) {
       if (vector->data[ii]>maxval) {
          maxval = vector->data[ii];
          indexval = ii;
@@ -940,7 +1046,11 @@ INT4 max_index(REAL4Vector *vector)
 
 } /* max_index() */
 
-//Return the index value of the maximum value in a REAL8Vector
+/**
+ * Determine the index value of the maximum value in a REAL8Vector
+ * \param [in] vector Pointer to REAL8Vector of values
+ * \return Index value of the largest element
+ */
 INT4 max_index_double(REAL8Vector *vector)
 {
    INT4 indexval = gsl_stats_max_index(vector->data, 1, vector->length);
@@ -948,22 +1058,23 @@ INT4 max_index_double(REAL8Vector *vector)
 } /* max_index_double() */
 
 
-//Return the index value of the maximum value in a REAL4Vector between startlocation and lastlocation (inclusive)
+/**
+ * Determine the index value of the maximum value between elements of a REAL4Vector (inclusive)
+ * \param [in] vector        Pointer to REAL4Vector of values
+ * \param [in] startlocation Index value to start from in the REAL4Vector
+ * \param [in] lastlocation  Index value to end at in the REAL4Vector
+ * \return Index value of the largest element
+ */
 INT4 max_index_in_range(REAL4Vector *vector, INT4 startlocation, INT4 lastlocation)
 {
 
-   if (startlocation<0) {
-      startlocation = 0;
-   }
+   if (startlocation<0) startlocation = 0;
+   if (lastlocation>=(INT4)vector->length) lastlocation = (INT4)vector->length-1;
 
-   INT4 ii = startlocation, indexval = ii;
-   REAL4 maxval = vector->data[ii];
+   INT4 indexval = startlocation;
+   REAL4 maxval = vector->data[startlocation];
 
-   if (lastlocation>=(INT4)vector->length) {
-      lastlocation = (INT4)vector->length-1;
-   }
-
-   for (ii=startlocation+1; ii<=lastlocation; ii++) {
+   for (INT4 ii=startlocation+1; ii<=lastlocation; ii++) {
       if (vector->data[ii]>maxval) {
          maxval = vector->data[ii];
          indexval = ii;
@@ -975,14 +1086,19 @@ INT4 max_index_in_range(REAL4Vector *vector, INT4 startlocation, INT4 lastlocati
 } /* max_index_in_range() */
 
 
-//Return the index value of the maximum value from a vector (vectornum) in a REAL4VectorSequence
+/**
+ * Determine the index value of the maximum value between elements of a REAL4Vector in a REAL4VectorSequence (inclusive)
+ * \param [in] vectorsequence Pointer to REAL4VectorSequence
+ * \param [in] vectornum      Vector number in the REAL4VectorSequence
+ * \return Index value of the largest element
+ */
 INT4 max_index_from_vector_in_REAL4VectorSequence(REAL4VectorSequence *vectorsequence, INT4 vectornum)
 {
 
-   INT4 ii = 0, indexval = 0;
+   INT4 indexval = 0;
    REAL4 maxval = vectorsequence->data[vectornum*vectorsequence->vectorLength];
 
-   for (ii=1; ii<(INT4)vectorsequence->vectorLength; ii++) {
+   for (INT4 ii=1; ii<(INT4)vectorsequence->vectorLength; ii++) {
       if (vectorsequence->data[vectornum*vectorsequence->vectorLength+ii]>maxval) {
          maxval = vectorsequence->data[vectornum*vectorsequence->vectorLength+ii];
          indexval = ii;
@@ -994,16 +1110,20 @@ INT4 max_index_from_vector_in_REAL4VectorSequence(REAL4VectorSequence *vectorseq
 } /* max_index_from_vector_in_REAL4VectorSequence() */
 
 
-//Return the index value of the maximum value and the minimum value from an INT4Vector
+/**
+ * Determine the index value of the maximum and minimum values in an INT4Vector
+ * \param [in]  inputvector   Pointer to INT4Vector
+ * \param [out] min_index_out Pointer to index value of smallest element
+ * \param [out] max_index_out Pointer to index value of largest element
+ */
 void min_max_index_INT4Vector(INT4Vector *inputvector, INT4 *min_index_out, INT4 *max_index_out)
 {
 
-   INT4 ii = 0;
    *min_index_out = 0, *max_index_out = 0;
    INT4 minval = inputvector->data[0];
    INT4 maxval = inputvector->data[0];
 
-   for (ii=1; ii<(INT4)inputvector->length; ii++) {
+   for (INT4 ii=1; ii<(INT4)inputvector->length; ii++) {
       if (inputvector->data[ii]<minval) {
          minval = inputvector->data[ii];
          *min_index_out = ii;
@@ -1017,12 +1137,17 @@ void min_max_index_INT4Vector(INT4Vector *inputvector, INT4 *min_index_out, INT4
 } /* min_max_index_INT4Vector() */
 
 
-//Calculate the median of a REAL4Vector
+/**
+ * Calculate the median value from a REAL4Vector
+ * \param [out] median Pointer to the median value
+ * \param [in]  vector Pointer to a REAL4Vector
+ * \return Status value
+ */
 INT4 calcMedian(REAL4 *median, REAL4Vector *vector)
 {
    //Make a copy of the original vector
    REAL4Vector *tempvect = NULL;
-   XLAL_CHECK_REAL4( (tempvect = XLALCreateREAL4Vector(vector->length)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (tempvect = XLALCreateREAL4Vector(vector->length)) != NULL, XLAL_EFUNC );
    memcpy(tempvect->data, vector->data, sizeof(REAL4)*vector->length);
 
    //qsort() on the copied data

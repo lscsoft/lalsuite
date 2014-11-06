@@ -37,7 +37,7 @@ PFILE=$PSRNAME.par
 UNITS=TDB
 
 if [ -f $PFILE ]; then
-	rm -f $PFILE
+  rm -f $PFILE
 fi
 
 echo PSR    $PSRNAME > $PFILE
@@ -49,8 +49,8 @@ echo PEPOCH $PEPOCH >> $PFILE
 echo UNITS  $UNITS >> $PFILE
 
 if [ $? != "0" ]; then
-	echo Error writing parameter file!
-	exit 2
+  echo Error writing parameter file!
+  exit 2
 fi
 
 # create slightly offset parameter file (for testing update mode)
@@ -84,33 +84,33 @@ TEPHEM="tdb_2000-2019.dat.gz"
 # get current location
 LOCATION=`pwd`
 if [ $? != "0" ]; then
-	echo Error! Could not set the current path!
-	exit 2
+  echo Error! Could not set the current path!
+  exit 2
 fi
 
 # create a frame cache file in the format used by the code
 
 # check file doesn't already exit
 if [ -f cachefile ]; then
-	rm -f cachefile
+  rm -f cachefile
 fi
 
 # make directory to contain the frames and unpack the tar file
 # first check if it already exists
 if [ -d ${LOCATION}/framedir ]; then
-	rm -f ${LOCATION}/framedir/*
-	rmdir ${LOCATION}/framedir
+  rm -f ${LOCATION}/framedir/*
+  rmdir ${LOCATION}/framedir
 fi
 
 mkdir ${LOCATION}/framedir
 if [ $? != "0" ]; then
-	echo Error. Could not create frame directory
-	exit 2
+  echo Error. Could not create frame directory
+  exit 2
 fi
 
 if [ ! -f $FRAMEFILE ]; then
-	echo Error. Frame file does not exist!
-	exit 2
+  echo Error. Frame file does not exist!
+  exit 2
 fi
 
 FILELIST=$FRAMEFILE
@@ -118,21 +118,21 @@ cp $FILELIST ${LOCATION}/framedir
 
 # use make_frame_cache to make a frame cache file
 if [ ! -f ${srcdir}/make_frame_cache ]; then
-	echo Error! make_frame_cache does not exist!
-	exit 2
+  echo Error! make_frame_cache does not exist!
+  exit 2
 fi
 
 ${srcdir}/make_frame_cache --frame-dir ${LOCATION}/framedir --gps-start-time $DATASTART --gps-end-time $DATAEND --output-file cachefile
 if [ $? != "0" ]; then
-	echo Could not create the cache file!
-	exit 2
+  echo Could not create the cache file!
+  exit 2
 fi
 
 # create segment file
 
 # check file doesn't already exit
 if [ -f segfile ]; then
-	rm -f segfile
+  rm -f segfile
 fi
 
 # make 1 segment of two minutes length
@@ -142,8 +142,8 @@ SEGEND=`expr $SEGSTART + 120`
 echo $SEGNUM $SEGSTART $SEGEND 120 >> segfile
 
 if [ $? != "0" ]; then
-	echo Could not create the segment file!
-	exit 2
+  echo Could not create the segment file!
+  exit 2
 fi
 
 # make output directory in format that the code like
@@ -151,14 +151,14 @@ OUTDIR=$LOCATION/$DATASTART-$DATAEND
 
 # check if it exists first
 if [ -d $OUTDIR ]; then
-	rm -f ${OUTDIR}/*
-	rmdir $OUTDIR
+  rm -f ${OUTDIR}/*
+  rmdir $OUTDIR
 fi
 
 mkdir $OUTDIR
 if [ $? != "0" ]; then
-	echo Could not create the output directory
-	exit 2
+  echo Could not create the output directory
+  exit 2
 fi
 
 #################### COARSE HETERODYNES ########################
@@ -170,15 +170,15 @@ $CODENAME --heterodyne-flag 0 --ifo $DETECTOR --pulsar $PSRNAME --param-file $PF
 # check the exit status of the code
 ret_code=$?
 if [ $ret_code != "0" ]; then
-	echo lalapps_heterodyne_pulsar exited with error $ret_code!
-	exit 2
+  echo lalapps_heterodyne_pulsar exited with error $ret_code!
+  exit 2
 fi
 
 # check that the expected file got output
 COARSEFILE=$OUTDIR/coarsehet_${PSRNAME}_${DETECTOR}_${DATASTART}-${DATAEND}
 if [ ! -f $COARSEFILE ]; then
-	echo Error! Code has not output a coarse heterodyne file
-	exit 2
+  echo Error! Code has not output a coarse heterodyne file
+  exit 2
 fi
 
 # move file so that we can create a binary file of the same name
@@ -241,8 +241,8 @@ fi
 # check that it produced the right file
 FINEFILE=$OUTDIR/finehet_${PSRNAME}_${DETECTOR}
 if [ ! -f $FINEFILE ]; then
-	echo Error! Code has not output a fine heterodyned file
-	exit 2
+  echo Error! Code has not output a fine heterodyned file
+  exit 2
 fi
 
 # move file
@@ -316,14 +316,14 @@ $CODENAME --ephem-earth-file $EEPHEM --ephem-sun-file $SEPHEM --ephem-time-file 
 # check the exit status of the code
 ret_code=$?
 if [ $ret_code != "0" ]; then
-	echo lalapps_heterodyne_pulsar exited with error $ret_code!
-	exit 2
+  echo lalapps_heterodyne_pulsar exited with error $ret_code!
+  exit 2
 fi
 
 # check that it produced the right file
 if [ ! -f $FINEFILE ]; then
-	echo Error! Cde has not output a fine heterodyned file
-	exit 2
+  echo Error! Cde has not output a fine heterodyned file
+  exit 2
 fi
 
 # move file
@@ -367,22 +367,22 @@ f1=875206560-875206680/finehet_J0000+0000_H1.bin
 val=0
 while read line
 do
-	for args in $line; do
-		# pass lines through said and convert any exponents
-		# expressed as e's to E's and then convert to decimal format (for bc)
+  for args in $line; do
+    # pass lines through said and convert any exponents
+    # expressed as e's to E's and then convert to decimal format (for bc)
                 tempval=`echo $args | sed 's/e/E/g'`
-		if [ $val == 0 ]; then
-                	arrvals[$val]=$tempval
-		else
-			arrvals[$val]=`echo "$tempval" | LC_ALL=C awk -F"E" 'BEGIN{OFMT="%10.35f"} {print $1 * (10 ^ $2)}'`
-		fi
-		((val++))
-	done
+    if [ $val == 0 ]; then
+                  arrvals[$val]=$tempval
+    else
+      arrvals[$val]=`echo "$tempval" | LC_ALL=C awk -F"E" 'BEGIN{OFMT="%10.35f"} {print $1 * (10 ^ $2)}'`
+    fi
+    ((val++))
+  done
 done < $f1
 
 if (( ${#arrvals[@]} != 3 )); then
-	echo Error! Wrong number of data in the file
-	exit 2
+  echo Error! Wrong number of data in the file
+  exit 2
 fi
 
 fail1=`echo "if (${arrvals[0]} != $REALT) 1" | bc`;
@@ -457,12 +457,12 @@ skip=0
 while read line
 do
         # this file has an extra line, so skip the first one
-	if [ $skip == 0 ]; then
-		((skip++))
-		continue
-	fi
+  if [ $skip == 0 ]; then
+    ((skip++))
+    continue
+  fi
 
-	for args in $line; do
+  for args in $line; do
                 # pass lines through said and convert any exponents
                 # expressed as e's to E's and then convert to decimal format (for bc)
                 tempval=`echo $args | sed 's/e/E/g'`
@@ -611,8 +611,8 @@ rm -f ${OUTDIR}/*
 rmdir $OUTDIR
 
 if [ $? != "0" ]; then
-	echo Error. Something went wrong during clean up!
-	exit 2
+  echo Error. Something went wrong during clean up!
+  exit 2
 fi
 
 # exit with all being well :)

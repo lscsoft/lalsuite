@@ -270,7 +270,7 @@ int main(INT4 argc, CHAR *argv[])
     if (path == NULL)
       path = frInCache->list[k].url;
     else
-      path++; /* skip the ':' -- now on the path */
+      path+=strlen("://localhost"); /* skip the ':' -- now on the path */
 
     frFile = FrFileINew(path);
 

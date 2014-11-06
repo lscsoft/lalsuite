@@ -86,7 +86,7 @@ sorted_inds = data[:,rho_col].argsort()[::-1]
 data = data[sorted_inds]
 
 for line in data:
-        outfile.write("%.10f %.10f %.10g %.10f %.10g %.5f %.10f %.10g %.10g\n"
+        outfile.write("%.10f %.10f %.10g %.10f %.10g %.5f %.10g %.10g %.10g\n"
                       % tuple(line))
 print "Highest discarded candidate SNR was %f" % dropped_rho
 outfile.close()

@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2011, 2013 Evan Goetz
+ *  Copyright (C) 2011, 2013, 2014 Evan Goetz
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -21,78 +21,80 @@
 #include <stdio.h>
 #include <math.h>
 
+#include <lal/UserInput.h>
+#include <lal/LALString.h>
 #include <lal/DopplerScan.h>
 
-#include "cmdline_skygridsetup.h"
 #include "../antenna.h"
+
+typedef struct
+{
+   BOOLEAN help;		/**< Print this help/usage message */
+   REAL8 Tcoh;
+   REAL8 SFToverlap;
+   REAL8 t0;
+   REAL8 Tobs;
+   REAL8 fmin;
+   REAL8 fspan;
+   CHAR *IFO;
+   CHAR *outfilename;
+   CHAR *ephemEarth;
+   CHAR *ephemSun;
+   CHAR *skyRegion;
+   BOOLEAN v1;
+} UserVariables_t;
+
+INT4 InitUserVars(UserVariables_t *uvar, int argc, char *argv[]);
 
 //Main program
 int main(int argc, char *argv[])
 {
    
    FILE *OUTPUT;
-   char s[20000];
    LALDetector det;
    LALStatus XLAL_INIT_DECL(status);
-   
-   struct gengetopt_args_info args_info;
-   struct cmdline_parser_params *configparams;
-   configparams = cmdline_parser_params_create();
-   configparams->check_required = 0;  //don't check for required values at the step
-   cmdline_parser_ext(argc, argv, &args_info, configparams);
-   configparams->initialize = 0;  //don't reinitialize the parameters structure
-   if (args_info.config_given) cmdline_parser_config_file(args_info.config_arg, &args_info, configparams);
-   cmdline_parser_required(&args_info, argv[0]);
 
-   if (args_info.v2_given && !args_info.Tobs_given) {
-      fprintf(stderr, "%s: Tobs must be specified.\n", __func__);
-      XLAL_ERROR(XLAL_FAILURE);
-   }
-   if (args_info.v2_given && !args_info.t0_given) {
-      fprintf(stderr, "%s: t0 must be specified.\n", __func__);
-      XLAL_ERROR(XLAL_FAILURE);
-   }
-   
-   snprintf(s, 20000, "%s", args_info.outfilename_arg);
-   XLAL_CHECK( (OUTPUT = fopen(s,"w")) != NULL, XLAL_EIO, "Output file %s could not be opened\n", s );
+   UserVariables_t XLAL_INIT_DECL(uvar);
+   XLAL_CHECK ( InitUserVars(&uvar, argc, argv) == XLAL_SUCCESS, XLAL_EFUNC );
+
+   XLAL_CHECK( (OUTPUT = fopen(uvar.outfilename,"w")) != NULL, XLAL_EIO, "Output file %s could not be opened\n", uvar.outfilename );
    
    //Interferometer
-   if (strcmp("L1", args_info.IFO_arg)==0) {
-      fprintf(stderr,"IFO = %s\n", args_info.IFO_arg);
+   if (strcmp("L1", uvar.IFO)==0) {
+      fprintf(stderr,"IFO = %s\n", uvar.IFO);
       det = lalCachedDetectors[LAL_LLO_4K_DETECTOR]; //L1
-   } else if (strcmp("H1", args_info.IFO_arg)==0) {
-      fprintf(stderr,"IFO = %s\n", args_info.IFO_arg);
+   } else if (strcmp("H1", uvar.IFO)==0) {
+      fprintf(stderr,"IFO = %s\n", uvar.IFO);
       det = lalCachedDetectors[LAL_LHO_4K_DETECTOR]; //H1
-   } else if (strcmp("V1", args_info.IFO_arg)==0) {
-      fprintf(stderr,"IFO = %s\n", args_info.IFO_arg);
+   } else if (strcmp("V1", uvar.IFO)==0) {
+      fprintf(stderr,"IFO = %s\n", uvar.IFO);
       det = lalCachedDetectors[LAL_VIRGO_DETECTOR]; //V1
    } else {
-      fprintf(stderr, "%s: Not using valid interferometer! Expected 'H1', 'L1', or 'V1' not %s.\n", __func__, args_info.IFO_arg);
-      XLAL_ERROR( XLAL_EFUNC );
+      XLAL_ERROR( XLAL_EINVAL, "Not using valid interferometer! Expected 'H1', 'L1', or 'V1' not %s.\n", uvar.IFO);
    }
    
    //Parameters for the sky-grid
-   fprintf(stderr, "Sky region = %s\n", args_info.skyRegion_arg);
+   fprintf(stderr, "Sky region = %s\n", uvar.skyRegion);
    DopplerSkyScanInit XLAL_INIT_DECL(scanInit);
    DopplerSkyScanState XLAL_INIT_DECL(scan);
    PulsarDopplerParams dopplerpos;
    scanInit.gridType = GRID_ISOTROPIC;     //Default value for an approximate-isotropic grid
-   scanInit.skyRegionString = args_info.skyRegion_arg;      //"allsky" = Default value for all-sky search
+   scanInit.skyRegionString = uvar.skyRegion;      //"allsky" = Default value for all-sky search
    scanInit.numSkyPartitions = 1;   //Default value so sky is not broken into chunks
-   scanInit.Freq = args_info.fmin_arg+0.5*args_info.fspan_arg;  //Mid-point of the frequency band
+   scanInit.Freq = uvar.fmin+0.5*uvar.fspan;  //Mid-point of the frequency band
    
    //Initialize ephemeris data structure
    EphemerisData *edat = NULL;
-   XLAL_CHECK( (edat = XLALInitBarycenter(args_info.ephemEarth_arg, args_info.ephemSun_arg)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (edat = XLALInitBarycenter(uvar.ephemEarth, uvar.ephemSun)) != NULL, XLAL_EFUNC );
    
    //Maximum orbital earth speed in units of c from start of S6 TwoSpect data for 104 weeks total time
    REAL4 detectorVmax = 0.0;
-   if (!args_info.v2_given) detectorVmax = CompDetectorVmax(931081500.0+args_info.SFToverlap_arg, args_info.Tcoh_arg, args_info.SFToverlap_arg, 62899200.0-args_info.SFToverlap_arg, det, edat);
-   else detectorVmax = CompDetectorVmax(args_info.t0_arg-args_info.Tcoh_arg, args_info.Tcoh_arg, args_info.SFToverlap_arg, args_info.Tobs_arg+2.0*args_info.Tcoh_arg, det, edat);
+   if (uvar.v1) detectorVmax = CompDetectorVmax(931081500.0+uvar.SFToverlap, uvar.Tcoh, uvar.SFToverlap, 62899200.0-uvar.SFToverlap, det, edat);
+   else detectorVmax = CompDetectorVmax(uvar.t0-uvar.Tcoh, uvar.Tcoh, uvar.SFToverlap, uvar.Tobs+2.0*uvar.Tcoh, det, edat);
    XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC, "CompDetectorVmax() failed\n" );
    
    //Initialize the sky-grid
-   scanInit.dAlpha = 0.5/((args_info.fmin_arg+0.5*args_info.fspan_arg) * args_info.Tcoh_arg * detectorVmax);
+   scanInit.dAlpha = 0.5/((uvar.fmin+0.5*uvar.fspan) * uvar.Tcoh * detectorVmax);
    scanInit.dDelta = scanInit.dAlpha;
    InitDopplerSkyScan(&status, &scan, &scanInit);
    XLAL_CHECK( status.statusCode == 0, XLAL_EFUNC );
@@ -109,7 +111,7 @@ int main(int argc, char *argv[])
    }
 
    //Destroy
-   cmdline_parser_free(&args_info);
+   XLALDestroyUserVars();
    XLALDestroyEphemerisData(edat);
    fclose(OUTPUT);
    
@@ -117,3 +119,40 @@ int main(int argc, char *argv[])
    
 }
 
+
+INT4 InitUserVars(UserVariables_t *uvar, int argc, char *argv[])
+{
+   XLAL_CHECK ( uvar != NULL, XLAL_EINVAL, "Invalid NULL input 'uvar'\n");
+   XLAL_CHECK ( argv != NULL, XLAL_EINVAL, "Invalid NULL input 'argv'\n");
+
+   uvar->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
+   uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
+   uvar->outfilename = XLALStringDuplicate("skygrid.dat");
+   uvar->skyRegion = XLALStringDuplicate("allsky");
+   uvar->Tcoh = 1800;
+   uvar->SFToverlap = 900;
+   uvar->fspan = 0.25;
+
+   XLALregBOOLUserStruct(  help,       'h', UVAR_HELP     , "Print this help/usage message");
+   XLALregREALUserStruct(  Tcoh,        0 , UVAR_OPTIONAL , "SFT coherence time");
+   XLALregREALUserStruct(  SFToverlap,  0 , UVAR_OPTIONAL , "SFT overlap in seconds, usually Tcoh/2");
+   XLALregREALUserStruct(  t0,          0 , UVAR_OPTIONAL , "GPS start time of the search; not needed if --v1 is specified");
+   XLALregREALUserStruct(  Tobs,        0 , UVAR_OPTIONAL , "Duration of the search (in seconds); not needed if --v1 is specified");
+   XLALregREALUserStruct(  fmin,        0 , UVAR_OPTIONAL , "Minimum frequency of band");
+   XLALregREALUserStruct(  fspan,       0 , UVAR_OPTIONAL , "Frequency span of band");
+   XLALregSTRINGUserStruct(IFO,         0 , UVAR_REQUIRED , "Interferometer of whose data is being analyzed");
+   XLALregSTRINGUserStruct(outfilename, 0 , UVAR_OPTIONAL , "Output filename");
+   XLALregSTRINGUserStruct(ephemEarth,  0 , UVAR_OPTIONAL , "Earth ephemeris file");
+   XLALregSTRINGUserStruct(ephemSun,    0 , UVAR_OPTIONAL , "Sun ephemeris file");
+   XLALregSTRINGUserStruct(skyRegion,   0 , UVAR_OPTIONAL , "Region of the sky to search (e.g. (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or allsky");
+   XLALregBOOLUserStruct(  v1,          0 , UVAR_DEVELOPER, "Flag to use older style of CompDetectorVmax (for S6/VSR2-3 analysis)");
+
+   XLAL_CHECK( XLALUserVarReadAllInput(argc, argv) == XLAL_SUCCESS, XLAL_EFUNC );
+
+   if ( uvar->help ) exit (0);
+
+   if (!uvar->v1 && !XLALUserVarWasSet(&uvar->t0)) XLAL_ERROR( XLAL_EINVAL, "Must set t0" );
+   if (!uvar->v1 && !XLALUserVarWasSet(&uvar->Tobs)) XLAL_ERROR( XLAL_EINVAL, "Must set Tobs" );
+
+   return XLAL_SUCCESS;
+}

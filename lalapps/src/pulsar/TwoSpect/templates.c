@@ -38,8 +38,10 @@
 #include "vectormath.h"
 
 
-//////////////////////////////////////////////////////////////
-// Allocate memory for farStruct struct
+/**
+ * Allocate memory for farStruct
+ * \return Pointer to a farStruct
+ */
 farStruct * new_farStruct(void)
 {
    farStruct *farstruct = NULL;
@@ -50,8 +52,10 @@ farStruct * new_farStruct(void)
 } /* new_farStruct() */
 
 
-//////////////////////////////////////////////////////////////
-// Destroy farStruct struct
+/**
+ * Destroy an farStruct
+ * \param [in] farstruct Pointer to a farStruct
+ */
 void free_farStruct(farStruct *farstruct)
 {
    XLALDestroyREAL4Vector(farstruct->topRvalues);
@@ -60,10 +64,17 @@ void free_farStruct(farStruct *farstruct)
 } /* free_farStruct() */
 
 
-//////////////////////////////////////////////////////////////
-// Estimate the FAR of the R statistic from the weights
-// We do this by a number of trials
-void estimateFAR(farStruct *output, templateStruct *templatestruct, INT4 trials, REAL8 thresh, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios)
+/**
+ * Estimate the FAR of the R statistic from the weights by a number of trials
+ * \param [out] output         Pointer to a farStruct
+ * \param [in]  templatestruct Pointer to a templateStruct containing a template
+ * \param [in]  trials         Number of trials to estimate the FAR
+ * \param [in]  thresh         Threshold value
+ * \param [in]  ffplanenoise   Pointer to REAL4Vector containing the expected 2nd FFT background estimates
+ * \param [in]  fbinaveratios  Pointer to REAL4Vector containing the noise floor variations
+ * \return Status value
+ */
+INT4 estimateFAR(farStruct *output, templateStruct *templatestruct, INT4 trials, REAL8 thresh, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios)
 {
 
    INT4 ii, jj;
@@ -74,17 +85,11 @@ void estimateFAR(farStruct *output, templateStruct *templatestruct, INT4 trials,
    for (ii=0; ii<numofweights; ii++) sumofsqweights += (templatestruct->templatedata->data[ii]*templatestruct->templatedata->data[ii]);
    REAL8 sumofsqweightsinv = 1.0/sumofsqweights;
 
-   REAL4Vector *Rs = XLALCreateREAL4Vector(trials);
-   if (Rs==NULL) {
-      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, trials);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   }
+   REAL4Vector *Rs = NULL;
+   XLAL_CHECK( (Rs = XLALCreateREAL4Vector(trials)) != NULL, XLAL_EFUNC );
 
-   gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
-   if (rng==NULL) {
-      fprintf(stderr,"%s: gsl_rng_alloc() failed.\n", __func__);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   }
+   gsl_rng *rng = NULL;
+   XLAL_CHECK( (rng = gsl_rng_alloc(gsl_rng_mt19937)) != NULL, XLAL_EFUNC );
    //srand(time(NULL));
    //UINT8 randseed = rand();
    //gsl_rng_set(rng, randseed);
@@ -95,30 +100,18 @@ void estimateFAR(farStruct *output, templateStruct *templatestruct, INT4 trials,
       REAL8 R = 0.0;
       for (jj=0; jj<numofweights; jj++) {
          REAL8 noise = expRandNum(ffplanenoise->data[ templatestruct->secondfftfrequencies->data[jj] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ], rng);
+         XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
          R += (noise - ffplanenoise->data[ templatestruct->secondfftfrequencies->data[jj] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ])*templatestruct->templatedata->data[jj];
       }
       Rs->data[ii] = (REAL4)(R*sumofsqweightsinv);
    } /* for ii < trials */
    REAL4 mean = calcMean(Rs);
-   if (XLAL_IS_REAL4_FAIL_NAN(mean)) {
-      fprintf(stderr,"%s: calcMean() failed.\n", __func__);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   }
    REAL4 sigma = 0.0;
-   XLAL_CHECK_VOID( calcStddev(&sigma, Rs) == XLAL_SUCCESS, XLAL_EFUNC );
+   XLAL_CHECK( calcStddev(&sigma, Rs) == XLAL_SUCCESS, XLAL_EFUNC );
 
    //Do an insertion sort. At best this is O(thresh*trials), at worst this is O(thresh*trials*trials).
-   if (output->topRvalues == NULL) {
-      output->topRvalues = XLALCreateREAL4Vector((INT4)round(thresh*trials)+1);
-      if (output->topRvalues==NULL) {
-         fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, (INT4)roundf(thresh*trials)+1);
-         XLAL_ERROR_VOID(XLAL_EFUNC);
-      }
-   }
-   if ((gsl_sort_float_largest((float*)output->topRvalues->data, output->topRvalues->length, (float*)Rs->data, 1, Rs->length)) != 0) {
-      fprintf(stderr,"%s: gsl_sort_float_largest() failed.\n", __func__);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   }
+   if (output->topRvalues == NULL) XLAL_CHECK( (output->topRvalues = XLALCreateREAL4Vector((INT4)round(thresh*trials)+1)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( gsl_sort_float_largest((float*)output->topRvalues->data, output->topRvalues->length, (float*)Rs->data, 1, Rs->length) == 0, XLAL_EFUNC );
 
    output->far = output->topRvalues->data[output->topRvalues->length - 1];
    output->distMean = mean;
@@ -128,14 +121,22 @@ void estimateFAR(farStruct *output, templateStruct *templatestruct, INT4 trials,
    XLALDestroyREAL4Vector(Rs);
    gsl_rng_free(rng);
 
+   return XLAL_SUCCESS;
+
 } /* estimateFAR() */
 
 
-//////////////////////////////////////////////////////////////
-// Numerically solve for the FAR of the R statistic from the weights
-// This is done using the Davies algorithm and a root finding algorithm
-// method = 0: Brent's method
-// method = 1: Newton's method
+/**
+ * Numerically solve for the FAR of the R statistic from the weights using the Davies algorithm and a root finding algorithm
+ * \param [out] output         Pointer to a farStruct
+ * \param [in]  templatestruct Pointer to a templateStruct containing a template
+ * \param [in]  thresh         Threshold value
+ * \param [in]  ffplanenoise   Pointer to REAL4Vector containing the expected 2nd FFT background estimates
+ * \param [in]  fbinaveratios  Pointer to REAL4Vector containing the noise floor variations
+ * \param [in]  inputParams    Pointer to inputParamsStruct
+ * \param [in]  method         Integer value of 0 (Brent's method) or 1 (Newton's method)
+ * \return Status value
+ */
 INT4 numericFAR(farStruct *output, templateStruct *templatestruct, REAL8 thresh, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios, inputParamsStruct *inputParams, INT4 method)
 {
 
@@ -236,8 +237,13 @@ INT4 numericFAR(farStruct *output, templateStruct *templatestruct, REAL8 thresh,
 
 } /* numericFAR() */
 
-//For the root finding, calculating the false alarm probability of R
-//Takes an average of 3 values of close by R values for stability
+
+/**
+ * For the root finding, calculating the false alarm probability of R. This method takes the average of 3 values of close by R values for stability
+ * \param [in] R     R value of interest
+ * \param [in] param A gsl_probR_pars struct
+ * \return Difference between the false alarm probability and the log10 threshold value
+ */
 REAL8 gsl_probR(REAL8 R, void *param)
 {
 
@@ -260,7 +266,13 @@ REAL8 gsl_probR(REAL8 R, void *param)
 
 } /* gsl_probR() */
 
-//When doing Newton's method, we need the slope
+
+/**
+ * Determine the slope of the inverse cumulative distribution function
+ * \param [in] R     R value of interest
+ * \param [in] param A gsl_probR_pars struct
+ * \return The slope of the inverse distribution function
+ */
 REAL8 gsl_dprobRdR(REAL8 R, void *param)
 {
 
@@ -292,7 +304,15 @@ REAL8 gsl_dprobRdR(REAL8 R, void *param)
 
 } /* gsl_dprobRdR() */
 
-//For Newton's method, we need the slope
+
+/**
+ * Determine the difference between the probability and log10 of the threshold as well as the slope of the inverse cumulative distribution function
+ * \param [in]  R            R value of interest
+ * \param [in]  param        A gsl_probR_pars struct
+ * \param [out] probabilityR The difference between the threshold and the probability of the R value in question
+ * \param [out] dprobRdR     The slope of the inverse cumulative distribution function
+ * \return The slope of the inverse distribution function
+ */
 void gsl_probRandDprobRdR(REAL8 R, void *param, REAL8 *probabilityR, REAL8 *dprobRdR)
 {
 
@@ -305,9 +325,15 @@ void gsl_probRandDprobRdR(REAL8 R, void *param, REAL8 *probabilityR, REAL8 *dpro
 } /* gsl_probRandDprobRdR() */
 
 
-//////////////////////////////////////////////////////////////
-// Analytically calculate the probability of a true signal using the Davies' method
-// output is log10(prob)
+/**
+ * Analytically calculate the probability of a true signal using the Davies' method
+ * \param [in]  templatestruct Pointer to a templateStruct with a template
+ * \param [in]  ffplanenoise   Pointer to a REAL4Vector with an estimate of the background of 2nd FFT powers
+ * \param [in]  R              The value of R for a given template
+ * \param [in]  params         Pointer to inputParamsStruct
+ * \param [out] errcode        Pointer to the error code value from the Davies algorithm
+ * \return log10 false alarm probability value
+ */
 REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios, REAL8 R, inputParamsStruct *params, INT4 *errcode)
 {
 
@@ -427,7 +453,11 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
 } /* probR() */
 
 
-//Create a new template structure
+/**
+ * Allocate a new templateStruct
+ * \param [in] length Length of the template
+ * \return Pointer to templateStruct
+ */
 templateStruct * new_templateStruct(INT4 length)
 {
 
@@ -453,7 +483,10 @@ templateStruct * new_templateStruct(INT4 length)
 } /* new_templateStruct() */
 
 
-//Reset the values in the template structure
+/**
+ * Reset the values in a templateStruct
+ * \param [in] templatestruct Pointer to a templateStruct
+ */
 void resetTemplateStruct(templateStruct *templatestruct)
 {
 
@@ -470,7 +503,10 @@ void resetTemplateStruct(templateStruct *templatestruct)
 } /* resetTemplateStruct() */
 
 
-//Free the memory of a template structure
+/**
+ * Free a templateStruct
+ * \param [in] nameoftemplate Pointer to a templateStruct
+ */
 void free_templateStruct(templateStruct *nameoftemplate)
 {
    XLALDestroyREAL4Vector(nameoftemplate->templatedata);
@@ -481,12 +517,19 @@ void free_templateStruct(templateStruct *nameoftemplate)
 } /* free_templateStruct() */
 
 
-//////////////////////////////////////////////////////////////
-// Make an estimated template based on FFT of train of Gaussians
-// It is, essentially, eq. 18 of E. Goetz and K. Riles (2011)
-// I've made it so that it handles spillage of power into neighboring bins a little more gracefully
-// Numerical stability issues means that we need to compute exp(log(eq. 18)) = eq. 18
-// exp(log(eq. 18)) = exp(log(4*pi*sigma^2)-sigma^2*omegapr^2)*(1+cos(delta*omegapr))*exp(log(1-cos(N*P*omegapr))-log(P*omegapr))
+/**
+ * \brief Make an estimated template based on FFT of train of Gaussians
+ *
+ * This is eq. 18 of E. Goetz and K. Riles (2011). This handles spillages of power into neighboring frequency bins a little
+ * more gracefully. Numerical stability issues mean that we need to compute exp(log(eq. 18)) = eq. 18
+ * exp(log(eq. 18)) = exp(log(4*pi*sigma^2) - sigma^2*omegapr^2) * (1+cos(delta*omegapr)) * exp(log(1-cos(N*P*omegapr))-log(P*omegapr))
+ * \param [out] output     Pointer to templateStruct
+ * \param [in]  input      An input candidate structure
+ * \param [in]  params     Pointer to inputParamsStruct
+ * \param [in]  numfbins   Number of frequency bins in the band
+ * \param [in]  numfprbins Number of 2nd FFT frequency bins
+ * \return Status value
+ */
 INT4 makeTemplateGaussians(templateStruct *output, candidate input, inputParamsStruct *params, INT4 numfbins, INT4 numfprbins)
 {
 
@@ -733,10 +776,17 @@ INT4 makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
 } /* makeTemplateGaussians() */
 
 
-
-//////////////////////////////////////////////////////////////
-// Make an template based on FFT of sinc squared functions
-// This is eq. 20 of E. Goetz and K. Riles (2011)
+/**
+ * \brief Make an template based on FFT of sinc squared functions
+ *
+ * This is eq. 20 of E. Goetz and K. Riles (2011)
+ * \param [out] output   Pointer to templateStruct
+ * \param [in]  input    An input candidate structure
+ * \param [in]  params   Pointer to inputParamsStruct
+ * \param [in]  sftexist Pointer to INT4Vector of existing SFTs
+ * \param [in]  plan     Pointer to REAL4FFTPlan
+ * \return Status value
+ */
 INT4 makeTemplate(templateStruct *output, candidate input, inputParamsStruct *params, INT4Vector *sftexist, REAL4FFTPlan *plan)
 {
 
@@ -867,6 +917,18 @@ INT4 makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
 }
 
 
+/**
+ * Analyze a single template
+ * \param [out] output                 Pointer to candidate structure
+ * \param [in]  input                  Pointer to candidate structure
+ * \param [in]  ffdata                 Pointer to ffdataStruct
+ * \param [in]  aveNoise               Pointer to REAL4Vector of expected 2nd FFT background powers
+ * \param [in]  aveTFnoisePerFbinRatio Pointer to REAL4Vector of normalized power across the frequency band
+ * \param [in]  params                 Pointer to inputParamsStruct
+ * \param [in]  sftexist               Pointer to INT4Vector of existing SFTs
+ * \param [in]  plan                   Pointer to REAL4FFTPlan
+ * \return Status value
+ */
 INT4 analyzeOneTemplate(candidate *output, candidate *input, ffdataStruct *ffdata, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, inputParamsStruct *params, INT4Vector *sftexist, REAL4FFTPlan *plan)
 {
 
@@ -909,7 +971,28 @@ INT4 analyzeOneTemplate(candidate *output, candidate *input, ffdataStruct *ffdat
 }
 
 
-//A brute force template search to find the most significant template around a candidate
+/**
+ * A brute force template search to find the most significant template around a candidate
+ * \param [out] output               Pointer to candidate structure
+ * \param [in]  input                Input candidate structure
+ * \param [in]  fminimum             Lower frequency bound to search (inclusive)
+ * \param [in]  fmaximum             Upper frequency bound to search (inclusive)
+ * \param [in]  numfsteps            Number of steps from lower to upper frequency bound (inclusive)
+ * \param [in]  numperiodslonger     Number of periods longer than candidate period
+ * \param [in]  numperiodsshorter    Number of periods shorter than candidate period
+ * \param [in]  periodSpacingFactor  Spacing factor of periods, 1 is normal spacing, >1 is larger spacing, <1 is smaller spacing
+ * \param [in]  dfmin                Lower modulation depth bound to search (inclusive)
+ * \param [in]  dfmax                Upper modulation depth bound to search (inclusive)
+ * \param [in]  numdfsteps           Number of steps from lower to upper modulation depth bound (inclusive)
+ * \param [in]  params               Pointer to inputParamsStruct
+ * \param [in]  ffdata               Pointer to ffdataStruct
+ * \param [in]  sftexist             Pointer to INT4Vector of existing SFTs
+ * \param [in]  aveNoise             Pointer to REAL4Vector of 2nd FFT background powers
+ * \param [in]  aveNoisePerFbinRatio Pointer to REAL4Vector of normalized power across the frequency band
+ * \param [in]  secondFFTplan        Pointer to REAL4FFTPlan
+ * \param [in]  useExactTemplates    Flag of 0 (use Gaussian templates) or 1 (use exact templates)
+ * \return Status value
+ */
 INT4 bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum, REAL8 fmaximum, INT4 numfsteps, INT4 numperiodslonger, INT4 numperiodsshorter, REAL4 periodSpacingFactor, REAL8 dfmin, REAL8 dfmax, INT4 numdfsteps, inputParamsStruct *params, REAL4Vector *ffdata, INT4Vector *sftexist, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, REAL4FFTPlan *secondFFTplan, INT4 useExactTemplates)
 {
 
@@ -1043,7 +1126,28 @@ INT4 bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum
 
 }
 
-
+/**
+ * A brute force template search to test templates around a candidate
+ * \param [out] output               Pointer to a pointer of a candidateVector
+ * \param [in]  input                Input candidate structure
+ * \param [in]  fminimum             Lower frequency bound to search (inclusive)
+ * \param [in]  fmaximum             Upper frequency bound to search (inclusive)
+ * \param [in]  numfsteps            Number of steps from lower to upper frequency bound (inclusive)
+ * \param [in]  numperiodslonger     Number of periods longer than candidate period
+ * \param [in]  numperiodsshorter    Number of periods shorter than candidate period
+ * \param [in]  periodSpacingFactor  Spacing factor of periods, 1 is normal spacing, >1 is larger spacing, <1 is smaller spacing
+ * \param [in]  dfmin                Lower modulation depth bound to search (inclusive)
+ * \param [in]  dfmax                Upper modulation depth bound to search (inclusive)
+ * \param [in]  numdfsteps           Number of steps from lower to upper modulation depth bound (inclusive)
+ * \param [in]  params               Pointer to inputParamsStruct
+ * \param [in]  ffdata               Pointer to ffdataStruct
+ * \param [in]  sftexist             Pointer to INT4Vector of existing SFTs
+ * \param [in]  aveNoise             Pointer to REAL4Vector of 2nd FFT background powers
+ * \param [in]  aveNoisePerFbinRatio Pointer to REAL4Vector of normalized power across the frequency band
+ * \param [in]  secondFFTplan        Pointer to REAL4FFTPlan
+ * \param [in]  useExactTemplates    Flag of 0 (use Gaussian templates) or 1 (use exact templates)
+ * \return Status value
+ */
 INT4 bruteForceTemplateTest(candidateVector **output, candidate input, REAL8 fminimum, REAL8 fmaximum, INT4 numfsteps, INT4 numperiodslonger, INT4 numperiodsshorter, REAL4 periodSpacingFactor, REAL8 dfmin, REAL8 dfmax, INT4 numdfsteps, inputParamsStruct *params, REAL4Vector *ffdata, INT4Vector *sftexist, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, REAL4FFTPlan *secondFFTplan, INT4 useExactTemplates)
 {
 
@@ -1151,9 +1255,25 @@ INT4 bruteForceTemplateTest(candidateVector **output, candidate input, REAL8 fmi
 }
 
 
-
-//A brute force template search in a region of parameter space
-/// Testing in progress
+/**
+ * A brute force template search to find the most significant template around a putative source whose parameters are somewhat constrained
+ * \param [out] output               Pointer to a pointer of a candidateVector
+ * \param [in]  fminimum             Lower frequency bound to search (inclusive)
+ * \param [in]  fspan                Span of the frequency band (inclusive of endpoint)
+ * \param [in]  period               Specific orbital period (measured in seconds)
+ * \param [in]  asini                Specific projected semi-major axis (measured in light seconds)
+ * \param [in]  asinisigma           Uncertainty on the specific asini value (measured in light seconds)
+ * \param [in]  ra                   Right ascension (measured in radians)
+ * \param [in]  dec                  Declinaion (measured in radians)
+ * \param [in]  params               Pointer to inputParamsStruct
+ * \param [in]  ffdata               Pointer to ffdataStruct
+ * \param [in]  sftexist             Pointer to INT4Vector of existing SFTs
+ * \param [in]  aveNoise             Pointer to REAL4Vector of 2nd FFT background powers
+ * \param [in]  aveNoisePerFbinRatio Pointer to REAL4Vector of normalized power across the frequency band
+ * \param [in]  secondFFTplan        Pointer to REAL4FFTPlan
+ * \param [in]  useExactTemplates    Flag of 0 (use Gaussian templates) or 1 (use exact templates)
+ * \return Status value
+ */
 INT4 templateSearch_scox1Style(candidateVector **output, REAL8 fminimum, REAL8 fspan, REAL8 period, REAL8 asini, REAL8 asinisigma, REAL4 ra, REAL4 dec, inputParamsStruct *params, REAL4Vector *ffdata, INT4Vector *sftexist, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, REAL4FFTPlan *secondFFTplan, INT4 useExactTemplates)
 {
 
@@ -1260,8 +1380,14 @@ INT4 templateSearch_scox1Style(candidateVector **output, REAL8 fminimum, REAL8 f
 }
 
 
-//////////////////////////////////////////////////////////////
-// Does the insertion sort for the template weights
+/**
+ * Insertion sort for the template weights
+ * \param [out] output        Pointer to templateStruct
+ * \param [in]  weight        Pixel weight
+ * \param [in]  pixelloc      Index of the pixel in the REAL4Vector of the frequency-frequency plane
+ * \param [in]  firstfftfreq  Index of the pixel in the SFT
+ * \param [in]  secondfftfreq Index of the pixel in the 2nd FFT
+ */
 void insertionSort_template(templateStruct *output, REAL4 weight, INT4 pixelloc, INT4 firstfftfreq, INT4 secfftfreq)
 {
 
@@ -1287,9 +1413,10 @@ void insertionSort_template(templateStruct *output, REAL4 weight, INT4 pixelloc,
 } /* insertionSort_template() */
 
 
-
-//////////////////////////////////////////////////////////////
-// Calculates y = sin(pi*x)/(pi*x)/(x^2-1)
+/**
+ * Calculate sin(pi*x)/(pi*x)/(x^2-1)
+ * \param x Value from which to compute
+ */
 REAL8 sincxoverxsqminusone(REAL8 x)
 {
    if (fabs(x*x-1.0)<1.0e-8) return -0.5;
@@ -1297,6 +1424,12 @@ REAL8 sincxoverxsqminusone(REAL8 x)
    REAL8 pix = LAL_PI*x;
    return sin(pix)/(pix*(x*x-1.0));
 } /* sincxoverxsqminusone() */
+
+
+/**
+ * Calculate [sin(pi*x)/(pi*x)/(x^2-1)]^2
+ * \param x Value from which to compute
+ */
 REAL8 sqsincxoverxsqminusone(REAL8 x)
 {
    REAL8 val = sincxoverxsqminusone(x);

@@ -14,7 +14,7 @@ import math
 import sha
 import os
 import sys
-import ConfigParser
+from glue.pipeline import DeepCopyableConfigParser as dcConfigParser
 import optparse
 import shutil
 import subprocess
@@ -284,13 +284,13 @@ class hipe_run(object):
     """
     Set start and end times, required for cache to be produced.
     """
-    self._cp.set("input", "gps-start-time", span[0])
-    self._cp.set("input", "gps-end-time", span[1])
+    self._cp.set("input", "gps-start-time", str(span[0]))
+    self._cp.set("input", "gps-end-time", str(span[1]))
     self._span = span
 
   def set_numslides(self, numslides):
     if numslides == 0: numslides = ""
-    self._cp.set('input', 'num-slides', numslides)
+    self._cp.set('input', 'num-slides', str(numslides))
 
   def remove_longslides(self):
     if self._cp.has_option('input','do-long-slides'):
@@ -310,8 +310,8 @@ class hipe_run(object):
     the config file cpinj.
     """
     # set the start and stop seeds from the injection config file
-    self._cp.set('pipeline', 'exttrig-inj-start', 1)
-    self._cp.set('pipeline', 'exttrig-inj-stop', numberInjFiles)
+    self._cp.set('pipeline', 'exttrig-inj-start', '1')
+    self._cp.set('pipeline', 'exttrig-inj-stop', str(numberInjFiles))
     self._cp.set("condor", "inspinj", "/bin/true")
     self._hipe_args.append("--noop-inspinj")
 
@@ -628,7 +628,7 @@ exttrig_config_file, grb_ifolist, onSourceSegment, offSourceSegment = exttrig_da
 
 ##############################################################################
 # create the config parser object and exttrig_dataquery ini file
-cp = ConfigParser.ConfigParser()
+cp = dcConfigParser()
 cp.read(exttrig_config_file)
 
 ext_trigs = grbsummary.load_external_triggers('grb%s.xml'%opts.name[0])
@@ -654,10 +654,10 @@ if opts.verbose:
 if opts.do_coh_PTF:
   for program in ['coh_PTF_inspiral','coh_PTF_spin_checker']:
     if not opts.ipn:
-      cp.set(program,'right-ascension',ext_trigs[0].event_ra)
-      cp.set(program,'declination',ext_trigs[0].event_dec)
-    cp.set(program,'trigger-time',ext_trigs[0].start_time)
-    cp.set(program,'trigger-time-ns',ext_trigs[0].start_time_ns)
+      cp.set(program,'right-ascension',str(ext_trigs[0].event_ra))
+      cp.set(program,'declination',str(ext_trigs[0].event_dec))
+    cp.set(program,'trigger-time',str(ext_trigs[0].start_time))
+    cp.set(program,'trigger-time-ns',str(ext_trigs[0].start_time_ns))
 
 ############################################################################
 # set up the über dag for all intervals and all injections
@@ -792,7 +792,7 @@ for grb in ext_trigs:
   ############################################################################
   # create the config parser object and read in the ini file
   if opts.injection_config:
-    cpinj = ConfigParser.ConfigParser()
+    cpinj = dcConfigParser()
     cpinj.read(opts.injection_config)
 
     ############################################################################

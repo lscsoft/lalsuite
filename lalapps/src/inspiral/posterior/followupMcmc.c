@@ -3671,7 +3671,7 @@ void templateLALPPN(DataFramework *DF, vector *parameter, double Fplus, double F
   /* Hope this makes sense.)                                          */
   for (i=0; i<DF->dataSize; ++i) {
     j = jStart + i;
-    timedomainwaveform[i] = (j<PPNPar.length) ? waveform.a->data->data[2*j]*cos(waveform.phi->data->data[j]) : 0.0;
+    timedomainwaveform[i] = (j<(long)PPNPar.length) ? waveform.a->data->data[2*j]*cos(waveform.phi->data->data[j]) : 0.0;
   }
 
   /* free memory allocated in "LALGeneratePPNInspiral()": */

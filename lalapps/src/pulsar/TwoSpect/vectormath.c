@@ -53,8 +53,19 @@ typedef size_t uintptr_t;
 #define FALSE           (1==0)
 
 
-//Computes a multiplication of two vectors with a stride and initial offset
-//Be sure you know what you are doing or this could go wrong (no error checking for speed!)
+/**
+ * \brief Computes a multiplication of two vectors with a stride and initial offset
+ *
+ * Be sure you know what you are doing or this could go wrong (no error checking for speed!)
+ * \param [out] output  Pointer to REAL4Vector output
+ * \param [in]  input1  Pointer to first REAL4Vector input
+ * \param [in]  input2  Pointer to second REAL4Vector input
+ * \param [in]  stride1 Skip stride1 number of elements in input1
+ * \param [in]  stride2 Skip stride2 number of elements in input2
+ * \param [in]  offset1 Start at offset1 number of elements from the beginning of input1
+ * \param [in]  offset2 Start at offset2 number of elements from the beginning of input2
+ * \return Status value
+ */
 INT4 fastSSVectorMultiply_with_stride_and_offset(REAL4Vector *output, REAL4Vector *input1, REAL4Vector *input2, INT4 stride1, INT4 stride2, INT4 offset1, INT4 offset2)
 {
 
@@ -78,10 +89,16 @@ INT4 fastSSVectorMultiply_with_stride_and_offset(REAL4Vector *output, REAL4Vecto
 } /* SSVectorMultiply_with_stride_and_offset() */
 
 
-//Sums a sequence of vector values within two vector sequences
-//vectorpos1 = vector number of first vector
-//vectorpos2 = vector number of second vector
-//outputvectorpos = vector number to load the sum into
+/**
+ * Fast sum of vector values from two vector sequences
+ * \param [out] output          Pointer to a REAL4VectorSequence
+ * \param [in]  input1          Pointer to a REAL4VectorSequence
+ * \param [in]  input2          Pointer to a REAL4VectorSequence
+ * \param [in]  vectorpos1      Vector index of input1
+ * \param [in]  vectorpos2      Vector index of input2
+ * \param [in]  outputvectorpos Vector index of output
+ * \return Status value
+ */
 INT4 fastSSVectorSequenceSum(REAL4VectorSequence *output, REAL4VectorSequence *input1, REAL4VectorSequence *input2, INT4 vectorpos1, INT4 vectorpos2, INT4 outputvectorpos)
 {
 
@@ -104,8 +121,15 @@ INT4 fastSSVectorSequenceSum(REAL4VectorSequence *output, REAL4VectorSequence *i
 
 }
 
-//Does a fast subtraction of 1 vector for a specific vector in a vector sequence (labeled by vectorpos1)
-//Output is a single (REAL4) vector
+
+/**
+ * Fast subtraction of one vector from a specific vector in a vector sequence
+ * \param [out] output     Pointer to a REAL4Vector
+ * \param [in]  input1     Pointer to a REAL4VectorSequence
+ * \param [in]  input2     Pointer to a REAL4Vector
+ * \param [in]  vectorpos1 Vector index of input1
+ * \return Status value
+ */
 INT4 fastSSVectorSequenceSubtract(REAL4Vector *output, REAL4VectorSequence *input1, REAL4Vector *input2, INT4 vectorpos1)
 {
 
@@ -129,8 +153,13 @@ INT4 fastSSVectorSequenceSubtract(REAL4Vector *output, REAL4VectorSequence *inpu
 }
 
 
-
-//Sum two REAL4Vectors using SSE
+/**
+ * Sum two REAL4Vectors using SSE
+ * \param [out] output Pointer to a REAL4Vector
+ * \param [in]  input1 Pointer to a REAL4Vector
+ * \param [in]  input2 Pointer to a REAL4Vector
+ * \return Status value
+ */
 INT4 sseSSVectorSum(REAL4Vector *output, REAL4Vector *input1, REAL4Vector *input2)
 {
 
@@ -204,7 +233,13 @@ INT4 sseSSVectorSum(REAL4Vector *output, REAL4Vector *input1, REAL4Vector *input
 }
 
 
-//Sum two REAL4Vectors using AVX
+/**
+ * Sum two REAL4Vectors using AVX
+ * \param [out] output Pointer to a REAL4Vector
+ * \param [in]  input1 Pointer to a REAL4Vector
+ * \param [in]  input2 Pointer to a REAL4Vector
+ * \return Status value
+ */
 INT4 avxSSVectorSum(REAL4Vector *output, REAL4Vector *input1, REAL4Vector *input2)
 {
 
@@ -278,7 +313,13 @@ INT4 avxSSVectorSum(REAL4Vector *output, REAL4Vector *input1, REAL4Vector *input
 }
 
 
-//Multiply two REAL4Vectors using SSE
+/**
+ * Multiply two REAL4Vectors using SSE
+ * \param [out] output Pointer to a REAL4Vector
+ * \param [in]  input1 Pointer to a REAL4Vector
+ * \param [in]  input2 Pointer to a REAL4Vector
+ * \return Status value
+ */
 INT4 sseSSVectorMultiply(REAL4Vector *output, REAL4Vector *input1, REAL4Vector *input2)
 {
 
@@ -352,7 +393,13 @@ INT4 sseSSVectorMultiply(REAL4Vector *output, REAL4Vector *input1, REAL4Vector *
 }
 
 
-//Multiply two REAL4Vectors using AVX
+/**
+ * Multiply two REAL4Vectors using AVX
+ * \param [out] output Pointer to a REAL4Vector
+ * \param [in]  input1 Pointer to a REAL4Vector
+ * \param [in]  input2 Pointer to a REAL4Vector
+ * \return Status value
+ */
 INT4 avxSSVectorMultiply(REAL4Vector *output, REAL4Vector *input1, REAL4Vector *input2)
 {
 
@@ -426,7 +473,13 @@ INT4 avxSSVectorMultiply(REAL4Vector *output, REAL4Vector *input1, REAL4Vector *
 }
 
 
-//Add a REAL4 to all REAL4Vector elements using SSE
+/**
+ * Add a REAL4 scalar value to the elements of a REAL4Vector using SSE
+ * \param [out] output Pointer to a REAL4Vector
+ * \param [in]  input  Pointer to a REAL4Vector
+ * \param [in]  scalar Value to add to the elements of input
+ * \return Status value
+ */
 INT4 sseAddScalarToREAL4Vector(REAL4Vector *output, REAL4Vector *input, REAL4 scalar)
 {
 
@@ -489,7 +542,13 @@ INT4 sseAddScalarToREAL4Vector(REAL4Vector *output, REAL4Vector *input, REAL4 sc
 }
 
 
-//Add a REAL4 to all REAL4Vector elements using AVX
+/**
+ * Add a REAL4 scalar value to the elements of a REAL4Vector using AVX
+ * \param [out] output Pointer to a REAL4Vector
+ * \param [in]  input  Pointer to a REAL4Vector
+ * \param [in]  scalar Value to add to the elements of input
+ * \return Status value
+ */
 INT4 avxAddScalarToREAL4Vector(REAL4Vector *output, REAL4Vector *input, REAL4 scalar)
 {
 
@@ -552,7 +611,13 @@ INT4 avxAddScalarToREAL4Vector(REAL4Vector *output, REAL4Vector *input, REAL4 sc
 }
 
 
-//Add a REAL8 to all REAL8Vector elements using SSE
+/**
+ * Add a REAL8 scalar value to the elements of a REAL8Vector using SSE
+ * \param [out] output Pointer to a REAL8Vector
+ * \param [in]  input  Pointer to a REAL8Vector
+ * \param [in]  scalar Value to add to the elements of input
+ * \return Status value
+ */
 INT4 sseAddScalarToREAL8Vector(REAL8Vector *output, REAL8Vector *input, REAL8 scalar)
 {
 
@@ -615,7 +680,13 @@ INT4 sseAddScalarToREAL8Vector(REAL8Vector *output, REAL8Vector *input, REAL8 sc
 }
 
 
-//Add a REAL8 to all REAL8Vector elements using AVX
+/**
+ * Add a REAL8 scalar value to the elements of a REAL8Vector using AVX
+ * \param [out] output Pointer to a REAL8Vector
+ * \param [in]  input  Pointer to a REAL8Vector
+ * \param [in]  scalar Value to add to the elements of input
+ * \return Status value
+ */
 INT4 avxAddScalarToREAL8Vector(REAL8Vector *output, REAL8Vector *input, REAL8 scalar)
 {
 
@@ -678,7 +749,13 @@ INT4 avxAddScalarToREAL8Vector(REAL8Vector *output, REAL8Vector *input, REAL8 sc
 }
 
 
-//Scale a REAL4Vector with a single scale factor using SSE
+/**
+ * Scale the elements of a REAL4Vector by a REAL4 value using SSE
+ * \param [out] output Pointer to a REAL4Vector
+ * \param [in]  input  Pointer to a REAL4Vector
+ * \param [in]  scale  Value to scale the elements of input
+ * \return Status value
+ */
 INT4 sseScaleREAL4Vector(REAL4Vector *output, REAL4Vector *input, REAL4 scale)
 {
 
@@ -741,7 +818,13 @@ INT4 sseScaleREAL4Vector(REAL4Vector *output, REAL4Vector *input, REAL4 scale)
 }
 
 
-//Scale a REAL4Vector with a single scale factor using AVX
+/**
+ * Scale the elements of a REAL4Vector by a REAL4 value using AVX
+ * \param [out] output Pointer to a REAL4Vector
+ * \param [in]  input  Pointer to a REAL4Vector
+ * \param [in]  scale  Value to scale the elements of input
+ * \return Status value
+ */
 INT4 avxScaleREAL4Vector(REAL4Vector *output, REAL4Vector *input, REAL4 scale)
 {
 
@@ -804,7 +887,13 @@ INT4 avxScaleREAL4Vector(REAL4Vector *output, REAL4Vector *input, REAL4 scale)
 }
 
 
-//Scale a REAL8Vector with a single scale factor using SSE
+/**
+ * Scale the elements of a REAL8Vector by a REAL8 value using SSE
+ * \param [out] output Pointer to a REAL8Vector
+ * \param [in]  input  Pointer to a REAL8Vector
+ * \param [in]  scale  Value to scale the elements of input
+ * \return Status value
+ */
 INT4 sseScaleREAL8Vector(REAL8Vector *output, REAL8Vector *input, REAL8 scale)
 {
 
@@ -867,7 +956,13 @@ INT4 sseScaleREAL8Vector(REAL8Vector *output, REAL8Vector *input, REAL8 scale)
 }
 
 
-//Scale a REAL8Vector with a single scale factor using AVX
+/**
+ * Scale the elements of a REAL8Vector by a REAL8 value using AVX
+ * \param [out] output Pointer to a REAL8Vector
+ * \param [in]  input  Pointer to a REAL8Vector
+ * \param [in]  scale  Value to scale the elements of input
+ * \return Status value
+ */
 INT4 avxScaleREAL8Vector(REAL8Vector *output, REAL8Vector *input, REAL8 scale)
 {
 
@@ -930,11 +1025,17 @@ INT4 avxScaleREAL8Vector(REAL8Vector *output, REAL8Vector *input, REAL8 scale)
 }
 
 
-//Using SSE, sum up a sequence of values from two vectors in a REAL4VectorSequence
-//vectorpos1 = vector number of first vector
-//vectorpos2 = vector number of second vector
-//outputvectorpos = vector number to load the sum into
-//numvectors = number of times to repeat the process, incrementing the vector positions by 1 each time
+/**
+ * Sum vectors from REAL4VectorSequences into an output REAL4VectorSequence using SSE
+ * \param [out] output          Pointer to REAL4VectorSequence
+ * \param [in]  input1          Pointer to REAL4VectorSequence
+ * \param [in]  input2          Pointer to REAL4VectorSequence
+ * \param [in]  vectorpos1      Starting vector index for input1
+ * \param [in]  vectorpos2      Starting vector index for input2
+ * \param [in]  outputvectorpos Starting vector index for output
+ * \param [in]  numvectors      Number of vectors to sum, incrementing vectorpos1, vectorpos2, and outputvectorpos by 1 each time
+ * \return Status value
+ */
 INT4 sseSSVectorSequenceSum(REAL4VectorSequence *output, REAL4VectorSequence *input1, REAL4VectorSequence *input2, INT4 vectorpos1, INT4 vectorpos2, INT4 outputvectorpos, INT4 numvectors)
 {
 
@@ -1013,11 +1114,17 @@ INT4 sseSSVectorSequenceSum(REAL4VectorSequence *output, REAL4VectorSequence *in
 }
 
 
-//Using SSE, sum up a sequence of values from two vectors in a REAL4VectorSequence
-//vectorpos1 = vector number of first vector
-//vectorpos2 = vector number of second vector
-//outputvectorpos = vector number to load the sum into
-//numvectors = number of times to repeat the process, incrementing the vector positions by 1 each time
+/**
+ * Sum vectors from REAL4VectorSequences into an output REAL4VectorSequence using AVX
+ * \param [out] output          Pointer to REAL4VectorSequence
+ * \param [in]  input1          Pointer to REAL4VectorSequence
+ * \param [in]  input2          Pointer to REAL4VectorSequence
+ * \param [in]  vectorpos1      Starting vector index for input1
+ * \param [in]  vectorpos2      Starting vector index for input2
+ * \param [in]  outputvectorpos Starting vector index for output
+ * \param [in]  numvectors      Number of vectors to sum, incrementing vectorpos1, vectorpos2, and outputvectorpos by 1 each time
+ * \return Status value
+ */
 INT4 avxSSVectorSequenceSum(REAL4VectorSequence *output, REAL4VectorSequence *input1, REAL4VectorSequence *input2, INT4 vectorpos1, INT4 vectorpos2, INT4 outputvectorpos, INT4 numvectors)
 {
 
@@ -1096,8 +1203,14 @@ INT4 avxSSVectorSequenceSum(REAL4VectorSequence *output, REAL4VectorSequence *in
 }
 
 
-//Does a fast subtraction of 1 vector for a specific vector in a vector sequence (labeled by vectorpos1) using SSE
-//Output is a single (REAL4) vector
+/**
+ * Fast subtraction of a vector from a specific vector in a vector sequence (labeled by vectorpos1) using SSE
+ * \param [out] output Pointer to a REAL4Vector
+ * \param [in]  input1 Pointer to a REAL4VectorSequence
+ * \param [in]  input2 Pointer to a REAL4Vector that will be subtracted from a vector in input1
+ * \param [in]  vectorpos1 Index value of the vector in input1
+ * \return Status value
+ */
 INT4 sseSSVectorSequenceSubtract(REAL4Vector *output, REAL4VectorSequence *input1, REAL4Vector *input2, INT4 vectorpos1)
 {
 
@@ -1177,8 +1290,14 @@ INT4 sseSSVectorSequenceSubtract(REAL4Vector *output, REAL4VectorSequence *input
 }
 
 
-//Does a fast subtraction of 1 vector for a specific vector in a vector sequence (labeled by vectorpos1) using AVX
-//Output is a single (REAL4) vector
+/**
+ * Fast subtraction of a vector from a specific vector in a vector sequence (labeled by vectorpos1) using AVX
+ * \param [out] output Pointer to a REAL4Vector
+ * \param [in]  input1 Pointer to a REAL4VectorSequence
+ * \param [in]  input2 Pointer to a REAL4Vector that will be subtracted from a vector in input1
+ * \param [in]  vectorpos1 Index value of the vector in input1
+ * \return Status value
+ */
 INT4 avxSSVectorSequenceSubtract(REAL4Vector *output, REAL4VectorSequence *input1, REAL4Vector *input2, INT4 vectorpos1)
 {
 
@@ -1258,8 +1377,14 @@ INT4 avxSSVectorSequenceSubtract(REAL4Vector *output, REAL4VectorSequence *input
 }
 
 
-//Compute from a look up table, the sin and cos of a vector of x values using SSE
-//Can't use this for x values less than 0 or greater than 2.147483648e9
+/**
+ * Compute from a look up table, the sin and cos of a vector of x values using SSE
+ * Cannot use this for x values less than 0 or greater than 2.147483648e9
+ * \param [out] sin2pix_vector Pointer to REAL8Vector of sin(2*pi*x)
+ * \param [out] cos2pix_vector Pointer to REAL8Vector of cos(2*pi*x)
+ * \param [in]  x              Pointer to REAL8Vector
+ * \return Status value
+ */
 INT4 sse_sin_cos_2PI_LUT_REAL8Vector(REAL8Vector *sin2pix_vector, REAL8Vector *cos2pix_vector, REAL8Vector *x)
 {
 
@@ -1399,9 +1524,14 @@ INT4 sse_sin_cos_2PI_LUT_REAL8Vector(REAL8Vector *sin2pix_vector, REAL8Vector *c
 } /* sse_sin_cos_2PI_LUT_REAL8Vector() */
 
 
-
-//Compute from a look up table, the sin and cos of a vector of x values using SSE
-//Can't use this for x values less than 0 or greater than 2.147483647e9
+/**
+ * Compute from a look up table, the sin and cos of a vector of x values using SSE
+ * Cannot use this for x values less than 0 or greater than 2.147483648e9
+ * \param [out] sin2pix_vector Pointer to REAL4Vector of sin(2*pi*x)
+ * \param [out] cos2pix_vector Pointer to REAL4Vector of cos(2*pi*x)
+ * \param [in]  x              Pointer to REAL4Vector
+ * \return Status value
+ */
 INT4 sse_sin_cos_2PI_LUT_REAL4Vector(REAL4Vector *sin2pix_vector, REAL4Vector *cos2pix_vector, REAL4Vector *x)
 {
 
@@ -1537,9 +1667,12 @@ INT4 sse_sin_cos_2PI_LUT_REAL4Vector(REAL4Vector *sin2pix_vector, REAL4Vector *c
 } /* sse_sin_cos_2PI_LUT_REAL4Vector() */
 
 
-
-//Exponential of input vector is computed using SSE
-//Cephes library based
+/**
+ * Exponential of input vector is computed using SSE, based on the Cephes library
+ * \param [out] output Pointer to REAL8Vector
+ * \param [in]  input  Pointer to REAL8Vector
+ * \return Status value
+ */
 INT4 sse_exp_REAL8Vector(REAL8Vector *output, REAL8Vector *input)
 {
 
@@ -1691,8 +1824,12 @@ INT4 sse_exp_REAL8Vector(REAL8Vector *output, REAL8Vector *input)
 }
 
 
-//Exponential of input vector is computed using SSE
-//Cephes library based
+/**
+ * Exponential of input vector is computed using SSE, based on the Cephes library
+ * \param [out] output Pointer to REAL4Vector
+ * \param [in]  input  Pointer to REAL4Vector
+ * \return Status value
+ */
 INT4 sse_exp_REAL4Vector(REAL4Vector *output, REAL4Vector *input)
 {
 

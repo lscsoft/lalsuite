@@ -36,6 +36,9 @@ from lalinspiral.sbank.bank import Bank
 from lalinspiral.sbank.waveforms import waveforms
 from lalinspiral.sbank.psds import noise_models, read_psd
 
+class ContentHandler(ligolw.LIGOLWContentHandler):
+    pass
+lsctables.use_in(ContentHandler)
 
 def ligolw_table_to_array(tab):
     # get mapping of LIGO_LW types to numpy numeric types; add string types
@@ -137,7 +140,7 @@ process = ligolw_process.register_to_xmldoc(fake_xmldoc, "lalapps_cbc_sbank_sim"
 h5file = H5File("%s.h5" % usertag, "w")
 
 # load templates
-xmldoc = utils.load_filename(tmplt_file)
+xmldoc = utils.load_filename(tmplt_file, contenthandler=ContentHandler)
 ligolw_copy_process(xmldoc, fake_xmldoc)
 sngls = table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
 h5file.create_dataset("/sngl_inspiral", data=ligolw_table_to_array(sngls), compression='gzip', compression_opts=1)
@@ -149,7 +152,7 @@ if verbose:
     tmplt_format = "".join("%s: %s   " % name_format for name_format in zip(tmplt_approx.param_names, tmplt_approx.param_formats))
 
 # pick injection parameters
-xmldoc2 = utils.load_filename(inj_file)
+xmldoc2 = utils.load_filename(inj_file, contenthandler=ContentHandler)
 ligolw_copy_process(xmldoc2, fake_xmldoc)
 sims = table.get_table(xmldoc2, lsctables.SimInspiralTable.tableName)
 

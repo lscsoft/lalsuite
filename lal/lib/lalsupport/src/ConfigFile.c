@@ -914,7 +914,7 @@ cleanConfig ( char *text )
   size_t len;
   CHAR *ptr, *ptr2, *eol;
   BOOLEAN inQuotes = 0;
-
+  INT4 inBracesCount = 0;
   /*----------------------------------------------------------------------
    * RUN 1: clean out comments, by replacing them by '\n'
    */
@@ -923,6 +923,12 @@ cleanConfig ( char *text )
     {
       if ( (*ptr) == '\"' ) {
         inQuotes = !inQuotes;	/* flip state */
+      }
+      if ( (*ptr) == '{' ) {
+        inBracesCount ++;
+      }
+      if ( (*ptr) == '}' ) {
+        inBracesCount --;
       }
 
       if ( ((*ptr) == '#') || ( (*ptr) == '%') ) {
@@ -933,8 +939,8 @@ cleanConfig ( char *text )
           }
       }
 
-      // replace un-quoted ';' by '\n' to allow semi-colons to separate assignments
-      if ( (!inQuotes) && ((*ptr) == ';') ) {
+      // replace un-quoted ';' {iff outside of any braces} by '\n' to allow semi-colons to separate assignments
+      if ( (!inQuotes) && (inBracesCount == 0) && ((*ptr) == ';') ) {
         (*ptr) = '\n';
       }
       // replace DOS-style '\r' EOL characters by '\n'

@@ -30,6 +30,11 @@ from optparse import OptionParser
 from glue.ligolw import table
 from glue.ligolw import lsctables
 from glue.ligolw import utils
+from glue.ligolw import ligolw
+
+class ContentHandler(ligolw.LIGOLWContentHandler):
+    pass
+lsctables.use_in(ContentHandler)
 
 def parse_command_line():
     parser = OptionParser(usage=__doc__)
@@ -58,7 +63,7 @@ def parse_command_line():
 options, filename = parse_command_line()
 
 # read input document
-xmldoc = utils.load_filename(filename, verbose=options.verbose)
+xmldoc = utils.load_filename(filename, verbose=options.verbose, contenthandler=ContentHandler)
 templates = table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
 if len(templates) < options.nbanks:
     raise ValueError("len(templates) < opts.nbanks; coarse bank too coarse")

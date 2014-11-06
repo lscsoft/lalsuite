@@ -18,6 +18,12 @@ setup_TwoSpect_injections.perl [options]
 =item B<help:>
 Show the help information
 
+=item B<plexecutable:>
+Path and filename of perl executable [R]
+
+=item B<twospectExe:>
+Path and filename of TwoSpect executable [R]
+
 =item B<dir:>
 Base directory to store the job subdirectories [R]
 
@@ -49,10 +55,10 @@ Constant strain value to inject
 Polarizations, 0 = linear, 1 = random, 2 = circular (2)
 
 =item B<injskyra:>
-Right ascension of injection in radians (0)
+Right ascension of injection in radians
 
 =item B<injskydec:>
-Declination of injection in radians (0)
+Declination of injection in radians
 
 =item B<injPmin:>
 Minimum period of injection (7200)
@@ -94,7 +100,7 @@ Spindown distribution, 0 = linear (0)
 Interferometer to use (may be multiple) [R]
 
 =item B<t0:>
-Start time of search (may be multiple) [R]
+Start time of search [R]
 
 =item B<Tobs:>
 Observation time of the search in seconds (40551300)
@@ -105,7 +111,7 @@ Coherence length of each SFT (1800)
 =item B<SFToverlap:>
 Overlap of each SFT in seconds (900)
 
-=item B<sftFile:>
+=item B<inputSFTs:>
 Noise SFT file (may be multiple)
 
 =item B<gaussianNoiseWithSFTGaps:>
@@ -153,10 +159,15 @@ Maximum length of a template (500)
 =item B<markBadSFTs:>
 Mark and remove bad SFTs (flag, off)
 
+=item B<keepOnlyTopNumIHS:>
+Keep only the top N number of IHS outliers
+
 =cut
 
 my $help = 0;
 
+my $plexecutable = '';
+my $twospectExe = '';
 my $directory = '';
 my $jobs = 1;
 my $logfile = '';
@@ -165,7 +176,7 @@ my $dur = 40551300.0;
 my $Tsft = 1800.0;
 my $SFToverlap = 900.0;
 
-my @sftFile = ();
+my @inputSFTs = ();
 my $gaussianNoiseWithSFTGaps = 0;
 my @timestampsfile = ();
 my @segmentfile = ();
@@ -183,8 +194,8 @@ my $h0min = '';
 my $h0max = '';
 my $h0dist = 1;
 my $h0val = '';
-my $injskyra = 0;
-my $injskydec = 0;
+my $injskyra = '';
+my $injskydec = '';
 my $injPmin = 7200;
 my $injPmax = 0.2*$dur;
 my $periodDist = 0;
@@ -194,7 +205,7 @@ my $injDfExpansionAllowance = 1.0;
 my $scox1switch = 0;
 
 my @ifo = ();
-my @t0 = ();
+my $t0 = 0;
 my $skylocations = 0;
 
 my $ihsfactor = 5;
@@ -207,16 +218,19 @@ my $ihsfomfar = 1.0;
 my $tmplfar = 1.0;
 my $tmplLength = 500;
 my $markBadSFTs = 0;
+my $keepOnlyTopNumIHS = -1;
 
 #H1 t0 = 931081500
 #L1 t0 = 931113900
 #V1 t0 = 931131900
 
 GetOptions('help' => \$help, 
+           'plexecutable=s' => \$plexecutable,
+           'twospectExe=s' => \$twospectExe,
            'dir=s' => \$directory, 
            'jobs:i' => \$jobs,
            'logfile=s' => \$logfile,
-           'sftFile:s' => \@sftFile,
+           'inputSFTs:s' => \@inputSFTs,
            'gaussianNoiseWithSFTGaps' => \$gaussianNoiseWithSFTGaps, 
            'injPol:i' => \$injPol, 
            'minEcc:f' => \$minEcc, 
@@ -226,9 +240,9 @@ GetOptions('help' => \$help,
            'maxSpindown:f' => \$maxSpindown, 
            'spindownDist:i' => \$spindownDist, 
            'ifo=s' => \@ifo,
-           't0=f' => \@t0,
+           't0=f' => \$t0,
            'Tobs:f' => \$dur,
-           'Tcoh:f' => \$Tsft,
+           'Tsft:f' => \$Tsft,
            'SFToverlap:f' => \$SFToverlap,
            'fmin=f' => \$fmin,
            'fspan:f' => \$fspan,
@@ -239,8 +253,8 @@ GetOptions('help' => \$help,
            'skylocations:i' => \$skylocations, 
            'timestampsfile:s' => \@timestampsfile, 
            'segmentfile:s' => \@segmentfile, 
-           'injskyra:f' => \$injskyra, 
-           'injskydec:f' => \$injskydec, 
+           'injskyra:f' => \$injskyra,
+           'injskydec:f' => \$injskydec,
            'injPmin:f' => \$injPmin,
            'injPmax:f' => \$injPmax, 
            'periodDist:i' => $periodDist,
@@ -257,17 +271,17 @@ GetOptions('help' => \$help,
            'ihsfomfar:f' => \$ihsfomfar, 
            'tmplfar:f' => \$tmplfar, 
            'tmplLength:i' => \$tmplLength, 
-           'markBadSFTs' => \$markBadSFTs) or pod2usage(2);
+           'markBadSFTs' => \$markBadSFTs,
+           'keepOnlyTopNumIHS:i' => \$keepOnlyTopNumIHS) or pod2usage(2);
 pod2usage(1) if $help;
 
 my $numIFOs = @ifo;
 my $numberTimestampFiles = @timestampsfile;
 my $numberSegmentFiles = @segmentfile;
-my $numberSFTfiles = @sftFile;
-my $numberT0 = @t0;
+my $numberSFTfiles = @inputSFTs;
 
 die "Jobs must be 1 or more" if $jobs<1;
-die "Number of IFOs and concatenated SFT files must be the same" if $numIFOs!=$numberSFTfiles;
+die "Number of IFOs and concatenated SFT files must be the same" if ($numberSFTfiles>0 && $numIFOs!=$numberSFTfiles);
 die "Must provide SFT file when gaussianNoiseWithSFTGaps is specifed" if $numberSFTfiles<1 && $gaussianNoiseWithSFTGaps!=0;
 die "Only choose sftFile OR sftFile and gaussianNoiseWithSFTgaps OR timestampsfile OR segmentfile" if (($numberSFTfiles>0 && ($numberTimestampFiles>0 || $numberSegmentFiles>0)) || ($numberTimestampFiles>0 && $numberSegmentFiles>0));
 die "Number of IFOs and timestamp files must be the same" if ($numberTimestampFiles>0 && $numIFOs!=$numberTimestampFiles);
@@ -278,7 +292,6 @@ die "Maximum eccentricity must be smaller than 1" if $maxEcc>=1.0;
 die "eccDist must be 0, 1, or -1" if $eccDist<-1 || $eccDist>1;
 die "spindownDist must be 0" if $spindownDist!=0;
 die "Number of IFOs must be 3 or less" if $numIFOs>3;
-die "Number of IFOs and t0 must be the same" if $numIFOs!=$numberT0;
 die "Must specify both h0min and h0max" if (($h0min ne "" && $h0max eq "") || ($h0max ne "" && $h0min eq ""));
 die "h0dist must be 0, 1, or -1" if $h0dist<-1 || $h0dist>1;
 die "h0val cannot be specified with h0min or h0max" if ($h0val ne "" && ($h0min ne "" || $h0max ne ""));
@@ -310,7 +323,7 @@ close(DAGFILE);
 open(CONDORFILE,">$directory/condor") or die "Cannot write to $directory/condor $!";
 print CONDORFILE<<EOF;
 universe=vanilla
-executable=/atlas/user/atlas3/egoetz/lalsuite-master/lalapps/src/pulsar/TwoSpect/scripts/run_TwoSpect_injections.perl
+executable=$plexecutable
 input=/dev/null
 output=/dev/null
 error=$directory/err/err.\$(JOBNUM)
@@ -319,7 +332,7 @@ request_memory=2500
 notification=Never
 EOF
 
-print CONDORFILE "arguments=\"--dir=$directory --jobnum=\$(JOBNUM) --Tobs=$dur --Tcoh=$Tsft --SFToverlap=$SFToverlap --fmin=$fmin --fspan=$fspan --injPol=$injPol";
+print CONDORFILE "arguments=\"--dir=$directory --twospectExe=$twospectExe --jobnum=\$(JOBNUM) --Tobs=$dur --Tsft=$Tsft --SFToverlap=$SFToverlap --fmin=$fmin --fspan=$fspan --injPol=$injPol --t0=$t0";
 
 if ($h0val ne "") { print CONDORFILE " --h0val=$h0val"; }
 else { print CONDORFILE " --h0min=$h0min --h0max=$h0max --h0dist=$h0dist"; }
@@ -333,8 +346,8 @@ else {
 }
 
 for (my $ii=0; $ii<$numIFOs; $ii++) {
-   print CONDORFILE " --ifo=$ifo[$ii] --t0=$t0[$ii]";
-   if ($numberSFTfiles>0) { print CONDORFILE " --sftFile=$sftFile[$ii]"; }
+   print CONDORFILE " --ifo=$ifo[$ii]";
+   if ($numberSFTfiles>0) { print CONDORFILE " --inputSFTs=$inputSFTs[$ii]"; }
    elsif ($numberTimestampFiles>0) { print CONDORFILE " --timestampsfile=$timestampsfile[$ii]"; }
    elsif ($numberSegmentFiles>0) { print CONDORFILE " --segmentfile=$segmentfile[$ii]"; }
 }
@@ -360,6 +373,7 @@ if ($ihsfomfar!=1.0) { print CONDORFILE " --ihsfomfar=$ihsfomfar"; }
 if ($tmplfar!=1.0) { print CONDORFILE " --tmplfar=$tmplfar"; }
 if ($tmplLength!=500) { print CONDORFILE " --tmplLength=$tmplLength"; }
 if ($injDfExpansionAllowance!=1.0) { print CONDORFILE " --injDfExpAllow=$injDfExpansionAllowance"; }
+if ($keepOnlyTopNumIHS>-1) { print CONDORFILE " --keepOnlyTopNumIHS=$keepOnlyTopNumIHS"; }
 
 print CONDORFILE "\"\n";
 

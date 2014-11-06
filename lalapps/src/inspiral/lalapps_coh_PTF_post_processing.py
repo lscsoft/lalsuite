@@ -541,7 +541,7 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
     # setup onoff node
     if timeSlides:
       node = trig_combiner_setup(job, tag, ifotag, usertag, grb, None,\
-                                 grbdir, numtrials, outdir,slidetag=zlString,\
+                                 grbdir, numtrials, outdir, slidetag=zlString,\
                                  timeslidecache=onoffcache)
     else:
       node = trig_combiner_setup(job, tag, ifotag, usertag, grb, onoffcache,\
@@ -552,6 +552,8 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
     if timeSlides:
       # setup long slide nodes
       for slideTag in slideStrings:
+        if slideTag == zlString:
+          continue
         node = trig_combiner_setup(job, tag, ifotag, usertag, grb, None,\
                                    grbdir, numtrials, outdir,slidetag=slideTag,\
                                    timeslidecache=timeSlidesCache,)
@@ -630,24 +632,24 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
     dag = init_subDAG(tag, outdir, logdir, cp)
     job = init_job(exe, universe, tag, outdir, logdir, cp, minmemory)
 
-    for timetype in timeSlideTags:
-      # Create cache file
-      currTag = 'COMBINED_CLUSTERED_COHPTF_%s' %(usertag)
-      cache_fname = '%s-%s_GRB%s_%s-%s-%s.cache'\
-          % (ifotag,currTag,grb,timetype,start,duration)
-      output_data_cache = lal.Cache.from_urls(fileList[timetype])
-      output_data_cache.tofile(open(cache_fname, "w"))
+    # Create cache file
+    currTag = 'COMBINED_CLUSTERED_COHPTF_%s' %(usertag)
+    cache_fname = '%s-%s_GRB%s_%s-%s-%s.cache'\
+        % (ifotag,currTag,grb,'ALL_TIMES',start,duration)
+    output_data_cache = lal.Cache.from_urls(fileList['ALL_TIMES'])
+    output_data_cache.tofile(open(cache_fname, "w"))
 
+    for timetype in timeSlideTags:
       clstslidefile[timetype] = \
             '%s-%s_TIMESLIDES_GRB%s_%s-%s-%s.xml.gz'\
             % (ifotag,usertag,grb,timetype,\
                start,duration)
 
-      node = trig_combiner_setup(job, tag, ifotag, usertag, grb, None,\
-                                 grbdir, numtrials, outdir,\
-                                 timeslidecache=cache_fname)
+    node = trig_combiner_setup(job, tag, ifotag, usertag, grb, None,\
+                               grbdir, numtrials, outdir,\
+                               timeslidecache=cache_fname)
   
-      dag.add_node(node)
+    dag.add_node(node)
 
     # finalise DAG
     parents = []

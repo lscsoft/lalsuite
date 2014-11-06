@@ -24,7 +24,7 @@ import subprocess, socket, tempfile
 ##############################################################################
 # import the modules we need to build the pipeline
 from optparse import OptionParser
-import ConfigParser
+from glue.pipeline import DeepCopyableConfigParser as dcConfigParser
 
 from glue import pipeline
 from lalapps import inspiral
@@ -478,7 +478,7 @@ except: pass
 dag = bank_DAG(options.user_tag)
 
 # read config file
-cp = ConfigParser.ConfigParser()
+cp = dcConfigParser()
 cp.read(options.config_file)
 
 # initialize sbank job objects

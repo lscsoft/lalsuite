@@ -164,7 +164,7 @@ iFreq=1
 while [ $iFreq -le $numFreqBands ]; do
     mfd_fi=`echo $mfd_fmin $iFreq $FreqStep | awk '{print $1 + ($2 - 1) * $3}'`
 
-    cmdline="$mfd_code $mfd_CL_common --fmin=$mfd_fi --outSFTdir=${SFTdir}"
+    cmdline="$mfd_code $mfd_CL_common --fmin=$mfd_fi --outSFTdir=${SFTdir} --outLabel=freqBand$iFreq"
     if [ -n "$DEBUG" ]; then
         cmdline="$cmdline"
     else
@@ -286,8 +286,8 @@ resGCT_RS=$(echo $topline | awk '{print $7}')
 resGCT_RS_H1=$(echo $topline | awk '{print $9}')
 resGCT_RS_L1=$(echo $topline | awk '{print $10}')
 resGCT_RSr=$(echo $topline  | awk '{print $11}')
-resGCT_RSr_H1=$(echo $topline  | awk '{print $12}')
-resGCT_RSr_L1=$(echo $topline  | awk '{print $13}')
+resGCT_RSr_H1=$(echo $topline  | awk '{print $13}')
+resGCT_RSr_L1=$(echo $topline  | awk '{print $14}')
 
 echo
 echo "----------------------------------------------------------------------------------------------------"
@@ -318,8 +318,8 @@ resGCT_DM_H1=$(echo $topline  | awk '{print $9}')
 resGCT_DM_L1=$(echo $topline  | awk '{print $10}')
 freqGCT_DM=$(echo $topline | awk '{print $1}')
 resGCT_DMr=$(echo $topline  | awk '{print $11}')
-resGCT_DMr_H1=$(echo $topline  | awk '{print $12}')
-resGCT_DMr_L1=$(echo $topline  | awk '{print $13}')
+resGCT_DMr_H1=$(echo $topline  | awk '{print $13}')
+resGCT_DMr_L1=$(echo $topline  | awk '{print $14}')
 
 echo
 echo "----------------------------------------------------------------------------------------------------"

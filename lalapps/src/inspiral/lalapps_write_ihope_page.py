@@ -25,6 +25,11 @@ from glue.ligolw.utils import print_tables
 from glue.markup import oneliner as e
 import glue.pipeline
 
+class ContentHandler(ligolw.LIGOLWContentHandler):
+    pass
+lsctables.use_in(ContentHandler)
+
+
 # ***************************************************************************
 def initialize_page(title,style,script):
   """
@@ -747,7 +752,7 @@ def write_datainfo(page,opts):
       summGlob += '_LOUDEST_ALL_DATA_EVENTS_BY_COMBINED_FAR_SUMMARY-*.xml'
       summFiles = glob.glob(summGlob)
       if len(summFiles) == 1:
-        xmldoc = utils.load_filename(summFiles[0])
+        xmldoc = utils.load_filename(summFiles[0], contenthandler=ContentHandler)
         loudest_event_table = table.get_table(xmldoc, 'loudest_events')
         if len (loudest_event_table):
           time = loudest_event_table[0].all_data_duration__Px_days_xP_
@@ -771,7 +776,7 @@ def write_datainfo(page,opts):
       formFlags[str(key)] = ['IFO','Flag','Version','Start padding (s)', 'End padding (s)','Start time','End time']
       key += 1
       seg_filename = datadir +'/segments/' + hipecp.get("segments", "veto-def-file")
-      xmldoc = utils.load_filename( seg_filename, gz = seg_filename.endswith(".gz") )
+      xmldoc = utils.load_filename( seg_filename, gz = seg_filename.endswith(".gz"), contenthandler=ContentHandler )
       veto_def_tab = table.get_table(xmldoc,'veto_definer')
       output = StringIO.StringIO()
       tableList = ['veto_definer']
@@ -2054,7 +2059,7 @@ def get_segments_tag(tag):
   for ifo in ifos:
     # read segments from science segments xml file
     scifile          = datadir + '/segments/' + ifo + '-SCIENCE_SEGMENTS-' + opts.gps_start_time + '-' + opts.duration + '.xml'
-    scifile_xmldoc, digest  = utils.load_fileobj(open(scifile, 'r'))
+    scifile_xmldoc, digest  = utils.load_fileobj(open(scifile, 'r'), contenthandler=ContentHandler)
     scifile_segtable = table.get_table(scifile_xmldoc, lsctables.SegmentTable.tableName)
     scifile_seglist  = segments.segmentlist()
     for seg in scifile_segtable:
@@ -2064,7 +2069,7 @@ def get_segments_tag(tag):
 
     # read segments from tag xml file
     file                 = datadir + '/segments/' + ifo + this_tag
-    file_xmldoc, digest  = utils.load_fileobj(open(file, 'r'))
+    file_xmldoc, digest  = utils.load_fileobj(open(file, 'r'), contenthandler=ContentHandler)
     file_segtable        = table.get_table(file_xmldoc, lsctables.SegmentTable.tableName)
     file_seglist         = segments.segmentlist()
     for seg in file_segtable:

@@ -22,6 +22,8 @@ pkginclude_HEADERS = \
 	LALInferenceReadData.h \
 	LALInferenceTemplate.h \
 	LALInferenceProposal.h \
+	LALInferenceClusteredKDE.h \
+	LALInferenceKDE.h \
 	LALInferenceVCSInfo.h \
 	LALInferenceInit.h \
 	LALInferenceVCSInfoHeader.h \
@@ -38,6 +40,8 @@ liblalinference_la_SOURCES = \
 	LALInferenceReadData.c \
 	LALInferenceTemplate.c \
 	LALInferenceProposal.c \
+	LALInferenceClusteredKDE.c \
+	LALInferenceKDE.c \
 	LALInferenceInitCBC.c \
 	LALInferenceVCSInfo.c \
 	LALInferenceRemoveLines.c \

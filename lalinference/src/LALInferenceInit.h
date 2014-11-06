@@ -54,12 +54,12 @@ void LALInferenceRegisterUniformVariableREAL8(LALInferenceRunState *state, LALIn
  * Initialise state variables needed for LALInferenceNest or LALInferenceMCMC to run
  * on a CBC signal. Reads the command line to get user-specified options
  */
-LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state);
+LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state);
 
 /**
  * Initialise the template for a standard CBC signal
  */
-void LALInferenceInitCBCTemplate(LALInferenceRunState *runState);
+LALInferenceTemplateFunction LALInferenceInitCBCTemplate(LALInferenceRunState *runState);
 
 /**
  Initialise the glitch fitting parameters
@@ -72,9 +72,9 @@ void LALInferenceInitGlitchVariables(LALInferenceRunState *runState, LALInferenc
  * 
  */
 
-LALInferenceVariables *LALInferenceInitVariablesReviewEvidence(LALInferenceRunState *state);
-LALInferenceVariables *LALInferenceInitVariablesReviewEvidence_bimod(LALInferenceRunState *state);
-LALInferenceVariables *LALInferenceInitVariablesReviewEvidence_banana(LALInferenceRunState *state);
+LALInferenceModel *LALInferenceInitModelReviewEvidence(LALInferenceRunState *state);
+LALInferenceModel *LALInferenceInitModelReviewEvidence_bimod(LALInferenceRunState *state);
+LALInferenceModel *LALInferenceInitModelReviewEvidence_banana(LALInferenceRunState *state);
 
 /**
  * Check options consistency 

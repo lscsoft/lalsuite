@@ -187,8 +187,8 @@ static void Test_alpha_epsilon(void) {
                       + angcoeffs.epsiloncoeff4*logomega
                       + angcoeffs.epsiloncoeff5*omega_cbrt);
 
-  const REAL8 alpha_expected = -11.8196;
-  const REAL8 epsilon_expected = -11.936;
+  const REAL8 alpha_expected = -11.8195574;
+  const REAL8 epsilon_expected = -11.9359726;
 
   print_difference("alpha", alpha, alpha_expected);
   print_difference("epsilon", epsilon, epsilon_expected);
@@ -206,7 +206,7 @@ static void Test_XLALSimIMRPhenomPCalculateModelParameters(void);
 static void Test_XLALSimIMRPhenomPCalculateModelParameters(void) {
   printf("\n** Test_XLALSimIMRPhenomPCalculateModelParameters: **\n");
 
-  REAL8 eta, chi_eff, chip, thetaJ, phiJ, alpha0;
+  REAL8 eta, chi_eff, chip, thetaJ, alpha0;
 
   REAL8 m1_SI = 10 * LAL_MSUN_SI;
   REAL8 m2_SI = 40 * LAL_MSUN_SI;
@@ -227,8 +227,7 @@ static void Test_XLALSimIMRPhenomPCalculateModelParameters(void) {
       &chip,              /**< Output: Effective spin in the orbital plane */
       &eta,               /**< Output: Symmetric mass-ratio */
       &thetaJ,            /**< Output: Angle between J0 and line of sight (z-direction) */
-      &phiJ,              /**< Output: Angle of J0 in the plane of the sky */
-      &alpha0,            /**< Output: Initial value of alpha angle */
+      &alpha0,            /**< Output: Initial value of alpha angle (azimuthal precession angle) */
       m1_SI,              /**< Mass of companion 1 (kg) */
       m2_SI,              /**< Mass of companion 2 (kg) */
       f_ref,              /**< Reference GW frequency (Hz) */
@@ -243,17 +242,15 @@ static void Test_XLALSimIMRPhenomPCalculateModelParameters(void) {
       s2z);               /**< Initial value of s2z: dimensionless spin of larger BH */
 
   REAL8 eta_expected = 0.16;
-  REAL8 chi_eff_expected = 0.437843;
-  REAL8 chip_expected = 0.175238;
-  REAL8 thetaJ_expected = 0.298553;
-  REAL8 phiJ_expected = 0;
-  REAL8 alpha0_expected = 0;
+  REAL8 chi_eff_expected = 0.4378425;
+  REAL8 chip_expected = 0.17523825;
+  REAL8 thetaJ_expected = 0.298552787;
+  REAL8 alpha0_expected = LAL_PI;
 
   print_difference("eta", eta, eta_expected);
   print_difference("chi_eff", chi_eff, chi_eff_expected);
   print_difference("chip", chip, chip_expected);
   print_difference("thetaJ", thetaJ, thetaJ_expected);
-  print_difference("phiJ", phiJ, phiJ_expected);
   print_difference("alpha0", alpha0, alpha0_expected);
 
   //const REAL8 eps = DBL_EPSILON;
@@ -264,7 +261,6 @@ static void Test_XLALSimIMRPhenomPCalculateModelParameters(void) {
     && approximatelyEqual(chi_eff,  chi_eff_expected, eps)
     && approximatelyEqual(chip,     chip_expected, eps)
     && approximatelyEqual(thetaJ,   thetaJ_expected, eps)
-    && approximatelyEqual(phiJ,     phiJ_expected, eps)
     && approximatelyEqual(alpha0,   alpha0_expected, eps)
     && "Test_XLALSimIMRPhenomPCalculateModelParameters()"
   );
@@ -368,8 +364,8 @@ static void Test_PhenomPCore(void) {
   prC("hp", hp);
   prC("hc", hc);
 
-  COMPLEX16 hp_expected = 2.07045e-23 - I*9.29274e-23;
-  COMPLEX16 hc_expected = -9.2936e-23 - I*2.06686e-23;
+  COMPLEX16 hp_expected = 2.06987e-23 - I*9.29351e-23;
+  COMPLEX16 hc_expected = -9.29438e-23 - I*2.06629e-23;
   const REAL8 eps = 1e-5;
 
   assert(
@@ -383,7 +379,7 @@ static void Test_XLALSimIMRPhenomP(void);
 static void Test_XLALSimIMRPhenomP(void) {
   printf("\n** Test_XLALSimIMRPhenomP: **\n");
 
-  REAL8 eta, chi_eff, chip, thetaJ, phiJ, alpha0;
+  REAL8 eta, chi_eff, chip, thetaJ, alpha0;
 
   REAL8 m1 = 10;
   REAL8 m2 = 40;
@@ -406,8 +402,7 @@ static void Test_XLALSimIMRPhenomP(void) {
       &chip,              /**< Output: Effective spin in the orbital plane */
       &eta,               /**< Output: Symmetric mass-ratio */
       &thetaJ,            /**< Output: Angle between J0 and line of sight (z-direction) */
-      &phiJ,              /**< Output: Angle of J0 in the plane of the sky */
-      &alpha0,            /**< Output: Initial value of alpha angle */
+      &alpha0,            /**< Output: Initial value of alpha angle (azimuthal precession angle) */
       m1_SI,              /**< Mass of companion 1 (kg) */
       m2_SI,              /**< Mass of companion 2 (kg) */
       f_ref,              /**< Reference GW frequency (Hz) */
@@ -435,7 +430,6 @@ static void Test_XLALSimIMRPhenomP(void) {
     chip,                     /**< Effective spin in the orbital plane */
     eta,                      /**< Symmetric mass-ratio */
     thetaJ,                   /**< Angle between J0 and line of sight (z-direction) */
-    phiJ,                     /**< Angle of J0 in the plane of the sky */
     m1_SI + m2_SI,            /**< Total mass of binary (kg) */
     distance,                 /**< Distance of source (m) */
     alpha0,                   /**< Initial value of alpha angle */
@@ -452,8 +446,8 @@ static void Test_XLALSimIMRPhenomP(void) {
   prC("hp", hp);
   prC("hc", hc);
 
-  COMPLEX16 hp_expected = 9.89892e-24 - I*5.42442e-23;
-  COMPLEX16 hc_expected = -5.40428e-23 - I*9.89086e-24;
+  COMPLEX16 hp_expected = 1.00825e-23 - I*5.79215e-23;
+  COMPLEX16 hc_expected = -5.7913e-23 - I*1.00782e-23;
   const REAL8 eps = 1e-5;
 
   assert(
@@ -493,15 +487,14 @@ static void Test_PhenomC_PhenomP(void) {
   REAL8 lnhaty = 0;
   REAL8 lnhatz = 1;
 
-  REAL8 chi_eff, chip, thetaJ, phiJ, alpha0;
+  REAL8 chi_eff, chip, thetaJ, alpha0;
 
   XLALSimIMRPhenomPCalculateModelParameters(
       &chi_eff,           /**< Output: Effective aligned spin */
       &chip,              /**< Output: Effective spin in the orbital plane */
       &eta,               /**< Output: Symmetric mass-ratio */
       &thetaJ,            /**< Output: Angle between J0 and line of sight (z-direction) */
-      &phiJ,              /**< Output: Angle of J0 in the plane of the sky */
-      &alpha0,            /**< Output: Initial value of alpha angle */
+      &alpha0,            /**< Output: Initial value of alpha angle (azimuthal precession angle) */
       m1_SI,              /**< Mass of companion 1 (kg) */
       m2_SI,              /**< Mass of companion 2 (kg) */
       f_ref,              /**< Starting GW frequency (Hz) */
@@ -519,7 +512,6 @@ static void Test_PhenomC_PhenomP(void) {
   printf("chip = %g\n", chip);
   printf("eta = %g\n", eta);
   printf("thetaJ = %g\n", thetaJ);
-  printf("phiJ = %g\n", phiJ);
 
   int ret = XLALSimIMRPhenomP(
     &hptilde,                 /**< Frequency-domain waveform h+ */
@@ -528,10 +520,9 @@ static void Test_PhenomC_PhenomP(void) {
     chip,                     /**< Effective spin in the orbital plane */
     eta,                      /**< Symmetric mass-ratio */
     thetaJ,                   /**< Angle between J0 and line of sight (z-direction) */
-    phiJ,                     /**< Angle of J0 in the plane of the sky */
     m1_SI + m2_SI,            /**< Total mass of binary (kg) */
     distance,                 /**< Distance of source (m) */
-    alpha0,                   /**< Initial value of alpha angle */
+    alpha0,                   /**< Initial value of alpha angle (azimuthal precession angle) */
     phic,                     /**< Orbital coalescence phase (rad) */
     deltaF,                   /**< Sampling frequency (Hz) */
     f_min,                    /**< Starting GW frequency (Hz) */
@@ -598,7 +589,7 @@ static void Test_XLALSimIMRPhenomP_f_ref(void) {
   // For aligned spins f_ref should not change the waveform
   printf("\n** Test_XLALSimIMRPhenomP_f_ref: **\n");
 
-  REAL8 eta, chi_eff, chip, thetaJ, phiJ, alpha0;
+  REAL8 eta, chi_eff, chip, thetaJ, alpha0;
 
   REAL8 m1 = 10;
   REAL8 m2 = 40;
@@ -621,8 +612,7 @@ static void Test_XLALSimIMRPhenomP_f_ref(void) {
       &chip,              /**< Output: Effective spin in the orbital plane */
       &eta,               /**< Output: Symmetric mass-ratio */
       &thetaJ,            /**< Output: Angle between J0 and line of sight (z-direction) */
-      &phiJ,              /**< Output: Angle of J0 in the plane of the sky */
-      &alpha0,            /**< Output: Initial value of alpha angle */
+      &alpha0,            /**< Output: Initial value of alpha angle (azimuthal precession angle) */
       m1_SI,              /**< Mass of companion 1 (kg) */
       m2_SI,              /**< Mass of companion 2 (kg) */
       f_ref,              /**< Reference GW frequency (Hz) */
@@ -650,10 +640,9 @@ static void Test_XLALSimIMRPhenomP_f_ref(void) {
     chip,                     /**< Effective spin in the orbital plane */
     eta,                      /**< Symmetric mass-ratio */
     thetaJ,                   /**< Angle between J0 and line of sight (z-direction) */
-    phiJ,                     /**< Angle of J0 in the plane of the sky */
     m1_SI + m2_SI,            /**< Total mass of binary (kg) */
     distance,                 /**< Distance of source (m) */
-    alpha0,                   /**< Initial value of alpha angle */
+    alpha0,                   /**< Initial value of alpha angle (azimuthal precession angle) */
     phic,                     /**< Orbital coalescence phase (rad) */
     deltaF,                   /**< Sampling frequency (Hz) */
     f_min,                    /**< Starting GW frequency (Hz) */
@@ -676,8 +665,7 @@ static void Test_XLALSimIMRPhenomP_f_ref(void) {
       &chip,              /**< Output: Effective spin in the orbital plane */
       &eta,               /**< Output: Symmetric mass-ratio */
       &thetaJ,            /**< Output: Angle between J0 and line of sight (z-direction) */
-      &phiJ,              /**< Output: Angle of J0 in the plane of the sky */
-      &alpha0,            /**< Output: Initial value of alpha angle */
+      &alpha0,            /**< Output: Initial value of alpha angle (azimuthal precession angle) */
       m1_SI,              /**< Mass of companion 1 (kg) */
       m2_SI,              /**< Mass of companion 2 (kg) */
       f_ref,              /**< Reference GW frequency (Hz) */
@@ -701,10 +689,9 @@ static void Test_XLALSimIMRPhenomP_f_ref(void) {
     chip,                     /**< Effective spin in the orbital plane */
     eta,                      /**< Symmetric mass-ratio */
     thetaJ,                   /**< Angle between J0 and line of sight (z-direction) */
-    phiJ,                     /**< Angle of J0 in the plane of the sky */
     m1_SI + m2_SI,            /**< Total mass of binary (kg) */
     distance,                 /**< Distance of source (m) */
-    alpha0,                   /**< Initial value of alpha angle */
+    alpha0,                   /**< Initial value of alpha angle (azimuthal precession angle) */
     phic,                     /**< Orbital coalescence phase (rad) */
     deltaF,                   /**< Sampling frequency (Hz) */
     f_min,                    /**< Starting GW frequency (Hz) */

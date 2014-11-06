@@ -234,7 +234,7 @@ void add_correlation_matrix( LALInferenceVariables *ini,
 void injectSignal( LALInferenceRunState *runState );
 
 /* helper functions */
-UINT4Vector *get_chunk_lengths( LALInferenceIFOData *data, INT4 chunkMax );
+UINT4Vector *get_chunk_lengths( LALInferenceIFOModel *ifo, INT4 chunkMax );
 
 UINT4Vector *chop_n_merge( LALInferenceIFOData *data, INT4 chunkMin, INT4 chunkMax );
 
@@ -260,7 +260,7 @@ INT4 count_csv( CHAR *csvline );
 
 INT4 recognised_parameter( CHAR *parname );
 
-REAL8 calculate_time_domain_snr( LALInferenceIFOData *data );
+REAL8 calculate_time_domain_snr( LALInferenceIFOData *data, LALInferenceIFOModel *ifo_model );
 
 void get_loudest_snr( LALInferenceRunState *runState );
 
@@ -269,7 +269,7 @@ TimeCorrectionType XLALAutoSetEphemerisFiles( CHAR *efile, CHAR *sfile,
                                               BinaryPulsarParams pulsar,
                                               INT4 gpsstart, INT4 gpsend );
 
-void remove_variable_and_prior( LALInferenceRunState *runState, LALInferenceIFOData *data, const CHAR *var );
+void remove_variable_and_prior( LALInferenceRunState *runState, LALInferenceIFOModel *data, const CHAR *var );
 
 void samples_prior( LALInferenceRunState *runState );
 

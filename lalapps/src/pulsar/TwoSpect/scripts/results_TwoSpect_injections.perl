@@ -21,12 +21,31 @@ if ($candidateOutput ne "") { open(CANDIDATERESULTS, ">$directory/$candidateOutp
 for(my $ii=0; $ii<$jobs; $ii++) {
    open(INJECTEDVALS, "$directory/$ii/injections.dat") or die "Cannot open $directory/$ii/injections.dat $!";
    my @injections = reverse <INJECTEDVALS>;
+   my $injectionLength = @injections;
+   next if $injectionLength<10;
+
    my @injections2;
-   my $jj;
-   for ($jj=0; $jj<10; $jj++) { push(@injections2, $injections[$jj]); }
+   my $jj = 0;
+   while ($jj<10 && $jj<$injectionLength) {
+      push(@injections2, $injections[$jj]);
+      $jj++;
+   }
    close(INJECTEDVALS);
    @injections2 = reverse @injections2;
-   
+   $injectionLength = @injections2;
+   next if $injectionLength<10;
+
+   my %repeated;
+   my $numberRepeated = 0;
+   $jj = 0;
+   while ($jj<10 && $jj<$injectionLength) {
+      $jj++;
+      my $injection = $injections2[$jj-1];
+      next unless $repeated{$injection}++;
+      $numberRepeated++;
+   }
+   next if $injectionLength-$numberRepeated<10;
+
    $jj = 0;
    foreach my $injection (@injections2) {
       chomp($injection);
@@ -37,7 +56,7 @@ for(my $ii=0; $ii<$jobs; $ii++) {
          elsif ($ifo eq "V1" || $ifo eq "Virgo") { $ifoval = "2"; }
 
          if ($ULoutput ne "") {
-            open(ULFILE, "$directory/$ii/${ifo}uls_$jj.dat") or die "Cannot open $directory/$ii/${ifo}uls_$jj.dat $!";
+            open(ULFILE, "$directory/$ii/uls_$jj.dat") or die "Cannot open $directory/$ii/uls_$jj.dat $!";
             while (my $line = <ULFILE>) {
                chomp($line);
                print ULRESULTS "$injection $line $ifoval\n";
@@ -46,7 +65,7 @@ for(my $ii=0; $ii<$jobs; $ii++) {
          }
 
          if ($candidateOutput ne "") {
-            open(TWOSPECTOUT, "$directory/$ii/${ifo}logfile_$jj.txt") or die "Cannot open $directory/$ii/${ifo}logfile_$jj.txt $!";
+            open(TWOSPECTOUT, "$directory/$ii/logfile_$jj.txt") or die "Cannot open $directory/$ii/logfile_$jj.txt $!";
             my @twospectoutput = reverse <TWOSPECTOUT>;
             my $kk = 1;
             my $foundoutlier = 0;
@@ -55,7 +74,8 @@ for(my $ii=0; $ii<$jobs; $ii++) {
                $kk++;
                $foundoutlier = 1;
             }
-            if ($foundoutlier==0) { print CANDIDATERESULTS "$jj $ii $injection NaN NaN NaN NaN NaN NaN NaN NaN $ifoval\n"; }
+            if ($foundoutlier==0 && $twospectoutput[0] =~ /^system lalapps_TwoSpect failed/) { print CANDIDATERESULTS "$jj $ii $injection -1 -1 -1 -1 -1 -1 -1 $ifoval\n"; }
+            elsif ($foundoutlier==0) { print CANDIDATERESULTS "$jj $ii $injection NaN NaN NaN NaN NaN NaN NaN NaN $ifoval\n"; }
             close(TWOSPECTOUT);
          }
       }

@@ -38,9 +38,12 @@ from lalinspiral.sbank.bank import Bank
 from lalinspiral.sbank.tau0tau3 import proposals
 from lalinspiral.sbank.psds import noise_models, read_psd, get_PSD
 from lalinspiral.sbank.waveforms import waveforms
-from pylal.xlal.constants import LAL_PI, LAL_MTSUN_SI
 
 import lal
+
+class ContentHandler(ligolw.LIGOLWContentHandler):
+    pass
+lsctables.use_in(ContentHandler)
 
 usage = """
 
@@ -252,13 +255,13 @@ else:
     # for overcoverage, but take it as is
     if opts.verbose:
         print>>sys.stdout,"Seeding the template bank..."
-    tmpdoc = utils.load_filename(opts.bank_seed)
+    tmpdoc = utils.load_filename(opts.bank_seed, contenthandler=ContentHandler)
     sngl_inspiral = table.get_table(tmpdoc, lsctables.SnglInspiralTable.tableName)
     bank = Bank.from_sngls(sngl_inspiral, waveform, noise_model, opts.flow, opts.use_metric)
 
     # update mchirp bounds
     # FIXME store boundaries in metadata of bank seed file
-    A0 = 5. / (256 * (LAL_PI * opts.flow)**(8./3)) # eqn B3
+    A0 = 5. / (256 * (lal.PI * opts.flow)**(8./3)) # eqn B3
     if opts.mchirp_min is None:
         opts.mchirp_min = min([b._mchirp for b in bank])
     if opts.mchirp_max is None:

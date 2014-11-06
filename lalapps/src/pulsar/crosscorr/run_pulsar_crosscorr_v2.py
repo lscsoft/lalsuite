@@ -22,6 +22,7 @@ from __future__ import division
 from argparse import ArgumentParser
 from subprocess import check_call
 from ConfigParser import SafeConfigParser
+from time import sleep
 
 ap = ArgumentParser()
 ap.add_argument("--configFile", action="store", required=True,
@@ -57,6 +58,10 @@ program_args += ['--fStart=%f' % fStart]
 program_args += ['--fBand=%f' % fBand]
 program_args += ['--toplistFilename=%s' % toplistName]
 program_args += ['--logFilename=%s' % logfileName]
+
+# Variable delay to stagger start times of lalapps code
+if cp.has_section('program') and cp.has_option('program','delay_secs'):
+    sleep(args.jobNum * cp.getfloat('program','delay_secs'))
 
 # Check if program was specified
 if cp.has_section('program') and cp.has_option('program','executable'):

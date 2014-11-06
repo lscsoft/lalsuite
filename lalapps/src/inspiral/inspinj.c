@@ -671,6 +671,7 @@ static void print_usage(char *program)
       " [--snr-distr]             use a distribution over expected (optimal) network SNR\n"\
       "                           uniform: uniform in SNR, log10: uniform in log10(SNR)\n"\
       "                           volume: uniform in 1/SNR^3\n"\
+      "                           ( Setting max-snr == min-snr will allow you to choose a fixed SNR )\n"\
       " [--ninja-snr]             use a NINJA waveform SNR calculation (if not set, use LALSimulation)\n"\
       " [--min-snr] SMIN          set the minimum network snr\n"\
       " [--max-snr] SMAX          set the maximum network snr\n"\
@@ -3061,7 +3062,7 @@ int main( int argc, char *argv[] )
     if (tmp) LALFree(tmp);
     if (ifo) LALFree(ifo);
 
-    if ( maxSNR <= minSNR )
+    if ( maxSNR < minSNR )
     {
       fprintf( stderr, "max SNR must be greater than min SNR\n");
       exit( 1 );

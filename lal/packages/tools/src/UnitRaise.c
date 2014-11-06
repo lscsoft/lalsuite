@@ -44,7 +44,7 @@
  * \left(\frac{N_1}{1+D_1}\right)\left( \frac{N_2}{1+D_2} \right)
  * = \frac{N_1 N_2}{1 + (1+D_1)(1+D_2)-1}
  * \f]
- * and then calls <tt>LALUnitNormalize()</tt> to bring the result into
+ * and then calls <tt>XLALUnitNormalize()</tt> to bring the result into
  * standard form.
  *
  */
@@ -151,44 +151,4 @@ LALUnit * XLALUnitInvert( LALUnit *output, const LALUnit *input )
   return output;
 }
 
-/**
- * This function raises the \c LALUnit structure <tt>*input</tt> to
- * the rational power <tt>*power</tt>.  In this way, units such as
- * \f$\mathrm{s}^{1/2}\f$ and \f$\mathrm{m}^{-1}\f$ can be created using existing units.
- *
- * \deprecated Use XLALUnitRaise() instead.
- */
-void
-LALUnitRaise (LALStatus *status, LALUnit *output, const LALUnit *input, const RAT4 *power)
-{
-  XLAL_PRINT_DEPRECATION_WARNING("XLALUnitRaiseRAT4");
-  INITSTATUS(status);
-
-  ASSERT( input != NULL, status, UNITSH_ENULLPIN, UNITSH_MSGENULLPIN );
-
-  ASSERT( power != NULL, status, UNITSH_ENULLPPARAM, UNITSH_MSGENULLPPARAM );
-
-  ASSERT( output != NULL, status, UNITSH_ENULLPOUT, UNITSH_MSGENULLPOUT );
-
-  ASSERT( input->powerOfTen % (power->denominatorMinusOne + 1) == 0, status,
-	  UNITSH_ENONINT, UNITSH_MSGENONINT);
-
-
-  if ( ! XLALUnitRaiseRAT4( output, input, power ) )
-  {
-    int code = xlalErrno;
-    XLALClearErrno();
-    switch ( code )
-    {
-      case XLAL_EINVAL:
-        ABORT( status, UNITSH_ENONINT, UNITSH_MSGENONINT);
-      case XLAL_ERANGE:
-        ABORT( status, UNITSH_EOVERFLOW, UNITSH_MSGEOVERFLOW);
-      default:
-        ABORTXLAL( status );
-    }
-  }
-
-  RETURN(status);
-}
 /*@}*/

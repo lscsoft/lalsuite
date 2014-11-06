@@ -19,7 +19,7 @@ import socket, time
 import re, string
 from optparse import *
 import tempfile
-import ConfigParser
+from glue.pipeline import DeepCopyableConfigParser as dcConfigParser
 import urlparse
 import itertools
 
@@ -636,7 +636,7 @@ except: pass
 
 ##############################################################################
 # create the config parser object and read in the ini file
-cp = ConfigParser.ConfigParser()
+cp = dcConfigParser()
 cp.read(opts.config_file)
 
 ##############################################################################
@@ -754,6 +754,11 @@ for ifo1 in ifo_list:
     else:
       splitBankFile = None
     splitNumBanks = int(cp.get('splitbank-meta','num-banks'))
+    if doExtTrig:
+      try:
+        splitNumBanks = int(cp.get('splitbank-injmeta','num-banks'))
+      except:
+        pass
   else:
     splitBankFile = None
     splitNumBanks = None

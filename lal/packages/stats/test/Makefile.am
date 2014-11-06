@@ -8,6 +8,9 @@ test_programs += LALMomentTest
 
 # Add shell, Python, etc. test scripts to this variable
 test_scripts +=
+if SWIG_BUILD_PYTHON
+test_scripts += LALMarcumQTest.py
+endif
 
 # Add any helper programs required by tests to this variable
 test_helpers +=

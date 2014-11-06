@@ -376,7 +376,9 @@ typedef struct {
       xlalErrno = XLAL_EDOM;   // Silently signal an error to caller
       return NULL;
     }
-    RAT4 rat = { (r[1] < 0) ? -r[0] : r[0], abs(r[1]) - 1 };
+    RAT4 rat;
+    rat.numerator = (r[1] < 0) ? -r[0] : r[0];
+    rat.denominatorMinusOne = abs(r[1]) - 1;
     LALUnit* retn = %swiglal_new_LALUnit();
     return XLALUnitRaiseRAT4(retn, $self, &rat);
   }

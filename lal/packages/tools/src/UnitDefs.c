@@ -32,27 +32,27 @@
  * \brief Defines basic and derived SI units and a function to produce a text
  * string corresponding to a unit structure.
  *
- * LALUnitAsString() converts the unit structure
+ * XLALUnitAsString() converts the unit structure
  * <tt>*input</tt> into a text string which is stored in the character
  * vector <tt>*output</tt>.  Note that the resulting text string is
  * expressed solely in terms of the basic units (m, kg, s, A,
  * K, strain and counts), and is thus not necessarily the most
  * convenient way to check the units of a quantity.  A better method is
  * to construct a unit structure containing the expected units, then
- * compare that to the actual units using LALUnitCompare().
+ * compare that to the actual units using XLALUnitCompare().
  *
- * LALParseUnitString() reconstructs the original
+ * XLALParseUnitString() reconstructs the original
  * \c LALUnit structure from the string output by
- * LALUnitAsString().  It is very sensitive to the exact format
+ * XLALUnitAsString().  It is very sensitive to the exact format
  * of the string and is not intended for use in parsing user-entered
  * strings.
  *
  * ### Algorithm ###
  *
- * LALUnitAsString() moves through the unit structure, appending
+ * XLALUnitAsString() moves through the unit structure, appending
  * the appropriate text to the string as it goes along.
  *
- * LALParseUnitString() moves through the input string, one
+ * XLALParseUnitString() moves through the input string, one
  * character at a time, building an ::LALUnit structure as a it
  * goes along, so long as it encounters precisely the syntax expected.
  *
@@ -144,12 +144,12 @@ const CHAR lalUnitName[LALNumUnits][LALUnitNameSize] =
  *********************************************************/
 
 /* Predefined constant units make it easier for programmers to specify
- * and compare (using LALUnitCompare) units more easily.  Those given
+ * and compare (using XLALUnitCompare) units more easily.  Those given
  * here are an example; more can be added.
  */
 
 /* LALUnitsTest.c will verify the definitions of the derived units,
- * for example using LALUnitRaise, LALUnitMultiply and LALUnitCompare
+ * for example using XLALUnitRaise, XLALUnitMultiply and XLALUnitCompare
  * to show that 1 Farad = 1 Coulomb Volt^-1
  */
 
@@ -356,52 +356,6 @@ char * XLALUnitToString( const LALUnit *input )
 }
 
 /**
- * \deprecated Use XLALUnitAsString() instead.
- */
-void
-LALUnitAsString( LALStatus *status,
-		 CHARVector *output,
-		 const LALUnit *input )
-
-{
-  XLAL_PRINT_DEPRECATION_WARNING("XLALUnitAsString");
-  INITSTATUS(status);
-  /* ATTATCHSTATUSPTR (status); */
-
-  ASSERT( input != NULL, status, UNITSH_ENULLPIN, UNITSH_MSGENULLPIN );
-
-  ASSERT( output != NULL, status, UNITSH_ENULLPOUT, UNITSH_MSGENULLPOUT );
-
-  ASSERT( output->data != NULL, status, UNITSH_ENULLPD,
-	  UNITSH_MSGENULLPD );
-
-  ASSERT( output->length > 0, status,
-	  UNITSH_ESTRINGSIZE, UNITSH_MSGESTRINGSIZE );
-
-  if ( ! XLALUnitAsString( output->data, output->length, input ) )
-  {
-    int code = xlalErrno;
-    XLALClearErrno();
-    switch ( code )
-    {
-      case XLAL_EFAULT: /* a NULL pointer was passed to the XLAL function */
-        if ( ! input )
-        {
-          ABORT( status, UNITSH_ENULLPIN, UNITSH_MSGENULLPIN );
-        }
-        else /* must have been a NULL output data pointer */
-        {
-          ABORT( status, UNITSH_ENULLPIN, UNITSH_MSGENULLPIN );
-        }
-      default: /* otherwise must have almost overwritten the string */
-        ABORT( status, UNITSH_ESTRINGSIZE, UNITSH_MSGESTRINGSIZE );
-    }
-  }
-
-  RETURN(status);
-}
-
-/**
  * Returns the pointer \c output upon return
  * or a pointer to newly allocated memory if \c output was \c NULL;
  * on failure, \c XLALParseUnitString() returns \c NULL and sets
@@ -576,43 +530,4 @@ LALUnit * XLALParseUnitString( LALUnit *output, const char *string )
 }
 
 
-/**
- * \deprecated Use XLALParseUnitString() instead.
- */
-void
-LALParseUnitString ( LALStatus *status,
-		     LALUnit *output,
-		     const CHARVector *input )
-
-{
-  XLAL_PRINT_DEPRECATION_WARNING("XLALParseUnitString");
-  CHAR         *charPtr, *charStopPtr;
-
-  INITSTATUS(status);
-
-  ASSERT( input != NULL, status, UNITSH_ENULLPIN, UNITSH_MSGENULLPIN );
-
-  ASSERT( output != NULL, status, UNITSH_ENULLPOUT, UNITSH_MSGENULLPOUT );
-
-  ASSERT( input->data != NULL, status, UNITSH_ENULLPD, UNITSH_MSGENULLPD );
-
-  /* ensure that there's a '\0' within the input CHARVector */
-  charPtr = input->data;
-  charStopPtr = charPtr + strlen(input->data);
-  /* Should point to first '\0' in string */
-  if (charStopPtr >= charPtr + input->length)
-  {
-    ABORT( status, UNITSH_EPARSE, UNITSH_MSGEPARSE );
-  }
-
-  /* call the XLAL function */
-  output = XLALParseUnitString( output, charPtr );
-  if ( ! output ) /* there was a parse error */
-  {
-    XLALClearErrno();
-    ABORT( status, UNITSH_EPARSE, UNITSH_MSGEPARSE );
-  }
-
-  RETURN(status);
-}
 /*@}*//* end: UnitDefs_c */

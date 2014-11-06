@@ -28,6 +28,7 @@ test_programs += NormalizeSFTRngMedTest
 test_programs += Peak2PHMDTest
 test_programs += PtoleMeshTest
 test_programs += PtoleMetricTest
+test_programs += ReadTEMPOFileTest
 test_programs += SFTfileIOTest
 test_programs += SimulateTaylorCWTest
 test_programs += SkyMetricTest

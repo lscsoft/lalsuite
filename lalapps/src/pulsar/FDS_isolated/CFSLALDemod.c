@@ -26,10 +26,6 @@
 #include "win_lib.h"
 #endif
 
-/* this is defined in C99 and *should* be in math.h.  Long term
-   protect this with a HAVE_FINITE */
-int finite(double);
-
 /* global variables defined in ComputeFStatistic.c */
 extern INT4 cfsRunNo;	   /**< CFS run-number: 0=run only once, 1=first run, 2=second run */
 extern INT4 maxSFTindex;  /**< maximal sftindex, for error-checking */
@@ -175,7 +171,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
         xTemp= f * skyConst[ tempInt1[ alpha ] ] + xSum[ alpha ];       /* >= 0 !! */
         
         /* this will now be assumed positive, but we double-check this to be sure */
-	if  (!finite(xTemp)) {
+	if  (!isfinite(xTemp)) {
             fprintf (stderr, "xTemp is not finite\n");
             fprintf (stderr, "DEBUG: loop=%d, xTemp=%f, f=%f, alpha=%d, tempInt1[alpha]=%d\n", 
                      i, xTemp, f, alpha, tempInt1[alpha]);
