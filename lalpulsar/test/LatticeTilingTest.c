@@ -27,6 +27,8 @@
 #include <lal/LALStdio.h>
 #include <lal/XLALError.h>
 
+#include "../src/GSLHelpers.h"
+
 static int CheckLatticeTiling(
   const size_t n,
   const LatticeType lattice,
@@ -45,8 +47,7 @@ static int CheckLatticeTiling(
   }
 
   // Set metric to the Lehmer matrix
-  gsl_matrix* metric = gsl_matrix_alloc(n, n);
-  XLAL_CHECK(metric != NULL, XLAL_ENOMEM);
+  gsl_matrix* GAMAT(metric, n, n);
   for (size_t i = 0; i < n; ++i) {
     for (size_t j = 0; j < n; ++j) {
       const double ii = i+1, jj = j+1;
@@ -64,8 +65,7 @@ static int CheckLatticeTiling(
   XLAL_CHECK(total == total_ref, XLAL_EFUNC, "ERROR: total = %zu != %zu = total_ref", total, total_ref);
 
   // Get all templates
-  gsl_matrix* templates = gsl_matrix_alloc(n, total);
-  XLAL_CHECK(templates != NULL, XLAL_ENOMEM);
+  gsl_matrix* GAMAT(templates, n, total);
   for (size_t i = 0; i < total; ++i) {
     gsl_vector_view point = gsl_matrix_column(templates, i);
     XLALNextLatticePoint(tiling, &point.vector);
@@ -93,10 +93,8 @@ static int CheckLatticeTiling(
 
   // Cleanup
   XLALDestroyLatticeTiling(tiling);
-  gsl_matrix_free(metric);
-  gsl_matrix_free(templates);
   XLALDestroyUINT8Vector(indices);
-  gsl_matrix_free(wksp);
+  GFMAT(metric, templates, wksp);
   LALCheckMemoryLeaks();
   printf("\n");
 
