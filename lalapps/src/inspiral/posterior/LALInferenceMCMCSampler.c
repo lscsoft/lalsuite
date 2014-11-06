@@ -383,7 +383,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     nullLikelihood = LALInferenceNullLogLikelihood(runState->data);
   } else if (runState->likelihood==&LALInferenceFreqDomainStudentTLogLikelihood || 
 	     (runState->likelihood==&LALInferenceMarginalisedTimeLogLikelihood &&
-        !LALInferenceGetProcParamVal(runState->commandLine, "--malmquistPrior")) ) {
+	      !LALInferenceGetProcParamVal(runState->commandLine, "--malmquistPrior")) || 
+	     (runState->likelihood==&LALInferenceMarginalisedTimePhaseLogLikelihood &&
+	      !LALInferenceGetProcParamVal(runState->commandLine, "--malmquistPrior")) || 
+	     (runState->likelihood==&LALInferenceMarginalisedPhaseLogLikelihood &&
+	      !LALInferenceGetProcParamVal(runState->commandLine, "--malmquistPrior"))) {
     LALInferenceIFOData *headData = runState->data;
     REAL8 d = *(REAL8 *)LALInferenceGetVariable(runState->currentParams, "distance");
     REAL8 bigD = INFINITY;
