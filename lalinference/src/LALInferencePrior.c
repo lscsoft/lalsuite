@@ -95,7 +95,7 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
   {
     if(item->vary==LALINFERENCE_PARAM_FIXED || item->vary==LALINFERENCE_PARAM_OUTPUT)
       continue;
-    else
+    else if (LALInferenceCheckMinMaxPrior(priorParams, item->name))
     {
       LALInferenceGetMinMaxPrior(priorParams, item->name, &min, &max);
       if(*(REAL8 *) item->value < min || *(REAL8 *)item->value > max) return -DBL_MAX;

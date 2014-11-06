@@ -1329,7 +1329,7 @@ draw_flat(LALInferenceRunState *runState, const char *name) {
   REAL8 min, max;
 
   LALInferenceGetMinMaxPrior(runState->priorArgs, name, &min, &max);
-
+    
   REAL8 x = gsl_rng_uniform(runState->GSLrandom);
 
   return min + x*(max - min);
@@ -4152,14 +4152,14 @@ void LALInferencePrintProposalTracking(FILE *fp, LALInferenceVariables *propArgs
   return;
 }
 
-void LALInferenceSplineCalibrationProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
+REAL8 LALInferenceSplineCalibrationProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams) {
   const char *proposalName = splineCalibrationProposalName;
   LALInferenceIFOData *ifo = NULL;
   UINT4 nifo = 0;
   REAL8 ampWidth = *(REAL8 *)LALInferenceGetVariable(runState->priorArgs, "spcal_amp_uncertainty");
   REAL8 phaseWidth = *(REAL8 *)LALInferenceGetVariable(runState->priorArgs, "spcal_phase_uncertainty");
 
-  LALInferenceCopyVariables(runState->currentParams, proposedParams);
+  LALInferenceCopyVariables(currentParams, proposedParams);
   LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &proposalName);
 
   ifo = runState->data;
@@ -4192,5 +4192,5 @@ void LALInferenceSplineCalibrationProposal(LALInferenceRunState *runState, LALIn
     ifo = ifo->next;
   } while (ifo);
 
-  LALInferenceSetLogProposalRatio(runState, 0.0);
+  return 0.0;
 }

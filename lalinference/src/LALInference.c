@@ -1397,7 +1397,7 @@ void LALInferenceCopyVariablesToArray(LALInferenceVariables *origin, REAL8 *targ
       {
 	v8 = *(REAL8Vector **)ptr->value;
 	for (j = 0; j < v8->length; j++) {
-	  parameters->data[p]=v8->data[j];
+	  target[p]=v8->data[j];
 	  p++;
 	}
       }
@@ -1449,7 +1449,7 @@ void LALInferenceCopyArrayToVariables(REAL8 *origin, LALInferenceVariables *targ
 	v8 = *(REAL8Vector **)ptr->value;
 	for (j=0; j < v8->length; j++)
 	{
-	  v8->data[j] = origin->data[p];
+	  v8->data[j] = origin[p];
 	  p++;
 	}
       }

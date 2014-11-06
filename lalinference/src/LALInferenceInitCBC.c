@@ -1269,7 +1269,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state)
   if(LALInferenceGetProcParamVal(commandLine, "--glitchFit")) LALInferenceInitGlitchVariables(state, model->params);
 
   /* Handle, if present, requests for calibration parameters. */
-  LALInferenceInitSplineCalibrationVariables(state, currentParams);
+  LALInferenceInitSplineCalibrationVariables(state, model->params);
 
   UINT4 signal_flag=1;
   ppt = LALInferenceGetProcParamVal(commandLine, "--noiseonly");

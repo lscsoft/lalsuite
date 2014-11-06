@@ -365,7 +365,7 @@ REAL8 LALInferenceEnsembleWalkExtrinsic(LALInferenceRunState *runState, LALInfer
 REAL8 LALInferenceEnsembleWalkNames(LALInferenceRunState *runState, LALInferenceVariables *cpi, LALInferenceVariables *ppi, const char **names);
 
 /** Proposes jumps in the spline calibration parameters, if present. */
-void LALInferenceSplineCalibrationProposal(LALInferenceRunState *runState, LALInferenceVariables *pp);
+REAL8 LALInferenceSplineCalibrationProposal(LALInferenceRunState *runState, LALInferenceVariables *cp, LALInferenceVariables *pp);
 /*@}*/
 
 #endif
