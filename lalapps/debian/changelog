@@ -1,3 +1,10 @@
+lalapps (6.15.1-1) unstable; urgency=low
+
+  * LALApps 6.15.1
+  * content handler updates for lalapps_trigger_hipe
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Thu, 06 Nov 2014 15:43:30 -0600
+
 lalapps (6.15.0-1) unstable; urgency=low
 
   * LALApps 6.15.0
