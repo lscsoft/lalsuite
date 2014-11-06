@@ -193,7 +193,7 @@ def createInjectionFile(hipe_dir, cp, cpinj, injrun, injection_segment,
       raise subprocess.CalledProcessError(p.returncode, "%s: %s" % (" ".join(cmd), err))
 
   # read in the file and the tables
-  doc = utils.load_filename(new_injFile)
+  doc = utils.load_filename(new_injFile, contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler))
   sims = table.get_table(doc, lsctables.SimInspiralTable.tableName)
 
   return sims, injInterval, numberInjections, new_injFile
@@ -612,7 +612,7 @@ if not opts.grb_file and (not opts.time or not opts.name):
 # find available data
 
 if opts.grb_file:
-  xmldoc    = utils.load_filename(opts.grb_file, gz=opts.grb_file.endswith('.gz'))
+  xmldoc    = utils.load_filename(opts.grb_file, gz=opts.grb_file.endswith('.gz'), contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler))
   ext_table = table.get_table(xmldoc,lsctables.ExtTriggersTable.tableName)
   grb_time  = ext_table[0].start_time
   grb_name  = os.path.basename(opts.grb_file)[3:-4]
