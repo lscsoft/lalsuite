@@ -86,9 +86,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %{_libdir}/python*/site-packages/lalpulsar/*.pyc
 %{_libdir}/python*/site-packages/lalpulsar/_lalpulsar.so*
 %exclude %{_libdir}/python*/site-packages/lalpulsar/*.pyo
-%exclude %{_libdir}/python*/site-packages/lalpulsar/*.la
 
 %files octave
 %defattr(-,root,root)
 %{_libexecdir}/octave/*/site/oct/*/lalpulsar.oct*
-%exclude %{_libexecdir}/octave/*/site/oct/*/lalpulsar.la
