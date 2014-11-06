@@ -37,8 +37,8 @@
 
 void ensemble_sampler(struct tagLALInferenceRunState *run_state) {
     INT4 mpi_rank, mpi_size;
-    INT4 walker, nwalkers_per_thread, nsteps;
-    INT4 skip, update_interval, verbose;
+    INT4 walker, nwalkers_per_thread, walker_offset;
+    INT4 nsteps, skip, update_interval, verbose;
     INT4 *step;
     INT4 *naccepts;
     char **walker_output_names = NULL;
@@ -63,6 +63,7 @@ void ensemble_sampler(struct tagLALInferenceRunState *run_state) {
         LALInferenceGetINT4Variable(algorithm_params, "nwalkers_per_thread");
     update_interval =
         LALInferenceGetINT4Variable(algorithm_params, "update_interval");
+    walker_offset = mpi_rank * nwalkers_per_thread;
 
     /* Initialize walker acceptance rate tracking and outputs.
      * Files are closed to avoid hitting system I/O limits */
@@ -102,7 +103,8 @@ void ensemble_sampler(struct tagLALInferenceRunState *run_state) {
                                     &proposed_params,
                                     &(run_state->currentPriors[walker]),
                                     &(run_state->currentLikelihoods[walker]),
-                                    &(run_state->currentPropDensityArray[walker]));
+                                    &(run_state->currentPropDensityArray[walker]),
+                                    walker_offset+walker);
 
             /* Track acceptance rates */
             naccepts[walker] += accepted;
@@ -138,7 +140,7 @@ INT4 walker_step(LALInferenceRunState *run_state,
                     LALInferenceVariables *current_params,
                     LALInferenceVariables *proposed_params,
                     REAL8 *current_prior, REAL8 *current_likelihood,
-                    REAL8 *current_prop_density) {
+                    REAL8 *current_prop_density, INT4 walker) {
     REAL8 proposed_prior = -INFINITY;
     REAL8 proposed_likelihood = -INFINITY;
     REAL8 proposal_ratio, acceptance_probability;
@@ -164,6 +166,10 @@ INT4 walker_step(LALInferenceRunState *run_state,
     acceptance_probability = (proposed_prior + proposed_likelihood)
                             - (*current_prior + *current_likelihood)
                             + proposal_ratio;
+
+    /* Save stats for calculating evidence */
+    print_evidence_sample(run_state, proposed_prior, proposed_likelihood,
+                            prop_density, walker);
 
     /* Accept the jump with the calculated probability */
     if (acceptance_probability > 0
@@ -338,28 +344,19 @@ char *init_ensemble_output(LALInferenceRunState *run_state,
     ProcessParamsTable *ppt;
     INT4 randomseed;
     char *outfile_name = NULL;
-    char *prop_name = NULL;
     FILE *walker_output = NULL;
 
     /* Randomseed used to prevent overwriting when peforming multiple analyses */
     randomseed = LALInferenceGetINT4Variable(run_state->algorithmParams, "random_seed");
 
     /* Decide on file name(s) and open */
+    outfile_name = (char*) XLALCalloc(255, sizeof(char*));
     ppt = LALInferenceGetProcParamVal(run_state->commandLine, "--outfile");
-    if (ppt) {
-        outfile_name = (char*) XLALCalloc(strlen(ppt->value)+255, sizeof(char*));
+    if (ppt)
         sprintf(outfile_name, "%s.%i", ppt->value, walker);
-    } else {
-        outfile_name = (char*) XLALCalloc(255, sizeof(char*));
+    else
         sprintf(outfile_name,
                 "ensemble.output.%u.%i", randomseed, walker_offset+walker);
-    }
-
-    if (verbose) {
-        prop_name = (char*) XLALCalloc(255, sizeof(char*));
-        sprintf(prop_name, "ensemble.proposed.%u.%i",
-                randomseed, walker_offset+walker);
-    }
 
     walker_output = fopen(outfile_name, "w");
     if (walker_output == NULL){
@@ -369,23 +366,35 @@ char *init_ensemble_output(LALInferenceRunState *run_state,
         XLAL_ERROR_NULL(XLAL_EIO);
     }
 
-    /* Print headers to file */
+    /* Print headers; close to avoid hitting system I/O file stream limits */
     print_ensemble_header(run_state, walker_output, walker);
-
-    /* Close to avoid hitting system I/O limits when using many walkers */
     fclose(walker_output);
 
+    /* Open file to write evidences */
+    print_evidence_header(run_state, walker_offset+walker);
+
     /* Extra outputs when running verbosely */
-    if (verbose) {
-        FILE *prop_out = fopen(prop_name, "w");
-        LALInferenceFprintParameterNonFixedHeaders(prop_out, run_state->currentParamArray[0]);
-        fprintf(prop_out, "accepted\n");
-        fclose(prop_out);
-        XLALFree(prop_name);
-    }
+    if (verbose)
+        print_proposal_header(run_state, walker_offset+walker);
 
     return outfile_name;
 }
+
+
+char* ensemble_output_name(LALInferenceRunState *run_state,
+                            const char *out_type,
+                            INT4 walker) {
+    char *name = NULL;
+    INT4 randomseed;
+
+    randomseed =
+        LALInferenceGetINT4Variable(run_state->algorithmParams, "random_seed");
+
+    name = (char*) XLALCalloc(255, sizeof(char*));
+    sprintf(name, "ensemble.%s.%u.%i", out_type, randomseed, walker);
+    return name;
+}
+
 
 void print_ensemble_sample(LALInferenceRunState *run_state,
                             char **walker_output_names,
@@ -436,23 +445,20 @@ void print_proposed_sample(LALInferenceRunState *run_state,
                             LALInferenceVariables *proposed_params,
                             INT4 walker,
                             INT4 accepted) {
-    INT4 mpi_rank;
-    INT4 nwalkers_per_thread;
-    INT4 randomseed;
+    INT4 mpi_rank, nwalkers_per_thread;
     FILE *output = NULL;
-    char *outname = (char*) XLALCalloc(255, sizeof(char*));
+    char *outname;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);    // This thread's index
 
     LALInferenceVariables *algorithm_params = run_state->algorithmParams;
-    randomseed = LALInferenceGetINT4Variable(algorithm_params, "random_seed");
     nwalkers_per_thread =
         LALInferenceGetINT4Variable(algorithm_params, "nwalkers_per_thread");
 
-    sprintf(outname, "ensemble.proposed.%u.%2.2d",
-            randomseed, nwalkers_per_thread*mpi_rank+walker);
-
+    outname = ensemble_output_name(run_state, "proposed",
+                                    nwalkers_per_thread*mpi_rank+walker);
     output = fopen(outname, "a");
+
     LALInferencePrintSampleNonFixed(output, proposed_params);
     fprintf(output, "%i\n", accepted);
 
@@ -461,25 +467,39 @@ void print_proposed_sample(LALInferenceRunState *run_state,
 }
 
 
+void print_evidence_sample(LALInferenceRunState *run_state,
+                            REAL8 logprior,
+                            REAL8 logl,
+                            REAL8 prop_density,
+                            INT4 walker) {
+    char *name = ensemble_output_name(run_state, "evidence", walker);
+    FILE *out = fopen(name, "a");
+
+    fprintf(out, "%g\t%g\t%g\t\n", logprior, logl, prop_density);
+
+    /* Close file before returning */
+    fclose(out);
+    XLALFree(name);
+}
+
+
 void print_acceptance_rate(LALInferenceRunState *run_state,
                             INT4 *naccepts,
                             INT4 step) {
     INT4 mpi_rank, walker;
     INT4 nwalkers_per_thread;
-    INT4 randomseed;
     FILE *output = NULL;
-    char *outname = (char*) XLALCalloc(255, sizeof(char*));
+    char *outname;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);    // This thread's index
 
     LALInferenceVariables *algorithm_params = run_state->algorithmParams;
-    randomseed = LALInferenceGetINT4Variable(algorithm_params, "random_seed");
     nwalkers_per_thread =
         LALInferenceGetINT4Variable(algorithm_params, "nwalkers_per_thread");
 
-    sprintf(outname, "ensemble.rates.%u.%i", randomseed, mpi_rank);
-
+    outname = ensemble_output_name(run_state, "rates", mpi_rank);
     output = fopen(outname, "a");
+
     for (walker = 0; walker < nwalkers_per_thread; walker++)
         fprintf(output, "%f\t", naccepts[walker]/((REAL8) step));
     fprintf(output, "\n");
@@ -607,4 +627,27 @@ void print_ensemble_header(LALInferenceRunState *run_state,
     fprintf(walker_output,"\n");
 
     XLALFree(cmd_str);
+}
+
+
+void print_evidence_header(LALInferenceRunState *run_state, INT4 walker) {
+    char *name = ensemble_output_name(run_state, "evidence", walker);
+    FILE *out = fopen(name, "w");
+
+    fprintf(out, "logprior\tlogl\tprop_density\t\n");
+
+    fclose(out);
+    XLALFree(name);
+}
+
+
+void print_proposal_header(LALInferenceRunState *run_state, INT4 walker) {
+    char *name = ensemble_output_name(run_state, "proposal", walker);
+    FILE *out = fopen(name, "w");
+
+    LALInferenceFprintParameterNonFixedHeaders(out, run_state->currentParamArray[0]);
+    fprintf(out, "accepted\n");
+
+    fclose(out);
+    XLALFree(name);
 }
