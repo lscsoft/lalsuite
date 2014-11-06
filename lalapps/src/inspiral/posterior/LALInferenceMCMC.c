@@ -473,7 +473,10 @@ void initializeMCMC(LALInferenceRunState *runState)
     malmquist = 1;
     LALInferenceAddVariable(runState->priorArgs, "malmquist", &malmquist, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
     runState->prior=&LALInferenceInspiralPrior;
-  } 
+  }  else {
+     /* By default, use LALInferenceInspiralPrior */
+     runState->prior=&LALInferenceInspiralPrior;
+  }
   //runState->prior=PTUniformGaussianPrior;
 
   if (malmquist) {
