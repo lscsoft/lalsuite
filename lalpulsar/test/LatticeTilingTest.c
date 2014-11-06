@@ -35,7 +35,7 @@ static int CheckLatticeTiling(
 {
 
   // Create a lattice tiling
-  fprintf(stderr, "Number of dimensions: %zu\n", n);
+  printf("Number of dimensions: %zu\n", n);
   LatticeTiling* tiling = XLALCreateLatticeTiling(n);
   XLAL_CHECK(tiling != NULL, XLAL_ENOMEM);
 
@@ -55,12 +55,12 @@ static int CheckLatticeTiling(
   }
 
   // Set lattice and metric
-  fprintf(stderr, "Lattice type: %u\n", lattice);
+  printf("Lattice type: %u\n", lattice);
   XLAL_CHECK(XLALSetLatticeTypeAndMetric(tiling, lattice, metric, 0.3) == XLAL_SUCCESS, XLAL_EFUNC);
 
   // Count number of templates
   size_t total = XLALCountLatticePoints(tiling);
-  fprintf(stderr, "Number of lattice points: %zu\n", total);
+  printf("Number of lattice points: %zu\n", total);
   XLAL_CHECK(total == total_ref, XLAL_EFUNC, "ERROR: total = %zu != %zu = total_ref", total, total_ref);
 
   // Get all templates
@@ -98,7 +98,7 @@ static int CheckLatticeTiling(
   XLALDestroyUINT8Vector(indices);
   gsl_matrix_free(wksp);
   LALCheckMemoryLeaks();
-  fprintf(stderr, "\n");
+  printf("\n");
 
   return XLAL_SUCCESS;
 
