@@ -86,9 +86,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %{_libdir}/python*/site-packages/lalxml/*.pyc
 %{_libdir}/python*/site-packages/lalxml/_lalxml.so*
 %exclude %{_libdir}/python*/site-packages/lalxml/*.pyo
-%exclude %{_libdir}/python*/site-packages/lalxml/*.la
 
 %files octave
 %defattr(-,root,root)
 %{_libexecdir}/octave/*/site/oct/*/lalxml.oct*
-%exclude %{_libexecdir}/octave/*/site/oct/*/lalxml.la
