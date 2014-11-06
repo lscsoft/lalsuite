@@ -93,10 +93,8 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %{_libdir}/python*/site-packages/lalinference/_lalinference.so*
 %exclude %{_libdir}/python*/site-packages/lalinference/*.pyo
 %exclude %{_libdir}/python*/site-packages/lalinference/bayestar/*.pyo
-%exclude %{_libdir}/python*/site-packages/lalinference/*.la
 %exclude %{_libdir}/python*/site-packages/lalinference/bayestar/*.la
 
 %files octave
 %defattr(-,root,root)
 %{_libexecdir}/octave/*/site/oct/*/lalinference.oct*
-%exclude %{_libexecdir}/octave/*/site/oct/*/lalinference.la
