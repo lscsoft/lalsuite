@@ -331,7 +331,7 @@ void init_sampler(LALInferenceRunState *run_state) {
     /* Set up the appropriate functions for the MCMC algorithm */
     run_state->algorithm = &ensemble_sampler;
 
-    INT4 malmquist = 0;
+    /* Choose the proper prior */
     if (LALInferenceGetProcParamVal(command_line, "--correlatedGaussianLikelihood") || 
                LALInferenceGetProcParamVal(command_line, "--bimodalGaussianLikelihood") ||
                LALInferenceGetProcParamVal(command_line, "--rosenbrockLikelihood") ||
@@ -339,37 +339,34 @@ void init_sampler(LALInferenceRunState *run_state) {
         run_state->prior = &LALInferenceAnalyticNullPrior;
     } else if (LALInferenceGetProcParamVal(command_line, "--nullprior")) {
         run_state->prior = &LALInferenceNullPrior;
-    } else if (LALInferenceGetProcParamVal(command_line, "--malmquistprior")) {
-        malmquist = 1;
-        LALInferenceAddVariable(run_state->priorArgs,
-                                "malmquist", &malmquist,
-                                LALINFERENCE_INT4_t,
-                                LALINFERENCE_PARAM_OUTPUT);
-
-        run_state->prior = &LALInferenceInspiralPrior;
     } else {
         run_state->prior = &LALInferenceInspiralPrior;
     }
 
-    if (malmquist) {
+    /* Set up malmquist prior */
+    INT4 malmquist = 0;
+    if (LALInferenceGetProcParamVal(command_line, "--malmquistprior")) {
+        malmquist = 1;
         REAL8 malmquist_loudest = 0.0;
         REAL8 malmquist_second_loudest = 5.0;
         REAL8 malmquist_network = 0.0;
 
         ppt = LALInferenceGetProcParamVal(command_line,
                                             "--malmquist-loudest-snr");
-        if (ppt)
-            malmquist_loudest = atof(ppt->value);
+        if (ppt) malmquist_loudest = atof(ppt->value);
 
         ppt = LALInferenceGetProcParamVal(command_line,
                                             "--malmquist-second-loudest-snr");
-        if (ppt)
-            malmquist_second_loudest = atof(ppt->value);
+        if (ppt) malmquist_second_loudest = atof(ppt->value);
 
         ppt = LALInferenceGetProcParamVal(command_line,
                                             "--malmquist-network-snr");
-        if (ppt)
-            malmquist_network = atof(ppt->value);
+        if (ppt) malmquist_network = atof(ppt->value);
+
+        LALInferenceAddVariable(run_state->priorArgs,
+                                "malmquist", &malmquist,
+                                LALINFERENCE_INT4_t,
+                                LALINFERENCE_PARAM_OUTPUT);
 
         LALInferenceAddVariable(run_state->priorArgs,
                                 "malmquist_loudest_snr",
