@@ -91,10 +91,8 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %{_libdir}/python*/site-packages/lalframe/utils/*.py
 %{_libdir}/python*/site-packages/lalframe/utils/*.pyc
 %exclude %{_libdir}/python*/site-packages/lalframe/*.pyo
-%exclude %{_libdir}/python*/site-packages/lalframe/*.la
 %exclude %{_libdir}/python*/site-packages/lalframe/utils/*.pyo
 
 %files octave
 %defattr(-,root,root)
 %{_libexecdir}/octave/*/site/oct/*/lalframe.oct*
-%exclude %{_libexecdir}/octave/*/site/oct/*/lalframe.la
