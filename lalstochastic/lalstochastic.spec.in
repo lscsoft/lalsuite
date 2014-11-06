@@ -87,9 +87,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %{_libdir}/python*/site-packages/lalstochastic/*.pyc
 %{_libdir}/python*/site-packages/lalstochastic/_lalstochastic.so*
 %exclude %{_libdir}/python*/site-packages/lalstochastic/*.pyo
-%exclude %{_libdir}/python*/site-packages/lalstochastic/*.la
 
 %files octave
 %defattr(-,root,root)
 %{_libexecdir}/octave/*/site/oct/*/lalstochastic.oct*
-%exclude %{_libexecdir}/octave/*/site/oct/*/lalstochastic.la
