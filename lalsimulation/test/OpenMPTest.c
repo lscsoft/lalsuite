@@ -104,7 +104,7 @@ static void GenerateOMPWaveform(OpenMPCapableWaveforms wf, COMPLEX16FrequencySer
   INT4 phaseO = LAL_PNORDER_THREE_POINT_FIVE;
   INT4 amplitudeO = LAL_PNORDER_THREE_POINT_FIVE;
 
-  REAL8 eta, chi_eff, chip, thetaJ, phiJ, alpha0;
+  REAL8 eta, chi_eff, chip, thetaJ, alpha0;
 
   switch (wf) {
     case OMP_TaylorF2:
