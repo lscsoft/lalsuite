@@ -88,10 +88,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %{_libdir}/python*/site-packages/lalburst/*.pyc
 %{_libdir}/python*/site-packages/lalburst/_lalburst.so*
 %exclude %{_libdir}/python*/site-packages/lalburst/*.pyo
-%exclude %{_libdir}/python*/site-packages/lalburst/*.la
 
 %files octave
 %defattr(-,root,root)
 %{_libexecdir}/octave/*/site/oct/*/lalburst.oct*
-%exclude %{_libexecdir}/octave/*/site/oct/*/lalburst.la
-

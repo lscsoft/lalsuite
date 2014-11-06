@@ -1,3 +1,10 @@
+lalburst (1.2.6-1) unstable; urgency=low
+
+  * LALBurst 1.2.6
+  * more SWIG binding packaging fixes
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Thu, 06 Nov 2014 15:33:48 -0600
+
 lalburst (1.2.5-1) unstable; urgency=low
 
   * LALBurst 1.2.5
