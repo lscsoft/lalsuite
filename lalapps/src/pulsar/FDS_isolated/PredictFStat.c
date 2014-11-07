@@ -642,7 +642,7 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     }
     strcpy ( cfg->dataSummary, summary );
 
-    LogPrintfVerbatim( LOG_DEBUG, cfg->dataSummary );
+    LogPrintfVerbatim( LOG_DEBUG, "%s", cfg->dataSummary );
   } /* write dataSummary string */
 
   /* free everything not needed any more */

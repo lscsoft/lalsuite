@@ -536,7 +536,7 @@ static REAL8 XLALdEnergyByFluxSpinPrec(
 			dEbF0 = params->dEbF0NonSpin; 
 			break; 
 		default: 
-            XLALPrintError("XLAL Error - %s: Invalid phase. PN order %s\n", __func__, phaseO);
+            XLALPrintError("XLAL Error - %s: Invalid phase. PN order %d\n", __func__, phaseO);
             XLAL_ERROR(XLAL_EINVAL);
 		break;
     }
@@ -745,7 +745,7 @@ static int computeOrbitalPhase(
 					phi0 = params->phiOrb0NonSpin; 
 					break; 
 				default: 
-					XLALPrintError("XLAL Error - %s: Invalid phase. PN order %s\n", __func__, phaseO);
+					XLALPrintError("XLAL Error - %s: Invalid phase. PN order %d\n", __func__, phaseO);
 					XLAL_ERROR(XLAL_EINVAL);
 				break;
 			}

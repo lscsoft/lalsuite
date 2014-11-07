@@ -3798,7 +3798,7 @@ void samples_prior( LALInferenceRunState *runState ){
     nnlive = count_csv( templives );
 
     if( nnlive != nsamps ){
-      XLALPrintError("%s: Number of live points not equal to number of posterior files!\n", fn, sampfile);
+      XLALPrintError("%s: Number of live points not equal to number of posterior files!\n", fn);
       XLAL_ERROR_VOID(XLAL_EIO);
     }
 

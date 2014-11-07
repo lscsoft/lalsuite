@@ -531,9 +531,7 @@ void XLALPerror(const char *func, const char *file, int line, int code)
         XLALPrintError(" - %s", func);
     if (file && *file)
         XLALPrintError(" (%s:%d)", file, line);
-    XLALPrintError(": ");
-    XLALPrintError(XLALErrorString(code));
-    XLALPrintError("\n");
+    XLALPrintError(": %s\n", XLALErrorString(code));
     return;
 }
 

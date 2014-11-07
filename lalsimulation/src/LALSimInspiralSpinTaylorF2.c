@@ -383,7 +383,7 @@ int XLALSimInspiralSpinTaylorF2(
             pfaN = pfa.v[0];
             break;
         default:
-            XLAL_ERROR(XLAL_ETYPE, "Invalid phase PN order %s", phaseO);
+            XLAL_ERROR(XLAL_ETYPE, "Invalid phase PN order %d", phaseO);
     }
 
     /* Add the zeta factor to the phasing, since it looks like a pN series.
@@ -407,7 +407,7 @@ int XLALSimInspiralSpinTaylorF2(
      */
 
     /* Validate amplitude PN order. */
-    if (amplitudeO != 0) { XLAL_ERROR(XLAL_ETYPE, "Invalid amplitude PN order %s", amplitudeO); }
+    if (amplitudeO != 0) { XLAL_ERROR(XLAL_ETYPE, "Invalid amplitude PN order %d", amplitudeO); }
 
     /* energy coefficients - not currently used, but could for MECO
     const REAL8 dETaN = 2. * XLALSimInspiralPNEnergy_0PNCoeff(eta);

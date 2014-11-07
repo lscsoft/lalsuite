@@ -927,7 +927,7 @@ int XLALConvertSSB2GPS ( LIGOTimeGPS *GPSout,			/**< [out] GPS-arrival-time at d
 
   /* check for convergence of root finder */
   if ( iterations == 100 ) {
-    XLAL_ERROR ( XLAL_EFAILED, "SSB->GPS iterative conversion failed to converge to <= 1ns within 100 iterations: delta = %d ns\n", delta );
+    XLAL_ERROR ( XLAL_EFAILED, "SSB->GPS iterative conversion failed to converge to <= 1ns within 100 iterations: delta = %"LAL_INT8_FORMAT" ns\n", delta );
   }
 
   /* if we exited because of flip-flop and final delta was +1 then round up to the higher value */

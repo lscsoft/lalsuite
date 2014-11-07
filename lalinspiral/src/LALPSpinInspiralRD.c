@@ -1967,7 +1967,7 @@ static int XLALSpinInspiralAdaptiveEngine(
       XLALPrintError("                     m:           : %12.5f  %12.5f\n",mparams->m1m*mparams->m,mparams->m2m*mparams->m);
       XLALPrintError("              S1:                 : %12.5f  %12.5f  %12.5f\n",S1x0,S1y0,S1z0);
       XLALPrintError("              S2:                 : %12.5f  %12.5f  %12.5f\n",S2x0,S2y0,S2z0);
-      XLALPrintError("     omM %12.5f   om[%d] %12.5f\n",omegaMatch,jMatch,omega);
+      XLALPrintError("     omM %12.5f   om[%d] %12.5f\n",omegaMatch,jMatch,*omega);
       XLAL_ERROR(XLAL_EFAILED);
     }
 
@@ -1990,7 +1990,7 @@ static int XLALSpinInspiralAdaptiveEngine(
       XLALPrintError("                     m:           : %12.5f  %12.5f\n",mparams->m1m*mparams->m,mparams->m2m*mparams->m);
       XLALPrintError("              S1:                 : %12.5f  %12.5f  %12.5f\n",S1x0,S1y0,S1z0);
       XLALPrintError("              S2:                 : %12.5f  %12.5f  %12.5f\n",S2x0,S2y0,S2z0);
-      XLALPrintError("     omM %12.5f   om[%d] %12.5f\n",omegaMatch,jMatch,omega);
+      XLALPrintError("     omM %12.5f   om[%d] %12.5f\n",omegaMatch,jMatch,*omega);
       XLAL_ERROR(XLAL_EFAILED);
     }
 

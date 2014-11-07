@@ -126,7 +126,7 @@ XLALNormalizeSFTVect ( SFTVector  *sftVect,		/**< [in/out] pointer to a vector o
 
   /* allocate memory for a single rngmed */
   REAL8FrequencySeries *rngmed;
-  XLAL_CHECK ( ( rngmed = XLALCalloc(1, sizeof(*rngmed))) != NULL, XLAL_ENOMEM, "Failed to XLALCalloc(1,%d)", sizeof(*rngmed) );
+  XLAL_CHECK ( ( rngmed = XLALCalloc(1, sizeof(*rngmed))) != NULL, XLAL_ENOMEM, "Failed to XLALCalloc(1,%lu)", sizeof(*rngmed) );
   XLAL_CHECK ( ( rngmed->data = XLALCreateREAL8Vector ( lengthsft ) ) != NULL, XLAL_EFUNC, "XLALCreateREAL8Vector ( %d ) failed.", lengthsft );
 
   /* loop over sfts and normalize them */
@@ -168,7 +168,7 @@ XLALNormalizeMultiSFTVect ( MultiSFTVector *multsft,		/**< [in/out] multi-vector
 
   UINT4 numifo = multsft->length;
   multiPSD->length = numifo;
-  XLAL_CHECK_NULL ( ( multiPSD->data = XLALCalloc ( numifo, sizeof(*multiPSD->data))) != NULL, XLAL_ENOMEM, "Failed to XLALCalloc ( %d, %d)", numifo, sizeof(*multiPSD->data) );
+  XLAL_CHECK_NULL ( ( multiPSD->data = XLALCalloc ( numifo, sizeof(*multiPSD->data))) != NULL, XLAL_ENOMEM, "Failed to XLALCalloc ( %d, %lu)", numifo, sizeof(*multiPSD->data) );
 
   /* loop over ifos */
   for ( UINT4 X = 0; X < numifo; X++ )
@@ -176,10 +176,10 @@ XLALNormalizeMultiSFTVect ( MultiSFTVector *multsft,		/**< [in/out] multi-vector
       UINT4 numsft = multsft->data[X]->length;
 
       /* allocation of psd vector over SFTs for this detector X */
-      XLAL_CHECK_NULL ( (multiPSD->data[X] = XLALCalloc(1, sizeof(*multiPSD->data[X]))) != NULL, XLAL_ENOMEM, "Failed to XLALCalloc(1, %d)", sizeof(*multiPSD->data[X]));
+      XLAL_CHECK_NULL ( (multiPSD->data[X] = XLALCalloc(1, sizeof(*multiPSD->data[X]))) != NULL, XLAL_ENOMEM, "Failed to XLALCalloc(1, %lu)", sizeof(*multiPSD->data[X]));
 
       multiPSD->data[X]->length = numsft;
-      XLAL_CHECK_NULL ( (multiPSD->data[X]->data = XLALCalloc ( numsft, sizeof(*(multiPSD->data[X]->data)))) != NULL, XLAL_ENOMEM, "Failed to XLALCalloc ( %d, size)", numsft );
+      XLAL_CHECK_NULL ( (multiPSD->data[X]->data = XLALCalloc ( numsft, sizeof(*(multiPSD->data[X]->data)))) != NULL, XLAL_ENOMEM, "Failed to XLALCalloc ( %d, %lu)", numsft, sizeof(*(multiPSD->data[X]->data)) );
 
       /* loop over sfts for this IFO X */
       for ( UINT4 j = 0; j < numsft; j++ )

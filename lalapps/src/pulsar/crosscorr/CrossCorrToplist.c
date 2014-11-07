@@ -897,7 +897,7 @@ int write_cc_checkpoint(const char*filename, toplist_t*tl, UINT4 counter, BOOLEA
   len = fwrite(tl->data, tl->size, tl->elems, fp);
   if(len != tl->elems) {
     LOGIOERROR("Couldn't write data to", tmpfilename);
-    LogPrintf(LOG_CRITICAL,"fwrite() returned %d, length was %d\n", len, tl->elems);
+    LogPrintf(LOG_CRITICAL,"fwrite() returned %d, length was %zu\n", len, tl->elems);
     if(fclose(fp))
       LOGIOERROR("In addition: couldn't close", tmpfilename);
     return(-1);
@@ -986,7 +986,7 @@ int read_cc_checkpoint(const char*filename, toplist_t*tl, UINT4*counter) {
   /* sanity check */
   if (tl->elems > tl->length) {
     LogPrintf(LOG_CRITICAL,
-	      "Number of elements read larger than length of toplist: %d, > %d\n",
+	      "Number of elements read larger than length of toplist: %zu > %zu\n",
 	      tl->elems, tl->length);
     if(fclose(fp))
       LOGIOERROR("In addition: couldn't close", filename);
@@ -997,7 +997,7 @@ int read_cc_checkpoint(const char*filename, toplist_t*tl, UINT4*counter) {
   len = fread(tl->data, tl->size, tl->elems, fp);
   if(len != tl->elems) {
     LOGIOERROR("Couldn't read data from", filename);
-    LogPrintf(LOG_CRITICAL,"fread() returned %d, length was %d\n", len, tl->elems);
+    LogPrintf(LOG_CRITICAL,"fread() returned %d, length was %zu\n", len, tl->elems);
     if(fclose(fp))
       LOGIOERROR("In addition: couldn't close", filename);
     clear_toplist(tl);

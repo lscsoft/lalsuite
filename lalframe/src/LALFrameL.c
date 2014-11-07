@@ -797,7 +797,7 @@ LALFrameUFrChan *XLALFrameUFrChanRead_FrameL_(LALFrameUFrFile * stream, const ch
     if (!toc || stream->handle->error != FR_OK)
         XLAL_ERROR_NULL(XLAL_EIO, "FrTOCReadFull failed with error code %s.", XLALFrameLErrorMessage(stream->handle->error));
     if (pos >= (size_t) toc->nFrame)
-        XLAL_ERROR_NULL(XLAL_EINVAL, "pos = %zu out of range");
+      XLAL_ERROR_NULL(XLAL_EINVAL, "pos = %zu out of range", pos);
 
     /* the gps time of the frame at position pos */
     gtime = toc->GTimeS[pos] + 1e-9 * toc->GTimeN[pos];

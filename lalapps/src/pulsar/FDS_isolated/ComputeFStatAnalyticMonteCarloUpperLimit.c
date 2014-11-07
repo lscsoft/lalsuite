@@ -181,11 +181,11 @@ int main(int argc, char *argv[]) {
     for (i = 0; i < mism_hist->size1; ++i) {
       double left_bin, right_bin, prob_bin;
       if (sscanf(file->lines->tokens[i], "%lf %lf %lf", &left_bin, &right_bin, &prob_bin) != 3) {
-	XLALPrintError("Couldn't parse line %i of '%s'\n", i, mism_hist_file);
+	XLALPrintError("Couldn't parse line %zu of '%s'\n", i, mism_hist_file);
 	return EXIT_FAILURE;
       }
       if (left_bin >= right_bin || prob_bin < 0.0) {
-	XLALPrintError("Invalid syntax: line %i of '%s'\n", i, mism_hist_file);
+	XLALPrintError("Invalid syntax: line %zu of '%s'\n", i, mism_hist_file);
 	return EXIT_FAILURE;
       }
       gsl_matrix_set(mism_hist, i, 0, left_bin);

@@ -778,7 +778,7 @@ XLALParseStringValueToINT8 ( INT8 *valINT8,         //!< [out] return INT8 value
 
   //  check range and convert long-int into INT8
   if ( sizeof(valLLong) > sizeof(INT8) ) { // avoid warning about trivial check
-    XLAL_CHECK ( (valLLong > -LAL_INT8_MAX) && (valLLong < LAL_INT8_MAX), XLAL_EDOM, "String-conversion '%s' --> '%ld' exceeds INT8 range of +-%d\n",
+    XLAL_CHECK ( (valLLong > -LAL_INT8_MAX) && (valLLong < LAL_INT8_MAX), XLAL_EDOM, "String-conversion '%s' --> '%lli' exceeds INT8 range of +-%"LAL_INT8_FORMAT"\n",
                  valString, valLLong, LAL_INT8_MAX );
   }
 
@@ -802,7 +802,7 @@ XLALParseStringValueToINT4 ( INT4 *valINT4,         //!< [out] return INT4 value
   XLAL_CHECK ( XLALParseStringValueToINT8 ( &valINT8, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // check range and convert INT8 into INT4
-  XLAL_CHECK ( (valINT8 > -LAL_INT4_MAX) && (valINT8 < LAL_INT4_MAX), XLAL_EDOM, "String-conversion '%s' --> '%ld' exceeds INT4 range of +-%d\n",
+  XLAL_CHECK ( (valINT8 > -LAL_INT4_MAX) && (valINT8 < LAL_INT4_MAX), XLAL_EDOM, "String-conversion '%s' --> '%"LAL_INT8_FORMAT"' exceeds INT4 range of +-%"LAL_INT8_FORMAT"\n",
                valString, valINT8, LAL_INT4_MAX );
 
   (*valINT4) = (INT4)valINT8;

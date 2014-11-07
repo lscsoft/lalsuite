@@ -422,7 +422,7 @@ void LALInferenceCopyVariables(LALInferenceVariables *origin, LALInferenceVariab
           {
             gsl_matrix *old=*(gsl_matrix **)ptr->value;
             gsl_matrix *new=gsl_matrix_alloc(old->size1,old->size2);
-            if(!new) XLAL_ERROR_VOID(XLAL_ENOMEM,"Unable to create %ix%i matrix\n",old->size1,old->size2);
+            if(!new) XLAL_ERROR_VOID(XLAL_ENOMEM,"Unable to create %zux%zu matrix\n",old->size1,old->size2);
             gsl_matrix_memcpy(new,old);
             LALInferenceAddVariable(target,ptr->name,(void *)&new,ptr->type,ptr->vary);
             break;
@@ -3562,7 +3562,7 @@ int LALInferenceSplineCalibrationFactor(REAL8Vector *freqs,
   if (status == XLAL_SUCCESS) {
     return status;
   } else {
-    XLAL_ERROR(status, fmt);
+    XLAL_ERROR(status, "%s", fmt);
   }
 }
 

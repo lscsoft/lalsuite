@@ -580,7 +580,7 @@ int XLALBBHPhenWaveTimeDomForInjection (
   if (params->ampOrder) {
     params->ampOrder = (LALPNOrder) 0;
     snprintf(message, 256, "WARNING: Amp Order has been reset to %d", params->ampOrder);
-    XLALPrintInfo(message);
+    XLALPrintInfo("%s", message);
   }
 
   /* Compute some parameters */
@@ -623,14 +623,14 @@ int XLALBBHPhenWaveTimeDomForInjection (
 
   /* print some messages */
   snprintf(message, 256, "fFinal = %f", params->fFinal);
-  XLALPrintInfo(message);
+  XLALPrintInfo("%s", message);
   s = 0.5 * (phi->data[count-1] - phi->data[0]);
   snprintf(message, 256, "cycles = %f", s/3.14159);
-  XLALPrintInfo(message);
+  XLALPrintInfo("%s", message);
   if (s < LAL_TWOPI){
     snprintf(message, 256, "The waveform has only %f cycles; we don't "
              "keep waveform with less than 2 cycles.", (double) s/ (double)LAL_PI );
-    XLALPrintWarning(message);
+    XLALPrintWarning("%s", message);
     goto done;
   }
 

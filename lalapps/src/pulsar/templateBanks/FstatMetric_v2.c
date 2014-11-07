@@ -490,12 +490,12 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
     size_t len = strlen ( app_name ) + 1;
 
     if ( (cfg->history = XLALCalloc ( 1, sizeof(*cfg->history))) == NULL ) {
-      LogPrintf (LOG_CRITICAL, "%s: XLALCalloc(1,%d) failed.\n\n", __func__, sizeof(*cfg->history));
+      LogPrintf (LOG_CRITICAL, "%s: XLALCalloc(1,%lu) failed.\n\n", __func__, sizeof(*cfg->history));
       XLAL_ERROR ( XLAL_ENOMEM );
     }
 
     if ( (tmp = XLALMalloc ( len )) == NULL ) {
-      LogPrintf (LOG_CRITICAL, "%s: XLALMalloc (%s) failed.\n\n", __func__, len );
+      LogPrintf (LOG_CRITICAL, "%s: XLALMalloc (%zu) failed.\n\n", __func__, len );
       XLAL_ERROR ( XLAL_ENOMEM );
     }
     strcpy ( tmp, app_name );

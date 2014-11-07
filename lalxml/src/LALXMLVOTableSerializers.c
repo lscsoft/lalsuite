@@ -258,7 +258,7 @@ XLALgsl_vector2VOTNode(const gsl_vector *vect,	/**< [in] input gsl_vector to ser
       /* add vector element [i] to arrayStr */
       if( snprintf ( REAL8Str, sizeof(REAL8Str), "%.16g", gsl_vector_get ( vect, i ) ) < 0 ) {
 	XLALFree ( arrayStr );
-	XLALPrintError("%s: failed to convert vector element to string: vect[%d]\n", i);
+	XLALPrintError("%s: failed to convert vector element to string: vect[%d]\n", __func__, i);
 	XLAL_ERROR_NULL ( XLAL_EINVAL );
       }
       strcat ( arrayStr, REAL8Str );
@@ -481,7 +481,7 @@ XLALgsl_matrix2VOTNode(const gsl_matrix *matrix,	/**< [in] input gsl_matrix to s
 	  /* add matrix element [row,col] to arrayStr */
 	  if( snprintf ( REAL8Str, sizeof(REAL8Str), "%.16g", gsl_matrix_get ( matrix, row, col ) ) < 0 ) {
 	    XLALFree ( arrayStr );
-	    XLALPrintError("%s: failed to convert matrix element to string: vect[%d,%d]\n", row, col);
+	    XLALPrintError("%s: failed to convert matrix element to string: vect[%d,%d]\n", __func__, row, col);
 	    XLAL_ERROR_NULL ( XLAL_EINVAL );
 	  }
 	  strcat ( arrayStr, REAL8Str );

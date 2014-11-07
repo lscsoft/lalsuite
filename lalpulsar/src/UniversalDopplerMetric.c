@@ -1250,7 +1250,7 @@ XLALDopplerFstatMetricCoh ( const DopplerMetricParams *metricParams,  	/**< inpu
 
       /* ----- compute the full 4+n dimensional Fisher matrix ---------- */
       if ( (metric->Fisher_ab = XLALComputeFisherFromAtoms ( atoms, metricParams->signalParams.Amp )) == NULL ) {
-        XLALPrintError ("%s: XLALComputeFisherFromAtoms() failed. errno = %d\n\n", xlalErrno );
+        XLALPrintError ("%s: XLALComputeFisherFromAtoms() failed. errno = %d\n\n", __func__, xlalErrno );
         XLALDestroyFmetricAtoms ( atoms );
         XLALDestroyDopplerMetric ( metric );
         XLAL_ERROR_NULL( XLAL_EFUNC );
@@ -1264,7 +1264,7 @@ XLALDopplerFstatMetricCoh ( const DopplerMetricParams *metricParams,  	/**< inpu
       /* if return-container 'metric' hasn't been allocated already earlier, we do it now */
       if (!metric ) {
         if ( (metric = XLALCalloc ( 1, sizeof(*metric) )) == NULL ) {
-          XLALPrintError ("%s: XLALCalloc ( 1, %d) failed.\n\n", sizeof(*metric) );
+          XLALPrintError ("%s: XLALCalloc ( 1, %lu) failed.\n\n", __func__, sizeof(*metric) );
           XLAL_ERROR_NULL ( XLAL_ENOMEM );
         }
       }
@@ -1373,7 +1373,7 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
 
   /* ----- create output structure ---------- */
   if ( (ret = XLALCreateFmetricAtoms ( dim )) == NULL ) {
-    XLALPrintError ("%s: call to XLALCreateFmetricAtoms (%s) failed. errno = %d\n\n", __func__, dim, xlalErrno );
+    XLALPrintError ("%s: call to XLALCreateFmetricAtoms (%d) failed. errno = %d\n\n", __func__, dim, xlalErrno );
     XLAL_ERROR_NULL ( XLAL_EFUNC );
   }
 
@@ -1849,7 +1849,7 @@ XLALCreateFmetricAtoms ( UINT4 dim )
   FmetricAtoms_t *ret;		/* output structure */
 
   if ( ( ret = XLALCalloc(1,sizeof(*ret))) == NULL ) {
-    XLALPrintError ( "%s: XLALCalloc(1,%s) failed.\n", __func__, sizeof(*ret));
+    XLALPrintError ( "%s: XLALCalloc(1,%lu) failed.\n", __func__, sizeof(*ret));
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
@@ -1923,7 +1923,7 @@ XLALComputeFmetricFromAtoms ( const FmetricAtoms_t *atoms, REAL8 cosi, REAL8 psi
 
   /* allocate output metric structure */
   if ( (metric = XLALCalloc ( 1, sizeof(*metric) )) == NULL ) {
-    XLALPrintError ("%s: XLALCalloc ( 1, %d) failed.\n\n", sizeof(*metric) );
+    XLALPrintError ("%s: XLALCalloc ( 1, %lu) failed.\n\n", __func__, sizeof(*metric) );
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
   metric->gF_ij = gsl_matrix_calloc ( dim, dim );
@@ -2345,12 +2345,12 @@ XLALComputeOrbitalDerivatives ( UINT4 maxorder,			/**< [in] highest derivative-o
 
   /* allocate return list */
   if ( (ret = XLALCalloc ( 1, sizeof(*ret) )) == NULL ) {
-    XLALPrintError ("%s: failed to XLALCalloc(1,%d)\n", __func__, sizeof(*ret) );
+    XLALPrintError ("%s: failed to XLALCalloc(1,%lu)\n", __func__, sizeof(*ret) );
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
   ret->length = maxorder + 1;
   if ( (ret->data = XLALCalloc ( ret->length, sizeof(*ret->data) )) == NULL ) {
-    XLALPrintError ("%s: failed to XLALCalloc(%d,%d)\n", __func__, ret->length, sizeof(*ret->data) );
+    XLALPrintError ("%s: failed to XLALCalloc(%d,%lu)\n", __func__, ret->length, sizeof(*ret->data) );
     XLALFree ( ret );
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
@@ -2428,7 +2428,7 @@ gsl_matrix* XLALNaturalizeMetric(
 {
   /* Check input */
   XLAL_CHECK_NULL( g_ij, XLAL_EINVAL );
-  XLAL_CHECK_NULL( g_ij->size1 == g_ij->size2, XLAL_EINVAL, "Input matrix g_ij must be square! (got %d x %d)\n", g_ij->size1, g_ij->size2 );
+  XLAL_CHECK_NULL( g_ij->size1 == g_ij->size2, XLAL_EINVAL, "Input matrix g_ij must be square! (got %zu x %zu)\n", g_ij->size1, g_ij->size2 );
 
   XLAL_CHECK_NULL ( XLALSegListIsInitialized ( &(metricParams->segmentList) ), XLAL_EINVAL, "Passed un-initialzied segment list 'metricParams->segmentList'\n");
   UINT4 Nseg = metricParams->segmentList.length;
@@ -2566,7 +2566,7 @@ XLALDiagNormalizeMetric ( const gsl_matrix * g_ij )
             double gtmp_jj = gsl_matrix_get(g_ij, j, j);
 
             if ( (gtmp_ii <= 0) || (gtmp_jj <= 0 ) ) {
-              XLALPrintError ("%f: DiagNormalize not defined for non-positive diagonal elements! i=%d, j=%d, g_ii=%g, g_jj=%g\n", i, j, gtmp_ii, gtmp_jj );
+              XLALPrintError ("%s: DiagNormalize not defined for non-positive diagonal elements! i=%d, j=%d, g_ii=%g, g_jj=%g\n", __func__, i, j, gtmp_ii, gtmp_jj );
               XLAL_ERROR_NULL ( XLAL_EDOM );
             }
 

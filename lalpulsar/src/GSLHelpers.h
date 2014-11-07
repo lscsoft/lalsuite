@@ -31,11 +31,11 @@
 
 #define ALLOC_GSL_1D_VAL(val, type, name, n) \
   name = gsl_##type##_calloc(n); \
-  XLAL_CHECK_VAL(val, (name) != NULL, XLAL_ENOMEM, "gsl_"#type"_calloc(%zu) failed", n)
+  XLAL_CHECK_VAL(val, (name) != NULL, XLAL_ENOMEM, "gsl_"#type"_calloc(%zu) failed", ((size_t) n))
 
 #define ALLOC_GSL_2D_VAL(val, type, name, m, n) \
   name = gsl_##type##_calloc(m, n); \
-  XLAL_CHECK_VAL(val, (name) != NULL, XLAL_ENOMEM, "gsl_"#type"_calloc(%zu,%zu) failed", m, n)
+  XLAL_CHECK_VAL(val, (name) != NULL, XLAL_ENOMEM, "gsl_"#type"_calloc(%zu,%zu) failed", ((size_t) m), ((size_t) n))
 
 #define PRINT_GSL_1D(type, name, fmt) \
   do { \

@@ -370,9 +370,9 @@ compare_metrics ( const gsl_matrix *g1_ij, const gsl_matrix *g2_ij )
   XLAL_CHECK_REAL8 ( g2_ij, XLAL_EINVAL, "Invalid NULL input metric 'g2_ij'\n");
 
   UINT4 dim = g1_ij->size1;
-  XLAL_CHECK_REAL8 ( g1_ij->size1 == g1_ij->size2, XLAL_EDOM, "Input matrix 'g1_ij' is not square, got %d x %d\n", g1_ij->size1, g1_ij->size2 );
-  XLAL_CHECK_REAL8 ( g2_ij->size1 == g2_ij->size2, XLAL_EDOM, "Input matrix 'g2_ij' is not square, got %d x %d\n", g2_ij->size1, g2_ij->size2 );
-  XLAL_CHECK_REAL8 ( g1_ij->size1 == g2_ij->size1, XLAL_EDOM, "Input metrics have different sizes: g1_ij = %d-dim, g2_ij = %d-dim\n", g1_ij->size1, g2_ij->size1 );
+  XLAL_CHECK_REAL8 ( g1_ij->size1 == g1_ij->size2, XLAL_EDOM, "Input matrix 'g1_ij' is not square, got %zu x %zu\n", g1_ij->size1, g1_ij->size2 );
+  XLAL_CHECK_REAL8 ( g2_ij->size1 == g2_ij->size2, XLAL_EDOM, "Input matrix 'g2_ij' is not square, got %zu x %zu\n", g2_ij->size1, g2_ij->size2 );
+  XLAL_CHECK_REAL8 ( g1_ij->size1 == g2_ij->size1, XLAL_EDOM, "Input metrics have different sizes: g1_ij = %zu-dim, g2_ij = %zu-dim\n", g1_ij->size1, g2_ij->size1 );
 
   //XLALfprintfGSLmatrix ( stderr, "%.15e", g1_ij );
   //XLALfprintfGSLmatrix ( stderr, "%.15e", g2_ij );

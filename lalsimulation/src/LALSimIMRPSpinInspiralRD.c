@@ -2269,7 +2269,7 @@ INT4 XLALSimIMRPhenSpinInspiralRDGenerator(REAL8TimeSeries **hPlus,             
       XLALPrintError("                     m:           : %12.5f  %12.5f\n",mass1,mass2);
       XLALPrintError("              S1:                 : %12.5f  %12.5f  %12.5f\n",s1x,s1y,s1z);
       XLALPrintError("              S2:                 : %12.5f  %12.5f  %12.5f\n",s2x,s2y,s2z);
-      XLALPrintError("     omM %12.5f   om[%d] %12.5f\n",omegaMatch,iMatch,omega);
+      XLALPrintError("     omM %12.5f   om[%d] %12.5f\n",omegaMatch,iMatch,omega->data->data[iMatch]);
       XLAL_ERROR(XLAL_EFAILED);
     }
     else {

@@ -857,7 +857,7 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 	 * Miscellaneous chores.
 	 */
 
-	XLALPrintInfo("%s: using --psd-average-points %zu\n", argv[0], options->psd_length);
+	XLALPrintInfo("%s: using --psd-average-points %i\n", argv[0], options->psd_length);
 	if(options->max_series_length)
 		XLALPrintInfo("%s: available RAM limits analysis to %d samples (%g s)\n", argv[0], options->max_series_length, options->max_series_length / (double) options->resample_rate);
 
@@ -1339,7 +1339,7 @@ static SnglBurst **analyze_series(SnglBurst **addpoint, REAL8TimeSeries *series,
 		XLALPrintInfo("%s(): ", __func__);
 		XLALPrintProgressBar(i / (double) (series->data->length + psd_shift - psd_length));
 		XLALPrintInfo(" complete\n");
-		XLALPrintInfo("%s(): analyzing samples %zu -- %zu (%.9lf s -- %.9lf s)\n", __func__, start, start + interval->data->length, start * interval->deltaT, (start + interval->data->length) * interval->deltaT);
+		XLALPrintInfo("%s(): analyzing samples %i -- %i (%.9lf s -- %.9lf s)\n", __func__, start, start + interval->data->length, start * interval->deltaT, (start + interval->data->length) * interval->deltaT);
 
 		XLAL_TRY(*addpoint = XLALEPSearch(
 			options->diagnostics,
@@ -1502,7 +1502,7 @@ int main(int argc, char *argv[])
 	 */
 
 	overlap = options->window->data->length - options->window_shift;
-	XLALPrintInfo("%s: time series overlap is %zu samples (%.9lf s)\n", argv[0], overlap, overlap / (double) options->resample_rate);
+	XLALPrintInfo("%s: time series overlap is %i samples (%.9lf s)\n", argv[0], overlap, overlap / (double) options->resample_rate);
 
 	boundepoch = options->gps_end;
 	XLALGPSAdd(&boundepoch, -(2 * options->filter_corruption + (int) overlap) / (double) options->resample_rate);

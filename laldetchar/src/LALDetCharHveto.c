@@ -68,7 +68,7 @@ void XLALDetCharScanTrigs( LALGHashTable *chancount, LALGHashTable *chanhist, LA
 		value = XLALGetGHashTblIntPtr( chancount, sb_target->channel );
 		if( value ){
 			(*value)++;
-			XLALPrintInfo( "Count: Incrementing, %s value: %lu\n", sb_target->channel, *value );
+			XLALPrintInfo( "Count: Incrementing, %s value: %i\n", sb_target->channel, *value );
 			//g_hash_table_insert( chancount, XLALStringDuplicate(sb_target->channel), value );
 		} else {
 			XLALPrintInfo( "Count: Adding %s with time %d.%d\n", sb_target->channel, sb_target->peak_time.gpsSeconds, sb_target->peak_time.gpsNanoSeconds );
@@ -137,7 +137,7 @@ void XLALDetCharScanTrigs( LALGHashTable *chancount, LALGHashTable *chanhist, LA
 			// new one
 			if( value != NULL ){
 				(*value)++;
-				XLALPrintInfo( "Left Coincidence: Incrementing, %s->%ld, time %d.%d value: %lu\n", sb_aux->channel, sb_target->event_id, sb_aux->peak_time.gpsSeconds, sb_aux->peak_time.gpsNanoSeconds, *value );
+				XLALPrintInfo( "Left Coincidence: Incrementing, %s->%ld, time %d.%d value: %i\n", sb_aux->channel, sb_target->event_id, sb_aux->peak_time.gpsSeconds, sb_aux->peak_time.gpsNanoSeconds, *value );
 				//g_hash_table_insert( chanhist, &sb_aux->channel, value );
 			} else {
 				XLALPrintInfo( "Left Coincidence: Adding %s->%ld with time %d.%d\n", sb_aux->channel, sb_target->event_id, sb_aux->peak_time.gpsSeconds, sb_aux->peak_time.gpsNanoSeconds );
@@ -186,7 +186,7 @@ void XLALDetCharScanTrigs( LALGHashTable *chancount, LALGHashTable *chanhist, LA
 			// new one
 			if( value != NULL ){
 				(*value)++;
-				XLALPrintInfo( "Right Coincidence: Incrementing, %s->%ld, time %d.%d value: %lu\n", sb_aux->channel, sb_target->event_id, sb_aux->peak_time.gpsSeconds, sb_aux->peak_time.gpsNanoSeconds, *value );
+				XLALPrintInfo( "Right Coincidence: Incrementing, %s->%ld, time %d.%d value: %i\n", sb_aux->channel, sb_target->event_id, sb_aux->peak_time.gpsSeconds, sb_aux->peak_time.gpsNanoSeconds, *value );
 				//g_hash_table_insert( chanhist, &sb_aux->channel, value );
 			} else {
 				XLALPrintInfo( "Right Coincidence: Adding %s->%ld with time %d.%d\n", sb_aux->channel, sb_target->event_id, sb_aux->peak_time.gpsSeconds, sb_aux->peak_time.gpsNanoSeconds );
@@ -240,7 +240,7 @@ double XLALDetCharVetoRound( char** winner, LALGHashTable* chancount, LALGHashTa
 
 		k = (int*)val;
 
-		XLALPrintInfo( "Total coincidences for channel %s: %zu\n", (char *)key, *k );
+		XLALPrintInfo( "Total coincidences for channel %s: %i\n", (char *)key, *k );
 		XLALPrintInfo( "Mu for channel %s: %g\n", (char *)key, mu );
 		sig = XLALDetCharHvetoSignificance( mu, *k );
 		XLALPrintInfo( "Significance for this channel: %g\n", sig );

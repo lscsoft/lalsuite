@@ -1005,7 +1005,7 @@ int MAIN( int argc, char *argv[]) {
 	  }
 	  else {
 	    fstatVector.data[k].data = LALRealloc( fstatVector.data[k].data, sizeof(REAL4Sequence));
-	    XLAL_CHECK( fstatVector.data[k].data != NULL, XLAL_ENOMEM, "Failed to re-allocate memory LALRealloc ( %d )\n", sizeof(REAL4Sequence) );
+	    XLAL_CHECK( fstatVector.data[k].data != NULL, XLAL_ENOMEM, "Failed to re-allocate memory LALRealloc ( %lu )\n", sizeof(REAL4Sequence) );
 
 	    fstatVector.data[k].data->length = binsFstat1;
 	    fstatVector.data[k].data->data = LALRealloc( fstatVector.data[k].data->data, alloc_len = binsFstat1 * sizeof(REAL4));
@@ -1754,7 +1754,7 @@ void ComputeFstatHoughMap(LALStatus *status,		/**< pointer to LALStatus structur
   fBinFin -= params->extraBinsFstat;
   /* this is not very clean -- the Fstat calculation has to know how many extra bins are needed */
 
-  LogPrintf(LOG_DETAIL, "Freq. range analyzed by Hough = [%fHz - %fHz] (%d bins)\n",
+  LogPrintf(LOG_DETAIL, "Freq. range analyzed by Hough = [%fHz - %fHz] (%"LAL_INT8_FORMAT" bins)\n",
 	    fBinIni*deltaF, fBinFin*deltaF, fBinFin - fBinIni + 1);
   ASSERT ( fBinIni <= fBinFin, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
 

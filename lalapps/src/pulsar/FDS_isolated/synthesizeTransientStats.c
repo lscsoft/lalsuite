@@ -646,7 +646,7 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
   const char fmt[] = "%%%% cmdline: %s\n%%%%\n%s%%%%\n";
   UINT4 len = strlen(vcs) + strlen(cmdline) + strlen(fmt) + 1;
   if ( ( cfg->logString = XLALMalloc ( len  )) == NULL ) {
-    XLALPrintError ("%s: XLALMalloc ( %d ) failed.\n", len );
+    XLALPrintError ("%s: XLALMalloc ( %d ) failed.\n", __func__, len );
     XLAL_ERROR ( XLAL_ENOMEM );
   }
   sprintf ( cfg->logString, fmt, cmdline, vcs );
@@ -748,7 +748,7 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
   }
 
   if ( uvar->injectWindow_t0DaysBand < 0 || uvar->injectWindow_tauDaysBand < 0 ) {
-    XLALPrintError ("%s: only positive t0/tau window injection bands allowed (%d, %f)\n", __func__, uvar->injectWindow_t0DaysBand, uvar->injectWindow_tauDaysBand );
+    XLALPrintError ("%s: only positive t0/tau window injection bands allowed (%f, %f)\n", __func__, uvar->injectWindow_t0DaysBand, uvar->injectWindow_tauDaysBand );
     XLAL_ERROR ( XLAL_EINVAL );
   }
 
@@ -810,7 +810,7 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
     }
 
   if (   uvar->searchWindow_t0DaysBand < 0 || uvar->searchWindow_tauDaysBand < 0 ) {
-    XLALPrintError ("%s: only positive t0/tau window injection bands allowed (%d, %f)\n", __func__, uvar->searchWindow_t0DaysBand, uvar->searchWindow_tauDaysBand );
+    XLALPrintError ("%s: only positive t0/tau window injection bands allowed (%f, %f)\n", __func__, uvar->searchWindow_t0DaysBand, uvar->searchWindow_tauDaysBand );
     XLAL_ERROR ( XLAL_EINVAL );
   }
 

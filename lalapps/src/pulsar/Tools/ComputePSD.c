@@ -1137,7 +1137,7 @@ XLALCropMultiPSDandSFTVectors ( MultiPSDVector *multiPSDVect,
   }
 
   if ( (firstBin >= numBins) || (lastBin >= numBins ) ) {
-    XLALPrintError ("%s: requested bin-interval [%d, %d] outside of PSD bins [0, %d]\n", __func__, firstBin, lastBin, 0, numBins - 1 );
+    XLALPrintError ("%s: requested bin-interval [%d, %d] outside of PSD bins [0, %d]\n", __func__, firstBin, lastBin, numBins - 1 );
     XLAL_ERROR ( XLAL_EDOM );
   }
 

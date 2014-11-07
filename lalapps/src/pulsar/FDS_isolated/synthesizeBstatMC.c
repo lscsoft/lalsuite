@@ -256,7 +256,7 @@ int main(int argc,char *argv[])
 
   /* ----- data = noise + signal: x_mu = n_mu + s_mu  ----- */
   if ( ( x_mu_i = gsl_matrix_calloc ( uvar.numDraws, 4 ) ) == NULL ) {
-    LogPrintf ( LOG_CRITICAL, "%s: gsl_matrix_calloc(%d,4) failed.\n", __func__, uvar.numDraws);
+    LogPrintf ( LOG_CRITICAL, "%s: gsl_matrix_calloc(%g,4) failed.\n", __func__, uvar.numDraws);
     return XLAL_ENOMEM;
   }
 
@@ -270,7 +270,7 @@ int main(int argc,char *argv[])
   else
     {
       if ( ( n_mu_i = gsl_matrix_calloc ( uvar.numDraws, 4 ) ) == NULL ) {
-	LogPrintf ( LOG_CRITICAL, "%s: gsl_matrix_calloc(%d,4) failed.\n", __func__, uvar.numDraws);
+	LogPrintf ( LOG_CRITICAL, "%s: gsl_matrix_calloc(%g,4) failed.\n", __func__, uvar.numDraws);
 	return XLAL_ENOMEM;
       }
     } /* if SignalOnly */
@@ -922,7 +922,7 @@ XLALcomputeFstatistic ( gsl_vector **Fstat_i,		/**< [OUT] F-statistic vector */
     return XLAL_EINVAL;
   }
   if ( (x_mu_i->size1 != numDraws) || (x_mu_i->size2 != 4) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: input vector-list x_mu_i must be numDraws(=%d) x 4.\n", numDraws, __func__);
+    LogPrintf ( LOG_CRITICAL, "%s: input vector-list x_mu_i must be numDraws(=%d) x 4.\n", __func__, numDraws);
     return XLAL_EINVAL;
   }
 
@@ -1203,7 +1203,7 @@ XLALcomputeBstatisticGauss ( gsl_vector **Bstat_i,	/**< [OUT] vector of numDraws
        * provided by workspace. The maximum number of subintervals is given by limit, which may not exceed the allocated size of the workspace.
        */
       if ( (gslstat = gsl_integration_qags ( &F, CosiLower, CosiUpper, epsabs, epsrel, 1000, w, &Bb, &abserr)) ) {
-	LogPrintf ( LOG_CRITICAL, "%s: row = %d: gsl_integration_qag() failed: res=%f, abserr=%f, intervals=%d, %s\n",
+	LogPrintf ( LOG_CRITICAL, "%s: row = %d: gsl_integration_qag() failed: res=%f, abserr=%f, intervals=%zu, %s\n",
 		    __func__, row, Bb, abserr, w->size, gsl_strerror (gslstat) );
 	return 1;
       }
@@ -1261,7 +1261,7 @@ BstatIntegrandOuter ( double cosi, void *p )
    * provided by workspace. The maximum number of subintervals is given by limit, which may not exceed the allocated size of the workspace.
    */
   if ( (gslstat = gsl_integration_qags ( &F, PsiLower, PsiUpper, epsabs, epsrel, 1000, w, &ret, &abserr)) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: gsl_integration_qag() failed: res=%f, abserr=%f, intervals=%d, %s\n",
+    LogPrintf ( LOG_CRITICAL, "%s: gsl_integration_qag() failed: res=%f, abserr=%f, intervals=%zu, %s\n",
 		__func__, ret, abserr, w->size, gsl_strerror (gslstat) );
     return 1;
   }
@@ -1314,7 +1314,7 @@ BstatIntegrand ( double Amp[], size_t dim, void *p )
   double integrand;
 
   if ( dim != 2 ) {
-    LogPrintf (LOG_CRITICAL, "Error: BstatIntegrand() was called with illegal dim = %d != 2\n", dim );
+    LogPrintf (LOG_CRITICAL, "Error: BstatIntegrand() was called with illegal dim = %zu != 2\n", dim );
     abort ();
   }
 
@@ -1384,7 +1384,7 @@ XLALcomputeBhatStatistic ( const gsl_matrix *M_mu_nu,	/**< antenna-pattern matri
   /* ----- allocate return statistics vectors ---------- */
   gsl_vector *Bhat_i;
   if ( ( Bhat_i = gsl_vector_calloc ( numDraws )) == NULL )
-    XLAL_ERROR_NULL ( XLAL_ENOMEM, "\ngsl_vector_calloc (%d) failed.\n", numDraws);
+    XLAL_ERROR_NULL ( XLAL_ENOMEM, "\ngsl_vector_calloc (%zu) failed.\n", numDraws);
 
   /* ----- prepare Mmunu_LU for M-inverse operations ---------- */
   gsl_matrix *Mmunu_LU = gsl_matrix_calloc ( 4, 4 );
@@ -1426,7 +1426,7 @@ XLALcomputeBhatStatistic ( const gsl_matrix *M_mu_nu,	/**< antenna-pattern matri
 
   /* ----- compute AMLE^mu = Minv^{mu nu} x_nu ----- */
   gsl_matrix *Ah_Mu_i = gsl_matrix_calloc ( 4, numDraws );
-  if ( Ah_Mu_i == NULL ) XLAL_ERROR_NULL ( XLAL_ENOMEM, "\nAh_Mu_i = gsl_matrix_calloc (%d,4) failed.\n", numDraws);
+  if ( Ah_Mu_i == NULL ) XLAL_ERROR_NULL ( XLAL_ENOMEM, "\nAh_Mu_i = gsl_matrix_calloc (%zu,4) failed.\n", numDraws);
 
   /* These functions compute the matrix-matrix product and sum C = \alpha op(A) op(B) + \beta C
    * where op(A) = A, A^T, A^H for TransA = CblasNoTrans, CblasTrans, CblasConjTrans and similarly

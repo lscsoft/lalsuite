@@ -412,7 +412,7 @@ XLALSimInspiralPNPhasing_F2(
         case LAL_SIM_INSPIRAL_SPIN_ORDER_0PN:
             break;
         default:
-            XLALPrintError("XLAL Error - %s: Invalid spin PN order %s\n",
+            XLALPrintError("XLAL Error - %s: Invalid spin PN order %i\n",
                     __func__, spinO );
             XLAL_ERROR_VOID(XLAL_EINVAL);
             break;

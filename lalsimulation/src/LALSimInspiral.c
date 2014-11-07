@@ -1024,7 +1024,7 @@ int XLALSimInspiralPNPolarizationWaveforms(
                 break;
             /*case LAL_PNORDER_NEWTONIAN:*/
             default:
-                XLALPrintError("XLAL Error - %s: Invalid amp. PN order %s\n",
+                XLALPrintError("XLAL Error - %s: Invalid amp. PN order %d\n",
                         __func__, ampO );
                 XLAL_ERROR(XLAL_EINVAL);
                 break;
@@ -1301,7 +1301,7 @@ int XLALSimInspiralPrecessingPolarizationWaveforms(
                 hcross0 = 2*lx*ly - 2*nx*ny;
                 break;
             default: 
-                XLALPrintError("XLAL Error - %s: Invalid amp. PN order %s\n", 
+                XLALPrintError("XLAL Error - %s: Invalid amp. PN order %d\n",
                         __func__, ampO );
                 XLAL_ERROR(XLAL_EINVAL);
                 break;
@@ -1452,7 +1452,7 @@ int XLALSimInspiralPrecessingPolarizationWaveformHarmonic(
         case 0:
           break;
         default:
-          XLALPrintError("XLAL Error - %s: Invalid amp. PN order %s, highest is %d\n", __func__, ampO, 3 );
+          XLALPrintError("XLAL Error - %s: Invalid amp. PN order %d, highest is %d\n", __func__, ampO, 3 );
           break;
       }
       break;
@@ -1501,7 +1501,7 @@ int XLALSimInspiralPrecessingPolarizationWaveformHarmonic(
         case 0:
           break;
         default:
-          XLALPrintError("XLAL Error - %s: Invalid amp. PN order %s, highest is %d\n", __func__, ampO, 3 );
+          XLALPrintError("XLAL Error - %s: Invalid amp. PN order %d, highest is %d\n", __func__, ampO, 3 );
           break;
       }
       break;
@@ -1561,7 +1561,7 @@ int XLALSimInspiralPrecessingPolarizationWaveformHarmonic(
           *hcross += v2*((e2xe2y - e1xe1y) - I*(e1ye2x + e1xe2y));
           break;
         default:
-          XLALPrintError("XLAL Error - %s: Invalid amp. PN order %s, highest is %d\n", __func__, ampO, 3 );
+          XLALPrintError("XLAL Error - %s: Invalid amp. PN order %d, highest is %d\n", __func__, ampO, 3 );
           break;
       }
       break;
@@ -1600,7 +1600,7 @@ int XLALSimInspiralPrecessingPolarizationWaveformHarmonic(
         case 0:
           break;
         default:
-          XLALPrintError("XLAL Error - %s: Invalid amp. PN order %s, highest is %d\n", __func__, ampO, 3 );
+          XLALPrintError("XLAL Error - %s: Invalid amp. PN order %d, highest is %d\n", __func__, ampO, 3 );
           break;
       }
       break;
@@ -1626,7 +1626,7 @@ int XLALSimInspiralPrecessingPolarizationWaveformHarmonic(
         case 0:
           break;
         default:
-          XLALPrintError("XLAL Error - %s: Invalid amp. PN order %s, highest is %d\n", __func__, ampO, 3 );
+          XLALPrintError("XLAL Error - %s: Invalid amp. PN order %d, highest is %d\n", __func__, ampO, 3 );
           break;
       }
       break;
@@ -1653,7 +1653,7 @@ int XLALSimInspiralPrecessingPolarizationWaveformHarmonic(
         case 0:
           break;
         default:
-          XLALPrintError("XLAL Error - %s: Invalid amp. PN order %s, highest is %d\n", __func__, ampO, 3 );
+          XLALPrintError("XLAL Error - %s: Invalid amp. PN order %d, highest is %d\n", __func__, ampO, 3 );
           break;
       }
       break;

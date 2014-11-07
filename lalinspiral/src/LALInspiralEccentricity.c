@@ -268,7 +268,7 @@ LALInspiralEccentricityForInjection(
   if ( (INT4)(p/LAL_TWOPI) < 2 ){
     sprintf(message, "The waveform has only %f cycles; we don't keep waveform with less than 2 cycles.",
 	       p/(double)LAL_TWOPI );
-    XLALPrintError(message);
+    XLALPrintError("%s", message);
     LALWarning(status, message);
   }
 

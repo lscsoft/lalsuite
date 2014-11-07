@@ -469,17 +469,17 @@ XLALCreateVOTTabledataNode ( xmlNode *fieldNodeList, 	/**< [in] linked list of F
 
     /* ---------- prepare column writing from varargs input list ---------- */
     if ( (dataColumns = XLALCalloc ( numFields, sizeof(*dataColumns) )) == NULL ) {
-      XLALPrintError ("%s: XLALCalloc ( %d, %d ) failed.\n", __func__, numFields, sizeof(*dataColumns) );
+      XLALPrintError ("%s: XLALCalloc ( %d, %lu ) failed.\n", __func__, numFields, sizeof(*dataColumns) );
       err = XLAL_ENOMEM;
       goto failed;
     }
     if ( (dataTypes = XLALCalloc ( numFields, sizeof(*dataTypes) )) == NULL ) {
-      XLALPrintError ("%s: XLALCalloc ( %d, %d ) failed.\n", __func__, numFields, sizeof(*dataTypes) );
+      XLALPrintError ("%s: XLALCalloc ( %d, %lu ) failed.\n", __func__, numFields, sizeof(*dataTypes) );
       err = XLAL_ENOMEM;
       goto failed;
     }
     if ( (dataFmts = XLALCalloc ( numFields, sizeof(char*) )) == NULL ) {
-      XLALPrintError ("%s: XLALCalloc ( %d, %d ) failed.\n", __func__, numFields, sizeof(*dataTypes) );
+      XLALPrintError ("%s: XLALCalloc ( %d, %lu ) failed.\n", __func__, numFields, sizeof(*dataTypes) );
       err = XLAL_ENOMEM;
       goto failed;
     }
@@ -667,7 +667,7 @@ XLALReadVOTFIELDNodes ( const xmlDocPtr xmlDocument,	/**< [in] The XML document 
 
   /* assemble 'extended resource path' leading to FIELD elements */
   if ( snprintf ( ePath, XPATHSTR_MAXLEN, "%s%s", resourcePath, pathExt ) >= XPATHSTR_MAXLEN ) {
-    XLALPrintError ("%s: extended resource-path '%s'+'%s' longer than max allowed (%d).\n", resourcePath, pathExt, XPATHSTR_MAXLEN );
+    XLALPrintError ("%s: extended resource-path '%s'+'%s' longer than max allowed (%d).\n", __func__, resourcePath, pathExt, XPATHSTR_MAXLEN );
     XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
 
@@ -810,7 +810,7 @@ XLALReadVOTTabledataSimpleColumn ( const xmlDocPtr xmlDocument, 	/**< [in] The X
 
   /* assemble 'extended resource path' leading to TABLEDATA element */
   if ( snprintf ( ePath, XPATHSTR_MAXLEN, "%s%s", resourcePath, pathExt ) >= XPATHSTR_MAXLEN ) {
-    XLALPrintError ("%s: extended resource-path '%s'+'%s' longer than max allowed (%d).\n", resourcePath, pathExt, XPATHSTR_MAXLEN );
+    XLALPrintError ("%s: extended resource-path '%s'+'%s' longer than max allowed (%d).\n", __func__, resourcePath, pathExt, XPATHSTR_MAXLEN );
     XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
 
@@ -872,7 +872,7 @@ XLALReadVOTTabledataSimpleColumn ( const xmlDocPtr xmlDocument, 	/**< [in] The X
 
       /* parse data-string into output array according to datatype */
       if ( XLALVOTsscanfToArray ( datatype, TD->children->content, ret, i ) != XLAL_SUCCESS ) {
-        XLALPrintError ("%s: failed to parse row %d.\n", i );
+        XLALPrintError ("%s: failed to parse row %d.\n", __func__, i );
         XLALFree ( ret );
         xmlXPathFreeNodeSet ( nodeSet );
         XLAL_ERROR_NULL ( XLAL_EFUNC );
@@ -1134,7 +1134,7 @@ XLALReadVOTAttributeFromNamedElement ( const xmlDocPtr xmlDocument,	/**< [in] Th
   /* copy attribute-content into a standard CHAR string, so caller can XLALFree() it */
   UINT4 len = strlen ( (const char*)xmlContent ) + 1;
   if ( (ret = XLALMalloc ( len * sizeof(*ret) )) == NULL ) {
-    XLALPrintError ("%s: failed to XLALMalloc (%d)\n", __func__, len * sizeof(*ret) );
+    XLALPrintError ("%s: failed to XLALMalloc (%lu)\n", __func__, len * sizeof(*ret) );
     xmlFree ( xmlContent );
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
@@ -1312,13 +1312,13 @@ XLALCreateVOTStringFromTree ( xmlNodePtr xmlTree )
 
   /* ----- Step 1: convert VOTable tree into full-fledged VOTable document, but skip namespace-reconciliation  */
   if ( (xmlDocTmp = XLALCreateVOTDocFromTree( xmlTree, 0 )) == NULL ) {
-    XLALPrintError ("%s: failed to convert input xmlTree into xmlDoc. errno = %s\n", __func__, xlalErrno );
+    XLALPrintError ("%s: failed to convert input xmlTree into xmlDoc. errno = %d\n", __func__, xlalErrno );
     XLAL_ERROR_NULL ( XLAL_EFUNC );
   }
 
   /* ----- Step 2: convert VOTable document into a string, with standard libxml2 indentation */
   if ( (xmlString = XLALXMLDoc2String ( xmlDocTmp )) == NULL ) {
-    XLALPrintError ("%s: failed to convert xmlDoc into string. errno = %s\n", __func__, xlalErrno );
+    XLALPrintError ("%s: failed to convert xmlDoc into string. errno = %d\n", __func__, xlalErrno );
     xmlUnlinkNode ( xmlTree );	/* protect input xmlTree from free'ing */
     xmlSetListDoc ( xmlTree, NULL ); /* unset document info */
     xmlFreeDoc ( xmlDocTmp );
@@ -1586,12 +1586,12 @@ XMLCleanVOTTableWhitespace ( const char *xmlString )
           startEl += TR_OPEN_LEN;
           /* find then next XML element */
           if ( (nextEl = strchr (startEl, '<' )) == NULL ) {	/* find next element */
-            XLALPrintError ("%s: invalid XML, no XML elements found after <TR>: '%s'\n", startEl );
+            XLALPrintError ("%s: invalid XML, no XML elements found after <TR>: '%s'\n", __func__, startEl );
             XLAL_ERROR_NULL ( XLAL_EINVAL );
           }
           /* check that next element is <TD>, if not ... something is wrong */
           if (strncmp ( nextEl, TD_OPEN, TD_OPEN_LEN ) ) {
-            XLALPrintError ("Malformed XML Table: <TR> is not followed by <TD>: '%s'\n", __func__, nextEl );
+            XLALPrintError ("%s: Malformed XML Table: <TR> is not followed by <TD>: '%s'\n", __func__, nextEl );
             XLAL_ERROR_NULL ( XLAL_EINVAL );
           }
 
@@ -1603,7 +1603,7 @@ XMLCleanVOTTableWhitespace ( const char *xmlString )
           startEl += TD_CLOSE_LEN;
           /* find the next XML element */
           if ( (nextEl = strchr (startEl, '<' )) == NULL ) {	/* find next element */
-            XLALPrintError ("%s: invalid XML, no XML elements found after <TR>: '%s'\n", startEl );
+            XLALPrintError ("%s: invalid XML, no XML elements found after <TR>: '%s'\n", __func__, startEl );
             XLAL_ERROR_NULL ( XLAL_EINVAL );
           }
 
@@ -1633,7 +1633,7 @@ XMLCleanVOTTableWhitespace ( const char *xmlString )
   char *ret;
   /* ----- second pass: copy all chars skipping all ZEROS */
   if ( (ret = XLALMalloc ( (numChars + 1) * sizeof(char) )) == NULL ) {
-    XLALPrintError ("%s: XLALMalloc ( %d ) failed.\n", __func__, numChars * sizeof(char));
+    XLALPrintError ("%s: XLALMalloc ( %lu ) failed.\n", __func__, numChars * sizeof(char));
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
@@ -2114,7 +2114,7 @@ XLALVOTAllocateArray ( VOTABLE_DATATYPE datatype, UINT4 length )
     } /* switch datatype */
 
   if ( (ret = LALMalloc ( length * typelen )) == NULL ) {
-    XLALPrintError ( "%s: LALMalloc ( %s ) failed.\n", __func__, length * typelen );
+    XLALPrintError ( "%s: LALMalloc ( %zu ) failed.\n", __func__, length * typelen );
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 

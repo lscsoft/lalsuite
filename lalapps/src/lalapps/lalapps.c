@@ -667,7 +667,7 @@ XLALGetVersionString( int level )
   len += strlen(lalstochastic_info);
 #endif
   if ( (ret = XLALMalloc ( len )) == NULL ) {
-    XLALPrintError ("%s: Failed to XLALMalloc(%d)\n", __func__, len );
+    XLALPrintError ("%s: Failed to XLALMalloc(%lu)\n", __func__, len );
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 

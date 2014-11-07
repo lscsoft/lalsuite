@@ -65,7 +65,7 @@ LALInferenceTemplateFunction LALInferenceInitCBCTemplate(LALInferenceRunState *r
       templt=&LALInferenceTemplateXLALSimInspiralChooseWaveform;
     else {
       XLALPrintError("Error: unknown template %s\n",ppt->value);
-      XLALPrintError(help);
+      XLALPrintError("%s", help);
       XLAL_ERROR_NULL(XLAL_EINVAL);
     }
   }

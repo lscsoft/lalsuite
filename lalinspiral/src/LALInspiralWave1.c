@@ -293,7 +293,7 @@ XLALInspiralWave1ForInjection(
 
   params->ampOrder = (LALPNOrder) 0;
   sprintf(message, "WARNING: Amp Order has been reset to %d", params->ampOrder);
-  XLALPrintInfo(message);
+  XLALPrintInfo("%s", message);
   /* Compute some parameters*/
   if (XLALInspiralInit(params, &paramsInit))
     XLAL_ERROR(XLAL_EFUNC);
@@ -347,12 +347,12 @@ XLALInspiralWave1ForInjection(
 
   params->fFinal = ff->data[count-1];
   sprintf(message, "cycles = %f", fabs(p)/(double)LAL_TWOPI);
-  XLALPrintInfo(message);
+  XLALPrintInfo("%s", message);
 
   if ( (INT4)(p/LAL_TWOPI) < 2 ){
     sprintf(message, "The waveform has only %f cycles; we don't keep waveform with less than 2 cycles.",
 	       fabs(p)/(double)LAL_TWOPI );
-    XLALPrintWarning(message);
+    XLALPrintWarning("%s", message);
   }
   else
   {

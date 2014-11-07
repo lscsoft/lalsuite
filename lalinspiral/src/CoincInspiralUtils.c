@@ -1122,7 +1122,7 @@ XLALRecreateCoincFromSngls(
       {
 	/* already have an event for this ifo */
 	XLALPrintError(
-		"Already have a single from this ifo with event id %lld",
+		"Already have a single from this ifo with event id %"LAL_UINT8_FORMAT,
 		eventId);
 	/* free memory */
 	while ( coincHead )

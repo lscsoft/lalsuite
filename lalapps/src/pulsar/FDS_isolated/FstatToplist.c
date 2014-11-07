@@ -185,7 +185,7 @@ int read_fstat_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxby
 	}
 	else if (line[len-1] != '\n') {
 	  LogPrintf (LOG_CRITICAL, 
-		     "Line %d is too long or has no NEWLINE. First %d chars are:\n'%s'\n",
+		     "Line %d is too long or has no NEWLINE. First %lu chars are:\n'%s'\n",
 		     lines,sizeof(line)-1, line);
 	  return -1;
 	}
@@ -223,7 +223,7 @@ int read_fstat_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxby
 	    ) {
 	    LogPrintf (LOG_CRITICAL, 
 		       "Line %d has invalid values.\n"
-		       "First %d chars are:\n"
+		       "First %lu chars are:\n"
 		       "%s\n"
 		       "All fields should be finite\n"
 		       "1st field should be positive.\n" 
@@ -651,7 +651,7 @@ int fstat_cpt_file_read (FStatCheckpointFile*cptf, UINT4 checksum_should, UINT4 
   cptf->checksum = 0;
 
   if (bytes == 0) {
-    LogPrintf (LOG_DEBUG, "DEBUG: found %DONE end marker\n");
+    LogPrintf (LOG_DEBUG, "DEBUG: found %%DONE end marker\n");
     return(1);
   } else if (bytes == -2) {
     LogPrintf (LOG_CRITICAL, "ERROR: invalid toplist\n");
@@ -670,7 +670,7 @@ int fstat_cpt_file_read (FStatCheckpointFile*cptf, UINT4 checksum_should, UINT4 
   }
 
   if (ftell(cptf->fp) > bytes) {
-    LogPrintf(LOG_DEBUG,"ERROR: File length mismatch: bytes: %u, file: %d, fixing\n",
+    LogPrintf(LOG_DEBUG,"ERROR: File length mismatch: bytes: %u, file: %li, fixing\n",
 	      bytes, ftell(cptf->fp));
     fseek(cptf->fp, bytes, SEEK_SET);  
   }
@@ -776,7 +776,7 @@ int write_hs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter, BOOLEA
   len = fwrite(tl->data, tl->size, tl->elems, fp);
   if(len != tl->elems) {
     LOGIOERROR("Couldn't write data to", tmpfilename);
-    LogPrintf(LOG_CRITICAL,"fwrite() returned %d, length was %d\n", len, tl->elems);
+    LogPrintf(LOG_CRITICAL,"fwrite() returned %d, length was %lu\n", len, tl->elems);
     if(fclose(fp))
       LOGIOERROR("In addition: couldn't close", tmpfilename);
     return(-1);
@@ -786,7 +786,7 @@ int write_hs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter, BOOLEA
   len = fwrite(&counter, sizeof(counter), 1, fp);
   if(len != 1) {
     LOGIOERROR("Couldn't write counter to", tmpfilename);
-    LogPrintf(LOG_CRITICAL,"fwrite() returned %d, length was %d\n",len,1);
+    LogPrintf(LOG_CRITICAL,"fwrite() returned %d, length was %i\n",len,1);
     if(fclose(fp))
       LOGIOERROR("In addition: couldn't close", tmpfilename);
     return(-1);
@@ -796,7 +796,7 @@ int write_hs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter, BOOLEA
   len = fwrite(&checksum, sizeof(checksum), 1, fp);
   if(len != 1) {
     LOGIOERROR("Couldn't write checksum to", tmpfilename);
-    LogPrintf(LOG_CRITICAL,"fwrite() returned %d, length was %d\n",len,1);
+    LogPrintf(LOG_CRITICAL,"fwrite() returned %d, length was %i\n",len,1);
     if(fclose(fp))
       LOGIOERROR("In addition: couldn't close", tmpfilename);
     return(-1);
@@ -859,7 +859,7 @@ int read_hs_checkpoint(const char*filename, toplist_t*tl, UINT4*counter) {
   /* sanity check */
   if (tl->elems > tl->length) {
     LogPrintf(LOG_CRITICAL,
-	      "Number of elements read larger than length of toplist: %d, > %d\n",
+	      "Number of elements read larger than length of toplist: %zu > %zu\n",
 	      tl->elems, tl->length);
     if(fclose(fp))
       LOGIOERROR("In addition: couldn't close", filename);
@@ -870,7 +870,7 @@ int read_hs_checkpoint(const char*filename, toplist_t*tl, UINT4*counter) {
   len = fread(tl->data, tl->size, tl->elems, fp);
   if(len != tl->elems) {
     LOGIOERROR("Couldn't read data from", filename);
-    LogPrintf(LOG_CRITICAL,"fread() returned %d, length was %d\n", len, tl->elems);
+    LogPrintf(LOG_CRITICAL,"fread() returned %d, length was %zu\n", len, tl->elems);
     if(fclose(fp))
       LOGIOERROR("In addition: couldn't close", filename);
     clear_toplist(tl);

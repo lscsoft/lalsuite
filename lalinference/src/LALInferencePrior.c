@@ -766,7 +766,7 @@ void LALInferenceCyclicReflectiveBound(LALInferenceVariables *parameter,
 
   /* Check that the minimum and maximum make sense. */
   if (min >= max) {
-    XLAL_ERROR_VOID(XLAL_EINVAL, "Minimum %f for variable '%s' is not less than maximum %f.", paraHead->name, min, max);
+    XLAL_ERROR_VOID(XLAL_EINVAL, "Minimum %f for variable '%s' is not less than maximum %f.", min, paraHead->name, max);
   }
 
     if(paraHead->vary==LALINFERENCE_PARAM_CIRCULAR) {

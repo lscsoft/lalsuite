@@ -435,7 +435,7 @@ XLALTaylorNWaveformEngine (
 	   break;
 	default:
 	   snprintf(message, 256, "There are no Et waveforms at order %d\n", params->order);
-	   XLALPrintError( message );
+	   XLALPrintError( "%s", message );
 	   XLALFree(dummy.data);
 	   XLAL_ERROR(XLAL_EINVAL);
 	   break;
@@ -474,7 +474,7 @@ XLALTaylorNWaveformEngine (
 	   break;
 	default:
 	   snprintf(message, 256, "There are no Et waveforms at order %d\n", params->order);
-	   XLALPrintError( message );
+	   XLALPrintError( "%s", message );
 	   XLALFree(dummy.data);
 	   XLAL_ERROR(XLAL_EINVAL);
 	   break;

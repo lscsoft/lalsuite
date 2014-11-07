@@ -844,7 +844,7 @@ int main(int argc,char *argv[])
 	    return (COMPUTEFSTAT_EXIT_OPENFSTAT);
 	  }
 	  if (howmany >= uvar_MaxFileSizeKB * 1024) {
-	    LogPrintf (LOG_CRITICAL, "Size of compacted list exceeds MaxFileSize - reduce candidates to keep\n", FstatFilename);
+	    LogPrintf (LOG_CRITICAL, "Size of compacted list exceeds MaxFileSize - reduce candidates to keep\n");
 	    return (COMPUTEFSTAT_EINPUT);
 	  }
 	  fstat_bytecounter = howmany;
@@ -2881,7 +2881,7 @@ WriteFStatLog (LALStatus *stat, char *argv[])
     strcat (fname, ".log");
 
     if ( (fplog = fopen(fname, "wb" )) == NULL) {
-      LogPrintf (LOG_CRITICAL, "Failed to open log-file '%f' for writing.\n\n", fname);
+      LogPrintf (LOG_CRITICAL, "Failed to open log-file '%s' for writing.\n\n", fname);
       LALFree (fname);
       ABORT (stat, COMPUTEFSTAT_ESYS, COMPUTEFSTAT_MSGESYS);
     }

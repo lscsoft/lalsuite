@@ -1790,17 +1790,17 @@ XLALOfficialSFTFilename ( char site,		//!< site-character 'G', 'H', 'L', ...
   char D[512];
   char IFO[2] = { site, channel };
   size_t written = snprintf ( D, sizeof(D), "%d_%c%c_%dSFT%s%s", numSFTs, IFO[0], IFO[1], Tsft, Misc ? "_" : "", Misc ? Misc : "" );
-  XLAL_CHECK_NULL ( written < sizeof(D), XLAL_EINVAL, "Description field length of %d exceeds buffer length of %d characters\n", written, sizeof(D)-1 );
+  XLAL_CHECK_NULL ( written < sizeof(D), XLAL_EINVAL, "Description field length of %zu exceeds buffer length of %zu characters\n", written, sizeof(D)-1 );
 
   // ----- G
   char G[11];
   written = snprintf ( G, sizeof(G), "%09d", GPS_start );
-  XLAL_CHECK_NULL ( written < sizeof(G), XLAL_EINVAL, "GPS seconds %d exceed buffer length of %d characters\n", GPS_start, sizeof(G)-1 );
+  XLAL_CHECK_NULL ( written < sizeof(G), XLAL_EINVAL, "GPS seconds %d exceed buffer length of %zu characters\n", GPS_start, sizeof(G)-1 );
 
   // ----- T
   char T[10];
   written = snprintf ( T, sizeof(T), "%d", Tspan );
-  XLAL_CHECK_NULL ( written < sizeof(T), XLAL_EINVAL, "Tspan=%d s exceed buffer length of %d characters\n", Tspan, sizeof(T)-1 );
+  XLAL_CHECK_NULL ( written < sizeof(T), XLAL_EINVAL, "Tspan=%d s exceed buffer length of %zu characters\n", Tspan, sizeof(T)-1 );
 
   // S-D-G-T.sft
   size_t len = strlen(S) + 1 + strlen(D) + 1 + strlen(G) + 1 + strlen(T) + 4 + 1;
@@ -1808,7 +1808,7 @@ XLALOfficialSFTFilename ( char site,		//!< site-character 'G', 'H', 'L', ...
   XLAL_CHECK_NULL ( (filename = XLALCalloc ( 1, len )) != NULL, XLAL_ENOMEM );
 
   written = snprintf ( filename, len, "%s-%s-%s-%s.sft", S, D, G, T );
-  XLAL_CHECK_NULL ( written < len, XLAL_EFAILED, "Miscounted string-length, expected %d characters but got %d\n", len - 1, written );
+  XLAL_CHECK_NULL ( written < len, XLAL_EFAILED, "Miscounted string-length, expected %zu characters but got %zu\n", len - 1, written );
 
   return filename;
 
@@ -2172,7 +2172,7 @@ read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *head
   /* double-check version-number */
   if ( rawheader.version != 2 )
     {
-      XLALPrintError ("\nWrong SFT-version %d in read_v2_header_from_fp()\n\n", rawheader.version );
+      XLALPrintError ("\nWrong SFT-version %g in read_v2_header_from_fp()\n\n", rawheader.version );
       goto failed;
     }
 
@@ -2214,7 +2214,7 @@ read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *head
 	}
       if ( (size_t)rawheader.comment_length != fread ( comm, 1, rawheader.comment_length, fp ) )
 	{
-	  XLALPrintError ("\nCould not read %d-bytes comment\n\n");
+	  XLALPrintError ("\nCould not read %d-bytes comment\n\n", rawheader.comment_length);
 	  goto failed;
 	}
 

@@ -214,7 +214,7 @@ int read_houghFStat_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 
 	}
 	else if (line[len-1] != '\n') {
 	  LogPrintf (LOG_CRITICAL, 
-		     "Line %d is too long or has no NEWLINE. First %d chars are:\n'%s'\n",
+		     "Line %d is too long or has no NEWLINE. First %lu chars are:\n'%s'\n",
 		     lines,sizeof(line)-1, line);
 	  return -1;
 	}
@@ -252,7 +252,7 @@ int read_houghFStat_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 
 	    ) {
 	    LogPrintf (LOG_CRITICAL, 
 		       "Line %d has invalid values.\n"
-		       "First %d chars are:\n"
+		       "First %lu chars are:\n"
 		       "%s\n"
 		       "All fields should be finite\n"
 		       "1st field should be positive.\n" 
@@ -318,7 +318,7 @@ static int print_houghFStatline_to_str(HoughFStatOutputEntry fline, char* buf, i
           snprintf ( buf0, sizeof(buf0), " %7.6f", fline.sumTwoFX->data[X] );
           UINT4 len1 = strlen ( extraFStr ) + strlen ( buf0 ) + 1;
           if ( len1 > sizeof ( extraFStr ) ) {
-            XLALPrintError ("%s: assembled output string too long! (%d > %d)\n", fn, len1, sizeof(extraFStr ));
+            XLALPrintError ("%s: assembled output string too long! (%d > %lu)\n", fn, len1, sizeof(extraFStr ));
             break;	/* we can't really terminate with error in this function, but at least we avoid crashing */
           }
           strcat ( extraFStr, buf0 );
@@ -576,7 +576,7 @@ int write_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter, BOOLE
   len = fwrite(tl->data, tl->size, tl->elems, fp);
   if(len != tl->elems) {
     LOGIOERROR("Couldn't write data to", tmpfilename);
-    LogPrintf(LOG_CRITICAL,"fwrite() returned %d, length was %d\n", len, tl->elems);
+    LogPrintf(LOG_CRITICAL,"fwrite() returned %d, length was %zu\n", len, tl->elems);
     if(fclose(fp))
       LOGIOERROR("In addition: couldn't close", tmpfilename);
     return(-1);
@@ -665,7 +665,7 @@ int read_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4*counter) {
   /* sanity check */
   if (tl->elems > tl->length) {
     LogPrintf(LOG_CRITICAL,
-	      "Number of elements read larger than length of toplist: %d, > %d\n",
+	      "Number of elements read larger than length of toplist: %zu > %zu\n",
 	      tl->elems, tl->length);
     if(fclose(fp))
       LOGIOERROR("In addition: couldn't close", filename);
@@ -676,7 +676,7 @@ int read_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4*counter) {
   len = fread(tl->data, tl->size, tl->elems, fp);
   if(len != tl->elems) {
     LOGIOERROR("Couldn't read data from", filename);
-    LogPrintf(LOG_CRITICAL,"fread() returned %d, length was %d\n", len, tl->elems);
+    LogPrintf(LOG_CRITICAL,"fread() returned %d, length was %zu\n", len, tl->elems);
     if(fclose(fp))
       LOGIOERROR("In addition: couldn't close", filename);
     clear_toplist(tl);

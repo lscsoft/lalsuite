@@ -149,7 +149,7 @@ int main(int argc, char *argv[]){
   CrossCorrBinaryOutputEntry thisCandidate;
   UINT4 checksum;
 
-  LogPrintf (LOG_CRITICAL, "Starting time\n", 0); /*for debug convenience to record calculating time*/
+  LogPrintf (LOG_CRITICAL, "Starting time\n"); /*for debug convenience to record calculating time*/
   /* initialize and register user variables */
   LIGOTimeGPS computingStartGPSTime, computingEndGPSTime;
   XLALGPSTimeNow (&computingStartGPSTime); /* record the rough starting GPS time*/
@@ -323,11 +323,11 @@ int main(int argc, char *argv[]){
       XLAL_ERROR(XLAL_ENOMEM);
     }
     if((fp = fopen(uvar.pairListInputFilename, "r")) == NULL){
-      LogPrintf ( LOG_CRITICAL, "didn't find SFT-pair list file with given input name\n", 0);
+      LogPrintf ( LOG_CRITICAL, "didn't find SFT-pair list file with given input name\n");
       XLAL_ERROR( XLAL_EFUNC );
     }
     if(fscanf(fp,PCC_SFTPAIR_HEADER,&sftPairs->length)==EOF){
-      LogPrintf ( LOG_CRITICAL, "can't read the length of SFT-pair list from the header\n", 0);
+      LogPrintf ( LOG_CRITICAL, "can't read the length of SFT-pair list from the header\n");
       XLAL_ERROR( XLAL_EFUNC );
     }
 
@@ -338,7 +338,7 @@ int main(int argc, char *argv[]){
 
     for(j = 0; j < sftPairs->length; j++){ /*read in  the SFT-pair list */
       if(fscanf(fp,PCC_SFTPAIR_BODY, &sftPairs->data[j].sftNum[0], &sftPairs->data[j].sftNum[1])==EOF){
-	LogPrintf ( LOG_CRITICAL, "The length of SFT-pair list doesn't match!", 0);
+	LogPrintf ( LOG_CRITICAL, "The length of SFT-pair list doesn't match!");
 	XLAL_ERROR( XLAL_EFUNC );
       }
     }
@@ -355,7 +355,7 @@ int main(int argc, char *argv[]){
 
   if (XLALUserVarWasSet(&uvar.pairListOutputFilename)) { /* Write the list of pairs to a file, if a name was provided */
     if((fp = fopen(uvar.pairListOutputFilename, "w")) == NULL){
-      LogPrintf ( LOG_CRITICAL, "Can't write in SFT-pair list \n", 0);
+      LogPrintf ( LOG_CRITICAL, "Can't write in SFT-pair list \n");
       XLAL_ERROR( XLAL_EFUNC );
     }
     fprintf(fp,PCC_SFTPAIR_HEADER, sftPairs->length ); /*output the length of SFT-pair list to the header*/
@@ -367,7 +367,7 @@ int main(int argc, char *argv[]){
 
   if (XLALUserVarWasSet(&uvar.sftListOutputFilename)) { /* Write the list of SFTs to a file for sanity-checking purposes */
     if((fp = fopen(uvar.sftListOutputFilename, "w")) == NULL){
-      LogPrintf ( LOG_CRITICAL, "Can't write in flat SFT list \n", 0);
+      LogPrintf ( LOG_CRITICAL, "Can't write in flat SFT list \n");
       XLAL_ERROR( XLAL_EFUNC );
     }
     fprintf(fp,PCC_SFT_HEADER, sftIndices->length ); /*output the length of SFT list to the header*/
@@ -380,11 +380,11 @@ int main(int argc, char *argv[]){
   else if(XLALUserVarWasSet(&uvar.sftListInputFilename)){ /*do a sanity check of the order of SFTs list if the name of input SFT list is given*/
     UINT4 numofsft=0;
     if((fp = fopen(uvar.sftListInputFilename, "r")) == NULL){
-      LogPrintf ( LOG_CRITICAL, "Can't read in flat SFT list \n", 0);
+      LogPrintf ( LOG_CRITICAL, "Can't read in flat SFT list \n");
       XLAL_ERROR( XLAL_EFUNC );
     }
     if (fscanf(fp, PCC_SFT_HEADER, &numofsft)==EOF){
-      LogPrintf ( LOG_CRITICAL, "can't read in the length of SFT list from header\n", 0);
+      LogPrintf ( LOG_CRITICAL, "can't read in the length of SFT list from header\n");
       XLAL_ERROR( XLAL_EFUNC );
     }
 
@@ -397,13 +397,13 @@ int main(int argc, char *argv[]){
     if(numofsft == sftIndices->length){
       for (j=0; j<numofsft; j++){
 	if( fscanf(fp,PCC_SFT_BODY,&checkDet->data[j * LALNameLength], &checkGPS[j], &checkGPSns[j])==EOF){
-	  LogPrintf ( LOG_CRITICAL, "The length of SFT list doesn't match\n", 0);
+	  LogPrintf ( LOG_CRITICAL, "The length of SFT list doesn't match\n");
 	  XLAL_ERROR( XLAL_EFUNC );
 	}
 	if(strcmp( inputSFTs->data[sftIndices->data[j].detInd]->data[sftIndices->data[j].sftInd].name, &checkDet->data[j * LALNameLength] ) != 0
 	   ||inputSFTs->data[sftIndices->data[j].detInd]->data[sftIndices->data[j].sftInd].epoch.gpsSeconds != checkGPS[j]
 	   ||inputSFTs->data[sftIndices->data[j].detInd]->data[sftIndices->data[j].sftInd].epoch.gpsNanoSeconds != checkGPSns[j] ){
-	  LogPrintf ( LOG_CRITICAL, "The order of SFTs has been changed, it's the end of civilization\n", 0);
+	  LogPrintf ( LOG_CRITICAL, "The order of SFTs has been changed, it's the end of civilization\n");
 	  XLAL_ERROR( XLAL_EFUNC );
 	}
       }
@@ -411,7 +411,7 @@ int main(int argc, char *argv[]){
       XLALDestroyCHARVectorSequence(checkDet);
     }
     else{
-      LogPrintf ( LOG_CRITICAL, "Run for your life, the length of SFT list doesn't match", 0);
+      LogPrintf ( LOG_CRITICAL, "Run for your life, the length of SFT list doesn't match");
       XLAL_ERROR( XLAL_EFUNC );
     }
   }
@@ -610,7 +610,7 @@ int main(int argc, char *argv[]){
   if(XLALUserVarWasSet(&uvar.logFilename)){
     CHAR *CMDInputStr = XLALUserVarGetLog ( UVAR_LOGFMT_CFGFILE );
     if ((fp = fopen(uvar.logFilename,"w"))==NULL){
-    LogPrintf ( LOG_CRITICAL, "Can't write in logfile", 0);
+    LogPrintf ( LOG_CRITICAL, "Can't write in logfile");
     XLAL_ERROR( XLAL_EFUNC );
     }
     fprintf(fp, "[UserInput]\n\n");
@@ -668,7 +668,7 @@ int main(int argc, char *argv[]){
   /* check memory leaks if we forgot to de-allocate anything */
   LALCheckMemoryLeaks();
 
-  LogPrintf (LOG_CRITICAL, "End time\n", 0);/*for debug convenience to record calculating time*/
+  LogPrintf (LOG_CRITICAL, "End time\n");/*for debug convenience to record calculating time*/
 
   return 0;
 

@@ -521,7 +521,7 @@ void StackSlideVecF_HoughMode(LALStatus *status,		/**< pointer to LALStatus stru
   fBinFin -= params->extraBinsFstat;
   /* this is not very clean -- the Fstat calculation has to know how many extra bins are needed */
 
-  LogPrintf(LOG_DETAIL, "Freq. range analyzed by Hough = [%fHz - %fHz] (%d bins)\n", 
+  LogPrintf(LOG_DETAIL, "Freq. range analyzed by Hough = [%fHz - %fHz] (%"LAL_INT8_FORMAT" bins)\n",
 	    fBinIni*deltaF, fBinFin*deltaF, fBinFin - fBinIni + 1);
   ASSERT ( fBinIni < fBinFin, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
 

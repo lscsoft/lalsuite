@@ -213,7 +213,7 @@ XLALSimInspiralTaylorT1Setup(
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN:
             break;
         default:
-            XLALPrintError("XLAL Error - %s: Invalid tidal PN order %s\nSee LALSimInspiralTidalOrder enum in LALSimInspiralWaveformFlags.h for valid tidal orders.\n",
+            XLALPrintError("XLAL Error - %s: Invalid tidal PN order %d\nSee LALSimInspiralTidalOrder enum in LALSimInspiralWaveformFlags.h for valid tidal orders.\n",
                     __func__, tideO );
             XLAL_ERROR(XLAL_EINVAL);
             break;

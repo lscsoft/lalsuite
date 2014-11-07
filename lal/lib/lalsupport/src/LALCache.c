@@ -242,7 +242,7 @@ LALCache *XLALCacheFileRead(LALFILE * fp)
         if (XLALCacheFileReadRow(s, sizeof(s), fp, &line) != 1
             || XLALCacheFileParseEntry(&cache->list[i], s) < 0) {
             XLALDestroyCache(cache);
-            XLAL_ERROR_NULL(XLAL_EFUNC, "Error reading row %s on line %s",
+            XLAL_ERROR_NULL(XLAL_EFUNC, "Error reading row %i on line %i",
                             i + 1, line);
         }
     XLALCacheSort(cache);

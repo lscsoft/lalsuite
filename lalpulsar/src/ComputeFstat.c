@@ -1271,7 +1271,7 @@ XLALFstatMethodHelpString ( void )
             strncat ( buf, "=ResampBest", sizeof(buf) - strlen(buf) - 1 );
           }
           len += strlen(buf);
-          XLAL_CHECK_NULL ( len < sizeof(helpstr), XLAL_EBADLEN, "FstatMethod help-string exceeds buffer length (%d)\n", sizeof(helpstr) );
+          XLAL_CHECK_NULL ( len < sizeof(helpstr), XLAL_EBADLEN, "FstatMethod help-string exceeds buffer length (%lu)\n", sizeof(helpstr) );
           strcat ( helpstr, buf );
         } // for i < FMETHOD_LAST
 

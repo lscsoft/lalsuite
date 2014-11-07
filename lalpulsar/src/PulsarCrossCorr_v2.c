@@ -69,7 +69,7 @@ int XLALGetDopplerShiftedFrequencyInfo
     UINT8 detInd = sftIndices->data[sftNum].detInd;
     XLAL_CHECK ( ( detInd < inputSFTs->length ),
 		 XLAL_EINVAL,
-		 "SFT asked for detector index off end of list:\n sftNum=%d, detInd=%d, inputSFTs->length=%d\n",
+		 "SFT asked for detector index off end of list:\n sftNum=%"LAL_UINT8_FORMAT", detInd=%"LAL_UINT8_FORMAT", inputSFTs->length=%d\n",
 		 sftNum, detInd, inputSFTs->length );
 
     UINT8 numSFTsDet = inputSFTs->data[detInd]->length;
@@ -83,7 +83,7 @@ int XLALGetDopplerShiftedFrequencyInfo
     UINT8 sftInd = sftIndices->data[sftNum].sftInd;
     XLAL_CHECK ( ( sftInd < numSFTsDet ),
 		 XLAL_EINVAL,
-		 "SFT asked for SFT index off end of list:\n sftNum=%d, detInd=%d, sftInd=%d, numSFTsDet=%d\n",
+		 "SFT asked for SFT index off end of list:\n sftNum=%"LAL_UINT8_FORMAT", detInd=%"LAL_UINT8_FORMAT", sftInd=%"LAL_UINT8_FORMAT", numSFTsDet=%"LAL_UINT8_FORMAT"\n",
 		 sftNum, detInd, sftInd, numSFTsDet );
     timeDiff = times->DeltaT->data[sftInd]
       + XLALGPSDiff( &(times->refTime), &(dopp->refTime));
@@ -270,7 +270,7 @@ int XLALCalculateAveCurlyGAmpUnshifted
 
   numPairs = pairIndexList->length;
 
-  XLAL_CHECK ( ( ret = XLALCreateREAL8Vector ( numPairs ) ) != NULL, XLAL_EFUNC, "XLALCreateREAL8Vector ( %d ) failed.", numPairs );
+  XLAL_CHECK ( ( ret = XLALCreateREAL8Vector ( numPairs ) ) != NULL, XLAL_EFUNC, "XLALCreateREAL8Vector ( %"LAL_UINT8_FORMAT" ) failed.", numPairs );
 
   for (j=0; j < numPairs; j++) {
     sftNum1 = pairIndexList->data[j].sftNum[0];
@@ -330,7 +330,7 @@ int XLALCalculatePulsarCrossCorrStatistic
 
     XLAL_CHECK ( ( sftNum1 < numSFTs ) && ( sftNum2 < numSFTs ),
 		 XLAL_EINVAL,
-		 "SFT pair asked for SFT index off end of list:\n alpha=%d, sftNum1=%d, sftNum2=%d, numSFTs=%d\n",
+		 "SFT pair asked for SFT index off end of list:\n alpha=%"LAL_UINT8_FORMAT", sftNum1=%"LAL_UINT8_FORMAT", sftNum2=%"LAL_UINT8_FORMAT", numSFTs=%"LAL_UINT8_FORMAT"\n",
 		 alpha,  sftNum1, sftNum2, numSFTs );
 
     UINT8 detInd1 = sftIndices->data[sftNum1].detInd;
@@ -339,7 +339,7 @@ int XLALCalculatePulsarCrossCorrStatistic
     XLAL_CHECK ( ( detInd1 < inputSFTs->length )
 		 && ( detInd2 < inputSFTs->length ),
 		 XLAL_EINVAL,
-		 "SFT asked for detector index off end of list:\n sftNum1=%d, sftNum2=%d, detInd1=%d, detInd2=%d, inputSFTs->length=%d\n",
+		 "SFT asked for detector index off end of list:\n sftNum1=%"LAL_UINT8_FORMAT", sftNum2=%"LAL_UINT8_FORMAT", detInd1=%"LAL_UINT8_FORMAT", detInd2=%"LAL_UINT8_FORMAT", inputSFTs->length=%d\n",
 		 sftNum1, sftNum2, detInd1, detInd2, inputSFTs->length );
 
     UINT8 sftInd1 = sftIndices->data[sftNum1].sftInd;
@@ -348,7 +348,7 @@ int XLALCalculatePulsarCrossCorrStatistic
     XLAL_CHECK ( ( sftInd1 < inputSFTs->data[detInd1]->length )
 		 && ( sftInd2 < inputSFTs->data[detInd2]->length ),
 		 XLAL_EINVAL,
-		 "SFT asked for SFT index off end of list:\n sftNum1=%d, sftNum2=%d, detInd1=%d, detInd2=%d, sftInd1=%d, sftInd2=%d, inputSFTs->data[detInd1]->length=%d, inputSFTs->data[detInd2]->length=%d\n",
+		 "SFT asked for SFT index off end of list:\n sftNum1=%"LAL_UINT8_FORMAT", sftNum2=%"LAL_UINT8_FORMAT", detInd1=%"LAL_UINT8_FORMAT", detInd2=%"LAL_UINT8_FORMAT", sftInd1=%"LAL_UINT8_FORMAT", sftInd2=%"LAL_UINT8_FORMAT", inputSFTs->data[detInd1]->length=%d, inputSFTs->data[detInd2]->length=%d\n",
 		 sftNum1, sftNum2, detInd1, detInd2, sftInd1, sftInd2,
 		 inputSFTs->data[detInd1]->length,
 		 inputSFTs->data[detInd2]->length );

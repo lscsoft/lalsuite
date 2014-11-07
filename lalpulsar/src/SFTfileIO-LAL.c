@@ -1774,7 +1774,7 @@ read_v1_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, BOOLEAN swa
   /* double-check version-number */
   if ( rawheader.version != 1 )
     {
-      XLALPrintError ("\nWrong SFT-version %d in read_v1_header_from_fp()\n\n", rawheader.version );
+      XLALPrintError ("\nWrong SFT-version %g in read_v1_header_from_fp()\n\n", rawheader.version );
       goto failed;
     }
 

@@ -74,7 +74,7 @@ XLALAppendString2Vector (LALStringVector *vect,		/**< input string-vector to app
       ret->length ++;
 
       if ( (ret->data[oldlen] = XLALCalloc(1, strlen(string) + 1 )) == NULL ) {
-        XLALPrintError ("%s: XLALCalloc(%d) failed!\n", __func__, strlen(string) + 1 );
+        XLALPrintError ("%s: XLALCalloc(%zu) failed!\n", __func__, strlen(string) + 1 );
 	XLAL_ERROR_NULL ( XLAL_ENOMEM );
       }
 
@@ -149,7 +149,7 @@ XLALCreateStringVector ( const CHAR *str1, ... )
 
  failed:
   va_end(ap);
-  XLALPrintError ("%s: failed to allocate '%d' bytes\n", __func__, len );
+  XLALPrintError ("%s: failed to allocate '%zu' bytes\n", __func__, len );
   XLALDestroyStringVector ( ret );
   XLAL_ERROR_NULL ( XLAL_ENOMEM );
 
@@ -269,7 +269,7 @@ XLALParseCSV2StringVector ( const CHAR *CSVlist )
   return ( ret );
 
  failed:
-  XLALPrintError ("%s: failed to allocate %d bytes\n", __func__, len );
+  XLALPrintError ("%s: failed to allocate %zu bytes\n", __func__, len );
   XLALDestroyStringVector ( ret );
   XLAL_ERROR_NULL ( XLAL_ENOMEM );
 

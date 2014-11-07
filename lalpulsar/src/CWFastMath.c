@@ -76,7 +76,7 @@ XLALCreateLogLUT ( void )
 {
   /* create empty output LUT */
   gsl_vector *ret;
-  XLAL_CHECK ( ( ret = gsl_vector_alloc ( LOGLUT_LENGTH + 1)) != NULL, XLAL_ENOMEM, "Failed call to gsl_vector_alloc (%s).", LOGLUT_LENGTH +1 );
+  XLAL_CHECK ( ( ret = gsl_vector_alloc ( LOGLUT_LENGTH + 1)) != NULL, XLAL_ENOMEM, "Failed call to gsl_vector_alloc (%i).", LOGLUT_LENGTH +1 );
 
   /* fill output LUT */
   REAL8 dx = LOGLUT_XMAX / LOGLUT_LENGTH;
@@ -156,7 +156,7 @@ XLALCreateExpLUT ( void )
   /* create empty output LUT */
   gsl_vector *ret;
   if ( ( ret = gsl_vector_alloc ( EXPLUT_LENGTH + 1)) == NULL ) {
-    XLALPrintError ("%s: failed to gsl_vector_alloc (%s)\n", __func__, EXPLUT_LENGTH +1 );
+    XLALPrintError ("%s: failed to gsl_vector_alloc (%i)\n", __func__, EXPLUT_LENGTH +1 );
     XLAL_ERROR ( XLAL_ENOMEM );
   }
 

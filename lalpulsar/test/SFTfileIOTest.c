@@ -483,7 +483,7 @@ int main(int argc, char *argv[])
     SUB ( LALReadTimestampsFile ( &status, &ts1, TEST_DATA_DIR TS_FNAME ), &status );
     /* ----- load timestamps w new XLAL function */
     if ( (ts2 = XLALReadTimestampsFile ( TEST_DATA_DIR TS_FNAME )) == NULL ) {
-      XLALPrintError ("XLALReadTimestampsFile() failed to read timestamps from file '%s'. xlalErrno = %d\n", TS_FNAME );
+      XLALPrintError ("XLALReadTimestampsFile() failed to read timestamps from file '%s'. xlalErrno = %d\n", TS_FNAME, xlalErrno );
       return SFTFILEIOTESTC_ESUB;
     }
     /* ----- compare the two */

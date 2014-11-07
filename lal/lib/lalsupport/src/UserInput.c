@@ -591,7 +591,7 @@ XLALUserVarHelpString ( const CHAR *progname )
   newlen = 0;
   sprintf (strbuf, "Usage: %s [@ConfigFile] [options], where options are:\n\n", progname);
   if ( (helpstr = XLALCalloc (1, strlen(strbuf) + 1)) == NULL) {
-    XLALPrintError ("%s: failed to XLALCalloc(1,%d)\n", __func__, strlen(strbuf) + 1 );
+    XLALPrintError ("%s: failed to XLALCalloc(1,%zu)\n", __func__, strlen(strbuf) + 1 );
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
   strcpy (helpstr, strbuf);
@@ -622,7 +622,7 @@ XLALUserVarHelpString ( const CHAR *progname )
       sprintf (strbuf, fmtStr, ptr->optchar, " ", typestr[ptr->type], ptr->help, *(INT4*)(ptr->varp) );
       newlen += strlen (strbuf);
       if ( (helpstr = XLALRealloc (helpstr, newlen)) == NULL ) {
-        XLALPrintError ("%s: failed to XLALRealloc (helpstr, %d)\n", __func__, newlen );
+        XLALPrintError ("%s: failed to XLALRealloc (helpstr, %zu)\n", __func__, newlen );
         XLAL_ERROR_NULL ( XLAL_ENOMEM );
       }
 
@@ -672,7 +672,7 @@ XLALUserVarHelpString ( const CHAR *progname )
       /* now increase allocated memory by the right amount */
       newlen += strlen (strbuf);
       if ( (helpstr = LALRealloc (helpstr, newlen)) == NULL ) {
-        XLALPrintError ("%s: failed to LALRealloc (helpstr, %d)\n", __func__, newlen );
+        XLALPrintError ("%s: failed to LALRealloc (helpstr, %zu)\n", __func__, newlen );
 	XLAL_ERROR_NULL ( XLAL_ENOMEM );
       }
 
@@ -694,7 +694,7 @@ XLALUserVarHelpString ( const CHAR *progname )
       sprintf (strbuf, "\n ----- Hint: use help with lalDebugLevel > 0 %s to see all 'developer-options' ----- \n", buf);
       newlen += strlen (strbuf);
       if ( (helpstr = LALRealloc (helpstr, newlen)) == NULL ) {
-        XLALPrintError ( "%f: LALRealloc (helpstr, %d) failed.\n", __func__, newlen );
+        XLALPrintError ( "%s: LALRealloc (helpstr, %zu) failed.\n", __func__, newlen );
         XLAL_ERROR_NULL ( XLAL_ENOMEM );
       }
 
@@ -707,7 +707,7 @@ XLALUserVarHelpString ( const CHAR *progname )
 	     "for most users:----------\n\n");
       newlen += strlen (strbuf);
       if ( (helpstr = LALRealloc (helpstr, newlen)) == NULL ) {
-        XLALPrintError ( "%f: LALRealloc (helpstr, %d) failed.\n", __func__, newlen );
+        XLALPrintError ( "%s: LALRealloc (helpstr, %zu) failed.\n", __func__, newlen );
         XLAL_ERROR_NULL ( XLAL_ENOMEM );
       }
 
@@ -746,7 +746,7 @@ XLALUserVarHelpString ( const CHAR *progname )
 	  /* now increase allocated memory by the right amount */
 	  newlen += strlen (strbuf);
           if ( (helpstr = LALRealloc (helpstr, newlen)) == NULL ) {
-            XLALPrintError ( "%f: LALRealloc (helpstr, %d) failed.\n", __func__, newlen );
+            XLALPrintError ( "%s: LALRealloc (helpstr, %zu) failed.\n", __func__, newlen );
             XLAL_ERROR_NULL ( XLAL_ENOMEM );
           }
 
@@ -759,7 +759,7 @@ XLALUserVarHelpString ( const CHAR *progname )
 	  strcpy(strbuf, "   -- NONE --\n\n");
 	  newlen += strlen (strbuf);
           if ( (helpstr = LALRealloc (helpstr, newlen)) == NULL ) {
-            XLALPrintError ( "%f: LALRealloc (helpstr, %d) failed.\n", __func__, newlen );
+            XLALPrintError ( "%s: LALRealloc (helpstr, %zu) failed.\n", __func__, newlen );
             XLAL_ERROR_NULL ( XLAL_ENOMEM );
           }
 
@@ -808,7 +808,7 @@ XLALUserVarReadAllInput ( int argc, char *argv[] )
 
 	  tmp ++;
 	  if ( (fname = XLALCalloc (1, strlen(tmp) + 5 )) == NULL) {
-            XLALPrintError("%s: XLALCalloc (1, %s) failed.\n", __func__, strlen(tmp) + 5 );
+            XLALPrintError("%s: XLALCalloc (1, %zu) failed.\n", __func__, strlen(tmp) + 5 );
             XLAL_ERROR ( XLAL_ENOMEM );
 	  }
 	  /* NOTE: if the filename given is not a relative or absolute path,
@@ -957,7 +957,7 @@ XLALUserVarGetLog ( UserVarLogFormat format 	/**< output format: return as confi
     {
       len += strlen ( program_name );
       if ( (record = XLALRealloc (record, len+1)) == NULL ) {
-        XLALPrintError ("%s: XLALRealloc (%d, %d) failed.\n", __func__, record, len+1);
+        XLALPrintError ("%s: XLALRealloc (%s, %d) failed.\n", __func__, record, len+1);
         XLAL_ERROR_NULL ( XLAL_ENOMEM );
       }
       strcat (record, program_name);
@@ -996,14 +996,14 @@ XLALUserVarGetLog ( UserVarLogFormat format 	/**< output format: return as confi
 	  sprintf (append, "--%s = %s :%s;", ptr->name, valstr, typestr);
 	  break;
 	default:
-          XLALPrintError ("%s: Unknown format for recording user-input: '%s'\n", __func__, format );
+          XLALPrintError ("%s: Unknown format for recording user-input: '%i'\n", __func__, format );
           XLAL_ERROR_NULL ( XLAL_EINVAL );
 	  break;
 	} /* switch (format) */
 
       len += strlen(append);
       if ( (record = LALRealloc (record, len+1)) == NULL ) {
-        XLALPrintError("%s: LALRealloc (%d, %d) failed.\n", __func__, record, len+1);
+        XLALPrintError("%s: LALRealloc (%s, %d) failed.\n", __func__, record, len+1);
 	XLAL_ERROR_NULL ( XLAL_ENOMEM );
       }
 
@@ -1060,7 +1060,7 @@ XLALUvarType2String ( LALUserVariable *uvar )
     } /* switch */
 
   if ( (ret = XLALMalloc (strlen(buf) + 1)) == NULL) {
-    XLALPrintError ("%s: XLALMalloc(%d) failed.\n", __func__, strlen(buf)+1);
+    XLALPrintError ("%s: XLALMalloc(%zu) failed.\n", __func__, strlen(buf)+1);
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
   strcpy (ret, buf);
@@ -1105,7 +1105,7 @@ XLALUvarValue2String ( LALUserVariable *uvar )
       if ( ptr != NULL )
 	{
 	  if ( (str = XLALMalloc ( strlen(ptr) + 3 )) == NULL) {
-            XLALPrintError ("%s: XLALMalloc(%d) failed.\n", __func__, strlen(ptr)+3);
+            XLALPrintError ("%s: XLALMalloc(%zu) failed.\n", __func__, strlen(ptr)+3);
             XLAL_ERROR_NULL ( XLAL_ENOMEM );
 	  }
 	  sprintf (str, "\"%s\"", ptr);
@@ -1149,7 +1149,7 @@ XLALUvarValue2String ( LALUserVariable *uvar )
   if (str == NULL)
     {
       if ( (str = XLALMalloc (strlen(buf) + 1)) == NULL) {
-        XLALPrintError ("%s: XLALMalloc(%d) failed.\n", __func__, strlen(buf)+1);
+        XLALPrintError ("%s: XLALMalloc(%zu) failed.\n", __func__, strlen(buf)+1);
         XLAL_ERROR_NULL ( XLAL_ENOMEM );
       }
       strcpy (str, buf);

@@ -67,14 +67,14 @@ XLALCreateSFT ( UINT4 numBins )
   SFTtype *sft;
 
   if ( (sft = XLALCalloc (1, sizeof(*sft) )) == NULL )
-    XLAL_ERROR_NULL ( XLAL_ENOMEM, "XLALCalloc (1, %d) failed.\n", sizeof(*sft) );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM, "XLALCalloc (1, %lu) failed.\n", sizeof(*sft) );
 
   if ( numBins )
     {
       if ( (sft->data = XLALCreateCOMPLEX8Vector ( numBins )) == NULL )
         {
           XLALFree ( sft );
-          XLAL_ERROR_NULL ( XLAL_EFUNC, "XLALCreateCOMPLEX8Vector ( %s ) failed. xlalErrno = %d\n", numBins, xlalErrno );
+          XLAL_ERROR_NULL ( XLAL_EFUNC, "XLALCreateCOMPLEX8Vector ( %d ) failed. xlalErrno = %d\n", numBins, xlalErrno );
         }
     }
   else
@@ -411,12 +411,12 @@ XLALExtractMultiTimestampsFromSFTs ( const MultiSFTVector *multiSFTs )
   /* create output vector */
   MultiLIGOTimeGPSVector *ret = NULL;
   if ( (ret = XLALCalloc ( 1, sizeof(*ret) )) == NULL ) {
-    XLALPrintError ("%s: failed to XLALCalloc ( 1, %d ).\n", __func__, sizeof(*ret));
+    XLALPrintError ("%s: failed to XLALCalloc ( 1, %lu ).\n", __func__, sizeof(*ret));
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
   if ( (ret->data = XLALCalloc ( numIFOs, sizeof(*ret->data) )) == NULL ) {
-    XLALPrintError ("%s: failed to XLALCalloc ( %d, %d ).\n", __func__, numIFOs, sizeof(ret->data[0]) );
+    XLALPrintError ("%s: failed to XLALCalloc ( %d, %lu ).\n", __func__, numIFOs, sizeof(ret->data[0]) );
     XLALFree (ret);
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
@@ -1494,7 +1494,7 @@ XLALSFTAdd ( SFTtype *a,		/**< [in/out] SFT to be added to */
   XLAL_CHECK ( a->data != NULL, XLAL_EINVAL );
   XLAL_CHECK ( b->data != NULL, XLAL_EINVAL );
 
-  XLAL_CHECK ( XLALGPSDiff ( &(a->epoch), &(b->epoch) ) == 0, XLAL_EINVAL, "SFT epochs differ %ld != %ld ns\n", XLALGPSToINT8NS ( &(a->epoch) ), XLALGPSToINT8NS ( &(b->epoch) ) );
+  XLAL_CHECK ( XLALGPSDiff ( &(a->epoch), &(b->epoch) ) == 0, XLAL_EINVAL, "SFT epochs differ %"LAL_INT8_FORMAT" != %"LAL_INT8_FORMAT" ns\n", XLALGPSToINT8NS ( &(a->epoch) ), XLALGPSToINT8NS ( &(b->epoch) ) );
 
   REAL8 tol = 10 * LAL_REAL8_EPS;	// generously allow up to 10*eps tolerance
   XLAL_CHECK ( gsl_fcmp ( a->f0, b->f0, tol ) == 0, XLAL_ETOL, "SFT frequencies relative deviation exceeds %g: %.16g != %.16g\n", tol, a->f0, b->f0 );

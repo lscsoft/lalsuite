@@ -905,7 +905,7 @@ int MAIN( int argc, char *argv[]) {
   
   /**** debugging information ******/
   /* print some debug info about spinrange */
-  LogPrintf(LOG_DETAIL, "Frequency and spindown range at refTime (%d): [%f,%f], [%e,%e], [%e,%e]\n",
+  LogPrintf(LOG_DETAIL, "Frequency and spindown range at refTime (%d): [%f,%f], [%e,%e], [%e,%e], [%e,%e]\n",
             usefulParams.spinRange_refTime.refTime.gpsSeconds,
             usefulParams.spinRange_refTime.fkdot[0],
             usefulParams.spinRange_refTime.fkdot[0] + usefulParams.spinRange_refTime.fkdotBand[0],
@@ -916,7 +916,7 @@ int MAIN( int argc, char *argv[]) {
 			usefulParams.spinRange_refTime.fkdot[3],
             usefulParams.spinRange_refTime.fkdot[3] + usefulParams.spinRange_refTime.fkdotBand[3]);
   
-  LogPrintf(LOG_DETAIL, "Frequency and spindown range at startTime (%d): [%f,%f], [%e,%e], [%e,%e]\n",
+  LogPrintf(LOG_DETAIL, "Frequency and spindown range at startTime (%d): [%f,%f], [%e,%e], [%e,%e], [%e,%e]\n",
             usefulParams.spinRange_startTime.refTime.gpsSeconds,
             usefulParams.spinRange_startTime.fkdot[0],
             usefulParams.spinRange_startTime.fkdot[0] + usefulParams.spinRange_startTime.fkdotBand[0],
@@ -928,7 +928,7 @@ int MAIN( int argc, char *argv[]) {
             usefulParams.spinRange_startTime.fkdot[3] + usefulParams.spinRange_startTime.fkdotBand[3]);
   
 
-  LogPrintf(LOG_DETAIL, "Frequency and spindown range at midTime (%d): [%f,%f], [%e,%e], [%e,%e]\n",
+  LogPrintf(LOG_DETAIL, "Frequency and spindown range at midTime (%d): [%f,%f], [%e,%e], [%e,%e], [%e,%e]\n",
             usefulParams.spinRange_midTime.refTime.gpsSeconds,
             usefulParams.spinRange_midTime.fkdot[0],
             usefulParams.spinRange_midTime.fkdot[0] + usefulParams.spinRange_midTime.fkdotBand[0],
@@ -939,7 +939,7 @@ int MAIN( int argc, char *argv[]) {
 			usefulParams.spinRange_midTime.fkdot[3],
             usefulParams.spinRange_midTime.fkdot[3] + usefulParams.spinRange_midTime.fkdotBand[3]);
 
-  LogPrintf(LOG_DETAIL, "Frequency and spindown range at endTime (%d): [%f,%f], [%e,%e], [%e,%e]\n",
+  LogPrintf(LOG_DETAIL, "Frequency and spindown range at endTime (%d): [%f,%f], [%e,%e], [%e,%e], [%e,%e]\n",
             usefulParams.spinRange_endTime.refTime.gpsSeconds,
             usefulParams.spinRange_endTime.fkdot[0],
             usefulParams.spinRange_endTime.fkdot[0] + usefulParams.spinRange_endTime.fkdotBand[0],
@@ -1300,11 +1300,11 @@ int MAIN( int argc, char *argv[]) {
           }
           if(!oldfg) {
             oldfg = finegrid.length;
-            LogPrintfVerbatim(LOG_NORMAL, "FG:%ld  f1dotmin_fg:%.13g df1dot_fg:%.13g f2dotmin_fg:%.13g df2dot_fg:%.13g f3dotmin_fg:%.13g df3dot_fg:%.13g\n",
+            LogPrintfVerbatim(LOG_NORMAL, "FG:%d  f1dotmin_fg:%.13g df1dot_fg:%.13g f2dotmin_fg:%.13g df2dot_fg:%.13g f3dotmin_fg:%.13g df3dot_fg:%.13g\n",
                               finegrid.length,f1dotmin_fg,df1dot_fg,f2dotmin_fg,df2dot_fg,f3dotmin_fg,df3dot_fg);
           }
           if((coarsegrid.length != oldcg) || (finegrid.length != oldfg)) {
-            LogPrintfVerbatim(LOG_CRITICAL, "ERROR: Grid-sizes disagree!\nPrevious CG:%d FG:%ld, currently CG:%d FG:%ld\n",
+            LogPrintfVerbatim(LOG_CRITICAL, "ERROR: Grid-sizes disagree!\nPrevious CG:%d FG:%d, currently CG:%d FG:%d\n",
                               oldcg,oldfg,coarsegrid.length,finegrid.length);
             return(HIERARCHICALSEARCH_EVAL);
           }
@@ -2610,7 +2610,7 @@ XLALSetUpStacksFromSegmentList ( const SFTCatalog *catalog,	/**< complete list o
 
   /* set memory of output catalog sequence to maximum possible length */
   if ( (stacks = XLALCalloc ( 1, sizeof(*stacks) ) ) == NULL ) {
-    XLALPrintError ("%s: XLALCalloc(%d) failed.\n", __func__, sizeof(*stacks) );
+    XLALPrintError ("%s: XLALCalloc(%lu) failed.\n", __func__, sizeof(*stacks) );
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
   stacks->length = numSegments;
