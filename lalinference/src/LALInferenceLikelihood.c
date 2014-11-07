@@ -533,8 +533,6 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
   for(i=0;i<=Nifos;i++) generatedFreqModels[i]=NULL;
   
   //noise model meta parameters
-  gsl_matrix *lines   = NULL;//pointer to matrix holding line centroids
-  gsl_matrix *widths  = NULL;//pointer to matrix holding line widths
   gsl_matrix *nparams = NULL;//pointer to matrix holding noise parameters
 
   gsl_matrix *psdBandsMin  = NULL;//pointer to matrix holding min frequencies for psd model
@@ -544,24 +542,9 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
   gsl_matrix *glitchFD=NULL;
 
   int Nblock = 1;            //number of frequency blocks per IFO
-  int Nlines = 1;            //number of lines to be removed
   int psdFlag = 0;           //flag for including psd fitting
-  int lineFlag = 0;          //flag for excluding lines from integration
   int glitchFlag = 0;   //flag for including glitch model
   int signalFlag = 1;   //flag for including signal model
-
-  //line removal parameters
-  if(LALInferenceCheckVariable(currentParams, "removeLinesFlag"))
-    lineFlag = *((INT4 *)LALInferenceGetVariable(currentParams, "removeLinesFlag"));
-  if(lineFlag)
-  {
-    //Add line matrices to variable lists
-    lines  = *(gsl_matrix **)LALInferenceGetVariable(currentParams, "line_center");
-    widths = *(gsl_matrix **)LALInferenceGetVariable(currentParams, "line_width");
-    Nlines = (int)lines->size2;
-  }
-  int lines_array[Nlines];
-  int widths_array[Nlines];
 
   //check if psd parameters are included in the model
   psdFlag = 0;
@@ -817,21 +800,6 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
       }
     }
 
-    //Set up psd line arrays
-    for(j=0;j<Nlines;j++)
-    {
-      if(lineFlag)
-      {
-        //find range of fourier fourier bins which are excluded from integration
-        lines_array[j]  = (int)gsl_matrix_get(lines,ifo,j);
-        widths_array[j] = (int)gsl_matrix_get(widths,ifo,j);
-      }
-      else
-      {
-        lines_array[j]=0;
-        widths_array[j]=0;
-      }
-    }
 
     REAL8 *psd=&(dataPtr->oneSidedNoisePowerSpectrum->data->data[lower]);
     COMPLEX16 *dtilde=&(dataPtr->freqData->data->data[lower]);
@@ -848,9 +816,6 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
          newIm = im + re*dim + im*dre,
          re = newRe, im = newIm)
     {
-      
-      if(!LALInferenceLineSwitch(lineFlag, Nlines, lines_array, widths_array, i))
-        continue;
       
       COMPLEX16 d=*dtilde;
       /* Normalise PSD to our funny standard (see twoDeltaTOverN

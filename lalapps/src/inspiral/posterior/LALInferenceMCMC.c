@@ -348,14 +348,8 @@ void initializeMCMC(LALInferenceRunState *runState)
                (--psdFit)                       Run with PSD fitting\n\
                (--psdNblock)                    Number of noise parameters per IFO channel (8)\n\
                (--psdFlatPrior)                 Use flat prior on psd parameters (Gaussian)\n\
-               (--removeLines)                  Do include persistent PSD lines in fourier-domain integration\n\
-               (--KSlines)                      Run with the KS test line removal\n\
-               (--KSlinesWidth)                 Width of the lines removed by the KS test (deltaF)\n\
-               (--chisquaredlines)              Run with the Chi squared test line removal\n\
-               (--chisquaredlinesWidth)         Width of the lines removed by the Chi squared test (deltaF)\n\
-               (--powerlawlines)                Run with the power law line removal\n\
-               (--powerlawlinesWidth)           Width of the lines removed by the power law test (deltaF)\n\
-               (--xcorrbands)                   Run PSD fitting with correlated frequency bands\n\
+               (--glitchFit)                    Run with glitch fitting\n\
+               (--glitchNmax)                   Maximum number of glitch basis functions per IFO (20)\n\
                \n\
                ---------------------------------------------------------------------------------------------------\n\
                --- Proposals  ------------------------------------------------------------------------------------\n\
@@ -415,7 +409,8 @@ void initializeMCMC(LALInferenceRunState *runState)
   if(LALInferenceGetProcParamVal(runState->commandLine,"--help"))
     {
       fprintf(stdout,"%s",help);
-      runState->algorithm=&PTMCMCAlgorithm;
+      //runState->algorithm=&PTMCMCAlgorithm;
+      runState=NULL;
       return;
     }
 
@@ -822,6 +817,7 @@ int main(int argc, char *argv[]){
   if (runState)
     LALInferenceAddVariable(runState->algorithmParams,"MPIrank", &MPIrank, LALINFERENCE_UINT4_t,
                           LALINFERENCE_PARAM_FIXED);
+  else return 0;
 
   /* Set up model struct and set currentVariables to match the initialized model params */
   runState->model = LALInferenceInitCBCModel(runState);

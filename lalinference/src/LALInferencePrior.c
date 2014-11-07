@@ -77,6 +77,142 @@ static REAL8 LALInferenceSplineCalibrationPrior(LALInferenceRunState *runState, 
   return logPrior;
 }
 
+/* Return the log Prior for the glitch amplitude */
+REAL8 logGlitchAmplitudeDensity(REAL8 A, REAL8 Q, REAL8 f)
+{
+  REAL8 SNR;
+  /*
+  REAL8 PIterm = 0.5*LAL_2_SQRTPI*LAL_SQRT1_2;
+  */
+  REAL8 PIterm = LAL_2_SQRTPI*LAL_SQRT1_2;
+  REAL8 SNRPEAK = 5.0;
+
+  SNR = A*sqrt( (PIterm*Q/f) );
+  return log(SNR/(SNRPEAK*SNRPEAK))+(-SNR/SNRPEAK);
+}
+
+/* Return the log Prior for the glitch model */
+static REAL8 LALInferenceGlitchPrior(LALInferenceRunState *runState, LALInferenceVariables *params) {
+  LALInferenceVariableItem *item=params->head;
+  LALInferenceVariables *priorParams=runState->priorArgs;
+  REAL8 logPrior=0.0;
+
+  /* check if glitch model is being used */
+  UINT4 glitchFlag = 0;
+  if(LALInferenceCheckVariable(params,"glitchFitFlag"))
+    glitchFlag = *((INT4 *)LALInferenceGetVariable(params, "glitchFitFlag"));
+
+  if(glitchFlag)
+  {
+    UINT4 nifo,nglitch;
+    // Get parameters for current glitch model
+    UINT4Vector *gsize   = *(UINT4Vector **) LALInferenceGetVariable(params, "glitch_size");
+
+    gsl_matrix *glitch_f = *(gsl_matrix **)LALInferenceGetVariable(params, "morlet_f0");
+    gsl_matrix *glitch_Q = *(gsl_matrix **)LALInferenceGetVariable(params, "morlet_Q");
+    gsl_matrix *glitch_A = *(gsl_matrix **)LALInferenceGetVariable(params, "morlet_Amp");
+    gsl_matrix *gparams = NULL;
+
+    REAL8 component_min=0.0;
+    REAL8 component_max=0.0;
+    REAL8 val=0.0;
+
+    char priormin[100];
+    char priormax[100];
+
+    REAL8 Anorm = *(REAL8 *)LALInferenceGetVariable(priorParams,"glitch_norm");
+
+    REAL8 A,f,Q;
+    for(nifo=0; nifo<(UINT4)gsize->length; nifo++)
+    {
+      for(nglitch=0; nglitch<gsize->data[nifo]; nglitch++)
+      {
+        A = gsl_matrix_get(glitch_A,nifo,nglitch);
+        Q = gsl_matrix_get(glitch_Q,nifo,nglitch);
+        f = gsl_matrix_get(glitch_f,nifo,nglitch);
+
+        logPrior += logGlitchAmplitudeDensity(A*Anorm,Q,f);
+        //printf("logPrior=%g\n",logPrior);
+      }
+    }
+    for(;item;item=item->next){
+      if(!strcmp(item->name,"morlet_f0" ) || !strcmp(item->name,"morlet_Q"  ) || !strcmp(item->name,"morlet_t0" ) || !strcmp(item->name,"morlet_phi") )
+      {
+        gparams = *((gsl_matrix **)(item->value));
+
+        sprintf(priormin,"%s_prior_min",item->name);
+        sprintf(priormax,"%s_prior_max",item->name);
+        component_min=*(REAL8 *)LALInferenceGetVariable(priorParams,priormin);
+        component_max=*(REAL8 *)LALInferenceGetVariable(priorParams,priormax);
+
+        for(UINT4 i=0; i<gsize->length; i++)
+        {
+          for(UINT4 j=0; j<gsize->data[i]; j++)
+          {
+            val = gsl_matrix_get(gparams,i,j);
+
+            //rejection sample on prior
+            if(val<component_min || val>component_max) return -DBL_MAX;
+            else logPrior -= log(component_max-component_min);
+          }
+        }
+      }//end morlet parameters prior
+    }//end loop through params
+  }//end check for glitch parameters
+  
+  return logPrior;
+}
+
+/* Return the log Prior for the psd model */
+static REAL8 LALInferencePSDPrior(LALInferenceRunState *runState, LALInferenceVariables *params)
+{
+  LALInferenceVariables *priorParams=runState->priorArgs;
+  REAL8 logPrior=0.0;
+
+
+  /* check if PSD model is being used */
+  UINT4 psdFlag = 0;
+  if(LALInferenceCheckVariable(params, "psdScaleFlag"))
+    psdFlag = *((INT4 *)LALInferenceGetVariable(params, "psdScaleFlag"));
+
+  /* PSD scale parameters */
+  if(psdFlag)
+  {
+    UINT4 i;
+    UINT4 j;
+
+    REAL8 val   = 0.0;
+    REAL8 var   = 1.0;
+    REAL8 mean  = 1.0;
+
+    REAL8Vector *sigma = *((REAL8Vector **)LALInferenceGetVariable(priorParams, "psdsigma"));
+    gsl_matrix *nparams = *((gsl_matrix **)LALInferenceGetVariable(params, "psdscale"));
+
+    REAL8 component_min=*(REAL8 *)LALInferenceGetVariable(priorParams,"psdrange_min");
+    REAL8 component_max=*(REAL8 *)LALInferenceGetVariable(priorParams,"psdrange_max");
+
+    UINT4 psdGaussianPrior = *(UINT4 *)LALInferenceGetVariable(priorParams,"psdGaussianPrior");
+
+    //Loop over IFOs
+    for(i=0; i<(UINT4)nparams->size1; i++)
+    {
+      //Loop over PSD windows
+      for(j=0; j<(UINT4)nparams->size2; j++)
+      {
+        var = sigma->data[j]*sigma->data[j];
+        val = gsl_matrix_get(nparams,i,j);
+
+        //reject prior
+        if(val < component_min || val > component_max) return -DBL_MAX;
+        else if(psdGaussianPrior) logPrior += -0.5*( (mean-val)*(mean-val)/var + log(2.0*LAL_PI*var) );
+      }//end loop over windows
+    }//end loop over IFOs
+
+  }//end psdFlag conditional
+  
+  return logPrior;
+}
+
 /* Return the log Prior of the variables specified, for the non-spinning/spinning inspiral signal case */
 REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVariables *params, LALInferenceModel *model)
 {
@@ -90,15 +226,25 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
   REAL8 min=-INFINITY, max=INFINITY;
   REAL8 mc=0.0;
   REAL8 m1=0.0,m2=0.0,q=0.0,eta=0.0;
-  /* Check boundaries */
+
+  /* check if signal model is being used */
+  UINT4 signalFlag=1;
+  if(LALInferenceCheckVariable(params, "signalModelFlag"))
+    signalFlag = *((INT4 *)LALInferenceGetVariable(params, "signalModelFlag"));
+
+  if(signalFlag){
+
+  /* Check boundaries for signal model parameters */
   for(;item;item=item->next)
   {
     if(item->vary==LALINFERENCE_PARAM_FIXED || item->vary==LALINFERENCE_PARAM_OUTPUT)
       continue;
     else if (LALInferenceCheckMinMaxPrior(priorParams, item->name))
     {
-      LALInferenceGetMinMaxPrior(priorParams, item->name, &min, &max);
-      if(*(REAL8 *) item->value < min || *(REAL8 *)item->value > max) return -DBL_MAX;
+      if(item->type==LALINFERENCE_REAL8_t){
+        LALInferenceGetMinMaxPrior(priorParams, item->name, &min, &max);
+        if(*(REAL8 *) item->value < min || *(REAL8 *)item->value > max) return -DBL_MAX;
+      }
     }
   }
   if(LALInferenceCheckVariable(params,"flow"))
@@ -176,9 +322,17 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
         !within_malmquist(runState, params, model))
       return -DBL_MAX;
 
+  }/* end prior for signal model parameters */
+
   /* Calibration priors. */
   logPrior += LALInferenceSplineCalibrationPrior(runState, params);
 
+  /* Evaluate PSD prior (returns 0 if no PSD model) */
+  logPrior += LALInferencePSDPrior(runState, params);
+
+  /* Evaluate glitch prior (returns 0 if no glitch model) */
+  logPrior += LALInferenceGlitchPrior(runState, params);
+  
   return(logPrior);
 }
 
@@ -630,9 +784,10 @@ void LALInferenceCyclicReflectiveBound(LALInferenceVariables *parameter,
 
         *(REAL8 *)paraHead->value = max - fmod(offset, delta);
       }
-    } else if (paraHead->vary==LALINFERENCE_PARAM_LINEAR) {
+    } else if (paraHead->vary==LALINFERENCE_PARAM_LINEAR && paraHead->type==LALINFERENCE_REAL8_t) {
       /* For linear boundaries, reflect about endpoints of range until
-         withoun range. */
+         withoun range. 
+         SKIP NOISE PARAMETERS (ONLY CHECK REAL8) */
       while(1) {
         /* Loop until broken. */
         REAL8 val = *(REAL8 *)paraHead->value;

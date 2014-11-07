@@ -168,12 +168,12 @@ INT4 LALInferenceGetVariableDimensionNonFixed(LALInferenceVariables *vars)
         if(ptr->type == LALINFERENCE_gslMatrix_t)
         {
           m = *((gsl_matrix **)ptr->value);
-          count += (int)( (m->size1)*(m->size2) );
+          count += (INT4)( (m->size1)*(m->size2) );
         }
         else if(ptr->type == LALINFERENCE_UINT4Vector_t)
         {
           v = *((UINT4Vector **)ptr->value);
-          count += (int)( v->length );
+          count += (INT4)( v->length );
         }
 	else if(ptr->type == LALINFERENCE_REAL8Vector_t) 
 	{
