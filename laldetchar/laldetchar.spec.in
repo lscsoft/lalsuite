@@ -12,7 +12,7 @@ Source: %{name}-%{version}.tar.gz
 URL: http://www.lsc-group.phys.uwm.edu/lal
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: swig python-devel octave-devel
+BuildRequires: python-devel octave-devel
 Requires: gsl libframe libmetaio lal lalframe lalmetaio lalsimulation lalburst
 Prefix: %{_prefix}
 

@@ -64,7 +64,7 @@ import_array();
 
 // Return a reference to the supplied PyObject; increment its reference count, then return it.
 %header %{
-static inline PyObject* swiglal_get_reference(PyObject* v) { Py_XINCREF(v); return v; }
+SWIGINTERNINLINE PyObject* swiglal_get_reference(PyObject* v) { Py_XINCREF(v); return v; }
 %}
 
 // Append an argument to the output argument list of an Python SWIG-wrapped function, if the list is empty.

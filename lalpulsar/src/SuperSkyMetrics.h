@@ -129,15 +129,14 @@ int XLALSetLatticeReducedSuperSkyPointBounds(
   );
 
 ///
-/// Set lattice tiling parameter-space bounds on the (untransformed) super-sky frequency/spindowns \f$f^{(s)}\f$
+/// Set lattice tiling parameter-space bounds on the physical frequency/spindowns \f$f^{(s)}\f$
 ///
-int XLALSetLatticeSuperSkySpinBound(
+int XLALSetLatticePhysicalSpinBound(
   LatticeTiling* tiling,			///< [in] Tiling state
   const gsl_matrix* rssky_transf,		///< [in] Reduced super-sky coordinate transform data
   const size_t s,				///< [in] Spindown order; 0=frequency, 1=first spindown, etc.
   const double bound1,				///< [in] First bound on frequency/spindown
-  const double bound2,				///< [in] Second bound on frequency/spindown
-  bool extra_padding				///< [in] Use extra padding to cover sky position mismatch
+  const double bound2				///< [in] Second bound on frequency/spindown
   );
 
 ///

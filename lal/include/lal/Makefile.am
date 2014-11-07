@@ -6,7 +6,7 @@ DISTCLEANFILES = header-link-stamp *.h *.i
 
 header-link-stamp: force-header-link-generation
 	$(AM_V_at)for file in $(DISTCLEANFILES); do \
-		test -r "$$file" || rm -f "$$file"; \
+		rm -f "$$file"; \
 	done; \
 	if test $(PACKAGE) = lal; then \
 		srcdirs="packages lib"; \

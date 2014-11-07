@@ -12,7 +12,7 @@ Source: %{name}-%{version}.tar.gz
 URL: https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html
 Packager: Jolien Creighton <jolien@uwm.edu>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: swig python-devel octave-devel
+BuildRequires: python-devel octave-devel
 Requires: gsl fftw
 Prefix: %{_prefix}
 
