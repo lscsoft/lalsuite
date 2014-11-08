@@ -76,7 +76,7 @@ mkdirs(mainwebdir)
 if prior_cp.get('analysis','engine')=='lalinferencenest':
   prior_cp.set('engine','sampleprior',str(20*opts.trials)) # more samples drawn since not all will end up in posterior
   prior_cp.set('engine','zeroLogLike','')
-  prior_cp.set('engine','nlive',str(opts.trials))
+  prior_cp.set('engine','nlive',str(20*opts.trials))
 elif prior_cp.get('analysis','engine')=='lalinferencemcmc':
   prior_cp.set('engine','Neff',str(opts.trials))
   prior_cp.set('engine','zeroLogLike','')
