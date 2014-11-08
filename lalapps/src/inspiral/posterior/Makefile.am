@@ -26,11 +26,6 @@ endif # bambi
 endif # lalinference
 endif # lalpulsar
 
-frame_progs = \
-	lalapps_followupMcmc
-lalapps_followupMcmc_SOURCES = \
-	followupMcmc.c
-
 endif # lalframe
 endif # lalinspiral
 

@@ -298,8 +298,8 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams,
   if(LALInferenceCheckVariable(currentParams,"inclination")){
     iota = *(REAL8*) LALInferenceGetVariable(currentParams, "inclination");
   }
-  else if(LALInferenceCheckVariable(currentParams,"theta_JN")){
-    iota = *(REAL8*) LALInferenceGetVariable(currentParams, "theta_JN");
+  else if(LALInferenceCheckVariable(currentParams,"theta_jn")){
+    iota = *(REAL8*) LALInferenceGetVariable(currentParams, "theta_jn");
   }
   
   double cosiota = cos(iota);
@@ -1137,11 +1137,11 @@ static void extractDimensionlessVariableVector(LALInferenceVariables *currentPar
     	exit(1);
   	}
 
-  	if (LALInferenceCheckVariable(currentParams, "massratio")) {
-    	REAL8 eta = *(REAL8 *)LALInferenceGetVariable(currentParams, "massratio");
+  	if (LALInferenceCheckVariable(currentParams, "eta")) {
+    	REAL8 eta = *(REAL8 *)LALInferenceGetVariable(currentParams, "eta");
     	LALInferenceMcEta2Masses(Mc, eta, &m1, &m2);
-  	} else if (LALInferenceCheckVariable(currentParams, "asym_massratio")) {
-    	REAL8 q = *(REAL8 *)LALInferenceGetVariable(currentParams, "asym_massratio");
+  	} else if (LALInferenceCheckVariable(currentParams, "q")) {
+    	REAL8 q = *(REAL8 *)LALInferenceGetVariable(currentParams, "q");
     	LALInferenceMcQ2Masses(Mc, q, &m1, &m2);
   	} else {
     	fprintf(stderr, "Could not find eta or q in LALInferenceCorrelatedAnalyticLogLikelihood (in %s, line %d)\n",
@@ -1160,10 +1160,7 @@ static void extractDimensionlessVariableVector(LALInferenceVariables *currentPar
     exit(1);
   }
 
-  if(LALInferenceCheckVariable(currentParams,"inclination"))
-      iota = *(REAL8 *)LALInferenceGetVariable(currentParams, "inclination");
-  else if(LALInferenceCheckVariable(currentParams,"theta_JN"))
-      iota = *(REAL8 *)LALInferenceGetVariable(currentParams, "theta_JN");
+  iota = *(REAL8 *)LALInferenceGetVariable(currentParams, "theta_jn");
   psi = *(REAL8 *)LALInferenceGetVariable(currentParams, "polarisation");
   phi = *(REAL8 *)LALInferenceGetVariable(currentParams, "phase");
   ra = *(REAL8 *)LALInferenceGetVariable(currentParams, "rightascension");

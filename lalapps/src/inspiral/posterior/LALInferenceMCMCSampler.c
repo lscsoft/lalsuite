@@ -1725,17 +1725,17 @@ void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
     REAL8 ra = theEventTable->longitude;
 
     LALInferenceSetVariable(runState->currentParams, "chirpmass", &chirpmass);
-    if (LALInferenceCheckVariable(runState->currentParams, "asym_massratio")) {
-      LALInferenceSetVariable(runState->currentParams, "asym_massratio", &q);
-    } else if (LALInferenceCheckVariable(runState->currentParams, "massratio")) {
-      LALInferenceSetVariable(runState->currentParams, "massratio", &eta);
+    if (LALInferenceCheckVariable(runState->currentParams, "q")) {
+      LALInferenceSetVariable(runState->currentParams, "q", &q);
+    } else if (LALInferenceCheckVariable(runState->currentParams, "eta")) {
+      LALInferenceSetVariable(runState->currentParams, "eta", &eta);
     } else {
       /* Restore state, cleanup, and throw error */
       LALInferenceCopyVariables(saveParams, runState->currentParams);
       XLALFree(fname);
       LALInferenceClearVariables(saveParams);
       XLALFree(saveParams);
-      XLAL_ERROR_VOID(XLAL_EINVAL, "unknown mass ratio parameter name (allowed are 'massratio' or 'asym_massratio')");
+      XLAL_ERROR_VOID(XLAL_EINVAL, "unknown mass ratio parameter name (allowed are 'eta' or 'q')");
     }
 
     UINT4 added_time_param = 0;
@@ -1755,7 +1755,7 @@ void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
     }
 
     LALInferenceSetVariable(runState->currentParams, "distance", &dist);
-    LALInferenceSetVariable(runState->currentParams, "theta_JN", &inclination);
+    LALInferenceSetVariable(runState->currentParams, "theta_jn", &inclination);
     LALInferenceSetVariable(runState->currentParams, "polarisation", &(psi));
     LALInferenceSetVariable(runState->currentParams, "declination", &dec);
     LALInferenceSetVariable(runState->currentParams, "rightascension", &ra);

@@ -91,7 +91,7 @@ int computePriorMassNormTest(void)
 	if (!XLAL_IS_REAL8_FAIL_NAN(result) || errnum != XLAL_ENAME)
 		TEST_FAIL("Invalid mass ratio name specified but appropriate error not generated.");
 
-	strcpy(massRatioName, "asym_massratio");
+	strcpy(massRatioName, "q");
 	MMin = 1;
 	MMax = -10;
 	MTotMax = -100;
@@ -466,8 +466,8 @@ int LALInferenceInspiralPriorTest(void)
 	LALInferenceAddVariable(params, "theta_spin2", &value, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
 	LALInferenceAddVariable(params, "logmc", &value, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
 	LALInferenceAddVariable(params, "chirpmass", &value, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-	/*LALInferenceAddVariable(params, "asym_massratio", &value, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);*/
-	LALInferenceAddVariable(params, "massratio", &value, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+	/*LALInferenceAddVariable(params, "q", &value, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);*/
+	LALInferenceAddVariable(params, "eta", &value, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
 	
 	REAL8 min, max;
 	min = 1.0; max = 100.0;
@@ -493,7 +493,7 @@ int LALInferenceInspiralPriorTest(void)
 	min = -LAL_PI / 2.0; max = LAL_PI / 2.0;
 	LALInferenceAddMinMaxPrior(priorArgs, "theta_spin2", &min, &max, LALINFERENCE_REAL8_t);
 	min = 0.01; max = 0.25;
-	LALInferenceAddMinMaxPrior(priorArgs, "massratio", &min, &max, LALINFERENCE_REAL8_t);
+	LALInferenceAddMinMaxPrior(priorArgs, "eta", &min, &max, LALINFERENCE_REAL8_t);
 
 	// Pick a random point in the non-zero region of the parameter space.
 	gsl_rng *rng = gsl_rng_alloc(gsl_rng_default);
@@ -533,7 +533,7 @@ int LALInferenceInspiralPriorTest(void)
 	REAL8 m2 = 0.5;
 	REAL8 m1 = 3.82;
 	REAL8 eta = m1 * m2 / pow(m1 + m2, 2);
-	LALInferenceSetVariable(params, "massratio", &eta);
+	LALInferenceSetVariable(params, "eta", &eta);
 	REAL8 Mc = pow(m1 * m2, 3.0 / 5.0) / pow(m1 + m2, 1.0 / 5.0);
 	LALInferenceSetVariable(params, "chirpmass", &Mc);
 	REAL8 logMc = log(Mc);
@@ -576,7 +576,7 @@ REAL8 BasicUniformLALPrior(LALInferenceRunState *runState, LALInferenceVariables
   REAL8 logdensity;
   
   // UNUSED!!: REAL8 mc   = *(REAL8*) LALInferenceGetVariable(params, "chirpmass");		/* solar masses*/
-  eta  = *(REAL8*) LALInferenceGetVariable(params, "massratio");		/* dim-less    */
+  eta  = *(REAL8*) LALInferenceGetVariable(params, "eta");		/* dim-less    */
   iota = *(REAL8*) LALInferenceGetVariable(params, "inclination");		/* radian      */
   // UNUSED!!: REAL8 tc   = *(REAL8*) LALInferenceGetVariable(params, "time");			/* GPS seconds */
   phi  = *(REAL8*) LALInferenceGetVariable(params, "phase");		/* radian      */
