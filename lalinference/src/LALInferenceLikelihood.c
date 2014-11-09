@@ -271,6 +271,11 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams,
   memset(&status,0,sizeof(status));
   LALInferenceVariables intrinsicParams;
   
+  UINT4 spcal_active = 0;
+  if (LALInferenceCheckVariable(currentParams, "spcal_active") && (*(UINT4 *)LALInferenceGetVariable(currentParams, "spcal_active"))) {
+    spcal_active = 1;
+  }
+
   gsl_complex complex_d_dot_h;
   
   gsl_complex gsl_fplus;
@@ -366,6 +371,11 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams,
       LALInferenceAddVariable(model->params, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
     }
     
+    /* Cannot handle calibration yet! */
+    if (spcal_active) {
+      XLAL_ERROR_REAL8(XLAL_FAILURE, "calibration does not yet play nicely with ROQ");
+    }
+
     /* determine beam pattern response (F_plus and F_cross) for given Ifo: */
     XLALComputeDetAMResponse(&Fplus, &Fcross, (const REAL4(*)[3])dataPtr->detector->response, ra, dec, psi, gmst);
     
@@ -470,6 +480,23 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
   double deltaT, TwoDeltaToverN, deltaF, twopit=0.0, re, im, dre, dim, newRe, newIm;
   double timeTmp;
   double mc;
+
+  COMPLEX16FrequencySeries *calFactor = NULL;
+  COMPLEX16 calF = 0.0;
+
+  char freqVarName[VARNAME_MAX];
+  char ampVarName[VARNAME_MAX];
+  char phaseVarName[VARNAME_MAX];
+
+  REAL8Vector *freqs = NULL;
+  REAL8Vector *amps = NULL;
+  REAL8Vector *phases = NULL;
+
+  UINT4 spcal_active = 0;
+  if (LALInferenceCheckVariable(currentParams, "spcal_active") && (*(UINT4 *)LALInferenceGetVariable(currentParams, "spcal_active"))) {
+    spcal_active = 1;
+  }
+
   REAL8 degreesOfFreedom=2.0;
   REAL8 chisq=0.0;
   /* margphi params */
@@ -688,6 +715,27 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
 
         /* Template is now in model->timeFreqhPlus and hCross */
 
+	/* Calibration stuff if necessary */
+	if (spcal_active) {
+	  snprintf(freqVarName, VARNAME_MAX, "%s_spcal_freq", dataPtr->name);
+	  snprintf(ampVarName, VARNAME_MAX, "%s_spcal_amp", dataPtr->name);
+	  snprintf(phaseVarName, VARNAME_MAX, "%s_spcal_phase", dataPtr->name);
+
+	  freqs = *(REAL8Vector **)LALInferenceGetVariable(currentParams, freqVarName);
+	  amps = *(REAL8Vector **)LALInferenceGetVariable(currentParams, ampVarName);
+	  phases = *(REAL8Vector **)LALInferenceGetVariable(currentParams, phaseVarName);
+
+	  if (calFactor == NULL) {
+	    calFactor = XLALCreateCOMPLEX16FrequencySeries("calibration factors", 
+							   &(dataPtr->freqData->epoch),
+							   0, dataPtr->freqData->deltaF,
+							   &lalDimensionlessUnit,
+							   dataPtr->freqData->data->length);
+	  }
+
+	  LALInferenceSplineCalibrationFactor(freqs, amps, phases, calFactor);
+	}
+
         /* determine beam pattern response (F_plus and F_cross) for given Ifo: */
         XLALComputeDetAMResponse(&Fplus, &Fcross, (const REAL4(*)[3])dataPtr->detector->response, ra, dec, psi, gmst);
 
@@ -812,6 +860,10 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
       /* Do time shifting */
       template = plainTemplate * (re + 1j*im);
         
+      if (spcal_active) {
+          calF = calFactor->data->data[i];
+          template = template*calF;
+      }
       
       diff = (d - template);
         
@@ -894,6 +946,12 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
 		  IFO loop */
       default:
         break;
+    }
+
+   /* Clean up calibration if necessary */
+    if (!(calFactor == NULL)) {
+      XLALDestroyCOMPLEX16FrequencySeries(calFactor);
+      calFactor = NULL;
     }
     
   } /* end loop over detectors */

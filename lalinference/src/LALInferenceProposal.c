@@ -88,6 +88,7 @@ const char *const ensembleWalkFullName = "EnsembleWalkFull";
 const char *const ensembleWalkIntrinsicName = "EnsembleWalkIntrinsic";
 const char *const ensembleWalkExtrinsicName = "EnsembleWalkExtrinsic";
 const char *const clusteredKDEProposalName = "ClusteredKDEProposal";
+const char *const splineCalibrationProposalName = "SplineCalibration";
 
 static int
 same_detector_location(LALInferenceIFOData *d1, LALInferenceIFOData *d2) {
@@ -479,6 +480,11 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *curr
   if (!LALInferenceGetProcParamVal(runState->commandLine,"--noProposalCorrPsiPhi") && !LALInferenceGetProcParamVal(runState->commandLine, "--margphi") && !LALInferenceGetProcParamVal(runState->commandLine, "--margtimephi")) {
     LALInferenceAddProposalToCycle(runState, polarizationCorrPhaseJumpName, &LALInferenceCorrPolarizationPhaseJump, SMALLWEIGHT);
   }
+
+  if (LALInferenceGetProcParamVal(runState->commandLine, "--enable-spline-calibration")) {
+    LALInferenceAddProposalToCycle(runState, splineCalibrationProposalName, &LALInferenceSplineCalibrationProposal, SMALLWEIGHT);
+  }
+
   }//End noise-only conditional
 
   /* Add LALInferencePSDFitJump to the cycle */
@@ -1292,7 +1298,7 @@ draw_flat(LALInferenceRunState *runState, const char *name) {
   REAL8 min, max;
 
   LALInferenceGetMinMaxPrior(runState->priorArgs, name, &min, &max);
-
+    
   REAL8 x = gsl_rng_uniform(runState->GSLrandom);
 
   return min + x*(max - min);
@@ -3941,4 +3947,47 @@ void LALInferencePrintProposalTracking(FILE *fp, LALInferenceVariables *propArgs
   fprintf(fp, "%d\t", accepted);
   fprintf(fp, "\n");
   return;
+}
+
+REAL8 LALInferenceSplineCalibrationProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams) {
+  const char *proposalName = splineCalibrationProposalName;
+  LALInferenceIFOData *ifo = NULL;
+  UINT4 nifo = 0;
+  REAL8 ampWidth = *(REAL8 *)LALInferenceGetVariable(runState->priorArgs, "spcal_amp_uncertainty");
+  REAL8 phaseWidth = *(REAL8 *)LALInferenceGetVariable(runState->priorArgs, "spcal_phase_uncertainty");
+
+  LALInferenceCopyVariables(currentParams, proposedParams);
+  LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &proposalName);
+
+  ifo = runState->data;
+  do {
+    nifo++;
+    ifo = ifo->next;
+  } while (ifo);
+
+  ifo = runState->data;
+  do {
+    size_t i;
+
+    char ampName[VARNAME_MAX];
+    char phaseName[VARNAME_MAX];
+
+    REAL8Vector *amps;
+    REAL8Vector *phases;
+
+    snprintf(ampName, VARNAME_MAX, "%s_spcal_amp", ifo->name);
+    snprintf(phaseName, VARNAME_MAX, "%s_spcal_phase", ifo->name);
+
+    amps = *(REAL8Vector **)LALInferenceGetVariable(proposedParams, ampName);
+    phases = *(REAL8Vector **)LALInferenceGetVariable(proposedParams, phaseName);
+
+    for (i = 0; i < amps->length; i++) {
+      amps->data[i] += ampWidth*gsl_ran_ugaussian(runState->GSLrandom)/sqrt(nifo*amps->length);
+      phases->data[i] += phaseWidth*gsl_ran_ugaussian(runState->GSLrandom)/sqrt(nifo*amps->length);
+    }
+
+    ifo = ifo->next;
+  } while (ifo);
+
+  return 0.0;
 }

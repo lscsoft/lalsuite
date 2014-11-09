@@ -35,6 +35,7 @@
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_eigen.h>
+#include <gsl/gsl_interp.h>
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
@@ -153,6 +154,7 @@ INT4 LALInferenceGetVariableDimensionNonFixed(LALInferenceVariables *vars)
   INT4 count=0;
   gsl_matrix *m=NULL;
   UINT4Vector *v=NULL;
+  REAL8Vector *v8=NULL;
   LALInferenceVariableItem *ptr = vars->head;
   if (ptr==NULL) return count;
   else {
@@ -173,6 +175,11 @@ INT4 LALInferenceGetVariableDimensionNonFixed(LALInferenceVariables *vars)
           v = *((UINT4Vector **)ptr->value);
           count += (int)( v->length );
         }
+	else if(ptr->type == LALINFERENCE_REAL8Vector_t) 
+	{
+	  v8 = *(REAL8Vector **)ptr->value;
+	  count += (int)(v8->length);
+	}
         else count++;
       }
       ptr = ptr->next;
@@ -221,11 +228,29 @@ void LALInferenceSetVariable(LALInferenceVariables * vars, const char * name, vo
     XLAL_ERROR_VOID(XLAL_EINVAL, "Entry \"%s\" not found.", name);
   }
   if (item->vary==LALINFERENCE_PARAM_FIXED) return;
+
+  /* We own the memory for each of these types, and it's about to be
+     replaced by the new inputs. */
+  switch (item->type) {
+  case LALINFERENCE_gslMatrix_t:
+    gsl_matrix_free(*(gsl_matrix **)item->value);
+    break;
+  case LALINFERENCE_REAL8Vector_t:
+    XLALDestroyREAL8Vector(*(REAL8Vector **)item->value);
+    break;
+  case LALINFERENCE_UINT4Vector_t:
+    XLALDestroyUINT4Vector(*(UINT4Vector **)item->value);
+    break;
+  default:
+    /* Do nothing for the other cases.  Possibly should deal with
+       string_t, runphase_ptr_t and void_ptr_t, too, but these cases
+       are too complicated to handle! */
+    break;
+  }
+
   memcpy(item->value,value,LALInferenceTypeSize[item->type]);
   return;
 }
-
-
 
 void LALInferenceAddVariable(LALInferenceVariables * vars, const char * name, void *value, LALInferenceVariableType type, LALInferenceParamVaryType vary)
 /* Add the variable name with type type and value value to vars */
@@ -283,6 +308,25 @@ void LALInferenceRemoveVariable(LALInferenceVariables *vars,const char *name)
   }
   if(!parent) vars->head=this->next;
   else parent->next=this->next;
+
+  /* We own the memory for these types, so have to free. */
+  switch (this->type) {
+  case LALINFERENCE_gslMatrix_t:
+    gsl_matrix_free(*(gsl_matrix **)this->value);
+    break;
+  case LALINFERENCE_REAL8Vector_t:
+    XLALDestroyREAL8Vector(*(REAL8Vector **)this->value);
+    break;
+  case LALINFERENCE_UINT4Vector_t:
+    XLALDestroyUINT4Vector(*(UINT4Vector **)this->value);
+    break;
+  default:
+    /* Do nothing for the other cases.  Possibly should deal with
+       string_t, runphase_ptr_t and void_ptr_t, too, but these cases
+       are too complicated to handle! */
+    break;
+  }
+
   XLALFree(this->value);
   this->value=NULL;
   XLALFree(this);
@@ -396,7 +440,7 @@ void LALInferenceCopyVariables(LALInferenceVariables *origin, LALInferenceVariab
           {
             REAL8Vector *old=*(REAL8Vector **)ptr->value;
             REAL8Vector *new=XLALCreateREAL8Vector(old->length);
-            if(new) memcpy(new->data,old->data,new->length);
+            if(new) memcpy(new->data,old->data,new->length*sizeof(REAL8));
             else XLAL_ERROR_VOID(XLAL_ENOMEM,"Unable to copy vector!\n");
             LALInferenceAddVariable(target,ptr->name,(void *)&new,ptr->type,ptr->vary);
             break;
@@ -1299,6 +1343,7 @@ void LALInferenceArrayToBuffer(LALInferenceRunState *runState, REAL8** DEarray, 
 void LALInferenceCopyVariablesToArray(LALInferenceVariables *origin, REAL8 *target) {
   gsl_matrix *m = NULL; //for dealing with noise parameters
   UINT4Vector *v = NULL; //for dealing with dimension parameters
+  REAL8Vector *v8 = NULL;
   UINT4 j,k;
 
   /* Make sure the structure is initialised */
@@ -1330,6 +1375,14 @@ void LALInferenceCopyVariablesToArray(LALInferenceVariables *origin, REAL8 *targ
           p++;
         }
       }
+      else if(ptr->type == LALINFERENCE_REAL8Vector_t)
+      {
+	v8 = *(REAL8Vector **)ptr->value;
+	for (j = 0; j < v8->length; j++) {
+	  target[p]=v8->data[j];
+	  p++;
+	}
+      }
       else
       {
         target[p]=*(REAL8 *)ptr->value;
@@ -1343,6 +1396,7 @@ void LALInferenceCopyVariablesToArray(LALInferenceVariables *origin, REAL8 *targ
 void LALInferenceCopyArrayToVariables(REAL8 *origin, LALInferenceVariables *target) {
   gsl_matrix *m = NULL; //for dealing with noise parameters
   UINT4Vector *v = NULL; //for dealing with dimension parameters
+  REAL8Vector *v8 = NULL;
   UINT4 j,k;
 
   LALInferenceVariableItem *ptr = target->head;
@@ -1371,6 +1425,15 @@ void LALInferenceCopyArrayToVariables(REAL8 *origin, LALInferenceVariables *targ
           v->data[j] = origin[p];
           p++;
         }
+      }
+      else if(ptr->type == LALINFERENCE_REAL8Vector_t)
+      {
+	v8 = *(REAL8Vector **)ptr->value;
+	for (j=0; j < v8->length; j++)
+	{
+	  v8->data[j] = origin[p];
+	  p++;
+	}
       }
       else
       {
@@ -3355,7 +3418,7 @@ REAL8Vector* LALInferenceGetREAL8VectorVariable(LALInferenceVariables * vars, co
     XLAL_ERROR_NULL(XLAL_ETYPE);
   }
 
-  REAL8Vector* rvalue=(REAL8Vector*)LALInferenceGetVariable(vars,name);
+  REAL8Vector* rvalue= *(REAL8Vector**)LALInferenceGetVariable(vars,name);
 
   return rvalue;
 }
@@ -3431,4 +3494,132 @@ CHAR* LALInferenceGetstringVariable(LALInferenceVariables * vars, const char * n
 
 void LALInferenceSetstringVariable(LALInferenceVariables* vars,const char* name,CHAR* value){
   LALInferenceSetVariable(vars,name,(void*)&value);
+}
+
+int LALInferenceSplineCalibrationFactor(REAL8Vector *freqs, 
+					REAL8Vector *deltaAmps, 
+					REAL8Vector *deltaPhases, 
+					COMPLEX16FrequencySeries *calFactor) {
+  size_t i = 0;
+  gsl_interp_accel *ampAcc = NULL, *phaseAcc = NULL;
+  gsl_interp *ampInterp = NULL, *phaseInterp = NULL;
+
+  int status = XLAL_SUCCESS;
+  const char *fmt = "";
+
+  size_t N = 0;
+
+  if (freqs == NULL || deltaAmps == NULL || deltaPhases == NULL || calFactor == NULL) {
+    status = XLAL_EINVAL;
+    fmt = "bad input";
+    goto cleanup;
+  }
+
+  if (freqs->length != deltaAmps->length || deltaAmps->length != deltaPhases->length) {
+    status = XLAL_EINVAL;
+    fmt = "input lengths differ";
+    goto cleanup;
+  }
+
+  N = freqs->length;
+
+  ampInterp = gsl_interp_alloc(gsl_interp_cspline, N);
+  phaseInterp = gsl_interp_alloc(gsl_interp_cspline, N);
+  
+  if (ampInterp == NULL || phaseInterp == NULL) {
+    status = XLAL_ENOMEM;
+    fmt = "could not allocate GSL interpolation objects";
+    goto cleanup;
+  }
+
+  ampAcc = gsl_interp_accel_alloc();
+  phaseAcc = gsl_interp_accel_alloc();
+
+  if (ampAcc == NULL || phaseAcc == NULL) {
+    status = XLAL_ENOMEM;
+    fmt = "could not allocate interpolation acceleration objects";
+    goto cleanup;
+  }
+
+  gsl_interp_init(ampInterp, freqs->data, deltaAmps->data, N);
+  gsl_interp_init(phaseInterp, freqs->data, deltaPhases->data, N);
+
+  for (i = 0; i < calFactor->data->length; i++) {
+    REAL8 dA = 0.0, dPhi = 0.0;
+    REAL8 f = calFactor->deltaF*i;
+
+    if (f < freqs->data[0] || f > freqs->data[N-1]) {
+      dA = 0.0;
+      dPhi = 0.0;
+    } else {
+      dA = gsl_interp_eval(ampInterp, freqs->data, deltaAmps->data, f, ampAcc);
+      dPhi = gsl_interp_eval(phaseInterp, freqs->data, deltaPhases->data, f, phaseAcc);
+    }
+
+    calFactor->data->data[i] = (1.0 + dA)*(2.0 + I*dPhi)/(2.0 - I*dPhi);
+  }
+
+ cleanup:
+  if (ampInterp != NULL) gsl_interp_free(ampInterp);
+  if (phaseInterp != NULL) gsl_interp_free(phaseInterp);
+  if (ampAcc != NULL) gsl_interp_accel_free(ampAcc);
+  if (phaseAcc != NULL) gsl_interp_accel_free(phaseAcc);
+
+  if (status == XLAL_SUCCESS) {
+    return status;
+  } else {
+    XLAL_ERROR(status, fmt);
+  }
+}
+
+void LALInferenceFprintSplineCalibrationHeader(FILE *output, LALInferenceRunState *runState) {
+  LALInferenceIFOData *ifo = runState->data;
+
+  do {
+    char parname[VARNAME_MAX];
+    size_t i;
+    UINT4 ncal = *(UINT4 *)LALInferenceGetVariable(runState->currentParams, "spcal_npts");
+    
+    for (i = 0; i < ncal; i++) {
+      snprintf(parname, VARNAME_MAX, "%sspcalamp%02ld", ifo->name, i);
+      fprintf(output, "%s\t", parname);
+    }
+
+    for (i = 0; i < ncal; i++) {
+      snprintf(parname, VARNAME_MAX, "%sspcalphase%02ld", ifo->name, i);
+      fprintf(output, "%s\t", parname);
+    }
+
+    ifo = ifo->next;
+  } while (ifo);
+}
+
+void LALInferencePrintSplineCalibration(FILE *output, LALInferenceRunState *runState) {
+  LALInferenceIFOData *ifo = runState->data;
+
+  do {
+    size_t i;
+
+    char ampVarName[VARNAME_MAX];
+    char phaseVarName[VARNAME_MAX];
+
+    REAL8Vector *amp = NULL;
+    REAL8Vector *phase = NULL;
+
+    snprintf(ampVarName, VARNAME_MAX, "%s_spcal_amp", ifo->name);
+    snprintf(phaseVarName, VARNAME_MAX, "%s_spcal_phase", ifo->name);
+
+    amp = *(REAL8Vector **)LALInferenceGetVariable(runState->currentParams, ampVarName);
+    phase = *(REAL8Vector **)LALInferenceGetVariable(runState->currentParams, phaseVarName);
+
+    for (i = 0; i < amp->length; i++) {
+      fprintf(output, "%g\t", amp->data[i]);
+    }
+
+    for (i = 0; i < phase->length; i++) {
+      fprintf(output, "%g\t", phase->data[i]);
+    }
+
+    ifo = ifo->next;
+  } while (ifo);
 }

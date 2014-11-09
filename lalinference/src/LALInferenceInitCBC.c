@@ -172,6 +172,81 @@ void LALInferenceInitGlitchVariables(LALInferenceRunState *runState, LALInferenc
 
 }
 
+static void LALInferenceInitSplineCalibrationVariables(LALInferenceRunState *runState, LALInferenceVariables *currentParams) {
+  UINT4 ncal = 5; /* Number of calibration nodes, log-distributed
+		     between fmin and fmax. */
+  UINT4 calOn = 1;
+  REAL8 ampUncertaintyPrior = 0.1; /* 10% amplitude */
+  REAL8 phaseUncertaintyPrior = 5*M_PI/180.0; /* 5 degrees phase */
+  ProcessParamsTable *ppt = NULL;
+  LALInferenceIFOData *ifo = NULL;
+
+  if (!(ppt = LALInferenceGetProcParamVal(runState->commandLine, "--enable-spline-calibration"))) {
+    /* If you don't enable spline calibration, nothing happens. */
+    return;
+  }
+
+  if ((ppt = LALInferenceGetProcParamVal(runState->commandLine, "--spline-calibration-nodes"))) {
+    ncal = atoi(ppt->value);
+  }
+
+  if ((ppt = LALInferenceGetProcParamVal(runState->commandLine, "--spline-calibration-amp-uncertainty"))) {
+    ampUncertaintyPrior = atof(ppt->value);
+  }
+
+  if ((ppt = LALInferenceGetProcParamVal(runState->commandLine, "--spline-calibration-phase-uncertainty"))) {
+    phaseUncertaintyPrior = M_PI/180.0*atof(ppt->value); /* CL arg in degrees, variable in radians */
+  }
+
+  LALInferenceAddVariable(runState->priorArgs, "spcal_amp_uncertainty", &ampUncertaintyPrior,
+			  LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+  LALInferenceAddVariable(runState->priorArgs, "spcal_phase_uncertainty", &phaseUncertaintyPrior,
+			  LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+  LALInferenceAddVariable(currentParams, "spcal_active", &calOn, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+  LALInferenceAddVariable(currentParams, "spcal_npts", &ncal, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+
+  ifo = runState->data;
+  do {
+    size_t i;
+
+    char freqVarName[VARNAME_MAX];
+    char ampVarName[VARNAME_MAX];
+    char phaseVarName[VARNAME_MAX];
+
+    REAL8Vector *freqs = NULL;
+    REAL8Vector *amps = NULL;
+    REAL8Vector *phase = NULL;
+
+    REAL8 fMin = ifo->fLow;
+    REAL8 fMax = ifo->fHigh;
+    REAL8 logFMin = log(fMin);
+    REAL8 logFMax = log(fMax);
+    REAL8 dLogF = (logFMax - logFMin)/(ncal-1);
+    
+
+    snprintf(freqVarName, VARNAME_MAX, "%s_spcal_freq", ifo->name);
+    snprintf(ampVarName, VARNAME_MAX, "%s_spcal_amp", ifo->name);
+    snprintf(phaseVarName, VARNAME_MAX, "%s_spcal_phase", ifo->name);
+
+    freqs = XLALCreateREAL8Vector(ncal);
+    amps = XLALCreateREAL8Vector(ncal);
+    phase = XLALCreateREAL8Vector(ncal);
+
+    for (i = 0; i < ncal; i++) {
+      freqs->data[i] = exp(logFMin + i*dLogF);
+      amps->data[i] = 0.0;
+      phase->data[i] = 0.0;
+    }
+
+    LALInferenceAddVariable(currentParams, freqVarName, &freqs, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(currentParams, ampVarName, &amps, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_LINEAR);
+    LALInferenceAddVariable(currentParams, phaseVarName, &phase, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_LINEAR);
+
+    ifo = ifo->next;
+
+  } while (ifo);
+}
+
 void LALInferenceRegisterUniformVariableREAL8(LALInferenceRunState *state, LALInferenceVariables *var, const char name[VARNAME_MAX], REAL8 startval, REAL8 min, REAL8 max, LALInferenceParamVaryType varytype)
 {
   char minopt[VARNAME_MAX+7];
@@ -320,7 +395,14 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state)
                --- Fix Parameters ----------------------------------------------------------------------------------------------\n\
                ------------------------------------------------------------------------------------------------------------------\n\
                You can generally fix a parameter to be fixed to a given values by using both --paramname VALUE and --fix-paramname\n\
-               where the known names have been listed above\n";
+               where the known names have been listed above\n\
+               ------------------------------------------------------------------------------------------------------------------\n\
+               --- Spline Calibration Model -------------------------------------------------------------------------------------\n\
+               ------------------------------------------------------------------------------------------------------------------\n\
+               (--enable-spline-calibration)            Enable cubic-spline calibration error model.\n\
+               (--spline-calibration-nodes N)           Set the number of spline nodes per detector (default 5)\n\
+               (--spline-calibration-amp-uncertainty X) Set the prior on relative amplitude uncertainty (default 0.1)\n\
+               (--spline-calibration-phase-uncertainty X) Set the prior on phase uncertanity in degrees (default 5)\n";
 
 
   /* Print command line arguments if state was not allocated */
@@ -958,6 +1040,9 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state)
    
   LALInferenceAddVariable(model->params, "removeLinesFlag", &lines_flag, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
   if(LALInferenceGetProcParamVal(commandLine, "--glitchFit")) LALInferenceInitGlitchVariables(state, model->params);
+
+  /* Handle, if present, requests for calibration parameters. */
+  LALInferenceInitSplineCalibrationVariables(state, model->params);
 
   //Only add waveform parameters to model if needed
   if(signal_flag)
