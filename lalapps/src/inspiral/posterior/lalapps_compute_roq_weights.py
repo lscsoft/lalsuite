@@ -64,7 +64,7 @@ def BuildWeights(data, B, deltaF):
 
         weights = np.dot(B, data.conjugate()) * deltaF * 4.
 
-        return weights.T
+        return weights
 ##################################
 
 relative_tc_shift = options.seglen - 2. 
@@ -121,7 +121,7 @@ for ifo in options.IFOs:
 	weights = BuildWeights(tc_shifted_data, B, deltaF)
 	print "Weights have been computed for "+ifo
 
-	(weights.T).tofile(weights_file)
+	(weights).tofile(weights_file)
 
 	weights_file.close()
 	i += 1
