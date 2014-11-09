@@ -43,7 +43,7 @@ static REAL8 LALInferenceSplineCalibrationPrior(LALInferenceRunState *runState, 
   REAL8 phaseWidth = -1.0;
   REAL8 logPrior = 0.0;
 
-  if (!(LALInferenceGetProcParamVal(runState->commandLine, "--enable-spline-calibration"))) {
+  if (runState->commandLine == NULL || !(LALInferenceGetProcParamVal(runState->commandLine, "--enable-spline-calibration"))) {
     return logPrior;
   }
 

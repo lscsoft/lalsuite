@@ -502,6 +502,7 @@ int LALInferenceInspiralPriorTest(void)
 
 	// Check that we get a finite log prior.
 	XLAL_TRY(result = LALInferenceInspiralPrior(runState, params, runState->model), errnum);
+
 	if (XLAL_IS_REAL8_FAIL_NAN(result) || errnum != XLAL_SUCCESS)
 	{
 		TEST_FAIL("Could not generate inspiral prior; XLAL error: %s", XLALErrorString(errnum));
