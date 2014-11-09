@@ -1053,23 +1053,15 @@ const char *LALInferenceTranslateInternalToExternalParamName(const char *inName)
     return "a1";
   } else if (!strcmp(inName, "a_spin2")) {
     return "a2";
-  } else if (!strcmp(inName, "phi_spin1")) {
-    return "phi1";
-  } else if (!strcmp(inName, "phi_spin2")) {
-    return "phi2";
-  } else if (!strcmp(inName, "theta_spin1")) {
-    return "theta1";
-  } else if (!strcmp(inName, "theta_spin2")) {
-    return "theta2";
   } else if (!strcmp(inName, "tilt_spin1")) {
     return "tilt1";
   } else if (!strcmp(inName, "tilt_spin2")) {
     return "tilt2";
   } else if (!strcmp(inName, "chirpmass")) {
     return "mc";
-  } else if (!strcmp(inName, "massratio")) {
+  } else if (!strcmp(inName, "eta")) {
     return "eta";
-  } else if (!strcmp(inName, "asym_massratio")) {
+  } else if (!strcmp(inName, "q")) {
     return "q";
   } else if (!strcmp(inName, "rightascension")) {
     return "ra";
@@ -1079,8 +1071,6 @@ const char *LALInferenceTranslateInternalToExternalParamName(const char *inName)
     return "phi_orb";
   } else if (!strcmp(inName, "polarisation")) {
     return "psi";
-  } else if (!strcmp(inName, "inclination")) {
-    return "iota";
   } else if (!strcmp(inName, "distance")) {
     return "dist";
   } else if (!strcmp(inName, "fRef")) {
@@ -1095,14 +1085,6 @@ void LALInferenceTranslateExternalToInternalParamName(char *outName, const char 
     strcpy(outName, "a_spin1");
   } else if (!strcmp(inName, "a2")) {
     strcpy(outName, "a_spin2");
-  } else if (!strcmp(inName, "phi1")) {
-    strcpy(outName, "phi_spin1");
-  } else if (!strcmp(inName, "phi2")) {
-    strcpy(outName, "phi_spin2");
-  } else if (!strcmp(inName, "theta1")) {
-    strcpy(outName, "theta_spin1");
-  } else if (!strcmp(inName, "theta2")) {
-    strcpy(outName, "theta_spin2");
   } else if (!strcmp(inName, "tilt1")) {
     strcpy(outName, "tilt_spin1");
   } else if (!strcmp(inName, "tilt2")) {
@@ -1110,9 +1092,9 @@ void LALInferenceTranslateExternalToInternalParamName(char *outName, const char 
   } else if (!strcmp(inName, "mc")) {
     strcpy(outName, "chirpmass");
   } else if (!strcmp(inName, "eta")) {
-    strcpy(outName, "massratio");
+    strcpy(outName, "eta");
   } else if (!strcmp(inName, "q")) {
-    strcpy(outName, "asym_massratio");
+    strcpy(outName, "q");
   } else if (!strcmp(inName, "ra")) {
     strcpy(outName, "rightascension");
   } else if (!strcmp(inName, "dec")) {
@@ -1124,9 +1106,9 @@ void LALInferenceTranslateExternalToInternalParamName(char *outName, const char 
   } else if (!strcmp(inName, "iota")) {
     strcpy(outName, "inclination");
   } else if (!strcmp(inName, "theta_jn")) {
-    strcpy(outName, "theta_JN");
+    strcpy(outName, "theta_jn");
   } else if (!strcmp(inName, "phi_jl")) {
-    strcpy(outName, "phi_JL");
+    strcpy(outName, "phi_jl");
   } else if (!strcmp(inName, "dist")) {
     strcpy(outName, "distance");
   } else if (!strcmp(inName, "f_ref")) {
@@ -1861,32 +1843,15 @@ char *colNameToParamName(const char *colName) {
   }
 
   else if (!strcmp(colName, "eta")) {
-    retstr=XLALStringDuplicate("massratio");
+    retstr=XLALStringDuplicate("eta");
   }
 
   else if (!strcmp(colName, "q")) {
-    retstr=XLALStringDuplicate("asym_massratio");
+    retstr=XLALStringDuplicate("q");
   }
 
   else if (!strcmp(colName, "dec")) {
     retstr=XLALStringDuplicate("declination");
-  }
-
-  /* Note the 1 <--> 2 swap between the post-proc world and the LI world. */
-  else if (!strcmp(colName, "phi1")) {
-    retstr=XLALStringDuplicate("phi_spin2");
-  }
-
-  else if (!strcmp(colName, "phi2")) {
-    retstr=XLALStringDuplicate("phi_spin1");
-  }
-
-  else if (!strcmp(colName, "theta1")) {
-    retstr=XLALStringDuplicate("theta_spin2");
-  }
-
-  else if (!strcmp(colName, "theta2")) {
-    retstr=XLALStringDuplicate("theta_spin1");
   }
 
   else if (!strcmp(colName, "a1")) {

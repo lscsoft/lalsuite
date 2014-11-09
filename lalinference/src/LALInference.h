@@ -123,29 +123,6 @@ typedef enum {
 	LALINFERENCE_PARAM_OUTPUT    /** A parameter changed by an inner code and passed out */
 } LALInferenceParamVaryType;
 
-/**
- * An enumerated type for denoting a type of taper
- */
-typedef enum
-{
-	LALINFERENCE_TAPER_NONE,
-	LALINFERENCE_TAPER_START,
-	LALINFERENCE_TAPER_END,
-	LALINFERENCE_TAPER_STARTEND,
-	LALINFERENCE_TAPER_NUM_OPTS,
-	LALINFERENCE_RING,
-	LALINFERENCE_SMOOTH
-}  LALInferenceApplyTaper;
-
-/**
- * An enumerated type for denoting the spinning parameter variables
- */
-typedef enum
-{
-  LALINFERENCE_FRAME_RADIATION,
-  LALINFERENCE_FRAME_SYSTEM
-} LALInferenceFrame;
-
 extern size_t LALInferenceTypeSize[14];
 
 /**

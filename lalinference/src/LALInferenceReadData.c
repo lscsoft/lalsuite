@@ -248,21 +248,10 @@ static INT4 getDataOptionsByDetectors(ProcessParamsTable *commandLine, char ***i
     *N=0;
     char tmp[128];
     if(!this) {fprintf(stderr,"No command line arguments given!\n"); exit(1);}
-    while(this)
-    {
-        if(!strcmp(this->param,"--ifo") || !strcmp(this->param,"--IFO"))
-        for(i=0;this->value[i]!='\0';i++)
-            if(this->value[i]=='[' || this->value[i]==']')
-            {
-                fprintf(stderr,"Found old-style input arguments for %s\n",this->param);
-                return(0);
-            }
-        this=this->next;
-    }
     /* Construct a list of IFOs */
     for(this=commandLine;this;this=this->next)
     {
-        if(!strcmp(this->param,"--ifo")||!strcmp(this->param,"--IFO"))
+        if(!strcmp(this->param,"--ifo"))
         {
             (*N)++;
             *ifos=XLALRealloc(*ifos,*N*sizeof(char *));
@@ -446,10 +435,12 @@ void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, ProcessPar
 (--lalinspiralinjection)      Enables injections via the LALInspiral package\n\
 (--inj-fref)                    Reference frequency for parameters in injection XML (default 100Hz)\n\
 (--inj-lambda1)                 value of lambda1 to be injected, LALSimulation only (0)\n\
-(--inj-lambda2)                 value of lambda1 to be injected, LALSimulation only (0)\n\
+(--inj-lambda2)                 value of lambda2 to be injected, LALSimulation only (0)\n\
+(--inj-lambdaT                  value of lambdaT to be injected (0)\n\
+(--inj-dlambdaT                  value of dlambdaT to be injected (0)\n\
 (--inj-spinOrder PNorder)           Specify twice the PN order (e.g. 5 <==> 2.5PN) of spin effects to use, only for LALSimulation (default: -1 <==> Use all spin effects).\n\
 (--inj-tidalOrder PNorder)          Specify twice the PN order (e.g. 10 <==> 5PN) of tidal effects to use, only for LALSimulation (default: -1 <==> Use all tidal effects).\n\
-(--snrpath) 			Set a folder where to write a file with the SNRs being injected\n\
+(--snrpath) 		              	Set a folder where to write a file with the SNRs being injected\n\
 (--0noise)                      Sets the noise realisation to be identically zero (for the fake caches above only)\n"
 
 
@@ -513,7 +504,6 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
         }
         LALInferenceParseCharacterOptionString(LALInferenceGetProcParamVal(commandLine,"--cache")->value,&caches,&Ncache);
         ppt=LALInferenceGetProcParamVal(commandLine,"--ifo");
-        if(!ppt) ppt=LALInferenceGetProcParamVal(commandLine,"--IFO");
         LALInferenceParseCharacterOptionString(ppt->value,&IFOnames,&Nifo);
 
         ppt=LALInferenceGetProcParamVal(commandLine,"--flow");
@@ -2586,11 +2576,11 @@ void LALInferenceInjectionToVariables(SimInspiralTable *theEventTable, LALInfere
   LALInferenceAddVariable(vars, "mass1", &m1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
   LALInferenceAddVariable(vars, "mass2", &m2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
   LALInferenceAddVariable(vars, "chirpmass", &chirpmass, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-  LALInferenceAddVariable(vars, "asym_massratio", &q, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+  LALInferenceAddVariable(vars, "q", &q, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
   LALInferenceAddVariable(vars, "time", &injGPSTime, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
   LALInferenceAddVariable(vars, "distance", &dist, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
   LALInferenceAddVariable(vars, "inclination", &inclination, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-  LALInferenceAddVariable(vars, "theta_JN", &inclination, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+  LALInferenceAddVariable(vars, "theta_jn", &inclination, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
   LALInferenceAddVariable(vars, "polarisation", &(psi), LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
   LALInferenceAddVariable(vars, "phase", &phase, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
   LALInferenceAddVariable(vars, "declination", &dec, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);

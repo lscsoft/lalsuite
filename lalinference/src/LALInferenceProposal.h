@@ -120,7 +120,6 @@ extern const char *const drawApproxPriorName;
 extern const char *const skyReflectDetPlaneName;
 extern const char *const skyRingProposalName;
 extern const char *const PSDFitJumpName;
-extern const char *const rotateSpinsName;
 extern const char *const polarizationPhaseJumpName;
 extern const char *const polarizationCorrPhaseJumpName;
 extern const char *const extrinsicParamProposalName;
@@ -252,10 +251,6 @@ REAL8 NSWrapMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariable
 REAL8 LALInferenceGlitchMorletProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 REAL8 LALInferenceGlitchMorletReverseJump(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 REAL8 LALInferencePSDFitJump(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
-
-/** Rotate each spin by random angles about L. */
-REAL8 LALInferenceRotateSpins(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
-
 /**
  * Uses a kD tree containing the previously-output points to propose
  * the next sample.  The proposal chooses a stored point at random,

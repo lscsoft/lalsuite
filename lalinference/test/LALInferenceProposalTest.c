@@ -333,8 +333,8 @@ void initVariables(LALInferenceRunState *state)
 	LALInferenceAddMinMaxPrior(priorArgs,	"chirpmass",	&mcMin,	&mcMax,		LALINFERENCE_REAL8_t);
 	
 	tmpVal=gsl_rng_uniform(RNG);
-	LALInferenceAddVariable(currentParams, "asym_massratio",       &tmpVal,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-	LALInferenceAddMinMaxPrior(priorArgs,	"asym_massratio",	&qMin,	&qMax,	LALINFERENCE_REAL8_t);
+	LALInferenceAddVariable(currentParams, "q",       &tmpVal,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+	LALInferenceAddMinMaxPrior(priorArgs,	"q",	&qMin,	&qMax,	LALINFERENCE_REAL8_t);
 	endtime=gsl_rng_uniform(RNG)*dt+endtime-0.5*dt;
 	LALInferenceAddVariable(currentParams, "time",            &endtime   ,           LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR); 
 	tmpMin=endtime-0.5*dt; tmpMax=endtime+0.5*dt;
