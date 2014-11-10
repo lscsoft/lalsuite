@@ -250,7 +250,6 @@ static REAL8 LALInferenceSplineCalibrationPrior(LALInferenceRunState *runState, 
     ifo = ifo->next;
   } while (ifo);
 
->>>>>>> updated glitch model, change 1j to I in likelihood
   return logPrior;
 }
 
