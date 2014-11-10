@@ -31,6 +31,7 @@ import math
 import datetime
 import shelve
 import struct
+import gzip
 from optparse import OptionParser
 import subprocess as sp
 
@@ -714,7 +715,7 @@ include one posterior sample file for each IFO.")
     Bkdata.append(os.path.join(Bkfiles[i], 'finehet_' + pname + '_' + ifo))
 
     # check files exist if not then skip the pulsar
-    if not os.path.isfile(Bkdata[i]):
+    if not os.path.isfile(Bkdata[i]) and not os.path.isfile(Bkdata[i]+'.gz'):
       print >> sys.stderr, "No heterodyne file %s" % Bkdata[i]
       sys.exit(0)
 
@@ -747,8 +748,8 @@ include one posterior sample file for each IFO.")
 
   f1 = par['F1']
   if not f1:
-    print >> sys.stderr, "No F1 value in par file %s" % parfile
-    sys.exit(0)
+    print >> sys.stderr, "No F1 value in par file %s, setting to zero" % parfile
+    f1 = 0.
 
   print 'Results for pulsar ' + pname
 
@@ -970,6 +971,12 @@ function toggle(id) {
 
   for i, ifo in enumerate(ifos):
     Bkdata.append(Bkfiles[i] + '/finehet_' + pname + '_' + ifo)
+    # check file exists
+    if not os.path.isfile(Bkdata[i]):
+      Bkdata[i] = Bkdata[i]+'.gz' # try gzipped file
+      if not os.path.isfile(Bkdata[i]):
+        print >> sys.stderr, "Error... could not find Bk data file %s" % Bkdata[i]
+
   asdtime = 14400 # set time over which to produce the asds
 
   Bkfigs, psdfigs, fscanfigs, asdlist = pppu.plot_Bks_ASDs( Bkdata, ifos, \
@@ -1382,9 +1389,15 @@ priorh0cifigname['png'], priorcifigname['png'], priorcifigname['png']))
   for i, ifo in enumerate(ifos):
     # get the start time, end time and length from the heterodyned data file
     st = et = None
-    st = (sp.Popen(['head', '-1', Bkdata[i]], stdout=sp.PIPE).communicate()[0]).split()[0]
-    et = (sp.Popen(['tail', '-1', Bkdata[i]], stdout=sp.PIPE).communicate()[0]).split()[0]
-    lt.append(float((sp.Popen(['wc', '-l', Bkdata[i]], stdout=sp.PIPE).communicate()[0]).split()[0])*60)
+    if '.gz' not in Bkdata[i]: # just use Popen to get data from heterodyne file
+      st = (sp.Popen(['head', '-1', Bkdata[i]], stdout=sp.PIPE).communicate()[0]).split()[0]
+      et = (sp.Popen(['tail', '-1', Bkdata[i]], stdout=sp.PIPE).communicate()[0]).split()[0]
+      lt.append(float((sp.Popen(['wc', '-l', Bkdata[i]], stdout=sp.PIPE).communicate()[0]).split()[0])*60)
+    else: # otherwise if gzipped we'll have to open the file
+      bkd = np.loadtxt(Bkdata[i])
+      st = bkd[0,0]
+      et = bkd[-1,0]
+      lt.append(float(len(bkd))*60.)
 
     # duty cycle
     dc = 100.*lt[i]/(float(et)-float(st))
