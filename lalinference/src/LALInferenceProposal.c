@@ -2503,9 +2503,9 @@ REAL8 LALInferenceGlitchMorletReverseJump(LALInferenceRunState *runState, LALInf
   REAL8 qyx      = 0.0; //log pixel proposals
   REAL8 qxy      = 0.0;
 
-  REAL8 pForward; //combined p() & q() probabilities for ...
-  REAL8 pReverse; //...RJMCMC hastings ratio
-
+  REAL8 pForward     = 0.0; //combined p() & q() probabilities for ...
+  REAL8 pReverse     = 0.0; //...RJMCMC hastings ratio
+  REAL8 logPropRatio = 0.0;
   gsl_matrix *params = NULL;
 
   /* Copy parameter structures and get local pointers to glitch parameters */
@@ -2528,11 +2528,18 @@ REAL8 LALInferenceGlitchMorletReverseJump(LALInferenceRunState *runState, LALInf
 
   /* Choose birth or death move */
   draw = gsl_rng_uniform(runState->GSLrandom);
-  if( (draw < 0.5 && nx < nmax) || nx == nmin ) rj = 1;
+  if(draw < 0.5) rj = 1;
   else rj = -1;
 
-  //find dimension of proposed model
+  /* find dimension of proposed model */
   ny = nx + rj;
+
+  /* Check that new dimension is allowed */
+  if(ny<nmin || ny>=nmax)
+  {
+    logPropRatio = -DBL_MAX;
+    return logPropRatio;
+  }
 
   switch(rj)
   {
@@ -2645,7 +2652,7 @@ REAL8 LALInferenceGlitchMorletReverseJump(LALInferenceRunState *runState, LALInf
   pForward = qxy + qx;
   pReverse = qyx + qy;
 
-  REAL8 logPropRatio = pForward-pReverse;
+  logPropRatio = pForward-pReverse;
 
   return logPropRatio;
 }

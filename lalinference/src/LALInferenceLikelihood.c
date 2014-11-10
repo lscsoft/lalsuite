@@ -198,27 +198,6 @@ LALInferenceVariables LALInferenceGetInstrinsicParams(LALInferenceVariables *cur
     return intrinsicParams;
 }
 
-
-INT4 LALInferenceLineSwitch(INT4 lineFlag, INT4 Nlines, INT4 *lines_array, INT4 *widths_array, INT4 i)
-{
-    INT4 lineimin = 0;
-    INT4 lineimax = 0;
-    INT4 lineSwitch=1;
-    INT4 j;
-
-    if(lineFlag) {
-        for(j=0;j<Nlines;j++) {
-            //find range of fourier fourier bins which are excluded from integration
-            lineimin = lines_array[j] - widths_array[j];
-            lineimax = lines_array[j] + widths_array[j];
-
-            //if the current bin is inside the exluded region, set the switch to 0
-            if(i>lineimin && i<lineimax) lineSwitch=0;
-        }
-    }
-    return lineSwitch;
-}
-
 /* Check to see if item is in the NULL-terminated array.
  If so, return 1. Otherwise, add it to the array and return 0
  */
@@ -853,7 +832,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
       COMPLEX16 plainTemplate = Fplus*(*hptilde)+Fcross*(*hctilde);
       
       /* Do time shifting */
-      template = plainTemplate * (re + 1j*im);
+      template = plainTemplate * (re + I*im);
         
       if (spcal_active) {
           calF = calFactor->data->data[i];
@@ -870,7 +849,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
         /* fourier amplitudes of glitches */
         glitchReal = gsl_matrix_get(glitchFD,ifo,2*i);
         glitchImag = gsl_matrix_get(glitchFD,ifo,2*i+1);
-        COMPLEX16 glitch = glitchReal + 1j*glitchImag;
+        COMPLEX16 glitch = glitchReal + I*glitchImag;
         diff -=glitch*deltaT;
 
       }//end glitch subtraction
