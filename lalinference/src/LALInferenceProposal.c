@@ -3772,7 +3772,7 @@ void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceRunState *runState
 REAL8 LALInferenceClusteredKDEProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams) {
     REAL8 logPropRatio;
 
-    logPropRatio = LALInferenceStoredClusterKDEProposal(runState, currentParams, proposedParams, NULL);
+    logPropRatio = LALInferenceStoredClusteredKDEProposal(runState, currentParams, proposedParams, NULL);
 
     return logPropRatio;
 }
@@ -3791,7 +3791,7 @@ REAL8 LALInferenceClusteredKDEProposal(LALInferenceRunState *runState, LALInfere
  *                              density at \a proposedParams.
  * @return proposal_ratio    The (log) proposal ratio for maintaining detailed balance
  */
-REAL8 LALInferenceStoredClusterKDEProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams, REAL8 *propDensity) {
+REAL8 LALInferenceStoredClusteredKDEProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams, REAL8 *propDensity) {
     const char *propName = (const char *) clusteredKDEProposalName;
     REAL8 cumulativeWeight, totalWeight;
     REAL8 logPropRatio = 0.0;
@@ -3833,12 +3833,12 @@ REAL8 LALInferenceStoredClusterKDEProposal(LALInferenceRunState *runState, LALIn
     }
 
     /* Draw a sample and fill the proposedParams variable with the parameters described by the KDE */
-    REAL8 *current = XLALCalloc(1, kde->dimension * sizeof(REAL8));
+    REAL8 *current = XLALCalloc(kde->dimension, sizeof(REAL8));
     REAL8 *proposed = LALInferenceKmeansDraw(kde->kmeans);
 
     INT4 i=0;
     for (item = kde->params->head; item; item = item->next) {
-        if (item->vary != LALINFERENCE_PARAM_FIXED && item->vary != LALINFERENCE_PARAM_OUTPUT) {
+        if (LALInferenceCheckVariableNonFixed(kde->params, item->name)) {
             current[i] = *(REAL8 *) LALInferenceGetVariable(currentParams, item->name);
             LALInferenceSetVariable(proposedParams, item->name, &(proposed[i]));
             i++;

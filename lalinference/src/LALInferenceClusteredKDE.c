@@ -1044,8 +1044,7 @@ REAL8 *LALInferenceKmeansDraw(LALInferenceKmeans *kmeans) {
 
     INT4 cluster = 0;
     REAL8 cumulativeWeight = kmeans->weights[cluster];
-    while ((cumulativeWeight < randomDraw)
-            || (cumulativeWeight == 0.0)) {
+    while (cumulativeWeight < randomDraw) {
         cluster++;
         cumulativeWeight += kmeans->weights[cluster];
     }

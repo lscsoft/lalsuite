@@ -313,7 +313,7 @@ void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceRunState *runState
 
 /* A proposal based on the clustered kernal density estimate of a set of samples. */
 REAL8 LALInferenceClusteredKDEProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
-REAL8 LALInferenceStoredClusterKDEProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams, REAL8 *propDensity);
+REAL8 LALInferenceStoredClusteredKDEProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams, REAL8 *propDensity);
 
 /* Initialize a clustered-KDE proposal. */
 void LALInferenceInitClusteredKDEProposal(LALInferenceRunState *runState, LALInferenceClusteredKDE *kde, REAL8 *array, INT4 nSamps, LALInferenceVariables *params, const char *name, REAL8 weight, LALInferenceKmeans* (*cluster_method)(gsl_matrix*, INT4, gsl_rng*), INT4 cyclic_reflective, INT4 ntrials);

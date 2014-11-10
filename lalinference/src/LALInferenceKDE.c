@@ -297,7 +297,7 @@ REAL8 LALInferenceKDEEvaluatePoint(LALInferenceKDE *kde, REAL8 *point) {
     INT4 npts = kde->npts;
     INT4 i, j, p;
     INT4 n_evals = 1;  // Number of evaluations to be done
-    REAL8 min, max, val;
+    REAL8 min, max, width, val;
 
     /* If the normalization is infinite, don't bother calculating anything */
     if (isinf(kde->log_norm_factor))
@@ -332,11 +332,11 @@ REAL8 LALInferenceKDEEvaluatePoint(LALInferenceKDE *kde, REAL8 *point) {
     gsl_matrix *points = gsl_matrix_alloc(n_evals, dim);
     gsl_matrix_set_row(points, 0, &x.vector);
 
-    p = 0;
     i = 1;
-    while (p < dim) {
+    for (p = 0; p < dim; p++) {
         min = kde->lower_bounds[p];
         max = kde->upper_bounds[p];
+        width = max - min;
         val = gsl_vector_get(&x.vector, p);
 
         if (kde->lower_bound_types[p] == LALINFERENCE_PARAM_LINEAR) {
@@ -354,15 +354,13 @@ REAL8 LALInferenceKDEEvaluatePoint(LALInferenceKDE *kde, REAL8 *point) {
         if (kde->lower_bound_types[p] == LALINFERENCE_PARAM_CIRCULAR &&
                 kde->upper_bound_types[p] == LALINFERENCE_PARAM_CIRCULAR) {
             gsl_matrix_set_row(points, i, &x.vector);
-            gsl_matrix_set(points, i, p, min + (max - val));
+            gsl_matrix_set(points, i, p, val + width);
             i++;
 
             gsl_matrix_set_row(points, i, &x.vector);
-            gsl_matrix_set(points, i, p, max - (val - min));
+            gsl_matrix_set(points, i, p, val - width);
             i++;
         }
-
-        p++;
     }
 
     /* Loop over list of reflected and cycled points */
@@ -426,7 +424,7 @@ REAL8 LALInferenceKDEEvaluatePoint(LALInferenceKDE *kde, REAL8 *point) {
 REAL8 *LALInferenceDrawKDESample(LALInferenceKDE *kde, gsl_rng *rng) {
     INT4 dim = kde->dim;
     INT4 j, p;
-    REAL8 min, max;
+    REAL8 min, max, width;
     REAL8 val, offset;
     INT4 within_bounds = 0;
 
@@ -459,11 +457,12 @@ REAL8 *LALInferenceDrawKDESample(LALInferenceKDE *kde, gsl_rng *rng) {
         for (p = 0; p < dim; p++) {
             min = kde->lower_bounds[p];
             max = kde->upper_bounds[p];
+            width = max - min;
 
             if (point[p] < min) {
                 offset = min - point[p];
                 if (kde->lower_bound_types[p] == LALINFERENCE_PARAM_CIRCULAR)
-                    point[p] = max - offset;
+                    point[p] += width;
                 else if (kde->lower_bound_types[p] == LALINFERENCE_PARAM_LINEAR)
                     point[p] = min + offset;
                 else if (kde->lower_bound_types[p] == LALINFERENCE_PARAM_FIXED)
@@ -472,7 +471,7 @@ REAL8 *LALInferenceDrawKDESample(LALInferenceKDE *kde, gsl_rng *rng) {
             } else if (point[p] > max) {
                 offset = point[p] - max;
                 if (kde->upper_bound_types[p] == LALINFERENCE_PARAM_CIRCULAR)
-                    point[p] = min + offset;
+                    point[p] -= width;
                 else if (kde->upper_bound_types[p] == LALINFERENCE_PARAM_LINEAR)
                     point[p] = max - offset;
                 else if (kde->upper_bound_types[p] == LALINFERENCE_PARAM_FIXED)
