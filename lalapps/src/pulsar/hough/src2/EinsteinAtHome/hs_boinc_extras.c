@@ -232,6 +232,9 @@ void mytime(void) {
 
 /*^* global VARIABLES *^*/
 
+/** E@H lal debug level */
+unsigned int eah_lal_debug_level = EAH_LALDEBUGLEVEL;
+
 /** the cpu type, see cpu_type_features.h */
 int global_cpu_type;
 
@@ -1455,16 +1458,24 @@ int main(int argc, char**argv) {
       if ( 1 == fscanf(fp_debug, "%d", &read_int ) ) 
 	{
 	  LogPrintf (LOG_NORMAL, "...containing int: Setting lalDebugLevel -> %d\n", read_int );
+	  eah_lal_debug_level = read_int;
 	}
       else
 	{
 	  LogPrintf (LOG_NORMAL, "...with no parsable int: Setting lalDebugLevel -> 1\n");
+	  eah_lal_debug_level = 1;
 	}
       fclose (fp_debug);
 
     } /* if DEBUG_LEVEL_FNAME file found */
 
-  
+  {
+    char buf[8];
+    if (setenv("LAL_DEBUG_LEVEL", myultoa(eah_lal_debug_level, buf, 8), 1)) {
+      LogPrintf(LOG_CRITICAL,"ERROR: couldn't set LAL_DEBUG_LEVEL env: %d\n", errno);
+    }
+  }
+
 #if defined(__GNUC__)
   /* see if user has created a DEBUG_DDD_FNAME file: turn on debuggin using 'ddd' */
   if ((fp_debug=fopen("../../" DEBUG_DDD_FNAME, "r")) || (fp_debug=fopen("./" DEBUG_DDD_FNAME, "r")) ) 
