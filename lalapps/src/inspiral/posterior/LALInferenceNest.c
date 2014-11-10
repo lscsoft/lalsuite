@@ -38,6 +38,7 @@
 #include <lal/LALInferenceTemplate.h>
 #include <lal/LALInferenceProposal.h>
 #include <lal/LALInferenceInit.h>
+#include <lal/LALInferenceCalibrationErrors.h>
 
 LALInferenceRunState *initialize(ProcessParamsTable *commandLine);
 void initializeNS(LALInferenceRunState *runState);
@@ -413,6 +414,8 @@ Arguments for each section follow:\n\n";
 		exit(0);
         }
 
+  /* Apply calibration errors if desired*/
+  LALInferenceApplyCalibrationErrors(state,procParams);
 	/* Call setupLivePointsArray() to populate live points structures */
 	LALInferenceSetupLivePointsArray(state);
 

@@ -39,6 +39,7 @@
 #include <lal/LALInferenceReadData.h>
 #include <lal/LALInferenceInit.h>
 #include <lalapps.h>
+#include <lal/LALInferenceCalibrationErrors.h>
 
 #include <mpi.h>
 
@@ -287,7 +288,8 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
     fprintf(stdout, " ==== LALInferenceInjectInspiralSignal(): started. ====\n");
     LALInferenceInjectInspiralSignal(irs->data,commandLine);
     fprintf(stdout, " ==== LALInferenceInjectInspiralSignal(): finished. ====\n");
-
+    /* Apply calibration errors if desired*/
+    LALInferenceApplyCalibrationErrors(irs,commandLine);
     ifoPtr = irs->data;
     while (ifoPtr) {
         nifo++;

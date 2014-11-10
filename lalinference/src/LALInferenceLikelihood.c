@@ -493,10 +493,22 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
   REAL8Vector *phases = NULL;
 
   UINT4 spcal_active = 0;
+  REAL8 calamp=0.0;
+  REAL8 calpha=0.0;
+  REAL8 cos_calpha=cos(calpha);
+  REAL8 sin_calpha=sin(calpha);
+  UINT4 constantcal_active=0;
+
   if (LALInferenceCheckVariable(currentParams, "spcal_active") && (*(UINT4 *)LALInferenceGetVariable(currentParams, "spcal_active"))) {
     spcal_active = 1;
   }
-
+  if (LALInferenceCheckVariable(currentParams, "constantcal_active") && (*(UINT4 *)LALInferenceGetVariable(currentParams, "constantcal_active"))) {
+   constantcal_active = 1;
+  }
+  if (spcal_active && constantcal_active){
+    fprintf(stderr,"ERROR: cannot use spline and constant calibration error marginalization together. Exiting...\n");
+    exit(1);
+  }
   REAL8 degreesOfFreedom=2.0;
   REAL8 chisq=0.0;
   /* margphi params */
@@ -715,27 +727,44 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
 
         /* Template is now in model->timeFreqhPlus and hCross */
 
-	/* Calibration stuff if necessary */
-	if (spcal_active) {
-	  snprintf(freqVarName, VARNAME_MAX, "%s_spcal_freq", dataPtr->name);
-	  snprintf(ampVarName, VARNAME_MAX, "%s_spcal_amp", dataPtr->name);
-	  snprintf(phaseVarName, VARNAME_MAX, "%s_spcal_phase", dataPtr->name);
+        /* Calibration stuff if necessary */
+        /*spline*/
+        if (spcal_active) {
+          snprintf(freqVarName, VARNAME_MAX, "%s_spcal_freq", dataPtr->name);
+          snprintf(ampVarName, VARNAME_MAX, "%s_spcal_amp", dataPtr->name);
+          snprintf(phaseVarName, VARNAME_MAX, "%s_spcal_phase", dataPtr->name);
 
-	  freqs = *(REAL8Vector **)LALInferenceGetVariable(currentParams, freqVarName);
-	  amps = *(REAL8Vector **)LALInferenceGetVariable(currentParams, ampVarName);
-	  phases = *(REAL8Vector **)LALInferenceGetVariable(currentParams, phaseVarName);
+          freqs = *(REAL8Vector **)LALInferenceGetVariable(currentParams, freqVarName);
+          amps = *(REAL8Vector **)LALInferenceGetVariable(currentParams, ampVarName);
+          phases = *(REAL8Vector **)LALInferenceGetVariable(currentParams, phaseVarName);
 
-	  if (calFactor == NULL) {
-	    calFactor = XLALCreateCOMPLEX16FrequencySeries("calibration factors", 
-							   &(dataPtr->freqData->epoch),
-							   0, dataPtr->freqData->deltaF,
-							   &lalDimensionlessUnit,
-							   dataPtr->freqData->data->length);
-	  }
+          if (calFactor == NULL) {
+            calFactor = XLALCreateCOMPLEX16FrequencySeries("calibration factors", 
+                       &(dataPtr->freqData->epoch),
+                       0, dataPtr->freqData->deltaF,
+                       &lalDimensionlessUnit,
+                       dataPtr->freqData->data->length);
+          }
 
-	  LALInferenceSplineCalibrationFactor(freqs, amps, phases, calFactor);
-	}
-
+          LALInferenceSplineCalibrationFactor(freqs, amps, phases, calFactor);
+        }
+        /*constant*/
+        if (constantcal_active){
+          char CA_A[10]="";
+          sprintf(CA_A,"%s_%s","calamp",dataPtr->name);
+          if (LALInferenceCheckVariable(currentParams, CA_A))
+            calamp=(*(REAL8*) LALInferenceGetVariable(currentParams, CA_A));
+          else
+            calamp=0.0; 
+          char CP_A[10]="";
+          sprintf(CP_A,"%s_%s","calpha",dataPtr->name);
+          if (LALInferenceCheckVariable(currentParams, CP_A))
+            calpha=(*(REAL8*) LALInferenceGetVariable(currentParams, CP_A));
+          else
+            calpha=0.0; 
+          cos_calpha=cos(calpha);
+          sin_calpha=-sin(calpha);
+        }
         /* determine beam pattern response (F_plus and F_cross) for given Ifo: */
         XLALComputeDetAMResponse(&Fplus, &Fcross, (const REAL4(*)[3])dataPtr->detector->response, ra, dec, psi, gmst);
 
@@ -746,14 +775,6 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
         timeshift =  (GPSdouble - (*(REAL8*) LALInferenceGetVariable(model->params, "time"))) + timedelay;
 
         twopit    = LAL_TWOPI * timeshift;
-
-        if (LALInferenceCheckVariable(currentParams, "crazyInjectionHLSign") &&
-            *((INT4 *)LALInferenceGetVariable(currentParams, "crazyInjectionHLSign"))) {
-          if (strstr(dataPtr->name, "H") || strstr(dataPtr->name, "L")) {
-            Fplus *= -1.0;
-            Fcross *= -1.0;
-          }
-        }
 
         dataPtr->fPlus = Fplus;
         dataPtr->fCross = Fcross;
@@ -835,6 +856,15 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
       /* Normalise PSD to our funny standard (see twoDeltaTOverN
 	 below). */
       REAL8 sigmasq=(*psd)*deltaT*deltaT;
+      
+      if (constantcal_active) {
+        REAL8 dre_tmp=creal(d)/(1.0+calamp);
+        REAL8 dim_tmp=cimag(d)/(1.0+calamp);
+        dre_tmp= creal(d)*cos_calpha - cimag(d)*sin_calpha;
+        dim_tmp = creal(d)*sin_calpha + cimag(d)*cos_calpha;
+        d=crect(dre_tmp,dim_tmp);
+        sigmasq/=((1.0+calamp)*(1.0+calamp));
+      } 
       
       REAL8 singleFreqBinTerm;
       
@@ -1026,6 +1056,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
   }
   
   //loglikelihood = -1.0 * chisquared; // note (again): the log-likelihood is unnormalised!
+  //printf("%10.10e\n",loglikelihood);
   return(loglikelihood);
 }
 

@@ -28,6 +28,7 @@ pkginclude_HEADERS = \
 	LALInferenceInit.h \
 	LALInferenceVCSInfoHeader.h \
 	LALInferenceRemoveLines.h \
+	LALInferenceCalibrationErrors.h \
 	$(BAYESTARHDR) \
 	$(XMLHDR)
 
@@ -45,6 +46,7 @@ liblalinference_la_SOURCES = \
 	LALInferenceInitCBC.c \
 	LALInferenceVCSInfo.c \
 	LALInferenceRemoveLines.c \
+	LALInferenceCalibrationErrors.c \
 	logaddexp.h \
 	$(BAYESTARSRC) \
 	$(XMLSRC)

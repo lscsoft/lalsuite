@@ -37,6 +37,7 @@
 #include <lal/LALInferenceTemplate.h>
 #include <lal/LALInferenceProposal.h>
 #include <lal/LALInferenceInit.h>
+#include <lal/LALInferenceCalibrationErrors.h>
 
 #ifdef PARALLEL
 #include <mpi.h>
@@ -521,6 +522,8 @@ Initialisation arguments:\n\
 
         irs->currentLikelihood=LALInferenceNullLogLikelihood(irs->data);
         printf("Null Log Likelihood: %g\n", irs->currentLikelihood);
+        /* Apply calibration errors if desired*/
+        LALInferenceApplyCalibrationErrors(irs,commandLine);
     }
     else
     {
