@@ -305,6 +305,7 @@ void init_sampler(LALInferenceRunState *run_state) {
     ProcessParamsTable *ppt = NULL;
     FILE *devrandom;
     struct timeval tv;
+    REAL8 timestamp;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
@@ -441,6 +442,10 @@ void init_sampler(LALInferenceRunState *run_state) {
     if (LALInferenceGetProcParamVal(command_line, "--benchmark"))
         benchmark = 1;
 
+    /* Get reference time */
+    gettimeofday(&tv, NULL);
+    timestamp = tv.tv_sec + tv.tv_usec/1E6;
+
     /* Initialize a random number generator. */
     gsl_rng_env_setup();
     run_state->GSLrandom = gsl_rng_alloc(gsl_rng_mt19937);
@@ -522,6 +527,9 @@ void init_sampler(LALInferenceRunState *run_state) {
 
     LALInferenceAddVariable(algorithm_params, "benchmark", &benchmark,
                             LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
+
+    LALInferenceAddVariable(algorithm_params, "timestamp_epoch", &timestamp,
+                            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
 
     LALInferenceAddVariable(algorithm_params, "random_seed", &randomseed,
                             LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);

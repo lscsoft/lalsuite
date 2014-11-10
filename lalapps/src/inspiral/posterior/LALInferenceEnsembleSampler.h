@@ -42,10 +42,10 @@ INT4 walker_step(LALInferenceRunState *run_state,
                     LALInferenceModel *model,
                     LALInferenceVariables *current_params,
                     LALInferenceVariables *proposed_params,
-                    REAL8 *current_prior,
-                    REAL8 *current_likelihood,
+                    REAL8 *current_prior, REAL8 *current_likelihood,
                     REAL8 *current_prop_density,
-                    INT4 walker);
+                    REAL8 *proposed_prior, REAL8 *proposed_likelihood,
+                    REAL8 *proposed_prop_density);
 
 /** Update the ensemble proposal from the ensemble's current state */
 void ensemble_update(LALInferenceRunState *run_state);
@@ -56,40 +56,35 @@ void parallel_incremental_kmeans(LALInferenceRunState *run_state,
                                     INT4 cyclic_reflective);
 
 /* Data IO routines */
-char* init_ensemble_output(LALInferenceRunState *run_state,
-                            INT4 walker,
-                            INT4 walker_offset,
-                            INT4 verbose);
+FILE* init_ensemble_output(LALInferenceRunState *run_state,
+                            INT4 verbose,
+                            INT4 rank);
 
-void print_ensemble_sample(LALInferenceRunState *run_state,
-                            char **walker_output_names,
-                            INT4 walker);
+void print_samples(LALInferenceRunState *run_state,
+                    FILE *output,
+                    REAL8* prop_priors,
+                    REAL8* prop_likelihoods,
+                    REAL8* prop_densities,
+                    REAL8* acceptance_rates,
+                    INT4 rank);
 
-void print_evidence_sample(LALInferenceRunState *run_state,
-                            REAL8 logprior,
-                            REAL8 logl,
-                            REAL8 prop_density,
-                            INT4 walker);
+void print_evidence(LALInferenceRunState *run_state,
+                            FILE *output,
+                            REAL8* logprior,
+                            REAL8* logl,
+                            REAL8* prop_density);
 
 void print_proposed_sample(LALInferenceRunState *run_state,
                             LALInferenceVariables *proposed_params,
                             INT4 walker,
                             INT4 accepted);
 
-void print_acceptance_rate(LALInferenceRunState *run_state,
-                            INT4 *naccepts,
-                            INT4 step);
-
 char* ensemble_output_name(LALInferenceRunState *run_state,
                             const char *out_type,
-                            INT4 walker);
+                            INT4 rank);
 
-void print_ensemble_header(LALInferenceRunState *run_state,
-                            FILE *walker_output,
-                            INT4 walker);
-
-void print_evidence_header(LALInferenceRunState *run_state,
-                            INT4 walker);
+FILE* print_ensemble_header(LALInferenceRunState *run_state,
+                            INT4 rank);
 
 void print_proposal_header(LALInferenceRunState *run_state,
-                            INT4 walker);
+                            INT4 rank);
