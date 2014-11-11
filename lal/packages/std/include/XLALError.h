@@ -20,6 +20,7 @@
 #ifndef XLALERROR_H
 #define XLALERROR_H
 
+#include <stdlib.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <lal/LALAtomicDatatypes.h>
@@ -708,6 +709,19 @@ void XLALError(const char *func,
  */
 #define XLAL_ERROR_REAL8(...) XLAL_ERROR_VAL(XLAL_REAL8_FAIL_NAN, __VA_ARGS__)
 
+/**
+ * \brief Macro to invoke a failure from a C <tt>main()</tt> routine.
+ *
+ * Prototype <b>XLAL_ERROR_MAIN(errnum [, fmt [, ...]])</b>
+ *
+ * \b Parameters:<ul>
+ * <li> \b errnum The XLAL error number to set.
+ * <li> \b fmt (Optional) Format string for additional error information.
+ * <li> \b ... (Optional) Additional arguments for printf-like format.
+ * </ul>
+ */
+#define XLAL_ERROR_MAIN(...) XLAL_ERROR_VAL(EXIT_FAILURE, __VA_ARGS__)
+
 
 /**
  * \brief Macro to test an assertion; if it is not true, invoke the
@@ -819,6 +833,22 @@ void XLALError(const char *func,
  */
 #define XLAL_CHECK_REAL8(assertion, ...) \
 	XLAL_CHECK_VAL(XLAL_REAL8_FAIL_NAN, assertion, __VA_ARGS__)
+
+/**
+ * \brief Macro to test an assertion and invoke a failure if it is not true
+ * in a C <tt>main()</tt> routine.
+ *
+ * Prototype: <b>XLAL_CHECK_MAIN(assertion, errnum [, fmt [, ...]])</b>
+ *
+ * \b Parameters:<ul>
+ * <li> \b assertion The assertion to test.
+ * <li> \b errnum The XLAL error number to set if the assertion is false.
+ * <li> \b fmt (Optional) Format string for additional error information.
+ * <li> \b ... (Optional) Additional arguments for printf-like format.
+ * </ul>
+ */
+#define XLAL_CHECK_MAIN(assertion, ...) \
+	XLAL_CHECK_VAL(EXIT_FAILURE, assertion, __VA_ARGS__)
 
 
 /*@}*/
