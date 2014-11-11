@@ -575,9 +575,6 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
     else
       GPSdouble = XLALGPSGetREAL8(&(data->freqData->epoch));
 
-    /* figure out GMST: */
-    XLALGPSSetREAL8(&GPSlal, GPSdouble);
-    gmst=XLALGreenwichMeanSiderealTime(&GPSlal);
     
     // Add phase parameter set to 0 for calculation
     if(margphi ){
@@ -603,7 +600,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
     deltaT = data->timeData->deltaT;
     REAL8 epoch = XLALGPSGetREAL8(&(data->freqData->epoch));
     REAL8 desired_tc = epoch + (time_length-1)*deltaT - 2.0;
-    (void) desired_tc;
+    GPSdouble = desired_tc;
     
     dh_S_tilde = XLALCreateCOMPLEX16Vector(time_length);
     dh_S = XLALCreateCOMPLEX16Vector(time_length);
@@ -615,6 +612,10 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
       dh_S_tilde->data[i] = 0.0;
     }
   }
+  
+  /* figure out GMST: */
+  XLALGPSSetREAL8(&GPSlal, GPSdouble);
+  gmst=XLALGreenwichMeanSiderealTime(&GPSlal);
 
   chisquared = 0.0;
   REAL8 loglikelihood = 0.0;
