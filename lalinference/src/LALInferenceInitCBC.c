@@ -328,10 +328,6 @@ void LALInferenceRegisterUniformVariableREAL8(LALInferenceRunState *state, LALIn
       exit(1);
     }
   if (!strcmp(name,"q")){
-    REAL8 mMin,mMax,MTotMax;
-    mMin=*(REAL8*)LALInferenceGetVariable(state->priorArgs, "component_min");
-    mMax=*(REAL8*)LALInferenceGetVariable(state->priorArgs, "component_max");
-    MTotMax=*(REAL8*)LALInferenceGetVariable(state->priorArgs, "MTotMax");
     REAL8 qMin=min;
     REAL8 qMax=max;
     
