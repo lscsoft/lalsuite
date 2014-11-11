@@ -324,32 +324,39 @@ static int MismatchAgeBrakeTest(
 
 }
 
-#define CHECK(test) XLAL_CHECK_VAL(EXIT_FAILURE, (test) == XLAL_SUCCESS, XLAL_EFUNC)
-
 int main(void) {
 
   // Perform basic tests
-  CHECK(BasicTest(1, LATTICE_TYPE_CUBIC,    92));
-  CHECK(BasicTest(1, LATTICE_TYPE_ANSTAR,   92));
-  CHECK(BasicTest(2, LATTICE_TYPE_CUBIC,   175));
-  CHECK(BasicTest(2, LATTICE_TYPE_ANSTAR,  144));
-  CHECK(BasicTest(3, LATTICE_TYPE_CUBIC,   580));
-  CHECK(BasicTest(3, LATTICE_TYPE_ANSTAR,  341));
-  CHECK(BasicTest(4, LATTICE_TYPE_CUBIC,  2811));
-  CHECK(BasicTest(4, LATTICE_TYPE_ANSTAR,  810));
+  XLAL_CHECK_MAIN(BasicTest(1, LATTICE_TYPE_CUBIC,    92) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(1, LATTICE_TYPE_ANSTAR,   92) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(2, LATTICE_TYPE_CUBIC,   175) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(2, LATTICE_TYPE_ANSTAR,  144) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(3, LATTICE_TYPE_CUBIC,   580) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(3, LATTICE_TYPE_ANSTAR,  341) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(4, LATTICE_TYPE_CUBIC,  2811) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(4, LATTICE_TYPE_ANSTAR,  810) == XLAL_SUCCESS, XLAL_EFUNC);
 
   // Perform mismatch tests with a square parameter space
-  CHECK(MismatchSquareTest(LATTICE_TYPE_CUBIC,  0.03,     0,     0, 21460, Z1_A1s_mism_hist));
-  CHECK(MismatchSquareTest(LATTICE_TYPE_CUBIC,  2e-4, -2e-9,     0, 23763,     Z2_mism_hist));
-  CHECK(MismatchSquareTest(LATTICE_TYPE_CUBIC,  1e-4, -1e-9, 1e-17, 19565,     Z3_mism_hist));
-  CHECK(MismatchSquareTest(LATTICE_TYPE_ANSTAR, 0.03,     0,     0, 21460, Z1_A1s_mism_hist));
-  CHECK(MismatchSquareTest(LATTICE_TYPE_ANSTAR, 2e-4, -2e-9,     0, 18657,    A2s_mism_hist));
-  CHECK(MismatchSquareTest(LATTICE_TYPE_ANSTAR, 1e-4, -2e-9, 2e-17, 18735,    A3s_mism_hist));
+  XLAL_CHECK_MAIN(MismatchSquareTest(LATTICE_TYPE_CUBIC,  0.03,     0,     0, 21460, Z1_A1s_mism_hist)
+                  == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(MismatchSquareTest(LATTICE_TYPE_CUBIC,  2e-4, -2e-9,     0, 23763,     Z2_mism_hist)
+                  == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(MismatchSquareTest(LATTICE_TYPE_CUBIC,  1e-4, -1e-9, 1e-17, 19565,     Z3_mism_hist)
+                  == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(MismatchSquareTest(LATTICE_TYPE_ANSTAR, 0.03,     0,     0, 21460, Z1_A1s_mism_hist)
+                  == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(MismatchSquareTest(LATTICE_TYPE_ANSTAR, 2e-4, -2e-9,     0, 18657,    A2s_mism_hist)
+                  == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(MismatchSquareTest(LATTICE_TYPE_ANSTAR, 1e-4, -2e-9, 2e-17, 18735,    A3s_mism_hist)
+                  == XLAL_SUCCESS, XLAL_EFUNC);
 
   // Perform mismatch tests with an age--braking index parameter space
-  CHECK(MismatchAgeBrakeTest(LATTICE_TYPE_ANSTAR, 100, 4.0e-5, 37889, A3s_mism_hist));
-  CHECK(MismatchAgeBrakeTest(LATTICE_TYPE_ANSTAR, 200, 1.5e-5, 37212, A3s_mism_hist));
-  CHECK(MismatchAgeBrakeTest(LATTICE_TYPE_ANSTAR, 300, 1.0e-5, 37043, A3s_mism_hist));
+  XLAL_CHECK_MAIN(MismatchAgeBrakeTest(LATTICE_TYPE_ANSTAR, 100, 4.0e-5, 37889, A3s_mism_hist)
+                  == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(MismatchAgeBrakeTest(LATTICE_TYPE_ANSTAR, 200, 1.5e-5, 37212, A3s_mism_hist)
+                  == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(MismatchAgeBrakeTest(LATTICE_TYPE_ANSTAR, 300, 1.0e-5, 37043, A3s_mism_hist)
+                  == XLAL_SUCCESS, XLAL_EFUNC);
 
   return EXIT_SUCCESS;
 
