@@ -335,15 +335,15 @@ void LALInferenceRegisterUniformVariableREAL8(LALInferenceRunState *state, LALIn
     REAL8 qMin=min;
     REAL8 qMax=max;
     
-    if (qMin <= 0.0 || qMin < mMin/mMax || qMin < mMin/(MTotMax-mMin) || qMin > 1.0)
+    if (qMin <= 0.0 || qMin > 1.0)
     {
-      fprintf(stderr,"ERROR: invalid qMin ( max{0,mMin/mMax,mMin/(MTotMax-mMin) < q < 1.0} )");
-      exit(1);
+        fprintf(stderr,"ERROR: qMin must be between 0 and 1, got value qMin=%f\n",qMin);
+		exit(1);
     }
-    if (qMax > 1.0 || qMax <= 0.0 || qMax < mMin/mMax || qMax < mMin/(MTotMax-mMin))
+    if (qMax > 1.0 || qMax <0.0 || qMax < qMin)
     {
-      fprintf(stderr,"ERROR: invalid qMax ( max{0,mMin/mMax,mMin/(MTotMax-mMin) < q < 1.0} )");
-      exit(1);
+      fprintf(stderr,"ERROR: qMax must be between 0 and 1, and qMax > qMin. Got value qMax=%f, qMin=%f\n",qMax,qMin);
+	  exit(1);
     }
   }
   /*End of mass parameters check */
