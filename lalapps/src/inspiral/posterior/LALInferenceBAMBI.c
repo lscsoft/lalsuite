@@ -668,7 +668,7 @@ void initializeMN(LALInferenceRunState *runState)
         initializeMalmquistPrior(runState);
     } else {
         runState->prior = &LALInferenceInspiralPrior;
-        runState->CubeToPrior = &LALInferenceInspiralPriorCubeToPrior;
+        runState->CubeToPrior = &LALInferenceInspiralCubeToPrior;
     }
 
     if (LALInferenceGetProcParamVal(commandLine, "--correlatedGaussianLikelihood") ||
