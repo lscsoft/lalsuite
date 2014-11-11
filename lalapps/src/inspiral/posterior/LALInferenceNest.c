@@ -391,28 +391,28 @@ Arguments for each section follow:\n\n";
 	LALInferenceInitModelFunction initModelFunc=NULL;
 	if(LALInferenceGetProcParamVal(procParams,"--correlatedGaussianLikelihood"))
 		initModelFunc=&LALInferenceInitModelReviewEvidence;
-        else if(LALInferenceGetProcParamVal(procParams,"--bimodalGaussianLikelihood"))
-                initModelFunc=&LALInferenceInitModelReviewEvidence_bimod;
-        else if(LALInferenceGetProcParamVal(procParams,"--rosenbrockLikelihood"))
-                initModelFunc=&LALInferenceInitModelReviewEvidence_banana;
+  else if(LALInferenceGetProcParamVal(procParams,"--bimodalGaussianLikelihood"))
+    initModelFunc=&LALInferenceInitModelReviewEvidence_bimod;
+  else if(LALInferenceGetProcParamVal(procParams,"--rosenbrockLikelihood"))
+    initModelFunc=&LALInferenceInitModelReviewEvidence_banana;
 	else
 		initModelFunc=&LALInferenceInitCBCModel;
 	state->initModel=initModelFunc;
 	state->model = initModelFunc(state);
-    state->currentParams = XLALMalloc(sizeof(LALInferenceVariables));
-    memset(state->currentParams, 0, sizeof(LALInferenceVariables));
-    LALInferenceCopyVariables(state->model->params, state->currentParams);
-    state->templt = state->model->templt;
+  state->currentParams = XLALMalloc(sizeof(LALInferenceVariables));
+  memset(state->currentParams, 0, sizeof(LALInferenceVariables));
+  LALInferenceCopyVariables(state->model->params, state->currentParams);
+  state->templt = state->model->templt;
 
-        /* Choose the likelihood */
-        LALInferenceInitLikelihood(state);
-    
-       /* Print command line arguments if help requested */
-        if(LALInferenceGetProcParamVal(state->commandLine,"--help"))
-        {
-                fprintf(stdout,"%s",help);
-		exit(0);
-        }
+      /* Choose the likelihood */
+      LALInferenceInitLikelihood(state);
+
+     /* Print command line arguments if help requested */
+      if(LALInferenceGetProcParamVal(state->commandLine,"--help"))
+      {
+              fprintf(stdout,"%s",help);
+  exit(0);
+      }
 
   /* Apply calibration errors if desired*/
   LALInferenceApplyCalibrationErrors(state,procParams);

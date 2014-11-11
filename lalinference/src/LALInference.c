@@ -1103,8 +1103,6 @@ void LALInferenceTranslateExternalToInternalParamName(char *outName, const char 
     strcpy(outName, "phase");
   } else if (!strcmp(inName, "psi")) {
     strcpy(outName, "polarisation");
-  } else if (!strcmp(inName, "iota")) {
-    strcpy(outName, "inclination");
   } else if (!strcmp(inName, "theta_jn")) {
     strcpy(outName, "theta_jn");
   } else if (!strcmp(inName, "phi_jl")) {
@@ -1824,10 +1822,6 @@ char *colNameToParamName(const char *colName) {
 
   else if (!strcmp(colName, "ra")) {
     retstr=XLALStringDuplicate("rightascension");
-  }
-
-  else if (!strcmp(colName, "iota")) {
-    retstr=XLALStringDuplicate("inclination");
   }
 
   else if (!strcmp(colName, "psi")) {
