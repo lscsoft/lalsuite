@@ -2639,10 +2639,15 @@ void LALInferencePrintInjectionSample(LALInferenceRunState *runState)
       theEventTable->next = NULL;
     }
 
+    LALPNOrder *order=LALInferenceGetVariable(runState->currentParams,"LAL_PNORDER");
+    Approximant *approx=LALInferenceGetVariable(runState->currentParams,"LAL_APPROXIMANT");
+
+    if(!(approx && order)){
+      fprintf(stdout,"Unable to print injection sample: No approximant/PN order set\n");
+      return;
+    }
     /* Save old variables */
     LALInferenceCopyVariables(runState->currentParams,&backup);
-    LALPNOrder *order=LALInferenceGetVariable(&backup,"LAL_PNORDER");
-    Approximant *approx=LALInferenceGetVariable(&backup,"LAL_APPROXIMANT");
     /* Fill named variables */
     LALInferenceInjectionToVariables(theEventTable,runState->currentParams);
 
@@ -2698,7 +2703,8 @@ void LALInferencePrintInjectionSample(LALInferenceRunState *runState)
     fprintf(outfile,"\n");
     LALInferencePrintSample(outfile,runState->currentParams);
     fclose(outfile);
-    
+    LALInferenceCopyVariables(&backup,runState->currentParams);
+    LALInferenceClearVariables(&backup);
     return;
 }
 

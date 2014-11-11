@@ -1271,13 +1271,13 @@ INT4 LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
                LALInferenceAddVariable(runState->currentParams,"deltalogL",(void *)&tmp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
             }
             ifo=0;
-            while(data)
+            while(data && runState->model->ifo_loglikelihoods)
             {
-               tmp=runState->model->ifo_loglikelihoods[ifo] - data->nullloglikelihood;
-               sprintf(tmpName,"deltalogl%s",data->name);
-               LALInferenceAddVariable(runState->currentParams,tmpName,&tmp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
-               ifo++;
-               data=data->next;
+              tmp=runState->model->ifo_loglikelihoods[ifo] - data->nullloglikelihood;
+              sprintf(tmpName,"deltalogl%s",data->name);
+              LALInferenceAddVariable(runState->currentParams,tmpName,&tmp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+              ifo++;
+              data=data->next;
             }
     }
     
