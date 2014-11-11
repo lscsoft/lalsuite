@@ -116,7 +116,7 @@ converterr=os.path.join(outerlogdir,'samples2injection-$(cluster)-$(process)-$(n
 convertout=os.path.join(outerlogdir,'samples2injection-$(cluster)-$(process)-$(node).out')
 
 if opts.injections:
-        injfile=opts.injections
+        injfile=os.path.abspath(opts.injections)
 else:
         injfile=os.path.join(rundir,'priorsamples.xml')
 approx=prior_cp.get('engine','approx')
@@ -139,9 +139,6 @@ prior2injnode.add_var_opt('flow',flow) # TODO: Read from somewhere
 prior2injnode.add_var_opt('amporder',amporder)
 prior2injnode.add_var_arg(priorfile)
 prior2injnode.add_parent(priordagnode)
-if not opts.injections:
-    outerdag.add_node(priordagnode)
-    outerdag.add_node(prior2injnode)
 
 # Create the pipeline based on the injections
 #main_cp.set('input','injection-file',injfile)
@@ -151,12 +148,16 @@ maindag=pipe_utils.LALInferencePipelineDAG(main_cp,dax=opts.dax,site=opts.grid_s
 maindag.set_dag_file(os.path.join(maindir,'lalinference_pipeline'))
 maindagjob=pipeline.CondorDAGManJob(maindag.get_dag_file(),dir=maindir)
 maindagnode=pipeline.CondorDAGManNode(maindagjob)
-maindagnode.add_parent(prior2injnode)
 maindag.config.set('input','injection-file',injfile)
 for i in range(int(opts.trials)):
   ev=pipe_utils.Event(trig_time=trig_time,event_id=i)
   e=maindag.add_full_analysis(ev)
 outerdag.add_node(maindagnode)
+
+if not opts.injections:
+    outerdag.add_node(priordagnode)
+    outerdag.add_node(prior2injnode)
+    maindagnode.add_parent(prior2injnode)
 
 # Get a list of posterior samples files
 resultspagenodes=filter(lambda n: isinstance(n, pipe_utils.ResultsPageNode), maindag.get_nodes())
