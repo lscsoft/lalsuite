@@ -397,7 +397,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state)
                ------------------------------------------------------------------------------------------------------------------\n\
                You can generally have MCMC chains to start from a given parameter value by using --parname VALUE. Names currently known to the code are:\n\
                  time                         Waveform time (overrides random about trigtime).\n\
-                 chirpmss                     Chirpmass\n\
+                 chirpmas                     Chirpmass\n\
                  eta                          Symmetric massratio (needs --use-eta)\n\
                  q                            Asymmetric massratio (a.k.a. q=m2/m1 with m1>m2)\n\
                  phase                        Coalescence phase.\n\
