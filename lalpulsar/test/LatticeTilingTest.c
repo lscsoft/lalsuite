@@ -141,29 +141,16 @@ static int BasicTest(
 
 static int MismatchTest(
   LatticeTiling* tiling,
-  const double Tspan,
+  gsl_matrix* metric,
+  const double max_mismatch,
   const LatticeType lattice,
   const size_t total_ref,
   const double mism_hist_ref[MISM_HIST_BINS+1]
   )
 {
 
-  // Set metric to the spindown metric
-  gsl_matrix* GAMAT(metric, 3, 3);
-  for (size_t i = 0; i < metric->size1; ++i) {
-    for (size_t j = i; j < metric->size2; ++j) {
-      gsl_matrix_set(metric, i, j, (
-                       4.0 * LAL_PI * LAL_PI * pow(Tspan, i + j + 2) * (i + 1) * (j + 1)
-                       ) / (
-                         LAL_FACT[i + 1] * LAL_FACT[j + 1] * (i + 2) * (j + 2) * (i + j + 3)
-                         ));
-      gsl_matrix_set(metric, j, i, gsl_matrix_get(metric, i, j));
-    }
-  }
-
   // Set lattice and metric
   printf("Lattice type: %u\n", lattice);
-  const double max_mismatch = 0.3;
   XLAL_CHECK(XLALSetLatticeTypeAndMetric(tiling, lattice, metric, max_mismatch) == XLAL_SUCCESS, XLAL_EFUNC);
 
   // Build lookup table required by XLALNearestLatticePoints()
@@ -291,8 +278,22 @@ static int MismatchSquareTest(
                == XLAL_SUCCESS, XLAL_EFUNC);
   }
 
+  // Set metric to the spindown metric
+  gsl_matrix* GAMAT(metric, 3, 3);
+  for (size_t i = 0; i < metric->size1; ++i) {
+    for (size_t j = i; j < metric->size2; ++j) {
+      const double Tspan = 432000;
+      gsl_matrix_set(metric, i, j, (
+                       4.0 * LAL_PI * LAL_PI * pow(Tspan, i + j + 2) * (i + 1) * (j + 1)
+                       ) / (
+                         LAL_FACT[i + 1] * LAL_FACT[j + 1] * (i + 2) * (j + 2) * (i + j + 3)
+                         ));
+      gsl_matrix_set(metric, j, i, gsl_matrix_get(metric, i, j));
+    }
+  }
+
   // Perform mismatch test
-  XLAL_CHECK(MismatchTest(tiling, 432000, lattice, total_ref, mism_hist_ref) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK(MismatchTest(tiling, metric, 0.3, lattice, total_ref, mism_hist_ref) == XLAL_SUCCESS, XLAL_EFUNC);
 
   return XLAL_SUCCESS;
 
@@ -317,8 +318,22 @@ static int MismatchAgeBrakeTest(
   XLAL_CHECK(XLALSetLatticeF1DotAgeBrakingBound(tiling, 0, 1, 1e11, 2, 5) == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK(XLALSetLatticeF2DotBrakingBound(tiling, 0, 1, 2, 2, 5) == XLAL_SUCCESS, XLAL_EFUNC);
 
+  // Set metric to the spindown metric
+  gsl_matrix* GAMAT(metric, 3, 3);
+  for (size_t i = 0; i < metric->size1; ++i) {
+    for (size_t j = i; j < metric->size2; ++j) {
+      const double Tspan = 1036800;
+      gsl_matrix_set(metric, i, j, (
+                       4.0 * LAL_PI * LAL_PI * pow(Tspan, i + j + 2) * (i + 1) * (j + 1)
+                       ) / (
+                         LAL_FACT[i + 1] * LAL_FACT[j + 1] * (i + 2) * (j + 2) * (i + j + 3)
+                         ));
+      gsl_matrix_set(metric, j, i, gsl_matrix_get(metric, i, j));
+    }
+  }
+
   // Perform mismatch test
-  XLAL_CHECK(MismatchTest(tiling, 1036800, lattice, total_ref, mism_hist_ref) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK(MismatchTest(tiling, metric, 0.3, lattice, total_ref, mism_hist_ref) == XLAL_SUCCESS, XLAL_EFUNC);
 
   return XLAL_SUCCESS;
 
