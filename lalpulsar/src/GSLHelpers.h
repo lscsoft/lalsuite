@@ -69,15 +69,14 @@
     } \
   } while (0)
 
-#define CALL_GSL_VAL(val, ...)		_CALL_GSL_VAL_1(val, __VA_ARGS__, "")
-#define _CALL_GSL_VAL_1(val, call, ...)	_CALL_GSL_VAL_2(val, call, "" __VA_ARGS__)
-#define _CALL_GSL_VAL_2(val, call, fmt, ...) \
+#define CALL_GSL_VAL(val, ...)		CALL_GSL_VAL_(val, __VA_ARGS__, NULL, NULL)
+#define CALL_GSL_VAL_(val, call, fmt, ...) \
   do { \
     int GH_retn = 0; \
     XLAL_CALLGSL(GH_retn = (call)); \
     if (GH_retn != 0) { \
-      if ((fmt)[0] != '\0') { \
-        XLAL_ERROR_VAL(val, XLAL_EFAILED, fmt "%.0s", __VA_ARGS__ ""); \
+      if (fmt != NULL) { \
+        XLAL_ERROR_VAL(val, XLAL_EFAILED, fmt, __VA_ARGS__, NULL); \
       } else { \
         XLAL_ERROR_VAL(val, XLAL_EFAILED, #call " failed: %s", gsl_strerror(GH_retn)); \
       } \
