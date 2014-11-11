@@ -23,6 +23,7 @@ Setup a DAG to run an end-to-end lalinference test:
 parser=OptionParser(usage)
 parser.add_option("-r","--run-path",default='./',action="store",type="string",help="Directory to run pipeline in (default: $PWD)",metavar="RUNDIR")
 parser.add_option("-p","--daglog-path",default=None,action="store",type="string",help="Path to directory to contain DAG log file. SHOULD BE LOCAL TO SUBMIT NODE",metavar="LOGDIR")
+parser.add_option("-I","--injections",default=None,action="store",type="string",help="Path to injection file, will bypass the prior-sampling stage",metavar="injections.xml")
 parser.add_option("-x", "--dax",action="store_true",default=False, help="Delete the ligo_data_find jobs and populate frame LFNs in the DAX")
 parser.add_option("-G", "--grid-site",action="store",type="string",metavar="SITE", help="Specify remote site in conjunction with --dax option. e.g. --grid-site=creamce for Bologna cluster.\
 Supported options are: creamce and local",default=None)
@@ -105,7 +106,6 @@ priordag=pipe_utils.LALInferencePipelineDAG(prior_cp,dax=opts.dax,site=opts.grid
 priordag.set_dag_file(os.path.join(priordir,'lalinference_priorsample'))
 priordagjob=pipeline.CondorDAGManJob(priordag.get_dag_file(),dir=priordir)
 priordagnode=pipeline.CondorDAGManNode(priordagjob)
-outerdag.add_node(priordagnode)
 # Find the output file
 pagenode=filter(lambda n:isinstance(n,pipe_utils.ResultsPageNode), priordag.get_nodes())[0]
 priorfile=pagenode.get_pos_file()
@@ -114,7 +114,11 @@ priorfile=pagenode.get_pos_file()
 convertsub=os.path.join(rundir,'samples2injections.sub')
 converterr=os.path.join(outerlogdir,'samples2injection-$(cluster)-$(process)-$(node).err')
 convertout=os.path.join(outerlogdir,'samples2injection-$(cluster)-$(process)-$(node).out')
-injfile=os.path.join(rundir,'priorsamples.xml')
+
+if opts.injections:
+        injfile=opts.injections
+else:
+        injfile=os.path.join(rundir,'priorsamples.xml')
 approx=prior_cp.get('engine','approx')
 prior2injexe=prior_cp.get('condor','pos_to_sim_inspiral')
 prior2injjob=pipeline.CondorDAGJob('vanilla',prior2injexe)
@@ -135,7 +139,9 @@ prior2injnode.add_var_opt('flow',flow) # TODO: Read from somewhere
 prior2injnode.add_var_opt('amporder',amporder)
 prior2injnode.add_var_arg(priorfile)
 prior2injnode.add_parent(priordagnode)
-outerdag.add_node(prior2injnode)
+if not opts.injections:
+    outerdag.add_node(priordagnode)
+    outerdag.add_node(prior2injnode)
 
 # Create the pipeline based on the injections
 #main_cp.set('input','injection-file',injfile)
@@ -203,9 +209,10 @@ outerdag.write_dag()
 outerdag.write_script()
 #os.chdir(olddir)
 
-priordag.write_sub_files()
-priordag.write_dag()
-priordag.write_script()
+if not opts.injections:
+    priordag.write_sub_files()
+    priordag.write_dag()
+    priordag.write_script()
 
 maindag.write_sub_files()
 maindag.write_dag()
