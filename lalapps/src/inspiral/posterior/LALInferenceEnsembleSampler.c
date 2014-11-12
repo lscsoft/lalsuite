@@ -451,7 +451,7 @@ void print_proposed_sample(LALInferenceRunState *run_state,
 void print_evidence(LALInferenceRunState *run_state,
                             FILE *output,
                             REAL8* logprior,
-                            REAL8* logl,
+                            REAL8* loglike,
                             REAL8* prop_density) {
     INT4 walker, nwalkers_per_thread;
     REAL8 *ratios;
@@ -462,12 +462,12 @@ void print_evidence(LALInferenceRunState *run_state,
 
     ratios = XLALCalloc(nwalkers_per_thread, sizeof(REAL8));
     for (walker = 0; walker < nwalkers_per_thread; walker++)
-        ratios[walker] = logprior[walker] + logl[walker] - prop_density[walker];
+        ratios[walker] = logprior[walker] + loglike[walker] - prop_density[walker];
 
     evidence = log_add_exps(ratios, nwalkers_per_thread) - log((REAL8)nwalkers_per_thread);
 
     for (walker = 0; walker < nwalkers_per_thread; walker++)
-        std += pow(logprior[walker] + logl[walker] - prop_density[walker] - evidence, 2.0);
+        std += pow(logprior[walker] + loglike[walker] - prop_density[walker] - evidence, 2.0);
 
     std = sqrt(std)/nwalkers_per_thread;
 

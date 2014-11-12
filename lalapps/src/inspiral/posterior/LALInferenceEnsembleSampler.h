@@ -71,7 +71,7 @@ void print_samples(LALInferenceRunState *run_state,
 void print_evidence(LALInferenceRunState *run_state,
                             FILE *output,
                             REAL8* logprior,
-                            REAL8* logl,
+                            REAL8* loglike,
                             REAL8* prop_density);
 
 void print_proposed_sample(LALInferenceRunState *run_state,
