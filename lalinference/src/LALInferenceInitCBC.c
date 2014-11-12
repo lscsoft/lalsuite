@@ -886,6 +886,10 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state)
       LALInferenceRegisterUniformVariableREAL8(state, model->params, "phase", zero, phiMin, phiMax, LALINFERENCE_PARAM_CIRCULAR);
     }
 
+  /* Check for distance prior for use if the user samples in logdistance */
+  if((ppt=LALInferenceGetProcParamVal(commandLine,"--distance-max"))) Dmax=atof(ppt->value);
+  if((ppt=LALInferenceGetProcParamVal(commandLine,"--distance-min"))) Dmin=atof(ppt->value);
+
   if(LALInferenceGetProcParamVal(commandLine,"--use-logdistance")){
     LALInferenceRegisterUniformVariableREAL8(state, model->params, "logdistance", zero, log(Dmin), log(Dmax),LALINFERENCE_PARAM_LINEAR);
   } else {
