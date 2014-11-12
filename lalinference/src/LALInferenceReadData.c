@@ -2663,13 +2663,6 @@ void LALInferencePrintInjectionSample(LALInferenceRunState *runState)
             LALInferenceAddVariable(runState->currentParams,"time_max",&time_max,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
     }
 
-    if(order && approx){
-      /* Set the waveform to the one used in the analysis */
-      LALInferenceRemoveVariable(runState->currentParams,"LAL_APPROXIMANT");
-      LALInferenceRemoveVariable(runState->currentParams,"LAL_PNORDER");
-      LALInferenceAddVariable(runState->currentParams,"LAL_PNORDER",order,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
-      LALInferenceAddVariable(runState->currentParams,"LAL_APPROXIMANT",approx,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
-    }
     REAL8 injPrior = runState->prior(runState,runState->currentParams,runState->model);
     LALInferenceAddVariable(runState->currentParams,"logPrior",&injPrior,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
     int errnum=0;
