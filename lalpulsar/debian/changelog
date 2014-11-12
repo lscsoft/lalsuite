@@ -1,3 +1,9 @@
+lalpulsar (1.10.3-2) unstable; urgency=low
+
+  * add lalxml dependencies
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Wed, 12 Nov 2014 09:29:31 -0600
+
 lalpulsar (1.10.3-1) unstable; urgency=low
 
   * LALPulsar 1.10.3
