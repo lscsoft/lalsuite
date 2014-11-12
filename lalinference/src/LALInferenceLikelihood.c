@@ -905,19 +905,21 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
     
     switch(marginalisationflags)
     {
-      case GAUSSIAN:
-      case STUDENTT:
-      {
-        loglikelihood += model->ifo_loglikelihoods[ifo];
-      }
-      case MARGTIME:
-        break; /* Placeholder for any code that needs to go at end of
+    case GAUSSIAN:
+    case STUDENTT:
+      loglikelihood += model->ifo_loglikelihoods[ifo];
+      break;
+    case MARGTIME:
+      break; /* Placeholder for any code that needs to go at end of
 		  IFO loop */
-      case MARGTIMEPHI:
-        break; /* Placeholder for any code that needs to go at end of
+    case MARGPHI:
+      break; /* Placeholder for any code that needs to go at end of
 		  IFO loop */
-      default:
-        break;
+    case MARGTIMEPHI:
+      break; /* Placeholder for any code that needs to go at end of
+		  IFO loop */
+    default:
+      break;
     }
 
    /* Clean up calibration if necessary */
