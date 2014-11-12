@@ -1,4 +1,5 @@
 /*
+*  Copyright (C) 2014 Karl Wette
 *  Copyright (C) 2013 Jolien Creighton
 *
 *  This program is free software; you can redistribute it and/or modify
@@ -30,6 +31,22 @@
 #else
 # define _LAL_RESTRICT_
 # define _LAL_INLINE_
+#endif
+
+/* macros for compiler-specific pragmas and attributes */
+#if __STDC_VERSION__ >= 199901L || defined(__GNUG__)
+# define _LAL_PRAGMA_(X) _Pragma(#X) do { } while (0)
+#else
+# define _LAL_PRAGMA_(X) do { } while (0)
+#endif
+#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 7))
+# define _LAL_GCC_DIAGNOSTIC_(X) _LAL_PRAGMA_(GCC diagnostic X); do { } while (0)
+# define _LAL_GCC_PRINTF_FORMAT_(NFMT, NARG) __attribute__ ((format (printf, NFMT, NARG)))
+# define _LAL_GCC_VPRINTF_FORMAT_(NFMT) __attribute__ ((format (printf, NFMT, 0)))
+#else
+# define _LAL_GCC_DIAGNOSTIC_(X) do { } while (0)
+# define _LAL_GCC_PRINTF_FORMAT_(NFMT, NARG)
+# define _LAL_GCC_VPRINTF_FORMAT_(NFMT)
 #endif
 
 #endif /* _LALSTDDEF_H */

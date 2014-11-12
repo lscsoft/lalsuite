@@ -149,24 +149,24 @@ extern "C" {
  */
 
 /** Prints an error message if error printing is enabled by lalDebugLevel. */
-int XLALPrintError(const char *fmt, ...);
+int XLALPrintError(const char *fmt, ...) _LAL_GCC_PRINTF_FORMAT_(1,2);
 
 /** Prints a warning message if warning printing is enabled by lalDebugLevel. */
-int XLALPrintWarning(const char *fmt, ...);
+int XLALPrintWarning(const char *fmt, ...) _LAL_GCC_PRINTF_FORMAT_(1,2);
 
 /** Prints an info message if info printing is enabled by lalDebugLevel. */
-int XLALPrintInfo(const char *fmt, ...);
+int XLALPrintInfo(const char *fmt, ...) _LAL_GCC_PRINTF_FORMAT_(1,2);
 
 #ifndef SWIG    /* exclude from SWIG interface */
 
 /** Prints an error message if error printing is enabled by lalDebugLevel. */
-int XLALVPrintError(const char *fmt, va_list ap);
+int XLALVPrintError(const char *fmt, va_list ap) _LAL_GCC_VPRINTF_FORMAT_(1);
 
 /** Prints a warning message if warning printing is enabled by lalDebugLevel. */
-int XLALVPrintWarning(const char *fmt, va_list ap);
+int XLALVPrintWarning(const char *fmt, va_list ap) _LAL_GCC_VPRINTF_FORMAT_(1);
 
 /** Prints an info message if info printing is enabled by lalDebugLevel. */
-int XLALVPrintInfo(const char *fmt, va_list ap);
+int XLALVPrintInfo(const char *fmt, va_list ap) _LAL_GCC_VPRINTF_FORMAT_(1);
 
 #endif /* SWIG */
 
@@ -182,21 +182,21 @@ int XLALVPrintInfo(const char *fmt, va_list ap);
  * are enabled by lalDebugLevel).
  */
 void XLALPrintErrorMessage(const char *func, const char *file, int line,
-                           const char *fmt, ...);
+                           const char *fmt, ...) _LAL_GCC_PRINTF_FORMAT_(4,5);
 
 /**
  * Print an warning message with standard XLAL formatting (if warning messages
  * are enabled by lalDebugLevel).
  */
 void XLALPrintWarningMessage(const char *func, const char *file, int line,
-                             const char *fmt, ...);
+                             const char *fmt, ...) _LAL_GCC_PRINTF_FORMAT_(4,5);
 
 /**
  * Print an info message with standard XLAL formatting (if info messages
  * are enabled by lalDebugLevel).
  */
 void XLALPrintInfoMessage(const char *func, const char *file, int line,
-                          const char *fmt, ...);
+                          const char *fmt, ...) _LAL_GCC_PRINTF_FORMAT_(4,5);
 
 #ifndef SWIG    /* exclude from SWIG interface */
 
@@ -205,21 +205,21 @@ void XLALPrintInfoMessage(const char *func, const char *file, int line,
  * are enabled by lalDebugLevel).
  */
 void XLALVPrintErrorMessage(const char *func, const char *file, int line,
-                            const char *fmt, va_list ap);
+                            const char *fmt, va_list ap) _LAL_GCC_VPRINTF_FORMAT_(4);
 
 /**
  * Print an warning message with standard XLAL formatting (if warning messages
  * are enabled by lalDebugLevel).
  */
 void XLALVPrintWarningMessage(const char *func, const char *file, int line,
-                              const char *fmt, va_list ap);
+                              const char *fmt, va_list ap) _LAL_GCC_VPRINTF_FORMAT_(4);
 
 /**
  * Print an error message with standard XLAL formatting (if error messages
  * are enabled by lalDebugLevel).
  */
 void XLALVPrintInfoMessage(const char *func, const char *file, int line,
-                           const char *fmt, va_list ap);
+                           const char *fmt, va_list ap) _LAL_GCC_VPRINTF_FORMAT_(4);
 
 #endif /* SWIG */
 
@@ -638,7 +638,10 @@ void XLALError(const char *func,
 #define XLAL_ERROR_VAL_(val, errnum, fmt, ...) \
 	do { \
 		if (fmt != NULL) { \
+			_LAL_GCC_DIAGNOSTIC_(push); \
+			_LAL_GCC_DIAGNOSTIC_(ignored "-Wformat-extra-args"); \
 			XLAL_PRINT_ERROR(fmt, __VA_ARGS__); \
+			_LAL_GCC_DIAGNOSTIC_(pop); \
 		} \
 		XLALError(__func__, __FILE__, __LINE__, errnum); \
 		return val; \
@@ -745,9 +748,12 @@ void XLALError(const char *func,
 	do { \
 		if (!(assertion)) { \
 			if (fmt != NULL) { \
+				_LAL_GCC_DIAGNOSTIC_(push); \
+				_LAL_GCC_DIAGNOSTIC_(ignored "-Wformat-extra-args"); \
 				XLAL_PRINT_ERROR(fmt, __VA_ARGS__); \
+				_LAL_GCC_DIAGNOSTIC_(pop); \
 			} else { \
-				XLAL_PRINT_ERROR("Check failed: " #assertion); \
+				XLAL_PRINT_ERROR("Check failed: %s", #assertion); \
 			} \
 			XLALError(__func__, __FILE__, __LINE__, errnum); \
 			return val; \
