@@ -180,9 +180,8 @@ int XLALComputeExtraStatsSemiCoherent ( RecalcStatsComponents *recalcStats,		/**
   recalcStats->twoFloudestSeg = 0.0;
 
   /* compute single- and multi-detector Fstats for each data segment and sum up */
-  UINT4 k;
   FstatResults* Fstat_res = NULL;
-  for (k = 0; k < numSegments; k++)
+  for (UINT4 k = 0; k < numSegments; k++)
     {
 
       /* starttime of segment */
@@ -198,17 +197,21 @@ int XLALComputeExtraStatsSemiCoherent ( RecalcStatsComponents *recalcStats,		/**
       sumTwoF  += Fstat_res->twoF[0]; /* sum up multi-detector Fstat for this segment*/
 
       BOOLEAN update_loudest = FALSE;
+      BOOLEAN updated_twoFXloudestSeg[numDetectors];
       if ( recalcParams->loudestSegOutput && ( Fstat_res->twoF[0] > recalcStats->twoFloudestSeg ) )
         {
           update_loudest = TRUE;
           recalcStats->loudestSeg = k;
           recalcStats->twoFloudestSeg = Fstat_res->twoF[0];
+          for (UINT4 Y = 0; Y < numDetectors; Y++) {
+            updated_twoFXloudestSeg[Y] = FALSE;
+          }
         }
 
       /* for each segment, number of detectors with data might be smaller than overall number */
       const UINT4 numDetectorsSeg = Fstat_res->numDetectors;
 
-      /* recompute single-detector Fstats from atoms */
+      /* get single-detector Fstats, with correct detector matching in case of single-IFO segments */
       for (UINT4 X = 0; X < numDetectorsSeg; X++)
         {
 
@@ -219,20 +222,29 @@ int XLALComputeExtraStatsSemiCoherent ( RecalcStatsComponents *recalcStats,		/**
               detid = Y;
             }
           }
-          if ( detid == -1 ) {
-            XLALPrintError ("\nError in function %s, line %d : For segment k=%d, detector X=%d, could not match detector ID %s.\n\n",
-                            __func__, __LINE__, k, X, Fstat_res->detectorNames[X] );
-            XLAL_ERROR ( XLAL_EFAILED );
-          }
+
+          XLAL_CHECK ( detid != -1, XLAL_EFAILED, "For segment k=%d, detector X=%d, could not match detector ID %s.", k, X, Fstat_res->detectorNames[X] );
+
           numSegmentsX[detid] += 1; /* have to keep this for correct averaging */
 
           sumTwoFX[detid] += Fstat_res->twoFPerDet[X][0]; /* sum up single-detector Fstat for this segment*/
 
           if ( update_loudest ) {
-            recalcStats->twoFXloudestSeg[X] = Fstat_res->twoFPerDet[X][0];
+            recalcStats->twoFXloudestSeg[detid] = Fstat_res->twoFPerDet[X][0];
+            updated_twoFXloudestSeg[detid] = TRUE;
           }
 
         } /* for X < numDetectorsSeg */
+
+      /* need to overwrite the twoFXloudestSeg when not all detectors have data in the loudest segment */
+      if ( update_loudest )
+        {
+          for (UINT4 Y = 0; Y < numDetectors; Y++) {
+            if ( !updated_twoFXloudestSeg[Y] ) {
+              recalcStats->twoFXloudestSeg[Y] = 0.0;
+            }
+          }
+        } /* if ( update_loudest ) */
 
     } /* for k < numSegments */
 
