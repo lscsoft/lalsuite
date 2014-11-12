@@ -365,7 +365,8 @@ void print_samples(LALInferenceRunState *run_state,
                     REAL8* prop_densities,
                     REAL8* acceptance_rates,
                     INT4 rank) {
-    REAL8 null_likelihood, timestamp, timestamp_epoch;
+    REAL8 null_likelihood, timestamp_epoch;
+    REAL8 timestamp = 0.0;
     REAL8 *current_priors, *current_likelihoods;
     REAL8 evidence_ratio;
     LALInferenceVariables **current_params;
