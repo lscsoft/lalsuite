@@ -1,3 +1,9 @@
+lalinference (1.4.3-2) unstable; urgency=low
+
+  * add lalxml dependencies
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Wed, 12 Nov 2014 09:34:41 -0600
+
 lalinference (1.4.3-1) unstable; urgency=low
 
   * LALInference 1.4.3
