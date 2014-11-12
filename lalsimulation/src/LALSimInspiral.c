@@ -2730,6 +2730,67 @@ int XLALSimInspiralChooseFDWaveform(
             }
             break;
 
+        case SEOBNRv1_ROM_SingleSpin:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformFlagsIsDefault(waveFlags) )
+                ABORT_NONDEFAULT_WAVEFORM_FLAGS(waveFlags);
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+                ABORT_NONZERO_TRANSVERSE_SPINS(waveFlags);
+            if( !checkTidesZero(lambda1, lambda2) )
+                ABORT_NONZERO_TIDES(waveFlags);
+            if( f_ref != 0.)
+                XLALPrintWarning("XLAL Warning - %s: This approximant does not use f_ref. The reference phase will be defined at coalescence.\n", __func__);
+
+            ret = XLALSimIMRSEOBNRv1ROMSingleSpin(hptilde, hctilde,
+                    phiRef, deltaF, f_min, f_max, f_ref, r, i, m1, m2, XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z));
+            break;
+
+        case SEOBNRv1_ROM_DoubleSpin:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformFlagsIsDefault(waveFlags) )
+                ABORT_NONDEFAULT_WAVEFORM_FLAGS(waveFlags);
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+                ABORT_NONZERO_TRANSVERSE_SPINS(waveFlags);
+            if( !checkTidesZero(lambda1, lambda2) )
+                ABORT_NONZERO_TIDES(waveFlags);
+            if( f_ref != 0.)
+                XLALPrintWarning("XLAL Warning - %s: This approximant does not use f_ref. The reference phase will be defined at coalescence.\n", __func__);
+
+            ret = XLALSimIMRSEOBNRv1ROMDoubleSpin(hptilde, hctilde,
+                    phiRef, deltaF, f_min, f_max, f_ref, r, i, m1, m2, S1z, S2z);
+            break;
+
+        case SEOBNRv2_ROM_SingleSpin:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformFlagsIsDefault(waveFlags) )
+                ABORT_NONDEFAULT_WAVEFORM_FLAGS(waveFlags);
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+                ABORT_NONZERO_TRANSVERSE_SPINS(waveFlags);
+            if( !checkTidesZero(lambda1, lambda2) )
+                ABORT_NONZERO_TIDES(waveFlags);
+            if( f_ref != 0.)
+                XLALPrintWarning("XLAL Warning - %s: This approximant does not use f_ref. The reference phase will be defined at coalescence.\n", __func__);
+
+            ret = XLALSimIMRSEOBNRv2ROMSingleSpin(hptilde, hctilde,
+                    phiRef, deltaF, f_min, f_max, f_ref, r, i, m1, m2, XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z));
+            break;
+
+        case SEOBNRv2_ROM_DoubleSpin:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformFlagsIsDefault(waveFlags) )
+                ABORT_NONDEFAULT_WAVEFORM_FLAGS(waveFlags);
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+                ABORT_NONZERO_TRANSVERSE_SPINS(waveFlags);
+            if( !checkTidesZero(lambda1, lambda2) )
+                ABORT_NONZERO_TIDES(waveFlags);
+            if( f_ref != 0.)
+                XLALPrintWarning("XLAL Warning - %s: This approximant does not use f_ref. The reference phase will be defined at coalescence.\n", __func__);
+
+            ret = XLALSimIMRSEOBNRv2ROMDoubleSpin(hptilde, hctilde,
+                    phiRef, deltaF, f_min, f_max, f_ref, r, i, m1, m2, S1z, S2z);
+            break;
+
+
         case IMRPhenomP:
             /* Waveform-specific sanity checks */
             if( !XLALSimInspiralFrameAxisIsDefault(
@@ -3590,6 +3651,10 @@ int XLALSimInspiralImplementedFDApproximants(
         case IMRPhenomB:
         case IMRPhenomC:
         case IMRPhenomP:
+        case SEOBNRv1_ROM_SingleSpin:
+        case SEOBNRv1_ROM_DoubleSpin:
+        case SEOBNRv2_ROM_SingleSpin:
+        case SEOBNRv2_ROM_DoubleSpin:
         //case TaylorR2F4:
         case TaylorF2:
         case SpinTaylorF2:
@@ -3706,6 +3771,22 @@ int XLALGetApproximantFromString(const CHAR *inString)
   else if ( strstr(inString, "IMRPhenomP" ) )
   {
     return IMRPhenomP;
+  }
+  else if ( strstr(inString, "SEOBNRv1_ROM_SingleSpin" ) )
+  {
+    return SEOBNRv1_ROM_SingleSpin;
+  }
+  else if ( strstr(inString, "SEOBNRv1_ROM_DoubleSpin" ) )
+  {
+    return SEOBNRv1_ROM_DoubleSpin;
+  }
+  else if ( strstr(inString, "SEOBNRv2_ROM_SingleSpin" ) )
+  {
+    return SEOBNRv2_ROM_SingleSpin;
+  }
+  else if ( strstr(inString, "SEOBNRv2_ROM_DoubleSpin" ) )
+  {
+    return SEOBNRv2_ROM_DoubleSpin;
   }
   else if ( strstr(inString, "IMRPhenomFA" ) )
   {
@@ -3876,6 +3957,14 @@ char* XLALGetStringFromApproximant(Approximant approximant)
       return strdup("IMRPhenomC");
     case IMRPhenomP:
       return strdup("IMRPhenomP");
+    case SEOBNRv1_ROM_SingleSpin:
+      return strdup("SEOBNRv1_ROM_SingleSpin");
+    case SEOBNRv1_ROM_DoubleSpin:
+      return strdup("SEOBNRv1_ROM_DoubleSpin");
+    case SEOBNRv2_ROM_SingleSpin:
+      return strdup("SEOBNRv2_ROM_SingleSpin");
+    case SEOBNRv2_ROM_DoubleSpin:
+      return strdup("SEOBNRv2_ROM_DoubleSpin");
     case IMRPhenomFA:
       return strdup("IMRPhenomFA");
     case IMRPhenomFB:
@@ -4113,6 +4202,10 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case SEOBNRv1:
     case SEOBNRv2:
     case SEOBNRv3:
+    case SEOBNRv1_ROM_SingleSpin:
+    case SEOBNRv1_ROM_DoubleSpin:
+    case SEOBNRv2_ROM_SingleSpin:
+    case SEOBNRv2_ROM_DoubleSpin:
     case TaylorR2F4:
     case IMRPhenomFB:
     case FindChirpSP:
@@ -4181,6 +4274,10 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case SEOBNRv1:
     case SEOBNRv2:
     case SEOBNRv3:
+    case SEOBNRv1_ROM_SingleSpin:
+    case SEOBNRv1_ROM_DoubleSpin:
+    case SEOBNRv2_ROM_SingleSpin:
+    case SEOBNRv2_ROM_DoubleSpin:
     case IMRPhenomA:
     case IMRPhenomB:
     case IMRPhenomFA:

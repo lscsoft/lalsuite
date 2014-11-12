@@ -90,6 +90,10 @@ typedef enum {
    SEOBNRv1,		/**< Spin-aligned EOBNR model */
    SEOBNRv2,		/**< Spin-aligned EOBNR model v2 */
    SEOBNRv3,		/**< Spin precessing EOBNR model v3 */
+   SEOBNRv1_ROM_SingleSpin, /**< Single-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv1 See [Purrer:2014fza] */
+   SEOBNRv1_ROM_DoubleSpin, /**< Double-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv1 See [Purrer:2014fza] */
+   SEOBNRv2_ROM_SingleSpin, /**< Single-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv2 */
+   SEOBNRv2_ROM_DoubleSpin, /**< Double-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv2 */
    IMRPhenomA,		/**< Time domain (non-spinning) inspiral-merger-ringdown waveforms generated from the inverse FFT of IMRPhenomFA  */
    IMRPhenomB,		/**< Time domain (non-precessing spins) inspiral-merger-ringdown waveforms generated from the inverse FFT of IMRPhenomFB */
    IMRPhenomFA,		/**< Frequency domain (non-spinning) inspiral-merger-ringdown templates of Ajith et al [Ajith_2007kx] with phenomenological coefficients defined in the Table I of [Ajith_2007xh]*/

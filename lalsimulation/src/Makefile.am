@@ -94,6 +94,10 @@ liblalsimulation_la_SOURCES = \
 	LALSimBurstImg.c \
 	LALSimIMREOBNRv2.c \
 	LALSimIMRSpinAlignedEOB.c \
+	LALSimIMRSEOBNRv1ROMSingleSpin.c \
+	LALSimIMRSEOBNRv1ROMDoubleSpin.c \
+	LALSimIMRSEOBNRv2ROMSingleSpin.c \
+	LALSimIMRSEOBNRv2ROMDoubleSpin.c \
 	LALSimIMRPhenom.c \
 	LALSimIMRPhenomC.c \
 	LALSimIMRPhenomP.c \
