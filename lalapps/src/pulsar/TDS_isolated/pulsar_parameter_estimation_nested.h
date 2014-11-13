@@ -135,7 +135,7 @@ extern "C" {
  *
  * Note: These should be increased if additional model parameters are added.
  */
-#define NUMAMPPARS 8
+#define NUMAMPPARS 15
 
 /**
  * The total number of frequency parameters that can defined a signal e.g.
@@ -162,7 +162,8 @@ extern "C" {
  * recognised within the code.
  */
 static const CHAR amppars[NUMAMPPARS][VARNAME_MAX] = { "h0", "phi0", "psi",
-"cosiota", "C22", "C21", "phi22", "phi21" };
+"cosiota", "C22", "C21", "phi22", "phi21", "hScalarB", "hScalarL", "hVector",
+"gammaVector", "psiVector", "phi0Vector", "phi0Scalar" };
 
 /**
  * A list of the frequency parameters. The names given here are those that are
@@ -232,8 +233,9 @@ void merge_data( COMPLEX16Vector *data, UINT4Vector *segs );
 
 void sum_data( LALInferenceRunState *runState );
 
-void response_lookup_table( REAL8 t0, LALDetAndSource detAndSource,
-                            INT4 timeSteps, REAL8Vector *a, REAL8Vector *b );
+void response_lookup_table( REAL8 t0, LALDetAndSource detNSource, INT4 timeSteps, REAL8Vector *a1,
+                            REAL8Vector *b1, REAL8Vector *a2, REAL8Vector *b2, REAL8Vector *a3,
+                            REAL8Vector *b3 );
 
 void rescale_output( LALInferenceRunState *runState );
 

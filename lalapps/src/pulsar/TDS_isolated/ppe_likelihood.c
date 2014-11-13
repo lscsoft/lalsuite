@@ -47,7 +47,7 @@
 REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *data,
                              LALInferenceModel *get_model ){
   REAL8 loglike = 0.; /* the log likelihood */
-  UINT4 i = 0, ifo = 0;
+  UINT4 i = 0, ifo = 0, nonGR = 0;
   INT4 gaussianLike = 0;
   LALInferenceIFOModel *ifomodeltemp = get_model->ifo;
   LALInferenceIFOData *tempdata = data;
@@ -57,6 +57,8 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
 
   /* get pulsar model (this will internally loop over all data frequency streams and IFOs) */
   get_model->templt( get_model );
+
+  if ( LALInferenceCheckVariable( ifomodeltemp, "nonGR" ) ){ nonGR = 1 };
 
   while ( tempdata ){
     /* check if using a Gaussian likelihood - default is the students-t */
@@ -72,8 +74,14 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
     COMPLEX16 B, M, Ma, Mb;
 
     REAL8Vector *sumDat = NULL;
-    REAL8Vector *sumA = NULL, *sumB = NULL, *sumAB = NULL;
-    COMPLEX16Vector *sumDataA = NULL, *sumDataB = NULL;
+    REAL8Vector *sumP = NULL, *sumC = NULL, *sumX = NULL, *sumY = NULL, *sumB = NULL, *sumL = NULL;
+    REAL8Vector *sumPC = NULL, *sumPX = NULL, *sumPY = NULL, *sumPB = NULL, *sumPL = NULL;
+    REAL8Vector *sumCX = NULL, *sumCY = NULL, *sumCB = NULL, *sumCL = NULL;
+    REAL8Vector *sumXY = NULL, *sumXB = NULL, *sumXL = NULL;
+    REAL8Vector *sumYB = NULL, *sumYL = NULL;
+    REAL8Vector *sumBL = NULL;
+
+    COMPLEX16Vector *sumDataP = NULL, *sumDataC = NULL, *sumDataX = NULL, *sumDataY = NULL, *sumDataB = NULL, *sumDataL = NULL;
     UINT4Vector *chunkLengths = NULL;
     INT4 varyphase = 0;
 
@@ -89,11 +97,39 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
 
     /* get pre-summed antenna pattern values if required */
     if ( !varyphase ){
-      sumA = *(REAL8Vector **)LALInferenceGetVariable( ifomodeltemp->params, "sumA" );
-      sumB = *(REAL8Vector **)LALInferenceGetVariable( ifomodeltemp->params, "sumB" );
-      sumAB = *(REAL8Vector **)LALInferenceGetVariable( ifomodeltemp->params, "sumAB" );
-      sumDataA = *(COMPLEX16Vector **)LALInferenceGetVariable( ifomodeltemp->params, "sumDataA" );
-      sumDataB = *(COMPLEX16Vector **)LALInferenceGetVariable( ifomodeltemp->params, "sumDataB" );
+      sumP = *(REAL8Vector **)LALInferenceGetVariable( ifomodeltemp->params, "sumP" );
+      sumC = *(REAL8Vector **)LALInferenceGetVariable( ifomodeltemp->params, "sumC" );
+      sumPC = *(REAL8Vector **)LALInferenceGetVariable( ifomodeltemp->params, "sumPC" );
+      sumDataP = *(COMPLEX16Vector **)LALInferenceGetVariable( ifomodeltemp->params, "sumDataP" );
+      sumDataC = *(COMPLEX16Vector **)LALInferenceGetVariable( ifomodeltemp->params, "sumDataC" );
+
+      /* get non-GR components */
+      if ( nonGR ){
+        sumX = *(REAL8Vector **)LALInferenceGetVariable( ifomodeltemp->params, "sumX" );
+        sumY = *(REAL8Vector **)LALInferenceGetVariable( ifomodeltemp->params, "sumY" );
+        sumB = *(REAL8Vector **)LALInferenceGetVariable( ifomodeltemp->params, "sumB" );
+        sumL = *(REAL8Vector **)LALInferenceGetVariable( ifomodeltemp->params, "sumL" );
+
+        sumPX = *(REAL8Vector **)LALInferenceGetVariable( ifomodeltemp->params, "sumPX" );
+        sumPY = *(REAL8Vector **)LALInferenceGetVariable( ifomodeltemp->params, "sumPY" );
+        sumPB = *(REAL8Vector **)LALInferenceGetVariable( ifomodeltemp->params, "sumPB" );
+        sumPL = *(REAL8Vector **)LALInferenceGetVariable( ifomodeltemp->params, "sumPL" );
+        sumCX = *(REAL8Vector **)LALInferenceGetVariable( ifomodeltemp->params, "sumCX" );
+        sumCY = *(REAL8Vector **)LALInferenceGetVariable( ifomodeltemp->params, "sumCY" );
+        sumCB = *(REAL8Vector **)LALInferenceGetVariable( ifomodeltemp->params, "sumCB" );
+        sumCL = *(REAL8Vector **)LALInferenceGetVariable( ifomodeltemp->params, "sumCL" );
+        sumXY = *(REAL8Vector **)LALInferenceGetVariable( ifomodeltemp->params, "sumXY" );
+        sumXB = *(REAL8Vector **)LALInferenceGetVariable( ifomodeltemp->params, "sumXB" );
+        sumXL = *(REAL8Vector **)LALInferenceGetVariable( ifomodeltemp->params, "sumXL" );
+        sumYB = *(REAL8Vector **)LALInferenceGetVariable( ifomodeltemp->params, "sumYB" );
+        sumYL = *(REAL8Vector **)LALInferenceGetVariable( ifomodeltemp->params, "sumYL" );
+        sumBL = *(REAL8Vector **)LALInferenceGetVariable( ifomodeltemp->params, "sumBL" );
+
+        sumDataX = *(COMPLEX16Vector **)LALInferenceGetVariable( ifomodeltemp->params, "sumDataX" );
+        sumDataY = *(COMPLEX16Vector **)LALInferenceGetVariable( ifomodeltemp->params, "sumDataY" );
+        sumDataB = *(COMPLEX16Vector **)LALInferenceGetVariable( ifomodeltemp->params, "sumDataB" );
+        sumDataL = *(COMPLEX16Vector **)LALInferenceGetVariable( ifomodeltemp->params, "sumDataL" );
+      }
     }
 
     for( i = 0 ; i < length ; i += chunkLength ){
@@ -123,20 +159,46 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
         }
       }
       else{ /* using pre-summed data */
-        Ma = ifomodeltemp->compTimeSignal->data->data[0];
-        Mb = ifomodeltemp->compTimeSignal->data->data[1];
+        Mp = ifomodeltemp->compTimeSignal->data->data[0];
+        Mc = ifomodeltemp->compTimeSignal->data->data[1];
 
-        sumModel += sumA->data[count]*(creal(Ma)*creal(Ma) + cimag(Ma)*cimag(Ma));
-        sumModel += sumB->data[count]*(creal(Mb)*creal(Mb) + cimag(Mb)*cimag(Mb));
-        sumModel += 2.*sumAB->data[count]*(creal(Ma)*creal(Mb) + cimag(Ma)*cimag(Mb));
+        sumModel += sumP->data[count]*(creal(Mp)*creal(Mp) + cimag(Mp)*cimag(Mp)) +
+                    sumC->data[count]*(creal(Mc)*creal(Mc) + cimag(Mc)*cimag(Mc)) +
+                    2.*sumPC->data[count]*(creal(Mp)*creal(Mc) + cimag(Mp)*cimag(Mc));
 
-        sumDataModel += creal(sumDataA->data[count])*creal(Ma) + cimag(sumDataA->data[count])*cimag(Ma);
-        sumDataModel += creal(sumDataB->data[count])*creal(Mb) + cimag(sumDataB->data[count])*cimag(Mb);
+        sumDataModel += creal(sumDataA->data[count])*creal(Mp) + cimag(sumDataA->data[count])*cimag(Mp) +
+                        creal(sumDataB->data[count])*creal(Mc) + cimag(sumDataB->data[count])*cimag(Mc);
+
+        if ( nonGR ){
+          REAL8 Mx, My, Mb, Ml;
+
+          Mx = ifomodeltemp->compTimeSignal->data->data[2];
+          My = ifomodeltemp->compTimeSignal->data->data[3];
+          Mb = ifomodeltemp->compTimeSignal->data->data[4];
+          Ml = ifomodeltemp->compTimeSignal->data->data[5];
+
+          sumModel += sumX->data[count]*(creal(Mx)*creal(Mx) + cimag(Mx)*cimag(Mx)) +
+                      sumY->data[count]*(creal(My)*creal(My) + cimag(My)*cimag(My)) +
+                      sumB->data[count]*(creal(Mb)*creal(Mb) + cimag(Mb)*cimag(Mb)) +
+                      sumL->data[count]*(creal(Ml)*creal(Ml) + cimag(Ml)*cimag(Ml)) +
+                      2.*(sumPX->data[count]*(creal(Mp)*creal(Mx) + cimag(Mp)*cimag(Mx)) +
+                          sumPY->data[count]*(creal(Mp)*creal(My) + cimag(Mp)*cimag(My)) +
+                          sumPB->data[count]*(creal(Mp)*creal(Mb) + cimag(Mp)*cimag(Mb)) +
+                          sumPL->data[count]*(creal(Mp)*creal(Ml) + cimag(Mp)*cimag(Ml)) +
+                          sumCX->data[count]*(creal(Mc)*creal(Mx) + cimag(Mc)*cimag(Mx)) +
+                          sumCY->data[count]*(creal(Mc)*creal(My) + cimag(Mc)*cimag(My)) +
+                          sumCB->data[count]*(creal(Mc)*creal(Mb) + cimag(Mc)*cimag(Mb)) +
+                          sumCL->data[count]*(creal(Mc)*creal(Ml) + cimag(Mc)*cimag(Ml)) +
+                          sumXY->data[count]*(creal(Mx)*creal(My) + cimag(Mx)*cimag(My)) +
+                          sumXB->data[count]*(creal(Mx)*creal(Mb) + cimag(Mx)*cimag(Mb)) +
+                          sumXL->data[count]*(creal(Mx)*creal(Ml) + cimag(Mx)*cimag(Ml)) +
+                          sumYB->data[count]*(creal(My)*creal(Mb) + cimag(My)*cimag(Mb)) +
+                          sumYL->data[count]*(creal(My)*creal(Ml) + cimag(My)*cimag(Ml)) +
+                          sumBL->data[count]*(creal(Mb)*creal(Ml) + cimag(Mb)*cimag(Ml)));
+        }
      }
 
-      chiSquare = sumDat->data[count];
-      chiSquare -= 2.*sumDataModel;
-      chiSquare += sumModel;
+      chiSquare = sumDat->data[count] - 2.*sumDataModel + sumModel;
 
       if ( !gaussianLike ){ /* using Students-t likelihood */
         logliketmp -= chunkLength*log(chiSquare) + LAL_LN2 * (chunkLength-1.) + gsl_sf_lnfact(chunkLength);

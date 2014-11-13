@@ -198,6 +198,8 @@ LALStringVector *corlist = NULL;
                      file contains a column specifying the noise standard deviation of\n\
                      the data then that will be used in the Gaussian likelihood function,\n\
                      otherwise the noise variance will be calculated from the data.\n"\
+" --nonGR             Set to allow non-GR polarisation modes and/or a variable\n\
+                     speed of gravitational waves.\n"\
 "\n"\
 " Nested sampling parameters:\n"\
 " --Nlive             (INT4) no. of live points for nested sampling\n"\
@@ -918,6 +920,12 @@ detectors specified (no. dets =\%d)\n", ml, ml, numDets);
     LALInferenceAddVariable( ifomodel->params, "freqfactors", &modelFreqFactors, LALINFERENCE_REAL8Vector_t,
                              LALINFERENCE_PARAM_FIXED );
 
+    /* check if using non-GR model */
+    if ( LALInferenceGetProcParamVal( commandLine, "--nonGR" ) ){
+      UINT4 nonGR = 1;
+      LALInferenceAddVariable( ifomodel->params, "nonGR", &nonGR, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
+    }
+
     if( i == 0 ) {
         runState->data = ifodata;
         runState->model->ifo = ifomodel;
@@ -1503,8 +1511,10 @@ void setup_lookup_tables( LALInferenceRunState *runState, LALSource *source ){
   else { timeBins = TIMEBINS; } /* default time bins */
 
   while( ifo_model ){
-    REAL8Vector *aresp = NULL;
-    REAL8Vector *bresp = NULL;
+    REAL8Vector *arespT = NULL, REAL8Vector *brespT = NULL;
+    REAL8Vector *arespV = NULL, REAL8Vector *brespV = NULL;
+    REAL8Vector *arespS = NULL, REAL8Vector *brespS = NULL;
+
     REAL8Vector *sidDayFrac = NULL;
     UINT4 i = 0;
 
@@ -1525,15 +1535,30 @@ void setup_lookup_tables( LALInferenceRunState *runState, LALSource *source ){
     detAndSource.pDetector = data->detector;
     detAndSource.pSource = source;
 
-    aresp = XLALCreateREAL8Vector( timeBins );
-    bresp = XLALCreateREAL8Vector( timeBins );
+    arespT = XLALCreateREAL8Vector( timeBins );
+    brespT = XLALCreateREAL8Vector( timeBins );
+    arespV = XLALCreateREAL8Vector( timeBins );
+    brespV = XLALCreateREAL8Vector( timeBins );
+    arespS = XLALCreateREAL8Vector( timeBins );
+    brespS = XLALCreateREAL8Vector( timeBins );
 
-    response_lookup_table( t0, detAndSource, timeBins, aresp, bresp );
+    response_lookup_table( t0, detAndSource, timeBins, arespT, brespT, arespV, brespV, arespS, brespS );
 
-    LALInferenceAddVariable( ifo_model->params, "a_response", &aresp, LALINFERENCE_REAL8Vector_t,
-                             LALINFERENCE_PARAM_FIXED );
-    LALInferenceAddVariable( ifo_model->params, "b_response", &bresp, LALINFERENCE_REAL8Vector_t,
-                             LALINFERENCE_PARAM_FIXED );
+    LALInferenceAddVariable( ifo_model->params, "a_response_tensor", &arespT, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
+    LALInferenceAddVariable( ifo_model->params, "b_response_tensor", &brespT, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
+
+    if ( LALInferenceCheckVariable( ifo_model->params, "nonGR" ) ){
+      LALInferenceAddVariable( ifo_model->params, "a_response_vector", &arespV, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
+      LALInferenceAddVariable( ifo_model->params, "b_response_vector", &brespV, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
+      LALInferenceAddVariable( ifo_model->params, "a_response_scalar", &arespS, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
+      LALInferenceAddVariable( ifo_model->params, "b_response_scalar", &brespS, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
+    }
+    else{
+      XLALDestroyREAL8Vector( arespV );
+      XLALDestroyREAL8Vector( brespV );
+      XLALDestroyREAL8Vector( arespS );
+      XLALDestroyREAL8Vector( brespS );
+    }
 
     data = data->next;
     ifo_model = ifo_model->next;
@@ -1597,7 +1622,16 @@ void add_initial_variables( LALInferenceVariables *ini,  LALInferenceVariables *
   add_variable_scale( ini, scaleFac, "f4", pars.f4 );
   add_variable_scale( ini, scaleFac, "f5", pars.f5 );
   add_variable_scale( ini, scaleFac, "pepoch", pars.pepoch );
+
+  /* add non-GR parameters */
   add_variable_scale( ini, scaleFac, "cgw", pars.cgw );
+  add_variable_scale( ini, scaleFac, "hScalarB", pars.hScalarB );
+  add_variable_scale( ini, scaleFac, "hScalarL", pars.hScalarL );
+  add_variable_scale( ini, scaleFac, "phi0Scalar", pars.phi0Scalar );
+  add_variable_scale( ini, scaleFac, "hVector", pars.hVector );
+  add_variable_scale( ini, scaleFac, "gammaVector", pars.gammaVector );
+  add_variable_scale( ini, scaleFac, "psiVector", pars.psiVector );
+  add_variable_scale( ini, scaleFac, "phi0Vector", pars.psiVector );
 
   /* sky position */
   add_variable_scale( ini, scaleFac, "ra", pars.ra );
@@ -1734,6 +1768,10 @@ void initialise_prior( LALInferenceRunState *runState )
 
   INT4 varyphase = 0, varyskypos = 0, varybinary = 0;
 
+  /* check if non-GR parameters are going to be used */
+  UINT4 nonGR = 0;
+  if ( LALInferenceGetProcParamVal( commandLine, "--nonGR" ) ){ nonGR = 1; }
+
   ppt = LALInferenceGetProcParamVal( commandLine, "--prior-file" );
   if( ppt ) { propfile = XLALStringDuplicate( LALInferenceGetProcParamVal(commandLine,"--prior-file")->value ); }
   else{
@@ -1800,7 +1838,7 @@ void initialise_prior( LALInferenceRunState *runState )
     }
 
     /* if a (fractional) gravitational wave speed is specified then check it's between 0 and 1 */
-    if( !strcmp(tempPar, "cgw") ){
+    if( nonGR && !strcmp(tempPar, "cgw") ){
       if( high > 1. || high <= 0. || low > 1. || low <= 0. || low > high ){
         fprintf(stderr, "Error... The GW speed range is non-physical.\n");
         exit(3);
@@ -2020,6 +2058,30 @@ void initialise_prior( LALInferenceRunState *runState )
         ifotemp = ifotemp->next;
       }
     }
+  }
+
+  if ( nonGR && freqFactors->length == 1 && freqFactors->data[0] == 2. ){
+    /* remove unwanted parameters */
+    remove_variable_and_prior( runState, ifo, "C22" );
+    remove_variable_and_prior( runState, ifo, "C21" );
+    remove_variable_and_prior( runState, ifo, "phi21" );
+    remove_variable_and_prior( runState, ifo, "h0" );
+    remove_variable_and_prior( runState, ifo, "cosiota" );
+  }
+  else if ( nonGR ) {
+    fprintf(stderr, "Error... currently can only run with non-GR parameters for l=m=2 harmonic!\n");
+    exit(3);
+  }
+  else{
+    /* remove non-GR parameters */
+    remove_variable_and_prior( runState, ifo, "hScalarB" );
+    remove_variable_and_prior( runState, ifo, "hScalarL" );
+    remove_variable_and_prior( runState, ifo, "phi0Scalar" );
+    remove_variable_and_prior( runState, ifo, "hVector" );
+    remove_variable_and_prior( runState, ifo, "gammaVector" );
+    remove_variable_and_prior( runState, ifo, "psiVector" );
+    remove_variable_and_prior( runState, ifo, "phi0Vector" );
+    remove_variable_and_prior( runState, ifo, "cgw" );
   }
 
   /* now check for a parameter correlation coefficient matrix file */
@@ -3141,26 +3203,11 @@ void sum_data( LALInferenceRunState *runState ){
   LALInferenceIFOData *data = runState->data;
   LALInferenceIFOModel *ifomodel = runState->model->ifo;
 
-  /* in here we want various options:
-   *   - the standard option would be that we are using the students-t likelihood and splitting the
-   *     data into chunks, and then not searching over any phase parameters. In this case we need to
-   *     sum the data and the antenna pattern (a(t) and b(t)) functions over each chunk.
-   *   - another option is where we use estimates of the data standard deviation (either input or
-   *     calculated for each chunk) and therefore a Gaussian likelihood, but are not searching over
-   *     any phase parameters. This will produce products very similar to above, but with only a
-   *     single "chunk", although the data and model sums will be divided by the noise variances.
-   *   - both above options could also be used in the case where phase parameters are being varied,
-   *     but the pre-summing of the antenna pattern functions cannot be done.
-   *   - another option is that we are using the Gaussian likelihood and searching over phase
-   *     parameters, but using reduced order models. In that case we need to have the sum over the
-   *     data, but also the sums over each of the ROM basis vectors (normalised by the noise
-   *     variance).
-   */
-
-  INT4 gaussianLike = 0, rom = 0;
+  INT4 gaussianLike = 0, rom = 0, nonGR = 0;
 
   if ( LALInferenceGetProcParamVal( runState->commandLine, "--gaussian-like" ) ){ gaussianLike = 1; }
   if ( LALInferenceGetProcParamVal( runState->commandLine, "--rom" ) ){ rom = 1; }
+  if ( LALInferenceGetProcParamVal( runState->commandLine, "--nonGR" ) ){ nonGR = 1; }
 
   while( data ){
     if ( !rom ){
@@ -3169,26 +3216,64 @@ void sum_data( LALInferenceRunState *runState ){
       /* sums of the antenna pattern functions with themeselves and the data.
        * These won't be needed if searching over phase parameters, but there's
        * no harm in computing them anyway. */
-      REAL8Vector *sumA = NULL; /* sum of antenna pattern function a(t)^2 */
-      REAL8Vector *sumB = NULL; /* sum of antenna pattern function b(t)^2 */
-      REAL8Vector *sumAB = NULL; /* sum of antenna pattern functions a(t)*b(t) */
-      COMPLEX16Vector *sumDataA = NULL; /* sum of the data * a(t) */
-      COMPLEX16Vector *sumDataB = NULL; /* sum of the data * b(t) */
 
       /* also have "explicitly" whitened (i.e. divided by variance) versions of these for use
        * by the function to calculate the signal-to-noise ratio (if using the Gaussian
        * likelihood the standard versions of these vectors will also be whitened too) */
-      REAL8Vector *sumAWhite = NULL; /* sum of antenna pattern function a(t)^2 */
-      REAL8Vector *sumBWhite = NULL; /* sum of antenna pattern function b(t)^2 */
-      REAL8Vector *sumABWhite = NULL; /* sum of antenna pattern functions a(t)*b(t) */
+      REAL8Vector *sumP = NULL; /* sum of tensor antenna pattern function a(t)^2 */
+      REAL8Vector *sumC = NULL; /* sum of tensor antenna pattern function b(t)^2 */
+      REAL8Vector *sumPWhite = NULL; /* sum of antenna pattern function a(t)^2 */
+      REAL8Vector *sumCWhite = NULL; /* sum of antenna pattern function b(t)^2 */
 
-      REAL8Vector *aresp = *(REAL8Vector **)LALInferenceGetVariable( ifomodel->params, "a_response" );
-      REAL8Vector *bresp = *(REAL8Vector **)LALInferenceGetVariable( ifomodel->params, "b_response" );
+      /* non-GR values */
+      REAL8Vector *sumX = NULL; /* sum of vector antenna pattern function a(t)^2 */
+      REAL8Vector *sumY = NULL; /* sum of vector antenna pattern function b(t)^2 */
+      REAL8Vector *sumXWhite = NULL; /* whitened version */
+      REAL8Vector *sumYWhite = NULL; /* whitened version */
+
+      REAL8Vector *sumB = NULL; /* sum of scalar antenna pattern function a(t)^2 */
+      REAL8Vector *sumL = NULL; /* sum of scalar antenna pattern function b(t)^2 */
+      REAL8Vector *sumBWhite = NULL; /* whitened version */
+      REAL8Vector *sumLWhite = NULL; /* whitened version */
+
+      COMPLEX16Vector *sumDataP = NULL; /* sum of the data * a(t) */
+      COMPLEX16Vector *sumDataC = NULL; /* sum of the data * b(t) */
+      COMPLEX16Vector *sumDataX = NULL; /* sum of the data * a(t) */
+      COMPLEX16Vector *sumDataY = NULL; /* sum of the data * b(t) */
+      COMPLEX16Vector *sumDataB = NULL; /* sum of the data * a(t) */
+      COMPLEX16Vector *sumDataL = NULL; /* sum of the data * b(t) */
+
+      /* cross terms */
+      REAL8Vector *sumPC = NULL, *sumPX = NULL, *sumPY = NULL, *sumPB = NULL, *sumPL = NULL;
+      REAL8Vector *sumCX = NULL, *sumCY = NULL, *sumCB = NULL, *sumCL = NULL;
+      REAL8Vector *sumXY = NULL, *sumXB = NULL, *sumXL = NULL;
+      REAL8Vector *sumYB = NULL, *sumYL = NULL;
+      REAL8Vector *sumBL = NULL;
+
+      /* whitened versions cross terms */
+      REAL8Vector *sumPCWhite = NULL, *sumPXWhite = NULL, *sumPYWhite = NULL, *sumPBWhite = NULL, *sumPLWhite = NULL;
+      REAL8Vector *sumCXWhite = NULL, *sumCYWhite = NULL, *sumCBWhite = NULL, *sumCLWhite = NULL;
+      REAL8Vector *sumXYWhite = NULL, *sumXBWhite = NULL, *sumXLWhite = NULL;
+      REAL8Vector *sumYBWhite = NULL, *sumYLWhite = NULL;
+      REAL8Vector *sumBLWhite = NULL;
+
+      /* get antenna patterns */
+      REAL8Vector *arespT = *(REAL8Vector **)LALInferenceGetVariable( ifomodel->params, "a_response_tensor" );
+      REAL8Vector *brespT = *(REAL8Vector **)LALInferenceGetVariable( ifomodel->params, "b_response_tensor" );
+      REAL8Vector *arespV = NULL, *brespV = NULL, *arespS = NULL, *brespS = NULL;
+
+      if ( nonGR ){
+        arespV = *(REAL8Vector **)LALInferenceGetVariable( ifomodel->params, "a_response_vector" );
+        brespV = *(REAL8Vector **)LALInferenceGetVariable( ifomodel->params, "b_response_vector" );
+        arespS = *(REAL8Vector **)LALInferenceGetVariable( ifomodel->params, "a_response_scalar" );
+        brespS = *(REAL8Vector **)LALInferenceGetVariable( ifomodel->params, "b_response_scalar" );
+      }
+
       INT4 tsteps = *(INT4 *)LALInferenceGetVariable( ifomodel->params, "timeSteps" );
 
       INT4 chunkLength = 0, length = 0, i = 0, j = 0, count = 0;
       COMPLEX16 B;
-      REAL8 a = 0., b = 0.;
+      REAL8 aT = 0., bT = 0., aV = 0., bV = 0., aS = 0., bS = 0.;
 
       UINT4Vector *chunkLengths;
 
@@ -3200,15 +3285,63 @@ void sum_data( LALInferenceRunState *runState ){
 
       sumdat = XLALCreateREAL8Vector( chunkLengths->length );
 
-      sumA = XLALCreateREAL8Vector( chunkLengths->length );
-      sumB = XLALCreateREAL8Vector( chunkLengths->length );
-      sumAB = XLALCreateREAL8Vector( chunkLengths->length );
-      sumDataA = XLALCreateCOMPLEX16Vector( chunkLengths->length );
-      sumDataB = XLALCreateCOMPLEX16Vector( chunkLengths->length );
+      /* allocate memory */
+      sumP = XLALCreateREAL8Vector( chunkLengths->length );
+      sumC = XLALCreateREAL8Vector( chunkLengths->length );
+      sumPC = XLALCreateREAL8Vector( chunkLengths->length );
+      sumDataP = XLALCreateCOMPLEX16Vector( chunkLengths->length );
+      sumDataC = XLALCreateCOMPLEX16Vector( chunkLengths->length );
 
-      sumAWhite = XLALCreateREAL8Vector( chunkLengths->length );
-      sumBWhite = XLALCreateREAL8Vector( chunkLengths->length );
-      sumABWhite = XLALCreateREAL8Vector( chunkLengths->length );
+      sumPWhite = XLALCreateREAL8Vector( chunkLengths->length );
+      sumCWhite = XLALCreateREAL8Vector( chunkLengths->length );
+      sumPCWhite = XLALCreateREAL8Vector( chunkLengths->length );
+
+      if ( nonGR ){
+        sumX = XLALCreateREAL8Vector( chunkLengths->length );
+        sumY = XLALCreateREAL8Vector( chunkLengths->length );
+        sumB = XLALCreateREAL8Vector( chunkLengths->length );
+        sumL = XLALCreateREAL8Vector( chunkLengths->length );
+
+        sumPX = XLALCreateREAL8Vector( chunkLengths->length );
+        sumPY = XLALCreateREAL8Vector( chunkLengths->length );
+        sumPB = XLALCreateREAL8Vector( chunkLengths->length );
+        sumPL = XLALCreateREAL8Vector( chunkLengths->length );
+        sumCX = XLALCreateREAL8Vector( chunkLengths->length );
+        sumCY = XLALCreateREAL8Vector( chunkLengths->length );
+        sumCB = XLALCreateREAL8Vector( chunkLengths->length );
+        sumCL = XLALCreateREAL8Vector( chunkLengths->length );
+        sumXY = XLALCreateREAL8Vector( chunkLengths->length );
+        sumXB = XLALCreateREAL8Vector( chunkLengths->length );
+        sumXL = XLALCreateREAL8Vector( chunkLengths->length );
+        sumYB = XLALCreateREAL8Vector( chunkLengths->length );
+        sumYL = XLALCreateREAL8Vector( chunkLengths->length );
+        sumBL = XLALCreateREAL8Vector( chunkLengths->length );
+
+        sumXWhite = XLALCreateREAL8Vector( chunkLengths->length );
+        sumYWhite = XLALCreateREAL8Vector( chunkLengths->length );
+        sumBWhite = XLALCreateREAL8Vector( chunkLengths->length );
+        sumLWhite = XLALCreateREAL8Vector( chunkLengths->length );
+
+        sumPXWhite = XLALCreateREAL8Vector( chunkLengths->length );
+        sumPYWhite = XLALCreateREAL8Vector( chunkLengths->length );
+        sumPBWhite = XLALCreateREAL8Vector( chunkLengths->length );
+        sumPLWhite = XLALCreateREAL8Vector( chunkLengths->length );
+        sumCXWhite = XLALCreateREAL8Vector( chunkLengths->length );
+        sumCYWhite = XLALCreateREAL8Vector( chunkLengths->length );
+        sumCBWhite = XLALCreateREAL8Vector( chunkLengths->length );
+        sumCLWhite = XLALCreateREAL8Vector( chunkLengths->length );
+        sumXYWhite = XLALCreateREAL8Vector( chunkLengths->length );
+        sumXBWhite = XLALCreateREAL8Vector( chunkLengths->length );
+        sumXLWhite = XLALCreateREAL8Vector( chunkLengths->length );
+        sumYBWhite = XLALCreateREAL8Vector( chunkLengths->length );
+        sumYLWhite = XLALCreateREAL8Vector( chunkLengths->length );
+        sumBLWhite = XLALCreateREAL8Vector( chunkLengths->length );
+
+        sumDataX = XLALCreateCOMPLEX16Vector( chunkLengths->length );
+        sumDataY = XLALCreateCOMPLEX16Vector( chunkLengths->length );
+        sumDataB = XLALCreateCOMPLEX16Vector( chunkLengths->length );
+        sumDataL = XLALCreateCOMPLEX16Vector( chunkLengths->length );
+      }
 
       REAL8 tsv = LAL_DAYSID_SI / tsteps, T = 0., timeMin = 0., timeMax = 0.;
 
@@ -3219,15 +3352,62 @@ void sum_data( LALInferenceRunState *runState ){
 
         sumdat->data[count] = 0.;
 
-        sumA->data[count] = 0.;
-        sumB->data[count] = 0.;
-        sumAB->data[count] = 0.;
-        sumDataA->data[count] = 0.;
-        sumDataB->data[count] = 0.;
+        sumP->data[count] = 0.;
+        sumC->data[count] = 0.;
+        sumPC->data[count] = 0.;
+        sumDataP->data[count] = 0.;
+        sumDataC->data[count] = 0.;
 
-        sumAWhite->data[count] = 0.;
-        sumBWhite->data[count] = 0.;
-        sumABWhite->data[count] = 0.;
+        sumPWhite->data[count] = 0.;
+        sumCWhite->data[count] = 0.;
+        sumPCWhite->data[count] = 0.;
+
+        if ( nonGR ){
+          sumX->data[count] = 0.;
+          sumY->data[count] = 0.;
+          sumB->data[count] = 0.;
+          sumL->data[count] = 0.;
+
+          sumPX->data[count] = 0.;
+          sumPY->data[count] = 0.;
+          sumPB->data[count] = 0.;
+          sumPL->data[count] = 0.;
+          sumCX->data[count] = 0.;
+          sumCY->data[count] = 0.;
+          sumCB->data[count] = 0.;
+          sumCL->data[count] = 0.;
+          sumXY->data[count] = 0.;
+          sumXB->data[count] = 0.;
+          sumXL->data[count] = 0.;
+          sumYB->data[count] = 0.;
+          sumYL->data[count] = 0.;
+          sumBL->data[count] = 0.;
+
+          sumXWhite->data[count] = 0.;
+          sumYWhite->data[count] = 0.;
+          sumBWhite->data[count] = 0.;
+          sumLWhite->data[count] = 0.;
+
+          sumPXWhite->data[count] = 0.;
+          sumPYWhite->data[count] = 0.;
+          sumPBWhite->data[count] = 0.;
+          sumPLWhite->data[count] = 0.;
+          sumCXWhite->data[count] = 0.;
+          sumCYWhite->data[count] = 0.;
+          sumCBWhite->data[count] = 0.;
+          sumCLWhite->data[count] = 0.;
+          sumXYWhite->data[count] = 0.;
+          sumXBWhite->data[count] = 0.;
+          sumXLWhite->data[count] = 0.;
+          sumYBWhite->data[count] = 0.;
+          sumYLWhite->data[count] = 0.;
+          sumBLWhite->data[count] = 0.;
+
+          sumDataX->data[count] = 0.;
+          sumDataY->data[count] = 0.;
+          sumDataB->data[count] = 0.;
+          sumDataL->data[count] = 0.;
+        }
 
         for( j = i ; j < i + chunkLength ; j++){
           REAL8 vari = 1., a0 = 0., a1 = 0., b0 = 0., b1 = 0., timeScaled = 0.;
@@ -3243,16 +3423,16 @@ void sum_data( LALInferenceRunState *runState ){
           timeMax = timeMin + tsv;
 
           /* get values of vector for linear interpolation */
-          a0 = aresp->data[timebinMin];
-          a1 = aresp->data[timebinMax];
-          b0 = bresp->data[timebinMin];
-          b1 = bresp->data[timebinMax];
+          a0 = arespT->data[timebinMin];
+          a1 = arespT->data[timebinMax];
+          b0 = brespT->data[timebinMin];
+          b1 = brespT->data[timebinMax];
 
           /* rescale time for linear interpolation on a unit square */
           timeScaled = (T - timeMin)/(timeMax - timeMin);
 
-          a = a0 + (a1-a0)*timeScaled;
-          b = b0 + (b1-b0)*timeScaled;
+          aT = a0 + (a1-a0)*timeScaled;
+          bT = b0 + (b1-b0)*timeScaled;
 
           /* if using a Gaussian likelihood divide all these values by the variance */
           if ( gaussianLike ) {
@@ -3264,18 +3444,85 @@ void sum_data( LALInferenceRunState *runState ){
           sumdat->data[count] += (creal(B)*creal(B) + cimag(B)*cimag(B))/vari;
 
           /* sum up the other terms */
-          sumA->data[count] += a*a/vari;
-          sumB->data[count] += b*b/vari;
-          sumAB->data[count] += a*b/vari;
-          sumDataA->data[count] += B*a/vari;
-          sumDataB->data[count] += B*b/vari;
+          sumP->data[count] += aT*aT/vari;
+          sumC->data[count] += bT*bT/vari;
+          sumPC->data[count] += aT*bT/vari;
+          sumDataP->data[count] += B*aT/vari;
+          sumDataC->data[count] += B*bT/vari;
+
+          /* non-GR values */
+          if ( nonGR ){
+            a0 = arespV->data[timebinMin];
+            a1 = arespV->data[timebinMax];
+            b0 = brespV->data[timebinMin];
+            b1 = brespV->data[timebinMax];
+
+            aV = a0 + (a1-a0)*timeScaled;
+            bV = b0 + (b1-b0)*timeScaled;
+
+            a0 = arespS->data[timebinMin];
+            a1 = arespS->data[timebinMax];
+            b0 = brespS->data[timebinMin];
+            b1 = brespS->data[timebinMax];
+
+            aS = a0 + (a1-a0)*timeScaled;
+            bS = b0 + (b1-b0)*timeScaled;
+
+            sumX->data[count] += aV*aV/vari;
+            sumY->data[count] += bV*bV/vari;
+            sumB->data[count] += aS*aS/vari;
+            sumL->data[count] += bS*bS/vari;
+
+            sumPX->data[count] += aT*aV/vari;
+            sumPY->data[count] += aT*bV/vari;
+            sumPB->data[count] += aT*aS/vari;
+            sumPL->data[count] += aT*bS/vari;
+            sumCX->data[count] += bT*aV/vari;
+            sumCY->data[count] += bT*bV/vari;
+            sumCB->data[count] += bT*aS/vari;
+            sumCL->data[count] += bT*bS/vari;
+            sumXY->data[count] += aV*bV/vari;
+            sumXB->data[count] += aV*aS/vari;
+            sumXL->data[count] += aV*bS/vari;
+            sumYB->data[count] += bV*aS/vari;
+            sumYL->data[count] += bV*bS/vari;
+            sumBL->data[count] += aS*bS/vari;
+
+            sumDataX->data[count] += B*aV/vari;
+            sumDataY->data[count] += B*bV/vari;
+            sumDataB->data[count] += B*aS/vari;
+            sumDataL->data[count] += B*bS/vari;
+          }
 
           /* get "explicitly whitened" versions, i.e. for use in signal-to-noise ratio
            * calculations even when not using a Gaussian likelihood */
           vari = data->varTimeData->data->data[j];
-          sumAWhite->data[count] += a*a/vari;
-          sumBWhite->data[count] += b*b/vari;
-          sumABWhite->data[count] += a*b/vari;
+          sumPWhite->data[count] += aT*aT/vari;
+          sumCWhite->data[count] += bT*bT/vari;
+          sumPCWhite->data[count] += aT*bT/vari;
+
+          /* non-GR values */
+          if ( nonGR ){
+            sumXWhite->data[count] += aV*aV/vari;
+            sumYWhite->data[count] += bV*bV/vari;
+            sumBWhite->data[count] += aS*aS/vari;
+            sumLWhite->data[count] += bS*bS/vari;
+
+            sumPXWhite->data[count] += aT*aV/vari;
+            sumPYWhite->data[count] += aT*bV/vari;
+            sumPBWhite->data[count] += aT*aS/vari;
+            sumPLWhite->data[count] += aT*bS/vari;
+            sumCXWhite->data[count] += bT*aV/vari;
+            sumCYWhite->data[count] += bT*bV/vari;
+            sumCBWhite->data[count] += bT*aS/vari;
+            sumCLWhite->data[count] += bT*bS/vari;
+            sumXYWhite->data[count] += aV*bV/vari;
+            sumXBWhite->data[count] += aV*aS/vari;
+            sumXLWhite->data[count] += aV*bS/vari;
+            sumYBWhite->data[count] += bV*aS/vari;
+            sumYLWhite->data[count] += bV*bS/vari;
+            sumBLWhite->data[count] += aS*bS/vari;
+          }
         }
 
         count++;
@@ -3284,14 +3531,61 @@ void sum_data( LALInferenceRunState *runState ){
       /* add all the summed data values - remove if already there, so that sum_data can be called more
        * than once if required e.g. if needed in the injection functions */
       check_and_add_fixed_variable( ifomodel->params, "sumData", &sumdat, LALINFERENCE_REAL8Vector_t );
-      check_and_add_fixed_variable( ifomodel->params, "sumA", &sumA, LALINFERENCE_REAL8Vector_t );
-      check_and_add_fixed_variable( ifomodel->params, "sumB", &sumB, LALINFERENCE_REAL8Vector_t );
-      check_and_add_fixed_variable( ifomodel->params, "sumAB", &sumAB, LALINFERENCE_REAL8Vector_t );
-      check_and_add_fixed_variable( ifomodel->params, "sumDataA", &sumDataA, LALINFERENCE_COMPLEX16Vector_t );
-      check_and_add_fixed_variable( ifomodel->params, "sumDataB", &sumDataB, LALINFERENCE_COMPLEX16Vector_t );
-      check_and_add_fixed_variable( ifomodel->params, "sumAWhite", &sumAWhite, LALINFERENCE_REAL8Vector_t );
-      check_and_add_fixed_variable( ifomodel->params, "sumBWhite", &sumBWhite, LALINFERENCE_REAL8Vector_t );
-      check_and_add_fixed_variable( ifomodel->params, "sumABWhite", &sumABWhite, LALINFERENCE_REAL8Vector_t );
+      check_and_add_fixed_variable( ifomodel->params, "sumP", &sumP, LALINFERENCE_REAL8Vector_t );
+      check_and_add_fixed_variable( ifomodel->params, "sumC", &sumC, LALINFERENCE_REAL8Vector_t );
+      check_and_add_fixed_variable( ifomodel->params, "sumPC", &sumPC, LALINFERENCE_REAL8Vector_t );
+      check_and_add_fixed_variable( ifomodel->params, "sumDataP", &sumDataP, LALINFERENCE_COMPLEX16Vector_t );
+      check_and_add_fixed_variable( ifomodel->params, "sumDataC", &sumDataC, LALINFERENCE_COMPLEX16Vector_t );
+      check_and_add_fixed_variable( ifomodel->params, "sumPWhite", &sumPWhite, LALINFERENCE_REAL8Vector_t );
+      check_and_add_fixed_variable( ifomodel->params, "sumCWhite", &sumCWhite, LALINFERENCE_REAL8Vector_t );
+      check_and_add_fixed_variable( ifomodel->params, "sumPCWhite", &sumPCWhite, LALINFERENCE_REAL8Vector_t );
+
+      if ( nonGR ){
+        check_and_add_fixed_variable( ifomodel->params, "sumX", &sumX, LALINFERENCE_REAL8Vector_t );
+        check_and_add_fixed_variable( ifomodel->params, "sumY", &sumY, LALINFERENCE_REAL8Vector_t );
+        check_and_add_fixed_variable( ifomodel->params, "sumB", &sumB, LALINFERENCE_REAL8Vector_t );
+        check_and_add_fixed_variable( ifomodel->params, "sumL", &sumL, LALINFERENCE_REAL8Vector_t );
+
+        check_and_add_fixed_variable( ifomodel->params, "sumPX", &sumPX, LALINFERENCE_REAL8Vector_t );
+        check_and_add_fixed_variable( ifomodel->params, "sumPY", &sumPY, LALINFERENCE_REAL8Vector_t );
+        check_and_add_fixed_variable( ifomodel->params, "sumPB", &sumPB, LALINFERENCE_REAL8Vector_t );
+        check_and_add_fixed_variable( ifomodel->params, "sumPL", &sumPL, LALINFERENCE_REAL8Vector_t );
+        check_and_add_fixed_variable( ifomodel->params, "sumCX", &sumCX, LALINFERENCE_REAL8Vector_t );
+        check_and_add_fixed_variable( ifomodel->params, "sumCY", &sumCY, LALINFERENCE_REAL8Vector_t );
+        check_and_add_fixed_variable( ifomodel->params, "sumCB", &sumCB, LALINFERENCE_REAL8Vector_t );
+        check_and_add_fixed_variable( ifomodel->params, "sumCL", &sumCL, LALINFERENCE_REAL8Vector_t );
+        check_and_add_fixed_variable( ifomodel->params, "sumXY", &sumXY, LALINFERENCE_REAL8Vector_t );
+        check_and_add_fixed_variable( ifomodel->params, "sumXB", &sumXB, LALINFERENCE_REAL8Vector_t );
+        check_and_add_fixed_variable( ifomodel->params, "sumXL", &sumXL, LALINFERENCE_REAL8Vector_t );
+        check_and_add_fixed_variable( ifomodel->params, "sumYB", &sumYB, LALINFERENCE_REAL8Vector_t );
+        check_and_add_fixed_variable( ifomodel->params, "sumYL", &sumYL, LALINFERENCE_REAL8Vector_t );
+        check_and_add_fixed_variable( ifomodel->params, "sumBL", &sumBL, LALINFERENCE_REAL8Vector_t );
+
+        check_and_add_fixed_variable( ifomodel->params, "sumDataX", &sumDataX, LALINFERENCE_COMPLEX16Vector_t );
+        check_and_add_fixed_variable( ifomodel->params, "sumDataY", &sumDataY, LALINFERENCE_COMPLEX16Vector_t );
+        check_and_add_fixed_variable( ifomodel->params, "sumDataB", &sumDataB, LALINFERENCE_COMPLEX16Vector_t );
+        check_and_add_fixed_variable( ifomodel->params, "sumDataL", &sumDataL, LALINFERENCE_COMPLEX16Vector_t );
+
+        check_and_add_fixed_variable( ifomodel->params, "sumXWhite", &sumXWhite, LALINFERENCE_REAL8Vector_t );
+        check_and_add_fixed_variable( ifomodel->params, "sumYWhite", &sumYWhite, LALINFERENCE_REAL8Vector_t );
+        check_and_add_fixed_variable( ifomodel->params, "sumBWhite", &sumBWhite, LALINFERENCE_REAL8Vector_t );
+        check_and_add_fixed_variable( ifomodel->params, "sumLWhite", &sumLWhite, LALINFERENCE_REAL8Vector_t );
+
+        check_and_add_fixed_variable( ifomodel->params, "sumPXWhite", &sumPXWhite, LALINFERENCE_REAL8Vector_t );
+        check_and_add_fixed_variable( ifomodel->params, "sumPYWhite", &sumPYWhite, LALINFERENCE_REAL8Vector_t );
+        check_and_add_fixed_variable( ifomodel->params, "sumPBWhite", &sumPBWhite, LALINFERENCE_REAL8Vector_t );
+        check_and_add_fixed_variable( ifomodel->params, "sumPLWhite", &sumPLWhite, LALINFERENCE_REAL8Vector_t );
+        check_and_add_fixed_variable( ifomodel->params, "sumCXWhite", &sumCXWhite, LALINFERENCE_REAL8Vector_t );
+        check_and_add_fixed_variable( ifomodel->params, "sumCYWhite", &sumCYWhite, LALINFERENCE_REAL8Vector_t );
+        check_and_add_fixed_variable( ifomodel->params, "sumCBWhite", &sumCBWhite, LALINFERENCE_REAL8Vector_t );
+        check_and_add_fixed_variable( ifomodel->params, "sumCLWhite", &sumCLWhite, LALINFERENCE_REAL8Vector_t );
+        check_and_add_fixed_variable( ifomodel->params, "sumXYWhite", &sumXYWhite, LALINFERENCE_REAL8Vector_t );
+        check_and_add_fixed_variable( ifomodel->params, "sumXBWhite", &sumXBWhite, LALINFERENCE_REAL8Vector_t );
+        check_and_add_fixed_variable( ifomodel->params, "sumXLWhite", &sumXLWhite, LALINFERENCE_REAL8Vector_t );
+        check_and_add_fixed_variable( ifomodel->params, "sumYBWhite", &sumYBWhite, LALINFERENCE_REAL8Vector_t );
+        check_and_add_fixed_variable( ifomodel->params, "sumYLWhite", &sumYLWhite, LALINFERENCE_REAL8Vector_t );
+        check_and_add_fixed_variable( ifomodel->params, "sumBLWhite", &sumBLWhite, LALINFERENCE_REAL8Vector_t );
+      }
 
       LALInferenceAddVariable( ifomodel->params, "logGaussianNorm", &logGaussianNorm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
 
@@ -3313,24 +3607,29 @@ void sum_data( LALInferenceRunState *runState ){
 /**
  * \brief Creates a lookup table of the detector antenna pattern
  *
- * This function creates a lookup table of the a(t) and b(t) antenna patterns for a given detector orientation
- * and source sky position. The are the functions given by equations 10-13 in \cite JKS98. The lookup table spans
- * one sidereal day in time (this being the period over which the antenna pattern changes). For \f$\psi=0\f$ the
- * a(t) component is equivalent to the plus polarisation and the b(t) function is equivalent to the cross
- * polarisation response.
+ * This function creates a lookup table of the tensor, vector and scalar antenna patterns for a given
+ * detector orientation and source sky position. For the tensor modes these are the functions given by
+ * equations 10-13 in \cite JKS98, whilst for the vector and scalar modes they are the \f$\psi\f$
+ * independent parts of e.g. equations 5-8 of \cite Nishizawa2009. We remove the \f$\psi\f$ dependent
+ * by setting \f$\psi=0\f$.
  *
  * \param t0 [in] initial GPS time of the data
  * \param detNSource [in] structure containing the detector and source orientations and locations
  * \param timeSteps [in] the number of grid bins to use in time
- * \param a [in] a vector into which the a(t) antenna pattern lookup table will be output
- * \param b [in] a vector into which the b(t) antenna pattern lookup table will be output
+ * \param aT [in] a vector into which the a(t) Fplus tensor antenna pattern lookup table will be output
+ * \param bT [in] a vector into which the b(t) Fcross tensor antenna pattern lookup table will be output
+ * \param aV [in] a vector into which the a(t) Fx vector antenna pattern lookup table will be output
+ * \param bV [in] a vector into which the b(t) Fy vector antenna pattern lookup table will be output
+ * \param aS [in] a vector into which the a(t) Fb scalar antenna pattern lookup table will be output
+ * \param bS [in] a vector into which the b(t) Fl scalar antenna pattern lookup table will be output
  */
-void response_lookup_table( REAL8 t0, LALDetAndSource detNSource, INT4 timeSteps, REAL8Vector *a,
-                            REAL8Vector *b ){
+void response_lookup_table( REAL8 t0, LALDetAndSource detNSource, INT4 timeSteps, REAL8Vector *aT,
+                            REAL8Vector *bT, REAL8Vector *aV, REAL8Vector *bV, REAL8Vector *aS,
+                            REAL8Vector *bS ){
   LIGOTimeGPS gps;
   REAL8 T = 0;
 
-  REAL8 fplus = 0., fcross = 0.;
+  REAL8 fplus = 0., fcross = 0., fx = 0., fy = 0., fb = 0., fl = 0.;
   REAL8 tsteps = (REAL8)timeSteps;
 
   INT4 j = 0;
@@ -3343,13 +3642,17 @@ void response_lookup_table( REAL8 t0, LALDetAndSource detNSource, INT4 timeSteps
 
     XLALGPSSetREAL8(&gps, T);
 
-    XLALComputeDetAMResponse( &fplus, &fcross, detNSource.pDetector->response,
-                              detNSource.pSource->equatorialCoords.longitude,
-                              detNSource.pSource->equatorialCoords.latitude,
-                              detNSource.pSource->orientation, XLALGreenwichMeanSiderealTime( &gps ) );
+    XLALComputeDetAMResponseExtraModes( &fplus, &fcross, &fb, &fl, &fx, &fy, detNSource.pDetector->response,
+                                        detNSource.pSource->equatorialCoords.longitude,
+                                        detNSource.pSource->equatorialCoords.latitude,
+                                        detNSource.pSource->orientation, XLALGreenwichMeanSiderealTime( &gps ) );
 
-    a->data[j] = fplus;
-    b->data[j] = fcross;
+    aT->data[j] = fplus;
+    bT->data[j] = fcross;
+    aV->data[j] = fx;
+    bV->data[j] = fy;
+    aS->data[j] = fb;
+    bS->data[j] = fl;
   }
 }
 
@@ -3660,15 +3963,15 @@ REAL8 calculate_time_domain_snr( LALInferenceIFOData *data, LALInferenceIFOModel
   chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( ifo_model->params, "chunkLength" );
   chunkMin = *(INT4*)LALInferenceGetVariable( ifo_model->params, "chunkMin" );
 
-  REAL8Vector *sumA = NULL, *sumB = NULL, *sumAB = NULL;
+  REAL8Vector *sumP = NULL, *sumC = NULL, *sumPC = NULL;
 
   if ( LALInferenceCheckVariable( ifo_model->params, "varyphase" ) ){ varyphase = 1; }
 
   if ( !varyphase ){
     /* get explicitly whitened versions of these sums */
-    sumA = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumAWhite" );
-    sumB = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumBWhite" );
-    sumAB = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumABWhite" );
+    sumP = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumPWhite" );
+    sumC = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumCWhite" );
+    sumPC = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumPCWhite" );
   }
 
   length = data->compTimeData->data->length;
@@ -3699,9 +4002,9 @@ REAL8 calculate_time_domain_snr( LALInferenceIFOData *data, LALInferenceIFOModel
       Ma = ifo_model->compTimeSignal->data->data[0];
       Mb = ifo_model->compTimeSignal->data->data[1];
 
-      snrcRe += sumA->data[count]*(creal(Ma)*creal(Ma) + cimag(Ma)*cimag(Ma));
-      snrcRe += sumB->data[count]*(creal(Mb)*creal(Mb) + cimag(Mb)*cimag(Mb));
-      snrcRe += 2.*sumAB->data[count]*(creal(Ma)*creal(Mb) + cimag(Ma)*cimag(Mb));
+      snrcRe += sumP->data[count]*(creal(Ma)*creal(Ma) + cimag(Ma)*cimag(Ma));
+      snrcRe += sumC->data[count]*(creal(Mb)*creal(Mb) + cimag(Mb)*cimag(Mb));
+      snrcRe += 2.*sumPC->data[count]*(creal(Ma)*creal(Mb) + cimag(Ma)*cimag(Mb));
       snrcIm = 0.;
     }
 

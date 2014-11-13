@@ -48,6 +48,22 @@ void get_pulsar_model( LALInferenceModel *model ){
 
     invert_source_params( &pars );
   }
+  else if ( LALInferenceCheckVariable( model->ifo->params, "nonGR" ) ){
+    /* speed of GWs as (1 - fraction of speed of light LAL_C_SI) */
+    pars.cgw = rescale_parameter( model, model->ifo, "cgw" );
+
+    /* amplitudes for use with non-GR searches */
+    /* tensor modes */
+    pars.hPlus = rescale_parameter( model, model->ifo, "hPlus" );
+    pars.hCross = rescale_parameter( model, model->ifo, "hCross" );
+    /* scalar modes */
+    pars.hScalarB = rescale_parameter( model, model->ifo, "hScalarB" );
+    pars.hScalarL = rescale_parameter( model, model->ifo, "hScalarL" );
+    /* vector modes */
+    pars.hVectorX = rescale_parameter( model, model->ifo, "hVectorX" );
+    pars.hVectorY = rescale_parameter( model, model->ifo, "hVectorY" );
+    pars.phi22 = rescale_parameter( model, model->ifo, "phi22" );
+  }
   else{
     pars.C21 = rescale_parameter( model, model->ifo, "C21" );
     pars.C22 = rescale_parameter( model, model->ifo, "C22" );
@@ -78,8 +94,40 @@ void get_pulsar_model( LALInferenceModel *model ){
   pars.f4 = rescale_parameter( model, model->ifo, "f4" );
   pars.f5 = rescale_parameter( model, model->ifo, "f5" );
 
-  /* speed of GWs as a fraction of speed of light LAL_C_SI */
-  pars.cgw = rescale_parameter( model, model->ifo, "cgw" );
+  pars.phi22 = rescale_parameter( model, model->ifo, "phi22" );
+  pars.cosiota = rescale_parameter( model, model->ifo, "cosiota" );
+  pars.C22 = rescale_parameter( model, model->ifo, "C22" );
+
+  if ( LALInferenceCheckVariable( model->ifo->params, "nonGR" ) ){
+    /* speed of GWs as (1 - fraction of speed of light LAL_C_SI) */
+    pars.cgw = rescale_parameter( model, model->ifo, "cgw" );
+
+    /* amplitudes and phases for use with non-GR searches */
+    /* scalar modes */
+    pars.hScalarB = rescale_parameter( model, model->ifo, "hScalarB" );
+    pars.hScalarL = rescale_parameter( model, model->ifo, "hScalarL" );
+
+    /* if phi0Scalar is not a variable then set to be the same as phi22 */
+    if ( LALInferenceGetVariableVaryType( model->params, "phi0Scalar" ) == LALINFERENCE_PARAM_FIXED ){
+      pars.phi0Scalar = pars.phi22;
+    }
+    else{ pars.phi0Scalar = rescale_parameter( model, model->ifo, "phi0Scalar" ); }
+
+    /* vector modes */
+    pars.hVector = rescale_parameter( model, model->ifo, "hVector" );
+    pars.gammaVector = rescale_parameter( model, model->ifo, "gammaVector" );
+    pars.psiVector = rescale_parameter( model, model->ifo, "psiVector" );
+
+    /* if phi0Scalar is not a variable then set to be the same as phi22 */
+    if ( LALInferenceGetVariableVaryType( model->params, "phi0Vector" ) == LALINFERENCE_PARAM_FIXED ){
+      pars.phi0Vector = pars.phi22;
+    }
+    else{ pars.phi0Vector = rescale_parameter( model, model->ifo, "phi0Vector" ); }
+  }
+  else{
+    pars.C21 = rescale_parameter( model, model->ifo, "C21" );
+    pars.phi21 = rescale_parameter( model, model->ifo, "phi21" );
+  }
 
   /* check if there are binary parameters */
   if( LALInferenceCheckVariable(model->params, "model") ){
@@ -816,7 +864,8 @@ void get_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOModel *ifo ){
 
   REAL8 T, twopsi;
   REAL8 siniota = sin(acos(pars.cosiota));
-  REAL4 s2psi = 0., c2psi = 0.;
+  REAL8 s2psi = 0., c2psi = 0., spsi = 0., cpsi = 0.;
+  UINT4 nonGR = 0;
 
   REAL8Vector *freqFactors = NULL;
   INT4 varyphase = 0;
@@ -826,14 +875,36 @@ void get_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOModel *ifo ){
   if( LALInferenceCheckVariable( ifo->params, "varyphase" ) ){ varyphase = 1; }
 
   twopsi = 2.*pars.psi;
-  XLAL_CHECK_VOID( XLALSinCosLUT( &s2psi, &c2psi, twopsi ) == XLAL_SUCCESS, XLAL_EFUNC );
+  s2psi = sin(twopsi);
+  c2psi = cos(twopsi);
+
+  /* check for non-GR model */
+  if ( LALInferenceCheckVariable( ifo->params, "nonGR" ) ){
+    nonGR = *(UINT4*)LALInferenceGetVariable( ifo->params, "nonGR" );
+  }
+
+  if ( nonGR == 1 ){
+    spsi = sin(pars.psi);
+    cpsi = cos(pars.psi);
+
+    /* get the other antenna response functions */
+    LU_Fb = *(gsl_matrix**)LALInferenceGetVariable( ifo->params, "LU_Fb" );
+    LU_Fl = *(gsl_matrix**)LALInferenceGetVariable( ifo->params, "LU_Fl" );
+    LU_Fx = *(gsl_matrix**)LALInferenceGetVariable( ifo->params, "LU_Fx" );
+    LU_Fy = *(gsl_matrix**)LALInferenceGetVariable( ifo->params, "LU_Fy" );
+  }
+
+  if ( nonGR == 1 && freqFactors->length > 1 ){
+    XLALPrintError( "%s: Error... currently can only use non-GR parameters for l=m=2 harmonic.\n", __func__ );
+    XLAL_ERROR_VOID( XLAL_EFAILED );
+  }
 
   /* loop over all detectors */
   while( ifo ){
     /* loop over components in data as given by the frequency factors */
     for( j = 0; j < freqFactors->length; j++ ){
       COMPLEX16 expPhi;
-      COMPLEX16 Cplus, Ccross;
+      COMPLEX16 Cplus, Ccross, Cx, Cy, Cl, Cb;
 
       if ( !ifo ){
         XLALPrintError( "%s: Error... ifo model not defined.\n", __func__ );
@@ -852,6 +923,19 @@ void get_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOModel *ifo ){
         expPhi = cexp( I * pars.phi22 );
         Cplus = -0.5 * pars.C22 * ( 1. + pars.cosiota * pars.cosiota ) * expPhi;
         Ccross = I * pars.C22 * pars.cosiota * expPhi;
+
+        if ( nonGR ){
+          COMPLEX16 expPhiScalar, expPhiVector, expPsiVector;
+          REAL8 cosgamma = cos(pars.gammaVector), singamma = sin(pars.gammaVector);
+
+          expPhiScalar = cexp( I * pars.phi0Scalar );
+          expPhiVector = cexp( I * pars.phi0Vector );
+          expPsiVector = cexp( I * pars.psiVector );
+
+          Cx = -0.5 * I * expPhiVector * pars.hVector * cosgamma;
+          Cy = -0.5 * I * expPhiVector * pars.hVectorY * singamma * expPsiVector;
+          Cb = -0.5 * I * expPhiScalar * pars.hScalarB;
+          Cl = -0.5 * I * expPhiScalar * pars.hScalarL;
       }
       else{
         XLALPrintError("%s: Error... currently unknown frequency factor (%.2lf) for models.\n", __func__, freqFactors->data[j] );
@@ -863,20 +947,28 @@ void get_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOModel *ifo ){
         REAL8 tsv;
         INT4 timebinMin, timebinMax;
 
-        REAL8Vector *LU_Fplus, *LU_Fcross;
+        REAL8Vector *LUfplus, *LUfcross, *LUfx, *LUfy, *LUfb, *LUfl;
 
         REAL8 tsteps;
         REAL8 plus00, plus01, cross00, cross01;
+        REAL8 x00, x01, y00, y01, b00, b01, l00, l01;
         REAL8 timeScaled;
         REAL8 timeMin, timeMax;
-        REAL8 plus, cross, plusT, crossT;
+        REAL8 plus, cross, plusT, crossT, x, y, xT, yT, b, l;
 
         /* set lookup table parameters */
         tsteps = *(INT4*)LALInferenceGetVariable( ifo->params, "timeSteps" );
         tsv = LAL_DAYSID_SI / tsteps;
 
-        LU_Fplus = *(REAL8Vector **)LALInferenceGetVariable( ifo->params, "a_response" );
-        LU_Fcross = *(REAL8Vector **)LALInferenceGetVariable( ifo->params, "b_response" );
+        LUfplus = *(REAL8Vector **)LALInferenceGetVariable( ifo->params, "a_response_tensor" );
+        LUfcross = *(REAL8Vector **)LALInferenceGetVariable( ifo->params, "b_response_tensor" );
+
+        if ( nonGR ){
+          LUfx = *(REAL8Vector **)LALInferenceGetVariable( ifo->params, "a_response_vector" );
+          LUfy = *(REAL8Vector **)LALInferenceGetVariable( ifo->params, "b_response_vector" );
+          LUfb = *(REAL8Vector **)LALInferenceGetVariable( ifo->params, "a_response_tensor" );
+          LUfl = *(REAL8Vector **)LALInferenceGetVariable( ifo->params, "b_response_tensor" );
+        }
 
         /* get the sidereal time since the initial data point % sidereal day */
         sidDayFrac = *(REAL8Vector**)LALInferenceGetVariable( ifo->params, "siderealDay" );
@@ -893,11 +985,11 @@ void get_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOModel *ifo ){
           timeMax = timeMin + tsv;
 
           /* get values of matrix for linear interpolation */
-          plus00 = LU_Fplus->data[timebinMin];
-          plus01 = LU_Fplus->data[timebinMax];
+          plus00 = LUfplus->data[timebinMin];
+          plus01 = LUfplus->data[timebinMax];
 
-          cross00 = LU_Fcross->data[timebinMin];
-          cross01 = LU_Fcross->data[timebinMax];
+          cross00 = LUfcross->data[timebinMin];
+          cross01 = LUfcross->data[timebinMax];
 
           /* rescale time for linear interpolation on a unit square */
           timeScaled = (T - timeMin)/(timeMax - timeMin);
@@ -908,25 +1000,68 @@ void get_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOModel *ifo ){
           plusT = plus*c2psi + cross*s2psi;
           crossT = cross*c2psi - plus*s2psi;
 
+          if ( nonGR ){
+            x00 = LUx->data[timebinMin];
+            x01 = LUx->data[timebinMax];
+            y00 = LUy->data[timebinMin];
+            y01 = LUy->data[timebinMax];
+            b00 = LUb->data[timebinMin];
+            b01 = LUb->data[timebinMax];
+            l00 = LUl->data[timebinMin];
+            l01 = LUl->data[timebinMax];
+
+            x = x00 + (x01-x00)*timeScaled;
+            y = y00 + (y01-y00)*timeScaled;
+            b = b00 + (b01-b00)*timeScaled;
+            l = l00 + (l01-l00)*timeScaled;
+
+            xT = x*cpsi + y*spsi;
+            yT = y*cpsi - x*spsi;
+          }
+
           /* create the complex signal amplitude model appropriate for the harmonic */
           ifo->compTimeSignal->data->data[i] = ( Cplus * plusT ) + ( Ccross * crossT );
+
+          /* add non-GR components if required */
+          if ( nonGR ){ ifo->compTimeSignal->data->data[i] += ( Cx*xT ) + ( Cy*yT ) + Cb*b + Cl*l; }
         }
       }
       else{ /* just have to calculate the values to multiply the pre-summed data */
-        /* calculate the two components of the single model value - things multplied by a(t) and
-         * things multiplied by b(t) (both these will have real and imaginary components:
+        /* for tensor-only models (e.g. the default of GR) calculate the two components of
+         * the single model value - things multplied by a(t) and things multiplied by b(t)
+         * (both these will have real and imaginary components:
          * h(t) = a(t)*(Cplus*cos(2psi) - Ccross*sin(2psi)) +
          *        b(t)*(Cplus*sin(2psi) + Ccross*cos(2psi))
+         *
+         * For scalar and vector modes also calculate the four addiational components:
+         * h(t)^V = aV(t)*(Cx*cos(psi) - Cy*sin(psi)) +
+         *          bV(t)*(Cy*sin(psi) + Cy*cos(psi)),
+         * h(t)^S = aS(t)*Cb + bS(t)*Cl.
          */
 
-        /* first check that compTimeSignal has been reduced in size to just hold these two values */
-        if ( ifo->compTimeSignal->data->length != 2 ){ /* otherwise resize it */
-          ifo->compTimeSignal = XLALResizeCOMPLEX16TimeSeries( ifo->compTimeSignal, 0, 2 );
-        }
-
         /* put multiples of a(t) in first value and b(t) in second */
-        ifo->compTimeSignal->data->data[0] = (Cplus*c2psi - Ccross*s2psi);
-        ifo->compTimeSignal->data->data[1] = (Cplus*s2psi + Ccross*c2psi);
+        if ( !nonGR ){
+          /* first check that compTimeSignal has been reduced in size to just hold these two values */
+          if ( ifo->compTimeSignal->data->length != 2 ){ /* otherwise resize it */
+            ifo->compTimeSignal = XLALResizeCOMPLEX16TimeSeries( ifo->compTimeSignal, 0, 2 );
+          }
+
+          ifo->compTimeSignal->data->data[0] = (Cplus*c2psi - Ccross*s2psi);
+          ifo->compTimeSignal->data->data[1] = (Cplus*s2psi + Ccross*c2psi);
+        }
+        else{
+          /* first check that compTimeSignal has been reduced in size to just hold these size values */
+          if ( ifo->compTimeSignal->data->length != 6 ){ /* otherwise resize it */
+            ifo->compTimeSignal = XLALResizeCOMPLEX16TimeSeries( ifo->compTimeSignal, 0, 6 );
+          }
+
+          ifo->compTimeSignal->data->data[0] = (Cplus*c2psi - Ccross*s2psi);
+          ifo->compTimeSignal->data->data[1] = (Cplus*s2psi + Ccross*c2psi);
+          ifo->compTimeSignal->data->data[0] = (Cx*cpsi - Cy*spsi);
+          ifo->compTimeSignal->data->data[1] = (Cx*spsi + Cy*cpsi);
+          ifo->compTimeSignal->data->data[0] = Cb;
+          ifo->compTimeSignal->data->data[1] = Cl;
+        }
       }
 
       ifo = ifo->next;
@@ -1043,6 +1178,64 @@ edat->nentriesE * edat->dtEtable );
     earth->velNow[j]=vel[j] + acc[j]*tdiffE;
   }
 }
+
+
+/**
+ * \brief Creates a lookup table of the detector antenna pattern for six polarisation modes
+ *
+ * This function creates a 2D lookup table of the GR 'plus' and 'cross' antenna patterns, and also the 4
+ * potential non-GR modes: the scalar breathing (b) the longitudinal (l) modes, and the vector x and y modes, for a
+ * given detector orientation and source sky position. The lookup table spans one sidereal day in time (this being the
+ * period over which the antenna pattern changes) and goes between \f$\pm\pi/2\f$ radians in \f$\psi\f$ (this is the
+ * full range of \f$\psi\f$ that should be required for and model).
+ *
+ * \param t0 [in] initial GPS time of the data
+ * \param detNSource [in] structure containing the detector and source orientations and locations
+ * \param timeSteps [in] the number of grid bins to use in time
+ * \param psiSteps [in] the number of grid bins to use in polarisation angle \f$\psi\f$
+ * \param LUfplus [in] a matrix into which the 'plus' antenna pattern lookup table will be output
+ * \param LUfcross [in] a matrix into which the 'cross' antenna pattern lookup table will be output
+ * \param LUfb [in] a matrix into which the 'b' antenna pattern lookup table will be output
+ * \param LUfl [in] a matrix into which the 'l' antenna pattern lookup table will be output
+ * \param LUfx [in] a matrix into which the 'x' antenna pattern lookup table will be output
+ * \param LUfy [in] a matrix into which the 'y' antenna pattern lookup table will be output
+ */
+void response_lookup_table( REAL8 t0, LALDetAndSource detNSource, INT4 timeSteps, INT4 psiSteps, gsl_matrix *LUfplus,
+                            gsl_matrix *LUfcross, gsl_matrix *LUfb, gsl_matrix *LUfl, gsl_matrix *LUfx,
+                            gsl_matrix *LUfy ){
+  LIGOTimeGPS gps;
+  REAL8 T = 0;
+
+  REAL8 fplus = 0., fcross = 0., fb = 0., fl = 0., fx = 0., fy = 0.;
+  REAL8 psteps = (REAL8)psiSteps;
+  REAL8 tsteps = (REAL8)timeSteps;
+
+  INT4 i = 0, j = 0;
+
+  for( i = 0 ; i < psiSteps ; i++ ){
+    detNSource.pSource->orientation = -(LAL_PI_2) + (REAL8)i*(LAL_PI) / ( psteps - 1. );
+
+    for( j = 0 ; j < timeSteps ; j++ ){
+      T = t0 + (REAL8)j*LAL_DAYSID_SI / tsteps;
+
+      XLALGPSSetREAL8(&gps, T);
+
+      XLALComputeDetAMResponseExtraModes( &fplus, &fcross, &fb, &fl, &fx, &fy, detNSource.pDetector->response,
+                                detNSource.pSource->equatorialCoords.longitude,
+                                detNSource.pSource->equatorialCoords.latitude,
+                                detNSource.pSource->orientation, XLALGreenwichMeanSiderealTime( &gps ) );
+
+      gsl_matrix_set( LUfplus, i, j, fplus );
+      gsl_matrix_set( LUfcross, i, j, fcross );
+      gsl_matrix_set( LUfb, i, j, fb );
+      gsl_matrix_set( LUfl, i, j, fl );
+      gsl_matrix_set( LUfx, i, j, fx );
+      gsl_matrix_set( LUfy, i, j, fy );
+    }
+  }
+}
+
+
 /*------------------------ END OF MODEL FUNCTIONS ----------------------------*/
 
 
