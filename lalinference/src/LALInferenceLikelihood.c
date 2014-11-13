@@ -587,19 +587,19 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
   int freq_length=0,time_length=0;
   COMPLEX16Vector * dh_S_tilde=NULL;
   COMPLEX16Vector *dh_S=NULL;
+  /* Setup times to integrate over */
+  freq_length = data->freqData->data->length;
+  time_length = 2*(freq_length-1);
+    
+  /* Desired tc == 2 seconds before buffer end.  Only used during
+     margtime{phi} to try to place the waveform in a reasonable
+     place before time-shifting */
+  deltaT = data->timeData->deltaT;
+  REAL8 epoch = XLALGPSGetREAL8(&(data->freqData->epoch));
+  desired_tc = epoch + (time_length-1)*deltaT - 2.0;
 
   if(margtime)
   {
-    /* Setup times to integrate over */
-    freq_length = data->freqData->data->length;
-    time_length = 2*(freq_length-1);
-    
-    /* Desired tc == 2 seconds before buffer end.  Only used during
-       margtime{phi} to try to place the waveform in a reasonable
-       place before time-shifting */
-    deltaT = data->timeData->deltaT;
-    REAL8 epoch = XLALGPSGetREAL8(&(data->freqData->epoch));
-    REAL8 desired_tc = epoch + (time_length-1)*deltaT - 2.0;
     GPSdouble = desired_tc;
     
     dh_S_tilde = XLALCreateCOMPLEX16Vector(time_length);
@@ -732,8 +732,13 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
         timedelay = XLALTimeDelayFromEarthCenter(dataPtr->detector->location, ra, dec, &GPSlal);
         /* (negative timedelay means signal arrives earlier at Ifo than at geocenter, etc.) */
         /* amount by which to time-shift template (not necessarily same as above "timedelay"): */
-        timeshift =  (GPSdouble - (*(REAL8*) LALInferenceGetVariable(model->params, "time"))) + timedelay;
-
+        if (margtime)
+          /* If we are marginalising over time, we want the
+	      freq-domain signal to have tC = epoch, so we shift it
+	      from the model's "time" parameter to epoch */
+          timeshift =  (epoch - (*(REAL8 *) LALInferenceGetVariable(model->params, "time"))) + timedelay;
+        else
+          timeshift =  (GPSdouble - (*(REAL8*) LALInferenceGetVariable(model->params, "time"))) + timedelay;
         twopit    = LAL_TWOPI * timeshift;
 
         dataPtr->fPlus = Fplus;
@@ -878,7 +883,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
           templatesq=creal(template)*creal(template) + cimag(template)*cimag(template);
           REAL8 datasq = creal(d)*creal(d)+cimag(d)*cimag(d);
           loglikelihood+=-TwoDeltaToverN*(templatesq+datasq)/sigmasq;
-          /* Note: This is conj(d) not H, since we use a Forward FFT later on */
+	  
           /* Note: No Factor of 2 here, since we are using the 2-sided COMPLEX16FFT */
           COMPLEX16 dstarh = TwoDeltaToverN * conj(d) * template / sigmasq;
           dh_S_tilde->data[i]+=dstarh;
@@ -910,14 +915,12 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
       loglikelihood += model->ifo_loglikelihoods[ifo];
       break;
     case MARGTIME:
-      break; /* Placeholder for any code that needs to go at end of
-		  IFO loop */
     case MARGPHI:
-      break; /* Placeholder for any code that needs to go at end of
-		  IFO loop */
     case MARGTIMEPHI:
-      break; /* Placeholder for any code that needs to go at end of
-		  IFO loop */
+      /* These are non-separable likelihoods, so single IFO log(L)
+	 doesn't make sense. */
+      model->ifo_loglikelihoods[ifo] = 0.0;
+      break;
     default:
       break;
     }
@@ -957,7 +960,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
       dh_S_tilde->data[0] = crect( creal(dh_S_tilde->data[0]), 0. );
 
       XLALCOMPLEX16VectorFFT(dh_S, dh_S_tilde, data->margComplexFFTPlan);
-      
+
       REAL8 time_low,time_high;
       LALInferenceGetMinMaxPrior(currentParams,"time",&time_low,&time_high);
       REAL8 t0 = XLALGPSGetREAL8(&(data->freqData->epoch));
@@ -1001,7 +1004,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
   }
   
   //loglikelihood = -1.0 * chisquared; // note (again): the log-likelihood is unnormalised!
-  //printf("%10.10e\n",loglikelihood);
+
   return(loglikelihood);
 }
 
