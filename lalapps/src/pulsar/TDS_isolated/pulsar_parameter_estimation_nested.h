@@ -97,7 +97,7 @@ extern "C" {
 #define FACTOR(x,y) ((INT4)floor(x/y))
 
 /** Macro to square a value. */
-#define SQUARE(x) ( (x) * (x) );
+#define SQUARE(x) ( (x) * (x) )
 
 /**
  * The maximum allowable length of the input data stream. Note: this may be
@@ -187,53 +187,35 @@ static const CHAR binpars[NUMBINPARS][VARNAME_MAX] = { "Pb", "e", "eps1",
 "T03", "x3", "w03", "xpbdot", "eps1dot", "eps2dot", "wdot", "gamma", "Pbdot",
 "xdot", "edot", "s", "dr", "dth", "a0", "b0", "M", "m2" };
 
-/**
- * A flag to specify if phase parameters are being searched over and
- * therefore the pulsar model requires phase evolution to be re-calculated (0 =
- * no, 1 = yes).
- */
-extern UINT4 varyphase;
-
-/**
- * A flag to specify if the sky position will be searched over, and therefore
- * whether the solar system barycentring needs recalculating (0 = no, 1 = yes).
- */
-extern UINT4 varyskypos;
-
-/**
- * A flag to specify if the binary system parameters will be searched over,
- * and therefore whether the binary system barycentring needs recalculating (0 =
- * no, 1 = yes)
- */
-extern UINT4 varybinary;
-
 extern LALStringVector *corlist;
 
 /* initialisation functions */
-void initialiseAlgorithm( LALInferenceRunState *runState );
+void initialise_algorithm( LALInferenceRunState *runState );
 
-void readPulsarData( LALInferenceRunState *runState );
+void read_pulsar_data( LALInferenceRunState *runState );
 
-void setupFromParFile( LALInferenceRunState *runState );
+void setup_from_par_file( LALInferenceRunState *runState );
 
-void setupLookupTables(LALInferenceRunState *runState, LALSource *source);
+void setup_lookup_tables(LALInferenceRunState *runState, LALSource *source);
 
 void add_initial_variables( LALInferenceVariables *ini, LALInferenceVariables *scaleFac, BinaryPulsarParams pars );
 
 void add_variable_scale( LALInferenceVariables *var, LALInferenceVariables *scale, const char *name, REAL8 value );
 
-void initialisePrior( LALInferenceRunState *runState );
+void initialise_prior( LALInferenceRunState *runState );
 
-void initialiseProposal( LALInferenceRunState *runState );
+void initialise_proposal( LALInferenceRunState *runState );
 
 void add_correlation_matrix( LALInferenceVariables *ini,
                              LALInferenceVariables *priors, REAL8Array *corMat,
                              LALStringVector *parMat );
 
 /* software injection functions */
-void injectSignal( LALInferenceRunState *runState );
+void inject_signal( LALInferenceRunState *runState );
 
 /* helper functions */
+void compute_variance( LALInferenceIFOData *data, LALInferenceIFOModel *model );
+
 UINT4Vector *get_chunk_lengths( LALInferenceIFOModel *ifo, INT4 chunkMax );
 
 UINT4Vector *chop_n_merge( LALInferenceIFOData *data, INT4 chunkMin, INT4 chunkMax );
@@ -248,13 +230,12 @@ void rechop_data( UINT4Vector *segs, INT4 chunkMax, INT4 chunkMin );
 
 void merge_data( COMPLEX16Vector *data, UINT4Vector *segs );
 
-void sumData( LALInferenceRunState *runState );
+void sum_data( LALInferenceRunState *runState );
 
 void response_lookup_table( REAL8 t0, LALDetAndSource detAndSource,
-                            INT4 timeSteps, INT4 psiSteps, gsl_matrix *LUfplus,
-                            gsl_matrix *LUfcross );
+                            INT4 timeSteps, REAL8Vector *a, REAL8Vector *b );
 
-void rescaleOutput( LALInferenceRunState *runState );
+void rescale_output( LALInferenceRunState *runState );
 
 INT4 count_csv( CHAR *csvline );
 
@@ -268,6 +249,8 @@ TimeCorrectionType XLALAutoSetEphemerisFiles( CHAR *efile, CHAR *sfile,
                                               CHAR *tfile,
                                               BinaryPulsarParams pulsar,
                                               INT4 gpsstart, INT4 gpsend );
+
+void check_and_add_fixed_variable( LALInferenceVariables *vars, const char *name, void *value, LALInferenceVariableType type );
 
 void remove_variable_and_prior( LALInferenceRunState *runState, LALInferenceIFOModel *data, const CHAR *var );
 

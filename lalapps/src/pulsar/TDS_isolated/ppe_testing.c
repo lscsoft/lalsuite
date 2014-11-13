@@ -29,8 +29,7 @@ void gridOutput( LALInferenceRunState *runState ){
   REAL8 h0max = 0.;
   REAL8 h0range = 0, h0step = 0;
   INT4 h0steps = 0, i = 0;
-  UINT4 verbose =
-    LALInferenceCheckVariable(runState->algorithmParams,"verbose");
+  UINT4 verbose = LALInferenceCheckVariable(runState->algorithmParams, "verbose");
 
   ProcessParamsTable *ppt;
   REAL8 scale = 1., scalemin = 0., tmpscale = 0., tmpmin = 0., tmpgridval = 0.;
@@ -129,7 +128,6 @@ void gridOutput( LALInferenceRunState *runState ){
 
     logL->data[i] = runState->likelihood( runState->currentParams,
                                           runState->data, runState->model );
-
 
     if ( logL->data[i] < minL ) minL = logL->data[i];
   }
