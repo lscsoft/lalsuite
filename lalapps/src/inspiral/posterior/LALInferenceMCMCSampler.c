@@ -400,9 +400,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     nullLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->model);
 
     runState->model->waveformCache = cache;
+    i = 0;
     while (headData != NULL) {
-      headData->nullloglikelihood = runState->model->loglikelihood;
+      headData->nullloglikelihood = runState->model->ifo_loglikelihoods[i];
       headData = headData->next;
+      i++;
     }
 
     LALInferenceSetVariable(runState->currentParams, "distance", &d);
@@ -1627,9 +1629,11 @@ void LALInferencePrintPTMCMCHeaderFile(LALInferenceRunState *runState, FILE *cha
     }
     fprintf(chainoutput,"%f\t",runState->currentLikelihood - nullLikelihood);
     headIFO = runState->data;
+    UINT4 i = 0;
     while (headIFO != NULL) {
-      fprintf(chainoutput, "%f\t", runState->currentLikelihood - headIFO->nullloglikelihood);
+      fprintf(chainoutput, "%f\t", runState->currentIFOLikelihoods[i] - headIFO->nullloglikelihood);
       headIFO = headIFO->next;
+      i++;
     }
     if(benchmark) {
       gettimeofday(&tv, NULL);
