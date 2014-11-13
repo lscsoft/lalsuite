@@ -882,7 +882,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
           /* Note: No Factor of 2 here, since we are using the 2-sided COMPLEX16FFT */
           COMPLEX16 dstarh =  TwoDeltaToverN * conj(d) * template/sigmasq;
           dh_S_tilde->data[i]+=dstarh;
-          dh_S_tilde->data[time_length-i-1] += conj(dstarh);
+          dh_S_tilde->data[time_length-i] += conj(dstarh);
           break;
         }
         case MARGPHI:
