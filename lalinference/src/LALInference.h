@@ -106,6 +106,7 @@ typedef enum {
   LALINFERENCE_gslMatrix_t,
   LALINFERENCE_REAL8Vector_t,
   LALINFERENCE_UINT4Vector_t,
+  LALINFERENCE_COMPLEX16Vector_t,
   LALINFERENCE_string_t,
   LALINFERENCE_MCMCrunphase_ptr_t,
   LALINFERENCE_void_ptr_t
@@ -548,6 +549,7 @@ tagLALInferenceIFOData
   char                       name[DETNAMELEN]; /** Detector name */
   REAL8TimeSeries           *timeData,         /** A time series from the detector */
                             *whiteTimeData, *windowedTimeData; /** white is not really white, but over-white. */
+  REAL8TimeSeries           *varTimeData;    /** A time series of the data noise variance */
   /* Stores the log(L) for the model in presence of data.  These were
      added to allow for individual-detector log(L) output.  The
      convention is that loglikelihood always stores the log(L) for the
@@ -985,6 +987,12 @@ void LALInferenceAddREAL8VectorVariable(LALInferenceVariables * vars, const char
 REAL8Vector* LALInferenceGetREAL8VectorVariable(LALInferenceVariables * vars, const char * name);
 
 void LALInferenceSetREAL8VectorVariable(LALInferenceVariables* vars,const char* name,REAL8Vector* value);
+
+void LALInferenceAddCOMPLEX16VectorVariable(LALInferenceVariables * vars, const char * name, COMPLEX16Vector* value, LALInferenceParamVaryType vary);
+
+COMPLEX16Vector* LALInferenceGetCOMPLEX16VectorVariable(LALInferenceVariables * vars, const char * name);
+
+void LALInferenceSetCOMPLEX16VectorVariable(LALInferenceVariables* vars,const char* name,COMPLEX16Vector* value);
 
 void LALInferenceAddUINT4VectorVariable(LALInferenceVariables * vars, const char * name, UINT4Vector* value, LALInferenceParamVaryType vary);
 
