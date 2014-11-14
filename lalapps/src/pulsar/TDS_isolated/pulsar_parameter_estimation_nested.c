@@ -1511,9 +1511,9 @@ void setup_lookup_tables( LALInferenceRunState *runState, LALSource *source ){
   else { timeBins = TIMEBINS; } /* default time bins */
 
   while( ifo_model ){
-    REAL8Vector *arespT = NULL, REAL8Vector *brespT = NULL;
-    REAL8Vector *arespV = NULL, REAL8Vector *brespV = NULL;
-    REAL8Vector *arespS = NULL, REAL8Vector *brespS = NULL;
+    REAL8Vector *arespT = NULL, *brespT = NULL;
+    REAL8Vector *arespV = NULL, *brespV = NULL;
+    REAL8Vector *arespS = NULL, *brespS = NULL;
 
     REAL8Vector *sidDayFrac = NULL;
     UINT4 i = 0;
@@ -1625,11 +1625,13 @@ void add_initial_variables( LALInferenceVariables *ini,  LALInferenceVariables *
 
   /* add non-GR parameters */
   add_variable_scale( ini, scaleFac, "cgw", pars.cgw );
+  add_variable_scale( ini, scaleFac, "hPlus", pars.hPlus );
+  add_variable_scale( ini, scaleFac, "hCross", pars.hCross );
   add_variable_scale( ini, scaleFac, "hScalarB", pars.hScalarB );
   add_variable_scale( ini, scaleFac, "hScalarL", pars.hScalarL );
   add_variable_scale( ini, scaleFac, "phi0Scalar", pars.phi0Scalar );
-  add_variable_scale( ini, scaleFac, "hVector", pars.hVector );
-  add_variable_scale( ini, scaleFac, "gammaVector", pars.gammaVector );
+  add_variable_scale( ini, scaleFac, "hVectorX", pars.hVectorX );
+  add_variable_scale( ini, scaleFac, "hVectorY", pars.hVectorY );
   add_variable_scale( ini, scaleFac, "psiVector", pars.psiVector );
   add_variable_scale( ini, scaleFac, "phi0Vector", pars.psiVector );
 
@@ -2074,11 +2076,13 @@ void initialise_prior( LALInferenceRunState *runState )
   }
   else{
     /* remove non-GR parameters */
+    remove_variable_and_prior( runState, ifo, "hPlus" );
+    remove_variable_and_prior( runState, ifo, "hCross" );
     remove_variable_and_prior( runState, ifo, "hScalarB" );
     remove_variable_and_prior( runState, ifo, "hScalarL" );
     remove_variable_and_prior( runState, ifo, "phi0Scalar" );
-    remove_variable_and_prior( runState, ifo, "hVector" );
-    remove_variable_and_prior( runState, ifo, "gammaVector" );
+    remove_variable_and_prior( runState, ifo, "hVectorX" );
+    remove_variable_and_prior( runState, ifo, "hVectorY" );
     remove_variable_and_prior( runState, ifo, "psiVector" );
     remove_variable_and_prior( runState, ifo, "phi0Vector" );
     remove_variable_and_prior( runState, ifo, "cgw" );
@@ -3605,59 +3609,6 @@ void sum_data( LALInferenceRunState *runState ){
 
 
 /**
- * \brief Creates a lookup table of the detector antenna pattern
- *
- * This function creates a lookup table of the tensor, vector and scalar antenna patterns for a given
- * detector orientation and source sky position. For the tensor modes these are the functions given by
- * equations 10-13 in \cite JKS98, whilst for the vector and scalar modes they are the \f$\psi\f$
- * independent parts of e.g. equations 5-8 of \cite Nishizawa2009. We remove the \f$\psi\f$ dependent
- * by setting \f$\psi=0\f$.
- *
- * \param t0 [in] initial GPS time of the data
- * \param detNSource [in] structure containing the detector and source orientations and locations
- * \param timeSteps [in] the number of grid bins to use in time
- * \param aT [in] a vector into which the a(t) Fplus tensor antenna pattern lookup table will be output
- * \param bT [in] a vector into which the b(t) Fcross tensor antenna pattern lookup table will be output
- * \param aV [in] a vector into which the a(t) Fx vector antenna pattern lookup table will be output
- * \param bV [in] a vector into which the b(t) Fy vector antenna pattern lookup table will be output
- * \param aS [in] a vector into which the a(t) Fb scalar antenna pattern lookup table will be output
- * \param bS [in] a vector into which the b(t) Fl scalar antenna pattern lookup table will be output
- */
-void response_lookup_table( REAL8 t0, LALDetAndSource detNSource, INT4 timeSteps, REAL8Vector *aT,
-                            REAL8Vector *bT, REAL8Vector *aV, REAL8Vector *bV, REAL8Vector *aS,
-                            REAL8Vector *bS ){
-  LIGOTimeGPS gps;
-  REAL8 T = 0;
-
-  REAL8 fplus = 0., fcross = 0., fx = 0., fy = 0., fb = 0., fl = 0.;
-  REAL8 tsteps = (REAL8)timeSteps;
-
-  INT4 j = 0;
-
-  /* set the polarisation angle to zero to get the a(t) and b(t) antenna pattern functions */
-  detNSource.pSource->orientation = 0.0;
-
-  for( j = 0 ; j < timeSteps ; j++ ){
-    T = t0 + (REAL8)j*LAL_DAYSID_SI / tsteps;
-
-    XLALGPSSetREAL8(&gps, T);
-
-    XLALComputeDetAMResponseExtraModes( &fplus, &fcross, &fb, &fl, &fx, &fy, detNSource.pDetector->response,
-                                        detNSource.pSource->equatorialCoords.longitude,
-                                        detNSource.pSource->equatorialCoords.latitude,
-                                        detNSource.pSource->orientation, XLALGreenwichMeanSiderealTime( &gps ) );
-
-    aT->data[j] = fplus;
-    bT->data[j] = fcross;
-    aV->data[j] = fx;
-    bV->data[j] = fy;
-    aS->data[j] = fb;
-    bS->data[j] = fl;
-  }
-}
-
-
-/**
  * \brief Rescale the values output by the Nested Sampling algorithm
  *
  * This function reads in the file of samples output from the Nested Sampling algorithm (in the file specified by \c
@@ -3957,21 +3908,49 @@ REAL8 calculate_time_domain_snr( LALInferenceIFOData *data, LALInferenceIFOModel
 
   INT4 i = 0, j = 0, length = 0, cl = 0;
 
-  INT4 chunkMin = 0, count = 0, varyphase = 0;
+  INT4 chunkMin = 0, count = 0, varyphase = 0, nonGR = 0;
 
   UINT4Vector *chunkLengths = NULL;
   chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( ifo_model->params, "chunkLength" );
   chunkMin = *(INT4*)LALInferenceGetVariable( ifo_model->params, "chunkMin" );
 
-  REAL8Vector *sumP = NULL, *sumC = NULL, *sumPC = NULL;
+  REAL8Vector *sumP = NULL, *sumC = NULL, *sumX = NULL, *sumY = NULL, *sumB = NULL, *sumL = NULL;
+  REAL8Vector *sumPC = NULL, *sumPX = NULL, *sumPY = NULL, *sumPB = NULL, *sumPL = NULL;
+  REAL8Vector *sumCX = NULL, *sumCY = NULL, *sumCB = NULL, *sumCL = NULL;
+  REAL8Vector *sumXY = NULL, *sumXB = NULL, *sumXL = NULL;
+  REAL8Vector *sumYB = NULL, *sumYL = NULL;
+  REAL8Vector *sumBL = NULL;
 
   if ( LALInferenceCheckVariable( ifo_model->params, "varyphase" ) ){ varyphase = 1; }
+  if ( LALInferenceCheckVariable( ifo_model->params, "nonGR" ) ){ nonGR = 1; }
 
   if ( !varyphase ){
     /* get explicitly whitened versions of these sums */
     sumP = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumPWhite" );
     sumC = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumCWhite" );
     sumPC = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumPCWhite" );
+
+    if ( nonGR ){
+      sumX = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumX" );
+      sumY = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumY" );
+      sumB = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumB" );
+      sumL = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumL" );
+
+      sumPX = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumPX" );
+      sumPY = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumPY" );
+      sumPB = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumPB" );
+      sumPL = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumPL" );
+      sumCX = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumCX" );
+      sumCY = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumCY" );
+      sumCB = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumCB" );
+      sumCL = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumCL" );
+      sumXY = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumXY" );
+      sumXB = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumXB" );
+      sumXL = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumXL" );
+      sumYB = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumYB" );
+      sumYL = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumYL" );
+      sumBL = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumBL" );
+    }
   }
 
   length = data->compTimeData->data->length;
@@ -3998,14 +3977,42 @@ REAL8 calculate_time_domain_snr( LALInferenceIFOData *data, LALInferenceIFOModel
       }
     }
     else{
-      COMPLEX16 Ma, Mb;
-      Ma = ifo_model->compTimeSignal->data->data[0];
-      Mb = ifo_model->compTimeSignal->data->data[1];
+      COMPLEX16 Mp, Mc;
+      Mp = ifo_model->compTimeSignal->data->data[0];
+      Mc = ifo_model->compTimeSignal->data->data[1];
 
-      snrcRe += sumP->data[count]*(creal(Ma)*creal(Ma) + cimag(Ma)*cimag(Ma));
-      snrcRe += sumC->data[count]*(creal(Mb)*creal(Mb) + cimag(Mb)*cimag(Mb));
-      snrcRe += 2.*sumPC->data[count]*(creal(Ma)*creal(Mb) + cimag(Ma)*cimag(Mb));
+      snrcRe += sumP->data[count]*(creal(Mp)*creal(Mp) + cimag(Mp)*cimag(Mp)) +
+                sumC->data[count]*(creal(Mc)*creal(Mc) + cimag(Mc)*cimag(Mc)) +
+                2.*sumPC->data[count]*(creal(Mp)*creal(Mc) + cimag(Mp)*cimag(Mc));
       snrcIm = 0.;
+
+      if ( nonGR ){
+        COMPLEX16 Mx, My, Mb, Ml;
+
+        Mx = ifo_model->compTimeSignal->data->data[2];
+        My = ifo_model->compTimeSignal->data->data[3];
+        Mb = ifo_model->compTimeSignal->data->data[4];
+        Ml = ifo_model->compTimeSignal->data->data[5];
+
+        snrcRe += sumX->data[count]*(creal(Mx)*creal(Mx) + cimag(Mx)*cimag(Mx)) +
+                  sumY->data[count]*(creal(My)*creal(My) + cimag(My)*cimag(My)) +
+                  sumB->data[count]*(creal(Mb)*creal(Mb) + cimag(Mb)*cimag(Mb)) +
+                  sumL->data[count]*(creal(Ml)*creal(Ml) + cimag(Ml)*cimag(Ml)) +
+                  2.*(sumPX->data[count]*(creal(Mp)*creal(Mx) + cimag(Mp)*cimag(Mx)) +
+                  sumPY->data[count]*(creal(Mp)*creal(My) + cimag(Mp)*cimag(My)) +
+                  sumPB->data[count]*(creal(Mp)*creal(Mb) + cimag(Mp)*cimag(Mb)) +
+                  sumPL->data[count]*(creal(Mp)*creal(Ml) + cimag(Mp)*cimag(Ml)) +
+                  sumCX->data[count]*(creal(Mc)*creal(Mx) + cimag(Mc)*cimag(Mx)) +
+                  sumCY->data[count]*(creal(Mc)*creal(My) + cimag(Mc)*cimag(My)) +
+                  sumCB->data[count]*(creal(Mc)*creal(Mb) + cimag(Mc)*cimag(Mb)) +
+                  sumCL->data[count]*(creal(Mc)*creal(Ml) + cimag(Mc)*cimag(Ml)) +
+                  sumXY->data[count]*(creal(Mx)*creal(My) + cimag(Mx)*cimag(My)) +
+                  sumXB->data[count]*(creal(Mx)*creal(Mb) + cimag(Mx)*cimag(Mb)) +
+                  sumXL->data[count]*(creal(Mx)*creal(Ml) + cimag(Mx)*cimag(Ml)) +
+                  sumYB->data[count]*(creal(My)*creal(Mb) + cimag(My)*cimag(Mb)) +
+                  sumYL->data[count]*(creal(My)*creal(Ml) + cimag(My)*cimag(Ml)) +
+                  sumBL->data[count]*(creal(Mb)*creal(Ml) + cimag(Mb)*cimag(Ml)));
+      }
     }
 
     /* add SNRs for each chunk in quadrature */

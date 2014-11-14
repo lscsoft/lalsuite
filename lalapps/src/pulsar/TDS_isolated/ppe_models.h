@@ -62,10 +62,9 @@ REAL8 get_phase_mismatch( REAL8Vector *phi1, REAL8Vector *phi2, LIGOTimeGPSVecto
 
 void get_earth_pos_vel( EarthState *earth, EphemerisData *ephem, LIGOTimeGPS *t );
 
-void response_lookup_table( REAL8 t0, LALDetAndSource detAndSource,
-                            INT4 timeSteps, INT4 psiSteps, gsl_matrix *LUfplus,
-                            gsl_matrix *LUfcross, gsl_matrix *LUfb, gsl_matrix *LUfl,
-                            gsl_matrix *LUfx, gsl_matrix *LUfy );
+void response_lookup_table( REAL8 t0, LALDetAndSource detNSource, INT4 timeSteps, REAL8Vector *a1,
+                            REAL8Vector *b1, REAL8Vector *a2, REAL8Vector *b2, REAL8Vector *a3,
+                            REAL8Vector *b3 );
 
 /* functions to convert between parameters */
 void phi0_psi_transform( REAL8 phi0, REAL8 psi, REAL8 *phi0prime, REAL8 *psiprime );

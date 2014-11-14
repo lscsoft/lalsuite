@@ -567,7 +567,7 @@ typedef struct tagParConversion{
 }ParConversion;
 
 
-#define NUM_PARS 101 /* number of allowed parameters */
+#define NUM_PARS 103 /* number of allowed parameters */
 
 /** Initialise conversion structure with most allowed TEMPO2 parameter names and conversion functions
  * (convert all read in parameters to SI units where necessary). See http://arxiv.org/abs/astro-ph/0603381 and
@@ -693,11 +693,13 @@ ParConversion pc[NUM_PARS] = {
   { .name = "I31", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t },
 
   /* GW non-GR polarisation mode amplitude parameters */
+  { .name = "HPLUS", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* GW tensor plus polarisation amplitude */
+  { .name = "HCROSS", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* GW tensor cross polarisation amplitude */
   { .name = "HSCALARB", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* GW scalar breathing mode polarisation amplitude */
   { .name = "HSCALARL", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* GW scalar longitudinal polarisation amplitude */
   { .name = "PHI0SCALAR", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* initial phase for scalar modes */
-  { .name = "HVECTOR", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* GW vector mode polarisation amplitude */
-  { .name = "GAMMAVECTOR", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* GW vector amplitude polarisation */
+  { .name = "HVECTORX", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* GW vector x-mode amplitude */
+  { .name = "HVECTORY", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* GW vector y-mode amplitude */
   { .name = "PSIVECTOR", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* GW vector angle polarisation */
   { .name = "PHI0VECTOR", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t } /* GW vector polarisation initial phase */
 };
@@ -1163,11 +1165,13 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   output->phi22=0.;
   output->phi21=0.;
 
+  output->hPlus=0.;
+  output->hCross=0.;
   output->hScalarB=0.;
   output->hScalarL=0.;
   output->phi0Scalar=0.;
-  output->hVector=0.;
-  output->gammaVector=0.;
+  output->hVectorX=0.;
+  output->hVectorY=0.;
   output->psiVector=0.;
   output->phi0Vector=0.;
 
@@ -1185,17 +1189,19 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   output->C21Err=0.;
   output->phi22Err=0.;
   output->phi21Err=0.;
+  output->hPlusErr=0.;
+  output->hCrossErr=0.;
   output->hScalarBErr=0.;
   output->hScalarLErr=0.;
   output->phi0ScalarErr=0.;
-  output->hVectorErr=0.;
-  output->gammaVectorErr=0.;
+  output->hVectorXErr=0.;
+  output->hVectorYErr=0.;
   output->psiVectorErr=0.;
   output->phi0VectorErr=0.;
 
   output->wave_omErr = 0.0;
 
-  output->cgw = 0.; /* initialise the GW speed to be the speed of light */
+  output->cgw = 1.; /* initialise the GW speed to be the speed of light */
   output->cgwErr = 0.;
 
   output->units = NULL;
@@ -2134,6 +2140,24 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
         j+=2;
       }
     }
+    else if( !strcmp(val[i],"hplus") || !strcmp(val[i],"HPLUS") ) {
+      output->hPlus = atof(val[i+1]);
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->hPlus = atof(val[i+3]);
+        j+=2;
+      }
+    }
+    else if( !strcmp(val[i],"hcross") || !strcmp(val[i],"HCROSS") ) {
+      output->hCross = atof(val[i+1]);
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->hCrossErr = atof(val[i+3]);
+        j+=2;
+      }
+    }
     else if( !strcmp(val[i],"hscalarb") || !strcmp(val[i],"HSCALARB") ) {
       output->hScalarB = atof(val[i+1]);
       j++;
@@ -2161,21 +2185,21 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
         j+=2;
       }
     }
-    else if( !strcmp(val[i],"hvector") || !strcmp(val[i],"HVECTOR") ) {
-      output->hVector = atof(val[i+1]);
+    else if( !strcmp(val[i],"hvectorx") || !strcmp(val[i],"HVECTORX") ) {
+      output->hVectorX = atof(val[i+1]);
       j++;
 
       if(atoi(val[i+2])==1 && i+2<k){
-        output->hVectorErr = atof(val[i+3]);
+        output->hVectorXErr = atof(val[i+3]);
         j+=2;
       }
     }
-    else if( !strcmp(val[i],"gammavector") || !strcmp(val[i],"GAMMAVECTOR") ) {
-      output->gammaVector = atof(val[i+1]);
+    else if( !strcmp(val[i],"hvectory") || !strcmp(val[i],"HVECTORY") ) {
+      output->hVectorY = atof(val[i+1]);
       j++;
 
       if(atoi(val[i+2])==1 && i+2<k){
-        output->gammaVectorErr = atof(val[i+3]);
+        output->hVectorYErr = atof(val[i+3]);
         j+=2;
       }
     }

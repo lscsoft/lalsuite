@@ -233,10 +233,6 @@ void merge_data( COMPLEX16Vector *data, UINT4Vector *segs );
 
 void sum_data( LALInferenceRunState *runState );
 
-void response_lookup_table( REAL8 t0, LALDetAndSource detNSource, INT4 timeSteps, REAL8Vector *a1,
-                            REAL8Vector *b1, REAL8Vector *a2, REAL8Vector *b2, REAL8Vector *a3,
-                            REAL8Vector *b3 );
-
 void rescale_output( LALInferenceRunState *runState );
 
 INT4 count_csv( CHAR *csvline );

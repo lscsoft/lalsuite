@@ -58,7 +58,7 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
   /* get pulsar model (this will internally loop over all data frequency streams and IFOs) */
   get_model->templt( get_model );
 
-  if ( LALInferenceCheckVariable( ifomodeltemp, "nonGR" ) ){ nonGR = 1 };
+  if ( LALInferenceCheckVariable( ifomodeltemp->params, "nonGR" ) ){ nonGR = 1; }
 
   while ( tempdata ){
     /* check if using a Gaussian likelihood - default is the students-t */
@@ -71,7 +71,7 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
 
     REAL8 sumModel = 0., sumDataModel = 0.;
     REAL8 chiSquare = 0.;
-    COMPLEX16 B, M, Ma, Mb;
+    COMPLEX16 B, M, Mp, Mc;
 
     REAL8Vector *sumDat = NULL;
     REAL8Vector *sumP = NULL, *sumC = NULL, *sumX = NULL, *sumY = NULL, *sumB = NULL, *sumL = NULL;
@@ -166,11 +166,11 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
                     sumC->data[count]*(creal(Mc)*creal(Mc) + cimag(Mc)*cimag(Mc)) +
                     2.*sumPC->data[count]*(creal(Mp)*creal(Mc) + cimag(Mp)*cimag(Mc));
 
-        sumDataModel += creal(sumDataA->data[count])*creal(Mp) + cimag(sumDataA->data[count])*cimag(Mp) +
-                        creal(sumDataB->data[count])*creal(Mc) + cimag(sumDataB->data[count])*cimag(Mc);
+        sumDataModel += creal(sumDataP->data[count])*creal(Mp) + cimag(sumDataP->data[count])*cimag(Mp) +
+                        creal(sumDataC->data[count])*creal(Mc) + cimag(sumDataC->data[count])*cimag(Mc);
 
         if ( nonGR ){
-          REAL8 Mx, My, Mb, Ml;
+          COMPLEX16 Mx, My, Mb, Ml;
 
           Mx = ifomodeltemp->compTimeSignal->data->data[2];
           My = ifomodeltemp->compTimeSignal->data->data[3];
@@ -182,19 +182,26 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
                       sumB->data[count]*(creal(Mb)*creal(Mb) + cimag(Mb)*cimag(Mb)) +
                       sumL->data[count]*(creal(Ml)*creal(Ml) + cimag(Ml)*cimag(Ml)) +
                       2.*(sumPX->data[count]*(creal(Mp)*creal(Mx) + cimag(Mp)*cimag(Mx)) +
-                          sumPY->data[count]*(creal(Mp)*creal(My) + cimag(Mp)*cimag(My)) +
-                          sumPB->data[count]*(creal(Mp)*creal(Mb) + cimag(Mp)*cimag(Mb)) +
-                          sumPL->data[count]*(creal(Mp)*creal(Ml) + cimag(Mp)*cimag(Ml)) +
-                          sumCX->data[count]*(creal(Mc)*creal(Mx) + cimag(Mc)*cimag(Mx)) +
-                          sumCY->data[count]*(creal(Mc)*creal(My) + cimag(Mc)*cimag(My)) +
-                          sumCB->data[count]*(creal(Mc)*creal(Mb) + cimag(Mc)*cimag(Mb)) +
-                          sumCL->data[count]*(creal(Mc)*creal(Ml) + cimag(Mc)*cimag(Ml)) +
-                          sumXY->data[count]*(creal(Mx)*creal(My) + cimag(Mx)*cimag(My)) +
-                          sumXB->data[count]*(creal(Mx)*creal(Mb) + cimag(Mx)*cimag(Mb)) +
-                          sumXL->data[count]*(creal(Mx)*creal(Ml) + cimag(Mx)*cimag(Ml)) +
-                          sumYB->data[count]*(creal(My)*creal(Mb) + cimag(My)*cimag(Mb)) +
-                          sumYL->data[count]*(creal(My)*creal(Ml) + cimag(My)*cimag(Ml)) +
-                          sumBL->data[count]*(creal(Mb)*creal(Ml) + cimag(Mb)*cimag(Ml)));
+                      sumPY->data[count]*(creal(Mp)*creal(My) + cimag(Mp)*cimag(My)) +
+                      sumPB->data[count]*(creal(Mp)*creal(Mb) + cimag(Mp)*cimag(Mb)) +
+                      sumPL->data[count]*(creal(Mp)*creal(Ml) + cimag(Mp)*cimag(Ml)) +
+                      sumCX->data[count]*(creal(Mc)*creal(Mx) + cimag(Mc)*cimag(Mx)) +
+                      sumCY->data[count]*(creal(Mc)*creal(My) + cimag(Mc)*cimag(My)) +
+                      sumCB->data[count]*(creal(Mc)*creal(Mb) + cimag(Mc)*cimag(Mb)) +
+                      sumCL->data[count]*(creal(Mc)*creal(Ml) + cimag(Mc)*cimag(Ml)) +
+                      sumXY->data[count]*(creal(Mx)*creal(My) + cimag(Mx)*cimag(My)) +
+                      sumXB->data[count]*(creal(Mx)*creal(Mb) + cimag(Mx)*cimag(Mb)) +
+                      sumXL->data[count]*(creal(Mx)*creal(Ml) + cimag(Mx)*cimag(Ml)) +
+                      sumYB->data[count]*(creal(My)*creal(Mb) + cimag(My)*cimag(Mb)) +
+                      sumYL->data[count]*(creal(My)*creal(Ml) + cimag(My)*cimag(Ml)) +
+                      sumBL->data[count]*(creal(Mb)*creal(Ml) + cimag(Mb)*cimag(Ml)));
+
+          sumDataModel += creal(sumDataP->data[count])*creal(Mp) + cimag(sumDataP->data[count])*cimag(Mp) +
+                          creal(sumDataC->data[count])*creal(Mc) + cimag(sumDataC->data[count])*cimag(Mc) +
+                          creal(sumDataX->data[count])*creal(Mx) + cimag(sumDataX->data[count])*cimag(Mx) +
+                          creal(sumDataY->data[count])*creal(My) + cimag(sumDataY->data[count])*cimag(My) +
+                          creal(sumDataB->data[count])*creal(Mb) + cimag(sumDataB->data[count])*cimag(Mb) +
+                          creal(sumDataL->data[count])*creal(Ml) + cimag(sumDataL->data[count])*cimag(Ml);
         }
      }
 
