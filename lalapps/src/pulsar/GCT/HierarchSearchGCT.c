@@ -1148,8 +1148,8 @@ int MAIN( int argc, char *argv[]) {
     {
 #ifdef EAH_BOINC
       SHOW_PROGRESS_RESERVE(dopplerpos.Alpha, dopplerpos.Delta,
-                    skyGridCounter * nf1dot + f1dotGridCounter,
-                    thisScan.numSkyGridPoints * nf1dot, uvar_Freq, uvar_FreqBand);
+                    skyGridCounter * usefulParams.nf1dot + f1dotGridCounter,
+                    thisScan.numSkyGridPoints * usefulParams.nf1dot, uvar_Freq, uvar_FreqBand);
 
       fprintf(stderr, "\n%d", skyGridCounter);
 #endif
@@ -1610,9 +1610,11 @@ int MAIN( int argc, char *argv[]) {
         } /* ########## End of loop over coarse-grid f2dot values (if2dot) ########## */
         ifdot++;  /* Increment ifdot counter BEFORE SET_GCT_CHECKPOINT */
 
+#ifdef EAH_BOINC
         SHOW_PROGRESS_RESERVE(dopplerpos.Alpha, dopplerpos.Delta,
-                      skyGridCounter * nf1dot + ifdot,
-                      thisScan.numSkyGridPoints * nf1dot, uvar_Freq, uvar_FreqBand);
+                      skyGridCounter * usefulParams.nf1dot + ifdot,
+                      thisScan.numSkyGridPoints * usefulParams.nf1dot, uvar_Freq, uvar_FreqBand);
+#endif
 
         SET_GCT_CHECKPOINT (uvar_fnameChkPoint, semiCohToplist, semiCohToplist2, skyGridCounter*usefulParams.nf1dot+ifdot, TRUE);
 
@@ -1720,10 +1722,12 @@ int MAIN( int argc, char *argv[]) {
 
   LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
 
+#ifdef EAH_BOINC
   SHOW_PROGRESS(dopplerpos.Alpha, dopplerpos.Delta,
-                skyGridCounter * nf1dot,
-                skyGridCounter * nf1dot,
+                skyGridCounter * usefulParams.nf1dot,
+                skyGridCounter * usefulParams.nf1dot,
                 uvar_Freq, uvar_FreqBand);
+#endif
 
   clear_gct_checkpoint (uvar_fnameChkPoint);
 
