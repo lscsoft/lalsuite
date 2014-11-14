@@ -1629,11 +1629,6 @@ int MAIN( int argc, char *argv[]) {
       else {
         skyGridCounter++;
 
-        /* this is necessary here, because the checkpoint needs some information from here */
-        SHOW_PROGRESS_RESERVE(dopplerpos.Alpha, dopplerpos.Delta,
-                      skyGridCounter * nf1dot,
-                      thisScan.numSkyGridPoints * nf1dot, uvar_Freq, uvar_FreqBand);
-
         XLALNextDopplerSkyPos( &dopplerpos, &thisScan );
       }
 
