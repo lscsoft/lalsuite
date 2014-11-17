@@ -39,7 +39,15 @@ lalapps_pulsar_parameter_estimation_nested_SOURCES = \
 	ppe_likelihood.c \
 	ppe_likelihood.h \
 	ppe_testing.c \
-	ppe_testing.h
+	ppe_testing.h \
+	ppe_init.c \
+	ppe_init.h \
+	ppe_utils.c \
+	ppe_utils.h \
+	ppe_readdata.c \
+	ppe_readdata.h \
+	ppe_inject.c \
+	ppe_inject.h
 
 lalapps_create_pulsar_signal_frame_SOURCES = \
 	create_pulsar_signal_frame.c
