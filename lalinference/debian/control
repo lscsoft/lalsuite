@@ -5,12 +5,12 @@ Maintainer: Adam Mercer <adam.mercer@ligo.org>
 Build-Depends: debhelper (>= 7), pkg-config, python-all-dev,
   libchealpix-dev,
   zlib1g-dev, libgsl0-dev (>= 1.15), libmetaio-dev (>= 8.2),
-  octave3.2-headers, python-numpy (>= 1.3),
+  octave3.2-headers, python-numpy (>= 1.3), python-scipy,
   lal-dev (>= 6.13.0~), lal-python (>= 6.13.0~),
   lal-octave (>= 6.13.0~), lalframe-dev (>= 1.2.0~),
   lalframe-python (>= 1.2.0~), lalframe-octave (>= 1.2.0~),
   lalmetaio-dev (>= 1.2.0~), lalmetaio-python (>= 1.2.0~),
-  lalmetaio-octave (>= 1.2.0~), lalxml (>= 1.1.14~),
+  lalmetaio-octave (>= 1.2.0~), lalxml-dev (>= 1.1.14~),
   lalxml-python (>= 1.1.14~), lalxml-octave (>= 1.1.14~),
   lalsimulation-dev (>= 1.2.0~), lalsimulation-python (>= 1.2.0~),
   lalsimulation-octave (>= 1.2.0~), lalinspiral-dev (>= 1.6.0~),
@@ -25,7 +25,7 @@ Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g,
   libchealpix0, python-healpy,
   libgsl0 (>= 1.15) | libgsl0ldbl (>= 1.15), libmetaio1 (>= 8.2),
-  lal (>= 6.13.0~), lalframe (>= 1.3.0~), lalmetaio (>= 1.2.0~),
+  lal (>= 6.13.0~), lalframe (>= 1.2.0~), lalmetaio (>= 1.2.0~),
   lalxml (>= 1.1.14~), lalsimulation (>= 1.2.0~), lalinspiral (>= 1.6.0~),
   lalpulsar (>= 1.10.0~)
 Description: LSC Algorithm Library Inference
@@ -49,7 +49,7 @@ Description: LSC Algorithm Library Inference Developers
 
 Package: lalinference-python
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, python-numpy,
+Depends: ${shlibs:Depends}, ${misc:Depends}, python-numpy, python-scipy,
   lalinference (= ${binary:Version}), lal-python (>= 6.13.0~),
   lalframe-python (>= 1.2.0~), lalmetaio-python (>= 1.2.0~),
   lalxml-python (>= 1.1.14~), lalsimulation-python (>= 1.2.0~),
