@@ -17,7 +17,7 @@ Build-Depends: debhelper (>= 7), pkg-config, python-all-dev,
   lalinspiral-python (>= 1.6.0~), lalinspiral-octave (>= 1.6.0~),
   lalpulsar-dev (>= 1.10.0~), lalpulsar-python (>= 1.10.0~),
   lalpulsar-octave (>= 1.10.0~)
-X-Python-Version: >= 2.6
+X-Python-Version: >= 2.7
 Standards-Version: 3.8.6
 
 Package: lalinference
