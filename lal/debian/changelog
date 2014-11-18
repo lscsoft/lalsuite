@@ -1,3 +1,10 @@
+lal (6.13.4-1) unstable; urgency=low
+
+  * LAL 6.13.4
+  * packaging updates
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 18 Nov 2014 15:18:59 -0600
+
 lal (6.13.3-1) unstable; urgency=low
 
   * LAL 6.13.3
