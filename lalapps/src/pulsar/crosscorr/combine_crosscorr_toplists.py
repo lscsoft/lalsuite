@@ -45,12 +45,12 @@ def read_and_sort_toplist(filename,min_snr=float("inf"),
         if rho_to_drop > min_snr:
             # count how many candidates are over the minimum
             keep_cands = np.sum(rho > min_snr)
-            rho_to_drop = rho[sorted_inds[keep_cands]]
+            rho_to_drop = rho[sorted_inds[keep_cands - 1]]
         else:
             keep_cands = min_cands
-        if dropped_rho < rho[sorted_inds[keep_cands]]:
-            dropped_rho = rho[sorted_inds[keep_cands]]
-        sorted_inds = sorted_inds[:keep_cands]
+            if dropped_rho < rho[sorted_inds[keep_cands - 1]]:
+                dropped_rho = rho[sorted_inds[keep_cands - 1]]
+        sorted_inds = sorted_inds[:keep_cands-1]
 
     return data[sorted_inds,:], dropped_rho
 
