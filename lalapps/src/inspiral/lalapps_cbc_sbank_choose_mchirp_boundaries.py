@@ -84,18 +84,34 @@ if options.mchirp_min or options.mchirp_max:
         high = len(mchirps)
     templates = templates[low:high]
 
-# define boundaries based on templates in coarse bank
+
+#
+# Define boundaries based on templates in coarse bank. The step size
+# is determined by a rough estimate of the computational scale for the
+# bank generation between the given mchirp boundaries.
+#
 if options.template_weight == "equal":
+    # More appropriate for metric match.
     template_weights = [1.0 for row in templates]
 elif options.template_weight == "duration":
+    # More appropriate for brute match (or bank sim). Split template
+    # banks up to have equal amounts of sum( deltaF * deltaT ), which
+    # should be ~ proportional to the computational scale for
+    # generating this sub-bank.
     template_weights = [row.tau0 * row.f_final for row in templates]
-template_weights = numpy.array(template_weights).cumsum()
 
-# split template banks up to have equal amounts of sum( deltaF *
-# deltaT ), which should be ~ proportional to the computational scale
-# for generating this sub-bank
-stride = numpy.searchsorted(template_weights, numpy.linspace(0, template_weights[-1], options.nbanks))
-boundaries = [templates[k].mchirp for k in stride[:-1]] # exclude high mass end point
+template_weights = numpy.array(template_weights).cumsum()
+stride = numpy.searchsorted(template_weights, numpy.linspace(0, template_weights[-1], options.nbanks+1))
+
+# We output the boundaries excluding the largest and smallest chirp
+# mass values. The idea is that if the "coarse" bank already contains
+# strict boundary points, then including extremal boundary points in
+# the split boundary file will lead to a job with a zero-measure
+# parameter space. This job gets stuck in a while 1 loop (this
+# behavior is a bug, which should be caught by the code and lead to a
+# crash, but regardless we want to avoid such cases here).
+boundaries = [templates[k].mchirp for k in stride[1:-1]] # exclude high mass and low mass end points
+
 
 # adjust based on user preferences
 if options.mchirp_min:
