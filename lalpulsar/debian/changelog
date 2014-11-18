@@ -1,3 +1,10 @@
+lalpulsar (1.10.4-1) unstable; urgency=low
+
+  * LALPulsar 1.10.4
+  * packaging updates
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 18 Nov 2014 15:39:38 -0600
+
 lalpulsar (1.10.3-3) unstable; urgency=low
 
   * fix lalxml dependencies
