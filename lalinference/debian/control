@@ -6,17 +6,17 @@ Build-Depends: debhelper (>= 7), pkg-config, python-all-dev,
   libchealpix-dev,
   zlib1g-dev, libgsl0-dev (>= 1.15), libmetaio-dev (>= 8.2),
   octave3.2-headers, python-numpy (>= 1.3), python-scipy,
-  lal-dev (>= 6.13.0~), lal-python (>= 6.13.0~),
-  lal-octave (>= 6.13.0~), lalframe-dev (>= 1.2.0~),
-  lalframe-python (>= 1.2.0~), lalframe-octave (>= 1.2.0~),
-  lalmetaio-dev (>= 1.2.0~), lalmetaio-python (>= 1.2.0~),
-  lalmetaio-octave (>= 1.2.0~), lalxml-dev (>= 1.1.14~),
-  lalxml-python (>= 1.1.14~), lalxml-octave (>= 1.1.14~),
-  lalsimulation-dev (>= 1.2.0~), lalsimulation-python (>= 1.2.0~),
-  lalsimulation-octave (>= 1.2.0~), lalinspiral-dev (>= 1.6.0~),
-  lalinspiral-python (>= 1.6.0~), lalinspiral-octave (>= 1.6.0~),
-  lalpulsar-dev (>= 1.10.0~), lalpulsar-python (>= 1.10.0~),
-  lalpulsar-octave (>= 1.10.0~)
+  lal-dev (>= 6.13.4~), lal-python (>= 6.13.4~),
+  lal-octave (>= 6.13.4~), lalframe-dev (>= 1.2.4~),
+  lalframe-python (>= 1.2.4~), lalframe-octave (>= 1.2.4~),
+  lalmetaio-dev (>= 1.2.5~), lalmetaio-python (>= 1.2.5~),
+  lalmetaio-octave (>= 1.2.5~), lalxml-dev (>= 1.1.15~),
+  lalxml-python (>= 1.1.15~), lalxml-octave (>= 1.1.15~),
+  lalsimulation-dev (>= 1.2.4~), lalsimulation-python (>= 1.2.4~),
+  lalsimulation-octave (>= 1.2.4~), lalinspiral-dev (>= 1.6.4~),
+  lalinspiral-python (>= 1.6.4~), lalinspiral-octave (>= 1.6.4~),
+  lalpulsar-dev (>= 1.10.4~), lalpulsar-python (>= 1.10.4~),
+  lalpulsar-octave (>= 1.10.4~)
 X-Python-Version: >= 2.7
 Standards-Version: 3.8.6
 
@@ -25,9 +25,9 @@ Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g,
   libchealpix0, python-healpy,
   libgsl0 (>= 1.15) | libgsl0ldbl (>= 1.15), libmetaio1 (>= 8.2),
-  lal (>= 6.13.0~), lalframe (>= 1.2.0~), lalmetaio (>= 1.2.0~),
-  lalxml (>= 1.1.14~), lalsimulation (>= 1.2.0~), lalinspiral (>= 1.6.0~),
-  lalpulsar (>= 1.10.0~)
+  lal (>= 6.13.4~), lalframe (>= 1.2.4~), lalmetaio (>= 1.2.5~),
+  lalxml (>= 1.1.15~), lalsimulation (>= 1.2.4~), lalinspiral (>= 1.6.4~),
+  lalpulsar (>= 1.10.4~)
 Description: LSC Algorithm Library Inference
  The LSC Algorithm Inspiral Library for gravitational wave data analysis.
  This package contains the shared-object libraries needed to run applications
@@ -37,10 +37,10 @@ Package: lalinference-dev
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g,
   libchealpix-dev,
-  libgsl0-dev (>= 1.15), libmetaio-dev (>= 8.2), lal-dev (>= 6.13.0~),
-  lalframe-dev (>= 1.2.0~), lalmetaio-dev (>= 1.2.0~),
-  lalxml-dev (>= 1.1.14~), lalsimulation-dev (>= 1.2.0~),
-  lalinspiral-dev (>= 1.6.0~), lalpulsar-dev (>= 1.10.0~),
+  libgsl0-dev (>= 1.15), libmetaio-dev (>= 8.2), lal-dev (>= 6.13.4~),
+  lalframe-dev (>= 1.2.4~), lalmetaio-dev (>= 1.2.5~),
+  lalxml-dev (>= 1.1.15~), lalsimulation-dev (>= 1.2.4~),
+  lalinspiral-dev (>= 1.6.4~), lalpulsar-dev (>= 1.10.4~),
   lalinference (= ${binary:Version})
 Description: LSC Algorithm Library Inference Developers
  The LSC Algorithm Inference Library for gravitational wave data analysis.
@@ -50,10 +50,10 @@ Description: LSC Algorithm Library Inference Developers
 Package: lalinference-python
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, python-numpy, python-scipy,
-  lalinference (= ${binary:Version}), lal-python (>= 6.13.0~),
-  lalframe-python (>= 1.2.0~), lalmetaio-python (>= 1.2.0~),
-  lalxml-python (>= 1.1.14~), lalsimulation-python (>= 1.2.0~),
-  lalinspiral-python (>= 1.6.0~), lalpulsar-python (>= 1.10.0~)
+  lalinference (= ${binary:Version}), lal-python (>= 6.13.4~),
+  lalframe-python (>= 1.2.4~), lalmetaio-python (>= 1.2.5~),
+  lalxml-python (>= 1.1.15~), lalsimulation-python (>= 1.2.4~),
+  lalinspiral-python (>= 1.6.4~), lalpulsar-python (>= 1.10.4~)
 Replaces: lalapps (<< 6.14.0-1)
 Breaks: lalapps (<< 6.14.0-1)
 Description: Python bindings for LALInference
@@ -61,8 +61,8 @@ Description: Python bindings for LALInference
 Package: lalinference-octave
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, octave,
-  lalinference (= ${binary:Version}), lal-octave (>= 6.13.0~),
-  lalframe-octave (>= 1.2.0~), lalmetaio-octave (>= 1.2.0~),
-  lalsimulation-octave (>= 1.2.0~), lalxml-octave (>= 1.1.14~),
-  lalinspiral-octave (>= 1.6.0~), lalpulsar-octave (>= 1.10.0~)
+  lalinference (= ${binary:Version}), lal-octave (>= 6.13.4~),
+  lalframe-octave (>= 1.2.4~), lalmetaio-octave (>= 1.2.5~),
+  lalxml-octave (>= 1.1.15~), lalsimulation-octave (>= 1.2.4~),
+  lalinspiral-octave (>= 1.6.4~), lalpulsar-octave (>= 1.10.4~)
 Description: Octave bindings for LALInference
