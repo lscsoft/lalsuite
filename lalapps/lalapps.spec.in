@@ -14,8 +14,8 @@ Source: %{name}-%{version}.tar.gz
 URL: https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html
 Packager: Duncan Brown <dbrown@ligo.caltech.edu>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: gsl-devel fftw-devel libframe-devel libmetaio-devel lal-devel lalframe-devel lalmetaio-devel lalxml-devel lalsimulation-devel lalburst-devel lalinspiral-devel lalstochastic-devel lalpulsar-devel lalinference-devel
-Requires: healpy gsl fftw libframe libmetaio lal lalframe lalmetaio lalxml lalsimulation lalburst lalinspiral lalstochastic lalpulsar lalinference python
+BuildRequires: gsl-devel fftw-devel libframe-devel libmetaio-devel lal-devel lal-python lalframe-devel lalframe-python lalmetaio-devel lalmetaio-python lalxml-devel lalxml-python lalsimulation-devel lalsimulation-python lalburst-devel lalburst-python lalinspiral-devel lalinspiral-python lalstochastic-devel lalstochastic-python lalpulsar-devel lalpulsar-python lalinference-devel lalinference-python
+Requires: healpy gsl fftw libframe libmetaio lal lal-python lalframe lalframe-python lalmetaio lalmetaio-python lalxml lalxml-python lalsimulation lalsimulation-python lalburst lalburst-python lalinspiral lalinspiral-python lalstochastic lalstochastic-python lalpulsar lalpulsar-python lalinference lalinference-python python
 Prefix: %{_prefix}
 
 %description
