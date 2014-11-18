@@ -1,3 +1,10 @@
+lalstochastic (1.1.15-1) unstable; urgency=low
+
+  * LALStochastic 1.1.15
+  * packaging updates
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 18 Nov 2014 15:41:19 -0600
+
 lalstochastic (1.1.14-1) unstable; urgency=low
 
   * LALStochastic 1.1.14
