@@ -42,13 +42,13 @@ class lazy_mchirps(object):
         return len(self.seq)
 
 class Bank(object):
-    __slots__ = ("tmplt_class", "noise_model", "flow", "use_metric", "_templates", "_nmatch", "_mchirps", "compute_match", "_workspace_cache", "_moments")
 
-    def __init__(self, tmplt_class, noise_model, flow, use_metric=False):
+    def __init__(self, tmplt_class, noise_model, flow, use_metric=False, cache_waveforms=False):
         self.tmplt_class = tmplt_class
         self.noise_model = noise_model
         self.flow = flow
         self.use_metric = use_metric
+        self.cache_waveforms = cache_waveforms
 
         self._templates = []
         self._nmatch = 0
@@ -87,8 +87,8 @@ class Bank(object):
         return merged
 
     @classmethod
-    def from_sngls(cls, sngls, tmplt_class, *args):
-        bank = cls(*((tmplt_class,) + args))
+    def from_sngls(cls, sngls, tmplt_class, *args, **kwargs):
+        bank = cls(*((tmplt_class,) + args), **kwargs)
         bank._templates.extend([tmplt_class.from_sngl(s, bank=bank) for s in sngls])
         bank._templates.sort(key=attrgetter("_mchirp"))
         # Mark all templates as seed points
@@ -107,7 +107,10 @@ class Bank(object):
         return tmplt.metric_match(proposal, f, **kwargs)
 
     def _brute_match(self, tmplt, proposal, f, **kwargs):
-        return tmplt.brute_match(proposal, f,self._workspace_cache, **kwargs)
+        match = tmplt.brute_match(proposal, f,self._workspace_cache, **kwargs)
+        if not self.cache_waveforms:
+            tmplt.clear()
+        return match
 
     def covers(self, proposal, min_match):
         """

@@ -92,7 +92,8 @@ def parse_command_line():
     parser.add_option("--verbose",default = False, action="store_true")
     parser.add_option("--use-gpu-match", default=False, action="store_true",
         help="Perform match calculations using the first available GPU")
-    parser.add_option("--disable-cache",default = False, action="store_true")
+    parser.add_option("--cache-waveforms", default = False, action="store_true", help="A given waveform in the template bank will be used many times throughout the bank simulation process. You can save a considerable amount of CPU by caching the waveform from the first time it is generated; however, do so only if you are sure that storing the waveforms in memory will not overload the system memory.")
+
 
     opts, args = parser.parse_args()
 
@@ -118,7 +119,6 @@ tmplt_file = opts.template_bank
 inj_approx = waveforms[opts.injection_approx]
 tmplt_approx = waveforms[opts.template_approx]
 flow = opts.flow
-cache = not opts.disable_cache
 verbose = opts.verbose
 if opts.use_gpu_match:
     from lalinspiral.sbank.overlap_cuda import compute_match, create_workspace_cache
@@ -145,7 +145,7 @@ ligolw_copy_process(xmldoc, fake_xmldoc)
 sngls = table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
 h5file.create_dataset("/sngl_inspiral", data=ligolw_table_to_array(sngls), compression='gzip', compression_opts=1)
 h5file.flush()
-bank = Bank.from_sngls(sngls, tmplt_approx, noise_model, flow)
+bank = Bank.from_sngls(sngls, tmplt_approx, noise_model, flow, use_metric=False, cache_waveforms=opts.cache_waveforms)
 del xmldoc, sngls[:]
 if verbose:
     print "Loaded %d templates" % len(bank)
@@ -197,7 +197,6 @@ for inj_ind, inj_wf in enumerate(inj_wfs):
 
     match_map[inj_ind] = (inj_ind, inj_wf.sigmasq) + match_tup
     inj_wf.clear()  # prune inj waveform
-    if not cache: bank.clear()
 
 
 if verbose:
