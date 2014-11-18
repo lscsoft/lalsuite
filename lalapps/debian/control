@@ -5,7 +5,7 @@ Maintainer: Steffen Grunewald <steffen.grunewald@aei.mpg.de>
 Build-Depends: debhelper (>= 7), pkg-config, python-all-dev,
   libgsl0-dev (>= 1.9), libfftw3-dev, zlib1g-dev,
   libframe-dev (>= 8.0), libmetaio-dev (>= 8.2), lal-dev (>= 6.13.0~),
-  lalframe-dev (>= 1.2.0~), lalmetaio-dev (>= 1.2.0~), lalxml (>= 1.1.14~),
+  lalframe-dev (>= 1.2.0~), lalmetaio-dev (>= 1.2.0~), lalxml-dev (>= 1.1.14~),
   lalxml-python (>= 1.1.14~), lalxml-octave (>= 1.1.14~),
   lalsimulation-dev (>= 1.2.0~), lalburst-dev (>= 1.2.0~),
   lalinspiral-dev (>= 1.6.0~), lalpulsar-dev (>= 1.10.0~),
