@@ -32,7 +32,7 @@ nightly_version=@NIGHTLY_VERSION@
 %{__make} V=1
 
 %install
-%makeinstall
+%make_install
 
 %post
 ldconfig
