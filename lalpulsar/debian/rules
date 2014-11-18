@@ -17,9 +17,12 @@ override_dh_auto_install:
 	    --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info \
 	    --enable-swig \
 	    --disable-gcc-flags && \
+	(grep . /dev/null `find . -name config.log`; true) && \
 	$(MAKE) V=1 && \
 	$(MAKE) V=1 check && \
 	$(MAKE) install DESTDIR=$(CURDIR)/debian/tmp && \
+	true; \
+	(grep . /dev/null `find $(CURDIR) -name test-suite.log`; true) ; \
 	$(MAKE) clean ; \
 	done
 	# fix python shebang lines

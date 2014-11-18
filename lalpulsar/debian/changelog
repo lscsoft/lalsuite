@@ -1,3 +1,9 @@
+lalpulsar (1.10.3-3) unstable; urgency=low
+
+  * fix lalxml dependencies
+
+ -- Steffen Grunewald <steffen.grunewald@ligo.org>  Thu, 13 Nov 2014 08:45:00 +0100
+
 lalpulsar (1.10.3-2) unstable; urgency=low
 
   * add lalxml dependencies
