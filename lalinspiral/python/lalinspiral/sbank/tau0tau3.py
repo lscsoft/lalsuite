@@ -438,4 +438,6 @@ proposals = {"IMRPhenomB":IMRPhenomB_param_generator,
              "TaylorF2RedSpin":aligned_spin_param_generator,
              "EOBNRv2":urand_tau0tau3_generator,
              "SEOBNRv1":aligned_spin_param_generator,
+             "SEOBNRv2":aligned_spin_param_generator,
+             "SEOBNRv2_ROM_DoubleSpin":aligned_spin_param_generator,
              "SpinTaylorT4":SpinTaylorT4_param_generator}

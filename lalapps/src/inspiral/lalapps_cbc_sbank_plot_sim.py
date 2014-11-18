@@ -95,28 +95,31 @@ inj_mchirp = compute_mchirp(inj_arr["mass1"], inj_arr["mass2"])
 # compute effective/reduced spin parameter for templates
 #
 if tmplt_approx == "TaylorF2RedSpin":
+    tmplt_chi_label = "\chi_\mathrm{red}"
     tmplt_chi = [SimInspiralTaylorF2ReducedSpinComputeChi(float(row["mass1"]), float(row["mass2"]), float(row["spin1z"]), float(row["spin2z"])) for row in tmplt_arr]
-elif tmplt_approx in ["IMRPhenomB", "IMRPhenomC", "IMRPhenomP"]:
+else: # default to effective spin
+    tmplt_chi_label = "\chi_\mathrm{eff}"
     tmplt_chi = [SimIMRPhenomBComputeChi(float(row["mass1"]), float(row["mass2"]), float(row["spin1z"]), float(row["spin2z"])) for row in tmplt_arr]
-else:
-    raise NotImplementedError("Only know how to compute chi for TaylorF2RedSpin (reduced spin) and IMRPhenomB/C (effective spin) templates.")
 
 
 #
 # compute effective/reduced spin parameter for injections
 #
 if inj_approx == "TaylorF2RedSpin" or "SpinTaylorT5" in inj_approx: # reduced spin
+    inj_chi_label = "\chi_\mathrm{red}"
     inj_chi = [SimInspiralTaylorF2ReducedSpinComputeChi(float(row["mass1"]), float(row["mass2"]), float(row["spin1z"]), float(row["spin2z"])) for row in inj_arr]
 elif "SpinTaylorT4" in inj_approx: # reduced spin (requires coordinate transformation)
+    inj_chi_label = "\chi_\mathrm{red}"
     chi1 = [row["spin1x"] *np.sin(row["inclination"]) + row["spin1z"] *np.cos(row["inclination"]) for row in inj_arr]
     chi2 = [row["spin2x"] *np.sin(row["inclination"]) + row["spin2z"] *np.cos(row["inclination"]) for row in inj_arr]
     inj_chi = [SimIMRPhenomBComputeChi(float(row["mass1"]), float(row["mass2"]), s1z, s2z) for row, s1z, s2z in zip(inj_arr, chi1, chi2)]
 else: # default to effective spin
+    inj_chi_label = "\chi_\mathrm{eff}"
     inj_chi = [SimIMRPhenomBComputeChi(float(row["mass1"]), float(row["mass2"]), float(row["spin1z"]), float(row["spin2z"])) for row in inj_arr]
 
-
-if "PhenomP" in inj_approx: # seriously wtf?
-    inj_chi *= np.cos(inj_arr["inclination"])
+    # IMRPhenomP uses yet another coordinate convention
+    if inj_approx == "IMRPhenomP":
+        inj_chi *= np.cos(inj_arr["inclination"])
 
 
 smallest_match = match.min()
@@ -130,7 +133,7 @@ fig = Figure()
 ax = fig.add_subplot(111)
 coll = ax.hexbin(inj_M, inj_chi, C=match, gridsize=50, vmin=smallest_match, vmax=1)
 ax.set_xlabel("Total Mass ($M_\odot$)")
-ax.set_ylabel("$\chi$")
+ax.set_ylabel("$%s$" % inj_chi_label)
 ax.set_xlim([min(inj_M), max(inj_M)])
 ax.set_ylim([min(inj_chi), max(inj_chi)])
 fig.colorbar(coll, ax=ax).set_label("Mean Fitting Factor")
@@ -221,8 +224,8 @@ fig.savefig(name+"_match_vs_tmpltm2_vs_injm2.png")
 fig = Figure()
 ax = fig.add_subplot(111)
 collection = ax.scatter(inj_chi, tmplt_chi, c=match, s=20, vmin=smallest_match, linewidth=0, alpha=0.5, vmax=1)
-ax.set_xlabel("Injection $\chi$")
-ax.set_ylabel("Best Matching Template $\chi$")
+ax.set_xlabel("Injection $%s$" % inj_chi_label)
+ax.set_ylabel("Best Matching Template $%s$" % tmplt_chi_label)
 ax.grid(True)
 fig.colorbar(collection, ax=ax).set_label("Fitting Factor")
 canvas = FigureCanvas(fig)
@@ -295,7 +298,7 @@ fig = Figure()
 ax = fig.add_subplot(111)
 collection = ax.scatter(inj_tau0, inj_chi, c=match, s=20, vmin=smallest_match, linewidth=0, alpha=0.5, vmax=1)
 ax.set_xlabel(r"Injected $\tau_0$ (s)")
-ax.set_ylabel(r"Injected $\chi$ (s)")
+ax.set_ylabel(r"Injected $%s$" % inj_chi_label)
 ax.set_title(r"Colorbar is Fitting Factor; assuming $f_\mathrm{low}=%d\,\mathrm{Hz}$" % flow)
 ax.grid(True)
 fig.colorbar(collection, ax=ax).set_label("Fitting Factor")
@@ -328,7 +331,7 @@ fig = Figure()
 ax = fig.add_subplot(111)
 collection = ax.scatter(tmplt_M, tmplt_chi, c=match, s=20, vmin=smallest_match, linewidth=0, alpha=0.5, vmax=1)
 ax.set_xlabel(r"Template $M_{total}$ ($M_\odot$)")
-ax.set_ylabel(r"Template $\chi$ (s)")
+ax.set_ylabel(r"Template $%s$" % tmplt_chi_label)
 ax.set_title(r"Colorbar is Fitting Factor; assuming $f_\mathrm{low}=%d\,\mathrm{Hz}$" % flow)
 ax.grid(True)
 fig.colorbar(collection, ax=ax).set_label("Fitting Factor")
@@ -352,7 +355,7 @@ fig = Figure()
 ax = fig.add_subplot(111)
 collection = ax.scatter(inj_M, inj_chi, c=match, s=20, vmin=smallest_match, linewidth=0, alpha=0.5, vmax=1)
 ax.set_xlabel("Injected Total Mass")
-ax.set_ylabel("Injected Chi")
+ax.set_ylabel("Injected $%s$" % inj_chi_label)
 ax.grid(True)
 fig.colorbar(collection, ax=ax).set_label("Fitting Factor")
 canvas = FigureCanvas(fig)

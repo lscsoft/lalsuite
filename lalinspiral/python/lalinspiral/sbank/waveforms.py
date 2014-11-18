@@ -471,8 +471,8 @@ class SEOBNRv2Template(Template):
 
         # derived quantities
         self._chi = lalsim.SimIMRPhenomBComputeChi(m1, m2, spin1z, spin2z)
-        # we'll just use the imrphenomb ffinal estimate for f_final
-        self._f_final = spawaveform.imrffinal(m1, m2, self._chi)
+        self._f_final = lalsim.SimInspiralGetFrequency(m1*lal.MSUN_SI,
+                     m2*lal.MSUN_SI, 0., 0., spin1z, 0, 0, spin2z, lalsim.fSEOBNRv2RD)
         self._dur = self._imrdur()
         self._mchirp = compute_mchirp(m1, m2)
 
@@ -509,11 +509,17 @@ class SEOBNRv2Template(Template):
 
     def _imrdur(self):
         """
-        Just using the estimate used for IMRPhenomB here.
+        Following Jolien's suggestion for the duration of an IMR
+        waveform, we compute the chirp time, scale by 10% and pad by
+        one second.
         """
-        return lalsim.SimInspiralTaylorF2ReducedSpinChirpTime(self.bank.flow,
+        # FIXME: This should be done better when possible!
+        dur = lalsim.SimInspiralTaylorF2ReducedSpinChirpTime(self.bank.flow,
             self.m1 * MSUN_SI, self.m2 * MSUN_SI, self._chi,
             7) + 1000 * (self.m1 + self.m2) * MTSUN_SI
+        # FIXME: Is a minimal time of 1.0s too long?
+        dur = 1.1 * dur + 1.0
+        return dur
 
     @classmethod
     def from_sim(cls, sim, bank):
@@ -521,8 +527,7 @@ class SEOBNRv2Template(Template):
 
     @classmethod
     def from_sngl(cls, sngl, bank):
-        # FIXME: change storing spins in alpha when sngl_inspiral table is updated
-        return cls(sngl.mass1, sngl.mass2, sngl.alpha1, sngl.alpha2, bank)
+        return cls(sngl.mass1, sngl.mass2, sngl.spin1z, sngl.spin2z, bank)
 
     def to_sngl(self):
         # note that we use the C version; this causes all numerical values to be initiated
@@ -530,19 +535,32 @@ class SEOBNRv2Template(Template):
         row = SnglInspiralTable()
         row.mass1 = self.m1
         row.mass2 = self.m2
+        row.spin1z = self.spin1z
+        row.spin2z = self.spin2z
         row.mtotal = self.m1 + self.m2
         row.mchirp = self._mchirp
         row.eta = row.mass1 * row.mass2 / (row.mtotal * row.mtotal)
         row.tau0, row.tau3 = m1m2_to_tau0tau3(self.m1, self.m2, self.bank.flow)
         row.f_final = self._f_final
         row.template_duration = self._dur
-        # FIXME: change storing spins in alpha when sngl_inspiral table is updated
-        row.alpha1 = self.spin1z
-        row.alpha2 = self.spin2z
         row.sigmasq = self.sigmasq
 
         return row
 
+class SEOBNRv2ROMDoubleSpinTemplate(SEOBNRv2Template):
+    def _compute_waveform(self, df, f_final):
+        """
+        The ROM is a frequency domain waveform, so easier.
+        """
+        # get hptilde
+        approx_enum = lalsim.GetApproximantFromString('SEOBNRv2_ROM_DoubleSpin')
+        flags = lalsim.SimInspiralCreateWaveformFlags()
+        
+        htilde, _ = lalsim.SimInspiralChooseFDWaveform(0, df, self.m1 * MSUN_SI,
+            self.m2 * MSUN_SI, 0., 0., self.spin1z, 0., 0., self.spin2z,
+            self.bank.flow, f_final, self.bank.flow, 1e6*PC_SI, 0., 0., 0.,
+            flags, None, 1, 8, approx_enum)
+        return htilde
 
 class EOBNRv2Template(Template):
     param_names = ("m1", "m2")
@@ -808,6 +826,7 @@ waveforms = {
     "IMRPhenomC": IMRPhenomCTemplate,
     "IMRPhenomP": IMRPhenomPTemplate,
     "SEOBNRv2": SEOBNRv2Template,
+    "SEOBNRv2_ROM_DoubleSpin": SEOBNRv2ROMDoubleSpinTemplate,
     "EOBNRv2": EOBNRv2Template,
     "SpinTaylorT4": SpinTaylorT4Template,
     "SpinTaylorT5": SpinTaylorT5Template,
