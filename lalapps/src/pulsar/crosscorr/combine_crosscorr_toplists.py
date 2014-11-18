@@ -41,14 +41,14 @@ def read_and_sort_toplist(filename,min_snr=float("inf"),
     # truncate it and record the highest SNR value we discarded
     # unless that would bring us below the minimum snr to keep
     if min_cands > 0 and min_cands < len(sorted_inds):
-        rho_to_drop = rho[sorted_inds[min_cands -1]]
+        rho_to_drop = rho[sorted_inds[min_cands]]
         if rho_to_drop > min_snr:
             # count how many candidates are over the minimum
             keep_cands = np.sum(rho > min_snr)
             rho_to_drop = rho[sorted_inds[keep_cands - 1]]
         else:
             keep_cands = min_cands
-            if dropped_rho < rho[sorted_inds[keep_cands - 1]]:
+            if dropped_rho < rho[sorted_inds[keep_cands]]:
                 dropped_rho = rho[sorted_inds[keep_cands]]
         sorted_inds = sorted_inds[:keep_cands]
 
