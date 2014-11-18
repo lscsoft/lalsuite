@@ -91,6 +91,9 @@ class Bank(object):
         bank = cls(*((tmplt_class,) + args))
         bank._templates.extend([tmplt_class.from_sngl(s, bank=bank) for s in sngls])
         bank._templates.sort(key=attrgetter("_mchirp"))
+        # Mark all templates as seed points
+        for template in bank._templates:
+            template.is_seed_point = True
         return bank
 
     @classmethod

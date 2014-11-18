@@ -26,6 +26,7 @@ from glue.ligolw import ligolw
 from glue.ligolw import lsctables
 from glue.ligolw import table
 from glue.ligolw import utils
+from glue.ligolw import ilwd
 from glue.ligolw.utils import process as ligolw_process
 from pylal.inspiral_metric import compute_metric
 from pylal.xlal.datatypes.real8frequencyseries import REAL8FrequencySeries
@@ -137,7 +138,7 @@ def parse_command_line():
     # initial condition options
     #
     parser.add_option("--seed", help="Set the seed for the random number generator used by SBank for waveform parameter (masss, spins, ...) generation.", metavar="INT", default=1729, type="int")
-    parser.add_option("--bank-seed",help="Initialize the bank with specified template bank. For instance, one might generate a template bank by geomtretic/lattice placement methods and use SBank to \"complete\" the bank.", metavar="FILE")
+    parser.add_option("--bank-seed",help="Initialize the bank with specified template bank. For instance, one might generate a template bank by geomtretic/lattice placement methods and use SBank to \"complete\" the bank. NOTE: Only the additional templates will be outputted and to complete the bank you will need to add the output of this to the original bank", metavar="FILE")
 
     #
     # noise model options
@@ -161,9 +162,6 @@ def parse_command_line():
     parser.add_option("--user-tag", default=None, help="Apply descriptive tag to output filename.")
     parser.add_option("--verbose", default=False,action="store_true", help="Be verbose and write diagnostic information out to file.")
 
-    #
-    # deprecated options
-    #
     parser.add_option("--mchirp-boundaries-file", metavar="FILE", help="Deprecated. File containing chirp mass bin boundaries")
     parser.add_option("--mchirp-boundaries-index", metavar="INDEX", type="int", help="Deprecated. Integer index into --mchirp-boundaries-file line number such that boundaries[INDEX] is taken as --mchirp-min and boundaries[INDEX + 1] is taken as --mchirp-max")
     parser.add_option("--mchirp-min", help="Deprecated. Set minimum chirp-mass of the system (in solar masses)", type="float")
@@ -259,14 +257,6 @@ else:
     sngl_inspiral = table.get_table(tmpdoc, lsctables.SnglInspiralTable.tableName)
     bank = Bank.from_sngls(sngl_inspiral, waveform, noise_model, opts.flow, opts.use_metric)
 
-    # update mchirp bounds
-    # FIXME store boundaries in metadata of bank seed file
-    A0 = 5. / (256 * (lal.PI * opts.flow)**(8./3)) # eqn B3
-    if opts.mchirp_min is None:
-        opts.mchirp_min = min([b._mchirp for b in bank])
-    if opts.mchirp_max is None:
-        opts.mchirp_max = max([b._mchirp for b in bank])
-
     tmpdoc.unlink()
     del sngl_inspiral, tmpdoc
     if opts.verbose:
@@ -320,8 +310,14 @@ psd = REAL8FrequencySeries(name="psd", f0=0., deltaF=1., data=get_PSD(1., opts.f
 lsctables.SnglInspiralTable.RowType = SnglInspiralTable
 tbl = lsctables.New(lsctables.SnglInspiralTable)
 xmldoc.childNodes[-1].appendChild(tbl)
-for template in bank:
+for idx, template in enumerate(bank):
+    # Do not store templates that were in the original bank, only store the
+    # additions.
+    if hasattr(template, 'is_seed_point'):
+        continue
     row = template.to_sngl()
+    # Event ids must be unique, or the table isn't valid, SQL needs this
+    row.event_id = ilwd.ilwdchar('sngl_inspiral:event_id:%d' %(idx,))
     row.ifo = opts.instrument
     row.process_id = process.process_id
     row.Gamma0, row.Gamma1, row.Gamma2, row.Gamma3, row.Gamma4, row.Gamma5,\

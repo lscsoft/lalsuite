@@ -223,7 +223,8 @@ class BankSimNode(pipeline.CondorDAGNode):
         self.add_var_opt("user-tag", tag)
         self.add_output_file("%s.h5" % tag)
         for p in p_node:
-            self.add_parent(p)
+            if p is not None:
+                self.add_parent(p)
         dag.add_node(self)
 
 
@@ -257,7 +258,8 @@ class LWAddNode(pipeline.CondorDAGNode):
         self.add_var_opt("output", output)
         self.add_output_file(output)
         for p in p_node:
-            self.add_parent(p)
+            if p is not None:
+                self.add_parent(p)
         dag.add_node(self)
 
 
@@ -384,7 +386,7 @@ convergence-threshold = 50
 ; determine where to put the chirp mass boundaries. When you have a
 ; metric, set it to "equal", otherwise set to "duration". See the sbank_pipe
 ; help for more information.
-nbanks = 250
+nbanks = 100
 template-weight = duration
 
 ;
@@ -465,6 +467,7 @@ def parse_command_line():
     parser.add_option("--config-file", default=None, help="Read options for generating template bank placement pipeline from configuration ini file..")
     parser.add_option("--user-tag", default="SBANK", help="Make your results feel special and give them a unique name.")
     parser.add_option("--template-bank", default=None, help="Skip the template bank generation stage. Use given template bank for bank sim.")
+    parser.add_option("--bank-seed", default=None, help="Use the provided template bank as a start bank. sBank will fill in any holes in this bank.")
     options, filenames = parser.parse_args()
 
     return options, filenames
@@ -506,14 +509,20 @@ if options.template_bank:
     bank_names = sbankSplitNode.get_output_files()
     bank_nodes = [sbankSplitNode]
 else:
-    # set up sole coarse node to plan out the mini-sbank nodes
-    coarse_sbank_node = SBankNode(sbankJob, dag, "COARSE")
-    coarse_mm = cp.get("coarse-sbank", "match-min")
-    coarse_sbank_node.add_var_opt("match-min", coarse_mm)
-    coarse_thresh = cp.get("coarse-sbank", "convergence-threshold")
-    coarse_sbank_node.add_var_arg("--convergence-threshold %s" % coarse_thresh)
-    xmlCoarse, = coarse_sbank_node.get_output_files()
-    pnode = [coarse_sbank_node]
+    if options.bank_seed:
+        xmlCoarse = options.bank_seed
+        pnode = []
+        bank_names.append(options.bank_seed)
+        bank_nodes.append(None)
+    else:
+        # set up sole coarse node to plan out the mini-sbank nodes
+        coarse_sbank_node = SBankNode(sbankJob, dag, "COARSE")
+        coarse_mm = cp.get("coarse-sbank", "match-min")
+        coarse_sbank_node.add_var_opt("match-min", coarse_mm)
+        coarse_thresh = cp.get("coarse-sbank", "convergence-threshold")
+        coarse_sbank_node.add_var_arg("--convergence-threshold %s" % coarse_thresh)
+        xmlCoarse, = coarse_sbank_node.get_output_files()
+        pnode = [coarse_sbank_node]
 
     # use coarse bank to choose mchirp regions of roughly equal template number
     sbankChooseMchirpBoundariesJob = SBankChooseMchirpBoundariesJob(cp)
@@ -522,7 +531,7 @@ else:
 
     # generate a bank for each mchirp region
     for j in xrange(nbanks):
-        bank_node = SBankNode(sbankJob, dag, "%04d"%j, seed="%d" % (j*nbanks+1), mchirp_boundaries_file=mchirp_boundaries_fname, mchirp_boundaries_index=str(j), p_node=[sbankChooseMchirpBoundariesNode])
+        bank_node = SBankNode(sbankJob, dag, "%04d"%j, seed="%d" % (j*nbanks+1), mchirp_boundaries_file=mchirp_boundaries_fname, mchirp_boundaries_index=str(j), p_node=[sbankChooseMchirpBoundariesNode], bank_seed=options.bank_seed)
         bank_node.add_var_opt("match-min", mm)
         bank_node.set_priority(1)  # want complete bank before sims
         bank_nodes.append(bank_node)

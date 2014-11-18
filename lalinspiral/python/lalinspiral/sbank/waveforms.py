@@ -132,7 +132,7 @@ class Template(object):
     * Provide a classmethod from_sim, which creates an instance based on
       a sim_inspiral object.
     """
-    __slots__ = ("_wf", "_metric", "sigmasq")
+    __slots__ = ("_wf", "_metric", "sigmasq", "is_seed_point")
 
     def __init__(self):
         self._wf = None
