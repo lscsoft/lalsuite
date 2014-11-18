@@ -1,3 +1,10 @@
+lalburst (1.2.7-1) unstable; urgency=low
+
+  * LALBurst 1.2.7
+  * packaging updates
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 18 Nov 2014 15:33:17 -0600
+
 lalburst (1.2.6-1) unstable; urgency=low
 
   * LALBurst 1.2.6
