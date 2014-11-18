@@ -4,12 +4,17 @@ Priority: optional
 Maintainer: Steffen Grunewald <steffen.grunewald@aei.mpg.de>
 Build-Depends: debhelper (>= 7), pkg-config, python-all-dev,
   libgsl0-dev (>= 1.9), libfftw3-dev, zlib1g-dev,
-  libframe-dev (>= 8.0), libmetaio-dev (>= 8.2), lal-dev (>= 6.13.0~),
-  lalframe-dev (>= 1.2.0~), lalmetaio-dev (>= 1.2.0~), lalxml-dev (>= 1.1.14~),
-  lalxml-python (>= 1.1.14~), lalxml-octave (>= 1.1.14~),
-  lalsimulation-dev (>= 1.2.0~), lalburst-dev (>= 1.2.0~),
-  lalinspiral-dev (>= 1.6.0~), lalpulsar-dev (>= 1.10.0~),
-  lalstochastic-dev (>= 1.1.4~), lalinference-dev (>= 1.4.0~),
+  libframe-dev (>= 8.0), libmetaio-dev (>= 8.2),
+  lal-dev (>= 6.13.4~), lal-python (>= 6.13.4~),
+  lalframe-dev (>= 1.2.4~), lalframe-python (>= 1.2.4~),
+  lalmetaio-dev (>= 1.2.5~), lalmetaio-python (>= 1.2.5~),
+  lalxml-dev (>= 1.1.15~), lalxml-python (>= 1.1.15~),
+  lalsimulation-dev (>= 1.2.4~), lalsimulation-python (>= 1.2.4~),
+  lalburst-dev (>= 1.2.7~), lalburst-python (>= 1.2.7~),
+  lalinspiral-dev (>= 1.6.4~), lalinspiral-python (>= 1.6.4~),
+  lalpulsar-dev (>= 1.10.4~), lalpulsar-python (>= 1.10.4~),
+  lalstochastic-dev (>= 1.1.15~), lalstochastic-python (>= 1.1.15~),
+  lalinference-dev (>= 1.4.4~), lalinference-python (>= 1.4.4~),
   bc
 X-Python-Version: >= 2.7
 Standards-Version: 3.8.6
@@ -19,11 +24,17 @@ Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends},
   python-healpy,
   libgsl0 (>= 1.9) | libgsl0ldbl (>= 1.10), fftw3, zlib1g,
-  libframe1 (>= 8.0), libmetaio1 (>= 8.2), lal (>= 6.13.0~),
-  lalframe (>= 1.2.0~), lalmetaio (>= 1.2.0~), lalxml (>= 1.1.14~),
-  lalsimulation (>= 1.2.0~), lalburst (>= 1.2.0~),
-  lalinspiral (>= 1.6.0~), lalpulsar (>= 1.10.0~),
-  lalstochastic (>= 1.1.4~), lalinference (>= 1.4.0~)
+  libframe1 (>= 8.0), libmetaio1 (>= 8.2),
+  lal (>= 6.13.4~), lal-python (>= 6.13.4~),
+  lalframe (>= 1.2.4~), lalframe-python (>= 1.2.4~),
+  lalmetaio (>= 1.2.5~), lalmetaio-python (>= 1.2.5~),
+  lalxml (>= 1.1.15~), lalxml-python (>= 1.1.15~),
+  lalsimulation (>= 1.2.4~), lalsimulation-python (>= 1.2.4~),
+  lalburst (>= 1.2.7~), lalburst-python (>= 1.2.7~),
+  lalinspiral (>= 1.6.4~), lalinspiral-python (>= 1.6.4~),
+  lalpulsar (>= 1.10.4~), lalpulsar-python (>= 1.10.4~),
+  lalstochastic (>= 1.1.15~), lalstochastic-python (>= 1.1.15~),
+  lalinference (>= 1.4.4~), lalinference-python (>= 1.4.4~),
 Recommends: python (>= 2.6)
 Provides: python-bayestar-localization, python-bayestar
 Conflicts: python-bayestar-localization, python-bayestar
