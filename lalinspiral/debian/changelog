@@ -1,3 +1,9 @@
+lalinspiral (1.6.3-2) unstable; urgency=low
+
+  * dependency typo fix
+
+ -- Steffen Grunewald <steffen.grunewald@ligo.org>  Thu, 13 Nov 2014 09:55:00 +0100
+
 lalinspiral (1.6.3-1) unstable; urgency=low
 
   * LALInspiral 1.6.3
