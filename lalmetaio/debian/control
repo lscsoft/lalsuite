@@ -5,7 +5,7 @@ Maintainer: Adam Mercer <adam.mercer@ligo.org>
 Build-Depends: debhelper (>= 7), pkg-config, python-all-dev,
   zlib1g-dev, libmetaio-dev (>= 8.2), octave3.2-headers,
   lal-dev (>= 6.13.0~), lal-python (>= 6.13.0~), lal-octave (>= 6.13.0~)
-X-Python-Version: >= 2.6
+X-Python-Version: >= 2.7
 Standards-Version: 3.8.6
 
 Package: lalmetaio
