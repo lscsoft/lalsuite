@@ -1,3 +1,10 @@
+lalinspiral (1.6.4-1) unstable; urgency=low
+
+  * LALInspiral 1.6.4
+  * packaging updates
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 18 Nov 2014 16:14:10 -0600
+
 lalinspiral (1.6.3-2) unstable; urgency=low
 
   * dependency typo fix
