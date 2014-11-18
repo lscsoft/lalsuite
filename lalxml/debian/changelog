@@ -1,3 +1,10 @@
+lalxml (1.1.15-1) unstable; urgency=low
+
+  * LALXML 1.1.15
+  * packaging updates
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 18 Nov 2014 15:29:30 -0600
+
 lalxml (1.1.14-1) unstable; urgency=low
 
   * LALXML 1.1.14
