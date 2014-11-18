@@ -1,3 +1,11 @@
+laldetchar (0.2.4-1) unstable; urgency=low
+
+  * LALDetChar 0.2.4
+  * add idq scripts to packaging
+  * packaging updates
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 18 Nov 2014 15:36:19 -0600
+
 laldetchar (0.2.3-1) unstable; urgency=low
 
   * LALDetChar 0.2.3
