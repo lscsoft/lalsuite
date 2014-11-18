@@ -55,7 +55,7 @@ This package provides the Octave bindings for LALXML.
 %{__make} V=1
 
 %install
-%makeinstall
+%make_install
 rm -f $RPM_BUILD_ROOT%{_libdir}/*.la
 
 %post
