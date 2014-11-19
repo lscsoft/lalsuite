@@ -3,7 +3,7 @@ Section: lscsoft
 Priority: optional
 Maintainer: Steffen Grunewald <steffen.grunewald@aei.mpg.de>
 Build-Depends: debhelper (>= 7), pkg-config, python-all-dev,
-  zlib1g-dev, libmetaio-dev (>= 8.2),
+  zlib1g-dev, libmetaio-dev (>= 8.2), swig (>= 2.0.11~),
   octave3.2-headers, python-numpy (>= 1.3), lal-dev (>= 6.13.4~),
   lal-python (>= 6.13.4~), lal-octave (>= 6.13.4~),
   lalmetaio-dev (>= 1.2.5~), lalmetaio-python (>= 1.2.5~),
