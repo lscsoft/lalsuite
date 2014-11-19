@@ -71,7 +71,7 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
 
     REAL8 sumModel = 0., sumDataModel = 0.;
     REAL8 chiSquare = 0.;
-    COMPLEX16 B, M, Mp, Mc;
+    COMPLEX16 B = 0., M = 0., Mp = 0., Mc = 0.;
 
     REAL8Vector *sumDat = NULL;
     REAL8Vector *sumP = NULL, *sumC = NULL, *sumX = NULL, *sumY = NULL, *sumB = NULL, *sumL = NULL;
@@ -170,7 +170,7 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
                         creal(sumDataC->data[count])*creal(Mc) + cimag(sumDataC->data[count])*cimag(Mc);
 
         if ( nonGR ){
-          COMPLEX16 Mx, My, Mb, Ml;
+          COMPLEX16 Mx = 0., My = 0., Mb = 0., Ml = 0.;
 
           Mx = ifomodeltemp->compTimeSignal->data->data[2];
           My = ifomodeltemp->compTimeSignal->data->data[3];

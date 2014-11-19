@@ -908,14 +908,14 @@ void get_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOModel *ifo ){
         REAL8 tsv;
         INT4 timebinMin, timebinMax;
 
-        REAL8Vector *LUfplus, *LUfcross, *LUfx, *LUfy, *LUfb, *LUfl;
+        REAL8Vector *LUfplus = NULL, *LUfcross = NULL, *LUfx = NULL, *LUfy = NULL, *LUfb = NULL, *LUfl = NULL;
 
         REAL8 tsteps;
         REAL8 plus00, plus01, cross00, cross01;
         REAL8 x00, x01, y00, y01, b00, b01, l00, l01;
         REAL8 timeScaled;
         REAL8 timeMin, timeMax;
-        REAL8 plus, cross, plusT, crossT, x, y, xT, yT, b, l;
+        REAL8 plus = 0., cross = 0., plusT = 0., crossT = 0., x = 0., y = 0., xT = 0., yT = 0., b = 0., l = 0.;
 
         /* set lookup table parameters */
         tsteps = *(INT4*)LALInferenceGetVariable( ifo->params, "timeSteps" );
