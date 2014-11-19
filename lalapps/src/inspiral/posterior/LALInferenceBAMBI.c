@@ -145,19 +145,20 @@ void getLogLike(double *Cube, UNUSED int *ndim, UNUSED int *npars, double *lnew,
 
 void dumper(UNUSED int *nSamples, UNUSED int *nlive, UNUSED int *nPar, UNUSED double **physLive,
             UNUSED double **posterior, UNUSED double **paramConstr, UNUSED double *maxLogLike,
-            double *logZ, UNUSED double *logZerr, void *context)
+            double *logZ, double *logZerr, void *context)
 {
     char **info = (char **)context;
     char *root2=&info[0][0];
     char *header=&info[1][0];
     char outfile[BAMBI_STRLEN];
-    FILE *fileout;
+    FILE *fileout = NULL;
 
     /* Write evidence to file for use by post-processing */
+    double logZnoise = (*(REAL8 *)LALInferenceGetVariable(runStateGlobal->algorithmParams, "logZnoise"));
     strcpy(outfile,root2);
     strcat(outfile,"evidence.dat");
     fileout=fopen(outfile,"w");
-    fprintf(fileout,"%g\n",*logZ);
+    fprintf(fileout,"%lf\t%lf\t%lf\n",*logZ,*logZerr,logZnoise);
     fclose(fileout);
 
     /* Write header line to file for use by post-processing */
