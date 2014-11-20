@@ -389,11 +389,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
 
   if (pow(LAL_PI*fMin*mTScaled,-2./3.) < 10.0)
   {
-    printf(" ==========\n");
-    printf("|| WARNING: Waveform generation may fail due to high starting frequency.\n");
-    printf("|| The starting frequency corresponds to a small initial radius of %.2fM.\n",pow(LAL_PI*fMin*mTScaled,-2./3.));
-    printf("|| We recommend a lower starting frequency that corresponds to an estimated starting radius > 10M.\n");
-    printf(" ==========\n");
+    XLAL_PRINT_WARNING("Waveform generation may fail due to high starting frequency. The starting frequency corresponds to a small initial radius of %.2fM. We recommend a lower starting frequency that corresponds to an estimated starting radius > 10M.", pow(LAL_PI*fMin*mTScaled,-2.0/3.0));
   }
  
   /* TODO: Insert potentially necessary checks on the arguments */
