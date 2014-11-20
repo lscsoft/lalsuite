@@ -289,6 +289,7 @@ void add_initial_variables( LALInferenceVariables *ini,  LALInferenceVariables *
   add_variable_scale( ini, scaleFac, "cgw", pars.cgw );
   add_variable_scale( ini, scaleFac, "hPlus", pars.hPlus );
   add_variable_scale( ini, scaleFac, "hCross", pars.hCross );
+  add_variable_scale( ini, scaleFac, "phi0Tensor", pars.phi0Tensor );
   add_variable_scale( ini, scaleFac, "hScalarB", pars.hScalarB );
   add_variable_scale( ini, scaleFac, "hScalarL", pars.hScalarL );
   add_variable_scale( ini, scaleFac, "phi0Scalar", pars.phi0Scalar );
@@ -729,6 +730,7 @@ void initialise_prior( LALInferenceRunState *runState )
     remove_variable_and_prior( runState, ifo, "C22" );
     remove_variable_and_prior( runState, ifo, "C21" );
     remove_variable_and_prior( runState, ifo, "phi21" );
+    remove_variable_and_prior( runState, ifo, "phi22" );
     remove_variable_and_prior( runState, ifo, "h0" );
     remove_variable_and_prior( runState, ifo, "cosiota" );
   }
@@ -740,6 +742,7 @@ void initialise_prior( LALInferenceRunState *runState )
     /* remove non-GR parameters */
     remove_variable_and_prior( runState, ifo, "hPlus" );
     remove_variable_and_prior( runState, ifo, "hCross" );
+    remove_variable_and_prior( runState, ifo, "phi0Tensor" );
     remove_variable_and_prior( runState, ifo, "hScalarB" );
     remove_variable_and_prior( runState, ifo, "hScalarL" );
     remove_variable_and_prior( runState, ifo, "phi0Scalar" );

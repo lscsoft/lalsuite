@@ -62,7 +62,11 @@ void get_pulsar_model( LALInferenceModel *model ){
     /* vector modes */
     pars.hVectorX = rescale_parameter( model, model->ifo, "hVectorX" );
     pars.hVectorY = rescale_parameter( model, model->ifo, "hVectorY" );
-    pars.phi22 = rescale_parameter( model, model->ifo, "phi22" );
+
+    pars.phi0Scalar = rescale_parameter( model, model->ifo, "phi0Scalar" );
+    pars.phi0Vector = rescale_parameter( model, model->ifo, "phi0Vector" );
+    pars.psiVector = rescale_parameter( model, model->ifo, "psiVector" );
+    pars.phi0Tensor = rescale_parameter( model, model->ifo, "phi0Tensor" );
   }
   else{
     pars.C21 = rescale_parameter( model, model->ifo, "C21" );
@@ -877,23 +881,23 @@ void get_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOModel *ifo ){
       }
       else if( freqFactors->data[j] == 2. ){
         /* the l=2, m=2 harmonic at twice the rotation frequency */
-        expPhi = cexp( I * pars.phi22 );
-
         if ( nonGR ){ /* amplitude if nonGR is specifiec */
-          COMPLEX16 expPhiScalar, expPhiVector, expPsiVector;
+          COMPLEX16 expPhiTensor, expPhiScalar, expPhiVector, expPsiVector;
 
+          expPhiTensor = cexp( I * pars.phi0Tensor );
           expPhiScalar = cexp( I * pars.phi0Scalar );
           expPhiVector = cexp( I * pars.phi0Vector );
           expPsiVector = cexp( I * pars.psiVector );
 
-          Cplus = 0.5 * pars.hPlus * expPhi;
-          Ccross = -0.5 * I * pars.hCross * expPhi;
+          Cplus = 0.5 * pars.hPlus * expPhiTensor;
+          Ccross = -0.5 * I * pars.hCross * expPhiTensor;
           Cx = -0.5 * I * expPhiVector * pars.hVectorX;
           Cy = -0.5 * I * expPhiVector * pars.hVectorY * expPsiVector;
           Cb = -0.5 * I * expPhiScalar * pars.hScalarB;
           Cl = -0.5 * I * expPhiScalar * pars.hScalarL;
         }
         else{ /* just GR tensor mode amplitudes */
+          expPhi = cexp( I * pars.phi22 );
           Cplus = -0.5 * pars.C22 * ( 1. + pars.cosiota * pars.cosiota ) * expPhi;
           Ccross = I * pars.C22 * pars.cosiota * expPhi;
         }

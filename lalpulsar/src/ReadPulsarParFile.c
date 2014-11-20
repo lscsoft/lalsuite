@@ -567,7 +567,7 @@ typedef struct tagParConversion{
 }ParConversion;
 
 
-#define NUM_PARS 103 /* number of allowed parameters */
+#define NUM_PARS 104 /* number of allowed parameters */
 
 /** Initialise conversion structure with most allowed TEMPO2 parameter names and conversion functions
  * (convert all read in parameters to SI units where necessary). See http://arxiv.org/abs/astro-ph/0603381 and
@@ -695,6 +695,7 @@ ParConversion pc[NUM_PARS] = {
   /* GW non-GR polarisation mode amplitude parameters */
   { .name = "HPLUS", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* GW tensor plus polarisation amplitude */
   { .name = "HCROSS", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* GW tensor cross polarisation amplitude */
+  { .name = "PHI0TENSOR", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* initial phase for tensor modes */
   { .name = "HSCALARB", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* GW scalar breathing mode polarisation amplitude */
   { .name = "HSCALARL", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* GW scalar longitudinal polarisation amplitude */
   { .name = "PHI0SCALAR", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* initial phase for scalar modes */
@@ -1167,6 +1168,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
 
   output->hPlus=0.;
   output->hCross=0.;
+  output->phi0Tensor=0.;
   output->hScalarB=0.;
   output->hScalarL=0.;
   output->phi0Scalar=0.;
@@ -1191,6 +1193,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   output->phi21Err=0.;
   output->hPlusErr=0.;
   output->hCrossErr=0.;
+  output->phi0TensorErr=0.;
   output->hScalarBErr=0.;
   output->hScalarLErr=0.;
   output->phi0ScalarErr=0.;
@@ -2155,6 +2158,15 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
 
       if(atoi(val[i+2])==1 && i+2<k){
         output->hCrossErr = atof(val[i+3]);
+        j+=2;
+      }
+    }
+    else if( !strcmp(val[i],"phi0tensor") || !strcmp(val[i],"PHI0TENSOR") ) {
+      output->phi0Tensor = atof(val[i+1]);
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->phi0TensorErr = atof(val[i+3]);
         j+=2;
       }
     }
