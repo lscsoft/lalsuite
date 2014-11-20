@@ -142,6 +142,10 @@ extern "C" {
  */
 /*@{*/
 
+
+#ifndef SWIG    /* exclude from SWIG interface */
+
+
 /*
  *
  * Use these functions to print arbitrary messages as errors or warnings.
@@ -157,8 +161,6 @@ int XLALPrintWarning(const char *fmt, ...) _LAL_GCC_PRINTF_FORMAT_(1,2);
 /** Prints an info message if info printing is enabled by lalDebugLevel. */
 int XLALPrintInfo(const char *fmt, ...) _LAL_GCC_PRINTF_FORMAT_(1,2);
 
-#ifndef SWIG    /* exclude from SWIG interface */
-
 /** Prints an error message if error printing is enabled by lalDebugLevel. */
 int XLALVPrintError(const char *fmt, va_list ap) _LAL_GCC_VPRINTF_FORMAT_(1);
 
@@ -167,8 +169,6 @@ int XLALVPrintWarning(const char *fmt, va_list ap) _LAL_GCC_VPRINTF_FORMAT_(1);
 
 /** Prints an info message if info printing is enabled by lalDebugLevel. */
 int XLALVPrintInfo(const char *fmt, va_list ap) _LAL_GCC_VPRINTF_FORMAT_(1);
-
-#endif /* SWIG */
 
 
 /*
@@ -198,8 +198,6 @@ void XLALPrintWarningMessage(const char *func, const char *file, int line,
 void XLALPrintInfoMessage(const char *func, const char *file, int line,
                           const char *fmt, ...) _LAL_GCC_PRINTF_FORMAT_(4,5);
 
-#ifndef SWIG    /* exclude from SWIG interface */
-
 /**
  * Print an error message with standard XLAL formatting (if error messages
  * are enabled by lalDebugLevel).
@@ -220,8 +218,6 @@ void XLALVPrintWarningMessage(const char *func, const char *file, int line,
  */
 void XLALVPrintInfoMessage(const char *func, const char *file, int line,
                            const char *fmt, va_list ap) _LAL_GCC_VPRINTF_FORMAT_(4);
-
-#endif /* SWIG */
 
 /** Prints a progress bar at the "info" verbosity level. */
 int XLALPrintProgressBar(double);
@@ -322,7 +318,6 @@ int XLALPrintProgressBar(double);
 
 /** Returns the value of the XLAL <tt>REAL4</tt> failure NaN. */
 static _LAL_INLINE_ REAL4 XLALREAL4FailNaN(void);
-#ifndef SWIG    /* exclude from SWIG interface */
 static _LAL_INLINE_ REAL4 XLALREAL4FailNaN(void)
 {
     volatile const union {
@@ -332,11 +327,9 @@ static _LAL_INLINE_ REAL4 XLALREAL4FailNaN(void)
     XLAL_REAL4_FAIL_NAN_INT};
     return val.x;
 }
-#endif /* SWIG */
 
 /** Returns the value of the XLAL <tt>REAL8</tt> failure NaN. */
 static _LAL_INLINE_ REAL8 XLALREAL8FailNaN(void);
-#ifndef SWIG    /* exclude from SWIG interface */
 static _LAL_INLINE_ REAL8 XLALREAL8FailNaN(void)
 {
     volatile const union {
@@ -346,11 +339,9 @@ static _LAL_INLINE_ REAL8 XLALREAL8FailNaN(void)
     XLAL_REAL8_FAIL_NAN_INT};
     return val.x;
 }
-#endif /* SWIG */
 
 /** Tests if a value is an XLAL <tt>REAL4</tt> failure NaN. */
 static _LAL_INLINE_ int XLALIsREAL4FailNaN(REAL4 val);
-#ifndef SWIG    /* exclude from SWIG interface */
 static _LAL_INLINE_ int XLALIsREAL4FailNaN(REAL4 val)
 {
     volatile const union {
@@ -369,11 +360,9 @@ static _LAL_INLINE_ int XLALIsREAL4FailNaN(REAL4 val)
             return 0;
     return 1;
 }
-#endif /* SWIG */
 
 /** Tests if a value is an XLAL <tt>REAL8</tt> failure NaN. */
 static _LAL_INLINE_ int XLALIsREAL8FailNaN(REAL8 val);
-#ifndef SWIG    /* exclude from SWIG interface */
 static _LAL_INLINE_ int XLALIsREAL8FailNaN(REAL8 val)
 {
     volatile const union {
@@ -392,7 +381,6 @@ static _LAL_INLINE_ int XLALIsREAL8FailNaN(REAL8 val)
             return 0;
     return 1;
 }
-#endif /* SWIG */
 
 /* Here are the macro constants for the fail NaNs. */
 #define XLAL_REAL4_FAIL_NAN ( XLALREAL4FailNaN() ) /**< Floating-point value of the XLAL <tt>REAL4</tt> failure NaN. */
@@ -402,6 +390,8 @@ static _LAL_INLINE_ int XLALIsREAL8FailNaN(REAL8 val)
 #define XLAL_IS_REAL4_FAIL_NAN(val) XLALIsREAL4FailNaN(val) /**< Tests if <tt>val</tt> is a XLAL <tt>REAL4</tt> failure NaN. */
 #define XLAL_IS_REAL8_FAIL_NAN(val) XLALIsREAL8FailNaN(val) /**< Tests if <tt>val</tt> is a XLAL <tt>REAL8</tt> failure NaN. */
 
+
+#endif /* SWIG */
 
 
 /** XLAL error numbers and return values. */
@@ -469,6 +459,9 @@ enum XLALErrorValue {
 };
 
 
+#ifndef SWIG    /* exclude from SWIG interface */
+
+
 /*
  *
  * These functions provide message associated with an error code and print
@@ -494,8 +487,6 @@ void XLALPerror(const char *func, const char *file, int line, int errnum);
  * Also provide is the default error handler.
  *
  */
-
-#ifndef SWIG    /* exclude from SWIG interface */
 
 /** The XLAL error handler type. */
 typedef void XLALErrorHandlerType(const char *func, const char *file,
@@ -531,6 +522,7 @@ XLALErrorHandlerType *XLALSetDefaultErrorHandler(void);
 /** Sets the error handler to a silent handler and returns the old handler. */
 XLALErrorHandlerType *XLALSetSilentErrorHandler(void);
 
+
 #endif /* SWIG */
 
 
@@ -553,6 +545,10 @@ int XLALGetBaseErrno(void);
 /** Clears the XLAL error number, returns the old value. */
 int XLALClearErrno(void);
 
+
+#ifndef SWIG    /* exclude from SWIG interface */
+
+
 /*
  *
  * The LAL specifiation requires that the XLAL error number be a modifiable
@@ -566,7 +562,6 @@ int XLALClearErrno(void);
 
 /** Function to return pointer to the XLAL error number. */
 int *XLALGetErrnoPtr(void);
-
 
 /* these are the modifiable lvalues for xlalErrno and XLALErrorHandler */
 #define xlalErrno ( * XLALGetErrnoPtr() ) /**< Modifiable lvalue containing the XLAL error number */
@@ -855,6 +850,9 @@ void XLALError(const char *func,
  */
 #define XLAL_CHECK_MAIN(assertion, ...) \
 	XLAL_CHECK_VAL(EXIT_FAILURE, assertion, __VA_ARGS__)
+
+
+#endif /* SWIG */
 
 
 /*@}*/
