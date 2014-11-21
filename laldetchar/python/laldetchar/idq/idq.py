@@ -322,7 +322,7 @@ def block_until(t, file_obj, max_wait=600, timeout=600, wait=0.1):
 
         elif "Begin: stride " in line: ### FIXME? this is fragile and could break if we change the logger statements
             ### find the stride start
-            stride_start = float( line.split("Begin: stride ")[-1].split("-")[-1] )
+            stride_start = float( line.split("Begin: stride ")[-1].split("-")[-2] )
 
         waited = 0.0 ### we found a new line, so re-set this counter
 
