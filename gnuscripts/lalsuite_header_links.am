@@ -1,5 +1,5 @@
 .PHONY: header-links
-header-links: $(pkginclude_HEADERS)
+header-links: $(pkginclude_HEADERS) $(nodist_pkginclude_HEADERS)
 	$(AM_V_at)for dir in $(SUBDIRS); do \
 		if test "x$$dir" != "x."; then \
 			( cd "$$dir" && $(MAKE) $(AM_MAKEFLAGS) header-links ) || exit 1; \

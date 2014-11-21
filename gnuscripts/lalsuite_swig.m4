@@ -41,8 +41,6 @@ AC_DEFUN([_LALSUITE_SWIG_CHECK_COMPILER_FLAGS],[
 
 AC_DEFUN([LALSUITE_ENABLE_SWIG],[
   # $0: enable SWIG bindings
-  AC_REQUIRE([LALSUITE_CHECK_GIT_REPO])
-  AM_COND_IF([HAVE_GIT_REPO],[swig_generate=true],[swig_generate=false])
   AC_ARG_ENABLE(
     [swig],
     AC_HELP_STRING(
@@ -50,7 +48,6 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG],[
       [generate SWIG bindings for all languages]
     ),[
       AS_CASE(["${enableval}"],
-        [generate],[swig_build_all=true; swig_generate=true],
         [yes],[swig_build_all=true],
         [no],[swig_build_all=false],
         [AC_MSG_ERROR([invalid value "${enableval}" for --enable-swig])]
@@ -62,13 +59,8 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG],[
   swig_build_any=false
   LALSUITE_ENABLE_SWIG_LANGUAGE([Octave],[false],[LALSUITE_REQUIRE_CXX])
   LALSUITE_ENABLE_SWIG_LANGUAGE([Python],[false],[LALSUITE_REQUIRE_PYTHON([2.6])])
-  AS_IF([test "${swig_generate}" = true],[
-    # Python is required for running generate_swig_iface.py
-    LALSUITE_REQUIRE_PYTHON([2.6])
-    SWIG_GENERATE_ENABLE_VAL=ENABLED
-  ],[
-    SWIG_GENERATE_ENABLE_VAL=DISABLED
-  ])
+  # Python is required to run generate_swig_iface.py
+  LALSUITE_REQUIRE_PYTHON([2.6])
   # end $0
 ])
 
@@ -80,10 +72,9 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG_LANGUAGE],[
     [swig-]lowercase,
     AC_HELP_STRING(
       [--enable-swig-]lowercase,
-      [generate SWIG binding for $1]
+      [generate SWIG bindings for $1]
     ),[
       AS_CASE(["${enableval}"],
-        [generate],[swig_build_]lowercase[=true; swig_generate=true],
         [yes],[swig_build_]lowercase[=true],
         [no],[swig_build_]lowercase[=false],
         [AC_MSG_ERROR([invalid value "${enableval}" for --enable-swig-]]lowercase[)]
@@ -116,59 +107,33 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
     LALSUITE_USE_SWIG_OCTAVE
     LALSUITE_USE_SWIG_PYTHON
 
-    # if SWIG bindings are being generated, check for SWIG binary
-    # with version ${swig_min_version} or later; use value of
-    # ${SWIG} if set, otherwise check common SWIG binary names
+    # check for SWIG binary with version ${swig_min_version} or later;
+    # use ${SWIG} if set, otherwise check common SWIG binary names
     AC_SUBST([SWIG])
-    AS_IF([test "${swig_generate}" = true],[
-      AS_IF([test "x${SWIG}" != x],[
-        AC_MSG_CHECKING([if ${SWIG} version is at least ${swig_min_version}])
-        _LALSUITE_CHECK_SWIG_VERSION([${SWIG}])
-        LALSUITE_VERSION_COMPARE([${swig_version}],[<],[${swig_min_version}],[
-          AC_MSG_RESULT([no (${swig_version})])
-          AC_MSG_ERROR([SWIG version ${swig_min_version} or later is required ${swig_min_version_info}])
-        ])
-        AC_MSG_RESULT([yes (${swig_version})])
-      ],[
-        AC_PATH_PROGS_FEATURE_CHECK([SWIG],[swig swig2.0],[
-          AC_MSG_CHECKING([if ${ac_path_SWIG} version is at least ${swig_min_version}])
-          _LALSUITE_CHECK_SWIG_VERSION([${ac_path_SWIG}])
-          LALSUITE_VERSION_COMPARE([${swig_version}],[>=],[${swig_min_version}],[
-            ac_path_SWIG_found=true
-            AC_MSG_RESULT([yes (${swig_version})])
-            ac_cv_path_SWIG="${ac_path_SWIG}"
-          ],[
-            ac_path_SWIG_found=false
-            AC_MSG_RESULT([no (${swig_version})])
-          ])
-        ],[
-          AC_MSG_ERROR([SWIG version ${swig_min_version} or later is required ${swig_min_version_info}])
-        ])
-        SWIG="${ac_cv_path_SWIG}"
+    AS_IF([test "x${SWIG}" != x],[
+      AC_MSG_CHECKING([if ${SWIG} version is at least ${swig_min_version}])
+      _LALSUITE_CHECK_SWIG_VERSION([${SWIG}])
+      LALSUITE_VERSION_COMPARE([${swig_version}],[<],[${swig_min_version}],[
+        AC_MSG_RESULT([no (${swig_version})])
+        AC_MSG_ERROR([SWIG version ${swig_min_version} or later is required ${swig_min_version_info}])
       ])
+      AC_MSG_RESULT([yes (${swig_version})])
     ],[
-      SWIG=false
-    ])
-
-    # if SWIG bindings are not being generated, check that the SWIG version
-    # used to generate the bindings satisfies ${swig_min_version}
-    src_file_swig_version_regex='s/^#.*define *SWIGVERSION *0x\([0-9][0-9]\)\([0-9][0-9]\)\([0-9][0-9]\).*$/\1 \2 \3/p'
-    AS_IF([test "${swig_generate}" != true],[
-      for file in ${swig_src_files}; do
-        src_file="${srcdir}/swig/${file}"
-        AS_IF([test -f "${src_file}"],[
-          AC_MSG_CHECKING([if SWIG version ${swig_min_version} or later generated ${src_file}])
-          src_file_swig_verargs=[`${SED} -n -e "${src_file_swig_version_regex}" "${src_file}"`]
-          src_file_swig_version=[`printf '%d.%d.%d' ${src_file_swig_verargs}`]
-          LALSUITE_VERSION_COMPARE([${src_file_swig_version}],[<],[${swig_min_version}],[
-            AC_MSG_RESULT([no (${src_file_swig_version})])
-            AC_MSG_ERROR([SWIG version ${swig_min_version} or later is required ${swig_min_version_info}])
-          ])
-          AC_MSG_RESULT([yes (${src_file_swig_version})])
+      AC_PATH_PROGS_FEATURE_CHECK([SWIG],[swig swig2.0],[
+        AC_MSG_CHECKING([if ${ac_path_SWIG} version is at least ${swig_min_version}])
+        _LALSUITE_CHECK_SWIG_VERSION([${ac_path_SWIG}])
+        LALSUITE_VERSION_COMPARE([${swig_version}],[>=],[${swig_min_version}],[
+          ac_path_SWIG_found=true
+          AC_MSG_RESULT([yes (${swig_version})])
+          ac_cv_path_SWIG="${ac_path_SWIG}"
         ],[
-          AC_MSG_ERROR([${src_file} does not exist])
+          ac_path_SWIG_found=false
+          AC_MSG_RESULT([no (${swig_version})])
         ])
-      done
+      ],[
+        AC_MSG_ERROR([SWIG version ${swig_min_version} or later is required ${swig_min_version_info}])
+      ])
+      SWIG="${ac_cv_path_SWIG}"
     ])
 
     # extract -I and -D flags from LALSuite library preprocessor flags
@@ -208,7 +173,6 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
 
   ])
   AM_CONDITIONAL([SWIG_BUILD],[test "${swig_build_any}" = true])
-  AM_CONDITIONAL([SWIG_GENERATE],[test "${swig_generate}" = true])
   # end $0
 ])
 
@@ -273,9 +237,10 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
       swig_min_version_info="for Octave version ${octave_version}"
     ])
 
-    # determine where to install Octave bindings: take versioned site .oct file directory given by octave-config,
-    # and strip off prefix; thus, if LALSuite is installed in the same directory as Octave, .oct files will be
-    # found by Octave without having to add to OCTAVE_PATH
+    # determine where to install Octave bindings: take versioned site .oct file
+    # directory given by octave-config, and strip off prefix; thus, if LALSuite
+    # is installed in the same directory as Octave, .oct files will be found by
+    # Octave without having to add to OCTAVE_PATH
     AC_MSG_CHECKING([${OCTAVE} .oct installation directory])
     octave_prefix=[`${octave_cfg} -p PREFIX 2>/dev/null | ${SED} -e 's|/*$||'`]
     octexecdir=[`${octave_cfg} -p LOCALVEROCTFILEDIR 2>/dev/null | ${SED} -e 's|/*$||'`]
@@ -287,7 +252,8 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
     AC_MSG_RESULT([${octexecdir}])
     AC_SUBST([octexecdir])
 
-    # check that wrappings are being compiled with the same C++ compiler used to compile Octave itself
+    # check that wrappings are being compiled with the
+    # same C++ compiler used to compile Octave itself
     AC_MSG_CHECKING([C++ compiler used for building ${OCTAVE}])
     octave_CXX=`${mkoctfile} -p CXX 2>/dev/null`
     AC_MSG_RESULT([${octave_CXX}])

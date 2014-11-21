@@ -26,16 +26,16 @@
 typedef struct {
   %extend {
 
-    // Constructor
+    // Construct a new gsl_rng from another gsl_rng.
+    gsl_rng(const gsl_rng* rng) {
+      XLAL_CHECK_NULL(rng != NULL, XLAL_EFAULT);
+      return gsl_rng_clone(rng);
+    }
+
+    // Constructor a new gsl_rng from a generator name and random seed.
     gsl_rng(const char* name, unsigned long int seed) {
-
-      // Check input
       XLAL_CHECK_NULL(name != NULL, XLAL_EFAULT, "Generator name must be non-NULL");
-
-      // Read environment variables for default generators
       gsl_rng_env_setup();
-
-      // Find generator
       const gsl_rng_type* T = NULL;
       if (strcmp(name, "default") == 0) {
         T = gsl_rng_default;
@@ -49,42 +49,27 @@ typedef struct {
         }
       }
       XLAL_CHECK_NULL(T != NULL, XLAL_EINVAL, "Could not find generator named '%s'", name);
-
-      // Create generator and set seed
       gsl_rng* rng = gsl_rng_alloc(T);
       gsl_rng_set(rng, seed);
-
       return rng;
-
     }
 
-    // Copy constructor
-    gsl_rng(const gsl_rng* src) {
-
-      // Check input
-      XLAL_CHECK_NULL(src != NULL, XLAL_EFAULT, "Generator must be non-NULL");
-
-      // Clone generator
-      return gsl_rng_clone(src);
-
-    }
-
-    // Destructor
+    // Destroy a gsl_rng.
     ~gsl_rng() {
       %swiglal_struct_call_dtor(gsl_rng_free, $self);
     }
 
-    // Properties and methods
+    // Properties and methods of a gsl_rng, most of which map to gsl_rng_...() functions.
+    const char* name();
+    double uniform();
+    double uniform_pos();
+    unsigned long int uniform_int(unsigned long int n);
     void set_seed(unsigned long int seed) {
       gsl_rng_set($self, seed);
     }
     unsigned long int get_value() {
       return gsl_rng_get($self);
     }
-    double uniform();
-    double uniform_pos();
-    unsigned long int uniform_int(unsigned long int n);
-    const char* name();
     unsigned long int max_value() {
       return gsl_rng_max($self);
     }
@@ -127,8 +112,7 @@ typedef struct {
     char *end = NULL;
     if (XLALStrToGPS(gps, str, &end) < 0 || *end != '\0') {
       XLALFree(gps);
-      xlalErrno = XLAL_EFUNC;   // Silently signal an error to constructor
-      return NULL;
+      XLAL_ERROR_NULL(XLAL_EINVAL, "'%s' is not a valid LIGOTimeGPS", str);
     }
     return gps;
   }

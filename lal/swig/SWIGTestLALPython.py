@@ -879,6 +879,7 @@ t4struct.t = 1234.5
 assert(t4struct.t == 1234.5)
 t5 = LIGOTimeGPS("1000")
 assert(t5 == 1000)
+print("*** below should be error messages from LIGOTimeGPS constructor ***")
 try:
     t5 = LIGOTimeGPS("abc1000")
     expected_exception = True
@@ -891,6 +892,7 @@ try:
 except:
     pass
 assert(not expected_exception)
+print("*** above should be error messages from LIGOTimeGPS constructor ***")
 assert(lal.swig_lal_test_noptrgps(LIGOTimeGPS(1234.5)) == lal.swig_lal_test_noptrgps(1234.5))
 del t0
 del t1
