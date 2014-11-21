@@ -84,6 +84,7 @@ if args.command == 'start':
     config = ConfigParser.SafeConfigParser()
     config.read(args.config)
 
+    server = config.get("lvalert_listener", "server")
     username = config.get("lvalert_listener", "username")
     password = config.get("lvalert_listener", "password")
     lvalert_config = config.get("lvalert_listener", "lvalert_config")
@@ -97,7 +98,9 @@ if args.command == 'start':
                 '--password',
                 password,
                 '--config-file',
-                lvalert_config
+                lvalert_config,
+                '--server',
+                server
                 ]
     if args.dont_wait:
         lvalert_launch_command.insert(2, "--dont-wait" )
