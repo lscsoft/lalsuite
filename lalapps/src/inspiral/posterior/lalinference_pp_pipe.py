@@ -32,6 +32,10 @@ parser.add_option('-N','--trials',action='store',type='int',metavar='NUM',help='
 
 (opts,args)=parser.parse_args()
 
+if len(args)==0:
+        parser.print_help()
+        sys.exit(1)
+
 inifile=args[0]
 
 # Set up the configuration for the sub-dags
