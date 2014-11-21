@@ -405,15 +405,22 @@ if opts.gps!=None:
 ### annotate glitches
 for gch_xmlname in opts.gch_xml:
     xmldoc = ligolw_utils.load_filename(gch_xmlname)
-    for row in lsctables.table.get_table(xmldoc, idq_tables.GlitchTable.tableName):
-        r_ax.plot(row.gps+1e-9*row.gps_ns - opts.plotting_gps_start, 0.1, marker="x", markercolor="g", linestyle="none")
+    for gch_row, ovl_row in idq_tables.coinc_to_ovl_data(xmldoc):
+        gps = gch_row.gps+gch_row.gps_ns*1e-9
+        chan = ovl_row.aux_channel
+        r_ax.text(gps - opts.plotting_gps_start, 0.1, chan, ha="left", va="bottom", rotation=45)
+#    for row in lsctables.table.get_table(xmldoc, idq_tables.GlitchTable.tableName):
+#        r_ax.plot(row.gps+1e-9*row.gps_ns - opts.plotting_gps_start, 0.1, marker="x", markercolor="g", linestyle="none")
 
 ### annotate cleans
 for cln_xmlname in opts.cln_xml:
     xmldoc = ligolw_utils.load_filename(cln_xmlname)
-    for row in lsctables.table.get_table(xmldoc, idq_tables.GlitchTable.tableName):
-        r_ax.plot(row.gps+1e-9*row.gps_ns - opts.plotting_gps_start, 0.9, marker="o", markeredgecolor="c", markerfacecolor="none", linestyle="none")
-    print cln_xmlname
+    for gch_row, ovl_row in idq_tables.coinc_to_ovl_data(xmldoc):
+        gps = gch_row.gps+gch_row.gps_ns*1e-9
+        chan = ovl_row.aux_channel
+        r_ax.text(gps - opts.plotting_gps_start, 0.9, chan, ha="left", va="bottom", rotation=-45)
+#    for row in lsctables.table.get_table(xmldoc, idq_tables.GlitchTable.tableName):
+#        r_ax.plot(row.gps+1e-9*row.gps_ns - opts.plotting_gps_start, 0.9, marker="o", markeredgecolor="c", markerfacecolor="none", linestyle="none")
 
 ### shade region outside of opts.start, opts.end
 if opts.start != opts.plotting_gps_start:
