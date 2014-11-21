@@ -89,7 +89,7 @@ class SBankJob(inspiral.InspiralAnalysisJob):
         self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
         self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
         self.add_condor_cmd('getenv','True')
-        self.add_condor_cmd('Requirements','Memory > 1999')
+        self.add_condor_cmd('request_memory', '1999')
 
 
 class SBankNode(pipeline.CondorDAGNode):
@@ -207,7 +207,7 @@ class BankSimJob(inspiral.InspiralAnalysisJob):
         extension = 'xml'
         sections = ['banksim']
         inspiral.InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
-        self.add_condor_cmd('Requirements','Memory > 1999')
+        self.add_condor_cmd('request_memory', '1999')
         self.tag_base = tag_base
         self.add_condor_cmd('getenv','True')
         self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
@@ -275,7 +275,7 @@ class MergeSimsJob(inspiral.InspiralAnalysisJob):
         self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
         self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
         self.add_condor_cmd('getenv','True')
-        self.add_condor_cmd('Requirements','Memory > 1999')
+        self.add_condor_cmd('request_memory', '1999')
 
 
 class MergeSimsNode(pipeline.CondorDAGNode):
@@ -303,7 +303,7 @@ class PlotSimJob(inspiral.InspiralAnalysisJob):
         self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
         self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
         self.add_condor_cmd('getenv','True')
-        self.add_condor_cmd('Requirements','Memory > 1999')
+        self.add_condor_cmd('request_memory', '1999')
 
 
 class PlotSimNode(pipeline.CondorDAGNode):
