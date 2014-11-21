@@ -589,6 +589,7 @@ typedef struct
 tagLALInferenceROQData
 {
   gsl_matrix_complex *weights; /** weights for the likelihood: NOTE: needs to be stored from data read from command line */
+  gsl_matrix_complex *mmweights; /** weights for calculating <h|h> if not using analytical formula */
   double int_f_7_over_3; /** /int_{fmin}^{fmax} df f^(-7/3)/psd...for <h|h> part of the likelihood */
   REAL8 time_weights_width;
 } LALInferenceROQData;

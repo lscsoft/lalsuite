@@ -5,6 +5,7 @@ include $(top_srcdir)/gnuscripts/lalsuite_test.am
 test_programs += LALInferenceTest
 test_programs += LALInferenceKDTest
 test_programs += LALInferencePriorTest
+test_programs += LALInferenceGenerateROQTest
 #test_programs += LALInferenceInjectionTest
 #test_programs += LALInferenceLikelihoodTest
 #test_programs += LALInferenceProposalTest
