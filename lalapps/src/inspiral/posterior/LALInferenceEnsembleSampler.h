@@ -48,6 +48,8 @@ INT4 walker_step(LALInferenceRunState *run_state,
                     REAL8 *proposed_prop_density);
 
 /** Update the ensemble proposal from the ensemble's current state */
+REAL8 get_acceptance_rate(LALInferenceRunState *run_state, REAL8 *local_acceptance_rates);
+
 void ensemble_update(LALInferenceRunState *run_state);
 
 void parallel_incremental_kmeans(LALInferenceRunState *run_state,

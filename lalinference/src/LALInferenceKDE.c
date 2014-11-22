@@ -149,7 +149,7 @@ LALInferenceKDE *LALInferenceNewKDEfromMat(gsl_matrix *data, INT4 *mask) {
  */
 LALInferenceKDE *LALInferenceInitKDE(INT4 npts, INT4 dim) {
     INT4 p;
-    LALInferenceKDE *kde = XLALMalloc(sizeof(LALInferenceKDE));
+    LALInferenceKDE *kde = XLALCalloc(1, sizeof(LALInferenceKDE));
     kde->dim = dim;
     kde->npts = npts;
     kde->mean = gsl_vector_calloc(dim);
