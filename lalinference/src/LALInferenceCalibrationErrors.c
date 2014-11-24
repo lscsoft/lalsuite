@@ -238,7 +238,6 @@ void ApplyPhaseCalibrationErrors(COMPLEX16FrequencySeries *doff,REAL8 * Pcoeffs)
       if (Pcoeffs[Npoints+3]==-300.)
         phase+=ConvertRandTransitionSlopeToFunction(Pcoeffs,f);
       else //catch all random errors
-        //tmp=ConvertCoefficientsToFunction(Pcoeffs,f)+0.0*ampli*phase;
         phase+=ConvertCoefficientsToFunction(Pcoeffs,f);
       doff->data->data[ui]=crect(ampli*cos(phase),ampli*sin(phase));
       /* Note: I (salvo) checked that this way of introducing the phase errors does not introduced significant numerical differences w.r.t. expanding both exp(i cE) and datum in their real and imag part, as done in the commented line below and in the likelihood. */
@@ -372,6 +371,8 @@ void LALInferenceApplyCalibrationErrors(LALInferenceRunState *state, ProcessPara
         while (tmpdata!=NULL){
           CreateRandomAmplitudeCalibrationErrors(ampCoeffs[this_ifo],calib_seed_ampli,tmpdata->name);
           CreateRandomPhaseCalibrationErrors(phaseCoeffs[this_ifo],calib_seed_phase,tmpdata->name);
+          calib_seed_ampli+=floor(1E6*gsl_rng_uniform(state->GSLrandom));
+          calib_seed_phase+=floor(1E6*gsl_rng_uniform(state->GSLrandom));
           this_ifo++;
           tmpdata=tmpdata->next;
         }
@@ -422,6 +423,7 @@ void LALInferenceApplyCalibrationErrors(LALInferenceRunState *state, ProcessPara
          
         /* Fill random part. Will take 10% of it later on */
         CreateRandomAmplitudeCalibrationErrors(ampCoeffs[i],calib_seed_ampli,tmpdata->name);
+        calib_seed_ampli+=floor(1E6*gsl_rng_uniform(state->GSLrandom));
         /* Consant plateau, knee, slope*/
         (ampCoeffs[i])[Npoints]=atof(calamps[i*3]);
         (ampCoeffs[i])[Npoints+1]=atof(calamps[i*3+1]);
@@ -449,9 +451,13 @@ void LALInferenceApplyCalibrationErrors(LALInferenceRunState *state, ProcessPara
          
         /* Fill random part. Will take 10% of it later on */
         CreateRandomPhaseCalibrationErrors(phaseCoeffs[i],calib_seed_phase,tmpdata->name);
+        calib_seed_phase+=floor(1E6*gsl_rng_uniform(state->GSLrandom));
         /* Consant plateau, knee, slope*/
-        (phaseCoeffs[i])[Npoints]=atof(calphas[i*3]);
+        // user gave degrees, convert to radiands
+        (phaseCoeffs[i])[Npoints]=LAL_PI/180.*atof(calphas[i*3]);
+        // transition frequency (Hz)
         (phaseCoeffs[i])[Npoints+1]=atof(calphas[i*3+1]);
+        // slope. After the transition freq the errors go like f^slope
         (phaseCoeffs[i])[Npoints+2]=atof(calphas[i*3+2]);
         (phaseCoeffs[i])[Npoints+3]=-300;
         i++;
@@ -913,7 +919,7 @@ static REAL8 ConvertRandTransitionSlopeToFunction(REAL8 *coeff,REAL8 f)
 {
   /* Takes an array of 3 numbers and return a calibraation error realization which is:
    * 
-   * flat (coeff[0]) + fluctuation (given by ~0.1% of the S6 1-sigma) for freq< coeff[1]
+   * flat (coeff[0]) + fluctuation (given by ~10% of the S6 1-sigma) for freq< coeff[1]
    * increasing with constant slope coeff[2] for freq>coeff[1]
    *  */
   REAL8 output=coeff[Npoints];
