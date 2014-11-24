@@ -26,8 +26,9 @@
 #include <lal/FrequencySeries.h>
 #include <lal/LALSimIMR.h>
 #include "check_series_macros.h"
+#include "LALSimInspiralPNCoefficients.c"
 
-#define UNUSED(expr) do { (void)(expr); } while (0)
+//#define UNUSED(expr) do { (void)(expr); } while (0)
 /*
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
@@ -75,7 +76,7 @@ typedef struct tagXLALSimInspiralSpinTaylorTxCoeffs
 	REAL8 wdotlogcoeff; ///< coefficient of log term in wdot
 	REAL8 Ecoeff[LAL_MAX_PN_ORDER]; ///< coeffs. of PN corrections to energy
 	REAL8 wdotSO15s1, wdotSO15s2; ///< non-dynamical 1.5PN SO corrections
-	REAL8 wdotSS2; ///< non-dynamical 2PN SS correction
+        REAL8 wdotSS2, wdotSSO2; ///< non-dynamical 2PN SS corrections
 	REAL8 wdotQM2S1; ///< non-dynamical S1^2 2PN quadrupole-monopole correction
 	REAL8 wdotQM2S1L; ///< non-dynamical (S1.L)^2 2PN quadrupole-monopole correction
 	REAL8 wdotQM2S2; ///< non-dynamical S2^2 2PN quadrupole-monopole correction
@@ -88,7 +89,7 @@ typedef struct tagXLALSimInspiralSpinTaylorTxCoeffs
 	REAL8 wdotSO3s1, wdotSO3s2; ///< non-dynamical 3PN SO corrections
 	REAL8 wdotSO35s1, wdotSO35s2; ///< non-dynamical 3.5PN SO corrections
 	REAL8 ESO15s1, ESO15s2; ///< non-dynamical 1.5PN SO corrections
-	REAL8 ESS2; ///< non-dynamical 2PN SS correction
+        REAL8 ESS2,ESSO2; ///< non-dynamical 2PN SS correction
 	REAL8 EQM2S1; ///< non-dynamical S1^2 2PN quadrupole-monopole correction
 	REAL8 EQM2S1L;///< non-dynamical (S1.L)^2 2PN quadrupole-monopole correction
 	REAL8 EQM2S2; ///< non-dynamical S2^2 2PN quadrupole-monopole correction
@@ -510,7 +511,7 @@ static int XLALSimInspiralSpinTaylorT4Setup(
 	INT4 phaseO                     /**< twice post-Newtonian order */
     )
 {
-    REAL8 M, eta, Mchirp, dm, m1m2, m2m1, m1M, m2M;
+    REAL8 M, eta, Mchirp, m1m2, m2m1, m1M, m2M;
     /* Zero the coefficients */
     memset(params, 0, sizeof(XLALSimInspiralSpinTaylorTxCoeffs));
 
@@ -520,7 +521,6 @@ static int XLALSimInspiralSpinTaylorT4Setup(
     m1 *= LAL_G_SI / pow(LAL_C_SI, 3.0); /* convert m1 from kg to seconds */
     m2 *= LAL_G_SI / pow(LAL_C_SI, 3.0); /* convert m2 from kg to seconds */
     M = m1 + m2;
-    dm = (m1 - m2)/M;
     m1M = m1 / M;
     m2M = m2 / M;
     eta = m1 * m2 / M / M;
@@ -558,36 +558,29 @@ static int XLALSimInspiralSpinTaylorT4Setup(
         case 8:
         /* case LAL_PNORDER_THREE_POINT_FIVE: */
         case 7:
-            params->wdotcoeff[7] = (LAL_PI/12096.0) 
-                    * (-13245.0 + 717350.0*eta + 731960.0*eta*eta);
+            params->wdotcoeff[7] = XLALSimInspiralTaylorT4wdot_7PNCoeff(eta);
             params->Ecoeff[7] = 0.;
         /* case LAL_PNORDER_THREE: */
         case 6:
-            params->wdotcoeff[6] = 16447322263./139708800. - 1712./105. 
-                    * LAL_GAMMA - 56198689./217728. * eta + LAL_PI * LAL_PI 
-                    * (16./3. + 451./48. * eta) + 541./896. * eta * eta 
-                    - 5605./2592. * eta * eta * eta - 856./105. * log(16.);
-            params->wdotlogcoeff = - 1712./315.;
-            params->Ecoeff[6] = - 675./64. + ( 34445./576. 
-                    - 205./96. * LAL_PI * LAL_PI ) * eta
-                    - (155./96.) *eta * eta - 35./5184. * eta * eta * eta;
+            params->wdotcoeff[6] = XLALSimInspiralTaylorT4wdot_6PNCoeff(eta);
+            params->wdotlogcoeff = XLALSimInspiralTaylorT4wdot_6PNLogCoeff(eta);
+            params->Ecoeff[6] = XLALSimInspiralPNEnergy_6PNCoeff(eta);
         /* case LAL_PNORDER_TWO_POINT_FIVE: */
         case 5:
-            params->wdotcoeff[5] = -(1./672.) * LAL_PI * (4159. + 15876.*eta);
+            params->wdotcoeff[5] = XLALSimInspiralTaylorT4wdot_5PNCoeff(eta);
             params->Ecoeff[5] = 0.;
         /* case LAL_PNORDER_TWO: */
         case 4:
-            params->wdotcoeff[4] = (34103. + 122949.*eta 
-                    + 59472.*eta*eta)/18144.;
-            params->Ecoeff[4] = (-81. + 57.*eta - eta*eta)/24.;
+            params->wdotcoeff[4] = XLALSimInspiralTaylorT4wdot_4PNCoeff(eta);
+            params->Ecoeff[4] = XLALSimInspiralPNEnergy_4PNCoeff(eta);
         /*case LAL_PNORDER_ONE_POINT_FIVE:*/
         case 3:
-            params->wdotcoeff[3] = 4. * LAL_PI;
+            params->wdotcoeff[3] = XLALSimInspiralTaylorT4wdot_3PNCoeff(eta);
             params->Ecoeff[3] = 0.;
         /*case LAL_PNORDER_ONE:*/
         case 2:
-            params->wdotcoeff[2] = -(1./336.) * (743. + 924.*eta);
-            params->Ecoeff[2] = -(1.0/12.0) * (9.0 + eta);
+            params->wdotcoeff[2] = XLALSimInspiralTaylorT4wdot_2PNCoeff(eta);
+            params->Ecoeff[2] = XLALSimInspiralPNEnergy_2PNCoeff(eta);
         /*case LAL_PNORDER_HALF:*/
         case 1:
             params->wdotcoeff[1] = 0.;
@@ -609,54 +602,48 @@ static int XLALSimInspiralSpinTaylorT4Setup(
      */
     switch( spinO )
     {
-        case LAL_SIM_INSPIRAL_SPIN_ORDER_35PN:
-            params->wdotSO35s1 = -4323559./18144. + 436705.*eta/672.
-                    - 5575.*eta*eta/27. + (dm/m1M) * (1195759./18144.
-                    - 257023.*eta/1008. + 2903.*eta*eta/32.);
-            params->wdotSO35s2 = -4323559./18144. + 436705.*eta/672.
-                    - 5575.*eta*eta/27. - (dm/m2M) * (1195759./18144.
-                    - 257023.*eta/1008. + 2903.*eta*eta/32.);
-            params->ESO35s1 = 135./4. - 367.*eta/4. + 29.*eta*eta/12.
-                    + (dm/m1M) * (-27./4. + 39.*eta - 5.*eta*eta/4.);
-            params->ESO35s2 = 135./4. - 367.*eta/4. + 29.*eta*eta/12.
-                    - (dm/m2M) * (-27./4. + 39.*eta - 5.*eta*eta/4.);
-        case LAL_SIM_INSPIRAL_SPIN_ORDER_3PN:
-            params->wdotSO3s1 = LAL_PI*(-188./3. + (dm/m1M)*151./6.);
-            params->wdotSO3s2 = LAL_PI*(-188./3. - (dm/m2M)*151./6.);
         case LAL_SIM_INSPIRAL_SPIN_ORDER_ALL:
+        case LAL_SIM_INSPIRAL_SPIN_ORDER_35PN:
+	    params->wdotSO35s1 = XLALSimInspiralTaylorT4wdot_7PNSOCoeff(m1M);
+            params->wdotSO35s2 = XLALSimInspiralTaylorT4wdot_7PNSOCoeff(m2M);
+            params->ESO35s1 = XLALSimInspiralPNEnergy_7PNSOCoeff(m1M);
+            params->ESO35s2 = XLALSimInspiralPNEnergy_7PNSOCoeff(m2M);
+        case LAL_SIM_INSPIRAL_SPIN_ORDER_3PN:
+            params->wdotSO3s1 = XLALSimInspiralTaylorT4wdot_6PNSOCoeff(m1M);
+            params->wdotSO3s2 = XLALSimInspiralTaylorT4wdot_6PNSOCoeff(m2M);
         case LAL_SIM_INSPIRAL_SPIN_ORDER_25PN:
-            params->wdotSO25s1 = -5861./144. + 1001.*eta/12. 
-                    + (dm/m1M) * (809./84. - 281.*eta/8.);
-            params->wdotSO25s2 = -5861./144. + 1001.*eta/12.
-                    + (dm/m2M) * (-809./84. + 281.*eta/8.);
-            params->ESO25s1 = 11. - 61.*eta/9. + (dm/m1M) * (-3. + 10.*eta/3.);
-            params->ESO25s2 = 11. - 61.*eta/9. + (dm/m2M) * (3. - 10.*eta/3.);
+            params->wdotSO25s1 = XLALSimInspiralTaylorT4wdot_5PNSOCoeff(m1M);
+            params->wdotSO25s2 = XLALSimInspiralTaylorT4wdot_5PNSOCoeff(m2M);
+            params->ESO25s1 = XLALSimInspiralPNEnergy_5PNSOCoeff(m1M);
+            params->ESO25s2 = XLALSimInspiralPNEnergy_5PNSOCoeff(m2M);
         case LAL_SIM_INSPIRAL_SPIN_ORDER_2PN:
             // 2PN spin-spin terms
             params->LNhatSS2 	= -1.5 / eta;
-            params->wdotSS2 		= - 1. / 48. / eta;
-            params->ESS2 		= 1. / eta;
+            params->wdotSS2     = XLALSimInspiralTaylorT4wdot_4PNS1S2Coeff(eta);
+            params->wdotSSO2    = XLALSimInspiralTaylorT4wdot_4PNS1S2OCoeff(eta);
+            params->ESS2 	= XLALSimInspiralPNEnergy_4PNS1S2Coeff(eta);
+            params->ESSO2       = XLALSimInspiralPNEnergy_4PNS1S2OCoeff(eta);
             // 2PN quadrupole-monopole terms
-            params->wdotQM2S1 	= -quadparam1 * 5./2./m1M/m1M;
-            params->wdotQM2S1L 	= quadparam1 * 15./2./m1M/m1M;
-            params->wdotQM2S2 	= -quadparam2 * 5./2./m2M/m2M;
-            params->wdotQM2S2L 	= quadparam2 * 15./2./m2M/m2M;
-            params->EQM2S1 		= quadparam1/2./m1M/m1M;
-            params->EQM2S1L 		= -quadparam1*3./2./m1M/m1M;
-            params->EQM2S2 		= quadparam2/2./m2M/m2M;
-            params->EQM2S2L 		= -quadparam2*3./2./m2M/m2M;
+            params->wdotQM2S1 	= quadparam1 * XLALSimInspiralTaylorT4wdot_4PNQMCoeff(m1M);
+            params->wdotQM2S1L 	= quadparam1 * XLALSimInspiralTaylorT4wdot_4PNQMSOCoeff(m1M);
+            params->wdotQM2S2 	= quadparam2 *  XLALSimInspiralTaylorT4wdot_4PNQMCoeff(m2M);
+            params->wdotQM2S2L 	= quadparam2 *  XLALSimInspiralTaylorT4wdot_4PNQMSOCoeff(m2M);
+            params->EQM2S1      = XLALSimInspiralPNEnergy_4PNQM2SCoeff(m1M);
+            params->EQM2S1L 	= XLALSimInspiralPNEnergy_4PNQM2SOCoeff(m1M);
+            params->EQM2S2 	= XLALSimInspiralPNEnergy_4PNQM2SCoeff(m2M);
+            params->EQM2S2L 	= XLALSimInspiralPNEnergy_4PNQM2SOCoeff(m2M);
             // 2PN self-spin terms
-            params->wdotSSselfS1     = 7./96./m1M/m1M;
-            params->wdotSSselfS1L    = -1./96./m1M/m1M;
-            params->wdotSSselfS2     = 7./96./m2M/m2M;
-            params->wdotSSselfS2L    = -1./96./m2M/m2M;
+            params->wdotSSselfS1     = XLALSimInspiralTaylorT4wdot_4PNSelfSSCoeff(m1M);
+            params->wdotSSselfS1L    = XLALSimInspiralTaylorT4wdot_4PNSelfSSOCoeff(m1M);
+            params->wdotSSselfS2     = XLALSimInspiralTaylorT4wdot_4PNSelfSSCoeff(m2M);
+            params->wdotSSselfS2L    = XLALSimInspiralTaylorT4wdot_4PNSelfSSOCoeff(m2M);
         case LAL_SIM_INSPIRAL_SPIN_ORDER_15PN:
-            params->LNhatSO15s1 	= 2. + 3./2. * m2m1;
+            params->LNhatSO15s1 = 2. + 3./2. * m2m1;
             params->LNhatSO15s2	= 2. + 3./2. * m1m2;
-            params->wdotSO15s1 	= - ( 113. + 75. * m2m1 ) / 12.;
-            params->wdotSO15s2 	= - ( 113. + 75. * m1m2 ) / 12.;
-            params->ESO15s1 		= 8./3. + 2. * m2m1;
-            params->ESO15s2 		= 8./3. + 2. * m1m2;
+	    params->wdotSO15s1 	= XLALSimInspiralTaylorT4wdot_3PNSOCoeff(m1M);
+            params->wdotSO15s2 	= XLALSimInspiralTaylorT4wdot_3PNSOCoeff(m2M);
+            params->ESO15s1 	= XLALSimInspiralPNEnergy_3PNSOCoeff(m1M);
+            params->ESO15s2 	= XLALSimInspiralPNEnergy_3PNSOCoeff(m2M);
         case LAL_SIM_INSPIRAL_SPIN_ORDER_1PN:
         case LAL_SIM_INSPIRAL_SPIN_ORDER_05PN:
         case LAL_SIM_INSPIRAL_SPIN_ORDER_0PN:
@@ -677,21 +664,11 @@ static int XLALSimInspiralSpinTaylorT4Setup(
     {
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL:
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_6PN:
-            params->wdottidal6pn = lambda1 * m1M*m1M*m1M*m1M*m1M
-                    * (4421./28. - 12263./28. * m1M + 1893./2. * m1M * m1M
-                    - 661 * m1M * m1M * m1M) / (2 * m1M) + lambda2
-                    * m2M*m2M*m2M*m2M*m2M * (4421./28. - 12263./28. * m2M
-                    + 1893./2. * m2M * m2M - 661 * m2M * m2M * m2M) / (2 * m2M);
-            params->Etidal6pn = - 11./2. * m2m1 * (3. + 2. * m1M
-                    + 3. * m1M * m1M) * lambda1 * m1M*m1M*m1M*m1M*m1M
-                    - 11./2. * m1m2 * (3. + 2. * m2M + 3. * m2M * m2M)
-                    * lambda2 * m2M*m2M*m2M*m2M*m2M;
+            params->wdottidal6pn = lambda1 * XLALSimInspiralTaylorT4wdot_12PNTidalCoeff(m1M) + lambda2 * XLALSimInspiralTaylorT4wdot_12PNTidalCoeff(m2M);
+            params->Etidal6pn =  lambda1*XLALSimInspiralPNEnergy_12PNTidalCoeff(m1M) + lambda2*XLALSimInspiralPNEnergy_12PNTidalCoeff(m2M);
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN:
-            params->wdottidal5pn = lambda1 * 6. * (1. + 11. * m2M)
-                    * m1M*m1M*m1M*m1M + lambda2
-                    * 6. * (1. + 11. * m1M) * m2M*m2M*m2M*m2M;
-            params->Etidal5pn = - 9. * m2m1 * lambda1 * m1M*m1M*m1M*m1M*m1M
-                    - 9. * m1m2 * lambda2 * m2M*m2M*m2M*m2M*m2M;
+	    params->wdottidal5pn = lambda1 * XLALSimInspiralTaylorT4wdot_10PNTidalCoeff(m1M) + lambda2 * XLALSimInspiralTaylorT4wdot_10PNTidalCoeff(m2M);
+	    params->Etidal5pn = lambda1*XLALSimInspiralPNEnergy_10PNTidalCoeff(m1M) + lambda2*XLALSimInspiralPNEnergy_10PNTidalCoeff(m2M);
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN:
             break;
         default:
@@ -1064,7 +1041,7 @@ int XLALSimInspiralSpinTaylorPNEvolveOrbit(
  * SpinTaylorT4 and SpinTaylorT2 both use this same stopping test
  */
 static int XLALSimInspiralSpinTaylorStoppingTest(
-	double t, 
+	double UNUSED t,
 	const double values[],
 	double dvalues[], 
 	void *mparams
@@ -1078,8 +1055,6 @@ static int XLALSimInspiralSpinTaylorStoppingTest(
             = (XLALSimInspiralSpinTaylorTxCoeffs*) mparams;
     /* Spin-corrections to energy (including dynamical terms) */
     REAL8 Espin15 = 0., Espin2 = 0., Espin25 = 0., Espin35 = 0.;
-
-    UNUSED(t);
 
     omega = values[1];
     v = pow(omega,1./3.);
@@ -1113,7 +1088,7 @@ static int XLALSimInspiralSpinTaylorStoppingTest(
         case LAL_SIM_INSPIRAL_SPIN_ORDER_2PN:
             // Compute S1-S2 spin-spin term
             S1dotS2 = (S1x*S2x + S1y*S2y + S1z*S2z);
-            Espin2 += params->ESS2  * (S1dotS2 - 3. * LNdotS1 * LNdotS2);
+            Espin2 += params->ESS2  * S1dotS2 + params->ESSO2 * LNdotS1 * LNdotS2;
             // Compute 2PN quadrupole-monopole correction to energy
             // See last line of Eq. 6 of astro-ph/0504538
             // or 2nd and 3rd lines of Eq. (C4) in arXiv:0810.5336v3
@@ -1203,7 +1178,7 @@ static int XLALSimInspiralSpinTaylorStoppingTest(
  * The derivative of E1 is Eq. (15)-(16) of gr-qc/0310034
  */
 static int XLALSimInspiralSpinTaylorT4Derivatives(
-	double t, 
+	double UNUSED t,
 	const double values[],
 	double dvalues[], 
 	void *mparams
@@ -1224,8 +1199,6 @@ static int XLALSimInspiralSpinTaylorT4Derivatives(
 
     XLALSimInspiralSpinTaylorTxCoeffs *params 
             = (XLALSimInspiralSpinTaylorTxCoeffs*) mparams;
-
-    UNUSED(t);
 
     /* copy variables */
     // UNUSED!!: s    = values[0] ;
@@ -1287,7 +1260,7 @@ static int XLALSimInspiralSpinTaylorT4Derivatives(
         case LAL_SIM_INSPIRAL_SPIN_ORDER_2PN:
             // Compute S1-S2 spin-spin term
             S1dotS2 = (S1x*S2x + S1y*S2y + S1z*S2z);
-            wspin2 = params->wdotSS2 * (247.*S1dotS2 - 721.*LNdotS1 * LNdotS2);
+            wspin2 = params->wdotSS2 *S1dotS2 + params->wdotSSO2 * LNdotS1 * LNdotS2;
             // Compute 2PN QM and self-spin corrections to domega/dt
             // This is equivalent to Eqs. 9c + 9d of astro-ph/0504538
             S1sq = (S1x*S1x + S1y*S1y + S1z*S1z);
@@ -1321,7 +1294,7 @@ static int XLALSimInspiralSpinTaylorT4Derivatives(
             + v * ( params->wdotcoeff[4] + wspin2
             + v * ( params->wdotcoeff[5] + wspin25
             + v * ( params->wdotcoeff[6] + wspin3
-                    + params->wdotlogcoeff * log(omega)
+                    + params->wdotlogcoeff * log(v)
             + v * ( params->wdotcoeff[7] + wspin35
             + v3 * ( params->wdottidal5pn
             + v2 * ( params->wdottidal6pn ) ) ) ) ) ) ) ) ) );
@@ -1433,7 +1406,7 @@ static int XLALSimInspiralSpinTaylorT4Derivatives(
  * The derivative of E1 is Eq. (15)-(16) of gr-qc/0310034
  */
 static int XLALSimInspiralSpinTaylorT2Derivatives(
-	double t,
+	double UNUSED t,
 	const double values[],
 	double dvalues[],
 	void *mparams
@@ -1454,8 +1427,6 @@ static int XLALSimInspiralSpinTaylorT2Derivatives(
 
     XLALSimInspiralSpinTaylorTxCoeffs *params
             = (XLALSimInspiralSpinTaylorTxCoeffs*) mparams;
-
-    UNUSED(t);
 
     /* copy variables */
     // UNUSED!!: s    = values[0] ;

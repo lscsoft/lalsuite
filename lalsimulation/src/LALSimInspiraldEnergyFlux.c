@@ -294,7 +294,7 @@ static REAL8 UNUSED XLALSimInspiralFt6(REAL8 v, expnCoeffsdEnergyFlux *ak)
    v10 = v8*v2;
    v12 = v10*v2;
    flux = ak->FTaN * v10 * (1.+ ak->FTa2*v2 + ak->FTa3*v2*v + ak->FTa4*v4
-        + ak->FTa5*v4*v + (ak->FTa6 + ak->FTl6*log(16.0*v2))*v6 + ak->FTa10*v10
+        + ak->FTa5*v4*v + (ak->FTa6 + ak->FTl6*log(v))*v6 + ak->FTa10*v10
         + ak->FTa12*v12);
    return (flux);
 }
@@ -310,7 +310,7 @@ static REAL8 UNUSED XLALSimInspiralFt7(REAL8 v, expnCoeffsdEnergyFlux *ak)
    v10 = v8*v2;
    v12 = v10*v2;
    flux = ak->FTaN * v10 * (1.+ ak->FTa2*v2 + ak->FTa3*v2*v + ak->FTa4*v4
-        + ak->FTa5*v4*v + (ak->FTa6 + ak->FTl6*log(16.0*v2))*v6 + ak->FTa7*v6*v
+        + ak->FTa5*v4*v + (ak->FTa6 + ak->FTl6*log(v))*v6 + ak->FTa7*v6*v
         + ak->FTa10*v10 + ak->FTa12*v12);
    return (flux);
 }

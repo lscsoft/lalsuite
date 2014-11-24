@@ -193,23 +193,11 @@ XLALSimInspiralTaylorT1Setup(
     {
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL:
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_6PN:
-            ak->akdEF.ETa6  = XLALSimInspiralPNEnergy_12PNTidalCoeff(
-                    ak->chi2, ak->chi1, lambda1)
-                    + XLALSimInspiralPNEnergy_12PNTidalCoeff(
-                    ak->chi1, ak->chi2, lambda2);
-            ak->akdEF.FTa12 = XLALSimInspiralPNFlux_12PNTidalCoeff(
-                    ak->chi1, lambda1)
-                    + XLALSimInspiralPNFlux_12PNTidalCoeff(
-                    ak->chi2, lambda2);
+	    ak->akdEF.ETa6  = lambda1 * XLALSimInspiralPNEnergy_12PNTidalCoeff(ak->chi1) + lambda2 * XLALSimInspiralPNEnergy_12PNTidalCoeff(ak->chi2);
+            ak->akdEF.FTa12 = lambda1 * XLALSimInspiralPNFlux_12PNTidalCoeff(ak->chi1) + lambda2 * XLALSimInspiralPNFlux_12PNTidalCoeff(ak->chi2);
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN:
-            ak->akdEF.ETa5  = XLALSimInspiralPNEnergy_10PNTidalCoeff(
-                    ak->chi2, ak->chi1, lambda1)
-                    + XLALSimInspiralPNEnergy_10PNTidalCoeff(
-                    ak->chi1, ak->chi2, lambda2);
-            ak->akdEF.FTa10 = XLALSimInspiralPNFlux_10PNTidalCoeff(
-                    ak->chi1, lambda1)
-                    + XLALSimInspiralPNFlux_10PNTidalCoeff(
-                    ak->chi2, lambda2);
+            ak->akdEF.ETa5  = lambda1 * XLALSimInspiralPNEnergy_10PNTidalCoeff(ak->chi1) + lambda2 * XLALSimInspiralPNEnergy_10PNTidalCoeff(ak->chi2);
+            ak->akdEF.FTa10 = lambda1 * XLALSimInspiralPNFlux_10PNTidalCoeff(ak->chi1) + lambda2 * XLALSimInspiralPNFlux_10PNTidalCoeff(ak->chi2);
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN:
             break;
         default:

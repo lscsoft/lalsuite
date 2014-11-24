@@ -188,11 +188,9 @@ int XLALSimInspiralTaylorF2(
     {
 	    case LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL:
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_6PN:
-            pft12 = pfaN * ( XLALSimInspiralTaylorF2Phasing_12PNTidalCoeff(m1OverM, lambda1)
-                            + XLALSimInspiralTaylorF2Phasing_12PNTidalCoeff(m2OverM, lambda2) );
+	    pft12 = pfaN * (lambda1*XLALSimInspiralTaylorF2Phasing_12PNTidalCoeff(m1OverM) + lambda2*XLALSimInspiralTaylorF2Phasing_12PNTidalCoeff(m2OverM) );
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN:
-            pft10 = pfaN * ( XLALSimInspiralTaylorF2Phasing_10PNTidalCoeff(m1OverM, lambda1)
-                            + XLALSimInspiralTaylorF2Phasing_10PNTidalCoeff(m2OverM, lambda2) );
+            pft10 = pfaN * ( lambda1*XLALSimInspiralTaylorF2Phasing_10PNTidalCoeff(m1OverM) + lambda2*XLALSimInspiralTaylorF2Phasing_10PNTidalCoeff(m2OverM) );
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN:
             break;
         default:
@@ -246,8 +244,6 @@ int XLALSimInspiralTaylorF2(
     /* extrinsic parameters */
     amp0 = -4. * m1 * m2 / r * LAL_MRSUN_SI * LAL_MTSUN_SI * sqrt(LAL_PI/12.L);
     shft = LAL_TWOPI * (tC.gpsSeconds + 1e-9 * tC.gpsNanoSeconds);
-
-    const REAL8 log4=log(4.0);
 
     /* Fill with non-zero vals from fStart to f_max */
     iStart = (size_t) ceil(fStart / deltaF);
@@ -334,7 +330,7 @@ int XLALSimInspiralTaylorF2(
             case 7:
                 flux += FTa7 * v7;
             case 6:
-                flux += (FTa6 + FTl6*2.0*(log4+logv)) * v6;
+                flux += (FTa6 + FTl6*logv) * v6;
                 dEnergy += dETa3 * v6;
             case 5:
                 flux += FTa5 * v5;

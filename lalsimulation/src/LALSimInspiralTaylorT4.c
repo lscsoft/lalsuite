@@ -341,14 +341,14 @@ XLALSimInspiralTaylorT4Setup(
     akdEF->ETa3 = XLALSimInspiralPNEnergy_6PNCoeff(ak->nu);
 
     /* PN co-efficients for angular acceleration */
-    ak->aatN = XLALSimInspiralTaylorT4OmDer_0PNCoeff(ak->nu)/(ak->m/LAL_MSUN_SI*LAL_MTSUN_SI)/3.;
-    ak->aat2 = XLALSimInspiralTaylorT4OmDer_2PNCoeff(ak->nu);
-    ak->aat3 = XLALSimInspiralTaylorT4OmDer_3PNCoeff(ak->nu);
-    ak->aat4 = XLALSimInspiralTaylorT4OmDer_4PNCoeff(ak->nu);
-    ak->aat5 = XLALSimInspiralTaylorT4OmDer_5PNCoeff(ak->nu);
-    ak->aat6 = XLALSimInspiralTaylorT4OmDer_6PNCoeff(ak->nu);
-    ak->aat7 = XLALSimInspiralTaylorT4OmDer_7PNCoeff(ak->nu);
-    ak->aat6l = XLALSimInspiralTaylorT4OmDer_6PNLogCoeff(ak->nu);
+    ak->aatN = XLALSimInspiralTaylorT4wdot_0PNCoeff(ak->nu)/(ak->m/LAL_MSUN_SI*LAL_MTSUN_SI)/3.;
+    ak->aat2 = XLALSimInspiralTaylorT4wdot_2PNCoeff(ak->nu);
+    ak->aat3 = XLALSimInspiralTaylorT4wdot_3PNCoeff(ak->nu);
+    ak->aat4 = XLALSimInspiralTaylorT4wdot_4PNCoeff(ak->nu);
+    ak->aat5 = XLALSimInspiralTaylorT4wdot_5PNCoeff(ak->nu);
+    ak->aat6 = XLALSimInspiralTaylorT4wdot_6PNCoeff(ak->nu);
+    ak->aat7 = XLALSimInspiralTaylorT4wdot_7PNCoeff(ak->nu);
+    ak->aat6l = XLALSimInspiralTaylorT4wdot_6PNLogCoeff(ak->nu);
 
     /* Tidal coefficients for energy and angular acceleration */
     akdEF->ETa5 = 0.;
@@ -359,23 +359,11 @@ XLALSimInspiralTaylorT4Setup(
     {
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL:
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_6PN:
-            akdEF->ETa6 = XLALSimInspiralPNEnergy_12PNTidalCoeff(
-                    ak->chi2, ak->chi1, lambda1)
-                    + XLALSimInspiralPNEnergy_12PNTidalCoeff(
-                    ak->chi1, ak->chi2, lambda2);
-            ak->aat12   = XLALSimInspiralTaylorT4OmDer_12PNTidalCoeff(
-                    ak->nu, ak->chi1, lambda1)
-                    + XLALSimInspiralTaylorT4OmDer_12PNTidalCoeff(
-                    ak->nu, ak->chi2, lambda2);
+            akdEF->ETa6 = lambda1 * XLALSimInspiralPNEnergy_12PNTidalCoeff(ak->chi1) + lambda2 * XLALSimInspiralPNEnergy_12PNTidalCoeff(ak->chi2);
+            ak->aat12   = lambda1 * XLALSimInspiralTaylorT4wdot_12PNTidalCoeff(ak->chi1) + lambda2 * XLALSimInspiralTaylorT4wdot_12PNTidalCoeff(ak->chi2);
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN:
-            akdEF->ETa5 = XLALSimInspiralPNEnergy_10PNTidalCoeff(
-                    ak->chi2, ak->chi1, lambda1)
-                    + XLALSimInspiralPNEnergy_10PNTidalCoeff(
-                    ak->chi1, ak->chi2, lambda2);
-            ak->aat10   = XLALSimInspiralTaylorT4OmDer_10PNTidalCoeff(
-                    ak->chi1, lambda1)
-                    + XLALSimInspiralTaylorT4OmDer_10PNTidalCoeff(
-                    ak->chi2, lambda2);
+            akdEF->ETa5 = lambda1 * XLALSimInspiralPNEnergy_10PNTidalCoeff(ak->chi1) + lambda2 * XLALSimInspiralPNEnergy_10PNTidalCoeff(ak->chi2);
+            ak->aat10   = lambda1 * XLALSimInspiralTaylorT4wdot_10PNTidalCoeff(ak->chi1) + lambda2 * XLALSimInspiralTaylorT4wdot_10PNTidalCoeff(ak->chi2);
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN:
             break;
         default:
