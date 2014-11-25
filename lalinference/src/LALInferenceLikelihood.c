@@ -880,7 +880,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
           loglikelihood+=-TwoDeltaToverN*(templatesq+datasq)/sigmasq;
           /* Note: This is conj(d) not H, since we use a Forward FFT later on */
           /* Note: No Factor of 2 here, since we are using the 2-sided COMPLEX16FFT */
-          COMPLEX16 dstarh =  TwoDeltaToverN * conj(d) * template/sigmasq;
+          COMPLEX16 dstarh = TwoDeltaToverN * conj(d) * template / sigmasq;
           dh_S_tilde->data[i]+=dstarh;
           dh_S_tilde->data[time_length-i] += conj(dstarh);
           break;
@@ -968,6 +968,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
         /* We've got the real and imaginary parts of the FFT in the two
          arrays.  Now combine them into one Bessel function. */
         for (i = istart; i < iend; i++) {
+          /* Note: No factor of 2 for x because the 2-sided FFT above introduces that for us */
           double x = cabs(dh_S->data[i]);
           double ang=carg(dh_S->data[i]);
           double I0=log(gsl_sf_bessel_I0_scaled(x)) + fabs(x);
@@ -1439,7 +1440,7 @@ static double integrate_interpolated_log(double h, COMPLEX16 *log_ys, size_t n, 
 
   log_imean_l -= log_integral;
 
-  if(imean) *imean=exp(log_imean_l);
+  if(imean) *imean=exp(log_imean_l-log_integral);
   if(imax) *imax=imax_l;
 
   return log_integral;
