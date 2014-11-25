@@ -493,6 +493,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
   COMPLEX16 Rcplx=0.0;
   int margphi=0;
   int margtime=0;
+  REAL8 desired_tc=0.0;
   if (marginalisationflags==MARGPHI || marginalisationflags==MARGTIMEPHI)
     margphi=1;
   if (marginalisationflags==MARGTIME || marginalisationflags==MARGTIMEPHI)
