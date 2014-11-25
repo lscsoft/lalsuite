@@ -50,8 +50,12 @@ usage = """
 
 lalapps_cbc_sbank: This program generates a template bank for compact
 binary searches covering a given region of mass and spin parameter
-space. The program supports a number of waveform approximants and is
-extensible to other waveform approximants as they become available.
+space. The program supports the waveform approximants listed below and
+is designed to be easily extensible to other waveform approximants as
+they become available (see waveforms.py for details).
+
+Supported template approximants:
+\t%s
 
 Example command lines:
 
@@ -99,8 +103,8 @@ For large parameter spaces with many templates, it is recommended that
 you split the space into smaller sub-regions and ligolw_add the
 resulting banks. One can also seed the template placement process with
 a pre-generated bank, produced for instance by lalapps_tmpltbank, and
-SBank will fill in whichever gaps remain.
-"""
+SBank will fill in whichever gaps remain. See also lalapps_cbc_sbank_pipe.
+""" % '\n\t'.join(sorted(waveforms.keys()))
 
 
 def parse_command_line():
