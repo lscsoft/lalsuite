@@ -62,7 +62,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
                                                LALInferenceModel *model,
                                                LALInferenceLikelihoodFlags marginalisationflags);
 
-static double integrate_interpolated_log(double h, COMPLEX16 *log_ys, size_t n, double *imean, size_t *imax);
+static double integrate_interpolated_log(double h, REAL8 *log_ys, size_t n, double *imean, size_t *imax);
 
 
 void LALInferenceInitLikelihood(LALInferenceRunState *runState)
@@ -587,7 +587,9 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
   
   int freq_length=0,time_length=0;
   COMPLEX16Vector * dh_S_tilde=NULL;
-  COMPLEX16Vector *dh_S=NULL;
+  COMPLEX16Vector * dh_S_phase_tilde = NULL;
+  REAL8Vector *dh_S=NULL;
+  REAL8Vector *dh_S_phase = NULL;
   /* Setup times to integrate over */
   freq_length = data->freqData->data->length;
   time_length = 2*(freq_length-1);
@@ -602,15 +604,27 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
   if(margtime)
   {
     GPSdouble = desired_tc;
-    
-    dh_S_tilde = XLALCreateCOMPLEX16Vector(time_length);
-    dh_S = XLALCreateCOMPLEX16Vector(time_length);
+    dh_S_tilde = XLALCreateCOMPLEX16Vector(freq_length);
+    dh_S = XLALCreateREAL8Vector(time_length);
     
     if (dh_S_tilde ==NULL || dh_S == NULL)
       XLAL_ERROR_REAL8(XLAL_ENOMEM, "Out of memory in LALInferenceMarginalisedTimeLogLikelihood.");
     
-    for (i = 0; i < time_length; i++) {
+    for (i = 0; i < freq_length; i++) {
       dh_S_tilde->data[i] = 0.0;
+    }
+
+    if (margphi) {
+      dh_S_phase_tilde = XLALCreateCOMPLEX16Vector(freq_length);
+      dh_S_phase = XLALCreateREAL8Vector(time_length);
+
+      if (dh_S_phase_tilde == NULL || dh_S_phase == NULL) {
+	XLAL_ERROR_REAL8(XLAL_ENOMEM, "Out of memory in time-phase marginalised likelihood.");
+      }
+
+      for (i = 0; i < freq_length; i++) {
+	dh_S_phase_tilde->data[i] = 0.0;
+      }
     }
   }
   
@@ -885,10 +899,17 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
           REAL8 datasq = creal(d)*creal(d)+cimag(d)*cimag(d);
           loglikelihood+=-TwoDeltaToverN*(templatesq+datasq)/sigmasq;
 	  
-          /* Note: No Factor of 2 here, since we are using the 2-sided COMPLEX16FFT */
-          COMPLEX16 dstarh = TwoDeltaToverN * conj(d) * template / sigmasq;
-          dh_S_tilde->data[i]+=dstarh;
-          dh_S_tilde->data[time_length-i] += conj(dstarh);
+          /* Note: No Factor of 2 here, since we are using the 2-sided
+	     COMPLEX16FFT.  Also, we use d*conj(h) because we are
+	     using a complex->real *inverse* FFT to compute the
+	     time-series of likelihoods. */
+          dh_S_tilde->data[i] += TwoDeltaToverN * d * conj(template) / sigmasq;
+
+	  if (margphi) {
+	    /* This is the other phase quadrature */
+	    dh_S_phase_tilde->data[i] += TwoDeltaToverN * d * conj(I*template) / sigmasq;
+	  }
+	  
           break;
         }
         case MARGPHI:
@@ -960,7 +981,12 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
       /* LALSuite only performs complex->real reverse-FFTs. */
       dh_S_tilde->data[0] = crect( creal(dh_S_tilde->data[0]), 0. );
 
-      XLALCOMPLEX16VectorFFT(dh_S, dh_S_tilde, data->margComplexFFTPlan);
+      XLALREAL8ReverseFFT(dh_S, dh_S_tilde, data->margFFTPlan);
+
+      if (margphi) {
+	dh_S_phase_tilde->data[i] = crect( creal(dh_S_tilde->data[0]), 0.0);
+	XLALREAL8ReverseFFT(dh_S_phase, dh_S_phase_tilde, data->margFFTPlan);
+      }
 
       REAL8 time_low,time_high;
       LALInferenceGetMinMaxPrior(currentParams,"time",&time_low,&time_high);
@@ -968,18 +994,22 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
       int istart = (UINT4)round((time_low - t0)/deltaT);
       int iend = (UINT4)round((time_high - t0)/deltaT);
       UINT4 n = iend - istart;
+      REAL8 xMax = -1.0;
+      REAL8 angMax = 0.0;
       if (margphi) {
         /* We've got the real and imaginary parts of the FFT in the two
          arrays.  Now combine them into one Bessel function. */
         for (i = istart; i < iend; i++) {
           /* Note: No factor of 2 for x because the 2-sided FFT above introduces that for us */
-          double x = cabs(dh_S->data[i]);
-          double ang=carg(dh_S->data[i]);
+          double x = sqrt(dh_S->data[i]*dh_S->data[i] + dh_S_phase->data[i]*dh_S_phase->data[i]);
+          double ang=atan2(dh_S_phase->data[i], dh_S->data[i]);
           double I0=log(gsl_sf_bessel_I0_scaled(x)) + fabs(x);
-          /* This is a hack, store the result in the real part and a
-           value in the imaginary part that will give the right max
-           likelihood phase below */
-          dh_S->data[i] = crect(I0, I0*tan(ang));
+
+          dh_S->data[i] = I0;
+
+	  if (x > xMax) {
+	    angMax = ang;
+	  }
         }
       }
       size_t imax;
@@ -989,14 +1019,18 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
       REAL8 max_time=t0+((REAL8) imax + istart)*deltaT;
       REAL8 mean_time=t0+(imean+(double)istart)*deltaT;
       if(margphi){
-        REAL8 phase_maxL=carg(dh_S->data[imax+istart]);
+        REAL8 phase_maxL=angMax;
         if(phase_maxL<0.0) phase_maxL=LAL_TWOPI+phase_maxL;
         LALInferenceAddVariable(currentParams,"phase_maxl",&phase_maxL,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
       }
       LALInferenceAddVariable(currentParams,"time_maxl",&max_time,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
       LALInferenceAddVariable(currentParams,"time_mean",&mean_time,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
       XLALDestroyCOMPLEX16Vector(dh_S_tilde);
-      XLALDestroyCOMPLEX16Vector(dh_S);
+      XLALDestroyREAL8Vector(dh_S);
+      if (margphi) {
+	XLALDestroyCOMPLEX16Vector(dh_S_phase_tilde);
+	XLALDestroyREAL8Vector(dh_S_phase);
+      }
       break;
     }
     default:
@@ -1405,7 +1439,7 @@ REAL8 LALInferenceMarginalisedPhaseLogLikelihood(LALInferenceVariables *currentP
  * The method used is the trapezoid method, which is quadratically
  * accurate.
  */
-static double integrate_interpolated_log(double h, COMPLEX16 *log_ys, size_t n, double *imean, size_t *imax) {
+static double integrate_interpolated_log(double h, REAL8 *log_ys, size_t n, double *imean, size_t *imax) {
   size_t i;
   double log_integral = -INFINITY;
   double max=-INFINITY;
@@ -1414,31 +1448,31 @@ static double integrate_interpolated_log(double h, COMPLEX16 *log_ys, size_t n, 
   double log_h = log(h);
   
   for (i = 1; i < n-1; i++) {
-    log_integral = logaddexp(log_integral, creal(log_ys[i]));
-    log_imean_l = logaddexp(log_imean_l, log(i) + creal(log_ys[i]));
+    log_integral = logaddexp(log_integral, log_ys[i]);
+    log_imean_l = logaddexp(log_imean_l, log(i) + log_ys[i]);
 
-    if (creal(log_ys[i]) > max) {
-      max = creal(log_ys[i]);
+    if (log_ys[i] > max) {
+      max = log_ys[i];
       imax_l = i;
     }
   }
 
-  log_integral = logaddexp(log_integral, log(0.5) + creal(log_ys[0]));
-  log_integral = logaddexp(log_integral, log(0.5) + creal(log_ys[n-1]));
+  log_integral = logaddexp(log_integral, log(0.5) + log_ys[0]);
+  log_integral = logaddexp(log_integral, log(0.5) + log_ys[n-1]);
 
   /* No contribution to mean index from i = 0 term! */
-  log_imean_l = logaddexp(log_imean_l, log(0.5) + log(n-1) + creal(log_ys[n-1]));
+  log_imean_l = logaddexp(log_imean_l, log(0.5) + log(n-1) + log_ys[n-1]);
 
   log_integral += log_h;
   log_imean_l += log_h;
 
   if (creal(log_ys[0]) > max) {
-    max = creal(log_ys[0]);
+    max = log_ys[0];
     imax_l = 0;
   }
 
-  if (creal(log_ys[n-1]) > max) {
-    max = creal(log_ys[n-1]);
+  if (log_ys[n-1] > max) {
+    max = log_ys[n-1];
     imax_l = n-1;
   }    
 
