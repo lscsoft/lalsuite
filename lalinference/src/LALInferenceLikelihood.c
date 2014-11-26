@@ -984,8 +984,8 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
       XLALREAL8ReverseFFT(dh_S, dh_S_tilde, data->margFFTPlan);
 
       if (margphi) {
-	dh_S_phase_tilde->data[i] = crect( creal(dh_S_tilde->data[0]), 0.0);
-	XLALREAL8ReverseFFT(dh_S_phase, dh_S_phase_tilde, data->margFFTPlan);
+          dh_S_phase_tilde->data[i] = crect( creal(dh_S_tilde->data[0]), 0.0);
+          XLALREAL8ReverseFFT(dh_S_phase, dh_S_phase_tilde, data->margFFTPlan);
       }
 
       REAL8 time_low,time_high;
@@ -997,20 +997,17 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
       REAL8 xMax = -1.0;
       REAL8 angMax = 0.0;
       if (margphi) {
-        /* We've got the real and imaginary parts of the FFT in the two
-         arrays.  Now combine them into one Bessel function. */
-        for (i = istart; i < iend; i++) {
-          /* Note: No factor of 2 for x because the 2-sided FFT above introduces that for us */
-          double x = sqrt(dh_S->data[i]*dh_S->data[i] + dh_S_phase->data[i]*dh_S_phase->data[i]);
-          double ang=atan2(dh_S_phase->data[i], dh_S->data[i]);
-          double I0=log(gsl_sf_bessel_I0_scaled(x)) + fabs(x);
-
-          dh_S->data[i] = I0;
-
-	  if (x > xMax) {
-	    angMax = ang;
-	  }
-        }
+          /* We've got the real and imaginary parts of the FFT in the two
+             arrays.  Now combine them into one Bessel function. */
+          for (i = istart; i < iend; i++) {
+              /* Note: No factor of 2 for x because the 2-sided FFT above introduces that for us */
+              double x = sqrt(dh_S->data[i]*dh_S->data[i] + dh_S_phase->data[i]*dh_S_phase->data[i]);
+              if (x > xMax) { /* Store the phase angle at max L */
+                  angMax = atan2(dh_S_phase->data[i], dh_S->data[i]);
+              }
+              double I0=log(gsl_sf_bessel_I0_scaled(x)) + fabs(x);
+              dh_S->data[i] = I0;
+          }
       }
       size_t imax;
       REAL8 imean;
