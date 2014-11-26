@@ -872,7 +872,7 @@ def stat_to_trends_plot(
                 color=colors[i],
                 label=labels[i],
                 marker='o',
-                markersize=10.0,
+                markersize=4.0,
                 linestyle='-',
                 )
         elif colors:
@@ -881,7 +881,7 @@ def stat_to_trends_plot(
                 100.0 * np.asarray(livetime_dict[classifier]),
                 color=colors[i],
                 marker='o',
-                markersize=10.0,
+                markersize=4.0,
                 linestyle='-',
                 )
         elif labels:
@@ -890,13 +890,13 @@ def stat_to_trends_plot(
                 100.0 * np.asarray(livetime_dict[classifier]),
                 label=labels[i],
                 marker='o',
-                markersize=10.0,
+                markersize=4.0,
                 linestyle='-',
                 )
         else:
             plt.plot(times, 100.0
                      * np.asarray(livetime_dict[classifier]), marker='o'
-                     , markersize=10.0, linestyle='-')
+                     , markersize=4.0, linestyle='-')
 
     plt.xlabel(__livetime_trend_xlabel)
     plt.ylabel(__livetime_trend_ylabel)
@@ -929,7 +929,7 @@ def stat_to_trends_plot(
                     color=colors[i],
                     label=labels[i],
                     marker='o',
-                    markersize=10.0,
+                    markersize=4.0,
                     linestyle='-',
                     )
             elif colors:
@@ -938,7 +938,7 @@ def stat_to_trends_plot(
                     r_glitches_dict[classifier],
                     color=colors[i],
                     marker='o',
-                    markersize=10.0,
+                    markersize=4.0,
                     linestyle='-',
                     )
             elif labels:
@@ -947,12 +947,12 @@ def stat_to_trends_plot(
                     r_glitches_dict[classifier],
                     label=labels[i],
                     marker='o',
-                    markersize=10.0,
+                    markersize=4.0,
                     linestyle='-',
                     )
             else:
                 plt.plot(times, r_glitches_dict[classifier], marker='o'
-                         , markersize=10.0, linestyle='-')
+                         , markersize=4.0, linestyle='-')
 
     plt.xlabel(__glitchrate_trend_xlabel)
     plt.ylabel(__glitchrate_trend_ylabel)
@@ -986,7 +986,7 @@ def stat_to_trends_plot(
                     color=colors[i],
                     label=labels[i],
                     marker='o',
-                    markersize=10.0,
+                    markersize=4.0,
                     linestyle='-',
                     )
             elif colors:
@@ -995,7 +995,7 @@ def stat_to_trends_plot(
                     r_cleans_dict[classifier],
                     color=colors[i],
                     marker='o',
-                    markersize=10.0,
+                    markersize=4.0,
                     linestyle='-',
                     )
             elif labels:
@@ -1004,12 +1004,12 @@ def stat_to_trends_plot(
                     r_cleans_dict[classifier],
                     label=labels[i],
                     marker='o',
-                    markersize=10.0,
+                    markersize=4.0,
                     linestyle='-',
                     )
             else:
                 plt.plot(times, r_cleans_dict[classifier], marker='o',
-                         markersize=10.0, linestyle='-')
+                         markersize=4.0, linestyle='-')
 
     plt.xlabel(__cleanrate_trend_xlabel)
     plt.ylabel(__cleanrate_trend_ylabel)
@@ -1272,7 +1272,7 @@ def chanlist_trending(
     for (ind, channel) in enumerate([chan for chan in
                                     sorted(chans.keys()) if chan
                                     != 'none']):  # we don't care about the "none" channel
-        yticklabels.append(channel)
+        yticklabels.append(channel.replace("_","\_")
         for (_start, _stop, eff_fap) in chans[channel]:
             if _start - gps_stop < time_min:
                 time_min = _start - gps_stop

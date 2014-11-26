@@ -560,7 +560,7 @@ while gpsstart < gpsstop:
                 sumdir,
                 classifier=classifier,
                 figure_name=figure_name,
-                annotated=True,
+                annotated=False,
                 )
             chanlist_trend.append((chan_perform_png, classifier))
         except:
