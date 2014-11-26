@@ -244,7 +244,7 @@ delta1=$(echo $params_draw1 | awk '{print $2}')
 A_synth=$(echo $params_draw1 $Nsteps | awk '{print $12/(2*$28)}')
 B_synth=$(echo $params_draw1 $Nsteps | awk '{print $13/(2*$28)}')
 C_synth=$(echo $params_draw1 $Nsteps | awk '{print $14/(2*$28)}')
-D_synth=$(echo $A_synth $B_synth $C_synth | awk '{print $1*$2-$3*$3}')
+D_synth=$(echo $params_draw1 $Nsteps | awk '{print $15/(4*$28*$28)}')
 A_H1_synth=$(echo $params_draw1 $Nsteps | awk '{print $20/$28}')
 B_H1_synth=$(echo $params_draw1 $Nsteps | awk '{print $21/$28}')
 C_H1_synth=$(echo $params_draw1 $Nsteps | awk '{print $22/$28}')
@@ -345,8 +345,10 @@ oLG=$(echo $oLGH1 $oLGL1 | awk '{print $1+$2}')
 pL=$(echo $oLG | awk '{print $1/(1+$1)}')
 rH1=$(echo $oLGH1 $oLG | awk '{print $1/$2}') # these are not really the rX of Keitel et al 2014, but divided by Ndet
 rL1=$(echo $oLGL1 $oLG | awk '{print $1/$2}')
+sqrtSn1=1
+sqrtSn2=2
 
-synth_cmdline_common2="${synth_cmdline_common} --sqrtSX=1,2 --Fstar0=$Fstar0  --oLGX=$oLGH1,$oLGL1"
+synth_cmdline_common2="${synth_cmdline_common} --sqrtSX=$sqrtSn1,$sqrtSn2 --Fstar0=$Fstar0  --oLGX=$oLGH1,$oLGL1"
 
 synth_cmdline="${synth_cmdline_common2} --fixedSNR=$SNR --outputStats=$stats_file_ns --outputInjParams=$params_file_ns"
 echo $synth_cmdline;
@@ -463,23 +465,18 @@ delta1=$(echo $params_draw1 | awk '{print $2}')
 A_synth=$(echo $params_draw1 $Nsteps | awk '{print $12/(2*$28)}')
 B_synth=$(echo $params_draw1 $Nsteps | awk '{print $13/(2*$28)}')
 C_synth=$(echo $params_draw1 $Nsteps | awk '{print $14/(2*$28)}')
-D_synth=$(echo $A_synth $B_synth $C_synth | awk '{print $1*$2-$3*$3}')
-sqrtSn1=1
-sqrtSn2=2
-Sntot=$(echo $sqrtSn1 $sqrtSn2 | awk '{print 2/(1/($1*$1)+1/($2*$2))}')
-corr1=$(echo $sqrtSn1 $Sntot | awk '{print ($1*$1)/$2}')
-corr2=$(echo $sqrtSn2 $Sntot | awk '{print ($1*$1)/$2}')
-A_H1_synth=$(echo $params_draw1 $corr1 $Nsteps | awk '{print $20*$28/$29}')
-B_H1_synth=$(echo $params_draw1 $corr1 $Nsteps | awk '{print $21*$28/$29}')
-C_H1_synth=$(echo $params_draw1 $corr1 $Nsteps | awk '{print $22*$28/$29}')
-D_H1_synth=$(echo $params_draw1 $corr1 $Nsteps | awk '{print $23*$28*$28/($29*$29)}')
-A_L1_synth=$(echo $params_draw1 $corr2 $Nsteps | awk '{print $24*$28/$29}')
-B_L1_synth=$(echo $params_draw1 $corr2 $Nsteps | awk '{print $25*$28/$29}')
-C_L1_synth=$(echo $params_draw1 $corr2 $Nsteps | awk '{print $26*$28/$29}')
-D_L1_synth=$(echo $params_draw1 $corr2 $Nsteps | awk '{print $27*$28*$28/($29*$29)}')
+D_synth=$(echo $params_draw1 $Nsteps | awk '{print $15/(4*$28*$28)}')
+A_H1_synth=$(echo $params_draw1 $Nsteps | awk '{print $20/$28}')
+B_H1_synth=$(echo $params_draw1 $Nsteps | awk '{print $21/$28}')
+C_H1_synth=$(echo $params_draw1 $Nsteps | awk '{print $22/$28}')
+D_H1_synth=$(echo $params_draw1 $Nsteps | awk '{print $23/($28*$28)}')
+A_L1_synth=$(echo $params_draw1 $Nsteps | awk '{print $24/$28}')
+B_L1_synth=$(echo $params_draw1 $Nsteps | awk '{print $25/$28}')
+C_L1_synth=$(echo $params_draw1 $Nsteps | awk '{print $26/$28}')
+D_L1_synth=$(echo $params_draw1 $Nsteps | awk '{print $27/($28*$28)}')
 
 ## ----- run ComputeAntennaPattern
-cap_cmdline="${cap_code} --IFOs=H1,L1 --timeStampsFile=$timestampsfile --outABCD=$outCAP2 --Alpha=$alpha1 --Delta=$delta1 --noiseSqrtShX=1,2"
+cap_cmdline="${cap_code} --IFOs=H1,L1 --timeStampsFile=$timestampsfile --outABCD=$outCAP2 --Alpha=$alpha1 --Delta=$delta1 --noiseSqrtShX=$sqrtSn1,$sqrtSn2"
 echo $cap_cmdline;
 if ! eval $cap_cmdline; then
     echo "Error.. something failed when running '$cap_code' ..."
@@ -525,7 +522,7 @@ fail_D_L1=$(echo $reldev_D_L1 $tolerance_p | awk "$awk_isgtr")
 
 echo "==> from lalapps_ComputeAntennaPattern:"
 echo "<A>=$A_cap, <B>=$B_cap, <C>=$C_cap, <D>=$D_cap, <A_H1>=$A_H1_cap, <B_H1>=$B_H1_cap, <C_H1>=$C_H1_cap, <D_H1>=$D_H1_cap, <A_L1>=$A_L1_cap, <B_L1>=$B_L1_cap, <C_L1>=$C_L1_cap, <D_L1>=$D_L1_cap"
-echo "    from lalapps_synthesizeLVStats, corrected with SnH1/Sn=$corr1 and SnL1/Sn=$corr2:"
+echo "    from lalapps_synthesizeLVStats:"
 echo "<A>=$A_synth, <B>=$B_synth, <C>=$C_synth, <D>=$D_synth, <A_H1>=$A_H1_synth, <B_H1>=$B_H1_synth, <C_H1>=$C_H1_synth, <D_H1>=$D_H1_synth, <A_L1>=$A_L1_synth, <B_L1>=$B_L1_synth, <C_L1>=$C_L1_synth, <D_L1>=$D_L1_synth"
 
 if [ "$fail_A" -o "$fail_B" -o "$fail_C" -o "$fail_D" -o "$fail_A_H1" -o "$fail_B_H1" -o "$fail_C_H1" -o "$fail_D_H1" -o "$fail_A_L1" -o "$fail_B_L1" -o "$fail_C_L1" -o "$fail_D_L1" ]; then

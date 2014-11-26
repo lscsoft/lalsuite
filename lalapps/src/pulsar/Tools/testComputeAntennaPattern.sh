@@ -443,10 +443,8 @@ echo "--------------------------------------------------------------------------
 echo "ComputeAntennaPattern Test6: varying detector sensitivity (compared with PFS)";
 echo "----------------------------------------------------------------------------------------------------"
 
-## compute harmonic mean of ShX
 SqrtShH=3e-23
 SqrtShL=6e-23
-Sinv=$(echo $SqrtShH $SqrtShL | awk '{print 0.5 * (1/($1^2)+1/($2^2))}')
 
 ## need more timestamps to get decent statistics for PFS
 rm $timestampsfile_H1
@@ -463,7 +461,7 @@ iTS=$(($iTS + 1))
 timestamp_i=$(echo $timestamp1 $iTS $Tsft| awk '{print $1 + ($2 - 1) * $3}')
 printf "%s 0\n" "$timestamp_i" >> $timestampsfile_L1
 
-cap_cmdline="${cap_code} --IFOs=H1,L1 --timeStampsFiles=$timestampsfile_H1,$timestampsfile_L1 --outABCD=$outCAP --Alpha=$alpha --Delta=$delta --noiseSqrtShX=$SqrtShH,$SqrtShL"
+cap_cmdline="${cap_code} --IFOs=H1,L1 --timeStampsFiles=$timestampsfile_H1,$timestampsfile_L1 --outABCD=$outCAP --Alpha=$alpha --Delta=$delta --noiseSqrtShX=$SqrtShH,$SqrtShL --singleIFOweighting=1"
 echo $cap_cmdline;
 if ! eval $cap_cmdline; then
     echo "Error.. something failed when running '$cap_code' ..."

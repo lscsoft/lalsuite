@@ -84,6 +84,7 @@ typedef struct
   INT4 Tsft;			/**< assumed length of SFTs, needed for offset to timestamps when comparing to CFS_v2, PFS etc */
 
   LALStringVector* noiseSqrtShX; /**< per-detector noise PSD sqrt(SX) */
+  BOOLEAN singleIFOweighting;	/**< Normalize single-IFO quantities by single-IFO SX instead of Stot */
 
   CHAR *outab; 			/**< output file for antenna pattern functions a(t), b(t) at each timestamp */
   CHAR *outABCD; 		/**< output file for antenna pattern matrix elements A, B, C, D averaged over timestamps */
@@ -203,7 +204,7 @@ main(int argc, char *argv[])
      */
     MultiAMCoeffs *multiAMforSingle = NULL;
     MultiAMCoeffs *multiAMunweighted = NULL;
-    if ( ( config.numDetectors > 1 ) && ( config.multiNoiseWeights != NULL ) ) {
+    if ( uvar.singleIFOweighting && ( config.numDetectors > 1 ) && ( config.multiNoiseWeights != NULL ) ) {
       XLAL_CHECK ( ( multiAMunweighted = XLALComputeMultiAMCoeffs ( config.multiDetStates, NULL, skypos ) ) != NULL, XLAL_EFUNC, "XLALComputeAMCoeffs() failed." );
       multiAMforSingle = multiAMunweighted;
     }
@@ -289,6 +290,7 @@ XLALInitUserVars ( UserVariables_t *uvar )
   uvar->timeStampsFile = NULL;
   uvar->outab = 0;
   uvar->outABCD = 0;
+  uvar->singleIFOweighting = 0;
   uvar->Tsft = 1800;
 
   uvar->noiseSqrtShX = NULL;
@@ -307,6 +309,7 @@ XLALInitUserVars ( UserVariables_t *uvar )
   XLALregINTUserStruct(		Tsft,		 0, UVAR_OPTIONAL,	"Assumed length of one SFT in seconds; needed for timestamps offset consistency with F-stat based codes");
 
   XLALregLISTUserStruct ( noiseSqrtShX,		 0, UVAR_OPTIONAL, "Per-detector noise PSD sqrt(SX). Only ratios relevant to compute noise weights. Defaults to 1,1,...");
+  XLALregBOOLUserStruct ( singleIFOweighting,	 0, UVAR_OPTIONAL, "Normalize single-IFO quantities by single-IFO SX instead of Stot");
 
   XLALregSTRINGUserStruct (	ephemEarth,	 0,  UVAR_OPTIONAL,	"Earth ephemeris file to use");
   XLALregSTRINGUserStruct (	ephemSun,	 0,  UVAR_OPTIONAL,	"Sun ephemeris file to use");
