@@ -1272,7 +1272,7 @@ def chanlist_trending(
     for (ind, channel) in enumerate([chan for chan in
                                     sorted(chans.keys()) if chan
                                     != 'none']):  # we don't care about the "none" channel
-        yticklabels.append(channel.replace("_","\_")
+        yticklabels.append(channel.replace("_","\_"))
         for (_start, _stop, eff_fap) in chans[channel]:
             if _start - gps_stop < time_min:
                 time_min = _start - gps_stop
