@@ -86,7 +86,11 @@ for fname in filenames:
 	        options.instrument = row.value
 
     # split into disjoint sub-banks
-    weights = [row.tau0*row.f_final for row in sngl_inspiral_table]
+    if min([row.f_final for row in sngl_inspiral_table]) > 0:
+        # check that this column is actually populated...
+        weights = [row.tau0*row.f_final for row in sngl_inspiral_table]
+    else:
+        weights = [1 for row in sngl_inspiral_table]
     weights_cum = numpy.array(weights).cumsum()
 
     first_row = 0
