@@ -106,12 +106,16 @@ if __name__=='__main__':
   if opts.pos is not None:
     Bfile=opts.pos+'_B.txt'
     Bs=map(getBfile,[d.replace('.gz', '')+'_B.txt' for d in datafiles])
-    if not any([b is None for b in Bs]):
-      meanZ=reduce(logaddexp,log_evs)-log(len(log_evs))
+    Bs=[b for b in Bs if b is not None] 
+    meanZ=reduce(logaddexp,log_evs)-log(len(log_evs))
+    if len(Bs)>0: # If there were files to load, use them
       noiseZ=reduce(logaddexp,[b[2] for b in Bs]) - log(len(Bs))
-      meanB=meanZ-noiseZ
       maxL=max([b[3] for b in Bs])
-      outB=open(Bfile,'w')
-      outB.write('%f %f %f %f\n'%(meanB,meanZ,noiseZ,maxL))
-      outB.close()
+    else: # Otherwise fill in some placeholder data
+      noiseZ=0
+      maxL=0
+    meanB=meanZ-noiseZ
+    outB=open(Bfile,'w')
+    outB.write('%f %f %f %f\n'%(meanB,meanZ,noiseZ,maxL))
+    outB.close()
 
