@@ -154,7 +154,9 @@ main(int argc, char *argv[])
       }
       else {
         for ( UINT4 X=0; X < config.numDetectors; X++ ) {
-          fprintf(fpOutab, "      a[%d](t)      b[%d](t)", X, X);
+          char* detectorID;
+          detectorID = config.multiDetStates->data[X]->detector.frDetector.prefix;
+          fprintf(fpOutab, "      a_%s(t)      b_%s(t)", detectorID, detectorID);
         }
       }
       fprintf(fpOutab, "\n");
@@ -177,11 +179,20 @@ main(int argc, char *argv[])
 
       /* write column headings */
       fprintf(fpOutABCD, "%%%% columns:\n%%%% Alpha   Delta");
-      fprintf(fpOutABCD, "        A            B            C            D");
+      if ( config.numDetectors == 1 ) {
+        char* detectorID;
+        detectorID = config.multiDetStates->data[0]->detector.frDetector.prefix;
+        fprintf(fpOutABCD, "        A_%s         B_%s         C_%s         D_%s", detectorID, detectorID, detectorID, detectorID);
+      }
+      else {
+        fprintf(fpOutABCD, "        A            B            C            D");
+      }
       if ( config.numDetectors > 1 ) {
         fprintf(fpOutABCD, "   ");
         for ( UINT4 X=0; X < config.numDetectors; X++ ) {
-          fprintf(fpOutABCD, "         A[%d]         B[%d]         C[%d]         D[%d]", X, X, X, X);
+          char* detectorID;
+          detectorID = config.multiDetStates->data[X]->detector.frDetector.prefix;
+          fprintf(fpOutABCD, "         A_%s         B_%s         C_%s         D_%s", detectorID, detectorID, detectorID, detectorID);
         }
       }
       fprintf(fpOutABCD, "\n");
