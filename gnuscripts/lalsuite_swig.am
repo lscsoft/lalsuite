@@ -93,7 +93,7 @@ $(swig_iface): Makefile swiglal_header_list.txt $(srcdir)/generate_swig_iface.py
 		exit 1; \
 	fi; \
 	if $(PYTHON) $(srcdir)/generate_swig_iface.py '$(PACKAGE_NAME)' '$(SWIG_DEPENDENCIES)' '$(swig_function_prefixes)' $@_preproc.xml $@; then \
-		rm -f $@_preproc.i $@_preproc.xml; \
+		: ; \
 	else \
 		rm -f $@; \
 		exit 1; \
