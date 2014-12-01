@@ -530,37 +530,6 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
             !(LALInferenceGetProcParamVal(commandLine,"--PSDlength")||LALInferenceGetProcParamVal(commandLine,"--psdlength")) ||!LALInferenceGetProcParamVal(commandLine,"--seglen"))
     {fprintf(stderr,USAGE); return(NULL);}
 
-    /* ET detectors */
-    LALDetector dE1,dE2,dE3;
-    /* response of the detectors */
-    dE1.type = dE2.type = dE3.type = LALDETECTORTYPE_IFODIFF;
-    dE1.location[0] = dE2.location[0] = dE3.location[0] = 4.546374099002599e6;
-    dE1.location[1] = dE2.location[1] = dE3.location[1] = 8.42989697626334e5;
-    dE1.location[2] = dE2.location[2] = dE3.location[2] = 4.378576962409281e6;
-    sprintf(dE1.frDetector.name,"ET-1");
-    sprintf(dE1.frDetector.prefix,"E1");
-    dE1.response[0][0] = 0.166589852497480;
-    dE1.response[1][1] = -0.248382035405337;
-    dE1.response[2][2] = 0.081792182907857;
-    dE1.response[0][1] = dE1.response[1][0] = -0.218849471235102 ;
-    dE1.response[0][2] = dE1.response[2][0] = -0.129963871963915;
-    dE1.response[1][2] = dE1.response[2][1] = 0.273214957676611;
-    sprintf(dE2.frDetector.name,"ET-2");
-    sprintf(dE2.frDetector.prefix,"E2");
-    dE2.response[0][0] = -0.199221201378560;
-    dE2.response[1][1] = 0.423356724499319;
-    dE2.response[2][2]=-0.224135523120759;
-    dE2.response[0][1] = dE2.response[1][0] = -0.070223802479191;
-    dE2.response[0][2] = dE2.response[2][0] = 0.218900453442919;
-    dE2.response[1][2] = dE2.response[2][1] = -0.008534697228688;
-    sprintf(dE3.frDetector.name,"ET-3");
-    sprintf(dE3.frDetector.prefix,"E3");
-    dE3.response[0][0] = 0.032631348881079;
-    dE3.response[1][1] = -0.174974689093981 ;
-    dE3.response[2][2] = 0.142343340212902;
-    dE3.response[0][1] = dE3.response[1][0] = 0.289073273714293;
-    dE3.response[0][2] = dE3.response[2][0] = -0.088936581479004;
-    dE3.response[1][2] = dE3.response[2][1] = -0.264680260447922;
 
     //TEMPORARY. JUST FOR CHECKING USING SPINSPIRAL PSD
     char **spinspiralPSD=NULL;
@@ -678,13 +647,13 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
             if(!Nchannel) sprintf((channels[i]),"G1:DER_DATA_H"); continue;}
 
         if(!strcmp(IFOnames[i],"E1")){
-            memcpy(IFOdata[i].detector,&dE1,sizeof(LALDetector));
+            memcpy(IFOdata[i].detector,&lalCachedDetectors[LALDetectorIndexE1DIFF],sizeof(LALDetector));
             if(!Nchannel) sprintf((channels[i]),"E1:STRAIN"); continue;}
         if(!strcmp(IFOnames[i],"E2")){
-            memcpy(IFOdata[i].detector,&dE2,sizeof(LALDetector));
+            memcpy(IFOdata[i].detector,&lalCachedDetectors[LALDetectorIndexE2DIFF],sizeof(LALDetector));
             if(!Nchannel) sprintf((channels[i]),"E2:STRAIN"); continue;}
         if(!strcmp(IFOnames[i],"E3")){
-            memcpy(IFOdata[i].detector,&dE3,sizeof(LALDetector));
+            memcpy(IFOdata[i].detector,&lalCachedDetectors[LALDetectorIndexE3DIFF],sizeof(LALDetector));
             if(!Nchannel) sprintf((channels[i]),"E3:STRAIN"); continue;}
         if(!strcmp(IFOnames[i],"HM1")){
             /* Note, this is a sqrt(2)*7.5-km 3rd gen detector */
