@@ -633,7 +633,15 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state)
   /* This sets the component masses and total mass priors, if given in command line. 
    * The prior for other parameters are now read in in RegisterUniformVariable, if given by the user. */
   LALInferenceInitMassVariables(state);
-
+  /* now we need to update the chirp mass and q limits accordingly */
+  REAL8 comp_min = *(REAL8 *)LALInferenceGetVariable(state->priorArgs,"component_min");
+  REAL8 comp_max = *(REAL8 *)LALInferenceGetVariable(state->priorArgs,"component_max");
+  REAL8 mtot_min = *(REAL8 *)LALInferenceGetVariable(state->priorArgs,"MTotMin");
+  REAL8 mtot_max = *(REAL8 *)LALInferenceGetVariable(state->priorArgs,"MTotMax");
+  qMin = comp_min/comp_max;
+  mcMin =mtot_min*pow(qMin/pow(1.+qMin,2.),3./5.);
+  mcMax =mtot_max*pow(0.25,3./5.);
+  
   /************ Initial Value Related Argument START *************/
   /* Read time parameter from injection file */
   if(injTable)
