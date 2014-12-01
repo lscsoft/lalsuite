@@ -1526,18 +1526,22 @@ void LALInferenceInitMassVariables(LALInferenceRunState *state){
   /* Over-ride component masses */
   ppt=LALInferenceGetProcParamVal(commandLine,"--comp-min");
   //if(!ppt) ppt=LALInferenceGetProcParamVal(commandLine,"--compmin");
-  if(ppt)	mMin=atof(ppt->value);
+  if(ppt){
+          mMin=atof(ppt->value);
+          MTotMin=2.0*mMin;
+  }
   
   ppt=LALInferenceGetProcParamVal(commandLine,"--comp-max");
   //if(!ppt) ppt=LALInferenceGetProcParamVal(commandLine,"--compmax");
-  if(ppt)	mMax=atof(ppt->value);
-  
+  if(ppt){
+          mMax=atof(ppt->value);
+          MTotMax=2.0*mMax;
+  }
+
   ppt=LALInferenceGetProcParamVal(commandLine,"--mtotal-max");
-  //if(!ppt) ppt=LALInferenceGetProcParamVal(commandLine,"--mtotalmax");
   if(ppt)	MTotMax=atof(ppt->value);
 
   ppt=LALInferenceGetProcParamVal(commandLine,"--mtotal-min");
-  //if(!ppt) ppt=LALInferenceGetProcParamVal(commandLine,"--mtotalmin");
   if(ppt)	MTotMin=atof(ppt->value);
 
   LALInferenceAddVariable(priorArgs,"component_min",&mMin,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
