@@ -1121,6 +1121,7 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
         self.set_executable_installed(False)
     # Set the options which are always used
     self.set_sub_file(os.path.abspath(submitFile))
+    self.add_condor_cmd('getenv','true')
     if self.engine=='lalinferencemcmc' or self.engine=='lalinferencebambimpi':
       #openmpipath=cp.get('condor','openmpi')
       if cp.has_section('mpi'):
@@ -1144,7 +1145,6 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
         self.add_condor_cmd('+RequiresMultipleCores','True')
       self.add_condor_cmd('request_cpus',self.machine_count)
       self.add_condor_cmd('request_memory',str(float(self.machine_count)*float(self.machine_memory)))
-      self.add_condor_cmd('getenv','true')
       if cp.has_option('condor','queue'):
         self.add_condor_cmd('+'+cp.get('condor','queue'),'True')
         self.add_condor_cmd('Requirements','(TARGET.'+cp.get('condor','queue')+' =?= True)')
