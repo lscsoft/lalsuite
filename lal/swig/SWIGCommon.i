@@ -1522,7 +1522,7 @@ if (strides[I-1] == 0) {
   }
 }
 %typemap(argout, noblock=1) SWIGTYPE ** {
-  %append_output(SWIG_NewPointerObj(%as_voidptr(*$1), $*descriptor, owner$argnum | %newpointer_flags));
+  %append_output(SWIG_NewPointerObj($1 != NULL ? %as_voidptr(*$1) : NULL, $*descriptor, owner$argnum | %newpointer_flags));
 }
 %typemap(freearg) SWIGTYPE ** "";
 %define %swiglal_public_INOUT_STRUCTS(TYPE, ...)
