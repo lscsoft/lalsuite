@@ -100,7 +100,7 @@ def generate_html(
         print >> f, '<p>total No.glitches = %d events</p>' \
             % int(tot_glitches)
     if roc_url:
-        print >> f, '<h2>Reciever Operating Characteristic Curve</h2>'
+        print >> f, '<h2>Receiver Operating Characteristic Curve</h2>'
         print >> f, \
             '<img src="%s" alt="ROC curve" title="ROC curve" />' \
             % roc_url
