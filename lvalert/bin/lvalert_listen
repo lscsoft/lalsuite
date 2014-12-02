@@ -137,6 +137,24 @@ def parse_command_line():
 # -- get command line arguments
 opts, args = parse_command_line()
 
+if opts.dont_wait: ### required packages for "dont-wait" option
+    import multiprocessing
+    import tempfile
+
+#=============================================================================
+### R. ESSICK 12/2/2014
+def forked_wait(cmd, file_obj):
+    """
+    used with the "--dont-wait" option to avoid zombie processes via a double fork
+    main process will wait for this function to finish (quick), send the "wait" signal
+    which removes this function from the process table, and then moves on.
+    the forked process that this function creates become orphaned, and will automatically
+    be removed from the process table upon completion.
+    """
+    Popen(cmd, stdin=file_obj)
+
+#=======================
+
 class LVAlertHandler(object):
     """Provides the actions taken when an event arrives.
     """
@@ -188,11 +206,14 @@ class LVAlertHandler(object):
                     p = Popen([self.actions[n]], stdin=PIPE, stdout=PIPE)
                     print p.communicate(e)[0]
                 else:
-                    import tempfile
+#                    import tempfile
                     file_obj = tempfile.SpooledTemporaryFile(mode="w+r", max_size=1000)
                     file_obj.write(e)
                     file_obj.seek(0, 0)
-                    p = Popen([self.actions[n]], stdin=file_obj)
+#                    p = Popen([self.actions[n]], stdin=file_obj)
+                    p = multiprocessing.Process(target=forked_wait, args=([self.actions[n]], file_obj))
+                    p.start()
+                    p.join()
                     file_obj.close()
                 #===================================================================
                 sys.stdout.flush()
