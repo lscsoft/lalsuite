@@ -18,6 +18,7 @@ import ConfigParser
 from optparse import *
 import sys
 import os
+import glob
 import time
 from laldetchar.idq import idq
 import numpy
@@ -543,31 +544,36 @@ while gpsstart < gpsstop:
                         + classifier)
     logger.info('Done')
 
-    ### generate channel trending plot
+    ### generate channel trending plots
     logger.info('generating channel performance trending plot')
     chanlist_trend = []
-    for classifier in classifiers:
-        if classifier not in ['ovl']:
-            logger.info('skipping ' + classifier)
-            continue
-        try:
-            figure_name = this_sumdir + '/' + classifier \
-                + '-%d-%d_channel_performance_trends.png' \
-                % (lookbacktime, gpsstart + stride)
-            chan_perform_png = idq_s_p.chanlist_trending(
-                lookbacktime,
-                gpsstart + stride,
-                sumdir,
-                classifier=classifier,
-                figure_name=figure_name,
-                annotated=False,
-                )
-            chanlist_trend.append((chan_perform_png, classifier))
-        except:
-            traceback.print_exc()
-            chanlist_trend.append(('', classifier))
-            logger.info('WARNING: FAILED to generated channel trending plot for '
-                         + classifier)
+    for yvalue in ["rank", "eff", "fap"]:
+        for classifier in classifiers:
+            logger.info('%s %s channel performance trending'%(classifier, yvalue))
+
+            if classifier not in ['ovl']:
+                logger.info('skipping ' + classifier)
+                continue
+
+            try:
+                figure_name = this_sumdir + '/' + classifier \
+                    + '-%d-%d_channel_performance_%s_trends.png' \
+                    % (lookbacktime, gpsstart + stride, yvalue)
+                chan_perform_png = idq_s_p.chanlist_trending(
+                    lookbacktime,
+                    gpsstart + stride,
+                    sumdir,
+                    classifier=classifier,
+                    figure_name=figure_name,
+                    annotated=False,
+                    yvalue=yvalue
+                    )
+                chanlist_trend.append((chan_perform_png, classifier))
+            except:
+                traceback.print_exc()
+                chanlist_trend.append(('', classifier))
+                logger.info('WARNING: FAILED to generated channel trending plot for '
+                             + classifier)
 
     logger.info('Done')
 
@@ -719,6 +725,11 @@ while gpsstart < gpsstop:
 
     logger.info('Done')
 
+    ### soft link html page to index.html
+    index_html = "%s/index.html"%this_sumdir
+    logger.info("soft linking %s -> %s"%(html_path, index_html))
+    os.system("ln -s %s %s"%(html_path, index_html))
+
     # update symbolic link
 # ....iif os.path.lexists(symlink_path):
 # ........os.remove(symlink_path)
@@ -727,3 +738,41 @@ while gpsstart < gpsstop:
     ### continue onto the next stride
     gpsstart += stride
 
+#===================================================================================================
+### (re)write index.html for sumdir once all pages are built
+logger.info("writting top-level index.html page to point to individual directories")
+
+index_html = "%s/index.html"%(sumdir)
+
+file_obj = open(index_html, "w")
+print >> file_obj, "<body>"
+
+print >> file_obj, "<h1>iDQ summary pages Directory</h1>"
+
+sumdirs = glob.glob("%s/*_*/"%sumdir)
+sumdirs.reverse()
+
+for this_sumdir in sumdirs:
+    this_sumdir = this_sumdir.strip("/").split("/")[-1]
+    print >> file_obj, "<p>information about iDQ between %s and %s : "%tuple(this_sumdir.split("_"))
+    print >> file_obj, "<a href=\"%s/index.html\">here</a>"%(this_sumdir)
+    print >> file_obj, "</p>"
+
+print >> file_obj, "<hr />"
+
+### print timestamp
+c_time = time.localtime()
+tzname = time.tzname[0]
+print >> file_obj, '<p>last updated %d:%d:%d %s %2d/%2d/%4d </p>' % (
+    c_time.tm_hour,
+    c_time.tm_min,
+    c_time.tm_sec,
+    tzname,
+    c_time.tm_mon,
+    c_time.tm_mday,
+    c_time.tm_year,
+    )
+
+print >> file_obj, "</body>"
+
+file_obj.close()

@@ -26,6 +26,8 @@
 
 import sys
 from laldetchar.idq import pdf_estimation as pdf_e
+from laldetchar.idq import ovl
+
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')
@@ -1192,10 +1194,14 @@ def chanlist_trending(
     figure_name=False,
     verbose=False,
     annotated=True,
+    yvalue="rank"
     ):
     """
   builds a channel performance trending plot using chanlist files
   """
+
+    if yvalue not in ["rank", "eff", "fap"]:
+        raise ValueError, "yvalue=%s not understood"%yvalue
 
     ax_bounds = [0.025, 0.075, 0.5, 0.775]
     ax_cb_bounds = [0.025, 0.875, 0.5, 0.05]
@@ -1245,12 +1251,20 @@ def chanlist_trending(
 
         for chan_dat in c:
             channel = chan_dat[chanlistD['channel']]
-            if chans.has_key(channel):
-                chans[channel].append([_start, _start + _dur,
-                        chan_dat[chanlistD['eff/fap']]])
+
+            if yvalue == "rank":
+                yValue = ovl.effbydt_to_rank(chan_dat[chanlistD['eff/fap']])
+            elif yvalue == "eff":
+                yValue = chan_dat[chanlistD['c_eff']]
+            elif yvalue == "fap":
+                yValue = chan_dat[chanlistD['c_fap']]
             else:
-                chans[channel] = [[_start, _start + _dur,
-                                  chan_dat[chanlistD['eff/fap']]]]
+                raise ValueError, "yvalue=%s not understood"%yvalue
+
+            if chans.has_key(channel):
+                chans[channel].append([_start, _start + _dur, yValue])
+            else:
+                chans[channel] = [[_start, _start + _dur, yValue]]
 
   # ## build plot
 
@@ -1268,14 +1282,15 @@ def chanlist_trending(
                                     sorted(chans.keys()) if chan
                                     != 'none']):  # we don't care about the "none" channel
         yticklabels.append(channel.replace("_","\_"))
-        for (_start, _stop, eff_fap) in chans[channel]:
+        for (_start, _stop, yValue) in chans[channel]:
             if _start - gps_stop < time_min:
                 time_min = _start - gps_stop
-            rank = 1 - np.exp(-eff_fap / 100.0)
+
             ax.fill_between([(_start - gps_stop) / tau, (_stop
                             - gps_stop) / tau], [ind + 0.49, ind
                             + 0.49], [ind - 0.49, ind - 0.49],
-                            facecolor=color_map(rank), edgecolor='none')
+                            facecolor=color_map(yValue), edgecolor='none')
+
             if annotated:
                 ax.text(((_start + _stop) / 2. - gps_stop) / tau, ind,
                         '%.2f' % rank, ha='center', va='center')
@@ -1294,7 +1309,16 @@ def chanlist_trending(
     ax_colorbar = fig.add_axes(ax_cb_bounds)
     cb = mpl.colorbar.ColorbarBase(ax_colorbar, cmap=color_map,
                                    norm=norm, orientation='horizontal')
-    cb.set_label(classifier + ' rank')
+
+    if yvalue == "rank":
+        cb.set_label(classifier + ' rank')
+    elif yvalue == "eff":
+        cb.set_label(classifier + ' efficiency')
+    elif yvalue == "fap":
+        cb.set_label(classifier + ' false alarm probability')
+    else:
+        raise ValueError, "yvalue=%s not understood"%yvalue
+
     ax_colorbar.xaxis.tick_top()
     ax_colorbar.xaxis.set_label_position('top')
 
