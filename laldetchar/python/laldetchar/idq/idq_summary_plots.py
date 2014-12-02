@@ -92,7 +92,7 @@ __roc_line_width = 2
 __kde_num_samples = 100
 
 # __kde_num_samples = 10
-# __kde_scale = 0.05
+__kde_scale = 0.05
 
 __kde_s = 0.01
 __kde_s = 0.1
@@ -828,19 +828,15 @@ def stat_to_trends_plot(
                         )[-1].strip()))
 
     # last gps time
-
     last_gps_time = times[-1]
 
     # compute time differences from the last central time
-
     times = np.asarray(times) - times[-1]
 
     # convert into days
-
     times /= 86400.0
 
     # compute rates and fractional livetimes
-
     for classifier in classifiers:
         for i in range(len(times)):
             if not livetime_dict[classifier][i] == 0:
@@ -1207,8 +1203,8 @@ def chanlist_trending(
   # figure out appropriat time variable:
 
     dur = gps_stop - gps_start
-    for (tau, tau_name) in [(1, 'seconds'), (60, 'minutes'), (3600,
-                            'hours'), (86400, 'days'), (7 * 86400,
+    for (tau, tau_name) in [(1., 'seconds'), (60., 'minutes'), (3600.,
+                            'hours'), (86400., 'days'), (7 * 86400.,
                             'weeks')]:
         if dur / tau < 100:
             break
@@ -1230,8 +1226,7 @@ def chanlist_trending(
         except:
             pass
 
-  # ## read in data from chanlists and build dictionary
-
+    ### read in data from chanlists and build dictionary
     chans = {}
     for chanlist in chanlists:
         if verbose:
@@ -1303,7 +1298,7 @@ def chanlist_trending(
     ax_colorbar.xaxis.tick_top()
     ax_colorbar.xaxis.set_label_position('top')
 
-    plt.setp(fig, figheight=2. + 0.54 * (ind + 1), figwidth=10)
+    plt.setp(fig, figheight=max(2.54, 1.0 + 0.15 * (ind + 1)), figwidth=10)
     ax.grid(True)
 
     if figure_name:
