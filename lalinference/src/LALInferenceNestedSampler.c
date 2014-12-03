@@ -520,7 +520,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
       LALInferenceSetupkDTreeNSLivePoints( runState );
       
   if(!LALInferenceCheckVariable(runState->algorithmParams,"Nmcmc")){
-    INT4 tmp=200;
+    INT4 tmp=MAX_MCMC;
     LALInferenceAddVariable(runState->algorithmParams,"Nmcmc",&tmp,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
   }
   s=initNSintegralState(Nruns,Nlive);
