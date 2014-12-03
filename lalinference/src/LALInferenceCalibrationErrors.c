@@ -300,21 +300,26 @@ void LALInferenceApplyCalibrationErrors(LALInferenceRunState *state, ProcessPara
      * */
      
      char help[]="\
-		  	\n\
-			------------------------------------------------------------------------------------------------------------------\n\
-			--- Calibration Errors Handling Arguments ------------------------------------------------------------------------\n\
-			------------------------------------------------------------------------------------------------------------------\n\
-			(--AddCalibrationErrors) Adds calibration errors into the f domain datastream (that includes both noise and signal)\n\
-			(--RandomCE) Add a random realization of phase and amplitude CE, using the S6/VSR2-3 error budget as an indication of the 1-sigma errors\n\
-			(--ConstantCE) Assumes calibration errors are constant over the bandwidth (requires ConstantCalAmp and ConstantCalPha)\n\
-			(--ConstantCalAmp [IFO1err,IFO2err,IFO3err]) List of constant amplitude CE. 0.0 means no error, 0.1 means 10 percent\n\
-			(--ConstantCalPha [IFO1err,IFO2err,IFO3err]) List of constant phase CE. 0.0 means no error, 5 means a  5 degree shift \n\
-      (--RandomLinearCE ) Assumes CE are given by a contant plateau plus a random jittering of a few percent. After a given frequency f CE increase linearly with a given slope (requires RandomLinearCalAmp)\n\
-			(--RandomLinearCalAmp [IF01_c,IFO1_f,IFO1_slope, IF02_c,IFO2_f,IFO2_slope, ...] ) Add on the i-th IFO's stream errors on the form (IFOi_c + jitter) for f<IFOi_f and (IFOi_c-f)*IFOi_slope for f>IFOi_f\n\
-      (--RandomLinearCalPha [IF01_c, IFO1_f,IFO1_slope, IF02_c,IFO2_f,IFO2_slope, ...] ) Add on the i-th IFO's stream errors on the form (IFOi_c + jitter) for f<IFOi_f and (IFOi_c-f)*IFOi_slope for f>IFOi_f\n\
-			(--MarginalizeConstantCalAmp ) If given, will add a constant value of Amplitude CE per each IFO on the top of the CBC parameters.\n\
-			(--MarginalizeConstantCalPha ) If given, will add a constant value of Phase CE per each IFO on the top of the CBC parameters.\n\
-			";
+\n\
+------------------------------------------------------------------------------------------------------------------\n\
+--- Calibration Errors Handling Arguments ------------------------------------------------------------------------\n\
+------------------------------------------------------------------------------------------------------------------\n\
+(--AddCalibrationErrors) Adds calibration errors into the f domain datastream (that includes both noise and signal)\n\
+(--RandomCE) Add a random realization of phase and amplitude CE, using the S6/VSR2-3 error budget as an indication of the 1-sigma errors\n\
+(--ConstantCE) Assumes calibration errors are constant over the bandwidth (requires ConstantCalAmp and ConstantCalPha)\n\
+(--ConstantCalAmp [IFO1err,IFO2err,IFO3err]) List of constant amplitude CE. 0.0 means no error, 0.1 means 10 percent\n\
+(--ConstantCalPha [IFO1err,IFO2err,IFO3err]) List of constant phase CE. 0.0 means no error, 5 means a  5 degree shift \n\
+(--RandomLinearCE ) Assumes CE are given by a contant plateau plus a random jittering of a few percent.\n\t\t After a given frequency f CE increase linearly with a given slope (requires RandomLinearCalAmp and RandomLinearCalPha)\n\
+(--RandomLinearCalAmp [IF01_c,IFO1_f,IFO1_slope, ...] ) Add on the i-th IFO's stream errors on the form (IFOi_c + jitter) for f<IFOi_f and (IFOi_c-f)*IFOi_slope for f>IFOi_f\n\
+(--RandomLinearCalPha [IF01_c, IFO1_f,IFO1_slope, ...] ) Add on the i-th IFO's stream errors on the form (IFOi_c + jitter) for f<IFOi_f and (IFOi_c-f)*IFOi_slope for f>IFOi_f\n\
+ * Constant Calibration Model \n\
+  (--MarginalizeConstantCalAmp ) If given, will add a constant value of Amplitude CE per each IFO on the top of the CBC parameters.\n\
+  (--MarginalizeConstantCalPha ) If given, will add a constant value of Phase CE per each IFO on the top of the CBC parameters.\n\
+ * Spline Calibration Model \n\
+  (--enable-spline-calibration)            Enable cubic-spline calibration error model.\n\
+  (--spline-calibration-nodes N)           Set the number of spline nodes per detector (default 5)\n\
+  (--spline-calibration-amp-uncertainty X) Set the prior on relative amplitude uncertainty (default 0.1)\n\
+  (--spline-calibration-phase-uncertainty X) Set the prior on phase uncertanity in degrees (default 5)\n\n\n";
 
       /* Print command line arguments if state was not allocated */
     if(state==NULL)

@@ -68,7 +68,6 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 	char help[]="\
 Initialisation arguments:\n\
 (--verbose [N])\tOutput more info. N=1: errors, N=2 (default): warnings, N=3: info \n\
-(--randomseed seed           Random seed for Nested Sampling)\
 (--resume)\tAllow non-condor checkpointing every 4 hours. If give will check for OUTFILE_resume and continue if possible\n\n";
 	LALInferenceRunState *irs=NULL;
 	ProcessParamsTable *ppt=NULL;
@@ -218,21 +217,21 @@ Nested sampling arguments:\n\
 (--randomseed seed)\tRandom seed of sampling distribution\n\
 (--prior )\t Set the prior to use (InspiralNormalised,SkyLoc,malmquist) default: InspiralNormalised\n\n\
 (--sampleprior N)\t For Testing: Draw N samples from the prior, will not perform the nested sampling integral\n\
-  ---------------------------------------------------------------------------------------------------\n\
-  --- Noise Model -----------------------------------------------------------------------------------\n\
-  ---------------------------------------------------------------------------------------------------\n\
-  (--psdFit)                       Run with PSD fitting\n\
-  (--psdNblock)                    Number of noise parameters per IFO channel (8)\n\
-  (--psdFlatPrior)                 Use flat prior on psd parameters (Gaussian)\n\
-  (--removeLines)                  Do include persistent PSD lines in fourier-domain integration\n\
-  (--KSlines)                      Run with the KS test line removal\n\
-  (--KSlinesWidth)                 Width of the lines removed by the KS test (deltaF)\n\
-  (--chisquaredlines)              Run with the Chi squared test line removal\n\
-  (--chisquaredlinesWidth)         Width of the lines removed by the Chi squared test (deltaF)\n\
-  (--powerlawlines)                Run with the power law line removal\n\
-  (--powerlawlinesWidth)           Width of the lines removed by the power law test (deltaF)\n\
-  (--xcorrbands)                   Run PSD fitting with correlated frequency bands\n\
-  \n";
+---------------------------------------------------------------------------------------------------\n\
+--- Noise Model -----------------------------------------------------------------------------------\n\
+---------------------------------------------------------------------------------------------------\n\
+(--psdFit)                       Run with PSD fitting\n\
+(--psdNblock)                    Number of noise parameters per IFO channel (8)\n\
+(--psdFlatPrior)                 Use flat prior on psd parameters (Gaussian)\n\
+(--removeLines)                  Do include persistent PSD lines in fourier-domain integration\n\
+(--KSlines)                      Run with the KS test line removal\n\
+(--KSlinesWidth)                 Width of the lines removed by the KS test (deltaF)\n\
+(--chisquaredlines)              Run with the Chi squared test line removal\n\
+(--chisquaredlinesWidth)         Width of the lines removed by the Chi squared test (deltaF)\n\
+(--powerlawlines)                Run with the power law line removal\n\
+(--powerlawlinesWidth)           Width of the lines removed by the power law test (deltaF)\n\
+(--xcorrbands)                   Run PSD fitting with correlated frequency bands\n\
+\n";
 //(--tdlike)\tUse time domain likelihood.\n";
 
 	ProcessParamsTable *ppt=NULL;
@@ -376,7 +375,11 @@ Arguments for each section follow:\n\n";
 
 	/* Read command line and parse */
 	procParams=LALInferenceParseCommandLine(argc,argv);
-	
+  if(LALInferenceGetProcParamVal(procParams,"--help"))
+  {
+    fprintf(stdout,"%s",help);
+  }
+
 	/* initialise runstate based on command line */
 	/* This includes reading in the data */
 	/* And performing any injections specified */
@@ -399,23 +402,24 @@ Arguments for each section follow:\n\n";
 		initModelFunc=&LALInferenceInitCBCModel;
 	state->initModel=initModelFunc;
 	state->model = initModelFunc(state);
+  if (state->model){
   state->currentParams = XLALMalloc(sizeof(LALInferenceVariables));
   memset(state->currentParams, 0, sizeof(LALInferenceVariables));
   LALInferenceCopyVariables(state->model->params, state->currentParams);
   state->templt = state->model->templt;
-
-      /* Choose the likelihood */
-      LALInferenceInitLikelihood(state);
-
-     /* Print command line arguments if help requested */
-      if(LALInferenceGetProcParamVal(state->commandLine,"--help"))
-      {
-              fprintf(stdout,"%s",help);
-  exit(0);
-      }
+  }
+  /* Choose the likelihood */
+  LALInferenceInitLikelihood(state);
 
   /* Apply calibration errors if desired*/
   LALInferenceApplyCalibrationErrors(state,procParams);
+  
+  /* Exit since we printed all command line arguments */
+  if(LALInferenceGetProcParamVal(state->commandLine,"--help"))
+  {
+    exit(0);
+  }
+  
 	/* Call setupLivePointsArray() to populate live points structures */
 	LALInferenceSetupLivePointsArray(state);
 
