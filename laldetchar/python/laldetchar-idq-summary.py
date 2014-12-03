@@ -27,7 +27,7 @@ import numpy
 import traceback
 import logging
 
-from glue.ligolw import table, lsctables, utils
+from glue.ligolw import table, lsctables, utils, ligolw
 
 from laldetchar import git_version
 
@@ -350,7 +350,9 @@ while gpsstart < gpsstop:
         logger.info("generating science segments")
         try:
             seg_xml_file = idq.segment_query(config, gpsstart, gpsstart+stride, url=config.get("get_science_segments","segdb"))
-            xmldoc = utils.load_fileobj(seg_xml_file)[0]
+
+            lsctables.use_in(ligolw.LIGOLWContentHandler)
+            xmldoc = utils.load_fileobj(seg_xml_file, contenthandler=ligolw.LIGOLWContentHandler)[0]
 
             seg_file = "%s/science_segements-%d-%d.xml.gz"%(this_sumdir, int(gpsstart), int(stride))
             logger.info("writting science segments to file : %s"%seg_file)

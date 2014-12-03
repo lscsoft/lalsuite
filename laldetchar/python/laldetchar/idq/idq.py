@@ -450,10 +450,11 @@ def extract_dq_segments(xmlfile, dq_name):
 ....dq_name is what was given as an --include-segments option to ligolw_segment_query that generated the xmlfileobj"
 ...."""
 
+    lsctables.use_in(ligolw.LIGOLWContentHandler)
     if type(xmlfile) == str:
-        xmldoc = ligolw_utils.load_filename(xmlfile)  # load as filename
+        xmldoc = ligolw_utils.load_filename(xmlfile, contenthandler=ligolw.LIGOLWContentHandler)  # load as filename
     else:
-        xmldoc = ligolw_utils.load_fileobj(xmlfile)[0]  # laod as file object
+        xmldoc = ligolw_utils.load_fileobj(xmlfile, contenthandler=ligolw.LIGOLWContentHandler)[0]  # laod as file object
 
     # get segment tables
 
@@ -491,8 +492,9 @@ def extract_lldq_segments(xmlfiles, lldq_name, hoft_name):
 
     good = []
     covered = []
+    lsctables.use_in(ligolw.LIGOLWContentHandler)
     for file in xmlfiles:
-        xmldoc = ligolw_utils.load_filename(file)  # load file
+        xmldoc = ligolw_utils.load_filename(file, contenthandler=ligolw.LIGOLWContentHandler)  # load file
 
         # get segment tables
 
@@ -533,8 +535,9 @@ def extract_dmt_segments(xmlfiles, dq_name):
 
     good = []
     covered = []
+    lsctables.use_in(ligolw.LIGOLWContentHandler)
     for file in xmlfiles:
-        xmldoc = ligolw_utils.load_filename(file)  # load file
+        xmldoc = ligolw_utils.load_filename(file, contenthandler=ligolw.LIGOLWContentHandler)  # load file
 
         # get segment tables
 

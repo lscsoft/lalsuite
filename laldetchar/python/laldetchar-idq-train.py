@@ -250,7 +250,8 @@ while gpsstart < gpsstop:
 
             ### load xml document
             ### converts string to an object
-            xmldoc = utils.load_fileobj(seg_xml_file)[0]
+            lsctables.use_in(ligolw.LIGOLWContentHandler)
+            xmldoc = utils.load_fileobj(seg_xml_file, contenthandler=ligolw.LIGOLWContentHandler)[0]
 
             ### science segments xml filename
             seg_file = "%sscience_segments-%d-%d.xml.gz"%(output_dir, int(gpsstart - lookback * stride), int((lookback+1)*stride))

@@ -29,6 +29,7 @@ from laldetchar.idq import idq
 from laldetchar.idq import event
 from laldetchar.idq import idq_gdb_utils
 from laldetchar.idq import idq_tables
+from glue.ligolw import ligolw
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw import lsctables
 
@@ -403,8 +404,9 @@ if opts.gps!=None:
           va='center')
 
 ### annotate glitches
+lsctables.use_in(ligolw.LIGOLWContentHandler)
 for gch_xmlname in opts.gch_xml:
-    xmldoc = ligolw_utils.load_filename(gch_xmlname)
+    xmldoc = ligolw_utils.load_filename(gch_xmlname, contenthandler=ligolw.LIGOLWContentHandler)
     for gch_row, ovl_row in idq_tables.coinc_to_ovl_data(xmldoc):
         gps = gch_row.gps+gch_row.gps_ns*1e-9
         chan = ovl_row.aux_channel
@@ -414,7 +416,7 @@ for gch_xmlname in opts.gch_xml:
 
 ### annotate cleans
 for cln_xmlname in opts.cln_xml:
-    xmldoc = ligolw_utils.load_filename(cln_xmlname)
+    xmldoc = ligolw_utils.load_filename(cln_xmlname, contenthandler=ligolw.LIGOLWContentHandler)
     for gch_row, ovl_row in idq_tables.coinc_to_ovl_data(xmldoc):
         gps = gch_row.gps+gch_row.gps_ns*1e-9
         chan = ovl_row.aux_channel
