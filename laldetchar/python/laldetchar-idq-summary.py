@@ -21,10 +21,13 @@ import os
 import glob
 import time
 from laldetchar.idq import idq
-import numpy
 from laldetchar.idq import idq_summary_plots as idq_s_p
+from laldetchar.idq import event
+import numpy
 import traceback
 import logging
+
+from glue.ligolw import table, lsctables, utils
 
 from laldetchar import git_version
 
@@ -214,6 +217,10 @@ parser.add_option('-e', '--gps-stop', default=False, type='int',
                   help='a GPS stop time for the analysis. If default, gpsstop is calculated from the current time.')
 parser.add_option('-l', '--log-file', default='idq_summary.log', type='string', help='log file')
 
+parser.add_option("", "--ignore-science-segments", default=False, action="store_true")
+
+parser.add_option('-f','--force',default=False, action='store_true', help="forces *uroc cache file to be updated, even if we have no data. Use with caution.")
+
 (opts, args) = parser.parse_args()
 
 #===================================================================================================
@@ -255,6 +262,9 @@ cluster_win = float(myconf['cluster_win']) ### used to cluster glitches
 
 FAP = float(myconf['fap']) ### FAP at which we report segments, efficiency trends, etc
 
+min_num_cln = float(myconf['min_num_cln'])
+min_num_gch = float(myconf['min_num_gch'])
+
 ### THESE ARE NOT USED. CONSIDER REMOVING?
 #symlink_path = myconf['symlink']
 #url_base = myconf['url_base']
@@ -270,6 +280,8 @@ sumdir = config.get('general', 'summarydir')
 realtimedir = config.get('general', 'realtimedir')
 traindir = config.get('general', 'traindir')
 
+usertag = config.get('general', 'usertag')
+
 classifiers = config.get('general', 'classifiers').split()
 
 vetolist_cache = config.get('general', 'ovl_train_cache')
@@ -281,6 +293,10 @@ columns = config.get('idq_realtime', 'dat_columns').split() + ['rank']
 kwtrgdir = config.get('general', 'kwtrgdir')
 
 kde_num_samples = int(config.get('idq_summary', 'kde_num_samples'))
+
+### kleineWelle config
+kwconfig = idq.loadkwconfig(config.get('general', 'kwconfig'))
+kwbasename = kwconfig['basename']
 
 #=================================================
 ### set classifier colors and labels
@@ -324,7 +340,75 @@ while gpsstart < gpsstop:
         os.makedirs(this_sumdir)
 
     #=============================================
-    # generat *roc files
+    # sciseg query
+    #=============================================
+    if opts.ignore_science_segments:
+        logger.info("ignoring science segments")
+        scisegs = [[gpsstart, gpsstart+stride]]
+
+    else:
+        logger.info("generating science segments")
+        try:
+            seg_xml_file = idq.segment_query(config, gpsstart, gpsstart+stride, url=config.get("get_science_segments","segdb"))
+            xmldoc = utils.load_fileobj(seg_xml_file)[0]
+
+            seg_file = "%s/science_segements-%d-%d.xml.gz"%(this_sumdir, int(gpsstart), int(stride))
+            logger.info("writting science segments to file : %s"%seg_file)
+            utils.write_filename(xmldoc, seg_file, gz=seg_file.endswith(".gz"))
+
+            (scisegs, coveredseg) = idq.extract_dq_segments(seg_file, config.get('get_science_segments', 'include'))
+
+        except Exception as e:
+            traceback.print_exc()
+            logger.info("ERROR: segment generation failed. Skipping this summary period.")
+
+            gpsstart += stride
+            continue
+
+    #=============================================
+    # generating summary datfiles filtered by segments
+    #=============================================
+    ### get all relevant datfiles
+    datfiles = idq.get_all_files_in_range(realtimedir, gpsstart, gpsstart+stride, suffix=".dat")
+
+    for classifier in classifiers:
+        ### follow standard datfile naming conventions 
+        summary_dat = "%s/%s_%s_0-0_%sSummary-%d-%d.dat"%(this_sumdir, kwbasename, classifier, usertag, gpsstart, stride)
+
+        logger.info("generating summary dat file for %s : %s"%(classifier, summary_dat))
+
+        columns = ['GPS', 'i', 'rank', "signif", "SNR"]
+        if classifier == "ovl":
+            columns += ["vchan", "vthr", "vwin"]
+
+        ### write columns to summary dat
+        file_obj = open(summary_dat, "w")
+        print >> file_obj, " ".join(columns)
+
+        for datfile in datfiles:
+            if classifier not in datfile: ### downselect based on classifier
+                continue
+
+            ### load only the required columns from datfile 
+            output = idq.slim_load_datfile(datfile, skip_lines=0, columns=columns)
+
+            ### convert to list of triggers
+            triggers = [[output[c][i] for c in columns] for i in xrange(len(output["GPS"]))]
+            triggers = [[float(l[0])]+l[1:] for l in triggers]
+
+            ### window triggers with scisegs
+            triggers = event.include( triggers, scisegs, tcent=0 ) ### tcent hard coded according to columns
+
+            ### write surviving triggers to datfile
+            for trigger in triggers:
+                trigger = [str(trigger[0])] + trigger[1:]
+                print >> file_obj, " ".join(trigger)
+
+        file_obj.close()
+        logger.info("Done.")
+   
+    #=============================================
+    # generate *roc files
     #=============================================
     ### collect *dat files and merge into *roc files
     logger.info('generating *.roc files')
@@ -334,7 +418,8 @@ while gpsstart < gpsstop:
         columns=columns,
         classifiers=classifiers,
         basename=False,
-        source_dir=realtimedir,
+        source_dir=this_sumdir,
+#        source_dir=realtimedir,
         output_dir=this_sumdir,
         cluster_win=cluster_win,
         unsafe_win=unsafe_win,
@@ -349,23 +434,30 @@ while gpsstart < gpsstop:
     for (roc_path, classifier) in roc_paths:
         (uniform_ranks, uniform_ccln, uniform_cgch, tcln, tgch) = \
             idq_s_p.ROC_to_uniformROC(roc_path, num_samples=100)
+
         uniformROCfilename = roc_path[:-4] + '.uroc'  # suffix is for uniformly-sampled roc file
+
         uroc_paths.append((idq_s_p.rcg_to_ROC(
-            roc_path[:-4] + '.uroc',
+            uniformROCfilename,
             uniform_ranks,
             uniform_ccln,
             uniform_cgch,
             tcln,
             tgch,
-            ), classifier))
+            ), classifier, (tcln>=min_num_cln) and (tgch>=min_num_gch)))
 
     ### update uroc_cachefiles used in realtime job
     logger.info('updating *_uroc.cache files')
-    for (uroc_path, classifier) in uroc_paths:
-        uroc_cachefilename = sumdir + '/' + classifier + '_uroc.cache'
-        file = open(uroc_cachefilename, 'a')
-        print >> file, uroc_path
-        file.close()
+    for (uroc_path, classifier, include) in uroc_paths:
+        if include or opts.force:
+            logger.info('updating *_uroc.cache file for %s'%classifier)
+
+            uroc_cachefilename = sumdir + '/' + classifier + '_uroc.cache'
+            file = open(uroc_cachefilename, 'a')
+            print >> file, uroc_path
+            file.close()
+        else:
+           logger.info('not enough glitches or cleans were found to justify updating uroc.cache for %s'%classifier)
 
     #=============================================
     # generat ROC figures
@@ -529,7 +621,8 @@ while gpsstart < gpsstop:
                 columns=columns + ['vchan'],
                 classifiers=[classifier],
                 basename=False,
-                source_dir=realtimedir,
+                source_dir=this_sumdir,
+#                source_dir=realtimedir,
                 output_dir=this_sumdir,
                 cluster_win=cluster_win,
                 unsafe_win=unsafe_win,
@@ -591,7 +684,8 @@ while gpsstart < gpsstop:
                 columns=columns + ['vchan', 'vthr', 'vwin'],
                 classifiers=[classifier],
                 basename=False,
-                source_dir=realtimedir,
+                source_dir=this_sumdir,
+#                source_dir=realtimedir,
                 output_dir=this_sumdir,
                 cluster_win=cluster_win,
                 unsafe_win=unsafe_win,
@@ -621,7 +715,8 @@ while gpsstart < gpsstop:
                 columns=columns,
                 classifiers=[classifier],
                 basename=False,
-                source_dir=realtimedir,
+                source_dir=this_sumdir,
+#                source_dir=realtimedir,
                 output_dir=this_sumdir,
                 cluster_win=cluster_win,
                 unsafe_win=unsafe_win,
@@ -749,7 +844,7 @@ print >> file_obj, "<body>"
 
 print >> file_obj, "<h1>iDQ summary pages Directory</h1>"
 
-sumdirs = glob.glob("%s/*_*/"%sumdir)
+sumdirs = sorted(glob.glob("%s/*_*/"%sumdir))
 sumdirs.reverse()
 
 for this_sumdir in sumdirs:

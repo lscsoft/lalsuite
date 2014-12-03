@@ -156,6 +156,11 @@ parser.add_option('', '--ignore-science-segments-training',
     help="forces training jobs to ignore science segments as well. \
     This should NOT be used to generate actual DQ information, but may be useful when debugging the pipeline."
     )
+parser.add_option('', '--ignore-science-segments-summary', 
+    default=False, action="store_true", 
+    help="forces summary jobs to ignore science segments as well. \
+    This should NOT be used to generate actual DQ information, but may be useful when debugging the pipeline."
+    )
 
 parser.add_option("", "--no-robot-cert",
     default=False, action="store_true",
@@ -419,7 +424,11 @@ if initial_summary:
         summary_start_time,
         '--gps-stop',
         summary_stop_time,
+        '--force'
         ]
+
+    if options.ignore_science_segments_summary:
+        summary_command.append( "--ignore-science-segments" )
 
     logger.info('Submiting idq_summary script with the following options:')
     logger.info(summary_command)
@@ -537,6 +546,9 @@ while t + stride < options.endgps:
             '--gps-stop',
             summary_stop_time,
             ]
+
+        if options.ignore_science_segments_summary:
+            summary_command.append( "--ignore-science-segments" )
 
         logger.info('Submiting idq_summary script with the following options:')
         logger.info(summary_command)
