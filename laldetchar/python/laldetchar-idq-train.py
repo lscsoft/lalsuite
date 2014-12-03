@@ -256,7 +256,7 @@ while gpsstart < gpsstop:
             seg_file = "%sscience_segments-%d-%d.xml.gz"%(output_dir, int(gpsstart - lookback * stride), int((lookback+1)*stride))
 
             logger.info('writing science segments to file : '+seg_file)
-            utils.write_filename(xmldoc, seg_file, gz=True)
+            utils.write_filename(xmldoc, seg_file, gz=seg_file.endswith(".gz"))
 
         except Exception as e:
             traceback.print_exc()
