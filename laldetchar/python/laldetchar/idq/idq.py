@@ -997,19 +997,22 @@ def datfiles_to_roc(
 
         # find all appropriate subdirectories of source_dir and gather datfiles
 
-        datfiles = []
-        for dir in os.listdir(source_dir):
-            try:
-                d = dir.strip('/').split('-')
-                start = int(d[-1])  # last element of d must be castable as an integer
-                if start * 1e5 <= gpsstart < (start + 1) * 1e5 or start \
-                    * 1e5 < gpsstop <= (start + 1) * 1e5:
-                    if not basename or basename in dir:  # check basename
-                        datfiles += gather_datfiles(gpsstart, gpsstop,
-                                classifier=classifier,
-                                source_dir=source_dir + '/' + dir)
-            except:
-                pass
+        datfiles = get_all_files_in_range(source_dir, gpsstart, gpsstop, suffix=".dat")
+        if classifier:
+            datfiles = [datfile for datfile in datfiles if classifier in datfile]
+#        datfiles = []
+#        for dir in os.listdir(source_dir):
+#            try:
+#                d = dir.strip('/').split('-')
+#                start = int(d[-1])  # last element of d must be castable as an integer
+#                if start * 1e5 <= gpsstart < (start + 1) * 1e5 or start \
+#                    * 1e5 < gpsstop <= (start + 1) * 1e5:
+#                    if not basename or basename in dir:  # check basename
+#                        datfiles += gather_datfiles(gpsstart, gpsstop,
+#                                classifier=classifier,
+#                                source_dir=source_dir + '/' + dir)
+#            except:
+#                pass
 
         # gather roc information as tuples: (rank, i)
         # i=1 --> glitch
@@ -1256,20 +1259,20 @@ def datfiles_to_chanlist(
     # pick up each classifier separately
 
     for classifier in classifiers:
-        print classifier
-        datfiles = []
-        for dir in os.listdir(source_dir):
-            try:
-                d = dir.strip('/').split('-')
-                start = int(d[-1])  # expect a particular directory structure
-                if start * 1e5 <= gpsstart < (start + 1) * 1e5 or start \
-                    * 1e5 < gpsstop <= (start + 1) * 1e5:
-                    if not basename or basename in dir:
-                        datfiles += gather_datfiles(gpsstart, gpsstop,
-                                classifier=classifier,
-                                source_dir=source_dir + '/' + dir)
-            except:
-                pass
+        datfiles = [datfile for datfile in get_all_files_in_range(source_dir, gpsstart, gpsstop, suffix=".dat") if classifier in datfile]
+#        datfiles = []
+#        for dir in os.listdir(source_dir):
+#            try:
+#                d = dir.strip('/').split('-')
+#                start = int(d[-1])  # expect a particular directory structure
+#                if start * 1e5 <= gpsstart < (start + 1) * 1e5 or start \
+#                    * 1e5 < gpsstop <= (start + 1) * 1e5:
+#                    if not basename or basename in dir:
+#                        datfiles += gather_datfiles(gpsstart, gpsstop,
+#                                classifier=classifier,
+#                                source_dir=source_dir + '/' + dir)
+#            except:
+#                pass
 
         # gather chan performance measures
 
@@ -1462,20 +1465,20 @@ def datfiles_to_ranklist(
     # pick up each classifier separately
 
     for classifier in classifiers:
-        print classifier
-        datfiles = []
-        for dir in os.listdir(source_dir):
-            try:
-                d = dir.strip('/').split('-')
-                start = int(d[-1])  # expect a particular directory structure
-                if start * 1e5 <= gpsstart < (start + 1) * 1e5 or start \
-                    * 1e5 < gpsstop <= (start + 1) * 1e5:
-                    if not basename or basename in dir:
-                        datfiles += gather_datfiles(gpsstart, gpsstop,
-                                classifier=classifier,
-                                source_dir=source_dir + '/' + dir)
-            except:
-                pass
+        
+        datfiles = [datfile for datfile in get_all_files_in_range(source_dir, gpsstart, gpsstop, suffix=".dat") if classifier in datfile]
+#        for dir in os.listdir(source_dir):
+#            try:
+#                d = dir.strip('/').split('-')
+#                start = int(d[-1])  # expect a particular directory structure
+#                if start * 1e5 <= gpsstart < (start + 1) * 1e5 or start \
+#                    * 1e5 < gpsstop <= (start + 1) * 1e5:
+#                    if not basename or basename in dir:
+#                        datfiles += gather_datfiles(gpsstart, gpsstop,
+#                                classifier=classifier,
+#                                source_dir=source_dir + '/' + dir)
+#            except:
+#                pass
 
         # gather chan performance measures
 
@@ -1641,20 +1644,20 @@ def datfiles_to_configlist(
     # pick up each classifier separately
 
     for classifier in classifiers:
-        print classifier
-        datfiles = []
-        for dir in os.listdir(source_dir):
-            try:
-                d = dir.strip('/').split('-')
-                start = int(d[-1])  # expect a particular directory structure
-                if start * 1e5 <= gpsstart < (start + 1) * 1e5 or start \
-                    * 1e5 < gpsstop <= (start + 1) * 1e5:
-                    if not basename or basename in dir:
-                        datfiles += gather_datfiles(gpsstart, gpsstop,
-                                classifier=classifier,
-                                source_dir=source_dir + '/' + dir)
-            except:
-                pass
+        
+        datfiles = [datfile for datfile in get_all_files_in_range(source_dir, gpsstart, gpsstop, suffix=".dat") if classifier in datfile]
+#        for dir in os.listdir(source_dir):
+#            try:
+#                d = dir.strip('/').split('-')
+#                start = int(d[-1])  # expect a particular directory structure
+#                if start * 1e5 <= gpsstart < (start + 1) * 1e5 or start \
+#                    * 1e5 < gpsstop <= (start + 1) * 1e5:
+#                    if not basename or basename in dir:
+#                        datfiles += gather_datfiles(gpsstart, gpsstop,
+#                                classifier=classifier,
+#                                source_dir=source_dir + '/' + dir)
+#            except:
+#                pass
 
         # gather chan performance measures
 
