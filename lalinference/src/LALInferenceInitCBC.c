@@ -439,8 +439,6 @@ Component masses, total mass and time have dedicated options listed here:\n\n\
 You can generally fix a parameter to be fixed to a given values by using both --paramname VALUE and --fix-paramname\n\
 where the known names have been listed above\n\
 \n";
->>>>>>> Updated help string indent. Fixed lalinference nest segfault on --help
-
 
   /* Print command line arguments if state was not allocated */
   if(state==NULL)
