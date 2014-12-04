@@ -620,8 +620,7 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
             LALInferenceSetVariable(params, "phi_jl", &phi_JL);
             Cube[i] = phi_JL;
             i++;
-            strcat(header,"phi_jl");
-            strcat(header,"phi_jl");
+            strcat(header,"phi_jl ");
         }
     }
 
