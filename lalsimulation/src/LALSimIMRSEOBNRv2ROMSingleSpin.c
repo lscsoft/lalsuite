@@ -708,12 +708,12 @@ int XLALSimIMRSEOBNRv2ROMSingleSpin(
     fRef=fLow;
 
   if ( chi < -1.0 || chi > 0.99 ) {
-    XLALPrintError( "XLAL Error - %s: chi smaller than -1 or larger than 0.99!\nSEOBNRv2ROMSingleSpin is only available for spins in the range -1 <= a/M <= 0.99.\n", __func__);
+    XLALPrintError( "XLAL Error - %s: chi (%f) smaller than -1 or larger than 0.99!\nSEOBNRv2ROMSingleSpin is only available for spins in the range -1 <= a/M <= 0.99.\n", __func__,chi);
     XLAL_ERROR( XLAL_EDOM );
   }
 
   if (eta<0.01 || eta > 0.25) {
-    XLALPrintError( "XLAL Error - %s: eta smaller than 0.01 or unphysical!\nSEOBNRv2ROMSingleSpin is only available for spins in the range 0.01 <= eta <= 0.25.\n", __func__);
+    XLALPrintError( "XLAL Error - %s: eta (%f) smaller than 0.01 or unphysical!\nSEOBNRv2ROMSingleSpin is only available for spins in the range 0.01 <= eta <= 0.25.\n", __func__,eta);
     XLAL_ERROR( XLAL_EDOM );
   }
 
