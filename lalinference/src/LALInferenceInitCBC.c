@@ -1551,25 +1551,25 @@ void LALInferenceCheckApproximantNeeds(LALInferenceRunState *state,Approximant a
   REAL8 min,max;
   UINT4 q=0;
 
-  if (LALInferenceCheckVariable(state->priorArgs,"q")){
+  if (LALInferenceCheckVariable(state->priorArgs,"q_min")){
     LALInferenceGetMinMaxPrior(state->priorArgs, "q", &min, &max);
     q=1;
   }
-  else if (LALInferenceCheckVariable(state->priorArgs,"eta"))
+  else if (LALInferenceCheckVariable(state->priorArgs,"eta_min"))
     LALInferenceGetMinMaxPrior(state->priorArgs, "eta", &min, &max);
   
   /* IMRPhenomP only supports q > 1/10. Set prior consequently  */
   if (q==1 && approx==IMRPhenomP && min<1./10.){
     min=1.0/10.;
-    LALInferenceRemoveVariable(state->priorArgs,"q-min");
-    LALInferenceAddVariable(state->priorArgs,"q-min",&min,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
-    XLALPrintWarning("WARNING: IMRPhenomP only supports mass ratios up to 10 ( suggested max: 4). Changing the min prior for q to 1/10\n");
+    LALInferenceRemoveVariable(state->priorArgs,"q_min");
+    LALInferenceAddVariable(state->priorArgs,"q_min",&min,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
+    fprintf(stdout,"WARNING: IMRPhenomP only supports mass ratios up to 10 ( suggested max: 4). Changing the min prior for q to 1/10\n");
   }
   if (q==0 && approx==IMRPhenomP && min<0.08264462810){
      min=0.08264462810;  //(that is eta for a 1-10 system)
-     LALInferenceRemoveVariable(state->priorArgs,"eta-min");
-     LALInferenceAddVariable(state->priorArgs,"eta-min",&min,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
-     XLALPrintWarning("WARNING: IMRPhenomP only supports mass ratios up to 10 ( suggested max: 4). Changing the min prior for eta to 0.083\n");
+     LALInferenceRemoveVariable(state->priorArgs,"eta_min");
+     LALInferenceAddVariable(state->priorArgs,"eta_min",&min,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
+     fprintf(stdout,"WARNING: IMRPhenomP only supports mass ratios up to 10 ( suggested max: 4). Changing the min prior for eta to 0.083\n");
   }
 
   (void) max;
