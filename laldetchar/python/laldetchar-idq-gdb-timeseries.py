@@ -192,7 +192,7 @@ if (not rank_filenames) or (not fap_filenames): ### we couldn't find either rank
 fig = plt.figure()
 r_ax = plt.subplot(1, 1, 1)
 f_ax = r_ax.twinx()
-f_ax.set_yscale('log')
+f_ax.set_yscale('log') ### this may be fragile if fap=0 for all points in the plot. That's super rare, so maybe we don't have to worry about it?
 
 #=================================================
 # RANK
@@ -543,8 +543,11 @@ if not opts.skip_gracedb_upload:
                 min_fap = f_min
 
     ### upload minimum fap observed within opts.start, opts.end
-    b = int(np.floor(np.log10(min_fap)))
-    a = min_fap*(10**-b)
+    if min_fap > 0:
+        b = int(np.floor(np.log10(min_fap)))
+        a = min_fap*(10**-b)
+    else:
+        a = b = 0
     gracedb.writeLog(opts.gracedb_id, message="minimum glitch-FAP for "+opts.classifier+" at "+opts.ifo+" within [%.3f, %.3f] is %.3fe%d"%(opts.start, opts.end, a,b), tagname='data_quality')
 
 if opts.verbose:
