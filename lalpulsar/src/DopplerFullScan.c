@@ -81,8 +81,8 @@ struct tagDopplerFullScanState {
   /* lattice scan state */
   /* DopplerLatticeScan *latticeScan;	state of lattice Scan */
   /* spindown lattice tiling */
-  LatticeTiling *spindownTiling;    /**< state of spindown lattice tiling */
-  gsl_vector *spindownTilingPoint;      /**< current point in spindown lattice tiling */
+  LatticeTiling *spindownTiling;              /**< state of spindown lattice tiling */
+  gsl_vector *spindownTilingPoint;            /**< current point in spindown lattice tiling */
 
   /* ----- emulate old-style factored grids */
   factoredGridScan_t *factoredScan;	/**< only used to emulate FACTORED grids sky x Freq x f1dot */

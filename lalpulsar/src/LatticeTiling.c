@@ -58,21 +58,21 @@ typedef enum tagLT_Status {
 /// Lattice tiling bound info
 ///
 typedef struct tagLT_Bound {
-  bool tiled;					///< True if the bound is tiled, false if it is a single point
-  LatticeBoundFunction func;			///< Parameter space bound function
-  void* data_lower;				///< Arbitrary data describing lower parameter space bound
-  void* data_upper;				///< Arbitrary data describing upper parameter space bound
+  bool tiled;				///< True if the bound is tiled, false if it is a single point
+  LatticeBoundFunction func;		///< Parameter space bound function
+  void* data_lower;			///< Arbitrary data describing lower parameter space bound
+  void* data_upper;			///< Arbitrary data describing upper parameter space bound
 } LT_Bound;
 
 ///
 /// Lattice tiling nearest point index lookup trie
 ///
 typedef struct tagLT_IndexLookup {
-  int int_lower;				///< Lower integer point bound in this dimension
-  int int_upper;				///< Upper integer point bound in this dimension
+  int int_lower;			///< Lower integer point bound in this dimension
+  int int_upper;			///< Upper integer point bound in this dimension
   union {
-    struct tagLT_IndexLookup* next;		///< Pointer to array of trie structures for the next-highest dimension
-    UINT8 index;				///< Lattice tiling index in the highest dimension
+    struct tagLT_IndexLookup* next;	///< Pointer to array of trie structures for the next-highest dimension
+    UINT8 index;			///< Lattice tiling index in the highest dimension
   };
 } LT_IndexLookup;
 
@@ -80,22 +80,22 @@ typedef struct tagLT_IndexLookup {
 /// Lattice tiling state structure
 ///
 struct tagLatticeTiling {
-  size_t dims;					///< Number of dimensions of the parameter space
-  gsl_vector_uint* tiled;			///< Tiled dimensions of the parameter space
-  LT_Status status;				///< Status of the tiling
-  LT_Bound* bounds;				///< Array of parameter-space bound info for each dimension
-  LatticeType lattice;				///< Type of lattice to generate tiling with
-  gsl_vector* phys_bbox;			///< Metric ellipse bounding box in physical coordinates
-  gsl_vector* phys_offset;			///< Physical coordinate offset
-  gsl_matrix* int_from_phys;			///< Transform to generating integers from physical coordinates
-  gsl_matrix* phys_from_int;			///< Transform to physical coordinates from generating integers
-  gsl_vector_int* int_point;			///< Current lattice point in generating integers
-  gsl_vector* phys_point;			///< Current lattice point in physical coordinates
-  gsl_vector_int* int_lower;			///< Current lower parameter-space bound in generating integers
-  gsl_vector_int* int_upper;			///< Current upper parameter-space bound in generating integers
-  UINT8 count;					///< Number of points generated so far
-  UINT8 total_count;				///< Total number of points in parameter space
-  LT_IndexLookup* lookup_base;			///< Lookup trie for finding index of nearest point
+  size_t dims;				///< Number of dimensions of the parameter space
+  gsl_vector_uint* tiled;		///< Tiled dimensions of the parameter space
+  LT_Status status;			///< Status of the tiling
+  LT_Bound* bounds;			///< Array of parameter-space bound info for each dimension
+  LatticeType lattice;			///< Type of lattice to generate tiling with
+  gsl_vector* phys_bbox;		///< Metric ellipse bounding box in physical coordinates
+  gsl_vector* phys_offset;		///< Physical coordinate offset
+  gsl_matrix* int_from_phys;		///< Transform to generating integers from physical coordinates
+  gsl_matrix* phys_from_int;		///< Transform to physical coordinates from generating integers
+  gsl_vector_int* int_point;		///< Current lattice point in generating integers
+  gsl_vector* phys_point;		///< Current lattice point in physical coordinates
+  gsl_vector_int* int_lower;		///< Current lower parameter-space bound in generating integers
+  gsl_vector_int* int_upper;		///< Current upper parameter-space bound in generating integers
+  UINT8 count;				///< Number of points generated so far
+  UINT8 total_count;			///< Total number of points in parameter space
+  LT_IndexLookup* lookup_base;		///< Lookup trie for finding index of nearest point
 };
 
 ///
@@ -125,12 +125,12 @@ static void LT_ReverseOrderRowsCols(gsl_matrix* A) {
 /// Returns the lower and upper parameter-space bounds
 ///
 static void LT_GetPhysBounds(
-  const LatticeTiling* tiling,			///< [in] Tiling state
-  const size_t dimension,			///< [in] Dimension on which bound applies
-  const gsl_vector* phys_point,			///< [in] Physical point at which to find bounds
-  const bool padded,				///< [in] Whether to add padding to parameter-space bounds (ignored if not tiled)
-  double* phys_lower,				///< [out] Physical lower bound on parameter space
-  double* phys_upper				///< [out] Physical upper bound on parameter space
+  const LatticeTiling* tiling,		///< [in] Tiling state
+  const size_t dimension,		///< [in] Dimension on which bound applies
+  const gsl_vector* phys_point,		///< [in] Physical point at which to find bounds
+  const bool padded,			///< [in] Whether to add padding to parameter-space bounds (ignored if not tiled)
+  double* phys_lower,			///< [out] Physical lower bound on parameter space
+  double* phys_upper			///< [out] Physical upper bound on parameter space
   )
 {
   const LT_Bound* bound = &tiling->bounds[dimension];
@@ -173,9 +173,9 @@ static void LT_GetPhysBounds(
 /// Destroy a lattice tiling nearest point index lookup trie
 ///
 static void LT_DestroyLookup(
-  const size_t ti,				///< [in] Current depth of the trie
-  const size_t tn,				///< [in] Total depth of the trie
-  LT_IndexLookup* lookup			///< [in] Pointer to array of trie structures
+  const size_t ti,			///< [in] Current depth of the trie
+  const size_t tn,			///< [in] Total depth of the trie
+  LT_IndexLookup* lookup		///< [in] Pointer to array of trie structures
   )
 {
 
@@ -201,12 +201,12 @@ static void LT_DestroyLookup(
 /// Print a lattice tiling nearest point index lookup trie
 ///
 static void LT_PrintLookup(
-  const LatticeTiling* tiling,			///< [in] Tiling state
-  FILE* fp,					///< [in] File pointer to print trie to
-  const size_t ti,				///< [in] Current depth of the trie
-  const size_t tn,				///< [in] Total depth of the trie
-  const LT_IndexLookup* lookup,			///< [in] Pointer to array of trie structures
-  int int_lower[]				///< [in] Current integer lower bound
+  const LatticeTiling* tiling,		///< [in] Tiling state
+  FILE* fp,				///< [in] File pointer to print trie to
+  const size_t ti,			///< [in] Current depth of the trie
+  const size_t tn,			///< [in] Total depth of the trie
+  const LT_IndexLookup* lookup,		///< [in] Pointer to array of trie structures
+  int int_lower[]			///< [in] Current integer lower bound
   )
 {
 
@@ -265,12 +265,12 @@ static void LT_PrintLookup(
 /// Find the nearest point, and its index, in the lattice tiling
 ///
 static void LT_FindNearestPoint(
-  const size_t n,				///< [in] Number of tiled dimensions
-  const LatticeType lattice,			///< [in] Lattice type
-  const LT_IndexLookup* lookup_base,		///< [in] Lookup trie for finding index of nearest point
-  const gsl_vector* int_point,			///< [in] Point in generating integer space
-  int* nearest_int_point,			///< [in/out] Nearest point in generating integer space
-  UINT8* nearest_index				///< [in/out] Index of nearest point
+  const size_t n,			///< [in] Number of tiled dimensions
+  const LatticeType lattice,		///< [in] Lattice type
+  const LT_IndexLookup* lookup_base,	///< [in] Lookup trie for finding index of nearest point
+  const gsl_vector* int_point,		///< [in] Point in generating integer space
+  int* nearest_int_point,		///< [in/out] Nearest point in generating integer space
+  UINT8* nearest_index			///< [in/out] Index of nearest point
   )
 {
 
