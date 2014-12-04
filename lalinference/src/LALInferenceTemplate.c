@@ -469,7 +469,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
 /*   - "LAL_AMPORDER"       Amplitude PN order; INT4 OPTIONAL (-1)                                                       */
 /*   - "spinO"              Spin order;         LALSimInspiralSpinOrder OPTIONAL (LAL_SIM_INSPIRAL_SPIN_ORDER_DEFAULT)   */
 /*   - "tideO"              Tidal order;        LALSimInspiralTidalOrder OPTIONAL (LAL_SIM_INSPIRAL_TIDAL_ORDER_DEFAULT) */
-/*   - "fRef"               frequency at which the (frequency dependent) parameters are defined; REAL8 OPTIONAL (0.0)    */
+/*   - "f_ref"               frequency at which the (frequency dependent) parameters are defined; REAL8 OPTIONAL (0.0)    */
 /*   - "fLow"               lower frequency bound; REAL8 OPTIONAL (model->fLow)                                          */
 /*                                                                                                                       */
 /*   MASS PARAMETERS; either:                                                                                            */
@@ -556,10 +556,10 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
   else
     amporder = -1;
     
-  REAL8 fRef = 100.0;
-  if (LALInferenceCheckVariable(model->params, "fRef")) fRef = *(REAL8 *)LALInferenceGetVariable(model->params, "fRef");
+  REAL8 f_ref = 100.0;
+  if (LALInferenceCheckVariable(model->params, "f_ref")) f_ref = *(REAL8 *)LALInferenceGetVariable(model->params, "f_ref");
 
-  REAL8 fTemp = fRef;
+  REAL8 fTemp = f_ref;
 
   if(LALInferenceCheckVariable(model->params,"chirpmass"))
     {
@@ -642,7 +642,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
     if(LALInferenceCheckVariable(model->params, "phi12"))
       phi12 = *(REAL8*) LALInferenceGetVariable(model->params, "phi12");      /* difference in azimuthal angle btwn S1, S2 in radians */
 
-    /* The transformation function doesn't know fLow, so fRef==0 isn't interpretted as a request to use the starting frequency for reference. */
+    /* The transformation function doesn't know fLow, so f_ref==0 isn't interpretted as a request to use the starting frequency for reference. */
     if(fTemp==0.0)
       fTemp = f_start;
 
@@ -680,7 +680,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
     
 	XLAL_TRY(ret=XLALSimInspiralChooseFDWaveformFromCache(&hptilde, &hctilde, phi0,
             deltaF, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, spin1x, spin1y, spin1z,
-            spin2x, spin2y, spin2z, f_start, f_max, fRef, distance, inclination,lambda1, lambda2, model->waveFlags, nonGRparams, amporder, order,
+            spin2x, spin2y, spin2z, f_start, f_max, f_ref, distance, inclination,lambda1, lambda2, model->waveFlags, nonGRparams, amporder, order,
             approximant,model->waveformCache), errnum);
 
 	if (hptilde==NULL || hptilde->data==NULL || hptilde->data->data==NULL ) {
@@ -722,7 +722,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
 
     XLAL_TRY(ret=XLALSimInspiralChooseTDWaveformFromCache(&hplus, &hcross, phi0, deltaT,
             m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, spin1x, spin1y, spin1z,
-            spin2x, spin2y, spin2z, f_start, fRef, distance,
+            spin2x, spin2y, spin2z, f_start, f_ref, distance,
             inclination, lambda1, lambda2, model->waveFlags, nonGRparams,
             amporder, order, approximant,model->waveformCache), errnum);
     XLALSimInspiralDestroyTestGRParam(nonGRparams);

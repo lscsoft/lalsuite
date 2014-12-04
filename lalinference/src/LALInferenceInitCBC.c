@@ -378,7 +378,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state)
                                                default modeldomain=\"frequency\": TaylorF1, TaylorF2, TaylorF2RedSpin, \n\
                                                                                 TaylorF2RedSpinTidal, IMRPhenomA, IMRPhenomB, IMRPhenomP.\n\
                (--amporder PNorder)            Specify a PN order in amplitude to use (defaults: LALSimulation: max available; LALInspiral: newtownian).\n\
-               (--fref fRef)                   Specify a reference frequency at which parameters are defined (default 100).\n\
+               (--fref f_ref)                   Specify a reference frequency at which parameters are defined (default 100).\n\
                (--use-tidal)                   Enables tidal corrections, only with LALSimulation.\n\
                (--use-tidalT)                  Enables reparmeterized tidal corrections, only with LALSimulation.\n\
                (--spinOrder PNorder)           Specify twice the PN order (e.g. 5 <==> 2.5PN) of spin effects to use, only for LALSimulation (default: -1 <==> Use all spin effects).\n\
@@ -473,7 +473,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state)
   LALPNOrder PhaseOrder=-1;
   LALPNOrder AmpOrder=-1;
   Approximant approx=NumApproximants;
-  REAL8 fRef = 100.0;
+  REAL8 f_ref = 100.0;
   LALInferenceIFOData *dataPtr;
   UINT4 event=0;
   UINT4 i=0;
@@ -609,7 +609,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state)
   }
 
   ppt=LALInferenceGetProcParamVal(commandLine, "--fref");
-  if (ppt) fRef = atof(ppt->value);
+  if (ppt) f_ref = atof(ppt->value);
 
   ppt=LALInferenceGetProcParamVal(commandLine,"--modeldomain");
   if(ppt){
@@ -666,7 +666,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state)
   LALInferenceAddVariable(model->params, "LAL_APPROXIMANT", &approx,        LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
   LALInferenceAddVariable(model->params, "LAL_PNORDER",     &PhaseOrder,        LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
   LALInferenceAddVariable(model->params, "LAL_AMPORDER",     &AmpOrder,        LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
-  LALInferenceAddVariable(model->params, "fref", &fRef, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+  LALInferenceAddVariable(model->params, "f_ref", &f_ref, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 
   /* flow handling */
   REAL8 fLow = state->data->fLow;
@@ -674,11 +674,11 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state)
   if(ppt){
     REAL8 fLow_min = fLow;
     REAL8 fLow_max = 200.0;
-    if(LALInferenceCheckVariable(model->params,"fref"))
-      fRef = *(REAL8*)LALInferenceGetVariable(model->params, "fref");
-      if (fRef > 0.0 && fLow_max > fRef) {
-        fprintf(stdout,"WARNING: flow can't go higher than the reference frequency.  Setting flow-max to %f\n",fRef);
-        fLow_max = fRef;
+    if(LALInferenceCheckVariable(model->params,"f_ref"))
+      f_ref = *(REAL8*)LALInferenceGetVariable(model->params, "f_ref");
+      if (f_ref > 0.0 && fLow_max > f_ref) {
+        fprintf(stdout,"WARNING: flow can't go higher than the reference frequency.  Setting flow-max to %f\n",f_ref);
+        fLow_max = f_ref;
       }
     LALInferenceRegisterUniformVariableREAL8(state, model->params, "flow", fLow, fLow_min, fLow_max, LALINFERENCE_PARAM_LINEAR);
   } else {

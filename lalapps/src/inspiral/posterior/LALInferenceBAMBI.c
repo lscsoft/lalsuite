@@ -327,7 +327,7 @@ void LALInferenceMultiNestAlgorithm(LALInferenceRunState *runState)
     double mntol = MNTol;
     int ndims = ND;
     int nPar = ndims + 3;
-    if (LALInferenceCheckVariable(runState->currentParams,"fRef")) nPar++;  // add space for fRef
+    if (LALInferenceCheckVariable(runState->currentParams,"f_ref")) nPar++;  // add space for f_ref
     int nClsPar = fmin(2,ND);
     int updInt = Ntrain;
     double Ztol = -1.e90;

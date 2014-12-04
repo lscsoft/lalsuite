@@ -588,8 +588,8 @@ FILE *print_ensemble_header(LALInferenceRunState *run_state, INT4 rank) {
     ndim = LALInferenceGetVariableDimensionNonFixed(sample_params);
 
     /* Reference frequency for evolving parameters */
-    if (LALInferenceCheckVariable(sample_params, "fRef"))
-        f_ref = LALInferenceGetREAL8Variable(sample_params, "fRef");
+    if (LALInferenceCheckVariable(sample_params, "f_ref"))
+        f_ref = LALInferenceGetREAL8Variable(sample_params, "f_ref");
 
     /* Count number of detectors */
     ifo_data = run_state->data;
