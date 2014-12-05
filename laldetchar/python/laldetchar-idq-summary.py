@@ -47,6 +47,7 @@ def generate_html(
     path,
     gpsstart=False,
     gpsstop=False,
+    gwchannel=False,
     tot_livetime=False,
     tot_glitches=False,
     roc_url=False,
@@ -97,6 +98,8 @@ def generate_html(
             gpsstop_date.tm_year,
             gpsstop,
             )
+    if gwchannel:
+        print >> f, '<p>Target channel : %s</p>' % gwchannel
     if tot_livetime:
         print >> f, '<p>total Livetime = %f seconds</p>' % tot_livetime
     if tot_glitches:
@@ -282,6 +285,8 @@ traindir = config.get('general', 'traindir')
 
 usertag = config.get('general', 'usertag')
 
+gwchannel = config.get('general', 'gwchannel')
+
 classifiers = config.get('general', 'classifiers').split()
 
 vetolist_cache = config.get('general', 'ovl_train_cache')
@@ -338,6 +343,24 @@ while gpsstart < gpsstop:
     this_sumdir = "%s/%d_%d"%(sumdir,gpsstart,gpsstart+stride)
     if not os.path.exists(this_sumdir):
         os.makedirs(this_sumdir)
+
+    ### attempt to write an index.html
+    index_html = "%s/index.html"%(this_sumdir)
+    index_html_obj = open(index_html, "w")
+    print >> index_html_obj, "attempted to build this page at:"
+    c_time = time.localtime()
+    tzname = time.tzname[0]
+    print >> index_html_obj, '%d:%d:%d %s %2d/%2d/%4d' % (
+        c_time.tm_hour,
+        c_time.tm_min,
+        c_time.tm_sec,
+        tzname,
+        c_time.tm_mon,
+        c_time.tm_mday,
+        c_time.tm_year,
+        )
+    print >> index_html_obj, "Target Channel: %s"%gwchannel
+    index_html_obj.close()
 
     #=============================================
     # sciseg query
@@ -806,6 +829,7 @@ while gpsstart < gpsstop:
         html_path,
         gpsstart=gpsstart,
         gpsstop=gpsstart + stride,
+        gwchannel=gwchannel,
         roc_url=roc_url,
         vetolist_url=vetolist_url,
         roc_urls=roc_urls,
@@ -846,7 +870,7 @@ print >> file_obj, "<body>"
 
 print >> file_obj, "<h1>iDQ summary pages Directory</h1>"
 
-sumdirs = sorted(glob.glob("%s/*_*/"%sumdir))
+sumdirs = [l.strip("index.html") for l in sorted(glob.glob("%s/*_*/index.html"%sumdir))]
 sumdirs.reverse()
 
 for this_sumdir in sumdirs:
