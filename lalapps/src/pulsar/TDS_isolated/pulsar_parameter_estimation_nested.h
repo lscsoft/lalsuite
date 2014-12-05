@@ -65,6 +65,7 @@
 #include <lal/LALInferenceNestedSampler.h>
 #include <lal/LALInferencePrior.h>
 #include <lal/LALInferenceProposal.h>
+#include <lal/LALInferenceGenerateROQ.h>
 
 #include <lal/LALSimNoise.h>
 
@@ -175,9 +176,6 @@ extern "C" {
                      same order) delimited by commas. These files can be gzipped.\n\
                      If not set you can generate fake data (see --fake-data below)\n"\
 " --sample-interval   (REAL8) the time interval bewteen samples (default to 60 s)\n"\
-" --downsample-factor (INT4) factor by which to downsample the input data\n\
-                     (default is for no downsampling and this is NOT\n\
-                     applied to fake data)\n"\
 " --outfile           name of output data file [required]\n"\
 " --non-fixed-only    output only the non-fixed (i.e. variable) parameters\n\
                      specified in the prior and .par files.\n"\
@@ -235,6 +233,17 @@ extern "C" {
 " --ensembleWalk      (UINT4) relative weight of the ensemble walk\n\
                      proposal (DEFAULT = 1, e.g. 50%%)\n"\
 "\n"\
+" Reduced order quadrature parameters:\n"\
+" --roq               Set this to use reduced order quadrature to compute the\n\
+                     likelihood.\n"\
+" --ntraining         (UNIT4) The number of training models used to generate an\n\
+                     orthonormal basis of waveform models.\n"\
+" --roq-tolerance     (REAL8) The tolerance used during the basis generation\n\
+                     (DEFAULT = 1e-11)\n"\
+" --test-basis        If this is set then the reduced basis set will be tested\n\
+                     against another set of waveforms to check they really are\n\
+                     within the required tolerance.\n"\
+"\n"\
 " Signal injection parameters:\n"\
 " --inject-file       a pulsar parameter (par) file containing the parameters\n\
                      of a signal to be injected. If this is given a signal\n\
@@ -282,16 +291,9 @@ extern "C" {
                     that where used when creating each nested sample file.\n"\
 " --prior-cell       The number of samples to use in a k-d tree cell for the\n\
                     prior (the default will be 8).\n"\
-" --Npost            The (approxiamate) number of posterior samples to be\n\
+" --Npost            The (approximate) number of posterior samples to be\n\
                     generated from each nested sample file (default = 1000)\n"\
 "\n"\
-" Phase parameter search speed-up factors:\n"\
-" --mismatch         Maximum allowed phase mismatch between consecutive\n\
-                    models (if phase mismatch is small do not update phase\n\
-                    correction)\n"\
-" --mm-factor        (INT4) Downsampling factor for the phase models used\n\
-                    to calculate the mismatch\n"\
- "\n"\
 " Legacy code flags:\n"\
 " --oldChunks        Set if using fixed chunk sizes for dividing the data as\n\
                     in the old code, rather than the calculating chunks\n\

@@ -47,7 +47,7 @@ LALInference tools */
  * ...
  *
  * Most commonly such data will have a sample rate of 1/60 Hz, giving a bandwidth of the same amount, but the code can
- * accept any rate, or downsample data (by averaging) by a given factor.
+ * accept any rate.
  *
  * The code also requires that you specify which parameters are to be searched over, and the prior ranges over these. Any
  * of the signal parameters can be searched over, including frequency, sky position and binary system parameters, although
@@ -148,6 +148,7 @@ LALInference tools */
 #include "ppe_models.h"
 #include "ppe_likelihood.h"
 #include "ppe_testing.h"
+#include "ppe_roq.h"
 
 /* global variables */
 /** An array to contain the log of factorials up to a certain number. */
@@ -200,6 +201,9 @@ INT4 main( INT4 argc, CHAR *argv[] ){
 
   /* create sum square of the data to speed up the likelihood calculation */
   sum_data( &runState );
+
+  /* check whether using reduced order quadrature */
+  generate_interpolant( &runState );
 
   gridOutput( &runState );
 

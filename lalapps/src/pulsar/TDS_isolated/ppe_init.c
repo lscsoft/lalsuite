@@ -999,88 +999,88 @@ void sum_data( LALInferenceRunState *runState ){
   LALInferenceIFOData *data = runState->data;
   LALInferenceIFOModel *ifomodel = runState->model->ifo;
 
-  INT4 gaussianLike = 0, rom = 0, nonGR = 0;
+  INT4 gaussianLike = 0, roq = 0, nonGR = 0;
 
   if ( LALInferenceGetProcParamVal( runState->commandLine, "--gaussian-like" ) ){ gaussianLike = 1; }
-  if ( LALInferenceGetProcParamVal( runState->commandLine, "--rom" ) ){ rom = 1; }
+  if ( LALInferenceGetProcParamVal( runState->commandLine, "--roq" ) ){ roq = 1; }
   if ( LALInferenceGetProcParamVal( runState->commandLine, "--nonGR" ) ){ nonGR = 1; }
 
   while( data ){
-    if ( !rom ){
-      REAL8Vector *sumdat = NULL;
+    REAL8Vector *sumdat = NULL;
 
-      /* sums of the antenna pattern functions with themeselves and the data.
-       * These won't be needed if searching over phase parameters, but there's
-       * no harm in computing them anyway. */
+    /* sums of the antenna pattern functions with themeselves and the data.
+     * These won't be needed if searching over phase parameters, but there's
+     * no harm in computing them anyway. */
 
-      /* also have "explicitly" whitened (i.e. divided by variance) versions of these for use
-       * by the function to calculate the signal-to-noise ratio (if using the Gaussian
-       * likelihood the standard versions of these vectors will also be whitened too) */
-      REAL8Vector *sumP = NULL; /* sum of tensor antenna pattern function a(t)^2 */
-      REAL8Vector *sumC = NULL; /* sum of tensor antenna pattern function b(t)^2 */
-      REAL8Vector *sumPWhite = NULL; /* sum of antenna pattern function a(t)^2 */
-      REAL8Vector *sumCWhite = NULL; /* sum of antenna pattern function b(t)^2 */
+    /* also have "explicitly" whitened (i.e. divided by variance) versions of these for use
+     * by the function to calculate the signal-to-noise ratio (if using the Gaussian
+     * likelihood the standard versions of these vectors will also be whitened too) */
+    REAL8Vector *sumP = NULL; /* sum of tensor antenna pattern function a(t)^2 */
+    REAL8Vector *sumC = NULL; /* sum of tensor antenna pattern function b(t)^2 */
+    REAL8Vector *sumPWhite = NULL; /* sum of antenna pattern function a(t)^2 */
+    REAL8Vector *sumCWhite = NULL; /* sum of antenna pattern function b(t)^2 */
 
-      /* non-GR values */
-      REAL8Vector *sumX = NULL; /* sum of vector antenna pattern function a(t)^2 */
-      REAL8Vector *sumY = NULL; /* sum of vector antenna pattern function b(t)^2 */
-      REAL8Vector *sumXWhite = NULL; /* whitened version */
-      REAL8Vector *sumYWhite = NULL; /* whitened version */
+    /* non-GR values */
+    REAL8Vector *sumX = NULL; /* sum of vector antenna pattern function a(t)^2 */
+    REAL8Vector *sumY = NULL; /* sum of vector antenna pattern function b(t)^2 */
+    REAL8Vector *sumXWhite = NULL; /* whitened version */
+    REAL8Vector *sumYWhite = NULL; /* whitened version */
 
-      REAL8Vector *sumB = NULL; /* sum of scalar antenna pattern function a(t)^2 */
-      REAL8Vector *sumL = NULL; /* sum of scalar antenna pattern function b(t)^2 */
-      REAL8Vector *sumBWhite = NULL; /* whitened version */
-      REAL8Vector *sumLWhite = NULL; /* whitened version */
+    REAL8Vector *sumB = NULL; /* sum of scalar antenna pattern function a(t)^2 */
+    REAL8Vector *sumL = NULL; /* sum of scalar antenna pattern function b(t)^2 */
+    REAL8Vector *sumBWhite = NULL; /* whitened version */
+    REAL8Vector *sumLWhite = NULL; /* whitened version */
 
-      COMPLEX16Vector *sumDataP = NULL; /* sum of the data * a(t) */
-      COMPLEX16Vector *sumDataC = NULL; /* sum of the data * b(t) */
-      COMPLEX16Vector *sumDataX = NULL; /* sum of the data * a(t) */
-      COMPLEX16Vector *sumDataY = NULL; /* sum of the data * b(t) */
-      COMPLEX16Vector *sumDataB = NULL; /* sum of the data * a(t) */
-      COMPLEX16Vector *sumDataL = NULL; /* sum of the data * b(t) */
+    COMPLEX16Vector *sumDataP = NULL; /* sum of the data * a(t) */
+    COMPLEX16Vector *sumDataC = NULL; /* sum of the data * b(t) */
+    COMPLEX16Vector *sumDataX = NULL; /* sum of the data * a(t) */
+    COMPLEX16Vector *sumDataY = NULL; /* sum of the data * b(t) */
+    COMPLEX16Vector *sumDataB = NULL; /* sum of the data * a(t) */
+    COMPLEX16Vector *sumDataL = NULL; /* sum of the data * b(t) */
 
-      /* cross terms */
-      REAL8Vector *sumPC = NULL, *sumPX = NULL, *sumPY = NULL, *sumPB = NULL, *sumPL = NULL;
-      REAL8Vector *sumCX = NULL, *sumCY = NULL, *sumCB = NULL, *sumCL = NULL;
-      REAL8Vector *sumXY = NULL, *sumXB = NULL, *sumXL = NULL;
-      REAL8Vector *sumYB = NULL, *sumYL = NULL;
-      REAL8Vector *sumBL = NULL;
+    /* cross terms */
+    REAL8Vector *sumPC = NULL, *sumPX = NULL, *sumPY = NULL, *sumPB = NULL, *sumPL = NULL;
+    REAL8Vector *sumCX = NULL, *sumCY = NULL, *sumCB = NULL, *sumCL = NULL;
+    REAL8Vector *sumXY = NULL, *sumXB = NULL, *sumXL = NULL;
+    REAL8Vector *sumYB = NULL, *sumYL = NULL;
+    REAL8Vector *sumBL = NULL;
 
-      /* whitened versions cross terms */
-      REAL8Vector *sumPCWhite = NULL, *sumPXWhite = NULL, *sumPYWhite = NULL, *sumPBWhite = NULL, *sumPLWhite = NULL;
-      REAL8Vector *sumCXWhite = NULL, *sumCYWhite = NULL, *sumCBWhite = NULL, *sumCLWhite = NULL;
-      REAL8Vector *sumXYWhite = NULL, *sumXBWhite = NULL, *sumXLWhite = NULL;
-      REAL8Vector *sumYBWhite = NULL, *sumYLWhite = NULL;
-      REAL8Vector *sumBLWhite = NULL;
+    /* whitened versions cross terms */
+    REAL8Vector *sumPCWhite = NULL, *sumPXWhite = NULL, *sumPYWhite = NULL, *sumPBWhite = NULL, *sumPLWhite = NULL;
+    REAL8Vector *sumCXWhite = NULL, *sumCYWhite = NULL, *sumCBWhite = NULL, *sumCLWhite = NULL;
+    REAL8Vector *sumXYWhite = NULL, *sumXBWhite = NULL, *sumXLWhite = NULL;
+    REAL8Vector *sumYBWhite = NULL, *sumYLWhite = NULL;
+    REAL8Vector *sumBLWhite = NULL;
 
-      /* get antenna patterns */
-      REAL8Vector *arespT = *(REAL8Vector **)LALInferenceGetVariable( ifomodel->params, "a_response_tensor" );
-      REAL8Vector *brespT = *(REAL8Vector **)LALInferenceGetVariable( ifomodel->params, "b_response_tensor" );
-      REAL8Vector *arespV = NULL, *brespV = NULL, *arespS = NULL, *brespS = NULL;
+    /* get antenna patterns */
+    REAL8Vector *arespT = *(REAL8Vector **)LALInferenceGetVariable( ifomodel->params, "a_response_tensor" );
+    REAL8Vector *brespT = *(REAL8Vector **)LALInferenceGetVariable( ifomodel->params, "b_response_tensor" );
+    REAL8Vector *arespV = NULL, *brespV = NULL, *arespS = NULL, *brespS = NULL;
 
-      if ( nonGR ){
-        arespV = *(REAL8Vector **)LALInferenceGetVariable( ifomodel->params, "a_response_vector" );
-        brespV = *(REAL8Vector **)LALInferenceGetVariable( ifomodel->params, "b_response_vector" );
-        arespS = *(REAL8Vector **)LALInferenceGetVariable( ifomodel->params, "a_response_scalar" );
-        brespS = *(REAL8Vector **)LALInferenceGetVariable( ifomodel->params, "b_response_scalar" );
-      }
+    if ( nonGR ){
+      arespV = *(REAL8Vector **)LALInferenceGetVariable( ifomodel->params, "a_response_vector" );
+      brespV = *(REAL8Vector **)LALInferenceGetVariable( ifomodel->params, "b_response_vector" );
+      arespS = *(REAL8Vector **)LALInferenceGetVariable( ifomodel->params, "a_response_scalar" );
+      brespS = *(REAL8Vector **)LALInferenceGetVariable( ifomodel->params, "b_response_scalar" );
+    }
 
-      INT4 tsteps = *(INT4 *)LALInferenceGetVariable( ifomodel->params, "timeSteps" );
+    INT4 tsteps = *(INT4 *)LALInferenceGetVariable( ifomodel->params, "timeSteps" );
 
-      INT4 chunkLength = 0, length = 0, i = 0, j = 0, count = 0;
-      COMPLEX16 B;
-      REAL8 aT = 0., bT = 0., aV = 0., bV = 0., aS = 0., bS = 0.;
+    INT4 chunkLength = 0, length = 0, i = 0, j = 0, count = 0;
+    COMPLEX16 B;
+    REAL8 aT = 0., bT = 0., aV = 0., bV = 0., aS = 0., bS = 0.;
 
-      UINT4Vector *chunkLengths;
+    UINT4Vector *chunkLengths;
 
-      REAL8Vector *sidDayFrac = *(REAL8Vector**)LALInferenceGetVariable( ifomodel->params, "siderealDay" );
+    REAL8Vector *sidDayFrac = *(REAL8Vector**)LALInferenceGetVariable( ifomodel->params, "siderealDay" );
 
-      chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( ifomodel->params, "chunkLength" );
+    chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( ifomodel->params, "chunkLength" );
 
-      length = runState->model->ifo->times->length + 1 - chunkLengths->data[chunkLengths->length - 1];
+    length = runState->model->ifo->times->length + 1 - chunkLengths->data[chunkLengths->length - 1];
 
-      sumdat = XLALCreateREAL8Vector( chunkLengths->length );
+    sumdat = XLALCreateREAL8Vector( chunkLengths->length );
 
+    if ( !roq ){
       /* allocate memory */
       sumP = XLALCreateREAL8Vector( chunkLengths->length );
       sumC = XLALCreateREAL8Vector( chunkLengths->length );
@@ -1138,16 +1138,18 @@ void sum_data( LALInferenceRunState *runState ){
         sumDataB = XLALCreateCOMPLEX16Vector( chunkLengths->length );
         sumDataL = XLALCreateCOMPLEX16Vector( chunkLengths->length );
       }
+    }
 
-      REAL8 tsv = LAL_DAYSID_SI / tsteps, T = 0., timeMin = 0., timeMax = 0.;
+    REAL8 tsv = LAL_DAYSID_SI / tsteps, T = 0., timeMin = 0., timeMax = 0.;
 
-      REAL8 logGaussianNorm = 0.; /* normalisation constant for Gaussian distribution */
+    REAL8 logGaussianNorm = 0.; /* normalisation constant for Gaussian distribution */
 
-      for( i = 0 ; i < length ; i+= chunkLength ){
-        chunkLength = chunkLengths->data[count];
+    for( i = 0, count = 0 ; i < length ; i+= chunkLength, count++ ){
+      chunkLength = chunkLengths->data[count];
 
-        sumdat->data[count] = 0.;
+      sumdat->data[count] = 0.;
 
+      if ( !roq ){
         sumP->data[count] = 0.;
         sumC->data[count] = 0.;
         sumPC->data[count] = 0.;
@@ -1204,13 +1206,24 @@ void sum_data( LALInferenceRunState *runState ){
           sumDataB->data[count] = 0.;
           sumDataL->data[count] = 0.;
         }
+      }
 
-        for( j = i ; j < i + chunkLength ; j++){
-          REAL8 vari = 1., a0 = 0., a1 = 0., b0 = 0., b1 = 0., timeScaled = 0.;
-          INT4 timebinMin = 0, timebinMax = 0;
+      for( j = i ; j < i + chunkLength ; j++){
+        REAL8 vari = 1., a0 = 0., a1 = 0., b0 = 0., b1 = 0., timeScaled = 0.;
+        INT4 timebinMin = 0, timebinMax = 0;
 
-          B = data->compTimeData->data->data[j];
+        B = data->compTimeData->data->data[j];
 
+        /* if using a Gaussian likelihood divide all these values by the variance */
+        if ( gaussianLike ) {
+          vari = data->varTimeData->data->data[j];
+          logGaussianNorm -= 0.5*log(LAL_TWOPI*vari);
+        }
+
+        /* sum up the data */
+        sumdat->data[count] += (creal(B)*creal(B) + cimag(B)*cimag(B))/vari;
+
+        if ( !roq ){
           /* set the time bin for the lookup table and interpolate between bins */
           T = sidDayFrac->data[j];
           timebinMin = (INT4)fmod( floor(T / tsv), tsteps );
@@ -1229,15 +1242,6 @@ void sum_data( LALInferenceRunState *runState ){
 
           aT = a0 + (a1-a0)*timeScaled;
           bT = b0 + (b1-b0)*timeScaled;
-
-          /* if using a Gaussian likelihood divide all these values by the variance */
-          if ( gaussianLike ) {
-            vari = data->varTimeData->data->data[j];
-            logGaussianNorm -= 0.5*log(LAL_TWOPI*vari);
-          }
-
-          /* sum up the data */
-          sumdat->data[count] += (creal(B)*creal(B) + cimag(B)*cimag(B))/vari;
 
           /* sum up the other terms */
           sumP->data[count] += aT*aT/vari;
@@ -1320,13 +1324,15 @@ void sum_data( LALInferenceRunState *runState ){
             sumBLWhite->data[count] += aS*bS/vari;
           }
         }
-
-        count++;
       }
+    }
 
-      /* add all the summed data values - remove if already there, so that sum_data can be called more
-       * than once if required e.g. if needed in the injection functions */
-      check_and_add_fixed_variable( ifomodel->params, "sumData", &sumdat, LALINFERENCE_REAL8Vector_t );
+    /* add all the summed data values - remove if already there, so that sum_data can be called more
+     * than once if required e.g. if needed in the injection functions */
+
+    check_and_add_fixed_variable( ifomodel->params, "sumData", &sumdat, LALINFERENCE_REAL8Vector_t );
+
+    if ( !roq ){
       check_and_add_fixed_variable( ifomodel->params, "sumP", &sumP, LALINFERENCE_REAL8Vector_t );
       check_and_add_fixed_variable( ifomodel->params, "sumC", &sumC, LALINFERENCE_REAL8Vector_t );
       check_and_add_fixed_variable( ifomodel->params, "sumPC", &sumPC, LALINFERENCE_REAL8Vector_t );
@@ -1382,18 +1388,11 @@ void sum_data( LALInferenceRunState *runState ){
         check_and_add_fixed_variable( ifomodel->params, "sumYLWhite", &sumYLWhite, LALINFERENCE_REAL8Vector_t );
         check_and_add_fixed_variable( ifomodel->params, "sumBLWhite", &sumBLWhite, LALINFERENCE_REAL8Vector_t );
       }
-
-      LALInferenceAddVariable( ifomodel->params, "logGaussianNorm", &logGaussianNorm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
-
-      data = data->next;
-      ifomodel = ifomodel->next;
     }
-    else{
-      fprintf(stderr, "Not yet implemented Reduced Order Modelling!");
-      exit(0);
+    LALInferenceAddVariable( ifomodel->params, "logGaussianNorm", &logGaussianNorm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
 
-      /* need to sum over the basis vectors and the data (or something similar) */
-    }
+    data = data->next;
+    ifomodel = ifomodel->next;
   }
 
   return;

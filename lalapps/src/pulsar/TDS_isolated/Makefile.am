@@ -32,8 +32,6 @@ lalapps_pulsar_parameter_estimation_SOURCES = \
 	pulsar_parameter_estimation.h
 
 lalapps_pulsar_parameter_estimation_nested_SOURCES = \
-	pulsar_parameter_estimation_nested.c \
-	pulsar_parameter_estimation_nested.h \
 	ppe_models.c \
 	ppe_models.h \
 	ppe_likelihood.c \
@@ -47,7 +45,11 @@ lalapps_pulsar_parameter_estimation_nested_SOURCES = \
 	ppe_readdata.c \
 	ppe_readdata.h \
 	ppe_inject.c \
-	ppe_inject.h
+	ppe_inject.h \
+	ppe_roq.c \
+	ppe_roq.h \
+	pulsar_parameter_estimation_nested.c \
+	pulsar_parameter_estimation_nested.h
 
 lalapps_create_pulsar_signal_frame_SOURCES = \
 	create_pulsar_signal_frame.c
