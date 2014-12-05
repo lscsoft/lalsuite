@@ -114,16 +114,6 @@ description = eventdata['description']
 if not alert_type=='new': ### only process new events
     sys.exit(0)
 
-### more specific logicals based on the following
-#group = event['Group']
-#pipeline = event['Pipeline']
-#search = event['Search']
-
-event_type = None
-
-# The above event attributes could be useful in the future if we decide to code up logic
-# that differentiates between gracedb entries based on their type, search, description etc.
-
 #=================================================
 ### logging setup
 
@@ -142,18 +132,6 @@ logger.addHandler(hdlr2)
 ### redirect stdout and stderr into logger
 sys.stdout = idq.LogFile(logger)
 sys.err = idq.LogFile(logger)
-
-#========================
-# digest event type and pull the correct params from config file
-#========================
-if event_type not in config.sections():
-    logger.info("Warning: event type not found. Defaulting to \"default_event\" settings in %s"%options.config_file)
-    event_type = 'default_event'
-
-time_before = config.getfloat(event_type, 'time_before')
-time_after = config.getfloat(event_type, 'time_after')
-max_wait = config.getfloat(event_type,'max_wait')
-delay = config.getfloat(event_type, 'delay') ### the amount of extra time we wait for jobs to finish
 
 #=================================================
 ### process the event in full
@@ -194,10 +172,35 @@ except:
     logger.info("    Exiting.")
     sys.exit(1)
 
+#========================
+# get parameters about event type from gracedb
+#========================
+group = gdb_event['group']
+pipeline = gdb_event['pipeline']
+if gdb_event.has_key('search'):
+    search = gdb_event['search']
+    event_type = "%s_%s_%s"%(group, pipeline, search)
+else:
+    event_type = "%s_%s"%(group, pipeline)
+
+#========================
+# digest event type and pull the correct params from config file
+#========================
+if event_type not in config.sections():
+    logger.info("Warning: event type not found. Defaulting to \"default_event\" settings in %s"%options.config_file)
+    event_type = 'default_event'
+
+time_before = config.getfloat(event_type, 'time_before')
+time_after = config.getfloat(event_type, 'time_after')
+max_wait = config.getfloat(event_type,'max_wait')
+delay = config.getfloat(event_type, 'delay') ### the amount of extra time we wait for jobs to finish
+
+#========================
+# get start and end time for our look-up routines
+#========================
 event_gps_time = gdb_entry['gpstime']
 gps_start = event_gps_time - time_before
 gps_end = event_gps_time + time_after
-
 
 logger.info("Started searching for iDQ information within [%.3f, %.3f] at %s"%(gps_start, gps_end, ifo))
 gracedb.writeLog(gdb_id, message="Started searching for iDQ information within [%.3f, %.3f] at %s"%(gps_start, gps_end, ifo))
