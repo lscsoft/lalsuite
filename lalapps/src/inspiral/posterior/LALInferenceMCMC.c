@@ -288,8 +288,6 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
     fprintf(stdout, " ==== LALInferenceInjectInspiralSignal(): started. ====\n");
     LALInferenceInjectInspiralSignal(irs->data,commandLine);
     fprintf(stdout, " ==== LALInferenceInjectInspiralSignal(): finished. ====\n");
-    /* Apply calibration errors if desired*/
-    LALInferenceApplyCalibrationErrors(irs,commandLine);
     ifoPtr = irs->data;
     while (ifoPtr) {
         nifo++;
@@ -818,6 +816,8 @@ int main(int argc, char *argv[]){
     LALInferenceAddVariable(runState->algorithmParams,"MPIrank", &MPIrank, LALINFERENCE_UINT4_t,
                           LALINFERENCE_PARAM_FIXED);
   else return 0;
+  /* Apply calibration errors if desired*/
+   LALInferenceApplyCalibrationErrors(runState,runState->commandLine);
 
   /* Set up model struct and set currentVariables to match the initialized model params */
   runState->model = LALInferenceInitCBCModel(runState);

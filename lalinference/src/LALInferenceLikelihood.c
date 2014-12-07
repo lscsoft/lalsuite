@@ -823,10 +823,11 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
       REAL8 sigmasq=(*psd)*deltaT*deltaT;
       
       if (constantcal_active) {
-        REAL8 dre_tmp=creal(d)/(1.0+calamp);
-        REAL8 dim_tmp=cimag(d)/(1.0+calamp);
-        dre_tmp= creal(d)*cos_calpha - cimag(d)*sin_calpha;
-        dim_tmp = creal(d)*sin_calpha + cimag(d)*cos_calpha;
+        REAL8 dre_tmp= creal(d)*cos_calpha - cimag(d)*sin_calpha;
+        REAL8 dim_tmp = creal(d)*sin_calpha + cimag(d)*cos_calpha;
+        dre_tmp/=(1.0+calamp);
+        dim_tmp/=(1.0+calamp);
+
         d=crect(dre_tmp,dim_tmp);
         sigmasq/=((1.0+calamp)*(1.0+calamp));
       } 
