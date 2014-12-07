@@ -292,12 +292,14 @@ def get_xml_psds(psdxml,ifos,outpath,end_time=None):
   """
   lal=1
   from glue.ligolw import utils
-  try: from lal import Aseries
-  except ImportError:
+  try:
     from pylal import series
     lal=0
+  except ImportError:
+    print "ERROR, cannot import pylal.series in bppu/get_xml_psds()\n"
+    exit(1)
   import numpy as np
-
+ 
   out={}
   if not os.path.isdir(outpath):
     os.makedirs(outpath)
@@ -324,7 +326,7 @@ def get_xml_psds(psdxml,ifos,outpath,end_time=None):
   if not os.path.isfile(psdxml):
     print "ERROR: impossible to open the psd file %s. Exiting...\n"%psdxml
     sys.exit(1)
-  xmlpsd =  series.read_psd_xmldoc(utils.load_filename(psdxml))
+  xmlpsd =  series.read_psd_xmldoc(utils.load_filename(psdxml,contenthandler = series.LIGOLWContentHandler))
   # Check the psd file contains all the IFOs we want to analize
   for ifo in ifos:
     if not ifo in [i.encode('ascii') for i in xmlpsd.keys()]:
@@ -924,9 +926,13 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
               gotdata+=node.add_ifo_data(ifo,seg,self.channels[ifo],timeslide=slide)
             else:
               fakecachefiles=ast.literal_eval(self.config.get('lalinference','fake-cache'))
+              if self.config.has_option('lalinference','fake-channels'):
+                fakechannels=ast.literal_eval(self.config.get('lalinference','fake-channels'))
+              else:
+                fakechannels=fakecachefiles
               if self.config.has_option('lalinference','roq'):
-                prenode.add_fake_ifo_data(ifo,seg,fakecachefiles[ifo],timeslide=slide)
-              gotdata+=node.add_fake_ifo_data(ifo,seg,fakecachefiles[ifo],timeslide=slide)
+                prenode.add_fake_ifo_data(ifo,seg,fakecachefiles[ifo],fakechannels[ifo],timeslide=slide)
+              gotdata+=node.add_fake_ifo_data(ifo,seg,fakecachefiles[ifo],fakechannels[ifo],timeslide=slide)
     if self.config.has_option('lalinference','psd-xmlfile'):
       psdpath=os.path.realpath(self.config.get('lalinference','psd-xmlfile'))
       node.psds=get_xml_psds(psdpath,ifos,os.path.join(self.basepath,'PSDs'),end_time=end_time)
@@ -1316,7 +1322,7 @@ class EngineNode(pipeline.CondorDAGNode):
 
   def get_trig_time(self): return self.__trigtime
  
-  def add_fake_ifo_data(self,ifo,sciseg,fake_cache_name,timeslide=0):
+  def add_fake_ifo_data(self,ifo,sciseg,fake_cache_name,fake_channel_name,timeslide=0):
     """
     Dummy method to set up fake data without needing to run datafind
     """
@@ -1324,7 +1330,7 @@ class EngineNode(pipeline.CondorDAGNode):
     self.scisegs[ifo]=sciseg
     self.cachefiles[ifo]=fake_cache_name
     self.timeslides[ifo]=timeslide
-    self.channels[ifo]=fake_cache_name
+    self.channels[ifo]=fake_channel_name
     self.fakedata=True
     return 1
   
