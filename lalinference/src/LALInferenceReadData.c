@@ -129,7 +129,7 @@ REAL8 interpolate(struct fvec *fvec, REAL8 f){
 	{
 		return (fvec[i-1].x);
 	}
-  //if(i==0){return (fvec[0].x);}
+//  if(i==0){return (fvec[0].x);}
 	a=(fvec[i].f-f)/(fvec[i].f-fvec[i-1].f);
 	delta=fvec[i].x-fvec[i-1].x;
 	return (fvec[i-1].x + delta*a);
@@ -235,16 +235,16 @@ static REAL8TimeSeries *readTseries(LALCache *cache, CHAR *channel, LIGOTimeGPS 
 }
 
 /**
- * Parse the command line looking for options of the kind --ifo H1 --H1-channel H1:LDAS_STRAIN --H1-cache H1.cache --H1-flow 40.0 --H1-fhigh 4096.0 --H1-timeslide 100.0 ...
+ * Parse the command line looking for options of the kind --ifo H1 --H1-channel H1:LDAS_STRAIN --H1-cache H1.cache --H1-flow 40.0 --H1-fhigh 4096.0 --H1-timeslide 100.0 --H1-psd psdascii.txt ...
  * It is necessary to use this method instead of the old method for the pipeline to work in DAX mode. Warning: do not mix options between
  * the old and new style.
  */
-static INT4 getDataOptionsByDetectors(ProcessParamsTable *commandLine, char ***ifos, char ***caches, char ***channels, char ***flows , char ***fhighs, char ***timeslides, UINT4 *N)
+static INT4 getDataOptionsByDetectors(ProcessParamsTable *commandLine, char ***ifos, char ***caches, char ***channels, char ***flows , char ***fhighs, char ***timeslides, char ***psds, UINT4 *N)
 {
     /* Check that the input has no lists with [ifo,ifo] */
     ProcessParamsTable *this=commandLine;
     UINT4 i=0;
-    *caches=*ifos=*channels=*flows=*fhighs=*timeslides=NULL;
+    *caches=*ifos=*channels=*flows=*fhighs=*timeslides=*psds=NULL;
     *N=0;
     char tmp[128];
     if(!this) {fprintf(stderr,"No command line arguments given!\n"); exit(1);}
@@ -263,6 +263,7 @@ static INT4 getDataOptionsByDetectors(ProcessParamsTable *commandLine, char ***i
     *flows=XLALCalloc(*N,sizeof(REAL8));
     *fhighs=XLALCalloc(*N,sizeof(REAL8));
     *timeslides=XLALCalloc(*N,sizeof(REAL8));
+    *psds=XLALCalloc(*N,sizeof(char *));
 
     int globFrames=!!LALInferenceGetProcParamVal(commandLine,"--glob-frame-data");
 
@@ -297,6 +298,10 @@ static INT4 getDataOptionsByDetectors(ProcessParamsTable *commandLine, char ***i
         this=LALInferenceGetProcParamVal(commandLine,tmp);
         (*timeslides)[i]=XLALStringDuplicate(this?this->value:"0.0");
 
+        /* PSD */
+        sprintf(tmp,"--%s-psd",(*ifos)[i]);
+        this=LALInferenceGetProcParamVal(commandLine,tmp);
+        (*psds)[i]=this?XLALStringDuplicate(this->value):NULL;
     }
     return(1);
 }
@@ -431,6 +436,7 @@ void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, ProcessPar
 (--IFO1-flow freq1 [--IFO2-flow freq2 ...])      Specify lower frequency cutoff for overlap integral (40.0)\n\
 (--IFO1-fhigh freq1 [--IFO2-fhigh freq2 ...])     Specify higher frequency cutoff for overlap integral (Nyquist freq 0.5*srate)\n\
 (--IFO1-channel chan1 [--IFO2-channel chan2 ...])   Specify channel names when reading cache files\n\
+(--IFO1-psd psd1-ascii.txt [--IFO2-psd psd2-ascii.txt ...])  Read in PSD from ascii file. This is not equivalent to using --IFO1-cache interp:file.txt since the former won't use the ascii psd to generate fake noise. \n\
 (--dataseed number)             Specify random seed to use when generating data\n\
 (--lalinspiralinjection)      Enables injections via the LALInspiral package\n\
 (--inj-fref)                    Reference frequency for parameters in injection XML (default 100Hz)\n\
@@ -493,7 +499,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
     if(LALInferenceGetProcParamVal(commandLine,"--glob-frame-data")) globFrames=1;
 
     /* Check if the new style command line arguments are used */
-    INT4 dataOpts=getDataOptionsByDetectors(commandLine, &IFOnames, &caches, &channels, &fLows , &fHighs, &timeslides, &Nifo);
+    INT4 dataOpts=getDataOptionsByDetectors(commandLine, &IFOnames, &caches, &channels, &fLows , &fHighs, &timeslides,&psds, &Nifo);
     /* Check for options if not given in the new style */
     if(!dataOpts){
         if(!(globFrames||LALInferenceGetProcParamVal(commandLine,"--cache"))||!(LALInferenceGetProcParamVal(commandLine,"--IFO")||LALInferenceGetProcParamVal(commandLine,"--ifo")))
@@ -515,6 +521,10 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
         if(ppt){
             LALInferenceParseCharacterOptionString(ppt->value,&fHighs,&NfHigh);
         }
+
+        ppt=LALInferenceGetProcParamVal(commandLine,"--psd");
+        if (ppt)  LALInferenceParseCharacterOptionString(ppt->value,&psds,&Npsd);
+
         if((ppt=LALInferenceGetProcParamVal(commandLine,"--timeslide"))) LALInferenceParseCharacterOptionString(ppt->value,&timeslides,&Ntimeslides);
         if(Nifo!=Ncache) {fprintf(stderr,"ERROR: Must specify equal number of IFOs and Cache files\n"); exit(1);}
         if(Nchannel!=0 && Nchannel!=Nifo) {fprintf(stderr,"ERROR: Please specify a channel for all caches, or omit to use the defaults\n"); exit(1);}
@@ -535,10 +545,6 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
     UINT4 NspinspiralPSD = 0;
     if (LALInferenceGetProcParamVal(commandLine, "--spinspiralPSD")) {
         LALInferenceParseCharacterOptionString(LALInferenceGetProcParamVal(commandLine,"--spinspiralPSD")->value,&spinspiralPSD,&NspinspiralPSD);
-    }
-
-    if(LALInferenceGetProcParamVal(commandLine,"--psd")){
-        LALInferenceParseCharacterOptionString(LALInferenceGetProcParamVal(commandLine,"--psd")->value,&psds,&Npsd);
     }
 
     if(LALInferenceGetProcParamVal(commandLine,"--dataseed")){
@@ -952,7 +958,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 
             }
             if(!cache) {fprintf(stderr,"ERROR: Cannot find any frame data!\n"); exit(1);}
-            if (LALInferenceGetProcParamVal(commandLine, "--psd")){
+            if (!((psds)==NULL || (psds[i])==NULL)){
                 interp=NULL;
                 char *interpfilename=&(psds[i][0]);
                 fprintf(stderr,"Reading PSD for %s using %s\n",IFOnames[i],interpfilename);
@@ -964,7 +970,8 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
                 if(!IFOdata[i].oneSidedNoisePowerSpectrum) XLAL_ERROR_NULL(XLAL_EFUNC);
                 for(j=0;j<IFOdata[i].oneSidedNoisePowerSpectrum->data->length;j++)
                 {
-                    MetaNoiseFunc(&status,&(IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]),j*IFOdata[i].oneSidedNoisePowerSpectrum->deltaF,interp,NULL);
+                    MetaNoiseFunc(&status,&(IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]),j*IFOdata[i].oneSidedNoisePowerSpectrum->deltaF,interp,NULL); 
+                    //fprintf(stdout,"%lf\n",IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]);
                 }
             }else{
                 fprintf(stderr,"Estimating PSD for %s using %i segments of %i samples (%lfs)\n",IFOnames[i],nSegs,(int)seglen,SegmentLength);
