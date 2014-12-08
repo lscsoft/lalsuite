@@ -33,6 +33,8 @@
 #include <lal/LALConstants.h>
 #include <lal/Factorial.h>
 #include <lal/DopplerFullScan.h>
+#include <lal/SuperSkyMetrics.h>
+#include <lal/LALInitBarycenter.h>
 
 #include "../src/GSLHelpers.h"
 
@@ -325,6 +327,69 @@ static int MismatchAgeBrakeTest(
 
 }
 
+static int SuperSkyTest(
+  const double T,
+  const double max_mismatch,
+  const TilingLattice lattice,
+  const double freq,
+  const double freqband,
+  const UINT8 total_ref,
+  const double mism_hist_ref[MISM_HIST_BINS+1]
+  )
+{
+
+  // Create lattice tiling parameter space
+  LatticeTilingSpace *space = XLALCreateLatticeTilingSpace(3);
+  XLAL_CHECK(space != NULL, XLAL_EFUNC);
+
+  // Compute reduced super-sky metric
+  const double Tspan = T * 86400;
+  gsl_matrix *essky_metric = NULL;
+  LIGOTimeGPS ref_time;
+  XLALGPSSetREAL8(&ref_time, 900100100);
+  LALSegList segments;
+  {
+    XLAL_CHECK(XLALSegListInit(&segments) == XLAL_SUCCESS, XLAL_EFUNC);
+    LALSeg segment;
+    LIGOTimeGPS start_time = ref_time, end_time = ref_time;
+    XLALGPSAdd(&start_time, -0.5 * Tspan);
+    XLALGPSAdd(&end_time, 0.5 * Tspan);
+    XLAL_CHECK(XLALSegSet(&segment, &start_time, &end_time, 0) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK(XLALSegListAppend(&segments, &segment) == XLAL_SUCCESS, XLAL_EFUNC);
+  }
+  MultiLALDetector detectors = {
+    .length = 1,
+    .sites = { lalCachedDetectors[LAL_LLO_4K_DETECTOR] }
+  };
+  EphemerisData* edat =  XLALInitBarycenter(TEST_DATA_DIR "earth00-19-DE405.dat.gz",
+                                            TEST_DATA_DIR "sun00-19-DE405.dat.gz");
+  XLAL_CHECK(edat != NULL, XLAL_EFUNC);
+  XLAL_CHECK(XLALExpandedSuperSkyMetric(&essky_metric, 0, &ref_time, &segments, freq, &detectors,
+                                        NULL, DETMOTION_SPIN | DETMOTION_PTOLEORBIT, edat)
+             == XLAL_SUCCESS, XLAL_EFUNC);
+  XLALSegListClear(&segments);
+  XLALDestroyEphemerisData(edat);
+  gsl_matrix *rssky_metric = NULL, *rssky_transf = NULL;
+  XLAL_CHECK(XLALReducedSuperSkyMetric(&rssky_metric, &rssky_transf, essky_metric)
+             == XLAL_SUCCESS, XLAL_EFUNC);
+  GFMAT(essky_metric);
+
+  // Add bounds
+  printf("Bounds: super-sky, freq=%0.3g, freqband=%0.3g\n", freq, freqband);
+  XLAL_CHECK(XLALSetLatticeTilingReducedSuperSkyBounds(space)
+             == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK(XLALSetLatticeTilingPhysicalSpinBound(space, rssky_transf, 0, freq, freq + freqband)
+             == XLAL_SUCCESS, XLAL_EFUNC);
+  GFMAT(rssky_transf);
+
+  // Perform mismatch test
+  XLAL_CHECK(MismatchTest(space, rssky_metric, max_mismatch, lattice, total_ref, mism_hist_ref)
+             == XLAL_SUCCESS, XLAL_EFUNC);
+
+  return XLAL_SUCCESS;
+
+}
+
 int main(void) {
 
   // Perform basic tests
@@ -357,6 +422,10 @@ int main(void) {
   XLAL_CHECK_MAIN(MismatchAgeBrakeTest(TILING_LATTICE_ANSTAR, 200, 1.5e-5, 37230, A3s_mism_hist)
                   == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN(MismatchAgeBrakeTest(TILING_LATTICE_ANSTAR, 300, 1.0e-5, 37022, A3s_mism_hist)
+                  == XLAL_SUCCESS, XLAL_EFUNC);
+
+  // Perform mismatch tests with the reduced super-sky parameter space and metric
+  XLAL_CHECK_MAIN(SuperSkyTest(2.0, 0.5, TILING_LATTICE_ANSTAR, 50, 1e-4, 111520, A3s_mism_hist)
                   == XLAL_SUCCESS, XLAL_EFUNC);
 
   return EXIT_SUCCESS;
