@@ -1,7 +1,0 @@
-#!/bin/bash
-
-for filename in "${@}" ; do
-	echo ${filename}
-	tmp=$(mktemp)
-	{ gzip -d <${filename} | ligolw_cut --delete-table coinc_event --delete-table coinc_event_map --delete-table coinc_definer --delete-table multi_burst | sed -e "/ligolw_burca/d" -e "/ligolw_binjfind/d" | gzip >${tmp} && mv -f ${tmp} ${filename} ; } || break
-done
