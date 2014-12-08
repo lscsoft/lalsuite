@@ -224,6 +224,8 @@ parser.add_option("", "--ignore-science-segments", default=False, action="store_
 
 parser.add_option('-f','--force',default=False, action='store_true', help="forces *uroc cache file to be updated, even if we have no data. Use with caution.")
 
+parser.add_option("", "--no-robot-cert", default=False, action="store_true")
+
 (opts, args) = parser.parse_args()
 
 #===================================================================================================
@@ -307,6 +309,23 @@ kwbasename = kwconfig['basename']
 ### set classifier colors and labels
 classifier_colors = [idq_s_p.classifier_colors(classifier) for classifier in classifiers]
 classifier_labels = [idq_s_p.classifier_labels(classifier) for classifier in classifiers]
+
+#=================================================
+### set up ROBOT certificates
+### IF ligolw_segement_query FAILS, THIS IS A LIKELY CAUSE
+if opts.no_robot_cert:
+    logger.info("Warning: running without a robot certificate. Your personal certificate may expire and this job may fail")
+else:
+    ### unset ligo-proxy just in case
+    del os.environ['X509_USER_PROXY']
+
+    ### get cert and key from ini file
+    robot_cert = config.get('ldg_certificate', 'robot_certificate')
+    robot_key = config.get('ldg_certificate', 'robot_key')
+
+    ### set cert and key
+    os.environ['X509_USER_CERT'] = robot_cert
+    os.environ['X509_USER_KEY'] = robot_key
 
 #=================================================
 ### current time and boundaries
@@ -849,6 +868,7 @@ while gpsstart < gpsstop:
     ### soft link html page to index.html
     index_html = "%s/index.html"%this_sumdir
     logger.info("soft linking %s -> %s"%(html_path, index_html))
+    os.system("rm %s"%(index_html))
     os.system("ln -s %s %s"%(html_path, index_html))
 
     # update symbolic link
@@ -876,7 +896,7 @@ sumdirs.reverse()
 for this_sumdir in sumdirs:
     this_sumdir = this_sumdir.strip("/").split("/")[-1]
     print >> file_obj, "<p>information about iDQ between %s and %s : "%tuple(this_sumdir.split("_"))
-    print >> file_obj, "<a href=\"%s/index.html\">here</a>"%(this_sumdir)
+    print >> file_obj, "<a href=\"%s/\">here</a>"%(this_sumdir)
     print >> file_obj, "</p>"
 
 print >> file_obj, "<hr />"
