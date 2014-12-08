@@ -1274,6 +1274,9 @@ REAL8 calculate_lalsim_snr(SimInspiralTable *inj, char *IFOname, REAL8FrequencyS
       exit(1);
     }
 
+    hplus->epoch  = timeHplus->epoch;
+    hcross->epoch = timeHcross->epoch;
+
     XLALSimAddInjectionREAL8TimeSeries(timeHplus, hplus, NULL);
     XLALSimAddInjectionREAL8TimeSeries(timeHcross, hcross, NULL);
     for (j=0; j<(UINT4) timeHplus->data->length; ++j)
