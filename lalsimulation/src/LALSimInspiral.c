@@ -3025,8 +3025,8 @@ int XLALSimInspiralTD(
     }
 
     case LAL_SIM_DOMAIN_FREQUENCY: {
-        COMPLEX16FrequencySeries *htildeplus;
-        COMPLEX16FrequencySeries *htildecross;
+        COMPLEX16FrequencySeries *htildeplus = NULL;
+        COMPLEX16FrequencySeries *htildecross = NULL;
         REAL8FFTPlan *plan;
         double chirplen, df;
         int chirplen_exp;
