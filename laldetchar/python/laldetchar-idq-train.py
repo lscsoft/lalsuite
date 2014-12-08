@@ -23,7 +23,7 @@ import ConfigParser
 from optparse import *
 import traceback
 import logging
-from glue.ligolw import table, lsctables, utils
+from glue.ligolw import table, lsctables, utils, ligolw
 from laldetchar.idq import auxmvc_utils
 from pylal import frutils
 import numpy
