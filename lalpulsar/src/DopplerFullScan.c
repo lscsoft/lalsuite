@@ -952,9 +952,7 @@ typedef struct {
 static double F1DotAgeBrakingBound(
   const void* data,
   const size_t dim UNUSED,
-  const gsl_vector* point,
-  const gsl_vector* bbox UNUSED,
-  double* padding UNUSED
+  const gsl_vector* point
   )
 {
 
@@ -1013,9 +1011,7 @@ typedef struct {
 static double F2DotBrakingBound(
   const void* data,
   const size_t dim UNUSED,
-  const gsl_vector* point,
-  const gsl_vector* bbox UNUSED,
-  double* padding UNUSED
+  const gsl_vector* point
   )
 {
 

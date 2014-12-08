@@ -71,9 +71,7 @@ typedef enum tagTilingLattice {
 typedef double (*LatticeTilingBound)(
   const void* data,			///< [in] Arbitrary data describing parameter space bound
   const size_t dim,			///< [in] Dimension on which bound applies
-  const gsl_vector* point,		///< [in] Point at which to find bound
-  const gsl_vector* bbox,		///< [in] Metric ellipse bounding box
-  double* padding			///< [out] Padding on bounds for tiled dimensions
+  const gsl_vector* point		///< [in] Point at which to find bound
   );
 
 ///
@@ -121,7 +119,6 @@ int XLALSetLatticeTilingConstantBound(
 ///
 int XLALRandomLatticeTilingPoints(
   const LatticeTilingSpace* space,	///< [in] Lattice tiling parameter space
-  const LatticeTiling* tiling,		///< [in] Lattice tiling state structure
   RandomParams* rng,			///< [in] Random number generator
   gsl_matrix* random_points		///< [out] Matrix whose columns are the random points
   );

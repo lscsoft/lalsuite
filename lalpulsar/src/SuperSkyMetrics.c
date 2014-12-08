@@ -845,9 +845,7 @@ int XLALConvertSuperSkyToPhysical(
 static double ReducedSuperSkyBCoordBound(
   const void* data,
   const size_t dim UNUSED,
-  const gsl_vector* point,
-  const gsl_vector* bbox,
-  double* padding
+  const gsl_vector* point
   )
 {
 
@@ -861,17 +859,6 @@ static double ReducedSuperSkyBCoordBound(
   // Set bound on 2-dimensional reduced super-sky B coordinate
   const double maxB = RE_SQRT(1.0 - SQR(dA));
   double bound = sgn * maxB;
-
-  // Add sufficient extra padding on B, such that the bounding box of the
-  // boundary templates will not intersect the circular A-B parameter spaces
-  const double hbboxA = 0.5 * gsl_vector_get(bbox, 0);
-  const double absdA = fabs(dA);
-  if (absdA <= hbboxA) {
-    *padding += 1.0 - maxB;
-  } else if (absdA <= 1.0 + hbboxA) {
-    const double ddA = (dA < 0.0) ? dA + hbboxA : dA - hbboxA;
-    *padding += RE_SQRT(1.0 - ddA * ddA) - maxB;
-  }
 
   return bound;
 
@@ -944,9 +931,7 @@ int XLALSetLatticeTilingReducedSuperSkyPointBounds(
 static double PhysicalSpinBound(
   const void* data,
   const size_t dim UNUSED,
-  const gsl_vector* point,
-  const gsl_vector* bbox,
-  double* padding
+  const gsl_vector* point
   )
 {
 
@@ -959,12 +944,6 @@ static double PhysicalSpinBound(
   double as[3];
   SSM_ReducedToAligned(as, point);
   bound += DOT3(sky_offsets, as);
-
-  // Add sufficient extra padding to the physical bound to cover any
-  // mismatch in sky position, within the bounding box around each sky point
-  const double bboxA = gsl_vector_get(bbox, 0);
-  const double bboxB = gsl_vector_get(bbox, 1);
-  *padding += fabs(sky_offsets[0]) * bboxA + fabs(sky_offsets[1]) * bboxB;
 
   return bound;
 

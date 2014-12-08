@@ -170,7 +170,7 @@ static int MismatchTest(
   for (size_t i = 0; i < 10; ++i) {
 
     // Generate random injection points
-    XLAL_CHECK(XLALRandomLatticeTilingPoints(space, tiling, rng, injections) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK(XLALRandomLatticeTilingPoints(space, rng, injections) == XLAL_SUCCESS, XLAL_EFUNC);
 
     // Find nearest lattice template points
     XLAL_CHECK(XLALNearestLatticeTilingPoints(tiling, injections, &nearest, NULL) == XLAL_SUCCESS, XLAL_EFUNC);
@@ -352,7 +352,7 @@ int main(void) {
                   == XLAL_SUCCESS, XLAL_EFUNC);
 
   // Perform mismatch tests with an age--braking index parameter space
-  XLAL_CHECK_MAIN(MismatchAgeBrakeTest(TILING_LATTICE_ANSTAR, 100, 4.0e-5, 37868, A3s_mism_hist)
+  XLAL_CHECK_MAIN(MismatchAgeBrakeTest(TILING_LATTICE_ANSTAR, 100, 4.0e-5, 37870, A3s_mism_hist)
                   == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN(MismatchAgeBrakeTest(TILING_LATTICE_ANSTAR, 200, 1.5e-5, 37230, A3s_mism_hist)
                   == XLAL_SUCCESS, XLAL_EFUNC);
