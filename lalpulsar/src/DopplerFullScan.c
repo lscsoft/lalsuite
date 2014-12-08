@@ -82,6 +82,7 @@ struct tagDopplerFullScanState {
   /* DopplerLatticeScan *latticeScan;	state of lattice Scan */
   /* spindown lattice tiling */
   LatticeTiling *spindownTiling;              /**< state of spindown lattice tiling */
+  LatticeTilingIterator *spindownTilingItr;   /**< iterator over spindown lattice tiling */
   gsl_vector *spindownTilingPoint;            /**< current point in spindown lattice tiling */
 
   /* ----- emulate old-style factored grids */
@@ -189,6 +190,7 @@ InitDopplerFullScan(LALStatus *status,			/**< pointer to LALStatus structure */
 
 	int i;
 	SkyRegion XLAL_INIT_DECL(sky);
+        LatticeTilingSpace *space;
 
 	/* Check that the reference time is the same as the start time */
 	if (XLALGPSCmp(&thisScan->spinRange.refTime, &init->startTime) != 0) {
@@ -197,13 +199,15 @@ InitDopplerFullScan(LALStatus *status,			/**< pointer to LALStatus structure */
 	  ABORT(status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT);
 	}
 
-	/* Create a flat lattice tiling */
-	if (NULL == (thisScan->spindownTiling = XLALCreateLatticeTiling(2 + PULSAR_MAX_SPINS))) {
-	  XLALPrintError("\nGRID_SPINDOWN_{SQUARE,AGEBRK}: XLALCreateLatticeTiling failed\n");
-	  ABORT(status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL);
-	}
+        /* Create a vector to hold flat lattice tiling parameter-space points */
 	if (NULL == (thisScan->spindownTilingPoint = gsl_vector_alloc(2 + PULSAR_MAX_SPINS))) {
 	  XLALPrintError("\nGRID_SPINDOWN_{SQUARE,AGEBRK}: gsl_vector_alloc failed\n");
+	  ABORT(status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL);
+	}
+
+	/* Create a flat lattice tiling parameter-space */
+	if (NULL == (space = XLALCreateLatticeTilingSpace(2 + PULSAR_MAX_SPINS))) {
+	  XLALPrintError("\nGRID_SPINDOWN_{SQUARE,AGEBRK}: XLALCreateLatticeTilingSpace() failed\n");
 	  ABORT(status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL);
 	}
 
@@ -217,12 +221,12 @@ InitDopplerFullScan(LALStatus *status,			/**< pointer to LALStatus structure */
  	  XLALPrintError("\nGRID_SPINDOWN_{SQUARE,AGEBRK}: This option only understands COORDINATESYSTEM_EQUATORIAL\n");
 	  ABORT(status, DOPPLERSCANH_ESKYREGION, DOPPLERSCANH_MSGESKYREGION);
 	}
-	if (XLAL_SUCCESS != XLALSetLatticeConstantBound(thisScan->spindownTiling, 0, sky.vertices[0].longitude, sky.vertices[0].longitude)) {
-          XLALPrintError("\nGRID_SPINDOWN_{SQUARE,AGEBRK}: XLALSetLatticeTilingConstantBound failed\n");
+	if (XLAL_SUCCESS != XLALSetLatticeTilingConstantBound(space, 0, sky.vertices[0].longitude, sky.vertices[0].longitude)) {
+          XLALPrintError("\nGRID_SPINDOWN_{SQUARE,AGEBRK}: XLALSetLatticeTilingConstantBound() failed\n");
 	  ABORT(status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL);
 	}
-	if (XLAL_SUCCESS != XLALSetLatticeConstantBound(thisScan->spindownTiling, 1, sky.vertices[0].latitude, sky.vertices[0].latitude)) {
-          XLALPrintError("\nGRID_SPINDOWN_{SQUARE,AGEBRK}: XLALSetLatticeTilingConstantBound failed\n");
+	if (XLAL_SUCCESS != XLALSetLatticeTilingConstantBound(space, 1, sky.vertices[0].latitude, sky.vertices[0].latitude)) {
+          XLALPrintError("\nGRID_SPINDOWN_{SQUARE,AGEBRK}: XLALSetLatticeTilingConstantBound() failed\n");
 	  ABORT(status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL);
 	}
 	if (sky.vertices)
@@ -233,15 +237,14 @@ InitDopplerFullScan(LALStatus *status,			/**< pointer to LALStatus structure */
 
 	  /* Set square bounds on the frequency and spindowns */
 	  for (i = 0; i < PULSAR_MAX_SPINS; ++i) {
-	    if (XLAL_SUCCESS != XLALSetLatticeConstantBound(thisScan->spindownTiling, 2 + i, init->searchRegion.fkdot[i],
+	    if (XLAL_SUCCESS != XLALSetLatticeTilingConstantBound(space, 2 + i, init->searchRegion.fkdot[i],
                                                             init->searchRegion.fkdot[i] + init->searchRegion.fkdotBand[i])) {
-	      XLALPrintError("\nGRID_SPINDOWN_SQUARE: XLALSetLatticeTilingConstantBound failed\n");
+	      XLALPrintError("\nGRID_SPINDOWN_SQUARE: XLALSetLatticeTilingConstantBound() failed\n");
 	      ABORT(status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL);
 	    }
 	  }
 
-	}
-	else if (thisScan->gridType == GRID_SPINDOWN_AGEBRK) { /* age-braking index parameter space */
+	} else if (thisScan->gridType == GRID_SPINDOWN_AGEBRK) { /* age-braking index parameter space */
 
 	  /* Get age and braking index from extra arguments */
 	  const REAL8 spindownAge = init->extraArgs[0];
@@ -249,32 +252,32 @@ InitDopplerFullScan(LALStatus *status,			/**< pointer to LALStatus structure */
 	  const REAL8 maxBraking = init->extraArgs[2];
 
 	  /* Set age-braking index parameter space */
-          if (XLAL_SUCCESS != XLALSetLatticeConstantBound(thisScan->spindownTiling, 2, init->searchRegion.fkdot[0],
+          if (XLAL_SUCCESS != XLALSetLatticeTilingConstantBound(space, 2, init->searchRegion.fkdot[0],
                                                           init->searchRegion.fkdot[0] + init->searchRegion.fkdotBand[0])) {
-            XLALPrintError("\nGRID_SPINDOWN_AGEBRK: XLALSetLatticeTilingConstantBound failed\n");
+            XLALPrintError("\nGRID_SPINDOWN_AGEBRK: XLALSetLatticeTilingConstantBound() failed\n");
             ABORT(status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL);
           }
-	  if (XLAL_SUCCESS != XLALSetLatticeF1DotAgeBrakingBound(thisScan->spindownTiling, 2, 3, spindownAge, minBraking, maxBraking)) {
-	    XLALPrintError("\nGRID_SPINDOWN_AGEBRK: XLALSetLatticeF1DotAgeBrakingBound failed\n");
+	  if (XLAL_SUCCESS != XLALSetLatticeTilingF1DotAgeBrakingBound(space, 2, 3, spindownAge, minBraking, maxBraking)) {
+	    XLALPrintError("\nGRID_SPINDOWN_AGEBRK: XLALSetLatticeTilingF1DotAgeBrakingBound() failed\n");
 	    ABORT(status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL);
 	  }
-	  if (XLAL_SUCCESS != XLALSetLatticeF2DotBrakingBound(thisScan->spindownTiling, 2, 3, 4, minBraking, maxBraking)) {
-	    XLALPrintError("\nGRID_SPINDOWN_AGEBRK: XLALSetLatticeF2DotBrakingBound failed\n");
+	  if (XLAL_SUCCESS != XLALSetLatticeTilingF2DotBrakingBound(space, 2, 3, 4, minBraking, maxBraking)) {
+	    XLALPrintError("\nGRID_SPINDOWN_AGEBRK: XLALSetLatticeTilingF2DotBrakingBound() failed\n");
 	    ABORT(status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL);
 	  }
 
 	  /* This current only goes up to second spindown, so bound higher dimensions */
 	  for (i = 3; i < PULSAR_MAX_SPINS; ++i) {
-	    if (XLAL_SUCCESS != XLALSetLatticeConstantBound(thisScan->spindownTiling, 2 + i, init->searchRegion.fkdot[i],
+	    if (XLAL_SUCCESS != XLALSetLatticeTilingConstantBound(space, 2 + i, init->searchRegion.fkdot[i],
                                                             init->searchRegion.fkdot[i] + init->searchRegion.fkdotBand[i])) {
-	      XLALPrintError("\nGRID_SPINDOWN_AGEBRK: XLALSetLatticeTilingConstantBound failed\n");
+	      XLALPrintError("\nGRID_SPINDOWN_AGEBRK: XLALSetLatticeTilingConstantBound() failed\n");
 	      ABORT(status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL);
 	    }
 	  }
 
 	}
 
-	/* Set Anstar lattice and spindown metric */
+	/* Create a flat lattice tiling with Anstar lattice and spindown metric */
         gsl_matrix* metric = gsl_matrix_alloc(2 + PULSAR_MAX_SPINS, 2 + PULSAR_MAX_SPINS);
         if (metric == NULL) {
 	  XLALPrintError("\nGRID_SPINDOWN_{SQUARE,AGEBRK}: metric == NULL\n");
@@ -286,11 +289,20 @@ InitDopplerFullScan(LALStatus *status,			/**< pointer to LALStatus structure */
 	  XLALPrintError("\nGRID_SPINDOWN_{SQUARE,AGEBRK}: XLALSpindownMetric() failed\n");
 	  ABORT(status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL);
         }
-        if (XLALSetLatticeTypeAndMetric(thisScan->spindownTiling, LATTICE_TYPE_ANSTAR, metric, init->metricMismatch) != XLAL_SUCCESS) {
-	  XLALPrintError("\nGRID_SPINDOWN_{SQUARE,AGEBRK}: XLALSetLatticeMetric() failed\n");
+        if (NULL == (thisScan->spindownTiling = XLALCreateLatticeTiling(space, TILING_LATTICE_ANSTAR, metric, init->metricMismatch))) {
+	  XLALPrintError("\nGRID_SPINDOWN_{SQUARE,AGEBRK}: XLALCreateLatticeTiling() failed\n");
 	  ABORT(status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL);
         }
+
+        /* Create iterator over flat lattice tiling */
+        if (NULL == (thisScan->spindownTilingItr = XLALCreateLatticeTilingIterator(thisScan->spindownTiling, 1 + PULSAR_MAX_SPINS))) {
+	  XLALPrintError("\nGRID_SPINDOWN_{SQUARE,AGEBRK}: XLALCreateLatticeTilingIterator() failed\n");
+	  ABORT(status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL);
+        }
+
+        /* Cleanup */
         gsl_matrix_free(metric);
+        XLALDestroyLatticeTilingSpace(space);
 
       }
 
@@ -437,7 +449,7 @@ XLALNumDopplerTemplates ( DopplerFullScanState *scan)
 	case GRID_SPINDOWN_SQUARE: /* square parameter space */
 	case GRID_SPINDOWN_AGEBRK: /* age-braking index parameter space */
 	  LogPrintf(LOG_DEBUG, "Counting spindown lattice templates ... ");
-	  scan->numTemplates = (REAL8)XLALCountLatticePoints(scan->spindownTiling);
+	  scan->numTemplates = (REAL8)XLALLatticeTilingTotalPointCount(scan->spindownTiling);
 	  LogPrintfVerbatim(LOG_DEBUG, "%0.0f\n", scan->numTemplates);
 	  break;
 
@@ -538,13 +550,13 @@ XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan)
       {
 
 	/* Advance to next tile */
-        int retn = XLALNextLatticePoint(scan->spindownTiling, scan->spindownTilingPoint);
-        if (xlalErrno != 0) {
-	  XLALPrintError("\nGRID_SPINDOWN_{SQUARE,AGEBRK}: XLALNextLatticeTile failed\n");
+        int retn = XLALNextLatticeTilingPoint(scan->spindownTilingItr, scan->spindownTilingPoint);
+        if (retn < 0) {
+	  XLALPrintError("\nGRID_SPINDOWN_{SQUARE,AGEBRK}: XLALNextLatticeTilingPoint() failed\n");
 	  return -1;
         }
 
-        if (retn >= 0) {
+        if (retn > 0) {
 
 	  /* Found a point */
           pos->Alpha      = gsl_vector_get(scan->spindownTilingPoint, 0);
@@ -708,6 +720,10 @@ FreeDopplerFullScan (LALStatus *status, DopplerFullScanState **scan)
 
   if ((*scan)->spindownTiling) {
     XLALDestroyLatticeTiling((*scan)->spindownTiling);
+  }
+
+  if ((*scan)->spindownTilingItr) {
+    XLALDestroyLatticeTilingIterator((*scan)->spindownTilingItr);
   }
 
   if ((*scan)->spindownTilingPoint) {
@@ -933,12 +949,11 @@ typedef struct {
   double scale;
 } F1DotAgeBrakingBoundInfo;
 
-static void F1DotAgeBrakingBound(
-  const size_t dimension UNUSED,
+static double F1DotAgeBrakingBound(
+  const void* data,
+  const size_t dim UNUSED,
   const gsl_vector* point,
   const gsl_vector* bbox UNUSED,
-  const void* data,
-  double* bound,
   double* padding UNUSED
   )
 {
@@ -949,13 +964,13 @@ static void F1DotAgeBrakingBound(
   // Get current value of frequency
   const double freq = gsl_vector_get(point, info->freq_dim);
 
-  // Set first spindown bounds
-  *bound = info->scale * freq;
+  // Return first spindown bounds
+  return info->scale * freq;
 
 }
 
-int XLALSetLatticeF1DotAgeBrakingBound(
-  LatticeTiling* tiling,
+int XLALSetLatticeTilingF1DotAgeBrakingBound(
+  LatticeTilingSpace* space,
   const size_t freq_dimension,
   const size_t f1dot_dimension,
   const double age,
@@ -965,7 +980,7 @@ int XLALSetLatticeF1DotAgeBrakingBound(
 {
 
   // Check input
-  XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
+  XLAL_CHECK(space != NULL, XLAL_EFAULT);
   XLAL_CHECK(freq_dimension < f1dot_dimension, XLAL_EINVAL);
   XLAL_CHECK(age > 0.0, XLAL_EINVAL);
   XLAL_CHECK(min_braking > 1.0, XLAL_EINVAL);
@@ -983,7 +998,7 @@ int XLALSetLatticeF1DotAgeBrakingBound(
   info_lower->freq_dim = info_upper->freq_dim = freq_dimension;
   info_lower->scale = -1.0 / ((min_braking - 1.0) * age);
   info_upper->scale = -1.0 / ((max_braking - 1.0) * age);
-  XLAL_CHECK(XLALSetLatticeBound(tiling, f1dot_dimension, F1DotAgeBrakingBound, info_len, info_lower, info_upper) == XLAL_SUCCESS, XLAL_EFAILED);
+  XLAL_CHECK(XLALSetLatticeTilingBound(space, f1dot_dimension, F1DotAgeBrakingBound, info_len, info_lower, info_upper) == XLAL_SUCCESS, XLAL_EFAILED);
 
   return XLAL_SUCCESS;
 
@@ -995,12 +1010,11 @@ typedef struct {
   double scale;
 } F2DotBrakingBoundInfo;
 
-static void F2DotBrakingBound(
-  const size_t dimension UNUSED,
+static double F2DotBrakingBound(
+  const void* data,
+  const size_t dim UNUSED,
   const gsl_vector* point,
   const gsl_vector* bbox UNUSED,
-  const void* data,
-  double* bound,
   double* padding UNUSED
   )
 {
@@ -1012,13 +1026,13 @@ static void F2DotBrakingBound(
   const double freq = gsl_vector_get(point, info->freq_dim);
   const double f1dot = gsl_vector_get(point, info->f1dot_dim);
 
-  // Set second spindown bounds
-  *bound = info->scale * f1dot * f1dot / freq;
+  // Return second spindown bounds
+  return info->scale * f1dot * f1dot / freq;
 
 }
 
-int XLALSetLatticeF2DotBrakingBound(
-  LatticeTiling* tiling,
+int XLALSetLatticeTilingF2DotBrakingBound(
+  LatticeTilingSpace* space,
   const size_t freq_dimension,
   const size_t f1dot_dimension,
   const size_t f2dot_dimension,
@@ -1028,7 +1042,7 @@ int XLALSetLatticeF2DotBrakingBound(
 {
 
   // Check input
-  XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
+  XLAL_CHECK(space != NULL, XLAL_EFAULT);
   XLAL_CHECK(freq_dimension < f1dot_dimension, XLAL_EINVAL);
   XLAL_CHECK(f1dot_dimension < f2dot_dimension, XLAL_EINVAL);
   XLAL_CHECK(min_braking > 0.0, XLAL_EINVAL);
@@ -1047,7 +1061,7 @@ int XLALSetLatticeF2DotBrakingBound(
   info_lower->f1dot_dim = info_upper->f1dot_dim = f1dot_dimension;
   info_lower->scale = min_braking;
   info_upper->scale = max_braking;
-  XLAL_CHECK(XLALSetLatticeBound(tiling, f2dot_dimension, F2DotBrakingBound, info_len, info_lower, info_upper) == XLAL_SUCCESS, XLAL_EFAILED);
+  XLAL_CHECK(XLALSetLatticeTilingBound(space, f2dot_dimension, F2DotBrakingBound, info_len, info_lower, info_upper) == XLAL_SUCCESS, XLAL_EFAILED);
 
   return XLAL_SUCCESS;
 
