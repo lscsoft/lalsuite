@@ -36,7 +36,7 @@
 void compute_variance( LALInferenceIFOData *data, LALInferenceIFOModel *model ){
   REAL8 chunkLength = 0.;
 
-  INT4 i = 0, j = 0, length = 0, cl = 0;
+  INT4 i = 0, j = 0, length = 0, cl = 0, counter = 0;
 
   COMPLEX16Vector *meddata = NULL; /* data with running median removed */
 
@@ -49,10 +49,10 @@ void compute_variance( LALInferenceIFOData *data, LALInferenceIFOModel *model ){
 
   length = data->compTimeData->data->length;
 
-  for ( i = 0; i < length; i+=chunkLength ){
+  for ( i = 0, counter = 0; i < length; i+=chunkLength, counter++ ){
     REAL8 vari = 0., meani = 0.;
 
-    chunkLength = (REAL8)chunkLengths->data[i];
+    chunkLength = (REAL8)chunkLengths->data[counter];
     cl = i + (INT4)chunkLength;
 
     /* get the mean (should be close to zero given the running median subtraction), but
