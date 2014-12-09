@@ -448,9 +448,7 @@ class trigdict(dict):
         if not channels:
             channels = self.channels()
         for channel in channels:
-            self[channel] = \
-                include(self.get_triggers_from_channel(channel),
-                        segments, tlag, tcent)
+            self[channel] = include(self.get_triggers_from_channel(channel), segments, tlag, tcent)
 
     def resort(self, tcent=col['tcent']):
         """
