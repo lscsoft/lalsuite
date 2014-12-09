@@ -181,12 +181,17 @@ if gdb_entry.has_key('search'):
 else:
     event_type = "%s_%s"%(group, pipeline)
 
+### cast to lower case to match config sections
+event_type = event_type.lower()
+
 #========================
 # digest event type and pull the correct params from config file
 #========================
 if event_type not in config.sections():
     logger.info("Warning: event type not found. Defaulting to \"default_event\" settings in %s"%options.config_file)
     event_type = 'default_event'
+
+logger.info("event_type : %s"%event_type)
 
 time_before = config.getfloat(event_type, 'time_before')
 time_after = config.getfloat(event_type, 'time_after')
