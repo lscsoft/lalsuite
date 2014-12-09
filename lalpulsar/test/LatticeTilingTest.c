@@ -99,7 +99,7 @@ static int BasicTest(
 
   // Count number of templates
   UINT8 total = XLALLatticeTilingTotalPointCount(tiling);
-  printf("Number of lattice points: %zu\n", total);
+  printf("Number of lattice points: %" LAL_UINT8_FORMAT "\n", total);
   XLAL_CHECK(total == total_ref, XLAL_EFUNC, "ERROR: total = %zu != %zu = total_ref", total, total_ref);
 
   // Get all templates
@@ -151,7 +151,7 @@ static int MismatchTest(
 
   // Count number of templates
   UINT8 total = XLALLatticeTilingTotalPointCount(tiling);
-  printf("Number of lattice points: %zu\n", total);
+  printf("Number of lattice points: %" LAL_UINT8_FORMAT "\n", total);
   XLAL_CHECK(total == total_ref, XLAL_EFUNC, "ERROR: total = %zu != %zu = total_ref", total, total_ref);
 
   // Get all templates
