@@ -317,7 +317,8 @@ if opts.no_robot_cert:
     logger.info("Warning: running without a robot certificate. Your personal certificate may expire and this job may fail")
 else:
     ### unset ligo-proxy just in case
-    del os.environ['X509_USER_PROXY']
+    if os.environ.has_key("X509_USER_PROXY"):
+        del os.environ['X509_USER_PROXY']
 
     ### get cert and key from ini file
     robot_cert = config.get('ldg_certificate', 'robot_certificate')
