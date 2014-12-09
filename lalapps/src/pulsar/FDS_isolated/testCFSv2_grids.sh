@@ -216,7 +216,7 @@ echo " STEP 3: Compare to reference results: "
 echo "----------------------------------------"
 echo
 
-for n in 0 1 2 3 6; do
+for n in 0 1 2 3 6 8 9; do
 
     ## compare results
     echo "Comparing gridType=${n}:"
