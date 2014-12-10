@@ -89,6 +89,23 @@ if args.command == 'start':
     password = config.get("lvalert_listener", "password")
     lvalert_config = config.get("lvalert_listener", "lvalert_config")
 
+    ### write lvalert_config file based on information from config
+    lvalert_config_obj = ConfigParser.SafeConfigParser()
+
+    for node in config.options("nodes"): ### iterate over nodes listed in config
+        lvalert_config_obj.add_section( node )
+        lvalert_config_obj.set( node, "executable", config.get("lvalert_listener", "executable") )
+#        lvalert_config_obj.set( node, "plotting_time_before", config.getfloat(node, "plotting_time_before") )
+#        lvalert_config_obj.set( node, "plotting_time_after", config.getfloat(node, "plotting_time_after") )
+#        lvalert_config_obj.set( node, "time_before", config.getfloat(node, "time_before") )
+#        lvalert_config_obj.set( node, "time_after", config.getfloat(node, "time_after") )
+#        lvalert_config_obj.set( node, "max_wait", config.getfloat(node, "max_wait") )
+#        lvalert_config_obj.set( node, "delay", config.getfloat(node, "delay") )
+
+    lvalert_config_file = open(lvalert_config, "w")
+    lvalert_config_obj.write(lvalert_config_file) ### write new config to disk
+    lvalert_config_file.close()
+
     print "Launching lvalert listener ..."
     lvalert_launch_command = [
                 'nohup',
