@@ -194,6 +194,8 @@ r_ax = plt.subplot(1, 1, 1)
 f_ax = r_ax.twinx()
 f_ax.set_yscale('log') ### this may be fragile if fap=0 for all points in the plot. That's super rare, so maybe we don't have to worry about it?
 
+r_ax.set_title(opts.ifo)
+
 #=================================================
 # RANK
 #=================================================
