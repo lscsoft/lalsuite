@@ -321,6 +321,7 @@ void LALInferenceApplyCalibrationErrors(LALInferenceRunState *state, ProcessPara
   (--spline-calibration-amp-uncertainty X) Set the prior on relative amplitude uncertainty (default 0.1)\n\
   (--spline-calibration-phase-uncertainty X) Set the prior on phase uncertanity in degrees (default 5)\n\n\n";
 
+    static LALStatus   status;
       /* Print command line arguments if state was not allocated */
     if(state==NULL)
     {
@@ -343,9 +344,21 @@ void LALInferenceApplyCalibrationErrors(LALInferenceRunState *state, ProcessPara
     }
     if(!state->GSLrandom)  {fprintf(stderr,"The random seed has not be initialized... Exiting..."); exit(1);}
 
-    /* For the moment the seed of CE is dependent on the data seed. We may want to add an indepedent option in the future */
-    int calib_seed_ampli= floor(1E6*gsl_rng_uniform(state->GSLrandom));
-    int calib_seed_phase=floor(1E6*gsl_rng_uniform(state->GSLrandom));
+    /* Set calibration seed for random errors */
+    if(!LALInferenceGetProcParamVal(commandLine,"--dataseed")){
+      fprintf(stdout,"--dataseed is required when running with --AddCalibrationErrors\n");
+      exit(1);
+    }
+    int dataseed=atoi(LALInferenceGetProcParamVal(commandLine,"--dataseed")->value);
+    RandomParams *datarandparam=XLALCreateRandomParams(dataseed);
+    
+    int calib_seed_ampli=0.0;
+    int calib_seed_phase=0.0;
+    REAL4 tmpampli,tmpphase;
+    LALUniformDeviate(&status,&tmpampli,datarandparam);
+    LALUniformDeviate(&status,&tmpphase,datarandparam);
+    calib_seed_ampli=floor(1E6*tmpampli);
+    calib_seed_phase=floor(1E6*tmpphase);
     fprintf(stdout,"Using calibseedAmp %d and calibseedPha %d\n",calib_seed_ampli,calib_seed_phase);
   
     LALInferenceIFOData * tmpdata=state->data;
@@ -376,8 +389,10 @@ void LALInferenceApplyCalibrationErrors(LALInferenceRunState *state, ProcessPara
         while (tmpdata!=NULL){
           CreateRandomAmplitudeCalibrationErrors(ampCoeffs[this_ifo],calib_seed_ampli,tmpdata->name);
           CreateRandomPhaseCalibrationErrors(phaseCoeffs[this_ifo],calib_seed_phase,tmpdata->name);
-          calib_seed_ampli+=floor(1E6*gsl_rng_uniform(state->GSLrandom));
-          calib_seed_phase+=floor(1E6*gsl_rng_uniform(state->GSLrandom));
+          LALUniformDeviate(&status,&tmpampli,datarandparam);
+          LALUniformDeviate(&status,&tmpphase,datarandparam);
+          calib_seed_ampli+=floor(1E6*tmpampli);
+          calib_seed_phase+=floor(1E6*tmpphase);
           this_ifo++;
           tmpdata=tmpdata->next;
         }
@@ -428,7 +443,8 @@ void LALInferenceApplyCalibrationErrors(LALInferenceRunState *state, ProcessPara
          
         /* Fill random part. Will take 10% of it later on */
         CreateRandomAmplitudeCalibrationErrors(ampCoeffs[i],calib_seed_ampli,tmpdata->name);
-        calib_seed_ampli+=floor(1E6*gsl_rng_uniform(state->GSLrandom));
+        LALUniformDeviate(&status,&tmpampli,datarandparam);
+        calib_seed_ampli+=floor(1E6*tmpampli);
         /* Consant plateau, knee, slope*/
         (ampCoeffs[i])[Npoints]=atof(calamps[i*3]);
         (ampCoeffs[i])[Npoints+1]=atof(calamps[i*3+1]);
@@ -456,7 +472,9 @@ void LALInferenceApplyCalibrationErrors(LALInferenceRunState *state, ProcessPara
          
         /* Fill random part. Will take 10% of it later on */
         CreateRandomPhaseCalibrationErrors(phaseCoeffs[i],calib_seed_phase,tmpdata->name);
-        calib_seed_phase+=floor(1E6*gsl_rng_uniform(state->GSLrandom));
+        
+        LALUniformDeviate(&status,&tmpphase,datarandparam);
+        calib_seed_phase+=floor(1E6*tmpphase);
         /* Consant plateau, knee, slope*/
         // user gave degrees, convert to radiands
         (phaseCoeffs[i])[Npoints]=LAL_PI/180.*atof(calphas[i*3]);
@@ -484,6 +502,7 @@ void LALInferenceApplyCalibrationErrors(LALInferenceRunState *state, ProcessPara
       this_ifo++;
       tmpdata=tmpdata->next;
     }
+    XLALDestroyRandomParams(datarandparam);
 }
 
 void PrintCEtoFile(REAL8* Acoeffs,REAL8* Pcoeffs,LALInferenceIFOData* IFOdata, ProcessParamsTable *commandLine ){
