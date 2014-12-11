@@ -484,6 +484,10 @@ void get_loudest_snr( LALInferenceRunState *runState ){
       XLALDestroyTimestampVector( ifo_model->times );
       ifo_model->times = timestamps;
 
+      REAL8TimeSeries *timedata = *(REAL8TimeSeries **)LALInferenceGetVariable( ifo_model->params, "timeDataFull" );
+      XLALDestroyREAL8TimeSeries( ifo_model->timeData );
+      ifo_model->timeData = timedata;
+
       ifo_model->compTimeSignal = XLALResizeCOMPLEX16TimeSeries( ifo_model->compTimeSignal, 0, ifo_model->times->length );
 
       /* remove the ROQ variable for calculating the likelihood */
@@ -491,6 +495,18 @@ void get_loudest_snr( LALInferenceRunState *runState ){
 
       if ( !LALInferenceCheckVariable( ifo_model->params, "varyphase" ) ){
         LALInferenceAddVariable( ifo_model->params, "varyphase", &varyphase, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
+      }
+
+      if ( LALInferenceCheckVariable( ifo_model->params, "ssb_delays" ) ){
+        REAL8Vector *ssbdelays = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "ssb_delays_full" );
+        LALInferenceRemoveVariable( ifo_model->params, "ssb_delays" );
+        LALInferenceAddVariable( ifo_model->params, "ssb_delays", &ssbdelays, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
+      }
+
+      if ( LALInferenceCheckVariable( ifo_model->params, "bsb_delays" ) ){
+        REAL8Vector *bsbdelays = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "bsb_delays_full" );
+        LALInferenceRemoveVariable( ifo_model->params, "bsb_delays" );
+        LALInferenceAddVariable( ifo_model->params, "bsb_delays", &bsbdelays, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
       }
 
       ifo_model = ifo_model->next;

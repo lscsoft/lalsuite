@@ -41,8 +41,7 @@ void generate_interpolant( LALInferenceRunState *runState );
 
 /* generate a training set */
 gsl_matrix_complex *generate_training_set( LALInferenceRunState *rs,
-                                           UINT4 n,
-                                           INT4 freqnodes );
+                                           UINT4 n );
 
 #ifdef __cplusplus
 }

@@ -35,114 +35,114 @@ void get_pulsar_model( LALInferenceModel *model ){
 
   /* set model parameters (including rescaling) */
   //pars.h0 = rescale_parameter( model, model->ifo, "h0" );
-  pars.cosiota = rescale_parameter( model, model->ifo, "cosiota" );
-  pars.psi = rescale_parameter( model, model->ifo, "psi" );
+  pars.cosiota = rescale_parameter( model, model->ifo, "COSIOTA" );
+  pars.psi = rescale_parameter( model, model->ifo, "PSI" );
   pars.cgw = 1.; /* need to set this to one otherwise it defaults to zero with the initialisation */
 
   if( LALInferenceCheckVariable( model->ifo->params, "jones-model" ) ){
     /* use parameterisation from Ian Jones's original model */
     pars.I21 = rescale_parameter( model, model->ifo, "I21" );
     pars.I31 = rescale_parameter( model, model->ifo, "I31" );
-    pars.lambda = rescale_parameter( model, model->ifo, "lambda" );
-    pars.costheta = rescale_parameter( model, model->ifo, "costheta" );
-    pars.phi0 = rescale_parameter( model, model->ifo, "phi0" );
+    pars.lambda = rescale_parameter( model, model->ifo, "LAMBDA" );
+    pars.costheta = rescale_parameter( model, model->ifo, "COSTHETA" );
+    pars.phi0 = rescale_parameter( model, model->ifo, "PHI0" );
 
     invert_source_params( &pars );
   }
   else if ( LALInferenceCheckVariable( model->ifo->params, "nonGR" ) ){
     /* speed of GWs as (1 - fraction of speed of light LAL_C_SI) */
-    pars.cgw = rescale_parameter( model, model->ifo, "cgw" );
+    pars.cgw = rescale_parameter( model, model->ifo, "CGW" );
 
     /* amplitudes for use with non-GR searches */
     /* tensor modes */
-    pars.hPlus = rescale_parameter( model, model->ifo, "hPlus" );
-    pars.hCross = rescale_parameter( model, model->ifo, "hCross" );
+    pars.hPlus = rescale_parameter( model, model->ifo, "HPLUS" );
+    pars.hCross = rescale_parameter( model, model->ifo, "HCROSS" );
     /* scalar modes */
-    pars.hScalarB = rescale_parameter( model, model->ifo, "hScalarB" );
-    pars.hScalarL = rescale_parameter( model, model->ifo, "hScalarL" );
+    pars.hScalarB = rescale_parameter( model, model->ifo, "HSCALARB" );
+    pars.hScalarL = rescale_parameter( model, model->ifo, "HSCALARL" );
     /* vector modes */
-    pars.hVectorX = rescale_parameter( model, model->ifo, "hVectorX" );
-    pars.hVectorY = rescale_parameter( model, model->ifo, "hVectorY" );
+    pars.hVectorX = rescale_parameter( model, model->ifo, "HVECTORX" );
+    pars.hVectorY = rescale_parameter( model, model->ifo, "HVECTORY" );
 
-    pars.phi0Scalar = rescale_parameter( model, model->ifo, "phi0Scalar" );
-    pars.phi0Vector = rescale_parameter( model, model->ifo, "phi0Vector" );
-    pars.psiVector = rescale_parameter( model, model->ifo, "psiVector" );
-    pars.phi0Tensor = rescale_parameter( model, model->ifo, "phi0Tensor" );
+    pars.phi0Scalar = rescale_parameter( model, model->ifo, "PHI0SCALAR" );
+    pars.phi0Vector = rescale_parameter( model, model->ifo, "PHI0VECTOR" );
+    pars.psiVector = rescale_parameter( model, model->ifo, "PSIVECTOR" );
+    pars.phi0Tensor = rescale_parameter( model, model->ifo, "PHI0TENSOR" );
   }
   else{
     pars.C21 = rescale_parameter( model, model->ifo, "C21" );
     pars.C22 = rescale_parameter( model, model->ifo, "C22" );
-    pars.phi21 = rescale_parameter( model, model->ifo, "phi21" );
+    pars.phi21 = rescale_parameter( model, model->ifo, "PHI21" );
 
     if( LALInferenceCheckVariable( model->ifo->params, "biaxial" ) ){
       /* use complex amplitude parameterisation, but set up for a biaxial star */
       pars.phi22 = 2.*pars.phi21;
     }
     else{
-      pars.phi22 = rescale_parameter( model, model->ifo, "phi22" );
+      pars.phi22 = rescale_parameter( model, model->ifo, "PHI22" );
     }
   }
 
   /* set the potentially variable parameters */
-  pars.pepoch = rescale_parameter( model, model->ifo, "pepoch" );
-  pars.posepoch = rescale_parameter( model, model->ifo, "posepoch" );
+  pars.pepoch = rescale_parameter( model, model->ifo, "PEPOCH" );
+  pars.posepoch = rescale_parameter( model, model->ifo, "POSEPOCH" );
 
-  pars.ra = rescale_parameter( model, model->ifo, "ra" );
-  pars.pmra = rescale_parameter( model, model->ifo, "pmra" );
-  pars.dec = rescale_parameter( model, model->ifo, "dec" );
-  pars.pmdec = rescale_parameter( model, model->ifo, "pmdec" );
+  pars.ra = rescale_parameter( model, model->ifo, "RA" );
+  pars.pmra = rescale_parameter( model, model->ifo, "PMRA" );
+  pars.dec = rescale_parameter( model, model->ifo, "DEC" );
+  pars.pmdec = rescale_parameter( model, model->ifo, "PMDEC" );
 
-  pars.f0 = rescale_parameter( model, model->ifo, "f0" );
-  pars.f1 = rescale_parameter( model, model->ifo, "f1" );
-  pars.f2 = rescale_parameter( model, model->ifo, "f2" );
-  pars.f3 = rescale_parameter( model, model->ifo, "f3" );
-  pars.f4 = rescale_parameter( model, model->ifo, "f4" );
-  pars.f5 = rescale_parameter( model, model->ifo, "f5" );
+  pars.f0 = rescale_parameter( model, model->ifo, "F0" );
+  pars.f1 = rescale_parameter( model, model->ifo, "F1" );
+  pars.f2 = rescale_parameter( model, model->ifo, "F2" );
+  pars.f3 = rescale_parameter( model, model->ifo, "F3" );
+  pars.f4 = rescale_parameter( model, model->ifo, "F4" );
+  pars.f5 = rescale_parameter( model, model->ifo, "F5" );
 
   /* check if there are binary parameters */
   if( LALInferenceCheckVariable(model->params, "model") ){
     /* binary system model - NOT pulsar model */
     pars.model = *(CHAR**)LALInferenceGetVariable( model->params, "model" );
 
-    pars.e = rescale_parameter( model, model->ifo, "e" );
-    pars.w0 = rescale_parameter( model, model->ifo, "w0" );
-    pars.Pb = rescale_parameter( model, model->ifo, "Pb" );
-    pars.x = rescale_parameter( model, model->ifo, "x" );
+    pars.e = rescale_parameter( model, model->ifo, "ECC" );
+    pars.w0 = rescale_parameter( model, model->ifo, "OM" );
+    pars.Pb = rescale_parameter( model, model->ifo, "PB" );
+    pars.x = rescale_parameter( model, model->ifo, "A1" );
     pars.T0 = rescale_parameter( model, model->ifo, "T0" );
 
-    pars.e2 = rescale_parameter( model, model->ifo, "e2" );
-    pars.w02 = rescale_parameter( model, model->ifo, "w02" );
-    pars.Pb2 = rescale_parameter( model, model->ifo, "Pb2" );
-    pars.x2 = rescale_parameter( model, model->ifo, "x2" );
-    pars.T02 = rescale_parameter( model, model->ifo, "T02" );
+    pars.e2 = rescale_parameter( model, model->ifo, "ECC_2" );
+    pars.w02 = rescale_parameter( model, model->ifo, "OM_2" );
+    pars.Pb2 = rescale_parameter( model, model->ifo, "PB_2" );
+    pars.x2 = rescale_parameter( model, model->ifo, "A1_2" );
+    pars.T02 = rescale_parameter( model, model->ifo, "T0_2" );
 
-    pars.e3 = rescale_parameter( model, model->ifo, "e3" );
-    pars.w03 = rescale_parameter( model, model->ifo, "w03" );
-    pars.Pb3 = rescale_parameter( model, model->ifo, "Pb3" );
-    pars.x3 = rescale_parameter( model, model->ifo, "x3" );
-    pars.T03 = rescale_parameter( model, model->ifo, "T03" );
+    pars.e3 = rescale_parameter( model, model->ifo, "ECC_3" );
+    pars.w03 = rescale_parameter( model, model->ifo, "OM_3" );
+    pars.Pb3 = rescale_parameter( model, model->ifo, "PB_3" );
+    pars.x3 = rescale_parameter( model, model->ifo, "A1_3" );
+    pars.T03 = rescale_parameter( model, model->ifo, "T0_3" );
 
-    pars.xpbdot = rescale_parameter( model, model->ifo, "xpbdot" );
-    pars.eps1 = rescale_parameter( model, model->ifo, "eps1" );
-    pars.eps2 = rescale_parameter( model, model->ifo, "eps2" );
-    pars.eps1dot = rescale_parameter( model, model->ifo, "eps1dot" );
-    pars.eps2dot = rescale_parameter( model, model->ifo, "eps2dot" );
-    pars.Tasc = rescale_parameter( model, model->ifo, "Tasc" );
+    pars.xpbdot = rescale_parameter( model, model->ifo, "XPBDOT" );
+    pars.eps1 = rescale_parameter( model, model->ifo, "EPS1" );
+    pars.eps2 = rescale_parameter( model, model->ifo, "EPS2" );
+    pars.eps1dot = rescale_parameter( model, model->ifo, "EPS1DOT" );
+    pars.eps2dot = rescale_parameter( model, model->ifo, "EPS2DOT" );
+    pars.Tasc = rescale_parameter( model, model->ifo, "TASC" );
 
-    pars.wdot = rescale_parameter( model, model->ifo, "wdot" );
-    pars.gamma = rescale_parameter( model, model->ifo, "gamma" );
-    pars.Pbdot = rescale_parameter( model, model->ifo, "Pbdot" );
-    pars.xdot = rescale_parameter( model, model->ifo, "xdot" );
-    pars.edot = rescale_parameter( model, model->ifo, "edot" );
+    pars.wdot = rescale_parameter( model, model->ifo, "OMDOT" );
+    pars.gamma = rescale_parameter( model, model->ifo, "GAMMA" );
+    pars.Pbdot = rescale_parameter( model, model->ifo, "PBDOT" );
+    pars.xdot = rescale_parameter( model, model->ifo, "XDOT" );
+    pars.edot = rescale_parameter( model, model->ifo, "EDOT" );
 
-    pars.s = rescale_parameter( model, model->ifo, "s" );
-    pars.dr = rescale_parameter( model, model->ifo, "dr" );
-    pars.dth = rescale_parameter( model, model->ifo, "dth" );
-    pars.a0 = rescale_parameter( model, model->ifo, "a0" );
-    pars.b0 = rescale_parameter( model, model->ifo, "b0" );
+    pars.s = rescale_parameter( model, model->ifo, "SINI" );
+    pars.dr = rescale_parameter( model, model->ifo, "DR" );
+    pars.dth = rescale_parameter( model, model->ifo, "DTHETA" );
+    pars.a0 = rescale_parameter( model, model->ifo, "A0" );
+    pars.b0 = rescale_parameter( model, model->ifo, "B0" );
 
-    pars.M = rescale_parameter( model, model->ifo, "M" );
-    pars.m2 = rescale_parameter( model, model->ifo, "m2" );
+    pars.M = rescale_parameter( model, model->ifo, "MTOT" );
+    pars.m2 = rescale_parameter( model, model->ifo, "M2" );
   }
 
   pulsar_model( pars, model->ifo );
@@ -318,7 +318,7 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params, LALInferenceIFOModel *i
   }
 
   for( i=0; i<length; i++){
-    REAL8 realT = XLALGPSGetREAL8( &ifo->times->data[i] ); /*time of data*/
+    REAL8 realT = XLALGPSGetREAL8( &datatimes->data[i] ); /*time of data*/
 
     T0 = params.pepoch; /*time of ephem info*/
 

@@ -452,12 +452,6 @@ detectors specified (no. dets =\%d)\n", ml, ml, numDets);
       LALInferenceAddVariable( ifomodel->params, "nonGR", &nonGR, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
     }
 
-    /* check if using reduced order quadrature */
-    if ( LALInferenceGetProcParamVal( commandLine, "--roq" ) ){
-      UINT4 roq= 1;
-      LALInferenceAddVariable( ifomodel->params, "roq", &roq, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
-    }
-
     if( i == 0 ) {
         runState->data = ifodata;
         runState->model->ifo = ifomodel;

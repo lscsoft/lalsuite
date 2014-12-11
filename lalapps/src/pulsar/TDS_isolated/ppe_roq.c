@@ -102,11 +102,22 @@ void generate_interpolant( LALInferenceRunState *runState ){
     /* create a copy of the model vector */
     LIGOTimeGPS gpstime = {0, 0};
     REAL8Vector *sidDayFrac = *(REAL8Vector**)LALInferenceGetVariable( ifo->params, "siderealDay" );
+    REAL8Vector *ssbdelays = NULL, *bsbdelays = NULL;
 
     LIGOTimeGPSVector *timenodes = NULL;
     REAL8Vector *sidtimenodes = NULL;
+    REAL8TimeSeries *timedatanodes = XLALCreateREAL8TimeSeries( "", &gpstime, 0., 1., &lalSecondUnit, 1 );
+    REAL8Vector *ssbnodes = NULL, *bsbnodes = NULL;
 
     data->roq = XLALMalloc(sizeof(LALInferenceROQData));
+
+    if ( LALInferenceCheckVariable( ifo->params, "ssb_delays") ){
+      ssbdelays = *(REAL8Vector**)LALInferenceGetVariable( ifo->params, "ssb_delays" );
+    }
+
+    if ( LALInferenceCheckVariable( ifo->params, "bsb_delays") ){
+      bsbdelays = *(REAL8Vector**)LALInferenceGetVariable( ifo->params, "bsb_delays" );
+    }
 
     /* get chunk */
     for ( i=0; i<chunkLengths->length; i++ ){
@@ -129,6 +140,7 @@ void generate_interpolant( LALInferenceRunState *runState ){
       ifotmp->times = XLALCreateTimestampVector( tlen );
       /* create a new model vector */
       ifotmp->compTimeSignal = XLALCreateCOMPLEX16TimeSeries( "", &gpstime, 0., 1., &lalSecondUnit, tlen );
+      ifotmp->timeData = XLALCreateREAL8TimeSeries( "", &gpstime, 0., 1., &lalSecondUnit, tlen );
 
       ifotmp->params = ifo->params; /* just use a pointer to params in runState */
       ifotmp->ephem = ifo->ephem;
@@ -139,10 +151,11 @@ void generate_interpolant( LALInferenceRunState *runState ){
       /* get chunk times */
       for ( j=0; j<tlen; j++ ){
         ifotmp->times->data[j] = ifo->times->data[startidx+j];
+        ifotmp->timeData->data->data[j] = ifo->timeData->data->data[startidx+j];
       }
 
       /* generate the training set */
-      ts = generate_training_set( tmpRS, ntraining, 1 );
+      ts = generate_training_set( tmpRS, ntraining );
 
       /* generate reduced basis */
       gsl_vector_view weights = gsl_vector_view_array(&dt, 1);
@@ -151,6 +164,9 @@ void generate_interpolant( LALInferenceRunState *runState ){
       RB = LALInferenceGenerateCOMPLEX16OrthonormalBasis(&weights.vector, tolerance, ts, &nbases0);
       XLAL_CHECK_VOID( RB != NULL, XLAL_EFUNC, "Could not produce basis set");
       nbases->data[i] = nbases0;
+
+      fprintf(stderr, "Generated orthonormal basis\n");
+       fprintf(stderr, "Number of bases = %zu\n", nbases0);
 
       XLAL_CALLGSL( gsl_matrix_complex_free( ts ) );
 
@@ -161,7 +177,7 @@ void generate_interpolant( LALInferenceRunState *runState ){
       /* if required test the basis */
       if ( LALInferenceGetProcParamVal( runState->commandLine, "--test-basis" ) ){
         /* generate another set of waveforms and test that the reduced basis can match them well enough */
-        ts = generate_training_set( tmpRS, ntraining, 0 );
+        ts = generate_training_set( tmpRS, ntraining );
 
         /* check values are within tolerance (use 100 time the defined tolerance for the basis generation) */
         gsl_matrix_complex_view m = gsl_matrix_complex_view_array( (double*)RB, nbases0, tlen );
@@ -174,6 +190,7 @@ void generate_interpolant( LALInferenceRunState *runState ){
 
       XLALDestroyTimestampVector( ifotmp->times );
       XLALDestroyCOMPLEX16TimeSeries( ifotmp->compTimeSignal );
+      XLALDestroyREAL8TimeSeries( ifotmp->timeData );
       LALInferenceClearVariables( tmpRS->model->params );
       XLALFree( tmpRS->model );
       XLALFree( tmpRS );
@@ -228,10 +245,18 @@ void generate_interpolant( LALInferenceRunState *runState ){
       /* get times at the interpolation nodes */
       timenodes = XLALResizeTimestampVector( timenodes, dmlength );
       sidtimenodes = XLALResizeREAL8Vector( sidtimenodes, dmlength );
+      timedatanodes = XLALResizeREAL8TimeSeries( timedatanodes, 0, dmlength );
+
+      if ( ssbdelays != NULL ){ ssbnodes = XLALResizeREAL8Vector( ssbnodes, dmlength ); }
+      if ( bsbdelays != NULL ){ bsbnodes = XLALResizeREAL8Vector( bsbnodes, dmlength ); }
 
       for ( j=0; j<dmlength; j++ ){
         timenodes->data[dlen+j] = ifo->times->data[startidx+interp->nodes[j]];
         sidtimenodes->data[dlen+j] = sidDayFrac->data[startidx+interp->nodes[j]];
+        timedatanodes->data->data[dlen+j] = ifo->timeData->data->data[startidx+interp->nodes[j]];
+
+        if ( ssbdelays != NULL ){ ssbnodes->data[dlen+j] = ssbdelays->data[startidx+interp->nodes[j]]; }
+        if ( bsbdelays != NULL ){ bsbnodes->data[dlen+j] = bsbdelays->data[startidx+interp->nodes[j]]; }
       }
 
       LALInferenceRemoveCOMPLEXROQInterpolant( interp );
@@ -257,6 +282,28 @@ void generate_interpolant( LALInferenceRunState *runState ){
     LALInferenceRemoveVariable( ifo->params, "siderealDay" );
     LALInferenceAddVariable( ifo->params, "siderealDay", &sidtimenodes, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
     LALInferenceAddVariable( ifo->params, "siderealDayFull", &siddaycopy, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
+
+    REAL8TimeSeries *timedatacopy = XLALCreateREAL8TimeSeries( "", &gpstime, 0., 1., &lalSecondUnit, ifo->timeData->data->length );
+    memcpy(timedatacopy->data->data, ifo->timeData->data->data, sizeof(REAL8)*ifo->timeData->data->length);
+    LALInferenceAddVariable( ifo->params, "timeDataFull", &timedatacopy, LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_FIXED );
+    XLALDestroyREAL8TimeSeries( ifo->timeData );
+    ifo->timeData = timedatanodes;
+
+    if ( ssbdelays != NULL ){
+      REAL8Vector *ssbcopy = XLALCreateREAL8Vector( ssbdelays->length );
+      memcpy(ssbcopy->data, ssbdelays->data, sizeof(REAL8)*ssbdelays->length);
+      LALInferenceRemoveVariable( ifo->params, "ssb_delays" );
+      LALInferenceAddVariable( ifo->params, "ssb_delays", &ssbnodes, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
+      LALInferenceAddVariable( ifo->params, "ssb_delays_full", &ssbcopy, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
+    }
+
+    if ( bsbdelays != NULL ){
+      REAL8Vector *bsbcopy = XLALCreateREAL8Vector( bsbdelays->length );
+      memcpy(bsbcopy->data, bsbdelays->data, sizeof(REAL8)*bsbdelays->length);
+      LALInferenceRemoveVariable( ifo->params, "bsb_delays" );
+      LALInferenceAddVariable( ifo->params, "bsb_delays", &bsbnodes, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
+      LALInferenceAddVariable( ifo->params, "bsb_delays_full", &bsbcopy, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
+    }
 
     ifo->compTimeSignal = XLALResizeCOMPLEX16TimeSeries( ifo->compTimeSignal, 0, dmlength );
 
@@ -296,7 +343,7 @@ void generate_interpolant( LALInferenceRunState *runState ){
  *
  * @return A complex matrix containing an array of training waveforms
  */
-gsl_matrix_complex *generate_training_set( LALInferenceRunState *rs, UINT4 n, INT4 freqnodes ){
+gsl_matrix_complex *generate_training_set( LALInferenceRunState *rs, UINT4 n ){
   UINT4 j = 0;
   gsl_matrix_complex *ts = gsl_matrix_complex_alloc(n, rs->model->ifo->times->length);
   REAL8 *fnodes = NULL;
@@ -325,11 +372,12 @@ gsl_matrix_complex *generate_training_set( LALInferenceRunState *rs, UINT4 n, IN
         /* as we're using scaled values they will be between zero and 1 */
 
           /* if variable is f0 (frequency) then set the Chebyshev-Gauss-Lobatto nodes */
-          if ( !strcmp(item->name, "F0") || !strcmp(item->name, "f0") ){
-            if ( j == 0 && freqnodes ){ fnodes = chebyshev_gauss_lobatto_nodes( 0., 1., n ); }
-            value = fnodes[j];
-          }
-          else{ value = gsl_rng_uniform(rs->GSLrandom); }
+          //if ( !strcmp(item->name, "F0") || !strcmp(item->name, "f0") ){
+          //  if ( j == 0 && freqnodes ){ fnodes = chebyshev_gauss_lobatto_nodes( 0., 1., n ); }
+          //  value = fnodes[j];
+         // }
+          //else{ value = gsl_rng_uniform(rs->GSLrandom); }
+          value = gsl_rng_uniform(rs->GSLrandom);
         }
         else if( LALInferenceCheckCorrelatedPrior(rs->priorArgs, item->name) && corlist ){
           /* for this correlation matrix values are also scaled as for the Gaussian prior */
