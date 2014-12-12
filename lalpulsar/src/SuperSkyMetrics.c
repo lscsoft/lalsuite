@@ -433,8 +433,11 @@ int XLALReducedSuperSkyMetric(
   {
 
     // Allocate memory
+    gsl_permutation* GAPERM(freq_freq_dnorm_LU_perm, fsize);
     gsl_matrix* GAMAT(decouple_sky_offsets, fsize, 3);
     gsl_matrix* GAMAT(freq_freq_dnorm, fsize, fsize);
+    gsl_matrix* GAMAT(freq_freq_dnorm_LU, fsize, fsize);
+    gsl_matrix* GAMAT(freq_freq_dnorm_inv, fsize, fsize);
     gsl_matrix* GAMAT(freq_freq_dnorm_transf, fsize, fsize);
 
     // Create views of the sky-sky, frequency-frequency, and off-diagonal blocks
@@ -447,13 +450,17 @@ int XLALReducedSuperSkyMetric(
     gsl_matrix_memcpy(freq_freq_dnorm, &freq_freq.matrix);
     SSM_DiagonalNormalise(freq_freq_dnorm, freq_freq_dnorm_transf);
 
+    // Invert the frequency-frequency block
+    int freq_freq_dnorm_LU_sign = 0;
+    gsl_matrix_memcpy(freq_freq_dnorm_LU, freq_freq_dnorm);
+    GCALL(gsl_linalg_LU_decomp(freq_freq_dnorm_LU, freq_freq_dnorm_LU_perm, &freq_freq_dnorm_LU_sign));
+    GCALL(gsl_linalg_LU_invert(freq_freq_dnorm_LU, freq_freq_dnorm_LU_perm, freq_freq_dnorm_inv));
+
     // Compute the additional sky offsets required to decouple the sky-sky and frequency blocks:
     //   decouple_sky_offsets = freq_freq_dnorm_transf * inv(freq_freq_dnorm) * freq_freq_dnorm_transf * freq_sky
     // Uses freq_sky as a temporary matrix, since it will be zeroed out anyway
     gsl_blas_dtrmm(CblasLeft, CblasUpper, CblasNoTrans, CblasNonUnit, 1.0, freq_freq_dnorm_transf, &freq_sky.matrix);
-    GCALL(gsl_linalg_cholesky_decomp(freq_freq_dnorm));
-    GCALL(gsl_linalg_cholesky_invert(freq_freq_dnorm));
-    gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, freq_freq_dnorm, &freq_sky.matrix, 0.0, decouple_sky_offsets);
+    gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, freq_freq_dnorm_inv, &freq_sky.matrix, 0.0, decouple_sky_offsets);
     gsl_blas_dtrmm(CblasLeft, CblasUpper, CblasNoTrans, CblasNonUnit, 1.0, freq_freq_dnorm_transf, decouple_sky_offsets);
 
     // Add the additional sky offsets to the reduced super-sky coordinate transform data
@@ -469,7 +476,8 @@ int XLALReducedSuperSkyMetric(
     gsl_matrix_set_zero(&freq_sky.matrix);
 
     // Cleanup
-    GFMAT(freq_freq_dnorm, freq_freq_dnorm_transf, decouple_sky_offsets);
+    GFPERM(freq_freq_dnorm_LU_perm);
+    GFMAT(freq_freq_dnorm, freq_freq_dnorm_LU, freq_freq_dnorm_inv, freq_freq_dnorm_transf, decouple_sky_offsets);
 
     // Ensured intermediate metric is symmetric
     SSM_MakeSymmetric(intm_ssky_metric);
