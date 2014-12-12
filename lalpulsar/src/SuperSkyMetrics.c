@@ -266,6 +266,17 @@ int XLALReducedSuperSkyMetric(
   XLAL_CHECK(essky_metric != NULL, XLAL_EFAULT);
   XLAL_CHECK(essky_metric->size1 == essky_metric->size2, XLAL_EINVAL);
   XLAL_CHECK(essky_metric->size1 > 5, XLAL_EINVAL);
+  const size_t esize = essky_metric->size1;
+
+  // Check metric is symmetric and has positive diagonal elements
+  for (size_t i = 0; i < esize; ++i) {
+    XLAL_CHECK(gsl_matrix_get(essky_metric, i, i) > 0, XLAL_EINVAL,
+               "Expanded supersky metric essky_metric(%zu,%zu) <= 0", i, i);
+    for (size_t j = i + 1; j < esize; ++j) {
+      XLAL_CHECK(gsl_matrix_get(essky_metric, i, j) == gsl_matrix_get(essky_metric, j, i), XLAL_EINVAL,
+                 "Expanded supersky metric essky_metric(%zu,%zu) != essky_metric(%zu,%zu)", i, j, j, i);
+    }
+  }
 
   // Size of the frequency+spindowns block of the expanded super-sky metric
   const size_t fsize = essky_metric->size1 - 5;
