@@ -575,6 +575,8 @@ tagLALInferenceIFOData
   LIGOTimeGPS		    epoch;              /** The epoch of this observation (the time of the first sample) */
   REAL8                     SNR;                /** IF INJECTION ONLY, E(SNR) of the injection in the detector.*/
   REAL8                     STDOF;              /** Degrees of freedom for IFO to be used in Student-T Likelihood. */
+  UINT4                     likeli_counter; /** counts how many time the likelihood has been calculated */
+  UINT4                     templa_counter; /** counts how many time the template has been calculated */
   struct tagLALInferenceROQData *roq; /** ROQ data */
 
   struct tagLALInferenceIFOData      *next;     /** A pointer to the next set of data for linked list */
