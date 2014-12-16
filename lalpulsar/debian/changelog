@@ -1,3 +1,9 @@
+lalpulsar (1.10.4-2) unstable; urgency=low
+
+  * configure using --without-simd to disable optimisations
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 16 Dec 2014 10:21:29 -0600
+
 lalpulsar (1.10.4-1) unstable; urgency=low
 
   * LALPulsar 1.10.4

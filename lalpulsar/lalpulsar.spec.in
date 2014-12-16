@@ -51,7 +51,7 @@ This package provides the Octave bindings for LALPulsar.
 %setup -q
 
 %build
-%configure --disable-gcc-flags --enable-swig
+%configure --disable-gcc-flags --enable-swig --without-simd
 %{__make} V=1
 
 %install
