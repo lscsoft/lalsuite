@@ -968,6 +968,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
       REAL8 phase_maxL = carg(Rcplx);
       if(phase_maxL<0.0) phase_maxL=LAL_TWOPI+phase_maxL;
       LALInferenceAddVariable(currentParams,"phase_maxl",&phase_maxL,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+	  if(LALInferenceCheckVariable(currentParams,"phase")) LALInferenceRemoveVariable(currentParams,"phase");
       gsl_sf_result result;
       REAL8 I0x=0.0;
       if(GSL_SUCCESS==gsl_sf_bessel_I0_scaled_e(R, &result))
@@ -1023,6 +1024,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
         REAL8 phase_maxL=angMax;
         if(phase_maxL<0.0) phase_maxL=LAL_TWOPI+phase_maxL;
         LALInferenceAddVariable(currentParams,"phase_maxl",&phase_maxL,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+	    if(LALInferenceCheckVariable(currentParams,"phase")) LALInferenceRemoveVariable(currentParams,"phase");
       }
       LALInferenceAddVariable(currentParams,"time_maxl",&max_time,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
       LALInferenceAddVariable(currentParams,"time_mean",&mean_time,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
