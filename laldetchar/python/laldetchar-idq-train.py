@@ -296,18 +296,24 @@ while gpsstart < gpsstop:
                     if opts.force:
                         raise e
 
-             ### if we aren't building auxmvc vectors, we re-use pat files from realtime job
+            ### if we aren't building auxmvc vectors, we re-use pat files from realtime job
             ### this requires us to redefine the 'science-segments' as the intersection of scisegs with realtime segs
-            ### currently, we assume realtime only runs when completely in science time, so the intersection is identical to realtime segs
+            ### we call this intersection "idq_segs"
             else:
                 try:
                     ### determine segments from realtime filenames
                     realtime_segs = idq.get_idq_segments(realtimedir, gpsstart - lookback * stride, gpsstart + stride, suffix='.pat')
 
+                    ### read in science segments
+                    (scisegs, coveredseg) = idq.extract_dq_segments(seg_file, config.get('get_science_segments', 'include'))
+
+                    ### take the intersection of these segments
+                    idq_segs = event.andsegments([scisegs, realtime_segs])
+
                     ### write segment file
                     idqseg_path = "%s/idq_segements-%d-%d.seg"%(output_dir, int(gpsstart - lookback * stride), int((lookback+1) * stride))
                     f = open(idqseg_path, 'w')
-                    for seg in realtime_segs:
+                    for seg in idq_segs:
                         print >> f, seg[0], seg[1]
                     f.close()
 
