@@ -26,6 +26,7 @@
 
 #include "pulsar_parameter_estimation_nested.h"
 #include "ppe_models.h"
+#include "ppe_utils.h"
 
 #define ROQTOLERANCE 1e-11
 
@@ -41,7 +42,8 @@ void generate_interpolant( LALInferenceRunState *runState );
 
 /* generate a training set */
 gsl_matrix_complex *generate_training_set( LALInferenceRunState *rs,
-                                           UINT4 n );
+                                           UINT4 n,
+                                           UINT4 freqnodes );
 
 #ifdef __cplusplus
 }
