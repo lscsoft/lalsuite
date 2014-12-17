@@ -277,10 +277,24 @@ int XLALSimIMRSpinAlignedEOBWaveform(
 
   Approximant SpinAlignedEOBapproximant = (SpinAlignedEOBversion == 1) ? SEOBNRv1 : SEOBNRv2;
 
+  /* 
+   * Check spins
+   */
+  if ( spin1z < -1.0 || spin2z < -1.0 )
+  {
+    XLALPrintError( "XLAL Error - %s: Component spin less than -1!\n", __func__);
+    XLAL_ERROR( XLAL_EINVAL );
+  }
   /* If either spin > 0.6, model not available, exit */
   if ( SpinAlignedEOBversion == 1 && ( spin1z > 0.6 || spin2z > 0.6 ) )
   {
     XLALPrintError( "XLAL Error - %s: Component spin larger than 0.6!\nSEOBNRv1 is only available for spins in the range -1 < a/M < 0.6.\n", __func__);
+    XLAL_ERROR( XLAL_EINVAL );
+  }
+ /* For v2 the upper bound is 0.99 */
+  if ( SpinAlignedEOBversion == 2 && ( spin1z > 0.99 || spin2z > 0.99 )) 
+  {
+    XLALPrintError( "XLAL Error - %s: Component spin larger than 0.99!\nSEOBNRv2 is only available for spins in the range -1 < a/M < 0.99.\n", __func__);
     XLAL_ERROR( XLAL_EINVAL );
   }
 
