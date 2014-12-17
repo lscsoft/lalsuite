@@ -61,6 +61,12 @@
 #include <stdio.h>
 #include <math.h>
 
+/* hard-coded resampling filter length, see LALSimulation.c
+ * the filter is 19 samples long, resampling can produce ringing 
+ * up to 9 samples away from an abrupt jump 
+ */
+const UINT4 LALSIMULATION_RINGING_EXTENT = 9;
+
 int XLALSimInspiralREAL4WaveTaper(
 		REAL4Vector              *signalvec,	/**< pointer to waveform vector */
 		LALSimInspiralApplyTaper  bookends	/**< taper type enumerator */
@@ -95,9 +101,9 @@ int XLALSimInspiralREAL4WaveTaper(
   /* Search for start and end of signal */
   flag = 0;
   i = 0;
-  while(flag == 0 && i < length )
+  while( flag == 0 && i < length )
   {
-    if( signalvec->data[i] != 0.)
+    if( signalvec->data[i] != 0. )
     {
       start = i;
       flag = 1;
@@ -112,9 +118,9 @@ int XLALSimInspiralREAL4WaveTaper(
 
   flag = 0;
   i = length - 1;
-  while(flag == 0)
+  while( flag == 0 )
   {
-    if( signalvec->data[i] != 0.)
+    if( signalvec->data[i] != 0. )
     {
       end = i;
       flag = 1;
@@ -122,15 +128,14 @@ int XLALSimInspiralREAL4WaveTaper(
     i--;
   }
 
-
   /* Check we have more than 2 data points */
-  if((end - start) <= 1)
+  if( (end - start) <= 1 )
   {
     XLALPrintWarning( "Data less than 3 points, cannot taper!\n" );
     safe = 0;
   }
 
-  if( safe == 1)
+  if( safe == 1 )
   {
     /* Calculate middle point in case of short waveform */
     mid = (start+end)/2;
@@ -140,20 +145,23 @@ int XLALSimInspiralREAL4WaveTaper(
     {
       flag = 0;
       i = start+1;
-      while( flag < 2 && i != mid)
+      while( flag < 2 && i != mid )
       {
-        if( fabs(signalvec->data[i]) >= fabs(signalvec->data[i-1]) )
-          if( fabs(signalvec->data[i]) >= fabs(signalvec->data[i+1]) )
-          {
-            if( fabs(signalvec->data[i]) == fabs(signalvec->data[i+1]) )
-              i++;
+        if( fabs(signalvec->data[i]) >= fabs(signalvec->data[i-1]) &&
+            fabs(signalvec->data[i]) >= fabs(signalvec->data[i+1]) )
+        {
+          if( fabs(signalvec->data[i]) == fabs(signalvec->data[i+1]) )
+            i++;
+          /* only count local extrema more than 9 samples in */
+          if ( i-start > LALSIMULATION_RINGING_EXTENT )
             flag++;
-            n = i - start;
-          }
+          n = i - start;
+        }
         i++;
       }
-      /* Have we reached the middle? */
-      if( flag < 2)
+
+      /* Have we reached the middle without finding 2 peaks? */
+      if( flag < 2 )
         n = mid - start;
 
       /* Taper to that point */
@@ -175,18 +183,21 @@ int XLALSimInspiralREAL4WaveTaper(
       flag = 0;
       while( flag < 2 && i != mid )
       {
-        if( fabs(signalvec->data[i]) >= fabs(signalvec->data[i+1]) )
-          if( fabs(signalvec->data[i]) >= fabs(signalvec->data[i-1]) )
-          {
-            if( fabs(signalvec->data[i]) == fabs(signalvec->data[i-1]) )
-              i--;
+        if( fabs(signalvec->data[i]) >= fabs(signalvec->data[i+1]) &&
+            fabs(signalvec->data[i]) >= fabs(signalvec->data[i-1]) )
+        {
+          if( fabs(signalvec->data[i]) == fabs(signalvec->data[i-1]) )
+            i--;
+          /* only count local extrema more than 9 samples in */
+          if ( end-i > LALSIMULATION_RINGING_EXTENT )
             flag++;
-            n = end - i;
-          }
+          n = end - i;
+        }
         i--;
       }
-      /* Have we reached the middle? */
-      if( flag < 2)
+
+      /* Have we reached the middle without finding 2 peaks? */
+      if( flag < 2 )
       {
         n = end - mid;
       }
@@ -241,9 +252,9 @@ int XLALSimInspiralREAL8WaveTaper(
   /* Search for start and end of signal */
   flag = 0;
   i = 0;
-  while(flag == 0 && i < length )
+  while( flag == 0 && i < length )
   {
-    if( signalvec->data[i] != 0.)
+    if( signalvec->data[i] != 0. )
     {
       start = i;
       flag = 1;
@@ -258,9 +269,9 @@ int XLALSimInspiralREAL8WaveTaper(
 
   flag = 0;
   i = length - 1;
-  while(flag == 0)
+  while( flag == 0 )
   {
-    if( signalvec->data[i] != 0.)
+    if( signalvec->data[i] != 0. )
     {
       end = i;
       flag = 1;
@@ -268,15 +279,14 @@ int XLALSimInspiralREAL8WaveTaper(
     i--;
   }
 
-
   /* Check we have more than 2 data points */
-  if((end - start) <= 1)
+  if( (end - start) <= 1 )
   {
     XLALPrintWarning( "Data less than 3 points, cannot taper!\n" );
     safe = 0;
   }
 
-  if( safe == 1)
+  if( safe == 1 )
   {
     /* Calculate middle point in case of short waveform */
     mid = (start+end)/2;
@@ -286,20 +296,23 @@ int XLALSimInspiralREAL8WaveTaper(
     {
       flag = 0;
       i = start+1;
-      while( flag < 2 && i != mid)
+      while( flag < 2 && i != mid )
       {
-        if( fabs(signalvec->data[i]) >= fabs(signalvec->data[i-1]) )
-          if( fabs(signalvec->data[i]) >= fabs(signalvec->data[i+1]) )
-          {
-            if( fabs(signalvec->data[i]) == fabs(signalvec->data[i+1]) )
-              i++;
+        if( fabs(signalvec->data[i]) >= fabs(signalvec->data[i-1]) &&
+            fabs(signalvec->data[i]) >= fabs(signalvec->data[i+1]) )
+        {
+          if( fabs(signalvec->data[i]) == fabs(signalvec->data[i+1]) )
+            i++;
+          /* only count local extrema more than 9 samples in */
+          if ( i-start > LALSIMULATION_RINGING_EXTENT )
             flag++;
-            n = i - start;
-          }
+          n = i - start;
+        }
         i++;
       }
-      /* Have we reached the middle? */
-      if( flag < 2)
+
+      /* Have we reached the middle without finding 2 peaks? */
+      if( flag < 2 )
         n = mid - start;
 
       /* Taper to that point */
@@ -321,18 +334,21 @@ int XLALSimInspiralREAL8WaveTaper(
       flag = 0;
       while( flag < 2 && i != mid )
       {
-        if( fabs(signalvec->data[i]) >= fabs(signalvec->data[i+1]) )
-          if( fabs(signalvec->data[i]) >= fabs(signalvec->data[i-1]) )
-          {
-            if( fabs(signalvec->data[i]) == fabs(signalvec->data[i-1]) )
-              i--;
+        if( fabs(signalvec->data[i]) >= fabs(signalvec->data[i+1]) &&
+            fabs(signalvec->data[i]) >= fabs(signalvec->data[i-1]) )
+        {
+          if( fabs(signalvec->data[i]) == fabs(signalvec->data[i-1]) )
+            i--;
+          /* only count local extrema more than 9 samples in */
+          if ( end-i > LALSIMULATION_RINGING_EXTENT )
             flag++;
-            n = end - i;
-          }
+          n = end - i;
+        }
         i--;
       }
-      /* Have we reached the middle? */
-      if( flag < 2)
+
+      /* Have we reached the middle without finding 2 peaks? */
+      if( flag < 2 )
       {
         n = end - mid;
       }

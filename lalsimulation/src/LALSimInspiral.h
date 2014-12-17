@@ -159,17 +159,17 @@ typedef enum {
  * Tapers a REAL4 inspiral waveform in the time domain.
  */
 int XLALSimInspiralREAL4WaveTaper(
-		REAL4Vector              *signalvec,	/**< pointer to waveform vector */
-		LALSimInspiralApplyTaper  bookends	/**< taper type enumerator */
-		);
+  REAL4Vector              *signalvec,	/**< pointer to waveform vector */
+  LALSimInspiralApplyTaper  bookends	/**< taper type enumerator */
+  );
 
 /**
  * Tapers a REAL8 inspiral waveform in the time domain.
  */
 int XLALSimInspiralREAL8WaveTaper(
-		REAL8Vector              *signalvec,	/**< pointer to waveform vector */
-		LALSimInspiralApplyTaper  bookends	/**< taper type enumerator */
-		);
+  REAL8Vector              *signalvec,	/**< pointer to waveform vector */
+  LALSimInspiralApplyTaper  bookends	/**< taper type enumerator */
+  );
 
 
 /**
