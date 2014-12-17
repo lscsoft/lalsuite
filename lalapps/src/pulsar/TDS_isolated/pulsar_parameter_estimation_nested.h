@@ -243,6 +243,15 @@ extern "C" {
 " --test-basis        If this is set then the reduced basis set will be tested\n\
                      against another set of waveforms to check they really are\n\
                      within the required tolerance.\n"\
+" --output-weights    (CHAR) If this is set then the weights will be output to\n\
+                     the (binary) file that is named and the programme will\n\
+                     exit. These could be read in later instead of being\n\
+                     regenerated. This allows the ROQ to be generated on a\n\
+                     machine with a large amount of RAM, whilst the full\n\
+                     parameter estimation can run on a machine with less RAM.\n"\
+" --input-weights     (CHAR) A binary file containing all the weights in a\n\
+                     defined format. If this is present then the RQO will\n\
+                     not be recalculated.\n"\
 "\n"\
 " Signal injection parameters:\n"\
 " --inject-file       a pulsar parameter (par) file containing the parameters\n\

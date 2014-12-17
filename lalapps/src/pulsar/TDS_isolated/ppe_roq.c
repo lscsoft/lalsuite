@@ -59,9 +59,13 @@ REAL8 *chebyshev_gauss_lobatto_nodes( REAL8 fmin, REAL8 fmax, UINT4 nnodes ){
  */
 void generate_interpolant( LALInferenceRunState *runState ){
   REAL8 tolerance = ROQTOLERANCE;
-  UINT4 ntraining = 0, i = 0, j = 0, verbose = 0;
+  UINT4 ntraining = 0, i = 0, j = 0, verbose = 0, outputroq = 0, inputroq = 0;
   INT4 gaussianLike = 0;
   ProcessParamsTable *ppt;
+
+  /* variables if reading in weights file */
+  UINT4 nstreams = 0, nchunks = 0;
+  FILE *fpin = NULL, *fpout = NULL;
 
   LALInferenceIFOModel *ifo = NULL;
   LALInferenceIFOData *data = runState->data;
@@ -76,16 +80,44 @@ void generate_interpolant( LALInferenceRunState *runState ){
   ppt = LALInferenceGetProcParamVal( runState->commandLine, "--roq" );
   if ( !ppt ){ return; }
 
-  /* get tolerance stopping criterion */
-  ppt = LALInferenceGetProcParamVal( runState->commandLine, "--roq-tolerance" );
-  if ( ppt ){ tolerance = atof( ppt->value ); }
-  XLAL_CHECK_VOID( tolerance < 1. && tolerance > 0., XLAL_EFUNC, "ROQ tolerence (%le) is not within allowed range.", tolerance );
+  ppt = LALInferenceGetProcParamVal( runState->commandLine, "--input-weights" );
+  if ( !ppt ){
+    /* get tolerance stopping criterion */
+    ppt = LALInferenceGetProcParamVal( runState->commandLine, "--roq-tolerance" );
+    if ( ppt ){ tolerance = atof( ppt->value ); }
+    XLAL_CHECK_VOID( tolerance < 1. && tolerance > 0., XLAL_EFUNC, "ROQ tolerence (%le) is not within allowed range.", tolerance );
 
-  /* get number of training sets */
-  ppt = LALInferenceGetProcParamVal( runState->commandLine, "--ntraining" );
-  if ( ppt ){ ntraining = atoi( ppt->value ); }
-  else { XLAL_ERROR_VOID( XLAL_EFUNC, "Number of training sets must be specifed if running with --roq" ); }
-  XLAL_CHECK_VOID( ntraining > 1, XLAL_EFUNC, "Number of training sets (%d) is too small!", ntraining );
+    /* get number of training sets */
+    ppt = LALInferenceGetProcParamVal( runState->commandLine, "--ntraining" );
+    if ( ppt ){ ntraining = atoi( ppt->value ); }
+    else { XLAL_ERROR_VOID( XLAL_EFUNC, "Number of training sets must be specifed if running with --roq" ); }
+    XLAL_CHECK_VOID( ntraining > 1, XLAL_EFUNC, "Number of training sets (%d) is too small!", ntraining );
+
+    /* check whether to output weights */
+    ppt = LALInferenceGetProcParamVal( runState->commandLine, "--output-weights" );
+    if ( ppt ){
+      CHAR *outputweights = ppt->value;
+      XLAL_CHECK_VOID( (fpout = fopen(outputweights, "wb")) != NULL, XLAL_EIO, "Could not open weights file for output." );
+      outputroq = 1;
+
+      /* write out the number of data streams */
+      nstreams = *(UINT4*)LALInferenceGetVariable( runState->algorithmParams, "numstreams" );
+      XLAL_CHECK_VOID( fwrite(&nstreams, sizeof(UINT4), 1, fpout) == 1, XLAL_EIO, "Could not write the number of data steams to file!" );
+    }
+  }
+  else{
+    /* read in weights from a file */
+    CHAR *inputweights = ppt->value;
+    UINT4 nstreamcheck = *(UINT4*)LALInferenceGetVariable( runState->algorithmParams, "numstreams" );
+
+    XLAL_CHECK_VOID( (fpin = fopen(inputweights, "rb")) != NULL, XLAL_EIO, "Could not open weights file for reading.");
+
+    /* read in the first bit of information, which is the number of datastreams as an UINT4 */
+    XLAL_CHECK_VOID( fread((void*)&nstreams, sizeof(UINT4), 1, fpin) == 1, XLAL_EIO, "Could not read in first value from weights file\n");
+    XLAL_CHECK_VOID( nstreams == nstreamcheck, XLAL_EFUNC, "Number of data streams inconsistent with ROQ weights file" );
+
+    inputroq = 1;
+  }
 
   ppt = LALInferenceGetProcParamVal( runState->commandLine, "--verbose" );
   if ( ppt ){ verbose = 1; }
@@ -128,129 +160,173 @@ void generate_interpolant( LALInferenceRunState *runState ){
       bsbdelays = *(REAL8Vector**)LALInferenceGetVariable( ifo->params, "bsb_delays" );
     }
 
+    if ( inputroq ) {
+      /* we assume that the data has been split into the same number and length chunks as in that
+       * used to calculate the weights, but the second value(s) will be the number of chunks,
+       * for the given stream, which can be checked */
+      XLAL_CHECK_VOID( fread((void*)&nchunks, sizeof(UINT4), 1, fpin) == 1, XLAL_EIO, "Could not read chunk numbers from weights file\n");
+      XLAL_CHECK_VOID( nchunks == chunkLengths->length, XLAL_EFUNC, "Number of chunks is not consistent!");
+    }
+
+    if ( outputroq ){
+      XLAL_CHECK_VOID( fwrite(&chunkLengths->length, sizeof(UINT4), 1, fpout) == 1, XLAL_EIO, "Could not write number of chunks!" );
+    }
+
     /* get chunk */
     for ( i=0; i<chunkLengths->length; i++ ){
-      /* a temporary run state containing just the required data for a single detector */
-      LALInferenceRunState *tmpRS = XLALMalloc(sizeof(LALInferenceRunState));
-      LALInferenceIFOModel *ifotmp = XLALMalloc(sizeof(LALInferenceIFOModel));
-      ifotmp->next = NULL;
-      tmpRS->model = XLALMalloc(sizeof(LALInferenceModel));
-      tmpRS->model->templt = runState->model->templt;
-      tmpRS->currentParams = runState->currentParams;
-      tmpRS->model->params = XLALCalloc(1, sizeof(LALInferenceVariables));
-      tmpRS->model->ifo = ifotmp;
-      tmpRS->GSLrandom = runState->GSLrandom;
-      tmpRS->priorArgs = runState->priorArgs;
-
-      gsl_matrix_complex *ts = NULL;
-
       UINT4 tlen = chunkLengths->data[i];
-
-      ifotmp->times = XLALCreateTimestampVector( tlen );
-      /* create a new model vector */
-      ifotmp->compTimeSignal = XLALCreateCOMPLEX16TimeSeries( "", &gpstime, 0., 1., &lalSecondUnit, tlen );
-      ifotmp->timeData = XLALCreateREAL8TimeSeries( "", &gpstime, 0., 1., &lalSecondUnit, tlen );
-
-      ifotmp->params = ifo->params; /* just use a pointer to params in runState */
-      ifotmp->ephem = ifo->ephem;
-      ifotmp->detector = ifo->detector;
-      ifotmp->tdat = ifo->tdat;
-      ifotmp->ttype = ifo->ttype;
-
-      /* get chunk times */
-      for ( j=0; j<tlen; j++ ){
-        ifotmp->times->data[j] = ifo->times->data[startidx+j];
-        ifotmp->timeData->data->data[j] = ifo->timeData->data->data[startidx+j];
-      }
-
-      /* generate the training set */
-      ts = generate_training_set( tmpRS, ntraining, 1 );
-
-      /* generate reduced basis */
-      gsl_vector_view weights = gsl_vector_view_array(&dt, 1);
+      LALInferenceCOMPLEXROQInterpolant *interp = NULL;
       size_t nbases0 = 0;
-      COMPLEX16 *RB = NULL;
-      RB = LALInferenceGenerateCOMPLEX16OrthonormalBasis(&weights.vector, tolerance, ts, &nbases0);
-      XLAL_CHECK_VOID( RB != NULL, XLAL_EFUNC, "Could not produce basis set");
-      nbases->data[i] = nbases0;
 
-      if ( verbose ){
-       fprintf(stderr, "Number of reduced bases for ROQ generation is %zu\n", nbases0);
-      }
+      if ( !inputroq ){
+        /* a temporary run state containing just the required data for a single detector */
+        LALInferenceRunState *tmpRS = XLALMalloc(sizeof(LALInferenceRunState));
+        LALInferenceIFOModel *ifotmp = XLALMalloc(sizeof(LALInferenceIFOModel));
+        ifotmp->next = NULL;
+        tmpRS->model = XLALMalloc(sizeof(LALInferenceModel));
+        tmpRS->model->templt = runState->model->templt;
+        tmpRS->currentParams = runState->currentParams;
+        tmpRS->model->params = XLALCalloc(1, sizeof(LALInferenceVariables));
+        tmpRS->model->ifo = ifotmp;
+        tmpRS->GSLrandom = runState->GSLrandom;
+        tmpRS->priorArgs = runState->priorArgs;
 
-      XLAL_CALLGSL( gsl_matrix_complex_free( ts ) );
+        gsl_matrix_complex *ts = NULL;
 
-      if ( nbases0 > (size_t)tlen-1 ){
-        XLAL_ERROR_VOID( XLAL_EFUNC, "Number of bases is longer than date length, so no point using ROQ" );
-      }
+        ifotmp->times = XLALCreateTimestampVector( tlen );
+        /* create a new model vector */
+        ifotmp->compTimeSignal = XLALCreateCOMPLEX16TimeSeries( "", &gpstime, 0., 1., &lalSecondUnit, tlen );
+        ifotmp->timeData = XLALCreateREAL8TimeSeries( "", &gpstime, 0., 1., &lalSecondUnit, tlen );
 
-      /* if required test the basis */
-      if ( LALInferenceGetProcParamVal( runState->commandLine, "--test-basis" ) ){
-        /* generate another set of waveforms and test that the reduced basis can match them well enough */
-        ts = generate_training_set( tmpRS, ntraining, 0 );
+        ifotmp->params = ifo->params; /* just use a pointer to params in runState */
+        ifotmp->ephem = ifo->ephem;
+        ifotmp->detector = ifo->detector;
+        ifotmp->tdat = ifo->tdat;
+        ifotmp->ttype = ifo->ttype;
 
-        /* check values are within tolerance (use 100 time the defined tolerance for the basis generation) */
-        gsl_matrix_complex_view m = gsl_matrix_complex_view_array( (double*)RB, nbases0, tlen );
-        if ( LALInferenceTestCOMPLEX16OrthonormalBasis( &weights.vector, tolerance*100., &m.matrix, ts ) != XLAL_SUCCESS ){
-          XLAL_ERROR_VOID( XLAL_EFUNC, "Basis does not cover the space to the required tolerance" );
+        /* get chunk times */
+        for ( j=0; j<tlen; j++ ){
+          ifotmp->times->data[j] = ifo->times->data[startidx+j];
+          ifotmp->timeData->data->data[j] = ifo->timeData->data->data[startidx+j];
+        }
+
+        /* generate the training set */
+        ts = generate_training_set( tmpRS, ntraining, 1 );
+
+        /* generate reduced basis */
+        gsl_vector_view weights = gsl_vector_view_array(&dt, 1);
+        COMPLEX16 *RB = NULL;
+        RB = LALInferenceGenerateCOMPLEX16OrthonormalBasis(&weights.vector, tolerance, ts, &nbases0);
+        XLAL_CHECK_VOID( RB != NULL, XLAL_EFUNC, "Could not produce basis set");
+        nbases->data[i] = nbases0;
+
+        if ( verbose ){
+          fprintf(stderr, "Number of reduced bases for ROQ generation is %zu\n", nbases0);
         }
 
         XLAL_CALLGSL( gsl_matrix_complex_free( ts ) );
+
+        if ( nbases0 > (size_t)tlen-1 ){
+          XLAL_ERROR_VOID( XLAL_EFUNC, "Number of bases is longer than date length, so no point using ROQ" );
+        }
+
+        /* if required test the basis */
+        if ( LALInferenceGetProcParamVal( runState->commandLine, "--test-basis" ) ){
+          /* generate another set of waveforms and test that the reduced basis can match them well enough */
+          ts = generate_training_set( tmpRS, ntraining, 0 );
+
+          /* check values are within tolerance (use 100 time the defined tolerance for the basis generation) */
+          gsl_matrix_complex_view m = gsl_matrix_complex_view_array( (double*)RB, nbases0, tlen );
+          if ( LALInferenceTestCOMPLEX16OrthonormalBasis( &weights.vector, tolerance*100., &m.matrix, ts ) != XLAL_SUCCESS ){
+            XLAL_ERROR_VOID( XLAL_EFUNC, "Basis does not cover the space to the required tolerance" );
+          }
+
+          XLAL_CALLGSL( gsl_matrix_complex_free( ts ) );
+        }
+
+        XLALDestroyTimestampVector( ifotmp->times );
+        XLALDestroyCOMPLEX16TimeSeries( ifotmp->compTimeSignal );
+        XLALDestroyREAL8TimeSeries( ifotmp->timeData );
+        LALInferenceClearVariables( tmpRS->model->params );
+        XLALFree( tmpRS->model );
+        XLALFree( tmpRS );
+
+        /* generate the interpolants (pass the data noise variances for weighting the interpolants in the case of using a Gaussian likelihood) */
+        gsl_matrix_complex_view RBview = gsl_matrix_complex_view_array((double*)RB, nbases0, tlen);
+        interp = LALInferenceGenerateCOMPLEXROQInterpolant(&RBview.matrix);
+
+        /* free the reduced basis set */
+        XLALFree( RB );
+
+        /* get pointer to data and variance */
+        REAL8 varone = 1.;
+        gsl_vector_view vari;
+        gsl_vector_complex_view dataview, datasub;
+
+        dataview = gsl_vector_complex_view_array((double*)data->compTimeData->data->data, data->compTimeData->data->length);
+        datasub = gsl_vector_complex_subvector( &dataview.vector, startidx, tlen );
+
+        if ( gaussianLike ){
+          gsl_vector_view varview = gsl_vector_view_array(data->varTimeData->data->data, data->varTimeData->data->length);
+          vari = gsl_vector_subvector( &varview.vector, startidx, tlen );
+        }
+        else{ vari = gsl_vector_view_array( &varone, 1 ); } /* using Students-t likelihood, so just set to 1 */
+
+        /* create the data/model and model/model inner product weights */
+        gsl_vector_complex *dmw = LALInferenceGenerateCOMPLEX16DataModelWeights(interp->B, &datasub.vector, &vari.vector);
+        gsl_matrix_complex *mmw = LALInferenceGenerateCOMPLEXModelModelWeights(interp->B, &vari.vector);
+
+        /* put weights into a vector */
+        mmlength += (nbases0*nbases0);
+        dmlength += nbases0;
+
+        dmweights = XLALRealloc( dmweights, sizeof(COMPLEX16)*dmlength );
+        mmweights = XLALRealloc( mmweights, sizeof(COMPLEX16)*mmlength );
+
+        gsl_vector_complex_view mmptr, dmptr, mmptrsub, dmptrsub;
+        gsl_matrix_complex_view cmmptr;
+
+        dmptr = gsl_vector_complex_view_array((double*)dmweights, dmlength);
+        dmptrsub = gsl_vector_complex_subvector(&dmptr.vector, dmlength-nbases0, nbases0);
+
+        mmptr = gsl_vector_complex_view_array((double*)mmweights, mmlength);
+        mmptrsub = gsl_vector_complex_subvector(&mmptr.vector, mmlength-(nbases0*nbases0), (nbases0*nbases0));
+
+        cmmptr = gsl_matrix_complex_view_vector(&mmptrsub.vector, nbases0, nbases0);
+
+        XLAL_CALLGSL( gsl_vector_complex_memcpy(&dmptrsub.vector, dmw) );
+        XLAL_CALLGSL( gsl_matrix_complex_memcpy(&cmmptr.matrix, mmw) );
+
+        /* output the node indices */
+        if ( outputroq ){
+          XLAL_CHECK_VOID( fwrite(&nbases0, sizeof(size_t), 1, fpout) == 1, XLAL_EIO, "Could not output number of nodes to file." );
+          XLAL_CHECK_VOID( fwrite(&interp->nodes[0], sizeof(UINT4), nbases0, fpout) == nbases0, XLAL_EIO, "Could not output interpolation node indices." );
+        }
+
+        for( j=0; j< nbases0; j++){ fprintf(stderr, "Interp nodes = %d\n", interp->nodes[j]); }
+
+        XLAL_CALLGSL( gsl_vector_complex_free( dmw ) );
+        XLAL_CALLGSL( gsl_matrix_complex_free( mmw ) );
       }
+      else{
+        interp = XLALMalloc(sizeof(LALInferenceCOMPLEXROQInterpolant));
+        interp->B = NULL;
 
-      XLALDestroyTimestampVector( ifotmp->times );
-      XLALDestroyCOMPLEX16TimeSeries( ifotmp->compTimeSignal );
-      XLALDestroyREAL8TimeSeries( ifotmp->timeData );
-      LALInferenceClearVariables( tmpRS->model->params );
-      XLALFree( tmpRS->model );
-      XLALFree( tmpRS );
+        /* read in the number of interpolant nodes for the current chunk and then the node indices */
+        XLAL_CHECK_VOID( fread((void*)&nbases0, sizeof(size_t), 1, fpin) == 1, XLAL_EIO, "Could not read number of nodes" );
 
-      /* generate the interpolants (pass the data noise variances for weighting the interpolants in the case of using a Gaussian likelihood) */
-      LALInferenceCOMPLEXROQInterpolant *interp = NULL;
-      gsl_matrix_complex_view RBview = gsl_matrix_complex_view_array((double*)RB, nbases0, tlen);
-      interp = LALInferenceGenerateCOMPLEXROQInterpolant(&RBview.matrix);
+        if ( verbose ){
+          fprintf(stderr, "Number of reduced bases for ROQ generation is %zu\n", nbases0);
+        }
 
-      /* free the reduced basis set */
-      XLALFree( RB );
+        /* read in the number of nodes for this chunk */
+        interp->nodes = XLALMalloc(nbases0*sizeof(UINT4));
+        XLAL_CHECK_VOID( fread((void*)interp->nodes, sizeof(UINT4), nbases0, fpin) == nbases0, XLAL_EIO, "Could not read in interpolation indices" );
 
-      /* get pointer to data and variance */
-      REAL8 varone = 1.;
-      gsl_vector_view vari;
-      gsl_vector_complex_view dataview, datasub;
-
-      dataview = gsl_vector_complex_view_array((double*)data->compTimeData->data->data, data->compTimeData->data->length);
-      datasub = gsl_vector_complex_subvector( &dataview.vector, startidx, tlen );
-
-      if ( gaussianLike ){
-        gsl_vector_view varview = gsl_vector_view_array(data->varTimeData->data->data, data->varTimeData->data->length);
-        vari = gsl_vector_subvector( &varview.vector, startidx, tlen );
+        nbases->data[i] = nbases0;
+        mmlength += (nbases0*nbases0);
+        dmlength += nbases0;
       }
-      else{ vari = gsl_vector_view_array( &varone, 1 ); } /* using Students-t likelihood, so just set to 1 */
-
-      /* create the data/model and model/model inner product weights */
-      gsl_vector_complex *dmw = LALInferenceGenerateCOMPLEX16DataModelWeights(interp->B, &datasub.vector, &vari.vector);
-      gsl_matrix_complex *mmw = LALInferenceGenerateCOMPLEXModelModelWeights(interp->B, &vari.vector);
-
-      /* put weights into a vector */
-      mmlength += (nbases0*nbases0);
-      dmlength += nbases0;
-
-      dmweights = XLALRealloc( dmweights, sizeof(COMPLEX16)*dmlength );
-      mmweights = XLALRealloc( mmweights, sizeof(COMPLEX16)*mmlength );
-
-      gsl_vector_complex_view mmptr, dmptr, mmptrsub, dmptrsub;
-      gsl_matrix_complex_view cmmptr;
-
-      dmptr = gsl_vector_complex_view_array((double*)dmweights, dmlength);
-      dmptrsub = gsl_vector_complex_subvector(&dmptr.vector, dmlength-nbases0, nbases0);
-
-      mmptr = gsl_vector_complex_view_array((double*)mmweights, mmlength);
-      mmptrsub = gsl_vector_complex_subvector(&mmptr.vector, mmlength-(nbases0*nbases0), (nbases0*nbases0));
-
-      cmmptr = gsl_matrix_complex_view_vector(&mmptrsub.vector, nbases0, nbases0);
-
-      XLAL_CALLGSL( gsl_vector_complex_memcpy(&dmptrsub.vector, dmw) );
-      XLAL_CALLGSL( gsl_matrix_complex_memcpy(&cmmptr.matrix, mmw) );
 
       /* get times at the interpolation nodes */
       timenodes = XLALResizeTimestampVector( timenodes, dmlength );
@@ -270,9 +346,6 @@ void generate_interpolant( LALInferenceRunState *runState ){
       }
 
       LALInferenceRemoveCOMPLEXROQInterpolant( interp );
-
-      XLAL_CALLGSL( gsl_vector_complex_free( dmw ) );
-      XLAL_CALLGSL( gsl_matrix_complex_free( mmw ) );
 
       startidx += tlen;
       dlen += nbases0;
@@ -317,6 +390,20 @@ void generate_interpolant( LALInferenceRunState *runState ){
 
     ifo->compTimeSignal = XLALResizeCOMPLEX16TimeSeries( ifo->compTimeSignal, 0, dmlength );
 
+    if ( inputroq ){
+      /* now read in all the weights */
+      dmweights = XLALMalloc( sizeof(COMPLEX16)*dmlength );
+      XLAL_CHECK_VOID( fread((void*)dmweights, sizeof(COMPLEX16), dmlength, fpin) == dmlength, XLAL_EIO, "Could not read in data-model product weights" );
+
+      mmweights = XLALMalloc( sizeof(COMPLEX16)*mmlength );
+      XLAL_CHECK_VOID( fread((void*)mmweights, sizeof(COMPLEX16), mmlength, fpin) == mmlength, XLAL_EIO, "Could not read in model-model product weights" );
+    }
+
+    if ( outputroq ){
+      XLAL_CHECK_VOID( fwrite(dmweights, sizeof(COMPLEX16), dmlength, fpout) == dmlength, XLAL_EIO, "Could not output data-model product weights" );
+      XLAL_CHECK_VOID( fwrite(mmweights, sizeof(COMPLEX16), mmlength, fpout) == mmlength, XLAL_EIO, "Could not output model-model product weights" );
+    }
+
     /* fill in data/model weights into roq->weights complex matrix */
     gsl_matrix_complex_view dmview;
     XLAL_CALLGSL( dmview = gsl_matrix_complex_view_array((double*)dmweights, 1, dmlength) );
@@ -337,6 +424,8 @@ void generate_interpolant( LALInferenceRunState *runState ){
     data = data->next;
   }
 
+  if ( inputroq ){ fclose(fpin); }
+
   if ( LALInferenceCheckVariable( runState->algorithmParams, "timefile" ) ){
     gettimeofday(&time2, NULL);
 
@@ -346,6 +435,13 @@ void generate_interpolant( LALInferenceRunState *runState ){
     fprintf(timefile, "[%d] %s: %.9le secs\n", timenum, __func__, tottime);
     timenum++;
     check_and_add_fixed_variable( runState->algorithmParams, "timenum", &timenum, LALINFERENCE_UINT4_t );
+  }
+
+  if ( outputroq ){
+    fclose(*(FILE **)LALInferenceGetVariable( runState->algorithmParams, "timefile" ));
+    fclose(fpout);
+    if ( verbose ){ fprintf(stderr, "ROQ weights have been written to file.\nExiting program.\n"); }
+    exit(0); /* exit the programme succussfully */
   }
 }
 

@@ -381,6 +381,9 @@ number of detectors specified (no. dets =\%d)\n", ml, ml, numDets);
   runState->model->ifo_loglikelihoods = XLALMalloc( sizeof(REAL8)*ml*numDets );
   runState->model->ifo_SNRs = XLALMalloc( sizeof(REAL8)*ml*numDets );
 
+  UINT4 nstreams = ml*numDets;
+  LALInferenceAddVariable( runState->algorithmParams, "numstreams", &nstreams, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
+
   ppt = LALInferenceGetProcParamVal( commandLine,"--input-files" );
   if( ppt ) { inputfile = XLALStringDuplicate( ppt->value ); }
 
