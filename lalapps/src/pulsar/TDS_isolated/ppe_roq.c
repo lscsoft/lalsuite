@@ -59,7 +59,7 @@ REAL8 *chebyshev_gauss_lobatto_nodes( REAL8 fmin, REAL8 fmax, UINT4 nnodes ){
  */
 void generate_interpolant( LALInferenceRunState *runState ){
   REAL8 tolerance = ROQTOLERANCE;
-  UINT4 ntraining = 0, i = 0, j = 0, verbose = 0, outputroq = 0, inputroq = 0;
+  UINT4 ntraining = 0, i = 0, j = 0, verbose = 0, outputroq = 0, inputroq = 0, counter = 0;
   INT4 gaussianLike = 0;
   ProcessParamsTable *ppt;
 
@@ -127,6 +127,12 @@ void generate_interpolant( LALInferenceRunState *runState ){
 
   ifo = runState->model->ifo;
 
+  /* we need to get the frequency factors */
+  REAL8Vector *freqFactors = *(REAL8Vector**)LALInferenceGetVariable( ifo->params, "freqfactors" );
+  REAL8Vector *freqsCopy = XLALCreateREAL8Vector( freqFactors->length );
+  memcpy(freqsCopy->data, freqFactors->data, sizeof(REAL8)*freqFactors->length);
+  UINT4 nfreqs = freqsCopy->length;
+
   while ( ifo ){
     UINT4Vector *chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( ifo->params, "chunkLength" );
     REAL8 dt = *(REAL8*)LALInferenceGetVariable( ifo->params, "dt" );
@@ -171,6 +177,12 @@ void generate_interpolant( LALInferenceRunState *runState ){
     if ( outputroq ){
       XLAL_CHECK_VOID( fwrite(&chunkLengths->length, sizeof(UINT4), 1, fpout) == 1, XLAL_EIO, "Could not write number of chunks!" );
     }
+
+    /* as we only use one datastream at a time (e.g. one frequency time series) we need to set the
+     * freqFactor to just contain that one frequency */
+    REAL8Vector *freqsTemp = XLALCreateREAL8Vector( 1 );
+    freqsTemp->data[0] = freqsCopy->data[counter%nfreqs];
+    check_and_add_fixed_variable( ifo->params, "freqfactors", &freqsTemp, LALINFERENCE_REAL8Vector_t );
 
     /* get chunk */
     for ( i=0; i<chunkLengths->length; i++ ){
@@ -303,8 +315,6 @@ void generate_interpolant( LALInferenceRunState *runState ){
           XLAL_CHECK_VOID( fwrite(&interp->nodes[0], sizeof(UINT4), nbases0, fpout) == nbases0, XLAL_EIO, "Could not output interpolation node indices." );
         }
 
-        for( j=0; j< nbases0; j++){ fprintf(stderr, "Interp nodes = %d\n", interp->nodes[j]); }
-
         XLAL_CALLGSL( gsl_vector_complex_free( dmw ) );
         XLAL_CALLGSL( gsl_matrix_complex_free( mmw ) );
       }
@@ -420,8 +430,12 @@ void generate_interpolant( LALInferenceRunState *runState ){
     /* add interpolation weights and nodes to a variable in runState->model->ifo->params */
     LALInferenceAddVariable( ifo->params, "numBases", &nbases, LALINFERENCE_UINT4Vector_t, LALINFERENCE_PARAM_FIXED );
 
+    /* reset freqfactors to the correct value */
+    check_and_add_fixed_variable( ifo->params, "freqfactors", &freqsCopy, LALINFERENCE_REAL8Vector_t );
+
     ifo = ifo->next;
     data = data->next;
+    counter++;
   }
 
   if ( inputroq ){ fclose(fpin); }
