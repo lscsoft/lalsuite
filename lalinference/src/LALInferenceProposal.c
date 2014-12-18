@@ -392,6 +392,11 @@ void LALInferenceSetupDefaultNSProposal(LALInferenceRunState *runState, LALInfer
       }
   }
 
+  /* Calibration error splines */
+  if (LALInferenceGetProcParamVal(runState->commandLine, "--enable-spline-calibration")) {
+    LALInferenceAddProposalToCycle(runState, splineCalibrationProposalName, &LALInferenceSplineCalibrationProposal, SMALLWEIGHT);
+  }
+
   LALInferenceRandomizeProposalCycle(runState);
   LALInferenceZeroProposalStats(runState);
 }

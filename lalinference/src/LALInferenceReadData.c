@@ -2661,10 +2661,14 @@ void LALInferencePrintInjectionSample(LALInferenceRunState *runState)
     outfile=fopen(fname,"w");
     if(!outfile) {fprintf(stderr,"ERROR: Unable to open file %s for injection saving\n",fname); exit(1);}
     LALInferenceSortVariablesByName(runState->currentParams);
-    for(LALInferenceVariableItem *this=runState->currentParams->head; this; this=this->next)
-        fprintf(outfile,"%s\t",this->name);
+    LALInferenceFprintParameterHeaders(outfile, runState->currentParams);
     fprintf(outfile,"\n");
-    LALInferencePrintSample(outfile,runState->currentParams);
+    LALInferencePrintSample(outfile, runState->currentParams);
+  
+    //for(LALInferenceVariableItem *this=runState->currentParams->head; this; this=this->next)
+    //    fprintf(outfile,"%s\t",this->name);
+    //fprintf(outfile,"\n");
+    //LALInferencePrintSample(outfile,runState->currentParams);
     fclose(outfile);
     LALInferenceCopyVariables(&backup,runState->currentParams);
     LALInferenceClearVariables(&backup);
