@@ -1909,6 +1909,7 @@ LALInferenceVariableItem *LALInferencePopVariableItem(LALInferenceVariables *var
   if(!thisPtr) return NULL;
   *prevPtr=thisPtr->next;
   thisPtr->next=NULL;
+  vars->dimension--;
   return thisPtr;
 }
 
