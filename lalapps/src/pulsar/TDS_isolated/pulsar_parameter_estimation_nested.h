@@ -136,7 +136,7 @@ extern "C" {
  *
  * Note: These should be increased if additional model parameters are added.
  */
-#define NUMAMPPARS 16
+#define NUMAMPPARS 15
 
 /**
  * The total number of frequency parameters that can defined a signal e.g.
@@ -321,32 +321,32 @@ extern "C" {
  * A list of the amplitude parameters. The names given here are those that are
  * recognised within the code.
  */
-static const CHAR amppars[NUMAMPPARS][VARNAME_MAX] = { "H0", "PHI0", "PSI",
-"COSIOTA", "C22", "C21", "PHI22", "PHI21", "HSCALARB", "HSCALARL", "HVECTORX",
-"HVECTORY", "PSIVECTOR", "PHI0VECTOR", "PHI0SCALAR", "PHI0TENSOR" };
+static const CHAR amppars[NUMAMPPARS][VARNAME_MAX] = { "h0", "phi0", "psi",
+"cosiota", "C22", "C21", "phi22", "phi21", "hScalarB", "hScalarL", "hVector",
+"gammaVector", "psiVector", "phi0Vector", "phi0Scalar" };
 
 /**
  * A list of the frequency parameters. The names given here are those that are
  * recognised within the code.
  */
-static const CHAR freqpars[NUMFREQPARS][VARNAME_MAX] = { "F0", "F1", "F2", "F3",
-"F4", "F5", "PEPOCH", "CGW" };
+static const CHAR freqpars[NUMFREQPARS][VARNAME_MAX] = { "f0", "f1", "f2", "f3",
+"f4", "f5", "pepoch", "cgw" };
 
 /**
  * A list of the sky position parameters. The names given here are those that
  * are recognised within the code.
  */
-static const CHAR skypars[NUMSKYPARS][VARNAME_MAX] = { "RA", "PMRA", "DEC",
-"PMDEC", "POSEPOCH" };
+static const CHAR skypars[NUMSKYPARS][VARNAME_MAX] = { "ra", "pmra", "dec",
+"pmdec", "posepoch" };
 
 /**
  * A list of the binary system parameters. The names given here are those that
  * are recognised within the code.
  */
-static const CHAR binpars[NUMBINPARS][VARNAME_MAX] = { "PB", "ECC", "EPS1",
-"EPS2", "T0", "TASC", "A1", "OM", "PB_2", "ECC_2", "T0_2", "A1_2", "OM_2", "PB_3", "ECC_3",
-"T0_3", "A1_3", "OM_3", "XPBDOT", "EPS1DOT", "EPS2DOT", "OMDOT", "GAMMA", "PBDOT",
-"XDOT", "EDOT", "SINI", "DR", "DTHETA", "A0", "B0", "MTOT", "M2" };
+static const CHAR binpars[NUMBINPARS][VARNAME_MAX] = { "Pb", "e", "eps1",
+"eps2", "T0", "Tasc", "x", "w0", "Pb2", "e2", "T02", "x2", "w02", "Pb3", "e3",
+"T03", "x3", "w03", "xpbdot", "eps1dot", "eps2dot", "wdot", "gamma", "Pbdot",
+"xdot", "edot", "s", "dr", "dth", "a0", "b0", "M", "m2" };
 
 extern LALStringVector *corlist;
 

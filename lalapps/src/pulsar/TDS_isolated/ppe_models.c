@@ -35,6 +35,7 @@ void get_pulsar_model( LALInferenceModel *model ){
 
   /* set model parameters (including rescaling) */
   //pars.h0 = rescale_parameter( model, model->ifo, "h0" );
+  pars.cosiota = rescale_parameter( model, model->ifo, "COSIOTA" );
   pars.psi = rescale_parameter( model, model->ifo, "PSI" );
   pars.cgw = 1.; /* need to set this to one otherwise it defaults to zero with the initialisation */
 
@@ -45,7 +46,6 @@ void get_pulsar_model( LALInferenceModel *model ){
     pars.lambda = rescale_parameter( model, model->ifo, "LAMBDA" );
     pars.costheta = rescale_parameter( model, model->ifo, "COSTHETA" );
     pars.phi0 = rescale_parameter( model, model->ifo, "PHI0" );
-    pars.cosiota = rescale_parameter( model, model->ifo, "COSIOTA" );
 
     invert_source_params( &pars );
   }
@@ -73,7 +73,6 @@ void get_pulsar_model( LALInferenceModel *model ){
     pars.C21 = rescale_parameter( model, model->ifo, "C21" );
     pars.C22 = rescale_parameter( model, model->ifo, "C22" );
     pars.phi21 = rescale_parameter( model, model->ifo, "PHI21" );
-    pars.cosiota = rescale_parameter( model, model->ifo, "COSIOTA" );
 
     if( LALInferenceCheckVariable( model->ifo->params, "biaxial" ) ){
       /* use complex amplitude parameterisation, but set up for a biaxial star */
