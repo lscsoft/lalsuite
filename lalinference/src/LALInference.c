@@ -234,7 +234,11 @@ void LALInferenceSetVariable(LALInferenceVariables * vars, const char * name, vo
   if(!item) {
     XLAL_ERROR_VOID(XLAL_EINVAL, "Entry \"%s\" not found.", name);
   }
-  if (item->vary==LALINFERENCE_PARAM_FIXED) return;
+  if (item->vary==LALINFERENCE_PARAM_FIXED)
+  {
+    XLALPrintWarning("Warning! Attempting to set variable %s which is fixed\n",item->name);
+    return;
+  }
 
   /* We own the memory for each of these types, and it's about to be
      replaced by the new inputs. */
