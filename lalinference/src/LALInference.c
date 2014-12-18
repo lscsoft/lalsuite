@@ -1895,28 +1895,43 @@ char *colNameToParamName(const char *colName) {
   return retstr;
 }
 
+LALInferenceVariableItem *LALInferencePopVariableItem(LALInferenceVariables *vars, const char *name)
+{
+  LALInferenceVariableItem **prevPtr=&(vars->head);
+  LALInferenceVariableItem *thisPtr=vars->head;
+  while(thisPtr)
+  {
+    if(!strcmp(thisPtr->name,name))
+      break;
+    prevPtr=&(thisPtr->next);
+    thisPtr=thisPtr->next;
+  }
+  if(!thisPtr) return NULL;
+  *prevPtr=thisPtr->next;
+  thisPtr->next=NULL;
+  return thisPtr;
+}
+
 void LALInferenceSortVariablesByName(LALInferenceVariables *vars)
 {
-  LALInferenceVariables tmp;
-  tmp.head=NULL;
-  tmp.dimension=0;
-  LALInferenceVariableItem *thisitem,*ptr;
-  LALInferenceVariables *new=XLALCalloc(1,sizeof(*new));
-  if(!vars){
-    XLAL_ERROR_VOID(XLAL_EFAULT, "Received null input pointer.");
-  }
+  
+  /* Start a new list */
+  LALInferenceVariableItem *newHead=NULL;
+  
+  /* While there are elements in the old list */
   while(vars->head)
   {
-    thisitem=vars->head;
-    for (ptr=thisitem->next;ptr;ptr=ptr->next){
-      if(strcmp(ptr->name,thisitem->name)<0)
-        thisitem=ptr;
-    }
-    LALInferenceAddVariable(&tmp, thisitem->name, thisitem->value, thisitem->type, thisitem->vary);
-    LALInferenceRemoveVariable(vars,thisitem->name);
+    /* Scan through the old list looking for first item alphabetically */
+    LALInferenceVariableItem *this=NULL,*match=NULL;
+    for(match=vars->head,this=match->next; this; this=this->next)
+      if(strcmp(match->name,this->name)<0)
+        match = this;
+    /* Remove it from the old list and link it into the new one */
+    LALInferenceVariableItem *item=LALInferencePopVariableItem(vars,match->name);
+    item->next=newHead;
+    newHead=item;
   }
-  vars->head=tmp.head;
-  vars->dimension=tmp.dimension;
+  vars->head=newHead;
   return;
 }
 

@@ -649,6 +649,11 @@ LALInferenceVariableItem *LALInferenceGetItem(const LALInferenceVariables *vars,
  */
 LALInferenceVariableItem *LALInferenceGetItemNr(LALInferenceVariables *vars, int idx);
 
+/**
+ * Pop the list node for "name". Returns a pointer to the node, which is removed from vars
+ */
+LALInferenceVariableItem *LALInferencePopVariableItem(LALInferenceVariables *vars, const char *name);
+
 /** Output the sample to file *fp, in ASCII format */
 void LALInferencePrintSample(FILE *fp,LALInferenceVariables *sample);
 
