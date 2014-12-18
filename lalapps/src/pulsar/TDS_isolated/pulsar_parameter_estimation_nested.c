@@ -151,6 +151,9 @@ LALInference tools */
 #include "ppe_roq.h"
 
 /* global variables */
+/** An array to contain the log of factorials up to a certain number. */
+REAL8 *logfactorial = NULL;
+
 UINT4 verbose_output = 0;
 
 LALStringVector *corlist = NULL;
@@ -175,7 +178,7 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   read_pulsar_data( &runState );
 
   /* set algorithm to use Nested Sampling */
-  runState.algorithm = &nested_sampling_algorithm_wrapper;
+  runState.algorithm = &LALInferenceNestedSamplingAlgorithm;
   runState.evolve = &LALInferenceNestedSamplingOneStep;
 
   /* set likelihood function */
@@ -210,7 +213,7 @@ INT4 main( INT4 argc, CHAR *argv[] ){
                            LALINFERENCE_PARAM_FIXED );
 
   /* Create live points array and fill initial parameters */
-  setup_live_points_array_wrapper( &runState );
+  LALInferenceSetupLivePointsArray( &runState );
 
   /* output the live points sampled from the prior */
   outputPriorSamples( &runState );
@@ -226,11 +229,6 @@ INT4 main( INT4 argc, CHAR *argv[] ){
 
   /* re-read in output samples and rescale appropriately */
   rescale_output( &runState );
-
-  /* close timing file */
-  if ( LALInferenceCheckVariable( runState.algorithmParams, "timefile" ) ){
-    fclose(*(FILE**)LALInferenceGetVariable( runState.algorithmParams, "timefile" ));
-  }
 
   return 0;
 }

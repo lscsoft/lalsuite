@@ -265,7 +265,6 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
     get_model->ifo_loglikelihoods[ifo] = logliketmp;
 
     loglike += logliketmp;
-    tempdata->likeli_counter += 1;
     tempdata = tempdata->next;
     ifomodeltemp = ifomodeltemp->next;
     ifo++;

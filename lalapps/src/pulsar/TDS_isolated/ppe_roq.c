@@ -59,18 +59,12 @@ REAL8 *chebyshev_gauss_lobatto_nodes( REAL8 fmin, REAL8 fmax, UINT4 nnodes ){
  */
 void generate_interpolant( LALInferenceRunState *runState ){
   REAL8 tolerance = ROQTOLERANCE;
-  UINT4 ntraining = 0, i = 0, j = 0, verbose = 0;
+  UINT4 ntraining = 0, i = 0, j = 0;
   INT4 gaussianLike = 0;
   ProcessParamsTable *ppt;
 
   LALInferenceIFOModel *ifo = NULL;
   LALInferenceIFOData *data = runState->data;
-
-  /* timing values */
-  struct timeval time1, time2;
-  REAL8 tottime;
-
-  if ( LALInferenceCheckVariable( runState->algorithmParams, "timefile" ) ){ gettimeofday(&time1, NULL); }
 
   /* check whether to use ROQ */
   ppt = LALInferenceGetProcParamVal( runState->commandLine, "--roq" );
@@ -86,9 +80,6 @@ void generate_interpolant( LALInferenceRunState *runState ){
   if ( ppt ){ ntraining = atoi( ppt->value ); }
   else { XLAL_ERROR_VOID( XLAL_EFUNC, "Number of training sets must be specifed if running with --roq" ); }
   XLAL_CHECK_VOID( ntraining > 1, XLAL_EFUNC, "Number of training sets (%d) is too small!", ntraining );
-
-  ppt = LALInferenceGetProcParamVal( runState->commandLine, "--verbose" );
-  if ( ppt ){ verbose = 1; }
 
   /* check if using a Gaussian likelihoodm and therefore need variance weighted ROQ values */
   if ( LALInferenceGetProcParamVal( runState->commandLine, "--gaussian-like" ) ){ gaussianLike = 1; }
@@ -164,7 +155,7 @@ void generate_interpolant( LALInferenceRunState *runState ){
       }
 
       /* generate the training set */
-      ts = generate_training_set( tmpRS, ntraining, 1 );
+      ts = generate_training_set( tmpRS, ntraining );
 
       /* generate reduced basis */
       gsl_vector_view weights = gsl_vector_view_array(&dt, 1);
@@ -174,9 +165,8 @@ void generate_interpolant( LALInferenceRunState *runState ){
       XLAL_CHECK_VOID( RB != NULL, XLAL_EFUNC, "Could not produce basis set");
       nbases->data[i] = nbases0;
 
-      if ( verbose ){
-       fprintf(stderr, "Number of reduced bases for ROQ generation is %zu\n", nbases0);
-      }
+      fprintf(stderr, "Generated orthonormal basis\n");
+       fprintf(stderr, "Number of bases = %zu\n", nbases0);
 
       XLAL_CALLGSL( gsl_matrix_complex_free( ts ) );
 
@@ -187,7 +177,7 @@ void generate_interpolant( LALInferenceRunState *runState ){
       /* if required test the basis */
       if ( LALInferenceGetProcParamVal( runState->commandLine, "--test-basis" ) ){
         /* generate another set of waveforms and test that the reduced basis can match them well enough */
-        ts = generate_training_set( tmpRS, ntraining, 0 );
+        ts = generate_training_set( tmpRS, ntraining );
 
         /* check values are within tolerance (use 100 time the defined tolerance for the basis generation) */
         gsl_matrix_complex_view m = gsl_matrix_complex_view_array( (double*)RB, nbases0, tlen );
@@ -260,7 +250,7 @@ void generate_interpolant( LALInferenceRunState *runState ){
       if ( ssbdelays != NULL ){ ssbnodes = XLALResizeREAL8Vector( ssbnodes, dmlength ); }
       if ( bsbdelays != NULL ){ bsbnodes = XLALResizeREAL8Vector( bsbnodes, dmlength ); }
 
-      for ( j=0; j<nbases0; j++ ){
+      for ( j=0; j<dmlength; j++ ){
         timenodes->data[dlen+j] = ifo->times->data[startidx+interp->nodes[j]];
         sidtimenodes->data[dlen+j] = sidDayFrac->data[startidx+interp->nodes[j]];
         timedatanodes->data->data[dlen+j] = ifo->timeData->data->data[startidx+interp->nodes[j]];
@@ -336,17 +326,6 @@ void generate_interpolant( LALInferenceRunState *runState ){
     ifo = ifo->next;
     data = data->next;
   }
-
-  if ( LALInferenceCheckVariable( runState->algorithmParams, "timefile" ) ){
-    gettimeofday(&time2, NULL);
-
-    FILE *timefile = *(FILE **)LALInferenceGetVariable( runState->algorithmParams, "timefile" );
-    UINT4 timenum = *(UINT4 *)LALInferenceGetVariable( runState->algorithmParams, "timenum" );
-    tottime = (REAL8)((time2.tv_sec + time2.tv_usec*1.e-6) - (time1.tv_sec + time1.tv_usec*1.e-6));
-    fprintf(timefile, "[%d] %s: %.9le secs\n", timenum, __func__, tottime);
-    timenum++;
-    check_and_add_fixed_variable( runState->algorithmParams, "timenum", &timenum, LALINFERENCE_UINT4_t );
-  }
 }
 
 
@@ -364,7 +343,7 @@ void generate_interpolant( LALInferenceRunState *runState ){
  *
  * @return A complex matrix containing an array of training waveforms
  */
-gsl_matrix_complex *generate_training_set( LALInferenceRunState *rs, UINT4 n, UINT4 freqnodes ){
+gsl_matrix_complex *generate_training_set( LALInferenceRunState *rs, UINT4 n ){
   UINT4 j = 0;
   gsl_matrix_complex *ts = gsl_matrix_complex_alloc(n, rs->model->ifo->times->length);
   REAL8 *fnodes = NULL;
@@ -393,12 +372,12 @@ gsl_matrix_complex *generate_training_set( LALInferenceRunState *rs, UINT4 n, UI
         /* as we're using scaled values they will be between zero and 1 */
 
           /* if variable is f0 (frequency) then set the Chebyshev-Gauss-Lobatto nodes */
-          if ( ( !strcmp(item->name, "F0") || !strcmp(item->name, "f0") ) && freqnodes ){
-            if ( j == 0 ){ fnodes = chebyshev_gauss_lobatto_nodes( 0., 1., n ); }
-            value = fnodes[j];
-          }
-          else{ value = gsl_rng_uniform(rs->GSLrandom); }
-          //value = gsl_rng_uniform(rs->GSLrandom);
+          //if ( !strcmp(item->name, "F0") || !strcmp(item->name, "f0") ){
+          //  if ( j == 0 && freqnodes ){ fnodes = chebyshev_gauss_lobatto_nodes( 0., 1., n ); }
+          //  value = fnodes[j];
+         // }
+          //else{ value = gsl_rng_uniform(rs->GSLrandom); }
+          value = gsl_rng_uniform(rs->GSLrandom);
         }
         else if( LALInferenceCheckCorrelatedPrior(rs->priorArgs, item->name) && corlist ){
           /* for this correlation matrix values are also scaled as for the Gaussian prior */

@@ -138,12 +138,6 @@ void read_pulsar_data( LALInferenceRunState *runState ){
   /* Initialize the model, as it will hold IFO params and signal buffers */
   runState->model = XLALMalloc(sizeof(LALInferenceModel));
 
-  /* timing values */
-  struct timeval time1, time2;
-  REAL8 tottime;
-
-  if ( LALInferenceCheckVariable( runState->algorithmParams, "timefile" ) ){ gettimeofday(&time1, NULL); }
-
   /* check pulsar model required by getting the frequency harmonics */
   ppt = LALInferenceGetProcParamVal( commandLine, "--harmonics" );
   if ( ppt ) { harmonics = XLALStringDuplicate( ppt->value ); }
@@ -442,8 +436,6 @@ detectors specified (no. dets =\%d)\n", ml, ml, numDets);
     randomParams = XLALCreateRandomParams( seed+i );
 
     ifodata = XLALCalloc( 1, sizeof(LALInferenceIFOData) );
-    ifodata->likeli_counter = 0;
-    ifodata->templa_counter = 0;
     ifodata->next = NULL;
 
     ifomodel = XLALMalloc(sizeof(LALInferenceIFOModel));
@@ -701,6 +693,10 @@ detectors specified (no. dets =\%d)\n", ml, ml, numDets);
     if ( ifodata->compTimeData->data->length > maxlen ) { maxlen = ifodata->compTimeData->data->length; }
   }
 
+  /* set global variable logfactorial */
+  logfactorial = XLALCalloc( maxlen+1, sizeof(REAL8) );
+  for ( i = 2; i < (INT4)(maxlen+1); i++ ) { logfactorial[i] = logfactorial[i-1] + log((REAL8)i); }
+
   /* chop the data into stationary chunks and also calculate the noise variance if required
    * (note that if there is going to be a signal injected then this variance will be recalculated
    * after the injection has been made to make the analysis most similar to a real case). */
@@ -774,17 +770,6 @@ detectors specified (no. dets =\%d)\n", ml, ml, numDets);
   XLALFree( flengths );
   XLALFree( fstarts );
   XLALFree( fpsds );
-
-  if ( LALInferenceCheckVariable( runState->algorithmParams, "timefile" ) ){
-    gettimeofday(&time2, NULL);
-
-    FILE *timefile = *(FILE **)LALInferenceGetVariable( runState->algorithmParams, "timefile" );
-    UINT4 timenum = *(UINT4 *)LALInferenceGetVariable( runState->algorithmParams, "timenum" );
-    tottime = (REAL8)((time2.tv_sec + time2.tv_usec*1.e-6) - (time1.tv_sec + time1.tv_usec*1.e-6));
-    fprintf(timefile, "[%d] %s: %.9le secs\n", timenum, __func__, tottime);
-    timenum++;
-    check_and_add_fixed_variable( runState->algorithmParams, "timenum", &timenum, LALINFERENCE_UINT4_t );
-  }
 }
 
 

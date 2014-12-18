@@ -40,68 +40,6 @@ static void strtoupper(CHAR *s) {
   }
 }
 
-
-/**
- * \brief A wrapper around \c LALInferenceNestedSamplingAlgorithm
- *
- * This function just calls \c LALInferenceNestedSamplingAlgorithm, but will time the algorithm
- * if required.
- *
- * \param runState [] A pointer to the \c LALInferenceRunState
- */
-void nested_sampling_algorithm_wrapper( LALInferenceRunState *runState ){
-  /* timing values */
-  struct timeval time1, time2;
-  REAL8 tottime;
-
-  if ( LALInferenceCheckVariable( runState->algorithmParams, "timefile" ) ){ gettimeofday(&time1, NULL); }
-
-  LALInferenceNestedSamplingAlgorithm(runState);
-
-  if ( LALInferenceCheckVariable( runState->algorithmParams, "timefile" ) ){
-    gettimeofday(&time2, NULL);
-
-    FILE *timefile = *(FILE **)LALInferenceGetVariable( runState->algorithmParams, "timefile" );
-    UINT4 timenum = *(UINT4 *)LALInferenceGetVariable( runState->algorithmParams, "timenum" );
-    tottime = (REAL8)((time2.tv_sec + time2.tv_usec*1.e-6) - (time1.tv_sec + time1.tv_usec*1.e-6));
-    fprintf(timefile, "[%d] %s: %.9le secs\n", timenum, __func__, tottime);
-    timenum++;
-    check_and_add_fixed_variable( runState->algorithmParams, "timenum", &timenum, LALINFERENCE_UINT4_t );
-  }
-}
-
-
-/**
- * \brief A wrapper around \c LALInferenceSetupLivePointsArray
- *
- * This function just calls \c LALInferenceSetupLivePointsArray, but will time the algorithm
- * if required.
- *
- * \param runState [] A pointer to the \c LALInferenceRunState
- */
-void setup_live_points_array_wrapper( LALInferenceRunState *runState ){
-  /* timing values */
-  struct timeval time1, time2;
-  REAL8 tottime;
-
-  if ( LALInferenceCheckVariable( runState->algorithmParams, "timefile" ) ){ gettimeofday(&time1, NULL); }
-
-  LALInferenceSetupLivePointsArray( runState );
-
-  /* note that this time divided by the number of live points will give the approximate time per likelihood evaluation */
-  if ( LALInferenceCheckVariable( runState->algorithmParams, "timefile" ) ){
-    gettimeofday(&time2, NULL);
-
-    FILE *timefile = *(FILE **)LALInferenceGetVariable( runState->algorithmParams, "timefile" );
-    UINT4 timenum = *(UINT4 *)LALInferenceGetVariable( runState->algorithmParams, "timenum" );
-    tottime = (REAL8)((time2.tv_sec + time2.tv_usec*1.e-6) - (time1.tv_sec + time1.tv_usec*1.e-6));
-    fprintf(timefile, "[%d] %s: %.9le secs\n", timenum, __func__, tottime);
-    timenum++;
-    check_and_add_fixed_variable( runState->algorithmParams, "timenum", &timenum, LALINFERENCE_UINT4_t );
-  }
-}
-
-
 /**
  * \brief Initialises the nested sampling algorithm control
  *
@@ -112,7 +50,7 @@ void setup_live_points_array_wrapper( LALInferenceRunState *runState ){
  * The random number generator is initialise (the GSL Mersenne Twister algorithm \c gsl_rng_mt19937) using either a user
  * defined seed \c randomseed, the system defined \c /dev/random file, or the system clock time.
  *
- * \param runState [in] A pointer to the \c LALInferenceRunState
+ * \param runState [in] A pointer to the LALInferenceRunState
  */
 void initialise_algorithm( LALInferenceRunState *runState )
 {
@@ -181,7 +119,8 @@ void initialise_algorithm( LALInferenceRunState *runState )
   ppt = LALInferenceGetProcParamVal( commandLine, "--tolerance" );
   if( ppt ){
     tmp = strtod( ppt->value, (char **)NULL );
-    LALInferenceAddVariable( runState->algorithmParams, "tolerance", &tmp, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
+    LALInferenceAddVariable( runState->algorithmParams, "tolerance", &tmp, LALINFERENCE_REAL8_t,
+                             LALINFERENCE_PARAM_FIXED );
   }
 
   /* Set up the random number generator */
@@ -202,27 +141,6 @@ void initialise_algorithm( LALInferenceRunState *runState )
         exit(3);
       }
       fclose( devrandom );
-    }
-  }
-
-  /* check if we want to time the program */
-  ppt = LALInferenceGetProcParamVal( commandLine, "--time-it" );
-  if ( ppt != NULL ){
-    FILE *timefile = NULL;
-    UINT4 timenum = 1;
-    ppt = LALInferenceGetProcParamVal( commandLine, "--outfile" );
-
-    if ( !ppt ){ XLAL_ERROR_VOID(XLAL_EFUNC, "Error... no output file is specified!"); }
-
-    CHAR outtimefile[256] = "";
-    sprintf(outtimefile, "%s_timings", ppt->value);
-
-    if ( ( timefile = fopen(outtimefile, "w") ) == NULL ){
-      fprintf(stderr, "Warning... cannot create a timing file, so proceeding without timings\n");
-    }
-    else{
-      LALInferenceAddVariable( runState->algorithmParams, "timefile", &timefile, LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_FIXED );
-      LALInferenceAddVariable( runState->algorithmParams, "timenum", &timenum, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
     }
   }
 
@@ -1507,68 +1425,6 @@ void sum_data( LALInferenceRunState *runState ){
 
 
 /**
- * \brief Print any non-fixed sample to file (based on \c LALInferencePrintSampleNonFixed)
- */
-static void PrintNonFixedSample(FILE *fp, LALInferenceVariables *sample){
-  UINT4 i;
-  UINT4Vector *v=NULL;
-  gsl_vector *gslv = NULL;
-
-  if(sample==NULL) { return; }
-
-  LALInferenceVariableItem *ptr=sample->head;
-  if(fp==NULL) { return; }
-
-  while(ptr!=NULL) {
-    if (LALInferenceGetVariableVaryType(sample, ptr->name) != LALINFERENCE_PARAM_FIXED && ptr->type != LALINFERENCE_gslMatrix_t ) {
-      switch (ptr->type) {
-        case LALINFERENCE_INT4_t:
-          fprintf(fp, "%"LAL_INT4_FORMAT, *(INT4 *) ptr->value);
-          break;
-        case LALINFERENCE_INT8_t:
-          fprintf(fp, "%"LAL_INT8_FORMAT, *(INT8 *) ptr->value);
-          break;
-        case LALINFERENCE_UINT4_t:
-          fprintf(fp, "%"LAL_UINT4_FORMAT, *(UINT4 *) ptr->value);
-          break;
-        case LALINFERENCE_REAL4_t:
-          fprintf(fp, "%9.20e", *(REAL4 *) ptr->value);
-          break;
-        case LALINFERENCE_REAL8_t:
-          fprintf(fp, "%9.20le", *(REAL8 *) ptr->value);
-          break;
-        case LALINFERENCE_COMPLEX8_t:
-          fprintf(fp, "%e + i*%e", (REAL4) crealf(*(COMPLEX8 *) ptr->value), (REAL4) cimagf(*(COMPLEX8 *) ptr->value));
-          break;
-        case LALINFERENCE_COMPLEX16_t:
-          fprintf(fp, "%e + i*%e", (REAL8) creal(*(COMPLEX16 *) ptr->value), (REAL8) cimag(*(COMPLEX16 *) ptr->value));
-          break;
-        case LALINFERENCE_UINT4Vector_t:
-          v = *((UINT4Vector **)ptr->value);
-          for(i=0;i<v->length;i++){
-            fprintf(fp,"%11.7f",(REAL8)v->data[i]);
-            if( i!=(UINT4)(v->length-1) ) { fprintf(fp,"\t"); }
-          }
-          break;
-        case LALINFERENCE_gslVector_t:
-          gslv = *((gsl_vector **)ptr->value);
-          for(i=0;i<(UINT4)gslv->size;i++){
-            fprintf(fp,"%9.20lef",(REAL8)gsl_vector_get(gslv, i));
-            if( i!=(UINT4)(gslv->size-1) ) { fprintf(fp,"\t"); }
-          }
-          break;
-        default:
-          fprintf(stdout, "<can't print>");
-      }
-      fprintf(fp,"\t");
-    }
-    ptr=ptr->next;
-  }
-  return;
-}
-
-
-/**
  * \brief Print out only the variable (i.e. non-fixed) parameters to the file
  *
  * If the command line argument --non-fixed-only is given then this function
@@ -1584,7 +1440,7 @@ void LogNonFixedSampleToFile(LALInferenceRunState *state, LALInferenceVariables 
   if(outfile==NULL) return;
   LALInferenceSortVariablesByName(vars);
   /* only write out non-fixed samples */
-  PrintNonFixedSample(outfile, vars);
+  LALInferencePrintSampleNonFixed(outfile,vars);
   fprintf(outfile,"\n");
   return;
 }

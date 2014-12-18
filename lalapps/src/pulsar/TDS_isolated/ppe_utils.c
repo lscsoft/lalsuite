@@ -413,7 +413,7 @@ UINT4 find_change_point( COMPLEX16Vector *data, REAL8 *logodds, INT4 minlength )
 
   /* calculate the evidence that the data consists of a Gaussian data with a
      single standard deviation */
-  logsingle = -2 + gsl_sf_lnfact(length-1) - (REAL8)length * log( datasum );
+  logsingle = -2 + logfactorial[length-1] - (REAL8)length * log( datasum );
 
   /* to speed up process calculate data sums first */
   lsum = length - 2*minlength + 1;
@@ -443,8 +443,8 @@ UINT4 find_change_point( COMPLEX16Vector *data, REAL8 *logodds, INT4 minlength )
     REAL8 log_1 = 0., log_2 = 0.;
 
     /* get log evidences for the individual segments */
-    log_1 = -2 + gsl_sf_lnfact(ln1-1) - (REAL8)ln1 * log( sumforward->data[i] );
-    log_2 = -2 + gsl_sf_lnfact(ln2-1) - (REAL8)ln2 * log( sumback->data[lsum-i-1] );
+    log_1 = -2 + logfactorial[ln1-1] - (REAL8)ln1 * log( sumforward->data[i] );
+    log_2 = -2 + logfactorial[ln2-1] - (REAL8)ln2 * log( sumback->data[lsum-i-1] );
 
     /* get evidence for the two segments */
     logdouble = log_1 + log_2;
@@ -591,10 +591,10 @@ void merge_data( COMPLEX16Vector *data, UINT4Vector *segs ){
       summerged = sum1 + sum2;
 
       /* calculated evidences */
-      log_merged = -2 + gsl_sf_lnfact(nm-1) - (REAL8)nm * log( summerged );
+      log_merged = -2 + logfactorial[nm-1] - (REAL8)nm * log( summerged );
 
-      log_individual = -2 + gsl_sf_lnfact(n1-1) - (REAL8)n1 * log( sum1 );
-      log_individual += -2 + gsl_sf_lnfact(n2-1) - (REAL8)n2 * log( sum2 );
+      log_individual = -2 + logfactorial[n1-1] - (REAL8)n1 * log( sum1 );
+      log_individual += -2 + logfactorial[n2-1] - (REAL8)n2 * log( sum2 );
 
       logodds = log_merged - log_individual;
 
@@ -636,8 +636,6 @@ void rescale_output( LALInferenceRunState *runState ){
   FILE *fp = NULL, *fptemp = NULL, *fppars = NULL, *fpparstmp = NULL;
 
   LALStringVector *paramsStr = NULL;
-  UINT4Vector *paramsStrIdx = NULL;
-  UINT4 nonfixed = 0, k = 0;
 
   ProcessParamsTable *ppt1 = LALInferenceGetProcParamVal( runState->commandLine, "--outfile" );
 
@@ -646,6 +644,12 @@ void rescale_output( LALInferenceRunState *runState ){
 
     /* set temporary file for re-writing out samples */
     sprintf(outfiletmp, "%s_tmp", outfile);
+
+    /* open output file */
+    if( (fp = fopen(outfile, "r")) == NULL ){
+      XLALPrintError("Error... cannot open output file %s.\n", outfile);
+      XLAL_ERROR_VOID(XLAL_EIO);
+    }
 
     /* open temporary output file for reading */
     if( (fptemp = fopen(outfiletmp, "w")) == NULL ){
@@ -667,32 +671,23 @@ void rescale_output( LALInferenceRunState *runState ){
       XLAL_ERROR_VOID(XLAL_EIO);
     }
 
-    if ( LALInferenceGetProcParamVal( runState->commandLine, "--non-fixed-only" ) ){ nonfixed = 1; }
-
     CHAR v[128] = "";
-    UINT4 idx = 0, counter = 0;
     while( fscanf(fppars, "%s", v) != EOF ){
       /* if outputing only non-fixed values then only re-output names of those non-fixed things */
-      if ( nonfixed ){
+      if ( LALInferenceGetProcParamVal( runState->commandLine, "--non-fixed-only" ) ){
         if ( LALInferenceCheckVariable( runState->currentParams, v ) ){
           if ( LALInferenceGetVariableVaryType( runState->currentParams, v ) != LALINFERENCE_PARAM_FIXED ){
             fprintf(fpparstmp, "%s\t", v);
-            paramsStrIdx = XLALResizeUINT4Vector( paramsStrIdx, counter+1 );
-            paramsStrIdx->data[counter] = idx;
-            counter++;
+            paramsStr = XLALAppendString2Vector( paramsStr, v );
           }
         }
       }
       else{
+        paramsStr = XLALAppendString2Vector( paramsStr, v );
+
         /* re-output everything but the "model" value to a temporary file */
         if( strcmp(v, "model") ) { fprintf(fpparstmp, "%s\t", v); }
-        paramsStrIdx = XLALResizeUINT4Vector( paramsStrIdx, counter+1 );
-        paramsStrIdx->data[counter] = idx;
-        counter++;
       }
-
-      paramsStr = XLALAppendString2Vector( paramsStr, v );
-      idx++;
     }
 
     fclose(fppars);
@@ -701,56 +696,43 @@ void rescale_output( LALInferenceRunState *runState ){
     /* move the temporary file name to the standard outfile_param name */
     rename( outfileparstmp, outfilepars );
 
-    CHAR *filebuf = NULL;
-    filebuf = XLALFileLoad( outfile );
-    TokenList *tlist = NULL;
-    if ( XLALCreateTokenList( &tlist, filebuf, "\n" ) != XLAL_SUCCESS ){
-      fprintf(stderr, "Error... could not convert data into separate lines.\n");
-      exit(3);
-    }
-
-    for ( k = 0; k < tlist->nTokens; k++ ){
-      UINT4 i = 0, j = 0;
-
-      TokenList *tline = NULL;
-      XLALCreateTokenList( &tline, tlist->tokens[k], " \t" );
+    while ( 1 ){
+      UINT4 i = 0;
 
       /* scan through line, get value and reprint out scaled value to temporary file */
-      for( i = 0; i < paramsStrIdx->length; i++, j++ ){
+      for( i = 0; i < paramsStr->length; i++ ){
         CHAR scalename[VARNAME_MAX] = "";
         CHAR scaleminname[VARNAME_MAX] = "";
         REAL8 scalefac = 1., scalemin = 0.;
+        CHAR value[128];
 
-        if ( !strcmp(paramsStr->data[paramsStrIdx->data[i]], "model") ){
-          j++;
-          continue;
-        }
+        if( fscanf(fp, "%s", value) == EOF ) break;
 
-        sprintf(scalename, "%s_scale", paramsStr->data[paramsStrIdx->data[i]]);
-        sprintf(scaleminname, "%s_scale_min", paramsStr->data[paramsStrIdx->data[i]]);
+        sprintf(scalename, "%s_scale", paramsStr->data[i]);
+        sprintf(scaleminname, "%s_scale_min", paramsStr->data[i]);
 
         if ( LALInferenceCheckVariable( runState->model->ifo->params, scalename ) &&
           LALInferenceCheckVariable( runState->model->ifo->params, scaleminname ) ){
           scalefac = *(REAL8 *)LALInferenceGetVariable( runState->model->ifo->params, scalename );
           scalemin = *(REAL8 *)LALInferenceGetVariable( runState->model->ifo->params, scaleminname );
 
-          fprintf(fptemp, "%.12le\t", atof(tline->tokens[j])*scalefac + scalemin);
+          fprintf(fptemp, "%.12le\t", atof(value)*scalefac + scalemin);
         }
-        else{ fprintf(fptemp, "%.12le\t", atof(tline->tokens[j])); }
+        else if( strcmp(paramsStr->data[i], "model") ){
+          fprintf(fptemp, "%.12le\t", atof(value));
+        }
       }
+
+      if( feof(fp) ) break;
 
       /* print out the last two items to be the logPrior and logLikelihood */
       fprintf(fptemp, "\n");
-
-      XLALDestroyTokenList( tline );
     }
 
+    fclose(fp);
     fclose(fptemp);
 
-    XLALDestroyTokenList( tlist );
     XLALDestroyStringVector( paramsStr );
-    XLALDestroyUINT4Vector( paramsStrIdx );
-    XLALFree( filebuf );
 
     /* move the temporary file name to the standard outfile name */
     rename( outfiletmp, outfile );

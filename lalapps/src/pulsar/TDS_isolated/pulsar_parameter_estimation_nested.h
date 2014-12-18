@@ -29,8 +29,8 @@
 #include <string.h>
 #include <getopt.h>
 #include <unistd.h>
+#include <dirent.h>
 #include <complex.h>
-#include <time.h>
 #include <sys/time.h>
 
 /* LAL headers */
@@ -301,11 +301,6 @@ extern "C" {
 " --jones-model      Set if using both 1 and 2 multiples of the frequency and\n\
                     requiring the use of the original signal model parameters\n\
                     from Jones, MNRAS, 402 (2010).\n"\
-"\n"\
-" Benchmarking:\n"\
-" --time-it          Set if wanting to time the various parts of the code.\n\
-                    A output file with the \"outfile\" filename appended with\n\
-                    \"_timings\" will contain the timings.\n"\
 "\n"
 
 /**
@@ -342,6 +337,8 @@ static const CHAR binpars[NUMBINPARS][VARNAME_MAX] = { "Pb", "e", "eps1",
 extern LALStringVector *corlist;
 
 extern UINT4 verbose_output;
+
+extern REAL8 *logfactorial;
 
 #ifdef __cplusplus
 }
