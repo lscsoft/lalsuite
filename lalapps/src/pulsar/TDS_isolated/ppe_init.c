@@ -1512,7 +1512,7 @@ void sum_data( LALInferenceRunState *runState ){
 static void PrintNonFixedSample(FILE *fp, LALInferenceVariables *sample){
   UINT4 i;
   UINT4Vector *v=NULL;
-  gsl_vector *gslv = NULL;
+  /* gsl_vector *gslv = NULL; */
 
   if(sample==NULL) { return; }
 
@@ -1550,6 +1550,7 @@ static void PrintNonFixedSample(FILE *fp, LALInferenceVariables *sample){
             if( i!=(UINT4)(v->length-1) ) { fprintf(fp,"\t"); }
           }
           break;
+        /*
         case LALINFERENCE_gslVector_t:
           gslv = *((gsl_vector **)ptr->value);
           for(i=0;i<(UINT4)gslv->size;i++){
@@ -1557,6 +1558,7 @@ static void PrintNonFixedSample(FILE *fp, LALInferenceVariables *sample){
             if( i!=(UINT4)(gslv->size-1) ) { fprintf(fp,"\t"); }
           }
           break;
+        */
         default:
           fprintf(stdout, "<can't print>");
       }
