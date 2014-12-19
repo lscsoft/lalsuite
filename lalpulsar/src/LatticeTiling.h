@@ -33,7 +33,7 @@ extern "C" {
 ///
 /// \file
 /// \author Karl Wette
-/// \brief Lattice-based template generation for flat metric parameter spaces
+/// \brief Lattice-based template generation for constant-metric parameter spaces
 ///
 
 ///
