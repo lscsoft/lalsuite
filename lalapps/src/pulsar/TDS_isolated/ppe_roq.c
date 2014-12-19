@@ -238,8 +238,8 @@ void generate_interpolant( LALInferenceRunState *runState ){
 
         XLAL_CALLGSL( gsl_matrix_complex_free( ts ) );
 
-        if ( nbases0 > (size_t)tlen-1 ){
-          XLAL_ERROR_VOID( XLAL_EFUNC, "Number of bases is longer than date length, so no point using ROQ" );
+        if ( nbases0 > (size_t)tlen-1 || nbases0 == ntraining ){
+          fprintf( stderr, "Number of bases is longer than data length (or uses all training points), so not using ROQ for this segment\n" );
         }
 
         /* if required test the basis */
@@ -264,8 +264,18 @@ void generate_interpolant( LALInferenceRunState *runState ){
         XLALFree( tmpRS );
 
         /* generate the interpolants (pass the data noise variances for weighting the interpolants in the case of using a Gaussian likelihood) */
-        gsl_matrix_complex_view RBview = gsl_matrix_complex_view_array((double*)RB, nbases0, tlen);
-        interp = LALInferenceGenerateCOMPLEXROQInterpolant(&RBview.matrix);
+        if ( nbases0 <= (size_t)tlen-1 && nbases0 < ntraining ){
+          gsl_matrix_complex_view RBview = gsl_matrix_complex_view_array((double*)RB, nbases0, tlen);
+          interp = LALInferenceGenerateCOMPLEXROQInterpolant(&RBview.matrix);
+        }
+        else{
+          /* if the number of bases is greater than the length just use all the data points in a chunk */
+          interp =  XLALMalloc(sizeof(LALInferenceCOMPLEXROQInterpolant));
+          interp->B = NULL;
+          interp->nodes = XLALMalloc(sizeof(UINT4)*tlen);
+
+          for ( j=0; j<tlen; j++ ){ interp->nodes[j] = (UINT4)j; }
+        }
 
         /* free the reduced basis set */
         XLALFree( RB );
@@ -285,8 +295,29 @@ void generate_interpolant( LALInferenceRunState *runState ){
         else{ vari = gsl_vector_view_array( &varone, 1 ); } /* using Students-t likelihood, so just set to 1 */
 
         /* create the data/model and model/model inner product weights */
-        gsl_vector_complex *dmw = LALInferenceGenerateCOMPLEX16DataModelWeights(interp->B, &datasub.vector, &vari.vector);
-        gsl_matrix_complex *mmw = LALInferenceGenerateCOMPLEXModelModelWeights(interp->B, &vari.vector);
+        gsl_vector_complex *dmw;
+        gsl_matrix_complex *mmw;
+        if ( nbases0 <= (size_t)tlen-1 && nbases0 < ntraining ){
+          dmw = LALInferenceGenerateCOMPLEX16DataModelWeights(interp->B, &datasub.vector, &vari.vector);
+          mmw = LALInferenceGenerateCOMPLEXModelModelWeights(interp->B, &vari.vector);
+        }
+        else{
+          /* if the number of bases is longer than the data then fill in the data-model weights with just the data
+           * and the model-model weights with a diagonal matrix filled with the variances */
+          dmw = gsl_vector_complex_alloc( tlen );
+          mmw = gsl_matrix_complex_calloc( tlen, tlen );
+
+          for ( j=0; j<tlen; j++ ){
+            gsl_complex compval1;
+
+            if ( gaussianLike ){ GSL_SET_COMPLEX(&compval1, 1./gsl_vector_get(&vari.vector, j), 0.); }
+            else{ GSL_SET_COMPLEX(&compval1, 1./gsl_vector_get(&vari.vector, 0), 0.); }
+            gsl_matrix_complex_set(mmw, j, j, compval1);
+            if ( gaussianLike ){ compval1 = gsl_complex_div_real(gsl_vector_complex_get(&datasub.vector, j), gsl_vector_get(&vari.vector, j)); }
+            else{ compval1 = gsl_complex_div_real(gsl_vector_complex_get(&datasub.vector, j), gsl_vector_get(&vari.vector, 0)); }
+            gsl_vector_complex_set(dmw, j, compval1);
+          }
+        }
 
         /* put weights into a vector */
         mmlength += (nbases0*nbases0);
