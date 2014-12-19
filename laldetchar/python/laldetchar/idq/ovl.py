@@ -2124,7 +2124,58 @@ def train(
 
     return vetolists
 
+###
+def convergent_train(__params, num_runs=5, output_dir="./", verbose=False, write_channels=False):
+    """
+    trains OVL on a specified data set
+    increments incremental to keep pace with num_runs and auto-terminates iteration only when incremental==num_configs_in_list
+    once we run out of configs to keep in the list, we iterate "num_runs" more times to shake out any loose ends...
+        ==> We're still susceptible to Markovian cycles!
+    """
 
+    # set up output directory
+    output_dir = __check_dirname(output_dir)
+    OVL_dir = output_dir + 'ovl/'
+    if not os.path.exists(OVL_dir):
+        os.makedirs(OVL_dir)
+
+    # write params file into the directory
+    write_params(__params, 'params.txt', params_dir=OVL_dir)
+
+    # train OVL
+    ### initial run (everything is independent)
+    run = 0
+    while True:
+        statsfiles = recalculate( run, run, __params, source_dir=OVL_dir, output_dir=OVL_dir, eval=False, verbose=verbose, write_channels=False)[0]
+        run += 1
+
+        ### see how many surviving configurations there are
+        for statsfile in statsfiles:
+            nconfigs = len([line for line in open("%s/%s"%(OVL_dir, statsfile), "r").readlines() if line[0] != "#"])
+            if nconfigs > run: ### there are configs that are not applied hierarchically
+                break
+        else: ### only reached if all configs were applied hierarchically for all statsfiles
+            break
+
+    incremental = run-1
+
+    for run in xrange(run, run+num_runs):
+        recalculate( run, incremental, __params, source_dir=OVL_dir, output_dir=OVL_dir, eval=False, verbose=verbose, write_channels=False)
+    run += 1
+
+    # we only write the channel list on the last iteration
+    recalculate( run, incremental, __params, source_dir=OVL_dir, output_dir=OVL_dir, track=True, eval=True, verbose=verbose, write_channels=write_channels)
+
+    # generate vetolist
+    vetolists = vetolist_eval(run, __params, output_dir=OVL_dir, source_dir=OVL_dir, verbose=verbose)
+
+    # generate standard ROC file
+    for v in vetolists:
+        v = v.split('/')[-1]
+        roc_filename = vetolist_to_ROC(v, source_dir=OVL_dir,
+                output_dir=OVL_dir, metric=__params.metric)
+
+    return vetolists
 
 # ===================================================================================================
 #
