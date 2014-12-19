@@ -377,12 +377,19 @@ void LALInferenceSetupDefaultNSProposal(LALInferenceRunState *runState, LALInfer
     LALInferenceAddProposalToCycle(runState, ensembleWalkIntrinsicName, &LALInferenceEnsembleWalkIntrinsic, SMALLWEIGHT);
     LALInferenceAddProposalToCycle(runState, ensembleWalkExtrinsicName, &LALInferenceEnsembleWalkExtrinsic, SMALLWEIGHT);
   }
-  
-  
+    
   //Add LALInferencePSDFitJump to the cycle
   if(LALInferenceGetProcParamVal(runState->commandLine, "--psdFit"))
   {
     LALInferenceAddProposalToCycle (runState, PSDFitJumpName, *LALInferencePSDFitJump, SMALLWEIGHT);
+  }
+  
+  /* Add glitch-fitting proposals to cycle */
+  if(LALInferenceGetProcParamVal(runState->commandLine, "--glitchFit"))
+  {
+    //Morlet wavelet propposals
+    LALInferenceAddProposalToCycle(runState, GlitchMorletJumpName, *LALInferenceGlitchMorletProposal, SMALLWEIGHT);
+    LALInferenceAddProposalToCycle(runState, GlitchMorletReverseJumpName, *LALInferenceGlitchMorletReverseJump, SMALLWEIGHT);
   }
 
   if(LALInferenceGetProcParamVal(runState->commandLine,"--proposal-kde")){

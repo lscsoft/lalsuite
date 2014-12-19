@@ -1296,6 +1296,20 @@ int LALInferenceCompareVariables(LALInferenceVariables *var1, LALInferenceVariab
               }
             break;
           }
+          case LALINFERENCE_UINT4Vector_t:
+          {
+            UINT4Vector *v1=ptr1->value,*v2=ptr2->value;
+            if(v1->length!=v2->length) result=1;
+            else
+              for(UINT4 i=0;i<v1->length;i++)
+              {
+                if(v1->data[i]!=v2->data[i]){
+                  result=1;
+                  break;
+                }
+              }
+            break;
+          }
           default:
             XLAL_ERROR(XLAL_EFAILED, "Encountered unknown LALInferenceVariables type (entry: \"%s\").", ptr1->name);
         }
