@@ -1,7 +1,7 @@
 /*******************************************************************************
   Matt Pitkin, Colin Gill, John Veitch - 2011
 
-  ppe_models.h
+  ppe_likelihood.h
 
   Header file for ppe_likelihood.c
 

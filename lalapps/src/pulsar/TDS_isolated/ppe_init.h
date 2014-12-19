@@ -38,6 +38,8 @@
 extern "C" {
 #endif
 
+void nested_sampling_algorithm_wrapper(LALInferenceRunState *runState);
+void setup_live_points_array_wrapper( LALInferenceRunState *runState );
 void initialise_algorithm( LALInferenceRunState *runState );
 void setup_lookup_tables(LALInferenceRunState *runState, LALSource *source);
 void add_initial_variables( LALInferenceVariables *ini, LALInferenceVariables *scaleFac, BinaryPulsarParams pars );

@@ -75,8 +75,7 @@
  *
  * If using real data the files must be specified in the \c input-files command line argument - these should be comma
  * separated for multiple files and be in the same order at the associated detector from which they came given by the
- * \c detectors command. The data can be downsampled by a factor given by the \c downsample-factor command line
- * argument, but by default no down-sampling is applied. The downsampling is performed by averaging points.
+ * \c detectors command.
  *
  * The function also checks that valid Earth and Sun ephemeris files (from the lalpulsar suite) are set with the \c
  * ephem-earth and \c ephem-sun arguments, and that a valid output file for the nested samples is set via the \c outfile
@@ -129,7 +128,7 @@ void read_pulsar_data( LALInferenceRunState *runState ){
 
   CHAR *harmonics = NULL;
   REAL8Vector *modelFreqFactors = NULL;
-  INT4 ml = 1, downs = 1;
+  INT4 ml = 1;
 
   CHAR *parFile = NULL;
   BinaryPulsarParams pulsar;
@@ -138,6 +137,12 @@ void read_pulsar_data( LALInferenceRunState *runState ){
 
   /* Initialize the model, as it will hold IFO params and signal buffers */
   runState->model = XLALMalloc(sizeof(LALInferenceModel));
+
+  /* timing values */
+  struct timeval time1, time2;
+  REAL8 tottime;
+
+  if ( LALInferenceCheckVariable( runState->algorithmParams, "timefile" ) ){ gettimeofday(&time1, NULL); }
 
   /* check pulsar model required by getting the frequency harmonics */
   ppt = LALInferenceGetProcParamVal( commandLine, "--harmonics" );
@@ -376,6 +381,9 @@ number of detectors specified (no. dets =\%d)\n", ml, ml, numDets);
   runState->model->ifo_loglikelihoods = XLALMalloc( sizeof(REAL8)*ml*numDets );
   runState->model->ifo_SNRs = XLALMalloc( sizeof(REAL8)*ml*numDets );
 
+  UINT4 nstreams = ml*numDets;
+  LALInferenceAddVariable( runState->algorithmParams, "numstreams", &nstreams, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
+
   ppt = LALInferenceGetProcParamVal( commandLine,"--input-files" );
   if( ppt ) { inputfile = XLALStringDuplicate( ppt->value ); }
 
@@ -409,11 +417,6 @@ detectors specified (no. dets =\%d)\n", ml, ml, numDets);
   if ( ppt != NULL ) { seed = atoi( ppt->value ); }
   else { seed = 0; } /* will be set from system clock */
 
-  /* check if we want to down-sample the input data by a given factor */
-  ppt = LALInferenceGetProcParamVal( commandLine, "--downsample-factor" );
-  if ( ppt != NULL ) { downs = atoi( ppt->value ); }
-  else { downs = 1; } /* no downsampling */
-
   /* reset filestr if using real data (i.e. not fake) */
   if ( !ppt2 ) { filestr = XLALStringDuplicate( inputfile ); }
 
@@ -442,6 +445,8 @@ detectors specified (no. dets =\%d)\n", ml, ml, numDets);
     randomParams = XLALCreateRandomParams( seed+i );
 
     ifodata = XLALCalloc( 1, sizeof(LALInferenceIFOData) );
+    ifodata->likeli_counter = 0;
+    ifodata->templa_counter = 0;
     ifodata->next = NULL;
 
     ifomodel = XLALMalloc(sizeof(LALInferenceIFOModel));
@@ -491,18 +496,12 @@ detectors specified (no. dets =\%d)\n", ml, ml, numDets);
     /*============================ GET DATA ==================================*/
     /* get i'th filename from the comma separated list */
     if ( !ppt2 ){ /* if using real data read in from the file */
-      UINT4 counter = 0;
-
       datafile = strsep(&filestr, ",");
 
       j=0;
 
       /* read in data */
       temptimes = XLALCreateREAL8Vector( 1 );
-
-      /* variables to aid downsampling of data */
-      REAL8 tmpre = 0., tmpim = 0., timetmp = 0., dtcur = 0., dtprev = 0., tmpsigma = 0.;
-      REAL8 tnow = 0., tprev = 0.;
 
       /* read in all the data then ignore lines starting with # or % */
       filebuf = XLALFileLoad( datafile );
@@ -520,7 +519,7 @@ detectors specified (no. dets =\%d)\n", ml, ml, numDets);
         /* search for a comment character in the string */
         if ( strchr(tlist->tokens[k], '#') || strchr(tlist->tokens[k], '%') ){ continue; }
         else{ /* read in data from string */
-          if ( counter == 0 && j == 0 ){
+          if ( j == 0 ){
             /* check the number of values in the line by counting the number of value separated by whitespace  */
             TokenList *tline = NULL;
             XLALCreateTokenList( &tline, tlist->tokens[k], " \t" );
@@ -547,84 +546,20 @@ detectors specified (no. dets =\%d)\n", ml, ml, numDets);
         }
         j++;
 
-        tnow = times;
-
-        /* downsample by averaging if required */
-        if ( j%downs != 0 ){
-          if ( j > 1 ) { dtcur = tnow - tprev; }
-
-          tmpre += dataValsRe;
-          tmpim += dataValsIm;
-          if ( inputsigma ) { tmpsigma += sigmaVals; }
-
-          timetmp += times;
-          tprev = tnow;
-
-          /* if timesteps between points aren't equal then reset and move on i.e. we only want to use contiguous data
-           * segments with equal time spacings */
-          if ( j > 2 && dtcur != dtprev ){
-            timetmp = times;
-            tmpre = dataValsRe;
-            tmpim = dataValsIm;
-            dtcur = dtprev = 0.;
-            j = 1;
-          }
-
-          dtprev = dtcur;
-
-          continue;
-        }
-        else{
-          /* if downsampling is not occuring just set individual values */
-          if ( !tmpre && !tmpim && !timetmp ){
-            tmpre = dataValsRe;
-            tmpim = dataValsIm;
-            if ( inputsigma ) { tmpsigma = sigmaVals; }
-
-            timetmp = times;
-          }
-          else{ /* if downsampling get averages */
-            if( j > 1 ) dtcur = tnow - tprev;
-
-            /* check for contiguous segments */
-            if( j > 2 && dtcur != dtprev ){
-              timetmp = times;
-              tmpre = dataValsRe;
-              tmpim = dataValsIm;
-              if ( inputsigma ) { tmpsigma = sigmaVals; }
-              dtcur = dtprev = 0.;
-              j = 1;
-              continue;
-            }
-
-            /* add on final point and average */
-            tmpre = (tmpre + dataValsRe) / (REAL8)downs;
-            tmpim = (tmpim + dataValsIm ) / (REAL8)downs;
-            if ( inputsigma ) { tmpsigma = (tmpsigma + sigmaVals) / (REAL8)downs; }
-            timetmp = (timetmp + times) / (REAL8)downs;
-          }
-        }
-
-        counter++;
-
         /* dynamically allocate more memory */
-        ifodata->compTimeData = XLALResizeCOMPLEX16TimeSeries( ifodata->compTimeData, 0, counter );
-        ifomodel->compTimeSignal = XLALResizeCOMPLEX16TimeSeries( ifomodel->compTimeSignal, 0, counter );
-        ifodata->varTimeData = XLALResizeREAL8TimeSeries( ifodata->varTimeData, 0, counter );
+        ifodata->compTimeData = XLALResizeCOMPLEX16TimeSeries( ifodata->compTimeData, 0, j );
+        ifomodel->compTimeSignal = XLALResizeCOMPLEX16TimeSeries( ifomodel->compTimeSignal, 0, j );
+        ifodata->varTimeData = XLALResizeREAL8TimeSeries( ifodata->varTimeData, 0, j );
 
-        temptimes = XLALResizeREAL8Vector( temptimes, counter );
+        temptimes = XLALResizeREAL8Vector( temptimes, j );
 
-        temptimes->data[counter-1] = timetmp;
-        ifodata->compTimeData->data->data[counter-1] = tmpre + I*tmpim;
+        temptimes->data[j-1] = times;
+        ifodata->compTimeData->data->data[j-1] = dataValsRe + I*dataValsIm;
 
-        if ( inputsigma ){ ifodata->varTimeData->data->data[counter-1] = SQUARE( tmpsigma ); }
-
-        tmpre = tmpim = timetmp = tmpsigma = 0.;
-        dtcur = dtprev = 0.;
-        j = 0;
+        if ( inputsigma ){ ifodata->varTimeData->data->data[j-1] = SQUARE( sigmaVals ); }
       }
 
-      if ( counter == 0 ){
+      if ( j == 0 ){
         fprintf(stderr, "Error... nothing read in from data file %s.\n", datafile);
         exit(3);
       }
@@ -632,7 +567,7 @@ detectors specified (no. dets =\%d)\n", ml, ml, numDets);
       XLALDestroyTokenList( tlist );
       XLALFree( filebuf );
 
-      datalength = counter;
+      datalength = j;
 
       /* allocate data time stamps */
       ifomodel->times = NULL;
@@ -769,10 +704,6 @@ detectors specified (no. dets =\%d)\n", ml, ml, numDets);
     if ( ifodata->compTimeData->data->length > maxlen ) { maxlen = ifodata->compTimeData->data->length; }
   }
 
-  /* set global variable logfactorial */
-  logfactorial = XLALCalloc( maxlen+1, sizeof(REAL8) );
-  for ( i = 2; i < (INT4)(maxlen+1); i++ ) { logfactorial[i] = logfactorial[i-1] + log((REAL8)i); }
-
   /* chop the data into stationary chunks and also calculate the noise variance if required
    * (note that if there is going to be a signal injected then this variance will be recalculated
    * after the injection has been made to make the analysis most similar to a real case). */
@@ -846,6 +777,17 @@ detectors specified (no. dets =\%d)\n", ml, ml, numDets);
   XLALFree( flengths );
   XLALFree( fstarts );
   XLALFree( fpsds );
+
+  if ( LALInferenceCheckVariable( runState->algorithmParams, "timefile" ) ){
+    gettimeofday(&time2, NULL);
+
+    FILE *timefile = *(FILE **)LALInferenceGetVariable( runState->algorithmParams, "timefile" );
+    UINT4 timenum = *(UINT4 *)LALInferenceGetVariable( runState->algorithmParams, "timenum" );
+    tottime = (REAL8)((time2.tv_sec + time2.tv_usec*1.e-6) - (time1.tv_sec + time1.tv_usec*1.e-6));
+    fprintf(timefile, "[%d] %s: %.9le secs\n", timenum, __func__, tottime);
+    timenum++;
+    check_and_add_fixed_variable( runState->algorithmParams, "timenum", &timenum, LALINFERENCE_UINT4_t );
+  }
 }
 
 
@@ -902,21 +844,11 @@ void setup_from_par_file( LALInferenceRunState *runState )
   LALInferenceIFOData *data = runState->data;
   LALInferenceVariables *scaletemp;
   ProcessParamsTable *ppt = NULL;
-  UINT4 mmfactor = 0;
-  REAL8 mm = 0;
   REAL8 DeltaT = 0.; /* maximum data time span */
 
   ppt = LALInferenceGetProcParamVal( runState->commandLine, "--par-file" );
   if( ppt == NULL ) { fprintf(stderr,"Must specify --par-file!\n"); exit(1); }
   CHAR *parFile = ppt->value;
-
-  /* check if we needed a downsampled time stamp series */
-  ppt = LALInferenceGetProcParamVal( runState->commandLine, "--mm-factor" );
-  if( ppt != NULL ) mmfactor = atoi( ppt->value );
-
-  /* get mismatch value if required */
-  ppt = LALInferenceGetProcParamVal( runState->commandLine, "--mismatch" );
-  if( ppt != NULL ) mm = atof( ppt->value );
 
   /* get the pulsar parameters */
   XLALReadTEMPOParFile( &pulsar, parFile );
@@ -965,7 +897,7 @@ void setup_from_par_file( LALInferenceRunState *runState )
       bdts = get_bsb_delay( pulsar, ifo_model->times, dts, ifo_model->ephem );
       LALInferenceAddVariable( ifo_model->params, "bsb_delays", &bdts, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
 
-      phase_vector = get_phase_model( pulsar, ifo_model, freqFactors->data[j], 0 );
+      phase_vector = get_phase_model( pulsar, ifo_model, freqFactors->data[j] );
 
       ifo_model->timeData = NULL;
       ifo_model->timeData = XLALCreateREAL8TimeSeries( "", &ifo_model->times->data[0], 0., 1., &lalSecondUnit, phase_vector->length );
@@ -975,29 +907,6 @@ void setup_from_par_file( LALInferenceRunState *runState )
       /* add the scale factors from scaletemp into the ifo_model->params structure */
       for( ; scaleitem; scaleitem = scaleitem->next ){
         LALInferenceAddVariable( ifo_model->params, scaleitem->name, scaleitem->value, scaleitem->type, scaleitem->vary );
-      }
-
-      /* get down sampled time stamps if required and set mismatch */
-      if ( mmfactor != 0 && mm != 0. ){
-        LIGOTimeGPSVector *downst = XLALCreateTimestampVector( floor(phase_vector->length/mmfactor) );
-        UINT4 k = 0;
-
-        /* array to contain down-sampled phases */
-        REAL8Vector *dsphase = XLALCreateREAL8Vector( floor(phase_vector->length/mmfactor) );
-
-        if ( downst->length < 2 ){
-          XLALPrintError("Error, downsampled time stamp factor to high!\n");
-          XLAL_ERROR_VOID(XLAL_EFAILED);
-        }
-
-        for( k = 1; k < downst->length+1; k++ ){
-          downst->data[k-1] = ifo_model->times->data[(k-1)*mmfactor];
-          dsphase->data[k-1] = 0.;
-        }
-
-        LALInferenceAddVariable( ifo_model->params, "downsampled_times", &downst, LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_FIXED );
-        LALInferenceAddVariable( ifo_model->params, "ds_phase", &dsphase, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
-        LALInferenceAddVariable( ifo_model->params, "mismatch", &mm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
       }
 
       data = data->next;

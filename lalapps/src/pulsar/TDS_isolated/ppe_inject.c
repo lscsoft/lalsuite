@@ -314,7 +314,7 @@ REAL8 calculate_time_domain_snr( LALInferenceIFOData *data, LALInferenceIFOModel
 
   INT4 i = 0, j = 0, length = 0, cl = 0;
 
-  INT4 chunkMin = 0, count = 0, varyphase = 0, nonGR = 0;
+  INT4 chunkMin = 0, count = 0, varyphase = 0, nonGR = 0, roq = 0;
 
   UINT4Vector *chunkLengths = NULL;
   chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( ifo_model->params, "chunkLength" );
@@ -329,33 +329,34 @@ REAL8 calculate_time_domain_snr( LALInferenceIFOData *data, LALInferenceIFOModel
 
   if ( LALInferenceCheckVariable( ifo_model->params, "varyphase" ) ){ varyphase = 1; }
   if ( LALInferenceCheckVariable( ifo_model->params, "nonGR" ) ){ nonGR = 1; }
+  if ( LALInferenceCheckVariable( ifo_model->params, "roq" ) ){ roq = 1; }
 
-  if ( !varyphase ){
+  if ( !varyphase && !roq ){
     /* get explicitly whitened versions of these sums */
     sumP = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumPWhite" );
     sumC = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumCWhite" );
     sumPC = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumPCWhite" );
 
     if ( nonGR ){
-      sumX = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumX" );
-      sumY = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumY" );
-      sumB = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumB" );
-      sumL = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumL" );
+      sumX = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumXWhite" );
+      sumY = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumYWhite" );
+      sumB = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumBWhite" );
+      sumL = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumLWhite" );
 
-      sumPX = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumPX" );
-      sumPY = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumPY" );
-      sumPB = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumPB" );
-      sumPL = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumPL" );
-      sumCX = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumCX" );
-      sumCY = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumCY" );
-      sumCB = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumCB" );
-      sumCL = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumCL" );
-      sumXY = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumXY" );
-      sumXB = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumXB" );
-      sumXL = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumXL" );
-      sumYB = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumYB" );
-      sumYL = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumYL" );
-      sumBL = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumBL" );
+      sumPX = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumPXWhite" );
+      sumPY = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumPYWhite" );
+      sumPB = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumPBWhite" );
+      sumPL = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumPLWhite" );
+      sumCX = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumCXWhite" );
+      sumCY = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumCYWhite" );
+      sumCB = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumCBWhite" );
+      sumCL = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumCLWhite" );
+      sumXY = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumXYWhite" );
+      sumXB = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumXBWhite" );
+      sumXL = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumXLWhite" );
+      sumYB = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumYBWhite" );
+      sumYL = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumYLWhite" );
+      sumBL = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "sumBLWhite" );
     }
   }
 
@@ -375,7 +376,7 @@ REAL8 calculate_time_domain_snr( LALInferenceIFOData *data, LALInferenceIFOModel
     cl = i + (INT4)chunkLength;
 
     /* check whether the full time domain model exists, or the pre-summed model */
-    if ( varyphase ){
+    if ( varyphase || roq ){
       for( j = i ; j < cl ; j++ ){
         /* calculate optimal signal power */
         snrcRe += SQUARE( creal(ifo_model->compTimeSignal->data->data[j]) ) / data->varTimeData->data->data[j];
@@ -448,6 +449,7 @@ REAL8 calculate_time_domain_snr( LALInferenceIFOData *data, LALInferenceIFOModel
  */
 void get_loudest_snr( LALInferenceRunState *runState ){
   INT4 ndats = 0;
+  UINT4 roq = 0;
   INT4 Nlive = *(INT4 *)LALInferenceGetVariable( runState->algorithmParams, "Nlive" );
   REAL8 snrmulti = 0.;
   REAL8Vector *freqFactors = NULL;
@@ -459,21 +461,75 @@ void get_loudest_snr( LALInferenceRunState *runState ){
   ProcessParamsTable *commandLine = runState->commandLine;
 
   LALInferenceVariables *loudestParams = NULL;
-  LALInferenceIFOData *data;
-  LALInferenceIFOModel *ifo_model;
+  LALInferenceIFOData *data = runState->data;
+  LALInferenceIFOModel *ifo_model = runState->model->ifo;
 
-  loudestParams = calloc( 1, sizeof(LALInferenceVariables) );
+  loudestParams = XLALCalloc( 1, sizeof(LALInferenceVariables) );
 
   /* max likelihood point should have been sorted to be the final value */
   LALInferenceCopyVariables( runState->livePoints[Nlive-1], loudestParams );
 
+  /* if using ROQ we need to reinstate the full time stamp vector to compute the model for the SNR calculation */
+  if ( LALInferenceGetProcParamVal( runState->commandLine, "--roq" ) ){
+    roq = 1;
+
+    while ( ifo_model ){
+      UINT4 varyphase = 1; /* must set varyphase */
+
+      REAL8Vector *sidtime = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "siderealDayFull" );
+      LALInferenceRemoveVariable( ifo_model->params, "siderealDay" );
+      LALInferenceAddVariable( ifo_model->params, "siderealDay", &sidtime, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
+
+      LIGOTimeGPSVector *timestamps = *(LIGOTimeGPSVector **)LALInferenceGetVariable( ifo_model->params, "timeStampVectorFull" );
+      XLALDestroyTimestampVector( ifo_model->times );
+      ifo_model->times = timestamps;
+
+      REAL8TimeSeries *timedata = *(REAL8TimeSeries **)LALInferenceGetVariable( ifo_model->params, "timeDataFull" );
+      XLALDestroyREAL8TimeSeries( ifo_model->timeData );
+      ifo_model->timeData = timedata;
+
+      ifo_model->compTimeSignal = XLALResizeCOMPLEX16TimeSeries( ifo_model->compTimeSignal, 0, ifo_model->times->length );
+
+      /* remove the ROQ variable for calculating the likelihood */
+      LALInferenceRemoveVariable( ifo_model->params, "roq" );
+
+      if ( !LALInferenceCheckVariable( ifo_model->params, "varyphase" ) ){
+        LALInferenceAddVariable( ifo_model->params, "varyphase", &varyphase, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
+      }
+
+      if ( LALInferenceCheckVariable( ifo_model->params, "ssb_delays" ) ){
+        REAL8Vector *ssbdelays = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "ssb_delays_full" );
+        LALInferenceRemoveVariable( ifo_model->params, "ssb_delays" );
+        LALInferenceAddVariable( ifo_model->params, "ssb_delays", &ssbdelays, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
+      }
+
+      if ( LALInferenceCheckVariable( ifo_model->params, "bsb_delays" ) ){
+        REAL8Vector *bsbdelays = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "bsb_delays_full" );
+        LALInferenceRemoveVariable( ifo_model->params, "bsb_delays" );
+        LALInferenceAddVariable( ifo_model->params, "bsb_delays", &bsbdelays, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
+      }
+
+      ifo_model = ifo_model->next;
+    }
+  }
+
   /* make sure that the signal model in runState->data is that of the loudest signal */
   REAL8 logLnew = runState->likelihood( loudestParams, runState->data, runState->model );
 
-  if ( logLnew != *(REAL8 *)LALInferenceGetVariable(
-    runState->livePoints[Nlive-1], "logL" ) ){
-    fprintf(stderr, "Error... maximum log likelihood problem!\n");
-    exit(0);
+  if ( !roq ) {
+    /* we don't expect exactly identical likelihoods if using ROQ */
+    if ( logLnew != *(REAL8 *)LALInferenceGetVariable(
+      runState->livePoints[Nlive-1], "logL" ) ){
+      fprintf(stderr, "Error... maximum log likelihood problem!\n");
+      exit(0);
+    }
+  }
+  else{
+    /* check likelihoods agree to within 0.1% */
+    fprintf(stderr, "Max. ROQ likeihood = %.12le, Max. full likelihood = %.12le\n", *(REAL8 *)LALInferenceGetVariable(runState->livePoints[Nlive-1], "logL"), logLnew);
+    if ( 100.*(1.-fabs(*(REAL8 *)LALInferenceGetVariable(runState->livePoints[Nlive-1], "logL")/logLnew)) > 0.1 ){
+      fprintf(stderr, "WARNING... maximum likelihood using ROQ is greater than 0.1%% different that the full likelihood calculation.\n");
+    }
   }
 
   LALInferenceClearVariables( loudestParams );
@@ -506,6 +562,8 @@ void get_loudest_snr( LALInferenceRunState *runState ){
   freqFactors = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "freqfactors" );
 
   while( data ){
+    if ( roq ) { LALInferenceAddVariable( ifo_model->params, "roq", &roq, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED ); }
+
     REAL8 snrval = calculate_time_domain_snr( data, ifo_model );
 
     //UINT4 length = ifo_model->compTimeData->data->length;

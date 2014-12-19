@@ -29,8 +29,8 @@
 #include <string.h>
 #include <getopt.h>
 #include <unistd.h>
-#include <dirent.h>
 #include <complex.h>
+#include <time.h>
 #include <sys/time.h>
 
 /* LAL headers */
@@ -65,6 +65,7 @@
 #include <lal/LALInferenceNestedSampler.h>
 #include <lal/LALInferencePrior.h>
 #include <lal/LALInferenceProposal.h>
+#include <lal/LALInferenceGenerateROQ.h>
 
 #include <lal/LALSimNoise.h>
 
@@ -135,7 +136,7 @@ extern "C" {
  *
  * Note: These should be increased if additional model parameters are added.
  */
-#define NUMAMPPARS 15
+#define NUMAMPPARS 16
 
 /**
  * The total number of frequency parameters that can defined a signal e.g.
@@ -175,9 +176,6 @@ extern "C" {
                      same order) delimited by commas. These files can be gzipped.\n\
                      If not set you can generate fake data (see --fake-data below)\n"\
 " --sample-interval   (REAL8) the time interval bewteen samples (default to 60 s)\n"\
-" --downsample-factor (INT4) factor by which to downsample the input data\n\
-                     (default is for no downsampling and this is NOT\n\
-                     applied to fake data)\n"\
 " --outfile           name of output data file [required]\n"\
 " --non-fixed-only    output only the non-fixed (i.e. variable) parameters\n\
                      specified in the prior and .par files.\n"\
@@ -235,6 +233,26 @@ extern "C" {
 " --ensembleWalk      (UINT4) relative weight of the ensemble walk\n\
                      proposal (DEFAULT = 1, e.g. 50%%)\n"\
 "\n"\
+" Reduced order quadrature parameters:\n"\
+" --roq               Set this to use reduced order quadrature to compute the\n\
+                     likelihood.\n"\
+" --ntraining         (UNIT4) The number of training models used to generate an\n\
+                     orthonormal basis of waveform models.\n"\
+" --roq-tolerance     (REAL8) The tolerance used during the basis generation\n\
+                     (DEFAULT = 1e-11)\n"\
+" --test-basis        If this is set then the reduced basis set will be tested\n\
+                     against another set of waveforms to check they really are\n\
+                     within the required tolerance.\n"\
+" --output-weights    (CHAR) If this is set then the weights will be output to\n\
+                     the (binary) file that is named and the programme will\n\
+                     exit. These could be read in later instead of being\n\
+                     regenerated. This allows the ROQ to be generated on a\n\
+                     machine with a large amount of RAM, whilst the full\n\
+                     parameter estimation can run on a machine with less RAM.\n"\
+" --input-weights     (CHAR) A binary file containing all the weights in a\n\
+                     defined format. If this is present then the RQO will\n\
+                     not be recalculated.\n"\
+"\n"\
 " Signal injection parameters:\n"\
 " --inject-file       a pulsar parameter (par) file containing the parameters\n\
                      of a signal to be injected. If this is given a signal\n\
@@ -282,16 +300,9 @@ extern "C" {
                     that where used when creating each nested sample file.\n"\
 " --prior-cell       The number of samples to use in a k-d tree cell for the\n\
                     prior (the default will be 8).\n"\
-" --Npost            The (approxiamate) number of posterior samples to be\n\
+" --Npost            The (approximate) number of posterior samples to be\n\
                     generated from each nested sample file (default = 1000)\n"\
 "\n"\
-" Phase parameter search speed-up factors:\n"\
-" --mismatch         Maximum allowed phase mismatch between consecutive\n\
-                    models (if phase mismatch is small do not update phase\n\
-                    correction)\n"\
-" --mm-factor        (INT4) Downsampling factor for the phase models used\n\
-                    to calculate the mismatch\n"\
- "\n"\
 " Legacy code flags:\n"\
 " --oldChunks        Set if using fixed chunk sizes for dividing the data as\n\
                     in the old code, rather than the calculating chunks\n\
@@ -299,44 +310,47 @@ extern "C" {
 " --jones-model      Set if using both 1 and 2 multiples of the frequency and\n\
                     requiring the use of the original signal model parameters\n\
                     from Jones, MNRAS, 402 (2010).\n"\
+"\n"\
+" Benchmarking:\n"\
+" --time-it          Set if wanting to time the various parts of the code.\n\
+                    A output file with the \"outfile\" filename appended with\n\
+                    \"_timings\" will contain the timings.\n"\
 "\n"
 
 /**
  * A list of the amplitude parameters. The names given here are those that are
  * recognised within the code.
  */
-static const CHAR amppars[NUMAMPPARS][VARNAME_MAX] = { "h0", "phi0", "psi",
-"cosiota", "C22", "C21", "phi22", "phi21", "hScalarB", "hScalarL", "hVector",
-"gammaVector", "psiVector", "phi0Vector", "phi0Scalar" };
+static const CHAR amppars[NUMAMPPARS][VARNAME_MAX] = { "H0", "PHI0", "PSI",
+"COSIOTA", "C22", "C21", "PHI22", "PHI21", "HSCALARB", "HSCALARL", "HVECTORX",
+"HVECTORY", "PSIVECTOR", "PHI0VECTOR", "PHI0SCALAR", "PHI0TENSOR" };
 
 /**
  * A list of the frequency parameters. The names given here are those that are
  * recognised within the code.
  */
-static const CHAR freqpars[NUMFREQPARS][VARNAME_MAX] = { "f0", "f1", "f2", "f3",
-"f4", "f5", "pepoch", "cgw" };
+static const CHAR freqpars[NUMFREQPARS][VARNAME_MAX] = { "F0", "F1", "F2", "F3",
+"F4", "F5", "PEPOCH", "CGW" };
 
 /**
  * A list of the sky position parameters. The names given here are those that
  * are recognised within the code.
  */
-static const CHAR skypars[NUMSKYPARS][VARNAME_MAX] = { "ra", "pmra", "dec",
-"pmdec", "posepoch" };
+static const CHAR skypars[NUMSKYPARS][VARNAME_MAX] = { "RA", "PMRA", "DEC",
+"PMDEC", "POSEPOCH" };
 
 /**
  * A list of the binary system parameters. The names given here are those that
  * are recognised within the code.
  */
-static const CHAR binpars[NUMBINPARS][VARNAME_MAX] = { "Pb", "e", "eps1",
-"eps2", "T0", "Tasc", "x", "w0", "Pb2", "e2", "T02", "x2", "w02", "Pb3", "e3",
-"T03", "x3", "w03", "xpbdot", "eps1dot", "eps2dot", "wdot", "gamma", "Pbdot",
-"xdot", "edot", "s", "dr", "dth", "a0", "b0", "M", "m2" };
+static const CHAR binpars[NUMBINPARS][VARNAME_MAX] = { "PB", "ECC", "EPS1",
+"EPS2", "T0", "TASC", "A1", "OM", "PB_2", "ECC_2", "T0_2", "A1_2", "OM_2", "PB_3", "ECC_3",
+"T0_3", "A1_3", "OM_3", "XPBDOT", "EPS1DOT", "EPS2DOT", "OMDOT", "GAMMA", "PBDOT",
+"XDOT", "EDOT", "SINI", "DR", "DTHETA", "A0", "B0", "MTOT", "M2" };
 
 extern LALStringVector *corlist;
 
 extern UINT4 verbose_output;
-
-extern REAL8 *logfactorial;
 
 #ifdef __cplusplus
 }

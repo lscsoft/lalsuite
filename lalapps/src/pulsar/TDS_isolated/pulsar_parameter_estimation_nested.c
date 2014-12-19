@@ -47,7 +47,7 @@ LALInference tools */
  * ...
  *
  * Most commonly such data will have a sample rate of 1/60 Hz, giving a bandwidth of the same amount, but the code can
- * accept any rate, or downsample data (by averaging) by a given factor.
+ * accept any rate.
  *
  * The code also requires that you specify which parameters are to be searched over, and the prior ranges over these. Any
  * of the signal parameters can be searched over, including frequency, sky position and binary system parameters, although
@@ -148,11 +148,9 @@ LALInference tools */
 #include "ppe_models.h"
 #include "ppe_likelihood.h"
 #include "ppe_testing.h"
+#include "ppe_roq.h"
 
 /* global variables */
-/** An array to contain the log of factorials up to a certain number. */
-REAL8 *logfactorial = NULL;
-
 UINT4 verbose_output = 0;
 
 LALStringVector *corlist = NULL;
@@ -177,7 +175,7 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   read_pulsar_data( &runState );
 
   /* set algorithm to use Nested Sampling */
-  runState.algorithm = &LALInferenceNestedSamplingAlgorithm;
+  runState.algorithm = &nested_sampling_algorithm_wrapper;
   runState.evolve = &LALInferenceNestedSamplingOneStep;
 
   /* set likelihood function */
@@ -201,6 +199,9 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   /* create sum square of the data to speed up the likelihood calculation */
   sum_data( &runState );
 
+  /* check whether using reduced order quadrature */
+  generate_interpolant( &runState );
+
   gridOutput( &runState );
 
   /* get noise likelihood and add as variable to runState */
@@ -209,7 +210,7 @@ INT4 main( INT4 argc, CHAR *argv[] ){
                            LALINFERENCE_PARAM_FIXED );
 
   /* Create live points array and fill initial parameters */
-  LALInferenceSetupLivePointsArray( &runState );
+  setup_live_points_array_wrapper( &runState );
 
   /* output the live points sampled from the prior */
   outputPriorSamples( &runState );
@@ -225,6 +226,11 @@ INT4 main( INT4 argc, CHAR *argv[] ){
 
   /* re-read in output samples and rescale appropriately */
   rescale_output( &runState );
+
+  /* close timing file */
+  if ( LALInferenceCheckVariable( runState.algorithmParams, "timefile" ) ){
+    fclose(*(FILE**)LALInferenceGetVariable( runState.algorithmParams, "timefile" ));
+  }
 
   return 0;
 }

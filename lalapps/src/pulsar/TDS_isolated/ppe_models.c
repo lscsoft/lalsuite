@@ -35,113 +35,115 @@ void get_pulsar_model( LALInferenceModel *model ){
 
   /* set model parameters (including rescaling) */
   //pars.h0 = rescale_parameter( model, model->ifo, "h0" );
-  pars.cosiota = rescale_parameter( model, model->ifo, "cosiota" );
-  pars.psi = rescale_parameter( model, model->ifo, "psi" );
+  pars.psi = rescale_parameter( model, model->ifo, "PSI" );
+  pars.cgw = 1.; /* need to set this to one otherwise it defaults to zero with the initialisation */
 
   if( LALInferenceCheckVariable( model->ifo->params, "jones-model" ) ){
     /* use parameterisation from Ian Jones's original model */
     pars.I21 = rescale_parameter( model, model->ifo, "I21" );
     pars.I31 = rescale_parameter( model, model->ifo, "I31" );
-    pars.lambda = rescale_parameter( model, model->ifo, "lambda" );
-    pars.costheta = rescale_parameter( model, model->ifo, "costheta" );
-    pars.phi0 = rescale_parameter( model, model->ifo, "phi0" );
+    pars.lambda = rescale_parameter( model, model->ifo, "LAMBDA" );
+    pars.costheta = rescale_parameter( model, model->ifo, "COSTHETA" );
+    pars.phi0 = rescale_parameter( model, model->ifo, "PHI0" );
+    pars.cosiota = rescale_parameter( model, model->ifo, "COSIOTA" );
 
     invert_source_params( &pars );
   }
   else if ( LALInferenceCheckVariable( model->ifo->params, "nonGR" ) ){
     /* speed of GWs as (1 - fraction of speed of light LAL_C_SI) */
-    pars.cgw = rescale_parameter( model, model->ifo, "cgw" );
+    pars.cgw = rescale_parameter( model, model->ifo, "CGW" );
 
     /* amplitudes for use with non-GR searches */
     /* tensor modes */
-    pars.hPlus = rescale_parameter( model, model->ifo, "hPlus" );
-    pars.hCross = rescale_parameter( model, model->ifo, "hCross" );
+    pars.hPlus = rescale_parameter( model, model->ifo, "HPLUS" );
+    pars.hCross = rescale_parameter( model, model->ifo, "HCROSS" );
     /* scalar modes */
-    pars.hScalarB = rescale_parameter( model, model->ifo, "hScalarB" );
-    pars.hScalarL = rescale_parameter( model, model->ifo, "hScalarL" );
+    pars.hScalarB = rescale_parameter( model, model->ifo, "HSCALARB" );
+    pars.hScalarL = rescale_parameter( model, model->ifo, "HSCALARL" );
     /* vector modes */
-    pars.hVectorX = rescale_parameter( model, model->ifo, "hVectorX" );
-    pars.hVectorY = rescale_parameter( model, model->ifo, "hVectorY" );
+    pars.hVectorX = rescale_parameter( model, model->ifo, "HVECTORX" );
+    pars.hVectorY = rescale_parameter( model, model->ifo, "HVECTORY" );
 
-    pars.phi0Scalar = rescale_parameter( model, model->ifo, "phi0Scalar" );
-    pars.phi0Vector = rescale_parameter( model, model->ifo, "phi0Vector" );
-    pars.psiVector = rescale_parameter( model, model->ifo, "psiVector" );
-    pars.phi0Tensor = rescale_parameter( model, model->ifo, "phi0Tensor" );
+    pars.phi0Scalar = rescale_parameter( model, model->ifo, "PHI0SCALAR" );
+    pars.phi0Vector = rescale_parameter( model, model->ifo, "PHI0VECTOR" );
+    pars.psiVector = rescale_parameter( model, model->ifo, "PSIVECTOR" );
+    pars.phi0Tensor = rescale_parameter( model, model->ifo, "PHI0TENSOR" );
   }
   else{
     pars.C21 = rescale_parameter( model, model->ifo, "C21" );
     pars.C22 = rescale_parameter( model, model->ifo, "C22" );
-    pars.phi21 = rescale_parameter( model, model->ifo, "phi21" );
+    pars.phi21 = rescale_parameter( model, model->ifo, "PHI21" );
+    pars.cosiota = rescale_parameter( model, model->ifo, "COSIOTA" );
 
     if( LALInferenceCheckVariable( model->ifo->params, "biaxial" ) ){
       /* use complex amplitude parameterisation, but set up for a biaxial star */
       pars.phi22 = 2.*pars.phi21;
     }
     else{
-      pars.phi22 = rescale_parameter( model, model->ifo, "phi22" );
+      pars.phi22 = rescale_parameter( model, model->ifo, "PHI22" );
     }
   }
 
   /* set the potentially variable parameters */
-  pars.pepoch = rescale_parameter( model, model->ifo, "pepoch" );
-  pars.posepoch = rescale_parameter( model, model->ifo, "posepoch" );
+  pars.pepoch = rescale_parameter( model, model->ifo, "PEPOCH" );
+  pars.posepoch = rescale_parameter( model, model->ifo, "POSEPOCH" );
 
-  pars.ra = rescale_parameter( model, model->ifo, "ra" );
-  pars.pmra = rescale_parameter( model, model->ifo, "pmra" );
-  pars.dec = rescale_parameter( model, model->ifo, "dec" );
-  pars.pmdec = rescale_parameter( model, model->ifo, "pmdec" );
+  pars.ra = rescale_parameter( model, model->ifo, "RA" );
+  pars.pmra = rescale_parameter( model, model->ifo, "PMRA" );
+  pars.dec = rescale_parameter( model, model->ifo, "DEC" );
+  pars.pmdec = rescale_parameter( model, model->ifo, "PMDEC" );
 
-  pars.f0 = rescale_parameter( model, model->ifo, "f0" );
-  pars.f1 = rescale_parameter( model, model->ifo, "f1" );
-  pars.f2 = rescale_parameter( model, model->ifo, "f2" );
-  pars.f3 = rescale_parameter( model, model->ifo, "f3" );
-  pars.f4 = rescale_parameter( model, model->ifo, "f4" );
-  pars.f5 = rescale_parameter( model, model->ifo, "f5" );
+  pars.f0 = rescale_parameter( model, model->ifo, "F0" );
+  pars.f1 = rescale_parameter( model, model->ifo, "F1" );
+  pars.f2 = rescale_parameter( model, model->ifo, "F2" );
+  pars.f3 = rescale_parameter( model, model->ifo, "F3" );
+  pars.f4 = rescale_parameter( model, model->ifo, "F4" );
+  pars.f5 = rescale_parameter( model, model->ifo, "F5" );
 
   /* check if there are binary parameters */
   if( LALInferenceCheckVariable(model->params, "model") ){
     /* binary system model - NOT pulsar model */
     pars.model = *(CHAR**)LALInferenceGetVariable( model->params, "model" );
 
-    pars.e = rescale_parameter( model, model->ifo, "e" );
-    pars.w0 = rescale_parameter( model, model->ifo, "w0" );
-    pars.Pb = rescale_parameter( model, model->ifo, "Pb" );
-    pars.x = rescale_parameter( model, model->ifo, "x" );
+    pars.e = rescale_parameter( model, model->ifo, "ECC" );
+    pars.w0 = rescale_parameter( model, model->ifo, "OM" );
+    pars.Pb = rescale_parameter( model, model->ifo, "PB" );
+    pars.x = rescale_parameter( model, model->ifo, "A1" );
     pars.T0 = rescale_parameter( model, model->ifo, "T0" );
 
-    pars.e2 = rescale_parameter( model, model->ifo, "e2" );
-    pars.w02 = rescale_parameter( model, model->ifo, "w02" );
-    pars.Pb2 = rescale_parameter( model, model->ifo, "Pb2" );
-    pars.x2 = rescale_parameter( model, model->ifo, "x2" );
-    pars.T02 = rescale_parameter( model, model->ifo, "T02" );
+    pars.e2 = rescale_parameter( model, model->ifo, "ECC_2" );
+    pars.w02 = rescale_parameter( model, model->ifo, "OM_2" );
+    pars.Pb2 = rescale_parameter( model, model->ifo, "PB_2" );
+    pars.x2 = rescale_parameter( model, model->ifo, "A1_2" );
+    pars.T02 = rescale_parameter( model, model->ifo, "T0_2" );
 
-    pars.e3 = rescale_parameter( model, model->ifo, "e3" );
-    pars.w03 = rescale_parameter( model, model->ifo, "w03" );
-    pars.Pb3 = rescale_parameter( model, model->ifo, "Pb3" );
-    pars.x3 = rescale_parameter( model, model->ifo, "x3" );
-    pars.T03 = rescale_parameter( model, model->ifo, "T03" );
+    pars.e3 = rescale_parameter( model, model->ifo, "ECC_3" );
+    pars.w03 = rescale_parameter( model, model->ifo, "OM_3" );
+    pars.Pb3 = rescale_parameter( model, model->ifo, "PB_3" );
+    pars.x3 = rescale_parameter( model, model->ifo, "A1_3" );
+    pars.T03 = rescale_parameter( model, model->ifo, "T0_3" );
 
-    pars.xpbdot = rescale_parameter( model, model->ifo, "xpbdot" );
-    pars.eps1 = rescale_parameter( model, model->ifo, "eps1" );
-    pars.eps2 = rescale_parameter( model, model->ifo, "eps2" );
-    pars.eps1dot = rescale_parameter( model, model->ifo, "eps1dot" );
-    pars.eps2dot = rescale_parameter( model, model->ifo, "eps2dot" );
-    pars.Tasc = rescale_parameter( model, model->ifo, "Tasc" );
+    pars.xpbdot = rescale_parameter( model, model->ifo, "XPBDOT" );
+    pars.eps1 = rescale_parameter( model, model->ifo, "EPS1" );
+    pars.eps2 = rescale_parameter( model, model->ifo, "EPS2" );
+    pars.eps1dot = rescale_parameter( model, model->ifo, "EPS1DOT" );
+    pars.eps2dot = rescale_parameter( model, model->ifo, "EPS2DOT" );
+    pars.Tasc = rescale_parameter( model, model->ifo, "TASC" );
 
-    pars.wdot = rescale_parameter( model, model->ifo, "wdot" );
-    pars.gamma = rescale_parameter( model, model->ifo, "gamma" );
-    pars.Pbdot = rescale_parameter( model, model->ifo, "Pbdot" );
-    pars.xdot = rescale_parameter( model, model->ifo, "xdot" );
-    pars.edot = rescale_parameter( model, model->ifo, "edot" );
+    pars.wdot = rescale_parameter( model, model->ifo, "OMDOT" );
+    pars.gamma = rescale_parameter( model, model->ifo, "GAMMA" );
+    pars.Pbdot = rescale_parameter( model, model->ifo, "PBDOT" );
+    pars.xdot = rescale_parameter( model, model->ifo, "XDOT" );
+    pars.edot = rescale_parameter( model, model->ifo, "EDOT" );
 
-    pars.s = rescale_parameter( model, model->ifo, "s" );
-    pars.dr = rescale_parameter( model, model->ifo, "dr" );
-    pars.dth = rescale_parameter( model, model->ifo, "dth" );
-    pars.a0 = rescale_parameter( model, model->ifo, "a0" );
-    pars.b0 = rescale_parameter( model, model->ifo, "b0" );
+    pars.s = rescale_parameter( model, model->ifo, "SINI" );
+    pars.dr = rescale_parameter( model, model->ifo, "DR" );
+    pars.dth = rescale_parameter( model, model->ifo, "DTHETA" );
+    pars.a0 = rescale_parameter( model, model->ifo, "A0" );
+    pars.b0 = rescale_parameter( model, model->ifo, "B0" );
 
-    pars.M = rescale_parameter( model, model->ifo, "M" );
-    pars.m2 = rescale_parameter( model, model->ifo, "m2" );
+    pars.M = rescale_parameter( model, model->ifo, "MTOT" );
+    pars.m2 = rescale_parameter( model, model->ifo, "M2" );
   }
 
   pulsar_model( pars, model->ifo );
@@ -204,7 +206,6 @@ REAL8 rescale_parameter( LALInferenceModel *model, LALInferenceIFOModel *ifo, co
 void pulsar_model( BinaryPulsarParams params, LALInferenceIFOModel *ifo ){
   INT4 i = 0, length = 0;
   UINT4 j = 0;
-  REAL8 mm = 0.;
   LALInferenceIFOModel *ifomodel1 = ifo, *ifomodel2 = ifo;
 
   /* get the amplitude model */
@@ -218,72 +219,32 @@ void pulsar_model( BinaryPulsarParams params, LALInferenceIFOModel *ifo ){
     REAL8Vector *freqFactors = NULL;
     freqFactors = *(REAL8Vector **)LALInferenceGetVariable( ifo->params, "freqfactors" );
 
-    if( LALInferenceCheckVariable( ifomodel2->params, "mismatch" ) ){
-      mm = *(REAL8 *)LALInferenceGetVariable( ifomodel2->params, "mismatch" );
-    }
-
     while ( ifomodel2 ){
       for( j = 0; j < freqFactors->length; j++ ){
         REAL8Vector *dphi = NULL;
-        UINT4 nohet = 0; /* set if extra phase heterodyne is not required */
 
         length = ifomodel2->compTimeSignal->data->length;
 
         /* the timeData vector within the LALIFOModel structure contains the phase calculated using the initial (heterodyne)
          * values of the phase parameters */
 
-        /* check whether to recompute the full phase or not */
-        if( LALInferenceCheckVariable( ifomodel2->params, "downsampled_times" ) ){
-          /* FIXME: This section needs to be thoroughly checked to make sure that it
-           * is doing what it is supposed to! At the moment I think it is wrong. */
-          REAL8Vector *dsdphi1 = NULL, *dsdphi2 = NULL;
-          LIGOTimeGPSVector *downst = *(LIGOTimeGPSVector **)LALInferenceGetVariable( ifomodel2->params, "downsampled_times" );
-
-          /* get the previous downsampled phase if it exists */
-          if ( LALInferenceCheckVariable( ifomodel2->params, "ds_phase" ) ){
-            dsdphi1 = *(REAL8Vector **)LALInferenceGetVariable( ifomodel2->params, "ds_phase" );
-          }
-          else{
-            XLALPrintError("Error, downsampled phase does not exist\n");
-            XLAL_ERROR_VOID(XLAL_EFAILED);
-          }
-
-          /* get the downsampled phase for the current parameters */
-          dsdphi2 = get_phase_model( params, ifomodel2, freqFactors->data[j], 1 );
-
-          /* work out phase mismatch (if any value in dsdphi1 is not zero it means ds_phase has been set) */
-          if( dsdphi1->data[dsdphi1->length-1] != 0. && dsdphi2 ){
-            REAL8 mmcalc = get_phase_mismatch( dsdphi1, dsdphi2, downst );
-
-            /* if small mismatch then just use previous phase if available */
-            if ( mmcalc < mm ) { nohet = 1; }
-          }
-
-          /* make sure the "previous" down sampled phase is the right one for comparison */
-          if ( !nohet ) { memcpy(dsdphi1->data, dsdphi2->data, sizeof(REAL8)*dsdphi1->length ); }
-
-          XLALDestroyREAL8Vector( dsdphi2 );
-        }
-
         /* reheterodyne with the phase */
-        if ( !nohet ){
-          if ( (dphi = get_phase_model( params, ifomodel2, freqFactors->data[j], 0 )) != NULL ){
-            for( i=0; i<length; i++ ){
-              COMPLEX16 M;
-              REAL8 dphit;
-              COMPLEX16 expp;
+        if ( (dphi = get_phase_model( params, ifomodel2, freqFactors->data[j] )) != NULL ){
+          for( i=0; i<length; i++ ){
+            COMPLEX16 M;
+            REAL8 dphit;
+            COMPLEX16 expp;
 
-              dphit = fmod(dphi->data[i] - ifomodel2->timeData->data->data[i], 1.);
-              expp = cexp( LAL_TWOPI * I * dphit );
+            dphit = fmod(dphi->data[i] - ifomodel2->timeData->data->data[i], 1.);
+            expp = cexp( LAL_TWOPI * I * dphit );
 
-              M = ifomodel2->compTimeSignal->data->data[i];
+            M = ifomodel2->compTimeSignal->data->data[i];
 
-              /* heterodyne */
-              ifomodel2->compTimeSignal->data->data[i] = M * expp;
-            }
-
-            XLALDestroyREAL8Vector( dphi );
+            /* heterodyne */
+            ifomodel2->compTimeSignal->data->data[i] = M * expp;
           }
+
+          XLALDestroyREAL8Vector( dphi );
         }
 
         ifomodel2 = ifomodel2->next;
@@ -324,8 +285,7 @@ void pulsar_model( BinaryPulsarParams params, LALInferenceIFOModel *ifo ){
  * \sa get_ssb_delay
  * \sa get_bsb_delay
  */
-REAL8Vector *get_phase_model( BinaryPulsarParams params, LALInferenceIFOModel *ifo, REAL8 freqFactor,
-                              UINT4 downsampled ){
+REAL8Vector *get_phase_model( BinaryPulsarParams params, LALInferenceIFOModel *ifo, REAL8 freqFactor ){
   INT4 i = 0, length = 0;
 
   REAL8 T0 = 0., DT = 0., deltat = 0., deltat2 = 0.;
@@ -335,17 +295,7 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params, LALInferenceIFOModel *i
   LIGOTimeGPSVector *datatimes = NULL;
 
   /* check if we want to calculate the phase at a the downsampled rate */
-  if ( downsampled ){
-    if( LALInferenceCheckVariable( ifo->params, "downsampled_times" ) ){
-      datatimes = *(LIGOTimeGPSVector **)LALInferenceGetVariable(
-        ifo->params, "downsampled_times" );
-    }
-    else{
-      fprintf(stderr, "Error, no downsampled time series available\n");
-      exit(1);
-    }
-  }
-  else datatimes = ifo->times;
+  datatimes = ifo->times;
 
   /* if edat is NULL then return a NULL pointer */
   if( ifo->ephem == NULL ) return NULL;
@@ -369,7 +319,7 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params, LALInferenceIFOModel *i
   }
 
   for( i=0; i<length; i++){
-    REAL8 realT = XLALGPSGetREAL8( &ifo->times->data[i] ); /*time of data*/
+    REAL8 realT = XLALGPSGetREAL8( &datatimes->data[i] ); /*time of data*/
 
     T0 = params.pepoch; /*time of ephem info*/
 
@@ -383,11 +333,11 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params, LALInferenceIFOModel *i
     /* work out phase */
     deltat2 = deltat*deltat;
     phis->data[i] = freqFactor*deltat*(params.f0 +
-      inv_fact[2]*params.f1*deltat +
-      inv_fact[3]*params.f2*deltat2 +
-      inv_fact[4]*params.f3*deltat*deltat2 +
-      inv_fact[5]*params.f4*deltat2*deltat2 +
-      inv_fact[6]*params.f5*deltat2*deltat2*deltat);
+      0.5*params.f1*deltat +
+      (1./6.)*params.f2*deltat2 +
+      (1./24.)*params.f3*deltat*deltat2 +
+      (1./120.)*params.f4*deltat2*deltat2 +
+      (1./720.)*params.f5*deltat2*deltat2*deltat);
   }
 
   /* free memory */
@@ -835,11 +785,12 @@ void get_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOModel *ifo ){
   UINT4 nonGR = 0;
 
   REAL8Vector *freqFactors = NULL;
-  INT4 varyphase = 0;
+  INT4 varyphase = 0, roq = 0;
 
   freqFactors = *(REAL8Vector**)LALInferenceGetVariable( ifo->params, "freqfactors" );
 
   if( LALInferenceCheckVariable( ifo->params, "varyphase" ) ){ varyphase = 1; }
+  if( LALInferenceCheckVariable( ifo->params, "roq" ) ){ roq = 1; }
 
   twopsi = 2.*pars.psi;
   s2psi = sin(twopsi);
@@ -907,7 +858,7 @@ void get_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOModel *ifo ){
         XLAL_ERROR_VOID( XLAL_EINVAL );
       }
 
-      if ( varyphase ){ /* have to compute the full time domain signal */
+      if ( varyphase || roq ){ /* have to compute the full time domain signal */
         REAL8Vector *sidDayFrac = NULL;
         REAL8 tsv;
         INT4 timebinMin, timebinMax;
@@ -922,7 +873,7 @@ void get_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOModel *ifo ){
         REAL8 plus = 0., cross = 0., plusT = 0., crossT = 0., x = 0., y = 0., xT = 0., yT = 0., b = 0., l = 0.;
 
         /* set lookup table parameters */
-        tsteps = *(INT4*)LALInferenceGetVariable( ifo->params, "timeSteps" );
+        tsteps = (REAL8)(*(INT4*)LALInferenceGetVariable( ifo->params, "timeSteps" ));
         tsv = LAL_DAYSID_SI / tsteps;
 
         LUfplus = *(REAL8Vector **)LALInferenceGetVariable( ifo->params, "a_response_tensor" );

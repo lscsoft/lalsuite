@@ -821,7 +821,7 @@ LALInferenceREALROQInterpolant *LALInferenceGenerateREALROQInterpolant(gsl_matri
   gsl_vector_view firstbasis = gsl_matrix_row(RB, 0);
   XLAL_CALLGSL( idmax = (int)gsl_blas_idamax(&firstbasis.vector) ); /* function gets index of maximum absolute value */
 
-  interp->nodes = XLALMalloc(RBsize*sizeof(int));
+  interp->nodes = XLALMalloc(RBsize*sizeof(UINT4));
   interp->nodes[0] = idmax;
 
   for ( i=1; i<RBsize; i++ ){
@@ -911,7 +911,7 @@ LALInferenceCOMPLEXROQInterpolant *LALInferenceGenerateCOMPLEXROQInterpolant(gsl
   gsl_vector_complex_view firstbasis = gsl_matrix_complex_row(RB, 0);
   idmax = complex_vector_maxabs_index(&firstbasis.vector);
 
-  interp->nodes = XLALMalloc(RBsize*sizeof(int));
+  interp->nodes = XLALMalloc(RBsize*sizeof(UINT4));
   interp->nodes[0] = idmax;
 
   for ( i=1; i<RBsize; i++ ){
