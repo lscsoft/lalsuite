@@ -60,7 +60,7 @@ else
 fi
 
 OUTFILE=$(mktemp /tmp/tmp.XXXXXXXXX)
-${GRACEDB} Test MBTAOnline $TEST_DATA_DIR/cbc-mbta.gwf >$OUTFILE 2>&1
+${GRACEDB} Test MBTAOnline $TEST_DATA_DIR/cbc-mbta.xml >$OUTFILE 2>&1
 recordTest "create MBTA" "$?" "$(cat $OUTFILE)"
 rm $OUTFILE
 

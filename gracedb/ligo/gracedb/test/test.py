@@ -191,14 +191,14 @@ class TestGracedb(unittest.TestCase):
 
     def test_create_mbta(self):
         """Create an MBTA event"""
-        """cbc-mbta.gwf"""
-        eventFile = os.path.join(testdatadir, "cbc-mbta.gwf")
+        """cbc-mbta.xml"""
+        eventFile = os.path.join(testdatadir, "cbc-mbta.xml")
         mbta_event = gracedb.createEvent(
                 "Test", "MBTAOnline", eventFile).json()
         self.assertEqual(mbta_event['group'], "Test")
         self.assertEqual(mbta_event['pipeline'], "MBTAOnline")
-        self.assertEqual(mbta_event['gpstime'], 1011992635)
-        self.assertEqual(mbta_event['far'], 0.000245980441198379)
+        self.assertEqual(mbta_event['gpstime'], 1078903329)
+        self.assertEqual(mbta_event['far'], 4.006953918826065e-7)
 
     def test_replace_event(self):
         graceid = eventId
