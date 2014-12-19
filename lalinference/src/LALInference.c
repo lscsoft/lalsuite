@@ -753,7 +753,8 @@ void LALInferencePrintSampleNonFixed(FILE *fp,LALInferenceVariables *sample){
 					break;
            */
 				default:
-					fprintf(stdout, "<can't print>");
+				  break;
+				  // fprintf(stdout, "<can't print>");  Don't print anything
 			}
 		fprintf(fp,"\t");
 		}
