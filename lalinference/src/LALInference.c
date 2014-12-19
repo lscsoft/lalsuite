@@ -1919,7 +1919,7 @@ void LALInferenceSortVariablesByName(LALInferenceVariables *vars)
   
   /* Start a new list */
   LALInferenceVariableItem *newHead=NULL;
-  
+
   /* While there are elements in the old list */
   while(vars->head)
   {
@@ -1932,6 +1932,7 @@ void LALInferenceSortVariablesByName(LALInferenceVariables *vars)
     LALInferenceVariableItem *item=LALInferencePopVariableItem(vars,match->name);
     item->next=newHead;
     newHead=item;
+	vars->dimension++; /* Increase the dimension which was decreased by PopVariableItem */
   }
   vars->head=newHead;
   return;
