@@ -250,6 +250,11 @@ def wrapped_angle(a):
     return np.mod(a, 2 * np.pi)
 
 
+def wrapped_angle_deg(a):
+    """Convert an angle to a reference angle between 0 and 2*pi."""
+    return np.mod(a, 360)
+
+
 def reference_angle(a):
     """Convert an angle to a reference angle between -pi and pi."""
     a = np.mod(a, 2 * np.pi)
