@@ -74,10 +74,7 @@
 
 /* Internal utility function to check all spin components are zero
    returns 1 if all spins zero, otherwise returns 0 */
-static int checkSpinsZero(REAL8 s1x, REAL8 s1y, REAL8 s1z,
-        REAL8 s2x, REAL8 s2y, REAL8 s2z);
-
-static int checkSpinsZero(REAL8 s1x, REAL8 s1y, REAL8 s1z,
+int checkSpinsZero(REAL8 s1x, REAL8 s1y, REAL8 s1z,
         REAL8 s2x, REAL8 s2y, REAL8 s2z)
 {
     if( s1x != 0. || s1y != 0. || s1z != 0.
@@ -89,9 +86,7 @@ static int checkSpinsZero(REAL8 s1x, REAL8 s1y, REAL8 s1z,
 
 /* Internal utility function to check transverse spins are zero
    returns 1 if x and y components of spins are zero, otherwise returns 0 */
-static int checkTransverseSpinsZero(REAL8 s1x, REAL8 s1y, REAL8 s2x, REAL8 s2y);
-
-static int checkTransverseSpinsZero(REAL8 s1x, REAL8 s1y, REAL8 s2x, REAL8 s2y)
+int checkTransverseSpinsZero(REAL8 s1x, REAL8 s1y, REAL8 s2x, REAL8 s2y)
 {
     if( s1x != 0. || s1y != 0. || s2x != 0. || s2y != 0. )
         return 0;
@@ -101,144 +96,13 @@ static int checkTransverseSpinsZero(REAL8 s1x, REAL8 s1y, REAL8 s2x, REAL8 s2y)
 
 /* Internal utility function to check tidal parameters are zero
    returns 1 if both tidal parameters zero, otherwise returns 0 */
-static int checkTidesZero(REAL8 lambda1, REAL8 lambda2);
-
-static int checkTidesZero(REAL8 lambda1, REAL8 lambda2)
+int checkTidesZero(REAL8 lambda1, REAL8 lambda2)
 {
     if( lambda1 != 0. || lambda2 != 0. )
         return 0;
     else
         return 1;
 }
-
-/**
- * Macro procedure for aborting if non-default LALSimInspiralWaveformFlags
- * struct was provided, but that approximant does not use the struct
- * and only has a single default use case.
- *
- * The ChooseWaveform functions will fail in such a case, so the user does not
- * think they are including features that are unavailable.
- *
- * All of the macros below will destroy the LALSimInspiralWaveformFlags struct,
- * print a specific warning and raise a general XLAL_ERROR for invalid argument.
- */
-#define ABORT_NONDEFAULT_WAVEFORM_FLAGS(waveFlags)\
-	do {\
-	XLALSimInspiralDestroyWaveformFlags(waveFlags);\
-	XLALPrintError("XLAL Error - %s: Non-default LALSimInspiralWaveformFlags given, but this approximant does not support this case.\n", __func__);\
-	XLAL_ERROR(XLAL_EINVAL);\
-	} while (0)
-
-/**
- * Same as above macro, but returns a null pointer rather than XLAL_FAILURE int
- */
-#define ABORT_NONDEFAULT_WAVEFORM_FLAGS_NULL(waveFlags)\
-	do {\
-	XLALSimInspiralDestroyWaveformFlags(waveFlags);\
-	XLALPrintError("XLAL Error - %s: Non-default LALSimInspiralWaveformFlags given, but this approximant does not support this case.\n", __func__);\
-	XLAL_ERROR_NULL(XLAL_EINVAL);\
-	} while (0)
-
-/**
- * Macro procedure for aborting if non-zero spins
- * given to a non-spinning approximant
- */
-#define ABORT_NONZERO_SPINS(waveFlags)\
-	do {\
-	XLALSimInspiralDestroyWaveformFlags(waveFlags);\
-	XLALPrintError("XLAL Error - %s: Non-zero spins were given, but this is a non-spinning approximant.\n", __func__);\
-	XLAL_ERROR(XLAL_EINVAL);\
-	} while (0)
-
-/**
- * Macro procedure for aborting if non-zero transverse spin
- * components given to a non-precessing approximant
- */
-#define ABORT_NONZERO_TRANSVERSE_SPINS(waveFlags)\
-	do {\
-	XLALSimInspiralDestroyWaveformFlags(waveFlags);\
-	XLALPrintError("XLAL Error - %s: Non-zero transverse spins were given, but this is a non-precessing approximant.\n", __func__);\
-	XLAL_ERROR(XLAL_EINVAL);\
-	} while (0)
-
-/**
- * Macro procedure for aborting if non-zero tidal parameters
- * given to an approximant with no tidal corrections
- */
-#define ABORT_NONZERO_TIDES(waveFlags)\
-	do {\
-	XLALSimInspiralDestroyWaveformFlags(waveFlags);\
-	XLALPrintError("XLAL Error - %s: Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.\n", __func__);\
-	XLAL_ERROR(XLAL_EINVAL);\
-	} while (0)
-
-/**
- * Macro procedure for aborting if non-default value of
- * LALSimInspiralSpinOrder is given for an approximant
- * which does not use that flag
- */
-#define ABORT_NONDEFAULT_SPIN_ORDER(waveFlags)\
-	do {\
-	XLALSimInspiralDestroyWaveformFlags(waveFlags);\
-	XLALPrintError("XLAL Error - %s: Non-default LALSimInspiralSpinOrder provided, but this approximant does not use that flag.\n", __func__);\
-	XLAL_ERROR(XLAL_EINVAL);\
-	} while (0)
-
-/**
- * Macro procedure for aborting if non-default value of
- * LALSimInspiralTidalOrder is given for an approximant
- * which does not use that flag
- */
-#define ABORT_NONDEFAULT_TIDAL_ORDER(waveFlags)\
-	do {\
-	XLALSimInspiralDestroyWaveformFlags(waveFlags);\
-	XLALPrintError("XLAL Error - %s: Non-default LALSimInspiralTidalOrder provided, but this approximant does not use that flag.\n", __func__);\
-	XLAL_ERROR(XLAL_EINVAL);\
-	} while (0)
-
-/**
- * Macro procedure for aborting if non-default value of
- * LALSimInspiralFrameAxis is given for an approximant
- * which does not use that flag
- */
-#define ABORT_NONDEFAULT_FRAME_AXIS(waveFlags)\
-	do {\
-	XLALSimInspiralDestroyWaveformFlags(waveFlags);\
-	XLALPrintError("XLAL Error - %s: Non-default LALSimInspiralFrameAxis provided, but this approximant does not use that flag.\n", __func__);\
-	XLAL_ERROR(XLAL_EINVAL);\
-	} while (0)
-
-/**
- * Same as above macro, but returns a null pointer rather than XLAL_FAILURE int
- */
-#define ABORT_NONDEFAULT_FRAME_AXIS_NULL(waveFlags)\
-	do {\
-	XLALSimInspiralDestroyWaveformFlags(waveFlags);\
-	XLALPrintError("XLAL Error - %s: Non-default LALSimInspiralFrameAxis provided, but this approximant does not use that flag.\n", __func__);\
-	XLAL_ERROR_NULL(XLAL_EINVAL);\
-	} while (0)
-
-/**
- * Macro procedure for aborting if non-default value of
- * LALSimInspiralModesChoice is given for an approximant
- * which does not use that flag
- */
-#define ABORT_NONDEFAULT_MODES_CHOICE(waveFlags)\
-	do {\
-	XLALSimInspiralDestroyWaveformFlags(waveFlags);\
-	XLALPrintError("XLAL Error - %s: Non-default LALSimInspiralModesChoice provided, but this approximant does not use that flag.\n", __func__);\
-	XLAL_ERROR(XLAL_EINVAL);\
-	} while (0)
-
-/**
- * Same as above macro, but returns a null pointer rather than XLAL_FAILURE int
- */
-#define ABORT_NONDEFAULT_MODES_CHOICE_NULL(waveFlags)\
-	do {\
-	XLALSimInspiralDestroyWaveformFlags(waveFlags);\
-	XLALPrintError("XLAL Error - %s: Non-default LALSimInspiralModesChoice provided, but this approximant does not use that flag.\n", __func__);\
-	XLAL_ERROR_NULL(XLAL_EINVAL);\
-	} while (0)
 
 /**
  * Function that gives the value of the desired frequency given some physical parameters
@@ -2903,7 +2767,6 @@ int XLALSimInspiralChooseFDWaveform(
 
     return ret;
 }
-
 
 /**
  * @brief Generates an time domain inspiral waveform using the specified approximant; the

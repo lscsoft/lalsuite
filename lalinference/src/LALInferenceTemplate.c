@@ -681,7 +681,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
 	XLAL_TRY(ret=XLALSimInspiralChooseFDWaveformFromCache(&hptilde, &hctilde, phi0,
             deltaF, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, spin1x, spin1y, spin1z,
             spin2x, spin2y, spin2z, f_start, f_max, f_ref, distance, inclination,lambda1, lambda2, model->waveFlags, nonGRparams, amporder, order,
-            approximant,model->waveformCache), errnum);
+            approximant,model->waveformCache, NULL), errnum);
 
 	if (hptilde==NULL || hptilde->data==NULL || hptilde->data->data==NULL ) {
 	  XLALPrintError(" ERROR in LALInferenceTemplateXLALSimInspiralChooseWaveform(): encountered unallocated 'hptilde'.\n");

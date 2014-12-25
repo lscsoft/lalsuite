@@ -61,6 +61,7 @@ tagLALSimInspiralWaveformCache {
     int amplitudeO;
     int phaseO;
     Approximant approximant;
+    REAL8Sequence *frequencies;
 } LALSimInspiralWaveformCache;
 
 
@@ -120,8 +121,40 @@ int XLALSimInspiralChooseFDWaveformFromCache(
     int amplitudeO,                             /**< twice post-Newtonian amplitude order */
     int phaseO,                                 /**< twice post-Newtonian order */
     Approximant approximant,                    /**< post-Newtonian approximant to use for waveform production */
-    LALSimInspiralWaveformCache *cache         /**< waveform cache structure; use NULL for no caching */
+    LALSimInspiralWaveformCache *cache,         /**< waveform cache structure; use NULL for no caching */
+    REAL8Sequence *frequencies                  /**< sequence of frequencies for which the waveform will be computed. Pass in NULL (or None in python) for standard f_min to f_max sequence. */
     );
+
+/**
+ * Wrapper similar to XLALSimInspiralChooseFDWaveform() for waveforms to be generated a specific freqencies.
+ * Only TaylorF2 implemented so far. See XLALSimInspiralTaylorF2Core().
+ * Returns the waveform in the frequency domain at the frequencies of the REAL8Sequence frequencies.
+ */
+int  XLALSimInspiralChooseFDWaveformSequence(
+                                             COMPLEX16FrequencySeries **hptilde,     /**< FD plus polarization */
+                                             COMPLEX16FrequencySeries **hctilde,     /**< FD cross polarization */
+                                             REAL8 phiRef,                           /**< reference orbital phase (rad) */
+                                             REAL8 deltaF,                           /**< sampling interval (Hz) */
+                                             REAL8 m1,                               /**< mass of companion 1 (kg) */
+                                             REAL8 m2,                               /**< mass of companion 2 (kg) */
+                                             REAL8 S1x,                              /**< x-component of the dimensionless spin of object 1 */
+                                             REAL8 S1y,                              /**< y-component of the dimensionless spin of object 1 */
+                                             REAL8 S1z,                              /**< z-component of the dimensionless spin of object 1 */
+                                             REAL8 S2x,                              /**< x-component of the dimensionless spin of object 2 */
+                                             REAL8 S2y,                              /**< y-component of the dimensionless spin of object 2 */
+                                             REAL8 S2z,                              /**< z-component of the dimensionless spin of object 2 */
+                                             REAL8 f_ref,                            /**< Reference frequency (Hz) */
+                                             REAL8 r,                                /**< distance of source (m) */
+                                             REAL8 i,                                /**< inclination of source (rad) */
+                                             REAL8 lambda1,                          /**< (tidal deformability of mass 1) / m1^5 (dimensionless) */
+                                             REAL8 lambda2,                          /**< (tidal deformability of mass 2) / m2^5 (dimensionless) */
+                                             LALSimInspiralWaveformFlags *waveFlags, /**< Set of flags to control special behavior of some waveform families. Pass in NULL (or None in python) for default flags */
+                                             LALSimInspiralTestGRParam *nonGRparams, /**< Linked list of non-GR parameters. Pass in NULL (or None in python) for standard GR waveforms */
+                                             int amplitudeO,                         /**< twice post-Newtonian amplitude order */
+                                             int phaseO,                             /**< twice post-Newtonian order */
+                                             Approximant approximant,                /**< post-Newtonian approximant to use for waveform production */
+                                             REAL8Sequence *frequencies              /**< sequence of frequencies for which the waveform will be computed. Pass in NULL (or None in python) for standard f_min to f_max sequence. */
+);
 
 #if 0
 { /* so that editors will match succeeding brace */

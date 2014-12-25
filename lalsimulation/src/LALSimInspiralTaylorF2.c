@@ -28,6 +28,7 @@
 #include <lal/Date.h>
 #include <lal/FrequencySeries.h>
 #include <lal/LALConstants.h>
+#include <lal/Sequence.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALSimInspiral.h>
 #include <lal/Units.h>
@@ -63,35 +64,16 @@ int XLALSimInspiralTaylorF2AlignedPhasing(
     return XLAL_SUCCESS;
 }
 
-
-/**
- * Computes the stationary phase approximation to the Fourier transform of
- * a chirp waveform with phase given by \eqref{eq_InspiralFourierPhase_f2}
- * and amplitude given by expanding \f$1/\sqrt{\dot{F}}\f$. If the PN order is
- * set to -1, then the highest implemented order is used.
- *
- * N.B. f_ref is the GW frequency at which phi_ref is defined. The most common
- * choice in the literature is to choose the reference point as "coalescence",
- * when the frequency becomes infinite. This is the behavior of the code when
- * f_ref==0. If f_ref > 0, phi_ref sets the orbital phase at that GW frequency.
- *
- * See arXiv:0810.5336 and arXiv:astro-ph/0504538 for spin corrections
- * to the phasing.
- * See arXiv:1303.7412 for spin-orbit phasing corrections at 3 and 3.5PN order
- *
- * The spin and tidal order enums are defined in LALSimInspiralWaveformFlags.h
- */
-int XLALSimInspiralTaylorF2(
+int XLALSimInspiralTaylorF2Core(
         COMPLEX16FrequencySeries **htilde_out, /**< FD waveform */
+	const REAL8Sequence *freqs,            /**< frequency points at which to evaluate the waveform (Hz) */
         const REAL8 phi_ref,                   /**< reference orbital phase (rad) */
-        const REAL8 deltaF,                    /**< frequency resolution */
         const REAL8 m1_SI,                     /**< mass of companion 1 (kg) */
         const REAL8 m2_SI,                     /**< mass of companion 2 (kg) */
         const REAL8 S1z,                       /**<  z component of the spin of companion 1 */
         const REAL8 S2z,                       /**<  z component of the spin of companion 2  */
-        const REAL8 fStart,                    /**< start GW frequency (Hz) */
-        const REAL8 fEnd,                      /**< highest GW frequency (Hz) of waveform generation - if 0, end at Schwarzschild ISCO */
         const REAL8 f_ref,                     /**< Reference GW frequency (Hz) - if 0 reference point is coalescence */
+	const REAL8 shft,		       /**< time shift to be applied to frequency-domain phase (sec)*/
         const REAL8 r,                         /**< distance of source (m) */
         const REAL8 quadparam1,                /**< quadrupole deformation parameter of body 1 (dimensionless, 1 for BH) */
         const REAL8 quadparam2,                /**< quadrupole deformation parameter of body 2 (dimensionless, 1 for BH) */
@@ -103,6 +85,9 @@ int XLALSimInspiralTaylorF2(
         const INT4 amplitudeO                  /**< twice PN amplitude order */
         )
 {
+
+    if (!htilde_out) XLAL_ERROR(XLAL_EFAULT);
+    if (!freqs) XLAL_ERROR(XLAL_EFAULT);
     /* external: SI; internal: solar masses */
     const REAL8 m1 = m1_SI / LAL_MSUN_SI;
     const REAL8 m2 = m2_SI / LAL_MSUN_SI;
@@ -110,14 +95,26 @@ int XLALSimInspiralTaylorF2(
     const REAL8 m_sec = m * LAL_MTSUN_SI;  /* total mass in seconds */
     const REAL8 eta = m1 * m2 / (m * m);
     const REAL8 piM = LAL_PI * m_sec;
-    const REAL8 vISCO = 1. / sqrt(6.);
-    const REAL8 fISCO = vISCO * vISCO * vISCO / piM;
     const REAL8 m1OverM = m1 / m;
     const REAL8 m2OverM = m2 / m;
-    REAL8 shft, amp0, f_max;
-    size_t i, n, iStart;
+    REAL8 amp0;
+    size_t i;
     COMPLEX16 *data = NULL;
     LIGOTimeGPS tC = {0, 0};
+    INT4 iStart = 0;
+
+    COMPLEX16FrequencySeries *htilde = NULL;
+
+    if (*htilde_out) { //case when htilde_out has been allocated in XLALSimInspiralTaylorF2
+	    htilde = *htilde_out;
+	    iStart = htilde->data->length - freqs->length; //index shift to fill pre-allocated data
+	    if(iStart < 0) XLAL_ERROR(XLAL_EFAULT);
+    }
+    else { //otherwise allocate memory here
+	    htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", &tC, freqs->data[0], NAN, &lalStrainUnit, freqs->length);
+	    if (!htilde) XLAL_ERROR(XLAL_EFUNC);
+	    XLALUnitDivide(&htilde->sampleUnits, &htilde->sampleUnits, &lalSecondUnit);
+    }
 
     /* phasing coefficients */
     PNPhasingSeries pfa;
@@ -216,37 +213,15 @@ int XLALSimInspiralTaylorF2(
     const REAL8 dETa3 = 4. * XLALSimInspiralPNEnergy_6PNCoeff(eta);
 
 
-    COMPLEX16FrequencySeries *htilde;
-
     /* Perform some initial checks */
-    if (!htilde_out) XLAL_ERROR(XLAL_EFAULT);
-    if (*htilde_out) XLAL_ERROR(XLAL_EFAULT);
     if (m1_SI <= 0) XLAL_ERROR(XLAL_EDOM);
     if (m2_SI <= 0) XLAL_ERROR(XLAL_EDOM);
-    if (fStart <= 0) XLAL_ERROR(XLAL_EDOM);
     if (f_ref < 0) XLAL_ERROR(XLAL_EDOM);
     if (r <= 0) XLAL_ERROR(XLAL_EDOM);
 
-    /* allocate htilde */
-    if ( fEnd == 0. ) // End at ISCO
-        f_max = fISCO;
-    else // End at user-specified freq.
-        f_max = fEnd;
-    if (f_max <= fStart) XLAL_ERROR(XLAL_EDOM);
-
-    n = (size_t) (f_max / deltaF + 1);
-    XLALGPSAdd(&tC, -1 / deltaF);  /* coalesce at t=0 */
-    htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", &tC, 0.0, deltaF, &lalStrainUnit, n);
-    if (!htilde) XLAL_ERROR(XLAL_EFUNC);
-    memset(htilde->data->data, 0, n * sizeof(COMPLEX16));
-    XLALUnitDivide(&htilde->sampleUnits, &htilde->sampleUnits, &lalSecondUnit);
-
     /* extrinsic parameters */
     amp0 = -4. * m1 * m2 / r * LAL_MRSUN_SI * LAL_MTSUN_SI * sqrt(LAL_PI/12.L);
-    shft = LAL_TWOPI * (tC.gpsSeconds + 1e-9 * tC.gpsNanoSeconds);
 
-    /* Fill with non-zero vals from fStart to f_max */
-    iStart = (size_t) ceil(fStart / deltaF);
     data = htilde->data->data;
 
     /* Compute the SPA phase at the reference point
@@ -286,8 +261,8 @@ int XLALSimInspiralTaylorF2(
     } /* End of if(f_ref != 0) block */
 
     #pragma omp parallel for
-    for (i = iStart; i < n; i++) {
-        const REAL8 f = i * deltaF;
+    for (i = 0; i < freqs->length; i++) {
+        const REAL8 f = freqs->data[i];
         const REAL8 v = cbrt(piM*f);
         const REAL8 logv = log(v);
         const REAL8 v2 = v * v;
@@ -354,10 +329,116 @@ int XLALSimInspiralTaylorF2(
         // Note the factor of 2 b/c phi_ref is orbital phase
         phasing += shft * f - 2.*phi_ref - ref_phasing;
         amp = amp0 * sqrt(-dEnergy/flux) * v;
-        data[i] = amp * cos(phasing - LAL_PI_4)
+        data[i+iStart] = amp * cos(phasing - LAL_PI_4)
                 - amp * sin(phasing - LAL_PI_4) * 1.0j;
     }
 
     *htilde_out = htilde;
     return XLAL_SUCCESS;
+}
+
+/**
+ * Computes the stationary phase approximation to the Fourier transform of
+ * a chirp waveform with phase given by \eqref{eq_InspiralFourierPhase_f2}
+ * and amplitude given by expanding \f$1/\sqrt{\dot{F}}\f$. If the PN order is
+ * set to -1, then the highest implemented order is used.
+ *
+ * N.B. f_ref is the GW frequency at which phi_ref is defined. The most common
+ * choice in the literature is to choose the reference point as "coalescence",
+ * when the frequency becomes infinite. This is the behavior of the code when
+ * f_ref==0. If f_ref > 0, phi_ref sets the orbital phase at that GW frequency.
+ *
+ * See arXiv:0810.5336 and arXiv:astro-ph/0504538 for spin corrections
+ * to the phasing.
+ * See arXiv:1303.7412 for spin-orbit phasing corrections at 3 and 3.5PN order
+ *
+ * The spin and tidal order enums are defined in LALSimInspiralWaveformFlags.h
+ */
+int XLALSimInspiralTaylorF2(
+        COMPLEX16FrequencySeries **htilde_out, /**< FD waveform */
+        const REAL8 phi_ref,                   /**< reference orbital phase (rad) */
+        const REAL8 deltaF,                    /**< frequency resolution */
+        const REAL8 m1_SI,                     /**< mass of companion 1 (kg) */
+        const REAL8 m2_SI,                     /**< mass of companion 2 (kg) */
+        const REAL8 S1z,                       /**<  z component of the spin of companion 1 */
+        const REAL8 S2z,                       /**<  z component of the spin of companion 2  */
+        const REAL8 fStart,                    /**< start GW frequency (Hz) */
+        const REAL8 fEnd,                      /**< highest GW frequency (Hz) of waveform generation - if 0, end at Schwarzschild ISCO */
+        const REAL8 f_ref,                     /**< Reference GW frequency (Hz) - if 0 reference point is coalescence */
+        const REAL8 r,                         /**< distance of source (m) */
+        const REAL8 quadparam1,                /**< quadrupole deformation parameter of body 1 (dimensionless, 1 for BH) */
+        const REAL8 quadparam2,                /**< quadrupole deformation parameter of body 2 (dimensionless, 1 for BH) */
+        const REAL8 lambda1,                   /**< (tidal deformation of body 1)/(mass of body 1)^5 */
+        const REAL8 lambda2,                   /**< (tidal deformation of body 2)/(mass of body 2)^5 */
+        const LALSimInspiralSpinOrder spinO,  /**< twice PN order of spin effects */
+        const LALSimInspiralTidalOrder tideO,  /**< flag to control tidal effects */
+        const INT4 phaseO,                     /**< twice PN phase order */
+        const INT4 amplitudeO                  /**< twice PN amplitude order */
+        )
+{
+    /* external: SI; internal: solar masses */
+    const REAL8 m1 = m1_SI / LAL_MSUN_SI;
+    const REAL8 m2 = m2_SI / LAL_MSUN_SI;
+    const REAL8 m = m1 + m2;
+    const REAL8 m_sec = m * LAL_MTSUN_SI;  /* total mass in seconds */
+    // const REAL8 eta = m1 * m2 / (m * m);
+    const REAL8 piM = LAL_PI * m_sec;
+    const REAL8 vISCO = 1. / sqrt(6.);
+    const REAL8 fISCO = vISCO * vISCO * vISCO / piM;
+    //const REAL8 m1OverM = m1 / m;
+    // const REAL8 m2OverM = m2 / m;
+    REAL8 shft, f_max;
+    size_t i, n;
+    INT4 iStart;
+    REAL8Sequence *freqs = NULL;
+    LIGOTimeGPS tC = {0, 0};
+    int ret;
+
+    COMPLEX16FrequencySeries *htilde = NULL;
+
+    /* Perform some initial checks */
+    if (!htilde_out) XLAL_ERROR(XLAL_EFAULT);
+    if (*htilde_out) XLAL_ERROR(XLAL_EFAULT);
+    if (m1_SI <= 0) XLAL_ERROR(XLAL_EDOM);
+    if (m2_SI <= 0) XLAL_ERROR(XLAL_EDOM);
+    if (fStart <= 0) XLAL_ERROR(XLAL_EDOM);
+    if (f_ref < 0) XLAL_ERROR(XLAL_EDOM);
+    if (r <= 0) XLAL_ERROR(XLAL_EDOM);
+
+    /* allocate htilde */
+    if ( fEnd == 0. ) // End at ISCO
+        f_max = fISCO;
+    else // End at user-specified freq.
+        f_max = fEnd;
+    if (f_max <= fStart) XLAL_ERROR(XLAL_EDOM);
+
+    n = (size_t) (f_max / deltaF + 1);
+    XLALGPSAdd(&tC, -1 / deltaF);  /* coalesce at t=0 */
+    htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", &tC, 0.0, deltaF, &lalStrainUnit, n);
+    if (!htilde) XLAL_ERROR(XLAL_EFUNC);
+    memset(htilde->data->data, 0, n * sizeof(COMPLEX16));
+    XLALUnitDivide(&htilde->sampleUnits, &htilde->sampleUnits, &lalSecondUnit);
+
+    /* Fill with non-zero vals from fStart to f_max */
+    iStart = (INT4) ceil(fStart / deltaF);
+
+    /* Sequence of frequencies where waveform model is to be evaluated */
+    freqs = XLALCreateREAL8Sequence(n - iStart);
+
+    /* extrinsic parameters */
+    shft = LAL_TWOPI * (tC.gpsSeconds + 1e-9 * tC.gpsNanoSeconds);
+
+    #pragma omp parallel for
+    for (i = iStart; i < n; i++) {
+        freqs->data[i-iStart] = i * deltaF;
+    }
+    ret = XLALSimInspiralTaylorF2Core(&htilde, freqs, phi_ref, m1_SI, m2_SI,
+                                      S1z, S2z, f_ref, shft, r, quadparam1, quadparam2,
+                                      lambda1, lambda2, spinO, tideO, phaseO, amplitudeO);
+
+    XLALDestroyREAL8Sequence(freqs);
+
+    *htilde_out = htilde;
+
+    return ret;
 }
