@@ -38,9 +38,9 @@ python/bayestar_sample_model_psd
 python/bayestar_sim_to_tmpltbank
 python/lalinference/__init__.py
 python/lalinference/_lalinference*
+python/lalinference/bayestar/sky_map.so
 python/lalinference/git_version.py
 python/lalinference/lalinference.py
-python/lalinference/bayestar/sky_map.so
 src/LALInferenceBuildInfo.c
 src/LALInferenceConfig.h
 src/LALInferenceVCSInfo.c
