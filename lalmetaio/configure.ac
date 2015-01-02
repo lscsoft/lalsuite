@@ -5,12 +5,12 @@ AC_CONFIG_SRCDIR([src/LIGOLwXML.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
-  lalmetaio.spec \
-  lalmetaio.pc \
   Makefile \
   debian/Makefile \
   include/Makefile \
   include/lal/Makefile \
+  lalmetaio.pc \
+  lalmetaio.spec \
   python/Makefile \
   python/lalmetaio/Makefile \
   python/lalmetaio/__init__.py \

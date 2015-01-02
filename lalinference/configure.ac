@@ -5,19 +5,19 @@ AC_CONFIG_SRCDIR([src/LALInference.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
-  lalinference.spec \
-  lalinference.pc \
   Makefile \
   debian/Makefile \
   include/Makefile \
   include/lal/Makefile \
-  src/LALInferenceVCSInfo.c \
-  src/LALInferenceVCSInfo.h \
-  src/Makefile \
+  lalinference.pc \
+  lalinference.spec \
   python/Makefile \
   python/lalinference/Makefile \
   python/lalinference/__init__.py \
   python/lalinference/bayestar/Makefile \
+  src/LALInferenceVCSInfo.c \
+  src/LALInferenceVCSInfo.h \
+  src/Makefile \
   swig/Makefile \
   test/Makefile \
 ])

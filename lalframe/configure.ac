@@ -5,21 +5,21 @@ AC_CONFIG_SRCDIR([src/LALFrameIO.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
-  lalframe.spec \
-  lalframe.pc \
   Makefile \
   debian/Makefile \
   include/Makefile \
   include/lal/Makefile \
-  src/LALFrameVCSInfo.c \
-  src/LALFrameVCSInfo.h \
-  src/Makefile \
+  lalframe.pc \
+  lalframe.spec \
   python/Makefile \
   python/lalframe/Makefile \
   python/lalframe/__init__.py \
   python/lalframe/utils/Makefile \
+  src/LALFrameVCSInfo.c \
+  src/LALFrameVCSInfo.h \
+  src/Makefile \
   swig/Makefile \
-  test/Makefile
+  test/Makefile \
 ])
 AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
 

@@ -5,20 +5,20 @@ AC_CONFIG_SRCDIR([src/EPSearch.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
-  lalburst.spec \
-  lalburst.pc \
   Makefile \
   debian/Makefile \
   include/Makefile \
   include/lal/Makefile \
-  src/LALBurstVCSInfo.c \
-  src/LALBurstVCSInfo.h \
-  src/Makefile \
+  lalburst.pc \
+  lalburst.spec \
   python/Makefile \
   python/lalburst/Makefile \
   python/lalburst/__init__.py \
+  src/LALBurstVCSInfo.c \
+  src/LALBurstVCSInfo.h \
+  src/Makefile \
   swig/Makefile \
-  test/Makefile
+  test/Makefile \
 ])
 AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
 

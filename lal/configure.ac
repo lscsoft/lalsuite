@@ -5,13 +5,13 @@ AC_CONFIG_SRCDIR([packages/std/include/LALStdio.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
-  lal.spec \
-  lal.pc \
-  lalsupport.pc \
   Makefile \
   debian/Makefile \
   include/Makefile \
   include/lal/Makefile \
+  lal.pc \
+  lal.spec \
+  lalsupport.pc \
   lib/Makefile \
   lib/lal/LALVCSInfo.c \
   lib/lal/LALVCSInfo.h \
@@ -21,73 +21,73 @@ AC_CONFIG_FILES([ \
   lib/lalsupport/include/Makefile \
   lib/lalsupport/src/Makefile \
   lib/lalsupport/test/Makefile \
-  python/Makefile \
-  python/lal/Makefile \
-  python/lal/__init__.py \
-  python/lal/utils/Makefile \
-  python/lal/spectrum/Makefile \
-  swig/Makefile \
   packages/Makefile \
-  packages/std/Makefile \
-  packages/std/doc/Makefile \
-  packages/std/include/Makefile
-  packages/std/src/Makefile \
-  packages/std/test/Makefile \
-  packages/tools/Makefile \
-  packages/tools/doc/Makefile \
-  packages/tools/include/Makefile \
-  packages/tools/src/Makefile \
-  packages/tools/test/Makefile \
-  packages/factories/Makefile \
-  packages/factories/doc/Makefile \
-  packages/factories/include/Makefile \
-  packages/factories/src/Makefile \
-  packages/factories/test/Makefile \
-  packages/vectorops/Makefile \
-  packages/vectorops/doc/Makefile \
-  packages/vectorops/include/Makefile \
-  packages/vectorops/src/Makefile \
-  packages/vectorops/test/Makefile \
-  packages/utilities/Makefile \
-  packages/utilities/doc/Makefile \
-  packages/utilities/include/Makefile \
-  packages/utilities/src/Makefile \
-  packages/utilities/test/Makefile \
-  packages/stats/Makefile \
-  packages/stats/doc/Makefile \
-  packages/stats/include/Makefile \
-  packages/stats/src/Makefile \
-  packages/stats/test/Makefile \
-  packages/inject/Makefile \
-  packages/inject/doc/Makefile \
-  packages/inject/include/Makefile \
-  packages/inject/src/Makefile \
-  packages/inject/test/Makefile \
   packages/date/Makefile \
   packages/date/doc/Makefile \
   packages/date/include/Makefile \
   packages/date/src/Makefile \
   packages/date/test/Makefile \
-  packages/tdfilter/Makefile \
-  packages/tdfilter/doc/Makefile \
-  packages/tdfilter/include/Makefile \
-  packages/tdfilter/src/Makefile \
-  packages/tdfilter/test/Makefile \
-  packages/window/Makefile \
-  packages/window/doc/Makefile \
-  packages/window/include/Makefile \
-  packages/window/src/Makefile \
-  packages/window/test/Makefile \
+  packages/factories/Makefile \
+  packages/factories/doc/Makefile \
+  packages/factories/include/Makefile \
+  packages/factories/src/Makefile \
+  packages/factories/test/Makefile \
   packages/fft/Makefile \
   packages/fft/doc/Makefile \
   packages/fft/include/Makefile \
   packages/fft/src/Makefile \
   packages/fft/test/Makefile \
+  packages/inject/Makefile \
+  packages/inject/doc/Makefile \
+  packages/inject/include/Makefile \
+  packages/inject/src/Makefile \
+  packages/inject/test/Makefile \
   packages/noisemodels/Makefile \
   packages/noisemodels/doc/Makefile \
   packages/noisemodels/include/Makefile \
   packages/noisemodels/src/Makefile \
-  packages/noisemodels/test/Makefile
+  packages/noisemodels/test/Makefile \
+  packages/stats/Makefile \
+  packages/stats/doc/Makefile \
+  packages/stats/include/Makefile \
+  packages/stats/src/Makefile \
+  packages/stats/test/Makefile \
+  packages/std/Makefile \
+  packages/std/doc/Makefile \
+  packages/std/include/Makefile
+  packages/std/src/Makefile \
+  packages/std/test/Makefile \
+  packages/tdfilter/Makefile \
+  packages/tdfilter/doc/Makefile \
+  packages/tdfilter/include/Makefile \
+  packages/tdfilter/src/Makefile \
+  packages/tdfilter/test/Makefile \
+  packages/tools/Makefile \
+  packages/tools/doc/Makefile \
+  packages/tools/include/Makefile \
+  packages/tools/src/Makefile \
+  packages/tools/test/Makefile \
+  packages/utilities/Makefile \
+  packages/utilities/doc/Makefile \
+  packages/utilities/include/Makefile \
+  packages/utilities/src/Makefile \
+  packages/utilities/test/Makefile \
+  packages/vectorops/Makefile \
+  packages/vectorops/doc/Makefile \
+  packages/vectorops/include/Makefile \
+  packages/vectorops/src/Makefile \
+  packages/vectorops/test/Makefile \
+  packages/window/Makefile \
+  packages/window/doc/Makefile \
+  packages/window/include/Makefile \
+  packages/window/src/Makefile \
+  packages/window/test/Makefile \
+  python/Makefile \
+  python/lal/Makefile \
+  python/lal/__init__.py \
+  python/lal/spectrum/Makefile \
+  python/lal/utils/Makefile \
+  swig/Makefile \
 ])
 AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
 

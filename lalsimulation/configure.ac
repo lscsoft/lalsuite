@@ -5,20 +5,20 @@ AC_CONFIG_SRCDIR([src/LALSimulation.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
-  lalsimulation.spec \
-  lalsimulation.pc \
   Makefile \
   debian/Makefile \
   include/Makefile \
   include/lal/Makefile \
-  src/LALSimulationVCSInfo.c \
-  src/LALSimulationVCSInfo.h \
-  src/Makefile \
+  lalsimulation.pc \
+  lalsimulation.spec \
   python/Makefile \
   python/lalsimulation/Makefile \
   python/lalsimulation/__init__.py \
+  src/LALSimulationVCSInfo.c \
+  src/LALSimulationVCSInfo.h \
+  src/Makefile \
   swig/Makefile \
-  test/Makefile
+  test/Makefile \
 ])
 AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
 

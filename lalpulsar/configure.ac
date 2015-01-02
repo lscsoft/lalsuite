@@ -5,20 +5,20 @@ AC_CONFIG_SRCDIR([src/ComputeFstat.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
-  lalpulsar.spec \
-  lalpulsar.pc \
   Makefile \
   debian/Makefile \
   include/Makefile \
   include/lal/Makefile \
-  src/LALPulsarVCSInfo.c \
-  src/LALPulsarVCSInfo.h \
-  src/Makefile \
+  lalpulsar.pc \
+  lalpulsar.spec \
   python/Makefile \
   python/lalpulsar/Makefile \
   python/lalpulsar/__init__.py \
+  src/LALPulsarVCSInfo.c \
+  src/LALPulsarVCSInfo.h \
+  src/Makefile \
   swig/Makefile \
-  test/Makefile
+  test/Makefile \
 ])
 AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
 

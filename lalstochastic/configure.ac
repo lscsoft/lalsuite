@@ -5,12 +5,12 @@ AC_CONFIG_SRCDIR([src/StochasticOmegaGW.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
-  lalstochastic.spec \
-  lalstochastic.pc \
   Makefile \
   debian/Makefile \
   include/Makefile \
   include/lal/Makefile \
+  lalstochastic.pc \
+  lalstochastic.spec \
   python/Makefile \
   python/lalstochastic/Makefile \
   python/lalstochastic/__init__.py \
@@ -18,7 +18,7 @@ AC_CONFIG_FILES([ \
   src/LALStochasticVCSInfo.h \
   src/Makefile \
   swig/Makefile \
-  test/Makefile
+  test/Makefile \
 ])
 AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
 

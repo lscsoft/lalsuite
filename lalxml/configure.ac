@@ -5,20 +5,20 @@ AC_CONFIG_SRCDIR([src/LALXML.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
-  lalxml.spec \
-  lalxml.pc \
   Makefile \
   debian/Makefile \
   include/Makefile \
   include/lal/Makefile \
-  src/LALXMLVCSInfo.c \
-  src/LALXMLVCSInfo.h \
-  src/Makefile \
+  lalxml.pc \
+  lalxml.spec \
   python/Makefile \
   python/lalxml/Makefile \
   python/lalxml/__init__.py \
+  src/LALXMLVCSInfo.c \
+  src/LALXMLVCSInfo.h \
+  src/Makefile \
   swig/Makefile \
-  test/Makefile
+  test/Makefile \
 ])
 AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
 

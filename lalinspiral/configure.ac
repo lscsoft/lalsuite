@@ -5,21 +5,21 @@ AC_CONFIG_SRCDIR([src/LALInspiral.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
-  lalinspiral.spec \
-  lalinspiral.pc \
   Makefile \
   debian/Makefile \
   include/Makefile \
   include/lal/Makefile \
-  src/LALInspiralVCSInfo.c \
-  src/LALInspiralVCSInfo.h \
-  src/Makefile \
+  lalinspiral.pc \
+  lalinspiral.spec \
   python/Makefile \
   python/lalinspiral/Makefile \
   python/lalinspiral/__init__.py \
   python/lalinspiral/sbank/Makefile \
+  src/LALInspiralVCSInfo.c \
+  src/LALInspiralVCSInfo.h \
+  src/Makefile \
   swig/Makefile \
-  test/Makefile
+  test/Makefile \
 ])
 AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
 

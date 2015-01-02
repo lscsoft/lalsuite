@@ -5,23 +5,23 @@ AC_CONFIG_SRCDIR([src/LALDetChar.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
-  laldetchar.spec \
-  laldetchar.pc \
   Makefile \
   debian/Makefile \
   include/Makefile \
   include/lal/Makefile \
-  src/LALDetCharVCSInfo.c \
-  src/LALDetCharVCSInfo.h \
-  src/Makefile \
+  laldetchar.pc \
+  laldetchar.spec \
   python/Makefile \
   python/laldetchar/Makefile \
   python/laldetchar/__init__.py \
-  python/laldetchar/triggers/Makefile \
   python/laldetchar/hveto/Makefile \
   python/laldetchar/idq/Makefile \
+  python/laldetchar/triggers/Makefile \
+  src/LALDetCharVCSInfo.c \
+  src/LALDetCharVCSInfo.h \
+  src/Makefile \
   swig/Makefile \
-  test/Makefile
+  test/Makefile \
 ])
 AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
 
