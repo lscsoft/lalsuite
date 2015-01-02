@@ -80,7 +80,7 @@ pybin-install-exec-local:
 				echo " $(INSTALL_DATA) $(srcdir)/$${file}.py '$(DESTDIR)$(pkglibexecdir)/$${file}.py'"; \
 				$(INSTALL_DATA) $(srcdir)/$${file}.py "$(DESTDIR)$(pkglibexecdir)/$${file}.py" || exit 1; \
 			fi; \
-			echo " $(INSTALL_SCRIPT) $${file}.tmp '$(DESTDIR)$(bindir)/$${file}'"; \
+			echo " $(INSTALL_SCRIPT) $${file} '$(DESTDIR)$(bindir)/$${file}'"; \
 			$(INSTALL_SCRIPT) $${file}.tmp "$(DESTDIR)$(bindir)/$${file}" || exit 1; \
 			rm -f $${file}.tmp || exit 1; \
 		done; \
