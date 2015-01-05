@@ -1382,7 +1382,7 @@ class EngineNode(pipeline.CondorDAGNode):
             self.add_file_opt('%s-cache'%(ifo),self.cachefiles[ifo])
         self.add_var_opt('%s-channel'%(ifo),self.channels[ifo])
         if self.flows: self.add_var_opt('%s-flow'%(ifo),self.flows[ifo])
-        if self.fhighs: self.add_var_opt('%s-fhigh'%(ifo),self.flows[ifo])
+        if self.fhighs: self.add_var_opt('%s-fhigh'%(ifo),self.fhighs[ifo])
         if self.psds: self.add_var_opt('%s-psd'%(ifo),self.psds[ifo])
         if any(self.timeslides): self.add_var_opt('%s-timeslide'%(ifo),self.timeslides[ifo])
 
