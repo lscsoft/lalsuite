@@ -206,6 +206,10 @@ STYPE *STREAMREADSERIES(LALFrStream * stream, const char *chname,
     STYPE *series;
     size_t length;
 
+    /* seek to the relevant point in the stream */
+   if (XLALFrStreamSeek(stream, start))
+        XLAL_ERROR_NULL(XLAL_EFUNC);
+
     /* create and initialize a zero-length time series vector */
     series = CREATESERIES(chname, start, 0.0, 0.0, &lalADCCountUnit, 0);
     if (!series)
@@ -227,7 +231,7 @@ STYPE *STREAMREADSERIES(LALFrStream * stream, const char *chname,
     }
 
     /* read the data */
-    if (XLALFrStreamSeek(stream, start) || STREAMGETSERIES(series, stream)) {
+    if (STREAMGETSERIES(series, stream)) {
         DESTROYSERIES(series);
         XLAL_ERROR_NULL(XLAL_EFUNC);
     }
