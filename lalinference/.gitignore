@@ -52,6 +52,7 @@ src/git_version
 src/stamp-h1
 src/stamp-h2
 swig/swiglal*
+test/LALInferenceGenerateROQTest
 test/LALInferenceInjectionTest
 test/LALInferenceKDTest
 test/LALInferenceLikelihoodTest
