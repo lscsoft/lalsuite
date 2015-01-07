@@ -240,6 +240,8 @@ Longer strings will be truncated.""" % {
         from glue.ligolw import lsctables
         from glue.ligolw import utils
         from glue.ligolw.utils import ligolw_add
+
+        lsctables.use_in(ligolw.LIGOLWContentHandler)
     except:
         if options.ligolw:
             error("ligolw modules not found")
@@ -386,7 +388,7 @@ Longer strings will be truncated.""" % {
                 graceid = e['graceid']
                 try:
                     r = client.files(graceid, "coinc.xml")
-                    utils.load_fileobj(r, xmldoc = xmldoc)
+                    utils.load_fileobj(r, xmldoc = xmldoc, contenthandler = ligolw.LIGOLWContentHandler)
                 except:
                     error("Missing coinc.xml for %s. Cannot build ligolw output." % graceid)
                     exit(1)
