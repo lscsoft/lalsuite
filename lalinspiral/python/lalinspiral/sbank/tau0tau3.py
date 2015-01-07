@@ -348,6 +348,17 @@ def urand_tau0tau3_generator(flow, **constraints):
                 qmin < mass1/mass2 < qmax:
             yield mass1, mass2
 
+def nonspin_param_generator(flow, **constraints):
+    """
+    Wrapper for urand_tau0tau3_generator() to remove spin options
+    for EOBNRv2 waveforms.
+    """
+    if constraints.has_key('spin1'):
+        constraints.pop('spin1')
+    if constraints.has_key('spin2'):
+        constraints.pop('spin2')
+
+    return urand_tau0tau3_generator(flow, **constraints)
 
 def IMRPhenomB_param_generator(flow, **kwargs):
     """
@@ -443,7 +454,7 @@ def SpinTaylorT4_param_generator(flow, **kwargs):
 proposals = {"IMRPhenomB":IMRPhenomB_param_generator,
              "IMRPhenomC":IMRPhenomC_param_generator,
              "TaylorF2RedSpin":aligned_spin_param_generator,
-             "EOBNRv2":urand_tau0tau3_generator,
+             "EOBNRv2":nonspin_param_generator,
              "SEOBNRv1":aligned_spin_param_generator,
              "SEOBNRv2":aligned_spin_param_generator,
              "SEOBNRv2_ROM_DoubleSpin":aligned_spin_param_generator,
