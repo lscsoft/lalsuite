@@ -908,8 +908,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 	/* data is ok, add to SFT */
 	segments[isft].last               = lastBinRead;
 	segments[isft].lastfrom           = locator;
-	if(locatalog.data[catPos].header.name && *(locatalog.data[catPos].header.name))
-	  strcpy(sftVector->data[isft].name, locatalog.data[catPos].header.name);
+        memcpy( sftVector->data[isft].name, locatalog.data[catPos].header.name, sizeof(sftVector->data[isft].name));
 	sftVector->data[isft].sampleUnits = locatalog.data[catPos].header.sampleUnits;
 	memcpy(sftVector->data[isft].data->data + (firstBinRead - firstbin),
 	       thisSFT->data->data,
