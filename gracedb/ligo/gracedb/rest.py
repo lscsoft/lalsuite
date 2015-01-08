@@ -16,7 +16,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 
-import httplib, socket
+import httplib, socket, ssl
 import mimetypes
 import urllib
 import os, sys
@@ -24,6 +24,7 @@ import json
 from urlparse import urlparse
 
 DEFAULT_SERVICE_URL = "https://gracedb.ligo.org/api/"
+KNOWN_TEST_HOSTS = ['moe.phys.uwm.edu', 'embb-dev.ligo.caltech.ed', 'simdb.phys.uwm.edu',]
 
 #-----------------------------------------------------------------
 # Exception(s)
@@ -84,16 +85,19 @@ class ProxyHTTPSConnection(ProxyHTTPConnection):
 
     default_port = 443
 
-    def __init__(self, host, port = None, key_file = None, cert_file = None, strict = None):
+    def __init__(self, host, port = None, context = None):
         ProxyHTTPConnection.__init__(self, host, port)
         self.key_file = key_file
         self.cert_file = cert_file
+        self.context = context
 
     def connect(self):
         ProxyHTTPConnection.connect(self)
         #make the sock ssl-aware
-        ssl = socket.ssl(self.sock, self.key_file, self.cert_file)
-        self.sock = httplib.FakeSocket(self.sock, ssl)
+        #ssl = socket.ssl(self.sock, self.key_file, self.cert_file)
+        #self.sock = httplib.FakeSocket(self.sock, ssl)
+        # XXX Modified for compatibility with Python 2.7.
+        self.sock = self.context.wrap_socket(self.sock)
 
 #-----------------------------------------------------------------
 # Generic GSI REST
@@ -113,16 +117,30 @@ class GsiRest(object):
             self.cert = self.key = cred
         self.connection = None
 
+        o = urlparse(url)
+        port = o.port
+        host = o.hostname
+        port = port or 443
+
+        # Prepare SSL context
+        ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+        ssl_context.load_cert_chain(self.cert, self.key)
+        # Generally speaking, test boxes use cheap/free certs from the LIGO CA.
+        # These cannot be verified by the client.
+        if host in KNOWN_TEST_HOSTS:
+            ssl_context.verify_mode = ssl.CERT_NONE
+        else:
+            ssl_context.verify_mode = ssl.CERT_REQUIRED
+            ssl_context.check_hostname = True
+            # Find the various CA cert bundles stored on the system
+            ssl_context.load_default_certs()        
+
         if proxy_host:
             self.connector = lambda: ProxyHTTPSConnection(
-                    proxy_host, proxy_port, key_file=self.key, cert_file=self.cert)
+                    proxy_host, proxy_port, context=ssl_context)
         else:
-            o = urlparse(url)
-            port = o.port
-            host = o.hostname
-            port = port or 443
             self.connector = lambda: httplib.HTTPSConnection(
-                    host, port, key_file=self.key, cert_file=self.cert)
+                    host, port, context=ssl_context)
 
     def getConnection(self):
         return self.connector()
