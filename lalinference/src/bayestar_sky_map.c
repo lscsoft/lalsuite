@@ -698,7 +698,7 @@ double *bayestar_sky_map_toa_phoa_snr(
         /* Restore old error handler. */
         gsl_set_error_handler(old_handler);
 
-        /* Sort pixels by descending log posterior. */
+        /* Sort pixels by ascending posterior probability. */
         adaptive_sky_map_sort(map);
 
         /* If we have reached order=11 (nside=2048), stop. */
