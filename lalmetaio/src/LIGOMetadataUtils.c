@@ -1200,14 +1200,14 @@ void XLALDestroyTimeSlideTable(TimeSlide *head)
 
 const TimeSlide *XLALTimeSlideConstGetByIDAndInstrument(const TimeSlide *time_slide, long time_slide_id, const char *instrument)
 {
-	for(; time_slide && (time_slide->time_slide_id != time_slide_id || !time_slide->instrument || strcmp(time_slide->instrument, instrument)); time_slide = time_slide->next);
+	for(; time_slide && (time_slide->time_slide_id != time_slide_id || strcmp(time_slide->instrument, instrument)); time_slide = time_slide->next);
 	return time_slide;
 }
 
 
 TimeSlide *XLALTimeSlideGetByIDAndInstrument(TimeSlide *time_slide, long time_slide_id, const char *instrument)
 {
-	for(; time_slide && (time_slide->time_slide_id != time_slide_id || !time_slide->instrument || strcmp(time_slide->instrument, instrument)); time_slide = time_slide->next);
+	for(; time_slide && (time_slide->time_slide_id != time_slide_id || strcmp(time_slide->instrument, instrument)); time_slide = time_slide->next);
 	return time_slide;
 }
 
