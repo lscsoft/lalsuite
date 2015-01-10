@@ -29,7 +29,8 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup LALVersion_h
+ * \defgroup LALVersion_h Header LALVersion.h
+ * \ingroup lal_std
  *
  * \brief Provides routines for reporting the LAL version.
  *

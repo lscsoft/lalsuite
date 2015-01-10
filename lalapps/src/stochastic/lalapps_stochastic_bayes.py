@@ -19,6 +19,180 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 """
 
+## \file
+#
+# <dl>
+# <dt>Name</dt><dd>
+# <tt>lalapps_stochastic_bayes</tt> --- python script to generate Condor DAGs
+# to run the stochastic bayesian pipeline.</dd>
+#
+# <dt>Synopsis</dt><dd>
+# <tt>lalapps_stochastic_bayes</tt>
+# [<tt>--help</tt>]
+# [<tt>--version</tt>]
+# [<tt>--user-tag</tt> <i>TAG</i>]
+# [<tt>--datafind</tt>]
+# [<tt>--stochastic</tt>]
+# [<tt>--priority</tt> <i>PRIO</i>]
+# <tt>--config-file</tt> <i>FILE</i>
+# <tt>--log-path</tt> <i>PATH</i></dd>
+#
+# <dt>Description</dt><dd>
+# <tt>lalapps_stochastic_bayes</tt> builds a stochastic search DAG suitable
+# for running at the various LSC Data Grid sites. The configuration file
+# specifies the parameters needed to run the analysis jobs contained
+# within the pipeline. It is specified with the <tt>--config-file</tt>
+# option. Examples of typical .ini files can be found in the directory
+# <tt>lalapps/src/stochastic/example</tt>.
+#
+# The .ini file contains several sections. The <tt>[condor]</tt> section
+# contains the names of executables which will run the various stages of
+# the pipeline. The <tt>[pipeline]</tt> section gives the CVS details of the
+# pipeline. The <tt>[input]</tt> section specifies the segment list and the
+# minimum and maximum segment duration for the jobs. The <tt>[datafind]</tt>
+# section specifies the frame types for the two input streams for passing
+# onto LSCdataFind. The <tt>[detectors]</tt> section specifies the detector
+# pair to cross correlate. The <tt>[calibration]</tt> section specifies the
+# location and name of the various calibration cache files. The
+# <tt>[frequency]</tt> section specifies the minimum and maximum frequencies
+# and the band over which the bayesian search runs. Finally
+# <tt>[stochastic]</tt> section specifies static options to pass to
+# <tt>lalapps_stochastic</tt>, i.e. options that are not automatically
+# generated.</dd>
+#
+# <dt>Options</dt><dd>
+# <dl>
+# <dt><tt>--help</tt></dt><dd> Display usage information</dd>
+# <dt><tt>--version</tt></dt><dd> Display version information</dd>
+# <dt><tt>--user-tag</tt> <i>TAG</i></dt><dd> The tag for the job</dd>
+# <dt><tt>--datafind</tt></dt><dd> Run LSCdataFind as part of the DAG to create
+# the cache files for each science segment</dd>
+# <dt><tt>--stochastic</tt></dt><dd> Run <tt>lalapps_stochastic</tt> on the data</dd>
+# <dt><tt>--priority</tt> <i>PRIO</i></dt><dd> Run jobs with condor priority <i>PRIO</i></dd>
+# <dt><tt>--config-file</tt> <i>FILE</i></dt><dd> Use configuration file <i>FILE</i></dd>
+# <dt><tt>--log-path</tt> <i>PATH</i></dt><dd> Directory to write condor log file</dd>
+# </dl></dd>
+#
+# <dt>Configuration File Options</dt><dd>
+# The configuration file is a standard python configuration that can be
+# easily parsed using the standard ConfigParser module from python. The
+# configuration file consists of sections, led by a "[section]" header
+# and followed by "name: value" entries. The optional values can contain
+# format strings which refer to other values in the same section. Lines
+# beginning with "\#" or ";" are ignored and may be used to provide
+# comments.
+#
+# The first section required is "[condor]", this specfies all the
+# parameters associated with condor.
+# <dl>
+# <dt>universe</dt><dd>
+# Specfies the condor universe under which to run, this should be set to
+# "standard" if LALApps has been compiled with the
+# <tt>--enable-condor</tt>, otherwise it should be set to "vanilla".</dd>
+# <dt>datafind</dt><dd>
+# Specifies the location of the <tt>LSCdataFind</tt> script.</dd>
+# <dt>stochastic</dt><dd>
+# Specifies the location of the <tt>lalapps_stochastic</tt> binary.</dd>
+# </dl>
+#
+# The next section is "[pipeline]", this specifies version information
+# of the pipeline, currently only the version of configuration file is
+# specified.
+# <dl>
+# <dt>version</dt><dd>
+# A CVS <tt>\\f$Id\\f$</tt> keyword specifying the version of the
+# configuration file.</dd>
+# </dl>
+#
+# The next section is "[input]" which specifies parameters regarding
+# the input data.
+# <dl>
+# <dt>segments</dt><dd>
+# Specifies the location of the segment list, outputed from
+# <tt>SegWizard</tt> listing the Science Segments to analyse.</dd>
+# <dt>min_length</dt><dd>
+# Specifies the minimum length of Science Segment to analyse</dd>
+# <dt>max_length</dt><dd>
+# Specifies the maximum length at which the split the Science Segments
+# into.</dd>
+# <dt>channel</dt><dd>
+# Currently the pipeline infrastructure requires that the "[input]"
+# section contains the option "channel", this can be set to anything as
+# it not used within the \c LSCdataFind class.</dd>
+# </dl>
+#
+# The next section is "[datafind]" which specifies parameters for
+# <tt>LSCdataFind</tt>.
+# <dl>
+# <dt>type-one</dt><dd>
+# Specifies the frame type of the first data stream for <tt>LSCdataFind</tt>
+# to find.</dd>
+# <dt>type-two</dt><dd>
+# Specifies the frame type of the second data stream for
+# <tt>LSCdataFind</tt> to find.</dd>
+# <dt>server</dt><dd>
+# Specifies which LDRdataFindServer to use.</dd>
+# </dl>
+#
+# The next section is "[detectors]" which specifies the detectors to use
+# for the search.
+# <dl>
+# <dt>detector-one</dt><dd>
+# Specifies the detector for the first data stream.</dd>
+# <dt>detector-two</dt><dd>
+# Specifies the detector for the second data stream.</dd>
+# </dl>
+#
+# The next section is "[calibration]" which specifies the location of
+# the calibration files.
+# <dl>
+# <dt>path</dt><dd>
+# Specifies the path to the calibration cache files.</dd>
+# <dt>L1</dt><dd>
+# Specifies the cache file for the Livingston 4 km detector.</dd>
+# <dt>H1</dt><dd>
+# Specifies the cache file for the Hanford 4 km detector.</dd>
+# <dt>H2</dt><dd>
+# Specifies the cache file for the Hanford 2 km detector.</dd>
+# </dl>
+#
+# The next section is "[frequency]" which specifies the frequency band
+# information for the bayesian search.
+# <dl>
+# <dt>f-min</dt><dd>
+# Specifies the minimum frequency of the total band to search.</dd>
+# <dt>f-max</dt><dd>
+# Specifies the maximum frequency of the total band to search.</dd>
+# <dt>f-band</dt><dd>
+# Specifies the sub band to search over.</dd>
+# </dl>
+#
+# The next section is "[stochastic]", this is used to specify any static
+# options to pass onto <tt>lalapps_stochastic</tt>, i.e. options that are
+# not automatically generated. See
+# \ref stochastic.c for the accepted options for
+# <tt>lalapps_stochastic</tt>. The options that are automatically generated
+# are, <tt>--gps-start-time</tt>, <tt>--gps-end-time</tt>,
+# <tt>--ifo-one</tt>, <tt>--ifo-two</tt>, <tt>--frame-cache-one</tt>,
+# <tt>--frame-cache-two</tt>, <tt>--calibration-cache-one</tt>,\\
+# <tt>--calibration-cache-two</tt>, <tt>--f-min</tt>, and
+# <tt>--f-max</tt>.</dd>
+#
+# <dt>Example</dt><dd>
+# Generate a DAG to run a stochastic search on a pair of interferometers
+# specified in the configuration file. The generated DAG is then submitted
+# with \c condor_submit_dag
+#
+# \code
+# > lalapps_stochastic_bayes --log-path /home/ram/dag_logs \
+#     --datafind --stochastic --config-file stochastic_H1L1_bayes.ini
+# > condor_submit_dag stochastic_H1L1_bayes.dag
+# \endcode</dd>
+#
+# <dt>Author</dt><dd>
+# Adam Mercer</dd>
+# </dl>
+
 __author__ = 'Adam Mercer <ram@star.sr.bham.ac.uk>'
 __date__ = '$Date$'
 __version__ = '$Revision$'

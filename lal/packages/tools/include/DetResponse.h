@@ -34,7 +34,8 @@ extern "C"
 #endif
 
 /**
- * \addtogroup DetResponse_h
+ * \defgroup DetResponse_h Header DetResponse.h
+ * \ingroup lal_tools
  * \author David Chin <dwchin@umich.edu>, Kipp Cannon <kipp@gravity.phys.uwm.edu>
  *
  * \brief Provides routines to compute gravitational wave detector response to

@@ -42,7 +42,8 @@ extern "C"
 #define XLAL_BILLION_REAL8 1e9
 
 /**
- * \addtogroup Date_h
+ * \defgroup Date_h Header Date.h
+ * \ingroup lal_date
  * \author D.W. Chin, J.D.E. Creighton and Kipp Cannon
  * \brief Provides routines for manipulating date and time information.
  *

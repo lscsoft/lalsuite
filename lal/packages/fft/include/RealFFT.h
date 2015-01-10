@@ -30,7 +30,8 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup RealFFT_h
+ * \defgroup RealFFT_h Header RealFFT_h
+ * \ingroup lal_fft
  * \brief Performs real-to-complex and complex-to-real FFTs.
  *
  * ### Synopsis ###

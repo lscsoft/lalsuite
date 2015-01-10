@@ -33,7 +33,8 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup Interpolate_h
+ * \defgroup Interpolate_h Header Interpolate.h
+ * \ingroup lal_utilities
  *
  * \brief This header covers the routines for interpolation.
  *

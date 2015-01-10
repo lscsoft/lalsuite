@@ -30,7 +30,7 @@
 /**
  * \author Brady P., R., and Brown, D. A.
  * \file
- * \ingroup pulsarTODO
+ * \ingroup lalpulsar_UNCLASSIFIED
  *
  * ### Header LALXMGRInterface.h ###
  *

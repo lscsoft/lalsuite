@@ -15,7 +15,8 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup AVFactories_h
+ * \defgroup AVFactories_h Header AVFactories.h
+ * \ingroup lal_factories
  *
  * \brief Provides prototype and status code information for use of CreateVector,
  * CreateArray, ResizeVector, ResizeArray, DestroyVector and DestroyArray

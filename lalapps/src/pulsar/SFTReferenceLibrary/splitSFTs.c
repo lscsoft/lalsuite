@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup pulsarApps
+ * \ingroup lalapps_pulsar
  * \author Bernd Machenschalk, Bruce Allen
  *
  * \brief This program reads in binary SFTs (v1 and v2) and writes out narrow-banded merged SFTs (v2).

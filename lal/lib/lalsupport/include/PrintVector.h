@@ -33,7 +33,8 @@ extern "C" {
 
 
 /**
- * \addtogroup PrintVector_h
+ * \defgroup PrintVector_h Header PrintVector.h
+ * \ingroup lal_support
  * \author Allen, B.; generalized by J. T. Whelan <jtwhelan@loyno.edu>
  *
  * \brief This is a simple utility to print vectors into a file.

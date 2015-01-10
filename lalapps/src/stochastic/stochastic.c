@@ -21,6 +21,232 @@
  *
  */
 
+/**
+ * \file
+ * \ingroup lalapps_inspiral
+ *
+ *
+ * <dl>
+ * <dt>Name</dt><dd>
+ * <tt>lalapps_stochastic</tt> --- standalone stochastic analysis code.</dd>
+ *
+ * <dt>Synopsis</dt><dd>
+ * <tt>lalapps_stochastic</tt>
+ * [<tt>--help</tt>]
+ * [<tt>--version</tt>]
+ * [<tt>--verbose</tt>]
+ * [<tt>--debug</tt>]
+ * [<tt>--user-tag</tt> <i>STRING</i>]
+ * [<tt>--comment</tt> <i>STRING</i>]
+ * [<tt>--output-dir</tt> <i>DIR</i>]
+ * [<tt>--cc-spectra</tt>]
+ * <tt>--gps-start-time</tt> <i>N</i>
+ * <tt>--gps-end-time</tt> <i>N</i>
+ * <tt>--interval-duration</tt> <i>N</i>
+ * <tt>--segment-duration</tt> <i>N</i>
+ * <tt>--resample-rate</tt> <i>N</i>
+ * <tt>--f-min</tt> <i>N</i>
+ * <tt>--f-max</tt> <i>N</i>
+ * <tt>--ifo-one</tt> <i>IFO</i>
+ * <tt>--ifo-two</tt> <i>IFO</i>
+ * <tt>--channel-one</tt> <i>CHANNEL</i>
+ * <tt>--channel-two</tt> <i>CHANNEL</i>
+ * <tt>--frame-cache-one</tt> <i>FILE</i>
+ * <tt>--frame-cache-two</tt> <i>FILE</i>
+ * <tt>--calibration-cache-one</tt> <i>FILE</i>
+ * <tt>--calibration-cache-two</tt> <i>FILE</i>
+ * <tt>--calibration-offset</tt> <i>N</i>
+ * [<tt>--apply-mask</tt> <i>N</i>
+ * <tt>--mask-bin</tt> <i>N</i>]
+ * [<tt>--overlap-hann</tt>
+ * <tt>--hann-duration</tt> <i>N</i>]
+ * [<tt>--high-pass-filter</tt>
+ * <tt>--hpf-frequency</tt> <i>N</i>
+ * <tt>--hpf-attenuation</tt> <i>N</i>
+ * <tt>--hpf-order</tt> <i>N</i>]
+ * <tt>--recentre</tt>
+ * <tt>--middle-segment</tt>
+ * [<tt>--geo-hpf-frequency</tt> <i>N</i>
+ * <tt>--geo-hpf-attenuation</tt> <i>N</i>
+ * <tt>--geo-hpf-order</tt> <i>N</i>]
+ * [<tt>--alpha</tt> <i>N</i>]
+ * [<tt>--f-ref</tt> <i>N</i>]
+ * [<tt>--omega0</tt> <i>N</i>]</dd>
+ *
+ * <dt>Description</dt><dd>
+ * <tt>lalapps_stochastic</tt> runs the standalone stochastic analysis code.</dd>
+ *
+ * <dt>Options</dt><dd>
+ * <dl>
+ * <dt><tt>--help</tt></dt><dd>
+ * Display usage information and exit.</dd>
+ *
+ * <dt><tt>--version</tt></dt><dd>
+ * Display version information and exit.</dd>
+ *
+ * <dt><tt>--verbose</tt></dt><dd>
+ * Enable the output of informational messages.</dd>
+ *
+ * <dt><tt>--debug</tt></dt><dd>
+ * Run in debug mode, saves out all intermediate products as ASCII files.</dd>
+ *
+ * <dt><tt>--user-tag</tt> <i>STRING</i></dt><dd>
+ * Set the user tag to the string <i>STRING</i>. This string must not
+ * contain spaces or dashes ("-"). This string will appear in the name of
+ * the file to which output information is written, and is recorded in the
+ * various XML tables within the file.</dd>
+ *
+ * <dt><tt>--comment</tt> <i>STRING</i></dt><dd>
+ * Set the process table comment to <i>STRING</i></dd>
+ *
+ * <dt><tt>--output-dir</tt> <i>DIR</i></dt><dd>
+ * Set the output directory for search results to <i>DIR</i></dd>
+ *
+ * <dt><tt>--cc-spectra</tt></dt><dd>
+ * Save out cross correlation spectra as frame files.</dd>
+ *
+ * <dt><tt>--gps-start-time</tt> <i>N</i></dt><dd>
+ * Sets the GPS time from which data should be read to <i>N</i></dd>
+ *
+ * <dt><tt>--gps-end-time</tt> <i>N</i></dt><dd>
+ * Sets the GPS time to which data should be read to <i>N</i></dd>
+ *
+ * <dt><tt>--interval-duration</tt> <i>N</i></dt><dd>
+ * Sets the interval duration to <i>N</i></dd>
+ *
+ * <dt><tt>--segment-duration</tt> <i>N</i></dt><dd>
+ * Sets the segment duration to <i>N</i></dd>
+ *
+ * <dt><tt>--resample-rate</tt> <i>N</i></dt><dd>
+ * Down-convert the input data stream to a sample rate of <i>N</i> samples
+ * per second prior to analysis.  This can be used to reduce the number of CPU
+ * cycles required to analyze a given quantity of input data.</dd>
+ *
+ * <dt><tt>--f-min</tt> <i>N</i></dt><dd>
+ * Sets the minimum frequency of the search band to <i>N</i></dd>
+ *
+ * <dt><tt>--f-max</tt> <i>N</i></dt><dd>
+ * Sets the maximum frequency of the search band to <i>N</i></dd>
+ *
+ * <dt><tt>--ifo-one</tt> <i>IFO</i></dt><dd>
+ * Sets the IFO for the first stream to be <i>IFO</i>, currently supported
+ * IFO's are H1, H2, L1 and G1</dd>
+ *
+ * <dt><tt>--ifo-two</tt> <i>IFO</i></dt><dd>
+ * Sets the IFO for the second stream to be <i>IFO</i>, currently supported
+ * IFO's are H1, H2, L1 and G1</dd>
+ *
+ * <dt><tt>--channel-one</tt> <i>CHANNEL</i></dt><dd>
+ * Sets the channel for the first stream to be <i>CHANNEL</i></dd>
+ *
+ * <dt><tt>--channel-two</tt> <i>CHANNEL</i></dt><dd>
+ * Sets the channel for the second stream to be <i>CHANNEL</i></dd>
+ *
+ * <dt><tt>--frame-cache-one</tt> <i>FILE</i></dt><dd>
+ * Obtain the locations of input <tt>.gwf</tt> frame files from the LAL frame
+ * cache file <i>FILE</i> for the first detector.  LAL frame cache files
+ * are explained in the "framedata" package in LAL and can be constructed
+ * by using <tt>LSCdataFind</tt> on supported systems.</dd>
+ *
+ * <dt><tt>--frame-cache-two</tt> <i>FILE</i></dt><dd>
+ * Obtain the locations of input <tt>.gwf</tt> frame files from the LAL frame
+ * cache file <i>FILE</i> for the second detector.  LAL frame cache files
+ * are explained in the "framedata" package in LAL and can be constructed
+ * by using <tt>LSCdataFind</tt> on supported systems.</dd>
+ *
+ * <dt><tt>--calibration-cache-one</tt> <i>FILE</i></dt><dd>
+ * Specify the location of calibration information for the first detector.
+ * <i>FILE</i> gives the path to a LAL-format frame cache file describing
+ * locations of <tt>.gwf</tt> frame files that provide the calibration data
+ * (\f$\alpha\f$ and \f$\beta\f$ coefficients) for the analysis.  Frame cache files
+ * are explained in the "framedata" package in LAL.</dd>
+ *
+ * <dt><tt>--calibration-cache-two</tt> <i>FILE</i></dt><dd>
+ * Specify the location of calibration information for the second detector.
+ * <i>FILE</i> gives the path to a LAL-format frame cache file describing
+ * locations of <tt>.gwf</tt> frame files that provide the calibration data
+ * (\f$\alpha\f$ and \f$\beta\f$ coefficients) for the analysis.  Frame cache files
+ * are explained in the "framedata" package in LAL.</dd>
+ *
+ * <dt><tt>--calibration-offset</tt> <i>N</i></dt><dd>
+ * Sets the calibration offset to <i>N</i></dd>
+ *
+ * <dt><tt>--apply-mask</tt></dt><dd>
+ * Apply frequency masking</dd>
+ *
+ * <dt><tt>--mask-bin</tt> <i>N</i></dt><dd>
+ * Set the number of bins to mask per frequency to <i>N</i></dd>
+ *
+ * <dt><tt>--overlap-hann</tt></dt><dd>
+ * Use overlapping Hann windows for data segments</dd>
+ *
+ * <dt><tt>--hann-duration</tt> <i>N</i></dt><dd>
+ * Set the Hann duration of the data segment window to <i>N</i>, 0 for
+ * Rectangular windowing, 1 for Tukey windowing and 60 for Hann windowing</dd>
+ *
+ * <dt><tt>--high-pass-filter</tt></dt><dd>
+ * Apply a high pass filter to the input data</dd>
+ *
+ * <dt><tt>--hpf-frequency</tt> <i>N</i></dt><dd>
+ * Set the knee frequency of the high pass filter to <i>N</i></dd>
+ *
+ * <dt><tt>--hpf-attenuation</tt> <i>N</i></dt><dd>
+ * Set the attenuation coefficent for the high pass filter to <i>N</i></dd>
+ *
+ * <dt><tt>--hpf-order</tt> <i>N</i></dt><dd>
+ * Sets the high pass filter order to <i>N</i></dd>
+ *
+ * <dt><tt>--recentre</tt></dt><dd>
+ * Centre the data</dd>
+ *
+ * <dt><tt>--middle-segment</tt></dt><dd>
+ * Include the middle segment in the power spectra estimation</dd>
+ *
+ * <dt><tt>--geo-hpf-frequency</tt> <i>N</i></dt><dd>
+ * Set the knee frequency for the GEO high pass filter to <i>N</i></dd>
+ *
+ * <dt><tt>--geo-hpf-attenuation</tt> <i>N</i></dt><dd>
+ * Set the attenuation coefficient for the GEO high pass filter to <i>N</i></dd>
+ *
+ * <dt><tt>--geo-hpf-order</tt> <i>N</i></dt><dd>
+ * Set the GEO high pass filter order to <i>N</i></dd>
+ *
+ * <dt><tt>--alpha</tt> <i>N</i></dt><dd>
+ * Exponent for \f$\Omega_{\mathrm{GW}}\f$ for construction of the optimal
+ * filter.</dd>
+ *
+ * <dt><tt>--f-ref</tt> <i>N</i></dt><dd>
+ * Reference frequency for \f$\Omega_{\mathrm{GW}}\f$ for the construction of
+ * the optimal filter.</dd>
+ *
+ * <dt><tt>--omega0</tt> <i>N</i></dt><dd>
+ * Reference \f$\Omega_0\f$ for \f$\Omega_{\mathrm{GW}}\f$ for the construction of
+ * the optimal filter.</dd>
+ * </dl></dd>
+ *
+ * <dt>Example</dt><dd>
+ * <tt>lalapps_stochastic</tt> is generally run as part of a DAG, as created
+ * by the pipeline generation scripts, <tt>lalapps_stochastic_pipe</tt> or
+ * <tt>lalapps_stochastic_bayes</tt>, however an example usage can be seen
+ * below.
+ *
+ * \code
+ * > lalapps_stochastic --verbose \
+ * >   --gps-start-time 752242398 --gps-end-time 752242758 \
+ * >   --interval-duration 180 --segment-duration 60 \
+ * >   --resample-rate 1024 --f-min 50 --f-max 250 --ifo-one H1 \
+ * >   --ifo-two H2 --channel-one LSC-AS_Q --channel-two LSC-AS_Q \
+ * >   --frame-cache-one H1.cache --frame-cache-two H2.cache \
+ * >   --calibration-cache-one H1-CAL-V02-751651244-757699245.cache \
+ * >   --calibration-cache-two H2-CAL-V02-751651244-757699245.cache \
+ * >   --calibration-offset 0 --hann-duration 1 --cc-spectra
+ * \endcode</dd>
+ *
+ * <dt>Author</dt><dd>
+ * Adam Mercer, Tania Regimbau</dd>
+ * </dl>
+ */
+
 #include "data_input.h"
 #include "misc.h"
 #include "sgwb.h"

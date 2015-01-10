@@ -31,7 +31,8 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup Matrix_h
+ * \defgroup Matrix_h Header Matrix.h
+ * \ingroup lal_vectorops
  * \author Matthew M. Tibbits
  *
  * \brief Matlab Routines to handle Matrices \& Vectors.

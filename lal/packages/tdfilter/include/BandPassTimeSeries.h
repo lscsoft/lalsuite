@@ -31,7 +31,8 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup BandPassTimeSeries_h
+ * \defgroup BandPassTimeSeries_h Header BandPassTimeSeries.h
+ * \ingroup lal_tdfilter
  * \author Creighton, T. D.
  *
  * \brief Provides routines to low- or high-pass filter a time series.
@@ -41,6 +42,12 @@ extern "C" {
  * \code
  * #include <lal/BandPassTimeSeries.h>
  * \endcode
+ *
+ * The \ref BandPassTimeSeries_h provides routines an actual implementation
+ * of these utilities to the specific task of high- or low-pass filtering
+ * of a data stream.  These routines also serve as an example for the more
+ * general task of designing time-domain filters with any desired frequency
+ * response.
  *
  * This header covers routines that apply a time-domain low- or
  * high-pass filter to a data series of type <tt>\<datatype\>TimeSeries</tt>.

@@ -27,6 +27,138 @@
  *-----------------------------------------------------------------------
  */
 
+/**
+ * \file
+ * \ingroup lalapps_inspiral
+ *
+ * <dl>
+ * <dt>Name</dt><dd>
+ * \c lalapps_trigbank --- program to make triggered template banks.</dd>
+ *
+ * <dt>Synopsis</dt><dd>
+ * <tt>lalapps_trigbank</tt>
+ * [<tt>--help</tt>]
+ * [<tt>--verbose</tt>]
+ * [<tt>--version</tt>]
+ * [<tt>--user-tag</tt> <i>usertag</i>]
+ * [<tt>--ifo-tag</tt> <i>ifotag</i>]
+ * [<tt>--comment</tt>]
+ * <tt>--gps-start-time</tt> <i>start_time</i>
+ * <tt>--gps-end-time</tt> <i>end_time</i>
+ * [<tt>--check-times</tt>]
+ * <tt>--input-ifo</tt> <i>inputifo</i>
+ * <tt>--output-ifo</tt> <i>outputifo</i>
+ * <tt>--parameter-test</tt> <i>(m1_and_m2|psi0_and_psi3|mchirp_and_eta)</i>
+ *
+ * <tt>--data-type</tt> <i>(playground_only|exclude_play|all_data)</i>
+ *
+ * <tt>LIGOLW XML input files</tt>
+ *
+ * <tt>(LIGO Lightweight XML files)</tt></dd>
+ *
+ * <dt>Description --- General</dt><dd>
+ *
+ * \c lalapps_trigbank produces a triggered template bank from the input xml
+ * files.  The code takes in a list of triggers from the specified input files.
+ * First, it discards any triggers which do not come from the specified
+ * \c input_ifo.  Then, it keeps only those triggers which occur between
+ * the \c start_time and the \c end_time. If the
+ * <tt>check-times</tt> option is specified, then the input search summary tables
+ * are checked to ensure that we have searched all data between the
+ * \c start_time and \c end_time in all relevant ifos.  Following
+ * this, we discard the non-playground triggers if \c playground_only was
+ * specified and any playground triggers if \c exclude_play was specified.
+ *
+ * The remaining triggers are sorted according to the given
+ * <tt>parameter-test</tt>, which must be one of \c m1_and_m2 or
+ * \c psi0_and_psi3.  Duplicate templates (those with identical m1
+ * and m2 or psio and psi3) are discarded and what
+ * remains is output as the triggered template bank.
+ *
+ * The output file contains \c process, \c process_params,
+ * \c search_summary and \c sngl_inspiral tables.  The output
+ * file name is
+ *
+ * <tt>OUTPUTIFO-TRIGBANK_IFOTAG_USERTAG-GPSSTARTTIME-DURATION.xml</tt>\\
+ *
+ * where the input and output instruments are specified on the command line.</dd>
+ *
+ * <dt>Options</dt><dd>
+ * <ul>
+ *
+ * <li><tt>--data-type</tt> (playground_only|exclude_play|all_data):
+ * Required.  Specify whether the code should use only the playground, exclude
+ * the playground or use all the data. </li>
+ *
+ * <li><tt>--gps-start-time</tt> \c start_time: Required.  Look
+ * for coincident triggers with end times after \c start_time.</li>
+ *
+ * <li><tt>--gps-end-time</tt> \c end_time: Required.  Look for
+ * coincident triggers with end times before \c end_time.</li>
+ *
+ * <li><tt>--check-times</tt>: Optional.  If this flag is set, the code checks
+ * the input search summary tables to verify that the data for the input
+ * interferometers was analyzed once and only once between the
+ * \c start_time and \c end_time.  By default, the code will not
+ * perform this check.</li>
+ *
+ * <li><tt>--parameter-test</tt> (m1_and_m2|psi0_and_psi3): Required. Choose
+ * which parameters to use when testing for repeated triggers.  If two triggers
+ * have the same value of \c mass1 and \c mass2 or \c psi0 and
+ * \c psi3 then only one copy is put into the triggered bank.</li>
+ *
+ * <li><tt>--input-ifo</tt> \c inputifo: Required. The triggers from
+ * \c INPUTIFO are uset to create the triggered bank.</li>
+ *
+ * <li><tt>--output-ifo</tt> \c outputifo: Required. This gives the
+ * instrument for which we are creating the triggered bank.  It is only used in
+ * naming the output file.</li>
+ *
+ * <li><tt>--ifo-tag</tt> \c ifotag: Optional.  Used in naming the output
+ * file.</li>
+ *
+ * <li><tt>--comment</tt> \c string: Optional. Add \c string
+ * to the comment field in the process table. If not specified, no comment
+ * is added. </li>
+ *
+ * <li><tt>--user-tag</tt> \c usertag: Optional. Set the user tag for
+ * this job to be \c usertag. May also be specified on the command line as
+ * <tt>-userTag</tt> for LIGO database compatibility.  This will affect the
+ * naming of the output file.</li>
+ *
+ * <li><tt>--verbose</tt>: Enable the output of informational messages.</li>
+ *
+ * <li><tt>--help</tt>: Optional.  Print a help message and exit.</li>
+ *
+ * <li><tt>--version</tt>: Optional.  Print out the author, CVS version and
+ * tag information and exit.
+ * </li>
+ * </ul></dd>
+ *
+ * <dt>Arguments</dt><dd>
+ * <ul>
+ * <li><tt>[LIGO Lightweight XML files]</tt>: The arguments to the program
+ * should be a list of LIGO Lightweight XML files containing the triggers from the
+ * two interferometers. The input files can be in any order and do not need to be
+ * time ordered as \c trigbank will sort all the triggers once they are read
+ * in. </li>
+ * </ul></dd>
+ *
+ * <dt>Example</dt><dd>
+ * \code
+ * lalapps_trigbank \
+ * --data-type playground_only --input-ifo H1 --output-ifo H1 --ifo-tag H1H2 \
+ * --gps-start-time 734323079 --gps-end-time 734324999 \
+ * H1-INSPIRAL-734323015-2048.xml
+ * \endcode</dd>
+ *
+ * <dt>Algorithm</dt><dd>
+ * None.</dd>
+ *
+ * <dt>Author</dt><dd>
+ * Patrick Brady, Duncan Brown and Steve Fairhurst</dd>
+ * </dl>
+ */
 
 #include <math.h>
 #include <stdio.h>

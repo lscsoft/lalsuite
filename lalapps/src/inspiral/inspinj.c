@@ -29,6 +29,343 @@
  *-----------------------------------------------------------------------
  */
 
+/**
+ * \file
+ * \ingroup lalapps_inspiral
+ *
+ * <dl>
+ * <dt>Name</dt><dd>
+ * \c lalapps_inspinj --- produces inspiral injection data files.</dd>
+ *
+ * <dt>Synopsis</dt><dd>
+ * \c lalapps_inspinj
+ *
+ * [<tt>--help</tt>]
+ * <tt>--source-file</tt> \c sfile
+ * <tt>--mass-file</tt> \c mfile
+ *
+ * [<tt>--gps-start-time</tt> \c tstart]
+ * [<tt>--gps-end-time</tt> \c tend]
+ *
+ * [<tt>--time-step</tt> \c tstep]
+ * [<tt>--time-interval</tt> \c tinterval]
+ *
+ * [<tt>--seed</tt> \c seed]
+ * [<tt>--waveform</tt> \c wave]
+ * [<tt>--lal-eff-dist</tt>]
+ * [<tt>--usertag</tt> \c tag]
+ *
+ * [<tt>--tama-output</tt>]
+ * [<tt>--write-eff-dist</tt>]
+ *
+ * [<tt>--ilwd</tt>]</dd>
+ *
+ * <dt>Description</dt><dd>
+ * \c lalapps_inspinj
+ * generates a number of inspiral  parameters suitable  for using in a Monte
+ * Carlo injection to test the efficiency of a inspiral search.  The  various
+ * parameters (detailed  below)  are randomly chosen and are appropriate for a
+ * particular population of binary neutron stars  whose spatial  distribution
+ * includes the Milky Way and a number of extragalactic objects that are  input
+ * in  a  datafile.  The  possible  mass pairs for the binary neutron star com-
+ * panions are also specified in a (different) datafile.
+ *
+ * The output of this program  is  a  list  of  the  injected events,  starting
+ * at  the specified start time and ending at the specified end time.  One
+ * injection with random inspiral parameters will be made every specified time
+ * step, and will be randomly placed within the specified time interval.
+ * The output is written to a file name in the standard inspiral pipeline format:
+ *
+ * \code
+ * HL-INJECTIONS_USERTAG_SEED-GPSSTART-DURATION.xml
+ * \endcode
+ *
+ * where \c USERTAG is \c tag as specfied on the command line,
+ * \c SEED is the  value  of  the random number seed chosen and
+ * \c GPSSTART and \c DURATION describes the GPS time interval that
+ * the file covers. The file is in the standard LIGO lightweight XML format
+ * containing a \c sim_inspiral table that describes the injections.
+ * In addition, an ASCII log file called <tt>injlog.txt</tt> is also written.
+ * If a <tt>--user-tag</tt> is not specified on the command line, the
+ * \c _USERTAG part of the filename will be omitted.</dd>
+ *
+ * <dt>Options</dt><dd>
+ * <ul>
+ * <li><tt>--help</tt>: Print a help message.</li>
+ *
+ * <li><tt>--source-file</tt> \c sfile:
+ * Optional. Data file containing spatial distribution of  extragalactic  objects.
+ * Default  is  the file <tt>inspsrcs.dat</tt> provided by LALApps. If that file is
+ * empty, all signals are in the Milky Way.</li>
+ *
+ * <li><tt>--mass-file</tt> \c mfile:
+ * Optional. Data file containing mass pairs  for  the binary  neutron  star
+ * companions.   Default is the file <tt>BNSMasses.dat</tt> provided by LALApps.</li>
+ *
+ * <li><tt>--gps-start-time</tt> \c tstart:
+ * Optional.  Start time of the injection data to be created. Defaults to the
+ * start of S2, Feb 14 2003 16:00:00 UTC (GPS time 729273613)</li>
+ *
+ * <li><tt>--gps-end-time</tt> \c tend:
+ * Optional. End time of the injection data to be created. Defaults to the end of
+ * S2, Apr 14 2003 15:00:00 UTC (GPS time 734367613).</li>
+ *
+ * <li><tt>--time-step</tt> \c tstep:
+ * Optional. Sets the time step interval between injections. The injections will
+ * occur with an average spacing of \c tstep seconds. Defaults to
+ * \f$2630/\pi\f$.</li>
+ *
+ * <li><tt>--time-interval</tt> \c tinterval:
+ * Optional. Sets the time interval during which an injection can occur.
+ * Injections are uniformly distributed over the interval.  Setting \c tstep
+ * to \f$6370\f$ and \c tinterval to 600 guarantees there will be one injection
+ * into each playground segment and they will be randomly distributed within the
+ * playground times - taken the fact that your gps start time coincides with start of a playground segment.</li>
+ *
+ * <li><tt>--seed</tt> \c seed:
+ * Optional. Seed the random number generator with the integer \c seed.
+ * Defaults to \f$1\f$.</li>
+ *
+ * <li><tt>--waveform</tt> \c wave:
+ * Optional. The string \c wave will be written into the \c waveform
+ * column of the \c sim_inspiral table output. This is used by the
+ * inspiral code to determine which type of waveforms it should inject into the
+ * data. Defaults is \c GeneratePPNtwoPN.</li>
+ *
+ * <li><tt>--lal-eff-dist</tt>:
+ * Optional.  If this option is specified, the effective distance will be
+ * calculated using routines from LAL.  Otherwise, the default behaviour is to
+ * use an independent method contained in inspinj.c.  There is good agreement
+ * between these two methods, see below for more details.</li>
+ *
+ * <li><tt>--user-tag</tt> \c string: Optional. Set the user tag for this
+ * job to be \c string. May also be specified on the command line as
+ * <tt>-userTag</tt> for LIGO database compatibility.</li>
+ *
+ * <li><tt>--tama-output</tt>:
+ * Optional.  If this option is given, \c lalapps_inspinj also produces a
+ * text output file:
+ *
+ * \code
+ * HLT-INJECTIONS_USERTAG_SEED-GPSSTART-DURATION.txt
+ * \endcode
+ *
+ * which contains the following fields:
+ *
+ * <ul>
+ * <li> geocentric end time</li>
+ * <li> Hanford end time</li>
+ * <li> Livingston end time</li>
+ * <li> TAMA end time</li>
+ * <li> total mass, \f$M_{\mathrm{TOT}}\f$</li>
+ * <li> mass ratio, \f$\eta\f$</li>
+ * <li> distance to source (in kpc)</li>
+ * <li> longitude</li>
+ * <li> latitude</li>
+ * <li> inclination</li>
+ * <li> coalescence phase</li>
+ * <li> polarization</li>
+ * <li> TAMA polarization</li>
+ * <li> end time GMST</li>
+ * </ul>
+ *
+ * In the above, all times are recorded as double precision real numbers and all
+ * angles are in radians.  The TAMA polarization is calculated using
+ *
+ * \f{equation}{
+ *   \tan( \psi_{T} ) = \frac{ x \cdot T_{z} }{ y \cdot T_{z} } \, .
+ * \f}
+ *
+ * Here x and y are the x,y axes of the radiation frame expressed in earth fixed
+ * coordinates \eqref{xrad}, \eqref{yrad}.  \f$T_{z}\f$ is a unit vector in earth fixed
+ * coordinates which is orthogonal to the two arms of the TAMA detector
+ * \eqref{tarm}.  It is given by
+ *
+ * \f{equation}{
+ *   T_{z} = ( -0.6180, +0.5272, +0.5832 )
+ * \f}</li>
+ *
+ * <li><tt>--write-eff-dist</tt>: Optional.  If this option is given, three extra
+ * columns are added to the TAMA output file described above.  They are
+ * <ul>
+ * <li> Hanford effective distance (kpc)</li>
+ * <li> Livingston effective distance (kpc)</li>
+ * <li> TAMA effective distance (kpc)</li>
+ * </ul>
+ *
+ * These entries are added to the list immediately after TAMA end time and before
+ * total mass.</li>
+ *
+ * <li><tt>--ilwd</tt>: Optional. If this option is given,
+ * \c lalapps_inspinj also produces two ILWD-format files, injepochs.ilwd and
+ * injparams.ilwd, that contain, respectively, the  GPS  times  suitable for
+ * inspiral injections, and the intrinsic inspiral signal parameters to be used
+ * for  those injections.
+ *
+ * The  file  injepochs.ilwd  contains  a sequence of integer pairs representing
+ * the injection GPS time in  seconds  and residual  nano-seconds.   The file
+ * injparams.ilwd contains the intrinsic binary parameters for each injection,
+ * which is  a  sequence  of  eight  real  numbers representing (in order) (1) the
+ * total mass of the binary system  (in  solar masses),  (2)  the  dimensionless
+ * reduced mass --- reduced mass per unit total mass --- in the range from  0
+ * (extreme mass  ratio)  to  0.25 (equal masses), (3) the distance to the system
+ * in meters, (4) the inclination  of  the  binary system  orbit  to the plane of
+ * the sky in radians, (5) the coalescence phase in radians, (6)  the  longitude
+ * to  the direction  of  the  source in radians, (7) the latitude to the
+ * direction of the source in radians, (8) and the polar- ization angle of the
+ * source in radians.</li>
+ * </ul></dd>
+ *
+ * <dt>Example</dt><dd>
+ * \code
+ * lalapps_inspinj --seed 45\
+ * --source-file inspsrcs.dat --mass-file BNSMasses.dat
+ * \endcode</dd>
+ *
+ * <dt>Algorithm</dt><dd>
+ *
+ * The algorithm for computing the effective distance will be described in some
+ * detail below.  The method is to compute both the strain due to the inspiral
+ * and the detector response in the earth fixed frame.  This frame is such that
+ * the z-axis points from the earth's centre to the North Pole, the x-axis points
+ * from the centre to the intersection of the equator and the prime meridian and
+ * the y-axis is chosen to complete the orthonormal basis.  The coordinates of
+ * the injection are specified by longitude (or right ascension) \f$\alpha\f$ and
+ * latitude (or declination) \f$\delta\f$.  The polarization is appropriate for
+ * transferring from the radiation to earth fixed frame.  These are then
+ * converted to the earth fixed frame by
+ *
+ * \f{eqnarray}{
+ *   \theta &=& \frac{\pi}{2} - \delta \\
+ *   \phi &=& \alpha - \textrm{gmst} \, .
+ * \f}
+ *
+ * Here, gmst is the Greenwich Mean sidereal time of the injection.  The axes of
+ * the radiation frame (x,y,z) can be expressed in terms of the earth fixed
+ * coordinates as:
+ *
+ * \f{eqnarray}{
+ *   x(1) &=& +( \sin( \phi ) \cos( \psi ) - \sin( \psi ) \cos( \phi )
+ *       \cos( \theta ) ) \nonumber \\
+ *   x(2) &=& -( \cos( \phi ) \cos( \psi ) + \sin( \psi ) \sin( \phi )
+ *       \cos( \theta ) ) \nonumber \\
+ *   x(3) &=& \sin( \psi ) \sin( \theta ) \label{xrad}\\
+ *   y(1) &=& -( \sin( \phi ) \sin( \psi ) + \cos( \psi ) \cos( \phi )
+ *       \cos( \theta ) ) \nonumber\\
+ *   y(2) &=& +( \cos( \phi ) \sin( \psi ) - \cos( \psi ) \sin( \phi )
+ *       \cos( \theta ) ) \nonumber \\
+ *   y(3) &=& \cos( \psi ) \sin( \theta ) \label{yrad}
+ * \f}
+ *
+ * Making use of these expressions, we can express the gravitational wave strain in
+ * earth fixed coordinates as
+ *
+ * \f{equation}{\label{hij}
+ *   h_{ij} = ( h^{+}(t) e^{+}_{ij} ) + (h^{\times}(t) e^{\times}_{ij})
+ * \f}
+ *
+ * where
+ *
+ * \f{equation}{
+ *   e^{+}_{ij} = x_{i} * x_{j} - y_{i} * y_{j} \qquad \mathrm{and} \qquad
+ *   e^{\times}_{ij} = x_{i} * y_{j} + y_{i} * x_{j}.
+ * \f}
+ *
+ * For the case of a binary inspiral signal, the two polarizations \f$h^{+}\f$
+ * and \f$h^{\times}\f$ of the gravitational wave are given by
+ *
+ * \f{eqnarray}{
+ *   h^{+}(t)  &=& \frac{A}{r}  ( 1 + \cos^2 ( \iota ) ) * \cos( \Phi(t) ) \\
+ *   h^{\times}(t) &=& \frac{A}{r} * ( 2 \cos( \iota )   ) * \sin( \Phi(t) )
+ * \f}
+ *
+ * where \f$A\f$ is a mass and frequency dependent amplitude factor, \f$r\f$ is the
+ * physical distance at which the injection is located and \f$\iota\f$ is the
+ * inclination angle.
+ *
+ * Next, we can write the detector response function as
+ *
+ * \f{equation}{
+ *   d^{ij} = \left(\frac{1}{2} \right) \left( n_{x}^{i} n_{x}^{j}
+ *       - n_{y}^{i} n_{y}^{j} \right) \, .
+ * \f}
+ *
+ * Here, \f$n_{x}\f$ and \f$n_{y}\f$ are unit vectors directed along the arms of the
+ * detector.  Specifically, for the Hanford, Livingston, GEO, TAMA and Virgo
+ * detectors we use:
+ *
+ * \f{eqnarray}{
+ *   H_{x} &=& ( -0.2239, +0.7998, +0.5569 ) \nonumber \\
+ *   H_{y} &=& ( -0.9140, +0.0261, -0.4049 ) \\
+ *   L_{x} &=& ( -0.9546, -0.1416, -0.2622 ) \nonumber \\
+ *   L_{y} &=& ( +0.2977, -0.4879, -0.8205 ) \\
+ *   G_{x} &=& ( -0.6261, -0.5522, +0.5506 ) \nonumber \\
+ *   G_{y} &=& ( -0.4453, +0.8665, +0.2255 ) \\
+ *   T_{x} &=& ( +0.6490, +0.7608, +0.0000 ) \nonumber \\
+ *   T_{y} &=& ( -0.4437, +0.3785, -0.8123 ) \label{tarm} \\
+ *   V_{x} &=& ( -0.7005, +0.2085, +0.6826 ) \nonumber \\
+ *   V_{y} &=& ( -0.0538, -0.9691, +0.2408 )
+ * \f}
+ *
+ * The response of an interferometric detector with arm locations given by \f$n_{x}\f$
+ * and \f$n_{y}\f$ to an inspiralling binary system described by \eqref{hij} is
+ *
+ * \f{eqnarray}{
+ *   h(t) &=& h^{+}(t) ( d^{ij} e^{+}_{ij} )
+ *     + h^{\times}(t) ( d^{ij} e^{\times}_{ij} ) \nonumber \\
+ *       &=&
+ *     \left(\frac{A}{r}\right) \left[
+ * 	( 1 + \cos^2 ( \iota ) ) F_{+} \cos( \Phi(t)) +
+ *         2 \cos( \iota ) F_{\times} \sin( \Phi(t) ) \right] \, ,
+ * \f}
+ *
+ * where we have introduced
+ *
+ * \f{equation}{
+ *   F_{+} = d^{ij} e^{+}_{ij} \qquad \mathrm{and} \qquad
+ *   F_{\times} = d^{ij} e^{\times}_{ij}
+ * \f}
+ *
+ * Finally, to calculate the effective distance, we note that the two contributions
+ * to \f$h(t)\f$ are \f$\pi/2\f$ radians out of phase, and hence orthogonal.  Thus, we can
+ * compute the effective distance to be:
+ *
+ * \f{equation}{
+ *   D_{\mathrm{eff}} = r / \left( \frac{ (1 + \cos^2(\iota))^2 }{4} F_{+}^{2} +
+ *       cos^{2}(\iota) F_{\times}^{2} \right)
+ * \f}
+ *
+ * \anchor eff_dist_comparison
+ * \image html effective_distance_comparison.png "Comparison of effective distance computed by inspinj.c and LAL routines"
+ *
+ * The algorithm to calculate effective distances described above is completely
+ * contained within inspinj.c.  There is an independent method of computing
+ * effective distances can also be called by inspinj.  It is contained in the LAL
+ * function <tt>LALPopulateSimInspiralSiteInfo()</tt>.  This function populates
+ * the site end time and effective distance for all the interferomter sites.  It
+ * makes use of LAL functionality in the tools and date packages.  These same
+ * functions are used when generating the injection waveform which is added to
+ * the data stream (in lalapps_inspiral).  As a check that these two
+ * calculations produce the same effective distance, lalapps_inspinj was run
+ * twice, once with the <tt>--lal-eff-dist</tt> option and once without.
+ * \ref eff_dist_comparison "This figure" shows the fractional difference in effective
+ * distance between the two methods for a set of injections.  We see that the
+ * distances agree within 1\
+ * occuring for the largest effective disances, i.e.  close to the dead spot of
+ * the instrument.  For injections which initial LIGO is sensitive to, the
+ * accuracy is few \f$\times 10^{-4}\f$.  </dd>
+ *
+ * <dt>Environment</dt><dd>
+ * <ul>
+ * <li>LALAPPS_DATA_PATH: Directory to look for the default mass
+ * file <tt>BNSMasses.dat</tt> and the default source file <tt>inspsrcs.dat</tt>.</li>
+ * </ul></dd>
+ *
+ * <dt>Author</dt><dd>
+ * Jolien Creighton, Patrick Brady, Duncan Brown</dd>
+ * </dl>
+ */
+
 #include <ctype.h>
 #include <getopt.h>
 #include <lalapps.h>

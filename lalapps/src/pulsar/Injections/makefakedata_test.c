@@ -35,7 +35,7 @@
 
 /**
  * \file
- * \ingroup pulsarApps
+ * \ingroup lalapps_pulsar
  * \author Papa, M.A.
  * \brief
  * Produces fake SFT data.

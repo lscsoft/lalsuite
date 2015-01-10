@@ -33,6 +33,27 @@
  *
  * \brief Applies a low- or high-pass Butterworth filter to a time series.
  *
+ * ### Synopsis ###
+ *
+ * The \ref ButterworthTimeSeries_c provides specific advice and
+ * guidelines for building a numerically stable time-domain filter,
+ * but the general procedure is as follows.
+ * <ol>
+ *   <li>Decide on the desired filter response, and express it as a
+ *   rational function of the frequency variable \f$w=\tan(\pi f\Delta
+ *   t)\f$ (which maps the Nyquist interval onto the positive real
+ *   axis).</li>
+ *   <li>Factorize this rational function into zeros and poles,
+ *   restricting oneself to the upper half of the \f$w\f$ complex plane.
+ *   Assign these to one or more objects of type
+ *   <tt>\<datatype\>ZPGFilter</tt></li>
+ *   <li>Use <tt>WToZ\<datatype\>ZPGFilter()</tt> to transform the
+ *   filter to the more conventional \f$z=\exp(2\pi if\Delta t)\f$
+ *   frequency variable.</li>
+ *   <li>Use the routines in \ref IIRFilter_h to create IIR filters from
+ *   the ZPG filters, and to apply them to data.</li>
+ * </ol>
+ *
  * ### Description ###
  *
  * These routines perform an in-place time-domain band-pass filtering of

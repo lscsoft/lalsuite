@@ -29,7 +29,8 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup VectorOps_h
+ * \defgroup VectorOps_h Header VectorOps.h
+ * \ingroup lal_vectorops
  * \author J. D. E. Creighton, T. D. Creighton, A. M. Sintes
  *
  * \brief Basic vector manipulation operations.

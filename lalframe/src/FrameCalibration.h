@@ -30,7 +30,7 @@ extern "C" {
 
 /**
  * \defgroup FrameCalibration_h Header FrameCalibration.h
- * \ingroup pkg_framedata
+ * \ingroup lalframe_general
  *
  * \author Brown, D. A.
  *

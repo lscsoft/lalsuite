@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup pulsarApps
+ * \ingroup lalapps_pulsar
  * \author Thomas Essinger-Hileman, Benjamin Owen
  */
 

@@ -28,7 +28,8 @@ extern "C" {
 
 
 /**
- * \addtogroup Integrate_h
+ * \defgroup Integrate_h Header Integrate.h
+ * \ingroup lal_utilities
  *
  * \brief Integrates a function.
  *

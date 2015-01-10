@@ -92,8 +92,8 @@ int PhenomPCore(
   SpinWeightedSphericalHarmonic_l2 *Y2m,  /**< Struct of l=2 spherical harmonics of spin weight -2 */
   const REAL8 alphaoffset,                /**< f_ref dependent offset for alpha angle */
   const REAL8 epsilonoffset,              /**< f_ref dependent offset for epsilon angle */
-  COMPLEX16 *hp,                          /**< Output: \tilde h_+ */
-  COMPLEX16 *hc                           /**< Output: \tilde h_+ */
+  COMPLEX16 *hp,                          /**< Output: \f$\tilde h_+\f$ */
+  COMPLEX16 *hc                           /**< Output: \f$\tilde h_+\f$ */
 );
 
 /* Simple 2PN version of L, without any spin terms expressed as a function of v */
@@ -127,9 +127,9 @@ REAL8 FinalSpinBarausse2009(  /* Barausse & Rezzolla, Astrophys.J.Lett.704:L40-L
   const REAL8 nu,               /**< Symmetric mass-ratio */
   const REAL8 a1,               /**< |a_1| norm of dimensionless spin vector for BH 1 */
   const REAL8 a2,               /**< |a_2| norm of dimensionless spin vector for BH 2 */
-  const REAL8 cos_alpha,        /**< cos(alpha) = \hat a_1 . \hat a_2 (Eq. 7) */
-  const REAL8 cos_beta_tilde,   /**< cos(\tilde beta)  = \hat a_1 . \hat L (Eq. 9) */
-  const REAL8 cos_gamma_tilde   /**< cos(\tilde gamma) = \hat a_2 . \hat L (Eq. 9)*/
+  const REAL8 cos_alpha,        /**< \f$cos(alpha) = \hat a_1 . \hat a_2\f$ (Eq. 7) */
+  const REAL8 cos_beta_tilde,   /**< \f$cos(\tilde beta)  = \hat a_1 . \hat L\f$ (Eq. 9) */
+  const REAL8 cos_gamma_tilde   /**< \f$cos(\tilde gamma) = \hat a_2 . \hat L\f$ (Eq. 9)*/
 );
 
 static size_t NextPow2(const size_t n); /* Return the closest higher power of 2. */

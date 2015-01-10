@@ -41,7 +41,8 @@ extern "C" {
 
 
 /**
- * \addtogroup FindChirpChisq_h
+ * \defgroup FindChirpChisq_h Header FindChirpChisq.h
+ * \ingroup lalinspiral_findchirp
  * \author Anderson, W. G., and Brown, D. A.
  *
  * \brief Provides prototypes and functions to perform a \f$\chi^2\f$ veto on binary

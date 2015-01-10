@@ -27,7 +27,8 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup MatrixUtils_h
+ * \defgroup MatrixUtils_h Header MatrixUtils.h
+ * \ingroup lal_utilities
  * \author Creighton, T. D.
  *
  * \brief Provides routines to solve linear systems.

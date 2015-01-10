@@ -1,6 +1,6 @@
 /**
  * \file
- * \ingroup pulsarApps
+ * \ingroup lalapps_pulsar
  * \author Matthew Pitkin, Colin Gill, John Veitch
  *
  * \brief Pulsar model functions for use in parameter estimation codes for targeted pulsar searches.
@@ -25,7 +25,6 @@
  * Note: Any additional models should be added into this function.
  *
  * \param model [in] The model structure hold model information and current parameter info
- * \param data [in] The data structure hold data and current parameter info
  *
  * \sa rescale_parameter
  * \sa pulsar_model
@@ -278,7 +277,6 @@ void pulsar_model( BinaryPulsarParams params, LALInferenceIFOModel *ifo ){
   * \param params [in] A set of pulsar parameters
  * \param ifo [in] The ifo model structure containing the detector parameters and buffers
  * \param freqFactor [in] the multiplicative factor on the pulsar frequency for a particular model
- * \param downsampled *UNDOCUMENTED*
  *
  * \return A vector of rotational phase values
  *

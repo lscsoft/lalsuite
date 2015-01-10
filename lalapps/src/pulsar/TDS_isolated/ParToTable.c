@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup pulsarApps
+ * \ingroup lalapps_pulsar
  * \author Matt Pitkin
  * \brief Preprocessor code to take inputs from a TEMPO .par file and output the values
  */

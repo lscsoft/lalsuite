@@ -20,7 +20,8 @@
 
 /**
  * \author Tania Regimbau, Sukanta Bose, Jeff Noel
- * \addtogroup StochasticMC_h
+ * \defgroup StochasticMC_h Header StochasticMC.h
+ * \ingroup lalstochastic_general
  *
  * \brief Routine used by the stochastic DSO to do software injection.
  *

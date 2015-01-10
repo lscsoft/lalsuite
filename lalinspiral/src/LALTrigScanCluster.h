@@ -39,7 +39,7 @@
 
 /**
  * \defgroup LALTrigScanCluster_h Header LALTrigScanCluster.h
- * \ingroup pkg_CBC_NEW
+ * \ingroup lalinspiral_UNCLASSIFIED
  * \author Sengupta, Anand. S., Gupchup, Jayant A. and Robinson, C. A. K.
  * \brief NONE
  */

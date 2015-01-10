@@ -7,7 +7,8 @@ AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([\
   Makefile \
   debian/Makefile \
-  doc/Makefile \
+  doxygen/Makefile \
+  doxygen/doxygen.cfg \
   lalapps.spec \
   man/Makefile \
   src/Makefile \
@@ -88,6 +89,9 @@ LALSUITE_ENABLE_LALPULSAR
 LALSUITE_ENABLE_LALINFERENCE
 LALSUITE_ENABLE_LALSTOCHASTIC
 
+# enable Doxygen documentation
+LALSUITE_ENABLE_DOXYGEN
+
 # define version/configure info
 LALSUITE_VERSION_CONFIGURE_INFO
 
@@ -149,12 +153,6 @@ if test "x$condor" = "xtrue"; then
 fi
 CONDOR_ENABLE_VAL="`eval test x$condor = xtrue && echo "ENABLED" || echo "DISABLED"`"
 AM_CONDITIONAL([CONDOR_ENABLED],[test "$CONDOR_ENABLE_VAL" = "ENABLED"])
-
-# further program checks
-AC_CHECK_PROGS([LATEX],[pdflatex latex],[echo])
-AC_CHECK_PROGS([MKIND],[makeindex],[echo])
-AC_CHECK_PROGS([DVIPS],[dvips],[echo])
-AC_CHECK_PROGS([BIBTEX],[bibtex],[echo])
 
 # check for supported mac os x version
 LALSUITE_OSX_VERSION_CHECK
@@ -485,6 +483,7 @@ LALApps has now been successfully configured:
 * GDS support is $GDS_ENABLE_VAL
 * CUDA support is $CUDA_ENABLE_VAL
 * OpenMP acceleration is $OPENMP_ENABLE_VAL
+* Doxygen documentation is $DOXYGEN_ENABLE_VAL
 
 and will be installed under the directory:
 

@@ -32,7 +32,8 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup GenerateRing_h
+ * \defgroup GenerateRing_h Header GenerateRing.h
+ * \ingroup lalinspiral_inject
  * \author Goggin, L., and Brown, D. A.
  *
  * \brief Provides routines to generate ringdown waveforms.

@@ -41,7 +41,8 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup SimulatePopcorn_h
+ * \defgroup SimulatePopcorn_h Header SimulatePopcorn.h
+ * \ingroup lalstochastic_general
  * \author Tania Regimbau
  *
  * \brief Provides prototype for simulating whitened time-domain signals in a pair

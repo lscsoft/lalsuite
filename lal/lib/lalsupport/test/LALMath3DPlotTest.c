@@ -45,8 +45,8 @@
  *
  * ### Notes ###
  *
- * For a more interesting test of LALMath3DPlot() see \ref InspiralSpinBankTest.c in
- * the bank package.
+ * For a more interesting test of LALMath3DPlot() see <tt>InspiralSpinBankTest.c</tt> in
+ * the LALInspiral <tt>bank</tt> package.
  *
  */
 

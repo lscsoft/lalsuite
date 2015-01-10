@@ -450,8 +450,8 @@ XLALSpindownAntennaWeightMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries *mult
                                                    MultiCOMPLEX8TimeSeries *multi_bx,                      /**< [out] the timeseries weighted by b(t) */
                                                    const MultiCOMPLEX8TimeSeries *multiTimeSeries,         /**< [in] the input multi-detector timeseries */
                                                    const MultiAMCoeffs *multiAMcoef,                       /**< [in] the multi-detector AM coefficients */
-                                                   const MultiUINT4Vector *multiSFTinds,          	   /**< [in] SFT start- and stop indices in the multiTimeSeries */
-                                                   const PulsarDopplerParams *doppler
+                                                   const MultiUINT4Vector *multiSFTinds,                   /**< [in] SFT start- and stop indices in the multiTimeSeries */
+                                                   const PulsarDopplerParams *doppler                      /**< UNDOCUMENTED */
                                                    )
 {
   // input sanity checks

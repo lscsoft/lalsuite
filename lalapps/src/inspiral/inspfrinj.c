@@ -27,6 +27,234 @@
  *-----------------------------------------------------------------------
  */
 
+/**
+ * \file
+ * \ingroup lalapps_inspiral
+ *
+ * <dl>
+ * <dt>Name</dt><dd>
+ * \c lalapps_inspfrinj --- performs inspiral injections into frame data.</dd>
+ *
+ * <dt>Synopsis</dt><dd>
+ * \code
+ * lalapps_inspfrinj [options]
+ *
+ *  [--help ]
+ *  [--verbose ]
+ *  [--version ]
+ *  [--user-tag STRING ]
+ *  [--comment STRING ]
+ *
+ *   --gps-start-time SEC
+ *  [--gps-start-time-ns NS ]
+ *   --gps-end-time SEC
+ *  [--gps-end-time-ns NS ]
+ *
+ *  [--frame-cache FRAME_CACHE
+ *   --channel-name CHAN ]
+ *
+ *  [--ifo  IFO
+ *   --sample-rate SAMPLE_RATE ]
+ *
+ *   --calibration-cache CAL_CACHE
+ *   --calibrated-data TYPE
+ *
+ *  [--num-resp-points N ]
+ *
+ *   --injection-file FILE
+ *   --injection-channel INJ
+ *  [--inject-overhead ]
+ *  [--inject-safety SEC ]
+ *
+ *  [--write-raw-data ]
+ *  [--write-inj-only ]
+ *  [--write-raw-plus-inj ]
+ *
+ *   --output-frame-length OUTPUT_LENGTH
+ *  [--output-file-name OUTPUT_NAME ]
+ *
+ * \endcode</dd>
+ *
+ * <dt>Description</dt><dd>
+ *
+ * \c lalapps_frinspinj generates injections and stores them as
+ * frame files.  This code is essentially a copy of those parts of
+ * \c lalapps_inspiral responsible for reading in the data and
+ * performing the injections.  The injection details are either read in
+ * from frame files containin an injection channel or from the
+ * \c sim_inspiral table of a LIGO lightweight xml file or Is a
+ * \c sim_inspiral table is given, the injections are generated
+ * using LALFindChirpInjectSignals.  The injection data is output to frame
+ * files.  The length of the output frames is specified by
+ * <tt>output-frame-length</tt>.
+ *
+ * The code is capable of generating both calibrated and uncalibrated
+ * injections.  To obtain calibrated h(t) injections the option
+ * <tt>calibrated-data</tt> must be specified (at present the code only
+ * works for real_4 data).  Alternatively, if a \c CAL_CACHE is
+ * given, then uncalibrated injections will be produced using the a
+ * response function generated from the calibration data in the cache.  The
+ * calibration coefficients will by default be averaged over the duration
+ * of the data.  When working with uncalibrated data, the number of points
+ * used to determine the response function will have an effect, albeit
+ * minor, on the injection signals.  By default, the value
+ * <tt>num-resp-points</tt> is set to 4194304.  This matches the value used
+ * by \c lalapps_inspiral when working with 256 second segments and
+ * a channel sampled at 16384 Hz.
+ *
+ * If input data is given by a \c FRAME_CACHE, the code will read in
+ * this data.  In this case, the sample rate and ifo will be determined
+ * from the data and channel name respectively.  The output frames can
+ * contain any of the following: raw data, injection only and raw plus
+ * injection.
+ *
+ * If no input data is provided, then the \c IFO and
+ * \c SAMPLE_RATE must be given on the command line.  Since no input
+ * data is read in, the output data can only contain the injection only
+ * channel.
+ *
+ * The output of \c lalapps_frinspinj is an xml file and one or several
+ * frame files.  The xml file contains
+ * \c process, \c process_params, \c search_summary and
+ * \c sim_inspiral tables and is named (unless set on the command line):
+ *
+ * <tt>IFO-INSPFRINJ_USERTAG-GPSSTARTTIME-DURATION.xml</tt>\\
+ *
+ * where \c GPSSTARTTIME and \c DURATION are the start time and
+ * duration passed to the code.  If <tt>--output-file-name</tt> is set to
+ * \c OUTPUT on the command line, the xml will be named
+ *
+ * <tt>OUTPUT_USERTAG-GPSSTARTTIME-DURATION.xml</tt>.\\
+ *
+ * The \c sim_inspiral table contains a list of all injections which
+ * were performed into the specified data.  The length of output frame
+ * files is specified by <tt>output-frame-length</tt>.  Unless otherwise set
+ * on the command line, output frames are named:
+ *
+ * <tt>IFO-INSPFRINJ_USERTAG-FRAMESTARTTIME-FRAMELENGTH.gwf</tt>\\
+ *
+ * The channels stored in the output frame are determined by which of
+ * <tt>--write-raw-data</tt>, <tt>--write-inj-only</tt> and
+ * <tt>--write-raw-plus-inj</tt> are selected.  The channel names are
+ * \c CHAN, \c CHAN_INSP_INJ_ONLY and
+ * \c CHAN_RAW_PLUS_INSP_INJ.  In the case where no input data is
+ * given, the single output channel name is \c IFO:STRAIN_INSP_INJ_ONLY.</dd>
+ *
+ * <dt>Options</dt><dd>
+ * <ul>
+ *
+ * <li><tt>--help</tt>:  Optional.  Print a help message and exit.</li>
+ *
+ * <li><tt>--verbose</tt>: Optional.  Print out the author, CVS version
+ * and tag information and exit.</li>
+ *
+ * <li><tt>--version</tt>: Optional.  Print out the author, CVS version and
+ * tag information and exit.
+ *   </li>
+ * <li><tt>--user-tag</tt> \c USERTAG: Optional. Set the user tag
+ * for this job to be \c USERTAG. May also be specified on the command
+ * line as <tt>-userTag</tt> for LIGO database compatibility.  This will
+ * affect the naming of the output file.</li>
+ *
+ * <li><tt>--comment</tt> \c string: Optional. Add \c string
+ * to the comment field in the process table. If not specified, no comment
+ * is added. </li>
+ *
+ * <li><tt>--gps-start-time</tt> <tt>GPS seconds</tt>: Required.  Start
+ * time, GPS seconds.</li>
+ *
+ * <li><tt>--gps-start-time-ns</tt> <tt>GPS seconds</tt>: Optional.
+ * Start time, GPS nanoseconds.  If not specified, then set to zero.</li>
+ *
+ * <li><tt>--gps-end-time</tt> <tt>GPS seconds</tt>: Required.  End
+ * time, GPS seconds.</li>
+ *
+ * <li><tt>--gps-end-time-ns</tt> <tt>GPS seconds</tt>: Optional.
+ * Start time, GPS nanoseconds.  If not specified, then set to zero.</li>
+ *
+ * <li><tt>--frame-cache</tt> \c FRAME_CACHE: Optional.  Name of
+ * the frame cache file.  If this is not specified then the code will not
+ * read in any input data.  Hence it will be unable to produce the raw or
+ * raw_plus_inj frames.</li>
+ *
+ * <li><tt>--channel-name</tt> \c CHAN: Optional.  Input data
+ * channel name.  This must be specified if the <tt>frame-cache</tt> file
+ * is specified.
+ *  </li>
+ * <li><tt>--ifo</tt> \c IFO: Optional.  Set input interferometer
+ * name to \c IFO.  This information is required unless a
+ * <tt>channel-name</tt> is specified (in this case the \c IFO is
+ * obtained from the channel name).</li>
+ *
+ * <li><tt>--sample-rate</tt> \c SAMPLE_RATE: Optional.  Set the
+ * sample rate (in Hz) at which the injections should be produced.  This is
+ * required unless a frame cache is given (in this case, the sample rate of
+ * the injections matches the input data).</li>
+ *
+ * <li><tt>--calibration-cache</tt> \c CAL_CACHE: Optional.
+ * Specify the \c CAL_CACHE to obtain the calibration information.</li>
+ *
+ * <li><tt>--calibrated-data </tt>\c TYPE:  Optional.  Use
+ * calibrated data as input/output.  This will produce strain data
+ * injections.  This option must be specified if no calibration cache is
+ * given.
+ *   </li>
+ * <li><tt>--num-resp-points</tt> \c N: Optional.  The number of
+ * points used to generate the response function.  If generating
+ * uncalibrated injections, this can actually change slightly the injection
+ * data.  If not specified, then set to default value of 4194304.
+ *  </li>
+ * <li><tt>--injection-channel</tt> \c INJ: Optional.  If this
+ * option is specified, the code will read in injection data from the INJ
+ * channel and add it to the raw data.  Either this option or
+ * <tt>--injection-file</tt> must be specified.
+ *  </li>
+ * <li><tt>--injection-file</tt> \c FILE: Optional. Read in the
+ * injection data from \c FILE.  This should contain a
+ * \c sim_inspiral table with a list of injections.  Either this
+ * option or <tt>--injection-channel</tt> must be specified.</li>
+ *
+ * <li><tt>--inject-overhead</tt>: Optional.  Perform the injections
+ * directly overhead the interferometer and optimally oriented.</li>
+ *
+ * <li><tt>--inject-safety</tt> \c SEC: Optional.  Inject signals
+ * whose end time is up to \c SEC after the gps end time.
+ *  </li>
+ * <li><tt>--write-raw-data</tt>:  Optional.  Write out a frame
+ * containing the raw data.  This can only be done if the raw data has been
+ * read in from frames.</li>
+ *
+ * <li><tt>--write-inj-only</tt>:  Optional.  Write out a frame
+ * containing only the injection data.</li>
+ *
+ * <li><tt>--write-raw-plus-inj</tt>:  Optional.  Write out a frame
+ * containing the raw data with the injections added.
+ *   </li>
+ * <li><tt>--output-frame-length</tt> \c OUTPUT_LENGTH:  Required.
+ * Specify the length of the output frames to be \c output_length
+ * seconds.</li>
+ *
+ * <li><tt>--output-file-name</tt> \c OUTPUT_NAME : Optional.
+ * Set the output file name.  This overrides the default file naming
+ * convention given above.
+ * </li>
+ * </ul></dd>
+ *
+ * <dt>Example</dt><dd>
+ * \code
+ * lalapps_frinspinj --gps-start-time 732758030  --gps-end-time 732760078 \
+ *   --frame-cache cache/L-732758022-732763688.cache --channel-name L1:LSC-AS_Q\
+ *   --calibration-cache cache_files/L1-CAL-V03-729273600-734367600.cache \
+ *   --injection-file HL-INJECTIONS_4096-729273613-5094000.xml \
+ *   --inject-safety 50 --output-frame-length 16 \
+ *   --write-raw-data   --write-inj-only   --write-raw-plus-inj
+ * \endcode</dd>
+ *
+ * <dt>Author</dt><dd>
+ * Steve Fairhurst</dd>
+ * </dl>
+ */
+
 #include <config.h>
 #include <stdio.h>
 #include <stdlib.h>

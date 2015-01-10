@@ -13,7 +13,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-## addtogroup pkg_py_laldetchar_idq
+## \addtogroup laldetchar_py_idq
 ## Synopsis
 # ~~~
 # from laldetchar.idq import auxmvc
@@ -35,7 +35,7 @@ __version__ = git_version.id
 __date__ = git_version.date
 
 
-## addtogroup pkg_py_laldetchar_idq_auxmvc
+## \addtogroup laldetchar_py_idq_auxmvc
 # @{
 
 # definitions of condor job and node classes for auxmvc algroithms.

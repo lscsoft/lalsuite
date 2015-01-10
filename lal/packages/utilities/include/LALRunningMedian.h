@@ -28,7 +28,8 @@ extern "C" {
 
 
 /**
- * \addtogroup LALRunningMedian_h
+ * \defgroup LALRunningMedian_h Header LALRunningMedian.h
+ * \ingroup lal_utilities
  * \author Somya D. Mohanty, B. Machenschalk
  *
  * \brief Provides routines to efficiently calculate the running median

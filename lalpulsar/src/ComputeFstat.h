@@ -33,7 +33,7 @@ extern "C" {
 
 ///
 /// \defgroup ComputeFstat_h Header ComputeFstat.h
-/// \ingroup pkg_pulsarCoh
+/// \ingroup lalpulsar_coh
 /// \authors Badri Krishnan, Bernd Machenschalk, Chris Messenger, David Keitel, Holger Pletsch,
 ///          John T. Whelan, Karl Wette, Pinkesh Patel, Reinhard Prix, Xavier Siemens
 ///

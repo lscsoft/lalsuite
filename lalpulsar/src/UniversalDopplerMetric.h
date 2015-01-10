@@ -28,7 +28,7 @@ extern "C" {
 
 /**
  * \defgroup UniversalDopplerMetric_h Header UniversalDopplerMetric.h
- * \ingroup pkg_pulsarMetric
+ * \ingroup lalpulsar_metric
  * \author Reinhard Prix, Karl Wette
  *
  * Function to compute the full F-statistic metric, including

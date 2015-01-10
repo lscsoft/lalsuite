@@ -30,7 +30,8 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup ComplexFFT_h
+ * \defgroup ComplexFFT_h Header ComplexFFT_h
+ * \ingroup lal_fft
  *
  * \brief Performs complex-to-complex FFTs.
  *

@@ -1,0 +1,133 @@
+/**
+\defgroup lalapps_inspiral_programs Inspiral Search Programs
+\ingroup lalapps_inspiral
+
+This section of \c LALApps contains programs that can be used to search
+interferometer data for inspiral signals using templated matched filtering and
+associated veto strategies.
+
+# Description of the Components of the Pipeline
+
+A short description of each possible part of the inspiral pipeline follows.
+The more detailed description of each command-line argument can be found in
+the specific pages for each part of the code.
+
+## Template Bank Generation
+
+\c lalapps_tmpltbank: Calculates the power spectrum and generates a
+template bank for an analysis
+chunk of LIGO or GEO data. The bank can be for any of the different kinds of
+inspiral signals: TaylorF2, BCV etc. The output is written in an aml file.
+
+There is also the capability of outputting the raw data,
+the response function and the uncalibrated power spectrum in
+frame files.
+
+## Matched Filtering and Injections
+
+\c lalapps_inspiral: Estimates the power spectrum and performs matched
+filtering for inspiral signals on LIGO or GEO data. The filter can be for
+either binary neutron star inspirals or for spinning or non-spinning black
+hole inspirals.
+It also has the capability of doing software injections of
+inspiral signals on the data. The resulting triggers are written in an xml
+file.
+
+There is also the capability of outputting the raw data before and after the
+injections, the response function, the uncalibrated power spectrum, the snr,
+the chisq time series, and the complex C time series required by the coherent
+code, all in frame files.
+
+\c lalapps_coherent_inspiral: Takes C data frame files as
+outputted by inspiral.c for up to 4 detectors and constructs the optimal
+coherent SNR time series.  Triggers are written to an xml file and the time
+series is written out as a frame file.
+
+## Triggered Template Bank, Trigger Coincidence and Time Slides
+
+\c lalapps_inca: Currently performs three different tasks:
+
+Triggered template bank generation: Given the triggers from one interferometer
+in a \c sngl_inspiral table, it generates a triggered tempalte bank to be
+used in filtering the data from a second interferometer.
+
+Trigger coincidence: Given the triggers from two interferometers, it checks
+which of those are time-coincident and coincident in mass (for the BNS search)
+or in the parameters psi0 and psi3 (for the BCV search).
+
+Time slides: Time slides the data by a given time and performs coincidence,
+as described above.
+
+All results are written in xml files.
+
+\c lalapps_thinca: This code is intended as a generalization of inca.  It
+is not fully implemented at the present time.  For now, it can take in triggers
+from any number of instruments and return triggers which are coincident in two
+of the instruments.  The coincidence test is performed over time and mass
+parameters.  Furthermore, the events are labelled with a unique id in order to
+facilitate post processing.
+
+All results are written in xml files.
+
+\c lalapps_trigbank:  This code generates a triggered template bank.
+Given an input of a \c sngl_inspiral table, it generates a triggered
+tempalte bank to be used in filtering the data from a second interferometer.
+All results are written in xml files.
+
+## Trigger Summary and Injection Analysis
+
+\c lalapps_sire: Currently performs two different tasks:
+
+Summary and clustering of inspiral triggers: Using the xml files with the
+inspiral triggers, it summarizes them and time-clusters them, using a
+specified clustering algorithm.
+
+Injection analysis: Performs time-coincidence between  the inspiral triggers
+and a list of injection parameters. An injection is considered "found" if
+there is an inspiral trigger that is time-coincident with it, within a
+specified time interval.
+
+All results are written in xml files.
+
+## Injection Parameter Generation
+
+\c lalapps_inspinj: Given a mass-file, it generates the mass,
+  distance and time parameters of BNS signals to be injected in the data.
+  It currently generates the signals coming from locations within the
+  galaxies of the Local Group, but the ability to do different distributions
+  will be added soon.
+
+  The result is an xml file.
+
+\c lalapps_bbhinj: It generates the mass,
+  distance and time parameters of inspiral signals to be injected in the data.
+  Despite its name, it can be used for BNS and for BBH parameter generation.
+
+  The result is an xml file.
+
+## Injection in Frames
+
+\c lalapps_inspfrinj: Given a frame file with LIGO or GEO data, it
+injects inspiral signals on the data.
+
+## Splitting Large Template Banks
+
+\c lalapps_splitbank: Given a template bank in an xml file, it splits
+that bank into smaller banks.
+
+ - \ref inspiral_pipe.c
+ - \ref inspiral_hipe.c
+ - \ref tmpltbank.c
+ - \ref inspiral.c
+ - \ref coherent_inspiral.c
+ - \ref inca.c
+ - \ref thinca.c
+ - \ref trigbank.c
+ - \ref sire.c
+ - \ref inspinj.c
+ - \ref bbhinj.c
+ - \ref inspfrinj.c
+ - \ref splitbank.c
+ - \ref coinext.c
+
+*/

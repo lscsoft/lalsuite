@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup pulsarApps
+ * \ingroup lalapps_pulsar
  * \author Matt Pitkin
  * \brief
  * This driver code performs the timing noise heterodyne for

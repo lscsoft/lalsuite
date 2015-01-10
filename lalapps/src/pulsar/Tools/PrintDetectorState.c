@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup pulsarApps
+ * \ingroup lalapps_pulsar
  * \author Reinhard Prix
  * \brief
  * Simple standalone code to provide ASCII output for detector response

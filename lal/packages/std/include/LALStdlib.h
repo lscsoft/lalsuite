@@ -19,7 +19,8 @@
 
 /**
  * \author J. D. E. Creighton, T. D. Creighton
- * \addtogroup LALStdlib_h
+ * \defgroup LALStdlib_h Header LALStdlib.h
+ * \ingroup lal_std
  *
  * \brief Includes the standard LAL header files.
  *

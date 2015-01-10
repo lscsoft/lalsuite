@@ -720,7 +720,7 @@ static INT4 XLALSimIMRSpinEOBGetPrecSpinFactorizedWaveform(
  * by ignoring complex arguments and keeping only absolute values.
  * Changes:
  * (i) Complex Argument of Tlm not exponentiated.
- * (ii) exp(\ii deltalm) set to 1.
+ * (ii) \f$exp(\ii deltalm)\f$ set to 1.
  * Eq. 17 and the entire Appendix of the paper.
  */
 static INT4 XLALSimIMRSpinEOBFluxGetSpinFactorizedWaveform(

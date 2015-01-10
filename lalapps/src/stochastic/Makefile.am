@@ -60,3 +60,7 @@ endif
 endif
 
 MOSTLYCLEANFILES  += *STOCHASTIC*.xml *CCSPECTRA*.gwf
+
+EXTRA_DIST += \
+	stochastic_running.dox \
+	$(END_OF_LIST)

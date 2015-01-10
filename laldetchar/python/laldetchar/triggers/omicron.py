@@ -14,7 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-## \addtogroup pkg_py_laldetchar_triggers_omicron
+## \addtogroup laldetchar_py_triggers_omicron
 """Read Omicron events from ROOT files
 """
 #
@@ -52,7 +52,7 @@ OMICRON_COLUMNS = ["search", "peak_time", "peak_time_ns", "start_time",
 _re_comment = re.compile("[#%]")
 _re_delim = re.compile("[\t\,\s]+")
 
-## \addtogroup pkg_py_laldetchar_triggers_omicron
+## \addtogroup laldetchar_py_triggers_omicron
 #@{
 
 

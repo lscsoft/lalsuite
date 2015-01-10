@@ -73,7 +73,8 @@
  * t_r = T_p + \frac{1}{n}\left( E + A\sinh E + B[\cosh E - 1] \right) \;,
  * \f}
  *
- * \figure{inject_hanomaly,eps,0.23,Function to be inverted to find eccentric anomaly}
+ * \anchor inject_hanomaly
+ * \image html inject_hanomaly.png "Function to be inverted to find eccentric anomaly"
  *
  * where \f$T_p\f$ is the \e observed time of periapsis passage.  Thus
  * the key numerical procedure in this routine is to invert the

@@ -1,6 +1,6 @@
 /**
  * \file
- * \ingroup pulsarApps
+ * \ingroup lalapps_pulsar
  * \author Matthew Pitkin, John Veitch, Colin Gill
  *
  * \brief Reduced order quadrature generation functions for use in parameter estimation
@@ -16,8 +16,8 @@
 /**
  * \brief Generate Chebyshev-Gauss-Lobatto nodes in frequency
  *
- * @param[in] fmin The minimum frequency
- * @param[in] fmax The maximum frequency
+ * @param[in] freqmin The minimum frequency
+ * @param[in] freqmax The maximum frequency
  * @param[in] nnodes The number of nodes
  *
  * @return An array with the node freqeuncy values

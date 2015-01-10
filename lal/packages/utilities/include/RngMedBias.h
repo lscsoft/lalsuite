@@ -45,7 +45,8 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup RngMedBias_h
+ * \defgroup RngMedBias_h Header RngMedBias.h
+ * \ingroup lal_utilities
  * \author Krishnan, B., Itoh, Y.
  *
  * \brief Routine for finding bias in median for exponential distribution

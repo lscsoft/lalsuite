@@ -1,8 +1,10 @@
+PACKAGE_TARNAME=@PACKAGE_TARNAME@
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 datarootdir=@datarootdir@
+docdir=@docdir@
 LALMETAIO_OCTAVE_PATH=@octexecdir@
 LALMETAIO_PYTHON_PATH=@pyexecdir@
 

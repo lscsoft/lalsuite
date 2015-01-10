@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup pulsarApps
+ * \ingroup lalapps_pulsar
  * \author Matt Pitkin, Réjean Dupuis
  * \brief Time domain heterodyning code for known pulsars
  */

@@ -45,7 +45,7 @@ extern "C" {
 
 /**
  * \defgroup NRWaveIO_h Header NRWaveIO.h
- * \ingroup pkg_CBC_NEW
+ * \ingroup lalinspiral_UNCLASSIFIED
  * \author S.Fairhurst, B. Krishnan, L.Santamaria
  *
  * \brief Module for reading/writing Numrel waveforms

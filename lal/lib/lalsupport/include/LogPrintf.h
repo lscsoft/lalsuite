@@ -36,7 +36,8 @@ extern "C" {
 #include <gsl/gsl_matrix.h>
 
 /**
- * \addtogroup LogPrintf_h
+ * \defgroup LogPrintf_h Header LogPrintf.h
+ * \ingroup lal_support
  * \author Reinhard Prix
  * \date 2005
  * \brief General-purpose log-message handling, controlled by lalDebugLevel independent of lalDebugLevel,

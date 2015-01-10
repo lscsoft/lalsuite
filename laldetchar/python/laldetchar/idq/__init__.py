@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation,.
 
-## addtogroup pkg_py_laldetchar_idq
+## \addtogroup laldetchar_py_idq
 """
  Python modules for iDQ pipeline. The pipeline is designed for low-latency detection of transient artifacts in GW data. 
 
@@ -44,18 +44,17 @@ __author__ = "Lindy Blackburn (<lindy.blackburn@ligo.org>), Reed Essick (<reed.e
 __version__ = version.id
 __date__ = version.date
 
-## addtogroup pkg_py_laldetchar_idq
+## \addtogroup laldetchar_py_idq
 #@{
 # close doxygen
 ##
-#       \defgroup       pkg_py_laldetchar_idq_auxmvc   AuxMVC Module
-#       \defgroup       pkg_py_laldetchar_idq_auxmc_utils   AuxMVC Utils
-#       \defgroup       pkg_py_laldetchar_idq_event  Event Module
-#       \defgroup       pkg_py_laldetchar_idq_idq iDQ Functions
-#       \defgroup       pkg_py_laldetchar_idq_idq_summary_plots Plotting Routines
-#       \defgroup       pkg_py_laldetchar_idq_idq_tables iDQ Tables
-#       \defgroup       pkg_py_laldetchar_idq_ovl OVL Module
-#       \defgroup       pkg_py_laldetchar_idq_pdf_estimation PDF Estimation Module
-#       \defgroup       pkg_py_laldetchar_idq_svmkit SVM Utils
+#       \defgroup laldetchar_py_idq_auxmvc		AuxMVC Module
+#       \defgroup laldetchar_py_idq_auxmvc_utils	AuxMVC Utils
+#       \defgroup laldetchar_py_idq_event		Event Module
+#       \defgroup laldetchar_py_idq_idq			iDQ Functions
+#       \defgroup laldetchar_py_idq_idq_summary_plots	Plotting Routines
+#       \defgroup laldetchar_py_idq_idq_tables		iDQ Tables
+#       \defgroup laldetchar_py_idq_ovl			OVL Module
+#       \defgroup laldetchar_py_idq_pdf_estimation	PDF Estimation Module
+#       \defgroup laldetchar_py_idq_svmkit		SVM Utils
 #@}
-

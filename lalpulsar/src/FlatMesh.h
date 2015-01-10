@@ -29,7 +29,7 @@ extern "C" {
 /**
  * \author Creighton, T. D.
  * \defgroup FlatMesh_h Header FlatMesh.h
- * \ingroup pkg_pulsarCovering
+ * \ingroup lalpulsar_templbank
  * \brief Provides routines to place search meshes for parameter spaces with
  * constant parameter metrics.
  *

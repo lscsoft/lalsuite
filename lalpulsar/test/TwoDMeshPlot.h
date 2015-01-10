@@ -32,7 +32,7 @@ extern "C" {
 /**
  * \author Creighton, T. D.
  * \defgroup TwoDMeshPlot_h Header TwoDMeshPlot.h
- * \ingroup pkg_pulsarMetric
+ * \ingroup lalpulsar_metric
  * \brief Provides routines to plot two-dimensional parameter meshes.
  *
  * ### Synopsis ###

@@ -39,7 +39,8 @@
 #include<lal/LIGOMetadataTables.h>
 
 /**
- * \addtogroup TemplateBankGeneration_h
+ * \defgroup TemplateBankGeneration_h Header TemplateBankGeneration.h
+ * \ingroup lalinspiral_bank
  * \author Hanna, C. R.
  *
  * \brief This header file includes all the necessary types and

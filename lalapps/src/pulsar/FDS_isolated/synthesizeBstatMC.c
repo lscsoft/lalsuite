@@ -21,7 +21,7 @@
 /**
  * \author R. Prix
  * \file
- * \ingroup pulsarApps
+ * \ingroup lalapps_pulsar
  * \brief
  * Generate N samples of B-statistic (and F-statistic) values drawn from their
  * respective distributions, assuming Gaussian noise, for given signal parameters.

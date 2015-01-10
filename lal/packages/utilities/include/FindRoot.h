@@ -28,7 +28,8 @@ extern "C" {
 
 
 /**
- * \addtogroup FindRoot_h
+ * \defgroup FindRoot_h Header FindRoot.h
+ * \ingroup lal_utilities
  *
  * \brief Root finding routines.
  *

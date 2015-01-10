@@ -85,7 +85,8 @@ static REAL8 gsl_E_solver(REAL8 e, void *p) {
  * t_r = T_p + \frac{1}{n}\left( E + A\sin E + B[\cos E - 1] \right) \;,
  * \f}
  *
- * \figure{inject_eanomaly,eps,0.23,Function to be inverted to find eccentric anomaly}
+ * \anchor inject_eanomaly
+ * \image html inject_eanomaly.png "Function to be inverted to find eccentric anomaly"
  *
  * where \f$T_p\f$ is the \e observed time of periapsis passage and
  * \f$n=2\pi/P\f$ is the mean angular speed around the orbit.  Thus the key

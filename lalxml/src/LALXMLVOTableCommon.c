@@ -20,7 +20,7 @@
 
 /**
  * \file
- * \ingroup XML
+ * \ingroup lalxml_general
  * \brief Implementation of the common VOTable XML API
  */
 

@@ -1,12 +1,11 @@
 # Import SWIG wrappings, if available
 @SWIG_BUILD_PYTHON_TRUE@from lal import *
 
-## \addtogroup pkg_py_lal
-"""This package provides python wrappings and extensions to the @ref
-ch_gen defined in the LALSuite @ref ch_c.
+## \addtogroup lal_python
+"""This package provides Python wrappings and extensions to the @ref lal_general and @ref lal_math.
 """
 #@{
-#	\defgroup pkg_py_lal_GPSTime_py	GPSTime
-#	\defgroup pkg_py_lal_spectrum	Spectrum
-#	\defgroup pkg_py_lal_utils	Utilities
+#	\defgroup lal_py_gpstime	GPSTime
+#	\defgroup lal_py_spectrum	Spectrum
+#	\defgroup lal_py_utils		Utilities
 #@}

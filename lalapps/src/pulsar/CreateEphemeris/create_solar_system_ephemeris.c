@@ -23,7 +23,7 @@
 
 /**
  * \file
- * \ingroup pulsarApps
+ * \ingroup lalapps_pulsar
  * \author Matt Pitkin
  * \brief
  * This code will take in JPL binary ephemeris files containing (e.g.

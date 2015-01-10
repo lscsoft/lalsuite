@@ -15,7 +15,6 @@ $(ACLOCAL_M4): $(am__aclocal_m4_deps)
 endif # HAVE_GIT_REPO
 
 EXTRA_DIST += \
-	doc \
 	lalburst.spec \
 	$(DATA)
 
@@ -26,6 +25,7 @@ SUBDIRS = \
 	swig \
 	python \
 	test \
+	doxygen \
 	$(END_OF_LIST)
 
 user_environment = \

@@ -28,7 +28,7 @@ extern "C" {
 
 /**
  * \defgroup SFTutils_h Header SFTutils.h
- * \ingroup pkg_SFTIO
+ * \ingroup lalpulsar_sft
  * \author Reinhard Prix, Badri Krishnan
  * \date 2005
  * \brief Utility functions for handling of SFTtype and SFTVectors

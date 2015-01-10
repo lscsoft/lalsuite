@@ -26,7 +26,7 @@ extern "C" {
 
 /**
  * \defgroup SSBtimes_h Header SSBtimes.h
- * \ingroup pkg_pulsarCoh
+ * \ingroup lalpulsar_coh
  * \author Reinhard Prix
  * \date 2005
  * \brief Functions for working with SSB times.

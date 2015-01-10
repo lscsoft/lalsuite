@@ -19,3 +19,7 @@ endif
 
 clean-local :
 	rm -f mcmc.output.??????.?? *-signal*.dat
+
+EXTRA_DIST = \
+	SPINspiral.dox \
+	$(END_OF_LIST)

@@ -27,7 +27,8 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup ReadFTSeries_h
+ * \defgroup ReadFTSeries_h Header ReadFTSeries.h
+ * \ingroup lal_support
  * \author Torres, C. W.
  *
  * \brief This is a simple utility to Read time and frequency series into a file.
@@ -67,9 +68,12 @@ enum enumMaxLineLength {
 /** \endcond */
 #endif /* SWIG */
 
+/*@}*/
+
 
 /**
  * \defgroup ReadTimeSeries_c Module ReadTimeSeries.c
+ * \ingroup ReadFTSeries_h
  * \author Torres, C. V.
  *
  * \brief Each member of this family of functions reads from a file the output of the corresponding \c PrintTimeSeries routine.
@@ -90,6 +94,7 @@ void LALZReadTimeSeries(LALStatus* status,  COMPLEX16TimeSeries *series , const 
 
 /**
  * \defgroup ReadFrequencySeries_c Module ReadFrequencySeries.c
+ * \ingroup ReadFTSeries_h
  * \author Torres, C. V.
  *
  * \brief Each member of this family of functions reads from a file the output of the corresponding \c PrintFrequencySeries routine.
@@ -106,8 +111,6 @@ void LALSReadFrequencySeries(LALStatus* status,  REAL4FrequencySeries *series , 
 void LALDReadFrequencySeries(LALStatus* status,  REAL8FrequencySeries *series , const CHAR *filename );
 void LALCReadFrequencySeries(LALStatus* status, COMPLEX8FrequencySeries *series , const CHAR *filename );
 void LALZReadFrequencySeries(LALStatus* status,  COMPLEX16FrequencySeries *series , const CHAR *filename );
-/*@}*/
-
 /*@}*/
 
 #ifdef  __cplusplus

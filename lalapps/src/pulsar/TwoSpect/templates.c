@@ -329,6 +329,7 @@ void gsl_probRandDprobRdR(REAL8 R, void *param, REAL8 *probabilityR, REAL8 *dpro
  * Analytically calculate the probability of a true signal using the Davies' method
  * \param [in]  templatestruct Pointer to a templateStruct with a template
  * \param [in]  ffplanenoise   Pointer to a REAL4Vector with an estimate of the background of 2nd FFT powers
+ * \param       fbinaveratios  UNDOCUMENTED
  * \param [in]  R              The value of R for a given template
  * \param [in]  params         Pointer to inputParamsStruct
  * \param [out] errcode        Pointer to the error code value from the Davies algorithm
@@ -988,7 +989,7 @@ INT4 analyzeOneTemplate(candidate *output, candidate *input, ffdataStruct *ffdat
  * \param [in]  ffdata               Pointer to ffdataStruct
  * \param [in]  sftexist             Pointer to INT4Vector of existing SFTs
  * \param [in]  aveNoise             Pointer to REAL4Vector of 2nd FFT background powers
- * \param [in]  aveNoisePerFbinRatio Pointer to REAL4Vector of normalized power across the frequency band
+ * \param [in]  aveTFnoisePerFbinRatio Pointer to REAL4Vector of normalized power across the frequency band
  * \param [in]  secondFFTplan        Pointer to REAL4FFTPlan
  * \param [in]  useExactTemplates    Flag of 0 (use Gaussian templates) or 1 (use exact templates)
  * \return Status value
@@ -1143,7 +1144,7 @@ INT4 bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum
  * \param [in]  ffdata               Pointer to ffdataStruct
  * \param [in]  sftexist             Pointer to INT4Vector of existing SFTs
  * \param [in]  aveNoise             Pointer to REAL4Vector of 2nd FFT background powers
- * \param [in]  aveNoisePerFbinRatio Pointer to REAL4Vector of normalized power across the frequency band
+ * \param [in]  aveTFnoisePerFbinRatio Pointer to REAL4Vector of normalized power across the frequency band
  * \param [in]  secondFFTplan        Pointer to REAL4FFTPlan
  * \param [in]  useExactTemplates    Flag of 0 (use Gaussian templates) or 1 (use exact templates)
  * \return Status value
@@ -1269,7 +1270,7 @@ INT4 bruteForceTemplateTest(candidateVector **output, candidate input, REAL8 fmi
  * \param [in]  ffdata               Pointer to ffdataStruct
  * \param [in]  sftexist             Pointer to INT4Vector of existing SFTs
  * \param [in]  aveNoise             Pointer to REAL4Vector of 2nd FFT background powers
- * \param [in]  aveNoisePerFbinRatio Pointer to REAL4Vector of normalized power across the frequency band
+ * \param [in]  aveTFnoisePerFbinRatio Pointer to REAL4Vector of normalized power across the frequency band
  * \param [in]  secondFFTplan        Pointer to REAL4FFTPlan
  * \param [in]  useExactTemplates    Flag of 0 (use Gaussian templates) or 1 (use exact templates)
  * \return Status value
@@ -1386,7 +1387,7 @@ INT4 templateSearch_scox1Style(candidateVector **output, REAL8 fminimum, REAL8 f
  * \param [in]  weight        Pixel weight
  * \param [in]  pixelloc      Index of the pixel in the REAL4Vector of the frequency-frequency plane
  * \param [in]  firstfftfreq  Index of the pixel in the SFT
- * \param [in]  secondfftfreq Index of the pixel in the 2nd FFT
+ * \param [in]  secfftfreq    Index of the pixel in the 2nd FFT
  */
 void insertionSort_template(templateStruct *output, REAL4 weight, INT4 pixelloc, INT4 firstfftfreq, INT4 secfftfreq)
 {

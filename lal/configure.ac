@@ -7,6 +7,8 @@ AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
   Makefile \
   debian/Makefile \
+  doxygen/Makefile \
+  doxygen/doxygen.cfg \
   include/Makefile \
   include/lal/Makefile \
   lal.pc \
@@ -17,68 +19,55 @@ AC_CONFIG_FILES([ \
   lib/lal/LALVCSInfo.h \
   lib/lal/Makefile \
   lib/lalsupport/Makefile \
-  lib/lalsupport/doc/Makefile \
   lib/lalsupport/include/Makefile \
   lib/lalsupport/src/Makefile \
   lib/lalsupport/test/Makefile \
   packages/Makefile \
   packages/date/Makefile \
-  packages/date/doc/Makefile \
   packages/date/include/Makefile \
   packages/date/src/Makefile \
   packages/date/test/Makefile \
   packages/factories/Makefile \
-  packages/factories/doc/Makefile \
   packages/factories/include/Makefile \
   packages/factories/src/Makefile \
   packages/factories/test/Makefile \
   packages/fft/Makefile \
-  packages/fft/doc/Makefile \
   packages/fft/include/Makefile \
   packages/fft/src/Makefile \
   packages/fft/test/Makefile \
   packages/inject/Makefile \
-  packages/inject/doc/Makefile \
   packages/inject/include/Makefile \
   packages/inject/src/Makefile \
   packages/inject/test/Makefile \
   packages/noisemodels/Makefile \
-  packages/noisemodels/doc/Makefile \
   packages/noisemodels/include/Makefile \
   packages/noisemodels/src/Makefile \
   packages/noisemodels/test/Makefile \
   packages/stats/Makefile \
-  packages/stats/doc/Makefile \
   packages/stats/include/Makefile \
   packages/stats/src/Makefile \
   packages/stats/test/Makefile \
   packages/std/Makefile \
-  packages/std/doc/Makefile \
   packages/std/include/Makefile
   packages/std/src/Makefile \
   packages/std/test/Makefile \
   packages/tdfilter/Makefile \
-  packages/tdfilter/doc/Makefile \
   packages/tdfilter/include/Makefile \
   packages/tdfilter/src/Makefile \
   packages/tdfilter/test/Makefile \
   packages/tools/Makefile \
-  packages/tools/doc/Makefile \
   packages/tools/include/Makefile \
   packages/tools/src/Makefile \
   packages/tools/test/Makefile \
   packages/utilities/Makefile \
-  packages/utilities/doc/Makefile \
   packages/utilities/include/Makefile \
   packages/utilities/src/Makefile \
   packages/utilities/test/Makefile \
   packages/vectorops/Makefile \
-  packages/vectorops/doc/Makefile \
   packages/vectorops/include/Makefile \
   packages/vectorops/src/Makefile \
   packages/vectorops/test/Makefile \
   packages/window/Makefile \
-  packages/window/doc/Makefile \
   packages/window/include/Makefile \
   packages/window/src/Makefile \
   packages/window/test/Makefile \
@@ -150,6 +139,9 @@ LALSUITE_ENABLE_NIGHTLY
 
 # enable SWIG wrapping modules
 LALSUITE_ENABLE_SWIG
+
+# enable Doxygen documentation
+LALSUITE_ENABLE_DOXYGEN
 
 # define version/configure info
 LALSUITE_VERSION_CONFIGURE_INFO
@@ -338,10 +330,6 @@ AC_CHECK_FUNCS([getopt_long],,[AC_MSG_ERROR([could not find the getopt_long() fu
 AC_CHECK_FUNCS([putenv])
 AC_CHECK_FUNCS([posix_memalign])
 
-# set package documentation install path
-pkgdocdir="\${prefix}/share/doc/${PACKAGE}-${VERSION}"
-AC_SUBST([pkgdocdir])
-
 # set automake conditionals
 AM_CONDITIONAL([INTELFFT],[test x$intelfft = xtrue])
 AM_CONDITIONAL([QTHREAD],[test x$qthread = xtrue])
@@ -373,6 +361,7 @@ LAL has now been successfully configured:
 * SWIG binding generation is $SWIG_GENERATE_ENABLE_VAL
 * SWIG bindings for Octave are $SWIG_BUILD_OCTAVE_ENABLE_VAL
 * SWIG bindings for Python are $SWIG_BUILD_PYTHON_ENABLE_VAL
+* Doxygen documentation is $DOXYGEN_ENABLE_VAL
 
 and will be installed under the directory:
 

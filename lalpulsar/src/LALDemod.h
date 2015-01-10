@@ -28,7 +28,7 @@ extern "C" {
 
 /**
  * \defgroup LALDemod_h  Header LALDemod.h
- * \ingroup pkg_pulsarCoh
+ * \ingroup lalpulsar_coh
  * \author Berukoff, S.J., Papa, M.A.
  *
  * \brief Computes a demodulated transform.

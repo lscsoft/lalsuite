@@ -19,7 +19,7 @@
 */
 
 /**
- * \file
+ * \defgroup LALPSpinInspiralRD_c Module LALPSpinInspiralRD.c
  * \ingroup LALInspiral_h
  *
  * \brief Module to generate generic spinning binaries waveforms complete with ring-down
@@ -93,16 +93,7 @@
  *
  * ### Notes ###
  *
- */
-
-/**
- * \defgroup psird Complete phenomenological spin-inspiral waveforms
- * \ingroup ch_inspiral
- *
- * This code provides complete waveforms for generically spinning binary
- * systems.
- *
- */
+ *//*@{*/
 
 #include <lal/LALPSpinInspiralRD.h>
 #include <lal/LALAdaptiveRungeKutta4.h>
@@ -465,10 +456,8 @@ static int XLALSpinInspiralTest(double t, const double values[], double dvalues[
 }
 
 /**
- * \ingroup psird
- * \brief Module to compute detivative of dynamical variables
+ * Function to compute detivative of dynamical variables
  */
-
 static int XLALSpinInspiralDerivatives(double t, const double values[], double dvalues[], void *mparams) {
 
     REAL8 omega;                // time-derivative of the orbital phase
@@ -664,10 +653,8 @@ void LALSpinInspiralDerivatives(REAL8Vector * values, REAL8Vector * dvalues, voi
 }				/* end of LALSpinInspiralDerivatives */
 
 /**
- * \ingroup psird
- * \brief Main module to produce waveforms
+ * Main function to produce waveforms
  */
-
 static int XLALPSpinInspiralRDEngine(
 			REAL8Vector * signalvec1,
 			REAL8Vector * signalvec2,
@@ -727,10 +714,8 @@ int XLALPSpinInspiralRD(REAL4Vector * signalvec, InspiralTemplate * params)
 }
 
 /**
- * \ingroup psird
- * \brief Module to produce waveform templates
+ * Function to produce waveform templates
  */
-
 void LALPSpinInspiralRDTemplates(LALStatus * status,
          REAL4Vector * signalvec1,
          REAL4Vector * signalvec2,
@@ -796,10 +781,8 @@ int XLALPSpinInspiralRDTemplates(
 }
 
 /**
- * \ingroup psird
- * \brief Module to produce injection waveforms
+ * Function Module to produce injection waveforms
  */
-
 void LALPSpinInspiralRDForInjection(LALStatus        * status,
             CoherentGW       * waveform,
             InspiralTemplate * params,
@@ -1068,8 +1051,7 @@ int XLALPSpinInspiralRDFreqDom(
 }
 
 /**
- * \ingroup psird
- * \brief Module actually computing PSIRD waveforms
+ * Function actually computing PSIRD waveforms
  */
 
 static int XLALSpinInspiralFillH2Modes(
@@ -3277,3 +3259,5 @@ static int XLALPSpinInspiralRDEngine(
 
   /*End */
 }
+
+/*@}*/

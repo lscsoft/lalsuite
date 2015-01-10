@@ -29,7 +29,7 @@
 /**
  * \author Brown, D. A.
  * \file
- * \ingroup lalmetaio
+ * \ingroup lalmetaio_general
  * \brief Provides functions for writing the LIGO metdata database table structres to LIGO light weight XML files.
  *
  * ### Synopsis ###

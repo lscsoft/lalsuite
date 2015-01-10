@@ -35,6 +35,7 @@
 
 /**
  * \file SPINspiral_mcmc.c
+ * \ingroup lalapps_inspiral
  * \brief Contains MCMC routines
  */
 

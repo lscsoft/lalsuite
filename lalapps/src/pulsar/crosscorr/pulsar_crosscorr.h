@@ -21,6 +21,7 @@
  * \author Christine Chung, Badri Krishnan, John Whelan
  * \date 2008
  * \file
+ * \ingroup lalapps_pulsar
  * \brief Header for CW cross-correlation search
  *
  */

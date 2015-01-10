@@ -19,7 +19,7 @@
 
 /*********************************************************************************
  * \file
- * \ingroup pulsarApps
+ * \ingroup lalapps_pulsar
  * \author  B. Allen, Y. Ioth, B. Machenschalk, M.A. Papa, R.Prix, X. Siemens
  * \brief
  * Calculate the F-statistic for a given parameter-space of pulsar GW signals.

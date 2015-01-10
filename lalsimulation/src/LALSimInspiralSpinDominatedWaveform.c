@@ -571,7 +571,8 @@ int XLALSpinDominatedWaveformBuild (
 	REAL8 expr[], 				/**< The 3 time dependent variables of the waveform at the time indexed by idx */
 	REAL8TimeSeries **hplus,        	/**< +-polarization waveform */
 	REAL8TimeSeries **hcross,      		/**< x-polarization waveform */
-	int idx)
+	int idx					/**< \todo UNDOCUMENTED */
+)
 {
 REAL8 *waveampcoeffs;
 REAL8 ampcoeff;
@@ -740,7 +741,7 @@ phin0=3.*LAL_PI_2;
 beta1 = 0;
 } else {
 beta1 = acos((Jx*s1x+Jy*s1y+Jz*s1z)/totalJ/chi1);
-// calculating the initial value of the \phi_n variable
+// calculating the initial value of the \f$\phi_n\f$ variable
 JxNx = Jx/totalJ*1.0;
 JxNy = - Jx/totalJ*1.0;
 JxNz = 0.;
@@ -782,7 +783,7 @@ int XLALSimInspiralSpinDominatedWaveformDriver(
 	int amplitudeO,                 /**< twice PN amplitude order */
 	REAL8 deltaT,			/**< Sampling time interval */
 	REAL8 phiRef,			/**< Reference phase at the Reference Frequency */
-	REAL8 phin0			/**< Starting value of the \phi_n parameter */
+	REAL8 phin0			/**< Starting value of the \f$\phi_n\f$ parameter */
 )
 {
 int idx;
@@ -890,8 +891,8 @@ return intLen;
 
 /**
  * Function calculating the derivatives of the three time dependent variables of the Spin-Dominated waveforms (SDW)
- * The first paramter is \phi_n, Eq 27 of Arxiv:1005.5330, taken for 1 spin case, and integrated over an orbital period.
- * The second parameter is \omega, the derivative is taken from Arxiv: astro-ph/0504538, up to 2 PN orders with 1 spin. (In order to stay consistent with SDW)
+ * The first paramter is \f$\phi_n\f$, Eq 27 of Arxiv:1005.5330, taken for 1 spin case, and integrated over an orbital period.
+ * The second parameter is \f$\omega\f$, the derivative is taken from Arxiv: astro-ph/0504538, up to 2 PN orders with 1 spin. (In order to stay consistent with SDW)
  * The thirs parameter is the phase.
  */
 static INT4 XLALSpinDominatedWaveformDerivatives(UNUSED REAL8 t,

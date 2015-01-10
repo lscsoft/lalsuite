@@ -13,7 +13,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-## addtogroup pkg_py_laldetchar_idq
+## \addtogroup laldetchar_py_idq
 ## Synopsis
 # ~~~
 # from laldetchar.idq import pdf_estimation
@@ -29,7 +29,7 @@ __author__ = 'Reed Essick <reed.essick@ligo.org>'
 __version__ = git_version.id
 __date__ = git_version.date
 
-## addtogroup pkg_py_laldetchar_idq_pdf_estimation
+## \addtogroup laldetchar_py_idq_pdf_estimation
 # @{
 
 # Functions for estimating pdf(s) of event (glitch or clean) ranks.

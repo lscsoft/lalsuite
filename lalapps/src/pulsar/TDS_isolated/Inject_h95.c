@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup pulsarApps
+ * \ingroup lalapps_pulsar
  * \author R.J. Dupuis
  * \brief This program injects a signal in the Bk's
  */

@@ -25,7 +25,7 @@ extern "C" {
 
 /**
  * \defgroup PHMD_h Header PHMD.h
- * \ingroup pkg_pulsarHough
+ * \ingroup lalpulsar_hough
  * \author Sintes, A. M.
  * \date 2001
  * \brief Conversion from peaks in a spectrum into a partial Hough map derivative

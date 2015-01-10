@@ -19,7 +19,8 @@
 
 /**
  * \author Regimbau Tania
- * \addtogroup AstroOmega_h
+ * \defgroup AstroOmega_h Header AstroOmega.h
+ * \ingroup lalstochastic_general
  *
  * \brief Compute the energy density spectrum of stochastic backgrounds produced
  * by cosmological population of astrophysical sources.

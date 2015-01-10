@@ -44,7 +44,7 @@ def timeseries_to_segments(t, ts, thr):
 ....computes segements from t  = time stamps
 ....                        ts = time series (values)
 ....                        thr=threshold on time series
-....so that t \in segments iff ts(t) >= thr
+....so that t \f$\in\f$ segments iff ts(t) >= thr
 
 ....pad is added to the end of the time-series points when generating segments
 ...."""

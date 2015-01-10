@@ -27,6 +27,346 @@
  *-----------------------------------------------------------------------
  */
 
+/**
+ * \file
+ * \ingroup lalapps_inspiral
+ *
+ * <dl>
+ * <dt>Name</dt><dd>
+ * \c lalapps_inspiral --- stand alone inspiral search code</dd>
+ *
+ * <dt>Synopsis</dt><dd> <tt>lalapps_inspiral</tt>
+ * [<tt>--help</tt>]
+ * [<tt>--verbose</tt>]
+ * [<tt>--version</tt>]
+ * [<tt>--user-tag</tt> <i>STRING</i>]
+ * [<tt>--ifo-tag</tt> <i>STRING</i>]
+ * <tt>--gps-start-time</tt> <i>SEC</i>
+ * <tt>--gps-start-time-ns</tt> <i>NS</i>
+ * <tt>--gps-end-time</tt> <i>SEC</i>
+ * <tt>--gps-end-time-ns</tt> <i>NS</i>
+ * <tt>--pad-data</tt> <i>T</i>
+ * [<tt>--slide-time</tt> <i>T</i>]
+ * [<tt>--slide-time-ns</tt> <i>T</i>]
+ * [<tt>--glob-frame-data</tt>]
+ * [<tt>--frame-type</tt> <i>TAG</i>]
+ * <tt>--frame-cache</tt> <i>FILE</i>
+ * <tt>--calibration-cache</tt> <i>FILE</i>
+ * <tt>--channel-name</tt> <i>CHAN</i>
+ * <tt>--calibrated-data</tt> <i>TYPE</i>
+ * [<tt>--geo-high-pass-freq</tt> <i>F</i>]
+ * [<tt>--geo-high-pass-order</tt> <i>O</i>]
+ * [<tt>--geo-high-pass-atten</tt> <i>A</i>]
+ * [<tt>--injection-file</tt> <i>FILE</i>]
+ * [<tt>--inject-overhead</tt>
+ * <tt>--enable-filter-inj-only</tt>
+ * <tt>--disable-filter-inj-only</tt>
+ * <tt>--bank-file</tt> <i>FILE</i>
+ * <tt>--minimal-match</tt> <i>M</i>
+ * [<tt>--start-template</tt> <i>N</i>]
+ * [<tt>--stop-template</tt> <i>N</i>]
+ * <tt>--sample-rate</tt> <i>F</i>
+ * <tt>--resample-filter</tt> <i>TYPE</i>
+ * <tt>--disable-high-pass</tt>
+ * <tt>--enable-high-pass</tt> <i>F</i>
+ * <tt>--high-pass-order</tt> <i>O</i>
+ * <tt>--high-pass-attenuation</tt> <i>A</i>
+ * <tt>--spectrum-type</tt> <i>TYPE</i>
+ * <tt>--segment-length</tt> <i>N</i>
+ * <tt>--number-of-segments</tt> <i>N</i>
+ * <tt>--segment-overlap</tt> <i>N</i>
+ * <tt>--low-frequency-cutoff</tt> <i>F</i>
+ * <tt>--inverse-spec-length</tt> <i>T</i>
+ * <tt>--dynamic-range-exponent</tt> <i>X</i>
+ * <tt>--approximant</tt> <i>APPROX</i>
+ * <tt>--chisq-bins</tt> <i>P</i>
+ * <tt>--snr-threshold</tt> <i>RHO</i>
+ * <tt>--chisq-threshold</tt> <i>X</i>
+ * <tt>--cluster-method</tt> <i>MTHD</i>
+ * [<tt>--cluster-window</tt> <i>SEC</i>]
+ * [<tt>--maximization-interval</tt> <i>MSEC</i>]
+ * [<tt>--ts-cluster</tt> <i>MTHD</i>]
+ * [<tt>--ts-volume-safety</tt> <i>SAFETYFAC</i>]
+ * [<tt>--ts-endtime-interval</tt> <i>MSEC</i>]
+ * <tt>--enable-output</tt>
+ * <tt>--disable-output</tt>
+ * [<tt>--trig-start-time</tt> <i>SEC</i>]
+ * [<tt>--trig-end-time</tt> <i>SEC</i>]
+ * [<tt>--gaussian-noise</tt> <i>VAR</i>]
+ * [<tt>--random-seed</tt> <i>SEED</i>]
+ * [<tt>--bank-simulation</tt> <i>N</i>]
+ * [<tt>--sim-approximant</tt> <i>APX</i>]
+ * [<tt>--sim-minimum-mass</tt> <i>M</i>]
+ * [<tt>--sim-maximum-mass</tt> <i>M</i>]
+ * [<tt>--data-checkpoint</tt>]
+ * [<tt>--checkpoint-path</tt> <i>PATH</i>]
+ * [<tt>--output-path</tt> <i>PATH</i>]
+ * [<tt>--write-raw-data</tt>]
+ * [<tt>--write-filter-data</tt>]
+ * [<tt>--write-response</tt>]
+ * [<tt>--write-spectrum</tt>]
+ * [<tt>--write-snrsq</tt>]
+ * [<tt>--write-chisq</tt>] </dd>
+ *
+ * <dt>Description</dt><dd>
+ * <tt>lalapps_inspiral</tt> is a stand alone code for performing matched filtering for inspiral signals on LIGO
+ * or GEO data for gravitational wave signals and Monte Carlo analysis; it also has the capability of doing software signal injections on the data. </dd>
+ *
+ * <dt>Options</dt><dd>
+ * <dl>
+ * <dt><tt>--help</tt></dt><dd> Optional. Display a brief usage summary.</dd>
+ *
+ * <dt><tt>--verbose</tt></dt><dd> Optional. Print progress information.</dd>
+ *
+ * <dt><tt>user-tag</tt> <i>STRING</i></dt><dd> Optional. Set the process-params
+ * usertag to <i>STRING</i>.</dd>
+ *
+ * <dt><tt>--ifo-tag</tt> <i>STRING</i></dt><dd> Optional. Set the ifotag to
+ * <i>STRING</i> for file naming.</dd>
+ *
+ * <dt><tt>--gps-start-time</tt> <i>SEC</i></dt><dd> GPS seconds <i>SEC</i> of data
+ * start time.</dd>
+ *
+ * <dt><tt>--gps-start-time-ns</tt> <i>NS</i></dt><dd> GPS nanoseconds  <i>NS</i> of
+ * data start time. You have an option of selecting the (start/end time) to be either both
+ * GPS seconds or GPS nanoseconds.</dd>
+ *
+ * <dt><tt>--gps-end-time</tt> <i>SEC</i></dt><dd> GPS seconds <i>SEC</i> of data end
+ * time.</dd>
+ *
+ * <dt><tt>--gps-end-time-ns</tt> <i>NS</i></dt><dd> GPS nanoseconds <i>NS</i>
+ * of data end time.</dd>
+ *
+ * <dt><tt>--pad-data</tt> <i>SEC</i></dt><dd> pad the data start and end time
+ * by a number of seconds <i>SEC</i>.</dd>
+ *
+ * <dt><tt>--slide-time</tt> <i>SEC</i></dt><dd> Optional. Slide data start epoch by
+ * a number of seconds <i>SEC</i>.</dd>
+ *
+ * <dt><tt>--slide-time-ns</tt> <i>NS</i></dt><dd> Optional. Slide data start epoch
+ * by a number of nanoseconds <i>NS</i>.</dd>
+ *
+ * <dt><tt>--glob-frame-data</tt></dt><dd> Optional. Glob *.gwf files in the pwd to
+ * obtain frame data.</dd>
+ *
+ * <dt><tt>--frame-type</tt> <i>TAG</i></dt><dd> Optional. Input data is contained in
+ * frames of type <i>TAG</i>.</dd>
+ *
+ * <dt><tt>--frame-cache</tt> <i>FILE</i></dt><dd> Obtain frame data from LAL
+ * frame cache file  <i>FILE</i>.
+ *  </dd>
+ * <dt><tt>--calibration-cache</tt> <i>FILE</i></dt><dd> Obtain calibration from
+ * LAL frame cache file  <i>FILE</i>.</dd>
+ *
+ * <dt><tt>--channel-name</tt> <i>CHAN</i></dt><dd> Read data from
+ * interferometer channel <i>CHAN</i>. ex: L1-LSC:AS_Q, etc. </dd>
+ *
+ * <dt><tt>--calibrated-data</tt> <i>TYPE</i></dt><dd> Calibrated data of
+ * type <i>TYPE</i> \f$(real_4|real_8\f$). You have a choice of using the calibration cache or
+ * calibrated data.</dd>
+ *
+ * <dt><tt>--geo-high-pass-freq</tt> <i>F</i></dt><dd> Optional. High pass GEO data
+ * above a given frequency  <i>F</i> [Hz] using an IIR filter.</dd>
+ *
+ * <dt><tt>--geo-high-pass-order</tt> <i>O</i></dt><dd> Optional. Set the order of
+ * the GEO high pass filter to an order <i>O</i>.</dd>
+ *
+ * <dt><tt>--geo-high-pass-atten</tt> <i>A</i></dt><dd> Optional. Set the
+ * attenuation of the high pass filter to an attenuation <i>A</i>.</dd>
+ *
+ * <dt><tt>--injection-file</tt> <i>FILE</i></dt><dd> Optional. Inject simulated
+ * inspiral signals from file <i>FILE</i>.</dd>
+ *
+ * <dt><tt>--inject-overhead</tt></dt><dd> Optional. Inject signals directly overhead
+ * detector.</dd>
+ *
+ * <dt><tt>--enable-filter-inj-only</tt></dt><dd>  Enables the mechanism to filter only segments with injections. All other segments are not filtered. Either <tt>--enable-filter-inj-only</tt> or <tt>--disable-filter-inj-only</tt> must be specified.</dd>
+ *
+ * <dt><tt>--disable-filter-inj-only</tt></dt><dd>  Disables the mechanism to filter only segments with injections. All segments are filtered. Either <tt>--enable-filter-inj-only</tt> or <tt>--disable-filter-inj-only</tt> must be specified.</dd>
+ *
+ * <dt><tt>--inject-overhead</tt></dt><dd> Optional. Inject signals directly overhead
+ * detector.</dd>
+ *
+ * <dt><tt>--bank-file</tt> <i>FILE</i></dt><dd> Read template bank parameters
+ * from file <i>FILE</i>.</dd>
+ *
+ * <dt><tt>--minimal-match</tt> <i>M</i></dt><dd> Override bank minimal match with
+ * <i>M</i> (sets delta). This value is usually set to 0.97 (delta = 0.03). If
+ * you plan to do a run with injections
+ * (<tt>--injection-file</tt> <i>FILE</i>), this value
+ * should be set to 0.8 (delta = 0.2) to ensure recovering injections.   </dd>
+ *
+ * <dt><tt>--start-template</tt> <i>N</i></dt><dd> Optional. Start filtering at
+ * template number <i>N</i> in bank.</dd>
+ *
+ * <dt><tt>--stop-template</tt> <i>N</i></dt><dd> Optional. Stop filtering at
+ * template number <i>N</i> in bank.</dd>
+ *
+ * <dt><tt>--sample-rate</tt> <i>F</i></dt><dd> Filter data at a given
+ * frequency  <i>F</i> [Hz], downsampling if necessary.</dd>
+ *
+ * <dt><tt>--resample-filter</tt> <i>TYPE</i></dt><dd> Set resample filter to
+ * a given type  <i>TYPE</i> \f$(ldas|butterworth)\f$.</dd>
+ *
+ * <dt><tt>--disable-high-pass</tt></dt><dd> Turn off the IIR highpass filter.</dd>
+ *
+ * <dt><tt>--enable-high-pass</tt> <i>F</i></dt><dd> High pass data above
+ *  <i>F</i> Hz using an IIR filter.</dd>
+ *
+ * <dt><tt>--high-pass-order</tt> <i>O</i></dt><dd> Set the order of the high
+ * pass filter to a given order <i>O</i>. </dd>
+ *
+ * <dt><tt>--high-pass-attenuation</tt> <i>A</i></dt><dd> Set the
+ * attenuation of the high pass filter to a given attenuation <i>A</i>.</dd>
+ *
+ * <dt><tt>--spectrum-type</tt> <i>TYPE</i></dt><dd> Use PSD estimator type
+ * <i>TYPE</i> \f$(mean|median)\f$.</dd>
+ *
+ * <dt><tt>--segment-length</tt> <i>N</i></dt><dd> Set data segment length to
+ * a number <i>N</i> of points.</dd>
+ *
+ * <dt><tt>--number-of-segments</tt> <i>N</i></dt><dd> Set number of data segments
+ * to a number <i>N</i>.</dd>
+ *
+ * <dt><tt>--segment-overlap</tt> <i>N</i></dt><dd> Overlap data segments by
+ * a number  <i>N</i> of points.</dd>
+ *
+ * <dt><tt>--low-frequency-cutoff</tt> <i>F</i></dt><dd> Do not filter
+ * below a given frequency  <i>F</i> [Hz].</dd>
+ *
+ * <dt><tt>--inverse-spec-length</tt> <i>T</i></dt><dd> Set length of
+ * inverse spectrum to number of a given number of seconds <i>T</i>.</dd>
+ *
+ * <dt><tt>--dynamic-range-exponent</tt> <i>X</i></dt><dd> Set dynamic range
+ * scaling to \f$2^X\f$. </dd>
+ *
+ * <dt><tt>--approximant</tt> <i>APPROX</i></dt><dd> Set approximant to be used.
+ * \f$(TaylorF2|BCV)\f$ </dd>
+ *
+ * <dt><tt>--chisq-bins</tt> <i>P</i></dt><dd> Set number of chisq veto bins
+ * to <i>P</i>.</dd>
+ *
+ * <dt><tt>--snr-threshold</tt> <i>RHO</i></dt><dd> Set signal-to-noise
+ * threshold to <i>RHO</i>.</dd>
+ *
+ * <dt><tt>--chisq-threshold</tt> <i>X</i></dt><dd> Set threshold on \f$chi^2\f$.
+ * Where \f$chi^2 < X * ( p + rho^2 * delta^2 )\f$</dd>
+ *
+ * <dt><tt>--cluster-method</tt> <i>MTHD</i></dt><dd> Set clustering method
+ * with which to maximize over a chirp to <i>MTHD</i>.
+ * \f$(tmplt|window|noClustering)\f$</dd>
+ *
+ * <dt><tt>--cluster-window</tt> <i>SEC</i></dt><dd> Optional. If <i>MTHD</i> is
+ * set to window, then the window length must be specified in seconds <i>SEC</i>.</dd>
+ *
+ * <dt><tt>--maximization-interval</tt> <i>MSEC</i></dt><dd> Optional. The
+ * maximization interval is specified in milliseconds <i>MSEC</i>.  When
+ * this option is invoked, the SNR is maximized in fixed intervals of
+ * <i>MSEC</i> after all templates have been filtered against all segments.
+ * A typical number might be <i>MSEC</i>=10.</dd>
+ *
+ * <dt><tt>--ts-cluster</tt> <i>MTHD</i></dt><dd> Optional. When invoked, the raw inspiral triggers over all the templates are clustered over intrinsic parameter space \f$(\tau_0, \tau_3)\f$ and end-time \f$(t_c)\f$ using the trigScan clustering algorithm. The specified method <i>MTHD</i> should be one of \f$(T0T3Tc|T0T3TcAS)\f$. When <i>MTHD</i> is set to \f$T0T3Tc\f$, the stragglers (isolated triggers, or singletons) are \e not appended to the final list of triggers. For production runs, one should always append the stragglers and \f$T0T3TcAS\f$ should be chosen. Note: the <tt>--ts-cluster</tt> option cannot be used in conjuction with the <tt>--maximization-interval</tt> option - as they invoke different clustering algorithms. At present trigScan clustering {<em>cannot be invoked for BCV searches</em>} where the templates are placed on phenomenological parameters \f$(\Psi_0, \Psi_3)\f$.</dd>
+ *
+ * <dt><tt>--ts-volume-safety</tt> <i>SAFETYFAC</i></dt><dd> In trigScan clustering algorithm, the raw triggers are modeled as ellipsoids in the space of parameters \f$\Lambda \equiv (\tau_0, \tau_3, t_c)\f$ using the metric over \f$\Lambda\f$. This <i>SAFETYFAC</i> is used to scale-up the volume of the ellipsoids thereby increasing the chances of overlap with neighboring ellipsoids. It is recommended (note that, it is a \e tunable) parameter whose optimum value can be determined by trial and error. If the <i>SAFETYFAC</i> is set to too large a value, nearby clusters of triggers can merge into one giving poor results. If set to too small a value (close to 1), clusters are likely to fracture resulting in high trigger rate.} to set <i>SAFETYFAC</i> to about \f$(1.5)^3 \sim 3.3\f$ .  </dd>
+ *
+ * <dt><tt>--ts-endtime-interval</tt> <i>MSEC</i></dt><dd> Optional. In the trigScan algorithm (when <tt>--ts-cluster</tt> is set to \f$T0T3TcAS\f$), one can maximize the stragglers over their SNRs using a <i>MSEC</i> long window slid along \f$t_c\f$ (end time of the triggers) before appending them to the clustered triggers. This option somewhat reduces the total number of triggers at the end of the pipeline. However for safety concerns, it is recommended \e not to specify this option for production runs. If this option is not specified, \e all the stragglers are appended to the final list of triggers. Obviously this option is irrelevant when <tt>--ts-cluster</tt> is set to \f$T0T3Tc\f$.</dd>
+ *
+ * <dt><tt>--enable-output</tt></dt><dd> Write the results to a LIGO LW XML file.</dd>
+ *
+ * <dt><tt>--disable-output</tt></dt><dd> Do not write LIGO LW XML output file. you
+ * have a choice between enabling or disabling the output.</dd>
+ *
+ * <dt><tt>--trig-start-time</tt> <i>SEC</i></dt><dd> Optional. Output only triggers
+ * only after a given GPS second <i>SEC</i>.</dd>
+ *
+ * <dt><tt>--trig-end-time</tt> <i>SEC</i></dt><dd> Optional. Output only triggers
+ * before a given GPS second <i>SEC</i>.</dd>
+ *
+ * <dt><tt>--gaussian-noise</tt> <i>VAR</i></dt><dd> Optional. Replace data with
+ * gaussian noise of variance <i>VAR</i>.</dd>
+ *
+ * <dt><tt>--random-seed</tt> <i>SEED</i></dt><dd> Optional. Set random number seed
+ * for injections to <i>SEED</i> \f$(urandom|integer)\f$.</dd>
+ *
+ * <dt><tt>--bank-simulation</tt> <i>N</i></dt><dd> Optional. Perform a number of
+ * <i>N</i> injections to test the template bank.</dd>
+ *
+ * <dt><tt>--sim-approximant</tt> <i>APX</i></dt><dd> Optional. Set approximant
+ * of the injected waveform to <i>APX</i>.</dd>
+ *
+ * <dt><tt>--sim-minimum-mass</tt> <i>M</i></dt><dd> Optional. Set minimum mass of
+ * bank injected signal to {M}.</dd>
+ *
+ * <dt><tt>--sim-maximum-mass</tt> <i>M</i></dt><dd> Optional. Set maximum mass of
+ * bank injected signal to {M}.</dd>
+ *
+ * <dt><tt>--data-checkpoint</tt></dt><dd> Optional. Checkpoint and exit after data
+ * is read in.</dd>
+ *
+ * <dt><tt>--checkpoint-path</tt> <i>PATH</i></dt><dd> Optional. Write checkpoint
+ * file under a given path <i>PATH</i>.</dd>
+ *
+ * <dt><tt>--output-path</tt> <i>PATH</i></dt><dd> Optional. Write output data to
+ * a given path <i>PATH</i>.</dd>
+ *
+ * <dt><tt>--write-raw-data</tt></dt><dd> Optional. Write raw data to a frame file.</dd>
+ *
+ * <dt><tt>--write-filter-data</tt></dt><dd> Optional. Write data that is passed to
+ * filter to a frame.</dd>
+ *
+ * <dt><tt>--write-response</tt></dt><dd> Optional. Write the computed response
+ * function to a frame.</dd>
+ *
+ * <dt><tt>--write-spectrum</tt></dt><dd> Optional. Write the uncalibrated psd to a
+ * frame.</dd>
+ *
+ * <dt><tt>--write-snrsq</tt></dt><dd> Optional. Write the snr time series for each
+ * data segment.</dd>
+ *
+ * <dt><tt>--write-chisq</tt></dt><dd> Optional. Write the \f$r^2\f$ time series for each
+ * data segment.
+ *
+ * </dd>
+ * </dl></dd>
+ *
+ * <dt>Example</dt><dd>
+ * To run the program, type:
+ * \code
+ * lalapps_inspiral \
+ * --verbose \
+ * --gps-start-time 73200096 \
+ * --gps-end-time 732902144 \
+ * --bank-file L1-TMPLTBANK-732900096-2048.xml \
+ * --calibration-cache L-CAL-729273600-734367600.cache \
+ * --frame-cache L1-732900096-2048.cache \
+ * --channel-name L1:LSC-AS_Q \
+ * --snr-threshold 6.0 \
+ * --chisq-threshold 5.0 \
+ * --pad-data 8 \
+ * --segment-length 1048576 \
+ * --number-of-segments 15 \
+ * --sample-rate 4096 \
+ * --resample-filter ldas \
+ * --enable-high-pass 100.0 \
+ * --high-pass-order 8 \
+ * --high-pass-attenuation 0.1 \
+ * --spectrum-type median \
+ * --low-frequency-cutoff 100.0 \
+ * --approximant TaylorF2 \
+ * --minimal-match 0.9 \
+ * --segment-overlap 524288 \
+ * --inverse-spec-length 16 \
+ * --cluster-method window \
+ * --cluster-window 0.5 \
+ * --dynamic-range-exponent 69.0 \
+ * --chisq-bins 15 \
+ * --enable-output \
+ * \endcode </dd>
+ *
+ * <dt>Author</dt><dd> Duncan Brown, Andres Rodriguez, Darren Woods, Anand S. Sengupta</dd>
+ * </dl>
+ */
+
 #include <config.h>
 #include <stdio.h>
 #include <stdlib.h>

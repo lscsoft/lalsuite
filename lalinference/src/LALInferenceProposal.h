@@ -37,7 +37,7 @@ SWIGLAL(
 
 /**
  * \defgroup LALInferenceProposal_h Header LALInferenceProposal.h
- * \ingroup pkg_LALInference
+ * \ingroup lalinference_general
  *
  * \author Ilya Mandel, Vivien Raymond, Christian Roever, Marc van der Sluys, John Veitch, and Will M. Farr.
  * \date 2011

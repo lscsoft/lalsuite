@@ -74,21 +74,23 @@ pybin_scripts = \
 	lalapps_searchsum2cache
 endif
 
-EXTRA_DIST += \
-	series.c \
-	series.h \
-	getdate.y \
-	__init__.py \
-	fftw_wisdom.c \
-	fftwf_wisdom.c \
-	lalappsfrutils.c \
-	lalappsfrutils.h \
-	processtable.c \
-	processtable.h \
-	git_version.py
-
 TESTS = lalapps_version
 
 vcs_info_sources = LALAppsVCSInfoHeader.h git_version.py
 build_info_source = LALAppsBuildInfo.c
 $(build_info_source): $(liblalapps_la_DEPENDENCIES)
+
+EXTRA_DIST += \
+	__init__.py \
+	fftw_wisdom.c \
+	fftwf_wisdom.c \
+	getdate.y \
+	git_version.py \
+	lalapps.dox \
+	lalappsfrutils.c \
+	lalappsfrutils.h \
+	processtable.c \
+	processtable.h \
+	series.c \
+	series.h \
+	$(END_OF_LIST)

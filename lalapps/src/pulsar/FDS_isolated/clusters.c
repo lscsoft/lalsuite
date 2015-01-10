@@ -19,6 +19,7 @@
 
 /**
  * \file
+ * \ingroup lalapps_pulsar
  * Set of routines that have been used to calculate outliers and clusters of outliers in the data.
  */
 /* Author: M. A. Papa - AEI August 2003 */

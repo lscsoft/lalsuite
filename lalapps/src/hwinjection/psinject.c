@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup pulsarApps
+ * \ingroup lalapps_hwinjection
  * \author Bruce Allen, Peter Shawhan
  * \brief multipulsar injection routine
  */

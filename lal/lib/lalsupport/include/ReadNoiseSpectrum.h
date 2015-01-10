@@ -40,7 +40,8 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup ReadNoiseSpectrum_h
+ * \defgroup ReadNoiseSpectrum_h Header ReadNoiseSpectrum.h
+ * \ingroup lal_support
  * \author Brady, P. R.
  *
  * \brief Provides function to read in a file containing a possibly unequally sampled

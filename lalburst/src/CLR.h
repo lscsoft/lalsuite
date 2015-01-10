@@ -71,11 +71,24 @@ extern "C" {
 /**
  * \author Sintes, A. M.
  * \defgroup CLR_h		Header CLR.h
- * \ingroup pkg_clremoval
+ * \ingroup lalburst_clremoval
  *
  * Provides routines for finding line harmonics,
  * generating a reference interference signal, and removing
  * all the interference harmonics.
+ *
+ * The technique used is the so-called coherent line removal (\c clr)
+ * \cite Sintes1998,\cite Sintes2000.  \c clr is an algorithm able to
+ * remove interference present in the data while preserving the
+ * stochastic detector noise.  \c clr works when the interference is
+ * present in many harmonics, as long as they remain coherent with one
+ * another.  \c clr can remove the external interference without
+ * removing any ` single line' signal buried by the harmonics. The
+ * algorithm works even when the interference frequency changes.  \c clr
+ * can be used to remove all harmonics of periodic or broad-band signals
+ * (e.g., those which change frequency in time), even when there is no
+ * external reference source.  \c clr requires little a priori knowledge
+ * of the signals we want to remove.
  *
  * ### Synopsis ###
  *

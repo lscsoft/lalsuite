@@ -27,7 +27,8 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup LALDetectors_h
+ * \defgroup LALDetectors_h Header LALDetectors.h
+ * \ingroup lal_tools
  * \author J. T. Whelan and J. D. E. Creighton
  *
  * \brief This header defines structures to hold the basic data describing a gravitational wave detector.

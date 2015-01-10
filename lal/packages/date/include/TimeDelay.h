@@ -30,7 +30,8 @@ extern "C"
 
 
 /**
- * \addtogroup TimeDelay_h
+ * \defgroup TimeDelay_h Header TimeDelay.h
+ * \ingroup lal_date
  * \author David Chin, Kipp Cannon
  *
  * \brief Provides routines to compute time delay between two detectors
@@ -48,9 +49,9 @@ extern "C"
  *
  * The function XLALLightTravelTime() computes the light travel time between two detectors and returns the answer in \c INT8 nanoseconds.
  *
- * The function XLALPopulateAccuracyParams() creates an instance of ::InspiralAccuracyList populated with
+ * The function XLALPopulateAccuracyParams() creates an instance of InspiralAccuracyList populated with
  * the light-travel times between the detectors, using just the previous function.
- * The function XLALPopulateAccuracyParamsExt(), however, creates an instance of ::InspiralAccuracyList
+ * The function XLALPopulateAccuracyParamsExt(), however, creates an instance of InspiralAccuracyList
  * populated with the \c real travel time of a putative signal for the given time and the given sky
  * location (in right ascension and declination, both given in degrees).
  *

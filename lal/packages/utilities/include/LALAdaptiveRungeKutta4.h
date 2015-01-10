@@ -14,7 +14,8 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup LALAdaptiveRungeKutta4_h
+ * \defgroup LALAdaptiveRungeKutta4_h Header LALAdaptiveRungeKutta4.h
+ * \ingroup lal_utilities
  * \author Vallisneri, M.
  * \brief Adaptive Runge-Kutta4
  *

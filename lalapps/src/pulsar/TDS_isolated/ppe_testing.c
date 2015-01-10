@@ -1,6 +1,6 @@
 /**
  * \file
- * \ingroup pulsarApps
+ * \ingroup lalapps_pulsar
  * \author Matthew Pitkin
  *
  * \brief Functions for use in testing the parameter estimation codes for

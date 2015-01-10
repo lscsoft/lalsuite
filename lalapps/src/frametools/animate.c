@@ -18,8 +18,67 @@
 */
 
 /**
- * \author Jolien D. E. Creighton
  * \file
+ * \ingroup lalapps_frametools
+ *
+ * <dl>
+ *
+ * <dt>Name</dt><dd>
+ * \c lal_animate --- produces an animated display showing the time
+ * series output of a selected channel in a lower window, and a simultaneously
+ * calculated FFT power spectrum in the upper window</dd>
+ *
+ * <dt>Synopsis</dt><dd>
+ * \c lal_animate [<tt>--help</tt>] [<tt>--channel</tt> \e name]
+ * [<tt>--duration</tt> \e secs] [<tt>--epoch</tt> \e sec
+ * \e nsec] [<tt>--framedir</tt> \e dirname]
+ * [<tt>--highpass</tt> \e freq \e attenuation]
+ * [<tt>--numpts</tt> \e npoints] \f$|\f$ xmgr -pipe</dd>
+ *
+ * <dt>Description</dt><dd>
+ * \c lal_animate produces an animated display showing the time
+ * series output of a selected channel in a lower window, and a simultaneously
+ * calculated FFT power spectrum in the upper window.  The output from
+ * this program must be piped into the graphing program \c xmgr.</dd>
+ *
+ * <dt>Options</dt><dd>
+ * <ul>
+ * <li><tt>--help</tt>:
+ * Print a help message.
+ * <li><tt>--channel</tt> \e name:
+ * Name of frame channel
+ * <li><tt>--duration</tt> \e secs:
+ * How many seconds to look at
+ * <li><tt>--epoch</tt> \e sec \e nsec:
+ * Starting epoch
+ * <li><tt>--framedir</tt> \e dirname:
+ * Directory containing frame files
+ * <li><tt>--highpass</tt> \e freq \e attenuation:
+ * High-pass filter parameters
+ * <li><tt>--numpts</tt> \e npoints:
+ * Points per graph to display
+ * </ul></dd>
+ *
+ * <dt>Example</dt><dd>
+ * To run the program,  type:
+ * \code
+ * lalapps_animate --channel H2:LSC-AS_Q --framedir ./h1 --numpts 16384 \
+ * --epoch 693768272 0 --duration 1 --highpass 300 0.01 | xmgr -pipe
+ * \endcode
+ * This will search in directory <tt>./h1</tt> for frame files containing
+ * the channel <tt>H2:LSC-AS_Q</tt> and pipe the data starting at 693768272
+ * GPS seconds and 0 GPS nanonseconds to xmgr in segments containing 16384
+ * points until 1 seconds of data has been reviewed.  The data is highpass
+ * filtered to above 300 Hz with an attenuation of \f$0.1\f$;  the output is
+ * shown in \ref f_animate "this figure".
+ *
+ * \anchor f_animate
+ * \image html animate.png "Example of output from \c lalapps_animate program"
+ *
+ * <dt>Author</dt><dd>
+ * Bruce Allen and Patrick Brady
+ * </dd>
+ * </dl>
  */
 
 #include <stdio.h>

@@ -1,0 +1,8 @@
+/* Top-level module organisation for LALSimulation */
+/**
+
+\defgroup lalsimulation_general		General Packages
+
+\defgroup lalsimulation_python		Python Packages
+
+*/

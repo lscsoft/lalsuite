@@ -160,7 +160,7 @@
  * response tensor of known detectors, the constant array
  * <tt>lalCachedDetectors[]</tt> contains the site geometry and
  * response tensors of the most commonly used detectors.  These are
- * defined in this file and listed in \tableref{tools_tab_cached}.
+ * defined in this file and listed in \ref tools_tab_cached "this table".
  *
  * ### Algorithm ###
  *

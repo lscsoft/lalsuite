@@ -28,7 +28,8 @@ extern "C" {
 
 
 /**
- * \addtogroup PrintFTSeries_h
+ * \defgroup PrintFTSeries_h Header PrintFTSeries.h
+ * \ingroup lal_support
  * \author J. T. Whelan <jtwhelan@loyno.edu>
  *
  * \brief This is a simple utility to print time and frequency series into a file.
@@ -42,10 +43,11 @@ extern "C" {
  * Provides prototype information for the routines in \ref PrintTimeSeries_c and \ref PrintFrequencySeries_c.
  *
  */
-/*@{*/
 
 /**
  * \defgroup PrintTimeSeries_c Module PrintTimeSeries.c
+ * \ingroup PrintFTSeries_h
+ *
  * Print a \<datatype\>TimeSeries object into a
  * file.  For use in non-production and test code only.
  *
@@ -101,6 +103,7 @@ void LALZPrintTimeSeries( COMPLEX16TimeSeries *series , const CHAR *filename );
 
 /**
  * \defgroup PrintFrequencySeries_c Module PrintFrequencySeries.c
+ * \ingroup PrintFTSeries_h
  *
  * Print a \<datatype\>FrequencySeries object into a
  * file.  For use in non-production and test code only.
@@ -164,9 +167,6 @@ void LALSPrintFrequencySeries( REAL4FrequencySeries *series , const CHAR *filena
 void LALDPrintFrequencySeries( REAL8FrequencySeries *series , const CHAR *filename );
 void LALCPrintFrequencySeries( COMPLEX8FrequencySeries *series , const CHAR *filename );
 void LALZPrintFrequencySeries( COMPLEX16FrequencySeries *series , const CHAR *filename );
-/*@}*/
-
-
 /*@}*/
 
 #ifdef  __cplusplus

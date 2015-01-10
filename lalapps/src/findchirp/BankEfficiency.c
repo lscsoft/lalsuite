@@ -17,6 +17,140 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * \file
+ * \ingroup lalapps_inspiral
+ *
+ * <dl>
+ *
+ * <dt>Name</dt><dd>
+ * \c lalapps_BankEfficiency --- produces Monte Carlo simulation to test the bank efficiency
+ * code in the framework of inspiral binaries. It is dedicated to BCV bank validation tough
+ * SPA bank might be tested as well.</dd>
+ *
+ * <dt>Synopsis</dt><dd>
+ * \c lalapps_BankEfficiency [<tt>-h</tt>]
+ * [<tt>--alpha-bank</tt>   <em>\f$\alpha_{bank}\f$</em>]
+ * [<tt>--alpha-signal</tt> <em>\f$\alpha_{signal}\f$</em>]
+ * [<tt>--fend-bcv</tt>     <em>\f$f_{cut}Min\f$</em><tt>\&</tt><em>\f$f_{cut}Max\f$</em>]
+ * [<tt>--fl</tt>	<em>lower cutoff frequency</em>]
+ * [<tt>--mm</tt> \e MinimalMatch]
+ * [<tt>--mass-range</tt> \e mMin<tt>\&</tt>\e mMax]
+ * [<tt>--n</tt>     <em>number of simulations</em>]  -
+ * [<tt>--number-fcut</tt> <em>number of layers </em> <em> in \f$f_{cut}\f$ dimension</em>]
+ * [<tt>--print-bank</tt>]
+ * [<tt>--psi0-range</tt> <em>\f$\psi0_{Min}\f$</em><tt>\&</tt><em>\f$\psi0_{Max}\f$</em>]
+ * [<tt>--psi3-range</tt> <em>\f$\psi3_{Min}\f$</em><tt>\&</tt><em>\f$\psi3_{Max}\f$</em>]
+ * [<tt>--s</tt> \e seed]
+ * [<tt>--sampling</tt> <em>sampling frequency</em>]
+ * [<tt>--signal</tt> <em>injected signal approximant</em>]
+ * [<tt>--signal-order</tt> <em>injected signal order</em>]
+ * [<tt>--template</tt> <em>template approximant</em>]</dd>
+ *
+ * <dt>Description</dt><dd>
+ * \c lalapps_BankEfficiency This application create a bank of templates based on the
+ * SPA bank or BCV bank. Then, it performs a Monte Carlo Simulation by injecting known signals
+ * such as TaylorT1, PadeT1 or EOB and computing the overlap between the signal and the
+ * bank of templates.
+ *
+ * The argument <tt>--template</tt>  decides which bank has to be used: BCV approximant leads
+ * to BCV templates and BCV bank whereas any other approximant leads to a SPA bank but with
+ * templates based on the given approximant.
+ *
+ * If BCV bank is chosen, then overlap is based on BCV and takes into account the alpha
+ * maximization. If SPA bank is chosen then the filter in quadrature is used.
+ *
+ * In the case of BCV bank, the user have to provide the following parameters:
+ *
+ * <ul>
+ * <li> Minimal Match <tt>--mm 0.97</tt>.</li>
+ * <li> \f$\alpha\f$ parameter <tt>--alpha-bank 0.01</tt> .</li>
+ * <li> a range of \f$\psi_0\f$ <tt>--psi0-range 1 100000</tt>.</li>
+ * <li> a range of \f$\psi_3\f$ <tt>--psi3-range -1 -3500</tt>.</li>
+ * </ul>
+ *  and possibly
+ * <ul>
+ * <li> number of layers <tt>--number-fcut 5</tt> in the \f$f_{cut}\f$ dimension for the bank generation. </li>
+ * <li> range of \f$f_{cut}\f$ <tt>--fend-bcv 4 8</tt>.</li>
+ * <li> cutoff frequency for the moment computation <tt>--fcut-moment</tt></li>
+ * </ul>
+ *
+ * For the time being the Bank code is provided by the bank package through the function
+ * \c LALCreateCoarseBank. If the option "template" is BCV then the bank will be a BCV
+ *  bank using the fucntion \c LALInspiralBCVFcutBank (see bank package for details).</dd>
+ *
+ * <dt>Options related to the simulations</dt><dd>
+ * <dl>
+ * <dt><tt>--alpha-bank</tt></dt><dd>
+ * alpha parameter to compute the metric.</dd>
+ * <dt><tt>--alpha-signal</tt></dt><dd>
+ * alpha parameter used for generating the  injection of BCV waveform.</dd>
+ * <dt><tt>--fend-bcv</tt></dt><dd>
+ * Range of cutoff frequency for the BCV template creation. User must provide two parameters:
+ * the lowest and upper frequency cutoff. Those frequency are not expressed in Hz but in term
+ * of distance betwwen the two objets. for instance at the last stable orbit, the distance
+ * between the two objects is 6GM. In the case of an EOB description, the distance between
+ * the two objects is closer to 3GM. A good compromise is to use fend-bcv between 8GM and 3GM
+ * and using the options --number-fcut = 5. </dd>
+ * <dt><tt>--fl</tt></dt><dd>
+ * Lower cutoff frequency for templates and signal. Might add two options later. </dd>
+ * <dt><tt>--h</tt></dt><dd>
+ * Print a help message.</dd>
+ * <dt><tt>--mm</tt></dt><dd>
+ * Fixe the Minimal Match of the bank.</dd>
+ * <dt><tt>--mass-range</tt></dt><dd>
+ * Mass range of the signal to inject (minimum and maximum values). One has to adjust
+ *  the parameters of the bank generation. For instance, if the minimal mass is 3 solar
+ * mass then psi0 max should be of the order of 500.000.</dd>
+ * <dt><tt>--n</tt></dt><dd>
+ * Number of trials, i.e number of injections.</dd>
+ * <dt><tt>--number-fcut</tt></dt><dd>
+ * Number of layers to create in the BCV bank in the fend-bcv dimension.
+ * Given the lower and upper frequency (see option fend-bcv), the bank creates
+ * n layers each of them having a frequency between lowest fend-bcv and highest fend-bcv.</dd>
+ * <dt><tt>--psi0-range</tt></dt><dd>
+ * Range of paramter psi0. User must give two positive numbers.</dd>
+ * <dt><tt>--psi3-range</tt></dt><dd>
+ * Range of paramter psi3. User must give two negative numbers.</dd>
+ * <dt><tt>--sampling</tt></dt><dd>
+ * Sampling frequency.</dd>
+ * <dt><tt>--seed</tt></dt><dd>
+ * Random seed.</dd>
+ * <dt><tt>--signal</tt></dt><dd>
+ * Approximant of the injected signal. See LAL documentation for details. It must be a string
+ * such as TaylorT1, TaylorT2, EOB ...</dd>
+ * <dt><tt>--signal-order</tt></dt><dd>
+ * Order of the injected waveforms.</dd>
+ * <dt><tt>--template</tt></dt><dd>
+ * Template to be used for the detection. If BCV if given then both bank and templates will be
+ * based on BCV. If the approximant is not BCV then the bank is a SPA bank of templates and the
+ * templates corresponds to the given argument.</dd>
+ * </dl></dd>
+ *
+ * <dt>Options related to output</dt><dd>
+ * <dl>
+ * <dt><tt>--print-bank</tt></dt><dd>
+ * Print the bank of templates on stdout. If a BCV-template bank is used then the ouput is composed of
+ * 5 columns: psi0, psi3, number of layer, total mass and final frequency. If it is a SPA bank
+ * then 4 columns are print: tau0, tau3, and corresponding mass1 and mass2. The number of templates is
+ * also printed.
+ * </dd>
+ * </dl></dd>
+ *
+ * <dt>Example</dt><dd>
+ * The following command
+ * \code
+ * lalapps_BankEfficiency --psi0-range 1 100000 --psi3-range -1 -3500 -n 1000
+ * --template BCV --signal TaylorT1 --alpha-bank 0 -mm 0.97
+ * \endcode
+ *
+ * will compute overlaps between injected TaylorT1 waveforms and a BCV abnk of templates. </dd>
+ *
+ * <dt>Author</dt><dd>
+ * Thomas Cokelaer
+ * </dd>
+ * </dl>
+ */
 
 #include "BankEfficiency.h"
 /* --- version information ------------------------------------------------ */

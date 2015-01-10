@@ -21,16 +21,16 @@
  * \author Matt Pitkin
  * \date 2013
  * \file
- * \ingroup pulsarTODO
+ * \ingroup lalpulsar_UNCLASSIFIED
  * \brief Functions to read TEMPO pulsar parameter files
  *
    Functions for reading pulsar parameters from TEMPO .par files.
 
-   \heading{Prototypes}
+   # Prototypes
 
 
 
-   \heading{Description}
+   # Description
 
    Radio astronomers fit pulsar parameters using TEMPO(2) which will output
    the parameters in a <tt>.par</tt> file. The values allowed in this file can be
@@ -52,7 +52,7 @@
    (as is given in the <tt>.par</tt> file) into a \c REAL8 value in
    radians.
 
-   \heading{Notes}
+   # Notes
 
 */
 

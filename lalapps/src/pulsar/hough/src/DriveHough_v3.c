@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup pulsarApps
+ * \ingroup lalapps_pulsar
  * \author Badri Krishnan, Alicia Sintes
  * \brief Driver code for performing Hough transform search on non-demodulated
  * data.

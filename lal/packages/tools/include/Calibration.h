@@ -30,7 +30,8 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup Calibration_h
+ * \defgroup Calibration_h Header Calibration.h
+ * \ingroup lal_tools
  * \author P. R. Brady, J. D. E. Creighton
  * \brief Calibration API
  *

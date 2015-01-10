@@ -38,7 +38,7 @@ extern "C" {
 
 /**
  * \defgroup TSData_h Header TSData.h
- * \ingroup pkg_tracksearch
+ * \ingroup lalburst_tracksearch
  * \author C. Torres
  *
  * \brief Provides an intermediate level of functions and structures for testing

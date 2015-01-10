@@ -20,7 +20,7 @@
 /**
  * \author Berukoff, S.J., Papa, M.A.,
  * \file
- * \ingroup pulsarTODO
+ * \ingroup lalpulsar_UNCLASSIFIED
  *
  * \brief Performs required tests of LALDemod().
  *

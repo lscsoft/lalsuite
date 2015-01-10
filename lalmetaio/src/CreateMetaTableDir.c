@@ -29,7 +29,7 @@
 /**
  * \author Brown, D. A., and Brady, P. R.
  * \file
- * \ingroup lalmetaio
+ * \ingroup lalmetaio_general
  * \brief Construct a \c MetaTableDirectory for a given LIGOLwXML table.
  *
  * ### Description ###

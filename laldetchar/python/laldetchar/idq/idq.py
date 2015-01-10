@@ -13,7 +13,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-## addtogroup pkg_py_laldetchar_idq
+## \addtogroup laldetchar_py_idq
 ## Synopsis
 # ~~~
 # from laldetchar.idq import idq
@@ -53,7 +53,7 @@ __author__ = \
 __version__ = git_version.id
 __date__ = git_version.date
 
-## addtogroup pkg_py_laldetchar_idq_idq
+## \addtogroup laldetchar_py_idq_idq
 # @{
 
 # common routines for idq codes
@@ -394,7 +394,8 @@ def submit_command(
 ....@param command is a list, first element of which is interpretted as an executable
 ....and all others as options and values for that executable.
 ....@param process_name is the name identifying the submitted job.
-....@param dir is directory in which the job is to be executed. 
+....@param dir is directory in which the job is to be executed.
+....@param verbose UNDOCUMENTED.
 ...."""
 
     process = subprocess.Popen(command, stderr=subprocess.PIPE,

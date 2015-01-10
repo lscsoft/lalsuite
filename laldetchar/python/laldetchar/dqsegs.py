@@ -15,7 +15,7 @@
 #  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 #  MA  02111-1307  USA
 
-## \addtogroup pkg_py_laldetchar_dqsegs
+## \addtogroup laldetchar_py_dqsegs
 """Utilities to transform data samples into segment information"""
 #
 # ### Synopsis ###
@@ -33,7 +33,7 @@ __author__  = "Chris Pankow <chris.pankow@ligo.org>"
 __version__ = git_version.id
 __date__    = git_version.date
 
-## \addtogroup pkg_py_laldetchar_dqsegs
+## \addtogroup laldetchar_py_dqsegs
 #@{
 
 def threshold_data_to_seglist(data, start, dt, min_threshold=None, max_threshold=None, invert=False):

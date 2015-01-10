@@ -34,16 +34,19 @@ lalapps_BankEfficiency_SOURCES = BankEfficiency.c BankEfficiency.h
 endif
 endif
 
-EXTRA_DIST = \
-	exc_resp.c \
-	ivana.c \
-	chirplen.c \
-	TestRandomBank.c \
-	BankEfficiency.c \
-	BankEfficiency.h \
-	BE_create_script.py \
-	TestRandomBank.h
-
 CLEANFILES = \
 	lalapps_BankEfficiency  \
 	lalapps_InspiralOverlap
+
+EXTRA_DIST = \
+	BE_create_script.py \
+	BankEfficiency.c \
+	BankEfficiency.dox \
+	BankEfficiency.h \
+	TestRandomBank.c \
+	TestRandomBank.h \
+	chirplen.c \
+	exc_resp.c \
+	ivana.c \
+	snr_versus_totalmass.png \
+	$(END_OF_LIST)

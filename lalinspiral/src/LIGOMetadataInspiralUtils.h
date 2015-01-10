@@ -29,7 +29,7 @@ extern "C" {
 
 /**
  * \defgroup LIGOMetadataInspiralUtils_h Header LIGOMetadataInspiralUtils.h
- * \ingroup pkg_CBC_NEW
+ * \ingroup lalinspiral_UNCLASSIFIED
  * \brief unknown
  */
 /*@{*/

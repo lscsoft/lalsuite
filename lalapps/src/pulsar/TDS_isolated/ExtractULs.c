@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup pulsarApps
+ * \ingroup lalapps_pulsar
  * \author Réjean Dupuis
  * \brief
  * This code extracts the 95% upper limits (from the results of ComputePFD)

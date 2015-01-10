@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation,.
 
-## \addtogroup pkg_py_laldetchar_triggers
+## \addtogroup laldetchar_py_triggers
 """A collection of tools for reading, manipulating, and writing triggers
 in a standard format.
 
@@ -58,7 +58,7 @@ __date__ = version.date
 _re_xml = _re.compile("(xml|xml.gz)\Z")
 _re_root = _re.compile("root\Z")
 
-## \addtogroup pkg_py_laldetchar_triggers
+## \addtogroup laldetchar_py_triggers
 #@{
 
 def from_file(filename, etg, columns=None, start=None, end=None, **kwargs):
@@ -162,10 +162,10 @@ def from_files(filelist, etg, columns=None, start=None, end=None,
 
 # close doxygen
 ##
-#	\defgroup	pkg_py_laldetchar_triggers_cwb	Coherent WaveBurst
-#	\defgroup	pkg_py_laldetchar_triggers_excesspower	ExcessPower
-#	\defgroup	pkg_py_laldetchar_triggers_kleinewelle	KleineWelle
-#	\defgroup	pkg_py_laldetchar_triggers_omega	Omega
-#	\defgroup	pkg_py_laldetchar_triggers_omicron	Omicron
-#	\defgroup	pkg_py_laldetchar_triggers_utils	Utilities
+#	\defgroup laldetchar_py_triggers_cwb		Coherent WaveBurst
+#	\defgroup laldetchar_py_triggers_excesspower	ExcessPower
+#	\defgroup laldetchar_py_triggers_kleinewelle	KleineWelle
+#	\defgroup laldetchar_py_triggers_omega		Omega
+#	\defgroup laldetchar_py_triggers_omicron	Omicron
+#	\defgroup laldetchar_py_triggers_utils		Utilities
 #@}

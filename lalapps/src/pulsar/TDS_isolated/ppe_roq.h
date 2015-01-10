@@ -13,7 +13,7 @@
 
 /**
  * \file
- * \ingroup pulsarApps
+ * \ingroup lalapps_pulsar
  * \author Matthew Pitkin
  *
  * \brief Header file for the reduced order quadrature generation used in parameter

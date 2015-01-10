@@ -29,12 +29,21 @@ extern "C" {
 }       /* so that editors will match preceding brace */
 #endif
 
+/**
+ * \defgroup LALString_h Header LALString.h
+ * \ingroup lal_std
+ * \author Creighton, J. D. E.
+ * \brief XLAL string manipulation routines.
+ *//*@{*/
+
 char *XLALStringAppend(char *s, const char *append);
 char *XLALStringDuplicate(const char *s);
 size_t XLALStringCopy(char *dst, const char *src, size_t size);
 size_t XLALStringConcatenate(char *dst, const char *src, size_t size);
 int XLALStringToLowerCase(CHAR * string);
 int XLALStringToUpperCase(CHAR * string);
+
+/*@}*/
 
 #if 0
 {       /* so that editors will match succeeding brace */

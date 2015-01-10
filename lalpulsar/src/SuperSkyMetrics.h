@@ -87,7 +87,7 @@ int XLALConvertSuperSkyCoordinates(
   const SuperSkyCoordinates out,		///< [in] Coordinate system of the output points
   gsl_matrix** out_points,			///< [in/out] Matrix whose columns are the output points
   const SuperSkyCoordinates in,			///< [in] Coordinate system of the input points
-  const gsl_matrix* in_points,			///> [in] Matrix whose columns are the input points
+  const gsl_matrix* in_points,			///< [in] Matrix whose columns are the input points
   const gsl_matrix* rssky_transf		///< [in] Reduced super-sky coordinate transform data
   );
 

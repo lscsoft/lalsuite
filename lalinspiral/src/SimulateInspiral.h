@@ -32,7 +32,8 @@ extern "C" {
 
 
 /**
- * \addtogroup SimulateInspiral_h
+ * \defgroup SimulateInspiral_h Header SimulateInspiral.h
+ * \ingroup lalinspiral_inject
  * \author Creighton, T. D.
  *
  * \brief Provides a routine to inject inspirals into time series data.
@@ -106,12 +107,12 @@ extern "C" {
  * We define here the conventions we use when talking about
  * signal-to-noise ratios in coloured and white noise.  You may also want
  * to read the signal processing conventions in Secs.\ \ref ss_conventions and \ref ss_psdconv of
- * \ref pkg_findchirp, since this section is esentially a summary and extension of those conventions.
+ * \ref lalinspiral_findchirp, since this section is esentially a summary and extension of those conventions.
  *
  * \subsection sec_si_SNR Signal-to-noise definitions
  *
  * We first reiterate the standard definitions (given in the
- * \ref pkg_findchirp) of the Fourier transform pair:
+ * \ref lalinspiral_findchirp) of the Fourier transform pair:
  * \f{equation}{
  * \label{eq_SimulateInspiralH_fourier_transforms}
  * \tilde{a}(f) = \int_{-\infty}^\infty dt\,a(t)e^{-2\pi ift}

@@ -24,7 +24,7 @@
  * \author Reinhard Prix, John T Whelan, Deepak Khurana
  * \date 2006-2008
  * \file
- * \ingroup pulsarApps
+ * \ingroup lalapps_pulsar
  * \brief Read in MLDC timeseries-files and produce SFTs (v2) for them
  */
 

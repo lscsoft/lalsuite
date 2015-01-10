@@ -58,7 +58,8 @@ def add_page_footer(page):
 def write_sub_page(opts,section,html_sections,style,script):
   """ 
   A function to write each of the individual sections into a markup.py object.
-  
+
+  @param opts: UNDOCUMENTED
   @param section: The section being generated
   @param html_sections : A list of section titles
   @param style: The css style file sent as location of this file
@@ -96,8 +97,7 @@ def functionId(nFramesUp):
   """ 
   Create a string naming the function n frames up on the stack.
   
-  @param nFramesUp: input
-  @type nFramesUp: number
+  @param nFramesUp: input (type: number)
   @return: message
   """
   try:
@@ -116,11 +116,10 @@ def logText(logfile, text, tag="done"):
   Utility to populate a logfile in HTML format. 
   The third argument is a string. Depending on its value, the text will have 
   different color. 
-  
-  @param text: a text to be printed
-  @type text: string
-  @type tag: string 
-  @param tag: is in {"done","warning","error"} 
+
+  @param logfile: UNDOCUMENTED
+  @param text: a text to be printed (type: string)
+  @param tag: is in {"done","warning","error"}  (type: string )
   """ 
 
   if tag=="warning":
@@ -156,10 +155,8 @@ def patternFoundInFilename(filename, pattern):
      >>> pattern = "plotinspmissed*eta"
      >>> patternfoundInFilename(filename, pattern)
 
-   @param filename: the filename to look at
-   @type filename: string
-   @param pattern: a pattern which may contain several '*'
-   @type pattern: string
+   @param filename: the filename to look at (type: string)
+   @param pattern: a pattern which may contain several '*' (type: string)
    @return: boolean
   """
   tokeep = False
@@ -186,14 +183,10 @@ def make_external_call(\
 
     >>> make_external_call('cp * /tmp', False, False, True)
 
-  @param command: the command to try
-  @type command: string
-  @param show_stdout: show the stdout 
-  @type show_stdout: boolean
-  @param show_command: show the command
-  @type show_command: boolean
-  @param show_error: show the error if any
-  @type show_error: boolean
+  @param command: the command to try (type: string)
+  @param show_stdout: show the stdout  (type: boolean)
+  @param show_command: show the command (type: boolean)
+  @param show_error: show the error if any (type: boolean)
   @return: the stdout and a status  
 
 
@@ -227,8 +220,7 @@ def mkdir( newdir ):
   """
   Create a directory
 
-  @param newdir : name of directory to be created
-  @type newdir: string
+  @param newdir : name of directory to be created (type: string)
   """
   if os.path.isdir(newdir): 
     print >>sys.stdout,"WARNING: this directory already exists (" + newdir +")."
@@ -269,12 +261,9 @@ def write_results(page, opts, section,injection=None):
    
     >>> write_results(page, opts, "injection")
 
-  @param page: the HTML document page.
-  @type page: markup.py document
-  @param opts: the main options variable
-  @type opts: write_ihope_page options
-  @param section: the current section to switch to 
-  @type section: string
+  @param page: the HTML document page. (type: markup.py document)
+  @param opts: the main options variable (type: write_ihope_page options)
+  @param section: the current section to switch to  (type: string)
   @return: an update of HTML document
   @param injection: The name of the injection when section=injection
   """
@@ -331,10 +320,8 @@ def write_logfile(page , opts):
   """
   This function creates an entry with the logfile information.
   
-  @param page: the HTML document page.
-  @type page: markup.py document
-  @param opts: the main options variable
-  @type opts: write_ihope_page options
+  @param page: the HTML document page. (type: markup.py document)
+  @param opts: the main options variable (type: write_ihope_page options)
   @return: an update of HTML document
   """
   # get the directory of the url
@@ -393,10 +380,8 @@ def write_general(page,opts):
   """
   Creates the general section. 
 
-  @param page: the HTML document page.
-  @type page: markup.py document
-  @param opts: the main options variable
-  @type opts: write_ihope_page options
+  @param page: the HTML document page. (type: markup.py document)
+  @param opts: the main options variable (type: write_ihope_page options)
   @return: an update of HTML document
   """
   webdir = opts.webdir
@@ -500,10 +485,9 @@ def write_table(page, segs, keys,printKeys = True):
   keys to the dictionary "segs"
 
   @param page: the html document
-  @param segs: the segment durations
-  @param keys: the segments names
-  @type segs: a dictionary which keys are stored in the parameter "keys"
-  @type keys: a list of sorted keys corresponding to the segs dictionary keys (not sorted)
+  @param segs: the segment durations (type: a dictionary which keys are stored in the parameter "keys")
+  @param keys: the segments names (type: a list of sorted keys corresponding to the segs dictionary keys (not sorted))
+  @param printKeys: UNDOCUMENTED
   """
   page.table()
   for key in keys:
@@ -522,12 +506,11 @@ def write_summary(page,opts,thisSearch='playground',injection = 'allinj',
   """
   Creates the summary section.
 
-  @param page: the HTML document page.
-  @type page: markup.py document
-  @param opts: the main options variable
-  @type opts: write_ihope_page options
-  @param thisSearch: either "playground" or "full_data" or "full_data_slide"
-  @type thisSearch: string
+  @param page: the HTML document page. (type: markup.py document)
+  @param opts: the main options variable (type: write_ihope_page options)
+  @param thisSearch: either "playground" or "full_data" or "full_data_slide" (type: string)
+  @param injection: UNDOCUMENTED
+  @param pipedown: UNDOCUMENTED
   @return: an update of HTML document
   """
   webdir = opts.webdir
@@ -664,10 +647,8 @@ def write_datainfo(page,opts):
   """
   Creates the datainfo section.
 
-  @param page: the HTML document page.
-  @type page: markup.py document
-  @param opts: the main options variable
-  @type opts: write_ihope_page options
+  @param page: the HTML document page. (type: markup.py document)
+  @param opts: the main options variable (type: write_ihope_page options)
   @return: an update of HTML document
   """
   # first, get some information 
@@ -837,10 +818,10 @@ def write_upperlimit(page, opts, thisSearch='playground', pipedown='pipedown'):
   """
   Creates an upper limit section
   
-  @param page: the HTML document page.
-  @type page: markup.py document
-  @param opts: the main options variable
-  @type opts: write_ihope_page options
+  @param page: the HTML document page. (type: markup.py document)
+  @param opts: the main options variable (type: write_ihope_page options)
+  @param thisSearch: either "playground" or "full_data" or "full_data_slide" (type: string)
+  @param pipedown: UNDOCUMENTED
   @return: an update of HTML document
   """
   webdir = opts.webdir
@@ -970,12 +951,10 @@ def write_analysis(page, opts, thisSearch='playground',pipedown='pipedown'):
   """
   Creates the playground or full_data section. It uses the same function 
   because except the name and time analysed, the figures of merits are the same. 
-  @param page: the HTML document page.
-  @type page: markup.py document
-  @param opts: the main options variable
-  @type opts: write_ihope_page options
-  @param thisSearch: either "playground" or "full_data" or "full_data_slide"
-  @type thisSearch: string
+  @param page: the HTML document page. (type: markup.py document)
+  @param opts: the main options variable (type: write_ihope_page options)
+  @param thisSearch: either "playground" or "full_data" or "full_data_slide" (type: string)
+  @param pipedown: UNDOCUMENTED
   @return: an update of HTML document
   """
   webdir = opts.webdir
@@ -1338,10 +1317,8 @@ def write_summaryFiles(page, opts):
   Creates a section to provide the relevant summary files such as COIRE_SUMMARY
   files
 
-  @param page: the HTML document page.
-  @type page: markup.py document
-  @param opts: the main options variable
-  @type opts: write_ihope_page options
+  @param page: the HTML document page. (type: markup.py document)
+  @param opts: the main options variable (type: write_ihope_page options)
   @return: an update of HTML document
   """
   webdir = opts.webdir
@@ -1507,10 +1484,10 @@ def write_injection(page, opts,injection,pipedown='pipedown'):
   """
   Creates the injection section
 
-  @param page: the HTML document page.
-  @type page: markup.py document
-  @param opts: the main options variable
-  @type opts: write_ihope_page options
+  @param page: the HTML document page. (type: markup.py document)
+  @param opts: the main options variable (type: write_ihope_page options)
+  @param injection: UNDOCUMENTED
+  @param pipedown: UNDOCUMENTED
   @return: an update of HTML document
   """
   webdir = opts.webdir
@@ -1703,10 +1680,8 @@ def write_hw_injection(page, opts):
   """
   Creates the injection section
 
-  @param page: the HTML document page.
-  @type page: markup.py document
-  @param opts: the main options variable
-  @type opts: write_ihope_page options
+  @param page: the HTML document page. (type: markup.py document)
+  @param opts: the main options variable (type: write_ihope_page options)
   @return: an update of HTML document
   """
   webdir = opts.webdir
@@ -1763,10 +1738,8 @@ def write_about(page, opts):
   """
   Creates the section "About". 
 
-  @param page: the HTML document page.
-  @type page: markup.py document
-  @param opts: the main options variable
-  @type opts: write_ihope_page options
+  @param page: the HTML document page. (type: markup.py document)
+  @param opts: the main options variable (type: write_ihope_page options)
   @return: an update of HTML document
   """
   webdir = opts.webdir
@@ -1797,10 +1770,8 @@ def add_config_section(page, section):
   Copy and paste a section of the ihope.ini into the HTML page within verbatim
   tags
 
-  @param page: the HTML document page.
-  @type page: markup.py document
-  @param section: the name of the section to copy and paste
-  @type section: string
+  @param page: the HTML document page. (type: markup.py document)
+  @param section: the name of the section to copy and paste (type: string)
   @return: an update of HTML document
   """
   # section may be empty or set to None
@@ -1822,14 +1793,10 @@ def heading(page, title="None", label="Switch details on/off", heading="h3"):
   """
   Add a hx HTML section within the document with the ability to toggle it on/off
    
-  @param page: the HTML document page.
-  @type page: markup.py document
-  @param title: the name of the section
-  @type title: string
-  @param label: the label to put on the toggle button 
-  @type label: string
-  @param heading: the HTML heading (h3 by default)
-  @type heading: string
+  @param page: the HTML document page. (type: markup.py document)
+  @param title: the name of the section (type: string)
+  @param label: the label to put on the toggle button  (type: string)
+  @param heading: the HTML heading (h3 by default) (type: string)
   @return: an update of HTML document
   """
   #increment block number
@@ -1867,10 +1834,8 @@ def add_caption(page, caption):
   Add a caption to the HTML document. Should be used with the figure only. 
   Take care of the figure numbering.
 
-  @param page: the HTML document page.
-  @type page: markup.py document
-  @param caption: the name of the section to copy and paste
-  @type caption: string
+  @param page: the HTML document page. (type: markup.py document)
+  @param caption: the name of the section to copy and paste (type: string)
   @return: an update of HTML document
   """
   global fig_num
@@ -1887,16 +1852,16 @@ def add_figure(page,webDir,fnames="test", caption="add a caption", size=None, \
   """
   Add a figure to the HTML document, taking care of the numbering.
  
-  @param page: the HTML document page.
-  @type page: markup.py document
-  @param caption: the name of the section to copy and paste
-  @type caption: string
-  @param size: the size of the image ("full", "half", "third")
-  @type size: string
-  @param alt: an HTML alt 
-  @type alt: a string
-  @param source: the source of the figure
-  @type source: string
+  @param page: the HTML document page. (type: markup.py document)
+  @param webDir: UNDOCUMENTED
+  @param fnames: UNDOCUMENTED
+  @param caption: the name of the section to copy and paste (type: string)
+  @param size: the size of the image ("full", "half", "third") (type: string)
+  @param alt: an HTML alt  (type: a string)
+  @param source: the source of the figure (type: string)
+  @param html: UNDOCUMENTED
+  @param html_file: UNDOCUMENTED
+  @param all_ifos: UNDOCUMENTED
   @return: an update of HTML document
   """
   global fig_num
@@ -1976,8 +1941,7 @@ def create_venn(data, tag):
 
   @param data: an input dictionary
   @param data: numbers
-  @param tag: 
-  @type tag: string
+  @param tag:  (type: string)
   @return: a boolean. True is succesfule, False otherwise.
   """
 
@@ -2003,8 +1967,7 @@ def create_venn(data, tag):
 # ***************************************************************************
 def get_coincident_segments(tag):
   """
-  @param tag: "playground" or "full_data" 
-  @type tag: string
+  @param tag: "playground" or "full_data"  (type: string)
   return: a dictionary with the coincident time for each ifo combination
   """
   ifos = get_ifos()
@@ -2042,8 +2005,7 @@ def get_segments_tag(tag):
  
     >>> get_segments_tag("SELECTED_SEGS")
 
-  @param tag: a tag to the segments
-  @type tag: string
+  @param tag: a tag to the segments (type: string)
   return: 
   """
   # variables for file location
@@ -2150,8 +2112,7 @@ def get_version(executable):
   """
   Search for the tag and version of an executable using the --version argument.
 
-  @param executable: the name of an executable
-  @type executable: string
+  @param executable: the name of an executable (type: string)
   return: the tag name if any and the version of the executable
   """
   output=[]
@@ -2297,17 +2258,14 @@ def fom(page, opts, cachefile_tag=None, caption="fix me",\
   This function reads a cachefile, copy the files to the relevant directory, and  update the HTML document to add figures and pertinent sections. 
 
   
-  @param page: the HTML document page.
-  @type page: markup.py document
-  @param opts: the main options variable
-  @type opts: write_ihope_page options
-  @param cachefile_tag: the pattern of the cachefile to look at
-  @type cachefile_tag: string
-  @param caption: a list of caption
-  @type caption: list of string 
+  @param page: the HTML document page. (type: markup.py document)
+  @param opts: the main options variable (type: write_ihope_page options)
+  @param cachefile_tag: the pattern of the cachefile to look at (type: string)
+  @param caption: a list of caption (type: list of string )
   @param image_tag: a list of tag (including *) to select files within a
-  @param directory:  the directory to look at
-  @type directory: string
+  @param directory:  the directory to look at (type: string)
+  @param all_ifos: UNDOCUMENTED
+
   cachefile
   """
 
@@ -2489,16 +2447,12 @@ def html_insert(page,opts, html_tag=None,\
   This function copies a set of html files verbatim into the page. 
 
   
-  @param page: the HTML document page.
-  @type page: markup.py document
-  @param opts: the main options variable
-  @type opts: write_ihope_page options
-  @param html_tag: the pattern of the html files to look at
-  @type html_tag: string
-  @param caption: a list of caption
-  @type caption: list of string 
-  @param directory:  the directory to look at
-  @type directory: string
+  @param page: the HTML document page. (type: markup.py document)
+  @param opts: the main options variable (type: write_ihope_page options)
+  @param html_tag: the pattern of the html files to look at (type: string)
+  @param caption: a list of caption (type: list of string )
+  @param directory:  the directory to look at (type: string)
+  @param all_ifos: UNDOCUMENTED
   """
 
   dataDir = opts.datadir+directory+'/'

@@ -235,21 +235,6 @@ pkgdata_DATA = \
 	simplify.sql \
 	mcmcsummary.R
 
-EXTRA_DIST += \
-	$(INSPIRALSRC) \
-	$(TMPLTBANKSRC) \
-	$(SIRESRC) \
-	$(COIRESRC) \
-	$(SIVASRC) \
-	$(MINJSRC) \
-	$(INCASRC) \
-	$(COHERESRC) \
-	$(INSPINJSRC) \
-	$(SPLITBANKSRC) \
-	ihope_ssipe.ini.in \
-	$(DATA)
-
-
 if HAVE_GLUE_PREFIX
 gluebindir=$(GLUE_PREFIX)/bin
 else
@@ -273,3 +258,20 @@ MOSTLYCLEANFILES += \
 	*INSPIRAL*.gwf \
 	*TMPLTBANK*.gwf \
 	*TMPLTBANK*.xml
+
+EXTRA_DIST += \
+	$(COHERESRC) \
+	$(COIRESRC) \
+	$(DATA) \
+	$(INCASRC) \
+	$(INSPINJSRC) \
+	$(INSPIRALSRC) \
+	$(MINJSRC) \
+	$(SIRESRC) \
+	$(SIVASRC) \
+	$(SPLITBANKSRC) \
+	$(TMPLTBANKSRC) \
+	effective_distance_comparison.png \
+	ihope_ssipe.ini.in \
+	inspiral_programs.dox \
+	$(END_OF_LIST)

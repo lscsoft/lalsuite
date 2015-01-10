@@ -490,7 +490,7 @@ XLALTimestampsFromSFTCatalog ( const SFTCatalog *catalog )		/**< [in] input SFT-
 
 /**
  * Extract timestamps-vector from a segment file, with functionality based on MakeSFTDAG
- * The filename should point to a file containing <GPSstart GPSend> of segments or <GPSstart GPSend segLength numSFTs> where segLength is in hours.
+ * The filename should point to a file containing \<GPSstart GPSend\> of segments or \<GPSstart GPSend segLength numSFTs\> where segLength is in hours.
  * adjustSegExtraTime is used in MakeSFTDAG to maximize the number of SFTs in each segement by placing the SFTs in the middle of the segment.
  * synchronize is used to force the start times of the SFTs to be integer multiples of Toverlap from the start time of the first SFT.
  * adjustSegExtraTime and synchronize cannot be used concurrently (synchronize will be preferred if both values are non-zero).

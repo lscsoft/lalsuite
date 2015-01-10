@@ -31,7 +31,7 @@ extern "C" {
  * \defgroup StackMetric_h Header StackMetric.h
  * \author Creighton, T. D.
  * \date 2000 -- 2003
- * \ingroup pkg_pulsarMetric
+ * \ingroup lalpulsar_metric
  * \brief Provides routines to compute parameter-space metrics for coherent or stacked pulsar searches.
  *
  * ### Synopsis ###

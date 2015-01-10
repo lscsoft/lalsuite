@@ -67,6 +67,7 @@ def get_status(filename, totals, debug=False):
   parse a dag filem search for failed/done jobs
   @param filename: name of a dag file to parse
   @param totals: cumulitive number of jobs in each category
+  @param debug: UNDOCUMENTED
   @return status_int
 
   """

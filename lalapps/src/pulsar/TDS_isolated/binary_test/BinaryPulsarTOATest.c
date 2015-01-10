@@ -1,6 +1,6 @@
 /**
  * \file
- * \ingroup pulsarApps
+ * \ingroup lalapps_pulsar
  * \author Matt Pitkin
  * \brief
  * Code to test my binary code against actual pulsar observations

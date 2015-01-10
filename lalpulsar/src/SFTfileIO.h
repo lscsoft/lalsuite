@@ -37,7 +37,7 @@ extern "C" {
 
 /**
  * \defgroup SFTfileIO_h Header SFTfileIO.h
- * \ingroup pkg_SFTIO
+ * \ingroup lalpulsar_sft
  * \author R. Prix, B. Machenschalk, A.M. Sintes, B. Krishnan
  * \brief Module for reading/writing/manipulating SFTs (Short Fourier transforms)
  *

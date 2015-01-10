@@ -34,7 +34,7 @@ extern "C" {
 
 /**
  * \defgroup CoincInspiralEllipsoid_h Header CoincInspiralEllipsoid.h
- * \ingroup pkg_CBC_NEW
+ * \ingroup lalinspiral_UNCLASSIFIED
  * \author Robinson, C. A.
  *
  * \brief Provides function definitions for performing inspiral coincidence analysis

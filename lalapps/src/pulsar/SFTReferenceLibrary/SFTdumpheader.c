@@ -20,7 +20,7 @@
 /**
  * \author Bruce Allen, Reinhard Prix
  * \file
- * \ingroup pulsarApps
+ * \ingroup lalapps_pulsar
  * \brief
  * Dump the header information from a set of SFT files
  *

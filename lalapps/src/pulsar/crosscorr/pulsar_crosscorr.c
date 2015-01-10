@@ -22,7 +22,7 @@
  * \author Christine Chung, Badri Krishnan, John Whelan
  * \date 2008
  * \file
- * \ingroup pulsarApps
+ * \ingroup lalapps_pulsar
  * \brief Perform CW cross-correlation search
  *
  * Id: pulsar_crosscorr.c,v 1.23 2009/03/13 00:43:04 cchung Exp

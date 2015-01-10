@@ -177,7 +177,7 @@ ihsVals * new_ihsVals(void)
 
 /**
  * Destroy ihsVals struct
- * \param [in] Pointer to an ihsVals structure to be freed
+ * \param [in] ihsvals Pointer to an ihsVals structure to be freed
  */
 void free_ihsVals(ihsVals *ihsvals)
 {

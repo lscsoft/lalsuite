@@ -28,6 +28,7 @@
 
 /**
  * \file
+ * \ingroup lalapps_inspiral
  * \brief Main header file
  */
 

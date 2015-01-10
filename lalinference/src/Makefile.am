@@ -60,7 +60,6 @@ EXTRA_DIST = \
 	LALInferenceConfig.h.in \
 	LALInferenceXML.c \
 	LALInferenceXML.h \
-	chapter_inference.dox \
 	config.h.in
 
 DISTCLEANFILES = config.h

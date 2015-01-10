@@ -18,7 +18,6 @@
 */
 
 /**
- * \ingroup pkg_pulsarApps
  * \author R. Prix
  */
 

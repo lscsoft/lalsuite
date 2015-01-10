@@ -31,7 +31,7 @@ extern "C" {
 
 /**
  * \defgroup Thresholds_h Header Thresholds.h
- * \ingroup pkg_burstsearch
+ * \ingroup lalburst_burstsearch
  *
  * \brief UNDOCUMENTED
  */

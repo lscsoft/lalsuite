@@ -31,7 +31,8 @@
 #include <lal/FrequencySeries.h>
 
 /**
- * \addtogroup Convolution_c
+ * \defgroup Convolution_c Module Convolution.c
+ * \ingroup lal_fft
  * \brief Convolutions of time-series
  */
 

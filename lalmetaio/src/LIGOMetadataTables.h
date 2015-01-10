@@ -29,7 +29,7 @@
 /**
  * \author Brown, D. A.
  * \file
- * \ingroup lalmetaio
+ * \ingroup lalmetaio_general
  * \brief Provides data type definitions for the LIGO metadata database tables.
  *
  * Only columns that are available for the user defined values are available in the

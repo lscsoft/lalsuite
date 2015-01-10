@@ -50,12 +50,14 @@ nodist_liblalburst_la_SOURCES = LALBurstBuildInfo.c
 
 liblalburst_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
 
-EXTRA_DIST = \
-	LALBurstConfig.h.in \
-	config.h.in
-
 DISTCLEANFILES = config.h
 
 vcs_info_sources = LALBurstVCSInfoHeader.h
 build_info_source = LALBurstBuildInfo.c
 $(build_info_source): $(liblalburst_la_DEPENDENCIES)
+
+EXTRA_DIST = \
+	LALBurstConfig.h.in \
+	TFR.dox \
+	config.h.in \
+	$(END_OF_LIST)

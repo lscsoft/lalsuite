@@ -32,7 +32,7 @@ __date__ = git_version.date
 
 __all__ = ['rayleigh']
 
-## \addtogroup pkg_py_lal_spectrum
+## \addtogroup lal_py_spectrum
 #@{
 
 

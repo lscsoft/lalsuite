@@ -29,7 +29,8 @@ extern "C" {
 
 
 /**
- * \addtogroup Random_h
+ * \defgroup Random_h Header Random.h
+ * \ingroup lal_utilities
  * \author Creighton, J. D. E. and Tibbits, M. M.
  *
  * \brief Generates random numbers.

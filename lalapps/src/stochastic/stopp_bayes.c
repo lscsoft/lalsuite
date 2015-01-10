@@ -20,6 +20,70 @@
  * 02110-1301, USA
  */
 
+/**
+ * \file
+ * \ingroup lalapps_inspiral
+ *
+ *
+ * <dl>
+ * <dt>Name</dt><dd>
+ * <tt>lalapps_stopp_bayes</tt> --- Bayesian Stochastic Post Processing.</dd>
+ *
+ * <dt>Synopsis</dt><dd>
+ * <tt>lalapps_stopp_bayes</tt> <i>options</i> <i>xml files</i>
+ * <tt>--help</tt>
+ * <tt>--version</tt>
+ * <tt>--verbose</tt>
+ * <tt>--cat-only</tt>
+ * <tt>--analyse-only</tt>
+ * <tt>--powerlaw-pdf</tt>
+ * <tt>--text</tt>
+ * <tt>--output</tt> <i>FILE</i>
+ * <tt>--confidence</tt> <i>LEVEL</i></dd>
+ *
+ * <dt>Description</dt><dd>
+ * <tt>lalapps_stopp_bayes</tt> performs Bayesian post processing upon output
+ * from the main search code <tt>lalapps_stochastic</tt>.</dd>
+ *
+ * <dt>Options</dt><dd>
+ * <dl>
+ * <dt><tt>--help</tt></dt><dd>
+ * Display usage information</dd>
+ * <dt><tt>--version</tt></dt><dd>
+ * Display version information</dd>
+ * <dt><tt>--verbose</tt></dt><dd>
+ * Verbose mode</dd>
+ * <dt><tt>--cat-only</tt></dt><dd>
+ * Only cat XML files together, don't perform post processing</dd>
+ * <dt><tt>--analyse-only</tt></dt><dd>
+ * Only perform post processing</dd>
+ * <dt><tt>--powerlaw-pdf</tt></dt><dd>
+ * Calculcate powerlaw PDF</dd>
+ * <dt><tt>--text</tt></dt><dd>
+ * Output file as text</dd>
+ * <dt><tt>--output</tt> <i>FILE</i></dt><dd>
+ * Write output data to <i>FILE</i></dd>
+ * <dt><tt>--confidence</tt> <i>LEVEL</i></dt><dd>
+ * Set confidence to <i>LEVEL</i> for calculating upperlimit</dd>
+ * </dl></dd>
+ *
+ * <dt>Example</dt><dd>
+ * An example usage of <tt>lalapps_stopp_bayes</tt> can be seen below.
+ *
+ * \code
+ * > lalapps_stopp_bayes --output S3-H1L1-STOCHASTIC.xml \
+ * >   H1L1-STOCHASTIC-753601044-753601242.xml \
+ * >   H1L1-STOCHASTIC-753620042-753620352.xml \
+ * >   H1L1-STOCHASTIC-753638864-753639462.xml \
+ * >   H1L1-STOCHASTIC-753785374-753785707.xml \
+ * >   H1L1-STOCHASTIC-753791744-753792342.xml
+ * \endcode</dd>
+ *
+ * <dt>Author</dt><dd>
+ * Adam Mercer</dd>
+ * </dl>
+ */
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>

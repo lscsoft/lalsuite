@@ -31,7 +31,8 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup UserInput_h
+ * \defgroup UserInput_h Header UserInput.h
+ * \ingroup lal_support
  * \author Reinhard Prix
  * \brief Module for simple unified handling of user-input from config-file and/or command-line.
  *

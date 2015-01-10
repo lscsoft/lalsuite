@@ -39,7 +39,7 @@ SWIGLAL(
 
 /**
  * \defgroup LALInferencePrior_h Header LALInferencePrior.h
- * \ingroup pkg_LALInference
+ * \ingroup lalinference_general
  * \brief Collection of commonly used Prior functions and utilities
  */
 /*@{*/

@@ -14,36 +14,36 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 # Last modified: Jul 11, 2013 LLB
-# ....- added loadkwconfig for reading kw configuration file as dictionary
-# ....- added random times routine
-#   - added random times from rate routine
-#   - added loadkwsingles routine
+#     - added loadkwconfig for reading kw configuration file as dictionary
+#     - added random times routine
+#     - added random times from rate routine
+#     - added loadkwsingles routine
 #
 # original version from
 # Python routines for basic trigger and segment processing
 # Lindy Blackburn (lindy@ligo.mit.edu)
 # Last modified: Jan 9, 2013 L. Blackburn
-# ....- trigger lists and segment lists are stored as two-dimensional lists,
-# ....  even for a single trigger/segment
-# ....- it is important to use the correct column for central time
-# ....- andsegments/orsegments work on a list of segment lists, a 3-D list
-# ....- segment lists assumed to be sorted, continuous and non-overlapping
-# ....  segments are treated as half-open intervals [start, stop)
-# ....- triggers are not automatically sorted when they are read from disk
-# ....  functions will create a sorted copy of the triggers when called
-# ....- added routines for loading segments (including XML)
-# ....- added routine to load triggers with cuts
-# ....- added ncoinc and cluster from backup version
-# ....- added loadkwm for reading multichannel KW triggers into a dict
+#     - trigger lists and segment lists are stored as two-dimensional lists,
+#       even for a single trigger/segment
+#     - it is important to use the correct column for central time
+#     - andsegments/orsegments work on a list of segment lists, a 3-D list
+#     - segment lists assumed to be sorted, continuous and non-overlapping
+#       segments are treated as half-open intervals [start, stop)
+#     - triggers are not automatically sorted when they are read from disk
+#       functions will create a sorted copy of the triggers when called
+#     - added routines for loading segments (including XML)
+#     - added routine to load triggers with cuts
+#     - added ncoinc and cluster from backup version
+#     - added loadkwm for reading multichannel KW triggers into a dict
 
-## addtogroup pkg_py_laldetchar_idq
+## \addtogroup laldetchar_py_idq
 ## Synopsis
 # ~~~
 # from laldetchar.idq import event
 # ~~~
 # \author Lindy Blackburn (<lindy.blackburn@ligo.org>)
 
-""" Module with classes and functions for construction and manipulation of composite glitch events. 
+""" Module with classes and functions for construction and manipulation of composite glitch events.
 """
 
 import math
@@ -57,7 +57,7 @@ __author__ = 'Lindy Blackburn <lindy.blackburn@ligo.org>'
 __version__ = git_version.id
 __date__ = git_version.date
 
-## addtogroup pkg_py_laldetchar_idq_event
+## \addtogroup laldetchar_py_idq_event
 # @{
 
 # Classes and functions for construction and manipulation of
@@ -96,9 +96,9 @@ col = col_kw.copy()
 
 
 # take subset of triggers which fall within segments
-# ....- segments are interpreted as [start, stop)
-# ....- tlag is added to the trigger times
-# ....- tcent defines the column for central time and is optional
+#     - segments are interpreted as [start, stop)
+#     - tlag is added to the trigger times
+#     - tcent defines the column for central time and is optional
 
 def include(
     triggers,
@@ -124,9 +124,9 @@ def include(
 
 
 # take subset of triggers which fall outside of segments
-# ....- segments are interpreted as [start, stop)
-# ....- tlag is added to the trigger times
-# ....- tcent defines the column for central time and is optional
+#     - segments are interpreted as [start, stop)
+#     - tlag is added to the trigger times
+#     - tcent defines the column for central time and is optional
 
 def exclude(
     triggers,
@@ -185,10 +185,10 @@ def includeexclude(
 
 
 # load triggers that pass threshold from ascii file into list
-# ....- file: filename string. '.gz' files are supported, and will be
-# ....  tried automatically if file does not exist
-# ....- only triggers with significance >= threshold are loaded
-# ....- signif defines the column for significance and is optional
+#     - file: filename string. '.gz' files are supported, and will be
+#       tried automatically if file does not exist
+#     - only triggers with significance >= threshold are loaded
+#     - signif defines the column for significance and is optional
 
 def loadtrg(file, threshold=0, signif=None):
     if signif == None:
@@ -209,15 +209,15 @@ def loadtrg(file, threshold=0, signif=None):
 
 
 # load triggers that pass cuts
-# ....- file: filename string. '.gz' files are supported, and will be
-# ....  tried automatically if file does not exist
-# ....- cuts is a list of lists of the form: [col, r1, r2]
-# ....  if r1 < r2: r1 <= trg[col] AND trg[col] < r2 for the trigger to pass (inclusive)
-# ....  may use interval with r1 > r2 to make an exclusion interval:
-# ....  if r1 >= r2: trg[col] < r2 OR trg[col] <= r1 to pass
-# ....- each trigger must pass ALL cuts
-# ....- duplicate lines are removed
-# ....- does NOT preserve order of triggers (due to duplicate line removal)
+#     - file: filename string. '.gz' files are supported, and will be
+#       tried automatically if file does not exist
+#     - cuts is a list of lists of the form: [col, r1, r2]
+#       if r1 < r2: r1 <= trg[col] AND trg[col] < r2 for the trigger to pass (inclusive)
+#       may use interval with r1 > r2 to make an exclusion interval:
+#       if r1 >= r2: trg[col] < r2 OR trg[col] <= r1 to pass
+#     - each trigger must pass ALL cuts
+#     - duplicate lines are removed
+#     - does NOT preserve order of triggers (due to duplicate line removal)
 
 def loadwithcuts(file, cuts=[]):
     if cuts != [] and dim(cuts) == 1:
@@ -250,11 +250,11 @@ def loadwithcuts(file, cuts=[]):
 
 
 # load triggers light version for veto work, only load tcent and signif
-# ....- file: filename string. '.gz' files are supported, and will be
-# ....  tried automatically if file does not exist
-# ....- only triggers with significance >= threshold are loaded
-# ....- tcent defines the column for central time and is optional
-# ....- signif defines the column for significance and is optional
+#     - file: filename string. '.gz' files are supported, and will be
+#       tried automatically if file does not exist
+#     - only triggers with significance >= threshold are loaded
+#     - tcent defines the column for central time and is optional
+#     - signif defines the column for significance and is optional
 
 def loadvetotrg(
     file,
@@ -345,8 +345,8 @@ def loadlist(file):
 
 def read_channels_from_file(file):
     """
-....Reads channel names from file. Return list of channel names. 
-...."""
+    Reads channel names from file. Return list of channel names.
+    """
 
     channels = open(file).readlines()
     channels = [ch.strip() for ch in channels]
@@ -356,9 +356,9 @@ def read_channels_from_file(file):
 class trigdict(dict):
 
     """
-....Class to hold multi-channel triggers. It is a dictionary, with keys defined by the names of the channels. Each value is a list of triggers. 
-....triggers are lists themselves, with entries correposnding to kw_col, defined at the top. 
-...."""
+    Class to hold multi-channel triggers. It is a dictionary, with keys defined by the names of the channels. Each value is a list of triggers.
+    triggers are lists themselves, with entries correposnding to kw_col, defined at the top.
+    """
 
     def __init__(self, channels=None):
 
@@ -376,8 +376,8 @@ class trigdict(dict):
 
     def get_triggers_from_channel(self, channel):
         """
-........Return triggers from a given channel
-........"""
+        Return triggers from a given channel
+        """
 
         if channel in self.keys():
             return self[channel]
@@ -392,9 +392,9 @@ class trigdict(dict):
         signif=None,
         ):
         """
-........Aplly threshold on triggers significance, by getting rid of those triggers which significance is less than the threshold.
-........channels is the lits of channels in which threshold is applied. 
-........"""
+        Aplly threshold on triggers significance, by getting rid of those triggers which significance is less than the threshold.
+        channels is the lits of channels in which threshold is applied.
+        """
 
         if signif == None:
             signif = col['signif']
@@ -415,9 +415,9 @@ class trigdict(dict):
 
     def remove_channels(self, channels):
         """
-........Removes unsafe channels from dictionary of triggers.
-........channels is the list of channel names. 
-........"""
+        Removes unsafe channels from dictionary of triggers.
+        channels is the list of channel names.
+        """
 
         for key in self.keys():
             if key in channels:
@@ -425,9 +425,9 @@ class trigdict(dict):
 
     def keep_channels(self, channels):
         """
-........Keeps triggers only from the designated channels.
-........channels is the list of channel names. 
-........"""
+        Keeps triggers only from the designated channels.
+        channels is the list of channel names.
+        """
 
         for key in self.keys():
             if not key in channels:
@@ -441,9 +441,9 @@ class trigdict(dict):
         tcent=None,
         ):
         """
-........Keeps triggers that fall within the segments.
-........If channels are given, action is applied only to triggers from these channels.
-........"""
+        Keeps triggers that fall within the segments.
+        If channels are given, action is applied only to triggers from these channels.
+        """
 
         if not channels:
             channels = self.channels()
@@ -452,8 +452,8 @@ class trigdict(dict):
 
     def resort(self, tcent=col['tcent']):
         """
-........sort triggers by central time. optionally define key
-........"""
+        sort triggers by central time. optionally define key
+        """
 
         for triglist in self.values():
             triglist.sort(key=lambda x: x[tcent])
@@ -463,9 +463,9 @@ class trigdict(dict):
 
 def loadkwm(files, trigs_dict=None):
     """
-....Loads multi-channel KW trigger files. Returns a dictionary with channel names used as keys. 
-....files - is the list of file names.
-...."""
+    Loads multi-channel KW trigger files. Returns a dictionary with channel names used as keys.
+    files - is the list of file names.
+    """
 
     if type(files) is str:
         files = [files]
@@ -508,8 +508,8 @@ def loadkwsingles(directory, channels=None, trigs_dict=None):
 
 def random_trigs(times):
     """
-....Generates fake triggers for corresponding times.
-...."""
+    Generates fake triggers for corresponding times.
+    """
 
     return [[
         0.0,
@@ -544,8 +544,8 @@ def build_auxmvc_vectors(
     clean_window=None,
     ):
     """
-....Construct auxmvc feature vectors using triggers from multi-channel trig dictionary. Triggers from the channel designated as main are used as glitch indicators.
-...."""
+    Construct auxmvc feature vectors using triggers from multi-channel trig dictionary. Triggers from the channel designated as main are used as glitch indicators.
+    """
 
     darmtrg = trigdict.get_triggers_from_channel(main_channel)
     darmtrg.sort(key=lambda x: x[col['tcent']])  # sort by central time
@@ -732,7 +732,7 @@ def build_auxmvc_vectors_at_gps(
 
 
 # write ASCII table with optional formatstring (printf style)
-# ....- filename ending in '.gz' will create gzip file
+#     - filename ending in '.gz' will create gzip file
 
 def write(table, file, formatstring=None):
     f = gzopen(file, 'w')
@@ -747,11 +747,11 @@ def write(table, file, formatstring=None):
 
 
 # return list of non-overlapping segments by applying window about tcent
-# ....- triggers: list of triggers with tcent central time column
-# ....- window: scalar value gives a symmetric +/- window
-# ....  list value gives segments [tcent+window[0], tcent+window[1])
-# ....- triggers with significance >= threshold contribute to veto segment
-# ....- tlag is added to the trigger times before making segments
+#     - triggers: list of triggers with tcent central time column
+#     - window: scalar value gives a symmetric +/- window
+#       list value gives segments [tcent+window[0], tcent+window[1])
+#     - triggers with significance >= threshold contribute to veto segment
+#     - tlag is added to the trigger times before making segments
 
 def vetosegs(
     triggers,
@@ -802,8 +802,8 @@ def vetosegs(
 
 
 # take the intersection of segments
-# ....- segmentlists: list of segment lists that need to be intersected
-# ....  e.g. gpstime = segmentlists[ifo][seg_number][0(start) or 1(end)]
+#     - segmentlists: list of segment lists that need to be intersected
+#       e.g. gpstime = segmentlists[ifo][seg_number][0(start) or 1(end)]
 
 def andsegments(segmentlists, wrongsyntax=None):
     if wrongsyntax != None:  # did not wrap two segment lists into a list
@@ -820,10 +820,10 @@ def andsegments(segmentlists, wrongsyntax=None):
 
 
 # take the intersection of two segment lists: list1 and list2
-# ....- this is an internal function which is called by andsegments
-# ....- only use this instead if you know that the particular ordering of
-# ....  list1/list2 is faster as andsegments(segmentlists) will sort the
-# ....  segmentlists by their length
+#     - this is an internal function which is called by andsegments
+#     - only use this instead if you know that the particular ordering of
+#       list1/list2 is faster as andsegments(segmentlists) will sort the
+#       segmentlists by their length
 
 def andtwosegmentlists(list1, list2):
     newsegments = []
@@ -876,8 +876,8 @@ def nandsegments(segmentlists, n):
 
 
 # take the union of segments
-# ....- segmentlists: list of segment lists that need to be merged.
-# ....  e.g. gpstime = segmentlists[ifo][seg_number][0(start) or 1(end)]
+#     - segmentlists: list of segment lists that need to be merged.
+#       e.g. gpstime = segmentlists[ifo][seg_number][0(start) or 1(end)]
 
 def orsegments(segmentlists, wrongsyntax=None):
     if wrongsyntax != None:  # did not wrap two segment lists into a list
@@ -896,8 +896,8 @@ def orsegments(segmentlists, wrongsyntax=None):
 
 
 # remove the "removesemgnets" from segments: segments - removesegments
-# ....- do not attempt to neglect to put in removesemgnets, use []
-# ....  otherwise the function will calculate segments[0] - segments[1]
+#     - do not attempt to neglect to put in removesemgnets, use []
+#       otherwise the function will calculate segments[0] - segments[1]
 
 def removesegments(segments, removesegments=None):
     if removesegments == None:
@@ -986,8 +986,8 @@ def dim(multilist):
 
 
 # open file or gzip file transparently, replaces open(file, mode)
-# ....- 'file.gz' is automatically tried for read modes if 'file' does
-# ....   not exist. 'file.gz' in write mode will write a gzip file
+#     - 'file.gz' is automatically tried for read modes if 'file' does
+#        not exist. 'file.gz' in write mode will write a gzip file
 
 def gzopen(file, mode='r'):
     import os
@@ -1012,7 +1012,7 @@ def gzopen(file, mode='r'):
 
 # ncoinc - n-fold coincidence, triggers must be sorted by central time
 # channels: a list of trigger lists, each element will represent a different channel
-# window:....time window for coidence (tcent is used +/- time window in seconds)
+# window:    time window for coidence (tcent is used +/- time window in seconds)
 # triggers are assumed to be sorted by central time!!
 # tlag: list of time lags for each trigger list in 'channels'
 # Jan 11, 2008 L. Blackburn

@@ -22,7 +22,6 @@
 #include <lal/LALInspiralBank.h>
 
 /**
- * \ingroup LALInspiralBank_h
  * \author Sathyaprakash, B.S. and Churches, D. K.
  * \brief Function to create a fine grid of templates.
  *
@@ -45,7 +44,8 @@
  * and for any \f$x\f$, \f$[x]\f$ denotes the smallest integer greater than or
  * equal to \f$x\f$.
  *
- * \figure{LALInspiralBankHfine,pdf,0.6,Algorithm sketching the construction of a rectangular fine grid around a given coordinate point}
+ * \anchor LALInspiralBankHfine
+ * \image html LALInspiralBankHfine.png "Algorithm sketching the construction of a rectangular fine grid around a given coordinate point"
  *
  * The algorithm takes as input a structure of type
  * \c InspiralFineBankIn and returns a <tt>pointer-to-a-pointer</tt>

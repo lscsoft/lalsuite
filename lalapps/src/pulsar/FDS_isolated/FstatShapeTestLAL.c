@@ -19,6 +19,7 @@
 
 /**
  * \file
+ * \ingroup lalapps_pulsar
  * \author Itoh, Yousuke
  * \brief Note on the code
  *

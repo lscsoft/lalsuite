@@ -31,7 +31,8 @@ extern "C" {
 
 
 /**
- * \addtogroup StringInput_h
+ * \defgroup StringInput_h Header StringInput.h
+ * \ingroup lal_std
  * \author Creighton, T. D.
  *
  * \brief Provides routines to parse \c CHARVectors into other LAL datatypes.

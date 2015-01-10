@@ -21,7 +21,7 @@
 /**
  * \author R. Prix
  * \file
- * \ingroup pulsarApps
+ * \ingroup lalapps_pulsar
  * \brief Calculate the Fourier transform over the total timespan from a set of SFTs
  *
  */

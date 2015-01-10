@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup pulsarApps
+ * \ingroup lalapps_pulsar
  * \author David Keitel, Reinhard Prix
  * \brief
  * Simple standalone code to provide ASCII output for antenna-pattern function and matrix

@@ -1,0 +1,18 @@
+/* Top-level module organisation for LALApps */
+/**
+
+\defgroup lalapps_general		General Packages
+
+\defgroup lalapps_frametools		Frame Tools
+
+\defgroup lalapps_hwinjection		Hardware Injection Tools
+
+\defgroup lalapps_burst			Burst Applications
+
+\defgroup lalapps_inspiral		Inspiral Applications
+
+\defgroup lalapps_pulsar		Pulsar Applications
+
+\defgroup lalapps_stochastic		Stochastic Applications
+
+*/

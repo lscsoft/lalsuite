@@ -32,7 +32,7 @@
 /**
  * \author Brown, D. A.
  * \file
- * \ingroup lalmetaio
+ * \ingroup lalmetaio_general
  *
  * \brief This header provides provides <tt>\#define</tt>s for the inspiral related
  * tables of LIGO light weight XML files.

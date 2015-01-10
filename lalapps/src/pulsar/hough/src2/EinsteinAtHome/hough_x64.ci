@@ -22,6 +22,7 @@
 
 /**
  * \file Opt_Hough_amd64_linux.h
+ * \ingroup lalapps_pulsar
  * \brief Header file for CPU architecture specific optimization code
  * \author 
  * 

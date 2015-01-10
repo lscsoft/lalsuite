@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup pulsarApps
+ * \ingroup lalapps_pulsar
  * \author Y. Ioth, M.A. Papa, X. Siemens, R. Prix, T. Creighton
  * \brief F-statistic generation code for known pulsars
  */

@@ -31,7 +31,8 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup SimulateCoherentGW_h
+ * \defgroup SimulateCoherentGW_h Header SimulateCoherentGW.h
+ * \ingroup lal_inject
  * \author Creighton, T. D.
  * \deprecated This module is deprecated, please see LALSimulation for a replacement.
  *
@@ -75,7 +76,8 @@ extern "C" {
  * + B_{+,\times}(t)\sin\phi(t) \; ,
  * \f]
  *
- * \figure{inject_phase_diagram,eps,0.42,Polarization phase diagram for a quasiperiodic gravitational wave. The phase point p(t) traces out the indicated ellipse in the h_+\,h_x plane; the parameters A1\, A2 and Phi remain roughly constant over many cycles in phi.}
+ * \anchor inject_phase_diagram
+ * \image html inject_phase_diagram.png "Polarization phase diagram for a quasiperiodic gravitational wave. The phase point p(t) traces out the indicated ellipse in the h_+\,h_x plane; the parameters A1\, A2 and Phi remain roughly constant over many cycles in phi."
  *
  * where \f$\phi(t)=2\pi\int f(t)\,dt\f$, and the <em>evolution timescale</em>
  * \f$\tau=\min\{A/\dot{A},B/\dot{B},f/\dot{f}\}\f$ is much greater than
@@ -104,7 +106,7 @@ extern "C" {
  * h_\times(t) & = & A_1(t)\sin\Phi(t)\cos\phi(t)
  * + A_2(t)\cos\Phi(t)\sin\phi(t) \; .
  * \f}
- * The physical meaning of these functions is shown in \figref{inject_phase_diagram}.
+ * The physical meaning of these functions is shown in \ref inject_phase_diagram "this figure".
  *
  * There is a close relationship between the polarization shift \f$\Phi\f$
  * and the orientation of the \f$x\f$-\f$y\f$ coordinates used to define our

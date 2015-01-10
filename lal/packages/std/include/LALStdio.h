@@ -18,7 +18,8 @@
 */
 
 /**
- * \addtogroup LALStdio_h
+ * \defgroup LALStdio_h Header LALStdio.h
+ * \ingroup lal_std
  *
  * \brief Provides LAL functions similar to the non-file functions in <tt><stdio.h></tt>.
  *

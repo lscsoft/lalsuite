@@ -19,6 +19,7 @@
 /**
  * @author Jolien Creighton, Benjamin Lackey
  * @addtogroup LALSimNeutronStar_h      Header LALSimNeutronStar.h
+ * @ingroup lalsimulation_general
  * @brief Provides routines for neutron star physical parameters.
  * @{
  * @defgroup LALSimNeutronStarEOS_c     Module LALSimNeutronStarEOS.c

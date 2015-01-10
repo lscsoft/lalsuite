@@ -24,8 +24,19 @@
  *
  * \brief This program can be used generate expected noise
  * NoiseSpectralDensity in various interferometers.
- * See the beginning of the NoiseModels module to see details on how
- * this test program works.
+ *
+ * ### Synopsis ###
+ * This test code makes four
+ * successive calls to the function \c LALNoiseSpectralDensity()
+ * successively passing a pointer to the functions LALGEOPsd(),
+ * LALLIGOIPsd(), LALTAMAPsd() and LALVIRGOPsd().
+ * The function LALNoiseSpectralDensity() returns the power
+ * spectrum in units \f$\mathrm{Hz}^{-1}\f$ while the test code NoisePSDTest.c
+ * outputs the amplitude spectrum in units \f$\mathrm{Hz}^{-1/2}\f$ The figure
+ * below shows the output of the test  code.
+ *
+ * \anchor NoisePSDTest
+ * \image html NoisePSDTest.png ""
  *
  * ### Uses ###
  *

@@ -13,7 +13,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-## addtogroup pkg_py_laldetchar_idq
+## \addtogroup laldetchar_py_idq
 ## Synopsis
 # ~~~
 # from laldetchar.idq import idq_tables
@@ -33,7 +33,7 @@ __version__ = git_version.id
 __date__ = git_version.date
 
 
-## addtogroup pkg_py_laldetchar_idq_idq_tables
+## \addtogroup laldetchar_py_idq_idq_tables
 # @{
 
 # contains definitions for iDQ xml table classes and objects

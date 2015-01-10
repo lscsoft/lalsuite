@@ -20,7 +20,7 @@
 /**
  * \author Dupuis, R. J.
  * \file
- * \ingroup pulsarTODO
+ * \ingroup lalpulsar_UNCLASSIFIED
  *
  * ### Program HeterodynePulsarTest.c ###
  *

@@ -1,0 +1,8 @@
+/* Top-level module organisation for LALFrame */
+/**
+
+\defgroup lalframe_general		General Packages
+
+\defgroup lalframe_python		Python Packages
+
+*/

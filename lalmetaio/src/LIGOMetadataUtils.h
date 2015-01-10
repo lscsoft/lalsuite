@@ -29,7 +29,7 @@
 /**
  * \author Brown, D. A. and Fairhurst, S.
  * \file
- * \ingroup lalmetaio
+ * \ingroup lalmetaio_general
  * \brief Provides functions for manipulating the LAL structures that correspond
  * to the LIGO metadata database tables defined in \ref LIGOMetadataTables.h.
  *

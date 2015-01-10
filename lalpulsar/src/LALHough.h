@@ -24,7 +24,7 @@ extern "C" {
 
 /**
  * \defgroup LALHough_h Header LALHough.h
- * \ingroup pkg_pulsarHough
+ * \ingroup lalpulsar_hough
  * \author Alicia Sintes, Badri Krishnan
  *
  * \brief Routines for building and updating the space of partial

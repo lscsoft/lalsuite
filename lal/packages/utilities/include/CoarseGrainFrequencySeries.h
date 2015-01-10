@@ -28,7 +28,8 @@ extern "C" {
 
 
 /**
- * \addtogroup CoarseGrainFrequencySeries_h
+ * \defgroup CoarseGrainFrequencySeries_h Header CoarseGrainFrequencySeries.h
+ * \ingroup lal_utilities
  * \author UTB Relativity Group; contact whelan@phys.utb.edu (original by S. Drasco)
  *
  * \brief Provides prototype, structure and error code information for routines which coarse-grain a frequency series.
@@ -79,9 +80,10 @@ extern "C" {
  * element of the coarse-grained series, which represents a frequency
  * range from \f$f_k-\delta f/2\f$ to \f$f_k+\delta f/2\f$, we consider the
  * elements of the fine-grained series whose frequency ranges overlap
- * with this (\figref{utilitiesCoarseGrain}).
+ * with this (\ref utilitiesCoarseGrain "this figure").
  *
- * \figure{utilitiesCoarseGrain,pdf,0.6,Coarse graining a frequency series}
+ * \anchor utilitiesCoarseGrain
+ * \image html utilitiesCoarseGrain.png "Coarse graining a frequency series"
  *
  * We define \f$\ell^{\scriptstyle\textrm{min}}_k\f$ and \f$\ell^{\scriptstyle{\rm  min}}_k\f$
  * to be the indices of the first and last elements of
@@ -108,7 +110,7 @@ extern "C" {
  * \Omega + \left(k+\frac{1}{2}\right) \rho - \frac{1}{2}
  * \ .
  * \f}
- * Examination of \figref{utilitiesCoarseGrain} shows that
+ * Examination of \ref utilitiesCoarseGrain "this figure" shows that
  * \f$\ell^{\scriptstyle\textrm{min}}_k\f$ is the smallest integer not less than
  * \f$\lambda^{\scriptstyle\textrm{min}}_k\f$ and \f$\ell^{\scriptstyle{\rm
  * min}}_k\f$ is the largest integer not greater than

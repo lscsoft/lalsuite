@@ -35,6 +35,7 @@
 
 /**
  * \file SPINspiral_routines.c
+ * \ingroup lalapps_inspiral
  * \brief Contains various routines
  */
 

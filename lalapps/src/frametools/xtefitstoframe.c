@@ -19,8 +19,8 @@
 
 /**
  * \author C.Messenger
- * \ingroup pulsarCoherent
  * \file
+ * \ingroup lalapps_frametools
  * \brief
  * This code is designed to convert an (R)XTE FITS data file into a frame file.
  *

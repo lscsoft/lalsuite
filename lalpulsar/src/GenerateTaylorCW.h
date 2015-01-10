@@ -31,7 +31,8 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup GenerateTaylorCW_h
+ * \defgroup GenerateTaylorCW_h Header GenerateTaylorCW.h
+ * \ingroup lalpulsar_inject
  * \author Creighton, T. D.
  *
  * \brief Provides routines to generate Taylor-parameterized continuous waveforms.
@@ -103,7 +104,7 @@ extern "C" {
 /**
  * This structure stores the parameters for constructing a gravitational
  * waveform with a Taylor-polynomial frequency and phase.  As with the
- * \c PPNParamStruc type in \ref GeneratePPNInspiral_h, we divide
+ * \c PPNParamStruc type in \c GeneratePPNInspiral_h, we divide
  * the fields into passed fields (which are supplied to the final
  * \c PulsarCoherentGW structure but not used in any calculations), input
  * fields (that are used by the waveform generator), and output fields

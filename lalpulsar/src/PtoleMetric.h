@@ -35,7 +35,7 @@ extern "C" {
  * \defgroup PtoleMetric_h Header PtoleMetric.h
  * \author Jones, D. I.  Owen, B. J.
  * \date 2001 -- 2006
- * \ingroup pkg_pulsarMetric
+ * \ingroup lalpulsar_metric
  * \brief Provides routines to compute pulsar parameter-space metrics using the
  * ``Ptolemaic'' approximation.
  *

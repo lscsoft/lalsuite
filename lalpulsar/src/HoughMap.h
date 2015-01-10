@@ -29,7 +29,7 @@ extern "C" {
 
 /**
  * \defgroup HoughMap_h Header HoughMap.h
- * \ingroup pkg_pulsarHough
+ * \ingroup lalpulsar_hough
  * \author Alicia M. Sintes and Badri Krishnan
  *
  * \brief Provides subroutines for initialization and construction of Hough-map derivatives and total Hough-maps.

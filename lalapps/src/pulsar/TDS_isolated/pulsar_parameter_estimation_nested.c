@@ -22,7 +22,7 @@ LALInference tools */
 
 /**
  * \file
- * \ingroup pulsarApps
+ * \ingroup lalapps_pulsar
  * \author Matthew Pitkin, John Veitch, Colin Gill
  *
  * \brief Parameter estimation code for known pulsar searches using the nested sampling algorithm.

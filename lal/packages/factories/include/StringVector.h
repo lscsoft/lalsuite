@@ -33,7 +33,8 @@ extern "C" {
 /**
  * \author Reinhard Prix
  * \date 2008
- * \addtogroup StringVector_h
+ * \defgroup StringVector_h Header StringVector.h
+ * \ingroup lal_factories
  *
  * \brief Creation/destruction/manipulation API for ::LALStringVector objects,
  * which are just LAL-type vectors of CHAR * pointers.

@@ -1,0 +1,8 @@
+/* Top-level module organisation for LALStochastic */
+/**
+
+\defgroup lalstochastic_general		General Packages
+
+\defgroup lalstochastic_python		Python Packages
+
+*/

@@ -24,8 +24,9 @@ EXTRA_DIST += \
 SUBDIRS = \
 	debian \
 	src \
-	doc \
-	man
+	man \
+	doxygen \
+	$(END_OF_LIST)
 
 user_environment = \
 	set $(PACKAGE)_PREFIX $(prefix); \

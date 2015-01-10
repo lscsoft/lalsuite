@@ -1,0 +1,32 @@
+/* Top-level module organisation for LALBurst */
+/**
+
+\defgroup lalburst_general		General Packages
+
+\defgroup lalburst_burstsearch		Standard Burst Search Functions
+@{
+   \brief Functions for the implementation of the standard burst
+   searches
+@}
+
+\defgroup lalburst_clremoval		Coherent Line Removal Routines
+@{
+   \brief This package provides routines for finding line harmonics,
+   generating a reference interference signal, and removing all the
+   interference harmonics.  As an example, these routines can be
+   usefull for removing all those lines corresponding to the
+   electricity supply frequency and its harmonics.
+@}
+
+\defgroup lalburst_timefreq		Time-Frequency Representation Package
+
+\defgroup lalburst_tracksearch		TrackSearch Package
+@{
+   \brief A collection of functions for the implementation of
+   tracksearch analysis. These function can be found in
+   \ref TSData_h, \ref TSSearch_h, and \ref TrackSearch_h.
+@}
+
+\defgroup lalburst_python		Python Packages
+
+*/

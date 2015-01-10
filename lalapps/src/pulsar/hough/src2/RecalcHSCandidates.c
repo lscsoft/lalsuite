@@ -22,7 +22,7 @@
 /**
  * \author Badri Krishnan, Alicia Sintes, Reinhard Prix, Bernd Machenschalk
  * \file
- * \ingroup pulsarApps
+ * \ingroup lalapps_pulsar
  * \brief Program for calculating F-stat values for different time segments
  * and combining them semi-coherently using the Hough transform, and following
  * up candidates using a longer coherent integration.

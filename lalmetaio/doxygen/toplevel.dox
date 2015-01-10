@@ -1,0 +1,8 @@
+/* Top-level module organisation for LALMetaIO */
+/**
+
+\defgroup lalmetaio_general		General Packages
+
+\defgroup lalmetaio_python		Python Packages
+
+*/

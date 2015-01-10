@@ -29,7 +29,8 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup Grid_h
+ * \defgroup Grid_h Header Grid.h
+ * \ingroup lal_std
  * \author Creighton, T. D.
  *
  * \brief Provides a structured datatype for a multidimensional rectilinear grid.

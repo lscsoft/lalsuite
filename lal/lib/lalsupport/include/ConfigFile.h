@@ -29,7 +29,8 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup ConfigFile_h
+ * \defgroup ConfigFile_h Header ConfigFile.h
+ * \ingroup lal_support
  * \author Reinhard Prix
  * \brief Module for general parsing of simple ASCII-based config-files.
  *

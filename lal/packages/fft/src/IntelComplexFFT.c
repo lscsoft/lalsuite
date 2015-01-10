@@ -169,3 +169,5 @@ tagCOMPLEX16FFTPlan
 #include "IntelComplexFFT_source.c"
 #undef SINGLE_PRECISION
 #include "IntelComplexFFT_source.c"
+
+/*@}*/

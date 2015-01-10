@@ -28,7 +28,8 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup LALCorrelation_h
+ * \defgroup LALCorrelation_h Header LALCorrelation.h
+ * \ingroup lal_stats
  * \author Yakushin, Igor
  *
  * \brief [One sentence briefly defining scope of the header]

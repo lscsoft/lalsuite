@@ -1,0 +1,8 @@
+/* Top-level module organisation for LALInference */
+/**
+
+\defgroup lalinference_general		General Packages
+
+\defgroup lalinference_python		Python Packages
+
+*/

@@ -18,8 +18,8 @@
  */
 
 /**
- * \defgroup RecalcToplistStats_h Header RecalcToplistStats.h
- * \ingroup pkg_pulsarCommon
+ * \file
+ * \ingroup lalapps_pulsar
  * \author David Keitel
  *
  * \brief Functions to recompute statistics for GCT/hough toplist entries

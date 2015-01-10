@@ -31,6 +31,7 @@
 
 /**
  * \file
+ * \ingroup lalapps_pulsar
  * \author M. D. Pitkin
  * \brief
  * Functions for reading the Crab Ephemeris, interpolating between these values and

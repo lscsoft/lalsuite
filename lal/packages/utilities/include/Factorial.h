@@ -23,7 +23,8 @@
 #include <lal/LALAtomicDatatypes.h>
 
 /**
- * \addtogroup Factorial_h
+ * \defgroup Factorial_h Header Factorial.h
+ * \ingroup lal_utilities
  * \author Karl Wette
  * \brief Static tables of the factorial and double-factorial functions, and derived quantities.
  *

@@ -30,7 +30,8 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup IIRFilter_h
+ * \defgroup IIRFilter_h Header IIRFilter.h
+ * \ingroup lal_tdfilter
  * \author Creighton, T. D.
  *
  * \brief Provides routines to make and apply IIR filters.
@@ -40,6 +41,10 @@ extern "C" {
  * \code
  * #include <lal/IIRFilter.h>
  * \endcode
+ *
+ * The \ref IIRFilter_h provides routines for creating actual
+ * time-domain filters from the ZPG representation, and applying these
+ * filters to data.
  *
  * This header covers routines that create, destroy, and apply
  * generic time-domain filters, given by objects of type

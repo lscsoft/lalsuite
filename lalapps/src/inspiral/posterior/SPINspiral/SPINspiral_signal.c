@@ -35,6 +35,7 @@
 
 /**
  * \file SPINspiral_signal.c
+ * \ingroup lalapps_inspiral
  * \brief Contains routines compute signal-related information, like likelihood, SNR, match, etc.
  */
 

@@ -26,7 +26,7 @@ extern "C" {
 
 /**
  * \defgroup LALComputeAM_h Header LALComputeAM.h
- * \ingroup pkg_pulsarCoh
+ * \ingroup lalpulsar_coh
  * \author S.J. Berukoff, Reinhard Prix, John Whelan
  * \date 2007
  *

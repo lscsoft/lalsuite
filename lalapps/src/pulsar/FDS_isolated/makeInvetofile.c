@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup pulsarApps
+ * \ingroup lalapps_pulsar
  * \author X. Siemens
  * \brief takes in an Fstats file and a ParamMLE file and constructs In.data
  */

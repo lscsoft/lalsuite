@@ -39,7 +39,7 @@ SWIGLAL(
 
 /**
  * \defgroup LALInferenceNestedSampler_h Header LALInferenceNestedSampler.h
- * \ingroup pkg_LALInference
+ * \ingroup lalinference_general
  * \brief Nested sampler written for LALInference. Independent of model.
  *
  * Nested Sampling algorithm defined using the LALInference

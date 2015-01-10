@@ -156,12 +156,21 @@ EXTRA_liblalpulsar_la_SOURCES = \
 
 liblalpulsar_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
 
-EXTRA_DIST = \
-	LALPulsarConfig.h.in \
-	config.h.in
-
 DISTCLEANFILES = config.h
 
 vcs_info_sources = LALPulsarVCSInfoHeader.h
 build_info_source = LALPulsarBuildInfo.c
 $(build_info_source): $(liblalpulsar_la_DEPENDENCIES)
+
+EXTRA_DIST = \
+	Eccentric_and_true_anomaly.png \
+	LALPulsarConfig.h.in \
+	LUTstereo.png \
+	config.h.in \
+	inject_binary.png \
+	inject_eanomaly.png \
+	inject_hanomaly.png \
+	inject_phase_diagram.png \
+	pulsarHough.dox \
+	pulsar_tiling.png \
+	$(END_OF_LIST)

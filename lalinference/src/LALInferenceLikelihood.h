@@ -49,7 +49,7 @@ SWIGLAL(
 
 /**
  * \defgroup LALInferenceLikelihood_h Header LALInferenceLikelihood.h
- * \ingroup pkg_LALInference
+ * \ingroup lalinference_general
  *
  * \brief Header file for likelihood functions used by LALInference codes
  *

@@ -32,7 +32,8 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup FrequencySeriesManipulation
+ * \defgroup FrequencySeriesManipulation Frequency Series Manipulation
+ * \ingroup lal_tools
  * \author Kipp Cannon <kipp@gravity.phys.uwm.edu>
  *
  * \brief This is a suite of functions for creating, destroying, and manipulating LAL

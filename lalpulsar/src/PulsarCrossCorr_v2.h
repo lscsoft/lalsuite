@@ -26,7 +26,7 @@ extern "C" {
 
 /**
  * \defgroup PulsarCrossCorr_v2_h Header PulsarCrossCorr_v2.h
- * \ingroup pkg_pulsarCrossCorr
+ * \ingroup lalpulsar_crosscorr
  * \author John Whelan, Yuanhao Zhang, Shane Larson, Badri Krishnan
  * \date 2012, 2013, 2014
  * \brief Header-file for XLAL routines for v2 CW cross-correlation searches

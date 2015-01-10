@@ -20,6 +20,7 @@
 /**
  * \author Patrick R Brady
  * \file
+ * \ingroup lalapps_frametools
  */
 
 #include <stdio.h>

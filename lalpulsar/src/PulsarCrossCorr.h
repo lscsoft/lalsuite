@@ -26,7 +26,7 @@ extern "C" {
 
 /**
  * \defgroup PulsarCrossCorr_h Header PulsarCrossCorr.h
- * \ingroup pkg_pulsarCrossCorr
+ * \ingroup lalpulsar_crosscorr
  * \author Christine Chung, Badri Krishnan, John Whelan
  * \date 2008
  * \brief Header-file for LAL routines for CW cross-correlation searches

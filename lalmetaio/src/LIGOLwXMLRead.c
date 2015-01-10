@@ -32,7 +32,7 @@
 /**
  * \author Brown, D. A. and Fairhurst, S.
  * \file
- * \ingroup lalmetaio
+ * \ingroup lalmetaio_general
  *
  * \brief Routines to write LIGO metadata database structures to LIGO lightweight XML files.
  *

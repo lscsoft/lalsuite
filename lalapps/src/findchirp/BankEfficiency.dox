@@ -1,0 +1,450 @@
+/**
+\defgroup lalapps_BankEfficiency BankEfficiency documentation
+\ingroup lalapps_inspiral
+
+\ref BankEfficiency.c is a tool written in C that is available in <tt>lalapps/src/findchirp/</tt>. It was primary developped to test efficiencies of the template bank placement coded in LAL, in the context of detection of inspiralling compact binaries in ground based detetectors.
+
+Although \ref BankEfficiency.c heavily relies on LAL packages such as the \ref lalinspiral_bank, \ref lalinspiral_inspiral and \ref lal_noisemodels packages, nevertheless it has its own sets of routines, which makes \ref BankEfficiency.c a pretty long piece of code (about 4,000 lines) but also a quite independant one.  Despite this relative length, I tried to make \ref BankEfficiency.c as modular as possible; the main core is only about 400 lines. It should therefore be easy to adapt it to your needs if you know the packages mentionned here above.
+
+## What BankEfficiency can do :
+<ul>
+ <li> Compute overlaps between a signal and a template bank.
+ </li><li> Perform large Monte-Carlo simulations using \c CONDOR and \c DAG technologies.
+ </li><li> Store results in XML format both for data mining and keeping track of the parameters being used.
+ </li><li> Inject any type of signal that is available in \ref lalinspiral_inspiral package.
+ </li><li> Use any template bank that is available in \ref lalinspiral_bank package.
+ </li><li> Use any noise model that is available in \ref lal_noisemodels package.</li>
+</ul>
+
+## What BankEfficiency cannot do
+<ul>
+ <li> Multidetector analysis.
+ </li><li> Analyse real noise, although implementation of an interface should be straigtforward.
+ </li><li> PTF filtering.
+ </li><li> BCV spin filtering.</li>
+</ul>
+
+## What BankEfficiency has done
+<ul>
+ <li> Validation of the SPA template bank coded in \ref lalinspiral_bank package, based on a square lattice for the SPA templates [\cite squarebank], which has been used in LIGO and GEO600 science runs up to S4.
+ </li><li> Design and validation of the SPA template, based on hexagonal lattice for the SPA templates. It has also show the possibility to use other models such as EOB, PadeT1 with the same template bank [\cite hexabank], which is currently used in S5 analysis.</li>
+<li> Design and validation of the BCV template bank used in S2/S3/S4 LIGO BBH searches [\cite bcvbank]</li>
+<li> Overlaps of eccentric models with SPA template bank.</li>
+</ul>
+
+\ref BankEfficiency.c has become a powerful tool. However, its complexity implies a lot of input arguments, most of them having default values hardcoded. This documentation is aimed at
+<ol>
+ <li> Explaining what type of simulations you can performed by showing concrete examples.
+ </li><li> Describing the input parameters in details.
+ </li><li> Describing the output files.
+ </li><li> Explaining how to run simulations using CONDOR/DAG.</li>
+</ol>
+
+In the following we assume that the reader knows what is a template bank, what is matched filtering, what is a template, and what are the models such as EOB, PadeT1, TaylorT1 and so on. If not, you may look at one of the references in the bibliography.
+
+# Tutorial
+In this section, I provide a few example on how to use \ref BankEfficiency.c. This selection will explain you how to set the parameters and what are the output files. This is of course a non exhaustive list of what can be done.
+
+## First example and outputs
+Let us start with a very simple example that has only two input parameters. This is possible because all parameters have default values. With the following command, we specify explicitly that both the signal and template approximant are based on EOB model:
+
+\code
+lalapps_BankEfficiency --template EOB --signal EOB
+\endcode
+
+Concerning the signal there is no ambiguity:  the argument
+<tt>--signal EOB</tt> means that all injected waveforms are based on EOB model. However, concerning the argument <tt>--template EOB</tt>, one need to understand that it sets both the template model and the template bank placement. For instance, if the template is BCV, then the template bank is a BCV template bank as well. For all other approximant such as EOB, PadeT1, TaylorF2 (physical models) then the template bank is the standard SPA template bank. We'll come back on template bank placement in the next sections.
+
+Note that the component masses of the injected signal are randomised so that the total mass is uniformly distributed. By default, component masses are between 5 and 20 solar masses. The phase order of both the signal and templates are set to 2PN order by default. There are many other default values such as the sampling, the minimal match of the template bank... We'll see below how to change all these default values.
+
+Note that by default the initial phase of the signal is randomised but can be switch off (and set to zero) using <tt>--no-start-phase</tt> option.
+
+The previous command returns a bunch of numbers on the screen. If not, most probably there was an error in the code.You may use the option <tt>--debug 33</tt> to check any standard LAL errors. I would advice to always use this option.
+
+The next step is to understand what all these numbers are. From the output on the screen this is quite tedious. Luckily, at the end of the previous command, one can add an option to stored results in an XML file : <tt>--xml-output</tt> such as in the following example
+
+\code
+lalapps_BankEfficiency --template EOB --signal EOB --debug 33 --xml-output
+\endcode
+
+This option will create a file called <tt>BankEfficiency-Result.xml</tt> that contains (1) all the input parameters (including the default values) and (2) all the results of the simulation. The structure of the XML file is similar to all standard LIGO XML file. Therefore, one can use tools such as \c lwtprint from ligotools. The output results of \ref BankEfficiency.c are stored in XML format in a table that is called \c bankefficiency (no big caps). From now, you can extract the output of \ref BankEfficiency.c using this kind of command:
+
+\code
+lwtprint BankEfficiency-Result.xml -t bankefficiency -c mass1_sim, mass2_sim, snr
+\endcode
+
+where <tt>-t bankefficiency </tt> parses the \ref BankEfficiency.c outputs and <tt>-c snr,mass1_sim,mass2_sim</tt> means you want to extract the columns labelled \c snr, \c mass1_sim and \c mass2_sim. Of course, you need to know what are the column's name. At the end of this document, we provide the list of columns and their meanings. You can also edit the XML file and figure out by yourself.
+
+In the previous example, we extracted the component masses as well as the field called \c snr. By SNR, we actually mean the max SNR over the entire template bank. This is a single number for each injected signal. This number is the maximisation over time and parameter space of all the correlations.
+
+As you've probably noticed, the input parameters can be very succint. In the first example, we provided only 2 or 3 arguments. This simply means that many parameters are set by default. For instance the sampling is 2048Hz and  the template bank is based on a square placement and so on. In order to know all the default values, you can consult the header of \ref BankEfficiency.c. A nicer way is again to look at the XML file. Indeed, all the parameters used for the simulation are stored in the \c process_params table together with the version of the code that has been used, which is stored in the \c process table. So, using the process_params table you should be able to reproduce your results.
+
+If you use \c BankEfficiency as a standalone code and add the option <tt>--print-bank</tt>, you will also have the template bank stored in a file called <tt>BankEfficiency-Bank.xml</tt> as welll as in ASCII format (<tt>BankEfficiency-Bank.dat</tt>).
+
+There are a few other possible outputs and we will come back to this later in this document.
+
+## How to test a template bank
+\ref BankEfficiency.c was designed to test the efficiency of a template bank. To do so, you need to inject many signals, and filter them one by one through all the template bank.
+
+There are three important steps :
+<ol>
+ <li> Set the signal model and its parameters
+ </li><li> Set the template and its parameters
+ </li><li> Set the template bank and its parameters</li>
+</ol>
+
+The two last points seem similar (dealing with the template) but are completely independant. The template bank is a grid of points in the parameter space considered (e.g., component masses) and the template model can be anything. Ideally, the template bank should be constructed with the knowledge of template model. This is the case for the so-called SPA tempalte bank that is designed for TaylorF2 model. However, since other model such as TaylorT3, EOB are quite similar to the TaylorF2, you can use the same so-called SPA template bank for those models as well.
+
+Nothing prevent you to use this SPA template bank (the grid) with model based on something that can be very different such as Eccentric or amplitude corrected waveforms.
+
+So, coming back to the template bank test, one really need to inject many signals to be able to quantify the efficiency of the template bank, that is the distribution of the overlaps in the parameter space. To do so, you can set the number of simulations using  <tt>--n 10000</tt>.
+
+Then, to be realistic, the minimal match of the bank is set to <tt>-- mm 95</tt>:
+
+\code
+lalapps_BankEfficiency --template EOB --signal EOB  --xml-output --print-bank --debug 33 --n 10000 --mm 0.95
+\endcode
+
+This command returns 10000 lines of numbers. So again, it is better to work with the XML file. \ref BankEfficiency.c does not create any plots for you. So you can use whatever tool you prefer (MATLAB, XMGrace,...). However, within <tt>lalapps/src/findchirp</tt> package, there are 2 python files called plotbankefficiency.py (the executable) and inspiraltools.py (the library). Use the former one as follows :
+
+\code
+python plotbankefficiency.py --glob 'BankEfficiency-Results.xml' --verbose --user-tag 'test'
+\endcode
+so as to generate a bunch of plots you may found useful. For instance, \ref snr_versus_totalmass "this figure" shows the distribution of the overlaps versus total mass.
+
+<tt>inspiraltools.py requires a few python packages that you may not have by default (scipy, delaunay, ...), in particular for the contour and scatter plots. Please update your packages. </tt>
+
+\anchor snr_versus_totalmass
+\image html snr_versus_totalmass.png "Overlaps versus total mass of the injected signals."
+
+Note that the XML table does not contains all the physical information you may want. It is quite light though because only 2 mass parameters are stored for the injection and for the template that gives the best SNR. Indeed, other set of parameters can be computed a posteriori.
+
+## Noise and Signal
+In the two previous examples, we considered noiseless simulations. \ref BankEfficiency.c was indeed created to check the overlaps between a template bank and injections. So there was no need for noise. However, the \c noisemodel package has also the possibility to inject a signal into noise (you can even set the signal amplitude to be null so as to study only the noise).  This can be done as follows :
+\code
+lalapps_BankEfficiency --template EOB --signal EOB --debug 33  --mm 0.95 --n 10000  --xml-output --print-bank  --simulation-type NoiseAndSignal --signal-amplitude 25
+\endcode
+
+The <tt>--simulation-type</tt> can be set to [NoiseOnly,NoiseAndSignal,SignalOnly(default)]. The last option <tt>--signal-amplitude</tt> set the average SNR of the signal. The default spectrum used inside the matched filtering or to define the noise spectrum is the initial LIGO by default.
+
+The NoiseAndSignal case is very useful to perform test of the Fisher matrix by testing the dispersion/accuracy of the mass parameters. However, in such a case, you would want the mass of the injection to be fixed instead  of being randomized. This can be done by fixing the individual masses as follows:
+
+\code
+lalapps_BankEfficiency --template EOB --signal EOB --mm 0.95 --n 10000  --xml-output --print-bank  --simulation-type NoiseAndSignal --signal-amplitude 25 --m1 10 --m2 10
+\endcode
+
+Another option related to the noise is that you may want to specify different type of colored noise, which currently are LIGOI, LIGOA, VIRGO, EGO, TAMA for initial LIGO, advanced LIGO, VIRGO, Einstein Telescope and TAMA, which can be set using <tt>--noise-model</tt>.
+
+\code
+lalapps_BankEfficiency --template EOB --signal EOB --mm 0.95 --n 10000  --xml-output --print-bank  --simulation-type NoiseAndSignal --signal-amplitude 25 --m1 10 --m2 10 --noise-model LIGOA
+\endcode
+
+Using the <tt>--print-psd</tt> option, the PSD will be saved in <tt>BankEfficiency-PSD.dat</tt>.
+
+## Template bank related
+Let us now look in more details at the parameters related to the template bank itself.
+
+First of all, there are only two specific type of template bank available at the moment that are in the \ref lalinspiral_bank package. The first template bank is the SPA template bank for physical models such as EOB, Taylor, Pade model. The second one is a BCV template bank that is created if <tt>--template</tt> is set to \c BCV. Let us focus on the SPA template bank for now.
+
+There are two types of placements : square and hexagonal. Historically, square placement was implemented first and can be called using <tt>--bank-grid-spacing SquareNotOriented</tt>. Then hexagonal placement was imlemented and can be called using <tt>--bank-grid-spacing Hexagonal</tt>
+
+\c Technical:
+A template bank is constructed using the metric components of the signal/template manifold. The metric components are computed by calculating quantities such as the moments, which in turn are integrals from a lower cut-off frequency to an upper cutoff frequency. The latter is  by default set to the  Nyquist frequency (so be aware that the sampling is 2048Hz by default). One can force the upper cut-off frequency to be a fixed value by setting <tt>--bank-ffinal</tt>. One can also recompute the moments for each template so that the upper cutoff frequency used to compute the moments is the last stable orbit instead of the Nyquist frequency. This option is not yet fully implemented within the template bank code but can be set on for the Gammas only (does not change the placement but affect the gammas and therefore the ematch values) using <tt>--compute-moments</tt>.
+
+By default the minimal match of the template bank is 80
+
+To set the masse range to which the bank is efficient, use <tt>--bank-mass-range a b</tt>, where \c a and \c b are 2 sorted values of component mass.
+
+There is also the possibility to create a template bank, which is a simple box in \f$\tau_0/\tau_3\f$ that has a fine grid. The fine grid is implemented within \ref BankEfficiency.c and requires these parameters:
+<ul>
+ <li> <tt>--t0-fine-range</tt> Two values to set the t0 range.</li>
+<li> <tt>--t3-fine-range</tt> Two values to set the tau3 range.</li>
+<li> <tt>--t0-fine-bin</tt> Number of bins in this dimension.</li>
+<li> <tt>--t3-fine-bin</tt> Number of bins in this dimension.</li>
+</ul>
+
+## Eccentricity related
+If the signal is set to \c Eccentricity (using the --signal option), then you can set the initial eccentricity of the simulated signals by using a range. The eccentricity will be uniformly distributed witin the two values that define this range. For instance :
+\code
+lalapps_BankEfficiency --template TaylorT3 --signal Eccentricity --mm 0.95 --n 10000  --xml-output --signal-eccentricity-range 0 0.4
+\endcode
+
+Note that the Eccentric model is only implemented at the Newtonian order for the moment. Therefore, one must specify the Newtonian order on the command line argument (by default the 2PN is used). If not, the code will fail.
+
+So, stricly speaking, the command above should have been :
+\code
+lalapps_BankEfficiency --template TaylorT3 --signal Eccentricity --mm 0.95 --n 10000  --xml-output --signal-eccentricity-range 0 0.4 --signal-order 0
+\endcode
+
+where the number 0 stands for Newtonian.
+
+There is no proper eccentric template bank. However, one can set the template bank to be based on SPA bank (optimised for a search that uses 2PN templates) but place an eccentric template on each point of the grid. Yet, by default all templates will have their eccentricity fixed to zero. So, really, this is not an eccentric template bank. One would need the metric in the eccentric dimension and create a template bank adequately. Yet, there is a naive template bank that is called by using the option <tt>--bank-eccentricity-range</tt> followed by a range of values and a number of bins. The template will be \c bins times the original template bank each of them having a different value of eccentricity. This is naive because it assumes that the metric is flat in the eccentric dimension even though this is clearly not the case. However, one can already test how we can recover eccentric waveforms with eccentric templates and performed some tests. To set the number of layers/bins, use <tt>--bank-eccentricity-bins</tt>.
+
+\code
+lalapps_BankEfficiency --template TaylorT3 --signal Eccentricity --mm 0.95 --n 10000  --xml-output --signal-eccentricity-range 0 0.4 --signal-order 0 --bank-eccentric-range 0 0.4 --bank-eccentricity-bins 10
+\endcode
+
+## BCV related functions
+In this section, we show how to test a template bank based on BCV template and how a BCV template bank can detect signals based on other models such as EOB, PadeT1, ...
+
+I will not described the placement itself neither the filtering (see for instance Ref. [\cite bcvbank]). Here is just a simple example:
+
+\code
+./lalapps_BankEfficiency --template BCV --bank-alpha 0.01 --bank-psi0-range 10 250000 --bank-psi3-range -2000 -10 --bank-fcut-range 2 6 --bank-number-fcut 3 --bank-inside-polygon 1 --signal EOB --signal-mass-range 5 20 --xml-output
+\endcode
+
+The BCV signal can be injected as well. We can force the psi0/psi values using <tt>--psi0</tt> and <tt>--psi3</tt> options.
+Otherwise the <tt>--signal-psi0-range</tt> and <tt>--signal-psi3-range</tt> need to be fixed or default values will be used instead.
+
+Concerning the filtering there is an option to avoid the alpha constraint to be used <tt>--no-alpha-constraint</tt> <tt>--alpha-constraint</tt>.
+
+The template bank can be either Hexagonal or Square, but only the Hexagonal case has been tested exhaustively.
+
+The filtering may fail if the psi0/psi3 pair gives an ending frequency lower than the lower cut-off frequency.
+
+## Amplitude Corrected related
+To use the amplitude corrected waveforms, one can simply set the signal to be \c AmpCorPPN. The order needs also to be set by using <tt>--signal-amp-order</tt>  and <tt>--template-amp-order</tt>
+
+Concerning the input parameter of the signal, one also need to set the range of inclination and polarisation using <tt>--signal-inclination-range</tt> and <tt>--signal-polarisation-range</tt>.
+
+<tt>Check this : Note, however, that because the signal is normalised with respect to their energy, the effect of the inclination on the amplitude of the signal won't be seen !</tt>
+
+The template bank is based on SPA placement.
+
+The filtering is the standard filtering in quadrature.
+
+## Others issues
+There are a few other options. Some of which can be useful.
+
+### Change the length of the vectors
+In principle \ref BankEfficiency.c estimates the longest length of all templates and all possible signals and allocate memory such that the vectors are long enough. If you still want to increase the size of the vectors  you can use <tt>--num-seconds</tt> to fix the size yourself (but you need to know the optimal length).
+
+### Lower cut off frequencies
+To set the lower cut-off frequency, use <tt>--fl</tt>, which affects both the signal and template lower cut-off frequency. You can independantly set the template/bank cut-off frequency and signal lower cut off frequency using <tt>--template</tt> and <tt>--signal</tt>.
+
+## Fast option
+There is a fast option to perform the simulation quicker that can be very powerful. It is based on the metric of the signal. So if the template and the signal are based on the same approximant, it can be used very safely. It is switched on by using <tt>--fast-simulation EMatch</tt> and <tt>--e-match</tt>, which is set to 0.5 by default
+
+\code
+./lalapps_BankEfficiency --fast-simulation EMatch --e-match 0.5 --xml-output
+\endcode
+
+The match is unity when the signal and template are identical. As soon as they differ, the match decreases. Since it is not normalised, it can take negative values. Also, in the xml table, we store the number of templates that have been used in the \c nfast field.
+
+How does the EMatch option works ? First, we know the position of the signal \f$s\f$. So, we compute the Ematch between this signal and a template. If the ematch value is greater than the ematch parameter (e.g. 0.5), then we compute the overlap between the signal and the template otherwise we skip the filtering.
+
+Another fast option is the Heuristic1 one. This is very similar to the EMatch case but the ematch value is computed between the template and the position of the template that gave the best SNR up to now. The ematch argument is not used. The consequence is that we can go much farther that the original position of the signal. This is useful in the presence of noise or when signal and template differ significantly. Typically, I use this option when signal is Eccentricity and template is non Eccentric waveforms. If you use this option, you also need to stop the simulation at some point. This is done by setting the <tt>--fast-param1</tt> option (default of 50). THis argument means that if after 50 iterations, no filtering gave a larger SNR that the current maximum SNR then we stop the template bank parsing.
+
+## BHNS injections
+There are many ways to choose the parameters of the signal to be injected. By default, the total mass is uniformly distributed and the component masses are set using the option <tt>--signal-mass-range</tt>. You can overwrite this option by using together the <tt>--m1</tt> and <tt>--m2</tt> options to force the component masses to be fixed. Similarly, if you prefer to work with the chirp times parameters, you can use
+<tt>--tau3</tt> and <tt>--tau0</tt>. Finally, there is an option to force the masses to be such that the binary system is a BHNS system, that is the first component mass in in the range \f$[1,3]M_\odot\f$ and the second component mass is larger than \f$3M_\odot\f$. This option is <tt>--bhns-injection</tt>. Of course you need to be sure that <tt>--signal-mass-range</tt> has a range that include the value 3.
+
+## Check the code
+There is a special option that is <tt>--check</tt> or equivalently <tt>{}-{-}faithfulness</tt>. This is a very powerful option that set the template parameter to be identical to the signal. So, you can compute the faithfulness and check your code. Ideally, the output SNRs must be equal to 1. If not something is wrong in your code, or different between the template and signal parameters.
+
+However, using this command :
+\code
+./lalapps_BankEfficiency --template EOB --signal EOB --xml-output --n 100 --check
+\endcode
+we obtain 100 SNRs that are not stricly equal to 1. The reason is that we randomize the starting phase of the signal. To remove this option, use the command <tt>--start-phase</tt>. Now you should get 1 all the time. There are some other parameters that are not overwritten : lower cut-off frequency, order of the phase and the approximant.
+
+# Deploy your DAGs and CONDOR jobs
+\ref BankEfficiency.c can be used standalone or in parallel on a cluster using \c CONDOR. Changing the seed will provide different outputs, which can be recombined all together and analysed. to do so, we will use Condor and Dagman concepts that I assume you already know.
+
+In the <tt>lalapps/src/findchirp</tt> package, there is python script called <tt>bep.py</tt>, which can be call to automatically create a dag file. This script requires one ini file, an example of which is <tt>bep.ini</tt> available in the same directory. This ini file can be changed to your need. The idea is that it contains all the arguments that should be passed to \ref BankEfficiency.c command line argument.
+
+## The ini file
+Here is a very simple example of bep.ini file that can be used to create the dag file.
+
+\code
+[main]
+executable=./lalapps_BankEfficiency
+
+[general]
+mm=0.95
+sampling=2048
+fl=40
+
+[bank]
+bank-grid-spacing=Hexagonal
+
+[signal]
+signal=EOB
+
+[simulation]
+ntrial=1000
+njobs=100
+\endcode
+
+change it to your need. The structure of the ini file  requires to have 5 sections as shown above ([main], [bank], ...). The content of the main section must contain the argument \c executables. Other than that there is no rules with respect to the order of the arguments as far as it is a valid  argument.
+
+## Generate the dag files
+\code
+python bep.py --config-file bep.ini
+\endcode
+
+## Submit the dag
+This command
+\code
+condor_submit_dag -maxjobs 100  -f bep.dag
+\endcode
+will start the \c DAG. You can see the status as usual using \c condor_q. Once done, the \c DAG will merge all the files (bankefficiency*out) together using the script <tt>finalise.sh</tt>. Nothing prevent you to use it while simulations are still running. This is very convenient for those of you who wants to study the efficiencies even though all the simulations are not over.
+
+# Meaning of the bankefficiency XML table
+## Meaning of the bankefficiency table
+Here is the list of the current field contained within the bankefficiency XML table:
+<dl>
+<dt>psi0</dt><dd> The first BCV parameter of the template</dd>
+<dt>psi3</dt><dd> The second BCV parameter of the template</dd>
+<dt>psi0_sim</dt><dd> The first BCV parameter of the injection</dd>
+<dt>psi3_sim</dt><dd> The second BCV parameter of the injection</dd>
+<dt>tau0</dt><dd> The first mass parameter of the template</dd>
+<dt>tau3</dt><dd> The second mass parameter of the template</dd>
+<dt>tau0_sim</dt><dd> The first mass parameter of the injection</dd>
+<dt>tau3_sim</dt><dd> The second mass parameter of the injection</dd>
+<dt>ecc</dt><dd> eccentricity of the best templates</dd>
+<dt>ecc_sim</dt><dd> eccentricity of the signal at 2FL_3 </dd>
+<dt>ecc_sim_fl</dt><dd> eccentricity of the signal at F_L</dd>
+<dt>ffinal</dt><dd> final frequency  of the best template</dd>
+<dt>ffinal_sim</dt><dd> final frequency of the injection</dd>
+<dt>mass1_sim</dt><dd> The first mass parameter of the injection</dd>
+<dt>mass2_sim</dt><dd> The second mass parameter of the injection</dd>
+<dt>phase_sim</dt><dd> The initial phase of the injection</dd>
+<dt>snr</dt><dd> the best overlap maximised over all template bank and time</dd>
+<dt>snr_at_ta</dt><dd> irrelevant for now</dd>
+<dt>phase</dt><dd> the phase of the best template</dd>
+<dt>alpha_f</dt><dd> the alpha_f value of the best template (BCV related)</dd>
+<dt>time</dt><dd> the time of arrival of the best template</dd>
+<dt>time_sim</dt><dd> the starting time of the signal (does not work for some models such as BCV)</dd>
+<dt>nfast</dt><dd> number of templates really used</dd>
+<dt>nfast</dt><dd> number of templates after which the max SNR was found. </dd>
+</dl>
+
+## How to add your own field
+Here is the brief procedure to add a new field in the table:
+<ol>
+ <li> Change the macros in BankEfficiency.h
+ </li><li> Change the functions PrintResults (stdout)
+ </li><li> Change the function  PrintXMLResults (XML)</li>
+</ol>
+
+# Arguments and their default values
+In the following, - or ? means this option is not fully checked.
+## Bank and template related
+
+<table><tr><td>
+
+argument</td><td>description</td><td>number of argument required</td><td>default value</td></tr>
+<tr><td>--bank-alpha</td><td>The alpha value to be used in the BCV bank</td><td>1</td><td>0.01</td></tr>
+<tr><td>--bank-fcut-range</td><td>Range of final frequnency in units of GM (e.g., 3 6)</td><td>2</td><td>3 6</td></tr>
+<tr><td>--bank-ffinal</td><td>The final frequency to be used in the moments computation (if set it is the same for all templates)</td><td>1</td><td>Nyquist</td></tr>
+<tr><td>--bank-inside-polygon</td><td>BCV related. reject all template outside a polygon defined within \ref lalinspiral_bank package</td><td>1 boolean</td><td>1</td></tr>
+<tr><td>--bank-grid-spacing</td><td>The template bank placement. [Hexagonal, SquareNotOriented, Square]</td><td>1</td><td>Square</td></tr>
+<tr><td>--bank-number-fcut</td><td>BCV related. number of layer in fcut dimension</td><td>1</td><td>5</td></tr>
+<tr><td>--bank-mass-range</td><td>Individual mass range of the simulated events</td><td>2</td><td>5 20</td></tr>
+<tr><td>--bank-max-total-mass</td><td>to be checked</td><td>-</td><td>None</td></tr>
+<tr><td>--bank-min-total-mass</td><td>to be checked</td><td>-</td><td>None</td></tr>
+<tr><td>--bank-psi0-range</td><td>BCV related</td><td>2</td><td>10 250000</td></tr>
+<tr><td>--bank-psi3-range</td><td>BCV related</td><td>2</td><td>-2200 -10</td></tr>
+<tr><td>--bank-eccentricity-range</td><td>Range of eccentricity of the templates</td><td>2</td><td>0 0.4</td></tr>
+<tr><td>--bank-eccentricity-bins</td><td>Number of layers in the eccentric template bank</td><td>1</td><td>1</td></tr>
+<tr><td>--mm</td><td>The minimal match of the bank</td><td>1</td><td>0.80</td></tr>
+<tr><td>--template-fl</td><td>lower cut-off frequency of the templat</td><td>1</td><td>40</td></tr>
+<tr><td>--template</td><td>the template approximant (EOB, Pade,...)</td><td>1</td><td></td></tr>
+<tr><td>--template-order</td><td>the phase order of the template</td><td>1</td><td>4</td></tr>
+<tr><td>--template-amp-order</td><td>the amplitude correction of the tempalte</td><td>1</td><td>5</td></tr>
+<tr><td>--t0-fine-range</td><td>Range of tau0 values for the fine template bank</td><td>2</td><td></td></tr>
+<tr><td>--t3-fine-range</td><td>Range of tau3 values for the fine temnplate bank</td><td>2</td><td></td></tr>
+<tr><td>--t0-fine-bin</td><td>The number of template along tau0</td><td>1</td><td>None</td></tr>
+<tr><td>--t3-fine-bin</td><td>The number of template along tau3.</td><td>1</td><td>None</td></tr>
+<tr><td>
+</td></tr></table>
+
+## Signal related
+
+<table><tr><td>
+
+--signal</td><td></td><td></td><td>EOB</td></tr>
+<tr><td>--signal-alpha</td><td>BCV related. The alphaF value of the signal</td><td>1</td><td>0.01</td></tr>
+<tr><td>--signal-amp-order</td><td>The amplitude correction order</td><td>1</td><td>5</td></tr>
+<tr><td>--signal-alpha1</td><td>obsolet</td><td>-</td><td>-</td></tr>
+<tr><td>--signal-alpha2</td><td>obsolet</td><td>-</td><td>-</td></tr>
+<tr><td>--signal-amplitude</td><td>The SNR of the signal</td><td>1</td><td>10</td></tr>
+<tr><td>--signal-eccentricity-range</td><td>The range of eccentricity of the eccentric signal. Uniformly distributed</td><td>2</td><td>0 0.4</td></tr>
+<tr><td>--signal-ffinal</td><td>Force the ffinal of the signal</td><td>1</td><td>None</td></tr>
+<tr><td>--signal-fl 40</td><td>lower cut off frequency of the signal</td><td>1</td><td>40</td></tr>
+<tr><td>--signal-inclination-range</td><td>Inclination range of the signal</td><td>2</td><td>0 \f$\pi\f$</td></tr>
+<tr><td>--signal-polarisation-range</td><td>Polarisation range of the signal</td><td>2</td><td>0 \f$\pi\f$</td></tr>
+<tr><td>--signal-mass-range</td><td>Range og the component mass</td><td>2</td><td>5 20</td></tr>
+<tr><td>--signal-tau0-range</td><td>-</td><td>-</td><td>-</td></tr>
+<tr><td>--signal-tau3-range</td><td>-</td><td>-</td><td>-</td></tr>
+<tr><td>--signal-order</td><td>The phase order 4 means 2PN, 5 means 2.5PN and so on</td><td>1</td><td>4</td></tr>
+<tr><td>--signal-nstartpad</td><td>-</td><td>-</td><td>-</td></tr>
+<tr><td>--signal-psi0-range</td><td>BCV related.</td><td>2</td><td>10 250000</td></tr>
+<tr><td>--signal-psi3-range</td><td>BCV related.</td><td>2</td><td>-2200 -10</td></tr>
+<tr><td>--signal-random-nstartpad</td><td>?</td><td>1</td><td>None</td></tr>
+<tr><td>--signal-max-total-mass</td><td>Max total mass</td><td>1</td><td>None</td></tr>
+<tr><td>--signal-min-total-mass</td><td>Min total mass</td><td>1</td><td>None</td></tr>
+<tr><td>
+--tau0</td><td>Set the injection parameters to be always equal to this value. Must be use with --tau3</td><td>1</td><td>None</td></tr>
+<tr><td>--tau3</td><td>Set the injection parameters to be always equal to this value. Must be use with --tau0</td><td>1</td><td>None</td></tr>
+<tr><td>--psi0</td><td>Set the injection parameters to be always equal to this value. Must be use with --psi0</td><td>1</td><td>None</td></tr>
+<tr><td>--psi3</td><td>Set the injection parameters to be always equal to this value. Must be use with --psi0</td><td>1</td><td>None</td></tr>
+<tr><td>--m1</td><td>Set the injection parameters to be always equal to this value. Must be use with --m2</td><td>1</td><td>None</td></tr>
+<tr><td>--m2</td><td>Set the injection parameters to be always equal to this value. Must be use with --m1</td><td>1</td><td>None</td></tr>
+<tr><td>
+</td></tr></table>
+
+## Other options
+
+<table><tr><td>
+
+--debug</td><td>Set to 33 to have LAL error, set to 6 to have memory leaking checked and so on. See LAL documentation</td><td>1</td><td>0</td></tr>
+<tr><td>--e-match</td><td>e-match for the fast simulation option</td><td>1</td><td>0.5</td></tr>
+<tr><td>--fl</td><td></td><td></td><td>40</td></tr>
+<tr><td>--h</td><td>help</td><td>0</td><td>None</td></tr>
+<tr><td>--ascii2xml</td><td>Internal usage only for the DAG generation</td><td>0</td><td>None</td></tr>
+<tr><td>--ntrial,--n</td><td>Number of simulations</td><td>1</td><td>1</td></tr>
+<tr><td>--noise-amplitude</td><td>?</td><td>?</td><td>?</td></tr>
+<tr><td>--noise-model</td><td>one of [LIGOI, LIGOA, VIRGO, GEO, EGO]</td><td></td><td></td></tr>
+<tr><td>--num-seconds</td><td>Set the vector duration in seconds</td><td>1</td><td>None</td></tr>
+<tr><td>--sampling</td><td>Sampling frequency</td><td>1</td><td>2048</td></tr>
+<tr><td>--seed</td><td>The seed of the random process</td><td>1</td><td>?</td></tr>
+<tr><td>--simulation-type</td><td>The type of simulations [NoiseOnly, NoiseAndSignal, SignalOnly]</td><td>1</td><td>SignalOnly</td></tr>
+<tr><td>--no-start-phase</td><td>force the initial phase to be zero all the time</td><td>0</td><td>not set</td></tr>
+<tr><td>--user-tag</td><td>not yet finalised</td><td>-</td><td>-</td></tr>
+<tr><td>--ambiguity</td><td>print the ambiguity function</td><td>0</td><td>None</td></tr>
+<tr><td>--alpha-constraint</td><td>BCV related</td><td>0</td><td>None</td></tr>
+<tr><td>--bhns-injection</td><td>inject BHNS waveforms only</td><td>0</td><td>None</td></tr>
+<tr><td>--no-alpha-constraint</td><td>BCV related</td><td>0</td><td>None</td></tr>
+<tr><td>--print-best-overlap</td><td>to check</td><td>0</td><td>None</td></tr>
+<tr><td>--faithfulness,--check</td><td>check the code</td><td>0</td><td>None</td></tr>
+<tr><td>--print-psd</td><td>print the PSD in BankEfficiency-PSD.dat</td><td>0</td><td>None</td></tr>
+<tr><td>--print-snr-histo</td><td>Save the Histogram of all the correlation in BankEfficiency-Histogram.dat</td><td>0</td><td>None</td></tr>
+<tr><td>--verbose</td><td>verbose option</td><td>0</td><td>None</td></tr>
+<tr><td>--version</td><td>print the version numbers</td><td>0</td><td>None</td></tr>
+<tr><td>--print-bank</td><td>print the tenplate bank in BankEfficiency-Bank.xml</td><td>0</td><td>None</td></tr>
+<tr><td>--compute-moments</td><td>Recompute the gamma of the template</td><td>0</td><td>None</td></tr>
+<tr><td>--xml-output</td><td>print results in an xml file BankEfficiency-Result.xml</td><td>0</td><td>None</td></tr>
+<tr><td>--print-prototype</td><td>internal usage only</td><td>0</td><td>None</td></tr>
+<tr><td>--fast-simulation</td><td>Set the fast simulation on [None, EMatch, Heuristic1]. Use with care.</td><td>0</td><td>None</td></tr>
+<tr><td>--fast-param1</td><td>Set the heuristic1 maximum consecutive filtering without increasing the SNR.</td><td>0</td><td>None</td></tr>
+<tr><td></td></tr></table>
+
+# FAQs
+
+## Why BankEfficiency fails without any error message?
+Usually, the code is quite robust but there are a few places where it may fail. One is related to the size of the vectors not being long enough. By default the memory allocation is optimized by fixing the vector length to a minimal value. This value is estimated as twice the length of the longest template/signal to be used. If this estimated length is not done properly, then the code fails if a signal/template is longer.
+
+An other reason could be related to the PN order not being set properly.
+
+Usually, with a segmentation fault, this is related to vector not being set properly.
+
+## Why does it take so long to compute the results
+You've been greedy. In general, you should see the simulation results coming on the stdout quite quickly.
+
+For instance, using the fast simulation option, you can generate 1000 simulations of BBH injections in a few minutes on your laptop.
+
+Of course, if you look at PBH or BNS systems, vector length are longer and it takes longer to compute a single FFT. In addition, if you remove the fast option, all templates will be filtered. On top of which, you may ask a very fine bank such as --mm 0.999 and so on. At the end you may have a 2048 seconds vector length and 50,000 templates. So you will have to wait or use a cluster.
+
+*/

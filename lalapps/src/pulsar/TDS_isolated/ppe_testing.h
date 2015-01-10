@@ -13,7 +13,7 @@
 
 /**
  * \file
- * \ingroup pulsarApps
+ * \ingroup lalapps_pulsar
  * \author Matthew Pitkin
  *
  * \brief Header file for functions used in testing the parameter

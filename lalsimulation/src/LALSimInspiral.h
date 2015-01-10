@@ -33,6 +33,11 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
+/**
+ * \defgroup LALSimInspiral_h Header LALSimInspiral.h
+ * \ingroup lalsimulation_general
+ */
+
 #define LAL_PN_MODE_L_MAX 3
 /* (2x) Highest available PN order - UPDATE IF NEW ORDERS ADDED!!*/
 #define LAL_MAX_PN_ORDER 8

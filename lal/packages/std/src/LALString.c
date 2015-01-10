@@ -17,14 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/**
- * \file
- * \addtogroup LALString_h
- * \author Creighton, J. D. E.
- * \brief XLAL string manipulation routines.
- *
- */
-
 #include <string.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALString.h>

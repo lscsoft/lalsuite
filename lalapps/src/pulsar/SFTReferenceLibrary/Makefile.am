@@ -21,12 +21,7 @@ lalapps_SFTdumpall_SOURCES =    SFTdumpall.c $(binsources)
 
 lalapps_splitSFTs_SOURCES =     splitSFTs.c $(binsources)
 
-docsources      =      README 		\
-                       SCCB_2004_09_09 	\
-                       T040164.tex 	\
-                       ligodcc.cls
-
-EXTRA_DIST      =      $(docsources) \
+EXTRA_DIST      =      SFTReferenceLibrary.dox \
                        run_validate.sh
 
 CLEANFILES      =      SFT-test[1-7] SFT-bad[1-9] SFT-bad1[0-4] SFT-good

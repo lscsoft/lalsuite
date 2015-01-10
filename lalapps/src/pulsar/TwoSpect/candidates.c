@@ -533,7 +533,7 @@ candidateVector * keepMostSignificantCandidates(candidateVector *input, inputPar
 /**
  * Calculate the R statistic from equation 13 of E. Goetz and K. Riles (2011)
  * \param [in] ffdata Pointer to REAL4Vector of the 2nd FFT data
- * \param [in] templateStruct Pointer to the templateStruct containing the template
+ * \param [in] templatestruct Pointer to the templateStruct containing the template
  * \param [in] noise Pointer to the REAL4Vector containing the background 2nd FFT powers
  * \param [in] fbinaveratios Pointer to the REAL4Vector of normalized SFT background powers
  * \return Value of the R statistic

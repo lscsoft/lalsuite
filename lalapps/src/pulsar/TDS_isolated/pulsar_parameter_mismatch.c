@@ -1,6 +1,6 @@
 /**
  * \file
- * \ingroup pulsarApps
+ * \ingroup lalapps_pulsar
  * \brief calculate the mismatch between two phase models from the standard definition of mismatch
  */
 

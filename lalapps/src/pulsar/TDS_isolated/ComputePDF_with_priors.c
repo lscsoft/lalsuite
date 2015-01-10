@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup pulsarApps
+ * \ingroup lalapps_pulsar
  * \author Réjean Dupuis
  * \brief
  * Driver code to calculate posterior pdfs for known pulsars

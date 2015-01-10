@@ -1,0 +1,8 @@
+/* Top-level module organisation for LALXML */
+/**
+
+\defgroup lalxml_general		General Packages
+
+\defgroup lalxml_python			Python Packages
+
+*/

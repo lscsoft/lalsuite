@@ -26,8 +26,8 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup SimulatePulsarSignal_h
- * \ingroup pkg_pulsarCommon
+ * \defgroup SimulatePulsarSignal_h Header SimulatePulsarSignal.h
+ * \ingroup lalpulsar_common
  * \author Reinhard Prix
  * \date 2004, 2013
  *

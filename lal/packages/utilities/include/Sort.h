@@ -37,7 +37,8 @@ extern "C" {
 
 
 /**
- * \addtogroup Sort_h
+ * \defgroup Sort_h Header Sort.h
+ * \ingroup lal_utilities
  *
  * \brief Provides routines for sorting, indexing, and ranking real vector elements.
  *

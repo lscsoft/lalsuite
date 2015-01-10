@@ -20,7 +20,7 @@
 /**
  * \author Sathyaprakash, B. S.
  * \file
- * \ingroup LALSimInspiraldEnergyFlux_c
+ * \ingroup LALSimInspiral_h
  *
  * \brief NONE
  *

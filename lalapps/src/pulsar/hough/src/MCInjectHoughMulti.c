@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup pulsarApps
+ * \ingroup lalapps_pulsar
  * \author Alicia Sintes, Badri Krishnan
  * \brief
  * Monte Carlo signal injections for several h_0 values and

@@ -27,7 +27,8 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup Dirichlet_h
+ * \defgroup Dirichlet_h Header Dirichlet.h
+ * \ingroup lal_utilities
  * \author UTB Relativity Group; contact whelan@phys.utb.edu
  *
  * \brief Provides prototype and error code information for <tt>LALDirichlet()</tt>,

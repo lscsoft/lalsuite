@@ -1,0 +1,145 @@
+/**
+\defgroup lalapps_stochastic_running Running the LALApps Stochastic Pipeline Under Condor
+\ingroup lalapps_stochastic
+
+This section describes how to run the LALApps stochastic analysis
+pipeline under Condor at the various LSC Data Grid Sites, such as CIT,
+UWM, and the observatory clusters at LHO and LLO.
+
+The pipeline is constructed as a directed acyclic graph (DAG) run under
+Condor. A DAG represents a set of programs where the input, output, or
+execution of one or more programs is dependent upon one or more other
+programs. The programs are represented by nodes (verticies) in the
+graph, and the edges (arcs) identifies the dependencies. There are three
+different nodes that make up the Stochastic analysis DAG - datafind,
+stochastic and stopp. A short description of the nodes that make up the
+stochastic DAG follows:
+
+### Datafind Node
+
+The datafind node, as its name suggests, is for determining the location
+of the data that is to be analysed. It uses \c LSCdataFind to
+query the LDR database for the location of the data on the cluster. This
+step in the pipeline does not need to be run for every analysis, only
+when the location of the data changes.
+
+### Stochastic Node
+
+The stochastic node runs an instance of <tt>lalapps_stochastic</tt>, the
+main stochastic analysis code. See
+\ref stochastic.c for more information on
+<tt>lalapps_stochastic</tt>.
+
+### Stopp Node
+
+The stopp node runs an instance of <tt>lalapps_stopp</tt>, the STOchastic
+Post Processing code. See \ref stopp.c for more
+information on <tt>lalapps_stopp</tt>.
+
+## Creating the DAG
+
+In order to create the DAG, a configuration file is required, examples
+of which can be found in the <tt>lalapps/src/stochastic/example</tt>
+directory. This configuration specfies the parameters to use for each
+step of the pipeline. See \ref lalapps_stochastic_pipe.py
+for details regarding the layout of the configuration file.
+
+Any combination of nodes, see above, can be present in the DAG, assuming
+that the dependencies for each node are satisfied. The datafine node has
+no dependencies, the stochastic node requires cache files to be
+available, so if cache have already been generated and the location of
+the data on the cluster has not changed then there is no read for the
+datafind node to be run, and finally the stopp node requires that the
+xml output file from <tt>lalapps_stochastic</tt> are available.
+
+The following example will create a DAG containing all nodes, datafind,
+stochastic and stopp.
+
+\code
+> lalapps_stochastic_pipe --datafind --stochastic --stopp \
+    --config-file example_S3_H1L1.ini --log-path logs
+\endcode
+
+In addition to creating the DAG it will also create several other file
+required for running the search under condor, descriptions of these
+files can be found below,
+
+<dl>
+<dt><tt>example_S3_H1L1.dag</tt></dt><dd>
+This is main dag file that includes all the required information for
+running the pipeline. This includes the dependency information for each
+job within the DAG along with all the dynamic command line arguments for
+each job.</dd>
+<dt><tt>example_S3_H1L1.datafind.sub</tt></dt><dd>
+This is the submit file used to submit datafind jobs to condor. It
+includes all the static command line options along with variable command
+line options, for each job, that are defined within the main
+<tt>.dag</tt> file.</dd>
+<dt><tt>example_S3_H1L1.stochastic.sub</tt></dt><dd>
+This is the submit file used to submit stochastic jobs to condor. It
+includes all the static command line options along with variable command
+line options, for each job, that are defined within the main
+<tt>.dag</tt> file.</dd>
+<dt><tt>example_S3_H1L1.stopp.sub</tt></dt><dd>
+This is the submit file used to submit stopp jobs to condor. It
+includes all the static command line options along with variable command
+line options, for each job, that are defined within the main
+<tt>.dag</tt> file.</dd>
+<dt><tt>example_S3_H1L1.pipeline.log</tt></dt><dd>
+This is the log file that details how the data, from the input segment
+list, has been split up into different jobs.</dd>
+</dl>
+
+## Running the DAG
+
+When the DAG has been created successfully, a message will be displayed
+describing what needs to be done inorder to run the analysis pipeline at
+a LSC DataGrid Site.
+
+<tt>LSCdataFind</tt> works by querying the datafind server for the
+location of the requested data, this requires the user running
+LSCdataFind to have a valid grid proxy. Therefore if the DAG includes
+any datafind nodes, a valid grid proxy must be available prior to the
+job being submitted to the cluster. This is achieved by running the
+following commands:
+
+\code
+> unset X509_USER_PROXY
+> grid-proxy-init
+\endcode
+
+This will remove any existing proxy and recreate another, requesting the
+grid certificates pass phase. The default duration for the proxy to be
+valid is 12 hours, if a longer duration is required it can be increased
+by appending "<tt>-hours</tt> <i>HOURS</i>" to the call to
+<tt>grid-proxy-init</tt>.
+
+Now that everything is setup, the DAG is ready to be submitted to condor
+for execution. This is achieved with the following command.
+
+\code
+> condor_submit_dag example_S3_H1L1.dag
+\endcode
+
+The progress of the DAG can be monitored by studying the DAGman output
+file, <tt>example_S3_H1L1.dag.dagman.out</tt>. This contains
+information regarding the current state of the search, what jobs have
+been completed sucessfully, those that have failed, and those that fail
+to run due to unsatisfied dependencies. Once the DAG has completed, if
+and jobs have failed, a rescue DAG will be written out. This can be then
+submitted to the cluster in the same way as before, the difference is
+that this will only attempt to run jobs that previously failed.
+
+NOTE: currently there is a problem with running a large number of
+stochastic jobs at any one time. As condor is designed to run jobs that
+take over an hour to complete and the average runtime for a stochastic
+job is a matter a minutes, running a large number of stocahastic jobs at
+the same time will greatly reduce the computational efficiency of a
+cluster. Whilst this problem it resolved it is recommended to submit the
+DAG with the following command, limiting the total number of jobs to run
+to a maximum of 30:
+
+\code
+> condor_submit_dag -maxjobs 30 example_S3_H1L1.dag
+\endcode
+*/

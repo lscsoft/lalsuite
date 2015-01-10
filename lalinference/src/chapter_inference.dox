@@ -1,9 +1,0 @@
-// -*- mode: c -*-
-
-/**
- * \addtogroup ch_inference
- * @{
- * \defgroup pkg_LALInference	Package 'LALInference'
- * \defgroup pkg_LALInferenceXML XML Serializers
- * @}
- */

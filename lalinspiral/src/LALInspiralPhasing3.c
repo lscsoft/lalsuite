@@ -30,7 +30,7 @@
  * <ul>
  * <li> \c phase: Output, the phase of the wave at the current epoch.</li>
  * <li> \c td: Input, the PN expansion coefficients of phase \f$\phi^t_k\f$ as a function
- * of time (cf. \tableref{table_flux}.</li>
+ * of time (cf. \ref table_flux "this table".</li>
  * <li> \c ak: Input containing PN expansion coefficients.</li>
  * </ul>
  *

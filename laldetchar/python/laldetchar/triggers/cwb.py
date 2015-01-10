@@ -14,7 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-## \addtogroup pkg_py_laldetchar_triggers_cwb
+## \addtogroup laldetchar_py_triggers_cwb
 """Read Coherent WaveBurst events from `ROOT` files
 """
 #
@@ -51,7 +51,7 @@ CWB_SNGL_COLUMNS = ['process_id', 'event_id', 'search', 'ifo', 'peak_time',
                     'central_freq', 'snr', 'confidence', 'hrss', 'tfvolume']
 
 # open doxygen
-## \addtogroup pkg_py_laldetchar_triggers_cwb
+## \addtogroup laldetchar_py_triggers_cwb
 #@{
 
 

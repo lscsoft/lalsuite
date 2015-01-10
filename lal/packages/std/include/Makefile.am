@@ -1,11 +1,5 @@
 include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 
-EXTRA_DIST = LALConfig.dox \
-	LALDatatypes.dox \
-	LALError.dox \
-	LALMalloc.dox \
-	LALStatusMacros.dox
-
 pkginclude_HEADERS = \
 	Grid.h \
 	LALAtomicDatatypes.h \
@@ -26,3 +20,11 @@ pkginclude_HEADERS = \
 	StringInput.h \
 	XLALError.h \
 	XLALGSL.h
+
+EXTRA_DIST = \
+	LALConfig.dox \
+	LALDatatypes.dox \
+	LALError.dox \
+	LALMalloc.dox \
+	LALStatusMacros.dox \
+	$(END_OF_LIST)

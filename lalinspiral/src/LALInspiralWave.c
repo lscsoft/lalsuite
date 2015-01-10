@@ -22,7 +22,7 @@
  * \file
  * \ingroup LALInspiral_h
  *
- * \brief Interface routine needed to generate all waveforms in the \ref pkg_inspiral package.
+ * \brief Interface routine needed to generate all waveforms in the \ref lalinspiral_inspiral package.
  *
  * To generate a waveform
  * a user is noramlly required to (a) choose the binary parameters, starting frequency, number of
@@ -66,10 +66,10 @@
  * defined as follows: For all \c Taylor approximants at orders 0PN, 1PN and 1.5PN
  * \f$v_\textrm{lso}^2=1/6,\f$ and at 2PN, 2.5PN, 3PN and 3.5PN
  * \f$v_\textrm{lso}^2 = x^\textrm{lso}_{T_4},\f$ where \f$x^\textrm{lso}_{T_4}\f$ is
- * defined in \tableref{table_energy}.  In the case of \c Pade approximant
+ * defined in \ref table_energy "this table".  In the case of \c Pade approximant
  * at 1.5PN order \f$v_\textrm{lso}^2=1/6,\f$ and at orders 2PN, 2.5PN, 3PN and 3.5PN
  * \f$v_\textrm{lso}^2 = x^\textrm{lso}_{P_4},\f$ where \f$x^\textrm{lso}_{P_4}\f$ is
- * defined in \tableref{table_energy}. In the case of #EOB approximant,
+ * defined in \ref table_energy "this table". In the case of #EOB approximant,
  * defined only at orders greater than 2PN, the plunge waveform is
  * terminated at the light-ring orbit defined by \eqref{eq_LightRing}.
  *

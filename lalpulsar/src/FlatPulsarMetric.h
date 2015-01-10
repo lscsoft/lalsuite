@@ -27,7 +27,7 @@ extern "C" {
 
 /**
  * \defgroup FlatPulsarMetric_h Header FlatPulsarMetric.h
- * \ingroup pkg_pulsarMetric
+ * \ingroup lalpulsar_metric
  * \author Reinhard Prix
  * \date 2005
  * \brief Header-file defining the API for the flat pulsar-metric functions.

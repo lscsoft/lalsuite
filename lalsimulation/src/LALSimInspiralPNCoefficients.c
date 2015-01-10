@@ -325,7 +325,7 @@ XLALSimInspiralPNFlux_12PNTidalCoeff(
  */
 static void UNUSED
 XLALSimInspiralPNPhasing_F2(
-	PNPhasingSeries *pfa,
+	PNPhasingSeries *pfa, /**< \todo UNDOCUMENTED */
 	const REAL8 m1, /**< Mass of body 1, in Msol */
 	const REAL8 m2, /**< Mass of body 2, in Msol */
 	const REAL8 chi1L, /**< Component of dimensionless spin 1 along Lhat */

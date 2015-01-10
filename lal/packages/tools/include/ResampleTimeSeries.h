@@ -30,7 +30,8 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup ResampleTimeSeries_h
+ * \defgroup ResampleTimeSeries_h Header ResampleTimeSeries.h
+ * \ingroup lal_tools
  * \author Brown, D. A.
  *
  * \brief Provides routines to resample a time series.

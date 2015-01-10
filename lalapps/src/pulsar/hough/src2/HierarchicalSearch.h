@@ -22,6 +22,7 @@
 
 /**
  * \file
+ * \ingroup lalapps_pulsar
  * \brief Header file for DriveHoughFStat.c
  * \author Badri Krishnan, Alicia Sintes
  *

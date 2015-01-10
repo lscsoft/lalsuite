@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation,
 
-## \addtogroup pkg_py_laldetchar_triggers_omega
+## \addtogroup laldetchar_py_triggers_omega
 """Read and write `ASCII` files written by the Omega-pipeline.
 """
 #
@@ -49,7 +49,7 @@ __date__    = git_version.date
 _comment = re.compile('[#%]')
 _delim   = re.compile('[\t\,\s]+')
 
-## \addtogroup pkg_py_laldetchar_triggers_omega
+## \addtogroup laldetchar_py_triggers_omega
 #@{
 
 OMEGA_COLUMNS = ['process_id', 'event_id', 'start_time', 'start_time_ns',

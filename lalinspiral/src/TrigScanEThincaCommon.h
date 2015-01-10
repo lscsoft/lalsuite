@@ -37,7 +37,7 @@ extern "C" {
 
 /**
  * \defgroup TrigScanEThincaCommon_h Header TrigScanEThincaCommon.h
- * \ingroup pkg_CBC_NEW
+ * \ingroup lalinspiral_UNCLASSIFIED
  * \author Robinson, C. A. K.
  *
  * \brief Provides helper functions common to TrigScan and E-thinca.

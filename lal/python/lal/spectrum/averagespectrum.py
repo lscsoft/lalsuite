@@ -33,7 +33,7 @@ __date__ = git_version.date
 
 from .. import utils
 
-## \addtogroup pkg_py_lal_spectrum
+## \addtogroup lal_py_spectrum
 #@{
 
 def median_mean(series, segment_length, segment_overlap, window=None,

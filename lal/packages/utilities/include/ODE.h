@@ -30,7 +30,8 @@ extern "C" {
 
 
 /**
- * \addtogroup ODE_h
+ * \defgroup ODE_h Header ODE.h
+ * \ingroup lal_utilities
  * \author J. D. E. Creighton
  *
  * \brief Routines for solving ordinary differential equations (ODEs).

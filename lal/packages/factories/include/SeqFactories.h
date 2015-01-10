@@ -10,7 +10,8 @@ extern "C" {
 
 
 /**
- * \addtogroup SeqFactories_h
+ * \defgroup SeqFactories_h Header SeqFactories.h
+ * \ingroup lal_factories
  *
  * \brief Provides prototype and status code information for use of CreateVectorSequence and DestroyVectorSequence.
  *

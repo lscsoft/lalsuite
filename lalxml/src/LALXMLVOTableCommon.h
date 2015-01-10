@@ -27,7 +27,7 @@ extern "C" {
 
 /**
  * \defgroup LALXMLVOTableCommon_h Header LALXMLVOTableCommon.h
- * \ingroup pkg_XML
+ * \ingroup lalxml_general
  * \brief Header file declaring the public common VOTable XML API
  */
 /*@{*/

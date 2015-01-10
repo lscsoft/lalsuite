@@ -1,0 +1,44 @@
+/* Top-level module organisation for LALPulsar */
+/**
+
+\defgroup lalpulsar_common		Common Pulsar APIs
+@{
+   \brief This package provides a common data-types and APIs for
+   pulsar searches, e.g. APIs related to timing, barycentering,
+   metric calculation, mesh-generation ...
+@}
+
+\defgroup lalpulsar_sft			SFT File I/O Routines
+
+\defgroup lalpulsar_inject		Pulsar Signal Generation
+
+\defgroup lalpulsar_hough		The Hough Transform
+
+\defgroup lalpulsar_fold		Amplitude Folding Routines
+
+\defgroup lalpulsar_coh			Coherent Search Routines
+
+\defgroup lalpulsar_known		Known Pulsar Time-Domain Search
+@{
+   \brief This package provides routines for a time domain search of
+   gravitational wave signals from known pulsars. The documentation
+   and functionality of this package is <b>incomplete</b>.
+@}
+
+\defgroup lalpulsar_metric		Pulsar Metric Routines
+@{
+   \brief Modules to deal with pulsar-specific parameter-space
+   metrics and coverings.
+@}
+
+\defgroup lalpulsar_templbank		Template Bank Routines
+
+\defgroup lalpulsar_crosscorr		Cross-Correlation Search
+
+\defgroup lalpulsar_xml			XML Serializers
+
+\defgroup lalpulsar_UNCLASSIFIED	UNCLASSIFIED LALPulsar Packages
+
+\defgroup lalpulsar_python		Python Packages
+
+*/

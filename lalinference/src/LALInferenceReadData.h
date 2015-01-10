@@ -29,7 +29,7 @@
 
 /**
  * \defgroup LALInferenceReadData_h Header LALInferenceReadData.h
- * \ingroup pkg_LALInference
+ * \ingroup lalinference_general
  * \brief Utility functions for handling IFO data
  */
 /*@{*/
@@ -59,6 +59,7 @@ void LALInferenceInjectInspiralSignal(struct tagLALInferenceIFOData *IFOdata, Pr
  * based on command line arguments (see --help for details).
  * \param commandLine [in] Pointer to a ProcessParamsTable containing command line arguments
  * \param IFOdata [in] Pointer to an already existing IFOdata structure.
+ * \param model UNDOCUMENTED
  */
 void LALInferenceSetupROQ(LALInferenceIFOData *IFOdata, LALInferenceModel *model, ProcessParamsTable *commandLine);
 

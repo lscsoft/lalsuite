@@ -36,13 +36,16 @@
  * It tests all error conditions listed in the Error codes table.
  * It also writes to files the values of the Dirichlet kernel for three
  * different valid test cases.
- * See \figref{utilitiesDirichletFig1}--\figref{utilitiesDirichletFig3}.
+ * See \ref utilitiesDirichletFig1 "this figure"--\ref utilitiesDirichletFig3 "this figure".
  *
- * \figure{utilitiesDirichletFig1,pdf,0.6,Dirichlet kernel for N=10\, Delta x =0.01\, and 0 \<= x \<= 1.}
+ * \anchor utilitiesDirichletFig1
+ * \image html utilitiesDirichletFig1.png "Dirichlet kernel for N=10\, Delta x =0.01\, and 0 \<= x \<= 1."
  *
- * \figure{utilitiesDirichletFig2,pdf,0.6,Dirichlet kernel for N=11\, Delta x =0.01\, and 0\<= x \<= 1.}
+ * \anchor utilitiesDirichletFig2
+ * \image html utilitiesDirichletFig2.png "Dirichlet kernel for N=11\, Delta x =0.01\, and 0\<= x \<= 1."
  *
- * \figure{utilitiesDirichletFig3,pdf,0.6,Dirichlet kernel for N=10\, Delta x =0.01\, and 0\<= x \<= 2.}
+ * \anchor utilitiesDirichletFig3
+ * \image html utilitiesDirichletFig3.png "Dirichlet kernel for N=10\, Delta x =0.01\, and 0\<= x \<= 2."
  *
  * ### Exit codes ###
  *

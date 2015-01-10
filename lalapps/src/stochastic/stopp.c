@@ -20,6 +20,66 @@
  * 02110-1301, USA
  */
 
+/**
+ * \file
+ * \ingroup lalapps_inspiral
+ *
+ *
+ * <dl>
+ * <dt>Name</dt><dd>
+ * <tt>lalapps_stopp</tt> --- Stochastic Post Processing.</dd>
+ *
+ * <dt>Synopsis</dt><dd>
+ * <tt>lalapps_stopp</tt> <i>options</i> <i>xml files</i>
+ * <tt>--help</tt>
+ * <tt>--version</tt>
+ * <tt>--verbose</tt>
+ * <tt>--cat-only</tt>
+ * <tt>--analyse-only</tt>
+ * <tt>--text</tt>
+ * <tt>--output</tt> <i>FILE</i></dd>
+ *
+ * <dt>Description</dt><dd>
+ * <tt>lalapps_stopp</tt> performs post processing upon output from
+ * <tt>lalapps_stochastic</tt>.</dd>
+ *
+ * <dt>Options</dt><dd>
+ * <dl>
+ * <dt><tt>--help</tt></dt><dd>
+ * Display usage information</dd>
+ * <dt><tt>--version</tt></dt><dd>
+ * Display version information</dd>
+ * <dt><tt>--verbose</tt></dt><dd>
+ * Verbose mode</dd>
+ * <dt><tt>--cat-only</tt></dt><dd>
+ * Only cat XML files together</dd>
+ * <dt><tt>--analyse-only</tt></dt><dd>
+ * Only combine statistics</dd>
+ * <dt><tt>--text</tt></dt><dd>
+ * Output file as text</dd>
+ * <dt><tt>--output</tt> <i>FILE</i></dt><dd>
+ * write output data to <i>FILE</i></dd>
+ * </dl></dd>
+ *
+ * <dt>Example</dt><dd>
+ * <tt>lalapps_stopp</tt> is generally run as part of a DAG, as created by
+ * the pipeline generation script <tt>lalapps_stochastic_pipe</tt>, however
+ * an example usage can be seen below.
+ *
+ * \code
+ * > lalapps_stopp --output S3-H1L1-STOCHASTIC.xml \
+ * >   H1L1-STOCHASTIC-753601044-753601242.xml \
+ * >   H1L1-STOCHASTIC-753620042-753620352.xml \
+ * >   H1L1-STOCHASTIC-753638864-753639462.xml \
+ * >   H1L1-STOCHASTIC-753785374-753785707.xml \
+ * >   H1L1-STOCHASTIC-753791744-753792342.xml
+ * \endcode</dd>
+ *
+ * <dt>Author</dt><dd>
+ * Adam Mercer</dd>
+ * </dl>
+ */
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>

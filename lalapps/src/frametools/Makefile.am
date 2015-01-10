@@ -52,14 +52,16 @@ bin_PROGRAMS = \
 	$(LALFRAMECFITSIOPROGRAMS)
 
 EXTRA_DIST = \
-	stripAdc.c \
-	lalDebugLevel.c \
-	info.c \
-	read.c \
-	extr.c \
-	join.c \
 	animate.c \
+	animate.png \
 	calfacs.c \
 	combinexteframes.c \
+	computespec.c \
+	extr.c \
 	framestats.c \
-	computespec.c
+	info.c \
+	join.c \
+	lalDebugLevel.c \
+	read.c \
+	stripAdc.c \
+	$(END_OF_LIST)

@@ -29,7 +29,7 @@
 /**
  * \author Brown, D. A.
  * \file
- * \ingroup lalmetaio
+ * \ingroup lalmetaio_general
  *
  * \brief Routines to write LIGO metadata database structures to LIGO lightweight XML files.
  *
@@ -83,7 +83,7 @@
  * the information in memory as well as the reading and writing codes.  Below is a
  * list of all the files which must be updated.
  * <ul>
- * <li>  Update the LAL table definition in \ref LIGOMetaDataTables.h</li>
+ * <li>  Update the LAL table definition in \ref LIGOMetadataTables.h</li>
  *
  * <li>  Update the LIGOLwXML writing code:</li>
  * <ol>

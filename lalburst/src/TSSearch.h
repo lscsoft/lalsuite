@@ -48,7 +48,7 @@ extern "C" {
 
 /**
  * \defgroup TSSearch_h	Header TSSearch.h
- * \ingroup pkg_tracksearch
+ * \ingroup lalburst_tracksearch
  * \author Torres, Cristina
  * \brief no brief description
  *

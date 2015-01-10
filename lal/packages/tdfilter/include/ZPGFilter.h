@@ -29,7 +29,8 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup ZPGFilter_h
+ * \defgroup ZPGFilter_h Header ZPGFilter.h
+ * \ingroup lal_tdfilter
  * \author Creighton, T. D.
  *
  * \brief Provides routines to manipulate ZPG filters.
@@ -39,6 +40,12 @@ extern "C" {
  * \code
  * #include <lal/ZPGFilter.h>
  * \endcode
+ *
+ * The \ref ZPGFilter_h provides routines for manipulating filters in
+ * the ``zeros, poles, gain'' representation, which is typically the
+ * simplest way of representing a filter response.  These routines
+ * create and destroy ZPG filters, and can transform the complex
+ * variable used to represent them.
  *
  * This header covers routines that create, destroy, and
  * transform objects of type <tt>\<datatype\>ZPGFilter</tt>, where

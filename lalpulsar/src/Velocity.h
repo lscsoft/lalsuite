@@ -28,7 +28,7 @@ extern "C" {
 /**
  * \author Krishnan, B., Sintes, A.M.
  * \defgroup Velocity_h Header Velocity.h
- * \ingroup pkg_pulsarHough
+ * \ingroup lalpulsar_hough
  * \brief Computation of instant and averaged velocities for a given detector and the like.
  *
  * ### Synopsis ###

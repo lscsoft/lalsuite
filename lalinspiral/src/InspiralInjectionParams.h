@@ -18,7 +18,8 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup InspiralInjectionParams_h
+ * \defgroup InspiralInjectionParams_h Header InspiralInjectionParams.h
+ * \ingroup lalinspiral_inject
  * \author D. Brown, J. Creighton, S. Fairhurst, G. Jones, E. Messaritaki
  *
  * \brief Module for generating randomly distributed inspiral parameters

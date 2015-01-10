@@ -173,3 +173,5 @@ tagREAL8FFTPlan
 #include "RealFFT_source.c"
 #undef SINGLE_PRECISION
 #include "RealFFT_source.c"
+
+/*@}*/

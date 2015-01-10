@@ -29,7 +29,7 @@ extern "C" {
 
 /**
  * \defgroup ExtrapolatePulsarSpins_h Header ExtrapolatePulsarSpins.h
- * \ingroup pkg_pulsarCommon
+ * \ingroup lalpulsar_common
  * \author Reinhard Prix
  * \brief  Extrapolate the Pulsar spin-paramters
  * \f$\{f^{(k)}\}\equiv\{f, \stackrel{.}{f},\ddot{f},...\}\f$, and "spin-ranges"

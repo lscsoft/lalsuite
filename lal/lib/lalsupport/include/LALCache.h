@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup support
+ * \ingroup lal_support
  * \author Creighton, J. D. E.
  * \date 2007
  * \brief This header covers routines to create and manipulate LALCache

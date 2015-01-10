@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation,
 
-## \addtogroup pkg_py_laldetchar_triggers_kleinewelle
+## \addtogroup laldetchar_py_triggers_kleinewelle
 """Read KleineWelle events from `ASCII` files
 
 The module provides a method to import triggers from `ASCII` into a
@@ -59,7 +59,7 @@ KLEINEWELLE_COLUMNS = ["search", "peak_time", "peak_time_ns", "start_time",
                        "bandwidth", "snr", "amplitude", "confidence"]
 
 
-## \addtogroup pkg_py_laldetchar_triggers_kleinewelle
+## \addtogroup laldetchar_py_triggers_kleinewelle
 #@{
 
 

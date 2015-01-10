@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup pulsarApps
+ * \ingroup lalapps_pulsar
  * \author Iraj Gholami
  * \brief
  * This code prints five + alpha random numbers to stdout,

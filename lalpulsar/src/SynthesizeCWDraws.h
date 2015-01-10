@@ -20,7 +20,7 @@
 
 /**
  * \defgroup SynthesizeCWDraws_h Header SynthesizeCWDraws.h
- * \ingroup pkg_pulsarCommon
+ * \ingroup lalpulsar_common
  * \author Reinhard Prix, David Keitel
  *
  * \brief

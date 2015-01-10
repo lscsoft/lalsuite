@@ -32,7 +32,8 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup LALNoiseModels_h
+ * \defgroup LALNoiseModels_h Header LALNoiseModels.h
+ * \ingroup lal_noisemodels
  * \author Sathyaprakash, B.S.
  *
  * \brief Header file for model noise generation codes.

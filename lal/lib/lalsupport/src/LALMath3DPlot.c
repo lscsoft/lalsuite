@@ -28,14 +28,14 @@
 
 /**
  * \brief This function is for plotting 3D template banks by creating a MATHEMATICA notebook.
- * \ingroup LALMathematica_h
  * \author Hanna, C. R.
  *
  * The notebook renders the templates as
  * points in a three dimensional lattice.  The plot is animated so the user
- * can see the template bank from different perspectives.  See \figref{LALMathematicaHplot1}.
+ * can see the template bank from different perspectives.  See \ref LALMathematicaHplot1 "this figure".
  *
- * \figure{LALMathematicaHplot1,eps,0.6,An example template bank produced by running InspiralSpinBankTest.c to generate roughly 5000 templates}
+ * \anchor LALMathematicaHplot1
+ * \image html LALMathematicaHplot1.png "An example template bank produced by running InspiralSpinBankTest.c to generate roughly 5000 templates"
  *
  * Currently the plot doesn't show the contour of the templates; it renders them as
  * spheres.  In the case of metrics with disimilar scales along the
@@ -54,7 +54,6 @@
  * to avoid overwriting previous files.
  * </li>
  * </ul>
- *
  */
 void
 LALMath3DPlot ( LALStatus *stat,        /**< LALStatus structure pointer */

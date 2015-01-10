@@ -43,7 +43,8 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup GeneratePulsarSignal_h
+ * \defgroup GeneratePulsarSignal_h Header GeneratePulsarSignal.h
+ * \ingroup lalpulsar_inject
  * \author Reinhard Prix, Greg Mendell
  * \date 2005
  *

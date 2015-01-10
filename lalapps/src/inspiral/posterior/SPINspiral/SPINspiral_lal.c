@@ -87,6 +87,7 @@
 
 /**
  * \file SPINspiral_lal.c
+ * \ingroup lalapps_inspiral
  * \brief Contains interfaces to LAL routines
  */
 

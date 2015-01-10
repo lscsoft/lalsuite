@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup pulsarApps
+ * \ingroup lalapps_pulsar
  * \author Badri Krishnan
  * \brief
  * program for comparing two sfts in a frequency band

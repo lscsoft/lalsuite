@@ -47,7 +47,7 @@ SWIGLAL(
 
 /**
  * \defgroup LALInferenceTemplate_h Header LALInferenceTemplate.h
- * \ingroup pkg_LALInference
+ * \ingroup lalinference_general
  *
  * \brief Main header file for LALInference signal template generating functions.
  *

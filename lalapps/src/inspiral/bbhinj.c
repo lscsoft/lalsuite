@@ -27,6 +27,178 @@
  *-----------------------------------------------------------------------
  */
 
+/**
+ * \file
+ * \ingroup lalapps_inspiral
+ *
+ * <dl>
+ * <dt>Name</dt><dd>
+ * \c lalapps_bbhinj --- produces inspiral injection data files.</dd>
+ *
+ * <dt>Synopsis</dt><dd>
+ * \c lalapps_bbhinj
+ * [<tt>--help</tt>]
+ * [<tt>--verbose</tt>]
+ * [<tt>--gps-start-time</tt> \c tstart]
+ * [<tt>--gps-end-time</tt> \c tend]
+ * [<tt>--time-step</tt> \c tstep]
+ * [<tt>--time-interval</tt> \c tinterval]
+ * [<tt>--seed</tt> \c seed]
+ * [<tt>--usertag</tt> \c tag]
+ * [<tt>--min-mass</tt> \c mmin]
+ * [<tt>--max-mass</tt> \c mmax]
+ * [<tt>--max-total-mass</tt> \c totalmass]
+ * [<tt>--min-distance</tt> \c dmin]
+ * [<tt>--max-distance</tt> \c dmax]
+ * [<tt>--m-distr</tt> \c mdistr]
+ * [<tt>--d-distr</tt> \c ddistr]
+ * [<tt>--waveform</tt> \c wvf] </dd>
+ *
+ * <dt>Description</dt><dd>
+ * \c lalapps_bbhinj
+ * generates a number of inspiral  parameters suitable  for using in a Monte
+ * Carlo injection to test the efficiency of an inspiral search.  The  various
+ * parameters (detailed  below)  are randomly chosen and are appropriate for
+ * a population of binaries that extends over all space between
+ * the minimum and maximum distances specified.
+ * Despite its name, it can be used for BNS and for BBH parameter generation.
+ *
+ * The output of this program  is  a  list  of  the  injected events,  starting
+ * at  the specified start time and ending at the specified end time.  One
+ * injection with random inspiral parameters will be made every specified time
+ * step, and will be randomly placed within the specified time interval.
+ * The output is written to a file name in the standard inspiral pipeline format:
+ *
+ * \code
+ * HL-INJECTIONS_USERTAG_SEED-GPSSTART-DURATION.xml
+ * \endcode
+ *
+ * where \c USERTAG is \c tag as specfied on the command line,
+ * \c SEED is the  value  of  the random number seed chosen and
+ * \c GPSSTART and \c DURATION describes the GPS time interval that
+ * the file covers. The file is in the standard LIGO lightweight XML format
+ * containing a \c sim_inspiral table that describes the injections.
+ * In addition, an ASCII log file called <tt>injlog.txt</tt> is also written.
+ * If a <tt>--user-tag</tt> is not specified on the command line, the
+ * \c _USERTAG part of the filename will be omitted.
+ *
+ * The GEO, TAMA and VIRGO end times and effective distances are currently
+ * not being populated.</dd>
+ *
+ * <dt>Options</dt><dd>
+ * <ul>
+ * <li><tt>--help</tt>: Print a help message.</li>
+ *
+ * <li><tt>--gps-start-time</tt> \c tstart:
+ * Optional.  Start time of the injection data to be created. Defaults to the
+ * start of S2, Feb 14 2003 16:00:00 UTC (GPS time 729273613)</li>
+ *
+ * <li><tt>--gps-end-time</tt> \c tend:
+ * Optional. End time of the injection data to be created. Defaults to the end of
+ * S2, Apr 14 2003 15:00:00 UTC (GPS time 734367613).</li>
+ *
+ * <li><tt>--time-step</tt> \c tstep:
+ * Optional. Sets the time step interval between injections. The injections will
+ * occur with an average spacing of \c tstep seconds. Defaults to
+ * \f$2630/\pi\f$.</li>
+ *
+ * <li><tt>--time-interval</tt> \c tinterval:
+ * Optional. Sets the time interval during which an injection can occur.
+ * Injections are uniformly distributed over the interval.  Setting \c tstep
+ * to \f$6370\f$ and \c tinterval to 600 guarantees there will be one injection
+ * into each playground segment and they will be randomly distributed within the
+ * playground times.</li>
+ *
+ * <li><tt>--seed</tt> \c seed:
+ * Optional. Seed the random number generator with the integer \c seed.
+ * Defaults to \f$1\f$.</li>
+ *
+ * <li><tt>--user-tag</tt> \c string: Optional. Set the user tag for this
+ * job to be \c string. May also be specified on the command line as
+ * <tt>-userTag</tt> for LIGO database compatibility.</li>
+ *
+ * <li><tt>--min-mass</tt> \c mmin: Optional. The minimum component
+ * mass of the binary. If not specified, it is automatically set to 3
+ * \f$M_\odot\f$.</li>
+ *
+ * <li><tt>--max-mass</tt> \c mmax: Optional. The maximum component
+ * mass of the binary. If not specified, it is automatically set to 20
+ * \f$M_\odot\f$.</li>
+ *
+ * <li><tt>-max-total-mass</tt> \c totalmass: Optional. The maximum of the total
+ * masses of the two components. If not specified, no restriction is set to
+ * the total mass of the two components. </li>
+ *
+ * <li><tt>--min-distance</tt> \c dmin: Optional. The minimum distance
+ * (in kpc) from the earth of the signals. If not specified, it is automatically
+ * set to 1 kpc.</li>
+ *
+ * <li><tt>--max-distance</tt> \c dmax: Optional. The maximum distance
+ * (in kpc) from the earth of the signals. If not specified, it is automatically
+ * set to 20 Mpc (20000 kpc).</li>
+ *
+ * <li><tt>--m-distr</tt> \c mdistr: Optional. It lets the user specify
+ * the mass distribution of the population. The choices are:
+ *  <ul>
+ *  <li> \c mdistr = 0 the distribution is uniform over total mass
+ *  (DEFAULT VALUE)
+ *  </li><li> \c mdistr = 1 the distribution is uniform over mass1 and
+ *     over mass2
+ *  </li></ul></li>
+ *
+ * <li><tt>--d-distr</tt> \c ddistr: Optional. It lets the used
+ * specify the distance distribution of the population. The choices are:
+ *  <ul>
+ *  <li> \c ddistr = 0 uniform-distance distribution
+ *  (DEFAULT VALUE)
+ *  </li><li> \c ddistr = 1 uniform \f$\log\f$(distance) distribution
+ *  </li><li> \c ddistr = 2 uniform volume distribution
+ *  </li></ul></li>
+ *
+ * <li><tt>--waveform</tt> \c wvf: Optional. Sets the waveforms to
+ * be injected to \c wvf. The \c wvf consists of two parts,
+ * which are specified as one word. The first part is one of:
+ *   <ul>
+ *   <li> EOB
+ *   </li><li> PadeT1
+ *   </li><li> TaylorT1
+ *   </li><li> TaylorT3
+ *   </li><li> GeneratePPN
+ *   </li></ul>
+ * The second part is one of:
+ *   <ul>
+ *   <li> newtonian
+ *   </li><li> onePN
+ *   </li><li> onePointFivePN
+ *   </li><li> twoPN (ONLY CHOICE if GeneratePPN is used before!)
+ *   </li><li> twoPointFivePN
+ *   </li><li> threePN
+ *   </li></ul>
+ * If nothing is specified, the default value is EOBtwoPN. It should be noted
+ * that if GeneratePPNtwoPN is used as the waveform, the code used to
+ * perform the injections is different than otherwise. For GeneratePPNtwoPN, the
+ * older injection code (that does only standard post-Newtonian injections) is
+ * used. That is the recommended approximant for the case of binary neutron
+ * star injections.
+ * </li>
+ * </ul></dd>
+ *
+ * <dt>Example:</dt><dd>
+ * The following command will produce an injection file for a population
+ * of binary black holes of total mass between 6 and 20 \f$M_\odot\f$ (component
+ * mass between 3 and 10 \f$M_\odot\f$), with uniform-distance distribution
+ * between 100 kpc and 3 Mpc. Since no mass-distribution is specified, the
+ * mass-distribution will be uniform over total mass (default value).
+ * \code
+ * lalapps_bbhinj --min-mass 3.0 --max-mass 10.0 --min-distance 100
+ * --max-distance 3000 --d-distr 0 --waveform PadeT1twoPN
+ * \endcode</dd>
+ *
+ * <dt>Author</dt><dd>
+ * Jolien Creighton, Patrick Brady, Duncan Brown and Eirini Messaritaki</dd>
+ * </dl>
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <config.h>

@@ -34,7 +34,7 @@ extern "C" {
 
 /**
  * \defgroup LALBarycenter_h Header LALBarycenter.h
- * \ingroup pkg_pulsarCommon
+ * \ingroup lalpulsar_common
  * \author Curt Cutler
  * \date 2001
  *

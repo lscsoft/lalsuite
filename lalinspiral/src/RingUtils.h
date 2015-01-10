@@ -31,7 +31,7 @@ extern "C" {
 
 /**
  * \defgroup RingUtils_h Header RingUtils_h
- * \ingroup pkg_ring
+ * \ingroup lalinspiral_inject
  * \author Jolien Creighton
  *
  * \brief Black hole ringdown waveform generation.

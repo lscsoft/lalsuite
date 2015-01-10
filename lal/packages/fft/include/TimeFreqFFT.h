@@ -32,7 +32,8 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup TimeFreqFFT_h
+ * \defgroup TimeFreqFFT_h Header TimeFreqFFT_h
+ * \ingroup lal_fft
  *
  * \brief Performs real-to-complex, complex-to-real FFTs and average power spectrum estimation.
  *

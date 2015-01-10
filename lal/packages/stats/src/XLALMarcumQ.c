@@ -610,7 +610,7 @@ static double MarcumQ_quadrature(double M, double x, double y, double xi)
 
 
 /**
- * The modified form of the Marcum Q function used by Gil <I>et al.</I> in
+ * The modified form of the Marcum Q function. Used by Gil <i>et al.</i> in
  *
  * A. Gil, J. Segura, and N. M. Temme.  Algorithm 939:  Computation of the
  * Marcum Q-Function.  ACM Transactions on Mathematical Software (TOMS),

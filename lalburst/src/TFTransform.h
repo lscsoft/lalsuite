@@ -38,7 +38,7 @@ extern "C" {
 
 /**
  * \defgroup TFTransform_h Header TFTransform.h
- * \ingroup pkg_burstsearch
+ * \ingroup lalburst_burstsearch
  *
  * Provides routines to to compute time-frequency planes from either
  * time-domain or frequency-domain data, for use in the excess

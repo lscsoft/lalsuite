@@ -33,7 +33,8 @@ extern "C" {
 
 
 /**
- * \addtogroup XLALError_h
+ * \defgroup XLALError_h Header XLALError.h
+ * \ingroup lal_std
  * \author Creighton, J. D. E.
  * \date 2005
  * \brief This header covers routines to provide the XLAL interface error

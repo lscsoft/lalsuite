@@ -18,7 +18,8 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup FindChirpACTD_h
+ * \defgroup FindChirpACTD_h Header FindChirpACTD.h
+ * \ingroup lalinspiral_findchirp
  * \author McKechan, D. J. A.
  *
  * \brief Provides structures and functions for amplitude corrected time domain

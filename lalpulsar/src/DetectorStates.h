@@ -26,8 +26,8 @@ extern "C" {
 
 /**
  * \author Reinhard Prix
- * \addtogroup DetectorStates_h Header DetectorStates.h
- * \ingroup pkg_pulsarCommon
+ * \defgroup DetectorStates_h Header DetectorStates.h
+ * \ingroup lalpulsar_common
  * \date 2005
  * \brief API for the DetectorStates.c functions.
  *

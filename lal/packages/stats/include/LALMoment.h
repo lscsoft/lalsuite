@@ -31,7 +31,8 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup LALMoment_h
+ * \defgroup LALMoment_h Header LALMoment.h
+ * \ingroup lal_stats
  * \author Tibbits, M. M.
  *
  * \brief This header provides the prototype for the LALDMoment() and LALSMoment() function.

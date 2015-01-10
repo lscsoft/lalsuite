@@ -20,7 +20,7 @@
 /**
  * \author Karl Wette
  * \file
- * \ingroup pulsarApps
+ * \ingroup lalapps_pulsar
  * \brief Computes an upper limit using Monte Carlo integration
  * of the analytic F statistic signal model
  */

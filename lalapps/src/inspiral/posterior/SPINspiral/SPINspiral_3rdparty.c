@@ -29,6 +29,7 @@
 
 /**
  * \file SPINspiral_3rdparty.c
+ * \ingroup lalapps_inspiral
  * \brief Contains third-party routines
  */
 

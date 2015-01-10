@@ -1,0 +1,8 @@
+/* Top-level module organisation for LALDetChar */
+/**
+
+\defgroup laldetchar_general		General Packages
+
+\defgroup laldetchar_python		Python Packages
+
+*/

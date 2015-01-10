@@ -48,8 +48,8 @@ def get_veto_segments_name( veto_cat_num, cumulative = True ):
   Given a category number, returns a veto segments name 
   as set by segs_from_cats.
 
-  @veto_cat_num: integer representing the category veto
-  @cumulative: If set to True, will add CUMULATIVE to the name.
+  @param veto_cat_num: integer representing the category veto
+  @param cumulative: If set to True, will add CUMULATIVE to the name.
   """
   if cumulative:
     return ''.join([ 'VETO_CAT', str(veto_cat_num), '_CUMULATIVE' ])

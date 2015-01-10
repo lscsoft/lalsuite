@@ -1,6 +1,6 @@
 /**
  * \file
- * \ingroup pulsarApps
+ * \ingroup lalapps_pulsar
  * \author Matthew Pitkin, John Veitch, Colin Gill
  *
  * \brief Pulsar likelihood and prior functions for use in parameter estimation
@@ -377,6 +377,7 @@ REAL8 noise_only_likelihood( LALInferenceRunState *runState ){
  *
  * \param runState [in] A pointer to the LALInferenceRunState
  * \param params [in] The set of parameter values
+ * \param model UNDOCUMENTED
  *
  * \return The natural logarithm of the prior value for a set of parameters
  */

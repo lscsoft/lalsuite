@@ -41,7 +41,8 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup FindChirpPTF_h
+ * \defgroup FindChirpPTF_h Header FindChirpPTF.h
+ * \ingroup lalinspiral_findchirp
  * \author Brown, D. A., and Fazi, D.
  *
  * \brief Provides structures and functions to filter interferometer data using the

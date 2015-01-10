@@ -16,7 +16,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-## \addtogroup pkg_py_laldetchar_triggers_utils
+## \addtogroup laldetchar_py_triggers_utils
 """Utilities for the triggers package.
 
 This package includes ways of determining the correct LIGO_LW table
@@ -94,7 +94,7 @@ def _which_etg(etg):
                      "isn't an I/O wrapper for it")
 
 # open doxygen
-## \addtogroup pkg_py_laldetchar_triggers_utils
+## \addtogroup laldetchar_py_triggers_utils
 #@{
 
 
@@ -226,6 +226,8 @@ def from_ligolw(filepath, table_name, columns=None, start=None, end=None,
         minimum GPS time for returned triggers
     @param end
         maximum GPS time for returned triggers
+    @param kwargs
+        UNDOCUMENTED
 
     @returns the requested `LIGO_LW` table.
     """

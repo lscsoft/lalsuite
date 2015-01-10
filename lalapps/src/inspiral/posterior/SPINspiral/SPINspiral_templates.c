@@ -34,6 +34,7 @@
 
 /**
  * \file SPINspiral_templates.c
+ * \ingroup lalapps_inspiral
  * \brief Contains routines that handle waveform-template generation
  */
 

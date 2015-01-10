@@ -25,6 +25,7 @@ SUBDIRS = \
 	swig \
 	python \
 	test \
+	doxygen \
 	$(END_OF_LIST)
 
 user_environment = \

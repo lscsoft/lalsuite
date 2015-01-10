@@ -59,19 +59,20 @@ libfft_la_LIBADD = $(FFTLIBCXX)
 libfftcxx_la_SOURCES = $(FFTCXXSRC)
 nodist_libfftcxx_la_SOURCES = $(FFTCXXGENSRC)
 
+CLEANFILES = CudaFFT.cpp
+
 EXTRA_DIST = \
-	qthread.c \
+	ComplexFFT.c \
+	CudaComplexFFT.c \
+	CudaFFT.cu \
+	CudaFFT.h \
+	CudaFunctions.h \
+	CudaRealFFT.c \
+	FFTWMutex.c \
 	IntelComplexFFT.c \
 	IntelRealFFT.c \
-	ComplexFFT.c \
 	RealFFT.c \
 	RealFFT_source.c \
-	FFTWMutex.c \
 	TimeFreqFFT.c \
-	CudaComplexFFT.c \
-	CudaRealFFT.c \
-	CudaFFT.cu \
-	CudaFunctions.h \
-	CudaFFT.h
-
-CLEANFILES = CudaFFT.cpp
+	qthread.c \
+	$(END_OF_LIST)

@@ -19,7 +19,7 @@
 
 /**
  * \defgroup LFTandTSutils_h Header LFTandTSutils.h
- * \ingroup pkg_SFTIO
+ * \ingroup lalpulsar_sft
  * \author Reinhard Prix, Chris Messenger
  * \date 2009
  * \brief Utility functions for working with Long Fourier Transforms and Time Series.

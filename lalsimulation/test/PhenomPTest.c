@@ -358,8 +358,8 @@ static void Test_PhenomPCore(void) {
     &angcoeffs,              /**< struct with PN coeffs for the NNLO angles */
     &Y2m,                    /**< struct of l=2 spherical harmonics of spin weight -2 */
     0,0,
-    &hp,                     /**< output: \tilde h_+ */
-    &hc);                    /**< output: \tilde h_+ */
+    &hp,                     /**< output: \f$\tilde h_+\f$ */
+    &hc);                    /**< output: \f$\tilde h_+\f$ */
   UNUSED(ret);
   prC("hp", hp);
   prC("hc", hc);

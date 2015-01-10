@@ -47,7 +47,7 @@ extern "C" {
 
 /**
  * \defgroup CoherentInspiral_h Header CoherentInspiral.h
- * \ingroup pkg_CBC_NEW
+ * \ingroup lalinspiral_UNCLASSIFIED
  * \author Bose, S., Seader, S. E.
  *
  * \brief Provides core prototypes, structures and functions to filter

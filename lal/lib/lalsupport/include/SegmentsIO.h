@@ -18,7 +18,8 @@
 */
 
 /**
- * \addtogroup SegmentsIO_h
+ * \defgroup SegmentsIO_h Header SegmentsIO.h
+ * \ingroup lal_support
  * \author Peter Shawhan
  *
  * \brief Provides segment list reading and writing functions as part of the \c lalsupport library.

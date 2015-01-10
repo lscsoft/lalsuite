@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup pulsarApps
+ * \ingroup lalapps_pulsar
  * \author Reinhard Prix
  *
  * Standalone code to produce a 'mesh' in the parameter-space

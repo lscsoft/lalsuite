@@ -184,7 +184,7 @@ XLALSimIMRSpinEOBCalculateNewtonianMultipole(
 /**
  * This function calculates the Newtonian multipole part of the
  * factorized waveform for the SEOBNRv1 model. This is defined in Eq. 4.
- * It ignores the exp(\ii * phi) part, and returns only the absolute
+ * It ignores the \f$exp(\ii * phi)\f$ part, and returns only the absolute
  * value.
  */
 UNUSED static int

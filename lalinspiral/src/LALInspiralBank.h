@@ -35,7 +35,8 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup LALInspiralBank_h
+ * \defgroup LALInspiralBank_h Header LALInspiralBank.h
+ * \ingroup lalinspiral_bank
  * \author Churches, D.K. and Sathyaprakash, B.S., Cokelaer, T.
  *
  * \brief %Header file for the template placement codes.
@@ -599,8 +600,6 @@ REAL4 b;
 }
 PRIN;
 
-/*@}*/ /* end:LALInspiralBank_h */
-
 /* ---------- Function prototypes ---------- */
 
 void
@@ -1100,6 +1099,8 @@ INT4 XLALInspiralComputePTFQDeriv (
     REAL8VectorSequence		   *Qderiv,
     InspiralTemplate           *params
     );
+
+/*@}*/
 
 #ifdef  __cplusplus
 }

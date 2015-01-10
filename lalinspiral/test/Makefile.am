@@ -60,6 +60,7 @@ MOSTLYCLEANFILES = \
 	$(END_OF_LIST)
 
 EXTRA_DIST += \
+	LALSQTPNWaveformTest.c \
 	NRWaveIOTest.cfg \
 	NRWaveIOTest.data \
 	RandomInspiralSignalTest.par \

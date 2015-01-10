@@ -25,7 +25,7 @@ extern "C" {
 
 /**
  * \defgroup SFTClean_h Header SFTClean.h
- * \ingroup pkg_SFTIO
+ * \ingroup lalpulsar_sft
  * \author Badri Krishnan, Alicia Sintes, Greg Mendell
  *
  * \brief Header file for cleaning routines

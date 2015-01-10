@@ -12,7 +12,8 @@ extern "C" {
 #endif /* C++ */
 
 /**
- * \addtogroup VectorIndexRange_h
+ * \defgroup VectorIndexRange_h Header VectorIndexRange.h
+ * \ingroup lal_vectorops
  * \author David Chin <dwchin@umich.edu> +1-734-709-9119
  *
  * \brief Routines to slice up vectors/sequences by specifying starting and ending indices, inclusive.

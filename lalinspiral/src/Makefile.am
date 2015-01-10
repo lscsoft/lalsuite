@@ -237,13 +237,23 @@ liblalinspiral_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
 CLEANFILES = \
 	Chisq_GPU.cpp
 
-EXTRA_DIST = \
-	Chisq_GPU.cu \
-	LALInspiralConfig.h.in \
-	config.h.in
-
 DISTCLEANFILES = config.h
 
 vcs_info_sources = LALInspiralVCSInfoHeader.h
 build_info_source = LALInspiralBuildInfo.c
 $(build_info_source): $(liblalinspiral_la_DEPENDENCIES)
+
+EXTRA_DIST = \
+	Chisq_GPU.cu \
+	LALInspiralBankH4Figures.png \
+	LALInspiralBankHCoarse2.png \
+	LALInspiralBankHequalmass.png \
+	LALInspiralBankHfine.png \
+	LALInspiralConfig.h.in \
+	LALInspiralHybridHexa1.png \
+	LALInspiralHybridHexa2.png \
+	bank.dox \
+	config.h.in \
+	findchirp.dox \
+	inspiral.dox \
+	$(END_OF_LIST)

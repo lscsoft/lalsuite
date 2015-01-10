@@ -29,7 +29,7 @@ extern "C" {
 
 /**
  * \defgroup Window_h Header Window.h
- * \ingroup pkg_window
+ * \ingroup lal_window
  * \brief This header file provides routines and structures to create and store window functions (also called a taper,
  * lag window, or apodization function).
  *
@@ -39,6 +39,23 @@ extern "C" {
  * #include <lal/Window.h>
  * \endcode
  *
+ * The \ref Window_h package defines two data types, the \c REAL4Window and
+ * \c REAL8Window types.  These are suitable for storing window function
+ * data, providing storage for a sequence of samples as well as metadata
+ * about the window such as the sum-of-squarse of the samples.  The package
+ * also provides a collection of functions to construct a variety of
+ * pre-defined window functions.
+ *
+ * The use of window functions in signal analysis is well documented in
+ * many places.
+ *
+ * Definitions of most of the window functions can be found in Numerical
+ * Recipes \cite ptvf1992 equations 13.4.13-13.4.15.  Definitions of the
+ * remaining windows can be found in <em>Spectral analysis for physical
+ * applications</em> \cite pw93 Section 6.11.  Definition of the Kaiser
+ * window can be found in <em>Discrete-time Signal Processing</em> by
+ * Oppenheim and Schafer, p.474.
+ *  *
  * ### Description ###
  *
  * These functions create or destroy a time-domain window function in a vector
@@ -169,11 +186,12 @@ extern "C" {
  * used, for example, in finite impulse response resampling to modulate a
  * truncated sinc interpolating kernel.
  *
- * These window functions are shown in \figref{window_t}, showing various windows as functions of the normalized
+ * These window functions are shown in \ref window_t "this figure", showing various windows as functions of the normalized
  * independend variable \f$y\f$, choosing \f$\beta = 6\f$ for the Kaiser window, \f$\beta = 2\f$ for the Creighton window,
  * \f$\beta = 0.5\f$ for the Tukey window, and \f$\beta = 3\f$ for the Gauss window.
  *
- * \figure{window_t,pdf,0.6,Various windows as functions of the normalized independend variable y}
+ * \anchor window_t
+ * \image html window_t.png "Various windows as functions of the normalized independend variable y"
  *
  * For a vector of length \f$L\f$ (an integer), the mapping from integer array
  * index \f$i\f$ to normalized co-ordinate \f$y\f$ is
@@ -194,16 +212,17 @@ extern "C" {
  * integer sample \f$i\f$.
  *
  * The Fourier transforms of the windows are shown as functions of \f$1 / y\f$ in
- * \figref{window_f}, showing frequency behaviour of various windows as functions
+ * \ref window_f "this figure", showing frequency behaviour of various windows as functions
  * of the inverse of the normalized independend variable \f$y\f$, choosing \f$\beta = 6\f$
  * for the Kaiser window, \f$\beta = 2\f$ for the Creighton window, \f$\beta = 0.5\f$ for
  * the Tukey window, and \f$\beta = 3\f$ for the Gauss window.
  *
- * \figure{window_f,pdf,0.6,Frequency behaviour of various windows as functions of the inverse of the normalized independend variable y}
+ * \anchor window_f
+ * \image html window_f.png "Frequency behaviour of various windows as functions of the inverse of the normalized independend variable y"
  *
  * Since the Fourier transform of windowed data is the Fourier transform of
  * the data convolved with the Fourier transform of the window,
- * \figref{window_f} is the major guideline for selecting a window.  One
+ * \ref window_f "this figure" is the major guideline for selecting a window.  One
  * can see that windows with a narrow central lobe tend to have higher
  * sidelobes, and windows which suppress their low-order sidelobes tend to
  * have more power in the high-order sidelobes.  The choice of window thus

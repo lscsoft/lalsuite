@@ -27,7 +27,8 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup Units_h
+ * \defgroup Units_h Header Units.h
+ * \ingroup lal_tools
  * \author J. T. Whelan <john.whelan@ligo.org>
  *
  * \brief Provides prototypes for manipulation of units and declares

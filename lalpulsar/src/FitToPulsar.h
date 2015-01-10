@@ -20,7 +20,7 @@
 /**
  * \author Dupuis, R.J.
  * \file
- * \ingroup pulsarTODO
+ * \ingroup lalpulsar_UNCLASSIFIED
  *
  * Provides routines for finding the best fit of the measured data to the strain expected from
  * non-precessing pulsar.

@@ -45,7 +45,7 @@
 
 /**
  * \defgroup CoincRingdownUtils_c Module CoincRingdownUtils.c
- * \ingroup pkg_CBC_NEW
+ * \ingroup lalinspiral_UNCLASSIFIED
  * \author Fairhurst, S.
  * \brief Blah.
  */

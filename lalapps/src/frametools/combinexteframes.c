@@ -19,8 +19,8 @@
 
 /**
  * \author C.Messenger
- * \ingroup pulsarCoherent
  * \file
+ * \ingroup lalapps_frametools
  * \brief
  * This code is designed to combine (R)XTE frames from simultaneous observations.
  *

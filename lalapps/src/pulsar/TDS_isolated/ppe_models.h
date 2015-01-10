@@ -13,7 +13,7 @@
 
 /**
  * \file
- * \ingroup pulsarApps
+ * \ingroup lalapps_pulsar
  * \author Matthew Pitkin, John Veitch, Colin Gill
  *
  * \brief Header file for the signal models functions used in parameter

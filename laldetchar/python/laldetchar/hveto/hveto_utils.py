@@ -24,7 +24,7 @@ from matplotlib import pyplot
 # FIXME: gridspec...
 #import breakout
 
-## \addtogroup pkg_py_laldetchar_hveto
+## \addtogroup laldetchar_py_hveto
 """hierarchical veto utilities"""
 # \author Chris Pankow (<chris.pankow@ligo.org>)
 # \heading{Synopsis}
@@ -129,5 +129,4 @@ class HVetoResult(object):
 
 # close doxygen
 ##
-#	\defgroup	pkg_py_laldetchar_triggers_hveto_utils   HVeto Utils
 #@}

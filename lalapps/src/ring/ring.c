@@ -17,6 +17,139 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * \file
+ * \ingroup lalapps_inspiral
+ *
+ * <dl>
+ *
+ * <dt>Name</dt><dd>
+ * \c lalapps_ring --- filters data through a bank of ringdown filters.</dd>
+ *
+ * <dt>Synopsis</dt><dd>
+ * \c lalapps_ring [<tt>-h</tt>] [<tt>-V</tt>] [<tt>-v</tt>]
+ *   [<tt>-d</tt> \e dbglvl] [<tt>-i</tt> \e infile]
+ *   [<tt>-o</tt> \e outfile] [<tt>-k</tt>] [<tt>-s</tt>]
+ *   [<tt>-f</tt> \e framefile] [<tt>-r</tt> \e respfile]
+ *   [<tt>-c</tt> \e channel] [<tt>-n</tt> \e numpoints]
+ *   [<tt>-t</tt> \e starttime] [<tt>-b</tt> \e b0[,\e b1]]
+ *   [<tt>--</tt> \e filterparams]</dd>
+ *
+ * <dt>Description</dt><dd>
+ * \c lalapps_ring uses matched filtering to search for ringdown waveforms in
+ * gravitational wave data.</dd>
+ *
+ * <dt>Options</dt><dd>
+ * <ul>
+ * <li><tt>-h</tt>:
+ * Print a help message.</li>
+ * <li><tt>-V</tt>:
+ * Print the version information.</li>
+ * <li><tt>-v</tt>:
+ * Verbose output.</li>
+ * <li><tt>-d</tt> \e dbglvl:
+ * Set LAL debug level to \e dbglvl.</li>
+ * <li><tt>-i</tt> \e infile:
+ * Read  filter  parameters  from  input  file \e infile [stdin].</li>
+ * <li><tt>-o</tt> \e outfile:
+ * Write the output to file \e outfile [stdout].</li>
+ * <li><tt>-k</tt>:
+ * Keep filtering results (for use with option <tt>-s</tt>).</li>
+ * <li><tt>-s</tt>:
+ * Save  intermediate  filtering  results  as .dat and snr- files.</li>
+ * <li><tt>-f</tt> \e framefile:
+ * Read channel data from \e framefile [\f$\ast\f$.gwf].</li>
+ * <li><tt>-r</tt> \e respfile:
+ * Read   response   function   data   from  \e respfile [response.asc].</li>
+ * <li><tt>-c</tt> \e channel:
+ * Use channel \e channel data [H1:LSC-AS_Q].</li>
+ * <li><tt>-n</tt> \e numpoints:
+ * Use \e numpoints points of data [65536].</li>
+ * <li><tt>-t</tt> \e starttime:
+ * Use  data  starting at GPS time \e starttime [start of frame data].</li>
+ * <li><tt>-b</tt> \e b0,\e b1:
+ * Filter only template numbers \e b0 to \e b1 in bank [0,end of bank].</li>
+ * <li><tt>--</tt> \e filterparams:
+ * Specify filter parameters as command line arguments \e filterparams
+ * (see below for filter parameters).</li>
+ * </ul></dd>
+ *
+ * <dt>Filter parameters</dt><dd>
+ * The filter parameters can be specified either on the  command  line  as
+ * arguments  following the <tt>--</tt> option or in a resource file that is input
+ * using the <tt>-i</tt> option  (or  from stdin).  As a resource file, each
+ * option-value pair should have their own line.
+ * <ul>
+ * <li><tt>-segsz</tt> \e npts:
+ * Set the size of segments analyzed to \e npts points.</li>
+ * <li><tt>-speclen</tt> \e len:
+ * Set the size of inverse spectrum truncation to \e len points [0].</li>
+ * <li><tt>-flow</tt> \e flow:
+ * Set the low frequency cutoff to \e flow Hz.</li>
+ * <li><tt>-fmin</tt> \e fmin:
+ * Set the minimum frequency for the bank to \e fmin Hz.</li>
+ * <li><tt>-fmax</tt> \e fmax:
+ * Set the maximum frequency for the bank to \e fmax Hz.</li>
+ * <li><tt>-qmin</tt> \e qmin:
+ * Set the minimum quality for the bank to \e qmin.</li>
+ * <li><tt>-qmax</tt> \e qmax:
+ * Set the maximum quality for the bank to \e qmax.</li>
+ * <li><tt>-maxmm</tt> \e maxmm:
+ * Set  the  maximum  allowed mismatch for the bank to \e maxmm.</li>
+ * <li><tt>-thresh</tt> \e thresh:
+ * Set the ringdown event signal-to-noise ratio threshold to \e thresh.</li>
+ * <li><tt>-scale</tt> \e scale:
+ * Scale the response function by a dynamic range factor of \e scale [1].</li>
+ * </ul></dd>
+ *
+ * <dt>Debug levels</dt><dd>
+ * The LAL debug level can be specified as an integer or as a string of flags:
+ * <ul>
+ * <li>\c NDEBUG:
+ * No debugging information is printed and memory debugging code is disabled.</li>
+ * <li>\c ERROR:
+ * Error messages are printed.</li>
+ * <li>\c WARNING:
+ * Warning messages are printed.</li>
+ * <li>\c INFO:
+ * Information messages are printed.</li>
+ * <li>\c TRACE:
+ * Function call tracing messages are printed.</li>
+ * <li>\c MEMINFO:
+ * Memory  allocation  information messages are printed.</li>
+ * <li>\c MEMDBG:
+ * Debugging of memory allocation routines is enabled but no messages are printed.</li>
+ * </ul>
+ * The following composite levels are available:
+ * <ul>
+ * <li>\c MSGLVL1:
+ * Equivalent to \c ERROR</li>
+ * <li>\c MSGLVL2:
+ * Equivalent to <tt>ERROR | WARNING</tt></li>
+ * <li>\c MSGLVL3:
+ * Equivalent to <tt>ERROR | WARNING | INFO</tt></li>
+ * <li>\c ALLDBG:
+ * All debugging messages are printed.</li>
+ * </ul>
+ *
+ * For example, the command
+ * \code
+ * lalapps_ring -d "ERROR | INFO" ...
+ * \endcode
+ * will set the debug level so that error and information messages are printed.</dd>
+ *
+ * <dt>Environment</dt><dd>
+ *
+ * <ul>
+ * <li>\c LAL_DEBUG_LEVEL: Default LAL debug level to use.</li>
+ * </ul></dd>
+ *
+ * <dt>Author</dt><dd>
+ * Jolien Creighton
+ * </dd>
+ * </dl>
+ */
+
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>

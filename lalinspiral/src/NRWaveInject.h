@@ -41,7 +41,8 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup NRWaveInject_h
+ * \defgroup NRWaveInject_h Header NRWaveInject.h
+ * \ingroup lalinspiral_inject
  * \author S.Fairhurst, B. Krishnan, L.Santamaria
  *
  * \brief Module for generating h(t) from Numrel waveforms

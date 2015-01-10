@@ -85,7 +85,7 @@ void compute_variance( LALInferenceIFOData *data, LALInferenceIFOModel *model ){
  * defined as containing consecutive point within 180 seconds of each other. The length of segments that do not fit into
  * a \c chunkMax length are also included.
  *
- * \param data [in] a data structure
+ * \param ifo [in] the LALInferenceIFOModel variable
  * \param chunkMax [in] the maximum length of a data chunk/segment
  *
  * \return A vector of chunk/segment lengths
@@ -1041,7 +1041,7 @@ void check_and_add_fixed_variable( LALInferenceVariables *vars, const char *name
  * factors and prior ranges.
  *
  * \param runState [in] The analysis information structure
- * \param data [in] The IFO data structure
+ * \param ifo [in] The IFO data structure
  * \param var [in] The variable to remove
  *
  */

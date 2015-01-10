@@ -23,3 +23,10 @@ libutilities_la_SOURCES = \
 	SphericalHarmonics.c
 
 noinst_HEADERS = MatrixOps_source.c
+
+EXTRA_DIST = \
+	utilitiesCoarseGrain.png \
+	utilitiesDirichletFig1.png \
+	utilitiesDirichletFig2.png \
+	utilitiesDirichletFig3.png \
+	$(END_OF_LIST)

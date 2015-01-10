@@ -202,3 +202,5 @@ tagREAL8FFTPlan
 #include "IntelRealFFT_source.c"
 #undef SINGLE_PRECISION
 #include "IntelRealFFT_source.c"
+
+/*@}*/

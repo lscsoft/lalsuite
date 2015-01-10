@@ -135,11 +135,12 @@
  * As explained in \ref CelestialCoordinates_c, the function
  * \f$\arctan\!2(y,x)\f$ returns the argument of the complex number \f$x+iy\f$.
  *
- * \figure{inject_geodetic,eps,0.3,The difference between geodetic and geocentric latitude.}
+ * \anchor inject_geodetic
+ * \image html inject_geodetic.png "The difference between geodetic and geocentric latitude."
  *
  * \par Geocentric coordinates:
  * As shown in
- * \figref{inject_geodetic}, the ellipticity of the Earth means that the
+ * \ref inject_geodetic "this figure", the ellipticity of the Earth means that the
  * vertical axis of a point on the Earth's surface does not pass through
  * the geometric centre of the Earth.  This means that the geodetic
  * latitude of a location (defined as the latitude angle
@@ -237,7 +238,8 @@
  * + [z-\mathrm{sgn}({z})r_e(1-f)]\sin\phi \; .
  * \f}
  *
- * \figure{inject_geodeticsing,eps,0.47,Singular surfaces in the geodetic coordinate system. The ellipticity of this spheroid has been exaggerated compared with the Earth.}
+ * \anchor inject_geodeticsing
+ * \image html inject_geodeticsing.png "Singular surfaces in the geodetic coordinate system. The ellipticity of this spheroid has been exaggerated compared with the Earth."
  *
  * These formulae still leave certain areas where coordinate
  * singularities or numerical cancelations can occur.  Some of these have
@@ -252,7 +254,7 @@
  *
  * <li> There is another coordinate singularity when \f$D\leq0\f$, where
  * lines of constant geodetic latitude will cross each other, as shown in
- * \figref{inject_geodeticsing}.  That is, a given point within this
+ * \ref inject_geodeticsing "this figure".  That is, a given point within this
  * region can be assigned a range of geodetic latitudes.  The
  * multi-valued region lies within an inner ellipsoid \f$P\leq0\f$, which in
  * the case of the Earth has equatorial radius \f$r_0=r_ef(2-f)=42.6977\f$km
@@ -307,7 +309,7 @@
  *
  * <li> The only remaining known numerical singularities are at the
  * poles of the inner ellipsoid, shown as red dots in
- * \figref{inject_geodeticsing}.  These points stubbornly resist
+ * \ref inject_geodeticsing "this figure".  These points stubbornly resist
  * high-precision calculation.  However, they are extremely unlikely to
  * come up in practice.</li>
  * </ul>

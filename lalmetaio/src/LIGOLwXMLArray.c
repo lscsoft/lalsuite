@@ -29,7 +29,7 @@
 
 /**
  * \file
- * \ingroup LIGOLwXMLArray
+ * \ingroup lalmetaio_general
  * \author Kipp Cannon
  *
  * \brief I/O library for LIGO Light Weight XML Array document fragments.

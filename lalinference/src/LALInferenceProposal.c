@@ -3776,7 +3776,7 @@ void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceRunState *runState
  * chooses at random a KDE-estimate from a linked list.
  * @param      runState      The current LALInferenceRunState.
  * @param      currentParams The current parameters.
- * @param[out] proposedParam The proposed parameters.
+ * @param[out] proposedParams The proposed parameters.
  * @return proposal_ratio    The (log) proposal ratio for maintaining detailed balance
  */
 REAL8 LALInferenceClusteredKDEProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams) {
@@ -3794,7 +3794,7 @@ REAL8 LALInferenceClusteredKDEProposal(LALInferenceRunState *runState, LALInfere
  * calculate and return.
  * @param      runState      The current LALInferenceRunState.
  * @param      currentParams The current parameters.
- * @param[out] proposedParam The proposed parameters.
+ * @param[out] proposedParams The proposed parameters.
  * @param      propDensity   If input is not NULL or >-DBL_MAX, assume this is the
  *                              proposal density at \a currentParams, otherwise
  *                              calculate.  It is then replaced with the proposal
@@ -3888,6 +3888,7 @@ REAL8 LALInferenceStoredClusteredKDEProposal(LALInferenceRunState *runState, LAL
  * Given the current differential evolution buffer, the maximum
  * one-dimensional autocorrelation length is found.
  * @param runState The run state containing the differential evolution buffer.
+ * @param maxACL UNDOCUMENTED
 */
 void LALInferenceComputeMaxAutoCorrLenFromDE(LALInferenceRunState *runState, INT4* maxACL) {
   INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
@@ -3931,6 +3932,8 @@ void LALInferenceComputeMaxAutoCorrLenFromDE(LALInferenceRunState *runState, INT
  * extreme of the lags in the ACF, where there is a lot
  * of noise.
  * @param array Array with rows containing samples.
+ * @param nPoints UNDOCUMENTED
+ * @param nPar UNDOCUMENTED
  * @return The maximum one-dimensional autocorrelation length
 */
 REAL8 LALInferenceComputeMaxAutoCorrLen(REAL8 *array, INT4 nPoints, INT4 nPar) {

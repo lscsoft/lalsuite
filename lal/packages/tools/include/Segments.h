@@ -30,7 +30,8 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup Segments_h
+ * \defgroup Segments_h Header Segments.h
+ * \ingroup lal_tools
  * \author Peter Shawhan
  *
  * \brief Provides data types and functions for manipulating lists of ``segments'' (GPS time intervals).

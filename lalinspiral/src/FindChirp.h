@@ -47,7 +47,8 @@ extern "C" {
 
 
 /**
- * \addtogroup FindChirp_h
+ * \defgroup FindChirp_h Header FindChirp.h
+ * \ingroup lalinspiral_findchirp
  * \author Allen, B., Brown, D. A. and Creighton, J. D. E.
  *
  * \brief This header provides core prototypes, structures and functions to
@@ -261,7 +262,7 @@ FindChirpDataParams;
 
 /**
  * This structure contains the parameters for generation of templates
- * by the various template generation functions provided in \ref pkg_findchirp.
+ * by the various template generation functions provided in \ref lalinspiral_findchirp.
  */
 typedef struct
 tagFindChirpTmpltParams

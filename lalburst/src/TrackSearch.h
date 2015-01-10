@@ -44,7 +44,7 @@ extern "C" {
 
 /**
  * \defgroup TrackSearch_h Header TrackSearch.h
- * \ingroup pkg_tracksearch
+ * \ingroup lalburst_tracksearch
  *
  * ### Synopsis ###
  *

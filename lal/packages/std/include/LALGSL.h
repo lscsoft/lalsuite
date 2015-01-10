@@ -18,7 +18,8 @@
 */
 
 /**
- * \addtogroup LALGSL_h
+ * \defgroup LALGSL_h Header LALGSL.h
+ * \ingroup lal_std
  * \author Creighton, J. D. E.
  *
  * \brief Provides macros for integrating the GSL error handler with the LAL status structure.

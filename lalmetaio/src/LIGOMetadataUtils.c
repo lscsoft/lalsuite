@@ -29,7 +29,7 @@
 /**
  * \author Brown, D. A.
  * \file
- * \ingroup lalmetaio
+ * \ingroup lalmetaio_general
  * \brief General routines for manipulating LIGO metadatabase tables.
  *
  * ### Description ###

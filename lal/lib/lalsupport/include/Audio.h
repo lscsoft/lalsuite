@@ -20,7 +20,7 @@
 /* vim: set noet ts=4 sw=4: */
 /**
  * \file
- * \ingroup std
+ * \ingroup lal_std
  * \author Creighton, J. D. E.
  * \brief Routines for exporting time series data as sound files.
  *

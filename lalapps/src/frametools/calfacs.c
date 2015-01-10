@@ -20,6 +20,7 @@
 /**
  * \author Jolien D. E. Creighton
  * \file
+ * \ingroup lalapps_frametools
  */
 
 #include <stdio.h>

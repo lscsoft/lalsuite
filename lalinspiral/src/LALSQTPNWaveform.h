@@ -19,7 +19,7 @@ extern "C" {
 
 /**
  * \defgroup LALSQTPNWaveform_h Header LALSQTPNWaveform.h
- * \ingroup pkg_CBC_NEW
+ * \ingroup lalinspiral_UNCLASSIFIED
  * \brief Contains the enumerations, structures and functions declarations to create GWforms.
  *
  * ### Notations ###

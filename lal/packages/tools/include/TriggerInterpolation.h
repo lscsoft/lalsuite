@@ -32,6 +32,9 @@ extern "C" {
 
 
 /**
+ * \defgroup TriggerInterpolation Trigger Interpolation
+ * \ingroup lal_tools
+ *
  * This module implements several algorithms for performing sub-sample
  * interpolation of peaks in the output of a matched filter. The interface for
  * each algorithm is the same. To illustrate, here is a description of the
@@ -80,7 +83,6 @@ extern "C" {
  * XLALDestroyLanczosTriggerInterpolant(interp);
  * \endcode
  *
- * \addtogroup TriggerInterpolation
  * \{
  */
 
@@ -95,7 +97,7 @@ extern "C" {
  * \warning It is an error to request a Catmull-Rom workspace with a window size
  * not equal to 2.
  *
- * \addtogroup CubicSplineTriggerInterpolant
+ * \defgroup CubicSplineTriggerInterpolant Cubic Spline Trigger Interpolant
  * \{
  */
 
@@ -164,7 +166,7 @@ int XLALREAL4ApplyCubicSplineTriggerInterpolant(
  * Convolve the data with a Lanczos reconstruction kernel and find the maximum
  * of the absolute value using a one-dimensional numerical method.
  *
- * \addtogroup LanczosTriggerInterpolant
+ * \defgroup LanczosTriggerInterpolant Lanczos Trigger Interpolant
  * \{
  */
 
@@ -233,7 +235,7 @@ int XLALREAL4ApplyLanczosTriggerInterpolant(
  * \warning It is an error to request a nearest-neighbor workspace with a window
  * size not equal to 0.
  *
- * \addtogroup NearestNeighborTriggerInterpolant
+ * \defgroup NearestNeighborTriggerInterpolant Nearest Neighbor Trigger Interpolant
  * \{
  */
 
@@ -304,7 +306,7 @@ int XLALREAL4ApplyNearestNeighborTriggerInterpolant(
  * actually an interpolant because it is not guaranteed to agree with the input
  * data points, and that it always sets *ymax = data[0].
  *
- * \addtogroup QuadraticFitTriggerInterpolant
+ * \defgroup QuadraticFitTriggerInterpolant Quadratic Fit Trigger Interpolant
  * \{
  */
 

@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup pulsarApps
+ * \ingroup lalapps_pulsar
  * \author Xavier Siemens,  Bruce Allen,  Bernd Machenschalk
  * \brief takes in two Fstats file to look for coincidence
  */

@@ -18,7 +18,8 @@
 */
 
 /**
- * \addtogroup LALConstants_h
+ * \defgroup LALConstants_h Header LALConstants.h
+ * \ingroup lal_std
  * \author Creighton, T. D.
  * \brief Provides standard numerical constants for LAL.
  *

@@ -32,12 +32,25 @@ liblalstochastic_la_SOURCES = \
 nodist_liblalstochastic_la_SOURCES = LALStochasticBuildInfo.c
 liblalstochastic_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
 
-EXTRA_DIST = \
-	LALStochasticConfig.h.in \
-	config.h.in
-
 DISTCLEANFILES = config.h
 
 vcs_info_sources = LALStochasticVCSInfoHeader.h
 build_info_source = LALStochasticBuildInfo.c
 $(build_info_source): $(liblalstochastic_la_DEPENDENCIES)
+
+EXTRA_DIST = \
+	LALStochasticConfig.h.in \
+	config.h.in \
+	stochasticOmegaGWQuadratic.png \
+	stochasticOverlapGEO600TAMA300.png \
+	stochasticOverlapLHOGEO600.png \
+	stochasticOverlapLHOLLO.png \
+	stochasticOverlapLHOTAMA300.png \
+	stochasticOverlapLHOVIRGO.png \
+	stochasticOverlapLLOGEO600.png \
+	stochasticOverlapLLOTAMA300.png \
+	stochasticOverlapLLOVIRGO.png \
+	stochasticOverlapVIRGOGEO600.png \
+	stochasticOverlapVIRGOTAMA300.png \
+	stochastic_CrossCorrFlowchart.png \
+	$(END_OF_LIST)

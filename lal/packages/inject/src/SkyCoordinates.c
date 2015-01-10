@@ -51,7 +51,8 @@
  * of which moves the output sky position one step closer to the desired
  * final coordinates system.  The usual "flow" of the algorithm is:
  *
- * \figure{SkyCoordinates_conversions,eps,0.6,}
+ * \anchor SkyCoordinates_conversions
+ * \image html SkyCoordinates_conversions.png ""
  *
  * although one can also convert directly between equatorial and horizon
  * coordinate systems if <tt>params->zenith</tt> is given in equatorial

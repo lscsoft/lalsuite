@@ -924,6 +924,7 @@ void LALInferenceDiscardPTMCMCHeader(FILE *filestream) {
  * maximum log(likelihood) sampled by the chain.
  * @param     filestream  The PTMCMC input stream to be burned in.
  * @param[in] logl_idx    The column containing logl values.
+ * @param     nPar        UNDOCUMENTED
  * @return The cycle to be used for burnin.
  */
 void LALInferenceBurninPTMCMC(FILE *filestream, INT4 logl_idx, INT4 nPar) {

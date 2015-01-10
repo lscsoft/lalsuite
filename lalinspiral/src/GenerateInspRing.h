@@ -35,7 +35,8 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup GenerateInspRing_h
+ * \defgroup GenerateInspRing_h Header GenerateInspRing.h
+ * \ingroup lalinspiral_inject
  * \author S.Fairhurst
  *
  * \brief Module for pasting a (realistic) ringdown on the end of an inspiral

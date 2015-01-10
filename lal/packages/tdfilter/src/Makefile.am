@@ -12,3 +12,7 @@ libtdfilter_la_SOURCES = \
 	CreateIIRFilter.c \
 	DestroyZPGFilter.c \
 	IIRFilterVectorR.c
+
+EXTRA_DIST = \
+	tdfilter_iirfiltertest.png \
+	$(END_OF_LIST)

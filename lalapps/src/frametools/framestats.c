@@ -19,8 +19,8 @@
 
 /**
  * \author C.Messenger
- * \ingroup pulsarCoherent
  * \file
+ * \ingroup lalapps_frametools
  * \brief
  * This code is designed to compute statistical quantities from a specified channel in a given
  * frame file.

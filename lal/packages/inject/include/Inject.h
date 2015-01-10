@@ -30,7 +30,8 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup Inject_h
+ * \defgroup Inject_h Header Inject.h
+ * \ingroup lal_inject
  * \author Creighton, T. D.
  *
  * \brief Provides routines to inject a signal into detector output.

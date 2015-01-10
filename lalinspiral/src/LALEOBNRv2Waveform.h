@@ -38,7 +38,7 @@ extern "C" {
 
 /**
  * \defgroup LALEOBNRv2Waveform_h Header LALEOBNRv2Waveform.h
- * \ingroup pkg_CBC_NEW
+ * \ingroup lalinspiral_UNCLASSIFIED
  * \author Craig Robinson
  *
  * \brief %Header containing most of the structures and prototypes which are

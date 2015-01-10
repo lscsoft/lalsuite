@@ -47,6 +47,7 @@
 
 /**
  * \file SPINspiral_parameters.c
+ * \ingroup lalapps_inspiral
  * \brief Contains routines that handle reading and randomisation of parameters
  */
 

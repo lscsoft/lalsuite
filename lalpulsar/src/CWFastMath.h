@@ -29,7 +29,7 @@ extern "C" {
 
 ///
 /// \defgroup CWFastMath_h Header CWFastMath.h
-/// \ingroup pkg_pulsarCommon
+/// \ingroup lalpulsar_common
 /// \authors Reinhard Prix, Karl Wette
 ///
 /// \brief Various functions for performing fast math in CW functions.

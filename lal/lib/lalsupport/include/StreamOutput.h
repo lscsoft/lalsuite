@@ -28,7 +28,8 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup StreamOutput_h
+ * \defgroup StreamOutput_h Header StreamOutput.h
+ * \ingroup lal_support
  * \author Creighton, T. D.
  *
  * \brief Provides routines to write data from LAL data structures to an open stream.

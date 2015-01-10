@@ -19,6 +19,7 @@
 
 /**
  * \file
+ * \ingroup lalapps_general
  * \author Josh Willis
  *
  * \brief Utility to create single-precision FFTW wisdom files

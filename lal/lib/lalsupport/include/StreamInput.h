@@ -28,7 +28,8 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup StreamInput_h
+ * \defgroup StreamInput_h Header StreamInput.h
+ * \ingroup lal_support
  * \author Creighton, T. D.
  *
  * \brief Provides routines to read data from an open stream and store it in LAL data structures.

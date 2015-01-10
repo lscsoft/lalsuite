@@ -50,15 +50,16 @@
  * and given also the distance between templates in our preferred coordinates
  * \f$(D\tau_0^{(n)},D\tau_3^{(n)}),\f$
  * consider lines \f$\tau_0 = \tau_0^{(n)} + D\tau_0^{(n)}\f$
- * (\f$QA\f$ of \figref{LALInspiralBankHequalmass}) and
+ * (\f$QA\f$ of \ref LALInspiralBankHequalmass "this figure") and
  * \f$\tau_3 = \tau_3^{(n)} + D\tau_3^{(n)}\f$
- * (\f$PB\f$ of \figref{LALInspiralBankHequalmass}).
+ * (\f$PB\f$ of \ref LALInspiralBankHequalmass "this figure").
  *
- * \figure{LALInspiralBankHequalmass,pdf,0.6,Algorithm sketching the placement of templates along eta=1/4 curve}
+ * \anchor LALInspiralBankHequalmass
+ * \image html LALInspiralBankHequalmass.png "Algorithm sketching the placement of templates along eta=1/4 curve"
  *
  * The template next to
  * \f$(\tau_0^{(n)},\tau_3^{(n)}),\f$ on the equal mass curve, must lie
- * either along \f$PB\f$ or along \f$QA\f$ (cf. \figref{LALInspiralBankHequalmass} in order
+ * either along \f$PB\f$ or along \f$QA\f$ (cf. \ref LALInspiralBankHequalmass "this figure" in order
  * that all the signals that may lie on \f$OAB\f$
  * are spanned by at least one of the two templates.  Clearly, if we were
  * to place the \f$(n+1)\f$\ th template at \f$B,\f$ some of the signals won't
@@ -95,10 +96,11 @@
  * \f$(\tau_0^\mathrm{min}, \tau_3^\mathrm{max})\f$.
  * The implementation of the algorithm along the equal mass curve and
  * in a rectangular lattice in the rest of the parameter space is shown
- * plotted in \figref{LALInspiralBankHCoarse2}, where the templates
+ * plotted in \ref LALInspiralBankHCoarse2 "this figure", where the templates
  * chosen are represented as points.
  *
- * \figure{LALInspiralBankHCoarse2,pdf,0.6,Algorithm sketching the construction of a rectangular lattice of templates}
+ * \anchor LALInspiralBankHCoarse2
+ * \image html LALInspiralBankHCoarse2.png "Algorithm sketching the construction of a rectangular lattice of templates"
  *
  * ### Algorithm ###
  *

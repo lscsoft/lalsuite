@@ -33,7 +33,8 @@ extern "C" {
 
 
 /**
- * \addtogroup LALMathematica_h
+ * \defgroup LALMathematica_h Header LALMathematica.h
+ * \ingroup lal_support
  * \author Hanna, C. R.
  *
  * \brief Provides structures, functions and macro definitions for modules that
@@ -189,8 +190,6 @@ typedef struct tagMathNDPointList{
   REAL4 grayLevel;
   } MathNDPointList;
 
-/*@}*/
-
 void
 LALMath3DPlot( LALStatus *status,
                Math3DPointList *first,
@@ -202,6 +201,8 @@ LALMathNDPlot( LALStatus *status,
                MathNDPointList *first,
                INT4 *ntiles,
                REAL4 *pointSize );
+
+/*@}*/
 
 #if 0
 { /* so that editors will match succeeding brace */

@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup pulsarApps
+ * \ingroup lalapps_pulsar
  * \author X. Siemens
  * \brief takes in two Fstats file to look for coincidence
  */

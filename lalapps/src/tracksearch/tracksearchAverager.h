@@ -20,6 +20,7 @@
 /**
  * \author Torres. C
  * \file
+ * \ingroup lalapps_burst
  */
 
 #ifndef TRACKSEARCHAVERAGER_H

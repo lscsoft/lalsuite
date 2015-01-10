@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup pulsarApps
+ * \ingroup lalapps_pulsar
  * \author Evan Goetz
  */
 
@@ -1091,7 +1091,6 @@ int main(int argc, char *argv[])
 
 /**
  * Create a new inputParamsStruct
- * \param [in] numofIFOs Number of interferometers
  * \return Pointer to new inputParamsStruct
  */
 inputParamsStruct * new_inputParams(void)
@@ -1313,7 +1312,7 @@ INT4 PhaseShiftSFT(SFTtype *sft, REAL8 shift)
 
 /**
  * Add SFTs together from a MultiSFTVector
- * \param [in] multiSFTVector      Pointer to a MultiSFTVector containing the SFT data
+ * \param [in] multiSFTvector      Pointer to a MultiSFTVector containing the SFT data
  * \param [in] multissb            Pointer to a MultiSSBtimes structure
  * \param [in] multiAMcoefficients Pointer to a MultiAMCoeffs structure
  * \param [in] assumeNScosi        Pointer to the assumed cosi value, or NULL if no value assumed
@@ -1615,7 +1614,7 @@ MultiLIGOTimeGPSVector * getMultiTimeStampsFromSFTCatalog(SFTCatalog *catalog)
 
 /**
  * Create a list of timestamps from SFTs that might be a subset from those in an SFTCatalog, applying KS/Kuipers test if desired
- * \param [in] multiSFTVector Pointer to a MultiSFTVector
+ * \param [in] multiSFTvector Pointer to a MultiSFTVector
  * \param [in] params         Pointer to inputParamsStruct
  * \return Pointer to a list of GPS timestamps in a MultiLIGOTimeGPSVector
  */
@@ -1670,7 +1669,7 @@ MultiLIGOTimeGPSVector * getMultiTimeStampsFromSFTs(MultiSFTVector *multiSFTvect
 
 /**
  * Create a list of timestamps from a segment list
- * \param [in] file String for the filename
+ * \param [in] filenames String for the filename
  * \param [in] params Pointer to inputParamsStruct
  * \return Pointer to a list of GPS timestamps in a MultiLIGOTimeGPSVector
  */

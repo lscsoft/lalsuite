@@ -35,7 +35,8 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup SphericalHarmonics_h
+ * \defgroup SphericalHarmonics_h Header SphericalHarmonics.h
+ * \ingroup lal_utilities
  * \author S.Fairhurst, B. Krishnan, L.Santamaria, C. Robinson, C. Pankow
  *
  * \brief Library of Spin-weighted Spherical Harmonic functions and an

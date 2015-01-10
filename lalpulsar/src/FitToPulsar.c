@@ -20,7 +20,7 @@
 /**
  * \author Dupuis, R. J.
  * \file
- * \ingroup pulsarTODO
+ * \ingroup lalpulsar_UNCLASSIFIED
  *
  * \brief Calculates the best fit parameters for a GW signal originating from a
  * non-precessing pulsar.

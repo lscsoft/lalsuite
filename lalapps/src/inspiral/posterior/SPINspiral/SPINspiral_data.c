@@ -36,6 +36,7 @@
 
 /**
  * \file SPINspiral_data.c
+ * \ingroup lalapps_inspiral
  * \brief Contains routines that do IFO initialisation and data handling
  */
 
