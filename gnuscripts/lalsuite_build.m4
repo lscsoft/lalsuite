@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 99
+# serial 100
 
 # not present in older versions of pkg.m4
 m4_pattern_allow([^PKG_CONFIG(_(PATH|LIBDIR|SYSROOT_DIR|ALLOW_SYSTEM_(CFLAGS|LIBS)))?$])
@@ -654,12 +654,14 @@ AC_DEFUN([LALSUITE_ENABLE_DOXYGEN],[
     ])
     AC_MSG_RESULT([yes (${doxygen_version})])
     AC_CONFIG_COMMANDS_PRE([
+      AC_SUBST([DOXYGEN_ENABLED_SECTIONS])
       AC_SUBST([DOXYGEN_TAGFILES],[])
       AC_SUBST([DOXYGEN_INSTALL_DIRMAP],[])
       for arg in ${lalsuite_libs}; do
         AS_CASE([${arg}],
           [lalsupport],[:],[
             ucarg=[`echo ${arg} | tr '[a-z]' '[A-Z]'`]
+            DOXYGEN_ENABLED_SECTIONS="${DOXYGEN_ENABLED_SECTIONS} ${ucarg}"
             arg_docdir_name="${ucarg}_DOCDIR"
             AS_VAR_COPY([arg_docdir],[${arg_docdir_name}])
             AS_IF([test "x${LALSUITE_BUILD}" = xtrue],[

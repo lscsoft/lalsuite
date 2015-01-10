@@ -1,4 +1,6 @@
 /**
+\cond LALINSPIRAL
+
 \defgroup lalapps_BankEfficiency BankEfficiency documentation
 \ingroup lalapps_inspiral
 
@@ -447,4 +449,5 @@ For instance, using the fast simulation option, you can generate 1000 simulation
 
 Of course, if you look at PBH or BNS systems, vector length are longer and it takes longer to compute a single FFT. In addition, if you remove the fast option, all templates will be filtered. On top of which, you may ask a very fine bank such as --mm 0.999 and so on. At the end you may have a 2048 seconds vector length and 50,000 templates. So you will have to wait or use a cluster.
 
+\endcond
 */
