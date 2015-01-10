@@ -37,4 +37,15 @@ EXTRA_DIST += \
 	response2.in \
 	spectrum1.in \
 	spectrum2.in \
+	stochasticOmegaGWQuadratic.png \
+	stochasticOverlapGEO600TAMA300.png \
+	stochasticOverlapLHOGEO600.png \
+	stochasticOverlapLHOLLO.png \
+	stochasticOverlapLHOTAMA300.png \
+	stochasticOverlapLHOVIRGO.png \
+	stochasticOverlapLLOGEO600.png \
+	stochasticOverlapLLOTAMA300.png \
+	stochasticOverlapLLOVIRGO.png \
+	stochasticOverlapVIRGOGEO600.png \
+	stochasticOverlapVIRGOTAMA300.png \
 	$(END_OF_LIST)

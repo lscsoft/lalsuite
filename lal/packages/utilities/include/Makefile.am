@@ -15,3 +15,7 @@ pkginclude_HEADERS = \
 	RngMedBias.h \
 	Sort.h \
 	SphericalHarmonics.h
+
+EXTRA_DIST = \
+	utilitiesCoarseGrain.png \
+	$(END_OF_LIST)

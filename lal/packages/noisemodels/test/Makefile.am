@@ -14,3 +14,7 @@ test_helpers +=
 MOSTLYCLEANFILES = \
 	*.out \
 	$(END_OF_LIST)
+
+EXTRA_DIST += \
+	NoisePSDTest.png \
+	$(END_OF_LIST)

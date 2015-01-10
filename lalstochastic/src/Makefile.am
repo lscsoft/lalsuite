@@ -41,16 +41,5 @@ $(build_info_source): $(liblalstochastic_la_DEPENDENCIES)
 EXTRA_DIST = \
 	LALStochasticConfig.h.in \
 	config.h.in \
-	stochasticOmegaGWQuadratic.png \
-	stochasticOverlapGEO600TAMA300.png \
-	stochasticOverlapLHOGEO600.png \
-	stochasticOverlapLHOLLO.png \
-	stochasticOverlapLHOTAMA300.png \
-	stochasticOverlapLHOVIRGO.png \
-	stochasticOverlapLLOGEO600.png \
-	stochasticOverlapLLOTAMA300.png \
-	stochasticOverlapLLOVIRGO.png \
-	stochasticOverlapVIRGOGEO600.png \
-	stochasticOverlapVIRGOTAMA300.png \
 	stochastic_CrossCorrFlowchart.png \
 	$(END_OF_LIST)

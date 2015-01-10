@@ -34,4 +34,7 @@ MOSTLYCLEANFILES = \
 
 EXTRA_DIST += \
 	CheckStatus.h \
+	utilitiesDirichletFig1.png \
+	utilitiesDirichletFig2.png \
+	utilitiesDirichletFig3.png \
 	$(END_OF_LIST)

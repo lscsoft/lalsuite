@@ -36,7 +36,4 @@ noinst_HEADERS = \
 
 EXTRA_DIST = \
 	MakeTemplateBank.c \
-	resamp_figs1.png \
-	resamp_figs2.png \
-	resamp_figs3.png \
 	$(END_OF_LIST)

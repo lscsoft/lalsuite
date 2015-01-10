@@ -17,9 +17,7 @@ EXTRA_DIST = \
 	inject_galactic.png \
 	inject_geodetic.png \
 	inject_geodeticsing.png \
-	inject_geodetictest.png \
 	inject_geographic.png \
 	inject_horizon.png \
 	inject_lat_long.png \
-	inject_phase_diagram.png \
 	$(END_OF_LIST)

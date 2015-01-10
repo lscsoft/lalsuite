@@ -11,3 +11,7 @@ test_scripts +=
 
 # Add any helper programs required by tests to this variable
 test_helpers +=
+
+EXTRA_DIST += \
+	inject_geodetictest.png \
+	$(END_OF_LIST)

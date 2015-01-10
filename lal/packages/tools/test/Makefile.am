@@ -68,4 +68,7 @@ EXTRA_DIST += \
 	indTestDetResGEO.cfg \
 	indTestDetResLHO.cfg \
 	indTestDetResLLO.cfg \
+	resamp_figs1.png \
+	resamp_figs2.png \
+	resamp_figs3.png \
 	$(END_OF_LIST)

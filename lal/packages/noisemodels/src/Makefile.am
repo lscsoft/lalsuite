@@ -14,8 +14,3 @@ libnoisemodels_la_SOURCES = \
 	LALVIRGOPsd.c\
 	LALAdvLIGOPsd.c\
 	LALETBPsd.c
-
-EXTRA_DIST = \
-	NoisePSDTest.png \
-	RandomSignal.png \
-	$(END_OF_LIST)

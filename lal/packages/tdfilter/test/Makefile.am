@@ -15,3 +15,7 @@ test_helpers +=
 MOSTLYCLEANFILES = \
 	out.dat \
 	$(END_OF_LIST)
+
+EXTRA_DIST += \
+	tdfilter_iirfiltertest.png \
+	$(END_OF_LIST)
