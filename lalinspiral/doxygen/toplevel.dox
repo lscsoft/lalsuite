@@ -9,17 +9,20 @@
    for inspiralling and merging binaries consisting of neutron stars
    and/or black holes.
 @}
+
 \defgroup lalinspiral_findchirp		FindChirp Package
 @{
    \brief This package contains LAL routines to search for binary
    inspiral chirps using templated matched filtering and the
    \f$\chi^2\f$ veto.
 @}
+
 \defgroup lalinspiral_inject		Inspiral Signal Generation
 @{
    \brief This package provides routines to simulate gravitational
    waves and their effect on a detector.
 @}
+
 \defgroup lalinspiral_inspiral		Inspiral Waveforms
 @{
    \brief This is a module which generates inspiral waveforms.
