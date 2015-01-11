@@ -39,6 +39,7 @@ test_programs += UniversalDopplerMetricTest
 test_programs += VelocityTest
 test_programs += XLALComputeAMTest
 test_programs += XLALMultiNoiseWeightsTest
+
 #test_programs += XLALLoadSFTsTest
 #test_programs += SFTCleanTest
 if LALXML
@@ -49,7 +50,7 @@ endif
 test_scripts +=
 
 # Add any helper programs required by tests to this variable
-test_helpers +=
+test_helpers += TEMPOcomparison
 
 TwoDMeshTest_SOURCES = \
 	TwoDMeshPlot.c \
@@ -70,6 +71,8 @@ MOSTLYCLEANFILES = \
 	OutHough.asc \
 	TS_R4.dat \
 	outputsft*.sft \
+	TEMPOcomparison.par \
+	TEMPOcomparison.tim \
 	$(END_OF_LIST)
 
 pkgdata_DATA = \

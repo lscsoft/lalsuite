@@ -18,12 +18,13 @@
 */
 
 /**
- * \file
- * \ingroup lalapps_pulsar
  * \author Chris Messenger
+ * \file
+ * \ingroup lalpulsar_coh
+ * \brief Tests for CW barycentric timing functions by comparing to tempo2
+ *
  */
 
-#include <glob.h>
 #include <stdlib.h>
 #include <math.h>
 #include <stdio.h>
@@ -40,10 +41,6 @@
 #include <lal/GeneratePulsarSignal.h>
 #include <lal/Random.h>
 #include <lal/LALString.h>
-
-#include <lal/LogPrintf.h>
-
-#include <lalapps.h>
 
 /* ---------- Error codes and messages ---------- */
 #define TEMPOCOMPARISONC_ENORM 0
@@ -271,15 +268,7 @@ main(int argc, char *argv[]){
   MJDTime TrefTDBMJD;
   LIGOTimeGPS TrefSSB_TDB_GPS;
 
-  vrbflg = 1;	/* verbose error-messages */
-
-  /* set LAL error-handler */
-  lal_errhandler = LAL_ERR_EXIT;
-
-  /* set log-level */
-  LogSetLevel ( lalDebugLevel );
-
-  LAL_CALL (initUserVars (&status, argc, argv, &uvar), &status);
+  initUserVars (&status, argc, argv, &uvar);
 
   /* exit if help was required */
   if (uvar.help)
@@ -320,16 +309,12 @@ main(int argc, char *argv[]){
 
   }
   /* if a user has defined a sky position */
-  else if ((LALUserVarWasSet(&uvar.RAJ))&&(LALUserVarWasSet(&uvar.DECJ))) {
-    if (lalDebugLevel) fprintf(stdout,"STATUS : User defined sky position - alpha = %s delta = %s (hms)\n",uvar.RAJ,uvar.DECJ);
-    alpha = XLALhmsToRads(uvar.RAJ);
-    delta = XLALdmsToRads(uvar.DECJ);
-    if (lalDebugLevel) fprintf(stdout,"STATUS : Converted user defined sky position to - alpha = %6.12f delta = %6.12f (rads)\n",alpha,delta);
-  }
-  else {
-    fprintf(stderr,"ERROR : must either set random params or define a sky position. Exiting.\n");
-    return(TEMPOCOMPARISONC_EINPUT);
-  }
+  else
+    {
+      alpha = XLALhmsToRads(uvar.RAJ);
+      delta = XLALdmsToRads(uvar.DECJ);
+      if (lalDebugLevel) fprintf(stdout,"STATUS : Converted user defined sky position to - alpha = %6.12f delta = %6.12f (rads)\n",alpha,delta);
+    }
 
   /* define start time in an MJD structure */
   REAL8toMJD(&status,&TstartUTCMJD,uvar.TstartUTCMJD);
@@ -745,11 +730,8 @@ initUserVars (LALStatus *status, int argc, char *argv[], UserVariables_t *uvar)
   /* set a few defaults */
   uvar->help = FALSE;
 
-  uvar->RAJ = (CHAR*)LALMalloc(512);
-  sprintf(uvar->RAJ,"00:00.00.0000");
-
-  uvar->DECJ = (CHAR*)LALMalloc(512);
-  sprintf(uvar->DECJ,"00:00.00.0000");
+  uvar->RAJ  = XLALStringDuplicate ( "5:08:18.97413254" );
+  uvar->DECJ = XLALStringDuplicate ( "15:41:48.6834778" );
 
   uvar->TstartUTCMJD = 53400;
   uvar->TrefTDBMJD = 53400;
@@ -760,7 +742,7 @@ initUserVars (LALStatus *status, int argc, char *argv[], UserVariables_t *uvar)
   uvar->fdot = 0.0;
 
   uvar->PSRJ = (CHAR*)LALMalloc(512);
-  sprintf(uvar->PSRJ,"TEST");
+  sprintf(uvar->PSRJ,"TEMPOcomparison");
 
   uvar->Observatory = (CHAR*)LALMalloc(512);
   sprintf(uvar->Observatory,"JODRELL");
@@ -783,13 +765,13 @@ initUserVars (LALStatus *status, int argc, char *argv[], UserVariables_t *uvar)
   LALregREALUserStruct ( status, 	TstartUTCMJD, 	'T', UVAR_OPTIONAL, 	"Start time of output TOAs in UTC [Default = 53400 ~ Jan 2005]");
   LALregREALUserStruct ( status, 	DeltaTMJD, 	't', UVAR_OPTIONAL, 	"Time inbetween TOAs (in days) [DEFAULT = 1]");
   LALregREALUserStruct ( status, 	DurationMJD, 	'D', UVAR_OPTIONAL, 	"Full duration of TOAs (in days) [Default = 1800 ~ 5 years]");
-  LALregSTRINGUserStruct ( status,      PSRJ,           'n', UVAR_OPTIONAL, 	"Name of pulsar [Default = TEST]");
+  LALregSTRINGUserStruct ( status,      PSRJ,           'n', UVAR_OPTIONAL, 	"Name of pulsar [Default = TEMPOcomparison]");
   LALregSTRINGUserStruct ( status,      Observatory,    'O', UVAR_OPTIONAL, 	"TEMPO observatory name (GBT,ARECIBO,NARRABRI,NANSHAN,DSS_43,PARKES,JODRELL,VLA,NANCAY,COE,SSB) [Default = JODRELL]");
   LALregBOOLUserStruct ( status,        randparams,      0, UVAR_OPTIONAL, 	"Override sky position with random values [Default = FALSE]");
   LALregINTUserStruct ( status, 	seed,     	'o', UVAR_OPTIONAL, 	"The random seed (integer) [Default = 0 = clock]");
 
   /* read all command line variables */
-  TRY( LALUserVarReadAllInput(status->statusPtr, argc, argv), status);
+  LALUserVarReadAllInput(status->statusPtr, argc, argv);
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
