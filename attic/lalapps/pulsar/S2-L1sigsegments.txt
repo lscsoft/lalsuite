@@ -1,3 +1,0 @@
-StartGPS  StopGPS   duration(sec)
-
-733976850 734002743 25893

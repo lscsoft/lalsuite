@@ -1,0 +1,48 @@
+# -*- mode: shell-script; -*-
+# ==============================================================================
+# This file records "atticed" files which are no longer built or distributed as
+# part of LALPulsar. They are recorded here for historical interest, or possible
+# future re-use. The files can be recalled from the git history, if ever needed,
+# by using the following shell commands:
+# $ file=lalpulsar/path/to/file
+# $ commit=`git log --diff-filter=D --summary | sed -n '\|^commit|h;\|delete mode [0-9]* '"$file"'|{g;s/commit //;s/$/^/;p}' | head -1`
+# $ git log -1 $commit
+# $ git checkout $commit OR git checkout $commit -- $file
+#
+# To add files to this record, create a commit which deletes the files from the
+# git repository, then run:
+# $ /bin/bash lalpulsar/attic.txt
+# ==============================================================================
+date=`git log -1 --date=short --pretty="format:%cd" HEAD`
+git log -1 --summary HEAD | sed -n "s|^ delete mode [0-9]* |# ${date} |p" | LC_ALL=C sort | uniq | tee -a $0
+# ==============================================================================
+# Deleted    File
+# ---------- -------------------------------------------------------------------
+# 2013-05-09 lalpulsar/src/ApplyResampleRules.c
+# 2013-05-09 lalpulsar/src/CreateResampleRules.c
+# 2013-05-09 lalpulsar/src/DestroyResampleRules.c
+# 2013-05-09 lalpulsar/src/PolycoToTimingDifference.c
+# 2013-05-09 lalpulsar/src/Resample.h
+# 2013-05-09 lalpulsar/src/RulesToTimingDifference.c
+# 2013-05-09 lalpulsar/test/ResampleTest.c
+# 2014-03-03 lalpulsar/src/ComputeSkyBinary.c
+# 2014-03-03 lalpulsar/src/ComputeSkyBinary.h
+# 2014-04-12 lalpulsar/attic/CFS_attic.c
+# 2014-05-02 lalpulsar/doc/pulsarFold.dox
+# 2014-05-02 lalpulsar/src/DopplerLatticeCovering.c
+# 2014-05-02 lalpulsar/src/DopplerLatticeCovering.h
+# 2014-05-02 lalpulsar/src/FoldAmplitudes.c
+# 2014-05-02 lalpulsar/src/FoldAmplitudes.h
+# 2014-05-02 lalpulsar/src/LatticeCovering.c
+# 2014-05-02 lalpulsar/src/LatticeCovering.h
+# 2014-05-02 lalpulsar/src/PulsarCat.c
+# 2014-05-02 lalpulsar/src/PulsarCat.h
+# 2014-05-02 lalpulsar/src/PulsarCatInput.c
+# 2014-05-02 lalpulsar/test/FoldAmplitudesTest.c
+# 2014-05-02 lalpulsar/test/PulsarCatTest.c
+# 2014-05-14 lalpulsar/src/ComputeFstat_Demod_altivec.i
+# 2014-05-14 lalpulsar/src/ComputeFstat_Demod_autovect.i
+# 2014-05-14 lalpulsar/src/ComputeFstat_Demod_generic.i
+# 2014-05-14 lalpulsar/src/ComputeFstat_Demod_precalc.i
+# 2014-05-14 lalpulsar/src/ComputeFstat_Demod_sse.i
+# 2014-05-14 lalpulsar/src/ComputeFstat_Demod_sse_msc.i
