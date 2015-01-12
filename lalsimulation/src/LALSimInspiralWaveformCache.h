@@ -134,7 +134,6 @@ int  XLALSimInspiralChooseFDWaveformSequence(
                                              COMPLEX16FrequencySeries **hptilde,     /**< FD plus polarization */
                                              COMPLEX16FrequencySeries **hctilde,     /**< FD cross polarization */
                                              REAL8 phiRef,                           /**< reference orbital phase (rad) */
-                                             REAL8 deltaF,                           /**< sampling interval (Hz) */
                                              REAL8 m1,                               /**< mass of companion 1 (kg) */
                                              REAL8 m2,                               /**< mass of companion 2 (kg) */
                                              REAL8 S1x,                              /**< x-component of the dimensionless spin of object 1 */

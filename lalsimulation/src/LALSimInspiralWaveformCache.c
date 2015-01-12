@@ -512,7 +512,7 @@ int XLALSimInspiralChooseFDWaveformFromCache(
     if( (changedParams & INTRINSIC) != 0 ) {
         if ( frequencies != NULL ){
             status =  XLALSimInspiralChooseFDWaveformSequence(hptilde, hctilde, phiRef,
-                deltaF, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_ref,
+                m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_ref,
                 r, i, lambda1, lambda2, waveFlags, nonGRparams, amplitudeO,
                 phaseO, approximant,frequencies);
         }
@@ -539,7 +539,7 @@ int XLALSimInspiralChooseFDWaveformFromCache(
         if( cache->hptilde == NULL || cache->hctilde == NULL) {
             if ( frequencies != NULL ){
                 status =  XLALSimInspiralChooseFDWaveformSequence(hptilde, hctilde, phiRef,
-                    deltaF, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_ref,
+                    m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_ref,
                     r, i, lambda1, lambda2, waveFlags, nonGRparams, amplitudeO,
                     phaseO, approximant,frequencies);
             }
@@ -894,7 +894,6 @@ int XLALSimInspiralChooseFDWaveformSequence(
                                       COMPLEX16FrequencySeries **hptilde,     /**< FD plus polarization */
                                       COMPLEX16FrequencySeries **hctilde,     /**< FD cross polarization */
                                       REAL8 phiRef,                           /**< reference orbital phase (rad) */
-                                      REAL8 deltaF,                           /**< sampling interval (Hz) */
                                       REAL8 m1,                               /**< mass of companion 1 (kg) */
                                       REAL8 m2,                               /**< mass of companion 2 (kg) */
                                       REAL8 S1x,                              /**< x-component of the dimensionless spin of object 1 */
@@ -934,10 +933,6 @@ int XLALSimInspiralChooseFDWaveformSequence(
     REAL8 f_min = frequencies->data[0];
     
     /* General sanity check the input parameters - only give warnings! */
-    if( deltaF > 1. )
-    XLALPrintWarning("XLAL Warning - %s: Large value of deltaF = %e requested...This corresponds to a very short TD signal (with padding). Consider a smaller value.\n", __func__, deltaF);
-    if( deltaF < 1./4096. )
-    XLALPrintWarning("XLAL Warning - %s: Small value of deltaF = %e requested...This corresponds to a very long TD signal. Consider a larger value.\n", __func__, deltaF);
     if( m1 < 0.09 * LAL_MSUN_SI )
     XLALPrintWarning("XLAL Warning - %s: Small value of m1 = %e (kg) = %e (Msun) requested...Perhaps you have a unit conversion error?\n", __func__, m1, m1/LAL_MSUN_SI);
     if( m2 < 0.09 * LAL_MSUN_SI )
@@ -985,7 +980,7 @@ int XLALSimInspiralChooseFDWaveformSequence(
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             /* Produce both polarizations */
             *hctilde = XLALCreateCOMPLEX16FrequencySeries("FD hcross",
-                    &((*hptilde)->epoch), (*hptilde)->f0, (*hptilde)->deltaF,
+                    &((*hptilde)->epoch), (*hptilde)->f0, 0.0,
                     &((*hptilde)->sampleUnits), (*hptilde)->data->length);
             for(j = 0; j < (*hptilde)->data->length; j++) {
                 (*hctilde)->data->data[j] = -I*cfac * (*hptilde)->data->data[j];
