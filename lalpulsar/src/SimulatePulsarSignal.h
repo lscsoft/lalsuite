@@ -27,7 +27,7 @@ extern "C" {
 
 /**
  * \defgroup SimulatePulsarSignal_h Header SimulatePulsarSignal.h
- * \ingroup lalpulsar_common
+ * \ingroup lalpulsar_inject
  * \author Reinhard Prix
  * \date 2004, 2013
  *

@@ -20,7 +20,7 @@
 
 /**
  * \defgroup LineRobustStats_h Header LineRobustStats.h
- * \ingroup lalpulsar_common
+ * \ingroup lalpulsar_coh
  * \author David Keitel, Reinhard Prix
  *
  * \brief Functions to compute line-robust CW statistics

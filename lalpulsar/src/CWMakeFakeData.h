@@ -27,7 +27,7 @@ extern "C" {
 
 /**
  * \defgroup CWMakeFakeData_h Header CWMakeFakeData.h
- * \ingroup lalpulsar_common
+ * \ingroup lalpulsar_inject
  * \author Reinhard Prix, Karl Wette
  *
  * \brief Module for generating 'fake' data containing CW signals and/or Gaussian noise.
