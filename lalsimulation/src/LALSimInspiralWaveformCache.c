@@ -978,7 +978,7 @@ int XLALSimInspiralChooseFDWaveformSequence(
             
             /* Call the waveform driver routine */
             ret = XLALSimInspiralTaylorF2Core(hptilde, frequencies, phiRef,
-                    m1, m2, S1z, S2z, f_ref, quadparam1, quadparam2, r, i, lambda1, lambda2,
+                    m1, m2, S1z, S2z, f_ref, 0., r, quadparam1, quadparam2, lambda1, lambda2,
                     XLALSimInspiralGetSpinOrder(waveFlags),
                     XLALSimInspiralGetTidalOrder(waveFlags),
                     phaseO, amplitudeO);
