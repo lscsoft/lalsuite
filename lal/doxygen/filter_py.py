@@ -327,12 +327,11 @@ class Doxypy(object):
 
 		@returns a list of indented comment lines
 		"""
-		doxyStart = "##"
 		commentLines = self.comment
 
-		commentLines = map(lambda x: "%s# %s" % (self.indent, x), commentLines)
-		l = [self.indent + doxyStart]
-		l.extend(commentLines)
+		l = [self.indent + "## " + commentLines[0]]
+		for line in commentLines[1:]:
+			l.append(self.indent + "# " + line)
 
 		return l
 
