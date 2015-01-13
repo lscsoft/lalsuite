@@ -14,8 +14,8 @@ Makefile
 Makefile.in
 config.lt
 doxygen/doxygen.cfg
+doxygen/filter
 doxygen/out/
-doxygen/filter_py
 include/lal/*.h
 include/lal/*.i
 include/lal/header-link-stamp
