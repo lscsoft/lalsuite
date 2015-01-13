@@ -51,11 +51,6 @@ typedef struct tagLatticeTilingSpace LatticeTilingSpace;
 typedef struct tagLatticeTiling LatticeTiling;
 
 ///
-/// Lattice tiling band iterator.
-///
-typedef struct tagLatticeTilingBandIterator LatticeTilingBandIterator;
-
-///
 /// Lattice tiling iterator.
 ///
 typedef struct tagLatticeTilingIterator LatticeTilingIterator;
