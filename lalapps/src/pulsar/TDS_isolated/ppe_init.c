@@ -277,6 +277,7 @@ void setup_lookup_tables( LALInferenceRunState *runState, LALSource *source ){
     REAL8Vector *arespS = NULL, *brespS = NULL;
 
     REAL8Vector *sidDayFrac = NULL;
+    REAL8 dt = 0;
     UINT4 i = 0;
 
     LALInferenceAddVariable( ifo_model->params, "timeSteps", &timeBins, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
@@ -303,7 +304,9 @@ void setup_lookup_tables( LALInferenceRunState *runState, LALSource *source ){
     arespS = XLALCreateREAL8Vector( timeBins );
     brespS = XLALCreateREAL8Vector( timeBins );
 
-    response_lookup_table( t0, detAndSource, timeBins, arespT, brespT, arespV, brespV, arespS, brespS );
+    dt = LALInferenceGetREAL8Variable( ifo_model->params, "dt" );
+
+    response_lookup_table( t0, detAndSource, timeBins, dt, arespT, brespT, arespV, brespV, arespS, brespS );
 
     LALInferenceAddVariable( ifo_model->params, "a_response_tensor", &arespT, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
     LALInferenceAddVariable( ifo_model->params, "b_response_tensor", &brespT, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );

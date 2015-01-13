@@ -1103,9 +1103,14 @@ edat->nentriesE * edat->dtEtable );
  * independent parts of e.g. equations 5-8 of \cite Nishizawa2009. We remove the \f$\psi\f$ dependent
  * by setting \f$\psi=0\f$.
  *
+ * If \c avedt is a value over 60 seconds then the antenna pattern will actually be the mean value from
+ * 60 second intervals within that timespan. This accounts for the fact that each data point is actually an
+ * averaged value over the given timespan.
+ *
  * \param t0 [in] initial GPS time of the data
  * \param detNSource [in] structure containing the detector and source orientations and locations
  * \param timeSteps [in] the number of grid bins to use in time
+ * \param avedt [in] average the antenna pattern over this timespan
  * \param aT [in] a vector into which the a(t) Fplus tensor antenna pattern lookup table will be output
  * \param bT [in] a vector into which the b(t) Fcross tensor antenna pattern lookup table will be output
  * \param aV [in] a vector into which the a(t) Fx vector antenna pattern lookup table will be output
@@ -1113,36 +1118,65 @@ edat->nentriesE * edat->dtEtable );
  * \param aS [in] a vector into which the a(t) Fb scalar antenna pattern lookup table will be output
  * \param bS [in] a vector into which the b(t) Fl scalar antenna pattern lookup table will be output
  */
-void response_lookup_table( REAL8 t0, LALDetAndSource detNSource, INT4 timeSteps, REAL8Vector *aT,
+void response_lookup_table( REAL8 t0, LALDetAndSource detNSource, INT4 timeSteps, REAL8 avedt, REAL8Vector *aT,
                             REAL8Vector *bT, REAL8Vector *aV, REAL8Vector *bV, REAL8Vector *aS,
                             REAL8Vector *bS ){
   LIGOTimeGPS gps;
-  REAL8 T = 0;
+  REAL8 T = 0, Tstart = 0., Tav = 0;
 
   REAL8 fplus = 0., fcross = 0., fx = 0., fy = 0., fb = 0., fl = 0.;
   REAL8 tsteps = (REAL8)timeSteps;
 
-  INT4 j = 0;
+  INT4 j = 0, k = 0, nav = 0;
 
   /* set the polarisation angle to zero to get the a(t) and b(t) antenna pattern functions */
   detNSource.pSource->orientation = 0.0;
 
   for( j = 0 ; j < timeSteps ; j++ ){
+    aT->data[j] = 0.;
+    bT->data[j] = 0.;
+    aV->data[j] = 0.;
+    bV->data[j] = 0.;
+    aS->data[j] = 0.;
+    bS->data[j] = 0.;
+
+    /* number of points to average */
+    nav = floor(avedt/60.) + 1;
+
+    /* central time of lookup table point */
     T = t0 + (REAL8)j*LAL_DAYSID_SI / tsteps;
 
-    XLALGPSSetREAL8(&gps, T);
+    if ( nav % 2 ){ /* is odd */
+      Tstart = T - 0.5*((REAL8)nav-1.)*60.;
+    }
+    else{ /* is even */
+      Tstart = T - (0.5*(REAL8)nav - 1.)*60. - 30.;
+    }
 
-    XLALComputeDetAMResponseExtraModes( &fplus, &fcross, &fb, &fl, &fx, &fy, detNSource.pDetector->response,
-                                        detNSource.pSource->equatorialCoords.longitude,
-                                        detNSource.pSource->equatorialCoords.latitude,
-                                        detNSource.pSource->orientation, XLALGreenwichMeanSiderealTime( &gps ) );
+    for ( k = 0; k < nav; k++ ){
+      Tav = Tstart + 60.*(REAL8)k;
 
-    aT->data[j] = fplus;
-    bT->data[j] = fcross;
-    aV->data[j] = fx;
-    bV->data[j] = fy;
-    aS->data[j] = fb;
-    bS->data[j] = fl;
+      XLALGPSSetREAL8(&gps, Tav);
+
+      XLALComputeDetAMResponseExtraModes( &fplus, &fcross, &fb, &fl, &fx, &fy, detNSource.pDetector->response,
+                                          detNSource.pSource->equatorialCoords.longitude,
+                                          detNSource.pSource->equatorialCoords.latitude,
+                                          detNSource.pSource->orientation, XLALGreenwichMeanSiderealTime( &gps ) );
+
+      aT->data[j] += fplus;
+      bT->data[j] += fcross;
+      aV->data[j] += fx;
+      bV->data[j] += fy;
+      aS->data[j] += fb;
+      bS->data[j] += fl;
+    }
+
+    aT->data[j] /= (REAL8)nav;
+    bT->data[j] /= (REAL8)nav;
+    aV->data[j] /= (REAL8)nav;
+    bV->data[j] /= (REAL8)nav;
+    aS->data[j] /= (REAL8)nav;
+    bS->data[j] /= (REAL8)nav;
   }
 }
 
