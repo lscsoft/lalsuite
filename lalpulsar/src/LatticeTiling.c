@@ -209,21 +209,21 @@ gsl_vector* XLALMetricEllipseBoundingBox(
 }
 
 LatticeTilingSpace* XLALCreateLatticeTilingSpace(
-  const size_t n
+  const size_t ndim
   )
 {
 
   // Check input
-  XLAL_CHECK_NULL(n > 0, XLAL_EINVAL);
+  XLAL_CHECK_NULL(ndim > 0, XLAL_EINVAL);
 
   // Allocate memory
   LatticeTilingSpace* space = XLALCalloc(1, sizeof(*space));
   XLAL_CHECK_NULL(space != NULL, XLAL_ENOMEM);
-  space->bounds = XLALCalloc(n, sizeof(*space->bounds));
+  space->bounds = XLALCalloc(ndim, sizeof(*space->bounds));
   XLAL_CHECK_NULL(space->bounds != NULL, XLAL_ENOMEM);
 
   // Initialise fields
-  space->ndim = n;
+  space->ndim = ndim;
 
   return space;
 

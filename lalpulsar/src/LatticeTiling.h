@@ -96,7 +96,7 @@ gsl_vector* XLALMetricEllipseBoundingBox(
 ///
 LatticeTilingSpace* XLALCreateLatticeTilingSpace(
   /// [in] Number of parameter-space dimensions.
-  const size_t n
+  const size_t ndim
   );
 
 ///
