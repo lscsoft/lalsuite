@@ -18,7 +18,7 @@ Makefile
 Makefile.in
 config.lt
 doxygen/doxygen.cfg
-doxygen/filter_py
+doxygen/filter
 doxygen/out/
 include/config.h
 include/config.h.in

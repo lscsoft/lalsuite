@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 100
+# serial 101
 
 # not present in older versions of pkg.m4
 m4_pattern_allow([^PKG_CONFIG(_(PATH|LIBDIR|SYSROOT_DIR|ALLOW_SYSTEM_(CFLAGS|LIBS)))?$])
@@ -639,7 +639,7 @@ AC_DEFUN([LALSUITE_ENABLE_DOXYGEN],[
   )
   LALSUITE_ENABLE_MODULE([DOXYGEN])
   AS_IF([test "x${doxygen}" = xtrue],[
-    AC_CONFIG_FILES([doxygen/filter_py],[chmod +x doxygen/filter_py])
+    AC_CONFIG_FILES([doxygen/filter],[chmod +x doxygen/filter])
     LALSUITE_REQUIRE_PYTHON([2.6])   # Python is required to run some scripts
     AC_PATH_PROG([DOXYGEN],[doxygen],[],[])
     AS_IF([test "x${DOXYGEN}" = x],[
