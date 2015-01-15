@@ -222,3 +222,5 @@ git log -1 --summary HEAD | sed -n "s|^ delete mode [0-9]* |# ${date} |p" | LC_A
 # 2014-06-23 lalapps/src/pulsar/attic/ResamplingFstat/Makefile.am
 # 2014-06-26 lalapps/src/pulsar/FDS_isolated/testMultiIFO.sh
 # 2014-06-26 lalapps/src/pulsar/FDS_isolated/testRandom.sh
+# 2015-01-15 lalapps/src/pulsar/FDS_isolated/README
+# 2015-01-15 lalapps/src/pulsar/FDS_isolated/TODO
