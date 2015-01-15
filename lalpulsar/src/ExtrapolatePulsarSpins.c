@@ -265,7 +265,7 @@ XLALCWSignalCoveringBand ( REAL8 *minCoverFreq,                          /**< [o
   if ( binaryMaxAsini > 0 )
     {
       REAL8 maxOmega = LAL_TWOPI / binaryMinPeriod;
-      extraPerFreq += sqrt(2) * maxOmega * binaryMaxAsini / ( 1.0 - binaryMaxEcc );
+      extraPerFreq += maxOmega * binaryMaxAsini / ( 1.0 - binaryMaxEcc );
   }
 
   // Expand frequency range
