@@ -2,7 +2,6 @@ BUILT_SOURCES =
 include $(top_srcdir)/gnuscripts/lalapps.am
 
 bin_PROGRAMS = \
-	lalapps_ComputeFStatistic \
 	lalapps_FstatShapeTest \
 	lalapps_SemiAnalyticF \
 	lalapps_polka \
@@ -11,7 +10,6 @@ bin_PROGRAMS = \
 	lalapps_compareFstats\
 	lalapps_makeInvetofile \
 	lalapps_extractSFTband \
-	lalapps_FindSh \
 	lalapps_zellepolka \
 	lalapps_PredictFStat \
 	lalapps_ComputeFStatistic_v2 \
@@ -27,20 +25,6 @@ EXTRA_PROGRAMS = \
 
 lalapps_zellepolka_SOURCES = zellepolka.c
 
-CFSsources = \
-	ComputeFStatistic.h \
-	clusters.c \
-	clusters.h \
-	FstatToplist.c \
-	FstatToplist.h \
-	HeapToplist.c \
-	HeapToplist.h
-
-lalapps_ComputeFStatistic_SOURCES = \
-	ComputeFStatistic.c \
-	CFSLALDemod.c \
-	$(CFSsources)
-
 lalapps_FstatShapeTest_SOURCES = FstatShapeTest.c
 
 lalapps_FstatShapeTestLAL_SOURCES = FstatShapeTestLAL.c
@@ -54,8 +38,6 @@ lalapps_uberpolka_SOURCES = uberpolka.c
 lalapps_makeInvetofile_SOURCES=makeInvetofile.c
 
 lalapps_extractSFTband_SOURCES=extractSFTband.c
-
-lalapps_FindSh_SOURCES=FindSh.c FindSh.h clusters.c clusters.h
 
 lalapps_compareFstats_SOURCES = compareFstats.c
 

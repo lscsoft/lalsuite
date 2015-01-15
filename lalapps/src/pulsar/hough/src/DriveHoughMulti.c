@@ -90,7 +90,7 @@
 
 /* lalapps includes */
 #include <lalapps.h>
-#include <FstatToplist.h>
+#include "FstatToplist.h"
 
 /* lal includes */
 #include <lal/DopplerScan.h>

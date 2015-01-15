@@ -20,9 +20,22 @@
 #ifndef FSTATTOPLIST_H
 #define FSTATTOPLIST_H
 
-#include "ComputeFStatistic.h"
-#include "HeapToplist.h"
+#include <stdio.h>
+#include <math.h>
 
+#include <lal/LALDatatypes.h>
+#include <lal/LALConstants.h>
+#include <HeapToplist.h>
+
+#define MAXFILENAMELENGTH 256   /* Maximum # of characters of a filename */
+/** Type to hold the fields that will be output in unclustered output file  */
+typedef struct {
+  REAL8 Freq;			/**< Frequency at maximum (?) of the cluster */
+  REAL8 f1dot;			/**< spindown value f1dot = df/dt */
+  REAL8 Alpha; 			/**< Skyposition: longitude in equatorial coords, radians */
+  REAL8 Delta;			/**< skyposition: latitude */
+  REAL8 Fstat;			/**< value of 2F */
+} FstatOutputEntry;
 
 
 /* This has by now been reduced to an interface to the HeapToplist functions */
