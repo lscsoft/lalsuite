@@ -27,6 +27,12 @@
    \ref TSData_h, \ref TSSearch_h, and \ref TrackSearch_h.
 @}
 
+\defgroup lalburst_swig			SWIG Interfaces
+@{
+   \brief This package provides Octave and Python wrappings of LALBurst
+   functions and data structures generated using SWIG.
+@}
+
 \defgroup lalburst_python		Python Packages
 
 */

@@ -58,6 +58,12 @@
 
 \defgroup lalpulsar_UNCLASSIFIED	UNCLASSIFIED LALPulsar Packages
 
+\defgroup lalpulsar_swig		SWIG Interfaces
+@{
+   \brief This package provides Octave and Python wrappings of LALPulsar
+   functions and data structures generated using SWIG.
+@}
+
 \defgroup lalpulsar_python		Python Packages
 
 */

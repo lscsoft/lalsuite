@@ -17,8 +17,12 @@
 // MA  02111-1307  USA
 //
 
-// Header containing SWIG code which must appear *before* the LALBurst headers.
-// Author: Karl Wette
+///
+/// \defgroup SWIGLALBurstAlpha_i Interface SWIGLALBurstAlpha.i
+/// \ingroup lalburst_swig
+/// \brief SWIG code which must appear \e before the LALBurst headers.
+/// \author Karl Wette
+///
 
 // Local Variables:
 // mode: c

@@ -3,6 +3,12 @@
 
 \defgroup lalxml_general		General Packages
 
+\defgroup lalxml_swig			SWIG Interfaces
+@{
+   \brief This package provides Octave and Python wrappings of LALXML
+   functions and data structures generated using SWIG.
+@}
+
 \defgroup lalxml_python			Python Packages
 
 */

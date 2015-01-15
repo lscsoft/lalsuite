@@ -17,8 +17,12 @@
 // MA  02111-1307  USA
 //
 
-// Header containing SWIG code which must appear *after* the LALDetChar headers.
-// Author: Karl Wette
+///
+/// \defgroup SWIGLALDetCharOmega_i Interface SWIGLALDetCharOmega.i
+/// \ingroup laldetchar_swig
+/// \brief SWIG code which must appear \e after the LALDetChar headers.
+/// \author Karl Wette
+///
 
 // Local Variables:
 // mode: c

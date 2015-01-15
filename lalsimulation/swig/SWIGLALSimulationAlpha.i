@@ -17,8 +17,12 @@
 // MA  02111-1307  USA
 //
 
-// Header containing SWIG code which must appear *before* the LALSimulation headers.
-// Author: Karl Wette
+///
+/// \defgroup SWIGLALSimulationAlpha_i Interface SWIGLALSimulationAlpha.i
+/// \ingroup lalsimulation_swig
+/// \brief SWIG code which must appear \e before the LALSimulation headers.
+/// \author Karl Wette
+///
 
 // Local Variables:
 // mode: c

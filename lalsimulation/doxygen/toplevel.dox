@@ -3,6 +3,12 @@
 
 \defgroup lalsimulation_general		General Packages
 
+\defgroup lalsimulation_swig		SWIG Interfaces
+@{
+   \brief This package provides Octave and Python wrappings of
+   LALSimulation functions and data structures generated using SWIG.
+@}
+
 \defgroup lalsimulation_python		Python Packages
 
 */

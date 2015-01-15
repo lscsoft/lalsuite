@@ -3,6 +3,12 @@
 
 \defgroup laldetchar_general		General Packages
 
+\defgroup laldetchar_swig		SWIG Interfaces
+@{
+   \brief This package provides Octave and Python wrappings of
+   LALDetChar functions and data structures generated using SWIG.
+@}
+
 \defgroup laldetchar_python		Python Packages
 
 */

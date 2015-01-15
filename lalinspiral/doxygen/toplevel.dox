@@ -30,6 +30,12 @@
 
 \defgroup lalinspiral_UNCLASSIFIED	UNCLASSIFIED LALInspiral Packages
 
+\defgroup lalinspiral_swig		SWIG Interfaces
+@{
+   \brief This package provides Octave and Python wrappings of
+   LALInspiral functions and data structures generated using SWIG.
+@}
+
 \defgroup lalinspiral_python		Python Packages
 
 */

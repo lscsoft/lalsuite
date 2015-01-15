@@ -3,6 +3,12 @@
 
 \defgroup lalmetaio_general		General Packages
 
+\defgroup lalmetaio_swig		SWIG Interfaces
+@{
+   \brief This package provides Octave and Python wrappings of LALMetaIO
+   functions and data structures generated using SWIG.
+@}
+
 \defgroup lalmetaio_python		Python Packages
 
 */

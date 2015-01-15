@@ -3,6 +3,12 @@
 
 \defgroup lalframe_general		General Packages
 
+\defgroup lalframe_swig			SWIG Interfaces
+@{
+   \brief This package provides Octave and Python wrappings of LALFrame
+   functions and data structures generated using SWIG.
+@}
+
 \defgroup lalframe_python		Python Packages
 
 */

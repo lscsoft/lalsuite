@@ -20,9 +20,12 @@ html-local: Makefile $(CONFIG_CLEAN_FILES)
 	fi; \
 	export doxygen_tagfiles="$(DOXYGEN_TAGFILES)"; \
 	export doxygen_quiet="$(doxygen_quiet)"; \
-	export doxygen_srcdirs=; \
+	export doxygen_input=; \
 	for dir in packages lib src test python; do \
-		test -r "$(abs_top_srcdir)/$${dir}" && doxygen_srcdirs="$${doxygen_srcdirs} $(abs_top_srcdir)/$${dir}"; \
+		test -d "$(abs_top_srcdir)/$${dir}" && doxygen_input="$${doxygen_input} $(abs_top_srcdir)/$${dir}"; \
+	done; \
+	for file in swig/SWIGCommon.i swig/SWIG$(PACKAGE_NAME)Alpha.i swig/SWIG$(PACKAGE_NAME)Omega.i; do \
+		test -r "$(abs_top_srcdir)/$${file}" && doxygen_input="$${doxygen_input} $(abs_top_srcdir)/$${file}"; \
 	done; \
 	$(MKDIR_P) out/ || exit 1; \
 	$(DOXYGEN) doxygen.cfg 2>&1; \
@@ -58,6 +61,7 @@ clean-local:
 
 EXTRA_DIST = \
 	check_tags.py \
+	filter_i.sed \
 	filter_py.py \
 	install_regex.py \
 	layout.xml \

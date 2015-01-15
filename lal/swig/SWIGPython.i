@@ -20,7 +20,7 @@
 // SWIG interface code specific to Python.
 // Author: Karl Wette
 
-////////// General SWIG directives and interface code //////////
+// # General SWIG directives and interface code
 
 // In SWIG Python modules, everything is namespaced, so it makes
 // sense to rename symbols to remove superfluous C-API prefixes
@@ -72,7 +72,7 @@ SWIGINTERNINLINE PyObject* swiglal_get_reference(PyObject* v) { Py_XINCREF(v); r
 #define swiglal_append_output_if_empty(v) if (resultobj == Py_None) resultobj = SWIG_Python_AppendOutput(resultobj, v)
 %}
 
-////////// SWIG directives for operators //////////
+// # SWIG directives for operators
 
 // These macros apply the correct python:slot directives
 // to map Python __operator__ functions (which may be
@@ -147,7 +147,7 @@ SWIGINTERNINLINE PyObject* swiglal_get_reference(PyObject* v) { Py_XINCREF(v); r
 %swiglal_py_cmp_op(lt, Py_LT);
 %swiglal_py_cmp_op(ne, Py_NE);
 
-////////// General fragments, typemaps, and macros //////////
+// # General fragments, typemaps, and macros
 
 // SWIG conversion fragments and typemaps for GSL complex numbers.
 %swig_cplxflt_convn(gsl_complex_float, gsl_complex_float_rect, GSL_REAL, GSL_IMAG);
@@ -225,7 +225,7 @@ SWIGINTERNINLINE PyObject* swiglal_get_reference(PyObject* v) { Py_XINCREF(v); r
 
 }
 
-////////// Interface code to track object parents //////////
+// # Interface code to track object parents
 
 // Interface code which tracks the parent structs of SWIG-wrapped struct members,
 // so that the parent struct is not destroyed as long as a SWIG-wrapped object
@@ -348,7 +348,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 
 %} // %init
 
-////////// Fragments and typemaps for arrays //////////
+// # Fragments and typemaps for arrays
 
 // This section implements array conversion functions for basic C array types,
 // and custom NumPy array descriptors for viewing C arrays of object, e.g. structs.

@@ -17,23 +17,33 @@
 // MA  02111-1307  USA
 //
 
-// Header containing SWIG code which must appear *before* the LAL headers.
-// Author: Karl Wette
+///
+/// \defgroup SWIGLALAlpha_i Interface SWIGLALAlpha.i
+/// \ingroup lal_swig
+/// \brief SWIG code which must appear \e before the LAL headers.
+/// \author Karl Wette
+///
 
-////////// Error handling //////////
+///
+/// # Error handling
+///
 
-// Custom GSL/LAL error handlers which raise XLAL errors, so that
-// they will be caught by the SWIG %exception handler (instead of
-// aborting, which will crash the user's scripting language session).
+///
+/// Custom GSL/LAL error handlers which raise XLAL errors, so that they will be
+/// caught by the SWIG \c %exception handler (instead of aborting, which will
+/// crash the user's scripting language session).
 %header %{
+/// <ul><li>
 
-// Print the supplied error message, then raise an XLAL error.
+/// Print the supplied error message, then raise an XLAL error.
 static void swig_lal_gsl_error_handler(const char *reason, const char *file, int line, int errnum) {
   XLALPrintError("GSL function failed: %s (errnum=%i)\n", reason, errnum);
   XLALError("<GSL function>", file, line, XLAL_EFAILED);
 }
 
-// Print the supplied error message, then raise an XLAL error.
+/// </li><li>
+
+/// Print the supplied error message, then raise an XLAL error.
 static int swig_lal_raise_hook(int sig, const char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
@@ -44,7 +54,9 @@ static int swig_lal_raise_hook(int sig, const char *fmt, ...) {
   return 0;
 }
 
-// Print the supplied error message, then raise an XLAL error.
+/// </li><li>
+
+/// Print the supplied error message, then raise an XLAL error.
 static void swig_lal_abort_hook(const char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
@@ -53,10 +65,14 @@ static void swig_lal_abort_hook(const char *fmt, ...) {
   XLALSetErrno(XLAL_EFAILED);
 }
 
-%} // %header
+/// </li></ul>
+%}
+///
 
-// Replace default GSL/LAL error handler with nice custom
-// handlers, and ensure default XLAL error handler is used.
+///
+/// Replace default GSL/LAL error handler with nice custom handlers, and ensure
+/// default XLAL error handler is used.
+///
 %inline %{
 void swig_set_nice_error_handlers(void) {
   gsl_set_error_handler(swig_lal_gsl_error_handler);
@@ -66,8 +82,10 @@ void swig_set_nice_error_handlers(void) {
 }
 %}
 
-// Use abort() error handlers in GSL/LAL/XLAL, which can be useful
-// when running scripting language interpreter under a debugger.
+///
+/// Use \c abort() error handlers in GSL/LAL/XLAL, which can be useful when
+/// running scripting language interpreter under a debugger.
+///
 %inline %{
 void swig_set_nasty_error_handlers(void) {
   fprintf(stderr, "*** WARNING: GSL/LAL/XLAL functions will now abort() on error ***\n");
@@ -78,17 +96,23 @@ void swig_set_nasty_error_handlers(void) {
 }
 %}
 
-// Use nice custom handlers by default.
+///
+/// Use nice custom handlers by default.
+///
 %init %{
 swig_set_nice_error_handlers();
 %}
 
-////////// GSL vectors and matrices //////////
+///
+/// # GSL vectors and matrices
+///
 
-// This macro create wrapping structs for GSL vectors and matrices.
+///
+/// This macro create wrapping structs for GSL vectors and matrices.
 %define %swig_lal_gsl_vector_matrix(BASETYPE, TYPE, NAME)
+/// <ul><li>
 
-// GSL vector of type NAME.
+/// GSL vector of type \c NAME.
 typedef struct {
   %extend {
     gsl_vector##NAME(const size_t n) {
@@ -107,7 +131,9 @@ typedef struct {
   %swiglal_array_dynamic_1D(gsl_vector##NAME, TYPE, size_t, data, arg1->size, arg1->stride);
 } gsl_vector##NAME;
 
-// Typemap which attempts to view pointers to const GSL vector.
+/// </li><li>
+
+/// Typemap which attempts to view pointers to \c const GSL vector.
 %typemap(in, noblock=1) const gsl_vector##NAME* (void *argp = 0, int res = 0, gsl_vector##NAME##_view temp, void *temp_data = 0) %{
   res = SWIG_ConvertPtr($input, &argp, $descriptor, 0 /*$disown*/ | %convertptr_flags);
   if (!SWIG_IsOK(res)) {
@@ -115,7 +141,7 @@ typedef struct {
       size_t numel = 0;
       size_t dims[] = {0};
       void *data = NULL;
-      // swiglal_array_typeid input type: TYPE*
+      /* swiglal_array_typeid input type: TYPE* */
       res = %swiglal_array_viewin(TYPE*)(swiglal_no_self(), $input, %as_voidptrptr(&data),
                                          sizeof(TYPE), 1, &numel, dims,
                                          $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
@@ -149,7 +175,9 @@ typedef struct {
   }
 %}
 
-// Typemap which attempts to view pointers to non-const GSL vector.
+/// </li><li>
+
+/// Typemap which attempts to view pointers to non-\c const GSL vector.
 %typemap(in, noblock=1) gsl_vector##NAME* SWIGLAL_VIEWIN_STRUCT (void *argp = 0, int res = 0, gsl_vector##NAME##_view temp) %{
   res = SWIG_ConvertPtr($input, &argp, $descriptor, 0 /*$disown*/ | %convertptr_flags);
   if (!SWIG_IsOK(res)) {
@@ -157,7 +185,7 @@ typedef struct {
       size_t numel = 0;
       size_t dims[] = {0};
       void *data = NULL;
-      // swiglal_array_typeid input type: TYPE*
+      /* swiglal_array_typeid input type: TYPE* */
       res = %swiglal_array_viewin(TYPE*)(swiglal_no_self(), $input, %as_voidptrptr(&data),
                                          sizeof(TYPE), 1, &numel, dims,
                                          $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
@@ -175,7 +203,9 @@ typedef struct {
   $1 = %reinterpret_cast(argp, $ltype);
 %}
 
-// GSL matrix of type NAME.
+/// </li><li>
+
+/// GSL matrix of type \c NAME.
 typedef struct {
   %extend {
     gsl_matrix##NAME(const size_t n1, const size_t n2) {
@@ -195,7 +225,9 @@ typedef struct {
   %swiglal_array_dynamic_2D(gsl_matrix##NAME, TYPE, size_t, data, arg1->size1, arg1->size2, arg1->tda, 1);
 } gsl_matrix##NAME;
 
-// Typemap which attempts to view pointers to const GSL matrix.
+/// </li><li>
+
+/// Typemap which attempts to view pointers to \c const GSL matrix.
 %typemap(in, noblock=1) const gsl_matrix##NAME* (void *argp = 0, int res = 0, gsl_matrix##NAME##_view temp, void *temp_data = 0) %{
   res = SWIG_ConvertPtr($input, &argp, $descriptor, 0 /*$disown*/ | %convertptr_flags);
   if (!SWIG_IsOK(res)) {
@@ -203,7 +235,7 @@ typedef struct {
       size_t numel = 0;
       size_t dims[] = {0, 0};
       void *data = NULL;
-      // swiglal_array_typeid input type: TYPE*
+      /* swiglal_array_typeid input type: TYPE* */
       res = %swiglal_array_viewin(TYPE*)(swiglal_no_self(), $input, %as_voidptrptr(&data),
                                          sizeof(TYPE), 2, &numel, dims,
                                          $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
@@ -237,7 +269,9 @@ typedef struct {
   }
 %}
 
-// Typemap which attempts to view pointers to non-const GSL matrix.
+/// </li><li>
+
+/// Typemap which attempts to view pointers to non-\c const GSL matrix.
 %typemap(in, noblock=1) gsl_matrix##NAME* SWIGLAL_VIEWIN_STRUCT (void *argp = 0, int res = 0, gsl_matrix##NAME##_view temp) %{
   res = SWIG_ConvertPtr($input, &argp, $descriptor, 0 /*$disown*/ | %convertptr_flags);
   if (!SWIG_IsOK(res)) {
@@ -245,7 +279,7 @@ typedef struct {
       size_t numel = 0;
       size_t dims[] = {0, 0};
       void *data = NULL;
-      // swiglal_array_typeid input type: TYPE*
+      /* swiglal_array_typeid input type: TYPE* */
       res = %swiglal_array_viewin(TYPE*)(swiglal_no_self(), $input, %as_voidptrptr(&data),
                                          sizeof(TYPE), 2, &numel, dims,
                                          $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
@@ -263,9 +297,13 @@ typedef struct {
   $1 = %reinterpret_cast(argp, $ltype);
 %}
 
-%enddef // %swig_lal_gsl_vector_matrix
+/// </li></ul>
+%enddef
+///
 
-// GSL integer vectors and matrices.
+///
+/// GSL integer vectors and matrices.
+///
 %swig_lal_gsl_vector_matrix(short, short, _short);
 %swig_lal_gsl_vector_matrix(unsigned short, unsigned short, _ushort);
 %swig_lal_gsl_vector_matrix(int, int, _int);
@@ -273,16 +311,22 @@ typedef struct {
 %swig_lal_gsl_vector_matrix(long, long, _long);
 %swig_lal_gsl_vector_matrix(unsigned long, unsigned long, _ulong);
 
-// GSL real and complex vectors and matrices.
+///
+/// GSL real and complex vectors and matrices.
+///
 %swig_lal_gsl_vector_matrix(float, float, _float);
-%swig_lal_gsl_vector_matrix(double, double, ); // GSL double vec./mat. has no typename suffix.
+%swig_lal_gsl_vector_matrix(double, double, ); // GSL double vector/matrix has no typename suffix.
 %swig_lal_gsl_vector_matrix(float, gsl_complex_float, _complex_float);
 %swig_lal_gsl_vector_matrix(double, gsl_complex, _complex);
 
-////////// Specialised typemaps for LIGOTimeGPS //////////
+///
+/// # Specialised typemaps for ::LIGOTimeGPS
+///
 
-// Specialised input typemaps for LIGOTimeGPS structs.
-// Accepts a SWIG-wrapped LIGOTimeGPS or a double as input.
+///
+/// Specialised input typemaps for ::LIGOTimeGPS structs.  Accepts a
+/// SWIG-wrapped ::LIGOTimeGPS or a double as input.
+///
 %fragment("swiglal_specialised_tagLIGOTimeGPS", "header", fragment=SWIG_AsVal_frag(double)) {
   int swiglal_specialised_tagLIGOTimeGPS(SWIG_Object in, LIGOTimeGPS *out) {
     double val = 0;
@@ -296,10 +340,14 @@ typedef struct {
 }
 %swiglal_specialised_typemaps(tagLIGOTimeGPS, "swiglal_specialised_tagLIGOTimeGPS");
 
-////////// Specialised typemaps for LALUnit //////////
+///
+/// # Specialised typemaps for ::LALUnit
+///
 
-// Specialised input typemaps for LALUnit structs.
-// Accepts a SWIG-wrapped LALUnit or power-of-10 double as input.
+///
+/// Specialised input typemaps for ::LALUnit structs.  Accepts a SWIG-wrapped
+/// ::LALUnit or power-of-10 double as input.
+///
 %fragment("swiglal_specialised_tagLALUnit", "header", fragment="SWIG_AsCharPtr", fragment=SWIG_AsVal_frag(double)) {
   int swiglal_specialised_tagLALUnit(SWIG_Object in, LALUnit *out) {
     char *str = 0;

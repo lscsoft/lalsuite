@@ -96,6 +96,12 @@
    compiled and installed as a separate library \c lalsupport.
 @}
 
+\defgroup lal_swig			SWIG Interfaces
+@{
+   \brief This package provides Octave and Python wrappings of LAL
+   functions and data structures generated using SWIG.
+@}
+
 \defgroup lal_python			Python Packages
 
 */

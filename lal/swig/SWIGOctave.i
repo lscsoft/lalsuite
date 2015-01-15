@@ -20,7 +20,7 @@
 // SWIG interface code specific to Octave.
 // Author: Karl Wette
 
-////////// General SWIG directives and interface code //////////
+// # General SWIG directives and interface code
 
 // In SWIG Octave modules, only variables are namespaced, everything else
 // is inserted in the global symbol table, so we rename only variables
@@ -72,7 +72,7 @@ extern "C++" {
 #define swiglal_append_output_if_empty(v) if (_outp->length() == 0) _outp = SWIG_Octave_AppendOutput(_outp, v)
 %}
 
-////////// SWIG directives for operators //////////
+// # SWIG directives for operators
 
 // Unary operators which return a new object, and thus
 // require %newobject to be set.
@@ -105,7 +105,7 @@ extern "C++" {
 // Octave __pow__() operator takes 2 arguments, so we ignore the 3rd.
 %typemap(in, numinputs=0) void* SWIGLAL_OP_POW_3RDARG "";
 
-////////// General fragments, typemaps, and macros //////////
+// # General fragments, typemaps, and macros
 
 // SWIG conversion fragments and typemaps for GSL complex numbers.
 %swig_cplxflt_convn(gsl_complex_float, gsl_complex_float_rect, GSL_REAL, GSL_IMAG);
@@ -184,7 +184,7 @@ extern "C++" {
 
 }
 
-////////// Interface code to track object parents //////////
+// # Interface code to track object parents
 
 // Interface code which tracks the parent structs of SWIG-wrapped struct members,
 // so that the parent struct is not destroyed as long as a SWIG-wrapped object
@@ -256,7 +256,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 
 %} // %init
 
-////////// Fragments and typemaps for arrays //////////
+// # Fragments and typemaps for arrays
 
 // This section implements a series of array view classes, through which
 // arbitrary C array data can be viewed as native Octave matrices, etc.

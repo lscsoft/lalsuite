@@ -3,6 +3,12 @@
 
 \defgroup lalinference_general		General Packages
 
+\defgroup lalinference_swig		SWIG Interfaces
+@{
+   \brief This package provides Octave and Python wrappings of
+   LALInference functions and data structures generated using SWIG.
+@}
+
 \defgroup lalinference_python		Python Packages
 
 */

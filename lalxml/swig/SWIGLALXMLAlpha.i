@@ -17,8 +17,12 @@
 // MA  02111-1307  USA
 //
 
-// Header containing SWIG code which must appear *before* the LALXML headers.
-// Author: Karl Wette
+///
+/// \defgroup SWIGLALXMLAlpha_i Interface SWIGLALXMLAlpha.i
+/// \ingroup lalxml_swig
+/// \brief SWIG code which must appear \e before the LALXML headers.
+/// \author Karl Wette
+///
 
 // Local Variables:
 // mode: c

@@ -17,8 +17,12 @@
 // MA  02111-1307  USA
 //
 
-// Header containing SWIG code which must appear *before* the LALFrame headers.
-// Author: Karl Wette
+///
+/// \defgroup SWIGLALFrameAlpha_i Interface SWIGLALFrameAlpha.i
+/// \ingroup lalframe_swig
+/// \brief SWIG code which must appear \e before the LALFrame headers.
+/// \author Karl Wette
+///
 
 // Local Variables:
 // mode: c
