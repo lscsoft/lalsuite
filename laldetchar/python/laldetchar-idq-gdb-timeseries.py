@@ -183,7 +183,10 @@ fap_filenames.sort()
 
 if (not rank_filenames) or (not fap_filenames): # we couldn't find either rank or fap files
     # exit gracefully
-    gracedb.writeLog(opts.gracedb_id, message="No iDQ timeseries for %s at %s"%(opts.classifier, opts.ifo))
+    if opts.verbose:
+        print "no iDQ timeseries for %s at %s"%(opts.classifier, opts.ifo)
+    if not opts.skip_gracedb_upload:
+        gracedb.writeLog(opts.gracedb_id, message="No iDQ timeseries for %s at %s"%(opts.classifier, opts.ifo))
     sys.exit(0)
 
 #=================================================
