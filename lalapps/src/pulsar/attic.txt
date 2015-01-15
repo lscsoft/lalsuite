@@ -310,3 +310,13 @@ git log -1 --summary HEAD | sed -n "s|^ delete mode [0-9]* |# ${date} |p" | LC_A
 # 2015-01-15 lalapps/src/pulsar/FDS_isolated/polka.c
 # 2015-01-15 lalapps/src/pulsar/FDS_isolated/uberpolka.c
 # 2015-01-15 lalapps/src/pulsar/FDS_isolated/zellepolka.c
+# 2015-01-15 lalapps/src/pulsar/Injections/In_binary.data
+# 2015-01-15 lalapps/src/pulsar/Injections/TODO
+# 2015-01-15 lalapps/src/pulsar/Injections/makefakedata_test.c
+# 2015-01-15 lalapps/src/pulsar/Injections/makefakedata_v2.c
+# 2015-01-15 lalapps/src/pulsar/Injections/makefakedatabinary.c
+# 2015-01-15 lalapps/src/pulsar/Injections/mfd_example.cfg
+# 2015-01-15 lalapps/src/pulsar/Injections/sft_extra.c
+# 2015-01-15 lalapps/src/pulsar/Injections/sft_extra.h
+# 2015-01-15 lalapps/src/pulsar/Injections/testMakefakedata.sh
+# 2015-01-15 lalapps/src/pulsar/Injections/testMFDv4-HW.sh
