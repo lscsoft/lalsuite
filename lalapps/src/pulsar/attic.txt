@@ -299,3 +299,14 @@ git log -1 --summary HEAD | sed -n "s|^ delete mode [0-9]* |# ${date} |p" | LC_A
 # 2015-01-15 lalapps/src/pulsar/FDS_isolated/make_C_files.py
 # 2015-01-15 lalapps/src/pulsar/FDS_isolated/separater.py
 # 2015-01-15 lalapps/src/pulsar/FDS_isolated/upperlimitwoutchi2.py
+# 2015-01-15 lalapps/src/pulsar/FDS_isolated/FreqFiducialTime.c
+# 2015-01-15 lalapps/src/pulsar/FDS_isolated/FstatShapeTest.c
+# 2015-01-15 lalapps/src/pulsar/FDS_isolated/FstatShapeTestLAL.c
+# 2015-01-15 lalapps/src/pulsar/FDS_isolated/extractSFTband.c
+# 2015-01-15 lalapps/src/pulsar/FDS_isolated/linearfit.c
+# 2015-01-15 lalapps/src/pulsar/FDS_isolated/makeInvetofile.c
+# 2015-01-15 lalapps/src/pulsar/FDS_isolated/makefit
+# 2015-01-15 lalapps/src/pulsar/FDS_isolated/makerandparam.c
+# 2015-01-15 lalapps/src/pulsar/FDS_isolated/polka.c
+# 2015-01-15 lalapps/src/pulsar/FDS_isolated/uberpolka.c
+# 2015-01-15 lalapps/src/pulsar/FDS_isolated/zellepolka.c

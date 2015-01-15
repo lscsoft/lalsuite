@@ -44,15 +44,13 @@ lalapps_HoughMismatch_SOURCES = HoughMismatch.c ../src/MCInjectHoughS2.h \
 HierarchicalSearchSources = HierarchicalSearch.c HierarchicalSearch.h \
 			  StackSlideFstat.c StackSlideFstat.h \
 			  HoughFStatToplist.c HoughFStatToplist.h \
-			  $(FDSsrc)/HeapToplist.c $(FDSsrc)/HeapToplist.h \
-			  $(FDSsrc)/ComputeFStatistic.h
+			  $(FDSsrc)/HeapToplist.c $(FDSsrc)/HeapToplist.h
 
 lalapps_HierarchicalSearch_SOURCES = $(HierarchicalSearchSources)
 
 lalapps_RecalcHSCandidates_SOURCES = RecalcHSCandidates.c HierarchicalSearch.h \
 				  HoughFStatToplist.c HoughFStatToplist.h \
 				  $(FDSsrc)/HeapToplist.c $(FDSsrc)/HeapToplist.h \
-				  $(FDSsrc)/ComputeFStatistic.h \
 				  $(Recalcsrc)/RecalcToplistStats.c $(Recalcsrc)/RecalcToplistStats.h
 
 

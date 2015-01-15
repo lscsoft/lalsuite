@@ -97,9 +97,6 @@ extern int boinc_resolve_filename(const char*, char*, int len);
 #include "erp_execinfo_plus.h"
 #endif
 
-/* FIXME: we should probably eliminate the references to this */
-#include "ComputeFStatistic.h"
-
 #ifdef __APPLE__
 #include "EaH_Mac_Icon.h" 
 #endif

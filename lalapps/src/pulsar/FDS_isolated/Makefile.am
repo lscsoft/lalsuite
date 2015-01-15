@@ -2,15 +2,8 @@ BUILT_SOURCES =
 include $(top_srcdir)/gnuscripts/lalapps.am
 
 bin_PROGRAMS = \
-	lalapps_FstatShapeTest \
 	lalapps_SemiAnalyticF \
-	lalapps_polka \
-	lalapps_uberpolka \
-	lalapps_FstatShapeTestLAL \
 	lalapps_compareFstats\
-	lalapps_makeInvetofile \
-	lalapps_extractSFTband \
-	lalapps_zellepolka \
 	lalapps_PredictFStat \
 	lalapps_ComputeFStatistic_v2 \
 	lalapps_ComputeFStatAnalyticMonteCarloUpperLimit \
@@ -23,21 +16,7 @@ EXTRA_PROGRAMS = \
 	eah_PredictFStat \
 	eah_ComputeFStatistic_v2
 
-lalapps_zellepolka_SOURCES = zellepolka.c
-
-lalapps_FstatShapeTest_SOURCES = FstatShapeTest.c
-
-lalapps_FstatShapeTestLAL_SOURCES = FstatShapeTestLAL.c
-
 lalapps_SemiAnalyticF_SOURCES = SemiAnalyticF.c
-
-lalapps_polka_SOURCES = polka.c
-
-lalapps_uberpolka_SOURCES = uberpolka.c
-
-lalapps_makeInvetofile_SOURCES=makeInvetofile.c
-
-lalapps_extractSFTband_SOURCES=extractSFTband.c
 
 lalapps_compareFstats_SOURCES = compareFstats.c
 
@@ -69,8 +48,6 @@ lalapps_synthesizeLVStats_SOURCES = synthesizeLVStats.c
 lalapps_CFSv3_SOURCES = CFSv3.c
 
 EXTRA_DIST = \
-	Fstats.ref1 \
-	Fstats.ref2 \
 	testPredictFStat.sh \
 	testCFSv2.sh \
 	testCFSv2_grids.sh \

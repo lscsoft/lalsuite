@@ -1,3 +1,0 @@
-
-linearfir.run : linearfit.c
-	gcc -o linearfit.run -lm -lgsl -lgslcblas -ggdb linearfit.c

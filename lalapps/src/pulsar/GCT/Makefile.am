@@ -15,7 +15,6 @@ EAHSources = $(EAHsrc)/hs_boinc_extras.c $(EAHsrc)/hs_boinc_options.cpp $(EAHsrc
 HSGCTSources = HierarchSearchGCT.c HierarchSearchGCT.h \
                           GCTtoplist.c GCTtoplist.h \
                           $(CFSsrc)/HeapToplist.c $(CFSsrc)/HeapToplist.h \
-                          $(CFSsrc)/ComputeFStatistic.h \
                           RecalcToplistStats.c RecalcToplistStats.h
 
 lalapps_HierarchSearchGCT_SOURCES = $(HSGCTSources)
