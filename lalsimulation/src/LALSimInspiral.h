@@ -171,6 +171,18 @@ XLALPrintError("XLAL Error - %s: Non-default LALSimInspiralModesChoice provided,
 XLAL_ERROR_NULL(XLAL_EINVAL);\
 } while (0)
 
+/**
+ * Macro procedure for aborting if non-zero spin2
+ * components given to central-spin-only approximant
+ */
+#define ABORT_NONZERO_SPIN2(waveFlags)\
+	do {\
+	XLALSimInspiralDestroyWaveformFlags(waveFlags);\
+	XLALPrintError("XLAL Error - %s: Non-zero CO spin given, but this approximant does not support this case.\n", __func__);\
+	XLAL_ERROR(XLAL_EINVAL);\
+	} while (0)
+
+
 /* Internal utility function to check all spin components are zero
  returns 1 if all spins zero, otherwise returns 0 */
 int checkSpinsZero(REAL8 s1x, REAL8 s1y, REAL8 s1z,
@@ -183,6 +195,10 @@ int checkTransverseSpinsZero(REAL8 s1x, REAL8 s1y, REAL8 s2x, REAL8 s2y);
 /* Internal utility function to check tidal parameters are zero
  returns 1 if both tidal parameters zero, otherwise returns 0 */
 int checkTidesZero(REAL8 lambda1, REAL8 lambda2);
+
+/* Internal utility function to check that the second body's spin components are zero.
+   Returns 1 if all components are zero, otherwise returns 0 */
+int checkCOSpinZero(REAL8 s2x, REAL8 s2y, REAL8 s2z);
 
 /**
  * Enum that specifies the PN approximant to be used in computing the waveform.
@@ -241,6 +257,7 @@ typedef enum {
    SEOBNRv1_ROM_DoubleSpin, /**< Double-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv1 See [Purrer:2014fza] */
    SEOBNRv2_ROM_SingleSpin, /**< Single-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv2 */
    SEOBNRv2_ROM_DoubleSpin, /**< Double-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv2 */
+   HGimri,		/**< Time domain inspiral-merger-ringdown waveform for quasi-circular intermediate mass-ratio inspirals [Huerta & Gair arXiv:1009.1985]*/
    IMRPhenomA,		/**< Time domain (non-spinning) inspiral-merger-ringdown waveforms generated from the inverse FFT of IMRPhenomFA  */
    IMRPhenomB,		/**< Time domain (non-precessing spins) inspiral-merger-ringdown waveforms generated from the inverse FFT of IMRPhenomFB */
    IMRPhenomFA,		/**< Frequency domain (non-spinning) inspiral-merger-ringdown templates of Ajith et al [Ajith_2007kx] with phenomenological coefficients defined in the Table I of [Ajith_2007xh]*/
@@ -2010,6 +2027,18 @@ int XLALSimInspiralTaylorEtPNGenerator(
 	       	int phaseO                /**< twice post-Newtonian phase order */
 		);
 
+int XLALHGimri_generator(
+		REAL8TimeSeries **hplus,
+		REAL8TimeSeries **hcross,
+		REAL8 phiRef,
+		REAL8 deltaT,
+		REAL8 m1,
+		REAL8 m2,
+		REAL8 f_min,
+		REAL8 r,
+		REAL8 i,
+		REAL8 S1z);
+
 /**
  * Driver routine to compute the post-Newtonian inspiral waveform.
  *
@@ -2052,7 +2081,6 @@ int XLALSimInspiralTaylorEtPNRestricted(
 	       	REAL8 i,                  /**< inclination of source (rad) */
 	       	int O                     /**< twice post-Newtonian phase order */
 		);
-
 
 /**
  * Structure for passing around PN phasing coefficients.

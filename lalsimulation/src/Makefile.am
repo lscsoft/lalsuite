@@ -137,7 +137,9 @@ liblalsimulation_la_SOURCES = \
 	LALSimSGWBORF.c \
 	LALSimUnicorn.c \
 	check_series_macros.h \
-	unicorn.xpm
+	unicorn.xpm \
+	LALSimInspiralHGimri.c
+
 nodist_liblalsimulation_la_SOURCES = LALSimulationBuildInfo.c
 
 liblalsimulation_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)

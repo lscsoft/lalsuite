@@ -84,6 +84,16 @@ int checkSpinsZero(REAL8 s1x, REAL8 s1y, REAL8 s1z,
         return 1;
 }
 
+/* Internal utility function to check that the second body's spin components are zero.
+   Returns 1 if all components are zero, otherwise returns 0 */
+int checkCOSpinZero(REAL8 s2x, REAL8 s2y, REAL8 s2z)
+{
+    if (s2x != 0. || s2y != 0. || s2z != 0.)
+	return 0;
+    else
+	return 1;
+}
+
 /* Internal utility function to check transverse spins are zero
    returns 1 if x and y components of spins are zero, otherwise returns 0 */
 int checkTransverseSpinsZero(REAL8 s1x, REAL8 s1y, REAL8 s2x, REAL8 s2y)
@@ -103,6 +113,8 @@ int checkTidesZero(REAL8 lambda1, REAL8 lambda2)
     else
         return 1;
 }
+
+
 
 /**
  * Function that gives the value of the desired frequency given some physical parameters
@@ -2318,6 +2330,16 @@ int XLALSimInspiralChooseTDWaveform(
             //        deltaT, m1, m2, f_min, r, i, spin1, spin2 );
             break;
 
+	case HGimri:
+	     /* Waveform-specific sanity checks */
+	     if( !checkTidesZero(lambda1, lambda2) )
+		 ABORT_NONZERO_TIDES(waveFlags);
+	     if( !checkCOSpinZero(S2x, S2y, S2z) )
+		 ABORT_NONZERO_SPIN2(waveFlags);
+	     /* Call the waveform driver */
+	     ret = XLALHGimri_generator(hplus, hcross, phiRef, deltaT, m1, m2, f_min, r, i, S1z);
+	     break;
+
         default:
             XLALPrintError("TD version of approximant not implemented in lalsimulation\n");
             XLAL_ERROR(XLAL_EINVAL);
@@ -3674,6 +3696,10 @@ int XLALGetApproximantFromString(const CHAR *inString)
   else if ( strstr(inString, "SEOBNRv3" ) )
   {
     return SEOBNRv3;
+  }
+  else if ( strstr(inString, "HGimri" ) )
+  {
+    return HGimri;
   }
   else if ( strstr(inString, "EOBNRv2HM" ) )
   {
