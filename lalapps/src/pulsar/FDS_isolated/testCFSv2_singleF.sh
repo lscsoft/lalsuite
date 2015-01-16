@@ -19,7 +19,7 @@ fi
 
 ##---------- names of codes and input/output files
 mfd_code="${injectdir}lalapps_Makefakedata_v4"
-cfs_code="${fdsdir}lalapps_ComputeFStatistic_v2"
+cfs_code="${fdsdir}lalapps_ComputeFstatistic_v2"
 
 SFTdir="testCFSv2_singleF_sfts"
 SFTfiles="$SFTdir${dirsep}*"
@@ -90,7 +90,7 @@ timing_awk='BEGIN { timingsum = 0; counter=0; } { timingsum=timingsum+$9; counte
 
 echo
 echo "----------------------------------------------------------------------"
-echo " STEP 2a: run standard ComputeFStatistic_v2"
+echo " STEP 2a: run standard ComputeFstatistic_v2"
 echo "----------------------------------------------------------------------"
 echo
 
@@ -98,7 +98,7 @@ outfile_cfs_loudest="fstat_loudest.dat"
 outfile_cfs_all="fstat_all.dat"
 timingsfile="cfs_timing.dat"
 
-    ## construct ComputeFStatistic command lines
+    ## construct ComputeFstatistic command lines
     cfs_CL=" --DataFiles='$SFTfiles' --TwoFthreshold=0.0 --Alpha=$Alpha --Delta=$Delta --Freq=$cfs_fmin --FreqBand=$cfs_FreqBand --clusterOnScanline=2"
 
     ## multi-IFO
@@ -135,7 +135,7 @@ timingsfile="cfs_timing.dat"
 
 echo
 echo "----------------------------------------------------------------------"
-echo " STEP 2b: run standard ComputeFStatistic_v2 with toplist"
+echo " STEP 2b: run standard ComputeFstatistic_v2 with toplist"
 echo "----------------------------------------------------------------------"
 echo
 
@@ -155,7 +155,7 @@ timingsfile_toplist="cfs_timing_toplist.dat"
 
 echo
 echo "----------------------------------------------------------------------"
-echo " STEP 3a: run ComputeFStatistic_v2 with single-IFO F-stats"
+echo " STEP 3a: run ComputeFstatistic_v2 with single-IFO F-stats"
 echo "----------------------------------------------------------------------"
 echo
 
@@ -179,7 +179,7 @@ timingsfile_singleF="cfs_timing_singleF.dat"
 
 echo
 echo "----------------------------------------------------------------------"
-echo " STEP 3b: run ComputeFStatistic_v2 with single-IFO F-stats and toplist"
+echo " STEP 3b: run ComputeFstatistic_v2 with single-IFO F-stats and toplist"
 echo "----------------------------------------------------------------------"
 echo
 

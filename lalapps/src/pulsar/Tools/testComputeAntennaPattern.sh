@@ -23,7 +23,7 @@ fdsdir="../FDS_isolated/"
 cap_code="${builddir}lalapps_ComputeAntennaPattern"
 pds_code="${builddir}lalapps_PrintDetectorState"
 mfd_code="${injectdir}lalapps_Makefakedata_v4"
-pfs_code="${fdsdir}lalapps_PredictFStat"
+pfs_code="${fdsdir}lalapps_PredictFstat"
 
 tolerance=1e-3
 tolerance_pfs=1 ## more lenient because PFS has noise fluctuations from MFD
@@ -300,7 +300,7 @@ else
 fi
 
 echo "----------------------------------------------------------------------------------------------------"
-echo "ComputeAntennaPattern Test4: comparing A,B,C,D with PredictFStat";
+echo "ComputeAntennaPattern Test4: comparing A,B,C,D with PredictFstat";
 echo "----------------------------------------------------------------------------------------------------"
 
 cap_cmdline="${cap_code} --IFOs=H1 --timeStampsFiles=$timestampsfile_H1 --outABCD=$outCAP --Alpha=$alpha --Delta=$delta"
@@ -335,7 +335,7 @@ C_pfs=$(grep 'C =' ${outPFS} | tr -d 'C =;')
 D_pfs=$(grep 'D =' ${outPFS} | tr -d 'D =;')
 
 echo "==> lalapps_ComputeAntennaPattern:   A=$A_cap, B=$B_cap, C=$C_cap, D=$D_cap"
-echo "    lalapps_PredictFStat:            A=$A_pfs,   B=$B_pfs,   C=$C_pfs,   D=$D_pfs"
+echo "    lalapps_PredictFstat:            A=$A_pfs,   B=$B_pfs,   C=$C_pfs,   D=$D_pfs"
 
 reldev_A=$(echo $A_cap $A_pfs | awk "$awk_reldev")
 fail_A=$(echo $reldev_A $tolerance | awk "$awk_isgtr")

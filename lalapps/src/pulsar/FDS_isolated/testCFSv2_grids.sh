@@ -25,7 +25,7 @@ fi
 ##---------- names of codes and input/output files
 mfdv4_code="${injectdir}lalapps_Makefakedata_v4"
 mfdv5_code="${injectdir}lalapps_Makefakedata_v5"
-cfsv2_code="${builddir}lalapps_ComputeFStatistic_v2"
+cfsv2_code="${builddir}lalapps_ComputeFstatistic_v2"
 cmp_code="${builddir}lalapps_compareFstats"
 
 # ---------- fixed parameter of our test-signal

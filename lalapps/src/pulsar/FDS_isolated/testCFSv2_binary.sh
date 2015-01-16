@@ -13,8 +13,8 @@ injectdir="../Injections/"
 
 ##---------- names of codes and input/output files
 mfd_code="${injectdir}lalapps_Makefakedata_v4"
-cfs_code="${builddir}lalapps_ComputeFStatistic_v2"
-pfs_code="${builddir}lalapps_PredictFStat"
+cfs_code="${builddir}lalapps_ComputeFstatistic_v2"
+pfs_code="${builddir}lalapps_PredictFstat"
 SFTdir="./testBinarySFTs"
 
 # ---------- fixed parameter of our test-signal

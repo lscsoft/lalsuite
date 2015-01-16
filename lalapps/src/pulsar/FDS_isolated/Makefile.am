@@ -4,40 +4,40 @@ include $(top_srcdir)/gnuscripts/lalapps.am
 bin_PROGRAMS = \
 	lalapps_SemiAnalyticF \
 	lalapps_compareFstats\
-	lalapps_PredictFStat \
-	lalapps_ComputeFStatistic_v2 \
-	lalapps_ComputeFStatAnalyticMonteCarloUpperLimit \
+	lalapps_PredictFstat \
+	lalapps_ComputeFstatistic_v2 \
+	lalapps_ComputeFstatAnalyticMonteCarloUpperLimit \
 	lalapps_synthesizeBstatMC \
 	lalapps_synthesizeTransientStats \
 	lalapps_synthesizeLVStats
 
 EXTRA_PROGRAMS = \
 	lalapps_CFSv3 \
-	eah_PredictFStat \
-	eah_ComputeFStatistic_v2
+	eah_PredictFstat \
+	eah_ComputeFstatistic_v2
 
 lalapps_SemiAnalyticF_SOURCES = SemiAnalyticF.c
 
 lalapps_compareFstats_SOURCES = compareFstats.c
 
-ComputeFStatisticV2Sources = \
-	ComputeFStatistic_v2.c \
+ComputeFstatisticV2Sources = \
+	ComputeFstatistic_v2.c \
 	HeapToplist.c \
 	HeapToplist.h
 
-lalapps_ComputeFStatistic_v2_SOURCES = $(ComputeFStatisticV2Sources)
+lalapps_ComputeFstatistic_v2_SOURCES = $(ComputeFstatisticV2Sources)
 
-lalapps_PredictFStat_SOURCES = PredictFStat.c
+lalapps_PredictFstat_SOURCES = PredictFstat.c
 
 # force linking in C++ mode for E@H
-eah_PredictFStat_SOURCES = \
-	$(lalapps_PredictFStat_SOURCES) \
+eah_PredictFstat_SOURCES = \
+	$(lalapps_PredictFstat_SOURCES) \
 	../hough/src2/EinsteinAtHome/win_lib.cpp
-eah_ComputeFStatistic_v2_SOURCES = \
-	$(ComputeFStatisticV2Sources) \
+eah_ComputeFstatistic_v2_SOURCES = \
+	$(ComputeFstatisticV2Sources) \
 	../hough/src2/EinsteinAtHome/win_lib.cpp
 
-lalapps_ComputeFStatAnalyticMonteCarloUpperLimit_SOURCES = ComputeFStatAnalyticMonteCarloUpperLimit.c
+lalapps_ComputeFstatAnalyticMonteCarloUpperLimit_SOURCES = ComputeFstatAnalyticMonteCarloUpperLimit.c
 
 lalapps_synthesizeBstatMC_SOURCES = synthesizeBstatMC.c
 
@@ -48,7 +48,7 @@ lalapps_synthesizeLVStats_SOURCES = synthesizeLVStats.c
 lalapps_CFSv3_SOURCES = CFSv3.c
 
 EXTRA_DIST = \
-	testPredictFStat.sh \
+	testPredictFstat.sh \
 	testCFSv2.sh \
 	testCFSv2_grids.sh \
 	testCFSv2_resamp.sh \
@@ -65,7 +65,7 @@ EXTRA_DIST += \
 	testCFSv2_grid8.dat.ref.gz \
 	testCFSv2_grid9.dat.ref.gz
 
-TESTS = testPredictFStat.sh \
+TESTS = testPredictFstat.sh \
 	testSynthLV.sh
 
 if !CONDOR_ENABLED

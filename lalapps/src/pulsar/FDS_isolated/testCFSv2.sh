@@ -34,7 +34,7 @@ saf_code="${builddir}lalapps_SemiAnalyticF"
 cmp_code="${builddir}lalapps_compareFstats"
 ## allow user to specify a different CFSv2 version to test by passing as cmdline-argument
 if test $# -eq 0 ; then
-    cfsv2_code="${builddir}lalapps_ComputeFStatistic_v2"
+    cfsv2_code="${builddir}lalapps_ComputeFstatistic_v2"
 else
     cfsv2_code="$@"
 fi

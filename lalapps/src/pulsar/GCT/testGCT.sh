@@ -30,7 +30,7 @@ fi
 
 ##---------- names of codes and input/output files
 mfd_code="${injectdir}lalapps_Makefakedata_v5"
-cfs_code="${fdsdir}lalapps_ComputeFStatistic_v2"
+cfs_code="${fdsdir}lalapps_ComputeFstatistic_v2"
 if test $# -eq 0 ; then
     gct_code="${builddir}lalapps_HierarchSearchGCT"
 else

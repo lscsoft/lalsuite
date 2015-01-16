@@ -24,10 +24,10 @@
  *
  * Standalone code to produce a 'mesh' in the parameter-space
  * Currently this is just some code to use InitDopplerScan()
- * directly outside of ComputeFStatistic, and can't do much more
+ * directly outside of ComputeFstatistic, and can't do much more
  * than generating sky-grids.
  *
- * UserInput-parameters a compatible with ComputeFStatistic.
+ * UserInput-parameters a compatible with ComputeFstatistic.
  */
 
 /* ---------- includes ---------- */

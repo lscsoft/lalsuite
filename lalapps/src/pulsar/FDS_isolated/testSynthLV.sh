@@ -21,7 +21,7 @@ capdir="../Tools/"
 synth_code="${builddir}lalapps_synthesizeLVStats"
 cap_code="${capdir}lalapps_ComputeAntennaPattern"
 mfd_code="${injectdir}lalapps_Makefakedata_v4"
-pfs_code="${builddir}lalapps_PredictFStat"
+pfs_code="${builddir}lalapps_PredictFstat"
 
 testDir="./testSynthLV_dir";
 if [ -d "$testDir" ]; then

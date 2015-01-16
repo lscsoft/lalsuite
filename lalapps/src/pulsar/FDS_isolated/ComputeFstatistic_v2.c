@@ -358,7 +358,7 @@ REAL8 XLALGetUserCPUTime ( void );
 /*----------------------------------------------------------------------*/
 
 /**
- * MAIN function of ComputeFStatistic code.
+ * MAIN function of ComputeFstatistic code.
  * Calculate the F-statistic over a given portion of the parameter-space
  * and write a list of 'candidates' into a file(default: 'Fstats').
  */
@@ -1814,7 +1814,7 @@ WriteFstatLog ( LALStatus *status, const CHAR *log_fname, const CHAR *log_string
     ABORT (status, COMPUTEFSTATISTIC_ESYS, COMPUTEFSTATISTIC_MSGESYS);
   }
 
-  fprintf (fplog, "%%%% LOG-FILE for ComputeFStatistic run\n\n");
+  fprintf (fplog, "%%%% LOG-FILE for ComputeFstatistic run\n\n");
   fprintf (fplog, "%s", log_string);
   fclose (fplog);
 

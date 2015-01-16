@@ -648,8 +648,8 @@ log_and_do cd "$BUILD/lalapps/src/pulsar/Injections"
 log_and_do make eah_Makefakedata_v5$ext
 log_and_do cp eah_Makefakedata_v5$ext "$EAH"
 log_and_do cd "$BUILD/lalapps/src/pulsar/FDS_isolated"
-log_and_do make eah_PredictFStat$ext eah_ComputeFStatistic_v2$ext
-log_and_do cp eah_PredictFStat$ext eah_ComputeFStatistic_v2$ext "$EAH"
+log_and_do make eah_PredictFstat$ext eah_ComputeFstatistic_v2$ext
+log_and_do cp eah_PredictFstat$ext eah_ComputeFstatistic_v2$ext "$EAH"
 
 log_and_show "==========================================="
 log_and_show "Einstein@home Apps were built, should be in"
@@ -669,8 +669,8 @@ if [ .$check = .true ]; then
     log_and_do ln -s Injections FDS_isolated
     log_and_do cd Injections
     log_and_do cp ../eah_Makefakedata_v5$ext lalapps_Makefakedata_v5
-    log_and_do cp ../eah_PredictFStat$ext lalapps_PredictFStat
-    log_and_do cp ../eah_ComputeFStatistic_v2$ext lalapps_ComputeFStatistic_v2
+    log_and_do cp ../eah_PredictFstat$ext lalapps_PredictFstat
+    log_and_do cp ../eah_ComputeFstatistic_v2$ext lalapps_ComputeFstatistic_v2
     LAL_DATA_PATH="$INSTALL/share/lalpulsar" NOCLEANUP=1 PATH="$PWD:$PATH" \
 	log_and_do ../source/lalsuite/lalapps/src/pulsar/GCT/testGCT.sh $wine "$check_app" --Dterms=8
     log_and_show "==========================================="

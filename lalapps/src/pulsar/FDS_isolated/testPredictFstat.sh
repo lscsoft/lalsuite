@@ -4,7 +4,7 @@
 echo "Setting LAL_DEBUG_LEVEL=${LAL_DEBUG_LEVEL:-msglvl1,memdbg}"
 export LAL_DEBUG_LEVEL
 
-## test PredictFStat by comparison with SemiAnalyticF
+## test PredictFstat by comparison with SemiAnalyticF
 extra_args="$@"
 
 builddir="./";
@@ -13,13 +13,13 @@ injectdir="../Injections/"
 ##---------- names of codes and input/output files
 mfd_code="lalapps_Makefakedata_v4"
 saf_code="lalapps_SemiAnalyticF"
-pfs_code="lalapps_PredictFStat"
+pfs_code="lalapps_PredictFstat"
 
 mfd_path="${injectdir}${mfd_code}"
 saf_path="${builddir}${saf_code}"
 pfs_path="${builddir}${pfs_code}"
 
-SFTdir="./testPredictFStat_sfts"
+SFTdir="./testPredictFstat_sfts"
 
 Ftolerance=0.05
 # ---------- fixed parameter of our test-signal
@@ -91,7 +91,7 @@ fi
 resSAF=`echo $tmp | awk '{printf "%g", 2.0 * $1}'`
 
 pfs_CL_common=" --Alpha=$Alpha --Delta=$Delta --IFO=$IFO --cosi=$cosi --psi=$psi --Freq=$Freq --DataFiles=\"${SFTdir}/*.sft\""
-## ---------- Run PredictFStat{NoiseWeights} ----------
+## ---------- Run PredictFstat{NoiseWeights} ----------
 outfile_pfs1="__tmp_PFS1.dat";
 pfs_CL="${pfs_CL_common} --h0=$h0 --outputFstat=$outfile_pfs1"
 cmdline="$pfs_path $pfs_CL"
@@ -106,7 +106,7 @@ else
 fi
 resPFS1=`echo $tmp | awk '{printf "%g", $1}'`
 
-## ---------- Run PredictFStat{SignalOnly} ----------
+## ---------- Run PredictFstat{SignalOnly} ----------
 outfile_pfs0="__tmp_PFS0.dat";
 pfs_CL="${pfs_CL_common} --h0=$h0Double --outputFstat=$outfile_pfs0 --SignalOnly"
 cmdline="$pfs_path $pfs_CL"
@@ -121,7 +121,7 @@ else
 fi
 resPFS0=`echo $tmp | awk '{printf "%g", $1}'`
 
-## ---------- Run PredictFStat{assumeSqrtSX} ----------
+## ---------- Run PredictFstat{assumeSqrtSX} ----------
 outfile_pfs0a="__tmp_PFS0a.dat";
 pfs_CL="${pfs_CL_common} --h0=$h0 --outputFstat=$outfile_pfs0a --assumeSqrtSX=${noiseSqrtSh}"
 cmdline="$pfs_path $pfs_CL"
@@ -139,9 +139,9 @@ resPFS0a=`echo $tmp | awk '{printf "%g", $1}'`
 ## ---------- Comparing results ----------
 echo
 echo "SemiAnalyticF:              2F_SA  = $resSAF"
-echo "PredictFStat{SignalOnly}:   2F_PF0 = $resPFS0"
-echo "PredictFStat{assumeSqrtSX}: 2F_PF0a= $resPFS0a"
-echo "PredictFStat{NoiseWeights}: 2F_PF1 = $resPFS1"
+echo "PredictFstat{SignalOnly}:   2F_PF0 = $resPFS0"
+echo "PredictFstat{assumeSqrtSX}: 2F_PF0a= $resPFS0a"
+echo "PredictFstat{NoiseWeights}: 2F_PF1 = $resPFS1"
 
 echo
 

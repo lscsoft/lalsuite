@@ -153,7 +153,7 @@ void InitPFS ( LALStatus *, ConfigVariables *cfg, const UserInput_t *uvar );
 /* Main Function starts here */
 /*----------------------------------------------------------------------*/
 /**
- * MAIN function of PredictFStat code.
+ * MAIN function of PredictFstat code.
  * Calculates the F-statistic for a given position in the sky and detector
  * semi-analytically and outputs the final 2F value.
  */
