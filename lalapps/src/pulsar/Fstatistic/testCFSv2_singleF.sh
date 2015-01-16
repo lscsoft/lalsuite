@@ -7,7 +7,7 @@ extra_args="$@"
 
 builddir="./";
 injectdir="../Injections/"
-fdsdir="../FDS_isolated/"
+fdsdir="../Fstatistic/"
 
 dirsep=/
 if [ "`echo $1 | sed 's%.*/%%'`" = "wine" ]; then

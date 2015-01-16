@@ -17,7 +17,7 @@ fi
 
 builddir="./";
 injectdir="../Injections/"
-fdsdir="../FDS_isolated/"
+fdsdir="../Fstatistic/"
 
 ##---------- names of codes
 cap_code="${builddir}lalapps_ComputeAntennaPattern"

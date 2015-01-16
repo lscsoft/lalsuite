@@ -18,7 +18,7 @@ dirsep="/"
 
 builddir="./";
 injectdir="../Injections/"
-fdsdir="../FDS_isolated/"
+fdsdir="../Fstatistic/"
 
 
 if [ "`echo $1 | sed 's%.*/%%'`" = "wine" ]; then

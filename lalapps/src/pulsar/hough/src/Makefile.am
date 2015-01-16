@@ -1,7 +1,7 @@
 BUILT_SOURCES =
 include $(top_srcdir)/gnuscripts/lalapps.am
 
-AM_CPPFLAGS = -I$(top_srcdir)/src/pulsar/FDS_isolated @AM_CPPFLAGS@
+AM_CPPFLAGS = -I$(top_srcdir)/src/pulsar/Fstatistic @AM_CPPFLAGS@
 
 bin_PROGRAMS = lalapps_NstarClean lalapps_SFTclean lalapps_MCInjectS2 lalapps_DriveHough_v3 lalapps_HoughValidate \
 	lalapps_DriveHoughMulti lalapps_MCInjectHoughMulti lalapps_MultiWeights \
@@ -14,7 +14,7 @@ lalapps_DriveHough_v3_SOURCES = DriveHough_v3.c  DriveHoughColor.h PeakSelect.c 
 lalapps_HoughValidate_SOURCES = HoughValidate.c MCInjectComputeHough.h DriveHoughColor.h PeakSelect.h PeakSelect.c
 lalapps_DriveHoughMulti_SOURCES = DriveHoughMulti.c  DriveHoughColor.h PeakSelect.c PeakSelect.h \
 	 FstatToplist.c FstatToplist.h \
-	 ../../FDS_isolated/HeapToplist.c ../../FDS_isolated/HeapToplist.h
+	 ../../Fstatistic/HeapToplist.c ../../Fstatistic/HeapToplist.h
 
 lalapps_ValidateHoughMulti_SOURCES = ValidateHoughMulti.c  DriveHoughColor.h PeakSelect.c PeakSelect.h MCInjectHoughMulti.h
 lalapps_MultiWeights_SOURCES = MultiWeights.c  DriveHoughColor.h

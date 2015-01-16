@@ -1,7 +1,7 @@
 SUBDIRS = \
 	MakeSFTs \
 	Injections \
-	FDS_isolated \
+	Fstatistic \
 	hough \
 	GCT \
 	SideBand \

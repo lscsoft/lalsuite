@@ -27,7 +27,7 @@ AC_CONFIG_FILES([\
   src/power/Makefile \
   src/pulsar/CombSearch/Makefile \
   src/pulsar/CreateEphemeris/Makefile \
-  src/pulsar/FDS_isolated/Makefile \
+  src/pulsar/Fstatistic/Makefile \
   src/pulsar/GCT/Makefile \
   src/pulsar/Injections/Makefile \
   src/pulsar/MakeSFTs/Makefile \

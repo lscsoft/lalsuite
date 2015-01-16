@@ -1,7 +1,7 @@
 BUILT_SOURCES =
 include $(top_srcdir)/gnuscripts/lalapps.am
 
-AM_CPPFLAGS = -I$(top_srcdir)/src/pulsar/FDS_isolated @AM_CPPFLAGS@
+AM_CPPFLAGS = -I$(top_srcdir)/src/pulsar/Fstatistic @AM_CPPFLAGS@
 
 ## Compiling with OpenCL on Linux
 # LDFLAGS = -lOpenCL
@@ -28,7 +28,7 @@ EXTRA_PROGRAMS = lalapps_HierarchicalSearch_sse lalapps_HierarchicalSearch_sse2 
 #bin_PROGRAMS += lalapps_HierarchicalSearch
 #endif
 
-FDSsrc = ../../FDS_isolated
+FDSsrc = ../../Fstatistic
 Recalcsrc = ../../GCT
 
 lalapps_HoughValidateAM_SOURCES = HoughValidateAM.c ../src/MCInjectHoughS2.h \
