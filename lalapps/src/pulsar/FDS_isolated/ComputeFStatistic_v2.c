@@ -319,7 +319,7 @@ extern int vrbflg;		/**< defined in lalapps.c */
 /* ---------- local prototypes ---------- */
 int main(int argc,char *argv[]);
 void initUserVars (LALStatus *, UserInput_t *uvar);
-void InitFStat ( LALStatus *, ConfigVariables *cfg, const UserInput_t *uvar );
+void InitFstat ( LALStatus *, ConfigVariables *cfg, const UserInput_t *uvar );
 void Freemem(LALStatus *,  ConfigVariables *cfg);
 
 void checkUserInputConsistency (LALStatus *, const UserInput_t *uvar);
@@ -332,7 +332,7 @@ int write_PulsarCandidate_to_fp ( FILE *fp,  const PulsarCandidate *pulsarParams
 int compareFstatCandidates ( const void *candA, const void *candB );
 int compareFstatCandidates_BSGL ( const void *candA, const void *candB );
 
-void WriteFStatLog ( LALStatus *status, const CHAR *log_fname, const CHAR *logstr );
+void WriteFstatLog ( LALStatus *status, const CHAR *log_fname, const CHAR *logstr );
 CHAR *XLALGetLogString ( const ConfigVariables *cfg );
 
 int write_TimingInfo ( const CHAR *timingFile, const timingInfo_t *ti );
@@ -418,7 +418,7 @@ int main(int argc,char *argv[])
 
   /* Initialization the common variables of the code, */
   /* like ephemeries data and template grids: */
-  LAL_CALL ( InitFStat(&status, &GV, &uvar), &status);
+  LAL_CALL ( InitFstat(&status, &GV, &uvar), &status);
 
   /* ----- produce a log-string describing the specific run setup ----- */
   if ( (GV.logstring = XLALGetLogString ( &GV )) == NULL ) {
@@ -429,7 +429,7 @@ int main(int argc,char *argv[])
 
   /* keep a log-file recording all relevant parameters of this search-run */
   if ( uvar.outputLogfile ) {
-    LAL_CALL (WriteFStatLog ( &status, uvar.outputLogfile, GV.logstring ), &status );
+    LAL_CALL (WriteFstatLog ( &status, uvar.outputLogfile, GV.logstring ), &status );
   }
 
   /* if a complete output of the F-statistic file was requested,
@@ -1235,7 +1235,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
  * NOTE: the logical *order* of things in here is very important, so be careful
  */
 void
-InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
+InitFstat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 {
   REAL8 fCoverMin, fCoverMax;	/* covering frequency-band to read from SFTs */
   SFTCatalog *catalog = NULL;
@@ -1724,7 +1724,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   DETATCHSTATUSPTR (status);
   RETURN (status);
 
-} /* InitFStat() */
+} /* InitFstat() */
 
 /**
  * Produce a log-string describing the present run-setup
@@ -1797,7 +1797,7 @@ XLALGetLogString ( const ConfigVariables *cfg )
  * <em>NOTE:</em> Currently this function only logs the user-input and code-versions.
  */
 void
-WriteFStatLog ( LALStatus *status, const CHAR *log_fname, const CHAR *log_string )
+WriteFstatLog ( LALStatus *status, const CHAR *log_fname, const CHAR *log_string )
 {
   FILE *fplog;
 
@@ -1822,7 +1822,7 @@ WriteFStatLog ( LALStatus *status, const CHAR *log_fname, const CHAR *log_string
   DETATCHSTATUSPTR (status);
   RETURN(status);
 
-} /* WriteFStatLog() */
+} /* WriteFstatLog() */
 
 
 /** Free all globally allocated memory. */

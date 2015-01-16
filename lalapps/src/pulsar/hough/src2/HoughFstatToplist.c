@@ -20,7 +20,7 @@
 
 #include <stdio.h>
 #include <unistd.h>
-#include "HoughFStatToplist.h"
+#include "HoughFstatToplist.h"
 #include "HeapToplist.h"
 #include <lal/StringInput.h> /* for LAL_REAL8_FORMAT etc. */
 #include <lal/AVFactories.h> /* for XLALDestroyREAL4Vector */
@@ -86,60 +86,60 @@ int finite(double);
 #define SYNC_FAIL_LIMIT 5
 
 /* local prototypes */
-static void reduce_houghFStat_toplist_precision(toplist_t *l);
-static int _atomic_write_houghFStat_toplist_to_file(toplist_t *l, const char *filename, UINT4*checksum, int write_done);
-static int print_houghFStatline_to_str(HoughFStatOutputEntry fline, char* buf, int buflen);
+static void reduce_houghFstat_toplist_precision(toplist_t *l);
+static int _atomic_write_houghFstat_toplist_to_file(toplist_t *l, const char *filename, UINT4*checksum, int write_done);
+static int print_houghFstatline_to_str(HoughFstatOutputEntry fline, char* buf, int buflen);
 
 
 /* ordering function for sorting the list */
-static int houghFStat_toplist_qsort_function(const void *a, const void *b) {
-    if      (((const HoughFStatOutputEntry*)a)->Freq  < ((const HoughFStatOutputEntry*)b)->Freq)
+static int houghFstat_toplist_qsort_function(const void *a, const void *b) {
+    if      (((const HoughFstatOutputEntry*)a)->Freq  < ((const HoughFstatOutputEntry*)b)->Freq)
 	return -1;
-    else if (((const HoughFStatOutputEntry*)a)->Freq  > ((const HoughFStatOutputEntry*)b)->Freq)
+    else if (((const HoughFstatOutputEntry*)a)->Freq  > ((const HoughFstatOutputEntry*)b)->Freq)
 	return 1;
-    else if (((const HoughFStatOutputEntry*)a)->Alpha < ((const HoughFStatOutputEntry*)b)->Alpha)
+    else if (((const HoughFstatOutputEntry*)a)->Alpha < ((const HoughFstatOutputEntry*)b)->Alpha)
 	return -1;
-    else if (((const HoughFStatOutputEntry*)a)->Alpha > ((const HoughFStatOutputEntry*)b)->Alpha)
+    else if (((const HoughFstatOutputEntry*)a)->Alpha > ((const HoughFstatOutputEntry*)b)->Alpha)
 	return 1;
-    else if (((const HoughFStatOutputEntry*)a)->Delta < ((const HoughFStatOutputEntry*)b)->Delta)
+    else if (((const HoughFstatOutputEntry*)a)->Delta < ((const HoughFstatOutputEntry*)b)->Delta)
 	return -1;
-    else if (((const HoughFStatOutputEntry*)a)->Delta > ((const HoughFStatOutputEntry*)b)->Delta)
+    else if (((const HoughFstatOutputEntry*)a)->Delta > ((const HoughFstatOutputEntry*)b)->Delta)
 	return 1;
-    else if (((const HoughFStatOutputEntry*)a)->f1dot < ((const HoughFStatOutputEntry*)b)->f1dot)
+    else if (((const HoughFstatOutputEntry*)a)->f1dot < ((const HoughFstatOutputEntry*)b)->f1dot)
 	return -1;
-    else if (((const HoughFStatOutputEntry*)a)->f1dot > ((const HoughFStatOutputEntry*)b)->f1dot)
+    else if (((const HoughFstatOutputEntry*)a)->f1dot > ((const HoughFstatOutputEntry*)b)->f1dot)
 	return 1;
     else
 	return 0;
 }
 
 /* ordering function defining the toplist */
-static int houghFStat_smaller(const void*a, const void*b) {
-  if     (((const HoughFStatOutputEntry*)a)->HoughFStat < ((const HoughFStatOutputEntry*)b)->HoughFStat)
+static int houghFstat_smaller(const void*a, const void*b) {
+  if     (((const HoughFstatOutputEntry*)a)->HoughFstat < ((const HoughFstatOutputEntry*)b)->HoughFstat)
     return(1);
-  else if(((const HoughFStatOutputEntry*)a)->HoughFStat > ((const HoughFStatOutputEntry*)b)->HoughFStat)
+  else if(((const HoughFstatOutputEntry*)a)->HoughFstat > ((const HoughFstatOutputEntry*)b)->HoughFstat)
     return(-1);
   else
-    return(houghFStat_toplist_qsort_function(a,b));
+    return(houghFstat_toplist_qsort_function(a,b));
 }
 
 
 /* creates a toplist with length elements,
    returns -1 on error (usually out of memory), else 0 */
-int create_houghFStat_toplist(toplist_t**tl, UINT8 length) {
-  return(create_toplist(tl, length, sizeof(HoughFStatOutputEntry), houghFStat_smaller));
+int create_houghFstat_toplist(toplist_t**tl, UINT8 length) {
+  return(create_toplist(tl, length, sizeof(HoughFstatOutputEntry), houghFstat_smaller));
 }
 
 
 /* frees the space occupied by the toplist */
-void free_houghFStat_toplist(toplist_t**l) {
+void free_houghFstat_toplist(toplist_t**l) {
   /* special handling of sumTwoFX entries, which are REAL4Vectors
    * and need to be free'ed first if they are non-NULL
    */
   UINT4 i;
   for (i = 0; i < (*l)->elems; i++ )
     {
-      HoughFStatOutputEntry *elem = toplist_elem ( (*l), i );
+      HoughFstatOutputEntry *elem = toplist_elem ( (*l), i );
       XLALDestroyREAL4Vector ( elem->sumTwoFX );
     } /* for cand < numCands */
 
@@ -154,7 +154,7 @@ void free_houghFStat_toplist(toplist_t**l) {
    In the latter case, remove the smallest element from the toplist and
    look for the now smallest one.
    Returns 1 if the element was actually inserted, 0 if not. */
-int insert_into_houghFStat_toplist(toplist_t*tl, HoughFStatOutputEntry elem) {
+int insert_into_houghFstat_toplist(toplist_t*tl, HoughFstatOutputEntry elem) {
   if ( !tl )
     return 0;
   else
@@ -163,8 +163,8 @@ int insert_into_houghFStat_toplist(toplist_t*tl, HoughFStatOutputEntry elem) {
 
 
 /* (q)sort the toplist according to the sorting function. */
-void sort_houghFStat_toplist(toplist_t*l) {
-  qsort_toplist(l,houghFStat_toplist_qsort_function);
+void sort_houghFstat_toplist(toplist_t*l) {
+  qsort_toplist(l,houghFstat_toplist_qsort_function);
 }
 
 
@@ -173,13 +173,13 @@ void sort_houghFStat_toplist(toplist_t*l) {
     0 if we found a %DONE marker at the end,
    -1 if the file contained a syntax error,
    -2 if given an improper toplist */
-int read_houghFStat_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxbytes) {
+int read_houghFstat_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxbytes) {
     CHAR line[256];       /* buffer for reading a line */
     UINT4 items, lines;   /* number of items read from a line, linecounter */
     UINT4 len, chars = 0; /* length of a line, total characters read from the file */
     UINT4 i;              /* loop counter */
     CHAR lastchar;        /* last character of a line read, should be newline */
-    HoughFStatOutputEntry HoughFStatLine;
+    HoughFstatOutputEntry HoughFstatLine;
     REAL8 epsilon=1e-5;
 
     /* basic check that the list argument is valid */
@@ -225,28 +225,28 @@ int read_houghFStat_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 
 			" %" LAL_REAL8_FORMAT
 			" %" LAL_REAL8_FORMAT
 			" %" LAL_REAL8_FORMAT "%c",
-			&HoughFStatLine.Freq,
-			&HoughFStatLine.Alpha,
-			&HoughFStatLine.Delta,
-			&HoughFStatLine.f1dot,
-			&HoughFStatLine.HoughFStat,
+			&HoughFstatLine.Freq,
+			&HoughFstatLine.Alpha,
+			&HoughFstatLine.Delta,
+			&HoughFstatLine.f1dot,
+			&HoughFstatLine.HoughFstat,
 			&lastchar);
 
 	/* check the values scanned */
 	if (
 	    items != 6 ||
 
-	    !finite(HoughFStatLine.Freq)	||
-	    !finite(HoughFStatLine.f1dot)	||
-	    !finite(HoughFStatLine.Alpha)	||
-	    !finite(HoughFStatLine.Delta)	||
-	    !finite(HoughFStatLine.HoughFStat)	||
+	    !finite(HoughFstatLine.Freq)	||
+	    !finite(HoughFstatLine.f1dot)	||
+	    !finite(HoughFstatLine.Alpha)	||
+	    !finite(HoughFstatLine.Delta)	||
+	    !finite(HoughFstatLine.HoughFstat)	||
 
-	    HoughFStatLine.Freq  < 0.0                    ||
-	    HoughFStatLine.Alpha <         0.0 - epsilon  ||
-	    HoughFStatLine.Alpha >   LAL_TWOPI + epsilon  ||
-	    HoughFStatLine.Delta < -0.5*LAL_PI - epsilon  ||
-	    HoughFStatLine.Delta >  0.5*LAL_PI + epsilon  ||
+	    HoughFstatLine.Freq  < 0.0                    ||
+	    HoughFstatLine.Alpha <         0.0 - epsilon  ||
+	    HoughFstatLine.Alpha >   LAL_TWOPI + epsilon  ||
+	    HoughFstatLine.Delta < -0.5*LAL_PI - epsilon  ||
+	    HoughFstatLine.Delta >  0.5*LAL_PI + epsilon  ||
 
 	    lastchar != '\n'
 	    ) {
@@ -267,10 +267,10 @@ int read_houghFStat_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 
 	    for(i=0;i<len;i++)
 		*checksum += line[i];
 	
-	insert_into_toplist(l, &HoughFStatLine);
+	insert_into_toplist(l, &HoughFstatLine);
 	lines++;
 
-	/* NOTE: it *CAN* happen (and on Linux it DOES) that the fully buffered HoughFStat stream
+	/* NOTE: it *CAN* happen (and on Linux it DOES) that the fully buffered HoughFstat stream
 	 * gets written to the File at program termination.
 	 * This does not seem to happen on Mac though, most likely due to different
 	 * exit()-calls used (_exit() vs exit() etc.....)
@@ -281,14 +281,14 @@ int read_houghFStat_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 
 	 */
 	if ( chars == maxbytes )
 	  {
-	    LogPrintf (LOG_DEBUG, "Read exactly %d == maxbytes from HoughFStat-file, that's enough.\n", 
+	    LogPrintf (LOG_DEBUG, "Read exactly %d == maxbytes from HoughFstat-file, that's enough.\n", 
 		       chars);
 	    break;
 	  }
 	/* however, if we've read more than maxbytes, something is gone wrong */
 	if ( chars > maxbytes )
 	  {
-	    LogPrintf (LOG_CRITICAL, "Read %d bytes > maxbytes %d from HoughFStat-file ... corrupted.\n",
+	    LogPrintf (LOG_CRITICAL, "Read %d bytes > maxbytes %d from HoughFstat-file ... corrupted.\n",
 		       chars, maxbytes );
 	    return -1;
 	  }
@@ -297,12 +297,12 @@ int read_houghFStat_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 
 
     return chars;
 
-} /* read_houghFStat_toplist_from_fp() */
+} /* read_houghFstat_toplist_from_fp() */
 
 
 /* Prints a Tooplist line to a string buffer.
    Separate function to assure consistency of output and reduced precision for sorting */
-static int print_houghFStatline_to_str(HoughFStatOutputEntry fline, char* buf, int buflen) {
+static int print_houghFstatline_to_str(HoughFstatOutputEntry fline, char* buf, int buflen) {
   const char *fn = __func__;
 
   /* add extra output-field containing sumTwoF and per-detector sumTwoFX if non-NULL */
@@ -338,7 +338,7 @@ static int print_houghFStatline_to_str(HoughFStatOutputEntry fline, char* buf, i
 		     fline.Alpha,
 		     fline.Delta,
 		     fline.f1dot,
-		     fline.HoughFStat,
+		     fline.HoughFstat,
 		     fline.AlphaBest,
 		     fline.DeltaBest,
 		     fline.MeanSig,
@@ -347,14 +347,14 @@ static int print_houghFStatline_to_str(HoughFStatOutputEntry fline, char* buf, i
 }
 
 
-/* writes an HoughFStatOutputEntry line to an open filepointer.
+/* writes an HoughFstatOutputEntry line to an open filepointer.
    Returns the number of chars written, -1 if in error
    Updates checksum if given */
-int write_houghFStat_toplist_item_to_fp(HoughFStatOutputEntry fline, FILE*fp, UINT4*checksum) {
+int write_houghFstat_toplist_item_to_fp(HoughFstatOutputEntry fline, FILE*fp, UINT4*checksum) {
     char linebuf[256];
     UINT4 i;
 
-    UINT4 length = print_houghFStatline_to_str(fline, linebuf, sizeof(linebuf)-1);
+    UINT4 length = print_houghFstatline_to_str(fline, linebuf, sizeof(linebuf)-1);
     
     if(length>sizeof(linebuf)-1) {
        return -1;
@@ -372,36 +372,36 @@ int write_houghFStat_toplist_item_to_fp(HoughFStatOutputEntry fline, FILE*fp, UI
 
 /* Reduces the precision of all elements in the toplist which influence the sorting order.
    To be called before sorting and finally writing out the list */
-static void reduce_houghFStatline_precision(void*line) {
+static void reduce_houghFstatline_precision(void*line) {
   char linebuf[256];
-  print_houghFStatline_to_str((*(HoughFStatOutputEntry*)line), linebuf, sizeof(linebuf));
+  print_houghFstatline_to_str((*(HoughFstatOutputEntry*)line), linebuf, sizeof(linebuf));
   sscanf(linebuf,
 	 "%" LAL_REAL8_FORMAT
 	 " %" LAL_REAL8_FORMAT
 	 " %" LAL_REAL8_FORMAT
 	 " %" LAL_REAL8_FORMAT
 	 "%*s\n",
-	 &((*(HoughFStatOutputEntry*)line).Freq),
-	 &((*(HoughFStatOutputEntry*)line).Alpha),
-	 &((*(HoughFStatOutputEntry*)line).Delta),
-	 &((*(HoughFStatOutputEntry*)line).f1dot));
+	 &((*(HoughFstatOutputEntry*)line).Freq),
+	 &((*(HoughFstatOutputEntry*)line).Alpha),
+	 &((*(HoughFstatOutputEntry*)line).Delta),
+	 &((*(HoughFstatOutputEntry*)line).f1dot));
 }
 
-static void reduce_houghFStat_toplist_precision(toplist_t *l) {
-  go_through_toplist(l,reduce_houghFStatline_precision);
+static void reduce_houghFstat_toplist_precision(toplist_t *l) {
+  go_through_toplist(l,reduce_houghFstatline_precision);
 }
 
 
 /* Writes the toplist to an (already open) filepointer
    Returns the number of written charactes
    Returns something <0 on error */
-int write_houghFStat_toplist_to_fp(toplist_t*tl, FILE*fp, UINT4*checksum) {
+int write_houghFstat_toplist_to_fp(toplist_t*tl, FILE*fp, UINT4*checksum) {
    UINT8 c=0,i;
    INT8 r;
    if(checksum)
        *checksum = 0;
    for(i=0;i<tl->elems;i++)
-     if ((r = write_houghFStat_toplist_item_to_fp(*((HoughFStatOutputEntry*)(void*)(tl->heap[i])), fp, checksum)) < 0) {
+     if ((r = write_houghFstat_toplist_item_to_fp(*((HoughFstatOutputEntry*)(void*)(tl->heap[i])), fp, checksum)) < 0) {
        LogPrintf (LOG_CRITICAL, "Failed to write toplistitem to output fp: %d: %s\n",
 		  errno,strerror(errno));
 #ifdef _MSC_VER
@@ -417,15 +417,15 @@ int write_houghFStat_toplist_to_fp(toplist_t*tl, FILE*fp, UINT4*checksum) {
 /* writes the given toplitst to a temporary file, then renames the temporary file to filename.
    The name of the temporary file is derived from the filename by appending ".tmp". Returns the
    number of chars written or -1 if the temp file could not be opened.
-   This just calls _atomic_write_houghFStat_toplist_to_file() telling it not to write a %DONE marker*/
-int atomic_write_houghFStat_toplist_to_file(toplist_t *l, const char *filename, UINT4*checksum) {
-  return(_atomic_write_houghFStat_toplist_to_file(l, filename, checksum, 0));
+   This just calls _atomic_write_houghFstat_toplist_to_file() telling it not to write a %DONE marker*/
+int atomic_write_houghFstat_toplist_to_file(toplist_t *l, const char *filename, UINT4*checksum) {
+  return(_atomic_write_houghFstat_toplist_to_file(l, filename, checksum, 0));
 }
 
-/* function that does the actual work of atomic_write_houghFStat_toplist_to_file(),
-   appending a %DONE marker if specified (not when called from atomic_write_houghFStat_toplist_to_file().
+/* function that does the actual work of atomic_write_houghFstat_toplist_to_file(),
+   appending a %DONE marker if specified (not when called from atomic_write_houghFstat_toplist_to_file().
    NOTE that the checksum will be a little wrong when %DOME is appended, as this line is not counted */
-static int _atomic_write_houghFStat_toplist_to_file(toplist_t *l, const char *filename, UINT4*checksum, int write_done) {
+static int _atomic_write_houghFstat_toplist_to_file(toplist_t *l, const char *filename, UINT4*checksum, int write_done) {
     char* tempname;
     INT4 length;
     FILE * fpnew;
@@ -443,7 +443,7 @@ static int _atomic_write_houghFStat_toplist_to_file(toplist_t *l, const char *fi
 
     fpnew=fopen(tempname, "wb");
     if(!fpnew) {
-      LogPrintf (LOG_CRITICAL, "Failed to open temp HoughFStat file \"%s\" for writing: %d: %s\n",
+      LogPrintf (LOG_CRITICAL, "Failed to open temp HoughFstat file \"%s\" for writing: %d: %s\n",
 		 tempname,errno,strerror(errno));
 #ifdef _MSC_VER
       LogPrintf (LOG_CRITICAL, "Windows system call returned: %d\n", _doserrno);
@@ -451,7 +451,7 @@ static int _atomic_write_houghFStat_toplist_to_file(toplist_t *l, const char *fi
       free(tempname);
       return -1;
     }
-    length = write_houghFStat_toplist_to_fp(l,fpnew,checksum);
+    length = write_houghFstat_toplist_to_fp(l,fpnew,checksum);
 
     if ((write_done) && (length >= 0)) {
       int ret;
@@ -465,7 +465,7 @@ static int _atomic_write_houghFStat_toplist_to_file(toplist_t *l, const char *fi
     fclose(fpnew);
     
     if (length < 0) {
-      LogPrintf (LOG_CRITICAL, "Failed to write temp HoughFStat file \"%s\": %d: %s\n",
+      LogPrintf (LOG_CRITICAL, "Failed to write temp HoughFstat file \"%s\": %d: %s\n",
 		 tempname,errno,strerror(errno));
 #ifdef _MSC_VER
       LogPrintf (LOG_CRITICAL, "Windows system call returned: %d\n", _doserrno);
@@ -475,7 +475,7 @@ static int _atomic_write_houghFStat_toplist_to_file(toplist_t *l, const char *fi
     }
 
     if(rename(tempname, filename)) {
-      LogPrintf (LOG_CRITICAL, "Failed to rename HoughFStat file to \"%s\": %d: %s\n",
+      LogPrintf (LOG_CRITICAL, "Failed to rename HoughFstat file to \"%s\": %d: %s\n",
 		 filename,errno,strerror(errno));
 #ifdef _MSC_VER
       LogPrintf (LOG_CRITICAL, "Windows system call returned: %d\n", _doserrno);
@@ -492,11 +492,11 @@ static int _atomic_write_houghFStat_toplist_to_file(toplist_t *l, const char *fi
 /* meant for the final writing of the toplist
    - reduces toplist precision
    - sorts the toplist
-   - then calls atomic_write_houghFStat_toplist_to_file() */
-int final_write_houghFStat_toplist_to_file(toplist_t *l, const char *filename, UINT4*checksum) {
-  reduce_houghFStat_toplist_precision(l);
-  sort_houghFStat_toplist(l);
-  return(atomic_write_houghFStat_toplist_to_file(l,filename,checksum));
+   - then calls atomic_write_houghFstat_toplist_to_file() */
+int final_write_houghFstat_toplist_to_file(toplist_t *l, const char *filename, UINT4*checksum) {
+  reduce_houghFstat_toplist_precision(l);
+  sort_houghFstat_toplist(l);
+  return(atomic_write_houghFstat_toplist_to_file(l,filename,checksum));
 }
 
 
@@ -728,7 +728,7 @@ int read_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4*counter) {
   /* restore Heap structure by sorting */
   for(len = 0; len < tl->elems; len++)
     tl->heap[len] = tl->data + len * tl->size;
-  qsort_toplist_r(tl,houghFStat_smaller);
+  qsort_toplist_r(tl,houghFstat_smaller);
 
   /* all went well */
   LogPrintf(LOG_DEBUG,"Successfully read checkpoint\n");
@@ -741,7 +741,7 @@ int write_hfs_oputput(const char*filename, toplist_t*tl) {
   /* reduce the precision of the calculated values before doing the sort to
      the precision we will write the result with. This should ensure a sorting
      order that looks right to the validator, too */
-  reduce_houghFStat_toplist_precision(tl);
-  sort_houghFStat_toplist(tl);
-  return(_atomic_write_houghFStat_toplist_to_file(tl, filename, NULL, 1));
+  reduce_houghFstat_toplist_precision(tl);
+  sort_houghFstat_toplist(tl);
+  return(_atomic_write_houghFstat_toplist_to_file(tl, filename, NULL, 1));
 }

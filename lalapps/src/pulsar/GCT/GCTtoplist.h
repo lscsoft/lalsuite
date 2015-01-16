@@ -76,10 +76,10 @@ typedef enum
  * creates a toplist with length elements,
  * returns -1 on error (usually out of memory), else 0
  */
-extern int create_gctFStat_toplist(toplist_t**list, UINT8 length, SortBy_t whatToSortBy);
+extern int create_gctFstat_toplist(toplist_t**list, UINT8 length, SortBy_t whatToSortBy);
 
 /** frees the space occupied by the toplist */
-extern void free_gctFStat_toplist(toplist_t**list);
+extern void free_gctFstat_toplist(toplist_t**list);
 
 /**
  * Inserts an element in to the toplist either if there is space left
@@ -87,7 +87,7 @@ extern void free_gctFStat_toplist(toplist_t**list);
  * In the latter case, remove the smallest element from the toplist
  * Returns 1 if the element was actually inserted, 0 if not.
  */
-extern int insert_into_gctFStat_toplist(toplist_t*list, GCTtopOutputEntry line);
+extern int insert_into_gctFstat_toplist(toplist_t*list, GCTtopOutputEntry line);
 
 
 /**
@@ -96,21 +96,21 @@ extern int insert_into_gctFStat_toplist(toplist_t*list, GCTtopOutputEntry line);
  * sets the checksum if non-NULL
  * Returns something <0 on error
  */
-extern int write_gctFStat_toplist_to_fp(toplist_t*list, FILE*fp, UINT4*checksum);
+extern int write_gctFstat_toplist_to_fp(toplist_t*list, FILE*fp, UINT4*checksum);
 
 
 /**
  * sorts the toplist with an internal sorting function,
  * used before finally writing it
  */
-extern void sort_gctFStat_toplist(toplist_t*list);
+extern void sort_gctFstat_toplist(toplist_t*list);
 
 
 /**
  * sorts the toplist with an internal sorting function,
  * used before doing the follow-up analysis
  */
-extern void sort_gctFStat_toplist_strongest(toplist_t*list);
+extern void sort_gctFstat_toplist_strongest(toplist_t*list);
 
 
 

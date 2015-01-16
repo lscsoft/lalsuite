@@ -128,14 +128,14 @@
 /* checkpointing */
 #define HS_CHECKPOINTING 0 /* no checkpointing in the non-BOINC case (yet) */
 #define GET_CHECKPOINT(toplist,total,count,outputname,cptname) *total=0;
-#define INSERT_INTO_HOUGHFSTAT_TOPLIST insert_into_houghFStat_toplist
+#define INSERT_INTO_HOUGHFSTAT_TOPLIST insert_into_houghFstat_toplist
 #define SHOW_PROGRESS(rac,dec,tpl_count,tpl_total,freq,fband)
 #define SET_CHECKPOINT
 /* BOINC */
 #define MAIN main
 #endif /* EAH_BOINC */
 
-/* These might have been set differently in hs_boinc_extras.h or ComputeFStatREAL4.h */
+/* These might have been set differently in hs_boinc_extras.h or ComputeFstatREAL4.h */
 #ifndef GPUREADY_DEFAULT
 #define GPUREADY_DEFAULT 0
 #endif
@@ -537,7 +537,7 @@ int MAIN( int argc, char *argv[]) {
   }
 
   /* create toplist with exactly the length of the input candidate-list */
-  create_houghFStat_toplist(&semiCohToplist, InputCandList->length );
+  create_houghFstat_toplist(&semiCohToplist, InputCandList->length );
 
   /* write the log file */
   if ( uvar_log )
@@ -980,7 +980,7 @@ int MAIN( int argc, char *argv[]) {
     /* else */
     /*   multiNoiseWeightsPointer = NULL; */
     RecalcStatsParams XLAL_INIT_DECL(recalcToplistParams);
-    recalcToplistParams.listEntryTypeName	= "HoughFStat";
+    recalcToplistParams.listEntryTypeName	= "HoughFstat";
     recalcToplistParams.Fstat_in_vec		= Fstat_in_vec;
     recalcToplistParams.detectorIDs		= usefulParams.detectorIDs;
     recalcToplistParams.startTstack		= usefulParams.startTstack;
@@ -1005,10 +1005,10 @@ int MAIN( int argc, char *argv[]) {
       return HIERARCHICALSEARCH_EFILE;
     }
   /* write header-line comment explaining columns */
-  fprintf ( fpSemiCoh, "%%%%  Freq            Alpha              Delta              f1dot                 HoughFStat        AlphaBest          DeltaBest          MeanSig   VarSig    <multiF>   <F1>    <F2> ...\n");
+  fprintf ( fpSemiCoh, "%%%%  Freq            Alpha              Delta              f1dot                 HoughFstat        AlphaBest          DeltaBest          MeanSig   VarSig    <multiF>   <F1>    <F2> ...\n");
 
-  sort_houghFStat_toplist(semiCohToplist);
-  if ( write_houghFStat_toplist_to_fp( semiCohToplist, fpSemiCoh, NULL) < 0)
+  sort_houghFstat_toplist(semiCohToplist);
+  if ( write_houghFstat_toplist_to_fp( semiCohToplist, fpSemiCoh, NULL) < 0)
     fprintf( stderr, "Error in writing toplist to file\n");
   /*     LAL_CALL( AppendFstatCandidates( &status, &fStatCand, fpFstat), &status); */
   if (fprintf(fpSemiCoh,"%%DONE\n") < 0)
@@ -1065,7 +1065,7 @@ int MAIN( int argc, char *argv[]) {
 
   /* free candidates */
   LALFree(semiCohCandList.list);
-  free_houghFStat_toplist(&semiCohToplist);
+  free_houghFstat_toplist(&semiCohToplist);
 
   LAL_CALL (LALDestroyUserVars(&status), &status);
 
@@ -3010,7 +3010,7 @@ void GetSemiCohToplist(LALStatus            *status,
 {
 
   INT4 k;
-  HoughFStatOutputEntry line;
+  HoughFstatOutputEntry line;
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
@@ -3026,10 +3026,10 @@ void GetSemiCohToplist(LALStatus            *status,
     line.Alpha = in->list[k].alpha;
     line.Delta = in->list[k].delta;
     line.f1dot = in->list[k].fdot;
-    line.HoughFStat = (in->list[k].significance - meanN)/sigmaN; 
+    line.HoughFstat = (in->list[k].significance - meanN)/sigmaN; 
     /* for debugging */
-    /* line.HoughFStat = in->list[k].significance; */
-    /* if (line.HoughFStat > 121) */
+    /* line.HoughFstat = in->list[k].significance; */
+    /* if (line.HoughFstat > 121) */
     /*   fprintf(stdout, "number count exceeded"); */
 
     line.AlphaBest = in->list[k].alphaBest;

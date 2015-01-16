@@ -589,15 +589,15 @@ int MAIN( int argc, char *argv[]) {
      as a fstat candidate, so treat it as a fstat candidate */
   if ( uvar_SortToplist == SORTBY_DUAL_F_BSGL )	// special treatement of 'dual' toplists: 1st one sorted by 'F', 2nd one by 'BSGL'
     {
-      XLAL_CHECK ( 0 == create_gctFStat_toplist ( &semiCohToplist, uvar_nCand1, SORTBY_F ),
-                   XLAL_EFUNC, "create_gctFStat_toplist() failed for nCand=%d and sortBy=%d\n", uvar_nCand1, SORTBY_F );
-      XLAL_CHECK ( 0 == create_gctFStat_toplist ( &semiCohToplist2, uvar_nCand1, SORTBY_BSGL ),
-                   XLAL_EFUNC, "create_gctFStat_toplist() failed for nCand=%d and sortBy=%d\n", uvar_nCand1, SORTBY_BSGL );
+      XLAL_CHECK ( 0 == create_gctFstat_toplist ( &semiCohToplist, uvar_nCand1, SORTBY_F ),
+                   XLAL_EFUNC, "create_gctFstat_toplist() failed for nCand=%d and sortBy=%d\n", uvar_nCand1, SORTBY_F );
+      XLAL_CHECK ( 0 == create_gctFstat_toplist ( &semiCohToplist2, uvar_nCand1, SORTBY_BSGL ),
+                   XLAL_EFUNC, "create_gctFstat_toplist() failed for nCand=%d and sortBy=%d\n", uvar_nCand1, SORTBY_BSGL );
     }
   else	// 'normal' single-sorting toplist cases (sortby 'F', 'nc' or 'BSGL')
     {
-      XLAL_CHECK ( 0 == create_gctFStat_toplist ( &semiCohToplist, uvar_nCand1, uvar_SortToplist),
-                   XLAL_EFUNC, "create_gctFStat_toplist() failed for nCand=%d and sortBy=%d\n", uvar_nCand1, uvar_SortToplist );
+      XLAL_CHECK ( 0 == create_gctFstat_toplist ( &semiCohToplist, uvar_nCand1, uvar_SortToplist),
+                   XLAL_EFUNC, "create_gctFstat_toplist() failed for nCand=%d and sortBy=%d\n", uvar_nCand1, uvar_SortToplist );
     }
 
 #ifdef EAH_BOINC
@@ -1796,8 +1796,8 @@ int MAIN( int argc, char *argv[]) {
     LALFree(coarsegrid.Uindex);
   }
 
-  free_gctFStat_toplist ( &semiCohToplist );
-  if ( semiCohToplist2 ) free_gctFStat_toplist ( &semiCohToplist2 );
+  free_gctFstat_toplist ( &semiCohToplist );
+  if ( semiCohToplist2 ) free_gctFstat_toplist ( &semiCohToplist2 );
 
   XLALDestroyBSGLSetup ( usefulParams.BSGLsetup );
 
@@ -2352,8 +2352,8 @@ void UpdateSemiCohToplists ( LALStatus *status,
       line.avTwoFX[X] = 0.0;
       line.avTwoFXrecalc[X] = 0.0;
     }
-    line.avTwoFrecalc = -1.0; /* initialise this to -1.0, so that it only gets written out by print_gctFStatline_to_str if later overwritten in recalcToplistStats step */
-    line.log10BSGLrecalc = -LAL_REAL4_MAX; /* for now, block field with minimal value, needed for output checking in print_gctFStatline_to_str() */
+    line.avTwoFrecalc = -1.0; /* initialise this to -1.0, so that it only gets written out by print_gctFstatline_to_str if later overwritten in recalcToplistStats step */
+    line.log10BSGLrecalc = -LAL_REAL4_MAX; /* for now, block field with minimal value, needed for output checking in print_gctFstatline_to_str() */
     line.have_f3dot = have_f3dot;
     line.loudestSeg = -1;
     line.twoFloudestSeg = -1.0;
@@ -2376,10 +2376,10 @@ void UpdateSemiCohToplists ( LALStatus *status,
         ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
       }
       if ( line.log10BSGL < -LAL_REAL4_MAX*0.1 )
-        line.log10BSGL = -LAL_REAL4_MAX*0.1; /* avoid minimum value, needed for output checking in print_gctFStatline_to_str() */
+        line.log10BSGL = -LAL_REAL4_MAX*0.1; /* avoid minimum value, needed for output checking in print_gctFstatline_to_str() */
     }
     else {
-      line.log10BSGL = -LAL_REAL4_MAX; /* in non-BSGL case, block field with minimal value, needed for output checking in print_gctFStatline_to_str() */
+      line.log10BSGL = -LAL_REAL4_MAX; /* in non-BSGL case, block field with minimal value, needed for output checking in print_gctFstatline_to_str() */
     }
 
     /* take F-stat averages over segments */
@@ -2390,9 +2390,9 @@ void UpdateSemiCohToplists ( LALStatus *status,
       }
     }
 
-    insert_into_gctFStat_toplist( list1, line);
+    insert_into_gctFstat_toplist( list1, line);
     if ( list2 )	// also insert candidate into (optional) second toplist
-      insert_into_gctFStat_toplist( list2, line);
+      insert_into_gctFstat_toplist( list2, line);
 
   }
 

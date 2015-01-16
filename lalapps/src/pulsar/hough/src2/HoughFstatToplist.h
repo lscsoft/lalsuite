@@ -30,14 +30,14 @@ typedef struct {
   REAL8 f1dot;		/**< spindown value f1dot = df/dt */
   REAL8 Alpha; 		/**< Skyposition: longitude in equatorial coords, radians */
   REAL8 Delta;		/**< skyposition: latitude */
-  REAL8 HoughFStat;	/**< Hough significance */
+  REAL8 HoughFstat;	/**< Hough significance */
   REAL8 AlphaBest;      /**< skyposition of best candidate: longitude */
   REAL8 DeltaBest;      /**< skyposition of best candidate: latitude */
   REAL8 MeanSig;        /**< mean of significance values in hough map*/
   REAL8 VarianceSig;    /**< variance of significance values in hough map*/
   REAL4 sumTwoF;        /**< sum of 2F-values as recomputed in LV postprocessing */
   REAL4Vector *sumTwoFX; /**< sum of 2F-values per detector, computed in LV postprocessing */
-} HoughFStatOutputEntry;
+} HoughFstatOutputEntry;
 
 
 /* This has by now been reduced to an interface to the HeapToplist functions */
@@ -46,10 +46,10 @@ typedef struct {
  * creates a toplist with length elements,
  * returns -1 on error (usually out of memory), else 0
  */
-extern int create_houghFStat_toplist(toplist_t**list, UINT8 length);
+extern int create_houghFstat_toplist(toplist_t**list, UINT8 length);
 
 /** frees the space occupied by the toplist */
-extern void free_houghFStat_toplist(toplist_t**list);
+extern void free_houghFstat_toplist(toplist_t**list);
 
 /**
  * Inserts an element in to the toplist either if there is space left
@@ -57,7 +57,7 @@ extern void free_houghFStat_toplist(toplist_t**list);
  * In the latter case, remove the smallest element from the toplist
  * Returns 1 if the element was actually inserted, 0 if not.
  */
-extern int insert_into_houghFStat_toplist(toplist_t*list, HoughFStatOutputEntry line);
+extern int insert_into_houghFstat_toplist(toplist_t*list, HoughFstatOutputEntry line);
 
 /**
  * Writes the toplist to an (already open) filepointer
@@ -65,7 +65,7 @@ extern int insert_into_houghFStat_toplist(toplist_t*list, HoughFStatOutputEntry 
  * sets the checksum if non-NULL
  * Returns something <0 on error
  */
-extern int write_houghFStat_toplist_to_fp(toplist_t*list, FILE*fp, UINT4*checksum);
+extern int write_houghFstat_toplist_to_fp(toplist_t*list, FILE*fp, UINT4*checksum);
 
 /**
  * reads a (created!) toplist from an open filepointer
@@ -76,13 +76,13 @@ extern int write_houghFStat_toplist_to_fp(toplist_t*list, FILE*fp, UINT4*checksu
  * -1 if the file contained a syntax error,
  * -2 if given an improper toplist
  */
-extern int read_houghFStat_toplist_from_fp(toplist_t*list, FILE*fp, UINT4*checksum, UINT4 maxbytes);
+extern int read_houghFstat_toplist_from_fp(toplist_t*list, FILE*fp, UINT4*checksum, UINT4 maxbytes);
 
 /**
  * sorts the toplist with an internal sorting function,
  * used before finally writing it
  */
-extern void sort_houghFStat_toplist(toplist_t*list);
+extern void sort_houghFstat_toplist(toplist_t*list);
 
 
 
@@ -90,11 +90,11 @@ extern void sort_houghFStat_toplist(toplist_t*list);
 /** File IO */
 
 /**
- * writes an HoughFStatOutputEntry line to an open filepointer.
+ * writes an HoughFstatOutputEntry line to an open filepointer.
  * Returns the number of chars written, -1 if in error
  * Updates checksum if given (i.e. not NULL)
  */
-extern int write_houghFStat_toplist_item_to_fp(HoughFStatOutputEntry line, FILE*fp, UINT4*checksum);
+extern int write_houghFstat_toplist_item_to_fp(HoughFstatOutputEntry line, FILE*fp, UINT4*checksum);
 
 /**
  * writes the given toplitst to a temporary file, then renames the
@@ -102,15 +102,15 @@ extern int write_houghFStat_toplist_item_to_fp(HoughFStatOutputEntry line, FILE*
  * derived from the filename by appending ".tmp". Returns the number
  * of chars written or -1 if the temp file could not be opened.
  */
-extern int atomic_write_houghFStat_toplist_to_file(toplist_t*list, const char*filename, UINT4*checksum);
+extern int atomic_write_houghFstat_toplist_to_file(toplist_t*list, const char*filename, UINT4*checksum);
 
 /**
  * meant for the final writing of the toplist
  * - reduces toplist precision
  * - sorts the toplist
- * - finally calls atomic_write_houghFStat_toplist_to_file()
+ * - finally calls atomic_write_houghFstat_toplist_to_file()
  */
-extern int final_write_houghFStat_toplist_to_file(toplist_t*list, const char*filename, UINT4*checksum);
+extern int final_write_houghFstat_toplist_to_file(toplist_t*list, const char*filename, UINT4*checksum);
 
 
 

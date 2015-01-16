@@ -445,8 +445,8 @@ int final_write_fstat_toplist_to_file(toplist_t *l, const char *filename, UINT4*
 
 
 
-/* sets up a FStatCheckpointFile from parameters */
-int fstat_cpt_file_create (FStatCheckpointFile **cptf,
+/* sets up a FstatCheckpointFile from parameters */
+int fstat_cpt_file_create (FstatCheckpointFile **cptf,
 			   CHAR  *filename,
 			   UINT4 bufsize,
 			   UINT4 maxsize,
@@ -463,7 +463,7 @@ int fstat_cpt_file_create (FStatCheckpointFile **cptf,
   }
 
   /* allocation */
-  *cptf = LALMalloc(sizeof(FStatCheckpointFile));
+  *cptf = LALMalloc(sizeof(FstatCheckpointFile));
   if (!(*cptf)) {
     LogPrintf (LOG_CRITICAL, "ERROR: out of memeory (fstat_cpt_file_create)\n");
     return(-1);
@@ -502,10 +502,10 @@ int fstat_cpt_file_create (FStatCheckpointFile **cptf,
 
 
 
-/* destroys a FStatCheckpointFile structure */
-int fstat_cpt_file_destroy (FStatCheckpointFile **cptf) {
+/* destroys a FstatCheckpointFile structure */
+int fstat_cpt_file_destroy (FstatCheckpointFile **cptf) {
   if (!cptf) {
-    LogPrintf (LOG_CRITICAL, "ERROR: FStatCheckpointFile is NULL\n");
+    LogPrintf (LOG_CRITICAL, "ERROR: FstatCheckpointFile is NULL\n");
     return(-1);
   }
   if((*cptf)->filename)
@@ -520,9 +520,9 @@ int fstat_cpt_file_destroy (FStatCheckpointFile **cptf) {
 
 
 /* opens the file named in the structure (for writing) and attaches an output buffer if specified */
-int fstat_cpt_file_open (FStatCheckpointFile *cptf) {
+int fstat_cpt_file_open (FstatCheckpointFile *cptf) {
   if (!cptf) {
-    LogPrintf (LOG_CRITICAL, "ERROR: FStatCheckpointFile is NULL\n");
+    LogPrintf (LOG_CRITICAL, "ERROR: FstatCheckpointFile is NULL\n");
     return(-1);
   }
   /* try open for appending if the file already exists */
@@ -547,9 +547,9 @@ int fstat_cpt_file_open (FStatCheckpointFile *cptf) {
 
 
 /* flushes the checkpoint file (only useful if buffered) */
-int fstat_cpt_file_flush (FStatCheckpointFile *cptf) {
+int fstat_cpt_file_flush (FstatCheckpointFile *cptf) {
   if (!cptf) {
-    LogPrintf (LOG_CRITICAL, "ERROR: FStatCheckpointFile is NULL\n");
+    LogPrintf (LOG_CRITICAL, "ERROR: FstatCheckpointFile is NULL\n");
     return(-1);
   }
   if (!(cptf->fp)) {
@@ -562,10 +562,10 @@ int fstat_cpt_file_flush (FStatCheckpointFile *cptf) {
 
 
 /* returns information for checkpointing */
-extern int fstat_cpt_file_info (FStatCheckpointFile *cptf,
+extern int fstat_cpt_file_info (FstatCheckpointFile *cptf,
 				CHAR**filename, UINT4*bytes, UINT4*checksum) {
   if (!cptf) {
-    LogPrintf (LOG_CRITICAL, "ERROR: FStatCheckpointFile is NULL\n");
+    LogPrintf (LOG_CRITICAL, "ERROR: FstatCheckpointFile is NULL\n");
     return(-1);
   }
   if (filename)
@@ -579,9 +579,9 @@ extern int fstat_cpt_file_info (FStatCheckpointFile *cptf,
 
 
 /* closes and compacts the file */
-int fstat_cpt_file_close(FStatCheckpointFile*cptf) {
+int fstat_cpt_file_close(FstatCheckpointFile*cptf) {
   if (!cptf) {
-    LogPrintf (LOG_CRITICAL, "ERROR: FStatCheckpointFile is NULL\n");
+    LogPrintf (LOG_CRITICAL, "ERROR: FstatCheckpointFile is NULL\n");
     return(-1);
   }
   fclose(cptf->fp);
@@ -604,7 +604,7 @@ int fstat_cpt_file_close(FStatCheckpointFile*cptf) {
    returns 1 if the item was actually inserted, 0 if not,
    -1 in case of an error
  */
-int fstat_cpt_file_add (FStatCheckpointFile*cptf, FstatOutputEntry line) {
+int fstat_cpt_file_add (FstatCheckpointFile*cptf, FstatOutputEntry line) {
   int ret, bytes;
 
   ret = insert_into_toplist(cptf->list, &line);
@@ -634,11 +634,11 @@ int fstat_cpt_file_add (FStatCheckpointFile*cptf, FstatOutputEntry line) {
     1 if we found a %DONE marker at the end,
    -1 if the file contained a syntax error,
    -2 if given an improper toplist */
-int fstat_cpt_file_read (FStatCheckpointFile*cptf, UINT4 checksum_should, UINT4 maxbytes) {
+int fstat_cpt_file_read (FstatCheckpointFile*cptf, UINT4 checksum_should, UINT4 maxbytes) {
   INT4  bytes;
   UINT4 checksum_read;
   if (!cptf) {
-    LogPrintf (LOG_CRITICAL, "ERROR: FStatCheckpointFile is NULL\n");
+    LogPrintf (LOG_CRITICAL, "ERROR: FstatCheckpointFile is NULL\n");
     return(-1);
   }
 
@@ -685,7 +685,7 @@ int fstat_cpt_file_read (FStatCheckpointFile*cptf, UINT4 checksum_should, UINT4 
 
 
 /* compacts a checkpointed toplist, i.e. re-writes it from scratch from memory */
-int fstat_cpt_file_compact(FStatCheckpointFile*cptf) {
+int fstat_cpt_file_compact(FstatCheckpointFile*cptf) {
   INT4  bytes;
   UINT4 checksum;
 

@@ -124,45 +124,45 @@ typedef struct {
   UINT4 checksum;    /**< keeps the checksum */
   FILE* fp;          /**< FILE* currently associated */
   toplist_t*list;    /**< toplist this file reflects */
-} FStatCheckpointFile;
+} FstatCheckpointFile;
 
-/** creates a FStatCheckpointFile */
-extern int fstat_cpt_file_create (FStatCheckpointFile **cptf,
+/** creates a FstatCheckpointFile */
+extern int fstat_cpt_file_create (FstatCheckpointFile **cptf,
 				  CHAR  *filename,
 				  UINT4 bufsize,
 				  UINT4 maxsize,
 				  toplist_t*tl);
 
-/** destroys a FStatCheckpointFile */
-extern int fstat_cpt_file_destroy (FStatCheckpointFile **cptf);
+/** destroys a FstatCheckpointFile */
+extern int fstat_cpt_file_destroy (FstatCheckpointFile **cptf);
 
 /** opens a file for checkpointing the desired toplist */
-extern int fstat_cpt_file_open (FStatCheckpointFile *cptf);
+extern int fstat_cpt_file_open (FstatCheckpointFile *cptf);
 
 /** flushes the checkpoint file (only useful if buffered) */
-extern int fstat_cpt_file_flush (FStatCheckpointFile *cptf);
+extern int fstat_cpt_file_flush (FstatCheckpointFile *cptf);
 
 /** returns information for checkpointing */
-extern int fstat_cpt_file_info (FStatCheckpointFile *cptf, CHAR**filename, UINT4*bytes, UINT4*checksum);
+extern int fstat_cpt_file_info (FstatCheckpointFile *cptf, CHAR**filename, UINT4*bytes, UINT4*checksum);
 
 /**
  * adds an item to the toplist and keeps the file consistent, i.e.
  * adds the entry to the file if it was really inserted
  * and compacts the file if necessary
  */
-extern int fstat_cpt_file_add  (FStatCheckpointFile*cptf, FstatOutputEntry line);
+extern int fstat_cpt_file_add  (FstatCheckpointFile*cptf, FstatOutputEntry line);
 
 /**
  * closes the file, reduces the precision, sorts the toplist,
  * finally rewrites the file (sorted and compact) with end marker
  */
-extern int fstat_cpt_file_close(FStatCheckpointFile*cptf);
+extern int fstat_cpt_file_close(FstatCheckpointFile*cptf);
 
 /** reads a written checkpointed toplist back into memory */
-extern int fstat_cpt_file_read (FStatCheckpointFile*cptf, UINT4 checksum, UINT4 maxbytes);
+extern int fstat_cpt_file_read (FstatCheckpointFile*cptf, UINT4 checksum, UINT4 maxbytes);
 
 /** compact a toplist file if the length has reached maxbytes */
-extern int fstat_cpt_file_compact(FStatCheckpointFile*cptf);
+extern int fstat_cpt_file_compact(FstatCheckpointFile*cptf);
 
 /** new, simpler checkpointing for HierarchicalSearch */
 

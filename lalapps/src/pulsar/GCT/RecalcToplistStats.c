@@ -55,10 +55,10 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,				/**< list of cancidate
   if (strcmp(recalcParams->listEntryTypeName, "GCTtop") == 0 ) {
     listEntryType = 1;
   }
-  if (strcmp(recalcParams->listEntryTypeName, "HoughFStat") == 0 ) {
+  if (strcmp(recalcParams->listEntryTypeName, "HoughFstat") == 0 ) {
     listEntryType = 2;
   }
-  XLAL_CHECK ( listEntryType != 0, XLAL_EBADLEN, "Unsupported entry type for input toplist! Supported types currently are: GCTtop, HoughFStat." );
+  XLAL_CHECK ( listEntryType != 0, XLAL_EBADLEN, "Unsupported entry type for input toplist! Supported types currently are: GCTtop, HoughFstat." );
 
   /* set up temporary variables and structs */
   PulsarDopplerParams XLAL_INIT_DECL(candidateDopplerParams); /* struct containing sky position, frequency and fdot for the current candidate */
@@ -88,7 +88,7 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,				/**< list of cancidate
         candidateDopplerParams.fkdot[2] = elem->F2dot;
       }
       else if ( listEntryType == 2 ) {
-        HoughFStatOutputEntry *elem = toplist_elem ( list, j );
+        HoughFstatOutputEntry *elem = toplist_elem ( list, j );
         elemV = elem;
 
         XLAL_CHECK ( (elem->sumTwoFX = XLALCreateREAL4Vector ( numDetectors )) != NULL, XLAL_EFUNC, "Failed call to XLALCreateREAL4Vector( %d ).", numDetectors );
@@ -98,7 +98,7 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,				/**< list of cancidate
         candidateDopplerParams.Delta = elem->DeltaBest;
         candidateDopplerParams.fkdot[0] = elem->Freq;
         candidateDopplerParams.fkdot[1] = elem->f1dot;
-        /* no 2nd spindown in HoughFStatOutputEntry */
+        /* no 2nd spindown in HoughFstatOutputEntry */
       } /* if listEntryType 2 */
 
       /*  recalculate multi- and single-IFO Fstats for all segments for this candidate */
@@ -124,7 +124,7 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,				/**< list of cancidate
           }
       } /* if ( listEntryType == 1 ) */
       else if ( listEntryType == 2 ) {
-          HoughFStatOutputEntry *elem = elemV;
+          HoughFstatOutputEntry *elem = elemV;
 
           elem->sumTwoF = recalcStats.avTwoF; /* this is also the average over segments, the field is only called "sumTwoF" due to Hough legacy */
           for ( X = 0; X < numDetectors; X ++ ) {
