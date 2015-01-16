@@ -255,7 +255,7 @@ char *LALInferenceGetVariableName(LALInferenceVariables *vars, int idx);
  * Pass a void * in \c value to the value you wish to set,
  * i.e. LALInferenceSetVariable(vars, "mu", (void *)&mu);
  */
-void LALInferenceSetVariable(LALInferenceVariables * vars, const char * name, void * value);
+void LALInferenceSetVariable(LALInferenceVariables * vars, const char * name, const void * value);
 
 /**
  * Add a variable named \c name to \c vars with initial value referenced by \c value
@@ -266,7 +266,7 @@ void LALInferenceSetVariable(LALInferenceVariables * vars, const char * name, vo
  * \param value UNDOCUMENTED
  * If the variable already exists it will be over-written UNLESS IT HAS A CONFLICTING TYPE
  */
-void LALInferenceAddVariable(LALInferenceVariables * vars, const char * name, void * value, 
+void LALInferenceAddVariable(LALInferenceVariables * vars, const char * name, const void * value, 
 	LALInferenceVariableType type, LALInferenceParamVaryType vary);
 
 /**

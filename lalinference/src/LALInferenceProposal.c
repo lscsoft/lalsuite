@@ -308,7 +308,7 @@ void LALInferenceSetupDefaultNSProposal(LALInferenceRunState *runState, LALInfer
   if(!runState->proposalStats) runState->proposalStats = XLALCalloc(1,sizeof(LALInferenceVariables));
 
   if(!LALInferenceCheckVariable(runState->proposalArgs,LALInferenceCurrentProposalName))
-      LALInferenceAddVariable(runState->proposalArgs,LALInferenceCurrentProposalName, (void*)&defaultPropName, LALINFERENCE_string_t, LALINFERENCE_PARAM_OUTPUT);
+      LALInferenceAddVariable(runState->proposalArgs,LALInferenceCurrentProposalName, &defaultPropName, LALINFERENCE_string_t, LALINFERENCE_PARAM_OUTPUT);
 
   LALInferenceCopyVariables(currentParams, proposedParams);
 
@@ -424,7 +424,7 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *curr
 
   ProcessParamsTable *ppt;
   if(!LALInferenceCheckVariable(runState->proposalArgs,LALInferenceCurrentProposalName))
-      LALInferenceAddVariable(runState->proposalArgs,LALInferenceCurrentProposalName, (void*)&defaultPropName, LALINFERENCE_string_t, LALINFERENCE_PARAM_OUTPUT);
+      LALInferenceAddVariable(runState->proposalArgs,LALInferenceCurrentProposalName, &defaultPropName, LALINFERENCE_string_t, LALINFERENCE_PARAM_OUTPUT);
 
   LALInferenceCopyVariables(currentParams, proposedParams);
 
