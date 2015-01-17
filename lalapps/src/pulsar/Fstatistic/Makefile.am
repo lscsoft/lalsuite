@@ -6,7 +6,7 @@ bin_PROGRAMS = \
 	lalapps_compareFstats\
 	lalapps_PredictFstat \
 	lalapps_ComputeFstatistic_v2 \
-	lalapps_ComputeFstatAnalyticMonteCarloUpperLimit \
+	lalapps_ComputeFstatMCUpperLimit \
 	lalapps_synthesizeBstatMC \
 	lalapps_synthesizeTransientStats \
 	lalapps_synthesizeLVStats
@@ -37,7 +37,7 @@ eah_ComputeFstatistic_v2_SOURCES = \
 	$(ComputeFstatisticV2Sources) \
 	../hough/src2/EinsteinAtHome/win_lib.cpp
 
-lalapps_ComputeFstatAnalyticMonteCarloUpperLimit_SOURCES = ComputeFstatAnalyticMonteCarloUpperLimit.c
+lalapps_ComputeFstatMCUpperLimit_SOURCES = ComputeFstatMCUpperLimit.c
 
 lalapps_synthesizeBstatMC_SOURCES = synthesizeBstatMC.c
 

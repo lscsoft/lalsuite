@@ -153,7 +153,7 @@ src/power/sense_compare
 src/pulsar/CombSearch/lalapps_CombSearch
 src/pulsar/CreateEphemeris/lalapps_create_solar_system_ephemeris
 src/pulsar/CreateEphemeris/lalapps_create_time_correction_ephemeris
-src/pulsar/Fstatistic/lalapps_ComputeFstatAnalyticMonteCarloUpperLimit
+src/pulsar/Fstatistic/lalapps_ComputeFstatMCUpperLimit
 src/pulsar/Fstatistic/lalapps_ComputeFstatistic_v2
 src/pulsar/Fstatistic/lalapps_PredictFstat
 src/pulsar/Fstatistic/lalapps_SemiAnalyticF
