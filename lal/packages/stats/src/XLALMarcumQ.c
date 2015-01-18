@@ -28,10 +28,6 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-
-#pragma GCC diagnostic ignored "-Wshadow"
-
-
 /*
  * ============================================================================
  *
@@ -223,9 +219,9 @@ static double theta_over_sin_theta_primed_sin_theta(double theta)
 }
 
 
-static double rho(double theta_over_sin_theta, double xi)
+static double rho(double theta_over_sin_theta_, double xi)
 {
-	return sqrt(theta_over_sin_theta * theta_over_sin_theta + xi * xi);
+	return sqrt(theta_over_sin_theta_ * theta_over_sin_theta_ + xi * xi);
 }
 
 
@@ -343,7 +339,7 @@ static double MarcumQ_large_xy(double M, double x, double y, double xi)
 
 	/* equation (31) */
 	double sigma = root_y_minus_root_x * root_y_minus_root_x / xi;
-	double rho = sqrt(y / x);
+	double rho_ = sqrt(y / x);
 
 	double rho_to_M_over_root_8_pi = pow(y / x, M / 2.) / sqrt(8. * LAL_PI);
 	double e_to_neg_sigma_xi_over_xi_to_n_minus_half = exp(-root_y_minus_root_x * root_y_minus_root_x) * sqrt(xi);
@@ -414,7 +410,7 @@ static double MarcumQ_large_xy(double M, double x, double y, double xi)
 	 * initialization of the sum.  we've chosen to initialize the x==y
 	 * case to 0, so the correct sign for Psi_{0} is positive.
 	 */
-	double Psi = rho == 1. ? .5 : copysign(pow(rho, M - .5) * gsl_sf_erfc(fabs(root_y_minus_root_x)) / 2., rho - 1.);
+	double Psi = rho_ == 1. ? .5 : copysign(pow(rho_, M - .5) * gsl_sf_erfc(fabs(root_y_minus_root_x)) / 2., rho_ - 1.);
 
 	double sum = x > y ? 1. : 0.;
 	int n = 0;
@@ -436,7 +432,7 @@ static double MarcumQ_large_xy(double M, double x, double y, double xi)
 
 		/* Psi_{n} from Phi_{n}.  equation (38) */
 		double lnA_n_M_minus_1 = lnA(n, M - 1.);
-		Psi = rho_to_M_over_root_8_pi * exp(lnA_n_M_minus_1) * (1. - exp(lnA(n, M) - lnA_n_M_minus_1) / rho) * Phi;
+		Psi = rho_to_M_over_root_8_pi * exp(lnA_n_M_minus_1) * (1. - exp(lnA(n, M) - lnA_n_M_minus_1) / rho_) * Phi;
 	} while(1);
 
 	/*
@@ -631,7 +627,7 @@ double XLALMarcumQmodified(double M, double x, double y)
 {
 	double xi;
 	double f1, f2;
-	double Q;
+	double Q_;
 
 	/*
 	 * check input
@@ -667,19 +663,19 @@ double XLALMarcumQmodified(double M, double x, double y)
 		 * use the series expansion in section 3
 		 */
 
-		Q = MarcumQ_small_x(M, x, y);
+		Q_ = MarcumQ_small_x(M, x, y);
 	} else if(xi > 30. && M * M < 2. * xi) {
 		/*
 		 * use the asymptotic expansion in section 4.1
 		 */
 
-		Q = MarcumQ_large_xy(M, x, y, xi);
+		Q_ = MarcumQ_large_xy(M, x, y, xi);
 	} else if(f1 < y && y < f2 && M < 135.) {
 		/*
 		 * use the recurrence relations in (14)
 		 */
 
-		Q = MarcumQ_recurrence(M, x, y, xi);
+		Q_ = MarcumQ_recurrence(M, x, y, xi);
 	} else if(f1 < y && y < f2 && M >= 135.) {
 		/*
 		 * use the asymptotic expansion in section 4.2
@@ -689,13 +685,13 @@ double XLALMarcumQmodified(double M, double x, double y)
 		 * this code path */
 		XLAL_ERROR_REAL8(XLAL_EDOM, "not implemented: %s(%.16g, %.16g, %.16g)", __func__, M, x, y);
 
-		Q = MarcumQ_large_M(M - 1., x / (M - 1.), y / (M - 1.));
+		Q_ = MarcumQ_large_M(M - 1., x / (M - 1.), y / (M - 1.));
 	} else {
 		/*
 		 * use the integral representation in section 5
 		 */
 
-		Q = MarcumQ_quadrature(M, x / M, y / M, xi / M);
+		Q_ = MarcumQ_quadrature(M, x / M, y / M, xi / M);
 	}
 
 	/*
@@ -704,13 +700,13 @@ double XLALMarcumQmodified(double M, double x, double y)
 	 * allowed range.
 	 */
 
-	if(1. < Q && Q < 1. + 1e-12)
-		Q = 1.;
+	if(1. < Q_ && Q_ < 1. + 1e-12)
+		Q_ = 1.;
 
-	if(Q < 0. || Q > 1.)
-		XLAL_ERROR_REAL8(XLAL_ERANGE, "%s(%.17g, %.17g, %.17g) = %.17g", __func__, M, x, y, Q);
+	if(Q_ < 0. || Q_ > 1.)
+		XLAL_ERROR_REAL8(XLAL_ERANGE, "%s(%.17g, %.17g, %.17g) = %.17g", __func__, M, x, y, Q_);
 
-	return Q;
+	return Q_;
 }
 
 
