@@ -132,16 +132,6 @@ void
 LALGSLErrorHandler(const char *reason,
                    const char *file, int line, int errnum);
 
-#ifdef LAL_PTHREAD_LOCK
-#include <pthread.h>
-extern pthread_mutex_t lalGSLPthreadMutex;
-#define LALGSL_PTHREAD_MUTEX_LOCK pthread_mutex_lock( &lalGSLPthreadMutex )
-#define LALGSL_PTHREAD_MUTEX_UNLOCK pthread_mutex_unlock( &lalGSLPthreadMutex )
-#else
-#define LALGSL_PTHREAD_MUTEX_LOCK  ((void)(0))
-#define LALGSL_PTHREAD_MUTEX_UNLOCK  ((void)(0))
-#endif
-
 /*
  *
  * FIXME: Must disable pthread safety commands.... Problems arise if the
@@ -157,14 +147,14 @@ extern pthread_mutex_t lalGSLPthreadMutex;
     gsl_error_handler_t *saveGSLErrorHandler_;                                \
     if ( !( (statusptr)->statusPtr ) )                                        \
       { ABORT( (statusptr), -8, "CALLGSL: null status pointer pointer" ); }   \
-    /* LALGSL_PTHREAD_MUTEX_LOCK; */                                          \
+    /* XLALGSL_PTHREAD_MUTEX_LOCK; */                                         \
     saveGSLErrorHandler_ = gsl_set_error_handler( LALGSLErrorHandler );       \
     saveLALGSLGlobalStatusPtr_ = lalGSLGlobalStatusPtr;                       \
     lalGSLGlobalStatusPtr = (statusptr)->statusPtr;                           \
     statement;                                                                \
     lalGSLGlobalStatusPtr = saveLALGSLGlobalStatusPtr_;                       \
     gsl_set_error_handler( saveGSLErrorHandler_ );                            \
-    /* LALGSL_PTHREAD_MUTEX_UNLOCK; */                                        \
+    /* XLALGSL_PTHREAD_MUTEX_UNLOCK; */                                       \
   }                                                                           \
   else                                                                        \
     lalAbortHook( "Abort: CALLGSL, file %s, line %d\n"                        \
