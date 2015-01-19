@@ -24,6 +24,14 @@
  *                                                                         *
  ***************************************************************************/
 
+#ifdef  __MINGW64__
+#ifdef __x86_64
+#include "exchndl64.c"
+#else
+#include "exchndl32.c"
+#endif
+#else /* MINGW64 */
+
 #include <assert.h>
 #include <windows.h>
 #include <tchar.h>
@@ -1134,3 +1142,4 @@ BOOL APIENTRY DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved)
 	return TRUE;
 }
 #endif
+#endif /* MINGW64 */

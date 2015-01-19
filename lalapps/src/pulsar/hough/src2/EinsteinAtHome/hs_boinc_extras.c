@@ -229,6 +229,9 @@ void mytime(void) {
 
 /*^* global VARIABLES *^*/
 
+/** E@H lal debug level */
+unsigned int eah_lal_debug_level = EAH_LALDEBUGLEVEL;
+
 /** the cpu type, see cpu_type_features.h */
 int global_cpu_type;
 
@@ -252,6 +255,10 @@ extern int gpu_device_id;
  */
 static double estimated_flops = -1.0;
 
+/** how many workunits are bundled */
+int bundle_size = 0;
+/** number of current WU in bundle (or config file on command line during parsing) */
+int current_config_file = 0;
 
 /** worker() doesn't take arguments, so we have to pass it argv/c as global vars :-( */
 int global_argc;
@@ -412,7 +419,9 @@ int BOINC_LAL_ErrHand (LALStatus  *status,
 #include <ucontext.h>
 /* see https://bugzilla.redhat.com/show_bug.cgi?id=234560 */
 #ifdef __x86_64__
+#ifdef  REG_RIP
 #define REG_EIP REG_RIP
+#endif
 #define FP_SW swd
 #else  /*  __x86_64__ */
 #define FP_SW sw
@@ -494,7 +503,12 @@ static void sighandler(int sig)
     fputs(myltoa(nostackframes, buf, sizeof(buf)), stderr);
     fputs(" stack frames obtained for this thread:\n", stderr);
     /* overwrite sigaction with caller's address */
+#ifndef REWRITE_STACK_SIGACTION
+#define REWRITE_STACK_SIGACTION 1
+#endif
+#if REWRITE_STACK_SIGACTION && defined(REG_EIP)
     stackframes[1] = (void *) uc->uc_mcontext.gregs[REG_EIP];
+#endif
     fputs("Use gdb command: 'info line *0xADDRESS' to print corresponding line numbers.\n",stderr);
     backtrace_symbols_fd(stackframes, nostackframes, fileno(stderr));
 #if defined(__i386__) && defined(EXT_STACKTRACE)
@@ -563,7 +577,11 @@ void show_progress(REAL8 rac,   /**< right ascension */
 		   REAL8 freq,  /**< base frequency */
 		   REAL8 fband  /**< frequency bandwidth */
 		   ) {
-  double fraction = count / total;
+  double fraction;
+  if (bundle_size)
+    fraction = ( current_config_file + count / total ) / bundle_size;
+  else
+    fraction = count / total;
 
   /* set globals to be written into next checkpoint */
   last_count = count;
@@ -766,6 +784,18 @@ static int resolve_and_unzip(const char*filename, /**< filename to resolve */
  * boinc-resolving filenames), then calls MAIN() (from HierarchicalSearch.c), and
  * finally handles the output / result file(s) before exiting with boinc_finish().
  */
+/**
+ * rules for "bundled" workunits
+ * - the command-line needs to begin with --BundleSize=<no_wus>
+ * - each WU within a bundle must have its own config file specified on the command line
+ *   the number of config files on the command-line must equal the bundle_size
+ * - the config file should not refer to any files, as filenames in the config files are noy 'boinc_resolve'd
+ *   in particular skygrid- and SFT files need to be specified on the command-line, thus being the
+ *   same for all WUs of a bundle
+ * - only a single output file (toplist) per WU is allowed
+ *   the output file must be specified as a separate argument to the '-o' option,
+ *   e.g. '-o outputfile', NOT '--OutputFile=outputfile'
+ */
 static void worker (void) {
   int argc    = global_argc;   /**< as worker is defined void worker(void), ... */
   char**argv  = global_argv;   /**< ...  take argc and argv from global variables */
@@ -788,6 +818,11 @@ static void worker (void) {
   int test_snan = 0;
   int test_sqrt = 0;
 
+  char**config_files = NULL;     /**< list of (boinc-resolved) config files, omne for each WU in bundle */
+  char**config_file_arg = NULL;  /**< points to a placeholder for the config file in the command-line paased to MAIN() */
+  char wu_result_file[MAX_PATH_LEN];
+
+  int second_outfile = 0;        /**< flag: is there a second output file, i.e. --SortToplist=3 */
   int resultfile_present = 0;
 
   resultfile[0] = '\0';
@@ -826,8 +861,14 @@ static void worker (void) {
   /* for all args in the command line (except argv[0]) */
   for (arg=1; arg<argc; arg++) {
     
+    /* if this is a "workunit bundle", --BundleSize must be the first command-line option */
+    if (MATCH_START("--BundleSize=",argv[arg],l)) {
+      bundle_size = atoi(argv[arg]+l);
+      rarg--; rargc--; /* this argument is not passed to the main worker function */
+    }
+
     /* a possible config file is boinc_resolved, but filenames contained in it are not! */
-    if (argv[arg][0] == '@') {
+    else if (argv[arg][0] == '@') {
       rargv[rarg] = (char*)calloc(MAX_PATH_LEN,sizeof(char));
       if(!rargv[rarg]){
 	LogPrintf(LOG_CRITICAL, "Out of memory\n");
@@ -836,6 +877,20 @@ static void worker (void) {
       rargv[rarg][0] = '@';
       if (boinc_resolve_filename(argv[arg]+1,rargv[rarg]+1,MAX_PATH_LEN-1)) {
         LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve config file '%s'\n", argv[arg]+1);
+      }
+      if (bundle_size) {
+	config_files = realloc(config_files, sizeof(char*) * (current_config_file + 1));
+	if(!config_files){
+	  LogPrintf(LOG_CRITICAL, "Out of memory\n");
+	  boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EMEM);
+	}
+	config_files[current_config_file] = rargv[rarg];
+	if (current_config_file) {
+	  rarg--; rargc--; /* skip that config file */
+	} else {
+	  config_file_arg = &rargv[rarg]; /* save the place of the first config file in the command-line */
+	}
+	current_config_file ++;
       }
     }
 
@@ -1000,9 +1055,19 @@ static void worker (void) {
 	    if (readlink(resultfile,targetpath,sizeof(targetpath)) != -1)
 	      strncpy(resultfile,targetpath,sizeof(resultfile));
 #endif
-	    rargv[rarg] = resultfile;
+	    if (bundle_size) {
+	      rargv[rarg] = wu_result_file; /* this will get copied from resultfile later */
+	    } else {
+	      rargv[rarg] = resultfile;
+	    }
 	  }
 	}
+    }
+
+    /* record if there will be a second output file */
+    else if (!strcmp("--SortToplist=3",argv[arg])) {
+      rargv[rarg] = argv[arg];
+      second_outfile = -1;
     }
 
     /* set the "flops estimation" */
@@ -1069,24 +1134,16 @@ static void worker (void) {
     rarg++;
   } /* for all command line arguments */
 
-  /* sanity check */
+  /* sanity checks */
   if (!resultfile[0] && !output_help && !output_version) {
       LogPrintf (LOG_CRITICAL, "ERROR: no result file has been specified\n");
       res = HIERARCHICALSEARCH_EFILE;
   }
-
-
-#if DEBUG_COMMAND_LINE_MANGLING
-  /* debug: dump the modified command line */
-  {
-    int i;
-    fputs("command line:",stderr);
-    for(i=0;i<rargc;i++)
-      fprintf(stderr," %s",rargv[i]);
-    fprintf(stderr,"\n");
+  if (bundle_size != current_config_file) {
+    LogPrintf (LOG_CRITICAL, "ERROR: bundle size %d doesn't match number of config files %d\n",
+	       bundle_size, current_config_file);
+    res = HIERARCHICALSEARCH_EFILE;
   }
-#endif
-
 
   LogPrintf (LOG_DEBUG, "Flags: "
 #ifdef LAL_NDEBUG
@@ -1192,7 +1249,7 @@ static void worker (void) {
   if(test_sqrt)
     fprintf(stderr,"NaN:%f\n", sqrt(-1));
 
-  if((fp = boinc_fopen(resultfile,"r"))) {
+  if(!bundle_size && (fp = boinc_fopen(resultfile,"r"))) {
     fclose(fp);
     LogPrintf (LOG_NORMAL, "WARNING: Resultfile '%s' present - doing nothing\n", resultfile);
     resultfile_present = 1;
@@ -1206,19 +1263,89 @@ static void worker (void) {
 #endif
 
   /* if the program was called to output the version, output the BOINC revision, too */
-  if(output_version)
+  if(output_version) {
 #ifdef BUILD_INFO
     printf("%%%% " BUILD_INFO "\n");
 #endif
     printf("%%%% BOINC: " SVN_VERSION "\n");
+  }
+
+  /* rrargv will hold a copy of rargv, since apparently MAIN() / UserInput modifies the argv passed */
+  char**rrargv = (char**)malloc(rargc * sizeof(char*));
+  if(!rrargv){
+    LogPrintf(LOG_CRITICAL, "Out of memory\n");
+    boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EMEM);
+  }
 
   if (output_help || output_version || !resultfile_present) {
-    /* CALL WORKER's MAIN()
-     */
-    res = MAIN(rargc,rargv);
-    if (res) {
-      LogPrintf (LOG_CRITICAL, "ERROR: MAIN() returned with error '%d'\n",res);
-    }
+
+    /* loop over WUs in bundles */
+    current_config_file = 0;
+    do {
+
+      if (bundle_size) {
+	char buf[20];
+	unsigned int rlen = strlen(resultfile);
+	strcpy(wu_result_file, resultfile);
+	strcpy(&wu_result_file[rlen-1], myltoa(second_outfile ? current_config_file * 2 : current_config_file, buf, 20));
+	*config_file_arg = config_files[current_config_file];
+
+	if (fp = boinc_fopen(wu_result_file,"r")) {
+	  fclose(fp);
+	  LogPrintf (LOG_NORMAL, "WARNING: Resultfile '%s' present - skipping subWU#%d\n", wu_result_file, current_config_file);
+	  current_config_file ++;
+	  continue;
+	}
+      }
+
+      /* copy the modified command line, dump it when DEBUG_COMMAND_LINE_MANGLING */
+      {
+	int i;
+#if DEBUG_COMMAND_LINE_MANGLING
+	fputs("command line:",stderr);
+#endif
+	for(i=0;i<rargc;i++) {
+	  rrargv[i] = rargv[i];
+#if DEBUG_COMMAND_LINE_MANGLING
+	  if (rrargv[i]) {
+	    fputs(" ", stderr);
+	    fputs(rrargv[i],stderr);
+	  } else {
+	    fputs(" [NULL]", stderr);
+	  }
+#endif
+	}
+#if DEBUG_COMMAND_LINE_MANGLING
+	fputs("\n",stderr);
+#endif
+      }
+
+      /* CALL WORKER's MAIN()
+       */
+      res = MAIN(rargc,rrargv);
+      if (res) {
+	LogPrintf (LOG_CRITICAL, "ERROR: MAIN() returned with error '%d'\n",res);
+      }
+
+      /* if there is a file <wuname>_<instance>_0-LV, rename it to <wuname>_<instance>_1 */
+      if (second_outfile) {
+	unsigned int len = strlen(resultfile);
+	char*lv_file = (char*)malloc(len+6);
+	if (lv_file) {
+	  strcpy(lv_file, resultfile);
+	  strcat(lv_file, "-LV");
+	  if (boinc_file_exists(lv_file) && resultfile[len-1]=='0') {
+	    myltoa(current_config_file*2+1, &resultfile[len-1], 5);
+	    boinc_rename(lv_file,resultfile);
+	  }
+	} else {
+	  LogPrintf(LOG_CRITICAL,"ERROR: out of memory, can't allocate lv_file\n");
+	  res = HIERARCHICALSEARCH_EMEM;
+	}
+      }
+
+      current_config_file ++;
+    } while (!res && bundle_size && current_config_file < bundle_size);
 
 #ifdef __GNUX86__
     {
@@ -1246,8 +1373,7 @@ static void worker (void) {
 
   }
 
-
-  /* HANDLE OUTPUT FILES
+  /* FIXME: HANDLE OUTPUT FILES
    */
 
 #ifdef HAVE_BOINC_ZIP
@@ -1275,23 +1401,6 @@ static void worker (void) {
     }
   }
 #endif
-
-  /* if there is a file <wuname>_<instance>_0-LV, rename it to <wuname>_<instance>_1 */
-  {
-    unsigned int len = strlen(resultfile);
-    char*lv_file = (char*)malloc(len+4);
-    if (lv_file) {
-      strcpy(lv_file, resultfile);
-      strcat(lv_file, "-LV");
-      if (boinc_file_exists(lv_file) && resultfile[len-1]=='0') {
-	resultfile[len-1] = '1';
-	boinc_rename(lv_file,resultfile);
-      }
-    } else {
-      LogPrintf(LOG_CRITICAL,"ERROR: out of memory, can't allocate lv_file\n");
-      res = HIERARCHICALSEARCH_EMEM;
-    }
-  }
 
   LogPrintf (LOG_NORMAL, "done. calling boinc_finish(%d).\n",res);
   boinc_finish(boinc_finish_status=res);
@@ -1350,16 +1459,24 @@ int main(int argc, char**argv) {
       if ( 1 == fscanf(fp_debug, "%d", &read_int ) ) 
 	{
 	  LogPrintf (LOG_NORMAL, "...containing int: Setting lalDebugLevel -> %d\n", read_int );
+	  eah_lal_debug_level = read_int;
 	}
       else
 	{
 	  LogPrintf (LOG_NORMAL, "...with no parsable int: Setting lalDebugLevel -> 1\n");
+	  eah_lal_debug_level = 1;
 	}
       fclose (fp_debug);
 
     } /* if DEBUG_LEVEL_FNAME file found */
 
-  
+  {
+    char buf[8];
+    if (setenv("LAL_DEBUG_LEVEL", myultoa(eah_lal_debug_level, buf, 8), 1)) {
+      LogPrintf(LOG_CRITICAL,"ERROR: couldn't set LAL_DEBUG_LEVEL env: %d\n", errno);
+    }
+  }
+
 #if defined(__GNUC__)
   /* see if user has created a DEBUG_DDD_FNAME file: turn on debuggin using 'ddd' */
   if ((fp_debug=fopen("../../" DEBUG_DDD_FNAME, "r")) || (fp_debug=fopen("./" DEBUG_DDD_FNAME, "r")) ) 

@@ -29,7 +29,7 @@ lalapps_HierarchSearchGCT_SSE2_NONC_CFLAGS = $(AM_CFLAGS) -msse -msse2 -mfpmath=
 
 
 eah_HierarchSearchGCT_SOURCES = $(HSGCTSources) $(EAHSources)
-eah_HierarchSearchGCT_CPPFLAGS = $(AM_CPPFLAGS) -DEAH_BOINC -DHS_OPTIMIZATION -DHIERARCHSEARCHGCT
+eah_HierarchSearchGCT_CPPFLAGS = $(AM_CPPFLAGS) -I $(EAHsrc) -DEAH_BOINC -DHS_OPTIMIZATION -DHIERARCHSEARCHGCT
 # this shouldn't harm - it just prefers libraries in the build directory over e.g. system ones
 eah_HierarchSearchGCT_LDFLAGS = -L. $(AM_LDFLAGS)
 # RELEASE_DEPS contains additional dependencies of the E@H build
@@ -52,19 +52,6 @@ erp_execinfo_plus.o: $(EAHsrc)/erp_execinfo_plus.c
 NVCC ?= nvcc
 .cu.o:
 	$(NVCC) $(CPPFLAGS) -c $< -o $@
-
-## pretty dirty hack, particulary for compiling an E@H Mac OS 10.3 App on 10.4
-eah_HierarchSearchGCT_manual: eah_HierarchSearchGCT-HierarchSearchGCT.o \
-    eah_HierarchSearchGCT-GCTtoplist.o \
-    eah_HierarchSearchGCT-HeapToplist.o \
-    eah_HierarchSearchGCT-ComputeFstat_RS.o \
-    eah_HierarchSearchGCT-RecalcToplistStats.o \
-    eah_HierarchSearchGCT-hs_boinc_extras.o \
-    eah_HierarchSearchGCT-hs_boinc_options.o \
-    eah_HierarchSearchGCT-win_lib.o \
-    libstdc++.a
-	$(CXX) $(CPPFLAGS) $(AC_CPPFLAGS) -o $@ $^ $(LDFLAGS) $(AC_LDFLAGS) $(LDADD) $(AC_LDADD) $(LIBS) $(AC_LIBS) libstdc++.a
-
 
 EXTRA_DIST = testGCT.sh
 

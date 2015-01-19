@@ -799,7 +799,11 @@ XLALUserVarReadAllInput ( int argc, char *argv[] )
   for (i=1; i < argc; i++)
     {
       tmp = argv[i];
-      if ( *tmp == '@' )
+      if (tmp == NULL) {
+	  XLALPrintError ("%s: can't access argv[%d]!\n", __func__, i);
+	  continue;
+      }
+      if ( tmp[0] == '@' )
 	{
 	  if (fname != NULL) {
             XLALPrintError ("%s: can handle only one config-file passed on commandline!\n", __func__ );

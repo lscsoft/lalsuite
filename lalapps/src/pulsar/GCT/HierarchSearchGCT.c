@@ -66,10 +66,14 @@
 */
 #ifdef EAH_BOINC
 #include "hs_boinc_extras.h"
+// reserves 1% of progress for the last (toplist recaclculation) step
+#define SHOW_PROGRESS_RESERVE(rac,dec,count,total,freq,fband)\
+        SHOW_PROGRESS(rac, dec, (count) - 0.01 * (total), total, freq, fband)
 #else
 #define GET_GCT_CHECKPOINT read_gct_checkpoint // (cptname, semiCohToplist, NULL, &count)
 #define SET_GCT_CHECKPOINT write_gct_checkpoint
 #define SHOW_PROGRESS(rac,dec,skyGridCounter,tpl_total,freq,fband)
+#define SHOW_PROGRESS_RESERVE(rac,dec,count,total,freq,fband)
 #define MAIN  main
 char**global_argv;
 int global_argc;
@@ -139,7 +143,11 @@ typedef struct {
   REAL8 df1dot;                    /**< coarse grid resolution in spindown */
   REAL8 df2dot;                    /**< coarse grid resolution in 2nd spindown */
   REAL8 df3dot;                    /**< coarse grid resolution in 3rd spindown */
-  UINT4 extraBinsFstat;            /**< Extra bins required for Fstat calculation */
+  UINT4 extraBinsFstat;            /**< Extra Fstat frequency bins required to cover residual spindowns */
+  UINT4 binsFstatSearch;	   /**< nominal number of Fstat frequency bins in search band */
+  UINT4 nf1dot;			/**< number of 1st spindown Fstat bins */
+  UINT4 nf2dot;			/**< number of 2nd spindown Fstat bins */
+  UINT4 nf3dot;			/**< number of 3rd spindown Fstat bins */
   SSBprecision SSBprec;            /**< SSB transform precision */
   FstatMethodType Fmethod;         //!< which Fstat-method/algorithm to use
   BOOLEAN useResamp;               /**< user-input switch whether to use resampling */
@@ -251,7 +259,7 @@ int MAIN( int argc, char *argv[]) {
   FstatInputVector* Fstat_in_vec = NULL;		// Vector of Fstat input data structures for XLALComputeFstat(), one per stack
   FstatResults* Fstat_res = NULL;			// Pointer to Fstat results structure, will be allocated by XLALComputeFstat()
   FstatQuantities Fstat_what = FSTATQ_2F;		// Quantities to be computed by XLALComputeFstat()
-  UINT4 binsFstat1, binsFstatSearch=0;
+  UINT4 binsFstat1;
 
   /* Semicoherent variables */
   static SemiCoherentParams semiCohPar;
@@ -260,13 +268,10 @@ int MAIN( int argc, char *argv[]) {
   CoarseGrid XLAL_INIT_DECL(coarsegrid);
   REAL8 dFreqStack; /* frequency resolution of Fstat calculation */
   REAL8 df1dot;  /* coarse grid resolution in spindown */
-  UINT4 nf1dot;  /* number of coarse-grid spindown values */
   UINT4 ifdot;  /* counter for coarse-grid spindown values */
   REAL8 df2dot;  /* coarse grid resolution in 2nd spindown */
-  UINT4 nf2dot;  /* number of coarse-grid 2nd spindown values */
   UINT4 if2dot;  /* counter for coarse-grid 2nd spindown values */
   REAL8 df3dot;  /* coarse grid resolution in 3rd spindown */
-  UINT4 nf3dot;  /* number of coarse-grid 3rd spindown values */
   UINT4 if3dot;  /* counter for coarse-grid 3rd spindown values */
 
   /* fine grid */
@@ -841,13 +846,6 @@ int MAIN( int argc, char *argv[]) {
   df3dot = usefulParams.df3dot;
   LogPrintf(LOG_NORMAL, "dFreqStack = %e, df1dot = %e, df2dot = %e, df3dot = %e\n", dFreqStack, df1dot, df2dot, df3dot);
 
-  /* number of coarse grid spindown values */
-  if ( df1dot == 0 ) {
-    nf1dot = 1;
-  } else {
-    nf1dot = (UINT4) ceil( usefulParams.spinRange_midTime.fkdotBand[1] / df1dot) + 1;
-  }
-
   /* set number of fine-grid spindowns */
   if ( LALUserVarWasSet(&uvar_gammaRefine) ) {
     gammaRefine = uvar_gammaRefine;
@@ -862,13 +860,6 @@ int MAIN( int argc, char *argv[]) {
     sigmasq = sigmasq / (nStacks * tStack * tStack);
     /* Refinement factor (approximate) */
     gammaRefine = sqrt(1.0 + 60 * sigmasq);   /* Eq. from PRL, page 3 */
-  }
-
-  /* number of coarse grid 2nd spindown values */
-  if ( df2dot == 0 ) {
-    nf2dot = 1;
-  } else {
-    nf2dot = (UINT4) floor( usefulParams.spinRange_midTime.fkdotBand[2] / uvar_df2dot + NUDGE) + 1;
   }
 
   /* set number of fine-grid 2nd spindowns */
@@ -896,13 +887,6 @@ int MAIN( int argc, char *argv[]) {
     gamma2Refine = sqrt( 2100.0 * (sigma4 - sigmasq*sigmasq) );
   }
 
-  /* number of coarse grid 3rd spindown values */
-  if ( df3dot == 0 ) {
-    nf3dot = 1;
-  } else {
-    nf3dot = (UINT4) floor( usefulParams.spinRange_midTime.fkdotBand[3] / uvar_df3dot + NUDGE) + 1;
-  }
-  
   /**** debugging information ******/
   /* print some debug info about spinrange */
   LogPrintf(LOG_DETAIL, "Frequency and spindown range at refTime (%d): [%f,%f], [%e,%e], [%e,%e], [%e,%e]\n",
@@ -1128,16 +1112,16 @@ int MAIN( int argc, char *argv[]) {
     GET_GCT_CHECKPOINT (uvar_fnameChkPoint, semiCohToplist, semiCohToplist2, &count);
 
     if (count) {
-      f1dotGridCounter = (UINT4) (count % nf1dot);  /* Checkpointing counter = i_sky * nf1dot + i_f1dot */
-      skycount = (UINT4) ((count - f1dotGridCounter) / nf1dot);
+      f1dotGridCounter = (UINT4) (count % usefulParams.nf1dot);  /* Checkpointing counter = i_sky * nf1dot + i_f1dot */
+      skycount = (UINT4) ((count - f1dotGridCounter) / usefulParams.nf1dot);
     }
    fprintf (stderr, "%% --- Cpt:%d,  total:%d,  sky:%d/%d,  f1dot:%d/%d\n",
-             count, thisScan.numSkyGridPoints*nf1dot, skycount+1, thisScan.numSkyGridPoints, f1dotGridCounter+1, nf1dot);
+             count, thisScan.numSkyGridPoints*usefulParams.nf1dot, skycount+1, thisScan.numSkyGridPoints, f1dotGridCounter+1, usefulParams.nf1dot);
 
     for(skyGridCounter = 0; skyGridCounter < skycount; skyGridCounter++)
       XLALNextDopplerSkyPos(&dopplerpos, &thisScan);
 
-    if ( count == thisScan.numSkyGridPoints*nf1dot )
+    if ( count == thisScan.numSkyGridPoints * usefulParams.nf1dot )
       thisScan.state = STATE_FINISHED;
 
   }
@@ -1162,10 +1146,13 @@ int MAIN( int argc, char *argv[]) {
   /* ################## loop over SKY coarse-grid points ################## */
   while(thisScan.state != STATE_FINISHED)
     {
-      SHOW_PROGRESS(dopplerpos.Alpha, dopplerpos.Delta,
-                    skyGridCounter * nf1dot + f1dotGridCounter,
-                    thisScan.numSkyGridPoints * nf1dot, uvar_Freq, uvar_FreqBand);
+#ifdef EAH_BOINC
+      SHOW_PROGRESS_RESERVE(dopplerpos.Alpha, dopplerpos.Delta,
+                    skyGridCounter * usefulParams.nf1dot + f1dotGridCounter,
+                    thisScan.numSkyGridPoints * usefulParams.nf1dot, uvar_Freq, uvar_FreqBand);
 
+      fprintf(stderr, "\n%d", skyGridCounter);
+#endif
       /*------------- calculate F-Statistic for each segment --------------*/
 
       /* normalize skyposition: correctly map into [0,2pi]x[-pi/2,pi/2] */
@@ -1183,19 +1170,12 @@ int MAIN( int argc, char *argv[]) {
 
         /* calculate number of bins for Fstat overhead due to residual spin-down */
         semiCohPar.extraBinsFstat = usefulParams.extraBinsFstat;
-
-        /* calculate total number of bins for Fstat */
-        if ( dFreqStack == 0 ) {
-          binsFstatSearch = 1;
-        } else {
-          binsFstatSearch = (UINT4)(usefulParams.spinRange_midTime.fkdotBand[0]/dFreqStack + 1e-6) + 1;
-        }
-        binsFstat1 = binsFstatSearch + 2 * semiCohPar.extraBinsFstat;
+        binsFstat1 = usefulParams.binsFstatSearch + 2 * semiCohPar.extraBinsFstat;
 
       /* ################## loop over coarse-grid F1DOT values ################## */
       ifdot = 0;
 
-      while ( ifdot < nf1dot ) {
+      while ( ifdot < usefulParams.nf1dot ) {
 
         /* if checkpoint read, spool forward */
         if (f1dotGridCounter > 0) {
@@ -1206,15 +1186,20 @@ int MAIN( int argc, char *argv[]) {
         /* ################## loop over coarse-grid F2DOT values ################## */
         if2dot = 0;
 
-        while ( if2dot < nf2dot ) {
+        while ( if2dot < usefulParams.nf2dot ) {
 
         /* ################## loop over coarse-grid F3DOT values ################## */
         if3dot = 0;
 
-        while ( if3dot < nf3dot ) {
+        while ( if3dot < usefulParams.nf3dot ) {
 
           /* show progress */
-          LogPrintf( LOG_NORMAL, "Coarse grid sky:%d/%d f1dot:%d/%d f2dot:%d/%d f3dot:%d/%d\n", skyGridCounter+1, thisScan.numSkyGridPoints, ifdot+1, nf1dot, if2dot+1, nf2dot, if3dot+1, nf3dot );
+#ifndef EAH_BOINC
+          LogPrintf( LOG_NORMAL, "Coarse grid sky:%d/%d f1dot:%d/%d f2dot:%d/%d f3dot:%d/%d\n",
+                     skyGridCounter+1, thisScan.numSkyGridPoints, ifdot+1, usefulParams.nf1dot, if2dot+1, usefulParams.nf2dot, if3dot+1, usefulParams.nf3dot );
+#else
+	  fprintf(stderr, ".");
+#endif
 
           /* ------------- Set up coarse grid --------------------------------------*/
           coarsegrid.freqlength = (UINT4) (binsFstat1);
@@ -1255,7 +1240,7 @@ int MAIN( int argc, char *argv[]) {
           finegrid.freqlengthAL = ALIGN_REAL4 * ((UINT4)ceil ( 1.0 * finegrid.freqlength / ALIGN_REAL4 ));
 
           /* fine-grid f1dot resolution */
-          if (nf1dot == 1) {
+          if (usefulParams.nf1dot == 1) {
             nf1dots_fg = 1;
           }
           else {
@@ -1455,7 +1440,6 @@ int MAIN( int argc, char *argv[]) {
                 if (doComputeFstats) { /* if first time through fine grid fdots loop */
 
                   timeFstatStart = XLALGetTimeOfDay();
-
                   const int retn = XLALComputeFstat(&Fstat_res, Fstat_in_vec->data[k], &thisPoint, dFreqStack, binsFstat1, Fstat_what);
                   if ( retn != XLAL_SUCCESS ) {
                     XLALPrintError ("%s: XLALComputeFstat() failed with errno=%d\n", __func__, xlalErrno );
@@ -1626,11 +1610,13 @@ int MAIN( int argc, char *argv[]) {
         } /* ########## End of loop over coarse-grid f2dot values (if2dot) ########## */
         ifdot++;  /* Increment ifdot counter BEFORE SET_GCT_CHECKPOINT */
 
-        SHOW_PROGRESS(dopplerpos.Alpha, dopplerpos.Delta,
-                      skyGridCounter * nf1dot + ifdot,
-                      thisScan.numSkyGridPoints * nf1dot, uvar_Freq, uvar_FreqBand);
+#ifdef EAH_BOINC
+        SHOW_PROGRESS_RESERVE(dopplerpos.Alpha, dopplerpos.Delta,
+                      skyGridCounter * usefulParams.nf1dot + ifdot,
+                      thisScan.numSkyGridPoints * usefulParams.nf1dot, uvar_Freq, uvar_FreqBand);
+#endif
 
-        SET_GCT_CHECKPOINT (uvar_fnameChkPoint, semiCohToplist, semiCohToplist2, skyGridCounter*nf1dot+ifdot, TRUE);
+        SET_GCT_CHECKPOINT (uvar_fnameChkPoint, semiCohToplist, semiCohToplist2, skyGridCounter*usefulParams.nf1dot+ifdot, TRUE);
 
       } /* ########## End of loop over coarse-grid f1dot values (ifdot) ########## */
 
@@ -1645,15 +1631,13 @@ int MAIN( int argc, char *argv[]) {
       else {
         skyGridCounter++;
 
-        /* this is necessary here, because the checkpoint needs some information from here */
-        SHOW_PROGRESS(dopplerpos.Alpha, dopplerpos.Delta,
-                      skyGridCounter * nf1dot,
-                      thisScan.numSkyGridPoints * nf1dot, uvar_Freq, uvar_FreqBand);
-
         XLALNextDopplerSkyPos( &dopplerpos, &thisScan );
       }
 
     } /* ######## End of while loop over 1st stage SKY coarse-grid points ############ */
+#ifdef EAH_BOINC
+      fprintf(stderr, "\n");
+#endif
   /*---------------------------------------------------------------------------------*/
   timeLoopEnd = XLALGetTimeOfDay();
   costLoop = (timeLoopEnd - timeLoopStart);
@@ -1702,11 +1686,11 @@ int MAIN( int argc, char *argv[]) {
       timing.Nsft = usefulParams.nSFTs;
 
       timing.NFreqCo = coarsegrid.freqlength;		// includes Fstat sideband bins
-      timing.Nco = thisScan.numSkyGridPoints * timing.NFreqCo * nf1dot * nf2dot;
+      timing.Nco = thisScan.numSkyGridPoints * timing.NFreqCo * usefulParams.nf1dot * usefulParams.nf2dot;
 
-      REAL8 nf1dot_fine = nf1dot * nf1dots_fg;	// 'nf1dots_fg' is the number of fine-grid points *per coarse-grid point*!
-      REAL8 nf2dot_fine = nf2dot * nf2dots_fg;	// 'nf1dots_fg' is the number of fine-grid points *per coarse-grid point*!
-      timing.Nic = thisScan.numSkyGridPoints * binsFstatSearch * nf1dot_fine * nf2dot_fine;	// excludes F-stat sideband bins
+      REAL8 nf1dot_fine = usefulParams.nf1dot * nf1dots_fg;	// 'nf1dots_fg' is the number of fine-grid points *per coarse-grid point*!
+      REAL8 nf2dot_fine = usefulParams.nf2dot * nf2dots_fg;	// 'nf1dots_fg' is the number of fine-grid points *per coarse-grid point*!
+      timing.Nic = thisScan.numSkyGridPoints * usefulParams.binsFstatSearch * nf1dot_fine * nf2dot_fine;	// excludes F-stat sideband bins
 
       timing.c0ic = (costLoop - costFstat) / (1.0 * timing.Nseg * timing.Nic);	// safe estimate: everything except coherent time
       timing.c1co = costFstat / (1.0 * timing.Nseg * timing.Nco);
@@ -1738,10 +1722,14 @@ int MAIN( int argc, char *argv[]) {
 
   LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
 
-  // in BOINC App the checkpoint is left behind to be cleaned up by the Core Client
-#ifndef EAH_BOINC
-  clear_gct_checkpoint (uvar_fnameChkPoint);
+#ifdef EAH_BOINC
+  SHOW_PROGRESS(dopplerpos.Alpha, dopplerpos.Delta,
+                skyGridCounter * usefulParams.nf1dot,
+                skyGridCounter * usefulParams.nf1dot,
+                uvar_Freq, uvar_FreqBand);
 #endif
+
+  clear_gct_checkpoint (uvar_fnameChkPoint);
 
   /*------------ free all remaining memory -----------*/
 
@@ -1977,13 +1965,46 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   /* calculate number of bins for Fstat overhead due to residual spin-down */
   in->extraBinsFstat = (UINT4)( 0.25*(in->tObs*in->df1dot + in->tObs*in->tObs*in->df2dot)/in->dFreqStack + 1e-6) + 1;
 
+  /* calculate total number of bins for Fstat */
+  if ( in->dFreqStack == 0 ) {
+    in->binsFstatSearch = 1;
+  } else {
+    in->binsFstatSearch = (UINT4)(in->spinRange_midTime.fkdotBand[0]/in->dFreqStack + 1e-6) + 1;
+  }
+  /* number of coarse grid spindown values */
+  if ( in->df1dot == 0 ) {
+    in->nf1dot = 1;
+  } else {
+    in->nf1dot = (UINT4) ceil( in->spinRange_midTime.fkdotBand[1] / in->df1dot) + 1;
+  }
+  /* number of coarse grid 2nd spindown values */
+  if ( in->df2dot == 0 ) {
+    in->nf2dot = 1;
+  } else {
+    in->nf2dot = (UINT4) floor( in->spinRange_midTime.fkdotBand[2] / in->df2dot + NUDGE) + 1;
+  }
+    /* number of coarse grid 3rd spindown values */
+  if ( in->df3dot == 0 ) {
+    in->nf3dot = 1;
+  } else {
+    in->nf3dot = (UINT4) floor( in->spinRange_midTime.fkdotBand[3] / in->df3dot + NUDGE) + 1;
+  }
+
   /* set wings of sfts to be read */
   REAL8 minCoverFreq, maxCoverFreq;
   REAL8 asiniMax = 0, PeriodMin = 0, maxEcc = 0;
   // NOTE: *must* use spin-range at *mid-time* (not reftime), which is where the GCT code sets up its
   // template bank. This is potentially 'wider' than the physically-requested template bank, and
   // can therefore also require more SFT frequency bins!
-  XLALCWSignalCoveringBand ( &minCoverFreq, &maxCoverFreq, &tStartGPS, &tEndGPS, &(in->spinRange_midTime), asiniMax, PeriodMin, maxEcc );
+  // NOTE2: a second trap here is that the GCT code does not strictly respect the given bands, but can exceed them on the upside
+  // due to 'conversative' discretization on bins, seen above. (binsFstatSearch,nf1dot,nf2dot,nf3dot)
+  // therefore we use this 'effective' spinrange in order to be able to estimate the required number of SFT bins correctly:
+  PulsarSpinRange spinRangeEff = in->spinRange_midTime;
+  spinRangeEff.fkdotBand[0] = (in->binsFstatSearch-1) * in->dFreqStack;
+  spinRangeEff.fkdotBand[1] = (in->nf1dot-1) * in->df1dot;
+  spinRangeEff.fkdotBand[2] = (in->nf2dot-1) * in->df2dot;
+  spinRangeEff.fkdotBand[3] = (in->nf3dot-1) * in->df3dot;
+  XLALCWSignalCoveringBand ( &minCoverFreq, &maxCoverFreq, &tStartGPS, &tEndGPS, &(spinRangeEff), asiniMax, PeriodMin, maxEcc );
 
   REAL8 freqmin = minCoverFreq - in->extraBinsFstat * in->dFreqStack;
   REAL8 freqmax = maxCoverFreq + in->extraBinsFstat * in->dFreqStack;

@@ -66,7 +66,7 @@ boinc_rev=current_gw_apps
 #previous:-r22844 -r22825 -r22804 -r22794 -r22784 -r22561 -r22503 -r22363 -r21777 -r'{2008-12-01}'
 retries=1
 
-gsl=gsl-1.15
+gsl=gsl-1.16
 fftw=fftw-3.3.3
 zlib=zlib-1.2.8
 binutils=binutils-2.19
@@ -230,6 +230,24 @@ SOURCE="$EAH/source"
 BUILD="$EAH/build$acc"
 INSTALL="$EAH/install$acc"
 
+# Jenkins build info
+if [ ".$BUILD_INFO" = "." ]; then
+  test ".$BUILD_TAG" = "." || BUILD_INFO="Build $BUILD_TAG"
+  test ".$NODE_NAME" = "." || BUILD_INFO="$BUILD_INFO on $NODE_NAME"
+  test ".$BUILD_ID" = "."  || BUILD_INFO="$BUILD_INFO at $BUILD_ID"
+fi
+if [ -n "$BUILD_INFO" ]; then
+  LOGFILE="$EAH/${appname}_`echo build_$BUILD_INFO | sed 's%/%_%g;s/ on /./;s/  */_/g'`.log"
+  CPPFLAGS="$CPPFLAGS -DHAVE_BUILD_INFO_H"
+fi
+
+# make sure the E@H directory exists (for logging)
+mkdir -p "$EAH" || fail
+
+echo " " >> "$LOGFILE"
+log_and_show "==========================================="
+log_and_show "Build start `date`"
+
 missing_wine_warning=false
 if [ ."$build_win32" = ."true" ] ; then
     BUILD="${BUILD}_win32"
@@ -264,7 +282,7 @@ if [ ."$build_win32" = ."true" ] ; then
 	CFLAGS="-gstabs3 $CFLAGS"
 	CXXFLAGS="-gstabs3 $CXXFLAGS"
 	export RELEASE_DEPS="exchndl.o"
-	export RELEASE_LDADD="exchndl.o -lbfd -liberty -lintl"
+	export RELEASE_LDADD="$RELEASE_LDADD exchndl.o -lbfd -liberty -lintl"
 	build_binutils=true
     fi
 else
@@ -292,7 +310,7 @@ else
 	    if [ ".$release" = ".true" ]; then
 		CPPFLAGS="-DDLOPEN_LIBGCC -DEXT_STACKTRACE -I$INSTALL/include/bfd $CPPFLAGS"
 		export RELEASE_DEPS="erp_execinfo_plus.o libstdc++.a"
-		export RELEASE_LDADD="erp_execinfo_plus.o -lbfd -liberty -ldl"
+		export RELEASE_LDADD="$RELEASE_LDADD erp_execinfo_plus.o -lbfd -liberty -ldl"
 		build_zlib=true
 		build_binutils=true
 		enable_linux_compatibility_workarounds=true
@@ -310,17 +328,6 @@ if echo "$LDFLAGS" | grep -e -m64 >/dev/null; then
     LDFLAGS="-L$INSTALL/lib64 $LDFLAGS"
 fi
 
-# Jenkins build info
-if [ ".$BUILD_INFO" = "." ]; then
-  test ".$BUILD_TAG" = "." || BUILD_INFO="Build $BUILD_TAG"
-  test ".$NODE_NAME" = "." || BUILD_INFO="$BUILD_INFO on $NODE_NAME"
-  test ".$BUILD_ID" = "."  || BUILD_INFO="$BUILD_INFO at $BUILD_ID"
-fi
-if [ -n "$BUILD_INFO" ]; then
-  LOGFILE="$EAH/${appname}_`echo build_$BUILD_INFO | sed 's%/%_%g;s/ on /./;s/  */_/g'`.log"
-  CPPFLAGS="$CPPFLAGS -DHAVE_BUILD_INFO_H"
-fi
-
 # export environment variables
 export CPPFLAGS="-DPULSAR_MAX_DETECTORS=2 -DUSEXLALLOADSFTS -DBOINC_APIV6 -D__NO_CTYPE -DUSE_BOINC -DEAH_BOINC -I$INSTALL/include $CPPFLAGS"
 export LDFLAGS
@@ -328,13 +335,6 @@ export LD_LIBRARY_PATH="$INSTALL/lib:$LD_LIBRARY_PATH"
 export DYLD_LIBRARY_PATH="$INSTALL/lib:$DYLD_LIBRARY_PATH"
 export PKG_CONFIG_PATH="$INSTALL/lib/pkgconfig:$PKG_CONFIG_PATH"
 export BOINC_PREFIX="$INSTALL"
-
-# make sure the E@H directory exists (for logging)
-mkdir -p "$EAH" || fail
-
-echo " " >> "$LOGFILE"
-log_and_show "==========================================="
-log_and_show "Build start `date`"
 
 # log environment variables
 echo "$0" "$@" >> "$LOGFILE"
@@ -381,7 +381,7 @@ if test -z "$rebuild" && pkg-config --exists gsl; then
     log_and_show "using existing gsl source"
 elif test -z "$noupdate"; then
     log_and_show "retrieving $gsl"
-    download $gsl.tar.gz
+    download ftp://ftp.fu-berlin.de/unix/gnu/gsl $gsl.tar.gz
     log_and_do tar xzf "$gsl.tar.gz"
 fi
 
@@ -438,7 +438,7 @@ else
         log_and_do cd boinc
     fi
     log_and_do git fetch --tags
-    log_and_do git checkout "$boinc_rev"
+    log_and_do git checkout -f "$boinc_rev"
     log_and_do cd "$SOURCE"
 fi
 
@@ -635,7 +635,7 @@ log_and_do "$SOURCE/lalsuite/lalapps/configure" $lalsuite_copts
 log_and_show "building Apps"
 
 log_and_do cd "$BUILD/lalapps/src/lalapps"
-log_and_do make LALAppsVCSInfo.h liblalapps.la
+log_and_do make LALAppsVCSInfo.h LALAppsVCSInfoHeader.h liblalapps.la
 
 log_and_do cd "$BUILD/lalapps/src/pulsar/GCT"
 log_and_dont_fail make gitID
