@@ -104,7 +104,35 @@ extern int boinc_resolve_filename(const char*, char*, int len);
 
 /*^* MACROS *^*/
 
-#define MAX_PATH_LEN 512
+/* exit codes from deleted ComputeFStatistic.h */
+#define COMPUTEFSTAT_EXIT_OK              0  /* normal exit */
+#define COMPUTEFSTAT_EXIT_USAGE           7  /* user requested help */
+#define COMPUTEFSTAT_EXIT_READSFTFAIL     8  /* ReadSFT failed */
+#define COMPUTEFSTAT_EXIT_OPENFMAX        9  /* error opening Fmax file */
+#define COMPUTEFSTAT_EXIT_OPENFSTAT      10  /* error opening FStats file */
+#define COMPUTEFSTAT_EXIT_OPENFSTAT2     11  /* error opening FStats file for append (chkpt) */
+#define COMPUTEFSTAT_EXIT_WRITEFSTAT     12  /* error writing FStats file */
+#define COMPUTEFSTAT_EXIT_WRITEFAFB      13  /* writeFaFb failed */
+#define COMPUTEFSTAT_EXIT_ESTSIGPAR      14  /* EstimateSignalParameters failed */
+#define COMPUTEFSTAT_EXIT_NOMEM          15  /* out of memory */
+#define COMPUTEFSTAT_EXIT_CANTZIP        16  /* unable to zip Fstats file */
+#define COMPUTEFSTAT_EXIT_CANTUNZIP      17  /* unable to zip Fstats file */
+#define COMPUTEFSTAT_EXIT_CANTRENAME     18  /* unable to zip Fstats file */
+#define COMPUTEFSTAT_EXIT_NOPOLKADEL     19  /* no // found in command line */
+#define COMPUTEFSTAT_EXIT_USER           20  /* user asked for exit */
+#define COMPUTEFSTAT_EXIT_DEMOD          21  /* error in LAL-Demod */
+#define COMPUTEFSTAT_EXIT_BOINCRESOLVE   23  /* boinc_resolve_filename failed */
+#define COMPUTEFSTAT_EXIT_DLOPEN         24  /* problems with dynamic lib */
+#define COMPUTEFSTAT_EXIT_WORKER         25  /* can't start worker-thread */
+#define COMPUTEFSTAT_EXIT_UPSAMPLESFTFAIL 26 /* UpsampleSFT failed */
+#define COMPUTEFSTAT_EXIT_SIGNAL         30  /* Exit code will be 30 + signal number */
+#define COMPUTEFSTAT_EXIT_LALCALLERROR  100  /* added to LAL status for BOINC exit value */
+
+#ifdef MAXPATHLEN
+#define MAX_PATH_LEN MAXPATHLEN
+#else
+#define MAX_PATH_LEN 1024
+#endif
 
 /** don't want to include LAL headers just for PI */
 #define LAL_PI 3.1415926535897932384626433832795029  /**< pi */
@@ -1482,7 +1510,7 @@ int main(int argc, char**argv) {
   if ((fp_debug=fopen("../../" DEBUG_DDD_FNAME, "r")) || (fp_debug=fopen("./" DEBUG_DDD_FNAME, "r")) ) 
     {
       char commandstring[256];
-      char resolved_name[MAXFILENAMELENGTH];
+      char resolved_name[MAX_PATH_LEN];
       char *ptr;
       pid_t process_id=getpid();
       
@@ -1524,7 +1552,7 @@ int main(int argc, char**argv) {
   if(name_debug)
     {
       char commandstring[256];
-      char resolved_name[MAXFILENAMELENGTH];
+      char resolved_name[MAX_PATH_LEN];
       char *ptr;
       pid_t process_id=getpid();
       
