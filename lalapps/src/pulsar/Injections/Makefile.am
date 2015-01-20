@@ -18,9 +18,9 @@ lalapps_Makefakedata_v4_SOURCES = makefakedata_v4.c
 lalapps_Makefakedata_v5_SOURCES = makefakedata_v5.c
 
 # force linking in C++ mode for E@H
-eah_Makefakedata_v4_SOURCES = $(lalapps_Makefakedata_v4_SOURCES) ../hough/src2/EinsteinAtHome/win_lib.cpp
+eah_Makefakedata_v4_SOURCES = $(lalapps_Makefakedata_v4_SOURCES) ../EinsteinAtHome/win_lib.cpp
 
-eah_Makefakedata_v5_SOURCES = $(lalapps_Makefakedata_v5_SOURCES) ../hough/src2/EinsteinAtHome/win_lib.cpp
+eah_Makefakedata_v5_SOURCES = $(lalapps_Makefakedata_v5_SOURCES) ../EinsteinAtHome/win_lib.cpp
 
 lalapps_compareSFTs_SOURCES = compareSFTs.c
 

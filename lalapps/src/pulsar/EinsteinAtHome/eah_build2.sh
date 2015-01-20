@@ -444,7 +444,7 @@ fi
 
 if test \! -d lalsuite/.git ; then
     log_and_do rm -rf lalsuite
-    log_and_do ln -s "$eah_build2_loc/../../../../../.." lalsuite
+    log_and_do ln -s "$eah_build2_loc/../../../.." lalsuite
 fi
 
 if test ."$build_zlib" = ."true"; then
