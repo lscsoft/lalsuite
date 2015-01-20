@@ -342,6 +342,7 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
 {
     REAL8 min=-INFINITY, max=INFINITY, logPrior=0.;
     LALInferenceVariableItem *item;
+    LALInferenceVariables *priorParams=runState->priorArgs;
 
     char **info = (char **)context;
     char *header = &info[1][0];
@@ -424,6 +425,7 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
         }
     }
 
+    /***** OLD INCORRECT MASS PRIOR
     // mchirp
     double mc=0.0;
     if( LALInferenceCheckVariable(params,"logmc") )
@@ -503,6 +505,96 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
         {
             q = *(REAL8 *)LALInferenceGetVariable(params, "q");
             LALInferenceMcQ2Masses(mc,q,&m1,&m2);
+        }
+    }
+    ****/
+
+    // mass variables
+    double mc = 0.0, eta = 0.0, q = 0.0, m1 = 0.0, m2 = 0.0, m = 0.0;
+    
+    // check if mchirp is fixed
+    if( LALInferenceCheckVariable(params,"logmc") )
+    {
+        item = LALInferenceGetItem(params, "logmc");
+        if(item->vary == LALINFERENCE_PARAM_FIXED) mc = exp(*(REAL8 *)LALInferenceGetVariable(params, "logmc"));
+    }
+    else if( LALInferenceCheckVariable(params,"chirpmass") )
+    {
+        item = LALInferenceGetItem(params, "chirpmass");
+        if(item->vary == LALINFERENCE_PARAM_FIXED) mc = *(REAL8 *)LALInferenceGetVariable(params, "chirpmass");
+    }
+
+    // check if eta is fixed
+    if( LALInferenceCheckVariable(params,"eta") )
+    {
+        item = LALInferenceGetItem(params, "eta");
+        if(item->vary == LALINFERENCE_PARAM_FIXED)
+        {
+            eta = *(REAL8 *)LALInferenceGetVariable(params, "eta");
+            if( mc != 0.0 ) LALInferenceMcEta2Masses(mc,eta,&m1,&m2);
+        }
+    }
+    else if( LALInferenceCheckVariable(params,"q") )
+    {
+        item = LALInferenceGetItem(params, "q");
+        if(item->vary == LALINFERENCE_PARAM_FIXED)
+        {
+            q = *(REAL8 *)LALInferenceGetVariable(params, "q");
+            if( mc != 0.0 ) LALInferenceMcQ2Masses(mc,q,&m1,&m2);
+        }
+    }
+
+    //m1 & m2
+    if( m1 == 0.0 && m2 == 0.0 )
+    {
+        min = *(REAL8 *)LALInferenceGetVariable(priorParams,"component_min");
+        max = *(REAL8 *)LALInferenceGetVariable(priorParams,"component_max");
+        if( min == max )
+        {
+            m1 = m2 = min;
+            m = m1 + m2;
+            eta = m1 * m2 / (m*m);
+            mc = pow(eta,0.6) * m;
+            q = m2 / m1; // asymmetric mass ratio, m1 >= m2
+        }
+        else
+        {
+            m1 = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            m2 = LALInferenceCubeToFlatPrior(Cube[i+1], min, max);
+            if(m1<m2)
+            {
+                double temp = m2;
+                m2 = m1;
+                m1 = temp;
+            }
+
+            m = m1 + m2;
+            eta = m1 * m2 / (m*m);
+            mc = pow(eta,0.6) * m;
+            q = m2 / m1; // asymmetric mass ratio, m1 >= m2
+            Cube[i] = mc; i++;
+            strcat(header,"mc ");
+            Cube[i] = eta; i++;
+            strcat(header,"eta ");
+        }
+
+        // chirp mass and eta/q
+        if(LALInferenceCheckVariable(params,"eta")||LALInferenceCheckVariable(params,"q"))
+        {
+            if(LALInferenceCheckVariable(params,"logmc"))
+            {
+                double logmc = log(mc);
+                LALInferenceSetVariable(params, "logmc", &logmc);
+            }
+            else if(LALInferenceCheckVariable(params,"chirpmass"))
+            {
+                LALInferenceSetVariable(params, "chirpmass", &mc);
+            }
+
+                  if(LALInferenceCheckVariable(params,"q"))
+                LALInferenceSetVariable(params, "q", &q);
+            else if(LALInferenceCheckVariable(params,"eta"))
+                    LALInferenceSetVariable(params, "eta", &eta);
         }
     }
 
@@ -669,7 +761,6 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
         }
     }
 
-    LALInferenceVariables *priorParams=runState->priorArgs;
     INT4 ScaleTest = LALInferenceCubeToPSDScaleParams(priorParams, params, &i, Cube, context);
 
     Cube[i] = m1; i++; strcat(header,"m1 ");
