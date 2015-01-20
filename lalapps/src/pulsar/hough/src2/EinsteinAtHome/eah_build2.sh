@@ -647,7 +647,7 @@ test ".$release" = ".true" &&
 log_and_do cd "$BUILD/lalapps/src/pulsar/Injections"
 log_and_do make eah_Makefakedata_v5$ext
 log_and_do cp eah_Makefakedata_v5$ext "$EAH"
-log_and_do cd "$BUILD/lalapps/src/pulsar/FDS_isolated"
+log_and_do cd "$BUILD/lalapps/src/pulsar/Fstatistic"
 log_and_do make eah_PredictFstat$ext eah_ComputeFstatistic_v2$ext
 log_and_do cp eah_PredictFstat$ext eah_ComputeFstatistic_v2$ext "$EAH"
 
@@ -664,9 +664,9 @@ if [ .$check = .true ]; then
     fi
     log_and_show "Running test"
     log_and_do cd "$EAH"
-    log_and_do rm -rf Injections FDS_isolated test
+    log_and_do rm -rf Injections Fstatistic test
     log_and_do mkdir Injections
-    log_and_do ln -s Injections FDS_isolated
+    log_and_do ln -s Injections Fstatistic
     log_and_do cd Injections
     log_and_do cp ../eah_Makefakedata_v5$ext lalapps_Makefakedata_v5
     log_and_do cp ../eah_PredictFstat$ext lalapps_PredictFstat
