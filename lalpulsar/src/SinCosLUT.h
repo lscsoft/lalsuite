@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2015 Reinhard Prix
+// Copyright (C) 2011 Bernd Machenschalk
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,8 +17,8 @@
 // MA  02111-1307  USA
 //
 
-#ifndef _CWFASTMATH_H
-#define _CWFASTMATH_H
+#ifndef _SINCOSLUT_H
+#define _SINCOSLUT_H
 
 #include <lal/LALStdlib.h>
 
@@ -27,19 +27,23 @@ extern "C" {
 #endif
 
 ///
-/// \defgroup CWFastMath_h Header CWFastMath.h
+/// \defgroup SinCosLUT_h Header SinCosLUT.h
 /// \ingroup lalpulsar_common
 /// \authors Reinhard Prix, Karl Wette
 ///
-/// \brief Various functions for performing fast math in CW functions.
+/// \brief fast non-vector FPU version of SinCos used in various CW codes
 ///
 
 // @{
+void XLALSinCosLUTInit (void);
 
+int XLALSinCosLUT ( REAL4 *sinx, REAL4 *cosx, REAL8 x );
+int XLALSinCos2PiLUT ( REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x );
+int XLALSinCos2PiLUTtrimmed ( REAL4 *s, REAL4 *c, REAL8 x );
 // @}
 
 #ifdef  __cplusplus
 }
 #endif
 
-#endif // _CWFASTMATH_H
+#endif // _SINCOSLUT_H

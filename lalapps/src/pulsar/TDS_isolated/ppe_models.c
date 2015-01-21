@@ -7,7 +7,7 @@
  */
 
 #include "ppe_models.h"
-#include <lal/CWFastMath.h>
+#include <lal/SinCosLUT.h>
 
 #define SQUARE(x) ( (x) * (x) )
 

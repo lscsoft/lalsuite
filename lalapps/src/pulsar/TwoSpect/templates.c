@@ -29,7 +29,7 @@
 #include <lal/LALMalloc.h>
 #include <lal/Window.h>
 #include <lal/VectorOps.h>
-#include <lal/CWFastMath.h>
+#include <lal/SinCosLUT.h>
 
 #include "templates.h"
 #include "cdfwchisq.h"

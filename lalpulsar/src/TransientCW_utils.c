@@ -46,7 +46,17 @@
 /* ----- MACRO definitions ---------- */
 #define SQ(x) ((x)*(x))
 
-/* ---------- internal prototypes ---------- */
+/* ----- module-local fast lookup-table handling of negative exponentials ----- */
+/**
+ * Lookup-table for negative exponentials e^(-x)
+ * Holds an array 'data' of 'length' for values e^(-x) for x in the range [0, xmax]
+ */
+#define EXPLUT_XMAX 	20.0	// LUT down to e^(-20) = 2.0612e-09
+#define EXPLUT_LENGTH 	2000	// number of LUT values to pre-compute
+static gsl_vector *expLUT = NULL; 	/**< module-global lookup-table for negative exponentials e^(-x) */
+#define EXPLUT_DXINV  ((EXPLUT_LENGTH)/(EXPLUT_XMAX))	// 1/dx with dx = xmax/length
+
+static int XLALCreateExpLUT ( void );	/* only ever used internally, destructor is in exported API */
 
 static const char *transientWindowNames[TRANSIENT_LAST] =
   {
@@ -1056,3 +1066,88 @@ XLALDestroyTransientCandidate ( transientCandidate_t *cand )
   return;
 
 } /* XLALDestroyTransientCandidate() */
+
+
+// ========== LUT math functions used here ==========
+/**
+ * Generate an exponential lookup-table expLUT for e^(-x)
+ * over the interval x in [0, xmax], using 'length' points.
+ */
+int
+XLALCreateExpLUT ( void )
+{
+  /* create empty output LUT */
+  gsl_vector *ret;
+  if ( ( ret = gsl_vector_alloc ( EXPLUT_LENGTH + 1)) == NULL ) {
+    XLALPrintError ("%s: failed to gsl_vector_alloc (%i)\n", __func__, EXPLUT_LENGTH +1 );
+    XLAL_ERROR ( XLAL_ENOMEM );
+  }
+
+  /* fill output LUT */
+  REAL8 dx = EXPLUT_XMAX / EXPLUT_LENGTH;
+  UINT4 i;
+  for ( i=0; i <= EXPLUT_LENGTH; i ++ )
+    {
+      REAL8 xi = i * dx;
+
+      gsl_vector_set ( ret, i, exp( - xi ) );
+
+    } /* for i < length() */
+
+  /* 'return' this by setting the global vector */
+  expLUT = ret;
+
+  return XLAL_SUCCESS;
+
+} /* XLALCreateExpLUT() */
+
+
+/**
+ * Destructor function for expLUT_t lookup table
+ */
+void
+XLALDestroyExpLUT ( void )
+{
+  if ( !expLUT )
+    return;
+
+  gsl_vector_free ( expLUT );
+
+  expLUT = NULL;
+
+  return;
+
+} /* XLALDestroyExpLUT() */
+
+
+/**
+ * Fast exponential function e^-x using lookup-table (LUT).
+ * We need to compute exp(-x) for x >= 0, typically in a B-stat
+ * integral of the form int e^-x dx: this means that small values e^(-x)
+ * will not contribute much to the integral and are less important than
+ * values close to 1. Therefore we pre-compute a LUT of e^(-x) for x in [0, xmax],
+ * in Npoints points, and set e^(-x) = 0 for x < xmax.
+ *
+ * NOTE: if module-global expLUT=NULL, we create it here
+ * NOTE: if argument is negative, we use math-lib exp(-x) instead of LUT
+ */
+REAL8
+XLALFastNegExp ( REAL8 mx )
+{
+  if ( mx > EXPLUT_XMAX )	/* for values smaller than e^(-xmax) we truncate to 0 */
+    return 0.0;
+
+  if ( mx < 0 )
+    return exp ( - mx  );
+
+  /* if lookup table doesn't exist yet: generate it now */
+  if ( !expLUT && ( XLALCreateExpLUT() != XLAL_SUCCESS) ) {
+    XLAL_ERROR_REAL8 ( XLAL_EFUNC );
+  }
+
+  /* find index of closest point xp in LUT to xm */
+  UINT4 i0 = (UINT4) ( mx * EXPLUT_DXINV + 0.5 );
+
+  return gsl_vector_get ( expLUT, i0 );
+
+} /* XLALFastNegExp() */

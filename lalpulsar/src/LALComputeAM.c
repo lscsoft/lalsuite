@@ -53,7 +53,7 @@
 
 /*---------- INCLUDES ----------*/
 #include <lal/LALComputeAM.h>
-#include <lal/CWFastMath.h>
+#include <lal/SinCosLUT.h>
 
 /*---------- local DEFINES and macros ----------*/
 

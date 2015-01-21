@@ -25,7 +25,7 @@
 // included from ComputeFstat.c
 
 #include <lal/LogPrintf.h>
-#include <lal/CWFastMath.h>
+#include <lal/SinCosLUT.h>
 #include "config.h"
 
 // ========== Demod internals ==========

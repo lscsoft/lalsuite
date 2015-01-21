@@ -56,6 +56,7 @@ pkginclude_HEADERS = \
 	SFTutils-LAL.h \
 	SFTutils.h \
 	SimulatePulsarSignal.h \
+	SinCosLUT.h \
 	SSBtimes.h \
 	StackMetric.h \
 	Statistics.h \

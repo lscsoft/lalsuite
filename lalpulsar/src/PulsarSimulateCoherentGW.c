@@ -31,7 +31,7 @@
 #include <lal/VectorOps.h>
 #include <lal/PulsarSimulateCoherentGW.h>
 #include <lal/SkyCoordinates.h>
-#include <lal/CWFastMath.h>
+#include <lal/SinCosLUT.h>
 
 /** \name Error Codes */
 /*@{*/

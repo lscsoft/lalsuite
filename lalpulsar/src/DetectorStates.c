@@ -22,7 +22,7 @@
 #define __USE_ISOC99 1
 #include <math.h>
 
-#include <lal/CWFastMath.h>
+#include <lal/SinCosLUT.h>
 #include <lal/DetectorStates.h>
 #include <lal/LISAspecifics.h>
 #include <lal/ConfigFile.h>

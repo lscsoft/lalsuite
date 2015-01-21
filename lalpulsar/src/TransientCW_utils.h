@@ -48,7 +48,7 @@ extern "C" {
 #include <lal/SFTutils.h>
 #include <lal/PulsarDataTypes.h>
 #include <lal/ComputeFstat.h>
-#include <lal/CWFastMath.h> /* for XLALFastNegExp() */
+#include <lal/SinCosLUT.h> /* for XLALFastNegExp() */
 
 /* ---------- exported API defines ---------- */
 
@@ -121,6 +121,10 @@ pdf1D_t *XLALComputeTransientPosterior_tau ( transientWindowRange_t windowRange,
 
 void XLALDestroyTransientFstatMap ( transientFstatMap_t *FstatMap );
 void XLALDestroyTransientCandidate ( transientCandidate_t *cand );
+
+REAL8 XLALFastNegExp ( REAL8 mx );
+REAL4 XLALFastExpf ( REAL4 x );
+void XLALDestroyExpLUT( void );
 
 /* ---------- Fstat-atoms related functions ----------*/
 int write_MultiFstatAtoms_to_fp ( FILE *fp, const MultiFstatAtomVector *multiAtoms );

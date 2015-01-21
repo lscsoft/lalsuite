@@ -43,7 +43,7 @@
 #include <lal/AVFactories.h>
 #include <lal/ComplexAM.h>
 #include <lal/LISAspecifics.h>
-#include <lal/CWFastMath.h>
+#include <lal/SinCosLUT.h>
 
 /*---------- local DEFINES ----------*/
 #define TRUE (1==1)

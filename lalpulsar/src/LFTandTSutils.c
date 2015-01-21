@@ -39,7 +39,7 @@
 #include <lal/TimeSeries.h>
 #include <lal/ComplexFFT.h>
 #include <lal/ComputeFstat.h>
-#include <lal/CWFastMath.h>
+#include <lal/SinCosLUT.h>
 
 /*---------- DEFINES ----------*/
 #define MYMAX(x,y) ( (x) > (y) ? (x) : (y) )

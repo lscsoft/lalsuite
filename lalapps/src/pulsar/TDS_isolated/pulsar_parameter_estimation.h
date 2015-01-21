@@ -40,7 +40,7 @@
 #include <lal/MatrixUtils.h>
 #include <lal/LALConstants.h>
 #include <lal/XLALError.h>
-#include <lal/CWFastMath.h>
+#include <lal/SinCosLUT.h>
 #include <lal/TimeSeries.h>
 
 #include <lalapps.h>

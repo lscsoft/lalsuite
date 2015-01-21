@@ -67,7 +67,7 @@ extern "C" {
 #include <gsl/gsl_sf_trig.h>
 #include <lal/FrequencySeries.h>
 #include <lal/Sequence.h>
-#include <lal/CWFastMath.h>
+#include <lal/SinCosLUT.h>
 #include <lal/LogPrintf.h>
 
 /* ******************************************************************

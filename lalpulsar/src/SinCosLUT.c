@@ -21,7 +21,7 @@
 
 #include <math.h>
 
-#include <lal/CWFastMath.h>
+#include <lal/SinCosLUT.h>
 
 #define OOTWOPI         (1.0 / LAL_TWOPI)      // 1/2pi
 

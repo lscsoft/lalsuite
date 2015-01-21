@@ -32,7 +32,7 @@
 #include <math.h>
 
 #include <lal/LALConstants.h>
-#include <lal/CWFastMath.h>
+#include <lal/SinCosLUT.h>
 
 #include "vectormath.h"
 #include "templates.h"

@@ -38,7 +38,7 @@
 #include <lal/LALComputeAM.h>
 #include <lal/ExtrapolatePulsarSpins.h>
 #include <lal/LFTandTSutils.h>
-#include <lal/CWFastMath.h>
+#include <lal/SinCosLUT.h>
 #include <lal/NormalizeSFTRngMed.h>
 
 // ----- macro definitions
