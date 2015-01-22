@@ -490,10 +490,8 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
 /*   - "tilt_spin1");    zenith angle between S1 and LNhat in radians;       REAL8                                    */
 /*   - "tilt_spin2");    zenith angle between S2 and LNhat in radians;       REAL8                                    */
 /*   - "phi12");         difference in azimuthal angle between S1, S2 in radians;   REAL8                             */
-/*   - "a_spin1"            magnitude of spin 1 in general configuration, 0<a_spin1<1; REAL8 OPTIONAL (0.0)              */
-/*   - "a_spin2"            magnitude of spin 2 in general configuration, 0<a_spin1<1; REAL8 OPTIONAL (0.0)              */
-/*   - "spin1"              magnitude of spin 1 in aligned configuration, -1<spin1<1;  REAL8 OPTIONAL (0.0)              */
-/*   - "spin2"              magnitude of spin 2 in aligned configuration, -1<spin1<1;  REAL8 OPTIONAL (0.0)              */
+/*   - "a_spin1"            magnitude of spin 1 in general configuration, -1<a_spin1<1; REAL8 OPTIONAL (0.0)              */
+/*   - "a_spin2"            magnitude of spin 2 in general configuration, -1<a_spin1<1; REAL8 OPTIONAL (0.0)              */
 /*                                                                                                                       */
 /*   OTHER PARAMETERS                                                                                                    */
 /*   - "lambda1"            tidal parameter of object 1; REAL8  OPTIONAL (0.0)                                           */
@@ -528,10 +526,13 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
   REAL8TimeSeries *hcross=NULL; /**< x-polarization waveform [returned] */
   COMPLEX16FrequencySeries *hptilde=NULL, *hctilde=NULL;
   REAL8 mc;
-  REAL8 phi0, deltaT, m1, m2, spin1x=0.0, spin1y=0.0, spin1z=0.0, spin2x=0.0, spin2y=0.0, spin2z=0.0, f_low, f_start, distance, inclination;
+  REAL8 phi0, deltaT, m1, m2, f_low, f_start, distance, inclination;
   
   REAL8 *m1_p,*m2_p;
   REAL8 deltaF, f_max;
+  
+  /* Sampling rate for time domain models */
+  deltaT = model->deltaT;
   
   if (LALInferenceCheckVariable(model->params, "LAL_APPROXIMANT"))
     approximant = *(Approximant*) LALInferenceGetVariable(model->params, "LAL_APPROXIMANT");
@@ -584,79 +585,84 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
     }
 
   distance	= LALInferenceGetREAL8Variable(model->params,"distance")* LAL_PC_SI * 1.0e6;        /* distance (1 Mpc) in units of metres */
-
-  /* Default to spinless signals if spin amplitude are not present in model->params */
-  REAL8 a_spin1		= 0.0;
-  if(LALInferenceCheckVariable(model->params, "a_spin1"))    a_spin1   = *(REAL8*) LALInferenceGetVariable(model->params, "a_spin1");
-  REAL8 a_spin2    = 0.0;
-  if(LALInferenceCheckVariable(model->params, "a_spin2"))    a_spin2   = *(REAL8*) LALInferenceGetVariable(model->params, "a_spin2");
-
-  phi0		= *(REAL8*) LALInferenceGetVariable(model->params, "phase"); /* START phase as per lalsimulation convention*/
+  
+  phi0		= LALInferenceGetREAL8Variable(model->params, "phase"); /* START phase as per lalsimulation convention, radians*/
+  
+  /* Zenith angle between J and N in radians. Also known as inclination angle when spins are aligned */
+  REAL8 thetaJN = *(REAL8*) LALInferenceGetVariable(model->params, "theta_jn");     /* zenith angle between J and N in radians */
 
   /* Check if fLow is a model parameter, otherwise use data structure definition */
   if(LALInferenceCheckVariable(model->params, "flow"))
     f_low = *(REAL8*) LALInferenceGetVariable(model->params, "flow");
   else
-    f_low = model->fLow /** 0.9 */;
+    f_low = model->fLow;
 
   f_start = fLow2fStart(f_low, amporder, approximant);
   f_max = 0.0; /* for freq domain waveforms this will stop at ISCO. Previously found using model->fHigh causes NaNs in waveform (see redmine issue #750)*/
 
-  int aligned_spins=0;
-  /* We first check if we are deadling with a spin-aligned only template, for which we use "spin1" and "spin2" names */
-  if(LALInferenceCheckVariable(model->params, "spin1")){
-    spin1z= *(REAL8*) LALInferenceGetVariable(model->params, "spin1");
-    spin1x=0.0;
-    spin1y=0.0;
-    aligned_spins+=1;
-  }
-  if(LALInferenceCheckVariable(model->params, "spin2")){
-    spin2z= *(REAL8*) LALInferenceGetVariable(model->params, "spin2");
-    spin2x=0.0;
-    spin2y=0.0;
-    aligned_spins+=1;
-  }
+  /* ==== SPINS ==== */
+  /* We will default to spinless signal and then add in the spin components if required */
+  /* If there are non-aligned spins, we must convert between the System Frame coordinates
+   * and the cartestian coordinates */
 
-  /* Set inclination to something sensible now, because for spin aligned we won't enter in the blocks below, where theta_JN 
-   *  is set for no-spin or precessing spins.  */
-  inclination       = *(REAL8*) LALInferenceGetVariable(model->params, "theta_jn");           /* inclination in radian */
+  /* The cartesian spin coordinates (default 0), as passed to LALSimulation */
+  REAL8 spin1x = 0.0;
+  REAL8 spin1y = 0.0;
+  REAL8 spin1z = 0.0;
+  REAL8 spin2x = 0.0;
+  REAL8 spin2y = 0.0;
+  REAL8 spin2z = 0.0;
   
-  if (aligned_spins==0){
-    /* Template is not spin-aligned only.
-    * Set the all other spins variables (that is an overkill. We can just check if there are spins in the first place, and if there aren't don't bother calculating them (they'll be zero) ) */
-    REAL8 phiJL=0.0;
-    REAL8 tilt1=0.0;
-    REAL8 tilt2=0.0;
-    REAL8 phi12=0.0;
+  /* System frame coordinates as used for jump proposals */
+  REAL8 a_spin1 = 0.0;  /* Magnitude of spin1 */
+  REAL8 a_spin2 = 0.0;  /* Magnitude of spin2 */
+  REAL8 phiJL  = 0.0;  /* azimuthal angle of L_N on its cone about J radians */ 
+  REAL8 tilt1   = 0.0;  /* zenith angle between S1 and LNhat in radians */
+  REAL8 tilt2   = 0.0;  /* zenith angle between S2 and LNhat in radians */
+  REAL8 phi12   = 0.0;  /* difference in azimuthal angle btwn S1, S2 in radians */
 
-    /* IMPORTANT NOTE: default to spin aligned case (i.e. tilt1=tilt2=0) if no angles are provided for the spins.
-    * If you change this, must also change LALInferenceInitCBC.c
-    */
-    REAL8 thetaJN = *(REAL8*) LALInferenceGetVariable(model->params, "theta_jn");     /* zenith angle between J and N in radians */
-    if(LALInferenceCheckVariable(model->params, "phi_jl"))
-      phiJL = *(REAL8*) LALInferenceGetVariable(model->params, "phi_jl");     /* azimuthal angle of L_N on its cone about J radians */
-    if(LALInferenceCheckVariable(model->params, "tilt_spin1"))
-      tilt1 = *(REAL8*) LALInferenceGetVariable(model->params, "tilt_spin1");     /* zenith angle between S1 and LNhat in radians */
-    if(LALInferenceCheckVariable(model->params, "tilt_spin2"))
-      tilt2 = *(REAL8*) LALInferenceGetVariable(model->params, "tilt_spin2");     /* zenith angle between S2 and LNhat in radians */
-    if(LALInferenceCheckVariable(model->params, "phi12"))
-      phi12 = *(REAL8*) LALInferenceGetVariable(model->params, "phi12");      /* difference in azimuthal angle btwn S1, S2 in radians */
+  /* Now check if we have spin amplitudes */
+  if(LALInferenceCheckVariable(model->params, "a_spin1"))    a_spin1   = *(REAL8*) LALInferenceGetVariable(model->params, "a_spin1");
+  if(LALInferenceCheckVariable(model->params, "a_spin2"))    a_spin2   = *(REAL8*) LALInferenceGetVariable(model->params, "a_spin2");
 
-    /* The transformation function doesn't know fLow, so f_ref==0 isn't interpretted as a request to use the starting frequency for reference. */
-    if(fTemp==0.0)
-      fTemp = f_start;
+  /* Check if we have spin angles too */
+  if(LALInferenceCheckVariable(model->params, "phi_jl"))
+      phiJL = LALInferenceGetREAL8Variable(model->params, "phi_jl");
+  if(LALInferenceCheckVariable(model->params, "tilt_spin1"))
+      tilt1 = LALInferenceGetREAL8Variable(model->params, "tilt_spin1");
+  if(LALInferenceCheckVariable(model->params, "tilt_spin2"))
+      tilt2 = LALInferenceGetREAL8Variable(model->params, "tilt_spin2");
+  if(LALInferenceCheckVariable(model->params, "phi12"))
+      phi12 = LALInferenceGetREAL8Variable(model->params, "phi12");
 
-    XLAL_TRY(ret=XLALSimInspiralTransformPrecessingInitialConditions(
-    &inclination, &spin1x, &spin1y, &spin1z, &spin2x, &spin2y, &spin2z,
-    thetaJN, phiJL, tilt1, tilt2, phi12, a_spin1, a_spin2, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, fTemp), errnum);
-    if (ret == XLAL_FAILURE)
-    {
-      XLALPrintError(" ERROR in XLALSimInspiralTransformPrecessingInitialConditions(): error converting angles. errnum=%d\n",errnum );
-      return;
-    }
-
+  /* If we have tilt angles zero, then the spins are aligned and we just set the z component */
+  /* However, if the waveform supports precession then we still need to get the right coordinate components */
+  SpinSupport spin_support=XLALSimInspiralGetSpinSupportFromApproximant(approximant);
+  if(tilt1==0.0 && tilt2==0.0 && (spin_support==LAL_SIM_INSPIRAL_SPINLESS || spin_support==LAL_SIM_INSPIRAL_ALIGNEDSPIN))
+  {
+      spin1z=a_spin1;
+      spin2z=a_spin2;
+      inclination = thetaJN; /* Inclination angle is just thetaJN */
   }
-	
+  else
+  {   /* Template is not aligned-spin only. */
+      /* Set all the other spin components according to the angles we received above */
+      /* The transformation function doesn't know fLow, so f_ref==0 isn't interpretted as a request to use the starting frequency for reference. */
+      if(fTemp==0.0)
+        fTemp = f_start;
+
+      XLAL_TRY(ret=XLALSimInspiralTransformPrecessingInitialConditions(
+                    &inclination, &spin1x, &spin1y, &spin1z, &spin2x, &spin2y, &spin2z,
+                    thetaJN, phiJL, tilt1, tilt2, phi12, a_spin1, a_spin2, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, fTemp), errnum);
+      if (ret == XLAL_FAILURE)
+      {
+        XLALPrintError(" ERROR in XLALSimInspiralTransformPrecessingInitialConditions(): error converting angles. errnum=%d\n",errnum );
+        return;
+      }
+  }
+
+  
+  /* ==== TIDAL PARAMETERS ==== */  
   REAL8 lambda1 = 0.;
   if(LALInferenceCheckVariable(model->params, "lambda1")) lambda1 = *(REAL8*) LALInferenceGetVariable(model->params, "lambda1");
   REAL8 lambda2 = 0.;
@@ -671,10 +677,13 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
     LALInferenceLambdaTsEta2Lambdas(lambdaT,dLambdaT,sym_mass_ratio_eta,&lambda1,&lambda2);
   }
 
+
+  /* Only use GR templates */
   LALSimInspiralTestGRParam *nonGRparams = NULL;
   
-  deltaT = model->deltaT;
   
+
+  /* ==== Call the waveform generator ==== */
   if(model->domain == LAL_SIM_DOMAIN_FREQUENCY) {
     deltaF = model->deltaF;
     

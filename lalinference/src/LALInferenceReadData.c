@@ -2562,8 +2562,8 @@ void LALInferenceInjectionToVariables(SimInspiralTable *theEventTable, LALInfere
   LALInferenceAddVariable(vars, "LAL_AMPORDER", &(theEventTable->amp_order), LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
   if(spinCheck){
       if (theEventTable->spin1x==0 && theEventTable->spin1y==0.0 && theEventTable->spin2x==0.0 && theEventTable->spin2y==0.0){
-        LALInferenceAddVariable(vars, "spin1", &s1z, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-        LALInferenceAddVariable(vars, "spin2", &s2z, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+        LALInferenceAddVariable(vars, "a_spin1", &s1z, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+        LALInferenceAddVariable(vars, "a_spin2", &s2z, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
       }
       else{
         LALInferenceAddVariable(vars, "a_spin1", &a_spin1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);

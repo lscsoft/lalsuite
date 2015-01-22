@@ -922,7 +922,7 @@ REAL8 LALInferenceEnsembleStretchFull(LALInferenceRunState *runState, LALInferen
 REAL8 LALInferenceEnsembleStretchIntrinsic(LALInferenceRunState *runState, LALInferenceVariables *cp, LALInferenceVariables *pp) {
   const char *propName = ensembleStretchIntrinsicName;
   LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
-  const char *names[] = {"chirpmass", "q", "eta", "m1", "m2", "a_spin1", "a_spin2","spin1","spin2",
+  const char *names[] = {"chirpmass", "q", "eta", "m1", "m2", "a_spin1", "a_spin2",
     "tilt_spin1", "tilt_spin2", "phi12", NULL};
   REAL8 logPropRatio = LALInferenceEnsembleStretchNames(runState, cp, pp, names);
   return logPropRatio;
@@ -1045,7 +1045,7 @@ REAL8 LALInferenceEnsembleWalkFull(LALInferenceRunState *runState, LALInferenceV
 REAL8 LALInferenceEnsembleWalkIntrinsic(LALInferenceRunState *runState, LALInferenceVariables *cp, LALInferenceVariables *pp) {
   const char *propName = ensembleWalkIntrinsicName;
   LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
-  const char *names[] = {"chirpmass", "q", "eta", "m1", "m2", "a_spin1", "a_spin2","spin1","spin2",
+  const char *names[] = {"chirpmass", "q", "eta", "m1", "m2", "a_spin1", "a_spin2",
     "tilt_spin1", "tilt_spin2", "phi12", NULL};
   REAL8 logPropRatio = LALInferenceEnsembleWalkNames(runState, cp, pp, names);
   return logPropRatio;
@@ -1246,8 +1246,8 @@ REAL8 LALInferenceDifferentialEvolutionNames(LALInferenceRunState *runState,
 REAL8 LALInferenceDifferentialEvolutionIntrinsic(LALInferenceRunState *runState, LALInferenceVariables *cp, LALInferenceVariables *pp) {
   const char *propName = differentialEvolutionIntrinsicName;
   LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
-  const char *names[] = {"chirpmass", "q", "eta", "m1", "m2", "a_spin1", "a_spin2","spin1","spin2",
-      "tilt_spin1", "tilt_spin2", "phi12",  "spin1", "spin2", NULL};
+  const char *names[] = {"chirpmass", "q", "eta", "m1", "m2", "a_spin1", "a_spin2",
+      "tilt_spin1", "tilt_spin2", "phi12",  NULL};
   REAL8 logPropRatio = LALInferenceDifferentialEvolutionNames(runState, cp, pp, names);
   return logPropRatio;
 }
@@ -1450,16 +1450,6 @@ LALInferenceDrawApproxPrior(LALInferenceRunState *runState, LALInferenceVariable
     if (LALInferenceCheckVariableNonFixed(proposedParams, "a_spin2")) {
       REAL8 a2 = draw_flat(runState, "a_spin2");
       LALInferenceSetVariable(proposedParams, "a_spin2", &a2);
-    }
-
-    if (LALInferenceCheckVariableNonFixed(proposedParams, "spin1")) {
-      REAL8 a1 = draw_flat(runState, "spin1");
-      LALInferenceSetVariable(proposedParams, "spin1", &a1);
-    }
-
-    if (LALInferenceCheckVariableNonFixed(proposedParams, "spin2")) {
-      REAL8 a2 = draw_flat(runState, "spin2");
-      LALInferenceSetVariable(proposedParams, "spin2", &a2);
     }
 
     if (LALInferenceCheckVariableNonFixed(proposedParams, "psdscale")) {

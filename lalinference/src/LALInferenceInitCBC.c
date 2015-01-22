@@ -404,10 +404,8 @@ You can generally have MCMC chains to start from a given parameter value by usin
  declination                  Declination.\n\
  polarisation                 Polarisation angle.\n\
 * Spin Parameters:\n\
- a1                           Spin1 magnitude (for precessing spins)\n\
- a_spin1                      Spin1 magnitude (for aligned spins)\n\
- a2                           Spin2 magnitude (for precessing spins)\n\
- a_spin2                      Spin2 magnitude (for aligned spins)\n\
+ a_spin1                      Spin1 magnitude\n\
+ a_spin2                      Spin2 magnitude\n\
  tilt_spin1                   Angle between spin1 and orbital angular momentum\n\
  tilt_spin2                   Angle between spin2 and orbital angular momentum \n\
  phi_12                       Difference between spins' azimuthal angles \n\
@@ -1475,9 +1473,9 @@ void LALInferenceInitSpinVariables(LALInferenceRunState *state, LALInferenceMode
    * otherwise -> add everything */
    /* Note: To get spin aligned is sufficient to not add the spin angles because LALInferenceTemplate will default to aligned spin if it doesn't find spin angle params in model->params. */
   if (!noSpin){
-    LALInferenceRegisterUniformVariableREAL8(state, model->params, spin_support==LAL_SIM_INSPIRAL_ALIGNEDSPIN?"spin1":"a_spin1", 0.0, a1min, a1max,spin1Vary);
+    LALInferenceRegisterUniformVariableREAL8(state, model->params, "a_spin1", 0.0, a1min, a1max,spin1Vary);
     if (!singleSpin)
-      LALInferenceRegisterUniformVariableREAL8(state, model->params, spin_support==LAL_SIM_INSPIRAL_ALIGNEDSPIN?"spin2":"a_spin2", 0.0, a2min, a2max,spin2Vary);
+      LALInferenceRegisterUniformVariableREAL8(state, model->params, "a_spin2", 0.0, a2min, a2max,spin2Vary);
     if (!spinAligned){
       LALInferenceRegisterUniformVariableREAL8(state, model->params, "phi_jl", 0.0, phiJLmin,  phiJLmax, phiJLVary);
       LALInferenceRegisterUniformVariableREAL8(state, model->params, "tilt_spin1", 0.0, tilt1min,tilt1max,tilt1Vary);
