@@ -439,8 +439,8 @@ class IMRPhenomPTemplate(PrecessingTemplate):
     def _compute_waveform(self, df, f_final):
 
         approx = lalsim.GetApproximantFromString( "IMRPhenomP" )
-        phi0 = 0  # what is phi0?
-        lmbda1 = lmbda2 = 0
+        phi0 = 0  # This is a reference phase, and not an intrinsic parameter
+        lmbda1 = lmbda2 = 0 # No tidal terms in model
         ampO = 3
         phaseO = 7 # are these PN orders correct for PhenomP?
         hplus_fd, hcross_fd = lalsim.SimInspiralChooseFDWaveform(
@@ -458,6 +458,34 @@ class IMRPhenomPTemplate(PrecessingTemplate):
         # project onto detector
         return project_hplus_hcross(hplus_fd, hcross_fd, self.theta, self.phi, self.psi)
 
+    @classmethod
+    def from_sngl(cls, sngl, bank):
+        return cls(sngl.mass1, sngl.mass2, sngl.spin1x, sngl.spin1y, sngl.spin1z, sngl.spin2x, sngl.spin2y, sngl.spin2z, sngl.alpha1, sngl.alpha2, sngl.alpha3, sngl.alpha4, bank)
+
+    def to_sngl(self):
+        # note that we use the C version; this causes all numerical values to be initiated
+        # as 0 and all strings to be '', which is nice
+        row = SnglInspiralTable()
+        row.mass1 = self.m1
+        row.mass2 = self.m2
+        row.mtotal = self.m1 + self.m2
+        row.mchirp = self._mchirp
+        row.eta = row.mass1 * row.mass2 / (row.mtotal * row.mtotal)
+        row.tau0, row.tau3 = m1m2_to_tau0tau3(self.m1, self.m2, self.bank.flow)
+        row.f_final = self._f_final
+        row.template_duration = self._dur
+        row.spin1x = self.spin1x
+        row.spin1y = self.spin1y
+        row.spin1z = self.spin1z
+        row.spin2x = self.spin2x
+        row.spin2y = self.spin2y
+        row.spin2z = self.spin2z
+        row.alpha1 = self.theta
+        row.alpha2 = self.phi
+        row.alpha3 = self.iota
+        row.alpha4 = self.psi
+        row.sigmasq = self.sigmasq
+        return row
 
 
 class SEOBNRv2Template(Template):
