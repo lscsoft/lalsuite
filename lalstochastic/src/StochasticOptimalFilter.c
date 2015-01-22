@@ -24,7 +24,7 @@
  * \brief Calculates the values of the optimal filter function for the standard cross-correlation statistic.
  *
  * As described in
- * \cite Allen1997, \cite Allen1999, \cite Finn2001,
+ * \cite Allen1997 , \cite Allen1999 , \cite Finn2001 ,
  * the optimal filter \f$\widetilde{Q}^{\mathrm{C}}(f)\f$ which maximizes the ratio of the
  * mean \f$\mu=\langle Y\rangle\f$ to the standard deviation
  * \f$\sigma=\sqrt{\langle (Y-\mu)^2\rangle}\f$ of the cross-correlation

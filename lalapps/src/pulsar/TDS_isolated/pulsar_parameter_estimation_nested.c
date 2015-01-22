@@ -76,7 +76,7 @@ LALInference tools */
  * picking a point via differential evolution (two random live points are selected and a new point half way between the two
  * is created). The probability of using either method is currently set at 80\% and 20\% respectively. The procedure is
  * continued until a stopping criterion is reached, which in this case is that the remaining prior volume is less than the
- * \c tolerance value set (see below). The implementation of this can be seen in \cite VeitchVecchio2010.
+ * \c tolerance value set (see below). The implementation of this can be seen in \cite VeitchVecchio2010 .
  *
  * ### Usage ###
  *

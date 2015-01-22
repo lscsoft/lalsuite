@@ -47,7 +47,7 @@
  * The frequency domain strains \f$\widetilde{h}_1(f_i)\f$
  * and \f$\widetilde{h}_2(f_j)\f$ caused by
  * the stochastic background in two detectors are random variables that have
- * zero mean and that obey  \cite Allen1999:
+ * zero mean and that obey  \cite Allen1999 :
  * \f{equation}{
  * \langle\widetilde{h}_1^*(f_i)\widetilde{h}_1(f_j)\rangle
  * = \frac{3H_0^2T}{20\pi^2}\delta_{ij}f_i^{-3}\gamma_{11}(f_i)

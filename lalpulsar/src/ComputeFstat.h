@@ -39,7 +39,7 @@ extern "C" {
 ///
 /// \brief The \f$\mathcal{F}\f$-statistic.
 ///
-/// This module provides a API for computing the \f$\mathcal{F}\f$-statistic \cite JKS98, using
+/// This module provides a API for computing the \f$\mathcal{F}\f$-statistic \cite JKS98 , using
 /// various different methods.  All data required to compute the \f$\mathcal{F}\f$-statistic are
 /// contained in the opaque structure \c FstatInput, which is shared by all methods. A function
 /// XLALCreateFstatInput() is provided for creating an \c FstatInput structure configured

@@ -62,7 +62,7 @@
  * One difference between <tt>ludcmp()</tt> in \cite ptvf1992 and the
  * routines <tt>LALSLUDecomp()</tt> and <tt>LALDLUDecomp()</tt> in this
  * module is the way in which singular matrices are handled.
- * In \cite ptvf1992, there is a distinction between between a
+ * In \cite ptvf1992 , there is a distinction between between a
  * manifestly singular matrix (where an entire row of the matrix is zero)
  * and a numerically singular matrix (if a diagonal element in the
  * decomposed matrix turns out to be zero).  In the former case, they

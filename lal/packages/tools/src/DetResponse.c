@@ -32,7 +32,7 @@
 
 /**
  * An implementation of the detector response formulae in Anderson et al
- * PRD 63 042003 (2001) \cite ABCF2001.
+ * PRD 63 042003 (2001) \cite ABCF2001 .
  *
  * Computes F+ and Fx for a source at a specified sky position,
  * polarization angle, and sidereal time.  Also requires the detector's

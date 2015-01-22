@@ -25,7 +25,7 @@
  * \brief Computes quantities for amplitude demodulation.
  *
  * This routine computes the quantities \f$a(t)\f$ and \f$b(t)\f$ as defined in
- * Jaranowski, Krolak, and Schutz \cite JKS98, hereafter JKS.  These
+ * Jaranowski, Krolak, and Schutz \cite JKS98 , hereafter JKS.  These
  * functions quantify the dependence of the detector output on the
  * beam-pattern functions \f$F_{+}\f$ and \f$F_{\times}\f$; in fact, \f$a(t)\f$ and
  * \f$b(t)\f$ <i>are</i> the beam-pattern functions, without the dependence

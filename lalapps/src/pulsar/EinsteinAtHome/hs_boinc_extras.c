@@ -257,7 +257,7 @@ void mytime(void) {
 
 /*^* global VARIABLES *^*/
 
-/** E@H lal debug level */
+/** E\@H lal debug level */
 unsigned int eah_lal_debug_level = EAH_LALDEBUGLEVEL;
 
 /** the cpu type, see cpu_type_features.h */
@@ -814,7 +814,7 @@ static int resolve_and_unzip(const char*filename, /**< filename to resolve */
  */
 /**
  * rules for "bundled" workunits
- * - the command-line needs to begin with --BundleSize=<no_wus>
+ * - the command-line needs to begin with --BundleSize=\<no_wus\>
  * - each WU within a bundle must have its own config file specified on the command line
  *   the number of config files on the command-line must equal the bundle_size
  * - the config file should not refer to any files, as filenames in the config files are noy 'boinc_resolve'd
@@ -1934,7 +1934,7 @@ static void drain_fpu_stack(void) {
 
 static REAL4 get_nan(void) {
   static const UINT4 inan =
-    /* 0xFFFFFFFF; /* quiet NaN */
+    /* 0xFFFFFFFF; */ /* quiet NaN */
        0xFF8001FF; /* signaling NaN palindrome */
   return((*((REAL4*)&inan)) * ((REAL4)estimated_flops));
 }

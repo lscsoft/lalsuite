@@ -1099,8 +1099,8 @@ edat->nentriesE * edat->dtEtable );
  *
  * This function creates a lookup table of the tensor, vector and scalar antenna patterns for a given
  * detector orientation and source sky position. For the tensor modes these are the functions given by
- * equations 10-13 in \cite JKS98, whilst for the vector and scalar modes they are the \f$\psi\f$
- * independent parts of e.g. equations 5-8 of \cite Nishizawa2009. We remove the \f$\psi\f$ dependent
+ * equations 10-13 in \cite JKS98 , whilst for the vector and scalar modes they are the \f$\psi\f$
+ * independent parts of e.g. equations 5-8 of \cite Nishizawa2009 . We remove the \f$\psi\f$ dependent
  * by setting \f$\psi=0\f$.
  *
  * If \c avedt is a value over 60 seconds then the antenna pattern will actually be the mean value from

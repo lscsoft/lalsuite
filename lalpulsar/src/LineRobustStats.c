@@ -128,7 +128,7 @@ XLALDestroyBSGLSetup ( BSGLSetup * setup )
  * \f$\BSGL \equiv \frac{P(\data | \text{Signal})}{P(\data | \text{Gauss or Line})}\f$, which is related to the odds ratio
  * via \f$\OSGL = \oSGL\,\BSGL\f$ in terms of the prior odds \f$\oSGL\f$.
  *
- * Here we use the odds ratio derived in Eq.(36) (and Eq.(55)) of \cite KPPLS2014, from which we can obtain
+ * Here we use the odds ratio derived in Eq.(36) (and Eq.(55)) of \cite KPPLS2014 , from which we can obtain
  * \f{equation}{
  * \ln \BSGL = \F - \FpMax - \ln\left( e^{C - \FpMax} + \sum_X e^{\F^X + C^X - \FpMax} \right) \,,
  * \f}
@@ -140,7 +140,7 @@ XLALDestroyBSGLSetup ( BSGLSetup * setup )
  * C &\equiv \Ftho + \ln(1-\pL) = \Ftho - \ln(1+\oLG)\,,\\
  * C^X &\equiv \ln\frac{\pL\,r^X}{\Ndet} = \ln \oLGX - \ln(1+\oLG)\,,
  * \f}
- * and we used the following relations from \cite KPPLS2014:
+ * and we used the following relations from \cite KPPLS2014 :
  * \f$ \oLG = \sum_X \oLGX \;\f$ [Eq.(22)],
  * \f$ r^X = \frac{\oLGX\, \Ndet}{\oLG} \;\f$ [Eq.(23)],
  * and \f$\pL = \frac{\oLG}{1 + \oLG} \;\f$ [Eq.(37)].

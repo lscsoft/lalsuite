@@ -89,7 +89,7 @@ extern "C" {
  * ### Algorithm ###
  *
  * This is an implementation of the root bracketing and bisection finding
- * routines \c zbrac and \c rtbis in Numerical Recipes \cite ptvf1992.
+ * routines \c zbrac and \c rtbis in Numerical Recipes \cite ptvf1992 .
  *
  */
 /*@{*/

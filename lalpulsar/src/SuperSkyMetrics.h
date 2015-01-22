@@ -34,7 +34,7 @@ extern "C" {
 /// \ingroup lalpulsar_metric
 /// \author Karl Wette
 /// \brief Functions which compute the super-sky and reduced super-sky metrics
-/// of \cite WettePrix2013a.
+/// of \cite WettePrix2013a .
 ///
 /// @{
 ///

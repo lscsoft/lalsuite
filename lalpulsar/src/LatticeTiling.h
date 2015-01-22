@@ -35,7 +35,7 @@ extern "C" {
 /// \ingroup lalpulsar_templbank
 /// \author Karl Wette
 /// \brief Lattice-based template generation for constant-metric parameter
-/// spaces, described in \cite Wette2009a and \cite Wette2014a.
+/// spaces, described in \cite Wette2009a and \cite Wette2014a .
 ///
 /// @{
 ///

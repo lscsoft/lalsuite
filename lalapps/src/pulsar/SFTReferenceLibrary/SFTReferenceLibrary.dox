@@ -153,8 +153,8 @@ The current version of this specification may be found
     CRC checksum will be evaluated using the
     polynomial D800000000000000 (base-16) =
     1101100000000000000000000000000000000000000000000000000000000000 (base-2).
-    The primitive polynomial is x\f$^{64}\f$ + x\f$^4\f$ + x\f$^3\f$ + x + 1.
-    The CRC will be initialized to all ones (\f$\sim\f$0ULL).</li>
+    The primitive polynomial is \f$x^{64} + x^4 + x^3 + x + 1\f$.
+    The CRC will be initialized to all ones (\f$\sim 0\f$ULL).</li>
   <li> detector:
     two characters of the form 'Xn' characterizing the detector,
     following the naming convention for the channel-name prefix

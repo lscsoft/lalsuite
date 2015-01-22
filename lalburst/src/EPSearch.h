@@ -39,8 +39,8 @@ extern "C" {
  *
  * \brief A set of functions to implement the excess power search
  * technique which was suggested in Ref.\ \cite fh1998 and later
- * independently invented in Ref.\ \cite acdhp1999.  The implementation
- * here is described in detail in Ref.\ \cite ABCF2001.
+ * independently invented in Ref.\ \cite acdhp1999 .  The implementation
+ * here is described in detail in Ref.\ \cite ABCF2001 .
  */
   /*@{*/
 

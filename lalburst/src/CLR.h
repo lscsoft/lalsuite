@@ -78,7 +78,7 @@ extern "C" {
  * all the interference harmonics.
  *
  * The technique used is the so-called coherent line removal (\c clr)
- * \cite Sintes1998,\cite Sintes2000.  \c clr is an algorithm able to
+ * \cite Sintes1998 ,\cite Sintes2000 .  \c clr is an algorithm able to
  * remove interference present in the data while preserving the
  * stochastic detector noise.  \c clr works when the interference is
  * present in many harmonics, as long as they remain coherent with one

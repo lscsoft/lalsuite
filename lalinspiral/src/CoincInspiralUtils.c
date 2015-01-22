@@ -43,7 +43,7 @@
 #include <lal/CoincInspiralEllipsoid.h>
 
 /**
- * \defgroup CoincInspiralEllipsoid_c Module CoincInspiralEllipsoid.c
+ * \defgroup CoincInspiralUtils_c Module CoincInspiralUtils.c
  * \ingroup CoincInspiralEllipsoid_h
  * \author Fairhurst, S.
  *

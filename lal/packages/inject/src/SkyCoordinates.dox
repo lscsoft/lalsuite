@@ -93,7 +93,7 @@ direction perpendicular from the Earth's rotation axis to a reference
 point in Greenwich, UK (the <em>prime meridian</em>.  Note that we adopt
 a longitude convention that is consistent with the
 <i>Astronomical Almanac</i>, but opposite to that
-in \cite Lang_K1999, in that our geographic longitudes increase
+in \cite Lang_K1999 , in that our geographic longitudes increase
 <em>eastward</em> (counterclockwise) like the rest of our longitudinal
 coordinates.
 

@@ -529,7 +529,7 @@ particular piece of code and its status macros, this conflict would be
 easier to catch and resolve by replacing the macros with function
 calls into which the debugger could step.
 
-\subsection ss_compilation_flags Using the compilation flags
+\subsection ss_using_compilation_flags Using the compilation flags
 
 There are three ways to set these flags when compiling LAL programs or
 libraries.

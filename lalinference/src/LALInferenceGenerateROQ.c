@@ -420,7 +420,7 @@ int complex_vector_maxabs_index( gsl_vector_complex *c ){
  *
  * Given a \c gsl_matrix containing a training set of real waveforms (where the waveforms
  * are created at time or frequency steps seperated by \a delta) an orthonormal basis
- * will be generated using the greedy binning Algorithm 1 of \cite FGHKT2014. The stopping
+ * will be generated using the greedy binning Algorithm 1 of \cite FGHKT2014 . The stopping
  * criteria for the algorithm is controlled by the \a tolerance value, which defined the
  * maximum residual between the current basis set (at a given iteration) and the training
  * set (and example tolerance is \f$10^{-12}\f$. In this function the training set will be
@@ -547,7 +547,7 @@ REAL8 *LALInferenceGenerateREAL8OrthonormalBasis(gsl_vector *delta,
  *
  * Given a \c gsl_matrix containing a training set of complex waveforms (where the waveforms
  * are created at time or frequency steps seperated by \a delta) an orthonormal basis
- * will be generated using the greedy binning Algorithm 1 of \cite FGHKT2014. The stopping
+ * will be generated using the greedy binning Algorithm 1 of \cite FGHKT2014 . The stopping
  * criteria for the algorithm is controlled by the \a tolerance value, which defined the
  * maximum residual between the current basis set (at a given iteration) and the training
  * set (and example tolerance is \f$10^{-12}\f$. In this function the training set will be
@@ -801,7 +801,7 @@ INT4 LALInferenceTestCOMPLEX16OrthonormalBasis(gsl_vector *delta,
  *
  * Given a real \c gsl_matrix containing a set of orthonormal basis functions generate an
  * empirical intopolant, and set of interpolation points, using Algorithm 2 of
- * \cite FGHKT2014.
+ * \cite FGHKT2014 .
  *
  * @param[in] RB The set of basis functions
  *
@@ -887,7 +887,7 @@ LALInferenceREALROQInterpolant *LALInferenceGenerateREALROQInterpolant(gsl_matri
  *
  * Given a complex \c gsl_matrix_complex containing a set of orthonormal basis functions generate an
  * empirical intopolant, and set of interpolation points, using Algorithm 2 of
- * \cite FGHKT2014.
+ * \cite FGHKT2014 .
  *
  * @param[in] RB The set of basis functions
  *

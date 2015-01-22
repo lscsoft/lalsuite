@@ -43,7 +43,7 @@
  * \author Reinhard Prix, Karl Wette
  * \ingroup UniversalDopplerMetric_h
  * \brief Function to compute the full F-statistic metric, including
- * antenna-pattern functions from multi-detector, as derived in \cite Prix07.
+ * antenna-pattern functions from multi-detector, as derived in \cite Prix07 .
  *
  */
 
@@ -1104,7 +1104,7 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
 
 /**
  * Calculate the general (single-segment coherent, or multi-segment semi-coherent) phase-metric,
- * the *full* (multi-IFO) Fstat-metrix and the Fisher-matrix derived in \cite Prix07.
+ * the *full* (multi-IFO) Fstat-metrix and the Fisher-matrix derived in \cite Prix07 .
  *
  * The semi-coherent metrics \f$g_{ij}\f$ over \f$N\f$ segments are computed according to
  *
@@ -1189,7 +1189,7 @@ XLALDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< input p
 
 /**
  * Calculate the *coherent* (single-segment) phase-metric, the *full* (multi-IFO) Fstat-metrix
- * and the Fisher-matrix derived in \cite Prix07.
+ * and the Fisher-matrix derived in \cite Prix07 .
  *
  * Note: The returned DopplerMetric struct contains the matrices
  * g_ij (the phase metric), gF_ij (the F-metric), gFav_ij (the average F-metric),

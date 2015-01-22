@@ -34,7 +34,7 @@
  * \section sec_RealFFT_LAL LAL-style functions [DEPRECATED]
  *
  * This package also provides a (deprecated!) LAL-style interface with the FFTW fast Fourier
- * transform package \cite fj_1998.
+ * transform package \cite fj_1998 .
  *
  * The routines LALCreateForwardRealFFTPlan() and
  * LALCreateReverseRealFFTPlan() create plans for computing the
@@ -119,7 +119,7 @@
  *
  * <ol>
  * <li> The sign convention used here is the opposite of
- * <em>Numerical Recipes</em> \cite ptvf1992, but agrees with the one used
+ * <em>Numerical Recipes</em> \cite ptvf1992 , but agrees with the one used
  * by FFTW \cite fj_1998 and the other LIGO software components.
  * </li>
  * <li> The result of the reverse FFT must be multiplied by \f$1/n\f$ to recover
@@ -132,7 +132,7 @@
  * performance is \f$O(n\log n)\f$.  However, better performance is obtained if \f$n\f$
  * is the product of powers of 2, 3, 5, 7, and zero or one power of either 11
  * or 13.  Transforms when \f$n\f$ is a power of 2 are especially fast.  See
- * \cite fj_1998.
+ * \cite fj_1998 .
  * </li>
  * <li> All of these routines leave the input array undamaged.  (Except for LALREAL4VectorFFT().)
  * </li>

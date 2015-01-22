@@ -271,7 +271,7 @@ extern "C" {
  */
 typedef struct tagPulsarCoherentGW {
   SkyPosition position;     /**< The location of the source in the sky; this should be in equatorial celestial coordinates, but routines may be able to do the conversion */
-  REAL4 psi;                /**< The polarization angle \f$\psi\f$, in radians, as defined in Appendix B of \cite ABCF2001 */
+  REAL4 psi;                /**< The polarization angle \f$\psi\f$, in radians, as defined in Appendix B of \cite ABCF2001 . */
   REAL4TimeVectorSeries *h; /**< A time-sampled two-dimensional vector storing the waveforms \f$h_+(t)\f$ and \f$h_\times(t)\f$, in dimensionless strain */
   REAL4TimeVectorSeries *a; /**< A time-sampled two-dimensional vector storing the amplitudes \f$A_1(t)\f$ and \f$A_2(t)\f$, in dimensionless strain */
   REAL4TimeSeries *f;       /**< A time-sampled sequence storing the instantaneous frequency \f$f(t)\f$, in Hz. */

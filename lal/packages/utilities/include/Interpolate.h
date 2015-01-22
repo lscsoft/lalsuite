@@ -81,7 +81,7 @@ extern "C" {
  * ### Algorithm ###
  *
  * This is an implementation of the Neville algroithm, see \c polint in
- * Numerical Recipes \cite ptvf1992.
+ * Numerical Recipes \cite ptvf1992 .
  *
  */
 /*@{*/

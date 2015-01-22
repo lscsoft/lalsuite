@@ -83,7 +83,7 @@ extern "C" {
  * from \f$-\pi/2\f$ to \f$\pi/2\f$.  The \e elevation \f$h\f$ is the
  * signed distance along this ray from the reference ellipsoid to the
  * point in question.  This coördinate system is described in more
- * detail in \cite Althouse_1999.
+ * detail in \cite Althouse_1999 .
  *
  * ### Altitude and Azimuth Angles ###
  *
@@ -107,7 +107,7 @@ extern "C" {
  * longitude on the equator, and an \f$x^3\f$ axis which pierces the Earth's
  * surface at the North Pole.  The coördinates \f$x^1\f$, \f$x^2\f$, \f$x^3\f$
  * correspond to the Earth-fixed coördinates \f$X_E\f$, \f$Y_E\f$, \f$Z_E\f$
- * defined in \cite Althouse_1999, respectively.
+ * defined in \cite Althouse_1999 , respectively.
  *
  * The relationship between geodetic and Cartesian coördinates is
  * given by

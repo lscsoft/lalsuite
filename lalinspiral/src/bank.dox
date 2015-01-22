@@ -2,7 +2,7 @@
 \addtogroup lalinspiral_bank
 
 Template placement is based on the geometrical
-formalism \cite Owen_96,\cite OwenAndSathyaprakash99.  A user
+formalism \cite Owen_96 ,\cite OwenAndSathyaprakash99 .  A user
 calls either LALInspiralCreateCoarseBank(),
 to create a coarse bank, or LALInspiralCreateFineBank(),
 to create a fine bank, at specified minimal matches.
@@ -26,7 +26,7 @@ parameter space (masses, spins, etc.) with as small a number of
 templates as possible, subject to the constraint that every signal
 that lies within the space has an overlap greater
 than or equal to a certain <em>minimal match</em> with at least one template in
-the grid. Past studies \cite SathyaprakashDhurandhar1991,\cite Sathyaprakash1994,\cite OwenAndSathyaprakash99
+the grid. Past studies \cite SathyaprakashDhurandhar1991 ,\cite Sathyaprakash1994 ,\cite OwenAndSathyaprakash99
 have shown that this is most easily achieved by using the space of
 <em>chirp-times</em> to lay templates rather than the space of component masses.
 
@@ -186,7 +186,7 @@ for wave generation which can be anyone of #TaylorT1, #TaylorT2,
 #TaylorT3, #TaylorF1, #TaylorF2, or #PadeT1, #PadeF1, #EOB. Note that
 the placement algorithm is guaranteed to work with only #TaylorF2
 approximants. A detailed study of approximants that are well captured by
-this template placement algorithm is described elsewhere \cite dis2001.</li>
+this template placement algorithm is described elsewhere \cite dis2001 .</li>
 <li> ::GridSpacing, specify the type of placement to be used. For the
 physical template families placement, it must be #SquareNotOriented,
 #Hexagonal, #HybridHexagonal. For the non-BCV case, it could be #Square,

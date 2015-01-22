@@ -42,7 +42,7 @@ extern "C" {
  *
  * Perform real-to-complex and complex-to-real fast Fourier
  * transforms of vectors, and sequences of vectors using the package
- * FFTW \cite fj_1998.
+ * FFTW \cite fj_1998 .
  *
  * \section sec_RealFFT_XLAL XLAL Functions
  *
