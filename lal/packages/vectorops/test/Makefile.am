@@ -4,6 +4,7 @@ include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 
 # Add compiled test programs to this variable
 test_programs += VectorIndexRangeTest
+test_programs += VectorMathTest
 test_programs += VectorOpsTest
 
 # Add shell, Python, etc. test scripts to this variable

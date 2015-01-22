@@ -7,6 +7,12 @@ libvectorops_la_SOURCES = \
 	MatrixMultiply.c \
 	MatrixPower.c \
 	MiscMatlab.c \
+	VectorMath.c \
+	VectorMath_sse_mathfun.h \
+	VectorMath_avx_mathfun.h \
+	VectorMath_AVX.c \
+	VectorMath_FPU.c \
+	VectorMath_SSE.c \
 	VectorMultiply.c \
 	VectorPolar.c \
 	VectorIndexRange.c

@@ -13,7 +13,6 @@ pkginclude_HEADERS = \
 	ComplexAM.h \
 	ComputeFstat.h \
 	ComputeSky.h \
-	CWFastMath.h \
 	CWMakeFakeData.h \
 	DetectorStates.h \
 	DopplerFullScan.h \
@@ -76,7 +75,6 @@ liblalpulsar_la_SOURCES = \
 	ComputeFstat.c \
 	ComputeSky.c \
 	ConstructPLUT.c \
-	CWFastMath.c \
 	CWMakeFakeData.c \
 	DetectorStates.c \
 	DopplerFullScan.c \
