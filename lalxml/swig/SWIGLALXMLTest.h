@@ -20,11 +20,23 @@
 // Code for SWIG tests of the LALXML bindings.
 // Author: Karl Wette
 
-// Include LAL test code header.
 #include <lal/SWIGLALTest.h>
+
+#ifndef _SWIGLALXMLTEST_H
+#define _SWIGLALXMLTEST_H
+
+#ifdef  __cplusplus
+extern "C" {
+#endif
 
 // Test object parent tracking between modules.
 typedef struct tagswig_lalxml_test_parent_map_struct {
   swig_lal_test_struct s;
 } swig_lalxml_test_parent_map_struct;
-swig_lalxml_test_parent_map_struct swig_lalxml_test_parent_map;
+extern swig_lalxml_test_parent_map_struct swig_lalxml_test_parent_map;
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif // _SWIGLALXMLTEST_H

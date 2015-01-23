@@ -17,26 +17,17 @@
 // MA  02111-1307  USA
 //
 
-// Code for SWIG tests of the LALFrame bindings.
+// Code for SWIG tests of the LALInference bindings.
 // Author: Karl Wette
 
-#include <lal/SWIGLALTest.h>
+#include "swiglal_config.h"
+#include <lal/SWIGLALInferenceTest.h>
 
-#ifndef _SWIGLALFRAMETEST_H
-#define _SWIGLALFRAMETEST_H
-
-#ifdef  __cplusplus
-extern "C" {
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
 #endif
 
 // Test object parent tracking between modules.
-typedef struct tagswig_lalframe_test_parent_map_struct {
-  swig_lal_test_struct s;
-} swig_lalframe_test_parent_map_struct;
-extern swig_lalframe_test_parent_map_struct swig_lalframe_test_parent_map;
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif // _SWIGLALFRAMETEST_H
+UNUSED swig_lalinference_test_parent_map_struct swig_lalinference_test_parent_map;

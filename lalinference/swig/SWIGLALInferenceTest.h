@@ -20,11 +20,23 @@
 // Code for SWIG tests of the LALInference bindings.
 // Author: Karl Wette
 
-// Include LAL test code header.
 #include <lal/SWIGLALTest.h>
+
+#ifndef _SWIGLALINFERENCETEST_H
+#define _SWIGLALINFERENCETEST_H
+
+#ifdef  __cplusplus
+extern "C" {
+#endif
 
 // Test object parent tracking between modules.
 typedef struct tagswig_lalinference_test_parent_map_struct {
   swig_lal_test_struct s;
 } swig_lalinference_test_parent_map_struct;
-swig_lalinference_test_parent_map_struct swig_lalinference_test_parent_map;
+extern swig_lalinference_test_parent_map_struct swig_lalinference_test_parent_map;
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif // _SWIGLALINFERENCETEST_H

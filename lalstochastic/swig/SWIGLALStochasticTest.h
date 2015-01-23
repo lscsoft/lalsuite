@@ -20,11 +20,23 @@
 // Code for SWIG tests of the LALStochastic bindings.
 // Author: Karl Wette
 
-// Include LAL test code header.
 #include <lal/SWIGLALTest.h>
+
+#ifndef _SWIGLALSTOCHASTICTEST_H
+#define _SWIGLALSTOCHASTICTEST_H
+
+#ifdef  __cplusplus
+extern "C" {
+#endif
 
 // Test object parent tracking between modules.
 typedef struct tagswig_lalstochastic_test_parent_map_struct {
   swig_lal_test_struct s;
 } swig_lalstochastic_test_parent_map_struct;
-swig_lalstochastic_test_parent_map_struct swig_lalstochastic_test_parent_map;
+extern swig_lalstochastic_test_parent_map_struct swig_lalstochastic_test_parent_map;
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif // _SWIGLALSTOCHASTICTEST_H

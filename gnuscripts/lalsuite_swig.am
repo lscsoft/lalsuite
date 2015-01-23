@@ -1,6 +1,7 @@
 # Common SWIG build rules
 # Author: Karl Wette, 2011--2014
 
+BUILT_SOURCES =
 DEFAULT_INCLUDES =
 EXTRA_DIST =
 EXTRA_HEADERS =
@@ -31,6 +32,10 @@ pkginclude_HEADERS += \
 	$(END_OF_LIST)
 
 if SWIG_BUILD
+
+BUILT_SOURCES += \
+	swiglal_config.h \
+	$(END_OF_LIST)
 
 swig_iface = swig$(PACKAGE).i
 swig_preproc_flags = -MP -MD -MT $@ -Wextra -Werror -I$(top_builddir)/include -includeall -ignoremissing -xml -xmllite
@@ -114,6 +119,7 @@ swig_octave_flags = $(swig_flags) -octave -globals . -DSWIG_CPLUSPLUS_CAST
 
 octexec_LTLIBRARIES = swiglal_octave.la
 nodist_swiglal_octave_la_SOURCES = swiglal_octave.cpp
+swiglal_octave_la_SOURCES = SWIGTest.c
 swiglal_octave_la_CPPFLAGS = $(SWIG_OCTAVE_CPPFLAGS_IOCTAVE) $(swig_cppflags) $(SWIG_OCTAVE_CPPFLAGS)
 swiglal_octave_la_CXXFLAGS = $(SWIG_OCTAVE_CXXFLAGS)
 swiglal_octave_la_LDFLAGS = $(swig_ldflags) $(SWIG_OCTAVE_LDFLAGS)
@@ -165,6 +171,7 @@ swig_python_flags = $(swig_flags) -python -O -builtin -globals globalvar
 pkgpyexec_LTLIBRARIES = swiglal_python.la
 nodist_pkgpyexec_PYTHON = swiglal_python/$(PACKAGE).py
 nodist_swiglal_python_la_SOURCES = swiglal_python.c
+swiglal_python_la_SOURCES = SWIGTest.c
 swiglal_python_la_CFLAGS = $(SWIG_PYTHON_CFLAGS)
 swiglal_python_la_CPPFLAGS = $(swig_cppflags) $(SWIG_PYTHON_CPPFLAGS)
 swiglal_python_la_LDFLAGS = $(swig_ldflags) $(SWIG_PYTHON_LDFLAGS)

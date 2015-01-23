@@ -20,11 +20,23 @@
 // Code for SWIG tests of the LALBurst bindings.
 // Author: Karl Wette
 
-// Include LAL test code header.
 #include <lal/SWIGLALTest.h>
+
+#ifndef _SWIGLALBURSTTEST_H
+#define _SWIGLALBURSTTEST_H
+
+#ifdef  __cplusplus
+extern "C" {
+#endif
 
 // Test object parent tracking between modules.
 typedef struct tagswig_lalburst_test_parent_map_struct {
   swig_lal_test_struct s;
 } swig_lalburst_test_parent_map_struct;
-swig_lalburst_test_parent_map_struct swig_lalburst_test_parent_map;
+extern swig_lalburst_test_parent_map_struct swig_lalburst_test_parent_map;
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif // _SWIGLALBURSTTEST_H

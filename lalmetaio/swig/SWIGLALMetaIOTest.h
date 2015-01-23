@@ -20,11 +20,23 @@
 // Code for SWIG tests of the LALMetaIO bindings.
 // Author: Karl Wette
 
-// Include LAL test code header.
 #include <lal/SWIGLALTest.h>
+
+#ifndef _SWIGLALMETAIOTEST_H
+#define _SWIGLALMETAIOTEST_H
+
+#ifdef  __cplusplus
+extern "C" {
+#endif
 
 // Test object parent tracking between modules.
 typedef struct tagswig_lalmetaio_test_parent_map_struct {
   swig_lal_test_struct s;
 } swig_lalmetaio_test_parent_map_struct;
-swig_lalmetaio_test_parent_map_struct swig_lalmetaio_test_parent_map;
+extern swig_lalmetaio_test_parent_map_struct swig_lalmetaio_test_parent_map;
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif // _SWIGLALMETAIOTEST_H
