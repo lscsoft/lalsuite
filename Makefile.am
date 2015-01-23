@@ -13,3 +13,9 @@ $(ACLOCAL_M4): $(am__aclocal_m4_deps)
 # exports) are propagated to the library-level configurations. See Redmine issue #728.
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	$(SHELL) $(top_srcdir)/configure $(ac_configure_args)
+
+if DOXYGEN
+html_DATA = gnuscripts/index.html
+install-html-local: install-htmlDATA
+	@echo "=== $(PACKAGE_NAME) main page is at file://$(htmldir)/index.html"
+endif

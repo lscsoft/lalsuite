@@ -24,6 +24,25 @@ LALSUITE_ENABLE_LALPULSAR
 LALSUITE_ENABLE_LALINFERENCE
 LALSUITE_ENABLE_LALAPPS
 
+# configure Doxygen top-level page
+LALSUITE_ENABLE_DOXYGEN
+LALSUITE_ENABLE_MODULE([DOXYGEN])
+AS_IF([test "x${doxygen}" = xtrue],[
+  AC_CONFIG_FILES([gnuscripts/index.html])
+  AC_SUBST([DOXYGEN_PACKAGE_LINKS],[])
+  AM_SUBST_NOTMAKE([DOXYGEN_PACKAGE_LINKS])
+  AC_SUBST([DOXYGEN_LAST_PACKAGE],[])
+  AM_SUBST_NOTMAKE([DOXYGEN_LAST_PACKAGE])
+])
+AC_DEFUN([lalsuite_config_doxygen],[
+  m4_pushdef([lowercase],m4_translit([[$1]], [A-Z], [a-z]))
+  AS_IF([test "x${doxygen}" = xtrue],[
+    DOXYGEN_PACKAGE_LINKS="${DOXYGEN_PACKAGE_LINKS}"' <a target="docframe" href="../lowercase/index.html">$1</a>'
+    DOXYGEN_LAST_PACKAGE="../lowercase/index.html"
+  ])
+  m4_popdef([lowercase])
+])
+
 # directories of top-level build and source
 lalsuite_abs_top_builddir="`pwd`"
 #lalsuite_top_builddir='$(top_builddir)/..'
@@ -47,6 +66,9 @@ AC_DEFUN([lalsuite_config_subdir],[
     export uppercase[]_LIBS uppercase[]_CFLAGS uppercase[]_HTMLDIR
     export uppercase[]_DATA_PATH uppercase[]_OCTAVE_PATH uppercase[]_PYTHON_PATH
 
+    # configure Doxygen top-level page
+    lalsuite_config_doxygen([$1])
+
     # configure $1
     AC_CONFIG_SUBDIRS(lowercase)
 
@@ -62,6 +84,7 @@ AC_DEFUN([lalsuite_config_subdir],[
 ])
 
 # lal and lalsupport are always configured
+lalsuite_config_doxygen([LAL])
 AC_CONFIG_SUBDIRS(lal)
 LAL_LIBS="${lalsuite_abs_top_builddir}/lal/lib/lal/liblal.la"
 LAL_CFLAGS="-I${lalsuite_abs_top_builddir}/lal/include"
@@ -81,19 +104,20 @@ export LAL_LIBS LAL_CFLAGS LAL_DATA_PATH LAL_OCTAVE_PATH LAL_PYTHON_PATH LAL_HTM
 export LALSUPPORT_LIBS LALSUPPORT_CFLAGS LALSUPPORT_DATA_PATH LALSUPPORT_OCTAVE_PATH LALSUPPORT_PYTHON_PATH LALSUPPORT_HTMLDIR
 
 # configure optional packages
-lalsuite_config_subdir([lalframe])
-lalsuite_config_subdir([lalmetaio])
-lalsuite_config_subdir([lalxml])
-lalsuite_config_subdir([lalsimulation])
-lalsuite_config_subdir([lalburst])
-lalsuite_config_subdir([laldetchar])
-lalsuite_config_subdir([lalinspiral])
-lalsuite_config_subdir([lalstochastic])
-lalsuite_config_subdir([lalpulsar])
-lalsuite_config_subdir([lalinference])
+lalsuite_config_subdir([LALFrame])
+lalsuite_config_subdir([LALMetaIO])
+lalsuite_config_subdir([LALXML])
+lalsuite_config_subdir([LALSimulation])
+lalsuite_config_subdir([LALBurst])
+lalsuite_config_subdir([LALDetChar])
+lalsuite_config_subdir([LALInspiral])
+lalsuite_config_subdir([LALStochastic])
+lalsuite_config_subdir([LALPulsar])
+lalsuite_config_subdir([LALInference])
 
 # optionally configure lalapps
 AS_IF([test "x$lalapps" = xtrue],[
+  lalsuite_config_doxygen([LALApps])
   AC_CONFIG_SUBDIRS(lalapps)
   LALAPPS_ENABLE_VAL=ENABLED
 ],[
@@ -117,6 +141,7 @@ LALSuite has now been successfully configured:
 * LALPulsar library support is $LALPULSAR_ENABLE_VAL
 * LALInference library support is $LALINFERENCE_ENABLE_VAL
 * LALApps library support is $LALAPPS_ENABLE_VAL
+* Doxygen documentation is $DOXYGEN_ENABLE_VAL
 
 and will be installed under the directory:
 
