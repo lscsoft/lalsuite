@@ -150,7 +150,7 @@ int XLALComputeExtraStatsSemiCoherent ( RecalcStatsComponents *recalcStats,		/**
 {
 
   /* check input parameters and report errors */
-  XLAL_CHECK ( recalcStats && recalcStats->avTwoFX && dopplerParams && recalcParams->Fstat_in_vec && recalcParams->detectorIDs && recalcParams->startTstack, XLAL_EFAULT, "Empty pointer as input parameter." );
+  XLAL_CHECK ( recalcStats && dopplerParams && recalcParams->Fstat_in_vec && recalcParams->detectorIDs && recalcParams->startTstack, XLAL_EFAULT, "Empty pointer as input parameter." );
 
   UINT4 numSegments  = recalcParams->Fstat_in_vec->length;
   UINT4 numDetectors = recalcParams->detectorIDs->length;
