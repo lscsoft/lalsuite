@@ -214,7 +214,7 @@ void XLALFreeAligned(void *ptr)
  */
 
 
-#if ! defined NDEBUG && ! defined LAL_NDEBUG
+#if ! defined NDEBUG
 
 #ifdef LAL_PTHREAD_LOCK
 #include <pthread.h>
@@ -325,12 +325,12 @@ static void *PadAlloc(size_t * p, size_t n, int keep, const char *func)
     }
 
     if (lalDebugLevel & LALMEMINFOBIT) {
-        LALPrintError("%s meminfo: allocating %ld bytes at address %p\n",
+        XLALPrintError("%s meminfo: allocating %ld bytes at address %p\n",
                       func, n, p + nprefix);
     }
 
     if (lalDebugLevel & LALWARNING && n == 0) {
-        LALPrintError("%s warning: zero size allocation at address %p\n",
+        XLALPrintError("%s warning: zero size allocation at address %p\n",
                       func, p + nprefix);
     }
 
@@ -374,12 +374,12 @@ static void *UnPadAlloc(void *p, int keep, const char *func)
     s = (char *) q;
 
     if (lalDebugLevel & LALMEMINFOBIT) {
-        LALPrintError("%s meminfo: freeing %ld bytes at address %p\n",
+        XLALPrintError("%s meminfo: freeing %ld bytes at address %p\n",
                       func, n, p);
     }
 
     if (lalDebugLevel & LALWARNING && n == 0) {
-        LALPrintError
+        XLALPrintError
             ("%s warning: tried to free a freed pointer at address %p\n",
              func, p);
     }
@@ -555,7 +555,7 @@ void *LALMallocLong(size_t n, const char *file, int line)
         XLALPrintError("LALMalloc: failed to allocate %zd bytes of memory\n", n);
         XLALPrintError("LALMalloc: %zd bytes of memory already allocated\n", lalMallocTotal);
         if (lalDebugLevel & LALMEMINFOBIT) {
-            LALPrintError("LALMalloc meminfo: out of memory\n");
+            XLALPrintError("LALMalloc meminfo: out of memory\n");
         }
         if (p) {
             free(p);
@@ -593,7 +593,7 @@ void *LALCallocLong(size_t m, size_t n, const char *file, int line)
         XLALPrintError("LALMalloc: failed to allocate %zd bytes of memory\n", n);
         XLALPrintError("LALMalloc: %zd bytes of memory already allocated\n", lalMallocTotal);
         if (lalDebugLevel & LALMEMINFOBIT) {
-            LALPrintError("LALCalloc meminfo: out of memory\n");
+            XLALPrintError("LALCalloc meminfo: out of memory\n");
         }
         if (p) {
             free(p);
@@ -627,7 +627,7 @@ void *LALReallocLong(void *q, size_t n, const char *file, const int line)
             XLALPrintError("LALMalloc: failed to allocate %zd bytes of memory\n", n);
             XLALPrintError("LALMalloc: %zd bytes of memory already allocated\n", lalMallocTotal);
             if (lalDebugLevel & LALMEMINFOBIT) {
-                LALPrintError("LALRealloc meminfo: out of memory\n");
+                XLALPrintError("LALRealloc meminfo: out of memory\n");
             }
             if (p) {
                 free(p);
@@ -688,9 +688,9 @@ void LALCheckMemoryLeaks(void)
     /* allocList should be NULL */
     if ((lalDebugLevel & LALMEMTRKBIT) && allocList) {
         struct allocNode *node = allocList;
-        LALPrintError("LALCheckMemoryLeaks: allocation list\n");
+        XLALPrintError("LALCheckMemoryLeaks: allocation list\n");
         while (node) {
-            LALPrintError("%p: %lu bytes (%s:%d)\n", node->addr,
+            XLALPrintError("%p: %lu bytes (%s:%d)\n", node->addr,
                           (unsigned long) node->size, node->file,
                           node->line);
             node = node->next;
@@ -701,7 +701,7 @@ void LALCheckMemoryLeaks(void)
     /* lalMallocTotal and lalMallocCount should be zero */
     if ((lalDebugLevel & LALMEMPADBIT)
         && (lalMallocTotal || lalMallocCount)) {
-        LALPrintError("LALCheckMemoryLeaks: lalMallocCount = %d allocs, "
+        XLALPrintError("LALCheckMemoryLeaks: lalMallocCount = %d allocs, "
                       "lalMallocTotal = %ld bytes\n", lalMallocCount,
                       (long) lalMallocTotal);
         leak = 1;
@@ -710,7 +710,7 @@ void LALCheckMemoryLeaks(void)
     if (leak) {
         lalRaiseHook(SIGSEGV, "LALCheckMemoryLeaks: memory leak\n");
     } else if (lalDebugLevel & LALMEMINFOBIT) {
-        LALPrintError
+        XLALPrintError
             ("LALCheckMemoryLeaks meminfo: no memory leaks detected\n");
     }
 
@@ -721,4 +721,4 @@ void LALCheckMemoryLeaks(void)
 
 void (LALCheckMemoryLeaks)(void) { return; }
 
-#endif /* ! defined NDEBUG && ! defined LAL_NDEBUG */
+#endif /* ! defined NDEBUG */

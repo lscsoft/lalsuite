@@ -5,10 +5,10 @@
 AC_DEFUN([LAL_ENABLE_DEBUG],
 [AC_ARG_ENABLE(
   [debug],
-  AC_HELP_STRING([--enable-debug],[include standard LAL debugging code [default=yes]]),
+  AC_HELP_STRING([--enable-debug],[set default lalDebugLevel to 1, which turns on output of error messages [default=yes]]),
   [AS_CASE(["${enableval}"],
     [yes],,
-    [no],AC_DEFINE(LAL_NDEBUG, 1, Suppress debugging code),
+    [no],AC_DEFINE(LAL_NDEBUG, 1, Set default lalDebugLevel to 0),
     AC_MSG_ERROR(bad value for ${enableval} for --enable-debug))
   ], )
 ])

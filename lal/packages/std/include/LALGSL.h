@@ -107,11 +107,6 @@
 #define _LALGSL_H
 
 #include <lal/LALConfig.h>
-#ifdef NDEBUG
-#ifndef LAL_NDEBUG
-#define LAL_NDEBUG
-#endif
-#endif
 
 #include <stdlib.h>
 #include <string.h>

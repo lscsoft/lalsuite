@@ -20,7 +20,7 @@ standard C routines.
 ### Macros ###
 
 \code
-#if defined NDEBUG || defined LAL_NDEBUG
+#if defined NDEBUG
 
 #define LALMalloc                           malloc
 #define LALMallocShort                      malloc

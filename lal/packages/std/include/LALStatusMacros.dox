@@ -497,7 +497,7 @@ header.  The two flags are named \c NDEBUG and \c NOLALMACROS.
 
 \subsection ss_ndebug_flag The NDEBUG flag
 
-Setting the \c NDEBUG (or \c LAL_NDEBUG) flag turns off debugging and
+Setting the \c NDEBUG flag turns off debugging and
 error-reporting code, in order to get condensed production-line programs.  As
 far as error reporting is concerned, setting the \c NDEBUG flag at compile
 time is similar to setting \c lalDebugLevel equal to zero at runtime, in

@@ -62,7 +62,7 @@ char caughtMessage[1024];
 jmp_buf jump;
 FILE *mystderr;
 
-#if defined(NDEBUG) || defined(LAL_NDEBUG)
+#if defined(NDEBUG)
 /* debugging is turned off */
 #else
 /* replacement for LALRaise */
@@ -127,7 +127,7 @@ size_t  *r;
 size_t  *s;
 size_t **v;
 
-#if defined(NDEBUG) || defined(LAL_NDEBUG)
+#if defined(NDEBUG)
 /* debugging is turned off */
 #else
 /* do a bunch of allocations/deallocations that are OK */
@@ -329,7 +329,7 @@ static int stressTestRealloc( void )
 
 int main( void )
 {
-#if defined(NDEBUG) || defined(LAL_NDEBUG) /* debugging is turned off */
+#if defined(NDEBUG) /* debugging is turned off */
   return 77; /* don't do any testing */
 #else
   XLALGetDebugLevel();
