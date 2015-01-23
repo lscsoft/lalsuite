@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 101
+# serial 102
 
 # not present in older versions of pkg.m4
 m4_pattern_allow([^PKG_CONFIG(_(PATH|LIBDIR|SYSROOT_DIR|ALLOW_SYSTEM_(CFLAGS|LIBS)))?$])
@@ -473,12 +473,12 @@ AC_DEFUN([LALSUITE_CHECK_LIB],[
   AS_UNSET([PKG_CONFIG_ALLOW_SYSTEM_CFLAGS])
   AS_UNSET([PKG_CONFIG_ALLOW_SYSTEM_LIBS])
 
-  # prepend to CFLAGS, CPPFLAGS, LDFLAGS, LIBS, LAL_DATA_PATH, LAL_OCTAVE_PATH, LAL_PYTHON_PATH, LAL_DOCDIR
+  # prepend to CFLAGS, CPPFLAGS, LDFLAGS, LIBS, LAL_DATA_PATH, LAL_OCTAVE_PATH, LAL_PYTHON_PATH, LAL_HTMLDIR
   PKG_CHECK_MODULES(uppercase, [lowercase >= $2], [lowercase="true"], [lowercase="false"])
   PKG_CHECK_VAR(uppercase[]_DATA_PATH, [lowercase >= $2], uppercase[]_DATA_PATH,,)
   PKG_CHECK_VAR(uppercase[]_OCTAVE_PATH, [lowercase >= $2], uppercase[]_OCTAVE_PATH,,)
   PKG_CHECK_VAR(uppercase[]_PYTHON_PATH, [lowercase >= $2], uppercase[]_PYTHON_PATH,,)
-  PKG_CHECK_VAR(uppercase[]_DOCDIR, [lowercase >= $2], docdir,,)
+  PKG_CHECK_VAR(uppercase[]_HTMLDIR, [lowercase >= $2], htmldir,,)
   if test "$lowercase" = "true"; then
     LALSUITE_ADD_FLAGS([C],$[]uppercase[]_CFLAGS,$[]uppercase[]_LIBS)
     LALSUITE_ADD_PATH(LAL_DATA_PATH,"$[]uppercase[]_DATA_PATH")
@@ -662,15 +662,15 @@ AC_DEFUN([LALSUITE_ENABLE_DOXYGEN],[
           [lalsupport],[:],[
             ucarg=[`echo ${arg} | tr '[a-z]' '[A-Z]'`]
             DOXYGEN_ENABLED_SECTIONS="${DOXYGEN_ENABLED_SECTIONS} ${ucarg}"
-            arg_docdir_name="${ucarg}_DOCDIR"
-            AS_VAR_COPY([arg_docdir],[${arg_docdir_name}])
+            arg_htmldir_name="${ucarg}_HTMLDIR"
+            AS_VAR_COPY([arg_htmldir],[${arg_htmldir_name}])
             AS_IF([test "x${LALSUITE_BUILD}" = xtrue],[
               tagpath="\$(abs_top_builddir)/../${arg}/doxygen/out"
             ],[
-              tagpath="${arg_docdir}/doxygen"
+              tagpath="${arg_htmldir}"
             ])
             DOXYGEN_TAGFILES="${DOXYGEN_TAGFILES} ${tagpath}/${arg}.tag=${tagpath}"
-            DOXYGEN_INSTALL_DIRMAP="${DOXYGEN_INSTALL_DIRMAP} ${tagpath}:${arg_docdir}/doxygen"
+            DOXYGEN_INSTALL_DIRMAP="${DOXYGEN_INSTALL_DIRMAP} ${tagpath}:${arg_htmldir}"
           ]
         )
       done

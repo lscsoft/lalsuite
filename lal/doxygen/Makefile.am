@@ -36,24 +36,26 @@ html-local: Makefile $(CONFIG_CLEAN_FILES)
 	test `cat errors.log | wc -l` -eq 0 || exit 1; \
 	rm -f errors.log || exit 1; \
 	echo "=== Doxygen documentation build was successful!"; \
-	echo "=== Main page is at file://$(abs_builddir)/out/index.html"
+	echo "=== $(PACKAGE_NAME) main page is at file://$(abs_builddir)/out/index.html"
 
 install-data-local: install-html-local
 install-html-local: html-local
 	$(AM_V_at)for dir in `cd out/ && find . -type d`; do \
-		echo " $(MKDIR_P) '$(DESTDIR)$(docdir)/doxygen/$${dir}'"; \
-		$(MKDIR_P) "$(DESTDIR)$(docdir)/doxygen/$${dir}" || exit 1; \
-	done; \
-	$(PYTHON) $(abs_srcdir)/install_regex.py "$(DESTDIR)$(docdir)/doxygen" "$(DOXYGEN_INSTALL_DIRMAP)" > $@.regex || exit 1; \
-	for file in `cd out/ && find . -type f`; do \
-		echo " $(INSTALL_DATA) out/$${file} '$(DESTDIR)$(docdir)/doxygen/$${file}'"; \
-		$(SED) -n -f $@.regex out/$${file} > $@.tmp || exit 1; \
-		$(INSTALL_DATA) $@.tmp "$(DESTDIR)$(docdir)/doxygen/$${file}" || exit 1; \
+		echo " $(MKDIR_P) '$(DESTDIR)$(htmldir)/$${dir}'"; \
+		$(MKDIR_P) "$(DESTDIR)$(htmldir)/$${dir}" || exit 1; \
+		$(PYTHON) $(abs_srcdir)/install_regex.py "$(DESTDIR)$(htmldir)/$${dir}" "$(DOXYGEN_INSTALL_DIRMAP)" > $@.regex || exit 1; \
+		for file in `cd out/ && echo $${dir}/*`; do \
+			if test -f "out/$${file}"; then \
+				echo " $(INSTALL_DATA) out/$${file} '$(DESTDIR)$(htmldir)/$${file}'"; \
+				$(SED) -n -f $@.regex "out/$${file}" > $@.tmp || exit 1; \
+				$(INSTALL_DATA) $@.tmp "$(DESTDIR)$(htmldir)/$${file}" || exit 1; \
+			fi; \
+		done; \
 	done; \
 	rm -f $@.regex $@.tmp
 
 uninstall-local:
-	-rm -rf "$(DESTDIR)$(docdir)/doxygen/"
+	-rm -rf "$(DESTDIR)$(htmldir)/"
 
 clean-local:
 	-rm -rf out/

@@ -4,6 +4,7 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 datarootdir=@datarootdir@
+htmldir=@htmldir@
 docdir=@docdir@
 LALDETCHAR_OCTAVE_PATH=@octexecdir@
 LADETCHARL_PYTHON_PATH=@pyexecdir@
