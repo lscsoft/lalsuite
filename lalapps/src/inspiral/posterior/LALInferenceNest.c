@@ -87,7 +87,7 @@ Initialisation arguments:\n\
 	INT4 x=0;
 	ppt=LALInferenceGetProcParamVal(commandLine,"--verbose");
 	if(ppt) {
-	  if(ppt->value){
+	  if(ppt->value[0]){
 	    x=atoi(ppt->value);
 	    switch(x){
 	     case 0:
