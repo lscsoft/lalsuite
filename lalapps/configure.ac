@@ -368,6 +368,9 @@ if test "${boinc}" = "true" ; then
    AC_LANG_POP([C++])
 fi
 
+# configure Doxygen documentation
+LALSUITE_USE_DOXYGEN
+
 # check for qthread
 LALAPPS_CHECK_QTHREAD
 

@@ -314,6 +314,9 @@ fi
 # configure SWIG wrapping modules
 LALSUITE_USE_SWIG
 
+# configure Doxygen documentation
+LALSUITE_USE_DOXYGEN
+
 # checks for typedefs, structures, and compiler characteristics
 AC_C_BIGENDIAN
 AC_C_CONST

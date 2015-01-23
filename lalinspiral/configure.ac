@@ -137,6 +137,9 @@ LALSUITE_CHECK_LIB([LALFrame],[1.2.0],[LALFrOpen],[lal/LALFrameL.h])
 # configure SWIG wrapping modules
 LALSUITE_USE_SWIG
 
+# configure Doxygen documentation
+LALSUITE_USE_DOXYGEN
+
 # define if CUDA is enabled
 if test "${cuda}" = "true"; then
   AC_DEFINE([LALINSPIRAL_CUDA_ENABLED],[1],[Define if using cuda library])

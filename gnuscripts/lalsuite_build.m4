@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 102
+# serial 103
 
 # not present in older versions of pkg.m4
 m4_pattern_allow([^PKG_CONFIG(_(PATH|LIBDIR|SYSROOT_DIR|ALLOW_SYSTEM_(CFLAGS|LIBS)))?$])
@@ -608,98 +608,6 @@ AC_DEFUN([LALSUITE_CHECK_LIBRARY_FOR_SUPPORT],[
   # end $0
 ])
 
-AC_DEFUN([LALSUITE_ENABLE_DOXYGEN],[
-  # $0: enable Doxygen documentation
-  AC_REQUIRE([LALSUITE_CHECK_GIT_REPO])
-  AC_ARG_ENABLE(
-    [doxygen],
-    AC_HELP_STRING(
-      [--enable-doxygen],
-      [generate Doxygen documentation]
-    ),[
-      AS_CASE(["${enableval}"],
-        [yes],[doxygen=true],
-        [no],[doxygen=false],
-        [AC_MSG_ERROR([invalid value "${enableval}" for --enable-doxygen])]
-      )
-    ],[
-      doxygen=false
-    ]
-  )
-  AC_ARG_WITH(
-    [mathjax],
-    AC_HELP_STRING(
-      [--with-mathjax=PATH],
-      [use MathJax installation at PATH [default: use CDN]]
-    ),[
-      DOXYGEN_MATHJAXDIR="${withval}"
-    ],[
-      DOXYGEN_MATHJAXDIR=
-    ]
-  )
-  LALSUITE_ENABLE_MODULE([DOXYGEN])
-  AS_IF([test "x${doxygen}" = xtrue],[
-    AC_CONFIG_FILES([doxygen/filter],[chmod +x doxygen/filter])
-    LALSUITE_REQUIRE_PYTHON([2.6])   # Python is required to run some scripts
-    AC_PATH_PROG([DOXYGEN],[doxygen],[],[])
-    AS_IF([test "x${DOXYGEN}" = x],[
-      AC_MSG_ERROR([could not find Doxygen in PATH])
-    ])
-    doxygen_min_version=1.8.1.2   # minimum required Doxygen version
-    AC_MSG_CHECKING([if ${DOXYGEN} version is at least ${doxygen_min_version}])
-    doxygen_version=`${DOXYGEN} --version 2>/dev/null`
-    LALSUITE_VERSION_COMPARE([${doxygen_version}],[<],[${doxygen_min_version}],[
-      AC_MSG_RESULT([no (${doxygen_version})])
-      AC_MSG_ERROR([Doxygen version ${doxygen_min_version} or later is required])
-    ])
-    AC_MSG_RESULT([yes (${doxygen_version})])
-    AC_CONFIG_COMMANDS_PRE([
-      AC_SUBST([DOXYGEN_ENABLED_SECTIONS])
-      AC_SUBST([DOXYGEN_TAGFILES],[])
-      AC_SUBST([DOXYGEN_INSTALL_DIRMAP],[])
-      for arg in ${lalsuite_libs}; do
-        AS_CASE([${arg}],
-          [lalsupport],[:],[
-            ucarg=[`echo ${arg} | tr '[a-z]' '[A-Z]'`]
-            DOXYGEN_ENABLED_SECTIONS="${DOXYGEN_ENABLED_SECTIONS} ${ucarg}"
-            arg_htmldir_name="${ucarg}_HTMLDIR"
-            AS_VAR_COPY([arg_htmldir],[${arg_htmldir_name}])
-            AS_IF([test "x${LALSUITE_BUILD}" = xtrue],[
-              tagpath="\$(abs_top_builddir)/../${arg}/doxygen/out"
-            ],[
-              tagpath="${arg_htmldir}"
-            ])
-            DOXYGEN_TAGFILES="${DOXYGEN_TAGFILES} ${tagpath}/${arg}.tag=${tagpath}"
-            DOXYGEN_INSTALL_DIRMAP="${DOXYGEN_INSTALL_DIRMAP} ${tagpath}:${arg_htmldir}"
-          ]
-        )
-      done
-    ])
-    AC_SUBST([DOXYGEN_MATHJAXDIR])
-    AS_IF([test "x${DOXYGEN_MATHJAXDIR}" != x],[
-      AS_IF([test ! -f "${DOXYGEN_MATHJAXDIR}/MathJax.js"],[
-        AC_MSG_ERROR([no MathJax installation found in ${DOXYGEN_MATHJAXDIR}])
-      ])
-    ],[
-      for dir in /usr/share/javascript/mathjax; do
-        AC_MSG_CHECKING([for MathJax installation in ${dir}])
-        AS_IF([test -f "${dir}/MathJax.js"],[
-          AC_MSG_RESULT([yes])
-          DOXYGEN_MATHJAXDIR="${dir}"
-          break
-        ],[
-          AC_MSG_RESULT([no])
-        ])
-      done
-      AS_IF([test "x${DOXYGEN_MATHJAXDIR}" = x],[
-        DOXYGEN_MATHJAXDIR='https://cdn.mathjax.org/mathjax/latest'
-        AC_MSG_NOTICE([using MathJax CDN at ${DOXYGEN_MATHJAXDIR}])
-      ])
-    ])
-  ])
-  # end $0
-])
-
 AC_DEFUN([LALSUITE_ENABLE_NIGHTLY],
 [AC_ARG_ENABLE(
   [nightly],
@@ -1088,4 +996,115 @@ AC_MSG_RESULT([no])
 [cuda=false],
 AC_MSG_RESULT([unknown])
 [cuda=false])
+])
+
+AC_DEFUN([LALSUITE_ENABLE_DOXYGEN],[
+  # $0: enable Doxygen documentation
+  AC_ARG_ENABLE(
+    [doxygen],
+    AC_HELP_STRING(
+      [--enable-doxygen],
+      [generate Doxygen documentation]
+    ),[
+      AS_CASE(["${enableval}"],
+        [yes],[doxygen=true],
+        [no],[doxygen=false],
+        [AC_MSG_ERROR([invalid value "${enableval}" for --enable-doxygen])]
+      )
+    ],[
+      doxygen=false
+    ]
+  )
+  # end $0
+])
+
+AC_DEFUN([LALSUITE_USE_DOXYGEN],[
+  # $0: configure Doxygen documentation
+  AC_REQUIRE([LALSUITE_CHECK_GIT_REPO])
+
+  # add configuration option for MathJax installation
+  AC_ARG_WITH(
+    [mathjax],
+    AC_HELP_STRING(
+      [--with-mathjax=PATH],
+      [use MathJax installation at PATH [default: use CDN]]
+    ),[
+      DOXYGEN_MATHJAXDIR="${withval}"
+    ],[
+      DOXYGEN_MATHJAXDIR=
+    ]
+  )
+
+  # enable Doxygen module
+  LALSUITE_ENABLE_MODULE([DOXYGEN])
+
+  AS_IF([test "x${doxygen}" = xtrue],[
+
+    # configure Doxygen filter script
+    AC_CONFIG_FILES([doxygen/filter],[chmod +x doxygen/filter])
+
+    # Python is required to run some scripts
+    LALSUITE_REQUIRE_PYTHON([2.6])
+
+    # check for Doxygen
+    AC_PATH_PROG([DOXYGEN],[doxygen],[],[])
+    AS_IF([test "x${DOXYGEN}" = x],[
+      AC_MSG_ERROR([could not find Doxygen in PATH])
+    ])
+    doxygen_min_version=1.8.1.2   # minimum required Doxygen version
+    AC_MSG_CHECKING([if ${DOXYGEN} version is at least ${doxygen_min_version}])
+    doxygen_version=`${DOXYGEN} --version 2>/dev/null`
+    LALSUITE_VERSION_COMPARE([${doxygen_version}],[<],[${doxygen_min_version}],[
+      AC_MSG_RESULT([no (${doxygen_version})])
+      AC_MSG_ERROR([Doxygen version ${doxygen_min_version} or later is required])
+    ])
+    AC_MSG_RESULT([yes (${doxygen_version})])
+
+    # build some substituted variables from list of configured LAL libraries
+    AC_SUBST([DOXYGEN_ENABLED_SECTIONS])
+    AC_SUBST([DOXYGEN_TAGFILES],[])
+    AC_SUBST([DOXYGEN_INSTALL_DIRMAP],[])
+    for arg in ${lalsuite_libs}; do
+      AS_CASE([${arg}],
+        [lalsupport],[:],[
+          ucarg=[`echo ${arg} | tr '[a-z]' '[A-Z]'`]
+          DOXYGEN_ENABLED_SECTIONS="${DOXYGEN_ENABLED_SECTIONS} ${ucarg}"
+          arg_htmldir_name="${ucarg}_HTMLDIR"
+          AS_VAR_COPY([arg_htmldir],[${arg_htmldir_name}])
+          AS_IF([test "x${LALSUITE_BUILD}" = xtrue],[
+            tagpath="\$(abs_top_builddir)/../${arg}/doxygen/out"
+          ],[
+            tagpath="${arg_htmldir}"
+          ])
+          DOXYGEN_TAGFILES="${DOXYGEN_TAGFILES} ${tagpath}/${arg}.tag=${tagpath}"
+          DOXYGEN_INSTALL_DIRMAP="${DOXYGEN_INSTALL_DIRMAP} ${tagpath}:${arg_htmldir}"
+        ]
+      )
+    done
+
+    # configure MathJax
+    AC_SUBST([DOXYGEN_MATHJAXDIR])
+    AS_IF([test "x${DOXYGEN_MATHJAXDIR}" != x],[
+      AS_IF([test ! -f "${DOXYGEN_MATHJAXDIR}/MathJax.js"],[
+        AC_MSG_ERROR([no MathJax installation found in ${DOXYGEN_MATHJAXDIR}])
+      ])
+    ],[
+      for dir in /usr/share/javascript/mathjax; do
+        AC_MSG_CHECKING([for MathJax installation in ${dir}])
+        AS_IF([test -f "${dir}/MathJax.js"],[
+          AC_MSG_RESULT([yes])
+          DOXYGEN_MATHJAXDIR="${dir}"
+          break
+        ],[
+          AC_MSG_RESULT([no])
+        ])
+      done
+      AS_IF([test "x${DOXYGEN_MATHJAXDIR}" = x],[
+        DOXYGEN_MATHJAXDIR='https://cdn.mathjax.org/mathjax/latest'
+        AC_MSG_NOTICE([using MathJax CDN at ${DOXYGEN_MATHJAXDIR}])
+      ])
+    ])
+
+  ])
+  # end $0
 ])
