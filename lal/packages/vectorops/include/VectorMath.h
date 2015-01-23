@@ -32,7 +32,7 @@ extern "C" {
  * \ingroup lal_vectorops
  * \author Reinhard Prix
  *
- * \brief Various functions for performing fast math on vectors of numbers, using SIMD instructions if available.
+ * \brief Functions for performing fast math on vectors of numbers, using SIMD (SSE, AVX, ...) instructions if available.
  *
  * ### Synopsis ###
  * \code
@@ -45,7 +45,23 @@ extern "C" {
 #define isMemAligned(x,align)  (((size_t)(x) % (align)) == 0)
 
 /* ---------- exported Types ---------- */
-/* we provide our own local aligned-memory handling functions, until this
+/** enumerate all supported vector 'devices' (SSE, AVX, ...) that can be chosen from at runtime
+ */
+typedef enum tagVectorDevice_type
+{
+  /* \cond DONT_DOXYGEN */
+  VECTORDEVICE_START,	/**< start marker for range checking */
+  /* \endcond */
+  VECTORDEVICE_FPU,	/**< not really a vector device, but added here as failsafe fallback option */
+  VECTORDEVICE_SSE,	/**< SSE extension */
+  VECTORDEVICE_AVX,	/**< AVX extension */
+  /* \cond DONT_DOXYGEN */
+  VECTORDEVICE_END	/**< end marker for range checking */
+  /* \endcond */
+}
+VectorDevice_type;
+
+/** We provide our own local aligned-memory handling functions, until this
  * may later be merged upstream into the LALMalloc module
  */
 typedef struct tagREAL4VectorAligned32
@@ -56,39 +72,58 @@ typedef struct tagREAL4VectorAligned32
 } REAL4VectorAligned32;
 
 /* ---------- Prototypes ---------- */
+
+/* ----- runtime handling of vector device switching */
+int XLALVectorDeviceSet ( VectorDevice_type device );
+VectorDevice_type XLALVectorDeviceGet ( void );
+int XLALVectorDeviceIsAvailable ( VectorDevice_type device );
+const CHAR *XLALVectorDeviceName ( VectorDevice_type device );
+const CHAR *XLALVectorDeviceHelpString ( void );
+int XLALVectorDeviceParseString ( VectorDevice_type *device, const char *s );
+
+/* ----- aligned-memory handling */
+REAL4VectorAligned32 *XLALCreateREAL4VectorAligned32 ( UINT4 length );
+void XLALDestroyREAL4VectorAligned32 ( REAL4VectorAligned32 *in );
+
+/* ----- exported vector math functions */
 int XLALVectorSinf     ( REAL4Vector *out, const REAL4Vector *in );
+int XLALVectorCosf     ( REAL4Vector *out, const REAL4Vector *in );
+int XLALVectorExpf     ( REAL4Vector *out, const REAL4Vector *in );
+int XLALVectorLogf     ( REAL4Vector *out, const REAL4Vector *in );
+int XLALVectorSinCosf  ( REAL4Vector *sinx,    REAL4Vector *cosx,    const REAL4Vector *x );
+int XLALVectorSinCosf2PI(REAL4Vector *sin2pix, REAL4Vector *cos2pix, const REAL4Vector *x );
+
+/* ---------- module internal prototypes ---------- */
+/* these should not be used except within this module, that's why the
+ * exported API only declared the device-generic XLALVector<Funcf>() functions
+ */
+#ifdef IN_VECTORMATH
 int XLALVectorSinf_FPU ( REAL4Vector *out, const REAL4Vector *in );
 int XLALVectorSinf_SSE ( REAL4Vector *out, const REAL4Vector *in );
 int XLALVectorSinf_AVX ( REAL4Vector *out, const REAL4Vector *in );
 
-int XLALVectorCosf     ( REAL4Vector *out, const REAL4Vector *in );
 int XLALVectorCosf_FPU ( REAL4Vector *out, const REAL4Vector *in );
 int XLALVectorCosf_SSE ( REAL4Vector *out, const REAL4Vector *in );
 int XLALVectorCosf_AVX ( REAL4Vector *out, const REAL4Vector *in );
 
-int XLALVectorExpf     ( REAL4Vector *out, const REAL4Vector *in );
 int XLALVectorExpf_FPU ( REAL4Vector *out, const REAL4Vector *in );
 int XLALVectorExpf_SSE ( REAL4Vector *out, const REAL4Vector *in );
 int XLALVectorExpf_AVX ( REAL4Vector *out, const REAL4Vector *in );
 
-int XLALVectorLogf     ( REAL4Vector *out, const REAL4Vector *in );
 int XLALVectorLogf_FPU ( REAL4Vector *out, const REAL4Vector *in );
 int XLALVectorLogf_SSE ( REAL4Vector *out, const REAL4Vector *in );
 int XLALVectorLogf_AVX ( REAL4Vector *out, const REAL4Vector *in );
 
-int XLALVectorSinCosf     ( REAL4Vector *sinx, REAL4Vector *cosx, const REAL4Vector *x );
 int XLALVectorSinCosf_FPU ( REAL4Vector *sinx, REAL4Vector *cosx, const REAL4Vector *x );
 int XLALVectorSinCosf_SSE ( REAL4Vector *sinx, REAL4Vector *cosx, const REAL4Vector *x );
 int XLALVectorSinCosf_AVX ( REAL4Vector *sinx, REAL4Vector *cosx, const REAL4Vector *x );
 
-int XLALVectorSinCosf2PI     ( REAL4Vector *sin2pix, REAL4Vector *cos2pix, const REAL4Vector *x );
 int XLALVectorSinCosf2PI_FPU ( REAL4Vector *sin2pix, REAL4Vector *cos2pix, const REAL4Vector *x );
 int XLALVectorSinCosf2PI_SSE ( REAL4Vector *sin2pix, REAL4Vector *cos2pix, const REAL4Vector *x );
 int XLALVectorSinCosf2PI_AVX ( REAL4Vector *sin2pix, REAL4Vector *cos2pix, const REAL4Vector *x );
+#endif
 
-REAL4VectorAligned32 *XLALCreateREAL4VectorAligned32 ( UINT4 length );
-void XLALDestroyREAL4VectorAligned32 ( REAL4VectorAligned32 *in );
-/* @} */
+/** @} */
 
 #ifdef  __cplusplus
 }

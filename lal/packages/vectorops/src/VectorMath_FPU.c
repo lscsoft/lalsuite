@@ -25,6 +25,7 @@
 
 #include <lal/LALConstants.h>
 
+#define IN_VECTORMATH
 #include <lal/VectorMath.h>
 
 // ---------- local prototypes ----------

@@ -26,86 +26,205 @@
 
 #include <lal/LALConstants.h>
 
+#define IN_VECTORMATH
 #include <lal/VectorMath.h>
 
 // ---------- local DEFINES ----------
+#if defined(HAVE_SSE)
+#define VM_HAVE_SSE 1
+#else
+#define VM_HAVE_SSE 0
+#endif
+#if defined(HAVE_AVX)
+#define VM_HAVE_AVX 1
+#else
+#define VM_HAVE_AVX 0
+#endif
+
 // ----- Macros -----
 // ---------- internal types ----------
+
 // ---------- Global variables ----------
-//---------- internal prototypes ----------
-
-/*==================== FUNCTION DEFINITIONS ====================*/
-
-/// Vector version of sinf(x) to take advantage of parallel-math devices (SSE,AVX,GPU...)
-int
-XLALVectorSinf ( REAL4Vector *out, const REAL4Vector *in )
-{
-#ifdef HAVE_AVX
-  return XLALVectorSinf_AVX ( out, in );
-#elif defined HAVE_SSE
-  return XLALVectorSinf_SSE ( out, in );
-#else // vanilla LALsuite
-  return XLALVectorSinf_FPU ( out, in );
+// default VectoDevice is the best available one:
+#if defined(HAVE_AVX)
+static VectorDevice_type currentVectorDevice = VECTORDEVICE_AVX;
+#elif defined(HAVE_SSE)
+static VectorDevice_type currentVectorDevice = VECTORDEVICE_SSE;
+#else
+static VectorDevice_type currentVectorDevice = VECTORDEVICE_FPU;
 #endif
-   return XLAL_SUCCESS;
-} // XLALVectorSinf()
 
-/// Vector version of cosf(x) to take advantage of parallel-math devices (SSE,AVX,GPU...)
+static const struct {
+  const char *const name;
+  BOOLEAN available;
+} allVectorDevices[VECTORDEVICE_END] = {
+  [VECTORDEVICE_FPU]	= {"FPU",	1 },
+  [VECTORDEVICE_SSE] 	= {"SSE", 	VM_HAVE_SSE },
+  [VECTORDEVICE_AVX] 	= {"AVX", 	VM_HAVE_AVX }
+} ;
+
+//==================== FUNCTION DEFINITIONS ====================*/
+///
+/// Set Vector-math device at runtime, return error if invalid or unavailable
+///
 int
-XLALVectorCosf ( REAL4Vector *out, const REAL4Vector *in )
+XLALVectorDeviceSet ( VectorDevice_type device )
 {
-#ifdef HAVE_AVX
-  return XLALVectorCosf_AVX ( out, in );
-#elif defined HAVE_SSE
-  return XLALVectorCosf_SSE ( out, in );
-#else // vanilla LALsuite
-  return XLALVectorCosf_FPU ( out, in );
-#endif
-   return XLAL_SUCCESS;
-} // XLALVectorCosf()
+  XLAL_CHECK ( (device > VECTORDEVICE_START) && (device < VECTORDEVICE_END), XLAL_EDOM );
+  XLAL_CHECK ( allVectorDevices[device].available, XLAL_EINVAL, "Sorry, vector device '%s' not available in this build\n", allVectorDevices[device].name );
 
-/// Vector version of expf(x) to take advantage of parallel-math devices (SSE,AVX,GPU...)
+  currentVectorDevice = device;
+  return XLAL_SUCCESS;
+} // XLALVectorDeviceSet()
+
+///
+/// Return internal number of currently-selected vector device
+///
+VectorDevice_type
+XLALVectorDeviceGet ( void )
+{
+  return currentVectorDevice;
+} // XLALVectorDeviceGet()
+
+///
+/// Return 1 or 0 depending on whether the given vector device is available in this code
+///
 int
-XLALVectorExpf ( REAL4Vector *out, const REAL4Vector *in )
+XLALVectorDeviceIsAvailable ( VectorDevice_type device )
 {
-#ifdef HAVE_AVX
-  return XLALVectorExpf_AVX ( out, in );
-#elif defined HAVE_SSE
-  return XLALVectorExpf_SSE ( out, in );
-#else // vanilla LALsuite
-  return XLALVectorExpf_FPU ( out, in );
-#endif
-   return XLAL_SUCCESS;
-} // XLALVectorExpf()
+  XLAL_CHECK ( (device > VECTORDEVICE_START) && (device < VECTORDEVICE_END), XLAL_EDOM );
+  return allVectorDevices[device].available;
+} // XLALVectorDeviceIsAvailable()
 
-/// Vector version of logf(x) to take advantage of parallel-math devices (SSE,AVX,GPU...)
+///
+/// Provide human-readable names for the different vector device ids in #VectorDevice_type
+///
+const CHAR *
+XLALVectorDeviceName ( VectorDevice_type device )
+{
+  return allVectorDevices[device].name;
+}// XLALVectorDeviceName()
+
+///
+/// Return pointer to a static help string enumerating all (available) #VectorDevice_type options.
+/// Also indicates which is the currently-selected one.
+///
+const CHAR *
+XLALVectorDeviceHelpString ( void )
+{
+  static int firstCall = 1;
+  static CHAR helpstr[1024];
+  if ( firstCall )
+    {
+      CHAR buf[1024];
+      strncpy (helpstr, "Available vector devices: (", sizeof(helpstr));
+      UINT4 len = strlen(helpstr);
+      const CHAR *separator = "";
+      for (UINT4 i = VECTORDEVICE_START + 1; i < VECTORDEVICE_END; i++ )
+        {
+          if ( ! allVectorDevices[i].available ) {
+            continue;
+          }
+          snprintf ( buf, sizeof(buf), "%s%s", separator, allVectorDevices[i].name );
+          separator="|";
+          if ( i == currentVectorDevice ) {
+            strncat ( buf, "(=default)", sizeof(buf) - strlen(buf) - 1 );
+          }
+          len += strlen(buf);
+          XLAL_CHECK_NULL ( len < sizeof(helpstr), XLAL_EBADLEN, "VectorDevice help-string exceeds buffer length (%lu)\n", sizeof(helpstr) );
+          strcat ( helpstr, buf );
+        } // for i < VECTORDEVICE_END
+
+      strcat(helpstr, ") ");
+      firstCall = 0;
+
+    } // if firstCall
+
+  return helpstr;
+} // XLALVectorDeviceHelpString()
+
+///
+/// Parse a given string into an #VectorDevice_type if valid and available,
+/// return error otherwise.
+///
 int
-XLALVectorLogf ( REAL4Vector *out, const REAL4Vector *in )
+XLALVectorDeviceParseString ( VectorDevice_type *device,//!< [out] Parsed #VectorDevice_type enum
+                              const char *s		//!< [in] String to parse
+                              )
 {
-#ifdef HAVE_AVX
-  return XLALVectorLogf_AVX ( out, in );
-#elif defined HAVE_SSE
-  return XLALVectorLogf_SSE ( out, in );
-#else // vanilla LALsuite
-  return XLALVectorLogf_FPU ( out, in );
-#endif
-   return XLAL_SUCCESS;
-} // XLALVectorLogf()
+  XLAL_CHECK ( s != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( device != NULL, XLAL_EINVAL );
 
-/// Vector version of sincosf(x) to take advantage of parallel-math devices (SSE,AVX,GPU...)
-int
-XLALVectorSinCosf ( REAL4Vector *sinx, REAL4Vector *cosx, const REAL4Vector *x )
-{
-#ifdef HAVE_AVX
-  return XLALVectorSinCosf_AVX ( sinx, cosx, x );
-#elif defined HAVE_SSE
-  return XLALVectorSinCosf_SSE ( sinx, cosx, x );
-#else // vanilla LALsuite
-  return XLALVectorSinCosf_FPU ( sinx, cosx, x );
-#endif
-   return XLAL_SUCCESS;
-} // XLALVectorSinCosf()
+  // find matching VectorDevice name string
+  for (int i = VECTORDEVICE_START + 1; i < VECTORDEVICE_END; i++ )
+    {
+      if ( (allVectorDevices[i].name != NULL) && (strcmp ( s, allVectorDevices[i].name ) == 0) )
+        {
+          if ( allVectorDevices[i].available )
+            {
+              (*device) = i;
+              return XLAL_SUCCESS;
+            }
+          else
+            {
+              XLAL_ERROR ( XLAL_EINVAL, "Chosen VectorDevice '%s' valid but unavailable in this binary\n", s );
+            }
+        } // if found matching VectorDevice
+    } // for i < VECTORDEVICE_END
 
+  XLAL_ERROR ( XLAL_EINVAL, "Unknown VectorDevice '%s'\n", s );
+
+} // XLALVectorDeviceParseString()
+
+
+// ---------- High-level vector maths functions ----------
+/// Vector version of 1-output math functions to take advantage of parallel-math devices (SSE,AVX,GPU...)
+
+#define DEFINE_FN_1OUT(funcf)                                           \
+  int XLALVector##funcf ( REAL4Vector *out, const REAL4Vector *in ) {   \
+    switch ( currentVectorDevice ) {                                    \
+    case VECTORDEVICE_FPU:                                              \
+      return XLALVector##funcf##_FPU ( out, in );                       \
+      break;                                                            \
+    case VECTORDEVICE_SSE:                                              \
+      return XLALVector##funcf##_SSE ( out, in );                       \
+      break;                                                            \
+    case VECTORDEVICE_AVX:                                              \
+      return XLALVector##funcf##_AVX ( out, in );                       \
+      break;                                                            \
+    default:                                                            \
+      XLAL_ERROR ( XLAL_EINVAL, "Invalid device selected '%d' unknown! [coding error]\n", currentVectorDevice ); \
+      break;                                                            \
+    } /* end: switch currentVectorDevice */                             \
+    return XLAL_SUCCESS;                                                \
+  } /* XLALVector##funcf() */
+
+#define DEFINE_FN_2OUT(funcf)                                           \
+  int XLALVector##funcf ( REAL4Vector *out, REAL4Vector *out2, const REAL4Vector *in ) { \
+    switch ( currentVectorDevice ) {                                    \
+    case VECTORDEVICE_FPU:                                              \
+      return XLALVector##funcf##_FPU ( out, out2, in );                 \
+      break;                                                            \
+    case VECTORDEVICE_SSE:                                              \
+      return XLALVector##funcf##_SSE ( out, out2, in );                 \
+      break;                                                            \
+    case VECTORDEVICE_AVX:                                              \
+      return XLALVector##funcf##_AVX ( out, out2, in );                 \
+      break;                                                            \
+    default:                                                            \
+      XLAL_ERROR ( XLAL_EINVAL, "Invalid device selected '%d' unknown! [coding error]\n", currentVectorDevice ); \
+      break;                                                            \
+    } /* end: switch currentVectorDevice */                             \
+    return XLAL_SUCCESS;                                                \
+  } /* XLALVector##funcf() */
+
+DEFINE_FN_1OUT(Sinf);
+DEFINE_FN_1OUT(Cosf);
+DEFINE_FN_1OUT(Expf);
+DEFINE_FN_1OUT(Logf);
+
+DEFINE_FN_2OUT(SinCosf);
+DEFINE_FN_2OUT(SinCosf2PI);
 
 // -------------------- our own failsafe aligned memory handling --------------------
 ///
