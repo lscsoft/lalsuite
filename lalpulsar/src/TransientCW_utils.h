@@ -123,7 +123,6 @@ void XLALDestroyTransientFstatMap ( transientFstatMap_t *FstatMap );
 void XLALDestroyTransientCandidate ( transientCandidate_t *cand );
 
 REAL8 XLALFastNegExp ( REAL8 mx );
-REAL4 XLALFastExpf ( REAL4 x );
 void XLALDestroyExpLUT( void );
 
 /* ---------- Fstat-atoms related functions ----------*/
