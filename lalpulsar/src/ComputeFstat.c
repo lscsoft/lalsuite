@@ -743,7 +743,7 @@ XLALDestroyFstatResults ( FstatResults* Fstats  ///< [in] #FstatResults structur
 ///
 /// Add +4 to any multi-detector or per-detector 2F values computed by XLALComputeFstat().
 /// This is for compatibility with programs which expect this normalisation if SFTs do not
-/// contain noise, e.g. \c lalapps_ComputeFStatistic with the \c --SignalOnly option.
+/// contain noise, e.g. \c lalapps_ComputeFstatistic with the \c --SignalOnly option.
 ///
 int
 XLALAdd4ToFstatResults ( FstatResults* Fstats    ///< [in/out] #FstatResults structure.

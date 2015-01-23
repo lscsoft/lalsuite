@@ -766,7 +766,7 @@ InitCode ( ConfigVariables *cfg,
 
   return XLAL_SUCCESS;
 
-} /* InitFStat() */
+} /* InitCode() */
 
 
 /**

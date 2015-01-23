@@ -349,7 +349,7 @@ XLALGetDopplerSpinRange ( PulsarSpinRange *spinRange, const DopplerFullScanState
 
 /**
  * Initialize Doppler-scanner to emulate an old-style factored template grid: 'sky x f0dot x f1dot x f2dot x f3dot'.
- * This is a compatiblity-mode with the previous implementation currently also used in ComputeFStatistic.c.
+ * This is a compatiblity-mode with the previous implementation currently also used in ComputeFstatistic.c.
  */
 void
 initFactoredGrid (LALStatus *status,				/**< pointer to LALStatus structure */
