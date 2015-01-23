@@ -438,8 +438,11 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
   if ( corlist ) { corVals = XLALCreateREAL8Vector( corlist->length ); }
 
   /* I31 and I21 values required to check/set I31 >= I21 */
-  REAL8 I31 = -INFINITY;
-  REAL8 I21 = -INFINITY;
+  REAL8 I31 = -INFINITY, I21 = -INFINITY;
+
+  /* C21 and C22 values to required to check/set that they are either both positive or both
+   * negative for the case of a biaxial star */
+  REAL8 C21 = -INFINITY, C22 = -INFINITY;
 
   for(; item; item = item->next ){
     /* get scale factor */
@@ -469,6 +472,8 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
 
         if ( !strcmp(item->name, "I21") ){ I21 = value; }
         if ( !strcmp(item->name, "I31") ){ I31 = value; }
+        if ( !strcmp(item->name, "C21") ){ C21 = value; }
+        if ( !strcmp(item->name, "C22") ){ C22 = value; }
       }
       /* check for a flat prior */
       else if( LALInferenceCheckMinMaxPrior(runState->priorArgs, item->name) ){
@@ -497,6 +502,14 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
     if ( I21 != -INFINITY && I31 != -INFINITY ){
       if ( I31 < I21 ) { return -DBL_MAX; }
     }
+  }
+
+  /* if a biaxial star check that C21 and C22 are the same sign */
+  if ( LALInferenceCheckVariable( ifo->params, "biaxial" ) ){
+    /* in case one parameter is fixed check that */
+    if ( C21 == -INFINITY ){ C21 = LALInferenceGetREAL8Variable( runState->currentParams, "C21" ); }
+    if ( C22 == -INFINITY ){ C22 = LALInferenceGetREAL8Variable( runState->currentParams, "C22" ); }
+    if ( C21/C22 < 0. ) { return -DBL_MAX; } /* if same sign this will be positive */
   }
 
   /* if there are values for which the priors are defined by a correlation
