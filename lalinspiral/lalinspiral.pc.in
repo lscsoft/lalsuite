@@ -4,8 +4,8 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 datarootdir=@datarootdir@
-htmldir=@htmldir@
 docdir=@docdir@
+htmldir=@htmldir@
 LALINSPIRAL_OCTAVE_PATH=@octexecdir@
 LALINSPIRAL_PYTHON_PATH=@pyexecdir@
 
