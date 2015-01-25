@@ -139,7 +139,7 @@ static int CompareSFTVectors(SFTVector *sft_vect, SFTVector *sft_vect2)
 		       sft, GPS2REAL8(sft1.epoch), GPS2REAL8(sft2.epoch) );
       return(-1);
     }
-    if (!sft1.name || !sft2.name || strcmp(sft1.name,sft2.name)) {
+    if ( strncmp(sft1.name,sft2.name, sizeof(sft1.name)) ) {
       XLALPrintError ( "CompareSFTVectors(): SFT#%u names differ!\n", sft);
       return(-1);
     }
