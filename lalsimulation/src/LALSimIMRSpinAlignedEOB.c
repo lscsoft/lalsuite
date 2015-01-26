@@ -398,6 +398,13 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   mTotal = m1 + m2;
   mTScaled = mTotal * LAL_MTSUN_SI;
   eta    = m1 * m2 / (mTotal*mTotal);
+    
+    /* For v2 the upper bound is mass ratio 100 */
+    if ( SpinAlignedEOBversion == 2 && eta < 100./101./101.)
+    {
+        XLALPrintError( "XLAL Error - %s: Mass ratio larger than 100!\nSEOBNRv2 is only available for mass ratios up to 100.\n", __func__);
+        XLAL_ERROR( XLAL_EINVAL );
+    }
 
   amp0 = mTotal * LAL_MRSUN_SI / r;
 
