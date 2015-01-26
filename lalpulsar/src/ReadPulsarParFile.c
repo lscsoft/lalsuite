@@ -954,22 +954,6 @@ PulsarParameters *XLALReadTEMPOParFileNew( const CHAR *pulsarAndPath ){
   return par;
 }
 
-
-void
-LALReadTEMPOParFile( LALStatus *status, BinaryPulsarParams *output, CHAR *pulsarAndPath ){
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR(status);
-
-  ASSERT(output != (BinaryPulsarParams *)NULL, status,
-  READPULSARPARFILEH_ENULLOUTPUT, READPULSARPARFILEH_MSGENULLOUTPUT);
-
-  XLALReadTEMPOParFile( output, pulsarAndPath );
-
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
-}
-
-
 /* NOTE: Convert this function to be more like readParfile.C in TEMPO2 - read
  * in a line at a time using fgets and make each parameter a structure */
 void

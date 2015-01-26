@@ -320,3 +320,4 @@ git log -1 --summary HEAD | sed -n "s|^ delete mode [0-9]* |# ${date} |p" | LC_A
 # 2015-01-15 lalapps/src/pulsar/Injections/sft_extra.h
 # 2015-01-15 lalapps/src/pulsar/Injections/testMakefakedata.sh
 # 2015-01-15 lalapps/src/pulsar/Injections/testMFDv4-HW.sh
+# 2015-01-26 lalapps/src/pulsar/TDS_isolated/ParToTable.c
