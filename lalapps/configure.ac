@@ -34,7 +34,7 @@ AC_CONFIG_FILES([\
   src/pulsar/Makefile \
   src/pulsar/SFTReferenceLibrary/Makefile \
   src/pulsar/SideBand/Makefile \
-  src/pulsar/TDS_isolated/Makefile \
+  src/pulsar/HeterodyneSearch/Makefile \
   src/pulsar/Tools/Makefile \
   src/pulsar/TwoSpect/Makefile \
   src/pulsar/crosscorr/Makefile \

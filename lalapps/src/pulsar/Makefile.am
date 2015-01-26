@@ -7,7 +7,7 @@ SUBDIRS = \
 	SideBand \
 	templateBanks \
 	crosscorr \
-	TDS_isolated \
+	HeterodyneSearch \
 	fscan \
 	TwoSpect \
 	CombSearch \

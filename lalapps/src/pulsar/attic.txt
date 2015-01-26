@@ -321,3 +321,15 @@ git log -1 --summary HEAD | sed -n "s|^ delete mode [0-9]* |# ${date} |p" | LC_A
 # 2015-01-15 lalapps/src/pulsar/Injections/testMakefakedata.sh
 # 2015-01-15 lalapps/src/pulsar/Injections/testMFDv4-HW.sh
 # 2015-01-26 lalapps/src/pulsar/TDS_isolated/ParToTable.c
+# 2015-01-26 lalapps/src/pulsar/TDS_isolated/B0531+21
+# 2015-01-26 lalapps/src/pulsar/TDS_isolated/ComputePDF.c
+# 2015-01-26 lalapps/src/pulsar/TDS_isolated/ComputePDF_with_priors.c
+# 2015-01-26 lalapps/src/pulsar/TDS_isolated/ExtractULs.c
+# 2015-01-26 lalapps/src/pulsar/TDS_isolated/FitToPulsar.c
+# 2015-01-26 lalapps/src/pulsar/TDS_isolated/FitToPulsar.h
+# 2015-01-26 lalapps/src/pulsar/TDS_isolated/FitToPulsar_modified.c
+# 2015-01-26 lalapps/src/pulsar/TDS_isolated/FitToPulsar_modified_with_priors.c
+# 2015-01-26 lalapps/src/pulsar/TDS_isolated/Inject_h95.c
+# 2015-01-26 lalapps/src/pulsar/TDS_isolated/J0534+2200
+# 2015-01-26 lalapps/src/pulsar/TDS_isolated/ProcData.c
+# 2015-01-26 lalapps/src/pulsar/TDS_isolated/TargetedBinaryPulsars.c
