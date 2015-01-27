@@ -457,6 +457,20 @@ int XLALSimIMRSEOBNRv2ROMSingleSpin(
     REAL8 chi                                     /**< Effective aligned spin */
 );
 
+/** Compute waveform in LAL format at specified frequencies */
+int XLALSimIMRSEOBNRv2ROMSingleSpinFrequencySequence(
+  struct tagCOMPLEX16FrequencySeries **hptilde, /**< Output: Frequency-domain waveform h+ */
+  struct tagCOMPLEX16FrequencySeries **hctilde, /**< Output: Frequency-domain waveform hx */
+  const REAL8Sequence *freqs,                   /**< Frequency points at which to evaluate the waveform (Hz) */
+  REAL8 phiRef,                                 /**< Phase at reference time */
+  REAL8 fRef,                                   /**< Reference frequency (Hz); 0 defaults to fLow */
+  REAL8 distance,                               /**< Distance of source (m) */
+  REAL8 inclination,                            /**< Inclination of source (rad) */
+  REAL8 m1SI,                                   /**< Mass of companion 1 (kg) */
+  REAL8 m2SI,                                   /**< Mass of companion 2 (kg) */
+  REAL8 chi                                     /**< Effective aligned spin */
+);
+
 int XLALSimIMRSEOBNRv2ROMDoubleSpin(
     struct tagCOMPLEX16FrequencySeries **hptilde, /**< Output: Frequency-domain waveform h+ */
     struct tagCOMPLEX16FrequencySeries **hctilde, /**< Output: Frequency-domain waveform hx */
@@ -473,6 +487,22 @@ int XLALSimIMRSEOBNRv2ROMDoubleSpin(
     REAL8 chi2                                    /**< Dimensionless aligned component spin 2 */
 );
 
+/** Compute waveform in LAL format at specified frequencies */
+int XLALSimIMRSEOBNRv2ROMDoubleSpinFrequencySequence(
+  struct tagCOMPLEX16FrequencySeries **hptilde, /**< Output: Frequency-domain waveform h+ */
+  struct tagCOMPLEX16FrequencySeries **hctilde, /**< Output: Frequency-domain waveform hx */
+  const REAL8Sequence *freqs,                   /**< Frequency points at which to evaluate the waveform (Hz) */
+  REAL8 phiRef,                                 /**< Phase at reference time */
+  REAL8 fRef,                                   /**< Reference frequency (Hz); 0 defaults to fLow */
+  REAL8 distance,                               /**< Distance of source (m) */
+  REAL8 inclination,                            /**< Inclination of source (rad) */
+  REAL8 m1SI,                                   /**< Mass of companion 1 (kg) */
+  REAL8 m2SI,                                   /**< Mass of companion 2 (kg) */
+  REAL8 chi1,                                   /**< Dimensionless aligned component spin 1 */
+  REAL8 chi2                                    /**< Dimensionless aligned component spin 2 */
+);
+
+  
 /**
  * Routine to compute the mass and spin of the final black hole given
  * the masses, spins, binding energy, and orbital angular momentum vector.
