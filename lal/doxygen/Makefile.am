@@ -30,7 +30,7 @@ html-local: Makefile $(CONFIG_CLEAN_FILES)
 	$(MKDIR_P) out/ || exit 1; \
 	$(DOXYGEN) doxygen.cfg 2>&1; \
 	$(PYTHON) $(abs_srcdir)/check_tags.py $(abs_builddir)/out/$(PACKAGE).tag >> warnings.log || exit 1; \
-	$(SED) -e '/^$$/d' -e '/^citelist/d' -e '/warning: Duplicate anchor/d' -e '/warning: explicit link request/d' warnings.log > errors.log; \
+	$(SED) -e '/^$$/d' $(DOXYGEN_WARNING_REGEX) warnings.log > errors.log; \
 	rm -f warnings.log || exit 1; \
 	cat errors.log >&2 || exit 1; \
 	test `cat errors.log | wc -l` -eq 0 || exit 1; \
