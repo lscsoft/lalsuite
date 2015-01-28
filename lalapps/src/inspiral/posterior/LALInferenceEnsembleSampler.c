@@ -134,7 +134,7 @@ void ensemble_sampler(struct tagLALInferenceRunState *run_state) {
             XLALFree(proposed_params);
         }
 
-        /* Deside if an update is in order */
+        /* Update if acceptance rate has fallen by more than 10% */
         if (!update && ((*step % tracking_interval) == 0)) {
             acceptance_rate = get_acceptance_rate(run_state, acceptance_rates);
 
@@ -191,7 +191,7 @@ INT4 walker_step(LALInferenceRunState *run_state,
 
     /* Only bother calculating likelihood if within prior boundaries */
     *proposed_prior = run_state->prior(run_state, proposed_params, model);
-    if (*proposed_prior > -INFINITY)
+    if (*proposed_prior > -DBL_MAX)
         *proposed_likelihood = run_state->likelihood(proposed_params, run_state->data, model);
 
     /* Find jump acceptance probability */
@@ -601,7 +601,7 @@ FILE *print_ensemble_header(LALInferenceRunState *run_state, INT4 rank) {
 
     /* Integer (from an enum) identfying the waveform family used */
     if (LALInferenceCheckVariable(sample_params, "LAL_APPROXIMANT"))
-        waveform = LALInferenceGetINT4Variable(sample_params, "LAL_APPROXIMANT");
+        waveform = (INT4) LALInferenceGetUINT4Variable(sample_params, "LAL_APPROXIMANT");
 
     /* Determine post-Newtonian (pN) order (half of the integer stored in currentParams) */
     if (LALInferenceCheckVariable(sample_params, "LAL_PNORDER")) {
