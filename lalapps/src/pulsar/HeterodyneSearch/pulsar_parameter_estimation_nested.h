@@ -196,6 +196,7 @@ extern "C" {
                      the 'triaxial' model for which you use 2 (the default\n\
                      value) or 1,2 for a model with emission at both the rotation\n\
                      frequency and twice the rotation frequency.\n"\
+" --biaxial           Set this if the waveform model parameters spcify a biaxial star\n"\
 " --gaussian-like     Set this if a Gaussian likelihood is to be used. If the input\n\
                      file contains a column specifying the noise standard deviation of\n\
                      the data then that will be used in the Gaussian likelihood function,\n\

@@ -226,7 +226,6 @@ class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.__par_file = None
     self.__cor_file = None
     self.__input_files = None
-    self.__downsample_factor = None
     self.__outfile = None
     self.__outXML = None
     self.__chunk_min = None
@@ -238,6 +237,8 @@ class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.__ephem_sun = None
     self.__ephem_time = None
     self.__harmonics = None
+    self.__biaxial = False
+    self.__gaussian_like = False
 
     self.__Nlive = None
     self.__Nmcmc = None
@@ -265,8 +266,6 @@ class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.__sample_nlives = None
     self.__prior_cell = None
 
-    self.__mismatch = None
-    self.__mm_factor = None
     self.__nonfixedonly = False
     self.__gzip = False
 
@@ -300,11 +299,6 @@ class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     # set data files for analysing
     self.add_var_opt('input-files', inputfiles)
     self.__input_files = inputfiles
-
-  def set_downsample_factor(self, ds):
-    # set downsampling factor for input files
-    self.add_var_opt('downsample-factor', ds)
-    self.__downsample_factor = ds
 
   def set_outfile(self, of):
     # set the output file
@@ -476,16 +470,6 @@ class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.add_var_opt('prior-cell',pc)
     self.__prior_cell = pc
 
-  def set_mismatch(self,mm):
-    # set maximum phase mismatch at which to recalculate the phase model
-    self.add_var_opt('mismatch',mm)
-    self.__mismatch = mm
-
-  def set_mm_factor(self,mmf):
-    # set the downsampling factor of the phase model when calculating mismatch
-    self.add_var_opt('mm-factor',mmf)
-    self.__mm_factor = mmf
-
   def set_gzip(self):
     # set to gzip the output file
     self.add_var_opt('gzip', '')
@@ -505,6 +489,16 @@ class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     # use the physical parameter model from Jones
     self.add_var_opt('jones-model', '')
     self.__jonesModel = True
+
+  def set_biaxial(self):
+    # the model is a biaxial star using the amplitude/phase waveform parameterisation
+    self.add_var_opt('biaxial', '')
+    self.__biaxial = True
+
+  def set_gaussian_like(self):
+    # use a Gaussian likelihood rather than the Students-t likelihood
+    self.add_var_opt('gaussian-like', '')
+    self.__gaussian_like = True
 
 class createresultspageJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """

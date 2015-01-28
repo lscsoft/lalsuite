@@ -33,17 +33,18 @@ void get_pulsar_model( LALInferenceModel *model ){
   BinaryPulsarParams XLAL_INIT_DECL(pars); /* initialise as empty */
 
   /* set model parameters (including rescaling) */
-  //pars.h0 = rescale_parameter( model, model->ifo, "h0" );
   pars.psi = rescale_parameter( model, model->ifo, "PSI" );
   pars.cgw = 1.; /* need to set this to one otherwise it defaults to zero with the initialisation */
 
-  if( LALInferenceCheckVariable( model->ifo->params, "jones-model" ) ){
+  if( LALInferenceCheckVariableNonFixed( model->params, "H0" ) || LALInferenceCheckVariable( model->ifo->params, "jones-model" ) ){
+    pars.h0 = rescale_parameter( model, model->ifo, "H0" );
+
     /* use parameterisation from Ian Jones's original model */
     pars.I21 = rescale_parameter( model, model->ifo, "I21" );
     pars.I31 = rescale_parameter( model, model->ifo, "I31" );
     pars.lambda = rescale_parameter( model, model->ifo, "LAMBDA" );
     pars.costheta = rescale_parameter( model, model->ifo, "COSTHETA" );
-    pars.phi0 = rescale_parameter( model, model->ifo, "PHI0" );
+    pars.phi0 = rescale_parameter( model, model->ifo, "PHI0" ); /* note that this is the rotational phase */
     pars.cosiota = rescale_parameter( model, model->ifo, "COSIOTA" );
 
     invert_source_params( &pars );
@@ -376,11 +377,7 @@ REAL8Vector *get_ssb_delay( BinaryPulsarParams pars, LIGOTimeGPSVector *datatime
                             TimeCorrectionData *tdat, TimeCorrectionType ttype, LALDetector *detector,
                             REAL8 interptime ){
   INT4 i = 0, length = 0;
-
-  REAL8 T0 = 0., DT = 0., DTplus = 0.;
-
-  EarthState earth, earth2;
-  EmissionTime emit, emit2;
+  REAL8 T0 = 0.;
 
   BarycenterInput *bary = NULL;
 
@@ -414,10 +411,13 @@ REAL8Vector *get_ssb_delay( BinaryPulsarParams pars, LIGOTimeGPSVector *datatime
   else if( pars.dist != 0. ) { bary->dInv = LAL_C_SI/(pars.dist*1e3*LAL_PC_SI); }
   else { bary->dInv = 0.; }
 
-  for( i=0; i<length; i++){
-    REAL8 realT = XLALGPSGetREAL8( &datatimes->data[i] );
+  T0 = pars.pepoch;
 
-    T0 = pars.pepoch;
+  for( i=0; i<length; i++){
+    EarthState earth, earth2;
+    EmissionTime emit, emit2;
+
+    REAL8 DT = 0., DTplus = 0., realT = XLALGPSGetREAL8( &datatimes->data[i] );
 
     DT = realT - T0;
 
@@ -446,7 +446,7 @@ REAL8Vector *get_ssb_delay( BinaryPulsarParams pars, LIGOTimeGPSVector *datatime
 
     /* linearly interpolate to get emitdt */
     if( interptime > 0. ){
-      dts->data[i] = emit.deltaT + (DT - (DTplus - interptime)) * (emit2.deltaT - emit.deltaT)/interptime;
+      dts->data[i] = emit.deltaT + (DT - (DTplus - interptime)) * (emit2.deltaT -  emit.deltaT)/interptime;
     }
     else { dts->data[i] = emit.deltaT; }
   }
@@ -475,8 +475,6 @@ REAL8Vector *get_ssb_delay( BinaryPulsarParams pars, LIGOTimeGPSVector *datatime
  */
 REAL8Vector *get_bsb_delay( BinaryPulsarParams pars, LIGOTimeGPSVector *datatimes, REAL8Vector *dts,
                             EphemerisData *edat ){
-  BinaryPulsarInput binput;
-  BinaryPulsarOutput boutput;
   REAL8Vector *bdts = NULL;
 
   INT4 i = 0, length = datatimes->length;
@@ -486,6 +484,8 @@ REAL8Vector *get_bsb_delay( BinaryPulsarParams pars, LIGOTimeGPSVector *datatime
   for ( i = 0; i < length; i++ ){
     /* check whether there's a binary model */
     if ( pars.model ){
+      BinaryPulsarInput binput;
+      BinaryPulsarOutput boutput;
       EarthState earth;
 
       binput.tb = XLALGPSGetREAL8( &datatimes->data[i] ) + dts->data[i];
@@ -858,17 +858,9 @@ void get_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOModel *ifo ){
 
       if ( varyphase || roq ){ /* have to compute the full time domain signal */
         REAL8Vector *sidDayFrac = NULL;
-        REAL8 tsv;
-        INT4 timebinMin, timebinMax;
+        REAL8 tsv, tsteps;
 
         REAL8Vector *LUfplus = NULL, *LUfcross = NULL, *LUfx = NULL, *LUfy = NULL, *LUfb = NULL, *LUfl = NULL;
-
-        REAL8 tsteps;
-        REAL8 plus00, plus01, cross00, cross01;
-        REAL8 x00, x01, y00, y01, b00, b01, l00, l01;
-        REAL8 timeScaled;
-        REAL8 timeMin, timeMax;
-        REAL8 plus = 0., cross = 0., plusT = 0., crossT = 0., x = 0., y = 0., xT = 0., yT = 0., b = 0., l = 0.;
 
         /* set lookup table parameters */
         tsteps = (REAL8)(*(INT4*)LALInferenceGetVariable( ifo->params, "timeSteps" ));
@@ -890,6 +882,12 @@ void get_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOModel *ifo ){
         length = ifo->times->length;
 
         for( i=0; i<length; i++ ){
+          REAL8 plus00, plus01, cross00, cross01, plus = 0., cross = 0.;
+          REAL8 x00, x01, y00, y01, b00, b01, l00, l01;
+          REAL8 timeScaled, timeMin, timeMax;
+          REAL8 plusT = 0., crossT = 0., x = 0., y = 0., xT = 0., yT = 0., b = 0., l = 0.;
+          INT4 timebinMin, timebinMax;
+
           /* set the time bin for the lookup table */
           /* sidereal day in secs*/
           T = sidDayFrac->data[i];
@@ -1185,122 +1183,14 @@ void response_lookup_table( REAL8 t0, LALDetAndSource detNSource, INT4 timeSteps
 
 
 /*----------------- FUNCTIONS TO CONVERT BETWEEN PARAMETERS ------------------*/
-/**
- * \brief Convert \f$\phi_0\f$ and \f$\psi\f$ to a new coordinate system
- *
- * This function will convert the initial phase \f$\phi_0\f$ and polarisation angle \f$\psi\f$ into a new coordinate
- * system. As they are currently defined when \f$\psi\f$ wraps around at the limits of its range (\f$ \pm \pi/4 \f$
- * radians) it is equivalent to a \f$ \pi \f$ radians shift in \f$\phi_0\f$. This leads to a bimodal distribution in
- * \f$\phi_0\f$. A new coordinate system that is uni-modal and wraps around at the edges without introduction any phase
- * shift is given by:
- * \f[
- * \left( \begin{array}{c} {\phi'}_0 \\ {\psi}' \end{array} \right) =
- * \left( \begin{array}{cc} \sin{\theta} & \cos{\theta} \\ -\sin{\theta} &
- * \cos{\theta} \end{array} \right)
- * \left( \begin{array}{c} \phi_0 \\ \psi \end{array} \right),
- * \f]
- * where \f$\theta = \arctan{(1/2)}\f$.
- *
- * NOTE: This may want to be moved into LALInference at some point.
- *
- * \param phi0 [in] the initial phase parameter
- * \param psi [in] the polarisation angle parameter
- * \param phi0prime [in] the new coordinate axis
- * \param psiprime [in] the new coordinate axis
- */
-void phi0_psi_transform( REAL8 phi0, REAL8 psi, REAL8 *phi0prime, REAL8 *psiprime ){
-  REAL8 theta = atan2( 1., 2. );
-  REAL8 st = sin(theta);
-  REAL8 ct = cos(theta);
-
-  /* check psi is in range: -pi/4 < psi < pi/4 */
-  if( fabs(psi) > LAL_PI/4 ){
-    XLALPrintError("Error... psi is not in range.\n");
-    XLAL_ERROR_VOID(XLAL_EFUNC);
-  }
-
-  /* put phi0 in range -pi < phi0 < pi */
-  if ( phi0 > 2.*LAL_PI ) { phi0 = fmod(phi0, LAL_TWOPI); }
-  else { phi0 = LAL_TWOPI - fmod(LAL_TWOPI-phi0, LAL_TWOPI); }
-  phi0 -= LAL_PI;
-
-  *phi0prime = (st*phi0 + ct*psi);
-  *psiprime = (-st*phi0 + ct*psi);
-}
-
-
-/**
- * \brief Convert new \f${\phi'}_0\f$ and \f$\psi'\f$ coordinate system back
- * to \f$\phi_0\f$ and \f$\psi\f$
- *
- * This function will convert the new parameters \f${\phi'}_0\f$ and \f$\psi'\f$, defined in \c phi0_psi_transform()
- * into the original \f$\phi_0\f$ and \f$\psi\f$ coordinates. This is done through the inverse transform:
- * \f{eqnarray}{
- * \left( \begin{array}{c} {\phi}_0 \\ {\psi} \end{array} \right) & = &
- * \left( \begin{array}{cc} \sin{\theta} & \cos{\theta} \\ -\sin(\theta) &
- * \cos{\theta} \end{array} \right)^{-1}
- * \left( \begin{array}{c} {\phi'}_0 \\ {\psi'} \end{array} \right), \\
- * & = & \left( \begin{array}{cc} \frac{1}{2\sin{\theta}} &
- * -\frac{1}{2\sin{\theta}} \\ \frac{1}{2\cos{\theta}} &
- * \frac{1}{2\cos{\theta}} \end{array} \right)
- * \left( \begin{array}{c} {\phi'}_0 \\ {\psi'} \end{array} \right),
- * \f}
- * where \f$\theta = \arctan{(1/2)}\f$.
- *
- * The \f${\phi'}_0\f$ and \f$\psi'\f$ should both be in the range \f$ \pm (\pi/2)\cos{\theta}\f$, which will return
- * \f$\psi\f$ in the range \f$ \pm \pi/2 \f$, and \f$\phi_0\f$ in the range \f$ \pm \pi \f$. These will then be
- * converted back into their original ranges.
- *
- * NOTE: This may want to be moved into LALInference at some point.
- *
- * \param phi0prime [in] the new coordinate axis
- * \param psiprime [in] the new coordinate axis
- * \param phi0 [in] the initial phase parameter
- * \param psi [in] the polarisation angle parameter
- */
-void inverse_phi0_psi_transform( REAL8 phi0prime, REAL8 psiprime, REAL8 *phi0, REAL8 *psi ){
-  REAL8 theta = atan2( 1., 2. );
-  REAL8 ct = cos( theta );
-  REAL8 o2st = 1. / ( 2. * sin( theta ) );
-  REAL8 o2ct = 1. / ( 2. * ct );
-  REAL8 phitmp = 0., psitmp = 0.;
-
-  /* check psiprime and phi0prime is in range +/- (pi/2)cos(theta) */
-  if ( fabs(phi0prime) > LAL_PI_2*ct || fabs(psiprime) > LAL_PI_2*ct ){
-    fprintf(stderr, "phi0prime = %le, psiprime = %le\n", phi0prime, psiprime);
-    XLALPrintError("Error... phi0prime or psiprime are not in range\n");
-    XLAL_ERROR_VOID(XLAL_EFUNC);
-  }
-
-  phitmp = o2st*phi0prime - o2st*psiprime;
-  psitmp = o2ct*phi0prime + o2ct*psiprime;
-
-  /* get psi into +/- pi/4 range */
-  if ( fabs(psitmp) > LAL_PI/4. ){
-    phitmp += LAL_PI; /* rotate phase by pi */
-
-    /* wrap around psi */
-    if ( psitmp > LAL_PI/4. ) { psitmp = -(LAL_PI/4.) + fmod(psitmp+(LAL_PI/4.), LAL_PI_2); }
-    else { psitmp = (LAL_PI/4.) - fmod((LAL_PI/4.)-psitmp, LAL_PI_2); }
-  }
-
-  *psi = psitmp;
-
-  /* get phi0 into 0 -> 2pi range */
-  if ( phitmp > LAL_TWOPI ) { phitmp = fmod(phitmp, LAL_TWOPI); }
-  else { phitmp = LAL_TWOPI - fmod(LAL_TWOPI-phitmp, LAL_TWOPI); }
-
-  *phi0 = phitmp;
-}
-
 
 /**
  * \brief Convert sources parameters into amplitude and phase notation parameters
  *
  * Convert the physical source parameters into the amplitude and phase notation given in Eqns
- * 76-79 of LIGO T1200265-v3.
+ * 62-65 of \cite Jones:2015.
  *
- * In this is \c phi0 is the gravitational wave phase for a signal from the l=m=2 mode.
+ * Note that \c phi0 is essentially the rotational phase of the pulsar.
  */
 void invert_source_params( BinaryPulsarParams *params ){
   REAL8 sinlambda, coslambda, sinlambda2, coslambda2, sin2lambda;
@@ -1309,7 +1199,7 @@ void invert_source_params( BinaryPulsarParams *params ){
 
   if ( params->h0 != 0.){
     params->C22 = 0.5 * params->h0;
-    params->phi22 = params->phi0 - LAL_PI;
+    params->phi22 = 2.*params->phi0;
     params->phi22 = params->phi22 - LAL_TWOPI*floor(params->phi22/LAL_TWOPI);
   }
   else if ( ( params->I21 != 0. || params->I31 != 0. ) && ( params->C22 == 0. && params->C21 == 0. ) ) {
@@ -1339,7 +1229,7 @@ void invert_source_params( BinaryPulsarParams *params ){
     params->C22 = 2.*sqrt( A222 + B222 );
     params->C21 = 2.*sqrt( A212 + B212 );
 
-    params->phi22 = fmod( phi0 - atan2( B22, A22 ), LAL_TWOPI );
-    params->phi21 = fmod( ( phi0/2. ) - atan2( B21, A21 ), LAL_TWOPI );
+    params->phi22 = fmod( 2.*phi0 - atan2( B22, A22 ), LAL_TWOPI );
+    params->phi21 = fmod( phi0 - atan2( B21, A21 ), LAL_TWOPI );
   }
 }

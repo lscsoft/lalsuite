@@ -1732,22 +1732,21 @@ def convert_model_parameters(pardict):
 
   phi0 = pardict['phi0']
 
-  f2_r = pardict['f0'] * pardict['f0'] / pardict['dist']
   I21 = pardict['I21']
   I31 = pardict['I31']
 
   A22 = ( I21 * ( sinlambda**2 - ( coslambda * costheta )**2 ) - I31 * sintheta**2 )
   B22 = I21 * sin2lambda * costheta
 
-  C22 = 2.*f2_r * math.sqrt( A22**2 + B22**2 )
+  C22 = 2.*math.sqrt( A22**2 + B22**2 )
 
   A21 = I21 * sin2lambda * sintheta
   B21 = ( I21 * coslambda**2 - I31 ) * sin2theta
 
-  C21 = 2.*f2_r * math.sqrt( A21**2 + B21**2 )
+  C21 = 2.*math.sqrt( A21**2 + B21**2 )
 
-  phi22 = phi0 - math.atan2( B22, A22 )
-  phi21 = (phi0/2.) - math.atan2( B21, A21 )
+  phi22 = 2.*phi0 - math.atan2( B22, A22 )
+  phi21 = phi0 - math.atan2( B21, A21 )
 
   outvals = {'C22': C22, 'C21': C21, 'phi22': phi22, 'phi21': phi21}
 
