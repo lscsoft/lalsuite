@@ -162,6 +162,12 @@ src/pulsar/Fstatistic/lalapps_synthesizeBstatMC
 src/pulsar/Fstatistic/lalapps_synthesizeLVStats
 src/pulsar/Fstatistic/lalapps_synthesizeTransientStats
 src/pulsar/GCT/lalapps_HierarchSearchGCT
+src/pulsar/HeterodyneSearch/lalapps_CrabTNHeterodyne
+src/pulsar/HeterodyneSearch/lalapps_create_pulsar_signal_frame
+src/pulsar/HeterodyneSearch/lalapps_heterodyne_pulsar
+src/pulsar/HeterodyneSearch/lalapps_pulsar_parameter_estimation
+src/pulsar/HeterodyneSearch/lalapps_pulsar_parameter_estimation_nested
+src/pulsar/HeterodyneSearch/lalapps_ssbtodetector
 src/pulsar/Injections/lalapps_Makefakedata_v4
 src/pulsar/Injections/lalapps_Makefakedata_v5
 src/pulsar/Injections/lalapps_compareSFTs
@@ -200,12 +206,6 @@ src/pulsar/SFTReferenceLibrary/lalapps_splitSFTs
 src/pulsar/SideBand/lalapps_GenerateSideBandTemplate
 src/pulsar/SideBand/lalapps_GetTimeStamps
 src/pulsar/SideBand/lalapps_SideBandMCMC
-src/pulsar/TDS_isolated/lalapps_CrabTNHeterodyne
-src/pulsar/TDS_isolated/lalapps_create_pulsar_signal_frame
-src/pulsar/TDS_isolated/lalapps_heterodyne_pulsar
-src/pulsar/TDS_isolated/lalapps_pulsar_parameter_estimation
-src/pulsar/TDS_isolated/lalapps_pulsar_parameter_estimation_nested
-src/pulsar/TDS_isolated/lalapps_ssbtodetector
 src/pulsar/Tools/lalapps_ComputeAntennaPattern
 src/pulsar/Tools/lalapps_ComputePSD
 src/pulsar/Tools/lalapps_GetSFTVelocities
