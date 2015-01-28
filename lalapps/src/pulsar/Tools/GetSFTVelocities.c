@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup lalapps_pulsar
+ * \ingroup lalapps_pulsar_Tools
  * \author Badri Krishnan, Berit Behnke
  * \brief Little Helper code for getting velocities from v2 SFTs
  */

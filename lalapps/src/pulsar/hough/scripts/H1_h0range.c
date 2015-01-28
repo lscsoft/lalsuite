@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup lalapps_pulsar
+ * \ingroup lalapps_pulsar_hough
  */
 
 #include <stdio.h> 

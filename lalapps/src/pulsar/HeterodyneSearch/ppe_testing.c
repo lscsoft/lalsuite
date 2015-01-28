@@ -1,6 +1,6 @@
 /**
  * \file
- * \ingroup lalapps_pulsar
+ * \ingroup lalapps_pulsar_HeterodyneSearch
  * \author Matthew Pitkin
  *
  * \brief Functions for use in testing the parameter estimation codes for

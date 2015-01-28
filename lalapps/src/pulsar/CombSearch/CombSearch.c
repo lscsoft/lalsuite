@@ -22,7 +22,7 @@
 /**
  * \author L.Sammut, C. Messenger
  * \file
- * \ingroup lalapps_pulsar
+ * \ingroup lalapps_pulsar_SideBand
  * \brief
  * Calculates the C-statistic for a given parameter-space of GW signals from binary sources with known sky position.
  *

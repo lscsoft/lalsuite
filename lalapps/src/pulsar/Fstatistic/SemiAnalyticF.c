@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup lalapps_pulsar
+ * \ingroup lalapps_pulsar_Fstatistic
  * \author Chris Messenger, Iraj Gholami,  Holger Pletsch, Reinhard Prix, Xavier Siemens
  * \brief Semi-Analytic calculation of the F-statistic
  */

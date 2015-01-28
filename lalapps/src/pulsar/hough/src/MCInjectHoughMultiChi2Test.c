@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup lalapps_pulsar
+ * \ingroup lalapps_pulsar_hough
  * \author Llucia Sancho de la Jordana
  * \brief
  * Monte Carlo signal injections for several h_0 values and

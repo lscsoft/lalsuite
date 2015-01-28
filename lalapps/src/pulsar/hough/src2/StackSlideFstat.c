@@ -20,7 +20,7 @@
 /**
  * \author Gregory Mendell
  * \file StackSlideFstat.c
- * \ingroup lalapps_pulsar
+ * \ingroup lalapps_pulsar_hough
  * \brief Module with functions that StackSlide a vector of Fstat values or any REAL8FrequencySeriesVector.
  */
 

@@ -1,6 +1,6 @@
 /**
  * \file
- * \ingroup lalapps_pulsar
+ * \ingroup lalapps_pulsar_HeterodyneSearch
  * \author Matthew Pitkin, Colin Gill, John Veitch
  *
  * \brief Pulsar model functions for use in parameter estimation codes for targeted pulsar searches.

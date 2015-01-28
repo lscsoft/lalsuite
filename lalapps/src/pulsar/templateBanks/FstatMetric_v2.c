@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup lalapps_pulsar
+ * \ingroup lalapps_pulsar_templateBanks
  * \author Reinhard Prix
  * \brief
  * This module deals with calculating various F-statistic metric approximations,

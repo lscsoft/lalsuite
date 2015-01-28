@@ -22,7 +22,7 @@
  * \author Reinhard Prix
  * \date 2005, 2013
  * \file
- * \ingroup lalapps_pulsar
+ * \ingroup lalapps_pulsar_Injections
  * \brief Code to dump various SFT-info in human-readable form to stdout.
  */
 

@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup lalapps_pulsar
+ * \ingroup lalapps_pulsar_GCT
  * \author David Keitel
  *
  * \brief Functions to recompute statistics for GCT/hough toplist entries

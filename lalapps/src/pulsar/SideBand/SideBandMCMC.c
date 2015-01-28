@@ -21,7 +21,7 @@
 /**
  * \author C. Messenger
  * \file
- * \ingroup lalapps_pulsar
+ * \ingroup lalapps_pulsar_SideBand
  * \brief
  * Generates posterior pdfs for a subset of the unknown orbital and nuisance
  * parameters given a set of candidate regions in frequency of demodulated Fourier

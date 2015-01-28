@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup lalapps_pulsar
+ * \ingroup lalapps_pulsar_templateBanks
  * \author Reinhard Prix
  *
  * Standalone code to produce a 'mesh' in the parameter-space

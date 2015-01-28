@@ -20,7 +20,7 @@
 /**
  * \author Bruce Allen
  * \file
- * \ingroup lalapps_pulsar
+ * \ingroup lalapps_pulsar_SFTReferenceLibrary
  * \brief
  * Verify that a set of SFT files is valid
  *

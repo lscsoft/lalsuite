@@ -22,7 +22,7 @@
  * \author Reinhard Prix
  * \date 2006
  * \file
- * \ingroup lalapps_pulsar
+ * \ingroup lalapps_pulsar_MakeSFTs
  * \brief Code to convert given input-SFTs (v1 or v2) to v2-SFTs with given extra-comment,
  * and write them out following the SFTv2 naming conventions (see LIGO-T040164-01-Z)
  */

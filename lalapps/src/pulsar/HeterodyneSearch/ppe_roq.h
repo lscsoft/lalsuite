@@ -13,7 +13,7 @@
 
 /**
  * \file
- * \ingroup lalapps_pulsar
+ * \ingroup lalapps_pulsar_HeterodyneSearch
  * \author Matthew Pitkin
  *
  * \brief Header file for the reduced order quadrature generation used in parameter

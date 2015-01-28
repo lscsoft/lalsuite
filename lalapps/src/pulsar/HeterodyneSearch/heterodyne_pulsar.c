@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup lalapps_pulsar
+ * \ingroup lalapps_pulsar_HeterodyneSearch
  * \author M. D. Pitkin
  * \brief
  * lalapps code to perform a coarse/fine heterodyne on LIGO or GEO data given a set of pulsar

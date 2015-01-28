@@ -13,7 +13,7 @@
 
 /**
  * \file
- * \ingroup lalapps_pulsar
+ * \ingroup lalapps_pulsar_HeterodyneSearch
  * \author Matthew Pitkin
  *
  * \brief Header file for functions used in testing the parameter

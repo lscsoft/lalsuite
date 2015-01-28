@@ -19,7 +19,7 @@
 
 /**
  * \file getMetric.c
- * \ingroup lalapps_pulsar
+ * \ingroup lalapps_pulsar_templateBanks
  * \author Reinhard Prix
  * \brief
  * Standalone code to calculated the metric in a given parameter-space point

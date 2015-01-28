@@ -22,7 +22,7 @@
  * \author B.Krishnan, S.Larson, J.T.Whelan, Y.Zhang
  * \date 2013, 2014
  * \file pulsar_crosscorr_v2.c
- * \ingroup lalapps_pulsar
+ * \ingroup lalapps_pulsar_crosscorr
  * \brief Perform CW cross-correlation search - version 2
  *
  */

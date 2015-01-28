@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup lalapps_pulsar
+ * \ingroup lalapps_pulsar_EinsteinAtHome
  * \author Bernd Machenschalk, Reinhard Prix
  */
 

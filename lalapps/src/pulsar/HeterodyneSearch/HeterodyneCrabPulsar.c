@@ -31,7 +31,7 @@
 
 /**
  * \file
- * \ingroup lalapps_pulsar
+ * \ingroup lalapps_pulsar_HeterodyneSearch
  * \author M. D. Pitkin
  * \brief
  * Functions for reading the Crab Ephemeris, interpolating between these values and

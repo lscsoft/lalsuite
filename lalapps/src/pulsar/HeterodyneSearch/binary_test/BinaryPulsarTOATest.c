@@ -1,6 +1,6 @@
 /**
  * \file
- * \ingroup lalapps_pulsar
+ * \ingroup lalapps_pulsar_HeterodyneSearch
  * \author Matt Pitkin
  * \brief
  * Code to test my binary code against actual pulsar observations
