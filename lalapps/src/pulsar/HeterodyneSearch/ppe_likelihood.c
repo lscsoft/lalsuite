@@ -147,6 +147,7 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
         cl = i + (INT4)chunkLength;
 
         if ( varyphase ){ /* not using pre-summed values */
+          #pragma omp parallel for default(shared) private(B, M) reduction(+:sumModel,sumDataModel)
           for( j = i ; j < cl ; j++ ){
             B = tempdata->compTimeData->data->data[j];
             M = ifomodeltemp->compTimeSignal->data->data[j];

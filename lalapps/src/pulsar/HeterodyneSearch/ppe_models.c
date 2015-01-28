@@ -230,6 +230,7 @@ void pulsar_model( BinaryPulsarParams params, LALInferenceIFOModel *ifo ){
 
         /* reheterodyne with the phase */
         if ( (dphi = get_phase_model( params, ifomodel2, freqFactors->data[j] )) != NULL ){
+          #pragma omp parallel for
           for( i=0; i<length; i++ ){
             COMPLEX16 M;
             REAL8 dphit;
@@ -317,6 +318,7 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params, LALInferenceIFOModel *i
     bdts = get_bsb_delay( params, datatimes, dts, ifo->ephem );
   }
 
+  #pragma omp parallel for private(T0, DT, deltat, deltat2)
   for( i=0; i<length; i++){
     REAL8 realT = XLALGPSGetREAL8( &datatimes->data[i] ); /*time of data*/
 
@@ -380,6 +382,7 @@ REAL8Vector *get_ssb_delay( BinaryPulsarParams pars, LIGOTimeGPSVector *datatime
   REAL8 T0 = 0.;
 
   BarycenterInput *bary = NULL;
+  UINT4 baryfail = 0;
 
   REAL8Vector *dts = NULL;
 
@@ -413,43 +416,49 @@ REAL8Vector *get_ssb_delay( BinaryPulsarParams pars, LIGOTimeGPSVector *datatime
 
   T0 = pars.pepoch;
 
+  #pragma omp parallel for shared(baryfail)
   for( i=0; i<length; i++){
-    EarthState earth, earth2;
-    EmissionTime emit, emit2;
+    if ( !baryfail ){ /* need this to quickly exit loop while using openmp (as can't use break statements) */
+      EarthState earth, earth2;
+      EmissionTime emit, emit2;
 
-    REAL8 DT = 0., DTplus = 0., realT = XLALGPSGetREAL8( &datatimes->data[i] );
+      REAL8 DT = 0., DTplus = 0., realT = XLALGPSGetREAL8( &datatimes->data[i] );
 
-    DT = realT - T0;
+      DT = realT - T0;
 
-    /* only do call to the barycentring routines once every interptime (unless
-       interptime == 0), otherwise just linearly interpolate between them */
-    if( i == 0 || DT > DTplus || interptime == 0 ){
-      bary->tgps = datatimes->data[i];
+      /* only do call to the barycentring routines once every interptime (unless
+         interptime == 0), otherwise just linearly interpolate between them */
+      if( i == 0 || DT > DTplus || interptime == 0 ){
+        bary->tgps = datatimes->data[i];
 
-      bary->delta = pars.dec + ( realT - pars.posepoch ) * pars.pmdec;
-      bary->alpha = pars.ra + ( realT - pars.posepoch ) * pars.pmra / cos( bary->delta );
+        bary->delta = pars.dec + ( realT - pars.posepoch ) * pars.pmdec;
+        bary->alpha = pars.ra + ( realT - pars.posepoch ) * pars.pmra / cos( bary->delta );
 
-      /* call barycentring routines */
-      XLAL_CHECK_NULL( XLALBarycenterEarthNew( &earth, &bary->tgps, ephem, tdat, ttype ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_NULL( XLALBarycenter( &emit, bary, &earth ) == XLAL_SUCCESS, XLAL_EFUNC );
+        /* call barycentring routines */
+        if ( XLALBarycenterEarthNew( &earth, &bary->tgps, ephem, tdat, ttype ) != XLAL_SUCCESS ){ baryfail = 1; continue; }
+        if ( XLALBarycenter( &emit, bary, &earth ) != XLAL_SUCCESS ){ baryfail = 1; continue; }
 
-      /* add interptime to the time */
-      if ( interptime > 0 ){
-        DTplus = DT + interptime;
-        XLALGPSAdd( &bary->tgps, interptime );
+        /* add interptime to the time */
+        if ( interptime > 0 ){
+          DTplus = DT + interptime;
+          XLALGPSAdd( &bary->tgps, interptime );
 
-        /* No point in updating the positions as difference will be tiny */
-        XLAL_CHECK_NULL( XLALBarycenterEarthNew( &earth2, &bary->tgps, ephem,tdat, ttype ) == XLAL_SUCCESS, XLAL_EFUNC );
-        XLAL_CHECK_NULL( XLALBarycenter( &emit2, bary, &earth2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+          /* No point in updating the positions as difference will be tiny */
+          if( XLALBarycenterEarthNew( &earth2, &bary->tgps, ephem,tdat, ttype ) != XLAL_SUCCESS ){ baryfail = 1; continue; }
+          if( XLALBarycenter( &emit2, bary, &earth2 ) != XLAL_SUCCESS){ baryfail = 1; continue; }
+        }
       }
-    }
 
-    /* linearly interpolate to get emitdt */
-    if( interptime > 0. ){
-      dts->data[i] = emit.deltaT + (DT - (DTplus - interptime)) * (emit2.deltaT -  emit.deltaT)/interptime;
+      /* linearly interpolate to get emitdt */
+      if( interptime > 0. ){
+        dts->data[i] = emit.deltaT + (DT - (DTplus - interptime)) * (emit2.deltaT -  emit.deltaT)/interptime;
+      }
+      else { dts->data[i] = emit.deltaT; }
     }
-    else { dts->data[i] = emit.deltaT; }
   }
+
+  /* check that for loop didn't fail early */
+  XLAL_CHECK_NULL( !baryfail, XLAL_EFUNC );
 
   XLALFree( bary );
 
@@ -481,6 +490,7 @@ REAL8Vector *get_bsb_delay( BinaryPulsarParams pars, LIGOTimeGPSVector *datatime
 
   bdts = XLALCreateREAL8Vector( length );
 
+  #pragma omp parallel for
   for ( i = 0; i < length; i++ ){
     /* check whether there's a binary model */
     if ( pars.model ){
@@ -881,6 +891,7 @@ void get_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOModel *ifo ){
 
         length = ifo->times->length;
 
+        #pragma omp parallel for
         for( i=0; i<length; i++ ){
           REAL8 plus00, plus01, cross00, cross01, plus = 0., cross = 0.;
           REAL8 x00, x01, y00, y01, b00, b01, l00, l01;
