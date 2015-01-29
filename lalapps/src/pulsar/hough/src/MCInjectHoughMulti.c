@@ -266,11 +266,9 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALRegisterREALUserVar(   &status, "startTime",        0,  UVAR_OPTIONAL, "GPS start time of observation",         &uvar_startTime),        &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "endTime",          0,  UVAR_OPTIONAL, "GPS end time of observation",           &uvar_endTime),          &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "timeStampsFile",   0,  UVAR_OPTIONAL, "Input time-stamps file",                &uvar_timeStampsFile),   &status);
-  /* developer input variables */
-  LAL_CALL( LALRegisterINTUserVar(    &status, "nfSizeCylinder",   0, UVAR_DEVELOPER, "Size of cylinder of PHMDs",             &uvar_nfSizeCylinder),  &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",     0, UVAR_DEVELOPER, "Running Median block size",             &uvar_blocksRngMed),    &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "maxBinsClean",     0, UVAR_DEVELOPER, "Maximum number of bins in cleaning",    &uvar_maxBinsClean),    &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "Dterms",           0,  UVAR_DEVELOPER, "Number of f-bins in MC injection",     &uvar_Dterms),    &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "nfSizeCylinder",   0,  UVAR_OPTIONAL, "Size of cylinder of PHMDs",             &uvar_nfSizeCylinder),  &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "maxBinsClean",     0,  UVAR_OPTIONAL, "Maximum number of bins in cleaning",    &uvar_maxBinsClean),    &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "Dterms",           0,  UVAR_OPTIONAL, "Number of f-bins in MC injection",     &uvar_Dterms),    &status);
 
   /******************************************************************/ 
   /* read all command line variables */
@@ -1105,7 +1103,7 @@ void GenerateInjectParams(LALStatus   *status,
   ASSERT (fpRandom, status, DRIVEHOUGHCOLOR_EFILE,  DRIVEHOUGHCOLOR_MSGEFILE); 
   
   count = fread(&seed, sizeof(INT4),1, fpRandom);
-  if ( count != 0 ) ABORT( status, DRIVEHOUGHCOLOR_EARG,  DRIVEHOUGHCOLOR_MSGEARG);
+  if ( count = 0 ) ABORT( status, DRIVEHOUGHCOLOR_EARG,  DRIVEHOUGHCOLOR_MSGEARG);
   
   fclose(fpRandom);
   
@@ -1329,7 +1327,7 @@ void GenerateInjectParamsNoVeto(LALStatus   *status,
   ASSERT (fpRandom, status, DRIVEHOUGHCOLOR_EFILE,  DRIVEHOUGHCOLOR_MSGEFILE); 
   
   count = fread(&seed, sizeof(INT4),1, fpRandom);
-  if (count != 0) ABORT ( status, DRIVEHOUGHCOLOR_EARG,  DRIVEHOUGHCOLOR_MSGEARG);
+  if ( count = 0 ) ABORT ( status, DRIVEHOUGHCOLOR_EARG,  DRIVEHOUGHCOLOR_MSGEARG);
   
   fclose(fpRandom);
   
