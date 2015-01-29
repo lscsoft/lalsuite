@@ -37,42 +37,12 @@ extern "C" {
  */
   /*@{*/
 
-REAL8 XLALChisqCdf(
-	REAL8 chi2,
-	REAL8 dof
-);
-
-
-REAL8 XLALOneMinusChisqCdf(
-	REAL8 chi2,
-	REAL8 dof
-);
-
 
 REAL8 XLALlnOneMinusChisqCdf(
 	REAL8 chi2,
 	REAL8 dof
 );
 
-
-REAL8 XLALNoncChisqCdf (
-	REAL8 chi2,
-	REAL8 dof,
-	REAL8 nonCentral
-);
-
-
-REAL8 XLALChi2Threshold(
-	REAL8 dof,
-	REAL8 falseAlarm
-);
-
-
-REAL8 XLALRhoThreshold(
-	REAL8 chi2,
-	REAL8 dof,
-	REAL8 falseDismissal
-);
 
   /*@}*/
 

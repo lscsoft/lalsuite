@@ -155,21 +155,6 @@ static void ParseOptions(int argc, char *argv[])
 };
 
 
-#ifndef LAL_NDEBUG
-static void CHECKERROR(const char *msg, REAL8 result, int error )
-{
-  if(!XLALIsREAL8FailNaN(result)) {
-    fprintf(stderr, "%s: failed to return REAL8FailNaN\n", msg);
-    exit(1);
-  }
-  if(XLALGetBaseErrno() != error) {
-    fprintf(stderr, "%s: expected error %d, got %d\n",msg, error, XLALGetBaseErrno());
-    exit(1);
-  }
-  XLALClearErrno();
-}
-#endif
-
 /*
  * Entry point
  */
@@ -178,7 +163,6 @@ int main(int argc, char *argv[])
 {
 	REAL8 chi2;
 	REAL8 dof;
-	REAL8 rho;
 
 	/*
 	 * Parse the command line options
@@ -194,66 +178,9 @@ int main(int argc, char *argv[])
 
 	chi2 = 2.3l;
 	dof = 8.0;
-	rho = 2.2;
 
 	/* check forward functions */
-	CHECKOUTPUT("1.0 - XLALChisqCdf(chi2, dof)", 1.0 - XLALChisqCdf(chi2, dof), 0.970406, 1e-5);
-	CHECKOUTPUT("XLALOneMinusChisqCdf(chi2, dof)", XLALOneMinusChisqCdf(chi2, dof), 0.970406, 1e-5);
-	CHECKOUTPUT("XLALNoncChisqCdf(chi2, dof, rho * rho)", XLALNoncChisqCdf(chi2, dof, rho * rho), 0.00439452, 1e-7);
-	/* check reverse functions */
-	CHECKOUTPUT("XLALChi2Threshold(dof, 1.0 - XLALChisqCdf(chi2, dof))", XLALChi2Threshold(dof, 1.0 - XLALChisqCdf(chi2, dof)), chi2, 1e-5);
-	CHECKOUTPUT("XLALRhoThreshold(chi2, dof, XLALNoncChisqCdf(chi2, dof, rho * rho))", XLALRhoThreshold(chi2, dof, XLALNoncChisqCdf(chi2, dof, rho * rho)), rho, 1e-5);
-
-
-	/*
-	 *  Check to make sure the functions return the correct values.
-	 *  Second time around
-	 */
-
-	chi2 = 12.3l;
-	dof = 3.1;
-	rho = 2.2;
-
-	/* check forward functions */
-	CHECKOUTPUT("1.0 - XLALChisqCdf(chi2, dof)", 1.0 - XLALChisqCdf(chi2, dof), 0.007066, 1e-7);
-	CHECKOUTPUT("XLALNoncChisqCdf(chi2, dof, rho * rho)", XLALNoncChisqCdf(chi2, dof, rho * rho), 0.822575, 1e-6);
-	/* check reverse functions */
-	CHECKOUTPUT("XLALChi2Threshold(dof, 1.0 - XLALChisqCdf(chi2, dof))", XLALChi2Threshold(dof, 1.0 - XLALChisqCdf(chi2, dof)), chi2, 1e-5);
-	CHECKOUTPUT("XLALRhoThreshold(chi2, dof, XLALNoncChisqCdf(chi2, dof, rho * rho))", XLALRhoThreshold(chi2, dof, XLALNoncChisqCdf(chi2, dof, rho * rho)), rho, 1e-5);
-
-
-	/*
-	 * Check to make sure that correct error codes are generated.
-	 */
-
-#ifndef LAL_NDEBUG
-	REAL8 falseAlarm = 0.970406;
-	REAL8 falseDismissal = 0.00439452;
-	if(!lalNoDebug) {
-		if(verbose || lalDebugLevel)
-			printf("\n===== Check Errors =====\n");
-
-		CHECKERROR("XLALChisqCdf(-chi2, dof)", XLALChisqCdf(-chi2, dof), XLAL_EDOM);
-		CHECKERROR("XLALNoncChisqCdf(-chi2, dof, rho * rho)", XLALNoncChisqCdf(-chi2, dof, rho * rho), XLAL_EDOM);
-		CHECKERROR("XLALChisqCdf(chi2, -dof)", XLALChisqCdf(chi2, -dof), XLAL_EDOM);
-		CHECKERROR("XLALNoncChisqCdf(chi2, -dof, rho * rho)", XLALNoncChisqCdf(chi2, -dof, rho * rho), XLAL_EDOM);
-		CHECKERROR("XLALNoncChisqCdf(chi2, dof, -rho * rho)", XLALNoncChisqCdf(chi2, dof, -rho * rho), XLAL_EDOM);
-		CHECKERROR("XLALChi2Threshold(-dof, falseAlarm)", XLALChi2Threshold(-dof, falseAlarm), XLAL_EDOM);
-		CHECKERROR("XLALRhoThreshold(chi2, -dof, falseDismissal)", XLALRhoThreshold(chi2, -dof, falseDismissal), XLAL_EDOM);
-		CHECKERROR("XLALRhoThreshold(-chi2, dof, falseDismissal)", XLALRhoThreshold(-chi2, dof, falseDismissal), XLAL_EDOM);
-
-		/* There is no test here for exceeding the maximum number
-		 * of iterations in XLALNoncChisqCdf() since I could not
-		 * find a set of parameters which caused this condition to
-		 * occur. */
-
-		/* Supplied probabilities must lie between 0 and 1 */
-		CHECKERROR("XLALChi2Threshold(dof, -falseAlarm)", XLALChi2Threshold(dof, -falseAlarm), XLAL_EDOM);
-		CHECKERROR("XLALChi2Threshold(dof, 2.0)", XLALChi2Threshold(dof, 2.0), XLAL_EDOM);
-		CHECKERROR("XLALRhoThreshold(chi2, dof, -falseDismissal)", XLALRhoThreshold(chi2, dof, -falseDismissal), XLAL_EDOM);
-		CHECKERROR("XLALRhoThreshold(chi2, dof, -2.0)", XLALRhoThreshold(chi2, dof, -2.0), XLAL_EDOM);
-	}
-#endif
+	CHECKOUTPUT("XLALlnOneMinusChisqCdf(chi2, dof)", XLALlnOneMinusChisqCdf(chi2, dof), -0.030040797757, 1e-9);
 
 	LALCheckMemoryLeaks();
 
