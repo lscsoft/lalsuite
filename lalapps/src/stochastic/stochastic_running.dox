@@ -1,4 +1,6 @@
 /**
+\if LALSTOCHASTIC
+
 \defgroup lalapps_stochastic_running Running the LALApps Stochastic Pipeline Under Condor
 \ingroup lalapps_stochastic
 
@@ -142,4 +144,6 @@ to a maximum of 30:
 \code
 > condor_submit_dag -maxjobs 30 example_S3_H1L1.dag
 \endcode
+
+\endif
 */

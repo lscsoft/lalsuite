@@ -1,4 +1,6 @@
 /**
+\if LALINSPIRAL
+
 \defgroup lalapps_inspiral_programs Inspiral Search Programs
 \ingroup lalapps_inspiral
 
@@ -130,4 +132,5 @@ that bank into smaller banks.
  - \ref splitbank.c
  - \ref coinext.c
 
+\endif
 */

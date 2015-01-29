@@ -1,4 +1,6 @@
 /**
+\if LALINSPIRAL
+
 \defgroup lalapps_SPINspiral SPINspiral: Parameter estimation on gravitational-wave signals from spinning binary inspirals
 \ingroup lalapps_inspiral
 \authors Marc van der Sluys, Vivien Raymond, Ilya Mandel
@@ -431,4 +433,5 @@ using the program \c FrDump, which comes with \c libframe: \\
 The channel name is probably going to look like \c H1:STRAIN (for the case of
 the H1 detector).
 
+\endif
 */
