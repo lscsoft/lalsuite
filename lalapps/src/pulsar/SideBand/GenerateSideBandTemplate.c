@@ -21,7 +21,7 @@
 /**
  * \author C. Messenger
  * \file
- * \ingroup lalapps_pulsar
+ * \ingroup lalapps_pulsar_SideBand
  * \brief
  * Generate a frequency domain template for a binary signal as recieved at the SSB.
  *

@@ -21,7 +21,7 @@
 /**
  * \author C. Messenger
  * \file
- * \ingroup lalapps_pulsar
+ * \ingroup lalapps_pulsar_SideBand
  * \brief
  * A collection of commonly used utilities in the SideBand directory
  *
