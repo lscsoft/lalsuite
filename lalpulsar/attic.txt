@@ -14,7 +14,7 @@
 # $ /bin/bash lalpulsar/attic.txt
 # ==============================================================================
 date=`git log -1 --date=short --pretty="format:%cd" HEAD`
-git log -1 --summary HEAD | sed -n "s|^ delete mode [0-9]* |# ${date} |p" | LC_ALL=C sort | uniq | tee -a $0
+git log -1 --summary --find-renames HEAD | sed -n "s|^ delete mode [0-9]* |# ${date} |p" | LC_ALL=C sort | uniq | tee -a $0
 # ==============================================================================
 # Deleted    File
 # ---------- -------------------------------------------------------------------
