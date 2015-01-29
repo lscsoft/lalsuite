@@ -616,8 +616,6 @@ XLALComputeFstat ( FstatResults **Fstats,	  	///< [in/out] Address of a pointer 
       // Enlarge F-atoms per detector arrays, and initialise to NULL
       if ( (whatToCompute & FSTATQ_ATOMS_PER_DET) && (moreFreqBins || moreDetectors) )
         {
-          for ( UINT4 X = 0; X < numDetectors; ++X )
-            {
               (*Fstats)->multiFatoms = XLALRealloc ( (*Fstats)->multiFatoms, numFreqBins*sizeof((*Fstats)->multiFatoms[0]) );
               XLAL_CHECK ( (*Fstats)->multiFatoms != NULL, XLAL_EINVAL, "Failed to (re)allocate (*Fstats)->multiFatoms to length %u", numFreqBins );
 
@@ -636,7 +634,6 @@ XLALComputeFstat ( FstatResults **Fstats,	  	///< [in/out] Address of a pointer 
                     (*Fstats)->multiFatoms[k] = NULL;
                   }
                 }
-            } // for X < numDetectors
 
         } // if Atoms_per_det to enlarge
 
