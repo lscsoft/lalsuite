@@ -102,7 +102,7 @@ static int BasicTest(
   // Count number of templates
   UINT8 total = XLALLatticeTilingTotalPointCount(tiling);
   printf("Number of lattice points: %" LAL_UINT8_FORMAT "\n", total);
-  XLAL_CHECK(total == total_ref, XLAL_EFUNC, "ERROR: total = %zu != %zu = total_ref", total, total_ref);
+  XLAL_CHECK(total == total_ref, XLAL_EFUNC, "ERROR: total = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = total_ref", total, total_ref);
 
   // Get all templates
   gsl_matrix* templates = XLALLatticeTilingUniquePoints(tiling, n - 1);
@@ -112,15 +112,15 @@ static int BasicTest(
   gsl_matrix* nearest = NULL;
   UINT8Vector* indices = NULL;
   XLAL_CHECK(XLALNearestLatticeTilingPoints(tiling, templates, &nearest, &indices) == XLAL_SUCCESS, XLAL_EFUNC);
-  size_t failed = 0;
-  for (size_t i = 0; i < total; ++i) {
+  UINT8 failed = 0;
+  for (UINT8 i = 0; i < total; ++i) {
     if (indices->data[i] != i) {
       ++failed;
-      XLALPrintError("ERROR: indices->data[i] = %" LAL_UINT8_FORMAT " != %zu\n", indices->data[i], i);
+      XLALPrintError("ERROR: indices->data[i] = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT "\n", indices->data[i], i);
     }
   }
   if (failed > 0) {
-    XLAL_ERROR(XLAL_EFAILED, "ERROR: number of failed index lookups = %zu > 0", failed);
+    XLAL_ERROR(XLAL_EFAILED, "ERROR: number of failed index lookups = %" LAL_UINT8_FORMAT " > 0", failed);
   }
 
   // Cleanup
@@ -140,7 +140,7 @@ static int MismatchTest(
   gsl_matrix* metric,
   const double max_mismatch,
   const TilingLattice lattice,
-  const size_t total_ref,
+  const UINT8 total_ref,
   const double mism_hist_ref[MISM_HIST_BINS+1]
   )
 {
@@ -154,7 +154,7 @@ static int MismatchTest(
   // Count number of templates
   UINT8 total = XLALLatticeTilingTotalPointCount(tiling);
   printf("Number of lattice points: %" LAL_UINT8_FORMAT "\n", total);
-  XLAL_CHECK(total == total_ref, XLAL_EFUNC, "ERROR: total = %zu != %zu = total_ref", total, total_ref);
+  XLAL_CHECK(total == total_ref, XLAL_EFUNC, "ERROR: total = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = total_ref", total, total_ref);
 
   // Get all templates
   gsl_matrix* templates = XLALLatticeTilingUniquePoints(tiling, n - 1);
