@@ -26,6 +26,7 @@ liblalsupport_la_SOURCES = \
 	StreamVectorInput.c \
 	StreamVectorSequenceInput.c \
 	UserInput.c \
+	UserInputParser.c \
 	LALgetopt.c \
 	LALgetopt.h
 

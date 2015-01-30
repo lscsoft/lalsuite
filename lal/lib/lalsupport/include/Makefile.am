@@ -15,4 +15,5 @@ pkginclude_HEADERS = \
 	StreamInput.h \
 	StreamOutput.h \
 	UserInput.h \
+	UserInputParser.h \
 	ConfigFile.h
