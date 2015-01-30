@@ -711,8 +711,8 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
       }
     else if ( have_RA )
       {
-	cfg->pulsar.Doppler.Alpha = XLALhmsToRads(uvar->RA);
-	cfg->pulsar.Doppler.Delta = XLALdmsToRads(uvar->Dec);
+	XLAL_CHECK ( XLALConvertHMStoRAD ( &cfg->pulsar.Doppler.Alpha, uvar->RA  ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK ( XLALConvertDMStoRAD ( &cfg->pulsar.Doppler.Delta, uvar->Dec ) == XLAL_SUCCESS, XLAL_EFUNC );
       }
     else
       {

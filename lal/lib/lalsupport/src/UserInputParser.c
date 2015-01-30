@@ -1,5 +1,6 @@
 //
 // Copyright (C) 2004, 2005, 2015 Reinhard Prix
+// Copyright (C) 2013 Matt Pitkin
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -17,17 +18,19 @@
 //  MA  02111-1307  USA
 //
 
+#include <ctype.h>
 #include <errno.h>
 
 #include <lal/StringInput.h>
+#include <lal/LALConstants.h>
 #include <lal/LALString.h>
 #include <lal/UserInputParser.h>
 
 
 // ---------- local defines ----------
 // these constants are taken from StringConvert.c
-#define LAL_INT4_MAX    LAL_INT8_C(2147483647)
-#define LAL_INT8_MAX    LAL_INT8_C(9223372036854775807)
+#define LAL_sINT4_MAX    LAL_INT8_C(2147483647)
+#define LAL_sINT8_MAX    LAL_INT8_C(9223372036854775807)
 
 
 // ==================== function definitions ====================
@@ -50,8 +53,8 @@ XLALParseStringValueToINT8 ( INT8 *valINT8,         //!< [out] return INT8 value
 
   //  check range and convert long-int into INT8
   if ( sizeof(valLLong) > sizeof(INT8) ) { // avoid warning about trivial check
-    XLAL_CHECK ( (valLLong > -LAL_INT8_MAX) && (valLLong < LAL_INT8_MAX), XLAL_EDOM, "String-conversion '%s' --> '%lli' exceeds INT8 range of +-%"LAL_INT8_FORMAT"\n",
-                 valString, valLLong, LAL_INT8_MAX );
+    XLAL_CHECK ( (valLLong > -LAL_sINT8_MAX) && (valLLong < LAL_sINT8_MAX), XLAL_EDOM, "String-conversion '%s' --> '%lli' exceeds INT8 range of +-%"LAL_INT8_FORMAT"\n",
+                 valString, valLLong, LAL_sINT8_MAX );
   }
 
   (*valINT8) = (INT8)valLLong;
@@ -74,8 +77,8 @@ XLALParseStringValueToINT4 ( INT4 *valINT4,         //!< [out] return INT4 value
   XLAL_CHECK ( XLALParseStringValueToINT8 ( &valINT8, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // check range and convert INT8 into INT4
-  XLAL_CHECK ( (valINT8 > -LAL_INT4_MAX) && (valINT8 < LAL_INT4_MAX), XLAL_EDOM, "String-conversion '%s' --> '%"LAL_INT8_FORMAT"' exceeds INT4 range of +-%"LAL_INT8_FORMAT"\n",
-               valString, valINT8, LAL_INT4_MAX );
+  XLAL_CHECK ( (valINT8 > -LAL_sINT4_MAX) && (valINT8 < LAL_sINT4_MAX), XLAL_EDOM, "String-conversion '%s' --> '%"LAL_INT8_FORMAT"' exceeds INT4 range of +-%"LAL_INT8_FORMAT"\n",
+               valString, valINT8, LAL_sINT4_MAX );
 
   (*valINT4) = (INT4)valINT8;
 
@@ -167,3 +170,74 @@ XLALParseStringValueToBOOLEAN ( BOOLEAN *valBOOLEAN,     //!< [out] return BOOLE
   return XLAL_SUCCESS;
 
 } // XLALParseStringValueToBOOLEAN()
+
+
+///
+/// Convert a string representing an angle in the form "degrees:minutues:seconds" into radians.
+///
+/// It requires that the minutes and seconds values are between 0 to 60. Degrees are allowed to be a
+/// positive or negative integer between [-360, 360].
+/// An example would be: XLALConvertDMStoRAD ( &radians, "-06:52:16.875" );
+///
+int
+XLALConvertDMStoRAD ( REAL8 *radians, const CHAR *dms )
+{
+  XLAL_CHECK ( dms != NULL, XLAL_EINVAL, "Angle input string 'dms' is NULL" );
+  XLAL_CHECK ( radians != NULL, XLAL_EINVAL );
+
+  XLAL_CHECK ( !isspace(dms[0]), XLAL_EINVAL, "No initial whitespace allowed in input string '%s''\n", dms );
+
+  REAL8 s;
+  INT4 d, m;
+  int numitems = sscanf(dms, "%d:%d:%lf", &d, &m, &s);
+
+  XLAL_CHECK ( numitems == 3, XLAL_EINVAL, "Angle input string '%s' not in format 'degs:mins:secs'", dms );
+  XLAL_CHECK ( d >= -360 && d <= 360, XLAL_EDOM, "Degrees '%d' outside of valid range of [-360,360] deg\n", d );
+  XLAL_CHECK ( m >= 0 && m < 60, XLAL_EDOM, "Minutes '%d' outside of the valid range of [0, 59] mins", m );
+  XLAL_CHECK ( s >= 0 && s < 60, XLAL_EDOM, "Seconds '%lf' outside of the valid range of [0, 60) secs", s );
+
+  // check if there's a minus sign, and apply to minutes and seconds (degrees would already have it)
+  // Note that this is the reason we don't accept initial whitespace in the input string
+  REAL8 sig = 1;
+  if ( dms[0] == '-' ) {
+    sig = -1;
+  }
+
+  // now convert the pieces from degrees to radians
+  (*radians) =  (LAL_PI/180.0) * ( d + (sig*m / 60.0) + (sig*s / 3600.0) );
+
+  return XLAL_SUCCESS;
+
+} // XLALConvertDMStoRAD()
+
+///
+/// Convert a string representing an angle in the form "hours:minutes:seconds" into radians.
+///
+/// It requires that the hours value to be within [0, 23] hours, and the minutes and seconds values are within [0, 60).
+/// An example would be: XLALConvertHMStoRAD( &radians, "12:05:07.765" );
+///
+int
+XLALConvertHMStoRAD ( REAL8 *radians, const CHAR *hms )
+{
+  XLAL_CHECK_REAL8( hms != NULL, XLAL_EINVAL, "Angle input string 'hms' is NULL" );
+  XLAL_CHECK ( radians != NULL, XLAL_EINVAL );
+
+  REAL8 s;
+  INT4 h, m;
+  int numitems = sscanf(hms, "%d:%d:%lf", &h, &m, &s);
+
+  XLAL_CHECK_REAL8 ( numitems == 3, XLAL_EINVAL, "Angle input string '%s' not in format 'hours:mins:secs'\n", hms );
+  XLAL_CHECK_REAL8 ( h >= 0 && h < 24, XLAL_EDOM, "Hours value '%d' must be within [0, 23]\n", h );
+  XLAL_CHECK_REAL8 ( m >= 0 && m < 60, XLAL_EDOM, "Minutes value '%d' must be within [0 to 59]\n", m );
+  XLAL_CHECK_REAL8 ( s >= 0 && s < 60, XLAL_EDOM, "Seconds value '%lf' must be within [0,60)\n", s );
+
+  /* convert from hh:mm:ss to radians */
+  const REAL8 hour2deg = 360./24.;
+  const REAL8 deg2rad  = LAL_PI/180.0;
+  const REAL8 hour2rad = hour2deg * deg2rad;
+
+  (*radians) = hour2rad * ( h + (m / 60.0) + (s / 3600.0) );
+
+  return XLAL_SUCCESS;
+
+} // XLALConvertHMStoRAD()

@@ -38,7 +38,6 @@
 #include <lal/PulsarDataTypes.h>
 #include <lal/UserInput.h>
 #include <lal/LALInitBarycenter.h>
-#include <lal/BinaryPulsarTiming.h>
 #include <lal/GeneratePulsarSignal.h>
 #include <lal/Random.h>
 #include <lal/LALString.h>
@@ -267,7 +266,7 @@ main(int argc, char *argv[])
   BOOLEAN have_DECJ = XLALUserVarWasSet ( &uvar.DECJ );
   if ( have_RAJ )
     {
-      alpha = XLALhmsToRads ( uvar.RAJ );
+      XLAL_CHECK ( XLALConvertHMStoRAD ( &alpha, uvar.RAJ ) == XLAL_SUCCESS, XLAL_EFUNC );
       RAJ = XLALStringDuplicate ( uvar.RAJ );
     }
   else
@@ -277,7 +276,7 @@ main(int argc, char *argv[])
     }
   if ( have_DECJ )
     {
-      delta = XLALdmsToRads ( uvar.DECJ );
+      XLAL_CHECK ( XLALConvertDMStoRAD ( &delta, uvar.DECJ ) == XLAL_SUCCESS, XLAL_EFUNC );
       DECJ = XLALStringDuplicate ( uvar.DECJ );
     }
   else

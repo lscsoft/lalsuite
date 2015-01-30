@@ -12,6 +12,7 @@ test_programs += ReadFTSeriesTest
 test_programs += SegmentsIOTest
 test_programs += StreamInputTest
 test_programs += StreamSeriesInputTest
+test_programs += UserInputParserTest
 test_programs += UserInputTest
 
 # Add shell, Python, etc. test scripts to this variable

@@ -217,8 +217,8 @@ int main( int argc, char *argv[] ){
   }
   else{ params.site = XLALGetSiteInfo( det ); } /* try a GW detector */
 
-  params.pulsar.position.latitude = XLALdmsToRads( dec );
-  params.pulsar.position.longitude = XLALhmsToRads( ra );
+  XLAL_CHECK_MAIN ( XLALConvertDMStoRAD( &params.pulsar.position.latitude, dec ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( XLALConvertHMStoRAD( &params.pulsar.position.longitude, ra ) == XLAL_SUCCESS, XLAL_EFUNC );
   params.pulsar.position.system = COORDINATESYSTEM_EQUATORIAL;
 
   /* get the Earth and Sun ephemeris files - note yo may have to change this for different systems */

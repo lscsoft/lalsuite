@@ -66,6 +66,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALString.h>
 #include <lal/ComputeFstat.h>
+#include <lal/UserInputParser.h>
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
@@ -73,6 +74,8 @@
 #define UNUSED
 #endif
 
+
+#define DAYSTOSECS 86400.0 /* number of seconds in an SI day */
 
 size_t PulsarTypeSize[5] = {
   sizeof(UINT4),
@@ -516,10 +519,10 @@ enum{
         else{ x *= convfactor; } \
       } \
       else if ( type == CONVHMS ) { /* convert to radians from hh:mm:ss.s format */ \
-        x = XLALhmsToRads( in ); \
+        XLALConvertHMStoRAD( &x, in );                              \
       } \
       else if ( type == CONVDMS ) { /* convert to radians from hh:mm:ss.s format */ \
-        x = XLALdmsToRads( in ); \
+        XLALConvertDMStoRAD( &x, in );                                  \
       } \
       else if ( type == CONVMJD ) { /* convert an MJD to a GPS time */ \
          x = XLALTTMJDtoGPS( atof(in) ); \
@@ -1243,7 +1246,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
     }
     else if(!strcmp(val[i],"ra") || !strcmp(val[i],"RA") || !strcmp(val[i],"RAJ")){
       /* this can be in form hh:mm:ss.ss or hhmmss.ss */
-      output->ra = XLALhmsToRads(val[i+1]);
+      XLALConvertHMStoRAD( &output->ra, val[i+1]);
       j++;
 
       /* only try to get error if one exists */
@@ -1254,7 +1257,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
       }
     }
     else if(!strcmp(val[i],"dec") || !strcmp(val[i],"DEC") || !strcmp(val[i],"DECJ")) {
-      output->dec = XLALdmsToRads(val[i+1]);
+      XLALConvertDMStoRAD ( &output->dec, val[i+1] );
       j++;
 
       if(atoi(val[i+2])==1 && i+2<k){
@@ -2421,159 +2424,6 @@ Parameters not in consistent order!\n");
 
   return params;
 }
-
-
-/* function to convert a string containing an angular coordinate in the format
- * degrees:minutues:seconds into radians */
-REAL8
-XLALdmsToRads( const CHAR *dms )
-{
-  XLAL_CHECK_REAL8( dms != NULL, XLAL_EIO, "Angle string is NULL" );
-
-  REAL8 s;
-  INT4 d, m;
-  int negbutzero = 0;
-  int numitems = sscanf(dms, "%d:%d:%lf", &d, &m, &s);
-
-  XLAL_CHECK_REAL8( numitems == 3, XLAL_EINVAL, "Angle string not in format 'degs:mins:secs'" );
-  XLAL_CHECK_REAL8( m >= 0 && m < 60, XLAL_EDOM, "Minutes is out of the 0 to 59 mins range" );
-  XLAL_CHECK_REAL8( s >= 0. && s < 60., XLAL_EDOM, "Seconds is out of the 0 to 60 secs range" );
-
-  /* check if the string is negative in the case when the degrees value is zero */
-  if( dms[0] == '-' && d == 0 ) { negbutzero = 1; }
-
-  /* if dec is negative convert mins and secs to -ve numbers */
-  if( d < 0 || negbutzero == 1 ){
-    m = -m;
-    s = -s;
-  }
-
-  /* convert from dd:mm:ss to radians */
-  const REAL8 deg2rad = LAL_PI_180;
-  REAL8 radians =  deg2rad * ( d + (m / 60.0) + (s / 3600.0) );
-
-  return radians;
-
-} // XLALdmsToRads()
-
-
-/* function to convert a string containing an angular coordinate in the format
- * hours:minutues:seconds into radians */
-REAL8
-XLALhmsToRads( const CHAR *hms )
-{
-  XLAL_CHECK_REAL8( hms != NULL, XLAL_EIO, "Angle string is NULL" );
-
-  REAL8 s;
-  INT4 h, m;
-  int numitems = sscanf(hms, "%d:%d:%lf", &h, &m, &s);
-
-  XLAL_CHECK_REAL8( numitems == 3, XLAL_EINVAL, "Angle string not in format 'hours:mins:secs'" );
-  XLAL_CHECK_REAL8( h >= 0 && h < 24, XLAL_EDOM, "Hours value must be within [0, 24)" );
-  XLAL_CHECK_REAL8( m >= 0 && m < 60, XLAL_EDOM, "Minutes is out of the 0 to 59 mins range" );
-  XLAL_CHECK_REAL8( s >= 0. && s < 60., XLAL_EDOM, "Seconds is out of the 0 to 60 secs range" );
-
-  /* convert from hh:mm:ss to radians */
-  const REAL8 hour2deg = 360./24.;
-  const REAL8 deg2rad  = LAL_PI_180;
-  const REAL8 hour2rad = hour2deg * deg2rad;
-
-  REAL8 radians = hour2rad * ( h + (m / 60.0) + (s / 3600.0) );
-
-  return radians;
-
-} // XLALhmsToRads()
-
-
-/* DEPREACTED: Use XLALhmsToRads() or XLALdmsToRads()
-   function converts dec or ra from format dd/hh:mm:ss.sss or format
-   dd/hhmmss.ss to radians */
-REAL8 LALDegsToRads(CHAR *degs, const CHAR *coord){
-  REAL8 radians=0.;
-  INT4 d, m;
-  REAL8 s;
-  CHAR dc[4]="", mc[3]="", *sc=NULL;
-  CHAR *loc;
-  INT4 n, negbutzero=0;
-
-  /* if in format dd/hh:mm:ss.s do this*/
-  /* locate first : */
-  if((loc = strchr(degs, ':'))!=NULL){
-    n = loc-degs;
-
-    /* copy degrees part to dc */
-    strncpy(dc, degs, n);
-    d = atoi(dc);
-
-    /* check if dec is negative but the degree part is zero */
-    if((strchr(degs, '-') != NULL) && d == 0){
-      negbutzero = 1;
-    }
-
-    /* copy minutes part to mc */
-    strncpy(mc, loc+1, 2);
-    m = atoi(mc);
-
-    /* copy seconds part to sc */
-    sc = XLALStringDuplicate(loc+4);
-    s = atof(sc);
-  }
-  /* if in format hh/ddmmss.ss */
-  else{
-    /* find pos of decimal point . (ascii character 46) */
-    loc = strchr(degs, '.');
-
-    /* get seconds part */
-    sc = XLALStringDuplicate(loc-2);
-    s = atof(sc);
-
-    /* get minutes part */
-    strncpy(mc, loc-4, 2);
-    m = atoi(mc);
-
-    /* get hours or degs part part */
-    /* check if first char is - (ascii character 45) */
-    if(strchr(degs, '-') != NULL){
-      /* first char is negative */
-      strncpy(dc, loc-7, 3);
-      d = atoi(dc);
-
-      /* if dec is negative but the degrees part is zero set flag */
-      negbutzero = 1;
-    }
-    else{
-      strncpy(dc, loc-6, 2);
-      d = atoi(dc);
-    }
-  }
-
-  if(strstr(coord, "ra") || strstr(coord, "RA") || strstr(coord, "alpha")){
-    /* convert from hh:mm:ss to radians */
-    radians = LAL_PI_180*(REAL8)d*(360.0/24.0);
-    radians += LAL_PI_180*((REAL8)m/60.0)*(360.0/24.0);
-    radians += LAL_PI_180*(s/(60.0*60.0))*(360.0/24.0);
-  }
-  else if(strstr(coord, "dec") || strstr(coord, "DEC") || strstr(coord, "delta")){
-    /* convert from dd:mm:ss to radians */
-    radians = LAL_PI_180*(REAL8)d;
-
-    /* if dec is negative convert mins and secs to -ve numbers */
-    if(d<0 || negbutzero==1){
-      m = -m;
-      s = -s;
-    }
-
-    radians += LAL_PI_180*(REAL8)m/60.0;
-    radians += LAL_PI_180*s/(60.0*60.0);
-  }
-
-  /* free mem */
-  XLALFree(sc);
-
-  return radians;
-}
-
-
 /* functions for converting times given in Terrestrial time TT or TDB in MJD to
 times in GPS - this is important for epochs given in .par files which are in
 TDB. TT and GPS are different by a factor of 51.184 secs, this is just the

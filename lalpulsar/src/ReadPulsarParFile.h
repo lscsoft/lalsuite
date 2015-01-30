@@ -547,38 +547,6 @@ LALStringVector *XLALReadTEMPOCorFile( REAL8Array *cormat, CHAR *corfile );
 /** function to print out all the pulsar parameters read in from a par file */
 void PrintPulsarParameters( BinaryPulsarParams params );
 
-/** \brief Convert a string containing an angle in "hours:minutes:seconds" format into radians
- *
- * This function will covert a string containing an angle given in "hours:minutes:seconds"
- * format (e.g. a right ascension) into radians. It requires that the hours value is positive
- * and the minutes and seconds values are between 0 to 60. Hours are limited to be between
- * 0 and 24 hours. An example would be:
- *
- * rads = XLALhmsToRads( "12:05:07.765" );
- */
-REAL8 XLALhmsToRads( const CHAR *hms );
-
-
-/** \brief Convert a string containing an angle in "degrees:minutes:seconds" format into radians
- *
- * This function will covert a string containing an angle given in "degrees:minutes:seconds"
- * format (e.g. a declination) into radians. It requires that the minutes and seconds values
- * are between 0 to 60. Degrees are allowed to be any positive of negative integer. An
- * example would be:
- *
- * rads = XLALdmsToRads( "-06:52:16.875" );
- */
-REAL8 XLALdmsToRads( const CHAR *dms );
-
-
-/** \deprecated Use XLALdmsToRads() or XLALhmsToRads() instead.
- *
- * A function to convert RA and Dec in format dd:mm:ss.ss or ddmmss.ss into the
- * number of degrees as a float degs is the string containing the
- * dd/hh:mm:ss.sss coords is either ra/RA or dec/DEC.
- */
-REAL8
-LALDegsToRads(CHAR *degs, const CHAR *coords);
 
 /** Functions for converting times given in Terrestrial time TT, TDB, or TCB in
  * MJD to times in GPS - this is important for epochs given in <tt>.par</tt>

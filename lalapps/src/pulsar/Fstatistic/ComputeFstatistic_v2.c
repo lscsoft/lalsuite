@@ -1333,13 +1333,13 @@ InitFstat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   if (LALUserVarWasSet(&uvar->RA))
     {
       /* use Matt Pitkins conversion code found in lal/packages/pulsar/src/BinaryPulsarTiming.c */
-      cfg->Alpha = XLALhmsToRads(uvar->RA);
+      XLALConvertHMStoRAD ( &cfg->Alpha, uvar->RA );
     }
   else cfg->Alpha = uvar->Alpha;
   if (LALUserVarWasSet(&uvar->Dec))
     {
-      /* use Matt Pitkins conversion code found in lal/packages/pulsar/src/BinaryPulsarTiming.c */
-      cfg->Delta = XLALdmsToRads(uvar->Dec);
+      /* use Matt Pitkins conversion code found in UserInputParser */
+      XLALConvertDMStoRAD( &cfg->Delta, uvar->Dec );
     }
   else cfg->Delta = uvar->Delta;
 
