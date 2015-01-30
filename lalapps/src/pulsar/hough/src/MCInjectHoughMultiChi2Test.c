@@ -1186,7 +1186,7 @@ void GenerateInjectParams(LALStatus   *status,
   ASSERT (fpRandom, status, DRIVEHOUGHCOLOR_EFILE,  DRIVEHOUGHCOLOR_MSGEFILE); 
   
   count = fread(&seed, sizeof(INT4),1, fpRandom);
-  if ( count = 0 ) ABORT ( status, DRIVEHOUGHCOLOR_EARG,  DRIVEHOUGHCOLOR_MSGEARG);
+  if (count == 0 ) ABORT ( status, DRIVEHOUGHCOLOR_EARG,  DRIVEHOUGHCOLOR_MSGEARG);
   
   fclose(fpRandom);
   
@@ -1410,7 +1410,7 @@ void GenerateInjectParamsNoVeto(LALStatus   *status,
   ASSERT (fpRandom, status, DRIVEHOUGHCOLOR_EFILE,  DRIVEHOUGHCOLOR_MSGEFILE); 
   
   count = fread(&seed, sizeof(INT4),1, fpRandom);
-  if ( count = 0 ) ABORT ( status, DRIVEHOUGHCOLOR_EARG,  DRIVEHOUGHCOLOR_MSGEARG);
+  if (count == 0 ) ABORT ( status, DRIVEHOUGHCOLOR_EARG,  DRIVEHOUGHCOLOR_MSGEARG);
   
   fclose(fpRandom);
   
