@@ -1,6 +1,7 @@
 //
 // Copyright (C) 2004, 2005, 2015 Reinhard Prix
 // Copyright (C) 2013 Matt Pitkin
+// Copyright (C) 2007 Chris Messenger
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -18,6 +19,7 @@
 //  MA  02111-1307  USA
 //
 
+#include <math.h>
 #include <ctype.h>
 #include <errno.h>
 
@@ -241,3 +243,75 @@ XLALConvertHMStoRAD ( REAL8 *radians, const CHAR *hms )
   return XLAL_SUCCESS;
 
 } // XLALConvertHMStoRAD()
+
+
+///
+/// Convert (longitude, right-ascencsion, RA) radians into hours:minutes:seconds (HMS) format, returns allocated string.
+///
+CHAR *
+XLALConvertRADtoHMS ( REAL8 radians )
+{
+  XLAL_CHECK_NULL ( (radians>=0.0) && (radians < LAL_TWOPI), XLAL_EDOM, "RA %g not in range [0, 2pi) rad\n", radians );
+
+  REAL8 remainderH = radians * 24.0/LAL_TWOPI;
+  INT4 hours = (INT4) floor ( remainderH );
+  remainderH -= hours;
+  INT4 minutes = (INT4) floor ( remainderH * 60.0 );
+  remainderH -= minutes / 60.0;
+  REAL8 seconds = remainderH * 3600.0;
+  INT4 roundedSec = (INT4) round ( seconds * 10000000 ) / 10000000;  // round to 1e-7s accuracy
+  if ( roundedSec == 60 )
+    {
+      seconds = 0;
+      minutes ++;
+      if ( minutes == 60 )
+        {
+          minutes = 60;
+          hours ++;
+          if ( hours == 24 ) {
+            hours = 0;
+          }
+        }
+    }
+  CHAR hms[256];
+  snprintf ( hms, sizeof(hms)-1, "%02d:%02d:%010.7f", hours, minutes, seconds );   // output format taken from tempo2
+
+  return XLALStringDuplicate ( hms );
+
+} // XLALConvertRADtoHMS()
+
+///
+/// Convert (latitude, declination, DEC) radians into "sign*degrees:minutes:seconds" (DMS) format, returns allocated string
+///
+CHAR *
+XLALConvertRADtoDMS ( REAL8 radians )
+{
+  XLAL_CHECK_NULL ( (radians >= -LAL_PI_2) && (radians < LAL_PI_2), XLAL_EDOM, "DEC %g not in range [-pi/2, pi/2) rad\n", radians);
+
+  CHAR sign = (radians < 0) ? '-' : '+';
+
+  REAL8 remainderDeg = fabs ( radians * 360.0/LAL_TWOPI );
+
+  INT4 degrees = (INT4) floor ( remainderDeg );
+  remainderDeg -= degrees;
+  INT4 arcmins = (INT4) floor ( remainderDeg * 60.0 );
+  remainderDeg -= arcmins / 60.0;
+  REAL8 arcsecs = remainderDeg * 3600.0;
+  INT4 roundedArcsecs = (INT4) round ( arcsecs * 100000 ) / 100000;	// round to 1e-5 arcsec accuracy
+  if ( roundedArcsecs == 60 )
+    {
+      arcsecs = 0;
+      arcmins ++;
+      if ( arcmins == 60 )
+        {
+          arcmins = 0;
+          degrees ++;
+        }
+    }
+
+  CHAR dms[256];
+  snprintf ( dms, sizeof(dms)-1, "%c%02d:%02d:%08.5f", sign, degrees, arcmins, arcsecs );
+
+  return XLALStringDuplicate ( dms );
+
+} // XLALConvertRADtoDMS()

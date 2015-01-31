@@ -46,6 +46,8 @@ int XLALParseStringValueToBOOLEAN ( BOOLEAN *valBOOLEAN, const char *valString )
 
 int XLALConvertHMStoRAD ( REAL8 *radians, const CHAR *hms );
 int XLALConvertDMStoRAD ( REAL8 *radians, const CHAR *dms );
+CHAR *XLALConvertRADtoHMS ( REAL8 radians );
+CHAR *XLALConvertRADtoDMS ( REAL8 radians );
 
 /*@}*/
 
