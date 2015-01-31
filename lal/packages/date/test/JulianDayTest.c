@@ -113,20 +113,20 @@ static int test(const struct tm *utc, double expected_julian_day, int expected_m
 		fprintf(stderr, "Testing %s ...\n", buf);
 	}
 
-	julian_day = XLALJulianDay(utc);
-	modified_julian_day = XLALModifiedJulianDay(utc);
+	julian_day = XLALJulianDayUTC(utc);
+	modified_julian_day = XLALModifiedJulianDayUTC(utc);
 
 	if(expected_julian_day && (julian_day != expected_julian_day)) {
-		fprintf(stderr, "XLALJulianDay() failed (line %d):  expected %.17g got %.17g\n", line, expected_julian_day, julian_day);
+		fprintf(stderr, "XLALJulianDayUTC() failed (line %d):  expected %.17g got %.17g\n", line, expected_julian_day, julian_day);
 		result = -1;
 	} else if(lalDebugLevel) {
-		fprintf(stderr, "XLALJulianDay() returned %.16g\n", julian_day);
+		fprintf(stderr, "XLALJulianDayUTC() returned %.16g\n", julian_day);
 	}
 	if(expected_modified_julian_day && (abs(modified_julian_day) != expected_modified_julian_day)) {
-		fprintf(stderr, "XLALModifiedJulianDay() failed (line %d):  expected %d got %d\n", line, expected_modified_julian_day, modified_julian_day);
+		fprintf(stderr, "XLALModifiedJulianDayUTC() failed (line %d):  expected %d got %d\n", line, expected_modified_julian_day, modified_julian_day);
 		result = -1;
 	} else if(lalDebugLevel) {
-		fprintf(stderr, "XLALModifiedJulianDay() returned %d\n", modified_julian_day);
+		fprintf(stderr, "XLALModifiedJulianDayUTC() returned %d\n", modified_julian_day);
 	}
 
 	return result;

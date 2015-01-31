@@ -82,13 +82,13 @@ extern "C"
  */
 #define XLAL_EPOCH_UNIX_GPS 315964800
 
-#define XLAL_EPOCH_J2000_0_JD 2451545.0         /**< Julian Day of the J2000.0 epoch (2000 JAN 1 12h UTC). */
+#define XLAL_EPOCH_J2000_0_JD 2451545.0         /**< Julian Day (UTC) of the J2000.0 epoch (2000 JAN 1 12h UTC). */
 #define XLAL_EPOCH_J2000_0_TAI_UTC 32           /**< Leap seconds (TAI-UTC) on the J2000.0 epoch (2000 JAN 1 12h UTC). */
 #define XLAL_EPOCH_J2000_0_GPS 630763213        /**< GPS seconds of the J2000.0 epoch (2000 JAN 1 12h UTC). */
-#define XLAL_EPOCH_GPS_JD 2444244.5             /**< Julian Day of the GPS epoch (1980 JAN 6 0h UTC) */
+#define XLAL_EPOCH_GPS_JD 2444244.5             /**< Julian Day (UTC) of the GPS epoch (1980 JAN 6 0h UTC) */
 #define XLAL_EPOCH_GPS_TAI_UTC 19               /**< Leap seconds (TAI-UTC) on the GPS epoch (1980 JAN 6 0h UTC) */
 #define XLAL_MJD_REF 2400000.5                  /**< Reference Julian Day for Mean Julian Day. */
-#define XLAL_MODIFIED_JULIEN_DAY(utc) (XLALJulianDay(utc)-XLAL_MJD_REF) /**< Modified Julian Day for specified civil time structure. */
+#define XLAL_MODIFIED_JULIEN_DAY_UTC(utc) (XLALJulianDayUTC(utc)-XLAL_MJD_REF) /**< Modified Julian Day (UTC) for specified civil time structure. */
 
 /**
  * This structure stores pointers to a ::LALDetector and a
@@ -197,12 +197,12 @@ struct tm* XLALGPSToUTC( struct tm *utc, INT4 gpssec );
 SWIGLAL_CLEAR(EMPTY_ARGUMENT(struct tm*, utc));
 #endif
 
-/* Returns the Julian Day (JD) corresponding to the date given in a broken
+/* Returns the Julian Day JD(UTC) [in UTC time system] corresponding to the date given in a broken
  * down time structure. */
-REAL8 XLALJulianDay( const struct tm *utc );
+REAL8 XLALJulianDayUTC( const struct tm *utc );
 
-/* Returns the Modified Julian Day (MJD) corresponding to the date given in a broken down time structure.*/
-INT4 XLALModifiedJulianDay( const struct tm *utc );
+/* Returns the Modified Julian Day MJD(UTC) [in UTC time system] corresponding to the date given in a broken down time structure.*/
+INT4 XLALModifiedJulianDayUTC( const struct tm *utc );
 
 /* Fill in missing fields of a C 'tm' broken-down time struct. */
 int XLALFillBrokenDownTime( struct tm *tm );

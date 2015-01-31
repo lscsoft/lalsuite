@@ -79,7 +79,7 @@
  * monitoring UT1.
  *
  * Another way of representing the civil time in in terms of Julian days.
- * There is a routine for converting a UTC time into Julian days.
+ * There is a routine for converting a UTC time into Julian days [in UTC time system].
  * The inverse conversion is not attempted.
  *
  */
@@ -161,7 +161,7 @@ int XLALLeapSecondsUTC( const struct tm *utc /**< [In] UTC as a broken down time
   REAL8 jd;
   int leap;
 
-  jd = XLALJulianDay( utc );
+  jd = XLALJulianDayUTC( utc );
   if ( XLAL_IS_REAL8_FAIL_NAN( jd ) )
     XLAL_ERROR( XLAL_EFUNC );
 
@@ -284,7 +284,7 @@ struct tm * XLALGPSToUTC(
  * analyzable data from before 1900 March.
  *
  */
-REAL8 XLALJulianDay( const struct tm *utc /**< [In] UTC time in a broken down time structure. */ )
+REAL8 XLALJulianDayUTC( const struct tm *utc /**< [In] UTC time in a broken down time structure. */ )
 {
   const int sec_per_day = 60 * 60 * 24; /* seconds in a day */
   int year, month, day, sec;
@@ -310,7 +310,7 @@ REAL8 XLALJulianDay( const struct tm *utc /**< [In] UTC time in a broken down ti
 
 
 /**
- * Returns the Modified Julian Day (MJD) corresponding to the date given
+ * Returns the Modified Julian Day MJD(UTC) [in UTC time system] corresponding to the date given
  * in a broken down time structure.
  *
  * Note:
@@ -320,13 +320,13 @@ REAL8 XLALJulianDay( const struct tm *utc /**< [In] UTC time in a broken down ti
  * If you want a Modified Julian Day that has a fractional part, simply use
  * the macro:
  *
- * \#define XLAL_MODIFIED_JULIAN_DAY(utc) (XLALJulianDay(utc)-XLAL_MJD_REF)
+ * \#define XLAL_MODIFIED_JULIAN_DAY_UTC(utc) (XLALJulianDayUTC(utc)-XLAL_MJD_REF)
  */
-INT4 XLALModifiedJulianDay( const struct tm *utc /**< [In] UTC time in a broken down time structure. */ )
+INT4 XLALModifiedJulianDayUTC( const struct tm *utc /**< [In] UTC time in a broken down time structure. */ )
 {
   REAL8 jd;
   INT4 mjd;
-  jd = XLALJulianDay( utc );
+  jd = XLALJulianDayUTC( utc );
   if ( XLAL_IS_REAL8_FAIL_NAN( jd ) )
     XLAL_ERROR( XLAL_EFUNC );
   mjd = floor( jd - XLAL_MJD_REF );

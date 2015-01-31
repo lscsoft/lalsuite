@@ -306,9 +306,9 @@ static void output_jd( int gps_sec )
   struct tm utc;
   double jd;
   utc = *XLALGPSToUTC( &utc, gps_sec );
-  jd = XLALJulianDay( &utc );
+  jd = XLALJulianDayUTC( &utc );
   if ( verbose )
-    printf( "Julian Day = " );
+    printf( "Julian Day (UTC)  = " );
   printf( "%.6f\n", jd );
   return;
 }
@@ -319,10 +319,10 @@ static void output_mjd( int gps_sec )
   double jd;
   double mjd;
   utc = *XLALGPSToUTC( &utc, gps_sec );
-  jd = XLALJulianDay( &utc );
+  jd = XLALJulianDayUTC( &utc );
   mjd = jd - XLAL_MJD_REF;
   if ( verbose )
-    printf( "Modified Julian Day = " );
+    printf( "Modified Julian Day (UTC) = " );
   printf( "%.6f\n", mjd );
   return;
 }
@@ -631,7 +631,7 @@ void usage( const char *program, int exitcode )
                 output date string in ISO 8601 format\n\
         \n\
         -j, --jd, --julian-day\n\
-                output Julian day\n\
+                output Julian day (in UTC time system)\n\
         \n\
         -l, --leap-seconds\n\
                 output number of leap seconds (TAI-UTC)\n\
@@ -640,7 +640,7 @@ void usage( const char *program, int exitcode )
                 date strings formatted for local time (current TZ setting)\
         \n\
         -m, --mjd, --modified-julian-day\n\
-                output modified Julian day\n\
+                output modified Julian day (in UTC time system)\n\
         \n\
         -R, --rfc-2822\n\
                 output RFC-2822 compliant date string\n\
@@ -685,7 +685,7 @@ void usage( const char *program, int exitcode )
         \n\
                 %s --sidereal-time --site=LHO 3 hours ago\n\
         \n\
-        Get the Julian day of Y2K (UTC is default unless --local is used):\n\
+        Get the Julian day(UTC) of Y2K (UTC is default unless --local is used):\n\
         \n\
                 %s --julian-day Jan 1, 2000\n\
         \n\
