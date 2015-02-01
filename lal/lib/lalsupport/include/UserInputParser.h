@@ -43,6 +43,7 @@ int XLALParseStringValueToINT4 ( INT4 *valINT4, const char *valString );
 int XLALParseStringValueToREAL8 ( REAL8 *valREAL8, const char *valString );
 int XLALParseStringValueToREAL4 ( REAL4 *valREAL4, const char *valString );
 int XLALParseStringValueToBOOLEAN ( BOOLEAN *valBOOLEAN, const char *valString );
+int XLALParseStringValueToINT4PlusFrac ( INT4 *valINT4, REAL8 *valFrac, const char *valString );
 
 int XLALConvertHMStoRAD ( REAL8 *radians, const CHAR *hms );
 int XLALConvertDMStoRAD ( REAL8 *radians, const CHAR *dms );

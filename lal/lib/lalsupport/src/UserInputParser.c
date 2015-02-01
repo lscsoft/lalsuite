@@ -37,11 +37,11 @@
 
 // ==================== function definitions ====================
 
-//! Parse a string into an INT8
-//! This ignores initial whitespace, but throws an error on _any_ non-converted trailing characters (including whitespace)
+/// Parse a string into an INT8
+/// This ignores initial whitespace, but throws an error on _any_ non-converted trailing characters (including whitespace)
 int
-XLALParseStringValueToINT8 ( INT8 *valINT8,         //!< [out] return INT8 value
-                             const char *valString  //!< [in]  input string value
+XLALParseStringValueToINT8 ( INT8 *valINT8,         ///< [out] return INT8 value
+                             const char *valString  ///< [in]  input string value
                              )
 {
   XLAL_CHECK ( (valINT8 != NULL) && (valString != NULL ), XLAL_EINVAL );
@@ -55,7 +55,7 @@ XLALParseStringValueToINT8 ( INT8 *valINT8,         //!< [out] return INT8 value
 
   //  check range and convert long-int into INT8
   if ( sizeof(valLLong) > sizeof(INT8) ) { // avoid warning about trivial check
-    XLAL_CHECK ( (valLLong > -LAL_sINT8_MAX) && (valLLong < LAL_sINT8_MAX), XLAL_EDOM, "String-conversion '%s' --> '%lli' exceeds INT8 range of +-%"LAL_INT8_FORMAT"\n",
+    XLAL_CHECK ( (valLLong >= -LAL_sINT8_MAX) && (valLLong <= LAL_sINT8_MAX), XLAL_EDOM, "String-conversion '%s' --> '%lli' exceeds INT8 range of +-%"LAL_INT8_FORMAT"\n",
                  valString, valLLong, LAL_sINT8_MAX );
   }
 
@@ -66,11 +66,11 @@ XLALParseStringValueToINT8 ( INT8 *valINT8,         //!< [out] return INT8 value
 } // XLALParseStringValueToINT8()
 
 
-//! Parse a string into an INT4
-//! This ignores initial whitespace, but throws an error on _any_ non-converted trailing characters (including whitespace)
+/// Parse a string into an INT4
+/// This ignores initial whitespace, but throws an error on _any_ non-converted trailing characters (including whitespace)
 int
-XLALParseStringValueToINT4 ( INT4 *valINT4,         //!< [out] return INT4 value
-                             const char *valString  //!< [in]  input string value
+XLALParseStringValueToINT4 ( INT4 *valINT4,         ///< [out] return INT4 value
+                             const char *valString  ///< [in]  input string value
                              )
 {
   XLAL_CHECK ( (valINT4 != NULL) && (valString != NULL ), XLAL_EINVAL );
@@ -79,7 +79,7 @@ XLALParseStringValueToINT4 ( INT4 *valINT4,         //!< [out] return INT4 value
   XLAL_CHECK ( XLALParseStringValueToINT8 ( &valINT8, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // check range and convert INT8 into INT4
-  XLAL_CHECK ( (valINT8 > -LAL_sINT4_MAX) && (valINT8 < LAL_sINT4_MAX), XLAL_EDOM, "String-conversion '%s' --> '%"LAL_INT8_FORMAT"' exceeds INT4 range of +-%"LAL_INT8_FORMAT"\n",
+  XLAL_CHECK ( (valINT8 >= -LAL_sINT4_MAX) && (valINT8 <= LAL_sINT4_MAX), XLAL_EDOM, "String-conversion '%s' --> '%"LAL_INT8_FORMAT"' exceeds INT4 range of +-%"LAL_INT8_FORMAT"\n",
                valString, valINT8, LAL_sINT4_MAX );
 
   (*valINT4) = (INT4)valINT8;
@@ -89,11 +89,11 @@ XLALParseStringValueToINT4 ( INT4 *valINT4,         //!< [out] return INT4 value
 } // XLALParseStringValueToINT4()
 
 
-//! Parse a string into a REAL8
-//! This ignores initial whitespace, but throws an error on _any_ non-converted trailing characters (including whitespace)
+/// Parse a string into a REAL8
+/// This ignores initial whitespace, but throws an error on _any_ non-converted trailing characters (including whitespace)
 int
-XLALParseStringValueToREAL8 ( REAL8 *valREAL8,         //!< [out] return REAL8 value
-                              const char *valString    //!< [in]  input string value
+XLALParseStringValueToREAL8 ( REAL8 *valREAL8,         ///< [out] return REAL8 value
+                              const char *valString    ///< [in]  input string value
                               )
 {
   XLAL_CHECK ( (valREAL8 != NULL) && (valString != NULL ), XLAL_EINVAL );
@@ -110,12 +110,11 @@ XLALParseStringValueToREAL8 ( REAL8 *valREAL8,         //!< [out] return REAL8 v
 
 } // XLALParseStringValueToREAL8()
 
-
-//! Parse a string into a REAL4.
-//! This ignores initial whitespace, but throws an error on _any_ non-converted trailing characters (including whitespace)
+/// Parse a string into a REAL4.
+/// This ignores initial whitespace, but throws an error on _any_ non-converted trailing characters (including whitespace)
 int
-XLALParseStringValueToREAL4 ( REAL4 *valREAL4,         //!< [out] return REAL4 value
-                              const char *valString    //!< [in]  input string value
+XLALParseStringValueToREAL4 ( REAL4 *valREAL4,         ///< [out] return REAL4 value
+                              const char *valString    ///< [in]  input string value
                               )
 {
   XLAL_CHECK ( (valREAL4 != NULL) && (valString != NULL ), XLAL_EINVAL );
@@ -130,18 +129,61 @@ XLALParseStringValueToREAL4 ( REAL4 *valREAL4,         //!< [out] return REAL4 v
 
   return XLAL_SUCCESS;
 
-} // XLALParseStringValueToREAL8()
+} // XLALParseStringValueToREAL4()
 
-
-//! Parse a string into a BOOLEAN
-//! Allowed string-values are (case-insensitive):
-//! {"yes", "true", "1"} --> TRUE
-//! {"no", "false", "0"} --> FALSE
-//!
-//! NOTE: This throws an error on _any_ extraneous leading or trailing characters or whitespace
+///
+/// Parse a string containing a floating-point number into integer and fractional part, such that val = valINT + valFrac.
+///
+/// This is useful for parsing strings representing GPS or MJD times wihout loss of ns accuracy.
+///
 int
-XLALParseStringValueToBOOLEAN ( BOOLEAN *valBOOLEAN,     //!< [out] return BOOLEAN value
-                                const char *valString    //!< [in]  input string value
+XLALParseStringValueToINT4PlusFrac ( INT4 *valINT4,		///< [out] return INT4 integer part 'xxx'
+                                     REAL8 *valFrac,      	///< [out] return fractional part '0.yyyy'
+                                     const char *valString	///< [in]  input string value representing a floating-point number "xxx.yyyy"
+                                     )
+{
+  XLAL_CHECK ( (valINT4 != NULL) && (valFrac != NULL) && (valString != NULL), XLAL_EINVAL );
+  XLAL_CHECK ( !isspace(valString[0]), XLAL_EINVAL, "No initial whitespace allowed in input string '%s'\n", valString );
+
+  char buf[256];
+  strncpy ( buf, valString, sizeof(buf)-1 );
+  buf[ sizeof(buf)-1 ] = 0;
+
+  REAL8 sign = 1;
+  if ( valString[0] == '-' ) {	 // that's why no initial whitespace is allowed in input string
+    sign = -1;
+  }
+  char *point = strchr ( buf, '.' );
+  // is there a fractional part at all? If yes, parse it, if no, set to 0
+  if ( point != NULL )
+    {
+      (*point) = 0;
+      char fracString[256] = "0.";
+      strcat ( fracString+2, point+1);
+      XLAL_CHECK ( XLALParseStringValueToREAL8 ( valFrac, fracString ) == XLAL_SUCCESS, XLAL_EFUNC );
+      (*valFrac) *= sign;	// correct sign: must agree with integer part
+    }
+  else
+    {
+      (*valFrac) = 0;
+    }
+
+  // now parse integer part
+  XLAL_CHECK ( XLALParseStringValueToINT4 ( valINT4, buf ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  return XLAL_SUCCESS;
+} // XLALParseStringValueToINT4PlusFrac()
+
+
+/// Parse a string into a BOOLEAN
+/// Allowed string-values are (case-insensitive):
+/// {"yes", "true", "1"} --> TRUE
+/// {"no", "false", "0"} --> FALSE
+///
+/// NOTE: This throws an error on _any_ extraneous leading or trailing characters or whitespace
+int
+XLALParseStringValueToBOOLEAN ( BOOLEAN *valBOOLEAN,     ///< [out] return BOOLEAN value
+                                const char *valString    ///< [in]  input string value
                                 )
 {
   XLAL_CHECK ( (valBOOLEAN != NULL) && (valString != NULL ), XLAL_EINVAL );
@@ -187,7 +229,7 @@ XLALConvertDMStoRAD ( REAL8 *radians, const CHAR *dms )
   XLAL_CHECK ( dms != NULL, XLAL_EINVAL, "Angle input string 'dms' is NULL" );
   XLAL_CHECK ( radians != NULL, XLAL_EINVAL );
 
-  XLAL_CHECK ( !isspace(dms[0]), XLAL_EINVAL, "No initial whitespace allowed in input string '%s''\n", dms );
+  XLAL_CHECK ( !isspace(dms[0]), XLAL_EINVAL, "No initial whitespace allowed in input string '%s'\n", dms );
 
   REAL8 s;
   INT4 d, m;
