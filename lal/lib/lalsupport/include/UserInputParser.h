@@ -50,6 +50,9 @@ int XLALConvertDMStoRAD ( REAL8 *radians, const CHAR *dms );
 CHAR *XLALConvertRADtoHMS ( REAL8 radians );
 CHAR *XLALConvertRADtoDMS ( REAL8 radians );
 
+int XLALConvertMJDTTtoGPS ( LIGOTimeGPS *gps, INT4 mjdDays, REAL8 mjdFracDays );
+int XLALConvertStringMJDTTtoGPS ( LIGOTimeGPS *gps, const char *mjdString );
+
 /*@}*/
 
 

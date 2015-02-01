@@ -24,6 +24,7 @@
 #include <string.h>
 
 #include <lal/XLALError.h>
+#include <lal/LALMalloc.h>
 #include <lal/LALConstants.h>
 #include <lal/UserInputParser.h>
 
@@ -32,7 +33,7 @@
 int test_HMS_RAD ( void );
 int test_DMS_RAD ( void );
 int test_ParseStringValue ( void );
-
+int test_MJDTT_GPS ( void );
 
 // ==================== function definitions ====================
 int main(void)
@@ -45,10 +46,11 @@ int main(void)
   // ---------- test various string-value parser functions ----------
   XLAL_CHECK_MAIN ( test_ParseStringValue() == XLAL_SUCCESS, XLAL_EFUNC );
 
+  // ---------- test MJD(TT) to GPS conversions ----------
+  XLAL_CHECK_MAIN ( test_MJDTT_GPS() == XLAL_SUCCESS, XLAL_EFUNC );
 
-
-
-
+  // check for memory leaks
+  LALCheckMemoryLeaks();
 
   return EXIT_SUCCESS;
 
@@ -72,8 +74,8 @@ test_HMS_RAD ( void )
 
   XLAL_CHECK ( (hms = XLALConvertRADtoHMS ( rads )) != NULL, XLAL_EFUNC );
   XLAL_CHECK ( strcmp ( hms, hmsRef ) == 0, XLAL_ETOL, "Returned hms string '%s' differs from input '%s'\n", hms, hmsRef );
-
   XLALPrintInfo ("Converted HMS '%s' into %.16g rad, and back into '%s'\n", hmsRef, rads, hms );
+  XLALFree ( hms );
 
   hmsRef = "00:52:16.8753234";
   radsRef = 0.228120010907883;	// octave> hms_to_rad ( "00:52:16.8753234" )
@@ -82,8 +84,8 @@ test_HMS_RAD ( void )
 
   XLAL_CHECK ( (hms = XLALConvertRADtoHMS ( rads )) != NULL, XLAL_EFUNC );
   XLAL_CHECK ( strcmp ( hms, hmsRef ) == 0, XLAL_ETOL, "Returned hms string '%s' differs from input '%s'\n", hms, hmsRef );
-
   XLALPrintInfo ("Converted HMS '%s' into %.16g rad, and back into '%s'\n", hmsRef, rads, hms );
+  XLALFree ( hms );
 
   return XLAL_SUCCESS;
 } // test_HMS_RAD()
@@ -106,8 +108,8 @@ test_DMS_RAD ( void )
 
   XLAL_CHECK ( (dms = XLALConvertRADtoDMS ( rads )) != NULL, XLAL_EFUNC );
   XLAL_CHECK ( strcmp ( dms, dmsRef ) == 0, XLAL_ETOL, "Returned dms string '%s' differs from input '%s'\n", dms, dmsRef );
-
   XLALPrintInfo ("Converted DMS '%s' into %.16g rad, and back into '%s'\n", dmsRef, rads, dms );
+  XLALFree ( dms );
 
   dmsRef = "+00:52:16.87532";
   radsRef = 0.0152080007107085;	// octave> dms_to_rad ( "00:52:16.87532");
@@ -116,8 +118,8 @@ test_DMS_RAD ( void )
 
   XLAL_CHECK ( (dms = XLALConvertRADtoDMS ( rads )) != NULL, XLAL_EFUNC );
   XLAL_CHECK ( strcmp ( dms, dmsRef ) == 0, XLAL_ETOL, "Returned dms string '%s' differs from input '%s'\n", dms, dmsRef );
-
   XLALPrintInfo ("Converted DMS '%s' into %.16g rad, and back into '%s'\n", dmsRef, rads, dms );
+  XLALFree ( dms );
 
   return XLAL_SUCCESS;
 } // test_DMS_RAD()
@@ -217,3 +219,70 @@ test_ParseStringValue ( void )
 
   return XLAL_SUCCESS;
 } // test_ParseStringValue()
+
+///
+/// test conversion between MJD(TT) string and GPS value
+///
+int
+test_MJDTT_GPS ( void )
+{
+
+  INT4 mjdTTDays;
+  REAL8 mjdTTFracDays;
+  char mjdTTString[256];
+  LIGOTimeGPS gps, gpsRef;
+
+  // ----- example 1: J200 epoch, see https://en.wikipedia.org/wiki/Epoch_%28astronomy%29#Julian_years_and_J2000
+  mjdTTDays = 51544;
+  mjdTTFracDays = 0.5;
+  gpsRef.gpsSeconds = 630763148; // $ lalapps_tconvert "Jan 01 2000 11:58:55 UTC"
+  gpsRef.gpsNanoSeconds = 0.816 * 1e9;
+
+  XLAL_CHECK ( XLALConvertMJDTTtoGPS ( &gps, mjdTTDays, mjdTTFracDays ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( (gps.gpsSeconds == gpsRef.gpsSeconds) && (gps.gpsNanoSeconds == gpsRef.gpsNanoSeconds), XLAL_ETOL,
+               "XLALConvertMJDTTtoGPS(%s) = (%d,%d) failed, correct result = (%d,%d)\n",
+               mjdTTString, gps.gpsSeconds, gps.gpsNanoSeconds, gpsRef.gpsSeconds, gpsRef.gpsNanoSeconds );
+
+  sprintf ( mjdTTString, "%d.%014ld", mjdTTDays, (long)round(mjdTTFracDays*1e14) );
+  XLAL_CHECK ( XLALConvertStringMJDTTtoGPS ( &gps, mjdTTString ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( (gps.gpsSeconds == gpsRef.gpsSeconds) && (gps.gpsNanoSeconds == gpsRef.gpsNanoSeconds), XLAL_ETOL,
+               "XLALConvertStringMJDTTtoGPS(%s) = (%d,%d) failed, correct result = (%d,%d)\n",
+               mjdTTString, gps.gpsSeconds, gps.gpsNanoSeconds, gpsRef.gpsSeconds, gpsRef.gpsNanoSeconds );
+
+  // ----- example 2: Chandra MET http://cxc.cfa.harvard.edu/contrib/arots/time/time_tutorial.html
+  mjdTTDays = 50814;
+  mjdTTFracDays = 0;
+  gpsRef.gpsSeconds = 567647948;
+  gpsRef.gpsNanoSeconds = 0.816 * 1e9;
+
+  XLAL_CHECK ( XLALConvertMJDTTtoGPS ( &gps, mjdTTDays, mjdTTFracDays ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( (gps.gpsSeconds == gpsRef.gpsSeconds) && (gps.gpsNanoSeconds == gpsRef.gpsNanoSeconds), XLAL_ETOL,
+               "XLALConvertMJDTTtoGPS(%s) = (%d,%d) failed, correct result = (%d,%d)\n",
+               mjdTTString, gps.gpsSeconds, gps.gpsNanoSeconds, gpsRef.gpsSeconds, gpsRef.gpsNanoSeconds );
+
+  sprintf ( mjdTTString, "%d.%014ld", mjdTTDays, (long)round(mjdTTFracDays*1e14) );
+  XLAL_CHECK ( XLALConvertStringMJDTTtoGPS ( &gps, mjdTTString ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( (gps.gpsSeconds == gpsRef.gpsSeconds) && (gps.gpsNanoSeconds == gpsRef.gpsNanoSeconds), XLAL_ETOL,
+               "XLALConvertStringMJDTTtoGPS(%s) = (%d,%d) failed, correct result = (%d,%d)\n",
+               mjdTTString, gps.gpsSeconds, gps.gpsNanoSeconds, gpsRef.gpsSeconds, gpsRef.gpsNanoSeconds );
+
+
+  // ----- example 3: RXTE MET https://heasarc.gsfc.nasa.gov/docs/xte/abc/time_tutorial.html
+  mjdTTDays = 49353;
+  mjdTTFracDays = 0.000696574074074074;
+  gpsRef.gpsSeconds = 441417609;	// $ lalapps_tconvert -g "Jan 1 1994 0:00:00 UTC"
+  gpsRef.gpsNanoSeconds = 0;
+
+  XLAL_CHECK ( XLALConvertMJDTTtoGPS ( &gps, mjdTTDays, mjdTTFracDays ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( (gps.gpsSeconds == gpsRef.gpsSeconds) && (gps.gpsNanoSeconds == gpsRef.gpsNanoSeconds), XLAL_ETOL,
+               "XLALConvertMJDTTtoGPS(%s) = (%d,%d) failed, correct result = (%d,%d)\n",
+               mjdTTString, gps.gpsSeconds, gps.gpsNanoSeconds, gpsRef.gpsSeconds, gpsRef.gpsNanoSeconds );
+
+  sprintf ( mjdTTString, "%d.%014ld", mjdTTDays, (long)round(mjdTTFracDays*1e14) );
+  XLAL_CHECK ( XLALConvertStringMJDTTtoGPS ( &gps, mjdTTString ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( (gps.gpsSeconds == gpsRef.gpsSeconds) && (gps.gpsNanoSeconds == gpsRef.gpsNanoSeconds), XLAL_ETOL,
+               "XLALConvertStringMJDTTtoGPS(%s) = (%d,%d) failed, correct result = (%d,%d)\n",
+               mjdTTString, gps.gpsSeconds, gps.gpsNanoSeconds, gpsRef.gpsSeconds, gpsRef.gpsNanoSeconds );
+
+  return XLAL_SUCCESS;
+} // test_MJDTT_GPS()
