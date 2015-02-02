@@ -41,15 +41,17 @@ const REAL8 GPS0_in_MJDUTC        = 44244.0;	///< GPS epoch [1980 JAN 6 0h UTC] 
 ///
 /// convert given MJD(TT) time, mjd = mjdDays + mjdFracDays into LIGOTimeGPS format, preserving full (ns) accuracy.
 ///
-int
+/// returns gps input pointer on success, NULL on error.
+///
+LIGOTimeGPS *
 XLALTranslateMJDTTtoGPS ( LIGOTimeGPS *gps,	///< [out] returned GPS time
-                        INT4 mjdDays,		///< [in] input MJD integer days, must be >= 0
-                        REAL8 mjdFracDays	///< [in] input MJD fractional days, must be in [0, 1)
-                        )
+                          INT4 mjdDays,		///< [in] input MJD integer days, must be >= 0
+                          REAL8 mjdFracDays	///< [in] input MJD fractional days, must be in [0, 1)
+                          )
 {
-  XLAL_CHECK ( gps != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( mjdDays >= 0, XLAL_EDOM, "mjdDays = %d must be positive\n", mjdDays );
-  XLAL_CHECK ( (mjdFracDays < 1) && (mjdFracDays >= 0), XLAL_EDOM, "mjdFracDays = %g must be within [0, 1) days\n", mjdFracDays );
+  XLAL_CHECK_NULL ( gps != NULL, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( mjdDays >= 0, XLAL_EDOM, "mjdDays = %d must be positive\n", mjdDays );
+  XLAL_CHECK_NULL ( (mjdFracDays < 1) && (mjdFracDays >= 0), XLAL_EDOM, "mjdFracDays = %g must be within [0, 1) days\n", mjdFracDays );
 
   INT4 gpsSeconds = (INT4) round ( (mjdDays - GPS0_in_MJDUTC) * 86400.0 );	// use gps0 epoch in mjd(utc) here, [round() just for safety, should be int anyway]
   REAL8 gpsSeconds2 = mjdFracDays * 86400.0 - TT_minus_UTC_at_GPS0;		// correct gps0 epoch from mjd(utc) to mjd(tt)
@@ -73,7 +75,7 @@ XLALTranslateMJDTTtoGPS ( LIGOTimeGPS *gps,	///< [out] returned GPS time
   gps->gpsSeconds = gpsSeconds;
   gps->gpsNanoSeconds = gpsNanoSeconds;
 
-  return XLAL_SUCCESS;
+  return gps;
 
 } // XLALTranslateMJDTTtoGPS()
 
@@ -81,19 +83,21 @@ XLALTranslateMJDTTtoGPS ( LIGOTimeGPS *gps,	///< [out] returned GPS time
 ///
 /// Parse and convert given string representing MJD(TT) time into LIGOTimeGPS gps time, without loss of (ns) accuracy
 ///
-int
+/// returns gps input pointer on success, NULL on error.
+///
+LIGOTimeGPS *
 XLALTranslateStringMJDTTtoGPS ( LIGOTimeGPS *gps,		///< [out] returned GPS time
-                              const char *mjdString 	///< [in] input string representing MJD(TT) time
-                              )
+                                const char *mjdString 	///< [in] input string representing MJD(TT) time
+                                )
 {
-  XLAL_CHECK ( (gps != NULL) && (mjdString != NULL), XLAL_EINVAL );
+  XLAL_CHECK_NULL ( (gps != NULL) && (mjdString != NULL), XLAL_EINVAL );
 
   INT4 mjdDays;
   REAL8 mjdFracDays;
-  XLAL_CHECK ( XLALParseStringValueToINT4PlusFrac ( &mjdDays, &mjdFracDays, mjdString ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_NULL ( XLALParseStringValueToINT4PlusFrac ( &mjdDays, &mjdFracDays, mjdString ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  XLAL_CHECK ( XLALTranslateMJDTTtoGPS ( gps, mjdDays, mjdFracDays ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_NULL ( XLALTranslateMJDTTtoGPS ( gps, mjdDays, mjdFracDays ) != NULL, XLAL_EFUNC );
 
-  return XLAL_SUCCESS;
+  return gps;
 
 } // XLALTranslateStringMJDTTtoGPS()

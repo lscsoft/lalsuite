@@ -2444,7 +2444,7 @@ REAL8 XLALTTMJDtoGPS(REAL8 MJD){
   LIGOTimeGPS GPS;
   REAL8 mjdInt, mjdFrac;
   mjdFrac = modf ( MJD, &mjdInt );
-  XLAL_CHECK_REAL8 ( XLALTranslateMJDTTtoGPS ( &GPS, (INT4)mjdInt, mjdFrac ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_REAL8 ( XLALTranslateMJDTTtoGPS ( &GPS, (INT4)mjdInt, mjdFrac ) != NULL, XLAL_EFUNC );
 
   return XLALGPSGetREAL8( &GPS );
 }

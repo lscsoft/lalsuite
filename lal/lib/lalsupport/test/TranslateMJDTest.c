@@ -64,13 +64,13 @@ test_MJDTT_GPS ( void )
   gpsRef.gpsSeconds = 630763148; // $ lalapps_tconvert "Jan 01 2000 11:58:55 UTC"
   gpsRef.gpsNanoSeconds = 0.816 * 1e9;
 
-  XLAL_CHECK ( XLALTranslateMJDTTtoGPS ( &gps, mjdTTDays, mjdTTFracDays ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALTranslateMJDTTtoGPS ( &gps, mjdTTDays, mjdTTFracDays ) != NULL, XLAL_EFUNC );
   XLAL_CHECK ( (gps.gpsSeconds == gpsRef.gpsSeconds) && (gps.gpsNanoSeconds == gpsRef.gpsNanoSeconds), XLAL_ETOL,
                "XLALTranslateMJDTTtoGPS(%s) = (%d,%d) failed, correct result = (%d,%d)\n",
                mjdTTString, gps.gpsSeconds, gps.gpsNanoSeconds, gpsRef.gpsSeconds, gpsRef.gpsNanoSeconds );
 
   sprintf ( mjdTTString, "%d.%014" LAL_INT8_FORMAT, mjdTTDays, (INT8)round(mjdTTFracDays*1e14) );
-  XLAL_CHECK ( XLALTranslateStringMJDTTtoGPS ( &gps, mjdTTString ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALTranslateStringMJDTTtoGPS ( &gps, mjdTTString ) != NULL, XLAL_EFUNC );
   XLAL_CHECK ( (gps.gpsSeconds == gpsRef.gpsSeconds) && (gps.gpsNanoSeconds == gpsRef.gpsNanoSeconds), XLAL_ETOL,
                "XLALTranslateStringMJDTTtoGPS(%s) = (%d,%d) failed, correct result = (%d,%d)\n",
                mjdTTString, gps.gpsSeconds, gps.gpsNanoSeconds, gpsRef.gpsSeconds, gpsRef.gpsNanoSeconds );
@@ -81,13 +81,13 @@ test_MJDTT_GPS ( void )
   gpsRef.gpsSeconds = 567647948;
   gpsRef.gpsNanoSeconds = 0.816 * 1e9;
 
-  XLAL_CHECK ( XLALTranslateMJDTTtoGPS ( &gps, mjdTTDays, mjdTTFracDays ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALTranslateMJDTTtoGPS ( &gps, mjdTTDays, mjdTTFracDays ) != NULL, XLAL_EFUNC );
   XLAL_CHECK ( (gps.gpsSeconds == gpsRef.gpsSeconds) && (gps.gpsNanoSeconds == gpsRef.gpsNanoSeconds), XLAL_ETOL,
                "XLALTranslateMJDTTtoGPS(%s) = (%d,%d) failed, correct result = (%d,%d)\n",
                mjdTTString, gps.gpsSeconds, gps.gpsNanoSeconds, gpsRef.gpsSeconds, gpsRef.gpsNanoSeconds );
 
   sprintf ( mjdTTString, "%d.%014" LAL_INT8_FORMAT, mjdTTDays, (INT8)round(mjdTTFracDays*1e14) );
-  XLAL_CHECK ( XLALTranslateStringMJDTTtoGPS ( &gps, mjdTTString ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALTranslateStringMJDTTtoGPS ( &gps, mjdTTString ) != NULL, XLAL_EFUNC );
   XLAL_CHECK ( (gps.gpsSeconds == gpsRef.gpsSeconds) && (gps.gpsNanoSeconds == gpsRef.gpsNanoSeconds), XLAL_ETOL,
                "XLALTranslateStringMJDTTtoGPS(%s) = (%d,%d) failed, correct result = (%d,%d)\n",
                mjdTTString, gps.gpsSeconds, gps.gpsNanoSeconds, gpsRef.gpsSeconds, gpsRef.gpsNanoSeconds );
@@ -99,13 +99,13 @@ test_MJDTT_GPS ( void )
   gpsRef.gpsSeconds = 441417609;	// $ lalapps_tconvert -g "Jan 1 1994 0:00:00 UTC"
   gpsRef.gpsNanoSeconds = 0;
 
-  XLAL_CHECK ( XLALTranslateMJDTTtoGPS ( &gps, mjdTTDays, mjdTTFracDays ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALTranslateMJDTTtoGPS ( &gps, mjdTTDays, mjdTTFracDays ) != NULL, XLAL_EFUNC );
   XLAL_CHECK ( (gps.gpsSeconds == gpsRef.gpsSeconds) && (gps.gpsNanoSeconds == gpsRef.gpsNanoSeconds), XLAL_ETOL,
                "XLALTranslateMJDTTtoGPS(%s) = (%d,%d) failed, correct result = (%d,%d)\n",
                mjdTTString, gps.gpsSeconds, gps.gpsNanoSeconds, gpsRef.gpsSeconds, gpsRef.gpsNanoSeconds );
 
   sprintf ( mjdTTString, "%d.%014" LAL_INT8_FORMAT, mjdTTDays, (INT8)round(mjdTTFracDays*1e14) );
-  XLAL_CHECK ( XLALTranslateStringMJDTTtoGPS ( &gps, mjdTTString ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALTranslateStringMJDTTtoGPS ( &gps, mjdTTString ) != NULL, XLAL_EFUNC );
   XLAL_CHECK ( (gps.gpsSeconds == gpsRef.gpsSeconds) && (gps.gpsNanoSeconds == gpsRef.gpsNanoSeconds), XLAL_ETOL,
                "XLALTranslateStringMJDTTtoGPS(%s) = (%d,%d) failed, correct result = (%d,%d)\n",
                mjdTTString, gps.gpsSeconds, gps.gpsNanoSeconds, gpsRef.gpsSeconds, gpsRef.gpsNanoSeconds );

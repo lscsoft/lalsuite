@@ -506,7 +506,7 @@ int main(int argc,char *argv[])
       orbit_period = uvar.orbitPeriod;
       if (LALUserVarWasSet(&uvar.orbitTpSSBMJD))
 	{
-          if ( XLALTranslateStringMJDTTtoGPS ( &(orbit_tp), uvar.orbitTpSSBMJD ) != XLAL_SUCCESS ) {
+          if ( XLALTranslateStringMJDTTtoGPS ( &(orbit_tp), uvar.orbitTpSSBMJD ) == NULL ) {
             XLALPrintError("\nXLALTranslateStringMJDTTtoGPS(%s) failed\n", uvar.orbitTpSSBMJD );
             return COMPUTEFSTATISTIC_EINPUT;
           }
@@ -1323,7 +1323,7 @@ InitFstat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     }
   else if (LALUserVarWasSet(&uvar->refTimeMJD))
     {
-      if ( XLALTranslateStringMJDTTtoGPS ( &refTime, uvar->refTimeMJD ) != XLAL_SUCCESS ) {
+      if ( XLALTranslateStringMJDTTtoGPS ( &refTime, uvar->refTimeMJD ) == NULL ) {
         XLALPrintError("XLALTranslateStringMJDTTtoGPS(%s) failed\n", uvar->refTimeMJD );
         ABORT ( status,  COMPUTEFSTATISTIC_EINPUT,  COMPUTEFSTATISTIC_MSGEINPUT);
       }

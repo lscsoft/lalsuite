@@ -1121,7 +1121,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 
       if ( set7 && (!set5 && !set6) )
 	{
-          XLAL_CHECK ( XLALTranslateStringMJDTTtoGPS ( &(cfg->pulsar.Doppler.tp), uvar->orbitTpSSBMJD ) == XLAL_SUCCESS, XLAL_EFUNC );
+          XLAL_CHECK ( XLALTranslateStringMJDTTtoGPS ( &(cfg->pulsar.Doppler.tp), uvar->orbitTpSSBMJD ) != NULL, XLAL_EFUNC );
 	}
       else if ( set5 && !set7 )
 	{
@@ -1204,7 +1204,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
     }
   else if (XLALUserVarWasSet(&uvar->refTimeMJD))
     {
-      XLAL_CHECK ( XLALTranslateStringMJDTTtoGPS ( &(cfg->pulsar.Doppler.refTime), uvar->refTimeMJD) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK ( XLALTranslateStringMJDTTtoGPS ( &(cfg->pulsar.Doppler.refTime), uvar->refTimeMJD) != NULL, XLAL_EFUNC );
     }
   else
     cfg->pulsar.Doppler.refTime = cfg->timestamps->data[0];	/* internal startTime always found in here*/
