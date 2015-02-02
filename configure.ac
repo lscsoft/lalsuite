@@ -9,6 +9,9 @@ AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
 
 LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 
+# use silent build rules
+AM_SILENT_RULES([yes])
+
 # provide LAL library enable/disable options
 LALSUITE_ENABLE_ALL_LAL
 lal=true
@@ -28,7 +31,8 @@ LALSUITE_ENABLE_LALAPPS
 LALSUITE_ENABLE_DOXYGEN
 LALSUITE_ENABLE_MODULE([DOXYGEN])
 AS_IF([test "x${doxygen}" = xtrue],[
-  AC_CONFIG_FILES([gnuscripts/index.html])
+  AC_PROG_SED
+  AC_CONFIG_FILES([index.html:gnuscripts/lalsuite_index.html.in])
   AC_SUBST([DOXYGEN_PACKAGE_LINKS],[])
   AM_SUBST_NOTMAKE([DOXYGEN_PACKAGE_LINKS])
   AC_SUBST([DOXYGEN_LAST_PACKAGE],[])
@@ -37,8 +41,8 @@ AS_IF([test "x${doxygen}" = xtrue],[
 AC_DEFUN([lalsuite_config_doxygen],[
   m4_pushdef([lowercase],m4_translit([[$1]], [A-Z], [a-z]))
   AS_IF([test "x${doxygen}" = xtrue],[
-    DOXYGEN_PACKAGE_LINKS="${DOXYGEN_PACKAGE_LINKS}"' <a target="docframe" href="../lowercase/index.html">$1</a>'
-    DOXYGEN_LAST_PACKAGE="../lowercase/index.html"
+    DOXYGEN_PACKAGE_LINKS="${DOXYGEN_PACKAGE_LINKS}"' <a target="docframe" href="lowercase/doxygen/out/index.html">$1</a>'
+    DOXYGEN_LAST_PACKAGE="lowercase/doxygen/out/index.html"
   ])
   m4_popdef([lowercase])
 ])

@@ -34,11 +34,10 @@ html-local: Makefile $(CONFIG_CLEAN_FILES)
 	rm -f warnings.log || exit 1; \
 	cat errors.log >&2 || exit 1; \
 	test `cat errors.log | wc -l` -eq 0 || exit 1; \
-	rm -f errors.log || exit 1; \
-	echo "=== Doxygen documentation build was successful!"; \
+	rm -f errors.log doxygen_objdb_*.tmp doxygen_sqlite3.db; \
+	echo "=== Doxygen documentation was built successfully!"; \
 	echo "=== $(PACKAGE_NAME) main page is at file://$(abs_builddir)/out/index.html"
 
-install-data-local: install-html-local
 install-html-local: html-local
 	$(AM_V_at)for dir in `cd out/ && find . -type d`; do \
 		echo " $(MKDIR_P) '$(DESTDIR)$(htmldir)/$${dir}'"; \
@@ -52,14 +51,15 @@ install-html-local: html-local
 			fi; \
 		done; \
 	done; \
-	rm -f $@.regex $@.tmp
+	rm -f $@.regex $@.tmp; \
+	echo "=== Doxygen documentation was installed successfully!"; \
+	echo "=== Installed $(PACKAGE_NAME) main page is at file://$(DESTDIR)$(htmldir)/index.html"
 
 uninstall-local:
 	-rm -rf "$(DESTDIR)$(htmldir)/"
 
 clean-local:
 	-rm -rf out/
-	-rm -f *.log
 
 EXTRA_DIST = \
 	check_tags.py \
