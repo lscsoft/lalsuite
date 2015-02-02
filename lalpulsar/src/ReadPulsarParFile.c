@@ -67,6 +67,7 @@
 #include <lal/LALString.h>
 #include <lal/ComputeFstat.h>
 #include <lal/TranslateAngles.h>
+#include <lal/TranslateMJD.h>
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
@@ -2439,19 +2440,14 @@ and why they are necessary can be found in Seidelmann and Fukushima, A&A 265
 /** This function converts a MJD format time corrected to Terrestrial Time (TT)
  * into an equivalent GPS time */
 REAL8 XLALTTMJDtoGPS(REAL8 MJD){
-  REAL8 GPS;
 
-  /* Check not before the start of GPS time (MJD 44244) */
-  XLAL_CHECK_REAL8 ( MJD >= GPS0MJD, XLAL_EDOM, "Input MJD time %.1f is not in\
- range, must be > %.1f.\n", MJD, GPS0MJD);
+  LIGOTimeGPS GPS;
+  REAL8 mjdInt, mjdFrac;
+  mjdFrac = modf ( MJD, &mjdInt );
+  XLAL_CHECK_REAL8 ( XLALTranslateMJDTTtoGPS ( &GPS, (INT4)mjdInt, mjdFrac ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  /* there is the magical number factor of 32.184 + 19 leap seconds to the
-   * start of GPS time */
-  GPS = (MJD - GPS0MJD)*86400. - GPS_TDT;
-
-  return GPS;
+  return XLALGPSGetREAL8( &GPS );
 }
-
 
 /** If you have an MJD arrival time on the Earth then this will convert it to
  * the equivalent GPS time in TDB (see Table 1 of Seidelmann and Fukushima,
