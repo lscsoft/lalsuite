@@ -22,12 +22,10 @@
 #define XLAL_BEGINGSL \
         { \
           gsl_error_handler_t *saveGSLErrorHandler_; \
-          XLALGSL_PTHREAD_MUTEX_LOCK; \
           saveGSLErrorHandler_ = gsl_set_error_handler_off();
 
 #define XLAL_ENDGSL \
           gsl_set_error_handler( saveGSLErrorHandler_ ); \
-          XLALGSL_PTHREAD_MUTEX_UNLOCK; \
         }
 
 LALAdaptiveRungeKutta4Integrator *XLALAdaptiveRungeKutta4Init(int dim, int (*dydt) (double t, const double y[], double dydt[], void *params),   /* These are XLAL functions! */
