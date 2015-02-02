@@ -1513,7 +1513,7 @@ XLALEOBPPWaveformEngine (
    InspiralDerivativesIn   in3;
 
    /* Variables for the integrator */
-   ark4GSLIntegrator       *integrator = NULL;
+   LALAdaptiveRungeKutta4Integrator       *integrator = NULL;
    REAL8Array              *dynamics   = NULL;
    REAL8Array              *dynamicsHi = NULL;
    INT4                    retLen;

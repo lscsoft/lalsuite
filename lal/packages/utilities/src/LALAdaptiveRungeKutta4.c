@@ -19,16 +19,27 @@
 
 #include <lal/LALAdaptiveRungeKutta4.h>
 
-ark4GSLIntegrator *XLALAdaptiveRungeKutta4Init( int dim,
+#define XLAL_BEGINGSL \
+        { \
+          gsl_error_handler_t *saveGSLErrorHandler_; \
+          XLALGSL_PTHREAD_MUTEX_LOCK; \
+          saveGSLErrorHandler_ = gsl_set_error_handler_off();
+
+#define XLAL_ENDGSL \
+          gsl_set_error_handler( saveGSLErrorHandler_ ); \
+          XLALGSL_PTHREAD_MUTEX_UNLOCK; \
+        }
+
+LALAdaptiveRungeKutta4Integrator *XLALAdaptiveRungeKutta4Init( int dim,
                              int (* dydt) (double t, const double y[], double dydt[], void * params),  /* These are XLAL functions! */
                              int (* stop) (double t, const double y[], double dydt[], void * params),
                              double eps_abs, double eps_rel
                   				 )
 {
-  ark4GSLIntegrator *integrator;
+  LALAdaptiveRungeKutta4Integrator *integrator;
 
 	/* allocate our custom integrator structure */
-  if (!(integrator = (ark4GSLIntegrator *) LALCalloc(1, sizeof(ark4GSLIntegrator))))
+  if (!(integrator = (LALAdaptiveRungeKutta4Integrator *) LALCalloc(1, sizeof(LALAdaptiveRungeKutta4Integrator))))
 	{
 		XLAL_ERROR_NULL(XLAL_ENOMEM);
 	}
@@ -63,7 +74,7 @@ ark4GSLIntegrator *XLALAdaptiveRungeKutta4Init( int dim,
 }
 
 
-void XLALAdaptiveRungeKutta4Free( ark4GSLIntegrator *integrator )
+void XLALAdaptiveRungeKutta4Free( LALAdaptiveRungeKutta4Integrator *integrator )
 {
   if (!integrator) return;
 
@@ -170,7 +181,7 @@ rkf45_state_t;
  * This method is functionally equivalent to XLALAdaptiveRungeKutta4,
  * but is nearly always faster due to the improved interpolation.
  */
-int XLALAdaptiveRungeKutta4Hermite( ark4GSLIntegrator *integrator,	/**< struct holding dydt, stopping test, stepper, etc. */
+int XLALAdaptiveRungeKutta4Hermite( LALAdaptiveRungeKutta4Integrator *integrator,	/**< struct holding dydt, stopping test, stepper, etc. */
                                     void *params,			/**< params struct used to compute dydt and stopping test */
                                     REAL8 *yinit,			/**< pass in initial values of all variables - overwritten to final values */
                                     REAL8 tinit,			/**< integration start time */
@@ -179,6 +190,7 @@ int XLALAdaptiveRungeKutta4Hermite( ark4GSLIntegrator *integrator,	/**< struct h
                                     REAL8Array **yout			/**< array holding the evenly sampled output */
                                     )
 {
+  int errnum = 0;
   int status;
   size_t dim, retries, i;
   int outputlen = 0, count = 0;
@@ -190,6 +202,8 @@ int XLALAdaptiveRungeKutta4Hermite( ark4GSLIntegrator *integrator,	/**< struct h
   REAL8 *ytemp = NULL;
 
   REAL8 tend = tend_in;
+
+  XLAL_BEGINGSL;
 
   /* If want to stop only on test, then tend = +/-infinity; otherwise
      tend_in */
@@ -204,7 +218,7 @@ int XLALAdaptiveRungeKutta4Hermite( ark4GSLIntegrator *integrator,	/**< struct h
   //if (outputlen < 0) outputlen = -outputlen;
   if (outputlen < 0) {
     XLALPrintError("XLAL Error - %s: (tend_in - tinit) and deltat must have the same sign\ntend_in: %f, tinit: %f, deltat: %f\n", __func__, tend_in, tinit, deltat);
-    status = XLAL_EINVAL;
+    errnum = XLAL_EINVAL;
     goto bail_out;
   }
   outputlen += 2;
@@ -212,14 +226,14 @@ int XLALAdaptiveRungeKutta4Hermite( ark4GSLIntegrator *integrator,	/**< struct h
   output = XLALCreateREAL8ArrayL(2, (dim+1), outputlen);
 
   if (!output) {
-    status = XLAL_ENOMEM;
+    errnum = XLAL_ENOMEM;
     goto bail_out;
   }
 
   ytemp = XLALCalloc(dim, sizeof(REAL8));
 
   if (!ytemp) {
-    status = XLAL_ENOMEM;
+    errnum = XLAL_ENOMEM;
     goto bail_out;
   }
 
@@ -236,7 +250,6 @@ int XLALAdaptiveRungeKutta4Hermite( ark4GSLIntegrator *integrator,	/**< struct h
   for (i = 1; i <= dim; i++) output->data[i*outputlen] = yinit[i-1];
   count = 1;
 
-  XLAL_BEGINGSL;
 
   /* We are starting a fresh integration; clear GSL step and evolve
      objects. */
@@ -298,7 +311,10 @@ int XLALAdaptiveRungeKutta4Hermite( ark4GSLIntegrator *integrator,	/**< struct h
 
       /* Store the interpolated value in the output array. */
       count++;
-      if ((status = storeStateInOutput(&output, tintp, ytemp, dim, &outputlen, count)) == XLAL_ENOMEM) goto bail_out;
+      if ((status = storeStateInOutput(&output, tintp, ytemp, dim, &outputlen, count)) == XLAL_ENOMEM) {
+        errnum = XLAL_ENOMEM;
+        goto bail_out;
+      }
     }
 
     /* Now that we have recorded the last interpolated step that we
@@ -315,7 +331,6 @@ int XLALAdaptiveRungeKutta4Hermite( ark4GSLIntegrator *integrator,	/**< struct h
     }
   }
 
-  XLAL_ENDGSL;
 
   /* Now that the interpolation is done, shrink the output array down
      to exactly count samples. */
@@ -328,28 +343,31 @@ int XLALAdaptiveRungeKutta4Hermite( ark4GSLIntegrator *integrator,	/**< struct h
 
 
  bail_out:
+
+  XLAL_ENDGSL;
+
   /* If we have an error, then we should free allocated memory, and
-     then return.  Currently, the only errors we encounter in this
-     function are XLAL_ENOMEM, so we just test for that. */
+     then return. */
   XLALFree(ytemp);
 
-  if (status == XLAL_ENOMEM || status == XLAL_EINVAL) {
+  if (errnum) {
     if (output) XLALDestroyREAL8Array(output);
     *yout = NULL;
-    XLAL_ERROR(status);
+    XLAL_ERROR(errnum);
   }
 
   *yout = output;
   return outputlen;
 }
 
-int XLALAdaptiveRungeKutta4( ark4GSLIntegrator *integrator,
+int XLALAdaptiveRungeKutta4( LALAdaptiveRungeKutta4Integrator *integrator,
                          void *params,
                          REAL8 *yinit,
                          REAL8 tinit, REAL8 tend, REAL8 deltat,
                          REAL8Array **yout
                          )
 {
+  int errnum = 0;
   int status; /* used throughout */
 
 	/* needed for the integration */
@@ -365,6 +383,9 @@ int XLALAdaptiveRungeKutta4( ark4GSLIntegrator *integrator,
 	REAL8Array *output = NULL;
   REAL8 *times, *vector;	/* aliases */
 
+	/* note: for speed, this replaces the single CALLGSL wrapper applied before each GSL call */
+	XLAL_BEGINGSL;
+
   /* allocate the buffers!
 	   note: REAL8Array has a field dimLength (UINT4Vector) with dimensions, and a field data that points to a single memory block;
 	         dimLength itself has fields length and data */
@@ -374,7 +395,7 @@ int XLALAdaptiveRungeKutta4( ark4GSLIntegrator *integrator,
   temp = LALCalloc(6*dim,sizeof(REAL8));
 
   if (!buffers || !temp) {
-    status = XLAL_ENOMEM;
+    errnum = XLAL_ENOMEM;
     goto bail_out;
   }
 
@@ -398,11 +419,10 @@ int XLALAdaptiveRungeKutta4( ark4GSLIntegrator *integrator,
   /* compute derivatives at the initial time (dydt_in), bail out if impossible */
   if ((status = integrator->dydt(t,y,dydt_in,params)) != GSL_SUCCESS) {
 		integrator->returncode = status;
+                errnum = XLAL_EFAILED;
 		goto bail_out;
 	}
 
-	/* note: for speed, this replaces the single CALLGSL wrapper applied before each GSL call */
-	XLAL_BEGINGSL;
 
   while(1) {
 
@@ -471,7 +491,7 @@ int XLALAdaptiveRungeKutta4( ark4GSLIntegrator *integrator,
 				/* sadly, we cannot use ResizeREAL8Array, because it would only work if we extended the first array dimension,
 					 so we need to copy everything over and switch the buffers. Oh well. */
       if (!(rebuffers = XLALCreateREAL8ArrayL(2,dim+1,2*bufferlength))) {
-        status = XLAL_ENOMEM;	/* ouch, that hurt */
+        errnum = XLAL_ENOMEM;	/* ouch, that hurt */
         goto bail_out;
       } else {
 				for(unsigned int i=0;i<=dim;i++) memcpy(&rebuffers->data[i*2*bufferlength],&buffers->data[i*bufferlength],cnt*sizeof(REAL8));
@@ -484,7 +504,6 @@ int XLALAdaptiveRungeKutta4( ark4GSLIntegrator *integrator,
     buffers->data[cnt] = t;
     for(unsigned int i=1;i<=dim;i++) buffers->data[i*bufferlength + cnt] = y[i-1]; /* y does not have time */
   }
-	XLAL_ENDGSL;
 
 	/* copy the final state into yinit */
 
@@ -493,14 +512,14 @@ int XLALAdaptiveRungeKutta4( ark4GSLIntegrator *integrator,
   /* if we have completed at least one step, allocate the GSL interpolation object and the output array */
   if (cnt == 0) goto bail_out;
 
-  XLAL_CALLGSL( interp = gsl_spline_alloc(gsl_interp_cspline,cnt+1) );
-  XLAL_CALLGSL( accel  = gsl_interp_accel_alloc() );
+  interp = gsl_spline_alloc(gsl_interp_cspline,cnt+1);
+  accel  = gsl_interp_accel_alloc();
 
   outputlen = (int)(t / deltat) + 1;
   output = XLALCreateREAL8ArrayL(2,dim+1,outputlen);
 
   if (!interp || !accel || !output) {
-    status = XLAL_ENOMEM;	/* ouch again, ran out of memory */
+    errnum = XLAL_ENOMEM;	/* ouch again, ran out of memory */
 	  if (output) XLALDestroyREAL8Array(output);
 		outputlen = 0;
     goto bail_out;
@@ -511,7 +530,6 @@ int XLALAdaptiveRungeKutta4( ark4GSLIntegrator *integrator,
   for(int j=0;j<outputlen;j++) times[j] = tinit + deltat * j;
 
   /* interpolate! */
-	XLAL_BEGINGSL;
   for(unsigned int i=1;i<=dim;i++) {
     gsl_spline_init(interp,&buffers->data[0],&buffers->data[bufferlength*i],cnt+1);
 
@@ -520,10 +538,11 @@ int XLALAdaptiveRungeKutta4( ark4GSLIntegrator *integrator,
       gsl_spline_eval_e(interp,times[j],accel, &(vector[j]));
     }
   }
-	XLAL_ENDGSL;
 
   /* deallocate stuff and return */
   bail_out:
+
+	XLAL_ENDGSL;
 
   if (buffers) XLALDestroyREAL8Array(buffers);   /* let's be careful, although all these checks may not be needed */
   if (temp)    LALFree(temp);
@@ -531,10 +550,10 @@ int XLALAdaptiveRungeKutta4( ark4GSLIntegrator *integrator,
   if (interp)  XLAL_CALLGSL( gsl_spline_free(interp) );
   if (accel)   XLAL_CALLGSL( gsl_interp_accel_free(accel) );
 
-  if (status == XLAL_ENOMEM) XLAL_ERROR(XLAL_ENOMEM);	/* TO DO: will this return? */
+  if (errnum)  XLAL_ERROR(errnum);
 
 	*yout = output;
-  return outputlen; /* TO DO: check XLAL error reporting conventions */
+  return outputlen;
 }
 
 
@@ -556,7 +575,7 @@ int XLALAdaptiveRungeKutta4( ark4GSLIntegrator *integrator,
  * XLALAdaptiveRungeKutta4Hermite, but does not includes any interpolation.
  *
  */
-int XLALAdaptiveRungeKutta4IrregularIntervals( ark4GSLIntegrator *integrator,      /**< struct holding dydt, stopping test, stepper, etc. */
+int XLALAdaptiveRungeKutta4IrregularIntervals( LALAdaptiveRungeKutta4Integrator *integrator,      /**< struct holding dydt, stopping test, stepper, etc. */
                                     void *params,                       /**< params struct used to compute dydt and stopping test */
                                     REAL8 *yinit,                       /**< pass in initial values of all variables - overwritten to final values */
                                     REAL8 tinit,                        /**< integration start time */
@@ -565,6 +584,7 @@ int XLALAdaptiveRungeKutta4IrregularIntervals( ark4GSLIntegrator *integrator,   
                                     )
 {
   UINT4 MaxRK4Steps = 1000000;
+  int errnum = 0;
   int status; /* used throughout */
   unsigned int i;
 
@@ -583,6 +603,9 @@ int XLALAdaptiveRungeKutta4IrregularIntervals( ark4GSLIntegrator *integrator,   
   int outputlen = 0;
   REAL8Array *output = NULL;
 
+        /* note: for speed, this replaces the single CALLGSL wrapper applied before each GSL call */
+        XLAL_BEGINGSL;
+
   /* allocate the buffers!
            note: REAL8Array has a field dimLength (UINT4Vector) with dimensions, and a field data that points to a single memory block;
                  dimLength itself has fields length and data */
@@ -592,7 +615,7 @@ int XLALAdaptiveRungeKutta4IrregularIntervals( ark4GSLIntegrator *integrator,   
   temp = LALCalloc(6*dim,sizeof(REAL8));
 
   if (!buffers || !temp) {
-    status = XLAL_ENOMEM;
+    errnum = XLAL_ENOMEM;
     goto bail_out;
   }
 
@@ -640,13 +663,12 @@ int XLALAdaptiveRungeKutta4IrregularIntervals( ark4GSLIntegrator *integrator,   
   /* compute derivatives at the initial time (dydt_in), bail out if impossible */
   if ((status = integrator->dydt(t,y,dydt_in,params)) != GSL_SUCCESS) {
                 integrator->returncode = status;
+                errnum = XLAL_EFAILED;
                 goto bail_out;
         }
 
   buffers->data[i*bufferlength + iCurrent] = dydt_in[1]; /* add domega/dt. here i=dim+1 */
 
-        /* note: for speed, this replaces the single CALLGSL wrapper applied before each GSL call */
-        XLAL_BEGINGSL;
 
   while(1) {
 
@@ -716,7 +738,7 @@ int XLALAdaptiveRungeKutta4IrregularIntervals( ark4GSLIntegrator *integrator,   
                                          so we need to copy everything over and switch the buffers. Oh well. */
       if (!(rebuffers = XLALCreateREAL8ArrayL(2,dim+1,2*bufferlength)))
       {
-        status = XLAL_ENOMEM;   /* ouch, that hurt */
+        errnum = XLAL_ENOMEM;   /* ouch, that hurt */
         goto bail_out;
       }
       else
@@ -738,7 +760,6 @@ int XLALAdaptiveRungeKutta4IrregularIntervals( ark4GSLIntegrator *integrator,   
     buffers->data[i*bufferlength + iCurrent] = dydt_in[1]; /* add domega/dt. here i=dim+1 */
   }
 
-        XLAL_ENDGSL;
 
         /* copy the final state into yinit */
 
@@ -763,7 +784,7 @@ int XLALAdaptiveRungeKutta4IrregularIntervals( ark4GSLIntegrator *integrator,   
 
 
   if (!output) {
-    status = XLAL_ENOMEM;       /* ouch again, ran out of memory */
+    errnum = XLAL_ENOMEM;       /* ouch again, ran out of memory */
           if (output) XLALDestroyREAL8Array(output);
                 outputlen = 0;
     goto bail_out;
@@ -777,11 +798,13 @@ int XLALAdaptiveRungeKutta4IrregularIntervals( ark4GSLIntegrator *integrator,   
   /* deallocate stuff and return */
   bail_out:
 
+        XLAL_ENDGSL;
+
   if (buffers) XLALDestroyREAL8Array(buffers);   /* let's be careful, although all these checks may not be needed */
   if (temp)    LALFree(temp);
 
-  if (status == XLAL_ENOMEM) XLAL_ERROR(XLAL_ENOMEM);   /* TO DO: will this return? */
+  if (errnum) XLAL_ERROR(errnum);
 
         *yout = output;
-  return outputlen; /* TO DO: check XLAL error reporting conventions */
+  return outputlen;
 }

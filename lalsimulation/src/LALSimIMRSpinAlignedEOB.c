@@ -370,7 +370,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   REAL8 y_1, y_2, z1, z2;
 
   /* Variables for the integrator */
-  ark4GSLIntegrator       *integrator = NULL;
+  LALAdaptiveRungeKutta4Integrator       *integrator = NULL;
   REAL8Array              *dynamics   = NULL;
   REAL8Array              *dynamicsHi = NULL;
   INT4                    retLen;
@@ -1369,7 +1369,7 @@ printf("in function 2\n");
   memset( &prefixes, 0, sizeof( prefixes ) );
 
   /* Variables for the integrator */
-  ark4GSLIntegrator UNUSED      *integrator = NULL;
+  LALAdaptiveRungeKutta4Integrator UNUSED      *integrator = NULL;
   REAL8Array UNUSED             *dynamics   = NULL;
   //REAL8Array              *dynamicsHi = NULL;
   INT4                    retLen;

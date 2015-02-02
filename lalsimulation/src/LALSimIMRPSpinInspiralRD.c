@@ -877,7 +877,7 @@ static INT4 XLALSimInspiralSpinTaylorT4Engine(REAL8TimeSeries **omega,      /**<
   REAL8 S1x0,S1y0,S1z0,S2x0,S2y0,S2z0;  /** Used to store initial spin values */
   REAL8Array *yout;                     /** Used to store integration output */
 
-  ark4GSLIntegrator *integrator;
+  LALAdaptiveRungeKutta4Integrator *integrator;
 
   /* allocate the integrator */
   if (approx == PhenSpinTaylor)

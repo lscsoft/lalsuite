@@ -1781,9 +1781,9 @@ static int XLALSpinInspiralAdaptiveEngine(
 
   REAL8Array *yout=NULL;
   //yout=malloc(sizeof(REAL8Array));
-  ark4GSLIntegrator *integrator=NULL;
-  //integrator=malloc(sizeof(ark4GSLIntegrator));
- //memset(&integrator,0,sizeof(ark4GSLIntegrator)+1);
+  LALAdaptiveRungeKutta4Integrator *integrator=NULL;
+  //integrator=malloc(sizeof(LALAdaptiveRungeKutta4Integrator));
+ //memset(&integrator,0,sizeof(LALAdaptiveRungeKutta4Integrator)+1);
 
   REAL8 Psi;
   REAL8 alpha=0.;

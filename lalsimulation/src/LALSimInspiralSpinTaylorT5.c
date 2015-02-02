@@ -184,7 +184,7 @@ int XLALSimInspiralSpinTaylorT5 (
 	LIGOTimeGPS tStart = LIGOTIMEGPSZERO;
 	REAL8TimeSeries *orbPhase=NULL, *V=NULL, *LNhxVec=NULL, *LNhyVec=NULL, *LNhzVec=NULL; 
 	REAL8TimeSeries *S1xVec=NULL, *S1yVec=NULL, *S1zVec=NULL, *S2xVec=NULL, *S2yVec=NULL, *S2zVec=NULL;
-	ark4GSLIntegrator *integrator = NULL;     /* GSL integrator object */
+	LALAdaptiveRungeKutta4Integrator *integrator = NULL;     /* GSL integrator object */
     SpinTaylorT5Params *mParams;
     SpinTaylorT5Params SpinTaylorParameters;
     REAL8 LNh[3], S1[3], S2[3], J[3], Jh[3], Lmag, Jmag, v; 

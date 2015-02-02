@@ -545,7 +545,7 @@ int XLALSTPNFramelessAdaptiveWaveformEngine(REAL4Vector *signalvec1,
   LALSTPNparams mparams;
 
   /* needed for integration */
-  ark4GSLIntegrator *integrator;
+  LALAdaptiveRungeKutta4Integrator *integrator;
   unsigned int len;
   int intreturn;
   REAL8 yinit[14];

@@ -48,20 +48,7 @@ extern "C" {
  */
 /*@{*/
 
-#define XLAL_BEGINGSL \
-        { \
-          gsl_error_handler_t *saveGSLErrorHandler_; \
-          XLALGSL_PTHREAD_MUTEX_LOCK; \
-          saveGSLErrorHandler_ = gsl_set_error_handler_off();
-
-#define XLAL_ENDGSL \
-          gsl_set_error_handler( saveGSLErrorHandler_ ); \
-          XLALGSL_PTHREAD_MUTEX_UNLOCK; \
-        }
-
-
-typedef struct
-tagark4GSLIntegrator
+typedef struct tagLALAdaptiveRungeKutta4Integrator
 {
   gsl_odeiv_step    *step;
   gsl_odeiv_control *control;
@@ -76,24 +63,23 @@ tagark4GSLIntegrator
   int stopontestonly;	/* stop only on test, use tend to size buffers only */
 
   int returncode;
-} ark4GSLIntegrator;
+} LALAdaptiveRungeKutta4Integrator;
 
-
-ark4GSLIntegrator *XLALAdaptiveRungeKutta4Init( int dim,
+LALAdaptiveRungeKutta4Integrator *XLALAdaptiveRungeKutta4Init( int dim,
                              int (* dydt) (double t, const double y[], double dydt[], void * params),
                              int (* stop) (double t, const double y[], double dydt[], void * params),
                              double eps_abs, double eps_rel
                              );
 
-void XLALAdaptiveRungeKutta4Free( ark4GSLIntegrator *integrator );
+void XLALAdaptiveRungeKutta4Free( LALAdaptiveRungeKutta4Integrator *integrator );
 
-int XLALAdaptiveRungeKutta4( ark4GSLIntegrator *integrator,
+int XLALAdaptiveRungeKutta4( LALAdaptiveRungeKutta4Integrator *integrator,
                          void *params,
                          REAL8 *yinit,
                          REAL8 tinit, REAL8 tend, REAL8 deltat,
                          REAL8Array **yout
                          );
-int XLALAdaptiveRungeKutta4Hermite( ark4GSLIntegrator *integrator,
+int XLALAdaptiveRungeKutta4Hermite( LALAdaptiveRungeKutta4Integrator *integrator,
                                     void *params,
                                     REAL8 *yinit,
                                     REAL8 tinit,
@@ -119,7 +105,7 @@ int XLALAdaptiveRungeKutta4Hermite( ark4GSLIntegrator *integrator,
  *
  * Memory is allocated in steps of LAL_MAX_RK4_STEPS.
  */
-int XLALAdaptiveRungeKutta4IrregularIntervals( ark4GSLIntegrator *integrator,      /**< struct holding dydt, stopping test, stepper, etc. */
+int XLALAdaptiveRungeKutta4IrregularIntervals( LALAdaptiveRungeKutta4Integrator *integrator,      /**< struct holding dydt, stopping test, stepper, etc. */
                                     void *params,                       /**< params struct used to compute dydt and stopping test */
                                     REAL8 *yinit,                       /**< pass in initial values of all variables - overwritten to final values */
                                     REAL8 tinit,                        /**< integration start time */

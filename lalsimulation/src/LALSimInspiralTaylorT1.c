@@ -290,7 +290,7 @@ int XLALSimInspiralTaylorT1PNEvolveOrbit(
 	double lengths, VRef = 0.;
 	int len, intreturn, idx, idxRef = 0;
 	XLALSimInspiralTaylorT1PNEvolveOrbitParams params;
-	ark4GSLIntegrator *integrator = NULL;
+	LALAdaptiveRungeKutta4Integrator *integrator = NULL;
 	expnFuncTaylorT1 expnfunc;
 	expnCoeffsTaylorT1 ak;
 

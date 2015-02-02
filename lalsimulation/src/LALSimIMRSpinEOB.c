@@ -204,7 +204,7 @@ int XLALSimIMRSpinEOBWaveform(
   seobParams.s2Vec    = &s2VecOverMtMt;
 
   /* Variables for the integrator */
-  ark4GSLIntegrator       *integrator = NULL;
+  LALAdaptiveRungeKutta4Integrator       *integrator = NULL;
   REAL8Array              *dynamics   = NULL;
   INT4                    retLen;
   /*REAL8  UNUSED           tMax;*/

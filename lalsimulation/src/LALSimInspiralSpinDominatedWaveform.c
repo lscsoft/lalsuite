@@ -798,7 +798,7 @@ if (deltaT <= 0) XLAL_ERROR(XLAL_EDOM);
 if (totalmass < 0) XLAL_ERROR(XLAL_EDOM);
 if (fStart <= 0) XLAL_ERROR(XLAL_EDOM);
 /* set up the integrator*/
-ark4GSLIntegrator *integrator= XLALAdaptiveRungeKutta4Init(LAL_SDW_NUM_VARIABLES,XLALSpinDominatedWaveformDerivatives,XLALSpinDominatedWaveformStoppingTest,LAL_SDW_ABSOLUTE_TOLERANCE,LAL_SDW_RELATIVE_TOLERANCE);
+LALAdaptiveRungeKutta4Integrator *integrator= XLALAdaptiveRungeKutta4Init(LAL_SDW_NUM_VARIABLES,XLALSpinDominatedWaveformDerivatives,XLALSpinDominatedWaveformStoppingTest,LAL_SDW_ABSOLUTE_TOLERANCE,LAL_SDW_RELATIVE_TOLERANCE);
 if (!integrator) {
 	XLALPrintError("XLAL Error - %s: Cannot allocate integrator\n", __func__);
 	XLAL_ERROR(XLAL_EFUNC);
