@@ -23,6 +23,7 @@
 #include <ctype.h>
 #include <errno.h>
 
+#include <lal/Date.h>
 #include <lal/StringInput.h>
 #include <lal/LALConstants.h>
 #include <lal/LALString.h>
@@ -57,8 +58,8 @@ XLALTranslateMJDTTtoGPS ( LIGOTimeGPS *gps,	///< [out] returned GPS time
   frac2 = modf ( gpsSeconds2, &int2 );	// get integer and fractional parts
 
   gpsSeconds += (INT4) int2;
-  INT4 gpsNanoSeconds = (INT4) round ( frac2 * 1e9 );
-  if ( gpsNanoSeconds >= (INT4)1e9 )
+  INT4 gpsNanoSeconds = (INT4) round ( frac2 * XLAL_BILLION_REAL8 );
+  if ( gpsNanoSeconds >= XLAL_BILLION_INT4 )
     {
       gpsNanoSeconds = 0;
       gpsSeconds ++;
@@ -66,7 +67,7 @@ XLALTranslateMJDTTtoGPS ( LIGOTimeGPS *gps,	///< [out] returned GPS time
   if ( gpsNanoSeconds < 0 )
     {
       gpsSeconds --;
-      gpsNanoSeconds += (INT4)1e9;
+      gpsNanoSeconds += XLAL_BILLION_INT4;
     }
 
   gps->gpsSeconds = gpsSeconds;

@@ -23,6 +23,7 @@
 #include <math.h>
 #include <string.h>
 
+#include <lal/LALStdio.h>
 #include <lal/XLALError.h>
 #include <lal/LALMalloc.h>
 #include <lal/LALConstants.h>
@@ -68,7 +69,7 @@ test_MJDTT_GPS ( void )
                "XLALTranslateMJDTTtoGPS(%s) = (%d,%d) failed, correct result = (%d,%d)\n",
                mjdTTString, gps.gpsSeconds, gps.gpsNanoSeconds, gpsRef.gpsSeconds, gpsRef.gpsNanoSeconds );
 
-  sprintf ( mjdTTString, "%d.%014ld", mjdTTDays, (long)round(mjdTTFracDays*1e14) );
+  sprintf ( mjdTTString, "%d.%014" LAL_INT8_FORMAT, mjdTTDays, (INT8)round(mjdTTFracDays*1e14) );
   XLAL_CHECK ( XLALTranslateStringMJDTTtoGPS ( &gps, mjdTTString ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( (gps.gpsSeconds == gpsRef.gpsSeconds) && (gps.gpsNanoSeconds == gpsRef.gpsNanoSeconds), XLAL_ETOL,
                "XLALTranslateStringMJDTTtoGPS(%s) = (%d,%d) failed, correct result = (%d,%d)\n",
@@ -85,7 +86,7 @@ test_MJDTT_GPS ( void )
                "XLALTranslateMJDTTtoGPS(%s) = (%d,%d) failed, correct result = (%d,%d)\n",
                mjdTTString, gps.gpsSeconds, gps.gpsNanoSeconds, gpsRef.gpsSeconds, gpsRef.gpsNanoSeconds );
 
-  sprintf ( mjdTTString, "%d.%014ld", mjdTTDays, (long)round(mjdTTFracDays*1e14) );
+  sprintf ( mjdTTString, "%d.%014" LAL_INT8_FORMAT, mjdTTDays, (INT8)round(mjdTTFracDays*1e14) );
   XLAL_CHECK ( XLALTranslateStringMJDTTtoGPS ( &gps, mjdTTString ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( (gps.gpsSeconds == gpsRef.gpsSeconds) && (gps.gpsNanoSeconds == gpsRef.gpsNanoSeconds), XLAL_ETOL,
                "XLALTranslateStringMJDTTtoGPS(%s) = (%d,%d) failed, correct result = (%d,%d)\n",
@@ -103,7 +104,7 @@ test_MJDTT_GPS ( void )
                "XLALTranslateMJDTTtoGPS(%s) = (%d,%d) failed, correct result = (%d,%d)\n",
                mjdTTString, gps.gpsSeconds, gps.gpsNanoSeconds, gpsRef.gpsSeconds, gpsRef.gpsNanoSeconds );
 
-  sprintf ( mjdTTString, "%d.%014ld", mjdTTDays, (long)round(mjdTTFracDays*1e14) );
+  sprintf ( mjdTTString, "%d.%014" LAL_INT8_FORMAT, mjdTTDays, (INT8)round(mjdTTFracDays*1e14) );
   XLAL_CHECK ( XLALTranslateStringMJDTTtoGPS ( &gps, mjdTTString ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( (gps.gpsSeconds == gpsRef.gpsSeconds) && (gps.gpsNanoSeconds == gpsRef.gpsNanoSeconds), XLAL_ETOL,
                "XLALTranslateStringMJDTTtoGPS(%s) = (%d,%d) failed, correct result = (%d,%d)\n",
