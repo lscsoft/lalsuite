@@ -49,6 +49,7 @@
 #include <lal/AVFactories.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/UserInput.h>
+#include <lal/TranslateAngles.h>
 #include <lal/SFTfileIO.h>
 #include <lal/ExtrapolatePulsarSpins.h>
 
@@ -1332,14 +1333,12 @@ InitFstat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   /* define sky position variables from user input */
   if (LALUserVarWasSet(&uvar->RA))
     {
-      /* use Matt Pitkins conversion code found in lal/packages/pulsar/src/BinaryPulsarTiming.c */
-      XLALConvertHMStoRAD ( &cfg->Alpha, uvar->RA );
+      XLALTranslateHMStoRAD ( &cfg->Alpha, uvar->RA );
     }
   else cfg->Alpha = uvar->Alpha;
   if (LALUserVarWasSet(&uvar->Dec))
     {
-      /* use Matt Pitkins conversion code found in UserInputParser */
-      XLALConvertDMStoRAD( &cfg->Delta, uvar->Dec );
+      XLALTranslateDMStoRAD( &cfg->Delta, uvar->Dec );
     }
   else cfg->Delta = uvar->Delta;
 

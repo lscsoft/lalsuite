@@ -55,6 +55,7 @@
 #include <lal/TimeSeries.h>
 #include <lal/BinaryPulsarTiming.h>
 #include <lal/Window.h>
+#include <lal/TranslateAngles.h>
 
 #ifdef HAVE_LIBLALFRAME
 #include <lal/LALFrameIO.h>
@@ -711,8 +712,8 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
       }
     else if ( have_RA )
       {
-	XLAL_CHECK ( XLALConvertHMStoRAD ( &cfg->pulsar.Doppler.Alpha, uvar->RA  ) == XLAL_SUCCESS, XLAL_EFUNC );
-        XLAL_CHECK ( XLALConvertDMStoRAD ( &cfg->pulsar.Doppler.Delta, uvar->Dec ) == XLAL_SUCCESS, XLAL_EFUNC );
+	XLAL_CHECK ( XLALTranslateHMStoRAD ( &cfg->pulsar.Doppler.Alpha, uvar->RA  ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK ( XLALTranslateDMStoRAD ( &cfg->pulsar.Doppler.Delta, uvar->Dec ) == XLAL_SUCCESS, XLAL_EFUNC );
       }
     else
       {

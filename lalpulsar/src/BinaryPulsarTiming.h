@@ -53,7 +53,6 @@
 #include <lal/Date.h>
 
 #include <lal/ReadPulsarParFile.h>
-#include <lal/UserInputParser.h>
 
 #ifdef __cplusplus
 extern "C" {

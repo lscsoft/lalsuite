@@ -22,7 +22,7 @@
 
 #include <lal/LALDatatypes.h>
 #include <lal/StringInput.h>
-#include <lal/UserInputParser.h>
+#include <lal/ParseStringValue.h>
 
 /* C++ protection. */
 #ifdef  __cplusplus

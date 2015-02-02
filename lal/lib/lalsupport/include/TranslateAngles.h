@@ -17,8 +17,8 @@
 //  MA  02111-1307  USA
 //
 
-#ifndef _USERINPUTPARSER_H  /* Double-include protection. */
-#define _USERINPUTPARSER_H
+#ifndef _TRANSLATEANGLES_H  /* Double-include protection. */
+#define _TRANSLATEANGLES_H
 
 #include <lal/LALDatatypes.h>
 
@@ -28,31 +28,20 @@ extern "C" {
 #endif
 
 /**
- * \defgroup UserInputParser_h Header UserInputParser.h
+ * \defgroup TranslateAngles_h Header TranslateAngles.h
  * \ingroup lal_support
  * \author Reinhard Prix
- * \brief Module for general parsing of simple user-input strings
+ * \brief Module for translating between 'hms' (RA) and 'dms' (DEC) angle strings and radians
  *
  */
 
 /*@{*/
 
 // ---------- Function prototypes ----------
-int XLALParseStringValueToINT8 ( INT8 *valINT8, const char *valString );
-int XLALParseStringValueToINT4 ( INT4 *valINT4, const char *valString );
-int XLALParseStringValueToREAL8 ( REAL8 *valREAL8, const char *valString );
-int XLALParseStringValueToREAL4 ( REAL4 *valREAL4, const char *valString );
-int XLALParseStringValueToBOOLEAN ( BOOLEAN *valBOOLEAN, const char *valString );
-int XLALParseStringValueToINT4PlusFrac ( INT4 *valINT4, REAL8 *valFrac, const char *valString );
-
-int XLALConvertHMStoRAD ( REAL8 *radians, const CHAR *hms );
-int XLALConvertDMStoRAD ( REAL8 *radians, const CHAR *dms );
-CHAR *XLALConvertRADtoHMS ( REAL8 radians );
-CHAR *XLALConvertRADtoDMS ( REAL8 radians );
-
-int XLALConvertMJDTTtoGPS ( LIGOTimeGPS *gps, INT4 mjdDays, REAL8 mjdFracDays );
-int XLALConvertStringMJDTTtoGPS ( LIGOTimeGPS *gps, const char *mjdString );
-
+int XLALTranslateHMStoRAD ( REAL8 *radians, const CHAR *hms );
+int XLALTranslateDMStoRAD ( REAL8 *radians, const CHAR *dms );
+CHAR *XLALTranslateRADtoHMS ( REAL8 radians );
+CHAR *XLALTranslateRADtoDMS ( REAL8 radians );
 /*@}*/
 
 

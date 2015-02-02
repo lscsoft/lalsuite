@@ -36,11 +36,12 @@
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
 #include <lal/PulsarDataTypes.h>
-#include <lal/UserInput.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/GeneratePulsarSignal.h>
 #include <lal/Random.h>
 #include <lal/LALString.h>
+#include <lal/UserInput.h>
+#include <lal/TranslateAngles.h>
 
 /*---------- local defines ---------- */
 #define TRUE (1==1)
@@ -264,23 +265,23 @@ main(int argc, char *argv[])
   BOOLEAN have_DECJ = XLALUserVarWasSet ( &uvar.DECJ );
   if ( have_RAJ )
     {
-      XLAL_CHECK ( XLALConvertHMStoRAD ( &alpha, uvar.RAJ ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK ( XLALTranslateHMStoRAD ( &alpha, uvar.RAJ ) == XLAL_SUCCESS, XLAL_EFUNC );
       RAJ = XLALStringDuplicate ( uvar.RAJ );
     }
   else
     { // pick randomly
       alpha = LAL_TWOPI * (1.0 * rand() / ( RAND_MAX + 1.0 ) );  // alpha uniform in [0, 2pi)
-      XLAL_CHECK ( (RAJ = XLALConvertRADtoHMS ( alpha )) != NULL, XLAL_EFUNC );
+      XLAL_CHECK ( (RAJ = XLALTranslateRADtoHMS ( alpha )) != NULL, XLAL_EFUNC );
     }
   if ( have_DECJ )
     {
-      XLAL_CHECK ( XLALConvertDMStoRAD ( &delta, uvar.DECJ ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK ( XLALTranslateDMStoRAD ( &delta, uvar.DECJ ) == XLAL_SUCCESS, XLAL_EFUNC );
       DECJ = XLALStringDuplicate ( uvar.DECJ );
     }
   else
     { // pick randomly
       delta = LAL_PI_2 - acos ( 1 - 2.0 * rand()/RAND_MAX );	// sin(delta) uniform in [-1,1]
-      XLAL_CHECK ( (DECJ = XLALConvertRADtoDMS ( delta )) != NULL, XLAL_EFUNC );
+      XLAL_CHECK ( (DECJ = XLALTranslateRADtoDMS ( delta )) != NULL, XLAL_EFUNC );
     }
 
   /* define start time in an MJD structure */

@@ -26,7 +26,7 @@ extern "C" {
 #endif
 
 #include <lal/ConfigFile.h>
-#include <lal/UserInputParser.h>
+#include <lal/ParseStringValue.h>
 #if 0
 #include <lal/LIGOMetadataTables.h>
 #endif

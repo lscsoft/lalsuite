@@ -10,6 +10,7 @@ liblalsupport_la_SOURCES = \
 	LALMath3DPlot.c \
 	LALMathNDPlot.c \
 	LogPrintf.c \
+	ParseStringValue.c \
 	PrintFrequencySeries.c \
 	PrintTimeSeries.c \
 	PrintVector.c \
@@ -25,8 +26,9 @@ liblalsupport_la_SOURCES = \
 	StreamGridOutput.c \
 	StreamVectorInput.c \
 	StreamVectorSequenceInput.c \
+	TranslateAngles.c \
+	TranslateMJD.c \
 	UserInput.c \
-	UserInputParser.c \
 	LALgetopt.c \
 	LALgetopt.h
 

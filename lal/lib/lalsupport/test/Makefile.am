@@ -6,13 +6,15 @@ include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 test_programs += ConfigFileTest
 test_programs += LALMath3DPlotTest
 test_programs += LALMathNDPlotTest
+test_programs += ParseStringValueTest
 test_programs += PrintFTSeriesTest
 test_programs += PrintVectorTest
 test_programs += ReadFTSeriesTest
 test_programs += SegmentsIOTest
 test_programs += StreamInputTest
 test_programs += StreamSeriesInputTest
-test_programs += UserInputParserTest
+test_programs += TranslateAnglesTest
+test_programs += TranslateMJDTest
 test_programs += UserInputTest
 
 # Add shell, Python, etc. test scripts to this variable

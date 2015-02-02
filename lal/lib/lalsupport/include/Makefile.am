@@ -6,6 +6,7 @@ pkginclude_HEADERS = \
 	LALCache.h \
 	LALMathematica.h \
 	LogPrintf.h \
+	ParseStringValue.h \
 	PrintFTSeries.h \
 	PrintVector.h \
 	ReadFTSeries.h \
@@ -14,6 +15,7 @@ pkginclude_HEADERS = \
 	SegmentsIO.h \
 	StreamInput.h \
 	StreamOutput.h \
+	TranslateAngles.h \
+	TranslateMJD.h \
 	UserInput.h \
-	UserInputParser.h \
 	ConfigFile.h

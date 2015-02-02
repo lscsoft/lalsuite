@@ -56,7 +56,6 @@ extern "C" {
 
 #define PULSAR_HASHTABLE_SIZE 512
 #define PULSAR_PARNAME_MAX 128
-#define DAYSTOSECS 86400.0 /* number of seconds in an SI day */
 
 #define GPS0MJD 44244.0 /* start of GPS time (MJD 44244) */
 /* the difference between TDT (or TT) and TAI (see e.g. Eqn 15 of T.-Y. Huang et

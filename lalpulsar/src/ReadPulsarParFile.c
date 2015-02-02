@@ -66,7 +66,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALString.h>
 #include <lal/ComputeFstat.h>
-#include <lal/UserInputParser.h>
+#include <lal/TranslateAngles.h>
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
@@ -519,10 +519,10 @@ enum{
         else{ x *= convfactor; } \
       } \
       else if ( type == CONVHMS ) { /* convert to radians from hh:mm:ss.s format */ \
-        XLALConvertHMStoRAD( &x, in );                              \
+        XLALTranslateHMStoRAD( &x, in );                              \
       } \
       else if ( type == CONVDMS ) { /* convert to radians from hh:mm:ss.s format */ \
-        XLALConvertDMStoRAD( &x, in );                                  \
+        XLALTranslateDMStoRAD( &x, in );                                  \
       } \
       else if ( type == CONVMJD ) { /* convert an MJD to a GPS time */ \
          x = XLALTTMJDtoGPS( atof(in) ); \
@@ -1246,7 +1246,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
     }
     else if(!strcmp(val[i],"ra") || !strcmp(val[i],"RA") || !strcmp(val[i],"RAJ")){
       /* this can be in form hh:mm:ss.ss or hhmmss.ss */
-      XLALConvertHMStoRAD( &output->ra, val[i+1]);
+      XLALTranslateHMStoRAD( &output->ra, val[i+1]);
       j++;
 
       /* only try to get error if one exists */
@@ -1257,7 +1257,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
       }
     }
     else if(!strcmp(val[i],"dec") || !strcmp(val[i],"DEC") || !strcmp(val[i],"DECJ")) {
-      XLALConvertDMStoRAD ( &output->dec, val[i+1] );
+      XLALTranslateDMStoRAD ( &output->dec, val[i+1] );
       j++;
 
       if(atoi(val[i+2])==1 && i+2<k){
