@@ -50,6 +50,7 @@
 #include <lal/LALInitBarycenter.h>
 #include <lal/UserInput.h>
 #include <lal/TranslateAngles.h>
+#include <lal/TranslateMJD.h>
 #include <lal/SFTfileIO.h>
 #include <lal/ExtrapolatePulsarSpins.h>
 
@@ -235,7 +236,7 @@ typedef struct {
   REAL8 orbitasini;		/**< amplitude of radial motion */
   INT4 orbitTpSSBsec;		/**< time of periapse passage */
   INT4 orbitTpSSBnan;
-  REAL8 orbitTpSSBMJD;		/**< in MJD format */
+  CHAR *orbitTpSSBMJD;		/**< in MJD(TT) format */
   REAL8 orbitArgp;		/**< angle of periapse */
   REAL8 orbitEcc;		/**< orbital eccentricity */
 
@@ -276,7 +277,7 @@ typedef struct {
 
   INT4 RngMedWindow;		/**< running-median window for noise floor estimation */
   REAL8 refTime;		/**< reference-time for definition of pulsar-parameters [GPS] */
-  REAL8 refTimeMJD;		/**< the same in MJD */
+  CHAR *refTimeMJD;		/**< the same in MJD(TT) */
 
   REAL8 internalRefTime;	/**< which reference time to use internally for template-grid */
   INT4 SSBprecision;		/**< full relativistic timing or Newtonian */
@@ -505,10 +506,10 @@ int main(int argc,char *argv[])
       orbit_period = uvar.orbitPeriod;
       if (LALUserVarWasSet(&uvar.orbitTpSSBMJD))
 	{
-	  /* convert MJD peripase to GPS using Matt Pitkins code found at lal/packages/pulsar/src/BinaryPulsarTimeing.c */
-	  REAL8 GPSfloat;
-	  GPSfloat = XLALTTMJDtoGPS(uvar.orbitTpSSBMJD);
-	  XLALGPSSetREAL8(&(orbit_tp),GPSfloat);
+          if ( XLALTranslateStringMJDTTtoGPS ( &(orbit_tp), uvar.orbitTpSSBMJD ) != XLAL_SUCCESS ) {
+            XLALPrintError("\nXLALTranslateStringMJDTTtoGPS(%s) failed\n", uvar.orbitTpSSBMJD );
+            return COMPUTEFSTATISTIC_EINPUT;
+          }
 	}
       else
 	{
@@ -1143,7 +1144,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   LALregREALUserStruct(status, 	orbitPeriod, 	 0,  UVAR_OPTIONAL, "Binary Orbit: Period in seconds");
   LALregINTUserStruct(status, 	orbitTpSSBsec, 	 0,  UVAR_OPTIONAL, "Binary Orbit: (true) time of periapsis in SSB frame, GPS seconds");
   LALregINTUserStruct(status, 	orbitTpSSBnan, 	 0,  UVAR_OPTIONAL, "Binary Orbit: (true) time of periapsis in SSB frame, GPS nanoseconds part");
-  LALregREALUserStruct(status, 	orbitTpSSBMJD, 	 0,  UVAR_OPTIONAL, "ALTERNATIVE: (true) time of periapsis in the SSB frame in MJD");
+  LALregSTRINGUserStruct(status,orbitTpSSBMJD, 	 0,  UVAR_OPTIONAL, "ALTERNATIVE: (true) time of periapsis in the SSB frame in MJD(TT)");
   LALregREALUserStruct(status, 	orbitArgp, 	 0,  UVAR_OPTIONAL, "Binary Orbit: Orbital argument of periapse in radians");
   LALregREALUserStruct(status, 	orbitEcc, 	 0,  UVAR_OPTIONAL, "Binary Orbit: Orbital eccentricity");
 
@@ -1159,7 +1160,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   LALregSTRINGUserStruct(status,outputLogfile,	 0,  UVAR_OPTIONAL, "Name of log-file identifying the code + search performed");
   LALregSTRINGUserStruct(status,gridFile,	 0,  UVAR_OPTIONAL, "Load grid from this file: sky-grid or full-grid depending on --gridType.");
   LALregREALUserStruct(status,	refTime,	 0,  UVAR_OPTIONAL, "SSB reference time for pulsar-parameters [Default: startTime]");
-  LALregREALUserStruct(status,	refTimeMJD,	 0,  UVAR_OPTIONAL, "ALTERNATIVE: SSB reference time for pulsar-parameters in MJD [Default: startTime]");
+  LALregSTRINGUserStruct(status,refTimeMJD,	 0,  UVAR_OPTIONAL, "ALTERNATIVE: SSB reference time for pulsar-parameters in MJD(TT) [Default: startTime]");
 
   LALregSTRINGUserStruct(status,outputFstat,	 0,  UVAR_OPTIONAL, "Output-file for F-statistic field over the parameter-space");
   LALregSTRINGUserStruct(status,outputLoudest,	 0,  UVAR_OPTIONAL, "Loudest F-statistic candidate + estimated MLE amplitudes");
@@ -1322,10 +1323,10 @@ InitFstat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     }
   else if (LALUserVarWasSet(&uvar->refTimeMJD))
     {
-      /* convert MJD peripase to GPS using Matt Pitkins code found at lal/packages/pulsar/src/BinaryPulsarTimeing.c */
-      REAL8 GPSfloat;
-      GPSfloat = XLALTDBMJDtoGPS(uvar->refTimeMJD);
-      XLALGPSSetREAL8 ( &refTime, GPSfloat );
+      if ( XLALTranslateStringMJDTTtoGPS ( &refTime, uvar->refTimeMJD ) != XLAL_SUCCESS ) {
+        XLALPrintError("XLALTranslateStringMJDTTtoGPS(%s) failed\n", uvar->refTimeMJD );
+        ABORT ( status,  COMPUTEFSTATISTIC_EINPUT,  COMPUTEFSTATISTIC_MSGEINPUT);
+      }
     }
   else
     refTime = cfg->startTime;
@@ -1926,11 +1927,6 @@ checkUserInputConsistency (LALStatus *status, const UserInput_t *uvar)
    if ( LALUserVarWasSet(&uvar->orbitTpSSBMJD) && (LALUserVarWasSet(&uvar->orbitTpSSBsec) || LALUserVarWasSet(&uvar->orbitTpSSBnan)))
     {
       XLALPrintError ("\nSet only uvar->orbitTpSSBMJD OR uvar->orbitTpSSBsec/nan to specify periapse passage time!\n\n");
-      ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
-    }
-   if ( LALUserVarWasSet(&uvar->orbitTpSSBMJD) && (uvar->orbitTpSSBMJD < 0) )
-    {
-      XLALPrintError ("\nNegative value of the true time of orbital periapsis not allowed!\n\n");
       ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
     }
   if ( LALUserVarWasSet(&uvar->orbitTpSSBsec) && (uvar->orbitTpSSBsec < 0) )

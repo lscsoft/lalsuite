@@ -56,6 +56,7 @@
 #include <lal/BinaryPulsarTiming.h>
 #include <lal/Window.h>
 #include <lal/TranslateAngles.h>
+#include <lal/TranslateMJD.h>
 
 #ifdef HAVE_LIBLALFRAME
 #include <lal/LALFrameIO.h>
@@ -160,7 +161,7 @@ typedef struct
 
   /* pulsar parameters [REQUIRED] */
   REAL8 refTime;		/**< Pulsar reference time tRef in SSB ('0' means: use startTime converted to SSB) */
-  REAL8 refTimeMJD;          /**< Pulsar reference time tRef in MJD ('0' means: use startTime converted to SSB) */
+  CHAR *refTimeMJD;          /**< Pulsar reference time tRef in MJD(TT) ('0' means: use startTime converted to SSB) */
 
   REAL8 h0;			/**< overall signal amplitude h0 */
   REAL8 cosi;		/**< cos(iota) of inclination angle iota */
@@ -189,7 +190,7 @@ typedef struct
   REAL8 orbitEcc;	        /**< Orbital eccentricity */
   INT4  orbitTpSSBsec;	/**< 'observed' (SSB) time of periapsis passage. Seconds. */
   INT4  orbitTpSSBnan;	/**< 'observed' (SSB) time of periapsis passage. Nanoseconds. */
-  REAL8 orbitTpSSBMJD;       /**< 'observed' (SSB) time of periapsis passage. MJD. */
+  CHAR *orbitTpSSBMJD;       /**< 'observed' (SSB) time of periapsis passage. MJD(TT). */
   REAL8 orbitPeriod;		/**< Orbital period (seconds) */
   REAL8 orbitArgp;	        /**< Argument of periapsis (radians) */
 
@@ -1120,10 +1121,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 
       if ( set7 && (!set5 && !set6) )
 	{
-	  /* convert MJD peripase to GPS using Matt Pitkins code found at lal/packages/pulsar/src/BinaryPulsarTimeing.c */
-	  REAL8 GPSfloat;
-	  GPSfloat = XLALTTMJDtoGPS(uvar->orbitTpSSBMJD);
-	  XLALGPSSetREAL8(&(cfg->pulsar.Doppler.tp),GPSfloat);
+          XLAL_CHECK ( XLALTranslateStringMJDTTtoGPS ( &(cfg->pulsar.Doppler.tp), uvar->orbitTpSSBMJD ) == XLAL_SUCCESS, XLAL_EFUNC );
 	}
       else if ( set5 && !set7 )
 	{
@@ -1206,11 +1204,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
     }
   else if (XLALUserVarWasSet(&uvar->refTimeMJD))
     {
-
-      /* convert MJD to GPS using Matt Pitkins code found at lal/packages/pulsar/src/BinaryPulsarTimeing.c */
-      REAL8 GPSfloat;
-      GPSfloat = XLALTTMJDtoGPS(uvar->refTimeMJD);
-      XLALGPSSetREAL8(&(cfg->pulsar.Doppler.refTime),GPSfloat);
+      XLAL_CHECK ( XLALTranslateStringMJDTTtoGPS ( &(cfg->pulsar.Doppler.refTime), uvar->refTimeMJD) == XLAL_SUCCESS, XLAL_EFUNC );
     }
   else
     cfg->pulsar.Doppler.refTime = cfg->timestamps->data[0];	/* internal startTime always found in here*/
@@ -1316,7 +1310,7 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
 
   /* pulsar params */
   XLALregREALUserStruct (  refTime,             'S', UVAR_OPTIONAL, "Pulsar SSB reference time in GPS seconds (default: use startTime)");
-  XLALregREALUserStruct (  refTimeMJD,           0 , UVAR_OPTIONAL, "ALTERNATIVE: Pulsar SSB reference time in MJD (default: use startTime)");
+  XLALregSTRINGUserStruct( refTimeMJD,           0 , UVAR_OPTIONAL, "ALTERNATIVE: Pulsar SSB reference time in MJD(TT) (default: use startTime)");
 
   XLALregREALUserStruct (  Alpha,                0, UVAR_OPTIONAL, "Right-ascension/longitude of pulsar in radians");
   XLALregSTRINGUserStruct (RA,                   0, UVAR_OPTIONAL, "ALTERNATIVE: Righ-ascension/longitude of pulsar in HMS 'hh:mm:ss.ssss'");
@@ -1342,7 +1336,7 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALregREALUserStruct (  orbitEcc,             0, UVAR_OPTIONAL, "Orbital eccentricity");
   XLALregINTUserStruct (   orbitTpSSBsec,        0, UVAR_OPTIONAL, "'true' (SSB) time of periapsis passage. Seconds.");
   XLALregINTUserStruct (   orbitTpSSBnan,        0, UVAR_OPTIONAL, "'true' (SSB) time of periapsis passage. Nanoseconds.");
-  XLALregREALUserStruct (  orbitTpSSBMJD,        0, UVAR_OPTIONAL, "'true' (SSB) time of periapsis passage. MJD.");
+  XLALregSTRINGUserStruct (orbitTpSSBMJD,        0, UVAR_OPTIONAL, "'true' (SSB) time of periapsis passage in MJD(TT).");
   XLALregREALUserStruct (  orbitPeriod,          0, UVAR_OPTIONAL, "Orbital period (seconds)");
   XLALregREALUserStruct (  orbitArgp,            0, UVAR_OPTIONAL, "Argument of periapsis (radians)");
 
