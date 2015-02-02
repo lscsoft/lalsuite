@@ -27,59 +27,18 @@
  */
 #include <math.h>
 
+#include <lal/Date.h>
 #include <lal/AVFactories.h>
 #include <lal/PulsarDataTypes.h>
 #include <lal/ExtrapolatePulsarSpins.h>
 
-/** \name Error codes */
-/*@{*/
-#define PULSARSPINTESTC_ENORM 	0
-#define PULSARSPINTESTC_ESUB  	1
-
-#define PULSARSPINTESTC_MSGENORM    "Normal exit"
-#define PULSARSPINTESTC_MSGESUB     "Subroutine failed"
-/*@}*/
-
-
 #define RELERROR(x, y) fabs( 2.0 * ((x) - (y)) / ( (x) + (y) ) )
-
-
-/*********************************************************************/
-/* Macros for printing errors & testing subroutines (from Creighton) */
-/*********************************************************************/
-
-#define ERROR( code, msg, statement )                                \
-do {                                                                 \
-  if ( lalDebugLevel & LALERROR )                                    \
-    XLALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n" \
-                   "        %s %s\n", (code), *argv, __FILE__,       \
-              __LINE__, "$Id$", statement ? statement :  \
-                   "", (msg) );                                      \
-} while (0)
-
-#define INFO( statement )                                            \
-do {                                                                 \
-  if ( lalDebugLevel & LALINFO )                                     \
-    XLALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"     \
-                   "        %s\n", *argv, __FILE__, __LINE__,        \
-              "$Id$", (statement) );                     \
-} while (0)
-
-#define SUB( func, statusptr )                                       \
-do {                                                                 \
-  if ( (func), (statusptr)->statusCode ) {                           \
-    ERROR( PULSARSPINTESTC_ESUB, PULSARSPINTESTC_MSGESUB,      	     \
-           "Function call \"" #func "\" failed:" );                  \
-    return PULSARSPINTESTC_ESUB;                                     \
-  }                                                                  \
-} while (0)
-
 
 /**
  * Very simple test: given spin-params at \f$\tau_0\f$, extrapolate them to
  * \f$\tau_1\f$ and compare to reference-result...
  */
-int main(int argc, char *argv[])
+int main(void)
 {
   LALStatus XLAL_INIT_DECL(status);
   PulsarSpins result;
@@ -90,12 +49,12 @@ int main(int argc, char *argv[])
   PulsarSpinRange range0, range2;
   PulsarSpinRange rangeResult;
 
-  LIGOTimeGPS epoch0 = {714180733, 0};
-  LIGOTimeGPS epoch1 = {714180733 + 94608000, 0};	/* 3 years later */
-  LIGOTimeGPS epoch2 = {714180733 - 94608000, 0};	/* 3 years earlier */
+  const LIGOTimeGPS epoch0 = {714180733, 0};
+  const LIGOTimeGPS epoch1 = {714180733 + 94608000, 0};	/* 3 years later */
+  const LIGOTimeGPS epoch2 = {714180733 - 94608000, 0};	/* 3 years earlier */
 
-  if ( argc == 1 )
-    argc = 1;	/* avoid warning */
+  const REAL8 dtau10 = XLALGPSDiff( &epoch1, &epoch0 );
+  const REAL8 dtau20 = XLALGPSDiff( &epoch2, &epoch0 );
 
   /* set up initial spin-values */
   XLAL_INIT_MEM( fkdot0 );
@@ -117,7 +76,7 @@ int main(int argc, char *argv[])
 	 epoch0.gpsSeconds, epoch0.gpsNanoSeconds,
 	 fkdot0[0], fkdot0[1], fkdot0[2], fkdot0[3] );
 
-  SUB ( LALExtrapolatePulsarSpins (&status, fkdot1, epoch1, fkdot0, epoch0), &status );
+  XLAL_CHECK_MAIN( XLALExtrapolatePulsarSpins( fkdot1, fkdot0, dtau10 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   printf("Output2@ tau1 = %d.%09d : [%.10g, %.10g, %.10g, %.10g]\n",
 	 epoch1.gpsSeconds, epoch1.gpsNanoSeconds,
@@ -132,10 +91,10 @@ int main(int argc, char *argv[])
        (RELERROR(fkdot1[3], result[3]) > tolerance) )
     {
       XLALPrintError ( "\nRelative error of XLALExtrapolatePulsarSpins() exceeds tolerance of %g \n\n", tolerance);
-      return -1;
+      return EXIT_FAILURE;
     }
   else
-    printf ("\n ==> OK. LALExtrapolatePulsarSpins() lies within %g of the reference-result!\n", tolerance);
+    printf ("\n ==> OK. XLALExtrapolatePulsarSpins() lies within %g of the reference-result!\n", tolerance);
 
   /* ----- propagate phase from epoch1 --> epoch0, given fkdot0 ----- */
   {
@@ -143,22 +102,19 @@ int main(int argc, char *argv[])
     REAL8 phi0, phi1;
 
     phi0 = 1;
-    if ( XLALExtrapolatePulsarPhase ( &phi1, fkdot1, epoch1, phi0, epoch0 ) != XLAL_SUCCESS ) {
-      ERROR( PULSARSPINTESTC_ESUB, PULSARSPINTESTC_MSGESUB, "Function call \"XLALExtrapolatePulsarPhase\" failed:" );
-      return PULSARSPINTESTC_ESUB;
-    }
+    XLAL_CHECK_MAIN( XLALExtrapolatePulsarPhase( &phi1, fkdot1, phi0, dtau10 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     printf ("\nExtrapolated phase phi1 = %.16f, Reference-result = %.16f\n", phi1, phi1Result );
     if ( RELERROR(phi1, phi1Result) > tolerancePhi )
       {
-	XLALPrintError ( "\nRelative error of LALExtrapolatePulsarPhase() exceeds tolerance of %g \n\n", tolerancePhi);
-	return -1;
+	XLALPrintError ( "\nRelative error of XLALExtrapolatePulsarPhase() exceeds tolerance of %g \n\n", tolerancePhi);
+      return EXIT_FAILURE;
       }
     else
-      printf ("\n ==> OK. LALExtrapolatePulsarPhase() lies within %g of the reference-result!\n", tolerancePhi);
+      printf ("\n ==> OK. XLALExtrapolatePulsarPhase() lies within %g of the reference-result!\n", tolerancePhi);
   }
 
-  /* ----- now test LALExtrapolatePulsarSpinRange() ----- */
+  /* ----- now test XLALExtrapolatePulsarSpinRange() ----- */
   /* set up initial spin-range */
   range0.refTime = epoch0;
   XLAL_INIT_MEM ( range0.fkdot );
@@ -196,7 +152,7 @@ int main(int argc, char *argv[])
   printf ("Input: fkdotBand = [%.10g, %.10g, %.10g, %.10g ]\n",
 	  range0.fkdotBand[0], range0.fkdotBand[1], range0.fkdotBand[2], range0.fkdotBand[3] );
 
-  SUB ( LALExtrapolatePulsarSpinRange (&status, &range2, epoch2, &range0 ), &status );
+  XLAL_CHECK_MAIN( XLALExtrapolatePulsarSpinRange( &range2, &range0, dtau20 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   printf ("\n");
   printf ("Output: epoch = %d.%09d \n", range2.refTime.gpsSeconds, range2.refTime.gpsNanoSeconds );
@@ -215,7 +171,7 @@ int main(int argc, char *argv[])
        || ( range2.refTime.gpsNanoSeconds != rangeResult.refTime.gpsNanoSeconds ) )
     {
       XLALPrintError ("\nOutput-range has wrong epoch\n");
-      return -1;
+      return EXIT_FAILURE;
     }
 
   if ( (RELERROR(range2.fkdot[0], rangeResult.fkdot[0]) > tolerance) ||
@@ -229,11 +185,11 @@ int main(int argc, char *argv[])
        (RELERROR(range2.fkdotBand[3], rangeResult.fkdotBand[3]) > tolerance)
        )
     {
-      XLALPrintError ( "\nRelative error of LALExtrapolatePulsarSpinRange() exceeds tolerance of %g \n", tolerance );
-      return -1;
+      XLALPrintError ( "\nRelative error of XLALExtrapolatePulsarSpinRange() exceeds tolerance of %g \n", tolerance );
+      return EXIT_FAILURE;
     }
   else
-    printf ("\n ==> OK. LALExtrapolatePulsarSpinRange() lies within %g of the reference-result!\n\n", tolerance);
+    printf ("\n ==> OK. XLALExtrapolatePulsarSpinRange() lies within %g of the reference-result!\n\n", tolerance);
 
   LALCheckMemoryLeaks();
 

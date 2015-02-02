@@ -984,12 +984,9 @@ XLALEstimatePulsarAmplitudeParams ( PulsarCandidate *pulsarParams,	///< [in,out]
 
   // ===== debug-output resulting matrices =====
   // propagate initial-phase from Fstat-reference-time to refTime of Doppler-params
-  XLAL_CHECK( XLALExtrapolatePulsarPhase ( &phi0, pulsarParams->Doppler.fkdot, pulsarParams->Doppler.refTime, phi0, *FaFb_refTime )
-              == XLAL_SUCCESS, XLAL_EFUNC );
-
-  if ( phi0 < 0 )             /* make sure phi0 in [0, 2*pi] */
-    phi0 += LAL_TWOPI;
-  phi0 = fmod ( phi0, LAL_TWOPI );
+  // XLALExtrapolatePulsarPhase() guarantees propagated phi0 is in [0, 2*pi]
+  const REAL8 dtau = XLALGPSDiff( &pulsarParams->Doppler.refTime, FaFb_refTime );
+  XLAL_CHECK( XLALExtrapolatePulsarPhase( &phi0, pulsarParams->Doppler.fkdot, phi0, dtau ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // fill candidate-struct with the obtained signal-parameters and error-estimations
   pulsarParams->Amp.h0     = normAmu * h0;

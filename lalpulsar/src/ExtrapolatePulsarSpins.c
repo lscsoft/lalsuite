@@ -36,7 +36,7 @@
  * \author Reinhard Prix
  *
  * \brief Defines functions to extrapolate the pulsar spin-paramters
- * \f$\{f, \stackrel{.}{f},\ddot{f},...\}\f$ from one SSB epoch to another.
+ * \f$\{f, \dot{f},\ddot{f},...\}\f$ from one SSB epoch to another.
  *
  */
 
@@ -58,20 +58,20 @@
 /*---------- main functions ---------- */
 
 /**
- * General pulsar-spin extrapolation function: given a "spin-range" (ie spins + spin-bands) at time
- * \f$\tau_0\f$, propagate the whole spin-range to time \f$\tau_1\f$.
+ * General pulsar-spin extrapolation function: given a "spin-range" (ie spins + spin-bands) \c range0
+ * at time \f$\tau_0\f$, propagate the whole spin-range to time \f$\tau_1\f$.
  *
- * NOTE: *range1 is allowed to point to the same spin-range as *range0: the input will be overwritten
+ * \note \c *range1 is allowed to point to the same spin-range as \c *range0: the input will be overwritten
  * with the output.
  *
- * NOTE2: The output-range is in the 'canonical' order of \f$[ f^{(k)}, f^{(k)} + \Delta f^{(k)}]\f$,
+ * \note The output-range is in the 'canonical' order of \f$[ f^{(k)}, f^{(k)} + \Delta f^{(k)}]\f$,
  * where \f$\Delta f^{(k)} \ge 0\f$.
  *
  */
 int
 XLALExtrapolatePulsarSpinRange ( PulsarSpinRange *range1,		/**< [out] output spin range */
                                  const PulsarSpinRange *range0,		/**< [in] input spin range */
-                                 const REAL8 dtau 			/**< [in] time difference (range1.refTime - range0.refTime) to extrapolate spin range to */
+                                 const REAL8 dtau 			/**< [in] time difference \f$\tau_1 - \tau_0\f$ to extrapolate \c range0 to */
                                  )
 {
   UINT4 k, l;
@@ -120,39 +120,38 @@ XLALExtrapolatePulsarSpinRange ( PulsarSpinRange *range1,		/**< [out] output spi
 
 
 /**
- * Extrapolate the Pulsar spin-paramters \f$\{f, \stackrel{.}{f},\ddot{f},...\}\f$
- * (\a fkdotOld) from the initial reference-epoch \f$\tau_0\f$ (\a epoch0)
- * to the new reference-epoch \f$\tau_1\f$ (\a epoch1).
+ * Extrapolate the Pulsar spin-parameters \f$\{f, \dot{f},\ddot{f},...\}\f$
+ * (\c fkdot0) from the initial reference-epoch \f$\tau_0\f$
+ * to the new reference-epoch \f$\tau_1\f$.
  *
  * This is equivalent to XLALExtrapolatePulsarSpins(), but uses the fixed-size array-type
- * 'PulsarSpins' = REAL8[PULSAR_MAX_SPINS] instead, which is easier to handle and avoids
- * any dynamic-memory hassles.
+ * ::PulsarSpins instead, which is easier to handle and avoids any dynamic-memory hassles.
  *
- * NOTE: this can be called with fkdotOut == fkdotIn, in which case the input will be correctly
- * replaced by the output.
+ * \note This can be called with <tt>fkdot1 == fkdot0</tt>, in which case the input will
+ * be correctly replaced by the output.
  */
 int
-XLALExtrapolatePulsarSpins ( PulsarSpins fkdotOut,		/**< output fkdot array */
-			     const PulsarSpins fkdotIn,		/**< inptut fkdot array */
-			     REAL8 DeltaTau 			/**< time-difference (tRefOut - tRefIn) to extrapolate fkdot to */
+XLALExtrapolatePulsarSpins ( PulsarSpins fkdot1,		/**< [out] output spin-parameter array */
+			     const PulsarSpins fkdot0,		/**< [in] input spin-parameter array */
+			     REAL8 dtau 			/**< [in] time difference \f$\tau_1 - \tau_0\f$ to extrapolate \c fkdot0 to */
 			     )
 {
-  UINT4 numSpins = sizeof(PulsarSpins) / sizeof(fkdotIn[0]); 	/* fixed size array */
+  UINT4 numSpins = sizeof(PulsarSpins) / sizeof(fkdot0[0]); 	/* fixed size array */
   UINT4 k, l;
   REAL8 kfact, dtauk;
   PulsarSpins inSpins;
 
-  /* if DeltaTau is zero, just copy fkdotIn to fkdotOut */
-  if ( DeltaTau == 0.0 ) {
-    memmove ( fkdotOut, fkdotIn, sizeof(PulsarSpins) );
+  /* if dtau is zero, just copy fkdot0 to fkdot1 */
+  if ( dtau == 0.0 ) {
+    memmove ( fkdot1, fkdot0, sizeof(PulsarSpins) );
     return XLAL_SUCCESS;
   }
 
   /* keep a local copy of input to allow the input- and output- pointers to be identical */
-  memcpy ( inSpins, fkdotIn, sizeof(PulsarSpins) );
+  memcpy ( inSpins, fkdot0, sizeof(PulsarSpins) );
 
   for ( l = 0; l < numSpins; l ++ )
-    fkdotOut[l] = 0;
+    fkdot1[l] = 0;
 
   kfact = 1;
   dtauk = 1;	/* values of k! and (dTau)^k at k=0 */
@@ -160,10 +159,10 @@ XLALExtrapolatePulsarSpins ( PulsarSpins fkdotOut,		/**< output fkdot array */
     {
       REAL8 kcoef  = dtauk / kfact;
       for ( l=0; l < numSpins - k ; l ++ )
-	fkdotOut[l] += inSpins[ k + l ] * kcoef;
+	fkdot1[l] += inSpins[ k + l ] * kcoef;
 
       kfact *= (k + 1.0);
-      dtauk *= DeltaTau;
+      dtauk *= dtau;
 
     } /* for k < numSpins */
 
@@ -173,21 +172,20 @@ XLALExtrapolatePulsarSpins ( PulsarSpins fkdotOut,		/**< output fkdot array */
 
 
 /**
- * Extrapolate phase phi0 from epoch0 to epoch1, given the spins fkdot1 at epoch1
- * Returns phi1 in the range [0, 2pi]
+ * Extrapolate phase \f$\phi_0\f$ from \f$\tau_0\f$ to \f$\tau_1\f$, given the spins \c fkdot1 at \f$\tau_1\f$.
+ * Returns \f$\phi_1\f$ in the range \f$[0, 2\pi]\f$.
  */
 int
-XLALExtrapolatePulsarPhase ( REAL8 *phi1,		/**< [out] phase at epoch1 */
-                             PulsarSpins fkdot1,	/**< [in] spin-params at reference epoch1 */
-                             LIGOTimeGPS epoch1, 	/**< [in] GPS SSB-time of epoch1 */
-                             REAL8 phi0,		/**< [in] initial phase at epoch 0 */
-                             LIGOTimeGPS epoch0		/**< [in] GPS SSB-time of reference-epoch */
+XLALExtrapolatePulsarPhase ( REAL8 *phi1,			/**< [out] output phase at \f$\tau_1\f$ */
+                             const PulsarSpins fkdot1,		/**< [in] spin-params at reference \f$\tau_1\f$ */
+                             const REAL8 phi0,			/**< [in] input phase at \f$\tau_0\f$ */
+                             const REAL8 dtau			/**< [in] time difference \f$\tau_1 - \tau_0\f$ to extrapolate \c phi0 to */
                              )
 {
   UINT4 numSpins = PULSAR_MAX_SPINS;
   UINT4 k;
   UINT4 kFact;
-  REAL8 dTau, dTauk;
+  REAL8 dtauk;
   REAL8 frac_cycles;
   REAL8 dummy, phi;
 
@@ -195,15 +193,14 @@ XLALExtrapolatePulsarPhase ( REAL8 *phi1,		/**< [out] phase at epoch1 */
   XLAL_CHECK( phi1 != NULL, XLAL_EFAULT );
 
   kFact = 1;
-  dTau = XLALGPSDiff( &epoch0, &epoch1 );
-  dTauk = 1.0;
+  dtauk = 1.0;
   frac_cycles = 0;
 
   for ( k=0; k < numSpins; k++ )
     {
       kFact *= (k+1);
-      dTauk *= dTau;
-      frac_cycles += modf ( fkdot1[k] * dTauk / kFact, &dummy );
+      dtauk *= -dtau;
+      frac_cycles += modf ( fkdot1[k] * dtauk / kFact, &dummy );
     }
 
   phi = fmod ( phi0 - LAL_TWOPI * frac_cycles, LAL_TWOPI );

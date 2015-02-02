@@ -30,18 +30,18 @@ extern "C" {
 /**
  * \defgroup ExtrapolatePulsarSpins_h Header ExtrapolatePulsarSpins.h
  * \ingroup lalpulsar_common
- * \author Reinhard Prix
  * \brief  Extrapolate the Pulsar spin-paramters
- * \f$\{f^{(k)}\}\equiv\{f, \stackrel{.}{f},\ddot{f},...\}\f$, and "spin-ranges"
+ * \f$\{f^{(k)}\}\equiv\{f, \dot{f},\ddot{f},...\}\f$, and "spin-ranges"
  * \f$\{ f^{(k)}, \Delta f^{(k)} \}\f$ from one SSB epoch to another.
+ * \author Reinhard Prix
  *
- * The central function of this module is LALExtrapolatePulsarSpinRange(), which extrapolates
- * a complete "spin range" (defined as LALPulsarSpinRange) from one epoch to another.
+ * The central function of this module is XLALExtrapolatePulsarSpinRange(), which extrapolates
+ * a complete "spin range" (defined as PulsarSpinRange) from one epoch to another.
  * A "spin-range" contains an epoch, and \em two vectors, \f$f^{(k)}\f$ and \f$\Delta f^{(k)}\f$
  * (where "canonical" ordering refers to \f$\Delta f^{(k)} >= 0\f$ for all k.
  *
  * The extrapolation is defined by the pulsar spindown-model:
- * \f[ f(\tau_1) = f(\tau_0) + \frac{\stackrel{.}{f}(\tau_0)}{1!} \,\Delta\tau
+ * \f[ f(\tau_1) = f(\tau_0) + \frac{\dot{f}(\tau_0)}{1!} \,\Delta\tau
  * + \frac{\ddot{f}(\tau_0)}{2!} \,\Delta\tau^2 + ...
  * = \sum_{k=0}^s \frac{f^{(k)}(\tau_0)}{k!}\, \Delta\tau^k\,,
  * \f]
@@ -66,17 +66,11 @@ extern "C" {
  *
  * The initial-phase extrapolation in XLALExtrapolatePulsarPhase() proceeds in the other direction, extrapolating
  * \f$\phi(\tau_0)\f$ to \f$\phi(\tau_1)\f$, where the spins are given at \f$\tau_1\f$, i.e. \f$f^{(k)}(\tau_1)\f$.
- *
- * By using the above equations, one can arrive at the following expression
+ * By using the above equations, one can arrive at the following expression:
  * \f[
- * \phi(\tau_1) = \phi(\tau_0) - \sum_{k=0}^s \frac{f^{(k)}(\tau_1)}{(k+1)!}\,\Delta\tau^{k+1}\,,
+ * \phi(\tau_1) = \phi(\tau_0) - \sum_{k=0}^s \frac{f^{(k)}(\tau_1)}{(k+1)!} \, (-\Delta\tau)^{k+1} \,.
  * \f]
- * where <b>NOW</b> we have defined
- * \f[
- * \Delta\tau \equiv \tau_0 - \tau_1\,.
- * \f]
- *
- * This function is used in LALEstimatePulsarAmplitudeParams() to propagate the estimated initial phase
+ * This function is used in XLALEstimatePulsarAmplitudeParams() to propagate the estimated initial phase
  * from the internal reference time back to the user-input reference time.
  */
 /*@{*/
@@ -111,9 +105,9 @@ extern "C" {
 /*---------- exported prototypes [API] ----------*/
 int XLALExtrapolatePulsarSpinRange(  PulsarSpinRange *range1, const PulsarSpinRange *range0, const REAL8 dtau );
 
-int XLALExtrapolatePulsarSpins ( PulsarSpins fkdotOut, const PulsarSpins fkdotIn, REAL8 DeltaTau );
+int XLALExtrapolatePulsarSpins ( PulsarSpins fkdot1, const PulsarSpins fkdot0, REAL8 dtau );
 
-int XLALExtrapolatePulsarPhase ( REAL8 *phi1, PulsarSpins fkdot1, LIGOTimeGPS epoch1, REAL8 phi0, LIGOTimeGPS epoch0 );
+int XLALExtrapolatePulsarPhase ( REAL8 *phi1, const PulsarSpins fkdot1, const REAL8 phi0, const REAL8 dtau );
 
 int XLALCWSignalCoveringBand( REAL8 *minCoverFreq, REAL8 *maxCoverFreq, const LIGOTimeGPS *time1, const LIGOTimeGPS *time2,
                               const PulsarSpinRange *spinRange, const REAL8 binaryMaxAsini, const REAL8 binaryMinPeriod, const REAL8 binaryMaxEcc );
