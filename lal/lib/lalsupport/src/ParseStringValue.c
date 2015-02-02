@@ -20,11 +20,14 @@
 #include <math.h>
 #include <ctype.h>
 #include <errno.h>
+#include <string.h>
 
+#include <lal/Date.h>
 #include <lal/StringInput.h>
 #include <lal/LALConstants.h>
 #include <lal/LALString.h>
 #include <lal/ParseStringValue.h>
+#include <lal/TranslateMJD.h>
 
 // ---------- local defines ----------
 // these constants are taken from StringConvert.c
@@ -211,3 +214,79 @@ XLALParseStringValueToBOOLEAN ( BOOLEAN *valBOOLEAN,     ///< [out] return BOOLE
   return XLAL_SUCCESS;
 
 } // XLALParseStringValueToBOOLEAN()
+
+
+///
+/// Parse a string representing a GPS time into LIGOTimeGPS, without loss of (ns) accuracy
+///
+/// returns gps input pointer on success, NULL on error.
+///
+LIGOTimeGPS *
+XLALParseStringValueToGPS ( LIGOTimeGPS *gps,	///< [out] returned GPS time
+                            const char *valString 	///< [in] input string representing MJD(TT) time
+                            )
+{
+  XLAL_CHECK_NULL ( (gps != NULL) && (valString != NULL), XLAL_EINVAL );
+
+  INT4 gpsInt;
+  REAL8 gpsFrac;
+  XLAL_CHECK_NULL ( XLALParseStringValueToINT4PlusFrac ( &gpsInt, &gpsFrac, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
+  INT8 gpsNs = (INT8) round ( gpsFrac * XLAL_BILLION_REAL8 );
+
+  return XLALGPSSet ( gps, gpsInt, gpsNs );
+
+} // XLALParseStringValueToGPS()
+
+
+///
+/// Parse a string representing an 'epoch' into an LIGOTimeGPS, allowing both GPS and MJD(TT) inputs, at ns accuracy.
+///
+/// Allowed input string formats are "INT4.INT4[GPS|MJD]", where the optional postfix 'GPS' or 'MJD' indicates
+/// the time 'units', which defaults to GPS if no postfix is given. Note that MJD input is interpreted as MJD(TT),
+/// and translated into GPS using XLALTranslateStringMJDTTtoGPS().
+/// This ignores initial whitespace, but throws an error on _any_ non-converted trailing characters (including whitespace)
+///
+/// returns gps input pointer on success, NULL on error.
+///
+LIGOTimeGPS *
+XLALParseStringValueToEPOCH ( LIGOTimeGPS *gps,   	///< [out] return LIGOTimeGPS value
+                              const char *valString  	///< [in]  input string value
+                              )
+{
+  XLAL_CHECK_NULL ( (gps != NULL) && (valString != NULL ), XLAL_EINVAL );
+
+  char buf[256];
+  strncpy ( buf, valString, sizeof(buf)-1 );
+  buf[ sizeof(buf)-1 ] = 0;
+
+  // ---------- first check if there's a postfix indicating the time 'units' (GPS or MJD):
+  BOOLEAN is_gps;
+  char *postfix;
+  if ( (postfix = strstr ( buf, "MJD" )) != NULL )
+    {
+      XLAL_CHECK_NULL ( postfix[3] == 0, XLAL_EINVAL, "Input '%s' contains trailing characters after units 'MJD': must be of form 'xxx.yyyMJD'\n", valString );
+      postfix[0] = 0; // cut off postfix
+      is_gps = 0;
+    }
+  else if ( (postfix = strstr ( buf, "GPS" )) != NULL )
+    {
+      XLAL_CHECK_NULL ( postfix[3] == 0, XLAL_EINVAL, "Input '%s' contains trailing characters after units 'GPS': must be of form 'xxx.yyy' or 'xxx.yyyGPS'\n", valString );
+      postfix[0] = 0; // cut off postfix
+      is_gps = 1;
+    }
+  else	// no postfix: default to 'GPS' units
+    {
+      is_gps = 1;
+    }
+
+
+  if ( is_gps )
+    {
+      return XLALParseStringValueToGPS ( gps, buf );
+    }
+  else
+    {
+      return XLALTranslateStringMJDTTtoGPS ( gps, buf );
+    }
+
+} // XLALParseStringValueToEPOCH()
