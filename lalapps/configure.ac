@@ -33,7 +33,6 @@ AC_CONFIG_FILES([\
   src/pulsar/MakeSFTs/Makefile \
   src/pulsar/Makefile \
   src/pulsar/SFTReferenceLibrary/Makefile \
-  src/pulsar/SideBand/Makefile \
   src/pulsar/HeterodyneSearch/Makefile \
   src/pulsar/Tools/Makefile \
   src/pulsar/TwoSpect/Makefile \

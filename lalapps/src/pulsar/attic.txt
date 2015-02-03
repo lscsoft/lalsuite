@@ -337,3 +337,9 @@ git commit --amend
 # 2015-01-26 lalapps/src/pulsar/TDS_isolated/TargetedBinaryPulsars.c
 # 2015-02-03 lalapps/src/pulsar/HeterodyneSearch/binary_test/BinaryPulsarTOATest.c
 # 2015-02-03 lalapps/src/pulsar/SFTReferenceLibrary/README
+# 2015-02-03 lalapps/src/pulsar/SideBand/GenerateSideBandTemplate.c
+# 2015-02-03 lalapps/src/pulsar/SideBand/GetTimeStamps.c
+# 2015-02-03 lalapps/src/pulsar/SideBand/Makefile.am
+# 2015-02-03 lalapps/src/pulsar/SideBand/SideBand.h
+# 2015-02-03 lalapps/src/pulsar/SideBand/SideBandMCMC.c
+# 2015-02-03 lalapps/src/pulsar/SideBand/SideBandUtils.c
