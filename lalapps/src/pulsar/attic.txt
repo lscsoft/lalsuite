@@ -336,3 +336,4 @@ git commit --amend
 # 2015-01-26 lalapps/src/pulsar/TDS_isolated/ProcData.c
 # 2015-01-26 lalapps/src/pulsar/TDS_isolated/TargetedBinaryPulsars.c
 # 2015-02-03 lalapps/src/pulsar/HeterodyneSearch/binary_test/BinaryPulsarTOATest.c
+# 2015-02-03 lalapps/src/pulsar/SFTReferenceLibrary/README
