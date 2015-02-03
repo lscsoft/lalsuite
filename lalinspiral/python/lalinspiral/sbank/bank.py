@@ -43,12 +43,13 @@ class lazy_mchirps(object):
 
 class Bank(object):
 
-    def __init__(self, tmplt_class, noise_model, flow, use_metric=False, cache_waveforms=False):
+    def __init__(self, tmplt_class, noise_model, flow, use_metric=False, cache_waveforms=False, nhood_size=1.0):
         self.tmplt_class = tmplt_class
         self.noise_model = noise_model
         self.flow = flow
         self.use_metric = use_metric
         self.cache_waveforms = cache_waveforms
+        self.nhood_size = nhood_size
 
         self._templates = []
         self._nmatch = 0
@@ -118,7 +119,7 @@ class Bank(object):
         greater than min_match.
         """
         # find templates in the bank "near" this tmplt
-        low, high = _find_neighborhood(self._mchirps, proposal._mchirp, self.flow)
+        low, high = _find_neighborhood(self._mchirps, proposal._mchirp, self.flow, self.nhood_size)
         tmpbank = self._templates[low:high]
         if not tmpbank: return False
 
@@ -147,7 +148,7 @@ class Bank(object):
 
     def argmax_match(self, proposal):
         # find templates near the proposal
-        low, high = _find_neighborhood(self._mchirps, proposal._mchirp, self.flow)
+        low, high = _find_neighborhood(self._mchirps, proposal._mchirp, self.flow, self.nhood_size)
         tmpbank = self._templates[low:high]
         if not tmpbank: return (0., 0)
 

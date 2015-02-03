@@ -93,7 +93,8 @@ def parse_command_line():
     parser.add_option("--use-gpu-match", default=False, action="store_true",
         help="Perform match calculations using the first available GPU")
     parser.add_option("--cache-waveforms", default = False, action="store_true", help="A given waveform in the template bank will be used many times throughout the bank simulation process. You can save a considerable amount of CPU by caching the waveform from the first time it is generated; however, do so only if you are sure that storing the waveforms in memory will not overload the system memory.")
-
+    parser.add_option("--neighborhood-size", metavar="N", default = 1.0, type="float", help="Specify the window size in seconds to define \"nearby\" templates used to compute the match against each injection. The neighborhood is chosen symmetric about the injection; \"nearby\" is defined using the option --neighborhood-type. The default value of 1.0 is *not a guarantee of performance*. Choosing the neighborhood too small may lead to the reporting of lower-than-actual fitting factors.")
+    parser.add_option("--neighborhood-param", default="tau0", choices=["tau0"], help="Choose how the neighborhood is sorted for match calculations. TODO: Implement duration neighborhoods.")
 
     opts, args = parser.parse_args()
 
@@ -145,7 +146,7 @@ ligolw_copy_process(xmldoc, fake_xmldoc)
 sngls = table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
 h5file.create_dataset("/sngl_inspiral", data=ligolw_table_to_array(sngls), compression='gzip', compression_opts=1)
 h5file.flush()
-bank = Bank.from_sngls(sngls, tmplt_approx, noise_model, flow, use_metric=False, cache_waveforms=opts.cache_waveforms)
+bank = Bank.from_sngls(sngls, tmplt_approx, noise_model, flow, use_metric=False, cache_waveforms=opts.cache_waveforms, nhood_size=opts.neighborhood_size)
 del xmldoc, sngls[:]
 if verbose:
     print "Loaded %d templates" % len(bank)
