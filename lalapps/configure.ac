@@ -25,7 +25,6 @@ AC_CONFIG_FILES([\
   src/lalapps/Makefile \
   src/online/Makefile \
   src/power/Makefile \
-  src/pulsar/CombSearch/Makefile \
   src/pulsar/CreateEphemeris/Makefile \
   src/pulsar/Fstatistic/Makefile \
   src/pulsar/GCT/Makefile \
@@ -33,6 +32,7 @@ AC_CONFIG_FILES([\
   src/pulsar/MakeSFTs/Makefile \
   src/pulsar/Makefile \
   src/pulsar/SFTReferenceLibrary/Makefile \
+  src/pulsar/SidebandSearch/Makefile \
   src/pulsar/HeterodyneSearch/Makefile \
   src/pulsar/Tools/Makefile \
   src/pulsar/TwoSpect/Makefile \
