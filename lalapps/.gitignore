@@ -150,7 +150,6 @@ src/power/lalapps_power_likelihood_pipe
 src/power/lalapps_power_online_pipe
 src/power/lalapps_power_pipe
 src/power/sense_compare
-src/pulsar/CombSearch/lalapps_CombSearch
 src/pulsar/CreateEphemeris/lalapps_create_solar_system_ephemeris
 src/pulsar/CreateEphemeris/lalapps_create_time_correction_ephemeris
 src/pulsar/Fstatistic/lalapps_ComputeFstatMCUpperLimit
@@ -203,9 +202,7 @@ src/pulsar/SFTReferenceLibrary/lalapps_SFTdumpheader
 src/pulsar/SFTReferenceLibrary/lalapps_SFTvalidate
 src/pulsar/SFTReferenceLibrary/lalapps_SFTwrite
 src/pulsar/SFTReferenceLibrary/lalapps_splitSFTs
-src/pulsar/SideBand/lalapps_GenerateSideBandTemplate
-src/pulsar/SideBand/lalapps_GetTimeStamps
-src/pulsar/SideBand/lalapps_SideBandMCMC
+src/pulsar/SidebandSearch/lalapps_CombSearch
 src/pulsar/Tools/lalapps_ComputeAntennaPattern
 src/pulsar/Tools/lalapps_ComputePSD
 src/pulsar/Tools/lalapps_GetSFTVelocities
