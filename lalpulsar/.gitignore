@@ -85,6 +85,7 @@ test/SimulateTaylorCWTest
 test/SkyMetricTest
 test/StackMetricTest
 test/StatisticsTest
+test/TEMPOcomparison
 test/TwoDMeshTest
 test/UniversalDopplerMetricTest
 test/VelocityTest
