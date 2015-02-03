@@ -333,3 +333,4 @@ git log -1 --summary --find-renames HEAD | sed -n "s|^ delete mode [0-9]* |# ${d
 # 2015-01-26 lalapps/src/pulsar/TDS_isolated/J0534+2200
 # 2015-01-26 lalapps/src/pulsar/TDS_isolated/ProcData.c
 # 2015-01-26 lalapps/src/pulsar/TDS_isolated/TargetedBinaryPulsars.c
+# 2015-02-03 lalapps/src/pulsar/HeterodyneSearch/binary_test/BinaryPulsarTOATest.c
