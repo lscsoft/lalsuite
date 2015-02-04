@@ -11,7 +11,7 @@ import functools
 
 import healpy
 
-from statutils import cumvar
+from lalinference.rapid_pe.statutils import cumvar
 
 class NanOrInf(Exception):
     def __init__(self, value):

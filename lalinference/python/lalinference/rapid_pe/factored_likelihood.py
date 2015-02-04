@@ -22,7 +22,7 @@ Requires python SWIG bindings of the LIGO Algorithms Library (LAL)
 
 import lal
 import lalsimulation as lalsim
-import lalsimutils as lsu
+from lalinference.rapid_pe import lalsimutils as lsu
 import numpy as np
 from scipy import interpolate, integrate
 from scipy import special
