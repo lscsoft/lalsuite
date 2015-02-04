@@ -157,6 +157,10 @@ extern "C" {
 
 #define XLALregLISTUserStruct(name,option,flag,help)                    \
   XLALRegisterLISTUserVar(#name, option, flag, help, &(uvar-> name))
+
+#define XLALregEPOCHUserStruct(name,option,flag,help)                    \
+  XLALRegisterEPOCHUserVar(#name, option, flag, help, &(uvar-> name))
+
 /*@}*/
 
 /** State-flags: variable is optional, required, help, developer or was_set */
@@ -196,6 +200,7 @@ int XLALRegisterINTUserVar ( const CHAR *name, CHAR optchar, UserVarState flag, 
 int XLALRegisterBOOLUserVar ( const CHAR *name, CHAR optchar, UserVarState flag, const CHAR *helpstr, BOOLEAN *cvar );
 int XLALRegisterSTRINGUserVar ( const CHAR *name, CHAR optchar, UserVarState flag, const CHAR *helpstr, CHAR **cvar );
 int XLALRegisterLISTUserVar ( const CHAR *name, CHAR optchar, UserVarState flag, const CHAR *helpstr, LALStringVector **cvar);
+int XLALRegisterEPOCHUserVar ( const CHAR *name, CHAR optchar, UserVarState flag, const CHAR *helpstr, LIGOTimeGPS *cvar);
 
 
 /* ========== Deprecated LAL interface wrappers ========== */

@@ -21,6 +21,7 @@
 #include <lal/AVFactories.h>
 #include <lal/ConfigFile.h>
 #include <lal/StringVector.h>
+#include <lal/Date.h>
 
 /* Default parameters. */
 
@@ -66,6 +67,10 @@ int main ( int argc, char *argv[])
 
   XLAL_CHECK ( XLALReadConfigBOOLVariable ( &testBool, cfgdata, 0, "testBool", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
 
+  LIGOTimeGPS epochGPS, epochMJDTT;
+  XLAL_CHECK ( XLALReadConfigEPOCHVariable ( &epochGPS, cfgdata, 0, "epochGPS", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALReadConfigEPOCHVariable ( &epochMJDTT, cfgdata, 0, "epochMJDTT", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
+
   XLAL_CHECK ( XLALCheckConfigReadComplete (cfgdata, CONFIGFILE_ERROR) == XLAL_SUCCESS, XLAL_EFUNC );
 
   XLALDestroyParsedDataFile (cfgdata);
@@ -90,6 +95,9 @@ int main ( int argc, char *argv[])
   XLAL_CHECK ( strcmp ( string3, string3_ref ) == 0, XLAL_EFAILED, "%s: got string3 = '%s', expected '%s'\n", cfgname, string3, string3_ref );
 
   XLAL_CHECK ( testBool == 0, XLAL_EFAILED, "%s: got testBool = %d, expected 0\n", cfgname, testBool );
+
+  XLAL_CHECK ( XLALGPSCmp ( &epochGPS, &epochMJDTT ) == 0, XLAL_EFAILED, "GPS epoch {%d,%d} differs from MJD(TT) epoch {%d,%d}\n",
+               epochGPS.gpsSeconds, epochGPS.gpsNanoSeconds, epochMJDTT.gpsSeconds, epochMJDTT.gpsNanoSeconds );
 
   XLALFree (string1);
   XLALFree (string2b);
@@ -126,6 +134,10 @@ int main ( int argc, char *argv[])
 
   XLAL_CHECK ( XLALReadConfigBOOLVariable   (&testBool,  cfgdata, "section3", "testBool", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
 
+
+  XLAL_CHECK ( XLALReadConfigEPOCHVariable ( &epochGPS, cfgdata, "section2", "epochGPS", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALReadConfigEPOCHVariable ( &epochMJDTT, cfgdata, "section3", "epochMJDTT", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
+
   XLAL_CHECK ( XLALCheckConfigReadComplete (cfgdata, CONFIGFILE_ERROR) == XLAL_SUCCESS, XLAL_EFUNC );
   XLALDestroyParsedDataFile (cfgdata);
   cfgdata = NULL;
@@ -146,6 +158,9 @@ int main ( int argc, char *argv[])
   XLAL_CHECK ( strcmp ( string3, string3_ref ) == 0, XLAL_EFAILED, "%s: got string3 = '%s', expected '%s'\n", cfgname, string3, string3_ref );
 
   XLAL_CHECK ( testBool == 0, XLAL_EFAILED, "%s: got testBool = %d, expected 0\n", cfgname, testBool );
+
+  XLAL_CHECK ( XLALGPSCmp ( &epochGPS, &epochMJDTT ) == 0, XLAL_EFAILED, "GPS epoch {%d,%d} differs from MJD(TT) epoch {%d,%d}\n",
+               epochGPS.gpsSeconds, epochGPS.gpsNanoSeconds, epochMJDTT.gpsSeconds, epochMJDTT.gpsNanoSeconds );
 
   // ---------- TEST 3: check reading of compressed files ----------
   cfgname = TEST_DATA_DIR "ConfigFileSample3.cfg.gz";
