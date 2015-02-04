@@ -40,6 +40,7 @@ bin_PROGRAMS = \
 	lalsim-bh-sphwf \
 	lalsim-detector-noise \
 	lalsim-detector-strain \
+	lalsim-inject \
 	lalsim-inspiral \
 	lalsim-ns-eos-table \
 	lalsim-ns-mass-radius \
@@ -156,6 +157,7 @@ lalsim_unicorn_SOURCES = unicorn.c
 lalsim_detector_noise_SOURCES = detector_noise.c
 lalsim_detector_strain_SOURCES = detector_strain.c
 lalsim_inspiral_SOURCES = inspiral.c
+lalsim_inject_SOURCES = inject.c
 
 pkgdata_DATA = \
 	$(NOISEPSDFILES) \
