@@ -12,6 +12,7 @@ pymodule_PYTHON = \
     factored_likelihood.py \
     lalsimutils.py \
     mcsampler.py \
+    statutils.py \
     xmlutils.py \
 	$(END_OF_LIST)
 
