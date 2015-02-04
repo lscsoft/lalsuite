@@ -2822,7 +2822,13 @@ void LALInferenceSetupROQ(LALInferenceIFOData *IFOdata, LALInferenceModel *model
 
   if(LALInferenceGetProcParamVal(commandLine,"--roqnodes")){
     ppt=LALInferenceGetProcParamVal(commandLine,"--roqnodes");
+
+    // open file containing the set of frequency points associated
+    // with the given weights
     tempfp = fopen(ppt->value, "rb");
+    if (!tempfp) {
+        fprintf(stderr,"Error: cannot find file %s \n", ppt->value);
+        exit(1);} // check file exists
     gsl_vector_fread(tempfp, model->roq->frequencyNodes);
 
     thisData=IFOdata;
