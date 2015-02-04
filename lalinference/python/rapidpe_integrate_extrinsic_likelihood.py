@@ -35,10 +35,7 @@ import glue.lal
 import pylal
 
 # our analysis stuff
-import lalsimutils
-import factored_likelihood
-import mcsampler
-import xmlutils
+from lalinference.rapid_pe import lalsimutils, factored_likelihood, mcsampler, xmlutils
 
 from lalinference.bayestar import fits as bfits
 
