@@ -126,7 +126,7 @@ typedef struct
 
   /* specify start + duration */
   CHAR *timestampsFile;	/**< Timestamps file */
-  INT4 startTime;		/**< Start-time of requested signal in detector-frame (GPS seconds) */
+  LIGOTimeGPS startTime;		/**< Start-time of requested signal in detector-frame (GPS seconds) */
   INT4 duration;		/**< Duration of requested signal in seconds */
 
   /* generation mode of timer-series: all-at-once or per-sft */
@@ -160,8 +160,7 @@ typedef struct
   CHAR *ephemSun;		/**< Sun ephemeris file to use */
 
   /* pulsar parameters [REQUIRED] */
-  REAL8 refTime;		/**< Pulsar reference time tRef in SSB ('0' means: use startTime converted to SSB) */
-  CHAR *refTimeMJD;          /**< Pulsar reference time tRef in MJD(TT) ('0' means: use startTime converted to SSB) */
+  LIGOTimeGPS refTime;		/**< Pulsar reference epoch tRef in SSB ('0' means: use startTime converted to SSB) */
 
   REAL8 h0;			/**< overall signal amplitude h0 */
   REAL8 cosi;		/**< cos(iota) of inclination angle iota */
@@ -917,11 +916,13 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 	/* use all additional constraints user might have given */
 	if ( haveStart && haveDuration )
 	  {
-	    XLALGPSSetREAL8 ( &minStartTime, uvar->startTime );
-	    constraints.minStartTime = &minStartTime;
-	    XLALGPSSetREAL8 ( &maxStartTime, uvar->startTime + uvar->duration );
+	    minStartTime = maxStartTime = uvar->startTime;
+            XLALGPSAdd ( &maxStartTime, uvar->duration );
+            constraints.minStartTime = &minStartTime;
 	    constraints.maxStartTime = &maxStartTime;
-            XLALPrintWarning ( "\nWARNING: only noise-SFTs between GPS [%d, %d] will be used!\n", uvar->startTime, uvar->startTime + uvar->duration );
+            char *tmpStr1, *tmpStr2;
+            XLALPrintWarning ( "\nWARNING: only noise-SFTs between GPS [%s, %s] will be used!\n", tmpStr1=XLALGPSToStr (NULL, &minStartTime), tmpStr2=XLALGPSToStr (NULL, &maxStartTime) );
+            XLALFree ( tmpStr1 ); XLALFree ( tmpStr2 );
 	  } /* if start+duration given */
 	if ( cfg->timestamps )
 	  {
@@ -968,10 +969,8 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
           XLAL_ERROR ( XLAL_EINVAL, "--SFToverlap cannot be larger than --Tsft!\n\n");
         }
 
-	LIGOTimeGPS tStart;
 	/* internally always use timestamps, so we generate them  */
-	XLALGPSSetREAL8 ( &tStart, uvar->startTime );
-        XLAL_CHECK ( ( cfg->timestamps = XLALMakeTimestamps ( tStart, uvar->duration, uvar->Tsft, uvar->SFToverlap )) != NULL, XLAL_EFUNC );
+        XLAL_CHECK ( ( cfg->timestamps = XLALMakeTimestamps ( uvar->startTime, uvar->duration, uvar->Tsft, uvar->SFToverlap )) != NULL, XLAL_EFUNC );
 
       } /* if !cfg->timestamps */
 
@@ -1191,23 +1190,17 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 
   /* ----- set "pulsar reference time", i.e. SSB-time at which pulsar params are defined ---------- */
   if (XLALUserVarWasSet (&uvar->parfile)) {
-    uvar->refTime = pulparams.pepoch; /*XLALReadTEMPOParFile already converted pepoch to GPS*/
-    XLALGPSSetREAL8(&(cfg->pulsar.Doppler.refTime),uvar->refTime);
+    XLALGPSSetREAL8( &(uvar->refTime), pulparams.pepoch ); /*XLALReadTEMPOParFile converted pepoch to REAL8 */
+    XLALGPSSetREAL8( &(cfg->pulsar.Doppler.refTime), pulparams.pepoch);
   }
-  else if (XLALUserVarWasSet(&uvar->refTime) && XLALUserVarWasSet(&uvar->refTimeMJD))
-    {
-      XLAL_ERROR ( XLAL_EINVAL, "\nUse only one of '--refTime' and '--refTimeMJD' to specify SSB reference time!\n\n");
-    }
   else if (XLALUserVarWasSet(&uvar->refTime))
     {
-      XLALGPSSetREAL8(&(cfg->pulsar.Doppler.refTime), uvar->refTime);
-    }
-  else if (XLALUserVarWasSet(&uvar->refTimeMJD))
-    {
-      XLAL_CHECK ( XLALTranslateStringMJDTTtoGPS ( &(cfg->pulsar.Doppler.refTime), uvar->refTimeMJD) != NULL, XLAL_EFUNC );
+      cfg->pulsar.Doppler.refTime = uvar->refTime;
     }
   else
-    cfg->pulsar.Doppler.refTime = cfg->timestamps->data[0];	/* internal startTime always found in here*/
+    {
+      cfg->pulsar.Doppler.refTime = cfg->timestamps->data[0];	/* internal startTime always found in here*/
+    }
 
 
   /* ---------- has the user specified an actuation-function file ? ---------- */
@@ -1294,7 +1287,7 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALregSTRINGUserStruct( ephemSun, 	 	0,  UVAR_OPTIONAL, "Sun ephemeris file to use");
 
   /* start + duration of timeseries */
-  XLALregINTUserStruct (  startTime,            'G', UVAR_OPTIONAL, "Start-time of requested signal in detector-frame (GPS seconds)");
+  XLALregEPOCHUserStruct ( startTime,           'G', UVAR_OPTIONAL, "Start-time of requested signal in detector-frame (format 'xx.yy[GPS]' or 'xx.yyMJD' (for MJD(TT)))");
   XLALregINTUserStruct (  duration,              0,  UVAR_OPTIONAL, "Duration of requested signal in seconds");
   XLALregSTRINGUserStruct ( timestampsFile,      0,  UVAR_OPTIONAL, "ALTERNATIVE: File to read timestamps from (file-format: lines with <seconds> <nanoseconds>)");
 
@@ -1309,8 +1302,7 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALregREALUserStruct (  tukeyBeta,            0, UVAR_OPTIONAL, "Fraction of Tukey window which is transition (0.0=rect, 1.0=Hann)");
 
   /* pulsar params */
-  XLALregREALUserStruct (  refTime,             'S', UVAR_OPTIONAL, "Pulsar SSB reference time in GPS seconds (default: use startTime)");
-  XLALregSTRINGUserStruct( refTimeMJD,           0 , UVAR_OPTIONAL, "ALTERNATIVE: Pulsar SSB reference time in MJD(TT) (default: use startTime)");
+  XLALregEPOCHUserStruct ( refTime,             'S', UVAR_OPTIONAL, "Pulsar SSB reference epoch: format 'xx.yy[GPS]' or 'xx.yyMJD' (for MJD(TT)) [default: startTime]");
 
   XLALregREALUserStruct (  Alpha,                0, UVAR_OPTIONAL, "Right-ascension/longitude of pulsar in radians");
   XLALregSTRINGUserStruct (RA,                   0, UVAR_OPTIONAL, "ALTERNATIVE: Righ-ascension/longitude of pulsar in HMS 'hh:mm:ss.ssss'");
