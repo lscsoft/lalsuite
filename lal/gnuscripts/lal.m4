@@ -50,15 +50,12 @@ AC_DEFUN([LAL_ENABLE_MACROS],
 AC_DEFUN([LAL_ENABLE_PTHREAD_LOCK],
 [AC_ARG_ENABLE(
   [pthread_lock],
-  AC_HELP_STRING([--enable-pthread-lock],[use pthread mutex lock for threadsafety [default=yes]]),
+  AC_HELP_STRING([--enable-pthread-lock],[use pthread mutex lock for threadsafety [default=no]]),
   AS_CASE(["${enableval}"],
-    [yes],[lal_pthread_lock=true],
+    [yes],[lal_pthread_lock=true; AC_DEFINE([LAL_PTHREAD_LOCK],[1],[Use pthread mutex lock for threadsafety])],
     [no],[lal_pthread_lock=false],
     AC_MSG_ERROR([bad value for ${enableval} for --enable-pthread-lock])
-  ),[lal_pthread_lock=true])
-  AS_IF([test "x$lal_pthread_lock" = "xtrue"],
-    AC_DEFINE([LAL_PTHREAD_LOCK],[1],[Use pthread mutex lock for threadsafety])
-  )
+  ),[lal_pthread_lock=false])
 ])
 
 AC_DEFUN([LAL_INTEL_MKL_QTHREAD_WARNING],
