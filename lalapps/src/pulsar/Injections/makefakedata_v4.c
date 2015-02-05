@@ -1238,7 +1238,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
   cfg->transientWindow.type = twtype;
 
   cfg->transientWindow.t0   = uvar->transientStartTime;
-  cfg->transientWindow.tau  = uvar->transientTauDays * LAL_DAYSID_SI;
+  cfg->transientWindow.tau  = uvar->transientTauDays * 86400;
 
   return XLAL_SUCCESS;
 
