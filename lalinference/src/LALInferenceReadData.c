@@ -2247,13 +2247,11 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
   char SNRpath[FILENAME_MAX];
   ProcessParamsTable *ppt=NULL;
 
-  ppt=LALInferenceGetProcParamVal(commandLine,"--outfile");
-  if(!ppt){
-    fprintf(stderr,"Must specify --outfile <filename.dat>\n");
-    exit(1);
-  }
-  char *outfile=ppt->value;
-  sprintf(SNRpath,"%s_snr.txt",outfile);
+  ppt = LALInferenceGetProcParamVal(commandLine,"--outfile");
+  if (ppt)
+    sprintf(SNRpath, "%s_snr.txt", ppt->value);
+  else
+    sprintf(SNRpath, "snr.txt");
 
   Approximant approximant = XLALGetApproximantFromString(inj_table->waveform);
   if( (int) approximant == XLAL_FAILURE)
