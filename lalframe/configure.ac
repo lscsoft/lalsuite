@@ -81,7 +81,7 @@ AM_SILENT_RULES([yes])
 # check for required compilers
 LALSUITE_PROG_COMPILERS
 
-# check for pythread, needed for low latency data test codes
+# check for pthread, needed for low latency data test codes
 AX_PTHREAD([lalframe_pthread=true],[lalframe_pthread=false])
 AM_CONDITIONAL([PTHREAD],[test x$lalframe_pthread = xtrue])
 
