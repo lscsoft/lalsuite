@@ -13,5 +13,5 @@ Name: LALSupport
 Description: LSC Algorithm Support Library (useful but non-conforming routines)
 Version: @VERSION@
 Requires: lal = @VERSION@
-Libs: -L${libdir} -llalsupport @ZLIB_LIBS@
-Cflags: -I${includedir} @ZLIB_CFLAGS@
+Libs: -L${libdir} -llalsupport @PTHREAD_LIBS@ @ZLIB_LIBS@
+Cflags: -I${includedir} @PTHREAD_CFLAGS@ @ZLIB_CFLAGS@

@@ -131,18 +131,6 @@ LALSUITE_PROG_COMPILERS
 # check for SIMD extensions
 LALSUITE_WITH_SIMD
 
-# check for pthreads
-lal_pthread_available="yes"
-AX_PTHREAD(,[lal_pthread_available="no"])
-if test "$lal_pthread_lock" = "true" ; then
-  if test "$lal_pthread_available" = "yes" ; then
-    LALSUITE_ADD_FLAGS([C],[${PTHREAD_CFLAGS}],[${PTHREAD_LIBS}])
-    CC="$PTHREAD_CC"
-  else
-    AC_MSG_ERROR([do not know how to compile posix threads])
-  fi
-fi
-
 # check for programs
 AC_PROG_INSTALL
 AC_PROG_LN_S

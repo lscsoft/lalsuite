@@ -47,15 +47,27 @@ AC_DEFUN([LAL_ENABLE_MACROS],
   ),)
 ])
 
-AC_DEFUN([LAL_ENABLE_PTHREAD_LOCK],
-[AC_ARG_ENABLE(
-  [pthread_lock],
-  AC_HELP_STRING([--enable-pthread-lock],[use pthread mutex lock for threadsafety [default=no]]),
-  AS_CASE(["${enableval}"],
-    [yes],[lal_pthread_lock=true; AC_DEFINE([LAL_PTHREAD_LOCK],[1],[Use pthread mutex lock for threadsafety])],
-    [no],[lal_pthread_lock=false],
-    AC_MSG_ERROR([bad value for ${enableval} for --enable-pthread-lock])
-  ),[lal_pthread_lock=false])
+AC_DEFUN([LAL_ENABLE_PTHREAD_LOCK], [
+  AC_ARG_ENABLE([pthread_lock],
+    AC_HELP_STRING([--enable-pthread-lock],[use pthread mutex lock for threadsafety @<:@default=no@:>@]),
+    AS_CASE(["${enableval}"],
+      [yes],[lal_pthread_lock=true],
+      [no],[lal_pthread_lock=false],
+      AC_MSG_ERROR([bad value for ${enableval} for --enable-pthread-lock])
+    ),
+    [lal_pthread_lock=false]
+  )
+  AS_IF([test "x$lal_pthread_lock" = "xtrue"], [
+    # check for pthreads
+    AX_PTHREAD([
+      LALSUITE_ADD_FLAGS([C],[${PTHREAD_CFLAGS}],[${PTHREAD_LIBS}])
+    ],[
+      AC_MSG_ERROR([do not know how to compile posix threads])
+    ])
+    AC_DEFINE([LAL_PTHREAD_LOCK],[1],[Use pthread mutex lock for threadsafety])
+  ])
+  AC_SUBST([PTHREAD_CFLAGS])
+  AC_SUBST([PTHREAD_LIBS])
 ])
 
 AC_DEFUN([LAL_INTEL_MKL_QTHREAD_WARNING],

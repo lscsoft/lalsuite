@@ -13,5 +13,5 @@ Name: LAL
 Description: LSC Algorithm Library
 Version: @VERSION@
 Requires: gsl, fftw3, fftw3f
-Libs: -L${libdir} -llal @CUDA_LIBS@ @BOINC_LIBS@
-Cflags: -I${includedir} @CUDA_CFLAGS@ @BOINC_CFLAGS@
+Libs: -L${libdir} -llal @CUDA_LIBS@ @BOINC_LIBS@ @PTHREAD_LIBS@
+Cflags: -I${includedir} @CUDA_CFLAGS@ @BOINC_CFLAGS@ @PTHREAD_CFLAGS@
