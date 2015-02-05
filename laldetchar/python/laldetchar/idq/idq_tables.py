@@ -27,7 +27,14 @@ from glue.ligolw import table
 from glue.ligolw import types as ligolwtypes
 from glue.ligolw import ilwd
 from glue.ligolw import lsctables
+from glue.ligolw import dbtables
 from laldetchar import git_version
+
+try:
+	from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
+except ImportError:
+	# pylal is optional
+	from glue.lal import LIGOTimeGPS
 
 __author__ = 'Reed Essick <reed.essick@ligo.org>, Ruslan Vaulin <ruslan.vaulin@ligo.org>'
 __version__ = git_version.id
@@ -39,12 +46,200 @@ __date__ = git_version.date
 
 # contains definitions for iDQ xml table classes and objects
 
+
+#
+# =============================================================================
+#
+#                            idq_glitch:table
+#
+# =============================================================================
+#
+
+
+
+IDQGlitchID = ilwd.get_ilwdchar_class(u"idq_glitch", u"event_id")
+
+class IDQGlitchTable(table.Table):
+
+    tableName = 'idq_glitch:table'
+    validcolumns = {
+        'event_id': 'ilwd:char',
+        'ifo': 'lstring',
+        'gps': 'int_4s',
+        'gps_ns': 'int_4s',
+        'rank': 'real_4',
+        'fap': 'real_4',
+        'likelihood': 'real_4',
+        }
+    constraints = "PRIMARY KEY (event_id)"
+    next_id = IDQGlitchID(0)
+
+
+
+class IDQGlitch(object):
+
+    __slots__ = IDQGlitchTable.validcolumns.keys()
+
+    def get_gps(self):
+        return LIGOTimeGPS(self.gps, self.gps_ns)
+
+    def set_gps(self, gps):
+        self.gps, self.gps_ns = gps.seconds, gps.nanoseconds
+
+
+
+IDQGlitchTable.RowType = IDQGlitch
+
+#
+# =============================================================================
+#
+#                              ovl_data:table
+#
+# =============================================================================
+#
+
+OVLDataID = ilwd.get_ilwdchar_class(u"ovl_data", u"event_id")
+
+class OVLDataTable(table.Table):
+
+    tableName = 'ovl_data:table'
+    validcolumns = {
+        'event_id': 'ilwd:char',
+        'ifo': 'lstring',
+        'aux_channel': 'lstring',
+        'veto_thr': 'real_4',
+        'veto_win': 'real_4',
+        }
+    next_id = OVLDataID(0)
+    constraints = "PRIMARY KEY (event_id)"
+    
+class OVLData(object):
+
+    __slots__ = OVLDataTable.validcolumns.keys()
+
+
+OVLDataTable.RowType = OVLData
+
+
+
+
 # define types of coincidences within iDQ pipeline
 
 IDQCoincDef = {
     'idq_glitch<-->sngl_burst': ('idq',0),
     'idq_glitch<-->ovl_data': ('idq', 1)
 } 
+
+# define mapping between coinc definitions and tables that participate in them 
+CoincDefToTableNames = {
+'idq_glitch<-->sngl_burst': [IDQGlitchTable.tableName, lsctables.SnglBurstTable.tableName],
+'idq_glitch<-->ovl_data' : [IDQGlitchTable.tableName, OVLDataTable.tableName]
+}
+
+#
+# Override portions of a ligolw.LIGOLWContentHandler class
+#
+
+# Table name ---> table type mapping
+
+#
+# Extend lsctables.TableByName to include iDQ tables
+#
+
+IDQTableByName = {
+    table.StripTableName(IDQGlitchTable.tableName): IDQGlitchTable,
+    table.StripTableName(OVLDataTable.tableName): OVLDataTable
+}
+
+TableByName = dict(lsctables.TableByName, **IDQTableByName)
+
+#
+# Override portions of a ligolw.LIGOLWContentHandler class
+#
+
+def use_in(ContentHandler):
+    """
+    Modify ContentHandler, a sub-class of
+    glue.ligolw.LIGOLWContentHandler, to cause it to use the  
+    tables from this module as well as from lsctable.py
+    when parsing XML documents.
+
+    Example:
+
+    >>> from glue.ligolw import ligolw
+    >>> def MyContentHandler(ligolw.LIGOLWContentHandler):
+    ...	pass
+    ...
+    >>> from laldetchar.idq import idq_tables
+    >>> idq_tables.use_in(MyContentHandler)
+    """
+    ContentHandler = table.use_in(ContentHandler)
+
+    def startTable(self, parent, attrs, __orig_startTable = ContentHandler.startTable):
+        name = table.StripTableName(attrs[u"Name"])
+        if name in TableByName:
+            return TableByName[name](attrs)
+        return __orig_startTable(self, parent, attrs)
+
+    ContentHandler.startTable = startTable
+
+    return ContentHandler
+  
+
+
+def use_in_db(ContentHandler):
+        """
+        Imitation of use_in() method from glue.ligowlw.dbtables
+        customized for using idq_tables.
+        
+        Modify ContentHandler, a sub-class of
+        glue.ligolw.LIGOLWContentHandler, to cause it to use the DBTable
+        class defined in glue.ligowlw.dbtables module when parsing XML documents.
+        Instances of the class must provide a connection attribute.  When a document
+        is parsed, the value of this attribute will be passed to the
+        DBTable class' .__init__() method as each table object is created,
+        and thus sets the database connection for all table objects in the
+        document.
+
+        Example:
+
+        >>> import sqlite3
+        >>> from glue.ligolw import ligolw
+        >>> class MyContentHandler(ligolw.LIGOLWContentHandler):
+        ...     def __init__(self, *args):
+        ...             super(MyContentHandler, self).__init__(*args)
+        ...             self.connection = sqlite3.connection()
+        ...
+        >>> from laldetchar.idq import idq_tables
+        >>> idq_tables.use_in_db(MyContentHandler)
+
+        Multiple database files can be in use at once by creating a content
+        handler class for each one.
+        """
+        ContentHandler = use_in(ContentHandler)
+
+        def startTable(self, parent, attrs):
+                name = table.StripTableName(attrs[u"Name"])
+                if name in dbtables.TableByName:
+                        return dbtables.TableByName[name](attrs, connection = self.connection)
+                elif name in IDQTableByName:
+                       IDQDBTable = dbtables.DBTable(attrs, connection = self.connection)
+                       IDQDBTable.tableName = IDQTableByName[name].tableName
+                       IDQDBTable.validcolumns = IDQTableByName[name].validcolumns
+                       IDQDBTable.loadcolumns = IDQTableByName[name].loadcolumns
+                       IDQDBTable.constraints = IDQTableByName[name].constraints
+                       IDQDBTable.next_id = IDQTableByName[name].next_id
+                       IDQDBTable.RowType = IDQTableByName[name].RowType
+                       IDQDBTable.how_to_index = IDQTableByName[name].how_to_index
+                       return IDQDBTable
+                return dbtables.DBTable(attrs, connection = self.connection)
+
+        ContentHandler.startTable = startTable
+
+        return ContentHandler
+
+
+
 
 
 def coinc_to_ovl_data(xmldoc):
@@ -179,84 +374,5 @@ def coinc_to_triggers(xmldoc, trigger_types):
 
     
     
-    
-    
-    
-    
-	
-	
-	
-	
-	
-	
-	
-
-
-#
-# =============================================================================
-#
-#                              glitch:table
-#
-# =============================================================================
-#
-
-
-
-
-
-
-GlitchID = ilwd.get_ilwdchar_class(u"glitch", u"event_id")
-
-class GlitchTable(table.Table):
-
-    tableName = 'glitch:table'
-    validcolumns = {
-        'event_id': 'ilwd:char',
-        'ifo': 'lstring',
-        'gps': 'int_4s',
-        'gps_ns': 'int_4s',
-        'rank': 'real_4',
-        'fap': 'real_4',
-        'likelihood': 'real_4',
-        }
-    next_id = GlitchID(0)
-
-class Glitch(object):
-
-    __slots__ = GlitchTable.validcolumns.keys()
-
-
-GlitchTable.RowType = Glitch
-
-
-#
-# =============================================================================
-#
-#                              ovl_data:table
-#
-# =============================================================================
-#
-
-OVLDataID = ilwd.get_ilwdchar_class(u"ovl_data", u"event_id")
-
-class OVLDataTable(table.Table):
-
-    tableName = 'ovl_data:table'
-    validcolumns = {
-        'event_id': 'ilwd:char',
-        'ifo': 'lstring',
-        'aux_channel': 'lstring',
-        'veto_thr': 'real_4',
-        'veto_win': 'real_4',
-        }
-    next_id = OVLDataID(0)
-
-class OVLData(object):
-
-    __slots__ = OVLDataTable.validcolumns.keys()
-
-
-OVLDataTable.RowType = OVLData
-
 ##@}
 

@@ -1139,8 +1139,8 @@ def datfilename_to_xmldocs(
     gchproc = process.register_to_xmldoc(gchxml_doc, prog, options, version = version)
     clnproc = process.register_to_xmldoc(clnxml_doc, prog, options, version = version)
 
-    gchTable = lsctables.New(lsctables.IDQGlitchTable)  # instantiate glitch table objects
-    clnTable = lsctables.New(lsctables.IDQGlitchTable)
+    gchTable = lsctables.New(idq_tables.IDQGlitchTable)  # instantiate glitch table objects
+    clnTable = lsctables.New(idq_tables.IDQGlitchTable)
 	
     gchCoincDefTable = lsctables.New(lsctables.CoincDefTable) # instantiate coinc_def table objects
     clnCoincDefTable = lsctables.New(lsctables.CoincDefTable)
@@ -1180,8 +1180,8 @@ def datfilename_to_xmldocs(
 
         # setup ovl specific tables
 
-        gchOVLTable = lsctables.New(lsctables.OVLDataTable)  # instantiate table objects
-        clnOVLTable = lsctables.New(lsctables.OVLDataTable)
+        gchOVLTable = lsctables.New(idq_tables.OVLDataTable)  # instantiate table objects
+        clnOVLTable = lsctables.New(idq_tables.OVLDataTable)
         gch_ligolw_element.appendChild(gchOVLTable)  # add tables to document tree
         cln_ligolw_element.appendChild(clnOVLTable)
 
@@ -1323,7 +1323,7 @@ def datfilename_to_xmldocs(
                 # add entries to coinc_map table
                 coinc_map_row = lsctables.CoincMap()
                 coinc_map_row.coinc_event_id = coinc_row.coinc_event_id
-                coinc_map_row.table_name = table.StripTableName(lsctables.IDQGlitchTable.tableName)
+                coinc_map_row.table_name = table.StripTableName(idq_tables.IDQGlitchTable.tableName)
                 coinc_map_row.event_id = idq_glitch_row.event_id
                 gchCoincMapTable.append(coinc_map_row)
 				
@@ -1355,13 +1355,13 @@ def datfilename_to_xmldocs(
                 # add entries to coinc_map table
                 coinc_map_row = lsctables.CoincMap()
                 coinc_map_row.coinc_event_id = coinc_row.coinc_event_id
-                coinc_map_row.table_name = table.StripTableName(lsctables.IDQGlitchTable.tableName)
+                coinc_map_row.table_name = table.StripTableName(idq_tables.IDQGlitchTable.tableName)
                 coinc_map_row.event_id = idq_glitch_row.event_id
                 gchCoincMapTable.append(coinc_map_row)
 				
                 coinc_map_row = lsctables.CoincMap()
                 coinc_map_row.coinc_event_id = coinc_row.coinc_event_id
-                coinc_map_row.table_name = table.StripTableName(lsctables.OVLDataTable.tableName)
+                coinc_map_row.table_name = table.StripTableName(idq_tables.OVLDataTable.tableName)
                 coinc_map_row.event_id = ovl_row.event_id
                 gchCoincMapTable.append(coinc_map_row)
 				
@@ -1390,13 +1390,13 @@ def datfilename_to_xmldocs(
                 # add entries to coinc_map table
                 coinc_map_row = lsctables.CoincMap()
                 coinc_map_row.coinc_event_id = coinc_row.coinc_event_id
-                coinc_map_row.table_name = table.StripTableName(lsctables.IDQGlitchTable.tableName)
+                coinc_map_row.table_name = table.StripTableName(idq_tables.IDQGlitchTable.tableName)
                 coinc_map_row.event_id = idq_glitch_row.event_id
                 clnCoincMapTable.append(coinc_map_row)
 				
                 coinc_map_row = lsctables.CoincMap()
                 coinc_map_row.coinc_event_id = coinc_row.coinc_event_id
-                coinc_map_row.table_name = table.StripTableName(lsctables.OVLDataTable.tableName)
+                coinc_map_row.table_name = table.StripTableName(idq_tables.OVLDataTable.tableName)
                 coinc_map_row.event_id = ovl_row.event_id
                 clnCoincMapTable.append(coinc_map_row)
 

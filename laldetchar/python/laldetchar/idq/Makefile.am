@@ -19,6 +19,7 @@ pymodule_PYTHON = \
 	idq_gdb_utils.py \
 	idq.py \
 	idq_summary_plots.py \
+	idq_tables_dbutils.py \
 	idq_tables.py \
 	ovl.py \
 	pdf_estimation.py \
