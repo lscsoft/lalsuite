@@ -234,9 +234,7 @@ typedef struct {
   /* orbital parameters */
   REAL8 orbitPeriod;		/**< binary-system orbital period in s */
   REAL8 orbitasini;		/**< amplitude of radial motion */
-  INT4 orbitTpSSBsec;		/**< time of periapse passage */
-  INT4 orbitTpSSBnan;
-  CHAR *orbitTpSSBMJD;		/**< in MJD(TT) format */
+  LIGOTimeGPS orbitTp;		/**< epoch of periapse passage */
   REAL8 orbitArgp;		/**< angle of periapse */
   REAL8 orbitEcc;		/**< orbital eccentricity */
 
@@ -497,24 +495,11 @@ int main(int argc,char *argv[])
   REAL8 orbit_argp = 0;
   if ( LALUserVarWasSet(&uvar.orbitasini) && (uvar.orbitasini > 0) )
     {
-      orbit_tp.gpsSeconds = uvar.orbitTpSSBsec;
-      orbit_tp.gpsNanoSeconds = uvar.orbitTpSSBnan;
+      orbit_tp = uvar.orbitTp;
       orbit_argp = uvar.orbitArgp;
       orbit_asini = uvar.orbitasini;
       orbit_ecc = uvar.orbitEcc;
       orbit_period = uvar.orbitPeriod;
-      if (LALUserVarWasSet(&uvar.orbitTpSSBMJD))
-	{
-          if ( XLALTranslateStringMJDTTtoGPS ( &(orbit_tp), uvar.orbitTpSSBMJD ) == NULL ) {
-            XLALPrintError("\nXLALTranslateStringMJDTTtoGPS(%s) failed\n", uvar.orbitTpSSBMJD );
-            return COMPUTEFSTATISTIC_EINPUT;
-          }
-	}
-      else
-	{
-	  orbit_tp.gpsSeconds = uvar.orbitTpSSBsec;
-	  orbit_tp.gpsNanoSeconds = uvar.orbitTpSSBnan;
-	}
     }
 
   /* count number of templates */
@@ -1141,9 +1126,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
 
   LALregREALUserStruct(status, 	orbitasini, 	 0,  UVAR_OPTIONAL, "Binary Orbit: Projected semi-major axis in light-seconds [Default: 0.0]");
   LALregREALUserStruct(status, 	orbitPeriod, 	 0,  UVAR_OPTIONAL, "Binary Orbit: Period in seconds");
-  LALregINTUserStruct(status, 	orbitTpSSBsec, 	 0,  UVAR_OPTIONAL, "Binary Orbit: (true) time of periapsis in SSB frame, GPS seconds");
-  LALregINTUserStruct(status, 	orbitTpSSBnan, 	 0,  UVAR_OPTIONAL, "Binary Orbit: (true) time of periapsis in SSB frame, GPS nanoseconds part");
-  LALregSTRINGUserStruct(status,orbitTpSSBMJD, 	 0,  UVAR_OPTIONAL, "ALTERNATIVE: (true) time of periapsis in the SSB frame in MJD(TT)");
+  XLALregEPOCHUserStruct(	orbitTp, 	 0,  UVAR_OPTIONAL, "Binary Orbit: (true) epoch of periapsis: use 'xx.yy[GPS]' or 'xx.yyMJD' (for MJD(TT)) format.");
   LALregREALUserStruct(status, 	orbitArgp, 	 0,  UVAR_OPTIONAL, "Binary Orbit: Orbital argument of periapse in radians");
   LALregREALUserStruct(status, 	orbitEcc, 	 0,  UVAR_OPTIONAL, "Binary Orbit: Orbital eccentricity");
 
@@ -1911,21 +1894,6 @@ checkUserInputConsistency (LALStatus *status, const UserInput_t *uvar)
       XLALPrintError ("\nNegative value of projected orbital semi-major axis not allowed!\n\n");
       ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
     }
-   if ( LALUserVarWasSet(&uvar->orbitTpSSBMJD) && (LALUserVarWasSet(&uvar->orbitTpSSBsec) || LALUserVarWasSet(&uvar->orbitTpSSBnan)))
-    {
-      XLALPrintError ("\nSet only uvar->orbitTpSSBMJD OR uvar->orbitTpSSBsec/nan to specify periapse passage time!\n\n");
-      ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
-    }
-  if ( LALUserVarWasSet(&uvar->orbitTpSSBsec) && (uvar->orbitTpSSBsec < 0) )
-    {
-      XLALPrintError ("\nNegative value of seconds part of the true time of orbital periapsis not allowed!\n\n");
-      ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
-    }
-  if ( LALUserVarWasSet(&uvar->orbitTpSSBnan) && ((uvar->orbitTpSSBnan < 0) || (uvar->orbitTpSSBnan >= 1e9)) )
-    {
-      XLALPrintError ("\nTime of nanoseconds part the true time of orbital periapsis must lie in range (0, 1e9]!\n\n");
-      ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
-    }
   if ( LALUserVarWasSet(&uvar->orbitArgp) && ((uvar->orbitArgp < 0) || (uvar->orbitArgp >= LAL_TWOPI)) )
     {
       XLALPrintError ("\nOrbital argument of periapse must lie in range [0 2*PI)!\n\n");
@@ -2140,8 +2108,8 @@ write_PulsarCandidate_to_fp ( FILE *fp,  const PulsarCandidate *pulsarParams, co
     {
       fprintf (fp, "orbitPeriod       = % .16g;\n", pulsarParams->Doppler.period );
       fprintf (fp, "orbitasini        = % .16g;\n", pulsarParams->Doppler.asini );
-      fprintf (fp, "orbitTpSSBsec     = % .8d;\n", pulsarParams->Doppler.tp.gpsSeconds );
-      fprintf (fp, "orbitTpSSBnan     = % .8d;\n", pulsarParams->Doppler.tp.gpsNanoSeconds );
+      fprintf (fp, "orbitTp           = %s;\n", tmpStr = XLALGPSToStr ( NULL, &(pulsarParams->Doppler.tp) ));
+      XLALFree ( tmpStr );
       fprintf (fp, "orbitArgp         = % .16g;\n", pulsarParams->Doppler.argp );
       fprintf (fp, "orbitEcc          = % .16g;\n", pulsarParams->Doppler.ecc );
     }

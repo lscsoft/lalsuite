@@ -187,9 +187,7 @@ typedef struct
 
   REAL8 orbitasini;	        /**< Projected orbital semi-major axis in seconds (a/c) */
   REAL8 orbitEcc;	        /**< Orbital eccentricity */
-  INT4  orbitTpSSBsec;	/**< 'observed' (SSB) time of periapsis passage. Seconds. */
-  INT4  orbitTpSSBnan;	/**< 'observed' (SSB) time of periapsis passage. Nanoseconds. */
-  CHAR *orbitTpSSBMJD;       /**< 'observed' (SSB) time of periapsis passage. MJD(TT). */
+  LIGOTimeGPS  orbitTp;		/**< 'true' epoch of periapsis passage */
   REAL8 orbitPeriod;		/**< Orbital period (seconds) */
   REAL8 orbitArgp;	        /**< Argument of periapsis (radians) */
 
@@ -1097,40 +1095,26 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 	  Dt = (uvar->orbitPeriod/LAL_TWOPI)*(uasc-uvar->orbitEcc*sin(uasc));
 	  pulparams.T0 = pulparams.Tasc + Dt;
 	}
-	uvar->orbitTpSSBsec = (UINT4)floor(pulparams.T0);
-	uvar->orbitTpSSBnan = (UINT4)floor((pulparams.T0 - uvar->orbitTpSSBsec)*1e9);
+	uvar->orbitTp.gpsSeconds = (UINT4)floor(pulparams.T0);
+	uvar->orbitTp.gpsNanoSeconds = (UINT4)floor((pulparams.T0 - uvar->orbitTp.gpsSeconds)*1e9);
       }
     }
     BOOLEAN set1 = XLALUserVarWasSet(&uvar->orbitasini);
     BOOLEAN set2 = XLALUserVarWasSet(&uvar->orbitEcc);
     BOOLEAN set3 = XLALUserVarWasSet(&uvar->orbitPeriod);
     BOOLEAN set4 = XLALUserVarWasSet(&uvar->orbitArgp);
-    BOOLEAN set5 = XLALUserVarWasSet(&uvar->orbitTpSSBsec);
-    BOOLEAN set6 = XLALUserVarWasSet(&uvar->orbitTpSSBnan);
-    BOOLEAN set7 = XLALUserVarWasSet(&uvar->orbitTpSSBMJD);
+    BOOLEAN set5 = XLALUserVarWasSet(&uvar->orbitTp);
 
-    if (set1 || set2 || set3 || set4 || set5 || set6 || set7)
+    if (set1 || set2 || set3 || set4 || set5 )
     {
-      if ( (uvar->orbitasini > 0) && !(set1 && set2 && set3 && set4 && (set5 || set7)) ) {
+      if ( (uvar->orbitasini > 0) && !(set1 && set2 && set3 && set4 && set5 ) ) {
         XLAL_ERROR ( XLAL_EINVAL, "\nPlease either specify  ALL orbital parameters or NONE!\n\n");
       }
       if ( (uvar->orbitEcc < 0) || (uvar->orbitEcc > 1) ) {
         XLAL_ERROR ( XLAL_EINVAL, "\nEccentricity = %g has to lie within [0, 1]\n\n", uvar->orbitEcc );
       }
 
-      if ( set7 && (!set5 && !set6) )
-	{
-          XLAL_CHECK ( XLALTranslateStringMJDTTtoGPS ( &(cfg->pulsar.Doppler.tp), uvar->orbitTpSSBMJD ) != NULL, XLAL_EFUNC );
-	}
-      else if ( set5 && !set7 )
-	{
-	  cfg->pulsar.Doppler.tp.gpsSeconds = uvar->orbitTpSSBsec;
-	  cfg->pulsar.Doppler.tp.gpsNanoSeconds = uvar->orbitTpSSBnan;
-	}
-      else if ((set7 && set5) || (set7 && set6))
-	{
-	  XLAL_ERROR ( XLAL_EINVAL, "\nPlease either specify time of periapse in GPS OR MJD, not both!\n\n");
-	}
+      cfg->pulsar.Doppler.tp = uvar->orbitTp;
 
       /* fill in orbital parameter structure */
       cfg->pulsar.Doppler.period = uvar->orbitPeriod;
@@ -1326,9 +1310,7 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   /* binary-system orbital parameters */
   XLALregREALUserStruct (  orbitasini,           0, UVAR_OPTIONAL, "Projected orbital semi-major axis in seconds (a/c)");
   XLALregREALUserStruct (  orbitEcc,             0, UVAR_OPTIONAL, "Orbital eccentricity");
-  XLALregINTUserStruct (   orbitTpSSBsec,        0, UVAR_OPTIONAL, "'true' (SSB) time of periapsis passage. Seconds.");
-  XLALregINTUserStruct (   orbitTpSSBnan,        0, UVAR_OPTIONAL, "'true' (SSB) time of periapsis passage. Nanoseconds.");
-  XLALregSTRINGUserStruct (orbitTpSSBMJD,        0, UVAR_OPTIONAL, "'true' (SSB) time of periapsis passage in MJD(TT).");
+  XLALregEPOCHUserStruct ( orbitTp,        	 0, UVAR_OPTIONAL, "True epoch of periapsis passage: format 'xx.yy[GPS]' or 'xx.yyMJD' (for MJD(TT))");
   XLALregREALUserStruct (  orbitPeriod,          0, UVAR_OPTIONAL, "Orbital period (seconds)");
   XLALregREALUserStruct (  orbitArgp,            0, UVAR_OPTIONAL, "Argument of periapsis (radians)");
 

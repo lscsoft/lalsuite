@@ -84,6 +84,11 @@ s3_f2dot=-2e-19
 s3_transientWindowType=rect
 s3_transientStartTime=701230229
 s3_transientTauDays=0.5
+s3_orbitasini=1.44
+s3_orbitPeriod=68400
+s3_orbitTp=57058.434479MJD
+s3_orbitArgp=1
+s3_orbitEcc=0.1
 # --------------------
 
 injString="{Alpha=${s1_Alpha};Delta=${s1_Delta};refTime=${s1_refTime};Freq=${s1_Freq};f1dot=${s1_f1dot};f2dot=${s1_f2dot};h0=${s1_h0};cosi=${s1_cosi};psi=${s1_psi};phi0=${s1_phi0};}"
@@ -130,6 +135,12 @@ echo "phi0 = ${s3_phi0}" >> ${injFile2}
 echo "transientWindowType = ${s3_transientWindowType}"  >> ${injFile2}
 echo "transientStartTime = ${s3_transientStartTime}"  >> ${injFile2}
 echo "transientTauDays = ${s3_transientTauDays}"  >> ${injFile2}
+echo "orbitasini = ${s3_orbitasini}" >> ${injFile2}
+echo "orbitPeriod = ${s3_orbitPeriod}" >> ${injFile2}
+echo "orbitTp = ${s3_orbitTp}" >> ${injFile2}
+echo "orbitArgp = ${s3_orbitArgp}" >> ${injFile2}
+echo "orbitEcc = ${s3_orbitEcc}" >> ${injFile2}
+
 echo >> ${injFile2}
 
 
@@ -188,7 +199,7 @@ if ! eval $cmdline; then
     exit 1
 fi
 echo "---------- mfdv4: inject third signal on top ----------"
-sig2="--refTime=${s3_refTime} --h0=${s3_h0} --cosi=${s3_cosi} --psi=${s3_psi} --phi0=${s3_phi0} --Freq=${s3_Freq} --Alpha=${s3_Alpha} --Delta=${s3_Delta} --f1dot=${s3_f1dot} --f2dot=${s3_f2dot} --transientWindowType=${s3_transientWindowType} --transientStartTime=${s3_transientStartTime} --transientTauDays=${s3_transientTauDays}"
+sig2="--refTime=${s3_refTime} --h0=${s3_h0} --cosi=${s3_cosi} --psi=${s3_psi} --phi0=${s3_phi0} --Freq=${s3_Freq} --Alpha=${s3_Alpha} --Delta=${s3_Delta} --f1dot=${s3_f1dot} --f2dot=${s3_f2dot} --transientWindowType=${s3_transientWindowType} --transientStartTime=${s3_transientStartTime} --transientTauDays=${s3_transientTauDays} --orbitasini=${s3_orbitasini} --orbitPeriod=${s3_orbitPeriod} --orbitTp=${s3_orbitTp} --orbitArgp=${s3_orbitArgp} --orbitEcc=${s3_orbitEcc}"
 
 ##----- first IFO
 out_IFO1="--IFO=${IFO1} --noiseSFTs=${sftsv4_1} --window=None --outSFTbname=${sftsv4_1}"

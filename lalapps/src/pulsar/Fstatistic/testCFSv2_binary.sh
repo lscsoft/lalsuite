@@ -41,8 +41,8 @@ orbitasini=4.94036957341473
 dopplermax=0.02
 ##orbitArgp=5.2
 orbitArgp=2.88
-TpSec=22665
-TpNS=1234567
+orbitTp=22665.001234567GPS
+
 if [ -z "$orbitEcc" ]; then
     orbitEcc=0.35
 fi
@@ -65,20 +65,20 @@ echo "Injection parameters:"
 echo "Alpha=$Alpha, Delta=$Delta"
 echo "h0=$h0, cosi=$cosi, psi=$psi, phi0=$phi0"
 echo "Freq=$Freq, f1dot=$f1dot"
-echo "orbitasini=$orbitasini, orbitPeriod=$orbitPeriod, orbitEcc=$orbitEcc, orbitArgp=$orbitArgp, orbitTpSSBsec=$TpSec, orbitTpSSBnan=$TpNS"
+echo "orbitasini=$orbitasini, orbitPeriod=$orbitPeriod, orbitEcc=$orbitEcc, orbitArgp=$orbitArgp, orbitTp=$orbitTp"
 echo "--------------------------------------------------"
 echo
 
 ## ---------- generate data with binary injection
 outfileCFS="CFS.dat";
-mfd_CL1="--refTime=${refTime} --Alpha=$Alpha --Delta=$Delta --Tsft=$Tsft --startTime=$startTime --duration=$duration --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --f1dot=$f1dot --orbitasini=$orbitasini --orbitPeriod=$orbitPeriod --orbitEcc=$orbitEcc --orbitArgp=$orbitArgp --orbitTpSSBsec=$TpSec --orbitTpSSBnan=$TpNS"
+mfd_CL1="--refTime=${refTime} --Alpha=$Alpha --Delta=$Delta --Tsft=$Tsft --startTime=$startTime --duration=$duration --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --f1dot=$f1dot --orbitasini=$orbitasini --orbitPeriod=$orbitPeriod --orbitEcc=$orbitEcc --orbitArgp=$orbitArgp --orbitTp=$orbitTp"
 mfd_CL="${mfd_CL1} --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir/catsft.sft --outSingleSFT --IFO=$IFO"
 cmdline="$mfd_code $mfd_CL"
 if [ "$DEBUG" ]; then echo $cmdline; fi
 echo -n "Running $cmdline ... "
 if ! eval "$cmdline &> /dev/null"; then
     echo "lalapps_Makefakedata_v4 failed"
-    exit;
+    exit 1;
 fi
 echo "done."
 
@@ -91,7 +91,7 @@ resPFS=`echo $resPFS0 | awk '{printf "%g", $1}'`
 echo "done:         2F_PFS = $resPFS"
 
 ## ---------- targeted CFSv2 search
-cfs_CL=" --refTime=${refTime} --Alpha=$Alpha --Delta=$Delta  --Freq=$Freq --f1dot=$f1dot --orbitasini=$orbitasini --orbitPeriod=$orbitPeriod --orbitEcc=$orbitEcc --orbitArgp=$orbitArgp --orbitTpSSBsec=$TpSec --orbitTpSSBnan=$TpNS --DataFiles='$SFTdir/*.sft' --SignalOnly --dopplermax=$dopplermax"
+cfs_CL=" --refTime=${refTime} --Alpha=$Alpha --Delta=$Delta  --Freq=$Freq --f1dot=$f1dot --orbitasini=$orbitasini --orbitPeriod=$orbitPeriod --orbitEcc=$orbitEcc --orbitArgp=$orbitArgp --orbitTp=$orbitTp --DataFiles='$SFTdir/*.sft' --SignalOnly --dopplermax=$dopplermax"
 cmdline="$cfs_code $cfs_CL  --outputLoudest=$outfileCFS"
 if [ "$DEBUG" ]; then echo $cmdline; fi
 echo -n "Running $cmdline ... "
