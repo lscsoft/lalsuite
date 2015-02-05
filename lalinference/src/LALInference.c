@@ -1203,6 +1203,10 @@ int LALInferenceFprintParameterNonFixedHeaders(FILE *out, LALInferenceVariables 
         vector = *((UINT4Vector **)head->value);
         for(i=0; i<(int)vector->length; i++) fprintf(out, "%s%i\t", LALInferenceTranslateInternalToExternalParamName(head->name),i);
       }
+      else if(head->type==LALINFERENCE_REAL8Vector_t)
+      {
+        // Handle this manually with routines like LALInferenceFprintSplineCalibrationHeader() for now
+      }
       else fprintf(out, "%s\t", LALInferenceTranslateInternalToExternalParamName(head->name));
     }
     head = head->next;
