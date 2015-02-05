@@ -1742,15 +1742,13 @@ XLALGetLogString ( const ConfigVariables *cfg )
     XLAL_CHECK_NULL ( snprintf ( buf, BUFLEN, "%%%% GPS starttime         = %d (%s GMT)\n", startTimeSeconds, startTimeUTCString ) < BUFLEN, XLAL_EBADLEN );
     XLALFree ( startTimeUTCString );
   }
-  char *tmpStr;
+  char bufGPS[32];
   XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, buf )) != NULL, XLAL_EFUNC );
   XLAL_CHECK_NULL ( snprintf ( buf, BUFLEN, "%%%% Total time spanned    = %.0f s (%.2f hours)\n", cfg->Tspan, cfg->Tspan/3600.0 ) < BUFLEN, XLAL_EBADLEN );
   XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, buf )) != NULL, XLAL_EFUNC );
-  XLAL_CHECK_NULL ( snprintf (buf, BUFLEN, "%%%% InternalRefTime       = %s\n", tmpStr = XLALGPSToStr ( NULL, &(cfg->internalRefTime)) ) < BUFLEN, XLAL_EBADLEN );
-  XLALFree ( tmpStr );
+  XLAL_CHECK_NULL ( snprintf (buf, BUFLEN, "%%%% InternalRefTime       = %s\n", XLALGPSToStr ( bufGPS, &(cfg->internalRefTime)) ) < BUFLEN, XLAL_EBADLEN );
   XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, buf )) != NULL, XLAL_EFUNC );
-  XLAL_CHECK_NULL ( snprintf (buf, BUFLEN, "%%%% Pulsar-params refTime = %s\n", tmpStr = XLALGPSToStr ( NULL, &(cfg->searchRegion.refTime) )) < BUFLEN, XLAL_EBADLEN );
-  XLALFree ( tmpStr );
+  XLAL_CHECK_NULL ( snprintf (buf, BUFLEN, "%%%% Pulsar-params refTime = %s\n", XLALGPSToStr ( bufGPS, &(cfg->searchRegion.refTime) )) < BUFLEN, XLAL_EBADLEN );
   XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, buf )) != NULL, XLAL_EFUNC );
   XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, "%% Spin-range at refTime: fkdot = [ " )) != NULL, XLAL_EFUNC );
   for (UINT4 k=0; k < PULSAR_MAX_SPINS; k ++ )
@@ -2076,9 +2074,8 @@ write_PulsarCandidate_to_fp ( FILE *fp,  const PulsarCandidate *pulsarParams, co
     return -1;
 
   fprintf (fp, "\n");
-  char *tmpStr;
-  fprintf (fp, "refTime  = %s;\n", tmpStr = XLALGPSToStr ( NULL, &pulsarParams->Doppler.refTime ) );
-  XLALFree(tmpStr);
+  char bufGPS[32];
+  fprintf (fp, "refTime  = %s;\n", XLALGPSToStr ( bufGPS, &pulsarParams->Doppler.refTime ) );
   fprintf (fp, "\n");
 
   /* Amplitude parameters with error-estimates */
@@ -2108,8 +2105,7 @@ write_PulsarCandidate_to_fp ( FILE *fp,  const PulsarCandidate *pulsarParams, co
     {
       fprintf (fp, "orbitPeriod       = % .16g;\n", pulsarParams->Doppler.period );
       fprintf (fp, "orbitasini        = % .16g;\n", pulsarParams->Doppler.asini );
-      fprintf (fp, "orbitTp           = %s;\n", tmpStr = XLALGPSToStr ( NULL, &(pulsarParams->Doppler.tp) ));
-      XLALFree ( tmpStr );
+      fprintf (fp, "orbitTp           = %s;\n", XLALGPSToStr ( bufGPS, &(pulsarParams->Doppler.tp) ));
       fprintf (fp, "orbitArgp         = % .16g;\n", pulsarParams->Doppler.argp );
       fprintf (fp, "orbitEcc          = % .16g;\n", pulsarParams->Doppler.ecc );
     }

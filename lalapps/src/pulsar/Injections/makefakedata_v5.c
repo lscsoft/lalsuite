@@ -396,9 +396,8 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
           XLALGPSAdd ( &maxStartTime, uvar->duration );
           constraints.minStartTime = &minStartTime;
           constraints.maxStartTime = &maxStartTime;
-          char *tmpStr1, *tmpStr2;
-          XLALPrintWarning ( "Only noise-SFTs between GPS [%s, %s] will be used!\n", tmpStr1=XLALGPSToStr(NULL, &minStartTime), tmpStr2=XLALGPSToStr(NULL, &maxStartTime) );
-          XLALFree ( tmpStr1 ); XLALFree ( tmpStr2 );
+          char bufGPS1[32], bufGPS2[32];
+          XLALPrintWarning ( "Only noise-SFTs between GPS [%s, %s] will be used!\n", XLALGPSToStr(bufGPS1, &minStartTime), XLALGPSToStr(bufGPS2, &maxStartTime) );
         } /* if start+duration given */
       XLAL_CHECK ( (cfg->noiseCatalog = XLALSFTdataFind ( uvar->noiseSFTs, &constraints )) != NULL, XLAL_EFUNC );
       XLAL_CHECK (  cfg->noiseCatalog->length > 0, XLAL_EINVAL, "No noise-SFTs matching (start+duration, timestamps) were found!\n" );
