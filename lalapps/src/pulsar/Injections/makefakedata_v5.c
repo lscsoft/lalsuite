@@ -494,7 +494,7 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALregSTRINGUserStruct( ephemSun, 	 	0,  UVAR_OPTIONAL, "Sun ephemeris file to use");
 
   /* start + duration of timeseries */
-  XLALregEPOCHUserStruct (startTime,            'G', UVAR_OPTIONAL, "Start-time of requested signal in detector-frame (format 'xx.yy[GPS]' or 'xx.yyMJD' for MJD(TT))");
+  XLALregEPOCHUserStruct (startTime,            'G', UVAR_OPTIONAL, "Start-time of requested signal in detector-frame (format 'xx.yy[GPS|MJD]')");
   XLALregINTUserStruct (  duration,              0,  UVAR_OPTIONAL, "Duration of requested signal in seconds");
   XLALregLISTUserStruct ( timestampsFiles,       0,  UVAR_OPTIONAL, "ALTERNATIVE: File to read timestamps from (file-format: lines with <seconds> <nanoseconds>)");
 

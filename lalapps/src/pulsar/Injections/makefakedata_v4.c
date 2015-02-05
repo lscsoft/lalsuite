@@ -1270,7 +1270,7 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALregSTRINGUserStruct( ephemSun, 	 	0,  UVAR_OPTIONAL, "Sun ephemeris file to use");
 
   /* start + duration of timeseries */
-  XLALregEPOCHUserStruct ( startTime,           'G', UVAR_OPTIONAL, "Start-time of requested signal in detector-frame (format 'xx.yy[GPS]' or 'xx.yyMJD' (for MJD(TT)))");
+  XLALregEPOCHUserStruct ( startTime,           'G', UVAR_OPTIONAL, "Start-time of requested signal in detector-frame (format 'xx.yy[GPS|MJD]')");
   XLALregINTUserStruct (  duration,              0,  UVAR_OPTIONAL, "Duration of requested signal in seconds");
   XLALregSTRINGUserStruct ( timestampsFile,      0,  UVAR_OPTIONAL, "ALTERNATIVE: File to read timestamps from (file-format: lines with <seconds> <nanoseconds>)");
 
@@ -1285,7 +1285,7 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALregREALUserStruct (  tukeyBeta,            0, UVAR_OPTIONAL, "Fraction of Tukey window which is transition (0.0=rect, 1.0=Hann)");
 
   /* pulsar params */
-  XLALregEPOCHUserStruct ( refTime,             'S', UVAR_OPTIONAL, "Pulsar SSB reference epoch: format 'xx.yy[GPS]' or 'xx.yyMJD' (for MJD(TT)) [default: startTime]");
+  XLALregEPOCHUserStruct ( refTime,             'S', UVAR_OPTIONAL, "Pulsar SSB reference epoch: format 'xx.yy[GPS|MJD]' [default: startTime]");
 
   XLALregREALUserStruct (  Alpha,                0, UVAR_OPTIONAL, "Right-ascension/longitude of pulsar in radians");
   XLALregSTRINGUserStruct (RA,                   0, UVAR_OPTIONAL, "ALTERNATIVE: Righ-ascension/longitude of pulsar in HMS 'hh:mm:ss.ssss'");
@@ -1309,7 +1309,7 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   /* binary-system orbital parameters */
   XLALregREALUserStruct (  orbitasini,           0, UVAR_OPTIONAL, "Projected orbital semi-major axis in seconds (a/c)");
   XLALregREALUserStruct (  orbitEcc,             0, UVAR_OPTIONAL, "Orbital eccentricity");
-  XLALregEPOCHUserStruct ( orbitTp,        	 0, UVAR_OPTIONAL, "True epoch of periapsis passage: format 'xx.yy[GPS]' or 'xx.yyMJD' (for MJD(TT))");
+  XLALregEPOCHUserStruct ( orbitTp,        	 0, UVAR_OPTIONAL, "True epoch of periapsis passage: format 'xx.yy[GPS|MJD]'");
   XLALregREALUserStruct (  orbitPeriod,          0, UVAR_OPTIONAL, "Orbital period (seconds)");
   XLALregREALUserStruct (  orbitArgp,            0, UVAR_OPTIONAL, "Argument of periapsis (radians)");
 

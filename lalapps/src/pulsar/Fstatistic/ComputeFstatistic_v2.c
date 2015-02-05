@@ -1126,7 +1126,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
 
   LALregREALUserStruct(status, 	orbitasini, 	 0,  UVAR_OPTIONAL, "Binary Orbit: Projected semi-major axis in light-seconds [Default: 0.0]");
   LALregREALUserStruct(status, 	orbitPeriod, 	 0,  UVAR_OPTIONAL, "Binary Orbit: Period in seconds");
-  XLALregEPOCHUserStruct(	orbitTp, 	 0,  UVAR_OPTIONAL, "Binary Orbit: (true) epoch of periapsis: use 'xx.yy[GPS]' or 'xx.yyMJD' (for MJD(TT)) format.");
+  XLALregEPOCHUserStruct(	orbitTp, 	 0,  UVAR_OPTIONAL, "Binary Orbit: (true) epoch of periapsis: use 'xx.yy[GPS|MJD]' format.");
   LALregREALUserStruct(status, 	orbitArgp, 	 0,  UVAR_OPTIONAL, "Binary Orbit: Orbital argument of periapse in radians");
   LALregREALUserStruct(status, 	orbitEcc, 	 0,  UVAR_OPTIONAL, "Binary Orbit: Orbital eccentricity");
 
@@ -1141,7 +1141,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   LALregREALUserStruct(status, 	metricMismatch,	'X', UVAR_OPTIONAL, "Maximal allowed mismatch for metric tiling");
   LALregSTRINGUserStruct(status,outputLogfile,	 0,  UVAR_OPTIONAL, "Name of log-file identifying the code + search performed");
   LALregSTRINGUserStruct(status,gridFile,	 0,  UVAR_OPTIONAL, "Load grid from this file: sky-grid or full-grid depending on --gridType.");
-  XLALregEPOCHUserStruct(refTime,	 	 0,  UVAR_OPTIONAL, "Reference SSB epoch for pulsar-parameters: use 'xx.yy[GPS]' or 'xx.yyMJD' (for MJD(TT)) format [Default: startTime]");
+  XLALregEPOCHUserStruct(refTime,	 	 0,  UVAR_OPTIONAL, "Reference SSB epoch for pulsar-parameters: use 'xx.yy[GPS|MJD]' format [Default: startTime]");
 
   LALregSTRINGUserStruct(status,outputFstat,	 0,  UVAR_OPTIONAL, "Output-file for F-statistic field over the parameter-space");
   LALregSTRINGUserStruct(status,outputLoudest,	 0,  UVAR_OPTIONAL, "Loudest F-statistic candidate + estimated MLE amplitudes");
@@ -1153,8 +1153,8 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   LALregREALUserStruct(status,FracCandidatesToKeep,0, UVAR_OPTIONAL, "Fraction of Fstat 'candidates' to keep.");
   LALregINTUserStruct(status,   clusterOnScanline, 0, UVAR_OPTIONAL, "Neighbors on each side for finding 1D local maxima on scanline");
 
-  XLALregEPOCHUserStruct ( minStartTime, 	 0,  UVAR_OPTIONAL, "Only use SFTs with timestamps starting from (including) this epoch (format 'xx.yy[GPS]' or 'xx.yyMJD')");
-  XLALregEPOCHUserStruct ( maxStartTime, 	 0,  UVAR_OPTIONAL, "Only use SFTs with timestamps up to (excluding) this epoch (format 'xx.yy[GPS]' or 'xx.yyMJD')");
+  XLALregEPOCHUserStruct ( minStartTime, 	 0,  UVAR_OPTIONAL, "Only use SFTs with timestamps starting from (including) this epoch (format 'xx.yy[GPS|MJD]') ");
+  XLALregEPOCHUserStruct ( maxStartTime, 	 0,  UVAR_OPTIONAL, "Only use SFTs with timestamps up to (excluding) this epoch (format 'xx.yy[GPS|MJD]')");
 
   LALregSTRINGUserStruct(status,outputFstatAtoms,0,  UVAR_OPTIONAL, "Output filename *base* for F-statistic 'atoms' {a,b,Fa,Fb}_alpha. One file per doppler-point.");
   LALregBOOLUserStruct(status,  outputSingleFstats,0,  UVAR_OPTIONAL, "In multi-detector case, also output single-detector F-stats?");
@@ -1194,7 +1194,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
 
   LALregSTRINGUserStruct(status,workingDir,     'w', UVAR_DEVELOPER, "Directory to use as work directory.");
   LALregREALUserStruct(status, 	timerCount, 	 0,  UVAR_DEVELOPER, "N: Output progress/timer info every N seconds");
-  XLALregEPOCHUserStruct(internalRefTime, 	 0,  UVAR_DEVELOPER, "Internal reference epoch for Fstat-computation: use 'xx.yy[GPS]' or 'xx.yyMJD' (for MJD(TT)) format [Default: midTime]");
+  XLALregEPOCHUserStruct(internalRefTime, 	 0,  UVAR_DEVELOPER, "Internal reference epoch for Fstat-computation: use 'xx.yy[GPS|MJD]' format [Default: midTime]");
 
   LALregBOOLUserStruct(status, 	projectMetric, 	 0,  UVAR_DEVELOPER, "Use projected metric on Freq=const subspact");
 
