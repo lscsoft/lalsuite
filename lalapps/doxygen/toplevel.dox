@@ -21,7 +21,7 @@
    \defgroup lalapps_pulsar_GCT			Global Correlation Transform Search  Applications
    \defgroup lalapps_pulsar_PowerFlux		PowerFlux Search Applications
    \defgroup lalapps_pulsar_loosely_coherent	PowerFlux Loosely Coherent Search Applications
-   \defgroup lalapps_pulsar_SideBand		SideBand Search Applications
+   \defgroup lalapps_pulsar_SidebandSearch	Sideband Search Applications
    \defgroup lalapps_pulsar_TwoSpect		TwoSpect Search Applications
    \defgroup lalapps_pulsar_crosscorr		Cross-Correlation Search Applications
    \defgroup lalapps_pulsar_CreateEphemeris	Ephemeris Creation Applications
