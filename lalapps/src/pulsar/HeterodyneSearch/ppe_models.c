@@ -1199,7 +1199,7 @@ void response_lookup_table( REAL8 t0, LALDetAndSource detNSource, INT4 timeSteps
  * \brief Convert sources parameters into amplitude and phase notation parameters
  *
  * Convert the physical source parameters into the amplitude and phase notation given in Eqns
- * 62-65 of \cite Jones:2015.
+ * 62-65 of \cite Jones:2015 .
  *
  * Note that \c phi0 is essentially the rotational phase of the pulsar.
  */
