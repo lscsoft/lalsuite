@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 104
+# serial 105
 
 # not present in older versions of pkg.m4
 m4_pattern_allow([^PKG_CONFIG(_(PATH|LIBDIR|SYSROOT_DIR|ALLOW_SYSTEM_(CFLAGS|LIBS)))?$])
@@ -1062,20 +1062,18 @@ AC_DEFUN([LALSUITE_USE_DOXYGEN],[
 
     # ignore some Doxygen warnings due to Doxygen bugs
     AC_SUBST([DOXYGEN_WARNING_REGEX],[])
-    LALSUITE_VERSION_COMPARE([1.8.1.2],[<=],[${doxygen_version}],[
-      LALSUITE_VERSION_COMPARE([${doxygen_version}],[<],[1.8.9.1],[
-        # https://bugzilla.gnome.org/show_bug.cgi?id=742151
-        DOXYGEN_WARNING_REGEX=["${DOXYGEN_WARNING_REGEX} -e '/^citelist/d'"]
-      ])
+    LALSUITE_VERSION_COMPARE([${doxygen_version}],[<],[1.8.9.1],[
+      # https://bugzilla.gnome.org/show_bug.cgi?id=742151
+      DOXYGEN_WARNING_REGEX=["${DOXYGEN_WARNING_REGEX} -e '/^citelist/d'"]
     ])
     LALSUITE_VERSION_COMPARE([1.8.8],[<=],[${doxygen_version}],[
-      LALSUITE_VERSION_COMPARE([${doxygen_version}],[<],[99.0],[
+      LALSUITE_VERSION_COMPARE([${doxygen_version}],[<=],[1.8.9.1],[
         # https://bugzilla.gnome.org/show_bug.cgi?id=743604
         DOXYGEN_WARNING_REGEX=["${DOXYGEN_WARNING_REGEX} -e '/warning: Duplicate anchor/d'"]
       ])
     ])
     LALSUITE_VERSION_COMPARE([1.8.8],[<=],[${doxygen_version}],[
-      LALSUITE_VERSION_COMPARE([${doxygen_version}],[<],[99.0],[
+      LALSUITE_VERSION_COMPARE([${doxygen_version}],[<=],[1.8.9.1],[
         # https://bugzilla.gnome.org/show_bug.cgi?id=743605
         DOXYGEN_WARNING_REGEX=["${DOXYGEN_WARNING_REGEX} -e '/warning: explicit link request/d'"]
       ])
