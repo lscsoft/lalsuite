@@ -17,7 +17,7 @@
 *  MA  02111-1307  USA
 */
 
-// ---------- NOTE: API is doxygen-documented in header file XLALError.h ----------
+/* - NOTE: API is doxygen-documented in header file XLALError.h - */
 
 #include <math.h>
 #include <stdio.h>
@@ -415,7 +415,7 @@ const char *XLALErrorString(int code)
     /* use this to report error strings... deals with possible mask for
      * errors arising from internal function calls */
 # define XLAL_ERROR_STRING(s) \
-    ( ( code & XLAL_EFUNC ) ? "Internal function call failed: " s : s )
+    ( ( code & XLAL_EFUNC ) ? "Internal function call failed: " s : (const char *) s )
     switch (code & ~XLAL_EFUNC) {
         /* these are standard error numbers */
     case XLAL_EIO:
