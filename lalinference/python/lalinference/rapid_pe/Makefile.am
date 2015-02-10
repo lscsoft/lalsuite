@@ -14,6 +14,7 @@ pymodule_PYTHON = \
     mcsampler.py \
     statutils.py \
     xmlutils.py \
+    common_cl.py \
 	$(END_OF_LIST)
 
 endif
