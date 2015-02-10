@@ -35,6 +35,11 @@
 #define CVS_DATE "$Date$"
 #define CVS_NAME_STRING "$Name$"
 
+#ifndef _OPENMP
+#define omp ignore
+#endif
+
+
 void ensemble_sampler(struct tagLALInferenceRunState *run_state) {
     INT4 mpi_rank, mpi_size;
     INT4 walker, nwalkers_per_thread;

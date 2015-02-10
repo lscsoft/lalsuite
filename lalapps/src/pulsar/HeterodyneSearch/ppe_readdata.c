@@ -353,7 +353,7 @@ number of detectors specified (no. dets = %d)\n", ml, ml, numDets);
 
       if( (numDt = count_csv( fakedt )) != ml*numDets ){
         fprintf(stderr, "Error... for %d harmonics the number of sample time steps for fake data must be %d times the \
-number of detectors specified (no. dets =\%d)\n", ml, ml, numDets);
+number of detectors specified (no. dets =%d)\n", ml, ml, numDets);
         exit(0);
       }
 
@@ -407,7 +407,7 @@ number of detectors specified (no. dets =\%d)\n", ml, ml, numDets);
 
     if ( count != ml*numDets ){
       fprintf(stderr, "Error... for %d harmonics the number of input files given must be %d times the number of \
-detectors specified (no. dets =\%d)\n", ml, ml, numDets);
+detectors specified (no. dets =%d)\n", ml, ml, numDets);
       exit(0);
     }
   }
