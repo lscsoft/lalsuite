@@ -283,13 +283,13 @@ Longer strings will be truncated.""" % {
             exit(0)
     elif args[0] == 'list':
         if args[1] == 'groups':
-            output(client.groups)
+            output(' '.join(client.groups))
             exit(0)
         elif args[1] == 'pipelines':
-            output(client.pipelines)
+            output(' '.join(client.pipelines))
             exit(0)
         elif args[1] == 'searches':
-            output(client.searches)
+            output(' '.join(client.searches))
             exit(0)
         else:
             output("Unknown list object. Please use 'groups', 'pipelines', or 'searches.'")
