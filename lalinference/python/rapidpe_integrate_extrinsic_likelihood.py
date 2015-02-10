@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 #
 # Copyright (C) 2012 Chris Pankow, Evan Ochsner, Richard O'Shaughnessy
 #
@@ -35,89 +36,34 @@ import glue.lal
 import pylal
 
 # our analysis stuff
-from lalinference.rapid_pe import lalsimutils, factored_likelihood, mcsampler, xmlutils
+from lalinference.rapid_pe import lalsimutils, factored_likelihood, mcsampler, xmlutils, common_cl
+from lalinference.rapid_pe.common_cl import param_limits
 
 from lalinference.bayestar import fits as bfits
 
 __author__ = "Evan Ochsner <evano@gravity.phys.uwm.edu>, Chris Pankow <pankow@gravity.phys.uwm.edu>, R. O'Shaughnessy"
 
 #
-# Pinnable parameters -- for command line processing
-#
-LIKELIHOOD_PINNABLE_PARAMS = ["right_ascension", "declination", "psi", "distance", "phi_orb", "t_ref", "inclination"]
-
-def get_pinned_params(opts):
-    """
-    Retrieve a dictionary of user pinned parameters and their pin values.
-    """
-    return dict([(p,v) for p, v in opts.__dict__.iteritems() if p in LIKELIHOOD_PINNABLE_PARAMS and v is not None]) 
-
-def get_unpinned_params(opts, params):
-    """
-    Retrieve a set of unpinned parameters.
-    """
-    return params - set([p for p, v in opts.__dict__.iteritems() if p in LIKELIHOOD_PINNABLE_PARAMS and v is not None])
-
-#
 # Option parsing
 #
-
 optp = OptionParser()
-optp.add_option("-c", "--cache-file", default=None, help="LIGO cache file containing all data needed.")
-optp.add_option("-C", "--channel-name", action="append", help="instrument=channel-name, e.g. H1=FAKE-STRAIN. Can be given multiple times for different instruments.")
-optp.add_option("-p", "--psd-file", action="append", help="instrument=psd-file, e.g. H1=H1_PSD.xml.gz. Can be given multiple times for different instruments.")
-optp.add_option("-k", "--skymap-file", help="Use skymap stored in given FITS file.")
-optp.add_option("-x", "--coinc-xml", help="gstlal_inspiral XML file containing coincidence information.")
-optp.add_option("-f", "--reference-freq", type=float, default=100.0, help="Waveform reference frequency. Required, default is 100 Hz.")
-optp.add_option("--fmin-template", dest='fmin_template', type=float, default=40, help="Waveform starting frequency.  Default is 40 Hz.") 
-optp.add_option("-a", "--approximant", default="TaylorT4", help="Waveform family to use for templates. Any approximant implemented in LALSimulation is valid.")
-optp.add_option("-A", "--amp-order", type=int, default=0, help="Include amplitude corrections in template waveforms up to this e.g. (e.g. 5 <==> 2.5PN), default is Newtonian order.")
-optp.add_option("--l-max", type=int, default=2, help="Include all (l,m) modes with l less than or equal to this value.")
-optp.add_option("-s", "--data-start-time", type=float, default=None, help="GPS start time of data segment. If given, must also give --data-end-time. If not given, sane start and end time will automatically be chosen.")
-optp.add_option("-e", "--data-end-time", type=float, default=None, help="GPS end time of data segment. If given, must also give --data-start-time. If not given, sane start and end time will automatically be chosen.")
-optp.add_option("-F", "--fmax", type=float, help="Upper frequency of signal integration. Default is use PSD's maximum frequency.")
-optp.add_option("-t", "--event-time", type=float, help="GPS time of the event --- probably the end time. Required if --coinc-xml not given.")
-optp.add_option("-i", "--inv-spec-trunc-time", type=float, default=8., help="Timescale of inverse spectrum truncation in seconds (Default is 8 - give 0 for no truncation)")
-optp.add_option("-w", "--window-shape", type=float, default=0, help="Shape of Tukey window to apply to data (default is no windowing)")
-optp.add_option("-m", "--time-marginalization", action="store_true", help="Perform marginalization over time via direct numerical integration. Default is false.")
-optp.add_option("-o", "--output-file", help="Save result to this file.")
-optp.add_option("-S", "--save-samples", action="store_true", help="Save sample points to output-file. Requires --output-file to be defined.")
-optp.add_option("-L", "--save-deltalnL", type=float, default=float("Inf"), help="Threshold on deltalnL for points preserved in output file.  Requires --output-file to be defined")
-optp.add_option("-P", "--save-P", type=float,default=0, help="Threshold on cumulative probability for points preserved in output file.  Requires --output-file to be defined")
+common_cl.add_datasource_params(optp)
+common_cl.add_output_params(optp)
 
 #
 # Add the integration options
 #
-integration_params = OptionGroup(optp, "Integration Parameters", "Control the integration with these options.")
-# Default is actually None, but that tells the integrator to go forever or until n_eff is hit.
-integration_params.add_option("--n-max", type=int, help="Total number of samples points to draw. If this number is hit before n_eff, then the integration will terminate. Default is 'infinite'.",default=1e7)
-integration_params.add_option("--n-eff", type=int, default=100, help="Total number of effective samples points to calculate before the integration will terminate. Default is 100")
-integration_params.add_option("--n-chunk", type=int, help="Chunk'.",default=100)
-integration_params.add_option("--convergence-tests-on",default=False,action='store_true')
-integration_params.add_option("--seed", type=int, help="Random seed to use. Default is to not seed the RNG.")
-integration_params.add_option("--no-adapt", action="store_true", help="Turn off adaptive sampling. Adaptive sampling is on by default.")
-integration_params.add_option("--adapt-weight-exponent", type=float, default=1.0, help="Exponent to use with weights (likelihood integrand) when doing adaptive sampling. Used in tandem with --adapt-floor-level to prevent overconvergence. Default is 1.0.")
-integration_params.add_option("--adapt-floor-level", type=float, default=0.1, help="Floor to use with weights (likelihood integrand) when doing adaptive sampling. This is necessary to ensure the *sampling* prior is non zero during adaptive sampling and to prevent overconvergence. Default is 0.1 (no floor)")
-integration_params.add_option("--interpolate-time", default=False,help="If using time marginalization, compute using a continuously-interpolated array. (Default=false)")
-optp.add_option_group(integration_params)
+common_cl.add_integration_params(optp)
 
 #
 # Add the intrinsic parameters
 #
-intrinsic_params = OptionGroup(optp, "Intrinsic Parameters", "Intrinsic parameters (e.g component mass) to use.")
-intrinsic_params.add_option("--pin-to-sim", help="Pin values to sim_inspiral table entry.")
-intrinsic_params.add_option("--mass1", type=float, help="Value of first component mass, in solar masses. Required if not providing coinc tables.")
-intrinsic_params.add_option("--mass2", type=float, help="Value of second component mass, in solar masses. Required if not providing coinc tables.")
-optp.add_option_group(intrinsic_params)
+common_cl.add_intrinsic_params(optp)
 
 #
 # Add the pinnable parameters
 #
-pinnable = OptionGroup(optp, "Pinnable Parameters", "Specifying these command line options will pin the value of that parameter to the specified value with a probability of unity.")
-for pin_param in LIKELIHOOD_PINNABLE_PARAMS:
-    option = "--" + pin_param.replace("_", "-")
-    pinnable.add_option(option, type=float, help="Pin the value of %s." % pin_param)
-optp.add_option_group(pinnable)
+common_cl.add_pinnable_params(optp)
 
 opts, args = optp.parse_args()
 
@@ -342,22 +288,6 @@ if opts.pin_to_sim:
     exit()
 
 #
-# Set up parameters and bounds
-#
-
-dmin = 1.    # min distance
-dmax = 300.  # max distance FOR ANY SOURCE EVER. EUCLIDEAN
-
-param_limits = { "psi": (0, 2*numpy.pi),
-    "phi_orb": (0, 2*numpy.pi),
-    "distance": (dmin, dmax),
-    "right_ascension": (0, 2*numpy.pi),
-    "declination": (-numpy.pi/2, numpy.pi/2),
-    "t_ref": (-t_ref_wind, t_ref_wind),
-    "inclination": (0, numpy.pi)
-}
-
-#
 # Parameter integral sampling strategy
 #
 params = {}
@@ -438,8 +368,8 @@ else:
 # Determine pinned and non-pinned parameters
 #
 
-pinned_params = get_pinned_params(opts)
-unpinned_params = get_unpinned_params(opts, sampler.params)
+pinned_params = common_cl.get_pinned_params(opts)
+unpinned_params = common_cl.get_unpinned_params(opts, sampler.params)
 print "{0:<25s} {1:>5s} {2:>5s} {3:>20s} {4:<10s}".format("parameter", "lower limit", "upper limit", "pinned?", "pin value")
 plen = len(sorted(sampler.params, key=lambda p: len(p))[-1])
 for p in sampler.params:
