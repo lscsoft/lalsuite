@@ -147,8 +147,10 @@ if test "x$condor" = "xtrue"; then
     AC_MSG_RESULT([yes])
     LD=/usr/bin/ld
   fi
+  CONDOR_ENABLE_VAL="ENABLED"
+else
+  CONDOR_ENABLE_VAL="DISABLED"
 fi
-CONDOR_ENABLE_VAL="`eval test x$condor = xtrue && echo "ENABLED" || echo "DISABLED"`"
 
 # check for supported mac os x version
 LALSUITE_OSX_VERSION_CHECK
