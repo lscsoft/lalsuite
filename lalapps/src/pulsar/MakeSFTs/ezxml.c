@@ -885,7 +885,7 @@ void ezxml_free(ezxml_t xml)
 const char *ezxml_error(ezxml_t xml)
 {
   while (xml && xml->parent) xml = xml->parent; /* find root tag */
-    return (xml) ? ((ezxml_root_t)xml)->err : "";
+    return (xml) ? ((ezxml_root_t)xml)->err : (const char *) "";
 }
 
 /* returns a new empty ezxml structure with the given root tag name */
