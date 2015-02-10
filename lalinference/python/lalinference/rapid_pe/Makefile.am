@@ -15,6 +15,7 @@ pymodule_PYTHON = \
     statutils.py \
     xmlutils.py \
     common_cl.py \
+    dagutils.py \
 	$(END_OF_LIST)
 
 endif
