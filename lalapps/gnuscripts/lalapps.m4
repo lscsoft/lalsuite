@@ -2,16 +2,21 @@
 #
 # serial 15
 
-AC_DEFUN([LALAPPS_ENABLE_CONDOR],
-[AC_ARG_ENABLE(
-  [condor],
-  AC_HELP_STRING([--enable-condor],[compile for use with condor [default=no]]),
-  [ case "${enableval}" in
-      yes) condor=true;;
-      no)  condor=false;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-condor) ;;
-    esac
-  ], [ condor=false ] )
+AC_DEFUN([LALAPPS_ENABLE_CONDOR], [
+  AC_ARG_ENABLE(
+    [condor],
+    AC_HELP_STRING([--enable-condor],[compile for use with condor @<:@default=no@:>@]),
+    AS_CASE(["${enableval}"],
+      [yes],[condor=true],
+      [no],[condor=false],
+      AC_MSG_ERROR([bad value ${enableval} for --enable-condor])
+    ),
+    [condor=false]
+  )
+  AS_IF([test "x$condor" = "xtrue"],
+    AC_DEFINE([LALAPPS_CONDOR],[1],[LALApps is condor compiled])
+  )
+  AM_CONDITIONAL([CONDOR_ENABLED],[test "x$condor" = "xtrue"])
 ])
 
 AC_DEFUN([LALAPPS_ENABLE_STATIC_BINARIES],

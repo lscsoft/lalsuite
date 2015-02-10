@@ -149,7 +149,6 @@ if test "x$condor" = "xtrue"; then
   fi
 fi
 CONDOR_ENABLE_VAL="`eval test x$condor = xtrue && echo "ENABLED" || echo "DISABLED"`"
-AM_CONDITIONAL([CONDOR_ENABLED],[test "$CONDOR_ENABLE_VAL" = "ENABLED"])
 
 # check for supported mac os x version
 LALSUITE_OSX_VERSION_CHECK
@@ -392,7 +391,6 @@ if test "x${condor}" = "xtrue" ; then
   CC="$CONDOR_COMPILE $CC"
   LALSUITE_ADD_FLAGS([],[],[-all-static])
   AC_DISABLE_SHARED
-  AC_DEFINE([LALAPPS_CONDOR],[1],[LALApps is condor compiled])
 fi
 
 # add -all-static to AM_LDFLAGS for --enable-static-binaries
