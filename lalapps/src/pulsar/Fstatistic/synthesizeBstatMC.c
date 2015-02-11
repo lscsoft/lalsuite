@@ -67,26 +67,6 @@
 
 #include <lalapps.h>
 
-/*---------- DEFINES ----------*/
-
-#define TRUE (1==1)
-#define FALSE (1==0)
-
-/*----- Error-codes -----*/
-#define SYNTHBSTAT_ENULL 	1
-#define SYNTHBSTAT_ESYS     	2
-#define SYNTHBSTAT_EINPUT   	3
-#define SYNTHBSTAT_EMEM   	4
-#define SYNTHBSTAT_ENONULL 	5
-#define SYNTHBSTAT_EXLAL	6
-
-#define SYNTHBSTAT_MSGENULL 	"Arguments contained an unexpected null pointer"
-#define SYNTHBSTAT_MSGESYS	"System call failed (probably file IO)"
-#define SYNTHBSTAT_MSGEINPUT  "Invalid input"
-#define SYNTHBSTAT_MSGEMEM   	"Out of memory. Bad."
-#define SYNTHBSTAT_MSGENONULL "Output pointer is non-NULL"
-#define SYNTHBSTAT_MSGEXLAL	"XLALFunction-call failed"
-
 #define SQ(x) ((x)*(x))
 
 /**
@@ -163,7 +143,7 @@ typedef struct {
 /* ---------- local prototypes ---------- */
 int main(int argc,char *argv[]);
 
-void initUserVars (LALStatus *status, UserInput_t *uvar );
+int initUserVars ( UserInput_t *uvar );
 int InitCode ( ConfigVariables *cfg, const UserInput_t *uvar );
 
 int XLALsynthesizeSignals ( gsl_matrix **A_Mu_i, gsl_matrix **s_mu_i, gsl_matrix **Amp_i, gsl_vector **rho2,
@@ -194,7 +174,6 @@ REAL8 XLALComputeBhatCorrection ( const gsl_vector * A_Mu, const gsl_matrix *M_m
  */
 int main(int argc,char *argv[])
 {
-  LALStatus status = blank_status;
   UserInput_t XLAL_INIT_DECL(uvar);
   ConfigVariables XLAL_INIT_DECL(GV);	/**< various derived configuration settings */
   UINT4 i;
@@ -224,18 +203,16 @@ int main(int argc,char *argv[])
 
   /* register all user-variable */
   LogSetLevel(lalDebugLevel);
-  LAL_CALL (initUserVars(&status, &uvar), &status);
+  XLAL_CHECK_MAIN ( initUserVars ( &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* do ALL cmdline and cfgfile handling */
-  LAL_CALL (LALUserVarReadAllInput(&status, argc, argv), &status);
+  XLAL_CHECK_MAIN ( XLALUserVarReadAllInput ( argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  if (uvar.help)	/* if help was requested, we're done here */
+  if (uvar.help) {	/* if help was requested, we're done here */
     return 0;
-
-  if ( (version_string = XLALGetVersionString(0)) == NULL ) {
-    XLALPrintError("XLALGetVersionString(0) failed.\n");
-    exit(1);
   }
+
+  XLAL_CHECK_MAIN ( (version_string = XLALGetVersionString(0)) != NULL, XLAL_EFUNC );
 
   if ( uvar.version ) {
     printf ( "%s\n", version_string );
@@ -243,89 +220,52 @@ int main(int argc,char *argv[])
   }
 
   /* ---------- Initialize code-setup ---------- */
-  if ( InitCode( &GV, &uvar ) ) {
-    LogPrintf (LOG_CRITICAL, "InitCode() failed with error = %d\n", xlalErrno );
-    return 1;
-  }
+  XLAL_CHECK_MAIN ( InitCode ( &GV, &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* ---------- generate numDraws random draws of signals (A^mu, s_mu) */
-  if ( XLALsynthesizeSignals( &A_Mu_i, &s_mu_i, &Amp_i, &rho2_i, GV.M_mu_nu, GV.AmpRange, GV.rng, uvar.numDraws ) ) {
-    LogPrintf (LOG_CRITICAL, "XLALsynthesizeSignal() failed with error = %d\n", xlalErrno );
-    return 1;
-  }
+  XLAL_CHECK_MAIN ( XLALsynthesizeSignals( &A_Mu_i, &s_mu_i, &Amp_i, &rho2_i, GV.M_mu_nu, GV.AmpRange, GV.rng, uvar.numDraws ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* ----- data = noise + signal: x_mu = n_mu + s_mu  ----- */
-  if ( ( x_mu_i = gsl_matrix_calloc ( uvar.numDraws, 4 ) ) == NULL ) {
-    LogPrintf ( LOG_CRITICAL, "%s: gsl_matrix_calloc(%g,4) failed.\n", __func__, uvar.numDraws);
-    return XLAL_ENOMEM;
-  }
+  XLAL_CHECK_MAIN ( ( x_mu_i = gsl_matrix_calloc ( uvar.numDraws, 4 ) ) != NULL, XLAL_ENOMEM );
 
   if ( ! uvar.SignalOnly )
     {
-      if ( XLALsynthesizeNoise( &n_mu_i, GV.M_mu_nu, GV.rng, uvar.numDraws ) ) {
-	LogPrintf (LOG_CRITICAL, "XLALsynthesizeNoise() failed with error = %d\n", xlalErrno );
-	return 1;
-      }
+      XLAL_CHECK_MAIN ( XLALsynthesizeNoise( &n_mu_i, GV.M_mu_nu, GV.rng, uvar.numDraws ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
   else
     {
-      if ( ( n_mu_i = gsl_matrix_calloc ( uvar.numDraws, 4 ) ) == NULL ) {
-	LogPrintf ( LOG_CRITICAL, "%s: gsl_matrix_calloc(%g,4) failed.\n", __func__, uvar.numDraws);
-	return XLAL_ENOMEM;
-      }
+      XLAL_CHECK_MAIN ( ( n_mu_i = gsl_matrix_calloc ( uvar.numDraws, 4 ) ) != NULL, XLAL_ENOMEM );
     } /* if SignalOnly */
 
-  if ( (gslstat = gsl_matrix_memcpy (x_mu_i, n_mu_i))  ) {
-    LogPrintf ( LOG_CRITICAL, "%s: gsl_matrix_memcpy() failed): %s\n", __func__, gsl_strerror (gslstat) );
-    return XLAL_EDOM;
-  }
+  XLAL_CHECK_MAIN ( (gslstat = gsl_matrix_memcpy (x_mu_i, n_mu_i)) == 0, XLAL_EFAILED, "gsl_matrix_memcpy() failed): %s\n", gsl_strerror (gslstat) );
 
-  if ( (gslstat = gsl_matrix_add (x_mu_i, s_mu_i)) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: gsl_matrix_add() failed): %s\n", __func__, gsl_strerror (gslstat) );
-    return XLAL_EDOM;
-  }
+  XLAL_CHECK_MAIN ( (gslstat = gsl_matrix_add (x_mu_i, s_mu_i)) == 0, XLAL_EFAILED, "gsl_matrix_add() failed): %s\n", gsl_strerror (gslstat) );
 
   /* ---------- compute log likelihood ratio lnL ---------- */
-  if ( XLALcomputeLogLikelihood ( &lnL_i, A_Mu_i, s_mu_i, x_mu_i) ) {
-    LogPrintf (LOG_CRITICAL, "XLALcomputeLogLikelihood() failed with error = %d\n", xlalErrno );
-    return 1;
-  }
+  XLAL_CHECK_MAIN ( XLALcomputeLogLikelihood ( &lnL_i, A_Mu_i, s_mu_i, x_mu_i) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* ---------- compute F-statistic ---------- */
-  if ( XLALcomputeFstatistic ( &Fstat_i, &x_Mu_i, GV.M_mu_nu, x_mu_i ) ) {
-    LogPrintf (LOG_CRITICAL, "XLALcomputeFstatistic() failed with error = %d\n", xlalErrno );
-    return 1;
-  }
+  XLAL_CHECK_MAIN ( XLALcomputeFstatistic ( &Fstat_i, &x_Mu_i, GV.M_mu_nu, x_mu_i ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* ---------- compute (full) B-statistic ---------- */
   switch ( uvar.integrationMethod )
     {
     case 0:
-      if ( XLALcomputeBstatisticGauss ( &Bstat_i, GV.M_mu_nu, x_mu_i ) ) {
-	LogPrintf (LOG_CRITICAL, "XLALcomputeBstatisticGauss() failed with error = %d\n", xlalErrno );
-	return 1;
-      }
+      XLAL_CHECK_MAIN ( XLALcomputeBstatisticGauss ( &Bstat_i, GV.M_mu_nu, x_mu_i ) == XLAL_SUCCESS, XLAL_EFUNC );
       break;
 
     case 1:
-      if ( XLALcomputeBstatisticMC ( &Bstat_i, GV.M_mu_nu, x_mu_i, GV.rng, uvar.numMCpoints ) ) {
-	LogPrintf (LOG_CRITICAL, "XLALcomputeBstatisticMC() failed with error = %d\n", xlalErrno );
-	return 1;
-      }
+      XLAL_CHECK_MAIN ( XLALcomputeBstatisticMC ( &Bstat_i, GV.M_mu_nu, x_mu_i, GV.rng, uvar.numMCpoints ) == XLAL_SUCCESS, XLAL_EFUNC );
       break;
 
     default:
-      LogPrintf (LOG_CRITICAL, "Sorry, --integrationMethod = %d not implemented!\n", uvar.integrationMethod );
-      return 1;
+      XLAL_ERROR_MAIN ( XLAL_EINVAL, "Sorry, --integrationMethod = %d not implemented!\n", uvar.integrationMethod );
       break;
     } /* switch integrationMethod */
 
 
   /* ---------- compute (approximate) B-statistic 'Bhat' ---------- */
-  if ( ( Bhat_i = XLALcomputeBhatStatistic ( GV.M_mu_nu, x_mu_i)) == NULL ) {
-    LogPrintf (LOG_CRITICAL, "XLALcomputeBhatStatistic() failed with error = %d\n", xlalErrno );
-    return 1;
-  }
+  XLAL_CHECK_MAIN ( ( Bhat_i = XLALcomputeBhatStatistic ( GV.M_mu_nu, x_mu_i)) != NULL, XLAL_EFUNC );
 
   /* ---------- output F-statistic and B-statistic samples into file, if requested */
   if (uvar.outputStats)
@@ -333,22 +273,18 @@ int main(int argc,char *argv[])
       FILE *fpStat = NULL;
       CHAR *logstr = NULL;
 
-      if ( (fpStat = fopen (uvar.outputStats, "wb")) == NULL)
-	{
-	  XLALPrintError ("\nError opening file '%s' for writing..\n\n", uvar.outputStats);
-	  return (SYNTHBSTAT_ESYS);
-	}
+      XLAL_CHECK_MAIN ( (fpStat = fopen (uvar.outputStats, "wb")) != NULL, XLAL_ESYS, "\nError opening file '%s' for writing..\n\n", uvar.outputStats );
 
       /* log search-footprint at head of output-file */
-      LAL_CALL( LALUserVarGetLog (&status, &logstr,  UVAR_LOGFMT_CMDLINE ), &status );
+      XLAL_CHECK_MAIN ( (logstr = XLALUserVarGetLog ( UVAR_LOGFMT_CMDLINE )) != NULL, XLAL_EFUNC );
 
       fprintf(fpStat, "%%%% cmdline: %s\n", logstr );
-      LALFree ( logstr );
+      XLALFree ( logstr );
       fprintf ( fpStat, "%s\n", version_string );
 
       /* append 'dataSummary' */
       fprintf (fpStat, "%%%% h0Nat        cosi       psi        phi0          n1         n2         n3         n4              rho2            lnL            2F           Bstat        Bhat\n");
-      for ( i=0; i < Bstat_i->size; i ++ )
+      for ( i=0; i < Bstat_i->size; i ++ ) {
 	fprintf ( fpStat, "%10f %10f %10f %10f    %10f %10f %10f %10f    %12f    %12f   %12f   %12f   %12f\n",
 		  gsl_matrix_get ( Amp_i, i, 0 ),
 		  gsl_matrix_get ( Amp_i, i, 1 ),
@@ -368,12 +304,12 @@ int main(int argc,char *argv[])
 
 		  gsl_vector_get ( Bhat_i, i )
 		  );
-
+      }
       fclose (fpStat);
     } /* if outputStat */
 
   /* Free config-Variables and userInput stuff */
-  LAL_CALL (LALDestroyUserVars (&status), &status);
+  XLALDestroyUserVars();
   XLALFree ( version_string );
 
   gsl_matrix_free ( GV.M_mu_nu );
@@ -402,15 +338,13 @@ int main(int argc,char *argv[])
  * Register all our "user-variables" that can be specified from cmd-line and/or config-file.
  * Here we set defaults for some user-variables and register them with the UserInput module.
  */
-void
-initUserVars (LALStatus *status, UserInput_t *uvar )
+int
+initUserVars ( UserInput_t *uvar )
 {
-
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
+  XLAL_CHECK ( uvar != NULL, XLAL_EINVAL );
 
   /* set a few defaults */
-  uvar->help = FALSE;
+  uvar->help = 0;
   uvar->outputStats = NULL;
 
   uvar->phi0 = 0;
@@ -424,34 +358,33 @@ initUserVars (LALStatus *status, UserInput_t *uvar )
   uvar->E = 0;	/* RAA approximation antenna-pattern matrix component M_{14}. Zero if using LWL */
 
   /* register all our user-variables */
-  LALregBOOLUserStruct(status,	help, 		'h', UVAR_HELP,     "Print this message");
+  XLALregBOOLUserStruct(	help, 		'h', UVAR_HELP,     "Print this message");
 
-  LALregREALUserStruct(status,	h0Nat,		's', UVAR_OPTIONAL, "Overall GW amplitude h0 in *natural units*: h0Nat = h0 sqrt(T/Sn) ");
-  LALregREALUserStruct(status,	h0NatBand,	 0,  UVAR_OPTIONAL, "Randomize amplitude within [h0, h0+h0Band] with uniform prior");
-  LALregREALUserStruct(status,	SNR,		 0,  UVAR_OPTIONAL, "Alternative: adjust h0 to obtain signal of exactly this optimal SNR");
+  XLALregREALUserStruct(	h0Nat,		's', UVAR_OPTIONAL, "Overall GW amplitude h0 in *natural units*: h0Nat = h0 sqrt(T/Sn) ");
+  XLALregREALUserStruct(	h0NatBand,	 0,  UVAR_OPTIONAL, "Randomize amplitude within [h0, h0+h0Band] with uniform prior");
+  XLALregREALUserStruct(	SNR,		 0,  UVAR_OPTIONAL, "Alternative: adjust h0 to obtain signal of exactly this optimal SNR");
 
-  LALregREALUserStruct(status,	cosi,		'i', UVAR_OPTIONAL, "cos(inclination angle). If not set: randomize within [-1,1].");
-  LALregREALUserStruct(status,	psi,		 0, UVAR_OPTIONAL, "polarization angle psi. If not set: randomize within [-pi/4,pi/4].");
-  LALregREALUserStruct(status,	phi0,		 0, UVAR_OPTIONAL, "initial GW phase phi_0. If not set: randomize within [0, 2pi]");
+  XLALregREALUserStruct(	cosi,		'i', UVAR_OPTIONAL, "cos(inclination angle). If not set: randomize within [-1,1].");
+  XLALregREALUserStruct(	psi,		 0, UVAR_OPTIONAL, "polarization angle psi. If not set: randomize within [-pi/4,pi/4].");
+  XLALregREALUserStruct(	phi0,		 0, UVAR_OPTIONAL, "initial GW phase phi_0. If not set: randomize within [0, 2pi]");
 
-  LALregREALUserStruct(status,	A,	  	 0,  UVAR_REQUIRED, "Antenna-pattern matrix MNat_mu_nu: component {1,1} = A = <|a|^2>");
-  LALregREALUserStruct(status,	B,	  	 0,  UVAR_REQUIRED, "Antenna-pattern matrix MNat_mu_nu: component {2,2} = B = <|b|^2>");
-  LALregREALUserStruct(status,	C,	  	 0,  UVAR_REQUIRED, "Antenna-pattern matrix MNat_mu_nu: component {1,2} = C = <Re(b a*)>");
-  LALregREALUserStruct(status,	E,	  	 0,  UVAR_OPTIONAL, "Antenna-pattern matrix MNat_mu_nu: component {1,4} = E = <Im(b a*)>");
+  XLALregREALUserStruct(	A,	  	 0,  UVAR_REQUIRED, "Antenna-pattern matrix MNat_mu_nu: component {1,1} = A = <|a|^2>");
+  XLALregREALUserStruct(	B,	  	 0,  UVAR_REQUIRED, "Antenna-pattern matrix MNat_mu_nu: component {2,2} = B = <|b|^2>");
+  XLALregREALUserStruct(	C,	  	 0,  UVAR_REQUIRED, "Antenna-pattern matrix MNat_mu_nu: component {1,2} = C = <Re(b a*)>");
+  XLALregREALUserStruct(	E,	  	 0,  UVAR_OPTIONAL, "Antenna-pattern matrix MNat_mu_nu: component {1,4} = E = <Im(b a*)>");
 
-  LALregREALUserStruct(status,	numDraws,	'N', UVAR_OPTIONAL, "Number of random 'draws' to simulate for F-stat and B-stat");
+  XLALregREALUserStruct(	numDraws,	'N', UVAR_OPTIONAL, "Number of random 'draws' to simulate for F-stat and B-stat");
 
-  LALregSTRINGUserStruct(status, outputStats,	'o', UVAR_OPTIONAL, "Output file containing 'numDraws' random draws of lnL, 2F and B");
+  XLALregSTRINGUserStruct( outputStats,	'o', UVAR_OPTIONAL, "Output file containing 'numDraws' random draws of lnL, 2F and B");
 
-  LALregINTUserStruct(status, integrationMethod,'m', UVAR_OPTIONAL, "2D Integration-method: 0=Gauss-Kronod, 1=Monte-Carlo(Vegas)");
-  LALregREALUserStruct(status,	numMCpoints,	'M', UVAR_OPTIONAL, "Number of points to use in Monte-Carlo integration");
+  XLALregINTUserStruct( integrationMethod,'m', UVAR_OPTIONAL, "2D Integration-method: 0=Gauss-Kronod, 1=Monte-Carlo(Vegas)");
+  XLALregREALUserStruct(	numMCpoints,	'M', UVAR_OPTIONAL, "Number of points to use in Monte-Carlo integration");
 
-  LALregBOOLUserStruct(status,	SignalOnly,     'S', UVAR_SPECIAL,  "No noise-draws: will result in non-random 'signal only' values for F and B");
+  XLALregBOOLUserStruct(	SignalOnly,     'S', UVAR_SPECIAL,  "No noise-draws: will result in non-random 'signal only' values for F and B");
 
-  LALregBOOLUserStruct(status,	version,        'V', UVAR_SPECIAL,   "Output code version");
+  XLALregBOOLUserStruct(	version,        'V', UVAR_SPECIAL,   "Output code version");
 
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
+  return XLAL_SUCCESS;
 
 } /* initUserVars() */
 
@@ -462,18 +395,16 @@ InitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
 {
   /* ----- parse user-input on signal amplitude-paramters + ranges ----- */
 
-  if ( LALUserVarWasSet ( &uvar->SNR ) && ( LALUserVarWasSet ( &uvar->h0Nat ) || LALUserVarWasSet (&uvar->h0NatBand) ) )
-    {
-      LogPrintf (LOG_CRITICAL, "Don't specify either of {--h0,--h0Band} and --SNR\n");
-      XLAL_ERROR( SYNTHBSTAT_EINPUT );
-    }
+  if ( XLALUserVarWasSet ( &uvar->SNR ) && ( XLALUserVarWasSet ( &uvar->h0Nat ) || XLALUserVarWasSet (&uvar->h0NatBand) ) ) {
+    XLAL_ERROR ( XLAL_EINVAL, "Don't specify either of {--h0,--h0Band} and --SNR\n");
+  }
 
   cfg->AmpRange.h0Nat = uvar->h0Nat;
   cfg->AmpRange.h0NatBand = uvar->h0NatBand;
   cfg->AmpRange.SNR = uvar->SNR;
 
   /* implict ranges on cosi, psi and phi0 if not specified by user */
-  if ( LALUserVarWasSet ( &uvar->cosi ) )
+  if ( XLALUserVarWasSet ( &uvar->cosi ) )
     {
       cfg->AmpRange.cosi = uvar->cosi;
       cfg->AmpRange.cosiBand = 0;
@@ -483,7 +414,7 @@ InitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
       cfg->AmpRange.cosi = -1;
       cfg->AmpRange.cosiBand = 2;
     }
-  if ( LALUserVarWasSet ( &uvar->psi ) )
+  if ( XLALUserVarWasSet ( &uvar->psi ) )
     {
       cfg->AmpRange.psi = uvar->psi;
       cfg->AmpRange.psiBand = 0;
@@ -493,7 +424,7 @@ InitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
       cfg->AmpRange.psi = - LAL_PI_4;
       cfg->AmpRange.psiBand = LAL_PI_2;
     }
-  if ( LALUserVarWasSet ( &uvar->phi0 ) )
+  if ( XLALUserVarWasSet ( &uvar->phi0 ) )
     {
       cfg->AmpRange.phi0 = uvar->phi0;
       cfg->AmpRange.phi0Band = 0;
@@ -506,8 +437,7 @@ InitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
 
   /* ----- set up M_mu_nu matrix ----- */
   if ( ( cfg->M_mu_nu = gsl_matrix_calloc ( 4, 4 )) == NULL ) {
-    LogPrintf (LOG_CRITICAL, "%s: gsl_matrix_calloc(4,4) failed.\n", __func__);
-    XLAL_ERROR( SYNTHBSTAT_EMEM );
+    XLAL_ERROR ( XLAL_ENOMEM );
   }
 
   gsl_matrix_set (cfg->M_mu_nu, 0, 0,   uvar->A );
@@ -537,7 +467,7 @@ InitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
   LogPrintf ( LOG_DEBUG, "random-number generator type: %s\n", gsl_rng_name (cfg->rng));
   LogPrintf ( LOG_DEBUG, "seed = %lu\n", gsl_rng_default_seed );
 
-  return 0;
+  return XLAL_SUCCESS;
 
 } /* InitCode() */
 
@@ -691,7 +621,7 @@ XLALsynthesizeSignals ( gsl_matrix **A_Mu_i,		/**< [OUT] list of numDraws 4D lin
 
     } /* row < numDraws */
 
-  return 0;
+  return XLAL_SUCCESS;
 
 } /* XLALsynthesizeSignals() */
 
