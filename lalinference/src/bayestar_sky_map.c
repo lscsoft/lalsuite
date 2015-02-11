@@ -91,6 +91,10 @@
 
 #include "logaddexp.h"
 
+#ifndef _OPENMP
+#define omp ignore
+#endif
+
 
 /* Storage for old GSL error handler. */
 static gsl_error_handler_t *old_handler;

@@ -32,6 +32,10 @@
 
 #include <mpi.h>
 
+#ifndef _OPENMP
+#define omp ignore
+#endif
+
 
 LALInferenceRunState *init_runstate(ProcessParamsTable *command_line);
 void init_sampler(LALInferenceRunState *run_state);

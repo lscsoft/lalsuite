@@ -21,6 +21,7 @@ pybin_scripts = \
 	bayestar_sample_model_psd \
 	bayestar_sim_to_tmpltbank \
 	bayestar_littlehope \
+	rapidpe_integrate_extrinsic_likelihood \
 	$(END_OF_LIST)
 
 endif

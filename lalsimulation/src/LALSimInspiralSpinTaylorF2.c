@@ -33,6 +33,10 @@
 #include <stdio.h>
 #include <stdbool.h>
 
+#ifndef _OPENMP
+#define omp ignore
+#endif
+
 typedef struct tagLALSimInspiralSF2Orientation
 {
     REAL8 thetaJ, psiJ;

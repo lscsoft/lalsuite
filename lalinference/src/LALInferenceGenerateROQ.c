@@ -21,6 +21,11 @@
 
 #include <lal/LALInferenceGenerateROQ.h>
 
+#ifndef _OPENMP
+#define omp ignore
+#endif
+
+
 /* internal function definitions */
 
 /* define function to project model vector onto the training set of models */

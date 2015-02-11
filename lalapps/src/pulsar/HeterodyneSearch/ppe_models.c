@@ -9,6 +9,10 @@
 #include "ppe_models.h"
 #include <lal/SinCosLUT.h>
 
+#ifndef _OPENMP
+#define omp ignore
+#endif
+
 #define SQUARE(x) ( (x) * (x) )
 
 /******************************************************************************/

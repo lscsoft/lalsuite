@@ -37,6 +37,11 @@
 #include <lal/LALInference.h>
 #include <lal/LALInferenceKDE.h>
 
+#ifndef _OPENMP
+#define omp ignore
+#endif
+
+
 
 /**
  * Allocate, fill, and tune a Gaussian kernel density estimate from
