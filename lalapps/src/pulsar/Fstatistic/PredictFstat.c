@@ -59,9 +59,6 @@
 
 #define MAXFILENAMELENGTH 256   /* Maximum # of characters of a SFT filename */
 
-#define TRUE (1==1)
-#define FALSE (1==0)
-
 /*----- Error-codes -----*/
 #define PREDICTFSTAT_ENULL 	1
 #define PREDICTFSTAT_ESYS     	2
@@ -135,8 +132,6 @@ typedef struct {
   REAL8 transientStartTime;	/**< GPS start-time of transient window */
   REAL8 transientTauDays;	/**< time-scale in days of transient window */
 
-  REAL8 cosiota;	/* DEPRECATED in favor of cosi */
-
   BOOLEAN version;	/**< output version-info */
 
 } UserInput_t;
@@ -144,8 +139,8 @@ typedef struct {
 /* ---------- local prototypes ---------- */
 int main(int argc,char *argv[]);
 
-void initUserVars (LALStatus *status, UserInput_t *uvar );
-void InitPFS ( LALStatus *, ConfigVariables *cfg, const UserInput_t *uvar );
+int initUserVars ( UserInput_t *uvar );
+int InitPFS ( ConfigVariables *cfg, const UserInput_t *uvar );
 
 /*---------- empty initializers ---------- */
 
@@ -159,7 +154,6 @@ void InitPFS ( LALStatus *, ConfigVariables *cfg, const UserInput_t *uvar );
  */
 int main(int argc,char *argv[])
 {
-  LALStatus status = blank_status;	/* initialize status */
   REAL8 rho2;	/* SNR^2 */
 
   UserInput_t XLAL_INIT_DECL(uvar);
@@ -171,19 +165,16 @@ int main(int argc,char *argv[])
   lal_errhandler = LAL_ERR_EXIT;
 
   /* register all user-variable */
-  LAL_CALL (initUserVars(&status, &uvar), &status);
+  XLAL_CHECK_MAIN ( initUserVars( &uvar) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* do ALL cmdline and cfgfile handling */
-  LAL_CALL (LALUserVarReadAllInput(&status, argc, argv), &status);
+  XLAL_CHECK_MAIN ( XLALUserVarReadAllInput ( argc, argv) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  if (uvar.help)	/* if help was requested, we're done here */
+  if (uvar.help) {	/* if help was requested, we're done here */
     exit (0);
-
-
-  if ( (VCSInfoString = XLALGetVersionString(0)) == NULL ) {
-    XLALPrintError("XLALGetVersionString(0) failed.\n");
-    exit(1);
   }
+
+  XLAL_CHECK_MAIN ( (VCSInfoString = XLALGetVersionString(0)) != NULL, XLAL_EFUNC );
 
   if ( uvar.version ) {
     printf ("%s\n", VCSInfoString );
@@ -191,7 +182,7 @@ int main(int argc,char *argv[])
   }
 
   /* Initialize code-setup */
-  LAL_CALL ( InitPFS(&status, &GV, &uvar ), &status);
+  XLAL_CHECK_MAIN ( InitPFS ( &GV, &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   { /* Calculating the F-Statistic */
     REAL8 al1, al2, al3;
@@ -208,8 +199,9 @@ int main(int argc,char *argv[])
     rho2 = GV.Mmunu.Sinv_Tsft * (GV.Mmunu.Ad * al1 + GV.Mmunu.Bd * al2 + 2.0 * GV.Mmunu.Cd * al3 );
   }
 
-  if (uvar.printFstat)
+  if (uvar.printFstat) {
     fprintf(stdout, "\n%.1f\n", 4.0 + rho2);
+  }
 
   /* output predicted Fstat-value into file, if requested */
   if (uvar.outputFstat)
@@ -217,17 +209,13 @@ int main(int argc,char *argv[])
       FILE *fpFstat = NULL;
       CHAR *logstr = NULL;
 
-      if ( (fpFstat = fopen (uvar.outputFstat, "wb")) == NULL)
-	{
-	  XLALPrintError ("\nError opening file '%s' for writing..\n\n", uvar.outputFstat);
-	  return (PREDICTFSTAT_ESYS);
-	}
+      XLAL_CHECK_MAIN ( (fpFstat = fopen (uvar.outputFstat, "wb")) != NULL, XLAL_ESYS, "\nError opening file '%s' for writing..\n\n", uvar.outputFstat );
 
       /* log search-footprint at head of output-file */
-      LAL_CALL( LALUserVarGetLog (&status, &logstr,  UVAR_LOGFMT_CMDLINE ), &status );
+      XLAL_CHECK_MAIN ( (logstr = XLALUserVarGetLog ( UVAR_LOGFMT_CMDLINE )) != NULL, XLAL_EFUNC );
 
       fprintf(fpFstat, "%%%% cmdline: %s\n", logstr );
-      LALFree ( logstr );
+      XLALFree ( logstr );
 
       fprintf ( fpFstat, "%s\n", VCSInfoString );
 
@@ -253,8 +241,8 @@ int main(int argc,char *argv[])
     } /* if outputFstat */
 
   /* Free config-Variables and userInput stuff */
-  LAL_CALL (LALDestroyUserVars (&status), &status);
-  LALFree ( GV.dataSummary );
+  XLALDestroyUserVars();
+  XLALFree ( GV.dataSummary );
   XLALFree ( VCSInfoString );
 
   /* did we forget anything ? */
@@ -268,12 +256,10 @@ int main(int argc,char *argv[])
  * Register all our "user-variables" that can be specified from cmd-line and/or config-file.
  * Here we set defaults for some user-variables and register them with the UserInput module.
  */
-void
-initUserVars (LALStatus *status, UserInput_t *uvar )
+int
+initUserVars ( UserInput_t *uvar )
 {
-
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
+  XLAL_CHECK ( uvar != NULL, XLAL_EINVAL );
 
   /* set a few defaults */
   uvar->RngMedWindow = 50;	/* for running-median */
@@ -281,9 +267,9 @@ initUserVars (LALStatus *status, UserInput_t *uvar )
   uvar->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
   uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
 
-  uvar->help = FALSE;
+  uvar->help = 0;
   uvar->outputFstat = NULL;
-  uvar->printFstat = TRUE;
+  uvar->printFstat = 1;
 
   uvar->minStartTime = 0;
   uvar->maxStartTime = LAL_INT4_MAX;
@@ -292,59 +278,54 @@ initUserVars (LALStatus *status, UserInput_t *uvar )
   uvar->SignalOnly = 0;
 
   uvar->phi0 = 0;
-
-#define DEFAULT_TRANSIENT "none"
-  uvar->transientWindowType = LALMalloc(strlen(DEFAULT_TRANSIENT)+1);
-  strcpy ( uvar->transientWindowType, DEFAULT_TRANSIENT );
+  uvar->transientWindowType = XLALStringDuplicate ( "none" );
 
   /* register all our user-variables */
-  LALregBOOLUserStruct(status,	help, 		'h', UVAR_HELP,     "Print this message");
+  XLALregBOOLUserStruct ( help, 	'h', UVAR_HELP,     "Print this message");
 
-  LALregREALUserStruct(status, 	aPlus,	 	 0 , UVAR_OPTIONAL, "'Plus' polarization amplitude: aPlus  [alternative to {h0, cosi}");
-  LALregREALUserStruct(status,	aCross,  	 0 , UVAR_OPTIONAL, "'Cross' polarization amplitude: aCross [alternative to {h0, cosi}");
-  LALregREALUserStruct(status,	h0,		's', UVAR_OPTIONAL, "Overall GW amplitude h0 [alternative to {aPlus, aCross}]");
-  LALregREALUserStruct(status,	cosi,		'i', UVAR_OPTIONAL, "Inclination angle of rotation axis cos(iota) [alternative to {aPlus, aCross}]");
+  XLALregREALUserStruct ( aPlus, 	 0 , UVAR_OPTIONAL, "'Plus' polarization amplitude: aPlus  [alternative to {h0, cosi}");
+  XLALregREALUserStruct ( aCross,  	 0 , UVAR_OPTIONAL, "'Cross' polarization amplitude: aCross [alternative to {h0, cosi}");
+  XLALregREALUserStruct ( h0,		's', UVAR_OPTIONAL, "Overall GW amplitude h0 [alternative to {aPlus, aCross}]");
+  XLALregREALUserStruct ( cosi,		'i', UVAR_OPTIONAL, "Inclination angle of rotation axis cos(iota) [alternative to {aPlus, aCross}]");
 
-  LALregREALUserStruct(status,	psi,		 0, UVAR_REQUIRED, "Polarisation angle in radians");
-  LALregREALUserStruct(status,	phi0,		 0, UVAR_OPTIONAL, "Initial GW phase phi0 in radians");
+  XLALregREALUserStruct ( psi,		 0, UVAR_REQUIRED, "Polarisation angle in radians");
+  XLALregREALUserStruct ( phi0,		 0, UVAR_OPTIONAL, "Initial GW phase phi0 in radians");
 
-  LALregREALUserStruct(status,	Alpha,		'a', UVAR_REQUIRED, "Sky position alpha (equatorial coordinates) in radians");
-  LALregREALUserStruct(status,	Delta,		'd', UVAR_REQUIRED, "Sky position delta (equatorial coordinates) in radians");
-  LALregREALUserStruct(status,	Freq,		'F', UVAR_REQUIRED, "GW signal frequency (only used for noise-estimation in SFTs)");
+  XLALregREALUserStruct ( Alpha,	'a', UVAR_REQUIRED, "Sky position alpha (equatorial coordinates) in radians");
+  XLALregREALUserStruct ( Delta,	'd', UVAR_REQUIRED, "Sky position delta (equatorial coordinates) in radians");
+  XLALregREALUserStruct ( Freq,		'F', UVAR_REQUIRED, "GW signal frequency (only used for noise-estimation in SFTs)");
 
-  LALregSTRINGUserStruct(status,DataFiles, 	'D', UVAR_REQUIRED, "File-pattern specifying (multi-IFO) input SFT-files");
-  LALregSTRINGUserStruct(status,IFO, 		'I', UVAR_OPTIONAL, "Detector-constraint: 'G1', 'L1', 'H1', 'H2' ...(useful for single-IFO v1-SFTs only!)");
-  LALregSTRINGUserStruct(status,ephemEarth, 	 0,  UVAR_OPTIONAL, "Earth ephemeris file to use");
-  LALregSTRINGUserStruct(status,ephemSun, 	 0,  UVAR_OPTIONAL, "Sun ephemeris file to use");
-  LALregSTRINGUserStruct(status,outputFstat,     0,  UVAR_OPTIONAL, "Output-file for predicted F-stat value" );
-  LALregBOOLUserStruct(status,printFstat,	 0,  UVAR_OPTIONAL, "Print predicted F-stat value to terminal" );
+  XLALregSTRINGUserStruct ( DataFiles, 	'D', UVAR_REQUIRED, "File-pattern specifying (multi-IFO) input SFT-files");
+  XLALregSTRINGUserStruct ( IFO, 		'I', UVAR_OPTIONAL, "Detector-constraint: 'G1', 'L1', 'H1', 'H2' ...(useful for single-IFO v1-SFTs only!)");
+  XLALregSTRINGUserStruct ( ephemEarth, 	 0,  UVAR_OPTIONAL, "Earth ephemeris file to use");
+  XLALregSTRINGUserStruct ( ephemSun, 	 0,  UVAR_OPTIONAL, "Sun ephemeris file to use");
+  XLALregSTRINGUserStruct ( outputFstat,     0,  UVAR_OPTIONAL, "Output-file for predicted F-stat value" );
+  XLALregBOOLUserStruct ( printFstat,	 0,  UVAR_OPTIONAL, "Print predicted F-stat value to terminal" );
 
-  LALregINTUserStruct ( status,	minStartTime, 	 0,  UVAR_OPTIONAL, "Only use SFTs with timestamps starting from (including) this GPS time");
-  LALregINTUserStruct ( status,	maxStartTime, 	 0,  UVAR_OPTIONAL, "Only use SFTs with timestamps up to (excluding) this GPS time");
+  XLALregINTUserStruct ( minStartTime, 	 0,  UVAR_OPTIONAL, "Only use SFTs with timestamps starting from (including) this GPS time");
+  XLALregINTUserStruct ( maxStartTime, 	 0,  UVAR_OPTIONAL, "Only use SFTs with timestamps up to (excluding) this GPS time");
 
-  LALregLISTUserStruct(status,  assumeSqrtSX,	 0,  UVAR_OPTIONAL, "Don't estimate noise-floors but assume (stationary) per-IFO sqrt{SX} (if single value: use for all IFOs)");
-  LALregBOOLUserStruct(status,	SignalOnly,	'S', UVAR_DEVELOPER,"DEPRECATED ALTERNATIVE: Don't estimate noise-floors but assume sqrtSX=1 instead");
+  XLALregLISTUserStruct ( assumeSqrtSX,	 0,  UVAR_OPTIONAL, "Don't estimate noise-floors but assume (stationary) per-IFO sqrt{SX} (if single value: use for all IFOs)");
+  XLALregBOOLUserStruct ( SignalOnly,	'S', UVAR_DEVELOPER,"DEPRECATED ALTERNATIVE: Don't estimate noise-floors but assume sqrtSX=1 instead");
 
-  LALregBOOLUserStruct(status,	version,        'V', UVAR_SPECIAL,  "Output code version");
+  XLALregBOOLUserStruct ( version,        'V', UVAR_SPECIAL,  "Output code version");
 
-  LALregINTUserStruct(status,	RngMedWindow,	'k', UVAR_DEVELOPER, "Running-Median window size");
-  LALregREALUserStruct(status,	cosiota,	 0 , UVAR_DEVELOPER, "[DEPRECATED] Use --cosi instead!");
+  XLALregINTUserStruct ( RngMedWindow,	'k', UVAR_DEVELOPER, "Running-Median window size");
 
   /* transient signal window properties (name, start, duration) */
-  LALregSTRINGUserStruct(status, transientWindowType,  0, UVAR_OPTIONAL, "Name of transient signal window to use. ('none', 'rect', 'exp').");
-  LALregREALUserStruct(status,   transientStartTime,    0, UVAR_OPTIONAL, "GPS start-time 't0' of transient signal window.");
-  LALregREALUserStruct(status,   transientTauDays,   0, UVAR_OPTIONAL, "Timescale 'tau' of transient signal window in seconds.");
+  XLALregSTRINGUserStruct ( transientWindowType,  0, UVAR_OPTIONAL, "Name of transient signal window to use. ('none', 'rect', 'exp').");
+  XLALregREALUserStruct ( transientStartTime,    0, UVAR_OPTIONAL, "GPS start-time 't0' of transient signal window.");
+  XLALregREALUserStruct ( transientTauDays,   0, UVAR_OPTIONAL, "Timescale 'tau' of transient signal window in seconds.");
 
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
+  return XLAL_SUCCESS;
 
 } /* initUserVars() */
 
 /** Initialized Fstat-code: handle user-input and set everything up. */
-void
-InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
+int
+InitPFS ( ConfigVariables *cfg, const UserInput_t *uvar )
 {
-  static const char *fn = "InitPFS()";
+  XLAL_CHECK ( (cfg != NULL) && (uvar != NULL), XLAL_EINVAL );
 
   SFTCatalog *catalog = NULL;
   SFTConstraints XLAL_INIT_DECL(constraints);
@@ -356,53 +337,26 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   MultiAMCoeffs *multiAMcoef = NULL;
   MultiDetectorStateSeries *multiDetStates = NULL; /* pos, vel and LMSTs for detector at times t_i */
 
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
-
   { /* Check user-input consistency */
-    BOOLEAN have_h0, have_cosi, have_cosiota, have_Ap, have_Ac;
-    REAL8 cosi = 0;
-
-    have_h0 = LALUserVarWasSet ( &uvar->h0 );
-    have_cosi = LALUserVarWasSet ( &uvar->cosi );
-    have_cosiota = LALUserVarWasSet ( &uvar->cosiota );
-    have_Ap = LALUserVarWasSet ( &uvar->aPlus );
-    have_Ac = LALUserVarWasSet ( &uvar->aCross );
-
-    /* ----- handle cosi/cosiota ambiguity */
-    if ( (have_cosi && have_cosiota)  ) {
-      LogPrintf (LOG_CRITICAL, "Need EITHER --cosi [preferred] OR --cosiota [deprecated]!\n");
-      ABORT ( status, PREDICTFSTAT_EINPUT, PREDICTFSTAT_MSGEINPUT );
-    }
-    if ( have_cosiota ) {
-      cosi = uvar->cosiota;
-      have_cosi = TRUE;
-    }
-    else if ( have_cosi ) {
-      cosi = uvar->cosi;
-      have_cosi = TRUE;
-    }
+    BOOLEAN have_h0   = XLALUserVarWasSet ( &uvar->h0 );
+    BOOLEAN have_cosi = XLALUserVarWasSet ( &uvar->cosi );
+    BOOLEAN have_Ap   = XLALUserVarWasSet ( &uvar->aPlus );
+    BOOLEAN have_Ac   = XLALUserVarWasSet ( &uvar->aCross );
 
     /* ----- handle {h0,cosi} || {aPlus,aCross} freedom ----- */
-    if ( ( have_h0 && !have_cosi ) || ( !have_h0 && have_cosi ) )
-      {
-	LogPrintf (LOG_CRITICAL, "Need both (h0, cosi) to specify signal!\n");
-	ABORT ( status, PREDICTFSTAT_EINPUT, PREDICTFSTAT_MSGEINPUT );
-      }
-    if ( ( have_Ap && !have_Ac) || ( !have_Ap && have_Ac ) )
-      {
-	LogPrintf (LOG_CRITICAL, "Need both (aPlus, aCross) to specify signal!\n");
-	ABORT ( status, PREDICTFSTAT_EINPUT, PREDICTFSTAT_MSGEINPUT );
-      }
-    if ( have_h0 && have_Ap )
-      {
-	LogPrintf (LOG_CRITICAL, "Overdetermined: specify EITHER (h0,cosi) OR (aPlus,aCross)!\n");
-	ABORT ( status, PREDICTFSTAT_EINPUT, PREDICTFSTAT_MSGEINPUT );
-      }
+    if ( ( have_h0 && !have_cosi ) || ( !have_h0 && have_cosi ) ) {
+      XLAL_ERROR ( XLAL_EINVAL, "Need both (h0, cosi) to specify signal!\n");
+    }
+    if ( ( have_Ap && !have_Ac) || ( !have_Ap && have_Ac ) ) {
+      XLAL_ERROR ( XLAL_EINVAL, "Need both (aPlus, aCross) to specify signal!\n");
+    }
+    if ( have_h0 && have_Ap ) {
+      XLAL_ERROR ( XLAL_EINVAL, "Overdetermined: specify EITHER (h0,cosi) OR (aPlus,aCross)!\n");
+    }
     /* ----- internally we always use Aplus, Across */
     if ( have_h0 )
       {
-	cfg->aPlus = 0.5 * uvar->h0 * ( 1.0 + SQ( cosi) );
+	cfg->aPlus = 0.5 * uvar->h0 * ( 1.0 + SQ( uvar->cosi) );
 	cfg->aCross = uvar->h0 * uvar->cosi;
       }
     else
@@ -412,12 +366,10 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
       }
   }/* check user-input */
 
-
   /* ----- prepare SFT-reading ----- */
-  if ( LALUserVarWasSet ( &uvar->IFO ) )
-    if ( (constraints.detector = XLALGetChannelPrefix ( uvar->IFO )) == NULL ) {
-      ABORT ( status,  PREDICTFSTAT_EINPUT,  PREDICTFSTAT_MSGEINPUT);
-    }
+  if ( XLALUserVarWasSet ( &uvar->IFO ) ) {
+    XLAL_CHECK ( (constraints.detector = XLALGetChannelPrefix ( uvar->IFO )) != NULL, XLAL_EFUNC );
+  }
 
   minStartTimeGPS.gpsSeconds = uvar->minStartTime;
   minStartTimeGPS.gpsNanoSeconds = 0;
@@ -427,58 +379,38 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   constraints.maxStartTime = &maxStartTimeGPS;
 
   /* ----- get full SFT-catalog of all matching (multi-IFO) SFTs */
-  LogPrintf (LOG_DEBUG, "Finding all SFTs to load ... ");
-  TRY ( LALSFTdataFind ( status->statusPtr, &catalog, uvar->DataFiles, &constraints ), status);
-  LogPrintfVerbatim (LOG_DEBUG, "done. (found %d SFTs)\n", catalog->length);
-  if ( constraints.detector )
-    LALFree ( constraints.detector );
-
-  if ( catalog->length == 0 )
-    {
-      LogPrintf (LOG_CRITICAL, "No matching SFTs for pattern '%s'!\n", uvar->DataFiles );
-      ABORT ( status,  PREDICTFSTAT_EINPUT,  PREDICTFSTAT_MSGEINPUT);
-    }
+  XLALPrintInfo ( "Finding all SFTs to load ... ");
+  XLAL_CHECK ( (catalog = XLALSFTdataFind ( uvar->DataFiles, &constraints )) != NULL, XLAL_EFUNC );
+  XLALPrintInfo ( "done. (found %d SFTs)\n", catalog->length );
+  if ( constraints.detector ) {
+    XLALFree ( constraints.detector );
+  }
+  XLAL_CHECK ( catalog->length > 0, XLAL_EINVAL, "No matching SFTs for pattern '%s'!\n", uvar->DataFiles );
 
   /* ----- deduce start- and end-time of the observation spanned by the data */
   GV.numSFTs = catalog->length;	/* total number of SFTs */
   REAL8 Tsft = 1.0 / catalog->data[0].header.deltaF;
   LIGOTimeGPS startTime = catalog->data[0].header.epoch;
   LIGOTimeGPS endTime   = catalog->data[GV.numSFTs-1].header.epoch;
-  XLALGPSAdd(&endTime, Tsft);
+  XLALGPSAdd ( &endTime, Tsft );
   REAL8 duration = GPS2REAL8(endTime) - GPS2REAL8 (startTime);
 
-  { /* ----- load ephemeris-data ----- */
-    edat = XLALInitBarycenter( uvar->ephemEarth, uvar->ephemSun );
-    if ( !edat ) {
-      XLALPrintError("XLALInitBarycenter failed: could not load Earth ephemeris '%s' and Sun ephemeris '%s'\n", uvar->ephemEarth, uvar->ephemSun);
-      ABORT ( status,  PREDICTFSTAT_EINPUT,  PREDICTFSTAT_MSGEINPUT);
-    }
-  }
+  /* ----- load ephemeris-data ----- */
+  XLAL_CHECK ( (edat = XLALInitBarycenter( uvar->ephemEarth, uvar->ephemSun )) != NULL, XLAL_EFUNC );
 
   MultiSFTCatalogView *multiCatalogView;
-  if ( (multiCatalogView = XLALGetMultiSFTCatalogView ( catalog )) == NULL ) {
-    XLALPrintError ("%s: XLALGetMultiSFTCatalogView() failed with errno=%d\n", __func__, xlalErrno );
-    ABORT ( status, PREDICTFSTAT_EXLAL, PREDICTFSTAT_MSGEXLAL );
-  }
-  UINT4 numDetectors = multiCatalogView->length;
+  XLAL_CHECK ( (multiCatalogView = XLALGetMultiSFTCatalogView ( catalog )) != NULL, XLAL_EFUNC );
 
+  UINT4 numDetectors = multiCatalogView->length;
   // ----- get the (multi-IFO) 'detector-state series' for given catalog
   MultiLIGOTimeGPSVector *mTS;
-  if ( (mTS = XLALTimestampsFromMultiSFTCatalogView ( multiCatalogView )) == NULL ) {
-    XLALPrintError ("%s: XLALTimestampsFromMultiSFTCatalogView() failed with errno=%d\n", __func__, xlalErrno );
-    ABORT ( status, PREDICTFSTAT_EXLAL, PREDICTFSTAT_MSGEXLAL );
-  }
+  XLAL_CHECK ( (mTS = XLALTimestampsFromMultiSFTCatalogView ( multiCatalogView )) != NULL, XLAL_EFUNC );
+
   MultiLALDetector XLAL_INIT_DECL(multiIFO);
-  if ( XLALMultiLALDetectorFromMultiSFTCatalogView ( &multiIFO, multiCatalogView ) != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: XLALMultiLALDetectorFromMultiSFTCatalogView() failed with errno=%d\n", __func__, xlalErrno );
-    ABORT ( status, PREDICTFSTAT_EXLAL, PREDICTFSTAT_MSGEXLAL );
-  }
+  XLAL_CHECK ( XLALMultiLALDetectorFromMultiSFTCatalogView ( &multiIFO, multiCatalogView ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   REAL8 tOffset = 0.5 * Tsft;
-  if ( ( multiDetStates = XLALGetMultiDetectorStates( mTS, &multiIFO, edat, tOffset )) == NULL ) {
-    XLALPrintError ("%s: XLALGetMultiDetectorStates() failed with code %d\n", __func__, xlalErrno );
-    ABORT ( status, PREDICTFSTAT_EXLAL, PREDICTFSTAT_MSGEXLAL );
-  }
+  XLAL_CHECK ( ( multiDetStates = XLALGetMultiDetectorStates( mTS, &multiIFO, edat, tOffset )) != NULL, XLAL_EFUNC );
 
   // ----- compute or estimate multiNoiseWeights ----------
   MultiNoiseWeights *multiNoiseWeights = NULL;
@@ -486,10 +418,7 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   // noise-sqrtSX provided by user ==> don't need to load the SFTs at all
   if ( uvar->SignalOnly || (uvar->assumeSqrtSX != NULL) )
     {
-      if ( uvar->SignalOnly && (uvar->assumeSqrtSX != NULL) ) {
-        XLALPrintError ("Cannot pass --SignalOnly AND --assumeSqrtSX at the same time!\n");
-        ABORT ( status, PREDICTFSTAT_EINPUT, PREDICTFSTAT_MSGEINPUT );
-      }
+      XLAL_CHECK ( !uvar->SignalOnly || (uvar->assumeSqrtSX == NULL), XLAL_EINVAL, "Cannot pass --SignalOnly AND --assumeSqrtSX at the same time!\n");
       LALStringVector *assumeSqrtSX_input;
       if ( uvar->SignalOnly ) {
         assumeSqrtSX_input = XLALCreateStringVector ( "1", NULL );
@@ -498,21 +427,14 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
       }
 
       MultiNoiseFloor XLAL_INIT_DECL(assumeSqrtSX);
-      if ( XLALParseMultiNoiseFloor ( &assumeSqrtSX, assumeSqrtSX_input, numDetectors ) != XLAL_SUCCESS ) {
-        XLALPrintError ("%s: XLALParseMultiNoiseFloor() failed with errno=%d\n", __func__, xlalErrno );
-        ABORT ( status, PREDICTFSTAT_EXLAL, PREDICTFSTAT_MSGEXLAL );
-      }
+      XLAL_CHECK ( XLALParseMultiNoiseFloor ( &assumeSqrtSX, assumeSqrtSX_input, numDetectors ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       if ( uvar->SignalOnly ) {
         XLALDestroyStringVector ( assumeSqrtSX_input );
       }
 
-      if ( (multiNoiseWeights = XLALCalloc(1,sizeof(*multiNoiseWeights))) == NULL ) {
-        ABORT ( status, PREDICTFSTAT_EMEM, PREDICTFSTAT_MSGEMEM );
-      }
-      if ( (multiNoiseWeights->data = XLALCalloc ( numDetectors, sizeof(*multiNoiseWeights->data) )) == NULL ) {
-        ABORT ( status, PREDICTFSTAT_EMEM, PREDICTFSTAT_MSGEMEM );
-      }
+      XLAL_CHECK ( (multiNoiseWeights = XLALCalloc(1,sizeof(*multiNoiseWeights))) != NULL, XLAL_ENOMEM );
+      XLAL_CHECK ( (multiNoiseWeights->data = XLALCalloc ( numDetectors, sizeof(*multiNoiseWeights->data) )) != NULL, XLAL_ENOMEM );
       multiNoiseWeights->length = numDetectors;
 
       REAL8 Sinv = 0;
@@ -521,9 +443,8 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
         {
           UINT4 numSFTsX = mTS->data[X]->length;
           numSFTs += numSFTsX;
-          if ( (multiNoiseWeights->data[X] = XLALCreateREAL8Vector ( numSFTsX )) == NULL ) {
-            ABORT ( status, PREDICTFSTAT_EMEM, PREDICTFSTAT_MSGEMEM );
-          }
+          XLAL_CHECK ( (multiNoiseWeights->data[X] = XLALCreateREAL8Vector ( numSFTsX )) != NULL, XLAL_EFUNC );
+
           REAL8 SXinv = 1.0  / ( SQ(assumeSqrtSX.sqrtSn[X]) );
           Sinv += numSFTsX * SXinv;
           for ( UINT4 j = 0; j < numSFTsX; j ++ ) {
@@ -550,53 +471,42 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
       REAL8 fMax = uvar->Freq + 1.0 * wings / Tsft;
       REAL8 fMin = uvar->Freq - 1.0 * wings / Tsft;
 
-      LogPrintf (LOG_DEBUG, "Loading SFTs ... ");
-      MultiSFTVector *multiSFTs = NULL;	    	/* multi-IFO SFT-vectors */
-      if ( (multiSFTs = XLALLoadMultiSFTsFromView ( multiCatalogView, fMin, fMax )) == NULL ) {
-        XLALPrintError ("%s: XLALLoadMultiSFTsFromView() failed with errno=%d\n", __func__, xlalErrno );
-        ABORT ( status, PREDICTFSTAT_EXLAL, PREDICTFSTAT_MSGEXLAL );
-      }
-      LogPrintfVerbatim (LOG_DEBUG, "done.\n");
+      MultiSFTVector *multiSFTs;
+      XLAL_CHECK ( (multiSFTs = XLALLoadMultiSFTsFromView ( multiCatalogView, fMin, fMax )) != NULL, XLAL_EFUNC );
 
       MultiPSDVector *multiRngmed = NULL;
-      if ( (multiRngmed = XLALNormalizeMultiSFTVect ( multiSFTs, uvar->RngMedWindow, NULL )) == NULL ) {
-        XLALPrintError ("%s: XLALNormalizeMultiSFTVect() failed with errno=%d\n", __func__, xlalErrno );
-        ABORT ( status, PREDICTFSTAT_EXLAL, PREDICTFSTAT_MSGEXLAL );
-      }
-      TRY ( LALDestroyMultiSFTVector (status->statusPtr, &multiSFTs ), status );
-      if ( (multiNoiseWeights = XLALComputeMultiNoiseWeights ( multiRngmed, uvar->RngMedWindow, 0 )) == NULL ) {
-        XLALPrintError ("%s: XLALComputeMultiNoiseWeights() failed with errno=%d\n", __func__, xlalErrno );
-        ABORT ( status, PREDICTFSTAT_EXLAL, PREDICTFSTAT_MSGEXLAL );
-      }
-      TRY ( LALDestroyMultiPSDVector (status->statusPtr, &multiRngmed ), status );
+      XLAL_CHECK ( (multiRngmed = XLALNormalizeMultiSFTVect ( multiSFTs, uvar->RngMedWindow, NULL )) != NULL, XLAL_EFUNC );
+      XLALDestroyMultiSFTVector ( multiSFTs );
+
+      XLAL_CHECK ( (multiNoiseWeights = XLALComputeMultiNoiseWeights ( multiRngmed, uvar->RngMedWindow, 0 )) != NULL, XLAL_EFUNC );
+      XLALDestroyMultiPSDVector ( multiRngmed );
     } // if noise-estimation done from SFTs
 
   /* ----- handle transient-signal window if given ----- */
-  if ( LALUserVarWasSet ( &uvar->transientWindowType ) && strcmp ( uvar->transientWindowType, "none") )
+  if ( XLALUserVarWasSet ( &uvar->transientWindowType ) && strcmp ( uvar->transientWindowType, "none") )
     {
       transientWindow_t transientWindow;	/**< properties of transient-signal window */
 
-      if ( !strcmp ( uvar->transientWindowType, "rect" ) )
+      if ( !strcmp ( uvar->transientWindowType, "rect" ) ) {
         transientWindow.type = TRANSIENT_RECTANGULAR;		/* rectangular window [t0, t0+tau] */
-      else if ( !strcmp ( uvar->transientWindowType, "exp" ) )
+      }
+      else if ( !strcmp ( uvar->transientWindowType, "exp" ) ) {
         transientWindow.type = TRANSIENT_EXPONENTIAL;		/* exponential decay window e^[-(t-t0)/tau for t>t0, 0 otherwise */
-      else
-	{
-	  XLALPrintError ("Illegal transient window '%s' specified: valid are 'none', 'rect' or 'exp'\n", uvar->transientWindowType);
-          ABORT ( status, PREDICTFSTAT_EINPUT, PREDICTFSTAT_MSGEINPUT );
-	}
+      }
+      else {
+        XLAL_ERROR ( XLAL_EINVAL, "Illegal transient window '%s' specified: valid are 'none', 'rect' or 'exp'\n", uvar->transientWindowType);
+      }
 
-      if ( LALUserVarWasSet ( &uvar->transientStartTime ) )
+      if ( XLALUserVarWasSet ( &uvar->transientStartTime ) ) {
         transientWindow.t0 = uvar->transientStartTime;
-      else
+      }
+      else {
         transientWindow.t0 = XLALGPSGetREAL8( &startTime ); /* if not set, default window startTime == startTime here */
+      }
 
       transientWindow.tau  = uvar->transientTauDays;
 
-      if ( XLALApplyTransientWindow2NoiseWeights ( multiNoiseWeights, mTS, transientWindow ) != XLAL_SUCCESS ) {
-        XLALPrintError ("%s: XLALApplyTransientWindow2NoiseWeights() failed! xlalErrno = %d\n", fn, xlalErrno );
-        ABORT ( status, PREDICTFSTAT_EXLAL, PREDICTFSTAT_MSGEXLAL );
-      }
+      XLAL_CHECK ( XLALApplyTransientWindow2NoiseWeights ( multiNoiseWeights, mTS, transientWindow ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     } /* apply transient window to noise-weights */
 
@@ -605,14 +515,9 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   skypos.longitude = uvar->Alpha;
   skypos.latitude = uvar->Delta;
   skypos.system = COORDINATESYSTEM_EQUATORIAL;
-  TRY (LALNormalizeSkyPosition ( status->statusPtr, &skypos, &skypos), status);
+  XLALNormalizeSkyPosition ( &skypos.longitude, &skypos.latitude);
 
-  TRY ( LALGetMultiAMCoeffs ( status->statusPtr, &multiAMcoef, multiDetStates, skypos ), status);
-  /* noise-weighting of Antenna-patterns and compute A,B,C */
-  if ( XLALWeightMultiAMCoeffs ( multiAMcoef, multiNoiseWeights ) != XLAL_SUCCESS ) {
-    LogPrintf (LOG_CRITICAL, "XLALWeightMultiAMCoeffs() failed with error = %d\n\n", xlalErrno );
-    ABORT ( status, PREDICTFSTAT_EXLAL, PREDICTFSTAT_MSGEXLAL );
-  }
+  XLAL_CHECK ( (multiAMcoef = XLALComputeMultiAMCoeffs ( multiDetStates, multiNoiseWeights, skypos )) != NULL, XLAL_EFUNC );
 
   /* OK: we only need the antenna-pattern matrix M_mu_nu */
   cfg->Mmunu = multiAMcoef->Mmunu;
@@ -637,9 +542,7 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     sprintf (line, "%%%% Total time spanned    = %12.3f s  (%.1f hours)\n", duration, duration/3600 );
     strcat ( summary, line );
 
-    if ( (cfg->dataSummary = LALCalloc(1, strlen(summary) + 1 )) == NULL ) {
-      ABORT (status, PREDICTFSTAT_EMEM, PREDICTFSTAT_MSGEMEM);
-    }
+    XLAL_CHECK ( (cfg->dataSummary = LALCalloc(1, strlen(summary) + 1 )) != NULL, XLAL_ENOMEM );
     strcpy ( cfg->dataSummary, summary );
 
     LogPrintfVerbatim( LOG_DEBUG, "%s", cfg->dataSummary );
@@ -647,16 +550,15 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 
   /* free everything not needed any more */
   XLALDestroyMultiTimestamps ( mTS );
-  TRY ( LALDestroySFTCatalog ( status->statusPtr, &catalog ), status );
+  XLALDestroySFTCatalog ( catalog );
   XLALDestroyMultiSFTCatalogView ( multiCatalogView );
-  TRY ( LALDestroyMultiNoiseWeights (status->statusPtr, &multiNoiseWeights ), status );
+  XLALDestroyMultiNoiseWeights ( multiNoiseWeights );
   XLALDestroyMultiDetectorStateSeries ( multiDetStates );
   XLALDestroyMultiAMCoeffs ( multiAMcoef );
 
   /* Free ephemeris data */
   XLALDestroyEphemerisData (edat);
 
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
+  return XLAL_SUCCESS;
 
 } /* InitPFS() */
