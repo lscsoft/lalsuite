@@ -31,52 +31,24 @@
 #include <lal/SFTfileIO.h>
 #include <lal/SFTutils.h>
 
-/* Error codes and messages */
-/**\name Error Codes */ /*@{*/
-#define MAKEFAKEDATAC_ENORM 	0
-#define MAKEFAKEDATAC_ESUB  	1
-#define MAKEFAKEDATAC_EARG  	2
-#define MAKEFAKEDATAC_EBAD  	3
-#define MAKEFAKEDATAC_EFILE 	4
-#define MAKEFAKEDATAC_ENOARG 	5
-#define MAKEFAKEDATAC_EINCOMPAT 6
-#define MAKEFAKEDATAC_ENULL	7
+/* User variables */
+typedef struct
+{
+  CHAR *sftBname1;
+  CHAR *sftBname2;
+  INT4 debug;
+  BOOLEAN verbose;
+  BOOLEAN help;
+  REAL8 relErrorMax;
+} UserInput_t;
 
-#define MAKEFAKEDATAC_MSGENORM "Normal exit"
-#define MAKEFAKEDATAC_MSGESUB  "Subroutine failed"
-#define MAKEFAKEDATAC_MSGEARG  "Error parsing arguments"
-#define MAKEFAKEDATAC_MSGEBAD  "Bad argument values"
-#define MAKEFAKEDATAC_MSGEFILE "File IO error"
-#define MAKEFAKEDATAC_MSGENOARG "Missing argument"
-#define MAKEFAKEDATAC_MSGEINCOMPAT "Incompatible SFTs"
-#define MAKEFAKEDATAC_MSGENULL	"Unexpected null pointer"
-
-/*@}*/
-
-/***************************************************/
-#define TRUE (1==1)
-#define FALSE (1==0)
-
-#define mymax(a,b) ( (a>b) ? a:b )
 /* local prototypes */
-/* Prototypes for the functions defined in this file */
-void initUserVars (LALStatus *stat);
+int initUserVars ( UserInput_t *uvar );
 REAL4 getMaxErrSFT (const SFTtype *sft1, const SFTtype *sft2);
 REAL4 getMaxErrSFTVector (const SFTVector *sftvect1, const SFTVector *sftvect2);
-void scalarProductSFT (LALStatus *stat, REAL4 *scalar, const SFTtype *sft1, const SFTtype *sft2);
-void scalarProductSFTVector (LALStatus *stat, REAL4 *scalar, const SFTVector *sftvect1, const SFTVector *sftvect2);
-void subtractSFTVectors (LALStatus *stat, SFTVector **ret, const SFTVector *sftvect1, const SFTVector *sftvect2);
-
-extern int vrbflg;
-
-/*----------------------------------------------------------------------*/
-/* User variables */
-CHAR *uvar_sftBname1;
-CHAR *uvar_sftBname2;
-INT4 uvar_debug;
-BOOLEAN uvar_verbose;
-BOOLEAN uvar_help;
-REAL8 uvar_relErrorMax;
+REAL4 scalarProductSFT ( const SFTtype *sft1, const SFTtype *sft2 );
+REAL4 scalarProductSFTVector ( const SFTVector *sftvect1, const SFTVector *sftvect2 );
+SFTVector *subtractSFTVectors ( const SFTVector *sftvect1, const SFTVector *sftvect2 );
 
 /*----------------------------------------------------------------------
  * main function
@@ -84,187 +56,160 @@ REAL8 uvar_relErrorMax;
 int
 main(int argc, char *argv[])
 {
-  LALStatus XLAL_INIT_DECL(status);
   SFTConstraints XLAL_INIT_DECL(constraints);
   CHAR detector[2] = "??";	/* allow reading v1-SFTs without detector-info */
-  SFTVector *SFTs1 = NULL, *SFTs2 = NULL;
   SFTVector *diffs = NULL;
-  SFTCatalog *catalog = NULL;
-  UINT4 i;
   REAL8 maxd = 0;
 
-  vrbflg = 1;		/* verbose error-messages */
-
-  /* set LAL error-handler */
-  lal_errhandler = LAL_ERR_EXIT;	/* exit with returned status-code on error */
-
   /* register all user-variables */
-  LAL_CALL (initUserVars (&status), &status);
+  UserInput_t XLAL_INIT_DECL(uvar);
+  XLAL_CHECK_MAIN ( initUserVars ( &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* read cmdline & cfgfile  */
-  LAL_CALL (LALUserVarReadAllInput (&status, argc,argv), &status);
+  XLAL_CHECK_MAIN ( XLALUserVarReadAllInput ( argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  if (uvar_help) 	/* help requested: we're done */
+  if (uvar.help) { 	/* help requested: we're done */
     exit (0);
+  }
 
   /* now read in the two complete sft-vectors */
   constraints.detector = detector;
 
-  LAL_CALL (LALSFTdataFind (&status, &catalog, uvar_sftBname1, &constraints ), &status );
-  LAL_CALL (LALLoadSFTs(&status, &SFTs1, catalog, -1, -1 ), &status );
-  LAL_CALL (LALDestroySFTCatalog(&status, &catalog), &status );
-  catalog = NULL;
+  SFTCatalog *catalog;
+  XLAL_CHECK_MAIN ( (catalog = XLALSFTdataFind ( uvar.sftBname1, &constraints )) != NULL, XLAL_EFUNC );
+  SFTVector *SFTs1;
+  XLAL_CHECK_MAIN ( (SFTs1 = XLALLoadSFTs( catalog, -1, -1 )) != NULL, XLAL_EFUNC );
+  XLALDestroySFTCatalog ( catalog );
 
-  LAL_CALL (LALSFTdataFind (&status, &catalog, uvar_sftBname2, &constraints ), &status );
-  LAL_CALL (LALLoadSFTs(&status, &SFTs2, catalog, -1, -1 ), &status );
-  LAL_CALL (LALDestroySFTCatalog(&status, &catalog), &status );
+  XLAL_CHECK_MAIN ( (catalog = XLALSFTdataFind ( uvar.sftBname2, &constraints )) != NULL, XLAL_EFUNC );
+  SFTVector *SFTs2;
+  XLAL_CHECK_MAIN ( (SFTs2 = XLALLoadSFTs( catalog, -1, -1 )) != NULL, XLAL_EFUNC );
+  XLALDestroySFTCatalog ( catalog );
 
   /* ---------- do some sanity checks of consistency of SFTs ----------*/
-  if (SFTs1->length != SFTs2->length) {
-    XLALPrintError ("Warning: number of SFTs differ for SFTbname1 and SFTbname2!\n");
-    exit(1);
-  }
-  for (i=0; i < SFTs1->length; i++)
+  XLAL_CHECK_MAIN ( SFTs1->length == SFTs2->length, XLAL_EINVAL, "Number of SFTs differ for SFTbname1 and SFTbname2!\n");
+
+  for ( UINT4 i=0; i < SFTs1->length; i++ )
     {
-      REAL8 Tdiff;
-      SFTtype *sft1, *sft2;
-      sft1 = &(SFTs1->data[i]);
-      sft2 = &(SFTs2->data[i]);
+      SFTtype *sft1 = &(SFTs1->data[i]);
+      SFTtype *sft2 = &(SFTs2->data[i]);
 
       if( strcmp( sft1->name, sft2->name ) )
 	{
-	  if ( lalDebugLevel ) XLALPrintError("WARNING SFT %d: detector-prefix differ! '%s' != '%s'\n", i, sft1->name, sft2->name );
+	  if ( lalDebugLevel ) { XLALPrintError("WARNING SFT %d: detector-prefix differ! '%s' != '%s'\n", i, sft1->name, sft2->name ); }
 	  /* exit (1); */  /* can't be too strict here, as we also allow v1-SFTs, which don't have detector-name */
 	}
 
-      if (sft1->data->length != sft2->data->length)
-	{
-	  XLALPrintError ("\nERROR SFT %d: lengths differ! %d != %d\n", i, sft1->data->length, sft2->data->length);
-	  exit(1);
-	}
-      Tdiff = XLALGPSDiff(&(sft1->epoch), &(sft2->epoch));
-      if ( Tdiff != 0.0 )
-	XLALPrintError ("WARNING SFT %d: epochs differ: (%d s, %d ns)  vs (%d s, %d ns)\n", i,
-		       sft1->epoch.gpsSeconds, sft1->epoch.gpsNanoSeconds, sft2->epoch.gpsSeconds, sft2->epoch.gpsNanoSeconds);
+      XLAL_CHECK_MAIN ( sft1->data->length == sft2->data->length, XLAL_EINVAL, "\nERROR SFT %d: lengths differ! %d != %d\n", i, sft1->data->length, sft2->data->length );
 
-      if ( sft1->f0 != sft2->f0)
-	{
-	  XLALPrintError ("ERROR SFT %d: fmin differ: %fHz vs %fHz\n", i, sft1->f0, sft2->f0);
-	  exit(1);
-	}
-
-      if ( sft1->deltaF != sft2->deltaF )
-	{
-	  XLALPrintError ("ERROR SFT %d: deltaF differs: %fHz vs %fHz\n", i, sft1->deltaF, sft2->deltaF);
-	  exit(1);
-	}
+      REAL8 Tdiff = XLALGPSDiff(&(sft1->epoch), &(sft2->epoch));
+      CHAR buf1[32], buf2[32];;
+      XLAL_CHECK_MAIN ( Tdiff == 0.0, XLAL_EINVAL, "SFT %d: epochs differ: %s vs %s\n", i, XLALGPSToStr(buf1,&sft1->epoch), XLALGPSToStr(buf2,&sft2->epoch) );
+      XLAL_CHECK_MAIN ( sft1->f0 == sft2->f0, XLAL_EINVAL, "ERROR SFT %d: fmin differ: %fHz vs %fHz\n", i, sft1->f0, sft2->f0 );
+      XLAL_CHECK_MAIN ( sft1->deltaF == sft2->deltaF, XLAL_EINVAL, "ERROR SFT %d: deltaF differs: %fHz vs %fHz\n", i, sft1->deltaF, sft2->deltaF );
     } /* for i < numSFTs */
 
   /*---------- now do some actual comparisons ----------*/
-  LAL_CALL (subtractSFTVectors (&status, &diffs, SFTs1, SFTs2), &status);
+  XLAL_CHECK_MAIN ( (diffs = subtractSFTVectors ( SFTs1, SFTs2)) != NULL, XLAL_EFUNC );
 
-  if ( uvar_verbose)
+  if ( uvar.verbose)
     {
-      for (i=0; i < SFTs1->length; i++)
+      for ( UINT4 i=0; i < SFTs1->length; i++)
 	{
 	  SFTtype *sft1 = &(SFTs1->data[i]);
 	  SFTtype *sft2 = &(SFTs2->data[i]);
 
-	  REAL4 d1, d2, d3, d4;
-	  REAL4 scalar, norm1, norm2, normdiff;
-	  printf ("i=%02d: ", i);
-	  LAL_CALL( scalarProductSFT(&status, &norm1, sft1, sft1 ), &status);
+	  XLALPrintInfo ("i=%02d: ", i);
+	  REAL4 norm1 = scalarProductSFT ( sft1, sft1 );
 	  norm1 = sqrt(norm1);
-	  LAL_CALL( scalarProductSFT(&status, &norm2, sft2, sft2 ), &status);
+	  REAL4 norm2 = scalarProductSFT ( sft2, sft2 );
 	  norm2 = sqrt(norm2);
-	  LAL_CALL( scalarProductSFT(&status, &scalar, sft1, sft2 ), &status);
+	  REAL4 scalar = scalarProductSFT ( sft1, sft2 );
 
-	  LAL_CALL( scalarProductSFT(&status, &normdiff, &(diffs->data[i]), &(diffs->data[i]) ), &status);
+	  REAL4 normdiff = scalarProductSFT ( &(diffs->data[i]), &(diffs->data[i]) );
 
-	  d1 = (norm1 - norm2)/norm1;
-	  d2 = 1.0 - scalar / (norm1*norm2);
-	  d3 = normdiff / (norm1*norm1 + norm2*norm2 );
-	  d4 = getMaxErrSFT (sft1, sft2);
-	  printf ("(|x|-|y|)/|x|=%10.3e, 1-x.y/(|x||y|)=%10.3e, |x-y|^2/(|x|^2+|y|^2))=%10.3e, maxErr=%10.3e\n", d1, d2, d3, d4);
+	  REAL4 d1 = (norm1 - norm2)/norm1;
+	  REAL4 d2 = 1.0 - scalar / (norm1*norm2);
+	  REAL4 d3 = normdiff / (norm1*norm1 + norm2*norm2 );
+	  REAL4 d4 = getMaxErrSFT (sft1, sft2);
+	  XLALPrintInfo ("(|x|-|y|)/|x|=%10.3e, 1-x.y/(|x||y|)=%10.3e, |x-y|^2/(|x|^2+|y|^2))=%10.3e, maxErr=%10.3e\n", d1, d2, d3, d4);
 	} /* for i < SFTs->length */
     } /* if verbose */
 
   /* ---------- COMBINED measures ---------- */
   {
     REAL4 ret;
-    REAL8 norm1, norm2, normdiff, scalar;
-    REAL8 d1, d2, d3,d4;
+    ret = scalarProductSFTVector ( SFTs1, SFTs1 );
+    REAL8 norm1 = sqrt( (REAL8)ret );
 
-    LAL_CALL( scalarProductSFTVector (&status, &ret, SFTs1, SFTs1 ), &status);
-    norm1 = sqrt( (REAL8)ret );
+    ret = scalarProductSFTVector ( SFTs2, SFTs2 );
+    REAL8 norm2 = sqrt( (REAL8)ret );
 
-    LAL_CALL( scalarProductSFTVector (&status, &ret, SFTs2, SFTs2 ), &status);
-    norm2 = sqrt( (REAL8)ret );
+    ret = scalarProductSFTVector ( SFTs1, SFTs2 );
+    REAL8 scalar = (REAL8) ret;
 
-    LAL_CALL( scalarProductSFTVector (&status, &ret, SFTs1, SFTs2 ), &status);
-    scalar = (REAL8) ret;
+    ret = scalarProductSFTVector ( diffs, diffs );
+    REAL8 normdiff = (REAL8) ret;
 
-    LAL_CALL( scalarProductSFTVector(&status, &ret, diffs, diffs ), &status);
-    normdiff = (REAL8) ret;
+    REAL8 d1 = (norm1 - norm2)/norm1;
+    maxd = fmax ( maxd, d1 );
+    REAL8 d2 = 1.0 - scalar / (norm1*norm2);
+    maxd = fmax ( maxd, d2 );
+    REAL8 d3 = normdiff / ( norm1*norm1 + norm2*norm2);
+    maxd = fmax ( maxd, d3 );
+    REAL8 d4 = getMaxErrSFTVector (SFTs1, SFTs2);
+    maxd = fmax ( maxd, d4 );
 
-    d1 = (norm1 - norm2)/norm1;
-    maxd = mymax ( maxd, d1 );
-    d2 = 1.0 - scalar / (norm1*norm2);
-    maxd = mymax ( maxd, d2 );
-    d3 = normdiff / ( norm1*norm1 + norm2*norm2);
-    maxd = mymax ( maxd, d3 );
-    d4 = getMaxErrSFTVector (SFTs1, SFTs2);
-    maxd = mymax ( maxd, d4 );
-
-    if ( uvar_verbose )
+    if ( uvar.verbose ) {
       printf ("\nTOTAL:(|x|-|y|)/|x|=%10.3e, 1-x.y/(|x||y|)=%10.3e, |x-y|^2/(|x|^2+|y|^2)=%10.3e, maxErr=%10.3e\n", d1, d2, d3, d4);
+    }
     else
-      printf ("%10.3e  %10.3e\n", d3, d4);
+      {
+        printf ("%10.3e  %10.3e\n", d3, d4);
+      }
 
   } /* combined total measures */
 
 
   /* free memory */
-  LAL_CALL (LALDestroySFTVector(&status, &SFTs1), &status);
-  LAL_CALL (LALDestroySFTVector(&status, &SFTs2), &status);
-  LAL_CALL (LALDestroySFTVector(&status, &diffs), &status);
-  LAL_CALL (LALDestroyUserVars (&status), &status);
-
+  XLALDestroySFTVector ( SFTs1 );
+  XLALDestroySFTVector ( SFTs2 );
+  XLALDestroySFTVector ( diffs );
+  XLALDestroyUserVars();
 
   LALCheckMemoryLeaks();
 
-  if ( maxd <= uvar_relErrorMax )
+  if ( maxd <= uvar.relErrorMax ) {
     return 0;
-  else
+  }
+  else {
     return 1;
+  }
 
 } /* main */
 
 
 /*----------------------------------------------------------------------*/
 /* register all our "user-variables" */
-void
-initUserVars (LALStatus *stat)
+int
+initUserVars ( UserInput_t *uvar )
 {
-  INITSTATUS(stat);
-  ATTATCHSTATUSPTR (stat);
+  XLAL_CHECK ( uvar != NULL, XLAL_EINVAL );
 
   /* set some defaults */
-  uvar_debug = lalDebugLevel;
-  uvar_verbose = FALSE;
-  uvar_relErrorMax = 1e-4;
+  uvar->debug = lalDebugLevel;
+  uvar->verbose = 0;
+  uvar->relErrorMax = 1e-4;
 
   /* now register all our user-variable */
 
-  LALregBOOLUserVar(stat,   help,	'h', UVAR_HELP,     "Print this help/usage message");
-  LALregSTRINGUserVar(stat, sftBname1,	'1', UVAR_REQUIRED, "Path and basefilename for SFTs1");
-  LALregSTRINGUserVar(stat, sftBname2,	'2', UVAR_REQUIRED, "Path and basefilename for SFTs2");
-  LALregBOOLUserVar(stat,   verbose,	'v', UVAR_OPTIONAL, "Verbose output of differences");
-  LALregREALUserVar(stat,   relErrorMax,'e', UVAR_OPTIONAL, "Maximal relative error acceptable to 'pass' comparison");
+  XLALregBOOLUserStruct		( help,		'h', UVAR_HELP,     "Print this help/usage message");
+  XLALregSTRINGUserStruct 	( sftBname1,	'1', UVAR_REQUIRED, "Path and basefilename for SFTs1");
+  XLALregSTRINGUserStruct 	( sftBname2,	'2', UVAR_REQUIRED, "Path and basefilename for SFTs2");
+  XLALregBOOLUserStruct 	(  verbose,	'v', UVAR_OPTIONAL, "Verbose output of differences");
+  XLALregREALUserStruct 	( relErrorMax,	'e', UVAR_OPTIONAL, "Maximal relative error acceptable to 'pass' comparison");
 
-
-  DETATCHSTATUSPTR (stat);
-  RETURN (stat);
+  return XLAL_SUCCESS;
 
 } /* initUserVars() */
 
@@ -290,10 +235,10 @@ getMaxErrSFT (const SFTtype *sft1, const SFTtype *sft2)
       diff = (re1 - re2)*(re1 - re2) + (im1 - im2)*(im1 - im2);
       A1 = re1*re1 + im1*im1;
       A2 = re2*re2 + im2*im2;
-      Ampl = mymax(A1, A2);
+      Ampl = fmax(A1, A2);
 
-      maxDiff = mymax(maxDiff, diff);
-      maxAmpl = mymax(maxAmpl, Ampl);
+      maxDiff = fmax(maxDiff, diff);
+      maxAmpl = fmax(maxAmpl, Ampl);
 
     } /* for i */
 
@@ -314,10 +259,10 @@ getMaxErrSFTVector (const SFTVector *sftvect1, const SFTVector *sftvect2)
   for (i=0; i<sftvect1->length; i++)
     {
       thisErr = getMaxErrSFT ( &(sftvect1->data[i]), &(sftvect2->data[i]));
-      maxErr = mymax (maxErr, thisErr);
+      maxErr = fmax (maxErr, thisErr);
     }
 
-  return(maxErr);
+  return maxErr;
 
 } /* getMaxErrSFTVector() */
 
@@ -327,29 +272,20 @@ getMaxErrSFTVector (const SFTVector *sftvect1, const SFTVector *sftvect2)
  * two time-series x_i and y_i : x*y = sum_i x_i y_i
  * in Fourier-space, which is 2/N * Re( sum_i X_i Y*_i)
  *--------------------------------------------------*/
-void
-scalarProductSFT (LALStatus *stat, REAL4 *scalar, const SFTtype *sft1, const SFTtype *sft2)
+REAL4
+scalarProductSFT ( const SFTtype *sft1, const SFTtype *sft2 )
 {
-  UINT4 i;
-  REAL8 prod;
-
-  INITSTATUS(stat);
-  ATTATCHSTATUSPTR (stat);
-
-  ASSERT ( scalar, stat, MAKEFAKEDATAC_ENULL, MAKEFAKEDATAC_MSGENULL);
-  ASSERT ( sft1, stat, MAKEFAKEDATAC_ENULL, MAKEFAKEDATAC_MSGENULL);
-  ASSERT ( sft2, stat, MAKEFAKEDATAC_ENULL, MAKEFAKEDATAC_MSGENULL);
-  ASSERT ( sft1->data->length == sft2->data->length, stat, MAKEFAKEDATAC_EINCOMPAT, MAKEFAKEDATAC_MSGEINCOMPAT);
+  XLAL_CHECK_REAL4 ( (sft1 != NULL) && (sft2 != NULL), XLAL_EINVAL );
+  XLAL_CHECK_REAL4 ( sft1->data->length == sft2->data->length, XLAL_EINVAL );
 
   /* we do the calculation in REAL8 to avoid accumulating roundoff-errors */
-  prod = 0;
-  for (i=0; i < sft1->data->length; i++)
+  REAL8 prod = 0;
+  for ( UINT4 i=0; i < sft1->data->length; i++ )
     {
-      REAL8 xre, xim, yre, yim;
-      xre = (REAL8)crealf(sft1->data->data[i]);
-      xim = (REAL8)cimagf(sft1->data->data[i]);
-      yre = (REAL8)crealf(sft2->data->data[i]);
-      yim = (REAL8)cimagf(sft2->data->data[i]);
+      REAL8 xre = (REAL8)crealf(sft1->data->data[i]);
+      REAL8 xim = (REAL8)cimagf(sft1->data->data[i]);
+      REAL8 yre = (REAL8)crealf(sft2->data->data[i]);
+      REAL8 yim = (REAL8)cimagf(sft2->data->data[i]);
 
       prod +=  xre * yre + xim * yim;
 
@@ -357,12 +293,7 @@ scalarProductSFT (LALStatus *stat, REAL4 *scalar, const SFTtype *sft1, const SFT
 
   prod *= 2.0 / ((REAL8)sft1->data->length);
 
-  /* cast back to REAL4 */
-  (*scalar) = (REAL4) prod;
-
-
-  DETATCHSTATUSPTR (stat);
-  RETURN (stat);
+  return (REAL4) prod;
 
 } /* scalarProductSFT() */
 
@@ -370,32 +301,20 @@ scalarProductSFT (LALStatus *stat, REAL4 *scalar, const SFTtype *sft1, const SFT
  * extend the previous definition to an SFT-vector
  * this is simply the sum of individual SFT-products
  *--------------------------------------------------*/
-void
-scalarProductSFTVector (LALStatus *stat, REAL4 *scalar, const SFTVector *sftvect1, const SFTVector *sftvect2)
+REAL4
+scalarProductSFTVector ( const SFTVector *sftvect1, const SFTVector *sftvect2 )
 {
-  UINT4 i;
-  REAL8 prod;
+  XLAL_CHECK_REAL4 ( (sftvect1 != NULL) && (sftvect2 != NULL), XLAL_EINVAL );
+  XLAL_CHECK_REAL4 ( sftvect1->length == sftvect2->length, XLAL_EINVAL );
 
-  INITSTATUS(stat);
-  ATTATCHSTATUSPTR (stat);
-
-  ASSERT ( scalar, stat, MAKEFAKEDATAC_ENULL, MAKEFAKEDATAC_MSGENULL);
-  ASSERT ( sftvect1, stat, MAKEFAKEDATAC_ENULL, MAKEFAKEDATAC_MSGENULL);
-  ASSERT ( sftvect2, stat, MAKEFAKEDATAC_ENULL, MAKEFAKEDATAC_MSGENULL);
-  ASSERT ( sftvect1->length == sftvect2->length, stat, MAKEFAKEDATAC_EINCOMPAT, MAKEFAKEDATAC_MSGEINCOMPAT);
-
-  prod = 0;
-  for (i=0; i < sftvect1->length; i++)
+  REAL8 prod = 0;
+  for ( UINT4 i=0; i < sftvect1->length; i++ )
     {
-      REAL4 xy;
-      TRY ( scalarProductSFT (stat->statusPtr, &xy, &(sftvect1->data[i]), &(sftvect2->data[i]) ), stat);
+      REAL4 xy = scalarProductSFT ( &(sftvect1->data[i]), &(sftvect2->data[i]) );
       prod += (REAL8) xy;
     }
 
-  (*scalar) = (REAL4) prod;
-
-  DETATCHSTATUSPTR (stat);
-  RETURN (stat);
+  return (REAL4)prod;
 
 } /* scalarProductSFTVector() */
 
@@ -403,39 +322,26 @@ scalarProductSFTVector (LALStatus *stat, REAL4 *scalar, const SFTVector *sftvect
 /*--------------------------------------------------
  * calculate the difference of two SFT-vectors
  *--------------------------------------------------*/
-void
-subtractSFTVectors (LALStatus *stat, SFTVector **ret, const SFTVector *sftvect1, const SFTVector *sftvect2)
+SFTVector *
+subtractSFTVectors ( const SFTVector *sftvect1, const SFTVector *sftvect2 )
 {
-  UINT4 alpha, j;
-  UINT4 M, N;
-  SFTVector *vect = NULL;
+  XLAL_CHECK_NULL ( (sftvect1 != NULL) && (sftvect2 != NULL), XLAL_EINVAL );
+  XLAL_CHECK_NULL ( sftvect1->length == sftvect2->length, XLAL_EINVAL );
 
-  INITSTATUS(stat);
-  ATTATCHSTATUSPTR (stat);
+  UINT4 numSFTs = sftvect1->length;
+  UINT4 numBins = sftvect1->data[0].data->length;
 
-  ASSERT ( ret, stat, MAKEFAKEDATAC_ENULL, MAKEFAKEDATAC_MSGENULL);
-  ASSERT ( *ret == NULL, stat, MAKEFAKEDATAC_ENULL, MAKEFAKEDATAC_MSGENULL);
-  ASSERT ( sftvect1, stat, MAKEFAKEDATAC_ENULL, MAKEFAKEDATAC_MSGENULL);
-  ASSERT ( sftvect2, stat, MAKEFAKEDATAC_ENULL, MAKEFAKEDATAC_MSGENULL);
-  ASSERT ( sftvect1->length == sftvect2->length, stat, MAKEFAKEDATAC_EINCOMPAT, MAKEFAKEDATAC_MSGEINCOMPAT);
+  SFTVector *vect;
+  XLAL_CHECK_NULL ( (vect = XLALCreateSFTVector ( numSFTs, numBins )) != NULL, XLAL_EFUNC );
 
-  M = sftvect1->length;
-  N = sftvect1->data[0].data->length;
-
-  TRY ( LALCreateSFTVector (stat->statusPtr, &vect, M, N), stat);
-
-  for (alpha = 0; alpha < M; alpha ++)
+  for ( UINT4 alpha = 0; alpha < numSFTs; alpha ++ )
     {
-      for (j=0; j < N; j++)
+      for ( UINT4 j=0; j < numBins; j++ )
 	{
-	  vect->data[alpha].data->data[j] = crectf( crealf(sftvect1->data[alpha].data->data[j]) - crealf(sftvect2->data[alpha].data->data[j]), cimagf(sftvect1->data[alpha].data->data[j]) - cimagf(sftvect2->data[alpha].data->data[j]) );
-	} /* for j < N */
+	  vect->data[alpha].data->data[j] = sftvect1->data[alpha].data->data[j] - sftvect2->data[alpha].data->data[j];
+	}
+    } /* for alpha < numSFTs */
 
-    } /* for alpha < M */
-
-  (*ret) = vect;
-
-  DETATCHSTATUSPTR (stat);
-  RETURN (stat);
+  return vect;
 
 } /* subtractSFTVectors() */
