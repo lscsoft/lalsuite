@@ -294,7 +294,7 @@ const char *USELESSDATAMODE[5] = {"D_1US_0_249_1024_64S_F","D_1US_0_249_128_1S_F
 /***********************************************************************************************/
 /* define functions */
 int main(int argc,char *argv[]);
-void ReadUserVars(LALStatus *status,int argc,char *argv[],UserInput_t *uvar, CHAR *clargs);
+int ReadUserVars(int argc,char *argv[],UserInput_t *uvar, CHAR *clargs);
 
 /* FITS reading functions */
 int XLALReadFITSFile(FITSData **data,char *filename);
@@ -358,7 +358,7 @@ int main( int argc, char *argv[] )  {
   LogSetLevel(lalDebugLevel);
 
   /* register and read all user-variables */
-  LAL_CALL (ReadUserVars(&status,argc,argv,&uvar,clargs), &status);
+  XLAL_CHECK_MAIN ( ReadUserVars( argc,argv, &uvar, clargs) == XLAL_SUCCESS, XLAL_EFUNC );
   LogPrintf(LOG_DEBUG,"%s : read in uservars\n",fn);
 
   /**********************************************************************************/
@@ -465,7 +465,7 @@ int main( int argc, char *argv[] )  {
    LogPrintf(LOG_DEBUG,"%s : freed timeseries data\n",fn);
 
   /* Free config-Variables and userInput stuff */
-  LAL_CALL (LALDestroyUserVars (&status), &status);
+  XLALDestroyUserVars();
 
   /* did we forget anything ? */
   LALCheckMemoryLeaks();
@@ -479,15 +479,9 @@ int main( int argc, char *argv[] )  {
 /**
  * Read in input user arguments
  */
-void ReadUserVars(LALStatus *status,int argc,char *argv[],UserInput_t *uvar,CHAR *clargs)
+int
+ReadUserVars( int argc,char *argv[], UserInput_t *uvar, CHAR *clargs)
 {
-
-  CHAR *version_string;
-  INT4 i;
-
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
-
   /* initialise user variables */
   uvar->inputfile = NULL;
   uvar->outputdir = NULL;
@@ -495,40 +489,36 @@ void ReadUserVars(LALStatus *status,int argc,char *argv[],UserInput_t *uvar,CHAR
   uvar->deltat = MIN_DT;
 
   /* ---------- register all user-variables ---------- */
-  LALregBOOLUserStruct(status, 	help, 		'h', UVAR_HELP,     "Print this message");
-  LALregSTRINGUserStruct(status,inputfile, 	'i', UVAR_REQUIRED, "The input FITS file name");
-  LALregSTRINGUserStruct(status,outputdir, 	'o', UVAR_REQUIRED, "The output frame file directory name");
-  LALregREALUserStruct(status,  deltat,         't', UVAR_OPTIONAL, "The output sampling time (in seconds)");
-  LALregBOOLUserStruct(status, 	bary,   	'b', UVAR_OPTIONAL, "Output barycentered data");
-  LALregBOOLUserStruct(status,	version,        'V', UVAR_SPECIAL,  "Output code version");
+  XLALregBOOLUserStruct ( 	help, 		'h', UVAR_HELP,     "Print this message");
+  XLALregSTRINGUserStruct ( 	inputfile, 	'i', UVAR_REQUIRED, "The input FITS file name");
+  XLALregSTRINGUserStruct ( 	outputdir, 	'o', UVAR_REQUIRED, "The output frame file directory name");
+  XLALregREALUserStruct ( 	deltat,         't', UVAR_OPTIONAL, "The output sampling time (in seconds)");
+  XLALregBOOLUserStruct ( 	bary,   	'b', UVAR_OPTIONAL, "Output barycentered data");
+  XLALregBOOLUserStruct (	version,        'V', UVAR_SPECIAL,  "Output code version");
 
   /* do ALL cmdline and cfgfile handling */
-  LAL_CALL (LALUserVarReadAllInput(status->statusPtr, argc, argv), status->statusPtr);
+  XLAL_CHECK ( XLALUserVarReadAllInput ( argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* if help was requested, we're done here */
-  if (uvar->help) exit(0);
-
-  if ((version_string = XLALGetVersionString(0)) == NULL) {
-    XLALPrintError("XLALGetVersionString(0) failed.\n");
-    exit(1);
-  }
+  if (uvar->help) { exit(0); }
 
   if (uvar->version) {
+    CHAR *version_string;
+    XLAL_CHECK ( (version_string = XLALGetVersionString(0)) != NULL, XLAL_EFUNC );
     printf("%s\n",version_string);
+    XLALFree(version_string);
     exit(0);
   }
-  XLALFree(version_string);
+
 
   /* put clargs into string */
   strcpy(clargs,"");
-  for (i=0;i<argc;i++) {
+  for ( UINT4 i=0;i<argc;i++) {
     strcat(clargs,argv[i]);
     strcat(clargs," ");
   }
 
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
-
+  return XLAL_SUCCESS;
 }
 
 
