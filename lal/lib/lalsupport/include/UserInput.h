@@ -244,23 +244,6 @@ int XLALRegisterEPOCHUserVar ( const CHAR *name, CHAR optchar, UserVarState flag
  */
 /*@{*/
 
-/*----- another family of short-cut macros: register _struct-pointer_ "uvar->" User-Variables ----- */
-#define LALregREALUserStruct(status,name,option,flag,help) \
-TRY(LALRegisterREALUserVar((status)->statusPtr, #name, option, flag, help, &(uvar-> name)), status)
-
-#define LALregINTUserStruct(status,name,option,flag,help) \
-TRY(LALRegisterINTUserVar((status)->statusPtr, #name, option,flag, help, &(uvar-> name)), status)
-
-#define LALregBOOLUserStruct(status,name,option,flag,help) \
-TRY(LALRegisterBOOLUserVar((status)->statusPtr, #name, option, flag, help, &(uvar-> name)),status)
-
-#define LALregSTRINGUserStruct(status,name,option,flag,help) \
-TRY(LALRegisterSTRINGUserVar((status)->statusPtr, #name, option, flag, help, &(uvar-> name)),status)
-
-#define LALregLISTUserStruct(status,name,option,flag,help) \
-TRY(LALRegisterLISTUserVar((status)->statusPtr, #name, option, flag, help, &(uvar-> name)),status)
-
-
 void LALRegisterREALUserVar(LALStatus *, const CHAR *name, CHAR optchar, UserVarState flag, const CHAR *helpstr, REAL8 *cvar);
 void LALRegisterINTUserVar (LALStatus *, const CHAR *name, CHAR optchar, UserVarState flag, const CHAR *helpstr, INT4 *cvar);
 void LALRegisterBOOLUserVar (LALStatus *, const CHAR *name, CHAR optchar, UserVarState flag, const CHAR *helpstr, BOOLEAN *cvar);
