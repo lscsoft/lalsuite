@@ -343,47 +343,47 @@ initUserVars (LALStatus *status, UserVariables_t *uvar)
   uvar->searchNeighbors = 0;
 
   /* now register all user-variable */
-  LALregBOOLUserStruct(status,	help,		'h', UVAR_HELP,		"Print this help/usage message");
-  LALregSTRINGUserStruct(status,IFO,		'I', UVAR_REQUIRED, 	"Detector: H1, H2, L1, G1, ... ");
+  XLALregBOOLUserStruct(	help,		'h', UVAR_HELP,		"Print this help/usage message");
+  XLALregSTRINGUserStruct(IFO,		'I', UVAR_REQUIRED, 	"Detector: H1, H2, L1, G1, ... ");
 
-  LALregREALUserStruct(status,	Alpha,		'a', UVAR_OPTIONAL,	"skyposition Alpha in radians, equatorial coords.");
-  LALregREALUserStruct(status,	Delta, 		'd', UVAR_OPTIONAL,	"skyposition Delta in radians, equatorial coords.");
+  XLALregREALUserStruct(	Alpha,		'a', UVAR_OPTIONAL,	"skyposition Alpha in radians, equatorial coords.");
+  XLALregREALUserStruct(	Delta, 		'd', UVAR_OPTIONAL,	"skyposition Delta in radians, equatorial coords.");
 
-  LALregREALUserStruct(status,	AlphaBand,      'z', UVAR_OPTIONAL, 	"Band in alpha (equatorial coordinates) in radians");
-  LALregREALUserStruct(status,	DeltaBand,      'c', UVAR_OPTIONAL, 	"Band in delta (equatorial coordinates) in radians");
-  LALregSTRINGUserStruct(status,skyRegion,      'R', UVAR_OPTIONAL, 	"ALTERNATIVE: sky-region polygon \"(a1,d1),(a2,d2),..(aN,dN)\"");
+  XLALregREALUserStruct(	AlphaBand,      'z', UVAR_OPTIONAL, 	"Band in alpha (equatorial coordinates) in radians");
+  XLALregREALUserStruct(	DeltaBand,      'c', UVAR_OPTIONAL, 	"Band in delta (equatorial coordinates) in radians");
+  XLALregSTRINGUserStruct(skyRegion,      'R', UVAR_OPTIONAL, 	"ALTERNATIVE: sky-region polygon \"(a1,d1),(a2,d2),..(aN,dN)\"");
 
-  LALregINTUserStruct(status,	numSkyPartitions, 0, UVAR_OPTIONAL,	"Number of (equi-)partitions to split skygrid into");
-  LALregINTUserStruct(status,	partitionIndex,   0, UVAR_OPTIONAL,	"Index [0,numSkyPartitions-1] of sky-partition to generate");
+  XLALregINTUserStruct(	numSkyPartitions, 0, UVAR_OPTIONAL,	"Number of (equi-)partitions to split skygrid into");
+  XLALregINTUserStruct(	partitionIndex,   0, UVAR_OPTIONAL,	"Index [0,numSkyPartitions-1] of sky-partition to generate");
 
-  LALregREALUserStruct(status,	Freq, 		'f', UVAR_REQUIRED, 	"target frequency");
-  LALregREALUserStruct(status,	f1dot, 		's', UVAR_OPTIONAL, 	"first spindown-value df/dt");
-  LALregREALUserStruct(status,	FreqBand,       'b', UVAR_OPTIONAL, 	"Search frequency band in Hz");
-  LALregREALUserStruct(status,  f1dotBand,      'm', UVAR_OPTIONAL, 	"Search-band for f1dot");
+  XLALregREALUserStruct(	Freq, 		'f', UVAR_REQUIRED, 	"target frequency");
+  XLALregREALUserStruct(	f1dot, 		's', UVAR_OPTIONAL, 	"first spindown-value df/dt");
+  XLALregREALUserStruct(	FreqBand,       'b', UVAR_OPTIONAL, 	"Search frequency band in Hz");
+  XLALregREALUserStruct(  f1dotBand,      'm', UVAR_OPTIONAL, 	"Search-band for f1dot");
 
-  LALregREALUserStruct(status,	dFreq,         	'r', UVAR_OPTIONAL, 	"Frequency resolution in Hz (default: 1/(2*Tsft*Nsft)");
-  LALregREALUserStruct(status,	df1dot,        	'e', UVAR_OPTIONAL, 	"Resolution for f1dot (default: use metric or 1/(2*T^2))");
+  XLALregREALUserStruct(	dFreq,         	'r', UVAR_OPTIONAL, 	"Frequency resolution in Hz (default: 1/(2*Tsft*Nsft)");
+  XLALregREALUserStruct(	df1dot,        	'e', UVAR_OPTIONAL, 	"Resolution for f1dot (default: use metric or 1/(2*T^2))");
 
-  LALregREALUserStruct(status,	startTime,       0, UVAR_OPTIONAL, 	"GPS start time of observation");
-  LALregREALUserStruct(status, 	endTime,      	 0, UVAR_OPTIONAL,	"GPS end time of observation");
-  LALregREALUserStruct(status,	duration,	'T', UVAR_OPTIONAL,	"Alternative: Duration of observation in seconds");
+  XLALregREALUserStruct(	startTime,       0, UVAR_OPTIONAL, 	"GPS start time of observation");
+  XLALregREALUserStruct( 	endTime,      	 0, UVAR_OPTIONAL,	"GPS end time of observation");
+  XLALregREALUserStruct(	duration,	'T', UVAR_OPTIONAL,	"Alternative: Duration of observation in seconds");
 
   XLALregSTRINGUserStruct( ephemEarth,   	 0,  UVAR_OPTIONAL,     "Earth ephemeris file to use");
   XLALregSTRINGUserStruct( ephemSun,     	 0,  UVAR_OPTIONAL,     "Sun ephemeris file to use");
 
   /* ---------- */
-  LALregINTUserStruct(status,	gridType,        0 , UVAR_OPTIONAL, 	"0=flat, 1=isotropic, 2=metric, 3=file, 4=SkyGridFILE+metric");
-  LALregINTUserStruct(status, 	metricType,     'M', UVAR_OPTIONAL, 	"Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact");
-  LALregBOOLUserStruct(status,	projectMetric,	 0,  UVAR_OPTIONAL,	"Project metric onto frequency-surface");
-  LALregREALUserStruct(status,	metricMismatch, 'X', UVAR_OPTIONAL, 	"Maximal mismatch for SKY-grid (adjust value for more dimensions)");
-  LALregREALUserStruct(status,	dAlpha,         'l', UVAR_OPTIONAL, 	"Resolution in alpha (equatorial coordinates) in radians");
-  LALregREALUserStruct(status,	dDelta,         'g', UVAR_OPTIONAL, 	"Resolution in delta (equatorial coordinates) in radians");
-  LALregSTRINGUserStruct(status,skyGridFile,     0,  UVAR_OPTIONAL, 	"Load sky-grid from this file.");
-  LALregSTRINGUserStruct(status,outputSkyGrid,   0,  UVAR_OPTIONAL, 	"Write sky-grid into this file.");
-  LALregINTUserStruct(status, 	searchNeighbors, 0,  UVAR_OPTIONAL, 	"Find search-grid with roughly this many points/dimension");
-  LALregINTUserStruct(status, 	randomSeed, 	 0,  UVAR_OPTIONAL, 	"Random-seed to use for searchNeighbors grid-randomization");
+  XLALregINTUserStruct(	gridType,        0 , UVAR_OPTIONAL, 	"0=flat, 1=isotropic, 2=metric, 3=file, 4=SkyGridFILE+metric");
+  XLALregINTUserStruct( 	metricType,     'M', UVAR_OPTIONAL, 	"Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact");
+  XLALregBOOLUserStruct(	projectMetric,	 0,  UVAR_OPTIONAL,	"Project metric onto frequency-surface");
+  XLALregREALUserStruct(	metricMismatch, 'X', UVAR_OPTIONAL, 	"Maximal mismatch for SKY-grid (adjust value for more dimensions)");
+  XLALregREALUserStruct(	dAlpha,         'l', UVAR_OPTIONAL, 	"Resolution in alpha (equatorial coordinates) in radians");
+  XLALregREALUserStruct(	dDelta,         'g', UVAR_OPTIONAL, 	"Resolution in delta (equatorial coordinates) in radians");
+  XLALregSTRINGUserStruct(skyGridFile,     0,  UVAR_OPTIONAL, 	"Load sky-grid from this file.");
+  XLALregSTRINGUserStruct(outputSkyGrid,   0,  UVAR_OPTIONAL, 	"Write sky-grid into this file.");
+  XLALregINTUserStruct( 	searchNeighbors, 0,  UVAR_OPTIONAL, 	"Find search-grid with roughly this many points/dimension");
+  XLALregINTUserStruct( 	randomSeed, 	 0,  UVAR_OPTIONAL, 	"Random-seed to use for searchNeighbors grid-randomization");
 
-  LALregSTRINGUserStruct(status,mergedSFTFile, 	 0,  UVAR_DEVELOPER, 	"Dummy for CFS-compatibility ");
+  XLALregSTRINGUserStruct(mergedSFTFile, 	 0,  UVAR_DEVELOPER, 	"Dummy for CFS-compatibility ");
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
