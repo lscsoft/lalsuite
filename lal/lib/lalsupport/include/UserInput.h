@@ -243,21 +243,6 @@ int XLALRegisterEPOCHUserVar ( const CHAR *name, CHAR optchar, UserVarState flag
  * These functions and macros are deprecated, and you should user their XLAL-equivalents instead.
  */
 /*@{*/
-/*----- short-cut macros to register global "uvar_" User-Variables ----- */
-#define LALregREALUserVar(status,name,option,flag,help) \
-TRY(LALRegisterREALUserVar((status)->statusPtr, #name, option, flag, help,&(uvar_ ## name)), status)
-
-#define LALregINTUserVar(status,name,option,flag,help) \
-TRY(LALRegisterINTUserVar((status)->statusPtr, #name, option,flag, help,&(uvar_ ## name)), status)
-
-#define LALregBOOLUserVar(status,name,option,flag,help) \
-TRY(LALRegisterBOOLUserVar((status)->statusPtr, #name, option, flag, help, &(uvar_ ## name)),status)
-
-#define LALregSTRINGUserVar(status,name,option,flag,help) \
-TRY(LALRegisterSTRINGUserVar((status)->statusPtr, #name, option, flag, help, &(uvar_ ## name)),status)
-
-#define LALregLISTUserVar(status,name,option,flag,help) \
-TRY(LALRegisterLISTUserVar((status)->statusPtr, #name, option, flag, help, &(uvar_ ## name)),status)
 
 /*----- another family of short-cut macros: register _struct-pointer_ "uvar->" User-Variables ----- */
 #define LALregREALUserStruct(status,name,option,flag,help) \
