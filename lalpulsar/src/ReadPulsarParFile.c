@@ -367,7 +367,7 @@ int PulsarCheckParam( PulsarParameters *pars, const CHAR *name ){
 
 void PulsarClearParams( PulsarParameters *pars ){
 /* Free all variables inside the linked list, leaving only the head struct */
-  PulsarParam *this, *next;
+  PulsarParam *this, *next = NULL;
 
   if( !pars ) { return; }
 

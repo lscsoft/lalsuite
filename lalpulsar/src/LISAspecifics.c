@@ -238,7 +238,7 @@ XLALgetLISADetectorTensorLWL ( SymmTensor3 *detT, 		/**< [out]: LISA LWL detecto
 			       const Detector3Arms detArms,	/**< [in] precomputed detector-arms */
 			       CHAR channelNum )		/**< channel-number (as a char)  '1', '2', '3' .. */
 {
-  LISAarmT armA, armB;
+  LISAarmT armA = 0, armB = 0;
   CHAR chan1 = 0;
   CHAR chan2 = 0;
   SymmTensor3 detT1, detT2;
@@ -398,7 +398,7 @@ XLALgetLISADetectorTensorRAA ( CmplxDetectorTensor *detT, 	/**< [out]: LISA LWL 
 			       const FreqSkypos_t *freq_skypos	/**< [in] precompute frequency and skypos info */
 			       )
 {
-  LISAarmT armA, armB;
+  LISAarmT armA = 0, armB = 0;
   CHAR chan1 = 0;
   CHAR chan2 = 0;
   CmplxDetectorTensor detT1, detT2;
