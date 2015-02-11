@@ -18,7 +18,7 @@ pss_progs =
 pssinterface =
 endif
 
-bin_PROGRAMS = $(frameprogs) $(pss_progs) lalapps_ConvertToSFTv2 lalapps_LISAmakeSFTs
+bin_PROGRAMS = $(frameprogs) $(pss_progs) lalapps_ConvertToSFTv2
 EXTRA_PROGRAMS = $(frameexprogs)
 
 if FRAME
@@ -32,5 +32,3 @@ lalapps_MakeSFTs_CPPFLAGS += -DPSS_ENABLED
 endif
 
 lalapps_ConvertToSFTv2_SOURCES = ConvertToSFTv2.c
-
-lalapps_LISAmakeSFTs_SOURCES = LISAmakeSFTs.c readxml.c readxml.h ezxml.c ezxml.h

@@ -343,3 +343,8 @@ git commit --amend
 # 2015-02-03 lalapps/src/pulsar/SideBand/SideBand.h
 # 2015-02-03 lalapps/src/pulsar/SideBand/SideBandMCMC.c
 # 2015-02-03 lalapps/src/pulsar/SideBand/SideBandUtils.c
+# 2015-02-11 lalapps/src/pulsar/MakeSFTs/LISAmakeSFTs.c
+# 2015-02-11 lalapps/src/pulsar/MakeSFTs/ezxml.c
+# 2015-02-11 lalapps/src/pulsar/MakeSFTs/ezxml.h
+# 2015-02-11 lalapps/src/pulsar/MakeSFTs/readxml.c
+# 2015-02-11 lalapps/src/pulsar/MakeSFTs/readxml.h
