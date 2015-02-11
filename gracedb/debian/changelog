@@ -1,3 +1,11 @@
+ligo-gracedb (1.16-1) unstable; urgency=low
+  * Fixes for glue 1.47 to the command line client
+  * Use SSLContext and explicitly turn off client-side server verification
+  * Fix for command that lists groups, pipelines, and searches 
+  * Allow multiple tags to be added to an event log at creation time
+  * Updates to unit test data
+ -- Branson Stephens <branson.stephens@ligo.org>  Wed, 11 Feb 2015 12:00:00 -0600
+
 ligo-gracedb (1.15-1) unstable; urgency=low
   * Features for EMBB Event Log upload and retrieval
   * Changes for (Group,Type) -> (Group,Pipeline,Search) transition
