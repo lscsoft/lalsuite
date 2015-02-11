@@ -317,7 +317,7 @@ extern int vrbflg;		/**< defined in lalapps.c */
 
 /* ---------- local prototypes ---------- */
 int main(int argc,char *argv[]);
-void initUserVars (LALStatus *, UserInput_t *uvar);
+int initUserVars ( UserInput_t *uvar);
 void InitFstat ( LALStatus *, ConfigVariables *cfg, const UserInput_t *uvar );
 void Freemem(LALStatus *,  ConfigVariables *cfg);
 
@@ -383,7 +383,7 @@ int main(int argc,char *argv[])
   lal_errhandler = LAL_ERR_EXIT;
 
   /* register all user-variable */
-  LAL_CALL (initUserVars(&status, &uvar), &status);
+  XLAL_CHECK_MAIN ( initUserVars ( &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   if ( (GV.VCSInfoString = XLALGetVersionString(0)) == NULL ) {
     XLALPrintError("XLALGetVersionString(0) failed.\n");
@@ -1000,11 +1000,10 @@ int main(int argc,char *argv[])
  * Register all our "user-variables" that can be specified from cmd-line and/or config-file.
  * Here we set defaults for some user-variables and register them with the UserInput module.
  */
-void
-initUserVars (LALStatus *status, UserInput_t *uvar)
+int
+initUserVars ( UserInput_t *uvar )
 {
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
+  XLAL_CHECK ( uvar != NULL, XLAL_EINVAL );
 
   /* set a few defaults */
   uvar->FreqBand = 0.0;
@@ -1069,8 +1068,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   uvar->minStartTime.gpsSeconds = 0;
   uvar->maxStartTime.gpsSeconds = LAL_INT4_MAX;
 
-  uvar->workingDir = (CHAR*)LALMalloc(512);
-  strcpy(uvar->workingDir, ".");
+  uvar->workingDir = XLALStringDuplicate ( "." );
 
   uvar->timerCount = 10;	/* output a timer/progress count every N seconds */
 
@@ -1081,9 +1079,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   uvar->FstatMethod = XLALStringDuplicate("DemodBest");	// default to guessed 'best' demod hotloop variant
 
   uvar->outputSingleFstats = FALSE;
-  #define DEFAULT_RANKINGSTATISTIC "F"
-  uvar->RankingStatistic = LALCalloc (1, strlen(DEFAULT_RANKINGSTATISTIC)+1);
-  strcpy (uvar->RankingStatistic, DEFAULT_RANKINGSTATISTIC);
+  uvar->RankingStatistic = XLALStringDuplicate ( "F" );
 
   uvar->computeBSGL = FALSE;
   uvar->BSGLlogcorr = TRUE;
@@ -1091,9 +1087,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   uvar->oLGX = NULL;       /* NULL is intepreted as oLGX[X] = 1.0/Ndet for all X */
   uvar->BSGLthreshold = - LAL_REAL8_MAX;
 
-#define DEFAULT_TRANSIENT "none"
-  uvar->transient_WindowType = LALMalloc(strlen(DEFAULT_TRANSIENT)+1);
-  strcpy ( uvar->transient_WindowType, DEFAULT_TRANSIENT );
+  uvar->transient_WindowType = XLALStringDuplicate ( "none" );
   uvar->transient_useFReg = 0;
 
   /* ---------- register all user-variables ---------- */
@@ -1210,8 +1204,8 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
 
   XLALregSTRINGUserStruct( outputTiming,         0,  UVAR_DEVELOPER, "Append timing measurements and parameters into this file");
 
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
+  return XLAL_SUCCESS;
+
 } /* initUserVars() */
 
 /** Initialized Fstat-code: handle user-input and set everything up.
