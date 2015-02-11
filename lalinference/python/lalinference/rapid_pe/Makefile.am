@@ -16,6 +16,7 @@ pymodule_PYTHON = \
     xmlutils.py \
     common_cl.py \
     dagutils.py \
+    effectiveFisher.py \
 	$(END_OF_LIST)
 
 endif
