@@ -348,3 +348,6 @@ git commit --amend
 # 2015-02-11 lalapps/src/pulsar/MakeSFTs/ezxml.h
 # 2015-02-11 lalapps/src/pulsar/MakeSFTs/readxml.c
 # 2015-02-11 lalapps/src/pulsar/MakeSFTs/readxml.h
+# 2015-02-12 lalapps/src/pulsar/templateBanks/getMesh.c
+# 2015-02-12 lalapps/src/pulsar/templateBanks/getMetric.c
+# 2015-02-12 lalapps/src/pulsar/templateBanks/skynet.c

@@ -1,16 +1,7 @@
 BUILT_SOURCES =
 include $(top_srcdir)/gnuscripts/lalapps.am
 
-bin_PROGRAMS =  lalapps_skynet \
-		lalapps_getMetric \
-		lalapps_getMesh \
-		lalapps_FstatMetric_v2
-
-lalapps_skynet_SOURCES = skynet.c
-
-lalapps_getMetric_SOURCES = getMetric.c
-
-lalapps_getMesh_SOURCES = getMesh.c
+bin_PROGRAMS = lalapps_FstatMetric_v2
 
 lalapps_FstatMetric_v2_SOURCES = FstatMetric_v2.c
 
