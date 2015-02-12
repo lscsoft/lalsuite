@@ -53,6 +53,7 @@ lib/lalsupport/test/LALMathNDPlotTest
 lib/lalsupport/test/Math3DNotebook.nb
 lib/lalsupport/test/MathNDNotebook.nb
 lib/lalsupport/test/NRWaveIOTest
+lib/lalsupport/test/ParseStringValueTest
 lib/lalsupport/test/PrintFTSeriesTest
 lib/lalsupport/test/PrintVectorTest
 lib/lalsupport/test/ReadFTSeriesTest
@@ -61,6 +62,8 @@ lib/lalsupport/test/SegmentsIOTest
 lib/lalsupport/test/SegmentsOutput1.data
 lib/lalsupport/test/StreamInputTest
 lib/lalsupport/test/StreamSeriesInputTest
+lib/lalsupport/test/TranslateAnglesTest
+lib/lalsupport/test/TranslateMJDTest
 lib/lalsupport/test/UserInputTest
 libtool
 octave/
