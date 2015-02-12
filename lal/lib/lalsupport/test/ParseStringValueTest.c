@@ -23,6 +23,7 @@
 #include <math.h>
 #include <string.h>
 
+#include <lal/LALStdio.h>
 #include <lal/Date.h>
 #include <lal/XLALError.h>
 #include <lal/LALMalloc.h>
@@ -60,17 +61,17 @@ test_ParseStringValue ( void )
   valString = "9223372036854775807"; // LAL_INT8_MAX
   valINT8Ref = 9223372036854775807;
   XLAL_CHECK ( XLALParseStringValueToINT8 ( &valINT8, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( valINT8 == valINT8Ref, XLAL_ETOL, "XLALParseStringValueToINT8(%s) failed, return = %ld\n", valString, valINT8 );
+  XLAL_CHECK ( valINT8 == valINT8Ref, XLAL_ETOL, "XLALParseStringValueToINT8(%s) failed, return = %" LAL_INT8_FORMAT "\n", valString, valINT8 );
 
   valString = "4294967294"; // 2 * LAL_INT4_MAX
   valINT8Ref = 4294967294;
   XLAL_CHECK ( XLALParseStringValueToINT8 ( &valINT8, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( valINT8 == valINT8Ref, XLAL_ETOL, "XLALParseStringValueToINT8(%s) failed, return = %ld\n", valString, valINT8 );
+  XLAL_CHECK ( valINT8 == valINT8Ref, XLAL_ETOL, "XLALParseStringValueToINT8(%s) failed, return = %" LAL_INT8_FORMAT "\n", valString, valINT8 );
 
   valString = "-4294967294"; // -2 * LAL_INT4_MAX
   valINT8Ref = -4294967294;
   XLAL_CHECK ( XLALParseStringValueToINT8 ( &valINT8, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( valINT8 == valINT8Ref, XLAL_ETOL, "XLALParseStringValueToINT8(%s) failed, return = %ld\n", valString, valINT8 );
+  XLAL_CHECK ( valINT8 == valINT8Ref, XLAL_ETOL, "XLALParseStringValueToINT8(%s) failed, return = %" LAL_INT8_FORMAT "\n", valString, valINT8 );
 
   // this one needs to fail!
   //valString = "18446744073709551616"; // 2 * LAL_INT8_MAX
