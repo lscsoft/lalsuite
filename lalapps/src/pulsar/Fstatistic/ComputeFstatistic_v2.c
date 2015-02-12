@@ -1091,114 +1091,114 @@ initUserVars ( UserInput_t *uvar )
   uvar->transient_useFReg = 0;
 
   /* ---------- register all user-variables ---------- */
-  LALregBOOLUserStruct(status, 	help, 		'h', UVAR_HELP,     "Print this message");
+  XLALregBOOLUserStruct( 	help, 		'h', UVAR_HELP,     "Print this message");
 
-  LALregREALUserStruct(status, 	Alpha, 		'a', UVAR_OPTIONAL, "Sky position alpha (equatorial coordinates) in radians");
-  LALregREALUserStruct(status, 	Delta, 		'd', UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in radians");
-  LALregSTRINGUserStruct(status,RA, 		 0 , UVAR_OPTIONAL, "Sky position alpha (equatorial coordinates) in format hh:mm:ss.sss");
-  LALregSTRINGUserStruct(status,Dec, 		 0 , UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in format dd:mm:ss.sss");
-  LALregSTRINGUserStruct(status,skyRegion, 	'R', UVAR_OPTIONAL, "ALTERNATIVE: Sky-region by polygon of form '(ra1,dec1),(ra2,dec2),(ra3,dec3),...' or 'allsky'");
+  XLALregREALUserStruct( 	Alpha, 		'a', UVAR_OPTIONAL, "Sky position alpha (equatorial coordinates) in radians");
+  XLALregREALUserStruct( 	Delta, 		'd', UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in radians");
+  XLALregSTRINGUserStruct(RA, 		 0 , UVAR_OPTIONAL, "Sky position alpha (equatorial coordinates) in format hh:mm:ss.sss");
+  XLALregSTRINGUserStruct(Dec, 		 0 , UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in format dd:mm:ss.sss");
+  XLALregSTRINGUserStruct(skyRegion, 	'R', UVAR_OPTIONAL, "ALTERNATIVE: Sky-region by polygon of form '(ra1,dec1),(ra2,dec2),(ra3,dec3),...' or 'allsky'");
 
-  LALregREALUserStruct(status, 	Freq, 		'f', UVAR_OPTIONAL, "Starting search frequency Freq in Hz");
-  LALregREALUserStruct(status, 	f1dot, 		's', UVAR_OPTIONAL, "First spindown parameter  f1dot = dFreq/dt");
-  LALregREALUserStruct(status, 	f2dot, 		 0 , UVAR_OPTIONAL, "Second spindown parameter f2dot = d^2Freq/dt^2");
-  LALregREALUserStruct(status, 	f3dot, 		 0 , UVAR_OPTIONAL, "Third spindown parameter  f3dot = d^3Freq/dt^3");
+  XLALregREALUserStruct( 	Freq, 		'f', UVAR_OPTIONAL, "Starting search frequency Freq in Hz");
+  XLALregREALUserStruct( 	f1dot, 		's', UVAR_OPTIONAL, "First spindown parameter  f1dot = dFreq/dt");
+  XLALregREALUserStruct( 	f2dot, 		 0 , UVAR_OPTIONAL, "Second spindown parameter f2dot = d^2Freq/dt^2");
+  XLALregREALUserStruct( 	f3dot, 		 0 , UVAR_OPTIONAL, "Third spindown parameter  f3dot = d^3Freq/dt^3");
 
-  LALregREALUserStruct(status, 	AlphaBand, 	'z', UVAR_OPTIONAL, "Search band in alpha (equatorial coordinates) in radians");
-  LALregREALUserStruct(status, 	DeltaBand, 	'c', UVAR_OPTIONAL, "Search band in delta (equatorial coordinates) in radians");
-  LALregREALUserStruct(status, 	FreqBand, 	'b', UVAR_OPTIONAL, "Search band in frequency in Hz");
-  LALregREALUserStruct(status, 	f1dotBand, 	'm', UVAR_OPTIONAL, "Search band in f1dot in Hz/s");
-  LALregREALUserStruct(status, 	f2dotBand, 	 0 , UVAR_OPTIONAL, "Search band in f2dot in Hz/s^2");
-  LALregREALUserStruct(status, 	f3dotBand, 	 0 , UVAR_OPTIONAL, "Search band in f3dot in Hz/s^3");
+  XLALregREALUserStruct( 	AlphaBand, 	'z', UVAR_OPTIONAL, "Search band in alpha (equatorial coordinates) in radians");
+  XLALregREALUserStruct( 	DeltaBand, 	'c', UVAR_OPTIONAL, "Search band in delta (equatorial coordinates) in radians");
+  XLALregREALUserStruct( 	FreqBand, 	'b', UVAR_OPTIONAL, "Search band in frequency in Hz");
+  XLALregREALUserStruct( 	f1dotBand, 	'm', UVAR_OPTIONAL, "Search band in f1dot in Hz/s");
+  XLALregREALUserStruct( 	f2dotBand, 	 0 , UVAR_OPTIONAL, "Search band in f2dot in Hz/s^2");
+  XLALregREALUserStruct( 	f3dotBand, 	 0 , UVAR_OPTIONAL, "Search band in f3dot in Hz/s^3");
 
-  LALregREALUserStruct(status, 	dAlpha, 	'l', UVAR_OPTIONAL, "Stepsize in alpha (equatorial coordinates) in radians");
-  LALregREALUserStruct(status, 	dDelta, 	'g', UVAR_OPTIONAL, "Stepsize in delta (equatorial coordinates) in radians");
-  LALregREALUserStruct(status,  dFreq,          'r', UVAR_OPTIONAL, "Stepsize for frequency in Hz");
-  LALregREALUserStruct(status, 	df1dot, 	'e', UVAR_OPTIONAL, "Stepsize for f1dot in Hz/s");
-  LALregREALUserStruct(status, 	df2dot, 	 0 , UVAR_OPTIONAL, "Stepsize for f2dot in Hz/s^2");
-  LALregREALUserStruct(status, 	df3dot, 	 0 , UVAR_OPTIONAL, "Stepsize for f3dot in Hz/s^3");
+  XLALregREALUserStruct( 	dAlpha, 	'l', UVAR_OPTIONAL, "Stepsize in alpha (equatorial coordinates) in radians");
+  XLALregREALUserStruct( 	dDelta, 	'g', UVAR_OPTIONAL, "Stepsize in delta (equatorial coordinates) in radians");
+  XLALregREALUserStruct(  dFreq,          'r', UVAR_OPTIONAL, "Stepsize for frequency in Hz");
+  XLALregREALUserStruct( 	df1dot, 	'e', UVAR_OPTIONAL, "Stepsize for f1dot in Hz/s");
+  XLALregREALUserStruct( 	df2dot, 	 0 , UVAR_OPTIONAL, "Stepsize for f2dot in Hz/s^2");
+  XLALregREALUserStruct( 	df3dot, 	 0 , UVAR_OPTIONAL, "Stepsize for f3dot in Hz/s^3");
 
-  LALregREALUserStruct(status, 	orbitasini, 	 0,  UVAR_OPTIONAL, "Binary Orbit: Projected semi-major axis in light-seconds [Default: 0.0]");
-  LALregREALUserStruct(status, 	orbitPeriod, 	 0,  UVAR_OPTIONAL, "Binary Orbit: Period in seconds");
+  XLALregREALUserStruct( 	orbitasini, 	 0,  UVAR_OPTIONAL, "Binary Orbit: Projected semi-major axis in light-seconds [Default: 0.0]");
+  XLALregREALUserStruct( 	orbitPeriod, 	 0,  UVAR_OPTIONAL, "Binary Orbit: Period in seconds");
   XLALregEPOCHUserStruct(	orbitTp, 	 0,  UVAR_OPTIONAL, "Binary Orbit: (true) epoch of periapsis: use 'xx.yy[GPS|MJD]' format.");
-  LALregREALUserStruct(status, 	orbitArgp, 	 0,  UVAR_OPTIONAL, "Binary Orbit: Orbital argument of periapse in radians");
-  LALregREALUserStruct(status, 	orbitEcc, 	 0,  UVAR_OPTIONAL, "Binary Orbit: Orbital eccentricity");
+  XLALregREALUserStruct( 	orbitArgp, 	 0,  UVAR_OPTIONAL, "Binary Orbit: Orbital argument of periapse in radians");
+  XLALregREALUserStruct( 	orbitEcc, 	 0,  UVAR_OPTIONAL, "Binary Orbit: Orbital eccentricity");
 
-  LALregSTRINGUserStruct(status,DataFiles, 	'D', UVAR_REQUIRED, "File-pattern specifying (also multi-IFO) input SFT-files");
-  LALregSTRINGUserStruct(status,IFO, 		'I', UVAR_OPTIONAL, "Detector: 'G1', 'L1', 'H1', 'H2' ...(useful for single-IFO v1-SFTs only!)");
+  XLALregSTRINGUserStruct(DataFiles, 	'D', UVAR_REQUIRED, "File-pattern specifying (also multi-IFO) input SFT-files");
+  XLALregSTRINGUserStruct(IFO, 		'I', UVAR_OPTIONAL, "Detector: 'G1', 'L1', 'H1', 'H2' ...(useful for single-IFO v1-SFTs only!)");
 
-  LALregBOOLUserStruct(status, 	SignalOnly, 	'S', UVAR_OPTIONAL, "Signal only flag");
+  XLALregBOOLUserStruct( 	SignalOnly, 	'S', UVAR_OPTIONAL, "Signal only flag");
 
-  LALregREALUserStruct(status, 	TwoFthreshold,	'F', UVAR_OPTIONAL, "Set the threshold for selection of 2F");
-  LALregINTUserStruct(status, 	gridType,	 0 , UVAR_OPTIONAL, "Grid: 0=flat, 1=isotropic, 2=metric, 3=skygrid-file, 6=grid-file, 8=spin-square, 9=spin-age-brk");
-  LALregINTUserStruct(status, 	metricType,	'M', UVAR_OPTIONAL, "Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact");
-  LALregREALUserStruct(status, 	metricMismatch,	'X', UVAR_OPTIONAL, "Maximal allowed mismatch for metric tiling");
-  LALregSTRINGUserStruct(status,outputLogfile,	 0,  UVAR_OPTIONAL, "Name of log-file identifying the code + search performed");
-  LALregSTRINGUserStruct(status,gridFile,	 0,  UVAR_OPTIONAL, "Load grid from this file: sky-grid or full-grid depending on --gridType.");
+  XLALregREALUserStruct( 	TwoFthreshold,	'F', UVAR_OPTIONAL, "Set the threshold for selection of 2F");
+  XLALregINTUserStruct( 	gridType,	 0 , UVAR_OPTIONAL, "Grid: 0=flat, 1=isotropic, 2=metric, 3=skygrid-file, 6=grid-file, 8=spin-square, 9=spin-age-brk");
+  XLALregINTUserStruct( 	metricType,	'M', UVAR_OPTIONAL, "Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact");
+  XLALregREALUserStruct( 	metricMismatch,	'X', UVAR_OPTIONAL, "Maximal allowed mismatch for metric tiling");
+  XLALregSTRINGUserStruct(outputLogfile,	 0,  UVAR_OPTIONAL, "Name of log-file identifying the code + search performed");
+  XLALregSTRINGUserStruct(gridFile,	 0,  UVAR_OPTIONAL, "Load grid from this file: sky-grid or full-grid depending on --gridType.");
   XLALregEPOCHUserStruct(refTime,	 	 0,  UVAR_OPTIONAL, "Reference SSB epoch for pulsar-parameters: use 'xx.yy[GPS|MJD]' format [Default: startTime]");
 
-  LALregSTRINGUserStruct(status,outputFstat,	 0,  UVAR_OPTIONAL, "Output-file for F-statistic field over the parameter-space");
-  LALregSTRINGUserStruct(status,outputLoudest,	 0,  UVAR_OPTIONAL, "Loudest F-statistic candidate + estimated MLE amplitudes");
+  XLALregSTRINGUserStruct(outputFstat,	 0,  UVAR_OPTIONAL, "Output-file for F-statistic field over the parameter-space");
+  XLALregSTRINGUserStruct(outputLoudest,	 0,  UVAR_OPTIONAL, "Loudest F-statistic candidate + estimated MLE amplitudes");
 
-  LALregSTRINGUserStruct(status,outputFstatHist, 0,  UVAR_OPTIONAL, "Output-file for a discrete histogram of all Fstatistic values");
-  LALregREALUserStruct(status,  FstatHistBin,    0,  UVAR_OPTIONAL, "Width of an Fstatistic histogram bin");
+  XLALregSTRINGUserStruct(outputFstatHist, 0,  UVAR_OPTIONAL, "Output-file for a discrete histogram of all Fstatistic values");
+  XLALregREALUserStruct(  FstatHistBin,    0,  UVAR_OPTIONAL, "Width of an Fstatistic histogram bin");
 
-  LALregINTUserStruct(status,  NumCandidatesToKeep,0, UVAR_OPTIONAL, "Number of Fstat 'candidates' to keep. (0 = All)");
-  LALregREALUserStruct(status,FracCandidatesToKeep,0, UVAR_OPTIONAL, "Fraction of Fstat 'candidates' to keep.");
-  LALregINTUserStruct(status,   clusterOnScanline, 0, UVAR_OPTIONAL, "Neighbors on each side for finding 1D local maxima on scanline");
+  XLALregINTUserStruct(  NumCandidatesToKeep,0, UVAR_OPTIONAL, "Number of Fstat 'candidates' to keep. (0 = All)");
+  XLALregREALUserStruct(FracCandidatesToKeep,0, UVAR_OPTIONAL, "Fraction of Fstat 'candidates' to keep.");
+  XLALregINTUserStruct(   clusterOnScanline, 0, UVAR_OPTIONAL, "Neighbors on each side for finding 1D local maxima on scanline");
 
   XLALregEPOCHUserStruct ( minStartTime, 	 0,  UVAR_OPTIONAL, "Only use SFTs with timestamps starting from (including) this epoch (format 'xx.yy[GPS|MJD]') ");
   XLALregEPOCHUserStruct ( maxStartTime, 	 0,  UVAR_OPTIONAL, "Only use SFTs with timestamps up to (excluding) this epoch (format 'xx.yy[GPS|MJD]')");
 
-  LALregSTRINGUserStruct(status,outputFstatAtoms,0,  UVAR_OPTIONAL, "Output filename *base* for F-statistic 'atoms' {a,b,Fa,Fb}_alpha. One file per doppler-point.");
-  LALregBOOLUserStruct(status,  outputSingleFstats,0,  UVAR_OPTIONAL, "In multi-detector case, also output single-detector F-stats?");
-  LALregSTRINGUserStruct(status,RankingStatistic,0,  UVAR_DEVELOPER, "Rank toplist candidates according to 'F' or 'BSGL' statistic");
+  XLALregSTRINGUserStruct(outputFstatAtoms,0,  UVAR_OPTIONAL, "Output filename *base* for F-statistic 'atoms' {a,b,Fa,Fb}_alpha. One file per doppler-point.");
+  XLALregBOOLUserStruct(  outputSingleFstats,0,  UVAR_OPTIONAL, "In multi-detector case, also output single-detector F-stats?");
+  XLALregSTRINGUserStruct(RankingStatistic,0,  UVAR_DEVELOPER, "Rank toplist candidates according to 'F' or 'BSGL' statistic");
 
   // ----- Line robust stats parameters ----------
-  LALregBOOLUserStruct(status,  computeBSGL,	0,  UVAR_OPTIONAL, "Compute and output line-robust statistic BSGL ");
-  LALregREALUserStruct(status,  Fstar0,		0,  UVAR_OPTIONAL, "BSGL: transition-scale parameter 'Fstar0'");
-  LALregLISTUserStruct(status,  oLGX,		0,  UVAR_OPTIONAL, "BSGL: prior per-detector line-vs-Gauss odds 'oLGX' (Defaults to oLGX=1/Ndet)");
-  LALregBOOLUserStruct(status,  BSGLlogcorr,	0,  UVAR_DEVELOPER,"BSGL: include log-correction terms (slower) or not (faster)");
-  LALregREALUserStruct(status, 	BSGLthreshold,	0,  UVAR_OPTIONAL, "BSGL threshold for candidate output");
+  XLALregBOOLUserStruct(  computeBSGL,	0,  UVAR_OPTIONAL, "Compute and output line-robust statistic BSGL ");
+  XLALregREALUserStruct(  Fstar0,		0,  UVAR_OPTIONAL, "BSGL: transition-scale parameter 'Fstar0'");
+  XLALregLISTUserStruct(  oLGX,		0,  UVAR_OPTIONAL, "BSGL: prior per-detector line-vs-Gauss odds 'oLGX' (Defaults to oLGX=1/Ndet)");
+  XLALregBOOLUserStruct(  BSGLlogcorr,	0,  UVAR_DEVELOPER,"BSGL: include log-correction terms (slower) or not (faster)");
+  XLALregREALUserStruct( 	BSGLthreshold,	0,  UVAR_OPTIONAL, "BSGL threshold for candidate output");
   // --------------------------------------------
 
-  LALregSTRINGUserStruct(status,outputTransientStats,0,  UVAR_OPTIONAL, "TransientCW: Output filename for transient-CW statistics.");
-  LALregSTRINGUserStruct(status, transient_WindowType,0,UVAR_OPTIONAL,  "TransientCW: Type of transient signal window to use. ('none', 'rect', 'exp').");
-  LALregREALUserStruct (status, transient_t0Days, 0,  UVAR_OPTIONAL,    "TransientCW: Earliest GPS start-time for transient window search, as offset in days from dataStartGPS");
-  LALregREALUserStruct (status, transient_t0DaysBand,0,UVAR_OPTIONAL,   "TransientCW: Range of GPS start-times to search in transient search, in days");
-  LALregINTUserStruct (status, transient_dt0,    0,  UVAR_OPTIONAL,     "TransientCW: Step-size in transient-CW start-time in seconds [Default:Tsft]");
-  LALregREALUserStruct(status, transient_tauDays,0,  UVAR_OPTIONAL,     "TransientCW: Minimal transient-CW duration timescale, in days");
-  LALregREALUserStruct(status, transient_tauDaysBand,0,  UVAR_OPTIONAL, "TransientCW: Range of transient-CW duration timescales to search, in days");
-  LALregINTUserStruct (status, transient_dtau,   0,  UVAR_OPTIONAL,     "TransientCW: Step-size in transient-CW duration timescale, in seconds [Default:Tsft]");
+  XLALregSTRINGUserStruct(outputTransientStats,0,  UVAR_OPTIONAL, "TransientCW: Output filename for transient-CW statistics.");
+  XLALregSTRINGUserStruct( transient_WindowType,0,UVAR_OPTIONAL,  "TransientCW: Type of transient signal window to use. ('none', 'rect', 'exp').");
+  XLALregREALUserStruct ( transient_t0Days, 0,  UVAR_OPTIONAL,    "TransientCW: Earliest GPS start-time for transient window search, as offset in days from dataStartGPS");
+  XLALregREALUserStruct ( transient_t0DaysBand,0,UVAR_OPTIONAL,   "TransientCW: Range of GPS start-times to search in transient search, in days");
+  XLALregINTUserStruct ( transient_dt0,    0,  UVAR_OPTIONAL,     "TransientCW: Step-size in transient-CW start-time in seconds [Default:Tsft]");
+  XLALregREALUserStruct( transient_tauDays,0,  UVAR_OPTIONAL,     "TransientCW: Minimal transient-CW duration timescale, in days");
+  XLALregREALUserStruct( transient_tauDaysBand,0,  UVAR_OPTIONAL, "TransientCW: Range of transient-CW duration timescales to search, in days");
+  XLALregINTUserStruct ( transient_dtau,   0,  UVAR_OPTIONAL,     "TransientCW: Step-size in transient-CW duration timescale, in seconds [Default:Tsft]");
 
   XLALregSTRINGUserStruct( FstatMethod,             0,  UVAR_OPTIONAL,  XLALFstatMethodHelpString() );
 
-  LALregBOOLUserStruct( status, version,	'V', UVAR_SPECIAL,  "Output version information");
+  XLALregBOOLUserStruct(  version,	'V', UVAR_SPECIAL,  "Output version information");
 
   /* ----- more experimental/expert options ----- */
-  LALregREALUserStruct(status, 	dopplermax, 	'q', UVAR_DEVELOPER, "Maximum doppler shift expected");
-  LALregBOOLUserStruct(status, 	UseNoiseWeights,'W', UVAR_DEVELOPER, "Use per-SFT noise weights");
-  LALregSTRINGUserStruct(status,ephemEarth, 	 0,  UVAR_DEVELOPER, "Earth ephemeris file to use");
-  LALregSTRINGUserStruct(status,ephemSun, 	 0,  UVAR_DEVELOPER, "Sun ephemeris file to use");
+  XLALregREALUserStruct( 	dopplermax, 	'q', UVAR_DEVELOPER, "Maximum doppler shift expected");
+  XLALregBOOLUserStruct( 	UseNoiseWeights,'W', UVAR_DEVELOPER, "Use per-SFT noise weights");
+  XLALregSTRINGUserStruct(ephemEarth, 	 0,  UVAR_DEVELOPER, "Earth ephemeris file to use");
+  XLALregSTRINGUserStruct(ephemSun, 	 0,  UVAR_DEVELOPER, "Sun ephemeris file to use");
 
-  LALregINTUserStruct (status, 	SSBprecision,	 0,  UVAR_DEVELOPER, "Precision to use for time-transformation to SSB: 0=Newtonian 1=relativistic");
+  XLALregINTUserStruct ( 	SSBprecision,	 0,  UVAR_DEVELOPER, "Precision to use for time-transformation to SSB: 0=Newtonian 1=relativistic");
 
-  LALregINTUserStruct(status, 	RngMedWindow,	'k', UVAR_DEVELOPER, "Running-Median window size");
-  LALregINTUserStruct(status,	Dterms,		't', UVAR_DEVELOPER, "Number of terms to keep in Dirichlet kernel sum");
+  XLALregINTUserStruct( 	RngMedWindow,	'k', UVAR_DEVELOPER, "Running-Median window size");
+  XLALregINTUserStruct(	Dterms,		't', UVAR_DEVELOPER, "Number of terms to keep in Dirichlet kernel sum");
 
-  LALregSTRINGUserStruct(status,workingDir,     'w', UVAR_DEVELOPER, "Directory to use as work directory.");
-  LALregREALUserStruct(status, 	timerCount, 	 0,  UVAR_DEVELOPER, "N: Output progress/timer info every N seconds");
+  XLALregSTRINGUserStruct(workingDir,     'w', UVAR_DEVELOPER, "Directory to use as work directory.");
+  XLALregREALUserStruct( 	timerCount, 	 0,  UVAR_DEVELOPER, "N: Output progress/timer info every N seconds");
   XLALregEPOCHUserStruct(internalRefTime, 	 0,  UVAR_DEVELOPER, "Internal reference epoch for Fstat-computation: use 'xx.yy[GPS|MJD]' format [Default: midTime]");
 
-  LALregBOOLUserStruct(status, 	projectMetric, 	 0,  UVAR_DEVELOPER, "Use projected metric on Freq=const subspact");
+  XLALregBOOLUserStruct( 	projectMetric, 	 0,  UVAR_DEVELOPER, "Use projected metric on Freq=const subspact");
 
-  LALregSTRINGUserStruct(status,outputLogPrintf, 0,  UVAR_DEVELOPER, "Send all output from LogPrintf statements to this file");
+  XLALregSTRINGUserStruct(outputLogPrintf, 0,  UVAR_DEVELOPER, "Send all output from LogPrintf statements to this file");
 
-  LALregBOOLUserStruct(status, 	countTemplates,  0,  UVAR_DEVELOPER, "Count number of templates (if supported) instead of search");
+  XLALregBOOLUserStruct( 	countTemplates,  0,  UVAR_DEVELOPER, "Count number of templates (if supported) instead of search");
 
-  LALregREALUserStruct(status,  spindownAge,     0,  UVAR_DEVELOPER, "Spindown age for --gridType=9");
-  LALregREALUserStruct(status,  minBraking,      0,  UVAR_DEVELOPER, "Minimum braking index for --gridType=9");
-  LALregREALUserStruct(status,  maxBraking,      0,  UVAR_DEVELOPER, "Maximum braking index for --gridType=9");
+  XLALregREALUserStruct(  spindownAge,     0,  UVAR_DEVELOPER, "Spindown age for --gridType=9");
+  XLALregREALUserStruct(  minBraking,      0,  UVAR_DEVELOPER, "Minimum braking index for --gridType=9");
+  XLALregREALUserStruct(  maxBraking,      0,  UVAR_DEVELOPER, "Maximum braking index for --gridType=9");
 
   XLALregBOOLUserStruct ( transient_useFReg,   	 0,  UVAR_DEVELOPER, "FALSE: use 'standard' e^F for marginalization, if TRUE: use e^FReg = (1/D)*e^F (BAD)");
 
