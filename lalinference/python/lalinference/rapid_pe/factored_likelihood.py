@@ -268,7 +268,7 @@ def compute_mode_ip_time_series(hlms, data, psd, fmin, fMax, fNyq,
     and the interferometer data COMPLEX16FrequencySeries 'data',
     weighted the power spectral density REAL8FrequencySeries 'psd'.
 
-    The integrand is non-zero in the range: [-fNyq, -fmin] \union [fmin, fNyq].
+    The integrand is non-zero in the range: [-fNyq, -fmin] union [fmin, fNyq].
     This integrand is then inverse-FFT'd to get the inner product
     at a discrete series of time shifts.
 
@@ -354,7 +354,7 @@ def compute_mode_cross_term_ip(hlms, psd, fmin, fMax, fNyq, deltaF,
     Compute the 'cross terms' between waveform modes, i.e.
     < h_lm | h_l'm' >.
     The inner product is weighted by power spectral density 'psd' and
-    integrated over the interval [-fNyq, -fmin] \union [fmin, fNyq]
+    integrated over the interval [-fNyq, -fmin] union [fmin, fNyq]
 
     Returns a dictionary of inner product values keyed by tuples of mode indices
     i.e. ((l,m),(l',m'))

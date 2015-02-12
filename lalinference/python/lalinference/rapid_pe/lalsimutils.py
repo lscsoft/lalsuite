@@ -347,7 +347,7 @@ class RealIP(InnerProduct):
     Real-valued inner product. self.ip(h1,h2) computes
 
              fNyq
-    4 Re \int      h1(f) h2*(f) / Sn(f) df
+    4 Re int      h1(f) h2*(f) / Sn(f) df
              fLow
 
     And similarly for self.norm(h1)
@@ -382,7 +382,7 @@ class HermitianComplexIP(InnerProduct):
     Complex-valued inner product. self.ip(h1,h2) computes
 
           fNyq
-    4 \int      h1(f) h2*(f) / Sn(f) df
+    4 int      h1(f) h2*(f) / Sn(f) df
           fLow
 
     And similarly for self.norm(h1)
@@ -419,7 +419,7 @@ class ComplexIP(InnerProduct):
     Complex-valued inner product. self.ip(h1,h2) computes
 
           fNyq
-    2 \int      h1(f) h2*(f) / Sn(f) df
+    2 int      h1(f) h2*(f) / Sn(f) df
           -fNyq
 
     And similarly for self.norm(h1)
@@ -458,7 +458,7 @@ class Overlap(InnerProduct):
     Inner product maximized over time and phase. self.ip(h1,h2) computes:
 
                   fNyq
-    max 4 Abs \int      h1*(f,tc) h2(f) / Sn(f) df
+    max 4 Abs int      h1*(f,tc) h2(f) / Sn(f) df
      tc           fLow
 
     h1, h2 must be COMPLEX16FrequencySeries defined in [0, fNyq]
@@ -557,7 +557,7 @@ class ComplexOverlap(InnerProduct):
     self.IP(h1,h2) computes:
 
                   fNyq
-    max 2 Abs \int      h1*(f,tc) h2(f) / Sn(f) df
+    max 2 Abs int      h1*(f,tc) h2(f) / Sn(f) df
      tc          -fNyq
 
     h1, h2 must be COMPLEX16FrequencySeries defined in [-fNyq, fNyq-deltaF]
