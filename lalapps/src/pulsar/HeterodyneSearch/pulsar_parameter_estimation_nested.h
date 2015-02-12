@@ -73,6 +73,11 @@
 #include <lal/LALInferenceXML.h>
 #endif
 
+/* check whether openmp is enabled and if so include omp.h */
+#ifdef HAVE_OPENMP
+#include <omp.h>
+#endif
+
 #include <gsl/gsl_sort_double.h>
 #include <gsl/gsl_statistics_double.h>
 #include <gsl/gsl_blas.h>
@@ -136,7 +141,7 @@ extern "C" {
  *
  * Note: These should be increased if additional model parameters are added.
  */
-#define NUMAMPPARS 16
+#define NUMAMPPARS 20
 
 /**
  * The total number of frequency parameters that can defined a signal e.g.
@@ -196,6 +201,7 @@ extern "C" {
                      the 'triaxial' model for which you use 2 (the default\n\
                      value) or 1,2 for a model with emission at both the rotation\n\
                      frequency and twice the rotation frequency.\n"\
+" --biaxial           Set this if the waveform model parameters spcify a biaxial star\n"\
 " --gaussian-like     Set this if a Gaussian likelihood is to be used. If the input\n\
                      file contains a column specifying the noise standard deviation of\n\
                      the data then that will be used in the Gaussian likelihood function,\n\
@@ -323,7 +329,8 @@ extern "C" {
  */
 static const CHAR amppars[NUMAMPPARS][VARNAME_MAX] = { "H0", "PHI0", "PSI",
 "COSIOTA", "C22", "C21", "PHI22", "PHI21", "HSCALARB", "HSCALARL", "HVECTORX",
-"HVECTORY", "PSIVECTOR", "PHI0VECTOR", "PHI0SCALAR", "PHI0TENSOR" };
+"HVECTORY", "PSIVECTOR", "PHI0VECTOR", "PHI0SCALAR", "PHI0TENSOR", "I21", "I31",
+"LAMBDA", "COSTHETA" };
 
 /**
  * A list of the frequency parameters. The names given here are those that are

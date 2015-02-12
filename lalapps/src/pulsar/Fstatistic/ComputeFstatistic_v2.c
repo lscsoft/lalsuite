@@ -234,9 +234,7 @@ typedef struct {
   /* orbital parameters */
   REAL8 orbitPeriod;		/**< binary-system orbital period in s */
   REAL8 orbitasini;		/**< amplitude of radial motion */
-  INT4 orbitTpSSBsec;		/**< time of periapse passage */
-  INT4 orbitTpSSBnan;
-  CHAR *orbitTpSSBMJD;		/**< in MJD(TT) format */
+  LIGOTimeGPS orbitTp;		/**< epoch of periapse passage */
   REAL8 orbitArgp;		/**< angle of periapse */
   REAL8 orbitEcc;		/**< orbital eccentricity */
 
@@ -276,14 +274,13 @@ typedef struct {
   REAL8 dopplermax;		/**< maximal possible doppler-effect */
 
   INT4 RngMedWindow;		/**< running-median window for noise floor estimation */
-  REAL8 refTime;		/**< reference-time for definition of pulsar-parameters [GPS] */
-  CHAR *refTimeMJD;		/**< the same in MJD(TT) */
+  LIGOTimeGPS refTime;		/**< reference-time for definition of pulsar-parameters [GPS] */
+  LIGOTimeGPS internalRefTime;	/**< which reference time to use internally for template-grid */
 
-  REAL8 internalRefTime;	/**< which reference time to use internally for template-grid */
   INT4 SSBprecision;		/**< full relativistic timing or Newtonian */
 
-  INT4 minStartTime;		/**< Only use SFTs with timestamps starting from (including) this GPS time */
-  INT4 maxStartTime;		/**< Only use SFTs with timestamps up to (excluding) this GPS time */
+  LIGOTimeGPS minStartTime;	/**< Only use SFTs with timestamps starting from (including) this epoch (format 'xx.yy[GPS]' or 'xx.yyMJD') */
+  LIGOTimeGPS maxStartTime;	/**< Only use SFTs with timestamps up to (excluding) this epoch (format 'xx.yy[GPS]' or 'xx.yyMJD') */
   CHAR *workingDir;		/**< directory to use for output files */
   REAL8 timerCount;		/**< output progress-meter every timerCount seconds */
 
@@ -498,24 +495,11 @@ int main(int argc,char *argv[])
   REAL8 orbit_argp = 0;
   if ( LALUserVarWasSet(&uvar.orbitasini) && (uvar.orbitasini > 0) )
     {
-      orbit_tp.gpsSeconds = uvar.orbitTpSSBsec;
-      orbit_tp.gpsNanoSeconds = uvar.orbitTpSSBnan;
+      orbit_tp = uvar.orbitTp;
       orbit_argp = uvar.orbitArgp;
       orbit_asini = uvar.orbitasini;
       orbit_ecc = uvar.orbitEcc;
       orbit_period = uvar.orbitPeriod;
-      if (LALUserVarWasSet(&uvar.orbitTpSSBMJD))
-	{
-          if ( XLALTranslateStringMJDTTtoGPS ( &(orbit_tp), uvar.orbitTpSSBMJD ) == NULL ) {
-            XLALPrintError("\nXLALTranslateStringMJDTTtoGPS(%s) failed\n", uvar.orbitTpSSBMJD );
-            return COMPUTEFSTATISTIC_EINPUT;
-          }
-	}
-      else
-	{
-	  orbit_tp.gpsSeconds = uvar.orbitTpSSBsec;
-	  orbit_tp.gpsNanoSeconds = uvar.orbitTpSSBnan;
-	}
     }
 
   /* count number of templates */
@@ -1082,8 +1066,8 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
 
   uvar->SSBprecision = SSBPREC_RELATIVISTIC;
 
-  uvar->minStartTime = 0;
-  uvar->maxStartTime = LAL_INT4_MAX;
+  uvar->minStartTime.gpsSeconds = 0;
+  uvar->maxStartTime.gpsSeconds = LAL_INT4_MAX;
 
   uvar->workingDir = (CHAR*)LALMalloc(512);
   strcpy(uvar->workingDir, ".");
@@ -1142,9 +1126,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
 
   LALregREALUserStruct(status, 	orbitasini, 	 0,  UVAR_OPTIONAL, "Binary Orbit: Projected semi-major axis in light-seconds [Default: 0.0]");
   LALregREALUserStruct(status, 	orbitPeriod, 	 0,  UVAR_OPTIONAL, "Binary Orbit: Period in seconds");
-  LALregINTUserStruct(status, 	orbitTpSSBsec, 	 0,  UVAR_OPTIONAL, "Binary Orbit: (true) time of periapsis in SSB frame, GPS seconds");
-  LALregINTUserStruct(status, 	orbitTpSSBnan, 	 0,  UVAR_OPTIONAL, "Binary Orbit: (true) time of periapsis in SSB frame, GPS nanoseconds part");
-  LALregSTRINGUserStruct(status,orbitTpSSBMJD, 	 0,  UVAR_OPTIONAL, "ALTERNATIVE: (true) time of periapsis in the SSB frame in MJD(TT)");
+  XLALregEPOCHUserStruct(	orbitTp, 	 0,  UVAR_OPTIONAL, "Binary Orbit: (true) epoch of periapsis: use 'xx.yy[GPS|MJD]' format.");
   LALregREALUserStruct(status, 	orbitArgp, 	 0,  UVAR_OPTIONAL, "Binary Orbit: Orbital argument of periapse in radians");
   LALregREALUserStruct(status, 	orbitEcc, 	 0,  UVAR_OPTIONAL, "Binary Orbit: Orbital eccentricity");
 
@@ -1159,8 +1141,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   LALregREALUserStruct(status, 	metricMismatch,	'X', UVAR_OPTIONAL, "Maximal allowed mismatch for metric tiling");
   LALregSTRINGUserStruct(status,outputLogfile,	 0,  UVAR_OPTIONAL, "Name of log-file identifying the code + search performed");
   LALregSTRINGUserStruct(status,gridFile,	 0,  UVAR_OPTIONAL, "Load grid from this file: sky-grid or full-grid depending on --gridType.");
-  LALregREALUserStruct(status,	refTime,	 0,  UVAR_OPTIONAL, "SSB reference time for pulsar-parameters [Default: startTime]");
-  LALregSTRINGUserStruct(status,refTimeMJD,	 0,  UVAR_OPTIONAL, "ALTERNATIVE: SSB reference time for pulsar-parameters in MJD(TT) [Default: startTime]");
+  XLALregEPOCHUserStruct(refTime,	 	 0,  UVAR_OPTIONAL, "Reference SSB epoch for pulsar-parameters: use 'xx.yy[GPS|MJD]' format [Default: startTime]");
 
   LALregSTRINGUserStruct(status,outputFstat,	 0,  UVAR_OPTIONAL, "Output-file for F-statistic field over the parameter-space");
   LALregSTRINGUserStruct(status,outputLoudest,	 0,  UVAR_OPTIONAL, "Loudest F-statistic candidate + estimated MLE amplitudes");
@@ -1172,8 +1153,8 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   LALregREALUserStruct(status,FracCandidatesToKeep,0, UVAR_OPTIONAL, "Fraction of Fstat 'candidates' to keep.");
   LALregINTUserStruct(status,   clusterOnScanline, 0, UVAR_OPTIONAL, "Neighbors on each side for finding 1D local maxima on scanline");
 
-  LALregINTUserStruct ( status, minStartTime, 	 0,  UVAR_OPTIONAL, "Only use SFTs with timestamps starting from (including) this GPS time");
-  LALregINTUserStruct ( status, maxStartTime, 	 0,  UVAR_OPTIONAL, "Only use SFTs with timestamps up to (excluding) this GPS time");
+  XLALregEPOCHUserStruct ( minStartTime, 	 0,  UVAR_OPTIONAL, "Only use SFTs with timestamps starting from (including) this epoch (format 'xx.yy[GPS|MJD]') ");
+  XLALregEPOCHUserStruct ( maxStartTime, 	 0,  UVAR_OPTIONAL, "Only use SFTs with timestamps up to (excluding) this epoch (format 'xx.yy[GPS|MJD]')");
 
   LALregSTRINGUserStruct(status,outputFstatAtoms,0,  UVAR_OPTIONAL, "Output filename *base* for F-statistic 'atoms' {a,b,Fa,Fb}_alpha. One file per doppler-point.");
   LALregBOOLUserStruct(status,  outputSingleFstats,0,  UVAR_OPTIONAL, "In multi-detector case, also output single-detector F-stats?");
@@ -1213,7 +1194,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
 
   LALregSTRINGUserStruct(status,workingDir,     'w', UVAR_DEVELOPER, "Directory to use as work directory.");
   LALregREALUserStruct(status, 	timerCount, 	 0,  UVAR_DEVELOPER, "N: Output progress/timer info every N seconds");
-  LALregREALUserStruct(status,	internalRefTime, 0,  UVAR_DEVELOPER, "internal reference time to use for Fstat-computation [Default: midTime]");
+  XLALregEPOCHUserStruct(internalRefTime, 	 0,  UVAR_DEVELOPER, "Internal reference epoch for Fstat-computation: use 'xx.yy[GPS|MJD]' format [Default: midTime]");
 
   LALregBOOLUserStruct(status, 	projectMetric, 	 0,  UVAR_DEVELOPER, "Use projected metric on Freq=const subspact");
 
@@ -1242,9 +1223,6 @@ InitFstat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   REAL8 fCoverMin, fCoverMax;	/* covering frequency-band to read from SFTs */
   SFTCatalog *catalog = NULL;
   SFTConstraints XLAL_INIT_DECL(constraints);
-  LIGOTimeGPS XLAL_INIT_DECL(minStartTimeGPS);
-  LIGOTimeGPS XLAL_INIT_DECL(maxStartTimeGPS);
-
   LIGOTimeGPS endTime;
   size_t toplist_length = uvar->NumCandidatesToKeep;
 
@@ -1278,10 +1256,10 @@ InitFstat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     if ( (constraints.detector = XLALGetChannelPrefix ( uvar->IFO )) == NULL ) {
       ABORT ( status,  COMPUTEFSTATISTIC_EINPUT,  COMPUTEFSTATISTIC_MSGEINPUT);
     }
-  minStartTimeGPS.gpsSeconds = uvar->minStartTime;
-  maxStartTimeGPS.gpsSeconds = uvar->maxStartTime;
-  constraints.minStartTime = &minStartTimeGPS;
-  constraints.maxStartTime = &maxStartTimeGPS;
+  LIGOTimeGPS minStartTime = uvar->minStartTime;
+  LIGOTimeGPS maxStartTime = uvar->maxStartTime;
+  constraints.minStartTime = &minStartTime;
+  constraints.maxStartTime = &maxStartTime;
 
   /* get full SFT-catalog of all matching (multi-IFO) SFTs */
   LogPrintf (LOG_DEBUG, "Finding all SFTs to load ... ");
@@ -1319,17 +1297,12 @@ InitFstat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   LIGOTimeGPS refTime;
   if ( LALUserVarWasSet(&uvar->refTime) )
     {
-      XLALGPSSetREAL8 ( &refTime, uvar->refTime );
-    }
-  else if (LALUserVarWasSet(&uvar->refTimeMJD))
-    {
-      if ( XLALTranslateStringMJDTTtoGPS ( &refTime, uvar->refTimeMJD ) == NULL ) {
-        XLALPrintError("XLALTranslateStringMJDTTtoGPS(%s) failed\n", uvar->refTimeMJD );
-        ABORT ( status,  COMPUTEFSTATISTIC_EINPUT,  COMPUTEFSTATISTIC_MSGEINPUT);
-      }
+      refTime = uvar->refTime;
     }
   else
-    refTime = cfg->startTime;
+    {
+      refTime = cfg->startTime;
+    }
 
   /* define sky position variables from user input */
   if (LALUserVarWasSet(&uvar->RA))
@@ -1591,9 +1564,10 @@ InitFstat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   }
 
   /* internal refTime is used for computing the F-statistic at, to avoid large (t - tRef)^2 values */
-  if ( LALUserVarWasSet ( &uvar->internalRefTime ) ) {
-    XLALGPSSetREAL8 ( &(cfg->internalRefTime), uvar->internalRefTime);
-  }
+  if ( LALUserVarWasSet ( &uvar->internalRefTime ) )
+    {
+      cfg->internalRefTime = uvar->internalRefTime;
+    }
   else
     {
       LIGOTimeGPS midTime = cfg->startTime;
@@ -1768,12 +1742,13 @@ XLALGetLogString ( const ConfigVariables *cfg )
     XLAL_CHECK_NULL ( snprintf ( buf, BUFLEN, "%%%% GPS starttime         = %d (%s GMT)\n", startTimeSeconds, startTimeUTCString ) < BUFLEN, XLAL_EBADLEN );
     XLALFree ( startTimeUTCString );
   }
+  char bufGPS[32];
   XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, buf )) != NULL, XLAL_EFUNC );
   XLAL_CHECK_NULL ( snprintf ( buf, BUFLEN, "%%%% Total time spanned    = %.0f s (%.2f hours)\n", cfg->Tspan, cfg->Tspan/3600.0 ) < BUFLEN, XLAL_EBADLEN );
   XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, buf )) != NULL, XLAL_EFUNC );
-  XLAL_CHECK_NULL ( snprintf (buf, BUFLEN, "%%%% InternalRefTime       = %.16g \n", XLALGPSGetREAL8 ( &(cfg->internalRefTime)) ) < BUFLEN, XLAL_EBADLEN );
+  XLAL_CHECK_NULL ( snprintf (buf, BUFLEN, "%%%% InternalRefTime       = %s\n", XLALGPSToStr ( bufGPS, &(cfg->internalRefTime)) ) < BUFLEN, XLAL_EBADLEN );
   XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, buf )) != NULL, XLAL_EFUNC );
-  XLAL_CHECK_NULL ( snprintf (buf, BUFLEN, "%%%% Pulsar-params refTime = %.16g \n", XLALGPSGetREAL8 ( &(cfg->searchRegion.refTime) )) < BUFLEN, XLAL_EBADLEN );
+  XLAL_CHECK_NULL ( snprintf (buf, BUFLEN, "%%%% Pulsar-params refTime = %s\n", XLALGPSToStr ( bufGPS, &(cfg->searchRegion.refTime) )) < BUFLEN, XLAL_EBADLEN );
   XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, buf )) != NULL, XLAL_EFUNC );
   XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, "%% Spin-range at refTime: fkdot = [ " )) != NULL, XLAL_EFUNC );
   for (UINT4 k=0; k < PULSAR_MAX_SPINS; k ++ )
@@ -1906,13 +1881,6 @@ checkUserInputConsistency (LALStatus *status, const UserInput_t *uvar)
       ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
     }
 
-  /* check that reference time has not been set twice */
-  if ( LALUserVarWasSet(&uvar->refTime) && LALUserVarWasSet(&uvar->refTimeMJD) )
-    {
-      XLALPrintError ("\nSet only uvar->refTime OR uvar->refTimeMJD OR leave empty to use SSB start time as Tref!\n\n");
-      ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
-    }
-
   /* binary parameter checks */
   if ( LALUserVarWasSet(&uvar->orbitPeriod) && (uvar->orbitPeriod <= 0) )
     {
@@ -1922,21 +1890,6 @@ checkUserInputConsistency (LALStatus *status, const UserInput_t *uvar)
   if ( LALUserVarWasSet(&uvar->orbitasini) && (uvar->orbitasini < 0) )
     {
       XLALPrintError ("\nNegative value of projected orbital semi-major axis not allowed!\n\n");
-      ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
-    }
-   if ( LALUserVarWasSet(&uvar->orbitTpSSBMJD) && (LALUserVarWasSet(&uvar->orbitTpSSBsec) || LALUserVarWasSet(&uvar->orbitTpSSBnan)))
-    {
-      XLALPrintError ("\nSet only uvar->orbitTpSSBMJD OR uvar->orbitTpSSBsec/nan to specify periapse passage time!\n\n");
-      ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
-    }
-  if ( LALUserVarWasSet(&uvar->orbitTpSSBsec) && (uvar->orbitTpSSBsec < 0) )
-    {
-      XLALPrintError ("\nNegative value of seconds part of the true time of orbital periapsis not allowed!\n\n");
-      ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
-    }
-  if ( LALUserVarWasSet(&uvar->orbitTpSSBnan) && ((uvar->orbitTpSSBnan < 0) || (uvar->orbitTpSSBnan >= 1e9)) )
-    {
-      XLALPrintError ("\nTime of nanoseconds part the true time of orbital periapsis must lie in range (0, 1e9]!\n\n");
       ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
     }
   if ( LALUserVarWasSet(&uvar->orbitArgp) && ((uvar->orbitArgp < 0) || (uvar->orbitArgp >= LAL_TWOPI)) )
@@ -2121,9 +2074,8 @@ write_PulsarCandidate_to_fp ( FILE *fp,  const PulsarCandidate *pulsarParams, co
     return -1;
 
   fprintf (fp, "\n");
-
-  fprintf (fp, "refTime  = % 9d;\n", pulsarParams->Doppler.refTime.gpsSeconds );   /* forget about ns... */
-
+  char bufGPS[32];
+  fprintf (fp, "refTime  = %s;\n", XLALGPSToStr ( bufGPS, &pulsarParams->Doppler.refTime ) );
   fprintf (fp, "\n");
 
   /* Amplitude parameters with error-estimates */
@@ -2153,8 +2105,7 @@ write_PulsarCandidate_to_fp ( FILE *fp,  const PulsarCandidate *pulsarParams, co
     {
       fprintf (fp, "orbitPeriod       = % .16g;\n", pulsarParams->Doppler.period );
       fprintf (fp, "orbitasini        = % .16g;\n", pulsarParams->Doppler.asini );
-      fprintf (fp, "orbitTpSSBsec     = % .8d;\n", pulsarParams->Doppler.tp.gpsSeconds );
-      fprintf (fp, "orbitTpSSBnan     = % .8d;\n", pulsarParams->Doppler.tp.gpsNanoSeconds );
+      fprintf (fp, "orbitTp           = %s;\n", XLALGPSToStr ( bufGPS, &(pulsarParams->Doppler.tp) ));
       fprintf (fp, "orbitArgp         = % .16g;\n", pulsarParams->Doppler.argp );
       fprintf (fp, "orbitEcc          = % .16g;\n", pulsarParams->Doppler.ecc );
     }

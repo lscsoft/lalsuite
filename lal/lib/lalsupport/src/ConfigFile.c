@@ -700,6 +700,36 @@ XLALReadConfigSTRINGNVariable (CHARVector *varp,        /**< [out] must be alloc
 
 
 /**
+ * Read a GPS 'epoch' value, specified either as GPS or MJD(TT) string.
+ *
+ */
+int
+XLALReadConfigEPOCHVariable (LIGOTimeGPS *varp,
+                             const LALParsedDataFile *cfgdata,
+                             const CHAR *secName,
+                             const CHAR *varName,
+                             BOOLEAN *wasRead)
+{
+  (*wasRead) = FALSE;
+  /* first read the value as a string */
+  CHAR *valString = NULL;
+  XLAL_CHECK ( XLALReadConfigSTRINGVariable ( &valString, cfgdata, secName, varName, wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  if ( ! (*wasRead ) ) { // if nothing was read and XLALReadConfigSTRINGVariable() didn't throw an error, then we're ok and return
+    return XLAL_SUCCESS;
+  }
+  XLAL_CHECK ( valString != NULL, XLAL_EFAILED, "Got NULL string after reading config-variable '%s' in section '%s'\n", varName, secName ? secName: "default" );
+
+  XLAL_CHECK ( XLALParseStringValueToEPOCH ( varp, valString ) != NULL, XLAL_EFUNC );
+
+  XLALFree ( valString );
+
+  return XLAL_SUCCESS;
+
+} /* XLALReadConfigEPOCHVariable() */
+
+
+/**
  * Check if all lines of config-file have been successfully read in
  * and issue a warning or error (depending on strictness) if not.
  */

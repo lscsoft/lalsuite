@@ -308,7 +308,6 @@ REAL8 XLALJulianDayUTC( const struct tm *utc /**< [In] UTC time in a broken down
   return jd;
 }
 
-
 /**
  * Returns the Modified Julian Day MJD(UTC) [in UTC time system] corresponding to the date given
  * in a broken down time structure.
@@ -332,6 +331,27 @@ INT4 XLALModifiedJulianDayUTC( const struct tm *utc /**< [In] UTC time in a brok
   mjd = floor( jd - XLAL_MJD_REF );
   return mjd;
 }
+
+/** \deprecated Use XLALJulianDayUTC() instead, this is only provided for pylal backwards compatibility.
+ * (see #1856)
+ */
+REAL8
+XLALJulianDay ( const struct tm *utc )
+{
+  XLAL_PRINT_DEPRECATION_WARNING ( "XLALJulianDayUTC" );
+  return XLALJulianDayUTC ( utc );
+} // XLALJulianDay()
+
+/** \deprecated Use XLALModifiedJulianDayUTC() instead, this is only provided for pylal backwards compatibility.
+ * (see #1856)
+ */
+INT4
+XLALModifiedJulianDay ( const struct tm *utc )
+{
+  XLAL_PRINT_DEPRECATION_WARNING ( "XLALModifiedJulianDayUTC" );
+  return XLALModifiedJulianDayUTC ( utc );
+} // XLALModifiedJulianDay()
+
 
 /**
  * Fill in missing fields of a C 'tm' broken-down time struct.

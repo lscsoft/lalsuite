@@ -3,15 +3,15 @@ import os
 
 from distutils.core import setup
 
-version = "1.15"
+version = "1.16"
 
 setup(
   name = "ligo-gracedb",
   version = version,
-  maintainer = "Brian Moe",
-  maintainer_email = "brian.moe@ligo.org",
-  description = "Gravity Wave Candidate Event Database",
-  long_description = "The gravitational-wave candidate event database (GraCEDb) is a prototype system to organize candidate events from gravitational-wave searches and to provide an environment to record information about follow-ups. A simple client tool is provided to submit a candidate event to the database.",
+  maintainer = "Branson Stephens",
+  maintainer_email = "branson.stephens@ligo.org",
+  description = "Gravitational Wave Candidate Event Database",
+  long_description = "The gravitational wave candidate event database (GraceDB) is a system to organize candidate events from gravitational wave searches and to provide an environment to record information about follow-ups. A simple client tool is provided to submit a candidate event to the database.",
 
   url = "http://www.lsc-group.phys.uwm.edu/daswg/gracedb.html",
   license = 'GPL',

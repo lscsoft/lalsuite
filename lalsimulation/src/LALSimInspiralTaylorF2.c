@@ -35,6 +35,11 @@
 #include <lal/XLALError.h>
 #include "LALSimInspiralPNCoefficients.c"
 
+#ifndef _OPENMP
+#define omp ignore
+#endif
+
+
 /* This function allows SWIG to wrap the TaylorF2 phasing coefficients
  * for use in external Python code
  */

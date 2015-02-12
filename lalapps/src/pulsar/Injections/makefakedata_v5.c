@@ -105,7 +105,7 @@ typedef struct
 
   /* specify start + duration */
   LALStringVector *timestampsFiles;        /**< Names of numDet timestamps files */
-  INT4 startTime;		/**< Start-time of requested signal in detector-frame (GPS seconds) */
+  LIGOTimeGPS startTime;	/**< Start-time of requested signal in detector-frame (GPS seconds) */
   INT4 duration;		/**< Duration of requested signal in seconds */
 
   /* time-series sampling + heterodyning frequencies */
@@ -391,11 +391,13 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
       if ( have_startTime && have_duration )	 // use optional (startTime+duration) as constraints,
         {
           LIGOTimeGPS minStartTime, maxStartTime;
-          XLALGPSSetREAL8 ( &minStartTime, uvar->startTime );
-          XLALGPSSetREAL8 ( &maxStartTime, uvar->startTime + uvar->duration );
+          minStartTime = uvar->startTime;
+          maxStartTime = uvar->startTime;
+          XLALGPSAdd ( &maxStartTime, uvar->duration );
           constraints.minStartTime = &minStartTime;
-          constraints.maxStartTime   = &maxStartTime;
-          XLALPrintWarning ( "Only noise-SFTs between GPS [%d, %d] will be used!\n", uvar->startTime, uvar->startTime + uvar->duration );
+          constraints.maxStartTime = &maxStartTime;
+          char bufGPS1[32], bufGPS2[32];
+          XLALPrintWarning ( "Only noise-SFTs between GPS [%s, %s] will be used!\n", XLALGPSToStr(bufGPS1, &minStartTime), XLALGPSToStr(bufGPS2, &maxStartTime) );
         } /* if start+duration given */
       XLAL_CHECK ( (cfg->noiseCatalog = XLALSFTdataFind ( uvar->noiseSFTs, &constraints )) != NULL, XLAL_EFUNC );
       XLAL_CHECK (  cfg->noiseCatalog->length > 0, XLAL_EINVAL, "No noise-SFTs matching (start+duration, timestamps) were found!\n" );
@@ -421,9 +423,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
     } // endif have_timestampsFiles
   else if ( have_startTime && have_duration )
     {
-      LIGOTimeGPS tStart;
-      XLALGPSSetREAL8 ( &tStart, uvar->startTime );
-      XLAL_CHECK ( ( cfg->multiTimestamps = XLALMakeMultiTimestamps ( tStart, uvar->duration, uvar->Tsft, uvar->SFToverlap, cfg->multiIFO.length )) != NULL, XLAL_EFUNC );
+      XLAL_CHECK ( ( cfg->multiTimestamps = XLALMakeMultiTimestamps ( uvar->startTime, uvar->duration, uvar->Tsft, uvar->SFToverlap, cfg->multiIFO.length )) != NULL, XLAL_EFUNC );
     } // endif have_startTime
   else {
     XLAL_ERROR (XLAL_EFAILED, "Something went wrong with my internal logic ..\n");
@@ -494,7 +494,7 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALregSTRINGUserStruct( ephemSun, 	 	0,  UVAR_OPTIONAL, "Sun ephemeris file to use");
 
   /* start + duration of timeseries */
-  XLALregINTUserStruct (  startTime,            'G', UVAR_OPTIONAL, "Start-time of requested signal in detector-frame (GPS seconds)");
+  XLALregEPOCHUserStruct (startTime,            'G', UVAR_OPTIONAL, "Start-time of requested signal in detector-frame (format 'xx.yy[GPS|MJD]')");
   XLALregINTUserStruct (  duration,              0,  UVAR_OPTIONAL, "Duration of requested signal in seconds");
   XLALregLISTUserStruct ( timestampsFiles,       0,  UVAR_OPTIONAL, "ALTERNATIVE: File to read timestamps from (file-format: lines with <seconds> <nanoseconds>)");
 

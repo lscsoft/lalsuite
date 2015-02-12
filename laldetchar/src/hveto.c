@@ -21,6 +21,11 @@
 #include <lal/LALDetCharHvetoUtils.h>
 #include <lal/LIGOLwXML.h>
 
+#ifndef _OPENMP
+#define omp ignore
+#endif
+
+
 // Program level functions, mostly utility
 
 // Fake a series of triggers

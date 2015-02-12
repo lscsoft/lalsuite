@@ -47,10 +47,11 @@ test_programs += LALPulsarXMLTest
 endif
 
 # Add shell, Python, etc. test scripts to this variable
-test_scripts +=
+test_scripts += pulsar_toa_test.sh
 
 # Add any helper programs required by tests to this variable
 test_helpers += TEMPOcomparison
+test_helpers += PulsarTOATest
 
 TwoDMeshTest_SOURCES = \
 	TwoDMeshPlot.c \
@@ -125,4 +126,7 @@ EXTRA_DIST += \
 	inputsft.1 \
 	sun98.dat \
 	testTimestamps.dat \
+	TOAtest.par \
+	TOAtest.simulate \
+	pks2gps.clk \
 	$(END_OF_LIST)

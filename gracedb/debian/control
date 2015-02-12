@@ -1,5 +1,5 @@
 Source: ligo-gracedb
-Maintainer: Brian Moe <brian.moe@ligo.org>
+Maintainer: Branson Stephens <branson.stephens@ligo.org>
 Section: python
 Priority: optional
 Build-Depends: debhelper (>= 7), python-all-dev

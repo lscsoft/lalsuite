@@ -33,8 +33,6 @@ void LALDestroyMultiPSDVector (LALStatus *status, MultiPSDVector **multvect);
 
 void LALCopySFT (LALStatus *status, SFTtype *dest, const SFTtype *src);
 
-void LALSubtractSFTVectors (LALStatus *, SFTVector **outVect, const SFTVector *inVect1, const SFTVector *inVect2 );
-void LALLinearlyCombineSFTVectors (LALStatus *, SFTVector **outVect, SFTVector **inVects, const COMPLEX16Vector *weights, const CHAR *outName);
 void LALAppendSFT2Vector (LALStatus *, SFTVector *vect, const SFTtype *sft );
 
 void LALCreateTimestampVector (LALStatus *status, LIGOTimeGPSVector **vect, UINT4 len);

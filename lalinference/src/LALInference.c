@@ -1203,6 +1203,10 @@ int LALInferenceFprintParameterNonFixedHeaders(FILE *out, LALInferenceVariables 
         vector = *((UINT4Vector **)head->value);
         for(i=0; i<(int)vector->length; i++) fprintf(out, "%s%i\t", LALInferenceTranslateInternalToExternalParamName(head->name),i);
       }
+      else if(head->type==LALINFERENCE_REAL8Vector_t)
+      {
+        // Handle this manually with routines like LALInferenceFprintSplineCalibrationHeader() for now
+      }
       else fprintf(out, "%s\t", LALInferenceTranslateInternalToExternalParamName(head->name));
     }
     head = head->next;
@@ -1945,7 +1949,7 @@ LALInferenceVariableItem *LALInferencePopVariableItem(LALInferenceVariables *var
 
 void LALInferenceSortVariablesByName(LALInferenceVariables *vars)
 {
-  
+
   /* Start a new list */
   LALInferenceVariableItem *newHead=NULL;
 
@@ -3627,7 +3631,7 @@ void LALInferenceSetstringVariable(LALInferenceVariables* vars,const char* name,
   LALInferenceSetVariable(vars,name,(void*)&value);
 }
 
-int LALInferenceSplineCalibrationFactor(REAL8Vector *freqs,
+int LALInferenceSplineCalibrationFactor(REAL8Vector *logfreqs,
 					REAL8Vector *deltaAmps,
 					REAL8Vector *deltaPhases,
 					COMPLEX16FrequencySeries *calFactor) {
@@ -3640,19 +3644,19 @@ int LALInferenceSplineCalibrationFactor(REAL8Vector *freqs,
 
   size_t N = 0;
 
-  if (freqs == NULL || deltaAmps == NULL || deltaPhases == NULL || calFactor == NULL) {
+  if (logfreqs == NULL || deltaAmps == NULL || deltaPhases == NULL || calFactor == NULL) {
     status = XLAL_EINVAL;
     fmt = "bad input";
     goto cleanup;
   }
 
-  if (freqs->length != deltaAmps->length || deltaAmps->length != deltaPhases->length) {
+  if (logfreqs->length != deltaAmps->length || deltaAmps->length != deltaPhases->length) {
     status = XLAL_EINVAL;
     fmt = "input lengths differ";
     goto cleanup;
   }
 
-  N = freqs->length;
+  N = logfreqs->length;
 
   ampInterp = gsl_interp_alloc(gsl_interp_cspline, N);
   phaseInterp = gsl_interp_alloc(gsl_interp_cspline, N);
@@ -3672,19 +3676,21 @@ int LALInferenceSplineCalibrationFactor(REAL8Vector *freqs,
     goto cleanup;
   }
 
-  gsl_interp_init(ampInterp, freqs->data, deltaAmps->data, N);
-  gsl_interp_init(phaseInterp, freqs->data, deltaPhases->data, N);
+  gsl_interp_init(ampInterp, logfreqs->data, deltaAmps->data, N);
+  gsl_interp_init(phaseInterp, logfreqs->data, deltaPhases->data, N);
 
+  REAL8 lowf = exp(logfreqs->data[0]);
+  REAL8 highf = exp(logfreqs->data[N-1]);
   for (i = 0; i < calFactor->data->length; i++) {
     REAL8 dA = 0.0, dPhi = 0.0;
     REAL8 f = calFactor->deltaF*i;
 
-    if (f < freqs->data[0] || f > freqs->data[N-1]) {
+    if (f < lowf || f > highf) {
       dA = 0.0;
       dPhi = 0.0;
     } else {
-      dA = gsl_interp_eval(ampInterp, freqs->data, deltaAmps->data, f, ampAcc);
-      dPhi = gsl_interp_eval(phaseInterp, freqs->data, deltaPhases->data, f, phaseAcc);
+      dA = gsl_interp_eval(ampInterp, logfreqs->data, deltaAmps->data, log(f), ampAcc);
+      dPhi = gsl_interp_eval(phaseInterp, logfreqs->data, deltaPhases->data, log(f), phaseAcc);
     }
 
     calFactor->data->data[i] = (1.0 + dA)*(2.0 + I*dPhi)/(2.0 - I*dPhi);

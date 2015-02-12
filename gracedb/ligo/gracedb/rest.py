@@ -521,6 +521,12 @@ class GraceDb(GsiRest):
         Required args: graceid, message
         Optional: filename, tagname
 
+        Note: The tagname argument accepts either a single string or a python
+        list of string.  For example, both of these are acceptable:
+
+        tagname = "sky_loc"
+        tagname = ["sky_loc", "my_lovely_skymap"]
+
         If only graceid and message are provided, a text comment will be created
         in the event log. If a filename is also specified, the file will be attached 
         to the log message and displayed along side the message text. If a tagname 
@@ -548,7 +554,13 @@ class GraceDb(GsiRest):
                 filecontents = filecontents.read()
             files = [('upload', os.path.basename(filename), filecontents)]
 
-        return self.post(uri, body={'message' : message, 'tagname': tagname, 
+        # Let's see if tagname is a string or a list 
+        if tagname and not isinstance(tagname, basestring):
+            tagnames = ','.join(tagname)
+        else:
+            tagnames = tagname if tagname else None
+
+        return self.post(uri, body={'message' : message, 'tagname': tagnames, 
             'displayName': displayName}, files=files)
 
     def eels(self, graceid):

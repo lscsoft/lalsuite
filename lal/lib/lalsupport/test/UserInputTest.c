@@ -18,6 +18,7 @@
 *  MA  02111-1307  USA
 */
 
+#include <lal/Date.h>
 #include <lal/UserInput.h>
 
 /* Error codes and messages */
@@ -37,32 +38,9 @@ typedef struct
   BOOLEAN argB2;
   CHAR *string2;	// will be read from config-file
   INT4 dummy;
+  LIGOTimeGPS epochGPS;
+  LIGOTimeGPS epochMJDTT;
 } UserInput_t;
-
-#define TESTSTRING "this is also possible, and # here does nothing "
-
-const char *cfgfile_content = \
-"## Some 'tough' tests for config-file reading routines\n"
-"# comment line\n"
-"float1 = 1.0    ; ## semi-colon ignored\n"
-"\n"
-"string1 = some text.\\\n"
-"	You can also use\\\n"
-"	line-continuation\n"
-"\n"
-"   int1 = 4      # whatever that means\n"
-"\n"
-"# Comment before section\n"
-"# Comment after section\n"
-"string2 = \"" TESTSTRING "\"	# but this is a comment\n"
-"\n"
-"string3 = \"how about #quotes\\\n"
-"	AND line-continuation?\"		# yet another comment\n"
-"testBool = False	# use yes/no/0/1/true/false, case INsensitive\n"
-"# etc etc.\n"
-;
-
-
 
 /**
  * some basic consistency checks of the (XLAL) UserInput module, far from exhaustive,
@@ -72,7 +50,7 @@ int
 main(int argc, char *argv[])
 {
   int i, my_argc = 8;
-  #define CFG_FNAME "ConfigFile.cfg"
+#define CFG_FNAME TEST_DATA_DIR "ConfigFileSample.cfg"
   char **my_argv;
   const char *argv_in[] = { "progname", "--argNum=1", "--argStr=xyz", "--argBool=true", "-a", "1", "-b", "@" CFG_FNAME };
   UserInput_t XLAL_INIT_DECL(my_uvars);
@@ -88,15 +66,6 @@ main(int argc, char *argv[])
       my_argv[i] = XLALCalloc ( 1, strlen(argv_in[i])+1);
       strcpy ( my_argv[i], argv_in[i] );
     }
-
-  /* ----- dump config-file content into config-file ----- */
-  FILE *fid;
-  if ( (fid = fopen ( CFG_FNAME, "wb" )) == NULL ) {
-    XLALPrintError ("%s: Failed to open configfile '%s' for writing.\n", __func__, CFG_FNAME );
-    XLAL_ERROR ( XLAL_ESYS );
-  }
-  fprintf ( fid, "%s\n", cfgfile_content );
-  fclose(fid);
 
   /* ---------- Register all test user-variables ---------- */
   UserInput_t *uvar = &my_uvars;
@@ -127,6 +96,15 @@ main(int argc, char *argv[])
   }
   if ( XLALregSTRINGUserStruct( string2, 0, UVAR_REQUIRED, "Testing another string argument") != XLAL_SUCCESS ) {
     XLALPrintError ("%s: XLALregSTRINGUserStruct() failed with code %d\n", __func__, xlalErrno );
+    XLAL_ERROR ( XLAL_EFUNC );
+  }
+
+  if ( XLALregEPOCHUserStruct( epochGPS, 0, UVAR_REQUIRED, "Testing epoch given as GPS time") != XLAL_SUCCESS ) {
+    XLALPrintError ("%s: XLALregEPOCHUserStruct() failed with code %d\n", __func__, xlalErrno );
+    XLAL_ERROR ( XLAL_EFUNC );
+  }
+  if ( XLALregEPOCHUserStruct( epochMJDTT, 0, UVAR_REQUIRED, "Testing epoch given as MJD(TT) time") != XLAL_SUCCESS ) {
+    XLALPrintError ("%s: XLALregEPOCHUserStruct() failed with code %d\n", __func__, xlalErrno );
     XLAL_ERROR ( XLAL_EFUNC );
   }
 
@@ -174,10 +152,14 @@ main(int argc, char *argv[])
     XLALPrintError ("%s: Failed to read in argB2\n", __func__);
     XLAL_ERROR ( XLAL_EFAILED );
   }
-  if ( strcmp ( uvar->string2, TESTSTRING ) ) {
+  if ( strcmp ( uvar->string2, "this is also possible, and # here does nothing; and neither does semi-colon " ) ) {
     XLALPrintError ("%s: Failed to read in string2\n", __func__);
     XLAL_ERROR ( XLAL_EFAILED );
   }
+
+  XLAL_CHECK ( XLALGPSCmp ( &uvar->epochGPS, &uvar->epochMJDTT ) == 0, XLAL_EFAILED, "GPS epoch {%d,%d} differs from MJD(TT) epoch {%d,%d}\n",
+               uvar->epochGPS.gpsSeconds, uvar->epochGPS.gpsNanoSeconds, uvar->epochMJDTT.gpsSeconds, uvar->epochMJDTT.gpsNanoSeconds );
+
 
   /* ----- cleanup ---------- */
   XLALDestroyUserVars();

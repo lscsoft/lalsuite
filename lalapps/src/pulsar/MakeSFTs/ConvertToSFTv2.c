@@ -39,22 +39,7 @@
 #include <lal/SFTutils.h>
 #include <lal/LogPrintf.h>
 
-/** \name Error codes */
-/*@{*/
-#define CONVERTSFT_ENORM 	0
-#define CONVERTSFT_EINPUT  	1
-#define CONVERTSFT_EMEM		2
-
-#define CONVERTSFT_MSGENORM 	"Normal exit"
-#define CONVERTSFT_MSGEINPUT  	"Bad argument values"
-#define CONVERTSFT_MSGEMEM	"Out of memory"
-/*@}*/
-
 /*---------- DEFINES ----------*/
-
-#define TRUE    (1==1)
-#define FALSE   (1==0)
-
 /*----- Macros ----- */
 /*---------- internal types ----------*/
 
@@ -63,25 +48,27 @@
 /*---------- Global variables ----------*/
 
 /* User variables */
-BOOLEAN uvar_help;
-CHAR *uvar_inputSFTs;
-CHAR *uvar_outputDir;
-CHAR *uvar_outputSingleSFT;
-CHAR *uvar_extraComment;
-CHAR *uvar_descriptionMisc;
-CHAR *uvar_IFO;
-REAL8 uvar_fmin;
-REAL8 uvar_fmax;
-REAL8 uvar_mysteryFactor;
+typedef struct
+{
+  BOOLEAN help;
+  CHAR *inputSFTs;
+  CHAR *outputDir;
+  CHAR *outputSingleSFT;
+  CHAR *extraComment;
+  CHAR *descriptionMisc;
+  CHAR *IFO;
+  REAL8 fmin;
+  REAL8 fmax;
+  REAL8 mysteryFactor;
+  INT4 minStartTime;
+  INT4 maxStartTime;
+  CHAR *timestampsFile;
+} UserInput_t;
 
-INT4 uvar_minStartTime;
-INT4 uvar_maxStartTime;
-
-CHAR *uvar_timestampsFile;
 
 /*---------- internal prototypes ----------*/
-void initUserVars (LALStatus *status);
-void applyFactor2SFTs ( LALStatus *status, SFTVector *SFTs, REAL8 factor );
+int initUserVars ( UserInput_t *uvar );
+int applyFactor2SFTs ( SFTVector *SFTs, REAL8 factor );
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -91,7 +78,6 @@ void applyFactor2SFTs ( LALStatus *status, SFTVector *SFTs, REAL8 factor );
 int
 main(int argc, char *argv[])
 {
-  LALStatus status = blank_status;	/* initialize status */
   SFTConstraints XLAL_INIT_DECL(constraints);
   LIGOTimeGPS XLAL_INIT_DECL(minStartTimeGPS);
   LIGOTimeGPS XLAL_INIT_DECL(maxStartTimeGPS);
@@ -100,101 +86,91 @@ main(int argc, char *argv[])
   UINT4 i;
   REAL8 fMin, fMax;
 
-
-  /* set LAL error-handler */
-  lal_errhandler = LAL_ERR_EXIT;	/* exit with returned status-code on error */
+  UserInput_t XLAL_INIT_DECL(uvar);
 
   /* register all user-variables */
-  LAL_CALL (initUserVars (&status), &status);
+  XLAL_CHECK_MAIN ( initUserVars ( &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* read cmdline & cfgfile  */
-  LAL_CALL (LALUserVarReadAllInput (&status, argc,argv), &status);
+  XLAL_CHECK_MAIN ( XLALUserVarReadAllInput (argc, argv) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  if (uvar_help) 	/* help requested: we're done */
+  if (uvar.help) {	/* help requested: we're done */
     exit (0);
+  }
 
   /* ----- make sure output directory exists ---------- */
-  if ( uvar_outputDir )
+  if ( uvar.outputDir )
   {
     int ret;
-    ret = mkdir ( uvar_outputDir, 0777);
+    ret = mkdir ( uvar.outputDir, 0777);
     if ( (ret == -1) && ( errno != EEXIST ) )
       {
 	int errsv = errno;
-	LogPrintf (LOG_CRITICAL, "Failed to create directory '%s': %s\n", uvar_outputDir, strerror(errsv) );
+	LogPrintf (LOG_CRITICAL, "Failed to create directory '%s': %s\n", uvar.outputDir, strerror(errsv) );
 	return -1;
       }
   }
 
   LIGOTimeGPSVector *timestamps = NULL;
-  if ( uvar_timestampsFile )
+  if ( uvar.timestampsFile )
     {
-      if ( (timestamps = XLALReadTimestampsFile ( uvar_timestampsFile )) == NULL ) {
-        XLALPrintError ("XLALReadTimestampsFile() failed to load timestamps from file '%s'\n", uvar_timestampsFile );
+      if ( (timestamps = XLALReadTimestampsFile ( uvar.timestampsFile )) == NULL ) {
+        XLALPrintError ("XLALReadTimestampsFile() failed to load timestamps from file '%s'\n", uvar.timestampsFile );
         return -1;
       }
     }
 
   /* use IFO-contraint if one given by the user */
-  if ( LALUserVarWasSet ( &uvar_IFO ) ) {
-    if ( (constraints.detector = XLALGetChannelPrefix ( uvar_IFO )) == NULL ) {
-      return CONVERTSFT_EINPUT;
-    }
+  if ( LALUserVarWasSet ( &uvar.IFO ) ) {
+    XLAL_CHECK_MAIN ( (constraints.detector = XLALGetChannelPrefix ( uvar.IFO )) != NULL, XLAL_EINVAL );
   }
 
-  minStartTimeGPS.gpsSeconds = uvar_minStartTime;
-  maxStartTimeGPS.gpsSeconds = uvar_maxStartTime;
+  minStartTimeGPS.gpsSeconds = uvar.minStartTime;
+  maxStartTimeGPS.gpsSeconds = uvar.maxStartTime;
   constraints.minStartTime = &minStartTimeGPS;
   constraints.maxStartTime = &maxStartTimeGPS;
   constraints.timestamps = timestamps;
 
   /* get full SFT-catalog of all matching (multi-IFO) SFTs */
-  LAL_CALL ( LALSFTdataFind ( &status, &FullCatalog, uvar_inputSFTs, &constraints ), &status);
+  XLAL_CHECK_MAIN ( (FullCatalog = XLALSFTdataFind ( uvar.inputSFTs, &constraints )) != NULL, XLAL_EFUNC );
 
   if ( constraints.detector ) {
-    LALFree ( constraints.detector );
+    XLALFree ( constraints.detector );
   }
 
-  if ( !FullCatalog || (FullCatalog->length == 0)  )
-    {
-      XLALPrintError ("\nSorry, didn't find any matching SFTs with pattern '%s'!\n\n", uvar_inputSFTs );
-      return CONVERTSFT_EINPUT;
-    }
+  XLAL_CHECK_MAIN ( (FullCatalog != NULL) && (FullCatalog->length > 0), XLAL_EINVAL, "\nSorry, didn't find any matching SFTs with pattern '%s'!\n\n", uvar.inputSFTs );
 
   /* build up full comment-string to be added to SFTs: 1) converted by ConvertToSFTv2, VCS ID 2) user extraComment */
   {
     UINT4 len = 128;
-    len += strlen ( uvar_inputSFTs );
-    if ( uvar_extraComment )
-      len += strlen ( uvar_extraComment );
+    len += strlen ( uvar.inputSFTs );
+    if ( uvar.extraComment )
+      len += strlen ( uvar.extraComment );
 
-    if ( ( add_comment = LALCalloc ( 1, len )) == NULL ) {
-      XLALPrintError ( "\nOut of memory!\n");
-      return CONVERTSFT_EMEM;
-    }
+    XLAL_CHECK_MAIN ( ( add_comment = LALCalloc ( 1, len )) != NULL, XLAL_ENOMEM );
 
     /** \deprecated FIXME: the following code uses obsolete CVS ID tags.
      *  It should be modified to use git version information. */
-    sprintf ( add_comment, "Converted by $Id$, inputSFTs = '%s';", uvar_inputSFTs );
-    if ( uvar_extraComment )
+    sprintf ( add_comment, "Converted by $Id$, inputSFTs = '%s';", uvar.inputSFTs );
+    if ( uvar.extraComment )
       {
 	strcat ( add_comment, "\n");
-	strcat ( add_comment, uvar_extraComment );
+	strcat ( add_comment, uvar.extraComment );
       }
   } /* construct comment-string */
 
   /* which frequency-band to extract? */
   fMin = -1;	/* default: all */
   fMax = -1;
-  if ( LALUserVarWasSet ( &uvar_fmin ) )
-    fMin = uvar_fmin;
-  if ( LALUserVarWasSet ( &uvar_fmax ) )
-    fMax = uvar_fmax;
+  if ( LALUserVarWasSet ( &uvar.fmin ) )
+    fMin = uvar.fmin;
+  if ( LALUserVarWasSet ( &uvar.fmax ) )
+    fMax = uvar.fmax;
 
   FILE *fpSingleSFT = NULL;
-  if ( uvar_outputSingleSFT )
-    XLAL_CHECK ( ( fpSingleSFT = fopen ( uvar_outputSingleSFT, "wb" )) != NULL,
-                 XLAL_EIO, "Failed to open singleSFT file '%s' for writing\n", uvar_outputSingleSFT );
+  if ( uvar.outputSingleSFT )
+    XLAL_CHECK ( ( fpSingleSFT = fopen ( uvar.outputSingleSFT, "wb" )) != NULL,
+                 XLAL_EIO, "Failed to open singleSFT file '%s' for writing\n", uvar.outputSingleSFT );
 
   /* loop over all SFTs in SFTCatalog */
   for ( i=0; i < FullCatalog->length; i ++ )
@@ -214,43 +190,44 @@ main(int argc, char *argv[])
       if ( sft_comment )
 	comment_len += strlen ( sft_comment );
 
-      if ( ( new_comment  = LALCalloc (1, comment_len )) == NULL ) {
-	XLALPrintError ( CONVERTSFT_MSGEMEM );
-	return CONVERTSFT_EMEM;
-      }
+      XLAL_CHECK_MAIN ( ( new_comment  = LALCalloc (1, comment_len )) != NULL, XLAL_ENOMEM );
+
       if ( sft_comment ) {
 	strcpy ( new_comment, sft_comment );
 	strcat ( new_comment, ";\n");
       }
       strcat ( new_comment, add_comment );
 
-      LAL_CALL ( LALLoadSFTs ( &status, &thisSFT, &oneSFTCatalog, fMin, fMax ), &status );
+      XLAL_CHECK_MAIN ( (thisSFT = XLALLoadSFTs ( &oneSFTCatalog, fMin, fMax )) != NULL, XLAL_EFUNC );
 
-      if ( uvar_mysteryFactor != 1.0 ) {
-	LAL_CALL ( applyFactor2SFTs ( &status, thisSFT, uvar_mysteryFactor ), &status );
+      if ( uvar.mysteryFactor != 1.0 ) {
+	XLAL_CHECK_MAIN ( applyFactor2SFTs ( thisSFT, uvar.mysteryFactor ) == XLAL_SUCCESS, XLAL_EFUNC );
       }
 
       // if user asked for single-SFT output, add this SFT to the open file
-      if ( uvar_outputSingleSFT )
+      if ( uvar.outputSingleSFT )
         XLAL_CHECK ( XLAL_SUCCESS == XLALWriteSFT2fp( &(thisSFT->data[0]), fpSingleSFT, new_comment ),
-                     XLAL_EFUNC,  "XLALWriteSFT2fp() failed to write SFT to '%s'!\n", uvar_outputSingleSFT );
+                     XLAL_EFUNC,  "XLALWriteSFT2fp() failed to write SFT to '%s'!\n", uvar.outputSingleSFT );
 
       // if user asked for directory output, write this SFT into that directory
-      if ( uvar_outputDir )
-        LAL_CALL ( LALWriteSFTVector2Dir (&status, thisSFT, uvar_outputDir, new_comment, uvar_descriptionMisc ), &status );
+      if ( uvar.outputDir ) {
+        XLAL_CHECK_MAIN ( XLALWriteSFTVector2Dir ( thisSFT, uvar.outputDir, new_comment, uvar.descriptionMisc ) == XLAL_SUCCESS, XLAL_EFUNC );
+      }
 
-      LAL_CALL ( LALDestroySFTVector ( &status, &thisSFT ), &status );
+      XLALDestroySFTVector ( thisSFT );
 
-      LALFree ( new_comment );
+      XLALFree ( new_comment );
 
     } /* for i < numSFTs */
 
-  if ( fpSingleSFT ) fclose ( fpSingleSFT );
+  if ( fpSingleSFT ) {
+    fclose ( fpSingleSFT );
+  }
 
   /* free memory */
-  LALFree ( add_comment );
-  LAL_CALL (LALDestroySFTCatalog (&status, &FullCatalog), &status );
-  LAL_CALL (LALDestroyUserVars (&status), &status);
+  XLALFree ( add_comment );
+  XLALDestroySFTCatalog ( FullCatalog );
+  XLALDestroyUserVars();
   XLALDestroyTimestampVector ( timestamps );
 
   LALCheckMemoryLeaks();
@@ -261,70 +238,62 @@ main(int argc, char *argv[])
 
 /*----------------------------------------------------------------------*/
 /* register all our "user-variables" */
-void
-initUserVars (LALStatus *status)
+int
+initUserVars ( UserInput_t *uvar )
 {
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
+  XLAL_CHECK ( uvar != NULL, XLAL_EINVAL );
 
   /* set defaults */
-  uvar_outputDir = NULL;
-  uvar_outputSingleSFT = NULL;
+  uvar->outputDir = NULL;
+  uvar->outputSingleSFT = NULL;
 
-  uvar_extraComment = NULL;
-  uvar_descriptionMisc = NULL;
-  uvar_IFO = NULL;
+  uvar->extraComment = NULL;
+  uvar->descriptionMisc = NULL;
+  uvar->IFO = NULL;
 
-  uvar_minStartTime = 0;
-  uvar_maxStartTime = LAL_INT4_MAX;
+  uvar->minStartTime = 0;
+  uvar->maxStartTime = LAL_INT4_MAX;
 
-  uvar_mysteryFactor = 1.0;
+  uvar->mysteryFactor = 1.0;
 
-  uvar_timestampsFile = NULL;
+  uvar->timestampsFile = NULL;
 
   /* now register all our user-variable */
-  LALregBOOLUserVar(status,   help,		'h', UVAR_HELP,     "Print this help/usage message");
-  LALregSTRINGUserVar(status, inputSFTs,	'i', UVAR_REQUIRED, "File-pattern for input SFTs");
-  LALregSTRINGUserVar(status, IFO,		'I', UVAR_OPTIONAL, "IFO of input SFTs: 'G1', 'H1', 'H2', ...(required for v1-SFTs)");
+  XLALregBOOLUserStruct(   help,		'h', UVAR_HELP,     "Print this help/usage message");
+  XLALregSTRINGUserStruct( inputSFTs,	'i', UVAR_REQUIRED, "File-pattern for input SFTs");
+  XLALregSTRINGUserStruct( IFO,		'I', UVAR_OPTIONAL, "IFO of input SFTs: 'G1', 'H1', 'H2', ...(required for v1-SFTs)");
 
-  LALregSTRINGUserVar(status, outputSingleSFT,	'O', UVAR_OPTIONAL, "Output all SFTs into a single concatenated SFT-file with this name");
-  LALregSTRINGUserVar(status, outputDir,	'o', UVAR_OPTIONAL, "Output directory for SFTs");
+  XLALregSTRINGUserStruct( outputSingleSFT,	'O', UVAR_OPTIONAL, "Output all SFTs into a single concatenated SFT-file with this name");
+  XLALregSTRINGUserStruct( outputDir,	'o', UVAR_OPTIONAL, "Output directory for SFTs");
 
-  LALregSTRINGUserVar(status, extraComment,	'C', UVAR_OPTIONAL, "Additional comment to be added to output-SFTs");
+  XLALregSTRINGUserStruct( extraComment,	'C', UVAR_OPTIONAL, "Additional comment to be added to output-SFTs");
 
-  LALregSTRINGUserVar(status, descriptionMisc,	'D', UVAR_OPTIONAL, "'Misc' entry in the SFT filename description-field (see SFTv2 naming convention)");
-  LALregREALUserVar(status,   fmin,		'f', UVAR_OPTIONAL, "Lowest frequency to extract from SFTs. [Default: lowest in inputSFTs]");
-  LALregREALUserVar(status,   fmax,		'F', UVAR_OPTIONAL, "Highest frequency to extract from SFTs. [Default: highest in inputSFTs]");
+  XLALregSTRINGUserStruct( descriptionMisc,	'D', UVAR_OPTIONAL, "'Misc' entry in the SFT filename description-field (see SFTv2 naming convention)");
+  XLALregREALUserStruct(   fmin,		'f', UVAR_OPTIONAL, "Lowest frequency to extract from SFTs. [Default: lowest in inputSFTs]");
+  XLALregREALUserStruct(   fmax,		'F', UVAR_OPTIONAL, "Highest frequency to extract from SFTs. [Default: highest in inputSFTs]");
 
 
-  LALregINTUserVar ( status, 	minStartTime, 	 0,  UVAR_OPTIONAL, "Only use SFTs with timestamps starting from (including) this GPS time");
-  LALregINTUserVar ( status, 	maxStartTime, 	 0,  UVAR_OPTIONAL, "Only use SFTs with timestamps up to (excluding) this GPS time");
+  XLALregINTUserStruct (  	minStartTime, 	 0,  UVAR_OPTIONAL, "Only use SFTs with timestamps starting from (including) this GPS time");
+  XLALregINTUserStruct (  	maxStartTime, 	 0,  UVAR_OPTIONAL, "Only use SFTs with timestamps up to (excluding) this GPS time");
 
-  LALregSTRINGUserVar(status, timestampsFile,	 0, UVAR_OPTIONAL, "Timestamps file to use as a constraint for SFT loading");
+  XLALregSTRINGUserStruct( timestampsFile,	 0, UVAR_OPTIONAL, "Timestamps file to use as a constraint for SFT loading");
 
   /* developer-options */
-  LALregREALUserVar(status,   mysteryFactor,	 0, UVAR_DEVELOPER, "Change data-normalization by applying this factor (for E@H)");
+  XLALregREALUserStruct(   mysteryFactor,	 0, UVAR_DEVELOPER, "Change data-normalization by applying this factor (for E@H)");
 
-
-
-
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
+  return XLAL_SUCCESS;
 
 } /* initUserVars() */
 
-void
-applyFactor2SFTs ( LALStatus *status, SFTVector *SFTs, REAL8 factor )
+int
+applyFactor2SFTs ( SFTVector *SFTs, REAL8 factor )
 {
-  UINT4 i, numSFTs;
 
-  INITSTATUS(status);
+  XLAL_CHECK ( SFTs != NULL, XLAL_EINVAL );
 
-  ASSERT ( SFTs, status, CONVERTSFT_EINPUT, CONVERTSFT_MSGEINPUT );
+  UINT4 numSFTs = SFTs->length;
 
-  numSFTs = SFTs->length;
-
-  for ( i=0; i < numSFTs; i ++ )
+  for ( UINT4 i=0; i < numSFTs; i ++ )
     {
       SFTtype *thisSFT = &(SFTs->data[i]);
       UINT4 k, numBins = thisSFT->data->length;
@@ -336,6 +305,6 @@ applyFactor2SFTs ( LALStatus *status, SFTVector *SFTs, REAL8 factor )
 
     } /* for i < numSFTs */
 
-  RETURN (status);
+  return XLAL_SUCCESS;
 
 } /* applyFactor2SFTs() */

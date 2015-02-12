@@ -5,6 +5,11 @@
 #include <time.h>
 #include <math.h>
 
+/* check whether to include omp.h for use of multiple cores */
+#ifdef HAVE_OPENMP
+#include <omp.h>
+#endif
+
 /* test waveform length */
 #define WL 4096
 

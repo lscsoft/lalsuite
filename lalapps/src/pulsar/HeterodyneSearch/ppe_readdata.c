@@ -353,7 +353,7 @@ number of detectors specified (no. dets = %d)\n", ml, ml, numDets);
 
       if( (numDt = count_csv( fakedt )) != ml*numDets ){
         fprintf(stderr, "Error... for %d harmonics the number of sample time steps for fake data must be %d times the \
-number of detectors specified (no. dets =\%d)\n", ml, ml, numDets);
+number of detectors specified (no. dets =%d)\n", ml, ml, numDets);
         exit(0);
       }
 
@@ -407,7 +407,7 @@ number of detectors specified (no. dets =\%d)\n", ml, ml, numDets);
 
     if ( count != ml*numDets ){
       fprintf(stderr, "Error... for %d harmonics the number of input files given must be %d times the number of \
-detectors specified (no. dets =\%d)\n", ml, ml, numDets);
+detectors specified (no. dets =%d)\n", ml, ml, numDets);
       exit(0);
     }
   }
@@ -885,10 +885,16 @@ void setup_from_par_file( LALInferenceRunState *runState )
       LALInferenceVariableItem *scaleitem = scaletemp->head;
       REAL8Vector *dts = NULL, *bdts = NULL;
 
-      /* check whether using original Jones (2010) signal model */
-      if ( freqFactors->length == 2 && LALInferenceGetProcParamVal( runState->commandLine, "--jones-model" ) ){
-        UINT4 jones = 1;
-        LALInferenceAddVariable( ifo_model->params, "jones-model", &jones, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
+      /* check whether using original Jones (2010) signal model or a biaxial model (in the amplitude/phase parameterisation) */
+      if ( freqFactors->length == 2 ){
+        UINT4 dummyvar = 1;
+
+        if ( LALInferenceGetProcParamVal( runState->commandLine, "--jones-model" ) ){
+          LALInferenceAddVariable( ifo_model->params, "jones-model", &dummyvar, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
+        }
+        else if ( LALInferenceGetProcParamVal( runState->commandLine, "--biaxial" ) ){
+          LALInferenceAddVariable( ifo_model->params, "biaxial", &dummyvar, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
+        }
       }
 
       dts = get_ssb_delay( pulsar, ifo_model->times, ifo_model->ephem, ifo_model->tdat, ifo_model->ttype, data->detector, 0. );

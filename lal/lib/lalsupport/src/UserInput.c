@@ -24,6 +24,7 @@
 #include <lal/UserInput.h>
 #include <lal/LogPrintf.h>
 #include <lal/LALString.h>
+#include <lal/Date.h>
 #include <lal/StringVector.h>
 
 #define TRUE  (1==1)
@@ -38,6 +39,7 @@ typedef enum {
   UVAR_REAL8,   /* float */
   UVAR_STRING,  /* string */
   UVAR_CSVLIST, /* list of comma-separated values */
+  UVAR_EPOCH,   /* time 'epoch', specified in either GPS or MJD(TT) format, translated into GPS */
   UVAR_LAST
 } UserVarType;
 
@@ -116,6 +118,13 @@ XLALRegisterLISTUserVar ( const CHAR *name, CHAR optchar, UserVarState flag, con
   return XLALRegisterUserVar ( name, UVAR_CSVLIST, optchar, flag, helpstr, cvar );
 }
 
+/** Register a user-variable of 'EPOCH' type LIGOTimeGPS, allowing both GPS and MJD string inputs, see XLALRegisterUserVar() for API documentation */
+int
+XLALRegisterEPOCHUserVar ( const CHAR *name, CHAR optchar, UserVarState flag, const CHAR *helpstr, LIGOTimeGPS *cvar)
+{
+  return XLALRegisterUserVar ( name, UVAR_EPOCH, optchar, flag, helpstr, cvar );
+}
+
 
 /**
  * \ingroup UserInput_h
@@ -126,8 +135,9 @@ XLALRegisterLISTUserVar ( const CHAR *name, CHAR optchar, UserVarState flag, con
  * if a previous option name collides.
  *
  * \note don't use this function directly, as it is not type-safe!!
- * ==> use one of the 4 wrappers: XLALRegisterREALUserVar(),
- * XLALRegisterINTUserVar(), XLALRegisterBOOLUserVar(), XLALRegisterSTRINGUserVar().
+ * ==> use one of the appropriate typed wrappers:
+ * XLALRegisterREALUserVar(), XLALRegisterINTUserVar(), XLALRegisterBOOLUserVar(), XLALRegisterSTRINGUserVar(),
+ * XLALRegisterLISTUserVar(), XLALRegisterEPOCHUserVar().
  *
  */
 int XLALRegisterUserVar ( const CHAR *name,	/**< name of user-variable to register */
@@ -415,6 +425,11 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
 	  check_and_mark_as_set ( ptr );
 	  break;
 
+        case UVAR_EPOCH:
+          XLAL_CHECK ( XLALParseStringValueToEPOCH ( (LIGOTimeGPS *)(ptr->varp), LALoptarg ) != NULL, XLAL_EFUNC );
+	  check_and_mark_as_set ( ptr );
+	  break;
+
 	default:
 	  XLALPrintError ( "%s: ERROR: unkown UserVariable-type encountered... points to a coding error!\n", __func__ );
 	  XLAL_ERROR ( XLAL_EINVAL );
@@ -539,6 +554,15 @@ XLALUserVarReadCfgfile ( const CHAR *cfgfile ) 	   /**< [in] name of config-file
 	      check_and_mark_as_set ( ptr );
 	    } /* if stringbuf */
 	  break;
+
+        case UVAR_EPOCH:
+	  if ( XLALReadConfigEPOCHVariable ( ptr->varp, cfg, NULL, ptr->name, &wasRead ) != XLAL_SUCCESS ) {
+            XLAL_ERROR ( XLAL_EFUNC );
+          }
+	  if (wasRead)
+	    check_and_mark_as_set ( ptr );
+	  break;
+
 	default:
 	  XLALPrintError ("%s: ERROR: unkown UserVariable-type encountered...points to a coding error!\n", __func__);
           XLAL_ERROR ( XLAL_EFAILED );
@@ -574,7 +598,7 @@ XLALUserVarHelpString ( const CHAR *progname )
   CHAR fmtStr[UVAR_MAXFMTLEN];		/* for building a dynamic format-string */
   CHAR optstr[10];			/* display of opt-char */
   /* we need strings for UVAR_BOOL, UVAR_INT4, UVAR_REAL8, UVAR_STRING: */
-  const CHAR *typestr[] = {"BOOL", "INT", "REAL", "STRING", "LIST"};
+  const CHAR *typestr[] = {"BOOL", "INT", "REAL", "STRING", "LIST", "EPOCH"};
   LALUserVariable *ptr;
   LALUserVariable *helpptr = NULL;	/* pointer to help-option */
   CHAR *helpstr = NULL;
@@ -1057,6 +1081,9 @@ XLALUvarType2String ( LALUserVariable *uvar )
     case UVAR_CSVLIST:
       sprintf(buf, "list");
       break;
+    case UVAR_EPOCH:
+      sprintf(buf, "epoch");
+      break;
     default:
       XLALPrintError ("%s: ERROR: unkown UserVariable-type encountered\n", __func__ );
       XLAL_ERROR_NULL ( XLAL_EINVAL );
@@ -1116,6 +1143,11 @@ XLALUvarValue2String ( LALUserVariable *uvar )
 	}
       else
 	strcpy (buf, "NULL");
+      break;
+
+    case UVAR_EPOCH:
+      XLAL_CHECK_NULL ( XLALGPSToStr ( buf, (const LIGOTimeGPS *)(uvar->varp) ) != NULL, XLAL_EFUNC );
+      strcat ( buf, "GPS" );	// postfix this with 'units' for explicitness (as opposed to 'MJD')
       break;
 
     case UVAR_CSVLIST:

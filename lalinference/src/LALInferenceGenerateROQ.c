@@ -21,6 +21,11 @@
 
 #include <lal/LALInferenceGenerateROQ.h>
 
+#ifndef _OPENMP
+#define omp ignore
+#endif
+
+
 /* internal function definitions */
 
 /* define function to project model vector onto the training set of models */
@@ -79,6 +84,7 @@ void project_onto_basis(gsl_vector *weight,
 
   XLAL_CALLGSL( basis = gsl_matrix_row(RB, idx) );
 
+  #pragma omp parallel for
   for ( row=0; row < TS->size1; row++ ){
     double prod;
     gsl_vector_view proj, model;
@@ -122,6 +128,7 @@ void complex_project_onto_basis(gsl_vector *weight,
 
   XLAL_CALLGSL( basis = gsl_matrix_complex_row(RB, idx) );
 
+  #pragma omp parallel for
   for ( row=0; row < TS->size1; row++ ){
     gsl_complex cprod;
     gsl_vector_complex_view proj, model;
@@ -447,7 +454,6 @@ REAL8 *LALInferenceGenerateREAL8OrthonormalBasis(gsl_vector *delta,
   gsl_matrix *projection_coeffs;
   gsl_vector *projection_errors;
   gsl_vector *firstrow;
-  gsl_vector_view resrow;
 
   REAL8 sigma = 1.;
   size_t dlength = TS->size2, nts = TS->size1;
@@ -487,8 +493,11 @@ REAL8 *LALInferenceGenerateREAL8OrthonormalBasis(gsl_vector *delta,
     XLAL_CALLGSL( gsl_matrix_sub(residual, projections) );
 
     /* get projection errors */
+    #pragma omp parallel for
     for( k=0; k < nts; k++ ){
       REAL8 err;
+      gsl_vector_view resrow;
+
       XLAL_CALLGSL( resrow = gsl_matrix_row(residual, k) );
 
       err = weighted_dot_product(delta, &resrow.vector, &resrow.vector);
@@ -579,7 +588,6 @@ COMPLEX16 *LALInferenceGenerateCOMPLEX16OrthonormalBasis(gsl_vector *delta,
   gsl_matrix_complex *projection_coeffs;
   gsl_vector *projection_errors;
   gsl_vector_complex *firstrow;
-  gsl_vector_complex_view resrow;
 
   REAL8 sigma = 1.;
   size_t dlength = TS->size2, nts = TS->size1;
@@ -619,8 +627,11 @@ COMPLEX16 *LALInferenceGenerateCOMPLEX16OrthonormalBasis(gsl_vector *delta,
     XLAL_CALLGSL( gsl_matrix_complex_sub(residual, projections) );
 
     /* get projection errors */
+    #pragma omp parallel for
     for( k=0; k < nts; k++ ){
       gsl_complex err;
+      gsl_vector_complex_view resrow;
+
       XLAL_CALLGSL( resrow = gsl_matrix_complex_row(residual, k) );
 
       err = complex_weighted_dot_product(delta, &resrow.vector, &resrow.vector);

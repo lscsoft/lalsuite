@@ -43,6 +43,11 @@
 #include "LALSimIMR.h"
 #include "LALSimIMRPhenomC_internals.c" /* This is ugly, but allows us to reuse internal PhenomC functions without making those functions XLAL */
 
+#ifndef _OPENMP
+#define omp ignore
+#endif
+
+
 /**************************** PhenomP internal function prototypes *****************************/
 
 /* PhenomC parameters for modified ringdown: Uses final spin formula of Barausse & Rezzolla, Astrophys.J.Lett.704:L40-L44, 2009 */

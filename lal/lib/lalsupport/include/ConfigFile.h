@@ -188,6 +188,14 @@ XLALReadConfigSTRINGNVariable (CHARVector *varp,
                               const CHAR *varName,
                               BOOLEAN *wasRead);
 
+
+int
+XLALReadConfigEPOCHVariable (LIGOTimeGPS *varp,
+                             const LALParsedDataFile *cfgdata,
+                             const CHAR *secName,
+                             const CHAR *varName,
+                             BOOLEAN *wasRead);
+
 int
 XLALReadConfigVariable (void *varp,
                        const LALParsedDataFile *cfgdata,

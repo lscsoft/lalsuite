@@ -19,7 +19,11 @@
 #include <lal/Date.h>
 #include <lal/LALString.h>
 
+#include <lal/ReadPulsarParFile.h>
 #include <lal/BinaryPulsarTiming.h>
+
+/* set the allowed error in the phase - 1 degree */
+#define MAX_PHASE_ERR_DEGS 1.0
 
 #define USAGE \
 "Usage: %s [options]\n\n"\
@@ -37,18 +41,19 @@
 
 int verbose = 0;
 
-typedef struct tagParams{
+typedef struct tagInputParams{
   char *parfile;
   char *timfile;
   char *ephem;
   char *clock;
 
   int simulated;
-}Params;
+}InputParams;
 
-void get_input_args(Params *pars, int argc, char *argv[]);
+void get_input_args(InputParams *pars, int argc, char *argv[]);
 
-int main(int argc, char *argv[]){
+int main(int argc, char *argv[])
+{
   FILE *fpin=NULL;
   FILE *fpout=NULL;
 
@@ -57,7 +62,7 @@ int main(int argc, char *argv[]){
   double TOA[10000];
   double num1;
   int telescope;
-  int i=0, j=0, k=0;
+  int i=0, j=0, k=0, exceedPhaseErr=0;
 
   double PPTime[10000]; /* Pulsar proper time - corrected for solar system and
  binary orbit delay times */
@@ -68,7 +73,7 @@ int main(int argc, char *argv[]){
   BinaryPulsarInput input;
   BinaryPulsarOutput output;
 
-  Params par;
+  InputParams par;
 
   /* LAL barycentring variables */
   BarycenterInput baryinput;
@@ -76,7 +81,6 @@ int main(int argc, char *argv[]){
   EmissionTime emit;
   EphemerisData *edat=NULL;
   TimeCorrectionData *tdat=NULL;
-  char *earthFile=NULL, *sunFile=NULL, *tcFile=NULL, *lalpath=NULL;
 
   double MJD_tcorr[10000];
   double tcorr[10000];
@@ -94,14 +98,10 @@ int main(int argc, char *argv[]){
 
   if( verbose ){
     fprintf(stderr,"\n");
-    fprintf(stderr,
-"*******************************************************\n");
-    fprintf(stderr, "** We are assuming that the TOAs where produced with \
-**\n");
-    fprintf(stderr, "** TEMPO2 and are sited at the Parkes telescope.     \
-**\n");
-    fprintf(stderr,
-"*******************************************************\n");
+    fprintf(stderr, "*******************************************************\n");
+    fprintf(stderr, "** We are assuming that the TOAs where produced with **\n");
+    fprintf(stderr, "** TEMPO2 and are sited at the Parkes telescope.     **\n");
+    fprintf(stderr, "*******************************************************\n");
   }
   if((fpin = fopen(par.timfile, "r")) == NULL){
     fprintf(stderr, "Error... can't open TOA file!\n");
@@ -115,10 +115,10 @@ int main(int argc, char *argv[]){
     char firstchar[256];
 
     /* if line starts with FORMAT, MODE, or a C or # then skip it */
-    if( fscanf(fpin, "%s", firstchar) != 1 ) break;
+    if( fscanf(fpin, "%s", firstchar) != 1 ) { break; }
     if( !strcmp(firstchar, "FORMAT") || !strcmp(firstchar, "MODE") ||
         firstchar[0] == '#' || firstchar[0] == 'C' ){
-      if ( fscanf(fpin, "%*[^\n]") == EOF ) break;
+      if ( fscanf(fpin, "%*[^\n]") == EOF ) { break; }
       continue;
     }
     else{
@@ -126,15 +126,13 @@ int main(int argc, char *argv[]){
 
       /* is data is simulated with TEMPO2 fake plugin then it only has 5 columns */
       if (par.simulated){
-        fscanf(fpin, "%s%lf%lf%lf%d", filestr, &radioFreq, &TOA[i],
-&num1, &telescope);
+        fscanf(fpin, "%s%lf%lf%lf%d", filestr, &radioFreq, &TOA[i], &num1, &telescope);
       }
       else{
         char randstr1[256], randstr2[256], randstr3[256];
         int randnum;
 
-        fscanf(fpin, "%s%lf%lf%lf%d%s%s%s%d", filestr, &radioFreq, &TOA[i],
-&num1, &telescope, randstr1, randstr2, randstr3, &randnum);
+        fscanf(fpin, "%s%lf%lf%lf%d%s%s%s%d", filestr, &radioFreq, &TOA[i],&num1, &telescope, randstr1, randstr2, randstr3, &randnum);
       }
       rf[i] = radioFreq;
 
@@ -191,45 +189,28 @@ x,y,z components are got from tempo */
   baryinput.site.location[1] = 2816759.1/LAL_C_SI;
   baryinput.site.location[2] = -3454036.3/LAL_C_SI;
 
-  if((lalpath = getenv("LALPULSAR_PREFIX")) == NULL){
-    fprintf(stderr, "LALPULSAR_PREFIX environment variable not set!\n");
-    exit(1);
-  }
-
-  earthFile = XLALStringDuplicate(lalpath);
-  sunFile = XLALStringDuplicate(lalpath);
-
   /* initialise the solar system ephemerides */
+  const char *earthFile = NULL, *sunFile = NULL;
   if( par.ephem == NULL ){ /* default to DE405 */
-    earthFile = XLALStringAppend( earthFile,
-                                  "/share/lalpulsar/earth00-19-DE405.dat.gz" );
-    sunFile = XLALStringAppend( sunFile,
-                                "/share/lalpulsar/sun00-19-DE405.dat.gz" );
+    earthFile = TEST_DATA_DIR "earth00-19-DE405.dat.gz";
+    sunFile   = TEST_DATA_DIR "sun00-19-DE405.dat.gz";
   }
   else if( strcmp(par.ephem, "DE200") == 0 ){
-    earthFile = XLALStringAppend( earthFile,
-                                  "/share/lalpulsar/earth00-19-DE200.dat.gz" );
-    sunFile = XLALStringAppend( sunFile,
-                                "/share/lalpulsar/sun00-19-DE200.dat.gz" );
+    earthFile = TEST_DATA_DIR "earth00-19-DE200.dat.gz";
+    sunFile   = TEST_DATA_DIR "sun00-19-DE200.dat.gz";
   }
   else if( strcmp(par.ephem, "DE405") ){
-    earthFile = XLALStringAppend( earthFile,
-                                  "/share/lalpulsar/earth00-19-DE405.dat.gz" );
-    sunFile = XLALStringAppend( sunFile,
-                                "/share/lalpulsar/sun00-19-DE405.dat.gz" );
+    earthFile = TEST_DATA_DIR "earth00-19-DE405.dat.gz";
+    sunFile   = TEST_DATA_DIR "lalpulsar/sun00-19-DE405.dat.gz";
+  } else {
+    XLAL_ERROR_MAIN ( XLAL_EINVAL, "Invalid ephem='%s', allowed are 'DE200' or 'DE405'\n", par.ephem );
   }
-
-  /* static LALStatus status;
-  edat = (EphemerisData *)LALCalloc(1, sizeof(EphemerisData));
-  edat->ephiles.earthEphemeris = XLALStringDuplicate( earthFile );
-  edat->ephiles.sunEphemeris = XLALStringDuplicate( sunFile );
-  LALInitBarycenter( &status, edat ); */
 
   edat = XLALInitBarycenter( earthFile, sunFile );
 
   if ( verbose ) fprintf(stderr, "I've set up the ephemeris files\n");
 
-  fpout = fopen("pulsarPhase.txt", "w");
+  if ( verbose ) { fpout = fopen("pulsarPhase.txt", "w"); }
 
   DM = params.DM;
 
@@ -239,21 +220,18 @@ x,y,z components are got from tempo */
   }
   else baryinput.dInv = 0.0;  /* no parallax */
 
-  if( params.units == NULL ) ttype = TYPE_TEMPO2;
-  else if( !strcmp(params.units, "TDB") ) ttype = TYPE_TDB;
-  else if( !strcmp(params.units, "TCB") ) ttype = TYPE_TCB; /* same as TYPE_TEMPO2 */
-  else ttype = TYPE_TEMPO2; /*default */
-
-  tcFile = XLALStringDuplicate(lalpath);
+  if( params.units == NULL ) { ttype = TIMECORRECTION_TEMPO2; }
+  else if( !strcmp(params.units, "TDB") ) { ttype = TIMECORRECTION_TDB; }
+  else if( !strcmp(params.units, "TCB") ) { ttype = TIMECORRECTION_TCB; } /* same as TYPE_TEMPO2 */
+  else { ttype = TIMECORRECTION_TEMPO2; } /*default */
 
   /* read in the time correction file */
-  if( ttype == TYPE_TEMPO2 || ttype == TYPE_TCB ){
-    tcFile = XLALStringAppend( tcFile,
-                               "/share/lalpulsar/te405_2000-2019.dat.gz" );
+  const char *tcFile = NULL;
+  if( ttype == TIMECORRECTION_TEMPO2 || ttype == TIMECORRECTION_TCB ){
+    tcFile = TEST_DATA_DIR "te405_2000-2019.dat.gz";
   }
-  else if ( ttype == TYPE_TDB ){
-    tcFile = XLALStringAppend( tcFile,
-                               "/share/lalpulsar/tdb_2000-2019.dat.gz" );
+  else if ( ttype == TIMECORRECTION_TDB ){
+    tcFile = TEST_DATA_DIR "tdb_2000-2019.dat.gz";
   }
 
   tdat = XLALInitTimeCorrections( tcFile );
@@ -265,35 +243,34 @@ x,y,z components are got from tempo */
     double tt0;
     double phaseWave = 0., tWave = 0.;
 
+    //fprintf(stderr, "TOA[%d] = %.15lf\n", j, TOA[j]);
+
     if (par.clock != NULL){
-      while(MJD_tcorr[k] < TOA[j])
-        k++;
+      while(MJD_tcorr[k] < TOA[j]){ k++; }
 
       /* linearly interpolate between corrections */
       double grad = (tcorr[k] - tcorr[k-1])/(MJD_tcorr[k] - MJD_tcorr[k-1]);
 
-      t = (TOA[j]-44244.)*86400. + (tcorr[k-1] + grad*(TOA[j] -
-        MJD_tcorr[k-1]));
+      t = (TOA[j]-44244.)*86400. + (tcorr[k-1] + grad*(TOA[j] - MJD_tcorr[k-1]));
     }
-    else t = (TOA[j]-44244.0)*86400.0;
+    else { t = (TOA[j]-44244.0)*86400.0; }
 
     /* convert time from UTC to GPS reference */
     t += (double)XLALGPSLeapSeconds( (UINT4)t );
 
     baryinput.delta = params.dec + params.pmdec*(t-params.posepoch);
-    baryinput.alpha = params.ra +
-      params.pmra*(t-params.posepoch)/cos(baryinput.delta);
+    baryinput.alpha = params.ra + params.pmra*(t-params.posepoch)/cos(baryinput.delta);
 
     /* set pulsar position */
     baryinput.delta = params.dec + params.pmdec*(t-params.posepoch);
-    baryinput.alpha = params.ra +
-      params.pmra*(t-params.posepoch)/cos(baryinput.delta);
+    baryinput.alpha = params.ra + params.pmra*(t-params.posepoch)/cos(baryinput.delta);
 
     /* recalculate the time delay at the dedispersed time */
     XLALGPSSetREAL8( &baryinput.tgps, t );
 
     /* calculate solar system barycentre time delay */
     XLALBarycenterEarthNew( &earth, &baryinput.tgps, edat, tdat, ttype );
+    //XLALBarycenterEarth( &earth, &baryinput.tgps, edat );
     XLALBarycenter( &emit, &baryinput, &earth );
 
     /* correct to infinite observation frequency for dispersion measure */
@@ -310,12 +287,7 @@ x,y,z components are got from tempo */
 
       PPTime[j] = t + ((double)emit.deltaT + output.deltaT);
     }
-    else
-      PPTime[j] = t + (double)emit.deltaT;
-
-    if( verbose ){
-      fprintf(stderr, "%.12lf\n", 44244 + (PPTime[j] + 51.184)/86400.);
-    }
+    else { PPTime[j] = t + (double)emit.deltaT; }
 
     if(j==0){
       T = PPTime[0] - params.pepoch;
@@ -331,7 +303,7 @@ x,y,z components are got from tempo */
       REAL8 dtWave = (XLALGPSGetREAL8(&emit.te) - params.waveepoch)/86400.;
       REAL8 om = params.wave_om;
 
-      for( INT4 k = 0; k < params.nwaves; k++ ){
+      for( k = 0; k < params.nwaves; k++ ){
         tWave += params.waveSin[k]*sin(om*(REAL8)(k+1.)*dtWave) +
           params.waveCos[k]*cos(om*(REAL8)(k+1.)*dtWave);
       }
@@ -342,15 +314,41 @@ x,y,z components are got from tempo */
 
     phase = fmod(phase+phaseWave+0.5, 1.0) - 0.5;
 
-    fprintf(fpout, "%.9lf\t%lf\n", tt0, phase);
+    if ( verbose ) { fprintf(fpout, "%.9lf\t%lf\n", tt0, phase); }
+
+    /* check the phase error (in degrees) */
+    if ( fabs(phase)*360. > MAX_PHASE_ERR_DEGS ) { exceedPhaseErr = 1; }
   }
 
-  fclose(fpout);
+  if ( verbose ) { fclose(fpout); }
+
+  if ( exceedPhaseErr ) { return 1; } /* phase difference it too great, so fail */
+
+  // ----- clean up memory
+  XLALDestroyEphemerisData ( edat );
+  XLALDestroyTimeCorrectionData ( tdat );
+  XLALFree ( par.parfile );
+  XLALFree ( par.timfile );
+  XLALFree ( par.ephem );
+  XLALFree ( par.clock );
+
+  // FIXME: I didn't find a destructor for BinaryPulsarParams read by XLALReadTEMPOParFile()
+  XLALFree ( params.name );
+  XLALFree ( params.jname );
+  XLALFree ( params.bname );
+  XLALFree ( params.model );
+  XLALFree ( params.ephem );
+  XLALFree ( params.units );
+  XLALFree ( params.sstr );
+
+
+  LALCheckMemoryLeaks();
 
   return 0;
-}
 
-void get_input_args(Params *pars, int argc, char *argv[]){
+} // main()
+
+void get_input_args(InputParams *pars, int argc, char *argv[]){
   struct option long_options[] =
   {
     { "help",                     no_argument,        0, 'h' },
