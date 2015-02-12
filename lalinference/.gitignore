@@ -44,6 +44,7 @@ python/lalinference/_lalinference*
 python/lalinference/bayestar/sky_map.so
 python/lalinference/git_version.py
 python/lalinference/lalinference.py
+python/rapidpe_integrate_extrinsic_likelihood
 src/LALInferenceBuildInfo.c
 src/LALInferenceConfig.h
 src/LALInferenceVCSInfo.c
