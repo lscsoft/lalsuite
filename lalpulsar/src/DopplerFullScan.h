@@ -84,13 +84,12 @@ typedef struct tagDopplerFullScanState DopplerFullScanState; 	/* opaque type */
 /*---------- external prototypes [API] ----------*/
 
 /* ----- full-fledged multi-dimensional Doppler scanner functions ----- */
-void InitDopplerFullScan(LALStatus *, DopplerFullScanState **scanState, const DopplerFullScanInit *init);
-void loadFullGridFile ( LALStatus *, DopplerFullScanState *scan, const DopplerFullScanInit *init );
+DopplerFullScanState *XLALInitDopplerFullScan ( const DopplerFullScanInit *init );
 
 int  XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan);
-void FreeDopplerFullScan (LALStatus *status, DopplerFullScanState **scan);
 REAL8 XLALNumDopplerTemplates ( DopplerFullScanState *scan);
 int XLALGetDopplerSpinRange ( PulsarSpinRange *spinRange, const DopplerFullScanState *scan );
+void XLALDestroyDopplerFullScan ( DopplerFullScanState *scan );
 
 /* ----- variout utility functions ----- */
 
@@ -117,6 +116,9 @@ int XLALSetLatticeTilingF2DotBrakingBound(
   const double min_braking,		///< [in] Minimum braking index
   const double max_braking		///< [in] Maximum braking index
   );
+
+// ========== deprecated LAL functions ==========
+void InitDopplerFullScan(LALStatus *, DopplerFullScanState **scanState, const DopplerFullScanInit *init);
 
 #ifdef  __cplusplus
 }
