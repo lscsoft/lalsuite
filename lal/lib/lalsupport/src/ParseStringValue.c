@@ -28,6 +28,7 @@
 #include <lal/LALString.h>
 #include <lal/ParseStringValue.h>
 #include <lal/TranslateMJD.h>
+#include <lal/TranslateAngles.h>
 
 // ---------- local defines ----------
 // these constants are taken from StringConvert.c
@@ -290,3 +291,58 @@ XLALParseStringValueToEPOCH ( LIGOTimeGPS *gps,   	///< [out] return LIGOTimeGPS
     }
 
 } // XLALParseStringValueToEPOCH()
+
+
+///
+/// Parse a string representing a 'longitude' into REAL8 radians, allowing for both radians or "hours:minutes:seconds" as input.
+///
+/// Note that "h:m:s" input is translated into radians using XLALTranslateHMStoRAD().
+///
+int
+XLALParseStringValueToLONGITUDE ( REAL8 *valLongitude,   	///< [out] return longitude value in radians
+                                  const char *valString  	///< [in]  input string value
+                                  )
+{
+  XLAL_CHECK ( (valLongitude != NULL) && (valString != NULL ), XLAL_EINVAL );
+
+  // ---------- first check if there's a colon ':' somewhere in the string, which indicates "H:M:S" format
+  const char *colon;
+  if ( (colon = strchr ( valString, ':' )) != NULL )
+    {
+      XLAL_CHECK ( XLALTranslateHMStoRAD ( valLongitude, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+  else
+    {
+      XLAL_CHECK ( XLALParseStringValueToREAL8 ( valLongitude, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+
+  return XLAL_SUCCESS;
+
+} // XLALParseStringValueToLONGITUDE()
+
+///
+/// Parse a string representing a 'latitude' into REAL8 radians, allowing for both radians or "degrees:minutes:seconds" as input.
+///
+/// Note that "d:m:s" input is translated into radians using XLALTranslateDMStoRAD().
+///
+int
+XLALParseStringValueToLATITUDE ( REAL8 *valLatitude,   	///< [out] return latitude value in radians
+                                 const char *valString 	///< [in]  input string value
+                                  )
+{
+  XLAL_CHECK ( (valLatitude != NULL) && (valString != NULL ), XLAL_EINVAL );
+
+  // ---------- first check if there's a colon ':' somewhere in the string, which indicates "D:M:S" format
+  const char *colon;
+  if ( (colon = strchr ( valString, ':' )) != NULL )
+    {
+      XLAL_CHECK ( XLALTranslateDMStoRAD ( valLatitude, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+  else
+    {
+      XLAL_CHECK ( XLALParseStringValueToREAL8 ( valLatitude, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+
+  return XLAL_SUCCESS;
+
+} // XLALParseStringValueToLATITUDE()

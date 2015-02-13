@@ -40,6 +40,8 @@ typedef enum {
   UVAR_STRING,  /* string */
   UVAR_CSVLIST, /* list of comma-separated values */
   UVAR_EPOCH,   /* time 'epoch', specified in either GPS or MJD(TT) format, translated into GPS */
+  UVAR_LONGITUDE,/* sky longitude (aka right-ascencion or RA), in either radians or hours:minutes:seconds format, translated into radians */
+  UVAR_LATITUDE, /* sky latitude (aka declination or DEC), in either radians or degrees:minutes:seconds format, translated into radians */
   UVAR_LAST
 } UserVarType;
 
@@ -123,6 +125,20 @@ int
 XLALRegisterEPOCHUserVar ( const CHAR *name, CHAR optchar, UserVarState flag, const CHAR *helpstr, LIGOTimeGPS *cvar)
 {
   return XLALRegisterUserVar ( name, UVAR_EPOCH, optchar, flag, helpstr, cvar );
+}
+
+/** Register a user-variable of 'LONGITUDE' type (REAL8), allowing both "hours:minutes:seconds" or radians as input */
+int
+XLALRegisterLONGITUDEUserVar ( const CHAR *name, CHAR optchar, UserVarState flag, const CHAR *helpstr, REAL8 *cvar)
+{
+  return XLALRegisterUserVar ( name, UVAR_LONGITUDE, optchar, flag, helpstr, cvar );
+}
+
+/** Register a user-variable of 'LATITUDE' type (REAL8), allowing both "degrees:minutes:seconds" or radians as input */
+int
+XLALRegisterLATITUDEUserVar ( const CHAR *name, CHAR optchar, UserVarState flag, const CHAR *helpstr, REAL8 *cvar)
+{
+  return XLALRegisterUserVar ( name, UVAR_LATITUDE, optchar, flag, helpstr, cvar );
 }
 
 
@@ -430,6 +446,16 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
 	  check_and_mark_as_set ( ptr );
 	  break;
 
+        case UVAR_LONGITUDE:
+          XLAL_CHECK ( XLALParseStringValueToLONGITUDE ( (REAL8 *)(ptr->varp), LALoptarg ) == XLAL_SUCCESS, XLAL_EFUNC );
+	  check_and_mark_as_set ( ptr );
+	  break;
+
+        case UVAR_LATITUDE:
+          XLAL_CHECK ( XLALParseStringValueToLATITUDE ( (REAL8 *)(ptr->varp), LALoptarg ) == XLAL_SUCCESS, XLAL_EFUNC );
+	  check_and_mark_as_set ( ptr );
+	  break;
+
 	default:
 	  XLALPrintError ( "%s: ERROR: unkown UserVariable-type encountered... points to a coding error!\n", __func__ );
 	  XLAL_ERROR ( XLAL_EINVAL );
@@ -563,6 +589,22 @@ XLALUserVarReadCfgfile ( const CHAR *cfgfile ) 	   /**< [in] name of config-file
 	    check_and_mark_as_set ( ptr );
 	  break;
 
+        case UVAR_LONGITUDE:
+	  if ( XLALReadConfigLONGITUDEVariable ( ptr->varp, cfg, NULL, ptr->name, &wasRead ) != XLAL_SUCCESS ) {
+            XLAL_ERROR ( XLAL_EFUNC );
+          }
+	  if (wasRead)
+	    check_and_mark_as_set ( ptr );
+	  break;
+
+        case UVAR_LATITUDE:
+	  if ( XLALReadConfigLATITUDEVariable ( ptr->varp, cfg, NULL, ptr->name, &wasRead ) != XLAL_SUCCESS ) {
+            XLAL_ERROR ( XLAL_EFUNC );
+          }
+	  if (wasRead)
+	    check_and_mark_as_set ( ptr );
+	  break;
+
 	default:
 	  XLALPrintError ("%s: ERROR: unkown UserVariable-type encountered...points to a coding error!\n", __func__);
           XLAL_ERROR ( XLAL_EFAILED );
@@ -598,7 +640,7 @@ XLALUserVarHelpString ( const CHAR *progname )
   CHAR fmtStr[UVAR_MAXFMTLEN];		/* for building a dynamic format-string */
   CHAR optstr[10];			/* display of opt-char */
   /* we need strings for UVAR_BOOL, UVAR_INT4, UVAR_REAL8, UVAR_STRING: */
-  const CHAR *typestr[] = {"BOOL", "INT", "REAL", "STRING", "LIST", "EPOCH"};
+  const CHAR *typestr[] = {"BOOL", "INT", "REAL", "STRING", "LIST", "EPOCH", "LONGITUDE", "LATITUDE"};
   LALUserVariable *ptr;
   LALUserVariable *helpptr = NULL;	/* pointer to help-option */
   CHAR *helpstr = NULL;
@@ -640,7 +682,7 @@ XLALUserVarHelpString ( const CHAR *progname )
   /* special treatment of debug-option in the head (if present) */
   if ( ptr->help && ptr->optchar )
     {
-      snprintf ( fmtStr, UVAR_MAXFMTLEN, "  -%%c    %%-%ds   %%-6s   %%s [%%d]\n",  nameFieldLen );
+      snprintf ( fmtStr, UVAR_MAXFMTLEN, "  -%%c    %%-%ds   %%-9s  %%s [%%d]\n",  nameFieldLen );
       fmtStr[UVAR_MAXFMTLEN-1]=0;
 
       sprintf (strbuf, fmtStr, ptr->optchar, " ", typestr[ptr->type], ptr->help, *(INT4*)(ptr->varp) );
@@ -653,7 +695,7 @@ XLALUserVarHelpString ( const CHAR *progname )
       strcat (helpstr, strbuf);	/* add this line to the helpstring */
     }
 
-  snprintf ( fmtStr, UVAR_MAXFMTLEN, "  %%s --%%-%ds   %%-6s   %%s [%%s]\n", nameFieldLen );
+  snprintf ( fmtStr, UVAR_MAXFMTLEN, "  %%s --%%-%ds   %%-9s  %%s [%%s]\n", nameFieldLen );
   fmtStr[UVAR_MAXFMTLEN-1]=0;
 
   /* FIRST PASS: treat all "normal" entries excluding DEVELOPER-options */
@@ -1084,6 +1126,12 @@ XLALUvarType2String ( LALUserVariable *uvar )
     case UVAR_EPOCH:
       sprintf(buf, "epoch");
       break;
+    case UVAR_LONGITUDE:
+      sprintf(buf, "longitude");
+      break;
+    case UVAR_LATITUDE:
+      sprintf(buf, "latitude");
+      break;
     default:
       XLALPrintError ("%s: ERROR: unkown UserVariable-type encountered\n", __func__ );
       XLAL_ERROR_NULL ( XLAL_EINVAL );
@@ -1126,6 +1174,8 @@ XLALUvarValue2String ( LALUserVariable *uvar )
       sprintf (buf, "%" LAL_INT4_FORMAT, *(INT4*)(uvar->varp) );
       break;
     case UVAR_REAL8:
+    case UVAR_LONGITUDE:
+    case UVAR_LATITUDE:
       if (*(REAL8*)(uvar->varp) == 0)
 	strcpy (buf, "0.0");	/* makes it more explicit that's it a REAL */
       else

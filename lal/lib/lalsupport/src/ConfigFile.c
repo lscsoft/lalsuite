@@ -730,6 +730,65 @@ XLALReadConfigEPOCHVariable (LIGOTimeGPS *varp,
 
 
 /**
+ * Type-specialization of generic reading-function LALReadConfigVariable() to LONGITUDE variables
+ * (allowing for either radians or "hours:minutes:seconds" input format).
+ */
+int
+XLALReadConfigLONGITUDEVariable (REAL8 *varp,
+                                 const LALParsedDataFile *cfgdata,
+                                 const CHAR *secName,
+                                 const CHAR *varName,
+                                 BOOLEAN *wasRead)
+{
+  (*wasRead) = FALSE;
+  /* first read the value as a string */
+  CHAR *valString = NULL;
+  XLAL_CHECK ( XLALReadConfigSTRINGVariable ( &valString, cfgdata, secName, varName, wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  if ( ! (*wasRead ) ) { // if nothing was read and XLALReadConfigSTRINGVariable() didn't throw an error, then we're ok and return
+    return XLAL_SUCCESS;
+  }
+  XLAL_CHECK ( valString != NULL, XLAL_EFAILED, "Got NULL string after reading config-variable '%s' in section '%s'\n", varName, secName ? secName: "default" );
+
+  XLAL_CHECK ( XLALParseStringValueToLONGITUDE ( varp, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  XLALFree ( valString );
+
+  return XLAL_SUCCESS;
+
+} /* XLALReadConfigLONGITUDEVariable() */
+
+/**
+ * Type-specialization of generic reading-function LALReadConfigVariable() to LATITUDE variables
+ * (allowing for either radians or "degrees:minutes:seconds" input format).
+ */
+int
+XLALReadConfigLATITUDEVariable (REAL8 *varp,
+                                const LALParsedDataFile *cfgdata,
+                                const CHAR *secName,
+                                const CHAR *varName,
+                                BOOLEAN *wasRead)
+{
+  (*wasRead) = FALSE;
+  /* first read the value as a string */
+  CHAR *valString = NULL;
+  XLAL_CHECK ( XLALReadConfigSTRINGVariable ( &valString, cfgdata, secName, varName, wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  if ( ! (*wasRead ) ) { // if nothing was read and XLALReadConfigSTRINGVariable() didn't throw an error, then we're ok and return
+    return XLAL_SUCCESS;
+  }
+  XLAL_CHECK ( valString != NULL, XLAL_EFAILED, "Got NULL string after reading config-variable '%s' in section '%s'\n", varName, secName ? secName: "default" );
+
+  XLAL_CHECK ( XLALParseStringValueToLATITUDE ( varp, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  XLALFree ( valString );
+
+  return XLAL_SUCCESS;
+
+} /* XLALReadConfigLATITUDEVariable() */
+
+
+/**
  * Check if all lines of config-file have been successfully read in
  * and issue a warning or error (depending on strictness) if not.
  */

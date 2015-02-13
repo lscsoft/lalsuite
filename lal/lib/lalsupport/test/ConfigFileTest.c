@@ -18,6 +18,8 @@
 *  MA  02111-1307  USA
 */
 
+#include <math.h>
+
 #include <lal/AVFactories.h>
 #include <lal/ConfigFile.h>
 #include <lal/StringVector.h>
@@ -71,6 +73,14 @@ int main ( int argc, char *argv[])
   XLAL_CHECK ( XLALReadConfigEPOCHVariable ( &epochGPS, cfgdata, 0, "epochGPS", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALReadConfigEPOCHVariable ( &epochMJDTT, cfgdata, 0, "epochMJDTT", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
 
+  REAL8 longHMS, longRad;
+  XLAL_CHECK ( XLALReadConfigLONGITUDEVariable ( &longHMS, cfgdata, 0, "longHMS", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALReadConfigLONGITUDEVariable ( &longRad, cfgdata, 0, "longRad", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  REAL8 latDMS, latRad;
+  XLAL_CHECK ( XLALReadConfigLATITUDEVariable ( &latDMS, cfgdata, 0, "latDMS", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALReadConfigLATITUDEVariable ( &latRad, cfgdata, 0, "latRad", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
+
   XLAL_CHECK ( XLALCheckConfigReadComplete (cfgdata, CONFIGFILE_ERROR) == XLAL_SUCCESS, XLAL_EFUNC );
 
   XLALDestroyParsedDataFile (cfgdata);
@@ -98,6 +108,10 @@ int main ( int argc, char *argv[])
 
   XLAL_CHECK ( XLALGPSCmp ( &epochGPS, &epochMJDTT ) == 0, XLAL_EFAILED, "GPS epoch {%d,%d} differs from MJD(TT) epoch {%d,%d}\n",
                epochGPS.gpsSeconds, epochGPS.gpsNanoSeconds, epochMJDTT.gpsSeconds, epochMJDTT.gpsNanoSeconds );
+
+  REAL8 diff, tol = 3e-15;
+  XLAL_CHECK ( (diff = fabs(longHMS - longRad)) < tol, XLAL_EFAILED, "longitude(HMS) = %.16g differs from longitude(rad) = %.16g by %g > tolerance\n", longHMS, longRad, diff, tol );
+  XLAL_CHECK ( (diff = fabs(latDMS - latRad)) < tol, XLAL_EFAILED, "latitude(HMS) = %.16g differs from latitude(rad) = %.16g by %g > tolerance\n", latDMS, latRad, diff, tol );
 
   XLALFree (string1);
   XLALFree (string2b);

@@ -17,6 +17,7 @@
 *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 *  MA  02111-1307  USA
 */
+#include <math.h>
 
 #include <lal/Date.h>
 #include <lal/UserInput.h>
@@ -40,6 +41,10 @@ typedef struct
   INT4 dummy;
   LIGOTimeGPS epochGPS;
   LIGOTimeGPS epochMJDTT;
+  REAL8 longHMS;
+  REAL8 longRad;
+  REAL8 latDMS;
+  REAL8 latRad;
 } UserInput_t;
 
 /**
@@ -107,6 +112,10 @@ main(int argc, char *argv[])
     XLALPrintError ("%s: XLALregEPOCHUserStruct() failed with code %d\n", __func__, xlalErrno );
     XLAL_ERROR ( XLAL_EFUNC );
   }
+  XLAL_CHECK ( XLALregLONGITUDEUserStruct( longHMS, 0, UVAR_REQUIRED, "Testing LONGITUDE(HMS) argument") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALregLONGITUDEUserStruct( longRad, 0, UVAR_REQUIRED, "Testing LONGITUDE(rad) argument") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALregLATITUDEUserStruct( latDMS, 0, UVAR_REQUIRED, "Testing LATITUDE(DMS) argument") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALregLATITUDEUserStruct( latRad, 0, UVAR_REQUIRED, "Testing LATITUDE(rad) argument") == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* ---------- now read all input from commandline and config-file ---------- */
   if ( XLALUserVarReadAllInput ( my_argc, my_argv ) != XLAL_SUCCESS ) {
@@ -160,6 +169,9 @@ main(int argc, char *argv[])
   XLAL_CHECK ( XLALGPSCmp ( &uvar->epochGPS, &uvar->epochMJDTT ) == 0, XLAL_EFAILED, "GPS epoch {%d,%d} differs from MJD(TT) epoch {%d,%d}\n",
                uvar->epochGPS.gpsSeconds, uvar->epochGPS.gpsNanoSeconds, uvar->epochMJDTT.gpsSeconds, uvar->epochMJDTT.gpsNanoSeconds );
 
+  REAL8 diff, tol = 3e-15;
+  XLAL_CHECK ( (diff = fabs(uvar->longHMS - uvar->longRad)) < tol, XLAL_EFAILED, "longitude(HMS) = %.16g differs from longitude(rad) = %.16g by %g > tolerance\n", uvar->longHMS, uvar->longRad, diff, tol );
+  XLAL_CHECK ( (diff = fabs(uvar->latDMS - uvar->latRad)) < tol, XLAL_EFAILED, "latitude(HMS) = %.16g differs from latitude(rad) = %.16g by %g > tolerance\n", uvar->latDMS, uvar->latRad, diff, tol );
 
   /* ----- cleanup ---------- */
   XLALDestroyUserVars();

@@ -52,6 +52,9 @@ int XLALParseStringValueToINT4PlusFrac ( INT4 *valINT4, REAL8 *valFrac, const ch
 LIGOTimeGPS *XLALParseStringValueToGPS ( LIGOTimeGPS *gps, const char *valString );
 LIGOTimeGPS *XLALParseStringValueToEPOCH ( LIGOTimeGPS *gps, const char *valString );
 
+int XLALParseStringValueToLONGITUDE ( REAL8 *valLongitude, const char *valString );
+int XLALParseStringValueToLATITUDE ( REAL8 *valLatitude, const char *valString );
+
 #ifdef SWIG /* SWIG interface directives */
 SWIGLAL_CLEAR(NEW_EMPTY_ARGUMENT(LIGOTimeGPS*, gps));
 #endif
