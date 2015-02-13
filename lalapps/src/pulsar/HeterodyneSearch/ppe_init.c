@@ -353,6 +353,7 @@ void add_initial_variables( LALInferenceVariables *ini,  LALInferenceVariables *
   add_variable_scale( ini, scaleFac, "H0", pars.h0 );
   add_variable_scale( ini, scaleFac, "PHI0", pars.phi0 ); /* note that this is rotational phase */
   add_variable_scale( ini, scaleFac, "COSIOTA", pars.cosiota );
+  add_variable_scale( ini, scaleFac, "IOTA", pars.iota );
   add_variable_scale( ini, scaleFac, "PSI", pars.psi );
 
   /* amplitude model parameters for l=2, m=1 and 2 harmonic emission from Jones (2010) */
@@ -360,6 +361,7 @@ void add_initial_variables( LALInferenceVariables *ini,  LALInferenceVariables *
   add_variable_scale( ini, scaleFac, "I31", pars.I31 );
   add_variable_scale( ini, scaleFac, "LAMBDA", pars.lambda );
   add_variable_scale( ini, scaleFac, "COSTHETA", pars.costheta );
+  add_variable_scale( ini, scaleFac, "THETA", pars.costheta );
 
   /* amplitude model parameters in phase and amplitude form */
   add_variable_scale( ini, scaleFac, "C22", pars.C22 );
@@ -477,14 +479,23 @@ void add_variable_scale( LALInferenceVariables *var, LALInferenceVariables *scal
  * This function sets up any parameters that you require the code to search over and specifies the prior range and type
  * for each. This information is contained in a prior file specified by the command line argument \c prior-file. This
  * file should contain four columns: the first has the name of a parameter to be searched over; the second has the prior
- * type (e.g. "uniform" for a prior that is flat over the given range or "gaussian"); the third has the lower limit, or
- * mean, of the prior, for "uniform" and "gaussian" priors respectively; and the fourth has the upper limit, or standard
- * deviation, for "uniform" and "gaussian" priors respectively. E.g.
+ * type (e.g. "uniform" for a prior that is flat over the given range, or "gaussian" with a certain mean and standard
+ * deviation, or "predefined", which means that the prior for that variable is already hardcoded into the prior function);
+ * the third has the lower limit, or mean, of the prior, for "uniform"/"predefined" and "gaussian" priors respectively;
+ * and the fourth has the upper limit, or standard deviation, for "uniform"/"predefined" and "gaussian" priors respectively.
+ * E.g.
  * \code
- * h0 uniform 0 1e-21
- * phi0 uniform 0 3.14159265359
- * cosiota uniform -1 1
- * psi uniform -0.785398163397448 0.785398163397448
+ * H0 uniform 0 1e-21
+ * PHI0 uniform 0 3.14159265359
+ * COSIOTA uniform -1 1
+ * PSI uniform -0.785398163397448 0.785398163397448
+ * \endcode
+ * or
+ * \code
+ * H0 uniform 0 1e-21
+ * PHI0 uniform 0 3.14159265359
+ * IOTA predefined 0 3.14159265359
+ * PSI uniform -0.785398163397448 0.785398163397448
  * \endcode
  *
  * Any parameter specified in the file will have its vary type set to \c LALINFERENCE_PARAM_LINEAR, (except
@@ -574,7 +585,7 @@ void initialise_prior( LALInferenceRunState *runState )
     /* remove variable value */
     LALInferenceRemoveVariable( runState->currentParams, tempPar );
 
-    if ( !strcmp(tempPrior, "uniform") ){
+    if ( !strcmp(tempPrior, "uniform") || !strcmp(tempPrior, "predefined") ){
       scale = high - low; /* the prior range */
       scaleMin = low;     /* the lower limit of the prior range */
     }
@@ -628,7 +639,7 @@ void initialise_prior( LALInferenceRunState *runState )
     LALInferenceAddVariable( runState->currentParams, tempPar, &tempVar, type, varyType );
 
     /* Add the prior variables */
-    if ( !strcmp(tempPrior, "uniform") ){
+    if ( !strcmp(tempPrior, "uniform") || !strcmp(tempPrior, "predefined") ){
       LALInferenceAddMinMaxPrior( runState->priorArgs, tempPar, &low, &high, type );
     }
     else if( !strcmp(tempPrior, "gaussian") ){

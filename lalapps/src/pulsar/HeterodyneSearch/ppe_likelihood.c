@@ -483,11 +483,22 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
       }
       /* check for a flat prior */
       else if( LALInferenceCheckMinMaxPrior(runState->priorArgs, item->name) ){
-        LALInferenceGetMinMaxPrior( runState->priorArgs, item->name, &min, &max );
-        prior -= log( (max - min) * scale );
+        value = (*(REAL8 *)item->value) * scale + scaleMin;
 
-        if ( !strcmp(item->name, "I21") ){ I21 = (*(REAL8 *)item->value) * scale + scaleMin; }
-        if ( !strcmp(item->name, "I31") ){ I31 = (*(REAL8 *)item->value) * scale + scaleMin; }
+        LALInferenceGetMinMaxPrior( runState->priorArgs, item->name, &min, &max );
+
+        if ( value < scaleMin || value > scaleMin + (max-min)*scale ) { return -DBL_MAX; }
+
+        /* check if either using theta or iota rather than their cosines */
+        if ( !strcmp(item->name, "IOTA") || !strcmp(item->name, "THETA") ){
+          prior += theta_prior( value );
+        }
+        else {
+          prior -= log( (max - min) * scale );
+
+          if ( !strcmp(item->name, "I21") ){ I21 = value; }
+          if ( !strcmp(item->name, "I31") ){ I31 = value; }
+        }
       }
       else if( LALInferenceCheckCorrelatedPrior(runState->priorArgs, item->name) && corlist ){
         /* set item in correct position given the order of the correlation matrix given by corlist */
@@ -573,6 +584,24 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
 
   return prior;
 }
+
+
+/**
+ * \brief Prior for angle that is equivalent to an latitude value to give a uniform prior on a sphere
+ *
+ * If you have two angles that define spherical polar coordinates and you want these to have a prior
+ * that is uniform over the sphere then you can instead work with the cosine of the latitude-like angle
+ * and have this to be uniform between -1 and 1. However, if you want to work in the actual angle then
+ * you need to set the correct prior which will be \f$p(\theta) \propto \sin{\theta)\f$.
+ *
+ * \param theta [in] The angle in radians
+ *
+ * \return The log prior as defined above.
+ */
+REAL8 theta_prior( REAL8 theta ){
+  return log(sin(theta));
+}
+
 
 /**
  * \brief Convert an array of nested samples to posterior samples
@@ -830,7 +859,6 @@ void create_kdtree_prior( LALInferenceRunState *runState ){
       /* change the prior ranges, the scale factors and the current params */
       if( change != 0 ){
         LALInferenceIFOModel *ifo = runState->model->ifo;
-        fprintf(stderr, "Here\n");
         REAL8 newscale = high[cnt] - low[cnt], newscaleMin = low[cnt];
 
         /* with the scaled parameters the k-D tree ranges will be between 0 and 1 */

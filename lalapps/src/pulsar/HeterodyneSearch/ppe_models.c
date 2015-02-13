@@ -47,9 +47,19 @@ void get_pulsar_model( LALInferenceModel *model ){
     pars.I21 = rescale_parameter( model, model->ifo, "I21" );
     pars.I31 = rescale_parameter( model, model->ifo, "I31" );
     pars.lambda = rescale_parameter( model, model->ifo, "LAMBDA" );
-    pars.costheta = rescale_parameter( model, model->ifo, "COSTHETA" );
+
+    /* check whether using cos(theta) or theta as the variable (defaulting to cos(theta) being the value that is set */
+    if ( LALInferenceCheckVariableNonFixed( model->params, "THETA" ) ){
+      pars.costheta = cos(rescale_parameter( model, model->ifo, "THETA" ));
+    }
+    else{ pars.costheta = rescale_parameter( model, model->ifo, "COSTHETA" ); }
     pars.phi0 = rescale_parameter( model, model->ifo, "PHI0" ); /* note that this is the rotational phase */
-    pars.cosiota = rescale_parameter( model, model->ifo, "COSIOTA" );
+
+    /* check whether using cos(theta) or theta as the variable (defaulting to cos(theta) being the value that is set */
+    if ( LALInferenceCheckVariableNonFixed( model->params, "IOTA" ) ){
+      pars.cosiota = cos(rescale_parameter( model, model->ifo, "IOTA" ));
+    }
+    else{ pars.cosiota = rescale_parameter( model, model->ifo, "COSIOTA" ); }
 
     invert_source_params( &pars );
   }
@@ -77,7 +87,12 @@ void get_pulsar_model( LALInferenceModel *model ){
     pars.C21 = rescale_parameter( model, model->ifo, "C21" );
     pars.C22 = rescale_parameter( model, model->ifo, "C22" );
     pars.phi21 = rescale_parameter( model, model->ifo, "PHI21" );
-    pars.cosiota = rescale_parameter( model, model->ifo, "COSIOTA" );
+
+    /* check whether using cos(theta) or theta as the variable (defaulting to cos(theta) being the value that is set */
+    if ( LALInferenceCheckVariableNonFixed( model->params, "IOTA" ) ){
+      pars.cosiota = cos(rescale_parameter( model, model->ifo, "IOTA" ));
+    }
+    else{ pars.cosiota = rescale_parameter( model, model->ifo, "COSIOTA" ); }
 
     if( LALInferenceCheckVariable( model->ifo->params, "biaxial" ) ){
       /* use complex amplitude parameterisation, but set up for a biaxial star */

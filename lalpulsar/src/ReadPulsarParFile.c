@@ -571,7 +571,7 @@ typedef struct tagParConversion{
 }ParConversion;
 
 
-#define NUM_PARS 104 /* number of allowed parameters */
+#define NUM_PARS 106 /* number of allowed parameters */
 
 /** Initialise conversion structure with most allowed TEMPO2 parameter names and conversion functions
  * (convert all read in parameters to SI units where necessary). See http://arxiv.org/abs/astro-ph/0603381 and
@@ -686,6 +686,7 @@ ParConversion pc[NUM_PARS] = {
   { .name = "PHI0", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* gravitational wave initial phase (radians) */
   { .name = "PSI", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* gravitational wave polarisation angle (radians) */
   { .name = "COSIOTA", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* cosine of source inclination angle */
+  { .name = "IOTA", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* the source inclination angle in radians */
   { .name = "C22", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* GW amplitude of C22 component */
   { .name = "C21", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* GW amplitude of C21 component */
   { .name = "PHI22", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* initial phase of C22 component (radians) */
@@ -693,6 +694,7 @@ ParConversion pc[NUM_PARS] = {
   { .name = "CGW", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* speed of gravitational waves as a fraction of the speed of light */
   { .name = "LAMBDA", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* parameters from http://uk.arxiv.org/abs/0909.4035 */
   { .name = "COSTHETA", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t },
+  { .name = "THETA", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t },
   { .name = "I21", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t },
   { .name = "I31", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t },
 
@@ -1141,6 +1143,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
 
   output->h0=0.;
   output->cosiota=0.;
+  output->iota=0.;
   output->psi=0.;
   output->phi0=0.;
   output->Aplus=0.;
@@ -1149,6 +1152,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   output->I31=0.;
   output->lambda=0.;
   output->costheta=0.;
+  output->theta=0.;
   output->C22=0.;
   output->C21=0.;
   output->phi22=0.;
@@ -1167,6 +1171,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
 
   output->h0Err=0.;
   output->cosiotaErr=0.;
+  output->iotaErr=0.;
   output->psiErr=0.;
   output->phi0Err=0.;
   output->AplusErr=0.;
@@ -1175,6 +1180,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   output->I31Err=0.;
   output->lambdaErr=0.;
   output->costhetaErr=0.;
+  output->thetaErr=0.;
   output->C22Err=0.;
   output->C21Err=0.;
   output->phi22Err=0.;
@@ -2023,6 +2029,15 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
         j+=2;
       }
     }
+    else if( !strcmp(val[i],"iota") || !strcmp(val[i],"IOTA") ) {
+      output->iota = atof(val[i+1]);
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->iotaErr = atof(val[i+3]);
+        j+=2;
+      }
+    }
     else if( !strcmp(val[i],"psi") || !strcmp(val[i],"PSI") ) {
       output->psi = atof(val[i+1]);
       j++;
@@ -2092,6 +2107,15 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
 
       if(atoi(val[i+2])==1 && i+2<k){
         output->costhetaErr = atof(val[i+3]);
+        j+=2;
+      }
+    }
+    else if( !strcmp(val[i],"theta") || !strcmp(val[i],"THETA") ) {
+      output->theta = atof(val[i+1]);
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->thetaErr = atof(val[i+3]);
         j+=2;
       }
     }
