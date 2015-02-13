@@ -227,10 +227,7 @@ src/pulsar/hough/src2/lalapps_HierarchicalSearch
 src/pulsar/hough/src2/lalapps_HoughMismatch
 src/pulsar/hough/src2/lalapps_HoughValidateAM
 src/pulsar/hough/src2/lalapps_RecalcHSCandidates
-src/pulsar/templateBanks/lalapps_FstatMetric_v2
-src/pulsar/templateBanks/lalapps_getMesh
-src/pulsar/templateBanks/lalapps_getMetric
-src/pulsar/templateBanks/lalapps_skynet
+src/pulsar/Tools/lalapps_FstatMetric_v2
 src/ring/lalapps_coh_PTF_inspiral
 src/ring/lalapps_coh_PTF_spin_checker
 src/ring/lalapps_coh_PTF_testing
