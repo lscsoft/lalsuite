@@ -1287,11 +1287,8 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   /* pulsar params */
   XLALregEPOCHUserStruct ( refTime,             'S', UVAR_OPTIONAL, "Pulsar SSB reference epoch: format 'xx.yy[GPS|MJD]' [default: startTime]");
 
-  XLALregREALUserStruct (  Alpha,                0, UVAR_OPTIONAL, "Right-ascension/longitude of pulsar in radians");
-  XLALregSTRINGUserStruct (RA,                   0, UVAR_OPTIONAL, "ALTERNATIVE: Righ-ascension/longitude of pulsar in HMS 'hh:mm:ss.ssss'");
-
-  XLALregREALUserStruct (  Delta,                0, UVAR_OPTIONAL, "Declination/latitude of pulsar in radians");
-  XLALregSTRINGUserStruct (Dec,                  0, UVAR_OPTIONAL, "ALTERNATIVE: Declination/latitude of pulsar in DMS 'dd:mm:ss.ssss'");
+  XLALregLONGITUDEUserStruct (  Alpha,		 0, UVAR_OPTIONAL, "Sky: equatorial right ascension 'Alpha' (radians or hours:minutes:seconds)");
+  XLALregLATITUDEUserStruct (  Delta,		 0, UVAR_OPTIONAL, "Sky: equatorial declination 'Delta' (radians or degrees:minutes:seconds)");
 
   XLALregREALUserStruct (  h0,                   0, UVAR_OPTIONAL, "Overall signal-amplitude h0");
   XLALregREALUserStruct (  cosi,                 0, UVAR_OPTIONAL, "cos(iota) of inclination-angle iota");
@@ -1344,6 +1341,10 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALregSTRINGUserStruct (detector,             0, UVAR_DEVELOPER, "[DEPRECATED] Detector: use --IFO instead!.");
   XLALregBOOLUserStruct( outSFTv1,	 	 0, UVAR_DEVELOPER, "[DEPRECATED]Write output-SFTs in obsolete SFT-v1 format." );
   XLALregREALUserStruct (  noiseSigma,           0, UVAR_DEVELOPER, "[DEPRECATED] Alternative: Gaussian noise with standard-deviation sigma");
+
+
+  XLALregSTRINGUserStruct (RA,                   0, UVAR_DEVELOPER, "[DEPRECATED] use --Alpha instead");
+  XLALregSTRINGUserStruct (Dec,                  0, UVAR_DEVELOPER, "[DEPRECATED] use --Delta instead");
 
   /* read cmdline & cfgfile  */
   ret = XLALUserVarReadAllInput ( argc, argv );
