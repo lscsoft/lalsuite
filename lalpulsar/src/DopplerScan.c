@@ -50,12 +50,6 @@
 #define UNUSED
 #endif
 
-#define MIN(x,y) (x < y ? x : y)
-#define MAX(x,y) (x > y ? x : y)
-
-#define TRUE (1==1)
-#define FALSE (1==0)
-
 /* Metric indexing scheme: if g_ij for i<=j: index = i + j*(j+1)/2 */
 /* the variable-order of PulsarMetric is {f, alpha, delta, f1, f2, ... } */
 
@@ -74,12 +68,12 @@
 #define INDEX_f1_f1	PMETRIC_INDEX(3,3)
 
 /* all-sky skyregion string, with exact boundaries */
-#define DELTA_0     "-1.570796)"
-#define DELTA_1     " 1.570796)"
-#define ALPHA_0     "(1e-6, "
-#define ALPHA_1     "(6.283185, "
+#define DELTA_0     "-1.570796"
+#define DELTA_1      "1.570796"
+#define ALPHA_0     "1e-6"
+#define ALPHA_1     "6.283185"
 
-#define SKYREGION_ALLSKY  ALPHA_0 DELTA_0 "," ALPHA_1 DELTA_0 "," ALPHA_1 DELTA_1 "," ALPHA_0 DELTA_1
+#define SKYREGION_ALLSKY  "(" ALPHA_0 ", " DELTA_0 "),(" ALPHA_1 ", " DELTA_0 "),(" ALPHA_1 ", " DELTA_1 "),(" ALPHA_0 ", " DELTA_1 ")"
 
 /* the amount by which we push-in the encosing rectangle to avoid spurious polygon-clipping
  * of boundary-points due to numerical fluctuations in TwoDMesh().
@@ -734,7 +728,7 @@ pointInPolygon ( const SkyPosition *point, const SkyRegion *polygon )
       v2y = vertex[(i+1) % N].latitude;
 
       /* pre-select candidate edges */
-      if ( (py <  MIN(v1y,  v2y)) || (py >=  MAX(v1y, v2y) ) || (v1y == v2y) )
+      if ( (py <  fmin(v1y,  v2y)) || (py >=  fmax(v1y, v2y) ) || (v1y == v2y) )
 	continue;
 
       /* now calculate the actual intersection point of the horizontal ray with the edge in question*/
@@ -1256,24 +1250,18 @@ XLALParseSkyRegionString ( SkyRegion *region, const CHAR *input)
   XLAL_CHECK ( region->vertices == NULL, XLAL_EINVAL );
 
   const CHAR *skyRegion = NULL;
-  CHAR buf[100];
-  /* ----- first check if special skyRegion string was specified: */
-  if ( input == NULL ) {
-    skyRegion = SKYREGION_ALLSKY;
-  }
+
+  if ( input == NULL ) // default is 'allsky'
+    {
+      skyRegion = SKYREGION_ALLSKY;
+    }
+  else if ( !strcmp ( input, "allsky" ) || !strcmp ( input, "ALLSKY" ) || !strcmp ( input, "Allsky" ) )
+    {
+      skyRegion = SKYREGION_ALLSKY;
+    }
   else
     {
-      strncpy (buf, input, sizeof(buf)-1);
-      buf[sizeof(buf)-1] = 0;
-      XLAL_CHECK ( XLALStringToLowerCase (buf) == XLAL_SUCCESS, XLAL_EFUNC );
-
-      /* check if "allsky" was given: replace input by allsky-skyRegion */
-      if ( !strcmp( buf, "allsky" ) ) {
-	skyRegion = SKYREGION_ALLSKY;
-      }
-      else {
-	skyRegion = input;
-      }
+      skyRegion = input;
     }
 
   /* count number of entries (by # of opening parantheses) */
@@ -1307,11 +1295,11 @@ XLALParseSkyRegionString ( SkyRegion *region, const CHAR *input)
       }
 
       /* keep track of min's and max's to get the bounding square */
-      region->lowerLeft.longitude=MIN(region->lowerLeft.longitude, region->vertices[i].longitude);
-      region->lowerLeft.latitude =MIN(region->lowerLeft.latitude,  region->vertices[i].latitude);
+      region->lowerLeft.longitude = fmin ( region->lowerLeft.longitude, region->vertices[i].longitude );
+      region->lowerLeft.latitude  = fmin ( region->lowerLeft.latitude,  region->vertices[i].latitude );
 
-      region->upperRight.longitude = MAX( region->upperRight.longitude, region->vertices[i].longitude);
-      region->upperRight.latitude  = MAX( region->upperRight.latitude, region->vertices[i].latitude);
+      region->upperRight.longitude = fmax ( region->upperRight.longitude, region->vertices[i].longitude );
+      region->upperRight.latitude  = fmax ( region->upperRight.latitude, region->vertices[i].latitude );
 
       pos = strchr (pos + 1, '(');
 
@@ -1565,7 +1553,7 @@ XLALEquiPartitionSkygrid ( const DopplerSkyGrid *skygrid, UINT4 partitionIndex, 
   dp = Nsky - numPartitions * Nt;	/* dp = Nsky mod P : 0 <= dp < P */
 
   /* first point in partion partitionIndex */
-  iMin = MIN ( partitionIndex, dp ) * ( Nt + 1 )  + MAX ( 0, ((INT4)partitionIndex - (INT4)dp) ) * Nt;
+  iMin = fmin ( partitionIndex, dp ) * ( Nt + 1 )  + fmax ( 0, ((INT4)partitionIndex - (INT4)dp) ) * Nt;
   numPoints = (partitionIndex < dp) ? (Nt + 1) : Nt ;	/* number of points in partition partitionIndex */
 
   /* ----- generate skygrid patch partitionIndex */
