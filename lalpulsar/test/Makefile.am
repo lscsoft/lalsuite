@@ -89,6 +89,7 @@ pkgdata_DATA = \
 	tdb_2000-2019.dat.gz \
 	te405_2000-2019.dat.gz \
 	testTimestamps.dat \
+	testTimestampsNew.dat \
 	$(END_OF_LIST)
 
 EXTRA_DIST += \
@@ -127,6 +128,7 @@ EXTRA_DIST += \
 	inputsft.1 \
 	sun98.dat \
 	testTimestamps.dat \
+	testTimestampsNew.dat \
 	TOAtest.par \
 	TOAtest.simulate \
 	pks2gps.clk \

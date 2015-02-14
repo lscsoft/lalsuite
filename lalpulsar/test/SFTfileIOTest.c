@@ -20,6 +20,8 @@
 
 /*---------- INCLUDES ----------*/
 #include <config.h>
+
+#include <lal/LALStdio.h>
 #include <lal/SFTfileIO.h>
 #include <lal/SFTutils.h>
 #include <lal/Units.h>
@@ -477,39 +479,35 @@ int main(int argc, char *argv[])
   /* ---------- test timestamps-reading functions by comparing LAL- and XLAL-versions against each other ---------- */
   {
 #define TS_FNAME "testTimestamps.dat"
-    LIGOTimeGPSVector *ts1 = NULL, *ts2 = NULL;
+#define TS_FNAME_NEW "testTimestampsNew.dat"
+    LIGOTimeGPSVector *ts1 = NULL, *ts2 = NULL, *ts3 = NULL;
 
     /* ----- load timestamps with deprecated LAL function  */
     SUB ( LALReadTimestampsFile ( &status, &ts1, TEST_DATA_DIR TS_FNAME ), &status );
     /* ----- load timestamps w new XLAL function */
-    if ( (ts2 = XLALReadTimestampsFile ( TEST_DATA_DIR TS_FNAME )) == NULL ) {
-      XLALPrintError ("XLALReadTimestampsFile() failed to read timestamps from file '%s'. xlalErrno = %d\n", TS_FNAME, xlalErrno );
-      return SFTFILEIOTESTC_ESUB;
-    }
-    /* ----- compare the two */
-    if ( ts1->length != ts2->length ) {
-      XLALPrintError ("Read timestamps-lists differ in length %d != %d\n", ts1->length, ts2->length );
-      return 1;
-    }
-    if ( ts1->deltaT != ts2->deltaT ) {
-      XLALPrintError ("Read timestamps-lists differ in deltaT %g != %g\n", ts1->deltaT, ts2->deltaT );
-      return 1;
-    }
-    UINT4 i, numTS = ts1->length;
-    for ( i = 0; i < numTS; i ++ )
+    XLAL_CHECK_MAIN ( (ts2 = XLALReadTimestampsFile ( TEST_DATA_DIR TS_FNAME )) != NULL, XLAL_EFUNC );
+    XLAL_CHECK_MAIN ( (ts3 = XLALReadTimestampsFile ( TEST_DATA_DIR TS_FNAME_NEW )) != NULL, XLAL_EFUNC );
+
+    /* ----- compare the 3 */
+    XLAL_CHECK_MAIN ( ts1->length == ts2->length, XLAL_EFAILED, "Read timestamps-lists differ in length %d != %d\n", ts1->length, ts2->length );
+    XLAL_CHECK_MAIN ( ts2->length == ts3->length, XLAL_EFAILED, "Read timestamps-lists differ in length %d != %d\n", ts2->length, ts3->length );
+
+    XLAL_CHECK_MAIN ( ts1->deltaT == ts2->deltaT, XLAL_EFAILED, "Read timestamps-lists differ in deltaT %g != %g\n", ts1->deltaT, ts2->deltaT );
+    XLAL_CHECK_MAIN ( ts2->deltaT == ts3->deltaT, XLAL_EFAILED, "Read timestamps-lists differ in deltaT %g != %g\n", ts2->deltaT, ts3->deltaT );
+
+    UINT4 numTS = ts1->length;
+    char buf1[256], buf2[256];
+    const char *fmt = "Timestamps-lists differ in entry %" LAL_UINT4_FORMAT ": %s != %s\n";
+    for ( UINT4 i = 0; i < numTS; i ++ )
       {
-        if ( XLALGPSDiff( &ts1->data[i], &ts2->data[i]) != 0 ) {
-          XLALPrintError ("Read timestamps-lists differ in entry %d: { %d, %d } != { %d, %d }\n",
-                          i + 1,
-                          ts1->data[i].gpsSeconds, ts1->data[i].gpsNanoSeconds,
-                          ts2->data[i].gpsSeconds, ts2->data[i].gpsNanoSeconds );
-          return 1;
-        }
+        XLAL_CHECK_MAIN ( XLALGPSDiff( &ts1->data[i], &ts2->data[i]) == 0, XLAL_EFAILED, fmt, i + 1, XLALGPSToStr ( buf1, &ts1->data[i] ), XLALGPSToStr ( buf2, &ts2->data[i] ) );
+        XLAL_CHECK_MAIN ( XLALGPSDiff( &ts2->data[i], &ts3->data[i]) == 0, XLAL_EFAILED, fmt, i + 1, XLALGPSToStr ( buf1, &ts2->data[i] ), XLALGPSToStr ( buf2, &ts3->data[i] ) );
       } /* for i < numTS */
 
     /* free mem */
     XLALDestroyTimestampVector ( ts1 );
     XLALDestroyTimestampVector ( ts2 );
+    XLALDestroyTimestampVector ( ts3 );
   }
 
   /* ------------------------------ */
@@ -520,7 +518,6 @@ int main(int argc, char *argv[])
   XLALPrintError ("\n--------------------------------------------------------------------------------\n");
 
 
-  INFO( SFTFILEIOTESTC_MSGENORM );
-  return SFTFILEIOTESTC_ENORM;
+  return XLAL_SUCCESS;
 }
 /** \endcond */

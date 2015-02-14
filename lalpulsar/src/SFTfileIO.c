@@ -1076,27 +1076,38 @@ XLALReadTimestampsFile ( const CHAR *fname )
   LIGOTimeGPSVector *timestamps = NULL;
   XLAL_CHECK_NULL ( ( timestamps = XLALCreateTimestampVector ( numTS )) != NULL, XLAL_EFUNC );
 
+  char buf[256];
   for ( UINT4 iTS = 0; iTS < numTS; iTS ++ )
     {
+      LIGOTimeGPS gps;
       INT4 secs, ns;
       char junk[11] = "";
-      if ( sscanf ( flines->lines->tokens[iTS], "%d %d%10s\n", &secs, &ns, junk ) != 2 ) {
-        if ( junk[0] != 0 ) { XLALPrintError ("Found junk '%s' after timestamp in line %d/%d\n", junk, iTS+1, numTS ); }
-        XLALPrintError ( "Failed to parse data-line %d: '%s' in timestamps-file '%s' (needs to be in format 'sec ns')\n",
-                         iTS + 1, flines->lines->tokens[iTS], fname );
-        XLALDestroyTimestampVector ( timestamps );
-        XLALDestroyParsedDataFile ( flines );
-        XLAL_ERROR_NULL ( XLAL_ESYS );
-      }
 
-      XLAL_CHECK_NULL ( ( secs >= 0 ) && ( ns >= 0 ), XLAL_EDOM,
-                        "Timestamps-file '%s' contains negative time-entry in line %d : s = %d, ns = %d\n", fname, iTS, secs, ns );
+      // first check if obsolete <sec ns> format is found on this line
+      if ( sscanf ( flines->lines->tokens[iTS], "%" LAL_INT4_FORMAT " %" LAL_INT4_FORMAT "%10s\n", &secs, &ns, junk ) > 1 )
+        {
+          gps.gpsSeconds = secs;
+          gps.gpsNanoSeconds = ns;
 
-      XLAL_CHECK_NULL ( ns <= 999999999, XLAL_EDOM,
-                        "Timestamps-file '%s' contains nano-seconds entry >= 1 billion ns in line %d: s = %d, ns = %d\n", fname, iTS, secs, ns );
+          XLALPrintWarning ( "Line %d: found obsolete 'sec ns' timestamps format '%s', use 'xx.yy[GPS|MJD]' instead: %s\n", iTS, flines->lines->tokens[iTS], XLALGPSToStr(buf,&gps) );
+          if ( junk[0] != 0 )
+            {
+              XLALDestroyTimestampVector ( timestamps );
+              XLALDestroyParsedDataFile ( flines );
+              XLAL_ERROR_NULL ( XLAL_EINVAL, "Unconverted trailing junk '%s' found: invalid\n", junk );
+            }
+        } // end: if old-style format 'sec ns' is found
+      else
+        {
+          if ( XLALParseStringValueToEPOCH ( &gps, flines->lines->tokens[iTS] ) == NULL )
+            {
+              XLALDestroyTimestampVector ( timestamps );
+              XLALDestroyParsedDataFile ( flines );
+              XLAL_ERROR_NULL ( XLAL_EINVAL, "Failed to parse line %d into epoch: '%s'\n", iTS, flines->lines->tokens[iTS] );
+            }
+        }
 
-      timestamps->data[iTS].gpsSeconds     = secs;
-      timestamps->data[iTS].gpsNanoSeconds = ns;
+      timestamps->data[iTS] = gps;
 
     } /* for iTS < numTS */
 
