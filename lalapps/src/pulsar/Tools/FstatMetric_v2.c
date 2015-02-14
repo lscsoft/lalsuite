@@ -145,9 +145,9 @@ typedef struct
   CHAR *ephemEarth;	/**< Earth ephemeris file to use */
   CHAR *ephemSun;	/**< Sun ephemeris file to use */
 
-  REAL8 refTime;	/**< GPS reference time of Doppler parameters */
+  LIGOTimeGPS refTime;	/**< GPS reference time of Doppler parameters */
 
-  REAL8 startTime;	/**< GPS start time of observation */
+  LIGOTimeGPS startTime;	/**< GPS start time of observation */
   REAL8 duration;	/**< length of observation in seconds */
   INT4 Nseg;		/**< number of segments to split duration into */
   CHAR *segmentList;	/**< ALTERNATIVE: specify segment file with format: repeated lines <startGPS endGPS duration[h] NumSFTs>" */
@@ -323,12 +323,12 @@ initUserVars (UserVariables_t *uvar)
   uvar->h0 = 1;
   uvar->phi0 = 0;
 
-  uvar->startTime = 714180733;
+  uvar->startTime.gpsSeconds = 714180733;
   uvar->duration = 10 * 3600;
   uvar->Nseg = 1;
   uvar->segmentList = NULL;
 
-  uvar->refTime = -1;	/* default: use mid-time */
+  uvar->refTime.gpsSeconds = -1;	/* default: use mid-time */
 
   uvar->projection = 0;
   if ( (uvar->IFOs = XLALCreateStringVector ( "H1", NULL )) == NULL ) {
@@ -353,14 +353,16 @@ initUserVars (UserVariables_t *uvar)
   XLALregBOOLUserStruct(help,		'h', UVAR_HELP,		"Print this help/usage message");
   XLALregLISTUserStruct(IFOs,		'I', UVAR_OPTIONAL, 	"CSV list of detectors, eg. \"H1,H2,L1,G1, ...\" ");
   XLALregLISTUserStruct(sqrtSX,	 	 0,  UVAR_OPTIONAL, 	"[for F-metric weights] CSV list of detectors' noise-floors sqrt{Sn}");
-  XLALregREALUserStruct(Alpha,		'a', UVAR_OPTIONAL,	"Equatorial Right-ascension (RA) Alpha in radians");
-  XLALregREALUserStruct(Delta, 		'd', UVAR_OPTIONAL,	"Equatorial Declination (DEC) Delta in radians");
+  XLALregLONGITUDEUserStruct(Alpha,	'a', UVAR_OPTIONAL,	"Sky: equatorial right ascension 'Alpha' (radians or hours:minutes:seconds)");
+  XLALregLATITUDEUserStruct(Delta, 	'd', UVAR_OPTIONAL,	"Sky: equatorial declination 'Delta' (radians or degrees:minutes:seconds)");
   XLALregREALUserStruct(Freq, 		'f', UVAR_OPTIONAL, 	"target frequency");
   XLALregREALUserStruct(f1dot, 		's', UVAR_OPTIONAL, 	"first spindown-value df/dt");
   XLALregREALUserStruct(f2dot, 		 0 , UVAR_OPTIONAL, 	"second spindown-value d2f/dt2");
   XLALregREALUserStruct(f3dot, 		 0 , UVAR_OPTIONAL, 	"third spindown-value d3f/dt3");
-  XLALregREALUserStruct(refTime,         0,  UVAR_OPTIONAL, 	"GPS reference time of Doppler parameters. Special values: 0=startTime, -1=mid-time");
-  XLALregREALUserStruct(startTime,      't', UVAR_OPTIONAL, 	"GPS start time of observation");
+
+  XLALregEPOCHUserStruct(refTime,         0,  UVAR_OPTIONAL, 	"Reference epoch for phase-evolution parameters (format 'xx.yy[GPS|MJD]'). [0=startTime, default=mid-time]");
+  XLALregEPOCHUserStruct(startTime,      't', UVAR_OPTIONAL, 	"Start time of observation (format 'xx.yy[GPS|MJD]')");
+
   XLALregREALUserStruct(duration,	'T', UVAR_OPTIONAL,	"Duration of observation in seconds");
   XLALregINTUserStruct(Nseg,		'N', UVAR_OPTIONAL, 	"Compute semi-coherent metric for this number of segments within 'duration'" );
   XLALregSTRINGUserStruct(segmentList,   0,  UVAR_OPTIONAL,     "ALTERNATIVE: specify segment file with format: repeated lines <startGPS endGPS duration[h] NumSFTs>");
@@ -414,7 +416,7 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
     {
       XLAL_CHECK ( uvar->Nseg >= 1, XLAL_EDOM, "Invalid input --Nseg=%d: number of segments must be >= 1\n", uvar->Nseg );
       XLAL_CHECK ( uvar->duration >= 1, XLAL_EDOM, "Invalid input --duration=%f: duration must be >= 1 s\n", uvar->duration );
-      XLAL_CHECK ( XLALGPSSetREAL8( &startTimeGPS, uvar->startTime ) != NULL, XLAL_EFUNC, "XLALGPSSetREAL8(%f) failed with xlalErrno = %d\n", uvar->startTime, xlalErrno );
+      startTimeGPS = uvar->startTime;
       int ret = XLALSegListInitSimpleSegments ( &cfg->segmentList, startTimeGPS, uvar->Nseg, uvar->duration / uvar->Nseg );
       XLAL_CHECK ( ret == XLAL_SUCCESS, XLAL_EFUNC, "XLALSegListInitSimpleSegments() failed with xlalErrno = %d\n", xlalErrno );
       duration = uvar->duration;
@@ -435,18 +437,18 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
   LIGOTimeGPS refTimeGPS;
 
   /* treat special values first */
-  if ( uvar->refTime == 0 )		/* 0 = use startTime */
+  if ( uvar->refTime.gpsSeconds == 0 )		/* 0 = use startTime */
     {
-      refTimeGPS = startTimeGPS;
+      refTimeGPS = uvar->startTime;
     }
-  else if ( uvar->refTime == -1 )	/* -1 = use mid-time of observation */
+  else if ( !XLALUserVarWasSet ( &uvar->refTime ) )	/* default = use mid-time of observation */
     {
       refTimeGPS = startTimeGPS;
       XLALGPSAdd( &refTimeGPS, duration / 2.0 );
     }
   else
     {
-      XLALGPSSetREAL8( &refTimeGPS, uvar->refTime );
+      refTimeGPS = uvar->refTime;
     }
 
   /* ----- get parameter-space point from user-input) */
