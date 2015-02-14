@@ -986,27 +986,25 @@ initUserVars ( UserInput_t *uvar )
   /* ---------- register all user-variables ---------- */
   XLALregBOOLUserStruct( 	help, 		'h', UVAR_HELP,     "Print this message");
 
-  XLALregREALUserStruct( 	Alpha, 		'a', UVAR_OPTIONAL, "Sky position alpha (equatorial coordinates) in radians");
-  XLALregREALUserStruct( 	Delta, 		'd', UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in radians");
-  XLALregSTRINGUserStruct(RA, 		 0 , UVAR_OPTIONAL, "Sky position alpha (equatorial coordinates) in format hh:mm:ss.sss");
-  XLALregSTRINGUserStruct(Dec, 		 0 , UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in format dd:mm:ss.sss");
-  XLALregSTRINGUserStruct(skyRegion, 	'R', UVAR_OPTIONAL, "ALTERNATIVE: Sky-region by polygon of form '(ra1,dec1),(ra2,dec2),(ra3,dec3),...' or 'allsky'");
+  XLALregLONGITUDEUserStruct( 	Alpha, 		'a', UVAR_OPTIONAL, "Sky: equatorial right ascension 'Alpha' (radians or hours:minutes:seconds)");
+  XLALregLATITUDEUserStruct( 	Delta, 		'd', UVAR_OPTIONAL, "Sky: equatorial declination 'Delta' (radians or degrees:minutes:seconds)");
+  XLALregSTRINGUserStruct ( 	skyRegion,      'R', UVAR_OPTIONAL, "ALTERNATIVE: Sky-region polygon '(longitude1,latitude1),(longitude2,latitude2),...' or 'allsky'");
 
   XLALregREALUserStruct( 	Freq, 		'f', UVAR_OPTIONAL, "Starting search frequency Freq in Hz");
   XLALregREALUserStruct( 	f1dot, 		's', UVAR_OPTIONAL, "First spindown parameter  f1dot = dFreq/dt");
   XLALregREALUserStruct( 	f2dot, 		 0 , UVAR_OPTIONAL, "Second spindown parameter f2dot = d^2Freq/dt^2");
   XLALregREALUserStruct( 	f3dot, 		 0 , UVAR_OPTIONAL, "Third spindown parameter  f3dot = d^3Freq/dt^3");
 
-  XLALregREALUserStruct( 	AlphaBand, 	'z', UVAR_OPTIONAL, "Search band in alpha (equatorial coordinates) in radians");
-  XLALregREALUserStruct( 	DeltaBand, 	'c', UVAR_OPTIONAL, "Search band in delta (equatorial coordinates) in radians");
+  XLALregLONGITUDEUserStruct( 	AlphaBand, 	'z', UVAR_OPTIONAL, "Sky: search band from Alpha to Alpha+AlphaBand (radians or h:m:s)");
+  XLALregLATITUDEUserStruct( 	DeltaBand, 	'c', UVAR_OPTIONAL, "Sky: search band from Delta to Delta+DeltaBand (radians or d:m:s)");
   XLALregREALUserStruct( 	FreqBand, 	'b', UVAR_OPTIONAL, "Search band in frequency in Hz");
   XLALregREALUserStruct( 	f1dotBand, 	'm', UVAR_OPTIONAL, "Search band in f1dot in Hz/s");
   XLALregREALUserStruct( 	f2dotBand, 	 0 , UVAR_OPTIONAL, "Search band in f2dot in Hz/s^2");
   XLALregREALUserStruct( 	f3dotBand, 	 0 , UVAR_OPTIONAL, "Search band in f3dot in Hz/s^3");
 
-  XLALregREALUserStruct( 	dAlpha, 	'l', UVAR_OPTIONAL, "Stepsize in alpha (equatorial coordinates) in radians");
-  XLALregREALUserStruct( 	dDelta, 	'g', UVAR_OPTIONAL, "Stepsize in delta (equatorial coordinates) in radians");
-  XLALregREALUserStruct(  dFreq,          'r', UVAR_OPTIONAL, "Stepsize for frequency in Hz");
+  XLALregLONGITUDEUserStruct( 	dAlpha, 	'l', UVAR_OPTIONAL, "Sky: stepsize in Alpha (radians or h:m:s)");
+  XLALregLATITUDEUserStruct( 	dDelta, 	'g', UVAR_OPTIONAL, "Sky: stepsize in Delta (radians or d:m:s)");
+  XLALregREALUserStruct(  	dFreq,          'r', UVAR_OPTIONAL, "Stepsize for frequency in Hz");
   XLALregREALUserStruct( 	df1dot, 	'e', UVAR_OPTIONAL, "Stepsize for f1dot in Hz/s");
   XLALregREALUserStruct( 	df2dot, 	 0 , UVAR_OPTIONAL, "Stepsize for f2dot in Hz/s^2");
   XLALregREALUserStruct( 	df3dot, 	 0 , UVAR_OPTIONAL, "Stepsize for f3dot in Hz/s^3");
@@ -1096,6 +1094,9 @@ initUserVars ( UserInput_t *uvar )
   XLALregBOOLUserStruct(transient_useFReg,   	 0,  UVAR_DEVELOPER, "FALSE: use 'standard' e^F for marginalization, if TRUE: use e^FReg = (1/D)*e^F (BAD)");
 
   XLALregSTRINGUserStruct(outputTiming,         0,  UVAR_DEVELOPER, "Append timing measurements and parameters into this file");
+
+  XLALregSTRINGUserStruct(RA, 		 0 , UVAR_DEVELOPER, "[DEPRECATED] use --Alpha instead");
+  XLALregSTRINGUserStruct(Dec, 		 0 , UVAR_DEVELOPER, "[DEPRECATED] use --Delta instead");
 
   return XLAL_SUCCESS;
 
