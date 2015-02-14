@@ -26,6 +26,7 @@
 
 /*---------- INCLUDES ----------*/
 #include <math.h>
+#include <ctype.h>
 
 #include <lal/LALStdlib.h>
 #include <lal/DetectorSite.h>
@@ -1236,9 +1237,8 @@ getDopplermax(EphemerisData *edat)
 
 
 /**
- * parse a skyRegion-string into a SkyRegion structure: the expected
- * string-format is
- * " (ra1, dec1), (ra2, dec2), (ra3, dec3), ... "
+ * parse a skyRegion-string into a SkyRegion structure: the expected string-format is
+ * " (longitude1, latitude1), (longitude2, latitude2), (longitude3, latitude3), ... "
  *
  * If input == NULL or input == "allsky":==> sky-region covering the whole sky.
  *
@@ -1285,14 +1285,38 @@ XLALParseSkyRegionString ( SkyRegion *region, const CHAR *input)
   region->upperRight.latitude  = -LAL_PI/2;
   region->lowerLeft.system = region->upperRight.system = COORDINATESYSTEM_EQUATORIAL;
 
+  char buf[256];
   /* and parse list of vertices from input-string */
   pos = skyRegion;
   for ( UINT4 i = 0; i < region->numVertices; i++ )
     {
       region->vertices[i].system = COORDINATESYSTEM_EQUATORIAL;
-      if ( sscanf (pos, "(%" LAL_REAL8_FORMAT ", %" LAL_REAL8_FORMAT ")", &(region->vertices[i].longitude), &(region->vertices[i].latitude) ) != 2) {
-        XLAL_ERROR ( XLAL_EINVAL, "Failed to parse sky-region: '%s'\n", skyRegion );
-      }
+      const char *startLong, *comma, *startLat, *end;
+      XLAL_CHECK ( (startLong = strchr ( pos, '(')) != NULL, XLAL_EINVAL, "Invalid skyregion format at '%s': no opening '('\n", pos );
+      XLAL_CHECK ( (comma     = strchr ( pos, ',')) != NULL, XLAL_EINVAL, "Invalid skyregion format at '%s': no comma separator ','\n", pos );
+      XLAL_CHECK ( (end       = strchr ( pos, ')')) != NULL, XLAL_EINVAL, "Invalid skyregion format at '%s': no closing ')'\n", pos );
+
+      startLong ++;
+      startLat = comma + 1;
+
+      while ( isspace(startLong[0]) ) { startLong ++; }	// skip initial whitespace in longitude string
+      while ( isspace(startLat[0]) ) { startLat ++; }	// skip initial whitespace in latitude string
+
+      size_t lenLong = comma - startLong;
+      size_t lenLat  = end   - startLat;
+
+      XLAL_CHECK ( lenLong < sizeof(buf), XLAL_EINVAL, "Element at '%s' exceeds buffer length %zd\n", startLong, sizeof(buf) );
+      XLAL_CHECK ( lenLat  < sizeof(buf), XLAL_EINVAL, "Element at '%s' exceeds buffer length %zd\n", startLat,  sizeof(buf) );
+
+      // parse longitude
+      memcpy ( buf, startLong, lenLong );
+      buf[lenLong] = 0;
+      XLAL_CHECK ( XLALParseStringValueToLONGITUDE ( &(region->vertices[i].longitude), buf ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+      // parse latitude
+      memcpy ( buf, startLat, lenLat );
+      buf[lenLat] = 0;
+      XLAL_CHECK ( XLALParseStringValueToLATITUDE ( &(region->vertices[i].latitude), buf ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       /* keep track of min's and max's to get the bounding square */
       region->lowerLeft.longitude = fmin ( region->lowerLeft.longitude, region->vertices[i].longitude );

@@ -44,6 +44,7 @@ swig/swiglal*
 test/BinarySSBTimesTest
 test/ComputeFstatTest
 test/ConstructPLUTTest
+test/DopplerScanTest
 test/DriveHoughTest
 test/DriveNDHoughTest
 test/ExtrapolatePulsarSpinsTest
