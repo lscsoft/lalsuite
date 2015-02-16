@@ -45,6 +45,24 @@ typedef enum {
   UVAR_TYPE_LAST
 } UserVarType;
 
+
+/**
+ * Array of descriptors for each UserVarType type
+ */
+static const struct {
+  const char *const name;	/**< type name */
+} UserVarTypeDescription[UVAR_TYPE_LAST] = {
+
+  [UVAR_TYPE_BOOL]     = {"BOOLEAN"},
+  [UVAR_TYPE_INT4]     = {"INT4"},
+  [UVAR_TYPE_REAL8]    = {"REAL8"},
+  [UVAR_TYPE_STRING]   = {"STRING"},
+  [UVAR_TYPE_CSVLIST]  = {"CSVLIST"},
+  [UVAR_TYPE_EPOCH]    = {"EPOCH"},
+  [UVAR_TYPE_LONGITUDE]= {"LONGITUDE"},
+  [UVAR_TYPE_LATITUDE] = {"LATITUDE"}
+};
+
 /**
  * Linked list to hold the complete information about the user-variables.
  */
@@ -71,9 +89,6 @@ extern int LALoptind, LALopterr, LALoptopt;
 /* ----- XLAL interface ----- */
 int XLALRegisterUserVar (const CHAR *name, UserVarType type, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, void *cvar);
 CHAR *XLALUvarValue2String (LALUserVariable *uvar);
-
-CHAR *XLALUvarType2String (LALUserVariable *uvar);
-
 CHAR *XLAL_copy_string_unquoted ( const CHAR *in );
 void check_and_mark_as_set ( LALUserVariable *varp );
 
@@ -517,10 +532,6 @@ XLALUserVarHelpString ( const CHAR *progname )
   XLAL_CHECK_NULL ( progname != NULL, XLAL_EINVAL );
   XLAL_CHECK_NULL ( UVAR_vars.next != NULL, XLAL_EINVAL, "No UVAR memory allocated. Did you register any user-variables?\n" );
 
-  /* we need strings for UVAR_BOOL, UVAR_INT4, UVAR_REAL8, UVAR_STRING: */
-  const CHAR *typestr[] = {"BOOL", "INT", "REAL", "STRING", "LIST", "EPOCH", "LONGITUDE", "LATITUDE"};
-
-
   CHAR strbuf[512];
   CHAR *helpstr = NULL;
   // prepare first lines of help-string: info about config-file reading
@@ -585,7 +596,7 @@ XLALUserVarHelpString ( const CHAR *progname )
       snprintf ( strbuf, sizeof(strbuf),  fmtStr,
                  optstr,
                  ptr->name ? ptr->name : "-NONE-",
-                 typestr[ptr->type],
+                 UserVarTypeDescription[ptr->type].name,
                  ptr->help ? ptr->help : "-NONE-",
                  defaultstr
                  );
@@ -645,7 +656,7 @@ XLALUserVarHelpString ( const CHAR *progname )
 	  snprintf (strbuf, sizeof(strbuf),  fmtStr,
                     optstr,
                     ptr->name ? ptr->name : "-NONE-",
-                    typestr[ptr->type],
+                    UserVarTypeDescription[ptr->type].name,
                     ptr->help ? ptr->help : "-NONE-",
                     defaultstr
                     );
@@ -813,9 +824,8 @@ XLALUserVarGetLog ( UserVarLogFormat format 	/**< output format: return as confi
 	continue;
       }
 
-      CHAR *valstr, *typestr;		/* buffer to hold value-string */
+      CHAR *valstr;
       XLAL_CHECK_NULL ( (valstr = XLALUvarValue2String ( ptr )) != NULL, XLAL_EFUNC );
-      XLAL_CHECK_NULL ( (typestr = XLALUvarType2String ( ptr )) != NULL, XLAL_EFUNC );
 
       char append[256];
       switch (format)
@@ -829,7 +839,7 @@ XLALUserVarGetLog ( UserVarLogFormat format 	/**< output format: return as confi
 	  break;
 
 	case UVAR_LOGFMT_PROCPARAMS:
-	  snprintf (append, sizeof(append), "--%s = %s :%s;", ptr->name, valstr, typestr);
+	  snprintf (append, sizeof(append), "--%s = %s :%s;", ptr->name, valstr, UserVarTypeDescription[ptr->type].name );
 	  break;
 
 	default:
@@ -841,58 +851,11 @@ XLALUserVarGetLog ( UserVarLogFormat format 	/**< output format: return as confi
       XLAL_CHECK_NULL ( (record = XLALStringAppend (record, append)) != NULL, XLAL_EFUNC );
 
       XLALFree (valstr);
-      XLALFree(typestr);
     } // while ptr=ptr->next
 
   return record;
 
 } // XLALUserVarGetLog()
-
-
-/* Return the type of the given UserVariable as a string.
- * For INTERNAL use only!
- */
-CHAR *
-XLALUvarType2String ( LALUserVariable *uvar )
-{
-  XLAL_CHECK_NULL ( uvar != NULL, XLAL_EINVAL );
-
-  CHAR buf[16];
-  switch (uvar->type)
-    {
-    case UVAR_TYPE_BOOL:
-      sprintf(buf, "boolean");
-      break;
-    case UVAR_TYPE_INT4:
-      sprintf(buf, "int4");
-      break;
-    case UVAR_TYPE_REAL8:
-      sprintf(buf, "real8");
-      break;
-    case UVAR_TYPE_STRING:
-      sprintf(buf, "string");
-      break;
-    case UVAR_TYPE_CSVLIST:
-      sprintf(buf, "list");
-      break;
-    case UVAR_TYPE_EPOCH:
-      sprintf(buf, "epoch");
-      break;
-    case UVAR_TYPE_LONGITUDE:
-      sprintf(buf, "longitude");
-      break;
-    case UVAR_TYPE_LATITUDE:
-      sprintf(buf, "latitude");
-      break;
-    default:
-      XLAL_ERROR_NULL ( XLAL_EINVAL, "Unkown UserVariable-type encountered\n" );
-      break;
-    } // switch
-
-  return XLALStringDuplicate ( buf );
-
-} // XLALUvarType2String()
-
 
 /* Return the value of the given UserVariable as a string.
  * For INTERNAL use only!
