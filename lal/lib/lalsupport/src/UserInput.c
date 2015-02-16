@@ -532,56 +532,66 @@ XLALUserVarHelpString ( const CHAR *progname )
   XLAL_CHECK_NULL ( progname != NULL, XLAL_EINVAL );
   XLAL_CHECK_NULL ( UVAR_vars.next != NULL, XLAL_EINVAL, "No UVAR memory allocated. Did you register any user-variables?\n" );
 
-  CHAR strbuf[512];
-  CHAR *helpstr = NULL;
-  // prepare first lines of help-string: info about config-file reading
-  snprintf (strbuf, sizeof(strbuf), "Usage: %s [@ConfigFile] [options], where options are:\n\n", progname);
-  strbuf[sizeof(strbuf)-1] = 0;
-  XLAL_CHECK_NULL ( (helpstr = XLALStringDuplicate ( strbuf )) != NULL, XLAL_EFUNC );
+  CHAR *helpstr_regular = NULL;
+  CHAR *helpstr_developer = NULL;
 
-  LALUserVariable *ptr;
-  // ---------- ZEROTH PASS: find longest long-option name, for proper output formatting
-  ptr = &UVAR_vars;
+  BOOLEAN showDeveloperOptions = (lalDebugLevel > 0);	// currently only output for lalDebugLevel > 0
+
+  // ---------- ZEROTH PASS: find longest long-option and type names, for proper output formatting
+  LALUserVariable *ptr = &UVAR_vars;
   UINT4 nameFieldLen = 0;
+  UINT4 typeFieldLen = 0;
+  BOOLEAN haveDevOpts = 0;
   while ( (ptr=ptr->next) != NULL )
     {
-      if ( (lalDebugLevel == 0) && (ptr->state & UVAR_DEVELOPER) ) {
-	continue;	// skip developer-options if debugLevel = 0
+      if (ptr->state & UVAR_DEVELOPER) {
+        haveDevOpts = 1;
       }
+      if ( !showDeveloperOptions && (ptr->state & UVAR_DEVELOPER) ) {
+	continue;	// skip developer-options if not requested
+      }
+
+      UINT4 len;
+      // max variable name length
       if ( ptr->name != NULL )
         {
-          UINT4 len = strlen ( ptr->name );
-          if ( len > nameFieldLen ) { nameFieldLen = len; }
-        } // if name
-    } // while options
+          len = strlen ( ptr->name );
+          nameFieldLen = (len > nameFieldLen) ? len : nameFieldLen;
+        }
+
+      // max type name length
+      len = strlen ( UserVarTypeDescription[ptr->type].name );
+      typeFieldLen = (len > typeFieldLen) ? len : typeFieldLen;
+
+    } // while ptr=ptr->next
 
   CHAR fmtStr[256];		// for building a dynamic format-string
-  snprintf ( fmtStr, sizeof(fmtStr), "  %%s --%%-%ds   %%-9s  %%s [%%s]\n", nameFieldLen );
+  snprintf ( fmtStr, sizeof(fmtStr), "  %%s --%%-%ds   %%-%ds  %%s [%%s]\n", nameFieldLen, typeFieldLen );
   fmtStr[sizeof(fmtStr)-1]=0;
 
   CHAR defaultstr[256]; 	// for display of default-value
-  LALUserVariable *helpptr = NULL;	// pointer to help-option
-  // ---------- FIRST PASS: treat all "normal" entries excluding DEVELOPER-options
+  CHAR strbuf[512];
+
+  // ---------- provide header line: info about config-file reading
+  snprintf (strbuf, sizeof(strbuf), "Usage: %s [@ConfigFile] [options], where options are:\n\n", progname);
+  strbuf[sizeof(strbuf)-1] = 0;
+  XLAL_CHECK_NULL ( (helpstr_regular = XLALStringDuplicate ( strbuf )) != NULL, XLAL_EFUNC );
+
+  // ---------- MAIN LOOP: step through all user variables and add entry to appropriate help string
   ptr = &UVAR_vars;
   while ( (ptr=ptr->next) != NULL )
     {
-      if ( ptr->state & UVAR_DEVELOPER ) {
-	continue;	// skip developer-options to be treated a second pass
-      }
-
       if ( ptr->state & UVAR_REQUIRED ) {
 	strcpy (defaultstr, "REQUIRED");
       }
-      else if ( ptr->state & UVAR_HELP )
-	{
-	  helpptr = ptr;	// keep a pointer to the help-option for later
-	  strcpy ( defaultstr, "");
-	}
+      else if ( ptr->state & UVAR_HELP ) {
+        strcpy ( defaultstr, "");
+      }
       else // write the current default-value into a string
 	{
 	  CHAR *valstr = NULL;
 	  XLAL_CHECK_NULL ( (valstr = XLALUvarValue2String ( ptr )) != NULL, XLAL_EFUNC );
-	  strncpy ( defaultstr, valstr, sizeof(defaultstr) );	/* cut short for default-entry */
+	  strncpy ( defaultstr, valstr, sizeof(defaultstr) );	// cut short for default-entry
 	  defaultstr[sizeof(defaultstr)-1] = 0;
 	  XLALFree (valstr);
 	}
@@ -602,74 +612,38 @@ XLALUserVarHelpString ( const CHAR *progname )
                  );
       strbuf[sizeof(strbuf)-1] = 0;
 
-      // now append new line to helpstring
-      helpstr = XLALStringAppend ( helpstr, strbuf );
+      // now append new line to the appropriate helpstring
+      if ( ptr->state & UVAR_DEVELOPER ) {
+        if ( showDeveloperOptions ) {
+          helpstr_developer = XLALStringAppend ( helpstr_developer, strbuf );
+        }
+      } else {
+        helpstr_regular = XLALStringAppend ( helpstr_regular, strbuf );
+      }
 
-    } // while ptr->next
+    } // while ptr=ptr->next
 
-  // ---------- SECOND PASS through user-options:
-  // show DEVELOPER-options only if lalDebugLevel >= 1
-  BOOLEAN haveDevOpt = 0;
-  if ( lalDebugLevel == 0)	/* only give instructions as to how to see developer-options */
+  CHAR *helpstr = NULL;
+  XLAL_CHECK_NULL ( (helpstr = XLALStringAppend ( helpstr, helpstr_regular )) != NULL, XLAL_EFUNC );
+
+  // handle output of developer options, if requested
+  if ( haveDevOpts )
     {
-      CHAR buf[256];
-      if ( (UVAR_vars.optchar != 0) && (helpptr != NULL) && (helpptr->name != NULL) ) {
-	sprintf (buf, "(e.g. --%s -%c1)", helpptr->name, UVAR_vars.optchar);
-      }
-      else {
-	sprintf (buf, " ");
-      }
+      if ( !showDeveloperOptions )
+        {
+          const char *str = "\n ---------- Use help with lalDebugLevel > 0 to also see all 'developer-options' ---------- \n\n";
+          XLAL_CHECK_NULL ( (helpstr = XLALStringAppend ( helpstr, str )) != NULL, XLAL_EFUNC );
+        }
+      else
+        {
+          const char *str = "\n   ---------- The following are 'Developer'-options not useful for most users:----------\n\n";
+          XLAL_CHECK_NULL ( (helpstr = XLALStringAppend ( helpstr, str )) != NULL, XLAL_EFUNC );
+          XLAL_CHECK_NULL ( (helpstr = XLALStringAppend ( helpstr, helpstr_developer )) != NULL, XLAL_EFUNC );
+        }
+    } // if haveDevOpts
 
-      snprintf (strbuf, sizeof(strbuf), "\n ---------- Hint: use help with lalDebugLevel > 0 %s to see all 'developer-options' ----- \n", buf);
-      strbuf[sizeof(strbuf)-1]=0;
-      XLAL_CHECK_NULL ( (helpstr = XLALStringAppend ( helpstr, strbuf )) != NULL, XLAL_EFUNC );
-    }
-  else	// if lalDebugLevel > 0
-    {
-      const char *str = "\n   ---------- The following are 'Developer'-options not useful for most users:----------\n\n";
-      XLAL_CHECK_NULL ( (helpstr = XLALStringAppend ( helpstr, str )) != NULL, XLAL_EFUNC );
-
-      ptr = &UVAR_vars;
-      while ( (ptr=ptr->next) != NULL )
-	{
-
-	  if ( ! (ptr->state & UVAR_DEVELOPER) ) {	// now only treat developer-options
-	    continue;
-          }
-
-	  haveDevOpt = 1;
-
-          CHAR *valstr;
-	  XLAL_CHECK_NULL ( (valstr = XLALUvarValue2String(ptr)) != NULL, XLAL_EFUNC );
-
-	  strncpy ( defaultstr, valstr, sizeof(defaultstr ) );
-	  defaultstr[sizeof(defaultstr)-1] = 0;
-	  XLALFree (valstr);
-
-          CHAR optstr[10];
-	  if (ptr->optchar != 0) {
-	    sprintf (optstr, "-%c,", ptr->optchar);
-          } else {
-	    strcpy (optstr, "   ");
-          }
-
-	  snprintf (strbuf, sizeof(strbuf),  fmtStr,
-                    optstr,
-                    ptr->name ? ptr->name : "-NONE-",
-                    UserVarTypeDescription[ptr->type].name,
-                    ptr->help ? ptr->help : "-NONE-",
-                    defaultstr
-                    );
-          strbuf[sizeof(strbuf)-1]=0;
-	  XLAL_CHECK_NULL ( (helpstr = XLALStringAppend ( helpstr, strbuf )) != NULL, XLAL_EFUNC );
-
-	} // while ptr->next: 2nd PASS for DEVELOPER-options
-
-      if ( !haveDevOpt ) {	// no developer-options found: say something
-        XLAL_CHECK_NULL ( (helpstr = XLALStringAppend ( helpstr, "   -- NONE --\n\n" )) != NULL, XLAL_EFUNC );
-      }
-
-    } // if lalDebugLevel > 0: output developer-options
+  XLALFree ( helpstr_regular );
+  XLALFree ( helpstr_developer );
 
   return helpstr;
 
