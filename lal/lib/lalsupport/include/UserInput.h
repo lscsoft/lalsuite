@@ -177,7 +177,7 @@ typedef enum {
   UVAR_DEVELOPER	= 1<<2,	/**< OPTIONAL and hidden in help-output at lalDebugLevel==0 */
   UVAR_SPECIAL		= 1<<3,	/**< OPTIONAL and *turns off* checking of required variables (LALUserVarCheckRequired) */
   UVAR_WAS_SET 		= 1<<7	/**< flag that this user-var has been set by user */
-} UserVarState;
+} UserVarFlag;
 
 /**
  * Format for logging User-input: configFile- or cmdLine-style.
@@ -201,50 +201,17 @@ int XLALUserVarWasSet (const void *cvar);
 CHAR * XLALUserVarGetLog ( UserVarLogFormat format );
 
 /* type-specific wrappers to XLALRegisterUserVar() to allow type-checking! */
-int XLALRegisterREALUserVar ( const CHAR *name, CHAR optchar, UserVarState flag, const CHAR *helpstr, REAL8 *cvar );
-int XLALRegisterINTUserVar ( const CHAR *name, CHAR optchar, UserVarState flag, const CHAR *helpstr, INT4 *cvar );
-int XLALRegisterBOOLUserVar ( const CHAR *name, CHAR optchar, UserVarState flag, const CHAR *helpstr, BOOLEAN *cvar );
-int XLALRegisterSTRINGUserVar ( const CHAR *name, CHAR optchar, UserVarState flag, const CHAR *helpstr, CHAR **cvar );
-int XLALRegisterLISTUserVar ( const CHAR *name, CHAR optchar, UserVarState flag, const CHAR *helpstr, LALStringVector **cvar);
-int XLALRegisterEPOCHUserVar ( const CHAR *name, CHAR optchar, UserVarState flag, const CHAR *helpstr, LIGOTimeGPS *cvar);
-int XLALRegisterLONGITUDEUserVar ( const CHAR *name, CHAR optchar, UserVarState flag, const CHAR *helpstr, REAL8 *cvar);
-int XLALRegisterLATITUDEUserVar ( const CHAR *name, CHAR optchar, UserVarState flag, const CHAR *helpstr, REAL8 *cvar);
+int XLALRegisterREALUserVar ( const CHAR *name, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, REAL8 *cvar );
+int XLALRegisterINTUserVar ( const CHAR *name, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, INT4 *cvar );
+int XLALRegisterBOOLUserVar ( const CHAR *name, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, BOOLEAN *cvar );
+int XLALRegisterSTRINGUserVar ( const CHAR *name, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, CHAR **cvar );
+int XLALRegisterLISTUserVar ( const CHAR *name, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, LALStringVector **cvar);
+int XLALRegisterEPOCHUserVar ( const CHAR *name, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, LIGOTimeGPS *cvar);
+int XLALRegisterLONGITUDEUserVar ( const CHAR *name, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, REAL8 *cvar);
+int XLALRegisterLATITUDEUserVar ( const CHAR *name, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, REAL8 *cvar);
 
 
 /* ========== Deprecated LAL interface wrappers ========== */
-
-/** \name Error codes */
-/*@{*/
-#define USERINPUTH_ENULL        1       /**< Arguments contained an unexpected null pointer. */
-#define USERINPUTH_ENONULL      2       /**< Output pointer is not NULL */
-#define USERINPUTH_EMEM         3       /**< Out of memory */
-#define USERINPUTH_EOPT         4       /**< Unknown command-line option encountered */
-#define USERINPUTH_ENOUVARS     5       /**< No user-variables have been registered! */
-#define USERINPUTH_ECMDLARG     6       /**< Illegal command-line argument */
-#define USERINPUTH_EUNKNOWN     7       /**< Unknown user-variable */
-#define USERINPUTH_ENOTSET      8       /**< Required user-variable was not set */
-#define USERINPUTH_EDEBUG       9       /**< lalDebugLevel can only be read before ANY mallocs(), even hidden */
-#define USERINPUTH_EONECONFIG   10      /**< Currently one ONE config-file can be specified using '\@' */
-#define USERINPUTH_ERECFORMAT   11      /**< Unknown format for recording user-input */
-#define USERINPUTH_EXLAL        12      /**< Failure in XLAL function */
-#define USERINPUTH_ENAMECOLL    13      /**< Commandline option assigned more than once */
-/*@}*/
-
-/** \cond DONT_DOXYGEN */
-#define USERINPUTH_MSGENULL 	"Arguments contained an unexpected null pointer."
-#define USERINPUTH_MSGENONULL	"Output pointer is not NULL"
-#define USERINPUTH_MSGEMEM	"Out of memory"
-#define USERINPUTH_MSGEOPT	"Unknown command-line option encountered"
-#define USERINPUTH_MSGENOUVARS	"No user-variables have been registered!"
-#define USERINPUTH_MSGECMDLARG   "Illegal command-line argument"
-#define USERINPUTH_MSGEUNKNOWN	"Unknown user-variable"
-#define USERINPUTH_MSGENOTSET	"Required user-variable was not set"
-#define USERINPUTH_MSGEDEBUG	"lalDebugLevel can only be read before ANY mallocs(), even hidden.."
-#define USERINPUTH_MSGEONECONFIG "Currently one ONE config-file can be specified using '@'"
-#define USERINPUTH_MSGERECFORMAT   "Unknown format for recording user-input"
-#define USERINPUTH_MSGEXLAL	"Failure in XLAL function"
-#define USERINPUTH_MSGENAMECOLL "Commandline option assigned more than once"
-/** \endcond */
 
 /**
  * \name Deprecated LAL-interface
@@ -252,11 +219,11 @@ int XLALRegisterLATITUDEUserVar ( const CHAR *name, CHAR optchar, UserVarState f
  */
 /*@{*/
 
-void LALRegisterREALUserVar(LALStatus *, const CHAR *name, CHAR optchar, UserVarState flag, const CHAR *helpstr, REAL8 *cvar);
-void LALRegisterINTUserVar (LALStatus *, const CHAR *name, CHAR optchar, UserVarState flag, const CHAR *helpstr, INT4 *cvar);
-void LALRegisterBOOLUserVar (LALStatus *, const CHAR *name, CHAR optchar, UserVarState flag, const CHAR *helpstr, BOOLEAN *cvar);
-void LALRegisterSTRINGUserVar (LALStatus *, const CHAR *name, CHAR optchar, UserVarState flag, const CHAR *helpstr, CHAR **cvar);
-void LALRegisterLISTUserVar (LALStatus *, const CHAR *name, CHAR optchar, UserVarState flag, const CHAR *helpstr, LALStringVector **cvar);
+void LALRegisterREALUserVar(LALStatus *, const CHAR *name, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, REAL8 *cvar);
+void LALRegisterINTUserVar (LALStatus *, const CHAR *name, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, INT4 *cvar);
+void LALRegisterBOOLUserVar (LALStatus *, const CHAR *name, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, BOOLEAN *cvar);
+void LALRegisterSTRINGUserVar (LALStatus *, const CHAR *name, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, CHAR **cvar);
+void LALRegisterLISTUserVar (LALStatus *, const CHAR *name, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, LALStringVector **cvar);
 
 void LALDestroyUserVars (LALStatus *);
 
@@ -268,9 +235,6 @@ void LALUserVarHelpString (LALStatus *, CHAR **helpstring, const CHAR *progname)
 void LALUserVarCheckRequired (LALStatus *);
 INT4 LALUserVarWasSet (const void *cvar);
 void LALUserVarGetLog (LALStatus *, CHAR **logstr,  UserVarLogFormat format);
-#if 0
-void LALUserVarGetProcParamsTable (LALStatus *status, ProcessParamsTable **out, CHAR *progname);
-#endif
 
 /*@}*/
 
