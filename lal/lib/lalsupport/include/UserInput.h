@@ -181,12 +181,12 @@ typedef enum {
 
 /**
  * Format for logging User-input: configFile- or cmdLine-style.
- * This determines the format of the string returned from LALLogUserInput().
+ * This determines the format of the string returned from XLALUserVarGetLog().
  */
 typedef enum {
-  UVAR_LOGFMT_CFGFILE,	/**< return UserVars as a config-file */
-  UVAR_LOGFMT_CMDLINE,	/**< return UserVars as a command-line */
-  UVAR_LOGFMT_PROCPARAMS, /**< return UserVars suitable for filling in process-params struct */
+  UVAR_LOGFMT_CFGFILE,		/**< return UserVars as a config-file */
+  UVAR_LOGFMT_CMDLINE,		/**< return UserVars as a command-line */
+  UVAR_LOGFMT_PROCPARAMS, 	/**< return UserVars suitable for filling in process-params struct */
   UVAR_LOGFMT_LAST
 } UserVarLogFormat;
 
