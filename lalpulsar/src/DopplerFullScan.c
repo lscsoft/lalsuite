@@ -75,12 +75,10 @@ struct tagDopplerFullScanState {
   SkyRegion skyRegion;		/**< sky-range covered by template bank */
 
   /* ----- full multi-dim parameter-space grid stuff ----- */
-  /* gsl_matrix *gij;			flat parameter-space metric */
   REAL8VectorList *covering;		/**< multi-dimensional covering */
   REAL8VectorList *thisGridPoint; 	/**< pointer to current grid-point */
-  /* lattice scan state */
-  /* DopplerLatticeScan *latticeScan;	state of lattice Scan */
-  /* spindown lattice tiling */
+
+  /* ----- spindown lattice tiling ----- */
   LatticeTiling *spindownTiling;              /**< state of spindown lattice tiling */
   LatticeTilingIterator *spindownTilingItr;   /**< iterator over spindown lattice tiling */
   gsl_vector *spindownTilingPoint;            /**< current point in spindown lattice tiling */
