@@ -193,6 +193,11 @@ typedef struct tagFstatResults {
   /// computed.
   PulsarDopplerParams doppler;
 
+  /// For performance reasons the global phase of all returned 'Fa' and 'Fb' quantities (#Fa,#Fb,#FaPerDet,#FbPerDet, #multiFatoms),
+  /// refers to this 'phase reference time' instead of the (#doppler).refTime.
+  /// Use this to compute initial phase of signals at doppler.refTime, or if you need the correct global Fa,Fb-phase!
+  LIGOTimeGPS refTimePhase;
+
   /// Spacing in frequency between each computed \f$\mathcal{F}\f$-statistic.
   REAL8 dFreq;
 
@@ -224,6 +229,7 @@ typedef struct tagFstatResults {
   /// If #whatWasComputed & FSTATQ_PARTS is true, the multi-detector \f$F_a\f$ and \f$F_b\f$
   /// computed at #numFreqBins frequencies spaced #dFreq apart.  This array should not be accessed
   /// if #whatWasComputed & FSTATQ_PARTS is false.
+  /// \note global phase refers to #refTimePhase, not (#doppler).refTime
 #ifdef SWIG // SWIG interface directives
   SWIGLAL(ARRAY_1D(FstatResults, COMPLEX8, Fa, UINT4, numFreqBins));
   SWIGLAL(ARRAY_1D(FstatResults, COMPLEX8, Fb, UINT4, numFreqBins));
@@ -243,6 +249,7 @@ typedef struct tagFstatResults {
   /// If #whatWasComputed & FSTATQ_PARTS_PER_DET is true, the \f$F_a\f$ and \f$F_b\f$ values
   /// computed at #numFreqBins frequencies spaced #dFreq apart, and for #numDetectors detectors.
   /// This array should not be accessed if #whatWasComputed & FSTATQ_PARTS_PER_DET is false.
+  /// \note global phase refers to #refTimePhase, not (#doppler).refTime
 #ifdef SWIG // SWIG interface directives
   SWIGLAL(ARRAY_1D_PTR_1D(FstatResults, COMPLEX8, FaPerDet, UINT4, numDetectors, numFreqBins));
   SWIGLAL(ARRAY_1D_PTR_1D(FstatResults, COMPLEX8, FbPerDet, UINT4, numDetectors, numFreqBins));
@@ -253,6 +260,7 @@ typedef struct tagFstatResults {
   /// If #whatWasComputed & FSTATQ_ATOMS_PER_DET is true, the per-SFT \f$\mathcal{F}\f$-statistic
   /// multi-atoms computed at #numFreqBins frequencies spaced #dFreq apart.  This array should not
   /// be accessed if #whatWasComputed & FSTATQ_ATOMS_PER_DET is false.
+  /// \note global phase of atoms refers to #refTimePhase, not (#doppler).refTime
 #ifdef SWIG // SWIG interface directives
   SWIGLAL(ARRAY_1D(FstatResults, MultiFstatAtomVector*, multiFatoms, UINT4, numFreqBins));
 #endif // SWIG

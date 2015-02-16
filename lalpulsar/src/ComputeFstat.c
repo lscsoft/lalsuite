@@ -29,6 +29,7 @@
 #include <lal/LALString.h>
 #include <lal/LALSIMD.h>
 #include <lal/NormalizeSFTRngMed.h>
+#include <lal/ExtrapolatePulsarSpins.h>
 
 // ---------- Internal struct definitions ---------- //
 
@@ -366,6 +367,14 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
   // Determine the time baseline of an SFT
   const REAL8 Tsft = 1.0 / SFTcatalog->data[0].header.deltaF;
 
+  // Save the mid-time of the SFTs
+  {
+    const LIGOTimeGPS startTime = SFTcatalog->data[0].header.epoch;
+    const LIGOTimeGPS endTime   = SFTcatalog->data[SFTcatalog->length - 1].header.epoch;
+    common->midTime = startTime;
+    XLALGPSAdd ( &common->midTime, 0.5 * (  Tsft + XLALGPSDiff( &endTime, &startTime )) );
+  }
+
   // Determine the frequency band required by each method 'minFreqMethod',
   // as well as the frequency band required to load or generate initial SFTs for 'minFreqFull'
   // the difference being that for noise-floor estimation, we need extra frequency-bands for the
@@ -662,12 +671,20 @@ XLALComputeFstat ( FstatResults **Fstats,               ///< [in/out] Address of
 
     } // if (moreFreqBins || moreDetectors)
 
+  // Extrapolate parameters in 'doppler' to SFT mid-time
+  PulsarDopplerParams midDoppler = (*doppler);
+  {
+    const REAL8 dtau = XLALGPSDiff ( &common->midTime, &doppler->refTime );
+    XLAL_CHECK ( XLALExtrapolatePulsarSpins ( midDoppler.fkdot, midDoppler.fkdot, dtau ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+  midDoppler.refTime = common->midTime;
+
   // Initialise result struct parameters
-  (*Fstats)->doppler = *doppler;
-  (*Fstats)->dFreq = common->dFreq;
-  (*Fstats)->numFreqBins = numFreqBins;
+  (*Fstats)->doppler      = midDoppler;
+  (*Fstats)->dFreq        = common->dFreq;
+  (*Fstats)->numFreqBins  = numFreqBins;
   (*Fstats)->numDetectors = numDetectors;
-  memset ( (*Fstats)->detectorNames, 0, sizeof((*Fstats)->detectorNames) );
+  XLAL_INIT_MEM ( (*Fstats)->detectorNames);
   for (UINT4 X = 0; X < numDetectors; ++X) {
     strncpy ( (*Fstats)->detectorNames[X], common->detectors.sites[X].frDetector.prefix, 2 );
   }
@@ -675,6 +692,10 @@ XLALComputeFstat ( FstatResults **Fstats,               ///< [in/out] Address of
 
   // Call the appropriate method function to compute the F-statistic
   XLAL_CHECK ( (input->method_funcs.compute_func) ( *Fstats, common, input->method_data ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  (*Fstats)->doppler = (*doppler);
+  // Record the internal reference time used, which is required to compute a correct global signal phase
+  (*Fstats)->refTimePhase = midDoppler.refTime;
 
   return XLAL_SUCCESS;
 
