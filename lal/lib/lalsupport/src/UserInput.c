@@ -385,6 +385,7 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
 	  /* if the next entry is not an option, take it as an argument */
 	  if ( (LALoptarg == NULL) && (LALoptind < argc) && (argv[LALoptind][0] != '-') && (argv[LALoptind][0] != '@') ) {
 	    LALoptarg = argv[LALoptind];
+            LALoptind ++;
           }
 
 	  if ( LALoptarg == NULL )  /* no argument found at all: defaults to TRUE */
