@@ -25,6 +25,9 @@
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_matrix.h>
 
+#include <lal/XLALError.h>
+#include <lal/XLALGSL.h>
+
 #define ALLOC_GSL_VAL(val, name, call) \
   name = (call); \
   XLAL_CHECK_VAL(val, (name) != NULL, XLAL_ENOMEM, #call " failed")
@@ -36,6 +39,22 @@
 #define ALLOC_GSL_2D_VAL(val, type, name, m, n) \
   name = gsl_##type##_calloc(m, n); \
   XLAL_CHECK_VAL(val, (name) != NULL, XLAL_ENOMEM, "gsl_"#type"_calloc(%zu,%zu) failed", ((size_t) m), ((size_t) n))
+
+#define CLONE_GSL_1D_VAL(val, type, dest, src) \
+  if ((src) != NULL) { \
+    ALLOC_GSL_1D_VAL(val, type, dest, (src)->size); \
+    gsl_##type##_memcpy(dest, src); \
+  } else { \
+    dest = NULL; \
+  }
+
+#define CLONE_GSL_2D_VAL(val, type, dest, src) \
+  if ((src) != NULL) { \
+    ALLOC_GSL_2D_VAL(val, type, dest, (src)->size1, (src)->size2); \
+    gsl_##type##_memcpy(dest, src); \
+  } else { \
+    dest = NULL; \
+  }
 
 #define PRINT_GSL_1D(type, name, fmt) \
   do { \
@@ -86,33 +105,85 @@
 #define GALLOC(name, call)		ALLOC_GSL_VAL(XLAL_FAILURE, name, call)
 #define GALLOC_NULL(type, name, n)	ALLOC_GSL_VAL(NULL, name, call)
 
+#define GCALL(...)			CALL_GSL_VAL(XLAL_FAILURE, __VA_ARGS__);
+#define GCALL_NULL(...)			CALL_GSL_VAL(NULL, __VA_ARGS__);
+
+#define GAPERM(name, n)			ALLOC_GSL_1D_VAL(XLAL_FAILURE, permutation, name, n)
+#define GAPERM_NULL(name, n)		ALLOC_GSL_1D_VAL(NULL, permutation, name, n)
+#define GCPERM(dest, src)		CLONE_GSL_1D_VAL(XLAL_FAILURE, permutation, dest, src)
+#define GCPERM_NULL(dest, src)		CLONE_GSL_1D_VAL(NULL, permutation, dest, src)
+#define GPPERM(name, fmt)		PRINT_GSL_1D(permutation, name, fmt)
+#define GFPERM(...)			FREE_GSL(permutation, __VA_ARGS__)
+
 #define GAVEC(name, n)			ALLOC_GSL_1D_VAL(XLAL_FAILURE, vector, name, n)
 #define GAVEC_NULL(name, n)		ALLOC_GSL_1D_VAL(NULL, vector, name, n)
+#define GCVEC(dest, src)		CLONE_GSL_1D_VAL(XLAL_FAILURE, vector, dest, src)
+#define GCVEC_NULL(dest, src)		CLONE_GSL_1D_VAL(NULL, vector, dest, src)
 #define GPVEC(name, fmt)		PRINT_GSL_1D(vector, name, fmt)
 #define GFVEC(...)			FREE_GSL(vector, __VA_ARGS__)
 
 #define GAVECI(name, n)			ALLOC_GSL_1D_VAL(XLAL_FAILURE, vector_int, name, n)
 #define GAVECI_NULL(name, n)		ALLOC_GSL_1D_VAL(NULL, vector_int, name, n)
+#define GCVECI(dest, src)		CLONE_GSL_1D_VAL(XLAL_FAILURE, vector_int, dest, src)
+#define GCVECI_NULL(dest, src)		CLONE_GSL_1D_VAL(NULL, vector_int, dest, src)
 #define GPVECI(name, fmt)		PRINT_GSL_1D(vector_int, name, fmt)
 #define GFVECI(...)			FREE_GSL(vector_int, __VA_ARGS__)
 
 #define GAVECU(name, n)			ALLOC_GSL_1D_VAL(XLAL_FAILURE, vector_uint, name, n)
 #define GAVECU_NULL(name, n)		ALLOC_GSL_1D_VAL(NULL, vector_uint, name, n)
+#define GCVECU(dest, src)		CLONE_GSL_1D_VAL(XLAL_FAILURE, vector_uint, dest, src)
+#define GCVECU_NULL(dest, src)		CLONE_GSL_1D_VAL(NULL, vector_uint, dest, src)
 #define GPVECU(name, fmt)		PRINT_GSL_1D(vector_uint, name, fmt)
 #define GFVECU(...)			FREE_GSL(vector_uint, __VA_ARGS__)
 
-#define GAPERM(name, n)			ALLOC_GSL_1D_VAL(XLAL_FAILURE, permutation, name, n)
-#define GAPERM_NULL(name, n)		ALLOC_GSL_1D_VAL(NULL, permutation, name, n)
-#define GPPERM(name, fmt)		PRINT_GSL_1D(permutation, name, fmt)
-#define GFPERM(...)			FREE_GSL(permutation, __VA_ARGS__)
+#define GAVECLI(name, n)		ALLOC_GSL_1D_VAL(XLAL_FAILURE, vector_long, name, n)
+#define GAVECLI_NULL(name, n)		ALLOC_GSL_1D_VAL(NULL, vector_long, name, n)
+#define GCVECLI(dest, src)		CLONE_GSL_1D_VAL(XLAL_FAILURE, vector_long, dest, src)
+#define GCVECLI_NULL(dest, src)		CLONE_GSL_1D_VAL(NULL, vector_long, dest, src)
+#define GPVECLI(name, fmt)		PRINT_GSL_1D(vector_long, name, fmt)
+#define GFVECLI(...)			FREE_GSL(vector_long, __VA_ARGS__)
+
+#define GAVECLU(name, n)		ALLOC_GSL_1D_VAL(XLAL_FAILURE, vector_ulong, name, n)
+#define GAVECLU_NULL(name, n)		ALLOC_GSL_1D_VAL(NULL, vector_ulong, name, n)
+#define GCVECLU(dest, src)		CLONE_GSL_1D_VAL(XLAL_FAILURE, vector_ulong, dest, src)
+#define GCVECLU_NULL(dest, src)		CLONE_GSL_1D_VAL(NULL, vector_ulong, dest, src)
+#define GPVECLU(name, fmt)		PRINT_GSL_1D(vector_ulong, name, fmt)
+#define GFVECLU(...)			FREE_GSL(vector_ulong, __VA_ARGS__)
 
 #define GAMAT(name, m, n)		ALLOC_GSL_2D_VAL(XLAL_FAILURE, matrix, name, m, n)
 #define GAMAT_NULL(name, m, n)		ALLOC_GSL_2D_VAL(NULL, matrix, name, m, n)
+#define GCMAT(dest, src)		CLONE_GSL_2D_VAL(XLAL_FAILURE, matrix, dest, src)
+#define GCMAT_NULL(dest, src)		CLONE_GSL_2D_VAL(NULL, matrix, dest, src)
 #define GPMAT(name, fmt)		PRINT_GSL_2D(matrix, name, fmt)
 #define GFMAT(...)			FREE_GSL(matrix, __VA_ARGS__)
 
-#define GCALL(...)			CALL_GSL_VAL(XLAL_FAILURE, __VA_ARGS__);
-#define GCALL_NULL(...)			CALL_GSL_VAL(NULL, __VA_ARGS__);
+#define GAMATI(name, m, n)		ALLOC_GSL_2D_VAL(XLAL_FAILURE, matrix_int, name, m, n)
+#define GAMATI_NULL(name, m, n)		ALLOC_GSL_2D_VAL(NULL, matrix_int, name, m, n)
+#define GCMATI(dest, src)		CLONE_GSL_2D_VAL(XLAL_FAILURE, matrix_int, dest, src)
+#define GCMATI_NULL(dest, src)		CLONE_GSL_2D_VAL(NULL, matrix_int, dest, src)
+#define GPMATI(name, fmt)		PRINT_GSL_2D(matrix_int, name, fmt)
+#define GFMATI(...)			FREE_GSL(matrix_int, __VA_ARGS__)
+
+#define GAMATU(name, m, n)		ALLOC_GSL_2D_VAL(XLAL_FAILURE, matrix_uint, name, m, n)
+#define GAMATU_NULL(name, m, n)		ALLOC_GSL_2D_VAL(NULL, matrix_uint, name, m, n)
+#define GCMATU(dest, src)		CLONE_GSL_2D_VAL(XLAL_FAILURE, matrix_uint, dest, src)
+#define GCMATU_NULL(dest, src)		CLONE_GSL_2D_VAL(NULL, matrix_uint, dest, src)
+#define GPMATU(name, fmt)		PRINT_GSL_2D(matrix_uint, name, fmt)
+#define GFMATU(...)			FREE_GSL(matrix_uint, __VA_ARGS__)
+
+#define GAMATLI(name, m, n)		ALLOC_GSL_2D_VAL(XLAL_FAILURE, matrix_long, name, m, n)
+#define GAMATLI_NULL(name, m, n)	ALLOC_GSL_2D_VAL(NULL, matrix_long, name, m, n)
+#define GCMATLI(dest, src)		CLONE_GSL_2D_VAL(XLAL_FAILURE, matrix_long, dest, src)
+#define GCMATLI_NULL(dest, src)		CLONE_GSL_2D_VAL(NULL, matrix_long, dest, src)
+#define GPMATLI(name, fmt)		PRINT_GSL_2D(matrix_long, name, fmt)
+#define GFMATLI(...)			FREE_GSL(matrix_long, __VA_ARGS__)
+
+#define GAMATLU(name, m, n)		ALLOC_GSL_2D_VAL(XLAL_FAILURE, matrix_ulong, name, m, n)
+#define GAMATLU_NULL(name, m, n)	ALLOC_GSL_2D_VAL(NULL, matrix_ulong, name, m, n)
+#define GCMATLU(dest, src)		CLONE_GSL_2D_VAL(XLAL_FAILURE, matrix_ulong, dest, src)
+#define GCMATLU_NULL(dest, src)		CLONE_GSL_2D_VAL(NULL, matrix_ulong, dest, src)
+#define GPMATLU(name, fmt)		PRINT_GSL_2D(matrix_ulong, name, fmt)
+#define GFMATLU(...)			FREE_GSL(matrix_ulong, __VA_ARGS__)
 
 /// \endcond
 #endif // _GSLHELPERS_H
