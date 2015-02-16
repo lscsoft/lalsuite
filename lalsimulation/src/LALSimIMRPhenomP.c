@@ -40,6 +40,8 @@
 #include <lal/Units.h>
 #include <lal/XLALError.h>
 #include <lal/SphericalHarmonics.h>
+#include <lal/Sequence.h>
+
 #include "LALSimIMR.h"
 #include "LALSimIMRPhenomC_internals.c" /* This is ugly, but allows us to reuse internal PhenomC functions without making those functions XLAL */
 
@@ -83,8 +85,28 @@ typedef struct tagSpinWeightedSphericalHarmonic_l2 {
   COMPLEX16 Y2m2, Y2m1, Y20, Y21, Y22;
 } SpinWeightedSphericalHarmonic_l2;
 
+/* Internal core function to calculate PhenomP polarizations for a sequence of frequences. */
+static int PhenomPCore(
+  COMPLEX16FrequencySeries **hptilde,   /**< Output: Frequency-domain waveform h+ */
+  COMPLEX16FrequencySeries **hctilde,   /**< Output: Frequency-domain waveform hx */
+  const REAL8 chi_eff,                  /**< Effective aligned spin */
+  const REAL8 chip,                     /**< Effective spin in the orbital plane */
+  const REAL8 eta,                      /**< Symmetric mass-ratio */
+  const REAL8 thetaJ,                   /**< Angle between J0 and line of sight (z-direction) */
+  const REAL8 Mtot_SI,                  /**< Total mass of binary (kg) */
+  const REAL8 distance,                 /**< Distance of source (m) */
+  const REAL8 alpha0,                   /**< Initial value of alpha angle (azimuthal precession angle) */
+  const REAL8 phic,                     /**< Orbital phase at the peak of the underlying non precessing model (rad) */
+  const REAL8 f_ref,                    /**< Reference frequency */
+  const REAL8Sequence *freqs,           /**< Frequency points at which to evaluate the waveform (Hz) */
+  double deltaF
+  /* If deltaF != NaN, the frequency points given in freqs are uniformly spaced with
+   * spacing deltaF. If deltaF = NaN, the frequency points are spaced non-uniformly.
+   * Then we will use deltaF = NaN to create the frequency series we return. */
+);
+
 /* Internal core function to calculate PhenomP polarizations for a single frequency. */
-int PhenomPCore(
+static int PhenomPCoreOneFrequency(
   const REAL8 fHz,                        /**< Frequency (Hz) */
   const REAL8 eta,                        /**< Symmetric mass ratio */
   const REAL8 chi_eff,                    /**< Dimensionless effective total aligned spin */
@@ -266,6 +288,74 @@ int XLALSimIMRPhenomP(
   // Note that the angles phiJ which is calculated internally in XLALSimIMRPhenomPCalculateModelParameters
   // and alpha0 are degenerate. Therefore phiJ is not passed to this function.
 
+  // Use fLow, fHigh, deltaF to compute freqs sequence
+  // Instead of building a full sequency we only transfer the boundaries and let
+  // the internal core function do the rest (and properly take care of corner cases).
+  REAL8Sequence *freqs = XLALCreateREAL8Sequence(2);
+  freqs->data[0] = f_min;
+  freqs->data[1] = f_max;
+
+  int retcode = PhenomPCore(hptilde, hctilde,
+      chi_eff, chip, eta, thetaJ, Mtot_SI, distance, alpha0, phic, f_ref, freqs, deltaF);
+
+  return (retcode);
+}
+
+int XLALSimIMRPhenomPFrequencySequence(
+  COMPLEX16FrequencySeries **hptilde,   /**< Output: Frequency-domain waveform h+ */
+  COMPLEX16FrequencySeries **hctilde,   /**< Output: Frequency-domain waveform hx */
+  const REAL8Sequence *freqs,           /**< Frequency points at which to evaluate the waveform (Hz) */
+  const REAL8 chi_eff,                  /**< Effective aligned spin */
+  const REAL8 chip,                     /**< Effective spin in the orbital plane */
+  const REAL8 eta,                      /**< Symmetric mass-ratio */
+  const REAL8 thetaJ,                   /**< Angle between J0 and line of sight (z-direction) */
+  const REAL8 Mtot_SI,                  /**< Total mass of binary (kg) */
+  const REAL8 distance,                 /**< Distance of source (m) */
+  const REAL8 alpha0,                   /**< Initial value of alpha angle (azimuthal precession angle) */
+  const REAL8 phic,                     /**< Orbital phase at the peak of the underlying non precessing model (rad) */
+  const REAL8 f_ref)                    /**< Reference frequency */
+{
+  // See Fig. 1. in arxiv:1408.1810 for diagram of the angles.
+  // Note that the angles phiJ which is calculated internally in XLALSimIMRPhenomPCalculateModelParameters
+  // and alpha0 are degenerate. Therefore phiJ is not passed to this function.
+
+  // Call the internal core function with deltaF = NaN to indicate that freqs is non-uniformly
+  // spaced and we want the strain only at these frequencies
+  int retcode = PhenomPCore(hptilde, hctilde,
+      chi_eff, chip, eta, thetaJ, Mtot_SI, distance, alpha0, phic, f_ref, freqs, NAN);
+
+  return(retcode);
+}
+
+/* Internal core function to calculate PhenomP polarizations for a sequence of frequences. */
+static int PhenomPCore(
+  COMPLEX16FrequencySeries **hptilde,   /**< Output: Frequency-domain waveform h+ */
+  COMPLEX16FrequencySeries **hctilde,   /**< Output: Frequency-domain waveform hx */
+  const REAL8 chi_eff,                  /**< Effective aligned spin */
+  const REAL8 chip,                     /**< Effective spin in the orbital plane */
+  const REAL8 eta,                      /**< Symmetric mass-ratio */
+  const REAL8 thetaJ,                   /**< Angle between J0 and line of sight (z-direction) */
+  const REAL8 Mtot_SI,                  /**< Total mass of binary (kg) */
+  const REAL8 distance,                 /**< Distance of source (m) */
+  const REAL8 alpha0,                   /**< Initial value of alpha angle (azimuthal precession angle) */
+  const REAL8 phic,                     /**< Orbital phase at the peak of the underlying non precessing model (rad) */
+  const REAL8 f_ref,                    /**< Reference frequency */
+  const REAL8Sequence *freqs_in,        /**< Frequency points at which to evaluate the waveform (Hz) */
+  double deltaF
+  /* If deltaF != NaN, the frequency points given in freqs are uniformly spaced with
+   * spacing deltaF. If deltaF = NaN, the frequency points are spaced non-uniformly.
+   * Then we will use deltaF = NaN to create the frequency series we return. */
+  )
+{
+  // See Fig. 1. in arxiv:1408.1810 for diagram of the angles.
+  // Note that the angles phiJ which is calculated internally in XLALSimIMRPhenomPCalculateModelParameters
+  // and alpha0 are degenerate. Therefore phiJ is not passed to this function.
+
+  /* Find frequency bounds */
+  if (!freqs_in) XLAL_ERROR(XLAL_EFAULT);
+  double f_min = freqs_in->data[0];
+  double f_max = freqs_in->data[freqs_in->length - 1];
+
   const REAL8 M = Mtot_SI / LAL_MSUN_SI;  /* External units: SI; internal units: solar masses */
   const REAL8 m_sec = M * LAL_MTSUN_SI;   /* Total mass in seconds */
   const REAL8 q = (1.0 + sqrt(1.0 - 4.0*eta) - 2.0*eta)/(2.0*eta); /* Mass-ratio */
@@ -329,7 +419,7 @@ int XLALSimIMRPhenomP(
                                 + angcoeffs.epsiloncoeff4*logomega_ref
                                 + angcoeffs.epsiloncoeff5*omega_ref_cbrt);
 
-  /* Compute Ylm's only once and pass them to PhenomPCore() below. */
+  /* Compute Ylm's only once and pass them to PhenomPCoreOneFrequency() below. */
   SpinWeightedSphericalHarmonic_l2 Y2m;
   const REAL8 ytheta  = thetaJ;
   const REAL8 yphi    = 0;
@@ -362,12 +452,41 @@ int XLALSimIMRPhenomP(
 
   /* Allocate hp, hc */
   XLALPrintInfo("f_max / deltaF = %g\n", f_max_prime / deltaF);
-  size_t n = NextPow2(f_max_prime / deltaF) + 1; /* Note: Should explain why the length is one plus a power of 2. */
-  if (f_max_prime < f_max)                       /* Resize waveform if user wants f_max larger than cutoff frequency */
-    n = NextPow2(f_max / deltaF) + 1;
-  XLALPrintInfo("n = %d\n", (int)(n));
-  *hptilde = XLALCreateCOMPLEX16FrequencySeries("hptilde: FD waveform", &ligotimegps_zero, 0.0, deltaF, &lalStrainUnit, n);
-  *hctilde = XLALCreateCOMPLEX16FrequencySeries("hctilde: FD waveform", &ligotimegps_zero, 0.0, deltaF, &lalStrainUnit, n);
+
+  size_t n = 0;
+  UINT4 offset = 0; // Index shift between freqs and the frequency series
+  REAL8Sequence *freqs = NULL;
+  if (!isnan(deltaF))  { // freqs contains uniform frequency grid with spacing deltaF; we start at frequency 0
+    /* Set up output array with size closest power of 2 */
+    n = NextPow2(f_max_prime / deltaF) + 1;
+    if (f_max_prime < f_max)                       /* Resize waveform if user wants f_max larger than cutoff frequency */
+      n = NextPow2(f_max / deltaF) + 1;
+
+    XLALGPSAdd(&ligotimegps_zero, -1. / deltaF);  /* coalesce at t=0 */
+
+    *hptilde = XLALCreateCOMPLEX16FrequencySeries("hptilde: FD waveform", &ligotimegps_zero, 0.0, deltaF, &lalStrainUnit, n);
+    *hctilde = XLALCreateCOMPLEX16FrequencySeries("hctilde: FD waveform", &ligotimegps_zero, 0.0, deltaF, &lalStrainUnit, n);
+
+    // Recreate freqs using only the lower and upper bounds
+    size_t i_min = (size_t) (f_min / deltaF);
+    size_t i_max = (size_t) (f_max_prime / deltaF);
+    freqs = XLALCreateREAL8Sequence(i_max - i_min);
+    for (UINT4 i=i_min; i<i_max; i++)
+      freqs->data[i-i_min] = i*deltaF;
+
+    offset = i_min;
+  } else { // freqs contains frequencies with non-uniform spacing; we start at lowest given frequency
+    n = freqs_in->length;
+    *hptilde = XLALCreateCOMPLEX16FrequencySeries("hptilde: FD waveform", &ligotimegps_zero, f_min, deltaF, &lalStrainUnit, n);
+    *hctilde = XLALCreateCOMPLEX16FrequencySeries("hctilde: FD waveform", &ligotimegps_zero, f_min, deltaF, &lalStrainUnit, n);
+    offset = 0;
+
+    freqs = XLALCreateREAL8Sequence(freqs_in->length);
+    for (UINT4 i=0; i<freqs_in->length; i++)
+      freqs->data[i] = freqs_in->data[i];
+  }
+
+
   memset((*hptilde)->data->data, 0, n * sizeof(COMPLEX16));
   memset((*hctilde)->data->data, 0, n * sizeof(COMPLEX16));
   XLALUnitMultiply(&((*hptilde)->sampleUnits), &((*hptilde)->sampleUnits), &lalSecondUnit);
@@ -386,18 +505,23 @@ int XLALSimIMRPhenomP(
   XLALPrintInfo("ind_max = (int)(f_max / deltaF) = %d\n", (int)(f_max_prime / deltaF));
 
   /* Note: there will usually be zero data at the beginning and end of the frequency series  */
-  size_t i_min = (size_t) (f_min / deltaF);
-  size_t i_max = (size_t) (f_max_prime / deltaF);
+  //size_t i_min = (size_t) (f_min / deltaF);
+  //size_t i_max = (size_t) (f_max_prime / deltaF);
   int errcode = XLAL_SUCCESS;
+
+
   /*
     We can't call XLAL_ERROR() directly with OpenMP on.
     Keep track of return codes for each thread and in addition use flush to get out of
     the parallel for loop as soon as possible if something went wrong in any thread.
   */
   #pragma omp parallel for
-  for (size_t i = i_min; i < i_max; i++) {
-    COMPLEX16 hp_val, hc_val;
-    REAL8 f = i * deltaF;
+  for (UINT4 i=0; i<freqs->length; i++) { // loop over frequency points in sequence
+    COMPLEX16 hp_val = 0.0;
+    COMPLEX16 hc_val = 0.0;
+    double f = freqs->data[i];
+    int j = i + offset; // shift index for frequency series if needed
+
     int per_thread_errcode;
 
     #pragma omp flush(errcode)
@@ -405,7 +529,7 @@ int XLALSimIMRPhenomP(
       goto skip;
 
     /* Generate the waveform */
-    per_thread_errcode = PhenomPCore(f, eta, chi_eff, chip, distance, M, phic,
+    per_thread_errcode = PhenomPCoreOneFrequency(f, eta, chi_eff, chip, distance, M, phic,
                               PCparams, &angcoeffs, &Y2m,
                               alphaNNLOoffset - alpha0, epsilonNNLOoffset,
                               &hp_val, &hc_val);
@@ -415,12 +539,13 @@ int XLALSimIMRPhenomP(
       #pragma omp flush(errcode)
     }
 
-
-    ((*hptilde)->data->data)[i] = hp_val;
-    ((*hctilde)->data->data)[i] = hc_val;
+    ((*hptilde)->data->data)[j] = hp_val;
+    ((*hctilde)->data->data)[j] = hc_val;
 
     skip: /* this statement intentionally left blank */;
   }
+
+  XLALDestroyREAL8Sequence(freqs);
 
   if( errcode != XLAL_SUCCESS )
     XLAL_ERROR(errcode);
@@ -431,7 +556,7 @@ int XLALSimIMRPhenomP(
 /******************************* PhenomP internal functions *********************************/
 
 /* Internal core function to calculate PhenomP polarizations for a single frequency. */
-int PhenomPCore(
+int PhenomPCoreOneFrequency(
   const REAL8 fHz,                        /**< Frequency (Hz) */
   const REAL8 eta,                        /**< Symmetric mass ratio */
   const REAL8 chi_eff,                    /**< Dimensionless effective total aligned spin */

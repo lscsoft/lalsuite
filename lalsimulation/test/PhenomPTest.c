@@ -346,7 +346,7 @@ static void Test_PhenomPCore(void) {
 
   COMPLEX16 hp, hc;
   REAL8 fHz = 40.6051; // Mf = 0.01 for M=50Msun
-  int ret = PhenomPCore(
+  int ret = PhenomPCoreOneFrequency(
     fHz,                     /**< frequency (Hz) */
     0.16,                    /**< symmetric mass ratio */
     0.45,                    /**< dimensionless effective total aligned spin */

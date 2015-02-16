@@ -210,6 +210,33 @@ int XLALSimIMRPhenomP(
 );
 
 /**
+ * Driver routine to compute the plus and cross polarizations for the IMRPhenomP model
+ * for precessing binaries in the frequency domain for a specified sequence of frequencies.
+ *
+ * This function takes effective model parameters that should be computed with
+ * XLALSimIMRPhenomPCalculateModelParameters().
+ *
+ * Reference: http://arxiv.org/abs/1308.3271
+ *
+ */
+
+int XLALSimIMRPhenomPFrequencySequence(
+  COMPLEX16FrequencySeries **hptilde,   /**< Output: Frequency-domain waveform h+ */
+  COMPLEX16FrequencySeries **hctilde,   /**< Output: Frequency-domain waveform hx */
+  const REAL8Sequence *freqs,           /**< Frequency points at which to evaluate the waveform (Hz) */
+  const REAL8 chi_eff,                  /**< Effective aligned spin */
+  const REAL8 chip,                     /**< Effective spin in the orbital plane */
+  const REAL8 eta,                      /**< Symmetric mass-ratio */
+  const REAL8 thetaJ,                   /**< Angle between J0 and line of sight (z-direction) */
+  const REAL8 Mtot_SI,                  /**< Total mass of binary (kg) */
+  const REAL8 distance,                 /**< Distance of source (m) */
+  const REAL8 alpha0,                   /**< Initial value of alpha angle (azimuthal precession angle) */
+  const REAL8 phic,                     /**< Orbital phase at the peak of the underlying non precessing model (rad) */
+  const REAL8 f_ref                     /**< Reference frequency */
+);
+
+
+/**
  * Function that transforms from the LAL frame to model effective parameters for the IMRPhenomP model.
  *
  * Reference: http://arxiv.org/abs/1308.3271
