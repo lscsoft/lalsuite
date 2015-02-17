@@ -105,3 +105,8 @@
 \defgroup lal_python			Python Packages
 
 */
+
+/**
+\page lal_authors			Author List
+\verbinclude AUTHORS
+*/

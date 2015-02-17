@@ -14,6 +14,7 @@
 /_build/
 /_inst/
 /lal-*/
+AUTHORS
 Makefile
 Makefile.in
 config.lt

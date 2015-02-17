@@ -10,6 +10,7 @@
 /_build/
 /_inst/
 /lalsimulation-*/
+AUTHORS
 Makefile
 Makefile.in
 config.lt
