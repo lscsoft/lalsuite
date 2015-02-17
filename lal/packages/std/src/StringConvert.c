@@ -757,8 +757,8 @@ LALStringToGPS(LALStatus * stat, LIGOTimeGPS * value, const CHAR * string,
         if (!nanosecSet) {
 
             absValue = 0;
-            for (idigit = dppos; idigit < dppos + 9 && idigit < mdigits;
-                 idigit++) {
+            INT4 limit = dppos+9 < mdigits ? dppos+9 : mdigits;
+            for (idigit = dppos; idigit < limit; idigit++) {
                 if (idigit >= 0) {
                     absValue =
                         10 * absValue + (UINT8) (mantissa[idigit] - '0');
