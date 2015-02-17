@@ -460,6 +460,12 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
     if ( LALInferenceGetProcParamVal( commandLine, "--nonGR" ) ){
       UINT4 nonGR = 1;
       LALInferenceAddVariable( ifomodel->params, "nonGR", &nonGR, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
+      /* check if nonGR argument has an associated inpute variable */
+      if ( LALInferenceGetProcParamVal( commandLine, "--nonGR")->value != NULL){
+      CHAR *nonGRmodel = NULL;
+      nonGRmodel =  XLALStringDuplicate( LALInferenceGetProcParamVal( commandLine, "--nonGR" )->value);
+      LALInferenceAddVariable( ifomodel->params, "nonGRmodel", &nonGRmodel, LALINFERENCE_string_t, LALINFERENCE_PARAM_FIXED );
+      }
     }
 
     if( i == 0 ) {

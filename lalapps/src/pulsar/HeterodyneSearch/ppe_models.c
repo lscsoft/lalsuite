@@ -67,23 +67,63 @@ void get_pulsar_model( LALInferenceModel *model ){
     /* speed of GWs as (1 - fraction of speed of light LAL_C_SI) */
     pars.cgw = rescale_parameter( model, model->ifo, "CGW" );
 
-    /* amplitudes for use with non-GR searches */
-    /* tensor modes */
-    pars.hPlus = rescale_parameter( model, model->ifo, "HPLUS" );
-    pars.hCross = rescale_parameter( model, model->ifo, "HCROSS" );
-    /* scalar modes */
-    pars.hScalarB = rescale_parameter( model, model->ifo, "HSCALARB" );
-    pars.hScalarL = rescale_parameter( model, model->ifo, "HSCALARL" );
-    /* vector modes */
-    pars.hVectorX = rescale_parameter( model, model->ifo, "HVECTORX" );
-    pars.hVectorY = rescale_parameter( model, model->ifo, "HVECTORY" );
+    /* check whether a specific nonGR model was requested */
+    if ( LALInferenceCheckVariable( model->ifo->params, "nonGRmodel" ) ){
+      char* nonGRmodel;
+      nonGRmodel = *(char**)LALInferenceGetVariable( model->ifo->params, "nonGRmodel" );
 
-    pars.phi0Scalar = rescale_parameter( model, model->ifo, "PHI0SCALAR" );
-    pars.phi0Vector = rescale_parameter( model, model->ifo, "PHI0VECTOR" );
-    pars.psiVector = rescale_parameter( model, model->ifo, "PSIVECTOR" );
-    pars.phi0Tensor = rescale_parameter( model, model->ifo, "PHI0TENSOR" );
+      /* add alternative models here */
+      int isG4v = strcmp(nonGRmodel, "G4v") * strcmp(nonGRmodel, "g4v") * strcmp(nonGRmodel, "G4V");
+      int isST = strcmp(nonGRmodel, "scalar-tensor") * strcmp(nonGRmodel, "ST");
+      if( isG4v==0 ){
+        /* \f$ h_{\rm x} = h_0 \sin \iota~,~\phi_{\rm x} = -\pi/2 \f$ */
+        /* \f$ h_{\rm y} = h_0 \sin \iota \cos \iota~,~\phi_{\rm y} = 0 */
+        REAL8 h0 = rescale_parameter( model, model->ifo, "H0" );
+        REAL8 iota = rescale_parameter( model, model->ifo, "IOTA" );
+        REAL8 cosiota = cos(iota);
+        REAL8 siniota = sin(iota);
+
+        pars.hVectorX = -I * h0 * siniota;
+        pars.hVectorY = h0 * siniota * cosiota;
+        pars.phi0Vector = rescale_parameter( model, model->ifo, "PHI0VECTOR" );
+      }
+      else if( isST==0) {
+        /* GR plus an unconstrained breathing mode */
+        /* TO DO: are there specific functional relations linking the HSCALARB to pulsar parameters like COSIOTA, etc.? */
+        REAL8 h0 = rescale_parameter( model, model->ifo, "H0" );
+        REAL8 cosiota = rescale_parameter( model, model->ifo, "COSIOTA" );
+
+        pars.hPlus = 0.5 * h0 * (1 + cosiota * cosiota);
+        pars.hCross = h0 * cosiota;
+        pars.hScalarB = rescale_parameter( model, model->ifo, "HSCALARB" );
+        pars.phi0Scalar = rescale_parameter( model, model->ifo, "PHI0SCALAR" );
+      } else {
+        XLALPrintError ("%s: invalid argument passed to --nonGR. Currently supported: scalar-tensor (ST), G4v, or no argument for full search.\n", __func__ );
+        XLAL_ERROR_VOID( XLAL_EINVAL );
+      }
+    }
+    else { 
+      /* amplitudes for use with non-GR searches */
+      /* tensor modes */
+      pars.hPlus = rescale_parameter( model, model->ifo, "HPLUS" );
+      pars.hCross = rescale_parameter( model, model->ifo, "HCROSS" );
+      /* scalar modes */
+      pars.hScalarB = rescale_parameter( model, model->ifo, "HSCALARB" );
+      pars.hScalarL = rescale_parameter( model, model->ifo, "HSCALARL" );
+      /* vector modes */
+      pars.hVectorX = rescale_parameter( model, model->ifo, "HVECTORX" );
+      pars.hVectorY = rescale_parameter( model, model->ifo, "HVECTORY" );
+  
+      pars.phi0Scalar = rescale_parameter( model, model->ifo, "PHI0SCALAR" );
+      pars.psiScalar = rescale_parameter( model, model->ifo, "PSISCALAR" );
+      pars.phi0Vector = rescale_parameter( model, model->ifo, "PHI0VECTOR" );
+      pars.psiVector = rescale_parameter( model, model->ifo, "PSIVECTOR" );
+      pars.phi0Tensor = rescale_parameter( model, model->ifo, "PHI0TENSOR" );
+      pars.psiTensor = rescale_parameter( model, model->ifo, "PSITENSOR" );
+    }
   }
   else{
+    /* amplitude for usual GR search */
     pars.C21 = rescale_parameter( model, model->ifo, "C21" );
     pars.C22 = rescale_parameter( model, model->ifo, "C22" );
     pars.phi21 = rescale_parameter( model, model->ifo, "PHI21" );
@@ -852,19 +892,21 @@ void get_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOModel *ifo ){
       else if( freqFactors->data[j] == 2. ){
         /* the l=2, m=2 harmonic at twice the rotation frequency */
         if ( nonGR ){ /* amplitude if nonGR is specifiec */
-          COMPLEX16 expPhiTensor, expPhiScalar, expPhiVector, expPsiVector;
+          COMPLEX16 expPhiTensor, expPsiTensor, expPhiScalar, expPsiScalar, expPhiVector, expPsiVector;
 
           expPhiTensor = cexp( I * pars.phi0Tensor );
+          expPsiTensor = cexp( I * pars.psiTensor );
           expPhiScalar = cexp( I * pars.phi0Scalar );
+          expPsiScalar = cexp( I * pars.psiScalar );
           expPhiVector = cexp( I * pars.phi0Vector );
           expPsiVector = cexp( I * pars.psiVector );
 
-          Cplus = 0.5 * pars.hPlus * expPhiTensor;
-          Ccross = -0.5 * I * pars.hCross * expPhiTensor;
-          Cx = -0.5 * I * expPhiVector * pars.hVectorX;
-          Cy = -0.5 * I * expPhiVector * pars.hVectorY * expPsiVector;
-          Cb = -0.5 * I * expPhiScalar * pars.hScalarB;
-          Cl = -0.5 * I * expPhiScalar * pars.hScalarL;
+          Cplus = 0.5 * expPhiTensor * pars.hPlus;
+          Ccross = 0.5 * expPhiTensor * pars.hCross * expPsiTensor;
+          Cx = 0.5 * expPhiVector * pars.hVectorX;
+          Cy = 0.5 * expPhiVector * pars.hVectorY * expPsiVector;
+          Cb = 0.5 * expPhiScalar * pars.hScalarB;
+          Cl = 0.5 * expPhiScalar * pars.hScalarL * expPsiScalar;
         }
         else{ /* just GR tensor mode amplitudes */
           expPhi = cexp( I * pars.phi22 );

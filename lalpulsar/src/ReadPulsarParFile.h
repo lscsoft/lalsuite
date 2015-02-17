@@ -226,9 +226,11 @@ tagBinaryPulsarParams
   /* scalar-tensor-vector mode amplitude parameters */
   REAL8 hPlus;       /**< amplitude for the tensor plus polarisation */
   REAL8 hCross;      /**< amplitude for the tensor cross polarisation */
+  REAL8 psiTensor;   /**< phase polarisation angle for tensor polarisation mode */
   REAL8 phi0Tensor;  /**< initial phase for tensor modes (to be used instead of phi0 or phi22) */
   REAL8 hScalarB;    /**< amplitude for scalar breathing polarisation mode */
   REAL8 hScalarL;    /**< amplitude for scalar longitudinal polarisation mode */
+  REAL8 psiScalar;   /**< phase polarisation angle for scalar polarisation mode */
   REAL8 phi0Scalar;  /**< initial phase for the scalar modes */
   REAL8 hVectorX;    /**< amplitude for vector "x" polarisation mode */
   REAL8 hVectorY;    /**< amplitude for vector "y" polarisation mode */
@@ -335,9 +337,11 @@ tagBinaryPulsarParams
 
   REAL8 hPlusErr;
   REAL8 hCrossErr;
+  REAL8 psiScalarErr;
   REAL8 phi0TensorErr;
   REAL8 hScalarBErr;
   REAL8 hScalarLErr;
+  REAL8 psiTensorErr;
   REAL8 phi0ScalarErr;
   REAL8 hVectorXErr;
   REAL8 hVectorYErr;

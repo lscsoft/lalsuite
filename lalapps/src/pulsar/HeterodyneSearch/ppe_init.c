@@ -383,9 +383,11 @@ void add_initial_variables( LALInferenceVariables *ini,  LALInferenceVariables *
   add_variable_scale( ini, scaleFac, "CGW", pars.cgw );
   add_variable_scale( ini, scaleFac, "HPLUS", pars.hPlus );
   add_variable_scale( ini, scaleFac, "HCROSS", pars.hCross );
+  add_variable_scale( ini, scaleFac, "PSITENSOR", pars.psiTensor );
   add_variable_scale( ini, scaleFac, "PHI0TENSOR", pars.phi0Tensor );
   add_variable_scale( ini, scaleFac, "HSCALARB", pars.hScalarB );
   add_variable_scale( ini, scaleFac, "HSCALARL", pars.hScalarL );
+  add_variable_scale( ini, scaleFac, "PSISCALAR", pars.psiScalar );
   add_variable_scale( ini, scaleFac, "PHI0SCALAR", pars.phi0Scalar );
   add_variable_scale( ini, scaleFac, "HVECTORX", pars.hVectorX );
   add_variable_scale( ini, scaleFac, "HVECTORY", pars.hVectorY );
