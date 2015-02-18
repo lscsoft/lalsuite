@@ -7,7 +7,6 @@ SUBDIRS = laldetchar
 
 dist_bin_SCRIPTS = \
 	laldetchar-idq-append-file-to-cache \
-	laldetchar-idq-post-svm-train
 
 if HAVE_PYTHON
 
