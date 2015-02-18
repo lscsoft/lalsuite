@@ -446,7 +446,7 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
   /* I31 and I21 values required to check/set I31 >= I21 */
   REAL8 I31 = -INFINITY, I21 = -INFINITY;
 
-  /* C21 and C22 values to required to check/set that they are either both positive or both
+  /* C21 and C22 values required to check/set that they are either both positive or both
    * negative for the case of a biaxial star */
   REAL8 C21 = -INFINITY, C22 = -INFINITY;
 
@@ -498,6 +498,8 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
 
           if ( !strcmp(item->name, "I21") ){ I21 = value; }
           if ( !strcmp(item->name, "I31") ){ I31 = value; }
+          if ( !strcmp(item->name, "C21") ){ C21 = value; }
+          if ( !strcmp(item->name, "C22") ){ C22 = value; }
         }
       }
       else if( LALInferenceCheckCorrelatedPrior(runState->priorArgs, item->name) && corlist ){
