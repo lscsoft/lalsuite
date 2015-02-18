@@ -547,6 +547,7 @@ else:
             templates_max = 15*nbanks  # to prevent the coarse bank from running forever
         coarse_sbank_node.add_var_arg("--templates-max %s" % templates_max)
 
+        coarse_sbank_node.set_priority(1000)
         xmlCoarse, = coarse_sbank_node.get_output_files()
         pnode = [coarse_sbank_node]
         bank_names.append(xmlCoarse)
@@ -555,13 +556,14 @@ else:
     # use coarse bank to choose mchirp regions of roughly equal template number
     sbankChooseMchirpBoundariesJob = SBankChooseMchirpBoundariesJob(cp)
     sbankChooseMchirpBoundariesNode = SBankChooseMchirpBoundariesNode(sbankChooseMchirpBoundariesJob, dag, xmlCoarse, options.user_tag, pnode)
+    sbankChooseMchirpBoundariesNode.set_priority(1000)
     mchirp_boundaries_fname, = sbankChooseMchirpBoundariesNode.get_output_files()
 
     # generate a bank for each mchirp region
     for j in xrange(nbanks):
         bank_node = SBankNode(sbankJob, dag, "%04d"%j, seed="%d" % (j*nbanks+1), mchirp_boundaries_file=mchirp_boundaries_fname, mchirp_boundaries_index=str(j), p_node=[sbankChooseMchirpBoundariesNode], bank_seed=xmlCoarse)
         bank_node.add_var_opt("match-min", mm)
-        bank_node.set_priority(1)  # want complete bank before sims
+        bank_node.set_priority(1000)  # want complete bank before sims
         bank_nodes.append(bank_node)
         bank_name, = bank_node.get_output_files()
         bank_names.append(bank_name)
@@ -570,6 +572,7 @@ else:
 if not options.template_bank:
     lwaddJob = LWAddJob(tag_base=options.user_tag + "_lwadd")
     lwaddNode = LWAddNode(lwaddJob, dag, bank_names, "H1-SBANK_COMBINED-%s.xml.gz"%options.user_tag,bank_nodes)
+    lwaddNode.set_priority(1000)
 
 # set up banksim parameters according to sbank parameters (if not provided)
 if not cp.has_option("banksim","flow"):
