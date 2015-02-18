@@ -2236,7 +2236,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
         j+=2;
       }
     }
-    else if( !strcmp(val[i],"phi0vector") || !strcmp(val[i],"phi0VECTOR") ) {
+    else if( !strcmp(val[i],"phi0vector") || !strcmp(val[i],"PHI0VECTOR") ) {
       output->phi0Vector = atof(val[i+1]);
       j++;
 
