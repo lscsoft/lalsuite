@@ -31,7 +31,7 @@ from glue.ligolw import table
 from glue.ligolw.utils import ligolw_sqlite
 from glue import segments
 from glue.ligolw import dbtables
-from glue import lal 
+from glue import lal
 import sqlite3
 
 
@@ -43,8 +43,6 @@ from laldetchar import git_version
 __author__ = 'Reed Essick <reed.essick@ligo.org>, Ruslan Vaulin <ruslan.vaulin@ligo.org>'
 __version__ = git_version.id
 __date__ = git_version.date
-
-    
 
 ##################################################
 # main

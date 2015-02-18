@@ -1109,7 +1109,7 @@ def datfilename_to_xmldocs(
     FAPmap,
     Lmap=False,
     Effmap=False,
-    classifier=None, 
+    classifier=None,
     gwchan = None,
     gwtrigs=None,
     prog = None,

@@ -128,9 +128,9 @@ OVLDataTable.RowType = OVLData
 IDQCoincDef = {
     'idq_glitch<-->sngl_burst': ('idq',0),
     'idq_glitch<-->ovl_data': ('idq', 1)
-} 
+}
 
-# define mapping between coinc definitions and tables that participate in them 
+# define mapping between coinc definitions and tables that participate in them
 CoincDefToTableNames = {
 'idq_glitch<-->sngl_burst': [IDQGlitchTable.tableName, lsctables.SnglBurstTable.tableName],
 'idq_glitch<-->ovl_data' : [IDQGlitchTable.tableName, OVLDataTable.tableName]
@@ -243,7 +243,7 @@ def use_in_db(ContentHandler):
 
 
 def coinc_to_ovl_data(xmldoc):
-    """Function returns list of (idq_glitch_object, ovl_data_object) tuples 
+    """Function returns list of (idq_glitch_object, ovl_data_object) tuples
        where objects in the tuple are mapped to each other via coinc tables.
 	"""
 
@@ -272,7 +272,7 @@ def coinc_to_ovl_data(xmldoc):
     ovl_data = dict([(row.event_id, row) for row in ovl_data_table])
 
     
-    # create dictionary of connected events in coinc_event_map. 
+    # create dictionary of connected events in coinc_event_map.
     # We can not assume any specific order of rows in the table.
     connected_events_dict = {}
     for row in coinc_map_table:
@@ -308,7 +308,7 @@ def coinc_to_ovl_data(xmldoc):
         
     
 def coinc_to_triggers(xmldoc, trigger_types):
-    """ Function returns list of glitch-trigger(s) coincident events. 
+    """ Function returns list of glitch-trigger(s) coincident events.
         Coincident event in the list is represented by tuple (glitch_object, [trigger1, trigger2, ...]).
         trigger_types is the list of trigger type names corresponding to "search" column of the sngl_burst table
     """
@@ -338,7 +338,7 @@ def coinc_to_triggers(xmldoc, trigger_types):
     glitches = dict([ (glitch.event_id, glitch) for glitch in idq_glitch_table])
     triggers = dict([ (row.event_id, row) for row in sngl_burst_table if row.search in trigger_types])
 
-    # create dictionary of connected events using coinc_event_map. 
+    # create dictionary of connected events using coinc_event_map.
     # We can not assume any specific order of rows in the table.
     connected_events_dict = {}
     for row in coinc_map_table:
