@@ -213,6 +213,8 @@ extern "C" {
 " --Nlive             (INT4) no. of live points for nested sampling\n"\
 " --Nmcmc             (INT4) no. of for MCMC used to find new live points\n\
                      (if not specified an adaptive number of points is used)\n"\
+" --Nmcmcinitial      (INT4) no. of MCMC points to use in the initial resampling of\n\
+"                    the prior (default is to use MAXMCMC).\n"\
 " --Nruns             (INT4) no. of parallel runs\n"\
 " --tolerance         (REAL8) tolerance of nested sampling integrator\n"\
 " --randomseed        seed for random number generator\n"\

@@ -209,6 +209,7 @@ Nested sampling arguments:\n\
  --Nlive N\tNumber of live points to use\n\
 (--Nmcmc M)\tOver-ride auto chain length determination and use this number of MCMC samples.\n\
 (--maxmcmc M)\tUse at most this number of MCMC points when autodetermining the chain (5000).\n\
+(--Nmcmcinitial M)\tUse this number of MCMC points when initially resampling from the prior (otherwise default is to use maxmcmc).\n\
 (--sloppyratio S)\tNumber of sub-samples of the prior for every sample from the limited prior\n\
 (--Nruns R)\tNumber of parallel samples from logt to use(1)\n\
 (--tolerance dZ)\tTolerance of nested sampling algorithm (0.1)\n\
