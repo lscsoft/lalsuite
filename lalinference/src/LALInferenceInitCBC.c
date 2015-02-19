@@ -890,6 +890,9 @@ where the known names have been listed above\n\
       LALInferenceRegisterUniformVariableREAL8(state,model->params,"t0",timeParam,timeMin,timeMax,LALINFERENCE_PARAM_LINEAR);
       LALInferenceRegisterUniformVariableREAL8(state,model->params,"cosalpha",0,-1,1,LALINFERENCE_PARAM_LINEAR);
       LALInferenceRegisterUniformVariableREAL8(state,model->params,"azimuth",0.0,0.0,LAL_TWOPI,LALINFERENCE_PARAM_CIRCULAR);
+      /* add the time parameter then remove it so that the prior is set up properly */
+      LALInferenceRegisterUniformVariableREAL8(state, model->params, "time", timeParam, timeMin, timeMax,LALINFERENCE_PARAM_LINEAR);
+      LALInferenceRemoveVariable(model->params,"time");
       INT4 one=1;
       LALInferenceAddVariable(model->params,"SKY_FRAME",&one,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
   }
@@ -897,22 +900,20 @@ where the known names have been listed above\n\
   {
 		  LALInferenceRegisterUniformVariableREAL8(state, model->params, "rightascension", zero, raMin, raMax, LALINFERENCE_PARAM_CIRCULAR);
 		  LALInferenceRegisterUniformVariableREAL8(state, model->params, "declination", zero, decMin, decMax, LALINFERENCE_PARAM_LINEAR);
-
 		  LALInferenceRegisterUniformVariableREAL8(state, model->params, "time", timeParam, timeMin, timeMax,LALINFERENCE_PARAM_LINEAR);
-
-		  /* If we are marginalising over the time, remove that variable from the model (having set the prior above) */
-		  /* Also set the prior in model->params, since Likelihood can't access the state! (ugly hack) */
-		  if(LALInferenceGetProcParamVal(commandLine,"--margtime") || LALInferenceGetProcParamVal(commandLine, "--margtimephi")){
-				  LALInferenceVariableItem *p=LALInferenceGetItem(state->priorArgs,"time_min");
-				  LALInferenceAddVariable(model->params,"time_min",p->value,p->type,p->vary);
-				  p=LALInferenceGetItem(state->priorArgs,"time_max");
-				  LALInferenceAddVariable(model->params,"time_max",p->value,p->type,p->vary);
-				  LALInferenceRemoveVariable(model->params,"time");
-				  if (LALInferenceGetProcParamVal(commandLine, "--margtimephi")) {
-						  UINT4 margphi = 1;
-						  LALInferenceAddVariable(model->params, "margtimephi", &margphi, LALINFERENCE_UINT4_t,LALINFERENCE_PARAM_FIXED);
-				  }
-		  }
+  }
+  /* If we are marginalising over the time, remove that variable from the model (having set the prior above) */
+  /* Also set the prior in model->params, since Likelihood can't access the state! (ugly hack) */
+  if(LALInferenceGetProcParamVal(commandLine,"--margtime") || LALInferenceGetProcParamVal(commandLine, "--margtimephi")){
+	  LALInferenceVariableItem *p=LALInferenceGetItem(state->priorArgs,"time_min");
+	  LALInferenceAddVariable(model->params,"time_min",p->value,p->type,p->vary);
+	  p=LALInferenceGetItem(state->priorArgs,"time_max");
+	  LALInferenceAddVariable(model->params,"time_max",p->value,p->type,p->vary);
+	  if (LALInferenceCheckVariable(model->params,"time")) LALInferenceRemoveVariable(model->params,"time");
+	  if (LALInferenceGetProcParamVal(commandLine, "--margtimephi")) {
+		  UINT4 margphi = 1;
+		  LALInferenceAddVariable(model->params, "margtimephi", &margphi, LALINFERENCE_UINT4_t,LALINFERENCE_PARAM_FIXED);
+	  }
   }
       
   /* PPE parameters */

@@ -597,17 +597,13 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
       /* determine source's sky location & orientation parameters: */
       ra        = *(REAL8*) LALInferenceGetVariable(currentParams, "rightascension"); /* radian      */
       dec       = *(REAL8*) LALInferenceGetVariable(currentParams, "declination");    /* radian      */
-	  if(!margtime)
-			  GPSdouble = *(REAL8*) LALInferenceGetVariable(currentParams, "time");           /* GPS seconds */
-	  else
-			  GPSdouble = XLALGPSGetREAL8(&(data->freqData->epoch));
     }
     else
     {
-      if(Nifos<2){
-			  fprintf(stderr,"ERROR: Cannot use --detector-frame with less than 2 detectors!\n");
-			  exit(1);
-	  }
+	    if(Nifos<2){
+		    fprintf(stderr,"ERROR: Cannot use --detector-frame with less than 2 detectors!\n");
+		    exit(1);
+	    }
       REAL8 t0=LALInferenceGetREAL8Variable(currentParams,"t0");
       REAL8 alph=acos(LALInferenceGetREAL8Variable(currentParams,"cosalpha"));
       REAL8 theta=LALInferenceGetREAL8Variable(currentParams,"azimuth");
@@ -615,9 +611,13 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
                                        t0,alph,theta,&GPSdouble,&ra,&dec);
       LALInferenceAddVariable(currentParams,"rightascension",&ra,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
       LALInferenceAddVariable(currentParams,"declination",&dec,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
-      LALInferenceAddVariable(currentParams,"time",&GPSdouble,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+      if(!margtime) LALInferenceAddVariable(currentParams,"time",&GPSdouble,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
     }
     psi       = *(REAL8*) LALInferenceGetVariable(currentParams, "polarisation");   /* radian      */
+    if(!margtime)
+	      GPSdouble = *(REAL8*) LALInferenceGetVariable(currentParams, "time");           /* GPS seconds */
+    else
+	      GPSdouble = XLALGPSGetREAL8(&(data->freqData->epoch));
 
 
     // Add phase parameter set to 0 for calculation
