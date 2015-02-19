@@ -1,8 +1,0 @@
-#!/bin/sh
-pypath="/Users/chrispankow/work/codedev/lalsuite/lalinference/python:/Users/chrispankow/work/codedev/lalsuite/lalinference/python:/Users/chrispankow/work/codedev/lalsuite/lalxml/python:/Users/chrispankow/work/codedev/lalsuite/lalpulsar/python:/Users/chrispankow/work/codedev/lalsuite/lalinspiral/python:/Users/chrispankow/work/codedev/lalsuite/lalsimulation/python:/Users/chrispankow/work/codedev/lalsuite/lalframe/python:/Users/chrispankow/work/codedev/lalsuite/lalmetaio/python:/Users/chrispankow/work/codedev/lalsuite/lal/python"
-pyscript="/Users/chrispankow/work/codedev/lalsuite/lalinference/python/rapidpe_create_event_dag.py"
-PYTHONPATH=`echo "${PYTHONPATH}" | /opt/local/bin/gsed -e "s|${pypath}:||g;"`
-PYTHONPATH="${pypath}:${PYTHONPATH}"
-export PYTHONPATH
-exec /opt/local/bin/python "${pyscript}" "$@"
-exit 1
