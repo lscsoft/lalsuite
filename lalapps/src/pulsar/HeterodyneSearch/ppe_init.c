@@ -390,7 +390,7 @@ void add_initial_variables( LALInferenceVariables *ini,  LALInferenceVariables *
   add_variable_scale( ini, scaleFac, "HVECTORX", pars.hVectorX );
   add_variable_scale( ini, scaleFac, "HVECTORY", pars.hVectorY );
   add_variable_scale( ini, scaleFac, "PSIVECTOR", pars.psiVector );
-  add_variable_scale( ini, scaleFac, "PHI0VECTOR", pars.psiVector );
+  add_variable_scale( ini, scaleFac, "PHI0VECTOR", pars.phi0Vector );
 
   /* sky position */
   add_variable_scale( ini, scaleFac, "RA", pars.ra );
