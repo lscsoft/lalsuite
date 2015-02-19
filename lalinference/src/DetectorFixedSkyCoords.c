@@ -17,10 +17,6 @@
 
 void LALInferenceDetFrameToEquatorial(LALDetector *det0, LALDetector *det1,
                                       REAL8 t0, REAL8 alpha, REAL8 theta,
-                                      REAL8 *tg, REAL8 *ra, REAL8 *dec);
-
-void LALInferenceDetFrameToEquatorial(LALDetector *det0, LALDetector *det1,
-                                      REAL8 t0, REAL8 alpha, REAL8 theta,
                                       REAL8 *tg, REAL8 *ra, REAL8 *dec)
 {
   /* Calculate vector between detectors in earth frame */
