@@ -3033,9 +3033,6 @@ REAL8 NSWrapMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariable
   /* PTMCMC likes to read currentParams directly, whereas NS expects proposedParams
    to be modified by the proposal. Back up currentParams and then restore it after
    calling the MCMC proposal function. */
-  REAL8 oldlogmc=-1.0;
-  REAL8 newmc;
-  LALInferenceVariables *currentParamsBackup=currentParams;
   /* Create the proposal if none exists */
   if (!LALInferenceCheckVariable(runState->proposalArgs, cycleArrayName) || !LALInferenceCheckVariable(runState->proposalArgs, cycleArrayLengthName))
    {
@@ -3048,24 +3045,8 @@ REAL8 NSWrapMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariable
 	 }
   }
 
-  /* PTMCMC expects some variables that NS doesn't use by default, so create them */
-
-  if(LALInferenceCheckVariable(proposedParams,"logmc"))
-    oldlogmc=*(REAL8*)LALInferenceGetVariable(proposedParams,"logmc");
-
-  currentParams=proposedParams;
   REAL8 logPropRatio = LALInferenceCyclicProposal(runState,currentParams,proposedParams);
   /* Restore currentParams */
-  currentParams=currentParamsBackup;
-
-  /* If the remapped variables are not updated do it here */
-  if(oldlogmc!=-1.0)
-    if(oldlogmc==*(REAL8*)LALInferenceGetVariable(proposedParams,"logmc"))
-    {
-      newmc=*(REAL8*)LALInferenceGetVariable(proposedParams,"chirpmass");
-      newmc=log(newmc);
-      LALInferenceSetVariable(proposedParams,"logmc",&newmc);
-    }
 
   return logPropRatio;
 }
