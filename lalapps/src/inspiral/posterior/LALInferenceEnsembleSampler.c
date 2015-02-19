@@ -303,6 +303,11 @@ void parallel_incremental_kmeans(LALInferenceRunState *run_state,
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
 
+    /* Try atleast as many clusterings as there are MPI threads,
+     * so everyone has something to do. */
+    if (mpi_size > kmax)
+        kmax = mpi_size;
+
     bics = XLALCalloc(mpi_size, sizeof(REAL8));
 
     ndim = LALInferenceGetVariableDimensionNonFixed(run_state->currentParamArray[0]);
