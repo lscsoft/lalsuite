@@ -188,427 +188,185 @@ BcastDifferentialEvolutionPoints(LALInferenceRunState *runState, INT4 sourceTemp
   MPI_Barrier(MPI_COMM_WORLD);
 }
 
-void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
-{
-  INT4 i,t; //indexes for for() loops
-  INT4 nChain;
-  INT4 MPIrank, MPIsize;
-  MPI_Status MPIstatus;
-  LALStatus status;
-  memset(&status,0,sizeof(status));
-  INT4 runComplete=0;
-  INT4 acceptanceCount = 0;
-  REAL8 nullLikelihood;
-  REAL8 trigSNR = 0.0;
-  REAL8 *ladder = NULL;			//the ladder
-  REAL8 *annealDecay = NULL;
-  INT4 parameter=0;
-  INT4 annealStartIter = 0;
-  UINT4 hotChain = 0;                 // Affects proposal setup
-  REAL8 temp = 1;
-  REAL8 tempDelta = 0.0;
-  MPI_Request MPIrequest;
+void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
+    INT4 i, t; //indexes for for() loops
+    INT4 runComplete = 0;
+    INT4 acceptanceCount = 0;
+    INT4 iEff = 0;
+    REAL8 timestamp, timestamp_epoch=0.0;
+    struct timeval tv;
+    REAL8 nullLikelihood;
+    INT4 MPIrank, MPIsize;
+    MPI_Request MPIrequest;
+    MPI_Status MPIstatus;
+    LALStatus status;
+    LALInferenceMPIswapAcceptance swapReturn;
+    LALInferenceVariables *propStats, *algorithm_params;
+    LALInferenceProposalStatistics *propStat;
+    LALInferenceVariableItem *ptr;
 
-  LALInferenceMPIswapAcceptance swapReturn;
-  LALInferenceVariables *propStats = runState->proposalStats; // Print proposal acceptance rates to file
-  LALInferenceProposalStatistics *propStat;
-  UINT4 propTrack = 0;
-  UINT4 (*parallelSwap)(LALInferenceRunState *, REAL8 *, INT4, FILE *);
-  INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
-  INT4 Niter = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Niter");
-  INT4 Neff = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Neff");
-  INT4 Nskip = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Nskip");
-  UINT4 randomseed = *(UINT4*) LALInferenceGetVariable(runState->algorithmParams,"random_seed");
-  INT4 acl=(INT4)INFINITY, PTacl=(INT4)INFINITY;
-  INT4 iEff=0;
-  REAL8 ladderMin,ladderMax;
-  REAL8 timestamp,timestamp_epoch=0.0;
-  struct timeval tv;
+    UINT4 (*parallelSwap)(LALInferenceRunState *, REAL8 *, INT4, FILE *);
 
-  MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
-  MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
-  nChain = MPIsize;		//number of parallel chain
+    memset(&status, 0, sizeof(status));
 
-  LALInferenceMCMCRunPhase *runPhase_p = XLALCalloc(sizeof(LALInferenceMCMCRunPhase), 1);
-  *runPhase_p = LALINFERENCE_ONLY_PT;
-  LALInferenceAddVariable(runState->algorithmParams, "runPhase", &runPhase_p,  LALINFERENCE_MCMCrunphase_ptr_t, LALINFERENCE_PARAM_FIXED);
+    MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
+    MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
 
-  //
-  /* Command line flags (avoid repeated checks of runState->commandLine) */
-  //
-  UINT4 annealingOn = 0; // Chains will be annealed
-  UINT4 annealingStarted = 0; // Flag indicating proper bookkeeping complete for annealing
-  if (LALInferenceGetProcParamVal(runState->commandLine, "--anneal")) {
-    annealingOn = 1;
-    *runPhase_p = LALINFERENCE_TEMP_PT;
+    algorithm_params = runStat->algorithmParams;
+    propStats = runState->proposalStats; // Print proposal acceptance rates to file
 
-    /* Non-blocking receive to accept change in state.
-     * Run phase changes are triggered by the coldest chain,
-     * then propogated from the top of the ladder down to avoid
-     * lockup from PT swaps */
-    if (MPIrank != 0) {
-        if (MPIrank == nChain-1)
-            MPI_Irecv(runPhase_p, 1, MPI_INT, 0, RUN_PHASE_COM, MPI_COMM_WORLD, &MPIrequest);
-        else
-            MPI_Irecv(runPhase_p, 1, MPI_INT, MPIrank+1, RUN_PHASE_COM, MPI_COMM_WORLD, &MPIrequest);
-    }
-  }
+    /* Get all algorithm params */
+    INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
+    INT4 Niter = LALInferenceGetINT4Variable(algorithm_params, "Niter");
+    INT4 Neff = LALInferenceGetINT4Variable(algorithm_params, "Neff");
+    INT4 Nskip = LALInferenceGetINT4Variable(algorithm_params, "Nskip");
+    INT4 Tskip = LALInferenceGetINT4Variable(algorithm_params, "Tskip");
+    INT4 randomseed = LALInferenceGetINT4Variable(algorithm_params, "random_seed");
 
-  /* Clustered-KDE proposal updates */
-  INT4 kde_update_start    = 200;  // rough number of effective samples to start KDE updates
-  INT4 kde_update_interval = 0;    // proposal will be updated 5 times per decade, so this interval will change
-  INT4 last_kde_update = 0;        // effective sample size at last KDE update
+    INT4 verbose = LALInferenceGetINT4Variable(runState->algorithmParams, "verbose");
+    INT4 propVerbose = LALInferenceGetINT4Variable(runState->algorithmParams, "propVerbose");
+    INT4 tempVerbose = LALInferenceGetINT4Variable(runState->algorithmParams, "tempVerbose");
+    INT4 adaptVerbose = LALInferenceGetINT4Variable(runState->algorithmParams, "adaptVerbose");
+    INT4 benchmark = LALInferenceGetINT4Variable(runState->algorithmParams, "benchmark")
 
+    /* Clustered-KDE proposal updates */
+    INT4 kde_update_start = 200;  // rough number of effective samples to start KDE updates
+    INT4 kde_update_interval = 0; // proposal will be updated 5 times per decade, so this interval will change
+    INT4 last_kde_update = 0;     // effective sample size at last KDE update
 
-  UINT4 diffEvo = 1; // Differential evolution
-  if (LALInferenceGetProcParamVal(runState->commandLine, "--noDifferentialEvolution") || LALInferenceGetProcParamVal(runState->commandLine, "--nodifferentialevolution")) {
-    diffEvo = 0;
-  }
+    INT4 diffEvo = 1;
+    if (runState->differentialPoints == NULL)
+        diffEvo = 0;
 
-  UINT4 adapting = 0;
-
-  if (LALInferenceGetProcParamVal(runState->commandLine,"--varyFlow")) {
-    /* Metropolis-coupled MCMC Swap (assumes likelihood function differs between chains).*/
-    parallelSwap = &LALInferenceMCMCMCswap;
-  } else {
-    /* Standard parallel tempering swap. */
-    parallelSwap = &LALInferencePTswap;
-  }
-
-  UINT4 tempVerbose = 0; // Print temperature swaps to file
-  if (LALInferenceGetProcParamVal(runState->commandLine, "--tempVerbose")) {
-    tempVerbose = 1;
-  }
-
-  UINT4 adaptVerbose = 0; // Print adaptation info to file
-  if (LALInferenceGetProcParamVal(runState->commandLine, "--adaptVerbose")) {
-    adaptVerbose = 1;
-  }
-
-  UINT4 benchmark = 0; // Print timestamps to chain outputs
-  if (LALInferenceGetProcParamVal(runState->commandLine, "--benchmark")) {
-    benchmark = 1;
-  }
-
-  ProcessParamsTable *ppt;
-
-  ladder = malloc(nChain * sizeof(REAL8));                  // Array of temperatures for parallel tempering.
-  annealDecay = malloc(nChain * sizeof(REAL8));           			// Used by annealing scheme
-
-  /* If not specified otherwise, set effective sample size to total number of iterations */
-  if (!Neff) {
-    Neff = Niter;
-    LALInferenceSetVariable(runState->algorithmParams, "Neff", &Neff);
-  }
-
-  /* Determine network SNR if injection was done */
-  REAL8 networkSNRsqrd = 0.0;
-  LALInferenceIFOData *IFO = runState->data;
-  while (IFO != NULL) {
-    networkSNRsqrd  += IFO->SNR * IFO->SNR;
-    IFO = IFO->next;
-  }
-
-  /* Adaptation settings */
-  LALInferenceSetupAdaptiveProposals(runState);
-  INT4  adaptationOn = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adaptationOn")); // Run adapts
-  INT4  adaptTau     = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adaptTau"));     // Sets decay of adaption function
-  INT4  adaptLength       = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adaptLength"));// Number of iterations to adapt before turning off
-  REAL8 s_gamma           = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "s_gamma"));                // Sets the size of changes to jump size during adaptation
-  INT4  endOfPhase        = Neff;
-
-
-  LALInferenceAddVariable(runState->algorithmParams, "acl", &acl,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_LINEAR);
-
-  /* burnin settings */
-  INT4 burnin       = 1;                           // Burnin phase where proposal ratio is ignored
-  INT4 burninLength = (INT4)(0.25 * adaptLength);  // Number of iterations to turn off proposal ratio
-
-  LALInferenceAddVariable(runState->proposalArgs, "burnin", &burnin,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_LINEAR);
-  LALInferenceAddVariable(runState->proposalArgs, "burninLength", &burninLength,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_LINEAR);
-
-  /* Standard parallel tempering */
-  ladderMin = *(REAL8*) LALInferenceGetVariable(runState->algorithmParams, "tempMin");   // Min temp in ladder
-  ladderMax = *(REAL8*) LALInferenceGetVariable(runState->algorithmParams, "tempMax");   // Max temp in ladder
-
-  REAL8 targetHotLike       = nPar/2.;          // Targeted max 'experienced' log(likelihood) of hottest chain
-  INT4 hotThreshold         = nChain/2-1;        // If MPIrank > hotThreshold, use different proposal set
-
-  /*  If running hot chains for Thermodynamic Integration make all draw from prior */
-  if(ladderMin>0.0) hotThreshold=-1;
-
-  /* Set maximum temperature (command line value take precidence) */
-  if (LALInferenceGetProcParamVal(runState->commandLine,"--tempMax")) {
-    if(MPIrank==0)
-      fprintf(stdout,"Using tempMax specified by commandline: %f.\n", ladderMax);
-  } else if (LALInferenceGetProcParamVal(runState->commandLine,"--trigSNR")) {        //--trigSNR given, choose ladderMax to get targetHotLike
-    trigSNR = *(REAL8*) LALInferenceGetVariable(runState->algorithmParams, "trigSNR");
-    networkSNRsqrd = trigSNR * trigSNR;
-    ladderMax = networkSNRsqrd/(2*targetHotLike);
-    if(MPIrank==0)
-      fprintf(stdout,"Trigger SNR of %f specified, setting tempMax to %f.\n", trigSNR, ladderMax);
-  } else if (networkSNRsqrd > 0.0) {                                                  //injection, choose ladderMax to get targetHotLike
-    ladderMax = networkSNRsqrd/(2*targetHotLike);
-    if(MPIrank==0)
-      fprintf(stdout,"Injecting SNR of %f, setting tempMax to %f.\n", sqrt(networkSNRsqrd), ladderMax);
-  } else {                                                                            //If all else fails, use the default
-    ladderMax = *(REAL8*) LALInferenceGetVariable(runState->algorithmParams, "tempMax");
-    if(MPIrank==0)
-      fprintf(stdout,"No --trigSNR or --tempMax specified, and not injecting a signal. Setting tempMax to default of %f.\n", ladderMax);
-  }
-  LALInferenceSetVariable(runState->algorithmParams, "tempMax", &ladderMax);
-
-  if (ladderMin > ladderMax) {
-    fprintf(stdout,"WARNING: tempMin > tempMax.  Forcing tempMin=1.0.\n");
-    ladderMin = 1.0;
-    LALInferenceSetVariable(runState->algorithmParams, "tempMin", &ladderMin);
-  }
-
-
-  /* Parallel tempering settings */
-  INT4 Tskip            = 100;                                // Number of iterations between proposed temperature swaps
-  if (LALInferenceGetProcParamVal(runState->commandLine,"--tempSkip"))
-    Tskip = atoi(LALInferenceGetProcParamVal(runState->commandLine,"--tempSkip")->value);
-  LALInferenceAddVariable(runState->algorithmParams, "tempSkip", &Tskip,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
-
-  INT4  annealStart     = 500;                                // # of autocorrelation lengths after adaptation before annealing
-  INT4  annealLength    = 100;                                // # of autocorrelation lenghts to cool temperatures to ~1.0
-
-  if (annealingOn) {
-    if (LALInferenceGetProcParamVal(runState->commandLine,"--annealStart"))
-      annealStart = atoi(LALInferenceGetProcParamVal(runState->commandLine,"--annealStart")->value);
-
-    if (LALInferenceGetProcParamVal(runState->commandLine,"--annealLength"))
-      annealLength = atoi(LALInferenceGetProcParamVal(runState->commandLine,"--annealLength")->value);
-
-    endOfPhase=annealStart;
-  }
-
-  for (t=0; t<nChain; ++t) {
-    ladder[t] = 0.0;
-  }
-
-  if (runState->likelihood==&LALInferenceUndecomposedFreqDomainLogLikelihood){
-    nullLikelihood = LALInferenceNullLogLikelihood(runState->data);
-  } else if (runState->likelihood==&LALInferenceFreqDomainStudentTLogLikelihood ||
-	     (runState->likelihood==&LALInferenceMarginalisedTimeLogLikelihood &&
-	      !LALInferenceGetProcParamVal(runState->commandLine, "--malmquistPrior")) ||
-	     (runState->likelihood==&LALInferenceMarginalisedTimePhaseLogLikelihood &&
-	      !LALInferenceGetProcParamVal(runState->commandLine, "--malmquistPrior")) ||
-	     (runState->likelihood==&LALInferenceMarginalisedPhaseLogLikelihood &&
-	      !LALInferenceGetProcParamVal(runState->commandLine, "--malmquistPrior"))) {
-    LALInferenceIFOData *headData = runState->data;
-    REAL8 d;
-    DistanceParam distParam;
-    if (LALInferenceCheckVariable(runState->currentParams, "distance")) {
-      distParam = USES_DISTANCE_VARIABLE;
-      d = *(REAL8 *)LALInferenceGetVariable(runState->currentParams, "distance");
-    } else if (LALInferenceCheckVariable(runState->currentParams, "logdistance")) {
-      distParam = USES_LOG_DISTANCE_VARIABLE;
-      d = *(REAL8 *)LALInferenceGetVariable(runState->currentParams, "logdistance");
+    if (LALInferenceGetProcParamVal(runState->commandLine,"--varyFlow")) {
+        /* Metropolis-coupled MCMC Swap (assumes likelihood function differs between chains).*/
+        parallelSwap = &LALInferenceMCMCMCswap;
     } else {
-      XLAL_ERROR_VOID(XLAL_FAILURE, "could not find 'distance' or 'logdistance' in current params");
+        /* Standard parallel tempering swap. */
+        parallelSwap = &LALInferencePTswap;
     }
 
-    REAL8 bigD = INFINITY;
+    /* Adaptation settings */
+    INT4 adaptationOn = LALInferenceGetINT4Variable(runState->proposalArgs, "adaptationOn"));
+    INT4 adaptTau = LALInferenceGetINT4Variable(runState->proposalArgs, "adaptTau")); // Sets decay of adaption function
+    INT4 adaptLength = LALInferenceGetINT4Variable(runState->proposalArgs, "adaptLength")); // Number of iterations to adapt before turning off
+    REAL8 s_gamma = LALInferenceGetREAL8Variable(runState->proposalArgs, "s_gamma")); // Sets the size of changes to jump size during adaptation
 
-    /* Don't store to cache, since distance scaling won't work */
-    LALSimInspiralWaveformCache *cache = runState->model->waveformCache;
-    runState->model->waveformCache = NULL;
+    /* burnin settings */
+    INT4 burnin = 1; // Burnin phase where proposal ratio is ignored
+    INT4 burninLength = (INT4)(0.25 * adaptLength);  // Number of iterations to turn off proposal ratio
 
-    if (distParam == USES_DISTANCE_VARIABLE) {
-      LALInferenceSetVariable(runState->currentParams, "distance", &bigD);
-    } else {
-      LALInferenceSetVariable(runState->currentParams, "logdistance", &bigD);
+    LALInferenceAddVariable(runState->proposalArgs, "burnin", &burnin, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddVariable(runState->proposalArgs, "burninLength", &burninLength, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddVariable(runState->proposalArgs, "acceptanceCount", &acceptanceCount,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
+
+    /* File outputs */
+    FILE *chainoutput = NULL;
+    FILE *statfile = NULL;
+    FILE *propstatfile = NULL;
+    FILE *proptrackfile = NULL;
+    FILE *swapfile = NULL;
+    char statfilename[256];
+    char propstatfilename[256];
+    char proptrackfilename[256];
+    char swapfilename[256];
+
+    if (tempVerbose && MPIrank > 0) {
+        sprintf(swapfilename, "PTMCMC.tempswaps.%u.%2.2d", randomseed, MPIrank);
+        swapfile = fopen(swapfilename, "w");
+
+        fprintf(swapfile,
+            "cycle\tlog(chain_swap)\tlow_temp_likelihood\thigh_temp_likelihood\tswap_accepted\n");
     }
 
-    nullLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->model);
+    if (adaptationOn && adaptVerbose) {
+        sprintf(statfilename, "PTMCMC.statistics.%u.%2.2d", randomseed, MPIrank);
+        statfile = fopen(statfilename, "w");
 
-    runState->model->waveformCache = cache;
-    i = 0;
-    while (headData != NULL) {
-      headData->nullloglikelihood = runState->model->ifo_loglikelihoods[i];
-      headData = headData->next;
-      i++;
+        fprintf(statfile, "cycle\ts_gamma");
+        ptr = runState->currentParams->head;
+        while (ptr != NULL) {
+            if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
+                fprintf(statfile, "\tsigma_%s",
+                        LALInferenceTranslateInternalToExternalParamName(ptr->name));
+            }
+            ptr = ptr->next;
+        }
+        ptr = runState->currentParams->head;
+        while ( ptr != NULL) {
+            if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
+                fprintf(statfile, "\tPaccept_%s",
+                        LALInferenceTranslateInternalToExternalParamName(ptr->name));
+            }
+            ptr=ptr->next;
+        }
+        fprintf(statfile,"\n");
     }
 
-    if (distParam == USES_DISTANCE_VARIABLE) {
-      LALInferenceSetVariable(runState->currentParams, "distance", &d);
-    } else {
-      LALInferenceSetVariable(runState->currentParams, "logdistance", &d);
+    if (propVerbose) {
+        sprintf(propstatfilename, "PTMCMC.propstats.%u.%2.2d", randomseed, MPIrank);
+        sprintf(proptrackfilename, "PTMCMC.proptrack.%u.%2.2d", randomseed, MPIrank);
+
+        propstatfile = fopen(propstatfilename, "w");
+        proptrackfile = fopen(proptrackfilename, "w");
+
+        runState->preProposalParams = XLALCalloc(1, sizeof(LALInferenceVariableItem));
+        runState->proposedParams = XLALCalloc(1, sizeof(LALInferenceVariableItem));
+
+        UINT4 a=0;
+        LALInferenceAddVariable(runState->proposalArgs, "accepted", &a, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
     }
 
-  } else {
-    nullLikelihood = 0.0;
-    LALInferenceIFOData *headData = runState->data;
-    while (headData != NULL) {
-      headData->nullloglikelihood = 0.0;
-      headData = headData->next;
+    // initialize starting likelihood value:
+    runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->model);
+    runState->currentPrior = runState->prior(runState, runState->currentParams, runState->model);
+
+    REAL8 logLAtAdaptStart = runState->currentLikelihood;
+    LALInferenceSetVariable(runState->proposalArgs, "logLAtAdaptStart", &(logLAtAdaptStart));
+
+    chainoutput = LALInferencePrintPTMCMCHeaderOrResume(runState);
+    if (MPIrank == 0)
+        LALInferencePrintPTMCMCInjectionSample(runState);
+
+    /* Add parallel swaps to proposal tracking structure */
+    if (propVerbose && MPIrank < nChain-1) {
+        if(!LALInferenceCheckVariable(propStats, parallelSwapProposalName)) {
+            LALInferenceProposalStatistics newPropStat = {
+                .weight = 0,
+                .proposed = 0,
+                .accepted = 0};
+            LALInferenceAddVariable(propStats, parallelSwapProposalName, (void *)&newPropStat,
+                                    LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_LINEAR);
+        }
     }
-  }
 
-  //null log likelihood logic doesn't work with noise parameters
-  if(runState->likelihood==&LALInferenceMarginalisedTimeLogLikelihood &&
-     (LALInferenceGetProcParamVal(runState->commandLine,"--psdFit") ||
-      LALInferenceGetProcParamVal(runState->commandLine,"--glitchFit") ) )
-    nullLikelihood = 0.0;
+    if (benchmark)
+        timestamp_epoch = LALInferenceGetREAL8Variable(runState->algorithmParams, "timestamp_epoch"));
 
-  LALInferenceAddVariable(runState->algorithmParams, "nChain", &nChain,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
-  LALInferenceAddVariable(runState->algorithmParams, "nPar", &nPar,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
-  LALInferenceAddVariable(runState->proposalArgs, "parameter",&parameter, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_LINEAR);
-  LALInferenceAddVariable(runState->proposalArgs, "nullLikelihood", &nullLikelihood, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-  LALInferenceAddVariable(runState->proposalArgs, "acceptanceCount", &acceptanceCount,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_LINEAR);
+    /* Print run details */
+    if (MPIrank == 0) {
+        if (verbose) {
+            printf("\nParallel Behavior:\n");
+            if (adaptationOn)
+                printf(" Adapting with decay power %i for %i iterations after max log(L) increases by nParams/2 (%1.2f).\n", adaptTau, adaptLength, (double)nPar/2.0);
+            else
+                printf(" Adaptation off.\n");
+            if (Neff != Niter)
+                printf(" Collecting %i effective samples.\n", Neff);
 
-  /* Construct temperature ladder */
-  if(nChain > 1){
-    if(LALInferenceGetProcParamVal(runState->commandLine, "--inverseLadder")) {     //Spacing uniform in 1/T
-      tempDelta = (1.0/ladderMin - 1.0/ladderMax)/(REAL8)(nChain-1);
-      for (t=0; t<nChain; ++t) {
-        ladder[t]=1.0/(REAL8)(1.0/ladderMin-t*tempDelta);
-      }
-    } else {                                                                        //Geometric spacing
-      if (LALInferenceGetProcParamVal(runState->commandLine, "--tempLadderBottomUp") && nPar != 1)
-        tempDelta=1.+sqrt(2./(REAL8)nPar);
-      else
-        tempDelta=pow(ladderMax/ladderMin,1.0/(REAL8)(nChain-1));
-      for (t=0;t<nChain; ++t) {
-        ladder[t]=ladderMin*pow(tempDelta,t);
-      }
+            printf("\nPTMCMCAlgorithm(); starting parameter values:\n");
+            LALInferencePrintVariables(runState->currentParams);
+            printf(" MCMC iteration: 0\t");
+            printf("%f\t", runState->currentLikelihood - nullLikelihood);
+            printf("\n");
+        }
+
+        /* Print to file the contents of model->freqhPlus. */
+        ppt = LALInferenceGetProcParamVal(runState->commandLine, "--data-dump");
+        if (ppt) {
+            LALInferenceDataDump(runState->data, runState->model);
+        }
     }
-  } else {
-    if(LALInferenceGetProcParamVal(runState->commandLine,"--tempMax")){   //assume --tempMax specified intentionally
-      ladder[0]=ladderMax;
-    }else{
-      ladder[0]=1.0;
-      ladderMax=1.0;
-    }
-  }
-  temp=ladder[MPIrank];
-
-  if (MPIrank > hotThreshold) {
-    hotChain = 1;
-  }
-
-  LALInferenceAddVariable(runState->proposalArgs, "temperature", &temp,  LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-  LALInferenceAddVariable(runState->proposalArgs, "hotChain", &hotChain, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
-
-  FILE * chainoutput = NULL;
-  FILE *statfile = NULL;
-  FILE *propstatfile = NULL;
-  FILE *proptrackfile = NULL;
-  FILE *swapfile = NULL;
-  char statfilename[256];
-  char propstatfilename[256];
-  char proptrackfilename[256];
-  char swapfilename[256];
-  if (tempVerbose && MPIrank > 0) {
-    sprintf(swapfilename,"PTMCMC.tempswaps.%u.%2.2d",randomseed,MPIrank);
-    swapfile = fopen(swapfilename, "w");
-    fprintf(swapfile, "cycle\tlog(chain_swap)\tlow_temp_likelihood\thigh_temp_likelihood\tswap_accepted\n");  // Print header for temp stat file
-  }
-
-  if (adaptationOn && adaptVerbose) {
-    sprintf(statfilename,"PTMCMC.statistics.%u.%2.2d",randomseed,MPIrank);
-    statfile = fopen(statfilename, "w");
-
-    /* Print header for adaptation stats */
-    fprintf(statfile,"cycle\ts_gamma");
-    LALInferenceVariableItem *ptr=runState->currentParams->head;
-    while(ptr!=NULL) {
-      if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
-        fprintf(statfile, "\tsigma_%s", LALInferenceTranslateInternalToExternalParamName(ptr->name));
-      }
-      ptr=ptr->next;
-    }
-    ptr=runState->currentParams->head;
-    while(ptr!=NULL) {
-      if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
-        fprintf(statfile, "\tPaccept_%s", LALInferenceTranslateInternalToExternalParamName(ptr->name));
-      }
-      ptr=ptr->next;
-    }
-    fprintf(statfile,"\n");
-  }
-
-  if (propStats) {
-    sprintf(propstatfilename,"PTMCMC.propstats.%u.%2.2d",randomseed,MPIrank);
-    propstatfile = fopen(propstatfilename, "w");
-  }
-
-  if (LALInferenceGetProcParamVal(runState->commandLine, "--propTrack")){
-    propTrack=1;
-    runState->preProposalParams = XLALCalloc(1, sizeof(LALInferenceVariableItem));
-    runState->proposedParams = XLALCalloc(1, sizeof(LALInferenceVariableItem));
-
-    UINT4 a=0;
-    LALInferenceAddVariable(runState->proposalArgs, "accepted", &a, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
-    sprintf(proptrackfilename,"PTMCMC.proptrack.%u.%2.2d",randomseed,MPIrank);
-    proptrackfile = fopen(proptrackfilename, "w");
-  }
-
-  // initialize starting likelihood value:
-  runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->model);
-  runState->currentPrior = runState->prior(runState, runState->currentParams, runState->model);
-
-  REAL8 logLAtAdaptStart = runState->currentLikelihood;
-  LALInferenceSetVariable(runState->proposalArgs, "logLAtAdaptStart", &(logLAtAdaptStart));
-
-  chainoutput = LALInferencePrintPTMCMCHeaderOrResume(runState);
-  if (MPIrank == 0) {
-    LALInferencePrintPTMCMCInjectionSample(runState);
-  }
-
-  if (MPIrank == 0){
-    printf("\nTemperature ladder:\n");
-    for (t=0; t<nChain; ++t) {
-      printf(" ladder[%d]=%f\n",t,ladder[t]);
-    }
-  }
-
-  /* Add parallel swaps to proposal tracking structure */
-  if (propStats && MPIrank < nChain-1) {
-    if(!LALInferenceCheckVariable(propStats, parallelSwapProposalName)) {
-        LALInferenceProposalStatistics newPropStat = {
-        .weight = 0,
-        .proposed = 0,
-        .accepted = 0};
-      LALInferenceAddVariable(propStats, parallelSwapProposalName, (void *)&newPropStat, LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_LINEAR);
-    }
-  }
-
-
-  if (benchmark)
-    timestamp_epoch = *((REAL8 *)LALInferenceGetVariable(runState->algorithmParams, "timestamp_epoch"));
-
-  /* Print run details */
-  if (MPIrank == 0) {
-    printf("\nParallel Behavior:\n");
-    if (adaptationOn)
-      printf(" Adapting with decay power %i for %i iterations after max log(L) increases by nParams/2 (%1.2f).\n", adaptTau, adaptLength, (double)nPar/2.0);
-    else
-      printf(" Adaptation off.\n");
-    if (annealingOn)
-      printf(" Annealing linearly for %i effective samples.\n", annealLength);
-    else
-      printf(" Annealing off.\n");
-    if (Neff != Niter)
-      printf(" Collecting %i effective samples.\n", Neff);
-  }
-
-
-  if (MPIrank == 0) {
-    printf("\nPTMCMCAlgorithm(); starting parameter values:\n");
-    LALInferencePrintVariables(runState->currentParams);
-    printf(" MCMC iteration: 0\t");
-    printf("%f\t", runState->currentLikelihood - nullLikelihood);
-    printf("\n");
-
-    /* Print to file the contents of model->freqhPlus. */
-    ppt = LALInferenceGetProcParamVal(runState->commandLine, "--data-dump");
-    if (ppt) {
-      LALInferenceDataDump(runState->data, runState->model);
-    }
-  }
 
   /* Setup non-blocking recieve that will trigger from chain 0 and propigate down the ladder */
   if (MPIrank == nChain-1)
@@ -625,114 +383,28 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     /* Increment iteration counter */
     i++;
 
-    if (*runPhase_p == LALINFERENCE_LADDER_UPDATE)
-      LALInferenceLadderUpdate(runState, 0, i);
-
     LALInferenceSetVariable(runState->proposalArgs, "acceptanceCount", &(acceptanceCount));
 
     if (adaptationOn)
       LALInferenceAdaptation(runState, i);
 
-    // Parallel tempering phase
-    if (*runPhase_p == LALINFERENCE_ONLY_PT || *runPhase_p == LALINFERENCE_TEMP_PT) {
+  //ACL calculation
+  if (i % (100*Nskip) == 0) {
+    adapting = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adapting"));
 
-      //ACL calculation during parallel tempering
-      if (i % (100*Nskip) == 0) {
-        adapting = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adapting"));
+    if (adapting)
+      iEff = 0;
+    else
+      iEff = LALInferenceComputeEffectiveSampleSize(runState);
+  }
 
-        if (adapting)
-          iEff = 0;
-        else
-          iEff = LALInferenceComputeEffectiveSampleSize(runState);
-      }
-
-      if (MPIrank==0 && iEff > endOfPhase) {
-        if (*runPhase_p==LALINFERENCE_ONLY_PT) {
-          fprintf(stdout,"Chain %i has %i effective samples. Stopping...\n", MPIrank, iEff);
-          runComplete = 1;          // Sampling is done!
-        } else if (*runPhase_p==LALINFERENCE_TEMP_PT) {
-          /* Broadcast new run phase to other chains */
-          *runPhase_p=LALINFERENCE_ANNEALING;
-          MPI_Send(runPhase_p, 1, MPI_INT, nChain-1, RUN_PHASE_COM, MPI_COMM_WORLD);
-        }
-      }
-    }
-
-    // Annealing phase
-    if (*runPhase_p==LALINFERENCE_ANNEALING) {
-      if (!annealingStarted) {
-        annealingStarted = 1;
-        annealStartIter=i;
-
-        /* Propogate the change in runPhase down the ladder, waiting for the next attempted PT swap */
-        if (MPIrank > 1) {
-            MPI_Probe(MPIrank-1, PT_COM, MPI_COMM_WORLD, &MPIstatus);  // Completes when PT swap attempted
-            MPI_Send(runPhase_p, 1, MPI_INT, MPIrank-1, RUN_PHASE_COM, MPI_COMM_WORLD);  // Update runPhase
-            LALInferenceFlushPTswap();                                // Rejects the swap
-        }
-
-        /* Broadcast the cold chain ACL from parallel tempering */
-        PTacl = *((INT4*) LALInferenceGetVariable(runState->algorithmParams, "acl"));
-        MPI_Bcast(&PTacl, 1, MPI_INT, 0, MPI_COMM_WORLD);
-
-        /* Switch to a new set of jump proposals */
-        runState->proposal = &LALInferencePostPTProposal;
-
-        if(MPIrank==0)
-          printf("Starting to anneal at iteration %i.\n",i);
-
-        /* Share DE buffer from cold chain */
-        if (diffEvo)
-          BcastDifferentialEvolutionPoints(runState, 0);
-
-        /* Build KDE proposal */
-        if (LALInferenceGetProcParamVal(runState->commandLine,"--proposal-kde")) {
-            if (MPIrank!=0)
-              LALInferenceSetupClusteredKDEProposalFromDEBuffer(runState);
-          last_kde_update = 0;
-        }
-
-        /* Force chains to re-adapt */
-        if (adaptationOn)
-          LALInferenceAdaptationRestart(runState, i);
-
-        /* Calculate speed of annealing based on ACL */
-        for (t=0; t<nChain; ++t)
-          annealDecay[t] = (ladder[t]-1.0)/(REAL8)(annealLength*PTacl);
-
-        /* Reset effective sample size and ACL */
-        iEff=0;
-        acl = PTacl;
-        LALInferenceSetVariable(runState->algorithmParams, "acl", &acl);
-      }
-
-      if (i-annealStartIter < PTacl*annealLength) {
-        for (t=0;t<nChain; ++t) {
-          ladder[t] = ladder[t] - annealDecay[t];
-          LALInferenceSetVariable(runState->proposalArgs, "temperature", &(ladder[MPIrank]));
-        }
-      } else {
-        *runPhase_p = LALINFERENCE_SINGLE_CHAIN;
-        if (MPIrank==0)
-          printf(" Single-chain sampling starting at iteration %i.\n", i);
-      }
-    } //if (runState==ANNEALING)
-
-
-    //Post-annealing single-chain sampling
-    if (*runPhase_p==LALINFERENCE_SINGLE_CHAIN && i % (100*Nskip) == 0) {
-      adapting = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adapting"));
-      if (!adapting) {
-        iEff = LALInferenceComputeEffectiveSampleSize(runState);
-        if (iEff >= Neff/nChain) {
-          fprintf(stdout,"Chain %i has %i effective samples. Stopping...\n", MPIrank, iEff);
-          break;                                 // Sampling is done for this chain!
-        }
-      }
-    } //if (*runPhase_p==SINGLE_CHAIN)
+  if (MPIrank==0 && iEff > Neff) {
+      fprintf(stdout,"Chain %i has %i effective samples. Stopping...\n", MPIrank, iEff);
+      runComplete = 1;          // Sampling is done!
+  }
 
     INT4 accepted = runState->evolve(runState); //evolve the chain at temperature ladder[t]
-    acceptanceCount = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "acceptanceCount");
+    acceptanceCount = LALInferenceGetINT4Variable(runState->proposalArgs, "acceptanceCount");
 
     LALInferenceTrackProposalAcceptance(runState, accepted);
 
@@ -752,7 +424,6 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     }
 
     if ((i % Nskip) == 0) {
-
       /* Update clustered-KDE proposal every time the buffer is expanded */
       if (LALInferenceGetProcParamVal(runState->commandLine,"--proposal-kde")
           && (iEff > kde_update_start)
@@ -1573,11 +1244,10 @@ void LALInferencePrintPTMCMCHeaderFile(LALInferenceRunState *runState, FILE *cha
 {
   int MPIrank;
   MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
-  UINT4 randomseed = *(UINT4*) LALInferenceGetVariable(runState->algorithmParams,"random_seed");
+  INT4 randomseed = LALInferenceGetINT4Variable(runState->algorithmParams, "random_seed");
   INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
-  INT4 Niter = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Niter");
-  REAL8 nullLikelihood = *(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "nullLikelihood");
-  INT4 nChain = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "nChain");
+  INT4 Niter = LALInferenceGetINT4Variable(runState->algorithmParams, "Niter");
+  REAL8 nullLikelihood = LALInferenceGetREAL8Variable(runState->proposalArgs, "nullLikelihood");
   REAL8 temperature = *(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "temperature");
   REAL8 SampleRate=4096.0; //default value of the sample rate from LALInferenceReadData()
   UINT4 nIFO=0;
