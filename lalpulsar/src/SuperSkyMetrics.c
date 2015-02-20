@@ -51,12 +51,10 @@
 #define DOT3(x,y)    ((x)[0]*(y)[0] + (x)[1]*(y)[1] + (x)[2]*(y)[2])
 
 ///
-/// Ensure a matrix is exactly symmetric, by ensuring it is equal to its
-/// transpose.
+/// Ensure a matrix is exactly symmetric, by ensuring it is equal to its transpose.
 ///
 static void SSM_MakeSymmetric(
-  /// [in/out] Matrix to make symmetric.
-  gsl_matrix* matrix
+  gsl_matrix* matrix				///< [in/out] Matrix to make symmetric
   )
 {
   for (size_t i = 0; i < matrix->size1; ++i) {
@@ -71,12 +69,11 @@ static void SSM_MakeSymmetric(
 }
 
 ///
-/// Build matrix to reconstruct the super-sky metric in equatorial
-/// coordinates from the expanded super-sky metric.
+/// Build matrix to reconstruct the super-sky metric in equatorial coordinates from the expanded
+/// super-sky metric.
 ///
 static void SSM_ReconstructionMatrix(
-  /// [in/out] Reconstruction matrix.
-  gsl_matrix* reconstruct
+  gsl_matrix* reconstruct			///< [in/out] Reconstruction matrix
   )
 {
   const size_t fsize = reconstruct->size1 - 5;
@@ -95,10 +92,8 @@ static void SSM_ReconstructionMatrix(
 /// Diagonal-normalise the given matrix, and return the normalisation transform.
 ///
 static void SSM_DiagonalNormalise(
-  /// [in/out] Matrix to diagonal-normalise.
-  gsl_matrix* matrix,
-  /// [in/out] Normalisation transform.
-  gsl_matrix* transf
+  gsl_matrix* matrix,				///< [in/out] Matrix to diagonal-normalise
+  gsl_matrix* transf				///< [in/out] Normalisation transform
   )
 {
   for (size_t i = 0; i < matrix->size1; ++i) {
@@ -583,13 +578,12 @@ int XLALReducedSuperSkyMetric(
 }
 
 ///
-/// Convert from 2-dimensional reduced super-sky coordinates to
-/// 3-dimensional aligned sky coordinates.
+/// Convert from 2-dimensional reduced super-sky coordinates to 3-dimensional aligned sky
+/// coordinates.
 ///
-/// The 2-dimensional reduced super-sky coordinates \c rss = (\c A, \c
-/// B) encode the two hemispheres of the sky as two neighbouring unit
-/// disks. The conversion to 3-dimensional aligned sky coordinates is
-/// illustrated in the following diagram:
+/// The 2-dimensional reduced super-sky coordinates \c rss = (\c A, \c B) encode the two
+/// hemispheres of the sky as two neighbouring unit disks. The conversion to 3-dimensional
+/// aligned sky coordinates is illustrated in the following diagram:
 ///
 /** \verbatim
 as[1] = B =___________________
@@ -604,14 +598,11 @@ as[1] = B =___________________
    as[2] =  0  -1   0   1   0
 \endverbatim */
 ///
-/// Points outside the unit disks are moved radially onto their
-/// boundaries.
+/// Points outside the unit disks are moved radially onto their boundaries.
 ///
 static void SSM_ReducedToAligned(
-  /// [out] 3-dimensional aligned sky coordinates.
-  double as[3],
-  /// [in] 2-dimensional reduced super-sky coordinates.
-  const gsl_vector* rss
+  double as[3],					///< [out] 3-dimensional aligned sky coordinates
+  const gsl_vector* rss				///< [in] 2-dimensional reduced super-sky coordinates
   )
 {
   const double A = gsl_vector_get(rss, 0);
@@ -625,14 +616,12 @@ static void SSM_ReducedToAligned(
 }
 
 ///
-/// Convert from 3-dimensional aligned sky coordinates to 2-dimensional
-/// reduced super-sky coordinates.
+/// Convert from 3-dimensional aligned sky coordinates to 2-dimensional reduced super-sky
+/// coordinates.
 ///
 static void SSM_AlignedToReduced(
-  /// [out] 2-dimensional reduced super-sky coordinates.
-  gsl_vector* rss,
-  /// [in] 3-dimensional aligned sky coordinates.
-  const double as[3]
+  gsl_vector* rss,				///< [out] 2-dimensional reduced super-sky coordinates
+  const double as[3]				///< [in] 3-dimensional aligned sky coordinates
   )
 {
   const double r = sqrt(DOT3(as, as));
