@@ -83,6 +83,7 @@ void LALInferenceInitLikelihood(LALInferenceRunState *runState)
 
     ProcessParamsTable *commandLine=runState->commandLine;
     LALInferenceIFOData *ifo=runState->data;
+    REAL8 nullLikelihood = 0.0; // Populated if such a thing exists
 
     /* Print command line arguments if help requested */
     if(LALInferenceGetProcParamVal(runState->commandLine,"--help"))
@@ -133,6 +134,54 @@ void LALInferenceInitLikelihood(LALInferenceRunState *runState)
    } else {
     runState->likelihood=&LALInferenceUndecomposedFreqDomainLogLikelihood;
    }
+
+   /* Try to determine a model-less likelihood, if such a thing makes sense */
+   if (runState->likelihood==&LALInferenceUndecomposedFreqDomainLogLikelihood){
+       nullLikelihood = LALInferenceNullLogLikelihood(runState->data);
+   } else if (runState->likelihood==&LALInferenceFreqDomainStudentTLogLikelihood ||
+       (runState->likelihood==&LALInferenceMarginalisedTimeLogLikelihood &&
+           !LALInferenceGetProcParamVal(runState->commandLine, "--malmquistPrior")) ||
+       (runState->likelihood==&LALInferenceMarginalisedTimePhaseLogLikelihood &&
+           !LALInferenceGetProcParamVal(runState->commandLine, "--malmquistPrior")) ||
+       (runState->likelihood==&LALInferenceMarginalisedPhaseLogLikelihood &&
+           !LALInferenceGetProcParamVal(runState->commandLine, "--malmquistPrior"))) {
+
+   }
+
+   //null log likelihood logic doesn't work with noise parameters
+   if (LALInferenceGetProcParamVal(runState->commandLine,"--psdFit") ||
+       LALInferenceGetProcParamVal(runState->commandLine,"--glitchFit")) {
+           nullLikelihood = 0.0;
+           ifo = runState->data;
+           while (ifo != NULL) {
+               ifo->nullloglikelihood = 0.0;
+               ifo = ifo->next;
+           }
+   } else {
+       ifo = runState->data;
+       REAL8 d = LALInferenceGetREAL8Variable(runState->currentParams, "distance");
+       REAL8 bigD = INFINITY;
+
+       /* Don't store to cache, since distance scaling won't work */
+       LALSimInspiralWaveformCache *cache = runState->model->waveformCache;
+       runState->model->waveformCache = NULL;
+
+       LALInferenceSetVariable(runState->currentParams, "distance", &bigD);
+       nullLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->model);
+
+       runState->model->waveformCache = cache;
+       i = 0;
+       while (ifo != NULL) {
+           ifo->nullloglikelihood = runState->model->ifo_loglikelihoods[i];
+           ifo = ifo->next;
+           i++;
+       }
+
+       LALInferenceSetVariable(runState->currentParams, "distance", &d);
+   }
+
+   LALInferenceAddVariable(runState->proposalArgs, "nullLikelihood", &nullLikelihood,
+                            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
 
     return;
 }
