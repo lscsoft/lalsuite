@@ -174,6 +174,7 @@ packages/utilities/test/SFTCleanTest
 packages/utilities/test/SortTest
 packages/utilities/test/ZCoarseGrainFrequencySeriesTest
 packages/vectorops/test/VectorIndexRangeTest
+packages/vectorops/test/VectorMathTest
 packages/vectorops/test/VectorOpsTest
 packages/window/test/WindowTest
 python/lal/__init__.py
