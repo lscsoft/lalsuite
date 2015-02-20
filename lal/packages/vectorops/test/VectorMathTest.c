@@ -131,10 +131,10 @@ main ( int argc, char *argv[] )
   UINT4 Nruns = (UINT4)uvar->Nruns;
 
   UINT4 Ntrials = 1000000 + 7;
-  REAL4VectorAligned32 *xIn_a, *xOut_a, *xOut2_a;
-  XLAL_CHECK ( ( xIn_a  =  XLALCreateREAL4VectorAligned32 ( Ntrials )) != NULL, XLAL_EFUNC );
-  XLAL_CHECK ( ( xOut_a =  XLALCreateREAL4VectorAligned32 ( Ntrials )) != NULL, XLAL_EFUNC );
-  XLAL_CHECK ( ( xOut2_a = XLALCreateREAL4VectorAligned32 ( Ntrials )) != NULL, XLAL_EFUNC );
+  REAL4VectorAligned *xIn_a, *xOut_a, *xOut2_a;
+  XLAL_CHECK ( ( xIn_a  =  XLALCreateREAL4VectorAligned ( Ntrials, 32 )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK ( ( xOut_a =  XLALCreateREAL4VectorAligned ( Ntrials, 32 )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK ( ( xOut2_a = XLALCreateREAL4VectorAligned ( Ntrials, 32 )) != NULL, XLAL_EFUNC );
   // alias these into standard REAL4Vectors for convenience
   REAL4Vector *xIn   = (REAL4Vector*)xIn_a;
   REAL4Vector *xOut  = (REAL4Vector*)xOut_a;
@@ -194,9 +194,9 @@ main ( int argc, char *argv[] )
   XLALPrintInfo ("\n");
 
   // ---------- clean up memory ----------
-  XLALDestroyREAL4VectorAligned32 ( xIn_a );
-  XLALDestroyREAL4VectorAligned32 ( xOut_a );
-  XLALDestroyREAL4VectorAligned32 ( xOut2_a );
+  XLALDestroyREAL4VectorAligned ( xIn_a );
+  XLALDestroyREAL4VectorAligned ( xOut_a );
+  XLALDestroyREAL4VectorAligned ( xOut2_a );
 
   XLALDestroyREAL4Vector ( xOut_Ref );
   XLALDestroyREAL4Vector ( xOut2_Ref );

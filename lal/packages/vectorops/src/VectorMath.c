@@ -228,16 +228,15 @@ DEFINE_FN_2OUT(SinCosf2PI);
 
 // -------------------- our own failsafe aligned memory handling --------------------
 ///
-/// Create a special REAL4 Vector with 32-byte aligned memory 'data' array.
+/// Create a special REAL4 Vector with n-byte aligned memory 'data' array.
 ///
 /// This does not rely on posix_memalign() being available, and should compile+run everywhere.
-/// Use XLALDestroyREAL4VectorAligned32() to free.
+/// Use XLALDestroyREAL4VectorAligned() to free this.
 ///
-REAL4VectorAligned32 *
-XLALCreateREAL4VectorAligned32 ( UINT4 length )
+REAL4VectorAligned *
+XLALCreateREAL4VectorAligned ( UINT4 length, UINT4 align )
 {
-  const size_t align = 32;
-  REAL4VectorAligned32 *ret;
+  REAL4VectorAligned *ret;
   XLAL_CHECK_NULL ( (ret = XLALMalloc ( sizeof(*ret))) != NULL, XLAL_ENOMEM );
 
   ret->length = length;
@@ -248,16 +247,16 @@ XLALCreateREAL4VectorAligned32 ( UINT4 length )
   size_t offsetBytes = (align - remBytes) % align;
   ret->data = (void*)(((char*)ret->data0) + offsetBytes);
 
-  XLAL_CHECK_NULL ( isMemAligned(ret->data,align), XLAL_EFAULT, "Failed to allocate %zd-byte aligned memory. Must be a coding error.\n", align );
+  XLAL_CHECK_NULL ( isMemAligned(ret->data,align), XLAL_EFAULT, "Failed to allocate %zd-byte aligned memory. Must be a coding error.\n", (size_t)align );
 
   return ret;
-} // XLALCreateREAL4VectorAligned32()
+} // XLALCreateREAL4VectorAligned()
 
 ///
-/// Destroy special 32-byte aligned  REAL4VectorAligned32
+/// Destroy special n-byte aligned  REAL4VectorAligned
 ///
 void
-XLALDestroyREAL4VectorAligned32 ( REAL4VectorAligned32 *in )
+XLALDestroyREAL4VectorAligned ( REAL4VectorAligned *in )
 {
   if ( !in ) {
     return;
@@ -270,4 +269,4 @@ XLALDestroyREAL4VectorAligned32 ( REAL4VectorAligned32 *in )
 
   return;
 
-} // XLALDestroyREAL4VectorAligned32()
+} // XLALDestroyREAL4VectorAligned()

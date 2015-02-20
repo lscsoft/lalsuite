@@ -64,12 +64,12 @@ VectorDevice_type;
 /** We provide our own local aligned-memory handling functions, until this
  * may later be merged upstream into the LALMalloc module
  */
-typedef struct tagREAL4VectorAligned32
+typedef struct tagREAL4VectorAligned
 {
   UINT4 length;		/**< number of 'usable' array entries (fully aligned) */
-  REAL4 *data;		/**< start of 32-byte aligned memory block */
+  REAL4 *data;		/**< start of aligned memory block */
   REAL4 *data0;		/**< actual physical start of memory block, possibly not aligned */
-} REAL4VectorAligned32;
+} REAL4VectorAligned;
 
 /* ---------- Prototypes ---------- */
 
@@ -82,8 +82,8 @@ const CHAR *XLALVectorDeviceHelpString ( void );
 int XLALVectorDeviceParseString ( VectorDevice_type *device, const char *s );
 
 /* ----- aligned-memory handling */
-REAL4VectorAligned32 *XLALCreateREAL4VectorAligned32 ( UINT4 length );
-void XLALDestroyREAL4VectorAligned32 ( REAL4VectorAligned32 *in );
+REAL4VectorAligned *XLALCreateREAL4VectorAligned ( UINT4 length, UINT4 align );
+void XLALDestroyREAL4VectorAligned ( REAL4VectorAligned *in );
 
 /* ----- exported vector math functions */
 int XLALVectorSinf     ( REAL4Vector *out, const REAL4Vector *in );
