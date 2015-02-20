@@ -49,6 +49,7 @@ liblalinference_la_SOURCES = \
 	LALInferenceRemoveLines.c \
 	LALInferenceCalibrationErrors.c \
 	LALInferenceGenerateROQ.c \
+	DetectorFixedSkyCoords.c \
 	logaddexp.h \
 	$(BAYESTARSRC) \
 	$(XMLSRC)

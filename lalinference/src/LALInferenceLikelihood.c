@@ -40,7 +40,6 @@
 #include <lal/LALInferenceTemplate.h>
 
 #include "logaddexp.h"
-#include "DetectorFixedSkyCoords.c"
 
 typedef enum
 {
