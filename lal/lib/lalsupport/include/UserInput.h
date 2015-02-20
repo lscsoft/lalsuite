@@ -37,32 +37,35 @@ extern "C" {
  * \author Reinhard Prix
  * \brief Module for simple unified handling of user-input from config-file and/or command-line.
  *
+ *
  * ### Description ###
  *
- * This module provides simple function and macros to 'register' a set of C-variables as 'User Variables',
+ * This module provides functions and macros to 'register' a set off C-variables as 'User Variables',
  * which can then be read in from the commandline and/or an input config file, as parsed by \ref ConfigFile_h.
  *
- * The module handles generating and outputting a help-string on the available inputs when requested, and
- * can deal with required inputs and providing defaults.
+ * The module also handles generating and outputting a help-string on the available input options when requested, and
+ * can deal with enforcing input of required options and using default values.
  *
  * ### Usage ###
  *
- * The general approach consists of these steps
+ * The general approach consists of the following steps:
  * <ol>
- * <li> set default-value for optional user-variables</li>
+ * <li> set default-values for optional user-variables as appropriate</li>
  * <li> \c register all user-variables using calls to \c XLALRegister<TYPE>UserVar(), or more conveniently, using the shortcut-macros
- * XLALreg<TYPE>UserStruct() that assume a struct-pointer named 'uvar' containing all user-variables as 'uvar->UserVariable'.</li>
- * <li> parse all user-input using XLALUserVarReadAllInput()</li>
- * <li> At the end, free user-input structure</li>
+ * XLALreg<TYPE>UserStruct() that assume a pointer named 'uvar' to a struct containing all user-variables in the form 'uvar->UserVariable'.</li>
+ * <li> parse user-input using XLALUserVarReadAllInput()</li>
  * </ol>
  *
- * One can use XLALUserVarWasSet() to determine wheter the user specified input for a given (optional) variable, or if it still has just its default value.
+ * One can use XLALUserVarWasSet() to determine whether a given user-input option has been set by the user.
  *
  * The function XLALUserVarGetLog() can be used to obtain a log-string containing the full user-input, either in \c commandline- or \c ConfigFile format.
  *
  * Here is a worked simple example of its recommended use:
  * \code
  * #include <stdio.h>
+ * #include <lal/XLALError.h>
+ * #include <lal/LALDatatypes.h>
+ *
  * #include <lal/UserInput.h>
  *
  * // these are the C-variables we want to read in from user-input
@@ -72,6 +75,9 @@ extern "C" {
  *   REAL8 aDoubleVar;
  *   CHAR *andAString;
  *   REAL8 specialGeekSwitch;
+ *   LIGOTimeGPS someEpoch;
+ *   REAL8 RA;
+ *   REAL8 DEC;
  * } UserInput_t;
  *
  *
@@ -88,17 +94,22 @@ extern "C" {
  *   XLALregBOOLUserStruct  ( help,               'h',  UVAR_HELP,     "Output this help-message");
  *   XLALregINTUserStruct   ( anInteger,          'i',  UVAR_OPTIONAL, "An example user-variable of an optional integer");
  *   XLALregREALUserStruct  ( aDoubleVar,         'r',  UVAR_REQUIRED, "This REAL8 user-variable is required");
- *   XLALregSTRINGUserStruct( andAString,           0,  UVAR_OPTIONAL, "Optional string-input, has no short-option");
- *   XLALregREALUserStruct  ( specialGeekSwitch,   'g',  UVAR_DEVELOPER, "This REAL8 user-variable is required");
+ *   XLALregSTRINGUserStruct( andAString,          0,   UVAR_OPTIONAL, "Optional string-input, has no short-option");
+ *   XLALregEPOCHUserStruct ( someEpoch,           0,   UVAR_OPTIONAL, "Reference epoch (format 'xx.yy[GPS|MJD]')");
+ *   XLALregLONGITUDEUserStruct(RA,                0,   UVAR_OPTIONAL, "Sky location: right ascension in [0,2pi] (in radians or hours:minutes:seconds)");
+ *   XLALregLATITUDEUserStruct(DEC,                0,   UVAR_OPTIONAL, "Sky location: declination [-pi/2,pi/2] (in radians or degrees:minutes:seconds)");
+ *
+ *   XLALregREALUserStruct  ( specialGeekSwitch,   'g', UVAR_DEVELOPER, "This REAL8 user-variable may not be relevant for standard usage");
  *
  *   // 3. step: parse all user-input, from either config-file if given, or commandline (overloads config-file values)
- *   if ( XLALUserVarReadAllInput ( argc, argv ) != XLAL_SUCCESS )
- *     XLAL_ERROR ( XLAL_EFUNC );
+ *   XLAL_CHECK ( XLALUserVarReadAllInput ( argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC);
  *
- *   if (uvar->help)      // if user had requested help, then we're already done here
+ *   if (uvar->help){      // if user had requested help, then we're already done here
  *     return 0;
+ *   }
  *
  *   printf ("User-input was: anInteger = %d, aDoubleVar = %f, andAString = %s\n", uvar->anInteger, uvar->aDoubleVar, uvar->andAString );
+ *   printf ("someEpoch = {%d s, %d ns}, RA = %f rad, DEC = %f rad\n", uvar->someEpoch.gpsSeconds, uvar->someEpoch.gpsNanoSeconds, uvar->RA, uvar->DEC );
  *
  *   // 4. step: free user-input module memory
  *   XLALDestroyUserVars();
@@ -110,29 +121,33 @@ extern "C" {
  *
  * \note This code can be compiled <b>as is</b> within lalapps, and yields
  *
- * \code
- * $ ./testUserInput -v1 --help
+ * \verbatim
+$ LAL_DEBUG_LEVEL=1 ./tmp --help
+
+Usage: ./tmp [@ConfigFile] [options], where options are:
+
+-h, --help                BOOLEAN    Output this help-message []
+-i, --anInteger           INT4       An example user-variable of an optional integer [0]
+-r, --aDoubleVar          REAL8      This REAL8 user-variable is required [REQUIRED]
+    --andAString          STRING     Optional string-input, has no short-option [NULL]
+    --someEpoch           EPOCH      Reference epoch (format 'xx.yy[GPS|MJD]') [0.000000000GPS]
+    --RA                  LONGITUDE  Sky location: right ascension in [0,2pi] (in radians or hours:minutes:seconds) [0.0]
+    --DEC                 LATITUDE   Sky location: declination [-pi/2,pi/2] (in radians or degrees:minutes:seconds) [0.0]
+
+---------- The following are 'Developer'-options not useful for most users:----------
+
+-g, --specialGeekSwitch   REAL8      This REAL8 user-variable may not be relevant for standard usage [0.0]
+
+\endverbatim
  *
- * Usage: testUserInput [@ConfigFile] [options], where options are:
+ * And if called
+ * \verbatim
+$ ./tmp -r 3.1415 --andAString="stupid example" --someEpoch=5555MJD --RA=10:25:10.123 --DEC=-30:0:0
+User-input was: anInteger = 0, aDoubleVar = 3.141500, andAString = stupid example
+someEpoch = {2147483596 s, 816000000 ns}, RA = 2.727813 rad, DEC = -0.523599 rad
+\endverbatim
  *
- * -v                        INT      set lalDebugLevel [0]
- * -h, --help                BOOL     Output this help-message []
- * -i, --anInteger           INT      An example user-variable of an optional integer [0]
- * -r, --aDoubleVar          REAL     This REAL8 user-variable is required [REQUIRED]
- * --andAString          STRING   Optional string-input, has no short-option [NULL]
- *
- * ---------- The following are 'Developer'-options not useful for most users:----------
- *
- * -g, --specialGeekSwitch   REAL     This REAL8 user-variable is required [0.0]
- * \endcode
- *
- * And if called correctly:
- * \code
- * $ ./testUserInput -r 3.1415 --andAString="stupid example"
- * User-input was: anInteger = 0, aDoubleVar = 3.141500, andAString = stupid example
- * \endcode
- *
- * \note For a real-world example of usage, see various codes in lalapps/src/pulsar, notably synthesizeLVStats.c
+ * \note For a real-world example of usage, see various codes under lalapps/src/pulsar/{Injections,Fstatistic}
  *
  */
 /*@{*/
