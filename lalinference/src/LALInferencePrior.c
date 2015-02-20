@@ -722,18 +722,18 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
         }
     }
 
-    // theta_JN for system-frame parameters
-    if(LALInferenceCheckVariable(params,"theta_jn"))
+    // cos theta_JN for system-frame parameters
+    if(LALInferenceCheckVariable(params,"costheta_jn"))
     {
-        item = LALInferenceGetItem(params, "theta_jn");
+        item = LALInferenceGetItem(params, "costheta_jn");
         if(item->vary != LALINFERENCE_PARAM_FIXED)
         {
-            LALInferenceGetMinMaxPrior(runState->priorArgs, "theta_jn", (void *)&min, (void *)&max);
-            double theta_JN = LALInferenceCubeToSinPrior(Cube[i], min, max);
-            LALInferenceSetVariable(params, "theta_jn", &theta_JN);
-            Cube[i] = theta_JN;
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "costheta_jn", (void *)&min, (void *)&max);
+            double costheta_JN = LALInferenceCubeToSinPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "costheta_jn", &costheta_JN);
+            Cube[i] = costheta_JN;
             i++;
-            strcat(header,"theta_jn ");
+            strcat(header,"costheta_jn ");
         }
     }
 
@@ -1453,17 +1453,17 @@ UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALI
     }
 
     // theta_JN for system-frame parameters
-    if(LALInferenceCheckVariable(params,"theta_jn"))
+    if(LALInferenceCheckVariable(params,"costheta_jn"))
     {
-        item = LALInferenceGetItem(params, "theta_jn");
+        item = LALInferenceGetItem(params, "costheta_jn");
         if(item->vary != LALINFERENCE_PARAM_FIXED)
         {
-            LALInferenceGetMinMaxPrior(runState->priorArgs, "theta_jn", (void *)&min, (void *)&max);
-            double theta_JN = LALInferenceCubeToSinPrior(Cube[i], min, max);
-            LALInferenceSetVariable(params, "theta_jn", &theta_JN);
-            Cube[i] = theta_JN;
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "costheta_jn", (void *)&min, (void *)&max);
+            double costheta_JN = LALInferenceCubeToSinPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "costheta_jn", &costheta_JN);
+            Cube[i] = costheta_JN;
             i++;
-            strcat(header,"theta_jn ");
+            strcat(header,"costheta_jn ");
         }
     }
 

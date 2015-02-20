@@ -166,7 +166,7 @@ double m1,m2,mc,eta,q,iota=0;
     mc2masses(mc, eta, &m1, &m2);
   }
 
-  iota = *(REAL8*) LALInferenceGetVariable(model->params, "theta_jn");     /* zenith angle between J and N in radians */
+  iota = acos(LALInferenceGetREAL8Variable(model->params, "costheta_jn"));     /* zenith angle between J and N in radians */
 
   double cosiota = cos(iota);
   double plusCoef  = 0.5 * (1.0 + cosiota*cosiota);
@@ -485,7 +485,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
 /*   ORIENTATION AND SPIN PARAMETERS                                                                                     */
 /*   - "phi0"               reference phase as per LALSimulation convention; REAL8                                       */
 /*   - "distance"           distance in Mpc                                                                              */
-/*   - "theta_jn");      zenith angle between J and N in radians;            REAL8                                    */
+/*   - "costheta_jn");      cos of zenith angle between J and N in radians;            REAL8                                    */
 /*   - "phi_jl");        azimuthal angle of L_N on its cone about J radians; REAL8                                    */
 /*   - "tilt_spin1");    zenith angle between S1 and LNhat in radians;       REAL8                                    */
 /*   - "tilt_spin2");    zenith angle between S2 and LNhat in radians;       REAL8                                    */
@@ -589,7 +589,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
   phi0		= LALInferenceGetREAL8Variable(model->params, "phase"); /* START phase as per lalsimulation convention, radians*/
   
   /* Zenith angle between J and N in radians. Also known as inclination angle when spins are aligned */
-  REAL8 thetaJN = *(REAL8*) LALInferenceGetVariable(model->params, "theta_jn");     /* zenith angle between J and N in radians */
+  REAL8 thetaJN = acos(LALInferenceGetREAL8Variable(model->params, "costheta_jn"));     /* zenith angle between J and N in radians */
 
   /* Check if fLow is a model parameter, otherwise use data structure definition */
   if(LALInferenceCheckVariable(model->params, "flow"))

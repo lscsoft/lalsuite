@@ -300,8 +300,8 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams,
     distMpc = *(REAL8*) LALInferenceGetVariable(currentParams, "distance");       /* Mpc         */
 
   double iota	= 0.0;
-  if(LALInferenceCheckVariable(currentParams,"theta_jn"))
-    iota = *(REAL8*) LALInferenceGetVariable(currentParams, "theta_jn");
+  if(LALInferenceCheckVariable(currentParams,"costheta_jn"))
+    iota = acos(LALInferenceGetREAL8Variable(currentParams, "costheta_jn"));
 
 
   double cosiota = cos(iota);
@@ -1274,7 +1274,7 @@ static void extractDimensionlessVariableVector(LALInferenceVariables *currentPar
     exit(1);
   }
 
-  iota = *(REAL8 *)LALInferenceGetVariable(currentParams, "theta_jn");
+  iota = *(REAL8 *)LALInferenceGetVariable(currentParams, "costheta_jn");
   psi = *(REAL8 *)LALInferenceGetVariable(currentParams, "polarisation");
   phi = *(REAL8 *)LALInferenceGetVariable(currentParams, "phase");
   ra = *(REAL8 *)LALInferenceGetVariable(currentParams, "rightascension");

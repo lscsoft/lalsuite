@@ -1766,9 +1766,9 @@ void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
     } else {
       LALInferenceSetVariable(runState->currentParams, "phase", &phase);
     }
-
+    REAL8 cosinclination=cos(inclination);
     LALInferenceSetVariable(runState->currentParams, "distance", &dist);
-    LALInferenceSetVariable(runState->currentParams, "theta_jn", &inclination);
+    LALInferenceSetVariable(runState->currentParams, "costheta_jn", &cosinclination);
     LALInferenceSetVariable(runState->currentParams, "polarisation", &(psi));
     LALInferenceSetVariable(runState->currentParams, "declination", &dec);
     LALInferenceSetVariable(runState->currentParams, "rightascension", &ra);

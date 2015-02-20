@@ -398,7 +398,7 @@ You can generally have MCMC chains to start from a given parameter value by usin
  eta                          Symmetric massratio (needs --use-eta)\n\
  q                            Asymmetric massratio (a.k.a. q=m2/m1 with m1>m2)\n\
  phase                        Coalescence phase.\n\
- theta_jn                     Angle between J and line of sight [rads]\n\
+ costheta_jn                  Cosine of angle between J and line of sight [rads]\n\
  distance                     Distance [Mpc]\n\
  logdistance                  Log Distance (requires --use-logdistance)\n\
  rightascension               Rightascensions\n\
@@ -482,7 +482,7 @@ where the known names have been listed above\n\
   REAL8 decMin=-LAL_PI/2.0,decMax=LAL_PI/2.0;
   REAL8 raMin=0.0,raMax=LAL_TWOPI;
   REAL8 phiMin=0.0,phiMax=LAL_TWOPI;
-  REAL8 thetaJNmin=0.0,thetaJNmax=LAL_PI;
+  REAL8 costhetaJNmin=-1.0 , costhetaJNmax=1.0;
   REAL8 dt=0.1;  /* Half the width of time prior */
   REAL8 lambda1Min=0.0;
   REAL8 lambda1Max=3000.0;
@@ -881,8 +881,8 @@ where the known names have been listed above\n\
     LALInferenceRegisterUniformVariableREAL8(state, model->params, "distance", zero, Dmin, Dmax, LALINFERENCE_PARAM_LINEAR);
   }
   LALInferenceRegisterUniformVariableREAL8(state, model->params, "polarisation", zero, psiMin, psiMax, LALINFERENCE_PARAM_LINEAR);
-  LALInferenceRegisterUniformVariableREAL8(state, model->params, "theta_jn", zero, thetaJNmin, thetaJNmax,LALINFERENCE_PARAM_LINEAR);
-	
+  LALInferenceRegisterUniformVariableREAL8(state, model->params, "costheta_jn", zero, costhetaJNmin, costhetaJNmax,LALINFERENCE_PARAM_LINEAR);
+
   /* Option to use the detector-aligned frame */ 
   if(LALInferenceGetProcParamVal(commandLine,"--detector-frame"))
   {
@@ -1058,7 +1058,7 @@ LALInferenceModel *LALInferenceInitModelReviewEvidence(LALInferenceRunState *sta
 		{.name="m1", .val=16., .min=14.927715, .max=17.072285},
 		{.name="m2", .val=7., .min=5.829675, .max=8.170325},
 		{.name="distance", .val=50., .min=37.986000000000004, .max=62.013999999999996},
-		{.name="theta_jn", .val=LAL_PI/2., .min=1.4054428267948966, .max=1.7361498267948965},
+		{.name="costheta_jn", .val=LAL_PI/2., .min=1.4054428267948966, .max=1.7361498267948965},
 		{.name="phase", .val=LAL_PI, .min=2.8701521535897934, .max=3.413033153589793},
 		{.name="polarisation", .val=LAL_PI/2., .min=1.3885563267948966, .max=1.7530363267948965},
 		{.name="rightascension", .val=LAL_PI, .min=2.813050153589793, .max=3.4701351535897933},
@@ -1112,7 +1112,7 @@ LALInferenceModel *LALInferenceInitModelReviewEvidence_bimod(LALInferenceRunStat
     {.name="m1", .val=16.857828, .min=14.927715, .max=18.787941},
     {.name="m2", .val=7.93626, .min=5.829675, .max=10.042845},
     {.name="distance", .val=34.6112, .min=12.986, .max=56.2364},
-    {.name="theta_jn", .val=0.9176809634, .min=0.6200446634, .max=1.2153172634},
+    {.name="costheta_jn", .val=0.9176809634, .min=0.6200446634, .max=1.2153172634},
     {.name="phase", .val=1.7879487268, .min=1.2993558268, .max=2.2765416268},
     {.name="polarisation", .val=0.9311901634, .min=0.6031581634, .max=1.2592221634},
     {.name="rightascension", .val=1.8336303268, .min=1.2422538268, .max=2.4250068268},
@@ -1164,7 +1164,7 @@ LALInferenceModel *LALInferenceInitModelReviewEvidence_banana(LALInferenceRunSta
     {.name="m1", .val=16., .min=14., .max=18.},
     {.name="m2", .val=7., .min=5., .max=9.},
     {.name="distance", .val=50., .min=45., .max=55.},
-    {.name="theta_jn", .val=LAL_PI/2., .min=-0.429203673, .max=3.570796327},
+    {.name="costheta_jn", .val=LAL_PI/2., .min=-0.429203673, .max=3.570796327},
     {.name="phase", .val=LAL_PI, .min=1.141592654, .max=5.141592654},
     {.name="polarisation", .val=LAL_PI/2., .min=-0.429203673, .max=3.570796327},
     {.name="rightascension", .val=LAL_PI, .min=1.141592654, .max=5.141592654},
