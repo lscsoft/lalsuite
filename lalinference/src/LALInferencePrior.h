@@ -49,6 +49,11 @@ SWIGLAL(INPUT_SCALARS(REAL8*, min, max));
 #endif
 
 /**
+ * Initialize the prior based on command line arguments.
+*/
+void LALInferenceInitPrior(LALInferenceRunState *runState);
+
+/**
  * Return the log Prior for the glitch amplitude
 */
 REAL8 logGlitchAmplitudeDensity(REAL8 A, REAL8 Q, REAL8 f);
@@ -125,14 +130,14 @@ void LALInferenceRemoveMinMaxPrior(LALInferenceVariables *priorArgs, const char 
 /**
  * Function to add the mu and sigma values for the Gaussian prior onto the \c priorArgs.
  */
-void LALInferenceAddGaussianPrior(LALInferenceVariables *priorArgs, 
+void LALInferenceAddGaussianPrior(LALInferenceVariables *priorArgs,
                                   const char *name, REAL8 *mu, REAL8 *sigma,
                                   LALInferenceVariableType type);
 
 /**
  * Get the mu and sigma values of the Gaussian prior from the \c priorArgs list, given a name.
  */
-void LALInferenceGetGaussianPrior(LALInferenceVariables *priorArgs, 
+void LALInferenceGetGaussianPrior(LALInferenceVariables *priorArgs,
                                   const char *name, REAL8 *mu, REAL8 *sigma);
 
 
@@ -153,41 +158,41 @@ int LALInferenceCheckGaussianPrior(LALInferenceVariables *priorArgs, const char 
  * priorArgs. The correlation coefficient matrix must be a gsl_matrix and the
  * index for the given parameter in the matrix must be supplied.
  */
-void LALInferenceAddCorrelatedPrior( LALInferenceVariables *priorArgs, 
-                                     const char *name, gsl_matrix **cor, 
+void LALInferenceAddCorrelatedPrior( LALInferenceVariables *priorArgs,
+                                     const char *name, gsl_matrix **cor,
                                      UINT4 *idx );
 
 /**
  * Get the correlation coefficient matrix and index for a parameter from the
  * \c priorArgs list.
  */
-void LALInferenceGetCorrelatedPrior( LALInferenceVariables *priorArgs, 
-                                     const char *name, gsl_matrix **cor, 
+void LALInferenceGetCorrelatedPrior( LALInferenceVariables *priorArgs,
+                                     const char *name, gsl_matrix **cor,
                                      UINT4 *idx );
 
 /**
  * Remove the correlation coefficient matrix and index for a parameter from the
  * \c priorArgs list.
  */
-void LALInferenceRemoveCorrelatedPrior( LALInferenceVariables *priorArgs, 
+void LALInferenceRemoveCorrelatedPrior( LALInferenceVariables *priorArgs,
                                         const char *name );
 
 /**
  * Check for the existance of a correlation coefficient matrix and index for
  * a parameter from the \c priorArgs list.
  */
-int LALInferenceCheckCorrelatedPrior( LALInferenceVariables *priorArgs, 
+int LALInferenceCheckCorrelatedPrior( LALInferenceVariables *priorArgs,
                                       const char *name );
 
 /** Draw variables from the prior ranges */
-void LALInferenceDrawFromPrior( LALInferenceVariables *output, 
-                                LALInferenceVariables *priorArgs, 
+void LALInferenceDrawFromPrior( LALInferenceVariables *output,
+                                LALInferenceVariables *priorArgs,
                                 gsl_rng *rdm );
 
 /** Draw an individual variable from its prior range */
-void LALInferenceDrawNameFromPrior( LALInferenceVariables *output, 
-                                    LALInferenceVariables *priorArgs, 
-                                    char *name, LALInferenceVariableType type, 
+void LALInferenceDrawNameFromPrior( LALInferenceVariables *output,
+                                    LALInferenceVariables *priorArgs,
+                                    char *name, LALInferenceVariableType type,
                                     gsl_rng *rdm );
 
 /* Switch reads true if parameters lie within Malmquist prior */
@@ -209,7 +214,7 @@ REAL8 LALInferenceNullPrior(LALInferenceRunState *runState, LALInferenceVariable
  * ratio limits.  Returns the integral of \f$\mathcal{M}^{-11/6}\f$ over the allowed
  * ranges in mass.
  */
-REAL8 LALInferenceComputePriorMassNorm(const double MMin, const double MMax, const double MTotMax, 
+REAL8 LALInferenceComputePriorMassNorm(const double MMin, const double MMax, const double MTotMax,
                     const double McMin, const double McMax,
                     const double massRatioMin, const double massRatioMax, const char *massRatioName);
 

@@ -37,6 +37,85 @@ static double qInnerIntegrand(double M2, void *viData);
 static double etaInnerIntegrand(double M2, void *viData);
 static double outerIntegrand(double M1, void *voData);
 
+void LALInferenceInitPrior(LALInferenceRunState *runState)
+{
+    char help[]="\
+                 ------------------------------------------------------------------------------------------------------------------\n\
+                 --- Prior Arguments     ------------------------------------------------------------------------------------------\n\
+                 ------------------------------------------------------------------------------------------------------------------\n\
+                 (--malmquistprior)               Impose selection effects on the prior (False).\n\
+                 (--malmquist-loudest-snr)        Threshold SNR in the loudest detector (0.0).\n\
+                 (--malmquist-second-loudest-snr) Threshold SNR in the second loudest detector (5.0).\n\
+                 (--malmquist-network-snr)        Threshold network SNR (0.0).\n\
+                 (--analyticnullprior)            Use analytic null prior.\n\
+                 (--nullprior)                    Use null prior in the sampled parameters.\n";
+    ProcessParamsTable *commandLine=runState->commandLine;
+
+    /* Print command line arguments if help requested */
+    if(LALInferenceGetProcParamVal(commandLine, "--help"))
+    {
+        fprintf(stdout,"%s",help);
+        return;
+    }
+
+    /* Choose the proper prior */
+    if (LALInferenceGetProcParamVal(commandLine, "--correlatedGaussianLikelihood") ||
+               LALInferenceGetProcParamVal(commandLine, "--bimodalGaussianLikelihood") ||
+               LALInferenceGetProcParamVal(commandLine, "--rosenbrockLikelihood") ||
+               LALInferenceGetProcParamVal(commandLine, "--analyticnullprior")) {
+        runState->prior = &LALInferenceAnalyticNullPrior;
+    } else if (LALInferenceGetProcParamVal(commandLine, "--nullprior")) {
+        runState->prior = &LALInferenceNullPrior;
+    } else {
+        runState->prior = &LALInferenceInspiralPrior;
+    }
+
+    /* Set up malmquist prior */
+    INT4 malmquist = 0;
+    if (LALInferenceGetProcParamVal(commandLine, "--malmquistprior")) {
+        malmquist = 1;
+        REAL8 malmquist_loudest = 0.0;
+        REAL8 malmquist_second_loudest = 5.0;
+        REAL8 malmquist_network = 0.0;
+
+        ppt = LALInferenceGetProcParamVal(commandLine,
+                                            "--malmquist-loudest-snr");
+        if (ppt) malmquist_loudest = atof(ppt->value);
+
+        ppt = LALInferenceGetProcParamVal(commandLine,
+                                            "--malmquist-second-loudest-snr");
+        if (ppt) malmquist_second_loudest = atof(ppt->value);
+
+        ppt = LALInferenceGetProcParamVal(commandLine,
+                                            "--malmquist-network-snr");
+        if (ppt) malmquist_network = atof(ppt->value);
+
+        LALInferenceAddVariable(runState->priorArgs,
+                                "malmquist", &malmquist,
+                                LALINFERENCE_INT4_t,
+                                LALINFERENCE_PARAM_OUTPUT);
+
+        LALInferenceAddVariable(runState->priorArgs,
+                                "malmquist_loudest_snr",
+                                &malmquist_loudest,
+                                LALINFERENCE_REAL8_t,
+                                LALINFERENCE_PARAM_OUTPUT);
+
+        LALInferenceAddVariable(runState->priorArgs,
+                                "malmquist_second_loudest_snr",
+                                &malmquist_second_loudest,
+                                LALINFERENCE_REAL8_t,
+                                LALINFERENCE_PARAM_OUTPUT);
+
+        LALInferenceAddVariable(runState->priorArgs,
+                                "malmquist_network_snr",
+                                &malmquist_network,
+                                LALINFERENCE_REAL8_t,
+                                LALINFERENCE_PARAM_OUTPUT);
+    }
+}
+
+
 static REAL8 LALInferenceSplineCalibrationPrior(LALInferenceRunState *runState, LALInferenceVariables *params) {
   LALInferenceIFOData *ifo = NULL;
   REAL8 ampWidth = -1.0;
@@ -159,7 +238,7 @@ static REAL8 LALInferenceGlitchPrior(LALInferenceRunState *runState, LALInferenc
       }//end morlet parameters prior
     }//end loop through params
   }//end check for glitch parameters
-  
+
   return logPrior;
 }
 
@@ -335,7 +414,7 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
 
   /* Evaluate glitch prior (returns 0 if no glitch model) */
   logPrior += LALInferenceGlitchPrior(runState, params);
-  
+
   return(logPrior);
 }
 
@@ -925,7 +1004,7 @@ void LALInferenceCyclicReflectiveBound(LALInferenceVariables *parameter,
       }
     } else if (paraHead->vary==LALINFERENCE_PARAM_LINEAR && paraHead->type==LALINFERENCE_REAL8_t) {
       /* For linear boundaries, reflect about endpoints of range until
-         withoun range. 
+         withoun range.
          SKIP NOISE PARAMETERS (ONLY CHECK REAL8) */
       while(1) {
         /* Loop until broken. */
