@@ -415,8 +415,10 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *curr
   if(!LALInferenceGetProcParamVal(runState->commandLine,"--noiseonly"))
   {
   /* The default, single-parameter updates. */
-  if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-singleadapt"))
+  if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-singleadapt")) {
+    LALInferenceSetupAdaptiveProposals(runState);
     LALInferenceAddProposalToCycle(runState, singleAdaptProposalName, &LALInferenceSingleAdaptProposal, BIGWEIGHT);
+  }
 
   if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-psiphi") && !LALInferenceGetProcParamVal(runState->commandLine, "--margphi") && !LALInferenceGetProcParamVal(runState->commandLine, "--margtimephi")) {
     LALInferenceAddProposalToCycle(runState, polarizationPhaseJumpName, &LALInferencePolarizationPhaseJump, TINYWEIGHT);
