@@ -323,6 +323,8 @@ extern "C" {
 " --time-it          Set if wanting to time the various parts of the code.\n\
                     A output file with the \"outfile\" filename appended with\n\
                     \"_timings\" will contain the timings.\n"\
+" --sampleprior      (UINT4) Set this to be a number of samples generated from\n\
+                    the prior. The nested sampling will not be performed.\n"\
 "\n"
 
 /**
