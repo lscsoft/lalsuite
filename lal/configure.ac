@@ -155,6 +155,9 @@ AM_SILENT_RULES([yes])
 # check for required compilers
 LALSUITE_PROG_COMPILERS
 
+# check for SIMD extensions
+LALSUITE_WITH_SIMD
+
 # check for pthreads
 lal_pthread_available="yes"
 AX_PTHREAD(,[lal_pthread_available="no"])
@@ -360,6 +363,7 @@ LAL has now been successfully configured:
 
 * Python support is $PYTHON_ENABLE_VAL
 * CUDA support is $CUDA_ENABLE_VAL
+* SIMD extensions are $SIMD_ENABLE_VAL
 * BOINC support is $BOINC_ENABLE_VAL
 * SWIG binding generation is $SWIG_GENERATE_ENABLE_VAL
 * SWIG bindings for Octave are $SWIG_BUILD_OCTAVE_ENABLE_VAL

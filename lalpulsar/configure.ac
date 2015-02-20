@@ -81,7 +81,7 @@ AM_SILENT_RULES([yes])
 LALSUITE_PROG_COMPILERS
 
 # check for SIMD extensions
-LALPULSAR_WITH_SIMD
+LALSUITE_WITH_SIMD
 
 # checks for programs
 AC_PROG_INSTALL
