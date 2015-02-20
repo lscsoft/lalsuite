@@ -1,0 +1,8 @@
+#!/bin/sh
+pypath="/home/pankow/lalsuite/lalinference/python:/home/pankow/lalsuite/lalinference/python:/home/pankow/lalsuite/lalxml/python:/home/pankow/lalsuite/lalpulsar/python:/home/pankow/lalsuite/lalinspiral/python:/home/pankow/lalsuite/lalsimulation/python:/home/pankow/lalsuite/lalframe/python:/home/pankow/lalsuite/lalmetaio/python:/home/pankow/lalsuite/lal/python"
+pyscript="/home/pankow/lalsuite/lalinference/python/rapidpe_create_event_dag.py"
+PYTHONPATH=`echo "${PYTHONPATH}" | /bin/sed -e "s|${pypath}:||g;"`
+PYTHONPATH="${pypath}:${PYTHONPATH}"
+export PYTHONPATH
+exec /usr/bin/python "${pyscript}" "$@"
+exit 1
