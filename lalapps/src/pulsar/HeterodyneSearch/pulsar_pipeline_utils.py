@@ -242,6 +242,7 @@ class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
 
     self.__Nlive = None
     self.__Nmcmc = None
+    self.__Nmcmcinitial = None
     self.__Nruns = None
     self.__tolerance = None
     self.__randomseed = None
@@ -364,6 +365,11 @@ class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     # set number of MCMC iterations
     self.add_var_opt('Nmcmc',nm)
     self.__Nmcmc = nm
+
+  def set_Nmcmcinitial(self,nm):
+    # set number of MCMC iterations
+    self.add_var_opt('Nmcmcinitial',nm)
+    self.__Nmcmcinitial = nm
 
   def set_Nruns(self,nr):
     # set number of internal nested sample runs
