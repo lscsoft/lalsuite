@@ -197,7 +197,7 @@ class ppeJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
   A parameter estimation job
   """
-  def __init__(self,execu,univ,logpath):
+  def __init__(self,execu,univ,logpath,subfile='ppe.sub'):
     self.__executable = execu # set executable
     self.__universe = univ # set condor universe
     pipeline.CondorDAGJob.__init__(self, self.__universe, self.__executable)
@@ -208,7 +208,7 @@ class ppeJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     # set log files for job
     self.set_stdout_file(logpath+'/ppe-$(cluster).out')
     self.set_stderr_file(logpath+'/ppe-$(cluster).err')
-    self.set_sub_file('ppe.sub')
+    self.set_sub_file(subfile)
 
 class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
