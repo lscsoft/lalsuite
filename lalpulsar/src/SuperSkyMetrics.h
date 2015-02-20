@@ -120,14 +120,14 @@ int XLALConvertSuperSkyToPhysical(
 /// Set all-sky parameter-space bounds on a lattice tiling using the reduced super-sky metric.
 ///
 int XLALSetLatticeTilingReducedSuperSkyBounds(
-  LatticeTilingSpace *space			///< [in] Lattice tiling parameter space
+  LatticeTiling *tiling				///< [in] Lattice tiling.
   );
 
 ///
 /// Set a sky point parameter-space bound on a lattice tiling using the reduced super-sky metric.
 ///
 int XLALSetLatticeTilingReducedSuperSkyPointBounds(
-  LatticeTilingSpace *space,			///< [in] Lattice tiling parameter space
+  LatticeTiling *tiling,			///< [in] Lattice tiling.
   const gsl_matrix *rssky_transf,		///< [in] Reduced super-sky coordinate transform data
   const double alpha,				///< [in] Sky point right ascension
   const double delta				///< [in] Sky point declination
@@ -137,7 +137,7 @@ int XLALSetLatticeTilingReducedSuperSkyPointBounds(
 /// Set lattice tiling parameter-space bounds on the physical frequency/spindowns \f$f^{(s)}\f$.
 ///
 int XLALSetLatticeTilingPhysicalSpinBound(
-  LatticeTilingSpace *space,			///< [in] Lattice tiling parameter space
+  LatticeTiling *tiling,			///< [in] Lattice tiling.
   const gsl_matrix *rssky_transf,		///< [in] Reduced super-sky coordinate transform data
   const size_t s,				///< [in] Spindown order; 0=frequency, 1=first spindown, etc.
   const double bound1,				///< [in] First bound on frequency/spindown
@@ -150,7 +150,7 @@ int XLALSetLatticeTilingPhysicalSpinBound(
 /// f^{(s)} + \vec\Delta^s \cdot \vec n\f$.
 ///
 int XLALSetLatticeTilingReducedSuperSkySpinBound(
-  LatticeTilingSpace *space,			///< [in] Lattice tiling parameter space
+  LatticeTiling *tiling,			///< [in] Lattice tiling.
   const gsl_matrix *rssky_transf,		///< [in] Reduced super-sky coordinate transform data
   const size_t s,				///< [in] Spindown order; 0=frequency, 1=first spindown, etc.
   const double bound1,				///< [in] First bound on frequency/spindown

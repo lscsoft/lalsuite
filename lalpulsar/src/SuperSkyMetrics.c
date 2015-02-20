@@ -889,15 +889,15 @@ static double ReducedSuperSkyBCoordBound(
 }
 
 int XLALSetLatticeTilingReducedSuperSkyBounds(
-  LatticeTilingSpace *space
+  LatticeTiling *tiling
   )
 {
 
   // Check input
-  XLAL_CHECK( space != NULL, XLAL_EFAULT );
+  XLAL_CHECK( tiling != NULL, XLAL_EFAULT );
 
   // Set the parameter-space bound on 2-dimensional reduced super-sky A coordinate
-  XLAL_CHECK( XLALSetLatticeTilingConstantBound( space, 0, -2.0, 2.0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, 0, -2.0, 2.0 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Allocate memory
   const size_t data_len = sizeof( double );
@@ -909,14 +909,14 @@ int XLALSetLatticeTilingReducedSuperSkyBounds(
   // Set the parameter-space bound on 2-dimensional reduced super-sky B coordinate
   data_lower[0] = -1.0;
   data_upper[0] = +1.0;
-  XLAL_CHECK( XLALSetLatticeTilingBound( space, 1, ReducedSuperSkyBCoordBound, data_len, data_lower, data_upper ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetLatticeTilingBound( tiling, 1, ReducedSuperSkyBCoordBound, data_len, data_lower, data_upper ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
 
 }
 
 int XLALSetLatticeTilingReducedSuperSkyPointBounds(
-  LatticeTilingSpace *space,
+  LatticeTiling *tiling,
   const gsl_matrix *rssky_transf,
   const double alpha,
   const double delta
@@ -924,7 +924,7 @@ int XLALSetLatticeTilingReducedSuperSkyPointBounds(
 {
 
   // Check input
-  XLAL_CHECK( space != NULL, XLAL_EFAULT );
+  XLAL_CHECK( tiling != NULL, XLAL_EFAULT );
   XLAL_CHECK( rssky_transf != NULL, XLAL_EFAULT );
 
   // Allocate memory
@@ -939,7 +939,7 @@ int XLALSetLatticeTilingReducedSuperSkyPointBounds(
   // Set the parameter-space bounds on 2-dimensional reduced super-sky A and B coordinates
   for( size_t i = 0; i < 2; ++i ) {
     const double rssky_point_i = gsl_vector_get( rssky_point, i );
-    XLAL_CHECK( XLALSetLatticeTilingConstantBound( space, i, rssky_point_i, rssky_point_i ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, i, rssky_point_i, rssky_point_i ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
   // Cleanup
@@ -971,7 +971,7 @@ static double PhysicalSpinBound(
 }
 
 int XLALSetLatticeTilingPhysicalSpinBound(
-  LatticeTilingSpace *space,
+  LatticeTiling *tiling,
   const gsl_matrix *rssky_transf,
   const size_t s,
   const double bound1,
@@ -980,7 +980,7 @@ int XLALSetLatticeTilingPhysicalSpinBound(
 {
 
   // Check input
-  XLAL_CHECK( space != NULL, XLAL_EFAULT );
+  XLAL_CHECK( tiling != NULL, XLAL_EFAULT );
   XLAL_CHECK( rssky_transf != NULL, XLAL_EFAULT );
   XLAL_CHECK( rssky_transf->size1 > 3, XLAL_EINVAL );
   XLAL_CHECK( isfinite( bound1 ), XLAL_EINVAL );
@@ -1004,14 +1004,14 @@ int XLALSetLatticeTilingPhysicalSpinBound(
   // Set the parameter-space bound on physical frequency/spindown coordinate
   data_lower[3] = GSL_MIN( bound1, bound2 );
   data_upper[3] = GSL_MAX( bound1, bound2 );
-  XLAL_CHECK( XLALSetLatticeTilingBound( space, dim, PhysicalSpinBound, data_len, data_lower, data_upper ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetLatticeTilingBound( tiling, dim, PhysicalSpinBound, data_len, data_lower, data_upper ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
 
 }
 
 int XLALSetLatticeTilingReducedSuperSkySpinBound(
-  LatticeTilingSpace *space,
+  LatticeTiling *tiling,
   const gsl_matrix *rssky_transf,
   const size_t s,
   const double bound1,
@@ -1020,7 +1020,7 @@ int XLALSetLatticeTilingReducedSuperSkySpinBound(
 {
 
   // Check input
-  XLAL_CHECK( space != NULL, XLAL_EFAULT );
+  XLAL_CHECK( tiling != NULL, XLAL_EFAULT );
   XLAL_CHECK( rssky_transf != NULL, XLAL_EFAULT );
   XLAL_CHECK( rssky_transf->size1 > 3, XLAL_EINVAL );
   XLAL_CHECK( isfinite( bound1 ), XLAL_EINVAL );
@@ -1030,7 +1030,7 @@ int XLALSetLatticeTilingReducedSuperSkySpinBound(
   const size_t dim = ( s == 0 ) ? ( 2 + smax ) : ( 1 + s );
 
   // Set the parameter-space bound on reduced super-sky frequency/spindown coordinate
-  XLAL_CHECK( XLALSetLatticeTilingConstantBound( space, dim, bound1, bound2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, dim, bound1, bound2 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
 

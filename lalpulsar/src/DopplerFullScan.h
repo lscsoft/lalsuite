@@ -97,7 +97,7 @@ void XLALDestroyDopplerFullScan ( DopplerFullScanState *scan );
 /// Set a first spindown bound derived from spindown age and braking indices
 ///
 int XLALSetLatticeTilingF1DotAgeBrakingBound(
-  LatticeTilingSpace* space,		///< [in] Lattice tiling parameter space
+  LatticeTiling* tiling,		///< [in] Lattice tiling
   const size_t freq_dimension,		///< [in] Frequency dimension
   const size_t f1dot_dimension,		///< [in] First spindown dimension
   const double age,			///< [in] Spindown age
@@ -109,7 +109,7 @@ int XLALSetLatticeTilingF1DotAgeBrakingBound(
 /// Set a second spindown bound derived from braking indices
 ///
 int XLALSetLatticeTilingF2DotBrakingBound(
-  LatticeTilingSpace* space,		///< [in] Lattice tiling parameter space
+  LatticeTiling* tiling,		///< [in] Lattice tiling
   const size_t freq_dimension,		///< [in] Frequency dimension
   const size_t f1dot_dimension,		///< [in] First spindown dimension
   const size_t f2dot_dimension,		///< [in] Second spindown dimension
