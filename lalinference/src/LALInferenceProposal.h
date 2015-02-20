@@ -150,7 +150,7 @@ void
 LALInferenceAddProposalToCycle(LALInferenceRunState *runState, const char *propName, LALInferenceProposalFunction prop, UINT4 weight);
 
 /** Randomizes the order of the proposals in the proposal cycle. */
-void 
+void
 LALInferenceRandomizeProposalCycle(LALInferenceRunState *runState);
 
 /** Proposes a jump from the next proposal in the proposal cycle.*/
@@ -166,12 +166,6 @@ LALInferenceDeleteProposalCycle(LALInferenceRunState *runState);
  * command-line flag active.
  */
 REAL8 LALInferenceDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
-
-/**
- * Proposal for rapid sky localization.  Used when --rapidSkyLoc
- * is specified.
- */
-REAL8 LALInferenceRapidSkyLocProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
 /** Proposal for after annealing is over. */
 REAL8 LALInferencePostPTProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
@@ -334,6 +328,15 @@ void LALInferenceUpdateMaxAutoCorrLen(LALInferenceRunState *runState);
 /* Determine the effective sample size based on the DE buffer. */
 INT4 LALInferenceComputeEffectiveSampleSize(LALInferenceRunState *runState);
 
+/* Initialize differential evolution proposal */
+void LALInferenceSetupDifferentialEvolutionProposal(LALInferenceRunState *state);
+
+/* Initialize kD-tree proposal */
+void LALInferenceSetupKDTreeProposal(LALInferenceRunState *state);
+
+/* Initialize covariance eigenvector proposal. */
+void LALInferenceSetupCovarianceEigenvectorProposal(LALInferenceRunState *state);
+
 /** Helper function to setup the adaptive step proposals before the run */
 void LALInferenceSetupAdaptiveProposals(LALInferenceRunState *state);
 
@@ -362,4 +365,3 @@ REAL8 LALInferenceSplineCalibrationProposal(LALInferenceRunState *runState, LALI
 /*@}*/
 
 #endif
-

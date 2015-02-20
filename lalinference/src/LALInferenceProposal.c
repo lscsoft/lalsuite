@@ -397,6 +397,9 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *curr
   UINT4 fullProp = 1;
   UINT4 nDet = numDetectorsUniquePositions(runState);
 
+  if(LALInferenceGetProcParamVal(run_state->commandLine, "--prop-verbose"))
+      runState->proposalStats = XLALCalloc(1, sizeof(LALInferenceVariables));
+
   /* If MCMC w/ parallel tempering, use reduced set of proposal functions for cold chains */
   if(LALInferenceCheckVariable(runState->proposalArgs, "hotChain")) {
     fullProp = *(UINT4 *)LALInferenceGetVariable(runState->proposalArgs, "hotChain");
@@ -446,24 +449,23 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *curr
   /* Now add various special proposals that are conditional on
      command-line arguments or variables in the params. */
 
-  ppt=LALInferenceGetProcParamVal(runState->commandLine, "--covariancematrix");
-  if(!ppt){
-    ppt=LALInferenceGetProcParamVal(runState->commandLine, "--covarianceMatrix");
-    if(ppt) XLALPrintWarning("WARNING: Deprecated --covarianceMatrix option will be removed, please change to --covariancematrix");
-  }
+  ppt = LALInferenceGetProcParamVal(runState->commandLine, "--covariancematrix");
   if (ppt) {
+    LALInferenceSetupCovarianceEigenvectorProposal(runState);
     LALInferenceAddProposalToCycle(runState, covarianceEigenvectorJumpName, &LALInferenceCovarianceEigenvectorJump, BIGWEIGHT);
   }
 
   if (!LALInferenceGetProcParamVal(runState->commandLine, "--noDifferentialEvolution")
       && !LALInferenceGetProcParamVal(runState->commandLine, "--nodifferentialevolution") && !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-differentialevolution")) {
+    LALInferenceSetupDifferentialEvolutionProposal(runState);
     LALInferenceAddProposalToCycle(runState, differentialEvolutionFullName, &LALInferenceDifferentialEvolutionFull, BIGWEIGHT);
     LALInferenceAddProposalToCycle(runState, differentialEvolutionIntrinsicName, &LALInferenceDifferentialEvolutionIntrinsic, SMALLWEIGHT);
     LALInferenceAddProposalToCycle(runState, differentialEvolutionExtrinsicName, &LALInferenceDifferentialEvolutionExtrinsic, SMALLWEIGHT);
 
   }
 
-  if (LALInferenceGetProcParamVal(runState->commandLine, "--kDTree") || LALInferenceGetProcParamVal(runState->commandLine,"--kdtree")) {
+  if (LALInferenceGetProcParamVal(runState->commandLine, "--kdtree")) {
+    LALInferenceSetupKDTreeProposal(runState);
     LALInferenceAddProposalToCycle(runState, KDNeighborhoodProposalName, &LALInferenceKDNeighborhoodProposal, SMALLWEIGHT);
   }
 
@@ -508,36 +510,6 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *curr
   LALInferenceZeroProposalStats(runState);
 }
 
-static void
-SetupRapidSkyLocProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams) {
-  LALInferenceCopyVariables(currentParams, proposedParams);
-  LALInferenceAddProposalToCycle(runState, singleAdaptProposalName, &LALInferenceSingleAdaptProposal, 100);
-  if (!LALInferenceGetProcParamVal(runState->commandLine, "--margphi") && !LALInferenceGetProcParamVal(runState->commandLine, "--margtimephi"))
-    LALInferenceAddProposalToCycle(runState, polarizationPhaseJumpName, &LALInferencePolarizationPhaseJump, 1);
-
-  INT4 skyframe=0;
-  if(LALInferenceCheckVariable(runState->currentParams,"SKY_FRAME"))
-		skyframe=LALInferenceGetINT4Variable(runState->currentParams,"SKY_FRAME");
-
-  UINT4 nDet = numDetectorsUniquePositions(runState);
-  if (nDet >= 3 && !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-extrinsicparam") && !LALInferenceGetProcParamVal(runState->commandLine,"--margtime") && !LALInferenceGetProcParamVal(runState->commandLine,"--margtimephi") &&!skyframe) {
-    LALInferenceAddProposalToCycle(runState, extrinsicParamProposalName, &LALInferenceExtrinsicParamProposal, 20);
-  }
-
-  /*
-  UINT4 nDet = numDetectorsUniquePositions(runState);
-  if (nDet == 3 &&!skyframe) {
-    LALInferenceAddProposalToCycle(runState, skyReflectDetPlaneName, &LALInferenceSkyReflectDetPlane, 1);
-  }
-  */
-
-  if (!LALInferenceGetProcParamVal(runState->commandLine, "--noDifferentialEvolution")) {
-    LALInferenceAddProposalToCycle(runState, differentialEvolutionFullName, &LALInferenceDifferentialEvolutionFull, 10);
-    LALInferenceAddProposalToCycle(runState, differentialEvolutionExtrinsicName, &LALInferenceDifferentialEvolutionExtrinsic, 5);
-  }
-
-  LALInferenceRandomizeProposalCycle(runState);
-}
 
 static void
 SetupPostPTProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams) {
@@ -567,21 +539,6 @@ REAL8 LALInferencePostPTProposal(LALInferenceRunState *runState, LALInferenceVar
     /* In case there is a partial cycle set up already, delete it. */
     LALInferenceDeleteProposalCycle(runState);
     SetupPostPTProposal(runState, currentParams, proposedParams);
-  }
-
-  REAL8 logPropRatio = LALInferenceCyclicProposal(runState, currentParams, proposedParams);
-
-  return logPropRatio;
-}
-
-
-REAL8 LALInferenceRapidSkyLocProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams) {
-  LALInferenceVariables *propArgs = runState->proposalArgs;
-
-  if (!LALInferenceCheckVariable(propArgs, cycleArrayName) || !LALInferenceCheckVariable(propArgs, cycleArrayLengthName)) {
-    /* In case there is a partial cycle set up already, delete it. */
-    LALInferenceDeleteProposalCycle(runState);
-    SetupRapidSkyLocProposal(runState, currentParams, proposedParams);
   }
 
   REAL8 logPropRatio = LALInferenceCyclicProposal(runState, currentParams, proposedParams);
@@ -3109,6 +3066,123 @@ REAL8 NSWrapMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariable
 
   return logPropRatio;
 }
+
+
+/* Initialize differential evolution proposal */
+void LALInferenceSetupDifferentialEvolutionProposal(LALInferenceRunState *state) {
+    state->differentialPoints = XLALCalloc(1, sizeof(LALInferenceVariables *));
+    state->differentialPointsLength = 0;
+    state->differentialPointsSize = 1;
+}
+
+/* Initialize kD-tree proposal */
+void LALInferenceSetupKDTreeProposal(LALInferenceRunState *state) {
+    ProcessParamsTable *ppt = NULL;
+    INT4 NCell;
+    REAL8 *low, *high;
+    size_t ndim;
+    LALInferenceKDTree *tree;
+    LALInferenceVariables *template;
+    LALInferenceVariableItem *currentItem;
+
+    /* kD Tree NCell parameter. */
+    ppt = LALInferenceGetProcParamVal(state->commandLine, "--kd-ncell");
+    if (ppt) {
+        NCell = atoi(ppt->value);
+        LALInferenceAddVariable(state->proposalArgs, "KDNCell", &NCell, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
+    }
+
+    /* KD Tree propsal. */
+    ppt = LALInferenceGetProcParamVal(state->commandLine, "--kdtree");
+    if (ppt) {
+        template = XLALCalloc(1, sizeof(LALInferenceVariables));
+        ndim = LALInferenceGetVariableDimensionNonFixed(state->currentParams);
+
+        low = XLALMalloc(ndim * sizeof(REAL8));
+        high = XLALMalloc(ndim * sizeof(REAL8));
+
+        currentItem = state->currentParams->head;
+        i = 0;
+        while (currentItem != NULL) {
+            if (currentItem->vary != LALINFERENCE_PARAM_FIXED) {
+                LALInferenceGetMinMaxPrior(state->priorArgs, currentItem->name, &(low[i]), &(high[i]));
+                i++;
+            }
+            currentItem = currentItem->next;
+        }
+
+        tree = LALInferenceKDEmpty(low, high, ndim);
+        LALInferenceCopyVariables(currentParams, template);
+
+        LALInferenceAddVariable(state->proposalArgs, "kDTree", &tree, LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_FIXED);
+        LALInferenceAddVariable(state->proposalArgs, "kDTreeVariableTemplate", &template, LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_FIXED);
+    }
+}
+
+
+/* Initialize covariance eigenvector proposal.  The given file
+ *     should contain the desired covariance matrix for the jump
+ *     proposal, in row-major (i.e. C) order. */
+void LALInferenceSetupCovarianceEigenvectorProposal(LALInferenceRunState *state) {
+    UINT4 N, i;
+    INT4 gsl_status;
+    FILE *inp;
+    gsl_matrix *covM, *covCopy, *eVectors;
+    gsl_vector *eValues;
+    gsl_eigen_symmv_workspace *ws;
+    REAL8Vector *sigmaVec, *eigenValues;
+    ProcessParamsTable *ppt = NULL;
+
+    ppt = LALInferenceGetProcParamVal(state->commandLine, "--covariancematrix");
+    if (ppt) {
+        inp = fopen(ppt->value, "r");
+        N = LALInferenceGetVariableDimensionNonFixed(state->currentParams);
+        covM = gsl_matrix_alloc(N, N);
+        covCopy = gsl_matrix_alloc(N, N);
+        sigmaVec = XLALCreateREAL8Vector(N);
+
+        if (readSquareMatrix(covM, N, inp)) {
+            fprintf(stderr, "Error reading covariance matrix (in %s, line %d)\n",
+                    __FILE__, __LINE__);
+            exit(1);
+        }
+
+        gsl_matrix_memcpy(covCopy, covM);
+
+        for (i = 0; i < N; i++)
+            sigmaVec->data[i] = sqrt(gsl_matrix_get(covM, i, i)); /* Single-parameter sigma. */
+
+        /* Set up eigenvectors and eigenvalues. */
+        eVectors = gsl_matrix_alloc(N,N);
+        eValues = gsl_vector_alloc(N);
+        eigenValues = XLALCreateREAL8Vector(N);
+        ws = gsl_eigen_symmv_alloc(N);
+
+        if ((gsl_status = gsl_eigen_symmv(covCopy, eValues, eVectors, ws)) != GSL_SUCCESS) {
+            fprintf(stderr, "Error in gsl_eigen_symmv (in %s, line %d): %d: %s\n",
+                    __FILE__, __LINE__, gsl_status, gsl_strerror(gsl_status));
+            exit(1);
+        }
+
+        for (i = 0; i < N; i++)
+            eigenValues->data[i] = gsl_vector_get(eValues,i);
+
+        LALInferenceAddVariable(state->proposalArgs, "covarianceEigenvectors",
+                                &eVectors, LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_FIXED);
+        LALInferenceAddVariable(state->proposalArgs, "covarianceEigenvalues",
+                                &eigenValues, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
+
+        fprintf(stdout, "Jumping with correlated jumps in %d dimensions from file %s.\n",
+                N, ppt->value);
+
+        fclose(inp);
+        gsl_eigen_symmv_free(ws);
+        gsl_matrix_free(covCopy);
+        gsl_vector_free(eValues);
+    } else
+        fprintf(stderr, "LALInferenceSetupCovarianceEigenvectorProposal() called, but no covariance matrix found.\n");
+}
+
 
 /** Setup adaptive proposals. Should be called when state->currentParams is already filled with an initial sample */
 void LALInferenceSetupAdaptiveProposals(LALInferenceRunState *state)
