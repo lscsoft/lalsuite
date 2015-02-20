@@ -49,14 +49,12 @@ void LogNSSampleAsMCMCSampleToFile(LALInferenceRunState *state, LALInferenceVari
 
 void LogNSSampleAsMCMCSampleToArray(LALInferenceRunState *state, LALInferenceVariables *vars)
 {
-  NSFillMCMCVariables(vars,state->priorArgs);
   LALInferenceLogSampleToArray(state, vars);
   return;
 }
 
 void LogNSSampleAsMCMCSampleToFile(LALInferenceRunState *state, LALInferenceVariables *vars)
 {
-  NSFillMCMCVariables(vars,state->priorArgs);
   LALInferenceLogSampleToFile(state, vars);
   return;
 }
