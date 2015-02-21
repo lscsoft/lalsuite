@@ -147,7 +147,9 @@ main ( int argc, char *argv[] )
   REAL4 maxErr = 0, maxRelerr = 0;
   REAL4 abstol, reltol;
 
-  XLALPrintInfo ("\n%s\n\n", XLALVectorDeviceHelpString() );
+  CHAR *helpstr;
+  XLALPrintInfo ("\n%s\n\n", helpstr = XLALVectorDeviceHelpString() );
+  XLALFree ( helpstr );
 
   // ---------- input data x in [-1000, 1000] for sin(),cos() ----------
   XLALPrintInfo ("Testing sinf(x), cosf(x) for x in [-1000, 1000]\n");

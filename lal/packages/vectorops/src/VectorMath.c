@@ -24,6 +24,7 @@
 
 #include <config.h>
 
+#include <lal/LALString.h>
 #include <lal/LALConstants.h>
 
 #define IN_VECTORMATH
@@ -106,41 +107,35 @@ XLALVectorDeviceName ( VectorDevice_type device )
 }// XLALVectorDeviceName()
 
 ///
-/// Return pointer to a static help string enumerating all (available) #VectorDevice_type options.
-/// Also indicates which is the currently-selected one.
+/// Return a help string enumerating all (available) #VectorDevice_type options, and
+/// also indicates which is the currently-selected one.
 ///
-const CHAR *
+CHAR *
 XLALVectorDeviceHelpString ( void )
 {
-  static int firstCall = 1;
-  static CHAR helpstr[1024];
-  if ( firstCall )
+  CHAR *helpstr = NULL;
+
+  XLAL_CHECK_NULL ( (helpstr = XLALStringAppend ( helpstr, "Available vector devices: (" )) != NULL, XLAL_EFUNC );
+
+  BOOLEAN firstDev = 1;
+  for (UINT4 i = VECTORDEVICE_START + 1; i < VECTORDEVICE_END; i++ )
     {
-      CHAR buf[1024];
-      strncpy (helpstr, "Available vector devices: (", sizeof(helpstr));
-      UINT4 len = strlen(helpstr);
-      const CHAR *separator = "";
-      for (UINT4 i = VECTORDEVICE_START + 1; i < VECTORDEVICE_END; i++ )
-        {
-          if ( ! allVectorDevices[i].available ) {
-            continue;
-          }
-          snprintf ( buf, sizeof(buf), "%s%s", separator, allVectorDevices[i].name );
-          separator="|";
-          if ( i == currentVectorDevice ) {
-            strncat ( buf, "(=default)", sizeof(buf) - strlen(buf) - 1 );
-          }
-          len += strlen(buf);
-          XLAL_CHECK_NULL ( len < sizeof(helpstr), XLAL_EBADLEN, "VectorDevice help-string exceeds buffer length (%lu)\n", sizeof(helpstr) );
-          strcat ( helpstr, buf );
-        } // for i < VECTORDEVICE_END
+      if ( ! allVectorDevices[i].available ) {
+        continue;
+      }
 
-      strcat(helpstr, ") ");
-      firstCall = 0;
+      XLAL_CHECK_NULL ( (helpstr = XLALStringAppend ( helpstr, firstDev ? "" : "|" )) != NULL, XLAL_EFUNC );
+      XLAL_CHECK_NULL ( (helpstr = XLALStringAppend ( helpstr, allVectorDevices[i].name )) != NULL, XLAL_EFUNC );
+      if ( i == currentVectorDevice ) {
+        XLAL_CHECK_NULL ( (helpstr = XLALStringAppend ( helpstr, "(=current)" )) != NULL, XLAL_EFUNC );
+      }
+      firstDev = 0;
+    } // for i < VECTORDEVICE_END
 
-    } // if firstCall
+  XLAL_CHECK_NULL ( (helpstr = XLALStringAppend ( helpstr, ") ")) != NULL, XLAL_EFUNC );
 
   return helpstr;
+
 } // XLALVectorDeviceHelpString()
 
 ///

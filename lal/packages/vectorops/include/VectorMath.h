@@ -78,7 +78,7 @@ int XLALVectorDeviceSet ( VectorDevice_type device );
 VectorDevice_type XLALVectorDeviceGet ( void );
 int XLALVectorDeviceIsAvailable ( VectorDevice_type device );
 const CHAR *XLALVectorDeviceName ( VectorDevice_type device );
-const CHAR *XLALVectorDeviceHelpString ( void );
+CHAR *XLALVectorDeviceHelpString ( void );
 int XLALVectorDeviceParseString ( VectorDevice_type *device, const char *s );
 
 /* ----- aligned-memory handling */
