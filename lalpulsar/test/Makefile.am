@@ -47,6 +47,9 @@ if LALXML
 test_programs += LALPulsarXMLTest
 endif
 
+## special benchmark program for CFS, not run as part of tests
+bin_PROGRAMS = ComputeFstatBenchmark
+
 # Add shell, Python, etc. test scripts to this variable
 test_scripts += pulsar_toa_test.sh
 
