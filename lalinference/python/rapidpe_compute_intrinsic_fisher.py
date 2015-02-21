@@ -26,6 +26,7 @@ import os
 import select
 import sys
 import stat
+from functools import partial
 from optparse import OptionParser, OptionGroup
 
 import numpy as np
@@ -46,12 +47,11 @@ __author__ = "Evan Ochsner <evano@gravity.phys.uwm.edu>, Chris Pankow <pankow@gr
 
 optp = OptionParser()
 # Options needed by this program only.
-optp.add_option("-w", "--working-directory", default="./", help="Directory in which to stage DAG components.")
-
 optp.add_option("-X", "--mass-points-xml", action="store_true", help="Output mass points as a sim_inspiral table.")
 optp.add_option("-N", "--N-mass-pts", type=int, default=200, help="Number of intrinsic parameter (mass) values at which to compute marginalized likelihood. Default is 200.")
 optp.add_option("--linear-spoked", action="store_true", help="Place mass pts along spokes linear in radial distance (if omitted placement will be random and uniform in volume")
 optp.add_option("--match-value", type=float, default=0.97, help="Use this as the minimum match value. Default is 0.97")
+optp.add_option("--save-ellipsoid-data", action="store_true", help="Save the parameters and eigenvalues of the ellipsoid.")
 
 # Options transferred to ILE
 optp.add_option("-C", "--channel-name", action="append", help="instrument=channel-name, e.g. H1=FAKE-STRAIN. Can be given multiple times for different instruments.")
@@ -64,6 +64,8 @@ optp.add_option("-s", "--sim-xml", help="XML file containing injected event info
 intrinsic_params = OptionGroup(optp, "Intrinsic Parameters", "Intrinsic parameters (e.g component mass) to use.")
 intrinsic_params.add_option("--mass1", type=float, help="Value of first component mass, in solar masses. Required if not providing coinc tables.")
 intrinsic_params.add_option("--mass2", type=float, help="Value of second component mass, in solar masses. Required if not providing coinc tables.")
+intrinsic_params.add_option("--event-time", type=float, help="Event coalescence GPS time.")
+intrinsic_params.add_option("--approximant", help="Waveform family approximant to use. Required.")
 optp.add_option_group(intrinsic_params)
 
 opts, args = optp.parse_args()
@@ -272,7 +274,8 @@ gam = np.real(gam)
 test = np.concatenate((np.array([[McSIG/lal.MSUN_SI, etaSIG]]), gam,np.array([[r1,r2]]),np.array([[area, frac_area]]), np.array([[match_cntr,match_cntr]]) ))
 # If clusters get upgraded, add this header to output:
 #   header='grid center; 2x2 effective Fisher matrix, 4rd row: ellipsoid axes, 5th row: total ellipse area, estimated physical area'
-np.savetxt('ellipsoid.dat', test)
+if opts.save_ellipsoid_data:
+    np.savetxt('ellipsoid.dat', test)
 
 # Convert to m1, m2
 m1m2_grid = np.array([lsu.m1m2(cart_grid[i][0], cart_grid[i][1])
