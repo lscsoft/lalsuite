@@ -396,7 +396,7 @@ if pinned_params.has_key("t_ref"):
 
 pinned_params.update({ 
     # Iteration settings and termination conditions
-    "n": min(opts.n_chunk, n_max), # Number of samples in a chunk
+    "n": min(opts.n_chunk, opts.n_max), # Number of samples in a chunk
     "nmax": opts.n_max, # Total number of samples to draw before termination
     "neff": opts.n_eff, # Total number of effective samples to collect before termination
 
