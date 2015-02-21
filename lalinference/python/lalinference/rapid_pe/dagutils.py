@@ -81,7 +81,7 @@ def write_integrate_likelihood_extrinsic_sub(tag='integrate', exe=None, log_dir=
 
     assert len(kwargs["psd_file"]) == len(kwargs["channel_name"])
 
-    exe = exe or which("integrate_likelihood_extrinsic")
+    exe = exe or which("rapidpe_integrate_extrinsic_likelihood")
     ile_job = pipeline.CondorDAGJob(universe="vanilla", executable=exe)
     # This is a hack since CondorDAGJob hides the queue property
     ile_job._CondorJob__queue = ncopies
@@ -106,7 +106,7 @@ def write_integrate_likelihood_extrinsic_sub(tag='integrate', exe=None, log_dir=
         ile_job.add_file_opt("output-file", "%s-%s.%s" % (ofname, uniq_str, ext))
         del kwargs["output_file"]
         if kwargs.has_key("save_samples") and kwargs["save_samples"] is True:
-            ile_job.add_opt("save-samples", None)
+            ile_job.add_opt("save-samples", '')
             del kwargs["save_samples"]
 
     #
@@ -119,7 +119,7 @@ def write_integrate_likelihood_extrinsic_sub(tag='integrate', exe=None, log_dir=
             for p in param:
                 ile_job.add_arg("--%s %s" % (opt.replace("_", "-"), str(p)))
         elif param is True:
-            ile_job.add_opt(opt.replace("_", "-"), None)
+            ile_job.add_opt(opt.replace("_", "-"), '')
         elif param is None:
             continue
         else:
@@ -168,7 +168,7 @@ def write_result_coalescence_sub(tag='coalesce', exe=None, log_dir=None, output_
         #tmpdir = "/tmp/"
     tmpdir = "/dev/shm/"
     sql_job.add_opt("tmp-space", tmpdir)
-    sql_job.add_opt("verbose", None)
+    sql_job.add_opt("verbose", '')
 
     sql_job.add_condor_cmd('getenv', 'True')
     sql_job.add_condor_cmd('request_memory', '1024')
@@ -194,11 +194,11 @@ def write_posterior_plot_sub(tag='plot_post', exe=None, log_dir=None, output_dir
     plot_job.set_stderr_file("%s%s-%s.err" % (log_dir, tag, uniq_str))
     plot_job.set_stdout_file("%s%s-%s.out" % (log_dir, tag, uniq_str))
 
-    plot_job.add_opt("show-points", None)
+    plot_job.add_opt("show-points", '')
     plot_job.add_opt("dimension1", "mchirp")
     plot_job.add_opt("dimension2", "eta")
     plot_job.add_opt("input-cache", "ILE_all.cache")
-    plot_job.add_opt("log-evidence", None)
+    plot_job.add_opt("log-evidence", '')
 
     plot_job.add_condor_cmd('getenv', 'True')
     plot_job.add_condor_cmd('request_memory', '1024')
@@ -254,8 +254,8 @@ def write_1dpos_plot_sub(tag='1d_post_plot', exe=None, log_dir=None, output_dir=
     plot_job.set_stdout_file("%s%s-%s.out" % (log_dir, tag, uniq_str))
 
     plot_job.add_opt("save-sampler-file", "ILE_$(macromassid).sqlite")
-    plot_job.add_opt("disable-triplot", None)
-    plot_job.add_opt("disable-1d-density", None)
+    plot_job.add_opt("disable-triplot", '')
+    plot_job.add_opt("disable-1d-density", '')
 
     plot_job.add_condor_cmd('getenv', 'True')
     plot_job.add_condor_cmd('request_memory', '2048')
@@ -292,7 +292,7 @@ def write_bayes_pe_postproc_sub(tag='bayespe_post_plot', exe=None, log_dir=None,
         plot_job.add_opt("eventnum", 0)
 
     # Calculate evidence (just to compare)
-    plot_job.add_opt("dievidence", None)
+    plot_job.add_opt("dievidence", '')
 
     plot_job.add_opt("header", "header.txt")
     plot_job.add_opt("data", "tmp")
