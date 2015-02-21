@@ -30,6 +30,7 @@ import lal
 
 import glue.lal
 from glue.ligolw import utils, ligolw, lsctables, table
+lsctables.use_in(ligolw.LIGOLWContentHandler)
 from glue.ligolw.utils import process
 
 from glue.ligolw.utils import process
@@ -53,6 +54,8 @@ optp.add_option("-l", "--log-directory", default="./", help="Directory in which 
 optp.add_option("-W", "--web-output", default="./", help="Directory to place web accessible plots and webpages.")
 optp.add_option("--disable-ile-postproc", action="store_true", help="Do not plot mass posteriors via plot_like_contours.")
 optp.add_option("--disable-bayes-postproc", action="store_true", help="Do not plot posteriors via cbcBayesPostProc.")
+optp.add_option("--n-copies", default=1, help="Number of copies of each integrator instance to run per mass point. Default is one.")
+optp.add_option("--write-script", action="store_true", help="In addition to the DAG, write a script to this filename to execute the workflow.")
 
 for cat, val in MAXJOBS.iteritems():
     optname = "--maxjobs-%s" % cat.lower().replace("_", "-")
@@ -78,7 +81,7 @@ if not opts.template_bank_xml:
 # Get end time from coinc inspiral table or command line
 xmldoc = None
 if opts.coinc_xml is not None:
-    xmldoc = utils.load_filename(opts.coinc_xml)
+    xmldoc = utils.load_filename(opts.coinc_xml, contenthandler=ligolw.LIGOLWContentHandler)
     coinc_table = table.get_table(xmldoc, lsctables.CoincInspiralTable.tableName)
     assert len(coinc_table) == 1
     coinc_row = coinc_table[0]
@@ -105,14 +108,14 @@ elif xmldoc is not None:
 else:
     raise ValueError("Need either --mass1 --mass2 or --coinc-xml to retrieve masses.")
 
-xmldoc, tmplt_bnk = utils.load_filename(opts.template_bank_xml), None
+xmldoc, tmplt_bnk = utils.load_filename(opts.template_bank_xml, contenthandler=ligolw.LIGOLWContentHandler), None
 try:
-    tmplt_bnk = table.get_table(xmldoc, SimInspiralTable.tableName)
+    tmplt_bnk = lsctables.SimInspiralTable.get_table(xmldoc)
 except ValueError:
     print >>sys.stderr, "Exactly one sim_inspiral table was not found in %s, trying sngl_inspiral" % opts.template_bank_xml
 
 if tmplt_bnk is None:
-    tmplt_bnk = table.get_table(xmldoc, SnglInspiralTable.tableName)
+    tmplt_bnk = lsctables.SnglInspiralTable.get_table(xmldoc)
 
 #
 # Post processing options
@@ -132,11 +135,12 @@ ppdag = pipeline.CondorDAG(log=os.getcwd())
 ppdag.add_maxjobs_category("SQL", MAXJOBS["SQL"])
 ppdag.add_maxjobs_category("PLOT", MAXJOBS["PLOT"])
 
-os.makedirs(log_dir) # Make a directory to hold log files of jobs
+if not os.path.exists(opts.log_directory):
+    os.makedirs(opts.log_directory) # Make a directory to hold log files of jobs
 
 ile_job_type, ile_sub_name = dagutils.write_integrate_likelihood_extrinsic_sub(
         tag='integrate',
-        log_dir=log_dir,
+        log_dir=opts.log_directory,
         cache_file=opts.cache_file,
         channel_name=opts.channel_name,
         psd_file=opts.psd_file,
@@ -166,7 +170,7 @@ ile_job_type.write_sub_file()
 if use_bayespe_postproc:
     if not os.path.exists(opts.web_output):
         os.makedirs(opts.web_output)
-    bpp_plot_job_type, bpp_plot_job_name = dagutils.write_bayes_pe_postproc_sub(tag="bayes_pp_plot", log_dir=log_dir, web_dir=opts.web_output)
+    bpp_plot_job_type, bpp_plot_job_name = dagutils.write_bayes_pe_postproc_sub(tag="bayes_pp_plot", log_dir=opts.log_directory, web_dir=opts.web_output)
     bpp_plot_job_type.write_sub_file()
     bpp_plot_node = pipeline.CondorDAGNode(bpp_plot_job_type)
     bpp_plot_node.set_category("PLOT")
@@ -178,7 +182,7 @@ if use_bayespe_postproc:
 # node in the DAG
 #
 if use_ile_postproc:
-    pos_plot_job_type, pos_plot_job_name = dagutils.write_posterior_plot_sub(tag="pos_plot", log_dir=log_dir)
+    pos_plot_job_type, pos_plot_job_name = dagutils.write_posterior_plot_sub(tag="pos_plot", log_dir=opts.log_directory)
     pos_plot_job_type.write_sub_file()
     pos_plot_node = pipeline.CondorDAGNode(pos_plot_job_type)
     pos_plot_node.set_pre_script(dagutils.which("coalesce.sh"))
@@ -186,7 +190,7 @@ if use_ile_postproc:
     pos_plot_node.set_priority(JOB_PRIORITIES["PLOT"])
     ppdag.add_node(pos_plot_node)
 
-sql_job_type, sql_job_name = dagutils.write_result_coalescence_sub(tag="coalesce", log_dir=log_dir)
+sql_job_type, sql_job_name = dagutils.write_result_coalescence_sub(tag="coalesce", log_dir=opts.log_directory)
 sql_job_type.write_sub_file()
 
 # TODO: Mass index table
@@ -228,16 +232,16 @@ for i, (m1, m2) in enumerate([(tmplt.mass1, tmplt.mass2) for tmplt in tmplt_bnk]
     sql_node.set_category("SQL")
     ppdag.add_node(sql_node)
 
-    tri_plot_job_type, tri_plot_job_name = dagutils.write_tri_plot_sub(tag="tri_plot", injection_file=opts.sim_xml, log_dir=log_dir)
-    tri_plot_job_type.write_sub_file()
-    tri_plot_node = pipeline.CondorDAGNode(tri_plot_job_type)
-    tri_plot_node.add_macro("macromassid", mass_grouping)
-    tri_plot_node.set_category("PLOT")
-    tri_plot_node.set_priority(JOB_PRIORITIES["PLOT"])
-    ppdag.add_node(tri_plot_node)
-    tri_plot_node.add_parent(sql_node)
-
     if use_ile_postproc:
+        tri_plot_job_type, tri_plot_job_name = dagutils.write_tri_plot_sub(tag="tri_plot", injection_file=opts.sim_xml, log_dir=opts.log_directory)
+        tri_plot_job_type.write_sub_file()
+        tri_plot_node = pipeline.CondorDAGNode(tri_plot_job_type)
+        tri_plot_node.add_macro("macromassid", mass_grouping)
+        tri_plot_node.set_category("PLOT")
+        tri_plot_node.set_priority(JOB_PRIORITIES["PLOT"])
+        ppdag.add_node(tri_plot_node)
+        tri_plot_node.add_parent(sql_node)
+    
         # In the interest of not blocking later DAGs for completion in an
         # uberdag, this is now dependent on the SQL step
         pos_plot_node.add_parent(sql_node)
@@ -246,9 +250,11 @@ for i, (m1, m2) in enumerate([(tmplt.mass1, tmplt.mass2) for tmplt in tmplt_bnk]
 dag_name="marginalize_extrinsic_parameters"
 dag.set_dag_file(dag_name)
 dag.write_concrete_dag()
+if opts.write_script:
+    dag.write_script()
 
 print "Created a DAG named %s\n" % dag_name
-print "This will run %i instances of %s in parallel\n" % (len(cart_grid), ile_sub_name)
+print "This will run %i instances of %s in parallel\n" % (len(tmplt_bnk), ile_sub_name)
 
 # FIXME: Adjust name on command line
 ppdag_name="posterior_pp"
@@ -256,5 +262,7 @@ ppdag.set_dag_file(ppdag_name)
 ppdag.add_maxjobs_category("ANALYSIS", MAXJOBS["ANALYSIS"])
 ppdag.add_maxjobs_category("POST", MAXJOBS["POST"])
 ppdag.write_concrete_dag()
+if opts.write_script:
+    ppdag.write_script()
 
 print "Created a postprocessing DAG named %s\n" % ppdag_name
