@@ -243,8 +243,6 @@ REAL8 LALInferenceSkyReflectDetPlane(LALInferenceRunState *runState, LALInferenc
 
 REAL8 LALInferenceSkyRingProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);;
 
-/* Nested sampling wrappers. */
-void NSFillMCMCVariables(LALInferenceVariables *proposedParams, LALInferenceVariables *priorArgs);
 REAL8 NSWrapMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
 /* Noise model proposals. */
