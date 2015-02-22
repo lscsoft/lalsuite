@@ -400,12 +400,19 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
       REAL4 EdX = 0; // FIXME
       REAL4 DdX_inv = 1.0 / multiAMcoef->data[X]->D;
 
+      REAL8 dtauX = XLALGPSDiff ( &multiTimeSeries_SRC->data[X]->epoch, &thisPoint.refTime );
+
       /* compute final Fa,Fb and Fstats (per-detector and combined) */
       for ( UINT4 k = 0; k < numFreqBinsOut; k++ )
         {
           UINT4 idy = k + offset_bins;
-          COMPLEX8 FaX_k = dt_SRC * resamp->ws_FaX->data[idy];
-          COMPLEX8 FbX_k = dt_SRC * resamp->ws_FbX->data[idy];
+          REAL8 f_k = FreqOut0 + k * dFreqOut;
+          REAL8 cycles = - f_k * dtauX;
+          REAL4 sinphase, cosphase;
+          XLALSinCos2PiLUT ( &sinphase, &cosphase, cycles );
+          COMPLEX8 norm = dt_SRC * crectf ( cosphase, sinphase );
+          COMPLEX8 FaX_k = norm * resamp->ws_FaX->data[idy];
+          COMPLEX8 FbX_k = norm * resamp->ws_FbX->data[idy];
 
           resamp->ws_Fa_k[k] += FaX_k;
           resamp->ws_Fb_k[k] += FbX_k;
@@ -517,15 +524,15 @@ XLALSpindownAntennaWeightCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *ax,           
   }
 
   REAL8 dt = x->deltaT;
-  const LIGOTimeGPS *epoch = &(x->epoch);
-  REAL8 t0 = XLALGPSDiff ( epoch, &(doppler->refTime) );
-
   UINT4 numSamples = x->data->length;
   XLAL_CHECK ( (ax->data->length == numSamples) && (bx->data->length == numSamples), XLAL_EINVAL );
 
   REAL8 Tspan = numSamples * dt;
-  REAL8 freq_offset = x->f0 - doppler->fkdot[0]; 		// difference between the input timeseries heterodyne frequency and user-requested lowest frequency
-  REAL8 bin_shift = remainder ( freq_offset, 1.0 / Tspan ); // fractional bin frequency offset to closest bin
+  REAL8 freq_offset = doppler->fkdot[0] - x->f0; 		// difference between user-requested lowest frequency and heterodyne frequency "new - old"
+  REAL8 DeltaFreq_bin = remainder ( freq_offset, 1.0 / Tspan ); // fractional bin frequency offset to closest bin
+
+  const LIGOTimeGPS *epoch = &(x->epoch);
+  REAL8 Dtau0 = XLALGPSDiff ( epoch, &(doppler->refTime) );
 
   // set output TS to 0, to avoid garbage data in case of gaps
   memset ( ax->data->data, 0, numSamples * sizeof(ax->data->data[0]) );
@@ -538,10 +545,6 @@ XLALSpindownAntennaWeightCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *ax,           
   (*bx) = (*x);
   ax->data = tmp_ax;
   bx->data = tmp_bx;
-
-  // correct output for frequency shift to be applied below ..
-  ax->f0 = x->f0 - bin_shift;
-  bx->f0 = x->f0 - bin_shift;
 
   UINT4 numSFTs = SFTinds->length / 2;
   XLAL_CHECK ( (AMcoef->a->length == numSFTs) && (AMcoef->b->length == numSFTs), XLAL_EINVAL );
@@ -559,15 +562,16 @@ XLALSpindownAntennaWeightCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *ax,           
       // loop over all samples from this SFT
       for ( UINT4 j=start_index; j <= end_index; j ++ )
         {
-          REAL8 t_alpha_j = t0 + j * dt;
+          REAL8 taup_j = j * dt;
+          REAL8 Dtau_alpha_j = Dtau0 + taup_j;
 
-          REAL8 cycles = bin_shift * t_alpha_j;
+          REAL8 cycles = - DeltaFreq_bin * taup_j;
 
-          REAL8 tk_pow_kp1 = t_alpha_j;
+          REAL8 Dtau_pow_kp1 = Dtau_alpha_j;
           for ( UINT4 k = 1; k <= s_max; k++ )
             {
-              tk_pow_kp1 *= t_alpha_j;
-              cycles += - inv_fact[k+1] * doppler->fkdot[k] * tk_pow_kp1;
+              Dtau_pow_kp1 *= Dtau_alpha_j;
+              cycles += - inv_fact[k+1] * doppler->fkdot[k] * Dtau_pow_kp1;
             } // for k = 1 ... s_max
 
           REAL4 cosphase, sinphase;
@@ -581,6 +585,10 @@ XLALSpindownAntennaWeightCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *ax,           
         } // for j in [start_index, end_index]
 
     } // for alpha < numSFTs
+
+  // correct output for frequency shift
+  ax->f0 = x->f0 + DeltaFreq_bin;
+  bx->f0 = x->f0 + DeltaFreq_bin;
 
   return XLAL_SUCCESS;
 
@@ -611,14 +619,6 @@ XLALBarycentricResampleMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries **mTime
   UINT4 numDetectors = mTimeSeries_DET->length;
   XLAL_CHECK ( (numDetectors >0) && (mSRC_timing->length == numDetectors) && (mTimestamps_DET->length == numDetectors), XLAL_EINVAL );
 
-  /* define the length of an SFT (assuming 1/T resolution) */
-  REAL8 Tsft = mTimestamps_DET->data[0]->deltaT;
-
-  /* find earliest and latest SRC time */
-  LIGOTimeGPS earliestSRC, latestSRC;
-  XLAL_CHECK ( XLALEarliestMultiSSBtime ( &earliestSRC, mSRC_timing, Tsft ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALLatestMultiSSBtime ( &latestSRC, mSRC_timing, Tsft ) == XLAL_SUCCESS, XLAL_EFUNC );
-
   /* determine resampled timeseries parameters */
   REAL8 Teff = 1.0 / deltaF;                                       /* the effective observation time based on the requested frequency resolution (for zero padding) */
   REAL8 fHet = mTimeSeries_DET->data[0]->f0;                               /* the input timeseries heterodyne frequency */
@@ -645,12 +645,15 @@ XLALBarycentricResampleMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries **mTime
       LIGOTimeGPSVector *Timestamps_DETX = mTimestamps_DET->data[X];
 
       // create empty timeseries structures for the resampled timeseries
-      XLAL_CHECK ( ((*mTimeSeries_SRC)->data[X] = XLALCreateCOMPLEX8TimeSeries ( TimeSeries_DETX->name, &earliestSRC, fHet, deltaTEff, &emptyLALUnit, numSamplesOut )) != NULL, XLAL_EFUNC );
+      XLAL_CHECK ( ((*mTimeSeries_SRC)->data[X] = XLALCreateCOMPLEX8TimeSeries ( TimeSeries_DETX->name, &TimeSeries_DETX->epoch, fHet, deltaTEff, &emptyLALUnit, numSamplesOut )) != NULL, XLAL_EFUNC );
       memset ( (*mTimeSeries_SRC)->data[X]->data->data, 0, numSamplesOut * sizeof(COMPLEX8)) ; 	// set all time-samples to zero (in case there are gaps)
       XLAL_CHECK ( ((*mSFTinds_SRC)->data[X] = XLALCreateUINT4Vector ( 2 * Timestamps_DETX->length )) != NULL, XLAL_EFUNC );
 
+      COMPLEX8TimeSeries *TimeSeries_SRCX = (*mTimeSeries_SRC)->data[X];
+      UINT4Vector *SFTinds_SRCX = (*mSFTinds_SRC)->data[X];
+
       // perform resampling on current detector timeseries */
-      XLAL_CHECK ( XLALBarycentricResampleCOMPLEX8TimeSeries ( (*mTimeSeries_SRC)->data[X], (*mSFTinds_SRC)->data[X], TimeSeries_DETX, Timestamps_DETX, SRCtimingX ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK ( XLALBarycentricResampleCOMPLEX8TimeSeries ( TimeSeries_SRCX, SFTinds_SRCX, TimeSeries_DETX, Timestamps_DETX, SRCtimingX ) == XLAL_SUCCESS, XLAL_EFUNC );
     } // for X < numDetectors
 
   /* success */
@@ -698,10 +701,11 @@ XLALBarycentricResampleCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *TimeSeries_SRC,	
   REAL8 deltaT_DET  = TimeSeries_DET->deltaT;
   REAL8 end_DET     = start_DET + (numSamples_DET - 1) * deltaT_DET;	// time of *last sample* in detector-frame timeseries
 
-  REAL8 start_SRC   = XLALGPSGetREAL8 ( &(TimeSeries_SRC->epoch) );
   REAL8 deltaT_SRC  = TimeSeries_SRC->deltaT;
-
   UINT4 numSamples_SRC = TimeSeries_SRC->data->length;
+  // determine and set time-series start-time in SRC frame
+  REAL8 start_SRC   = refTime + SRC_timing->DeltaT->data[0] - (0.5*Tsft) * SRC_timing->Tdot->data[0];
+  XLALGPSSetREAL8 ( &(TimeSeries_SRC->epoch), start_SRC );
 
   /* allocate memory for the uniformly sampled detector time samples (Fa and Fb real and imaginary) */
   REAL8Vector* ts[2]; // store real and imaginary parts of input timeseries as separate real vectors
@@ -793,14 +797,15 @@ XLALBarycentricResampleCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *TimeSeries_SRC,	
           if ( idx >= numSamples_SRC ) {	// temporary FIX to avoid writing outside of memory bounds (FIXME!)
             break;
           }
-          REAL8 tDiff = start_SRC + idx * deltaT_SRC - detectortimes->data[k];                              /* the difference between t_SRC and t_DET */
+          REAL8 tDiff = idx * deltaT_SRC - (detectortimes->data[k] - start_DET); 	// tau' - t'(tau')
           REAL8 cycles = fmod ( fHet * tDiff, 1 );                                                          /* the accumulated heterodyne cycles */
 
           /* use a look-up-table for speed to compute real and imaginary phase */
           REAL4 cosphase, sinphase;                                                                         /* the real and imaginary parts of the phase correction */
           XLAL_CHECK( XLALSinCos2PiLUT ( &sinphase, &cosphase, -cycles ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-          TimeSeries_SRC->data->data[idx] = crectf( out_ts[0]->data[k]*cosphase - out_ts[1]->data[k]*sinphase, out_ts[1]->data[k]*cosphase + out_ts[0]->data[k]*sinphase );
+          COMPLEX8 ei2piphase = crectf ( cosphase, sinphase );
+          TimeSeries_SRC->data->data[idx] = ei2piphase * ts_SRC->data[k];
         } // for k < SFTnumSamples_SRC
 
       /* free memory used for this SFT */

@@ -229,12 +229,16 @@ XLALSFTVectorToCOMPLEX8TimeSeries ( const SFTVector *sftsIn,        /**< [in] SF
       XLAL_CHECK_NULL ( XLALTimeShiftSFT ( thisSFT, nudge_n ) == XLAL_SUCCESS, XLAL_EFUNC  );
 
       /* determine heterodyning phase-correction for this SFT */
-      REAL8 offset0 = XLALGPSDiff ( &thisSFT->epoch, &start );
+      REAL8 offset = XLALGPSDiff ( &thisSFT->epoch, &start );	// updated value after time-shift
+      // fHet * Tsft is an integer by construction, because fHet was chosen as a frequency-bin of the input SFTs
+      // therefore we only need the remainder (offset % Tsft)
+      REAL8 offsetEff = fmod ( offset, Tsft );
+      REAL8 hetCycles = fmod ( fHet * offsetEff, 1); // heterodyning phase-correction for this SFT
 
-      /* fHet * Tsft is an integer, because fHet is a frequency-bin of the input SFTs, so we only need the remainder offset_t0 % Tsft */
-      REAL8 offsetEff = fmod ( offset0, Tsft );
-      offsetEff = 1e-9 * round ( offsetEff * 1e9 );	/* round to closest integer multiple of nanoseconds */
-      REAL8 hetCycles = fmod ( fHet * offsetEff, 1);			/* required heterodyning phase-correction for this SFT */
+      if ( nudge_n != 0 ){
+        XLALPrintInfo("n = %d, offset_n = %g, nudge_n = %g, offset = %g, offsetEff = %g, hetCycles = %g\n",
+                      n, offset_n, nudge_n, offset, offsetEff, hetCycles );
+      }
 
       REAL4 hetCorrection_re, hetCorrection_im;
       XLAL_CHECK_NULL ( XLALSinCos2PiLUT ( &hetCorrection_im, &hetCorrection_re, -hetCycles ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -249,20 +253,16 @@ XLALSFTVectorToCOMPLEX8TimeSeries ( const SFTVector *sftsIn,        /**< [in] SF
        * apply it ourselves)
        *
        */
-      hetCorrection *= ((REAL4) dfSFT);
+      hetCorrection *= dfSFT;
 
-      /* FIXME: check how time-critical this step is, using proper profiling! */
-
-      for ( UINT4 k=0; k < numFreqBinsSFT; k++) {
-        thisSFT->data->data[k] *= hetCorrection;
-      } /* for k < numBins */
-
-      /* FIXME: check if required */
       XLAL_CHECK_NULL ( XLALReorderSFTtoFFTW (thisSFT->data) == XLAL_SUCCESS, XLAL_EFUNC );
-
       XLAL_CHECK_NULL ( XLALCOMPLEX8VectorFFT( sTS->data, thisSFT->data, SFTplan ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-      /* copy short (shifted) timeseries into correct location within long timeseries */
+      for ( UINT4 j=0; j < sTS->data->length; j++) {
+        sTS->data->data[j] *= hetCorrection;
+      } // for j < numFreqBinsSFT
+
+      // copy the short (shifted) heterodyned timeseries into correct location within long timeseries
       UINT4 binsLeft = numSamples - bin0_n;
       UINT4 copyLen = MYMIN ( numFreqBinsSFT, binsLeft );		/* make sure not to write past the end of the long TS */
       memcpy ( &lTS->data->data[bin0_n], sTS->data->data, copyLen * sizeof(lTS->data->data[0]) );
@@ -283,8 +283,6 @@ XLALSFTVectorToCOMPLEX8TimeSeries ( const SFTVector *sftsIn,        /**< [in] SF
  * Turn the given multiSFTvector into multiple long COMPLEX8TimeSeries, properly dealing with gaps.
  * Memory allocation for the output MultiCOMPLEX8TimeSeries is done within this function.
  *
- * NOTE : We enforce that each detectors timeseries has <b>equal</b> start times and time spans.
- *
  */
 MultiCOMPLEX8TimeSeries *
 XLALMultiSFTVectorToCOMPLEX8TimeSeries ( const MultiSFTVector *multisfts  /**< [in] multi SFT vector */
@@ -298,9 +296,6 @@ XLALMultiSFTVectorToCOMPLEX8TimeSeries ( const MultiSFTVector *multisfts  /**< [
   XLAL_CHECK_NULL ( XLALEarliestMultiSFTsample ( &start, multisfts) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_NULL ( XLALLatestMultiSFTsample (   &end,   multisfts) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  /* check that earliest is before latest */
-  XLAL_CHECK_NULL ( XLALGPSDiff ( &end, &start ) >= 0, XLAL_EDOM, "Start time after end time!\n" );
-
   UINT4 numDetectors = multisfts->length;
 
   /* allocate memory for the output structure */
@@ -311,7 +306,7 @@ XLALMultiSFTVectorToCOMPLEX8TimeSeries ( const MultiSFTVector *multisfts  /**< [
 
   /* loop over detectors */
   for ( UINT4 X=0; X < numDetectors; X++ ) {
-    XLAL_CHECK_NULL ((out->data[X] = XLALSFTVectorToCOMPLEX8TimeSeries ( multisfts->data[X], &start, &end)) != NULL, XLAL_EFUNC );
+    XLAL_CHECK_NULL ((out->data[X] = XLALSFTVectorToCOMPLEX8TimeSeries ( multisfts->data[X], NULL, NULL)) != NULL, XLAL_EFUNC );
   }
 
   return out;
