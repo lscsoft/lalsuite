@@ -804,8 +804,7 @@ XLALBarycentricResampleCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *TimeSeries_SRC,	
           REAL4 cosphase, sinphase;                                                                         /* the real and imaginary parts of the phase correction */
           XLAL_CHECK( XLALSinCos2PiLUT ( &sinphase, &cosphase, -cycles ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-          COMPLEX8 ei2piphase = crectf ( cosphase, sinphase );
-          TimeSeries_SRC->data->data[idx] = ei2piphase * ts_SRC->data[k];
+          TimeSeries_SRC->data->data[idx] = crectf( out_ts[0]->data[k]*cosphase - out_ts[1]->data[k]*sinphase, out_ts[1]->data[k]*cosphase + out_ts[0]->data[k]*sinphase );
         } // for k < SFTnumSamples_SRC
 
       /* free memory used for this SFT */

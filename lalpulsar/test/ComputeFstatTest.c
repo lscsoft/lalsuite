@@ -72,14 +72,25 @@ main ( int argc, char *argv[] )
   XLALGPSAdd( &endTime, Tspan );
   REAL8 Tsft = 60;
 
-  LIGOTimeGPS refTime = { startTime.gpsSeconds + round(0.5*Tspan), 0 };	// reftime in middle of segment
+  LIGOTimeGPS refTime = { startTime.gpsSeconds - 2.3 * Tspan, 0 };	// reftime in middle of segment
 
   MultiLIGOTimeGPSVector *multiTimestamps;
-  XLAL_CHECK ( (multiTimestamps = XLALMakeMultiTimestamps ( startTime, Tspan, Tsft, 0, numDetectors )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK ( ( multiTimestamps = XLALCalloc ( 1, sizeof(*multiTimestamps))) != NULL, XLAL_ENOMEM );
+  XLAL_CHECK ( ( multiTimestamps->data = XLALCalloc ( numDetectors, sizeof(multiTimestamps->data[0]) )) != NULL, XLAL_ENOMEM );
+  multiTimestamps->length = numDetectors;
+  LIGOTimeGPS startTimeX = startTime;
+  for ( UINT4 X=0; X < numDetectors; X ++ )
+    {
+      XLAL_CHECK ( (multiTimestamps->data[X] = XLALMakeTimestamps ( startTimeX, Tspan, Tsft, 0 ) ) != NULL, XLAL_EFUNC );
+      XLALGPSAdd ( &startTimeX, 0.5 * Tspan );	// shift start-times by 1/2 Tspan for each detector
+    } // for X < numDetectors
 
-  // shift a timestamp in order to create a non-commensurate gap
+  // shift a few timestamps around to create gaps
   UINT4 numSFTsPerDet = multiTimestamps->data[0]->length;
-  multiTimestamps->data[0]->data[numSFTsPerDet-1].gpsSeconds += 2000;
+  multiTimestamps->data[0]->data[numSFTsPerDet-1].gpsSeconds += 10000;
+  multiTimestamps->data[0]->data[numSFTsPerDet-2].gpsSeconds += 5000;
+  multiTimestamps->data[1]->data[0].gpsSeconds -= 10000;
+  multiTimestamps->data[1]->data[1].gpsSeconds -=  5000;
 
   SFTCatalog *catalog;
   XLAL_CHECK ( (catalog = XLALMultiAddToFakeSFTCatalog ( NULL, detNames, multiTimestamps )) != NULL, XLAL_EFUNC );
@@ -255,11 +266,11 @@ compareFstatResults ( const FstatResults *result1, const FstatResults *result2 )
 
   // ----- set tolerance levels for comparisons ----------
   VectorComparison XLAL_INIT_DECL(tol);
-  tol.relErr_L1 	= 5.3e-2;
-  tol.relErr_L2		= 5e-2;
-  tol.angleV 		= 0.05;  // rad
-  tol.relErr_atMaxAbsx 	= 6e-2;
-  tol.relErr_atMaxAbsy  = 6e-2;
+  tol.relErr_L1 	= 8e-2;
+  tol.relErr_L2		= 8e-2;
+  tol.angleV 		= 0.08;  // rad
+  tol.relErr_atMaxAbsx	= 8e-2;
+  tol.relErr_atMaxAbsy  = 8e-2;
 
   UINT4 numFreqBins = result1->numFreqBins;
   VectorComparison XLAL_INIT_DECL(cmp);
@@ -289,12 +300,12 @@ compareFstatResults ( const FstatResults *result1, const FstatResults *result2 )
       c1.data = result1->Fa;
       c2.data = result2->Fa;
       XLALPrintInfo ("Comparing Fa values:\n");
-      XLAL_CHECK ( XLALCompareCOMPLEX8Vectors ( &cmp, &c1, &c2, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );	 // FIXME: deactivated test
+      XLAL_CHECK ( XLALCompareCOMPLEX8Vectors ( &cmp, &c1, &c2, &tol ) == XLAL_SUCCESS, XLAL_EFUNC );	 // FIXME: deactivated test
       // Fb
       c1.data = result1->Fb;
       c2.data = result2->Fb;
       XLALPrintInfo ("Comparing Fb values:\n");
-      XLAL_CHECK ( XLALCompareCOMPLEX8Vectors ( &cmp, &c1, &c2, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );	 // FIXME: deactivated test
+      XLAL_CHECK ( XLALCompareCOMPLEX8Vectors ( &cmp, &c1, &c2, &tol ) == XLAL_SUCCESS, XLAL_EFUNC );	 // FIXME: deactivated test
     }
 
   return XLAL_SUCCESS;
