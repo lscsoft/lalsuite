@@ -172,26 +172,30 @@ main ( int argc, char *argv[] )
     {
       XLAL_CHECK ( (inputs[l] = XLALCreateFstatInput ( catalogs[l], minCoverFreq, maxCoverFreq, NULL, &injectNoiseFloor, NULL, rngMed, ephem, FstatMethod, &extraParams )) != NULL, XLAL_EFUNC );
     }
-  REAL8 memMaxSetup = XLALGetPeakHeapUsageMB() - memBase;
+  // REAL8 memMaxSetup = XLALGetPeakHeapUsageMB() - memBase;
 
   FstatResults **results;
   XLAL_CHECK ( (results = XLALCalloc ( uvar->numSegments, sizeof(results[0]))) != NULL, XLAL_ENOMEM );
-  REAL8 tauFTotal = 0;
+  REAL8 tauFSumBuffered = 0, tauFSumUnbuffered = 0;
   for ( INT4 l = 0; l < uvar->numSegments; l ++ )
     {
       // call it once to initialize buffering, don't count this time
-      XLAL_CHECK ( XLALComputeFstat ( &results[l], inputs[l], &Doppler, dFreq, uvar->numFreqBins, whatToCompute ) == XLAL_SUCCESS, XLAL_EFUNC );
-      // now call it with full buffering to get converged runtime per template (assuming many templates per skypoint or per binary params)
       REAL8 tic = XLALGetTimeOfDay();
       XLAL_CHECK ( XLALComputeFstat ( &results[l], inputs[l], &Doppler, dFreq, uvar->numFreqBins, whatToCompute ) == XLAL_SUCCESS, XLAL_EFUNC );
       REAL8 toc = XLALGetTimeOfDay();
-      tauFTotal += (toc - tic);
+      tauFSumUnbuffered += ( toc - tic );
+      // now call it with full buffering to get converged runtime per template (assuming many templates per skypoint or per binary params)
+      tic = XLALGetTimeOfDay();
+      XLAL_CHECK ( XLALComputeFstat ( &results[l], inputs[l], &Doppler, dFreq, uvar->numFreqBins, whatToCompute ) == XLAL_SUCCESS, XLAL_EFUNC );
+      toc = XLALGetTimeOfDay();
+      tauFSumBuffered += (toc - tic);
     } // for l < numSegments
-  REAL8 timePerTemplate = tauFTotal / ( uvar->numSegments * uvar->numFreqBins * numDetectors );
+  REAL8 tauF1Buffered   = tauFSumBuffered / ( uvar->numSegments * uvar->numFreqBins * numDetectors );
+  REAL8 tauF1Unbuffered = tauFSumUnbuffered / ( uvar->numSegments * uvar->numFreqBins * numDetectors );
   REAL8 memMaxCompute = XLALGetPeakHeapUsageMB() - memBase;
 
-  fprintf (stderr, "%-15s: tauF1 = %.1e s (= %.1e s per SFT), memSFTs = %.1f MB, memMaxSetup = %.1f MB (= %.1f x memSFTs), memMaxCompute = %.1f MB (= %.1f x memSFTs)\n",
-           XLALGetFstatMethodName ( FstatMethod ), timePerTemplate, numDetectors * timePerTemplate / numSFTsPerSeg, memSFTs, memMaxSetup, memMaxSetup / memSFTs, memMaxCompute, memMaxCompute / memSFTs );
+  fprintf (stderr, "%-15s: tauF1Buffered = %.1e s (=>tauF0SFT = %1.e s), tauF1Unbuffered = %.1e s, memSFTs = %.1f MB, memMaxCompute = %.1f MB\n",
+           XLALGetFstatMethodName ( FstatMethod ), tauF1Buffered, numDetectors * tauF1Buffered / numSFTsPerSeg, tauF1Unbuffered, memSFTs, memMaxCompute  );
 
   for ( INT4 l = 0; l < uvar->numSegments; l ++ )
     {
