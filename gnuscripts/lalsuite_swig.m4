@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2014
 #
-# serial 74
+# serial 75
 
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
   # $0: check the version of $1, and store it in ${swig_version}
@@ -288,7 +288,7 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
     AC_LANG_PUSH([C++])
     _LALSUITE_SWIG_CHECK_COMPILER_FLAGS([SWIG_OCTAVE_CXXFLAGS],[
       -Wno-uninitialized -Wno-unused-variable -Wno-unused-but-set-variable
-      -Wno-tautological-compare -fno-strict-aliasing -g
+      -Wno-format-extra-args -Wno-tautological-compare -fno-strict-aliasing -g
       -O0 -Wp[,]-U_FORTIFY_SOURCE
     ])
     AC_LANG_POP([C++])
@@ -388,7 +388,7 @@ EOD`]
     AC_LANG_PUSH([C])
     _LALSUITE_SWIG_CHECK_COMPILER_FLAGS([SWIG_PYTHON_CFLAGS],[
       -Wno-uninitialized -Wno-unused-variable -Wno-unused-but-set-variable
-      -Wno-tautological-compare -fno-strict-aliasing -g
+      -Wno-format-extra-args -Wno-tautological-compare -fno-strict-aliasing -g
     ])
     AC_LANG_POP([C])
 
