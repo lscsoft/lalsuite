@@ -1014,6 +1014,7 @@ size_t XLALNumberOfTiledLatticeDimensions(
 
 int XLALRandomLatticeTilingPoints(
   const LatticeTiling *tiling,
+  const double scale,
   RandomParams *rng,
   gsl_matrix *random_points
   )
@@ -1022,6 +1023,7 @@ int XLALRandomLatticeTilingPoints(
   // Check input
   XLAL_CHECK( tiling != NULL, XLAL_EFAULT );
   XLAL_CHECK( tiling->lattice < TILING_LATTICE_MAX, XLAL_EINVAL );
+  XLAL_CHECK( scale > -1.0, XLAL_EINVAL );
   XLAL_CHECK( rng != NULL, XLAL_EFAULT );
   XLAL_CHECK( random_points != NULL, XLAL_EFAULT );
   XLAL_CHECK( random_points->size1 == tiling->ndim, XLAL_ESIZE );
@@ -1038,7 +1040,7 @@ int XLALRandomLatticeTilingPoints(
       LT_GetBounds( tiling, i, &phys_point.vector, &phys_lower, &phys_upper );
 
       // Generate random number
-      const double u = XLALUniformDeviate( rng );
+      const double u = (1.0 + scale) * ( XLALUniformDeviate( rng ) - 0.5 ) + 0.5;
 
       // Set parameter-space point
       gsl_vector_set( &phys_point.vector, i, phys_lower + u*( phys_upper - phys_lower ) );

@@ -149,10 +149,13 @@ size_t XLALNumberOfTiledLatticeDimensions(
   );
 
 ///
-/// Generate random points within the parameter space of the lattice tiling.
+/// Generate random points within the parameter space of the lattice tiling.  Points can be scaled
+/// to fill the parameter space exactly (<tt>scale == 0</tt>), fill a subset of the parameter space
+/// (<tt>-1 < scale < 0</tt>), or fill outside the parameter space (<tt>scale > 0</tt>).
 ///
 int XLALRandomLatticeTilingPoints(
   const LatticeTiling *tiling,		///< [in] Lattice tiling
+  const double scale,			///< [in] Scale of random points
   RandomParams *rng,			///< [in] Random number generator
   gsl_matrix *random_points		///< [out] Matrix whose columns are the random points
   );
