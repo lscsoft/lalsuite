@@ -35,8 +35,6 @@ extern "C" {
 #endif
 
 /*---------- exported INCLUDES ----------*/
-#include <gsl/gsl_spline.h>
-
 #include <lal/SFTutils.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALComputeAM.h>
@@ -74,7 +72,7 @@ typedef struct tagVectorComparison
 
 /*---------- exported prototypes [API] ----------*/
 
-COMPLEX8TimeSeries *XLALSFTVectorToCOMPLEX8TimeSeries ( const SFTVector *sfts, const LIGOTimeGPS *start_in, const LIGOTimeGPS *end_in );
+COMPLEX8TimeSeries *XLALSFTVectorToCOMPLEX8TimeSeries ( const SFTVector *sfts );
 MultiCOMPLEX8TimeSeries *XLALMultiSFTVectorToCOMPLEX8TimeSeries ( const MultiSFTVector *multisfts );
 SFTtype *XLALSFTVectorToLFT ( SFTVector *sfts, REAL8 upsampling );
 

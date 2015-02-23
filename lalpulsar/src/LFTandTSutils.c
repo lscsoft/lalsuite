@@ -75,7 +75,7 @@ XLALSFTVectorToLFT ( SFTVector *sfts,		/**< input SFT vector (gets modified!) */
 
   // ----- turn input SFTs into a complex (heterodyned) timeseries
   COMPLEX8TimeSeries *lTS;
-  XLAL_CHECK_NULL ( (lTS = XLALSFTVectorToCOMPLEX8TimeSeries ( sfts, NULL, NULL )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_NULL ( (lTS = XLALSFTVectorToCOMPLEX8TimeSeries ( sfts )) != NULL, XLAL_EFUNC );
   REAL8 dt = lTS->deltaT;
   UINT4 numSamples0 = lTS->data->length;
   REAL8 Tspan0 = numSamples0 * dt;
@@ -142,10 +142,8 @@ XLALSFTVectorToLFT ( SFTVector *sfts,		/**< input SFT vector (gets modified!) */
  * Turn the given SFTvector into one long time-series, properly dealing with gaps.
  */
 COMPLEX8TimeSeries *
-XLALSFTVectorToCOMPLEX8TimeSeries ( const SFTVector *sftsIn,        /**< [in] SFT vector */
-				    const LIGOTimeGPS *start_in,    /**< [in] start time */
-				    const LIGOTimeGPS *end_in       /**< [in] input end time */
-				    )
+XLALSFTVectorToCOMPLEX8TimeSeries ( const SFTVector *sftsIn         /**< [in] SFT vector */
+                                    )
 {
   // check input sanity
   XLAL_CHECK_NULL ( (sftsIn !=NULL) && (sftsIn->length > 0), XLAL_EINVAL );
@@ -165,21 +163,9 @@ XLALSFTVectorToCOMPLEX8TimeSeries ( const SFTVector *sftsIn,        /**< [in] SF
   REAL8 f0SFT = firstSFT->f0;
 
   /* if the start and end input pointers are NOT NULL then determine start and time-span of the final long time-series */
-  LIGOTimeGPS start, end;
-  if (start_in && end_in)
-    {
-      start = (*start_in);
-      end = (*end_in);
-      /* do sanity checks */
-      XLAL_CHECK_NULL ( XLALGPSDiff ( &end, &firstSFT->epoch) >= 0, XLAL_EDOM, "End time before first SFT!\n" );
-      XLAL_CHECK_NULL ( XLALGPSDiff ( &start, &sfts->data[numSFTs-1].epoch)  <= Tsft, XLAL_EDOM, "Start time after end of data!\n" );
-    }
-  else
-    {   /* otherwise we use the start and end of the sft vector */
-      start = firstSFT->epoch;
-      end = lastSFT->epoch;
-      XLALGPSAdd ( &end, Tsft );
-    }
+  LIGOTimeGPS start = firstSFT->epoch;
+  LIGOTimeGPS end = lastSFT->epoch;
+  XLALGPSAdd ( &end, Tsft );
 
   /* determine output time span */
   REAL8 Tspan;
@@ -282,12 +268,6 @@ XLALMultiSFTVectorToCOMPLEX8TimeSeries ( const MultiSFTVector *multisfts  /**< [
 {
   // check input sanity
   XLAL_CHECK_NULL ( (multisfts != NULL) && (multisfts->length > 0), XLAL_EINVAL );
-
-  /* determine the start and end times of the multiSFT observation */
-  LIGOTimeGPS start,end;
-  XLAL_CHECK_NULL ( XLALEarliestMultiSFTsample ( &start, multisfts) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_NULL ( XLALLatestMultiSFTsample (   &end,   multisfts) == XLAL_SUCCESS, XLAL_EFUNC );
-
   UINT4 numDetectors = multisfts->length;
 
   /* allocate memory for the output structure */
@@ -298,7 +278,7 @@ XLALMultiSFTVectorToCOMPLEX8TimeSeries ( const MultiSFTVector *multisfts  /**< [
 
   /* loop over detectors */
   for ( UINT4 X=0; X < numDetectors; X++ ) {
-    XLAL_CHECK_NULL ((out->data[X] = XLALSFTVectorToCOMPLEX8TimeSeries ( multisfts->data[X], NULL, NULL)) != NULL, XLAL_EFUNC );
+    XLAL_CHECK_NULL ( (out->data[X] = XLALSFTVectorToCOMPLEX8TimeSeries ( multisfts->data[X] )) != NULL, XLAL_EFUNC );
   }
 
   return out;

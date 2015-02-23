@@ -162,11 +162,6 @@ SetupFstatInput_Resamp ( FstatInput_Resamp *resamp,
   XLAL_CHECK(multiSFTs != NULL, XLAL_EFAULT);
 
   // Convert SFTs into heterodyned complex timeseries [in detector frame]
-  /* generate multiple coincident timeseries - one for each detector spanning start -> end */
-  /* we need each timeseries to span the exact same amount of time and to start at the same time */
-  /* because for the multi-detector Fstat we need frequency bins to be coincident */
-  /* The memory allocated here is freed when the buffer is cleared in the calling program */
-  /* generate complex heterodyned timeseries from the input SFTs */
   XLAL_CHECK ( (resamp->multiTimeSeries_DET = XLALMultiSFTVectorToCOMPLEX8TimeSeries ( multiSFTs )) != NULL, XLAL_EFUNC );
 
   XLALDestroyMultiSFTVector ( multiSFTs );	// don't need them SFTs any more ...
@@ -355,7 +350,7 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
 
   // ====================================================================================================
 
-  /* store AM coefficient integrals in local variables */
+  // store AM coefficient integrals in local variables
   REAL4 Ad = multiAMcoef->Mmunu.Ad;
   REAL4 Bd = multiAMcoef->Mmunu.Bd;
   REAL4 Cd = multiAMcoef->Mmunu.Cd;
@@ -558,7 +553,7 @@ XLALApplySpindownAndFreqShift ( COMPLEX8TimeSeries *xOut,      		///< [out] the 
           XLAL_CHECK( XLALSinCos2PiLUT ( &sinphase, &cosphase, cycles ) == XLAL_SUCCESS, XLAL_EFUNC );
           COMPLEX8 em2piphase = crectf ( cosphase, sinphase );
 
-          /* weight the complex timeseries by the antenna patterns */
+          // weight the complex timeseries by the antenna patterns
           xOut->data->data[j] = em2piphase * xIn->data->data[j];
 
         } // for j in [start_index, end_index]
@@ -618,9 +613,9 @@ XLALApplyAmplitudeModulation ( COMPLEX8TimeSeries *xOut,      		///< [out] the s
 } // XLALApplyAmplitudeModulation()
 
 
-/**
- * Performs barycentric resampling on a multi-detector timeseries
- */
+///
+/// Performs barycentric resampling on a multi-detector timeseries
+///
 int
 XLALBarycentricResampleMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries *mTimeSeries_SRC,		///< [out] resampled timeseries in the source (SRC) frame, must be alloced+initialized correctly!
                                                  MultiUINT4Vector *mSFTinds_SRC,			///< [out] start- and end- SFT times in SRC frame, expressed as indices in the SRC timeseries
@@ -657,20 +652,18 @@ XLALBarycentricResampleMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries *mTimeS
       XLAL_CHECK ( XLALBarycentricResampleCOMPLEX8TimeSeries ( TimeSeries_SRCX, SFTinds_SRCX, TimeSeries_DETX, Timestamps_DETX, SRCtimingX, dt_SRC ) == XLAL_SUCCESS, XLAL_EFUNC );
     } // for X < numDetectors
 
-  /* success */
   return XLAL_SUCCESS;
 
 } // XLALBarycentricResampleMultiCOMPLEX8TimeSeries()
 
 
-/**
- * Performs barycentric resampling of a timeseries in the detector frame
- * into a uniformly-sampled timeseries at the source frame.
- *
- * We expect that the output timeseries has already been allocated correctly,
- * *and* carry the correct start-time epoch for the output! (FIXME!)
- *
- */
+///
+/// Performs barycentric resampling of a timeseries in the detector frame
+/// into a uniformly-sampled timeseries at the source frame.
+///
+/// We expect that the output timeseries has already been allocated correctly,
+/// *and* carry the correct start-time epoch for the output! (FIXME!)
+///
 int
 XLALBarycentricResampleCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *TimeSeries_SRC,		///< [out] resampled timeseries in the source (SRC) frame x(t(t_SRC)), must be alloced+initialized correctly!
                                             UINT4Vector *SFTinds_SRC,			///< [out] start- and end- SFT times in SRC frame, expressed as indices in the SRC timeseries
@@ -695,7 +688,7 @@ XLALBarycentricResampleCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *TimeSeries_SRC,	
   XLAL_CHECK ( (numSFTs > 0) && (SRC_timing->DeltaT->length == numSFTs) && (SRC_timing->Tdot->length == numSFTs), XLAL_EINVAL );
   XLAL_CHECK ( SFTinds_SRC->length == 2 * numSFTs, XLAL_EINVAL );
 
-  /* define some useful shorthands */
+  // define some useful shorthands
   REAL8 Tsft    = Timestamps_DET->deltaT;
   REAL8 refTime = XLALGPSGetREAL8 ( &SRC_timing->refTime );
   REAL8 fHet    = TimeSeries_DET->f0;
@@ -715,47 +708,47 @@ XLALBarycentricResampleCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *TimeSeries_SRC,	
   // make sure all output samples are initialized to zero first, in case of gaps
   memset ( TimeSeries_SRC->data->data, 0, numSamples_SRC * sizeof(COMPLEX8) );
 
-  /* loop over SFT timestamps to compute the detector frame time samples corresponding to uniformly sampled SRC time samples */
+  // loop over SFT timestamps to compute the detector frame time samples corresponding to uniformly sampled SRC time samples
   for ( UINT4 j=0; j < numSFTs; j++ )
     {
-      /* define some useful shorthands */
-      REAL8 Tdot         = SRC_timing->Tdot->data[j];                                         /* the instantaneous time derivitive dt_SRC/dt_DET at the MID-POINT of the SFT */
-      REAL8 SFTmid_SRC   = refTime + SRC_timing->DeltaT->data[j];                             /* MID-POINT time of the SFT at the SRC */
-      REAL8 SFTstart_SRC = SFTmid_SRC - 0.5*Tsft*Tdot;                                 /* START time of the SFT at the SRC */
-      REAL8 SFTend_SRC   = SFTmid_SRC + 0.5*Tsft*Tdot;                                 /* END time of the SFT at the SRC */
-      REAL8 SFTstart_DET = XLALGPSGetREAL8 ( &(Timestamps_DET->data[j]) );                   /* START time of the SFT at the detector */
-      REAL8 SFTmid_DET   = SFTstart_DET + 0.5*Tsft;                                    /* MID-POINT time of the SFT at the detector */
+      // define some useful shorthands
+      REAL8 Tdot         = SRC_timing->Tdot->data[j];				// the instantaneous time derivitive dt_SRC/dt_DET at the MID-POINT of the SFT
+      REAL8 SFTmid_SRC   = refTime + SRC_timing->DeltaT->data[j];		// MID-POINT time of the SFT at the SRC
+      REAL8 SFTstart_SRC = SFTmid_SRC - 0.5*Tsft*Tdot;				// START time of the SFT at the SRC
+      REAL8 SFTend_SRC   = SFTmid_SRC + 0.5*Tsft*Tdot;				// END time of the SFT at the SRC
+      REAL8 SFTstart_DET = XLALGPSGetREAL8 ( &(Timestamps_DET->data[j]) );	// START time of the SFT at the detector
+      REAL8 SFTmid_DET   = SFTstart_DET + 0.5*Tsft;				// MID-POINT time of the SFT at the detector
 
       // indices of first and last SRC-frame sample corresponding to this SFT
-      UINT4 SFTidx_start_SRC  = lround ( (SFTstart_SRC - start_SRC) / dt_SRC );       /* the index of the resampled timeseries corresponding to the start of the SFT */
-      UINT4 SFTidx_end_SRC    = lround ( (SFTend_SRC - start_SRC) / dt_SRC );         /* the index of the resampled timeseries corresponding to the end of the SFT */
+      UINT4 SFTidx_start_SRC  = lround ( (SFTstart_SRC - start_SRC) / dt_SRC );	// the index of the resampled timeseries corresponding to the start of the SFT
+      UINT4 SFTidx_end_SRC    = lround ( (SFTend_SRC - start_SRC) / dt_SRC );	// the index of the resampled timeseries corresponding to the end of the SFT
 
       // truncate to actual SRC-frame timeseries
       SFTidx_start_SRC = MYMIN ( SFTidx_start_SRC, numSamples_SRC - 1);
       SFTidx_end_SRC = MYMIN ( SFTidx_end_SRC, numSamples_SRC - 1);
-      UINT4 SFTnumSamples_SRC = SFTidx_end_SRC - SFTidx_start_SRC + 1;                          /* the number of samples in the SRC-frame for this SFT */
+      UINT4 SFTnumSamples_SRC = SFTidx_end_SRC - SFTidx_start_SRC + 1;		// the number of samples in the SRC-frame for this SFT
 
       SFTinds_SRC->data[2*j]   = SFTidx_start_SRC;
       SFTinds_SRC->data[2*j+1] = SFTidx_end_SRC;
 
-      /* allocate memory for the *non-uniform* detector time samples for this SFT */
-      /* have to allocate it inside the loop because it may have different lengths for each SFT */
-      REAL8Vector *detectortimes; // a vector of *non-uniform* time values in the detector frame (used for interpolation) */
+      // allocate memory for the *non-uniform* detector time samples for this SFT
+      // have to allocate it inside the loop because it may have different lengths for each SFT
+      REAL8Vector *detectortimes; // a vector of *non-uniform* time values in the detector frame (used for interpolation)
       XLAL_CHECK ( (detectortimes = XLALCreateREAL8Vector ( SFTnumSamples_SRC )) != NULL, XLAL_EFUNC );
 
-      /* for each time sample in the SRC frame for this SFT we estimate the detector time. */
-      /* We use a linear approximation expanding around the midpoint of an SFT where  */
-      /* t_DET = SFTmid_DET + (t_SRC - SFTmid_SRC)*dt_DET/dt_SRC */
+      // for each time sample in the SRC frame for this SFT we estimate the detector time. */
+      // We use a linear approximation expanding around the midpoint of an SFT where
+      // t_DET = SFTmid_DET + (t_SRC - SFTmid_SRC)*dt_DET/dt_SRC
       for ( UINT4 k=0; k < SFTnumSamples_SRC; k++ )
         {
-          REAL8 t_SRC = start_SRC + ( k + SFTidx_start_SRC ) * dt_SRC;                 /* the SRC time of the current resampled time sample */
-          detectortimes->data[k] = SFTmid_DET + ( t_SRC - SFTmid_SRC ) / Tdot;          /* the approximated DET time of the current resampled time sample */
+          REAL8 t_SRC = start_SRC + ( k + SFTidx_start_SRC ) * dt_SRC;		// the SRC time of the current resampled time sample
+          detectortimes->data[k] = SFTmid_DET + ( t_SRC - SFTmid_SRC ) / Tdot;	// the approximated DET time of the current resampled time sample
 
-          /*
-           * NOTE: we need to be careful that none of the times falls outside
-           * of the range of detector timesamples, in order to avoid problems in the interpolation
-           * therefore we truncate the detector-times to fully fall within the detector timeseries span
-           */
+          //
+          // NOTE: we need to be careful that none of the times falls outside
+          // of the range of detector timesamples, in order to avoid problems in the interpolation
+          // therefore we truncate the detector-times to fully fall within the detector timeseries span
+          //
           if ( detectortimes->data[k] > end_DET )
             {
               detectortimes->data[k] = end_DET;
@@ -768,38 +761,37 @@ XLALBarycentricResampleCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *TimeSeries_SRC,	
               XLALPrintWarning ("%s: time-sample jSFT=%d, kSample=%d at t=%f to interpolate is *before* detector-timeseries, nudged to beginning (start=%f)\n",
                                 __func__, j, k, detectortimes->data[k], start_DET );
             }
-        } /* for k < SFTnumSamples_SRC */
+        } // for k < SFTnumSamples_SRC
 
       COMPLEX8Vector *ts_SRC;
       XLAL_CHECK ( (ts_SRC = XLALCreateCOMPLEX8Vector ( SFTnumSamples_SRC )) != NULL, XLAL_EFUNC );
       const UINT4 Dterms = 8;
       XLAL_CHECK ( XLALSincInterpolateCOMPLEX8TimeSeries ( ts_SRC, detectortimes, TimeSeries_DET, Dterms ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-      /* place these interpolated timeseries into the output */
-      /* and apply correction due to non-zero heterodyne frequency of input */
+      // place these interpolated timeseries into the output
+      // and apply correction due to non-zero heterodyne frequency of input
       for ( UINT4 k=0; k < SFTnumSamples_SRC; k++ )
         {
-          UINT4 idx = k + SFTidx_start_SRC;                                                                     /* the full resampled timeseries index */
+          UINT4 idx = k + SFTidx_start_SRC;                                                                     // the full resampled timeseries index
           if ( idx >= numSamples_SRC ) {	// temporary FIX to avoid writing outside of memory bounds (FIXME!)
             break;
           }
           REAL8 tDiff = idx * dt_SRC - (detectortimes->data[k] - start_DET); 	// tau' - t'(tau')
-          REAL8 cycles = fmod ( fHet * tDiff, 1 );                                                          /* the accumulated heterodyne cycles */
+          REAL8 cycles = fmod ( fHet * tDiff, 1 );                                                          // the accumulated heterodyne cycles
 
-          /* use a look-up-table for speed to compute real and imaginary phase */
-          REAL4 cosphase, sinphase;                                                                         /* the real and imaginary parts of the phase correction */
+          // use a look-up-table for speed to compute real and imaginary phase
+          REAL4 cosphase, sinphase;                                                                         // the real and imaginary parts of the phase correction
           XLAL_CHECK( XLALSinCos2PiLUT ( &sinphase, &cosphase, -cycles ) == XLAL_SUCCESS, XLAL_EFUNC );
           COMPLEX8 ei2piphase = crectf(cosphase,sinphase);
           TimeSeries_SRC->data->data[idx] = ei2piphase * ts_SRC->data[k];
         } // for k < SFTnumSamples_SRC
 
-      /* free memory used for this SFT */
+      // free memory used for this SFT
       XLALDestroyREAL8Vector ( detectortimes );
       XLALDestroyCOMPLEX8Vector ( ts_SRC );
 
     } // for j < numSFTs
 
-  /* success */
   return XLAL_SUCCESS;
 
 } // XLALBarycentricResampleCOMPLEX8TimeSeries()
