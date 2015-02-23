@@ -99,8 +99,12 @@ LALREAL8SequenceInterp *XLALREAL8SequenceInterpCreate(const REAL8Sequence *s, in
 
 void XLALREAL8SequenceInterpDestroy(LALREAL8SequenceInterp *interp)
 {
-	if(interp)
+	if(interp) {
 		XLALFree(interp->cached_kernel);
+		/* unref the REAL8Sequence.  place-holder in case this code
+		 * is ported to a language where this matters */
+		interp->s = NULL;
+	}
 	XLALFree(interp);
 }
 
@@ -108,7 +112,7 @@ void XLALREAL8SequenceInterpDestroy(LALREAL8SequenceInterp *interp)
 /**
  * Evaluate a LALREAL8SequenceInterp at the real-valued index x.  Raises a
  * XLAL_EDOM domain error if x is not in [0, length) where length is the
- * sample count of the sequence which the interpolator is attached.
+ * sample count of the sequence to which the interpolator is attached.
  *
  * A Welch-windowed sinc interpolating kernel is used.  See
  *
@@ -278,8 +282,12 @@ LALREAL8TimeSeriesInterp *XLALREAL8TimeSeriesInterpCreate(const REAL8TimeSeries 
 
 void XLALREAL8TimeSeriesInterpDestroy(LALREAL8TimeSeriesInterp *interp)
 {
-	if(interp)
+	if(interp) {
 		XLALREAL8SequenceInterpDestroy(interp->seqinterp);
+		/* unref the REAL8TimeSeries.  place-holder in case this
+		 * code is ported to a language where this matters */
+		interp->series = NULL;
+	}
 	XLALFree(interp);
 }
 
@@ -291,29 +299,9 @@ void XLALREAL8TimeSeriesInterpDestroy(LALREAL8TimeSeriesInterp *interp)
  * sample period, respectively, of the time series to which the
  * interpolator is attached.
  *
- * A Welch-windowed sinc interpolating kernel is used.  See
- *
- * Smith, Julius O. Digital Audio Resampling Home Page
- * Center for Computer Research in Music and Acoustics (CCRMA), Stanford
- * University, 2014-01-10.  Web published at
- * http://www-ccrma.stanford.edu/~jos/resample/.
- *
- * for more information, but note that that reference uses a Kaiser window
- * for the sinc kernel's envelope whereas we use a Welch window here.  The
- * Welch window (inverted parabola) is chosen because it yields results
- * similar in accuracy to the Lanczos window but is much less costly to
- * compute.
- *
- * Be aware that for performance reasons the interpolating kernel is cached
- * and only recomputed if the error estimated to arise from failing to
- * recompute it exceeds the error estimated to arise from using a finite
- * interpolating kernel.  Therefore, if a function is interpolated at very
- * high resolution with a short kernel the result will consist of intervals
- * of constant values in a stair-step pattern.  The stair steps should be a
- * small contribution to the interpolation error but numerical
- * differentiation of the result is likely to be unsatisfactory.  In that
- * case, consider interpolating the derivative or use a longer kernel to
- * force more frequent kernel updates.
+ * See XLALREAL8SequenceInterpEval() for information about the
+ * interpolation kernel that is used and performance enhancements that can
+ * give rise to numerical artifacts.
  */
 
 
