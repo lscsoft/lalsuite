@@ -413,7 +413,7 @@ UINT4 find_change_point( COMPLEX16Vector *data, REAL8 *logodds, INT4 minlength )
 
   /* calculate the evidence that the data consists of a Gaussian data with a
      single standard deviation */
-  logsingle = -2 + gsl_sf_lnfact(length-1) - (REAL8)length * log( datasum );
+  logsingle = -LAL_LN2 - (REAL8)length*PPE_LNPI + gsl_sf_lnfact(length-1) - (REAL8)length * log( datasum );
 
   /* to speed up process calculate data sums first */
   lsum = length - 2*minlength + 1;
@@ -443,8 +443,8 @@ UINT4 find_change_point( COMPLEX16Vector *data, REAL8 *logodds, INT4 minlength )
     REAL8 log_1 = 0., log_2 = 0.;
 
     /* get log evidences for the individual segments */
-    log_1 = -2 + gsl_sf_lnfact(ln1-1) - (REAL8)ln1 * log( sumforward->data[i] );
-    log_2 = -2 + gsl_sf_lnfact(ln2-1) - (REAL8)ln2 * log( sumback->data[lsum-i-1] );
+    log_1 = -LAL_LN2 - (REAL8)ln1*PPE_LNPI + gsl_sf_lnfact(ln1-1) - (REAL8)ln1 * log( sumforward->data[i] );
+    log_2 = -LAL_LN2 - (REAL8)ln2*PPE_LNPI + gsl_sf_lnfact(ln2-1) - (REAL8)ln2 * log( sumback->data[lsum-i-1] );
 
     /* get evidence for the two segments */
     logdouble = log_1 + log_2;

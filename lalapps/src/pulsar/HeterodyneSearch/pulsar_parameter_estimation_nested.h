@@ -92,6 +92,9 @@ extern "C" {
 #define UNUSED
 #endif
 
+/** Macro defining the natural logarithm of pi \f$ \log{\pi}\f$ from http://math.stackexchange.com/questions/239438/natural-log-of-pi-to-sixty-digits-a-reference-needed */
+#define PPE_LNPI 1.1447298858494001741434273513530587
+
 /** Macro to round a value to the nearest integer. */
 #define ROUND(x) (floor(x+0.5))
 
