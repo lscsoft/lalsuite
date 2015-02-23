@@ -214,7 +214,7 @@ static int MismatchTest(
     for( size_t i = 0; i < 10; ++i ) {
 
       // Generate random injection points
-      XLAL_CHECK( XLALRandomLatticeTilingPoints( tiling, rng, injections ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( XLALRandomLatticeTilingPoints( tiling, 0.0, rng, injections ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       // Find nearest lattice template points
       XLAL_CHECK( XLALNearestLatticeTilingPoints( loc, injections, &nearest, NULL, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -287,16 +287,8 @@ static int MismatchTest(
     RandomParams *rng = XLALCreateRandomParams( total );
     XLAL_CHECK( rng != NULL, XLAL_EFUNC );
 
-    // Generate random injection points
-    XLAL_CHECK( XLALRandomLatticeTilingPoints( tiling, rng, injections ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-    // Wildly peturb injection points so that they will be outside parameter space
-    for( size_t i = 0; i < injections->size1; ++i ) {
-      for( size_t j = 0; j < injections->size2; ++j ) {
-        gsl_matrix_set( injections, i, j, gsl_matrix_get( injections, i, j ) * 1000 * ( XLALUniformDeviate( rng ) - 0.5 ) );
-      }
-    }
-    GPMAT( injections, "%0.3g" );
+    // Generate random injection points outside parameter space
+    XLAL_CHECK( XLALRandomLatticeTilingPoints( tiling, 5.0, rng, injections ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Find nearest lattice template points
     XLAL_CHECK( XLALNearestLatticeTilingPoints( loc, injections, &nearest, NULL, &indexes ) == XLAL_SUCCESS, XLAL_EFUNC );

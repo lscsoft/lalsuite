@@ -1702,6 +1702,7 @@ int XLALNearestLatticeTilingPoints(
           long original_int[tn], poll_int[tn];
           memcpy( original_int, nearest_int, sizeof( original_int ) );
           double poll_min_distance = GSL_POSINF;
+          XLALPrintInfo("%s: calling LT_PollIndexTrie()\n", __func__);
           LT_PollIndexTrie( loc->tiling, loc->index_trie, 0, original_int, poll_int, &poll_min_distance, nearest_int );
 
           // Recompute 'trie', given that 'nearest_int' may have changed in any dimension
