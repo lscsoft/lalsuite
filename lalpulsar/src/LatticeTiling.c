@@ -18,6 +18,7 @@
 //
 
 #include <config.h>
+#include <fenv.h>
 
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_blas.h>
@@ -905,7 +906,7 @@ int XLALSetTilingLatticeAndMetric(
       break;
 
     default:
-      XLAL_ERROR( XLAL_EINVAL, "Invalid lattice %u", lattice );
+      XLAL_ERROR( XLAL_EINVAL, "Invalid lattice=%u", lattice );
     }
 
     // Generator will be lower-triangular, so zero out upper triangle
@@ -1254,8 +1255,10 @@ int XLALNextLatticeTilingPoint(
       const double dbl_int_upper_i = int_from_phys_point_i + int_from_phys_i_i * ( phys_upper - phys_origin_i );
 
       // Compute integer lower/upper bounds, rounded up/down to avoid extra boundary points
+      feclearexcept( FE_ALL_EXCEPT );
       const long int_lower_i = lround( ceil( dbl_int_lower_i ) );
       const long int_upper_i = lround( floor( dbl_int_upper_i ) );
+      XLAL_CHECK( fetestexcept( FE_INVALID ) == 0, XLAL_EFAILED, "Integer bounds on dimension #%zu are too large: %0.2e to %0.2e", i, dbl_int_lower_i, dbl_int_upper_i );
 
       // Set integer lower/upper bounds; if this is not an iterated-over
       // dimension, set both bounds to the lower bound
@@ -1554,9 +1557,19 @@ int XLALNearestLatticeTilingPoints(
     case TILING_LATTICE_CUBIC: {	// Cubic (\f$Z_n\f$) lattice
 
       // Round each dimension of 'nearest[:,j]' to nearest integer to find the nearest point in Zn
+      feclearexcept( FE_ALL_EXCEPT );
       for( size_t ti = 0; ti < tn; ++ti ) {
         const size_t i = loc->tiling->tiled_idx[ti];
         nearest_int[ti] = lround( gsl_matrix_get( nearest, i, j ) );
+      }
+      if( fetestexcept( FE_INVALID ) != 0 ) {
+        XLALPrintError( "Rounding failed while finding nearest point #%zu:", j );
+        for( size_t ti = 0; ti < tn; ++ti ) {
+          const size_t i = loc->tiling->tiled_idx[ti];
+          XLALPrintError( " %0.2e", gsl_matrix_get( nearest, i, j ) );
+        }
+        XLALPrintError( "\n" );
+        XLAL_ERROR( XLAL_EFAILED );
       }
 
     }
@@ -1593,12 +1606,21 @@ int XLALNearestLatticeTilingPoints(
         // Lines 1--4, 20
         double z[tn+1], alpha = 0, beta = 0;
         size_t bucket[tn+1], link[tn+1];
+        feclearexcept( FE_ALL_EXCEPT );
         for( size_t ti = 1; ti <= tn + 1; ++ti ) {
           k[ti-1] = lround( y[ti-1] ); // Line 20, moved here to avoid duplicate round
           z[ti-1] = y[ti-1] - k[ti-1];
           alpha += z[ti-1];
           beta += z[ti-1]*z[ti-1];
           bucket[ti-1] = 0;
+        }
+        if( fetestexcept( FE_INVALID ) != 0 ) {
+          XLALPrintError( "Rounding failed while finding nearest point #%zu:", j );
+          for( size_t ti = 1; ti <= tn + 1; ++ti ) {
+            XLALPrintError( " %0.2e", y[ti-1] );
+          }
+          XLALPrintError( "\n" );
+          XLAL_ERROR( XLAL_EFAILED );
         }
 
         // Lines 5--8
@@ -1612,6 +1634,8 @@ int XLALNearestLatticeTilingPoints(
         //     to avoid a casting operation. Rewriting the line as:
         //       ti = lround((tn + 1)*(0.5 - z_t) + 0.5)
         //     appears to improve numerical robustness in some cases.
+        //   * No floating-point exception checking needed for lround()
+        //     here since its argument will be of order 'tn'.
         for( size_t tt = 1; tt <= tn + 1; ++tt ) {
           const long ti = lround( ( tn + 1 )*( 0.5 - z[tt-1] ) + 0.5 );
           link[tt-1] = bucket[ti-1];
@@ -1657,7 +1681,7 @@ int XLALNearestLatticeTilingPoints(
       break;
 
     default:
-      XLAL_ERROR( XLAL_EINVAL, "Invalid lattice %u", loc->tiling->lattice );
+      XLAL_ERROR( XLAL_EINVAL, "Invalid lattice=%u", loc->tiling->lattice );
     }
 
     // Bound generating integers and determine the unique tiling index of 'nearest[:,j]', if requested
