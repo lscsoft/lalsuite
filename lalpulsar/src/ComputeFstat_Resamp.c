@@ -22,8 +22,6 @@
 // This file implements the F-statistic resampling algorithm. It is not compiled directly, but
 // included from ComputeFstat.c
 
-#include <lal/LogPrintf.h>
-
 // ========== Resamp internals ==========
 
 // ----- local macros ----------
@@ -694,8 +692,6 @@ XLALBarycentricResampleCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *TimeSeries_SRC,	
   REAL8 fHet    = TimeSeries_DET->f0;
 
   REAL8 start_DET   = XLALGPSGetREAL8 ( &TimeSeries_DET->epoch );
-  REAL8 deltaT_DET  = TimeSeries_DET->deltaT;
-  REAL8 end_DET     = start_DET + (numSamples_DET - 1) * deltaT_DET;	// time of *last sample* in detector-frame timeseries
 
   UINT4 numSamples_SRC = TimeSeries_SRC->data->length;
   // determine and set time-series start-time in SRC frame
@@ -707,6 +703,12 @@ XLALBarycentricResampleCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *TimeSeries_SRC,	
 
   // make sure all output samples are initialized to zero first, in case of gaps
   memset ( TimeSeries_SRC->data->data, 0, numSamples_SRC * sizeof(COMPLEX8) );
+
+  UINT4 maxSFTnumSamples_SRC = ceil ( 1.1 * Tsft / dt_SRC ) + 1;	// guaranteed to be > SFTnumSamples_SRC
+  REAL8Vector *detectortimes; // a vector of *non-uniform* time values in the detector frame (used for interpolation)
+  XLAL_CHECK ( (detectortimes = XLALCreateREAL8Vector ( maxSFTnumSamples_SRC )) != NULL, XLAL_EFUNC );
+  COMPLEX8Vector *ts_SRC;
+  XLAL_CHECK ( (ts_SRC = XLALCreateCOMPLEX8Vector ( maxSFTnumSamples_SRC )) != NULL, XLAL_EFUNC );
 
   // loop over SFT timestamps to compute the detector frame time samples corresponding to uniformly sampled SRC time samples
   for ( UINT4 j=0; j < numSFTs; j++ )
@@ -728,13 +730,14 @@ XLALBarycentricResampleCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *TimeSeries_SRC,	
       SFTidx_end_SRC = MYMIN ( SFTidx_end_SRC, numSamples_SRC - 1);
       UINT4 SFTnumSamples_SRC = SFTidx_end_SRC - SFTidx_start_SRC + 1;		// the number of samples in the SRC-frame for this SFT
 
+      XLAL_CHECK ( SFTnumSamples_SRC <= maxSFTnumSamples_SRC, XLAL_EFAILED, "Coding error: maxSFTnumSamples_SRC = %d < %d = SFTnumSamples_SRC in SFT j = %d\n",
+                   maxSFTnumSamples_SRC, SFTnumSamples_SRC, j );
+
       SFTinds_SRC->data[2*j]   = SFTidx_start_SRC;
       SFTinds_SRC->data[2*j+1] = SFTidx_end_SRC;
 
-      // allocate memory for the *non-uniform* detector time samples for this SFT
-      // have to allocate it inside the loop because it may have different lengths for each SFT
-      REAL8Vector *detectortimes; // a vector of *non-uniform* time values in the detector frame (used for interpolation)
-      XLAL_CHECK ( (detectortimes = XLALCreateREAL8Vector ( SFTnumSamples_SRC )) != NULL, XLAL_EFUNC );
+      // array of *non-uniform* detector time samples for this SFT
+      detectortimes->length = SFTnumSamples_SRC;
 
       // for each time sample in the SRC frame for this SFT we estimate the detector time. */
       // We use a linear approximation expanding around the midpoint of an SFT where
@@ -743,28 +746,9 @@ XLALBarycentricResampleCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *TimeSeries_SRC,	
         {
           REAL8 t_SRC = start_SRC + ( k + SFTidx_start_SRC ) * dt_SRC;		// the SRC time of the current resampled time sample
           detectortimes->data[k] = SFTmid_DET + ( t_SRC - SFTmid_SRC ) / Tdot;	// the approximated DET time of the current resampled time sample
-
-          //
-          // NOTE: we need to be careful that none of the times falls outside
-          // of the range of detector timesamples, in order to avoid problems in the interpolation
-          // therefore we truncate the detector-times to fully fall within the detector timeseries span
-          //
-          if ( detectortimes->data[k] > end_DET )
-            {
-              detectortimes->data[k] = end_DET;
-              XLALPrintWarning ("%s: time-sample jSFT=%d, kSample=%d at t=%f to interpolate is *after* detector-timeseries, nudged back to end (end=%f)\n",
-                                __func__, j, k, detectortimes->data[k], end_DET );
-            }
-          if ( detectortimes->data[k] < start_DET )
-            {
-              detectortimes->data[k] = start_DET;
-              XLALPrintWarning ("%s: time-sample jSFT=%d, kSample=%d at t=%f to interpolate is *before* detector-timeseries, nudged to beginning (start=%f)\n",
-                                __func__, j, k, detectortimes->data[k], start_DET );
-            }
         } // for k < SFTnumSamples_SRC
 
-      COMPLEX8Vector *ts_SRC;
-      XLAL_CHECK ( (ts_SRC = XLALCreateCOMPLEX8Vector ( SFTnumSamples_SRC )) != NULL, XLAL_EFUNC );
+      ts_SRC->length = SFTnumSamples_SRC;
       const UINT4 Dterms = 8;
       XLAL_CHECK ( XLALSincInterpolateCOMPLEX8TimeSeries ( ts_SRC, detectortimes, TimeSeries_DET, Dterms ) == XLAL_SUCCESS, XLAL_EFUNC );
 
@@ -786,11 +770,11 @@ XLALBarycentricResampleCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *TimeSeries_SRC,	
           TimeSeries_SRC->data->data[idx] = ei2piphase * ts_SRC->data[k];
         } // for k < SFTnumSamples_SRC
 
-      // free memory used for this SFT
-      XLALDestroyREAL8Vector ( detectortimes );
-      XLALDestroyCOMPLEX8Vector ( ts_SRC );
-
     } // for j < numSFTs
+
+  // free memory
+  XLALDestroyREAL8Vector ( detectortimes );
+  XLALDestroyCOMPLEX8Vector ( ts_SRC );
 
   return XLAL_SUCCESS;
 
