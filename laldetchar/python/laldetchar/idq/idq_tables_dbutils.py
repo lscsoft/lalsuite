@@ -163,6 +163,8 @@ def delete_glitch_events_in_segment(connection, cursor, segment):
     Removes glitch events whose gps times fall within segment. 
     All rows from the other tables in database connected to these glitch
     events via coinc_map tables are also deteled.
+    @param connection UNDOCUMENTED
+    @param cursor UNDOCUMENTED
     @param segment is glue segment
     """
     # get table names from the database
@@ -232,6 +234,8 @@ def delete_glitch_events_in_segment(connection, cursor, segment):
 def delete_glitch_events_in_segmentlist(connection, cursor, segmentlist):
     """
     Remove glitch events that fall inside of a segment in the segmentlist. 
+    @param connection UNDOCUMENTED
+    @param cursor UNDOCUMENTED
     @param segmentlist is an instance of glue.segments.segmentlist class
     """
     # loop over segments
@@ -244,8 +248,10 @@ def get_glitch_ovl_data(connection, cursor, glitch_columns, ovl_columns):
     Connects glitch and ovl tables, and returns requested data, 
     as a list of tuples with values for requested columns in the order of
     [(glitch_columns, ovl_columns), ...].
-    @oarams glitch_columns is the list of requested  glitch table column names,
-    @params ovl_columns  is the list of requested ovl table column names.
+    @param connection UNDOCUMENTED
+    @param cursor UNDOCUMENTED
+    @param glitch_columns is the list of requested  glitch table column names,
+    @param ovl_columns  is the list of requested ovl table column names.
     """
     # get table names from the database
     tablenames = dbtables.get_table_names(connection)
@@ -281,8 +287,10 @@ def get_glitch_snglburst_data(connection, cursor, glitch_columns, snglburst_colu
     Connects glitch and snglburst tables, and returns requested data, 
     as a list of tuples with values for requested columns in the order of
     [(glitch_columns, snglburst_columns), ...].
-    @oarams glitch_columns is the list of requested  glitch table column names,
-    @params snglburst_columns  is the list of requested snglburst table column names.
+    @param connection UNDOCUMENTED
+    @param cursor UNDOCUMENTED
+    @param glitch_columns is the list of requested  glitch table column names,
+    @param snglburst_columns  is the list of requested snglburst table column names.
     """
     # get table names from the database
     tablenames = dbtables.get_table_names(connection)
@@ -316,9 +324,11 @@ def get_get_glitch_ovl_sngburst_data(connection, cursor, glitch_columns, ovl_col
     Connects glitch, ovl and snglburst tables, and returns requested data, 
     as a list of tuples with values for requested columns in the order of
     [(glitch_columns, ovl_columns, snglburst_columns), ...].
-    @oarams glitch_columns is the list of requested  glitch table column names,
-    @params ovl_columns  is the list of requested ovl table column names,
-    @params snglburst_columns  is the list of requested snglburst table column names.
+    @param connection UNDOCUMENTED
+    @param cursor UNDOCUMENTED
+    @param glitch_columns is the list of requested  glitch table column names,
+    @param ovl_columns  is the list of requested ovl table column names,
+    @param snglburst_columns  is the list of requested snglburst table column names.
     """
     # get table names from the database
     tablenames = dbtables.get_table_names(connection)
