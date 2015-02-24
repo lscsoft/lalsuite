@@ -319,6 +319,12 @@ typedef enum {
   LAL_SIM_DOMAIN_FREQUENCY
  } LALSimulationDomain;
 
+
+REAL8 XLALSimInspiralChirpTimeBound(REAL8 fstart, REAL8 m1, REAL8 m2, REAL8 s1, REAL8 s2);
+REAL8 XLALSimInspiralMergeTimeBound(REAL8 m1, REAL8 m2);
+REAL8 XLALSimInspiralRingdownTimeBound(REAL8 M, REAL8 s);
+REAL8 XLALSimInspiralChirpStartFrequencyBound(REAL8 tchirp, REAL8 m1, REAL8 m2);
+
 /**
  * Tapers a REAL4 inspiral waveform in the time domain.
  */
