@@ -228,8 +228,6 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
   UINT4 numDetectors = multiTimeSeries_DET->length;
   REAL8 dt_DET = multiTimeSeries_DET->data[0]->deltaT;
 
-  MultiAMCoeffs *multiAMcoef;
-
   // determine resampled timeseries parameters */
   UINT4 numFreqBinsOut = Fstats->numFreqBins;
   REAL8 dFreqOut = ( Fstats->dFreq > 0 ) ? Fstats->dFreq : 1.0 / (multiTimeSeries_DET->data[0]->data->length * dt_DET);
@@ -239,13 +237,14 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
 
   // ============================== BEGIN: handle buffering =============================
   BOOLEAN same_skypos = (resamp->prev_doppler.Alpha == thisPoint.Alpha) && (resamp->prev_doppler.Delta == thisPoint.Delta);
-  BOOLEAN same_refTime = ( XLALGPSDiff ( &resamp->prev_doppler.refTime, &thisPoint.refTime ) == 0 );
-  BOOLEAN same_binary = (resamp->prev_doppler.asini == thisPoint.asini) &&
+  BOOLEAN same_refTime = ( XLALGPSCmp ( &resamp->prev_doppler.refTime, &thisPoint.refTime ) == 0 );
+  BOOLEAN same_binary = \
+    (resamp->prev_doppler.asini == thisPoint.asini) &&
     (resamp->prev_doppler.period == thisPoint.period) &&
     (resamp->prev_doppler.ecc == thisPoint.ecc) &&
     (XLALGPSCmp( &resamp->prev_doppler.tp, &thisPoint.tp ) == 0 ) &&
     (resamp->prev_doppler.argp == thisPoint.argp);
-  BOOLEAN same_numSamplesOut = ( resamp->prev_numSamplesOut == numSamplesOut );
+  BOOLEAN same_numSamplesOut = ( resamp->prev_numSamplesOut == numSamplesOut );	// checks whether same dFreqOut !
 
   SkyPosition skypos;
   skypos.system = COORDINATESYSTEM_EQUATORIAL;
@@ -253,30 +252,31 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
   skypos.latitude  = thisPoint.Delta;
 
   // ----- same skyposition? --> reuse antenna-patterns
+  MultiAMCoeffs *multiAMcoef;
   if ( same_skypos && (resamp->prev_multiAMcoef != NULL) )
     {
       multiAMcoef = resamp->prev_multiAMcoef;
     }
   else
     {
-      XLAL_CHECK ( (multiAMcoef = XLALComputeMultiAMCoeffs ( common->detectorStates, common->noiseWeights, skypos )) != NULL, XLAL_EFUNC );
       XLALDestroyMultiAMCoeffs ( resamp->prev_multiAMcoef );
+      XLAL_CHECK ( (multiAMcoef = XLALComputeMultiAMCoeffs ( common->detectorStates, common->noiseWeights, skypos )) != NULL, XLAL_EFUNC );
       resamp->prev_multiAMcoef = multiAMcoef;
     }
 
   // ----- same skypos+binary+refTime? --> reuse SRC timings
-  MultiSSBtimes *multiTimingSRC = NULL;
+  MultiSSBtimes *multiTimingSRC;
   if ( same_skypos && same_refTime && same_binary )
     {
       multiTimingSRC = resamp->prev_multiTimingSRC;
     }
   else
     {
+      XLALDestroyMultiSSBtimes ( resamp->prev_multiTimingSRC );
       XLAL_CHECK ( (multiTimingSRC = XLALGetMultiSSBtimes ( common->detectorStates, skypos, thisPoint.refTime, common->SSBprec )) != NULL, XLAL_EFUNC );
       if ( thisPoint.asini > 0 ) {
         XLAL_CHECK ( XLALAddMultiBinaryTimes ( &multiTimingSRC, multiTimingSRC, &thisPoint ) == XLAL_SUCCESS, XLAL_EFUNC );
       }
-      XLALDestroyMultiSSBtimes ( resamp->prev_multiTimingSRC );
       resamp->prev_multiTimingSRC = multiTimingSRC;
     }
   resamp->prev_doppler = thisPoint;
@@ -316,13 +316,9 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
   // this also avoid having to copy these results in case the user asked for them to be returned
   if ( whatToCompute & FSTATQ_FAFB )
     {
-      if ( resamp->ws_Fa_k != NULL ) {
-        XLALFree ( resamp->ws_Fa_k ); // avoid memory leak if allocated in previous call
-      }
+      XLALFree ( resamp->ws_Fa_k ); // avoid memory leak if allocated in previous call
       resamp->ws_Fa_k = Fstats->Fa;
-      if ( resamp->ws_Fb_k != NULL ) {
-        XLALFree ( resamp->ws_Fb_k ); // avoid memory leak if allocated in previous call
-      }
+      XLALFree ( resamp->ws_Fb_k ); // avoid memory leak if allocated in previous call
       resamp->ws_Fb_k = Fstats->Fb;
     } // end: if returning FaFb we can use that return-struct as 'workspace'
   else	// otherwise: we (re)allocate it locally
@@ -333,14 +329,10 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
 
   if ( whatToCompute & FSTATQ_FAFB_PER_DET )
     {
-      if ( resamp->ws_FaX_k != NULL ) {
-        XLALFree ( resamp->ws_FaX_k ); // avoid memory leak if allocated in previous call
-        resamp->ws_FaX_k = NULL;	// will be set in loop over detectors X
-      }
-      if ( resamp->ws_FbX_k != NULL ) {
-        XLALFree ( resamp->ws_FbX_k ); // avoid memory leak if allocated in previous call
-        resamp->ws_FbX_k = NULL;	// will be set in loop over detectors X
-      }
+      XLALFree ( resamp->ws_FaX_k ); // avoid memory leak if allocated in previous call
+      resamp->ws_FaX_k = NULL;	// will be set in loop over detectors X
+      XLALFree ( resamp->ws_FbX_k ); // avoid memory leak if allocated in previous call
+      resamp->ws_FbX_k = NULL;	// will be set in loop over detectors X
     } // end: if returning FaFbPerDet we can use that return-struct as 'workspace'
   else	// otherwise: we (re)allocate it locally
     {
