@@ -25,7 +25,7 @@ $(PACKAGE)-user-env.csh $(PACKAGE)-user-env.sh: $(PACKAGE)-user-env.shell
 
 EXTRA_DIST += AUTHORS
 if DOXYGEN
-BUILT_SOURCES += AUTHORS
+html-recursive install-html-recursive: AUTHORS
 endif # DOXYGEN
 
 .PHONY: force-author-generation
