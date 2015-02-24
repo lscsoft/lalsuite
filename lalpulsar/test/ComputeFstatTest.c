@@ -67,10 +67,10 @@ main ( int argc, char *argv[] )
   XLAL_CHECK ( XLALParseMultiLALDetector ( &detInfo, detNames ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   LIGOTimeGPS startTime = {711595934, 0};
-  REAL8 Tspan = 10 * 3600;
+  REAL8 Tspan = 200 * 3600;
   LIGOTimeGPS endTime = startTime;
   XLALGPSAdd( &endTime, Tspan );
-  REAL8 Tsft = 60;
+  REAL8 Tsft = 1800;
 
   LIGOTimeGPS refTime = { startTime.gpsSeconds - 2.3 * Tspan, 0 };	// reftime in middle of segment
 
@@ -83,6 +83,7 @@ main ( int argc, char *argv[] )
     {
       XLAL_CHECK ( (multiTimestamps->data[X] = XLALMakeTimestamps ( startTimeX, Tspan, Tsft, 0 ) ) != NULL, XLAL_EFUNC );
       XLALGPSAdd ( &startTimeX, 0.5 * Tspan );	// shift start-times by 1/2 Tspan for each detector
+      Tspan *= 2.0;
     } // for X < numDetectors
 
   // shift a few timestamps around to create gaps
@@ -106,9 +107,9 @@ main ( int argc, char *argv[] )
   sources->data[0].Amp.psi  = 0.1;
   sources->data[0].Amp.phi0 = 1.2;
 
-  REAL8 asini = 1.4;	// sco-X1 like
-  REAL8 Period = 19 * 3600;// sco-X1 like
-  REAL8 ecc = 0.1;	// much larger than ScoX1
+  REAL8 asini = 0; // 1.4;	// sco-X1 like
+  REAL8 Period = 0; // 19 * 3600;// sco-X1 like
+  REAL8 ecc = 0; // 0.1;	// much larger than ScoX1
   PulsarDopplerParams XLAL_INIT_DECL(Doppler);
   Doppler.Alpha = 0.5;
   Doppler.Delta = -0.5;

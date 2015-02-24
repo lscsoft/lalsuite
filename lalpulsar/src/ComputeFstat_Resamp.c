@@ -175,20 +175,22 @@ SetupFstatInput_Resamp ( FstatInput_Resamp *resamp,
   XLAL_CHECK ( (resamp->prev_multiSFTinds_SRC->data = XLALCalloc ( numDetectors, sizeof(UINT4Vector) )) != NULL, XLAL_EFUNC );
   resamp->prev_multiSFTinds_SRC->length = numDetectors;
 
-  UINT4 numSamplesIn = resamp->multiTimeSeries_DET->data[0]->data->length;	// fix all SRC-frame timeseries to have same number of samples!
+  UINT4 numSamplesInMax = 0;
   LIGOTimeGPS XLAL_INIT_DECL(epoch0);	// will be set to corresponding SRC-frame epoch when barycentering
   const REAL8 fHet0 = 0;
   const REAL8 dt0 = 0;
   for ( UINT4 X = 0; X < numDetectors; X ++ )
     {
-      XLAL_CHECK ( (resamp->prev_multiTimeSeries_SRC->data[X] = XLALCreateCOMPLEX8TimeSeries ( "", &epoch0, fHet0, dt0, &emptyLALUnit, numSamplesIn )) != NULL, XLAL_EFUNC );
+      UINT4 numSamplesInX = resamp->multiTimeSeries_DET->data[X]->data->length;
+      numSamplesInMax = MYMAX ( numSamplesInMax, numSamplesInX );
+      XLAL_CHECK ( (resamp->prev_multiTimeSeries_SRC->data[X] = XLALCreateCOMPLEX8TimeSeries ( "", &epoch0, fHet0, dt0, &emptyLALUnit, numSamplesInX )) != NULL, XLAL_EFUNC );
 
       UINT4 numTimestamps = common->timestamps->data[X]->length;
       XLAL_CHECK ( (resamp->prev_multiSFTinds_SRC->data[X] = XLALCreateUINT4Vector ( 2 * numTimestamps )) != NULL, XLAL_EFUNC );
     } // for X < numDetectors
 
   // ---- prepare (fixed-size) workspace timeseries
-  XLAL_CHECK ( (resamp->ws_TimeSeries_SRC = XLALCreateCOMPLEX8TimeSeries ( "", &epoch0, fHet0, dt0, &emptyLALUnit, numSamplesIn )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK ( (resamp->ws_TimeSeries_SRC = XLALCreateCOMPLEX8TimeSeries ( "", &epoch0, fHet0, dt0, &emptyLALUnit, numSamplesInMax )) != NULL, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
 
@@ -223,14 +225,12 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
   const MultiCOMPLEX8TimeSeries *multiTimeSeries_DET = resamp->multiTimeSeries_DET;
   UINT4 numDetectors = multiTimeSeries_DET->length;
   REAL8 dt_DET = multiTimeSeries_DET->data[0]->deltaT;
-  UINT4 numSamplesIn = multiTimeSeries_DET->data[0]->data->length;
-  REAL8 Tspan_DET = numSamplesIn * dt_DET;
 
   MultiAMCoeffs *multiAMcoef;
 
   // determine resampled timeseries parameters */
   UINT4 numFreqBinsOut = Fstats->numFreqBins;
-  REAL8 dFreqOut = ( Fstats->dFreq > 0 ) ? Fstats->dFreq : 1.0 / Tspan_DET;
+  REAL8 dFreqOut = ( Fstats->dFreq > 0 ) ? Fstats->dFreq : 1.0 / (multiTimeSeries_DET->data[0]->data->length * dt_DET);
   REAL8 TspanOut = 1.0 / dFreqOut;
   UINT4 numSamplesOut = (UINT4) ceil ( TspanOut / dt_DET );      // we use ceil() so that we artificially widen the band rather than reduce it
   REAL8 dt_SRC = TspanOut / numSamplesOut;			// adjust sampling rate to allow achieving exact requested dFreqOut=1/TspanOut !
