@@ -100,7 +100,7 @@ static int PhenomPCore(
   const REAL8 f_ref,                    /**< Reference frequency */
   const REAL8Sequence *freqs,           /**< Frequency points at which to evaluate the waveform (Hz) */
   double deltaF
-  /* If deltaF != NaN, the frequency points given in freqs are uniformly spaced with
+  /**< If deltaF != NaN, the frequency points given in freqs are uniformly spaced with
    * spacing deltaF. If deltaF = NaN, the frequency points are spaced non-uniformly.
    * Then we will use deltaF = NaN to create the frequency series we return. */
 );
