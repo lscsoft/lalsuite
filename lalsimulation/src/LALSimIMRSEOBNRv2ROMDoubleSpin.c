@@ -359,9 +359,9 @@ static int SEOBNRv2ROMDoubleSpinCore(
   double chi2,
   const REAL8Sequence *freqs, /* Frequency points at which to evaluate the waveform (Hz) */
   double deltaF
-  /* If deltaF != NaN, the frequency points given in freqs are uniformly spaced with
-   * spacing deltaF. If deltaF = NaN, the frequency points are spaced non-uniformly.
-   * Then we will use deltaF = NaN to create the frequency series we return. */
+  /* If deltaF > 0, the frequency points given in freqs are uniformly spaced with
+   * spacing deltaF. Otherwise, the frequency points are spaced non-uniformly.
+   * Then we will use deltaF = 0 to create the frequency series we return. */
 );
 
 static void SEOBNRROMdataDS_coeff_Init(SEOBNRROMdataDS_coeff **romdatacoeff, int nk_amp, int nk_phi);
@@ -838,9 +838,9 @@ static int SEOBNRv2ROMDoubleSpinCore(
   double chi2,
   const REAL8Sequence *freqs_in, /* Frequency points at which to evaluate the waveform (Hz) */
   double deltaF
-  /* If deltaF != NaN, the frequency points given in freqs are uniformly spaced with
-   * spacing deltaF. If deltaF = NaN, the frequency points are spaced non-uniformly.
-   * Then we will use deltaF = NaN to create the frequency series we return. */
+  /* If deltaF > 0, the frequency points given in freqs are uniformly spaced with
+   * spacing deltaF. Otherwise, the frequency points are spaced non-uniformly.
+   * Then we will use deltaF = 0 to create the frequency series we return. */
   )
 {
 
@@ -947,7 +947,7 @@ static int SEOBNRv2ROMDoubleSpinCore(
   LIGOTimeGPS tC = {0, 0};
   UINT4 offset = 0; // Index shift between freqs and the frequency series
   REAL8Sequence *freqs = NULL;
-  if (!isnan(deltaF))  { // freqs contains uniform frequency grid with spacing deltaF; we start at frequency 0
+  if (deltaF > 0)  { // freqs contains uniform frequency grid with spacing deltaF; we start at frequency 0
     /* Set up output array with size closest power of 2 */
     npts = NextPow2(fHigh_geom / deltaF_geom) + 1;
     if (fHigh_geom < fHigh * Mtot_sec) /* Resize waveform if user wants f_max larger than cutoff frequency */
@@ -967,8 +967,8 @@ static int SEOBNRv2ROMDoubleSpinCore(
     offset = iStart;
   } else { // freqs contains frequencies with non-uniform spacing; we start at lowest given frequency
     npts = freqs_in->length;
-    *hptilde = XLALCreateCOMPLEX16FrequencySeries("hptilde: FD waveform", &tC, fLow, deltaF, &lalStrainUnit, npts);
-    *hctilde = XLALCreateCOMPLEX16FrequencySeries("hctilde: FD waveform", &tC, fLow, deltaF, &lalStrainUnit, npts);
+    *hptilde = XLALCreateCOMPLEX16FrequencySeries("hptilde: FD waveform", &tC, fLow, 0, &lalStrainUnit, npts);
+    *hctilde = XLALCreateCOMPLEX16FrequencySeries("hctilde: FD waveform", &tC, fLow, 0, &lalStrainUnit, npts);
     offset = 0;
 
     freqs = XLALCreateREAL8Sequence(freqs_in->length);
@@ -1071,10 +1071,10 @@ int XLALSimIMRSEOBNRv2ROMDoubleSpinFrequencySequence(
   // Load ROM data if not loaded already
   SEOBNRv2ROMDoubleSpin_Init_LALDATA();
 
-  // Call the internal core function with deltaF = NaN to indicate that freqs is non-uniformly
+  // Call the internal core function with deltaF = 0 to indicate that freqs is non-uniformly
   // spaced and we want the strain only at these frequencies
   int retcode = SEOBNRv2ROMDoubleSpinCore(hptilde,hctilde,
-            phiRef, fRef, distance, inclination, Mtot_sec, eta, chi1, chi2, freqs, NAN);
+            phiRef, fRef, distance, inclination, Mtot_sec, eta, chi1, chi2, freqs, 0);
 
   return(retcode);
 }
