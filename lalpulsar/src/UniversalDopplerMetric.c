@@ -37,6 +37,7 @@
 #include <lal/Factorial.h>
 #include <lal/LogPrintf.h>
 
+#include <lal/EstimateAmplitudeParams.h>
 #include <lal/UniversalDopplerMetric.h>
 
 /**

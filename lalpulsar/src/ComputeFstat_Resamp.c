@@ -22,6 +22,8 @@
 // This file implements the F-statistic resampling algorithm. It is not compiled directly, but
 // included from ComputeFstat.c
 
+#include <lal/ComplexFFT.h>
+
 // ========== Resamp internals ==========
 
 // ----- local macros ----------

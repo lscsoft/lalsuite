@@ -64,6 +64,7 @@
 #include <lal/ComputeFstat.h>
 #include <lal/LALHough.h>
 #include <lal/LogPrintf.h>
+#include <lal/EstimateAmplitudeParams.h>
 
 #include <lalapps.h>
 
