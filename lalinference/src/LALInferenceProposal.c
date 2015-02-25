@@ -2562,8 +2562,10 @@ REAL8 LALInferenceGlitchMorletReverseJump(LALInferenceRunState *runState, LALInf
       //Amplitude
       params = *(gsl_matrix **)LALInferenceGetVariable(proposedParams, "morlet_Amp");
       val    = glitchAmplitudeDraw(Q, f, runState->GSLrandom);
-      REAL8 Anorm = *(REAL8 *)LALInferenceGetVariable(runState->priorArgs,"glitch_norm");
-      A=val/Anorm;
+      {
+        REAL8 Anorm = *(REAL8 *)LALInferenceGetVariable(runState->priorArgs,"glitch_norm");
+        A=val/Anorm;
+      }
       gsl_matrix_set(params,ifo,nx,A);
 
       //Centroid phase
