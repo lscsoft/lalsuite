@@ -345,6 +345,7 @@ static void Test_PhenomPCore(void) {
   Y2m.Y22  = XLALSpinWeightedSphericalHarmonic(ytheta, yphi, -2, 2,  2);
 
   COMPLEX16 hp, hc;
+  REAL8 phasing;
   REAL8 fHz = 40.6051; // Mf = 0.01 for M=50Msun
   int ret = PhenomPCoreOneFrequency(
     fHz,                     /**< frequency (Hz) */
@@ -359,7 +360,9 @@ static void Test_PhenomPCore(void) {
     &Y2m,                    /**< struct of l=2 spherical harmonics of spin weight -2 */
     0,0,
     &hp,                     /**< output: \f$\tilde h_+\f$ */
-    &hc);                    /**< output: \f$\tilde h_+\f$ */
+    &hc,                     /**< output: \f$\tilde h_+\f$ */
+    &phasing);               /**< Output: overall phasing */
+
   UNUSED(ret);
   prC("hp", hp);
   prC("hc", hc);
@@ -446,8 +449,8 @@ static void Test_XLALSimIMRPhenomP(void) {
   prC("hp", hp);
   prC("hc", hc);
 
-  COMPLEX16 hp_expected = 1.00825e-23 - I*5.79215e-23;
-  COMPLEX16 hc_expected = -5.7913e-23 - I*1.00782e-23;
+  COMPLEX16 hp_expected = -8.90351e-24 + I*5.81144e-23;
+  COMPLEX16 hc_expected = 5.81058e-23 + I*8.89934e-24;
   const REAL8 eps = 1e-5;
 
   assert(
@@ -571,7 +574,7 @@ static void Test_PhenomC_PhenomP(void) {
 
   // Now compute match between PhenomC and PhenomP for this aligned configuration
   REAL8 match = MatchSI(&hptilde, &htildePC, f_min, f_max_prime, deltaF);
-  REAL8 match_expected = 0.999443;
+  REAL8 match_expected = 0.999465;
 
   const REAL8 eps = 1e-5;
 

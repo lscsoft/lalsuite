@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2013,2014 Michael Puerrer, Alejandro Bohe
+ *  Copyright (C) 2013,2014,2015 Michael Puerrer, Alejandro Bohe
  *  Reuses code found in:
  *    - LALSimIMRPhenomC
  *    - LALSimInspiralSpinTaylorF2
@@ -31,6 +31,9 @@
 
 #include <stdlib.h>
 #include <math.h>
+#include <gsl/gsl_errno.h>
+#include <gsl/gsl_spline.h>
+
 #include <lal/Date.h>
 #include <lal/FrequencySeries.h>
 #include <lal/LALAtomicDatatypes.h>
@@ -100,9 +103,9 @@ static int PhenomPCore(
   const REAL8 f_ref,                    /**< Reference frequency */
   const REAL8Sequence *freqs,           /**< Frequency points at which to evaluate the waveform (Hz) */
   double deltaF
-  /**< If deltaF != NaN, the frequency points given in freqs are uniformly spaced with
-   * spacing deltaF. If deltaF = NaN, the frequency points are spaced non-uniformly.
-   * Then we will use deltaF = NaN to create the frequency series we return. */
+  /**< If deltaF > 0, the frequency points given in freqs are uniformly spaced with
+   * spacing deltaF. Otherwise, the frequency points are spaced non-uniformly.
+   * Then we will use deltaF = 0 to create the frequency series we return. */
 );
 
 /* Internal core function to calculate PhenomP polarizations for a single frequency. */
@@ -120,7 +123,8 @@ static int PhenomPCoreOneFrequency(
   const REAL8 alphaoffset,                /**< f_ref dependent offset for alpha angle */
   const REAL8 epsilonoffset,              /**< f_ref dependent offset for epsilon angle */
   COMPLEX16 *hp,                          /**< Output: \f$\tilde h_+\f$ */
-  COMPLEX16 *hc                           /**< Output: \f$\tilde h_+\f$ */
+  COMPLEX16 *hc,                          /**< Output: \f$\tilde h_+\f$ */
+  REAL8 *phasing                          /**< Output: overall phasing */
 );
 
 /* Simple 2PN version of L, without any spin terms expressed as a function of v */
@@ -161,7 +165,6 @@ REAL8 FinalSpinBarausse2009(  /* Barausse & Rezzolla, Astrophys.J.Lett.704:L40-L
 
 static size_t NextPow2(const size_t n); /* Return the closest higher power of 2. */
 
-
 /*************************************** Implementation ****************************************/
 
 int XLALSimIMRPhenomPCalculateModelParameters(
@@ -193,10 +196,8 @@ int XLALSimIMRPhenomPCalculateModelParameters(
   if (!thetaJ)   XLAL_ERROR(XLAL_EFAULT);
   if (!alpha0)   XLAL_ERROR(XLAL_EFAULT);
 
-  if (f_ref <= 0) {
-    XLALPrintError("Reference frequency must be positive.\n");
-    XLAL_ERROR(XLAL_EDOM);
-  }
+  if (f_ref <= 0)
+    XLAL_ERROR(XLAL_EDOM, "Reference frequency must be positive.\n");
 
   const REAL8 m1 = m1_SI / LAL_MSUN_SI;   /* Masses in solar masses */
   const REAL8 m2 = m2_SI / LAL_MSUN_SI;
@@ -319,10 +320,10 @@ int XLALSimIMRPhenomPFrequencySequence(
   // Note that the angles phiJ which is calculated internally in XLALSimIMRPhenomPCalculateModelParameters
   // and alpha0 are degenerate. Therefore phiJ is not passed to this function.
 
-  // Call the internal core function with deltaF = NaN to indicate that freqs is non-uniformly
+  // Call the internal core function with deltaF = 0 to indicate that freqs is non-uniformly
   // spaced and we want the strain only at these frequencies
   int retcode = PhenomPCore(hptilde, hctilde,
-      chi_eff, chip, eta, thetaJ, Mtot_SI, distance, alpha0, phic, f_ref, freqs, NAN);
+      chi_eff, chip, eta, thetaJ, Mtot_SI, distance, alpha0, phic, f_ref, freqs, 0);
 
   return(retcode);
 }
@@ -342,15 +343,17 @@ static int PhenomPCore(
   const REAL8 f_ref,                    /**< Reference frequency */
   const REAL8Sequence *freqs_in,        /**< Frequency points at which to evaluate the waveform (Hz) */
   double deltaF
-  /* If deltaF != NaN, the frequency points given in freqs are uniformly spaced with
-   * spacing deltaF. If deltaF = NaN, the frequency points are spaced non-uniformly.
-   * Then we will use deltaF = NaN to create the frequency series we return. */
+  /* If deltaF > 0, the frequency points given in freqs are uniformly spaced with
+   * spacing deltaF. Otherwise, the frequency points are spaced non-uniformly.
+   * Then we will use deltaF = 0 to create the frequency series we return. */
   )
 {
   // See Fig. 1. in arxiv:1408.1810 for diagram of the angles.
   // Note that the angles phiJ which is calculated internally in XLALSimIMRPhenomPCalculateModelParameters
   // and alpha0 are degenerate. Therefore phiJ is not passed to this function.
 
+  XLAL_PRINT_INFO("*** PhenomPCore() ***");
+  
   /* Find frequency bounds */
   if (!freqs_in) XLAL_ERROR(XLAL_EFAULT);
   double f_min = freqs_in->data[0];
@@ -364,7 +367,7 @@ static int PhenomPCore(
   const REAL8 piM = LAL_PI * m_sec;
   const REAL8 v0 = cbrt(piM * f_ref);
 
-  static LIGOTimeGPS ligotimegps_zero = {0, 0};
+  LIGOTimeGPS ligotimegps_zero = LIGOTIMEGPSZERO; // = {0, 0}
 
   /* Check inputs for sanity */
   if (*hptilde)       XLAL_ERROR(XLAL_EFAULT);
@@ -375,28 +378,21 @@ static int PhenomPCore(
   if (f_max < 0)      XLAL_ERROR(XLAL_EDOM);
   if (distance <= 0)  XLAL_ERROR(XLAL_EDOM);
 
-  if (f_ref <= 0) {
-      XLALPrintError("Reference frequency must be positive.\n");
-      XLAL_ERROR(XLAL_EDOM);
-  }
+  if (f_ref <= 0)
+      XLAL_ERROR(XLAL_EDOM, "Reference frequency must be positive.\n");
 
-  if (eta < 0.0453515){ /* q = 20 */
-      XLALPrintError("Mass ratio is way outside the calibration range. m1/m2 should be <= 20.\n");
-      XLAL_ERROR(XLAL_EDOM);
-  }
-  else if (eta < 0.16) { /* q = 4 */
-      XLALPrintWarning("Warning: The model is only calibrated for m1/m2 <= 4.\n");
-  }
-
-  if (fabs(chi_eff) > 1) XLAL_ERROR(XLAL_EDOM);
-  if (fabs(chip) > 1) XLAL_ERROR(XLAL_EDOM);
+  if (eta < 0.0453515) /* q = 20 */
+      XLAL_ERROR(XLAL_EDOM, "Mass ratio is way outside the calibration range. m1/m2 should be <= 20.\n");
+  else if (eta < 0.16)  /* q = 4 */
+      XLAL_PRINT_WARNING("Warning: The model is only calibrated for m1/m2 <= 4.\n");
 
   /* If spins are above 0.9 or below -0.9, throw an error. */
   /* The rationale behind this is given at this page: https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/WaveformsReview/IMRPhenomCdevel-SanityCheck01 */
-  if (chi_eff > 0.9 || chi_eff < -0.9){
-      XLALPrintError("Spins outside the range [-0.9,0.9] are not supported\n");
-      XLAL_ERROR(XLAL_EDOM);
-  }
+  if (chi_eff > 0.9 || chi_eff < -0.9)
+      XLAL_ERROR(XLAL_EDOM, "Effective spin chi_eff = %g outside the range [-0.9,0.9] is not supported!\n", chi_eff);
+
+  if (fabs(chip) > 1)
+    XLAL_ERROR(XLAL_EDOM, "In-plane spin chip =%g is super extremal!\n", chip);
 
   const REAL8 chil = (1.0+q)/q * chi_eff; /* dimensionless aligned spin of the largest BH */
   NNLOanglecoeffs angcoeffs;
@@ -435,34 +431,31 @@ static int PhenomPCore(
   //PCparams = ComputeIMRPhenomCParams(m1, m2, chi_eff); /* original PhenomC */
   PCparams = ComputeIMRPhenomCParamsRDmod(m1, m2, chi_eff, chip); /* PhenomC with ringdown using Barausse 2009 formula for final spin */
   if (!PCparams) XLAL_ERROR(XLAL_EFUNC);
-  if (PCparams->fCut <= f_min) {
-      XLALPrintError("(fCut = 0.15M) <= f_min\n");
-      XLAL_ERROR(XLAL_EDOM);
-  }
+  if (PCparams->fCut <= f_min)
+      XLAL_ERROR(XLAL_EDOM, "(fCut = 0.15M) <= f_min\n");
 
   /* Default f_max to params->fCut */
   REAL8 f_max_prime = f_max ? f_max : PCparams->fCut;
   f_max_prime = (f_max_prime > PCparams->fCut) ? PCparams->fCut : f_max_prime;
-  if (f_max_prime <= f_min) {
-      XLALPrintError("f_max <= f_min\n");
-      XLAL_ERROR(XLAL_EDOM);
-  }
-  XLALPrintInfo("f_max_prime = %g\tfcut = %g\tv = %g\n", f_max_prime, PCparams->fCut, cbrt(piM * f_max_prime));
+  if (f_max_prime <= f_min)
+      XLAL_ERROR(XLAL_EDOM, "f_max <= f_min\n");
+  XLAL_PRINT_INFO("f_max_prime = %g\tfcut = %g\tv = %g\n", f_max_prime, PCparams->fCut, cbrt(piM * f_max_prime));
 
 
   /* Allocate hp, hc */
-  XLALPrintInfo("f_max / deltaF = %g\n", f_max_prime / deltaF);
+  XLAL_PRINT_INFO("f_max / deltaF = %g\n", f_max_prime / deltaF);
 
   size_t n = 0;
   UINT4 offset = 0; // Index shift between freqs and the frequency series
   REAL8Sequence *freqs = NULL;
-  if (!isnan(deltaF))  { // freqs contains uniform frequency grid with spacing deltaF; we start at frequency 0
+  if (deltaF > 0)  { // freqs contains uniform frequency grid with spacing deltaF; we start at frequency 0
     /* Set up output array with size closest power of 2 */
     n = NextPow2(f_max_prime / deltaF) + 1;
     if (f_max_prime < f_max)                       /* Resize waveform if user wants f_max larger than cutoff frequency */
       n = NextPow2(f_max / deltaF) + 1;
 
-    XLALGPSAdd(&ligotimegps_zero, -1. / deltaF);  /* coalesce at t=0 */
+    /* coalesce at t=0 */
+    XLALGPSAdd(&ligotimegps_zero, -1. / deltaF); // shift by overall length in time
 
     *hptilde = XLALCreateCOMPLEX16FrequencySeries("hptilde: FD waveform", &ligotimegps_zero, 0.0, deltaF, &lalStrainUnit, n);
     *hctilde = XLALCreateCOMPLEX16FrequencySeries("hctilde: FD waveform", &ligotimegps_zero, 0.0, deltaF, &lalStrainUnit, n);
@@ -477,8 +470,8 @@ static int PhenomPCore(
     offset = i_min;
   } else { // freqs contains frequencies with non-uniform spacing; we start at lowest given frequency
     n = freqs_in->length;
-    *hptilde = XLALCreateCOMPLEX16FrequencySeries("hptilde: FD waveform", &ligotimegps_zero, f_min, deltaF, &lalStrainUnit, n);
-    *hctilde = XLALCreateCOMPLEX16FrequencySeries("hctilde: FD waveform", &ligotimegps_zero, f_min, deltaF, &lalStrainUnit, n);
+    *hptilde = XLALCreateCOMPLEX16FrequencySeries("hptilde: FD waveform", &ligotimegps_zero, f_min, 0, &lalStrainUnit, n);
+    *hctilde = XLALCreateCOMPLEX16FrequencySeries("hctilde: FD waveform", &ligotimegps_zero, f_min, 0, &lalStrainUnit, n);
     offset = 0;
 
     freqs = XLALCreateREAL8Sequence(freqs_in->length);
@@ -495,20 +488,20 @@ static int PhenomPCore(
     XLAL_ERROR(XLAL_EFUNC);
 
   /* Test output */
-  XLALPrintInfo("eta: %g\n", eta);
-  XLALPrintInfo("m1: %g\n", m1);
-  XLALPrintInfo("m2: %g\n", m2);
-  XLALPrintInfo("chi: %g\n", chi_eff);
-  XLALPrintInfo("chip: %g\n", chip);
-  XLALPrintInfo("thetaJ: %g\n", thetaJ);
-  XLALPrintInfo("ind_mix = (int)(f_mix / deltaF) = %d\n", (int)(f_min / deltaF));
-  XLALPrintInfo("ind_max = (int)(f_max / deltaF) = %d\n", (int)(f_max_prime / deltaF));
+  XLAL_PRINT_INFO("eta: %g\n", eta);
+  XLAL_PRINT_INFO("m1: %g\n", m1);
+  XLAL_PRINT_INFO("m2: %g\n", m2);
+  XLAL_PRINT_INFO("chi: %g\n", chi_eff);
+  XLAL_PRINT_INFO("chip: %g\n", chip);
+  XLAL_PRINT_INFO("thetaJ: %g\n", thetaJ);
+  XLAL_PRINT_INFO("ind_mix = (int)(f_mix / deltaF) = %d\n", (int)(f_min / deltaF));
+  XLAL_PRINT_INFO("ind_max = (int)(f_max / deltaF) = %d\n", (int)(f_max_prime / deltaF));
 
-  /* Note: there will usually be zero data at the beginning and end of the frequency series  */
-  //size_t i_min = (size_t) (f_min / deltaF);
-  //size_t i_max = (size_t) (f_max_prime / deltaF);
   int errcode = XLAL_SUCCESS;
 
+  UINT4 L = freqs->length;
+  REAL8 *phis = XLALMalloc(L*sizeof(REAL8)); // array for waveform phase
+  REAL8 phasing = 0;
 
   /*
     We can't call XLAL_ERROR() directly with OpenMP on.
@@ -532,7 +525,7 @@ static int PhenomPCore(
     per_thread_errcode = PhenomPCoreOneFrequency(f, eta, chi_eff, chip, distance, M, phic,
                               PCparams, &angcoeffs, &Y2m,
                               alphaNNLOoffset - alpha0, epsilonNNLOoffset,
-                              &hp_val, &hc_val);
+                              &hp_val, &hc_val, &phasing);
 
     if (per_thread_errcode != XLAL_SUCCESS) {
       errcode = per_thread_errcode;
@@ -542,8 +535,46 @@ static int PhenomPCore(
     ((*hptilde)->data->data)[j] = hp_val;
     ((*hctilde)->data->data)[j] = hc_val;
 
+    phis[i] = phasing;
+
     skip: /* this statement intentionally left blank */;
   }
+
+  /* Correct phasing so we coalesce at t=0 (with the definition of the epoch=-1/deltaF above) */
+  /* We apply the same time shift to hptilde and hctilde based on the overall phasing returned by PhenomPCoreOneFrequency */
+  if (deltaF<=0)
+    XLAL_PRINT_WARNING("Warning: Depending on specified frequency sequence correction to time of coalescence may not be accurate.\n");
+
+  /* Set up spline for phase */
+  gsl_interp_accel *acc = gsl_interp_accel_alloc();
+  gsl_spline *phiI = gsl_spline_alloc(gsl_interp_cspline, L);
+
+  gsl_spline_init(phiI, freqs->data, phis, L);
+
+  REAL8 f_final = PCparams->fRingDown; // This isn't quite the same as the SEOBNRv2 ringdown frequency
+  XLAL_PRINT_INFO("f_ringdown = %g\n", f_final);
+
+  // Prevent gsl interpolation errors
+  if (f_final > freqs->data[L-1])
+    f_final = freqs->data[L-1];
+  if (f_final < freqs->data[0])
+    XLAL_ERROR(XLAL_EDOM, "f_ringdown < f_min\n");
+
+  /* Time correction is t(f_final) = 1/(2pi) dphi/df (f_final) */
+  REAL8 t_corr = gsl_spline_eval_deriv(phiI, f_final, acc) / (2*LAL_PI);
+  XLAL_PRINT_INFO("t_corr = %g\n", t_corr);
+
+  /* Now correct phase */
+  for (UINT4 i=0; i<freqs->length; i++) { // loop over frequency points in sequence
+    double f = freqs->data[i];
+    int j = i + offset; // shift index for frequency series if needed
+    ((*hptilde)->data->data)[j] *= cexp(-2*LAL_PI * I * f * t_corr);
+    ((*hctilde)->data->data)[j] *= cexp(-2*LAL_PI * I * f * t_corr);
+  }
+
+  gsl_spline_free(phiI);
+  gsl_interp_accel_free(acc);
+  XLALFree(phis);
 
   XLALDestroyREAL8Sequence(freqs);
 
@@ -565,12 +596,13 @@ int PhenomPCoreOneFrequency(
   const REAL8 M,                          /**< Total mass (Solar masses) */
   const REAL8 phic,                       /**< Orbital phase at the peak of the underlying non precessing model (rad) */
   BBHPhenomCParams *PCparams,             /**< Internal PhenomC parameters */
-  NNLOanglecoeffs *angcoeffs,  		  /**< Struct with PN coeffs for the NNLO angles */
+  NNLOanglecoeffs *angcoeffs,  		        /**< Struct with PN coeffs for the NNLO angles */
   SpinWeightedSphericalHarmonic_l2 *Y2m,  /**< Struct of l=2 spherical harmonics of spin weight -2 */
   const REAL8 alphaoffset,                /**< f_ref dependent offset for alpha angle (azimuthal precession angle) */
   const REAL8 epsilonoffset,              /**< f_ref dependent offset for epsilon angle */
   COMPLEX16 *hp,                          /**< Output: \tilde h_+ */
-  COMPLEX16 *hc)                          /**< Output: \tilde h_+ */
+  COMPLEX16 *hc,                          /**< Output: \tilde h_+ */
+  REAL8 *phasing)                         /**< Output: overall phasing */
 {
 
   /* Calculate PhenomC amplitude and phase for a given frequency. */
@@ -667,6 +699,9 @@ int PhenomPCoreOneFrequency(
   COMPLEX16 eps_phase_hPC = cexp(-2*I*epsilon) * hPC / 2.0;
   *hp = eps_phase_hPC * hp_sum;
   *hc = eps_phase_hPC * hc_sum;
+
+  //*phasing = -phPhenomC -2*epsilon; // ignore alpha contributions
+  *phasing = -phPhenomC; // ignore alpha and epsilon contributions
 
   return XLAL_SUCCESS;
 }
@@ -897,8 +932,10 @@ BBHPhenomCParams *ComputeIMRPhenomCParamsRDmod(
   const REAL8 eta = m1 * m2 / (M * M);
 
   REAL8 finspin = FinalSpinBarausse2009_all_spin_on_larger_BH(eta, chi, chip);
-  if( fabs(finspin) > 1.0 )
+  if( fabs(finspin) > 1.0 ) {
+    XLAL_PRINT_ERROR("Error: magnitude of final spin > 1!");
     XLAL_ERROR_NULL( XLAL_EDOM );
+  }
 
   p->afin = finspin;
 
