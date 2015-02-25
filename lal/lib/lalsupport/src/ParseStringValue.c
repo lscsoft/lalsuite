@@ -294,14 +294,14 @@ XLALParseStringValueToEPOCH ( LIGOTimeGPS *gps,   	///< [out] return LIGOTimeGPS
 
 
 ///
-/// Parse a string representing a 'longitude' into REAL8 radians, allowing for both radians or "hours:minutes:seconds" as input.
+/// Parse a string representing an 'equatorial longitude' (aka right ascension or RA) into REAL8 radians, allowing for both radians or "hours:minutes:seconds" as input.
 ///
 /// Note that "h:m:s" input is translated into radians using XLALTranslateHMStoRAD().
 ///
 int
-XLALParseStringValueToLONGITUDE ( REAL8 *valLongitude,   	///< [out] return longitude value in radians
-                                  const char *valString  	///< [in]  input string value
-                                  )
+XLALParseStringValueToRAJ ( REAL8 *valLongitude,   	///< [out] return longitude value in radians
+                            const char *valString  	///< [in]  input string value
+                            )
 {
   XLAL_CHECK ( (valLongitude != NULL) && (valString != NULL ), XLAL_EINVAL );
 
@@ -318,17 +318,17 @@ XLALParseStringValueToLONGITUDE ( REAL8 *valLongitude,   	///< [out] return long
 
   return XLAL_SUCCESS;
 
-} // XLALParseStringValueToLONGITUDE()
+} // XLALParseStringValueToRAJ()
 
 ///
-/// Parse a string representing a 'latitude' into REAL8 radians, allowing for both radians or "degrees:minutes:seconds" as input.
+/// Parse a string representing an 'equatorial latitude' (aka declination or DEC) into REAL8 radians, allowing for both radians or "degrees:minutes:seconds" as input.
 ///
 /// Note that "d:m:s" input is translated into radians using XLALTranslateDMStoRAD().
 ///
 int
-XLALParseStringValueToLATITUDE ( REAL8 *valLatitude,   	///< [out] return latitude value in radians
-                                 const char *valString 	///< [in]  input string value
-                                  )
+XLALParseStringValueToDECJ ( REAL8 *valLatitude,   	///< [out] return latitude value in radians
+                             const char *valString 	///< [in]  input string value
+                             )
 {
   XLAL_CHECK ( (valLatitude != NULL) && (valString != NULL ), XLAL_EINVAL );
 
@@ -345,4 +345,4 @@ XLALParseStringValueToLATITUDE ( REAL8 *valLatitude,   	///< [out] return latitu
 
   return XLAL_SUCCESS;
 
-} // XLALParseStringValueToLATITUDE()
+} // XLALParseStringValueToDECJ()

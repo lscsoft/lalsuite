@@ -197,14 +197,14 @@ XLALReadConfigEPOCHVariable (LIGOTimeGPS *varp,
                              BOOLEAN *wasRead);
 
 int
-XLALReadConfigLONGITUDEVariable (REAL8 *varp,
+XLALReadConfigRAJVariable (REAL8 *varp,
                                  const LALParsedDataFile *cfgdata,
                                  const CHAR *secName,
                                  const CHAR *varName,
                                  BOOLEAN *wasRead);
 
 int
-XLALReadConfigLATITUDEVariable (REAL8 *varp,
+XLALReadConfigDECJVariable (REAL8 *varp,
                                 const LALParsedDataFile *cfgdata,
                                 const CHAR *secName,
                                 const CHAR *varName,

@@ -96,8 +96,8 @@ extern "C" {
  *   XLALregREALUserStruct  ( aDoubleVar,         'r',  UVAR_REQUIRED, "This REAL8 user-variable is required");
  *   XLALregSTRINGUserStruct( andAString,          0,   UVAR_OPTIONAL, "Optional string-input, has no short-option");
  *   XLALregEPOCHUserStruct ( someEpoch,           0,   UVAR_OPTIONAL, "Reference epoch (format 'xx.yy[GPS|MJD]')");
- *   XLALregLONGITUDEUserStruct(RA,                0,   UVAR_OPTIONAL, "Sky location: right ascension in [0,2pi] (in radians or hours:minutes:seconds)");
- *   XLALregLATITUDEUserStruct(DEC,                0,   UVAR_OPTIONAL, "Sky location: declination [-pi/2,pi/2] (in radians or degrees:minutes:seconds)");
+ *   XLALregRAJUserStruct   ( RAJ,                 0,   UVAR_OPTIONAL, "Sky location: equatorial right ascension in [0,2pi] (in radians or hours:minutes:seconds)");
+ *   XLALregDECJUserStruct  ( DEC,                 0,   UVAR_OPTIONAL, "Sky location: equatorial declination [-pi/2,pi/2] (in radians or degrees:minutes:seconds)");
  *
  *   XLALregREALUserStruct  ( specialGeekSwitch,   'g', UVAR_DEVELOPER, "This REAL8 user-variable may not be relevant for standard usage");
  *
@@ -131,8 +131,8 @@ Usage: ./tmp [@ConfigFile] [options], where options are:
 -r, --aDoubleVar          REAL8      This REAL8 user-variable is required [REQUIRED]
     --andAString          STRING     Optional string-input, has no short-option [NULL]
     --someEpoch           EPOCH      Reference epoch (format 'xx.yy[GPS|MJD]') [0.000000000GPS]
-    --RA                  LONGITUDE  Sky location: right ascension in [0,2pi] (in radians or hours:minutes:seconds) [0.0]
-    --DEC                 LATITUDE   Sky location: declination [-pi/2,pi/2] (in radians or degrees:minutes:seconds) [0.0]
+    --RA                  RAJ        Sky location: right ascension in [0,2pi] (in radians or hours:minutes:seconds) [0.0]
+    --DEC                 DECJ       Sky location: declination [-pi/2,pi/2] (in radians or degrees:minutes:seconds) [0.0]
 
 ---------- The following are 'Developer'-options not useful for most users:----------
 
@@ -176,11 +176,11 @@ someEpoch = {2147483596 s, 816000000 ns}, RA = 2.727813 rad, DEC = -0.523599 rad
 #define XLALregEPOCHUserStruct(name,option,flag,help)                    \
   XLALRegisterEPOCHUserVar(#name, option, flag, help, &(uvar-> name))
 
-#define XLALregLONGITUDEUserStruct(name,option,flag,help)                    \
-  XLALRegisterLONGITUDEUserVar(#name, option, flag, help, &(uvar-> name))
+#define XLALregRAJUserStruct(name,option,flag,help)                    \
+  XLALRegisterRAJUserVar(#name, option, flag, help, &(uvar-> name))
 
-#define XLALregLATITUDEUserStruct(name,option,flag,help)               \
-  XLALRegisterLATITUDEUserVar(#name, option, flag, help, &(uvar-> name))
+#define XLALregDECJUserStruct(name,option,flag,help)               \
+  XLALRegisterDECJUserVar(#name, option, flag, help, &(uvar-> name))
 
 /*@}*/
 
@@ -222,8 +222,8 @@ int XLALRegisterBOOLUserVar ( const CHAR *name, CHAR optchar, UserVarFlag flag, 
 int XLALRegisterSTRINGUserVar ( const CHAR *name, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, CHAR **cvar );
 int XLALRegisterLISTUserVar ( const CHAR *name, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, LALStringVector **cvar);
 int XLALRegisterEPOCHUserVar ( const CHAR *name, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, LIGOTimeGPS *cvar);
-int XLALRegisterLONGITUDEUserVar ( const CHAR *name, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, REAL8 *cvar);
-int XLALRegisterLATITUDEUserVar ( const CHAR *name, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, REAL8 *cvar);
+int XLALRegisterRAJUserVar ( const CHAR *name, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, REAL8 *cvar);
+int XLALRegisterDECJUserVar ( const CHAR *name, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, REAL8 *cvar);
 
 
 /* ========== Deprecated LAL interface wrappers ========== */

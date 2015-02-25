@@ -74,12 +74,12 @@ int main ( int argc, char *argv[])
   XLAL_CHECK ( XLALReadConfigEPOCHVariable ( &epochMJDTT, cfgdata, 0, "epochMJDTT", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   REAL8 longHMS, longRad;
-  XLAL_CHECK ( XLALReadConfigLONGITUDEVariable ( &longHMS, cfgdata, 0, "longHMS", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALReadConfigLONGITUDEVariable ( &longRad, cfgdata, 0, "longRad", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALReadConfigRAJVariable ( &longHMS, cfgdata, 0, "longHMS", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALReadConfigRAJVariable ( &longRad, cfgdata, 0, "longRad", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   REAL8 latDMS, latRad;
-  XLAL_CHECK ( XLALReadConfigLATITUDEVariable ( &latDMS, cfgdata, 0, "latDMS", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALReadConfigLATITUDEVariable ( &latRad, cfgdata, 0, "latRad", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALReadConfigDECJVariable ( &latDMS, cfgdata, 0, "latDMS", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALReadConfigDECJVariable ( &latRad, cfgdata, 0, "latRad", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   XLAL_CHECK ( XLALCheckConfigReadComplete (cfgdata, CONFIGFILE_ERROR) == XLAL_SUCCESS, XLAL_EFUNC );
 

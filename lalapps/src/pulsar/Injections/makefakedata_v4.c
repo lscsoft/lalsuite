@@ -1287,8 +1287,8 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   /* pulsar params */
   XLALregEPOCHUserStruct ( refTime,             'S', UVAR_OPTIONAL, "Pulsar SSB reference epoch: format 'xx.yy[GPS|MJD]' [default: startTime]");
 
-  XLALregLONGITUDEUserStruct (  Alpha,		 0, UVAR_OPTIONAL, "Sky: equatorial right ascension 'Alpha' (radians or hours:minutes:seconds)");
-  XLALregLATITUDEUserStruct (  Delta,		 0, UVAR_OPTIONAL, "Sky: equatorial declination 'Delta' (radians or degrees:minutes:seconds)");
+  XLALregRAJUserStruct (  Alpha,		 0, UVAR_OPTIONAL, "Sky: equatorial J2000 right ascension (in radians or hours:minutes:seconds)");
+  XLALregDECJUserStruct (  Delta,		 0, UVAR_OPTIONAL, "Sky: equatorial J2000 declination (in radians or degrees:minutes:seconds)");
 
   XLALregREALUserStruct (  h0,                   0, UVAR_OPTIONAL, "Overall signal-amplitude h0");
   XLALregREALUserStruct (  cosi,                 0, UVAR_OPTIONAL, "cos(iota) of inclination-angle iota");

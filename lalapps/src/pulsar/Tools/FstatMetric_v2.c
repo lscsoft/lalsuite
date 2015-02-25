@@ -353,8 +353,8 @@ initUserVars (UserVariables_t *uvar)
   XLALregBOOLUserStruct(help,		'h', UVAR_HELP,		"Print this help/usage message");
   XLALregLISTUserStruct(IFOs,		'I', UVAR_OPTIONAL, 	"CSV list of detectors, eg. \"H1,H2,L1,G1, ...\" ");
   XLALregLISTUserStruct(sqrtSX,	 	 0,  UVAR_OPTIONAL, 	"[for F-metric weights] CSV list of detectors' noise-floors sqrt{Sn}");
-  XLALregLONGITUDEUserStruct(Alpha,	'a', UVAR_OPTIONAL,	"Sky: equatorial right ascension 'Alpha' (radians or hours:minutes:seconds)");
-  XLALregLATITUDEUserStruct(Delta, 	'd', UVAR_OPTIONAL,	"Sky: equatorial declination 'Delta' (radians or degrees:minutes:seconds)");
+  XLALregRAJUserStruct(Alpha,		'a', UVAR_OPTIONAL,	"Sky: equatorial J2000 right ascension (in radians or hours:minutes:seconds)");
+  XLALregDECJUserStruct(Delta, 		'd', UVAR_OPTIONAL,	"Sky: equatorial J2000 declination (in radians or degrees:minutes:seconds)");
   XLALregREALUserStruct(Freq, 		'f', UVAR_OPTIONAL, 	"target frequency");
   XLALregREALUserStruct(f1dot, 		's', UVAR_OPTIONAL, 	"first spindown-value df/dt");
   XLALregREALUserStruct(f2dot, 		 0 , UVAR_OPTIONAL, 	"second spindown-value d2f/dt2");

@@ -704,7 +704,7 @@ XLALReadPulsarParams ( PulsarParams *pulsarParams,	///< [out] pulsar parameters 
 
   // ----- Alpha
   REAL8 Alpha_Rad = 0; BOOLEAN have_Alpha;
-  XLAL_CHECK ( XLALReadConfigLONGITUDEVariable ( &Alpha_Rad, cfgdata, secName, "Alpha", &have_Alpha ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALReadConfigRAJVariable ( &Alpha_Rad, cfgdata, secName, "Alpha", &have_Alpha ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( have_Alpha, XLAL_EINVAL );
 
   XLAL_CHECK ( (Alpha_Rad >= 0) && (Alpha_Rad < LAL_TWOPI), XLAL_EDOM );
@@ -712,7 +712,7 @@ XLALReadPulsarParams ( PulsarParams *pulsarParams,	///< [out] pulsar parameters 
 
   // ----- Delta
   REAL8 Delta_Rad = 0; BOOLEAN have_Delta;
-  XLAL_CHECK ( XLALReadConfigLATITUDEVariable ( &Delta_Rad, cfgdata, secName, "Delta", &have_Delta ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALReadConfigDECJVariable ( &Delta_Rad, cfgdata, secName, "Delta", &have_Delta ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( have_Delta, XLAL_EINVAL );
 
   XLAL_CHECK ( (Delta_Rad >= -LAL_PI_2) && (Delta_Rad <= LAL_PI_2), XLAL_EDOM );

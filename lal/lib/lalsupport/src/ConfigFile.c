@@ -730,11 +730,11 @@ XLALReadConfigEPOCHVariable (LIGOTimeGPS *varp,
 
 
 /**
- * Type-specialization of generic reading-function LALReadConfigVariable() to LONGITUDE variables
+ * Type-specialization of generic reading-function LALReadConfigVariable() to RAJ variables
  * (allowing for either radians or "hours:minutes:seconds" input format).
  */
 int
-XLALReadConfigLONGITUDEVariable (REAL8 *varp,
+XLALReadConfigRAJVariable (REAL8 *varp,
                                  const LALParsedDataFile *cfgdata,
                                  const CHAR *secName,
                                  const CHAR *varName,
@@ -750,20 +750,20 @@ XLALReadConfigLONGITUDEVariable (REAL8 *varp,
   }
   XLAL_CHECK ( valString != NULL, XLAL_EFAILED, "Got NULL string after reading config-variable '%s' in section '%s'\n", varName, secName ? secName: "default" );
 
-  XLAL_CHECK ( XLALParseStringValueToLONGITUDE ( varp, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALParseStringValueToRAJ ( varp, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   XLALFree ( valString );
 
   return XLAL_SUCCESS;
 
-} /* XLALReadConfigLONGITUDEVariable() */
+} /* XLALReadConfigRAJVariable() */
 
 /**
- * Type-specialization of generic reading-function LALReadConfigVariable() to LATITUDE variables
+ * Type-specialization of generic reading-function LALReadConfigVariable() to DECJ variables
  * (allowing for either radians or "degrees:minutes:seconds" input format).
  */
 int
-XLALReadConfigLATITUDEVariable (REAL8 *varp,
+XLALReadConfigDECJVariable (REAL8 *varp,
                                 const LALParsedDataFile *cfgdata,
                                 const CHAR *secName,
                                 const CHAR *varName,
@@ -779,13 +779,13 @@ XLALReadConfigLATITUDEVariable (REAL8 *varp,
   }
   XLAL_CHECK ( valString != NULL, XLAL_EFAILED, "Got NULL string after reading config-variable '%s' in section '%s'\n", varName, secName ? secName: "default" );
 
-  XLAL_CHECK ( XLALParseStringValueToLATITUDE ( varp, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALParseStringValueToDECJ ( varp, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   XLALFree ( valString );
 
   return XLAL_SUCCESS;
 
-} /* XLALReadConfigLATITUDEVariable() */
+} /* XLALReadConfigDECJVariable() */
 
 
 /**

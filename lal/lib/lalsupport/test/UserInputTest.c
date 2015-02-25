@@ -71,10 +71,10 @@ main(int argc, char *argv[])
   XLAL_CHECK ( XLALregSTRINGUserStruct( string2, 0, UVAR_REQUIRED, "Testing another string argument") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALregEPOCHUserStruct( epochGPS, 0, UVAR_REQUIRED, "Testing epoch given as GPS time") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALregEPOCHUserStruct( epochMJDTT, 0, UVAR_REQUIRED, "Testing epoch given as MJD(TT) time") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALregLONGITUDEUserStruct( longHMS, 0, UVAR_REQUIRED, "Testing LONGITUDE(HMS) argument") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALregLONGITUDEUserStruct( longRad, 0, UVAR_REQUIRED, "Testing LONGITUDE(rad) argument") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALregLATITUDEUserStruct( latDMS, 0, UVAR_REQUIRED, "Testing LATITUDE(DMS) argument") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALregLATITUDEUserStruct( latRad, 0, UVAR_REQUIRED, "Testing LATITUDE(rad) argument") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALregRAJUserStruct( longHMS, 0, UVAR_REQUIRED, "Testing RAJ(HMS) argument") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALregRAJUserStruct( longRad, 0, UVAR_REQUIRED, "Testing RAJ(rad) argument") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALregDECJUserStruct( latDMS, 0, UVAR_REQUIRED, "Testing DECJ(DMS) argument") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALregDECJUserStruct( latRad, 0, UVAR_REQUIRED, "Testing DECJ(rad) argument") == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* ---------- now read all input from commandline and config-file ---------- */
   XLAL_CHECK ( XLALUserVarReadAllInput ( my_argc, my_argv ) == XLAL_SUCCESS, XLAL_EFUNC );

@@ -40,8 +40,8 @@ typedef enum {
   UVAR_TYPE_STRING,  /* string */
   UVAR_TYPE_CSVLIST, /* list of comma-separated values */
   UVAR_TYPE_EPOCH,   /* time 'epoch', specified in either GPS or MJD(TT) format, translated into GPS */
-  UVAR_TYPE_LONGITUDE,/* sky longitude (aka right-ascencion or RA), in either radians or hours:minutes:seconds format, translated into radians */
-  UVAR_TYPE_LATITUDE, /* sky latitude (aka declination or DEC), in either radians or degrees:minutes:seconds format, translated into radians */
+  UVAR_TYPE_RAJ,     /* sky equatorial longitude (aka right-ascencion or RA), in either radians or hours:minutes:seconds format, translated into radians */
+  UVAR_TYPE_DECJ,    /* sky equatorial latitude (aka declination or DEC), in either radians or degrees:minutes:seconds format, translated into radians */
   UVAR_TYPE_LAST
 } UserVarType;
 
@@ -59,8 +59,8 @@ static const struct {
   [UVAR_TYPE_STRING]   = {"STRING"},
   [UVAR_TYPE_CSVLIST]  = {"CSVLIST"},
   [UVAR_TYPE_EPOCH]    = {"EPOCH"},
-  [UVAR_TYPE_LONGITUDE]= {"LONGITUDE"},
-  [UVAR_TYPE_LATITUDE] = {"LATITUDE"}
+  [UVAR_TYPE_RAJ]= {"RAJ"},
+  [UVAR_TYPE_DECJ] = {"DECJ"}
 };
 
 /**
@@ -138,18 +138,18 @@ XLALRegisterEPOCHUserVar ( const CHAR *name, CHAR optchar, UserVarFlag flag, con
   return XLALRegisterUserVar ( name, UVAR_TYPE_EPOCH, optchar, flag, helpstr, cvar );
 }
 
-/** Register a user-variable of 'LONGITUDE' type (REAL8), allowing both "hours:minutes:seconds" or radians as input */
+/** Register a user-variable of 'RAJ' type (REAL8), allowing both "hours:minutes:seconds" or radians as input */
 int
-XLALRegisterLONGITUDEUserVar ( const CHAR *name, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, REAL8 *cvar)
+XLALRegisterRAJUserVar ( const CHAR *name, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, REAL8 *cvar)
 {
-  return XLALRegisterUserVar ( name, UVAR_TYPE_LONGITUDE, optchar, flag, helpstr, cvar );
+  return XLALRegisterUserVar ( name, UVAR_TYPE_RAJ, optchar, flag, helpstr, cvar );
 }
 
-/** Register a user-variable of 'LATITUDE' type (REAL8), allowing both "degrees:minutes:seconds" or radians as input */
+/** Register a user-variable of 'DECJ' type (REAL8), allowing both "degrees:minutes:seconds" or radians as input */
 int
-XLALRegisterLATITUDEUserVar ( const CHAR *name, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, REAL8 *cvar)
+XLALRegisterDECJUserVar ( const CHAR *name, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, REAL8 *cvar)
 {
-  return XLALRegisterUserVar ( name, UVAR_TYPE_LATITUDE, optchar, flag, helpstr, cvar );
+  return XLALRegisterUserVar ( name, UVAR_TYPE_DECJ, optchar, flag, helpstr, cvar );
 }
 
 
@@ -385,12 +385,12 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
           XLAL_CHECK ( XLALParseStringValueToEPOCH ( (LIGOTimeGPS *)(ptr->varp), LALoptarg ) != NULL, XLAL_EFUNC );
 	  break;
 
-        case UVAR_TYPE_LONGITUDE:
-          XLAL_CHECK ( XLALParseStringValueToLONGITUDE ( (REAL8 *)(ptr->varp), LALoptarg ) == XLAL_SUCCESS, XLAL_EFUNC );
+        case UVAR_TYPE_RAJ:
+          XLAL_CHECK ( XLALParseStringValueToRAJ ( (REAL8 *)(ptr->varp), LALoptarg ) == XLAL_SUCCESS, XLAL_EFUNC );
 	  break;
 
-        case UVAR_TYPE_LATITUDE:
-          XLAL_CHECK ( XLALParseStringValueToLATITUDE ( (REAL8 *)(ptr->varp), LALoptarg ) == XLAL_SUCCESS, XLAL_EFUNC );
+        case UVAR_TYPE_DECJ:
+          XLAL_CHECK ( XLALParseStringValueToDECJ ( (REAL8 *)(ptr->varp), LALoptarg ) == XLAL_SUCCESS, XLAL_EFUNC );
 	  break;
 
 	default:
@@ -496,13 +496,13 @@ XLALUserVarReadCfgfile ( const CHAR *cfgfile ) 	   /**< [in] name of config-file
 	  if (wasRead) { check_and_mark_as_set ( ptr ); }
 	  break;
 
-        case UVAR_TYPE_LONGITUDE:
-	  XLAL_CHECK ( XLALReadConfigLONGITUDEVariable ( ptr->varp, cfg, NULL, ptr->name, &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
+        case UVAR_TYPE_RAJ:
+	  XLAL_CHECK ( XLALReadConfigRAJVariable ( ptr->varp, cfg, NULL, ptr->name, &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
 	  if (wasRead) { check_and_mark_as_set ( ptr ); }
 	  break;
 
-        case UVAR_TYPE_LATITUDE:
-	  XLAL_CHECK ( XLALReadConfigLATITUDEVariable ( ptr->varp, cfg, NULL, ptr->name, &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
+        case UVAR_TYPE_DECJ:
+	  XLAL_CHECK ( XLALReadConfigDECJVariable ( ptr->varp, cfg, NULL, ptr->name, &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
 	  if (wasRead) { check_and_mark_as_set ( ptr ); }
 	  break;
 
@@ -854,8 +854,8 @@ XLALUvarValue2String ( LALUserVariable *uvar )
       break;
 
     case UVAR_TYPE_REAL8:
-    case UVAR_TYPE_LONGITUDE:
-    case UVAR_TYPE_LATITUDE:
+    case UVAR_TYPE_RAJ:
+    case UVAR_TYPE_DECJ:
       if (*(REAL8*)(uvar->varp) == 0) {
 	strcpy (buf, "0.0");	// makes it more explicit that's it a REAL
       } else {
