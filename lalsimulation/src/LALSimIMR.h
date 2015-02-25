@@ -471,6 +471,30 @@ int XLALSimIMRSEOBNRv2ROMSingleSpinFrequencySequence(
   REAL8 chi                                     /**< Effective aligned spin */
 );
 
+/**
+ * Compute the time at a given frequency. The origin of time is at the merger.
+ * The allowed frequency range for the input is Mf \in [0.0001, 0.3].
+ */
+int XLALSimIMRSEOBNRv2ROMSingleSpinTimeOfFrequency(
+  REAL8 *t,         /**< Output: time (s) at frequency */
+  REAL8 frequency,  /**< Frequency (Hz) */
+  REAL8 m1SI,       /**< Mass of companion 1 (kg) */
+  REAL8 m2SI,       /**< Mass of companion 2 (kg) */
+  REAL8 chi         /**< Effective aligned spin */
+);
+
+/**
+ * Compute the frequency at a given time. The origin of time is at the merger.
+ * The frequency range for the output is Mf \in [0.0001, 0.3].
+ */
+int XLALSimIMRSEOBNRv2ROMSingleSpinFrequencyOfTime(
+  REAL8 *frequency,   /**< Output: Frequency (Hz) */
+  REAL8 t,            /**< Time (s) at frequency */
+  REAL8 m1SI,         /**< Mass of companion 1 (kg) */
+  REAL8 m2SI,         /**< Mass of companion 2 (kg) */
+  REAL8 chi           /**< Effective aligned spin */
+);
+
 int XLALSimIMRSEOBNRv2ROMDoubleSpin(
     struct tagCOMPLEX16FrequencySeries **hptilde, /**< Output: Frequency-domain waveform h+ */
     struct tagCOMPLEX16FrequencySeries **hctilde, /**< Output: Frequency-domain waveform hx */
