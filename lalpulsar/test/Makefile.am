@@ -5,8 +5,8 @@ include $(top_srcdir)/gnuscripts/lalsuite_test.am
 test_programs += BinarySSBTimesTest
 test_programs += ComputeFstatTest
 test_programs += ConstructPLUTTest
-test_programs += DriveHoughTest
 test_programs += DopplerScanTest
+test_programs += DriveHoughTest
 test_programs += DriveNDHoughTest
 test_programs += ExtrapolatePulsarSpinsTest
 test_programs += FileIOTest
