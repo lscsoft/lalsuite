@@ -39,7 +39,7 @@
 #else
 # define _LAL_PRAGMA_(X) do { } while (0)
 #endif
-#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 7))
+#if !defined(__ICC) && defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 7))
 # define _LAL_GCC_DIAGNOSTIC_(X) _LAL_PRAGMA_(GCC diagnostic X); do { } while (0)
 # define _LAL_GCC_PRINTF_FORMAT_(NFMT, NARG) __attribute__ ((format (printf, NFMT, NARG)))
 # define _LAL_GCC_VPRINTF_FORMAT_(NFMT) __attribute__ ((format (printf, NFMT, 0)))
