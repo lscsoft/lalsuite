@@ -35,6 +35,7 @@ test_programs += SimulateTaylorCWTest
 test_programs += SkyMetricTest
 test_programs += StackMetricTest
 test_programs += StatisticsTest
+test_programs += SuperSkyMetricsTest
 test_programs += TwoDMeshTest
 test_programs += UniversalDopplerMetricTest
 test_programs += VelocityTest
