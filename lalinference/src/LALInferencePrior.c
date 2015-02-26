@@ -729,7 +729,7 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
         if(item->vary != LALINFERENCE_PARAM_FIXED)
         {
             LALInferenceGetMinMaxPrior(runState->priorArgs, "costheta_jn", (void *)&min, (void *)&max);
-            double costheta_JN = LALInferenceCubeToSinPrior(Cube[i], min, max);
+            double costheta_JN = LALInferenceCubeToFlatPrior(Cube[i], min, max);
             LALInferenceSetVariable(params, "costheta_jn", &costheta_JN);
             Cube[i] = costheta_JN;
             i++;
@@ -1459,7 +1459,7 @@ UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALI
         if(item->vary != LALINFERENCE_PARAM_FIXED)
         {
             LALInferenceGetMinMaxPrior(runState->priorArgs, "costheta_jn", (void *)&min, (void *)&max);
-            double costheta_JN = LALInferenceCubeToSinPrior(Cube[i], min, max);
+            double costheta_JN = LALInferenceCubeToFlatPrior(Cube[i], min, max);
             LALInferenceSetVariable(params, "costheta_jn", &costheta_JN);
             Cube[i] = costheta_JN;
             i++;
