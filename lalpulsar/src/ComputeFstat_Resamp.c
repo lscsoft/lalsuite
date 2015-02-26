@@ -22,7 +22,9 @@
 // This file implements the F-statistic resampling algorithm. It is not compiled directly, but
 // included from ComputeFstat.c
 
-#include <lal/ComplexFFT.h>
+#include <complex.h>
+#include <fftw3.h>
+#include <lal/FFTWMutex.h>
 
 // ========== Resamp internals ==========
 
@@ -46,12 +48,14 @@ typedef struct tagMultiUINT4Vector
 typedef struct tagWorkspace_t
 {
   COMPLEX8TimeSeries *TimeSeries_SpinCorr;		// single-detector SRC-frame spindown-corrected timeseries
-  COMPLEX8TimeSeries *TimeSeriesPadded_SpinCorr;	// zero-padded + antenna-weighted single-detector SRC-frame spindown timeseries
 
-  COMPLEX8Vector *FabX_Raw;				// raw results of FTT for unnormalized full-band Fa(f) or Fb(b)
+  // padded timeseries of length 'numSamplesOut' and fftw plan
+  UINT4 numSamplesOut;					// keep track of previous padded SRC-frame samples (ie dFreqOut)
+  COMPLEX8 *FabX_Raw;					// raw full-band FFT result Fa,Fb and zero-padded, AM weighted + spindown-corr SRC-frame TS
+  fftwf_plan fftplan;					// buffer FFT plan for given numSamplesOut length
 
+  // arrays of size numFreqBinsOut over frequency bins f_k:
   UINT4 numFreqBinsOut;					// number of output frequency bins {f_k}
-  // pointers to arrays of size numFreqBinsOut over frequency bins f_k:
   COMPLEX8 *normX_k;					// normalization factors turning FabX_Raw into final F^X_{a,b} values
   COMPLEX8 *FaX_k;					// properly normalized F_a^X(f_k) over output bins
   COMPLEX8 *FbX_k;					// properly normalized F_b^X(f_k) over output bins
@@ -63,16 +67,12 @@ struct tagFstatInput_Resamp
 {
   MultiCOMPLEX8TimeSeries  *multiTimeSeries_DET;	// input SFTs converted into a heterodyned timeseries
   // ----- buffering -----
-  UINT4 prev_numSamplesOut;				// keep track of previous SRC-frame samples (ie dFreqOut)
-
   PulsarDopplerParams prev_doppler;			// buffering: previous phase-evolution ("doppler") parameters
   MultiAMCoeffs *prev_multiAMcoef;			// buffering: previous AM-coeffs, unique to skypos
   MultiSSBtimes *prev_multiTimingSRC;			// buffering: previous sky+binary multiSSB times
 
   MultiCOMPLEX8TimeSeries *prev_multiTimeSeries_SRC;	// buffering: multi-detector SRC-frame timeseries
   MultiUINT4Vector *prev_multiSFTinds_SRC;		// buffering: SFT timestamps translated into SRC frame
-
-  ComplexFFTPlan *prev_fftplan;				// buffer: FFT plan for given numSamplesOut length
 
   Workspace_t ws;					// 'workspace': pre-allocated vectors used to store intermediate results
 };
@@ -87,7 +87,7 @@ XLALApplySpindownAndFreqShift ( COMPLEX8TimeSeries *xOut,
                                 REAL8 freqShift
                                 );
 static int
-XLALApplyAmplitudeModulation ( COMPLEX8TimeSeries *xOut,
+XLALApplyAmplitudeModulation ( COMPLEX8 *xOut,
                                const COMPLEX8TimeSeries *xIn,
                                const UINT4Vector *SFTinds,
                                const REAL4Vector *ab
@@ -118,8 +118,7 @@ XLALComputeFaFb_Resamp ( Workspace_t *ws,
                          const PulsarDopplerParams thisPoint,
                          const COMPLEX8TimeSeries *TimeSeries_SRC,
                          const UINT4Vector *SFTinds_SRC,
-                         const AMCoeffs *ab,
-                         const ComplexFFTPlan *fftplan
+                         const AMCoeffs *ab
                          );
 
 
@@ -146,7 +145,6 @@ DestroyFstatInput_Resamp ( FstatInput_Resamp* resamp )
   XLALDestroyMultiCOMPLEX8TimeSeries (resamp->multiTimeSeries_DET );
 
   // ----- free buffer
-  XLALDestroyCOMPLEX8FFTPlan ( resamp->prev_fftplan );
   XLALDestroyMultiAMCoeffs ( resamp->prev_multiAMcoef );
   XLALDestroyMultiSSBtimes ( resamp->prev_multiTimingSRC );
   XLALDestroyMultiCOMPLEX8TimeSeries ( resamp->prev_multiTimeSeries_SRC );
@@ -154,8 +152,13 @@ DestroyFstatInput_Resamp ( FstatInput_Resamp* resamp )
 
   // ----- free workspace
   XLALDestroyCOMPLEX8TimeSeries ( resamp->ws.TimeSeries_SpinCorr );
-  XLALDestroyCOMPLEX8TimeSeries ( resamp->ws.TimeSeriesPadded_SpinCorr );
-  XLALDestroyCOMPLEX8Vector ( resamp->ws.FabX_Raw );
+
+  LAL_FFTW_WISDOM_LOCK;
+  fftwf_destroy_plan ( resamp->ws.fftplan );
+  LAL_FFTW_WISDOM_UNLOCK;
+
+  XLALFree ( resamp->ws.FabX_Raw );
+
   XLALFree ( resamp->ws.normX_k );
   XLALFree ( resamp->ws.FaX_k );
   XLALFree ( resamp->ws.FbX_k );
@@ -251,7 +254,6 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
   REAL8 TspanOut = 1.0 / dFreqOut;
   UINT4 numSamplesOut = (UINT4) ceil ( TspanOut / dt_DET );      // we use ceil() so that we artificially widen the band rather than reduce it
   REAL8 dt_SRC = TspanOut / numSamplesOut;			// adjust sampling rate to allow achieving exact requested dFreqOut=1/TspanOut !
-
   // ============================== BEGIN: handle buffering =============================
   BOOLEAN same_skypos = (resamp->prev_doppler.Alpha == thisPoint.Alpha) && (resamp->prev_doppler.Delta == thisPoint.Delta);
   BOOLEAN same_refTime = ( XLALGPSCmp ( &resamp->prev_doppler.refTime, &thisPoint.refTime ) == 0 );
@@ -261,7 +263,7 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
     (resamp->prev_doppler.ecc == thisPoint.ecc) &&
     (XLALGPSCmp( &resamp->prev_doppler.tp, &thisPoint.tp ) == 0 ) &&
     (resamp->prev_doppler.argp == thisPoint.argp);
-  BOOLEAN same_numSamplesOut = ( resamp->prev_numSamplesOut == numSamplesOut );	// checks whether same dFreqOut !
+  BOOLEAN same_numSamplesOut = ( resamp->ws.numSamplesOut == numSamplesOut );	// checks whether same dFreqOut !
 
   SkyPosition skypos;
   skypos.system = COORDINATESYSTEM_EQUATORIAL;
@@ -312,17 +314,16 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
   // ----- workspace + buffer quantities that depend on SRC-frame time samples 'numSamplesOut' ----------
   if ( !same_numSamplesOut )
     {
-      XLALDestroyCOMPLEX8TimeSeries ( resamp->ws.TimeSeriesPadded_SpinCorr );
-      LIGOTimeGPS XLAL_INIT_DECL(epoch0); const REAL8 fHet0 = 0; const REAL8 dt0 = 0;
-      XLAL_CHECK ( (resamp->ws.TimeSeriesPadded_SpinCorr = XLALCreateCOMPLEX8TimeSeries ( "", &epoch0, fHet0, dt0, &emptyLALUnit, numSamplesOut )) != NULL, XLAL_EFUNC );
+      XLALFree ( resamp->ws.FabX_Raw );
+      XLAL_CHECK ( (resamp->ws.FabX_Raw = XLALCalloc ( numSamplesOut, sizeof(COMPLEX8) )) != NULL, XLAL_EFUNC );
 
-      XLALDestroyCOMPLEX8Vector ( resamp->ws.FabX_Raw );
-      XLAL_CHECK ( (resamp->ws.FabX_Raw = XLALCreateCOMPLEX8Vector ( numSamplesOut )) != NULL, XLAL_EFUNC );
+      LAL_FFTW_WISDOM_LOCK;
+      fftwf_destroy_plan ( resamp->ws.fftplan );
+      XLAL_CHECK ( (resamp->ws.fftplan = fftwf_plan_dft_1d ( numSamplesOut, resamp->ws.FabX_Raw, resamp->ws.FabX_Raw, FFTW_FORWARD, FFTW_ESTIMATE )) != NULL,
+                   XLAL_EFAILED, "fftwf_plan_dft_1d() failed\n");
+      LAL_FFTW_WISDOM_UNLOCK;
 
-      XLALDestroyCOMPLEX8FFTPlan ( resamp->prev_fftplan );
-      XLAL_CHECK ( (resamp->prev_fftplan = XLALCreateCOMPLEX8FFTPlan ( numSamplesOut, 1, 0) ) != NULL, XLAL_EFUNC );
-
-      resamp->prev_numSamplesOut = numSamplesOut;
+      resamp->ws.numSamplesOut = numSamplesOut;
     } // if number of SRC samples has changed
 
   // ----- workspace that depends on number of output frequency bins 'numFreqBinsOut' ----------
@@ -385,7 +386,7 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
       const AMCoeffs *abX = multiAMcoef->data[X];
 
       // compute {Fa^X(f_k), Fb^X(f_k)}: results returned via workspace resamp->ws
-      XLAL_CHECK ( XLALComputeFaFb_Resamp ( &(resamp->ws), thisPoint, TimeSeriesX_SRC, SFTindsX_SRC, abX, resamp->prev_fftplan ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK ( XLALComputeFaFb_Resamp ( &(resamp->ws), thisPoint, TimeSeriesX_SRC, SFTindsX_SRC, abX ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       for ( UINT4 k = 0; k < numFreqBinsOut; k++ )
         {
@@ -451,22 +452,19 @@ XLALComputeFaFb_Resamp ( Workspace_t *ws,				//!< [in,out] pre-allocated 'worksp
                          const PulsarDopplerParams thisPoint,		//!< [in] Doppler point to compute {FaX,FbX} for
                          const COMPLEX8TimeSeries *TimeSeries_SRC,	//!< [in] SRC-frame single-IFO timeseries
                          const UINT4Vector *SFTinds_SRC,		//!< [in] corresponding SFT start/end indices
-                         const AMCoeffs *ab,				//!< [in] antenna-pattern coefficients aX[k], bX[k]
-                         const ComplexFFTPlan *fftplan			//!< [in] pre-computed fftw plan for length 'numSamplesOut'
+                         const AMCoeffs *ab				//!< [in] antenna-pattern coefficients aX[k], bX[k]
                          )
 {
-  XLAL_CHECK ( (ws != NULL) && (TimeSeries_SRC != NULL) && (SFTinds_SRC != NULL) && (ab != NULL) && (fftplan != NULL), XLAL_EINVAL );
+  XLAL_CHECK ( (ws != NULL) && (TimeSeries_SRC != NULL) && (SFTinds_SRC != NULL) && (ab != NULL), XLAL_EINVAL );
 
   // check workspace properly setup
   XLAL_CHECK ( ws->TimeSeries_SpinCorr != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( ws->TimeSeriesPadded_SpinCorr != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( ws->FabX_Raw != NULL, XLAL_EINVAL );
   XLAL_CHECK ( ws->normX_k != NULL, XLAL_EINVAL );
   XLAL_CHECK ( ws->FaX_k != NULL, XLAL_EINVAL );
   XLAL_CHECK ( ws->FbX_k != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( ws->fftplan != NULL, XLAL_EINVAL );
 
-  XLAL_CHECK ( ws->FabX_Raw != NULL, XLAL_EINVAL );
-  UINT4 numSamplesOut = ws->TimeSeriesPadded_SpinCorr->data->length;
-  XLAL_CHECK ( ws->FabX_Raw->length == numSamplesOut, XLAL_EINVAL );
 
   UINT4 numSFTs = SFTinds_SRC->length / 2;
   XLAL_CHECK ( (ab->a->length == numSFTs) && (ab->b->length == numSFTs ), XLAL_EINVAL );
@@ -474,7 +472,7 @@ XLALComputeFaFb_Resamp ( Workspace_t *ws,				//!< [in,out] pre-allocated 'worksp
   REAL8 FreqOut0 = thisPoint.fkdot[0];
 
   REAL8 dt_SRC = TimeSeries_SRC->deltaT;
-  REAL8 TspanOut = numSamplesOut * dt_SRC;
+  REAL8 TspanOut = ws->numSamplesOut * dt_SRC;
   REAL8 dFreqOut = 1.0 / TspanOut;
 
   // compute frequency shift to align heterodyne frequency with output frequency bins
@@ -482,8 +480,8 @@ XLALComputeFaFb_Resamp ( Workspace_t *ws,				//!< [in,out] pre-allocated 'worksp
   REAL8 freqShift = remainder ( FreqOut0 - fHet, dFreqOut ); // frequency shift to closest bin
 
   // lowest FFT frequency bin (after applying freqShift)
-  UINT4 NnegBins = NhalfNeg ( numSamplesOut );
-  UINT4 NposBinsDC = numSamplesOut - NnegBins;
+  UINT4 NnegBins = NhalfNeg ( ws->numSamplesOut );
+  UINT4 NposBinsDC = ws->numSamplesOut - NnegBins;
   REAL8 fMinFFT = fHet + freqShift - dFreqOut * NnegBins;
   UINT4 offset_bins = (UINT4) lround ( ( FreqOut0 - fMinFFT ) / dFreqOut );
 
@@ -504,35 +502,35 @@ XLALComputeFaFb_Resamp ( Workspace_t *ws,				//!< [in,out] pre-allocated 'worksp
 
   // ----- compute FaX_k
   // apply amplitude modulation factors {a,b}, store result in zero-padded timeseries for FFTing
-  memset ( ws->TimeSeriesPadded_SpinCorr->data->data, 0, numSamplesOut * sizeof(COMPLEX8) );
-  XLAL_CHECK ( XLALApplyAmplitudeModulation ( ws->TimeSeriesPadded_SpinCorr, ws->TimeSeries_SpinCorr, SFTinds_SRC, ab->a ) == XLAL_SUCCESS, XLAL_EFUNC );
+  memset ( ws->FabX_Raw, 0, ws->numSamplesOut * sizeof(COMPLEX8) );
+  XLAL_CHECK ( XLALApplyAmplitudeModulation ( ws->FabX_Raw, ws->TimeSeries_SpinCorr, SFTinds_SRC, ab->a ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Fourier transform the resampled Fa(t)
-  XLAL_CHECK ( XLALCOMPLEX8VectorFFT ( ws->FabX_Raw, ws->TimeSeriesPadded_SpinCorr->data, fftplan ) == XLAL_SUCCESS, XLAL_EFUNC );
+  fftwf_execute ( ws->fftplan );
 
   for ( UINT4 k = 0; k < ws->numFreqBinsOut; k++ )
     {
       UINT4 idy = k + offset_bins + NposBinsDC;
-      UINT4 idyFFT = idy % numSamplesOut;	// physical access pattern in FFT bin ordering!
+      UINT4 idyFFT = idy % ws->numSamplesOut;	// physical access pattern in FFT bin ordering!
 
-      ws->FaX_k[k] = ws->normX_k[k] * ws->FabX_Raw->data[idyFFT];
+      ws->FaX_k[k] = ws->normX_k[k] * ws->FabX_Raw[idyFFT];
 
     } // for k < numFreqBinsOut
 
   // ----- compute FbX_k
   // apply amplitude modulation factors {a,b}, store result in zero-padded timeseries for FFTing
-  // NOTE: we don't need to memset-zero the output timeseries here, as we'll write into the exact same bins as for "a * timeseries" above ...
-  XLAL_CHECK ( XLALApplyAmplitudeModulation ( ws->TimeSeriesPadded_SpinCorr, ws->TimeSeries_SpinCorr, SFTinds_SRC, ab->b ) == XLAL_SUCCESS, XLAL_EFUNC );
+  memset ( ws->FabX_Raw, 0, ws->numSamplesOut * sizeof(COMPLEX8) );
+  XLAL_CHECK ( XLALApplyAmplitudeModulation ( ws->FabX_Raw, ws->TimeSeries_SpinCorr, SFTinds_SRC, ab->b ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Fourier transform the resampled Fa(t)
-  XLAL_CHECK ( XLALCOMPLEX8VectorFFT ( ws->FabX_Raw, ws->TimeSeriesPadded_SpinCorr->data, fftplan ) == XLAL_SUCCESS, XLAL_EFUNC );
+  fftwf_execute ( ws->fftplan );
 
   for ( UINT4 k = 0; k < ws->numFreqBinsOut; k++ )
     {
       UINT4 idy = k + offset_bins + NposBinsDC;
-      UINT4 idyFFT = idy % numSamplesOut;	// physical access pattern in FFT bin ordering!
+      UINT4 idyFFT = idy % ws->numSamplesOut;	// physical access pattern in FFT bin ordering!
 
-      ws->FbX_k[k] = ws->normX_k[k] * ws->FabX_Raw->data[idyFFT];
+      ws->FbX_k[k] = ws->normX_k[k] * ws->FabX_Raw[idyFFT];
 
     } // for k < numFreqBinsOut
 
@@ -617,10 +615,10 @@ XLALApplySpindownAndFreqShift ( COMPLEX8TimeSeries *xOut,      		///< [out] the 
 } // XLALApplySpindownAndFreqShift()
 
 static int
-XLALApplyAmplitudeModulation ( COMPLEX8TimeSeries *xOut,      		///< [out] the spindown-corrected SRC-frame timeseries
-                               const COMPLEX8TimeSeries *xIn,		///< [in] the input SRC-frame timeseries
-                               const UINT4Vector *SFTinds,		///< [in] SFT start- and stop indices in the TimeSeries
-                               const REAL4Vector *ab			///< [in] amplitude-modulation factors to apply
+XLALApplyAmplitudeModulation ( COMPLEX8 *xOut,      		///< [out] the spindown-corrected SRC-frame timeseries of length >= length(xIn)
+                               const COMPLEX8TimeSeries *xIn,	///< [in] the input SRC-frame timeseries
+                               const UINT4Vector *SFTinds,	///< [in] SFT start- and stop indices in the TimeSeries
+                               const REAL4Vector *ab		///< [in] amplitude-modulation factors to apply
                                )
 {
   // input sanity checks
@@ -628,15 +626,6 @@ XLALApplyAmplitudeModulation ( COMPLEX8TimeSeries *xOut,      		///< [out] the s
   XLAL_CHECK ( xIn != NULL, XLAL_EINVAL );
   XLAL_CHECK ( SFTinds != NULL, XLAL_EINVAL );
   XLAL_CHECK ( ab != NULL, XLAL_EINVAL );
-
-  UINT4 numSamplesIn  = xIn->data->length;
-  UINT4 numSamplesOut = xOut->data->length;
-  XLAL_CHECK ( numSamplesOut >= numSamplesIn, XLAL_EINVAL );
-
-  // copy TS header information
-  COMPLEX8Vector *tmp_xOut = xOut->data;
-  (*xOut) = (*xIn);
-  xOut->data = tmp_xOut;
 
   UINT4 numSFTs = SFTinds->length / 2;
   XLAL_CHECK ( ab->length == numSFTs, XLAL_EINVAL );
@@ -652,7 +641,7 @@ XLALApplyAmplitudeModulation ( COMPLEX8TimeSeries *xOut,      		///< [out] the s
       // and apply amplitude modulation factor to output timeseries
       for ( UINT4 j=start_index; j <= end_index; j ++ )
         {
-          xOut->data->data[j] = fact * xIn->data->data[j];
+          xOut[j] = fact * xIn->data->data[j];
         } // for j in [start_index, end_index]
 
     } // for alpha < numSFTs
