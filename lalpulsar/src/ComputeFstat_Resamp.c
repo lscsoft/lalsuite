@@ -157,7 +157,7 @@ DestroyFstatInput_Resamp ( FstatInput_Resamp* resamp )
   fftwf_destroy_plan ( resamp->ws.fftplan );
   LAL_FFTW_WISDOM_UNLOCK;
 
-  XLALFree ( resamp->ws.FabX_Raw );
+  fftw_free ( resamp->ws.FabX_Raw );
 
   XLALFree ( resamp->ws.normX_k );
   XLALFree ( resamp->ws.FaX_k );
@@ -314,12 +314,12 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
   // ----- workspace + buffer quantities that depend on SRC-frame time samples 'numSamplesOut' ----------
   if ( !same_numSamplesOut )
     {
-      XLALFree ( resamp->ws.FabX_Raw );
-      XLAL_CHECK ( (resamp->ws.FabX_Raw = XLALCalloc ( numSamplesOut, sizeof(COMPLEX8) )) != NULL, XLAL_EFUNC );
+      fftw_free ( resamp->ws.FabX_Raw );
+      XLAL_CHECK ( (resamp->ws.FabX_Raw = fftw_malloc ( numSamplesOut * sizeof(resamp->ws.FabX_Raw[0]) )) != NULL, XLAL_EFUNC );
 
       LAL_FFTW_WISDOM_LOCK;
       fftwf_destroy_plan ( resamp->ws.fftplan );
-      XLAL_CHECK ( (resamp->ws.fftplan = fftwf_plan_dft_1d ( numSamplesOut, resamp->ws.FabX_Raw, resamp->ws.FabX_Raw, FFTW_FORWARD, FFTW_ESTIMATE )) != NULL,
+      XLAL_CHECK ( (resamp->ws.fftplan = fftwf_plan_dft_1d ( numSamplesOut, resamp->ws.FabX_Raw, resamp->ws.FabX_Raw, FFTW_FORWARD, FFTW_MEASURE )) != NULL,
                    XLAL_EFAILED, "fftwf_plan_dft_1d() failed\n");
       LAL_FFTW_WISDOM_UNLOCK;
 
@@ -502,7 +502,7 @@ XLALComputeFaFb_Resamp ( Workspace_t *ws,				//!< [in,out] pre-allocated 'worksp
 
   // ----- compute FaX_k
   // apply amplitude modulation factors {a,b}, store result in zero-padded timeseries for FFTing
-  memset ( ws->FabX_Raw, 0, ws->numSamplesOut * sizeof(COMPLEX8) );
+  memset ( ws->FabX_Raw, 0, ws->numSamplesOut * sizeof(ws->FabX_Raw[0]) );
   XLAL_CHECK ( XLALApplyAmplitudeModulation ( ws->FabX_Raw, ws->TimeSeries_SpinCorr, SFTinds_SRC, ab->a ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Fourier transform the resampled Fa(t)
@@ -519,7 +519,7 @@ XLALComputeFaFb_Resamp ( Workspace_t *ws,				//!< [in,out] pre-allocated 'worksp
 
   // ----- compute FbX_k
   // apply amplitude modulation factors {a,b}, store result in zero-padded timeseries for FFTing
-  memset ( ws->FabX_Raw, 0, ws->numSamplesOut * sizeof(COMPLEX8) );
+  memset ( ws->FabX_Raw, 0, ws->numSamplesOut * sizeof(ws->FabX_Raw[0]) );
   XLAL_CHECK ( XLALApplyAmplitudeModulation ( ws->FabX_Raw, ws->TimeSeries_SpinCorr, SFTinds_SRC, ab->b ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Fourier transform the resampled Fa(t)
