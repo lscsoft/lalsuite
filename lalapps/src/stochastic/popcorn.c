@@ -36,14 +36,13 @@
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
-#include <unistd.h>
-#include <getopt.h>
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_multimin.h>
 #include <gsl/gsl_statistics.h>
 #include <lal/LALFrameL.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConfig.h>
@@ -69,11 +68,7 @@
 #define CVS_DATE "$Date$"
 #define PROGRAM_NAME "popcorn"
 
-/* variables for getopt options parsing */
-extern char *optarg;
-extern int optind;
-
-/* flag for getopt_long */
+/* flag for LALgetopt_long */
 static int verbose_flag = 0;
 static int gaussian_flag = 0;
 static int ascii_flag = 0;
@@ -963,10 +958,10 @@ void parseOptions(INT4 argc, CHAR *argv[])
       {0, 0, 0, 0}
      };
 
-    /* getopt_long stores the option here */
+    /* LALgetopt_long stores the option here */
     int option_index = 0;
 
-    c = getopt_long(argc, argv, 
+    c = LALgetopt_long(argc, argv,
                   "hn:t:T:l:N:r:R:a:A:k:K:m:M:s:S:g:G:p:c:C:d:D:v:",
  		   long_options, &option_index);
 
@@ -983,8 +978,8 @@ void parseOptions(INT4 argc, CHAR *argv[])
              if (long_options[option_index].flag != 0)
               break;
              printf ("option %s", long_options[option_index].name);
-             if (optarg)
-              printf (" with arg %s", optarg);
+             if (LALoptarg)
+              printf (" with arg %s", LALoptarg);
              printf ("\n");
              break;
 
@@ -995,103 +990,103 @@ void parseOptions(INT4 argc, CHAR *argv[])
 			   
       case 'n':
 			   /* jub number */
-	           job = atoi(optarg);
+	           job = atoi(LALoptarg);
 	           break;
 			   
       case 't':
 			   /* start time */
-	           startTime = atoi(optarg);
+	           startTime = atoi(LALoptarg);
 	           break;
 			   
 	  case 'T':
 			   /* stop time */
-	           stopTime = atoi(optarg);
+	           stopTime = atoi(LALoptarg);
 	           break;
 			   
 	  case 'l':
 			   /* duration if condor flag */
-	           duration = atoi(optarg);
+	           duration = atoi(LALoptarg);
 	           break;
 
       case 'N':
 			   /* number of points in time serie */
-	           Npt = atoi(optarg);
+	           Npt = atoi(LALoptarg);
 	           break;
 			   
 	  case 'r':
 			   /* sample rate */
-	           sampleRate = atof(optarg);
+	           sampleRate = atof(LALoptarg);
 	           break;
 			   
 	  case 'R':
-			   resampleRate= atof(optarg);
+			   resampleRate= atof(LALoptarg);
 	           break;
 			   
 	  case 'a':
 			   /* statistic for analysis */
-	           stat = atoi(optarg);
+	           stat = atoi(LALoptarg);
 	           break;
 			   
 	  case 'A':
 			   /* statistic for MC */
-	           mcstat = atoi(optarg);
+	           mcstat = atoi(LALoptarg);
 	           break;
 			   
 	  case 'k':
-	           ksi = atof(optarg);
+	           ksi = atof(LALoptarg);
 	           break;
 			   
 	  case 'K':
-	           ksi0 = atof(optarg);
+	           ksi0 = atof(LALoptarg);
 	           break;
 			   
 	  case 'm':
-	           mu = atof(optarg);
+	           mu = atof(LALoptarg);
 	           break;
 			   
 	  case 'M':
-	           mu0 = atof(optarg);
+	           mu0 = atof(LALoptarg);
 	           break;
 			   
 	  case 's':
-	           sigma = atof(optarg);
+	           sigma = atof(LALoptarg);
 	           break;
 			   
 	  case 'S':
-	           sigma0 = atof(optarg);
+	           sigma0 = atof(LALoptarg);
 	           break;
 
 			   
 	  case 'g':
-	           sigma1_ref = atof(optarg);
+	           sigma1_ref = atof(LALoptarg);
 	           break;
 			   
 	  case 'G':
-	           sigma2_ref = atof(optarg);
+	           sigma2_ref = atof(LALoptarg);
 	           break;
 			   
 	  case 'p':
-	           nmax = atoi(optarg);
+	           nmax = atoi(LALoptarg);
 	           break;		   
      
       case 'c':
 	           /* ifo for first stream */
-	           strncpy(channel1, optarg, LALNameLength);
+	           strncpy(channel1, LALoptarg, LALNameLength);
                break;
 
       case 'C':
 	           /* ifo for first stream */
-	           strncpy(channel2, optarg, LALNameLength);
+	           strncpy(channel2, LALoptarg, LALNameLength);
                break;
 
       case 'd':
                /* data cache one */
-               strncpy(frameCache1, optarg, 200);
+               strncpy(frameCache1, LALoptarg, 200);
                break;
 
       case 'D':
                /* data cache two */
-               strncpy(frameCache2, optarg, 200);
+               strncpy(frameCache2, LALoptarg, 200);
                break;
 
       case 'v':
@@ -1105,7 +1100,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
      }
     }
 
-   if (optind < argc)
+   if (LALoptind < argc)
     {
      displayUsage(1);
     }

@@ -18,12 +18,11 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
-#include <getopt.h>
-#include <unistd.h>
 #include <sys/time.h>
 
 /* LAL headers */
 #include <lal/LALStdlib.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALAtomicDatatypes.h>
 #include <lal/LALDatatypes.h>
 #include <lal/PulsarDataTypes.h>

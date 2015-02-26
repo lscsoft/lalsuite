@@ -34,7 +34,6 @@
 #ifndef _PULSAR_CROSSCORR_H
 #define _PULSAR_CROSSCORR_H
 
-#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>

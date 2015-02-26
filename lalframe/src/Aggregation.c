@@ -19,11 +19,14 @@
  * Copyright (C) 2009 Adam Mercer
  */
 
+#include <config.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <sys/stat.h>
 
 #include <lal/LALStdio.h>

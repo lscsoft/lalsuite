@@ -93,15 +93,7 @@
 #include <lal/LALFrStream.h>
 #include <lal/AVFactories.h>
 #include <lal/LALStdio.h>
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-#ifdef HAVE_GETOPT_H
-#include <getopt.h>
-#endif
-
-extern char *optarg;
-extern int   optind;
+#include <lal/LALgetopt.h>
 
 int     verbose = 0;
 UINT4   numPoints = 1048576;
@@ -247,7 +239,7 @@ ParseOptions (int argc, char *argv[])
   {
     int c = -1;
 
-    c = getopt (argc, argv, "hvd:n:i:o:f:r:");
+    c = LALgetopt (argc, argv, "hvd:n:i:o:f:r:");
     if (c == -1)
     {
       break;
@@ -267,27 +259,27 @@ ParseOptions (int argc, char *argv[])
         break;
 
       case 'n': /* sets number of points */
-        numPoints = (UINT4) atoi( optarg );
+        numPoints = (UINT4) atoi( LALoptarg );
         break;
 
       case 'i': /* sets number of points */
-        inRate = (UINT4) atoi( optarg );
+        inRate = (UINT4) atoi( LALoptarg );
         break;
 
       case 'o': /* sets number of points */
-        outRate = (UINT4) atoi( optarg );
+        outRate = (UINT4) atoi( LALoptarg );
         break;
 
       case 'f': /* sets number of points */
-        sineFreq = (REAL4) atof( optarg );
+        sineFreq = (REAL4) atof( LALoptarg );
         break;
 
       case 'r':
-        if ( ! strcmp( "ldas", optarg ) )
+        if ( ! strcmp( "ldas", LALoptarg ) )
         {
           filtType = LDASfirLP;
         }
-        else if ( ! strcmp( "butterworth", optarg ) )
+        else if ( ! strcmp( "butterworth", LALoptarg ) )
         {
           filtType = defaultButterworth;
         }
@@ -303,7 +295,7 @@ ParseOptions (int argc, char *argv[])
 
   }
 
-  if (optind < argc)
+  if (LALoptind < argc)
   {
     Usage (argv[0], 1);
   }

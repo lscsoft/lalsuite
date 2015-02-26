@@ -259,8 +259,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <getopt.h>
-#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -274,6 +272,7 @@
 #include <lalappsfrutils.h>
 
 #include <lal/LALConfig.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALError.h>
@@ -1115,7 +1114,7 @@ static void print_usage(char *program)
 
 int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 {
-  /* getopt arguments */
+  /* LALgetopt arguments */
   struct option long_options[] =
   {
     /* these options set a flag */
@@ -1167,11 +1166,11 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
   while ( 1 )
   {
-    /* getopt_long stores long option here */
+    /* LALgetopt_long stores long option here */
     int option_index = 0;
-    size_t optarg_len;
+    size_t LALoptarg_len;
 
-    c = getopt_long_only( argc, argv, 
+    c = LALgetopt_long_only( argc, argv,
         "A:B:C:I:L:N:S:V:Z:"
         "a:b:c:d:f:hi:l:p:q:r:s:u:w:y:",
         long_options, &option_index );
@@ -1193,7 +1192,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         else
         {
           fprintf( stderr, "error parsing option %s with argument %s\n",
-              long_options[option_index].name, optarg );
+              long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
         break;
@@ -1201,7 +1200,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       case 'a':
         /* set gps start seconds */
         {
-          long int gstartt = atol( optarg );
+          long int gstartt = atol( LALoptarg );
           if ( gstartt < 441417609 )
           {
             fprintf( stderr, "invalid argument to --%s:\n"
@@ -1219,7 +1218,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       case 'A':
         /* set gps start nanoseconds */
         {
-          long int gstarttns = atol( optarg );
+          long int gstarttns = atol( LALoptarg );
           if ( gstarttns < 0 )
           {
             fprintf( stderr, "invalid argument to --%s:\n"
@@ -1243,7 +1242,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       case 'b':
         /* set gps end seconds */
         {
-          long int gendt = atol( optarg );
+          long int gendt = atol( LALoptarg );
           if ( gendt < 441417609 )
           {
             fprintf( stderr, "invalid argument to --%s:\n"
@@ -1261,7 +1260,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       case 'B':
         /* set gps end nanoseconds */
         {
-          long int gendtns = atol( optarg );
+          long int gendtns = atol( LALoptarg );
           if ( gendtns < 0 )
           {
             fprintf( stderr, "invalid argument to --%s:\n"
@@ -1287,10 +1286,10 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           /* create storage for the channel name and copy it */
           char *channamptr = NULL;
-          optarg_len = strlen( optarg ) + 1;
-          fqChanName = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
-          memcpy( fqChanName, optarg, optarg_len );
-          ADD_PROCESS_PARAM( "string", "%s", optarg );
+          LALoptarg_len = strlen( LALoptarg ) + 1;
+          fqChanName = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR) );
+          memcpy( fqChanName, LALoptarg, LALoptarg_len );
+          ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
 
           /* check that we have a proper channel name */
           if ( ! (channamptr = strstr( fqChanName, ":" ) ) )
@@ -1298,19 +1297,19 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
             fprintf( stderr, "invalid argument to --%s:\n"
                 "channel name must be a full LIGO channel name "
                 "e.g. L1:LSC-AS_Q\n(%s specified)\n",
-                long_options[option_index].name, optarg );
+                long_options[option_index].name, LALoptarg );
             exit( 1 );
           }
 
           /* copy the first two characters to the ifo name */
           memset( ifo, 0, sizeof(ifo) );
-          memcpy( ifo, optarg, sizeof(ifo) - 1 );
+          memcpy( ifo, LALoptarg, sizeof(ifo) - 1 );
         }
         break;
 
       case 'd':
         /* set length of output frames */
-        frameLength = (INT4) atoi( optarg );
+        frameLength = (INT4) atoi( LALoptarg );
         if ( frameLength < 1 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -1324,14 +1323,14 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
       case 'f':
         /* set output file name */
-        if ( snprintf( outfileName, FILENAME_MAX, "%s", optarg ) < 0 )
+        if ( snprintf( outfileName, FILENAME_MAX, "%s", LALoptarg ) < 0 )
         {
           fprintf( stderr, "invalid argument to --%s\n"
               "outfile name %s too long: string truncated\n",
-              long_options[option_index].name, optarg );
+              long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
         break;
 
       case 'h':
@@ -1342,24 +1341,24 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
       case 'p':
         /* create storage for the calibration frame cache name */
-        optarg_len = strlen( optarg ) + 1;
-        calCacheName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-        memcpy( calCacheName, optarg, optarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        calCacheName = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
+        memcpy( calCacheName, LALoptarg, LALoptarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
         break;
 
       case 'q':
         /* create storage for the calibration frame file name */
-        optarg_len = strlen( optarg ) + 1;
-        calFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-        memcpy( calFileName, optarg, optarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        calFileName = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
+        memcpy( calFileName, LALoptarg, LALoptarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
         break;
 
 
       case 'N':
         /* store the number of points used in computing the response */
-        numRespPoints = (INT4) atoi( optarg );
+        numRespPoints = (INT4) atoi( LALoptarg );
         if ( numRespPoints < 2 || numRespPoints % 2 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -1374,11 +1373,11 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       case 'y': 
         /* specify which type of calibrated data */
         {
-          if ( ! strcmp( "real_4", optarg ) )
+          if ( ! strcmp( "real_4", LALoptarg ) )
           {
             calData = real_4;
           }
-          else if ( ! strcmp( "real_8", optarg ) )
+          else if ( ! strcmp( "real_8", LALoptarg ) )
           {
             calData = real_8;
             fprintf( stderr, "Sorry, code not currently set up to\n"
@@ -1390,16 +1389,16 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
             fprintf( stderr, "invalid argument to --%s:\n"
                 "unknown data type specified;\n"
                 "%s (must be one of: real_4, real_8)\n",
-                long_options[option_index].name, optarg);
+                long_options[option_index].name, LALoptarg);
             exit( 1 );
           }
-          ADD_PROCESS_PARAM( "string", "%s", optarg );
+          ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
         }
         break;
 
       case 'r':
         /* set the sample rate */
-        sampleRate = (INT4) atoi( optarg );
+        sampleRate = (INT4) atoi( LALoptarg );
         if ( sampleRate < 1 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -1413,7 +1412,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
       case 'L':
         /* set the injection start frequency */
-        injFlow = (REAL4) atof ( optarg );
+        injFlow = (REAL4) atof ( LALoptarg );
         if ( injFlow <= 0 )
         {
           fprintf( stderr, "invalide argument to --%s:\n"
@@ -1429,14 +1428,14 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           /* create storage for the ifo name and copy it */
           memset( ifo, 0, sizeof(ifo) );
-          memcpy( ifo, optarg, sizeof(ifo) - 1 );
-          ADD_PROCESS_PARAM( "string", "%s", optarg );
+          memcpy( ifo, LALoptarg, sizeof(ifo) - 1 );
+          ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
         }
         break;
 
 
       case 's':
-        if ( strlen( optarg ) > LIGOMETA_COMMENT_MAX - 1 )
+        if ( strlen( LALoptarg ) > LIGOMETA_COMMENT_MAX - 1 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "comment must be less than %d characters\n",
@@ -1445,12 +1444,12 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         }
         else
         {
-          snprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
+          snprintf( comment, LIGOMETA_COMMENT_MAX, "%s", LALoptarg);
         }
         break;
 
       case 'S':
-        injectSafety = (INT4) atoi( optarg );
+        injectSafety = (INT4) atoi( LALoptarg );
         if ( injectSafety < 1 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -1465,42 +1464,42 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       case 'I':
         {
           /* create storage for the injection channel name and copy it */
-          optarg_len = strlen( optarg ) + 1;
-          injChanName = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
-          memcpy( injChanName, optarg, optarg_len );
-          ADD_PROCESS_PARAM( "string", "%s", optarg );
+          LALoptarg_len = strlen( LALoptarg ) + 1;
+          injChanName = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR) );
+          memcpy( injChanName, LALoptarg, LALoptarg_len );
+          ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
         }
         break;
 
       case 'u':
         /* create storage for the input frame cache name */
-        optarg_len = strlen( optarg ) + 1;
-        frInCacheName = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
-        memcpy( frInCacheName, optarg, optarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        frInCacheName = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR) );
+        memcpy( frInCacheName, LALoptarg, LALoptarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
         break;
 
       case 'C':
         /* create storage for the input frame cache name */
-        optarg_len = strlen( optarg ) + 1;
-        injCacheName = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
-        memcpy( injCacheName, optarg, optarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        injCacheName = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR) );
+        memcpy( injCacheName, LALoptarg, LALoptarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
         break;
 
       case 'w':
         /* create storage for the injection file name */
-        optarg_len = strlen( optarg ) + 1;
-        injectionFile = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-        memcpy( injectionFile, optarg, optarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        injectionFile = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
+        memcpy( injectionFile, LALoptarg, LALoptarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
         break;
 
       case 'Z':
         /* create storage for the usertag */
-        optarg_len = strlen( optarg ) + 1;
-        userTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
-        memcpy( userTag, optarg, optarg_len );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        userTag = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR) );
+        memcpy( userTag, LALoptarg, LALoptarg_len );
 
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
@@ -1509,7 +1508,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
         snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
         snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
-            optarg );
+            LALoptarg );
         break;
 
       case 'V':
@@ -1532,12 +1531,12 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     }
   }
 
-  if ( optind < argc )
+  if ( LALoptind < argc )
   {
     fprintf( stderr, "extraneous command line arguments:\n" );
-    while ( optind < argc )
+    while ( LALoptind < argc )
     {
-      fprintf ( stderr, "%s\n", argv[optind++] );
+      fprintf ( stderr, "%s\n", argv[LALoptind++] );
     }
     exit( 1 );
   }

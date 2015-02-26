@@ -2,18 +2,23 @@
  * (C) John Veitch, 2010
  */
 
+#include <config.h>
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <float.h>
+#include <signal.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#include <lal/TimeDelay.h>
+#include <lal/LALInferenceConfig.h>
+#include <lal/LALStdlib.h>
 #include <lal/LALInferenceNestedSampler.h>
 #include <lal/LALInferencePrior.h>
 #include <lal/LALInferenceLikelihood.h>
 #include <lal/LALInferenceProposal.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <float.h>
-#include <lal/TimeDelay.h>
-#include <lal/LALInferenceConfig.h>
-#include <lal/LALStdlib.h>
-#include <signal.h>
-
 #ifdef HAVE_LIBLALXML
 #include <lal/LALInferenceXML.h>
 #endif

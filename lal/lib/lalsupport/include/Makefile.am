@@ -18,4 +18,6 @@ pkginclude_HEADERS = \
 	TranslateAngles.h \
 	TranslateMJD.h \
 	UserInput.h \
-	ConfigFile.h
+	ConfigFile.h \
+	LALgetopt.h \
+	$(END_OF_LIST)

@@ -22,9 +22,9 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <getopt.h>
 
 #include <lal/LALStdlib.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALConstants.h>
 #include <lal/Units.h>
 #include <lal/TimeSeries.h>
@@ -91,7 +91,7 @@ int parseargs( int argc, char **argv )
 		int option_index = 0;
 		int c;
 	
-		c = getopt_long_only(argc, argv, args, long_options, &option_index);
+		c = LALgetopt_long_only(argc, argv, args, long_options, &option_index);
 		if (c == -1) /* end of options */
 			break;
 	
@@ -100,35 +100,35 @@ int parseargs( int argc, char **argv )
 				if (long_options[option_index].flag)
 					break;
 				else {
-					fprintf(stderr, "error parsing option %s with argument %s\n", long_options[option_index].name, optarg);
+					fprintf(stderr, "error parsing option %s with argument %s\n", long_options[option_index].name, LALoptarg);
 					exit(1);
 				}
 			case 'h': /* help */
 				usage(argv[0]);
 				exit(0);
 			case 'M': /* mass */
-				M = LAL_MSUN_SI * atof(optarg);
+				M = LAL_MSUN_SI * atof(LALoptarg);
 				break;
 			case 'a': /* spin */
-				a = atof(optarg);
+				a = atof(LALoptarg);
 				break;
 			case 'i': /* inclination */
-				i = LAL_PI_180 * atof(optarg);
+				i = LAL_PI_180 * atof(LALoptarg);
 				break;
 			case 'q': /* azimuth */
-				q = LAL_PI_180 * atof( optarg );
+				q = LAL_PI_180 * atof( LALoptarg );
 				break;
 			case 'e': /* energy */
-				e = atof(optarg);
+				e = atof(LALoptarg);
 				break;
 			case 'r': /* distance */
-				r = 1e6 * LAL_PC_SI * atof(optarg);
+				r = 1e6 * LAL_PC_SI * atof(LALoptarg);
 				break;
 			case 'l':
-				l = atoi(optarg);
+				l = atoi(LALoptarg);
 				break;
 			case 'm':
-				m = atoi(optarg);
+				m = atoi(LALoptarg);
 				break;
 			case '?':
 			default:
@@ -137,10 +137,10 @@ int parseargs( int argc, char **argv )
 		}
 	}
 	
-	if ( optind < argc ) {
+	if ( LALoptind < argc ) {
 		fprintf(stderr, "extraneous command line arguments:\n");
-		while (optind < argc)
-			fprintf(stderr, "%s\n", argv[optind++]);
+		while (LALoptind < argc)
+			fprintf(stderr, "%s\n", argv[LALoptind++]);
 		exit(1);
 	}
 	

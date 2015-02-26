@@ -12,13 +12,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <getopt.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <regex.h>
 #include <time.h>
 #include <lal/LALStdlib.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALStdio.h>
 #include <lal/Date.h>
 #include <lal/LIGOLwXML.h>
@@ -224,7 +224,7 @@ int main( int argc, char *argv[] )
 
   while (1)
   {
-    /* getopt arguments */
+    /* LALgetopt arguments */
     static struct option long_options[] =
     {
       {"verbose",             no_argument,           &vrbflg,              1 },
@@ -256,11 +256,11 @@ int main( int argc, char *argv[] )
     };
     int c;
 
-    /* getopt_long stores the option index here. */
+    /* LALgetopt_long stores the option index here. */
     int option_index = 0;
-    size_t optarg_len;
+    size_t LALoptarg_len;
 
-    c = getopt_long_only ( argc, argv,
+    c = LALgetopt_long_only ( argc, argv,
         "c:d:D:hj:k:m:o:r:s:t:v:C:DH:I:R:ST:VZ:",
         long_options, &option_index );
 
@@ -279,7 +279,7 @@ int main( int argc, char *argv[] )
         else
         {
           fprintf( stderr, "error parsing option %s with argument %s\n",
-              long_options[option_index].name, optarg );
+              long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
         break;
@@ -291,9 +291,9 @@ int main( int argc, char *argv[] )
 
       case 'Z':
         /* create storage for the usertag */
-        optarg_len = strlen( optarg ) + 1;
-        userTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
-        memcpy( userTag, optarg, optarg_len );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        userTag = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR) );
+        memcpy( userTag, LALoptarg, LALoptarg_len );
 
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
@@ -302,11 +302,11 @@ int main( int argc, char *argv[] )
         snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
         snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
         snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
-            optarg );
+            LALoptarg );
         break;
 
       case 'c':
-        if ( strlen( optarg ) > LIGOMETA_COMMENT_MAX - 1 )
+        if ( strlen( LALoptarg ) > LIGOMETA_COMMENT_MAX - 1 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "comment must be less than %d characters\n",
@@ -315,7 +315,7 @@ int main( int argc, char *argv[] )
         }
         else
         {
-          snprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
+          snprintf( comment, LIGOMETA_COMMENT_MAX, "%s", LALoptarg);
         }
         break;
 
@@ -328,15 +328,15 @@ int main( int argc, char *argv[] )
 
       case 'o':
         /* create storage for the output file name */
-        optarg_len = strlen( optarg ) + 1;
-        outputFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-        memcpy( outputFileName, optarg, optarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        outputFileName = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
+        memcpy( outputFileName, LALoptarg, LALoptarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
         break;
 
       case 'e':
         /* store the number of slides */
-        extractSlide = atoi( optarg );
+        extractSlide = atoi( LALoptarg );
         if ( extractSlide == 0 )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
@@ -350,7 +350,7 @@ int main( int argc, char *argv[] )
 
       case 'N':
         /* store the number of slides */
-        numSlides = atoi( optarg );
+        numSlides = atoi( LALoptarg );
         if ( numSlides < 0 )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
@@ -364,23 +364,23 @@ int main( int argc, char *argv[] )
 
       case 'S':
         /* create storage for the summ file name */
-        optarg_len = strlen( optarg ) + 1;
-        summFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-        memcpy( summFileName, optarg, optarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        summFileName = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
+        memcpy( summFileName, LALoptarg, LALoptarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
         break;
 
       case 'k':
         /* type of data to analyze */
-        if ( ! strcmp( "playground_only", optarg ) )
+        if ( ! strcmp( "playground_only", LALoptarg ) )
         {
           dataType = playground_only;
         }
-        else if ( ! strcmp( "exclude_play", optarg ) )
+        else if ( ! strcmp( "exclude_play", LALoptarg ) )
         {
           dataType = exclude_play;
         }
-        else if ( ! strcmp( "all_data", optarg ) )
+        else if ( ! strcmp( "all_data", LALoptarg ) )
         {
           dataType = all_data;
         }
@@ -389,14 +389,14 @@ int main( int argc, char *argv[] )
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown data type, %s, specified: "
               "(must be playground_only, exclude_play or all_data)\n",
-              long_options[option_index].name, optarg );
+              long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
         break;
 
       case 's':
-        snrStar = (REAL4) atof( optarg );
+        snrStar = (REAL4) atof( LALoptarg );
         if ( snrStar < 0 )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
@@ -409,7 +409,7 @@ int main( int argc, char *argv[] )
         break;
 
       case 'r':
-        rsqVetoThresh = (REAL4) atof( optarg );
+        rsqVetoThresh = (REAL4) atof( LALoptarg );
         if ( rsqVetoThresh < 0 )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
@@ -422,7 +422,7 @@ int main( int argc, char *argv[] )
         break;
 
       case 'R':
-        rsqMaxSnr = (REAL4) atof( optarg );
+        rsqMaxSnr = (REAL4) atof( LALoptarg );
         if ( rsqMaxSnr < 0 )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
@@ -435,7 +435,7 @@ int main( int argc, char *argv[] )
         break;
 
       case 'p':
-        rsqAboveSnrCoeff = (REAL4) atof( optarg );
+        rsqAboveSnrCoeff = (REAL4) atof( LALoptarg );
         if ( rsqAboveSnrCoeff < 0 )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
@@ -448,7 +448,7 @@ int main( int argc, char *argv[] )
         break;
 
       case 'P':
-        rsqAboveSnrPow = (REAL4) atof( optarg );
+        rsqAboveSnrPow = (REAL4) atof( LALoptarg );
         if ( rsqAboveSnrPow < 0 )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
@@ -463,35 +463,35 @@ int main( int argc, char *argv[] )
       case 'C':
         /* choose the clustering algorithm */
         {
-          if ( ! strcmp( "nullstat", optarg) )
+          if ( ! strcmp( "nullstat", LALoptarg) )
           {
             clusterchoice = nullstat;
           }
-          else if ( ! strcmp( "cohsnr", optarg) )
+          else if ( ! strcmp( "cohsnr", LALoptarg) )
           {
             clusterchoice = cohsnr;
           }
-          else if ( ! strcmp( "effCohSnr", optarg) )
+          else if ( ! strcmp( "effCohSnr", LALoptarg) )
           {
             clusterchoice = effCohSnr;
           }
-          else if ( ! strcmp( "snrByNullstat", optarg) )
+          else if ( ! strcmp( "snrByNullstat", LALoptarg) )
           {
             clusterchoice = snrByNullstat;
           }
-          else if ( ! strcmp( "autoCorrCohSqByNullstat", optarg) )
+          else if ( ! strcmp( "autoCorrCohSqByNullstat", LALoptarg) )
           {
             clusterchoice = autoCorrCohSqByNullstat;
           }
-          else if ( ! strcmp( "crossCorrCohSqByNullstat", optarg) )
+          else if ( ! strcmp( "crossCorrCohSqByNullstat", LALoptarg) )
           {
             clusterchoice = autoCorrCohSqByNullstat;
           }
-          else if ( ! strcmp( "autoCorrNullSqByNullstat", optarg) )
+          else if ( ! strcmp( "autoCorrNullSqByNullstat", LALoptarg) )
           {
             clusterchoice = autoCorrCohSqByNullstat;
           }
-          else if ( ! strcmp( "crossCorrNullSqByNullstat", optarg) )
+          else if ( ! strcmp( "crossCorrNullSqByNullstat", LALoptarg) )
           {
             clusterchoice = crossCorrCohSqByNullstat;
           }
@@ -501,16 +501,16 @@ int main( int argc, char *argv[] )
                 "unknown clustering specified:\n "
                 "%s (must be one of: cohsnr, effCohSnr, nullstat, snrByNullstat, autoCorrCohSqByNullstat, \n"
                 "crossCorrCohSqByNullstat, autoCorrNullSqByNullstat, or crossCorrNullSqByNullstat)\n",
-                long_options[option_index].name, optarg);
+                long_options[option_index].name, LALoptarg);
             exit( 1 );
           }
-          ADD_PROCESS_PARAM( "string", "%s", optarg );
+          ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
         }
         break;
 
       case 't':
         /* cluster time is specified on command line in ms */
-        cluster_dt = (INT8) atoi( optarg );
+        cluster_dt = (INT8) atoi( LALoptarg );
         if ( cluster_dt <= 0 )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
@@ -526,38 +526,38 @@ int main( int argc, char *argv[] )
 
       case 'v':
         /* create storage for the injection file name */
-        optarg_len = strlen( optarg ) + 1;
-        vetoFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-        memcpy( vetoFileName, optarg, optarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        vetoFileName = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
+        memcpy( vetoFileName, LALoptarg, LALoptarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
         break;
 
       case 'I':
         /* create storage for the injection file name */
-        optarg_len = strlen( optarg ) + 1;
-        injectFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-        memcpy( injectFileName, optarg, optarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        injectFileName = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
+        memcpy( injectFileName, LALoptarg, LALoptarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
         break;
 
       case 'd':
-        optarg_len = strlen( optarg ) + 1;
-        ifoName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-        memcpy( ifoName, optarg, optarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        ifoName = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
+        memcpy( ifoName, LALoptarg, LALoptarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
         break;
 
       case 'D':
         /* keep only coincs found in ifos */
-        optarg_len = strlen( optarg ) + 1;
-        ifos = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-        memcpy( ifos, optarg, optarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        ifos = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
+        memcpy( ifos, LALoptarg, LALoptarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
         break;
 
       case 'T':
         /* injection coincidence time is specified on command line in ms */
-        injectWindowNS = (INT8) atoi( optarg );
+        injectWindowNS = (INT8) atoi( LALoptarg );
         if ( injectWindowNS < 0 )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
@@ -573,10 +573,10 @@ int main( int argc, char *argv[] )
 
       case 'm':
         /* create storage for the missed injection file name */
-        optarg_len = strlen( optarg ) + 1;
-        missedFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-        memcpy( missedFileName, optarg, optarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        missedFileName = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
+        memcpy( missedFileName, LALoptarg, LALoptarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
         break;
 
       case '?':
@@ -716,14 +716,14 @@ int main( int argc, char *argv[] )
 
 
   /* if we have run out of arguments on the command line, throw an error */
-  if ( ! (optind < argc) )
+  if ( ! (LALoptind < argc) )
   {
     fprintf( stderr, "Error: No input trigger files specified.\n" );
     exit( 1 );
   }
 
   /* read in the triggers */
-  for( j = optind; j < argc; ++j )
+  for( j = LALoptind; j < argc; ++j )
   {
     INT4 numFileTriggers = 0;
     MultiInspiralTable   *inspiralFileList = NULL;

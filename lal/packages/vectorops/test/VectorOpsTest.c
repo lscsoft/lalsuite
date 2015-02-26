@@ -56,20 +56,10 @@
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
 #include <lal/VectorOps.h>
-
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-
-#ifdef HAVE_GETOPT_H
-#include <getopt.h>
-#endif
+#include <lal/LALgetopt.h>
 
 #define CODES_(x) #x
 #define CODES(x) CODES_(x)
-
-extern char *optarg;
-extern int   optind;
 
 int verbose    = 0;
 
@@ -406,7 +396,7 @@ ParseOptions( int argc, char *argv[] )
   {
     int c = -1;
 
-    c = getopt( argc, argv, "hqvd:" );
+    c = LALgetopt( argc, argv, "hqvd:" );
     if ( c == -1 )
     {
       break;
@@ -446,7 +436,7 @@ ParseOptions( int argc, char *argv[] )
 
   }
 
-  if ( optind < argc )
+  if ( LALoptind < argc )
   {
     Usage( argv[0], 1 );
   }

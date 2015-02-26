@@ -58,10 +58,14 @@
 
 #include <lal/ReadPulsarParFile.h>
 
+#include <config.h>
 #include <string.h>
 #include <math.h>
 #include <locale.h>
 #include <ctype.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 #include <lal/LALConstants.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALString.h>

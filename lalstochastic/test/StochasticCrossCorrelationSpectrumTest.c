@@ -102,7 +102,7 @@
  * LALCHARDestroyVector()
  * XLALUnitAsString()
  * XLALUnitCompare()
- * getopt()
+ * LALgetopt()
  * printf()
  * fprintf()
  * freopen()
@@ -148,15 +148,8 @@
 #include <stdio.h>
 #include <config.h>
 
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-
-#ifdef HAVE_GETOPT_H
-#include <getopt.h>
-#endif
-
 #include <lal/StochasticCrossCorrelation.h>
+#include <lal/LALgetopt.h>
 #include <lal/AVFactories.h>
 #include <lal/ReadFTSeries.h>
 #include <lal/PrintFTSeries.h>
@@ -176,9 +169,6 @@
 
 #define STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TRUE     1
 #define STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_FALSE    0
-
-extern char *optarg;
-extern int   optind;
 
 BOOLEAN optVerbose    = STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_FALSE;
 BOOLEAN optMatch    = STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TRUE;
@@ -899,7 +889,7 @@ ParseOptions (int argc, char *argv[])
   {
     int c = -1;
 
-    c = getopt (argc, argv, "hqvd:i:j:k:m:n:o:t");
+    c = LALgetopt (argc, argv, "hqvd:i:j:k:m:n:o:t");
     if (c == -1)
     {
       break;
@@ -912,27 +902,27 @@ ParseOptions (int argc, char *argv[])
         break;
 
       case 'o': /* specify output file */
-        strncpy (optOutputFile, optarg, LALNameLength);
+        strncpy (optOutputFile, LALoptarg, LALNameLength);
         break;
 
       case 'i': /* specify file containing first data stream */
-        strncpy (optData1File, optarg, LALNameLength);
+        strncpy (optData1File, LALoptarg, LALNameLength);
         break;
 
       case 'j': /* specify file containing second data stream */
-        strncpy (optData2File, optarg, LALNameLength);
+        strncpy (optData2File, LALoptarg, LALNameLength);
         break;
 
       case 'k': /* specify file containing optimal filter */
-        strncpy (optFilterFile, optarg, LALNameLength);
+        strncpy (optFilterFile, LALoptarg, LALNameLength);
         break;
 
       case 'm': /* specify number of points in optimal filter */
-        optFilterLength = atoi (optarg);
+        optFilterLength = atoi (LALoptarg);
         break;
 
       case 'n': /* specify number of points in data streams */
-        optStreamLength = atoi (optarg);
+        optStreamLength = atoi (LALoptarg);
         break;
 
       case 'd': /* set debug level */
@@ -967,7 +957,7 @@ ParseOptions (int argc, char *argv[])
 
   }
 
-  if (optind < argc)
+  if (LALoptind < argc)
   {
     Usage (argv[0], 1);
   }

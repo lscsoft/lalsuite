@@ -32,11 +32,10 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
-#include <getopt.h>
-#include <unistd.h>
 #include <sys/types.h>
 
 #include <lal/BinaryPulsarTiming.h>
+#include <lal/LALgetopt.h>
 
 /* LAL headers */
 #include <lal/LALStdlib.h>

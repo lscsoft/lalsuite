@@ -20,10 +20,10 @@
    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307,
    USA.  */
 
-#ifndef _GETOPT_H
-#define _GETOPT_H 1
+#ifndef SWIG /* exclude from SWIG interface */
 
-#pragma GCC system_header
+#ifndef _LALGETOPT_H
+#define _LALGETOPT_H
 
 #ifdef	__cplusplus
 extern "C" {
@@ -97,17 +97,17 @@ struct option
 #define required_argument	1
 #define optional_argument	2
 
-extern int LALgetopt_long (int argc, char *const *argv, const char *shortopts,
-                           const struct option *longopts, int *longind);
-
-/* Internal only.  Users should not call this directly.  */
-extern int _getopt_internal (int argc, char *const *argv,
-			     const char *shortopts,
-		             const struct option *longopts, int *longind,
-			     int long_only);
+int LALgetopt (int argc, char *const *argv, const char *shortopts);
+int LALgetopt_long (int argc, char *const *argv, const char *shortopts,
+                    const struct option *longopts, int *longind);
+int LALgetopt_long_only (int argc, char *const *argv,
+                         const char *shortopts,
+                         const struct option *longopts, int *longind);
 
 #ifdef	__cplusplus
 }
 #endif
 
-#endif /* getopt.h */
+#endif /* LALgetopt.h */
+
+#endif /* SWIG */

@@ -22,9 +22,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <getopt.h>
 
 #include <lal/LALStdlib.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALString.h>
 #include <lal/Date.h>
 #include <lal/FrequencySeries.h>
@@ -145,7 +145,7 @@ int parseargs(int argc, char **argv)
         int option_index = 0;
         int c;
 
-        c = getopt_long_only(argc, argv, args, long_options, &option_index);
+        c = LALgetopt_long_only(argc, argv, args, long_options, &option_index);
         if (c == -1)    /* end of options */
             break;
 
@@ -155,44 +155,44 @@ int parseargs(int argc, char **argv)
                 break;
             else {
                 fprintf(stderr, "error parsing option %s with argument %s\n",
-                    long_options[option_index].name, optarg);
+                    long_options[option_index].name, LALoptarg);
                 exit(1);
             }
         case 'h':      /* help */
             usage(argv[0]);
             exit(0);
         case 'c':      /* channel */
-            channel = strdup(optarg);
+            channel = strdup(LALoptarg);
             break;
         case 'f':      /* frame-cache */
-            cache = XLALCacheImport(optarg);
+            cache = XLALCacheImport(LALoptarg);
             break;
         case 'g':      /* frame-glob */
-            cache = XLALCacheGlob(NULL, optarg);
+            cache = XLALCacheGlob(NULL, LALoptarg);
             break;
         case 'o':      /* output */
-            outfile = strdup(optarg);
+            outfile = strdup(LALoptarg);
             break;
         case 's':      /* start-time */
-            t0 = atof(optarg);
+            t0 = atof(LALoptarg);
             break;
         case 't':      /* duration */
-            dt = atof(optarg);
+            dt = atof(LALoptarg);
             break;
         case 'H':      /* highpass */
-            minfreq = atof(optarg);
+            minfreq = atof(LALoptarg);
             break;
         case 'L':      /* lowpass */
-            maxfreq = atof(optarg);
+            maxfreq = atof(LALoptarg);
             break;
         case 'P':      /* pad */
-            pad = atof(optarg);
+            pad = atof(LALoptarg);
             break;
         case 'R':      /* start-time */
-            srate = atof(optarg);
+            srate = atof(LALoptarg);
             break;
         case 'S':      /* spectrum */
-            df = atof(optarg);
+            df = atof(LALoptarg);
             break;
         case '?':
         default:
@@ -201,10 +201,10 @@ int parseargs(int argc, char **argv)
         }
     }
 
-    if (optind < argc) {
+    if (LALoptind < argc) {
         fprintf(stderr, "extraneous command line arguments:\n");
-        while (optind < argc)
-            fprintf(stderr, "%s\n", argv[optind++]);
+        while (LALoptind < argc)
+            fprintf(stderr, "%s\n", argv[LALoptind++]);
         exit(1);
     }
 

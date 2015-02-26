@@ -47,10 +47,6 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-
 /* GSL includes */
 #include <gsl/gsl_rng.h>
 

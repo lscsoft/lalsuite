@@ -17,7 +17,11 @@
 *  MA  02111-1307  USA
 */
 
+#include <config.h>
+
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include "FstatToplist.h"
 #include "HeapToplist.h"
 #include <lal/StringInput.h> /* for LAL_REAL8_FORMAT etc. */

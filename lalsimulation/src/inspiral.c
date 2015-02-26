@@ -22,9 +22,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include <getopt.h>
 
 #include <lal/Date.h>
+#include <lal/LALgetopt.h>
 #include <lal/Units.h>
 #include <lal/Sequence.h>
 #include <lal/TimeSeries.h>
@@ -812,7 +812,7 @@ struct params parseargs(int argc, char **argv)
         int option_index = 0;
         int c;
 
-        c = getopt_long_only(argc, argv, args, long_options, &option_index);
+        c = LALgetopt_long_only(argc, argv, args, long_options, &option_index);
         if (c == -1)    /* end of options */
             break;
 
@@ -821,7 +821,7 @@ struct params parseargs(int argc, char **argv)
             if (long_options[option_index].flag)
                 break;
             else {
-                fprintf(stderr, "error parsing option %s with argument %s\n", long_options[option_index].name, optarg);
+                fprintf(stderr, "error parsing option %s with argument %s\n", long_options[option_index].name, LALoptarg);
                 exit(1);
             }
         case 'h':      /* help */
@@ -840,14 +840,14 @@ struct params parseargs(int argc, char **argv)
             p.amp_phase = 1;
             break;
         case 'a':      /* approximant */
-            p.approx = XLALGetApproximantFromString(optarg);
+            p.approx = XLALGetApproximantFromString(LALoptarg);
             if ((int)p.approx == XLAL_FAILURE) {
-                fprintf(stderr, "error: invalid value %s for %s\n", optarg, long_options[option_index].name);
+                fprintf(stderr, "error: invalid value %s for %s\n", LALoptarg, long_options[option_index].name);
                 exit(1);
             }
             break;
         case 'D':      /* domain */
-            switch (*optarg) {
+            switch (*LALoptarg) {
             case 'T':
             case 't':
                 p.domain = LAL_SIM_DOMAIN_TIME;
@@ -857,93 +857,93 @@ struct params parseargs(int argc, char **argv)
                 p.domain = LAL_SIM_DOMAIN_FREQUENCY;
                 break;
             default:
-                fprintf(stderr, "error: invalid value %s for %s\n", optarg, long_options[option_index].name);
+                fprintf(stderr, "error: invalid value %s for %s\n", LALoptarg, long_options[option_index].name);
                 exit(1);
             }
         case 'O':      /* phase-order */
-            p.phaseO = atoi(optarg);
+            p.phaseO = atoi(LALoptarg);
             break;
         case 'o':      /* amp-order */
-            p.ampO = atoi(optarg);
+            p.ampO = atoi(LALoptarg);
             break;
         case 'q':      /* phiRef */
-            p.phiRef = atof(optarg) * LAL_PI_180;
+            p.phiRef = atof(LALoptarg) * LAL_PI_180;
             break;
         case 'r':      /* fRef */
-            p.fRef = atof(optarg);
+            p.fRef = atof(LALoptarg);
             break;
         case 'R':      /* sample-rate */
-            p.srate = atof(optarg);
+            p.srate = atof(LALoptarg);
             break;
         case 'M':      /* m1 */
-            p.m1 = atof(optarg) * LAL_MSUN_SI;
+            p.m1 = atof(LALoptarg) * LAL_MSUN_SI;
             break;
         case 'm':      /* m2 */
-            p.m2 = atof(optarg) * LAL_MSUN_SI;
+            p.m2 = atof(LALoptarg) * LAL_MSUN_SI;
             break;
         case 'X':      /* spin1x */
-            p.s1x = atof(optarg);
+            p.s1x = atof(LALoptarg);
             break;
         case 'Y':      /* spin1y */
-            p.s1y = atof(optarg);
+            p.s1y = atof(LALoptarg);
             break;
         case 'Z':      /* spin1z */
-            p.s1z = atof(optarg);
+            p.s1z = atof(LALoptarg);
             break;
         case 'x':      /* spin2x */
-            p.s2x = atof(optarg);
+            p.s2x = atof(LALoptarg);
             break;
         case 'y':      /* spin2y */
-            p.s2y = atof(optarg);
+            p.s2y = atof(LALoptarg);
             break;
         case 'z':      /* spin2z */
-            p.s2z = atof(optarg);
+            p.s2z = atof(LALoptarg);
             break;
         case 'L':      /* tidal-lambda1 */
-            p.lambda1 = atof(optarg);
+            p.lambda1 = atof(LALoptarg);
             break;
         case 'l':      /* tidal-lambda2 */
-            p.lambda2 = atof(optarg);
+            p.lambda2 = atof(LALoptarg);
             break;
         case 's':      /* spin-order */
             if (p.waveFlags == NULL)
                 p.waveFlags = XLALSimInspiralCreateWaveformFlags();
-            XLALSimInspiralSetSpinOrder(p.waveFlags, atoi(optarg));
+            XLALSimInspiralSetSpinOrder(p.waveFlags, atoi(LALoptarg));
             break;
         case 't':      /* tidal-order */
             if (p.waveFlags == NULL)
                 p.waveFlags = XLALSimInspiralCreateWaveformFlags();
-            XLALSimInspiralSetTidalOrder(p.waveFlags, atoi(optarg));
+            XLALSimInspiralSetTidalOrder(p.waveFlags, atoi(LALoptarg));
             break;
         case 'f':      /* f-min */
-            p.f_min = atof(optarg);
+            p.f_min = atof(LALoptarg);
             break;
         case 'd':      /* distance */
-            p.distance = atof(optarg);
+            p.distance = atof(LALoptarg);
             break;
         case 'i':      /* inclination */
-            p.inclination = atof(optarg) * LAL_PI_180;
+            p.inclination = atof(LALoptarg) * LAL_PI_180;
             break;
         case 'A':      /* axis */
             if (p.waveFlags == NULL)
                 p.waveFlags = XLALSimInspiralCreateWaveformFlags();
-            XLALSimInspiralSetFrameAxis(p.waveFlags, XLALGetFrameAxisFromString(optarg));
+            XLALSimInspiralSetFrameAxis(p.waveFlags, XLALGetFrameAxisFromString(LALoptarg));
             if ((int)XLALSimInspiralGetFrameAxis(p.waveFlags) == XLAL_FAILURE) {
-                fprintf(stderr, "error: invalid value %s for %s\n", optarg, long_options[option_index].name);
+                fprintf(stderr, "error: invalid value %s for %s\n", LALoptarg, long_options[option_index].name);
                 exit(1);
             }
             break;
         case 'n':      /* modes */
             if (p.waveFlags == NULL)
                 p.waveFlags = XLALSimInspiralCreateWaveformFlags();
-            XLALSimInspiralSetModesChoice(p.waveFlags, XLALGetHigherModesFromString(optarg));
+            XLALSimInspiralSetModesChoice(p.waveFlags, XLALGetHigherModesFromString(LALoptarg));
             if ((int)XLALSimInspiralGetModesChoice(p.waveFlags) == XLAL_FAILURE) {
-                fprintf(stderr, "error: invalid value %s for %s\n", optarg, long_options[option_index].name);
+                fprintf(stderr, "error: invalid value %s for %s\n", LALoptarg, long_options[option_index].name);
                 exit(1);
             }
             break;
         case 'p':      /* nonGRpar */
-            while ((kv = strsep(&optarg, ","))) {
+            while ((kv = strsep(&LALoptarg, ","))) {
                 char *key = strsep(&kv, "=");
                 if (kv == NULL || key == NULL || *key == '\0') {
                     fprintf(stderr, "error: invalid key-value pair for %s\n", long_options[option_index].name);
@@ -961,10 +961,10 @@ struct params parseargs(int argc, char **argv)
             exit(1);
         }
     }
-    if (optind < argc) {
+    if (LALoptind < argc) {
         fprintf(stderr, "extraneous command line arguments:\n");
-        while (optind < argc)
-            fprintf(stderr, "%s\n", argv[optind++]);
+        while (LALoptind < argc)
+            fprintf(stderr, "%s\n", argv[LALoptind++]);
         exit(1);
     }
     return p;

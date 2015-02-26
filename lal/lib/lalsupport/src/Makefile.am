@@ -30,8 +30,7 @@ liblalsupport_la_SOURCES = \
 	TranslateMJD.c \
 	UserInput.c \
 	LALgetopt.c \
-	LALgetopt.h
-
+	$(END_OF_LIST)
 
 liblalsupport_la_LIBADD = $(top_builddir)/lib/lal/liblal.la $(ZLIB_LIBS)
 liblalsupport_la_CFLAGS = $(AM_CFLAGS) $(ZLIB_CFLAGS)

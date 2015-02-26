@@ -137,17 +137,10 @@
 
 #include <config.h>
 
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-
-#ifdef HAVE_GETOPT_H
-#include <getopt.h>
-#endif
-
 #include <math.h>
 #include <stdio.h>
 #include <lal/AVFactories.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALXMGRInterface.h>
 #include <lal/PtoleMetric.h>
 #include <lal/StackMetric.h>
@@ -171,7 +164,6 @@ REAL4 dec_min;
 REAL4 dec_max;
 
 
-extern char *optarg;     /* option argument for getopt() */
 int  metric_code;        /* Which metric code to use: */
                          /* 1 = Ptolemetric */
                          /* 2 = CoherentMetric + DTBarycenter */
@@ -237,20 +229,20 @@ int main( int argc, char **argv )
   rectangular = 0;
 
   /* Parse and sanity-check the command-line options. */
-  while( (opt = getopt( argc, argv, "a:b:c:d:ef:l:m:pr:t:x" )) != -1 )
+  while( (opt = LALgetopt( argc, argv, "a:b:c:d:ef:l:m:pr:t:x" )) != -1 )
   {
     switch( opt )
     {
     case '?':
       return GENERALMESHTESTC_EOPT;
     case 'a':
-      metric_code = atoi( optarg );
+      metric_code = atoi( LALoptarg );
       break;
     case 'b':
-      begin = atoi( optarg );
+      begin = atoi( LALoptarg );
       break;
     case 'c':
-      if( sscanf( optarg, "%f:%f:%f:%f:%f:%f", &a, &b, &c, &d, &e, &f ) != 6)
+      if( sscanf( LALoptarg, "%f:%f:%f:%f:%f:%f", &a, &b, &c, &d, &e, &f ) != 6)
       {
         fprintf( stderr, "coordinates should be hh:mm:ss:dd:mm:ss\n" );
         return GENERALMESHTESTC_EOPT;
@@ -259,15 +251,15 @@ int main( int argc, char **argv )
       center.latitude = (d+e/60+f/3600)*LAL_PI_180;
       break;
     case 'd':
-      detector = atoi( optarg );
+      detector = atoi( LALoptarg );
       break;
     case 'e':
       break;
     case 'f':
-      fMax = atof( optarg );
+      fMax = atof( LALoptarg );
       break;
     case 'l':
-      if( sscanf( optarg, "%f:%f:%f:%f",
+      if( sscanf( LALoptarg, "%f:%f:%f:%f",
 		  &ra_min, &ra_max, &dec_min, &dec_max) != 4)
 	{
 	  fprintf( stderr, "coordinates should be ra_min, ra_max, dec_min, dec_max, all in degrees\n" );
@@ -281,7 +273,7 @@ int main( int argc, char **argv )
       radius = 0;
       break;
     case 'm':
-      mismatch = atof( optarg );
+      mismatch = atof( LALoptarg );
       break;
     case 'p':
       nonGrace = 1;
@@ -289,7 +281,7 @@ int main( int argc, char **argv )
     case 'r':
       if( rectangular == 1 )
         break;
-      radius = LAL_PI_180/60*atof( optarg );
+      radius = LAL_PI_180/60*atof( LALoptarg );
       if( radius < 0 ) {
         fprintf( stderr, "%s line %d: %s\n", __FILE__, __LINE__,
                  GENERALMESHTESTC_MSGERNG );
@@ -297,7 +289,7 @@ int main( int argc, char **argv )
       }
       break;
     case 't':
-      duration = atof( optarg );
+      duration = atof( LALoptarg );
       if( duration < MIN_DURATION || duration > MAX_DURATION ) {
 	fprintf( stderr, "%s line %d: %s\n", __FILE__, __LINE__,
                  GENERALMESHTESTC_MSGERNG );
@@ -308,7 +300,7 @@ int main( int argc, char **argv )
       grace = 1;
       break;
     } /* switch( opt ) */
-  } /* while( getopt... ) */
+  } /* while( LALgetopt... ) */
 
 
   /* Set the mesh input parameters. */

@@ -39,8 +39,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
-#include <unistd.h>
-#include <getopt.h>
+#include <lal/LALgetopt.h>
 
 #include <gsl/gsl_sort.h>
 #include <gsl/gsl_rng.h>
@@ -2556,7 +2555,7 @@ int opt_parse( bayesline_opt *opts, int argc, char **argv )
     int opt_indx = 0;
     int c;
 
-    c = getopt_long( argc, argv, args, cmd_opt, &opt_indx );
+    c = LALgetopt_long( argc, argv, args, cmd_opt, &opt_indx );
     if ( c == -1 ) // end of options
       break;
 
@@ -2566,7 +2565,7 @@ int opt_parse( bayesline_opt *opts, int argc, char **argv )
         if ( cmd_opt[opt_indx].flag ) break;
         else
         {
-          fprintf(stderr,"error parsing option %s with argument %s\n", cmd_opt[opt_indx].name, optarg );
+          fprintf(stderr,"error parsing option %s with argument %s\n", cmd_opt[opt_indx].name, LALoptarg );
           exit(1);
         }
       case 'g': // gnuplot output
@@ -2577,12 +2576,12 @@ int opt_parse( bayesline_opt *opts, int argc, char **argv )
         bayesline_usage();
         exit(0);
       case 'i': // in-file
-        sprintf(cmd_param.ifile,"%s",optarg);
+        sprintf(cmd_param.ifile,"%s",LALoptarg);
         break;
       case 'l': // likelihood=constant test
         cmd_param.zerologL = 1;
       case 'o': // out-file
-        sprintf(cmd_param.ofile,"%s",optarg);
+        sprintf(cmd_param.ofile,"%s",LALoptarg);
         break;
       case 'v': // verbose output
         cmd_param.verbose = 1;
@@ -2596,10 +2595,10 @@ int opt_parse( bayesline_opt *opts, int argc, char **argv )
     }
   }
   
-  if ( optind < argc )
+  if ( LALoptind < argc )
   {
     fprintf( stderr, "extraneous command line arguments:\n" );
-    while ( optind < argc ) fprintf( stderr, "%s\n", argv[optind++] );
+    while ( LALoptind < argc ) fprintf( stderr, "%s\n", argv[LALoptind++] );
     exit(1);
   }
   

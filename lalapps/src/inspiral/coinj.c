@@ -21,12 +21,12 @@
 #include <stdlib.h>
 #include <config.h>
 #include <math.h>
-#include <getopt.h>
 #include <string.h>
 
 #include <lalapps.h>
 #include <processtable.h>
 #include <lal/LALStdio.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALStdlib.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
@@ -223,7 +223,7 @@ int main(int argc, char *argv[])
   while(1)
     {
       int option_idx=0;
-      c=getopt_long_only(argc,argv,"hFi:d:",long_options,&option_idx);
+      c=LALgetopt_long_only(argc,argv,"hFi:d:",long_options,&option_idx);
       if(c==-1) break;
       switch(c)
         {
@@ -232,38 +232,38 @@ int main(int argc, char *argv[])
           exit(0);
           break;
         case 'i':
-          strncpy(inputfile,optarg,FILENAME_MAX-1);
+          strncpy(inputfile,LALoptarg,FILENAME_MAX-1);
           break;
         case 'o':
-          strncpy(outputpath,optarg,999);
+          strncpy(outputpath,LALoptarg,999);
           break;          
         case 'r':
-          if(!strcmp("strain",optarg))          injectionResponse = unityResponse;
-          else if(!strcmp("etmx",optarg))   injectionResponse = actuationX;
-          else if(!strcmp("etmy",optarg))   injectionResponse = actuationY;
+          if(!strcmp("strain",LALoptarg))          injectionResponse = unityResponse;
+          else if(!strcmp("etmx",LALoptarg))   injectionResponse = actuationX;
+          else if(!strcmp("etmy",LALoptarg))   injectionResponse = actuationY;
           else {fprintf(stderr,"Invalid argument to response-type: %s\nResponse type must be strain, etmy or etmx\n", \
-                        optarg); exit(1);}
+                        LALoptarg); exit(1);}
           break;
         case 2:
-          minSNR=atof(optarg);
+          minSNR=atof(LALoptarg);
           fprintf(stderr,"Using minimum SNR of %f\n",minSNR);
           break;
         case 3:
-          maxSNR=atof(optarg);
+          maxSNR=atof(LALoptarg);
           fprintf(stderr,"Using maximum SNR of %f\n",maxSNR);
           break;
         case 4:
-          GPSstart=atoi(optarg);
+          GPSstart=atoi(LALoptarg);
           break;
         case 5:
-          GPSend=atoi(optarg);
+          GPSend=atoi(LALoptarg);
           break;
         case 6:
-          targetSNR=atof(optarg);
+          targetSNR=atof(LALoptarg);
           fprintf(stderr,"Target SNR = %lf\n",targetSNR);
           break;
         case 'd':
-	  max_chirp_dist=atof(optarg);
+	  max_chirp_dist=atof(LALoptarg);
           fprintf(stderr,"Using maximum chirp distance of %lf\n",max_chirp_dist);
 	  break;
 	}

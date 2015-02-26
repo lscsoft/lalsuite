@@ -62,20 +62,13 @@ the model given in Jaranowski, Krolak, and Schutz gr-qc/9804014.
 
 #include <config.h>
 
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-
-#ifdef HAVE_GETOPT_H
-#include <getopt.h>
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
 /* #include <lalapps.h> */ /* 05/20/03 gam */
 #include <lal/LALStdlib.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
 #include <lal/DetectorSite.h>
@@ -113,7 +106,6 @@ void GenerateResponseFuncUsingLAL(LALStatus *status, LALSource *pulsar, LALDetec
 /* 10/13/03 gam: Use independent code from Jolien Creighton to convert GPS to Sidereal time. */
 REAL8 greenwich_mean_sidereal_time( INT4 gpssec, INT4 gpsnan, INT4 taiutc );
 
-extern char *optarg;
 /* REAL8 omegaEarth = LAL_TWOPI/LAL_DAYSID_SI; */
 /* REAL8 omegaEarthSun = LAL_TWOPI/LAL_YRSID_SI; */
 REAL8 omegaEarth = LALIND_TWOPI/(23.0*3600.0 + 56.0*60.0 + 4.091);  /* Number of ordinary seconds in one sidereal day */
@@ -192,8 +184,8 @@ int main( int argc, char *argv[] )
       usage( program );
       return 0;
     }
-  /* while ( 0 < ( opt = getopt( argc, argv, "hc:d:" ) ) ) */ /* Added case L */ /* 05/20/03 gam */
-  while ( 0 < ( opt = getopt( argc, argv, "hc:Ld:" ) ) )
+  /* while ( 0 < ( opt = LALgetopt( argc, argv, "hc:d:" ) ) ) */ /* Added case L */ /* 05/20/03 gam */
+  while ( 0 < ( opt = LALgetopt( argc, argv, "hc:Ld:" ) ) )
     {
       switch ( opt )
         {
@@ -201,7 +193,7 @@ int main( int argc, char *argv[] )
           usage( program );
           return 0;
         case 'c':
-	  configFileName = optarg;
+	  configFileName = LALoptarg;
           break;
         case 'L':
 	  break;

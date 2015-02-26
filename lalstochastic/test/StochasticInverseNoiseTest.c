@@ -96,7 +96,7 @@
  * ### Uses ###
  *
  * \code
- * getopt()
+ * LALgetopt()
  * LALStochasticInverseNoise()
  * LALSCreateVector()
  * LALCCreateVector()
@@ -152,15 +152,8 @@
 #include <stdio.h>
 #include <config.h>
 
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-
-#ifdef HAVE_GETOPT_H
-#include <getopt.h>
-#endif
-
 #include <lal/StochasticCrossCorrelation.h>
+#include <lal/LALgetopt.h>
 #include <lal/AVFactories.h>
 #include <lal/ReadFTSeries.h>
 #include <lal/PrintFTSeries.h>
@@ -174,10 +167,6 @@
 #define STOCHASTICINVERSENOISETESTC_F0       0.0
 #define STOCHASTICINVERSENOISETESTC_LENGTH   8
 #define STOCHASTICINVERSENOISETESTC_TOL      1e-6
-
-extern char *optarg;
-extern int   optind;
-
 
 BOOLEAN optVerbose = STOCHASTICINVERSENOISETESTC_FALSE;
 UINT4 optLength    = 0;
@@ -1099,7 +1088,7 @@ ParseOptions (int argc, char *argv[])
   {
     int c = -1;
 
-    c = getopt (argc, argv, "hqvd:n:w:f:u:m:");
+    c = LALgetopt (argc, argv, "hqvd:n:w:f:u:m:");
     if (c == -1)
     {
       break;
@@ -1109,23 +1098,23 @@ ParseOptions (int argc, char *argv[])
     {
 
       case 'n': /* specify number of points in frequency series */
-        optLength = atoi (optarg);
+        optLength = atoi (LALoptarg);
         break;
 
       case 'w': /* specify uncalibrated noise file */
-        strncpy (optWNoiseFile, optarg, LALNameLength);
+        strncpy (optWNoiseFile, LALoptarg, LALNameLength);
         break;
 
       case 'f': /* specify response function file */
-        strncpy (optWFilterFile, optarg, LALNameLength);
+        strncpy (optWFilterFile, LALoptarg, LALNameLength);
         break;
 
       case 'u': /* specify calibrated inverse noise file */
-        strncpy (optInvNoiseFile, optarg, LALNameLength);
+        strncpy (optInvNoiseFile, LALoptarg, LALNameLength);
         break;
 
       case 'm': /* specify hwInvNoise file */
-        strncpy (optHWInvNoiseFile, optarg, LALNameLength);
+        strncpy (optHWInvNoiseFile, LALoptarg, LALNameLength);
         break;
 
       case 'd': /* set debug level */
@@ -1160,7 +1149,7 @@ ParseOptions (int argc, char *argv[])
 
   }
 
-  if (optind < argc)
+  if (LALoptind < argc)
   {
     Usage (argv[0], 1);
   }

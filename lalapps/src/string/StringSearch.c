@@ -28,7 +28,6 @@
 #include <config.h>
 
 #include <complex.h>
-#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -39,7 +38,6 @@
 #include <time.h>
 #include <glob.h>
 #include <errno.h>
-#include <getopt.h>
 #include <stdarg.h>
 
 #include <gsl/gsl_rng.h>
@@ -47,6 +45,7 @@
 #include <gsl/gsl_roots.h>
 
 #include <lal/LALDatatypes.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>
@@ -78,9 +77,6 @@
 #include <lalapps.h>
 #include <processtable.h>
 #include <LALAppsVCSInfo.h>
-
-extern char *optarg;
-extern int optind, opterr, optopt;
 
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 100; } else ((void)0)
@@ -398,7 +394,7 @@ static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param,
 }
 
 #define ADD_PROCESS_PARAM(process, type) \
-	do { paramaddpoint = add_process_param(paramaddpoint, process, type, long_options[option_index].name, optarg); } while(0)
+	do { paramaddpoint = add_process_param(paramaddpoint, process, type, long_options[option_index].name, LALoptarg); } while(0)
 
 /*******************************************************************************/
 
@@ -1147,7 +1143,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA, const 
   };
   char args[] = "hnckwabrxyzlj:f:L:M:D:H:t:F:C:E:S:i:v:d:T:s:g:o:p:A:B:G:K:";
 
-  optarg = NULL;
+  LALoptarg = NULL;
 
   /* Initialize default values */
   CLA->fbankstart=0.0;
@@ -1185,10 +1181,10 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA, const 
   /* Scan through list of command line arguments */
   while ( 1 )
   {
-    int option_index = 0; /* getopt_long stores long option here */
+    int option_index = 0; /* LALgetopt_long stores long option here */
     int c;
 
-    c = getopt_long_only( argc, argv, args, long_options, &option_index );
+    c = LALgetopt_long_only( argc, argv, args, long_options, &option_index );
     if ( c == -1 ) /* end of options */
       break;
 
@@ -1196,106 +1192,106 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA, const 
     {
     case 's':
       /* resample to this sample rate */
-      CLA->samplerate=atof(optarg);
+      CLA->samplerate=atof(LALoptarg);
       ADD_PROCESS_PARAM(process, "float");
       break;
     case 'H':
       /* lowest high frequency cutoff */
-      CLA->fbankhighfcutofflow=atof(optarg);
+      CLA->fbankhighfcutofflow=atof(LALoptarg);
       ADD_PROCESS_PARAM(process, "float");
       break;
     case 'M':
       /* Maximal mismatch */
-      CLA->fmismatchmax=atof(optarg);
+      CLA->fmismatchmax=atof(LALoptarg);
       ADD_PROCESS_PARAM(process, "float");
       break;
     case 'L':
       /* low frequency cutoff */
-      CLA->fbankstart=atof(optarg);
+      CLA->fbankstart=atof(LALoptarg);
       ADD_PROCESS_PARAM(process, "float");
       break;
     case 't':
       /* low frequency cutoff */
-      CLA->threshold=atof(optarg);
+      CLA->threshold=atof(LALoptarg);
       ADD_PROCESS_PARAM(process, "float");
       break;
     case 'F':
       /* name of frame cache file */
-      CLA->FrCacheFile=optarg;
+      CLA->FrCacheFile=LALoptarg;
       ADD_PROCESS_PARAM(process, "string");
       break;
     case 'C':
       /* name channel */
-      CLA->ChannelName=optarg;
+      CLA->ChannelName=LALoptarg;
       ADD_PROCESS_PARAM(process, "string");
       break;
     case 'i':
       /* name of xml injection file */
-      CLA->InjectionFile=optarg;
+      CLA->InjectionFile=LALoptarg;
       ADD_PROCESS_PARAM(process, "string");
       break;
     case 'K':
       /* name of txt template file */
-      CLA->TemplateFile=optarg;
+      CLA->TemplateFile=LALoptarg;
       ADD_PROCESS_PARAM(process, "string");
       break;
     case 'o':
       /* name of xml injection file */
-      CLA->outputFileName=optarg;
+      CLA->outputFileName=LALoptarg;
       ADD_PROCESS_PARAM(process, "string");
       break;
     case 'S':
       /* GPS start time of search */
-      if(XLALStrToGPS(&CLA->GPSStart, optarg, NULL)) {
-        fprintf(stderr,"range error parsing \"%s\"", optarg);
+      if(XLALStrToGPS(&CLA->GPSStart, LALoptarg, NULL)) {
+        fprintf(stderr,"range error parsing \"%s\"", LALoptarg);
         return 1;
       }
       ADD_PROCESS_PARAM(process, "string");
       break;
     case 'E':
       /* GPS end time time of search */
-      if(XLALStrToGPS(&CLA->GPSEnd, optarg, NULL)) {
-        fprintf(stderr,"range error parsing \"%s\"", optarg);
+      if(XLALStrToGPS(&CLA->GPSEnd, LALoptarg, NULL)) {
+        fprintf(stderr,"range error parsing \"%s\"", LALoptarg);
         return 1;
       }
       ADD_PROCESS_PARAM(process, "string");
       break;
     case 'd':
        /* Number of segment to break-up search into */
-      CLA->ShortSegDuration=atoi(optarg);
+      CLA->ShortSegDuration=atoi(LALoptarg);
       ADD_PROCESS_PARAM(process, "int");
       break;
     case 'T':
       /* Half the number of seconds that are trown out at the start and at the end of a short chunk */
-      CLA->TruncSecs=atof(optarg);
+      CLA->TruncSecs=atof(LALoptarg);
       ADD_PROCESS_PARAM(process, "int");
       break;
     case 'g':
       /* start time of allowed triggers */
-      if(XLALStrToGPS(&CLA->trigstarttime, optarg, NULL)) {
-        fprintf(stderr,"range error parsing \"%s\"", optarg);
+      if(XLALStrToGPS(&CLA->trigstarttime, LALoptarg, NULL)) {
+        fprintf(stderr,"range error parsing \"%s\"", LALoptarg);
         return 1;
       }
       ADD_PROCESS_PARAM(process, "string");
       break;
     case 'p':
       /* start time of allowed triggers */
-      CLA->pad=atoi(optarg);
+      CLA->pad=atoi(LALoptarg);
       ADD_PROCESS_PARAM(process, "int");
       break;
     case 'A':
       /* chi2 cut parameter 0 */
-      CLA->chi2cut[0]=atof(optarg);
+      CLA->chi2cut[0]=atof(LALoptarg);
       ADD_PROCESS_PARAM(process, "float");
       break;
     case 'B':
       /* chi2 cut parameter 1 */
-      CLA->chi2cut[1]=atof(optarg);
+      CLA->chi2cut[1]=atof(LALoptarg);
       ADD_PROCESS_PARAM(process, "float");
       break;
     case 'G':
       /* chi2 cut parameter 2 */
-      CLA->chi2cut[2]=atof(optarg);
+      CLA->chi2cut[2]=atof(LALoptarg);
       ADD_PROCESS_PARAM(process, "float");
       break;
     case 'c':
@@ -1320,7 +1316,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA, const 
       break;
     case 'l':
       /* fake gaussian noise flag */
-      CLA->cluster=atof(optarg);
+      CLA->cluster=atof(LALoptarg);
       ADD_PROCESS_PARAM(process, "string");
       break;
     case 'a':
@@ -1335,7 +1331,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA, const 
       break;
     case 'j':
       /* --user-tag */
-      CLA->comment = optarg;
+      CLA->comment = LALoptarg;
       ADD_PROCESS_PARAM(process, "string");
       break;
     case 'r':

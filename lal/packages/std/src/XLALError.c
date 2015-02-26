@@ -19,6 +19,8 @@
 
 /* - NOTE: API is doxygen-documented in header file XLALError.h - */
 
+#include <config.h>
+
 #include <math.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -218,7 +220,9 @@ XLALErrorHandlerType **XLALGetErrorHandlerPtr(void)
  * rejoining to the main thread (which shouldn't be done) then at least
  * these routines won't report any leaks.  */
 
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <pthread.h>
 
 pthread_key_t xlalErrnoKey;

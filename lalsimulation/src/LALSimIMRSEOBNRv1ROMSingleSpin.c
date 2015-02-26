@@ -49,8 +49,6 @@
 #include <math.h>
 #include <complex.h>
 #include <time.h>
-#include <unistd.h>
-#include <getopt.h>
 #include <stdbool.h>
 #include <alloca.h>
 #include <string.h>

@@ -25,14 +25,7 @@
 #include <lalapps.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
-
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-
-#ifdef HAVE_GETOPT_H
-#include <getopt.h>
-#endif
+#include <lal/LALgetopt.h>
 
 /* Calibration Constants for L1:LSC-ETMX        */
 /* Based on mail from Gaby Mon, 24 Jun 2002     */
@@ -68,8 +61,6 @@
 
 #define usage( program ) fprintf( stderr, usgfmt, program )
 
-extern char *optarg;
-extern int optind, opterr, optopt;
 extern int vrbflg;
 
 int main ( int argc, char *argv[] )
@@ -84,7 +75,7 @@ int main ( int argc, char *argv[] )
   FILE  *l1_fp = NULL, *h2_fp = NULL, *h1_fp = NULL;
   
   /* parse options */
-  while ( 0 < ( opt = getopt( argc, argv, "hVvL:H:n:" ) ) )
+  while ( 0 < ( opt = LALgetopt( argc, argv, "hVvL:H:n:" ) ) )
   {
     switch ( opt )
     {
@@ -98,20 +89,20 @@ int main ( int argc, char *argv[] )
         vrbflg = 1;
         break;
       case 'L':
-        f_min = (REAL4) atof(optarg);
+        f_min = (REAL4) atof(LALoptarg);
         break;
       case 'H':
-        f_max = (REAL4) atof(optarg);
+        f_max = (REAL4) atof(LALoptarg);
         break;
       case 'n':
-        numpts = atoi(optarg);
+        numpts = atoi(LALoptarg);
         break;
       default:
         usage( program );
         return 1;
     }
   }
-  if ( optind < argc )
+  if ( LALoptind < argc )
   {
     usage( program );
     return 1;

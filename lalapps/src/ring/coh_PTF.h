@@ -23,11 +23,10 @@
 #include <string.h>
 #include <limits.h>
 #include <sys/time.h>
-#include <unistd.h>
-#include <getopt.h>
 #include <ctype.h>
 
 #include <lal/LALDatatypes.h>
+#include <lal/LALgetopt.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/RealFFT.h>
 #include <lal/Units.h>

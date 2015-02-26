@@ -50,7 +50,6 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
 #include <lal/AVFactories.h>
 #include <lal/LALConfig.h>
 #include <lal/LALMalloc.h>

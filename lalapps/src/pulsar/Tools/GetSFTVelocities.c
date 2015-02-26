@@ -42,7 +42,6 @@
 #define FALSE (1==0)
 
 
-#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>

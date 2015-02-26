@@ -30,8 +30,8 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <getopt.h>
 #include <lal/LALFrameL.h>
+#include <lal/LALgetopt.h>
 #include <lal/Date.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLRead.h>
@@ -202,7 +202,7 @@ int main( int argc, char *argv[] )
 
   while (1)
   {
-    /* getopt arguments */
+    /* LALgetopt arguments */
     static struct option long_options[] = 
     {
       {"help",                    no_argument,            0,              'h'},
@@ -214,11 +214,11 @@ int main( int argc, char *argv[] )
     };
     int c;
 
-    /* getopt_long stores the option index here. */
+    /* LALgetopt_long stores the option index here. */
     int option_index = 0;
-    size_t optarg_len;
+    size_t LALoptarg_len;
 
-    c = getopt_long_only ( argc, argv, "hi:o:s:", 
+    c = LALgetopt_long_only ( argc, argv, "hi:o:s:",
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -236,7 +236,7 @@ int main( int argc, char *argv[] )
         else
         {
           fprintf( stderr, "error parsing option %s with argument %s\n",
-              long_options[option_index].name, optarg );
+              long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
         break;
@@ -248,27 +248,27 @@ int main( int argc, char *argv[] )
 
       case 'i':
         /* create storage for the input file name */
-        optarg_len = strlen( optarg ) + 1;
-        inputFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-        memcpy( inputFileName, optarg, optarg_len );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        inputFileName = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
+        memcpy( inputFileName, LALoptarg, LALoptarg_len );
         break;
 
       case 'o':
         /* create storage for the output file name */
-        optarg_len = strlen( optarg ) + 1;
-        outputFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-        memcpy( outputFileName, optarg, optarg_len );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        outputFileName = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
+        memcpy( outputFileName, LALoptarg, LALoptarg_len );
         break;
 
     case 'd':
         /* create storage for the output file name */
-        optarg_len = strlen( optarg ) + 1;
-        ifo = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-        memcpy( ifo, optarg, optarg_len );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        ifo = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
+        memcpy( ifo, LALoptarg, LALoptarg_len );
         break;
 
       case 's':
-        snrMin = (double) atof( optarg );
+        snrMin = (double) atof( LALoptarg );
         if ( snrMin < 0 )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
@@ -289,12 +289,12 @@ int main( int argc, char *argv[] )
     }   
   }
 
-  if ( optind < argc )
+  if ( LALoptind < argc )
   {
     fprintf( stderr, "extraneous command line arguments:\n" );
-    while ( optind < argc )
+    while ( LALoptind < argc )
     {
-      fprintf ( stderr, "%s\n", argv[optind++] );
+      fprintf ( stderr, "%s\n", argv[LALoptind++] );
     }
     exit( 1 );
   }

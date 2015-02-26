@@ -17,9 +17,9 @@
 *  MA  02111-1307  USA
 */
 
-#include <getopt.h>
 
 #include <lal/LALStdlib.h>
+#include <lal/LALgetopt.h>
 #include <lal/XLALError.h>
 #include <lal/LALString.h>
 #include <lal/FileIO.h>
@@ -53,7 +53,7 @@ int main(int argc, char **argv){
     int option_index = 0;
     int c;
 
-    c = getopt_long( argc, argv, args, long_options, &option_index );
+    c = LALgetopt_long( argc, argv, args, long_options, &option_index );
     if ( c == -1 ) /* end of options */
       break;
 
@@ -62,12 +62,12 @@ int main(int argc, char **argv){
         if ( long_options[option_index].flag )
           break;
         else
-          fprintf(stderr, "Error parsing option %s with argument %s\n", long_options[option_index].name, optarg );
+          fprintf(stderr, "Error parsing option %s with argument %s\n", long_options[option_index].name, LALoptarg );
       case 'h': /* help message */
         fprintf(stderr, USAGE, program);
         exit(0);
       case 'f': /* input file */
-        filename = XLALStringDuplicate( optarg );
+        filename = XLALStringDuplicate( LALoptarg );
         break;
       case 'g': /* gzip the file */
         gzip = 1;

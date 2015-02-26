@@ -367,9 +367,9 @@
  */
 
 #include <ctype.h>
-#include <getopt.h>
 #include <lalapps.h>
 #include <lal/Date.h>
+#include <lal/LALgetopt.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataInspiralUtils.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
@@ -1862,7 +1862,7 @@ int main( int argc, char *argv[] )
   REAL8FrequencySeries *virgoPsd = NULL;
   status=blank_status;
 
-  /* getopt arguments */
+  /* LALgetopt arguments */
   struct option long_options[] =
   {
     {"help",                    no_argument,       0,                'h'},
@@ -1982,12 +1982,12 @@ int main( int argc, char *argv[] )
   /* parse the arguments */
   while ( 1 )
   {
-    /* getopt_long stores long option here */
+    /* LALgetopt_long stores long option here */
     int option_index = 0;
     long int gpsinput;
-    size_t optarg_len;
+    size_t LALoptarg_len;
 
-    c = getopt_long_only( argc, argv,
+    c = LALgetopt_long_only( argc, argv,
         "hf:m:a:b:t:s:w:i:M:*", long_options, &option_index );
 
     /* detect the end of the options */
@@ -2007,56 +2007,56 @@ int main( int argc, char *argv[] )
         else
         {
           fprintf( stderr, "error parsing option %s with argument %s\n",
-              long_options[option_index].name, optarg );
+              long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
         break;
 
       case 'f':
-        optarg_len = strlen( optarg ) + 1;
-        sourceFileName = calloc( 1, optarg_len * sizeof(char) );
-        memcpy( sourceFileName, optarg, optarg_len * sizeof(char) );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        sourceFileName = calloc( 1, LALoptarg_len * sizeof(char) );
+        memcpy( sourceFileName, LALoptarg, LALoptarg_len * sizeof(char) );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name, "string",
-              "%s", optarg );
+              "%s", LALoptarg );
         break;
 
       case 'm':
-        optarg_len = strlen( optarg ) + 1;
-        massFileName = calloc( 1, optarg_len * sizeof(char) );
-        memcpy( massFileName, optarg, optarg_len * sizeof(char) );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        massFileName = calloc( 1, LALoptarg_len * sizeof(char) );
+        memcpy( massFileName, LALoptarg, LALoptarg_len * sizeof(char) );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name, "string",
-              "%s", optarg );
+              "%s", LALoptarg );
         break;
 
       case 'c':
-        optarg_len = strlen( optarg ) + 1;
-        nrFileName = calloc( 1, optarg_len * sizeof(char) );
-        memcpy( nrFileName, optarg, optarg_len * sizeof(char) );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        nrFileName = calloc( 1, LALoptarg_len * sizeof(char) );
+        memcpy( nrFileName, LALoptarg, LALoptarg_len * sizeof(char) );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name, "string",
-              "%s", optarg );
+              "%s", LALoptarg );
         break;
 
       case 'E':
-        optarg_len = strlen( optarg ) + 1;
-        exttrigFileName = calloc( 1, optarg_len * sizeof(char) );
-        memcpy( exttrigFileName, optarg, optarg_len * sizeof(char) );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        exttrigFileName = calloc( 1, LALoptarg_len * sizeof(char) );
+        memcpy( exttrigFileName, LALoptarg, LALoptarg_len * sizeof(char) );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name, "string",
-              "%s", optarg );
+              "%s", LALoptarg );
         break;
 
       case 'F':
-        fLower = atof( optarg );
+        fLower = atof( LALoptarg );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name, "float",
               "%f", fLower );
         break;
 
       case 'a':
-        gpsinput = atol( optarg );
+        gpsinput = atol( LALoptarg );
         if ( gpsinput < 441417609 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -2074,7 +2074,7 @@ int main( int argc, char *argv[] )
         break;
 
       case 'b':
-        gpsinput = atol( optarg );
+        gpsinput = atol( LALoptarg );
         if ( gpsinput < 441417609 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -2092,7 +2092,7 @@ int main( int argc, char *argv[] )
         break;
 
       case '"':
-        gpsinput = atol( optarg );
+        gpsinput = atol( LALoptarg );
         if ( gpsinput < 441417609 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -2109,15 +2109,15 @@ int main( int argc, char *argv[] )
         break;
 
       case 's':
-        rand_seed = atoi( optarg );
+        rand_seed = atoi( LALoptarg );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name, "int",
               "%d", rand_seed );
         break;
 
       case '(':
-        optarg_len = strlen( optarg ) + 1;
-        memcpy( dummy, optarg, optarg_len );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        memcpy( dummy, LALoptarg, LALoptarg_len );
 
         if (!strcmp(dummy, "fixed"))
         {
@@ -2137,13 +2137,13 @@ int main( int argc, char *argv[] )
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown time distribution: %s must be one of\n"
               "fixed, uniform or exponential\n",
-              long_options[option_index].name, optarg );
+              long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
         break;
 
       case ')':
-        localRate = atof( optarg );
+        localRate = atof( LALoptarg );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name, "float",
               "%le", localRate );
@@ -2158,28 +2158,28 @@ int main( int argc, char *argv[] )
         break;
 
       case 't':
-        meanTimeStep = atof( optarg );
+        meanTimeStep = atof( LALoptarg );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name, "float",
               "%le", meanTimeStep );
         break;
 
       case 'i':
-        timeInterval = atof( optarg );
+        timeInterval = atof( LALoptarg );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name, "float",
               "%le", timeInterval );
         break;
 
       case 'w':
-        snprintf( waveform, LIGOMETA_WAVEFORM_MAX, "%s", optarg );
+        snprintf( waveform, LIGOMETA_WAVEFORM_MAX, "%s", LALoptarg );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name, "string",
-              "%s", optarg );
+              "%s", LALoptarg );
         break;
 
       case 'q':
-        amp_order = atof( optarg );
+        amp_order = atof( LALoptarg );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name, "int",
               "%ld", amp_order );
@@ -2187,7 +2187,7 @@ int main( int argc, char *argv[] )
 
       case 'M':
         /* set the luminosity of the Milky Way */
-        mwLuminosity = atof( optarg );
+        mwLuminosity = atof( LALoptarg );
         if ( mwLuminosity < 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -2212,9 +2212,9 @@ int main( int argc, char *argv[] )
 
       case 'Z':
         /* create storage for the usertag */
-        optarg_len = strlen( optarg ) + 1;
-        userTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
-        memcpy( userTag, optarg, optarg_len );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        userTag = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR) );
+        memcpy( userTag, LALoptarg, LALoptarg_len );
 
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
@@ -2223,12 +2223,12 @@ int main( int argc, char *argv[] )
         snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--userTag" );
         snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
         snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
-            optarg );
+            LALoptarg );
         break;
 
       case 'd':
-        optarg_len = strlen( optarg ) + 1;
-        memcpy( dummy, optarg, optarg_len );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        memcpy( dummy, LALoptarg, LALoptarg_len );
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
         snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s",
@@ -2236,7 +2236,7 @@ int main( int argc, char *argv[] )
         snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--m-distr" );
         snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
         snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
-            optarg );
+            LALoptarg );
 
         if (!strcmp(dummy, "source"))
         {
@@ -2289,133 +2289,133 @@ int main( int argc, char *argv[] )
               "(source, nrwaves, totalMass, componentMass, gaussian, log,\n"
               "totalMassRatio, totalMassFraction, logTotalMassUniformMassRatio,\n"
               "m1m2SquareGrid, fixMasses)\n",
-              long_options[option_index].name, optarg );
+              long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
         break;
 
       case 'j':
-        minMass1 = atof( optarg );
+        minMass1 = atof( LALoptarg );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
               "float", "%le", minMass1 );
         break;
 
       case 'k':
-        maxMass1 = atof( optarg );
+        maxMass1 = atof( LALoptarg );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
               "float", "%le", maxMass1 );
         break;
 
       case 'J':
-        minMass2 = atof( optarg );
+        minMass2 = atof( LALoptarg );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
               "float", "%le", minMass2 );
         break;
 
       case 'K':
-        maxMass2 = atof( optarg );
+        maxMass2 = atof( LALoptarg );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
               "float", "%le", maxMass2 );
         break;
 
       case 'A':
-        minMtotal = atof( optarg );
+        minMtotal = atof( LALoptarg );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
               "float", "%le", minMtotal );
         break;
 
       case 'L':
-        maxMtotal = atof( optarg );
+        maxMtotal = atof( LALoptarg );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
               "float", "%le", maxMtotal );
         break;
 
       case 'n':
-        meanMass1 = atof( optarg );
+        meanMass1 = atof( LALoptarg );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
               "float", "%le", meanMass1 );
         break;
 
       case 'N':
-        meanMass2 = atof( optarg );
+        meanMass2 = atof( LALoptarg );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
               "float", "%le", meanMass2 );
         break;
 
       case 'o':
-        massStdev1 = atof( optarg );
+        massStdev1 = atof( LALoptarg );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
               "float", "%le", massStdev1 );
         break;
 
       case 'O':
-        massStdev2 = atof( optarg );
+        massStdev2 = atof( LALoptarg );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
               "float", "%le", massStdev2 );
         break;
 
       case 'x':
-        minMassRatio = atof( optarg );
+        minMassRatio = atof( LALoptarg );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
               "float", "%le", minMassRatio );
         break;
 
       case 'y':
-        maxMassRatio = atof( optarg );
+        maxMassRatio = atof( LALoptarg );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
               "float", "%le", maxMassRatio );
         break;
 
       case ':':
-        pntMass1 = atof( optarg );
+        pntMass1 = atof( LALoptarg );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
               "int", "%d", pntMass1 );
         break;
 
       case ';':
-        pntMass2 = atof( optarg );
+        pntMass2 = atof( LALoptarg );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
               "int", "%d", pntMass2 );
         break;
 
       case ']':
-        fixedMass1 = atof( optarg );
+        fixedMass1 = atof( LALoptarg );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
               "float", "%f", fixedMass1 );
         break;
 
       case '[':
-        fixedMass2 = atof( optarg );
+        fixedMass2 = atof( LALoptarg );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
               "float", "%f", fixedMass2 );
         break;
 
       case 'e':
-        optarg_len = strlen( optarg ) + 1;
-        memcpy( dummy, optarg, optarg_len );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        memcpy( dummy, LALoptarg, LALoptarg_len );
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
         snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s",
             PROGRAM_NAME );
         snprintf( this_proc_param->param,LIGOMETA_PARAM_MAX,"--d-distr" );
         snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-        snprintf( this_proc_param->value,LIGOMETA_VALUE_MAX,"%s", optarg );
+        snprintf( this_proc_param->value,LIGOMETA_VALUE_MAX,"%s", LALoptarg );
         haveLoudness += 1;  /* counter to check for clashing options */
 
         if (!strcmp(dummy, "source"))
@@ -2443,21 +2443,21 @@ int main( int argc, char *argv[] )
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown distance distribution: "
               "%s, must be one of (uniform, distancesquared, volume, log10, source)\n",
-              long_options[option_index].name, optarg );
+              long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
         break;
 
       case ',':
-        optarg_len = strlen( optarg ) + 1;
-        memcpy( dummy, optarg, optarg_len );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        memcpy( dummy, LALoptarg, LALoptarg_len );
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
         snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s",
             PROGRAM_NAME );
         snprintf( this_proc_param->param,LIGOMETA_PARAM_MAX,"--dchirp-distr" );
         snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-        snprintf( this_proc_param->value,LIGOMETA_VALUE_MAX,"%s", optarg );
+        snprintf( this_proc_param->value,LIGOMETA_VALUE_MAX,"%s", LALoptarg );
         haveLoudness += 1; /* counter to check for clashing options */
         useChirpDist = 1;
 
@@ -2482,14 +2482,14 @@ int main( int argc, char *argv[] )
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown distribution: "
               "%s, must be one of (uniform, distancesquared, volume, log10)\n",
-              long_options[option_index].name, optarg );
+              long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
         break;
 
       case 'p':
         /* minimum distance from earth */
-        minD = (REAL4) atof( optarg );
+        minD = (REAL4) atof( LALoptarg );
         if ( minD <= 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -2505,7 +2505,7 @@ int main( int argc, char *argv[] )
 
       case 'r':
         /* max distance from earth */
-        maxD = (REAL4) atof( optarg );
+        maxD = (REAL4) atof( LALoptarg );
         if ( maxD <= 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -2520,15 +2520,15 @@ int main( int argc, char *argv[] )
         break;
 
       case '5':
-        optarg_len = strlen( optarg ) + 1;
-        memcpy( dummy, optarg, optarg_len );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        memcpy( dummy, LALoptarg, LALoptarg_len );
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
         snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s",
             PROGRAM_NAME );
         snprintf( this_proc_param->param,LIGOMETA_PARAM_MAX,"--z-distr" );
         snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-        snprintf( this_proc_param->value,LIGOMETA_VALUE_MAX,"%s", optarg );
+        snprintf( this_proc_param->value,LIGOMETA_VALUE_MAX,"%s", LALoptarg );
         haveLoudness += 1; /* counter to check for clashing options */
 
         if (!strcmp(dummy, "sfr"))
@@ -2540,13 +2540,13 @@ int main( int argc, char *argv[] )
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown redshift distribution: "
               "%s, must be sfr (other distributions may be implemented in future)\n",
-              long_options[option_index].name, optarg );
+              long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
         break;
 
       case '6':
-        minZ = atof( optarg );
+        minZ = atof( LALoptarg );
         this_proc_param = this_proc_param->next =
             next_process_param( long_options[option_index].name,
             "float", "%le", minZ );
@@ -2554,13 +2554,13 @@ int main( int argc, char *argv[] )
         {
           fprintf(stderr,"invalid argument to --%s:\n"
                   "%s must not be less than 0.\n",
-                  long_options[option_index].name, optarg );
+                  long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
         break;
 
       case '7':
-        maxZ = atof( optarg );
+        maxZ = atof( LALoptarg );
         this_proc_param = this_proc_param->next =
             next_process_param( long_options[option_index].name,
             "float", "%le", maxZ );
@@ -2568,21 +2568,21 @@ int main( int argc, char *argv[] )
         {
           fprintf(stderr,"invalid argument to --%s:\n"
                   "%s must not be less than 0.\n",
-                  long_options[option_index].name, optarg );
+                  long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
         break;
 
       case '1':
-        optarg_len = strlen( optarg ) + 1;
-        memcpy( dummy, optarg, optarg_len );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        memcpy( dummy, LALoptarg, LALoptarg_len );
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
         snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s",
             PROGRAM_NAME );
         snprintf( this_proc_param->param,LIGOMETA_PARAM_MAX,"--snr-distr" );
         snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-        snprintf( this_proc_param->value,LIGOMETA_VALUE_MAX,"%s", optarg );
+        snprintf( this_proc_param->value,LIGOMETA_VALUE_MAX,"%s", LALoptarg );
         haveLoudness += 1; /* counter to check for clashing options */
 
         if (!strcmp(dummy, "uniform"))
@@ -2602,13 +2602,13 @@ int main( int argc, char *argv[] )
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown SNR distribution: "
               "%s, must be uniform, log10, or volume \n",
-              long_options[option_index].name, optarg );
+              long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
         break;
 
       case '2':
-        minSNR = atof( optarg );
+        minSNR = atof( LALoptarg );
         this_proc_param = this_proc_param->next =
             next_process_param( long_options[option_index].name,
             "float", "%le", minSNR );
@@ -2616,13 +2616,13 @@ int main( int argc, char *argv[] )
         {
           fprintf(stderr,"invalid argument to --%s:\n"
                   "%s must be greater than 2\n",
-                  long_options[option_index].name, optarg );
+                  long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
         break;
 
       case '3':
-        maxSNR = atof( optarg );
+        maxSNR = atof( LALoptarg );
         this_proc_param = this_proc_param->next =
             next_process_param( long_options[option_index].name,
             "float", "%le", maxSNR );
@@ -2630,23 +2630,23 @@ int main( int argc, char *argv[] )
         {
           fprintf(stderr,"invalid argument to --%s:\n"
                   "%s must be greater than 2\n",
-                  long_options[option_index].name, optarg );
+                  long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
         break;
 
       case '4':
-        optarg_len = strlen( optarg ) + 1;
-        ifos       = calloc( 1, optarg_len * sizeof(char) );
-        memcpy( ifos, optarg, optarg_len * sizeof(char) );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        ifos       = calloc( 1, LALoptarg_len * sizeof(char) );
+        memcpy( ifos, LALoptarg, LALoptarg_len * sizeof(char) );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name, "string",
-              "%s", optarg );
+              "%s", LALoptarg );
         break;
 
       case 'l':
-        optarg_len = strlen( optarg ) + 1;
-        memcpy( dummy, optarg, optarg_len );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        memcpy( dummy, LALoptarg, LALoptarg_len );
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
         snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s",
@@ -2654,7 +2654,7 @@ int main( int argc, char *argv[] )
         snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--l-distr" );
         snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
         snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
-            optarg );
+            LALoptarg );
 
         if (!strcmp(dummy, "source"))
         {
@@ -2681,7 +2681,7 @@ int main( int argc, char *argv[] )
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown location distribution: "
               "%s must be one of (source, random)\n",
-              long_options[option_index].name, optarg );
+              long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
 
@@ -2690,10 +2690,10 @@ int main( int argc, char *argv[] )
       case 'H':
         /* Turn on galaxy catalog completion function */
         srcComplete = 1;
-        srcCompleteDist = (REAL8) atof( optarg );
+        srcCompleteDist = (REAL8) atof( LALoptarg );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name, 
-              "string", "%s", optarg );
+              "string", "%s", LALoptarg );
         break;
 
       case '.':
@@ -2703,7 +2703,7 @@ int main( int argc, char *argv[] )
 
       case 'v':
         /* fixed location (longitude) */
-        longitude =  atof( optarg )*LAL_PI_180 ;
+        longitude =  atof( LALoptarg )*LAL_PI_180 ;
         if (longitude <= (  LAL_PI + epsAngle ) && \
             longitude >= ( -LAL_PI - epsAngle ))
         {
@@ -2715,14 +2715,14 @@ int main( int argc, char *argv[] )
         {
           fprintf(stderr,"invalid argument to --%s:\n"
                   "%s must be between -180. and 180. degrees\n",
-                  long_options[option_index].name, optarg );
+                  long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
         break;
 
       case 'z':
         /* fixed location (latitude) */
-        latitude = (REAL4) atof( optarg )*LAL_PI_180;
+        latitude = (REAL4) atof( LALoptarg )*LAL_PI_180;
         if (latitude <= (  LAL_PI/2. + epsAngle ) && \
             latitude >= ( -LAL_PI/2. - epsAngle ))
         {
@@ -2734,14 +2734,14 @@ int main( int argc, char *argv[] )
         {
           fprintf(stderr,"invalid argument to --%s:\n"
                   "%s must be between -90. and 90. degrees\n",
-                  long_options[option_index].name, optarg );
+                  long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
         break;
 
       case 'I':
-        optarg_len = strlen( optarg ) + 1;
-        memcpy( dummy, optarg, optarg_len );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        memcpy( dummy, LALoptarg, LALoptarg_len );
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
         snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s",
@@ -2749,7 +2749,7 @@ int main( int argc, char *argv[] )
         snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--i-distr" );
         snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
         snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
-            optarg );
+            LALoptarg );
 
         if (!strcmp(dummy, "uniform"))
         {
@@ -2768,14 +2768,14 @@ int main( int argc, char *argv[] )
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown inclination distribution: "
               "%s must be one of (uniform, gaussian, fixed)\n",
-              long_options[option_index].name, optarg );
+              long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
         break;
 
       case 'B':
         /* gaussian width for inclination */
-        inclStd = (REAL4) atof( optarg );
+        inclStd = (REAL4) atof( LALoptarg );
         if ( inclStd <= 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -2791,7 +2791,7 @@ int main( int argc, char *argv[] )
 
       case 'C':
         /* fixed angle of inclination */
-        fixed_inc = (REAL4) atof( optarg )/180.*LAL_PI;
+        fixed_inc = (REAL4) atof( LALoptarg )/180.*LAL_PI;
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
               "float", "%e", fixed_inc );
@@ -2799,12 +2799,12 @@ int main( int argc, char *argv[] )
 
       case 1001:
         /* maximum angle of inclination */
-        max_inc = (REAL4) atof( optarg )/180.*LAL_PI;
-        if ( (atof(optarg) < 0.) || (atof(optarg) >= 180.) ) {
+        max_inc = (REAL4) atof( LALoptarg )/180.*LAL_PI;
+        if ( (atof(LALoptarg) < 0.) || (atof(LALoptarg) >= 180.) ) {
           fprintf( stderr, "invalid argument to --%s:\n"
               "maximum inclination angle must be between 0 and 180 degrees:"
               "(%s specified)\n",
-              long_options[option_index].name, optarg );
+              long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
         this_proc_param = this_proc_param->next =
@@ -2814,14 +2814,14 @@ int main( int argc, char *argv[] )
 
       case 1007:
         /* coalescence phase distribution */
-        if ( strcmp( optarg, "uniform" ) == 0)
+        if ( strcmp( LALoptarg, "uniform" ) == 0)
           coaPhaseFixed = 0;
-        else if ( strcmp( optarg, "fixed" ) == 0)
+        else if ( strcmp( LALoptarg, "fixed" ) == 0)
           coaPhaseFixed = 1;
         else {
           fprintf( stderr, "invalid argument to --%s:\n"
               "must either uniform or fixed (%s specified)\n",
-              long_options[option_index].name, optarg );
+              long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
@@ -2831,17 +2831,17 @@ int main( int argc, char *argv[] )
         snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--coa-phase-distr" );
         snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
         snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
-            optarg );
+            LALoptarg );
         break;
 
      case 1008:
         /* fixed coalescence phase */
-        fixedCoaPhase = (REAL4) atof( optarg );
+        fixedCoaPhase = (REAL4) atof( LALoptarg );
         if ( (fixedCoaPhase < 0.) || (fixedCoaPhase >= 360.) ) {
           fprintf( stderr, "invalid argument to --%s:\n"
               "fixed coalescence phase must be between 0 and 360 degrees:"
               "(%s specified)\n",
-              long_options[option_index].name, optarg );
+              long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
         this_proc_param = this_proc_param->next =
@@ -2852,12 +2852,12 @@ int main( int argc, char *argv[] )
 
       case 'S':
         /* set the polarization angle */
-        psi = (REAL4) atof( optarg )/180.*LAL_PI;
-        if ( (atof(optarg) < 0.) || (atof(optarg) >= 360.) ) {
+        psi = (REAL4) atof( LALoptarg )/180.*LAL_PI;
+        if ( (atof(LALoptarg) < 0.) || (atof(LALoptarg) >= 360.) ) {
           fprintf( stderr, "invalid argument to --%s:\n"
               "polarization angle must be between 0 and 360 degrees: "
               "(%s specified)\n",
-              long_options[option_index].name, optarg );
+              long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
         this_proc_param = this_proc_param->next =
@@ -2866,122 +2866,122 @@ int main( int argc, char *argv[] )
         break;
 
       case 'P':
-        optarg_len = strlen( optarg ) + 1;
-        outputFileName = calloc( 1, optarg_len * sizeof(char) );
-        memcpy( outputFileName, optarg, optarg_len * sizeof(char) );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        outputFileName = calloc( 1, LALoptarg_len * sizeof(char) );
+        memcpy( outputFileName, LALoptarg, LALoptarg_len * sizeof(char) );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
-              "string", "%s", optarg );
+              "string", "%s", LALoptarg );
         break;
 
       case 500:  /* LIGO psd file */
-        optarg_len      = strlen( optarg ) + 1;
-        ligoPsdFileName = calloc( 1, optarg_len * sizeof(char) );
-        memcpy( ligoPsdFileName, optarg, optarg_len * sizeof(char) );
+        LALoptarg_len      = strlen( LALoptarg ) + 1;
+        ligoPsdFileName = calloc( 1, LALoptarg_len * sizeof(char) );
+        memcpy( ligoPsdFileName, LALoptarg, LALoptarg_len * sizeof(char) );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
-              "string", "%s", optarg );
+              "string", "%s", LALoptarg );
         break;
 
       case 501:  /* LIGO fake LALSim PSD */
-        optarg_len      = strlen( optarg ) + 1;
-        ligoFakePsd = calloc( 1, optarg_len * sizeof(char) );
-        memcpy( ligoFakePsd, optarg, optarg_len * sizeof(char) );
+        LALoptarg_len      = strlen( LALoptarg ) + 1;
+        ligoFakePsd = calloc( 1, LALoptarg_len * sizeof(char) );
+        memcpy( ligoFakePsd, LALoptarg, LALoptarg_len * sizeof(char) );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
-              "string", "%s", optarg );
+              "string", "%s", LALoptarg );
         break;
 
       case 502:  /* LIGO start frequency */
-        ligoStartFreq = (REAL8) atof( optarg );
+        ligoStartFreq = (REAL8) atof( LALoptarg );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
               "float", "%f", ligoStartFreq );
         break;
 
       case 600:  /* Virgo psd file */
-        optarg_len       = strlen( optarg ) + 1;
-        virgoPsdFileName = calloc( 1, optarg_len * sizeof(char) );
-        memcpy( virgoPsdFileName, optarg, optarg_len * sizeof(char) );
+        LALoptarg_len       = strlen( LALoptarg ) + 1;
+        virgoPsdFileName = calloc( 1, LALoptarg_len * sizeof(char) );
+        memcpy( virgoPsdFileName, LALoptarg, LALoptarg_len * sizeof(char) );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
-              "string", "%s", optarg );
+              "string", "%s", LALoptarg );
         break;
 
       case 601:  /* Virgo fake LALSim PSD */
-        optarg_len      = strlen( optarg ) + 1;
-        virgoFakePsd = calloc( 1, optarg_len * sizeof(char) );
-        memcpy( virgoFakePsd, optarg, optarg_len * sizeof(char) );
+        LALoptarg_len      = strlen( LALoptarg ) + 1;
+        virgoFakePsd = calloc( 1, LALoptarg_len * sizeof(char) );
+        memcpy( virgoFakePsd, LALoptarg, LALoptarg_len * sizeof(char) );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
-              "string", "%s", optarg );
+              "string", "%s", LALoptarg );
         break;
 
       case 602:  /* Virgo start frequency */
-        virgoStartFreq = (REAL8) atof( optarg );
+        virgoStartFreq = (REAL8) atof( LALoptarg );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
               "float", "%f", virgoStartFreq );
         break;
 
       case 1707: /* Set min coincident SNR in two IFOs */
-        single_IFO_SNR_threshold=(REAL8) atof(optarg);
+        single_IFO_SNR_threshold=(REAL8) atof(LALoptarg);
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
               "float", "%e", single_IFO_SNR_threshold );
         break;
 
       case 'g':
-        minSpin1 = atof( optarg );
+        minSpin1 = atof( LALoptarg );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
               "float", "%le", minSpin1 );
         break;
 
       case 'G':
-        maxSpin1 = atof( optarg );
+        maxSpin1 = atof( LALoptarg );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
               "float", "%le", maxSpin1 );
         break;
 
       case 'Q':
-        minKappa1 = atof( optarg );
+        minKappa1 = atof( LALoptarg );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
               "float", "%le", minKappa1 );
         break;
 
       case 'R':
-        maxKappa1 = atof( optarg );
+        maxKappa1 = atof( LALoptarg );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
               "float", "%le", maxKappa1 );
         break;
 
       case 'X':
-        minabsKappa1 = atof( optarg );
+        minabsKappa1 = atof( LALoptarg );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
               "float", "%le", minabsKappa1 );
         break;
 
       case 'Y':
-        maxabsKappa1 = atof( optarg );
+        maxabsKappa1 = atof( LALoptarg );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
               "float", "%le", maxabsKappa1 );
         break;
 
       case 'u':
-        minSpin2 = atof( optarg );
+        minSpin2 = atof( LALoptarg );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
               "float", "%le", minSpin2 );
         break;
 
       case 'U':
-        maxSpin2 = atof( optarg );
+        maxSpin2 = atof( LALoptarg );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
               "float", "%le", maxSpin2 );
@@ -3036,15 +3036,15 @@ int main( int argc, char *argv[] )
 
       case '*':
         /* Set injection tapering */
-        if ( ! strcmp( "start", optarg ) )
+        if ( ! strcmp( "start", LALoptarg ) )
         {
             taperInj = LAL_SIM_INSPIRAL_TAPER_START;
         }
-        else if ( ! strcmp( "end", optarg ) )
+        else if ( ! strcmp( "end", LALoptarg ) )
         {
             taperInj = LAL_SIM_INSPIRAL_TAPER_END;
         }
-        else if ( ! strcmp( "startend", optarg ) )
+        else if ( ! strcmp( "startend", LALoptarg ) )
         {
             taperInj = LAL_SIM_INSPIRAL_TAPER_STARTEND;
         }
@@ -3053,11 +3053,11 @@ int main( int argc, char *argv[] )
             fprintf( stderr, "invalid argument to --%s:\n"
                     "unknown option specified: %s\n"
                     "(Must be one of start|end|startend)\n",
-                    long_options[option_index].name, optarg );
+                    long_options[option_index].name, LALoptarg );
         }
         this_proc_param = this_proc_param->next =
                 next_process_param( long_options[option_index].name,
-                        "string", optarg );
+                        "string", LALoptarg );
         break;
 
       case 'h':
@@ -3071,12 +3071,12 @@ int main( int argc, char *argv[] )
         break;
 
       case '^':
-        optarg_len = strlen( optarg ) + 1;
-        IPNSkyPositionsFile = calloc( 1, optarg_len * sizeof(char) );
-        memcpy( IPNSkyPositionsFile, optarg, optarg_len * sizeof(char) );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        IPNSkyPositionsFile = calloc( 1, LALoptarg_len * sizeof(char) );
+        memcpy( IPNSkyPositionsFile, LALoptarg, LALoptarg_len * sizeof(char) );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name, "string",
-              "%s", optarg );
+              "%s", LALoptarg );
         break;
 
       case 1002:
@@ -3086,26 +3086,26 @@ int main( int argc, char *argv[] )
         break;
 
       case 1003:
-        Spin1Std = atof( optarg );
+        Spin1Std = atof( LALoptarg );
         this_proc_param = this_proc_param->next =
         next_process_param( long_options[option_index].name,
           "float", "%le", Spin1Std );
         break;
 
       case 1004:
-        Spin2Std = atof( optarg );
+        Spin2Std = atof( LALoptarg );
         this_proc_param = this_proc_param->next =
         next_process_param( long_options[option_index].name,
           "float", "%le", Spin2Std );
         break;
       case 1005:
-        meanSpin1 = atof( optarg );
+        meanSpin1 = atof( LALoptarg );
         this_proc_param = this_proc_param->next =
         next_process_param( long_options[option_index].name,
           "float", "%le", meanSpin1 );
         break;
       case 1006:
-        meanSpin2 = atof( optarg );
+        meanSpin2 = atof( LALoptarg );
         this_proc_param = this_proc_param->next =
         next_process_param( long_options[option_index].name,
           "float", "%le", meanSpin2 );

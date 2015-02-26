@@ -27,11 +27,11 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <getopt.h>
 #include <stdarg.h>
 #include "gsl/gsl_interp.h"
 #include <gsl/gsl_errno.h>
 #include <lal/cs_cosmo.h>
+#include <lal/LALgetopt.h>
 #include <lal/cs_lambda_cosmo.h>
 #include <lal/LALStdio.h>
 
@@ -275,7 +275,7 @@ int ReadEfficiencyFile(struct CommandLineArgsTag CLA)
 int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 {
   int errflg = 0;
-  optarg = NULL;
+  LALoptarg = NULL;
 
   struct option long_options[] = {
     {"frequency",                   required_argument, NULL,           'a'},
@@ -304,10 +304,10 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   /* Scan through list of command line arguments */
   while ( 1 )
   {
-    int option_index = 0; /* getopt_long stores long option here */
+    int option_index = 0; /* LALgetopt_long stores long option here */
     int c;
 
-    c = getopt_long_only( argc, argv, args, long_options, &option_index );
+    c = LALgetopt_long_only( argc, argv, args, long_options, &option_index );
     if ( c == -1 ) /* end of options */
       break;
 
@@ -316,35 +316,35 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 
     case 'a':
       /* lowest frequency  */
-      CLA->f=atof(optarg);
+      CLA->f=atof(LALoptarg);
       break;
     case 'b':
       /* lowest frequency  */
-      CLA->logGmustart=atof(optarg);
+      CLA->logGmustart=atof(LALoptarg);
       break;
     case 'c':
       /* highest frequency */
-      CLA->logGmuend=atof(optarg);
+      CLA->logGmuend=atof(LALoptarg);
       break;
     case 'd':
       /* number of frequencies to do */
-      CLA->nGmu=atoi(optarg);
+      CLA->nGmu=atoi(LALoptarg);
       break;
     case 'e':
       /* highest frequency */
-      CLA->logpstart=atof(optarg);
+      CLA->logpstart=atof(LALoptarg);
       break;
     case 'f':
       /* number of frequencies to do */
-      CLA->logpend=atof(optarg);
+      CLA->logpend=atof(LALoptarg);
       break;
     case 'g':
       /* number of frequencies to do */
-      CLA->np=atoi(optarg);
+      CLA->np=atoi(LALoptarg);
       break;
     case 'i':
       /* number of frequencies to do */
-      CLA->efficiencyfile=optarg;
+      CLA->efficiencyfile=LALoptarg;
       break;
     case 'h':
       /* print usage/help message */

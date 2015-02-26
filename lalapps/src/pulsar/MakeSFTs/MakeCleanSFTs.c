@@ -64,7 +64,6 @@ version 2 of the License, or
 int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", stderr);return 1;}
 #else
 
-#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -75,10 +74,10 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <time.h>
 #include <glob.h>
 #include <errno.h>
-#include <getopt.h>
 #include <stdarg.h>
 
 #include <lal/LALDatatypes.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>
@@ -96,9 +95,6 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/RealFFT.h>
 #include <lal/ComplexFFT.h>
 #include <lal/SFTfileIO.h>
-
-extern char *optarg;
-extern int optind, opterr, optopt;
 
 /* track memory usage under linux */
 #define TRACKMEMUSE 0
@@ -669,10 +665,10 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   /* Scan through list of command line arguments */
   while ( 1 )
   {
-    int option_index = 0; /* getopt_long stores long option here */
+    int option_index = 0; /* LALgetopt_long stores long option here */
     int c;
 
-    c = getopt_long_only( argc, argv, args, long_options, &option_index );
+    c = LALgetopt_long_only( argc, argv, args, long_options, &option_index );
     if ( c == -1 ) /* end of options */
       break;
 
@@ -692,82 +688,82 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       break;
     case 'f':
       /* high pass frequency */
-      CLA->HPf=atof(optarg);
+      CLA->HPf=atof(LALoptarg);
       break;
     case 't':
       /* SFT time */
-      CLA->stringT = optarg;  /* 12/27/05 gam; keep pointer to string that gives the SFT duration */
-      CLA->T=atoi(optarg);
+      CLA->stringT = LALoptarg;  /* 12/27/05 gam; keep pointer to string that gives the SFT duration */
+      CLA->T=atoi(LALoptarg);
       break;
     case 'C':
       /* name of frame cache file */
-      CLA->FrCacheFile=optarg;
+      CLA->FrCacheFile=LALoptarg;
       break;
     case 's':
       /* GPS start */
-      CLA->GPSStart=atof(optarg);
+      CLA->GPSStart=atof(LALoptarg);
       break;
     case 'e':
       /* GPS end */
-      CLA->GPSEnd=atof(optarg);
+      CLA->GPSEnd=atof(LALoptarg);
       break;
     case 'F':
       /* 12/28/05 gam; start frequency */
-      FMIN=(REAL8)atof(optarg);
+      FMIN=(REAL8)atof(LALoptarg);
       break;
     case 'B':
       /* 12/28/05 gam; band */
-      DF=(REAL8)atof(optarg);
+      DF=(REAL8)atof(LALoptarg);
       break;
     case 'D':
       /* 12/27/05 gam; make directories based on GPS time */
-      CLA->makeGPSDirs=atof(optarg);
+      CLA->makeGPSDirs=atof(LALoptarg);
       break;
     case 'v':
       /* 12/28/05 gam; output SFT version; default is version 1 SFTs */
-      CLA->sftVersion=atoi(optarg);
+      CLA->sftVersion=atoi(LALoptarg);
       break;
     case 'c':
       /* 12/28/05 gam; comment for version 2 SFTs */
-      /* CLA->commentField=optarg; */ /* 06/26/07 gam */
+      /* CLA->commentField=LALoptarg; */ /* 06/26/07 gam */
       strcat(CLA->commentField, " Additional comment: "); /* 06/26/07 gam; copy all command line args into commentField */      
-      strcat(CLA->commentField,optarg);
+      strcat(CLA->commentField,LALoptarg);
       break;
     case 'X':
       /* 12/28/05 gam; misc. part of the SFT description field in the filename (also used if makeGPSDirs > 0) */
-      CLA->miscDesc=optarg;
+      CLA->miscDesc=LALoptarg;
       break;
     case 'u':
-      CLA->frameStructType=optarg; /* 01/10/07 gam */
+      CLA->frameStructType=LALoptarg; /* 01/10/07 gam */
       break;
     case 'a':
       /* Time domain cleaning procedure; the default is 0.*/
-      CLA->TDcleaningProc=atoi(optarg);
+      CLA->TDcleaningProc=atoi(LALoptarg);
       break;
     case 'b':
       /*Cut frequency for the bilateral highpass filter. It has to be used only if TDcleaningProc is YES.*/
-      CLA->fc=atof(optarg);
+      CLA->fc=atof(LALoptarg);
       break;
    case 'r':
       /*Critical ratio threshold. It has to be used only if TDcleaningProc is YES.*/
-      CLA->cr=atof(optarg);
+      CLA->cr=atof(LALoptarg);
       break;
     case 'w':
       /* 12/28/05 gam; window options; 0 = no window, 1 = default = Matlab style Tukey window; 2 = make_sfts.c Tukey window; 3 = Hann window */
-      CLA->windowOption=atoi(optarg);
+      CLA->windowOption=atoi(LALoptarg);
       break;
     case 'P':
       /* 12/28/05 gam; overlap fraction (for use with windows; e.g., use -P 0.5 with -w 3 Hann windows; default is 1.0). */
-      CLA->overlapFraction=(REAL8)atof(optarg);
+      CLA->overlapFraction=(REAL8)atof(LALoptarg);
       break;
     case 'N':
-      CLA->ChannelName=optarg;       
+      CLA->ChannelName=LALoptarg;
       break;
     case 'i':
-      CLA->IFO=optarg; /* 01/14/07 gam */
+      CLA->IFO=LALoptarg; /* 01/14/07 gam */
       break;
     case 'p':
-      CLA->SFTpath=optarg;       
+      CLA->SFTpath=LALoptarg;
       break;
     case 'h':
       /* print usage/help message */

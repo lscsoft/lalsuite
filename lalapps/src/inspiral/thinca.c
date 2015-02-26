@@ -356,9 +356,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <getopt.h>
 #include <sys/types.h>
 #include <lal/LALStdio.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALStdlib.h>
 #include <lal/Date.h>
 #include <lal/TimeDelay.h>
@@ -656,7 +656,7 @@ int main( int argc, char *argv[] )
                                     "t1-triggers", "v1-triggers"};
 
 
-  /* getopt arguments */
+  /* LALgetopt arguments */
   struct option long_options[] =
   {
     {"verbose",             no_argument,   &vrbflg,                   1 },
@@ -818,12 +818,12 @@ int main( int argc, char *argv[] )
   /* parse the arguments */
   while ( 1 )
   {
-    /* getopt_long stores long option here */
+    /* LALgetopt_long stores long option here */
     int option_index = 0;
     long int gpstime;
-    size_t optarg_len;
+    size_t LALoptarg_len;
 
-    c = getopt_long_only( argc, argv, 
+    c = LALgetopt_long_only( argc, argv,
         "A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:S:T:U:VW:Y:Z:"
         "a:b:c:d:e:f:g:hi:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:"
         "2:3:4:5:6:7:8:9:`:!:-:+:=:@:^:&:*:(:):{:}:[:]:~", 
@@ -846,26 +846,26 @@ int main( int argc, char *argv[] )
         else
         {
           fprintf( stderr, "Error parsing option %s with argument %s\n",
-              long_options[option_index].name, optarg );
+              long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
         break;
 
       case 'a':
         /* set the parameter test */
-        if ( ! strcmp( "m1_and_m2", optarg ) )
+        if ( ! strcmp( "m1_and_m2", LALoptarg ) )
         {
           accuracyParams.test = m1_and_m2;
         }
-        else if ( ! strcmp( "psi0_and_psi3", optarg ) )
+        else if ( ! strcmp( "psi0_and_psi3", LALoptarg ) )
         {
           accuracyParams.test = psi0_and_psi3;
         }
-        else if ( ! strcmp( "mchirp_and_eta", optarg ) )
+        else if ( ! strcmp( "mchirp_and_eta", LALoptarg ) )
         {
           accuracyParams.test = mchirp_and_eta;
         }
-        else if ( ! strcmp( "ellipsoid", optarg ) )
+        else if ( ! strcmp( "ellipsoid", LALoptarg ) )
         {
           accuracyParams.test = ellipsoid;
         }
@@ -874,123 +874,123 @@ int main( int argc, char *argv[] )
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown test specified: "
               "%s (must be m1_and_m2, psi0_and_psi3, mchirp_and_eta or mchirp_and_eta_ext)\n",
-              long_options[option_index].name, optarg );
+              long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
         break;
 
       case 'A':
         /* time accuracy G1, argument is in milliseconds */
-        accuracyParams.ifoAccuracy[LAL_IFO_G1].dt = atof(optarg) * 1000000LL;
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        accuracyParams.ifoAccuracy[LAL_IFO_G1].dt = atof(LALoptarg) * 1000000LL;
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
       
       case 'B':
         /* time accuracy H1, argument is in milliseconds */
-        accuracyParams.ifoAccuracy[LAL_IFO_H1].dt = atof(optarg) * 1000000LL;
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        accuracyParams.ifoAccuracy[LAL_IFO_H1].dt = atof(LALoptarg) * 1000000LL;
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
         
       case 'C':
         /* time accuracy H2, argument is in milliseconds */
-        accuracyParams.ifoAccuracy[LAL_IFO_H2].dt = atof(optarg) * 1000000LL;
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        accuracyParams.ifoAccuracy[LAL_IFO_H2].dt = atof(LALoptarg) * 1000000LL;
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
         
       case 'D':
         /* time accuracy L1, argument is in milliseconds */
-        accuracyParams.ifoAccuracy[LAL_IFO_L1].dt = atof(optarg) * 1000000LL;
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        accuracyParams.ifoAccuracy[LAL_IFO_L1].dt = atof(LALoptarg) * 1000000LL;
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
 
       case 'E':
         /* time accuracy T1, argument is in milliseconds */
-        accuracyParams.ifoAccuracy[LAL_IFO_T1].dt = atof(optarg) * 1000000LL;
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        accuracyParams.ifoAccuracy[LAL_IFO_T1].dt = atof(LALoptarg) * 1000000LL;
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
         
       case 'F':
         /* time accuracy V1, argument is in milliseconds */
-        accuracyParams.ifoAccuracy[LAL_IFO_V1].dt = atof(optarg) * 1000000LL;
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        accuracyParams.ifoAccuracy[LAL_IFO_V1].dt = atof(LALoptarg) * 1000000LL;
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
 
       case 'G':
         /* mass accuracy G1, argument is in solar masses */
-        accuracyParams.ifoAccuracy[LAL_IFO_G1].dm = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        accuracyParams.ifoAccuracy[LAL_IFO_G1].dm = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
       
       case 'H':
         /* mass accuracy H1, argument is in solar masses */
-        accuracyParams.ifoAccuracy[LAL_IFO_H1].dm = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        accuracyParams.ifoAccuracy[LAL_IFO_H1].dm = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
         
       case 'I':
         /* mass accuracy H2, argument is in solar masses */
-        accuracyParams.ifoAccuracy[LAL_IFO_H2].dm = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        accuracyParams.ifoAccuracy[LAL_IFO_H2].dm = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
         
       case 'J':
         /* mass accuracy L1, argument is in solar masses */
-        accuracyParams.ifoAccuracy[LAL_IFO_L1].dm = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        accuracyParams.ifoAccuracy[LAL_IFO_L1].dm = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
 
       case 'K':
         /* mass accuracy T1, argument is in solar masses */
-        accuracyParams.ifoAccuracy[LAL_IFO_T1].dm = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        accuracyParams.ifoAccuracy[LAL_IFO_T1].dm = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
         
       case 'L':
         /* mass accuracy V1, argument is in solar masses */
-        accuracyParams.ifoAccuracy[LAL_IFO_V1].dm = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        accuracyParams.ifoAccuracy[LAL_IFO_V1].dm = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
 
       case 'M':
         /* chirp mass accuracy G1, argument is in solar masses */
-        accuracyParams.ifoAccuracy[LAL_IFO_G1].dmchirp = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        accuracyParams.ifoAccuracy[LAL_IFO_G1].dmchirp = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
       
       case 'N':
         /* chirp mass accuracy H1, argument is in solar masses */
-        accuracyParams.ifoAccuracy[LAL_IFO_H1].dmchirp = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        accuracyParams.ifoAccuracy[LAL_IFO_H1].dmchirp = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
         
       case 'O':
         /* chirp mass accuracy H2, argument is in solar masses */
-        accuracyParams.ifoAccuracy[LAL_IFO_H2].dmchirp = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        accuracyParams.ifoAccuracy[LAL_IFO_H2].dmchirp = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
         
       case 'P':
         /* chirp mass accuracy L1, argument is in solar masses */
-        accuracyParams.ifoAccuracy[LAL_IFO_L1].dmchirp = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        accuracyParams.ifoAccuracy[LAL_IFO_L1].dmchirp = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
 
       case 'Q':
         /* chirp mass accuracy T1, argument is in solar masses */
-        accuracyParams.ifoAccuracy[LAL_IFO_T1].dmchirp = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        accuracyParams.ifoAccuracy[LAL_IFO_T1].dmchirp = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
         
       case 'R':
         /* chirp mass accuracy V1, argument is in solar masses */
-        accuracyParams.ifoAccuracy[LAL_IFO_V1].dmchirp = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        accuracyParams.ifoAccuracy[LAL_IFO_V1].dmchirp = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
        
       case 'b':
         /* slide time for G1 */
-        slideStep[LAL_IFO_G1] = atof( optarg );
+        slideStep[LAL_IFO_G1] = atof( LALoptarg );
         if ( slideStep[LAL_IFO_G1] < 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -1004,7 +1004,7 @@ int main( int argc, char *argv[] )
 
       case 'c':
         /* slide time for H1 */
-        slideStep[LAL_IFO_H1] = atof( optarg );
+        slideStep[LAL_IFO_H1] = atof( LALoptarg );
         if ( slideStep[LAL_IFO_H1] < 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -1018,7 +1018,7 @@ int main( int argc, char *argv[] )
         
       case 'd':
         /* slide time for H2 */
-        slideStep[LAL_IFO_H2] = atof( optarg );
+        slideStep[LAL_IFO_H2] = atof( LALoptarg );
         if ( slideStep[LAL_IFO_H2] < 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -1032,7 +1032,7 @@ int main( int argc, char *argv[] )
         
       case 'e':
         /* slide time for L1 */
-        slideStep[LAL_IFO_L1] = atof( optarg );
+        slideStep[LAL_IFO_L1] = atof( LALoptarg );
         if ( slideStep[LAL_IFO_L1] < 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -1046,7 +1046,7 @@ int main( int argc, char *argv[] )
         
       case 'f':
         /* slide time for T1 */
-        slideStep[LAL_IFO_T1] = atof( optarg );
+        slideStep[LAL_IFO_T1] = atof( LALoptarg );
         if ( slideStep[LAL_IFO_T1] < 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -1060,7 +1060,7 @@ int main( int argc, char *argv[] )
         
       case 'g':
         /* slide time for V1 */
-        slideStep[LAL_IFO_V1] = atof( optarg );
+        slideStep[LAL_IFO_V1] = atof( LALoptarg );
         if ( slideStep[LAL_IFO_V1] < 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -1074,7 +1074,7 @@ int main( int argc, char *argv[] )
 
       case 'T':
         /* num slides*/
-        numSlides = atoi( optarg );
+        numSlides = atoi( LALoptarg );
         if ( numSlides < 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -1088,43 +1088,43 @@ int main( int argc, char *argv[] )
 
       case 'm':
         /* eta accuracy G1, argument is dimensionless */
-        accuracyParams.ifoAccuracy[LAL_IFO_G1].deta = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        accuracyParams.ifoAccuracy[LAL_IFO_G1].deta = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
       
       case 'n':
         /* eta accuracy H1, argument is dimensionless */
-        accuracyParams.ifoAccuracy[LAL_IFO_H1].deta = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        accuracyParams.ifoAccuracy[LAL_IFO_H1].deta = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
         
       case 'o':
         /* eta accuracy H2, argument is dimensionless */
-        accuracyParams.ifoAccuracy[LAL_IFO_H2].deta = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        accuracyParams.ifoAccuracy[LAL_IFO_H2].deta = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
         
       case 'p':
         /* eta accuracy L1, argument is dimensionless */
-        accuracyParams.ifoAccuracy[LAL_IFO_L1].deta = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        accuracyParams.ifoAccuracy[LAL_IFO_L1].deta = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
 
       case 'q':
         /* eta accuracy T1, argument is dimensionless */
-        accuracyParams.ifoAccuracy[LAL_IFO_T1].deta = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        accuracyParams.ifoAccuracy[LAL_IFO_T1].deta = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
         
       case 'r':
         /* eta accuracy V1, argument is dimensionless */
-        accuracyParams.ifoAccuracy[LAL_IFO_V1].deta = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        accuracyParams.ifoAccuracy[LAL_IFO_V1].deta = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
 
       case 's':
         /* start time coincidence window */
-        gpstime = atol( optarg );
+        gpstime = atol( LALoptarg );
         if ( gpstime < 441417609 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -1140,7 +1140,7 @@ int main( int argc, char *argv[] )
 
       case 't':
         /* end time coincidence window */
-        gpstime = atol( optarg );
+        gpstime = atol( LALoptarg );
         if ( gpstime < 441417609 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -1156,7 +1156,7 @@ int main( int argc, char *argv[] )
 
       case 'x':
         /* comment */
-        if ( strlen( optarg ) > LIGOMETA_COMMENT_MAX - 1 )
+        if ( strlen( LALoptarg ) > LIGOMETA_COMMENT_MAX - 1 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "comment must be less than %d characters\n",
@@ -1165,73 +1165,73 @@ int main( int argc, char *argv[] )
         }
         else
         {
-          snprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
+          snprintf( comment, LIGOMETA_COMMENT_MAX, "%s", LALoptarg);
         }
         break;
       
 
      case 'l':
         /* lower H1 alphaF cutoff */
-        alphafParams.h1_lo = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        alphafParams.h1_lo = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
 
       case 'j':
         /* upper H1 alphaF cutoff */
-        alphafParams.h1_hi = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        alphafParams.h1_hi = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
 
       case 'u':
         /* lower H2 alphaF cutoff */
-        alphafParams.h2_lo = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        alphafParams.h2_lo = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
 
       case 'S':
         /* upper H2 alphaF cutoff */
-        alphafParams.h2_hi = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        alphafParams.h2_hi = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
 
       case 'U':
         /* lower L1 alphaF cutoff */
-        alphafParams.l1_lo = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        alphafParams.l1_lo = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
 
       case 'X':
         /* upper L1 alphaF cutoff */
-        alphafParams.l1_hi = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        alphafParams.l1_hi = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
 
 
      case '#':
         /* iota cut value for the H1H2 case (default=2) */
-        accuracyParams.iotaCutH1H2 = atof(optarg);
+        accuracyParams.iotaCutH1H2 = atof(LALoptarg);
         iotaCut  = 1;
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
 
       case '%':
         /* iota cut value for the H1L1 case  (default=2)*/
-        accuracyParams.iotaCutH1L1 = atof(optarg);
+        accuracyParams.iotaCutH1L1 = atof(LALoptarg);
         iotaCut = 1;
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
 
       case 'k':
         /* type of data to analyze */
-        if ( ! strcmp( "playground_only", optarg ) )
+        if ( ! strcmp( "playground_only", LALoptarg ) )
         {
           dataType = playground_only;
         }
-        else if ( ! strcmp( "exclude_play", optarg ) )
+        else if ( ! strcmp( "exclude_play", LALoptarg ) )
         {
           dataType = exclude_play;
         }
-        else if ( ! strcmp( "all_data", optarg ) )
+        else if ( ! strcmp( "all_data", LALoptarg ) )
         {
           dataType = all_data;
         }
@@ -1240,10 +1240,10 @@ int main( int argc, char *argv[] )
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown data type, %s, specified: "
               "(must be playground_only, exclude_play or all_data)\n",
-              long_options[option_index].name, optarg );
+              long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
         break;
 
 
@@ -1255,9 +1255,9 @@ int main( int argc, char *argv[] )
 
       case 'Z':
         /* create storage for the usertag */
-        optarg_len = strlen(optarg) + 1;
-        userTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
-        memcpy( userTag, optarg, optarg_len );
+        LALoptarg_len = strlen(LALoptarg) + 1;
+        userTag = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR) );
+        memcpy( userTag, LALoptarg, LALoptarg_len );
 
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
@@ -1266,15 +1266,15 @@ int main( int argc, char *argv[] )
         snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--userTag" );
         snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
         snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
-            optarg );
+            LALoptarg );
         break;
         
       case 'i':
         /* create storage for the ifotag */
-        optarg_len = strlen(optarg) + 1;
-        ifoTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
-        memcpy( ifoTag, optarg, optarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        LALoptarg_len = strlen(LALoptarg) + 1;
+        ifoTag = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR) );
+        memcpy( ifoTag, LALoptarg, LALoptarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
         break;
 
 
@@ -1293,85 +1293,85 @@ int main( int argc, char *argv[] )
 
       case '2':
      /* psi0 mass accuracy G1  */
-        accuracyParams.ifoAccuracy[LAL_IFO_G1].dpsi0 = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        accuracyParams.ifoAccuracy[LAL_IFO_G1].dpsi0 = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
 
       case '3':
      /* psi0 mass accuracy H1  */
-        accuracyParams.ifoAccuracy[LAL_IFO_H1].dpsi0 = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        accuracyParams.ifoAccuracy[LAL_IFO_H1].dpsi0 = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
 
       case '4':
      /* psi0 mass accuracy H2  */
-        accuracyParams.ifoAccuracy[LAL_IFO_H2].dpsi0 = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        accuracyParams.ifoAccuracy[LAL_IFO_H2].dpsi0 = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
      
       case '5':
      /* psi0 mass accuracy L1  */
-        accuracyParams.ifoAccuracy[LAL_IFO_L1].dpsi0 = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        accuracyParams.ifoAccuracy[LAL_IFO_L1].dpsi0 = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
 
       case '6':
      /* psi0 mass accuracy T1  */
-        accuracyParams.ifoAccuracy[LAL_IFO_T1].dpsi0 = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        accuracyParams.ifoAccuracy[LAL_IFO_T1].dpsi0 = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
 
       case '7':
      /* psi0 mass accuracy V1  */
-        accuracyParams.ifoAccuracy[LAL_IFO_V1].dpsi0 = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        accuracyParams.ifoAccuracy[LAL_IFO_V1].dpsi0 = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
 
       case '8':
      /* psi3 mass accuracy G1  */
-        accuracyParams.ifoAccuracy[LAL_IFO_G1].dpsi3 = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        accuracyParams.ifoAccuracy[LAL_IFO_G1].dpsi3 = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
 
       case '9':
      /* psi3 mass accuracy H1  */
-        accuracyParams.ifoAccuracy[LAL_IFO_H1].dpsi3 = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        accuracyParams.ifoAccuracy[LAL_IFO_H1].dpsi3 = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
 
       case '!':
      /* psi3 mass accuracy H2  */
-        accuracyParams.ifoAccuracy[LAL_IFO_H2].dpsi3 = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        accuracyParams.ifoAccuracy[LAL_IFO_H2].dpsi3 = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
 
       case '-':
      /* psi3 mass accuracy L1  */
-        accuracyParams.ifoAccuracy[LAL_IFO_L1].dpsi3 = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        accuracyParams.ifoAccuracy[LAL_IFO_L1].dpsi3 = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
 
       case '+':
      /* psi3 mass accuracy T1  */
-        accuracyParams.ifoAccuracy[LAL_IFO_T1].dpsi3 = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        accuracyParams.ifoAccuracy[LAL_IFO_T1].dpsi3 = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
 
       case '=':
      /* psi3 mass accuracy V1  */
-        accuracyParams.ifoAccuracy[LAL_IFO_V1].dpsi3 = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        accuracyParams.ifoAccuracy[LAL_IFO_V1].dpsi3 = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
 
       case '`':
       /* Ellipsoid scaling factor */
-        accuracyParams.eMatch = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        accuracyParams.eMatch = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
 
       case '@':
         /* set the maximization window */
-        maximizationInterval = atoi( optarg );
+        maximizationInterval = atoi( LALoptarg );
         if ( maximizationInterval < 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -1385,98 +1385,98 @@ int main( int argc, char *argv[] )
   
       case '^':
         for (loopVar=0; loopVar < LAL_NUM_IFO; loopVar++)
-          accuracyParams.ifoAccuracy[loopVar].dmchirpHi = atof( optarg );
+          accuracyParams.ifoAccuracy[loopVar].dmchirpHi = atof( LALoptarg );
         break;  
 
       case '&':
         for (loopVar=0; loopVar < LAL_NUM_IFO; loopVar++) 
-          accuracyParams.ifoAccuracy[loopVar].highMass = atof( optarg );
+          accuracyParams.ifoAccuracy[loopVar].highMass = atof( LALoptarg );
         break; 
 
       case 'W':
         /* kappa accuracy H1 */
-        accuracyParams.ifoAccuracy[LAL_IFO_H1].kappa = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        accuracyParams.ifoAccuracy[LAL_IFO_H1].kappa = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
         
       case 'Y':
         /* kappa accuracy H2 */
-        accuracyParams.ifoAccuracy[LAL_IFO_H2].kappa = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        accuracyParams.ifoAccuracy[LAL_IFO_H2].kappa = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
         
       case 'w':
         /* epsilon accuracy H1 */
-        accuracyParams.ifoAccuracy[LAL_IFO_H1].epsilon = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        accuracyParams.ifoAccuracy[LAL_IFO_H1].epsilon = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
         
       case 'y':
         /* epsilon accuracy H2 */
-        accuracyParams.ifoAccuracy[LAL_IFO_H2].epsilon = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        accuracyParams.ifoAccuracy[LAL_IFO_H2].epsilon = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
       
       case '*':
         /* snr cut */
-        snrCut = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        snrCut = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
       
       case '(':
         /* veto filename */
-        optarg_len = strlen( optarg ) + 1;
-        vetoFileName[LAL_IFO_H1] = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-        memcpy( vetoFileName[LAL_IFO_H1], optarg, optarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        vetoFileName[LAL_IFO_H1] = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
+        memcpy( vetoFileName[LAL_IFO_H1], LALoptarg, LALoptarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
         break;
 
       case ')':
         /* veto filename */
-        optarg_len = strlen( optarg ) + 1;
-        vetoFileName[LAL_IFO_H2] = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-        memcpy( vetoFileName[LAL_IFO_H2], optarg, optarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        vetoFileName[LAL_IFO_H2] = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
+        memcpy( vetoFileName[LAL_IFO_H2], LALoptarg, LALoptarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
         break;
  
       case '}':
         /* veto filename */
-        optarg_len = strlen( optarg ) + 1;
-        vetoFileName[LAL_IFO_L1] = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-        memcpy( vetoFileName[LAL_IFO_L1], optarg, optarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        vetoFileName[LAL_IFO_L1] = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
+        memcpy( vetoFileName[LAL_IFO_L1], LALoptarg, LALoptarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
         break;        
         
       case '{':
         /* veto filename */
-        optarg_len = strlen( optarg ) + 1;
-        vetoFileName[LAL_IFO_G1] = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-        memcpy( vetoFileName[LAL_IFO_G1], optarg, optarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        vetoFileName[LAL_IFO_G1] = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
+        memcpy( vetoFileName[LAL_IFO_G1], LALoptarg, LALoptarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
         break;        
         
       case '[':
         /* veto filename */
-        optarg_len = strlen( optarg ) + 1;
-        vetoFileName[LAL_IFO_T1] = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-        memcpy( vetoFileName[LAL_IFO_T1], optarg, optarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        vetoFileName[LAL_IFO_T1] = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
+        memcpy( vetoFileName[LAL_IFO_T1], LALoptarg, LALoptarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
         break;        
         
       case ']':
         /* veto filename */
-        optarg_len = strlen( optarg ) + 1;
-        vetoFileName[LAL_IFO_V1] = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-        memcpy( vetoFileName[LAL_IFO_V1], optarg, optarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        vetoFileName[LAL_IFO_V1] = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
+        memcpy( vetoFileName[LAL_IFO_V1], LALoptarg, LALoptarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
         break;       
 
       case '_':
         /* specifying GRB source file */
-        optarg_len = strlen(optarg) + 1;
-        sourceFile = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
-        memcpy( sourceFile, optarg, optarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        LALoptarg_len = strlen(LALoptarg) + 1;
+        sourceFile = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR) );
+        memcpy( sourceFile, LALoptarg, LALoptarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
         accuracyParams.exttrig=1;
         break;
        
@@ -1827,9 +1827,9 @@ int main( int argc, char *argv[] )
    */
 
 
-  if ( optind < argc )
+  if ( LALoptind < argc )
   {
-    for( i = optind; i < argc; ++i )
+    for( i = LALoptind; i < argc; ++i )
     {
       INT4 numFileTriggers = 0;
       SnglInspiralTable   *inspiralFileList = NULL;

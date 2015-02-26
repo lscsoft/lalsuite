@@ -55,22 +55,11 @@
 #include <lal/AVFactories.h>
 #include <lal/VectorIndexRange.h>
 
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-
-#ifdef HAVE_GETOPT_H
-#include <getopt.h>
-#endif
-
 #define CODES_(x) #x
 #define CODES(X)  CODES_(x)
 
 #define FALSE 0
 #define TRUE  1
-
-extern char *optarg;
-extern int   optind;
 
 BOOLEAN verbose_p = FALSE;
 

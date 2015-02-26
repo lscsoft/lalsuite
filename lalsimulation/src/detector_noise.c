@@ -20,11 +20,11 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <getopt.h>
 
 #include <gsl/gsl_rng.h>
 
 #include <lal/LALStdlib.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALConstants.h>
 #include <lal/Date.h>
 #include <lal/Units.h>
@@ -135,7 +135,7 @@ int parseargs( int argc, char **argv )
 		int option_index = 0;
 		int c;
 
-		c = getopt_long_only(argc, argv, args, long_options, &option_index);
+		c = LALgetopt_long_only(argc, argv, args, long_options, &option_index);
 		if (c == -1) /* end of options */
 			break;
 
@@ -144,7 +144,7 @@ int parseargs( int argc, char **argv )
 				if (long_options[option_index].flag)
 					break;
 				else {
-					fprintf(stderr, "error parsing option %s with argument %s\n", long_options[option_index].name, optarg);
+					fprintf(stderr, "error parsing option %s with argument %s\n", long_options[option_index].name, LALoptarg);
 					exit(1);
 				}
 			case 'h': /* help */
@@ -228,19 +228,19 @@ int parseargs( int argc, char **argv )
 				psdonly = 1;
 				break;
 			case 's': /* start-time */
-				tstart = atof(optarg);
+				tstart = atof(LALoptarg);
 				break;
 			case 't': /* duration */
-				duration = atof(optarg);
+				duration = atof(LALoptarg);
 				break;
 			case 'r': /* sample-rate */
-				srate = atof(optarg);
+				srate = atof(LALoptarg);
 				break;
 			case 'd': /* segment duration */
-				segdur = atof(optarg);
+				segdur = atof(LALoptarg);
 				break;
 			case 'f': /* low frequency */
-				overrideflow = atof(optarg);
+				overrideflow = atof(LALoptarg);
 				break;
 			case '?':
 			default:
@@ -249,10 +249,10 @@ int parseargs( int argc, char **argv )
 		}
 	}
 
-	if ( optind < argc ) {
+	if ( LALoptind < argc ) {
 		fprintf(stderr, "extraneous command line arguments:\n");
-		while (optind < argc)
-			fprintf(stderr, "%s\n", argv[optind++]);
+		while (LALoptind < argc)
+			fprintf(stderr, "%s\n", argv[LALoptind++]);
 		exit(1);
 	}
 

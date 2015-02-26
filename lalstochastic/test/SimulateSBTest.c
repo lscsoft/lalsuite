@@ -107,6 +107,7 @@
 #include <stdio.h>
 
 #include <lal/LALStdlib.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALConstants.h>
 #include <lal/LALStatusMacros.h>
 #include <lal/StochasticCrossCorrelation.h>
@@ -146,9 +147,6 @@ REAL4     SIMULATESBTESTC_BARYAZIRAD  =  0.0;
 REAL8     SIMULATESBTESTC_BARLOCX     = -113258.848;
 REAL8     SIMULATESBTESTC_BARLOCY     =  5504077.706;
 REAL8     SIMULATESBTESTC_BARLOCZ     =  3209892.343;
-
-extern char *optarg;
-extern int   optind;
 
 BOOLEAN optVerbose    = SIMULATESBTESTC_FALSE;
 REAL8 optDeltaT       = -1;
@@ -498,7 +496,7 @@ ParseOptions (int argc, char *argv[])
     {
       int c = -1;
 
-      c = getopt (argc, argv, "hqvd:s:t:f:e:l:a:r:o:p:q");
+      c = LALgetopt (argc, argv, "hqvd:s:t:f:e:l:a:r:o:p:q");
       if (c == -1)
 	{
 	  break;
@@ -507,37 +505,37 @@ ParseOptions (int argc, char *argv[])
       switch (c)
 	{
 	case 'p': /* specify output file */
-	  strncpy (optFile, optarg, LALNameLength);
+	  strncpy (optFile, LALoptarg, LALNameLength);
 	  break;
 
 	case 'l': /* specify number of points in length series */
-	  optLength = atoi (optarg);
+	  optLength = atoi (LALoptarg);
 	  break;
 
 	case 'e': /* specify temporal resolution */
-	  optDeltaT = atof (optarg);
+	  optDeltaT = atof (LALoptarg);
 	  break;
 
 	case 'f': /* specify start frequency */
-	  optF0 = atof (optarg);
+	  optF0 = atof (LALoptarg);
 	  break;
 
 	case 's': /* specify detector #1 */
-	  optDetector1 = atoi (optarg);
+	  optDetector1 = atoi (LALoptarg);
 
 	case 't': /* specify detector #2 */
-	  optDetector2 = atoi (optarg);
+	  optDetector2 = atoi (LALoptarg);
 
 	case 'a': /* specify alpha */
-	  optAlpha = atof (optarg);
+	  optAlpha = atof (LALoptarg);
 	  break;
 
 	case 'r': /* specify reference frequency */
-	  optFRef = atof (optarg);
+	  optFRef = atof (LALoptarg);
 	  break;
 
 	case 'o': /* specify value of omega at reference frequency */
-	  optOmegaRef = atof (optarg);
+	  optOmegaRef = atof (LALoptarg);
 	  break;
 
 	case 'd': /* set debug level */
@@ -562,7 +560,7 @@ ParseOptions (int argc, char *argv[])
 
     }
 
-  if (optind < argc)
+  if (LALoptind < argc)
     {
       Usage (argv[0], 1);
     }

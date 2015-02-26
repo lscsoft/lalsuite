@@ -74,7 +74,6 @@
 
 /* headers from TimeFreqFFTTest.c */
 #include <stdio.h>
-#include <unistd.h>
 #include <lal/Random.h>
 #include <lal/PrintFTSeries.h>
 #include <lal/TimeFreqFFT.h>

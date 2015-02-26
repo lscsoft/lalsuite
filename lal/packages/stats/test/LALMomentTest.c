@@ -24,15 +24,8 @@
 #include <stdio.h>
 #include <config.h>
 
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-
-#ifdef HAVE_GETOPT_H
-#include <getopt.h>
-#endif
-
 #include <lal/LALMoment.h>
+#include <lal/LALgetopt.h>
 #include "CheckStatus.h"
 
 /**
@@ -116,11 +109,6 @@
 /*  constants  */
 #define LALMOMENTTESTC_TRUE     1
 #define LALMOMENTTESTC_FALSE    0
-
-extern char	*optarg;
-extern int	optind;
-
-
 
 /*  Setting variables to parse command line flags  */
 BOOLEAN	optVerbose	= LALMOMENTTESTC_FALSE;
@@ -360,7 +348,7 @@ static void ParseOptions (int argc, char *argv[])
   {
     int c = -1;
 
-    c = getopt (argc, argv, "hqvd:");
+    c = LALgetopt (argc, argv, "hqvd:");
     if (c == -1)
     {
       break;
@@ -400,7 +388,7 @@ static void ParseOptions (int argc, char *argv[])
 
   }
 
-  if (optind < argc)
+  if (LALoptind < argc)
   {
     Usage (argv[0], 1);
   }

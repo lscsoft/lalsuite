@@ -22,9 +22,9 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <getopt.h>
 
 #include <lal/LALStdio.h>
+#include <lal/LALgetopt.h>
 #include <lal/AVFactories.h>
 #include <lal/ConfigFile.h>
 #include <lal/LALFrameIO.h>
@@ -157,7 +157,7 @@ INT4 main(INT4 argc, CHAR **argv)
 
   INT4 generatingREAL8 = 0;
 
-  /* getopt arguments */
+  /* LALgetopt arguments */
   struct option long_options[] =
   {
     /* options that set a flag */
@@ -179,11 +179,11 @@ INT4 main(INT4 argc, CHAR **argv)
   /* parse the arguments */
   while(1)
   {
-    /* getopt_long stores long option here */
+    /* LALgetopt_long stores long option here */
     int option_index = 0;
-    size_t optarg_len;
+    size_t LALoptarg_len;
 
-    c = getopt_long_only(argc, argv, "f:m:d:o:phV", long_options, &option_index);
+    c = LALgetopt_long_only(argc, argv, "f:m:d:o:phV", long_options, &option_index);
 
     /* detect the end of the options */
     if (c == -1)
@@ -197,7 +197,7 @@ INT4 main(INT4 argc, CHAR **argv)
           break;
         else
         {
-          fprintf(stderr, "Error parsing option %s with argument %s\n", long_options[option_index].name, optarg);
+          fprintf(stderr, "Error parsing option %s with argument %s\n", long_options[option_index].name, LALoptarg);
           exit(1);
         }
         break;
@@ -217,30 +217,30 @@ INT4 main(INT4 argc, CHAR **argv)
 
       case 'f':
         /* create storage for the metadata format */
-        optarg_len = strlen(optarg) + 1;
-        metadata_format = (CHAR *)calloc(optarg_len, sizeof(CHAR));
-        memcpy(metadata_format, optarg, optarg_len);
+        LALoptarg_len = strlen(LALoptarg) + 1;
+        metadata_format = (CHAR *)calloc(LALoptarg_len, sizeof(CHAR));
+        memcpy(metadata_format, LALoptarg, LALoptarg_len);
         break;
 
       case 'm':
         /* create storage for the meta file name */
-        optarg_len = strlen(optarg) + 1;
-        nrMetaFile = (CHAR *)calloc(optarg_len, sizeof(CHAR));
-        memcpy(nrMetaFile, optarg, optarg_len);
+        LALoptarg_len = strlen(LALoptarg) + 1;
+        nrMetaFile = (CHAR *)calloc(LALoptarg_len, sizeof(CHAR));
+        memcpy(nrMetaFile, LALoptarg, LALoptarg_len);
         break;
 
       case 'd':
         /* create storage for the meta data directory name */
-        optarg_len = strlen(optarg) + 1;
-        nrDataDir = (CHAR *)calloc(optarg_len, sizeof(CHAR));
-        memcpy(nrDataDir, optarg, optarg_len);
+        LALoptarg_len = strlen(LALoptarg) + 1;
+        nrDataDir = (CHAR *)calloc(LALoptarg_len, sizeof(CHAR));
+        memcpy(nrDataDir, LALoptarg, LALoptarg_len);
         break;
 
       case 'o':
         /* create storage for the output frame file name */
-        optarg_len = strlen(optarg) + 1;
-        frame_name = (CHAR *)calloc(optarg_len, sizeof(CHAR));
-        memcpy(frame_name, optarg, optarg_len);
+        LALoptarg_len = strlen(LALoptarg) + 1;
+        frame_name = (CHAR *)calloc(LALoptarg_len, sizeof(CHAR));
+        memcpy(frame_name, LALoptarg, LALoptarg_len);
         break;
 
       case 'p':
@@ -262,11 +262,11 @@ INT4 main(INT4 argc, CHAR **argv)
   }
 
   /* check for extraneous command line arguments */
-  if (optind < argc)
+  if (LALoptind < argc)
   {
     fprintf(stderr, "Extraneous command line arguments:\n");
-    while(optind < argc)
-      fprintf(stderr, "%s\n", argv[optind++]);
+    while(LALoptind < argc)
+      fprintf(stderr, "%s\n", argv[LALoptind++]);
     exit(1);
   }
 

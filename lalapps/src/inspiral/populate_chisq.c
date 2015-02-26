@@ -33,8 +33,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <getopt.h>
-#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -48,6 +46,7 @@
 #include <lalappsfrutils.h>
 
 #include <lal/LALConfig.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALError.h>
@@ -2261,7 +2260,7 @@ fprintf( a, "\n");
 
 int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
 {
-    /* getopt arguments */
+    /* LALgetopt arguments */
     struct option long_options[] = {
         /* these options set a flag */
         {"verbose", no_argument, &vrbflg, 1},
@@ -2389,11 +2388,11 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
 
 
     while (1) {
-        /* getopt_long stores long option here */
+        /* LALgetopt_long stores long option here */
         int option_index = 0;
-        size_t optarg_len;
+        size_t LALoptarg_len;
 
-        c = getopt_long_only(argc, argv,
+        c = LALgetopt_long_only(argc, argv,
                              "-A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:S:T:U:VW:?:X:Y:Z:"
                              "a:b:c:d:e:f:g:hi:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:"
                              "0:1::2:3:4:567:8:9:*:>:<:(:):[:],:{:}:|:+:=:^:.:",
@@ -2412,14 +2411,14 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                 } else {
                     fprintf(stderr,
                             "error parsing option %s with argument %s\n",
-                            long_options[option_index].name, optarg);
+                            long_options[option_index].name, LALoptarg);
                     exit(1);
                 }
                 break;
 
             case 'a':
                 {
-                    long int gstartt = atol(optarg);
+                    long int gstartt = atol(LALoptarg);
                     if (gstartt < 441417609) {
                         fprintf(stderr, "invalid argument to --%s:\n"
                                 "GPS start time is prior to "
@@ -2435,7 +2434,7 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
 
             case 'A':
                 {
-                    long int gstarttns = atol(optarg);
+                    long int gstarttns = atol(LALoptarg);
                     if (gstarttns < 0) {
                         fprintf(stderr, "invalid argument to --%s:\n"
                                 "GPS start time nanoseconds is negative\n",
@@ -2457,7 +2456,7 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
 
             case 'b':
                 {
-                    long int gendt = atol(optarg);
+                    long int gendt = atol(LALoptarg);
                     if (gendt < 441417609) {
                         fprintf(stderr, "invalid argument to --%s:\n"
                                 "GPS end time is prior to "
@@ -2473,7 +2472,7 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
 
             case 'B':
                 {
-                    long int gendtns = atol(optarg);
+                    long int gendtns = atol(LALoptarg);
                     if (gendtns < 0) {
                         fprintf(stderr, "invalid argument to --%s:\n"
                                 "GPS end time nanoseconds is negative\n",
@@ -2496,32 +2495,32 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                 {
                     /* create storage for the channel name and copy it */
                     char *channamptr = NULL;
-                    optarg_len = strlen(optarg) + 1;
-                    fqChanName = (CHAR *) calloc(optarg_len, sizeof(CHAR));
-                    memcpy(fqChanName, optarg, optarg_len);
-                    ADD_PROCESS_PARAM("string", "%s", optarg);
+                    LALoptarg_len = strlen(LALoptarg) + 1;
+                    fqChanName = (CHAR *) calloc(LALoptarg_len, sizeof(CHAR));
+                    memcpy(fqChanName, LALoptarg, LALoptarg_len);
+                    ADD_PROCESS_PARAM("string", "%s", LALoptarg);
 
                     /* check that we have a proper channel name */
                     if (!(channamptr = strstr(fqChanName, ":"))) {
                         fprintf(stderr, "invalid argument to --%s:\n"
                                 "channel name must be a full LIGO channel name "
                                 "e.g. L1:LSC-AS_Q\n(%s specified)\n",
-                                long_options[option_index].name, optarg);
+                                long_options[option_index].name, LALoptarg);
                         exit(1);
                     }
-                    optarg_len = strlen(++channamptr) + 1;
+                    LALoptarg_len = strlen(++channamptr) + 1;
                     channelName =
-                        (CHAR *) calloc(optarg_len, sizeof(CHAR));
-                    memcpy(channelName, channamptr, optarg_len);
+                        (CHAR *) calloc(LALoptarg_len, sizeof(CHAR));
+                    memcpy(channelName, channamptr, LALoptarg_len);
 
                     /* copy the first two characters to the ifo name */
                     memset(ifo, 0, sizeof(ifo));
-                    memcpy(ifo, optarg, sizeof(ifo) - 1);
+                    memcpy(ifo, LALoptarg, sizeof(ifo) - 1);
                 }
                 break;
 
             case 'd':
-                numPoints = (INT4) atoi(optarg);
+                numPoints = (INT4) atoi(LALoptarg);
                 if (numPoints < 2 || numPoints % 2) {
                     fprintf(stderr, "invalid argument to --%s:\n"
                             "number of points must be a non-zero power of 2: "
@@ -2534,7 +2533,7 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
 
             case 'C':
                 {
-                    long int gstartt = atol(optarg);
+                    long int gstartt = atol(LALoptarg);
                     /* ignore a value of zero */
                     if (gstartt) {
                         if (gstartt < 441417609) {
@@ -2554,7 +2553,7 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
 
             case 'D':
                 {
-                    long int gendt = atol(optarg);
+                    long int gendt = atol(LALoptarg);
                     /* ignore a value of zero */
                     if (gendt) {
                         if (gendt < 441417609) {
@@ -2573,7 +2572,7 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                 break;
 
             case 'e':
-                numSegments = (INT4) atoi(optarg);
+                numSegments = (INT4) atoi(LALoptarg);
                 if (numSegments < 1) {
                     fprintf(stderr, "invalid argument to --%s:\n"
                             "number of data segment must be greater than 0: "
@@ -2585,7 +2584,7 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                 break;
 
             case 'f':
-                ovrlap = (INT4) atoi(optarg);
+                ovrlap = (INT4) atoi(LALoptarg);
                 if (ovrlap < 0) {
                     fprintf(stderr, "invalid argument to --%s:\n"
                             "data segment overlap must be positive: "
@@ -2597,7 +2596,7 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                 break;
 
             case 'g':
-                sampleRate = (INT4) atoi(optarg);
+                sampleRate = (INT4) atoi(LALoptarg);
                 if (sampleRate < 2 || sampleRate > 16384 || sampleRate % 2) {
                     fprintf(stderr, "invalid argument to --%s:\n"
                             "rate must be power of 2 between 2 and 16384 inclusive: "
@@ -2611,22 +2610,22 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
             case 'y':
                 /* specify which type of calibrated data */
                 {
-                    if (!strcmp("real_4", optarg)) {
+                    if (!strcmp("real_4", LALoptarg)) {
                         calData = real_4;
-                    } else if (!strcmp("real_8", optarg)) {
+                    } else if (!strcmp("real_8", LALoptarg)) {
                         calData = real_8;
                     } else {
                         fprintf(stderr, "invalid argument to --%s:\n"
                                 "unknown data type specified;\n"
                                 "%s (must be one of: real_4, real_8)\n",
-                                long_options[option_index].name, optarg);
+                                long_options[option_index].name, LALoptarg);
                     }
-                    ADD_PROCESS_PARAM("string", "%s", optarg);
+                    ADD_PROCESS_PARAM("string", "%s", LALoptarg);
                 }
                 break;
 
             case 'E':
-                strainHighPassFreq = (REAL4) atof(optarg);
+                strainHighPassFreq = (REAL4) atof(LALoptarg);
                 if (strainHighPassFreq <= 0) {
                     fprintf(stderr, "invalid argument to --%s:\n"
                             "REAL8 h(t) high pass filter frequency must be greater than 0 Hz:"
@@ -2639,7 +2638,7 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                 break;
 
             case 'P':
-                strainHighPassOrder = (INT4) atoi(optarg);
+                strainHighPassOrder = (INT4) atoi(LALoptarg);
                 if (strainHighPassOrder <= 0) {
                     fprintf(stderr, "invalid argument to --%s:\n"
                             "REAL8 h(t) high pass filter order must be greater than 0: "
@@ -2652,7 +2651,7 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                 break;
 
             case 'Q':
-                strainHighPassAtten = (REAL4) atof(optarg);
+                strainHighPassAtten = (REAL4) atof(LALoptarg);
                 if (strainHighPassAtten < 0.0 || strainHighPassAtten > 1.0) {
                     fprintf(stderr, "invalid argument to --%s:\n"
                             "REAL8 h(t) high pass attenuation must be in the range [0:1]: "
@@ -2670,7 +2669,7 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                 break;
 
             case 'i':
-                fLow = (REAL4) atof(optarg);
+                fLow = (REAL4) atof(LALoptarg);
                 if (fLow < 0) {
                     fprintf(stderr, "invalid argument to --%s:\n"
                             "low frequency cutoff is less than 0 Hz: "
@@ -2682,24 +2681,24 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                 break;
 
             case 'j':
-                if (!strcmp("mean", optarg)) {
+                if (!strcmp("mean", LALoptarg)) {
                     specType = specType_mean;
-                } else if (!strcmp("median", optarg)) {
+                } else if (!strcmp("median", LALoptarg)) {
                     specType = specType_median;
-                } else if (!strcmp("bad-mean", optarg)) {
+                } else if (!strcmp("bad-mean", LALoptarg)) {
                     specType = specType_mean;
                     badMeanPsd = 1;
-                } else if ((!strcmp("gaussian", optarg))
-                           || (!strcmp("white", optarg))) {
+                } else if ((!strcmp("gaussian", LALoptarg))
+                           || (!strcmp("white", LALoptarg))) {
                     specType = specType_gaussian;
                     fprintf(stderr,
                             "WARNING: replacing psd with white Gaussian spectrum\n");
-                } else if (!strcmp("LIGO", optarg)) {
+                } else if (!strcmp("LIGO", LALoptarg)) {
                     specType = specType_LIGO;
                     fprintf(stderr,
                             "WARNING: replacing psd with Initial LIGO design spectrum\n"
                             "WARNING: replacing response function with a constant\n");
-                } else if (!strcmp("AdvLIGO", optarg)) {
+                } else if (!strcmp("AdvLIGO", LALoptarg)) {
                     specType = specType_AdvLIGO;
                     fprintf(stderr,
                             "WARNING: replacing psd with Advanced LIGO design spectrum\n"
@@ -2708,14 +2707,14 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                     fprintf(stderr, "invalid argument to --%s:\n"
                             "unknown power spectrum type: "
                             "%s (must be mean, median, gaussian, white, LIGO or AdvLIGO)\n",
-                            long_options[option_index].name, optarg);
+                            long_options[option_index].name, LALoptarg);
                     exit(1);
                 }
-                ADD_PROCESS_PARAM("string", "%s", optarg);
+                ADD_PROCESS_PARAM("string", "%s", LALoptarg);
                 break;
 
             case 'k':
-                invSpecTrunc = (INT4) atoi(optarg);
+                invSpecTrunc = (INT4) atoi(LALoptarg);
                 if (invSpecTrunc < 0) {
                     fprintf(stderr, "invalid argument to --%s:\n"
                             "inverse spectrum length must be positive or zero: "
@@ -2727,13 +2726,13 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                 break;
 
             case 'l':
-                dynRangeExponent = (REAL4) atof(optarg);
+                dynRangeExponent = (REAL4) atof(LALoptarg);
                 haveDynRange = 1;
                 ADD_PROCESS_PARAM("float", "%e", dynRangeExponent);
                 break;
 
             case 'm':
-                startTemplate = (INT4) atoi(optarg);
+                startTemplate = (INT4) atoi(LALoptarg);
                 if (startTemplate < 0) {
                     fprintf(stderr, "invalid argument to --%s:\n"
                             "template bank start index must be positive: "
@@ -2746,7 +2745,7 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                 break;
 
             case 'M':
-                chisqDelta = (REAL4) atof(optarg);
+                chisqDelta = (REAL4) atof(LALoptarg);
                 if (chisqDelta < 0) {
                     fprintf(stderr, "invalid argument to --%s:\n"
                             "chi squared delta parameter must be positive: "
@@ -2757,7 +2756,7 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                 break;
 
             case 'n':
-                stopTemplate = (INT4) atoi(optarg);
+                stopTemplate = (INT4) atoi(LALoptarg);
                 if (stopTemplate < 0) {
                     fprintf(stderr, "invalid argument to --%s:\n"
                             "template bank stop index must be positive: "
@@ -2769,7 +2768,7 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                 break;
 
             case 'o':
-                numChisqBins = (INT4) atoi(optarg);
+                numChisqBins = (INT4) atoi(LALoptarg);
                 if (numChisqBins < 0) {
                     fprintf(stderr, "invalid argument to --%s:\n"
                             "number of chisq veto bins must be positive: "
@@ -2782,83 +2781,83 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
 
             case 'p':
                 /* create storage for the calibration frame cache name */
-                optarg_len = strlen(optarg) + 1;
-                calCacheName = (CHAR *) calloc(optarg_len, sizeof(CHAR));
-                memcpy(calCacheName, optarg, optarg_len);
-                ADD_PROCESS_PARAM("string", "%s", optarg);
+                LALoptarg_len = strlen(LALoptarg) + 1;
+                calCacheName = (CHAR *) calloc(LALoptarg_len, sizeof(CHAR));
+                memcpy(calCacheName, LALoptarg, LALoptarg_len);
+                ADD_PROCESS_PARAM("string", "%s", LALoptarg);
                 break;
 
             case 'F':
                 /* create storage for the approximant name */
-                optarg_len = strlen(optarg) + 1;
+                LALoptarg_len = strlen(LALoptarg) + 1;
                 approximantName =
-                    (CHAR *) calloc(optarg_len, sizeof(CHAR));
-                memcpy(approximantName, optarg, optarg_len);
-                if (!strcmp("TaylorT1", optarg)) {
+                    (CHAR *) calloc(LALoptarg_len, sizeof(CHAR));
+                memcpy(approximantName, LALoptarg, LALoptarg_len);
+                if (!strcmp("TaylorT1", LALoptarg)) {
                     approximant = TaylorT1;
-                } else if (!strcmp("TaylorT2", optarg)) {
+                } else if (!strcmp("TaylorT2", LALoptarg)) {
                     approximant = TaylorT2;
-                } else if (!strcmp("TaylorT3", optarg)) {
+                } else if (!strcmp("TaylorT3", LALoptarg)) {
                     approximant = TaylorT3;
-                } else if (!strcmp("GeneratePPN", optarg)) {
+                } else if (!strcmp("GeneratePPN", LALoptarg)) {
                     approximant = GeneratePPN;
-                } else if (!strcmp("PadeT1", optarg)) {
+                } else if (!strcmp("PadeT1", LALoptarg)) {
                     approximant = PadeT1;
-                } else if (!strcmp("EOB", optarg)) {
+                } else if (!strcmp("EOB", LALoptarg)) {
                     approximant = EOB;
-                } else if (!strcmp("EOBNR", optarg)) {
+                } else if (!strcmp("EOBNR", LALoptarg)) {
                     approximant = EOBNR;
-                } else if (!strcmp("FindChirpSP", optarg)) {
+                } else if (!strcmp("FindChirpSP", LALoptarg)) {
                     approximant = FindChirpSP;
-                } else if (!strcmp("BCV", optarg)) {
+                } else if (!strcmp("BCV", LALoptarg)) {
                     approximant = BCV;
-                } else if (!strcmp("BCVC", optarg)) {
+                } else if (!strcmp("BCVC", LALoptarg)) {
                     approximant = BCV;
                     bcvConstraint = 1;
-                } else if (!strcmp("BCVSpin", optarg)) {
+                } else if (!strcmp("BCVSpin", LALoptarg)) {
                     approximant = BCVSpin;
-                } else if (!strcmp("FindChirpPTF", optarg)) {
+                } else if (!strcmp("FindChirpPTF", LALoptarg)) {
                     approximant = FindChirpPTF;
                 } else {
                     fprintf(stderr, "invalid argument to --%s:\n"
                             "unknown order specified: "
                             "%s (must be either FindChirpSP, BCV, BCVC, BCVSpin, FindChirpPTF\n"
                             "TaylorT1, TaylorT2, TaylorT3, GeneratePPN, PadeT1 or EOB)\n",
-                            long_options[option_index].name, optarg);
+                            long_options[option_index].name, LALoptarg);
                     exit(1);
                 }
                 haveApprox = 1;
-                ADD_PROCESS_PARAM("string", "%s", optarg);
+                ADD_PROCESS_PARAM("string", "%s", LALoptarg);
                 break;
 
             case '^':
                 /* create storage for the order name */
-                optarg_len = strlen(optarg) + 1;
-                orderName = (CHAR *) calloc(optarg_len, sizeof(CHAR));
-                memcpy(orderName, optarg, optarg_len);
-                if (!strcmp("twoPN", optarg)) {
+                LALoptarg_len = strlen(LALoptarg) + 1;
+                orderName = (CHAR *) calloc(LALoptarg_len, sizeof(CHAR));
+                memcpy(orderName, LALoptarg, LALoptarg_len);
+                if (!strcmp("twoPN", LALoptarg)) {
                     order = LAL_PNORDER_TWO;
-                } else if (!strcmp("twoPointFivePN", optarg)) {
+                } else if (!strcmp("twoPointFivePN", LALoptarg)) {
                     order = LAL_PNORDER_TWO_POINT_FIVE;
-                } else if (!strcmp("threePN", optarg)) {
+                } else if (!strcmp("threePN", LALoptarg)) {
                     order = LAL_PNORDER_THREE;
-                } else if (!strcmp("threePointFivePN", optarg)) {
+                } else if (!strcmp("threePointFivePN", LALoptarg)) {
                     order = LAL_PNORDER_THREE_POINT_FIVE;
-                } else if (!strcmp("pseudoFourPN", optarg)) {
+                } else if (!strcmp("pseudoFourPN", LALoptarg)) {
                     order = LAL_PNORDER_PSEUDO_FOUR;
                 } else {
                     fprintf(stderr, "invalid argument to --%s:\n"
                             "unknown order specified: "
                             "%s (must be one of twoPN, twoPointFivePN, threePN, threePointFivePN, pseudoFourPN)\n",
-                            long_options[option_index].name, optarg);
+                            long_options[option_index].name, LALoptarg);
                     exit(1);
                 }
                 haveOrder = 1;
-                ADD_PROCESS_PARAM("string", "%s", optarg);
+                ADD_PROCESS_PARAM("string", "%s", LALoptarg);
                 break;
 
             case 'q':
-                snrThresh = atof(optarg);
+                snrThresh = atof(LALoptarg);
                 if (snrThresh < 0) {
                     fprintf(stderr, "invalid argument to --%s:\n"
                             "signal to noise threshold must be positive: "
@@ -2866,11 +2865,11 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                             long_options[option_index].name, snrThresh);
                     exit(1);
                 }
-                ADD_PROCESS_PARAM("float", "%s", optarg);
+                ADD_PROCESS_PARAM("float", "%s", LALoptarg);
                 break;
 
             case 'r':
-                chisqThresh = atof(optarg);
+                chisqThresh = atof(LALoptarg);
                 if (chisqThresh < 0) {
                     fprintf(stderr, "invalid argument to --%s:\n"
                             "chi squared threshold must be positive: "
@@ -2878,39 +2877,39 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                             long_options[option_index].name, chisqThresh);
                     exit(1);
                 }
-                ADD_PROCESS_PARAM("float", "%s", optarg);
+                ADD_PROCESS_PARAM("float", "%s", LALoptarg);
                 break;
 
             case 'R':
-                if (!strcmp("ldas", optarg)) {
+                if (!strcmp("ldas", LALoptarg)) {
                     resampFiltType = 0;
-                } else if (!strcmp("butterworth", optarg)) {
+                } else if (!strcmp("butterworth", LALoptarg)) {
                     resampFiltType = 1;
                 } else {
                     fprintf(stderr, "invalid argument to --%s:\n"
                             "unknown resampling filter type: "
                             "%s (must be ldas or butterworth)\n",
-                            long_options[option_index].name, optarg);
+                            long_options[option_index].name, LALoptarg);
                     exit(1);
                 }
-                ADD_PROCESS_PARAM("string", "%s", optarg);
+                ADD_PROCESS_PARAM("string", "%s", LALoptarg);
                 break;
 
             case 's':
-                if (strlen(optarg) > LIGOMETA_COMMENT_MAX - 1) {
+                if (strlen(LALoptarg) > LIGOMETA_COMMENT_MAX - 1) {
                     fprintf(stderr, "invalid argument to --%s:\n"
                             "comment must be less than %d characters\n",
                             long_options[option_index].name,
                             LIGOMETA_COMMENT_MAX);
                     exit(1);
                 } else {
-                    snprintf(comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
+                    snprintf(comment, LIGOMETA_COMMENT_MAX, "%s", LALoptarg);
                 }
                 break;
 
             case 't':
                 highPass = 1;
-                highPassFreq = (REAL4) atof(optarg);
+                highPassFreq = (REAL4) atof(LALoptarg);
                 if (highPassFreq <= 0) {
                     fprintf(stderr, "invalid argument to --%s:\n"
                             "high pass filter frequency must be greater than 0 Hz: "
@@ -2922,7 +2921,7 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                 break;
 
             case 'H':
-                highPassOrder = (INT4) atoi(optarg);
+                highPassOrder = (INT4) atoi(LALoptarg);
                 if (highPassOrder <= 0) {
                     fprintf(stderr, "invalid argument to --%s:\n"
                             "high pass filter order must be greater than 0: "
@@ -2935,7 +2934,7 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                 break;
 
             case 'T':
-                highPassAtten = (REAL4) atof(optarg);
+                highPassAtten = (REAL4) atof(LALoptarg);
                 if (highPassAtten < 0.0 || highPassAtten > 1.0) {
                     fprintf(stderr, "invalid argument to --%s:\n"
                             "high pass attenuation must be in the range [0:1]: "
@@ -2949,37 +2948,37 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
 
             case 'u':
                 /* create storage for the input frame cache name */
-                optarg_len = strlen(optarg) + 1;
-                frInCacheName = (CHAR *) calloc(optarg_len, sizeof(CHAR));
-                memcpy(frInCacheName, optarg, optarg_len);
-                ADD_PROCESS_PARAM("string", "%s", optarg);
+                LALoptarg_len = strlen(LALoptarg) + 1;
+                frInCacheName = (CHAR *) calloc(LALoptarg_len, sizeof(CHAR));
+                memcpy(frInCacheName, LALoptarg, LALoptarg_len);
+                ADD_PROCESS_PARAM("string", "%s", LALoptarg);
                 break;
 
             case 'S':
-                optarg_len = strlen(optarg) + 1;
-                frInType = (CHAR *) calloc(optarg_len, sizeof(CHAR));
-                memcpy(frInType, optarg, optarg_len);
-                ADD_PROCESS_PARAM("string", "%s", optarg);
+                LALoptarg_len = strlen(LALoptarg) + 1;
+                frInType = (CHAR *) calloc(LALoptarg_len, sizeof(CHAR));
+                memcpy(frInType, LALoptarg, LALoptarg_len);
+                ADD_PROCESS_PARAM("string", "%s", LALoptarg);
                 break;
 
             case 'v':
                 /* create storage for the calibration frame cache name */
-                optarg_len = strlen(optarg) + 1;
-                bankFileName = (CHAR *) calloc(optarg_len, sizeof(CHAR));
-                memcpy(bankFileName, optarg, optarg_len);
-                ADD_PROCESS_PARAM("string", "%s", optarg);
+                LALoptarg_len = strlen(LALoptarg) + 1;
+                bankFileName = (CHAR *) calloc(LALoptarg_len, sizeof(CHAR));
+                memcpy(bankFileName, LALoptarg, LALoptarg_len);
+                ADD_PROCESS_PARAM("string", "%s", LALoptarg);
                 break;
 
             case 'w':
                 /* create storage for the trigger file name */
-                optarg_len = strlen(optarg) + 1;
-                triggerFile = (CHAR *) calloc(optarg_len, sizeof(CHAR));
-                memcpy(triggerFile, optarg, optarg_len);
-                ADD_PROCESS_PARAM("string", "%s", optarg);
+                LALoptarg_len = strlen(LALoptarg) + 1;
+                triggerFile = (CHAR *) calloc(LALoptarg_len, sizeof(CHAR));
+                memcpy(triggerFile, LALoptarg, LALoptarg_len);
+                ADD_PROCESS_PARAM("string", "%s", LALoptarg);
                 break;
 
             case 'x':
-                padData = (INT4) atoi(optarg);
+                padData = (INT4) atoi(LALoptarg);
                 if (padData < 0) {
                     fprintf(stderr, "invalid argument to --%s:\n"
                             "number of seconds to pad from input data"
@@ -2991,27 +2990,27 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                 break;
 
             case 'X':
-                slideData.gpsSeconds = (INT4) atoi(optarg);
+                slideData.gpsSeconds = (INT4) atoi(LALoptarg);
                 ADD_PROCESS_PARAM("int", "%d", slideData.gpsSeconds);
                 break;
 
             case 'Y':
-                slideData.gpsNanoSeconds = (INT4) atoi(optarg);
+                slideData.gpsNanoSeconds = (INT4) atoi(LALoptarg);
                 ADD_PROCESS_PARAM("int", "%d", slideData.gpsNanoSeconds);
                 break;
 
             case 'K':
-                if (strstr(optarg, "xml")) {
+                if (strstr(LALoptarg, "xml")) {
                     /* we have been passed an xml file name */
-                    optarg_len = strlen(optarg) + 1;
+                    LALoptarg_len = strlen(LALoptarg) + 1;
                     bankSimFileName =
-                        (CHAR *) calloc(optarg_len, sizeof(CHAR));
-                    memcpy(bankSimFileName, optarg, optarg_len);
+                        (CHAR *) calloc(LALoptarg_len, sizeof(CHAR));
+                    memcpy(bankSimFileName, LALoptarg, LALoptarg_len);
                     bankSim = 1;
-                    ADD_PROCESS_PARAM("string", "%s", optarg);
+                    ADD_PROCESS_PARAM("string", "%s", LALoptarg);
                 } else {
                     /* parse the agument as an integer numer of simulations */
-                    bankSim = (INT4) atoi(optarg);
+                    bankSim = (INT4) atoi(LALoptarg);
                     if (bankSim < 1) {
                         fprintf(stderr, "invalid argument to --%s:\n"
                                 "number of template bank simulations"
@@ -3024,44 +3023,44 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                 break;
 
             case 'L':
-                if (!strcmp("TaylorT1", optarg)) {
+                if (!strcmp("TaylorT1", LALoptarg)) {
                     bankSimParams.approx = TaylorT1;
-                } else if (!strcmp("TaylorT2", optarg)) {
+                } else if (!strcmp("TaylorT2", LALoptarg)) {
                     bankSimParams.approx = TaylorT2;
-                } else if (!strcmp("TaylorT3", optarg)) {
+                } else if (!strcmp("TaylorT3", LALoptarg)) {
                     bankSimParams.approx = TaylorT3;
-                } else if (!strcmp("PadeT1", optarg)) {
+                } else if (!strcmp("PadeT1", LALoptarg)) {
                     bankSimParams.approx = PadeT1;
-                } else if (!strcmp("EOB", optarg)) {
+                } else if (!strcmp("EOB", LALoptarg)) {
                     bankSimParams.approx = EOB;
-                } else if (!strcmp("GeneratePPN", optarg)) {
+                } else if (!strcmp("GeneratePPN", LALoptarg)) {
                     bankSimParams.approx = GeneratePPN;
-                } else if (!strcmp("FrameFile", optarg)) {
+                } else if (!strcmp("FrameFile", LALoptarg)) {
                     bankSimParams.approx = FrameFile;
                 } else {
                     fprintf(stderr, "invalid argument to --%s:\n"
                             "unknown order specified: %s\n(must be one of TaylorT1, "
                             "TaylorT2, TaylorT3, PadeT1, EOB, GeneratePPN, FrameFile)\n",
-                            long_options[option_index].name, optarg);
+                            long_options[option_index].name, LALoptarg);
                     exit(1);
                 }
                 haveBankSimApprox = 1;
-                ADD_PROCESS_PARAM("string", "%s", optarg);
+                ADD_PROCESS_PARAM("string", "%s", LALoptarg);
                 break;
 
             case 'J':
-                if (!strcmp("urandom", optarg)) {
+                if (!strcmp("urandom", LALoptarg)) {
                     randSeedType = urandom;
-                    ADD_PROCESS_PARAM("string", "%s", optarg);
+                    ADD_PROCESS_PARAM("string", "%s", LALoptarg);
                 } else {
                     randSeedType = user;
-                    randomSeed = (INT4) atoi(optarg);
+                    randomSeed = (INT4) atoi(LALoptarg);
                     ADD_PROCESS_PARAM("int", "%d", randomSeed);
                 }
                 break;
 
             case 'U':
-                bankSimParams.minMass = (REAL4) atof(optarg);
+                bankSimParams.minMass = (REAL4) atof(LALoptarg);
                 if (bankSimParams.minMass <= 0) {
                     fprintf(stderr, "invalid argument to --%s:\n"
                             "miniumum component mass must be > 0: "
@@ -3074,7 +3073,7 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                 break;
 
             case 'W':
-                bankSimParams.maxMass = (REAL4) atof(optarg);
+                bankSimParams.maxMass = (REAL4) atof(LALoptarg);
                 if (bankSimParams.maxMass <= 0) {
                     fprintf(stderr, "invalid argument to --%s:\n"
                             "maxiumum component mass must be > 0: "
@@ -3087,7 +3086,7 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                 break;
 
             case 'G':
-                gaussVar = (REAL4) atof(optarg);
+                gaussVar = (REAL4) atof(LALoptarg);
                 if (gaussVar < 0) {
                     fprintf(stderr, "invalid argument to --%s:\n"
                             "variance of white Gaussian noise must be >= 0: "
@@ -3104,12 +3103,12 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                 break;
 
             case '.':
-                if (!strcmp("LIGO", optarg)) {
+                if (!strcmp("LIGO", LALoptarg)) {
                     colorSpec = colorSpec_LIGO;
                     fprintf(stderr,
                             "WARNING: replacing input data with colored Gaussian noise: "
                             "psd = Initial LIGO\n");
-                } else if (!strcmp("AdvLIGO", optarg)) {
+                } else if (!strcmp("AdvLIGO", LALoptarg)) {
                     colorSpec = colorSpec_AdvLIGO;
                     fprintf(stderr,
                             "WARNING: replacing input data with colored Gaussian noise: "
@@ -3125,29 +3124,29 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                 break;
 
             case 'N':
-                if (snprintf(ckptPath, FILENAME_MAX, "%s", optarg) < 0) {
+                if (snprintf(ckptPath, FILENAME_MAX, "%s", LALoptarg) < 0) {
                     fprintf(stderr,
                             "invalid argument to --%s\n"
                             "local path %s too long: string truncated\n",
-                            long_options[option_index].name, optarg);
+                            long_options[option_index].name, LALoptarg);
                     exit(1);
                 }
-                ADD_PROCESS_PARAM("string", "%s", optarg);
+                ADD_PROCESS_PARAM("string", "%s", LALoptarg);
 
             case 'O':
-                if (snprintf(outputPath, FILENAME_MAX, "%s", optarg) < 0) {
+                if (snprintf(outputPath, FILENAME_MAX, "%s", LALoptarg) < 0) {
                     fprintf(stderr, "invalid argument to --%s\n"
                             "output path %s too long: string truncated\n",
-                            long_options[option_index].name, optarg);
+                            long_options[option_index].name, LALoptarg);
                     exit(1);
                 }
-                ADD_PROCESS_PARAM("string", "%s", optarg);
+                ADD_PROCESS_PARAM("string", "%s", LALoptarg);
 
             case 'Z':
                 /* create storage for the usertag */
-                optarg_len = strlen(optarg) + 1;
-                userTag = (CHAR *) calloc(optarg_len, sizeof(CHAR));
-                memcpy(userTag, optarg, optarg_len);
+                LALoptarg_len = strlen(LALoptarg) + 1;
+                userTag = (CHAR *) calloc(LALoptarg_len, sizeof(CHAR));
+                memcpy(userTag, LALoptarg, LALoptarg_len);
 
                 this_proc_param = this_proc_param->next =
                     (ProcessParamsTable *) calloc(1,
@@ -3160,15 +3159,15 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                 snprintf(this_proc_param->type, LIGOMETA_TYPE_MAX,
                          "string");
                 snprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
-                         optarg);
+                         LALoptarg);
                 break;
 
             case 'I':
                 /* create storaged for the ifo-tag */
-                optarg_len = strlen(optarg) + 1;
-                ifoTag = (CHAR *) calloc(optarg_len, sizeof(CHAR));
-                memcpy(ifoTag, optarg, optarg_len);
-                ADD_PROCESS_PARAM("string", "%s", optarg);
+                LALoptarg_len = strlen(LALoptarg) + 1;
+                ifoTag = (CHAR *) calloc(LALoptarg_len, sizeof(CHAR));
+                memcpy(ifoTag, LALoptarg, LALoptarg_len);
+                ADD_PROCESS_PARAM("string", "%s", LALoptarg);
                 break;
 
             case 'V':
@@ -3181,7 +3180,7 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                 break;
 
             case '#':
-                clusterWindow = (REAL4) atof(optarg);
+                clusterWindow = (REAL4) atof(LALoptarg);
                 if (clusterWindow <= 0) {
                     fprintf(stderr, "invalid argument to --%s:\n"
                             "clustering time window is less than or equal to 0 secs: "
@@ -3195,7 +3194,7 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
 
             case '@':
                 {
-                    long int maxms = atol(optarg);
+                    long int maxms = atol(LALoptarg);
                     if (maxms < 0) {
                         fprintf(stderr, "invalid argument to --%s:\n"
                                 "maximization interval is less than 0 msecs: "
@@ -3213,42 +3212,42 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                 break;
 
             case '0':
-                if (!strcmp("none", optarg)) {
+                if (!strcmp("none", LALoptarg)) {
                     clusterMethod = FindChirpClustering_none;
-                } else if (!strcmp("template", optarg)) {
+                } else if (!strcmp("template", LALoptarg)) {
                     clusterMethod = FindChirpClustering_tmplt;
-                } else if (!strcmp("window", optarg)) {
+                } else if (!strcmp("window", LALoptarg)) {
                     clusterMethod = FindChirpClustering_window;
-                } else if (!strcmp("tmpltwindow", optarg)) {
+                } else if (!strcmp("tmpltwindow", LALoptarg)) {
                     clusterMethod = FindChirpClustering_tmpltwindow;
                 } else {
                     fprintf(stderr, "invalid argument to --%s:\n"
                             "unknown clustering method: "
                             "%s (must be 'none', 'template', 'window' or 'tmpltwindow')\n",
-                            long_options[option_index].name, optarg);
+                            long_options[option_index].name, LALoptarg);
                     exit(1);
                 }
                 haveClusterMethod = 1;
-                ADD_PROCESS_PARAM("string", "%s", optarg);
+                ADD_PROCESS_PARAM("string", "%s", LALoptarg);
                 break;
 
             case '1':
-                if (!strcmp("bns", optarg)) {
+                if (!strcmp("bns", LALoptarg)) {
                     outputMask = sngl_inspiral_table_bns;
-                } else if (!strcmp("bcv", optarg)) {
+                } else if (!strcmp("bcv", LALoptarg)) {
                     outputMask = sngl_inspiral_table_bcv;
                 } else {
                     fprintf(stderr, "invalid argument to --%s:\n"
                             "must be either bns or bcv: (%s specified)\n",
-                            long_options[option_index].name, optarg);
+                            long_options[option_index].name, LALoptarg);
                     exit(1);
                 }
-                ADD_PROCESS_PARAM("string", "%s", optarg);
+                ADD_PROCESS_PARAM("string", "%s", LALoptarg);
                 break;
 
             case '2':
                 {
-                    float mmFastArg = atof(optarg);
+                    float mmFastArg = atof(LALoptarg);
                     if (mmFastArg < (float) (0.0)
                         || mmFastArg > (float) (1.0)) {
                         fprintf(stderr,
@@ -3264,7 +3263,7 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                 break;
 
             case '3':
-                rsqVetoWindow = atol(optarg);
+                rsqVetoWindow = atol(LALoptarg);
                 if (rsqVetoWindow < 0) {
                     fprintf(stderr, "invalid argument to --%s:\n"
                             "r^2 veto time window is less than or equal to 0 msec: "
@@ -3273,11 +3272,11 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                             rsqVetoWindow);
                     exit(1);
                 }
-                ADD_PROCESS_PARAM("float", "%s", optarg);
+                ADD_PROCESS_PARAM("float", "%s", LALoptarg);
                 break;
 
             case '4':
-                rsqVetoThresh = atof(optarg);
+                rsqVetoThresh = atof(LALoptarg);
                 if (rsqVetoThresh < 0) {
                     fprintf(stderr, "invalid argument to --%s:\n"
                             " r^2 veto threshold must be positive: "
@@ -3286,7 +3285,7 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                             rsqVetoThresh);
                     exit(1);
                 }
-                ADD_PROCESS_PARAM("float", "%s", optarg);
+                ADD_PROCESS_PARAM("float", "%s", LALoptarg);
                 break;
 
             case '5':
@@ -3301,71 +3300,71 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
 
             case '7':
                 /* create storage for the bank sim frame file name */
-                optarg_len = strlen(optarg) + 1;
+                LALoptarg_len = strlen(LALoptarg) + 1;
                 bankSimParams.frameName =
-                    (CHAR *) calloc(optarg_len, sizeof(CHAR));
-                memcpy(bankSimParams.frameName, optarg, optarg_len);
-                ADD_PROCESS_PARAM("string", "%s", optarg);
+                    (CHAR *) calloc(LALoptarg_len, sizeof(CHAR));
+                memcpy(bankSimParams.frameName, LALoptarg, LALoptarg_len);
+                ADD_PROCESS_PARAM("string", "%s", LALoptarg);
                 break;
 
             case '8':
                 /* create storage for the bank sim frame file channel */
-                optarg_len = strlen(optarg) + 1;
+                LALoptarg_len = strlen(LALoptarg) + 1;
                 bankSimParams.frameChan =
-                    (CHAR *) calloc(optarg_len, sizeof(CHAR));
-                memcpy(bankSimParams.frameChan, optarg, optarg_len);
-                ADD_PROCESS_PARAM("string", "%s", optarg);
+                    (CHAR *) calloc(LALoptarg_len, sizeof(CHAR));
+                memcpy(bankSimParams.frameChan, LALoptarg, LALoptarg_len);
+                ADD_PROCESS_PARAM("string", "%s", LALoptarg);
                 break;
 
             case '9':
                 numTDFiles = 1;
                 /* Count the number of thinca files to follow up */
-                while (!strstr(argv[optind], "--")) {
+                while (!strstr(argv[LALoptind], "--")) {
                     numTDFiles++;
-                    optind++;
+                    LALoptind++;
                 }
-                optind = optind - numTDFiles;
+                LALoptind = LALoptind - numTDFiles;
 
                 /* Set pointers to the relevant filenames */
                 tdFollowUpFiles =
                     (CHAR **) calloc(numTDFiles, sizeof(CHAR *));
 
                 numTDFiles = 0;
-                while (!strstr(argv[optind], "--")) {
-                    tdFollowUpFiles[numTDFiles++] = argv[optind];
-                    ADD_PROCESS_PARAM("string", "%s", argv[optind]);
-                    optind++;
+                while (!strstr(argv[LALoptind], "--")) {
+                    tdFollowUpFiles[numTDFiles++] = argv[LALoptind];
+                    ADD_PROCESS_PARAM("string", "%s", argv[LALoptind]);
+                    LALoptind++;
 
                 }
                 break;
 
             case '*':
                 /* store trigSanClustering method */
-                if (!strcmp("T0T3Tc", optarg)) {
+                if (!strcmp("T0T3Tc", LALoptarg)) {
                     trigScanMethod = T0T3Tc;
                     trigScanAppendStragglers = 0;
-                } else if (!strcmp("T0T3TcAS", optarg)) {
+                } else if (!strcmp("T0T3TcAS", LALoptarg)) {
                     trigScanMethod = T0T3Tc;
                     trigScanAppendStragglers = 1;
-                } else if (!strcmp("Psi0Psi3Tc", optarg)) {
+                } else if (!strcmp("Psi0Psi3Tc", LALoptarg)) {
                     trigScanMethod = Psi0Psi3Tc;
                     trigScanAppendStragglers = 0;
-                } else if (!strcmp("Psi0Psi3TcAS", optarg)) {
+                } else if (!strcmp("Psi0Psi3TcAS", LALoptarg)) {
                     trigScanMethod = Psi0Psi3Tc;
                     trigScanAppendStragglers = 1;
                 } else {
                     fprintf(stderr, "invalid argument to --%s:\n"
                             "unknown scan method specified: %s\n"
                             "(Must be one of T0T3Tc, T0T3TcAS, Psi0Psi3Tc, Psi0Psi3TcAS)\n",
-                            long_options[option_index].name, optarg);
+                            long_options[option_index].name, LALoptarg);
                     exit(1);
                 }
-                ADD_PROCESS_PARAM("string", "%s", optarg);
+                ADD_PROCESS_PARAM("string", "%s", LALoptarg);
                 break;
 
             case '<':
                 /* TrigScan Delta End Time */
-                trigScanDeltaEndTime = atof(optarg);
+                trigScanDeltaEndTime = atof(LALoptarg);
                 if (trigScanDeltaEndTime < 0.0L) {
                     fprintf(stderr, "invalid argument to --%s:\n"
                             "ts-endtime-interval must be positive: "
@@ -3374,12 +3373,12 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                             trigScanDeltaEndTime);
                     exit(1);
                 }
-                ADD_PROCESS_PARAM("float", "%s", optarg);
+                ADD_PROCESS_PARAM("float", "%s", LALoptarg);
                 break;
 
             case '>':
                 /* TrigScan Template Metric Scaling Factor */
-                trigScanMetricScalingFac = atof(optarg);
+                trigScanMetricScalingFac = atof(LALoptarg);
                 if (trigScanMetricScalingFac <= 0.0) {
                     fprintf(stderr, "invalid argument to --%s:\n"
                             "ts-volume-safety must be > 0.0 : "
@@ -3388,11 +3387,11 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                             trigScanMetricScalingFac);
                     exit(1);
                 }
-                ADD_PROCESS_PARAM("float", "%s", optarg);
+                ADD_PROCESS_PARAM("float", "%s", LALoptarg);
                 break;
 
             case '?':
-                bankSimParams.f_lower = (REAL4) atof(optarg);
+                bankSimParams.f_lower = (REAL4) atof(LALoptarg);
                 if (bankSimParams.f_lower <= 0) {
                     fprintf(stderr, "invalid argument to --%s:\n"
                             "bank-sim-flower must be > 0.0 : "
@@ -3405,7 +3404,7 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                 break;
 
             case '(':
-                rsqVetoTimeThresh = atof(optarg);
+                rsqVetoTimeThresh = atof(LALoptarg);
                 if (rsqVetoTimeThresh < 0) {
                     fprintf(stderr, "invalid argument to --%s:\n"
                             " r^2 veto time threshold must be positive: "
@@ -3414,11 +3413,11 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                             rsqVetoTimeThresh);
                     exit(1);
                 }
-                ADD_PROCESS_PARAM("float", "%s", optarg);
+                ADD_PROCESS_PARAM("float", "%s", LALoptarg);
                 break;
 
             case ')':
-                rsqVetoMaxSNR = atof(optarg);
+                rsqVetoMaxSNR = atof(LALoptarg);
                 if (rsqVetoMaxSNR < 0) {
                     fprintf(stderr, "invalid argument to --%s:\n"
                             " r^2 veto maximum snr must be positive: "
@@ -3427,11 +3426,11 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                             rsqVetoMaxSNR);
                     exit(1);
                 }
-                ADD_PROCESS_PARAM("float", "%s", optarg);
+                ADD_PROCESS_PARAM("float", "%s", LALoptarg);
                 break;
 
             case '[':
-                rsqVetoCoeff = atof(optarg);
+                rsqVetoCoeff = atof(LALoptarg);
                 if (rsqVetoCoeff < 0) {
                     fprintf(stderr, "invalid argument to --%s:\n"
                             " r^2 veto coefficient must be positive: "
@@ -3439,11 +3438,11 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                             long_options[option_index].name, rsqVetoCoeff);
                     exit(1);
                 }
-                ADD_PROCESS_PARAM("float", "%s", optarg);
+                ADD_PROCESS_PARAM("float", "%s", LALoptarg);
                 break;
 
             case ']':
-                rsqVetoPow = atof(optarg);
+                rsqVetoPow = atof(LALoptarg);
                 if (rsqVetoPow < 0) {
                     fprintf(stderr, "invalid argument to --%s:\n"
                             " r^2 veto power must be positive: "
@@ -3451,12 +3450,12 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                             long_options[option_index].name, rsqVetoPow);
                     exit(1);
                 }
-                ADD_PROCESS_PARAM("float", "%s", optarg);
+                ADD_PROCESS_PARAM("float", "%s", LALoptarg);
                 break;
 
             case ',':
                 {
-                    int subBankSizeArg = atoi(optarg);
+                    int subBankSizeArg = atoi(LALoptarg);
 
                     if (subBankSizeArg < 1) {
                         fprintf(stderr, "invalid argument to --%s:\n"
@@ -3466,7 +3465,7 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                                 subBankSizeArg);
                         exit(1);
                     }
-                    ADD_PROCESS_PARAM("int", "%s", optarg);
+                    ADD_PROCESS_PARAM("int", "%s", LALoptarg);
 
                     subBankSize = (UINT4) subBankSizeArg;
                 }
@@ -3477,23 +3476,23 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                 break;
 
             case '{':
-                if (!strcmp("start", optarg)) {
+                if (!strcmp("start", LALoptarg)) {
                     taperTmplt = LAL_SIM_INSPIRAL_TAPER_START;
-                } else if (!strcmp("end", optarg)) {
+                } else if (!strcmp("end", LALoptarg)) {
                     taperTmplt = LAL_SIM_INSPIRAL_TAPER_END;
-                } else if (!strcmp("startend", optarg)) {
+                } else if (!strcmp("startend", LALoptarg)) {
                     taperTmplt = LAL_SIM_INSPIRAL_TAPER_STARTEND;
                 } else {
                     fprintf(stderr, "invalid argument to --%s:\n"
                             "Taper must be set to start, end or startend:(%s specified)\n",
-                            long_options[option_index].name, optarg);
+                            long_options[option_index].name, LALoptarg);
                     exit(1);
                 }
-                ADD_PROCESS_PARAM("string", "%s", optarg);
+                ADD_PROCESS_PARAM("string", "%s", LALoptarg);
                 break;
 
             case '|':
-                CDataLength = atof(optarg);
+                CDataLength = atof(LALoptarg);
                 if (CDataLength < 0) {
                     fprintf(stderr, "invalid argument to --%s:\n"
                             "Length of c-data snippet must be positive: "
@@ -3501,7 +3500,7 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                             long_options[option_index].name, CDataLength);
                     exit(1);
                 }
-                ADD_PROCESS_PARAM("float", "%s", optarg);
+                ADD_PROCESS_PARAM("float", "%s", LALoptarg);
                 break;
 
             default:
@@ -3511,10 +3510,10 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
         }
     }
 
-    if (optind < argc) {
+    if (LALoptind < argc) {
         fprintf(stderr, "extraneous command line arguments:\n");
-        while (optind < argc) {
-            fprintf(stderr, "%s\n", argv[optind++]);
+        while (LALoptind < argc) {
+            fprintf(stderr, "%s\n", argv[LALoptind++]);
         }
         exit(1);
     }

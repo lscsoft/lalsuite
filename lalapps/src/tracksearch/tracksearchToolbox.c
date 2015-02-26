@@ -21,7 +21,6 @@
  */
 #include "tracksearch.h"
 #include "tracksearchToolbox.h"
-#include <unistd.h>
 
 /* Code Identifying information */
 #define CVS_REVISION "$Revision$"

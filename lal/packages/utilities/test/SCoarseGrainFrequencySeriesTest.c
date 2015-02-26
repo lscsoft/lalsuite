@@ -24,15 +24,8 @@
 #include <stdio.h>
 #include <config.h>
 
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-
-#ifdef HAVE_GETOPT_H
-#include <getopt.h>
-#endif
-
 #include <lal/CoarseGrainFrequencySeries.h>
+#include <lal/LALgetopt.h>
 #include <lal/AVFactories.h>
 #include <lal/ReadFTSeries.h>
 #include <lal/PrintFTSeries.h>
@@ -162,9 +155,6 @@
 
 #define SCOARSEGRAINFREQUENCYSERIESTESTC_TRUE     1
 #define SCOARSEGRAINFREQUENCYSERIESTESTC_FALSE    0
-
-extern char *optarg;
-extern int   optind;
 
 BOOLEAN optVerbose = SCOARSEGRAINFREQUENCYSERIESTESTC_FALSE;
 UINT4 optInLength    = 0;
@@ -946,7 +936,7 @@ ParseOptions (int argc, char *argv[])
   {
     int c = -1;
 
-    c = getopt (argc, argv, "hqvd:i:o:n:m:e:f:");
+    c = LALgetopt (argc, argv, "hqvd:i:o:n:m:e:f:");
     if (c == -1)
     {
       break;
@@ -955,27 +945,27 @@ ParseOptions (int argc, char *argv[])
     switch (c)
     {
       case 'i': /* specify input file */
-        strncpy (optInputFile, optarg, LALNameLength);
+        strncpy (optInputFile, LALoptarg, LALNameLength);
         break;
 
       case 'o': /* specify output file */
-        strncpy (optOutputFile, optarg, LALNameLength);
+        strncpy (optOutputFile, LALoptarg, LALNameLength);
         break;
 
       case 'n': /* specify number of points in input series */
-        optInLength = atoi (optarg);
+        optInLength = atoi (LALoptarg);
         break;
 
       case 'm': /* specify number of points in output series */
-        optOutLength = atoi (optarg);
+        optOutLength = atoi (LALoptarg);
         break;
 
       case 'e': /* specify frequency resolution */
-        optDeltaF = atof (optarg);
+        optDeltaF = atof (LALoptarg);
         break;
 
       case 'f': /* specify start frequency */
-        optF0 = atof (optarg);
+        optF0 = atof (LALoptarg);
         break;
 
       case 'd': /* set debug level */
@@ -1011,7 +1001,7 @@ ParseOptions (int argc, char *argv[])
 
   }
 
-  if (optind < argc)
+  if (LALoptind < argc)
   {
     Usage (argv[0], 1);
   }

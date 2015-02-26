@@ -32,8 +32,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <getopt.h>
-#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -42,6 +40,7 @@
 #include <math.h>
 
 #include <lal/LALConstants.h>
+#include <lal/LALgetopt.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/Units.h>
 #include <lal/TimeSeries.h>

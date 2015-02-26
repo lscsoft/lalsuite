@@ -29,7 +29,6 @@
  */
 
 
-#include <getopt.h>
 #include <lalapps.h>
 #include <math.h>
 #include <processtable.h>
@@ -42,6 +41,7 @@
 #include <gsl/gsl_randist.h>
 
 #include <lal/AVFactories.h>
+#include <lal/LALgetopt.h>
 #include <lal/BandPassTimeSeries.h>
 #include <lal/Date.h>
 #include <lal/EPSearch.h>
@@ -459,7 +459,7 @@ static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param, c
 
 
 #define ADD_PROCESS_PARAM(process, type) \
-	do { paramaddpoint = add_process_param(paramaddpoint, process, type, long_options[option_index].name, optarg); } while(0)
+	do { paramaddpoint = add_process_param(paramaddpoint, process, type, long_options[option_index].name, LALoptarg); } while(0)
 
 
 /*
@@ -517,11 +517,11 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 	 * Parse command line.
 	 */
 
-	opterr = 1;		/* enable error messages */
-	optind = 0;		/* start scanning from argv[0] */
-	do switch (c = getopt_long(argc, argv, "", long_options, &option_index)) {
+	LALopterr = 1;		/* enable error messages */
+	LALoptind = 0;		/* start scanning from argv[0] */
+	do switch (c = LALgetopt_long(argc, argv, "", long_options, &option_index)) {
 	case 'A':
-		options->bandwidth = atof(optarg);
+		options->bandwidth = atof(LALoptarg);
 		if(options->bandwidth <= 0 || !double_is_power_of_2(options->bandwidth)) {
 			sprintf(msg, "must be greater than 0 and a power of 2 (%g specified)", options->bandwidth);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
@@ -531,18 +531,18 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		break;
 
 	case 'B':
-		options->cal_cache_filename = optarg;
+		options->cal_cache_filename = LALoptarg;
 		ADD_PROCESS_PARAM(process, "string");
 		break;
 
 	case 'C':
-		options->channel_name = optarg;
-		memcpy(options->ifo, optarg, sizeof(options->ifo) - 1);
+		options->channel_name = LALoptarg;
+		memcpy(options->ifo, LALoptarg, sizeof(options->ifo) - 1);
 		ADD_PROCESS_PARAM(process, "string");
 		break;
 
 	case 'F':
-		options->max_event_rate = atoi(optarg);
+		options->max_event_rate = atoi(LALoptarg);
 		if(options->max_event_rate < 0) {
 			sprintf(msg, "must not be negative (%d specified)", options->max_event_rate);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
@@ -552,13 +552,13 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		break;
 
 	case 'G':
-		options->cache_filename = optarg;
+		options->cache_filename = LALoptarg;
 		ADD_PROCESS_PARAM(process, "string");
 		break;
 
 	case 'K':
-		if(XLALStrToGPS(&options->gps_end, optarg, NULL)) {
-			sprintf(msg, "range error parsing \"%s\"", optarg);
+		if(XLALStrToGPS(&options->gps_end, LALoptarg, NULL)) {
+			sprintf(msg, "range error parsing \"%s\"", LALoptarg);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = 1;
 		}
@@ -566,8 +566,8 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		break;
 
 	case 'M':
-		if(XLALStrToGPS(&options->gps_start, optarg, NULL)) {
-			sprintf(msg, "range error parsing \"%s\"", optarg);
+		if(XLALStrToGPS(&options->gps_start, LALoptarg, NULL)) {
+			sprintf(msg, "range error parsing \"%s\"", LALoptarg);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = 1;
 		}
@@ -580,12 +580,12 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		break;
 
 	case 'P':
-		options->injection_filename = optarg;
+		options->injection_filename = LALoptarg;
 		ADD_PROCESS_PARAM(process, "string");
 		break;
 
 	case 'Q':
-		options->flow = atof(optarg);
+		options->flow = atof(LALoptarg);
 		if(options->flow < 0) {
 			sprintf(msg, "must not be negative (%f Hz specified)", options->flow);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
@@ -595,17 +595,17 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		break;
 
 	case 'R':
-		options->mdc_cache_filename = optarg;
+		options->mdc_cache_filename = LALoptarg;
 		ADD_PROCESS_PARAM(process, "string");
 		break;
 
 	case 'S':
-		options->mdc_channel_name = optarg;
+		options->mdc_channel_name = LALoptarg;
 		ADD_PROCESS_PARAM(process, "string");
 		break;
 
 	case 'V':
-		options->noise_rms = atof(optarg);
+		options->noise_rms = atof(LALoptarg);
 		if(options->noise_rms <= 0.0) {
 			sprintf(msg, "must be greater than 0 (%f specified)", options->noise_rms);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
@@ -616,7 +616,7 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 
 	case 'W':
 		{
-		int window_length = atoi(optarg);
+		int window_length = atoi(LALoptarg);
 		if((window_length < 4) || !is_power_of_2(window_length)) {
 			sprintf(msg, "must be greater than or equal to 4 and a power of 2 (%i specified)", window_length);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
@@ -637,7 +637,7 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 	case 'X':
 #if 0
 		options->diagnostics = malloc(sizeof(*options->diagnostics));
-		options->diagnostics->LIGOLwXMLStream = XLALOpenLIGOLwXMLFile(optarg);
+		options->diagnostics->LIGOLwXMLStream = XLALOpenLIGOLwXMLFile(LALoptarg);
 		options->diagnostics->XLALWriteLIGOLwXMLArrayREAL8FrequencySeries = XLALWriteLIGOLwXMLArrayREAL8FrequencySeries;
 		options->diagnostics->XLALWriteLIGOLwXMLArrayREAL8TimeSeries = XLALWriteLIGOLwXMLArrayREAL8TimeSeries;
 		options->diagnostics->XLALWriteLIGOLwXMLArrayCOMPLEX16FrequencySeries = XLALWriteLIGOLwXMLArrayCOMPLEX16FrequencySeries;
@@ -648,7 +648,7 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		break;
 
 	case 'Z':
-		options->psd_length = atoi(optarg);
+		options->psd_length = atoi(LALoptarg);
 		ADD_PROCESS_PARAM(process, "int");
 		break;
 
@@ -658,9 +658,9 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		 * guestimated limit on the length of a time series to read
 		 * in.
 		 */
-		options->max_series_length = atoi(optarg) * 1024 * 1024 / (8 * sizeof(REAL8));
+		options->max_series_length = atoi(LALoptarg) * 1024 * 1024 / (8 * sizeof(REAL8));
 		if(options->max_series_length <= 0) {
-			sprintf(msg, "must be greater than 0 (%i specified)", atoi(optarg));
+			sprintf(msg, "must be greater than 0 (%i specified)", atoi(LALoptarg));
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = 1;
 		}
@@ -668,17 +668,17 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		break;
 
 	case 'b':
-		options->output_filename = optarg;
+		options->output_filename = LALoptarg;
 		ADD_PROCESS_PARAM(process, "string");
 		break;
 
 	case 'c':
-		options->seed = atol(optarg);
+		options->seed = atol(LALoptarg);
 		ADD_PROCESS_PARAM(process, "long");
 		break;
 
 	case 'e':
-		options->resample_rate = atoi(optarg);
+		options->resample_rate = atoi(LALoptarg);
 		if(options->resample_rate < 2 || options->resample_rate > 16384 || !is_power_of_2(options->resample_rate)) {
 			sprintf(msg, "must be a power of 2 in the rage [2,16384] (%d specified)", options->resample_rate);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
@@ -688,7 +688,7 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		break;
 
 	case 'f':
-		options->fractional_stride = atof(optarg);
+		options->fractional_stride = atof(LALoptarg);
 		if(options->fractional_stride > 1 || !double_is_power_of_2(options->fractional_stride)) {
 			sprintf(msg, "must be less than or equal to 1 and a power of 2 (%g specified)", options->fractional_stride);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
@@ -698,7 +698,7 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		break;
 
 	case 'g':
-		options->confidence_threshold = atof(optarg);
+		options->confidence_threshold = atof(LALoptarg);
 		if(options->confidence_threshold < 0) {
 			sprintf(msg, "must not be negative (%g specified)", options->confidence_threshold);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
@@ -708,12 +708,12 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		break;
 
 	case 'h':
-		options->comment = optarg;
+		options->comment = LALoptarg;
 		ADD_PROCESS_PARAM(process, "string");
 		break;
 
 	case 'j':
-		options->filter_corruption = atoi(optarg);
+		options->filter_corruption = atoi(LALoptarg);
 		if(options->filter_corruption < 0) {
 			sprintf(msg, "must not be negative (%d specified)", options->filter_corruption);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
@@ -723,7 +723,7 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		break;
 
 	case 'l':
-		options->maxTileBandwidth = atof(optarg);
+		options->maxTileBandwidth = atof(LALoptarg);
 		if((options->maxTileBandwidth <= 0) || !double_is_power_of_2(options->maxTileBandwidth)) {
 			sprintf(msg, "must be greater than 0 and a power of 2 (%f specified)", options->maxTileBandwidth);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
@@ -733,7 +733,7 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		break;
 
 	case 'm':
-		options->maxTileDuration = atof(optarg);
+		options->maxTileDuration = atof(LALoptarg);
 		if((options->maxTileDuration <= 0) || !double_is_power_of_2(options->maxTileDuration)) {
 			sprintf(msg, "must be greater than 0 and a power of 2 (%f specified)", options->maxTileDuration);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
@@ -743,7 +743,7 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		break;
 
 	case 'o':
-		options->high_pass = atof(optarg);
+		options->high_pass = atof(LALoptarg);
 		if(options->high_pass < 0) {
 			sprintf(msg, "must not be negative (%f Hz specified)", options->high_pass);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
@@ -754,7 +754,7 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 
 	/* option sets a flag */
 	case 0:
-		optarg = NULL;
+		LALoptarg = NULL;
 		ADD_PROCESS_PARAM(process, "string");
 		break;
 

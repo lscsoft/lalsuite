@@ -33,12 +33,12 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
-#include <getopt.h>
 #include <time.h>
 #include <config.h>
 #include <lalapps.h>
 #include <processtable.h>
 #include <lal/LALStdio.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/LIGOMetadataTables.h>
@@ -168,12 +168,12 @@ int main ( int argc, char *argv[] )
   /* parse the arguments */
   while ( 1 )
   {
-    /* getopt_long stores long option here */
+    /* LALgetopt_long stores long option here */
     int option_index = 0;
     long int gpsinput;
-    size_t optarg_len;
+    size_t LALoptarg_len;
 
-    c = getopt_long_only( argc, argv, 
+    c = LALgetopt_long_only( argc, argv,
         "Ha:b:c:d:e:f:g:h:i:j:k:l:Z:", long_options, &option_index );
 
     /* detect the end of the options */
@@ -193,14 +193,14 @@ int main ( int argc, char *argv[] )
         else
         {
           fprintf( stderr, "error parsing option %s with argument %s\n",
-              long_options[option_index].name, optarg );
+              long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
         break;
 
       case 'a':
         {
-          long int gendsec = atol( optarg );
+          long int gendsec = atol( LALoptarg );
           if ( gendsec < 441417609 )
           {
             fprintf( stderr, "invalid argument to --%s:\n"
@@ -219,7 +219,7 @@ int main ( int argc, char *argv[] )
 
       case 'b':
         {
-          long int gendnansec = atol( optarg );
+          long int gendnansec = atol( LALoptarg );
           if ( gendnansec < 0 )
           {
             fprintf( stderr, "invalid argument to --%s:\n"
@@ -243,21 +243,21 @@ int main ( int argc, char *argv[] )
         break;
 
       case 'c':
-        injParams.mass1 = (REAL4) atof( optarg );
+        injParams.mass1 = (REAL4) atof( LALoptarg );
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, "real_4", 
               "%d", rand_seed );
         break;
 
       case 'd':
-        injParams.mass2 = (REAL4) atof( optarg );
+        injParams.mass2 = (REAL4) atof( LALoptarg );
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, "real_4", 
               "%d", rand_seed );
         break;
 
       case 'e':
-        injParams.distance = (REAL4) atof( optarg );
+        injParams.distance = (REAL4) atof( LALoptarg );
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, "real_4", 
               "%d", rand_seed );
@@ -276,21 +276,21 @@ int main ( int argc, char *argv[] )
         break;
 
       case 'i':
-        injParams.inclination = (REAL4) atof( optarg );
+        injParams.inclination = (REAL4) atof( LALoptarg );
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, "real_4", 
               "%d", rand_seed );
         break;
 
       case 'j':
-        injParams.coa_phase= (REAL4) atof( optarg );
+        injParams.coa_phase= (REAL4) atof( LALoptarg );
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, "real_4", 
               "%d", rand_seed );
         break;
 
       case 'k':
-        injParams.polarization = (REAL4) atof( optarg );
+        injParams.polarization = (REAL4) atof( LALoptarg );
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, "real_4", 
               "%d", rand_seed );
@@ -298,17 +298,17 @@ int main ( int argc, char *argv[] )
 
       case 'l':
         snprintf( &(injParams.waveform), 
-                  LIGOMETA_WAVEFORM_MAX, "%s", optarg );
+                  LIGOMETA_WAVEFORM_MAX, "%s", LALoptarg );
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, "string", 
-              "%s", optarg );
+              "%s", LALoptarg );
         break;
 
       case 'Z':
         /* create storage for the usertag */
-        optarg_len = strlen( optarg ) + 1;
-        userTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
-        memcpy( userTag, optarg, optarg_len );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        userTag = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR) );
+        memcpy( userTag, LALoptarg, LALoptarg_len );
 
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
@@ -317,7 +317,7 @@ int main ( int argc, char *argv[] )
         snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
         snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
         snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
-                  optarg );
+                  LALoptarg );
         break;
 
       case 'h':

@@ -30,9 +30,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <lalapps.h>
 #include <lal/LALStdlib.h>
+#include <lal/LALgetopt.h>
 #include <lal/StochasticCrossCorrelation.h>
 #include <lal/DetectorSite.h>
 #include <lal/LALConstants.h>

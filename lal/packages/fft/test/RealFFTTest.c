@@ -63,15 +63,8 @@
 #include <stdlib.h>
 #include <math.h>
 
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-
-#ifdef HAVE_GETOPT_H
-#include <getopt.h>
-#endif
-
 #include <lal/LALStdlib.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALConstants.h>
 #include <lal/SeqFactories.h>
 #include <lal/RealFFT.h>
@@ -80,9 +73,6 @@
 
 #define CODES_(x) #x
 #define CODES(x) CODES_(x)
-
-extern char *optarg;
-extern int   optind;
 
 int verbose       = 0;
 UINT4 m_ = 1; /* number of random trials */
@@ -405,7 +395,7 @@ ParseOptions( int argc, char *argv[] )
   {
     int c = -1;
 
-    c = getopt( argc, argv, "hqvd:m:n:" );
+    c = LALgetopt( argc, argv, "hqvd:m:n:" );
     if ( c == -1 )
     {
       break;
@@ -414,11 +404,11 @@ ParseOptions( int argc, char *argv[] )
     switch ( c )
     {
       case 'n': /* set FFT size */
-        n_ = atoi( optarg );
+        n_ = atoi( LALoptarg );
         break;
 
       case 'm': /* set number of trials */
-        m_ = atoi( optarg );
+        m_ = atoi( LALoptarg );
         break;
 
       case 'd': /* set debug level */
@@ -453,7 +443,7 @@ ParseOptions( int argc, char *argv[] )
 
   }
 
-  if ( optind < argc )
+  if ( LALoptind < argc )
   {
     Usage( argv[0], 1 );
   }

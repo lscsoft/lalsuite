@@ -37,11 +37,11 @@ int main( void ) { fprintf( stderr, "no gsl: disabled\n" ); return 77; }
 
 #include <math.h>
 #include <string.h>
-#include <getopt.h>
 #include <time.h>
 #include <lalapps.h>
 #include <processtable.h>
 #include <lal/LALStdio.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/LIGOMetadataTables.h>
@@ -140,7 +140,7 @@ int main( int argc, char *argv[] )
   SimInspiralTable     *this_inj = NULL;
   LIGOLwXMLStream       xmlfp;
 
-  /* getopt arguments */
+  /* LALgetopt arguments */
   struct option long_options[] =
   {
     {"help",                    no_argument,       0,                'h'},
@@ -188,11 +188,11 @@ int main( int argc, char *argv[] )
      
   while ( 1 )
   {
-    /* getopt_long stores long option here */
+    /* LALgetopt_long stores long option here */
     int option_index = 0;
-    size_t optarg_len;
+    size_t LALoptarg_len;
 
-    c = getopt_long_only( argc, argv, 
+    c = LALgetopt_long_only( argc, argv,
         "c:C:hI:m:M:o:t:T:VZ:", long_options, &option_index );
 
     /* detect the end of the options */
@@ -212,16 +212,16 @@ int main( int argc, char *argv[] )
         else
         {
           fprintf( stderr, "error parsing option %s with argument %s\n",
-              long_options[option_index].name, optarg );
+              long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
         break;
 
       case 'I':
         /* create storage for the injection file name */
-        optarg_len = strlen( optarg ) + 1;
-        injectFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-        memcpy( injectFileName, optarg, optarg_len );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        injectFileName = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
+        memcpy( injectFileName, LALoptarg, LALoptarg_len );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name, "string",
               "%s", injectFileName );
@@ -229,9 +229,9 @@ int main( int argc, char *argv[] )
 
       case 'M':
         /* create storage for the missed injection file name */
-        optarg_len = strlen( optarg ) + 1;
-        massCut = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-        memcpy( massCut, optarg, optarg_len );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        massCut = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
+        memcpy( massCut, LALoptarg, LALoptarg_len );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name, "string",
               "%s", massCut );
@@ -239,9 +239,9 @@ int main( int argc, char *argv[] )
 
       case 'o':
         /* create storage for the output file name */
-        optarg_len = strlen( optarg ) + 1;
-        outputFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-        memcpy( outputFileName, optarg, optarg_len );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        outputFileName = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
+        memcpy( outputFileName, LALoptarg, LALoptarg_len );
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name, "string",
               "%s", outputFileName );
@@ -249,7 +249,7 @@ int main( int argc, char *argv[] )
 
       case 't':
         /* minimum total mass */
-        minMass = (REAL4) atof( optarg );
+        minMass = (REAL4) atof( LALoptarg );
         if ( minMass <= 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -265,7 +265,7 @@ int main( int argc, char *argv[] )
 
       case 'T':
         /* maximum total mass */
-        maxMass = (REAL4) atof( optarg );
+        maxMass = (REAL4) atof( LALoptarg );
         if ( maxMass <= 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -281,7 +281,7 @@ int main( int argc, char *argv[] )
 
       case 'r':
         /* minimum total mass2 */
-        minMass2 = (REAL4) atof( optarg );
+        minMass2 = (REAL4) atof( LALoptarg );
         if ( minMass2 <= 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -297,7 +297,7 @@ int main( int argc, char *argv[] )
 
       case 'R':
         /* maximum total mass2 */
-        maxMass2 = (REAL4) atof( optarg );
+        maxMass2 = (REAL4) atof( LALoptarg );
         if ( maxMass2 <= 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -334,12 +334,12 @@ int main( int argc, char *argv[] )
     }
   }
 
-  if ( optind < argc )
+  if ( LALoptind < argc )
   {
     fprintf( stderr, "extraneous command line arguments:\n" );
-    while ( optind < argc )
+    while ( LALoptind < argc )
     {
-      fprintf ( stderr, "%s\n", argv[optind++] );
+      fprintf ( stderr, "%s\n", argv[LALoptind++] );
     }
     exit( 1 );
   }

@@ -42,6 +42,9 @@
 #include <math.h>
 #include <stdio.h>
 #include <strings.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 #include <gsl/gsl_math.h>
 
 /* LAL-includes */

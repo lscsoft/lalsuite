@@ -106,17 +106,10 @@
 
 #include <config.h>
 
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-
-#ifdef HAVE_GETOPT_H
-#include <getopt.h>
-#endif
-
 #include <math.h>
 #include <stdio.h>
 #include <lal/AVFactories.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALXMGRInterface.h>
 #include <lal/PtoleMetric.h>
 #include <lal/StackMetric.h>
@@ -140,8 +133,6 @@
 
 
 
-
-extern char *optarg;     /* option argument for getopt() */
 
 void getRange( LALStatus *, REAL4 [2], REAL4, void * );
 void getMetric( LALStatus *, REAL4 [3], REAL4 [2], void * );
@@ -183,7 +174,7 @@ int main( int argc, char **argv )
   radius = 24.0/60*LAL_PI_180;
 
   /* Parse and sanity-check the command-line options. */
-  while( (opt = getopt( argc, argv, "b:c:e:f:im:n:pr:t:x" )) != -1 )
+  while( (opt = LALgetopt( argc, argv, "b:c:e:f:im:n:pr:t:x" )) != -1 )
   {
     switch( opt )
     {
@@ -191,10 +182,10 @@ int main( int argc, char **argv )
     case '?':
       return PTOLEMESHTESTC_EOPT;
     case 'b':
-      begin = atof( optarg );
+      begin = atof( LALoptarg );
       break;
     case 'c':
-      if( sscanf( optarg, "%f:%f:%f:%f:%f:%f", &a, &b, &c, &d, &e, &f ) != 6)
+      if( sscanf( LALoptarg, "%f:%f:%f:%f:%f:%f", &a, &b, &c, &d, &e, &f ) != 6)
       {
         fprintf( stderr, "coordinates should be hh:mm:ss:dd:mm:ss\n" );
         return PTOLEMESHTESTC_EOPT;
@@ -205,21 +196,21 @@ int main( int argc, char **argv )
     case 'e':
       break;
     case 'f':
-      fMax = atof( optarg );
+      fMax = atof( LALoptarg );
       break;
     case 'i':
       break;
     case 'm':
-      mismatch = atof( optarg );
+      mismatch = atof( LALoptarg );
       break;
     case 'n':
-      maxNodes = atoi( optarg );
+      maxNodes = atoi( LALoptarg );
       break;
     case 'p':
       nonGrace = 1;
       break;
     case 'r':
-      radius = LAL_PI_180/60*atof( optarg );
+      radius = LAL_PI_180/60*atof( LALoptarg );
       if( radius < 0 ) {
         fprintf( stderr, "%s line %d: %s\n", __FILE__, __LINE__,
                  PTOLEMESHTESTC_MSGERNG );
@@ -227,7 +218,7 @@ int main( int argc, char **argv )
       }
       break;
     case 't':
-      duration = atof( optarg );
+      duration = atof( LALoptarg );
       if( duration < MIN_DURATION || duration > MAX_DURATION ) {
 	fprintf( stderr, "%s line %d: %s\n", __FILE__, __LINE__,
                  PTOLEMESHTESTC_MSGERNG );
@@ -238,7 +229,7 @@ int main( int argc, char **argv )
       grace = 1;
       break;
     } /* switch( opt ) */
-  } /* while( getopt... ) */
+  } /* while( LALgetopt... ) */
 
   /* Create the mesh. */
   mesh.mThresh = mismatch;

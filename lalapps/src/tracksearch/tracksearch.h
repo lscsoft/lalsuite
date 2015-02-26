@@ -36,11 +36,13 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <time.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <fcntl.h>
-#include <getopt.h>
 
 #include <lal/AVFactories.h>
+#include <lal/LALgetopt.h>
 #include <lal/Date.h>
 #include <lal/FrameCalibration.h>
 #include <lal/LALFrStream.h>

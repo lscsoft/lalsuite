@@ -141,7 +141,6 @@ void print4i(__m128i v) {
 
 #ifdef HAVE_SYS_TIMES
 #include <sys/times.h>
-#include <unistd.h>
 #endif
 
 #ifdef HAVE_VECLIB

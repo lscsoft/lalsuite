@@ -22,7 +22,9 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 
 #include <lal/LALDatatypes.h>
 #include <lal/LALDetectors.h>

@@ -37,7 +37,6 @@
 #define _READPULSARPARFILE_H
 
 #include <ctype.h>
-#include <unistd.h>
 
 #include <lal/LALStdlib.h>
 #include <lal/StringVector.h>

@@ -257,7 +257,7 @@
 /* program info */
 const CHAR* prog_name="lalapps_stochastic";
 
-/* flags for getopt_long */
+/* flags for LALgetopt_long */
 int middle_segment_flag;
 int apply_mask_flag;
 int high_pass_flag;
@@ -436,11 +436,11 @@ static void parse_options(INT4 argc, CHAR *argv[])
       {0, 0, 0, 0}
     };
 
-    /* getopt_long stores the option here */
+    /* LALgetopt_long stores the option here */
     int option_index = 0;
-    size_t optarg_len;
+    size_t LALoptarg_len;
 
-    c = getopt_long_only(argc, argv, \
+    c = LALgetopt_long_only(argc, argv, \
         "abd:e:f:g:h:i:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:z:" \
         "A:B:C:D:E:F:G:", long_options, &option_index);
 
@@ -461,7 +461,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         else
         {
           fprintf(stderr, "error parseing option %s with argument %s\n", \
-              long_options[option_index].name, optarg);
+              long_options[option_index].name, LALoptarg);
           exit(1);
         }
         break;
@@ -481,9 +481,9 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'd':
         /* user tag */
-        optarg_len = strlen(optarg) + 1;
-        userTag = (CHAR*)calloc(optarg_len, sizeof(CHAR));
-        memcpy(userTag, optarg, optarg_len);
+        LALoptarg_len = strlen(LALoptarg) + 1;
+        userTag = (CHAR*)calloc(LALoptarg_len, sizeof(CHAR));
+        memcpy(userTag, LALoptarg, LALoptarg_len);
 
         /* add to process_params table */
         this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
@@ -491,12 +491,12 @@ static void parse_options(INT4 argc, CHAR *argv[])
         snprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", prog_name);
         snprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, "--user-tag");
         snprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
-        snprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, "%s", optarg);
+        snprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, "%s", LALoptarg);
         break;
 
       case 'e':
         /* xml comment */
-        if (strlen(optarg) > LIGOMETA_COMMENT_MAX - 1)
+        if (strlen(LALoptarg) > LIGOMETA_COMMENT_MAX - 1)
         {
           fprintf(stderr, "invalid argument to --%s:\n" \
               "comment must be less than %d characters\n", \
@@ -505,15 +505,15 @@ static void parse_options(INT4 argc, CHAR *argv[])
         }
         else
         {
-          snprintf(comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
+          snprintf(comment, LIGOMETA_COMMENT_MAX, "%s", LALoptarg);
         }
         break;
 
       case 'f':
         /* directory for output files */
-        optarg_len = strlen(optarg) + 1;
-        outputPath = (CHAR*)calloc(optarg_len, sizeof(CHAR));
-        memcpy(outputPath, optarg, optarg_len);
+        LALoptarg_len = strlen(LALoptarg) + 1;
+        outputPath = (CHAR*)calloc(LALoptarg_len, sizeof(CHAR));
+        memcpy(outputPath, LALoptarg, LALoptarg_len);
         if (stat(outputPath, &fileStatus) == -1)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -526,7 +526,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'g':
         /* start time */
-        startTime = atoi(optarg);
+        startTime = atoi(LALoptarg);
         if (startTime < 441217609)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -548,7 +548,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'h':
         /* end time */
-        endTime = atoi(optarg);
+        endTime = atoi(LALoptarg);
         if (endTime < 441217609)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -570,7 +570,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'i':
         /* interval duration */
-        intervalDuration = atoi(optarg);
+        intervalDuration = atoi(LALoptarg);
         if (intervalDuration <= 0)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -583,7 +583,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'j':
         /* segment duration */
-        segmentDuration = atoi(optarg);
+        segmentDuration = atoi(LALoptarg);
         if (segmentDuration <= 0)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -596,7 +596,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'k':
         /* resample rate */
-        resampleRate = atoi(optarg);
+        resampleRate = atoi(LALoptarg);
         if (resampleRate < 2 || resampleRate > 16384 || resampleRate % 2)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -611,7 +611,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'l':
         /* minimal frequency */
-        fMin = atof(optarg);
+        fMin = atof(LALoptarg);
         if (fMin < 0)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -631,7 +631,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'm':
         /* maximal frequency */
-        fMax = atof(optarg);
+        fMax = atof(LALoptarg);
         if (fMax < 0)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -651,9 +651,9 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'n':
         /* ifo for first stream */
-        optarg_len = strlen(optarg) + 1;
-        ifoOne = (CHAR*)calloc(optarg_len, sizeof(CHAR));
-        memcpy(ifoOne, optarg, optarg_len);
+        LALoptarg_len = strlen(LALoptarg) + 1;
+        ifoOne = (CHAR*)calloc(LALoptarg_len, sizeof(CHAR));
+        memcpy(ifoOne, LALoptarg, LALoptarg_len);
 
         /* set site id for ifo one */
         if (strncmp(ifoOne, "H1", 2) == 0)
@@ -674,9 +674,9 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'o':
         /* ifo for second stream */
-        optarg_len = strlen(optarg) + 1;
-        ifoTwo = (CHAR*)calloc(optarg_len, sizeof(CHAR));
-        memcpy(ifoTwo, optarg, optarg_len);
+        LALoptarg_len = strlen(LALoptarg) + 1;
+        ifoTwo = (CHAR*)calloc(LALoptarg_len, sizeof(CHAR));
+        memcpy(ifoTwo, LALoptarg, LALoptarg_len);
 
         /* set site id for ifo two */
         if (strncmp(ifoTwo, "H1", 2) == 0)
@@ -697,27 +697,27 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'p':
         /* channel one */
-        optarg_len = strlen(optarg) + 4;
-        channelOneTemp = (CHAR*)calloc(optarg_len, sizeof(CHAR));
-        channelOne = (CHAR*)calloc(optarg_len, sizeof(CHAR));
-        memcpy(channelOneTemp, optarg, optarg_len);
+        LALoptarg_len = strlen(LALoptarg) + 4;
+        channelOneTemp = (CHAR*)calloc(LALoptarg_len, sizeof(CHAR));
+        channelOne = (CHAR*)calloc(LALoptarg_len, sizeof(CHAR));
+        memcpy(channelOneTemp, LALoptarg, LALoptarg_len);
         ADD_PROCESS_PARAM("string", "%s", channelOneTemp);
         break;
 
       case 'q':
         /* channel two */
-        optarg_len = strlen(optarg) + 4;
-        channelTwoTemp = (CHAR*)calloc(optarg_len, sizeof(CHAR));
-        channelTwo = (CHAR*)calloc(optarg_len, sizeof(CHAR));
-        memcpy(channelTwoTemp, optarg, optarg_len);
+        LALoptarg_len = strlen(LALoptarg) + 4;
+        channelTwoTemp = (CHAR*)calloc(LALoptarg_len, sizeof(CHAR));
+        channelTwo = (CHAR*)calloc(LALoptarg_len, sizeof(CHAR));
+        memcpy(channelTwoTemp, LALoptarg, LALoptarg_len);
         ADD_PROCESS_PARAM("string", "%s", channelTwoTemp);
         break;
 
       case 'r':
         /* frame cache one */
-        optarg_len = strlen(optarg) + 1;
-        frameCacheOne = (CHAR*)calloc(optarg_len, sizeof(CHAR));
-        memcpy(frameCacheOne, optarg, optarg_len);
+        LALoptarg_len = strlen(LALoptarg) + 1;
+        frameCacheOne = (CHAR*)calloc(LALoptarg_len, sizeof(CHAR));
+        memcpy(frameCacheOne, LALoptarg, LALoptarg_len);
         if (stat(frameCacheOne, &fileStatus) == -1)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -730,9 +730,9 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 's':
         /* frame cache two */
-        optarg_len = strlen(optarg) + 1;
-        frameCacheTwo = (CHAR*)calloc(optarg_len, sizeof(CHAR));
-        memcpy(frameCacheTwo, optarg, optarg_len);
+        LALoptarg_len = strlen(LALoptarg) + 1;
+        frameCacheTwo = (CHAR*)calloc(LALoptarg_len, sizeof(CHAR));
+        memcpy(frameCacheTwo, LALoptarg, LALoptarg_len);
         if (stat(frameCacheTwo, &fileStatus) == -1)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -745,9 +745,9 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 't':
         /* calibration cache one */
-        optarg_len = strlen(optarg) + 1;
-        calCacheOne = (CHAR*)calloc(optarg_len, sizeof(CHAR));
-        memcpy(calCacheOne, optarg, optarg_len);
+        LALoptarg_len = strlen(LALoptarg) + 1;
+        calCacheOne = (CHAR*)calloc(LALoptarg_len, sizeof(CHAR));
+        memcpy(calCacheOne, LALoptarg, LALoptarg_len);
         if (stat(calCacheOne, &fileStatus) == -1)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -760,9 +760,9 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'u':
         /* calibration cache two */
-        optarg_len = strlen(optarg) + 1;
-        calCacheTwo = (CHAR*)calloc(optarg_len, sizeof(CHAR));
-        memcpy(calCacheTwo, optarg, optarg_len);
+        LALoptarg_len = strlen(LALoptarg) + 1;
+        calCacheTwo = (CHAR*)calloc(LALoptarg_len, sizeof(CHAR));
+        memcpy(calCacheTwo, LALoptarg, LALoptarg_len);
         if (stat(calCacheTwo, &fileStatus) == -1)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -775,13 +775,13 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'v':
         /* calibration time offset */
-        calibOffset = atoi(optarg);
+        calibOffset = atoi(LALoptarg);
         ADD_PROCESS_PARAM("int", "%d", calibOffset);
         break;
 
       case 'w':
         /* number of bins to mask for frequency mask */
-        maskBin = atoi(optarg);
+        maskBin = atoi(LALoptarg);
         if (maskBin <= 0)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -794,7 +794,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'x':
         /* hann window duration */
-        hannDuration = atoi(optarg);
+        hannDuration = atoi(LALoptarg);
         if (hannDuration < 0)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -807,7 +807,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'y':
         /* high pass knee filter frequency  */
-        highPassFreq = atof(optarg);
+        highPassFreq = atof(LALoptarg);
         if (highPassFreq < 0)
         {
           fprintf(stderr, "Invalid argument tp --%s:\n" \
@@ -821,7 +821,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'z':
         /* high pass filter attenuation  */
-        highPassAtten = atof(optarg);
+        highPassAtten = atof(LALoptarg);
         if ((highPassAtten < 0.0) || (highPassAtten > 1.0))
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -835,7 +835,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'A':
         /* high pass filter order  */
-        highPassOrder = atoi(optarg);
+        highPassOrder = atoi(LALoptarg);
         if (highPassOrder <= 0)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -849,7 +849,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'B':
         /* GEO high pass knee filter frequency */
-        geoHighPassFreq = atof(optarg);
+        geoHighPassFreq = atof(LALoptarg);
         if (geoHighPassFreq < 0)
         {
           fprintf(stderr, "Invalid argument tp --%s:\n" \
@@ -863,7 +863,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'C':
         /* GEO high pass filter attenuation */
-        geoHighPassAtten = atof(optarg);
+        geoHighPassAtten = atof(LALoptarg);
         if ((geoHighPassAtten < 0.0) || (geoHighPassAtten > 1.0))
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -877,7 +877,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'D':
         /* GEO high pass filter order */
-        geoHighPassOrder = atoi(optarg);
+        geoHighPassOrder = atoi(LALoptarg);
         if (geoHighPassOrder <= 0)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -891,13 +891,13 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'E':
         /* filter spectrum exponent */
-        alpha = atof(optarg);
+        alpha = atof(LALoptarg);
         ADD_PROCESS_PARAM("float", "%e", alpha);
         break;
 
       case 'F':
         /* filter reference frequency */
-        fRef = atof(optarg);
+        fRef = atof(LALoptarg);
         if (fRef < 0)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -910,7 +910,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'G':
         /* filter reference omega */
-        omegaRef = atof(optarg);
+        omegaRef = atof(LALoptarg);
         if (omegaRef <= 0)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -931,12 +931,12 @@ static void parse_options(INT4 argc, CHAR *argv[])
     }
   }
 
-  if (optind < argc)
+  if (LALoptind < argc)
   {
     fprintf(stderr, "Extraneous command line arguments:\n");
-    while(optind < argc)
+    while(LALoptind < argc)
     {
-      fprintf(stderr, "%s\n", argv[optind++]);
+      fprintf(stderr, "%s\n", argv[LALoptind++]);
     }
     exit(1);
   }

@@ -20,7 +20,6 @@
  */
 
 #include <stdio.h>
-#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
@@ -33,11 +32,11 @@
 #include <math.h>
 #include <dirent.h>
 #include <sys/stat.h>
-#include <getopt.h>
 
 /*LAL Functions */
 #include <lalapps.h>
 #include <lal/Units.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALFrStream.h>
 #include <lal/LALFrameIO.h>
 #include <lal/LALCache.h>
@@ -353,7 +352,7 @@ void ReadInput(InputParams *inputParams, int argc, char *argv[]){
     INT4 option_index = 0;
     INT4 c;
 
-    c = getopt_long( argc, argv, args, long_options, &option_index );
+    c = LALgetopt_long( argc, argv, args, long_options, &option_index );
     if ( c == -1 ) /* end of options */
       break;
 
@@ -363,41 +362,41 @@ void ReadInput(InputParams *inputParams, int argc, char *argv[]){
           break;
         else
           fprintf(stderr, "Error parsing option %s with argument %s\n",
-            long_options[option_index].name, optarg );
+            long_options[option_index].name, LALoptarg );
       case 'h': /* help message */
         fprintf(stderr, USAGE, program);
         exit(0);
       case 'l': /* debug level */
         break;
       case 'i': /* interferometer/detector */
-        inputParams->det = XLALStringDuplicate( optarg );
+        inputParams->det = XLALStringDuplicate( LALoptarg );
         break;
       case 'c': /* channel name */
-        inputParams->channel = XLALStringDuplicate( optarg );
+        inputParams->channel = XLALStringDuplicate( LALoptarg );
         break;
       case 'e': /* frame epoch */
-        inputParams->epoch = atoi(optarg);
+        inputParams->epoch = atoi(LALoptarg);
         break;
       case 'g': /* geocentre flag */
         inputParams->geocentre = 1;
         break;
       case 'd': /* frame duration */
-        inputParams->frDur = atoi(optarg);
+        inputParams->frDur = atoi(LALoptarg);
         break;
       case 'p': /* pulsar par file directory */
-        inputParams->pulsarDir = XLALStringDuplicate( optarg );
+        inputParams->pulsarDir = XLALStringDuplicate( LALoptarg );
         break;
       case 'o': /* output directory */
-        inputParams->outDir = XLALStringDuplicate( optarg );
+        inputParams->outDir = XLALStringDuplicate( LALoptarg );
         break;
       case 's': /* output name string */
-        inputParams->outStr = XLALStringDuplicate( optarg );
+        inputParams->outStr = XLALStringDuplicate( LALoptarg );
         break;
       case 'm': /* ephemeris file directory */
-        inputParams->ephemDir = XLALStringDuplicate( optarg );
+        inputParams->ephemDir = XLALStringDuplicate( LALoptarg );
         break;
       case 'y': /* ephemeris file year */
-        inputParams->ephemType = XLALStringDuplicate( optarg );
+        inputParams->ephemType = XLALStringDuplicate( LALoptarg );
         break;
       case '?':
         fprintf(stderr, "unknown error while parsing options\n" );

@@ -26,7 +26,10 @@
 #ifndef TRACKSEARCHTOOLBOX_H
 #define TRACKSEARCHTOOLBOX_H
 
+#include <config.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <errno.h>
 
 #include "tracksearch.h"

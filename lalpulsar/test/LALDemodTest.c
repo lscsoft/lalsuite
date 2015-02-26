@@ -239,7 +239,6 @@ else (void)(0)
 #include <lal/LALInitBarycenter.h>
 #include <lal/SeqFactories.h>
 #include <lal/FileIO.h>
-#include <unistd.h>
 #include <sys/types.h>
 
 

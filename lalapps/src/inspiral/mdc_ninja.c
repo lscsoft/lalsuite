@@ -21,7 +21,6 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <getopt.h>
 #include <string.h>
 #include <errno.h>
 #include <sys/stat.h>
@@ -29,6 +28,7 @@
 #include <lalapps.h>
 
 #include <lal/LALConfig.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALError.h>
@@ -87,7 +87,6 @@ static int get_spectrum(REAL8Sequence *spectrum, InterferometerNumber ifoNumber,
 static void add_colored_noise(LALStatus *status, REAL4TimeSeries *chan, INT4 ifoNumber,
     RandomParams *randParams, REAL8 dynRange, REAL8 strainHighpassFreq);
 
-/* getopt flags */
 extern int vrbflg;
 INT4 ifosFlag   = 0;
 INT4 frameFlag  = 0;
@@ -162,7 +161,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
   REAL8 ligoSnrLowFreq  = 0;
   REAL8 virgoSnrLowFreq = 0;
         
-  /* getopt arguments */
+  /* LALgetopt arguments */
   struct option long_options[] =
   {
     /* these options set a flag */
@@ -205,12 +204,12 @@ INT4 main( INT4 argc, CHAR *argv[] )
   /* parse the arguments */
   while ( 1 )
   {
-    /* getopt_long stores long option here */
+    /* LALgetopt_long stores long option here */
     int option_index = 0;
-    size_t optarg_len;
+    size_t LALoptarg_len;
 
     /* parse command line arguments */
-    c = getopt_long_only( argc, argv, "T:a:b:f:r:i:I:t:n:o:l:L:s:S:c:e:f:g:O:d:hV",
+    c = LALgetopt_long_only( argc, argv, "T:a:b:f:r:i:I:t:n:o:l:L:s:S:c:e:f:g:O:d:hV",
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -230,7 +229,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
         else
         {
           fprintf( stderr, "Error parsing option '%s' with argument '%s'\n",
-              long_options[option_index].name, optarg );
+              long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
         break;
@@ -250,14 +249,14 @@ INT4 main( INT4 argc, CHAR *argv[] )
 
       case 'T':
         /* create storage for the injection type */
-        optarg_len = strlen(optarg) + 1;
-        injectionType = (CHAR *)calloc(optarg_len, sizeof(CHAR));
-        memcpy(injectionType, optarg, optarg_len);
+        LALoptarg_len = strlen(LALoptarg) + 1;
+        injectionType = (CHAR *)calloc(LALoptarg_len, sizeof(CHAR));
+        memcpy(injectionType, LALoptarg, LALoptarg_len);
         break;
 
       case 'a':
         /* set gps start seconds */
-        gpsStartSec = atoi( optarg );
+        gpsStartSec = atoi( LALoptarg );
         if ( gpsStartSec < 441417609 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -272,7 +271,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
 
       case 'b':
         /* set gps end seconds */
-        gpsEndSec = atoi( optarg );
+        gpsEndSec = atoi( LALoptarg );
         if ( gpsEndSec < 441417609 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -287,19 +286,19 @@ INT4 main( INT4 argc, CHAR *argv[] )
 
       case 'I':
         /* set gps end seconds */
-        injectWindow = atoi( optarg );
+        injectWindow = atoi( LALoptarg );
         break;
 
       case 'f':
         /* create storage for the injection file name */
-        optarg_len = strlen( optarg ) + 1;
-        injectionFile = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-        memcpy( injectionFile, optarg, optarg_len );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        injectionFile = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
+        memcpy( injectionFile, LALoptarg, LALoptarg_len );
         break;
 
       case 'r':
         /* set the sample rate */
-        sampleRate = (INT4) atoi( optarg );
+        sampleRate = (INT4) atoi( LALoptarg );
         if ( sampleRate < 1 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -312,9 +311,9 @@ INT4 main( INT4 argc, CHAR *argv[] )
 
       case 'i':
         /* create storage for the ifo name and copy it */
-        optarg_len = strlen( optarg ) + 1;
-        ifo = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-        memcpy( ifo, optarg, optarg_len );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        ifo = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
+        memcpy( ifo, LALoptarg, LALoptarg_len );
 
         /* check for supported ifo */
         if ( XLALIFONumber( ifo ) == LAL_UNKNOWN_IFO )
@@ -326,27 +325,27 @@ INT4 main( INT4 argc, CHAR *argv[] )
 
       case 't':
         /* create storage for the frame type */
-        optarg_len = strlen( optarg ) + 1;
-        frameType = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-        memcpy( frameType, optarg, optarg_len );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        frameType = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
+        memcpy( frameType, LALoptarg, LALoptarg_len );
 
       case 'n':
         /* create storage for the injection set name */
-        optarg_len = strlen(optarg) + 1;
-        setName = (CHAR *)calloc(optarg_len, sizeof(CHAR));
-        memcpy(setName, optarg, optarg_len);
+        LALoptarg_len = strlen(LALoptarg) + 1;
+        setName = (CHAR *)calloc(LALoptarg_len, sizeof(CHAR));
+        memcpy(setName, LALoptarg, LALoptarg_len);
         break;
 
       case 'o':
         /* create storage for the output mdc log file name */
-        optarg_len = strlen(optarg) + 1;
-        mdcFileName = (CHAR *)calloc(1, optarg_len*sizeof(CHAR));
-        memcpy(mdcFileName, optarg, optarg_len);
+        LALoptarg_len = strlen(LALoptarg) + 1;
+        mdcFileName = (CHAR *)calloc(1, LALoptarg_len*sizeof(CHAR));
+        memcpy(mdcFileName, LALoptarg, LALoptarg_len);
         break;
 
       case 'l':
         /* set lower cutoff frequency */
-        freqLowCutoff = atof(optarg);
+        freqLowCutoff = atof(LALoptarg);
         if (freqLowCutoff < 0 )
         {
           fprintf(stderr, "invalid argument to --%s:\n"
@@ -359,7 +358,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
 
       case 'L':
         /* set low-pass cutoff frequency for producing noise */
-        strainLowPassFreq = atof(optarg);
+        strainLowPassFreq = atof(LALoptarg);
         if (strainLowPassFreq < 0 )
         {
           fprintf(stderr, "invalid argument to --%s:\n"
@@ -372,23 +371,23 @@ INT4 main( INT4 argc, CHAR *argv[] )
 
       case 's':
         /* set low-pass cutoff frequency for producing noise */
-        snrLow = atof(optarg);
+        snrLow = atof(LALoptarg);
         break;
 
       case 'S':
         /* set low-pass cutoff frequency for producing noise */
-        snrHigh = atof(optarg);
+        snrHigh = atof(LALoptarg);
         break;
 
       case 'c':
         /* Specify a file to use as the LIGO psd */
-        optarg_len = strlen( optarg ) + 1;
-        ligoPsdFile = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-        memcpy( ligoPsdFile, optarg, optarg_len );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        ligoPsdFile = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
+        memcpy( ligoPsdFile, LALoptarg, LALoptarg_len );
         break;
       case 'e':
         /* Specify the low-frequency cutoff for LIGO SNR integrals */
-        ligoSnrLowFreq = atof(optarg);
+        ligoSnrLowFreq = atof(LALoptarg);
         if (ligoSnrLowFreq < 0 )
         {
           fprintf(stderr, "invalid argument to --%s:\n"
@@ -400,13 +399,13 @@ INT4 main( INT4 argc, CHAR *argv[] )
         break;
       case 'g':
         /* Specify a file to use as the Virgo psd */
-        optarg_len = strlen( optarg ) + 1;
-        virgoPsdFile = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-        memcpy( virgoPsdFile, optarg, optarg_len );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        virgoPsdFile = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
+        memcpy( virgoPsdFile, LALoptarg, LALoptarg_len );
         break;
       case 'j':
         /* Specify the low-frequency cutoff for Virgo SNR integrals */
-        virgoSnrLowFreq = atof(optarg);
+        virgoSnrLowFreq = atof(LALoptarg);
         if (virgoSnrLowFreq < 0 )
         {
           fprintf(stderr, "invalid argument to --%s:\n"
@@ -420,16 +419,16 @@ INT4 main( INT4 argc, CHAR *argv[] )
 
       case 'O':
         /* set output xml file name */
-        optarg_len = strlen(optarg) + 1;
-        fnameOutXML = (CHAR *)calloc(1,optarg_len*sizeof(CHAR));
-        memcpy(fnameOutXML, optarg, optarg_len);
+        LALoptarg_len = strlen(LALoptarg) + 1;
+        fnameOutXML = (CHAR *)calloc(1,LALoptarg_len*sizeof(CHAR));
+        memcpy(fnameOutXML, LALoptarg, LALoptarg_len);
         break;
 
       case 'd':
         /* set frame output directory */
-        optarg_len = strlen(optarg) + 1;
-        outDir = (CHAR *)calloc(1, optarg_len * sizeof(CHAR));
-        memcpy(outDir, optarg, optarg_len);
+        LALoptarg_len = strlen(LALoptarg) + 1;
+        outDir = (CHAR *)calloc(1, LALoptarg_len * sizeof(CHAR));
+        memcpy(outDir, LALoptarg, LALoptarg_len);
         break;
 
       case '?':
@@ -444,12 +443,12 @@ INT4 main( INT4 argc, CHAR *argv[] )
     }
   }
 
-  if ( optind < argc )
+  if ( LALoptind < argc )
   {
     fprintf( stderr, "ERROR: Extraneous command line arguments:\n" );
-    while ( optind < argc )
+    while ( LALoptind < argc )
     {
-      fprintf ( stderr, "%s\n", argv[optind++] );
+      fprintf ( stderr, "%s\n", argv[LALoptind++] );
     }
     exit( 1 );
   }

@@ -29,9 +29,9 @@
 #include <config.h>
 #endif
 
-#include <getopt.h>
 
 #include <lal/LIGOMetadataTables.h>
+#include <lal/LALgetopt.h>
 //#include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
 
@@ -112,19 +112,19 @@ void readCommandLineOptions(int argc, char* argv[], struct runPar *run)
   
   
   int option_index = 0;
-  while( (C = getopt_long(argc, argv, "i:m:e:t:d:n:d:a:o:c:r:w:y:x:",long_options, &option_index)) != -1) {
+  while( (C = LALgetopt_long(argc, argv, "i:m:e:t:d:n:d:a:o:c:r:w:y:x:",long_options, &option_index)) != -1) {
     switch(C) {
       
       
       // *** Treat (untranslated) long options:
     case 0:
       if(strcmp(long_options[option_index].name,"injXMLfile")==0) {
-        run->injXMLfilename=(char*)malloc(strlen(optarg)+1);
-        strcpy(run->injXMLfilename,optarg);
+        run->injXMLfilename=(char*)malloc(strlen(LALoptarg)+1);
+        strcpy(run->injXMLfilename,LALoptarg);
         printf("    - reading injection parameters from the XML file %s\n",run->injXMLfilename);
       }
       if(strcmp(long_options[option_index].name,"injXMLnr")==0) {
-        run->injXMLnr = atoi(optarg);
+        run->injXMLnr = atoi(LALoptarg);
         printf("    - using injection %d from the injection XML file\n",run->injXMLnr);
       }
       break; //For case 0: long options
@@ -132,50 +132,50 @@ void readCommandLineOptions(int argc, char* argv[], struct runPar *run)
       
       // *** Treat the short and translated long options:
     case 'i':
-      strcpy(run->mainFilename,optarg);
+      strcpy(run->mainFilename,LALoptarg);
       printf("    - using main input file %s\n",run->mainFilename);
       break;
       
     case 'm':           
-      run->triggerMc = atof(optarg);
+      run->triggerMc = atof(LALoptarg);
       printf("    - From command line, trigger value for mChirp\t\t= %f\n",run->triggerMc);
       break;
       
     case 'e':           
-      run->triggerEta = atof(optarg);
+      run->triggerEta = atof(LALoptarg);
       printf("    - From command line, trigger value for eta\t\t\t= %f\n",run->triggerEta);
       break;
       
     case 't':           
-      run->triggerTc = atof(optarg);
+      run->triggerTc = atof(LALoptarg);
       printf("    - From command line, trigger value for tc\t\t\t= %f\n",run->triggerTc);
       break;
       
     case 'd':           
-      run->triggerDist = atof(optarg);
+      run->triggerDist = atof(LALoptarg);
       printf("    - From command line, trigger value for the distance (Mpc)\t= %f\n",run->triggerDist);
       break;
       
     case 'n':           
-      run->nIter = atoi(optarg);
+      run->nIter = atoi(LALoptarg);
       run->commandSettingsFlag[0] = 1;
       printf("    - From command line, number of iterations\t\t\t= %d\n",run->nIter);
       break;
       
     case 's':           
-      run->thinOutput = atoi(optarg);
+      run->thinOutput = atoi(LALoptarg);
       run->commandSettingsFlag[1] = 1;
       printf("    - From command line, thin output by\t\t\t\t= %d\n",run->thinOutput);
       break;
       
 	case 'r':           
-		run->MCMCseed = atoi(optarg);
+		run->MCMCseed = atoi(LALoptarg);
 		run->commandSettingsFlag[16] = 1;
 		printf("    - From command line, random seed\t\t\t\t= %d\n",run->MCMCseed);
 		break;
 		
 	case 'w':           
-		run->mcmcWaveform = atoi(optarg);
+		run->mcmcWaveform = atoi(LALoptarg);
 		run->commandSettingsFlag[17] = 1;
 		if (run->mcmcWaveform == 1) {
 			printf("    - From command line, mcmc template\t\t\t\t= %d\t 1.5PN 12-parameter SINGLE SPIN Apostolatos (Unless specified otherwise in an input file)\n",run->mcmcWaveform);
@@ -204,18 +204,18 @@ void readCommandLineOptions(int argc, char* argv[], struct runPar *run)
 		break;
 	
 	case 'y':           
-		run->tukey1 = atof(optarg);
+		run->tukey1 = atof(LALoptarg);
 		printf("    - From command line, tukey window alpha_1\t\t\t= %f\n",run->tukey1);
 		break;
 		
 	case 'z':           
-		run->tukey2 = atof(optarg);
+		run->tukey2 = atof(LALoptarg);
 		printf("    - From command line, tukey window alpha_2\t\t\t= %f\n",run->tukey2);
 		break;		
 			
     case 'a': //Detector options
       if(strcmp(long_options[option_index].name,"network")==0) {
-        parseCharacterOptionString(optarg,&networkseq,&nIFO);
+        parseCharacterOptionString(LALoptarg,&networkseq,&nIFO);
         run->networkSize = nIFO;
         run->commandSettingsFlag[2] = 1;
         printf("    - From command line, network size\t\t\t\t= %d\n",run->networkSize);
@@ -227,7 +227,7 @@ void readCommandLineOptions(int argc, char* argv[], struct runPar *run)
       }
       
       if(strcmp(long_options[option_index].name,"channel")==0) {
-        parseCharacterOptionString(optarg,&channelseq,&nChannel);
+        parseCharacterOptionString(LALoptarg,&channelseq,&nChannel);
         if (run->networkSize != nChannel) {printf(" ERROR: number of IFOs %d should be the same as number of channels %d\n",nIFO,nChannel); exit(1);}
         else {
           for(i=0;i<run->networkSize;i++) {
@@ -240,42 +240,42 @@ void readCommandLineOptions(int argc, char* argv[], struct runPar *run)
       
       
       if(strcmp(long_options[option_index].name,"downsample")==0) {
-        run->downsampleFactor = atoi(optarg);
+        run->downsampleFactor = atoi(LALoptarg);
         run->commandSettingsFlag[6] = 1;
         printf("    - From command line, downsample factor\t\t\t= %d\n",run->downsampleFactor);
       }
       if(strcmp(long_options[option_index].name,"beforetc")==0) {
-        run->dataBeforeTc = atof(optarg);
+        run->dataBeforeTc = atof(LALoptarg);
         run->commandSettingsFlag[7] = 1;
         printf("    - From command line, before tc\t\t\t\t= %f\n",run->dataBeforeTc);
       }
       if(strcmp(long_options[option_index].name,"aftertc")==0) {
-        run->dataAfterTc = atof(optarg);
+        run->dataAfterTc = atof(LALoptarg);
         run->commandSettingsFlag[8] = 1;
         printf("    - From command line, after tc\t\t\t\t= %f\n",run->dataAfterTc);
       }
       if(strcmp(long_options[option_index].name,"Flow")==0) {
-        run->lowFrequencyCut = atof(optarg);
+        run->lowFrequencyCut = atof(LALoptarg);
         run->commandSettingsFlag[9] = 1;
         printf("    - From command line, low frequency cut\t\t\t= %f\n",run->lowFrequencyCut);
       }
       if(strcmp(long_options[option_index].name,"Fhigh")==0) {
-        run->highFrequencyCut = atof(optarg);
+        run->highFrequencyCut = atof(LALoptarg);
         run->commandSettingsFlag[10] = 1;
         printf("    - From command line, high frequency cut\t\t\t= %f\n",run->highFrequencyCut);
       }
       if(strcmp(long_options[option_index].name,"nPSDsegment")==0) {
-        run->PSDsegmentNumber = atoi(optarg);
+        run->PSDsegmentNumber = atoi(LALoptarg);
         run->commandSettingsFlag[11] = 1;
         printf("    - From command line, number of PSD segments\t\t\t= %d\n",run->PSDsegmentNumber);
       }
       if(strcmp(long_options[option_index].name,"lPSDsegment")==0) {
-        run->PSDsegmentLength = atof(optarg);
+        run->PSDsegmentLength = atof(LALoptarg);
         run->commandSettingsFlag[12] = 1;
         printf("    - From command line, length of PSD segments\t\t\t= %f\n",run->PSDsegmentLength);
       }
       if(strcmp(long_options[option_index].name,"PSDstart")==0) {
-        run->PSDstart = atof(optarg);
+        run->PSDstart = atof(LALoptarg);
         run->commandSettingsFlag[13] = 1;
         printf("    - From command line, start of PSD segments\t\t\t= %f\n",run->PSDstart);
       }
@@ -283,13 +283,13 @@ void readCommandLineOptions(int argc, char* argv[], struct runPar *run)
       break;            
       
     case 'o':           
-      run->outputPath=(char*)malloc(strlen(optarg)+1);
-      strcpy(run->outputPath,optarg);
+      run->outputPath=(char*)malloc(strlen(LALoptarg)+1);
+      strcpy(run->outputPath,LALoptarg);
       printf("    - From command line, output path\t\t\t\t= %s\n",run->outputPath);
       break;
     case 'c':
       
-      parseCharacterOptionString(optarg,&(run->cacheFilename),&nCache);
+      parseCharacterOptionString(LALoptarg,&(run->cacheFilename),&nCache);
       if (run->networkSize != nCache) {printf(" ERROR: number of IFOs %d should be the same as number of cache files %d\n",nIFO,nCache); exit(1);}
       else {
         for(i=0;i<run->networkSize;i++) {
@@ -301,7 +301,7 @@ void readCommandLineOptions(int argc, char* argv[], struct runPar *run)
       break;
       
     default:
-      //fprintf(stderr,"   Unrecognised option: %d\n",c);  // This notice is already produced by getopt_long()
+      //fprintf(stderr,"   Unrecognised option: %d\n",c);  // This notice is already produced by LALgetopt_long()
       fprintf(stderr,USAGE); 
       exit(1);
       break;
@@ -311,9 +311,9 @@ void readCommandLineOptions(int argc, char* argv[], struct runPar *run)
   
   
   // Print any remaining command line arguments (the ones that are not options, i.e. lack a starting '-'):
-  if(optind < argc) {
+  if(LALoptind < argc) {
     printf("   SPINspiral - unused command-line arguments: ");
-    while(optind < argc) printf ("%s ", argv[optind++]);
+    while(LALoptind < argc) printf ("%s ", argv[LALoptind++]);
     printf("\n");
   }
   

@@ -163,7 +163,7 @@ int main(int argc, char *argv[]){
   INT4   arg;                         /* Argument counter */
   REAL8  vTol=0.01 ;
   /* INT4   c, errflg=0;*/
-  /*  optarg = NULL; */
+  /*  LALoptarg = NULL; */
   /* ------------------------------------------------------- */
 
 

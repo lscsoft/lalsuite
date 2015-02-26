@@ -164,9 +164,7 @@ AC_CHECK_LIB([z],[compress],,[AC_MSG_ERROR([could not find the zlib library])])
 # check for system headers
 AC_HEADER_STDC
 AC_CHECK_HEADERS([zlib.h],,[AC_MSG_ERROR([could not find zlib.h])])
-AC_CHECK_HEADERS([glob.h])
-AC_CHECK_HEADERS([punistd.h])
-AC_CHECK_HEADERS([getopt.h])
+AC_CHECK_HEADERS([unistd.h glob.h])
 
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])

@@ -112,15 +112,14 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
 #include <lal/AVFactories.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALMalloc.h>
 #include <lal/LALStdlib.h>
 #include <lal/PtoleMetric.h>
 #include <lal/StackMetric.h>
 
 /** \cond DONT_DOXYGEN */
-extern char *optarg;
 
 #define DEFAULT_DURATION 1e5 /* seconds */
 #define NUM_SPINDOWN 0       /* Number of spindown parameters */
@@ -152,22 +151,22 @@ int main( int argc, char *argv[] ) {
 
 
   /* Parse options. */
-  while ((opt = getopt( argc, argv, "b:em:pt:x" )) != -1) {
+  while ((opt = LALgetopt( argc, argv, "b:em:pt:x" )) != -1) {
     switch (opt) {
     case 'b':
-      in.epoch.gpsSeconds = atof( optarg );
+      in.epoch.gpsSeconds = atof( LALoptarg );
       break;
     case 'e':
       test = 1;
       break;
     case 'm':
-      mismatch = atof( optarg );
+      mismatch = atof( LALoptarg );
       break;
     case 'p':
       nongrace = 1;
       break;
     case 't':
-      in.duration = atof( optarg );
+      in.duration = atof( LALoptarg );
       break;
     case 'x':
       grace = 1;

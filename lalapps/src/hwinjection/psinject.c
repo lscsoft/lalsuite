@@ -40,10 +40,12 @@
               by YYY.
 */
 
-#define _GNU_SOURCE
+#include <config.h>
 
 #include <stdio.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
@@ -60,7 +62,7 @@
 #endif
 
 #include <lal/LALFrameL.h>
-
+#include <lal/LALgetopt.h>
 #include <lal/XLALError.h>
 #include <lalapps.h>
 
@@ -243,7 +245,7 @@ int parseinput(int argc, char **argv){
 
   programname=argv[0];
 
-  while (-1 != (c = getopt(argc, argv, optionlist))) {
+  while (-1 != (c = LALgetopt(argc, argv, optionlist))) {
     char *end;
     double tempamp;
     switch (c) {
@@ -271,7 +273,7 @@ int parseinput(int argc, char **argv){
 
     case 'n':
       /* number of pulsars to simulate */
-      npulsars=atoi(optarg);
+      npulsars=atoi(LALoptarg);
       if (npulsars<0 || npulsars>MAXPULSARS){
 	syserror(0, "%s: Number of pulsars (-n argument = %d) must be non-negative and less than %d\n",
 		argv[0], npulsars, MAXPULSARS+1);
@@ -282,9 +284,9 @@ int parseinput(int argc, char **argv){
     case 'M':
     case 'H':
       /* calibration-line amplitude */
-      tempamp=strtod(optarg, &end);
+      tempamp=strtod(LALoptarg, &end);
       if (*end){
-	syserror(1, "-%c %s is invalid. -%c takes a double-precision amplitude.\n", c, optarg, c);
+	syserror(1, "-%c %s is invalid. -%c takes a double-precision amplitude.\n", c, LALoptarg, c);
 	exit(1);
       }
       /* assign amplitude to the correct line */
@@ -298,16 +300,16 @@ int parseinput(int argc, char **argv){
     case 'd':
       /* directory path */
       if (directory) free(directory);
-      if (!(directory=strdup(optarg))){
-	syserror(1, "Out of memory to duplicate -d directory path %s\n", optarg);
+      if (!(directory=strdup(LALoptarg))){
+	syserror(1, "Out of memory to duplicate -d directory path %s\n", LALoptarg);
 	exit(1);
       }
       break;
     case 'e':
 #ifdef ONLINE
       /* Excitation channel into which to inject */
-      if (!(channel=strdup(optarg))){
-	syserror(1, "Out of memory to duplicate -e channel name %s\n", optarg);
+      if (!(channel=strdup(LALoptarg))){
+	syserror(1, "Out of memory to duplicate -e channel name %s\n", LALoptarg);
 	exit(1);
       }
 #else
@@ -326,7 +328,7 @@ int parseinput(int argc, char **argv){
       break;
     case 'G':
       /* GPS time to pass as argument */
-      gpstime=atoi(optarg);
+      gpstime=atoi(LALoptarg);
       break;
     case 'T':
       /* enable text output */
@@ -341,14 +343,14 @@ int parseinput(int argc, char **argv){
       show=1;
       break;
     case 'I':
-      ifo_name = optarg;
+      ifo_name = LALoptarg;
       break;
     case 'A':
-      actuation = optarg;
+      actuation = LALoptarg;
       break;
     case 'F':
 	{
-	    int how_many = atoi(optarg);
+	    int how_many = atoi(LALoptarg);
 	    if (how_many < 0) {
 		syserror(0,"%s: fatal error, argument -F %d must be non-negative.\n", argv[0], how_many);
 		exit(1);
@@ -357,7 +359,7 @@ int parseinput(int argc, char **argv){
 	    break;
 	}
     case 'S':
-	secs_per_framefile = atoi(optarg);
+	secs_per_framefile = atoi(LALoptarg);
         if (secs_per_framefile < 1) {
 	    syserror(0,"%s: fatal error, argument -S %d must be at least 1 second.\n", argv[0], secs_per_framefile);
 	    exit(1);
@@ -368,7 +370,7 @@ int parseinput(int argc, char **argv){
 	break;
 
     case 'r':
-      sampling_rate = atoi(optarg);
+      sampling_rate = atoi(LALoptarg);
       if ( sampling_rate <= 0 ) {
         syserror (0, "%s: need positive sampling rate! %d\n", argv[0], sampling_rate );
         exit(1);
@@ -376,9 +378,9 @@ int parseinput(int argc, char **argv){
       break;
 
     case 'z':
-      starttime_offset_req = strtod(optarg, &end);
-      if ( end == optarg ){
-	syserror(1, "-%c %s is invalid. -%c takes a double-precision amplitude.\n", c, optarg, c);
+      starttime_offset_req = strtod(LALoptarg, &end);
+      if ( end == LALoptarg ){
+	syserror(1, "-%c %s is invalid. -%c takes a double-precision amplitude.\n", c, LALoptarg, c);
 	exit(1);
       }
       break;
@@ -393,7 +395,7 @@ int parseinput(int argc, char **argv){
 
     } /* switch(c) */
 
-  } /* while (getopt) */
+  } /* while (LALgetopt) */
 
   /* sanity checks on command line arguments */
   if (do_axis && !do_text) {

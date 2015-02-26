@@ -25,7 +25,6 @@
 #ifndef LAL_FRAME_ENABLED
 int main( void ) { return 77; }
 #else
-#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -423,11 +422,10 @@ int ReadFiles(struct CommandLineArgsTag CLA)
 
 /*******************************************************************************/
 
-extern char *optarg;
-   int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
+int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 {
   INT4 c, errflg = 0;
-  optarg = NULL;
+  LALoptarg = NULL;
 
   /* Initialize default values */
   CLA->f=0.0;
@@ -442,47 +440,47 @@ extern char *optarg;
   CLA->asq_chan="";
 
   /* Scan through list of command line arguments */
-  while (!errflg && ((c = getopt(argc, argv,"hf:F:r:S:c:A:E:D:a:k:"))!=-1))
+  while (!errflg && ((c = LALgetopt(argc, argv,"hf:F:r:S:c:A:E:D:a:k:"))!=-1))
     switch (c) {
     case 'f':
       /* frequency bandwidth */
-      CLA->f=atof(optarg);
+      CLA->f=atof(LALoptarg);
       break;
     case 'k':
       /* frequency bandwidth */
-      CLA->k=atof(optarg);
+      CLA->k=atof(LALoptarg);
       break;
     case 'F':
       /* starting observation time */
-      CLA->FrCacheFile=optarg;
+      CLA->FrCacheFile=LALoptarg;
       break;
     case 'r':
       /* starting observation time */
-      CLA->RFile=optarg;
+      CLA->RFile=LALoptarg;
       break;
     case 'c':
       /* starting observation time */
-      CLA->CFile=optarg;
+      CLA->CFile=LALoptarg;
       break;
     case 'a':
       /* starting observation time */
-      CLA->AFile=optarg;
+      CLA->AFile=LALoptarg;
       break;
     case 'S':
       /* starting observation time */
-      CLA->SegmentsFile=optarg;
+      CLA->SegmentsFile=LALoptarg;
       break;
     case 'E':
       /* frequency bandwidth */
-      CLA->exc_chan=optarg;
+      CLA->exc_chan=LALoptarg;
       break;
     case 'A':
       /* frequency bandwidth */
-      CLA->asq_chan=optarg;
+      CLA->asq_chan=LALoptarg;
       break;
     case 'D':
       /* frequency bandwidth */
-      CLA->darm_chan=optarg;
+      CLA->darm_chan=LALoptarg;
       break;
    case 'h':
       /* print usage/help message */

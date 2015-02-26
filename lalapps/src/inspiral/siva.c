@@ -24,7 +24,6 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <getopt.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/SegmentsIO.h>

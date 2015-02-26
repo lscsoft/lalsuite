@@ -31,7 +31,6 @@
 #include <config.h>
 #include <math.h>
 #include <string.h>
-#include <getopt.h>
 #include <time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -41,6 +40,7 @@
 #include <lalapps.h>
 #include <processtable.h>
 #include <lal/LALStdio.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALStdlib.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
@@ -163,7 +163,7 @@ int main( int argc, char *argv[] )
   
   while (1)
   {
-    /* getopt arguments */
+    /* LALgetopt arguments */
     static struct option long_options[] =
     {
       {"verbose",             no_argument,        &vrbflg,              1 },
@@ -176,11 +176,11 @@ int main( int argc, char *argv[] )
     };
     int c;
 
-    /* getopt_long stores the option index here. */
+    /* LALgetopt_long stores the option index here. */
     int option_index = 0;
-    size_t optarg_len;
+    size_t LALoptarg_len;
 
-    c = getopt_long_only ( argc, argv, "h:g:i:o:V", long_options, &option_index );
+    c = LALgetopt_long_only ( argc, argv, "h:g:i:o:V", long_options, &option_index );
 
     /* detect the end of the options */
     if ( c == - 1 )
@@ -197,7 +197,7 @@ int main( int argc, char *argv[] )
         else
         {
           fprintf( stderr, "error parsing option %s with argument %s\n",
-              long_options[option_index].name, optarg );
+              long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
          break;
@@ -209,26 +209,26 @@ int main( int argc, char *argv[] )
 
       case 'g':
          /* create storage for the input file glob */
-         optarg_len = strlen( optarg ) + 1;
-         inputGlob = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-         memcpy( inputGlob, optarg, optarg_len );
-         ADD_PROCESS_PARAM( "string", "'%s'", optarg );
+         LALoptarg_len = strlen( LALoptarg ) + 1;
+         inputGlob = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
+         memcpy( inputGlob, LALoptarg, LALoptarg_len );
+         ADD_PROCESS_PARAM( "string", "'%s'", LALoptarg );
          break;
 
       case 'i':
          /* create storage for the input file name */
-         optarg_len = strlen( optarg ) + 1;
-         inputFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-         memcpy( inputFileName, optarg, optarg_len );
-         ADD_PROCESS_PARAM( "string", "%s", optarg );
+         LALoptarg_len = strlen( LALoptarg ) + 1;
+         inputFileName = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
+         memcpy( inputFileName, LALoptarg, LALoptarg_len );
+         ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
          break;
 
       case 'o':
          /* create storage for the output file name */
-         optarg_len = strlen( optarg ) + 1;
-         outputFileName = (CHAR *) calloc( optarg_len,sizeof(CHAR));
-         memcpy( outputFileName, optarg, optarg_len );
-         ADD_PROCESS_PARAM( "string", "%s", optarg );
+         LALoptarg_len = strlen( LALoptarg ) + 1;
+         outputFileName = (CHAR *) calloc( LALoptarg_len,sizeof(CHAR));
+         memcpy( outputFileName, LALoptarg, LALoptarg_len );
+         ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
          break;
 
       default:
@@ -237,12 +237,12 @@ int main( int argc, char *argv[] )
     }
   }
 
-  if ( optind < argc )
+  if ( LALoptind < argc )
   {
     fprintf( stderr, "extraneous command line arguments:\n" );
-    while ( optind < argc )
+    while ( LALoptind < argc )
     {
-      fprintf ( stderr, "%s\n", argv[optind++] );
+      fprintf ( stderr, "%s\n", argv[LALoptind++] );
     }
     exit( 1 );
   }

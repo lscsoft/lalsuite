@@ -18,9 +18,8 @@
  *  MA  02111-1307  USA
  */
 
-#include "LALgetopt.h"
-
 #include <lal/LALStdio.h>
+#include <lal/LALgetopt.h>
 #include <lal/UserInput.h>
 #include <lal/LogPrintf.h>
 #include <lal/LALString.h>
@@ -79,10 +78,6 @@ typedef struct tagLALUserVariable {
 /** The module-local linked list to hold the user-variables */
 static LALUserVariable UVAR_vars;	/**< empty head */
 static const CHAR *program_name;	/**< keep a pointer to the program name */
-
-/* needed for command-line parsing */
-extern char *LALoptarg;
-extern int LALoptind, LALopterr, LALoptopt;
 
 /* ---------- internal prototypes ---------- */
 
@@ -296,7 +291,7 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
       }
       long_options[pos].name 	= ptr->name;
       long_options[pos].has_arg = (ptr->type == UVAR_TYPE_BOOL) ? optional_argument : required_argument;
-      long_options[pos].flag 	= NULL;	// get val returned from getopt_long()
+      long_options[pos].flag 	= NULL;	// get val returned from LALgetopt_long()
       long_options[pos].val 	= 0;	// we use longindex to find long-options
       pos ++;
     } // while ptr->next
@@ -312,10 +307,10 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
    * of setting optind to 0. As we're linking our private version of GNU getopt, this should be
    * guaranteed to work.
    *
-   * Bruce's notes: read getopt_long() source code, and in particular
+   * Bruce's notes: read LALgetopt_long() source code, and in particular
    * _getopt_internal() to see what is initialized.
    */
-  LALoptind = 0; 	// reset our local getopt(), getopt_long()
+  LALoptind = 0; 	// reset our local LALgetopt(), LALgetopt_long()
 
   // ---------- parse the command-line
   int longindex = -1;
@@ -402,7 +397,7 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
 
       check_and_mark_as_set ( ptr );
 
-    } // while getopt_long()
+    } // while LALgetopt_long()
 
   // ---------- check if there's any non-option strings left (except for a config-file specification '@file')
   if ( (LALoptind == argc - 1) && (argv[LALoptind][0] == '@' ) ) {
