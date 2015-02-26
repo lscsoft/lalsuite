@@ -20,17 +20,9 @@
 // Tests of the lattice-based template generation code in LatticeTiling.[ch].
 
 #include <stdio.h>
-#include <inttypes.h>
-#include <float.h>
-#include <math.h>
-#include <errno.h>
-#include <gsl/gsl_blas.h>
 
 #include <lal/LatticeTiling.h>
 #include <lal/LALStdlib.h>
-#include <lal/LALStdio.h>
-#include <lal/XLALError.h>
-#include <lal/LALConstants.h>
 #include <lal/Factorial.h>
 #include <lal/DopplerFullScan.h>
 #include <lal/SuperSkyMetrics.h>
