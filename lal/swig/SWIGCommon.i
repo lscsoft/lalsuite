@@ -1859,6 +1859,40 @@ if (strides[I-1] == 0) {
 %enddef
 
 ///
+/// The <b>SWIGLAL(CAST_STRUCT_TO(...))</b> macro adds to the containing struct methods which cast
+/// it to each of the given list of types. For example:
+/// \code
+/// typedef struct tagBase { ... } Base;
+/// typedef struct tagDerived {
+///   SWIGLAL(CAST_STRUCT_TO(Base));
+///    ...
+/// } Derived;
+/// \endcode
+/// adds a method <i>Base* cast2Base()</i> method to Derived. Obviously this should be a valid cast
+/// for the given types! The SWIG-wrapped object returned by the <i>cast2...()</i> methods will
+/// remain in scope as long as the struct that was cast from, by using a typemap similar to that of
+/// the SWIGLAL(RETURNS_PROPERTY(...)) macro.
+///
+%typemap(out, noblock=1) SWIGTYPE* SWIGLAL_RETURNS_SELF {
+%#ifndef swiglal_no_1starg
+  %swiglal_store_parent($1, 0, swiglal_self());
+%#endif
+  %set_output(SWIG_NewPointerObj(%as_voidptr($1), $descriptor, ($owner | %newpointer_flags) | SWIG_POINTER_OWN));
+}
+%define %swiglal_cast_struct(TOTYPE)
+%extend {
+  %apply SWIGTYPE* SWIGLAL_RETURNS_SELF { TOTYPE* cast2##TOTYPE() };
+  TOTYPE* cast2##TOTYPE() {
+    return (TOTYPE*) $self;
+  }
+}
+%enddef
+%define %swiglal_public_CAST_STRUCT_TO(...)
+%swiglal_map(%swiglal_cast_struct, __VA_ARGS__);
+%enddef
+#define %swiglal_public_clear_CAST_STRUCT_TO(...)
+
+///
 /// The <b>SWIGLAL(VARIABLE_ARGUMENT_LIST(...))</b> macro supports functions which require a
 /// variable-length list of arguments of type \c TYPE, i.e. a list of strings. It generates SWIG
 /// \e compact default arguments, i.e. only one wrapping function where all missing arguments are
