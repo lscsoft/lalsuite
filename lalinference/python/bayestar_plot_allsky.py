@@ -59,7 +59,9 @@ parser = OptionParser(
             default=[], help="right ascension (deg) and declination (deg) to mark"
             + " [may be specified multiple times, default: none]"),
         Option("--geo", action="store_true", default=False,
-            help="Plot in geographic coordinates, (lat, lon) instead of (RA, Dec) [default: %default]")
+            help="Plot in geographic coordinates, (lat, lon) instead of (RA, Dec) [default: %default]"),
+        Option("--transparent", action="store_true", default=False,
+            help="Save image with transparent background [default: %default]")
     ]
 )
 opts, args = parser.parse_args()
@@ -148,9 +150,10 @@ for ra, dec in np.deg2rad(opts.radec):
 # add a white outline to all text to make it stand out from the background.
 plot.outline_text(ax)
 
-fig.patch.set_alpha(0.)
-ax.patch.set_alpha(0.)
-ax.set_alpha(0.)
+if opts.transparent:
+    fig.patch.set_alpha(0.)
+    ax.patch.set_alpha(0.)
+    ax.set_alpha(0.)
 
 if opts.output is None:
     plt.show()
