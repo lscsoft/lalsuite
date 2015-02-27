@@ -528,7 +528,7 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
     /* in case one parameter is fixed check that */
     if ( C21 == -INFINITY ){ C21 = LALInferenceGetREAL8Variable( runState->currentParams, "C21" ); }
     if ( C22 == -INFINITY ){ C22 = LALInferenceGetREAL8Variable( runState->currentParams, "C22" ); }
-    if ( C21/C22 < 0. ) { return -DBL_MAX; } /* if same sign this will be positive */
+    if ( (C21 < 0. && C22 > 0.) || (C21 > 0. && C22 < 0.) ) { return -DBL_MAX; } /* if same sign this will be positive */
   }
 
   /* if there are values for which the priors are defined by a correlation
