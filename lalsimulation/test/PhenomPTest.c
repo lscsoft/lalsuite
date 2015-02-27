@@ -300,7 +300,7 @@ static void Test_PhenomC(void) {
   printf("LAL_MRSUN_SI, LAL_MTSUN_SI, LAL_PC_SI: %g\t%g\t%g\n",LAL_MRSUN_SI, LAL_MTSUN_SI, LAL_PC_SI);
   prC("hPC", hPC);
 
-  COMPLEX16 hPC_expected = -4.08272e-23 - I * 8.89604e-23;
+  COMPLEX16 hPC_expected = -4.08291e-23 - I * 8.89596e-23;
 
   const REAL8 eps = 1e-5;
 
@@ -367,8 +367,8 @@ static void Test_PhenomPCore(void) {
   prC("hp", hp);
   prC("hc", hc);
 
-  COMPLEX16 hp_expected = 2.06987e-23 - I*9.29351e-23;
-  COMPLEX16 hc_expected = -9.29438e-23 - I*2.06629e-23;
+  COMPLEX16 hp_expected = 2.06975e-23 - I * 9.29353e-23;
+  COMPLEX16 hc_expected = -9.29441e-23 - I * 2.06616e-23;
   const REAL8 eps = 1e-5;
 
   assert(
@@ -449,8 +449,9 @@ static void Test_XLALSimIMRPhenomP(void) {
   prC("hp", hp);
   prC("hc", hc);
 
-  COMPLEX16 hp_expected = -8.90351e-24 + I*5.81144e-23;
-  COMPLEX16 hc_expected = 5.81058e-23 + I*8.89934e-24;
+  COMPLEX16 hp_expected = -8.90294e-24 + I * 5.81145e-23;
+  COMPLEX16 hc_expected =  5.81059e-23 + I * 8.89877e-24;
+
   const REAL8 eps = 1e-5;
 
   assert(

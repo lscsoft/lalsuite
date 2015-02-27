@@ -27,4 +27,5 @@ EXTRA_DIST = \
 	LALError.dox \
 	LALMalloc.dox \
 	LALStatusMacros.dox \
+	compute_constants.py \
 	$(END_OF_LIST)
