@@ -22,8 +22,8 @@
 
 // # General SWIG directives and interface code
 
-// In SWIG Python modules, everything is namespaced, so it makes
-// sense to rename symbols to remove superfluous C-API prefixes
+// In SWIG Python modules, everything is namespaced, so it makes sense to rename symbols to remove
+// superfluous C-API prefixes.
 #define SWIGLAL_MODULE_RENAME_CONSTANTS
 #define SWIGLAL_MODULE_RENAME_FUNCTIONS
 #define SWIGLAL_MODULE_RENAME_TDSTRUCTS
@@ -32,8 +32,8 @@
 // Include SWIG Python headers.
 %include <pycomplex.swg>
 
-// Include NumPy headers in wrapping code, and ensure that
-// NumPy array module is loaded along with this module.
+// Include NumPy headers in wrapping code, and ensure that NumPy array module is loaded along with
+// this module.
 %header %{
 #include <numpy/arrayobject.h>
 %}
@@ -67,16 +67,16 @@ import_array();
 SWIGINTERNINLINE PyObject* swiglal_get_reference(PyObject* v) { Py_XINCREF(v); return v; }
 %}
 
-// Append an argument to the output argument list of an Python SWIG-wrapped function, if the list is empty.
+// Append an argument to the output argument list of an Python SWIG-wrapped function, if the list is
+// empty.
 %header %{
 #define swiglal_append_output_if_empty(v) if (resultobj == Py_None) resultobj = SWIG_Python_AppendOutput(resultobj, v)
 %}
 
 // # SWIG directives for operators
 
-// These macros apply the correct python:slot directives
-// to map Python __operator__ functions (which may be
-// defined in %extend) to the correct PyTypeObject slots.
+// These macros apply the correct python:slot directives to map Python __operator__ functions (which
+// may be defined in %extend) to the correct PyTypeObject slots.
 
 // Unary operators which do not return a new object.
 %define %swiglal_py_ury_op(NAME, FUNCTYPE, SLOT)
@@ -92,8 +92,7 @@ SWIGINTERNINLINE PyObject* swiglal_get_reference(PyObject* v) { Py_XINCREF(v); r
 %swiglal_py_ury_op(repr, reprfunc, tp_repr);
 %swiglal_py_ury_op(str, reprfunc, tp_str);
 
-// Unary operators which return a new object, and thus
-// require %newobject to be set.
+// Unary operators which return a new object, and thus require %newobject to be set.
 %define %swiglal_py_urn_op(NAME, FUNCTYPE, SLOT)
 %newobject *::__##NAME##__;
 %pythonmaybecall *::__##NAME##__;
@@ -104,10 +103,9 @@ SWIGINTERNINLINE PyObject* swiglal_get_reference(PyObject* v) { Py_XINCREF(v); r
 %swiglal_py_urn_op(neg, unaryfunc, nb_negative);
 %swiglal_py_urn_op(pos, unaryfunc, nb_positive);
 
-// Binary operators, which always must return a new object,
-// and thus require %newobject to be set. The SWIG Python
-// module with -builtin does not support reverse operators,
-// so they are removed from the interface.
+// Binary operators, which always must return a new object, and thus require %newobject to be
+// set. The SWIG Python module with -builtin does not support reverse operators, so they are removed
+// from the interface.
 %define %swiglal_py_bin_op(NAME, FUNCTYPE, SLOT)
 %newobject *::__##NAME##__;
 %pythonmaybecall *::__##NAME##__;
@@ -227,19 +225,16 @@ SWIGINTERNINLINE PyObject* swiglal_get_reference(PyObject* v) { Py_XINCREF(v); r
 
 // # Interface code to track object parents
 
-// Interface code which tracks the parent structs of SWIG-wrapped struct members,
-// so that the parent struct is not destroyed as long as a SWIG-wrapped object
-// containing any of its members exists.
+// Interface code which tracks the parent structs of SWIG-wrapped struct members, so that the parent
+// struct is not destroyed as long as a SWIG-wrapped object containing any of its members exists.
 %header %{
 
-// Internal map from member pointers to PyObjects containing the
-// member parent struct, as well as an internal reference count of
-// how many SWIG-wrapped member objects are extant.
+// Internal map from member pointers to PyObjects containing the member parent struct, as well as an
+// internal reference count of how many SWIG-wrapped member objects are extant.
 static PyObject *parent_map = NULL;
 
-// Store a reference to the parent of ptr in the internal map.
-// If there is already such a reference, increment the internal
-// reference count instead.
+// Store a reference to the parent of ptr in the internal map. If there is already such a reference,
+// increment the internal reference count instead.
 SWIGINTERN void swiglal_store_parent(void* ptr, PyObject* parent) {
   PyObject *pyerr_type = NULL, *pyerr_value = NULL, *pyerr_traceback = NULL;
   PyErr_Fetch(&pyerr_type, &pyerr_value, &pyerr_traceback);
@@ -277,11 +272,10 @@ SWIGINTERN void swiglal_store_parent(void* ptr, PyObject* parent) {
   PyErr_Restore(pyerr_type, pyerr_value, pyerr_traceback);
 }
 
-// Check if ptr stored a reference to a parent struct. If there is
-// no parent object, then ptr *really* owns its memory, and it's okay
-// for it to destroy it (so return true). Otherwise, decrement the
-// internal reference count, erase the parent map entry if it reaches
-// zero, and return false to prevent any destructors being called.
+// Check if ptr stored a reference to a parent struct. If there is no parent object, then ptr
+// *really* owns its memory, and it's okay for it to destroy it (so return true). Otherwise,
+// decrement the internal reference count, erase the parent map entry if it reaches zero, and
+// return false to prevent any destructors being called.
 SWIGINTERN bool swiglal_release_parent(void *ptr) {
   PyObject *pyerr_type = NULL, *pyerr_value = NULL, *pyerr_traceback = NULL;
   PyErr_Fetch(&pyerr_type, &pyerr_value, &pyerr_traceback);
@@ -321,11 +315,10 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 %} // %header
 %init %{
 
-// Get a pointer to the internal parent map. Look for an attribute
-// 'parent_map' of an internal module 'swiglal_runtime_data'; if it
-// does not exist, create a new map and assign the module attribute,
-// otherwise store the attribute's value. In this way each wrapping
-// module gets a pointer to the same map.
+// Get a pointer to the internal parent map. Look for an attribute 'parent_map' of an internal
+// module 'swiglal_runtime_data'; if it does not exist, create a new map and assign the module
+// attribute, otherwise store the attribute's value. In this way each wrapping module gets a pointer
+// to the same map.
 {
   const char *const module_name = "swiglal_runtime_data";
   const char *const parent_map_name = "parent_map";
@@ -350,8 +343,8 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 
 // # Fragments and typemaps for arrays
 
-// This section implements array conversion functions for basic C array types,
-// and custom NumPy array descriptors for viewing C arrays of object, e.g. structs.
+// This section implements array conversion functions for basic C array types, and custom NumPy
+// array descriptors for viewing C arrays of object, e.g. structs.
 
 // Fragment defining helper functions for the array conversion functions.
 %fragment("swiglal_py_array_helpers", "header") {
@@ -388,23 +381,22 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 // Fragment defining helper functions for the NumPy object-view array descriptors.
 %fragment("swiglal_py_array_objview", "header") {
 
-  // Struct which associates a SWIG type descriptor with two NumPy array descriptors,
-  // one for arrays of data blocks (_noptr), and one for arrays of pointers (_isptr).
+  // Struct which associates a SWIG type descriptor with two NumPy array descriptors, one for arrays
+  // of data blocks (_noptr), and one for arrays of pointers (_isptr).
   typedef struct {
     swig_type_info* tinfo;
     PyArray_Descr* descr_noptr;
     PyArray_Descr* descr_isptr;
   } swiglal_py_array_type_pair;
 
-  // Static array of SWIG type/NumPy array descriptor pairs. This array should
-  // always be long enough to accommodate all possible swig_type_info*, since
-  // they are always members of the SWIG-generated global array swig_types[].
-  // This array in turn is always one longer than the total number of types,
-  // so there should always be a sentinal NULL element at the end.
+  // Static array of SWIG type/NumPy array descriptor pairs. This array should always be long enough
+  // to accommodate all possible swig_type_info*, since they are always members of the
+  // SWIG-generated global array swig_types[].  This array in turn is always one longer than the
+  // total number of types, so there should always be a sentinal NULL element at the end.
   static swiglal_py_array_type_pair swiglal_py_array_types[sizeof(swig_types) / sizeof(swig_types[0])];
 
-  // This function maps a SWIG type descriptor to a NumPy array descriptor,
-  // or returns the first NULL element if a mapping doesn't exist yet.
+  // This function maps a SWIG type descriptor to a NumPy array descriptor, or returns the first
+  // NULL element if a mapping doesn't exist yet.
   SWIGINTERN PyArray_Descr** swiglal_py_array_descr_from_tinfo(const bool isptr, swig_type_info* tinfo) {
     size_t i = 0;
     while (swiglal_py_array_types[i].tinfo != NULL && swiglal_py_array_types[i].tinfo != tinfo)
@@ -414,8 +406,8 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
     return isptr ? &swiglal_py_array_types[i].descr_isptr : &swiglal_py_array_types[i].descr_noptr;
   }
 
-  // This function maps a NumPy array descriptor to a SWIG type descriptor,
-  // or returns NULL element if a mapping doesn't exist.
+  // This function maps a NumPy array descriptor to a SWIG type descriptor, or returns NULL element
+  // if a mapping doesn't exist.
   SWIGINTERN void swiglal_py_array_tinfo_from_descr(bool *isptr, swig_type_info** tinfo, PyArray_Descr* descr) {
     size_t i = 0;
     while ( ( swiglal_py_array_types[i].descr_noptr != NULL  || swiglal_py_array_types[i].descr_isptr != NULL  ) &&
@@ -461,7 +453,8 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 // Name of fragment containing a NumPy object-view array descriptor for type ACFTYPE.
 #define %swiglal_py_array_objview_frag(ACFTYPE) "swiglal_py_array_objview_" %str(ACFTYPE)
 
-// Name of fragment containing NumPy object-view array descriptor initialisation code for type ACFTYPE.
+// Name of fragment containing NumPy object-view array descriptor initialisation code for type
+// ACFTYPE.
 #define %swiglal_py_array_objview_init_frag(ACFTYPE) "swiglal_py_array_objview_init_" %str(ACFTYPE)
 
 // Macro which generates fragments containing a NumPy object-view array descriptor for type ACFTYPE.
@@ -542,11 +535,11 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
     PyArrayObject* nptoarr = (PyArrayObject*)toarr;
     assert(PyArray_DESCR(nptoarr) != NULL);
 
-    // toarr should be an array of pointers to PyObjects.
+    // 'toarr' should be an array of pointers to PyObjects.
     assert(PyArray_DESCR(nptoarr)->elsize == sizeof(PyObject*));
 
-    // Loop over n elements, and assign each element of toarr
-    // the Python object wrapping the corresponding element of fromarr.
+    // Loop over 'n' elements, and assign each element of 'toarr' the Python object wrapping the
+    // corresponding element of 'fromarr'.
     char* fromelem = (void*)from;
     PyObject** toelem = (PyObject**)to;
     while (--n >= 0) {
@@ -601,9 +594,9 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
     &swiglal_py_array_objview_##ACFTYPE##_arrfuncs,   // f
   };
 
-  // This function returns the NumPy array descriptor appropriate for the
-  // supplied SWIG type descriptor. If no array descriptor exists, it creates
-  // one from the array descriptor for type ACFTYPE.
+  // This function returns the NumPy array descriptor appropriate for the supplied SWIG type
+  // descriptor. If no array descriptor exists, it creates one from the array descriptor for type
+  // ACFTYPE.
   SWIGINTERN PyArray_Descr* swiglal_py_array_objview_##ACFTYPE##_descr(const bool isptr, swig_type_info* tinfo, const int esize) {
 
     // Lookup existing NumPy array descriptor for SWIG type descriptor.
@@ -623,8 +616,8 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
       }
     }
 
-    // PyArray_NewFromDescr appears to steal a reference to the descriptor
-    // passed to it, so a reference count increment is needed here.
+    // PyArray_NewFromDescr appears to steal a reference to the descriptor passed to it, so a
+    // reference count increment is needed here.
     Py_INCREF(*pdescr);
 
     return *pdescr;
@@ -635,7 +628,8 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 
 %enddef // %swiglal_py_array_objview
 
-// Macro which generates fragments which define ACFTYPE-specific array view classes and conversion functions:
+// Macro which generates fragments which define ACFTYPE-specific array view classes and conversion
+// functions:
 //  - IN/OUTFRAG are names of fragments required by the in/out conversion functions IN/OUTCALL.
 //  - VIEWFRAG is the name of a fragment needed for array views.
 //  - NPYTYPE/NPYDESCR is the appropriate NumPy array typenum/descriptor.
@@ -895,8 +889,8 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 
 %enddef // %swiglal_py_array_frags
 
-// Macro which generates array conversion function fragments to/from Python
-// arrays for object arrays, which require additional code for views.
+// Macro which generates array conversion function fragments to/from Python arrays for object
+// arrays, which require additional code for views.
 %define %swiglal_py_array_objview_frags(ACFTYPE, INFRAG, OUTFRAG, INCALL, OUTCALL)
 %swiglal_py_array_objview(ACFTYPE, INFRAG, OUTFRAG, INCALL, OUTCALL);
 %swiglal_py_array_frags(ACFTYPE, INFRAG, OUTFRAG, INCALL, OUTCALL,
@@ -914,8 +908,8 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
                                 %arg(SWIG_AsNewLALcharPtr(objelem, %reinterpret_cast(elemptr, char**))),
                                 %arg(SWIG_FromLALcharPtr(*%reinterpret_cast(elemptr, char**))));
 
-// Macro which generates array conversion function fragments to/from Python
-// arrays for real/fragment TYPEs which use SWIG_AsVal/From fragments.
+// Macro which generates array conversion function fragments to/from Python arrays for real/fragment
+// TYPEs which use SWIG_AsVal/From fragments.
 %define %swiglal_py_array_asvalfrom_frags(TYPE, NPYTYPE)
 %swiglal_py_array_frags(TYPE, SWIG_AsVal_frag(TYPE), SWIG_From_frag(TYPE),
                         %arg(SWIG_AsVal(TYPE)(objelem, %reinterpret_cast(elemptr, TYPE*))),
