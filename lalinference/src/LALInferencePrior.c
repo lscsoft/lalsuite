@@ -255,10 +255,12 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
     logPrior+=3.0* *(REAL8 *)LALInferenceGetVariable(params,"logdistance");
   else if(LALInferenceCheckVariable(params,"distance"))
     logPrior+=2.0*log(*(REAL8 *)LALInferenceGetVariable(params,"distance"));
-  if(LALInferenceCheckVariable(params,"theta_jn"))
-    logPrior+=log(fabs(sin(*(REAL8 *)LALInferenceGetVariable(params,"theta_jn"))));
   if(LALInferenceCheckVariable(params,"declination"))
-    logPrior+=log(fabs(cos(*(REAL8 *)LALInferenceGetVariable(params,"declination"))));
+  {
+    /* Check that this is not an output variable */
+    if(LALInferenceGetVariableVaryType(params,"declination")==LALINFERENCE_PARAM_LINEAR)
+      logPrior+=log(fabs(cos(*(REAL8 *)LALInferenceGetVariable(params,"declination"))));
+  }
   if(LALInferenceCheckVariable(params,"tilt_spin1"))
   {
     LALInferenceParamVaryType vtype=LALInferenceGetVariableVaryType(params,"tilt_spin1");
@@ -1049,7 +1051,11 @@ REAL8 LALInferenceInspiralSkyLocPrior(LALInferenceRunState *runState, LALInferen
   if(LALInferenceCheckVariable(params,"theta_jn"))
     logPrior+=log(fabs(sin(*(REAL8 *)LALInferenceGetVariable(params,"theta_jn"))));
   if(LALInferenceCheckVariable(params,"declination"))
-    logPrior+=log(fabs(cos(*(REAL8 *)LALInferenceGetVariable(params,"declination"))));
+  {
+    /* Check that this is not an output variable */
+    if(LALInferenceGetVariableVaryType(params,"declination")==LALINFERENCE_PARAM_LINEAR)
+      logPrior+=log(fabs(cos(*(REAL8 *)LALInferenceGetVariable(params,"declination"))));
+  }
   if(LALInferenceCheckVariable(params,"tilt_spin1"))
   {
     LALInferenceParamVaryType vtype=LALInferenceGetVariableVaryType(params,"tilt_spin1");
