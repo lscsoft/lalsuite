@@ -160,7 +160,7 @@ main ( int argc, char *argv[] )
         continue;
       }
       optionalArgs.FstatMethod = iMethod;
-      XLAL_CHECK ( (input[iMethod] = XLALCreateFstatInput ( catalog, minCoverFreq, maxCoverFreq, ephem, &optionalArgs )) != NULL, XLAL_EFUNC );
+      XLAL_CHECK ( (input[iMethod] = XLALCreateFstatInput ( catalog, minCoverFreq, maxCoverFreq, dFreq, ephem, &optionalArgs )) != NULL, XLAL_EFUNC );
     }
 
   FstatQuantities whatToCompute = (FSTATQ_2F | FSTATQ_FAFB);
@@ -182,7 +182,7 @@ main ( int argc, char *argv[] )
                     firstMethod = iMethod;
                   }
 
-                  XLAL_CHECK ( XLALComputeFstat ( &results[iMethod], input[iMethod], &Doppler, dFreq, numFreqBins, whatToCompute ) == XLAL_SUCCESS, XLAL_EFUNC );
+                  XLAL_CHECK ( XLALComputeFstat ( &results[iMethod], input[iMethod], &Doppler, numFreqBins, whatToCompute ) == XLAL_SUCCESS, XLAL_EFUNC );
 
                   if ( lalDebugLevel & LALINFOBIT )
                     {

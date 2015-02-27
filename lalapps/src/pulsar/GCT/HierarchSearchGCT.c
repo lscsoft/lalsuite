@@ -1440,7 +1440,7 @@ int MAIN( int argc, char *argv[]) {
                 if (doComputeFstats) { /* if first time through fine grid fdots loop */
 
                   timeFstatStart = XLALGetTimeOfDay();
-                  const int retn = XLALComputeFstat(&Fstat_res, Fstat_in_vec->data[k], &thisPoint, dFreqStack, binsFstat1, Fstat_what);
+                  const int retn = XLALComputeFstat(&Fstat_res, Fstat_in_vec->data[k], &thisPoint, binsFstat1, Fstat_what);
                   if ( retn != XLAL_SUCCESS ) {
                     XLALPrintError ("%s: XLALComputeFstat() failed with errno=%d\n", __func__, xlalErrno );
                     return xlalErrno;
@@ -2053,7 +2053,8 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
     }
 
     /* ----- create Fstat input data struct ----- */
-    (*p_Fstat_in_vec)->data[k] = XLALCreateFstatInput ( &catalogSeq.data[k], freqmin, freqmax, in->edat, &optionalArgs );
+    (*p_Fstat_in_vec)->data[k] = XLALCreateFstatInput ( &catalogSeq.data[k], freqmin, freqmax, in->dFreqStack, in->edat, &optionalArgs );
+
     if ( (*p_Fstat_in_vec)->data[k] == NULL ) {
       XLALPrintError("%s: XLALCreateFstatInput() failed with errno=%d", __func__, xlalErrno);
       ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );

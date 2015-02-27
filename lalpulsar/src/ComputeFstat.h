@@ -297,7 +297,8 @@ MultiFstatAtomVector* XLALCreateMultiFstatAtomVector ( const UINT4 length );
 void XLALDestroyMultiFstatAtomVector ( MultiFstatAtomVector *atoms );
 
 FstatInput *
-XLALCreateFstatInput ( const SFTCatalog *SFTcatalog, const REAL8 minCoverFreq, const REAL8 maxCoverFreq, const EphemerisData *ephemerides, const FstatOptionalArgs *optionalArgs );
+XLALCreateFstatInput ( const SFTCatalog *SFTcatalog, const REAL8 minCoverFreq, const REAL8 maxCoverFreq, const REAL8 dFreq,
+                       const EphemerisData *ephemerides, const FstatOptionalArgs *optionalArgs );
 
 const MultiLALDetector* XLALGetFstatInputDetectors ( const FstatInput* input );
 const MultiLIGOTimeGPSVector* XLALGetFstatInputTimestamps ( const FstatInput* input );
@@ -308,7 +309,7 @@ const MultiDetectorStateSeries* XLALGetFstatInputDetectorStates ( const FstatInp
 SWIGLAL(INOUT_STRUCTS(FstatResults**, Fstats));
 #endif
 int XLALComputeFstat ( FstatResults **Fstats, FstatInput *input, const PulsarDopplerParams *doppler,
-                       const REAL8 dFreq, const UINT4 numFreqBins, const FstatQuantities whatToCompute );
+                       const UINT4 numFreqBins, const FstatQuantities whatToCompute );
 
 void XLALDestroyFstatInput ( FstatInput* input );
 void XLALDestroyFstatResults ( FstatResults* Fstats );

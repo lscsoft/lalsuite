@@ -194,6 +194,7 @@ typedef struct {
   UINT4 Dterms;                    /**< size of Dirichlet kernel for Fstat calculation */
   REAL8 dopplerMax;                /**< extra sft wings for doppler motion */
   SSBprecision SSBprec;            /**< SSB transform precision */
+  REAL8 dFreqStack;		   /**< frequency resolution of Fstat calculation */
 } UsefulStageVariables;
 
 
@@ -321,7 +322,6 @@ int MAIN( int argc, char *argv[]) {
 
   /* number of stacks -- not necessarily same as uvar_nStacks! */
   UINT4 nStacks;
-  REAL8 dFreqStack; /* frequency resolution of Fstat calculation */
   REAL8 df1dot, df1dotRes;  /* coarse grid resolution in spindown */
   UINT4 nf1dot, nf1dotRes; /* coarse and fine grid number of spindown values */
 
@@ -693,10 +693,10 @@ int MAIN( int argc, char *argv[]) {
   /* set Fstat calculation frequency resolution
      -- default is 1/tstack */
   if ( LALUserVarWasSet(&uvar_dFreq) ) {
-    dFreqStack = uvar_dFreq;
+    usefulParams.dFreqStack = uvar_dFreq;
   }
   else {
-    dFreqStack = 1.0/tStack;
+    usefulParams.dFreqStack = 1.0/tStack;
   }
 
   /* set Fstat spindown resolution
@@ -772,7 +772,7 @@ int MAIN( int argc, char *argv[]) {
 
   /* print debug info about stacks */
   LogPrintf(LOG_DETAIL, "1st stage params: Nstacks = %d,  Tstack = %.0fsec, dFreq = %eHz, Tobs = %.0fsec\n",
-	    nStacks, tStack, dFreqStack, tObs);
+	    nStacks, tStack, usefulParams.dFreqStack, tObs);
   if ( weightsNoise ) {
     for (k = 0; k < nStacks; k++) {
       LogPrintf(LOG_DETAIL, "Stack %d (GPS start time = %d, Noise weight = %f )\n ",
@@ -971,7 +971,7 @@ int MAIN( int argc, char *argv[]) {
 
 	/* calculate number of bins for fstat overhead */
 	freqHighest = usefulParams.spinRange_midTime.fkdot[0] + usefulParams.spinRange_midTime.fkdotBand[0];
-	ComputeNumExtraBins(&status, &semiCohPar, 0, freqHighest, dFreqStack);
+	ComputeNumExtraBins(&status, &semiCohPar, 0, freqHighest, usefulParams.dFreqStack);
 
 	/* conservative estimate */
 	/* extraBinsSky = (UINT4)(0.5 * LAL_SQRT2 * VTOT   */
@@ -982,19 +982,19 @@ int MAIN( int argc, char *argv[]) {
 	   caused by the residual spindown.  The reference time for the spindown is the midtime,
 	   so relevant interval is Tobs/2 and largest possible value of residual spindown is
 	   (number of residual spindowns -1)*resolution in residual spindowns */
-	extraBinsfdot = (UINT4)(tObs * (nf1dotRes - 1) * df1dotRes / dFreqStack + 0.5);
+	extraBinsfdot = (UINT4)(tObs * (nf1dotRes - 1) * df1dotRes / usefulParams.dFreqStack + 0.5);
 
 	semiCohPar.extraBinsFstat += extraBinsfdot;
 
 	/* allocate fstat memory */
-	binsFstatSearch = (UINT4)(usefulParams.spinRange_midTime.fkdotBand[0]/dFreqStack + 1e-6) + 1;
+	binsFstatSearch = (UINT4)(usefulParams.spinRange_midTime.fkdotBand[0]/usefulParams.dFreqStack + 1e-6) + 1;
 	binsFstat1 = binsFstatSearch + 2*semiCohPar.extraBinsFstat;
 
 	for (k = 0; k < nStacks; k++) {
 	  /* careful--the epoch here is not the reference time for f0! */
 	  fstatVector.data[k].epoch = startTstack->data[k];
-	  fstatVector.data[k].deltaF = dFreqStack;
-	  fstatVector.data[k].f0 = usefulParams.spinRange_midTime.fkdot[0] - semiCohPar.extraBinsFstat * dFreqStack;
+	  fstatVector.data[k].deltaF = usefulParams.dFreqStack;
+	  fstatVector.data[k].f0 = usefulParams.spinRange_midTime.fkdot[0] - semiCohPar.extraBinsFstat * usefulParams.dFreqStack;
 	  if (fstatVector.data[k].data == NULL) {
 	    fstatVector.data[k].data = LALCalloc( 1, alloc_len = sizeof(REAL4Sequence));
 	    XLAL_CHECK( fstatVector.data[k].data != NULL, XLAL_ENOMEM, "Failed to allocate memory LALCalloc ( 1, %d )\n", alloc_len );
@@ -1039,7 +1039,7 @@ int MAIN( int argc, char *argv[]) {
                   thisPoint.fkdot[0] = fstatVector.data[k].f0;
                   /* thisPoint.fkdot[0] = usefulParams.spinRange_midTime.fkdot[0]; */
 
-                  const int retn = XLALComputeFstat(&Fstat_res, Fstat_in_vec->data[k], &thisPoint, fstatVector.data[0].deltaF, binsFstat1, Fstat_what);
+                  const int retn = XLALComputeFstat(&Fstat_res, Fstat_in_vec->data[k], &thisPoint, binsFstat1, Fstat_what);
                   if ( retn != XLAL_SUCCESS ) {
                     XLALPrintError ("%s: XLALComputeFstat() failed with errno=%d\n", __func__, xlalErrno );
                     return xlalErrno;
@@ -1436,7 +1436,7 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   for (k = 0; k < in->nStacks; k++) {
 
     /* create Fstat input data struct for Fstat-computation */
-    (*p_Fstat_in_vec)->data[k] = XLALCreateFstatInput( &catalogSeq.data[k], fMin, fMax, in->edat,  &optionalArgs );
+    (*p_Fstat_in_vec)->data[k] = XLALCreateFstatInput( &catalogSeq.data[k], fMin, fMax, in->dFreqStack, in->edat,  &optionalArgs );
     if ( (*p_Fstat_in_vec)->data[k] == NULL ) {
       XLALPrintError("%s: XLALCreateFstatInput() failed with errno=%d", __func__, xlalErrno);
       ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );

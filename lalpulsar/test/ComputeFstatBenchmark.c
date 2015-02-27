@@ -159,7 +159,7 @@ main ( int argc, char *argv[] )
   XLAL_CHECK ( (inputs = XLALCreateFstatInputVector ( uvar->numSegments )) != NULL, XLAL_EFUNC );
   for ( INT4 l = 0; l < uvar->numSegments; l ++ )
     {
-      XLAL_CHECK ( (inputs->data[l] = XLALCreateFstatInput ( catalogs[l], minCoverFreq, maxCoverFreq, ephem, &optionalArgs )) != NULL, XLAL_EFUNC );
+      XLAL_CHECK ( (inputs->data[l] = XLALCreateFstatInput ( catalogs[l], minCoverFreq, maxCoverFreq, dFreq, ephem, &optionalArgs )) != NULL, XLAL_EFUNC );
     }
 
   // ----- compute Fstatistics over segments
@@ -172,12 +172,12 @@ main ( int argc, char *argv[] )
     {
       // call it once to initialize buffering, don't count this time
       REAL8 tic = XLALGetTimeOfDay();
-      XLAL_CHECK ( XLALComputeFstat ( &results[l], inputs->data[l], &Doppler, dFreq, uvar->numFreqBins, whatToCompute ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK ( XLALComputeFstat ( &results[l], inputs->data[l], &Doppler, uvar->numFreqBins, whatToCompute ) == XLAL_SUCCESS, XLAL_EFUNC );
       REAL8 toc = XLALGetTimeOfDay();
       tauFSumUnbuffered += ( toc - tic );
       // now call it with full buffering to get converged runtime per template (assuming many templates per skypoint or per binary params)
       tic = XLALGetTimeOfDay();
-      XLAL_CHECK ( XLALComputeFstat ( &results[l], inputs->data[l], &Doppler, dFreq, uvar->numFreqBins, whatToCompute ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK ( XLALComputeFstat ( &results[l], inputs->data[l], &Doppler, uvar->numFreqBins, whatToCompute ) == XLAL_SUCCESS, XLAL_EFUNC );
       toc = XLALGetTimeOfDay();
       tauFSumBuffered += (toc - tic);
     } // for l < numSegments

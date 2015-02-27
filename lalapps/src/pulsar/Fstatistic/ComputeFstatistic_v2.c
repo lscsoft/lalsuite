@@ -177,6 +177,8 @@ typedef struct {
   RankingStat_t RankingStatistic;           /**< rank candidates according to F or BSGL */
   BOOLEAN useResamp;
   FstatMethodType FstatMethod;
+  UINT4 numFreqBins_FBand;
+  REAL8 dFreq;
 } ConfigVariables;
 
 
@@ -478,18 +480,6 @@ int main(int argc,char *argv[])
   /* fixed time-offset between internalRefTime and refTime */
   REAL8 DeltaTRefInt = XLALGPSDiff ( &(GV.internalRefTime), &(GV.searchRegion.refTime) ); // tRefInt - tRef
 
-  UINT4 numFreqBins_FBand = 1;	// number of frequency-bins in the frequency-band used for resampling (1 if not using Resampling)
-  REAL8 dFreqResamp = 0; // frequency resolution used to allocate vector of F-stat values for resampling
-  if ( GV.useResamp )	// handle special resampling case, where we deal with a vector of F-stat values instead of one
-    {
-	if ( XLALUserVarWasSet(&uvar.dFreq) ) {
-		dFreqResamp = uvar.dFreq;
-	} else {
-		dFreqResamp = 1.0/(2*GV.Tspan);
-	}
-      numFreqBins_FBand = (UINT4) ( 1 + floor ( GV.searchRegion.fkdotBand[0] / dFreqResamp ) );
-    }
-
   // ----- prepare timing info
   REAL8 tic0, tic, toc, timeOfLastProgressUpdate = 0;	// high-precision timing counters
   timingInfo_t XLAL_INIT_DECL(timing);			// timings of Fstatistic computation, transient Fstat-map, transient Bayes factor
@@ -515,7 +505,7 @@ int main(int argc,char *argv[])
       internalDopplerpos.refTime = GV.internalRefTime;
 
       /* main function call: compute F-statistic for this template */
-      XLAL_CHECK_MAIN ( XLALComputeFstat ( &Fstat_res, GV.Fstat_in, &internalDopplerpos, dFreqResamp, numFreqBins_FBand, GV.Fstat_what) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN ( XLALComputeFstat ( &Fstat_res, GV.Fstat_in, &internalDopplerpos, GV.numFreqBins_FBand, GV.Fstat_what) == XLAL_SUCCESS, XLAL_EFUNC );
 
       /* if single-only flag is given, add +4 to F-statistic */
       if ( uvar.SignalOnly ) {
@@ -541,12 +531,12 @@ int main(int argc,char *argv[])
       // main-loop: we simply loop the remaining body over all frequency-bins in the Fstat-vector,
       // this way nothing needs to be changed!  in the non-resampling case, this loop iterates only
       // once, so nothing is changed ...
-      for ( UINT4 iFreq = 0; iFreq < numFreqBins_FBand; iFreq ++ )
+      for ( UINT4 iFreq = 0; iFreq < GV.numFreqBins_FBand; iFreq ++ )
       {
 
         /* collect data on current 'Fstat-candidate' */
         thisFCand.doppler = dopplerpos;	// use 'original' dopplerpos @ refTime !
-        thisFCand.doppler.fkdot[0] += iFreq * dFreqResamp; // this only does something for the resampling post-loop over frequency-bins, 0 otherwise ...
+        thisFCand.doppler.fkdot[0] += iFreq * GV.dFreq; // this only does something for the resampling post-loop over frequency-bins, 0 otherwise ...
         thisFCand.twoF = Fstat_res->twoF[iFreq];
         if (GV.Fstat_what & FSTATQ_2F_PER_DET) {
           thisFCand.numDetectors = Fstat_res->numDetectors;
@@ -770,10 +760,10 @@ int main(int argc,char *argv[])
   /* if requested: output timings into timing-file */
   if ( uvar.outputTiming )
     {
-      REAL8 num_templates = numTemplates * numFreqBins_FBand;	// 'templates' now refers to number of 'frequency-bands' in resampling case
+      REAL8 num_templates = numTemplates * GV.numFreqBins_FBand;	// 'templates' now refers to number of 'frequency-bands' in resampling case
 
       timing.NSFTs = GV.NSFTs;
-      timing.NFreq = (UINT4) ( 1 + floor ( GV.searchRegion.fkdotBand[0] / uvar.dFreq ) );
+      timing.NFreq = (UINT4) ( 1 + floor ( GV.searchRegion.fkdotBand[0] / GV.dFreq ) );
 
       timing.FstatMethod = GV.FstatMethod;
 
@@ -1372,6 +1362,17 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
     assumeSqrtSX = NULL;
   }
 
+  if ( XLALUserVarWasSet ( &uvar->dFreq) ) {
+    cfg->dFreq = uvar->dFreq;
+  } else {
+    cfg->dFreq = 1.0/(2*cfg->Tspan);
+  }
+  if ( cfg->useResamp )	{ // handle special resampling case, where we deal with a vector of F-stat values instead of one
+    cfg->numFreqBins_FBand = (UINT4) ( 1 + floor ( cfg->searchRegion.fkdotBand[0] / cfg->dFreq ) );
+  } else {
+    cfg->numFreqBins_FBand = 1;	// number of frequency-bins in the frequency-band used for resampling (1 if not using Resampling)
+  }
+
   PulsarParamsVector *injectSources = NULL;
   MultiNoiseFloor *injectSqrtSX = NULL;
   FstatOptionalArgs optionalArgs = FstatOptionalArgsDefaults;
@@ -1383,7 +1384,7 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
   optionalArgs.assumeSqrtSX = assumeSqrtSX;
   optionalArgs.FstatMethod = cfg->FstatMethod;
 
-  XLAL_CHECK ( (cfg->Fstat_in = XLALCreateFstatInput( catalog, fCoverMin, fCoverMax, cfg->ephemeris, &optionalArgs )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK ( (cfg->Fstat_in = XLALCreateFstatInput( catalog, fCoverMin, fCoverMax, cfg->dFreq, cfg->ephemeris, &optionalArgs )) != NULL, XLAL_EFUNC );
   XLALDestroySFTCatalog(catalog);
 
   cfg->Fstat_what = FSTATQ_2F;   // always calculate multi-detector 2F

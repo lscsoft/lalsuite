@@ -48,6 +48,7 @@ typedef struct {
   const EphemerisData *ephemerides;                     // Ephemerides for the time-span of the SFTs
   SSBprecision SSBprec;                                 // Barycentric transformation precision
   FstatMethodType FstatMethod;                          // Method to use for computing the F-statistic
+  REAL8 dFreq;	  		  			// Requested spacing of \f$\mathcal{F}\f$-statistic frequency bins.
 } FstatInput_Common;
 
 // Input data specific to F-statistic methods
@@ -262,6 +263,7 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,		  ///< [in] Catalog of SFT
                                                                   ///< The \c locator field of each ::SFTDescriptor must be \c !=NULL for SFT loading, and \c ==NULL for SFT generation.
                        const REAL8 minCoverFreq,		  ///< [in] Minimum instantaneous frequency which will be covered over the SFT time span.
                        const REAL8 maxCoverFreq,		  ///< [in] Maximum instantaneous frequency which will be covered over the SFT time span.
+                       const REAL8 dFreq,	  		  ///< [in] Requested spacing of \f$\mathcal{F}\f$-statistic frequency bins.
                        const EphemerisData *ephemerides,	  ///< [in] Ephemerides for the time-span of the SFTs.
                        const FstatOptionalArgs *optionalArgs      ///< [in] Optional 'advanced-level' and method-specific extra arguments; NULL: use defaults from FstatOptionalArgsDefaults.
                        )
@@ -280,6 +282,7 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,		  ///< [in] Catalog of SFT
   XLAL_CHECK_NULL ( isfinite(maxCoverFreq) && maxCoverFreq > 0, XLAL_EINVAL );
   XLAL_CHECK_NULL ( maxCoverFreq > minCoverFreq, XLAL_EINVAL );
   XLAL_CHECK_NULL ( ephemerides != NULL, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( dFreq > 0, XLAL_EINVAL);
 
   // handle optional arguments, if given
   const FstatOptionalArgs *optArgs;
@@ -322,6 +325,7 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,		  ///< [in] Catalog of SFT
       XLAL_ERROR_NULL ( XLAL_EINVAL, "Received invalid Fstat method enum '%d'\n", optArgs->FstatMethod );
     }
   common->FstatMethod = optArgs->FstatMethod;
+  common->dFreq = dFreq;
 
   // Determine the time baseline of an SFT
   const REAL8 Tsft = 1.0 / SFTcatalog->data[0].header.deltaF;
@@ -542,7 +546,6 @@ int
 XLALComputeFstat ( FstatResults **Fstats,	  	///< [in/out] Address of a pointer to a #FstatResults results structure; if \c NULL, allocate here.
                    FstatInput *input,		  	///< [in] Input data structure created by one of the setup functions.
                    const PulsarDopplerParams *doppler,  ///< [in] Doppler parameters, including starting frequency, at which to compute \f$2\mathcal{F}\f$
-                   const REAL8 dFreq,	  		///< [in] Required spacing in frequency between each \f$\mathcal{F}\f$-statistic.
                    const UINT4 numFreqBins,		///< [in] Number of frequencies at which the \f$2\mathcal{F}\f$ are to be computed.
                    const FstatQuantities whatToCompute	///< [in] Bit-field of which \f$\mathcal{F}\f$-statistic quantities to compute.
                    )
@@ -553,7 +556,6 @@ XLALComputeFstat ( FstatResults **Fstats,	  	///< [in/out] Address of a pointer 
   XLAL_CHECK ( input->common != NULL, XLAL_EINVAL, "'input' has not yet been set up");
   XLAL_CHECK ( doppler != NULL, XLAL_EINVAL);
   XLAL_CHECK ( doppler->asini >= 0, XLAL_EINVAL);
-  XLAL_CHECK ( dFreq > 0 || (numFreqBins == 1 && dFreq >= 0), XLAL_EINVAL);
   XLAL_CHECK ( numFreqBins > 0, XLAL_EINVAL);
   XLAL_CHECK ( 0 < whatToCompute && whatToCompute < FSTATQ_LAST, XLAL_EINVAL);
 
@@ -640,7 +642,7 @@ XLALComputeFstat ( FstatResults **Fstats,	  	///< [in/out] Address of a pointer 
 
   // Initialise result struct parameters
   (*Fstats)->doppler = *doppler;
-  (*Fstats)->dFreq = dFreq;
+  (*Fstats)->dFreq = common->dFreq;
   (*Fstats)->numFreqBins = numFreqBins;
   (*Fstats)->numDetectors = numDetectors;
   memset ( (*Fstats)->detectorNames, 0, sizeof((*Fstats)->detectorNames) );
