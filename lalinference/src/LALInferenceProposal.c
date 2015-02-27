@@ -1403,7 +1403,7 @@ LALInferenceDrawApproxPrior(LALInferenceRunState *runState, LALInferenceVariable
     LALInferenceSetVariable(proposedParams, "declination", &dec);
 
     REAL8 costhetaJN = draw_flat(runState, "costheta_jn");
-    LALInferenceSetVariable(proposedParams, "codtheta_jn", &costhetaJN);
+    LALInferenceSetVariable(proposedParams, "costheta_jn", &costhetaJN);
     
     if (LALInferenceCheckVariableNonFixed(proposedParams, "phi_jl")) {
       REAL8 phiJL = draw_flat(runState, "phi_jl");
