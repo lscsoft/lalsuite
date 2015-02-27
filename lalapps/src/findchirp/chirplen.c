@@ -103,7 +103,7 @@ int main ( int argc, char *argv[] )
   REAL4                      numChisqBins=0.0;
 
   /* LALgetopt arguments */
-  struct option long_options[] =
+  struct LALoption long_options[] =
   {
     {"verbose",                 no_argument,       &verbose,          1 },
     {"machine",                 no_argument,       &machine,          1 },

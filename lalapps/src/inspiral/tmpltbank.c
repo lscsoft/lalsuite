@@ -1666,7 +1666,7 @@ fprintf(a, "  --write-strain-spectrum      write the calibrated strain psd to a 
 int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 {
   /* LALgetopt arguments */
-  struct option long_options[] =
+  struct LALoption long_options[] =
   {
     /* these options set a flag */
     {"verbose",                 no_argument,       &vrbflg,           1 },

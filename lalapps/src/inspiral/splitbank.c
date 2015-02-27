@@ -205,7 +205,7 @@ int main ( int argc, char *argv[] )
   SnglInspiralTable *tmpTmplt = NULL;
 
   /* LALgetopt arguments */
-  struct option long_options[] =
+  struct LALoption long_options[] =
   {
     {"verbose",                 no_argument,       &vrbflg,           1 },
     {"version",                 no_argument,       0,                'V'},

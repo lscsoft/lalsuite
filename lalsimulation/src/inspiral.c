@@ -772,7 +772,7 @@ struct params parseargs(int argc, char **argv)
         .waveFlags = NULL,
         .nonGRparams = NULL
     };
-    struct option long_options[] = {
+    struct LALoption long_options[] = {
         {"help", no_argument, 0, 'h'},
         {"verbose", no_argument, 0, 'v'},
         {"frequency-domain", no_argument, 0, 'F'},

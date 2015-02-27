@@ -158,7 +158,7 @@ INT4 main(INT4 argc, CHAR **argv)
   INT4 generatingREAL8 = 0;
 
   /* LALgetopt arguments */
-  struct option long_options[] =
+  struct LALoption long_options[] =
   {
     /* options that set a flag */
     {"verbose", no_argument, &vrbflg, 1},

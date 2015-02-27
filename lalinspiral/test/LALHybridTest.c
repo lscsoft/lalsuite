@@ -210,7 +210,7 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
   REAL8 linearWindow;
 
   /* LALgetopt arguments */
-  struct option long_options[] =
+  struct LALoption long_options[] =
   {
     {"mass-ratio",              required_argument, 0,                'q'},
     {"low-freq (Hz)",           required_argument, 0,                'f'},

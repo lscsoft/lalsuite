@@ -68,7 +68,7 @@ static void parse_options(int argc, char **argv)
   int c;
 
   /* LALgetopt arguments */
-  struct option long_options[] =
+  struct LALoption long_options[] =
   {
     /* options that set a flag */
     {"verbose", no_argument, &vrbflg, 1},

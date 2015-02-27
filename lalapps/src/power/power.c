@@ -358,7 +358,7 @@ static void print_missing_argument(const char *prog, const char *arg)
  */
 
 
-static int all_required_arguments_present(char *prog, struct option *long_options, const struct options *options)
+static int all_required_arguments_present(char *prog, struct LALoption *long_options, const struct options *options)
 {
 	int option_index;
 	int got_all_arguments = 1;
@@ -474,7 +474,7 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 	int args_are_bad = 0;
 	int c;
 	int option_index;
-	struct option long_options[] = {
+	struct LALoption long_options[] = {
 		{"bandwidth", required_argument, NULL, 'A'},
 		{"injection-file", required_argument, NULL, 'P'},
 		{"calibration-cache", required_argument, NULL, 'B'},

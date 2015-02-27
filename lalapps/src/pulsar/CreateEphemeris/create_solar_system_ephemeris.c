@@ -876,7 +876,7 @@ void endian_swap(CHAR *pdata, size_t dsize, size_t nelements){
 
 
 void get_input_args(inputParams_t *inputParams, INT4 argc, CHAR *argv[]){
-  struct option long_options[] =
+  struct LALoption long_options[] =
   {
     { "help",          no_argument,       0, 'h' },
     { "verbose",       no_argument, &verbose, 1 },

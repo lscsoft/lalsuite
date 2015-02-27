@@ -65,7 +65,7 @@ int main( int argc, char *argv[] )
 
 int parseargs(int argc, char **argv)
 {
-	struct option long_options[] = {
+	struct LALoption long_options[] = {
 			{ "help", no_argument, 0, 'h' },
 			{ "spin", required_argument, 0, 'a' },
 			{ "inclination", required_argument, 0, 'i' },

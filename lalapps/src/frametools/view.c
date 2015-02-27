@@ -163,7 +163,7 @@ int main( int argc, char *argv[] )
 
 int parseopts( int argc, char **argv )
 {
-	struct option long_options[] = {
+	struct LALoption long_options[] = {
 		{ "help", no_argument, 0, 'h' },
 		{ "power-spectrum", required_argument, 0, 'P' },
 		{ "gps-start-time", required_argument, 0, 't' },

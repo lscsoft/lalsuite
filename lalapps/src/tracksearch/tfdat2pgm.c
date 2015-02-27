@@ -75,7 +75,7 @@ int main (int argc, char *argv[])
   lal_errhandler = LAL_ERR_ABRT;
 
 
-  struct option long_options[] =
+  struct LALoption long_options[] =
     {
       {"filename",            required_argument,  0,    'a'},
       {0,                     0,                  0,      0}

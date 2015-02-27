@@ -105,7 +105,7 @@ int main(int argc, char** argv)
  
   while (1)
     {
-      static struct option long_options[] =
+      static struct LALoption long_options[] =
 	{
 	  {"h1-frame-file", required_argument, 0, 'h'},
 	  {"l1-frame-file", required_argument, 0, 'l'},

@@ -106,7 +106,7 @@ end:
 
 int parseargs( int argc, char **argv )
 {
-	struct option long_options[] = {
+	struct LALoption long_options[] = {
 			{ "help", no_argument, 0, 'h' },
 			{ "aligo-nosrm", no_argument, 0, 'A' },
 			{ "aligo-zerodet-lowpower", no_argument, 0, 'B' },

@@ -397,7 +397,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 {
   /* LALgetopt arguments */
-  struct option long_options[] =
+  struct LALoption long_options[] =
   {
     /* these options set a flag */
     {"verbose",                 no_argument,       &vrbflg,           1 },

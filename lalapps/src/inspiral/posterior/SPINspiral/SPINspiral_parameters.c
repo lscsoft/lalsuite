@@ -81,7 +81,7 @@ void readCommandLineOptions(int argc, char* argv[], struct runPar *run)
   
   
   //Set up struct with long (--) options:
-  static struct option long_options[] =
+  static struct LALoption long_options[] =
     {
 		{"injXMLfile",      required_argument, 0,               0},
 		{"injXMLnr",        required_argument, 0,               0},

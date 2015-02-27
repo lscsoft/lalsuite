@@ -137,7 +137,7 @@ the conversion:\n\
 }
 
 void get_input_args(inputParams_t *inputParams, int argc, char *argv[]){
-  struct option long_options[] =
+  struct LALoption long_options[] =
   {
     { "help",          no_argument,       0, 'h' },
     { "verbose",       no_argument, &verbose, 1 },

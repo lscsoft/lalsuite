@@ -194,7 +194,7 @@ int main( int argc, char *argv[] )
   struct clusteredsourcedata *clustered_source_data = NULL;
 */
   /* LALgetopt arguments */
-  struct option long_options[] =
+  struct LALoption long_options[] =
   {
     {"help",                          no_argument, 0,                'h'},
     {"source-file",             required_argument, 0,                'f'},

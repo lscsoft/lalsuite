@@ -258,7 +258,7 @@ int main( int argc, char *argv[] )
                                     "t1-triggers", "v1-triggers"};
 
   /* LALgetopt arguments */
-  struct option long_options[] =
+  struct LALoption long_options[] =
   {
     {"verbose",             no_argument,   &vrbflg,                   1 },
     {"h1-triggers",         no_argument,   &(haveTrig[LAL_IFO_H1]),   1 },

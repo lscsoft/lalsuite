@@ -453,7 +453,7 @@ int main( int argc, char *argv[] )
   FILE                 *fp = NULL;
 
   /* LALgetopt arguments */
-  struct option long_options[] =
+  struct LALoption long_options[] =
   {
     {"help",                    no_argument,       0,                'h'},
     {"verbose",                 no_argument,       &vrbflg,           1 },

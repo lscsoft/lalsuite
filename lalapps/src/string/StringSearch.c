@@ -1106,7 +1106,7 @@ int ReadTemplateFile(struct CommandLineArgsTag CLA, int *NTemplates_fix, REAL8 *
 int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA, const ProcessTable *process, ProcessParamsTable **paramaddpoint){
   static char default_comment[] = "";
   INT4 errflg = 0;
-  struct option long_options[] = {
+  struct LALoption long_options[] = {
     {"bank-freq-start",           required_argument,	NULL,	'L'},
     {"bank-lowest-hifreq-cutoff", required_argument,	NULL,	'H'},
     {"max-mismatch",              required_argument,	NULL,	'M'},

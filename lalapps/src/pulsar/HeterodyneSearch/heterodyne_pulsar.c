@@ -704,7 +704,7 @@ file!\n");
 
 /* function to parse the input arguments */
 void get_input_args(InputParams *inputParams, int argc, char *argv[]){
-  struct option long_options[] =
+  struct LALoption long_options[] =
   {
     { "help",                     no_argument,        0, 'h' },
     { "ifo",                      required_argument,  0, 'i' },

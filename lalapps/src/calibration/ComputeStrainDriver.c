@@ -608,7 +608,7 @@ static FrChanIn chanin_lay;  /* light in y-arm */
 int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 {
   INT4 errflg=0;
-  struct option long_options[] = {
+  struct LALoption long_options[] = {
     {"factors-time",        required_argument, NULL,  't'},
     {"filters-file",        required_argument, NULL,  'F'},
     {"frame-cache",         required_argument, NULL,  'C'},

@@ -349,7 +349,7 @@ x,y,z components are got from tempo */
 } // main()
 
 void get_input_args(InputParams *pars, int argc, char *argv[]){
-  struct option long_options[] =
+  struct LALoption long_options[] =
   {
     { "help",                     no_argument,        0, 'h' },
     { "par-file",                 required_argument,  0, 'p' },

@@ -303,7 +303,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   int errflg = 0;
   LALoptarg = NULL;
 
-  struct option long_options[] = {
+  struct LALoption long_options[] = {
     {"frequency",                   required_argument, NULL,           'a'},
     {"log-Gmustart",                required_argument, NULL,           'b'},
     {"log-Gmuend",                  required_argument, NULL,           'c'},

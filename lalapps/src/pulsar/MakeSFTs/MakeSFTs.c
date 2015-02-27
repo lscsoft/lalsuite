@@ -574,7 +574,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 {
   INT4 errflg=0;
   INT4 i;              /* 06/26/07 gam */
-  struct option long_options[] = {
+  struct LALoption long_options[] = {
     {"high-pass-freq",       required_argument, NULL,          'f'},
     {"sft-duration",         required_argument, NULL,          't'},
     {"sft-write-path",       required_argument, NULL,          'p'},

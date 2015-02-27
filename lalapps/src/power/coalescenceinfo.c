@@ -129,7 +129,7 @@ static void set_option_defaults(struct options_t *options)
 
 static void parse_command_line(int argc, char **argv, struct options_t *options)
 {
-	struct option long_options[] = {
+	struct LALoption long_options[] = {
 		/* these options set a flag */
 		{"verbose",         no_argument,        &options->verbose, 1},
 		/* parameters which determine the output xml file */

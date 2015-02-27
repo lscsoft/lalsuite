@@ -40,7 +40,7 @@ static int ring_default_params( struct ring_params *params );
 int ring_parse_options( struct ring_params *params, int argc, char **argv )
 {
   static struct ring_params localparams;
-  struct option long_options[] =
+  struct LALoption long_options[] =
   {
     { "verbose", no_argument, &vrbflg, 1 },
     { "white-spectrum",          no_argument, &localparams.whiteSpectrum, 1 },

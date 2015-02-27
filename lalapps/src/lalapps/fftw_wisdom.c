@@ -272,7 +272,7 @@ int main(int argc, char **argv)
   FILE *infp=NULL, *outfp=NULL, *wisfp=NULL;
   int optindex, optreturn, retval;
 
-  static struct option long_options[] =
+  static struct LALoption long_options[] =
     {
       /* Options setting flags */
       {"no-system-wisdom",no_argument,&nosys,1},

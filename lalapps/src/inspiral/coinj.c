@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
   int rewriteXML=0;
   LALFrameH *frame;
 
-  struct option long_options[]=
+  struct LALoption long_options[]=
     {
       {"help", no_argument, 0, 'h'},
       {"input",required_argument,0, 'i'},

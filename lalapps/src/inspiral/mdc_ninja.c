@@ -162,7 +162,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
   REAL8 virgoSnrLowFreq = 0;
         
   /* LALgetopt arguments */
-  struct option long_options[] =
+  struct LALoption long_options[] =
   {
     /* these options set a flag */
     {"verbose",                 no_argument,       &vrbflg,           1 },

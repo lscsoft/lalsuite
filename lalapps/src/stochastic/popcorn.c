@@ -915,7 +915,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
 
   while(1)
    {
-    static struct option long_options[] =
+    static struct LALoption long_options[] =
      {
 	  /* options that set a flag */
       {"verbose", no_argument, &verbose_flag, 1},

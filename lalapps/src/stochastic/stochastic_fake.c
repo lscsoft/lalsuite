@@ -154,7 +154,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
   while(1)
   {
-    static struct option long_options[] =
+    static struct LALoption long_options[] =
     {
       /* options that set a flag */
       {"middle-segment", no_argument, &middle_segment_flag, 1},

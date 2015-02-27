@@ -62,13 +62,13 @@ extern int LALoptopt;
 
 /* Describe the long-named options requested by the application.
    The LONG_OPTIONS argument to getopt_long or getopt_long_only is a vector
-   of `struct option' terminated by an element containing a name which is
+   of `struct LALoption' terminated by an element containing a name which is
    zero.
 
    The field `has_arg' is:
    no_argument		(or 0) if the option does not take an argument,
    required_argument	(or 1) if the option requires an argument,
-   optional_argument 	(or 2) if the option takes an optional argument.
+   optional_argument	(or 2) if the option takes an optional argument.
 
    If the field `flag' is not NULL, it points to a variable that is set
    to the value given in the field `val' when the option is found, but
@@ -81,7 +81,7 @@ extern int LALoptopt;
    one).  For long options that have a zero `flag' field, `getopt'
    returns the contents of the `val' field.  */
 
-struct option
+struct LALoption
 {
   const char *name;
   /* has_arg can't be an enum because some compilers complain about
@@ -91,18 +91,22 @@ struct option
   int val;
 };
 
-/* Names for the values of the `has_arg' field of `struct option'.  */
+/* Names for the values of the `has_arg' field of `struct LALoption'.  */
 
-#define	no_argument		0
+#undef no_argument
+#undef required_argument
+#undef optional_argument
+
+#define no_argument		0
 #define required_argument	1
 #define optional_argument	2
 
 int LALgetopt (int argc, char *const *argv, const char *shortopts);
 int LALgetopt_long (int argc, char *const *argv, const char *shortopts,
-                    const struct option *longopts, int *longind);
+                    const struct LALoption *longopts, int *longind);
 int LALgetopt_long_only (int argc, char *const *argv,
                          const char *shortopts,
-                         const struct option *longopts, int *longind);
+                         const struct LALoption *longopts, int *longind);
 
 #ifdef	__cplusplus
 }

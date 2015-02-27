@@ -36,7 +36,7 @@ int main(int argc, char **argv){
   CHAR *filename = NULL;
   INT4 gzip = 0, gunzip = 0;
 
-  struct option long_options[] =
+  struct LALoption long_options[] =
   {
     { "help",      no_argument,        0, 'h' },
     { "file",      required_argument,  0, 'f' },

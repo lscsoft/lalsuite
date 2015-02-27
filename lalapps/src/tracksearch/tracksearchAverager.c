@@ -134,7 +134,7 @@ LALappsTSAInitialize(
 {
   int C;
 
-  struct option long_options[] =
+  struct LALoption long_options[] =
     {
       {"map_cache",            required_argument,  0,   'a'},
       {"new_t_bins",           required_argument,  0,   'b'},

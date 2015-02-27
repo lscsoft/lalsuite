@@ -2524,7 +2524,7 @@ int opt_parse( bayesline_opt *opts, int argc, char **argv )
 
   static bayesline_opt cmd_param;
 
-  struct option cmd_opt[] =
+  struct LALoption cmd_opt[] =
   {
     { "gnuplot",  no_arg,  0, 'g' },
     { "help",     no_arg,  0, 'h' },

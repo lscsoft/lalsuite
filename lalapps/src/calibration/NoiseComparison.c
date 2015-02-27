@@ -1000,7 +1000,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 {
 
   INT4 errflg=0;
-  struct option long_options[] = {
+  struct LALoption long_options[] = {
     {"freq-file",            required_argument, NULL,           'a'},
     {"time",                 required_argument, NULL,           'b'},
     {"band",                 required_argument, NULL,           'c'},

@@ -259,7 +259,7 @@ static struct options parse_command_line(int *argc, char **argv[], const Process
 	struct options options = options_defaults();
 	int c;
 	int option_index;
-	struct option long_options[] = {
+	struct LALoption long_options[] = {
 		{"gps-end-time", required_argument, NULL, 'A'},
 		{"gps-start-time", required_argument, NULL, 'B'},
 		{"help", no_argument, NULL, 'C'},

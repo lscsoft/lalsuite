@@ -55,7 +55,7 @@ static struct options parse_command_line(int argc, char *argv[])
 		0,
 		0
 	};
-	struct option long_options[] = {
+	struct LALoption long_options[] = {
 		{"help", no_argument, NULL, 'h'},
 		{"output", required_argument, NULL, 'o'},
 		{"verbose", no_argument, NULL, 'v'},

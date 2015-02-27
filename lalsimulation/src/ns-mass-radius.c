@@ -152,7 +152,7 @@ int output(const char *fmt, double c, double m, double r, double k2)
 
 int parseargs(int argc, char **argv)
 {
-    struct option long_options[] = {
+    struct LALoption long_options[] = {
         {"help", no_argument, 0, 'h'},
         {"eos-file", required_argument, 0, 'f'},
         {"eos-name", required_argument, 0, 'n'},

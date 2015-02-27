@@ -191,7 +191,7 @@ int output(const char *fmt, double h, double p, double epsilon, double rho,
 
 int parseargs(int argc, char **argv)
 {
-    struct option long_options[] = {
+    struct LALoption long_options[] = {
         {"help", no_argument, 0, 'h'},
         {"cgs", no_argument, 0, 'c'},
         {"geom", no_argument, 0, 'g'},

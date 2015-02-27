@@ -27,7 +27,7 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
   UINT4                        ifoNumber;
   static struct coh_PTF_params localparams;
   memset( &localparams.haveTrig, 0, LAL_NUM_IFO * sizeof(int) );
-  struct option                long_options[] =
+  struct LALoption                long_options[] =
   {
     { "verbose",            no_argument, &vrbflg, 1 },
     { "strain-data",        no_argument, &localparams.strainData, 1 },

@@ -255,7 +255,7 @@ int main( int argc, char *argv[] )
   {
 
   /* LALgetopt arguments */
-  static struct option long_options[] =
+  static struct LALoption long_options[] =
   {
     /* these options set a flag */
     /* these options do not set a flag */

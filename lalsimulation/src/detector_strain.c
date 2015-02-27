@@ -400,7 +400,7 @@ struct params parseargs(int argc, char **argv)
         .dec = HUGE_VAL,
         .psi = HUGE_VAL,
     };
-    struct option long_options[] = {
+    struct LALoption long_options[] = {
         {"help", no_argument, 0, 'h'},
         {"verbose", no_argument, 0, 'v'},
         {"detector-prefix", required_argument, 0, 'D'},

@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
 
 int parseargs(int argc, char **argv)
 {
-    struct option long_options[] = {
+    struct LALoption long_options[] = {
         {"help", no_argument, 0, 'h'},
         {"channel", required_argument, 0, 'c'},
         {"frame-cache", required_argument, 0, 'f'},

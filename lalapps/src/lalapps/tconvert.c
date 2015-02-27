@@ -702,7 +702,7 @@ void usage( const char *program, int exitcode )
 
 char * parse_options( char *buf, int buflen, int argc, char **argv )
 {
-  struct option long_options[] =
+  struct LALoption long_options[] =
   {
     { "date",           no_argument,            0,      'd'     },
     { "format",         required_argument,      0,      'f'     },

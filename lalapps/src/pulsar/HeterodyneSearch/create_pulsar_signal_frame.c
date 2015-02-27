@@ -318,7 +318,7 @@ EphemerisData *InitEphemeris (const CHAR *ephemType, const CHAR *ephemDir){
 } /* InitEphemeris() */
 
 void ReadInput(InputParams *inputParams, int argc, char *argv[]){
-  struct option long_options[] =
+  struct LALoption long_options[] =
   {
     { "help",                     no_argument,        0, 'h' },
     { "detector",                 required_argument,  0, 'i' },

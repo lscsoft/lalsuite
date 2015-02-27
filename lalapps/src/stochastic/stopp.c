@@ -148,7 +148,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   while (1)
   {
     /* LALgetopt arguments */
-    static struct option long_options[] =
+    static struct LALoption long_options[] =
     {
       /* options that set a flag */
       {"verbose", no_argument, &vrbflg, 1},

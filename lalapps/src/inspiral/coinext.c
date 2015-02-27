@@ -1645,7 +1645,7 @@ int arg_parse_check( int argc, char *argv[])
   int flagRun=0;
 
   /* LALgetopt arguments */
-  struct option long_options[] =
+  struct LALoption long_options[] =
     {
       /* these options set a flag */
       {"restart",                 no_argument,       &flagRestart,  1 },

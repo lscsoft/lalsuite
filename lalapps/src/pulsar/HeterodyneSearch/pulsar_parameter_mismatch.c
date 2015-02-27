@@ -369,7 +369,7 @@ maxpowmismatch, meanpowmismatch);
 }
 
 void get_input_args(InputParams *inputParams, INT4 argc, CHAR *argv[]){
-  struct option long_options[] =
+  struct LALoption long_options[] =
   {
     { "help",           no_argument,       0, 'h' },
     { "detector",      required_argument, 0, 'D' },

@@ -607,7 +607,7 @@ defined!\n");
 
 /* function to get the input arguments from the command line */
 void get_input_args(InputParams *inputParams, INT4 argc, CHAR *argv[]){
-  struct option long_options[] =
+  struct LALoption long_options[] =
   {
     { "help",           no_argument,       0, 'h' },
     { "verbose",        no_argument,    NULL, 'R' },

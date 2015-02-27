@@ -437,7 +437,7 @@ void LALappsTrackSearchInitialize(
 
   /* Setup file option to read ascii types and not frames */
   /* getop arguments */
-  struct option long_options[] =
+  struct LALoption long_options[] =
     {
       {"gpsstart_seconds",    required_argument,  0,    'a'},
       {"total_time_points",   required_argument,  0,    'b'},

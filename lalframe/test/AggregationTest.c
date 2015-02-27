@@ -52,7 +52,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
   while(1)
   {
-    static struct option long_options[] =
+    static struct LALoption long_options[] =
     {
       /* options that set a flag */
       {"verbose", no_argument, &vrbflg, 1},

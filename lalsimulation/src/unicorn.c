@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
 
 int parseargs(int argc, char **argv)
 {
-	struct option long_options[] = {
+	struct LALoption long_options[] = {
 			{ "help", no_argument, 0, 'h' },
 			{ "detector-site", required_argument, 0, 'd' },
 			{ "min-frequency", required_argument, 0, 'f' },

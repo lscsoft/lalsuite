@@ -180,7 +180,7 @@ int main( int argc, char *argv[] )
   InterferometerNumber  ifoNumber = LAL_UNKNOWN_IFO;
 
   /* LALgetopt arguments */
-  struct option long_options[] =
+  struct LALoption long_options[] =
   {
     {"verbose",                no_argument,     &vrbflg,                  1 },
     {"enable-all-ifo",         no_argument,     &allIFO,                  1 },

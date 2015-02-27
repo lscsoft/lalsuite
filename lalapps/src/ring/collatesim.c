@@ -164,7 +164,7 @@ int main( int argc, char *argv[] )
   while (1)
   {
     /* LALgetopt arguments */
-    static struct option long_options[] =
+    static struct LALoption long_options[] =
     {
       {"verbose",             no_argument,        &vrbflg,              1 },
       {"help",                    no_argument,            0,           'h'},

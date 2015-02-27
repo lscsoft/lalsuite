@@ -281,7 +281,7 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
   optstring[pos] = '\0';
 
   // ---------- fill option-struct for long-options
-  struct option *long_options = LALCalloc (1, (numvars+1) * sizeof(struct option));
+  struct LALoption *long_options = LALCalloc (1, (numvars+1) * sizeof(struct LALoption));
   ptr = &UVAR_vars;	// start again from beginning: empty head
   pos = 0;
   while ( (ptr= ptr->next) != NULL)
