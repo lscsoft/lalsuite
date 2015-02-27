@@ -26,10 +26,11 @@
 
 
 #include <lal/LALDatatypes.h>
-#include <lal/Window.h>
-#include <lal/RealFFT.h>
 #include <lal/LIGOMetadataTables.h>
+#include <lal/RealFFT.h>
 #include <lal/Sequence.h>
+#include <lal/TimeFreqFFT.h>
+#include <lal/Window.h>
 
 
 #ifdef  __cplusplus		/* C++ protection. */
@@ -210,12 +211,6 @@ LALExcessPowerFilterBank *XLALCreateExcessPowerFilterBank(
 
 void XLALDestroyExcessPowerFilterBank(
 	LALExcessPowerFilterBank *bank
-);
-
-
-REAL8Sequence *XLALREAL8WindowTwoPointSpectralCorrelation(
-	const REAL8Window *window,
-	const REAL8FFTPlan *plan
 );
 
 

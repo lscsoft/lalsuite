@@ -414,6 +414,11 @@ COMPLEX16FrequencySeries *XLALWhitenCOMPLEX16FrequencySeries(
     const REAL8FrequencySeries  *psd
 );
 
+REAL8Sequence *XLALREAL8WindowTwoPointSpectralCorrelation(
+    const REAL8Window *window,
+    const REAL8FFTPlan *plan
+);
+
 void
 LALTimeFreqRealFFT(
     LALStatus               *status,
