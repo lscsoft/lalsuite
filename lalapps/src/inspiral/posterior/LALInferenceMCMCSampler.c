@@ -23,6 +23,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 #include <lal/LALInspiral.h>
 #include <lal/DetResponse.h>
 #include <lal/SeqFactories.h>
