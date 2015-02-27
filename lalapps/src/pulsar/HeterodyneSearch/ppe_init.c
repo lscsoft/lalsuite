@@ -570,9 +570,11 @@ void initialise_prior( LALInferenceRunState *runState )
     /* convert tempPar to all uppercase letters */
     strtoupper( tempPar );
 
-    if( high < low ){
-      fprintf(stderr, "Error... In %s the %s parameters ranges are wrongly set.\n", propfile, tempPar);
-      exit(3);
+    if ( !strcmp(tempPrior, "uniform") ){
+      if( high < low ){
+        fprintf(stderr, "Error... In %s the %s parameters ranges are wrongly set.\n", propfile, tempPar);
+        exit(3);
+      }
     }
 
     sprintf(tempParScale, "%s_scale", tempPar);
