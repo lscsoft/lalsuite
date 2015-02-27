@@ -1274,7 +1274,12 @@ void LALInferenceCheckOptionsConsistency(ProcessParamsTable *commandLine)
 
   // Check PSDlength > 0
   ppt=LALInferenceGetProcParamVal(commandLine,"--psdlength");
-  if(!ppt) ppt=LALInferenceGetProcParamVal(commandLine,"--PSDlength");
+  if (!ppt)
+      ppt=LALInferenceGetProcParamVal(commandLine,"--PSDlength");
+  if (!ppt) {
+      printf("ERROR: PSD length not specified. Exiting...\n");
+      exit(1);
+  }
   tmp=atof(ppt->value);
   if (tmp<0.0){
     fprintf(stderr,"ERROR: PSD length must be positive. Exiting...\n");
