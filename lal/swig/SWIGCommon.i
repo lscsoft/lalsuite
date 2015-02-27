@@ -1269,70 +1269,8 @@ if (strides[I-1] == 0) {
 #endif
 
 ///
-/// # General typemaps and macros
+/// # General typemaps
 ///
-
-///
-/// The <b>SWIGLAL(RETURN_VOID(TYPE,...))</b> public macro can be used to ensure
-/// that the return value of a function is always ignored.
-///
-%define %swiglal_public_RETURN_VOID(TYPE, ...)
-%swiglal_map_ab(%swiglal_apply, SWIGTYPE SWIGLAL_RETURN_VOID, TYPE, __VA_ARGS__);
-%enddef
-%define %swiglal_public_clear_RETURN_VOID(TYPE, ...)
-%swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
-%enddef
-%typemap(out, noblock=1) SWIGTYPE SWIGLAL_RETURN_VOID {
-  %set_output(VOID_Object);
-}
-
-///
-/// The <b>SWIGLAL(RETURN_VALUE(TYPE,...))</b> public macro can be used to
-/// ensure that the return value of a function is not ignored, if the return
-/// value has previously been ignored in the generated wrappings.
-///
-%define %swiglal_public_RETURN_VALUE(TYPE, ...)
-%swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
-%enddef
-#define %swiglal_public_clear_RETURN_VALUE(TYPE, ...)
-
-///
-/// The <b>SWIGLAL(DISABLE_EXCEPTIONS(...))</b> public macro is useful for
-/// functions which manipulate XLAL error codes, which thus require XLAL
-/// exception handling to be disabled.
-///
-%define %swiglal_public_DISABLE_EXCEPTIONS(...)
-%swiglal_map_ab(%swiglal_feature, "except", "$action", __VA_ARGS__);
-%enddef
-#define %swiglal_public_clear_DISABLE_EXCEPTIONS(...)
-
-///
-/// The <b>SWIGLAL(FUNCTION_POINTER(...))</b> macro can be used to create a
-/// function pointer constant, for functions which need to be used as callback
-/// functions.
-///
-%define %swiglal_public_FUNCTION_POINTER(...)
-%swiglal_map_ab(%swiglal_feature, "callback", "%sPtr", __VA_ARGS__);
-%enddef
-#define %swiglal_public_clear_FUNCTION_POINTER(...)
-
-///
-/// The <b>SWIGLAL(IMMUTABLE_MEMBERS(TAGNAME, ...))</b> macro can be used to
-/// make the listed members of the struct TAGNAME immutable.
-///
-%define %swiglal_public_IMMUTABLE_MEMBERS(TAGNAME, ...)
-%swiglal_map_abc(%swiglal_feature_nspace, "immutable", "1", TAGNAME, __VA_ARGS__);
-%enddef
-#define %swiglal_public_clear_IMMUTABLE_MEMBERS(...)
-
-///
-/// The <b>SWIGLAL(IGNORE_MEMBERS(TAGNAME, ...))</b> macro can be used to ignore
-/// the listed members of the struct TAGNAME.
-///
-%define %swiglal_public_IGNORE_MEMBERS(TAGNAME, ...)
-%swiglal_map_a(%swiglal_ignore_nspace, TAGNAME, __VA_ARGS__);
-%enddef
-#define %swiglal_public_clear_IGNORE_MEMBERS(...)
 
 ///
 /// Typemap for functions which return \c int. If these functions also return
@@ -1653,41 +1591,6 @@ if (strides[I-1] == 0) {
 }
 
 ///
-/// The <b>SWIGLAL(RETURNS_PROPERTY(...))</b> macro is used when a function
-/// returns an object whose memory is owned by the object supplied as the first
-/// argument to the function.  Typically this occurs when the function is
-/// returning some property of its first argument. The macro applies a typemap
-/// which calles \c swiglal_store_parent() to store a reference to the first
-/// argument as the \c parent of the return argument, so that the parent will
-/// not be destroyed as long as the return value is in scope.
-///
-%define %swiglal_public_RETURNS_PROPERTY(TYPE, ...)
-%swiglal_map_ab(%swiglal_apply, SWIGTYPE* SWIGLAL_RETURNS_PROPERTY, TYPE, __VA_ARGS__);
-%enddef
-%define %swiglal_public_clear_RETURNS_PROPERTY(TYPE, ...)
-%swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
-%enddef
-%typemap(out, noblock=1) SWIGTYPE* SWIGLAL_RETURNS_PROPERTY {
-%#ifndef swiglal_no_1starg
-  %swiglal_store_parent($1, 0, swiglal_1starg());
-%#endif
-  %set_output(SWIG_NewPointerObj(%as_voidptr($1), $descriptor, ($owner | %newpointer_flags) | SWIG_POINTER_OWN));
-}
-
-///
-/// The <b>SWIGLAL(ACQUIRES_OWNERSHIP(...))</b> macro indicates that a function
-/// will acquire ownership of a particular argument, e.g. by storing that
-/// argument in some container, and that therefore the SWIG object wrapping that
-/// argument should no longer own its memory.
-///
-%define %swiglal_public_ACQUIRES_OWNERSHIP(TYPE, ...)
-%swiglal_map_ab(%swiglal_apply, SWIGTYPE* DISOWN, TYPE, __VA_ARGS__);
-%enddef
-%define %swiglal_public_clear_ACQUIRES_OWNERSHIP(TYPE, ...)
-%swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
-%enddef
-
-///
 /// Typemaps for pointers to primitive scalars. These are treated as output-only
 /// arguments by default, by globally applying the SWIG \c OUTPUT typemaps.
 ///
@@ -1906,6 +1809,107 @@ if (strides[I-1] == 0) {
   }
 }
 %typemap(freearg) struct TAGNAME*, const struct TAGNAME* "";
+%enddef
+
+///
+/// # General macros
+///
+
+///
+/// The <b>SWIGLAL(RETURN_VOID(TYPE,...))</b> public macro can be used to ensure
+/// that the return value of a function is always ignored.
+///
+%define %swiglal_public_RETURN_VOID(TYPE, ...)
+%swiglal_map_ab(%swiglal_apply, SWIGTYPE SWIGLAL_RETURN_VOID, TYPE, __VA_ARGS__);
+%enddef
+%define %swiglal_public_clear_RETURN_VOID(TYPE, ...)
+%swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
+%enddef
+%typemap(out, noblock=1) SWIGTYPE SWIGLAL_RETURN_VOID {
+  %set_output(VOID_Object);
+}
+
+///
+/// The <b>SWIGLAL(RETURN_VALUE(TYPE,...))</b> public macro can be used to
+/// ensure that the return value of a function is not ignored, if the return
+/// value has previously been ignored in the generated wrappings.
+///
+%define %swiglal_public_RETURN_VALUE(TYPE, ...)
+%swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
+%enddef
+#define %swiglal_public_clear_RETURN_VALUE(TYPE, ...)
+
+///
+/// The <b>SWIGLAL(DISABLE_EXCEPTIONS(...))</b> public macro is useful for
+/// functions which manipulate XLAL error codes, which thus require XLAL
+/// exception handling to be disabled.
+///
+%define %swiglal_public_DISABLE_EXCEPTIONS(...)
+%swiglal_map_ab(%swiglal_feature, "except", "$action", __VA_ARGS__);
+%enddef
+#define %swiglal_public_clear_DISABLE_EXCEPTIONS(...)
+
+///
+/// The <b>SWIGLAL(FUNCTION_POINTER(...))</b> macro can be used to create a
+/// function pointer constant, for functions which need to be used as callback
+/// functions.
+///
+%define %swiglal_public_FUNCTION_POINTER(...)
+%swiglal_map_ab(%swiglal_feature, "callback", "%sPtr", __VA_ARGS__);
+%enddef
+#define %swiglal_public_clear_FUNCTION_POINTER(...)
+
+///
+/// The <b>SWIGLAL(IMMUTABLE_MEMBERS(TAGNAME, ...))</b> macro can be used to
+/// make the listed members of the struct TAGNAME immutable.
+///
+%define %swiglal_public_IMMUTABLE_MEMBERS(TAGNAME, ...)
+%swiglal_map_abc(%swiglal_feature_nspace, "immutable", "1", TAGNAME, __VA_ARGS__);
+%enddef
+#define %swiglal_public_clear_IMMUTABLE_MEMBERS(...)
+
+///
+/// The <b>SWIGLAL(IGNORE_MEMBERS(TAGNAME, ...))</b> macro can be used to ignore
+/// the listed members of the struct TAGNAME.
+///
+%define %swiglal_public_IGNORE_MEMBERS(TAGNAME, ...)
+%swiglal_map_a(%swiglal_ignore_nspace, TAGNAME, __VA_ARGS__);
+%enddef
+#define %swiglal_public_clear_IGNORE_MEMBERS(...)
+
+///
+/// The <b>SWIGLAL(RETURNS_PROPERTY(...))</b> macro is used when a function
+/// returns an object whose memory is owned by the object supplied as the first
+/// argument to the function.  Typically this occurs when the function is
+/// returning some property of its first argument. The macro applies a typemap
+/// which calles \c swiglal_store_parent() to store a reference to the first
+/// argument as the \c parent of the return argument, so that the parent will
+/// not be destroyed as long as the return value is in scope.
+///
+%define %swiglal_public_RETURNS_PROPERTY(TYPE, ...)
+%swiglal_map_ab(%swiglal_apply, SWIGTYPE* SWIGLAL_RETURNS_PROPERTY, TYPE, __VA_ARGS__);
+%enddef
+%define %swiglal_public_clear_RETURNS_PROPERTY(TYPE, ...)
+%swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
+%enddef
+%typemap(out, noblock=1) SWIGTYPE* SWIGLAL_RETURNS_PROPERTY {
+%#ifndef swiglal_no_1starg
+  %swiglal_store_parent($1, 0, swiglal_1starg());
+%#endif
+  %set_output(SWIG_NewPointerObj(%as_voidptr($1), $descriptor, ($owner | %newpointer_flags) | SWIG_POINTER_OWN));
+}
+
+///
+/// The <b>SWIGLAL(ACQUIRES_OWNERSHIP(...))</b> macro indicates that a function
+/// will acquire ownership of a particular argument, e.g. by storing that
+/// argument in some container, and that therefore the SWIG object wrapping that
+/// argument should no longer own its memory.
+///
+%define %swiglal_public_ACQUIRES_OWNERSHIP(TYPE, ...)
+%swiglal_map_ab(%swiglal_apply, SWIGTYPE* DISOWN, TYPE, __VA_ARGS__);
+%enddef
+%define %swiglal_public_clear_ACQUIRES_OWNERSHIP(TYPE, ...)
+%swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
 %enddef
 
 ///
