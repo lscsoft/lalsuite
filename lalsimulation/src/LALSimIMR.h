@@ -526,6 +526,17 @@ int XLALSimIMRSEOBNRv2ROMDoubleSpinFrequencySequence(
   REAL8 chi2                                    /**< Dimensionless aligned component spin 2 */
 );
 
+
+/**
+ * Compute SEOBNRv2 chirp time from interpolant assuming a single-spin.
+ */
+REAL8 XLALSimIMRSEOBNRv2ChirpTimeSingleSpin(
+  const REAL8 m1_SI,    /**< Mass of companion 1 [kg] */
+  const REAL8 m2_SI,    /**< Mass of companion 2 [kg] */
+  const REAL8 chi,      /**< Effective aligned spin */
+  const REAL8 f_min     /**< Starting frequency [Hz] */
+);
+
   
 /**
  * Routine to compute the mass and spin of the final black hole given
