@@ -149,6 +149,14 @@ size_t XLALNumberOfTiledLatticeDimensions(
   );
 
 ///
+/// Return the step size of the lattice tiling in a given dimension, or 0 for non-tiled dimensions.
+///
+REAL8 XLALLatticeTilingStepSizes(
+  const LatticeTiling *tiling,		///< [in] Lattice tiling
+  const size_t dim			///< [in] Dimension of which to return step size
+  );
+
+///
 /// Generate random points within the parameter space of the lattice tiling.  Points can be scaled
 /// to fill the parameter space exactly (<tt>scale == 0</tt>), fill a subset of the parameter space
 /// (<tt>-1 < scale < 0</tt>), or fill outside the parameter space (<tt>scale > 0</tt>).
