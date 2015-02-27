@@ -16,7 +16,7 @@ NVCC ?= nvcc
 # allow to specify a different CUDA runtime library (e.g. for Windows when cross-compiling)
 CUDART ?= -lcudart
 
-bin_PROGRAMS = lalapps_HoughValidateAM lalapps_HoughMismatch lalapps_HierarchicalSearch lalapps_RecalcHSCandidates
+bin_PROGRAMS = lalapps_HoughValidateAM lalapps_HoughMismatch lalapps_HierarchicalSearch
 
 EXTRA_PROGRAMS = lalapps_HierarchicalSearch_sse lalapps_HierarchicalSearch_sse2 \
 		 eah_HierarchicalSearch
@@ -30,7 +30,6 @@ EXTRA_PROGRAMS = lalapps_HierarchicalSearch_sse lalapps_HierarchicalSearch_sse2 
 
 EAHsrc = $(top_srcdir)/src/pulsar/EinsteinAtHome
 FDSsrc = ../../Fstatistic
-Recalcsrc = ../../GCT
 
 lalapps_HoughValidateAM_SOURCES = HoughValidateAM.c ../src/MCInjectHoughS2.h \
 	                  ../src/SFTbin.h ../src/SFTbin.c \
@@ -48,12 +47,6 @@ HierarchicalSearchSources = HierarchicalSearch.c HierarchicalSearch.h \
 			  $(FDSsrc)/HeapToplist.c $(FDSsrc)/HeapToplist.h
 
 lalapps_HierarchicalSearch_SOURCES = $(HierarchicalSearchSources)
-
-lalapps_RecalcHSCandidates_SOURCES = RecalcHSCandidates.c HierarchicalSearch.h \
-				  HoughFstatToplist.c HoughFstatToplist.h \
-				  $(FDSsrc)/HeapToplist.c $(FDSsrc)/HeapToplist.h \
-				  $(Recalcsrc)/RecalcToplistStats.c $(Recalcsrc)/RecalcToplistStats.h
-
 
 HSLocalSources = $(EAHsrc)/LocalComputeFstatHoughMap.c
 EAHSources = $(HSLocalSources) $(EAHsrc)/hs_boinc_extras.c $(EAHsrc)/hs_boinc_options.cpp $(EAHsrc)/win_lib.cpp
@@ -88,9 +81,6 @@ exchndl.o: $(EAHsrc)/exchndl.c
 
 erp_execinfo_plus.o: $(EAHsrc)/erp_execinfo_plus.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
-
-TESTS = testRecalcHS.sh
-EXTRA_DIST = testRecalcHS.sh
 
 TESTS_ENVIRONMENT = \
 	LAL_DEBUG_LEVEL=msglvl1,memdbg; export LAL_DEBUG_LEVEL; \
