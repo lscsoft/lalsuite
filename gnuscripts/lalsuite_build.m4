@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 106
+# serial 107
 
 # not present in older versions of pkg.m4
 m4_pattern_allow([^PKG_CONFIG(_(PATH|LIBDIR|SYSROOT_DIR|ALLOW_SYSTEM_(CFLAGS|LIBS)))?$])
@@ -1145,7 +1145,7 @@ AC_DEFUN([LALSUITE_WITH_SIMD],[
       [yes],[
         AX_EXT
         AX_CHECK_COMPILE_FLAG([-mfpmath=sse],[SIMD_FLAGS="${SIMD_FLAGS} -mfpmath=sse"],[:],[-Werror])
-        AX_GCC_ARCHFLAG([yes],[SIMD_FLAGS="${SIMD_FLAGS} ${ax_cv_gcc_archflag}"])
+        AX_GCC_ARCHFLAG([no],[SIMD_FLAGS="${SIMD_FLAGS} ${ax_cv_gcc_archflag}"])
       ],
       [no],[:],
       [AC_MSG_ERROR([bad value '${with_simd}' for --with-simd])]
