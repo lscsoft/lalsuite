@@ -55,7 +55,6 @@ struct tagFstatWorkspace
 
   // arrays of size numFreqBinsOut over frequency bins f_k:
   UINT4 numFreqBinsOut;					// number of output frequency bins {f_k}
-  COMPLEX8 *normX_k;					// normalization factors turning FabX_Raw into final F^X_{a,b} values
   COMPLEX8 *FaX_k;					// properly normalized F_a^X(f_k) over output bins
   COMPLEX8 *FbX_k;					// properly normalized F_b^X(f_k) over output bins
   COMPLEX8 *Fa_k;					// properly normalized F_a(f_k) over output bins
@@ -160,7 +159,6 @@ XLALDestroyFstatWorkspace ( FstatWorkspace *ws )
 
   fftw_free ( ws->FabX_Raw );
 
-  XLALFree ( ws->normX_k );
   XLALFree ( ws->FaX_k );
   XLALFree ( ws->FbX_k );
   XLALFree ( ws->Fa_k );
@@ -370,7 +368,6 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
   // ----- workspace that depends on number of output frequency bins 'numFreqBins' ----------
   UINT4 numFreqBins = Fstats->numFreqBins;
   ws->numFreqBinsOut = numFreqBins;
-  XLAL_CHECK ( (ws->normX_k = XLALRealloc ( ws->normX_k, numFreqBins * sizeof(COMPLEX8) )) != NULL, XLAL_ENOMEM );
 
   // NOTE: we try to use as much existing memory as possible in FstatResults, so we only
   // allocate local 'workspace' storage in case there's not already a vector allocated in FstatResults for it
@@ -504,7 +501,6 @@ XLALComputeFaFb_Resamp ( FstatWorkspace *ws,				//!< [in,out] pre-allocated 'wor
   // check workspace properly setup
   XLAL_CHECK ( ws->TimeSeriesSpinCorr_SRC != NULL, XLAL_EINVAL );
   XLAL_CHECK ( ws->FabX_Raw != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( ws->normX_k != NULL, XLAL_EINVAL );
   XLAL_CHECK ( ws->FaX_k != NULL, XLAL_EINVAL );
   XLAL_CHECK ( ws->FbX_k != NULL, XLAL_EINVAL );
   XLAL_CHECK ( ws->fftplan != NULL, XLAL_EINVAL );
@@ -531,17 +527,6 @@ XLALComputeFaFb_Resamp ( FstatWorkspace *ws,				//!< [in,out] pre-allocated 'wor
   memset ( ws->TimeSeriesSpinCorr_SRC->data, 0, ws->TimeSeriesSpinCorr_SRC->length * sizeof(COMPLEX8));
   XLAL_CHECK ( XLALApplySpindownAndFreqShift ( ws->TimeSeriesSpinCorr_SRC, TimeSeries_SRC, SFTinds_SRC, &thisPoint, freqShift ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  // ----- compute normalization factors to be applied to Fa and Fb:
-  const REAL8 dtauX = XLALGPSDiff ( &TimeSeries_SRC->epoch, &thisPoint.refTime );
-  for ( UINT4 k = 0; k < ws->numFreqBinsOut; k++ )
-    {
-      REAL8 f_k = FreqOut0 + k * dFreq;
-      REAL8 cycles = - f_k * dtauX;
-      REAL4 sinphase, cosphase;
-      XLALSinCos2PiLUT ( &sinphase, &cosphase, cycles );
-      ws->normX_k[k] = dt_SRC * crectf ( cosphase, sinphase );
-    } // for k < numFreqBinsOut
-
   // ----- compute FaX_k
   // apply amplitude modulation factors {a,b}, store result in zero-padded timeseries for FFTing
   memset ( ws->FabX_Raw, 0, ws->numSamplesFFT * sizeof(ws->FabX_Raw[0]) );
@@ -555,7 +540,7 @@ XLALComputeFaFb_Resamp ( FstatWorkspace *ws,				//!< [in,out] pre-allocated 'wor
       UINT4 idy = k + offset_bins + NposBinsDC;
       UINT4 idyFFT = idy % ws->numSamplesFFT;	// physical access pattern in FFT bin ordering!
 
-      ws->FaX_k[k] = ws->normX_k[k] * ws->FabX_Raw[idyFFT];
+      ws->FaX_k[k] = ws->FabX_Raw[idyFFT];
 
     } // for k < numFreqBinsOut
 
@@ -572,9 +557,24 @@ XLALComputeFaFb_Resamp ( FstatWorkspace *ws,				//!< [in,out] pre-allocated 'wor
       UINT4 idy = k + offset_bins + NposBinsDC;
       UINT4 idyFFT = idy % ws->numSamplesFFT;	// physical access pattern in FFT bin ordering!
 
-      ws->FbX_k[k] = ws->normX_k[k] * ws->FabX_Raw[idyFFT];
+      ws->FbX_k[k] = ws->FabX_Raw[idyFFT];
 
     } // for k < numFreqBinsOut
+
+
+  // ----- normalization factors to be applied to Fa and Fb:
+  const REAL8 dtauX = XLALGPSDiff ( &TimeSeries_SRC->epoch, &thisPoint.refTime );
+  for ( UINT4 k = 0; k < ws->numFreqBinsOut; k++ )
+    {
+      REAL8 f_k = FreqOut0 + k * dFreq;
+      REAL8 cycles = - f_k * dtauX;
+      REAL4 sinphase, cosphase;
+      XLALSinCos2PiLUT ( &sinphase, &cosphase, cycles );
+      COMPLEX8 normX_k = dt_SRC * crectf ( cosphase, sinphase );
+      ws->FaX_k[k] *= normX_k;
+      ws->FbX_k[k] *= normX_k;
+    } // for k < numFreqBinsOut
+
 
   return XLAL_SUCCESS;
 
