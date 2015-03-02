@@ -22,7 +22,7 @@ def wien_factor_function(x):
 
 def wien_factor_function_deriv(x):
 	return (x - D(4)) * x.exp()
-	
+
 def compute_wien_factor():
 	""" Use Newton's method. """
 	x0 = D(5)
@@ -59,7 +59,7 @@ def compute_zeta3():
 		sign *= -1
 		s += sign / (bincoef * D(n)**D(3))
 	return D('2.5')*s
-		
+
 
 def cos(x):
 	i, lasts, s, fact, num, sign = 0, 0, 1, 1, 1, 1
@@ -143,14 +143,14 @@ LAL_REAL4_MANT = 24 # bits in REAL4 mantissa
 LAL_REAL4_EXPN = LAL_REAL4_BITS - LAL_REAL4_MANT - 1 # bits in REAL4 exponent
 LAL_REAL4_MAX  = (2 - 2**(-LAL_REAL4_MANT+1)) * 2**(2**LAL_REAL4_EXPN - 1)
 LAL_REAL4_MIN  = 2**(2 - 2**LAL_REAL4_EXPN)
-LAL_REAL4_EPS  = 2**(1 - LAL_REAL4_MANT) 
+LAL_REAL4_EPS  = 2**(1 - LAL_REAL4_MANT)
 
 LAL_REAL8_BITS = 64 # bits in REAL8
 LAL_REAL8_MANT = 53 # bits in REAL8 mantissa
 LAL_REAL8_EXPN = LAL_REAL8_BITS - LAL_REAL8_MANT - 1 # bits in REAL8 exponent
 LAL_REAL8_MAX  = (2 - 2**(-LAL_REAL8_MANT+1)) * 2**(2**LAL_REAL8_EXPN - 1)
 LAL_REAL8_MIN  = 2**(2 - 2**LAL_REAL8_EXPN)
-LAL_REAL8_EPS  = 2**(1 - LAL_REAL8_MANT) 
+LAL_REAL8_EPS  = 2**(1 - LAL_REAL8_MANT)
 
 print '#if __STDC_VERSION__ >= 199901L'
 
@@ -214,13 +214,12 @@ print '#define LAL_INT2_MAX    LAL_UINT8_C(%u)' % (2**(8*2-1)-1)
 print '/*@}*/'
 
 
-		
 
 print r'''
 /**
  * @name Mathematical constants
  * All are dimensionless.
- * 
+ *
  * @def LAL_E
  * @brief Euler's constant, e
  * @see https://oeis.org/A001113
@@ -244,7 +243,7 @@ print r'''
  * @def LAL_SQRT2
  * @brief Pythagoras's constant, sqrt(2)
  * @see https://oeis.org/A002193
- * 
+ *
  * @def LAL_SQRT1_2
  * @brief 1/sqrt(2)
  * @see https://oeis.org/A010503
@@ -293,6 +292,10 @@ print r'''
  * @def LAL_180_PI
  * @brief pi/180 is the number of radians in one degree
  * @see http://oeis.org/A019685
+ *
+ * @def LAL_LNPI
+ * @brief natural log of pi, ln(pi)
+ * @see http://oeis.org/A053510
  */'''
 
 LAL_EXPGAMMA = D('1.7810724179901979852365041031071795491696452143034302053')
@@ -344,6 +347,7 @@ LAL_2_PI = D('2') / LAL_PI
 LAL_2_SQRTPI = D('2') / LAL_PI.sqrt()
 LAL_PI_180 = LAL_PI / D('180')
 LAL_180_PI = D('180') / LAL_PI
+LAL_LNPI = LAL_PI.ln()
 
 print "/* Assuming we're not near a black hole or in Tennessee... */"
 
@@ -373,6 +377,9 @@ print as_str(LAL_PI_180)
 
 print '#define LAL_180_PI   ',
 print str(LAL_180_PI.quantize(quantize))
+
+print '#define LAL_LNPI     ',
+print str(LAL_LNPI.quantize(quantize))
 
 print '/*@}*/'
 
@@ -699,7 +706,7 @@ print '#define LAL_LYR_SI',
 print LAL_LYR_SI,
 print '/**< (Julian) Lightyear, m */'
 
-print '#define LAL_AU_SI', 
+print '#define LAL_AU_SI',
 print str(LAL_AU_SI) + 'e0',
 print '/**< Astronomical unit, m */'
 
@@ -908,7 +915,7 @@ print as_str(LAL_MTSUN_SI)
 
 print '''
 /**
- * @brief Mean sidereal day, s 
+ * @brief Mean sidereal day, s
  * @details
  * LAL_DAYSID_SI = LAL_DAYJUL_SI / LAL_SOL_SID
  */'''
@@ -1021,7 +1028,7 @@ print as_str(LAL_NCMB_SI)
 
 print '''
 /**
- * @brief Entropy density of cosmic microwave background radiation, J K^-1 m^-3 
+ * @brief Entropy density of cosmic microwave background radiation, J K^-1 m^-3
  * @details
  * LAL_SCMB_SI = 4 * LAL_PI^2 * LAL_K_SI * (LAL_K_SI * LAL_TCMB_SI / (LAL_C_SI * LAL_HBAR_SI))^3 / 45
  */'''

@@ -87,7 +87,7 @@ extern "C" {
 /**
  * @name Mathematical constants
  * All are dimensionless.
- * 
+ *
  * @def LAL_E
  * @brief Euler's constant, e
  * @see https://oeis.org/A001113
@@ -111,7 +111,7 @@ extern "C" {
  * @def LAL_SQRT2
  * @brief Pythagoras's constant, sqrt(2)
  * @see https://oeis.org/A002193
- * 
+ *
  * @def LAL_SQRT1_2
  * @brief 1/sqrt(2)
  * @see https://oeis.org/A010503
@@ -160,6 +160,10 @@ extern "C" {
  * @def LAL_180_PI
  * @brief pi/180 is the number of radians in one degree
  * @see http://oeis.org/A019685
+ *
+ * @def LAL_LNPI
+ * @brief natural log of pi, ln(pi)
+ * @see http://oeis.org/A053510
  */
 /*@{*/
 #define LAL_E         2.718281828459045235360287471352662498
@@ -181,6 +185,7 @@ extern "C" {
 #define LAL_2_SQRTPI  1.128379167095512573896158903121545172
 #define LAL_PI_180    1.745329251994329576923690768488612713e-2
 #define LAL_180_PI    57.295779513082320876798154814105170332
+#define LAL_LNPI      1.144729885849400174143427351353058712
 /*@}*/
 
 /**
@@ -508,7 +513,7 @@ extern "C" {
 #define LAL_MTSUN_SI 4.925491025543575903411922162094833998e-6
 
 /**
- * @brief Mean sidereal day, s 
+ * @brief Mean sidereal day, s
  * @details
  * LAL_DAYSID_SI = LAL_DAYJUL_SI / LAL_SOL_SID
  */
@@ -595,7 +600,7 @@ extern "C" {
 #define LAL_NCMB_SI 4.107177389981626568308052789272762276e8
 
 /**
- * @brief Entropy density of cosmic microwave background radiation, J K^-1 m^-3 
+ * @brief Entropy density of cosmic microwave background radiation, J K^-1 m^-3
  * @details
  * LAL_SCMB_SI = 4 * LAL_PI^2 * LAL_K_SI * (LAL_K_SI * LAL_TCMB_SI / (LAL_C_SI * LAL_HBAR_SI))^3 / 45
  */
