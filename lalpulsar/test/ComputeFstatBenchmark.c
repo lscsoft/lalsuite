@@ -155,11 +155,16 @@ main ( int argc, char *argv[] )
   optionalArgs.injectSqrtSX = &injectSqrtSX;
   optionalArgs.FstatMethod = FstatMethod;
 
+  FstatWorkspace *sharedWorkspace = NULL;
   FstatInputVector *inputs;
   XLAL_CHECK ( (inputs = XLALCreateFstatInputVector ( uvar->numSegments )) != NULL, XLAL_EFUNC );
   for ( INT4 l = 0; l < uvar->numSegments; l ++ )
     {
       XLAL_CHECK ( (inputs->data[l] = XLALCreateFstatInput ( catalogs[l], minCoverFreq, maxCoverFreq, dFreq, ephem, &optionalArgs )) != NULL, XLAL_EFUNC );
+      if ( l == 0 ) {
+        sharedWorkspace = XLALGetSharedFstatWorkspace ( inputs->data[0] );
+      }
+      optionalArgs.sharedWorkspace = sharedWorkspace;
     }
 
   // ----- compute Fstatistics over segments
@@ -197,7 +202,7 @@ main ( int argc, char *argv[] )
     }
   XLALFree ( catalogs );
   XLALFree ( results );
-
+  XLALDestroyFstatWorkspace ( sharedWorkspace );
   XLALDestroyUserVars();
   XLALDestroyStringVector ( detNames );
   XLALDestroyEphemerisData ( ephem );

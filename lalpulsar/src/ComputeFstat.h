@@ -68,6 +68,11 @@ extern "C" {
 typedef struct tagFstatInput FstatInput;
 
 ///
+/// pre-allocated 'workspace' memory for Resampling Fstat computation; can be shared over segments via XLALTakeOverFstatWorkspace()
+///
+typedef struct tagFstatWorkspace FstatWorkspace;
+
+///
 /// A vector of XLALComputeFstat() input data structures, for e.g. computing the
 /// \f$\mathcal{F}\f$-statistic for multiple segments.
 ///
@@ -157,6 +162,7 @@ typedef struct tagFstatOptionalArgs {
   PulsarParamsVector *injectSources;	///< Vector of parameters of CW signals to simulate and inject.
   MultiNoiseFloor *injectSqrtSX;  	///< Single-sided PSD values for fake Gaussian noise to be added to SFT data.
   MultiNoiseFloor *assumeSqrtSX;  	///< Single-sided PSD values to be used for computing SFT noise weights instead of from a running median of the SFTs themselves.
+  FstatWorkspace *sharedWorkspace;	///< use this shared workspace instead of creating our own one
 } FstatOptionalArgs;
 
 /// global initializer for setting FstatOptionalArgs to default values
@@ -310,6 +316,10 @@ SWIGLAL(INOUT_STRUCTS(FstatResults**, Fstats));
 #endif
 int XLALComputeFstat ( FstatResults **Fstats, FstatInput *input, const PulsarDopplerParams *doppler,
                        const UINT4 numFreqBins, const FstatQuantities whatToCompute );
+
+
+FstatWorkspace *XLALGetSharedFstatWorkspace ( FstatInput *input );
+void XLALDestroyFstatWorkspace ( FstatWorkspace *ws );
 
 void XLALDestroyFstatInput ( FstatInput* input );
 void XLALDestroyFstatResults ( FstatResults* Fstats );

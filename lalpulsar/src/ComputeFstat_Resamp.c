@@ -44,7 +44,7 @@ typedef struct tagMultiUINT4Vector
 } MultiUINT4Vector;
 
 // ----- workspace ----------
-typedef struct tagWorkspace_t
+struct tagFstatWorkspace
 {
   COMPLEX8Vector *TimeSeriesSpinCorr_SRC;		// single-detector SRC-frame spindown-corrected timeseries
 
@@ -60,7 +60,7 @@ typedef struct tagWorkspace_t
   COMPLEX8 *FbX_k;					// properly normalized F_b^X(f_k) over output bins
   COMPLEX8 *Fa_k;					// properly normalized F_a(f_k) over output bins
   COMPLEX8 *Fb_k;					// properly normalized F_b(f_k) over output bins
-} Workspace_t;
+};
 
 struct tagFstatInput_Resamp
 {
@@ -73,7 +73,8 @@ struct tagFstatInput_Resamp
   MultiCOMPLEX8TimeSeries *prev_multiTimeSeries_SRC;	// buffering: multi-detector SRC-frame timeseries
   MultiUINT4Vector *prev_multiSFTinds_SRC;		// buffering: SFT timestamps translated into SRC frame
 
-  Workspace_t ws;					// 'workspace': pre-allocated vectors used to store intermediate results
+  BOOLEAN ownThisWorkspace;				// flag whether we 'own' or share this workspace (ie who is responsible for freeing it)
+  FstatWorkspace *ws;					// 'workspace': pre-allocated vectors used to store intermediate results
 };
 
 
@@ -111,7 +112,7 @@ XLALBarycentricResampleCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *TimeSeries_SRC,
 
 
 static int
-XLALComputeFaFb_Resamp ( Workspace_t *ws,
+XLALComputeFaFb_Resamp ( FstatWorkspace *ws,
                          const PulsarDopplerParams thisPoint,
                          REAL8 dFreq,
                          const COMPLEX8TimeSeries *TimeSeries_SRC,
@@ -119,8 +120,58 @@ XLALComputeFaFb_Resamp ( Workspace_t *ws,
                          const AMCoeffs *ab
                          );
 
-
 // ==================== function definitions ====================
+
+// ---------- exported API functions ----------
+
+///
+/// Function to extract a workspace from a resampling setup, which can be passed in FstatOptionalArgs to be shared by various setups
+/// in order to save memory. Note, when using this, you need to free this workspace yourself at the end using XLALDestroyFstatWorkspace().
+/// Note: Demod methods don't use a workspace, so NULL (without error) is returned in this case.
+///
+FstatWorkspace *
+XLALGetSharedFstatWorkspace ( FstatInput *input		//!< [in,out] Fstat input structure to extract shared workspace from
+                              )
+{
+  XLAL_CHECK_NULL ( input != NULL, XLAL_EINVAL );
+
+  if ( input->resamp == NULL ) {
+    return NULL;
+  }
+
+  input->resamp->ownThisWorkspace = 0;	// the caller now owns the workspace and has to free it
+  return input->resamp->ws;
+
+} // XLALGetSharedFstatWorkspace()
+
+
+void
+XLALDestroyFstatWorkspace ( FstatWorkspace *ws )
+{
+  if ( ws == NULL ) {
+    return;
+  }
+
+  XLALDestroyCOMPLEX8Vector ( ws->TimeSeriesSpinCorr_SRC );
+
+  LAL_FFTW_WISDOM_LOCK;
+  fftwf_destroy_plan ( ws->fftplan );
+  LAL_FFTW_WISDOM_UNLOCK;
+
+  fftw_free ( ws->FabX_Raw );
+
+  XLALFree ( ws->normX_k );
+  XLALFree ( ws->FaX_k );
+  XLALFree ( ws->FbX_k );
+  XLALFree ( ws->Fa_k );
+  XLALFree ( ws->Fb_k );
+
+  XLALFree ( ws );
+  return;
+
+} // XLALDestroyFstatWorkspace()
+
+// ---------- internal functions ----------
 static void
 XLALDestroyMultiUINT4Vector ( MultiUINT4Vector *v)
 {
@@ -148,19 +199,9 @@ DestroyFstatInput_Resamp ( FstatInput_Resamp* resamp )
   XLALDestroyMultiUINT4Vector ( resamp->prev_multiSFTinds_SRC );
 
   // ----- free workspace
-  XLALDestroyCOMPLEX8Vector ( resamp->ws.TimeSeriesSpinCorr_SRC );
-
-  LAL_FFTW_WISDOM_LOCK;
-  fftwf_destroy_plan ( resamp->ws.fftplan );
-  LAL_FFTW_WISDOM_UNLOCK;
-
-  fftw_free ( resamp->ws.FabX_Raw );
-
-  XLALFree ( resamp->ws.normX_k );
-  XLALFree ( resamp->ws.FaX_k );
-  XLALFree ( resamp->ws.FbX_k );
-  XLALFree ( resamp->ws.Fa_k );
-  XLALFree ( resamp->ws.Fb_k );
+  if ( resamp->ownThisWorkspace ) {
+    XLALDestroyFstatWorkspace ( resamp->ws );
+  }
 
   XLALFree ( resamp );
 
@@ -171,7 +212,8 @@ DestroyFstatInput_Resamp ( FstatInput_Resamp* resamp )
 static int
 SetupFstatInput_Resamp ( FstatInput_Resamp *resamp,
                          const FstatInput_Common *common,
-                         MultiSFTVector *multiSFTs
+                         MultiSFTVector *multiSFTs,
+                         FstatWorkspace *sharedWorkspace
                          )
 {
   // Check input
@@ -217,19 +259,33 @@ SetupFstatInput_Resamp ( FstatInput_Resamp *resamp,
       XLAL_CHECK ( (resamp->prev_multiSFTinds_SRC->data[X] = XLALCreateUINT4Vector ( 2 * numTimestampsX )) != NULL, XLAL_EFUNC );
     } // for X < numDetectors
 
-  // ---- prepare (fixed-size) workspace timeseries in SRC frame for spin-corrections
-  Workspace_t *ws = &resamp->ws;
-  XLAL_CHECK ( ( ws->TimeSeriesSpinCorr_SRC = XLALCreateCOMPLEX8Vector ( numSamplesInMax )) != NULL, XLAL_EFUNC );
+  // ---- re-used shared workspace, or allocate here ----------
+  if ( sharedWorkspace != NULL )
+    {
+      XLAL_CHECK ( numSamplesFFT == sharedWorkspace->numSamplesFFT, XLAL_EINVAL, "Shared workspace of different frequency resolution: numSamplesFFT = %d != %d\n",
+                   sharedWorkspace->numSamplesFFT, numSamplesFFT );
+      resamp->ws = sharedWorkspace;
+      resamp->ownThisWorkspace = 0;
+      // adjust maximal SRC-frame timeseries length, if necessary
+      if ( numSamplesInMax > resamp->ws->TimeSeriesSpinCorr_SRC->length ) {
+        XLAL_CHECK ( (resamp->ws->TimeSeriesSpinCorr_SRC->data = XLALRealloc ( resamp->ws->TimeSeriesSpinCorr_SRC->data, numSamplesInMax * sizeof(COMPLEX8) )) != NULL, XLAL_ENOMEM );
+        resamp->ws->TimeSeriesSpinCorr_SRC->length = numSamplesInMax;
+      }
+    } // end: if shared workspace given
+  else
+    {
+      FstatWorkspace *ws;
+      XLAL_CHECK ( (ws = XLALCalloc ( 1, sizeof(*ws))) != NULL, XLAL_ENOMEM );
+      XLAL_CHECK ( (ws->TimeSeriesSpinCorr_SRC = XLALCreateCOMPLEX8Vector ( numSamplesInMax )) != NULL, XLAL_EFUNC );
+      XLAL_CHECK ( (ws->FabX_Raw = fftw_malloc ( numSamplesFFT * sizeof(ws->FabX_Raw[0]) )) != NULL, XLAL_EFUNC );
 
-
-  XLAL_CHECK ( (ws->FabX_Raw = fftw_malloc ( numSamplesFFT * sizeof(ws->FabX_Raw[0]) )) != NULL, XLAL_EFUNC );
-
-  LAL_FFTW_WISDOM_LOCK;
-  XLAL_CHECK ( (ws->fftplan = fftwf_plan_dft_1d ( numSamplesFFT, ws->FabX_Raw, ws->FabX_Raw, FFTW_FORWARD, FFTW_MEASURE )) != NULL, XLAL_EFAILED, "fftwf_plan_dft_1d() failed\n");
-  LAL_FFTW_WISDOM_UNLOCK;
-
-  ws->numSamplesFFT = numSamplesFFT;
-
+      LAL_FFTW_WISDOM_LOCK;
+      XLAL_CHECK ( (ws->fftplan = fftwf_plan_dft_1d ( numSamplesFFT, ws->FabX_Raw, ws->FabX_Raw, FFTW_FORWARD, FFTW_MEASURE )) != NULL, XLAL_EFAILED, "fftwf_plan_dft_1d() failed\n");
+      LAL_FFTW_WISDOM_UNLOCK;
+      ws->numSamplesFFT = numSamplesFFT;
+      resamp->ws = ws;
+      resamp->ownThisWorkspace = 1;
+    } // end: if we create our own workspace
 
   return XLAL_SUCCESS;
 
@@ -278,7 +334,7 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
   skypos.longitude = thisPoint.Alpha;
   skypos.latitude  = thisPoint.Delta;
 
-  Workspace_t *ws = &(resamp->ws);
+  FstatWorkspace *ws = resamp->ws;
   // ----- same skyposition? --> reuse antenna-patterns
   MultiAMCoeffs *multiAMcoef;
   if ( same_skypos && (resamp->prev_multiAMcoef != NULL) )
@@ -372,7 +428,7 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
       const AMCoeffs *abX = multiAMcoef->data[X];
 
       // compute {Fa^X(f_k), Fb^X(f_k)}: results returned via workspace resamp->ws
-      XLAL_CHECK ( XLALComputeFaFb_Resamp ( &(resamp->ws), thisPoint, common->dFreq, TimeSeriesX_SRC, SFTindsX_SRC, abX ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK ( XLALComputeFaFb_Resamp ( resamp->ws, thisPoint, common->dFreq, TimeSeriesX_SRC, SFTindsX_SRC, abX ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       for ( UINT4 k = 0; k < numFreqBins; k++ )
         {
@@ -434,7 +490,7 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
 
 
 static int
-XLALComputeFaFb_Resamp ( Workspace_t *ws,				//!< [in,out] pre-allocated 'workspace' for temporary and output quantities
+XLALComputeFaFb_Resamp ( FstatWorkspace *ws,				//!< [in,out] pre-allocated 'workspace' for temporary and output quantities
                          const PulsarDopplerParams thisPoint,		//!< [in] Doppler point to compute {FaX,FbX} for
                          REAL8 dFreq,					//!< [in] output frequency resolution
                          const COMPLEX8TimeSeries *TimeSeries_SRC,	//!< [in] SRC-frame single-IFO timeseries

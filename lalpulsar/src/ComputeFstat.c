@@ -116,7 +116,8 @@ const FstatOptionalArgs FstatOptionalArgsDefaults = {
   .FstatMethod = DEF_FMETHOD_DEMOD_BEST,
   .injectSources = NULL,
   .injectSqrtSX = NULL,
-  .assumeSqrtSX = NULL
+  .assumeSqrtSX = NULL,
+  .sharedWorkspace = NULL
 };
 
 
@@ -464,7 +465,7 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,		  ///< [in] Catalog of SFT
     }
   else if ( input->resamp != NULL )
     {
-      XLAL_CHECK_NULL ( SetupFstatInput_Resamp ( input->resamp, common, multiSFTs ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_NULL ( SetupFstatInput_Resamp ( input->resamp, common, multiSFTs, optArgs->sharedWorkspace ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
   else
     {
