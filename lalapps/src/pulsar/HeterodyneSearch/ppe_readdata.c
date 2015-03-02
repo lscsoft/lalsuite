@@ -424,6 +424,19 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
 
   if ( LALInferenceGetProcParamVal( commandLine, "--gaussian-like" ) ) { gaussianLike = 1; }
 
+  /* set reheterodyne frequency (0 if no reheterodyne is required) */
+  REAL8 rehetfreq = 0;
+  if ( LALInferenceGetProcParamVal( commandLine, "--reheterodyne" ) ) {
+    if ( *LALInferenceGetProcParamVal( commandLine, "--reheterodyne")->value == '\0'){
+    fprintf(stderr, "Error... --reheterodyne needs frequency as argument.\n");
+    fprintf(stderr, "Provide argument or remove flag\n.");
+    exit(0);
+    }
+    else {
+    rehetfreq = atof( LALInferenceGetProcParamVal( commandLine, "--reheterodyne" )->value );
+    }
+  }
+
   /* read in data, needs to read in two sets of data for each ifo for pinsf model */
   for( i = 0, prev=NULL, prevmodel=NULL ; i < ml*numDets ; i++, prev=ifodata, prevmodel=ifomodel ){
     CHAR *datafile = NULL;
@@ -460,11 +473,11 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
     if ( LALInferenceGetProcParamVal( commandLine, "--nonGR" ) ){
       UINT4 nonGR = 1;
       LALInferenceAddVariable( ifomodel->params, "nonGR", &nonGR, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
-      /* check if nonGR argument has an associated inpute variable */
-      if ( LALInferenceGetProcParamVal( commandLine, "--nonGR")->value != NULL){
-      CHAR *nonGRmodel = NULL;
-      nonGRmodel =  XLALStringDuplicate( LALInferenceGetProcParamVal( commandLine, "--nonGR" )->value);
-      LALInferenceAddVariable( ifomodel->params, "nonGRmodel", &nonGRmodel, LALINFERENCE_string_t, LALINFERENCE_PARAM_FIXED );
+      /* check if nonGR argument has an associated input variable */
+      if ( *LALInferenceGetProcParamVal( commandLine, "--nonGR")->value != '\0'){
+        CHAR *nonGRmodel = NULL;
+        nonGRmodel =  XLALStringDuplicate( LALInferenceGetProcParamVal( commandLine, "--nonGR" )->value);
+        LALInferenceAddVariable( ifomodel->params, "nonGRmodel", &nonGRmodel, LALINFERENCE_string_t, LALINFERENCE_PARAM_FIXED );
       }
     }
 
@@ -558,7 +571,9 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
 
         temptimes = XLALResizeREAL8Vector( temptimes, j );
 
+        // Note: j-1 because we added to j above (553)
         temptimes->data[j-1] = times;
+        
         ifodata->compTimeData->data->data[j-1] = dataValsRe + I*dataValsIm;
 
         if ( inputsigma ){ ifodata->varTimeData->data->data[j-1] = SQUARE( sigmaVals ); }
@@ -601,6 +616,9 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
       LALInferenceAddVariable( ifomodel->params, "dt", &sampledt, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
 
       XLALDestroyREAL8Vector( temptimes );
+
+      // ADD REHET STEP HERE IF NECESSARY
+
     }
     else{ /* set up fake data */
       /* if a Gaussian likelihood is required compute sigma from the data (to mimic real life) */

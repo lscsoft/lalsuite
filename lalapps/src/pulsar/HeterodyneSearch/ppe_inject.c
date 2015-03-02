@@ -110,6 +110,37 @@ void inject_signal( LALInferenceRunState *runState ){
     varyphase = 0; /* set to zero so varyphase is removed after the model is created */
   }
 
+  /* check whether to inject a non-GR signal (the default will ALWAYS be GR) */
+  UINT4 nonGR_search = LALInferenceCheckVariable( ifo_model->params, "nonGR" );
+
+  char* injection_model = NULL;
+  ProcessParamsTable *nonGR_injection;
+  nonGR_injection = LALInferenceGetProcParamVal(commandLine, "--inject-nonGR");
+
+  if ( nonGR_injection ){
+    /* set injection model */
+    injection_model = XLALStringDuplicate( nonGR_injection->value );
+    if ( !nonGR_search ){
+      /* add "nonGR" flag so that pulsar_model() runs in nonGR mode */
+      UINT4 nonGRval = 1;
+      LALInferenceAddVariable( ifo_model->params, "nonGR", &nonGRval, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
+      /* setup nonGR lookup tables */
+      LALSource psr;
+      psr.equatorialCoords.longitude = injpars.ra;
+      psr.equatorialCoords.latitude = injpars.dec;
+      psr.equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
+      setup_lookup_tables( runState, &psr );
+    }
+    if ( *injection_model!='\0' ){
+      /* set parameters corresponding to specific model */
+      set_nonGR_model_parameters( &injpars, injection_model);
+    }
+  }
+  else {
+    /* remove "nonGR" flag so that pulsar_model() runs in GR mode */
+    LALInferenceRemoveVariable(ifo_model->params, "nonGR");
+  }
+
   pulsar_model( injpars, ifo_model );
 
   /* get summed data for use in SNR calculation */
@@ -283,6 +314,18 @@ void inject_signal( LALInferenceRunState *runState ){
     ifo_model = ifo_model->next;
     j++;
   }
+
+/* reset nonGR status */
+ifo_model = runState->model->ifo;
+if ( nonGR_search ){
+  if ( !nonGR_injection ){
+    UINT4 nonGRval = 1;
+    LALInferenceAddVariable( ifo_model->params, "nonGR", &nonGRval, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
+  }
+}
+else {
+  LALInferenceRemoveVariable(ifo_model->params, "nonGR");
+}
 }
 
 /*-------------------- END OF SOFTWARE INJECTION FUNCTIONS -------------------*/

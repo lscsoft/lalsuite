@@ -39,6 +39,8 @@ REAL8 rescale_parameter( LALInferenceModel *model, LALInferenceIFOModel *ifo, co
 
 void pulsar_model( BinaryPulsarParams params, LALInferenceIFOModel *ifo );
 
+void set_nonGR_model_parameters(BinaryPulsarParams *pars, char* nonGRmodel);
+
 REAL8Vector *get_phase_model( BinaryPulsarParams params, LALInferenceIFOModel *ifo, REAL8 freqFactor );
 
 REAL8Vector *get_ssb_delay( BinaryPulsarParams pars, LIGOTimeGPSVector *datatimes, EphemerisData *ephem,
