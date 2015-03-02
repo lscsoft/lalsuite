@@ -38,6 +38,9 @@
 
 #include "LALSimIMRPhenomC_internals.c"
 
+#ifndef _OPENMP
+#define omp ignore
+#endif
 
 /**
  * private function prototypes; all internal functions use solar masses.
@@ -291,8 +294,13 @@ static int IMRPhenomCGenerateFD(
     const BBHPhenomCParams *params      /**< from ComputeIMRPhenomCParams */
 ) {
   LIGOTimeGPS ligotimegps_zero = LIGOTIMEGPSZERO; // = {0, 0}
-  size_t i;
-  INT4 errcode;
+
+  int errcode = XLAL_SUCCESS;
+  /*
+   We can't call XLAL_ERROR() directly with OpenMP on.
+   Keep track of return codes for each thread and in addition use flush to get out of
+   the parallel for loop as soon as possible if something went wrong in any thread.
+  */
 
   const REAL8 M = m1 + m2;
   const REAL8 eta = m1 * m2 / (M * M);
@@ -302,8 +310,6 @@ static int IMRPhenomCGenerateFD(
   REAL8 phSPA, phPM, phRD, aPM, aRD;
   REAL8 wPlusf1, wPlusf2, wMinusf1, wMinusf2, wPlusf0, wMinusf0;
   */
-  REAL8 phPhenomC = 0.0;
-  REAL8 aPhenomC = 0.0;
 
   /* compute the amplitude pre-factor */
   REAL8 amp0 = 2. * sqrt(5. / (64.*LAL_PI)) * M * LAL_MRSUN_SI * M * LAL_MTSUN_SI / distance;
@@ -329,13 +335,25 @@ static int IMRPhenomCGenerateFD(
   REAL8 *phis = XLALMalloc(L*sizeof(REAL8));
 
   /* now generate the waveform */
-  for (i = ind_min; i < ind_max; i++)
+  #pragma omp parallel for
+  for (size_t i = ind_min; i < ind_max; i++)
   {
+
+    REAL8 phPhenomC = 0.0;
+    REAL8 aPhenomC = 0.0;
     REAL8 f = i * deltaF;
 
-    errcode = IMRPhenomCGenerateAmpPhase( &aPhenomC, &phPhenomC, f, eta, params );
-    if( errcode != XLAL_SUCCESS )
-      XLAL_ERROR(XLAL_EFUNC);
+    int per_thread_errcode;
+    #pragma omp flush(errcode)
+    if (errcode != XLAL_SUCCESS)
+      goto skip;
+
+    per_thread_errcode = IMRPhenomCGenerateAmpPhase( &aPhenomC, &phPhenomC, f, eta, params );
+    if (per_thread_errcode != XLAL_SUCCESS) {
+      errcode = per_thread_errcode;
+      #pragma omp flush(errcode)
+    }
+
     phPhenomC -= 2.*phi0; // factor of 2 b/c phi0 is orbital phase
 
     freqs[i-ind_min] = f;
@@ -344,8 +362,13 @@ static int IMRPhenomCGenerateFD(
     /* generate the waveform */
     ((*htilde)->data->data)[i] = amp0 * aPhenomC * cos(phPhenomC);
     ((*htilde)->data->data)[i] += -I * amp0 * aPhenomC * sin(phPhenomC);
+
+  skip: /* this statement intentionally left blank */;
+
   }
 
+  if( errcode != XLAL_SUCCESS )
+    XLAL_ERROR(errcode);
 
   /* Correct phasing so we coalesce at t=0 (with the definition of the epoch=-1/deltaF above) */
   gsl_spline_init(phiI, freqs, phis, L);
@@ -363,7 +386,7 @@ static int IMRPhenomCGenerateFD(
   REAL8 t_corr = gsl_spline_eval_deriv(phiI, f_final, acc) / (2*LAL_PI);
   XLAL_PRINT_INFO("t_corr = %g\n", t_corr);
   /* Now correct phase */
-  for (i = ind_min; i < ind_max; i++) {
+  for (size_t i = ind_min; i < ind_max; i++) {
     REAL8 f = i * deltaF;
     ((*htilde)->data->data)[i] *= cexp(-2*LAL_PI * I * f * t_corr);
   }
