@@ -233,10 +233,27 @@ void XLALDestroyLatticeTilingLocator(
   );
 
 ///
-/// Locate the nearest points in a the lattice tiling to a given a set of points. Return the nearest
-/// points in \c nearest_points, and optionally: their generating integers in \c nearest_ints, and
-/// their unique index <i>over the bound-enforced dimensions</i> in \c nearest_indexes (requires \c
-/// loc to have been created with an index trie).
+/// Locate the nearest point in a lattice tiling to a given point. Return the nearest point in
+/// \c nearest_point, and optionally: its generating integers in \c nearest_int_point, and its
+/// unique index <i>over the bound-enforced dimensions</i> in \c nearest_index (requires \c loc
+/// to have been created with an index trie).
+///
+#ifdef SWIG // SWIG interface directives
+SWIGLAL( INOUT_STRUCTS( gsl_vector **, nearest_point ) );
+SWIGLAL( INOUT_STRUCTS( gsl_vector_long **, nearest_int_point ) );
+SWIGLAL( INOUT_SCALARS( UINT8 *, nearest_index ) );
+#endif
+int XLALNearestLatticeTilingPoint(
+  const LatticeTilingLocator *loc,	///< [in] Lattice tiling locator
+  const gsl_vector *point,		///< [in] Point for which to find nearest point
+  gsl_vector **nearest_point,		///< [out] Corresponding nearest point
+  gsl_vector_long **nearest_int_point,	///< [out] Generating integers of nearest point
+  UINT8 *nearest_index			///< [out] Unique tiling index of nearest point
+  );
+
+///
+/// Multi-point version of XLALNearestLatticeTilingPoint(): locate the nearest points in a lattice
+/// tiling to a given a set of points.
 ///
 #ifdef SWIG // SWIG interface directives
 SWIGLAL( INOUT_STRUCTS( gsl_matrix **, nearest_points ) );

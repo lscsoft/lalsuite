@@ -1488,6 +1488,70 @@ void XLALDestroyLatticeTilingLocator(
   }
 }
 
+int XLALNearestLatticeTilingPoint(
+  const LatticeTilingLocator *loc,
+  const gsl_vector *point,
+  gsl_vector **nearest_point,
+  gsl_vector_long **nearest_int_point,
+  UINT8 *nearest_index
+  )
+{
+
+  // Check input
+  XLAL_CHECK( loc != NULL, XLAL_EFAULT );
+  XLAL_CHECK( point != NULL, XLAL_EFAULT );
+  XLAL_CHECK( point->size == loc->tiling->ndim, XLAL_ESIZE );
+  XLAL_CHECK( nearest_point != NULL, XLAL_EFAULT );
+  XLAL_CHECK( nearest_index == NULL || loc->tiling->tiled_ndim == 0 || loc->index_trie != NULL, XLAL_EINVAL );
+
+  const size_t n = loc->tiling->ndim;
+
+  // Create matrix view of point
+  gsl_matrix_const_view point_view = gsl_matrix_const_view_vector( point, point->size, 1 );
+  const gsl_matrix *points = &point_view.matrix;
+
+  // (Re)Allocate nearest point vector, and create matrix view of it
+  if( *nearest_point != NULL && ( *nearest_point )->size != n ) {
+    GFVEC( *nearest_point );
+    *nearest_point = NULL;
+  }
+  if( *nearest_point == NULL ) {
+    GAVEC( *nearest_point, n );
+  }
+  gsl_matrix_view nearest_point_view = gsl_matrix_view_vector( *nearest_point, ( *nearest_point )->size, 1 );
+  gsl_matrix *nearest_points = &nearest_point_view.matrix;
+
+  // (Re)Allocate nearest generating integer vector, if supplied, and create matrix view of it
+  gsl_matrix_long_view nearest_int_point_view;
+  gsl_matrix_long *nearest_int_points = NULL;
+  if( nearest_int_point != NULL ) {
+    if( *nearest_int_point != NULL && ( *nearest_int_point )->size != n ) {
+      GFVECLI( *nearest_int_point );
+      *nearest_int_point = NULL;
+    }
+    if( *nearest_int_point == NULL ) {
+      GAVECLI( *nearest_int_point, n );
+    }
+    nearest_int_point_view = gsl_matrix_long_view_vector( *nearest_int_point, ( *nearest_int_point )->size, 1 );
+    nearest_int_points = &nearest_int_point_view.matrix;
+  }
+
+  // (Re)Allocate nearest point unique tiling index vector, if supplied, and initialise to zero
+  UINT8Vector nearest_index_view;
+  UINT8Vector *nearest_indexes = NULL;
+  if( nearest_index != NULL ) {
+    nearest_index_view.length = 1;
+    nearest_index_view.data = nearest_index;
+    nearest_indexes = &nearest_index_view;
+  }
+
+  // Call XLALNearestLatticeTilingPoints()
+  XLAL_CHECK( XLALNearestLatticeTilingPoints( loc, points, &nearest_points, &nearest_int_points, &nearest_indexes ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  return XLAL_SUCCESS;
+
+}
+
 int XLALNearestLatticeTilingPoints(
   const LatticeTilingLocator *loc,
   const gsl_matrix *points,
