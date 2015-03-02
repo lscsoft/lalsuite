@@ -36,7 +36,6 @@
  *
  */
 
-
 #define _XOPEN_SOURCE 500
 
 #ifdef __GNUC__
@@ -54,6 +53,10 @@
 #include <alloca.h>
 #include <string.h>
 #include <libgen.h>
+
+#ifdef LAL_PTHREAD_LOCK
+#include <pthread.h>
+#endif
 
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_bspline.h>
@@ -167,6 +170,10 @@ static const double gPhi[] = {0.0001,0.0001011603972084032,0.0001023387826723389
    0.12178370533810129,0.13,0.1368749683040054,0.145,0.15450982970874225,0.17523738873197545,0.19975298003522046,
    0.22894501461505934,0.26395954156353574,0.3};
 
+#ifdef LAL_PTHREAD_LOCK
+static pthread_once_t SEOBNRv2ROMSingleSpin_is_initialized = PTHREAD_ONCE_INIT;
+#endif
+
 /*************** type definitions ******************/
 
 typedef struct tagSEOBNRROMdata_coeff
@@ -197,7 +204,7 @@ typedef struct tagSplineData
 
 /**************** Internal functions **********************/
 
-static int SEOBNRv2ROMSingleSpin_Init_LALDATA(void);
+static void SEOBNRv2ROMSingleSpin_Init_LALDATA(void);
 static int SEOBNRv2ROMSingleSpin_Init(const char dir[]);
 static bool SEOBNRv2ROMSingleSpin_IsSetup(void);
 
@@ -789,7 +796,11 @@ int XLALSimIMRSEOBNRv2ROMSingleSpinFrequencySequence(
     XLAL_ERROR(XLAL_EDOM, "XLAL Error - %s: eta (%f) smaller than 0.01 or unphysical!\nSEOBNRv2ROMSingleSpin is only available for spins in the range 0.01 <= eta <= 0.25.\n", __func__,eta);
 
   // Load ROM data if not loaded already
+#ifdef LAL_PTHREAD_LOCK
+  (void) pthread_once(&SEOBNRv2ROMSingleSpin_is_initialized, SEOBNRv2ROMSingleSpin_Init_LALDATA);
+#else
   SEOBNRv2ROMSingleSpin_Init_LALDATA();
+#endif
 
   // Call the internal core function with deltaF = 0 to indicate that freqs is non-uniformly
   // spaced and we want the strain only at these frequencies
@@ -832,7 +843,11 @@ int XLALSimIMRSEOBNRv2ROMSingleSpin(
     XLAL_ERROR(XLAL_EDOM, "XLAL Error - %s: eta (%f) smaller than 0.01 or unphysical!\nSEOBNRv2ROMSingleSpin is only available for spins in the range 0.01 <= eta <= 0.25.\n", __func__,eta);
 
   // Load ROM data if not loaded already
+#ifdef LAL_PTHREAD_LOCK
+  (void) pthread_once(&SEOBNRv2ROMSingleSpin_is_initialized, SEOBNRv2ROMSingleSpin_Init_LALDATA);
+#else
   SEOBNRv2ROMSingleSpin_Init_LALDATA();
+#endif
 
   // Use fLow, fHigh, deltaF to compute freqs sequence
   // Instead of building a full sequency we only transfer the boundaries and let
@@ -868,7 +883,11 @@ static int SEOBNRv2ROMSingleSpinTimeFrequencySetup(
   *Mtot_sec = Mtot * LAL_MTSUN_SI; /* Total mass in seconds */
 
   // Load ROM data if not loaded already
+#ifdef LAL_PTHREAD_LOCK
+  (void) pthread_once(&SEOBNRv2ROMSingleSpin_is_initialized, SEOBNRv2ROMSingleSpin_Init_LALDATA);
+#else
   SEOBNRv2ROMSingleSpin_Init_LALDATA();
+#endif
 
   SEOBNRROMdata *romdata=&__lalsim_SEOBNRv2ROMSS_data;
 
@@ -1027,11 +1046,9 @@ int XLALSimIMRSEOBNRv2ROMSingleSpinFrequencyOfTime(
 
 /** Setup SEOBNRv2ROMSingleSpin model using data files installed in $LAL_DATA_PATH
  */
-int SEOBNRv2ROMSingleSpin_Init_LALDATA(void)
+void SEOBNRv2ROMSingleSpin_Init_LALDATA(void)
 {
-
-  if (SEOBNRv2ROMSingleSpin_IsSetup())
-    return XLAL_SUCCESS;
+  if (SEOBNRv2ROMSingleSpin_IsSetup()) return;
 
   // If we find one ROM datafile in a directory listed in LAL_DATA_PATH, 
   // then we expect the remaining datafiles to also be there.
@@ -1039,13 +1056,11 @@ int SEOBNRv2ROMSingleSpin_Init_LALDATA(void)
 
   char *path = XLALFileResolvePath(datafile);
   if (path==NULL)
-    XLAL_ERROR(XLAL_EIO, "Unable to resolve data file %s in $LAL_DATA_PATH\n", datafile);
+    XLAL_ERROR_VOID(XLAL_EIO, "Unable to resolve data file %s in $LAL_DATA_PATH\n", datafile);
   char *dir = dirname(path);
   int ret = SEOBNRv2ROMSingleSpin_Init(dir);
   XLALFree(path);
 
   if(ret!=XLAL_SUCCESS)
-    XLAL_ERROR(XLAL_FAILURE, "Unable to find SEOBNRv2ROMSingleSpin data files in $LAL_DATA_PATH\n");
-
-  return ret;
+    XLAL_ERROR_VOID(XLAL_FAILURE, "Unable to find SEOBNRv2ROMSingleSpin data files in $LAL_DATA_PATH\n");
 }

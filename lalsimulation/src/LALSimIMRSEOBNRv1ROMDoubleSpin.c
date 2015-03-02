@@ -51,6 +51,11 @@
 #include <stdbool.h>
 #include <alloca.h>
 #include <string.h>
+#include <libgen.h>
+
+#ifdef LAL_PTHREAD_LOCK
+#include <pthread.h>
+#endif
 
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_bspline.h>
@@ -65,6 +70,8 @@
 #include <lal/Date.h>
 #include <lal/StringInput.h>
 #include <lal/Sequence.h>
+#include <lal/LALStdio.h>
+#include <lal/FileIO.h>
 
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimIMR.h>
@@ -118,6 +125,10 @@ static const double gPhi[] = {0.00062519, 0.000638554, 0.000652301, 0.000666444,
     0.0472811, 0.0515553, 0.0563523, 0.0617535, 0.0678557, 0.0747749, \
     0.0826504, 0.0916509, 0.101981, 0.113893, 0.127695, 0.143771, 0.15};
 
+#ifdef LAL_PTHREAD_LOCK
+static pthread_once_t SEOBNRv1ROMDoubleSpin_is_initialized = PTHREAD_ONCE_INIT;
+#endif
+
 /*************** type definitions ******************/
 
 typedef struct tagSEOBNRROMdataDS_coeff
@@ -149,7 +160,7 @@ typedef struct tagSplineData
 
 /**************** Internal functions **********************/
 
-static int SEOBNRv1ROMDoubleSpin_Init_LALDATA(void);
+static void SEOBNRv1ROMDoubleSpin_Init_LALDATA(void);
 static int SEOBNRv1ROMDoubleSpin_Init(const char dir[]);
 static bool SEOBNRv1ROMDoubleSpin_IsSetup(void);
 
@@ -691,6 +702,37 @@ int SEOBNRv1ROMDoubleSpinCore(
     pdata[j] =      pcoef * htilde;
     cdata[j] = -I * ccoef * htilde;
   }
+  
+  /* Correct phasing so we coalesce at t=0 (with the definition of the epoch=-1/deltaF above) */
+  if (deltaF > 0)
+    XLAL_PRINT_WARNING("Warning: Depending on specified frequency sequence correction to time of coalescence may not be accurate.\n");
+
+  // Get SEOBNRv1 ringdown frequency for 22 mode
+  // XLALSimInspiralGetFinalFreq wants masses in SI units, so unfortunately we need to convert back
+  double Mtot_SI = Mtot_sec / LAL_MTSUN_SI * LAL_MSUN_SI;
+  double m1_SI = Mtot_SI * 1.0/(1.0+q);
+  double m2_SI = Mtot_SI * q/(1.0+q);
+  double Mf_final = XLALSimInspiralGetFinalFreq(m1_SI, m2_SI, 0,0,chi1, 0,0,chi2, SEOBNRv1) * Mtot_sec;
+
+  UINT4 L = freqs->length;
+  // prevent gsl interpolation errors
+  if (Mf_final > freqs->data[L-1])
+    Mf_final = freqs->data[L-1];
+  if (Mf_final < freqs->data[0])
+    XLAL_ERROR(XLAL_EDOM, "f_ringdown < f_min");
+
+  // Time correction is t(f_final) = 1/(2pi) dphi/df (f_final)
+  // We compute the dimensionless time correction t/M since we use geometric units.
+  REAL8 t_corr = gsl_spline_eval_deriv(spline_phi, Mf_final, acc_phi) / (2*LAL_PI);
+  XLAL_PRINT_INFO("t_corr [s] = %g\n", t_corr * Mtot_sec);
+
+  // Now correct phase
+  for (UINT4 i=0; i<freqs->length; i++) { // loop over frequency points in sequence
+    double f = freqs->data[i];
+    int j = i + offset; // shift index for frequency series if needed
+    pdata[j] *= cexp(-2*LAL_PI * I * f * t_corr);
+    cdata[j] *= cexp(-2*LAL_PI * I * f * t_corr);
+  }
 
   XLALDestroyREAL8Sequence(freqs);
 
@@ -752,7 +794,11 @@ int XLALSimIMRSEOBNRv1ROMDoubleSpinFrequencySequence(
   }
 
   // Load ROM data if not loaded already
+#ifdef LAL_PTHREAD_LOCK
+  (void) pthread_once(&SEOBNRv1ROMDoubleSpin_is_initialized, SEOBNRv1ROMDoubleSpin_Init_LALDATA);
+#else
   SEOBNRv1ROMDoubleSpin_Init_LALDATA();
+#endif
 
   // Call the internal core function with deltaF = 0 to indicate that freqs is non-uniformly
   // spaced and we want the strain only at these frequencies
@@ -814,7 +860,11 @@ int XLALSimIMRSEOBNRv1ROMDoubleSpin(
   }
 
   // Load ROM data if not loaded already
+#ifdef LAL_PTHREAD_LOCK
+  (void) pthread_once(&SEOBNRv1ROMDoubleSpin_is_initialized, SEOBNRv1ROMDoubleSpin_Init_LALDATA);
+#else
   SEOBNRv1ROMDoubleSpin_Init_LALDATA();
+#endif
 
   // Use fLow, fHigh, deltaF to compute freqs sequence
   // Instead of building a full sequency we only transfer the boundaries and let
@@ -833,28 +883,21 @@ int XLALSimIMRSEOBNRv1ROMDoubleSpin(
 
 /** Setup SEOBNRv1ROMDoubleSpin model using data files installed in $LAL_DATA_PATH
  */
-int SEOBNRv1ROMDoubleSpin_Init_LALDATA(void)
+void SEOBNRv1ROMDoubleSpin_Init_LALDATA(void)
 {
+  if (SEOBNRv1ROMDoubleSpin_IsSetup()) return;
 
-  if (SEOBNRv1ROMDoubleSpin_IsSetup())
-  return XLAL_SUCCESS;
+  // If we find one ROM datafile in a directory listed in LAL_DATA_PATH,
+  // then we expect the remaining datafiles to also be there.
+  char datafile[] = "SEOBNRv1ROM_DS_Phase_ciall.dat";
 
-  int ret=XLAL_FAILURE;
-  char *envpath=NULL;
-  char path[32768];
-  char *brkt,*word;
-  envpath=getenv("LAL_DATA_PATH");
-  if(!envpath) return(XLAL_FAILURE);
-  strncpy(path,envpath,sizeof(path));
+  char *path = XLALFileResolvePath(datafile);
+  if (path==NULL)
+    XLAL_ERROR_VOID(XLAL_EIO, "Unable to resolve data file %s in $LAL_DATA_PATH\n", datafile);
+  char *dir = dirname(path);
+  int ret = SEOBNRv1ROMDoubleSpin_Init(dir);
+  XLALFree(path);
 
-  for(word=strtok_r(path,":",&brkt); word; word=strtok_r(NULL,":",&brkt))
-  {
-    ret = SEOBNRv1ROMDoubleSpin_Init(word);
-    if (XLAL_SUCCESS == ret) break;
-  }
-  if(ret!=XLAL_SUCCESS) {
-    XLALPrintError("Unable to find SEOBNRv1ROMDoubleSpin data files in $LAL_DATA_PATH\n");
-    exit(XLAL_FAILURE);
-  }
-  return(ret);
+  if(ret!=XLAL_SUCCESS)
+    XLAL_ERROR_VOID(XLAL_FAILURE, "Unable to find SEOBNRv1ROMDoubleSpin data files in $LAL_DATA_PATH\n");
 }
