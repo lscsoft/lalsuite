@@ -42,37 +42,33 @@ main ( int argc, char *argv[] )
   XLAL_CHECK ( argc == 1, XLAL_EINVAL, "No input arguments allowed.\n" );
   XLAL_CHECK ( argv != NULL, XLAL_EINVAL );
 
-
+  // ----- load ephemeris
   EphemerisData *ephem;
   XLAL_CHECK ( (ephem = XLALInitBarycenter ( TEST_DATA_DIR "earth00-19-DE405.dat.gz", TEST_DATA_DIR "sun00-19-DE405.dat.gz" )) != NULL, XLAL_EFUNC );
 
   // ----- setup injection and data parameters
-  UINT4 numDetectors = 2;
-
-  // use signal-only injections to avoid usage of different noise bins to contaminate error-comparison
-  MultiNoiseFloor XLAL_INIT_DECL(injectNoiseFloor);
-  injectNoiseFloor.length = numDetectors;
-  injectNoiseFloor.sqrtSn[0] = 1;
-  injectNoiseFloor.sqrtSn[1] = 3;
-
-  MultiNoiseFloor XLAL_INIT_DECL(assumeNoiseFloor);
-  assumeNoiseFloor.length = numDetectors;
-  assumeNoiseFloor.sqrtSn[0] = 1;
-  assumeNoiseFloor.sqrtSn[1] = 3;
-
-
   LALStringVector *detNames = NULL;
   XLAL_CHECK ( (detNames = XLALCreateStringVector ( "H1", "L1", NULL )) != NULL, XLAL_EFUNC );
-  MultiLALDetector XLAL_INIT_DECL(detInfo);
-  XLAL_CHECK ( XLALParseMultiLALDetector ( &detInfo, detNames ) == XLAL_SUCCESS, XLAL_EFUNC );
+  UINT4 numDetectors = detNames->length;
+
+  // generate and assume some gaussian noise floors
+  MultiNoiseFloor XLAL_INIT_DECL(injectSqrtSX);
+  MultiNoiseFloor XLAL_INIT_DECL(assumeSqrtSX);
+  injectSqrtSX.length = numDetectors;
+  assumeSqrtSX.length = numDetectors;
+  for ( UINT4 X = 0; X < numDetectors; X ++ )
+    {
+      injectSqrtSX.sqrtSn[X] = 1.0 + 2.0*X;
+      assumeSqrtSX.sqrtSn[X] = 1.0 + 2.0*X;
+    }
 
   LIGOTimeGPS startTime = {711595934, 0};
-  REAL8 Tspan = 200 * 3600;
+  REAL8 Tspan = 20 * 3600;
   LIGOTimeGPS endTime = startTime;
   XLALGPSAdd( &endTime, Tspan );
   REAL8 Tsft = 1800;
 
-  LIGOTimeGPS refTime = { startTime.gpsSeconds - 2.3 * Tspan, 0 };	// reftime in middle of segment
+  LIGOTimeGPS refTime = { startTime.gpsSeconds - 2.3 * Tspan, 0 };
 
   MultiLIGOTimeGPSVector *multiTimestamps;
   XLAL_CHECK ( ( multiTimestamps = XLALCalloc ( 1, sizeof(*multiTimestamps))) != NULL, XLAL_ENOMEM );
@@ -99,13 +95,13 @@ main ( int argc, char *argv[] )
   // ----- CW sources to injet ----------
   REAL8 Freq = 100.0;
 
-  PulsarParamsVector *sources;
-  XLAL_CHECK ( (sources = XLALCreatePulsarParamsVector(1)) != NULL, XLAL_EFUNC );
+  PulsarParamsVector *injectSources;
+  XLAL_CHECK ( (injectSources = XLALCreatePulsarParamsVector(1)) != NULL, XLAL_EFUNC );
 
-  sources->data[0].Amp.h0   = 1;
-  sources->data[0].Amp.cosi = 0.5;
-  sources->data[0].Amp.psi  = 0.1;
-  sources->data[0].Amp.phi0 = 1.2;
+  injectSources->data[0].Amp.h0   = 1;
+  injectSources->data[0].Amp.cosi = 0.5;
+  injectSources->data[0].Amp.psi  = 0.1;
+  injectSources->data[0].Amp.phi0 = 1.2;
 
   REAL8 asini = 0; // 1.4;	// sco-X1 like
   REAL8 Period = 0; // 19 * 3600;// sco-X1 like
@@ -123,7 +119,7 @@ main ( int argc, char *argv[] )
   Doppler.period = Period;
   Doppler.argp = 0.5;
 
-  sources->data[0].Doppler = Doppler;
+  injectSources->data[0].Doppler = Doppler;
 
   REAL8 dFreq = 0.1 / Tspan;		// 10x finer than native FFT resolution
   REAL8 mis = 0.5;
@@ -139,7 +135,7 @@ main ( int argc, char *argv[] )
 
   PulsarSpinRange XLAL_INIT_DECL(spinRange);
   spinRange.refTime = refTime;
-  memcpy ( &spinRange.fkdot, &sources->data[0].Doppler.fkdot, sizeof(spinRange.fkdot) );
+  memcpy ( &spinRange.fkdot, &injectSources->data[0].Doppler.fkdot, sizeof(spinRange.fkdot) );
   spinRange.fkdotBand[0] = (numFreqBins - 1)*dFreq - 10*LAL_REAL8_EPS;
   spinRange.fkdotBand[1] = (numf1dotPoints - 1)*df1dot - 10*LAL_REAL8_EPS;
 
@@ -163,7 +159,7 @@ main ( int argc, char *argv[] )
       if ( !XLALFstatMethodIsAvailable(iMethod) ) {
         continue;
       }
-      input[iMethod] = XLALCreateFstatInput ( catalog, minCoverFreq, maxCoverFreq, sources, &injectNoiseFloor, &assumeNoiseFloor, 50, ephem, iMethod, &extraParams );
+      input[iMethod] = XLALCreateFstatInput ( catalog, minCoverFreq, maxCoverFreq, injectSources, &injectSqrtSX, &assumeSqrtSX, 50, ephem, iMethod, &extraParams );
       XLAL_CHECK ( input[iMethod] != NULL, XLAL_EFUNC );
     }
 
@@ -244,11 +240,12 @@ main ( int argc, char *argv[] )
       XLALDestroyFstatResults ( results[iMethod] );
     } // for i < FMETHOD_END
 
-  XLALDestroyPulsarParamsVector ( sources );
+  XLALDestroyPulsarParamsVector ( injectSources );
   XLALDestroySFTCatalog ( catalog );
   XLALDestroyMultiTimestamps ( multiTimestamps );
   XLALDestroyStringVector ( detNames );
   XLALDestroyEphemerisData ( ephem );
+
   LALCheckMemoryLeaks();
 
   return XLAL_SUCCESS;

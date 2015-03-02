@@ -42,9 +42,9 @@
 // Common input data for F-statistic methods
 typedef struct {
   MultiLALDetector detectors;                           // List of detectors
-  MultiLIGOTimeGPSVector *timestamps;                   // Multi-detector list of SFT timestamps
-  MultiNoiseWeights *noiseWeights;                      // Multi-detector noise weights
-  MultiDetectorStateSeries *detectorStates;             // Multi-detector state series
+  MultiLIGOTimeGPSVector *multiTimestamps;              // Multi-detector list of SFT timestamps
+  MultiNoiseWeights *multiNoiseWeights;                 // Multi-detector noise weights
+  MultiDetectorStateSeries *multiDetectorStates;        // Multi-detector state series
   const EphemerisData *ephemerides;                     // Ephemerides for the time-span of the SFTs
   SSBprecision SSBprec;                                 // Barycentric transformation precision
   FstatMethodType FstatMethod;                          // Method to use for computing the F-statistic
@@ -320,7 +320,7 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,		  ///< [in] Catalog of SFT
   REAL8 minFreqMethod, maxFreqMethod;
   REAL8 minFreqFull, maxFreqFull;
   {
-    // Determine whether the method being used requires extra frequency bins
+    // Determine whether the method being used requires extra SFT frequency bins
     int extraBinsMethod = 0;
     if ( input->demod != NULL )
       {
@@ -359,7 +359,7 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,		  ///< [in] Catalog of SFT
 
       // Extract detectors and timestamps from SFTs
       XLAL_CHECK_NULL ( XLALMultiLALDetectorFromMultiSFTs ( &common->detectors, multiSFTs ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_NULL ( ( common->timestamps = XLALExtractMultiTimestampsFromSFTs ( multiSFTs ) ) != NULL,  XLAL_EFUNC );
+      XLAL_CHECK_NULL ( ( common->multiTimestamps = XLALExtractMultiTimestampsFromSFTs ( multiSFTs ) ) != NULL,  XLAL_EFUNC );
 
     }
   else
@@ -370,7 +370,7 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,		  ///< [in] Catalog of SFT
 
       // Extract detectors and timestamps from multi-view of SFT catalog
       XLAL_CHECK_NULL ( XLALMultiLALDetectorFromMultiSFTCatalogView ( &common->detectors, multiSFTcatalog ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_NULL ( ( common->timestamps = XLALTimestampsFromMultiSFTCatalogView ( multiSFTcatalog ) ) != NULL,  XLAL_EFUNC );
+      XLAL_CHECK_NULL ( ( common->multiTimestamps = XLALTimestampsFromMultiSFTCatalogView ( multiSFTcatalog ) ) != NULL,  XLAL_EFUNC );
 
       // Cleanup
       XLALDestroyMultiSFTCatalogView ( multiSFTcatalog );
@@ -388,7 +388,7 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,		  ///< [in] Catalog of SFT
       MFDparams.fMin = minFreqFull;
       MFDparams.Band = maxFreqFull - minFreqFull;
       MFDparams.multiIFO = common->detectors;
-      MFDparams.multiTimestamps = *(common->timestamps);
+      MFDparams.multiTimestamps = *(common->multiTimestamps);
       MFDparams.randSeed = extraParams->randSeed;
 
       // Set noise floors if sqrtSX is given; otherwise noise floors are zero
@@ -422,7 +422,7 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,		  ///< [in] Catalog of SFT
   XLAL_CHECK_NULL ( (runningMedian = XLALNormalizeMultiSFTVect ( multiSFTs, runningMedianWindow, assumeSqrtSX )) != NULL, XLAL_EFUNC );
 
   // Calculate SFT noise weights from PSD
-  XLAL_CHECK_NULL ( (common->noiseWeights = XLALComputeMultiNoiseWeights ( runningMedian, runningMedianWindow, 0 )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_NULL ( (common->multiNoiseWeights = XLALComputeMultiNoiseWeights ( runningMedian, runningMedianWindow, 0 )) != NULL, XLAL_EFUNC );
 
   // at this point we're done with running-median noise estimation and can 'trim' the SFTs back to
   // the width actually required by the Fstat-methods *methods*.
@@ -432,7 +432,7 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,		  ///< [in] Catalog of SFT
 
   // Get detector states, with a timestamp shift of Tsft/2
   const REAL8 tOffset = 0.5 * Tsft;
-  XLAL_CHECK_NULL ( (common->detectorStates = XLALGetMultiDetectorStates ( common->timestamps, &common->detectors, ephemerides, tOffset )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_NULL ( (common->multiDetectorStates = XLALGetMultiDetectorStates ( common->multiTimestamps, &common->detectors, ephemerides, tOffset )) != NULL, XLAL_EFUNC );
 
   // Save ephemerides and SSB precision
   common->ephemerides = ephemerides;
@@ -488,7 +488,7 @@ XLALGetFstatInputTimestamps ( const FstatInput* input	///< [in] \c FstatInput st
   XLAL_CHECK_NULL ( input != NULL, XLAL_EINVAL );
   XLAL_CHECK_NULL ( input->common != NULL, XLAL_EINVAL, "'input' has not yet been set up" );
 
-  return input->common->timestamps;
+  return input->common->multiTimestamps;
 
 } // XLALGetFstatInputTimestamps()
 
@@ -503,7 +503,7 @@ XLALGetFstatInputNoiseWeights ( const FstatInput* input     ///< [in] \c FstatIn
   XLAL_CHECK_NULL ( input != NULL, XLAL_EINVAL );
   XLAL_CHECK_NULL ( input->common != NULL, XLAL_EINVAL, "'input' has not yet been set up" );
 
-  return input->common->noiseWeights;
+  return input->common->multiNoiseWeights;
 
 } // XLALGetFstatInputNoiseWeights()
 
@@ -518,7 +518,7 @@ XLALGetFstatInputDetectorStates ( const FstatInput* input	///< [in] \c FstatInpu
   XLAL_CHECK_NULL ( input != NULL, XLAL_EINVAL );
   XLAL_CHECK_NULL ( input->common != NULL, XLAL_EINVAL, "'input' has not yet been set up" );
 
-  return input->common->detectorStates;
+  return input->common->multiDetectorStates;
 
 } // XLALGetFstatInputDetectorStates()
 
@@ -667,9 +667,9 @@ XLALDestroyFstatInput ( FstatInput* input	///< [in] \c FstatInput structure to b
 
   if (input->common != NULL)
     {
-      XLALDestroyMultiTimestamps ( input->common->timestamps );
-      XLALDestroyMultiNoiseWeights ( input->common->noiseWeights );
-      XLALDestroyMultiDetectorStateSeries ( input->common->detectorStates );
+      XLALDestroyMultiTimestamps ( input->common->multiTimestamps );
+      XLALDestroyMultiNoiseWeights ( input->common->multiNoiseWeights );
+      XLALDestroyMultiDetectorStateSeries ( input->common->multiDetectorStates );
       XLALFree ( input->common );
     }
   if (input->demod != NULL)

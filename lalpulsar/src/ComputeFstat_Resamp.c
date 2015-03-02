@@ -208,7 +208,7 @@ SetupFstatInput_Resamp ( FstatInput_Resamp *resamp,
       numSamplesInMax = MYMAX ( numSamplesInMax, numSamplesInX );
       XLAL_CHECK ( (resamp->prev_multiTimeSeries_SRC->data[X] = XLALCreateCOMPLEX8TimeSeries ( "", &epoch0, fHet0, dt0, &emptyLALUnit, numSamplesInX )) != NULL, XLAL_EFUNC );
 
-      UINT4 numTimestamps = common->timestamps->data[X]->length;
+      UINT4 numTimestamps = common->multiTimestamps->data[X]->length;
       XLAL_CHECK ( (resamp->prev_multiSFTinds_SRC->data[X] = XLALCreateUINT4Vector ( 2 * numTimestamps )) != NULL, XLAL_EFUNC );
     } // for X < numDetectors
 
@@ -279,7 +279,7 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
   else
     {
       XLALDestroyMultiAMCoeffs ( resamp->prev_multiAMcoef );
-      XLAL_CHECK ( (multiAMcoef = XLALComputeMultiAMCoeffs ( common->detectorStates, common->noiseWeights, skypos )) != NULL, XLAL_EFUNC );
+      XLAL_CHECK ( (multiAMcoef = XLALComputeMultiAMCoeffs ( common->multiDetectorStates, common->multiNoiseWeights, skypos )) != NULL, XLAL_EFUNC );
       resamp->prev_multiAMcoef = multiAMcoef;
     }
 
@@ -292,7 +292,7 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
   else
     {
       XLALDestroyMultiSSBtimes ( resamp->prev_multiTimingSRC );
-      XLAL_CHECK ( (multiTimingSRC = XLALGetMultiSSBtimes ( common->detectorStates, skypos, thisPoint.refTime, common->SSBprec )) != NULL, XLAL_EFUNC );
+      XLAL_CHECK ( (multiTimingSRC = XLALGetMultiSSBtimes ( common->multiDetectorStates, skypos, thisPoint.refTime, common->SSBprec )) != NULL, XLAL_EFUNC );
       if ( thisPoint.asini > 0 ) {
         XLAL_CHECK ( XLALAddMultiBinaryTimes ( &multiTimingSRC, multiTimingSRC, &thisPoint ) == XLAL_SUCCESS, XLAL_EFUNC );
       }
@@ -303,7 +303,7 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
   // ----- if NOT same SRC timing OR same frequency-resolution (ie numSamplesOut)? --> recompute SRC-frame timeseries
   if (  ! ( same_numSamplesOut && same_skypos && same_refTime && same_binary ) )
     {
-      XLAL_CHECK ( XLALBarycentricResampleMultiCOMPLEX8TimeSeries ( resamp->prev_multiTimeSeries_SRC, resamp->prev_multiSFTinds_SRC, multiTimeSeries_DET, common->timestamps, multiTimingSRC, dt_SRC )
+      XLAL_CHECK ( XLALBarycentricResampleMultiCOMPLEX8TimeSeries ( resamp->prev_multiTimeSeries_SRC, resamp->prev_multiSFTinds_SRC, multiTimeSeries_DET, common->multiTimestamps, multiTimingSRC, dt_SRC )
                    == XLAL_SUCCESS, XLAL_EFUNC );
     }
 

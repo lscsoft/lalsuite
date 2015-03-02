@@ -89,7 +89,6 @@ main ( int argc, char *argv[] )
   fprintf ( stderr, "Tseg = %.1f d, numSegments = %" LAL_INT4_FORMAT ", Freq = %.1f Hz, f1dot = %.1e Hz/s, dFreq = %.1e Hz, numFreqBins = %" LAL_INT4_FORMAT ", FreqBand = %.2f Hz, Tsft = %.0f s\n",
             uvar->Tseg / 86400.0, uvar->numSegments, uvar->Freq, uvar->f1dot, dFreq, uvar->numFreqBins, FreqBand, uvar->Tsft );
   // ---------- end: handle user input ----------
-
   EphemerisData *ephem;
   REAL8 maxMem0 = XLALGetPeakHeapUsageMB();
   XLAL_CHECK ( (ephem = XLALInitBarycenter ( TEST_DATA_DIR "earth00-19-DE405.dat.gz", TEST_DATA_DIR "sun00-19-DE405.dat.gz" )) != NULL, XLAL_EFUNC );
@@ -99,18 +98,9 @@ main ( int argc, char *argv[] )
   XLALPrintInfo ("mem(ephemeris) = %.1f MB\n", memEphem );
 
   // ----- setup injection and data parameters
-  UINT4 numDetectors = 2;
-
-  // use signal-only injections to avoid usage of different noise bins to contaminate error-comparison
-  MultiNoiseFloor XLAL_INIT_DECL(injectNoiseFloor);
-  injectNoiseFloor.length = numDetectors;
-  injectNoiseFloor.sqrtSn[0] = 1;
-  injectNoiseFloor.sqrtSn[1] = 2;
-
   LALStringVector *detNames = NULL;
   XLAL_CHECK ( (detNames = XLALCreateStringVector ( "H1", "L1", NULL )) != NULL, XLAL_EFUNC );
-  MultiLALDetector XLAL_INIT_DECL(detInfo);
-  XLAL_CHECK ( XLALParseMultiLALDetector ( &detInfo, detNames ) == XLAL_SUCCESS, XLAL_EFUNC );
+  UINT4 numDetectors = detNames->length;
 
   LIGOTimeGPS startTime = {711595934, 0};
   LIGOTimeGPS startTime_l = startTime;
@@ -163,16 +153,21 @@ main ( int argc, char *argv[] )
   extraParams.SSBprec = SSBPREC_RELATIVISTICOPT;
   extraParams.Dterms = Dterms;	// constant value that works for all Demod methods
 
-  // ----- prepare input data with injection for all available methods
-  FstatQuantities whatToCompute = (FSTATQ_2F | FSTATQ_2F_PER_DET);
+  MultiNoiseFloor XLAL_INIT_DECL(injectSqrtSX);
+  injectSqrtSX.length = numDetectors;
+  for ( UINT4 X=0; X < numDetectors; X ++ ) {
+    injectSqrtSX.sqrtSn[X] = 1;
+  }
 
-  FstatInput **inputs;
-  XLAL_CHECK ( (inputs = XLALCalloc ( uvar->numSegments, sizeof(inputs[0]))) != NULL, XLAL_ENOMEM );
+  FstatInputVector *inputs;
+  XLAL_CHECK ( (inputs = XLALCreateFstatInputVector ( uvar->numSegments )) != NULL, XLAL_EFUNC );
   for ( INT4 l = 0; l < uvar->numSegments; l ++ )
     {
-      XLAL_CHECK ( (inputs[l] = XLALCreateFstatInput ( catalogs[l], minCoverFreq, maxCoverFreq, NULL, &injectNoiseFloor, NULL, rngMed, ephem, FstatMethod, &extraParams )) != NULL, XLAL_EFUNC );
+      XLAL_CHECK ( (inputs->data[l] = XLALCreateFstatInput ( catalogs[l], minCoverFreq, maxCoverFreq, NULL, &injectSqrtSX, NULL, rngMed, ephem, FstatMethod, &extraParams )) != NULL, XLAL_EFUNC );
     }
-  // REAL8 memMaxSetup = XLALGetPeakHeapUsageMB() - memBase;
+
+  // ----- compute Fstatistics over segments
+  FstatQuantities whatToCompute = (FSTATQ_2F | FSTATQ_2F_PER_DET);
 
   FstatResults **results;
   XLAL_CHECK ( (results = XLALCalloc ( uvar->numSegments, sizeof(results[0]))) != NULL, XLAL_ENOMEM );
@@ -181,12 +176,12 @@ main ( int argc, char *argv[] )
     {
       // call it once to initialize buffering, don't count this time
       REAL8 tic = XLALGetTimeOfDay();
-      XLAL_CHECK ( XLALComputeFstat ( &results[l], inputs[l], &Doppler, dFreq, uvar->numFreqBins, whatToCompute ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK ( XLALComputeFstat ( &results[l], inputs->data[l], &Doppler, dFreq, uvar->numFreqBins, whatToCompute ) == XLAL_SUCCESS, XLAL_EFUNC );
       REAL8 toc = XLALGetTimeOfDay();
       tauFSumUnbuffered += ( toc - tic );
       // now call it with full buffering to get converged runtime per template (assuming many templates per skypoint or per binary params)
       tic = XLALGetTimeOfDay();
-      XLAL_CHECK ( XLALComputeFstat ( &results[l], inputs[l], &Doppler, dFreq, uvar->numFreqBins, whatToCompute ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK ( XLALComputeFstat ( &results[l], inputs->data[l], &Doppler, dFreq, uvar->numFreqBins, whatToCompute ) == XLAL_SUCCESS, XLAL_EFUNC );
       toc = XLALGetTimeOfDay();
       tauFSumBuffered += (toc - tic);
     } // for l < numSegments
@@ -197,14 +192,14 @@ main ( int argc, char *argv[] )
   fprintf (stderr, "%-15s: tauF1Buffered = %.1e s (=>tauF0SFT = %1.e s), tauF1Unbuffered = %.1e s, memSFTs = %.1f MB, memMaxCompute = %.1f MB\n",
            XLALGetFstatMethodName ( FstatMethod ), tauF1Buffered, numDetectors * tauF1Buffered / numSFTsPerSeg, tauF1Unbuffered, memSFTs, memMaxCompute  );
 
+  // ----- free memory ----------
+  XLALDestroyFstatInputVector ( inputs );
   for ( INT4 l = 0; l < uvar->numSegments; l ++ )
     {
       XLALDestroySFTCatalog ( catalogs[l] );
-      XLALDestroyFstatInput ( inputs[l] );
       XLALDestroyFstatResults ( results[l] );
     }
   XLALFree ( catalogs );
-  XLALFree ( inputs );
   XLALFree ( results );
 
   XLALDestroyUserVars();

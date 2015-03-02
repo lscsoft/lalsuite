@@ -2038,16 +2038,16 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   for (k = 0; k < in->nStacks; k++) {
 
     /* if single-only flag is given, assume a PSD with sqrt(S) = 1.0 */
-    MultiNoiseFloor assumeSqrtSX, *p_assumeSqrtSX;
+    MultiNoiseFloor s_assumeSqrtSX, *assumeSqrtSX;
     if ( in->SignalOnly ) {
       const SFTCatalog *catalog_k = &(catalogSeq.data[k]);
-      assumeSqrtSX.length = XLALCountIFOsInCatalog ( catalog_k );
-      for (UINT4 X = 0; X < assumeSqrtSX.length; ++X) {
-        assumeSqrtSX.sqrtSn[X] = 1.0;
+      s_assumeSqrtSX.length = XLALCountIFOsInCatalog ( catalog_k );
+      for (UINT4 X = 0; X < s_assumeSqrtSX.length; ++X) {
+        s_assumeSqrtSX.sqrtSn[X] = 1.0;
       }
-      p_assumeSqrtSX = &assumeSqrtSX;
+      assumeSqrtSX = &s_assumeSqrtSX;
     } else {
-      p_assumeSqrtSX = NULL;
+      assumeSqrtSX = NULL;
     }
 
     PulsarParamsVector *injectSources = NULL;
@@ -2055,7 +2055,7 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
 
     /* ----- create Fstat input data struct ----- */
     (*p_Fstat_in_vec)->data[k] = XLALCreateFstatInput ( &catalogSeq.data[k], freqmin, freqmax,
-                                                        injectSources, injectSqrtSX, p_assumeSqrtSX, in->blocksRngMed,
+                                                        injectSources, injectSqrtSX, assumeSqrtSX, in->blocksRngMed,
                                                         in->edat, in->Fmethod, &extraParams );
     if ( (*p_Fstat_in_vec)->data[k] == NULL ) {
       XLALPrintError("%s: XLALCreateFstatInput() failed with errno=%d", __func__, xlalErrno);

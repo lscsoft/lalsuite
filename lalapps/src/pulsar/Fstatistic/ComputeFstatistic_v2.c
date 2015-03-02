@@ -1361,15 +1361,15 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
   } /* extrapolate spin-range */
 
   /* if single-only flag is given, assume a PSD with sqrt(S) = 1.0 */
-  MultiNoiseFloor assumeSqrtSX, *p_assumeSqrtSX;
+  MultiNoiseFloor s_assumeSqrtSX, *assumeSqrtSX;
   if ( uvar->SignalOnly ) {
-    assumeSqrtSX.length = XLALCountIFOsInCatalog(catalog);
-    for (UINT4 X = 0; X < assumeSqrtSX.length; ++X) {
-      assumeSqrtSX.sqrtSn[X] = 1.0;
+    s_assumeSqrtSX.length = XLALCountIFOsInCatalog(catalog);
+    for (UINT4 X = 0; X < s_assumeSqrtSX.length; ++X) {
+      s_assumeSqrtSX.sqrtSn[X] = 1.0;
     }
-    p_assumeSqrtSX = &assumeSqrtSX;
+    assumeSqrtSX = &s_assumeSqrtSX;
   } else {
-    p_assumeSqrtSX = NULL;
+    assumeSqrtSX = NULL;
   }
 
   PulsarParamsVector *injectSources = NULL;
@@ -1378,7 +1378,7 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
   extraParams.Dterms = uvar->Dterms;
   extraParams.SSBprec = uvar->SSBprecision;
   cfg->Fstat_in = XLALCreateFstatInput( catalog, fCoverMin, fCoverMax,
-                                        injectSources, injectSqrtSX, p_assumeSqrtSX, uvar->RngMedWindow,
+                                        injectSources, injectSqrtSX, assumeSqrtSX, uvar->RngMedWindow,
                                         cfg->ephemeris, cfg->FstatMethod, &extraParams );
   XLAL_CHECK ( cfg->Fstat_in != NULL, XLAL_EFUNC, "XLALCreateFstatInput() failed with errno=%d", xlalErrno);
   XLALDestroySFTCatalog(catalog);
