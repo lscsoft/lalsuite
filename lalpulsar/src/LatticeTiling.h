@@ -240,14 +240,14 @@ void XLALDestroyLatticeTilingLocator(
 ///
 #ifdef SWIG // SWIG interface directives
 SWIGLAL( INOUT_STRUCTS( gsl_matrix **, nearest_points ) );
-SWIGLAL( INOUT_STRUCTS( gsl_matrix_long **, nearest_ints ) );
+SWIGLAL( INOUT_STRUCTS( gsl_matrix_long **, nearest_int_points ) );
 SWIGLAL( INOUT_STRUCTS( UINT8Vector **, nearest_indexes ) );
 #endif
 int XLALNearestLatticeTilingPoints(
   const LatticeTilingLocator *loc,	///< [in] Lattice tiling locator
   const gsl_matrix *points,		///< [in] Columns are set of points for which to find nearest points
   gsl_matrix **nearest_points,		///< [out] Columns are the corresponding nearest points
-  gsl_matrix_long **nearest_ints,	///< [out] Columns are the generating integers of the nearest points
+  gsl_matrix_long **nearest_int_points,	///< [out] Columns are the generating integers of the nearest points
   UINT8Vector **nearest_indexes		///< [out] Unique tiling indexes of nearest points
   );
 

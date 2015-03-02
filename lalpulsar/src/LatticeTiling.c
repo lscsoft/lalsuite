@@ -1492,7 +1492,7 @@ int XLALNearestLatticeTilingPoints(
   const LatticeTilingLocator *loc,
   const gsl_matrix *points,
   gsl_matrix **nearest_points,
-  gsl_matrix_long **nearest_ints,
+  gsl_matrix_long **nearest_int_points,
   UINT8Vector **nearest_indexes
   )
 {
@@ -1520,15 +1520,15 @@ int XLALNearestLatticeTilingPoints(
   gsl_matrix *const nearest = &nearest_view.matrix;
 
   // (Re)Allocate nearest generating integer matrix, if supplied, and initialise to zero
-  if( nearest_ints != NULL ) {
-    if( *nearest_ints != NULL && ( ( *nearest_ints )->size1 != n || ( *nearest_ints )->size2 < npoints ) ) {
-      GFMATLI( *nearest_ints );
-      *nearest_ints = NULL;
+  if( nearest_int_points != NULL ) {
+    if( *nearest_int_points != NULL && ( ( *nearest_int_points )->size1 != n || ( *nearest_int_points )->size2 < npoints ) ) {
+      GFMATLI( *nearest_int_points );
+      *nearest_int_points = NULL;
     }
-    if( *nearest_ints == NULL ) {
-      GAMATLI( *nearest_ints, n, npoints );
+    if( *nearest_int_points == NULL ) {
+      GAMATLI( *nearest_int_points, n, npoints );
     }
-    gsl_matrix_long_set_zero( *nearest_ints );
+    gsl_matrix_long_set_zero( *nearest_int_points );
   }
 
   // (Re)Allocate nearest point unique tiling index vector, if supplied, and initialise to zero
@@ -1756,11 +1756,11 @@ int XLALNearestLatticeTilingPoints(
       gsl_matrix_set( nearest, i, j, nearest_int[ti] );
     }
 
-    // Save generating integers to 'nearest_ints[:,j]', if requested
-    if( nearest_ints != NULL ) {
+    // Save generating integers to 'nearest_int_points[:,j]', if requested
+    if( nearest_int_points != NULL ) {
       for( size_t ti = 0; ti < tn; ++ti ) {
         const size_t i = loc->tiling->tiled_idx[ti];
-        gsl_matrix_long_set( *nearest_ints, i, j, nearest_int[ti] );
+        gsl_matrix_long_set( *nearest_int_points, i, j, nearest_int[ti] );
       }
     }
 
