@@ -119,17 +119,17 @@ static void SM_DiagonalNormalise(
 /// aligned sky coordinates is illustrated in the following diagram:
 ///
 /** \verbatim
-    as[1] = B =___________________
-    1_|   _____   _____   |
-    |  /     \ /     \  |
-    0-| |       |       | |
-    _|  \_____/ \_____/  |
-    -1 |_.___.___.___.___._|
-    '   '   '   '   '
-    A = -2  -1   0   1   2
-    as[0] =  1   0  -1   0   1
-    as[2] =  0  -1   0   1   0
-    \endverbatim */
+| as[1] =    ___________________
+|     B = 1_|   _____   _____   |
+|           |  /     \ /     \  |
+|         0-| |       |       | |
+|          _|  \_____/ \_____/  |
+|        -1 |_.___.___.___.___._|
+|             '   '   '   '   '
+|        A = -2  -1   0   1   2
+|    as[0] =  1   0  -1   0   1
+|    as[2] =  0  -1   0   1   0
+\endverbatim */
 ///
 /// Points outside the unit disks are moved radially onto their boundaries.
 ///
