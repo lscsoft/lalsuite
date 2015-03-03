@@ -920,7 +920,7 @@ int XLALConvertSuperskyToPhysical(
 
 }
 
-static double ReducedSuperskyBCoordBound(
+static double SuperskyBCoordBound(
   const void *data,
   const size_t dim UNUSED,
   const gsl_vector *point
@@ -942,7 +942,7 @@ static double ReducedSuperskyBCoordBound(
 
 }
 
-int XLALSetLatticeTilingReducedSuperskyBounds(
+int XLALSetSuperskyLatticeTilingAllSkyBounds(
   LatticeTiling *tiling
   )
 {
@@ -963,13 +963,13 @@ int XLALSetLatticeTilingReducedSuperskyBounds(
   // Set the parameter-space bound on 2-dimensional reduced supersky B coordinate
   data_lower[0] = -1.0;
   data_upper[0] = +1.0;
-  XLAL_CHECK( XLALSetLatticeTilingBound( tiling, 1, ReducedSuperskyBCoordBound, data_len, data_lower, data_upper ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetLatticeTilingBound( tiling, 1, SuperskyBCoordBound, data_len, data_lower, data_upper ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
 
 }
 
-int XLALSetLatticeTilingReducedSuperskyPointBounds(
+int XLALSetSuperskyLatticeTilingSkyPointBounds(
   LatticeTiling *tiling,
   const gsl_matrix *rssky_transf,
   const double alpha,
@@ -1024,7 +1024,7 @@ static double PhysicalSpinBound(
 
 }
 
-int XLALSetLatticeTilingPhysicalSpinBound(
+int XLALSetSuperskyLatticeTilingPhysicalSpinBound(
   LatticeTiling *tiling,
   const gsl_matrix *rssky_transf,
   const size_t s,
@@ -1064,7 +1064,7 @@ int XLALSetLatticeTilingPhysicalSpinBound(
 
 }
 
-int XLALSetLatticeTilingReducedSuperskySpinBound(
+int XLALSetSuperskyLatticeTilingCoordinateSpinBound(
   LatticeTiling *tiling,
   const gsl_matrix *rssky_transf,
   const size_t s,

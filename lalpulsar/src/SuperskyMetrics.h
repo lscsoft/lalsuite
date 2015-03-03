@@ -109,14 +109,14 @@ int XLALConvertSuperskyToPhysical(
 ///
 /// Set all-sky parameter-space bounds on a lattice tiling using the reduced supersky metric.
 ///
-int XLALSetLatticeTilingReducedSuperskyBounds(
+int XLALSetSuperskyLatticeTilingAllSkyBounds(
   LatticeTiling *tiling				///< [in] Lattice tiling
   );
 
 ///
 /// Set a sky point parameter-space bound on a lattice tiling using the reduced supersky metric.
 ///
-int XLALSetLatticeTilingReducedSuperskyPointBounds(
+int XLALSetSuperskyLatticeTilingSkyPointBounds(
   LatticeTiling *tiling,			///< [in] Lattice tiling
   const gsl_matrix *rssky_transf,		///< [in] Reduced supersky coordinate transform data
   const double alpha,				///< [in] Sky point right ascension
@@ -124,9 +124,10 @@ int XLALSetLatticeTilingReducedSuperskyPointBounds(
   );
 
 ///
-/// Set lattice tiling parameter-space bounds on the physical frequency/spindowns \f$f^{(s)}\f$.
+/// Set parameter-space bounds on the physical frequency/spindowns \f$f^{(s)}\f$ for a lattice
+/// tiling using the reduced supersky metric.
 ///
-int XLALSetLatticeTilingPhysicalSpinBound(
+int XLALSetSuperskyLatticeTilingPhysicalSpinBound(
   LatticeTiling *tiling,			///< [in] Lattice tiling
   const gsl_matrix *rssky_transf,		///< [in] Reduced supersky coordinate transform data
   const size_t s,				///< [in] Spindown order; 0=frequency, 1=first spindown, etc.
@@ -135,11 +136,11 @@ int XLALSetLatticeTilingPhysicalSpinBound(
   );
 
 ///
-/// Set lattice tiling parameter-space bounds on the reduced supersky frequency/spindowns
-/// \f$\nu^{(s)}\f$, which are related to the supersky frequency/spindowns by \f$\nu^{(s)} =
-/// f^{(s)} + \vec\Delta^s \cdot \vec n\f$.
+/// Set parameter-space bounds on the reduced supersky frequency/spindown coordinates \f$\nu^{(s)}\f$
+/// for a lattice tiling using the reduced supersky metric. These coordinates are related to the
+/// physical frequency/spindowns by \f$\nu^{(s)} = f^{(s)} + \vec\Delta^s \cdot \vec n\f$.
 ///
-int XLALSetLatticeTilingReducedSuperskySpinBound(
+int XLALSetSuperskyLatticeTilingCoordinateSpinBound(
   LatticeTiling *tiling,			///< [in] Lattice tiling.
   const gsl_matrix *rssky_transf,		///< [in] Reduced supersky coordinate transform data
   const size_t s,				///< [in] Spindown order; 0=frequency, 1=first spindown, etc.
