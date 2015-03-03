@@ -30,29 +30,29 @@ extern "C" {
 #endif
 
 ///
-/// \defgroup SuperSkyMetrics_h Header SuperSkyMetrics.h
+/// \defgroup SuperskyMetrics_h Header SuperskyMetrics.h
 /// \ingroup lalpulsar_metric
 /// \author Karl Wette
-/// \brief Compute the super-sky metrics and coordinate transforms of \cite WettePrix2013a .
+/// \brief Compute the supersky metrics and coordinate transforms of \cite WettePrix2013a .
 ///
 /// @{
 ///
 
 ///
-/// Coordinate systems associated with the super-sky metrics.
+/// Coordinate systems associated with the supersky metrics.
 ///
 typedef enum {
   SSC_PHYSICAL,					///< Physical: right ascension, declination, frequency and spindowns
-  SSC_SUPER_SKY,				///< Super-sky: 3-dimensional sky, spindowns and frequency
-  SSC_REDUCED_SUPER_SKY,			///< Reduced super-sky: 2-dimensional sky, reduced spindowns and frequency
+  SSC_SUPER_SKY,				///< Supersky: 3-dimensional sky, spindowns and frequency
+  SSC_REDUCED_SUPER_SKY,			///< Reduced supersky: 2-dimensional sky, reduced spindowns and frequency
   SSC_MAX
-} SuperSkyCoordinates;
+} SuperskyCoordinates;
 
 ///
-/// Compute the expanded super-sky metric, which separates spin and orbital sky components.
+/// Compute the expanded supersky metric, which separates spin and orbital sky components.
 ///
-int XLALExpandedSuperSkyMetric(
-  gsl_matrix **essky_metric,			///< [out] Pointer to allocated expanded super-sky metric
+int XLALExpandedSuperskyMetric(
+  gsl_matrix **essky_metric,			///< [out] Pointer to allocated expanded supersky metric
   const size_t spindowns,			///< [in] Number of frequency spindown coordinates
   const LIGOTimeGPS *ref_time,			///< [in] Reference time for the metric
   const LALSegList *segments,			///< [in] List of segments to average metric over
@@ -64,71 +64,71 @@ int XLALExpandedSuperSkyMetric(
   );
 
 ///
-/// Compute the (untransformed) super-sky metric in equatorial coordinates from the expanded
-/// super-sky metric.
+/// Compute the (untransformed) supersky metric in equatorial coordinates from the expanded
+/// supersky metric.
 ///
-int XLALSuperSkyMetric(
-  gsl_matrix **ssky_metric,			///< [out] Pointer to allocated super-sky metric
-  const gsl_matrix *essky_metric		///< [in] Input expanded super-sky metric
+int XLALSuperskyMetric(
+  gsl_matrix **ssky_metric,			///< [out] Pointer to allocated supersky metric
+  const gsl_matrix *essky_metric		///< [in] Input expanded supersky metric
   );
 
 ///
-/// Compute the reduced super-sky metric and coordinate transform data from the expanded super-sky
+/// Compute the reduced supersky metric and coordinate transform data from the expanded supersky
 /// metric.
 ///
-int XLALReducedSuperSkyMetric(
-  gsl_matrix **rssky_metric,			///< [out] Pointer to allocated reduced super-sky metric
+int XLALReducedSuperskyMetric(
+  gsl_matrix **rssky_metric,			///< [out] Pointer to allocated reduced supersky metric
   gsl_matrix **rssky_transf,			///< [out] Pointer to allocated coordinate transform data
-  const gsl_matrix *essky_metric		///< [in] Input expanded super-sky metric
+  const gsl_matrix *essky_metric		///< [in] Input expanded supersky metric
   );
 
 ///
-/// Convert a series of points between super-sky coordinate systems.
+/// Convert a series of points between supersky coordinate systems.
 ///
 #ifdef SWIG // SWIG interface directives
 SWIGLAL( INOUT_STRUCTS( gsl_matrix **, out_points ) );
 #endif
-int XLALConvertSuperSkyCoordinates(
-  const SuperSkyCoordinates out,		///< [in] Coordinate system of the output points
+int XLALConvertSuperskyCoordinates(
+  const SuperskyCoordinates out,		///< [in] Coordinate system of the output points
   gsl_matrix **out_points,			///< [in/out] Matrix whose columns are the output points
-  const SuperSkyCoordinates in,			///< [in] Coordinate system of the input points
+  const SuperskyCoordinates in,			///< [in] Coordinate system of the input points
   const gsl_matrix *in_points,			///< [in] Matrix whose columns are the input points
-  const gsl_matrix *rssky_transf		///< [in] Reduced super-sky coordinate transform data
+  const gsl_matrix *rssky_transf		///< [in] Reduced supersky coordinate transform data
   );
 
 ///
-/// Convert a single point from physical to super-sky coordinates.
+/// Convert a single point from physical to supersky coordinates.
 ///
-int XLALConvertPhysicalToSuperSky(
-  const SuperSkyCoordinates out,		///< [in] Coordinate system of the output point
-  gsl_vector *out_point,			///< [in/out] Output point in super-sky coordinates
+int XLALConvertPhysicalToSupersky(
+  const SuperskyCoordinates out,		///< [in] Coordinate system of the output point
+  gsl_vector *out_point,			///< [in/out] Output point in supersky coordinates
   const PulsarDopplerParams *in_phys,		///< [in] Input point in physical coordinates
-  const gsl_matrix *rssky_transf		///< [in] Reduced super-sky coordinate transform data
+  const gsl_matrix *rssky_transf		///< [in] Reduced supersky coordinate transform data
   );
 
 ///
-/// Convert a single point from super-sky to physical coordinates.
+/// Convert a single point from supersky to physical coordinates.
 ///
-int XLALConvertSuperSkyToPhysical(
+int XLALConvertSuperskyToPhysical(
   PulsarDopplerParams *out_phys,		///< [in/out] Output point in physical coordinates
-  const SuperSkyCoordinates in,			///< [in] Coordinate system of the input point
-  const gsl_vector *in_point,			///< [in] Input point in super-sky coordinates
-  const gsl_matrix *rssky_transf		///< [in] Reduced super-sky coordinate transform data
+  const SuperskyCoordinates in,			///< [in] Coordinate system of the input point
+  const gsl_vector *in_point,			///< [in] Input point in supersky coordinates
+  const gsl_matrix *rssky_transf		///< [in] Reduced supersky coordinate transform data
   );
 
 ///
-/// Set all-sky parameter-space bounds on a lattice tiling using the reduced super-sky metric.
+/// Set all-sky parameter-space bounds on a lattice tiling using the reduced supersky metric.
 ///
-int XLALSetLatticeTilingReducedSuperSkyBounds(
+int XLALSetLatticeTilingReducedSuperskyBounds(
   LatticeTiling *tiling				///< [in] Lattice tiling.
   );
 
 ///
-/// Set a sky point parameter-space bound on a lattice tiling using the reduced super-sky metric.
+/// Set a sky point parameter-space bound on a lattice tiling using the reduced supersky metric.
 ///
-int XLALSetLatticeTilingReducedSuperSkyPointBounds(
+int XLALSetLatticeTilingReducedSuperskyPointBounds(
   LatticeTiling *tiling,			///< [in] Lattice tiling.
-  const gsl_matrix *rssky_transf,		///< [in] Reduced super-sky coordinate transform data
+  const gsl_matrix *rssky_transf,		///< [in] Reduced supersky coordinate transform data
   const double alpha,				///< [in] Sky point right ascension
   const double delta				///< [in] Sky point declination
   );
@@ -138,20 +138,20 @@ int XLALSetLatticeTilingReducedSuperSkyPointBounds(
 ///
 int XLALSetLatticeTilingPhysicalSpinBound(
   LatticeTiling *tiling,			///< [in] Lattice tiling.
-  const gsl_matrix *rssky_transf,		///< [in] Reduced super-sky coordinate transform data
+  const gsl_matrix *rssky_transf,		///< [in] Reduced supersky coordinate transform data
   const size_t s,				///< [in] Spindown order; 0=frequency, 1=first spindown, etc.
   const double bound1,				///< [in] First bound on frequency/spindown
   const double bound2				///< [in] Second bound on frequency/spindown
   );
 
 ///
-/// Set lattice tiling parameter-space bounds on the reduced super-sky frequency/spindowns
-/// \f$\nu^{(s)}\f$, which are related to the super-sky frequency/spindowns by \f$\nu^{(s)} =
+/// Set lattice tiling parameter-space bounds on the reduced supersky frequency/spindowns
+/// \f$\nu^{(s)}\f$, which are related to the supersky frequency/spindowns by \f$\nu^{(s)} =
 /// f^{(s)} + \vec\Delta^s \cdot \vec n\f$.
 ///
-int XLALSetLatticeTilingReducedSuperSkySpinBound(
+int XLALSetLatticeTilingReducedSuperskySpinBound(
   LatticeTiling *tiling,			///< [in] Lattice tiling.
-  const gsl_matrix *rssky_transf,		///< [in] Reduced super-sky coordinate transform data
+  const gsl_matrix *rssky_transf,		///< [in] Reduced supersky coordinate transform data
   const size_t s,				///< [in] Spindown order; 0=frequency, 1=first spindown, etc.
   const double bound1,				///< [in] First bound on frequency/spindown
   const double bound2				///< [in] Second bound on frequency/spindown

@@ -60,7 +60,7 @@ pkginclude_HEADERS = \
 	SSBtimes.h \
 	StackMetric.h \
 	Statistics.h \
-	SuperSkyMetrics.h \
+	SuperskyMetrics.h \
 	SynthesizeCWDraws.h \
 	TransientCW_utils.h \
 	TwoDMesh.h \
@@ -127,7 +127,7 @@ liblalpulsar_la_SOURCES = \
 	StackMetric.c \
 	Statistics.c \
 	Stereographic.c \
-	SuperSkyMetrics.c \
+	SuperskyMetrics.c \
 	SynthesizeCWDraws.c \
 	TBaryPtolemaic.c \
 	TComp.c \

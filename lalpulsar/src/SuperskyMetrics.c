@@ -29,7 +29,7 @@
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_eigen.h>
 
-#include <lal/SuperSkyMetrics.h>
+#include <lal/SuperskyMetrics.h>
 #include <lal/LALConstants.h>
 
 #include "GSLHelpers.h"
@@ -53,7 +53,7 @@
 ///
 /// Ensure a matrix is exactly symmetric, by ensuring it is equal to its transpose.
 ///
-static void SSM_MakeSymmetric(
+static void SM_MakeSymmetric(
   gsl_matrix *matrix				///< [in/out] Matrix to make symmetric
   )
 {
@@ -69,10 +69,10 @@ static void SSM_MakeSymmetric(
 }
 
 ///
-/// Build matrix to reconstruct the super-sky metric in equatorial coordinates from the expanded
-/// super-sky metric.
+/// Build matrix to reconstruct the supersky metric in equatorial coordinates from the expanded
+/// supersky metric.
 ///
-static void SSM_ReconstructionMatrix(
+static void SM_ReconstructionMatrix(
   gsl_matrix *reconstruct			///< [in/out] Reconstruction matrix
   )
 {
@@ -91,7 +91,7 @@ static void SSM_ReconstructionMatrix(
 ///
 /// Diagonal-normalise the given matrix, and return the normalisation transform.
 ///
-static void SSM_DiagonalNormalise(
+static void SM_DiagonalNormalise(
   gsl_matrix *matrix,				///< [in/out] Matrix to diagonal-normalise
   gsl_matrix *transf				///< [in/out] Normalisation transform
   )
@@ -111,10 +111,10 @@ static void SSM_DiagonalNormalise(
 }
 
 ///
-/// Convert from 2-dimensional reduced super-sky coordinates to 3-dimensional aligned sky
+/// Convert from 2-dimensional reduced supersky coordinates to 3-dimensional aligned sky
 /// coordinates.
 ///
-/// The 2-dimensional reduced super-sky coordinates \c rss = (\c A, \c B) encode the two
+/// The 2-dimensional reduced supersky coordinates \c rss = (\c A, \c B) encode the two
 /// hemispheres of the sky as two neighbouring unit disks. The conversion to 3-dimensional
 /// aligned sky coordinates is illustrated in the following diagram:
 ///
@@ -133,9 +133,9 @@ static void SSM_DiagonalNormalise(
 ///
 /// Points outside the unit disks are moved radially onto their boundaries.
 ///
-static void SSM_ReducedToAligned(
+static void SM_ReducedToAligned(
   double as[3],					///< [out] 3-dimensional aligned sky coordinates
-  const gsl_vector *rss				///< [in] 2-dimensional reduced super-sky coordinates
+  const gsl_vector *rss				///< [in] 2-dimensional reduced supersky coordinates
   )
 {
   const double A = gsl_vector_get( rss, 0 );
@@ -149,11 +149,11 @@ static void SSM_ReducedToAligned(
 }
 
 ///
-/// Convert from 3-dimensional aligned sky coordinates to 2-dimensional reduced super-sky
+/// Convert from 3-dimensional aligned sky coordinates to 2-dimensional reduced supersky
 /// coordinates.
 ///
-static void SSM_AlignedToReduced(
-  gsl_vector *rss,				///< [out] 2-dimensional reduced super-sky coordinates
+static void SM_AlignedToReduced(
+  gsl_vector *rss,				///< [out] 2-dimensional reduced supersky coordinates
   const double as[3]				///< [in] 3-dimensional aligned sky coordinates
   )
 {
@@ -164,7 +164,7 @@ static void SSM_AlignedToReduced(
   gsl_vector_set( rss, 1, B );
 }
 
-int XLALExpandedSuperSkyMetric(
+int XLALExpandedSuperskyMetric(
   gsl_matrix **essky_metric,
   const size_t spindowns,
   const LIGOTimeGPS *ref_time,
@@ -193,7 +193,7 @@ int XLALExpandedSuperSkyMetric(
   // Create parameters struct for XLALDopplerFstatMetric()
   DopplerMetricParams XLAL_INIT_DECL( par );
 
-  // Set expanded super-sky coordinate system: x,y spin motion in equatorial coordinates,
+  // Set expanded supersky coordinate system: x,y spin motion in equatorial coordinates,
   // then X,Y,Z orbital motion in ecliptic coordinates, then spindowns, then frequency
   {
     size_t i = 0;
@@ -253,13 +253,13 @@ int XLALExpandedSuperSkyMetric(
   XLALDestroyDopplerMetric( retn );
 
   // Ensured returned metric is symmetric
-  SSM_MakeSymmetric( *essky_metric );
+  SM_MakeSymmetric( *essky_metric );
 
   return XLAL_SUCCESS;
 
 }
 
-int XLALSuperSkyMetric(
+int XLALSuperskyMetric(
   gsl_matrix **ssky_metric,
   const gsl_matrix *essky_metric
   )
@@ -280,7 +280,7 @@ int XLALSuperSkyMetric(
     }
   }
 
-  // Size of the frequency+spindowns block of the expanded super-sky metric
+  // Size of the frequency+spindowns block of the expanded supersky metric
   const size_t fsize = essky_metric->size1 - 5;
 
   // Allocate memory
@@ -288,16 +288,16 @@ int XLALSuperSkyMetric(
   gsl_matrix *GAMAT( reconstruct, 5 + fsize, 3 + fsize );
   gsl_matrix *GAMAT( tmp, 5 + fsize, 3 + fsize );
 
-  // Build matrix to reconstruct the super-sky metric from the expanded super-sky metric
-  SSM_ReconstructionMatrix( reconstruct );
+  // Build matrix to reconstruct the supersky metric from the expanded supersky metric
+  SM_ReconstructionMatrix( reconstruct );
 
-  // Reconstruct the super-sky metric from the expanded super-sky metric:
+  // Reconstruct the supersky metric from the expanded supersky metric:
   //   *ssky_metric = reconstruct^T * essky_metric * reconstruct
   gsl_blas_dgemm( CblasNoTrans, CblasNoTrans, 1.0, essky_metric, reconstruct, 0.0, tmp );
   gsl_blas_dgemm( CblasTrans, CblasNoTrans, 1.0, reconstruct, tmp, 0.0, *ssky_metric );
 
   // Ensured returned metric is symmetric
-  SSM_MakeSymmetric( *ssky_metric );
+  SM_MakeSymmetric( *ssky_metric );
 
   // Cleanup
   GFMAT( reconstruct, tmp );
@@ -306,7 +306,7 @@ int XLALSuperSkyMetric(
 
 }
 
-int XLALReducedSuperSkyMetric(
+int XLALReducedSuperskyMetric(
   gsl_matrix **rssky_metric,
   gsl_matrix **rssky_transf,
   const gsl_matrix *essky_metric
@@ -329,7 +329,7 @@ int XLALReducedSuperSkyMetric(
     }
   }
 
-  // Size of the frequency+spindowns block of the expanded super-sky metric
+  // Size of the frequency+spindowns block of the expanded supersky metric
   const size_t fsize = essky_metric->size1 - 5;
 
   // Allocate memory
@@ -339,7 +339,7 @@ int XLALReducedSuperSkyMetric(
 
   //
   // Find least-squares linear fit to orbital X and Y by frequency and spindowns
-  // Produces the intermediate "residual" super-sky metric
+  // Produces the intermediate "residual" supersky metric
   //
 
   {
@@ -352,12 +352,12 @@ int XLALReducedSuperSkyMetric(
     gsl_matrix *GAMAT( subtractfit, 5 + fsize, 5 + fsize );
     gsl_matrix *GAMAT( tmp, 5 + fsize, 3 + fsize );
 
-    // Build matrix to reconstruct the super-sky metric from the expanded super-sky metric
-    SSM_ReconstructionMatrix( reconstruct );
+    // Build matrix to reconstruct the supersky metric from the expanded supersky metric
+    SM_ReconstructionMatrix( reconstruct );
 
-    // Diagonal-normalise the expanded super-sky metric
+    // Diagonal-normalise the expanded supersky metric
     gsl_matrix_memcpy( essky_dnorm, essky_metric );
-    SSM_DiagonalNormalise( essky_dnorm, essky_dnorm_transf );
+    SM_DiagonalNormalise( essky_dnorm, essky_dnorm_transf );
 
     gsl_matrix *fitA = NULL;
     gsl_matrix *fitAt_fitA = NULL;
@@ -375,7 +375,7 @@ int XLALReducedSuperSkyMetric(
       GAVEC( fitAt_fitA_svd_S, n );
       GAVEC( tmpv, n );
 
-      // Copy to fitA the fitting columns of the expanded super-sky metric. The order is always:
+      // Copy to fitA the fitting columns of the expanded supersky metric. The order is always:
       //   f1dot, ... f(n-1)dot, freq
       gsl_vector_view freq = gsl_matrix_column( essky_dnorm, 5 + fsize - 1 );
       gsl_vector_view fitA_freq = gsl_matrix_column( fitA, n - 1 );
@@ -427,7 +427,7 @@ int XLALReducedSuperSkyMetric(
     gsl_matrix_set_identity( subtractfit );
     for( size_t j = 2; j < 4; ++j ) {
 
-      // Construct a view of the column of the expanded super-sky metric to be fitted:
+      // Construct a view of the column of the expanded supersky metric to be fitted:
       // these are the X,Y orbital motion in ecliptic coordinates
       gsl_vector_view fity = gsl_matrix_column( essky_dnorm, j );
 
@@ -449,20 +449,20 @@ int XLALReducedSuperSkyMetric(
 
     }
 
-    // Build matrix which constructs the intermediate "residual" super-sky metric:
+    // Build matrix which constructs the intermediate "residual" supersky metric:
     //   residual = essky_dnorm_transf * subtractfit * inv(essky_dnorm_transf) * reconstruct
     gsl_matrix_memcpy( tmp, reconstruct );
     gsl_blas_dtrsm( CblasLeft, CblasUpper, CblasNoTrans, CblasNonUnit, 1.0, essky_dnorm_transf, tmp );
     gsl_blas_dgemm( CblasNoTrans, CblasNoTrans, 1.0, subtractfit, tmp, 0.0, residual );
     gsl_blas_dtrmm( CblasLeft, CblasUpper, CblasNoTrans, CblasNonUnit, 1.0, essky_dnorm_transf, residual );
 
-    // Construct the intermediate "residual" super-sky metric from the fitted expanded super-sky metric:
+    // Construct the intermediate "residual" supersky metric from the fitted expanded supersky metric:
     //    interm_ssky_metric = residual^T * essky_metric * residual
     gsl_blas_dgemm( CblasNoTrans, CblasNoTrans, 1.0, essky_metric, residual, 0.0, tmp );
     gsl_blas_dgemm( CblasTrans, CblasNoTrans, 1.0, residual, tmp, 0.0, intm_ssky_metric );
 
     // Extract the sky offset vectors from the residual transform matrix,
-    // and subtract them from the reduced super-sky coordinate transform data
+    // and subtract them from the reduced supersky coordinate transform data
     gsl_matrix_view residual_sky_offsets = gsl_matrix_submatrix( residual, 5, 0, fsize, 3 );
     gsl_matrix_view sky_offsets = gsl_matrix_submatrix( *rssky_transf, 3, 0, fsize, 3 );
     gsl_matrix_sub( &sky_offsets.matrix, &residual_sky_offsets.matrix );
@@ -472,13 +472,13 @@ int XLALReducedSuperSkyMetric(
     GFVEC( fitAt_fitA_svd_S, fitcoeff, tmpv );
 
     // Ensured intermediate metric is symmetric
-    SSM_MakeSymmetric( intm_ssky_metric );
+    SM_MakeSymmetric( intm_ssky_metric );
 
   }
 
   //
   // De-couple the sky-sky and frequency-frequency blocks
-  // Produces the intermediate "decoupled" super-sky metric
+  // Produces the intermediate "decoupled" supersky metric
   //
 
   {
@@ -499,7 +499,7 @@ int XLALReducedSuperSkyMetric(
 
     // Diagonal-normalise the frequency-frequency block
     gsl_matrix_memcpy( freq_freq_dnorm, &freq_freq.matrix );
-    SSM_DiagonalNormalise( freq_freq_dnorm, freq_freq_dnorm_transf );
+    SM_DiagonalNormalise( freq_freq_dnorm, freq_freq_dnorm_transf );
 
     // Invert the frequency-frequency block
     int freq_freq_dnorm_LU_sign = 0;
@@ -514,7 +514,7 @@ int XLALReducedSuperSkyMetric(
     gsl_blas_dgemm( CblasNoTrans, CblasNoTrans, 1.0, freq_freq_dnorm_inv, &freq_sky.matrix, 0.0, decouple_sky_offsets );
     gsl_blas_dtrmm( CblasLeft, CblasUpper, CblasNoTrans, CblasNonUnit, 1.0, freq_freq_dnorm_transf, decouple_sky_offsets );
 
-    // Add the additional sky offsets to the reduced super-sky coordinate transform data
+    // Add the additional sky offsets to the reduced supersky coordinate transform data
     gsl_matrix_view sky_offsets = gsl_matrix_submatrix( *rssky_transf, 3, 0, fsize, 3 );
     gsl_matrix_add( &sky_offsets.matrix, decouple_sky_offsets );
 
@@ -531,13 +531,13 @@ int XLALReducedSuperSkyMetric(
     GFMAT( freq_freq_dnorm, freq_freq_dnorm_LU, freq_freq_dnorm_inv, freq_freq_dnorm_transf, decouple_sky_offsets );
 
     // Ensured intermediate metric is symmetric
-    SSM_MakeSymmetric( intm_ssky_metric );
+    SM_MakeSymmetric( intm_ssky_metric );
 
   }
 
   //
   // Align the sky-sky metric with its eigenvalues by means of a rotation
-  // Produces the intermediate "aligned" super-sky metric
+  // Produces the intermediate "aligned" supersky metric
   //
 
   {
@@ -575,7 +575,7 @@ int XLALReducedSuperSkyMetric(
       }
     }
 
-    // Store the alignment transform in the reduced super-sky coordinate transform data
+    // Store the alignment transform in the reduced supersky coordinate transform data
     gsl_matrix_view align_sky = gsl_matrix_submatrix( *rssky_transf, 0, 0, 3, 3 );
     gsl_matrix_transpose_memcpy( &align_sky.matrix, sky_evec );
 
@@ -601,13 +601,13 @@ int XLALReducedSuperSkyMetric(
     GFVEC( sky_eval );
 
     // Ensured intermediate metric is symmetric
-    SSM_MakeSymmetric( intm_ssky_metric );
+    SM_MakeSymmetric( intm_ssky_metric );
 
   }
 
   //
   // Drop the 3rd row/column of the metric, corresponding to the smallest sky eigenvalue
-  // Produces the final reduced super-sky metric
+  // Produces the final reduced supersky metric
   //
 
   {
@@ -626,10 +626,10 @@ int XLALReducedSuperSkyMetric(
 
 }
 
-int XLALConvertSuperSkyCoordinates(
-  const SuperSkyCoordinates out,
+int XLALConvertSuperskyCoordinates(
+  const SuperskyCoordinates out,
   gsl_matrix **out_points,
-  const SuperSkyCoordinates in,
+  const SuperskyCoordinates in,
   const gsl_matrix *in_points,
   const gsl_matrix *rssky_transf
   )
@@ -681,12 +681,12 @@ int XLALConvertSuperSkyCoordinates(
     }
 
     // Initialise current coordinate system
-    SuperSkyCoordinates curr = in;
+    SuperskyCoordinates curr = in;
 
-    // Convert physical coordinates to super-sky coordinates
+    // Convert physical coordinates to supersky coordinates
     if( curr == SSC_PHYSICAL && out > curr ) {
 
-      // Convert right ascension and declination to super-sky position
+      // Convert right ascension and declination to supersky position
       const double alpha = tmp[0];
       const double delta = tmp[1];
       const double cos_delta = cos( delta );
@@ -704,50 +704,50 @@ int XLALConvertSuperSkyCoordinates(
 
     }
 
-    // Convert super-sky coordinates to reduced super-sky coordinates
+    // Convert supersky coordinates to reduced supersky coordinates
     if( curr == SSC_SUPER_SKY && out > curr ) {
 
       // Create views of the sky alignment transform and sky offset vectors
       gsl_matrix_const_view align_sky = gsl_matrix_const_submatrix( rssky_transf, 0, 0, 3, 3 );
       gsl_matrix_const_view sky_offsets = gsl_matrix_const_submatrix( rssky_transf, 3, 0, fsize, 3 );
 
-      // Apply the alignment transform to the super-sky position to produced the aligned sky position:
+      // Apply the alignment transform to the supersky position to produced the aligned sky position:
       //   asky = align_sky * ssky
       double asky[3];
       gsl_vector_view asky_v = gsl_vector_view_array( asky, 3 );
       gsl_blas_dgemv( CblasNoTrans, 1.0, &align_sky.matrix, &tmp_sky.vector, 0.0, &asky_v.vector );
 
       // Add the inner product of the sky offsets with the aligned sky position
-      // to the super-sky spins and frequency to get the reduced super-sky quantities:
+      // to the supersky spins and frequency to get the reduced supersky quantities:
       //   rssky_fspin[i] = ssky_fspin[i] + dot(sky_offsets[i], asky)
       gsl_blas_dgemv( CblasNoTrans, 1.0, &sky_offsets.matrix, &asky_v.vector, 1.0, &tmp_fspin.vector );
 
-      // Convert from 3-dimensional aligned sky coordinates to 2-dimensional reduced super-sky coordinates
-      SSM_AlignedToReduced( &tmp_sky.vector, asky );
+      // Convert from 3-dimensional aligned sky coordinates to 2-dimensional reduced supersky coordinates
+      SM_AlignedToReduced( &tmp_sky.vector, asky );
 
       // Update current coordinate system
       curr = SSC_REDUCED_SUPER_SKY;
 
     }
 
-    // Convert reduced super-sky coordinates to super-sky coordinates
+    // Convert reduced supersky coordinates to supersky coordinates
     if( curr == SSC_REDUCED_SUPER_SKY && out < curr ) {
 
       // Create views of the sky alignment transform and sky offset vectors
       gsl_matrix_const_view align_sky = gsl_matrix_const_submatrix( rssky_transf, 0, 0, 3, 3 );
       gsl_matrix_const_view sky_offsets = gsl_matrix_const_submatrix( rssky_transf, 3, 0, fsize, 3 );
 
-      // Convert from 2-dimensional reduced super-sky coordinates to 3-dimensional aligned sky coordinates
+      // Convert from 2-dimensional reduced supersky coordinates to 3-dimensional aligned sky coordinates
       double asky[3];
-      SSM_ReducedToAligned( asky, &tmp_sky.vector );
+      SM_ReducedToAligned( asky, &tmp_sky.vector );
       gsl_vector_view asky_v = gsl_vector_view_array( asky, 3 );
 
       // Subtract the inner product of the sky offsets with the aligned sky position
-      // from the reduced super-sky spins and frequency to get the super-sky quantities:
+      // from the reduced supersky spins and frequency to get the supersky quantities:
       //   ssky_fspin[i] = rssky_fspin[i] - dot(sky_offsets[i], asky)
       gsl_blas_dgemv( CblasNoTrans, -1.0, &sky_offsets.matrix, &asky_v.vector, 1.0, &tmp_fspin.vector );
 
-      // Apply the inverse alignment transform to the aligned sky position to produced the super-sky position:
+      // Apply the inverse alignment transform to the aligned sky position to produced the supersky position:
       //   ssky = align_sky^T * asky
       gsl_blas_dgemv( CblasTrans, 1.0, &align_sky.matrix, &asky_v.vector, 0.0, &tmp_sky.vector );
 
@@ -756,10 +756,10 @@ int XLALConvertSuperSkyCoordinates(
 
     }
 
-    // Convert super-sky coordinates to physical coordinates
+    // Convert supersky coordinates to physical coordinates
     if( curr == SSC_SUPER_SKY && out < curr ) {
 
-      // Convert super-sky position to right ascension and declination
+      // Convert supersky position to right ascension and declination
       const double nx = tmp[0];
       const double ny = tmp[1];
       const double nz = tmp[2];
@@ -794,8 +794,8 @@ int XLALConvertSuperSkyCoordinates(
 
 }
 
-int XLALConvertPhysicalToSuperSky(
-  const SuperSkyCoordinates out,
+int XLALConvertPhysicalToSupersky(
+  const SuperskyCoordinates out,
   gsl_vector *out_point,
   const PulsarDopplerParams *in_phys,
   const gsl_matrix *rssky_transf
@@ -819,20 +819,20 @@ int XLALConvertPhysicalToSuperSky(
   in_point[1] = in_phys->Delta;
   memcpy( &in_point[2], in_phys->fkdot, fsize * sizeof( in_point[0] ) );
 
-  // Convert input physical point to output super-sky coordinate point
+  // Convert input physical point to output supersky coordinate point
   gsl_matrix_view out_point_view = gsl_matrix_view_vector( out_point, out_point->size, 1 );
   gsl_matrix_const_view in_point_view = gsl_matrix_const_view_array( in_point, 2 + fsize, 1 );
   gsl_matrix *out_point_view_ptr = &out_point_view.matrix;
-  XLAL_CHECK( XLALConvertSuperSkyCoordinates( out, &out_point_view_ptr, SSC_PHYSICAL, &in_point_view.matrix, rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALConvertSuperskyCoordinates( out, &out_point_view_ptr, SSC_PHYSICAL, &in_point_view.matrix, rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK( out_point_view_ptr == &out_point_view.matrix, XLAL_EFAILED );
 
   return XLAL_SUCCESS;
 
 }
 
-int XLALConvertSuperSkyToPhysical(
+int XLALConvertSuperskyToPhysical(
   PulsarDopplerParams *out_phys,
-  const SuperSkyCoordinates in,
+  const SuperskyCoordinates in,
   const gsl_vector *in_point,
   const gsl_matrix *rssky_transf
   )
@@ -849,12 +849,12 @@ int XLALConvertSuperSkyToPhysical(
   const size_t fsize = in_point->size - ssize;
   XLAL_CHECK( fsize <= PULSAR_MAX_SPINS, XLAL_EFAILED );
 
-  // Convert input super-sky coordinate point to output physical point
+  // Convert input supersky coordinate point to output physical point
   double out_point[2 + fsize];
   gsl_matrix_view out_point_view = gsl_matrix_view_array( out_point, 2 + fsize, 1 );
   gsl_matrix_const_view in_point_view = gsl_matrix_const_view_vector( in_point, in_point->size, 1 );
   gsl_matrix *out_point_view_ptr = &out_point_view.matrix;
-  XLAL_CHECK( XLALConvertSuperSkyCoordinates( SSC_PHYSICAL, &out_point_view_ptr, in, &in_point_view.matrix, rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALConvertSuperskyCoordinates( SSC_PHYSICAL, &out_point_view_ptr, in, &in_point_view.matrix, rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK( out_point_view_ptr == &out_point_view.matrix, XLAL_EFAILED );
 
   // Copy output physical point from array
@@ -866,7 +866,7 @@ int XLALConvertSuperSkyToPhysical(
 
 }
 
-static double ReducedSuperSkyBCoordBound(
+static double ReducedSuperskyBCoordBound(
   const void *data,
   const size_t dim UNUSED,
   const gsl_vector *point
@@ -876,11 +876,11 @@ static double ReducedSuperSkyBCoordBound(
   // Get bounds data
   const double sgn = ( ( const double * ) data )[0];
 
-  // Get 2-dimensional reduced super-sky A coordinate
+  // Get 2-dimensional reduced supersky A coordinate
   const double A = gsl_vector_get( point, 0 );
   const double dA = fabs( A ) - 1.0;
 
-  // Set bound on 2-dimensional reduced super-sky B coordinate
+  // Set bound on 2-dimensional reduced supersky B coordinate
   const double maxB = RE_SQRT( 1.0 - SQR( dA ) );
   double bound = sgn * maxB;
 
@@ -888,7 +888,7 @@ static double ReducedSuperSkyBCoordBound(
 
 }
 
-int XLALSetLatticeTilingReducedSuperSkyBounds(
+int XLALSetLatticeTilingReducedSuperskyBounds(
   LatticeTiling *tiling
   )
 {
@@ -896,7 +896,7 @@ int XLALSetLatticeTilingReducedSuperSkyBounds(
   // Check input
   XLAL_CHECK( tiling != NULL, XLAL_EFAULT );
 
-  // Set the parameter-space bound on 2-dimensional reduced super-sky A coordinate
+  // Set the parameter-space bound on 2-dimensional reduced supersky A coordinate
   XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, 0, -2.0, 2.0 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Allocate memory
@@ -906,16 +906,16 @@ int XLALSetLatticeTilingReducedSuperSkyBounds(
   double *data_upper = XLALMalloc( data_len );
   XLAL_CHECK( data_upper != NULL, XLAL_ENOMEM );
 
-  // Set the parameter-space bound on 2-dimensional reduced super-sky B coordinate
+  // Set the parameter-space bound on 2-dimensional reduced supersky B coordinate
   data_lower[0] = -1.0;
   data_upper[0] = +1.0;
-  XLAL_CHECK( XLALSetLatticeTilingBound( tiling, 1, ReducedSuperSkyBCoordBound, data_len, data_lower, data_upper ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetLatticeTilingBound( tiling, 1, ReducedSuperskyBCoordBound, data_len, data_lower, data_upper ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
 
 }
 
-int XLALSetLatticeTilingReducedSuperSkyPointBounds(
+int XLALSetLatticeTilingReducedSuperskyPointBounds(
   LatticeTiling *tiling,
   const gsl_matrix *rssky_transf,
   const double alpha,
@@ -930,13 +930,13 @@ int XLALSetLatticeTilingReducedSuperSkyPointBounds(
   // Allocate memory
   gsl_vector *GAVEC( rssky_point, rssky_transf->size1 - 1 );
 
-  // Convert right ascension and declination to reduced super-sky coordinates
+  // Convert right ascension and declination to reduced supersky coordinates
   PulsarDopplerParams XLAL_INIT_DECL( doppler );
   doppler.Alpha = alpha;
   doppler.Delta = delta;
-  XLAL_CHECK( XLALConvertPhysicalToSuperSky( SSC_REDUCED_SUPER_SKY, rssky_point, &doppler, rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALConvertPhysicalToSupersky( SSC_REDUCED_SUPER_SKY, rssky_point, &doppler, rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  // Set the parameter-space bounds on 2-dimensional reduced super-sky A and B coordinates
+  // Set the parameter-space bounds on 2-dimensional reduced supersky A and B coordinates
   for( size_t i = 0; i < 2; ++i ) {
     const double rssky_point_i = gsl_vector_get( rssky_point, i );
     XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, i, rssky_point_i, rssky_point_i ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -961,9 +961,9 @@ static double PhysicalSpinBound(
   double bound = ( ( const double * ) data )[3];
 
   // Add the inner product of the sky offsets with the aligned sky
-  // position to the physical bound to get the reduced super-sky bound
+  // position to the physical bound to get the reduced supersky bound
   double as[3];
-  SSM_ReducedToAligned( as, point );
+  SM_ReducedToAligned( as, point );
   bound += DOT3( sky_offsets, as );
 
   return bound;
@@ -1010,7 +1010,7 @@ int XLALSetLatticeTilingPhysicalSpinBound(
 
 }
 
-int XLALSetLatticeTilingReducedSuperSkySpinBound(
+int XLALSetLatticeTilingReducedSuperskySpinBound(
   LatticeTiling *tiling,
   const gsl_matrix *rssky_transf,
   const size_t s,
@@ -1029,7 +1029,7 @@ int XLALSetLatticeTilingReducedSuperSkySpinBound(
   XLAL_CHECK( s <= smax, XLAL_ESIZE );
   const size_t dim = ( s == 0 ) ? ( 2 + smax ) : ( 1 + s );
 
-  // Set the parameter-space bound on reduced super-sky frequency/spindown coordinate
+  // Set the parameter-space bound on reduced supersky frequency/spindown coordinate
   XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, dim, bound1, bound2 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
