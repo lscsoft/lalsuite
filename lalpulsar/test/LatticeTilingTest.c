@@ -406,7 +406,6 @@ static int SuperskyTest(
 
   // Compute reduced super-sky metric
   const double Tspan = T * 86400;
-  gsl_matrix *essky_metric = NULL;
   LIGOTimeGPS ref_time;
   XLALGPSSetREAL8( &ref_time, 900100100 );
   LALSegList segments;
@@ -426,12 +425,10 @@ static int SuperskyTest(
   EphemerisData *edat =  XLALInitBarycenter( TEST_DATA_DIR "earth00-19-DE405.dat.gz",
                                              TEST_DATA_DIR "sun00-19-DE405.dat.gz" );
   XLAL_CHECK( edat != NULL, XLAL_EFUNC );
-  XLAL_CHECK( XLALExpandedSuperskyMetric( &essky_metric, 0, &ref_time, &segments, freq, &detectors, NULL, DETMOTION_SPIN | DETMOTION_PTOLEORBIT, edat ) == XLAL_SUCCESS, XLAL_EFUNC );
+  gsl_matrix *rssky_metric = NULL, *rssky_transf = NULL;
+  XLAL_CHECK( XLALComputeSuperskyMetrics( &rssky_metric, &rssky_transf, NULL, NULL, NULL, NULL, 0, &ref_time, &segments, freq, &detectors, NULL, DETMOTION_SPIN | DETMOTION_PTOLEORBIT, edat ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLALSegListClear( &segments );
   XLALDestroyEphemerisData( edat );
-  gsl_matrix *rssky_metric = NULL, *rssky_transf = NULL;
-  XLAL_CHECK( XLALReducedSuperskyMetric( &rssky_metric, &rssky_transf, essky_metric ) == XLAL_SUCCESS, XLAL_EFUNC );
-  GFMAT( essky_metric );
 
   // Add bounds
   printf( "Bounds: super-sky, freq=%0.3g, freqband=%0.3g\n", freq, freqband );

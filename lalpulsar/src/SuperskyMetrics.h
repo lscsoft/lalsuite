@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2014 Karl Wette
+// Copyright (C) 2014, 2015 Karl Wette
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -43,43 +43,33 @@ extern "C" {
 ///
 typedef enum {
   SSC_PHYSICAL,					///< Physical: right ascension, declination, frequency and spindowns
-  SSC_SUPER_SKY,				///< Supersky: 3-dimensional sky, spindowns and frequency
-  SSC_REDUCED_SUPER_SKY,			///< Reduced supersky: 2-dimensional sky, reduced spindowns and frequency
+  SSC_SUPER_SKY,				///< (Full) supersky: 3-dimensional sky (equatorial coordinates), spindowns and frequency
+  SSC_REDUCED_SUPER_SKY,			///< Reduced supersky: 2-dimensional sky (reduced supersky coordinates), reduced spindowns and frequency
   SSC_MAX
 } SuperskyCoordinates;
 
 ///
-/// Compute the expanded supersky metric, which separates spin and orbital sky components.
+/// Compute the reduced supersky metric (2-dimensional sky), and/or the (full) supersky metric
+/// (3-dimensional sky), for individual segments and/or appropriately averaged over a segment list.
 ///
-int XLALExpandedSuperskyMetric(
-  gsl_matrix **essky_metric,			///< [out] Pointer to allocated expanded supersky metric
-  const size_t spindowns,			///< [in] Number of frequency spindown coordinates
-  const LIGOTimeGPS *ref_time,			///< [in] Reference time for the metric
-  const LALSegList *segments,			///< [in] List of segments to average metric over
+#ifdef SWIG // SWIG interface directives
+SWIGLAL( INOUT_STRUCTS( gsl_matrix **, out_rssky_metric, out_rssky_transf, out_ssky_metric, out_rssky_metric_seg, out_rssky_transf_seg, out_ssky_metric_seg ) );
+#endif
+int XLALComputeSuperskyMetrics(
+  gsl_matrix **out_rssky_metric,		///< [out] Output reduced supersky metric, appropriately averaged over segments
+  gsl_matrix **out_rssky_transf,		///< [out] Output reduced supersky metric transform data
+  gsl_matrix **out_ssky_metric,			///< [out] Output (full) supersky metric, appropriately averaged over segments
+  gsl_matrix **out_rssky_metric_seg,		///< [out] Output reduced supersky metrics for each segment, concatenated by column: [rssky_metric_1, rssky_metric_2, ...]
+  gsl_matrix **out_rssky_transf_seg,		///< [out] Output reduced supersky metric transform data for each segment, concatenated by column: [rssky_transf_1, rssky_transf_2, ...]
+  gsl_matrix **out_ssky_metric_seg,		///< [out] Output (full) supersky metrics for each segment, concatenated by column: [ssky_metric_1, ssky_metric_2, ...]
+  const size_t spindowns,			///< [in] Number of frequency+spindown coordinates
+  const LIGOTimeGPS *ref_time,			///< [in] Reference time for the metrics
+  const LALSegList *segments,			///< [in] List of segments to average metrics over
   const double fiducial_freq,			///< [in] Fiducial frequency for sky-position coordinates
-  const MultiLALDetector *detectors,		///< [in] List of detector to average metric over
+  const MultiLALDetector *detectors,		///< [in] List of detectors to average metrics over
   const MultiNoiseFloor *detector_weights,	///< [in] Weights used to combine single-detector metrics (default: unit weights)
   const DetectorMotionType detector_motion,	///< [in] Which detector motion to use
   const EphemerisData *ephemerides		///< [in] Earth/Sun ephemerides
-  );
-
-///
-/// Compute the (untransformed) supersky metric in equatorial coordinates from the expanded
-/// supersky metric.
-///
-int XLALSuperskyMetric(
-  gsl_matrix **ssky_metric,			///< [out] Pointer to allocated supersky metric
-  const gsl_matrix *essky_metric		///< [in] Input expanded supersky metric
-  );
-
-///
-/// Compute the reduced supersky metric and coordinate transform data from the expanded supersky
-/// metric.
-///
-int XLALReducedSuperskyMetric(
-  gsl_matrix **rssky_metric,			///< [out] Pointer to allocated reduced supersky metric
-  gsl_matrix **rssky_transf,			///< [out] Pointer to allocated coordinate transform data
-  const gsl_matrix *essky_metric		///< [in] Input expanded supersky metric
   );
 
 ///
@@ -120,14 +110,14 @@ int XLALConvertSuperskyToPhysical(
 /// Set all-sky parameter-space bounds on a lattice tiling using the reduced supersky metric.
 ///
 int XLALSetLatticeTilingReducedSuperskyBounds(
-  LatticeTiling *tiling				///< [in] Lattice tiling.
+  LatticeTiling *tiling				///< [in] Lattice tiling
   );
 
 ///
 /// Set a sky point parameter-space bound on a lattice tiling using the reduced supersky metric.
 ///
 int XLALSetLatticeTilingReducedSuperskyPointBounds(
-  LatticeTiling *tiling,			///< [in] Lattice tiling.
+  LatticeTiling *tiling,			///< [in] Lattice tiling
   const gsl_matrix *rssky_transf,		///< [in] Reduced supersky coordinate transform data
   const double alpha,				///< [in] Sky point right ascension
   const double delta				///< [in] Sky point declination
@@ -137,7 +127,7 @@ int XLALSetLatticeTilingReducedSuperskyPointBounds(
 /// Set lattice tiling parameter-space bounds on the physical frequency/spindowns \f$f^{(s)}\f$.
 ///
 int XLALSetLatticeTilingPhysicalSpinBound(
-  LatticeTiling *tiling,			///< [in] Lattice tiling.
+  LatticeTiling *tiling,			///< [in] Lattice tiling
   const gsl_matrix *rssky_transf,		///< [in] Reduced supersky coordinate transform data
   const size_t s,				///< [in] Spindown order; 0=frequency, 1=first spindown, etc.
   const double bound1,				///< [in] First bound on frequency/spindown

@@ -91,7 +91,6 @@ int main( void )
 
   // Compute super-sky metrics
   const double Tspan = 3 * 86400;
-  gsl_matrix *essky_metric = NULL;
   LIGOTimeGPS ref_time;
   XLALGPSSetREAL8( &ref_time, 900100100 );
   LALSegList segments;
@@ -111,13 +110,10 @@ int main( void )
   EphemerisData *edat =  XLALInitBarycenter( TEST_DATA_DIR "earth00-19-DE405.dat.gz",
                                              TEST_DATA_DIR "sun00-19-DE405.dat.gz" );
   XLAL_CHECK( edat != NULL, XLAL_EFUNC );
-  XLAL_CHECK( XLALExpandedSuperskyMetric( &essky_metric, 1, &ref_time, &segments, 100.0, &detectors, NULL, DETMOTION_SPIN | DETMOTION_PTOLEORBIT, edat ) == XLAL_SUCCESS, XLAL_EFUNC );
+  gsl_matrix *rssky_metric = NULL, *rssky_transf = NULL, *ssky_metric = NULL;
+  XLAL_CHECK( XLALComputeSuperskyMetrics( &rssky_metric, &rssky_transf, &ssky_metric, NULL, NULL, NULL, 1, &ref_time, &segments, 100.0, &detectors, NULL, DETMOTION_SPIN | DETMOTION_PTOLEORBIT, edat ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLALSegListClear( &segments );
   XLALDestroyEphemerisData( edat );
-  gsl_matrix *ssky_metric = NULL, *rssky_metric = NULL, *rssky_transf = NULL;
-  XLAL_CHECK( XLALSuperskyMetric( &ssky_metric, essky_metric ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLALReducedSuperskyMetric( &rssky_metric, &rssky_transf, essky_metric ) == XLAL_SUCCESS, XLAL_EFUNC );
-  GFMAT( essky_metric );
 
   // Check round-trip conversions of each test point
   {
@@ -178,7 +174,7 @@ int main( void )
   }
 
   // Cleanup
-  GFMAT( ssky_metric, rssky_metric, rssky_transf );
+  GFMAT( rssky_metric, rssky_transf, ssky_metric );
   LALCheckMemoryLeaks();
 
   return EXIT_SUCCESS;
