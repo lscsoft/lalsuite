@@ -164,6 +164,9 @@ typedef struct tagFstatOptionalArgs {
   MultiNoiseFloor *assumeSqrtSX;  	///< Single-sided PSD values to be used for computing SFT noise weights instead of from a running median of the SFTs themselves.
   FstatWorkspace *sharedWorkspace;	///< use this shared workspace instead of creating our own one
 } FstatOptionalArgs;
+#ifdef SWIG // SWIG interface directives
+SWIGLAL(COPY_CONSTRUCTOR(tagFstatOptionalArgs));
+#endif // SWIG
 
 /// global initializer for setting FstatOptionalArgs to default values
 extern const FstatOptionalArgs FstatOptionalArgsDefaults;
