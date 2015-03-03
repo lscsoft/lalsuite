@@ -358,5 +358,5 @@ for struct_name in sorted(tdstructs):
     struct_tagname = tdstruct_names[struct_name]
     struct_opaque = '%i' % (not struct_tagname in structs)
     struct_dtor_function = dtor_functions.get(struct_name, '')
-    struct_args = (struct_name, struct_tagname, struct_opaque, struct_dtor_function)
+    struct_args = (struct_tagname, struct_opaque, struct_dtor_function)
     f.write('%%swiglal_struct_create_cdtors(%s)\n' % ','.join(struct_args))

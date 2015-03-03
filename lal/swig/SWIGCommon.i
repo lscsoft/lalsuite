@@ -363,8 +363,8 @@ if (swiglal_release_parent(PTR)) {
 %enddef
 
 ///
-/// Create constructors and destructors for a <tt>struct NAME</tt>.
-%define %swiglal_struct_create_cdtors(NAME, TAGNAME, OPAQUE, DTORFUNC)
+/// Create constructors and destructors for a <tt>struct TAGNAME</tt>.
+%define %swiglal_struct_create_cdtors(TAGNAME, OPAQUE, DTORFUNC)
 /// <ul><li>
 
 /// If this is an opaque struct, create an empty struct to represent the opaque struct, so that SWIG
@@ -377,8 +377,7 @@ struct TAGNAME {
 #else
 %extend TAGNAME {
   TAGNAME() {
-    NAME* self = %reinterpret_cast(XLALCalloc(1, sizeof(NAME)), NAME*);
-    return self;
+    return %swiglal_new_instance(struct TAGNAME);
   }
 }
 #endif
