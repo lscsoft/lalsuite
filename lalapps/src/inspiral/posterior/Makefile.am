@@ -8,11 +8,9 @@ SUBDIRS = \
 	SPINspiral \
 	mpi
 
-if LALINSPIRAL
-if LALFRAME
-
 if LALPULSAR
 if LALINFERENCE
+
 pulsar_progs = lalinference_nest #lalinference_mcmcmpi
 lalinference_nest_SOURCES = LALInferenceNest.c
 if HAVE_BAMBI
@@ -25,9 +23,6 @@ endif # bambi
 
 endif # lalinference
 endif # lalpulsar
-
-endif # lalframe
-endif # lalinspiral
 
 #bayesline_SOURCES = \
 #	BayesLine.c

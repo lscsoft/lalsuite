@@ -25,7 +25,6 @@ OLAPREDFCN_SRCS  = olapredfcn.c olapredfcn.h \
 ## frame and stochastic library dependant programs
 if FRAME
 if LALFRAME
-if LALSTOCHASTIC
 FRAMEPROGRAMS = lalapps_stochastic lalapps_stochastic_fake lalapps_stochastic_virgo lalapps_stochastic_preprocess
 lalapps_stochastic_SOURCES      = $(STOCH_SRCS)
 lalapps_stochastic_fake_SOURCES = $(STOCH_FAKE_SRCS)
@@ -33,30 +32,23 @@ lalapps_stochastic_virgo_SOURCES = $(STOCH_VIRGO_SRCS)
 lalapps_stochastic_preprocess_SOURCES = $(STOCH_PREPROCESS_SRCS)
 endif
 endif
-endif
 
 ## metaio and stochastic library dependant programs
 if LALMETAIO
-if LALSTOCHASTIC
 METAIOPROGRAMS = lalapps_stopp lalapps_stopp_bayes
 lalapps_stopp_SOURCES           = $(STOPP_SRCS)
 lalapps_stopp_bayes_SOURCES     = $(STOPP_BAYES_SRCS)
 endif
-endif
 
 ## stochastic library programs
-if LALSTOCHASTIC
 STOCHASTICPROGRAMS = lalapps_olapredfcn
 lalapps_olapredfcn_SOURCES      = $(OLAPREDFCN_SRCS)
-endif
 
 bin_PROGRAMS      = ${STOCHASTICPROGRAMS} ${FRAMEPROGRAMS} ${METAIOPROGRAMS}
 
-if LALSTOCHASTIC
 if HAVE_PYTHON
 pybin_scripts = lalapps_stochastic_pipe lalapps_stochastic_bayes
 pkgpython_PYTHON = stochastic.py
-endif
 endif
 
 MOSTLYCLEANFILES  += *STOCHASTIC*.xml *CCSPECTRA*.gwf
