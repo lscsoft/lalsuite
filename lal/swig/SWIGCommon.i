@@ -1808,22 +1808,23 @@ if (strides[I-1] == 0) {
 #define %swiglal_public_clear_FUNCTION_POINTER(...)
 
 ///
-/// The <b>SWIGLAL(IMMUTABLE_MEMBERS(TAGNAME, ...))</b> macro can be used to make the listed members
-/// of the struct TAGNAME immutable.
+/// The <b>SWIGLAL(VARIABLE_ARGUMENT_LIST(...))</b> macro supports functions which require a
+/// variable-length list of arguments of type \c TYPE, i.e. a list of strings. It generates SWIG
+/// \e compact default arguments, i.e. only one wrapping function where all missing arguments are
+/// assigned \e ENDVALUE, generates 11 additional optional arguments of type \e TYPE, and creates a
+/// contract ensuring that the last argument is always \c ENDVALUE, so that the argument list is
+/// terminated by \c ENDVALUE.
 ///
-%define %swiglal_public_IMMUTABLE_MEMBERS(TAGNAME, ...)
-%swiglal_map_abc(%swiglal_feature_nspace, "immutable", "1", TAGNAME, __VA_ARGS__);
+%define %swiglal_public_VARIABLE_ARGUMENT_LIST(FUNCTION, TYPE, ENDVALUE)
+%feature("kwargs", 0) FUNCTION;
+%feature("compactdefaultargs") FUNCTION;
+%varargs(11, TYPE arg = ENDVALUE) FUNCTION;
+%contract FUNCTION {
+require:
+  arg11 == ENDVALUE;
+}
 %enddef
-#define %swiglal_public_clear_IMMUTABLE_MEMBERS(...)
-
-///
-/// The <b>SWIGLAL(IGNORE_MEMBERS(TAGNAME, ...))</b> macro can be used to ignore the listed members
-/// of the struct TAGNAME.
-///
-%define %swiglal_public_IGNORE_MEMBERS(TAGNAME, ...)
-%swiglal_map_a(%swiglal_ignore_nspace, TAGNAME, __VA_ARGS__);
-%enddef
-#define %swiglal_public_clear_IGNORE_MEMBERS(...)
+#define %swiglal_public_clear_VARIABLE_ARGUMENT_LIST(FUNCTION, TYPE, ENDVALUE)
 
 ///
 /// The <b>SWIGLAL(RETURNS_PROPERTY(...))</b> macro is used when a function returns an object whose
@@ -1857,6 +1858,21 @@ if (strides[I-1] == 0) {
 %define %swiglal_public_clear_ACQUIRES_OWNERSHIP(TYPE, ...)
 %swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
 %enddef
+
+///
+/// The <b>SWIGLAL(EXTERNAL_STRUCT(...))</b> macro can be used to support structs which are not
+/// declared in LALSuite. It treats the struct as opaque, and attaches a destructor function to it.
+///
+%define %swiglal_public_EXTERNAL_STRUCT(NAME, DTORFUNC)
+typedef struct {} NAME;
+%ignore DTORFUNC;
+%extend NAME {
+  ~NAME() {
+    (void)DTORFUNC($self);
+  }
+}
+%enddef
+#define %swiglal_public_clear_EXTERNAL_STRUCT(NAME, DTORFUNC)
 
 ///
 /// The <b>SWIGLAL(CAST_STRUCT_TO(...))</b> macro adds to the containing struct methods which cast
@@ -1893,38 +1909,22 @@ if (strides[I-1] == 0) {
 #define %swiglal_public_clear_CAST_STRUCT_TO(...)
 
 ///
-/// The <b>SWIGLAL(VARIABLE_ARGUMENT_LIST(...))</b> macro supports functions which require a
-/// variable-length list of arguments of type \c TYPE, i.e. a list of strings. It generates SWIG
-/// \e compact default arguments, i.e. only one wrapping function where all missing arguments are
-/// assigned \e ENDVALUE, generates 11 additional optional arguments of type \e TYPE, and creates a
-/// contract ensuring that the last argument is always \c ENDVALUE, so that the argument list is
-/// terminated by \c ENDVALUE.
+/// The <b>SWIGLAL(IMMUTABLE_MEMBERS(TAGNAME, ...))</b> macro can be used to make the listed members
+/// of the struct TAGNAME immutable.
 ///
-%define %swiglal_public_VARIABLE_ARGUMENT_LIST(FUNCTION, TYPE, ENDVALUE)
-%feature("kwargs", 0) FUNCTION;
-%feature("compactdefaultargs") FUNCTION;
-%varargs(11, TYPE arg = ENDVALUE) FUNCTION;
-%contract FUNCTION {
-require:
-  arg11 == ENDVALUE;
-}
+%define %swiglal_public_IMMUTABLE_MEMBERS(TAGNAME, ...)
+%swiglal_map_abc(%swiglal_feature_nspace, "immutable", "1", TAGNAME, __VA_ARGS__);
 %enddef
-#define %swiglal_public_clear_VARIABLE_ARGUMENT_LIST(FUNCTION, TYPE, ENDVALUE)
+#define %swiglal_public_clear_IMMUTABLE_MEMBERS(...)
 
 ///
-/// The <b>SWIGLAL(EXTERNAL_STRUCT(...))</b> macro can be used to support structs which are not
-/// declared in LALSuite. It treats the struct as opaque, and attaches a destructor function to it.
+/// The <b>SWIGLAL(IGNORE_MEMBERS(TAGNAME, ...))</b> macro can be used to ignore the listed members
+/// of the struct TAGNAME.
 ///
-%define %swiglal_public_EXTERNAL_STRUCT(NAME, DTORFUNC)
-typedef struct {} NAME;
-%ignore DTORFUNC;
-%extend NAME {
-  ~NAME() {
-    (void)DTORFUNC($self);
-  }
-}
+%define %swiglal_public_IGNORE_MEMBERS(TAGNAME, ...)
+%swiglal_map_a(%swiglal_ignore_nspace, TAGNAME, __VA_ARGS__);
 %enddef
-#define %swiglal_public_clear_EXTERNAL_STRUCT(NAME, DTORFUNC)
+#define %swiglal_public_clear_IGNORE_MEMBERS(...)
 
 // Local Variables:
 // mode: c
