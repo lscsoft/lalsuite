@@ -177,11 +177,11 @@ MACRO(A, B, C, X);
 
 ///
 /// These macros allocate and/or copy new instances and arrays.  They are analogous to
-/// similarly-named SWIG macros but use XLALMalloc().
+/// similarly-named SWIG macros but use XLALCalloc().
 ///
-#define %swiglal_new_instance(TYPE...) %reinterpret_cast(XLALMalloc(sizeof(TYPE)), TYPE*)
-#define %swiglal_new_copy(VAL, TYPE...) %reinterpret_cast(memcpy(%swiglal_new_instance(TYPE), &VAL, sizeof(TYPE)), TYPE*)
-#define %swiglal_new_array(SIZE, TYPE...) %reinterpret_cast(XLALMalloc((SIZE)*sizeof(TYPE)), TYPE*)
+#define %swiglal_new_instance(TYPE...) %reinterpret_cast(XLALCalloc(1, sizeof(TYPE)), TYPE*)
+#define %swiglal_new_copy(VAL, TYPE...) %reinterpret_cast(memcpy(%swiglal_new_instance(TYPE), &(VAL), sizeof(TYPE)), TYPE*)
+#define %swiglal_new_array(SIZE, TYPE...) %reinterpret_cast(XLALCalloc(SIZE, sizeof(TYPE)), TYPE*)
 #define %swiglal_new_copy_array(PTR, SIZE, TYPE...) %reinterpret_cast(memcpy(%swiglal_new_array(SIZE, TYPE), PTR, sizeof(TYPE)*(SIZE)), TYPE*)
 
 ///
