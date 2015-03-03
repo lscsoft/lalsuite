@@ -1374,13 +1374,16 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
 
   PulsarParamsVector *injectSources = NULL;
   MultiNoiseFloor *injectSqrtSX = NULL;
-  FstatExtraParams XLAL_INIT_DECL(extraParams);
-  extraParams.Dterms = uvar->Dterms;
-  extraParams.SSBprec = uvar->SSBprecision;
-  cfg->Fstat_in = XLALCreateFstatInput( catalog, fCoverMin, fCoverMax,
-                                        injectSources, injectSqrtSX, assumeSqrtSX, uvar->RngMedWindow,
-                                        cfg->ephemeris, cfg->FstatMethod, &extraParams );
-  XLAL_CHECK ( cfg->Fstat_in != NULL, XLAL_EFUNC, "XLALCreateFstatInput() failed with errno=%d", xlalErrno);
+  FstatOptionalArgs optionalArgs = FstatOptionalArgsDefaults;
+  optionalArgs.Dterms  = uvar->Dterms;
+  optionalArgs.SSBprec = uvar->SSBprecision;
+  optionalArgs.runningMedianWindow = uvar->RngMedWindow;
+  optionalArgs.injectSources = injectSources;
+  optionalArgs.injectSqrtSX = injectSqrtSX;
+  optionalArgs.assumeSqrtSX = assumeSqrtSX;
+  optionalArgs.FstatMethod = cfg->FstatMethod;
+
+  XLAL_CHECK ( (cfg->Fstat_in = XLALCreateFstatInput( catalog, fCoverMin, fCoverMax, cfg->ephemeris, &optionalArgs )) != NULL, XLAL_EFUNC );
   XLALDestroySFTCatalog(catalog);
 
   cfg->Fstat_what = FSTATQ_2F;   // always calculate multi-detector 2F

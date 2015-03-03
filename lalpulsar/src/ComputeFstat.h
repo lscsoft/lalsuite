@@ -145,14 +145,22 @@ extern const int FMETHOD_DEMOD_BEST;
 extern const int FMETHOD_RESAMP_BEST;
 
 ///
-/// Struct for collecting 'lower-level' tuning and method-specific parameters to be passed to the
-/// \f$\mathcal{F}\f$-statistic setup function.
+/// Struct of optional 'advanced level' and (potentially method-specific) arguments to be passed to the
+/// \f$\mathcal{F}\f$-statistic setup function XLALCreateFstatInput().
 ///
-typedef struct tagFstatExtraParams {
-  UINT4 randSeed;                 ///< Random-number seed value used for fake Gaussian noise generation.
-  SSBprecision SSBprec;           ///< Barycentric transformation precision.
-  UINT4 Dterms;                   ///< Number of Dirichlet kernel terms, used by some \a Demod methods; see #FstatMethodType
-} FstatExtraParams;
+typedef struct tagFstatOptionalArgs {
+  UINT4 randSeed;			///< Random-number seed value used in case of fake Gaussian noise generation (\c injectSqrtSX)
+  SSBprecision SSBprec;			///< Barycentric transformation precision.
+  UINT4 Dterms;                  	///< Number of Dirichlet kernel terms, used by some \a Demod methods; see #FstatMethodType.
+  UINT4 runningMedianWindow;	  	///< If SFT noise weights are calculated from the SFTs, the running median window length to use.
+  FstatMethodType FstatMethod;	  	///< Method to use for computing the \f$\mathcal{F}\f$-statistic.
+  PulsarParamsVector *injectSources;	///< Vector of parameters of CW signals to simulate and inject.
+  MultiNoiseFloor *injectSqrtSX;  	///< Single-sided PSD values for fake Gaussian noise to be added to SFT data.
+  MultiNoiseFloor *assumeSqrtSX;  	///< Single-sided PSD values to be used for computing SFT noise weights instead of from a running median of the SFTs themselves.
+} FstatOptionalArgs;
+
+/// global initializer for setting FstatOptionalArgs to default values
+extern const FstatOptionalArgs FstatOptionalArgsDefaults;
 
 ///
 /// An \f$\mathcal{F}\f$-statistic 'atom', i.e. the elementary per-SFT quantities required to compute the
@@ -289,11 +297,7 @@ MultiFstatAtomVector* XLALCreateMultiFstatAtomVector ( const UINT4 length );
 void XLALDestroyMultiFstatAtomVector ( MultiFstatAtomVector *atoms );
 
 FstatInput *
-XLALCreateFstatInput ( const SFTCatalog *SFTcatalog, const REAL8 minCoverFreq, const REAL8 maxCoverFreq,
-                       const PulsarParamsVector *injectSources, const MultiNoiseFloor *injectSqrtSX,
-                       const MultiNoiseFloor *assumeSqrtSX, const UINT4 runningMedianWindow,
-                       const EphemerisData *ephemerides,
-                       const FstatMethodType FstatMethod, const FstatExtraParams *extraParams );
+XLALCreateFstatInput ( const SFTCatalog *SFTcatalog, const REAL8 minCoverFreq, const REAL8 maxCoverFreq, const EphemerisData *ephemerides, const FstatOptionalArgs *optionalArgs );
 
 const MultiLALDetector* XLALGetFstatInputDetectors ( const FstatInput* input );
 const MultiLIGOTimeGPSVector* XLALGetFstatInputTimestamps ( const FstatInput* input );

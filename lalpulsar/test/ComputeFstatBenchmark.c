@@ -120,9 +120,6 @@ main ( int argc, char *argv[] )
     } // for l < numSegments
   LIGOTimeGPS endTime = endTime_l;
 
-  UINT4 rngMed = 50;
-  UINT4 Dterms = 8;
-
   PulsarSpinRange XLAL_INIT_DECL(spinRange);
   LIGOTimeGPS refTime = { startTime.gpsSeconds - 2.3 * uvar->Tseg, 0 };
   spinRange.refTime = refTime;
@@ -134,7 +131,7 @@ main ( int argc, char *argv[] )
   REAL8 minCoverFreq, maxCoverFreq;
   XLAL_CHECK ( XLALCWSignalCoveringBand ( &minCoverFreq, &maxCoverFreq, &startTime, &endTime, &spinRange, asini, Period, ecc ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  UINT4 numBinsSFT = ceil ( (maxCoverFreq - minCoverFreq) * uvar->Tsft + 2 * Dterms );
+  UINT4 numBinsSFT = ceil ( (maxCoverFreq - minCoverFreq) * uvar->Tsft + 2 * 8 );
   UINT4 numSFTsPerSeg = catalogs[0]->length;
   REAL8 memSFTs = uvar->numSegments * numSFTsPerSeg * ( sizeof(SFTtype) + numBinsSFT * sizeof(COMPLEX8)) / 1e6;
 
@@ -147,23 +144,22 @@ main ( int argc, char *argv[] )
   Doppler.ecc = ecc;
   Doppler.asini = asini;
 
-  // ----- setup extra Fstat method params
-  FstatExtraParams XLAL_INIT_DECL(extraParams);
-  extraParams.randSeed  = 1;
-  extraParams.SSBprec = SSBPREC_RELATIVISTICOPT;
-  extraParams.Dterms = Dterms;	// constant value that works for all Demod methods
+  // ----- setup optional Fstat arguments
+  FstatOptionalArgs optionalArgs = FstatOptionalArgsDefaults;
 
   MultiNoiseFloor XLAL_INIT_DECL(injectSqrtSX);
   injectSqrtSX.length = numDetectors;
   for ( UINT4 X=0; X < numDetectors; X ++ ) {
     injectSqrtSX.sqrtSn[X] = 1;
   }
+  optionalArgs.injectSqrtSX = &injectSqrtSX;
+  optionalArgs.FstatMethod = FstatMethod;
 
   FstatInputVector *inputs;
   XLAL_CHECK ( (inputs = XLALCreateFstatInputVector ( uvar->numSegments )) != NULL, XLAL_EFUNC );
   for ( INT4 l = 0; l < uvar->numSegments; l ++ )
     {
-      XLAL_CHECK ( (inputs->data[l] = XLALCreateFstatInput ( catalogs[l], minCoverFreq, maxCoverFreq, NULL, &injectSqrtSX, NULL, rngMed, ephem, FstatMethod, &extraParams )) != NULL, XLAL_EFUNC );
+      XLAL_CHECK ( (inputs->data[l] = XLALCreateFstatInput ( catalogs[l], minCoverFreq, maxCoverFreq, ephem, &optionalArgs )) != NULL, XLAL_EFUNC );
     }
 
   // ----- compute Fstatistics over segments

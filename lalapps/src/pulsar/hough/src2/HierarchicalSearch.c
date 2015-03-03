@@ -1426,17 +1426,17 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   nSFTs = 0;
 #endif
 
-  FstatExtraParams XLAL_INIT_DECL(extraParams);
-  extraParams.SSBprec = in->SSBprec;
-  extraParams.Dterms = in->Dterms;
+  FstatOptionalArgs optionalArgs = FstatOptionalArgsDefaults;
+  optionalArgs.SSBprec = in->SSBprec;
+  optionalArgs.Dterms = in->Dterms;
+  optionalArgs.runningMedianWindow = in->blocksRngMed;
+  optionalArgs.FstatMethod = FMETHOD_DEMOD_BEST;
 
   /* loop over stacks and read sfts */
   for (k = 0; k < in->nStacks; k++) {
 
     /* create Fstat input data struct for Fstat-computation */
-    (*p_Fstat_in_vec)->data[k] = XLALCreateFstatInput( &catalogSeq.data[k], fMin, fMax,
-                                                       NULL, NULL, NULL, in->blocksRngMed,
-                                                       in->edat, FMETHOD_DEMOD_BEST, &extraParams );
+    (*p_Fstat_in_vec)->data[k] = XLALCreateFstatInput( &catalogSeq.data[k], fMin, fMax, in->edat,  &optionalArgs );
     if ( (*p_Fstat_in_vec)->data[k] == NULL ) {
       XLALPrintError("%s: XLALCreateFstatInput() failed with errno=%d", __func__, xlalErrno);
       ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );

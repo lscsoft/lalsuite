@@ -144,11 +144,11 @@ main ( int argc, char *argv[] )
   REAL8 minCoverFreq, maxCoverFreq;
   XLAL_CHECK ( XLALCWSignalCoveringBand ( &minCoverFreq, &maxCoverFreq, &startTime, &endTime, &spinRange, asini, Period, ecc ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  // ----- setup extra Fstat method params
-  FstatExtraParams XLAL_INIT_DECL(extraParams);
-  extraParams.randSeed  = 1;
-  extraParams.SSBprec = SSBPREC_RELATIVISTICOPT;
-  extraParams.Dterms = 8;	// constant value that works for all Demod methods
+  // ----- setup optional Fstat arguments
+  FstatOptionalArgs optionalArgs = FstatOptionalArgsDefaults;
+  optionalArgs.injectSources = injectSources;
+  optionalArgs.injectSqrtSX = &injectSqrtSX;
+  optionalArgs.assumeSqrtSX = &assumeSqrtSX;
 
   // ----- prepare input data with injection for all available methods
   FstatInput *input[FMETHOD_END];
@@ -159,8 +159,8 @@ main ( int argc, char *argv[] )
       if ( !XLALFstatMethodIsAvailable(iMethod) ) {
         continue;
       }
-      input[iMethod] = XLALCreateFstatInput ( catalog, minCoverFreq, maxCoverFreq, injectSources, &injectSqrtSX, &assumeSqrtSX, 50, ephem, iMethod, &extraParams );
-      XLAL_CHECK ( input[iMethod] != NULL, XLAL_EFUNC );
+      optionalArgs.FstatMethod = iMethod;
+      XLAL_CHECK ( (input[iMethod] = XLALCreateFstatInput ( catalog, minCoverFreq, maxCoverFreq, ephem, &optionalArgs )) != NULL, XLAL_EFUNC );
     }
 
   FstatQuantities whatToCompute = (FSTATQ_2F | FSTATQ_FAFB);

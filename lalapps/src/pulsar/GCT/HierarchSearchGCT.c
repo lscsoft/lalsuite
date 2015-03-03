@@ -2025,38 +2025,35 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   }
 
 
-  /* loop over segments and read sfts */
   in->nSFTs = 0;
   for (UINT4 X = 0; X < numDetectors; X++) {
     in->NSegmentsInvX[X] = 0;
   }
 
-  FstatExtraParams XLAL_INIT_DECL(extraParams);
-  extraParams.SSBprec = in->SSBprec;
-  extraParams.Dterms = in->Dterms;
+  FstatOptionalArgs optionalArgs = FstatOptionalArgsDefaults;
+  optionalArgs.SSBprec = in->SSBprec;
+  optionalArgs.Dterms = in->Dterms;
+  optionalArgs.runningMedianWindow = in->blocksRngMed;
+  optionalArgs.FstatMethod = in->Fmethod;
 
+  /* loop over segments and read sfts */
   for (k = 0; k < in->nStacks; k++) {
 
     /* if single-only flag is given, assume a PSD with sqrt(S) = 1.0 */
-    MultiNoiseFloor s_assumeSqrtSX, *assumeSqrtSX;
+    MultiNoiseFloor s_assumeSqrtSX;
     if ( in->SignalOnly ) {
       const SFTCatalog *catalog_k = &(catalogSeq.data[k]);
       s_assumeSqrtSX.length = XLALCountIFOsInCatalog ( catalog_k );
       for (UINT4 X = 0; X < s_assumeSqrtSX.length; ++X) {
         s_assumeSqrtSX.sqrtSn[X] = 1.0;
       }
-      assumeSqrtSX = &s_assumeSqrtSX;
+      optionalArgs.assumeSqrtSX = &s_assumeSqrtSX;
     } else {
-      assumeSqrtSX = NULL;
+      optionalArgs.assumeSqrtSX = NULL;
     }
 
-    PulsarParamsVector *injectSources = NULL;
-    MultiNoiseFloor *injectSqrtSX = NULL;
-
     /* ----- create Fstat input data struct ----- */
-    (*p_Fstat_in_vec)->data[k] = XLALCreateFstatInput ( &catalogSeq.data[k], freqmin, freqmax,
-                                                        injectSources, injectSqrtSX, assumeSqrtSX, in->blocksRngMed,
-                                                        in->edat, in->Fmethod, &extraParams );
+    (*p_Fstat_in_vec)->data[k] = XLALCreateFstatInput ( &catalogSeq.data[k], freqmin, freqmax, in->edat, &optionalArgs );
     if ( (*p_Fstat_in_vec)->data[k] == NULL ) {
       XLALPrintError("%s: XLALCreateFstatInput() failed with errno=%d", __func__, xlalErrno);
       ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );

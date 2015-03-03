@@ -79,14 +79,17 @@ struct tagFstatInput {
 // ---------- Include F-statistic method implementations ---------- //
 
 #if CFS_HAVE_SSE
-const int FMETHOD_DEMOD_BEST = FMETHOD_DEMOD_SSE;
+#define DEF_FMETHOD_DEMOD_BEST FMETHOD_DEMOD_SSE
 #elif CFS_HAVE_ALTIVEC
-const int FMETHOD_DEMOD_BEST = FMETHOD_DEMOD_ALTIVEC;
+#define DEF_FMETHOD_DEMOD_BEST FMETHOD_DEMOD_ALTIVEC
 #else
-const int FMETHOD_DEMOD_BEST = FMETHOD_DEMOD_OPTC;
+#define DEF_FMETHOD_DEMOD_BEST FMETHOD_DEMOD_OPTC
 #endif
+#define DEF_FMETHOD_RESAMP_BEST FMETHOD_RESAMP_GENERIC
 
-const int FMETHOD_RESAMP_BEST = FMETHOD_RESAMP_GENERIC;
+// these are for exporting
+const int FMETHOD_DEMOD_BEST  = DEF_FMETHOD_DEMOD_BEST;
+const int FMETHOD_RESAMP_BEST = DEF_FMETHOD_RESAMP_BEST;
 
 static const struct {
   const char *const name;
@@ -99,6 +102,22 @@ static const struct {
 
   [FMETHOD_RESAMP_GENERIC]	= {"ResampGeneric", 	1 }
 } ;
+
+
+// ----- global variables ----------
+
+/// global initializer for setting FstatOptionalArgs to default values
+const FstatOptionalArgs FstatOptionalArgsDefaults = {
+  .randSeed = 0,
+  .SSBprec = SSBPREC_RELATIVISTICOPT,
+  .Dterms = 8,
+  .runningMedianWindow = 50,
+  .FstatMethod = DEF_FMETHOD_DEMOD_BEST,
+  .injectSources = NULL,
+  .injectSqrtSX = NULL,
+  .assumeSqrtSX = NULL
+};
+
 
 #include "ComputeFstat_Demod.c"
 #include "ComputeFstat_Resamp.c"
@@ -240,26 +259,11 @@ XLALDestroyMultiFstatAtomVector ( MultiFstatAtomVector *multiAtoms  ///< [in] #M
 ///
 FstatInput *
 XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,		  ///< [in] Catalog of SFTs to either load from files, or generate in memory.
-                                                                  ///< The \c locator field of each ::SFTDescriptor must be \c !NULL for SFT loading,
-                                                                  ///< and \c NULL for SFT generation.
-
+                                                                  ///< The \c locator field of each ::SFTDescriptor must be \c !=NULL for SFT loading, and \c ==NULL for SFT generation.
                        const REAL8 minCoverFreq,		  ///< [in] Minimum instantaneous frequency which will be covered over the SFT time span.
                        const REAL8 maxCoverFreq,		  ///< [in] Maximum instantaneous frequency which will be covered over the SFT time span.
-                       const PulsarParamsVector *injectSources,	  ///< [in] Optional vector of parameters of CW signals to simulate and inject.
-
-                       const MultiNoiseFloor *injectSqrtSX,	  ///< [in] Optional array of single-sided PSD values governing fake Gaussian noise generation.
-                                                                  ///< If supplied, then fake Gaussian noise with the given PSD values will be added to the SFTs.
-
-                       const MultiNoiseFloor *assumeSqrtSX,	  ///< [in] Optional array of single-sided PSD values governing the calculation of SFT noise weights.
-                                                                  ///< If supplied, then SFT noise weights are calculated from constant spectra with the given PSD
-                                                                  ///< values; otherwise, SFT noise weights are calculated from PSDs computed from a running median
-                                                                  ///< of the SFTs themselves.
-                       const UINT4 runningMedianWindow,		  ///< [in] If SFT noise weights are calculated from the SFTs, the running median window length to use.
-
                        const EphemerisData *ephemerides,	  ///< [in] Ephemerides for the time-span of the SFTs.
-
-                       const FstatMethodType FstatMethod,	  ///< [in] Method to use for computing the \f$\mathcal{F}\f$-statistic.
-                       const FstatExtraParams *extraParams        ///< [in] Minor tuning or method-specific parameters.
+                       const FstatOptionalArgs *optionalArgs      ///< [in] Optional 'advanced-level' and method-specific extra arguments; NULL: use defaults from FstatOptionalArgsDefaults.
                        )
 {
   // Check catalog
@@ -271,19 +275,28 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,		  ///< [in] Catalog of SFT
                       "All 'locator' fields of SFTDescriptors in 'SFTcatalog' must be either NULL or !NULL." );
   }
 
-  // Check remaining parameters
+  // Check remaining required parameters
   XLAL_CHECK_NULL ( isfinite(minCoverFreq) && minCoverFreq > 0, XLAL_EINVAL );
   XLAL_CHECK_NULL ( isfinite(maxCoverFreq) && maxCoverFreq > 0, XLAL_EINVAL );
   XLAL_CHECK_NULL ( maxCoverFreq > minCoverFreq, XLAL_EINVAL );
-  XLAL_CHECK_NULL ( injectSources == NULL || injectSources->length > 0, XLAL_EINVAL );
-  XLAL_CHECK_NULL ( injectSources == NULL || injectSources->data != NULL, XLAL_EINVAL );
   XLAL_CHECK_NULL ( ephemerides != NULL, XLAL_EINVAL );
-  XLAL_CHECK_NULL ( extraParams != NULL, XLAL_EINVAL );
-  XLAL_CHECK_NULL ( extraParams->SSBprec < SSBPREC_LAST, XLAL_EINVAL );
+
+  // handle optional arguments, if given
+  const FstatOptionalArgs *optArgs;
+  if ( optionalArgs != NULL ) {
+    optArgs = optionalArgs;
+  } else {
+    optArgs = &FstatOptionalArgsDefaults;
+  }
+  // check optional arguments sanity
+  XLAL_CHECK_NULL ( (optArgs->injectSources == NULL) || ((optArgs->injectSources->length > 0) && (optArgs->injectSources->data != NULL)), XLAL_EINVAL );
+  XLAL_CHECK_NULL ( (optArgs->injectSqrtSX == NULL) || (optArgs->injectSqrtSX->length > 0), XLAL_EINVAL );
+  XLAL_CHECK_NULL ( (optArgs->assumeSqrtSX == NULL) || (optArgs->assumeSqrtSX->length > 0), XLAL_EINVAL );
+  XLAL_CHECK_NULL ( optArgs->SSBprec < SSBPREC_LAST, XLAL_EINVAL );
 
   // Determine whether to load and/or generate SFTs
   const BOOLEAN loadSFTs = (SFTcatalog->data[0].locator != NULL);
-  const BOOLEAN generateSFTs = (injectSources != NULL) || (injectSqrtSX != NULL);
+  const BOOLEAN generateSFTs = (optArgs->injectSources != NULL) || (optArgs->injectSqrtSX != NULL);
   XLAL_CHECK_NULL ( loadSFTs || generateSFTs, XLAL_EINVAL, "Can neither load nor generate SFTs with given parameters" );
 
   // Create top-level input data struct
@@ -295,20 +308,20 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,		  ///< [in] Catalog of SFT
   FstatInput_Common *const common = input->common;	// handy shortcut
 
   // create method-specific input data
-  if ( XLALFstatMethodClassIsDemod ( FstatMethod ) )
+  if ( XLALFstatMethodClassIsDemod ( optArgs->FstatMethod ) )
     {
       XLAL_CHECK_NULL ( (input->demod = XLALCalloc ( 1, sizeof(FstatInput_Demod) )) != NULL, XLAL_ENOMEM );
-      input->demod->Dterms = extraParams->Dterms;
+      input->demod->Dterms = optArgs->Dterms;
     }
-  else if ( XLALFstatMethodClassIsResamp ( FstatMethod ) )
+  else if ( XLALFstatMethodClassIsResamp ( optArgs->FstatMethod ) )
     {
       XLAL_CHECK_NULL ( (input->resamp = XLALCalloc(1, sizeof(FstatInput_Resamp))) != NULL, XLAL_ENOMEM );
     }
   else
     {
-      XLAL_ERROR_NULL ( XLAL_EINVAL, "Received invalid Fstat method enum '%d'\n", FstatMethod );
+      XLAL_ERROR_NULL ( XLAL_EINVAL, "Received invalid Fstat method enum '%d'\n", optArgs->FstatMethod );
     }
-  common->FstatMethod = FstatMethod;
+  common->FstatMethod = optArgs->FstatMethod;
 
   // Determine the time baseline of an SFT
   const REAL8 Tsft = 1.0 / SFTcatalog->data[0].header.deltaF;
@@ -337,7 +350,7 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,		  ///< [in] Catalog of SFT
     XLAL_CHECK_NULL ( extraBinsMethod >= 0, XLAL_EFAILED );
 
     // Add number of extra frequency bins required by running median
-    int extraBinsFull = extraBinsMethod + runningMedianWindow/2 + 1; // NOTE: running-median window needed irrespective of assumeSqrtSX!
+    int extraBinsFull = extraBinsMethod + optArgs->runningMedianWindow/2 + 1; // NOTE: running-median window needed irrespective of assumeSqrtSX!
 
     // Extend frequency range by number of extra bins times SFT bin width
     const REAL8 extraFreqMethod = extraBinsMethod / Tsft;
@@ -377,8 +390,8 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,		  ///< [in] Catalog of SFT
     } // end: if !loadSFTs
 
   // Check length of multi-noise floor arrays
-  XLAL_CHECK_NULL ( injectSqrtSX == NULL || injectSqrtSX->length == common->detectors.length, XLAL_EINVAL );
-  XLAL_CHECK_NULL ( assumeSqrtSX == NULL || assumeSqrtSX->length == common->detectors.length, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( (optArgs->injectSqrtSX == NULL) || (optArgs->injectSqrtSX->length == common->detectors.length), XLAL_EINVAL );
+  XLAL_CHECK_NULL ( (optArgs->assumeSqrtSX == NULL) || (optArgs->assumeSqrtSX->length == common->detectors.length), XLAL_EINVAL );
 
   // Generate SFTs with injections and noise, if required
   if (generateSFTs)
@@ -389,18 +402,18 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,		  ///< [in] Catalog of SFT
       MFDparams.Band = maxFreqFull - minFreqFull;
       MFDparams.multiIFO = common->detectors;
       MFDparams.multiTimestamps = *(common->multiTimestamps);
-      MFDparams.randSeed = extraParams->randSeed;
+      MFDparams.randSeed = optArgs->randSeed;
 
       // Set noise floors if sqrtSX is given; otherwise noise floors are zero
-      if ( injectSqrtSX != NULL ) {
-        MFDparams.multiNoiseFloor = (*injectSqrtSX);
+      if ( optArgs->injectSqrtSX != NULL ) {
+        MFDparams.multiNoiseFloor = *(optArgs->injectSqrtSX);
       } else {
         MFDparams.multiNoiseFloor.length = common->detectors.length;
       }
 
       // Generate SFTs with injections
       MultiSFTVector *fakeMultiSFTs = NULL;
-      XLAL_CHECK_NULL ( XLALCWMakeFakeMultiData ( &fakeMultiSFTs, NULL, injectSources, &MFDparams, ephemerides ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_NULL ( XLALCWMakeFakeMultiData ( &fakeMultiSFTs, NULL, optArgs->injectSources, &MFDparams, ephemerides ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       // If SFTs were loaded, add generated SFTs to then, otherwise just used generated SFTs
       if (multiSFTs != NULL) {
@@ -419,10 +432,10 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,		  ///< [in] Catalog of SFT
 
   // Normalise SFTs using either running median or assumed PSDs
   MultiPSDVector *runningMedian;
-  XLAL_CHECK_NULL ( (runningMedian = XLALNormalizeMultiSFTVect ( multiSFTs, runningMedianWindow, assumeSqrtSX )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_NULL ( (runningMedian = XLALNormalizeMultiSFTVect ( multiSFTs, optArgs->runningMedianWindow, optArgs->assumeSqrtSX )) != NULL, XLAL_EFUNC );
 
   // Calculate SFT noise weights from PSD
-  XLAL_CHECK_NULL ( (common->multiNoiseWeights = XLALComputeMultiNoiseWeights ( runningMedian, runningMedianWindow, 0 )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_NULL ( (common->multiNoiseWeights = XLALComputeMultiNoiseWeights ( runningMedian, optArgs->runningMedianWindow, 0 )) != NULL, XLAL_EFUNC );
 
   // at this point we're done with running-median noise estimation and can 'trim' the SFTs back to
   // the width actually required by the Fstat-methods *methods*.
@@ -436,7 +449,7 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,		  ///< [in] Catalog of SFT
 
   // Save ephemerides and SSB precision
   common->ephemerides = ephemerides;
-  common->SSBprec = extraParams->SSBprec;
+  common->SSBprec = optArgs->SSBprec;
 
   // Call the appropriate method function to setup their input data structures
   // - The method input data structures are expected to take ownership of the
