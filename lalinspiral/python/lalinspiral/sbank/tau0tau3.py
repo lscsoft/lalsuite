@@ -260,12 +260,6 @@ def tau0tau3_bound(flow, **constraints):
         m1m2_points += [(m1, m1/val) for m1 in numpy.linspace(m1min, m1max, npts)]
         m1m2_points += [(val*m2, m2) for m2 in numpy.linspace(m2min, m2max, npts)]
 
-    # draw constant mchirp lines
-    mcmin, mcmax = constraints.setdefault('mchirp', (None, None))
-    if mcmax is not None:
-        m1m2_points += [(m1, mchirpm1_to_m2(mcmax, m1)) for m1 in numpy.linspace(m1min, m1max, npts)]
-    if mcmin is not None:
-        m1m2_points += [(m1, mchirpm1_to_m2(mcmin, m1)) for m1 in numpy.linspace(m1min, m1max, npts)]
 
     # filter these down to only those that satisfy ALL constraints
     m1 = numpy.array([i[0] for i in m1m2_points])
@@ -279,6 +273,14 @@ def tau0tau3_bound(flow, **constraints):
     lims_tau0, lims_tau3 = m1m2_to_tau0tau3(m1, m2, flow)
     lims_tau0 = [min( lims_tau0 ), max( lims_tau0 )]
     lims_tau3 = [min( lims_tau3 ), max( lims_tau3 )]
+
+
+    # draw constant mchirp lines
+    mcmin, mcmax = constraints.setdefault('mchirp', (None, None))
+    if mcmax is not None:
+        lims_tau0[0] = max(lims_tau0[0], A0(flow)*mcmax**(-5./3))
+    if mcmin is not None:
+        lims_tau0[1] = max(lims_tau0[1], A0(flow)*mcmin**(-5./3))
 
     return lims_tau0, lims_tau3
 
