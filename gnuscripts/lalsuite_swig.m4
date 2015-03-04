@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2014
 #
-# serial 75
+# serial 76
 
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
   # $0: check the version of $1, and store it in ${swig_version}
@@ -308,7 +308,7 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
     AC_LANG_PUSH([C++])
     LALSUITE_PUSH_UVARS
     CPPFLAGS="${SWIG_OCTAVE_CPPFLAGS_IOCTAVE} ${SWIG_OCTAVE_CPPFLAGS}"
-    AC_CHECK_HEADERS([octave/oct.h],[],[
+    AC_CHECK_HEADER([octave/oct.h],[],[
       AC_MSG_ERROR([could not find the header "octave/oct.h"])
     ],[
       AC_INCLUDES_DEFAULT
@@ -417,12 +417,12 @@ EOD`]
     AC_LANG_PUSH([C])
     LALSUITE_PUSH_UVARS
     CPPFLAGS="${SWIG_PYTHON_CPPFLAGS}"
-    AC_CHECK_HEADERS([Python.h],[],[
+    AC_CHECK_HEADER([Python.h],[],[
       AC_MSG_ERROR([could not find the header "Python.h"])
     ],[
       AC_INCLUDES_DEFAULT
     ])
-    AC_CHECK_HEADERS([numpy/arrayobject.h],[],[
+    AC_CHECK_HEADER([numpy/arrayobject.h],[],[
       AC_MSG_ERROR([could not find the header "numpy/arrayobject.h"])
     ],[
       AC_INCLUDES_DEFAULT
@@ -438,7 +438,16 @@ EOD`]
     AC_LANG_PUSH([C])
     LALSUITE_PUSH_UVARS
     CPPFLAGS="${SWIG_PYTHON_CPPFLAGS}"
-    AC_CHECK_DECLS([NPY_ARRAY_WRITEABLE,PyArray_SetBaseObject],,,[
+    AC_CHECK_DECL([NPY_ARRAY_WRITEABLE],[
+      SWIG_PYTHON_CPPFLAGS="${SWIG_PYTHON_CPPFLAGS} -DSWIGLAL_HAVE_NPY_ARRAY_WRITEABLE"
+    ],[],[
+      AC_INCLUDES_DEFAULT
+      #include <Python.h>
+      #include <numpy/arrayobject.h>
+    ])
+    AC_CHECK_DECL([PyArray_SetBaseObject],[
+      SWIG_PYTHON_CPPFLAGS="${SWIG_PYTHON_CPPFLAGS} -DSWIGLAL_HAVE_PyArray_SetBaseObject"
+    ],[],[
       AC_INCLUDES_DEFAULT
       #include <Python.h>
       #include <numpy/arrayobject.h>

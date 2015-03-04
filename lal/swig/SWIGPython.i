@@ -43,10 +43,10 @@ import_array();
 
 // Include compatibility code for NumPy API < 1.7
 %header %{
-#if !SWIGLAL_HAVE_DECL_NPY_ARRAY_WRITEABLE
+#if !defined(SWIGLAL_HAVE_NPY_ARRAY_WRITEABLE)
 #define NPY_ARRAY_WRITEABLE NPY_WRITEABLE
 #endif
-#if !SWIGLAL_HAVE_DECL_PYARRAY_SETBASEOBJECT
+#if !defined(SWIGLAL_HAVE_PyArray_SetBaseObject)
 #define PyArray_SetBaseObject(arr, obj) do { (arr)->base = (obj); } while(0)
 #endif
 %}
