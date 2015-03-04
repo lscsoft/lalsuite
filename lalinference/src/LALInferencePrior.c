@@ -807,7 +807,7 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
     if(SKY_FRAME==1)
     {
         LALInferenceDetFrameToEquatorial(runState->data->detector, runState->data->next->detector,
-                                         t0, acos(cosalpha), azimuth, &tc, &lat, &longitude);
+                                         t0, acos(cosalpha), azimuth, &tc, &longitude, &lat);
         Cube[i] = tc; i++; strcat(header, "time ");
         Cube[i] = longitude; i++; strcat(header, "RA ");
         Cube[i] = lat; i++; strcat(header, "dec ");
@@ -1541,7 +1541,7 @@ UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALI
     if (SKY_FRAME==1)
     {
         LALInferenceDetFrameToEquatorial(runState->data->detector, runState->data->next->detector,
-                                         t0, acos(cosalpha), azimuth, &tc, &lat, &longitude);
+                                         t0, acos(cosalpha), azimuth, &tc, &longitude, &lat);
         Cube[i] = tc; i++; strcat(header, "time ");
         Cube[i] = longitude; i++; strcat(header, "RA ");
         Cube[i] = lat; i++; strcat(header, "dec ");
@@ -2268,7 +2268,7 @@ UINT4 LALInferenceAnalyticCubeToPrior(LALInferenceRunState *runState, LALInferen
         }
       }
     }
-    
+
     if(SKY_FRAME==1)
     {
       if(LALInferenceCheckVariable(params,"cosalpha"))
