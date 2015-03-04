@@ -320,7 +320,6 @@ SWIGLAL(INOUT_STRUCTS(FstatResults**, Fstats));
 int XLALComputeFstat ( FstatResults **Fstats, FstatInput *input, const PulsarDopplerParams *doppler,
                        const UINT4 numFreqBins, const FstatQuantities whatToCompute );
 
-
 FstatWorkspace *XLALGetSharedFstatWorkspace ( FstatInput *input );
 void XLALDestroyFstatWorkspace ( FstatWorkspace *ws );
 
