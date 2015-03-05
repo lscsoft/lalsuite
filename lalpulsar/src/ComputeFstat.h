@@ -323,6 +323,7 @@ int XLALComputeFstat ( FstatResults **Fstats, FstatInput *input, const PulsarDop
 
 FstatWorkspace *XLALGetSharedFstatWorkspace ( FstatInput *input );
 void XLALDestroyFstatWorkspace ( FstatWorkspace *ws );
+FstatWorkspace *XLALCreateFstatWorkspace ( UINT4 numSamples_DET, UINT4 numSamplesFFT );
 
 void XLALDestroyFstatInput ( FstatInput* input );
 void XLALDestroyFstatResults ( FstatResults* Fstats );

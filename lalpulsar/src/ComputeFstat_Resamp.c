@@ -122,6 +122,26 @@ XLALComputeFaFb_Resamp ( FstatWorkspace *ws,
 // ==================== function definitions ====================
 
 // ---------- exported API functions ----------
+///
+/// Create a new workspace with given samples in detector frame 'numSamples_DET' ( holds time-series for spindown-correction
+///
+FstatWorkspace *
+XLALCreateFstatWorkspace ( UINT4 numSamplesSRC,
+                           UINT4 numSamplesFFT
+                           )
+{
+  FstatWorkspace *ws;
+  XLAL_CHECK_NULL ( (ws = XLALCalloc ( 1, sizeof(*ws))) != NULL, XLAL_ENOMEM );
+  XLAL_CHECK_NULL ( (ws->TimeSeriesSpinCorr_SRC = XLALCreateCOMPLEX8Vector ( numSamplesSRC )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_NULL ( (ws->FabX_Raw = fftw_malloc ( numSamplesFFT * sizeof(ws->FabX_Raw[0]) )) != NULL, XLAL_EFUNC );
+
+  LAL_FFTW_WISDOM_LOCK;
+  XLAL_CHECK_NULL ( (ws->fftplan = fftwf_plan_dft_1d ( numSamplesFFT, ws->FabX_Raw, ws->FabX_Raw, FFTW_FORWARD, FFTW_MEASURE )) != NULL, XLAL_EFAILED, "fftwf_plan_dft_1d() failed\n");
+  LAL_FFTW_WISDOM_UNLOCK;
+  ws->numSamplesFFT = numSamplesFFT;
+
+  return ws;
+} // XLALCreateFstatWorkspace()
 
 ///
 /// Function to extract a workspace from a resampling setup, which can be passed in FstatOptionalArgs to be shared by various setups
@@ -242,46 +262,42 @@ SetupFstatInput_Resamp ( FstatInput_Resamp *resamp,
   XLAL_CHECK ( (resamp->prev_multiSFTinds_SRC->data = XLALCalloc ( numDetectors, sizeof(UINT4Vector) )) != NULL, XLAL_EFUNC );
   resamp->prev_multiSFTinds_SRC->length = numDetectors;
 
-  UINT4 numSamplesInMax = 0;
+  UINT4 numSamplesSRCMax = 0;
   for ( UINT4 X = 0; X < numDetectors; X ++ )
     {
+      REAL8 dt_DETX = resamp->multiTimeSeries_DET->data[X]->deltaT;
+      REAL8 fHetX = resamp->multiTimeSeries_DET->data[X]->f0;
+      XLAL_CHECK ( dt_DET == dt_DETX, XLAL_EINVAL, "Input timeseries must have identical 'deltaT' (%.3g != %.3g)\n", dt_DET, dt_DETX);
+      XLAL_CHECK ( fHet == fHetX, XLAL_EINVAL, "Input timeseries must have identical heterodyning frequency 'f0'\n", fHet, fHetX );
       const char *nameX = resamp->multiTimeSeries_DET->data[X]->name;
       UINT4 numSamplesInX = resamp->multiTimeSeries_DET->data[X]->data->length;
-      numSamplesInMax = MYMAX ( numSamplesInMax, numSamplesInX );
-      XLAL_CHECK ( dt_DET == resamp->multiTimeSeries_DET->data[X]->deltaT, XLAL_EINVAL, "Input timeseries must have identical 'deltaT'\n");
-
+      UINT4 numSamplesSRCX = (UINT4)ceil ( numSamplesInX * dt_DET / dt_SRC );
+      numSamplesSRCMax = MYMAX ( numSamplesSRCMax, numSamplesSRCX );
       LIGOTimeGPS epoch0 = {0,0};	// will be set to corresponding SRC-frame epoch when barycentering
-      XLAL_CHECK ( (resamp->prev_multiTimeSeries_SRC->data[X] = XLALCreateCOMPLEX8TimeSeries ( nameX, &epoch0, fHet, dt_SRC, &lalDimensionlessUnit, numSamplesInX )) != NULL, XLAL_EFUNC );
+      XLAL_CHECK ( (resamp->prev_multiTimeSeries_SRC->data[X] = XLALCreateCOMPLEX8TimeSeries ( nameX, &epoch0, fHet, dt_SRC, &lalDimensionlessUnit, numSamplesSRCX )) != NULL, XLAL_EFUNC );
 
       UINT4 numTimestampsX = common->multiTimestamps->data[X]->length;
       XLAL_CHECK ( (resamp->prev_multiSFTinds_SRC->data[X] = XLALCreateUINT4Vector ( 2 * numTimestampsX )) != NULL, XLAL_EFUNC );
     } // for X < numDetectors
 
-  // ---- re-used shared workspace, or allocate here ----------
+  // ---- re-use shared workspace, or allocate here ----------
+
   if ( sharedWorkspace != NULL )
     {
       XLAL_CHECK ( numSamplesFFT == sharedWorkspace->numSamplesFFT, XLAL_EINVAL, "Shared workspace of different frequency resolution: numSamplesFFT = %d != %d\n",
                    sharedWorkspace->numSamplesFFT, numSamplesFFT );
+
+      // adjust maximal SRC-frame timeseries length, if necessary
+      if ( numSamplesSRCMax > sharedWorkspace->TimeSeriesSpinCorr_SRC->length ) {
+        XLAL_CHECK ( (sharedWorkspace->TimeSeriesSpinCorr_SRC->data = XLALRealloc ( sharedWorkspace->TimeSeriesSpinCorr_SRC->data, numSamplesSRCMax * sizeof(COMPLEX8) )) != NULL, XLAL_ENOMEM );
+        sharedWorkspace->TimeSeriesSpinCorr_SRC->length = numSamplesSRCMax;
+      }
       resamp->ws = sharedWorkspace;
       resamp->ownThisWorkspace = 0;
-      // adjust maximal SRC-frame timeseries length, if necessary
-      if ( numSamplesInMax > resamp->ws->TimeSeriesSpinCorr_SRC->length ) {
-        XLAL_CHECK ( (resamp->ws->TimeSeriesSpinCorr_SRC->data = XLALRealloc ( resamp->ws->TimeSeriesSpinCorr_SRC->data, numSamplesInMax * sizeof(COMPLEX8) )) != NULL, XLAL_ENOMEM );
-        resamp->ws->TimeSeriesSpinCorr_SRC->length = numSamplesInMax;
-      }
     } // end: if shared workspace given
   else
     {
-      FstatWorkspace *ws;
-      XLAL_CHECK ( (ws = XLALCalloc ( 1, sizeof(*ws))) != NULL, XLAL_ENOMEM );
-      XLAL_CHECK ( (ws->TimeSeriesSpinCorr_SRC = XLALCreateCOMPLEX8Vector ( numSamplesInMax )) != NULL, XLAL_EFUNC );
-      XLAL_CHECK ( (ws->FabX_Raw = fftw_malloc ( numSamplesFFT * sizeof(ws->FabX_Raw[0]) )) != NULL, XLAL_EFUNC );
-
-      LAL_FFTW_WISDOM_LOCK;
-      XLAL_CHECK ( (ws->fftplan = fftwf_plan_dft_1d ( numSamplesFFT, ws->FabX_Raw, ws->FabX_Raw, FFTW_FORWARD, FFTW_MEASURE )) != NULL, XLAL_EFAILED, "fftwf_plan_dft_1d() failed\n");
-      LAL_FFTW_WISDOM_UNLOCK;
-      ws->numSamplesFFT = numSamplesFFT;
-      resamp->ws = ws;
+      XLAL_CHECK ( ( resamp->ws = XLALCreateFstatWorkspace ( numSamplesSRCMax, numSamplesFFT )) != NULL, XLAL_EFUNC );
       resamp->ownThisWorkspace = 1;
     } // end: if we create our own workspace
 
@@ -522,6 +538,7 @@ XLALComputeFaFb_Resamp ( FstatWorkspace *ws,				//!< [in,out] pre-allocated 'wor
   UINT4 NposBinsDC = ws->numSamplesFFT - NnegBins;
   REAL8 fMinFFT = fHet + freqShift - dFreq * NnegBins;
   UINT4 offset_bins = (UINT4) lround ( ( FreqOut0 - fMinFFT ) / dFreq );
+  XLAL_CHECK ( offset_bins + ws->numFreqBinsOut <= ws->numSamplesFFT, XLAL_EINVAL, "Error: Freq+numFreqBins*dFreq > FreqMax: request exceeded the computed frequency band!\n" );
 
   // apply spindown phase-factors, store result in 'workspace'
   memset ( ws->TimeSeriesSpinCorr_SRC->data, 0, ws->TimeSeriesSpinCorr_SRC->length * sizeof(COMPLEX8));
