@@ -254,15 +254,15 @@ INT4 XLALOverlappedSegmentsCommensurate(
 );
 
 
-INT4 XLALEPGetTimingParameters(
-	INT4 window_length,
-	INT4 max_tile_length,
-	REAL8 fractional_tile_stride,
-	INT4 *psd_length,
-	INT4 *psd_shift,
-	INT4 *window_shift,
-	INT4 *window_pad,
-	INT4 *tiling_length
+int XLALEPGetTimingParameters(
+	int window_length,
+	int max_tile_length,
+	double fractional_tile_stride,
+	int *psd_length,
+	int *psd_shift,
+	int *window_shift,
+	int *window_pad,
+	int *tiling_length
 );
 
 /*@}*/

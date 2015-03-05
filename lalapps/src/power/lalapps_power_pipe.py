@@ -125,7 +125,7 @@ def parse_config_file(options):
 
 	options.psds_per_power = config.getint("pipeline", "psds_per_power")
 	options.psds_per_injection = config.getint("pipeline", "psds_per_injection")
-	options.timing_params = power.get_timing_parameters(config)
+	options.timing_params = power.TimingParameters(config)
 
 	return seglistdict, tiling_phase, config
 

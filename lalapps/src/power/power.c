@@ -808,9 +808,12 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 	 * Compute timing parameters.
 	 */
 
-	if(XLALEPGetTimingParameters(options->window->data->length, options->maxTileDuration * options->resample_rate, options->fractional_stride, &options->psd_length, &options->psd_shift, &options->window_shift, &options->window_pad, NULL) < 0) {
+	{
+	int tiling_length;	/* unused */
+	if(XLALEPGetTimingParameters(options->window->data->length, options->maxTileDuration * options->resample_rate, options->fractional_stride, &options->psd_length, &options->psd_shift, &options->window_shift, &options->window_pad, &tiling_length) < 0) {
 		XLALPrintError("calculation of timing parameters failed\n");
 		exit(1);
+	}
 	}
 
 	/*
