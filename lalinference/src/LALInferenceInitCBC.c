@@ -1395,6 +1395,18 @@ void LALInferenceCheckOptionsConsistency(ProcessParamsTable *commandLine)
     exit(1);
   }
 
+  /* Check for small sample rates when margtime-ing. */
+  if (LALInferenceGetProcParamVal(commandLine, "--margtime") || LALInferenceGetProcParamVal(commandLine, "--margtimephi")) {
+    ppt = LALInferenceGetProcParamVal(commandLine, "--srate");
+    if (ppt) {
+      int srate = atoi(ppt->value);
+
+      if (srate < 4096) {
+	XLALPrintWarning("WARNING: you have chosen to marginalise in time with a sample rate of %d, but this typically gives incorrect results for CBCs; use at least 4096 Hz to be safe", srate);
+      }
+    }
+  }
+
   return;
 }
 
