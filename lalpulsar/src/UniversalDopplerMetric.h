@@ -248,11 +248,6 @@ XLALDopplerFstatMetric ( const DopplerMetricParams *metricParams,
 			 const EphemerisData *edat
 			 );
 
-DopplerMetric*
-XLALDopplerFstatMetricCoh ( const DopplerMetricParams *metricParams,
-                            const EphemerisData *edat
-                            );
-
 FmetricAtoms_t*
 XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,
 			     const EphemerisData *edat
