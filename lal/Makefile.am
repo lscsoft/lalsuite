@@ -16,10 +16,10 @@ EXTRA_DIST += \
 SUBDIRS = \
 	debian \
 	include \
-	packages \
-	lib \
+	src \
 	swig \
 	python \
+	test \
 	doxygen \
 	$(END_OF_LIST)
 

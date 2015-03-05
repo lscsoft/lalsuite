@@ -90,13 +90,13 @@ AC_DEFUN([lalsuite_config_subdir],[
 # lal and lalsupport are always configured
 lalsuite_config_doxygen([LAL])
 AC_CONFIG_SUBDIRS(lal)
-LAL_LIBS="${lalsuite_abs_top_builddir}/lal/lib/lal/liblal.la"
+LAL_LIBS="${lalsuite_abs_top_builddir}/lal/src/liblal.la"
 LAL_CFLAGS="-I${lalsuite_abs_top_builddir}/lal/include"
 LAL_DATA_PATH="${lalsuite_top_srcdir}/lal/test"
 LAL_OCTAVE_PATH="${lalsuite_abs_top_builddir}/lal/octave"
 LAL_PYTHON_PATH="${lalsuite_abs_top_builddir}/lal/python"
 LAL_HTMLDIR="${htmldir}/../lal"
-LALSUPPORT_LIBS="${lalsuite_abs_top_builddir}/lal/lib/lalsupport/src/liblalsupport.la"
+LALSUPPORT_LIBS="${lalsuite_abs_top_builddir}/lal/src/support/liblalsupport.la"
 LALSUPPORT_CFLAGS="-I${lalsuite_abs_top_builddir}/lal/include"
 LALSUPPORT_DATA_PATH="${LAL_DATA_PATH}"
 LALSUPPORT_OCTAVE_PATH="${LAL_OCTAVE_PATH}"

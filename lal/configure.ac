@@ -1,7 +1,7 @@
 AC_PREREQ([2.63])
 AC_INIT([LAL],[6.13.4.1],[lal-discuss@ligo.org])
-AC_CONFIG_HEADERS([include/config.h lib/lal/LALConfig.h])
-AC_CONFIG_SRCDIR([packages/std/include/LALStdio.h])
+AC_CONFIG_HEADERS([src/config.h src/LALConfig.h])
+AC_CONFIG_SRCDIR([src/std/LALStdio.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
@@ -14,69 +14,42 @@ AC_CONFIG_FILES([ \
   lal.pc \
   lal.spec \
   lalsupport.pc \
-  lib/Makefile \
-  lib/lal/LALVCSInfo.c \
-  lib/lal/LALVCSInfo.h \
-  lib/lal/Makefile \
-  lib/lalsupport/Makefile \
-  lib/lalsupport/include/Makefile \
-  lib/lalsupport/src/Makefile \
-  lib/lalsupport/test/Makefile \
-  packages/Makefile \
-  packages/date/Makefile \
-  packages/date/include/Makefile \
-  packages/date/src/Makefile \
-  packages/date/test/Makefile \
-  packages/factories/Makefile \
-  packages/factories/include/Makefile \
-  packages/factories/src/Makefile \
-  packages/factories/test/Makefile \
-  packages/fft/Makefile \
-  packages/fft/include/Makefile \
-  packages/fft/src/Makefile \
-  packages/fft/test/Makefile \
-  packages/inject/Makefile \
-  packages/inject/include/Makefile \
-  packages/inject/src/Makefile \
-  packages/inject/test/Makefile \
-  packages/noisemodels/Makefile \
-  packages/noisemodels/include/Makefile \
-  packages/noisemodels/src/Makefile \
-  packages/noisemodels/test/Makefile \
-  packages/stats/Makefile \
-  packages/stats/include/Makefile \
-  packages/stats/src/Makefile \
-  packages/stats/test/Makefile \
-  packages/std/Makefile \
-  packages/std/include/Makefile
-  packages/std/src/Makefile \
-  packages/std/test/Makefile \
-  packages/tdfilter/Makefile \
-  packages/tdfilter/include/Makefile \
-  packages/tdfilter/src/Makefile \
-  packages/tdfilter/test/Makefile \
-  packages/tools/Makefile \
-  packages/tools/include/Makefile \
-  packages/tools/src/Makefile \
-  packages/tools/test/Makefile \
-  packages/utilities/Makefile \
-  packages/utilities/include/Makefile \
-  packages/utilities/src/Makefile \
-  packages/utilities/test/Makefile \
-  packages/vectorops/Makefile \
-  packages/vectorops/include/Makefile \
-  packages/vectorops/src/Makefile \
-  packages/vectorops/test/Makefile \
-  packages/window/Makefile \
-  packages/window/include/Makefile \
-  packages/window/src/Makefile \
-  packages/window/test/Makefile \
   python/Makefile \
   python/lal/Makefile \
   python/lal/__init__.py \
   python/lal/spectrum/Makefile \
   python/lal/utils/Makefile \
+  src/LALVCSInfo.c \
+  src/LALVCSInfo.h \
+  src/Makefile \
+  src/date/Makefile \
+  src/factories/Makefile \
+  src/fft/Makefile \
+  src/inject/Makefile \
+  src/noisemodels/Makefile \
+  src/stats/Makefile \
+  src/std/Makefile \
+  src/support/Makefile \
+  src/tdfilter/Makefile \
+  src/tools/Makefile \
+  src/utilities/Makefile \
+  src/vectorops/Makefile \
+  src/window/Makefile \
   swig/Makefile \
+  test/Makefile \
+  test/date/Makefile \
+  test/factories/Makefile \
+  test/fft/Makefile \
+  test/inject/Makefile \
+  test/noisemodels/Makefile \
+  test/stats/Makefile \
+  test/std/Makefile \
+  test/support/Makefile \
+  test/tdfilter/Makefile \
+  test/tools/Makefile \
+  test/utilities/Makefile \
+  test/vectorops/Makefile \
+  test/window/Makefile \
 ])
 AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
 
@@ -339,7 +312,7 @@ AM_CONDITIONAL([QTHREAD],[test x$qthread = xtrue])
 LALSUITE_ADD_GCC_FLAGS
 
 # link any executables against LAL and LALSupport libraries
-AC_SUBST([LDADD], ["\$(top_builddir)/lib/lal/liblal.la \$(top_builddir)/lib/lalsupport/src/liblalsupport.la"])
+AC_SUBST([LDADD], ["\$(top_builddir)/src/liblal.la \$(top_builddir)/src/support/liblalsupport.la"])
 
 # add extra preprocessor flags
 AM_CPPFLAGS="-DPKG_DATA_DIR='\"\$(pkgdatadir)/\"' ${AM_CPPFLAGS}"
