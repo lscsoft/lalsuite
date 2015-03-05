@@ -155,6 +155,7 @@ typedef struct {
   UINT4 nSFTs;                     /**< total number of SFTs */
   LALStringVector *detectorIDs;    /**< vector of detector IDs */
   REAL4 NSegmentsInvX[PULSAR_MAX_DETECTORS]; /**< effective inverse number of segments per detector (needed for correct averaging in single-IFO F calculation) */
+  FstatWorkspace *sharedWorkspace; /**< resampling Fstat workspace shared across segments */
 } UsefulStageVariables;
 
 
@@ -1742,7 +1743,9 @@ int MAIN( int argc, char *argv[]) {
     LALFree( fnameFstatVec1 );
   }
 
+  XLALDestroyFstatWorkspace ( usefulParams.sharedWorkspace );
   XLALDestroyFstatInputVector(Fstat_in_vec);
+
   XLALDestroyFstatResults(Fstat_res);
 
   XLALDestroyTimestampVector(startTstack);
@@ -2054,10 +2057,13 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
 
     /* ----- create Fstat input data struct ----- */
     (*p_Fstat_in_vec)->data[k] = XLALCreateFstatInput ( &catalogSeq.data[k], freqmin, freqmax, in->dFreqStack, in->edat, &optionalArgs );
-
     if ( (*p_Fstat_in_vec)->data[k] == NULL ) {
       XLALPrintError("%s: XLALCreateFstatInput() failed with errno=%d", __func__, xlalErrno);
       ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
+    }
+    // re-use shared Resampling workspace from first segment for all segments
+    if ( k == 0 ) {
+      in->sharedWorkspace = optionalArgs.sharedWorkspace = XLALGetSharedFstatWorkspace ( (*p_Fstat_in_vec)->data[0] );
     }
 
     /* get SFT detectors and timestamps */
