@@ -669,11 +669,7 @@ XLALComputeFaFb_Resamp ( FstatWorkspace *ws,				//!< [in,out] pre-allocated 'wor
   REAL8 dt_SRC = TimeSeries_SRC->deltaT;
 
   REAL8 freqShift = remainder ( FreqOut0 - fHet, dFreq ); // frequency shift to closest bin
-
-  // lowest FFT frequency bin (after applying freqShift)
-  UINT4 NnegBins = NhalfNeg ( ws->numSamplesFFT );
-  UINT4 NposBinsDC = ws->numSamplesFFT - NnegBins;
-  REAL8 fMinFFT = fHet + freqShift - dFreq * NnegBins;
+  REAL8 fMinFFT = fHet + freqShift - dFreq * (ws->numSamplesFFT/2);	// we'll shift DC into the *middle bin* N/2  [N always even!]
   UINT4 offset_bins = (UINT4) lround ( ( FreqOut0 - fMinFFT ) / dFreq );
 
 #ifdef COLLECT_TIMING
@@ -706,14 +702,9 @@ XLALComputeFaFb_Resamp ( FstatWorkspace *ws,				//!< [in,out] pre-allocated 'wor
   // Fourier transform the resampled Fa(t)
   fftwf_execute ( ws->fftplan );
 
-  for ( UINT4 k = 0; k < ws->numFreqBinsOut; k++ )
-    {
-      UINT4 idy = k + offset_bins + NposBinsDC;
-      UINT4 idyFFT = idy % ws->numSamplesFFT;	// physical access pattern in FFT bin ordering!
-
-      ws->FaX_k[k] = ws->FabX_Raw[idyFFT];
-
-    } // for k < numFreqBinsOut
+  for ( UINT4 k = 0; k < ws->numFreqBinsOut; k++ ) {
+    ws->FaX_k[k] = ws->FabX_Raw [ offset_bins + k ];
+  }
 
 #ifdef COLLECT_TIMING
   toc = XLALGetCPUTime();
@@ -735,14 +726,9 @@ XLALComputeFaFb_Resamp ( FstatWorkspace *ws,				//!< [in,out] pre-allocated 'wor
   // Fourier transform the resampled Fa(t)
   fftwf_execute ( ws->fftplan );
 
-  for ( UINT4 k = 0; k < ws->numFreqBinsOut; k++ )
-    {
-      UINT4 idy = k + offset_bins + NposBinsDC;
-      UINT4 idyFFT = idy % ws->numSamplesFFT;	// physical access pattern in FFT bin ordering!
-
-      ws->FbX_k[k] = ws->FabX_Raw[idyFFT];
-
-    } // for k < numFreqBinsOut
+  for ( UINT4 k = 0; k < ws->numFreqBinsOut; k++ ) {
+    ws->FbX_k[k] = ws->FabX_Raw [ offset_bins + k ];
+  }
 
 #ifdef COLLECT_TIMING
   toc = XLALGetCPUTime();
@@ -860,15 +846,19 @@ XLALApplyAmplitudeModulation ( COMPLEX8 *xOut,      		///< [out] the spindown-co
   // loop over SFTs
   for ( UINT4 alpha=0; alpha < numSFTs; alpha ++ )
     {
-      const COMPLEX8 fact = (COMPLEX8) ab->data[alpha];
+      COMPLEX8 fact = (COMPLEX8) ab->data[alpha];
       UINT4 start_index = SFTinds->data[2*alpha];
       UINT4 end_index   = SFTinds->data[2*alpha+1];
 
+      // NOTE: this relies on the number of FFT bins being EVEN!
+      // multiply input TS by (-1)^j to bring DC into the middle bin (k=N/2)
+      fact = ((start_index % 2) == 0) ? fact : -fact;
       // loop over all samples from this SFT
       // and apply amplitude modulation factor to output timeseries
       for ( UINT4 j=start_index; j <= end_index; j ++ )
         {
           xOut[j] = fact * xIn->data[j];
+          fact = -fact;
         } // for j in [start_index, end_index]
 
     } // for alpha < numSFTs
