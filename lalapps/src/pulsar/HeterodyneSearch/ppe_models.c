@@ -999,10 +999,10 @@ void get_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOModel *ifo ){
 
           ifo->compTimeSignal->data->data[0] = (Cplus*c2psi - Ccross*s2psi);
           ifo->compTimeSignal->data->data[1] = (Cplus*s2psi + Ccross*c2psi);
-          ifo->compTimeSignal->data->data[0] = (Cx*cpsi - Cy*spsi);
-          ifo->compTimeSignal->data->data[1] = (Cx*spsi + Cy*cpsi);
-          ifo->compTimeSignal->data->data[0] = Cb;
-          ifo->compTimeSignal->data->data[1] = Cl;
+          ifo->compTimeSignal->data->data[2] = (Cx*cpsi - Cy*spsi);
+          ifo->compTimeSignal->data->data[3] = (Cx*spsi + Cy*cpsi);
+          ifo->compTimeSignal->data->data[4] = Cb;
+          ifo->compTimeSignal->data->data[5] = Cl;
         }
       }
 
