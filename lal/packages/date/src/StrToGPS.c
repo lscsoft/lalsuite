@@ -34,9 +34,7 @@ static int isbase10(const char *s, int radix)
 {
 	if(*s == radix)
 		s++;
-	if(isdigit(*s))
-		return(1);
-	return(0);
+	return isdigit(*s);
 }
 
 
@@ -48,11 +46,10 @@ static int isbase16(const char *s, int radix)
 			s++;
 			if(*s == radix)
 				s++;
-			if(isxdigit(*s))
-				return(1);
+			return isxdigit(*s);
 		}
 	}
-	return(0);
+	return 0;
 }
 
 
@@ -67,10 +64,9 @@ static int isdecimalexp(const char *s)
 		s++;
 		if(*s == '+' || *s == '-')
 			s++;
-		if(isdigit(*s))
-			return(1);
+		return isdigit(*s);
 	}
-	return(0);
+	return 0;
 }
 
 
@@ -80,10 +76,9 @@ static int isbinaryexp(const char *s)
 		s++;
 		if(*s == '+' || *s == '-')
 			s++;
-		if(isdigit(*s))
-			return(1);
+		return isdigit(*s);
 	}
-	return(0);
+	return 0;
 }
 
 
@@ -116,7 +111,7 @@ int XLALStrToGPS(LIGOTimeGPS *t, const char *nptr, char **endptr)
 	while(isspace(*(pconv.cs)))
 		(pconv.cs)++;
 	if(endptr)
-		*endptr  = pconv.s;
+		*endptr = pconv.s;
 
 	/* determine the sign */
 	if(*(pconv.cs) == '-') {
@@ -137,7 +132,7 @@ int XLALStrToGPS(LIGOTimeGPS *t, const char *nptr, char **endptr)
 	} else {
 		/* this isn't a recognized number */
 		XLALGPSSet(t, 0, 0);
-		return(0);
+		return 0;
 	}
 
 	/* count the number of digits including the radix but not including
@@ -260,7 +255,7 @@ int XLALStrToGPS(LIGOTimeGPS *t, const char *nptr, char **endptr)
 	errno = olderrno;
 
 	/* success */
-	return(0);
+	return 0;
 }
 
 
