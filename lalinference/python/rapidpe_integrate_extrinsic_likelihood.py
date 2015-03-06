@@ -137,7 +137,11 @@ elif opts.coinc_xml is not None:
         m1, m2 = sngl_row.mass1, sngl_row.mass2
 else:
     raise ValueError("Need either --mass1 --mass2 or --coinc-xml to retrieve masses.")
-print "Performing integration for intrinsic parameters mass 1: %f, mass 2 %f" % (m1, m2)
+
+if opts.lambda1 is not None or opts.lambda2 is not None:
+    lambda1, lambda2 = opts.lambda1 or 0, opts.lambda2 or 0
+
+print "Performing integration for intrinsic parameters mass 1: %f, mass 2 %f, lambda1: %f, lambda2: %f" % (m1, m2, lambda1, lambda2)
 
 #
 # Template descriptors
@@ -148,20 +152,24 @@ fiducial_epoch = lal.LIGOTimeGPS(event_time.seconds, event_time.nanoseconds)
 # Struct to hold template parameters
 P = lalsimutils.ChooseWaveformParams(
 	approx = lalsimutils.lalsim.GetApproximantFromString(opts.approximant),
-    fmin = opts.fmin_template, # minimum frequency of template
     radec = False,
+    fmin = opts.fmin_template, # minimum frequency of template
+    fref = opts.reference_freq,
+    ampO = opts.amp_order,
+    tref = fiducial_epoch,
+
+    dist = factored_likelihood.distMpcRef * 1.e6 * lal.PC_SI,
     incl = 0.0,
     phiref = 0.0,
     theta = 0.0,
     phi = 0.0,
     psi = 0.0,
+
     m1 = m1 * lal.MSUN_SI,
     m2 = m2 * lal.MSUN_SI,
-    ampO = opts.amp_order,
-    fref = opts.reference_freq,
-    tref = fiducial_epoch,
-    dist = factored_likelihood.distMpcRef * 1.e6 * lal.PC_SI
-    )
+    lambda1 = lambda1,
+    lambda2 = lambda2
+)
 
 # User requested bounds for data segment
 if opts.data_start_time is not None and opts.data_end_time is not None:
@@ -534,6 +542,11 @@ if opts.output_file:
         samples["loglikelihood"] = numpy.log(samples["integrand"])
         samples["mass1"] = numpy.ones(samples["psi"].shape)*opts.mass1
         samples["mass2"] = numpy.ones(samples["psi"].shape)*opts.mass2
+        if opts.eff_lambda is not None or opts.deff_lambda is not None:
+            # FIXME: the column mapping isn't working right, we need to fix that
+            # rather than give these weird names
+            samples["psi0"] = numpy.ones(samples["psi"].shape)*opts.eff_lambda
+            samples["psi3"] = numpy.ones(samples["psi"].shape)*(opts.deff_lambda or 0)
         xmlutils.append_samples_to_xmldoc(xmldoc, samples)
     # FIXME: likelihood or loglikehood
     # FIXME: How to encode variance?
