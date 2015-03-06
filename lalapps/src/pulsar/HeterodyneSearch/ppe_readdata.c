@@ -887,10 +887,9 @@ void setup_from_par_file( LALInferenceRunState *runState )
 /* Generates lookup tables also */
 {
   LALSource psr;
-  BinaryPulsarParams pulsar;
+  PulsarParameters *pulsar;
   REAL8Vector *phase_vector = NULL;
   LALInferenceIFOData *data = runState->data;
-  LALInferenceVariables *scaletemp;
   ProcessParamsTable *ppt = NULL;
   REAL8 DeltaT = 0.; /* maximum data time span */
 
@@ -899,10 +898,24 @@ void setup_from_par_file( LALInferenceRunState *runState )
   CHAR *parFile = ppt->value;
 
   /* get the pulsar parameters */
-  XLALReadTEMPOParFile( &pulsar, parFile );
-  psr.equatorialCoords.longitude = pulsar.ra;
+  pulsar = XLALReadTEMPOParFileNew( parFile );
 
-  psr.equatorialCoords.latitude = pulsar.dec;
+  REAL8 ra = 0.;
+  if ( PulsarCheckParam( pulsar, "RA" ) ) { ra = PulsarGetREAL8Param( pulsar, "RA" ); }
+  else if ( PulsarCheckParam( pulsar, "RAJ" ) ) { ra = PulsarGetREAL8Param( pulsar, "RAJ" ); }
+  else {
+    XLALPrintError ("%s: No source right ascension specified!", __func__ );
+    XLAL_ERROR_VOID( XLAL_EINVAL );
+  }
+  REAL8 dec = 0.;
+  if ( PulsarCheckParam( pulsar, "DEC" ) ) { dec = PulsarGetREAL8Param( pulsar, "DEC" ); }
+  else if ( PulsarCheckParam( pulsar, "DECJ" ) ) { dec = PulsarGetREAL8Param( pulsar, "DECJ" ); }
+  else {
+    XLALPrintError ("%s: No source declination specified!", __func__ );
+    XLAL_ERROR_VOID( XLAL_EINVAL );
+  }
+  psr.equatorialCoords.longitude = ra;
+  psr.equatorialCoords.latitude = dec;
   psr.equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
 
   /* Setup lookup tables for amplitudes */
@@ -913,18 +926,16 @@ void setup_from_par_file( LALInferenceRunState *runState )
 
   runState->threads[0]->currentParams = XLALCalloc( 1, sizeof(LALInferenceVariables) );
 
-  scaletemp = XLALCalloc( 1, sizeof(LALInferenceVariables) );
-
-  /* Add initial (unchanging) variables for the model, initial (unity) scale factors, from the par file */
-  add_initial_variables( runState->threads[0]->currentParams, scaletemp, pulsar );
+  /* Add initial (unchanging) variables for the model from the par file */
+  add_initial_variables( runState->threads[0]->currentParams, pulsar );
 
   /* check for binary model */
   CHAR *binarymodel = NULL;
-  if ( LALInferenceCheckVariable( runState->threads[0]->currentParams, "model") ){
-    binarymodel = XLALStringDuplicate(*(CHAR**)LALInferenceGetVariable( runState->threads[0]->currentParams, "model" ));
+  if ( LALInferenceCheckVariable( runState->threads[0]->currentParams, "BINARY") ){
+    binarymodel = XLALStringDuplicate(*(CHAR**)LALInferenceGetVariable( runState->threads[0]->currentParams, "BINARY" ));
 
     /* now remove from runState->params (as it conflict with calls to LALInferenceCompareVariables in the proposal) */
-    LALInferenceRemoveVariable( runState->threads[0]->currentParams, "model" );
+    LALInferenceRemoveVariable( runState->threads[0]->currentParams, "BINARY" );
   }
 
   /* Setup initial phase, and barycentring delays */
@@ -940,7 +951,6 @@ void setup_from_par_file( LALInferenceRunState *runState )
 
     for( j = 0; j < freqFactors->length; j++ ){
       UINT4 i = 0;
-      LALInferenceVariableItem *scaleitem = scaletemp->head;
       REAL8Vector *dts = NULL, *bdts = NULL;
 
       /* check whether using original Jones (2010) signal model or a biaxial model (in the amplitude/phase parameterisation) */
@@ -957,7 +967,7 @@ void setup_from_par_file( LALInferenceRunState *runState )
 
       /* add binary model to the general parameters */
       if ( binarymodel != NULL ){
-        LALInferenceAddVariable( ifo_model->params, "model", &binarymodel, LALINFERENCE_string_t, LALINFERENCE_PARAM_FIXED );
+        LALInferenceAddVariable( ifo_model->params, "BINARY", &binarymodel, LALINFERENCE_string_t, LALINFERENCE_PARAM_FIXED );
       }
 
       dts = get_ssb_delay( pulsar, ifo_model->times, ifo_model->ephem, ifo_model->tdat, ifo_model->ttype, data->detector, 0. );
@@ -972,11 +982,6 @@ void setup_from_par_file( LALInferenceRunState *runState )
       ifo_model->timeData = XLALCreateREAL8TimeSeries( "", &ifo_model->times->data[0], 0., 1., &lalSecondUnit, phase_vector->length );
 
       for ( i=0; i<phase_vector->length; i++ ) { ifo_model->timeData->data->data[i] = phase_vector->data[i]; }
-
-      /* add the scale factors from scaletemp into the ifo_model->params structure */
-      for( ; scaleitem; scaleitem = scaleitem->next ){
-        LALInferenceAddVariable( ifo_model->params, scaleitem->name, scaleitem->value, scaleitem->type, scaleitem->vary );
-      }
 
       data = data->next;
       ifo_model = ifo_model->next;
