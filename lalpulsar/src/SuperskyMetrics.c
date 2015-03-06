@@ -445,29 +445,29 @@ static int SM_ComputeSuperskyMetrics(
 
 }
 
-///
-/// Convert from 2-dimensional reduced supersky coordinates to 3-dimensional aligned sky
-/// coordinates.
-///
-/// The 2-dimensional reduced supersky coordinates \c rss = (\c A, \c B) encode the two
-/// hemispheres of the sky as two neighbouring unit disks. The conversion to 3-dimensional
-/// aligned sky coordinates is illustrated in the following diagram:
-///
-/** \verbatim
-| as[1] =    ___________________
-|     B = 1_|   _____   _____   |
-|           |  /     \ /     \  |
-|         0-| |       |       | |
-|          _|  \_____/ \_____/  |
-|        -1 |_.___.___.___.___._|
-|             '   '   '   '   '
-|        A = -2  -1   0   1   2
-|    as[0] =  1   0  -1   0   1
-|    as[2] =  0  -1   0   1   0
-\endverbatim */
-///
-/// Points outside the unit disks are moved radially onto their boundaries.
-///
+/**
+ * Convert from 2-dimensional reduced supersky coordinates to 3-dimensional aligned sky
+ * coordinates.
+ *
+ * The 2-dimensional reduced supersky coordinates \c rss = (\c A, \c B) encode the two
+ * hemispheres of the sky as two neighbouring unit disks. The conversion to 3-dimensional
+ * aligned sky coordinates is illustrated in the following diagram:
+ *
+ \verbatim
+ | as[1] =    ___________________
+ |     B = 1_|   _____   _____   |
+ |           |  /     \ /     \  |
+ |         0-| |       |       | |
+ |          _|  \_____/ \_____/  |
+ |        -1 |_.___.___.___.___._|
+ |             '   '   '   '   '
+ |        A = -2  -1   0   1   2
+ |    as[0] =  1   0  -1   0   1
+ |    as[2] =  0  -1   0   1   0
+ \endverbatim
+ *
+ * Points outside the unit disks are moved radially onto their boundaries.
+ */
 static void SM_ReducedToAligned(
   double as[3],					///< [out] 3-dimensional aligned sky coordinates
   const gsl_vector *rss				///< [in] 2-dimensional reduced supersky coordinates
@@ -649,19 +649,19 @@ int XLALComputeSuperskyMetrics(
       for( size_t n = 0; n < segments->length; ++n ) {
         gsl_matrix_view rssky_metric_view;
         gsl_matrix *rssky_metric = NULL;
-        if ( out_rssky_metric_seg != NULL ) {
+        if( out_rssky_metric_seg != NULL ) {
           rssky_metric_view = gsl_matrix_submatrix( *out_rssky_metric_seg, 0, ( 2 + fsize ) * n, 2 + fsize, 2 + fsize );
           rssky_metric = &rssky_metric_view.matrix;
         }
         gsl_matrix_view rssky_transf_view;
         gsl_matrix *rssky_transf = NULL;
-        if ( out_rssky_transf_seg != NULL ) {
+        if( out_rssky_transf_seg != NULL ) {
           rssky_transf_view = gsl_matrix_submatrix( *out_rssky_transf_seg, 0, ( 3 ) * n, 3 + fsize, 3 );
           rssky_transf = &rssky_transf_view.matrix;
         }
         gsl_matrix_view ssky_metric_view;
         gsl_matrix *ssky_metric = NULL;
-        if ( out_ssky_metric_seg != NULL ) {
+        if( out_ssky_metric_seg != NULL ) {
           ssky_metric_view = gsl_matrix_submatrix( *out_ssky_metric_seg, 0, ( 3 + fsize ) * n, 3 + fsize, 3 + fsize );
           ssky_metric = &ssky_metric_view.matrix;
         }
