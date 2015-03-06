@@ -388,7 +388,7 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
   LALInferenceIFOModel *ifo = runState->model->ifo;
   (void)runState;
   LALInferenceVariableItem *item = params->head;
-  REAL8 min, max, mu, sigma, prior = 0, value = 0.;
+  REAL8 min, max, prior = 0, value = 0.;
 
   REAL8Vector *corVals = NULL;
   UINT4 cori = 0;
@@ -465,13 +465,10 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
     if( item->vary == LALINFERENCE_PARAM_LINEAR || item->vary == LALINFERENCE_PARAM_CIRCULAR ){
       /* Check for a gaussian */
       if ( LALInferenceCheckGaussianPrior(runState->priorArgs, item->name) ){
-        LALInferenceGetGaussianPrior( runState->priorArgs, item->name, &mu, &sigma );
-
         value = (*(REAL8 *)item->value) * scale + scaleMin;
-        mu += scaleMin;
-        sigma *= scale;
-        prior -= log(sqrt(2.*LAL_PI)*sigma);
-        prior -= (value - mu)*(value - mu) / (2.*sigma*sigma);
+
+        /* the Gaussian distribution is scaled, so that values will be drawn from a zero mean unit variance distribution */
+        prior -= 0.5*((*(REAL8 *)item->value)*(*(REAL8 *)item->value));
 
         if ( !strcmp(item->name, "I21") ){ I21 = value; }
         if ( !strcmp(item->name, "I31") ){ I31 = value; }
@@ -488,9 +485,7 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
         if ( !strcmp(item->name, "IOTA") || !strcmp(item->name, "THETA") ){
           prior += theta_prior( value );
         }
-        else {
-          prior -= log( (max - min) * scale );
-
+        else { /* note: we don't need to update the prior as it is a constant */
           if ( !strcmp(item->name, "I21") ){ I21 = value; }
           if ( !strcmp(item->name, "I31") ){ I31 = value; }
           if ( !strcmp(item->name, "C21") ){ C21 = value; }
