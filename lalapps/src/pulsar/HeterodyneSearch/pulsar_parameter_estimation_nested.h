@@ -161,7 +161,7 @@ extern "C" {
  * binary period, orbital eccentricity, projected semi-major axis, time of
  * periastron and angle of periastron.
  */
-#define NUMBINPARS 33
+#define NUMBINPARS 34
 
 /** The maximum number of different detectors allowable. */
 #define MAXDETS 6
@@ -240,9 +240,12 @@ extern "C" {
                      frequency bins as a proposal (DEFAULT = 0, e.g. this is\n\
                      not required unless searching over frequency)\n"\
 " --ensembleStretch   (UINT4) relative weight of the ensemble stretch\n\
-                     proposal (DEFAULT = 1, e.g. 50%%)\n"\
+                     proposal (DEFAULT = 15, e.g. 37.5%%)\n"\
 " --ensembleWalk      (UINT4) relative weight of the ensemble walk\n\
-                     proposal (DEFAULT = 1, e.g. 50%%)\n"\
+                     proposal (DEFAULT = 15, e.g. 37.5%%)\n"\
+" --uniformprop       (UINT4) relative weight of a proposal that draws\n\
+                     points uniformly from any flat prior ranges.\n\
+                     (DEFAULT = 10, e.g. 25%%)\n"\
 "\n"\
 " Reduced order quadrature parameters:\n"\
 " --roq               Set this to use reduced order quadrature to compute the\n\
@@ -360,7 +363,7 @@ static const CHAR skypars[NUMSKYPARS][VARNAME_MAX] = { "RA", "PMRA", "DEC",
 static const CHAR binpars[NUMBINPARS][VARNAME_MAX] = { "PB", "ECC", "EPS1",
 "EPS2", "T0", "TASC", "A1", "OM", "PB_2", "ECC_2", "T0_2", "A1_2", "OM_2", "PB_3", "ECC_3",
 "T0_3", "A1_3", "OM_3", "XPBDOT", "EPS1DOT", "EPS2DOT", "OMDOT", "GAMMA", "PBDOT",
-"XDOT", "EDOT", "SINI", "DR", "DTHETA", "A0", "B0", "MTOT", "M2" };
+"XDOT", "EDOT", "SINI", "DR", "DTHETA", "A0", "B0", "MTOT", "M2", "FB" };
 
 extern LALStringVector *corlist;
 

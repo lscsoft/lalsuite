@@ -51,7 +51,7 @@ void inject_signal( LALInferenceRunState *runState ){
   ProcessParamsTable *ppt;
   ProcessParamsTable *commandLine = runState->commandLine;
 
-  BinaryPulsarParams injpars;
+  PulsarParameters *injpars = XLALCalloc(sizeof(*injpars),1);;
 
   FILE *fpsnr = NULL; /* output file for SNRs */
   INT4 ndats = 0, j = 1;
@@ -85,10 +85,32 @@ void inject_signal( LALInferenceRunState *runState ){
     }
 
     /* read in injection parameter file */
-    XLALReadTEMPOParFile( &injpars, injectfile );
+    injpars = XLALReadTEMPOParFileNew( injectfile );
+
+    /* check RA and DEC are set (if only RAJ and DECJ are given in the par file) */
+    if ( !PulsarCheckParam( injpars, "RA" ) ){
+      if ( PulsarCheckParam( injpars, "RAJ" ) ){
+        REAL8 ra = PulsarGetREAL8Param( injpars, "RAJ" );
+        PulsarAddParam( injpars, "RA", &ra, PULSARTYPE_REAL8_t );
+      }
+      else {
+        XLALPrintError ("%s: No source right ascension specified!", __func__ );
+        XLAL_ERROR_VOID( XLAL_EINVAL );
+      }
+    }
+    if ( !PulsarCheckParam( injpars, "DEC" ) ){
+      if ( PulsarCheckParam( injpars, "DECJ" ) ) {
+        REAL8 dec = PulsarGetREAL8Param( injpars, "DECJ" );
+        PulsarAddParam( injpars, "DEC", &dec, PULSARTYPE_REAL8_t );
+      }
+      else {
+        XLALPrintError ("%s: No source declination specified!", __func__ );
+        XLAL_ERROR_VOID( XLAL_EINVAL );
+      }
+    }
 
     /* make sure that we have parameters in terms of amplitude and phase parameters */
-    invert_source_params( &injpars );
+    invert_source_params( injpars );
   }
   else{
     fclose( fpsnr );
@@ -130,14 +152,14 @@ void inject_signal( LALInferenceRunState *runState ){
       ifo_model = runState->model->ifo;
       /* setup nonGR lookup tables */
       LALSource psr;
-      psr.equatorialCoords.longitude = injpars.ra;
-      psr.equatorialCoords.latitude = injpars.dec;
+      psr.equatorialCoords.longitude = PulsarGetREAL8ParamOrZero( injpars, "RA" );
+      psr.equatorialCoords.latitude = PulsarGetREAL8ParamOrZero( injpars, "DEC" );
       psr.equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
       setup_lookup_tables( runState, &psr );
     }
     if ( *injection_model!='\0' ){
       /* set parameters corresponding to specific model */
-      set_nonGR_model_parameters( &injpars, injection_model);
+      set_nonGR_model_parameters( injpars, injection_model);
     }
   }
   else {
@@ -196,8 +218,10 @@ void inject_signal( LALInferenceRunState *runState ){
     /* rescale the signal and calculate the SNRs */
     snrscale /= snrmulti;
 
-    injpars.C22 *= snrscale;
-    injpars.C21 *= snrscale;
+    REAL8 C22 = PulsarGetREAL8ParamOrZero( injpars, "C22" )*snrscale;
+    REAL8 C21 = PulsarGetREAL8ParamOrZero( injpars, "C21" )*snrscale;
+    PulsarAddParam( injpars, "C22", &C22, PULSARTYPE_REAL8_t );
+    PulsarAddParam( injpars, "C21", &C21, PULSARTYPE_REAL8_t );
 
     /* recreate the signal with scaled amplitude */
     varyphase = 1;
@@ -323,25 +347,27 @@ void inject_signal( LALInferenceRunState *runState ){
     j++;
   }
 
-/* reset nonGR status */
-ifo_model = runState->model->ifo;
-if ( nonGR_search ){
-  if ( !nonGR_injection ){
-    UINT4 nonGRval = 1;
+  /* reset nonGR status */
+  ifo_model = runState->model->ifo;
+  if ( nonGR_search ){
+    if ( !nonGR_injection ){
+      UINT4 nonGRval = 1;
       while ( ifo_model ){
         LALInferenceAddVariable( ifo_model->params, "nonGR", &nonGRval, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
         ifo_model = ifo_model->next;
       }
       ifo_model = runState->model->ifo;
+    }
   }
-}
-else {
-  while ( ifo_model ){
-    LALInferenceRemoveVariable(ifo_model->params, "nonGR");
-    ifo_model = ifo_model->next;
+  else {
+    while ( ifo_model ){
+      LALInferenceRemoveVariable(ifo_model->params, "nonGR");
+      ifo_model = ifo_model->next;
+    }
+    ifo_model = runState->model->ifo;
   }
-  ifo_model = runState->model->ifo;
-}
+
+  PulsarFreeParams( injpars ); /* free memory */
 }
 
 /*-------------------- END OF SOFTWARE INJECTION FUNCTIONS -------------------*/

@@ -682,8 +682,6 @@ void gzip_output( LALInferenceRunState *runState ){
     XLAL_ERROR_VOID( XLAL_EIO );
   }
 
-  /* rescale parameters held in array and recreate XML output - we don't need
-     to remove any variables. */
   if( ppt2 ){
     outVOTable = ppt2->value;
 
@@ -883,59 +881,4 @@ void check_and_add_fixed_variable( LALInferenceVariables *vars, const char *name
      if ( LALInferenceGetVariableVaryType( vars, name ) == LALINFERENCE_PARAM_FIXED ) { LALInferenceRemoveVariable( vars, name ); }
    }
    LALInferenceAddVariable( vars, name, value, type, LALINFERENCE_PARAM_FIXED );
-}
-
-
-/**
- * \brief Remove a variable from the current parameters and remove it's scaling and prior values
- *
- * This function will clear out a variable from the \c currentParams and also remove it's scale
- * factors and prior ranges.
- *
- * \param runState [in] The analysis information structure
- * \param ifo [in] The IFO data structure
- * \param var [in] The variable to remove
- *
- */
-void remove_variable_and_prior( LALInferenceRunState *runState, LALInferenceIFOModel *ifo, const CHAR *var ){
-  /* remove variable from currentParams */
-  if( LALInferenceCheckVariable( runState->currentParams, var ) ){
-    LALInferenceRemoveVariable( runState->currentParams, var );
-  }
-  else{
-    fprintf(stderr, "Error... variable %s cannot be removed as it does not exist!\n", var);
-    exit(3);
-  }
-
-  /* remove variable scale parameters from data */
-  LALInferenceIFOModel *ifotemp = ifo;
-  while ( ifotemp ){
-    CHAR *varscale = XLALStringDuplicate( var );
-    varscale = XLALStringAppend( varscale, "_scale" );
-
-    if( LALInferenceCheckVariable( ifotemp->params, varscale ) ){
-      LALInferenceRemoveVariable( ifotemp->params, varscale );
-    }
-    else{
-      fprintf(stderr, "Error... variable %s cannot be removed as it does not exist!\n", varscale);
-      exit(3);
-    }
-
-    varscale = XLALStringAppend( varscale, "_min" );
-    if( LALInferenceCheckVariable( ifotemp->params, varscale ) ){
-      LALInferenceRemoveVariable( ifotemp->params, varscale );
-    }
-    else{
-      fprintf(stderr, "Error... variable %s cannot be removed as it does not exist!\n", varscale);
-      exit(3);
-    }
-
-    ifotemp = ifotemp->next;
-  }
-
-  /* remove prior */
-  if ( LALInferenceCheckGaussianPrior( runState->priorArgs, var ) ){
-    LALInferenceRemoveGaussianPrior( runState->priorArgs, var );
-  }
-  else { LALInferenceRemoveMinMaxPrior( runState->priorArgs, var ); }
 }
