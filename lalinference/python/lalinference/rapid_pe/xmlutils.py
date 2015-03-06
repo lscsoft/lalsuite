@@ -54,17 +54,21 @@ CMAP = { "right_ascension": "longitude",
 
 # FIXME: Find way to intersect given cols with valid cols when making table.
 # Otherwise, we'll have to add them manually and ensure they all exist
-sim_valid_cols = ["process_id", "simulation_id", "inclination", "longitude", "latitude", "polarization", "geocent_end_time", "geocent_end_time_ns", "coa_phase", "distance", "mass1", "mass2", "alpha1", "alpha2", "alpha3", "psi0", "psi3"]
+sim_valid_req = ["process_id", "simulation_id", "alpha1", "alpha2", "alpha3"]
+sim_valid_ext = ["inclination", "longitude", "latitude", "polarization", "geocent_end_time", "geocent_end_time_ns", "coa_phase", "distance"]
+sim_valid_int = ["mass1", "mass2", "psi0", "psi3"]
 sngl_valid_cols = ["process_id", "event_id", "snr", "tau0", "tau3"]
 multi_valid_cols = ["process_id", "event_id", "snr"]
 
 def append_samples_to_xmldoc(xmldoc, sampdict):
+    write_cols = set(sim_valid_ext + sim_valid_int) & set(sampdict.keys())
+    write_cols = list(write_cols) + sim_valid_req
     try: 
         si_table = table.get_table(xmldoc, lsctables.SimInspiralTable.tableName)
         new_table = False
     # Warning: This will also get triggered if there is *more* than one table
     except ValueError:
-        si_table = lsctables.New(lsctables.SimInspiralTable, sim_valid_cols)
+        si_table = lsctables.New(lsctables.SimInspiralTable, write_cols)
         new_table = True
     
     keys = sampdict.keys()
