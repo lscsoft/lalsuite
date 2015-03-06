@@ -407,9 +407,16 @@ PulsarParamType PulsarGetParamType( const PulsarParameters *pars, const char *na
  */
 REAL8 PulsarGetREAL8Param( const PulsarParameters *pars, const CHAR *name );
 
+/** \brief Return a \c REAL8 parameter if it exists, otherwise return zero
+ */
+REAL8 PulsarGetREAL8ParamOrZero( const PulsarParameters *pars, const CHAR *name );
+
 /** \brief Return a string parameter
  *
  * This function will call \c PulsarGetParam for a string parameter and properly cast it for returning.
+ * The return value should be copied e.g. with
+ * CHAR *str = XLALStringDuplicate( PulsarGetStringParam(pars, "NAME") );
+ * It also needs to be freed afterwards.
  */
 CHAR *PulsarGetStringParam( const PulsarParameters *pars, const CHAR *name );
 
@@ -458,7 +465,7 @@ void PulsarSetParam( PulsarParameters* pars, const CHAR *name, void *value );
 void PulsarSetParamErr( PulsarParameters* pars, const CHAR *name, void *value, UINT4 fitFlag, UINT4 nfits, UINT4 len );
 
 /** \brief Check for the existence of the parameter \c name in the \c PulsarParameters structure */
-int PulsarCheckParam( PulsarParameters *pars, const CHAR *name );
+int PulsarCheckParam( const PulsarParameters *pars, const CHAR *name );
 
 /** \brief Function to free memory from pulsar parameters */
 void PulsarFreeParams( PulsarParameters *par );
