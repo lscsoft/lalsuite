@@ -41,7 +41,7 @@ from glue import pipeline
 
 from lalinference.rapid_pe import lalsimutils as lsu
 from lalinference.rapid_pe import effectiveFisher as eff
-from lalinference.rapid_pe import dagutils
+from lalinference.rapid_pe import common_cl
 
 __author__ = "Evan Ochsner <evano@gravity.phys.uwm.edu>, Chris Pankow <pankow@gravity.phys.uwm.edu>, R. O'Shaughnessy"
 
@@ -49,6 +49,7 @@ optp = OptionParser()
 # Options needed by this program only.
 optp.add_option("-X", "--mass-points-xml", action="store_true", help="Output mass points as a sim_inspiral table.")
 optp.add_option("-N", "--N-mass-pts", type=int, default=200, help="Number of intrinsic parameter (mass) values at which to compute marginalized likelihood. Default is 200.")
+optp.add_option("-t", "--N-tidal-pts", type=int, default=None, help="Number of intrinsic parameter (tidal) values at which to compute marginalized likelihood. Default is None, meaning 'don't grid in lambda'")
 optp.add_option("--linear-spoked", action="store_true", help="Place mass pts along spokes linear in radial distance (if omitted placement will be random and uniform in volume")
 optp.add_option("--match-value", type=float, default=0.97, help="Use this as the minimum match value. Default is 0.97")
 optp.add_option("--save-ellipsoid-data", action="store_true", help="Save the parameters and eigenvalues of the ellipsoid.")
@@ -64,11 +65,18 @@ optp.add_option("-s", "--sim-xml", help="XML file containing injected event info
 intrinsic_params = OptionGroup(optp, "Intrinsic Parameters", "Intrinsic parameters (e.g component mass) to use.")
 intrinsic_params.add_option("--mass1", type=float, help="Value of first component mass, in solar masses. Required if not providing coinc tables.")
 intrinsic_params.add_option("--mass2", type=float, help="Value of second component mass, in solar masses. Required if not providing coinc tables.")
+intrinsic_params.add_option("--eff-lambda", type=float, help="Value of the effective tidal parameter. Optional, ignored if not given.")
+intrinsic_params.add_option("--delta-eff-lambda", type=float, help="Value of second effective tidal parameter. Optional, ignored if not given.")
 intrinsic_params.add_option("--event-time", type=float, help="Event coalescence GPS time.")
 intrinsic_params.add_option("--approximant", help="Waveform family approximant to use. Required.")
 optp.add_option_group(intrinsic_params)
 
 opts, args = optp.parse_args()
+
+if opts.delta_eff_lambda and opts.eff_lambda is None:
+    exit("If you specify delta_eff_lambda and not eff_lambda, you're gonna have a bad time.")
+if opts.N_tidal_pts is not None and (opts.delta_eff_lambda or opts.eff_lambda):
+    exit("You asked for a specific value of lambda and gridding. You can't have it both ways.")
 
 #
 # Get trigger information from coinc xml file
@@ -127,6 +135,17 @@ match_cntr = opts.match_value # Fill an ellipsoid of this match
 wide_match = 1-(1-opts.match_value)**(2/3.0)
 fit_cntr = match_cntr # Do the effective Fisher fit with pts above this match
 Nrandpts = opts.N_mass_pts # Requested number of pts to put inside the ellipsoid
+Nlam = opts.N_tidal_pts or 1
+
+#
+# Tidal parameters
+#
+if opts.eff_lambda:
+    # NOTE: Since dlambda tilde is effectively zero, it's assumed that the user
+    # will set it explicitly if they want it, otherwise it's zero identically
+    lambda1, lambda2 = lsu.tidal_lambda_from_tilde(m1, m2, opts.eff_lambda, opts.delta_eff_lambda or 0)
+else:
+    lambda1, lambda2 = 0, 0
 
 #
 # Setup signal and IP class
@@ -136,6 +155,7 @@ McSIG = lsu.mchirp(m1_SI, m2_SI)
 etaSIG = lsu.symRatio(m1_SI, m2_SI)
 PSIG = lsu.ChooseWaveformParams(
         m1=m1_SI, m2=m2_SI,
+        lambda1=lambda1, lambda2=lambda2,
         fmin=template_min_freq,
         approx=lalsim.GetApproximantFromString(opts.approximant)
         )
@@ -256,6 +276,8 @@ cart_grid = cart_grid[phys_cut]
 print "Requested", Nrandpts, "points inside the ellipsoid of",\
         match_cntr, "match."
 print "Kept", len(cart_grid), "points with physically allowed parameters."
+if opts.N_tidal_pts:
+    print "With tidal parameters will have", len(cart_grid)*Nlam, "points."
 
 # Output Cartesian and spherical coordinates of intrinsic grid
 indices = np.arange(len(cart_grid))
@@ -289,14 +311,16 @@ if opts.mass_points_xml:
     procid = procrow.process_id
     process.append_process_params(xmldoc, procrow, process.process_params_from_dict(opts.__dict__))
     
-    sim_insp_tbl = lsctables.New(lsctables.SimInspiralTable, ["simulation_id", "process_id", "numrel_data", "mass1", "mass2"])
+    sim_insp_tbl = lsctables.New(lsctables.SimInspiralTable, ["simulation_id", "process_id", "numrel_data", "mass1", "mass2", "psi0", "psi3"])
     for itr, (m1, m2) in enumerate(m1m2_grid):
-        sim_insp = sim_insp_tbl.RowType()
-        sim_insp.numrel_data = "MASS_SET_%d" % itr
-        sim_insp.simulation_id = ilwd.ilwdchar("sim_inspiral:sim_inspiral_id:%d" % itr)
-        sim_insp.process_id = procid
-        sim_insp.mass1, sim_insp.mass2 = m1, m2
-        sim_insp_tbl.append(sim_insp)
+        for l1 in np.linspace(common_cl.param_limits["lam_tilde"][0], common_cl.param_limits["lam_tilde"][1], Nlam):
+            sim_insp = sim_insp_tbl.RowType()
+            sim_insp.numrel_data = "MASS_SET_%d" % itr
+            sim_insp.simulation_id = ilwd.ilwdchar("sim_inspiral:sim_inspiral_id:%d" % itr)
+            sim_insp.process_id = procid
+            sim_insp.mass1, sim_insp.mass2 = m1, m2
+            sim_insp.psi0, sim_insp.psi3 = opts.eff_lambda or l1, opts.delta_eff_lambda or 0
+            sim_insp_tbl.append(sim_insp)
     xmldoc.childNodes[0].appendChild(sim_insp_tbl)
     ifos = "".join([o.split("=")[0][0] for o in opts.channel_name])
     start = int(event_time)
