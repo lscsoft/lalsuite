@@ -28,6 +28,7 @@
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_eigen.h>
+#include <gsl/gsl_roots.h>
 
 #include <lal/SuperskyMetrics.h>
 #include <lal/LALConstants.h>
@@ -900,6 +901,22 @@ int XLALConvertSuperskyToPhysical(
 
 }
 
+static double SuperskyAHemiFracRoot(
+  double x,
+  void *params
+  )
+{
+
+  // Fractional area of reduced supersky hemisphere to left of line of constant 'x'
+  const double frac = LAL_PI + x * sqrt( 1 - x*x ) - acos( x );
+
+  // Target fractional area we are trying to find 'x' to satisfy
+  const double target_frac = *( ( double * ) params );
+
+  return frac - target_frac;
+
+}
+
 static double SuperskyBCoordBound(
   const void *data,
   const size_t dim UNUSED,
@@ -908,30 +925,115 @@ static double SuperskyBCoordBound(
 {
 
   // Get bounds data
-  const double sgn = ( ( const double * ) data )[0];
+  const double semiB = *( ( const double * ) data );
 
   // Get 2-dimensional reduced supersky A coordinate
   const double A = gsl_vector_get( point, 0 );
   const double dA = fabs( A ) - 1.0;
 
   // Set bound on 2-dimensional reduced supersky B coordinate
-  const double maxB = RE_SQRT( 1.0 - SQR( dA ) );
-  double bound = sgn * maxB;
+  const double bound = semiB * RE_SQRT( 1.0 - SQR( dA ) );
 
   return bound;
 
 }
 
 int XLALSetSuperskyLatticeTilingAllSkyBounds(
-  LatticeTiling *tiling
+  LatticeTiling *tiling,
+  const size_t patch_count_A,
+  const size_t patch_count_B,
+  const size_t patch_index_A,
+  const size_t patch_index_B
   )
 {
 
   // Check input
   XLAL_CHECK( tiling != NULL, XLAL_EFAULT );
+  XLAL_CHECK( patch_count_A > 0, XLAL_EINVAL );
+  XLAL_CHECK( patch_count_B > 0, XLAL_EINVAL );
+  XLAL_CHECK( patch_index_A < patch_count_A, XLAL_EINVAL );
+  XLAL_CHECK( patch_index_B < patch_count_B, XLAL_EINVAL );
 
-  // Set the parameter-space bound on 2-dimensional reduced supersky A coordinate
-  XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, 0, -2.0, 2.0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  // Allocate GSL root solver for finding reduced supersky A coordinate bounds
+  gsl_root_fsolver *GALLOC( skyA_bounds_fsolver, gsl_root_fsolver_alloc( gsl_root_fsolver_brent ) );
+
+  // The reduced supersky A coordinate is bounded from 'skyA_bounds[0]' to 'skyA_bounds[1]'. The
+  // value of 'skyA_bounds[i]' is chosen such that the fractional area of the sky (shaded # in the
+  // diagram) to the left of the line A = 'skyA_bounds[i]' (dotted : vertical line in the diagram)
+  // is equal to
+  //   2*pi * ('patch_index_A' + 'i') / 'patch_count_A'.
+  // This divides the sky into equal-area bands at constant 'patch_index_A'.
+  //
+  //        ______:____________
+  // B = 1_|   ___:_   _____   |
+  //       |  /###: \ /     \  |
+  //     0-| |####:  |       | |
+  //      _|  \###:_/ \_____/  |
+  //    -1 |_.____:__._______._|
+  //         '    :  '       '
+  //    A = -2       0       2
+  //
+  // To find 'skyA_bounds[i]', we numerically solve for 'x' in [-1.0, 1.0] such that
+  //   int_{-1}^{x} 2*sqrt(1 - x'^2) dx' = pi + x*sqrt(1 - x^2) - acos(x) = 'skyA_frac'
+  // where 'skyA_frac' is the fractional area of one sky hemisphere. The bound is then given by
+  //   'skyA_bounds[i]' = -1.0 + 2.0*'skyA_hemi' + 'x'
+  // where 'skyA_hemi' is 0.0 for the left hemisphere and 1.0 for the right hemisphere.
+
+  // Compute the lower and upper bounds on reduced supersky A coordinate
+  double skyA_bounds[2] = {0, 0};
+  for( size_t i = 0; i < 2; ++i ) {
+    const size_t iA = patch_index_A + i;
+
+    // Treat special value of 'iA' where root-finding is not required separately
+    if( iA == 0 ) {
+      skyA_bounds[i] = -2.0;
+      continue;
+    }
+    if( patch_count_A % 2 == 0 && iA == patch_count_A/2 ) {
+      skyA_bounds[i] = 0.0;
+      continue;
+    }
+    if( iA == patch_count_A ) {
+      skyA_bounds[i] = 2.0;
+      continue;
+    }
+
+    // Compute which hemisphere 'skyA_bounds[i]' is in ('skyA_hemi'), and
+    // the fractional area of the hemisphere ('skyA_frac')
+    double skyA_hemi = 0;
+    double skyA_frac = LAL_PI * modf( 2.0 * ( ( double ) iA ) / patch_count_A, &skyA_hemi );
+
+    // Initialise GSL root finder function and set parameter to 'skyA_frac'
+    gsl_function skyA_bounds_fsolver_F = { .function = &SuperskyAHemiFracRoot, .params = &skyA_frac };
+
+    // Set GSL root finder bounds on 'x' to [-1.0, 1.0] and solve for 'x'
+    GCALL( gsl_root_fsolver_set( skyA_bounds_fsolver, &skyA_bounds_fsolver_F, -1.0, 1.0 ) );
+    double x = -1.0;
+    const double epsabs = 1e-4;
+    int status = GSL_CONTINUE;
+    int iterations = 100;
+    while( status == GSL_CONTINUE && iterations-- > 0 ) {
+      GCALL( gsl_root_fsolver_iterate( skyA_bounds_fsolver ) );
+      x = gsl_root_fsolver_root( skyA_bounds_fsolver );
+      const double x_lower = gsl_root_fsolver_x_lower( skyA_bounds_fsolver );
+      const double x_upper = gsl_root_fsolver_x_upper( skyA_bounds_fsolver );
+      status = gsl_root_test_interval( x_lower, x_upper, epsabs, 0.0 );
+    }
+    XLAL_CHECK( status == GSL_SUCCESS, XLAL_EMAXITER, "GSL root solver failed to converge: x=%0.6g, f(x)=%0.6g, epsabs=%0.6g", x, GSL_FN_EVAL(&skyA_bounds_fsolver_F, x), epsabs );
+
+    // Set 'skyA_bounds[i]' from 'skyA_hemi' and 'x'
+    skyA_bounds[i] = -1.0 + 2.0*skyA_hemi + x;
+
+  }
+
+  // Set the parameter-space bound on reduced supersky A coordinate
+  XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, 0, skyA_bounds[0], skyA_bounds[1] ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // The reduced supersky B coordinate is bounded from below and above by ellipses, with semi-major
+  // axes (in A) of 1.0, and semi-minor axes (in B) given by 'semiB', which has values:
+  //   lower 'semiB' = -1.0 + 2.0 *   'patch_index_B'       / 'patch_count_B'
+  //   upper 'semiB' = -1.0 + 2.0 * ( 'patch_index_B' + 1 ) / 'patch_count_B'
+  // This divides the sky into equal-area bands at constant 'patch_index_B'.
 
   // Allocate memory
   const size_t data_len = sizeof( double );
@@ -940,10 +1042,13 @@ int XLALSetSuperskyLatticeTilingAllSkyBounds(
   double *data_upper = XLALMalloc( data_len );
   XLAL_CHECK( data_upper != NULL, XLAL_ENOMEM );
 
-  // Set the parameter-space bound on 2-dimensional reduced supersky B coordinate
-  data_lower[0] = -1.0;
-  data_upper[0] = +1.0;
+  // Set the parameter-space bound on reduced supersky B coordinate
+  data_lower[0] = -1.0 + 2.0 * ( ( double ) patch_index_B + 0 ) / patch_count_B;
+  data_upper[0] = -1.0 + 2.0 * ( ( double ) patch_index_B + 1 ) / patch_count_B;
   XLAL_CHECK( XLALSetLatticeTilingBound( tiling, 1, SuperskyBCoordBound, data_len, data_lower, data_upper ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Cleanup
+  gsl_root_fsolver_free( skyA_bounds_fsolver );
 
   return XLAL_SUCCESS;
 
