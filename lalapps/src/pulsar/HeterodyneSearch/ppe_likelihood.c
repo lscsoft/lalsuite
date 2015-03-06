@@ -84,7 +84,7 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
     if ( !roq ){ /* not using reduced order quadrature to calculate likelihood */
       UINT4 length = 0;
       REAL8 sumModel = 0., sumDataModel = 0.;
-      COMPLEX16 B = 0., M = 0., Mp = 0., Mc = 0.;
+      COMPLEX16 B = 0., M = 0., Mp = 0., Mc = 0., vari = 0.;
 
       REAL8Vector *sumP = NULL, *sumC = NULL, *sumX = NULL, *sumY = NULL, *sumB = NULL, *sumL = NULL;
       REAL8Vector *sumPC = NULL, *sumPX = NULL, *sumPY = NULL, *sumPB = NULL, *sumPL = NULL;
@@ -157,11 +157,14 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
             B = tempdata->compTimeData->data->data[j];
             M = ifomodeltemp->compTimeSignal->data->data[j];
 
+            vari = 1.;
+            if ( gaussianLike ) { vari = tempdata->varTimeData->data->data[j]; }
+
             /* sum over the model */
-            sumModel += creal(M)*creal(M) + cimag(M)*cimag(M);
+            sumModel += (creal(M)*creal(M) + cimag(M)*cimag(M))/vari;
 
             /* sum over that data and model */
-            sumDataModel += creal(B)*creal(M) + cimag(B)*cimag(M);
+            sumDataModel += (creal(B)*creal(M) + cimag(B)*cimag(M))/vari;
           }
         }
         else{ /* using pre-summed data */
