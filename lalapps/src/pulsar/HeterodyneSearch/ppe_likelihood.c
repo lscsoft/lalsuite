@@ -217,8 +217,7 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
           logliketmp -= chunkLength*log(chiSquare);
         }
         else{ /* using Gaussian likelihood */
-          REAL8 logGaussianNorm = *(REAL8 *)LALInferenceGetVariable( ifomodeltemp->params,  "logGaussianNorm" );
-          logliketmp += logGaussianNorm - 0.5*chiSquare;
+          logliketmp -= 0.5*chiSquare;
         }
 
         count++;
@@ -258,8 +257,7 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
           logliketmp -= chunkLength*log(chiSquare);
         }
         else{ /* using Gaussian likelihood */
-          REAL8 logGaussianNorm = *(REAL8 *)LALInferenceGetVariable( ifomodeltemp->params,  "logGaussianNorm" );
-          logliketmp += logGaussianNorm - 0.5*chiSquare;
+          logliketmp -= 0.5*chiSquare;
         }
 
         /* shift start indices */
@@ -347,8 +345,7 @@ REAL8 noise_only_likelihood( LALInferenceRunState *runState ){
     }
     else{
       /* for Gaussian likelihood there's only one chunk */
-      REAL8 logGaussianNorm = *(REAL8 *)LALInferenceGetVariable( ifo->params,  "logGaussianNorm" );
-      logLtmp -= logGaussianNorm -0.5*sumDat->data[0];
+      logLtmp -= 0.5*sumDat->data[0];
     }
 
     data->nullloglikelihood = logLtmp;
@@ -397,7 +394,7 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
   UINT4 cori = 0;
 
   /* check that parameters are within their prior ranges */
-  if( !in_range( runState->priorArgs, params ) ) { return -INFINITY; }
+  if( !in_range( runState->priorArgs, params ) ) { return -DBL_MAX; }
 
   /* if a k-d tree prior exists ONLY use that */
   if( LALInferenceCheckVariable( runState->priorArgs, "kDTreePrior" ) &&
@@ -486,8 +483,6 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
         value = (*(REAL8 *)item->value) * scale + scaleMin;
 
         LALInferenceGetMinMaxPrior( runState->priorArgs, item->name, &min, &max );
-
-        if ( value < scaleMin || value > scaleMin + (max-min)*scale ) { return -DBL_MAX; }
 
         /* check if either using theta or iota rather than their cosines */
         if ( !strcmp(item->name, "IOTA") || !strcmp(item->name, "THETA") ){
