@@ -580,9 +580,6 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 
   if(retcode!=0)
   {
-    FILE *fpc=NULL;
-    fpc = fopen("C22file.txt", "w");
-
     if(LALInferenceGetProcParamVal(runState->commandLine,"--resume"))
         fprintf(stdout,"Unable to open resume file %s. Starting anew.\n",resumefilename);
     /* Sprinkle points */
@@ -594,10 +591,8 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
         runState->evolve(runState);
     	logLikelihoods[i]=runState->likelihood(runState->livePoints[i],runState->data,runState->model);
     }while(isnan(logLikelihoods[i]));
-        fprintf(fpc, "%le\n", LALInferenceGetREAL8Variable(runState->livePoints[i], "C22"));
 	if(XLALPrintProgressBar((double)i/(double)Nlive)) fprintf(stderr,"\n");
     }
-    fclose(fpc);
     fpout=fopen(outfile,"w");
   }
   if(fpout==NULL) {fprintf(stderr,"Unable to open output file %s!\n",outfile); exit(1);}
