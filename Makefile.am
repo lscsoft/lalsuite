@@ -14,6 +14,15 @@ $(ACLOCAL_M4): $(am__aclocal_m4_deps)
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	$(SHELL) $(top_srcdir)/configure $(ac_configure_args)
 
+BUILT_SOURCES = $(PACKAGE)rc
+sysconf_DATA = $(PACKAGE)rc
+MOSTLYCLEANFILES = $(PACKAGE)rc
+$(PACKAGE)rc:
+	$(AM_V_GEN)echo "# source this file to access $(PACKAGE_NAME)" >$@; \
+	for dir in $(SUBDIRS); do \
+		echo "source $(sysconfdir)/$${dir}-user-env.\`sh -c \"case \$$0 in *csh) echo csh;; *) echo sh;; esac\"\`" >>$@; \
+	done
+
 if DOXYGEN
 
 html-local: Makefile $(CONFIG_CLEAN_FILES)
