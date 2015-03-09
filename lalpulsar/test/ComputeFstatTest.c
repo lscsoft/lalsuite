@@ -58,7 +58,7 @@ main ( int argc, char *argv[] )
   assumeSqrtSX.length = numDetectors;
   for ( UINT4 X = 0; X < numDetectors; X ++ )
     {
-      injectSqrtSX.sqrtSn[X] = 1.0 + 2.0*X;
+      injectSqrtSX.sqrtSn[X] = 0; // don't inject random noise to keep errors deterministic and informative (resampling differs much more on noise)
       assumeSqrtSX.sqrtSn[X] = 1.0 + 2.0*X;
     }
 
@@ -209,11 +209,14 @@ main ( int argc, char *argv[] )
                     } // if info
 
                   // compare to first result
-                  XLALPrintInfo ("Comparing results between method '%s' and '%s'\n", XLALGetFstatMethodName(firstMethod), XLALGetFstatMethodName(iMethod) );
-                  if ( compareFstatResults ( results[firstMethod], results[iMethod] ) != XLAL_SUCCESS )
+                  if ( iMethod != firstMethod )
                     {
-                      XLALPrintError ("Comparison between method '%s' and '%s' failed\n", XLALGetFstatMethodName(firstMethod), XLALGetFstatMethodName(iMethod) );
-                      XLAL_ERROR ( XLAL_EFUNC );
+                      XLALPrintInfo ("Comparing results between method '%s' and '%s'\n", XLALGetFstatMethodName(firstMethod), XLALGetFstatMethodName(iMethod) );
+                      if ( compareFstatResults ( results[firstMethod], results[iMethod] ) != XLAL_SUCCESS )
+                        {
+                          XLALPrintError ("Comparison between method '%s' and '%s' failed\n", XLALGetFstatMethodName(firstMethod), XLALGetFstatMethodName(iMethod) );
+                          XLAL_ERROR ( XLAL_EFUNC );
+                        }
                     }
 
                 }  // for i < FMETHOD_END
@@ -264,11 +267,11 @@ compareFstatResults ( const FstatResults *result1, const FstatResults *result2 )
 
   // ----- set tolerance levels for comparisons ----------
   VectorComparison XLAL_INIT_DECL(tol);
-  tol.relErr_L1 	= 8e-2;
-  tol.relErr_L2		= 8e-2;
-  tol.angleV 		= 0.08;  // rad
-  tol.relErr_atMaxAbsx	= 8e-2;
-  tol.relErr_atMaxAbsy  = 8e-2;
+  tol.relErr_L1 	= 2e-2;
+  tol.relErr_L2		= 2e-2;
+  tol.angleV 		= 0.02;  // rad
+  tol.relErr_atMaxAbsx	= 2e-2;
+  tol.relErr_atMaxAbsy  = 2e-2;
 
   UINT4 numFreqBins = result1->numFreqBins;
   VectorComparison XLAL_INIT_DECL(cmp);
