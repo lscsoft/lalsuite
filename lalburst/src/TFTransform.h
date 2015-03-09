@@ -254,6 +254,9 @@ INT4 XLALOverlappedSegmentsCommensurate(
 );
 
 
+#ifdef SWIG /* SWIG interface directives */
+SWIGLAL(INOUT_SCALARS(int*, psd_length));
+#endif
 int XLALEPGetTimingParameters(
 	int window_length,
 	int max_tile_length,

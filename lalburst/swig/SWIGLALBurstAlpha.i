@@ -1,6 +1,5 @@
 //
 // Copyright (C) 2011--2014 Karl Wette
-// Copyright (C) 2015 Kipp Cannon
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,9 +23,6 @@
 /// \brief SWIG code which must appear \e before the LALBurst headers.
 /// \author Karl Wette
 ///
-
-/// for XLALEPGetTimingParameters()
-%apply int *INOUT { int *psd_length };
 
 // Local Variables:
 // mode: c
