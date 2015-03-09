@@ -834,7 +834,7 @@ XLALCheckVectorComparisonTolerances ( const VectorComparison *result,	///< [in] 
 
   if ( failed || (lalDebugLevel & LALINFO) )
     {
-      XLALPrintInfo ( "relErr_L1        = %.1e (%.1e)\n"
+      XLALPrintError( "relErr_L1        = %.1e (%.1e)\n"
                       "relErr_L2        = %.1e (%.1e)\n"
                       "angleV           = %.1e (%.1e)\n"
                       "relErr_atMaxAbsx = %.1e (%.1e)\n"
