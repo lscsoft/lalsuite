@@ -23,7 +23,7 @@ endif
 # Add shell, Python, etc. test scripts to this variable
 test_scripts += AllApproximantsTest.sh
 if SWIG_BUILD_PYTHON
-test_scripts += LALSimWaveformReferenceTest.py
+#test_scripts += LALSimWaveformReferenceTest.py
 endif
 
 # Add any helper programs required by tests to this variable
