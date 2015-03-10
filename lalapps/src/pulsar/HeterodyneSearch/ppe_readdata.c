@@ -574,7 +574,17 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
         // Note: j-1 because we added to j above (553)
         temptimes->data[j-1] = times;
         
-        ifodata->compTimeData->data->data[j-1] = dataValsRe + I*dataValsIm;
+        /* reheterodyne data if required */
+        if ( rehetfreq != 0 ) {
+          /* create template */
+          REAL8 deltaPhase = 2. * LAL_PI * rehetfreq * times;
+          COMPLEX16 dataTemp = ( dataValsRe*cos(-deltaPhase) - dataValsIm*sin(-deltaPhase) ) +
+            I * ( dataValsRe*sin(-deltaPhase) + dataValsIm*cos(-deltaPhase) );
+          ifodata->compTimeData->data->data[j-1] = dataTemp;
+        }
+        else {
+          ifodata->compTimeData->data->data[j-1] = dataValsRe + I*dataValsIm;
+        }
 
         if ( inputsigma ){ ifodata->varTimeData->data->data[j-1] = SQUARE( sigmaVals ); }
       }
@@ -616,9 +626,6 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
       LALInferenceAddVariable( ifomodel->params, "dt", &sampledt, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
 
       XLALDestroyREAL8Vector( temptimes );
-
-      // ADD REHET STEP HERE IF NECESSARY
-
     }
     else{ /* set up fake data */
       /* if a Gaussian likelihood is required compute sigma from the data (to mimic real life) */
