@@ -83,9 +83,9 @@ with H5File(fname, "r") as h5file:
 # NB: Named fields in dtypes (see ligolw_table_to_array in lalapps_cbc_sbank_sim)
 # allow dict-like access to columns: e.g. arr["mass1"].
 inj_M = inj_arr["mass1"] + inj_arr["mass2"] #total mass
-inj_eta = inj_arr["mass1"] * inj_arr["mass2"] / (inj_arr["mass1"] * inj_arr["mass2"])
+inj_eta = inj_arr["mass1"] * inj_arr["mass2"] / (inj_arr["mass1"] + inj_arr["mass2"])**2
 tmplt_M = tmplt_arr["mass1"] + tmplt_arr["mass2"]
-tmplt_eta = tmplt_arr["mass1"] * tmplt_arr["mass2"] / (tmplt_arr["mass1"] * tmplt_arr["mass2"])
+tmplt_eta = tmplt_arr["mass1"] * tmplt_arr["mass2"] / (tmplt_arr["mass1"] + tmplt_arr["mass2"])**2
 inj_tau0, inj_tau3 = m1m2_to_tau0tau3(inj_arr["mass1"], inj_arr["mass2"], flow)
 tmplt_tau0, tmplt_tau3 = m1m2_to_tau0tau3(tmplt_arr["mass1"], tmplt_arr["mass2"], flow)
 tmplt_mchirp = compute_mchirp(tmplt_arr["mass1"], tmplt_arr["mass2"])
