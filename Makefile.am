@@ -17,7 +17,7 @@ $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENC
 BUILT_SOURCES = $(PACKAGE)rc
 sysconf_DATA = $(PACKAGE)rc
 MOSTLYCLEANFILES = $(PACKAGE)rc
-$(PACKAGE)rc:
+$(PACKAGE)rc: Makefile
 	$(AM_V_GEN)echo "# source this file to access $(PACKAGE_NAME)" >$@; \
 	for dir in $(SUBDIRS); do \
 		echo "source $(sysconfdir)/$${dir}-user-env.\`sh -c \"case \$$0 in *csh) echo csh;; *) echo sh;; esac\"\`" >>$@; \
