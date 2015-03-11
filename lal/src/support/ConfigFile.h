@@ -91,15 +91,9 @@ extern "C" {
  *
  * \par Notes
  *
- * XLALReadConfigSTRINGVariable() and XLALReadConfigSTRINGVariable() are not
- * the same as using <tt>%quot;\%s&quot;</tt> as a format string, as they read the
- * <em>rest</em> of the logical line (excluding comments) as a string.
+ * XLALReadConfigSTRINGVariable() read the <em>rest</em> of the logical line (excluding comments) as a string,
+ * and removes any surrounding quotes \' or \".
  *
- * In the case of XLALReadConfigSTRINGVariable(), the required
- * memory is allocated and has to be freed by the caller, while for
- * XLALReadConfigSTRINGVariable() the caller has to provide a
- * CHARVector of length N, which defines the maximum length of
- * string to be read.
  *
  * \note instead of using these functions directly, it might be
  * more convenient to use the \ref UserInput_h.
@@ -114,21 +108,6 @@ typedef enum {
   CONFIGFILE_ERROR,		/**< issue an error-message and report a LAL-error */
   CONFIGFILE_LAST
 } ConfigStrictness;
-
-
-/**
- * This structure defines a config-variable to be read in using the
- * general-purpose reading function XLALReadConfigVariable().
- */
-#ifdef SWIG /* SWIG interface directives */
-SWIGLAL(IMMUTABLE_MEMBERS(tagLALConfigVar, secName, varName, fmt));
-#endif /* SWIG */
-typedef struct tagLALConfigVar {
-  const CHAR *secName;          /**< Section name within which to find varName.  May be NULL */
-  const CHAR *varName;		/**< Variable-name to be read in the config-file */
-  const CHAR *fmt;		/**< Format string for reading (<tt>sscanf()</tt>-style) */
-  ConfigStrictness strictness;	/**< what to do if variable not found: ignore, warn, error */
-} LALConfigVar;
 
 
 /**
@@ -198,10 +177,6 @@ XLALReadConfigDECJVariable ( REAL8 *varp,
                              const CHAR *secName,
                              const CHAR *varName,
                              BOOLEAN *wasRead );
-XLALReadConfigVariable (void *varp,
-                       const LALParsedDataFile *cfgdata,
-                       const LALConfigVar *param,
-                       BOOLEAN *wasRead);
 
 int XLALCheckConfigReadComplete (const LALParsedDataFile *cfgdata, ConfigStrictness strict);
 
