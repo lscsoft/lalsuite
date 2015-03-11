@@ -252,7 +252,7 @@ XLALListConfigFileSections ( const LALParsedDataFile *cfgdata )    /**< [in] pre
  */
 int
 XLALReadConfigSTRINGVariable ( CHAR **varp,                     //!< [out] return string value if found (NULL otherwise)
-                               const LALParsedDataFile *cfgdata,        //!< [in,out] pre-parsed config-data
+                               LALParsedDataFile *cfgdata,      //!< [in,out] pre-parsed config-data
                                const CHAR * secName,            //!< [in] section name in which to find variable 'varName', NULL='default' section
                                const CHAR * varName,            //!< [in] variable name to be read
                                BOOLEAN *wasRead                 //!< [out] did we succeed in reading? */
@@ -334,7 +334,7 @@ XLALReadConfigSTRINGVariable ( CHAR **varp,                     //!< [out] retur
  */
 int
 XLALReadConfigBOOLVariable (BOOLEAN *varp,              /**< [out] variable to store result */
-                            const LALParsedDataFile *cfgdata,   /**< [in] pre-parsed config-data */
+                            LALParsedDataFile *cfgdata, /**< [in] pre-parsed config-data */
                             const CHAR *secName,        /**< [in] section-name to read */
                             const CHAR *varName,        /**< [in] variable-name to read */
                             BOOLEAN *wasRead            /**< [out] did we succeed in reading? */
@@ -370,7 +370,7 @@ XLALReadConfigBOOLVariable (BOOLEAN *varp,              /**< [out] variable to s
  */
 int
 XLALReadConfigINT4Variable (INT4 *varp,
-                            const LALParsedDataFile *cfgdata,
+                            LALParsedDataFile *cfgdata,
                             const CHAR *secName,
                             const CHAR *varName,
                             BOOLEAN *wasRead)
@@ -399,7 +399,7 @@ XLALReadConfigINT4Variable (INT4 *varp,
  */
 int
 XLALReadConfigREAL8Variable (REAL8 *varp,
-                             const LALParsedDataFile *cfgdata,
+                             LALParsedDataFile *cfgdata,
                              const CHAR *secName,
                              const CHAR *varName,
                              BOOLEAN *wasRead)
@@ -428,7 +428,7 @@ XLALReadConfigREAL8Variable (REAL8 *varp,
  */
 int
 XLALReadConfigEPOCHVariable ( LIGOTimeGPS *varp,
-                              const LALParsedDataFile *cfgdata,
+                              LALParsedDataFile *cfgdata,
                               const CHAR *secName,
                               const CHAR *varName,
                               BOOLEAN *wasRead)
@@ -458,7 +458,7 @@ XLALReadConfigEPOCHVariable ( LIGOTimeGPS *varp,
  */
 int
 XLALReadConfigRAJVariable ( REAL8 *varp,
-                            const LALParsedDataFile *cfgdata,
+                            LALParsedDataFile *cfgdata,
                             const CHAR *secName,
                             const CHAR *varName,
                             BOOLEAN *wasRead)
@@ -487,7 +487,7 @@ XLALReadConfigRAJVariable ( REAL8 *varp,
  */
 int
 XLALReadConfigDECJVariable ( REAL8 *varp,
-                             const LALParsedDataFile *cfgdata,
+                             LALParsedDataFile *cfgdata,
                              const CHAR *secName,
                              const CHAR *varName,
                              BOOLEAN *wasRead)

@@ -641,7 +641,7 @@ XLALDestroyPulsarParams ( PulsarParams *params )
  */
 int
 XLALReadPulsarParams ( PulsarParams *pulsarParams,	///< [out] pulsar parameters to fill in from config string
-                       const LALParsedDataFile *cfgdata,///< [in] pre-parsed "SourceParamsIO" config-file contents
+                       LALParsedDataFile *cfgdata,      ///< [in] pre-parsed "SourceParamsIO" config-file contents
                        const CHAR *secName		///< [in] section-name to use from config-file string (can be NULL)
                        )
 {

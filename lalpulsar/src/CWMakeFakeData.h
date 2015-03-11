@@ -101,7 +101,7 @@ REAL4TimeSeries *
 XLALGenerateCWSignalTS ( const PulsarParams *pulsarParams, const LALDetector *site, LIGOTimeGPS startTime, REAL8 duration, REAL8 fSamp, REAL8 fHet, const EphemerisData *edat );
 
 
-int XLALReadPulsarParams ( PulsarParams *pulsarParams, const LALParsedDataFile *cfgdata, const CHAR *secName );
+int XLALReadPulsarParams ( PulsarParams *pulsarParams, LALParsedDataFile *cfgdata, const CHAR *secName );
 PulsarParamsVector *XLALPulsarParamsFromFile ( const char *fname );
 PulsarParamsVector *XLALPulsarParamsFromUserInput ( const LALStringVector *UserInput );
 
