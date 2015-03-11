@@ -119,7 +119,7 @@ typedef enum {
 
 /**
  * This structure defines a config-variable to be read in using the
- * general-purpose reading function LALReadConfigVariable().
+ * general-purpose reading function XLALReadConfigVariable().
  */
 #ifdef SWIG /* SWIG interface directives */
 SWIGLAL(IMMUTABLE_MEMBERS(tagLALConfigVar, secName, varName, fmt));
@@ -209,53 +209,6 @@ XLALReadConfigVariable (void *varp,
                        BOOLEAN *wasRead);
 
 int XLALCheckConfigReadComplete (const LALParsedDataFile *cfgdata, ConfigStrictness strict);
-
-/* ========== DEPRECATED LAL INTERFACE FUNCTIONS, which have been replaced by XLAL functions,
- * These functions are just wrappers around the XLAL functions
- */
-
-
-/** \name Error codes */
-/*@{*/
-#define CONFIGFILEH_ENULL               1       /**< Arguments contained an unexpected null pointer. */
-#define CONFIGFILEH_EFILE               2       /**< File error. */
-#define CONFIGFILEH_EVAR                3       /**< Config variable not found. */
-#define CONFIGFILEH_EFMT                4       /**< Config variable not readable using given format-string. */
-#define CONFIGFILEH_ETOKENS             5       /**< The input ConfigData seems corrupted. */
-#define CONFIGFILEH_ENONULL             6       /**< Output pointer is not NULL */
-#define CONFIGFILEH_EUNKNOWN            8       /**< Unknown config-file entry found */
-#define CONFIGFILEH_EMEM                9       /**< Out of memory */
-#define CONFIGFILEH_EBOOL               10      /**< Illegal BOOLEAN entry */
-#define CONFIGFILEH_ESTRING             11      /**< Malformed quoted string */
-#define CONFIGFILEH_EXLAL               12      /**< Failure in XLAL function */
-/*@}*/
-
-/** \cond DONT_DOXYGEN */
-#define CONFIGFILEH_MSGENULL            "Arguments contained an unexpected null pointer."
-#define CONFIGFILEH_MSGEFILE		"File error."
-#define CONFIGFILEH_MSGEVAR		"Config variable not found."
-#define CONFIGFILEH_MSGEFMT		"Config variable not readable using given format-string."
-#define CONFIGFILEH_MSGETOKENS		"The input ConfigData seems corrupted."
-#define CONFIGFILEH_MSGENONULL		"Output pointer is not NULL"
-#define CONFIGFILEH_MSGEUNKNOWN		"Unknown config-file entry found"
-#define CONFIGFILEH_MSGEMEM		"Out of memory"
-#define CONFIGFILEH_MSGEBOOL		"Illegal BOOLEAN entry"
-#define CONFIGFILEH_MSGESTRING		"Malformed quoted string"
-#define CONFIGFILEH_MSGEXLAL		"Failure in XLAL function"
-/** \endcond */
-
-/**
- * \name Deprecated LAL-interface
- * These functions are deprecated, and you should user their XLAL-equivalents instead.
- */
-/*@{*/
-void LALReadConfigBOOLVariable (LALStatus *, BOOLEAN *varp, const LALParsedDataFile *cfgdata, const CHAR *varName, BOOLEAN *wasRead);
-void LALReadConfigINT4Variable (LALStatus *, INT4 *varp, const LALParsedDataFile *cfgdata, const CHAR *varName, BOOLEAN *wasRead);
-void LALReadConfigREAL8Variable (LALStatus *, REAL8 *varp, const LALParsedDataFile *cfgdata, const CHAR *varName, BOOLEAN *wasRead);
-void LALReadConfigSTRINGVariable (LALStatus *, CHAR **varp, const LALParsedDataFile *cfgdata, const CHAR *varName, BOOLEAN *wasRead);
-void LALReadConfigVariable (LALStatus *, void *varp, const LALParsedDataFile *cfgdata, const LALConfigVar *param, BOOLEAN *wasRead);
-void LALCheckConfigReadComplete (LALStatus *, const LALParsedDataFile *cfgdata, ConfigStrictness strict);
-/*@}*/
 
 /*@}*/
 
