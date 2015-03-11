@@ -77,7 +77,9 @@ int main ( int argc, char *argv[])
   XLAL_CHECK ( XLALReadConfigDECJVariable ( &latDMS, cfgdata, 0, "latDMS", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALReadConfigDECJVariable ( &latRad, cfgdata, 0, "latRad", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  XLAL_CHECK ( XLALCheckConfigReadComplete (cfgdata, CONFIGFILE_ERROR) == XLAL_SUCCESS, XLAL_EFUNC );
+  UINT4Vector *unread = XLALConfigFileGetUnreadEntries ( cfgdata );
+  XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "XLALConfigFileGetUnreadEntries() failed\n");
+  XLAL_CHECK ( unread == NULL, XLAL_EFAILED, "Some entries in config-file '%s' have not been parsed!\n", cfgname );
 
   XLALDestroyParsedDataFile (cfgdata);
   cfgdata = NULL;
@@ -144,7 +146,10 @@ int main ( int argc, char *argv[])
   XLAL_CHECK ( XLALReadConfigEPOCHVariable ( &epochGPS, cfgdata, "section2", "epochGPS", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALReadConfigEPOCHVariable ( &epochMJDTT, cfgdata, "section3", "epochMJDTT", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  XLAL_CHECK ( XLALCheckConfigReadComplete (cfgdata, CONFIGFILE_ERROR) == XLAL_SUCCESS, XLAL_EFUNC );
+  unread = XLALConfigFileGetUnreadEntries ( cfgdata );
+  XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "XLALConfigFileGetUnreadEntries() failed\n");
+  XLAL_CHECK ( unread == NULL, XLAL_EFAILED, "Some entries in config-file '%s' have not been parsed!\n", cfgname );
+
   XLALDestroyParsedDataFile (cfgdata);
   cfgdata = NULL;
 

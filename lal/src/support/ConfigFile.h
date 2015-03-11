@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2015 Reinhard Prix
  * Copyright (C) 2004 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -79,12 +80,7 @@ extern "C" {
  * If one wishes a tight sytnax for the config-file, one can check
  * that there are no illegal entries in the config-file. This is done
  * by checking at the end that all config-file entries have been
- * successfully parsed, using:
- * XLALCheckConfigReadComplete(), where \a strictness is either
- * CONFIGFILE_WARN or CONFIGFILE_ERROR.
- * In the first case only a warning is issued, while in the second it is
- * treated as a LAL-error if some config-file entries have not been
- * read-in. (The use of this function is optional).
+ * successfully parsed, using: XLALConfigFileGetUnreadEntries()
  *
  * The configfile-data should be freed at the end using
  * XLALDestroyParsedDataFile().
@@ -100,15 +96,6 @@ extern "C" {
  *
  */
 /*@{*/
-
-/** Levels of strictness for config-file parsing. */
-typedef enum {
-  CONFIGFILE_IGNORE = 0,	/**< ignore missing config-variable or unparsed config-entries */
-  CONFIGFILE_WARN,		/**< issue a warning but don't report an error. */
-  CONFIGFILE_ERROR,		/**< issue an error-message and report a LAL-error */
-  CONFIGFILE_LAST
-} ConfigStrictness;
-
 
 /**
  * This structure is returned by XLALParseDataFile() and holds the contents of an
@@ -178,7 +165,8 @@ XLALReadConfigDECJVariable ( REAL8 *varp,
                              const CHAR *varName,
                              BOOLEAN *wasRead );
 
-int XLALCheckConfigReadComplete (const LALParsedDataFile *cfgdata, ConfigStrictness strict);
+UINT4Vector *
+XLALConfigFileGetUnreadEntries ( const LALParsedDataFile *cfgdata );
 
 /*@}*/
 

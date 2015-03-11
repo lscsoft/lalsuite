@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2015 Reinhard Prix
  * Copyright (C) 2010 Larne Pekowsky
  * Copyright (C) 2004, 2005 Reinhard Prix
  *
@@ -511,48 +512,46 @@ XLALReadConfigDECJVariable ( REAL8 *varp,
 
 
 /**
- * Check if all lines of config-file have been successfully read in
- * and issue a warning or error (depending on strictness) if not.
+ * Return a list of unread config-file entries, NULL if none found (without error).
  */
-int
-XLALCheckConfigReadComplete (const LALParsedDataFile *cfgdata,  /**< [in] config-file data */
-                             ConfigStrictness strict)           /**< [in] what to do if unparsed lines */
+UINT4Vector *
+XLALConfigFileGetUnreadEntries ( const LALParsedDataFile *cfgdata	///< [in] config-file data
+                                 )
 {
-  XLAL_CHECK ( cfgdata != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( cfgdata->lines != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( (cfgdata->lines->nTokens == 0) || (cfgdata->wasRead != NULL), XLAL_EINVAL );
+  XLAL_CHECK_NULL ( cfgdata != NULL, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( cfgdata->lines != NULL, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( cfgdata->lines->nTokens > 0, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( cfgdata->wasRead != NULL, XLAL_EINVAL );
+
+  UINT4Vector *ret;
+  XLAL_CHECK_NULL ( (ret = XLALCalloc ( 1, sizeof(*ret))) != NULL, XLAL_ENOMEM );
 
   for (UINT4 i=0; i < cfgdata->lines->nTokens; i++)
     {
-      /* Don't require section headers to be marked read */
-      /* This has the effect of considering a file to have */
-      /* been read completely if every value in every section */
-      /* has been read. */
-      if (cfgdata->lines->tokens[i][0] == '[')
+      // We don't require section headers to be marked as read
+      // ie we consider the config-file to be fully read/parsed if
+      // if every value in every section has been parsed.
+      if (cfgdata->lines->tokens[i][0] == '[') {
         continue;
+      }
 
-      if (cfgdata->wasRead[i] == 0)
-        {
-          switch (strict)
-            {
-            case CONFIGFILE_IGNORE:
-              continue;
-            case CONFIGFILE_WARN:
-              XLALPrintError ( "%s: Warning: Ignoring unknown config-file entry '%s'.\n", __func__, cfgdata->lines->tokens[i] );
-              continue;
-            case CONFIGFILE_ERROR:
-            default:
-              XLALPrintError ( "%s: ERROR: config-file entry #%d has not been read!\n", __func__, i);
-              XLALPrintError ( "Line was: '%s'\n", cfgdata->lines->tokens[i]);
-              XLAL_ERROR ( XLAL_EDOM );
-            } /* switch strict */
-        } /* if some line not read */
+      if ( ! cfgdata->wasRead[i] ) {
+        ret->length ++;
+        XLAL_CHECK_NULL ( (ret->data = XLALRealloc ( ret->data, ret->length * sizeof(ret->data[0]) )) != NULL, XLAL_ENOMEM );
+        ret->data[ret->length-1] = i;
+      }
 
-    } /* for i < lines */
+    } // for i < numLines
 
-  return XLAL_SUCCESS;
+  if ( ret->length == 0 )
+    {
+      XLALFree ( ret );
+      ret = NULL;
+    }
 
-} /* XLALCheckConfigReadComplete() */
+  return ret;
+
+} // XLALConfigFileGetUnreadEntries()
 
 /*----------------------------------------------------------------------*/
 

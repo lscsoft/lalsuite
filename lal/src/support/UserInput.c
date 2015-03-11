@@ -26,6 +26,7 @@
 #include <lal/LALString.h>
 #include <lal/Date.h>
 #include <lal/StringVector.h>
+#include <lal/AVFactories.h>
 
 #define TRUE  (1==1)
 #define FALSE (1==0)
@@ -469,7 +470,16 @@ XLALUserVarReadCfgfile ( const CHAR *cfgfile ) 	   /**< [in] name of config-file
     } // while ptr->next
 
   // ok, that should be it: check if there were more definitions we did not read
-  XLAL_CHECK ( XLALCheckConfigReadComplete ( cfg, CONFIGFILE_WARN ) == XLAL_SUCCESS, XLAL_EFUNC );
+  UINT4Vector *unread = XLALConfigFileGetUnreadEntries ( cfg );
+  XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "XLALConfigFileGetUnreadEntries() failed\n");
+  if ( unread != NULL )
+    {
+      XLALPrintWarning ("The following entries in config-file '%s' have not been parsed:\n", cfgfile );
+      for ( UINT4 i = 0; i < unread->length; i ++ ) {
+        XLALPrintWarning ("%s\n", cfg->lines->tokens[ unread->data[i] ] );
+      }
+      XLALDestroyUINT4Vector ( unread );
+    }
 
   XLALDestroyParsedDataFile ( cfg );
 
