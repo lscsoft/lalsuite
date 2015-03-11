@@ -42,18 +42,18 @@ SWIGLAL(NEW_EMPTY_ARGUMENT(LIGOTimeGPS*, gps));
 #endif
 
 // ---------- Function prototypes ----------
-int XLALParseStringValueToINT8 ( INT8 *valINT8, const char *valString );
-int XLALParseStringValueToINT4 ( INT4 *valINT4, const char *valString );
-int XLALParseStringValueToREAL8 ( REAL8 *valREAL8, const char *valString );
-int XLALParseStringValueToREAL4 ( REAL4 *valREAL4, const char *valString );
-int XLALParseStringValueToBOOLEAN ( BOOLEAN *valBOOLEAN, const char *valString );
-int XLALParseStringValueToINT4PlusFrac ( INT4 *valINT4, REAL8 *valFrac, const char *valString );
+int XLALParseStringValueAsINT8 ( INT8 *valINT8, const char *valString );
+int XLALParseStringValueAsINT4 ( INT4 *valINT4, const char *valString );
+int XLALParseStringValueAsREAL8 ( REAL8 *valREAL8, const char *valString );
+int XLALParseStringValueAsREAL4 ( REAL4 *valREAL4, const char *valString );
+int XLALParseStringValueAsBOOLEAN ( BOOLEAN *valBOOLEAN, const char *valString );
+int XLALParseStringValueAsINT4PlusFrac ( INT4 *valINT4, REAL8 *valFrac, const char *valString );
 
-LIGOTimeGPS *XLALParseStringValueToGPS ( LIGOTimeGPS *gps, const char *valString );
-LIGOTimeGPS *XLALParseStringValueToEPOCH ( LIGOTimeGPS *gps, const char *valString );
+LIGOTimeGPS *XLALParseStringValueAsGPS ( LIGOTimeGPS *gps, const char *valString );
+LIGOTimeGPS *XLALParseStringValueAsEPOCH ( LIGOTimeGPS *gps, const char *valString );
 
-int XLALParseStringValueToRAJ ( REAL8 *valLongitude, const char *valString );
-int XLALParseStringValueToDECJ ( REAL8 *valLatitude, const char *valString );
+int XLALParseStringValueAsRAJ ( REAL8 *valLongitude, const char *valString );
+int XLALParseStringValueAsDECJ ( REAL8 *valLatitude, const char *valString );
 
 #ifdef SWIG /* SWIG interface directives */
 SWIGLAL_CLEAR(NEW_EMPTY_ARGUMENT(LIGOTimeGPS*, gps));

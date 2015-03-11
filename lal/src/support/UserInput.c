@@ -314,16 +314,16 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
 	  if ( LALoptarg == NULL ) { // if no argument given, defaults to TRUE
             *(BOOLEAN*)(ptr->varp) = TRUE;
           } else {
-            XLAL_CHECK ( XLALParseStringValueToBOOLEAN ( (BOOLEAN*)(ptr->varp), LALoptarg ) == XLAL_SUCCESS, XLAL_EFUNC );
+            XLAL_CHECK ( XLALParseStringValueAsBOOLEAN ( (BOOLEAN*)(ptr->varp), LALoptarg ) == XLAL_SUCCESS, XLAL_EFUNC );
           }
 	  break;
 
 	case UVAR_TYPE_INT4:
-          XLAL_CHECK ( XLALParseStringValueToINT4 ( (INT4*)(ptr->varp), LALoptarg ) == XLAL_SUCCESS, XLAL_EFUNC );
+          XLAL_CHECK ( XLALParseStringValueAsINT4 ( (INT4*)(ptr->varp), LALoptarg ) == XLAL_SUCCESS, XLAL_EFUNC );
 	  break;
 
 	case UVAR_TYPE_REAL8:
-          XLAL_CHECK ( XLALParseStringValueToREAL8 ( (REAL8*)(ptr->varp), LALoptarg ) == XLAL_SUCCESS, XLAL_EFUNC );
+          XLAL_CHECK ( XLALParseStringValueAsREAL8 ( (REAL8*)(ptr->varp), LALoptarg ) == XLAL_SUCCESS, XLAL_EFUNC );
 	  break;
 
 	case UVAR_TYPE_STRING:
@@ -337,15 +337,15 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
 	  break;
 
         case UVAR_TYPE_EPOCH:
-          XLAL_CHECK ( XLALParseStringValueToEPOCH ( (LIGOTimeGPS *)(ptr->varp), LALoptarg ) != NULL, XLAL_EFUNC );
+          XLAL_CHECK ( XLALParseStringValueAsEPOCH ( (LIGOTimeGPS *)(ptr->varp), LALoptarg ) != NULL, XLAL_EFUNC );
 	  break;
 
         case UVAR_TYPE_RAJ:
-          XLAL_CHECK ( XLALParseStringValueToRAJ ( (REAL8 *)(ptr->varp), LALoptarg ) == XLAL_SUCCESS, XLAL_EFUNC );
+          XLAL_CHECK ( XLALParseStringValueAsRAJ ( (REAL8 *)(ptr->varp), LALoptarg ) == XLAL_SUCCESS, XLAL_EFUNC );
 	  break;
 
         case UVAR_TYPE_DECJ:
-          XLAL_CHECK ( XLALParseStringValueToDECJ ( (REAL8 *)(ptr->varp), LALoptarg ) == XLAL_SUCCESS, XLAL_EFUNC );
+          XLAL_CHECK ( XLALParseStringValueAsDECJ ( (REAL8 *)(ptr->varp), LALoptarg ) == XLAL_SUCCESS, XLAL_EFUNC );
 	  break;
 
 	default:

@@ -481,7 +481,7 @@ XLALReadConfigBOOLVariable (BOOLEAN *varp,                 /**< [out] variable t
   }
   XLAL_CHECK ( valString != NULL, XLAL_EFAILED, "Got NULL string after reading config-variable '%s' in section '%s'\n", varName, secName ? secName: "default" );
 
-  XLAL_CHECK ( XLALParseStringValueToBOOLEAN ( varp, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALParseStringValueAsBOOLEAN ( varp, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   XLALFree (valString);
 
@@ -515,7 +515,7 @@ XLALReadConfigINT4Variable (INT4 *varp,
   }
   XLAL_CHECK ( valString != NULL, XLAL_EFAILED, "Got NULL string after reading config-variable '%s' in section '%s'\n", varName, secName ? secName: "default" );
 
-  XLAL_CHECK ( XLALParseStringValueToINT4 ( varp, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALParseStringValueAsINT4 ( varp, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   XLALFree ( valString );
 
@@ -544,7 +544,7 @@ XLALReadConfigREAL8Variable (REAL8 *varp,
   }
   XLAL_CHECK ( valString != NULL, XLAL_EFAILED, "Got NULL string after reading config-variable '%s' in section '%s'\n", varName, secName ? secName: "default" );
 
-  XLAL_CHECK ( XLALParseStringValueToREAL8 ( varp, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALParseStringValueAsREAL8 ( varp, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   XLALFree ( valString );
 
@@ -717,7 +717,7 @@ XLALReadConfigEPOCHVariable (LIGOTimeGPS *varp,
   }
   XLAL_CHECK ( valString != NULL, XLAL_EFAILED, "Got NULL string after reading config-variable '%s' in section '%s'\n", varName, secName ? secName: "default" );
 
-  XLAL_CHECK ( XLALParseStringValueToEPOCH ( varp, valString ) != NULL, XLAL_EFUNC );
+  XLAL_CHECK ( XLALParseStringValueAsEPOCH ( varp, valString ) != NULL, XLAL_EFUNC );
 
   XLALFree ( valString );
 
@@ -747,7 +747,7 @@ XLALReadConfigRAJVariable (REAL8 *varp,
   }
   XLAL_CHECK ( valString != NULL, XLAL_EFAILED, "Got NULL string after reading config-variable '%s' in section '%s'\n", varName, secName ? secName: "default" );
 
-  XLAL_CHECK ( XLALParseStringValueToRAJ ( varp, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALParseStringValueAsRAJ ( varp, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   XLALFree ( valString );
 
@@ -776,7 +776,7 @@ XLALReadConfigDECJVariable (REAL8 *varp,
   }
   XLAL_CHECK ( valString != NULL, XLAL_EFAILED, "Got NULL string after reading config-variable '%s' in section '%s'\n", varName, secName ? secName: "default" );
 
-  XLAL_CHECK ( XLALParseStringValueToDECJ ( varp, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALParseStringValueAsDECJ ( varp, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   XLALFree ( valString );
 

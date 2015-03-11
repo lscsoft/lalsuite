@@ -1311,12 +1311,12 @@ XLALParseSkyRegionString ( SkyRegion *region, const CHAR *input)
       // parse longitude
       memcpy ( buf, startLong, lenLong );
       buf[lenLong] = 0;
-      XLAL_CHECK ( XLALParseStringValueToRAJ ( &(region->vertices[i].longitude), buf ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK ( XLALParseStringValueAsRAJ ( &(region->vertices[i].longitude), buf ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       // parse latitude
       memcpy ( buf, startLat, lenLat );
       buf[lenLat] = 0;
-      XLAL_CHECK ( XLALParseStringValueToDECJ ( &(region->vertices[i].latitude), buf ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK ( XLALParseStringValueAsDECJ ( &(region->vertices[i].latitude), buf ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       /* keep track of min's and max's to get the bounding square */
       region->lowerLeft.longitude = fmin ( region->lowerLeft.longitude, region->vertices[i].longitude );
