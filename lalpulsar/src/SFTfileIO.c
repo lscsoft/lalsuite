@@ -1100,7 +1100,7 @@ XLALReadTimestampsFile ( const CHAR *fname )
         } // end: if old-style format 'sec ns' is found
       else
         {
-          if ( XLALParseStringValueAsEPOCH ( &gps, flines->lines->tokens[iTS] ) == NULL )
+          if ( XLALParseStringValueAsEPOCH ( &gps, flines->lines->tokens[iTS] ) != XLAL_SUCCESS )
             {
               XLALDestroyTimestampVector ( timestamps );
               XLALDestroyParsedDataFile ( flines );

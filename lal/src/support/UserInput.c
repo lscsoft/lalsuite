@@ -337,7 +337,7 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
 	  break;
 
         case UVAR_TYPE_EPOCH:
-          XLAL_CHECK ( XLALParseStringValueAsEPOCH ( (LIGOTimeGPS *)(ptr->varp), LALoptarg ) != NULL, XLAL_EFUNC );
+          XLAL_CHECK ( XLALParseStringValueAsEPOCH ( (LIGOTimeGPS *)(ptr->varp), LALoptarg ) == XLAL_SUCCESS, XLAL_EFUNC );
 	  break;
 
         case UVAR_TYPE_RAJ:

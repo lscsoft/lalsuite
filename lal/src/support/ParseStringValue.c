@@ -220,21 +220,22 @@ XLALParseStringValueAsBOOLEAN ( BOOLEAN *valBOOLEAN,     ///< [out] return BOOLE
 ///
 /// Parse a string representing a GPS time into LIGOTimeGPS, without loss of (ns) accuracy
 ///
-/// returns gps input pointer on success, NULL on error.
 ///
-LIGOTimeGPS *
+int
 XLALParseStringValueAsGPS ( LIGOTimeGPS *gps,	///< [out] returned GPS time
                             const char *valString 	///< [in] input string representing MJD(TT) time
                             )
 {
-  XLAL_CHECK_NULL ( (gps != NULL) && (valString != NULL), XLAL_EINVAL );
+  XLAL_CHECK ( (gps != NULL) && (valString != NULL), XLAL_EINVAL );
 
   INT4 gpsInt;
   REAL8 gpsFrac;
-  XLAL_CHECK_NULL ( XLALParseStringValueAsINT4PlusFrac ( &gpsInt, &gpsFrac, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALParseStringValueAsINT4PlusFrac ( &gpsInt, &gpsFrac, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
   INT8 gpsNs = (INT8) round ( gpsFrac * XLAL_BILLION_REAL8 );
 
-  return XLALGPSSet ( gps, gpsInt, gpsNs );
+  XLALGPSSet ( gps, gpsInt, gpsNs );
+
+  return XLAL_SUCCESS;
 
 } // XLALParseStringValueAsGPS()
 
@@ -247,14 +248,12 @@ XLALParseStringValueAsGPS ( LIGOTimeGPS *gps,	///< [out] returned GPS time
 /// and translated into GPS using XLALTranslateStringMJDTTtoGPS().
 /// This ignores initial whitespace, but throws an error on _any_ non-converted trailing characters (including whitespace)
 ///
-/// returns gps input pointer on success, NULL on error.
-///
-LIGOTimeGPS *
+int
 XLALParseStringValueAsEPOCH ( LIGOTimeGPS *gps,   	///< [out] return LIGOTimeGPS value
                               const char *valString  	///< [in]  input string value
                               )
 {
-  XLAL_CHECK_NULL ( (gps != NULL) && (valString != NULL ), XLAL_EINVAL );
+  XLAL_CHECK ( (gps != NULL) && (valString != NULL ), XLAL_EINVAL );
 
   char buf[256];
   strncpy ( buf, valString, sizeof(buf)-1 );
@@ -265,13 +264,13 @@ XLALParseStringValueAsEPOCH ( LIGOTimeGPS *gps,   	///< [out] return LIGOTimeGPS
   char *postfix;
   if ( (postfix = strstr ( buf, "MJD" )) != NULL )
     {
-      XLAL_CHECK_NULL ( postfix[3] == 0, XLAL_EINVAL, "Input '%s' contains trailing characters after units 'MJD': must be of form 'xxx.yyyMJD'\n", valString );
+      XLAL_CHECK ( postfix[3] == 0, XLAL_EINVAL, "Input '%s' contains trailing characters after units 'MJD': must be of form 'xxx.yyyMJD'\n", valString );
       postfix[0] = 0; // cut off postfix
       is_gps = 0;
     }
   else if ( (postfix = strstr ( buf, "GPS" )) != NULL )
     {
-      XLAL_CHECK_NULL ( postfix[3] == 0, XLAL_EINVAL, "Input '%s' contains trailing characters after units 'GPS': must be of form 'xxx.yyy' or 'xxx.yyyGPS'\n", valString );
+      XLAL_CHECK ( postfix[3] == 0, XLAL_EINVAL, "Input '%s' contains trailing characters after units 'GPS': must be of form 'xxx.yyy' or 'xxx.yyyGPS'\n", valString );
       postfix[0] = 0; // cut off postfix
       is_gps = 1;
     }
@@ -283,12 +282,14 @@ XLALParseStringValueAsEPOCH ( LIGOTimeGPS *gps,   	///< [out] return LIGOTimeGPS
 
   if ( is_gps )
     {
-      return XLALParseStringValueAsGPS ( gps, buf );
+      XLAL_CHECK ( XLALParseStringValueAsGPS ( gps, buf ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
   else
     {
-      return XLALTranslateStringMJDTTtoGPS ( gps, buf );
+      XLAL_CHECK ( XLALTranslateStringMJDTTtoGPS ( gps, buf ) != NULL, XLAL_EFUNC );
     }
+
+  return XLAL_SUCCESS;
 
 } // XLALParseStringValueAsEPOCH()
 

@@ -142,24 +142,24 @@ test_ParseStringValue ( void )
   LIGOTimeGPS valGPS, valGPSRef = {987654321, 123456789 };
 
   valString = "987654321.123456789";
-  XLAL_CHECK ( XLALParseStringValueAsGPS ( &valGPS, valString ) != NULL, XLAL_EFUNC );
+  XLAL_CHECK ( XLALParseStringValueAsGPS ( &valGPS, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALGPSCmp ( &valGPS, &valGPSRef ) == 0, XLAL_ETOL, "XLALParseStringValueAsGPS(%s) failed, return = {%d,%d}\n", valString, valGPS.gpsSeconds, valGPS.gpsNanoSeconds );
 
   // ---------- XLALParseStringValueAsEPOCH() ----------
-  XLAL_CHECK ( XLALParseStringValueAsEPOCH ( &valGPS, valString ) != NULL, XLAL_EFUNC );
+  XLAL_CHECK ( XLALParseStringValueAsEPOCH ( &valGPS, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALGPSCmp ( &valGPS, &valGPSRef ) == 0, XLAL_ETOL, "XLALParseStringValueAsGPS(%s) failed, return = {%d,%d}\n", valString, valGPS.gpsSeconds, valGPS.gpsNanoSeconds );
 
   valString = "987654321.123456789GPS";
-  XLAL_CHECK ( XLALParseStringValueAsEPOCH ( &valGPS, valString ) != NULL, XLAL_EFUNC );
+  XLAL_CHECK ( XLALParseStringValueAsEPOCH ( &valGPS, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALGPSCmp ( &valGPS, &valGPSRef ) == 0, XLAL_ETOL, "XLALParseStringValueAsGPS(%s) failed, return = {%d,%d}\n", valString, valGPS.gpsSeconds, valGPS.gpsNanoSeconds );
 
   valString = "55675.1848646696387616MJD";
-  XLAL_CHECK ( XLALParseStringValueAsEPOCH ( &valGPS, valString ) != NULL, XLAL_EFUNC );
+  XLAL_CHECK ( XLALParseStringValueAsEPOCH ( &valGPS, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALGPSCmp ( &valGPS, &valGPSRef ) == 0, XLAL_ETOL, "XLALParseStringValueAsGPS(%s) failed, return = {%d,%d}\n", valString, valGPS.gpsSeconds, valGPS.gpsNanoSeconds );
 
   valString = "987654321.12345";
   valGPSRef.gpsNanoSeconds = 123450000;
-  XLAL_CHECK ( XLALParseStringValueAsEPOCH ( &valGPS, valString ) != NULL, XLAL_EFUNC );
+  XLAL_CHECK ( XLALParseStringValueAsEPOCH ( &valGPS, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALGPSCmp ( &valGPS, &valGPSRef ) == 0, XLAL_ETOL, "XLALParseStringValueAsGPS(%s) failed, return = {%d,%d}, correct = {%d,%d}\n",
                valString, valGPS.gpsSeconds, valGPS.gpsNanoSeconds, valGPSRef.gpsSeconds, valGPSRef.gpsNanoSeconds );
 

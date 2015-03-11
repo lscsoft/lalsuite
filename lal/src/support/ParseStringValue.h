@@ -37,10 +37,6 @@ extern "C" {
 
 /*@{*/
 
-#ifdef SWIG /* SWIG interface directives */
-SWIGLAL(NEW_EMPTY_ARGUMENT(LIGOTimeGPS*, gps));
-#endif
-
 // ---------- Function prototypes ----------
 int XLALParseStringValueAsINT8 ( INT8 *valINT8, const char *valString );
 int XLALParseStringValueAsINT4 ( INT4 *valINT4, const char *valString );
@@ -48,18 +44,13 @@ int XLALParseStringValueAsREAL8 ( REAL8 *valREAL8, const char *valString );
 int XLALParseStringValueAsREAL4 ( REAL4 *valREAL4, const char *valString );
 int XLALParseStringValueAsBOOLEAN ( BOOLEAN *valBOOLEAN, const char *valString );
 int XLALParseStringValueAsINT4PlusFrac ( INT4 *valINT4, REAL8 *valFrac, const char *valString );
-
-LIGOTimeGPS *XLALParseStringValueAsGPS ( LIGOTimeGPS *gps, const char *valString );
-LIGOTimeGPS *XLALParseStringValueAsEPOCH ( LIGOTimeGPS *gps, const char *valString );
-
+int XLALParseStringValueAsGPS ( LIGOTimeGPS *gps, const char *valString );
+int XLALParseStringValueAsEPOCH ( LIGOTimeGPS *gps, const char *valString );
 int XLALParseStringValueAsRAJ ( REAL8 *valLongitude, const char *valString );
 int XLALParseStringValueAsDECJ ( REAL8 *valLatitude, const char *valString );
 
 CHAR * XLALCopyStringUnquoted ( const CHAR *in );
 
-#ifdef SWIG /* SWIG interface directives */
-SWIGLAL_CLEAR(NEW_EMPTY_ARGUMENT(LIGOTimeGPS*, gps));
-#endif
 
 /*@}*/
 

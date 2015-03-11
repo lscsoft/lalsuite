@@ -443,7 +443,7 @@ XLALReadConfigEPOCHVariable ( LIGOTimeGPS *varp,
   }
   XLAL_CHECK ( valString != NULL, XLAL_EFAILED, "Got NULL string after reading config-variable '%s' in section '%s'\n", varName, secName ? secName: "default" );
 
-  XLAL_CHECK ( XLALParseStringValueAsEPOCH ( varp, valString ) != NULL, XLAL_EFUNC );
+  XLAL_CHECK ( XLALParseStringValueAsEPOCH ( varp, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   XLALFree ( valString );
 
