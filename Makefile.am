@@ -43,3 +43,26 @@ uninstall-local:
 	-rm -rf "$(DESTDIR)$(htmldir)/"
 
 endif
+
+.PHONY: print-build-success
+all-local: print-build-success
+print-build-success:
+	@echo "";\
+	echo "==================================================";\
+	echo "$(PACKAGE_NAME) has now been successfully built.";\
+	echo "Now run 'make install' to install $(PACKAGE_NAME).";\
+	echo "==================================================";\
+	echo ""
+.PHONY: print-install-success
+install-exec-local: print-install-success
+print-install-success:
+	@echo "";\
+	echo "==================================================";\
+	echo "$(PACKAGE_NAME) has now been successfully installed.";\
+	echo "To set up your environment, please add the line";\
+	echo "  . $(sysconfdir)/$(PACKAGE)rc";\
+	echo "to ~/.profile for Bourne shells (e.g. bash), or";\
+	echo "  source $(sysconfdir)/$(PACKAGE)rc";\
+	echo "to ~/.login for C shells (e.g. tcsh).";\
+	echo "==================================================";\
+	echo ""
