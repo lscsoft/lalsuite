@@ -167,14 +167,12 @@ SWIGINTERNINLINE PyObject* swiglal_get_reference(PyObject* v) { Py_XINCREF(v); r
 
   if ($input != NULL && $input != Py_None) {
 
-    // Check that the $input PyObject is a sequence of either 6 or 9 integer elements; this
-    // should also handle a time.struct_time (assuming its attributes are in the order below).
-    // Note that the 7th ('tm_wday') and 8th ('tm_yday') elements are ignored; see below.
+    // Check that the $input PyObject is a sequence of 9 integer elements
     if (!PySequence_Check($input)) {
       %argument_fail(SWIG_ValueError, "$type (not a sequence)", $symname, $argnum);
     }
-    if (PySequence_Size($input) != 6 && PySequence_Size($input) != 9) {
-      %argument_fail(SWIG_ValueError, "$type (must have 6 or 9 elements)", $symname, $argnum);
+    if (PySequence_Size($input) != 9) {
+      %argument_fail(SWIG_ValueError, "$type (must have 9 elements)", $symname, $argnum);
     }
     PyObject *seq = PySequence_Fast($input, "$type (not a sequence)");
     temptm.tm_year  = %static_cast(PyInt_AsLong(PySequence_Fast_GET_ITEM($input, 0)), int);
@@ -183,24 +181,23 @@ SWIGINTERNINLINE PyObject* swiglal_get_reference(PyObject* v) { Py_XINCREF(v); r
     temptm.tm_hour  = %static_cast(PyInt_AsLong(PySequence_Fast_GET_ITEM($input, 3)), int);
     temptm.tm_min   = %static_cast(PyInt_AsLong(PySequence_Fast_GET_ITEM($input, 4)), int);
     temptm.tm_sec   = %static_cast(PyInt_AsLong(PySequence_Fast_GET_ITEM($input, 5)), int);
-    temptm.tm_isdst = PySequence_Size($input) > 8 ?
-      %static_cast(PyInt_AsLong(PySequence_Fast_GET_ITEM($input, 8)), int) : -1;
+    temptm.tm_wday  = %static_cast(PyInt_AsLong(PySequence_Fast_GET_ITEM($input, 6)), int);
+    temptm.tm_yday  = %static_cast(PyInt_AsLong(PySequence_Fast_GET_ITEM($input, 7)), int);
+    temptm.tm_isdst = %static_cast(PyInt_AsLong(PySequence_Fast_GET_ITEM($input, 8)), int);
     Py_CLEAR(seq);
     if (PyErr_Occurred()) {  // Catch any errors while converting items to integers
       SWIG_fail;
     }
 
     // Convert Python date ranges to 'tm' struct date ranges
-    temptm.tm_year -= 1900;   // 'tm' struct years start from 1900
-    temptm.tm_mon  -= 1;      // 'tm' struct months start from 0
-
-    // Fill in values for 'tm_wday' and 'tm_yday', and normalise member ranges
-    int errnum = 0;
-    XLAL_TRY( XLALFillBrokenDownTime(&temptm), errnum );
-    if (errnum != XLAL_SUCCESS) {
-      %argument_fail(SWIG_ValueError, "$type (invalid date/time)", $symname, $argnum);
-    }
-
+    // Python:  1900 = year 1900, January = month 1, Monday = week day 0,
+    // January 1st = year day 1
+    // C:  1900 = year 0, January = month 0, Monday = week day 1, January
+    // 1st = year day 0
+    temptm.tm_year -= 1900;
+    temptm.tm_mon  -= 1;
+    temptm.tm_wday  = (temptm.tm_wday + 8) % 7;
+    temptm.tm_yday -= 1;
   }
 
   $1 = &temptm;
@@ -210,13 +207,17 @@ SWIGINTERNINLINE PyObject* swiglal_get_reference(PyObject* v) { Py_XINCREF(v); r
 %typemap(out) struct tm* {
 
   // Convert 'tm' struct date ranges to Python date ranges
-  $1->tm_year += 1900;                    // Python stores 4-digit years
-  $1->tm_mon  += 1;                       // Python months start from 1
-  $1->tm_wday  = ($1->tm_wday + 6) % 7;   // Python week days start from 0=Monday
-  $1->tm_yday += 1;                       // Python year days start from 1
+  // Python:  1900 = year 1900, January = month 1, Monday = week day 0,
+  // January 1st = year day 1
+  // C:  1900 = year 0, January = month 0, Monday = week day 1, January 1st
+  // = year day 0
+  $1->tm_year += 1900;
+  $1->tm_mon  += 1;
+  $1->tm_wday  = ($1->tm_wday + 6) % 7;
+  $1->tm_yday += 1;
 
-  // Build a 9-element list
-  $result = Py_BuildValue("[iiiiiiiii]",
+  // Build a 9-element tuple (Python struct_time is immutable)
+  $result = Py_BuildValue("(iiiiiiiii)",
                           $1->tm_year, $1->tm_mon, $1->tm_mday,
                           $1->tm_hour, $1->tm_min, $1->tm_sec,
                           $1->tm_wday, $1->tm_yday, $1->tm_isdst);
