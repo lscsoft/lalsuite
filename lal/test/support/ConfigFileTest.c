@@ -63,7 +63,7 @@ int main ( int argc, char *argv[])
   XLAL_CHECK ( XLALReadConfigSTRINGVariable ( &string2, cfgdata, 0, "string2", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALReadConfigSTRINGVariable ( &string3, cfgdata, 0, "string3", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  XLAL_CHECK ( XLALReadConfigBOOLVariable ( &testBool, cfgdata, 0, "testBool", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALReadConfigBOOLEANVariable ( &testBool, cfgdata, 0, "testBool", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   LIGOTimeGPS epochGPS, epochMJDTT;
   XLAL_CHECK ( XLALReadConfigEPOCHVariable ( &epochGPS, cfgdata, 0, "epochGPS", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -140,7 +140,7 @@ int main ( int argc, char *argv[])
   XLAL_CHECK ( XLALReadConfigSTRINGVariable(&string2,   cfgdata, "section2", "string2", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALReadConfigSTRINGVariable(&string3,   cfgdata, "section3", "string3", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  XLAL_CHECK ( XLALReadConfigBOOLVariable   (&testBool,  cfgdata, "section3", "testBool", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALReadConfigBOOLEANVariable   (&testBool,  cfgdata, "section3", "testBool", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
 
 
   XLAL_CHECK ( XLALReadConfigEPOCHVariable ( &epochGPS, cfgdata, "section2", "epochGPS", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );

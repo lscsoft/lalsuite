@@ -410,7 +410,7 @@ XLALUserVarReadCfgfile ( const CHAR *cfgfile ) 	   /**< [in] name of config-file
       switch (ptr->type)
 	{
 	case UVAR_TYPE_BOOLEAN:
-          XLAL_CHECK ( XLALReadConfigBOOLVariable ( ptr->varp, cfg, NULL, ptr->name, &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
+          XLAL_CHECK ( XLALReadConfigBOOLEANVariable ( ptr->varp, cfg, NULL, ptr->name, &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
 	  if (wasRead) { check_and_mark_as_set ( ptr ); }
 	  break;
 

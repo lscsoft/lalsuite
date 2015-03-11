@@ -328,187 +328,30 @@ XLALReadConfigSTRINGVariable ( CHAR **varp,                     //!< [out] retur
 
 } // XLALReadConfigSTRINGVariable()
 
+// ------------------------------------------------------------
+// define type-specific wrappers to the generic XLALReadConfigSTRINGVariable() function,
+// using a template macro:
+#define DEFINE_XLALREADCONFIGVARIABLE(TYPE,CTYPE)                       \
+DECLARE_XLALREADCONFIGVARIABLE(TYPE,CTYPE)                              \
+{                                                                       \
+ /* first read the value as a string */                                 \
+ CHAR *valString = NULL;                                                \
+ XLAL_CHECK ( XLALReadConfigSTRINGVariable ( &valString, cfgdata, secName, varName, wasRead ) == XLAL_SUCCESS, XLAL_EFUNC ); \
+ if ( ! (*wasRead ) ) {                                                 \
+   return XLAL_SUCCESS;                                                 \
+ }                                                                      \
+ XLAL_CHECK ( XLALParseStringValueAs ##TYPE ( varp, valString ) == XLAL_SUCCESS, XLAL_EFUNC ); \
+ XLALFree (valString);                                                  \
+ return XLAL_SUCCESS;                                                   \
+}
 
-/**
- * Type-specialization of generic reading-function XLALReadConfigVariable() to BOOLEAN variables.
- */
-int
-XLALReadConfigBOOLVariable (BOOLEAN *varp,              /**< [out] variable to store result */
-                            LALParsedDataFile *cfgdata, /**< [in] pre-parsed config-data */
-                            const CHAR *secName,        /**< [in] section-name to read */
-                            const CHAR *varName,        /**< [in] variable-name to read */
-                            BOOLEAN *wasRead            /**< [out] did we succeed in reading? */
-                            )
-{
-  (*wasRead) = FALSE;
-  /* first read the value as a string */
-  CHAR *valString = NULL;
-  /* first read the value as a string */
-  XLAL_CHECK ( XLALReadConfigSTRINGVariable ( &valString, cfgdata, secName, varName, wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  if ( ! (*wasRead ) ) { // if nothing was read and XLALReadConfigSTRINGVariable() didn't throw an error, then we're ok and return
-    return XLAL_SUCCESS;
-  }
-  XLAL_CHECK ( valString != NULL, XLAL_EFAILED, "Got NULL string after reading config-variable '%s' in section '%s'\n", varName, secName ? secName: "default" );
-
-  XLAL_CHECK ( XLALParseStringValueAsBOOLEAN ( varp, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  XLALFree (valString);
-
-  return XLAL_SUCCESS;
-
-} /* XLALReadConfigBOOLVariable() */
-
-
-/**
- * Read a signed integer value.
- *
- * Note: Rather than using the sscanf() for the string-to-integer conversion,
- * we do our own parsing, in order to check for spurious extra characters at the end.
- * This allows us to catch user-input mistakes like specifying "1e3" for an int-variable, which
- * would silently be converted as '1' by sscanf("%ld").
- */
-int
-XLALReadConfigINT4Variable (INT4 *varp,
-                            LALParsedDataFile *cfgdata,
-                            const CHAR *secName,
-                            const CHAR *varName,
-                            BOOLEAN *wasRead)
-{
-  (*wasRead) = FALSE;
-  /* first read the value as a string */
-  CHAR *valString = NULL;
-  XLAL_CHECK ( XLALReadConfigSTRINGVariable ( &valString, cfgdata, secName, varName, wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  if ( ! (*wasRead ) ) { // if nothing was read and XLALReadConfigSTRINGVariable() didn't throw an error, then we're ok and return
-    return XLAL_SUCCESS;
-  }
-  XLAL_CHECK ( valString != NULL, XLAL_EFAILED, "Got NULL string after reading config-variable '%s' in section '%s'\n", varName, secName ? secName: "default" );
-
-  XLAL_CHECK ( XLALParseStringValueAsINT4 ( varp, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  XLALFree ( valString );
-
-  return XLAL_SUCCESS;
-
-} /* XLALReadConfigINT4Variable() */
-
-
-/**
- * Type-specialization of generic reading-function XLALReadConfigVariable() to REAL8 variables.
- */
-int
-XLALReadConfigREAL8Variable (REAL8 *varp,
-                             LALParsedDataFile *cfgdata,
-                             const CHAR *secName,
-                             const CHAR *varName,
-                             BOOLEAN *wasRead)
-{
-  (*wasRead) = FALSE;
-  /* first read the value as a string */
-  CHAR *valString = NULL;
-  XLAL_CHECK ( XLALReadConfigSTRINGVariable ( &valString, cfgdata, secName, varName, wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  if ( ! (*wasRead ) ) { // if nothing was read and XLALReadConfigSTRINGVariable() didn't throw an error, then we're ok and return
-    return XLAL_SUCCESS;
-  }
-  XLAL_CHECK ( valString != NULL, XLAL_EFAILED, "Got NULL string after reading config-variable '%s' in section '%s'\n", varName, secName ? secName: "default" );
-
-  XLAL_CHECK ( XLALParseStringValueAsREAL8 ( varp, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  XLALFree ( valString );
-
-  return XLAL_SUCCESS;
-
-} /* XLALReadConfigREAL8Variable() */
-
-/**
- * Read a GPS 'epoch' value, specified either as GPS or MJD(TT) string.
- *
- */
-int
-XLALReadConfigEPOCHVariable ( LIGOTimeGPS *varp,
-                              LALParsedDataFile *cfgdata,
-                              const CHAR *secName,
-                              const CHAR *varName,
-                              BOOLEAN *wasRead)
-{
-  (*wasRead) = FALSE;
-  /* first read the value as a string */
-  CHAR *valString = NULL;
-  XLAL_CHECK ( XLALReadConfigSTRINGVariable ( &valString, cfgdata, secName, varName, wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  if ( ! (*wasRead ) ) { // if nothing was read and XLALReadConfigSTRINGVariable() didn't throw an error, then we're ok and return
-    return XLAL_SUCCESS;
-  }
-  XLAL_CHECK ( valString != NULL, XLAL_EFAILED, "Got NULL string after reading config-variable '%s' in section '%s'\n", varName, secName ? secName: "default" );
-
-  XLAL_CHECK ( XLALParseStringValueAsEPOCH ( varp, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  XLALFree ( valString );
-
-  return XLAL_SUCCESS;
-
-} /* XLALReadConfigEPOCHVariable() */
-
-
-/**
- * Type-specialization of generic reading-function XLALReadConfigVariable() to RAJ variables
- * (allowing for either radians or "hours:minutes:seconds" input format).
- */
-int
-XLALReadConfigRAJVariable ( REAL8 *varp,
-                            LALParsedDataFile *cfgdata,
-                            const CHAR *secName,
-                            const CHAR *varName,
-                            BOOLEAN *wasRead)
-{
-  (*wasRead) = FALSE;
-  /* first read the value as a string */
-  CHAR *valString = NULL;
-  XLAL_CHECK ( XLALReadConfigSTRINGVariable ( &valString, cfgdata, secName, varName, wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  if ( ! (*wasRead ) ) { // if nothing was read and XLALReadConfigSTRINGVariable() didn't throw an error, then we're ok and return
-    return XLAL_SUCCESS;
-  }
-  XLAL_CHECK ( valString != NULL, XLAL_EFAILED, "Got NULL string after reading config-variable '%s' in section '%s'\n", varName, secName ? secName: "default" );
-
-  XLAL_CHECK ( XLALParseStringValueAsRAJ ( varp, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  XLALFree ( valString );
-
-  return XLAL_SUCCESS;
-
-} /* XLALReadConfigRAJVariable() */
-
-/**
- * Type-specialization of generic reading-function XLALReadConfigVariable() to DECJ variables
- * (allowing for either radians or "degrees:minutes:seconds" input format).
- */
-int
-XLALReadConfigDECJVariable ( REAL8 *varp,
-                             LALParsedDataFile *cfgdata,
-                             const CHAR *secName,
-                             const CHAR *varName,
-                             BOOLEAN *wasRead)
-{
-  (*wasRead) = FALSE;
-  /* first read the value as a string */
-  CHAR *valString = NULL;
-  XLAL_CHECK ( XLALReadConfigSTRINGVariable ( &valString, cfgdata, secName, varName, wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  if ( ! (*wasRead ) ) { // if nothing was read and XLALReadConfigSTRINGVariable() didn't throw an error, then we're ok and return
-    return XLAL_SUCCESS;
-  }
-  XLAL_CHECK ( valString != NULL, XLAL_EFAILED, "Got NULL string after reading config-variable '%s' in section '%s'\n", varName, secName ? secName: "default" );
-
-  XLAL_CHECK ( XLALParseStringValueAsDECJ ( varp, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  XLALFree ( valString );
-
-  return XLAL_SUCCESS;
-
-} /* XLALReadConfigDECJVariable() */
+DEFINE_XLALREADCONFIGVARIABLE(BOOLEAN,BOOLEAN);
+DEFINE_XLALREADCONFIGVARIABLE(INT4,INT4);
+DEFINE_XLALREADCONFIGVARIABLE(REAL8,REAL8);
+DEFINE_XLALREADCONFIGVARIABLE(EPOCH,LIGOTimeGPS);
+DEFINE_XLALREADCONFIGVARIABLE(RAJ,REAL8);
+DEFINE_XLALREADCONFIGVARIABLE(DECJ,REAL8);
+// ------------------------------------------------------------
 
 
 /**

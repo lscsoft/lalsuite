@@ -73,7 +73,7 @@ extern "C" {
  * <tt>XLALReadConfig<TYPE>Variable()</tt> or the general-purpose reading function
  * XLALReadConfigVariable().
  *
- * A boolean variable read by XLALReadConfigBOOLVariable() can have any of the values
+ * A boolean variable read by XLALReadConfigBOOLEANVariable() can have any of the values
  * <tt>{1, 0, yes, no, true, false}</tt>, where the comparison is done
  * <em>case-insensitively</em>, i.e. you can also use 'True' or 'FALSE'....
  *
@@ -118,55 +118,22 @@ void XLALDestroyParsedDataFile (LALParsedDataFile *cfgdata);
 
 int XLALConfigSectionExists(const LALParsedDataFile *, const CHAR *);
 LALStringVector *XLALListConfigFileSections ( const LALParsedDataFile *cfgdata );
+UINT4Vector *XLALConfigFileGetUnreadEntries ( const LALParsedDataFile *cfgdata );
 
-int
-XLALReadConfigSTRINGVariable ( CHAR **varp,
-                               LALParsedDataFile *cfgdata,
-                               const CHAR * secName,
-                               const CHAR * varName,
-                               BOOLEAN *wasRead );
+// ---------- type-specific parser prototypes generated via template
+#define DECLARE_XLALREADCONFIGVARIABLE(TYPE,CTYPE)                      \
+  int XLALReadConfig ##TYPE## Variable ( CTYPE *varp, LALParsedDataFile *cfgdata, const CHAR *secName, const CHAR *varName, BOOLEAN *wasRead )
 
-int
-XLALReadConfigBOOLVariable ( BOOLEAN *varp,
-                             LALParsedDataFile *cfgdata,
-                             const CHAR *secName,
-                             const CHAR *varName,
-                             BOOLEAN *wasRead );
-int
-XLALReadConfigINT4Variable ( INT4 *varp,
-                             LALParsedDataFile *cfgdata,
-                             const CHAR *secName,
-                             const CHAR *varName,
-                             BOOLEAN *wasRead );
-int
-XLALReadConfigREAL8Variable ( REAL8 *varp,
-                              LALParsedDataFile *cfgdata,
-                              const CHAR *secName,
-                              const CHAR *varName,
-                              BOOLEAN *wasRead );
-int
-XLALReadConfigEPOCHVariable ( LIGOTimeGPS *varp,
-                              LALParsedDataFile *cfgdata,
-                              const CHAR *secName,
-                              const CHAR *varName,
-                              BOOLEAN *wasRead );
+DECLARE_XLALREADCONFIGVARIABLE(STRING,CHAR*);
+DECLARE_XLALREADCONFIGVARIABLE(BOOLEAN,BOOLEAN);
+DECLARE_XLALREADCONFIGVARIABLE(INT4,INT4);
+DECLARE_XLALREADCONFIGVARIABLE(REAL8,REAL8);
+DECLARE_XLALREADCONFIGVARIABLE(EPOCH,LIGOTimeGPS);
+DECLARE_XLALREADCONFIGVARIABLE(RAJ,REAL8);
+DECLARE_XLALREADCONFIGVARIABLE(DECJ,REAL8);
+// ------------------------------------------------------------
 
-int
-XLALReadConfigRAJVariable ( REAL8 *varp,
-                            LALParsedDataFile *cfgdata,
-                            const CHAR *secName,
-                            const CHAR *varName,
-                            BOOLEAN *wasRead );
 
-int
-XLALReadConfigDECJVariable ( REAL8 *varp,
-                             LALParsedDataFile *cfgdata,
-                             const CHAR *secName,
-                             const CHAR *varName,
-                             BOOLEAN *wasRead );
-
-UINT4Vector *
-XLALConfigFileGetUnreadEntries ( const LALParsedDataFile *cfgdata );
 
 /*@}*/
 
