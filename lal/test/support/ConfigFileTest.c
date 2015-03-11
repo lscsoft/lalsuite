@@ -36,8 +36,7 @@ int main ( int argc, char *argv[])
 
   BOOLEAN testBool;
   CHAR *string1 = NULL;
-  CHARVector *string2 = NULL;
-  CHAR *string2b = NULL;
+  CHAR *string2 = NULL;
   CHAR *string3 = NULL;
   INT4 someint;
   REAL8 float1, float2;
@@ -61,10 +60,7 @@ int main ( int argc, char *argv[])
   XLAL_CHECK ( XLALReadConfigSTRINGVariable ( &string1, cfgdata, 0, "string1", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALReadConfigINT4Variable ( &someint, cfgdata, 0, "int1", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  UINT4 trunc_len = 35;
-  XLAL_CHECK ( ( string2 = XLALCreateCHARVector (trunc_len) ) != NULL, XLAL_EFUNC );
-  XLAL_CHECK ( XLALReadConfigSTRINGNVariable ( string2, cfgdata, 0, "string2", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALReadConfigSTRINGVariable ( &string2b, cfgdata, 0, "string2", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALReadConfigSTRINGVariable ( &string2, cfgdata, 0, "string2", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALReadConfigSTRINGVariable ( &string3, cfgdata, 0, "string3", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   XLAL_CHECK ( XLALReadConfigBOOLVariable ( &testBool, cfgdata, 0, "testBool", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -97,9 +93,7 @@ int main ( int argc, char *argv[])
   XLAL_CHECK ( strcmp(string1, string1_ref) == 0, XLAL_EFAILED, "%s: got string1 = '%s', expected '%s'\n", cfgname, string1, string1_ref );
 
   const char *string2_ref = "this is also possible, and # here does nothing; and neither does semi-colon ";
-  XLAL_CHECK ( string2->length == trunc_len, XLAL_EFAILED, "%s: got string2->length = %d, expected %d\n", cfgname, string2->length, trunc_len );
-  XLAL_CHECK ( strncmp ( string2->data, string2_ref, trunc_len-1 ) == 0, XLAL_EFAILED, "%s: got string2[%d] = '%s', expected '%.34s'\n", cfgname, trunc_len, string2->data, string2_ref );
-  XLAL_CHECK ( strcmp ( string2b, string2_ref ) == 0, XLAL_EFAILED, "%s: got string2 = '%s', expected '%s'\n", cfgname, string2b, string2_ref );
+  XLAL_CHECK ( strcmp ( string2, string2_ref ) == 0, XLAL_EFAILED, "%s: got string2 = '%s', expected '%s'\n", cfgname, string2, string2_ref );
 
   const char *string3_ref = "how about #quotes AND line-continuation?";
   XLAL_CHECK ( strcmp ( string3, string3_ref ) == 0, XLAL_EFAILED, "%s: got string3 = '%s', expected '%s'\n", cfgname, string3, string3_ref );
@@ -114,9 +108,9 @@ int main ( int argc, char *argv[])
   XLAL_CHECK ( (diff = fabs(latDMS - latRad)) < tol, XLAL_EFAILED, "latitude(HMS) = %.16g differs from latitude(rad) = %.16g by %g > tolerance\n", latDMS, latRad, diff, tol );
 
   XLALFree (string1);
-  XLALFree (string2b);
+  XLALFree (string2);
   XLALFree (string3);
-  string1 = string2b = string3 = NULL;
+  string1 = string2 = string3 = NULL;
 
   // ---------- TEST 2: read some values from different sections ----------
 
@@ -141,9 +135,7 @@ int main ( int argc, char *argv[])
 
   XLAL_CHECK ( XLALReadConfigINT4Variable   (&someint,   cfgdata, "section1", "int1", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  XLAL_CHECK ( XLALReadConfigSTRINGNVariable(string2,   cfgdata, "section2", "string2", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  XLAL_CHECK ( XLALReadConfigSTRINGVariable(&string2b,   cfgdata, "section2", "string2", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALReadConfigSTRINGVariable(&string2,   cfgdata, "section2", "string2", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALReadConfigSTRINGVariable(&string3,   cfgdata, "section3", "string3", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
 
   XLAL_CHECK ( XLALReadConfigBOOLVariable   (&testBool,  cfgdata, "section3", "testBool", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -165,9 +157,7 @@ int main ( int argc, char *argv[])
 
   XLAL_CHECK ( strcmp(string1, string1_ref) == 0, XLAL_EFAILED, "%s: got string1 = '%s', expected '%s'\n", cfgname, string1, string1_ref );
 
-  XLAL_CHECK ( string2->length == trunc_len, XLAL_EFAILED, "%s: got string2->length = %d, expected %d\n", cfgname, string2->length, trunc_len );
-  XLAL_CHECK ( strncmp ( string2->data, string2_ref, trunc_len-1 ) == 0, XLAL_EFAILED, "%s: got string2[%d] = '%s', expected '%.34s'\n", cfgname, trunc_len, string2->data, string2_ref );
-  XLAL_CHECK ( strcmp ( string2b, string2_ref ) == 0, XLAL_EFAILED, "%s: got string2 = '%s', expected '%s'\n", cfgname, string2b, string2_ref );
+  XLAL_CHECK ( strcmp ( string2, string2_ref ) == 0, XLAL_EFAILED, "%s: got string2 = '%s', expected '%s'\n", cfgname, string2, string2_ref );
 
   XLAL_CHECK ( strcmp ( string3, string3_ref ) == 0, XLAL_EFAILED, "%s: got string3 = '%s', expected '%s'\n", cfgname, string3, string3_ref );
 
@@ -189,8 +179,7 @@ int main ( int argc, char *argv[])
   cfgdata = NULL;
 
   XLALFree (string1);
-  XLALDestroyCHARVector (string2);
-  XLALFree (string2b);
+  XLALFree (string2);
   XLALFree (string3);
 
   // -----

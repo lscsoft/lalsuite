@@ -635,67 +635,6 @@ XLALReadConfigSTRINGVariable (CHAR ** varp,		/**< [out] string, allocated here! 
 
 } /* XLALReadConfigSTRINGVariable() */
 
-
-/**
- * Type-specialization of generic reading-function XLALReadConfigVariable() to
- * reading of <em>fixed-length</em> strings.
- * Another variant of string-reading:similar to ReadConfigSTRINGVariable(), but
- * here a fixed-size CHAR-array is used as input, no memory is allocated by
- * the function.
- * \note you have to provide the length of your string-array as input in <tt>varp->length</tt>
- * (this is basically a wrapper for ReadConfigSTRINGVariable())
- *
- * \par Note 2: the behaviour is similar to strncpy, i.e. we silently clip the
- * string to the right length, BUT we also 0-terminate it properly.
- * No error or warning is generated when clipping occurs!
- *
- * \par Note 3: at return, the value <tt>varp->length</tt> is set to the length of the
- * string copied (*including* the trailing 0)
- *
- */
-int
-XLALReadConfigSTRINGNVariable (CHARVector *varp,        /**< [out] must be allocated! */
-                              const LALParsedDataFile *cfgdata, /**< [in] pre-parsed config-data */
-                              const CHAR *secName,	/**< [in] section-name */
-                              const CHAR *varName,	/**< [in] variable-name */
-                              BOOLEAN *wasRead)		/**< [out] did we succeed in reading? */
-{
-  CHAR *tmp = NULL;
-
-  /* This traps coding errors in the calling routine. */
-  if (varp == NULL)
-    {
-      XLALPrintError ( "%s:" CONFIGFILEH_MSGENULL, __func__);
-      XLAL_ERROR ( XLAL_EINVAL );
-    }
-
-  if (varp->data == NULL)
-    {
-      XLALPrintError ( "%s:" CONFIGFILEH_MSGENULL, __func__);
-      XLAL_ERROR ( XLAL_EINVAL );
-    }
-
-  if ( XLALReadConfigSTRINGVariable (&tmp, cfgdata, secName, varName, wasRead) != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: XLALReadConfigSTRINGVariable() failed.\n", __func__ );
-    XLAL_ERROR ( XLAL_EFUNC );
-  }
-
-  if (*wasRead && tmp)
-    {
-      strncpy (varp->data, tmp, varp->length - 1);
-      varp->data[varp->length-1] = '\0';
-      XLALFree (tmp);
-      varp->length = strlen (varp->data) + 1;
-      *wasRead = TRUE;
-    }
-  else
-    *wasRead = FALSE;
-
-  return XLAL_SUCCESS;
-
-} /* XLALReadConfigSTRINGNVariable() */
-
-
 /**
  * Read a GPS 'epoch' value, specified either as GPS or MJD(TT) string.
  *
@@ -1082,29 +1021,6 @@ LALReadConfigSTRINGVariable (LALStatus *status,		/**< pointer to LALStatus struc
 
 } /* LALReadConfigSTRINGVariable() */
 
-
-/**
- * \deprecated use XLALReadConfigSTRINGNVariable() instead
- */
-void
-LALReadConfigSTRINGNVariable (LALStatus *status,	/**< pointer to LALStatus structure */
-                              CHARVector *varp,         /**< [out] must be allocated! */
-                              const LALParsedDataFile *cfgdata, /**< [in] pre-parsed config-data */
-                              const CHAR *varName,	/**< [in] variable-name */
-                              BOOLEAN *wasRead)		/**< [out] did we succeed in reading? */
-{
-  const char *fn = __func__;
-
-  INITSTATUS(status);
-
-  if ( XLALReadConfigSTRINGNVariable(varp, cfgdata, NULL, varName, wasRead ) != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: call to XLALReadConfigSTRINGNVariable() failed with code %d\n", fn, xlalErrno );
-    ABORT ( status, CONFIGFILEH_EXLAL, CONFIGFILEH_MSGEXLAL );
-  }
-
-  RETURN (status);
-
-} /* LALReadConfigSTRINGNVariable() */
 
 /**
  * \deprecated use XLALCheckConfigReadComplete() instead

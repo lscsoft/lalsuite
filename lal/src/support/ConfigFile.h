@@ -182,14 +182,6 @@ XLALReadConfigSTRINGVariable (CHAR **varp,
                              BOOLEAN *wasRead);
 
 int
-XLALReadConfigSTRINGNVariable (CHARVector *varp,
-                              const LALParsedDataFile *cfgdata,
-                              const CHAR *secName,
-                              const CHAR *varName,
-                              BOOLEAN *wasRead);
-
-
-int
 XLALReadConfigEPOCHVariable (LIGOTimeGPS *varp,
                              const LALParsedDataFile *cfgdata,
                              const CHAR *secName,
@@ -261,7 +253,6 @@ void LALReadConfigBOOLVariable (LALStatus *, BOOLEAN *varp, const LALParsedDataF
 void LALReadConfigINT4Variable (LALStatus *, INT4 *varp, const LALParsedDataFile *cfgdata, const CHAR *varName, BOOLEAN *wasRead);
 void LALReadConfigREAL8Variable (LALStatus *, REAL8 *varp, const LALParsedDataFile *cfgdata, const CHAR *varName, BOOLEAN *wasRead);
 void LALReadConfigSTRINGVariable (LALStatus *, CHAR **varp, const LALParsedDataFile *cfgdata, const CHAR *varName, BOOLEAN *wasRead);
-void LALReadConfigSTRINGNVariable (LALStatus *, CHARVector *varp, const LALParsedDataFile *cfgdata, const CHAR *varName, BOOLEAN *wasRead);
 void LALReadConfigVariable (LALStatus *, void *varp, const LALParsedDataFile *cfgdata, const LALConfigVar *param, BOOLEAN *wasRead);
 void LALCheckConfigReadComplete (LALStatus *, const LALParsedDataFile *cfgdata, ConfigStrictness strict);
 /*@}*/
