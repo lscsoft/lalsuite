@@ -55,14 +55,10 @@ print-install-success:
 	@echo "";\
 	echo "==================================================";\
 	echo "$(PACKAGE_NAME) has now been successfully installed.";\
-	echo "Now you may want to setup your environment:";\
-	echo "";\
-	echo "* Bourne shell [bash] users: please add the line";\
+	echo "To set up your environment, please add the line";\
 	echo "  . $(sysconfdir)/$(PACKAGE)-user-env.sh";\
-	echo "  to your .profile file.";\
-	echo "";\
-	echo "* C-shell [tcsh] users: please add the line";\
+	echo "to ~/.profile for Bourne shells (e.g. bash), or";\
 	echo "  source $(sysconfdir)/$(PACKAGE)-user-env.csh";\
-	echo "  to your .login file.";\
+	echo "to ~/.login for C shells (e.g. tcsh).";\
 	echo "==================================================";\
 	echo ""
