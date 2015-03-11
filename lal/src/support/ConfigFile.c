@@ -30,18 +30,21 @@
 #include <lal/StreamInput.h>
 #include <lal/AVFactories.h>
 #include <lal/StringVector.h>
+#include <lal/ParseStringValue.h>
 
 #include <lal/ConfigFile.h>
 
+// ---------- local defines ----------
 #define FMT_STRING "string"    /* reading in quoted strings needs some special treatment */
 #define WHITESPACE " \t"
 
 #define TRUE   (1==1)
 #define FALSE  (1==0)
 
-/* local prototypes */
+// ---------- local prototypes ----------
 static void cleanConfig ( char *text );
 
+// ==================== function definitions ==========
 /**
  * Parse an ASCII data-file into a pre-cleaned array of lines.
  * The cleaning gets rid of comments ('\#', '\%'), empty lines,
@@ -58,7 +61,7 @@ static void cleanConfig ( char *text );
  */
 int
 XLALParseDataFile (LALParsedDataFile **cfgdata, /**< [out] pre-parsed data-file lines */
-                   const CHAR *path		/**< [in] file-path of config-file to be read */
+                   const CHAR *path             /**< [in] file-path of config-file to be read */
                    )
 {
   XLAL_CHECK ( (cfgdata != NULL) && (*cfgdata == NULL), XLAL_EINVAL );
@@ -87,8 +90,8 @@ XLALParseDataFile (LALParsedDataFile **cfgdata, /**< [out] pre-parsed data-file 
 } /* XLALParseDataFile() */
 
 int
-XLALParseDataFileContent (LALParsedDataFile **cfgdata, 	/**< [out] pre-parsed data-file lines */
-                          const CHAR *string		/**< [in] string-contents of config-file: can get modified! */
+XLALParseDataFileContent (LALParsedDataFile **cfgdata,  /**< [out] pre-parsed data-file lines */
+                          const CHAR *string            /**< [in] string-contents of config-file: can get modified! */
                           )
 {
   XLAL_CHECK ( (cfgdata != NULL) && (*cfgdata == NULL), XLAL_EINVAL );
@@ -96,7 +99,7 @@ XLALParseDataFileContent (LALParsedDataFile **cfgdata, 	/**< [out] pre-parsed da
 
   char *rawdata;
   XLAL_CHECK ( (rawdata = XLALMalloc ( strlen(string) + 1 )) != NULL, XLAL_ENOMEM );
-  strcpy ( rawdata, string );	// keep local copy for modifying
+  strcpy ( rawdata, string );   // keep local copy for modifying
 
   /* get rid of comments and do line-continuation */
   cleanConfig ( rawdata );
@@ -139,7 +142,7 @@ XLALParseDataFileContent (LALParsedDataFile **cfgdata, 	/**< [out] pre-parsed da
  * Free memory associated with a LALParsedDataFile structure.
  */
 void
-XLALDestroyParsedDataFile (LALParsedDataFile *cfgdata)	/**< [in] config-file data */
+XLALDestroyParsedDataFile (LALParsedDataFile *cfgdata)  /**< [in] config-file data */
 {
   if ( cfgdata == NULL ) {
     return;
@@ -162,7 +165,7 @@ XLALDestroyParsedDataFile (LALParsedDataFile *cfgdata)	/**< [in] config-file dat
  */
 int
 XLALConfigSectionExists ( const LALParsedDataFile *cfgdata,     /**< [in] pre-parsed config-data */
-                          const CHAR *secName)			/**< [in] section-name to read */
+                          const CHAR *secName)                  /**< [in] section-name to read */
 {
   UINT4 i;
   size_t sec_searchlen = 0;
@@ -209,7 +212,7 @@ XLALListConfigFileSections ( const LALParsedDataFile *cfgdata )    /**< [in] pre
   const TokenList *lines = cfgdata->lines;
 
   LALStringVector *sections;
-  XLAL_CHECK_NULL ( (sections = XLALCalloc ( 1, sizeof(*sections) ) ) != NULL, XLAL_ENOMEM );	// empty string vector
+  XLAL_CHECK_NULL ( (sections = XLALCalloc ( 1, sizeof(*sections) ) ) != NULL, XLAL_ENOMEM );   // empty string vector
 
   if ( lines->tokens[0][0] != '[' ) // there is a non-empty 'default' section
     {
@@ -226,7 +229,7 @@ XLALListConfigFileSections ( const LALParsedDataFile *cfgdata )    /**< [in] pre
           UINT4 len = strlen ( thisLine );
           XLAL_CHECK_NULL ( thisLine[len-1] == ']', XLAL_EINVAL, "Invalid section start '%s'\n", thisLine );
 
-          const char *secName0 = thisLine + 1;	// skip '['
+          const char *secName0 = thisLine + 1;  // skip '['
           char *secName;
           XLAL_CHECK_NULL ( (secName = XLALDeblankString ( secName0, len - 2 )) != NULL, XLAL_EFUNC );
           XLAL_CHECK_NULL ( (sections = XLALAppendString2Vector ( sections, secName )) != NULL, XLAL_EFUNC );
@@ -397,17 +400,18 @@ XLALReadConfigVariable ( void *varp,                      /**< [out] result gets
  * Type-specialization of generic reading-function XLALReadConfigVariable() to BOOLEAN variables.
  */
 int
-XLALReadConfigBOOLVariable (BOOLEAN *varp,                 /**< [out] variable to store result */
-                            const LALParsedDataFile *cfgdata, /**< [in] pre-parsed config-data */
-                            const CHAR *secName,                       /**< [in] section-name to read */
-                            const CHAR *varName,                       /**< [in] variable-name to read */
-                            BOOLEAN *wasRead)                          /**< [out] did we succeed in reading? */
+XLALReadConfigBOOLVariable (BOOLEAN *varp,              /**< [out] variable to store result */
+                            const LALParsedDataFile *cfgdata,   /**< [in] pre-parsed config-data */
+                            const CHAR *secName,        /**< [in] section-name to read */
+                            const CHAR *varName,        /**< [in] variable-name to read */
+                            BOOLEAN *wasRead            /**< [out] did we succeed in reading? */
+                            )
 {
   (*wasRead) = FALSE;
   /* first read the value as a string */
   CHAR *valString = NULL;
   /* first read the value as a string */
-  XLAL_CHECK ( XLALReadConfigSTRINGVariable (&valString, cfgdata, secName, varName, wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALReadConfigSTRINGVariable ( &valString, cfgdata, secName, varName, wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   if ( ! (*wasRead ) ) { // if nothing was read and XLALReadConfigSTRINGVariable() didn't throw an error, then we're ok and return
     return XLAL_SUCCESS;
@@ -462,10 +466,10 @@ XLALReadConfigINT4Variable (INT4 *varp,
  */
 int
 XLALReadConfigREAL8Variable (REAL8 *varp,
-                            const LALParsedDataFile *cfgdata,
-                            const CHAR *secName,
-                            const CHAR *varName,
-                            BOOLEAN *wasRead)
+                             const LALParsedDataFile *cfgdata,
+                             const CHAR *secName,
+                             const CHAR *varName,
+                             BOOLEAN *wasRead)
 {
   (*wasRead) = FALSE;
   /* first read the value as a string */
@@ -563,11 +567,11 @@ XLALReadConfigSTRINGVariable (CHAR ** varp,		/**< [out] string, allocated here! 
  *
  */
 int
-XLALReadConfigEPOCHVariable (LIGOTimeGPS *varp,
-                             const LALParsedDataFile *cfgdata,
-                             const CHAR *secName,
-                             const CHAR *varName,
-                             BOOLEAN *wasRead)
+XLALReadConfigEPOCHVariable ( LIGOTimeGPS *varp,
+                              const LALParsedDataFile *cfgdata,
+                              const CHAR *secName,
+                              const CHAR *varName,
+                              BOOLEAN *wasRead)
 {
   (*wasRead) = FALSE;
   /* first read the value as a string */
@@ -593,11 +597,11 @@ XLALReadConfigEPOCHVariable (LIGOTimeGPS *varp,
  * (allowing for either radians or "hours:minutes:seconds" input format).
  */
 int
-XLALReadConfigRAJVariable (REAL8 *varp,
-                                 const LALParsedDataFile *cfgdata,
-                                 const CHAR *secName,
-                                 const CHAR *varName,
-                                 BOOLEAN *wasRead)
+XLALReadConfigRAJVariable ( REAL8 *varp,
+                            const LALParsedDataFile *cfgdata,
+                            const CHAR *secName,
+                            const CHAR *varName,
+                            BOOLEAN *wasRead)
 {
   (*wasRead) = FALSE;
   /* first read the value as a string */
@@ -622,11 +626,11 @@ XLALReadConfigRAJVariable (REAL8 *varp,
  * (allowing for either radians or "degrees:minutes:seconds" input format).
  */
 int
-XLALReadConfigDECJVariable (REAL8 *varp,
-                                const LALParsedDataFile *cfgdata,
-                                const CHAR *secName,
-                                const CHAR *varName,
-                                BOOLEAN *wasRead)
+XLALReadConfigDECJVariable ( REAL8 *varp,
+                             const LALParsedDataFile *cfgdata,
+                             const CHAR *secName,
+                             const CHAR *varName,
+                             BOOLEAN *wasRead)
 {
   (*wasRead) = FALSE;
   /* first read the value as a string */
@@ -716,7 +720,7 @@ cleanConfig ( char *text )
   while ( *ptr )
     {
       if ( (*ptr) == '\"' ) {
-        inQuotes = !inQuotes;	/* flip state */
+        inQuotes = !inQuotes;   /* flip state */
       }
       if ( (*ptr) == '{' ) {
         inBracesCount ++;
@@ -726,7 +730,7 @@ cleanConfig ( char *text )
       }
 
       if ( ((*ptr) == '#') || ( (*ptr) == '%') ) {
-        if ( !inQuotes )	/* only consider as comments if not quoted */
+        if ( !inQuotes )        /* only consider as comments if not quoted */
           {
             len = strcspn (ptr, "\n");
             memset ( (void*)ptr, '\n', len);
@@ -759,7 +763,7 @@ cleanConfig ( char *text )
            * to nicely fit to the previous line...
            */
           len = strlen (ptr+2);
-          memmove(ptr, ptr+2, len+1);	/* move the whole rest (add +1 for '\0') */
+          memmove(ptr, ptr+2, len+1);   /* move the whole rest (add +1 for '\0') */
         }
       else
         {
@@ -779,7 +783,7 @@ cleanConfig ( char *text )
    * RUN 4: get rid of initial and trailing whitespace (replace it by '\n')
    */
   ptr = text;
-  char *endptr = text + strlen(text);	// points to closing '\0' character in input-string
+  char *endptr = text + strlen(text);   // points to closing '\0' character in input-string
   while (ptr < endptr )
     {
       eol = strchr (ptr, '\n'); /* point to end-of-line */

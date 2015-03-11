@@ -35,7 +35,7 @@
 #include <lal/LALError.h>
 #include <lal/LALString.h>
 #include <lal/StringInput.h>
-#include <lal/ConfigFile.h>
+#include <lal/ParseStringValue.h>
 #include <lal/Velocity.h>
 #include <lal/TwoDMesh.h>
 

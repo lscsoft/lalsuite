@@ -22,7 +22,6 @@
 
 #include <lal/LALDatatypes.h>
 #include <lal/StringInput.h>
-#include <lal/ParseStringValue.h>
 
 /* C++ protection. */
 #ifdef  __cplusplus
@@ -140,8 +139,8 @@ typedef struct tagLALConfigVar {
  * This is used as the input structure in the config-variable reading routines.
  */
 typedef struct tagLALParsedDataFile {
-  TokenList *lines;	/**< list of pre-parsed data-file lines */
-  BOOLEAN *wasRead;	/**< keep track of successfully read lines for strictness-checking */
+  TokenList *lines;     /**< list of pre-parsed data-file lines */
+  BOOLEAN *wasRead;     /**< keep track of successfully read lines */
 } LALParsedDataFile;
 
 
@@ -155,54 +154,50 @@ int XLALConfigSectionExists(const LALParsedDataFile *, const CHAR *);
 LALStringVector *XLALListConfigFileSections ( const LALParsedDataFile *cfgdata );
 
 int
-XLALReadConfigBOOLVariable (BOOLEAN *varp,
-                            const LALParsedDataFile *cfgdata,
-                            const CHAR *secName,
-                            const CHAR *varName,
-                            BOOLEAN *wasRead);
-int
-XLALReadConfigINT4Variable (INT4 *varp,
-                           const LALParsedDataFile *cfgdata,
-                           const CHAR *secName,
-                           const CHAR *varName,
-                           BOOLEAN *wasRead);
+XLALReadConfigSTRINGVariable ( CHAR **varp,
+                               const LALParsedDataFile *cfgdata,
+                               const CHAR * secName,
+                               const CHAR * varName,
+                               BOOLEAN *wasRead );
 
 int
-XLALReadConfigREAL8Variable (REAL8 *varp,
-                            const LALParsedDataFile *cfgdata,
-                            const CHAR *secName,
-                            const CHAR *varName,
-                            BOOLEAN *wasRead);
-
-int
-XLALReadConfigSTRINGVariable (CHAR **varp,
+XLALReadConfigBOOLVariable ( BOOLEAN *varp,
                              const LALParsedDataFile *cfgdata,
                              const CHAR *secName,
                              const CHAR *varName,
-                             BOOLEAN *wasRead);
-
+                             BOOLEAN *wasRead );
 int
-XLALReadConfigEPOCHVariable (LIGOTimeGPS *varp,
+XLALReadConfigINT4Variable ( INT4 *varp,
                              const LALParsedDataFile *cfgdata,
                              const CHAR *secName,
                              const CHAR *varName,
-                             BOOLEAN *wasRead);
+                             BOOLEAN *wasRead );
+int
+XLALReadConfigREAL8Variable ( REAL8 *varp,
+                              const LALParsedDataFile *cfgdata,
+                              const CHAR *secName,
+                              const CHAR *varName,
+                              BOOLEAN *wasRead );
+int
+XLALReadConfigEPOCHVariable ( LIGOTimeGPS *varp,
+                              const LALParsedDataFile *cfgdata,
+                              const CHAR *secName,
+                              const CHAR *varName,
+                              BOOLEAN *wasRead );
 
 int
-XLALReadConfigRAJVariable (REAL8 *varp,
-                                 const LALParsedDataFile *cfgdata,
-                                 const CHAR *secName,
-                                 const CHAR *varName,
-                                 BOOLEAN *wasRead);
+XLALReadConfigRAJVariable ( REAL8 *varp,
+                            const LALParsedDataFile *cfgdata,
+                            const CHAR *secName,
+                            const CHAR *varName,
+                            BOOLEAN *wasRead );
 
 int
-XLALReadConfigDECJVariable (REAL8 *varp,
-                                const LALParsedDataFile *cfgdata,
-                                const CHAR *secName,
-                                const CHAR *varName,
-                                BOOLEAN *wasRead);
-
-int
+XLALReadConfigDECJVariable ( REAL8 *varp,
+                             const LALParsedDataFile *cfgdata,
+                             const CHAR *secName,
+                             const CHAR *varName,
+                             BOOLEAN *wasRead );
 XLALReadConfigVariable (void *varp,
                        const LALParsedDataFile *cfgdata,
                        const LALConfigVar *param,

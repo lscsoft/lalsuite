@@ -20,6 +20,7 @@
 
 //---------- INCLUDES ----------
 #include <lal/LineRobustStats.h>
+#include <lal/ParseStringValue.h>
 
 //---------- local DEFINES ----------
 

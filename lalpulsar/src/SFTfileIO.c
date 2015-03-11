@@ -54,6 +54,7 @@
 #include <lal/StringVector.h>
 #include <lal/Sequence.h>
 #include <lal/ConfigFile.h>
+#include <lal/ParseStringValue.h>
 #include <lal/LogPrintf.h>
 #include <lal/SFTutils.h>
 

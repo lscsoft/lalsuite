@@ -39,6 +39,7 @@
 #include <lal/LALString.h>
 #include <lal/StringVector.h>
 #include <lal/Units.h>
+#include <lal/ConfigFile.h>
 
 // ---------- local defines
 
