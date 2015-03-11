@@ -3063,7 +3063,8 @@ int XLALSimInspiralTD(
 
         /* generate the conditioned waveform in the frequency domain */
         /* note: redshift factor has already been applied above */
-        retval = XLALSimInspiralFD(&hptilde, &hctilde, phiRef, deltaT, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_ref, r, 0.0, i, lambda1, lambda2, waveFlags, nonGRparams, amplitudeO, phaseO, approximant);
+        /* set deltaF = 0 to get a small enough resolution */
+        retval = XLALSimInspiralFD(&hptilde, &hctilde, phiRef, 0.0, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, 0.5/deltaT, f_ref, r, 0.0, i, lambda1, lambda2, waveFlags, nonGRparams, amplitudeO, phaseO, approximant);
         if (retval < 0)
             XLAL_ERROR(XLAL_EFUNC);
 
@@ -3171,15 +3172,13 @@ int XLALSimInspiralTD(
  * resulting waveform to be Fourier transformed into the time domain without wrapping
  * the end of the waveform to the beginning.
  *
- * This routine has a few parameters that differ from XLALSimInspiralChooseFDWaveform.
- * Rather than f_max, this routine takes deltaT, the sampling interval of the corresponding
- * time domain waveform.  The Nyquist frequency, 2/deltaT, thus determines the maximum
- * frequency for the FD waveform.  Also, this routine does not take a deltaF parameter,
- * and instead computes the necessary value of deltaF based on the duration of the
- * corresponding time domain waveform, deltaF <= 1/duration.  The total number of points
- * in the FD waveform is a power of two plus one (the Nyquist frequency).  Thus, the FD
- * waveform returned could be directly Fourier transformed to the time domain without
- * further manipulation.
+ * This routine assumes that f_max is the Nyquist frequency of a corresponding time-domain
+ * waveform, so that deltaT = 0.5 / f_max.  If deltaF is set to 0 then this routine computes
+ * a deltaF that is small enough to represent the Fourier transform of a time-domain waveform.
+ * If deltaF is specified but f_max / deltaF is not a power of 2, and the waveform approximant
+ * is a time-domain approximant, then f_max is increased so that f_max / deltaF is the next
+ * power of 2.  (If the user wishes to discard the extra high frequency content, this must
+ * be done separately.)
  *
  * This routine has one additional parameter relative to XLALSimInspiralChooseFDWaveform.
  * The additional parameter is the redshift, z, of the waveform.  This should be set to
@@ -3197,7 +3196,7 @@ int XLALSimInspiralFD(
     COMPLEX16FrequencySeries **hptilde,         /**< +-polarization waveform */
     COMPLEX16FrequencySeries **hctilde,         /**< x-polarization waveform */
     REAL8 phiRef,                               /**< reference orbital phase (rad) */
-    REAL8 deltaT,                               /**< sampling interval (s) */
+    REAL8 deltaF,                               /**< frequency interval (Hz), or 0 to compute necessary interval */
     REAL8 m1,                                   /**< mass of companion 1 (kg) */
     REAL8 m2,                                   /**< mass of companion 2 (kg) */
     REAL8 S1x,                                  /**< x-component of the dimensionless spin of object 1 */
@@ -3207,6 +3206,7 @@ int XLALSimInspiralFD(
     REAL8 S2y,                                  /**< y-component of the dimensionless spin of object 2 */
     REAL8 S2z,                                  /**< z-component of the dimensionless spin of object 2 */
     REAL8 f_min,                                /**< starting GW frequency (Hz) */
+    REAL8 f_max,                                /**< ending GW frequency (Hz) */
     REAL8 f_ref,                                /**< reference GW frequency (Hz) */
     REAL8 r,                                    /**< distance of source (m) */
     REAL8 z,                                    /**< redshift of source frame relative to observer frame */
@@ -3223,7 +3223,7 @@ int XLALSimInspiralFD(
     const double maximum_black_hole_spin = 0.998;
     const double extra_time_fraction = 0.1; /* fraction of waveform duration to add as extra time for tapering */
     const double extra_cycles = 3.0; /* more extra time measured in cycles at the starting frequency */
-    double chirplen, deltaF;
+    double chirplen, deltaT;
     int chirplen_exp;
     int retval;
 
@@ -3235,6 +3235,10 @@ int XLALSimInspiralFD(
     }
     /* set redshift to zero so we don't accidentally apply it again later */
     z = 0.0;
+
+    /* FIXME: assume that f_max is the Nyquist frequency, and use it
+     * to compute the requested deltaT */
+    deltaT = 0.5 / f_max;
 
     if (XLALSimInspiralImplementedFDApproximants(approximant)) {
 
@@ -3310,10 +3314,13 @@ int XLALSimInspiralFD(
         frexp(chirplen, &chirplen_exp);
         chirplen = ldexp(1.0, chirplen_exp);
         /* frequency resolution */
-        deltaF = 1.0 / (chirplen * deltaT);
+        if (deltaF == 0.0)
+            deltaF = 1.0 / (chirplen * deltaT);
+        else if (deltaF > 1.0 / (chirplen * deltaT))
+            XLAL_PRINT_WARNING("Specified frequency interval of %g Hz is too large for a chirp of duration %g s", deltaF, chirplen * deltaT);
         
         /* generate the waveform in the frequency domain starting at fstart */
-        retval = XLALSimInspiralChooseFDWaveform(hptilde, hctilde, phiRef, deltaF, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, fstart, 0.5/deltaT, f_ref, r, i, lambda1, lambda2, waveFlags, nonGRparams, amplitudeO, phaseO, approximant);
+        retval = XLALSimInspiralChooseFDWaveform(hptilde, hctilde, phiRef, deltaF, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, fstart, f_max, f_ref, r, i, lambda1, lambda2, waveFlags, nonGRparams, amplitudeO, phaseO, approximant);
         if (retval < 0)
             XLAL_ERROR(XLAL_EFUNC);
 
@@ -3363,11 +3370,28 @@ int XLALSimInspiralFD(
             XLAL_ERROR(XLAL_EFUNC);
 
         /* determine chirp length and round up to next power of two */
-        chirplen = hplus->data->length * hplus->deltaT;
+        chirplen = hplus->data->length;
         frexp(chirplen, &chirplen_exp);
         chirplen = ldexp(1.0, chirplen_exp);
         /* frequency resolution */
-        deltaF = 1.0 / (chirplen * deltaT);
+        if (deltaF == 0.0)
+            deltaF = 1.0 / (chirplen * hplus->deltaT);
+        else { /* recompute chirplen based on deltaF and f_max */
+            size_t n;
+            if (deltaF > 1.0 / (chirplen * deltaT))
+                XLAL_PRINT_WARNING("Specified frequency interval of %g Hz is too large for a chirp of duration %g s", deltaF, chirplen * deltaT);
+            n = chirplen = round(2.0 * f_max / deltaF);
+            if ((n & (n - 1))) { /* not a power of 2 */
+                /* what do we do here?... we need to change either
+                 * f_max or deltaF so that chirplen is a power of 2
+                 * so that the FFT can be done, so choose to change f_max */
+                /* round chirplen up to next power of 2 */
+                frexp(chirplen, &chirplen_exp);
+                chirplen = ldexp(1.0, chirplen_exp);
+                XLAL_PRINT_WARNING("f_max/deltaF = %g/%g = %g is not a power of two: changing f_max to %g", f_max, deltaF, f_max/deltaF, (chirplen / 2) * deltaF);
+                f_max = (chirplen / 2) * deltaF;
+            }
+        }
 
         /* resize waveforms to the required length */
         XLALResizeREAL8TimeSeries(hplus, hplus->data->length - (size_t) chirplen, (size_t) chirplen);

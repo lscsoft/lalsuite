@@ -158,7 +158,7 @@ int main(int argc, char *argv[])
         COMPLEX16FrequencySeries *htilde_cross = NULL;
         if (p.condition) { /* use stock conditioning element */
             double redshift = 0.0;
-            XLALSimInspiralFD(&htilde_plus, &htilde_cross, p.phiRef, 1.0 / p.srate, p.m1, p.m2, p.s1x, p.s1y, p.s1z, p.s2x, p.s2y, p.s2z, p.f_min, p.fRef, p.distance, redshift, p.inclination, p.lambda1, p.lambda2, p.waveFlags, p.nonGRparams, p.ampO, p.phaseO, p.approx);
+            XLALSimInspiralFD(&htilde_plus, &htilde_cross, p.phiRef, 0.0, p.m1, p.m2, p.s1x, p.s1y, p.s1z, p.s2x, p.s2y, p.s2z, p.f_min, 0.5 * p.srate, p.fRef, p.distance, redshift, p.inclination, p.lambda1, p.lambda2, p.waveFlags, p.nonGRparams, p.ampO, p.phaseO, p.approx);
         } else { /* use our custom routine */
         	create_fd_waveform(&htilde_plus, &htilde_cross, p);
 	}

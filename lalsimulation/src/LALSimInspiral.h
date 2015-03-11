@@ -1334,15 +1334,13 @@ int XLALSimInspiralTD(
  * resulting waveform to be Fourier transformed into the time domain without wrapping
  * the end of the waveform to the beginning.
  *
- * This routine has a few parameters that differ from XLALSimInspiralChooseFDWaveform.
- * Rather than f_max, this routine takes deltaT, the sampling interval of the corresponding
- * time domain waveform.  The Nyquist frequency, 2/deltaT, thus determines the maximum
- * frequency for the FD waveform.  Also, this routine does not take a deltaF parameter,
- * and instead computes the necessary value of deltaF based on the duration of the
- * corresponding time domain waveform, deltaF <= 1/duration.  The total number of points
- * in the FD waveform is a power of two plus one (the Nyquist frequency).  Thus, the FD
- * waveform returned could be directly Fourier transformed to the time domain without
- * further manipulation.
+ * This routine assumes that f_max is the Nyquist frequency of a corresponding time-domain
+ * waveform, so that deltaT = 0.5 / f_max.  If deltaF is set to 0 then this routine computes
+ * a deltaF that is small enough to represent the Fourier transform of a time-domain waveform.
+ * If deltaF is specified but f_max / deltaF is not a power of 2, and the waveform approximant
+ * is a time-domain approximant, then f_max is increased so that f_max / deltaF is the next
+ * power of 2.  (If the user wishes to discard the extra high frequency content, this must
+ * be done separately.)
  *
  * This routine has one additional parameter relative to XLALSimInspiralChooseFDWaveform.
  * The additional parameter is the redshift, z, of the waveform.  This should be set to
@@ -1360,7 +1358,7 @@ int XLALSimInspiralFD(
     COMPLEX16FrequencySeries **hptilde,         /**< +-polarization waveform */
     COMPLEX16FrequencySeries **hcross,          /**< x-polarization waveform */
     REAL8 phiRef,                               /**< reference orbital phase (rad) */
-    REAL8 deltaT,                               /**< sampling interval (s) */
+    REAL8 deltaF,                               /**< frequency interval (Hz), or 0 to compute necessary interval */
     REAL8 m1,                                   /**< mass of companion 1 (kg) */
     REAL8 m2,                                   /**< mass of companion 2 (kg) */
     REAL8 S1x,                                  /**< x-component of the dimensionless spin of object 1 */
@@ -1370,6 +1368,7 @@ int XLALSimInspiralFD(
     REAL8 S2y,                                  /**< y-component of the dimensionless spin of object 2 */
     REAL8 S2z,                                  /**< z-component of the dimensionless spin of object 2 */
     REAL8 f_min,                                /**< starting GW frequency (Hz) */
+    REAL8 f_max,                                /**< ending GW frequency (Hz) */
     REAL8 f_ref,                                /**< reference GW frequency (Hz) */
     REAL8 r,                                    /**< distance of source (m) */
     REAL8 z,                                    /**< redshift of source frame relative to observer frame */
