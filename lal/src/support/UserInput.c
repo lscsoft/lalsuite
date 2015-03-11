@@ -84,7 +84,6 @@ static const CHAR *program_name;	/**< keep a pointer to the program name */
 /* ---------- internal prototypes ---------- */
 int XLALRegisterUserVar (const CHAR *name, UserVarType type, CHAR optchar, UserVarCategory category, const CHAR *helpstr, void *cvar);
 CHAR *XLALUvarValue2String (LALUserVariable *uvar);
-CHAR *XLAL_copy_string_unquoted ( const CHAR *in );
 void check_and_mark_as_set ( LALUserVariable *varp );
 
 
@@ -328,7 +327,7 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
 
 	case UVAR_TYPE_STRING:
 	  XLALFree ( *(CHAR**)(ptr->varp) ); // in case something allocated here before
-	  XLAL_CHECK ( ( *(CHAR**)(ptr->varp) = XLAL_copy_string_unquoted ( LALoptarg )) != NULL, XLAL_EFUNC );
+	  XLAL_CHECK ( ( *(CHAR**)(ptr->varp) = XLALCopyStringUnquoted ( LALoptarg )) != NULL, XLAL_EFUNC );
 	  break;
 
 	case UVAR_TYPE_LIST:	// list of comma-separated string values
@@ -853,49 +852,6 @@ XLALUvarValue2String ( LALUserVariable *uvar )
   return retstr;
 
 } // XLALUvarValue2String()
-
-
-/**
- * Copy (and allocate) string 'in', possibly with quotes \" or \' removed.
- * If quotes are present at the beginning of 'in', they must have a matching
- * quote at the end of string, otherwise an error is printed and return=NULL
- */
-CHAR *
-XLAL_copy_string_unquoted ( const CHAR *in )
-{
-  XLAL_CHECK_NULL ( in != NULL, XLAL_EINVAL );
-
-
-  CHAR opening_quote = 0;
-  CHAR closing_quote = 0;
-  UINT4 inlen = strlen ( in );
-
-  if ( (in[0] == '\'') || (in[0] == '\"') ) {
-    opening_quote = in[0];
-  }
-  if ( (inlen >= 2) && ( (in[inlen-1] == '\'') || (in[inlen-1] == '\"') ) ) {
-    closing_quote = in[inlen-1];
-  }
-
-  // check matching quotes
-  XLAL_CHECK_NULL ( opening_quote == closing_quote, XLAL_EINVAL, "Unmatched quotes in string [%s]\n", in );
-
-  const CHAR *start = in;
-  UINT4 outlen = inlen;
-  if ( opening_quote )
-    {
-      start = in + 1;
-      outlen = inlen - 2;
-    }
-
-  CHAR *ret;
-  XLAL_CHECK_NULL ( (ret = LALCalloc (1, outlen + 1)) != NULL, XLAL_ENOMEM );
-  strncpy ( ret, start, outlen );
-  ret[outlen] = 0;
-
-  return ret;
-
-} // XLAL_copy_string_unquoted()
 
 /**
  * Mark the user-variable as set, check if it has been

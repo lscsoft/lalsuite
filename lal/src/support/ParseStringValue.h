@@ -55,6 +55,8 @@ LIGOTimeGPS *XLALParseStringValueAsEPOCH ( LIGOTimeGPS *gps, const char *valStri
 int XLALParseStringValueAsRAJ ( REAL8 *valLongitude, const char *valString );
 int XLALParseStringValueAsDECJ ( REAL8 *valLatitude, const char *valString );
 
+CHAR * XLALCopyStringUnquoted ( const CHAR *in );
+
 #ifdef SWIG /* SWIG interface directives */
 SWIGLAL_CLEAR(NEW_EMPTY_ARGUMENT(LIGOTimeGPS*, gps));
 #endif

@@ -346,3 +346,45 @@ XLALParseStringValueAsDECJ ( REAL8 *valLatitude,   	///< [out] return latitude v
   return XLAL_SUCCESS;
 
 } // XLALParseStringValueAsDECJ()
+
+/**
+ * Duplicate string 'in', removing surrounding quotes \" or \' if present.
+ *
+ * \note Quotes at the beginning of the string must be matched at the end,
+ * otherwise we throw an error.
+ */
+CHAR *
+XLALCopyStringUnquoted ( const CHAR *in )
+{
+  XLAL_CHECK_NULL ( in != NULL, XLAL_EINVAL );
+
+  CHAR opening_quote = 0;
+  CHAR closing_quote = 0;
+  UINT4 inlen = strlen ( in );
+
+  if ( (in[0] == '\'') || (in[0] == '\"') ) {
+    opening_quote = in[0];
+  }
+  if ( (inlen >= 2) && ( (in[inlen-1] == '\'') || (in[inlen-1] == '\"') ) ) {
+    closing_quote = in[inlen-1];
+  }
+
+  // check matching quotes
+  XLAL_CHECK_NULL ( opening_quote == closing_quote, XLAL_EINVAL, "Unmatched quotes in string [%s]\n", in );
+
+  const CHAR *start = in;
+  UINT4 outlen = inlen;
+  if ( opening_quote )
+    {
+      start = in + 1;
+      outlen = inlen - 2;
+    }
+
+  CHAR *ret;
+  XLAL_CHECK_NULL ( (ret = XLALCalloc (1, outlen + 1)) != NULL, XLAL_ENOMEM );
+  strncpy ( ret, start, outlen );
+  ret[outlen] = 0;
+
+  return ret;
+
+} // XLALCopyStringUnquoted()
