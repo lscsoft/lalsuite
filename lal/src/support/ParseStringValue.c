@@ -26,9 +26,10 @@
 #include <lal/StringInput.h>
 #include <lal/LALConstants.h>
 #include <lal/LALString.h>
-#include <lal/ParseStringValue.h>
 #include <lal/TranslateMJD.h>
 #include <lal/TranslateAngles.h>
+
+#include <lal/ParseStringValue.h>
 
 // ---------- local defines ----------
 // these constants are taken from StringConvert.c
@@ -348,44 +349,55 @@ XLALParseStringValueAsDECJ ( REAL8 *valLatitude,   	///< [out] return latitude v
 
 } // XLALParseStringValueAsDECJ()
 
-/**
- * Duplicate string 'in', removing surrounding quotes \" or \' if present.
- *
- * \note Quotes at the beginning of the string must be matched at the end,
- * otherwise we throw an error.
- */
-CHAR *
-XLALCopyStringUnquoted ( const CHAR *in )
+///
+/// Duplicate string 'in', removing surrounding quotes \" or \' if present.
+///
+/// \note Quotes at the beginning of the string must be matched at the end,
+/// otherwise we return an error.
+///
+/// \note The output string (*out) can be !=NULL, in which case it is freed first!
+///
+int
+XLALParseStringValueAsSTRING ( CHAR **out,		///< [out] return allocated string
+                               const CHAR *valStr	///< [in] input string value
+                               )
 {
-  XLAL_CHECK_NULL ( in != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( valStr != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( out != NULL, XLAL_EINVAL );
 
   CHAR opening_quote = 0;
   CHAR closing_quote = 0;
-  UINT4 inlen = strlen ( in );
+  UINT4 inlen = strlen ( valStr );
 
-  if ( (in[0] == '\'') || (in[0] == '\"') ) {
-    opening_quote = in[0];
+  if ( (valStr[0] == '\'') || (valStr[0] == '\"') ) {
+    opening_quote = valStr[0];
   }
-  if ( (inlen >= 2) && ( (in[inlen-1] == '\'') || (in[inlen-1] == '\"') ) ) {
-    closing_quote = in[inlen-1];
+  if ( (inlen >= 2) && ( (valStr[inlen-1] == '\'') || (valStr[inlen-1] == '\"') ) ) {
+    closing_quote = valStr[inlen-1];
   }
 
   // check matching quotes
-  XLAL_CHECK_NULL ( opening_quote == closing_quote, XLAL_EINVAL, "Unmatched quotes in string [%s]\n", in );
+  XLAL_CHECK ( opening_quote == closing_quote, XLAL_EINVAL, "Unmatched quotes in string [%s]\n", valStr );
 
-  const CHAR *start = in;
+  const CHAR *start = valStr;
   UINT4 outlen = inlen;
   if ( opening_quote )
     {
-      start = in + 1;
+      start = valStr + 1;
       outlen = inlen - 2;
     }
 
   CHAR *ret;
-  XLAL_CHECK_NULL ( (ret = XLALCalloc (1, outlen + 1)) != NULL, XLAL_ENOMEM );
+  XLAL_CHECK ( (ret = XLALCalloc (1, outlen + 1)) != NULL, XLAL_ENOMEM );
   strncpy ( ret, start, outlen );
   ret[outlen] = 0;
 
-  return ret;
+  XLALFree ( (*out) );	// free any previously-allocated string in output variable
+  (*out) = ret;
 
-} // XLALCopyStringUnquoted()
+  return XLAL_SUCCESS;
+
+} // XLALParseStringValueAsSTRING()
+
+
+///

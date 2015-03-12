@@ -328,11 +328,13 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
 
 	case UVAR_TYPE_STRING:
 	  XLALFree ( *(CHAR**)(ptr->varp) ); // in case something allocated here before
-	  XLAL_CHECK ( ( *(CHAR**)(ptr->varp) = XLALCopyStringUnquoted ( LALoptarg )) != NULL, XLAL_EFUNC );
+          *(CHAR**)(ptr->varp) = NULL;
+	  XLAL_CHECK ( XLALParseStringValueAsSTRING ( (CHAR**)(ptr->varp), LALoptarg ) == XLAL_SUCCESS, XLAL_EFUNC );
 	  break;
 
 	case UVAR_TYPE_LIST:	// list of comma-separated string values
 	  XLALDestroyStringVector ( *(LALStringVector**)(ptr->varp) );	// in case sth allocated here before
+          *(LALStringVector**)(ptr->varp) = NULL;
 	  XLAL_CHECK ( (*(LALStringVector**)(ptr->varp) = XLALParseCSV2StringVector ( LALoptarg )) != NULL, XLAL_EFUNC );
 	  break;
 

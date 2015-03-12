@@ -314,7 +314,7 @@ XLALReadConfigSTRINGVariable ( CHAR **varp,                     //!< [out] retur
             {
               char *strVal = cfgdata->lines->tokens[i] + varlen;
               strVal += strspn ( strVal, WHITESPACE "=:" );     // skip all whitespace and define-chars
-              (*varp) = XLALCopyStringUnquoted ( strVal );
+              XLAL_CHECK ( XLALParseStringValueAsSTRING ( varp, strVal ) == XLAL_SUCCESS, XLAL_EFUNC ); // copy and remove quotes (if any)
               cfgdata->wasRead[i] = 1;
               (*wasRead) = TRUE;
               break; // exit loop, we've found it

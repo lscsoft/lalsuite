@@ -43,15 +43,16 @@ int XLALParseStringValueAsINT4 ( INT4 *valINT4, const char *valString );
 int XLALParseStringValueAsREAL8 ( REAL8 *valREAL8, const char *valString );
 int XLALParseStringValueAsREAL4 ( REAL4 *valREAL4, const char *valString );
 int XLALParseStringValueAsBOOLEAN ( BOOLEAN *valBOOLEAN, const char *valString );
-int XLALParseStringValueAsINT4PlusFrac ( INT4 *valINT4, REAL8 *valFrac, const char *valString );
 int XLALParseStringValueAsGPS ( LIGOTimeGPS *gps, const char *valString );
 int XLALParseStringValueAsEPOCH ( LIGOTimeGPS *gps, const char *valString );
 int XLALParseStringValueAsRAJ ( REAL8 *valLongitude, const char *valString );
 int XLALParseStringValueAsDECJ ( REAL8 *valLatitude, const char *valString );
 
-CHAR * XLALCopyStringUnquoted ( const CHAR *in );
+int XLALParseStringValueAsSTRING ( CHAR **out, const CHAR *valString );
+int XLALParseStringValueAsLIST ( LALStringVector **strVect, const CHAR *valString );
 
 
+int XLALParseStringValueAsINT4PlusFrac ( INT4 *valINT4, REAL8 *valFrac, const char *valString );
 /*@}*/
 
 /* C++ protection. */
