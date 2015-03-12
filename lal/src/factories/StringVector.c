@@ -215,68 +215,6 @@ XLALSortStringVector (LALStringVector *strings)
 
 } /* XLALSortStringVector() */
 
-
-
-/**
- * Parse a list of comma-separated values (CSV) into a StringVector
- * \note surrounding whitespace is removed from the 'values'.
- */
-LALStringVector *
-XLALParseCSV2StringVector ( const CHAR *CSVlist )
-{
-  UINT4 counter;
-  const CHAR *start, *tmp;
-  CHAR **data = NULL;
-  LALStringVector *ret = NULL;
-
-  if ( !CSVlist )
-    return NULL;
-
-  size_t len;
-  /* prepare return string-vector */
-  len = sizeof( *ret );
-  if ( ( ret = XLALCalloc ( 1, len ) ) == NULL )
-    goto failed;
-
-  start = CSVlist;
-  counter = 0;
-  do
-    {
-
-      /* extend string-array */
-      len = (counter+1) * sizeof(CHAR*);
-      if ( ( data = XLALRealloc ( data, len )) == NULL )
-	goto failed;
-
-      /* determine string-length of next value */
-      if ( ( tmp = strchr ( start, ',' ) ) )
-	len = tmp - start;
-      else
-	len = strlen ( start );
-
-      /* allocate space for that value in string-array */
-      if ( (data[counter] = XLALDeblankString ( start, len ) ) == NULL ) {
-        XLALDestroyStringVector ( ret );
-        XLAL_ERROR_NULL ( XLAL_EFUNC );
-      }
-      counter ++;
-
-    } while ( tmp && (start = tmp + 1) );
-
-  ret -> length = counter;
-  ret -> data = data;
-
-  /* success: */
-  return ( ret );
-
- failed:
-  XLALPrintError ("%s: failed to allocate %zu bytes\n", __func__, len );
-  XLALDestroyStringVector ( ret );
-  XLAL_ERROR_NULL ( XLAL_ENOMEM );
-
-} /* XLALParseCSV2StringVector() */
-
-
 char *
 XLALStringVector2CSV ( const LALStringVector *stringv )
 {

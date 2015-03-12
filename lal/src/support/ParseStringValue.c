@@ -24,6 +24,7 @@
 
 #include <lal/Date.h>
 #include <lal/StringInput.h>
+#include <lal/StringVector.h>
 #include <lal/LALConstants.h>
 #include <lal/LALString.h>
 #include <lal/TranslateMJD.h>
@@ -401,3 +402,47 @@ XLALParseStringValueAsSTRING ( CHAR **out,		///< [out] return allocated string
 
 
 ///
+/// Parse a string containing a list of comma-separated values (CSV) into a StringVector.
+/// \note surrounding whitespace is removed from the individual list entries.
+///
+/// \note The output string-vector (*strVect) can be !=NULL, in which case it is freed first!
+///
+int
+XLALParseStringValueAsLIST ( LALStringVector **strVect,	///< [out] allocated string vector
+                             const CHAR *valString	///< [in] input string value
+                             )
+{
+  XLAL_CHECK ( valString != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( strVect != NULL, XLAL_EINVAL );
+
+  LALStringVector *ret;
+  XLAL_CHECK ( (ret = XLALCalloc ( 1, sizeof(*ret))) != NULL, XLAL_ENOMEM );
+
+  const char *start = valString;
+  const char *tmp;
+  do
+    {
+      // create space for the next string-vector entry
+      ret->length ++;
+      XLAL_CHECK ( (ret->data = XLALRealloc ( ret->data, ret->length * sizeof(ret->data[0]) )) != NULL, XLAL_ENOMEM );
+
+      // determine length of next CSV string value
+      size_t len;
+      if ( ( tmp = strchr ( start, ',' ) ) ) {
+	len = tmp - start;
+      } else {
+	len = strlen ( start );
+      }
+
+      // copy this value with surrounding whitespace removed
+      XLAL_CHECK ( (ret->data[ret->length-1] = XLALDeblankString ( start, len ) ) != NULL, XLAL_EFUNC );
+
+    } while ( (tmp != NULL) && ((start = tmp + 1) != NULL) );
+
+  XLALDestroyStringVector ( (*strVect) );	// free any previously-allocated string-vector in output variable
+  (*strVect) = ret;
+
+  return XLAL_SUCCESS;
+
+} // XLALParseStringValueAsLIST()
+

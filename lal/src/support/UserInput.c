@@ -335,7 +335,7 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
 	case UVAR_TYPE_LIST:	// list of comma-separated string values
 	  XLALDestroyStringVector ( *(LALStringVector**)(ptr->varp) );	// in case sth allocated here before
           *(LALStringVector**)(ptr->varp) = NULL;
-	  XLAL_CHECK ( (*(LALStringVector**)(ptr->varp) = XLALParseCSV2StringVector ( LALoptarg )) != NULL, XLAL_EFUNC );
+	  XLAL_CHECK ( XLALParseStringValueAsLIST ( (LALStringVector**)(ptr->varp), LALoptarg ) == XLAL_SUCCESS, XLAL_EFUNC );
 	  break;
 
         case UVAR_TYPE_EPOCH:
@@ -443,7 +443,8 @@ XLALUserVarReadCfgfile ( const CHAR *cfgfile ) 	   /**< [in] name of config-file
 	  if ( wasRead )
 	    {
 	      XLALDestroyStringVector ( *(LALStringVector**)(ptr->varp) ); // if anything allocated here before
-	      XLAL_CHECK ( (*(LALStringVector**)(ptr->varp) = XLALParseCSV2StringVector ( stringbuf )) != NULL, XLAL_EFUNC );
+              *(LALStringVector**)(ptr->varp) = NULL;
+	      XLAL_CHECK ( XLALParseStringValueAsLIST ( (LALStringVector**)(ptr->varp), stringbuf ) == XLAL_SUCCESS, XLAL_EFUNC );
 	      check_and_mark_as_set ( ptr );
 	    }
 	  break;
