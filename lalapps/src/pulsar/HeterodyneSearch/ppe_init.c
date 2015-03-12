@@ -1015,7 +1015,7 @@ void sum_data( LALInferenceRunState *runState ){
 
     chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( ifomodel->params, "chunkLength" );
 
-    length = runState->model->ifo->times->length + 1 - chunkLengths->data[chunkLengths->length - 1];
+    length = ifomodel->times->length + 1 - chunkLengths->data[chunkLengths->length - 1];
 
     sumdat = XLALCreateREAL8Vector( chunkLengths->length );
 
