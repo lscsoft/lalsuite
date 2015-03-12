@@ -90,6 +90,8 @@ class SBankJob(inspiral.InspiralAnalysisJob):
         self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
         self.add_condor_cmd('getenv','True')
         self.add_condor_cmd('request_memory', '1999')
+        if "OMP_NUM_THREADS" in os.environ:
+            self.add_condor_cmd('request_cpus', os.environ["OMP_NUM_THREADS"])
 
 
 class SBankNode(pipeline.CondorDAGNode):
@@ -212,6 +214,8 @@ class BankSimJob(inspiral.InspiralAnalysisJob):
         self.add_condor_cmd('getenv','True')
         self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
         self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
+        if "OMP_NUM_THREADS" in os.environ:
+            self.add_condor_cmd('request_cpus', os.environ["OMP_NUM_THREADS"])
 
 
 class BankSimNode(pipeline.CondorDAGNode):
