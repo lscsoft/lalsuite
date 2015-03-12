@@ -45,8 +45,8 @@ int XLALParseStringValueAsREAL4 ( REAL4 *valREAL4, const char *valString );
 int XLALParseStringValueAsBOOLEAN ( BOOLEAN *valBOOLEAN, const char *valString );
 int XLALParseStringValueAsGPS ( LIGOTimeGPS *gps, const char *valString );
 int XLALParseStringValueAsEPOCH ( LIGOTimeGPS *gps, const char *valString );
-int XLALParseStringValueAsRAJ ( REAL8 *valLongitude, const char *valString );
-int XLALParseStringValueAsDECJ ( REAL8 *valLatitude, const char *valString );
+int XLALParseStringValueAsRAJ ( REAL8 *valRAJ, const char *valString );
+int XLALParseStringValueAsDECJ ( REAL8 *valDECJ, const char *valString );
 
 int XLALParseStringValueAsSTRING ( CHAR **out, const CHAR *valString );
 int XLALParseStringValueAsLIST ( LALStringVector **strVect, const CHAR *valString );
