@@ -66,7 +66,8 @@ with H5File(fname, "r") as h5file:
 
     # extract columns of interest and apply row ordering
     inj_arr = h5file["/sim_inspiral"]["mass1", "mass2", "spin1x", "spin1y", "spin1z", "spin2x", "spin2y", "spin2z", "inclination"][inj_ind]
-    tmplt_arr = h5file["/sngl_inspiral"]["mass1", "mass2", "spin1z", "spin2z"][tmplt_ind]
+    tmplt_arr = h5file["/sngl_inspiral"]["mass1", "mass2", "spin1x", "spin1y", "spin1z", "spin2x", "spin2y", "spin2z"][tmplt_ind]
+    inj_sigmasq = h5file["/match_map"]["inj_sigmasq"]
 
     # extract waveforms
     pid = find_process_id(h5file["/process"], u"lalapps_cbc_sbank_sim")
@@ -129,6 +130,54 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 
 name, ext =  os.path.splitext(os.path.basename(fname))
 
+#
+# binned, weighted (effective) fitting factor plots
+#
+fig = Figure()
+ax = fig.add_subplot(111)
+vals, xedges, yedges = np.histogram2d(inj_arr["mass1"], inj_arr["mass2"], bins=(10,10), weights= match**3 * inj_sigmasq**(3./2))
+norm, xedges, yedges = np.histogram2d(inj_arr["mass1"], inj_arr["mass2"], bins=(10,10), weights=inj_sigmasq**(3./2))
+vals = ( vals / np.array(norm + 1e-10, dtype="float") )**(1./3)
+x, y= np.meshgrid(xedges, yedges)
+coll = ax.pcolor(x, y, vals.T, vmin=0.9*vals[vals>0].min(), vmax=1)
+ax.set_xlabel("$m_1$ ($M_\odot$)")
+ax.set_ylabel("$m_2$ ($M_\odot$)")
+ax.set_xticks((xedges[:-1] + xedges[1:])/2)
+ax.set_yticks((yedges[:-1] + yedges[1:])/2)
+ax.set_xticklabels(["%.1f" % round(k,1) for k in ax.get_xticks()])
+ax.set_yticklabels(["%.1f" % round(k,1) for k in ax.get_yticks()])
+ax.set_xlim([xedges.min(), xedges.max()])
+ax.set_ylim([yedges.min(), yedges.max()])
+fig.colorbar(coll, ax=ax).set_label("Effective Fitting Factor")
+ax.grid(True)
+canvas = FigureCanvas(fig)
+fig.savefig(name+"_match_vs_injm1_vs_injm2_binned_lum_weighted.png")
+
+
+fig = Figure()
+ax = fig.add_subplot(111)
+vals, xedges, yedges = np.histogram2d(inj_M, inj_eta, bins=(6,6), weights= match**3 * inj_sigmasq**(3./2))
+norm, xedges, yedges = np.histogram2d(inj_M, inj_eta, bins=(6,6), weights=inj_sigmasq**(3./2))
+vals = ( vals / np.array(norm + 1e-10, dtype="float") )**(1./3)
+x, y= np.meshgrid(xedges, yedges)
+coll = ax.pcolor(x, y, vals.T, vmin=0.9*vals[vals>0].min(), vmax=1)
+ax.set_xlabel("$M_\mathrm{total}$ ($M_\odot$)")
+ax.set_ylabel("$\eta$")
+ax.set_xticks((xedges[:-1] + xedges[1:])/2)
+ax.set_yticks((yedges[:-1] + yedges[1:])/2)
+ax.set_xticklabels(["%.1f" % round(k,1) for k in ax.get_xticks()])
+ax.set_yticklabels(["%.3f" % round(k,3) for k in ax.get_yticks()])
+ax.set_xlim([xedges.min(), xedges.max()])
+ax.set_ylim([yedges.min(), yedges.max()])
+fig.colorbar(coll, ax=ax).set_label("Effective Fitting Factor")
+ax.grid(True)
+canvas = FigureCanvas(fig)
+fig.savefig(name+"_match_vs_injM_vs_injeta_binned_lum_weighted.png")
+
+
+#
+# binned (unweighted) fitting factor plots
+#
 fig = Figure()
 ax = fig.add_subplot(111)
 coll = ax.hexbin(inj_M, inj_chi, C=match, gridsize=50, vmin=smallest_match, vmax=1)
@@ -153,6 +202,19 @@ fig.colorbar(coll, ax=ax).set_label("Mean Fitting Factor")
 ax.grid(True)
 canvas = FigureCanvas(fig)
 fig.savefig(name+"_match_vs_injm1_vs_injm2_hexbin.png")
+
+#
+# luminosity vs FF
+#
+fig = Figure()
+ax = fig.add_subplot(111)
+coll = ax.hexbin(inj_sigmasq**(0.5)/(8*inj_mchirp**(5./6)), inj_mchirp, gridsize=25, C=match)
+ax.set_xlabel("SNR=8 Horizon Chirp Distance (Mpc)")
+ax.set_ylabel("$\mathcal{M}_\mathrm{chirp}$")
+fig.colorbar(coll, ax=ax).set_label("Mean Fitting Factor")
+ax.grid(True)
+canvas = FigureCanvas(fig)
+fig.savefig(name+"_match_vs_injsigsq_vs_mc.png")
 
 
 fig = Figure()
@@ -252,6 +314,16 @@ ax.grid(True)
 fig.colorbar(collection, ax=ax).set_label("Fitting Factor")
 canvas = FigureCanvas(fig)
 fig.savefig(name+"_match_vs_injM_vs_tmpltM.png")
+
+fig = Figure()
+ax = fig.add_subplot(111)
+collection = ax.scatter(inj_mchirp, tmplt_mchirp, c=match, s=20, vmin=smallest_match, linewidth=0, alpha=0.5, vmax=1)
+ax.set_xlabel("Injection $\mathcal{M}_\mathrm{chirp}$ ($M_\odot$)")
+ax.set_ylabel("Best Matching Template $\mathcal{M}_\mathrm{chirp}$ ($M_\odot$)")
+ax.grid(True)
+fig.colorbar(collection, ax=ax).set_label("Fitting Factor")
+canvas = FigureCanvas(fig)
+fig.savefig(name+"_match_vs_injmc_vs_tmpltmc.png")
 
 fig = Figure()
 ax = fig.add_subplot(111)
