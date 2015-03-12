@@ -31,7 +31,7 @@ extern "C" {
  * \defgroup ParseStringValue_h Header ParseStringValue.h
  * \ingroup lal_support
  * \author Reinhard Prix
- * \brief Module for general parsing of simple user-input strings
+ * \brief Module for general parsing of input 'string values' as various 'types' (as defined in \ref UserInput_h).
  *
  */
 
@@ -49,7 +49,7 @@ int XLALParseStringValueAsRAJ ( REAL8 *valRAJ, const char *valString );
 int XLALParseStringValueAsDECJ ( REAL8 *valDECJ, const char *valString );
 
 int XLALParseStringValueAsSTRING ( CHAR **out, const CHAR *valString );
-int XLALParseStringValueAsLIST ( LALStringVector **strVect, const CHAR *valString );
+int XLALParseStringValueAsSTRINGVector ( LALStringVector **strVect, const CHAR *valString );
 
 
 int XLALParseStringValueAsINT4PlusFrac ( INT4 *valINT4, REAL8 *valFrac, const char *valString );

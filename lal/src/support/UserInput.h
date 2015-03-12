@@ -176,7 +176,7 @@ someEpoch = {2147483596 s, 816000000 ns}, RA = 2.727813 rad, DEC = -0.523599 rad
   XLALRegisterSTRINGUserVar(#name, option, category, help, &(uvar-> name))
 
 #define XLALregLISTUserStruct(name,option,category,help)                    \
-  XLALRegisterLISTUserVar(#name, option, category, help, &(uvar-> name))
+  XLALRegisterSTRINGVectorUserVar(#name, option, category, help, &(uvar-> name))
 
 #define XLALregEPOCHUserStruct(name,option,category,help)                    \
   XLALRegisterEPOCHUserVar(#name, option, category, help, &(uvar-> name))
@@ -237,7 +237,7 @@ DECLARE_XLALREGISTERUSERVAR(REAL8,REAL8);
 DECLARE_XLALREGISTERUSERVAR(INT4,INT4);
 DECLARE_XLALREGISTERUSERVAR(BOOLEAN,BOOLEAN);
 DECLARE_XLALREGISTERUSERVAR(STRING,CHAR*);
-DECLARE_XLALREGISTERUSERVAR(LIST,LALStringVector*);
+DECLARE_XLALREGISTERUSERVAR(STRINGVector,LALStringVector*);
 DECLARE_XLALREGISTERUSERVAR(EPOCH,LIGOTimeGPS);
 DECLARE_XLALREGISTERUSERVAR(RAJ,REAL8);
 DECLARE_XLALREGISTERUSERVAR(DECJ,REAL8);

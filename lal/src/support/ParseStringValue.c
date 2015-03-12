@@ -408,7 +408,7 @@ XLALParseStringValueAsSTRING ( CHAR **out,		///< [out] return allocated string
 /// \note The output string-vector (*strVect) can be !=NULL, in which case it is freed first!
 ///
 int
-XLALParseStringValueAsLIST ( LALStringVector **strVect,	///< [out] allocated string vector
+XLALParseStringValueAsSTRINGVector ( LALStringVector **strVect,	///< [out] allocated string vector
                              const CHAR *valString	///< [in] input string value
                              )
 {
@@ -444,5 +444,5 @@ XLALParseStringValueAsLIST ( LALStringVector **strVect,	///< [out] allocated str
 
   return XLAL_SUCCESS;
 
-} // XLALParseStringValueAsLIST()
+} // XLALParseStringValueAsSTRINGVector()
 

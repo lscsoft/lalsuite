@@ -193,7 +193,7 @@ test_ParseStringVector(void)
   // generate 'manually' sorted string-vector, using CSV function instead
   // sort-order according to "LC_ALL=C sort"
   LALStringVector *strVectCmp = NULL;
-  XLAL_CHECK ( XLALParseStringValueAsLIST ( &strVectCmp, STR4 "," STR5 "," STR1 "," STR6 "," STR2 "," STR3 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALParseStringValueAsSTRINGVector ( &strVectCmp, STR4 "," STR5 "," STR1 "," STR6 "," STR2 "," STR3 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // compare results
   UINT4 len1 = strVect1->length;

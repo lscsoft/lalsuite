@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015
+ * Copyright (C) 2015 Reinhard Prix
  * Copyright (C) 2010 Reinhard Prix (xlalified)
  * Copyright (C) 2004, 2005, 2015 Reinhard Prix
  *
@@ -40,7 +40,7 @@ typedef enum {
   UVAR_TYPE_INT4,    /* integer */
   UVAR_TYPE_REAL8,   /* float */
   UVAR_TYPE_STRING,  /* string */
-  UVAR_TYPE_LIST,    /* list of comma-separated strings */
+  UVAR_TYPE_STRINGVector,/* list of comma-separated strings */
   UVAR_TYPE_EPOCH,   /* time 'epoch', specified in either GPS or MJD(TT) format, translated into GPS */
   UVAR_TYPE_RAJ,     /* sky equatorial longitude (aka right-ascencion or RA), in either radians or hours:minutes:seconds format, translated into radians */
   UVAR_TYPE_DECJ,    /* sky equatorial latitude (aka declination or DEC), in either radians or degrees:minutes:seconds format, translated into radians */
@@ -52,8 +52,8 @@ typedef enum {
  */
 
 // use those to cast functions with different input-argument types into a uniform template
-typedef int (*parsertype)(void*, const char*);
-typedef void (*destructortype)(void*);
+typedef int (*parserT)(void*, const char*);
+typedef void (*destructorT)(void*);
 
 static const struct {
 
@@ -61,14 +61,14 @@ static const struct {
   int (*parser)(void*, const char*);	///< parser function to parse string as this type
   void (*destructor)(void*);		///< destructor for this variable type, NULL if none required
 } UserVarTypeMap[UVAR_TYPE_END] = {
-  [UVAR_TYPE_BOOLEAN]  = {"BOOLEAN", 	(parsertype)XLALParseStringValueAsBOOLEAN,	NULL					},
-  [UVAR_TYPE_INT4]     = {"INT4", 	(parsertype)XLALParseStringValueAsINT4,		NULL 					},
-  [UVAR_TYPE_REAL8]    = {"REAL8",	(parsertype)XLALParseStringValueAsREAL8,	NULL 					},
-  [UVAR_TYPE_STRING]   = {"STRING",	(parsertype)XLALParseStringValueAsSTRING,	(destructortype)XLALFree		},
-  [UVAR_TYPE_LIST]     = {"LIST",	(parsertype)XLALParseStringValueAsLIST, 	(destructortype)XLALDestroyStringVector	},
-  [UVAR_TYPE_EPOCH]    = {"EPOCH",	(parsertype)XLALParseStringValueAsEPOCH, 	NULL					},
-  [UVAR_TYPE_RAJ]      = {"RAJ",	(parsertype)XLALParseStringValueAsRAJ, 		NULL					},
-  [UVAR_TYPE_DECJ]     = {"DECJ",	(parsertype)XLALParseStringValueAsDECJ, 	NULL					}
+  [UVAR_TYPE_BOOLEAN]  		= { "BOOLEAN", 		(parserT)XLALParseStringValueAsBOOLEAN,		NULL					},
+  [UVAR_TYPE_INT4]     		= { "INT4", 		(parserT)XLALParseStringValueAsINT4,		NULL 					},
+  [UVAR_TYPE_REAL8]    		= { "REAL8",		(parserT)XLALParseStringValueAsREAL8,		NULL 					},
+  [UVAR_TYPE_STRING]   		= { "STRING",		(parserT)XLALParseStringValueAsSTRING,		(destructorT)XLALFree			},
+  [UVAR_TYPE_STRINGVector]	= { "STRINGVector",	(parserT)XLALParseStringValueAsSTRINGVector,	(destructorT)XLALDestroyStringVector	},
+  [UVAR_TYPE_EPOCH]    		= { "EPOCH",		(parserT)XLALParseStringValueAsEPOCH, 		NULL					},
+  [UVAR_TYPE_RAJ]      		= { "RAJ",		(parserT)XLALParseStringValueAsRAJ, 		NULL					},
+  [UVAR_TYPE_DECJ]     		= { "DECJ",		(parserT)XLALParseStringValueAsDECJ, 		NULL					}
 };
 
 /**
@@ -108,7 +108,7 @@ DEFINE_XLALREGISTERUSERVAR(BOOLEAN,BOOLEAN);
 DEFINE_XLALREGISTERUSERVAR(INT4,INT4);
 DEFINE_XLALREGISTERUSERVAR(REAL8,REAL8);
 DEFINE_XLALREGISTERUSERVAR(STRING,CHAR*);
-DEFINE_XLALREGISTERUSERVAR(LIST,LALStringVector*);
+DEFINE_XLALREGISTERUSERVAR(STRINGVector,LALStringVector*);
 DEFINE_XLALREGISTERUSERVAR(EPOCH,LIGOTimeGPS);
 DEFINE_XLALREGISTERUSERVAR(RAJ,REAL8);
 DEFINE_XLALREGISTERUSERVAR(DECJ,REAL8);
@@ -760,7 +760,7 @@ XLALUvarValue2String ( LALUserVariable *uvar )
       strcat ( buf, "GPS" );	// postfix this with 'units' for explicitness (as opposed to 'MJD')
       break;
 
-    case UVAR_TYPE_LIST:
+    case UVAR_TYPE_STRINGVector:
       if ( *(LALStringVector**)(uvar->varp) != NULL ) {
         XLAL_CHECK_NULL ( (retstr = XLALStringVector2CSV ( *(LALStringVector**)(uvar->varp) )) != NULL, XLAL_EFUNC );
       } else {
@@ -954,7 +954,7 @@ LALRegisterSTRINGUserVar (LALStatus *status,
   RETURN(status);
 }
 
-/** \deprecated use XLALRegisterLISTUserVar() instead */
+/** \deprecated use XLALRegisterSTRINGVectorUserVar() instead */
 void
 LALRegisterLISTUserVar (LALStatus *status,
 			const CHAR *name,
@@ -964,7 +964,7 @@ LALRegisterLISTUserVar (LALStatus *status,
 			LALStringVector **cvar)
 {
   INITSTATUS(status);
-  if ( XLALRegisterUserVar ( name, UVAR_TYPE_LIST, optchar, category, helpstr, cvar ) != XLAL_SUCCESS ) {
+  if ( XLALRegisterUserVar ( name, UVAR_TYPE_STRINGVector, optchar, category, helpstr, cvar ) != XLAL_SUCCESS ) {
     XLALPrintError ("Call to XLALRegisterUserVar() failed: %d\n", xlalErrno );
     ABORT ( status, USERINPUTH_EXLAL, USERINPUTH_MSGEXLAL );
   }
