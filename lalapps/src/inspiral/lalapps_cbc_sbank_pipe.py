@@ -575,6 +575,14 @@ if not cp.has_option("banksim","flow"):
 if not cp.has_option("banksim","template-approx"):
     cp.set("banksim","template-approx",cp.get("sbank","approximant"))
 
+# copy over PSD if not specified
+if not cp.has_option("banksim","reference-psd") and not cp.has_option("banksim","noise-model"):
+    if cp.has_option("sbank","reference-psd"):
+        cp.set("banksim","reference-psd",cp.get("sbank","reference-psd"))
+        cp.set("banksim","instrument",cp.get("sbank","instrument"))
+    else:
+        cp.set("banksim","noise-model",cp.get("sbank","noise-model"))
+
 # sim nodes
 banksimJob = BankSimJob(cp)
 
