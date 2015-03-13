@@ -526,6 +526,32 @@ int XLALSimIMRSEOBNRv2ROMDoubleSpinFrequencySequence(
   REAL8 chi2                                    /**< Dimensionless aligned component spin 2 */
 );
 
+ /**
+  * Compute the time at a given frequency. The origin of time is at the merger.
+  * The allowed frequency range for the input is from Mf = 0.00053 to half the ringdown frequency.
+  */
+ int XLALSimIMRSEOBNRv2ROMDoubleSpinTimeOfFrequency(
+   REAL8 *t,         /**< Output: time (s) at frequency */
+   REAL8 frequency,  /**< Frequency (Hz) */
+   REAL8 m1SI,       /**< Mass of companion 1 (kg) */
+   REAL8 m2SI,       /**< Mass of companion 2 (kg) */
+   REAL8 chi1,       /**< Dimensionless aligned component spin 1 */
+   REAL8 chi2        /**< Dimensionless aligned component spin 2 */
+ );
+
+ /**
+  * Compute the frequency at a given time. The origin of time is at the merger.
+  * The frequency range for the output is from Mf = 0.00053 to half the ringdown frequency.
+  */
+ int XLALSimIMRSEOBNRv2ROMDoubleSpinFrequencyOfTime(
+   REAL8 *frequency,   /**< Output: Frequency (Hz) */
+   REAL8 t,            /**< Time (s) at frequency */
+   REAL8 m1SI,         /**< Mass of companion 1 (kg) */
+   REAL8 m2SI,         /**< Mass of companion 2 (kg) */
+   REAL8 chi1,         /**< Dimensionless aligned component spin 1 */
+   REAL8 chi2          /**< Dimensionless aligned component spin 2 */
+ );
+
 
 /**
  * Compute SEOBNRv2 chirp time from interpolant assuming a single-spin.
