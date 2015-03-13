@@ -552,9 +552,9 @@ static int _atomic_write_gctFStat_toplist_to_file(toplist_t *l, const char *file
     return(length);
   }
 
-  if(rename(tempname, filename)) {
-    LogPrintf (LOG_CRITICAL, "Failed to rename gctFStat file to \"%s\": %d: %s\n",
-	       filename,errno,strerror(errno));
+  if((ret = rename(tempname, filename))) {
+    LogPrintf (LOG_CRITICAL, "Failed to rename gctFstat file to \"%s\": %d: %s(%d)\n",
+	       filename,ret,strerror(errno),errno);
 #ifdef _MSC_VER
     LogPrintf (LOG_CRITICAL, "Windows system call returned: %d\n", _doserrno);
 #endif
