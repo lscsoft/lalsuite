@@ -64,7 +64,6 @@ LALStringVector *XLALAppendString2Vector (LALStringVector *vect, const CHAR *str
 void XLALDestroyStringVector ( LALStringVector *vect );
 
 int XLALSortStringVector (LALStringVector *strings);
-char *XLALStringVector2CSV ( const LALStringVector *stringv );
 INT4 XLALFindStringInVector ( const char *needle, const LALStringVector *haystack );
 
 char *XLALDeblankString ( const char *start, UINT4 len );

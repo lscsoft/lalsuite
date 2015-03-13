@@ -215,24 +215,6 @@ XLALSortStringVector (LALStringVector *strings)
 
 } /* XLALSortStringVector() */
 
-char *
-XLALStringVector2CSV ( const LALStringVector *stringv )
-{
-  XLAL_CHECK_NULL ( stringv != NULL, XLAL_EINVAL );
-
-  char *retstr = NULL;
-
-  for ( UINT4 i=0; i < stringv->length; i++ )
-    {
-      XLAL_CHECK_NULL ( (retstr = XLALStringAppend ( retstr, (i==0) ? "\"" : "," )) != NULL, XLAL_EFUNC );
-      const char *stringi = stringv->data[i];
-      XLAL_CHECK_NULL ( (retstr = XLALStringAppend ( retstr, (stringi != NULL) ? stringi : "NULL" )) != NULL, XLAL_EFUNC );
-    } // for i < length
-
-  return retstr;
-
-} // XLALStringVector2CSV()
-
 /**
  * Copy (and allocate) string from 'start' with length 'len', removing
  * all starting- and trailing blanks!

@@ -6,7 +6,6 @@ pkginclude_HEADERS = \
 	LALCache.h \
 	LALMathematica.h \
 	LogPrintf.h \
-	ParseStringValue.h \
 	PrintFTSeries.h \
 	PrintVector.h \
 	ReadFTSeries.h \
@@ -18,6 +17,8 @@ pkginclude_HEADERS = \
 	TranslateAngles.h \
 	TranslateMJD.h \
 	UserInput.h \
+	UserInputParse.h \
+	UserInputPrint.h \
 	ConfigFile.h \
 	LALgetopt.h \
 	$(END_OF_LIST)
@@ -32,7 +33,6 @@ liblalsupport_la_SOURCES = \
 	LALMath3DPlot.c \
 	LALMathNDPlot.c \
 	LogPrintf.c \
-	ParseStringValue.c \
 	PrintFrequencySeries.c \
 	PrintTimeSeries.c \
 	PrintVector.c \
@@ -51,6 +51,8 @@ liblalsupport_la_SOURCES = \
 	TranslateAngles.c \
 	TranslateMJD.c \
 	UserInput.c \
+	UserInputParse.c \
+	UserInputPrint.c \
 	LALgetopt.c \
 	$(END_OF_LIST)
 

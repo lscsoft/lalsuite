@@ -27,10 +27,6 @@ extern "C" {
 #endif
 
 #include <lal/ConfigFile.h>
-#include <lal/ParseStringValue.h>
-#if 0
-#include <lal/LIGOMetadataTables.h>
-#endif
 
 /**
  * \defgroup UserInput_h Header UserInput.h
@@ -229,18 +225,20 @@ int XLALUserVarCheckRequired( void );
 int XLALUserVarWasSet (const void *cvar);
 CHAR * XLALUserVarGetLog ( UserVarLogFormat format );
 
-/* type-specific wrappers to XLALRegisterUserVar() to allow type-checking! */
-#define DECLARE_XLALREGISTERUSERVAR(TYPE,CTYPE) \
-int XLALRegister ##TYPE## UserVar ( const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *helpstr, CTYPE *cvar )
+// declare type-specific wrappers to XLALRegisterUserVar() to allow for strict C type-checking!
+#define DECL_REGISTER_UVAR(UTYPE,CTYPE)                                 \
+  int XLALRegister ##UTYPE## UserVar ( const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *helpstr, CTYPE *cvar )
 
-DECLARE_XLALREGISTERUSERVAR(REAL8,REAL8);
-DECLARE_XLALREGISTERUSERVAR(INT4,INT4);
-DECLARE_XLALREGISTERUSERVAR(BOOLEAN,BOOLEAN);
-DECLARE_XLALREGISTERUSERVAR(STRING,CHAR*);
-DECLARE_XLALREGISTERUSERVAR(STRINGVector,LALStringVector*);
-DECLARE_XLALREGISTERUSERVAR(EPOCH,LIGOTimeGPS);
-DECLARE_XLALREGISTERUSERVAR(RAJ,REAL8);
-DECLARE_XLALREGISTERUSERVAR(DECJ,REAL8);
+// ------ declare registration functions
+DECL_REGISTER_UVAR(REAL8,REAL8);
+DECL_REGISTER_UVAR(INT4,INT4);
+DECL_REGISTER_UVAR(BOOLEAN,BOOLEAN);
+DECL_REGISTER_UVAR(EPOCH,LIGOTimeGPS);
+DECL_REGISTER_UVAR(RAJ,REAL8);
+DECL_REGISTER_UVAR(DECJ,REAL8);
+
+DECL_REGISTER_UVAR(STRING,CHAR*);
+DECL_REGISTER_UVAR(STRINGVector,LALStringVector*);
 
 /* ========== Deprecated LAL interface wrappers ========== */
 

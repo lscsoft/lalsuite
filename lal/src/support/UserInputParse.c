@@ -30,7 +30,7 @@
 #include <lal/TranslateMJD.h>
 #include <lal/TranslateAngles.h>
 
-#include <lal/ParseStringValue.h>
+#include <lal/UserInputParse.h>
 
 // ---------- local defines ----------
 // these constants are taken from StringConvert.c
@@ -356,7 +356,7 @@ XLALParseStringValueAsDECJ ( REAL8 *valDECJ,   	///< [out] return latitude value
 /// \note Quotes at the beginning of the string must be matched at the end,
 /// otherwise we return an error.
 ///
-/// \note The output string (*out) can be !=NULL, in which case it is freed first!
+/// \note The output string (*out) must be NULL
 ///
 int
 XLALParseStringValueAsSTRING ( CHAR **out,		///< [out] return allocated string
@@ -364,7 +364,7 @@ XLALParseStringValueAsSTRING ( CHAR **out,		///< [out] return allocated string
                                )
 {
   XLAL_CHECK ( valStr != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( out != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( (out != NULL) && (*out == NULL), XLAL_EINVAL );
 
   CHAR opening_quote = 0;
   CHAR closing_quote = 0;
@@ -393,7 +393,6 @@ XLALParseStringValueAsSTRING ( CHAR **out,		///< [out] return allocated string
   strncpy ( ret, start, outlen );
   ret[outlen] = 0;
 
-  XLALFree ( (*out) );	// free any previously-allocated string in output variable
   (*out) = ret;
 
   return XLAL_SUCCESS;
@@ -405,15 +404,15 @@ XLALParseStringValueAsSTRING ( CHAR **out,		///< [out] return allocated string
 /// Parse a string containing a list of comma-separated values (CSV) into a StringVector.
 /// \note surrounding whitespace is removed from the individual list entries.
 ///
-/// \note The output string-vector (*strVect) can be !=NULL, in which case it is freed first!
+/// \note The output string-vector (*strVect) must be NULL
 ///
 int
 XLALParseStringValueAsSTRINGVector ( LALStringVector **strVect,	///< [out] allocated string vector
-                             const CHAR *valString	///< [in] input string value
-                             )
+                                     const CHAR *valString	///< [in] input string value
+                                     )
 {
   XLAL_CHECK ( valString != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( strVect != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( (strVect != NULL) && (*strVect == NULL) , XLAL_EINVAL );
 
   LALStringVector *ret;
   XLAL_CHECK ( (ret = XLALCalloc ( 1, sizeof(*ret))) != NULL, XLAL_ENOMEM );
@@ -439,7 +438,7 @@ XLALParseStringValueAsSTRINGVector ( LALStringVector **strVect,	///< [out] alloc
 
     } while ( (tmp != NULL) && ((start = tmp + 1) != NULL) );
 
-  XLALDestroyStringVector ( (*strVect) );	// free any previously-allocated string-vector in output variable
+
   (*strVect) = ret;
 
   return XLAL_SUCCESS;

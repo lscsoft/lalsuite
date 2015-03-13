@@ -17,8 +17,8 @@
 //  MA  02111-1307  USA
 //
 
-#ifndef _PARSESTRINGVALUE_H  /* Double-include protection. */
-#define _PARSESTRINGVALUE_H
+#ifndef _USERINPUTPARSE_H  /* Double-include protection. */
+#define _USERINPUTPARSE_H
 
 #include <lal/LALDatatypes.h>
 
@@ -28,16 +28,19 @@ extern "C" {
 #endif
 
 /**
- * \defgroup ParseStringValue_h Header ParseStringValue.h
- * \ingroup lal_support
+ * \defgroup UserInputParse_h Header UserInputParse.h
+ * \ingroup UserInput_h
  * \author Reinhard Prix
- * \brief Module for general parsing of input 'string values' as various 'types' (as defined in \ref UserInput_h).
+ * \brief Sub-model for parsing of input 'string values' as various 'types' (as defined in \ref UserInput_h).
  *
  */
 
 /*@{*/
 
 // ---------- Function prototypes ----------
+int XLALParseStringValueAsINT4PlusFrac ( INT4 *valINT4, REAL8 *valFrac, const char *valString );
+
+// --------------- parsers for various USER_TYPE_<UTYPE>s ----------
 int XLALParseStringValueAsINT8 ( INT8 *valINT8, const char *valString );
 int XLALParseStringValueAsINT4 ( INT4 *valINT4, const char *valString );
 int XLALParseStringValueAsREAL8 ( REAL8 *valREAL8, const char *valString );
@@ -48,11 +51,10 @@ int XLALParseStringValueAsEPOCH ( LIGOTimeGPS *gps, const char *valString );
 int XLALParseStringValueAsRAJ ( REAL8 *valRAJ, const char *valString );
 int XLALParseStringValueAsDECJ ( REAL8 *valDECJ, const char *valString );
 
-int XLALParseStringValueAsSTRING ( CHAR **out, const CHAR *valString );
-int XLALParseStringValueAsSTRINGVector ( LALStringVector **strVect, const CHAR *valString );
+int XLALParseStringValueAsSTRING ( CHAR **valOut, const char *valString );
+int XLALParseStringValueAsSTRINGVector ( LALStringVector **valSTRINGVector, const CHAR *valString );
 
 
-int XLALParseStringValueAsINT4PlusFrac ( INT4 *valINT4, REAL8 *valFrac, const char *valString );
 /*@}*/
 
 /* C++ protection. */

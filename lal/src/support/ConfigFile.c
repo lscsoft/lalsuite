@@ -31,7 +31,8 @@
 #include <lal/StreamInput.h>
 #include <lal/AVFactories.h>
 #include <lal/StringVector.h>
-#include <lal/ParseStringValue.h>
+
+#include <lal/UserInputParse.h>
 
 #include <lal/ConfigFile.h>
 

@@ -30,7 +30,7 @@
 #include <lal/LALConstants.h>
 #include <lal/StringVector.h>
 
-#include <lal/ParseStringValue.h>
+#include <lal/UserInputParse.h>
 
 // ---------- local prototypes ----------
 int test_ParseStringValue ( void );

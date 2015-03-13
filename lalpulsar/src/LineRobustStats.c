@@ -19,8 +19,10 @@
  */
 
 //---------- INCLUDES ----------
+#include <lal/UserInputParse.h>
+
 #include <lal/LineRobustStats.h>
-#include <lal/ParseStringValue.h>
+
 
 //---------- local DEFINES ----------
 

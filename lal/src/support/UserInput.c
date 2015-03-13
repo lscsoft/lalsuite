@@ -19,100 +19,132 @@
  *  MA  02111-1307  USA
  */
 
+// ---------- local includes ----------
 #include <lal/LALStdio.h>
 #include <lal/LALgetopt.h>
-#include <lal/UserInput.h>
 #include <lal/LogPrintf.h>
 #include <lal/LALString.h>
 #include <lal/Date.h>
 #include <lal/StringVector.h>
 #include <lal/AVFactories.h>
 
+#include <lal/UserInputParse.h>
+#include <lal/UserInputPrint.h>
+
+#include <lal/UserInput.h>
+// ---------- local defines ----------
 #define TRUE  (1==1)
 #define FALSE (1==0)
 
-/* Defines the type of a "user-variable": bool, int, real or string.
- * Should be used only internally !!
- */
+
+// ---------- local Macro definitions ----------
+
+// ----- macro template for defining registration functions for UserInput variables
+#define DEFN_REGISTER_UVAR(UTYPE,CTYPE)                     \
+DECL_REGISTER_UVAR(UTYPE,CTYPE)                             \
+{                                                                       \
+  return XLALRegisterUserVar (name, UVAR_TYPE_ ## UTYPE, optchar, category, helpstr, cvar); \
+}
+
+// ---------- local type definitions ----------
+
+// Define the type of a "user-variable": bool, int, real or string, ...
 typedef enum {
-  UVAR_TYPE_START=0, /* internal start marker for range checking */
-  UVAR_TYPE_BOOLEAN, /* boolean */
-  UVAR_TYPE_INT4,    /* integer */
-  UVAR_TYPE_REAL8,   /* float */
-  UVAR_TYPE_STRING,  /* string */
-  UVAR_TYPE_STRINGVector,/* list of comma-separated strings */
-  UVAR_TYPE_EPOCH,   /* time 'epoch', specified in either GPS or MJD(TT) format, translated into GPS */
-  UVAR_TYPE_RAJ,     /* sky equatorial longitude (aka right-ascencion or RA), in either radians or hours:minutes:seconds format, translated into radians */
-  UVAR_TYPE_DECJ,    /* sky equatorial latitude (aka declination or DEC), in either radians or degrees:minutes:seconds format, translated into radians */
-  UVAR_TYPE_END      /* internal end marker for range checking */
+  UVAR_TYPE_START=0, 		// internal start marker for range checking
+
+  UVAR_TYPE_BOOLEAN, 		// boolean
+  UVAR_TYPE_INT4,    		// integer
+  UVAR_TYPE_REAL8,   		// float
+  UVAR_TYPE_EPOCH,   		// time 'epoch', specified in either GPS or MJD(TT) format, translated into GPS
+  UVAR_TYPE_RAJ,     		// sky equatorial longitude (aka right-ascencion or RA), in either radians or hours:minutes:seconds format, translated into radians
+  UVAR_TYPE_DECJ,    		// sky equatorial latitude (aka declination or DEC), in either radians or degrees:minutes:seconds format, translated into radians
+
+  UVAR_TYPE_STRING, 		// normal string
+  UVAR_TYPE_STRINGVector,	// list of comma-separated strings
+
+  UVAR_TYPE_END      	// internal end marker for range checking
 } UserVarType;
 
-/**
- * Array of descriptors for each UserVarType type
- */
-
-// use those to cast functions with different input-argument types into a uniform template
-typedef int (*parserT)(void*, const char*);
-typedef void (*destructorT)(void*);
-
-static const struct {
-
-  const char *const name;		///< type name
-  int (*parser)(void*, const char*);	///< parser function to parse string as this type
-  void (*destructor)(void*);		///< destructor for this variable type, NULL if none required
-} UserVarTypeMap[UVAR_TYPE_END] = {
-  [UVAR_TYPE_BOOLEAN]  		= { "BOOLEAN", 		(parserT)XLALParseStringValueAsBOOLEAN,		NULL					},
-  [UVAR_TYPE_INT4]     		= { "INT4", 		(parserT)XLALParseStringValueAsINT4,		NULL 					},
-  [UVAR_TYPE_REAL8]    		= { "REAL8",		(parserT)XLALParseStringValueAsREAL8,		NULL 					},
-  [UVAR_TYPE_STRING]   		= { "STRING",		(parserT)XLALParseStringValueAsSTRING,		(destructorT)XLALFree			},
-  [UVAR_TYPE_STRINGVector]	= { "STRINGVector",	(parserT)XLALParseStringValueAsSTRINGVector,	(destructorT)XLALDestroyStringVector	},
-  [UVAR_TYPE_EPOCH]    		= { "EPOCH",		(parserT)XLALParseStringValueAsEPOCH, 		NULL					},
-  [UVAR_TYPE_RAJ]      		= { "RAJ",		(parserT)XLALParseStringValueAsRAJ, 		NULL					},
-  [UVAR_TYPE_DECJ]     		= { "DECJ",		(parserT)XLALParseStringValueAsDECJ, 		NULL					}
-};
-
-/**
- * Linked list to hold the complete information about the user-variables.
- */
+//
+// Linked list to hold the complete information about the user-variables.
+//
 typedef struct tagLALUserVariable {
-  const CHAR *name;		/**< full name */
-  UserVarType type;		/**< variable type: BOOLEAN, INT4, REAL8, ... */
-  CHAR optchar;			/**< cmd-line character */
-  const CHAR *help;		/**< help-string */
-  void *varp;			/**< pointer to the actual C-variable */
-  UserVarCategory category;	/**< category (optional, required, developer, ... ) */
-  BOOLEAN was_set;		/**< was this set by the user in any way? (ie vie cmdline or cfg-file) */
-  struct tagLALUserVariable *next; /* linked list */
+  const CHAR *name;			// full name
+  UserVarType type;			// variable type: BOOLEAN, INT4, REAL8, ...
+  CHAR optchar;				// cmd-line character
+  const CHAR *help;			// help-string
+  void *varp;				// pointer to the actual C-variable
+  UserVarCategory category;		// category (optional, required, developer, ... )
+  BOOLEAN was_set;			// was this set by the user in any way? (ie vie cmdline or cfg-file)
+  struct tagLALUserVariable *next; 	// linked list
 } LALUserVariable;
 
-/** The module-local linked list to hold the user-variables */
-static LALUserVariable UVAR_vars;	/**< empty head */
-static const CHAR *program_name;	/**< keep a pointer to the program name */
-
-/* ---------- internal prototypes ---------- */
+// ---------- local prototypes ----------
 int XLALRegisterUserVar (const CHAR *name, UserVarType type, CHAR optchar, UserVarCategory category, const CHAR *helpstr, void *cvar);
-CHAR *XLALUvarValue2String (LALUserVariable *uvar);
 void check_and_mark_as_set ( LALUserVariable *varp );
+
+// ----- define templated registration functions for all supported UVAR_TYPE_ 'UTYPES'
+DEFN_REGISTER_UVAR(BOOLEAN,BOOLEAN);
+DEFN_REGISTER_UVAR(INT4,INT4);
+DEFN_REGISTER_UVAR(REAL8,REAL8);
+DEFN_REGISTER_UVAR(RAJ,REAL8);
+DEFN_REGISTER_UVAR(DECJ,REAL8);
+DEFN_REGISTER_UVAR(EPOCH,LIGOTimeGPS);
+DEFN_REGISTER_UVAR(STRING,CHAR*);
+DEFN_REGISTER_UVAR(STRINGVector,LALStringVector*);
+
+
+// ----- define helper types for casting
+typedef int (*parserT)(void*, const char*);
+typedef void (*destructorT)(void*);
+typedef char *(*printerT)(const void*);
+
+// ----- handy macro to simplify adding 'regular' entries for new UTYPES into UserVarTypeMap
+#define REGULAR_MAP_ENTRY(UTYPE,DESTRUCTOR)                             \
+  [UVAR_TYPE_##UTYPE] = { #UTYPE, (parserT)XLALParseStringValueAs##UTYPE,	(printerT)XLALPrintStringValueOf##UTYPE, (destructorT)DESTRUCTOR }
+
+// ---------- HOWTO add new UserInput variable types ----------
+// In order to add a new type <UTYPE> to be handled by the UserInput module, you just need to
+// 1) add an entry 'UVAR_TYPE_<UTYPE>' in the UserVarType enum
+// 2) provide
+//   a)  a parser function XLALParseStringValueAs<UTYPE>() (recommended to be added in \ref UserInputParse_h)
+//   b)  a printer function XLALPrintStringValueOf<UTYPE>() (recommended to be added in \ref UserInputPrint_h)
+// 3) generate a corresponding registration function using the macro-templates
+//    DECL_REGISTER_UVAR_AS<VALUE|POINTER>() and DEFN_REGISTER_UVAR_AS<VALUE|POINTER>(),
+// 4) add an entry in the master map 'UserInputTypeMap', specifying the parser, printer and (if required) a destructor
+//    If these follow the standard naming and API, the template macro REGULAR_MAP_ENTRY() can be used for that.
+
+// ---------- Master 'map' defining all UserInput types and how to handle them ----------
+// in particular, lists their name, and how to parse and print them, and (if required) how to destroy them
+static const struct
+{
+  const char *const name;			///< type name
+  int (*parser)(void*, const char*);		///< parser function to parse string as this type
+  char *(*printer)(const void *);		///< 'printer' function returning string value for given type
+  void (*destructor)(void*);			///< destructor for this variable type, NULL if none required
+} UserVarTypeMap[UVAR_TYPE_END]
+= {
+  // either use 'manual' entries of the form
+  // [UVAR_TYPE_<UTYPE>] = { "<UTYPE>",	(parserT)XLALParseStringValueAs<UTYPE>, (printerT)XLALPrintStringValueOf<UTYPE>, (destructorT)XLALDestroy<UTYPE> },
+  // or the convenience macro for cases using 'standard' function names and API
+  // REGULAR_MAP_ENTRY ( <UTYPE>, XLALDestroy<UTYPE> ),
+  REGULAR_MAP_ENTRY ( BOOLEAN, NULL ),
+  REGULAR_MAP_ENTRY ( INT4, NULL ),
+  REGULAR_MAP_ENTRY ( REAL8, NULL ),
+  REGULAR_MAP_ENTRY ( STRING, XLALFree ),
+  REGULAR_MAP_ENTRY ( STRINGVector, XLALDestroyStringVector ),
+  REGULAR_MAP_ENTRY ( EPOCH, NULL ),
+  REGULAR_MAP_ENTRY ( RAJ, NULL ),
+  REGULAR_MAP_ENTRY ( DECJ, NULL )
+};
+
+
+// ---------- The module-local linked list to hold the user-variables
+static LALUserVariable UVAR_vars;	// empty head
+static const CHAR *program_name;	// keep a pointer to the program name
 
 
 // ==================== Function definitions ====================
-
-// ------------------------------------------------------------
-// macro-template to define type-specific wrappers to XLALRegisterUserVar() to allow for strict C type-checking! */
-#define DEFINE_XLALREGISTERUSERVAR(TYPE,CTYPE)                          \
-DECLARE_XLALREGISTERUSERVAR(TYPE,CTYPE) {                               \
-    return XLALRegisterUserVar (name, UVAR_TYPE_ ##TYPE, optchar, category, helpstr, cvar); \
-}
-
-DEFINE_XLALREGISTERUSERVAR(BOOLEAN,BOOLEAN);
-DEFINE_XLALREGISTERUSERVAR(INT4,INT4);
-DEFINE_XLALREGISTERUSERVAR(REAL8,REAL8);
-DEFINE_XLALREGISTERUSERVAR(STRING,CHAR*);
-DEFINE_XLALREGISTERUSERVAR(STRINGVector,LALStringVector*);
-DEFINE_XLALREGISTERUSERVAR(EPOCH,LIGOTimeGPS);
-DEFINE_XLALREGISTERUSERVAR(RAJ,REAL8);
-DEFINE_XLALREGISTERUSERVAR(DECJ,REAL8);
-// ------------------------------------------------------------
 
 /**
  * \ingroup UserInput_h
@@ -320,7 +352,12 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
 	  break;
 
 	default:
-          // all other UVAR_TYPE_ types can be handled canonically
+          // all other UVAR_TYPE_ types can be handled canonically: first destroy previous value, the parse new one
+          if ( UserVarTypeMap [ ptr->type ].destructor != NULL )
+            {
+              UserVarTypeMap [ ptr->type ].destructor( *(char**)ptr->varp );
+              *(char**)ptr->varp = NULL;
+            } // if a destructor was registered
           XLAL_CHECK ( UserVarTypeMap [ ptr->type ].parser( ptr->varp, LALoptarg ) == XLAL_SUCCESS, XLAL_EFUNC );
 	  break;
 
@@ -472,8 +509,8 @@ XLALUserVarHelpString ( const CHAR *progname )
       }
       else // write the current default-value into a string
 	{
-	  CHAR *valstr = NULL;
-	  XLAL_CHECK_NULL ( (valstr = XLALUvarValue2String ( ptr )) != NULL, XLAL_EFUNC );
+	  CHAR *valstr;
+	  XLAL_CHECK_NULL ( (valstr = UserVarTypeMap [ ptr->type ].printer( ptr->varp )) != NULL, XLAL_EFUNC );
 	  strncpy ( defaultstr, valstr, sizeof(defaultstr) );	// cut short for default-entry
 	  defaultstr[sizeof(defaultstr)-1] = 0;
 	  XLALFree (valstr);
@@ -682,7 +719,7 @@ XLALUserVarGetLog ( UserVarLogFormat format 	/**< output format: return as confi
       }
 
       CHAR *valstr;
-      XLAL_CHECK_NULL ( (valstr = XLALUvarValue2String ( ptr )) != NULL, XLAL_EFUNC );
+      XLAL_CHECK_NULL ( (valstr = UserVarTypeMap [ ptr->type ].printer( ptr->varp )) != NULL, XLAL_EFUNC );
 
       char append[256];
       switch (format)
@@ -713,74 +750,6 @@ XLALUserVarGetLog ( UserVarLogFormat format 	/**< output format: return as confi
   return record;
 
 } // XLALUserVarGetLog()
-
-/* Return the value of the given UserVariable as a string.
- * For INTERNAL use only!
- */
-CHAR *
-XLALUvarValue2String ( LALUserVariable *uvar )
-{
-  XLAL_CHECK_NULL ( uvar != NULL, XLAL_EINVAL );
-  XLAL_CHECK_NULL ( uvar->varp != NULL, XLAL_EINVAL );
-
-  char buf[512];
-  char *retstr = NULL;
-
-  switch ( uvar->type )
-    {
-    case UVAR_TYPE_BOOLEAN:
-      sprintf (buf, *(BOOLEAN*)(uvar->varp) ? "TRUE" : "FALSE");
-      break;
-
-    case UVAR_TYPE_INT4:
-      sprintf (buf, "%" LAL_INT4_FORMAT, *(INT4*)(uvar->varp) );
-      break;
-
-    case UVAR_TYPE_REAL8:
-    case UVAR_TYPE_RAJ:
-    case UVAR_TYPE_DECJ:
-      if (*(REAL8*)(uvar->varp) == 0) {
-	strcpy (buf, "0.0");	// makes it more explicit that's it a REAL
-      } else {
-	sprintf (buf, "%.16g", *(REAL8*)(uvar->varp) );
-      }
-      break;
-
-    case UVAR_TYPE_STRING:
-      if ( *(CHAR**)(uvar->varp) != NULL ) {
-        snprintf (buf, sizeof(buf), "\"%s\"", *(CHAR**)(uvar->varp) );
-        buf[sizeof(buf)-1] = 0;
-      } else {
-        strcpy (buf, "NULL");
-      }
-      break;
-
-    case UVAR_TYPE_EPOCH:
-      XLAL_CHECK_NULL ( XLALGPSToStr ( buf, (const LIGOTimeGPS *)(uvar->varp) ) != NULL, XLAL_EFUNC );
-      strcat ( buf, "GPS" );	// postfix this with 'units' for explicitness (as opposed to 'MJD')
-      break;
-
-    case UVAR_TYPE_STRINGVector:
-      if ( *(LALStringVector**)(uvar->varp) != NULL ) {
-        XLAL_CHECK_NULL ( (retstr = XLALStringVector2CSV ( *(LALStringVector**)(uvar->varp) )) != NULL, XLAL_EFUNC );
-      } else {
-        strcpy (buf, "NULL");
-      }
-      break;
-
-    default:
-      XLAL_ERROR_NULL ( XLAL_EINVAL, "\nUnkown UserVariable-type encountered... this points to a coding error!\n" );
-      break;
-
-    } // switch uvar->type
-
-  if ( retstr == NULL ) {
-    XLAL_CHECK_NULL ( (retstr = XLALStringDuplicate ( buf )) != NULL, XLAL_EFUNC );
-  }
-
-  return retstr;
-
-} // XLALUvarValue2String()
 
 /**
  * Mark the user-variable as set, check if it has been

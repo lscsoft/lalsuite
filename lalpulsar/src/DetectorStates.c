@@ -25,7 +25,7 @@
 #include <lal/SinCosLUT.h>
 #include <lal/DetectorStates.h>
 #include <lal/LISAspecifics.h>
-#include <lal/ParseStringValue.h>
+#include <lal/UserInputParse.h>
 
 /*---------- local DEFINES ----------*/
 #define TRUE (1==1)

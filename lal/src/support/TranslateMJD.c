@@ -27,7 +27,9 @@
 #include <lal/StringInput.h>
 #include <lal/LALConstants.h>
 #include <lal/LALString.h>
-#include <lal/ParseStringValue.h>
+
+#include <lal/UserInputParse.h>
+
 #include <lal/TranslateMJD.h>
 
 // ---------- global variables ----------
