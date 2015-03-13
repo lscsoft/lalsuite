@@ -43,7 +43,7 @@ const PulsarDopplerParams phys_points[NUM_POINTS] = {
   { .Alpha = 3.31129323970275, .Delta = -1.225892709583030, .fkdot = {100.0000062524320,  8.07713885739405e-10} }
 };
 
-const double ssky_mismatches[NUM_POINTS][NUM_POINTS] = {
+const double ussky_mismatches[NUM_POINTS][NUM_POINTS] = {
   {  0.0000000000e+00,  2.8764539641e+07,  1.7339193295e+05,  2.8451029480e+07,  3.4146745049e+06,  2.7431796599e+07,  1.3229138543e+07,  2.1651788499e+07,  3.3466633515e+07,  4.2532448208e+07 },
   {  2.8764539641e+07,  0.0000000000e+00,  2.4471638891e+07,  1.7793497533e+03,  1.2362377917e+07,  1.9343156763e+04,  2.9814372830e+06,  5.0457966981e+05,  1.7844672448e+05,  1.3420018117e+06 },
   {  1.7339193295e+05,  2.4471638891e+07,  0.0000000000e+00,  2.4182449487e+07,  2.0496517155e+06,  2.3244046454e+07,  1.0373862571e+07,  1.7950144640e+07,  2.8822527465e+07,  3.7274828956e+07 },
@@ -110,28 +110,28 @@ int main( void )
   EphemerisData *edat =  XLALInitBarycenter( TEST_DATA_DIR "earth00-19-DE405.dat.gz",
                                              TEST_DATA_DIR "sun00-19-DE405.dat.gz" );
   XLAL_CHECK( edat != NULL, XLAL_EFUNC );
-  gsl_matrix *rssky_metric = NULL, *rssky_transf = NULL, *ssky_metric = NULL;
-  XLAL_CHECK( XLALComputeSuperskyMetrics( &rssky_metric, &rssky_transf, &ssky_metric, NULL, NULL, NULL, 1, &ref_time, &segments, 100.0, &detectors, NULL, DETMOTION_SPIN | DETMOTION_PTOLEORBIT, edat ) == XLAL_SUCCESS, XLAL_EFUNC );
+  gsl_matrix *rssky_metric = NULL, *rssky_transf = NULL, *ussky_metric = NULL;
+  XLAL_CHECK( XLALComputeSuperskyMetrics( &rssky_metric, &rssky_transf, &ussky_metric, NULL, NULL, NULL, 1, &ref_time, &segments, 100.0, &detectors, NULL, DETMOTION_SPIN | DETMOTION_PTOLEORBIT, edat ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLALSegListClear( &segments );
   XLALDestroyEphemerisData( edat );
 
   // Check round-trip conversions of each test point
   {
-    gsl_vector *GAVEC( ssky_point, 5 );
+    gsl_vector *GAVEC( ussky_point, 5 );
     for( size_t i = 0; i < NUM_POINTS; ++i ) {
       PulsarDopplerParams XLAL_INIT_DECL(point);
-      XLAL_CHECK_MAIN( XLALConvertPhysicalToSupersky( SSC_SUPER_SKY, ssky_point, &phys_points[i], NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_MAIN( XLALConvertSuperskyToPhysical( &point, SSC_SUPER_SKY, ssky_point, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALConvertPhysicalToSupersky( SC_USSKY, ussky_point, &phys_points[i], NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALConvertSuperskyToPhysical( &point, SC_USSKY, ussky_point, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK( CompareDoppler( &phys_points[i], &point ) == EXIT_SUCCESS, XLAL_EFUNC );
     }
-    GFVEC( ssky_point );
+    GFVEC( ussky_point );
   }
   {
     gsl_vector *GAVEC( rssky_point, 4 );
     for( size_t i = 0; i < NUM_POINTS; ++i ) {
       PulsarDopplerParams XLAL_INIT_DECL(point);
-      XLAL_CHECK_MAIN( XLALConvertPhysicalToSupersky( SSC_REDUCED_SUPER_SKY, rssky_point, &phys_points[i], rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_MAIN( XLALConvertSuperskyToPhysical( &point, SSC_REDUCED_SUPER_SKY, rssky_point, rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALConvertPhysicalToSupersky( SC_RSSKY, rssky_point, &phys_points[i], rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALConvertSuperskyToPhysical( &point, SC_RSSKY, rssky_point, rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK( CompareDoppler( &phys_points[i], &point ) == EXIT_SUCCESS, XLAL_EFUNC );
     }
     GFVEC( rssky_point );
@@ -139,30 +139,30 @@ int main( void )
 
   // Check mismatches between pairs of points
   {
-    gsl_vector *GAVEC( ssky_point_i, 5 );
-    gsl_vector *GAVEC( ssky_point_j, 5 );
+    gsl_vector *GAVEC( ussky_point_i, 5 );
+    gsl_vector *GAVEC( ussky_point_j, 5 );
     gsl_vector *GAVEC( temp, 5 );
     for( size_t i = 0; i < NUM_POINTS; ++i ) {
-      XLAL_CHECK_MAIN( XLALConvertPhysicalToSupersky( SSC_SUPER_SKY, ssky_point_i, &phys_points[i], NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALConvertPhysicalToSupersky( SC_USSKY, ussky_point_i, &phys_points[i], NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
       for( size_t j = 0; j < NUM_POINTS; ++j ) {
-        XLAL_CHECK_MAIN( XLALConvertPhysicalToSupersky( SSC_SUPER_SKY, ssky_point_j, &phys_points[j], NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
-        gsl_vector_sub( ssky_point_j, ssky_point_i );
-        gsl_blas_dgemv( CblasNoTrans, 1.0, ssky_metric, ssky_point_j, 0.0, temp );
+        XLAL_CHECK_MAIN( XLALConvertPhysicalToSupersky( SC_USSKY, ussky_point_j, &phys_points[j], NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
+        gsl_vector_sub( ussky_point_j, ussky_point_i );
+        gsl_blas_dgemv( CblasNoTrans, 1.0, ussky_metric, ussky_point_j, 0.0, temp );
         double mismatch = 0.0;
-        gsl_blas_ddot( ssky_point_j, temp, &mismatch );
-        CHECK_RELERR( mismatch, ssky_mismatches[i][j], 1e-5 );
+        gsl_blas_ddot( ussky_point_j, temp, &mismatch );
+        CHECK_RELERR( mismatch, ussky_mismatches[i][j], 1e-5 );
       }
     }
-    GFVEC( ssky_point_i, ssky_point_j, temp );
+    GFVEC( ussky_point_i, ussky_point_j, temp );
   }
   {
     gsl_vector *GAVEC( rssky_point_i, 4 );
     gsl_vector *GAVEC( rssky_point_j, 4 );
     gsl_vector *GAVEC( temp, 4 );
     for( size_t i = 0; i < NUM_POINTS; ++i ) {
-      XLAL_CHECK_MAIN( XLALConvertPhysicalToSupersky( SSC_SUPER_SKY, rssky_point_i, &phys_points[i], rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALConvertPhysicalToSupersky( SC_USSKY, rssky_point_i, &phys_points[i], rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
       for( size_t j = 0; j < NUM_POINTS; ++j ) {
-        XLAL_CHECK_MAIN( XLALConvertPhysicalToSupersky( SSC_SUPER_SKY, rssky_point_j, &phys_points[j], rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLALConvertPhysicalToSupersky( SC_USSKY, rssky_point_j, &phys_points[j], rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
         gsl_vector_sub( rssky_point_j, rssky_point_i );
         gsl_blas_dgemv( CblasNoTrans, 1.0, rssky_metric, rssky_point_j, 0.0, temp );
         double mismatch = 0.0;
@@ -174,7 +174,7 @@ int main( void )
   }
 
   // Cleanup
-  GFMAT( rssky_metric, rssky_transf, ssky_metric );
+  GFMAT( rssky_metric, rssky_transf, ussky_metric );
   LALCheckMemoryLeaks();
 
   return EXIT_SUCCESS;

@@ -42,26 +42,26 @@ extern "C" {
 /// Coordinate systems associated with the supersky metrics.
 ///
 typedef enum {
-  SSC_PHYSICAL,					///< Physical: right ascension, declination, frequency and spindowns
-  SSC_SUPER_SKY,				///< (Full) supersky: 3-dimensional sky (equatorial coordinates), spindowns and frequency
-  SSC_REDUCED_SUPER_SKY,			///< Reduced supersky: 2-dimensional sky (reduced supersky coordinates), reduced spindowns and frequency
-  SSC_MAX
+  SC_PHYS,					///< Physical: right ascension, declination, frequency and spindowns
+  SC_USSKY,					///< Unrestricted supersky: 3-dimensional sky (equatorial coordinates), spindowns and frequency
+  SC_RSSKY,					///< Reduced supersky: 2-dimensional sky (reduced supersky coordinates), reduced spindowns and frequency
+  SC_MAX
 } SuperskyCoordinates;
 
 ///
-/// Compute the reduced supersky metric (2-dimensional sky), and/or the (full) supersky metric
+/// Compute the reduced supersky metric (2-dimensional sky), and/or the unrestricted supersky metric
 /// (3-dimensional sky), for individual segments and/or appropriately averaged over a segment list.
 ///
 #ifdef SWIG // SWIG interface directives
-SWIGLAL( INOUT_STRUCTS( gsl_matrix **, out_rssky_metric, out_rssky_transf, out_ssky_metric, out_rssky_metric_seg, out_rssky_transf_seg, out_ssky_metric_seg ) );
+SWIGLAL( INOUT_STRUCTS( gsl_matrix **, out_rssky_metric, out_rssky_transf, out_ussky_metric, out_rssky_metric_seg, out_rssky_transf_seg, out_ussky_metric_seg ) );
 #endif
 int XLALComputeSuperskyMetrics(
   gsl_matrix **out_rssky_metric,		///< [out] Output reduced supersky metric, appropriately averaged over segments
   gsl_matrix **out_rssky_transf,		///< [out] Output reduced supersky metric transform data
-  gsl_matrix **out_ssky_metric,			///< [out] Output (full) supersky metric, appropriately averaged over segments
+  gsl_matrix **out_ussky_metric,		///< [out] Output unrestricted supersky metric, appropriately averaged over segments
   gsl_matrix **out_rssky_metric_seg,		///< [out] Output reduced supersky metrics for each segment, concatenated by column: [rssky_metric_1, rssky_metric_2, ...]
   gsl_matrix **out_rssky_transf_seg,		///< [out] Output reduced supersky metric transform data for each segment, concatenated by column: [rssky_transf_1, rssky_transf_2, ...]
-  gsl_matrix **out_ssky_metric_seg,		///< [out] Output (full) supersky metrics for each segment, concatenated by column: [ssky_metric_1, ssky_metric_2, ...]
+  gsl_matrix **out_ussky_metric_seg,		///< [out] Output unrestricted supersky metrics for each segment, concatenated by column: [ussky_metric_1, ussky_metric_2, ...]
   const size_t spindowns,			///< [in] Number of frequency+spindown coordinates
   const LIGOTimeGPS *ref_time,			///< [in] Reference time for the metrics
   const LALSegList *segments,			///< [in] List of segments to average metrics over
