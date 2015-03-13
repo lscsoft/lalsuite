@@ -298,6 +298,10 @@ class GraceDb(GsiRest):
     def obs_statuses(self):
         return self.service_info.get('obs-statuses')
 
+    @property
+    def voevent_types(self):
+        return self.service_info.get('voevent-types')
+
     def request(self, method, *args, **kwargs):
         if method.lower() in ['post', 'put']:
             kwargs['priming_url'] = self.service_url
@@ -773,6 +777,47 @@ class GraceDb(GsiRest):
 
         """
         return self.get(self.links['self'])
+
+    def voevents(self, graceid):
+        """Given a GraceID, get a list of VOEvents
+
+        Example:
+        
+            >>> g = GraceDb()       
+            >>> r = g.voevents('T101383') 
+            >>> voevent_list = r.json()['voevents'] 
+
+        """
+    
+        template = self.templates['voevent-list-template']
+        uri = template.format(graceid=graceid)
+        return self.get(uri)
+
+    def createVOEvent(self, graceid, voevent_type, **kwargs):
+        """Create a new VOEvent
+        
+        Required args: graceid, voevent_type
+
+        Additional keyword arguments may be passed in to be sent in the POST
+        data. Only the following kwargs are recognized:
+            skymap_filename
+            skyamp_type
+
+        Any other kwargs will be ignored.
+        """ 
+        # validate facility, waveband, eel_status, and obs_status
+        voevent_type = self._getCode(voevent_type.lower(), self.voevent_types)
+        if not voevent_type:
+            raise ValueError("voevent_type must be one of: %s" % self.voevent_types.values())
+        template = self.templates['voevent-list-template']
+        uri = template.format(graceid=graceid)
+
+        body = {
+            'voevent_type' : voevent_type,
+        }
+        body.update(**kwargs)
+        return self.post(uri, body=body)
+
 
 #-----------------------------------------------------------------
 # TBD
