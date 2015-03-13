@@ -18,7 +18,7 @@ testdatadir = os.environ.get('TEST_DATA_DIR', testdatadir)
 datafile = os.path.join(testdatadir, DATAFILE)
 
 # Module level global variables
-g = GraceDb(TEST_SERVICE)
+g = GraceDb(service)
 
 # Variables to which we will need access at the module level
 event = None
