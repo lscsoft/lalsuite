@@ -3060,6 +3060,7 @@ int XLALSimInspiralTD(
         COMPLEX16FrequencySeries *hctilde = NULL;
         REAL8FFTPlan *plan;
         size_t chirplen, end, k;
+        double tshift;
 
         /* generate the conditioned waveform in the frequency domain */
         /* note: redshift factor has already been applied above */
@@ -3074,13 +3075,14 @@ int XLALSimInspiralTD(
          * we shift waveform backwards in time and compensate for this
          * shift by adjusting the epoch -- note that XLALSimInspiralFD
          * guarantees that there is extra padding to do this */
+        tshift = round(textra / deltaT) * deltaT; /* integer number of samples */
         for (k = 0; k < hptilde->data->length; ++k) {
-            double complex phasefac = cexp(2.0 * M_PI * I * k * hptilde->deltaF * textra);
+            double complex phasefac = cexp(2.0 * M_PI * I * k * hptilde->deltaF * tshift);
             hptilde->data->data[k] *= phasefac;
             hctilde->data->data[k] *= phasefac;
         }
-        XLALGPSAdd(&hptilde->epoch, textra);
-        XLALGPSAdd(&hctilde->epoch, textra);
+        XLALGPSAdd(&hptilde->epoch, tshift);
+        XLALGPSAdd(&hctilde->epoch, tshift);
 
         /* transform the waveform into the time domain */
         chirplen = 2 * (hptilde->data->length - 1);
@@ -3110,8 +3112,8 @@ int XLALSimInspiralTD(
         /* total expected chirp length includes merger */
         chirplen = round((tchirp + tmerge) / deltaT);
 
-        /* amount to snip off at the end is textra */
-        end = (*hplus)->data->length - round(textra / deltaT);
+        /* amount to snip off at the end is tshift */
+        end = (*hplus)->data->length - round(tshift / deltaT);
 
         /* snip off extra time at beginning and at the end */
         XLALResizeREAL8TimeSeries(*hplus, end - chirplen, chirplen);
@@ -3132,14 +3134,16 @@ int XLALSimInspiralTD(
     /* waveform should terminate at a frequency >= Schwarzschild ISCO
      * so taper one cycle at this frequency at the end; should not make
      * any difference to IMR waveforms */
+    /* note: this tapering is done so the waveform goes to zero at the
+     * next point beyond the end of the data */
     fisco = 1.0 / (pow(6.0, 1.5) * LAL_PI * (m1 + m2) * LAL_MTSUN_SI / LAL_MSUN_SI);
     ntaper = round(1.0 / (fisco * deltaT));
     if (ntaper < 4)
         ntaper = 4;
-    for (j = 0; j < ntaper; ++j) {
+    for (j = 1; j < ntaper; ++j) {
         double w = 0.5 - 0.5 * cos(j * LAL_PI / ntaper);
-        (*hplus)->data->data[(*hplus)->data->length - j - 1] *= w;
-        (*hcross)->data->data[(*hcross)->data->length - j - 1] *= w;
+        (*hplus)->data->data[(*hplus)->data->length - j] *= w;
+        (*hcross)->data->data[(*hcross)->data->length - j] *= w;
     }
 
     /* there could be a filter transient at the beginning too:
@@ -3247,7 +3251,7 @@ int XLALSimInspiralFD(
          * f_min; also wind the waveform in phase in case it would wrap-
          * around at the merger time */
 
-        double tchirp, tmerge, textra;
+        double tchirp, tmerge, textra, tshift;
         double fstart, fisco;
         double s;
         size_t k, k0, k1;
@@ -3309,7 +3313,7 @@ int XLALSimInspiralFD(
 
         /* need a long enough segment to hold a whole chirp with some padding */
         /* length of the chirp in samples */
-        chirplen = (tchirp + tmerge + 2.0 * textra) / deltaT;
+        chirplen = round((tchirp + tmerge + 2.0 * textra) / deltaT);
         /* make chirplen next power of two */
         frexp(chirplen, &chirplen_exp);
         chirplen = ldexp(1.0, chirplen_exp);
@@ -3347,13 +3351,14 @@ int XLALSimInspiralFD(
          * to avoid the end of the waveform wrapping around to the beginning,
          * we shift waveform backwards in time and compensate for this
          * shift by adjusting the epoch */
+        tshift = round(tmerge / deltaT) * deltaT; /* integer number of time samples */
         for (k = 0; k < (*hptilde)->data->length; ++k) {
-            double complex phasefac = cexp(2.0 * M_PI * I * k * deltaF * tmerge);
+            double complex phasefac = cexp(2.0 * M_PI * I * k * deltaF * tshift);
             (*hptilde)->data->data[k] *= phasefac;
             (*hctilde)->data->data[k] *= phasefac;
         }
-        XLALGPSAdd(&(*hptilde)->epoch, tmerge);
-        XLALGPSAdd(&(*hctilde)->epoch, tmerge);
+        XLALGPSAdd(&(*hptilde)->epoch, tshift);
+        XLALGPSAdd(&(*hctilde)->epoch, tshift);
 
     } else if (XLALSimInspiralImplementedTDApproximants(approximant)) {
 
