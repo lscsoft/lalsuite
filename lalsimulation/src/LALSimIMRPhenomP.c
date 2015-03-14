@@ -576,6 +576,7 @@ static int PhenomPCore(
   gsl_interp_accel_free(acc);
   XLALFree(phis);
 
+  XLALFree(PCparams);
   XLALDestroyREAL8Sequence(freqs);
 
   if( errcode != XLAL_SUCCESS )
