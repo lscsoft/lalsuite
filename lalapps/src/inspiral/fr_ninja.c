@@ -334,34 +334,34 @@ INT4 main(INT4 argc, CHAR **argv)
    */
 
   /* common metadata */
-  XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_mass_ratio, meta_file, "mass-ratio", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_spin1x, meta_file, "spin1x", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_spin1y, meta_file, "spin1y", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_spin1z, meta_file, "spin1z", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_spin2x, meta_file, "spin2x", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_spin2y, meta_file, "spin2y", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_spin2z, meta_file, "spin2z", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_mass_ratio, meta_file, NULL, "mass-ratio", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_spin1x, meta_file, NULL, "spin1x", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_spin1y, meta_file, NULL, "spin1y", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_spin1z, meta_file, NULL, "spin1z", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_spin2x, meta_file, NULL, "spin2x", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_spin2y, meta_file, NULL, "spin2y", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_spin2z, meta_file, NULL, "spin2z", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* format specific metadata */
   if (strcmp(metadata_format, "NINJA1") == 0)
   {
     /* NINJA1 */
-    XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_simulation_details, meta_file, "simulation-details", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_nr_group, meta_file, "nr-group", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_email, meta_file, "email", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_freq_start_22, meta_file, "freqStart22", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_simulation_details, meta_file, NULL, "simulation-details", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_nr_group, meta_file, NULL, "nr-group", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_email, meta_file, NULL, "email", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_freq_start_22, meta_file, NULL, "freqStart22", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
   }
   else if (strcmp(metadata_format, "NINJA2") == 0)
   {
     /* NINJA2 */
-    XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_waveform_name, meta_file, "waveform-name", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_initial_separation, meta_file, "initial-separation", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_eccentricity, meta_file, "eccentricity", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_number_of_cycles_22, meta_file, "number-of-cycles-22", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_code, meta_file, "code", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_submitter_email, meta_file, "submitter-email", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_authors_emails, meta_file, "authors-emails", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_freq_start_22, meta_file, "freq-start-22", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_waveform_name, meta_file, NULL, "waveform-name", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_initial_separation, meta_file, NULL, "initial-separation", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_eccentricity, meta_file, NULL, "eccentricity", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_number_of_cycles_22, meta_file, NULL, "number-of-cycles-22", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_code, meta_file, NULL, "code", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_submitter_email, meta_file, NULL, "submitter-email", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_authors_emails, meta_file, NULL, "authors-emails", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_freq_start_22, meta_file, NULL, "freq-start-22", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
   }
   else
   {
@@ -494,7 +494,7 @@ INT4 main(INT4 argc, CHAR **argv)
 
       /* read ht-data section of metadata file */
       snprintf(field, HISTORY_COMMENT, "%d,%d", l, m - MAX_L);
-      XLAL_CHECK ( XLALReadConfigSTRINGVariable( &wf_name[l][m], meta_file, field, &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK ( XLALReadConfigSTRINGVariable( &wf_name[l][m], meta_file, NULL, field, &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
 
       /* read waveform */
       if (wf_name[l][m] != NULL)
