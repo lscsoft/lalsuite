@@ -120,8 +120,9 @@ XLALPrintStringValueOfSTRING ( const CHAR **valSTRING )
 char *
 XLALPrintStringValueOfSTRINGVector ( const LALStringVector **valSTRINGVector )
 {
+  XLAL_CHECK_NULL ( valSTRINGVector != NULL, XLAL_EINVAL );
   char *ret = NULL;
-  if ( (valSTRINGVector == NULL) || ((*valSTRINGVector)->data == NULL) || ((*valSTRINGVector)->length == 0) )
+  if ( (*valSTRINGVector == NULL) || ((*valSTRINGVector)->data == NULL) || ((*valSTRINGVector)->length == 0) )
     {
       XLAL_CHECK_NULL ( (ret = XLALStringDuplicate("NULL")) != NULL, XLAL_EFUNC );
     }
