@@ -193,6 +193,7 @@ typedef enum {
   UVAR_CATEGORY_REQUIRED,	///< required
   UVAR_CATEGORY_HELP,		///< special variable: trigger output of help-string
   UVAR_CATEGORY_DEVELOPER,	///< optional and hidden in help-output until lalDebugLevel>=warning
+  UVAR_CATEGORY_DEPRECATED,	///< optional and hidden until lalDebugLevel>=info, output warning if used
   UVAR_CATEGORY_SPECIAL,	///< optional and *turns off* all checking of required variables, useful for output of version info
 
   UVAR_CATEGORY_END		///< internal end marker for range checking

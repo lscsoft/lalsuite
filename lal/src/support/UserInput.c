@@ -458,21 +458,29 @@ XLALUserVarHelpString ( const CHAR *progname )
   XLAL_CHECK_NULL ( progname != NULL, XLAL_EINVAL );
   XLAL_CHECK_NULL ( UVAR_vars.next != NULL, XLAL_EINVAL, "No UVAR memory allocated. Did you register any user-variables?\n" );
 
-
-  BOOLEAN showDeveloperOptions = (lalDebugLevel > 0);	// currently only output for lalDebugLevel > 0
+  BOOLEAN showDeveloperOptions  = (lalDebugLevel >= LALWARNING);	// only output for lalDebugLevel >= warning
+  BOOLEAN showDeprecatedOptions = (lalDebugLevel >= LALINFO);		// only output for lalDebugLevel >= info
 
   // ---------- ZEROTH PASS: find longest long-option and type names, for proper output formatting
   LALUserVariable *ptr = &UVAR_vars;
   UINT4 nameFieldLen = 0;
   UINT4 typeFieldLen = 0;
   BOOLEAN haveDeveloperOptions = 0;
+  BOOLEAN haveDeprecatedOptions = 0;
+
   while ( (ptr=ptr->next) != NULL )
     {
       if (ptr->category == UVAR_CATEGORY_DEVELOPER) {
         haveDeveloperOptions = 1;
       }
+      if ( ptr->category == UVAR_CATEGORY_DEPRECATED ) {
+        haveDeprecatedOptions = 1;
+      }
       if ( (ptr->category == UVAR_CATEGORY_DEVELOPER) && !showDeveloperOptions ) {
 	continue;	// skip developer options if not requested
+      }
+      if ( (ptr->category == UVAR_CATEGORY_DEPRECATED) && !showDeprecatedOptions ) {
+	continue;	// skip deprecated options if not requested
       }
 
       UINT4 len;
@@ -498,7 +506,9 @@ XLALUserVarHelpString ( const CHAR *progname )
 
   CHAR *helpstr_regular    = NULL;
   CHAR *helpstr_developer  = NULL;
+  CHAR *helpstr_deprecated = NULL;
   // ---------- provide header line: info about config-file reading
+
   snprintf (strbuf, sizeof(strbuf), "Usage: %s [@ConfigFile] [options], where options are:\n\n", progname);
   XLAL_LAST_ELEM(strbuf) = 0;
   XLAL_CHECK_NULL ( (helpstr_regular = XLALStringDuplicate ( strbuf )) != NULL, XLAL_EFUNC );
@@ -539,13 +549,24 @@ XLALUserVarHelpString ( const CHAR *progname )
       XLAL_LAST_ELEM(strbuf) = 0;
 
       // now append new line to the appropriate helpstring
-      if ( ptr->category == UVAR_CATEGORY_DEVELOPER ) {
-        if ( showDeveloperOptions ) {
-          helpstr_developer = XLALStringAppend ( helpstr_developer, strbuf );
-        }
-      } else {
-        helpstr_regular = XLALStringAppend ( helpstr_regular, strbuf );
-      }
+      switch ( ptr->category )
+        {
+        case UVAR_CATEGORY_DEVELOPER:
+          if ( showDeveloperOptions ) {
+            helpstr_developer = XLALStringAppend ( helpstr_developer, strbuf );
+          }
+          break;
+
+        case UVAR_CATEGORY_DEPRECATED:
+          if ( showDeprecatedOptions ) {
+            helpstr_deprecated = XLALStringAppend ( helpstr_deprecated, strbuf );
+          }
+          break;
+
+        default:
+          helpstr_regular = XLALStringAppend ( helpstr_regular, strbuf );
+          break;
+        } // switch category
 
     } // while ptr=ptr->next
 
@@ -570,8 +591,26 @@ XLALUserVarHelpString ( const CHAR *progname )
         }
     } // if haveDeveloperOptions
 
+  // handle output of deprecated options, if requested
+  if ( haveDeprecatedOptions )
+    {
+      if ( !showDeprecatedOptions )
+        {
+          const char *str = " ---------- Use help with lalDebugLevel >= info to also see deprecated options ----------\n";
+          XLAL_CHECK_NULL ( (helpstr = XLALStringAppend ( helpstr, str )) != NULL, XLAL_EFUNC );
+        }
+      else
+        {
+          const char *str = " ---------- The following are *DEPRECATED* options that shouldn't be used any more:----------\n\n";
+          XLAL_CHECK_NULL ( (helpstr = XLALStringAppend ( helpstr, str )) != NULL, XLAL_EFUNC );
+          XLAL_CHECK_NULL ( (helpstr = XLALStringAppend ( helpstr, helpstr_deprecated )) != NULL, XLAL_EFUNC );
+          XLAL_CHECK_NULL ( (helpstr = XLALStringAppend ( helpstr, "\n" )) != NULL, XLAL_EFUNC );
+        }
+    } // if haveDeprecatedOptions
+
   XLALFree ( helpstr_regular );
   XLALFree ( helpstr_developer );
+  XLALFree ( helpstr_deprecated );
 
   return helpstr;
 
@@ -636,6 +675,11 @@ XLALUserVarReadAllInput ( int argc, char *argv[] )
       // check 'special' category, which suppresses the CheckRequired test
       if ( (ptr->category == UVAR_CATEGORY_SPECIAL) && ptr->was_set ) {
 	skipCheckRequired = TRUE;
+      }
+
+      // handle deprecated options by outputting a warning:
+      if ( ptr->category == UVAR_CATEGORY_DEPRECATED && ptr->was_set ) {
+        XLALPrintWarning ("DEPRECATED UserInput option '%s' used: %s\n", ptr->name, ptr->help );
       }
     } // while ptr = ptr->next
 
