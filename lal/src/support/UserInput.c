@@ -458,8 +458,6 @@ XLALUserVarHelpString ( const CHAR *progname )
   XLAL_CHECK_NULL ( progname != NULL, XLAL_EINVAL );
   XLAL_CHECK_NULL ( UVAR_vars.next != NULL, XLAL_EINVAL, "No UVAR memory allocated. Did you register any user-variables?\n" );
 
-  CHAR *helpstr_regular = NULL;
-  CHAR *helpstr_developer = NULL;
 
   BOOLEAN showDeveloperOptions = (lalDebugLevel > 0);	// currently only output for lalDebugLevel > 0
 
@@ -467,14 +465,14 @@ XLALUserVarHelpString ( const CHAR *progname )
   LALUserVariable *ptr = &UVAR_vars;
   UINT4 nameFieldLen = 0;
   UINT4 typeFieldLen = 0;
-  BOOLEAN haveDevOpts = 0;
+  BOOLEAN haveDeveloperOptions = 0;
   while ( (ptr=ptr->next) != NULL )
     {
       if (ptr->category == UVAR_CATEGORY_DEVELOPER) {
-        haveDevOpts = 1;
+        haveDeveloperOptions = 1;
       }
-      if ( !showDeveloperOptions && (ptr->category == UVAR_CATEGORY_DEVELOPER) ) {
-	continue;	// skip developer-options if not requested
+      if ( (ptr->category == UVAR_CATEGORY_DEVELOPER) && !showDeveloperOptions ) {
+	continue;	// skip developer options if not requested
       }
 
       UINT4 len;
@@ -498,6 +496,8 @@ XLALUserVarHelpString ( const CHAR *progname )
   CHAR defaultstr[256]; 	// for display of default-value
   CHAR strbuf[512];
 
+  CHAR *helpstr_regular    = NULL;
+  CHAR *helpstr_developer  = NULL;
   // ---------- provide header line: info about config-file reading
   snprintf (strbuf, sizeof(strbuf), "Usage: %s [@ConfigFile] [options], where options are:\n\n", progname);
   XLAL_LAST_ELEM(strbuf) = 0;
@@ -505,7 +505,7 @@ XLALUserVarHelpString ( const CHAR *progname )
 
   // ---------- MAIN LOOP: step through all user variables and add entry to appropriate help string
   ptr = &UVAR_vars;
-  while ( (ptr=ptr->next) != NULL )
+  while ( (ptr=ptr->next) != NULL )	// header always empty
     {
       if ( ptr->category == UVAR_CATEGORY_REQUIRED ) {
 	strcpy (defaultstr, "REQUIRED");
@@ -551,22 +551,24 @@ XLALUserVarHelpString ( const CHAR *progname )
 
   CHAR *helpstr = NULL;
   XLAL_CHECK_NULL ( (helpstr = XLALStringAppend ( helpstr, helpstr_regular )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_NULL ( (helpstr = XLALStringAppend ( helpstr, "\n" )) != NULL, XLAL_EFUNC );
 
   // handle output of developer options, if requested
-  if ( haveDevOpts )
+  if ( haveDeveloperOptions )
     {
       if ( !showDeveloperOptions )
         {
-          const char *str = "\n ---------- Use help with lalDebugLevel > 0 to also see all 'developer-options' ---------- \n\n";
+          const char *str = " ---------- Use help with lalDebugLevel >= warning to also see all 'developer' options ----------\n";
           XLAL_CHECK_NULL ( (helpstr = XLALStringAppend ( helpstr, str )) != NULL, XLAL_EFUNC );
         }
       else
         {
-          const char *str = "\n   ---------- The following are 'Developer'-options not useful for most users:----------\n\n";
+          const char *str = " ---------- The following are 'developer'-options not useful for most users:----------\n\n";
           XLAL_CHECK_NULL ( (helpstr = XLALStringAppend ( helpstr, str )) != NULL, XLAL_EFUNC );
           XLAL_CHECK_NULL ( (helpstr = XLALStringAppend ( helpstr, helpstr_developer )) != NULL, XLAL_EFUNC );
+          XLAL_CHECK_NULL ( (helpstr = XLALStringAppend ( helpstr, "\n" )) != NULL, XLAL_EFUNC );
         }
-    } // if haveDevOpts
+    } // if haveDeveloperOptions
 
   XLALFree ( helpstr_regular );
   XLALFree ( helpstr_developer );
@@ -617,8 +619,8 @@ XLALUserVarReadAllInput ( int argc, char *argv[] )
   // ---------- now parse cmdline: overloads previous config-file settings
   XLAL_CHECK ( XLALUserVarReadCmdline ( argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
 
+  // ---------- handle special options that need some action ----------
   BOOLEAN skipCheckRequired = FALSE;
-  // ---------- check if help-string was requested
   LALUserVariable *ptr = &UVAR_vars;
   while ( (ptr=ptr->next) != NULL )
     {

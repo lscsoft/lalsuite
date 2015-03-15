@@ -185,15 +185,17 @@ someEpoch = {2147483596 s, 816000000 ns}, RA = 2.727813 rad, DEC = -0.523599 rad
 
 /*@}*/
 
-/** State-categorys: variable is optional, required, help, developer or was_set */
+/// (mutually exclusive) UserVariable categories: optional, required, help, developer, ...
 typedef enum {
-  UVAR_CATEGORY_START = 0,	/* internal start marker for range checking */
-  UVAR_CATEGORY_OPTIONAL,	/* optional */
-  UVAR_CATEGORY_REQUIRED,	/* required */
-  UVAR_CATEGORY_HELP,	/* special variable: trigger output of help-string */
-  UVAR_CATEGORY_DEVELOPER,	/* optional and hidden in help-output until lalDebugLevel>1 */
-  UVAR_CATEGORY_SPECIAL,	/* optional and *turns off* all checking of required variables, useful for output of version info */
-  UVAR_CATEGORY_END		/* internal end marker for range checking */
+  UVAR_CATEGORY_START = 0,	///< internal start marker for range checking
+
+  UVAR_CATEGORY_OPTIONAL,	///< optional
+  UVAR_CATEGORY_REQUIRED,	///< required
+  UVAR_CATEGORY_HELP,		///< special variable: trigger output of help-string
+  UVAR_CATEGORY_DEVELOPER,	///< optional and hidden in help-output until lalDebugLevel>=warning
+  UVAR_CATEGORY_SPECIAL,	///< optional and *turns off* all checking of required variables, useful for output of version info
+
+  UVAR_CATEGORY_END		///< internal end marker for range checking
 } UserVarCategory;
 
 // ***** the following are provided only for backwards compatibility until full transition to new XLAL interface *****
