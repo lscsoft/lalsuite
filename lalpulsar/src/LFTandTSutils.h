@@ -1,4 +1,5 @@
 /*
+ *  Copyright (C) 2014 Reinhard Prix
  *  Copyright (C) 2009 Reinhard Prix, Chris Messenger, Pinkesh Patel
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -34,8 +35,6 @@ extern "C" {
 #endif
 
 /*---------- exported INCLUDES ----------*/
-#include <gsl/gsl_spline.h>
-
 #include <lal/SFTutils.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALComputeAM.h>
@@ -73,17 +72,13 @@ typedef struct tagVectorComparison
 
 /*---------- exported prototypes [API] ----------*/
 
-COMPLEX8TimeSeries *XLALSFTVectorToCOMPLEX8TimeSeries ( const SFTVector *sfts, const LIGOTimeGPS *start_in, const LIGOTimeGPS *end_in );
+COMPLEX8TimeSeries *XLALSFTVectorToCOMPLEX8TimeSeries ( const SFTVector *sfts );
 MultiCOMPLEX8TimeSeries *XLALMultiSFTVectorToCOMPLEX8TimeSeries ( const MultiSFTVector *multisfts );
 SFTtype *XLALSFTVectorToLFT ( SFTVector *sfts, REAL8 upsampling );
 
 int XLALReorderFFTWtoSFT (COMPLEX8Vector *X);
 int XLALReorderSFTtoFFTW (COMPLEX8Vector *X);
 int XLALTimeShiftSFT ( SFTtype *sft, REAL8 shift );
-
-int XLALGSLInterpolateREAL8Vector ( REAL8Vector **yi, REAL8Vector *xi, gsl_spline *spline );
-
-int XLALGSLInitInterpolateREAL8Vector ( gsl_spline **spline, REAL8Vector *x, REAL8Vector *y );
 
 int XLALFrequencyShiftMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries *x, const REAL8 shift );
 int XLALFrequencyShiftCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *x, const REAL8 shift );
@@ -97,7 +92,7 @@ int XLALCopyCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *ts_out, COMPLEX8TimeSeries 
 
 void XLALDestroyMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries *multiTimes );
 
-int XLALSincInterpolateCOMPLEX8TimeSeries ( COMPLEX8Vector **y_out, const REAL8Vector *t_out, const COMPLEX8TimeSeries *ts_in, UINT4 Dterms );
+int XLALSincInterpolateCOMPLEX8TimeSeries ( COMPLEX8Vector *y_out, const REAL8Vector *t_out, const COMPLEX8TimeSeries *ts_in, UINT4 Dterms );
 int XLALDirichletInterpolateCOMPLEX8FrequencySeries ( COMPLEX8Vector *y_out, const REAL8Vector *f_out, const COMPLEX8FrequencySeries *fs_in, UINT4 Dterms );
 SFTtype *XLALDirichletInterpolateSFT ( const SFTtype *sft_in, REAL8 f0Out, REAL8 dfOut, UINT4 numBinsOut, UINT4 Dterms );
 

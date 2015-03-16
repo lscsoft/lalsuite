@@ -10,6 +10,7 @@
 /_build/
 /_inst/
 /laldetchar-*/
+AUTHORS
 Makefile
 Makefile.in
 config.lt

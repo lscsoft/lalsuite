@@ -1,4 +1,0 @@
-#!/bin/csh -f
-
-/bin/rm $argv[1] $argv[2]
-/bin/echo $argv[3] $argv[4] >> $argv[5]

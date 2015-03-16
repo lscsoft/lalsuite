@@ -82,7 +82,6 @@
  */
 
 #include <stdio.h>
-#include <unistd.h>
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>

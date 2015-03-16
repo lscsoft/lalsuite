@@ -20,11 +20,11 @@
  */
 
 #include <stdio.h>
-#include <getopt.h>
 #include <string.h>
 #include <stdlib.h>
 
 #include <lal/LALDatatypes.h>
+#include <lal/LALgetopt.h>
 #include <lal/Aggregation.h>
 #include <lal/XLALError.h>
 #include <lal/LALCache.h>
@@ -33,7 +33,7 @@
 #include <lal/TimeSeries.h>
 #include <lal/XLALError.h>
 
-/* flags for getopt_long */
+/* flags for LALgetopt_long */
 int vrbflg;
 
 /* global variables */
@@ -52,7 +52,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
   while(1)
   {
-    static struct option long_options[] =
+    static struct LALoption long_options[] =
     {
       /* options that set a flag */
       {"verbose", no_argument, &vrbflg, 1},
@@ -64,12 +64,12 @@ static void parse_options(INT4 argc, CHAR *argv[])
       {0, 0, 0, 0}
     };
 
-    /* getopt_long stores the option here */
+    /* LALgetopt_long stores the option here */
     int option_index = 0;
-    size_t optarg_len;
+    size_t LALoptarg_len;
 
     /* parse options */
-    c = getopt_long_only(argc, argv, "ac:d:e:", long_options, &option_index);
+    c = LALgetopt_long_only(argc, argv, "ac:d:e:", long_options, &option_index);
 
     if (c == -1)
     {
@@ -88,7 +88,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         else
         {
           fprintf(stderr, "error parsing option %s with argument %s\n", \
-              long_options[option_index].name, optarg);
+              long_options[option_index].name, LALoptarg);
           exit(1);
         }
         break;
@@ -106,14 +106,14 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'c':
         /* set ifo */
-        optarg_len = strlen(optarg) + 1;
-        ifo = (CHAR *)calloc(optarg_len, sizeof(CHAR));
-        memcpy(ifo, optarg, optarg_len);
+        LALoptarg_len = strlen(LALoptarg) + 1;
+        ifo = (CHAR *)calloc(LALoptarg_len, sizeof(CHAR));
+        memcpy(ifo, LALoptarg, LALoptarg_len);
         break;
 
       case 'd':
         /* set gps start time */
-        gps.gpsSeconds = atoi(optarg);
+        gps.gpsSeconds = atoi(LALoptarg);
         gps.gpsNanoSeconds = 0;
         if (gps.gpsSeconds <= 0)
         {
@@ -125,7 +125,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'e':
         /* set duration */
-        duration = atof(optarg);
+        duration = atof(LALoptarg);
         if (duration <= 0)
         {
           fprintf(stderr, "invalid argument to --%s: %f\n", \
@@ -144,12 +144,12 @@ static void parse_options(INT4 argc, CHAR *argv[])
     }
   }
 
-  if (optind < argc)
+  if (LALoptind < argc)
   {
     fprintf(stderr, "extraneous command line arguments:\n");
-    while(optind < argc)
+    while(LALoptind < argc)
     {
-      fprintf(stderr, "%s\n", argv[optind++]);
+      fprintf(stderr, "%s\n", argv[LALoptind++]);
     }
     exit(1);
   }

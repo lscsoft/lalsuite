@@ -36,28 +36,11 @@ parser.add_option('-r', '--reference-file', action = 'store', type = 'string',
         dest = 'reffilename', default = DEFAULT_FILE,
         metavar = "FILE", help = 'location of the file containing '
         + 'reference waveform data [default: %default]')
-parser.add_option('-t', '--tolerance', action = 'store', type = float,
-        metavar = "TOL", dest = 'tolerance', default = 1.e-10,
-        help = 'test whether data are consistent to within this ' +
-        'fractional difference [default: %default]')
 parser.add_option('-a', '--approximant', action = 'store', type = 'string',
         dest = 'approx', default = 'all',
         help = 'waveform approximant [default: %default]')
 
 (options, args) = parser.parse_args()
-
-def diff(v1, v2, meanval):
-    """
-    Return
-        abs( (v1[i]-v2[i])/v1[i] )
-    Unless v1[i]==0, then return
-        abs( v1[i] - v2[i]/ meanval )
-    where meanval is the expected average absolute value of v1, v2
-    """
-    out = np.array( [ np.abs((v1[i]-v2[i])/v1[i]) if v1[i]!=0\
-            else np.abs((v1[i]-v2[i])/meanval) for i in range(len(v1)) ] )
-    return out
-
 
 def generatePolarizationTest(datasets):
     '''Generates test method to be added to the CheckReferenceWaveforms class.
@@ -95,7 +78,7 @@ def generatePolarizationTest(datasets):
             epoch = float(hp.epoch)
 
             # Actual test starts here
-            self.assertTrue( np.abs(epochref-epoch) < options.tolerance,
+            self.assertTrue( np.allclose(epochref, epoch),
                     self.errmsg('epoch', approxstr, parstring))
             self.assertEqual(hp.data.data.size, hpref.size,
                              self.errmsg('length of generated hplus array',
@@ -103,13 +86,10 @@ def generatePolarizationTest(datasets):
             self.assertEqual(hc.data.data.size, hcref.size,
                              self.errmsg('length of generated hcross array',
                              approxstr, parstring))
-            ampmean = np.sqrt(np.abs(hpref * hpref + hcref * hcref)).mean()
-            hpdiff = diff(hpref, hp.data.data, ampmean)
-            hcdiff = diff(hcref, hc.data.data, ampmean)
-            self.assertTrue( (hpdiff < options.tolerance).all(),
-                    self.errmsg('hplus', approxstr, parstring))
-            self.assertTrue( (hcdiff < options.tolerance).all(),
-                    self.errmsg('hcross', approxstr, parstring))
+            hpmean = np.abs(hpref).mean()
+            hcmean = np.abs(hcref).mean()
+            self.assertTrue(np.allclose(hp.data.data / hpmean, hpref / hpmean))
+            self.assertTrue(np.allclose(hc.data.data / hcmean, hcref / hcmean))
 
     return test_approx
 

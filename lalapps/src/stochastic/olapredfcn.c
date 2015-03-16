@@ -166,9 +166,6 @@
 
 #include "olapredfcn.h"
 
-extern char *optarg;
-extern int   optind;
-
 BOOLEAN optVerbose  = OLAPREDFCNH_FALSE;
 REAL8 optDeltaF     = -1;
 UINT4 optLength     = 0;

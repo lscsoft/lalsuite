@@ -40,9 +40,9 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
-#include <getopt.h>
 
 #include <lal/LALStdlib.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALConstants.h>
 #include <lal/LALBarycenter.h>
 #include <lal/LALVCSInfo.h>
@@ -876,7 +876,7 @@ void endian_swap(CHAR *pdata, size_t dsize, size_t nelements){
 
 
 void get_input_args(inputParams_t *inputParams, INT4 argc, CHAR *argv[]){
-  struct option long_options[] =
+  struct LALoption long_options[] =
   {
     { "help",          no_argument,       0, 'h' },
     { "verbose",       no_argument, &verbose, 1 },
@@ -910,7 +910,7 @@ void get_input_args(inputParams_t *inputParams, INT4 argc, CHAR *argv[]){
     INT4 option_index = 0;
     INT4 c;
 
-    c = getopt_long_only( argc, argv, args, long_options, &option_index );
+    c = LALgetopt_long_only( argc, argv, args, long_options, &option_index );
     if ( c == -1 ) /* end of options */
       break;
 
@@ -920,53 +920,53 @@ void get_input_args(inputParams_t *inputParams, INT4 argc, CHAR *argv[]){
           break;
         else
           fprintf(stderr, "Error passing option %s with argument %s\n",
-            long_options[option_index].name, optarg);
+            long_options[option_index].name, LALoptarg);
       case 'h': /* help message */
         fprintf(stderr, USAGE, program);
         exit(0);
       case 'e':
-        sprintf(inputParams->ephemfile, "%s", optarg);
+        sprintf(inputParams->ephemfile, "%s", LALoptarg);
         break;
       case 'E':
-        sprintf(inputParams->outputfile, "%s", optarg);
+        sprintf(inputParams->outputfile, "%s", LALoptarg);
         break;
       case 'y':
-        inputParams->year = atoi(optarg);
+        inputParams->year = atoi(LALoptarg);
         break;
       case 'i':
-        inputParams->nhre = atof(optarg);
+        inputParams->nhre = atof(LALoptarg);
         break;
       case 'n':
-        inputParams->noverlap = atoi(optarg);
+        inputParams->noverlap = atoi(LALoptarg);
         break;
       case 't':
         inputParams->targName = NULL;
 
-        if((inputParams->targName=(CHAR*)strstr("MERCURY",optarg))!=NULL)
+        if((inputParams->targName=(CHAR*)strstr("MERCURY",LALoptarg))!=NULL)
           inputParams->target = MERCURY;
-        else if((inputParams->targName=(CHAR*)strstr("VENUS",optarg))!=NULL)
+        else if((inputParams->targName=(CHAR*)strstr("VENUS",LALoptarg))!=NULL)
           inputParams->target = VENUS;
-        else if((inputParams->targName=(CHAR*)strstr("EARTH",optarg))!=NULL)
+        else if((inputParams->targName=(CHAR*)strstr("EARTH",LALoptarg))!=NULL)
           inputParams->target = EARTH;
-        else if((inputParams->targName=(CHAR*)strstr("MARS",optarg))!=NULL)
+        else if((inputParams->targName=(CHAR*)strstr("MARS",LALoptarg))!=NULL)
           inputParams->target = MARS;
-        else if((inputParams->targName=(CHAR*)strstr("JUPITER",optarg)) !=
+        else if((inputParams->targName=(CHAR*)strstr("JUPITER",LALoptarg)) !=
           NULL)
           inputParams->target = JUPITER;
-        else if((inputParams->targName=(CHAR*)strstr("SATURN",optarg)) !=
+        else if((inputParams->targName=(CHAR*)strstr("SATURN",LALoptarg)) !=
           NULL)
           inputParams->target = SATURN;
-        else if((inputParams->targName=(CHAR*)strstr("URANUS",optarg)) !=
+        else if((inputParams->targName=(CHAR*)strstr("URANUS",LALoptarg)) !=
           NULL)
           inputParams->target = URANUS;
-        else if((inputParams->targName=(CHAR*)strstr("NEPTUNE",optarg)) !=
+        else if((inputParams->targName=(CHAR*)strstr("NEPTUNE",LALoptarg)) !=
           NULL)
           inputParams->target = NEPTUNE;
-        else if((inputParams->targName=(CHAR*)strstr("PLUTO",optarg))!=NULL)
+        else if((inputParams->targName=(CHAR*)strstr("PLUTO",LALoptarg))!=NULL)
           inputParams->target = PLUTO;
-        else if((inputParams->targName=(CHAR*)strstr("MOON",optarg))!=NULL)
+        else if((inputParams->targName=(CHAR*)strstr("MOON",LALoptarg))!=NULL)
           inputParams->target = MOON;
-        else if((inputParams->targName=(CHAR*)strstr("SUN",optarg))!=NULL)
+        else if((inputParams->targName=(CHAR*)strstr("SUN",LALoptarg))!=NULL)
           inputParams->target = SUN;
         else{
           fprintf(stderr, "You must enter a valid solar system body!\n");
@@ -974,7 +974,7 @@ void get_input_args(inputParams_t *inputParams, INT4 argc, CHAR *argv[]){
         }
         break;
       case 'N':
-        inputParams->nyears = atoi(optarg);
+        inputParams->nyears = atoi(LALoptarg);
         break;
       case '?':
         fprintf(stderr, "Unknown error while parsing options\n");

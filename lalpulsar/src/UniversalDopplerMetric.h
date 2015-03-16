@@ -219,8 +219,8 @@ typedef struct tagDopplerMetric
 {
   DopplerMetricParams meta;		/**< "meta-info" describing/specifying the type of Doppler metric */
 
-  gsl_matrix *g_ij;			/**< symmetric matrix holding the usual Phase-metric */
-  double maxrelerr_gPh;			/**< estimate for largest relative error in phase-metric component integrations */
+  gsl_matrix *g_ij;			/**< symmetric matrix holding the phase-metric, averaged over segments */
+  gsl_matrix *g_ij_seg;			/**< the phase-metric for each segment, concatenated by column: [g_ij_1, g_ij_2, ...] */
 
   gsl_matrix *gF_ij;			/**< full F-statistic metric gF_ij, including antenna-pattern effects (see \cite Prix07) */
   gsl_matrix *gFav_ij;			/**< 'average' Fstat-metric */
@@ -228,6 +228,7 @@ typedef struct tagDopplerMetric
 
   gsl_matrix *Fisher_ab;		/**< Full 4+n dimensional Fisher matrix, ie amplitude + Doppler space */
 
+  double maxrelerr_gPh;			/**< estimate for largest relative error in phase-metric component integrations */
   double maxrelerr_gF;			/**< estimate for largest relative error in Fmetric component integrations */
 
   REAL8 rho2;				/**< signal SNR rho^2 = A^mu M_mu_nu A^nu */
@@ -247,11 +248,6 @@ DopplerMetric*
 XLALDopplerFstatMetric ( const DopplerMetricParams *metricParams,
 			 const EphemerisData *edat
 			 );
-
-DopplerMetric*
-XLALDopplerFstatMetricCoh ( const DopplerMetricParams *metricParams,
-                            const EphemerisData *edat
-                            );
 
 FmetricAtoms_t*
 XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,

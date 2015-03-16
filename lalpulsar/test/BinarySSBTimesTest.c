@@ -21,15 +21,8 @@
 #include <math.h>
 #include <sys/times.h>
 
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-#ifdef HAVE_GETOPT_H
-#include <getopt.h>
-#endif
-
-
 #include <lal/ComputeFstat.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/FindRoot.h>
 #include <lal/UserInput.h>

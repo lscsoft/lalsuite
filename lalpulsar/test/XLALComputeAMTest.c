@@ -20,20 +20,13 @@
 
 #include <config.h>
 
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-
-#ifdef HAVE_GETOPT_H
-#include <getopt.h>
-#endif
-
 #include <math.h>
 #include <sys/times.h>
 
 #include <gsl/gsl_math.h>
 
 #include <lal/ComputeFstat.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALBarycenter.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/AVFactories.h>
@@ -54,8 +47,6 @@
  * Monte-Carlo validation by simply running this script repeatedly.
  *
  */
-
-extern char *optarg;
 
 /* ----- internal prototypes ---------- */
 int XLALCompareMultiAMCoeffs ( MultiAMCoeffs *multiAM1, MultiAMCoeffs *multiAM2, REAL8 tolerance );
@@ -82,12 +73,12 @@ int main(int argc, char *argv[])
 
   /* read user input */
 
-  while ((opt = getopt( argc, argv, "n:qv:" )) != -1) {
+  while ((opt = LALgetopt( argc, argv, "n:qv:" )) != -1) {
     switch (opt) {
     case 'v': /* set lalDebugLevel */
       break;
     case 'n': /* number of times to check */
-      numChecks = atoi( optarg );
+      numChecks = atoi( LALoptarg );
       break;
     }
   }

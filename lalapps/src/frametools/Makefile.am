@@ -1,7 +1,6 @@
 BUILT_SOURCES =
 include $(top_srcdir)/gnuscripts/lalapps.am
 
-if LALFRAME
 LALFRAMEPROGRAMS = \
 	lalapps_animate \
 	lalapps_calfacs \
@@ -19,16 +18,12 @@ lalapps_frread_SOURCES = read.c
 lalapps_frextr_SOURCES = extr.c
 lalapps_frjoin_SOURCES = join.c
 #lalapps_framestats_SOURCES = framestats.c
-endif
 
-#if LALFRAME
 #if LALPULSAR
 #LALPULSARPROGRAMS = lalapps_combinexteframes
 #lalapps_combinexteframes_SOURCES = combinexteframes.c
 #endif
-#endif
 
-if LALFRAME
 if LALMETAIO
 if LALBURST
 if LALINSPIRAL
@@ -37,13 +32,10 @@ lalapps_frview_SOURCES = view.c
 endif
 endif
 endif
-endif
 
-if LALFRAME
 if CFITSIO
 LALFRAMECFITSIOPROGRAMS = lalapps_xtefitstoframe
 lalapps_xtefitstoframe_SOURCES = xtefitstoframe.c
-endif
 endif
 
 bin_PROGRAMS = \

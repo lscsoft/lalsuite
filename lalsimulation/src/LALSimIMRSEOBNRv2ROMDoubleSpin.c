@@ -48,11 +48,14 @@
 #include <math.h>
 #include <complex.h>
 #include <time.h>
-#include <unistd.h>
-#include <getopt.h>
 #include <stdbool.h>
 #include <alloca.h>
 #include <string.h>
+#include <libgen.h>
+
+#ifdef LAL_PTHREAD_LOCK
+#include <pthread.h>
+#endif
 
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_bspline.h>
@@ -66,7 +69,9 @@
 #include <lal/FrequencySeries.h>
 #include <lal/Date.h>
 #include <lal/StringInput.h>
-
+#include <lal/Sequence.h>
+#include <lal/LALStdio.h>
+#include <lal/FileIO.h>
 
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimIMR.h>
@@ -268,6 +273,9 @@ static const int ncx_sub3 = 24+2;       // points in eta  + 2
 static const int ncy_sub3 = 30+2;       // points in chi1 + 2
 static const int ncz_sub3 = 24+2;       // points in chi2 + 2
 
+#ifdef LAL_PTHREAD_LOCK
+static pthread_once_t SEOBNRv2ROMDoubleSpin_is_initialized = PTHREAD_ONCE_INIT;
+#endif
 
 /*************** type definitions ******************/
 
@@ -317,7 +325,7 @@ typedef struct tagSplineData
 
 /**************** Internal functions **********************/
 
-static int SEOBNRv2ROMDoubleSpin_Init_LALDATA(void);
+static void SEOBNRv2ROMDoubleSpin_Init_LALDATA(void);
 static int SEOBNRv2ROMDoubleSpin_Init(const char dir[]);
 static bool SEOBNRv2ROMDoubleSpin_IsSetup(void);
 
@@ -342,20 +350,29 @@ static int SEOBNRROMdataDS_Init_submodel(
 
 void SEOBNRROMdataDS_Cleanup_submodel(SEOBNRROMdataDS_submodel *submodel);
 
+/**
+ * Core function for computing the ROM waveform.
+ * Interpolate projection coefficient data and evaluate coefficients at desired (q, chi).
+ * Construct 1D splines for amplitude and phase.
+ * Compute strain waveform from amplitude and phase.
+*/
 static int SEOBNRv2ROMDoubleSpinCore(
   COMPLEX16FrequencySeries **hptilde,
   COMPLEX16FrequencySeries **hctilde,
   double phiRef,
-  double deltaF,
-  double fLow,
-  double fHigh,
   double fRef,
   double distance,
   double inclination,
   double Mtot_sec,
-  double q,
+  double eta,
   double chi1,
-  double chi2);
+  double chi2,
+  const REAL8Sequence *freqs, /* Frequency points at which to evaluate the waveform (Hz) */
+  double deltaF
+  /* If deltaF > 0, the frequency points given in freqs are uniformly spaced with
+   * spacing deltaF. Otherwise, the frequency points are spaced non-uniformly.
+   * Then we will use deltaF = 0 to create the frequency series we return. */
+);
 
 static void SEOBNRROMdataDS_coeff_Init(SEOBNRROMdataDS_coeff **romdatacoeff, int nk_amp, int nk_phi);
 static void SEOBNRROMdataDS_coeff_Cleanup(SEOBNRROMdataDS_coeff *romdatacoeff);
@@ -397,6 +414,17 @@ static int TP_Spline_interpolation_3d(
   gsl_vector *c_amp,        // Output: interpolated projection coefficients for amplitude
   gsl_vector *c_phi,        // Output: interpolated projection coefficients for phase
   REAL8 *amp_pre            // Output: interpolated amplitude prefactor
+);
+
+static int SEOBNRv2ROMDoubleSpinTimeFrequencySetup(
+  gsl_spline **spline_phi,                      // phase spline
+  gsl_interp_accel **acc_phi,                   // phase spline accelerator
+  REAL8 *Mf_final,                              // ringdown frequency in Mf
+  REAL8 *Mtot_sec,                              // total mass in seconds
+  REAL8 m1SI,                                   /**< Mass of companion 1 (kg) */
+  REAL8 m2SI,                                   /**< Mass of companion 2 (kg) */
+  REAL8 chi1,                                   /**< Aligned spin of companion 1 */
+  REAL8 chi2                                    /**< Aligned spin of companion 2 */
 );
 
 /********************* Definitions begin here ********************/
@@ -811,27 +839,32 @@ static size_t NextPow2(const size_t n) {
   return 1 << (size_t) ceil(log2(n));
 }
 
+
 /**
  * Core function for computing the ROM waveform.
- * Interpolate projection coefficient data and evaluate coefficients at desired (eta, chi1, chi2).
+ * Interpolate projection coefficient data and evaluate coefficients at desired (q, chi1, chi2).
  * Construct 1D splines for amplitude and phase.
  * Compute strain waveform from amplitude and phase.
 */
-int SEOBNRv2ROMDoubleSpinCore(
+static int SEOBNRv2ROMDoubleSpinCore(
   COMPLEX16FrequencySeries **hptilde,
   COMPLEX16FrequencySeries **hctilde,
   double phiRef,
-  double deltaF,
-  double fLow,
-  double fHigh,
   double fRef,
   double distance,
   double inclination,
   double Mtot_sec,
   double eta,
   double chi1,
-  double chi2)
+  double chi2,
+  const REAL8Sequence *freqs_in, /* Frequency points at which to evaluate the waveform (Hz) */
+  double deltaF
+  /* If deltaF > 0, the frequency points given in freqs are uniformly spaced with
+   * spacing deltaF. Otherwise, the frequency points are spaced non-uniformly.
+   * Then we will use deltaF = 0 to create the frequency series we return. */
+  )
 {
+
   /* Check output arrays */
   if(!hptilde || !hctilde)
     XLAL_ERROR(XLAL_EFAULT);
@@ -852,6 +885,14 @@ int SEOBNRv2ROMDoubleSpinCore(
   else
     submodel = romdata->sub1;
 
+  /* Find frequency bounds */
+  if (!freqs_in) XLAL_ERROR(XLAL_EFAULT);
+  double fLow  = freqs_in->data[0];
+  double fHigh = freqs_in->data[freqs_in->length - 1];
+
+  if(fRef==0.0)
+    fRef=fLow;
+
   /* Convert to geometric units for frequency */
   double Mf_ROM_min = fmax(submodel->gA[0], submodel->gPhi[0]);                                   // lowest allowed geometric frequency for ROM
   double Mf_ROM_max = fmin(submodel->gA[submodel->nk_amp-1], submodel->gPhi[submodel->nk_phi-1]); // highest allowed geometric frequency for ROM
@@ -867,6 +908,8 @@ int SEOBNRv2ROMDoubleSpinCore(
   }
   if (fHigh_geom == 0 || fHigh_geom > Mf_ROM_max)
     fHigh_geom = Mf_ROM_max;
+  else if (fHigh_geom < Mf_ROM_min)
+    XLAL_ERROR(XLAL_EDOM, "End frequency %g is smaller than starting frequency %g!\n", fHigh_geom, fLow_geom);
   if (fRef_geom > Mf_ROM_max)
     fRef_geom = Mf_ROM_max; // If fref > fhigh we reset fref to default value of cutoff frequency.
   if (fRef_geom < Mf_ROM_min) {
@@ -922,15 +965,40 @@ int SEOBNRv2ROMDoubleSpinCore(
   gsl_spline *spline_phi = gsl_spline_alloc(gsl_interp_cspline, submodel->nk_phi);
   gsl_spline_init(spline_phi, submodel->gPhi, gsl_vector_const_ptr(phi_f,0), submodel->nk_phi);
 
-  /* Set up output array with size closet power of 2 */
-  size_t npts = NextPow2(fHigh_geom / deltaF_geom) + 1;
-  if (fHigh_geom < fHigh * Mtot_sec) /* Resize waveform if user wants f_max larger than cutoff frequency */
-    npts = NextPow2(fHigh * Mtot_sec / deltaF_geom) + 1;
 
-  LIGOTimeGPS tC;
-  XLALGPSAdd(&tC, -1. / deltaF);  /* coalesce at t=0 */
-  *hptilde = XLALCreateCOMPLEX16FrequencySeries("hptilde: FD waveform", &tC, 0.0, deltaF, &lalStrainUnit, npts);
-  *hctilde = XLALCreateCOMPLEX16FrequencySeries("hctilde: FD waveform", &tC, 0.0, deltaF, &lalStrainUnit, npts);
+  size_t npts = 0;
+  LIGOTimeGPS tC = {0, 0};
+  UINT4 offset = 0; // Index shift between freqs and the frequency series
+  REAL8Sequence *freqs = NULL;
+  if (deltaF > 0)  { // freqs contains uniform frequency grid with spacing deltaF; we start at frequency 0
+    /* Set up output array with size closest power of 2 */
+    npts = NextPow2(fHigh_geom / deltaF_geom) + 1;
+    if (fHigh_geom < fHigh * Mtot_sec) /* Resize waveform if user wants f_max larger than cutoff frequency */
+      npts = NextPow2(fHigh * Mtot_sec / deltaF_geom) + 1;
+
+    XLALGPSAdd(&tC, -1. / deltaF);  /* coalesce at t=0 */
+    *hptilde = XLALCreateCOMPLEX16FrequencySeries("hptilde: FD waveform", &tC, 0.0, deltaF, &lalStrainUnit, npts);
+    *hctilde = XLALCreateCOMPLEX16FrequencySeries("hctilde: FD waveform", &tC, 0.0, deltaF, &lalStrainUnit, npts);
+
+    // Recreate freqs using only the lower and upper bounds
+    UINT4 iStart = (UINT4) ceil(fLow_geom / deltaF_geom);
+    UINT4 iStop = (UINT4) ceil(fHigh_geom / deltaF_geom);
+    freqs = XLALCreateREAL8Sequence(iStop - iStart);
+    for (UINT4 i=iStart; i<iStop; i++)
+      freqs->data[i-iStart] = i*deltaF_geom;
+
+    offset = iStart;
+  } else { // freqs contains frequencies with non-uniform spacing; we start at lowest given frequency
+    npts = freqs_in->length;
+    *hptilde = XLALCreateCOMPLEX16FrequencySeries("hptilde: FD waveform", &tC, fLow, 0, &lalStrainUnit, npts);
+    *hctilde = XLALCreateCOMPLEX16FrequencySeries("hctilde: FD waveform", &tC, fLow, 0, &lalStrainUnit, npts);
+    offset = 0;
+
+    freqs = XLALCreateREAL8Sequence(freqs_in->length);
+    for (UINT4 i=0; i<freqs_in->length; i++)
+      freqs->data[i] = freqs_in->data[i] * Mtot_sec;
+  }
+
 
   if (!(hptilde) || !(*hctilde)) XLAL_ERROR(XLAL_EFUNC);
   memset((*hptilde)->data->data, 0, npts * sizeof(COMPLEX16));
@@ -939,8 +1007,6 @@ int SEOBNRv2ROMDoubleSpinCore(
   XLALUnitDivide(&(*hptilde)->sampleUnits, &(*hptilde)->sampleUnits, &lalSecondUnit);
   XLALUnitDivide(&(*hctilde)->sampleUnits, &(*hctilde)->sampleUnits, &lalSecondUnit);
 
-  UINT4 iStart = (UINT4) ceil(fLow_geom / deltaF_geom);
-  UINT4 iStop = (UINT4) ceil(fHigh_geom / deltaF_geom);
   COMPLEX16 *pdata=(*hptilde)->data->data;
   COMPLEX16 *cdata=(*hctilde)->data->data;
 
@@ -956,14 +1022,50 @@ int SEOBNRv2ROMDoubleSpinCore(
   double phase_change = gsl_spline_eval(spline_phi, fRef_geom, acc_phi) - phiRef;
 
   // Assemble waveform from aplitude and phase
-  for (UINT4 i=iStart; i<iStop; i++) {
-    double f = i*deltaF_geom;
+  for (UINT4 i=0; i<freqs->length; i++) { // loop over frequency points in sequence
+    double f = freqs->data[i];
+    if (f > Mf_ROM_max) continue; // We're beyond the highest allowed frequency; since freqs may not be ordered, we'll just skip the current frequency and leave zero in the buffer
+    int j = i + offset; // shift index for frequency series if needed
     double A = gsl_spline_eval(spline_amp, f, acc_amp);
     double phase = gsl_spline_eval(spline_phi, f, acc_phi) - phase_change;
     COMPLEX16 htilde = s*amp0*A * cexp(I*phase);
-    pdata[i] =      pcoef * htilde;
-    cdata[i] = -I * ccoef * htilde;
+    pdata[j] =      pcoef * htilde;
+    cdata[j] = -I * ccoef * htilde;
   }
+
+  /* Correct phasing so we coalesce at t=0 (with the definition of the epoch=-1/deltaF above) */
+  if (deltaF > 0)
+    XLAL_PRINT_WARNING("Warning: Depending on specified frequency sequence correction to time of coalescence may not be accurate.\n");
+
+  // Get SEOBNRv2 ringdown frequency for 22 mode
+  // XLALSimInspiralGetFinalFreq wants masses in SI units, so unfortunately we need to convert back
+  double q = (1.0 + sqrt(1.0 - 4.0*eta) - 2.0*eta) / (2.0*eta);
+  double Mtot_SI = Mtot_sec / LAL_MTSUN_SI * LAL_MSUN_SI;
+  double m1_SI = Mtot_SI * 1.0/(1.0+q);
+  double m2_SI = Mtot_SI * q/(1.0+q);
+  double Mf_final = XLALSimInspiralGetFinalFreq(m1_SI, m2_SI, 0,0,chi1, 0,0,chi2, SEOBNRv2) * Mtot_sec;
+
+  UINT4 L = freqs->length;
+  // prevent gsl interpolation errors
+  if (Mf_final > freqs->data[L-1])
+    Mf_final = freqs->data[L-1];
+  if (Mf_final < freqs->data[0])
+    XLAL_ERROR(XLAL_EDOM, "f_ringdown < f_min");
+
+  // Time correction is t(f_final) = 1/(2pi) dphi/df (f_final)
+  // We compute the dimensionless time correction t/M since we use geometric units.
+  REAL8 t_corr = gsl_spline_eval_deriv(spline_phi, Mf_final, acc_phi) / (2*LAL_PI);
+  XLAL_PRINT_INFO("t_corr [s] = %g\n", t_corr * Mtot_sec);
+
+  // Now correct phase
+  for (UINT4 i=0; i<freqs->length; i++) { // loop over frequency points in sequence
+    double f = freqs->data[i];
+    int j = i + offset; // shift index for frequency series if needed
+    pdata[j] *= cexp(-2*LAL_PI * I * f * t_corr);
+    cdata[j] *= cexp(-2*LAL_PI * I * f * t_corr);
+  }
+
+  XLALDestroyREAL8Sequence(freqs);
 
   gsl_spline_free(spline_amp);
   gsl_spline_free(spline_phi);
@@ -974,6 +1076,66 @@ int SEOBNRv2ROMDoubleSpinCore(
   SEOBNRROMdataDS_coeff_Cleanup(romdata_coeff);
 
   return(XLAL_SUCCESS);
+}
+
+/** Compute waveform in LAL format at specified frequencies */
+int XLALSimIMRSEOBNRv2ROMDoubleSpinFrequencySequence(
+  struct tagCOMPLEX16FrequencySeries **hptilde, /**< Output: Frequency-domain waveform h+ */
+  struct tagCOMPLEX16FrequencySeries **hctilde, /**< Output: Frequency-domain waveform hx */
+  const REAL8Sequence *freqs,                   /**< Frequency points at which to evaluate the waveform (Hz) */
+  REAL8 phiRef,                                 /**< Phase at reference time */
+  REAL8 fRef,                                   /**< Reference frequency (Hz); 0 defaults to fLow */
+  REAL8 distance,                               /**< Distance of source (m) */
+  REAL8 inclination,                            /**< Inclination of source (rad) */
+  REAL8 m1SI,                                   /**< Mass of companion 1 (kg) */
+  REAL8 m2SI,                                   /**< Mass of companion 2 (kg) */
+  REAL8 chi1,                                   /**< Dimensionless aligned component spin 1 */
+  REAL8 chi2                                    /**< Dimensionless aligned component spin 2 */
+)
+{
+  /* Internally we need m1 > m2, so change around if this is not the case */
+  if (m1SI < m2SI) {
+    // Swap m1 and m2
+    double m1temp = m1SI;
+    double chi1temp = chi1;
+    m1SI = m2SI;
+    chi1 = chi2;
+    m2SI = m1temp;
+    chi2 = chi1temp;
+  }
+
+  /* Get masses in terms of solar mass */
+  double mass1 = m1SI / LAL_MSUN_SI;
+  double mass2 = m2SI / LAL_MSUN_SI;
+  double Mtot = mass1+mass2;
+  double eta = mass1 * mass2 / (Mtot*Mtot);    /* Symmetric mass-ratio */
+  double Mtot_sec = Mtot * LAL_MTSUN_SI; /* Total mass in seconds */
+
+  if (!freqs) XLAL_ERROR(XLAL_EFAULT);
+
+  if ( chi1 < -1.0 || chi2 < -1.0 || chi1 > 0.99 || chi2 > 0.99 ) {
+    XLALPrintError( "XLAL Error - %s: chi1 or chi2 smaller than -1 or larger than 0.99!\nSEOBNRv2ROMDoubleSpin is only available for spins in the range -1 <= a/M <= 0.99.\n", __func__);
+    XLAL_ERROR( XLAL_EDOM );
+  }
+
+  if (eta<0.01 || eta > 0.25) {
+    XLALPrintError( "XLAL Error - %s: eta (%f) smaller than 0.01 or unphysical!\nSEOBNRv2ROMDoubleSpin is only available for spins in the range 0.01 <= eta <= 0.25.\n", __func__,eta);
+    XLAL_ERROR( XLAL_EDOM );
+  }
+
+  // Load ROM data if not loaded already
+#ifdef LAL_PTHREAD_LOCK
+  (void) pthread_once(&SEOBNRv2ROMDoubleSpin_is_initialized, SEOBNRv2ROMDoubleSpin_Init_LALDATA);
+#else
+  SEOBNRv2ROMDoubleSpin_Init_LALDATA();
+#endif
+
+  // Call the internal core function with deltaF = 0 to indicate that freqs is non-uniformly
+  // spaced and we want the strain only at these frequencies
+  int retcode = SEOBNRv2ROMDoubleSpinCore(hptilde,hctilde,
+            phiRef, fRef, distance, inclination, Mtot_sec, eta, chi1, chi2, freqs, 0);
+
+  return(retcode);
 }
 
 /** Compute waveform in LAL format */
@@ -993,9 +1155,8 @@ int XLALSimIMRSEOBNRv2ROMDoubleSpin(
   REAL8 chi2)                                   /**< Dimensionless aligned component spin 2 */
 {
   /* Internally we need m1 > m2, so change around if this is not the case */
-  if (m1SI < m2SI)
-  {
-    /* Swap m1 and m2 */
+  if (m1SI < m2SI) {
+    // Swap m1 and m2
     double m1temp = m1SI;
     double chi1temp = chi1;
     m1SI = m2SI;
@@ -1020,42 +1181,274 @@ int XLALSimIMRSEOBNRv2ROMDoubleSpin(
   }
 
   if (eta < 0.01 || eta > 0.25) {
-    XLALPrintError( "XLAL Error - %s: eta smaller than 0.01 or unphysical!\nSEOBNRv2ROMSingleSpin is only available for spins in the range 0.01 <= eta <= 0.25.\n", __func__);
+    XLALPrintError( "XLAL Error - %s: eta smaller than 0.01 or unphysical!\nSEOBNRv2ROMDoubleSpin is only available for spins in the range 0.01 <= eta <= 0.25.\n", __func__);
     XLAL_ERROR( XLAL_EDOM );
   }
 
   // Load ROM data if not loaded already
+#ifdef LAL_PTHREAD_LOCK
+  (void) pthread_once(&SEOBNRv2ROMDoubleSpin_is_initialized, SEOBNRv2ROMDoubleSpin_Init_LALDATA);
+#else
   SEOBNRv2ROMDoubleSpin_Init_LALDATA();
+#endif
+
+  // Use fLow, fHigh, deltaF to compute freqs sequence
+  // Instead of building a full sequency we only transfer the boundaries and let
+  // the internal core function do the rest (and properly take care of corner cases).
+  REAL8Sequence *freqs = XLALCreateREAL8Sequence(2);
+  freqs->data[0] = fLow;
+  freqs->data[1] = fHigh;
 
   int retcode = SEOBNRv2ROMDoubleSpinCore(hptilde,hctilde,
-            phiRef, deltaF, fLow, fHigh, fRef, distance, inclination, Mtot_sec, eta, chi1, chi2);
+            phiRef, fRef, distance, inclination, Mtot_sec, eta, chi1, chi2, freqs, deltaF);
+
+  XLALDestroyREAL8Sequence(freqs);
 
   return(retcode);
 }
 
+
+// Auxiliary function to perform setup of phase spline for t(f) and f(t) functions
+static int SEOBNRv2ROMDoubleSpinTimeFrequencySetup(
+  gsl_spline **spline_phi,                      // phase spline
+  gsl_interp_accel **acc_phi,                   // phase spline accelerator
+  REAL8 *Mf_final,                              // ringdown frequency in Mf
+  REAL8 *Mtot_sec,                              // total mass in seconds
+  REAL8 m1SI,                                   /**< Mass of companion 1 (kg) */
+  REAL8 m2SI,                                   /**< Mass of companion 2 (kg) */
+  REAL8 chi1,                                   /**< Aligned spin of companion 1 */
+  REAL8 chi2                                    /**< Aligned spin of companion 2 */
+)
+{
+  /* Get masses in terms of solar mass */
+  double mass1 = m1SI / LAL_MSUN_SI;
+  double mass2 = m2SI / LAL_MSUN_SI;
+  double Mtot = mass1 + mass2;
+  double eta = mass1 * mass2 / (Mtot*Mtot);    /* Symmetric mass-ratio */
+  *Mtot_sec = Mtot * LAL_MTSUN_SI; /* Total mass in seconds */
+
+  // Load ROM data if not loaded already
+#ifdef LAL_PTHREAD_LOCK
+  (void) pthread_once(&SEOBNRv2ROMDoubleSpin_is_initialized, SEOBNRv2ROMDoubleSpin_Init_LALDATA);
+#else
+  SEOBNRv2ROMDoubleSpin_Init_LALDATA();
+#endif
+
+  SEOBNRROMdataDS *romdata=&__lalsim_SEOBNRv2ROMDS_data;
+
+  /* Select ROM submodel */
+  SEOBNRROMdataDS_submodel *submodel;
+  if (eta >= 0.242)
+    submodel = romdata->sub2;
+  else if (eta < 0.1 && chi1 > 0.5)
+    submodel = romdata->sub3;
+  else
+    submodel = romdata->sub1;
+
+  /* Internal storage for w.f. coefficiencts */
+  SEOBNRROMdataDS_coeff *romdata_coeff=NULL;
+  SEOBNRROMdataDS_coeff_Init(&romdata_coeff, submodel->nk_amp, submodel->nk_phi);
+  REAL8 amp_pre;
+
+  /* Interpolate projection coefficients and evaluate them at (eta,chi1,chi2) */
+  int retcode=TP_Spline_interpolation_3d(
+    eta,                       // Input: eta-value for which projection coefficients should be evaluated
+    chi1,                      // Input: chi1-value for which projection coefficients should be evaluated
+    chi2,                      // Input: chi2-value for which projection coefficients should be evaluated
+    submodel->cvec_amp,        // Input: data for spline coefficients for amplitude
+    submodel->cvec_phi,        // Input: data for spline coefficients for phase
+    submodel->cvec_amp_pre,    // Input: data for spline coefficients for amplitude prefactor
+    submodel->nk_amp,          // number of SVD-modes == number of basis functions for amplitude
+    submodel->nk_phi,          // number of SVD-modes == number of basis functions for phase
+    submodel->ncx,             // Number of points in eta  + 2
+    submodel->ncy,             // Number of points in chi1 + 2
+    submodel->ncz,             // Number of points in chi2 + 2
+    submodel->etavec,          // B-spline knots in eta
+    submodel->chi1vec,         // B-spline knots in chi1
+    submodel->chi2vec,         // B-spline knots in chi2
+    romdata_coeff->c_amp,      // Output: interpolated projection coefficients for amplitude
+    romdata_coeff->c_phi,      // Output: interpolated projection coefficients for phase
+    &amp_pre                   // Output: interpolated amplitude prefactor
+  );
+
+  if(retcode!=0) {
+    SEOBNRROMdataDS_coeff_Cleanup(romdata_coeff);
+    XLAL_ERROR(retcode);
+  }
+
+  // Compute function values of phase on sparse frequency points by evaluating matrix vector products
+  // phi_pts = B_phi^T . c_phi
+  gsl_vector* phi_f = gsl_vector_alloc(submodel->nk_phi);
+  gsl_blas_dgemv(CblasTrans, 1.0, submodel->Bphi, romdata_coeff->c_phi, 0.0, phi_f);
+
+  // Setup 1d phase spline in frequency
+  *acc_phi = gsl_interp_accel_alloc();
+  *spline_phi = gsl_spline_alloc(gsl_interp_cspline, submodel->nk_phi);
+  gsl_spline_init(*spline_phi, submodel->gPhi, gsl_vector_const_ptr(phi_f,0), submodel->nk_phi);
+
+  // Get SEOBNRv2 ringdown frequency for 22 mode
+  double q = (1.0 + sqrt(1.0 - 4.0*eta) - 2.0*eta) / (2.0*eta);
+  double Mtot_SI = *Mtot_sec / LAL_MTSUN_SI * LAL_MSUN_SI;
+  double m1_SI = Mtot_SI * 1.0/(1.0+q);
+  double m2_SI = Mtot_SI * q/(1.0+q);
+  *Mf_final = XLALSimInspiralGetFinalFreq(m1_SI, m2_SI, 0,0,chi1, 0,0,chi2, SEOBNRv2) * (*Mtot_sec);
+
+  gsl_vector_free(phi_f);
+  SEOBNRROMdataDS_coeff_Cleanup(romdata_coeff);
+
+  return(XLAL_SUCCESS);
+}
+
+/**
+* Compute the time at a given frequency. The origin of time is at the merger.
+* The allowed frequency range for the input is from Mf = 0.00053 to half the ringdown frequency.
+*/
+int XLALSimIMRSEOBNRv2ROMDoubleSpinTimeOfFrequency(
+  REAL8 *t,         /**< Output: time (s) at frequency */
+  REAL8 frequency,  /**< Frequency (Hz) */
+  REAL8 m1SI,       /**< Mass of companion 1 (kg) */
+  REAL8 m2SI,       /**< Mass of companion 2 (kg) */
+  REAL8 chi1,       /**< Dimensionless aligned component spin 1 */
+  REAL8 chi2        /**< Dimensionless aligned component spin 2 */
+)
+{
+  /* Internally we need m1 > m2, so change around if this is not the case */
+  if (m1SI < m2SI) {
+    // Swap m1 and m2
+    double m1temp = m1SI;
+    double chi1temp = chi1;
+    m1SI = m2SI;
+    chi1 = chi2;
+    m2SI = m1temp;
+    chi2 = chi1temp;
+  }
+
+  // Set up phase spline
+  gsl_spline *spline_phi;
+  gsl_interp_accel *acc_phi;
+  double Mf_final, Mtot_sec;
+  int ret = SEOBNRv2ROMDoubleSpinTimeFrequencySetup(&spline_phi, &acc_phi, &Mf_final, &Mtot_sec, m1SI, m2SI, chi1, chi2);
+  if(ret != 0)
+    XLAL_ERROR(ret);
+
+  // ROM frequency bounds in Mf
+  double Mf_ROM_min = 0.00053;
+  double Mf_ROM_max = 0.135;
+
+  // Time correction is t(f_final) = 1/(2pi) dphi/df (f_final)
+  double t_corr = gsl_spline_eval_deriv(spline_phi, Mf_final, acc_phi) / (2*LAL_PI); // t_corr / M
+  XLAL_PRINT_INFO("t_corr[s] = %g\n", t_corr * Mtot_sec);
+
+  double Mf = frequency * Mtot_sec;
+  if (Mf < Mf_ROM_min || Mf > Mf_ROM_max)
+    XLAL_ERROR(XLAL_EDOM, "Frequency %g is outside allowed frequency range.\n", frequency);
+
+  // Compute time relative to origin at merger
+  double time_M = gsl_spline_eval_deriv(spline_phi, frequency * Mtot_sec, acc_phi) / (2*LAL_PI) - t_corr;
+  *t = time_M * Mtot_sec;
+
+  gsl_spline_free(spline_phi);
+  gsl_interp_accel_free(acc_phi);
+
+  return(XLAL_SUCCESS);
+}
+
+/**
+ * Compute the frequency at a given time. The origin of time is at the merger.
+ * The frequency range for the output is from Mf = 0.00053 to half the ringdown frequency.
+ */
+int XLALSimIMRSEOBNRv2ROMDoubleSpinFrequencyOfTime(
+  REAL8 *frequency,   /**< Output: Frequency (Hz) */
+  REAL8 t,            /**< Time (s) at frequency */
+  REAL8 m1SI,         /**< Mass of companion 1 (kg) */
+  REAL8 m2SI,         /**< Mass of companion 2 (kg) */
+  REAL8 chi1,         /**< Dimensionless aligned component spin 1 */
+  REAL8 chi2          /**< Dimensionless aligned component spin 2 */
+)
+{
+  /* Internally we need m1 > m2, so change around if this is not the case */
+  if (m1SI < m2SI) {
+    // Swap m1 and m2
+    double m1temp = m1SI;
+    double chi1temp = chi1;
+    m1SI = m2SI;
+    chi1 = chi2;
+    m2SI = m1temp;
+    chi2 = chi1temp;
+  }
+
+  // Set up phase spline
+  gsl_spline *spline_phi;
+  gsl_interp_accel *acc_phi;
+  double Mf_final, Mtot_sec;
+  int ret = SEOBNRv2ROMDoubleSpinTimeFrequencySetup(&spline_phi, &acc_phi, &Mf_final, &Mtot_sec, m1SI, m2SI, chi1, chi2);
+  if(ret != 0)
+    XLAL_ERROR(ret);
+
+  // ROM frequency bounds in Mf
+  double Mf_ROM_min = 0.00053;
+
+  // Time correction is t(f_final) = 1/(2pi) dphi/df (f_final)
+  double t_corr = gsl_spline_eval_deriv(spline_phi, Mf_final, acc_phi) / (2*LAL_PI); // t_corr / M
+  XLAL_PRINT_INFO("t_corr[s] = %g\n", t_corr * Mtot_sec);
+
+  // Assume for now that we only care about f(t) *before* merger so that f(t) - f_ringdown >= 0.
+  // Assume that we only need to cover the frequency range [f_min, f_ringdown/2].
+  int N = 20;
+  double log_f_pts[N];
+  double log_t_pts[N];
+  double log_f_min   = log(Mf_ROM_min);
+  double log_f_rng_2 = log(Mf_final/2.0);
+  double dlog_f = (log_f_rng_2 - log_f_min) / (N-1);
+
+  // Set up data in log-log space
+  for (int i=0; i<N; i++) {
+    log_f_pts[i] = log_f_rng_2 - i*dlog_f; // gsl likes the x-values to be monotonically increasing
+    // Compute time relative to origin at merger
+    double time_M = gsl_spline_eval_deriv(spline_phi, exp(log_f_pts[i]), acc_phi) / (2*LAL_PI) - t_corr;
+    log_t_pts[i] = log(time_M * Mtot_sec);
+  }
+
+  // Check whether time is in bounds
+  double t_rng_2 = exp(log_t_pts[0]);   // time of f_ringdown/2
+  double t_min   = exp(log_t_pts[N-1]); // time of f_min
+  if (t < t_rng_2 || t > t_min)
+    XLAL_ERROR(XLAL_EDOM, "The frequency of time %g is outside allowed frequency range.\n", t);
+
+  // create new spline for data
+  gsl_interp_accel *acc = gsl_interp_accel_alloc();
+  gsl_spline *spline = gsl_spline_alloc(gsl_interp_cspline, N);
+  gsl_spline_init(spline, log_t_pts, log_f_pts, N);
+
+  *frequency = exp(gsl_spline_eval(spline, log(t), acc)) / Mtot_sec;
+
+  gsl_spline_free(spline);
+  gsl_interp_accel_free(acc);
+  gsl_spline_free(spline_phi);
+  gsl_interp_accel_free(acc_phi);
+
+  return(XLAL_SUCCESS);
+}
+
+
+
 /** Setup SEOBNRv2ROMDoubleSpin model using data files installed in $LAL_DATA_PATH
  */
-int SEOBNRv2ROMDoubleSpin_Init_LALDATA(void)
+void SEOBNRv2ROMDoubleSpin_Init_LALDATA(void)
 {
-  if (SEOBNRv2ROMDoubleSpin_IsSetup())
-  return XLAL_SUCCESS;
+  if (SEOBNRv2ROMDoubleSpin_IsSetup()) return;
 
-  int ret=XLAL_FAILURE;
-  char *envpath=NULL;
-  char path[32768];
-  char *brkt,*word;
-  envpath=getenv("LAL_DATA_PATH");
-  if(!envpath) return(XLAL_FAILURE);
-  strncpy(path,envpath,sizeof(path));
+  // If we find one ROM datafile in a directory listed in LAL_DATA_PATH,
+  // then we expect the remaining datafiles to also be there.
+  char datafile[] = "SEOBNRv2ROM_DS_sub1_Phase_ciall.dat";
 
-  for(word=strtok_r(path,":",&brkt); word; word=strtok_r(NULL,":",&brkt))
-  {
-    ret = SEOBNRv2ROMDoubleSpin_Init(word);
-    if (XLAL_SUCCESS == ret) break;
-  }
-  if(ret!=XLAL_SUCCESS) {
-    XLALPrintError("Unable to find SEOBNRv2ROMDoubleSpin data files in $LAL_DATA_PATH\n");
-    exit(XLAL_FAILURE);
-  }
-  return(ret);
+  char *path = XLALFileResolvePath(datafile);
+  if (path==NULL)
+    XLAL_ERROR_VOID(XLAL_EIO, "Unable to resolve data file %s in $LAL_DATA_PATH\n", datafile);
+  char *dir = dirname(path);
+  int ret = SEOBNRv2ROMDoubleSpin_Init(dir);
+  XLALFree(path);
+
+  if(ret!=XLAL_SUCCESS)
+    XLAL_ERROR_VOID(XLAL_FAILURE, "Unable to find SEOBNRv2ROMDoubleSpin data files in $LAL_DATA_PATH\n");
 }

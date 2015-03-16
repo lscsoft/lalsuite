@@ -22,9 +22,9 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <getopt.h>
 
 #include <lal/LALStdio.h>
+#include <lal/LALgetopt.h>
 #include <lal/AVFactories.h>
 #include <lal/ConfigFile.h>
 #include <lal/LALFrameIO.h>
@@ -157,8 +157,8 @@ INT4 main(INT4 argc, CHAR **argv)
 
   INT4 generatingREAL8 = 0;
 
-  /* getopt arguments */
-  struct option long_options[] =
+  /* LALgetopt arguments */
+  struct LALoption long_options[] =
   {
     /* options that set a flag */
     {"verbose", no_argument, &vrbflg, 1},
@@ -179,11 +179,11 @@ INT4 main(INT4 argc, CHAR **argv)
   /* parse the arguments */
   while(1)
   {
-    /* getopt_long stores long option here */
+    /* LALgetopt_long stores long option here */
     int option_index = 0;
-    size_t optarg_len;
+    size_t LALoptarg_len;
 
-    c = getopt_long_only(argc, argv, "f:m:d:o:phV", long_options, &option_index);
+    c = LALgetopt_long_only(argc, argv, "f:m:d:o:phV", long_options, &option_index);
 
     /* detect the end of the options */
     if (c == -1)
@@ -197,7 +197,7 @@ INT4 main(INT4 argc, CHAR **argv)
           break;
         else
         {
-          fprintf(stderr, "Error parsing option %s with argument %s\n", long_options[option_index].name, optarg);
+          fprintf(stderr, "Error parsing option %s with argument %s\n", long_options[option_index].name, LALoptarg);
           exit(1);
         }
         break;
@@ -217,30 +217,30 @@ INT4 main(INT4 argc, CHAR **argv)
 
       case 'f':
         /* create storage for the metadata format */
-        optarg_len = strlen(optarg) + 1;
-        metadata_format = (CHAR *)calloc(optarg_len, sizeof(CHAR));
-        memcpy(metadata_format, optarg, optarg_len);
+        LALoptarg_len = strlen(LALoptarg) + 1;
+        metadata_format = (CHAR *)calloc(LALoptarg_len, sizeof(CHAR));
+        memcpy(metadata_format, LALoptarg, LALoptarg_len);
         break;
 
       case 'm':
         /* create storage for the meta file name */
-        optarg_len = strlen(optarg) + 1;
-        nrMetaFile = (CHAR *)calloc(optarg_len, sizeof(CHAR));
-        memcpy(nrMetaFile, optarg, optarg_len);
+        LALoptarg_len = strlen(LALoptarg) + 1;
+        nrMetaFile = (CHAR *)calloc(LALoptarg_len, sizeof(CHAR));
+        memcpy(nrMetaFile, LALoptarg, LALoptarg_len);
         break;
 
       case 'd':
         /* create storage for the meta data directory name */
-        optarg_len = strlen(optarg) + 1;
-        nrDataDir = (CHAR *)calloc(optarg_len, sizeof(CHAR));
-        memcpy(nrDataDir, optarg, optarg_len);
+        LALoptarg_len = strlen(LALoptarg) + 1;
+        nrDataDir = (CHAR *)calloc(LALoptarg_len, sizeof(CHAR));
+        memcpy(nrDataDir, LALoptarg, LALoptarg_len);
         break;
 
       case 'o':
         /* create storage for the output frame file name */
-        optarg_len = strlen(optarg) + 1;
-        frame_name = (CHAR *)calloc(optarg_len, sizeof(CHAR));
-        memcpy(frame_name, optarg, optarg_len);
+        LALoptarg_len = strlen(LALoptarg) + 1;
+        frame_name = (CHAR *)calloc(LALoptarg_len, sizeof(CHAR));
+        memcpy(frame_name, LALoptarg, LALoptarg_len);
         break;
 
       case 'p':
@@ -262,11 +262,11 @@ INT4 main(INT4 argc, CHAR **argv)
   }
 
   /* check for extraneous command line arguments */
-  if (optind < argc)
+  if (LALoptind < argc)
   {
     fprintf(stderr, "Extraneous command line arguments:\n");
-    while(optind < argc)
-      fprintf(stderr, "%s\n", argv[optind++]);
+    while(LALoptind < argc)
+      fprintf(stderr, "%s\n", argv[LALoptind++]);
     exit(1);
   }
 
@@ -334,34 +334,34 @@ INT4 main(INT4 argc, CHAR **argv)
    */
 
   /* common metadata */
-  LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_mass_ratio, meta_file, "mass-ratio", &wasRead), &status);
-  LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_spin1x, meta_file, "spin1x", &wasRead), &status);
-  LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_spin1y, meta_file, "spin1y", &wasRead), &status);
-  LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_spin1z, meta_file, "spin1z", &wasRead), &status);
-  LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_spin2x, meta_file, "spin2x", &wasRead), &status);
-  LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_spin2y, meta_file, "spin2y", &wasRead), &status);
-  LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_spin2z, meta_file, "spin2z", &wasRead), &status);
+  XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_mass_ratio, meta_file, NULL, "mass-ratio", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_spin1x, meta_file, NULL, "spin1x", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_spin1y, meta_file, NULL, "spin1y", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_spin1z, meta_file, NULL, "spin1z", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_spin2x, meta_file, NULL, "spin2x", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_spin2y, meta_file, NULL, "spin2y", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_spin2z, meta_file, NULL, "spin2z", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* format specific metadata */
   if (strcmp(metadata_format, "NINJA1") == 0)
   {
     /* NINJA1 */
-    LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_simulation_details, meta_file, "simulation-details", &wasRead), &status);
-    LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_nr_group, meta_file, "nr-group", &wasRead), &status);
-    LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_email, meta_file, "email", &wasRead), &status);
-    LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_freq_start_22, meta_file, "freqStart22", &wasRead), &status);
+    XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_simulation_details, meta_file, NULL, "simulation-details", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_nr_group, meta_file, NULL, "nr-group", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_email, meta_file, NULL, "email", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_freq_start_22, meta_file, NULL, "freqStart22", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
   }
   else if (strcmp(metadata_format, "NINJA2") == 0)
   {
     /* NINJA2 */
-    LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_waveform_name, meta_file, "waveform-name", &wasRead), &status);
-    LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_initial_separation, meta_file, "initial-separation", &wasRead), &status);
-    LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_eccentricity, meta_file, "eccentricity", &wasRead), &status);
-    LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_number_of_cycles_22, meta_file, "number-of-cycles-22", &wasRead), &status);
-    LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_code, meta_file, "code", &wasRead), &status);
-    LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_submitter_email, meta_file, "submitter-email", &wasRead), &status);
-    LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_authors_emails, meta_file, "authors-emails", &wasRead), &status);
-    LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_freq_start_22, meta_file, "freq-start-22", &wasRead), &status);
+    XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_waveform_name, meta_file, NULL, "waveform-name", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_initial_separation, meta_file, NULL, "initial-separation", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_eccentricity, meta_file, NULL, "eccentricity", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_number_of_cycles_22, meta_file, NULL, "number-of-cycles-22", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_code, meta_file, NULL, "code", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_submitter_email, meta_file, NULL, "submitter-email", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_authors_emails, meta_file, NULL, "authors-emails", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK ( XLALReadConfigSTRINGVariable( &md_freq_start_22, meta_file, NULL, "freq-start-22", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
   }
   else
   {
@@ -494,7 +494,7 @@ INT4 main(INT4 argc, CHAR **argv)
 
       /* read ht-data section of metadata file */
       snprintf(field, HISTORY_COMMENT, "%d,%d", l, m - MAX_L);
-      LAL_CALL(LALReadConfigSTRINGVariable(&status, &wf_name[l][m], meta_file, field, &wasRead), &status);
+      XLAL_CHECK ( XLALReadConfigSTRINGVariable( &wf_name[l][m], meta_file, NULL, field, &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
 
       /* read waveform */
       if (wf_name[l][m] != NULL)

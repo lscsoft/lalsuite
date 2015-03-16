@@ -197,7 +197,7 @@ class ppeJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
   A parameter estimation job
   """
-  def __init__(self,execu,univ,logpath):
+  def __init__(self,execu,univ,logpath,subfile='ppe.sub'):
     self.__executable = execu # set executable
     self.__universe = univ # set condor universe
     pipeline.CondorDAGJob.__init__(self, self.__universe, self.__executable)
@@ -208,7 +208,7 @@ class ppeJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     # set log files for job
     self.set_stdout_file(logpath+'/ppe-$(cluster).out')
     self.set_stderr_file(logpath+'/ppe-$(cluster).err')
-    self.set_sub_file('ppe.sub')
+    self.set_sub_file(subfile)
 
 class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
@@ -242,6 +242,7 @@ class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
 
     self.__Nlive = None
     self.__Nmcmc = None
+    self.__Nmcmcinitial = None
     self.__Nruns = None
     self.__tolerance = None
     self.__randomseed = None
@@ -364,6 +365,11 @@ class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     # set number of MCMC iterations
     self.add_var_opt('Nmcmc',nm)
     self.__Nmcmc = nm
+
+  def set_Nmcmcinitial(self,nm):
+    # set number of MCMC iterations
+    self.add_var_opt('Nmcmcinitial',nm)
+    self.__Nmcmcinitial = nm
 
   def set_Nruns(self,nr):
     # set number of internal nested sample runs

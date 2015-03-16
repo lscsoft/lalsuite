@@ -12,3 +12,8 @@
 \defgroup lalstochastic_python		Python Packages
 
 */
+
+/**
+\page lalstochastic_authors		Author List
+\verbinclude AUTHORS
+*/

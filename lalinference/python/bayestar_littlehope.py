@@ -23,6 +23,9 @@ produced by lalapps_inspinj. The output file (or stdout if omitted) will be an
 optionally gzip-compressed LIGO-LW XML file containing single-detector triggers
 and coincidences. A single template that has the same intrinsic parameters as
 the injection is used.
+
+BEWARE THAT THIS PROGRAM'S TIMING ERRORS ARE KNOWN TO EXCEED THOSE OF ``REAL''
+MATCHED FILTER PIPELINES! THERE IS LIKELY A BUG SOMEWHERE IN HERE!
 """
 from __future__ import division
 __author__ = "Leo Singer <leo.singer@ligo.org>"

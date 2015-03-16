@@ -1,4 +1,5 @@
 //
+// Copyright (C) 2014 Reinhard Prix
 // Copyright (C) 2012, 2013, 2014 Karl Wette
 // Copyright (C) 2007, 2008, 2009, 2010, 2012 Bernd Machenschalk
 // Copyright (C) 2007 Chris Messenger
@@ -116,8 +117,8 @@ ComputeFstat_Demod ( FstatResults* Fstats,
   PulsarDopplerParams thisPoint = Fstats->doppler;
   const REAL8 fStart = thisPoint.fkdot[0];
   const MultiSFTVector *multiSFTs = demod->multiSFTs;
-  const MultiNoiseWeights *multiWeights = common->noiseWeights;
-  const MultiDetectorStateSeries *multiDetStates = common->detectorStates;
+  const MultiNoiseWeights *multiWeights = common->multiNoiseWeights;
+  const MultiDetectorStateSeries *multiDetStates = common->multiDetectorStates;
 
   UINT4 numDetectors = multiSFTs->length;
   XLAL_CHECK ( multiDetStates->length == numDetectors, XLAL_EINVAL );

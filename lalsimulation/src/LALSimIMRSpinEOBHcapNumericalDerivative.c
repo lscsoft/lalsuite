@@ -37,7 +37,6 @@
 #define UNUSED
 #endif
 
-#include <unistd.h>
 #include <math.h>
 #include <gsl/gsl_deriv.h>
 #include <lal/LALSimInspiral.h>

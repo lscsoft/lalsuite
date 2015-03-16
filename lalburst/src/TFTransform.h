@@ -26,10 +26,11 @@
 
 
 #include <lal/LALDatatypes.h>
-#include <lal/Window.h>
-#include <lal/RealFFT.h>
 #include <lal/LIGOMetadataTables.h>
+#include <lal/RealFFT.h>
 #include <lal/Sequence.h>
+#include <lal/TimeFreqFFT.h>
+#include <lal/Window.h>
 
 
 #ifdef  __cplusplus		/* C++ protection. */
@@ -213,12 +214,6 @@ void XLALDestroyExcessPowerFilterBank(
 );
 
 
-REAL8Sequence *XLALREAL8WindowTwoPointSpectralCorrelation(
-	const REAL8Window *window,
-	const REAL8FFTPlan *plan
-);
-
-
 REAL8TimeFrequencyPlane *XLALCreateTFPlane(
 	UINT4 tseries_length,
 	REAL8 tseries_deltaT,
@@ -259,15 +254,18 @@ INT4 XLALOverlappedSegmentsCommensurate(
 );
 
 
-INT4 XLALEPGetTimingParameters(
-	INT4 window_length,
-	INT4 max_tile_length,
-	REAL8 fractional_tile_stride,
-	INT4 *psd_length,
-	INT4 *psd_shift,
-	INT4 *window_shift,
-	INT4 *window_pad,
-	INT4 *tiling_length
+#ifdef SWIG /* SWIG interface directives */
+SWIGLAL(INOUT_SCALARS(int*, psd_length));
+#endif
+int XLALEPGetTimingParameters(
+	int window_length,
+	int max_tile_length,
+	double fractional_tile_stride,
+	int *psd_length,
+	int *psd_shift,
+	int *window_shift,
+	int *window_pad,
+	int *tiling_length
 );
 
 /*@}*/

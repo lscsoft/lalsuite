@@ -162,7 +162,7 @@ def factored_log_likelihood(extr_params, rholms_intp, crossTerms, Lmax):
 
     return lnL
 
-def factored_log_likelihoodTimeMarginalized(tvals, extr_params, rholms_intp, rholms, crossTerms, Lmax, interpolate=False):
+def factored_log_likelihood_time_marginalized(tvals, extr_params, rholms_intp, rholms, crossTerms, Lmax, interpolate=False):
     """
     Compute the log-likelihood = -1/2 < d - h | d - h > from:
         - extr_params is an object containing values of all extrinsic parameters

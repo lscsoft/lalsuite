@@ -10,6 +10,7 @@
 /_build/
 /_inst/
 /lalpulsar-*/
+AUTHORS
 Makefile
 Makefile.in
 config.lt
@@ -42,8 +43,10 @@ src/stamp-h1
 src/stamp-h2
 swig/swiglal*
 test/BinarySSBTimesTest
+test/ComputeFstatBenchmark
 test/ComputeFstatTest
 test/ConstructPLUTTest
+test/DopplerScanTest
 test/DriveHoughTest
 test/DriveNDHoughTest
 test/ExtrapolatePulsarSpinsTest
@@ -77,6 +80,7 @@ test/OutHough.asc
 test/Peak2PHMDTest
 test/PtoleMeshTest
 test/PtoleMetricTest
+test/PulsarTOATest
 test/ReadTEMPOFileTest
 test/ResampleTest
 test/SFTCleanTest
@@ -85,6 +89,7 @@ test/SimulateTaylorCWTest
 test/SkyMetricTest
 test/StackMetricTest
 test/StatisticsTest
+test/SuperskyMetricsTest
 test/TEMPOcomparison
 test/TwoDMeshTest
 test/UniversalDopplerMetricTest

@@ -196,36 +196,6 @@ LALInferenceRandomizeProposalCycle(LALInferenceRunState *runState) {
   }
 }
 
-/* Convert NS to MCMC variables (call before calling MCMC proposal from NS) */
-void NSFillMCMCVariables(LALInferenceVariables *proposedParams, LALInferenceVariables *priorArgs)
-{
-  REAL8 distance=0.0,mc=0.0,dmin,dmax,mmin,mmax;
-  if(LALInferenceCheckVariable(proposedParams,"logdistance"))
-  {
-    distance=exp(*(REAL8*)LALInferenceGetVariable(proposedParams,"logdistance"));
-    LALInferenceAddVariable(proposedParams,"distance",&distance,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
-  }
-  if(!LALInferenceCheckMinMaxPrior(priorArgs,"distance") &&
-     LALInferenceCheckMinMaxPrior(priorArgs,"logdistance"))
-  {
-    LALInferenceGetMinMaxPrior(priorArgs,"logdistance",&dmin,&dmax);
-    dmin=exp(dmin); dmax=exp(dmax);
-    LALInferenceAddMinMaxPrior(priorArgs,"distance",&dmin,&dmax,LALINFERENCE_REAL8_t);
-  }
-  if(LALInferenceCheckVariable(proposedParams,"logmc")){
-    mc=exp(*(REAL8 *)LALInferenceGetVariable(proposedParams,"logmc"));
-    LALInferenceAddVariable(proposedParams,"chirpmass",&mc,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
-  }
-  if(!LALInferenceCheckMinMaxPrior(priorArgs,"chirpmass") &&
-     LALInferenceCheckMinMaxPrior(priorArgs,"logmc"))
-  {
-    LALInferenceGetMinMaxPrior(priorArgs,"logmc",&mmin,&mmax);
-    mmin=exp(mmin); mmax=exp(mmax);
-    LALInferenceAddMinMaxPrior(priorArgs,"chirpmass",&mmin,&mmax,LALINFERENCE_REAL8_t);
-  }
-  return;
-}
-
 
 REAL8
 LALInferenceCyclicProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams) {
@@ -322,17 +292,22 @@ void LALInferenceSetupDefaultNSProposal(LALInferenceRunState *runState, LALInfer
   }
   */
 
-  if (nDet >= 3 && !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-extrinsicparam") ) {
+  INT4 skyframe=0;
+  if(LALInferenceCheckVariable(runState->currentParams,"SKY_FRAME"))
+		skyframe=LALInferenceGetINT4Variable(runState->currentParams,"SKY_FRAME");
+
+  if (nDet >= 3 && !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-extrinsicparam") && !skyframe) {
     LALInferenceAddProposalToCycle(runState, extrinsicParamProposalName, &LALInferenceExtrinsicParamProposal, SMALLWEIGHT);
   }
 
+
   if (fullProp) {
-    if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-skywander"))
+    if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-skywander") && !skyframe)
     {   /* If there are not 3 detectors, the other sky jumps are not used, so increase the % of wandering jumps */
         if(nDet<3) LALInferenceAddProposalToCycle(runState, skyLocWanderJumpName, &LALInferenceSkyLocWanderJump, BIGWEIGHT);
         else LALInferenceAddProposalToCycle(runState, skyLocWanderJumpName, &LALInferenceSkyLocWanderJump, 3.0*SMALLWEIGHT);
     }
-    if (nDet >= 3 && !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-skyreflect")) {
+    if (nDet >= 3 && !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-skyreflect") &&!skyframe) {
       LALInferenceAddProposalToCycle(runState, skyReflectDetPlaneName, &LALInferenceSkyReflectDetPlane, TINYWEIGHT);
     }
     /* Disabled as this breaks detailed balance */
@@ -439,15 +414,19 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *curr
     LALInferenceAddProposalToCycle(runState, polarizationPhaseJumpName, &LALInferencePolarizationPhaseJump, TINYWEIGHT);
   }
 
-  if (nDet >= 3 && !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-extrinsicparam")) {
+  INT4 skyframe=0;
+  if(LALInferenceCheckVariable(runState->currentParams,"SKY_FRAME"))
+		skyframe=LALInferenceGetINT4Variable(runState->currentParams,"SKY_FRAME");
+  
+  if (nDet >= 3 && !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-extrinsicparam") && !skyframe ) {
     LALInferenceAddProposalToCycle(runState, extrinsicParamProposalName, &LALInferenceExtrinsicParamProposal, SMALLWEIGHT);
   }
 
   if (fullProp) {
-    if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-skywander"))
+    if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-skywander") && !skyframe)
       LALInferenceAddProposalToCycle(runState, skyLocWanderJumpName, &LALInferenceSkyLocWanderJump, SMALLWEIGHT);
 
-    if (nDet == 3 && !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-skyreflect") ) {
+    if (nDet == 3 && !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-skyreflect") && !skyframe ) {
       LALInferenceAddProposalToCycle(runState, skyReflectDetPlaneName, &LALInferenceSkyReflectDetPlane, TINYWEIGHT);
     }
 
@@ -483,7 +462,7 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *curr
     LALInferenceAddProposalToCycle(runState, KDNeighborhoodProposalName, &LALInferenceKDNeighborhoodProposal, SMALLWEIGHT);
   }
 
-  if (nDet >= 2 && !LALInferenceGetProcParamVal(runState->commandLine,"--noProposalSkyRing")) {
+  if (nDet >= 2 && !LALInferenceGetProcParamVal(runState->commandLine,"--noProposalSkyRing") && !skyframe) {
     LALInferenceAddProposalToCycle(runState, skyRingProposalName, &LALInferenceSkyRingProposal, SMALLWEIGHT);
   }
 
@@ -531,10 +510,21 @@ SetupRapidSkyLocProposal(LALInferenceRunState *runState, LALInferenceVariables *
   if (!LALInferenceGetProcParamVal(runState->commandLine, "--margphi") && !LALInferenceGetProcParamVal(runState->commandLine, "--margtimephi"))
     LALInferenceAddProposalToCycle(runState, polarizationPhaseJumpName, &LALInferencePolarizationPhaseJump, 1);
 
+  INT4 skyframe=0;
+  if(LALInferenceCheckVariable(runState->currentParams,"SKY_FRAME"))
+		skyframe=LALInferenceGetINT4Variable(runState->currentParams,"SKY_FRAME");
+
   UINT4 nDet = numDetectorsUniquePositions(runState);
-  if (nDet >= 3 && !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-extrinsicparam") && !LALInferenceGetProcParamVal(runState->commandLine,"--margtime") && !LALInferenceGetProcParamVal(runState->commandLine,"--margtimephi")) {
+  if (nDet >= 3 && !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-extrinsicparam") && !LALInferenceGetProcParamVal(runState->commandLine,"--margtime") && !LALInferenceGetProcParamVal(runState->commandLine,"--margtimephi") &&!skyframe) {
     LALInferenceAddProposalToCycle(runState, extrinsicParamProposalName, &LALInferenceExtrinsicParamProposal, 20);
   }
+
+  /*
+  UINT4 nDet = numDetectorsUniquePositions(runState);
+  if (nDet == 3 &&!skyframe) {
+    LALInferenceAddProposalToCycle(runState, skyReflectDetPlaneName, &LALInferenceSkyReflectDetPlane, 1);
+  }
+  */
 
   if (!LALInferenceGetProcParamVal(runState->commandLine, "--noDifferentialEvolution")) {
     LALInferenceAddProposalToCycle(runState, differentialEvolutionFullName, &LALInferenceDifferentialEvolutionFull, 10);
@@ -771,7 +761,7 @@ REAL8 LALInferenceSingleProposal(LALInferenceRunState *runState, LALInferenceVar
       sigma = 0.6;
     } else if (!strcmp(param->name, "polarisation")) {
       sigma = 0.6;
-    } else if (!strcmp(param->name,"theta_jn")) {
+    } else if (!strcmp(param->name,"costheta_jn")) {
       sigma = 0.3;
     } else if (!strcmp(param->name, "a_spin1")) {
       sigma = 0.1;
@@ -785,7 +775,7 @@ REAL8 LALInferenceSingleProposal(LALInferenceRunState *runState, LALInferenceVar
   } else {
     if (!strcmp(param->name,"eta") || !strcmp(param->name,"q") || !strcmp(param->name,"time") || !strcmp(param->name,"a_spin2") || !strcmp(param->name,"a_spin1")){
       *(REAL8 *)param->value += gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.001;
-    } else if (!strcmp(param->name,"polarisation") || !strcmp(param->name,"phase") || !strcmp(param->name,"theta_jn")){
+    } else if (!strcmp(param->name,"polarisation") || !strcmp(param->name,"phase") || !strcmp(param->name,"costheta_jn")){
       *(REAL8 *)param->value += gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.1;
     } else {
       *(REAL8 *)param->value += gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.01;
@@ -922,7 +912,7 @@ REAL8 LALInferenceEnsembleStretchFull(LALInferenceRunState *runState, LALInferen
 REAL8 LALInferenceEnsembleStretchIntrinsic(LALInferenceRunState *runState, LALInferenceVariables *cp, LALInferenceVariables *pp) {
   const char *propName = ensembleStretchIntrinsicName;
   LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
-  const char *names[] = {"chirpmass", "q", "eta", "m1", "m2", "a_spin1", "a_spin2","spin1","spin2",
+  const char *names[] = {"chirpmass", "q", "eta", "m1", "m2", "a_spin1", "a_spin2",
     "tilt_spin1", "tilt_spin2", "phi12", NULL};
   REAL8 logPropRatio = LALInferenceEnsembleStretchNames(runState, cp, pp, names);
   return logPropRatio;
@@ -933,9 +923,9 @@ REAL8 LALInferenceEnsembleStretchExtrinsic(LALInferenceRunState *runState, LALIn
   const char *propName = ensembleStretchExtrinsicName;
   LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
   
-  const char *names[] = {"rightascension", "declination", "polarisation", "distance", "logdistance", "phase", "time", "theta_jn", NULL};
-  const char *marg_time_names[] = {"rightascension", "declination", "polarisation","distance", "logdistance", "phase", "theta_jn", NULL};
-  const char *marg_time_phase_names[] = {"rightascension", "declination", "polarisation",  "distance", "logdistance", "theta_jn",  NULL};
+  const char *names[] = {"rightascension", "declination", "polarisation", "distance", "logdistance", "phase", "time", "costheta_jn", "theta", "cosalpha", "t0", NULL};
+  const char *marg_time_names[] = {"rightascension", "declination", "polarisation","distance", "logdistance", "phase","costheta_jn", "theta", "cosalpha", "t0", NULL};
+  const char *marg_time_phase_names[] = {"rightascension", "declination", "polarisation",  "distance", "logdistance", "costheta_jn", "theta", "cosalpha", "t0",  NULL};
   
   if (LALInferenceGetProcParamVal(runState->commandLine, "--margtimephi"))
     logPropRatio = LALInferenceEnsembleStretchNames(runState, cp, pp, marg_time_phase_names);
@@ -1045,7 +1035,7 @@ REAL8 LALInferenceEnsembleWalkFull(LALInferenceRunState *runState, LALInferenceV
 REAL8 LALInferenceEnsembleWalkIntrinsic(LALInferenceRunState *runState, LALInferenceVariables *cp, LALInferenceVariables *pp) {
   const char *propName = ensembleWalkIntrinsicName;
   LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
-  const char *names[] = {"chirpmass", "q", "eta", "m1", "m2", "a_spin1", "a_spin2","spin1","spin2",
+  const char *names[] = {"chirpmass", "q", "eta", "m1", "m2", "a_spin1", "a_spin2",
     "tilt_spin1", "tilt_spin2", "phi12", NULL};
   REAL8 logPropRatio = LALInferenceEnsembleWalkNames(runState, cp, pp, names);
   return logPropRatio;
@@ -1056,9 +1046,9 @@ REAL8 LALInferenceEnsembleWalkExtrinsic(LALInferenceRunState *runState, LALInfer
   const char *propName = ensembleWalkExtrinsicName;
   LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
   
-  const char *names[] = {"rightascension", "declination", "polarisation", "distance", "logdistance", "phase", "time", "theta_jn", NULL};
-  const char *marg_time_names[] = {"rightascension", "declination", "polarisation", "distance", "logdistance", "phase", "theta_jn", NULL};
-  const char *marg_time_phase_names[] = {"rightascension", "declination", "polarisation", "distance", "logdistance", "theta_jn",  NULL};
+  const char *names[] = {"rightascension", "declination", "polarisation", "distance", "logdistance", "phase", "time", "costheta_jn", "theta", "cosalpha", "t0",NULL};
+  const char *marg_time_names[] = {"rightascension", "declination", "polarisation", "distance", "logdistance", "phase", "costheta_jn", "theta", "cosalpha", "t0",NULL};
+  const char *marg_time_phase_names[] = {"rightascension", "declination", "polarisation", "distance", "logdistance", "costheta_jn",  "theta", "cosalpha", "t0",NULL};
   
   if (LALInferenceGetProcParamVal(runState->commandLine, "--margtimephi"))
     logPropRatio = LALInferenceEnsembleWalkNames(runState, cp, pp, marg_time_phase_names);
@@ -1246,8 +1236,8 @@ REAL8 LALInferenceDifferentialEvolutionNames(LALInferenceRunState *runState,
 REAL8 LALInferenceDifferentialEvolutionIntrinsic(LALInferenceRunState *runState, LALInferenceVariables *cp, LALInferenceVariables *pp) {
   const char *propName = differentialEvolutionIntrinsicName;
   LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
-  const char *names[] = {"chirpmass", "q", "eta", "m1", "m2", "a_spin1", "a_spin2","spin1","spin2",
-      "tilt_spin1", "tilt_spin2", "phi12",  "spin1", "spin2", NULL};
+  const char *names[] = {"chirpmass", "q", "eta", "m1", "m2", "a_spin1", "a_spin2",
+      "tilt_spin1", "tilt_spin2", "phi12",  NULL};
   REAL8 logPropRatio = LALInferenceDifferentialEvolutionNames(runState, cp, pp, names);
   return logPropRatio;
 }
@@ -1257,9 +1247,9 @@ REAL8 LALInferenceDifferentialEvolutionExtrinsic(LALInferenceRunState *runState,
   const char *propName = differentialEvolutionExtrinsicName;
   LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
 
-  const char *names[] = {"rightascension", "declination", "polarisation", "distance", "logdistance", "phase", "time", "theta_jn", NULL};
-  const char *marg_time_names[] = {"rightascension", "declination", "polarisation", "distance", "logdistance", "phase", "theta_jn", NULL};
-  const char *marg_time_phase_names[] = {"rightascension", "declination", "polarisation", "distance", "logdistance", "theta_jn", NULL};
+  const char *names[] = {"rightascension", "declination", "polarisation", "distance", "logdistance", "phase", "time", "costheta_jn","cosalpha","t0","theta", NULL};
+  const char *marg_time_names[] = {"rightascension", "declination", "polarisation", "distance", "logdistance", "phase", "costheta_jn","cosalpha","t0","theta",  NULL};
+  const char *marg_time_phase_names[] = {"rightascension", "declination", "polarisation", "distance", "logdistance", "costheta_jn","cosalpha","t0","theta",  NULL};
 
   if (LALInferenceGetProcParamVal(runState->commandLine, "--margtimephi"))
     logPropRatio = LALInferenceDifferentialEvolutionNames(runState, cp, pp, marg_time_phase_names);
@@ -1337,11 +1327,6 @@ approxLogPrior(LALInferenceVariables *params) {
   REAL8 Mc = *(REAL8 *)LALInferenceGetVariable(params, "chirpmass");
   logP += -11.0/6.0*log(Mc);
 
-  if (LALInferenceCheckVariable(params, "theta_jn")) {
-    REAL8 thetaJN = *(REAL8 *)LALInferenceGetVariable(params, "theta_jn");
-    logP += log(sin(thetaJN));
-  }
-
   /* Flat in time, ra, psi, phi. */
 
   REAL8 dist = *(REAL8 *)LALInferenceGetVariable(params, "distance");
@@ -1417,11 +1402,9 @@ LALInferenceDrawApproxPrior(LALInferenceRunState *runState, LALInferenceVariable
     REAL8 dec = draw_dec(runState);
     LALInferenceSetVariable(proposedParams, "declination", &dec);
 
-    if (LALInferenceCheckVariableNonFixed(proposedParams, "theta_jn")) {
-      REAL8 thetaJN = draw_colatitude(runState, "theta_jn");
-      LALInferenceSetVariable(proposedParams, "theta_jn", &thetaJN);
-    }
-
+    REAL8 costhetaJN = draw_flat(runState, "costheta_jn");
+    LALInferenceSetVariable(proposedParams, "costheta_jn", &costhetaJN);
+    
     if (LALInferenceCheckVariableNonFixed(proposedParams, "phi_jl")) {
       REAL8 phiJL = draw_flat(runState, "phi_jl");
       LALInferenceSetVariable(proposedParams, "phi_jl", &phiJL);
@@ -1450,16 +1433,6 @@ LALInferenceDrawApproxPrior(LALInferenceRunState *runState, LALInferenceVariable
     if (LALInferenceCheckVariableNonFixed(proposedParams, "a_spin2")) {
       REAL8 a2 = draw_flat(runState, "a_spin2");
       LALInferenceSetVariable(proposedParams, "a_spin2", &a2);
-    }
-
-    if (LALInferenceCheckVariableNonFixed(proposedParams, "spin1")) {
-      REAL8 a1 = draw_flat(runState, "spin1");
-      LALInferenceSetVariable(proposedParams, "spin1", &a1);
-    }
-
-    if (LALInferenceCheckVariableNonFixed(proposedParams, "spin2")) {
-      REAL8 a2 = draw_flat(runState, "spin2");
-      LALInferenceSetVariable(proposedParams, "spin2", &a2);
     }
 
     if (LALInferenceCheckVariableNonFixed(proposedParams, "psdscale")) {
@@ -2577,8 +2550,10 @@ REAL8 LALInferenceGlitchMorletReverseJump(LALInferenceRunState *runState, LALInf
       //Amplitude
       params = *(gsl_matrix **)LALInferenceGetVariable(proposedParams, "morlet_Amp");
       val    = glitchAmplitudeDraw(Q, f, runState->GSLrandom);
-      REAL8 Anorm = *(REAL8 *)LALInferenceGetVariable(runState->priorArgs,"glitch_norm");
-      A=val/Anorm;
+      {
+        REAL8 Anorm = *(REAL8 *)LALInferenceGetVariable(runState->priorArgs,"glitch_norm");
+        A=val/Anorm;
+      }
       gsl_matrix_set(params,ifo,nx,A);
 
       //Centroid phase
@@ -2992,9 +2967,9 @@ REAL8 LALInferenceExtrinsicParamProposal(LALInferenceRunState *runState, LALInfe
   }
   REAL8 iota=0.;
   
-  if(LALInferenceCheckVariable(proposedParams,"theta_jn"))
+  if(LALInferenceCheckVariable(proposedParams,"costheta_jn"))
+    iota = acos(*(REAL8 *)LALInferenceGetVariable(proposedParams, "costheta_jn"));
 
-    iota = *(REAL8 *)LALInferenceGetVariable(proposedParams, "theta_jn");
 
   else fprintf(stderr,"LALInferenceExtrinsicParamProposal: No  theta_jn parameter!\n");
   
@@ -3059,7 +3034,8 @@ REAL8 LALInferenceExtrinsicParamProposal(LALInferenceRunState *runState, LALInfe
     REAL8 logNewDist = log(newDist);
     LALInferenceSetVariable(proposedParams, "logdistance", &logNewDist);
   }
-  LALInferenceSetVariable(proposedParams,"theta_jn",&newIota);
+  REAL8 newcosIota=cos(newIota);
+  LALInferenceSetVariable(proposedParams,"costheta_jn",&newcosIota);
   LALInferenceSetVariable(proposedParams, "polarisation", &newPsi);
 
   logPropRatio = pReverse - pForward;
@@ -3073,9 +3049,6 @@ REAL8 NSWrapMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariable
   /* PTMCMC likes to read currentParams directly, whereas NS expects proposedParams
    to be modified by the proposal. Back up currentParams and then restore it after
    calling the MCMC proposal function. */
-  REAL8 oldlogdist=-1.0,oldlogmc=-1.0;
-  REAL8 newdist,newmc;
-  LALInferenceVariables *currentParamsBackup=currentParams;
   /* Create the proposal if none exists */
   if (!LALInferenceCheckVariable(runState->proposalArgs, cycleArrayName) || !LALInferenceCheckVariable(runState->proposalArgs, cycleArrayLengthName))
    {
@@ -3088,35 +3061,8 @@ REAL8 NSWrapMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariable
 	 }
   }
 
-  /* PTMCMC expects some variables that NS doesn't use by default, so create them */
-
-  if(LALInferenceCheckVariable(proposedParams,"logdistance"))
-    oldlogdist=*(REAL8 *)LALInferenceGetVariable(proposedParams,"logdistance");
-  if(LALInferenceCheckVariable(proposedParams,"logmc"))
-    oldlogmc=*(REAL8*)LALInferenceGetVariable(proposedParams,"logmc");
-
-  NSFillMCMCVariables(proposedParams,runState->priorArgs);
-
-  currentParams=proposedParams;
   REAL8 logPropRatio = LALInferenceCyclicProposal(runState,currentParams,proposedParams);
   /* Restore currentParams */
-  currentParams=currentParamsBackup;
-
-  /* If the remapped variables are not updated do it here */
-  if(oldlogdist!=-1.0)
-    if(oldlogdist==*(REAL8*)LALInferenceGetVariable(proposedParams,"logdistance"))
-      {
-		newdist=*(REAL8*)LALInferenceGetVariable(proposedParams,"distance");
-		newdist=log(newdist);
-		LALInferenceSetVariable(proposedParams,"logdistance",&newdist);
-      }
-  if(oldlogmc!=-1.0)
-    if(oldlogmc==*(REAL8*)LALInferenceGetVariable(proposedParams,"logmc"))
-    {
-      newmc=*(REAL8*)LALInferenceGetVariable(proposedParams,"chirpmass");
-      newmc=log(newmc);
-      LALInferenceSetVariable(proposedParams,"logmc",&newmc);
-    }
 
   return logPropRatio;
 }
@@ -3135,7 +3081,7 @@ void LALInferenceSetupAdaptiveProposals(LALInferenceRunState *state)
                 REAL8 sigma=0.01;
                 if (!strcmp(name,"eta") || !strcmp(name,"q") || !strcmp(name,"time") || !strcmp(name,"a_spin2") || !strcmp(name,"a_spin1")){
                         sigma = 0.001;
-                } else if (!strcmp(name,"polarisation") || !strcmp(name,"phase") ||!strcmp(name,"theta_jn")){
+                } else if (!strcmp(name,"polarisation") || !strcmp(name,"phase") ||!strcmp(name,"costheta_jn")){
                         sigma = 0.1;
                 }
                 /* Set up variables to store current sigma, proposed and accepted */

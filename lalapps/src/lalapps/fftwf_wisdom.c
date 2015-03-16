@@ -99,10 +99,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <fftw3.h>
-#include <getopt.h>
 #include <limits.h>  /* For LINE_MAX */
 
 #include <lal/FileIO.h>
+#include <lal/LALgetopt.h>
 #include <lal/StringInput.h>
 
 /* prototypes */
@@ -272,7 +272,7 @@ int main(int argc, char **argv)
   FILE *infp=NULL, *outfp=NULL, *wisfp=NULL;
   int optindex, optreturn, retval;
 
-  static struct option long_options[] =
+  static struct LALoption long_options[] =
     {
       /* Options setting flags */
       {"no-system-wisdom",no_argument,&nosys,1},
@@ -285,7 +285,7 @@ int main(int argc, char **argv)
       {0,0,0,0}
     };
 
-  while ( (optreturn = getopt_long(argc,argv,"ni:o:w:l:h",long_options,&optindex)) != -1)
+  while ( (optreturn = LALgetopt_long(argc,argv,"ni:o:w:l:h",long_options,&optindex)) != -1)
     {
       switch(optreturn)
 	{
@@ -295,28 +295,28 @@ int main(int argc, char **argv)
 	  nosys=1;
 	  break;
 	case 'i':
-	  infp = LALFopen(optarg,"r+");
+	  infp = LALFopen(LALoptarg,"r+");
 	  if (!infp)
 	    {
-	      fprintf(stderr,"Error: Could not open input file %s\n",optarg);
+	      fprintf(stderr,"Error: Could not open input file %s\n",LALoptarg);
 	      if (outfp) LALFclose(outfp);
 	      exit(EXIT_FAILURE);
 	    }
 	  break;
 	case 'o':
-	  outfp = LALFopen(optarg,"w+");
+	  outfp = LALFopen(LALoptarg,"w+");
 	  if (!outfp)
 	    {
-	      fprintf(stderr,"Error: Could not open output file %s\n",optarg);
+	      fprintf(stderr,"Error: Could not open output file %s\n",LALoptarg);
 	      if (infp) LALFclose(infp);
 	      exit(EXIT_FAILURE);
 	    }
 	  break;
 	case 'w':
-	  wisfp = LALFopen(optarg,"r+");
+	  wisfp = LALFopen(LALoptarg,"r+");
 	  if (!wisfp)
 	    {
-	      fprintf(stderr,"Error: Could not open input wisdom file %s for reading\n",optarg);
+	      fprintf(stderr,"Error: Could not open input wisdom file %s for reading\n",LALoptarg);
 	      if (infp)  LALFclose(infp);
 	      if (outfp) LALFclose(outfp);
 	      exit(EXIT_FAILURE);
@@ -327,7 +327,7 @@ int main(int argc, char **argv)
 	      if (!retval)
 		{
 		  /* Retval is zero if UNsuccessful */
-		  fprintf(stderr,"Error: Could not read wisdom from input wisdom file %s\n",optarg);
+		  fprintf(stderr,"Error: Could not read wisdom from input wisdom file %s\n",LALoptarg);
 		  if (infp)  LALFclose(infp);
 		  if (outfp) LALFclose(outfp);
 		  LALFclose(wisfp);
@@ -335,12 +335,12 @@ int main(int argc, char **argv)
 		}
 	      LALFclose(wisfp);
 	    }
-	  fprintf(stderr,"Read in existing wisdom from file %s\n",optarg);
+	  fprintf(stderr,"Read in existing wisdom from file %s\n",LALoptarg);
 	  break;
 	case 'l':
-	  if ( sscanf(optarg,"%d",&measurelvl) != 1)
+	  if ( sscanf(LALoptarg,"%d",&measurelvl) != 1)
 	    {
-	      fprintf(stderr,"Error: invalid measure level %s.\n",optarg);
+	      fprintf(stderr,"Error: invalid measure level %s.\n",LALoptarg);
 	      if (infp)  LALFclose(infp);
 	      if (outfp) LALFclose(outfp);
 	      exit(EXIT_FAILURE);

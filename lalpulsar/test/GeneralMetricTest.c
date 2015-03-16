@@ -149,8 +149,8 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
 #include <lal/AVFactories.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALMalloc.h>
 #include <lal/LALStdlib.h>
 #include <lal/PtoleMetric.h>
@@ -159,7 +159,6 @@
 #include <lal/LALInitBarycenter.h>
 
 /** \cond DONT_DOXYGEN */
-extern char *optarg;
 
 #define DEFAULT_DURATION 39600 /* seconds */
 #define SPOKES 30
@@ -224,16 +223,16 @@ int main( int argc, char *argv[] ) {
   numSpindown = 0;
 
   /* Parse options. */
-  while ((opt = getopt( argc, argv, "a:b:c:d:ef:l:m:n:pt:s:x" )) != -1) {
+  while ((opt = LALgetopt( argc, argv, "a:b:c:d:ef:l:m:n:pt:s:x" )) != -1) {
     switch (opt) {
     case 'a':
-      metric_code = atoi( optarg );
+      metric_code = atoi( LALoptarg );
       break;
     case 'b':
-      in.epoch.gpsSeconds = tevpulse.epoch.gpsSeconds = atoi( optarg );
+      in.epoch.gpsSeconds = tevpulse.epoch.gpsSeconds = atoi( LALoptarg );
       break;
     case 'c':
-      if( sscanf( optarg, "%f:%f:%f:%f:%f:%f", &a, &b, &c, &d, &e, &f ) != 6)
+      if( sscanf( LALoptarg, "%f:%f:%f:%f:%f:%f", &a, &b, &c, &d, &e, &f ) != 6)
 	{
 	  fprintf( stderr, "coordinates should be hh:mm:ss:dd:mm:ss\n" );
 	}
@@ -241,25 +240,25 @@ int main( int argc, char *argv[] ) {
       dec_point = (d+e/60+f/3600)*LAL_PI_180;
       break;
     case 'd':
-      detector = atoi( optarg );
+      detector = atoi( LALoptarg );
       break;
     case 'e':
       break;
     case 'f':
-      f0 = atof( optarg );
+      f0 = atof( LALoptarg );
       break;
     case 'l':
-      if( sscanf( optarg, "%d:%d:%d:%d",
+      if( sscanf( LALoptarg, "%d:%d:%d:%d",
 		  &ra_min, &ra_max, &dec_min, &dec_max) != 4)
 	{
 	  fprintf( stderr, "coordinates should be ra_min, ra_max, dec_min, dec_max all in degrees" );
 	}
       break;
     case 'm':
-      mismatch = atof( optarg );
+      mismatch = atof( LALoptarg );
       break;
     case 'n':
-      numSpindown = atoi( optarg );
+      numSpindown = atoi( LALoptarg );
       break;
     case 'p':
       nongrace = 1;
@@ -267,7 +266,7 @@ int main( int argc, char *argv[] ) {
     case 's':
       break;
     case 't':
-      in.duration = tevparam.deltaT = atof( optarg );
+      in.duration = tevparam.deltaT = atof( LALoptarg );
       break;
     case 'x':
       grace = 1;

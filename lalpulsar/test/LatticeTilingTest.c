@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2014 Karl Wette
+// Copyright (C) 2014, 2015 Karl Wette
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,20 +20,12 @@
 // Tests of the lattice-based template generation code in LatticeTiling.[ch].
 
 #include <stdio.h>
-#include <inttypes.h>
-#include <float.h>
-#include <math.h>
-#include <errno.h>
-#include <gsl/gsl_blas.h>
 
 #include <lal/LatticeTiling.h>
 #include <lal/LALStdlib.h>
-#include <lal/LALStdio.h>
-#include <lal/XLALError.h>
-#include <lal/LALConstants.h>
 #include <lal/Factorial.h>
 #include <lal/DopplerFullScan.h>
-#include <lal/SuperSkyMetrics.h>
+#include <lal/SuperskyMetrics.h>
 #include <lal/LALInitBarycenter.h>
 
 #include "../src/GSLHelpers.h"
@@ -71,173 +63,242 @@ const double A3s_mism_hist[MISM_HIST_BINS+1] = {
 static int BasicTest(
   const size_t n,
   const TilingLattice lattice,
-  const UINT8 total_ref
+  const UINT8 total_ref_0,
+  const UINT8 total_ref_1,
+  const UINT8 total_ref_2,
+  const UINT8 total_ref_3
   )
 {
 
-  // Create lattice tiling parameter space
-  printf("Number of dimensions: %zu\n", n);
-  LatticeTilingSpace* space = XLALCreateLatticeTilingSpace(n);
-  XLAL_CHECK(space != NULL, XLAL_EFUNC);
+  const UINT8 total_ref[4] = {total_ref_0, total_ref_1, total_ref_2, total_ref_3};
+
+  // Create lattice tiling
+  printf( "Number of dimensions: %zu\n", n );
+  LatticeTiling *tiling = XLALCreateLatticeTiling( n );
+  XLAL_CHECK( tiling != NULL, XLAL_EFUNC );
 
   // Add bounds
-  for (size_t i = 0; i < n; ++i) {
-    XLAL_CHECK(XLALSetLatticeTilingConstantBound(space, i, 0.0, pow(100.0, 1.0/n)) == XLAL_SUCCESS, XLAL_EFUNC);
+  for( size_t i = 0; i < n; ++i ) {
+    XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, i, 0.0, pow( 100.0, 1.0/n ) ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
   // Set metric to the Lehmer matrix
-  gsl_matrix* GAMAT(metric, n, n);
-  for (size_t i = 0; i < n; ++i) {
-    for (size_t j = 0; j < n; ++j) {
-      const double ii = i+1, jj = j+1;
-      gsl_matrix_set(metric, i, j, jj >= ii ? ii/jj : jj/ii);
+  const double max_mismatch = 0.3;
+  {
+    gsl_matrix *GAMAT( metric, n, n );
+    for( size_t i = 0; i < n; ++i ) {
+      for( size_t j = 0; j < n; ++j ) {
+        const double ii = i+1, jj = j+1;
+        gsl_matrix_set( metric, i, j, jj >= ii ? ii/jj : jj/ii );
+      }
     }
+    printf( "Lattice type: %u\n", lattice );
+    XLAL_CHECK( XLALSetTilingLatticeAndMetric( tiling, lattice, metric, max_mismatch ) == XLAL_SUCCESS, XLAL_EFUNC );
+    GFMAT( metric );
   }
 
-  // Create lattice tiling
-  printf("Lattice type: %u\n", lattice);
-  LatticeTiling* tiling = XLALCreateLatticeTiling(space, lattice, metric, 0.3);
-  XLAL_CHECK(tiling != NULL, XLAL_EFUNC);
+  // Check number of generated points is expected
+  for( size_t i = 0; i < n; ++i ) {
 
-  // Count number of templates
-  UINT8 total = XLALLatticeTilingTotalPointCount(tiling);
-  printf("Number of lattice points: %" LAL_UINT8_FORMAT "\n", total);
-  XLAL_CHECK(total == total_ref, XLAL_EFUNC, "ERROR: total = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = total_ref", total, total_ref);
+    // Create lattice tiling iterator and locator over 'i+1' dimensions
+    LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator( tiling, i+1 );
+    XLAL_CHECK( itr != NULL, XLAL_EFUNC );
+    LatticeTilingLocator *loc = XLALCreateLatticeTilingLocator( tiling, i+1 );
+    XLAL_CHECK( loc != NULL, XLAL_EFUNC );
 
-  // Get all templates
-  gsl_matrix* templates = XLALLatticeTilingUniquePoints(tiling, n - 1);
-  XLAL_CHECK(templates != NULL, XLAL_EFAILED);
-
-  // Get nearest point to each template; should be template itself
-  gsl_matrix* nearest = NULL;
-  UINT8Vector* indices = NULL;
-  XLAL_CHECK(XLALNearestLatticeTilingPoints(tiling, templates, &nearest, &indices) == XLAL_SUCCESS, XLAL_EFUNC);
-  UINT8 failed = 0;
-  for (UINT8 i = 0; i < total; ++i) {
-    if (indices->data[i] != i) {
-      ++failed;
-      XLALPrintError("ERROR: indices->data[i] = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT "\n", indices->data[i], i);
+    // Count number of points
+    const UINT8 total = XLALNumberOfLatticeTilingPoints( itr );
+    printf( "Number of lattice points in %zu dimensions: %" LAL_UINT8_FORMAT "\n", i+1, total );
+    XLAL_CHECK( total == total_ref[i], XLAL_EFUNC, "ERROR: total = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = total_ref", total, total_ref[i] );
+    printf( "Minimum/average/maximum number of points per dimension:\n" );
+    for( size_t j = 0; j < n; ++j ) {
+      long min_dim = 0, max_dim = 0;
+      double avg_dim = 0;
+      XLAL_CHECK( XLALRangesOfLatticeTilingPoints( itr, j, &min_dim, &avg_dim, &max_dim ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( min_dim <= avg_dim && avg_dim <= max_dim, XLAL_EFAILED );
+      printf( "   %li <= %0.3g <= %li\n", min_dim, avg_dim, max_dim );
     }
-  }
-  if (failed > 0) {
-    XLAL_ERROR(XLAL_EFAILED, "ERROR: number of failed index lookups = %" LAL_UINT8_FORMAT " > 0", failed);
+
+    // Get all points
+    gsl_matrix *GAMAT( points, n, total );
+    for( size_t j = 0; j < total; ++j ) {
+      gsl_vector_view points_col = gsl_matrix_column( points, j );
+      XLAL_CHECK( XLALNextLatticeTilingPoint( itr, &points_col.vector ) > 0, XLAL_EFUNC );
+    }
+    XLAL_CHECK( XLALNextLatticeTilingPoint( itr, NULL ) == 0, XLAL_EFUNC );
+
+    // Get nearest point to each template; should be template itself
+    gsl_matrix *nearest = NULL;
+    UINT8Vector *indexes = NULL;
+    XLAL_CHECK( XLALNearestLatticeTilingPoints( loc, points, &nearest, NULL, &indexes ) == XLAL_SUCCESS, XLAL_EFUNC );
+    UINT8 failed = 0;
+    for( UINT8 j = 0; j < total; ++j ) {
+      if( indexes->data[j] != j ) {
+        ++failed;
+        XLALPrintError( "ERROR: indexes->data[j] = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT "\n", indexes->data[j], j );
+      }
+    }
+    if( failed > 0 ) {
+      XLAL_ERROR( XLAL_EFAILED, "ERROR: number of failed index lookups = %" LAL_UINT8_FORMAT " > 0", failed );
+    }
+
+    // Print index trie
+    printf( "Index trie in %zu dimensions:\n", i+1 );
+    XLAL_CHECK( XLALPrintLatticeTilingIndexTrie( loc, stdout ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    // Cleanup
+    XLALDestroyLatticeTilingIterator( itr );
+    XLALDestroyLatticeTilingLocator( loc );
+    XLALDestroyUINT8Vector( indexes );
+    GFMAT( points, nearest );
+
   }
 
   // Cleanup
-  XLALDestroyLatticeTilingSpace(space);
-  XLALDestroyLatticeTiling(tiling);
-  XLALDestroyUINT8Vector(indices);
-  GFMAT(metric, templates, nearest);
+  XLALDestroyLatticeTiling( tiling );
   LALCheckMemoryLeaks();
-  printf("\n");
+  printf( "\n" );
 
   return XLAL_SUCCESS;
 
 }
 
 static int MismatchTest(
-  LatticeTilingSpace* space,
-  gsl_matrix* metric,
+  LatticeTiling *tiling,
+  gsl_matrix *metric,
   const double max_mismatch,
-  const TilingLattice lattice,
   const UINT8 total_ref,
   const double mism_hist_ref[MISM_HIST_BINS+1]
   )
 {
 
-  // Create lattice tiling
-  printf("Lattice type: %u\n", lattice);
-  LatticeTiling* tiling = XLALCreateLatticeTiling(space, lattice, metric, max_mismatch);
-  XLAL_CHECK(tiling != NULL, XLAL_EFUNC);
-  const size_t n = XLALTotalLatticeTilingDimensions(tiling);
+  const size_t n = XLALNumberOfLatticeTilingDimensions( tiling );
 
-  // Count number of templates
-  UINT8 total = XLALLatticeTilingTotalPointCount(tiling);
-  printf("Number of lattice points: %" LAL_UINT8_FORMAT "\n", total);
-  XLAL_CHECK(total == total_ref, XLAL_EFUNC, "ERROR: total = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = total_ref", total, total_ref);
+  // Create lattice tiling iterator and locator
+  LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator( tiling, n );
+  XLAL_CHECK( itr != NULL, XLAL_EFUNC );
+  LatticeTilingLocator *loc = XLALCreateLatticeTilingLocator( tiling, n );
+  XLAL_CHECK( loc != NULL, XLAL_EFUNC );
 
-  // Get all templates
-  gsl_matrix* templates = XLALLatticeTilingUniquePoints(tiling, n - 1);
-  XLAL_CHECK(templates != NULL, XLAL_EFAILED);
+  // Count number of points
+  const UINT8 total = XLALNumberOfLatticeTilingPoints( itr );
+  printf( "Number of lattice points: %" LAL_UINT8_FORMAT "\n", total );
+  XLAL_CHECK( total == total_ref, XLAL_EFUNC, "ERROR: total = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = total_ref", total, total_ref );
+
+  // Get all points
+  gsl_matrix *GAMAT( points, n, total );
+  for( size_t j = 0; j < total; ++j ) {
+    gsl_vector_view points_col = gsl_matrix_column( points, j );
+    XLAL_CHECK( XLALNextLatticeTilingPoint( itr, &points_col.vector ) > 0, XLAL_EFUNC );
+  }
+  XLAL_CHECK( XLALNextLatticeTilingPoint( itr, NULL ) == 0, XLAL_EFUNC );
 
   // Initialise mismatch histogram counts
   double mism_hist[MISM_HIST_BINS+1] = {0};
 
   // Perform 10 injections for every template
-  gsl_matrix* GAMAT(injections, 3, total);
-  gsl_matrix* GAMAT(nearest, 3, total);
-  gsl_matrix* GAMAT(temp, 3, total);
-  RandomParams* rng = XLALCreateRandomParams(total);
-  XLAL_CHECK(rng != NULL, XLAL_EFUNC);
-  for (size_t i = 0; i < 10; ++i) {
+  {
+    gsl_matrix *GAMAT( injections, 3, total );
+    gsl_matrix *GAMAT( nearest, 3, total );
+    gsl_matrix *GAMAT( temp, 3, total );
+    RandomParams *rng = XLALCreateRandomParams( total );
+    XLAL_CHECK( rng != NULL, XLAL_EFUNC );
+    for( size_t i = 0; i < 10; ++i ) {
 
-    // Generate random injection points
-    XLAL_CHECK(XLALRandomLatticeTilingPoints(space, rng, injections) == XLAL_SUCCESS, XLAL_EFUNC);
+      // Generate random injection points
+      XLAL_CHECK( XLALRandomLatticeTilingPoints( tiling, 0.0, rng, injections ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-    // Find nearest lattice template points
-    XLAL_CHECK(XLALNearestLatticeTilingPoints(tiling, injections, &nearest, NULL) == XLAL_SUCCESS, XLAL_EFUNC);
+      // Find nearest lattice template points
+      XLAL_CHECK( XLALNearestLatticeTilingPoints( loc, injections, &nearest, NULL, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-    // Compute mismatch between injections
-    gsl_matrix_sub(nearest, injections);
-    gsl_blas_dsymm(CblasLeft, CblasUpper, 1.0, metric, nearest, 0.0, temp);
-    for (size_t j = 0; j < temp->size2; ++j) {
-      gsl_vector_view temp_j = gsl_matrix_column(temp, j);
-      gsl_vector_view nearest_j = gsl_matrix_column(nearest, j);
-      double mismatch = 0.0;
-      gsl_blas_ddot(&nearest_j.vector, &temp_j.vector, &mismatch);
-      mismatch /= max_mismatch;
+      // Compute mismatch between injections
+      gsl_matrix_sub( nearest, injections );
+      gsl_blas_dsymm( CblasLeft, CblasUpper, 1.0, metric, nearest, 0.0, temp );
+      for( size_t j = 0; j < temp->size2; ++j ) {
+        gsl_vector_view temp_j = gsl_matrix_column( temp, j );
+        gsl_vector_view nearest_j = gsl_matrix_column( nearest, j );
+        double mismatch = 0.0;
+        gsl_blas_ddot( &nearest_j.vector, &temp_j.vector, &mismatch );
+        mismatch /= max_mismatch;
 
-      // Add mismatch to histogram; out-of-range values go in last bin
-      if (mismatch < 0.0 || mismatch > 1.0) {
-        ++mism_hist[MISM_HIST_BINS];
-      } else {
-        ++mism_hist[lround(floor(mismatch * MISM_HIST_BINS))];
+        // Add mismatch to histogram; out-of-range values go in last bin
+        if( mismatch < 0.0 || mismatch > 1.0 ) {
+          ++mism_hist[MISM_HIST_BINS];
+        } else {
+          ++mism_hist[lround( floor( mismatch * MISM_HIST_BINS ) )];
+        }
+
       }
 
     }
+
+    // Cleanup
+    GFMAT( injections, nearest, temp );
+    XLALDestroyRandomParams( rng );
 
   }
 
   // Normalise histogram
   double mism_hist_total = 0.0;
-  for (size_t i = 0; i < MISM_HIST_BINS + 1; ++i) {
+  for( size_t i = 0; i < MISM_HIST_BINS + 1; ++i ) {
     mism_hist_total += mism_hist[i];
   }
-  for (size_t i = 0; i < MISM_HIST_BINS + 1; ++i) {
+  for( size_t i = 0; i < MISM_HIST_BINS + 1; ++i ) {
     mism_hist[i] *= MISM_HIST_BINS / mism_hist_total;
   }
 
   // Print mismatch histogram and its reference
-  printf("Mismatch histogram: ");
-  for (size_t i = 0; i < MISM_HIST_BINS + 1; ++i) {
-    printf(" %0.3f", mism_hist[i]);
+  printf( "Mismatch histogram: " );
+  for( size_t i = 0; i < MISM_HIST_BINS + 1; ++i ) {
+    printf( " %0.3f", mism_hist[i] );
   }
-  printf("\n");
-  printf("Reference histogram:");
-  for (size_t i = 0; i < MISM_HIST_BINS + 1; ++i) {
-    printf(" %0.3f", mism_hist_ref[i]);
+  printf( "\n" );
+  printf( "Reference histogram:" );
+  for( size_t i = 0; i < MISM_HIST_BINS + 1; ++i ) {
+    printf( " %0.3f", mism_hist_ref[i] );
   }
-  printf("\n");
+  printf( "\n" );
 
   // Determine error between mismatch histogram and its reference
   double mism_hist_error = 0.0;
-  for (size_t i = 0; i < MISM_HIST_BINS + 1; ++i) {
-    mism_hist_error += fabs(mism_hist[i] - mism_hist_ref[i]);
+  for( size_t i = 0; i < MISM_HIST_BINS + 1; ++i ) {
+    mism_hist_error += fabs( mism_hist[i] - mism_hist_ref[i] );
   }
   mism_hist_error /= MISM_HIST_BINS + 1;
-  printf("Mismatch histogram error: %0.3e\n", mism_hist_error);
+  printf( "Mismatch histogram error: %0.3e\n", mism_hist_error );
   const double mism_hist_error_tol = 5e-2;
-  if (mism_hist_error >= mism_hist_error_tol) {
-    XLAL_ERROR(XLAL_EFAILED, "ERROR: mismatch histogram error exceeds %0.3e\n", mism_hist_error_tol);
+  if( mism_hist_error >= mism_hist_error_tol ) {
+    XLAL_ERROR( XLAL_EFAILED, "ERROR: mismatch histogram error exceeds %0.3e\n", mism_hist_error_tol );
+  }
+
+  // Perform 10 injections outside parameter space
+  {
+    gsl_matrix *GAMAT( injections, 3, 10 );
+    gsl_matrix *nearest = NULL;
+    UINT8Vector *indexes = NULL;
+    RandomParams *rng = XLALCreateRandomParams( total );
+    XLAL_CHECK( rng != NULL, XLAL_EFUNC );
+
+    // Generate random injection points outside parameter space
+    XLAL_CHECK( XLALRandomLatticeTilingPoints( tiling, 5.0, rng, injections ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    // Find nearest lattice template points
+    XLAL_CHECK( XLALNearestLatticeTilingPoints( loc, injections, &nearest, NULL, &indexes ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    // Cleanup
+    GFMAT( injections, nearest );
+    XLALDestroyUINT8Vector( indexes );
+    XLALDestroyRandomParams( rng );
+
   }
 
   // Cleanup
-  XLALDestroyLatticeTilingSpace(space);
-  XLALDestroyLatticeTiling(tiling);
-  XLALDestroyRandomParams(rng);
-  GFMAT(metric, templates, injections, nearest, temp);
+  XLALDestroyLatticeTiling( tiling );
+  XLALDestroyLatticeTilingIterator( itr );
+  XLALDestroyLatticeTilingLocator( loc );
+  GFMAT( metric, points );
   LALCheckMemoryLeaks();
-  printf("\n");
+  printf( "\n" );
 
   return XLAL_SUCCESS;
 
@@ -253,35 +314,35 @@ static int MismatchSquareTest(
   )
 {
 
-  // Create lattice tiling parameter space
-  LatticeTilingSpace* space = XLALCreateLatticeTilingSpace(3);
-  XLAL_CHECK(space != NULL, XLAL_EFUNC);
+  // Create lattice tiling
+  LatticeTiling *tiling = XLALCreateLatticeTiling( 3 );
+  XLAL_CHECK( tiling != NULL, XLAL_EFUNC );
 
   // Add bounds
   const double fndot[3] = {100, 0, 0};
   const double fndotband[3] = {freqband, f1dotband, f2dotband};
-  for (size_t i = 0; i < 3; ++i) {
-    printf("Bounds: f%zudot=%0.3g, f%zudotband=%0.3g\n", i, fndot[i], i, fndotband[i]);
-    XLAL_CHECK(XLALSetLatticeTilingConstantBound(space, i, fndot[i], fndot[i] + fndotband[i])
-               == XLAL_SUCCESS, XLAL_EFUNC);
+  for( size_t i = 0; i < 3; ++i ) {
+    printf( "Bounds: f%zudot=%0.3g, f%zudotband=%0.3g\n", i, fndot[i], i, fndotband[i] );
+    XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, i, fndot[i], fndot[i] + fndotband[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
   // Set metric to the spindown metric
-  gsl_matrix* GAMAT(metric, 3, 3);
-  for (size_t i = 0; i < metric->size1; ++i) {
-    for (size_t j = i; j < metric->size2; ++j) {
+  const double max_mismatch = 0.3;
+  gsl_matrix *GAMAT( metric, 3, 3 );
+  for( size_t i = 0; i < metric->size1; ++i ) {
+    for( size_t j = i; j < metric->size2; ++j ) {
       const double Tspan = 432000;
-      gsl_matrix_set(metric, i, j, (
-                       4.0 * LAL_PI * LAL_PI * pow(Tspan, i + j + 2) * (i + 1) * (j + 1)
-                       ) / (
-                         LAL_FACT[i + 1] * LAL_FACT[j + 1] * (i + 2) * (j + 2) * (i + j + 3)
-                         ));
-      gsl_matrix_set(metric, j, i, gsl_matrix_get(metric, i, j));
+      const double metric_i_j_num = 4.0 * LAL_PI * LAL_PI * pow( Tspan, i + j + 2 ) * ( i + 1 ) * ( j + 1 );
+      const double metric_i_j_denom = LAL_FACT[i + 1] * LAL_FACT[j + 1] * ( i + 2 ) * ( j + 2 ) * ( i + j + 3 );
+      gsl_matrix_set( metric, i, j, metric_i_j_num / metric_i_j_denom );
+      gsl_matrix_set( metric, j, i, gsl_matrix_get( metric, i, j ) );
     }
   }
+  printf( "Lattice type: %u\n", lattice );
+  XLAL_CHECK( XLALSetTilingLatticeAndMetric( tiling, lattice, metric, max_mismatch ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Perform mismatch test
-  XLAL_CHECK(MismatchTest(space, metric, 0.3, lattice, total_ref, mism_hist_ref) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK( MismatchTest( tiling, metric, max_mismatch, total_ref, mism_hist_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
 
@@ -296,38 +357,39 @@ static int MismatchAgeBrakeTest(
   )
 {
 
-  // Create lattice tiling parameter space
-  LatticeTilingSpace* space = XLALCreateLatticeTilingSpace(3);
-  XLAL_CHECK(space != NULL, XLAL_EFUNC);
+  // Create lattice tiling
+  LatticeTiling *tiling = XLALCreateLatticeTiling( 3 );
+  XLAL_CHECK( tiling != NULL, XLAL_EFUNC );
 
   // Add bounds
-  printf("Bounds: freq=%0.3g, freqband=%0.3g\n", freq, freqband);
-  XLAL_CHECK(XLALSetLatticeTilingConstantBound(space, 0, freq, freq + freqband) == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK(XLALSetLatticeTilingF1DotAgeBrakingBound(space, 0, 1, 1e11, 2, 5) == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK(XLALSetLatticeTilingF2DotBrakingBound(space, 0, 1, 2, 2, 5) == XLAL_SUCCESS, XLAL_EFUNC);
+  printf( "Bounds: freq=%0.3g, freqband=%0.3g\n", freq, freqband );
+  XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, 0, freq, freq + freqband ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetLatticeTilingF1DotAgeBrakingBound( tiling, 0, 1, 1e11, 2, 5 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetLatticeTilingF2DotBrakingBound( tiling, 0, 1, 2, 2, 5 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Set metric to the spindown metric
-  gsl_matrix* GAMAT(metric, 3, 3);
-  for (size_t i = 0; i < metric->size1; ++i) {
-    for (size_t j = i; j < metric->size2; ++j) {
+  const double max_mismatch = 0.3;
+  gsl_matrix *GAMAT( metric, 3, 3 );
+  for( size_t i = 0; i < metric->size1; ++i ) {
+    for( size_t j = i; j < metric->size2; ++j ) {
       const double Tspan = 1036800;
-      gsl_matrix_set(metric, i, j, (
-                       4.0 * LAL_PI * LAL_PI * pow(Tspan, i + j + 2) * (i + 1) * (j + 1)
-                       ) / (
-                         LAL_FACT[i + 1] * LAL_FACT[j + 1] * (i + 2) * (j + 2) * (i + j + 3)
-                         ));
-      gsl_matrix_set(metric, j, i, gsl_matrix_get(metric, i, j));
+      const double metric_i_j_num = 4.0 * LAL_PI * LAL_PI * pow( Tspan, i + j + 2 ) * ( i + 1 ) * ( j + 1 );
+      const double metric_i_j_denom = LAL_FACT[i + 1] * LAL_FACT[j + 1] * ( i + 2 ) * ( j + 2 ) * ( i + j + 3 );
+      gsl_matrix_set( metric, i, j, metric_i_j_num / metric_i_j_denom );
+      gsl_matrix_set( metric, j, i, gsl_matrix_get( metric, i, j ) );
     }
   }
+  printf( "Lattice type: %u\n", lattice );
+  XLAL_CHECK( XLALSetTilingLatticeAndMetric( tiling, lattice, metric, max_mismatch ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Perform mismatch test
-  XLAL_CHECK(MismatchTest(space, metric, 0.3, lattice, total_ref, mism_hist_ref) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK( MismatchTest( tiling, metric, max_mismatch, total_ref, mism_hist_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
 
 }
 
-static int SuperSkyTest(
+static int SuperskyTest(
   const double T,
   const double max_mismatch,
   const TilingLattice lattice,
@@ -338,95 +400,81 @@ static int SuperSkyTest(
   )
 {
 
-  // Create lattice tiling parameter space
-  LatticeTilingSpace *space = XLALCreateLatticeTilingSpace(3);
-  XLAL_CHECK(space != NULL, XLAL_EFUNC);
+  // Create lattice tiling
+  LatticeTiling *tiling = XLALCreateLatticeTiling( 3 );
+  XLAL_CHECK( tiling != NULL, XLAL_EFUNC );
 
-  // Compute reduced super-sky metric
+  // Compute reduced supersky metric
   const double Tspan = T * 86400;
-  gsl_matrix *essky_metric = NULL;
   LIGOTimeGPS ref_time;
-  XLALGPSSetREAL8(&ref_time, 900100100);
+  XLALGPSSetREAL8( &ref_time, 900100100 );
   LALSegList segments;
   {
-    XLAL_CHECK(XLALSegListInit(&segments) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK( XLALSegListInit( &segments ) == XLAL_SUCCESS, XLAL_EFUNC );
     LALSeg segment;
     LIGOTimeGPS start_time = ref_time, end_time = ref_time;
-    XLALGPSAdd(&start_time, -0.5 * Tspan);
-    XLALGPSAdd(&end_time, 0.5 * Tspan);
-    XLAL_CHECK(XLALSegSet(&segment, &start_time, &end_time, 0) == XLAL_SUCCESS, XLAL_EFUNC);
-    XLAL_CHECK(XLALSegListAppend(&segments, &segment) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLALGPSAdd( &start_time, -0.5 * Tspan );
+    XLALGPSAdd( &end_time, 0.5 * Tspan );
+    XLAL_CHECK( XLALSegSet( &segment, &start_time, &end_time, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALSegListAppend( &segments, &segment ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
   MultiLALDetector detectors = {
     .length = 1,
     .sites = { lalCachedDetectors[LAL_LLO_4K_DETECTOR] }
   };
-  EphemerisData* edat =  XLALInitBarycenter(TEST_DATA_DIR "earth00-19-DE405.dat.gz",
-                                            TEST_DATA_DIR "sun00-19-DE405.dat.gz");
-  XLAL_CHECK(edat != NULL, XLAL_EFUNC);
-  XLAL_CHECK(XLALExpandedSuperSkyMetric(&essky_metric, 0, &ref_time, &segments, freq, &detectors,
-                                        NULL, DETMOTION_SPIN | DETMOTION_PTOLEORBIT, edat)
-             == XLAL_SUCCESS, XLAL_EFUNC);
-  XLALSegListClear(&segments);
-  XLALDestroyEphemerisData(edat);
+  EphemerisData *edat =  XLALInitBarycenter( TEST_DATA_DIR "earth00-19-DE405.dat.gz",
+                                             TEST_DATA_DIR "sun00-19-DE405.dat.gz" );
+  XLAL_CHECK( edat != NULL, XLAL_EFUNC );
   gsl_matrix *rssky_metric = NULL, *rssky_transf = NULL;
-  XLAL_CHECK(XLALReducedSuperSkyMetric(&rssky_metric, &rssky_transf, essky_metric)
-             == XLAL_SUCCESS, XLAL_EFUNC);
-  GFMAT(essky_metric);
+  XLAL_CHECK( XLALComputeSuperskyMetrics( &rssky_metric, &rssky_transf, NULL, NULL, NULL, NULL, 0, &ref_time, &segments, freq, &detectors, NULL, DETMOTION_SPIN | DETMOTION_PTOLEORBIT, edat ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLALSegListClear( &segments );
+  XLALDestroyEphemerisData( edat );
 
   // Add bounds
-  printf("Bounds: super-sky, freq=%0.3g, freqband=%0.3g\n", freq, freqband);
-  XLAL_CHECK(XLALSetLatticeTilingReducedSuperSkyBounds(space)
-             == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK(XLALSetLatticeTilingPhysicalSpinBound(space, rssky_transf, 0, freq, freq + freqband)
-             == XLAL_SUCCESS, XLAL_EFUNC);
-  GFMAT(rssky_transf);
+  printf( "Bounds: supersky, freq=%0.3g, freqband=%0.3g\n", freq, freqband );
+  XLAL_CHECK( XLALSetSuperskyLatticeTilingAllSkyBounds( tiling ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetSuperskyLatticeTilingPhysicalSpinBound( tiling, rssky_transf, 0, freq, freq + freqband ) == XLAL_SUCCESS, XLAL_EFUNC );
+  GFMAT( rssky_transf );
+
+  // Set metric
+  printf( "Lattice type: %u\n", lattice );
+  XLAL_CHECK( XLALSetTilingLatticeAndMetric( tiling, lattice, rssky_metric, max_mismatch ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Perform mismatch test
-  XLAL_CHECK(MismatchTest(space, rssky_metric, max_mismatch, lattice, total_ref, mism_hist_ref)
-             == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK( MismatchTest( tiling, rssky_metric, max_mismatch, total_ref, mism_hist_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
 
 }
 
-int main(void) {
+int main( void )
+{
 
   // Perform basic tests
-  XLAL_CHECK_MAIN(BasicTest(1, TILING_LATTICE_CUBIC,    93) == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN(BasicTest(1, TILING_LATTICE_ANSTAR,   93) == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN(BasicTest(2, TILING_LATTICE_CUBIC,   190) == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN(BasicTest(2, TILING_LATTICE_ANSTAR,  144) == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN(BasicTest(3, TILING_LATTICE_CUBIC,   583) == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN(BasicTest(3, TILING_LATTICE_ANSTAR,  332) == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN(BasicTest(4, TILING_LATTICE_CUBIC,  2543) == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN(BasicTest(4, TILING_LATTICE_ANSTAR,  897) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( BasicTest( 1, TILING_LATTICE_CUBIC,  93,   0,   0,    0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 1, TILING_LATTICE_ANSTAR, 93,   0,   0,    0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 2, TILING_LATTICE_CUBIC,  13, 190,   0,    0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 2, TILING_LATTICE_ANSTAR, 12, 144,   0,    0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 3, TILING_LATTICE_CUBIC,   8,  60, 583,    0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 3, TILING_LATTICE_ANSTAR,  8,  46, 332,    0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 4, TILING_LATTICE_CUBIC,   7,  46, 287, 2543 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 4, TILING_LATTICE_ANSTAR,  6,  30, 145,  897 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Perform mismatch tests with a square parameter space
-  XLAL_CHECK_MAIN(MismatchSquareTest(TILING_LATTICE_CUBIC,  0.03,     0,     0, 21460, Z1_A1s_mism_hist)
-                  == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN(MismatchSquareTest(TILING_LATTICE_CUBIC,  2e-4, -2e-9,     0, 23763,     Z2_mism_hist)
-                  == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN(MismatchSquareTest(TILING_LATTICE_CUBIC,  1e-4, -1e-9, 1e-17, 19550,     Z3_mism_hist)
-                  == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN(MismatchSquareTest(TILING_LATTICE_ANSTAR, 0.03,     0,     0, 21460, Z1_A1s_mism_hist)
-                  == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN(MismatchSquareTest(TILING_LATTICE_ANSTAR, 2e-4, -2e-9,     0, 18283,    A2s_mism_hist)
-                  == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN(MismatchSquareTest(TILING_LATTICE_ANSTAR, 1e-4, -2e-9, 2e-17, 20268,    A3s_mism_hist)
-                  == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( MismatchSquareTest( TILING_LATTICE_CUBIC,  0.03,     0,     0, 21460, Z1_A1s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( MismatchSquareTest( TILING_LATTICE_CUBIC,  2e-4, -2e-9,     0, 23763,     Z2_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( MismatchSquareTest( TILING_LATTICE_CUBIC,  1e-4, -1e-9, 1e-17, 19550,     Z3_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( MismatchSquareTest( TILING_LATTICE_ANSTAR, 0.03,     0,     0, 21460, Z1_A1s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( MismatchSquareTest( TILING_LATTICE_ANSTAR, 2e-4, -2e-9,     0, 18283,    A2s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( MismatchSquareTest( TILING_LATTICE_ANSTAR, 1e-4, -2e-9, 2e-17, 20268,    A3s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Perform mismatch tests with an age--braking index parameter space
-  XLAL_CHECK_MAIN(MismatchAgeBrakeTest(TILING_LATTICE_ANSTAR, 100, 4.0e-5, 37870, A3s_mism_hist)
-                  == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN(MismatchAgeBrakeTest(TILING_LATTICE_ANSTAR, 200, 1.5e-5, 37230, A3s_mism_hist)
-                  == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN(MismatchAgeBrakeTest(TILING_LATTICE_ANSTAR, 300, 1.0e-5, 37022, A3s_mism_hist)
-                  == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( MismatchAgeBrakeTest( TILING_LATTICE_ANSTAR, 100, 4.0e-5, 37870, A3s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( MismatchAgeBrakeTest( TILING_LATTICE_ANSTAR, 200, 1.5e-5, 37230, A3s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( MismatchAgeBrakeTest( TILING_LATTICE_ANSTAR, 300, 1.0e-5, 37022, A3s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  // Perform mismatch tests with the reduced super-sky parameter space and metric
-  XLAL_CHECK_MAIN(SuperSkyTest(2.0, 0.5, TILING_LATTICE_ANSTAR, 50, 1e-4, 111520, A3s_mism_hist)
-                  == XLAL_SUCCESS, XLAL_EFUNC);
+  // Perform mismatch tests with the reduced supersky parameter space and metric
+  XLAL_CHECK_MAIN( SuperskyTest( 2.0, 0.5, TILING_LATTICE_ANSTAR, 50, 1e-4, 111520, A3s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return EXIT_SUCCESS;
 

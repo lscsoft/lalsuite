@@ -499,11 +499,12 @@ LIGOTimeGPSVector *
 XLALTimestampsFromSegmentFile ( const char *filename,    //!< filename: Input filename
                                 REAL8 Tsft,              //!< Tsft: SFT length of each timestamp, in seconds
                                 REAL8 Toverlap,          //!< Toverlap: time to overlap successive SFTs by, in seconds
-                                INT4 adjustSegExtraTime, //!< adjustSegExtraTime: (0 or 1) remove the unused time from beginning and end of the segments (see MakeSFTDAG)
-                                INT4 synchronize         //!< synchronize: (0 or 1) synchronize SFT start times according to the start time of the first SFT
+                                BOOLEAN adjustSegExtraTime, //!< adjustSegExtraTime: remove the unused time from beginning and end of the segments (see MakeSFTDAG)
+                                BOOLEAN synchronize         //!< synchronize: synchronize SFT start times according to the start time of the first SFT. Start time of first SFT is shifted to next higher integer value of Tsft
                                 )
 {
   XLAL_CHECK_NULL ( filename != NULL, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( !(adjustSegExtraTime && synchronize), XLAL_EINVAL, "Must specify only one of adjustSegExtraTime or synchronize" );
 
   LALSegList *list = NULL;
   XLAL_CHECK_NULL ( ( list = XLALReadSegmentsFromFile ( filename )) != NULL, XLAL_EFUNC );
@@ -547,7 +548,7 @@ XLALTimestampsFromSegmentFile ( const char *filename,    //!< filename: Input fi
           REAL8 segStartTime = XLALGPSGetREAL8 ( &(list->segs[i].start) );
           REAL8 segEndTime = XLALGPSGetREAL8 ( &(list->segs[i].end) );
           if ( firstSFTstartTime==0.0 ) {
-            firstSFTstartTime = segStartTime;
+             firstSFTstartTime = ceil(segStartTime/Tsft)*Tsft;
           }
           analysisStartTime = round ( ceil ( (segStartTime - firstSFTstartTime)/((1.0 - overlapFraction)*Tsft))*(1.0 - overlapFraction)*Tsft) + firstSFTstartTime;
           if (analysisStartTime > segEndTime) {
@@ -623,7 +624,7 @@ XLALTimestampsFromSegmentFile ( const char *filename,    //!< filename: Input fi
           REAL8 segStartTime = XLALGPSGetREAL8 ( &(list->segs[i].start) );
           REAL8 segEndTime = XLALGPSGetREAL8 ( &(list->segs[i].end) );
           if ( firstSFTstartTime==0.0 ) {
-            firstSFTstartTime = segStartTime;
+             firstSFTstartTime = ceil(segStartTime/Tsft)*Tsft;
           }
           analysisStartTime = round ( ceil ( (segStartTime - firstSFTstartTime)/((1.0 - overlapFraction)*Tsft))*(1.0 - overlapFraction)*Tsft) + firstSFTstartTime;
           if (analysisStartTime > segEndTime) {
@@ -651,13 +652,15 @@ XLALTimestampsFromSegmentFile ( const char *filename,    //!< filename: Input fi
           }
           if ( endTime <= analysisEndTime ) {
             numThisSeg++;
+            LIGOTimeGPS sftStart;
+            XLALGPSSetREAL8( &sftStart, endTime-Tsft);
+            ret->data[j] = sftStart;
+            j++;
           }
-          LIGOTimeGPS sftStart;
-          XLALGPSSetREAL8( &sftStart, endTime-Tsft);
-          ret->data[j] = sftStart;
-          j++;
         } // while ( endTime < analysisEndTime )
     } // for i < length
+
+  XLALSegListFree(list);
 
   /* done: return Ts-vector */
   return ret;

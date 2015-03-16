@@ -4,17 +4,11 @@ EXTRA_DIST =
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
 include $(top_srcdir)/gnuscripts/lalapps.am
 
-if LALFRAME
-if LALMETAIO
-if LALBURST
 BURSTPROGS = lalapps_binj
 lalapps_binj_SOURCES = binj.c
 if LALINSPIRAL
 INSPPROGS = lalapps_power
 lalapps_power_SOURCES = power.c
-endif
-endif
-endif
 endif
 
 bin_PROGRAMS = $(BURSTPROGS) $(INSPPROGS)

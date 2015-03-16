@@ -205,7 +205,7 @@ delay = config.getfloat(event_type, 'delay') ### the amount of extra time we wai
 #========================
 # get start and end time for our look-up routines
 #========================
-event_gps_time = gdb_entry['gpstime']
+event_gps_time = float(gdb_entry['gpstime'])
 
 gps_start = event_gps_time - time_before
 gps_end = event_gps_time + time_after

@@ -30,8 +30,7 @@ mismatch from  1 - { (1/T) \int cos( phi1 - phi2 ) dt }^2. */
 #include <lal/MatrixUtils.h>
 #include <lal/LALConstants.h>
 #include <lal/XLALError.h>
-
-#include <getopt.h>
+#include <lal/LALgetopt.h>
 
 #define SIXTH 0.166666666666666666666666666666666666666667L
 #define TWENTYFOURTH 0.04166666666666666666666666666666666666666667L
@@ -370,7 +369,7 @@ maxpowmismatch, meanpowmismatch);
 }
 
 void get_input_args(InputParams *inputParams, INT4 argc, CHAR *argv[]){
-  struct option long_options[] =
+  struct LALoption long_options[] =
   {
     { "help",           no_argument,       0, 'h' },
     { "detector",      required_argument, 0, 'D' },
@@ -395,7 +394,7 @@ void get_input_args(InputParams *inputParams, INT4 argc, CHAR *argv[]){
     INT4 option_index = 0;
     INT4 c;
 
-    c = getopt_long_only( argc, argv, args, long_options, &option_index );
+    c = LALgetopt_long_only( argc, argv, args, long_options, &option_index );
     if( c == -1 ) /* end of options */
       break;
 
@@ -405,45 +404,45 @@ void get_input_args(InputParams *inputParams, INT4 argc, CHAR *argv[]){
           break;
         else
           fprintf(stderr, "Error passing option %s with argument %s\n",
-            long_options[option_index].name, optarg);
+            long_options[option_index].name, LALoptarg);
       case 'h': /* help message */
         fprintf(stderr, USAGE, program);
         exit(0);
       case 'D':
-        sprintf(inputParams->det, "%s", optarg);
+        sprintf(inputParams->det, "%s", LALoptarg);
         break;
       case 'p':
-        sprintf(inputParams->pulsar, "%s", optarg);
+        sprintf(inputParams->pulsar, "%s", LALoptarg);
         break;
       case 'P':
-        sprintf(inputParams->parfile, "%s", optarg);
+        sprintf(inputParams->parfile, "%s", LALoptarg);
         break;
       case 'b':
-        sprintf(inputParams->parfile2, "%s", optarg);
+        sprintf(inputParams->parfile2, "%s", LALoptarg);
         break;
       case 'c':
-        sprintf(inputParams->covfile, "%s", optarg);
+        sprintf(inputParams->covfile, "%s", LALoptarg);
         break;
       case 's':
-        inputParams->start = atoi(optarg);
+        inputParams->start = atoi(LALoptarg);
         break;
       case 't':
-        inputParams->timespan = atoi(optarg);
+        inputParams->timespan = atoi(LALoptarg);
         break;
       case 'd':
-        inputParams->deltat = atoi(optarg);
+        inputParams->deltat = atoi(LALoptarg);
         break;
       case 'i':
-        inputParams->iterations = atoi(optarg);
+        inputParams->iterations = atoi(LALoptarg);
         break;
       case 'o':
-        sprintf(inputParams->outputdir, "%s", optarg);
+        sprintf(inputParams->outputdir, "%s", LALoptarg);
         break;
       case 'e':
-        sprintf(inputParams->earth, "%s", optarg);
+        sprintf(inputParams->earth, "%s", LALoptarg);
         break;
       case 'S':
-        sprintf(inputParams->sun, "%s", optarg);
+        sprintf(inputParams->sun, "%s", LALoptarg);
         break;
       case '?':
         fprintf(stderr, "Unknown error while parsing options\n");

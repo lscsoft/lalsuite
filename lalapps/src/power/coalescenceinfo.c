@@ -21,8 +21,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <getopt.h>
 #include <lal/LALStdio.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALStdlib.h>
 #include <lal/Date.h>
 #include <lal/LIGOLwXML.h>
@@ -129,7 +129,7 @@ static void set_option_defaults(struct options_t *options)
 
 static void parse_command_line(int argc, char **argv, struct options_t *options)
 {
-	struct option long_options[] = {
+	struct LALoption long_options[] = {
 		/* these options set a flag */
 		{"verbose",         no_argument,        &options->verbose, 1},
 		/* parameters which determine the output xml file */
@@ -144,7 +144,7 @@ static void parse_command_line(int argc, char **argv, struct options_t *options)
 
 
 	do {
-		switch(c = getopt_long(argc, argv, "a:b:c:", long_options, &option_index)) {
+		switch(c = LALgetopt_long(argc, argv, "a:b:c:", long_options, &option_index)) {
 			case -1:
 			case 0:
 			break;
@@ -153,21 +153,21 @@ static void parse_command_line(int argc, char **argv, struct options_t *options)
 			/*
 			 * file containing list of xml files to use
 			 */
-			options->mass1 = atoi(optarg);
+			options->mass1 = atoi(LALoptarg);
 			break;
 
 			case 'b':
 			/*
 			 * output cache file name
 			 */
-			options->mass2 = atoi(optarg);
+			options->mass2 = atoi(LALoptarg);
 			break;
 
 			case 'c':
 			/*
 			 * output cache file name
 			 */
-			options->flow = atof(optarg);
+			options->flow = atof(LALoptarg);
 			break;	
 
 			case ':':
@@ -182,10 +182,10 @@ static void parse_command_line(int argc, char **argv, struct options_t *options)
 		}
 	} while(c != -1);
 
-	if(optind < argc) {
+	if(LALoptind < argc) {
 		fprintf(stderr, "extraneous command line arguments:\n");
-		while(optind < argc)
-			fprintf(stderr, "%s\n", argv[optind++]);
+		while(LALoptind < argc)
+			fprintf(stderr, "%s\n", argv[LALoptind++]);
 		exit(1);
 	}
 

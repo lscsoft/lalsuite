@@ -13,11 +13,11 @@ pkginclude_HEADERS = \
 	ComplexAM.h \
 	ComputeFstat.h \
 	ComputeSky.h \
-	CWFastMath.h \
 	CWMakeFakeData.h \
 	DetectorStates.h \
 	DopplerFullScan.h \
 	DopplerScan.h \
+	EstimateAmplitudeParams.h \
 	ExtrapolatePulsarSpins.h \
 	FitToPulsar.h \
 	FlatMesh.h \
@@ -60,7 +60,7 @@ pkginclude_HEADERS = \
 	SSBtimes.h \
 	StackMetric.h \
 	Statistics.h \
-	SuperSkyMetrics.h \
+	SuperskyMetrics.h \
 	SynthesizeCWDraws.h \
 	TransientCW_utils.h \
 	TwoDMesh.h \
@@ -76,13 +76,13 @@ liblalpulsar_la_SOURCES = \
 	ComputeFstat.c \
 	ComputeSky.c \
 	ConstructPLUT.c \
-	CWFastMath.c \
 	CWMakeFakeData.c \
 	DetectorStates.c \
 	DopplerFullScan.c \
 	DopplerScan.c \
 	DriveHough.c \
 	DTEphemeris.c \
+	EstimateAmplitudeParams.c \
 	ExtrapolatePulsarSpins.c \
 	FitToPulsar.c \
 	FlatMesh.c \
@@ -127,7 +127,7 @@ liblalpulsar_la_SOURCES = \
 	StackMetric.c \
 	Statistics.c \
 	Stereographic.c \
-	SuperSkyMetrics.c \
+	SuperskyMetrics.c \
 	SynthesizeCWDraws.c \
 	TBaryPtolemaic.c \
 	TComp.c \

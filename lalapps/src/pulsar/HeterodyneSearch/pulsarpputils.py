@@ -1745,8 +1745,8 @@ def convert_model_parameters(pardict):
 
   C21 = 2.*math.sqrt( A21**2 + B21**2 )
 
-  phi22 = 2.*phi0 - math.atan2( B22, A22 )
-  phi21 = phi0 - math.atan2( B21, A21 )
+  phi22 = np.fmod(2.*phi0 - math.atan2( B22, A22 ), 2.*np.pi)
+  phi21 = np.fmod(phi0 - math.atan2( B21, A21 ), 2.*np.pi)
 
   outvals = {'C22': C22, 'C21': C21, 'phi22': phi22, 'phi21': phi21}
 

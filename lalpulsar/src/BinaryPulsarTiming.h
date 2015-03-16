@@ -45,7 +45,6 @@
 #define _BINARYPULSARTIMING_H
 
 #include <ctype.h>
-#include <unistd.h>
 
 #include <lal/LALStdlib.h>
 #include <lal/StringVector.h>

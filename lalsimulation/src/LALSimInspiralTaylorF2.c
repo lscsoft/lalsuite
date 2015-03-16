@@ -116,7 +116,7 @@ int XLALSimInspiralTaylorF2Core(
 	    if(iStart < 0) XLAL_ERROR(XLAL_EFAULT);
     }
     else { //otherwise allocate memory here
-	    htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", &tC, freqs->data[0], NAN, &lalStrainUnit, freqs->length);
+	    htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", &tC, freqs->data[0], 0., &lalStrainUnit, freqs->length);
 	    if (!htilde) XLAL_ERROR(XLAL_EFUNC);
 	    XLALUnitDivide(&htilde->sampleUnits, &htilde->sampleUnits, &lalSecondUnit);
     }

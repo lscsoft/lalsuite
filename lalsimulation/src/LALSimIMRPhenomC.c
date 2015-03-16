@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Prayush Kumar, Frank Ohme
+ * Copyright (C) 2012 Prayush Kumar, Frank Ohme, 2015 Michael Puerrer
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -23,6 +23,8 @@
 
 #include <math.h>
 #include <complex.h>
+#include <gsl/gsl_errno.h>
+#include <gsl/gsl_spline.h>
 
 #include <lal/LALStdlib.h>
 #include <lal/LALSimIMR.h>
@@ -36,6 +38,9 @@
 
 #include "LALSimIMRPhenomC_internals.c"
 
+#ifndef _OPENMP
+#define omp ignore
+#endif
 
 /**
  * private function prototypes; all internal functions use solar masses.
@@ -59,7 +64,6 @@ static int apply_phase_shift(const REAL8TimeSeries *hp, const REAL8TimeSeries *h
 static int apply_inclination(const REAL8TimeSeries *hp, const REAL8TimeSeries *hc, const REAL8 inclination);
 
 static REAL8 PlanckTaper(const REAL8 t, const REAL8 t1, const REAL8 t2);
-
 
 /**
  * Driver routine to compute the spin-aligned, inspiral-merger-ringdown
@@ -101,38 +105,29 @@ int XLALSimIMRPhenomCGenerateFD(
   if (distance <= 0) XLAL_ERROR(XLAL_EDOM);
 
   /* If spins are above 0.9 or below -0.9, throw an error */
-  if (chi > 0.9 || chi < -0.9){
-      XLALPrintError("Spins outside the range [-0.9,0.9] are not supported\n");
-      XLAL_ERROR(XLAL_EDOM);
-  }
+  if (chi > 0.9 || chi < -0.9)
+      XLAL_ERROR(XLAL_EDOM, "Spins outside the range [-0.9,0.9] are not supported\n");
 
   /* If mass ratio is above 4 and below 20, give a warning, and if it is above
    * 20, throw an error */
-	REAL8 q = (m1 > m2) ? (m1 / m2) : (m2 / m1);
+  REAL8 q = (m1 > m2) ? (m1 / m2) : (m2 / m1);
 
-  if (q > 20.0){
-      XLALPrintError("Mass ratio is way outside the calibration range. m1/m2 should be <= 20.\n");
-      XLAL_ERROR(XLAL_EDOM);
-  }
-  else if (q > 4.0){
-      XLALPrintWarning("Warning: The model is only calibrated for m1/m2 <= 4.\n");
-  }
+  if (q > 20.0)
+      XLAL_ERROR(XLAL_EDOM, "Mass ratio is way outside the calibration range. m1/m2 should be <= 20.\n");
+  else if (q > 4.0)
+      XLAL_PRINT_WARNING("Warning: The model is only calibrated for m1/m2 <= 4.\n");
 
   /* phenomenological parameters*/
   params = ComputeIMRPhenomCParams(m1, m2, chi);
   if (!params) XLAL_ERROR(XLAL_EFUNC);
-  if (params->fCut <= f_min) {
-      XLALPrintError("(fCut = 0.15M) <= f_min\n");
-      XLAL_ERROR(XLAL_EDOM);
-  }
+  if (params->fCut <= f_min)
+      XLAL_ERROR(XLAL_EDOM, "(fCut = 0.15M) <= f_min\n");
 
   /* default f_max to params->fCut */
   f_max_prime = f_max ? f_max : params->fCut;
   f_max_prime = (f_max_prime > params->fCut) ? params->fCut : f_max_prime;
-  if (f_max_prime <= f_min) {
-      XLALPrintError("f_max <= f_min\n");
-      XLAL_ERROR(XLAL_EDOM);
-  }
+  if (f_max_prime <= f_min)
+      XLAL_ERROR(XLAL_EDOM, "f_max <= f_min\n");
 
   status = IMRPhenomCGenerateFD(htilde, phi0, deltaF, m1, m2, f_min, f_max_prime, distance, params);
 
@@ -210,38 +205,29 @@ int XLALSimIMRPhenomCGenerateTD(
 	if (distance <= 0) XLAL_ERROR(XLAL_EDOM);
 
 	/* If spins are above 0.9 or below -0.9, throw an error */
-	if (chi > 0.9 || chi < -0.9){
-		XLALPrintError("Spins outside the range [-0.9,0.9] are not supported\n");
-		XLAL_ERROR(XLAL_EDOM);
-	}
+	if (chi > 0.9 || chi < -0.9)
+		XLAL_ERROR(XLAL_EDOM, "Spins outside the range [-0.9,0.9] are not supported\n");
 
 	/* If mass ratio is above 4 and below 20, give a warning, and if it is above
 	 * 20, throw an error */
 	REAL8 q = (m1 > m2) ? (m1 / m2) : (m2 / m1);
 
-	if (q > 20.0){
-		XLALPrintError("Mass ratio is way outside the calibration range. m1/m2 should be <= 20.\n");
-		XLAL_ERROR(XLAL_EDOM);
-	}
-	else if (q > 4.0){
-		XLALPrintWarning("Warning: The model is only calibrated for m1/m2 <= 4.\n");
-	}
+	if (q > 20.0)
+		XLAL_ERROR(XLAL_EDOM, "Mass ratio is way outside the calibration range. m1/m2 should be <= 20.\n");
+	else if (q > 4.0)
+		XLAL_PRINT_WARNING("Warning: The model is only calibrated for m1/m2 <= 4.\n");
 
 	/* phenomenological parameters*/
 	params = ComputeIMRPhenomCParams(m1, m2, chi);
 	if (!params) XLAL_ERROR(XLAL_EFUNC);
-	if (params->fCut <= f_min) {
-		XLALPrintError("(fCut = 0.15M) <= f_min\n");
-		XLAL_ERROR(XLAL_EDOM);
-	}
+	if (params->fCut <= f_min)
+		XLAL_ERROR(XLAL_EDOM, "(fCut = 0.15M) <= f_min\n");
 
 	/* default f_max to params->fCut */
 	f_max_prime = f_max ? f_max : params->fCut;
 	f_max_prime = (f_max_prime > params->fCut) ? params->fCut : f_max_prime;
-	if (f_max_prime <= f_min) {
-		XLALPrintError("f_max <= f_min\n");
-		XLAL_ERROR(XLAL_EDOM);
-	}
+	if (f_max_prime <= f_min)
+		XLAL_ERROR(XLAL_EDOM, "f_max <= f_min\n");
 
 	/* generate plus */
 
@@ -307,9 +293,14 @@ static int IMRPhenomCGenerateFD(
     const REAL8 distance,              /**< distance to source (m) */
     const BBHPhenomCParams *params      /**< from ComputeIMRPhenomCParams */
 ) {
-  static LIGOTimeGPS ligotimegps_zero = {0, 0};
-  size_t i;
-  INT4 errcode;
+  LIGOTimeGPS ligotimegps_zero = LIGOTIMEGPSZERO; // = {0, 0}
+
+  int errcode = XLAL_SUCCESS;
+  /*
+   We can't call XLAL_ERROR() directly with OpenMP on.
+   Keep track of return codes for each thread and in addition use flush to get out of
+   the parallel for loop as soon as possible if something went wrong in any thread.
+  */
 
   const REAL8 M = m1 + m2;
   const REAL8 eta = m1 * m2 / (M * M);
@@ -319,35 +310,91 @@ static int IMRPhenomCGenerateFD(
   REAL8 phSPA, phPM, phRD, aPM, aRD;
   REAL8 wPlusf1, wPlusf2, wMinusf1, wMinusf2, wPlusf0, wMinusf0;
   */
-  REAL8 phPhenomC = 0.0;
-  REAL8 aPhenomC = 0.0;
 
   /* compute the amplitude pre-factor */
   REAL8 amp0 = 2. * sqrt(5. / (64.*LAL_PI)) * M * LAL_MRSUN_SI * M * LAL_MTSUN_SI / distance;
 
   /* allocate htilde */
   size_t n = NextPow2(f_max / deltaF) + 1;
+  /* coalesce at t=0 */
+  XLALGPSAdd(&ligotimegps_zero, -1. / deltaF); // shift by overall length in time
   *htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", &ligotimegps_zero, 0.0,
       deltaF, &lalStrainUnit, n);
   memset((*htilde)->data->data, 0, n * sizeof(COMPLEX16));
   XLALUnitMultiply(&((*htilde)->sampleUnits), &((*htilde)->sampleUnits), &lalSecondUnit);
   if (!(*htilde)) XLAL_ERROR(XLAL_EFUNC);
 
-  /* now generate the waveform */
+  size_t ind_min = (size_t) (f_min / deltaF);
   size_t ind_max = (size_t) (f_max / deltaF);
-  for (i = (size_t) (f_min / deltaF); i < ind_max; i++)
+
+  /* Set up spline for phase */
+  gsl_interp_accel *acc = gsl_interp_accel_alloc();
+  size_t L =  ind_max - ind_min;
+  gsl_spline *phiI = gsl_spline_alloc(gsl_interp_cspline, L);
+  REAL8 *freqs = XLALMalloc(L*sizeof(REAL8));
+  REAL8 *phis = XLALMalloc(L*sizeof(REAL8));
+
+  /* now generate the waveform */
+  #pragma omp parallel for
+  for (size_t i = ind_min; i < ind_max; i++)
   {
+
+    REAL8 phPhenomC = 0.0;
+    REAL8 aPhenomC = 0.0;
     REAL8 f = i * deltaF;
 
-    errcode = IMRPhenomCGenerateAmpPhase( &aPhenomC, &phPhenomC, f, eta, params );
-    if( errcode != XLAL_SUCCESS )
-      XLAL_ERROR(XLAL_EFUNC);
+    int per_thread_errcode;
+    #pragma omp flush(errcode)
+    if (errcode != XLAL_SUCCESS)
+      goto skip;
+
+    per_thread_errcode = IMRPhenomCGenerateAmpPhase( &aPhenomC, &phPhenomC, f, eta, params );
+    if (per_thread_errcode != XLAL_SUCCESS) {
+      errcode = per_thread_errcode;
+      #pragma omp flush(errcode)
+    }
+
     phPhenomC -= 2.*phi0; // factor of 2 b/c phi0 is orbital phase
+
+    freqs[i-ind_min] = f;
+    phis[i-ind_min] = -phPhenomC; // PhenomP uses cexp(-I*phPhenomC); want to use same phase adjustment code, so we will flip the sign of the phase
 
     /* generate the waveform */
     ((*htilde)->data->data)[i] = amp0 * aPhenomC * cos(phPhenomC);
     ((*htilde)->data->data)[i] += -I * amp0 * aPhenomC * sin(phPhenomC);
+
+  skip: /* this statement intentionally left blank */;
+
   }
+
+  if( errcode != XLAL_SUCCESS )
+    XLAL_ERROR(errcode);
+
+  /* Correct phasing so we coalesce at t=0 (with the definition of the epoch=-1/deltaF above) */
+  gsl_spline_init(phiI, freqs, phis, L);
+
+  REAL8 f_final = params->fRingDown;
+  XLAL_PRINT_INFO("f_ringdown = %g\n", f_final);
+
+  // Prevent gsl interpolation errors
+  if (f_final > freqs[L-1])
+    f_final = freqs[L-1];
+  if (f_final < freqs[0])
+    XLAL_ERROR(XLAL_EDOM, "f_ringdown <= f_min\n");
+
+  /* Time correction is t(f_final) = 1/(2pi) dphi/df (f_final) */
+  REAL8 t_corr = gsl_spline_eval_deriv(phiI, f_final, acc) / (2*LAL_PI);
+  XLAL_PRINT_INFO("t_corr = %g\n", t_corr);
+  /* Now correct phase */
+  for (size_t i = ind_min; i < ind_max; i++) {
+    REAL8 f = i * deltaF;
+    ((*htilde)->data->data)[i] *= cexp(-2*LAL_PI * I * f * t_corr);
+  }
+
+  gsl_spline_free(phiI);
+  gsl_interp_accel_free(acc);
+  XLALFree(freqs);
+  XLALFree(phis);
 
   return XLAL_SUCCESS;
 }
@@ -387,10 +434,7 @@ static int IMRPhenomCGenerateFDForTD(
   /* allocate htilde */
   size_t n = NextPow2(f_max / deltaF) + 1;
   if ( n > nf )
-  {
-    XLALPrintError("The required length passed as input wont fit the FD waveform\n");
-    XLAL_ERROR(XLAL_EDOM);
-  }
+    XLAL_ERROR(XLAL_EDOM, "The required length passed as input wont fit the FD waveform\n");
   else
     n = nf;
   *htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", &ligotimegps_zero, 0.0,
@@ -444,7 +488,7 @@ static int IMRPhenomCGenerateTD(
 	REAL8 f_min_wide = EstimateSafeFMinForTD(m1, m2, f_min, deltaT);
 	const REAL8 f_max_wide = params->fCut; //0.5 / deltaT;
 	if (EstimateSafeFMaxForTD(f_max, deltaT) > f_max_wide)
-		XLALPrintWarning("Warning: sampling rate (%" LAL_REAL8_FORMAT " Hz) too low for expected spectral content (%" LAL_REAL8_FORMAT " Hz) \n", deltaT, EstimateSafeFMaxForTD(f_max, deltaT));
+		XLAL_PRINT_WARNING("Warning: sampling rate (%" LAL_REAL8_FORMAT " Hz) too low for expected spectral content (%" LAL_REAL8_FORMAT " Hz) \n", deltaT, EstimateSafeFMaxForTD(f_max, deltaT));
 
     const size_t nt = NextPow2(EstimateIMRLength(m1, m2, f_min_wide, deltaT));
     const size_t ne = EstimateIMRLength(m1, m2, params->fRingDown, deltaT);

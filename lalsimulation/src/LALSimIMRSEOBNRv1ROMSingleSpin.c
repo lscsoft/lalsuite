@@ -35,7 +35,6 @@
  *   Mtot >= 1.4Msun
  */
 
-
 #define _XOPEN_SOURCE 500
 
 #ifdef __GNUC__
@@ -49,11 +48,14 @@
 #include <math.h>
 #include <complex.h>
 #include <time.h>
-#include <unistd.h>
-#include <getopt.h>
 #include <stdbool.h>
 #include <alloca.h>
 #include <string.h>
+#include <libgen.h>
+
+#ifdef LAL_PTHREAD_LOCK
+#include <pthread.h>
+#endif
 
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_bspline.h>
@@ -67,7 +69,9 @@
 #include <lal/FrequencySeries.h>
 #include <lal/Date.h>
 #include <lal/StringInput.h>
-
+#include <lal/Sequence.h>
+#include <lal/LALStdio.h>
+#include <lal/FileIO.h>
 
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimIMR.h>
@@ -132,6 +136,10 @@ static const double gPhi[] = {0.0001, 0.000101411, 0.000102849, 0.000104314, 0.0
   0.0561255, 0.0626582, 0.0702238, 0.0790313, 0.0893416, 0.101483, \
   0.115873, 0.133047, 0.14};
 
+#ifdef LAL_PTHREAD_LOCK
+static pthread_once_t SEOBNRv1ROMSingleSpin_is_initialized = PTHREAD_ONCE_INIT;
+#endif
+
 /*************** type definitions ******************/
 
 typedef struct tagSEOBNRROMdata_coeff
@@ -162,26 +170,35 @@ typedef struct tagSplineData
 
 /**************** Internal functions **********************/
 
-static int SEOBNRv1ROMSingleSpin_Init_LALDATA(void);
+static void SEOBNRv1ROMSingleSpin_Init_LALDATA(void);
 static int SEOBNRv1ROMSingleSpin_Init(const char dir[]);
 static bool SEOBNRv1ROMSingleSpin_IsSetup(void);
 
 static int SEOBNRROMdata_Init(SEOBNRROMdata *romdata, const char dir[]);
 static void SEOBNRROMdata_Cleanup(SEOBNRROMdata *romdata);
 
+/**
+ * Core function for computing the ROM waveform.
+ * Interpolate projection coefficient data and evaluate coefficients at desired (q, chi).
+ * Construct 1D splines for amplitude and phase.
+ * Compute strain waveform from amplitude and phase.
+*/
 static int SEOBNRv1ROMSingleSpinCore(
   COMPLEX16FrequencySeries **hptilde,
   COMPLEX16FrequencySeries **hctilde,
   double phiRef,
-  double deltaF,
-  double fLow,
-  double fHigh,
   double fRef,
   double distance,
   double inclination,
   double Mtot_sec,
   double q,
-  double chi);
+  double chi,
+  const REAL8Sequence *freqs, /* Frequency points at which to evaluate the waveform (Hz) */
+  double deltaF
+  /* If deltaF >0, the frequency points given in freqs are uniformly spaced with
+   * spacing deltaF. Otherwise, the frequency points are spaced non-uniformly.
+   * Then we will use deltaF = 0 to create the frequency series we return. */
+);
 
 static void SEOBNRROMdata_coeff_Init(SEOBNRROMdata_coeff **romdatacoeff);
 static void SEOBNRROMdata_coeff_Cleanup(SEOBNRROMdata_coeff *romdatacoeff);
@@ -511,30 +528,40 @@ static size_t NextPow2(const size_t n) {
  * Construct 1D splines for amplitude and phase.
  * Compute strain waveform from amplitude and phase.
 */
-int SEOBNRv1ROMSingleSpinCore(
+static int SEOBNRv1ROMSingleSpinCore(
   COMPLEX16FrequencySeries **hptilde,
   COMPLEX16FrequencySeries **hctilde,
   double phiRef,
-  double deltaF,
-  double fLow,
-  double fHigh,
   double fRef,
   double distance,
   double inclination,
   double Mtot_sec,
   double q,
-  double chi)
+  double chi,
+  const REAL8Sequence *freqs_in, /* Frequency points at which to evaluate the waveform (Hz) */
+  double deltaF
+  /* If deltaF > 0, the frequency points given in freqs are uniformly spaced with
+   * spacing deltaF. Otherwise, the frequency points are spaced non-uniformly.
+   * Then we will use deltaF = 0 to create the frequency series we return. */
+  )
 {
   /* Check output arrays */
   if(!hptilde || !hctilde)
     XLAL_ERROR(XLAL_EFAULT);
   SEOBNRROMdata *romdata=&__lalsim_SEOBNRv1ROMSS_data;
-  if(*hptilde || *hctilde)
-  {
+  if(*hptilde || *hctilde) {
     XLALPrintError("(*hptilde) and (*hctilde) are supposed to be NULL, but got %p and %p",(*hptilde),(*hctilde));
     XLAL_ERROR(XLAL_EFAULT);
   }
   int retcode=0;
+
+  /* Find frequency bounds */
+  if (!freqs_in) XLAL_ERROR(XLAL_EFAULT);
+  double fLow  = freqs_in->data[0];
+  double fHigh = freqs_in->data[freqs_in->length - 1];
+
+  if(fRef==0.0)
+    fRef=fLow;
 
   /* Convert to geometric units for frequency */
   double Mf_ROM_min = fmax(gA[0], gPhi[0]);               // lowest allowed geometric frequency for ROM
@@ -551,6 +578,8 @@ int SEOBNRv1ROMSingleSpinCore(
   }
   if (fHigh_geom == 0 || fHigh_geom > Mf_ROM_max)
     fHigh_geom = Mf_ROM_max;
+  else if (fHigh_geom < Mf_ROM_min)
+    XLAL_ERROR(XLAL_EDOM, "End frequency %g is smaller than starting frequency %g!\n", fHigh_geom, fLow_geom);
   if (fRef_geom > Mf_ROM_max)
     fRef_geom = Mf_ROM_max; // If fref > fhigh we reset fref to default value of cutoff frequency.
   if (fRef_geom < Mf_ROM_min) {
@@ -597,15 +626,40 @@ int SEOBNRv1ROMSingleSpinCore(
   gsl_spline *spline_phi = gsl_spline_alloc(gsl_interp_cspline, nk_phi);
   gsl_spline_init(spline_phi, gPhi, gsl_vector_const_ptr(phi_f,0), nk_phi);
 
-  /* Set up output array with size closet power of 2 */
-  size_t npts = NextPow2(fHigh_geom / deltaF_geom) + 1;
-  if (fHigh_geom < fHigh * Mtot_sec) /* Resize waveform if user wants f_max larger than cutoff frequency */
-    npts = NextPow2(fHigh * Mtot_sec / deltaF_geom) + 1;
 
-  LIGOTimeGPS tC;
-  XLALGPSAdd(&tC, -1. / deltaF);  /* coalesce at t=0 */
-  *hptilde = XLALCreateCOMPLEX16FrequencySeries("hptilde: FD waveform", &tC, 0.0, deltaF, &lalStrainUnit, npts);
-  *hctilde = XLALCreateCOMPLEX16FrequencySeries("hctilde: FD waveform", &tC, 0.0, deltaF, &lalStrainUnit, npts);
+  size_t npts = 0;
+  LIGOTimeGPS tC = {0, 0};
+  UINT4 offset = 0; // Index shift between freqs and the frequency series
+  REAL8Sequence *freqs = NULL;
+  if (deltaF > 0)  { // freqs contains uniform frequency grid with spacing deltaF; we start at frequency 0
+    /* Set up output array with size closest power of 2 */
+    npts = NextPow2(fHigh_geom / deltaF_geom) + 1;
+    if (fHigh_geom < fHigh * Mtot_sec) /* Resize waveform if user wants f_max larger than cutoff frequency */
+      npts = NextPow2(fHigh * Mtot_sec / deltaF_geom) + 1;
+
+    XLALGPSAdd(&tC, -1. / deltaF);  /* coalesce at t=0 */
+    *hptilde = XLALCreateCOMPLEX16FrequencySeries("hptilde: FD waveform", &tC, 0.0, deltaF, &lalStrainUnit, npts);
+    *hctilde = XLALCreateCOMPLEX16FrequencySeries("hctilde: FD waveform", &tC, 0.0, deltaF, &lalStrainUnit, npts);
+
+    // Recreate freqs using only the lower and upper bounds
+    UINT4 iStart = (UINT4) ceil(fLow_geom / deltaF_geom);
+    UINT4 iStop = (UINT4) ceil(fHigh_geom / deltaF_geom);
+    freqs = XLALCreateREAL8Sequence(iStop - iStart);
+    for (UINT4 i=iStart; i<iStop; i++)
+      freqs->data[i-iStart] = i*deltaF_geom;
+
+    offset = iStart;
+  } else { // freqs contains frequencies with non-uniform spacing; we start at lowest given frequency
+    npts = freqs_in->length;
+    *hptilde = XLALCreateCOMPLEX16FrequencySeries("hptilde: FD waveform", &tC, fLow, 0, &lalStrainUnit, npts);
+    *hctilde = XLALCreateCOMPLEX16FrequencySeries("hctilde: FD waveform", &tC, fLow, 0, &lalStrainUnit, npts);
+    offset = 0;
+
+    freqs = XLALCreateREAL8Sequence(freqs_in->length);
+    for (UINT4 i=0; i<freqs_in->length; i++)
+      freqs->data[i] = freqs_in->data[i] * Mtot_sec;
+  }
+
 
   if (!(hptilde) || !(*hctilde)) XLAL_ERROR(XLAL_EFUNC);
   memset((*hptilde)->data->data, 0, npts * sizeof(COMPLEX16));
@@ -614,8 +668,6 @@ int SEOBNRv1ROMSingleSpinCore(
   XLALUnitDivide(&(*hptilde)->sampleUnits, &(*hptilde)->sampleUnits, &lalSecondUnit);
   XLALUnitDivide(&(*hctilde)->sampleUnits, &(*hctilde)->sampleUnits, &lalSecondUnit);
 
-  UINT4 iStart = (UINT4) ceil(fLow_geom / deltaF_geom);
-  UINT4 iStop = (UINT4) ceil(fHigh_geom / deltaF_geom);
   COMPLEX16 *pdata=(*hptilde)->data->data;
   COMPLEX16 *cdata=(*hctilde)->data->data;
 
@@ -631,14 +683,49 @@ int SEOBNRv1ROMSingleSpinCore(
   double phase_change = gsl_spline_eval(spline_phi, fRef_geom, acc_phi) - phiRef;
 
   // Assemble waveform from aplitude and phase
-  for (UINT4 i=iStart; i<iStop; i++) {
-    double f = i*deltaF_geom;
+  for (UINT4 i=0; i<freqs->length; i++) { // loop over frequency points in sequence
+    double f = freqs->data[i];
+    if (f > Mf_ROM_max) continue; // We're beyond the highest allowed frequency; since freqs may not be ordered, we'll just skip the current frequency and leave zero in the buffer
+    int j = i + offset; // shift index for frequency series if needed
     double A = gsl_spline_eval(spline_amp, f, acc_amp);
     double phase = gsl_spline_eval(spline_phi, f, acc_phi) - phase_change;
     COMPLEX16 htilde = s*amp0*A * cexp(I*phase);
-    pdata[i] =      pcoef * htilde;
-    cdata[i] = -I * ccoef * htilde;
+    pdata[j] =      pcoef * htilde;
+    cdata[j] = -I * ccoef * htilde;
   }
+
+  /* Correct phasing so we coalesce at t=0 (with the definition of the epoch=-1/deltaF above) */
+  if (deltaF > 0)
+    XLAL_PRINT_WARNING("Warning: Depending on specified frequency sequence correction to time of coalescence may not be accurate.\n");
+
+  // Get SEOBNRv1 ringdown frequency for 22 mode
+  // XLALSimInspiralGetFinalFreq wants masses in SI units, so unfortunately we need to convert back
+  double Mtot_SI = Mtot_sec / LAL_MTSUN_SI * LAL_MSUN_SI;
+  double m1_SI = Mtot_SI * 1.0/(1.0+q);
+  double m2_SI = Mtot_SI * q/(1.0+q);
+  double Mf_final = XLALSimInspiralGetFinalFreq(m1_SI, m2_SI, 0,0,chi, 0,0,chi, SEOBNRv1) * Mtot_sec;
+
+  UINT4 L = freqs->length;
+  // prevent gsl interpolation errors
+  if (Mf_final > freqs->data[L-1])
+    Mf_final = freqs->data[L-1];
+  if (Mf_final < freqs->data[0])
+    XLAL_ERROR(XLAL_EDOM, "f_ringdown < f_min");
+
+  // Time correction is t(f_final) = 1/(2pi) dphi/df (f_final)
+  // We compute the dimensionless time correction t/M since we use geometric units.
+  REAL8 t_corr = gsl_spline_eval_deriv(spline_phi, Mf_final, acc_phi) / (2*LAL_PI);
+  XLAL_PRINT_INFO("t_corr [s] = %g\n", t_corr * Mtot_sec);
+
+  // Now correct phase
+  for (UINT4 i=0; i<freqs->length; i++) { // loop over frequency points in sequence
+    double f = freqs->data[i];
+    int j = i + offset; // shift index for frequency series if needed
+    pdata[j] *= cexp(-2*LAL_PI * I * f * t_corr);
+    cdata[j] *= cexp(-2*LAL_PI * I * f * t_corr);
+  }
+
+  XLALDestroyREAL8Sequence(freqs);
 
   gsl_spline_free(spline_amp);
   gsl_spline_free(spline_phi);
@@ -649,6 +736,61 @@ int SEOBNRv1ROMSingleSpinCore(
   SEOBNRROMdata_coeff_Cleanup(romdata_coeff);
 
   return(XLAL_SUCCESS);
+}
+
+/** Compute waveform in LAL format at specified frequencies */
+int XLALSimIMRSEOBNRv1ROMSingleSpinFrequencySequence(
+  struct tagCOMPLEX16FrequencySeries **hptilde, /**< Output: Frequency-domain waveform h+ */
+  struct tagCOMPLEX16FrequencySeries **hctilde, /**< Output: Frequency-domain waveform hx */
+  const REAL8Sequence *freqs,                   /**< Frequency points at which to evaluate the waveform (Hz) */
+  REAL8 phiRef,                                 /**< Phase at reference time */
+  REAL8 fRef,                                   /**< Reference frequency (Hz); 0 defaults to fLow */
+  REAL8 distance,                               /**< Distance of source (m) */
+  REAL8 inclination,                            /**< Inclination of source (rad) */
+  REAL8 m1SI,                                   /**< Mass of companion 1 (kg) */
+  REAL8 m2SI,                                   /**< Mass of companion 2 (kg) */
+  REAL8 chi)                                    /**< Effective aligned spin */
+{
+
+  /* Get masses in terms of solar mass */
+  double mass1 = m1SI / LAL_MSUN_SI;
+  double mass2 = m2SI / LAL_MSUN_SI;
+  double Mtot = mass1+mass2;
+  double q = mass2 / mass1;
+  if(q<1.0) q=1./q;
+  /* Total mass in seconds */
+  double Mtot_sec = Mtot * LAL_MTSUN_SI;
+
+
+  /* If either spin > 0.6, model not available, exit */
+  if ( chi < -1.0 || chi > 0.6 ) {
+    XLALPrintError( "XLAL Error - %s: chi smaller than -1 or larger than 0.6!\nSEOBNRv1ROMSingleSpin is only available for spins in the range -1 <= a/M <= 0.6.\n", __func__);
+    XLAL_ERROR( XLAL_EDOM );
+  }
+
+  if (q > 100) {
+    XLALPrintError( "XLAL Error - %s: q larger than 100!\nSEOBNRv1ROMSingleSpin is only available for spins in the range 1 <= q <= 100.\n", __func__);
+    XLAL_ERROR( XLAL_EDOM );
+  }
+
+  if (q >= 20 && q <= 40 && chi < -0.75 && chi > -0.9) {
+    XLALPrintWarning( "XLAL Warning - %s: q in [20,40] and chi in [-0.8]. The SEOBNRv1 model is not trustworthy in this region!\nSee Fig 15 in CQG 31 195010, 2014 for details.", __func__);
+    XLAL_ERROR( XLAL_EDOM );
+  }
+
+  // Load ROM data if not already loaded
+#ifdef LAL_PTHREAD_LOCK
+  (void) pthread_once(&SEOBNRv1ROMSingleSpin_is_initialized, SEOBNRv1ROMSingleSpin_Init_LALDATA);
+#else
+  SEOBNRv1ROMSingleSpin_Init_LALDATA();
+#endif
+
+  // Call the internal core function with deltaF = 0 to indicate that freqs is non-uniformly
+  // spaced and we want the strain only at these frequencies
+  int retcode = SEOBNRv1ROMSingleSpinCore(hptilde, hctilde,
+            phiRef, fRef, distance, inclination, Mtot_sec, q, chi, freqs, 0);
+
+  return(retcode);
 }
 
 /** Compute waveform in LAL format */
@@ -696,38 +838,44 @@ int XLALSimIMRSEOBNRv1ROMSingleSpin(
   }
 
   // Load ROM data if not already loaded
+#ifdef LAL_PTHREAD_LOCK
+  (void) pthread_once(&SEOBNRv1ROMSingleSpin_is_initialized, SEOBNRv1ROMSingleSpin_Init_LALDATA);
+#else
   SEOBNRv1ROMSingleSpin_Init_LALDATA();
+#endif
 
-  int retcode = SEOBNRv1ROMSingleSpinCore(hptilde,hctilde,
-            phiRef, deltaF, fLow, fHigh, fRef, distance, inclination, Mtot_sec, q, chi);
+  // Use fLow, fHigh, deltaF to compute freqs sequence
+  // Instead of building a full sequency we only transfer the boundaries and let
+  // the internal core function do the rest (and properly take care of corner cases).
+  REAL8Sequence *freqs = XLALCreateREAL8Sequence(2);
+  freqs->data[0] = fLow;
+  freqs->data[1] = fHigh;
+
+  int retcode = SEOBNRv1ROMSingleSpinCore(hptilde, hctilde,
+            phiRef, fRef, distance, inclination, Mtot_sec, q, chi, freqs, deltaF);
+
+  XLALDestroyREAL8Sequence(freqs);
 
   return(retcode);
 }
 
 /** Setup SEOBNRv1ROMSingleSpin model using data files installed in $LAL_DATA_PATH
  */
-int SEOBNRv1ROMSingleSpin_Init_LALDATA(void)
+void SEOBNRv1ROMSingleSpin_Init_LALDATA(void)
 {
+  if (SEOBNRv1ROMSingleSpin_IsSetup()) return;
 
-  if (SEOBNRv1ROMSingleSpin_IsSetup())
-  return XLAL_SUCCESS;
+  // If we find one ROM datafile in a directory listed in LAL_DATA_PATH,
+  // then we expect the remaining datafiles to also be there.
+  char datafile[] = "SEOBNRv1ROM_SS_Phase_ciall.dat";
 
-  int ret=XLAL_FAILURE;
-  char *envpath=NULL;
-  char path[32768];
-  char *brkt,*word;
-  envpath=getenv("LAL_DATA_PATH");
-  if(!envpath) return(XLAL_FAILURE);
-  strncpy(path,envpath,sizeof(path));
+  char *path = XLALFileResolvePath(datafile);
+  if (path==NULL)
+    XLAL_ERROR_VOID(XLAL_EIO, "Unable to resolve data file %s in $LAL_DATA_PATH\n", datafile);
+  char *dir = dirname(path);
+  int ret = SEOBNRv1ROMSingleSpin_Init(dir);
+  XLALFree(path);
 
-  for(word=strtok_r(path,":",&brkt); word; word=strtok_r(NULL,":",&brkt))
-  {
-    ret = SEOBNRv1ROMSingleSpin_Init(word);
-    if (XLAL_SUCCESS == ret) break;
-  }
-  if(ret!=XLAL_SUCCESS) {
-    XLALPrintError("Unable to find SEOBNRv1ROMSingleSpin data files in $LAL_DATA_PATH\n");
-    exit(XLAL_FAILURE);
-  }
-  return(ret);
+  if(ret!=XLAL_SUCCESS)
+    XLAL_ERROR_VOID(XLAL_FAILURE, "Unable to find SEOBNRv1ROMSingleSpin data files in $LAL_DATA_PATH\n");
 }

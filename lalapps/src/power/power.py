@@ -36,13 +36,15 @@ import sys
 import time
 
 
+import lalburst
+
+
 from glue import segments
 from glue import segmentsUtils
 from glue import pipeline
 from glue.lal import CacheEntry
 from pylal import ligolw_cafe
 from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
-from pylal import excesspower
 
 
 __author__ = "Duncan Brown <duncan@gravity.phys.uwm.edu>, Kipp Cannon <kipp@gravity.phys.uwm.edu>"
@@ -121,25 +123,26 @@ def get_files_per_binjfind(config_parser):
 	return config_parser.getint("pipeline", "files_per_binjfind")
 
 
-def get_timing_parameters(config_parser):
-	# initialize data structure
-	resample_rate = config_parser.getfloat("lalapps_power", "resample-rate")
-	params = excesspower.XLALEPGetTimingParameters(
-		window_length = config_parser.getint("lalapps_power", "window-length"),
-		max_tile_length = int(config_parser.getfloat("lalapps_power", "max-tile-duration") * resample_rate),
-		tile_stride_fraction = config_parser.getfloat("lalapps_power", "tile-stride-fraction"),
-		psd_length = config_parser.getint("lalapps_power", "psd-average-points")
-	)
-	params.resample_rate = resample_rate
+class TimingParameters(object):
+	"""
+	A class to hold timing parameter values.
+	"""
+	def __init__(self, config_parser):
+		# initialize from config file
+		self.resample_rate = config_parser.getfloat("lalapps_power", "resample-rate")
+		self.window_length = config_parser.getint("lalapps_power", "window-length")
+		self.max_tile_length = int(config_parser.getfloat("lalapps_power", "max-tile-duration") * self.resample_rate)
+		self.tile_stride_fraction = config_parser.getfloat("lalapps_power", "tile-stride-fraction")
+		self.filter_corruption = config_parser.getint("lalapps_power", "filter-corruption")
+		self.max_tile_bandwidth = config_parser.getfloat("lalapps_power", "max-tile-bandwidth")
 
-	# retrieve additional parameters from config file
-	params.filter_corruption = config_parser.getint("lalapps_power", "filter-corruption")
-	params.max_tile_bandwidth = config_parser.getfloat("lalapps_power", "max-tile-bandwidth")
-
-	# NOTE:  in previous code, psd_length, window_length, window_shift,
-	# filter_corruption, and psd_overlap were all floats in units of
-	# seconds
-	return params
+		# populate additional computed parameters from library code
+		self.psd_length, self.psd_shift, self.window_shift, self.window_pad, self.tiling_length = lalburst.EPGetTimingParameters(
+			self.window_length,
+			self.max_tile_length,
+			self.tile_stride_fraction,
+			config_parser.getint("lalapps_power", "psd-average-points")
+		)
 
 
 def make_cache_entry(input_cache, description, path):

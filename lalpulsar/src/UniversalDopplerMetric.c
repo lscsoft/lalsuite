@@ -37,6 +37,7 @@
 #include <lal/Factorial.h>
 #include <lal/LogPrintf.h>
 
+#include <lal/EstimateAmplitudeParams.h>
 #include <lal/UniversalDopplerMetric.h>
 
 /**
@@ -217,16 +218,17 @@ typedef struct
 #define vOrb_c  (LAL_TWOPI * LAL_AU_SI / LAL_C_SI / LAL_YRSID_SI)
 
 /*---------- internal prototypes ----------*/
-DopplerMetric* XLALComputeFmetricFromAtoms ( const FmetricAtoms_t *atoms, REAL8 cosi, REAL8 psi );
-gsl_matrix* XLALComputeFisherFromAtoms ( const FmetricAtoms_t *atoms, PulsarAmplitudeParams Amp );
+static DopplerMetric* XLALDopplerFstatMetricCoh ( const DopplerMetricParams *metricParams, const EphemerisData *edat );
+static DopplerMetric* XLALComputeFmetricFromAtoms ( const FmetricAtoms_t *atoms, REAL8 cosi, REAL8 psi );
+static gsl_matrix* XLALComputeFisherFromAtoms ( const FmetricAtoms_t *atoms, PulsarAmplitudeParams Amp );
 
-double CW_am1_am2_Phi_i_Phi_j ( double tt, void *params );
-double CWPhaseDeriv_i ( double tt, void *params );
+static double CW_am1_am2_Phi_i_Phi_j ( double tt, void *params );
+static double CWPhaseDeriv_i ( double tt, void *params );
 
-double XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params, double *relerr_max );
-double CWPhase_cov_Phi_ij ( const MultiLALDetector *multiIFO, const MultiNoiseFloor *multiNoiseFloor, const intparams_t *params, double *relerr_max );
+static double XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params, double *relerr_max );
+static double XLALCWPhase_cov_Phi_ij ( const MultiLALDetector *multiIFO, const MultiNoiseFloor *multiNoiseFloor, const intparams_t *params, double *relerr_max );
 
-UINT4 findHighestGCSpinOrder ( const DopplerCoordinateSystem *coordSys );
+static UINT4 findHighestGCSpinOrder ( const DopplerCoordinateSystem *coordSys );
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -238,7 +240,7 @@ UINT4 findHighestGCSpinOrder ( const DopplerCoordinateSystem *coordSys );
  *
  * The input parameters correspond to CW_am1_am2_Phi_i_Phi_j()
  */
-double
+static double
 XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params, double *relerr_max )
 {
   intparams_t par = (*params);	/* struct-copy, as the 'deriv' field has to be changeable */
@@ -315,7 +317,7 @@ XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params, double *relerr_max 
  * eg in this way this function can be used to compute \f$a^2(t), b^2(t), a(t) b(t)\f$,
  * or \f$phi_i(t) phi_j(t)\f$.
  */
-double
+static double
 CW_am1_am2_Phi_i_Phi_j ( double tt, void *params )
 {
   intparams_t *par = (intparams_t*) params;
@@ -402,7 +404,7 @@ CW_am1_am2_Phi_i_Phi_j ( double tt, void *params )
  * to GPS-times in [startTime, startTime + Tspan ]
  *
  */
-double
+static double
 CWPhaseDeriv_i ( double tt, void *params )
 {
   intparams_t *par = (intparams_t*) params;
@@ -778,12 +780,12 @@ XLALPtolemaicPosVel ( PosVel3D_t *posvel,		/**< [out] instantaneous position and
  *
  * NOTE: for passing unit noise-weights, set MultiNoiseFloor->length=0 (but multiNoiseFloor==NULL is invalid)
  */
-double
-CWPhase_cov_Phi_ij ( const MultiLALDetector *multiIFO,		//!< [in] detectors to use
-                     const MultiNoiseFloor *multiNoiseFloor,	//!< [in] corresponding noise floors for weights, NULL means unit-weights
-                     const intparams_t *params,			//!< [in] integration parameters
-                     double* relerr_max				//!< [in] maximal error for integration
-                     )
+static double
+XLALCWPhase_cov_Phi_ij ( const MultiLALDetector *multiIFO,		//!< [in] detectors to use
+                         const MultiNoiseFloor *multiNoiseFloor,	//!< [in] corresponding noise floors for weights, NULL means unit-weights
+                         const intparams_t *params,			//!< [in] integration parameters
+                         double* relerr_max				//!< [in] maximal error for integration
+                         )
 {
   XLAL_CHECK_REAL8 ( multiIFO != NULL, XLAL_EINVAL );
   UINT4 numDet = multiIFO->length;
@@ -915,7 +917,7 @@ CWPhase_cov_Phi_ij ( const MultiLALDetector *multiIFO,		//!< [in] detectors to u
 
   return ret;	/* return covariance */
 
-} /* CWPhase_cov_Phi_ij() */
+} /* XLALCWPhase_cov_Phi_ij() */
 
 
 /**
@@ -1016,7 +1018,7 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
             (n < intparams.rOrb_n->length -1 ) ? ", " : " ]\n" );
 #endif
 
-  double maxrelerr = 0, err;
+  double maxrelerr = 0, err = 0;
 
   /*** try to compute a metric with less than nonposEigValThresh non-positive eigenvalues ***/
   gsl_vector* eval = NULL;
@@ -1039,7 +1041,7 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
         /* g_ij */
         intparams.deriv1 = coordSys->coordIDs[i];
         intparams.deriv2 = coordSys->coordIDs[j];
-        REAL8 gg = CWPhase_cov_Phi_ij ( &metricParams->multiIFO, &metricParams->multiNoiseFloor, &intparams, &err );	/* [Phi_i, Phi_j] */
+        REAL8 gg = XLALCWPhase_cov_Phi_ij ( &metricParams->multiIFO, &metricParams->multiNoiseFloor, &intparams, &err );	/* [Phi_i, Phi_j] */
         maxrelerr = MYMAX ( maxrelerr, err );
         if ( xlalErrno ) {
           XLALPrintError ("\n%s: Integration of g_ij (i=%d, j=%d) failed. errno = %d\n", __func__, i, j, xlalErrno );
@@ -1201,7 +1203,7 @@ XLALDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< input p
  *
  * Return NULL on error.
  */
-DopplerMetric *
+static DopplerMetric *
 XLALDopplerFstatMetricCoh ( const DopplerMetricParams *metricParams,  	/**< input parameters determining the metric calculation */
                             const EphemerisData *edat			/**< ephemeris data */
                             )
@@ -1316,6 +1318,14 @@ XLALDopplerFstatMetricCoh ( const DopplerMetricParams *metricParams,  	/**< inpu
 
     } /* if projectCoordinate >= 0 */
 
+  /* copy phase-metric to per-segment matrix */
+  if ( metric->g_ij )
+    {
+      if ( metric->g_ij_seg ) gsl_matrix_free( metric->g_ij_seg );
+      XLAL_CHECK_NULL( ( metric->g_ij_seg = gsl_matrix_alloc ( metric->g_ij->size1, metric->g_ij->size2 ) ) != NULL,
+                       XLAL_ENOMEM, "%s: failed to gsl_matrix_alloc(%zu, %zu)\n", __func__, metric->g_ij->size1, metric->g_ij->size2 );
+      gsl_matrix_memcpy( metric->g_ij_seg, metric->g_ij );
+    }
 
   /*  attach the metricParams struct as 'meta-info' to the output */
   metric->meta = (*metricParams);
@@ -1613,11 +1623,13 @@ XLALDestroyDopplerMetric ( DopplerMetric *metric )
   if ( !metric )
     return;
 
-  if ( metric->g_ij ) 	gsl_matrix_free ( metric->g_ij );
-  if ( metric->gFav_ij) gsl_matrix_free ( metric->gFav_ij );
-  if ( metric->m1_ij ) 	gsl_matrix_free ( metric->m1_ij );
-  if ( metric->m2_ij ) 	gsl_matrix_free ( metric->m2_ij );
-  if ( metric->m3_ij ) 	gsl_matrix_free ( metric->m3_ij );
+  if ( metric->g_ij )      gsl_matrix_free ( metric->g_ij );
+  if ( metric->g_ij_seg )  gsl_matrix_free ( metric->g_ij_seg );
+  if ( metric->gF_ij )     gsl_matrix_free ( metric->gF_ij );
+  if ( metric->gFav_ij )   gsl_matrix_free ( metric->gFav_ij );
+  if ( metric->m1_ij )     gsl_matrix_free ( metric->m1_ij );
+  if ( metric->m2_ij )     gsl_matrix_free ( metric->m2_ij );
+  if ( metric->m3_ij )     gsl_matrix_free ( metric->m3_ij );
   if ( metric->Fisher_ab ) gsl_matrix_free ( metric->Fisher_ab );
 
   XLALFree ( metric );
@@ -1897,7 +1909,7 @@ XLALCreateFmetricAtoms ( UINT4 dim )
  * from the given FmetricAtoms and the signal amplitude parameters.
  *
  */
-DopplerMetric*
+static DopplerMetric*
 XLALComputeFmetricFromAtoms ( const FmetricAtoms_t *atoms, REAL8 cosi, REAL8 psi )
 {
   DopplerMetric *metric;		/* output matrix */
@@ -2039,7 +2051,7 @@ XLALComputeFmetricFromAtoms ( const FmetricAtoms_t *atoms, REAL8 cosi, REAL8 psi
  * Function to compute *full* 4+n dimensional Fisher matric for the
  * full CW parameter-space of Amplitude + Doppler parameters !
  */
-gsl_matrix*
+static gsl_matrix*
 XLALComputeFisherFromAtoms ( const FmetricAtoms_t *atoms, PulsarAmplitudeParams Amp )
 {
   gsl_matrix *fisher = NULL;	/* output matrix */
@@ -2382,7 +2394,7 @@ XLALDestroyVect3Dlist ( vect3Dlist_t *list )
  * Counting nu0 = order1, nu1 = order2, nu2 = order3, ...,
  * order = 0 therefore means there are no GC spin coordinates at all
  */
-UINT4
+static UINT4
 findHighestGCSpinOrder ( const DopplerCoordinateSystem *coordSys )
 {
 
@@ -2626,6 +2638,34 @@ XLALAddDopplerMetric ( DopplerMetric **metric1, const DopplerMetric *metric2 )
   if ( m2->m2_ij ) XLAL_CHECK (  (ret = gsl_matrix_add ( m1->m2_ij,     m2->m2_ij )) == 0, XLAL_EFAILED, "m2_ij: gsl_matrix_add() failed with status=%d\n", ret );
   if ( m2->m3_ij ) XLAL_CHECK (  (ret = gsl_matrix_add ( m1->m3_ij,     m2->m3_ij )) == 0, XLAL_EFAILED, "m3_ij: gsl_matrix_add() failed with status=%d\n", ret );
   if ( m2->Fisher_ab) XLAL_CHECK((ret = gsl_matrix_add ( m1->Fisher_ab, m2->Fisher_ab )) == 0, XLAL_EFAILED, "Fisher_ab: gsl_matrix_add() failed with status=%d\n", ret );
+
+  // concatenate phase metrics per segment by column
+  if ( m1->g_ij && m2->g_ij )
+    {
+      const size_t g_ij_seg_cols = ( m1->g_ij_seg ? m1->g_ij_seg->size2 : 0 ) + ( m2->g_ij_seg ? m2->g_ij_seg->size2 : 0 );
+      XLAL_CHECK( g_ij_seg_cols % m1->g_ij->size2 == 0, XLAL_EINVAL );
+      if ( g_ij_seg_cols > 0 )
+        {
+          size_t col = 0, len1, len2;
+          gsl_matrix* g_ij_seg = gsl_matrix_alloc( len1=m1->g_ij->size1, len2=g_ij_seg_cols );
+          XLAL_CHECK( g_ij_seg != NULL, XLAL_ENOMEM, "Failed: g_ij_seg = gsl_matrix_calloc(%zu,%zu)\n", len1, len2 );
+          if ( m1->g_ij_seg )
+            {
+              gsl_matrix_view g_ij_seg_view = gsl_matrix_submatrix( g_ij_seg, 0, col, m1->g_ij_seg->size1, m1->g_ij_seg->size2 );
+              gsl_matrix_memcpy( &g_ij_seg_view.matrix, m1->g_ij_seg );
+              col += m1->g_ij_seg->size2;
+            }
+          if ( m2->g_ij_seg )
+            {
+              gsl_matrix_view g_ij_seg_view = gsl_matrix_submatrix( g_ij_seg, 0, col, m2->g_ij_seg->size1, m2->g_ij_seg->size2 );
+              gsl_matrix_memcpy( &g_ij_seg_view.matrix, m2->g_ij_seg );
+              col += m2->g_ij_seg->size2;
+            }
+          XLAL_CHECK( col == g_ij_seg->size2, XLAL_EFAILED );
+          if ( m1->g_ij_seg ) gsl_matrix_free( m1->g_ij_seg );
+          m1->g_ij_seg = g_ij_seg;
+        }
+    }
 
   // add errors in quadrature
   m1->maxrelerr_gPh = sqrt ( SQUARE(m1->maxrelerr_gPh) + SQUARE(m2->maxrelerr_gPh) );

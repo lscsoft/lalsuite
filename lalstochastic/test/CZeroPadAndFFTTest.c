@@ -97,7 +97,7 @@
  * LALDestroyRealFFTPlan()
  * XLALUnitAsString()
  * XLALUnitCompare()
- * getopt()
+ * LALgetopt()
  * printf()
  * fprintf()
  * freopen()
@@ -145,15 +145,8 @@
 #include <stdio.h>
 #include <config.h>
 
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-
-#ifdef HAVE_GETOPT_H
-#include <getopt.h>
-#endif
-
 #include <lal/StochasticCrossCorrelation.h>
+#include <lal/LALgetopt.h>
 #include <lal/AVFactories.h>
 #include <lal/ReadFTSeries.h>
 #include <lal/PrintFTSeries.h>
@@ -177,9 +170,6 @@
 
 #define CZEROPADANDFFTTESTC_TRUE     1
 #define CZEROPADANDFFTTESTC_FALSE    0
-
-extern char *optarg;
-extern int   optind;
 
 BOOLEAN optVerbose = CZEROPADANDFFTTESTC_FALSE;
 BOOLEAN optMeasurePlan = CZEROPADANDFFTTESTC_FALSE;
@@ -772,7 +762,7 @@ ParseOptions (int argc, char *argv[])
   {
     int c = -1;
 
-    c = getopt (argc, argv, "hqvd:i:o:n:m");
+    c = LALgetopt (argc, argv, "hqvd:i:o:n:m");
     if (c == -1)
     {
       break;
@@ -781,15 +771,15 @@ ParseOptions (int argc, char *argv[])
     switch (c)
     {
       case 'i': /* specify input file */
-        strncpy (optInputFile, optarg, LALNameLength);
+        strncpy (optInputFile, LALoptarg, LALNameLength);
         break;
 
       case 'o': /* specify output file */
-        strncpy (optOutputFile, optarg, LALNameLength);
+        strncpy (optOutputFile, LALoptarg, LALNameLength);
         break;
 
       case 'n': /* specify number of points in series */
-        optLength = atoi (optarg);
+        optLength = atoi (LALoptarg);
         break;
 
       case 'm': /* specify whether or not to measure plan */
@@ -829,7 +819,7 @@ ParseOptions (int argc, char *argv[])
 
   }
 
-  if (optind < argc)
+  if (LALoptind < argc)
   {
     Usage (argv[0], 1);
   }

@@ -35,11 +35,11 @@
 #include <ctype.h>
 #include <assert.h>
 #include <string.h>
-#include <getopt.h>
 #include <time.h>
 #include <lalapps.h>
 #include <processtable.h>
 #include <lal/LALStdio.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/LIGOMetadataTables.h>
@@ -452,8 +452,8 @@ int main( int argc, char *argv[] )
   LIGOLwXMLStream       xmlfp;
   FILE                 *fp = NULL;
 
-  /* getopt arguments */
-  struct option long_options[] =
+  /* LALgetopt arguments */
+  struct LALoption long_options[] =
   {
     {"help",                    no_argument,       0,                'h'},
     {"verbose",                 no_argument,       &vrbflg,           1 },
@@ -523,11 +523,11 @@ int main( int argc, char *argv[] )
 
   while ( 1 )
   {
-    /* getopt_long stores long option here */
+    /* LALgetopt_long stores long option here */
     int option_index = 0;
     long int gpsinput;
 
-    c = getopt_long_only( argc, argv, "a:hs:t:V", long_options, &option_index );
+    c = LALgetopt_long_only( argc, argv, "a:hs:t:V", long_options, &option_index );
 
     /* detect the end of the options */
     if ( c == - 1 )
@@ -546,13 +546,13 @@ int main( int argc, char *argv[] )
         else
         {
           fprintf( stderr, "error parsing option %s with argument %s\n",
-              long_options[option_index].name, optarg );
+              long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
         break;
 
       case 'a':
-        gpsinput = atol( optarg );
+        gpsinput = atol( LALoptarg );
         if ( gpsinput < 441417609 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -570,7 +570,7 @@ int main( int argc, char *argv[] )
         break;
 
       case 's':
-        randSeed = atoi( optarg );
+        randSeed = atoi( LALoptarg );
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, "int", 
               "%d", randSeed );
@@ -578,15 +578,15 @@ int main( int argc, char *argv[] )
 
       case 't':
         /* set the injection type */
-        if ( ! strcmp( "strain", optarg ) )
+        if ( ! strcmp( "strain", LALoptarg ) )
         {
           injectionResponse = unityResponse;
         }
-        else if ( ! strcmp( "etmx", optarg ) )
+        else if ( ! strcmp( "etmx", LALoptarg ) )
         {
           injectionResponse = actuationX;
         }
-        else if ( ! strcmp( "etmy", optarg ) )
+        else if ( ! strcmp( "etmy", LALoptarg ) )
         {
           injectionResponse = actuationY;
         }
@@ -595,11 +595,11 @@ int main( int argc, char *argv[] )
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown injection type specified: "
               "%s (must be strain, etmx or etmy)\n",
-              long_options[option_index].name, optarg );
+              long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
         next_process_param( long_options[option_index].name, "string", "%s", 
-            optarg );
+            LALoptarg );
         break;
 
       case 'V':
@@ -623,12 +623,12 @@ int main( int argc, char *argv[] )
     }
   }
 
-  if ( optind < argc )
+  if ( LALoptind < argc )
   {
     fprintf( stderr, "extraneous command line arguments:\n" );
-    while ( optind < argc )
+    while ( LALoptind < argc )
     {
-      fprintf ( stderr, "%s\n", argv[optind++] );
+      fprintf ( stderr, "%s\n", argv[LALoptind++] );
     }
     exit( 1 );
   }

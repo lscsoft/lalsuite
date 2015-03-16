@@ -137,7 +137,7 @@ the conversion:\n\
 }
 
 void get_input_args(inputParams_t *inputParams, int argc, char *argv[]){
-  struct option long_options[] =
+  struct LALoption long_options[] =
   {
     { "help",          no_argument,       0, 'h' },
     { "verbose",       no_argument, &verbose, 1 },
@@ -177,7 +177,7 @@ void get_input_args(inputParams_t *inputParams, int argc, char *argv[]){
     int option_index = 0;
     int c;
 
-    c = getopt_long( argc, argv, args, long_options, &option_index );
+    c = LALgetopt_long( argc, argv, args, long_options, &option_index );
     if ( c == -1 ) /* end of options */
       break;
 
@@ -187,24 +187,24 @@ void get_input_args(inputParams_t *inputParams, int argc, char *argv[]){
           break;
         else
           fprintf(stderr, "Error passing option %s with argument %s\n",
-            long_options[option_index].name, optarg);
+            long_options[option_index].name, LALoptarg);
       case 'h': /* help message */
         fprintf(stderr, USAGE, program);
         exit(0);
       case 't':
-        inputParams->ephemtype = strdup(optarg);
+        inputParams->ephemtype = strdup(LALoptarg);
         break;
       case 'o':
-        inputParams->outputpath = strdup(optarg);
+        inputParams->outputpath = strdup(LALoptarg);
         break;
       case 's':
-        inputParams->startT = atof(optarg);
+        inputParams->startT = atof(LALoptarg);
         break;
       case 'e':
-        inputParams->endT = atof(optarg);
+        inputParams->endT = atof(LALoptarg);
         break;
       case 'i':
-        inputParams->interval = atof(optarg);
+        inputParams->interval = atof(LALoptarg);
         break;
       case '?':
         fprintf(stderr, "Unknown error while parsing options\n");

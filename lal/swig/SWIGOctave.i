@@ -62,7 +62,8 @@ extern "C++" {
 #define swiglal_1starg()  (args.length() > 0 ? args(0) : octave_value())
 %}
 
-// Return a reference to the supplied octave_value; since Octave handles reference counting, just return it.
+// Return a reference to the supplied octave_value; since Octave handles reference counting, just
+// return it.
 %header %{
 #define swiglal_get_reference(v) (v)
 %}
@@ -74,8 +75,7 @@ extern "C++" {
 
 // # SWIG directives for operators
 
-// Unary operators which return a new object, and thus
-// require %newobject to be set.
+// Unary operators which return a new object, and thus require %newobject to be set.
 %define %swiglal_oct_urn_op(NAME, OCTNAME)
 %rename(__##OCTNAME##__) *::__##NAME##__;
 %newobject *::__##NAME##__;
@@ -84,8 +84,7 @@ extern "C++" {
 %swiglal_oct_urn_op(neg, uminus);
 %swiglal_oct_urn_op(pos, uplus);
 
-// Binary operators, which always must return a new object,
-// and thus require %newobject to be set.
+// Binary operators, which always must return a new object, and thus require %newobject to be set.
 %define %swiglal_oct_bin_op(NAME)
 %newobject *::__##NAME##__;
 %newobject *::__r##NAME##__;
@@ -186,24 +185,21 @@ extern "C++" {
 
 // # Interface code to track object parents
 
-// Interface code which tracks the parent structs of SWIG-wrapped struct members,
-// so that the parent struct is not destroyed as long as a SWIG-wrapped object
-// containing any of its members exists.
+// Interface code which tracks the parent structs of SWIG-wrapped struct members, so that the parent
+// struct is not destroyed as long as a SWIG-wrapped object containing any of its members exists.
 %header %{
 
 #include <map>
 
-// Internal map from member pointers to octave_values containing the
-// member parent struct, as well as an internal reference count of
-// how many SWIG-wrapped member objects are extant.
+// Internal map from member pointers to octave_values containing the member parent struct, as well
+// as an internal reference count of how many SWIG-wrapped member objects are extant.
 typedef std::pair<octave_value, int> swiglal_oct_parent;
 typedef std::pair<void*, swiglal_oct_parent> swiglal_oct_parent_pair;
 typedef std::map<void*, swiglal_oct_parent> swiglal_oct_parent_map;
 static swiglal_oct_parent_map* parent_map = 0;
 
-// Store a reference to the parent of ptr in the internal map.
-// If there is already such a reference, increment the internal
-// reference count instead.
+// Store a reference to the parent of ptr in the internal map. If there is already such a reference,
+// increment the internal reference count instead.
 SWIGINTERN void swiglal_store_parent(void* ptr, octave_value parent) {
   assert(ptr);
   assert(parent.is_defined());
@@ -216,11 +212,10 @@ SWIGINTERN void swiglal_store_parent(void* ptr, octave_value parent) {
   }
 }
 
-// Check if ptr stored a reference to a parent struct. If there is
-// no parent object, then ptr *really* owns its memory, and it's okay
-// for it to destroy it (so return true). Otherwise, decrement the
-// internal reference count, erase the parent map entry if it reaches
-// zero, and return false to prevent any destructors being called.
+// Check if ptr stored a reference to a parent struct. If there is no parent object, then ptr
+// *really* owns its memory, and it's okay for it to destroy it (so return true). Otherwise,
+// decrement the internal reference count, erase the parent map entry if it reaches zero, and return
+// false to prevent any destructors being called.
 SWIGINTERN bool swiglal_release_parent(void *ptr) {
   bool retn = true;
   assert(ptr);
@@ -237,11 +232,10 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 %} // %header
 %init %{
 
-// Get a pointer to the internal parent map. Look for a global variable
-// ' __SWIGLAL_parent_map__', then try to extract a pointer to the parent
-// map from a SWIG packed object. If the packed object does not yet exist,
-// create a new map, pack its pointer in a SWIG packed object, then assign
-// it to global variable. Thus each binding gets a pointer to the same map.
+// Get a pointer to the internal parent map. Look for a global variable ' __SWIGLAL_parent_map__',
+// then try to extract a pointer to the parent map from a SWIG packed object. If the packed object
+// does not yet exist, create a new map, pack its pointer in a SWIG packed object, then assign it to
+// global variable. Thus each binding gets a pointer to the same map.
 {
   const char* const parent_map_name = "__SWIGLAL_parent_map__";
   octave_value ov = SWIG_Octave_GetGlobalValue(parent_map_name);
@@ -258,8 +252,8 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 
 // # Fragments and typemaps for arrays
 
-// This section implements a series of array view classes, through which
-// arbitrary C array data can be viewed as native Octave matrices, etc.
+// This section implements a series of array view classes, through which arbitrary C array data can
+// be viewed as native Octave matrices, etc.
 
 // Name of array view class for array conversion type ACFTYPE.
 #define %swiglal_oct_array_view_class(ACFTYPE) swiglal_oct_array_view_##ACFTYPE
@@ -276,12 +270,13 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 // Name of fragment containing array view class for array conversion type ACFTYPE.
 #define %swiglal_oct_array_view_frag(ACFTYPE) "swiglal_oct_array_view_" %str(ACFTYPE)
 
-// Name of fragment containing initialisation code for array view class for array conversion type ACFTYPE.
+// Name of fragment containing initialisation code for array view class for array conversion type
+// ACFTYPE.
 #define %swiglal_oct_array_view_init_frag(ACFTYPE) "swiglal_oct_array_view_init_" %str(ACFTYPE)
 
-// Fragment defining a base array view template, where all functionality is implemented,
-// and from which ACFTYPE-specific array view classes inherit. The template argument is
-// a helper class which supplied ACFTYPE-specific functions and types.
+// Fragment defining a base array view template, where all functionality is implemented, and from
+// which ACFTYPE-specific array view classes inherit. The template argument is a helper class which
+// supplied ACFTYPE-specific functions and types.
 %fragment("swiglal_oct_array_view", "header") {
 
   extern "C++" {
@@ -291,17 +286,15 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 
     private:
 
-      // Instance of the corresponding octave_base_value-derived class of
-      // the array view class, for consulting as to various properties.
+      // Instance of the corresponding octave_base_value-derived class of the array view class, for
+      // consulting as to various properties.
       const typename HELPER::OVClass sloav_class;
 
-      // Keep a reference to the SWIG-wrapped struct containing the
-      // C array being viewed, to prevent it being destroyed if the
-      // struct goes out of scope by the array view remains.
+      // Keep a reference to the SWIG-wrapped struct containing the C array being viewed, to prevent
+      // it being destroyed if the struct goes out of scope by the array view remains.
       const octave_value sloav_parent;
 
-      // Parameters of the C array data being viewed,
-      // and associated SWIG type information.
+      // Parameters of the C array data being viewed, and associated SWIG type information.
       void *const sloav_ptr;
       const size_t sloav_esize;
       const size_t sloav_ndims;
@@ -382,9 +375,9 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
           return SWIG_MemoryError;
         }
 
-        // Check that Octave array dimensions are consistent with C array dimensions.
-        // 1-D arrays are a special case, since Octave arrays are always at least
-        // 2-dimensional, so need to check that one of those dimensions is singular.
+        // Check that Octave array dimensions are consistent with C array dimensions.  1-D arrays
+        // are a special case, since Octave arrays are always at least 2-dimensional, so need to
+        // check that one of those dimensions is singular.
         dim_vector objdims = obj.dims();
         if (sloav_ndims == 1) {
           if (objdims.length() > 2 || objdims.num_ones() == 0 || objdims.numel() != sloav_dims(0)) {
@@ -536,9 +529,9 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 %#endif
 %#endif
 
-      // The following methods override virtual const-methods in octave_base_value.
-      // These methods are mapped to the equivalent method of the octave_base_value-
-      // derived class of the array view class.
+      // The following methods override virtual const-methods in octave_base_value.  These methods
+      // are mapped to the equivalent method of the octave_base_value-derived class of the array
+      // view class.
 
 #define SLOAV_OBV_METH_FROM_CLASS_0(N, R) R N() const { return sloav_class.N(); }
       SLOAV_OBV_METH_FROM_CLASS_0(is_all_va_args, bool);
@@ -596,8 +589,8 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
       SLOAV_OBV_METH_FROM_CLASS_0(is_user_script, bool);
 #undef SLOAV_OBV_METH_FROM_CLASS_0
 
-      // The following methods override virtual const-methods in octave_base_value.
-      // These methods are mapped to the equivalent method of the Octave array.
+      // The following methods override virtual const-methods in octave_base_value.  These methods
+      // are mapped to the equivalent method of the Octave array.
 
 #define SLOAV_OBV_METH_FROM_ARRAY_0(N, R) R N() const { return sloav_array_out().N(); }
 #define SLOAV_OBV_METH_FROM_ARRAY_1(N, R, A) R N(A a) const { return sloav_array_out().N(a); }
@@ -750,7 +743,8 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 
 } // fragment swiglal_oct_array_view
 
-// Macro which generates fragments which define ACFTYPE-specific array view classes and conversion functions:
+// Macro which generates fragments which define ACFTYPE-specific array view classes and conversion
+// functions:
 //  - IN/OUTFRAG are names of fragments required by the in/out conversion functions IN/OUTCALL.
 //  - OVCLASS is the octave_base_value-derived class of the array view class.
 //  - OVTYPE is the type of octave_value array value.
@@ -771,8 +765,8 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 
   extern "C++" {
 
-    // Helper class which supplies ACFTYPE-specific types and functions
-    // to the base template swiglal_oct_array_view<>.
+    // Helper class which supplies ACFTYPE-specific types and functions to the base template
+    // swiglal_oct_array_view<>.
     class %swiglal_oct_array_view_helper_class(ACFTYPE) {
 
     public:
@@ -858,7 +852,8 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
                                                      swig_type_info *tinfo,
                                                      const int tflags)
   {
-    // Create a local array view, then use its sloav_array_in() member to copy the input Octave array to the viewed C array.
+    // Create a local array view, then use its sloav_array_in() member to copy the input Octave
+    // array to the viewed C array.
     %swiglal_oct_array_view_class(ACFTYPE) arrview(parent, ptr, esize, ndims, dims, strides, isptr, tinfo, tflags);
     return arrview.sloav_array_in(obj);
   }
@@ -878,7 +873,8 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
                                                                swig_type_info *tinfo,
                                                                const int tflags)
   {
-    // Create a local array view, then use its sloav_array_out() member to copy the viewed C array to the output Octave array.
+    // Create a local array view, then use its sloav_array_out() member to copy the viewed C array
+    // to the output Octave array.
     %swiglal_oct_array_view_class(ACFTYPE) arrview(parent, ptr, esize, ndims, dims, strides, isptr, tinfo, tflags);
     return arrview.sloav_array_out();
   }
@@ -922,9 +918,9 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
         return SWIG_TypeError;
       }
 
-      // Check that 'val' has the correct number of dimensions.
-      // 1-D arrays are a special case, since Octave arrays are always at least
-      // 2-dimensional, so need to check that one of those dimensions is singular.
+      // Check that 'val' has the correct number of dimensions.  1-D arrays are a special case,
+      // since Octave arrays are always at least 2-dimensional, so need to check that one of those
+      // dimensions is singular.
       dim_vector valdims = val.dims();
       if (ndims == 1) {
         if (valdims.length() > 2 || valdims.num_ones() == 0) {
@@ -947,15 +943,15 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 
     }
 
-    // Since Octave stores arrays in column-major order, we can only view 1-D arrays.
-    // (This check is performed late so that 'numel' and 'dims' can be filled first.)
+    // Since Octave stores arrays in column-major order, we can only view 1-D arrays.  (This check
+    // is performed late so that 'numel' and 'dims' can be filled first.)
     if (ndims != 1) {
       return SWIG_ValueError;
     }
 
-    // Get pointer to Octave array data, a highly complicated and dodgy process!
-    // Usually mex_get_data() does the job, apart from complex arrays where that
-    // creates a copy ... in which case try data() and try to detect copying ...
+    // Get pointer to Octave array data, a highly complicated and dodgy process!  Usually
+    // mex_get_data() does the job, apart from complex arrays where that creates a copy ...
+    // in which case try data() and try to detect copying ...
     if (obj.is_complex_type() && !obj.is_scalar_type()) {
       if (obj.is_double_type()) {
         Complex c;
@@ -1014,22 +1010,22 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 
 %enddef // %swiglal_oct_array_frags
 
-// Array conversion fragments for generic arrays, e.g. SWIG-wrapped types.
-// Note that input views are not supported, and so ISOVTYPEEXPR is 'false'.
+// Array conversion fragments for generic arrays, e.g. SWIG-wrapped types.  Note that input views
+// are not supported, and so ISOVTYPEEXPR is 'false'.
 %swiglal_oct_array_frags(SWIGTYPE, "swiglal_as_SWIGTYPE", "swiglal_from_SWIGTYPE",
                          %arg(swiglal_as_SWIGTYPE(parent, objelem, elemptr, esize, isptr, tinfo, tflags)),
                          %arg(swiglal_from_SWIGTYPE(parent, elemptr, isptr, tinfo, tflags)),
                          octave_cell, Cell, cell_value, false);
 
-// Array conversion fragments for arrays of LAL strings.
-// Note that input views are not supported, and so ISOVTYPEEXPR is 'false'.
+// Array conversion fragments for arrays of LAL strings.  Note that input views are not supported,
+// and so ISOVTYPEEXPR is 'false'.
 %swiglal_oct_array_frags(LALchar, "SWIG_AsNewLALcharPtr", "SWIG_FromLALcharPtr",
                          %arg(SWIG_AsNewLALcharPtr(objelem, %reinterpret_cast(elemptr, char**))),
                          %arg(SWIG_FromLALcharPtr(*%reinterpret_cast(elemptr, char**))),
                          octave_cell, Cell, cell_value, false);
 
-// Macro which generates array conversion function fragments to/from Octave
-// arrays for real/fragment TYPEs which use SWIG_AsVal/From fragments.
+// Macro which generates array conversion function fragments to/from Octave arrays for real/fragment
+// TYPEs which use SWIG_AsVal/From fragments.
 %define %swiglal_oct_array_asvalfrom_frags(TYPE, OVCLASS, OVTYPE, OVVALUE, ISOVTYPEEXPR)
 %swiglal_oct_array_frags(TYPE, SWIG_AsVal_frag(TYPE), SWIG_From_frag(TYPE),
                          %arg(SWIG_AsVal(TYPE)(objelem, %reinterpret_cast(elemptr, TYPE*))),

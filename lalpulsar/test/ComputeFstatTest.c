@@ -42,44 +42,52 @@ main ( int argc, char *argv[] )
   XLAL_CHECK ( argc == 1, XLAL_EINVAL, "No input arguments allowed.\n" );
   XLAL_CHECK ( argv != NULL, XLAL_EINVAL );
 
-
+  // ----- load ephemeris
   EphemerisData *ephem;
   XLAL_CHECK ( (ephem = XLALInitBarycenter ( TEST_DATA_DIR "earth00-19-DE405.dat.gz", TEST_DATA_DIR "sun00-19-DE405.dat.gz" )) != NULL, XLAL_EFUNC );
 
   // ----- setup injection and data parameters
-  UINT4 numDetectors = 2;
-
-  // use signal-only injections to avoid usage of different noise bins to contaminate error-comparison
-  MultiNoiseFloor XLAL_INIT_DECL(injectNoiseFloor);
-  injectNoiseFloor.length = numDetectors;
-  injectNoiseFloor.sqrtSn[0] = 1;
-  injectNoiseFloor.sqrtSn[1] = 3;
-
-  MultiNoiseFloor XLAL_INIT_DECL(assumeNoiseFloor);
-  assumeNoiseFloor.length = numDetectors;
-  assumeNoiseFloor.sqrtSn[0] = 1;
-  assumeNoiseFloor.sqrtSn[1] = 3;
-
-
   LALStringVector *detNames = NULL;
   XLAL_CHECK ( (detNames = XLALCreateStringVector ( "H1", "L1", NULL )) != NULL, XLAL_EFUNC );
-  MultiLALDetector XLAL_INIT_DECL(detInfo);
-  XLAL_CHECK ( XLALParseMultiLALDetector ( &detInfo, detNames ) == XLAL_SUCCESS, XLAL_EFUNC );
+  UINT4 numDetectors = detNames->length;
+
+  // generate and assume some gaussian noise floors
+  MultiNoiseFloor XLAL_INIT_DECL(injectSqrtSX);
+  MultiNoiseFloor XLAL_INIT_DECL(assumeSqrtSX);
+  injectSqrtSX.length = numDetectors;
+  assumeSqrtSX.length = numDetectors;
+  for ( UINT4 X = 0; X < numDetectors; X ++ )
+    {
+      injectSqrtSX.sqrtSn[X] = 0; // don't inject random noise to keep errors deterministic and informative (resampling differs much more on noise)
+      assumeSqrtSX.sqrtSn[X] = 1.0 + 2.0*X;
+    }
 
   LIGOTimeGPS startTime = {711595934, 0};
-  REAL8 Tspan = 10 * 3600;
+  REAL8 Tspan = 20 * 3600;
   LIGOTimeGPS endTime = startTime;
   XLALGPSAdd( &endTime, Tspan );
-  REAL8 Tsft = 60;
+  REAL8 Tsft = 1800;
 
-  LIGOTimeGPS refTime = { startTime.gpsSeconds + round(0.5*Tspan), 0 };	// reftime in middle of segment
+  LIGOTimeGPS refTime = { startTime.gpsSeconds - 2.3 * Tspan, 0 };
 
   MultiLIGOTimeGPSVector *multiTimestamps;
-  XLAL_CHECK ( (multiTimestamps = XLALMakeMultiTimestamps ( startTime, Tspan, Tsft, 0, numDetectors )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK ( ( multiTimestamps = XLALCalloc ( 1, sizeof(*multiTimestamps))) != NULL, XLAL_ENOMEM );
+  XLAL_CHECK ( ( multiTimestamps->data = XLALCalloc ( numDetectors, sizeof(multiTimestamps->data[0]) )) != NULL, XLAL_ENOMEM );
+  multiTimestamps->length = numDetectors;
+  LIGOTimeGPS startTimeX = startTime;
+  for ( UINT4 X=0; X < numDetectors; X ++ )
+    {
+      XLAL_CHECK ( (multiTimestamps->data[X] = XLALMakeTimestamps ( startTimeX, Tspan, Tsft, 0 ) ) != NULL, XLAL_EFUNC );
+      XLALGPSAdd ( &startTimeX, 0.5 * Tspan );	// shift start-times by 1/2 Tspan for each detector
+      Tspan *= 2.0;
+    } // for X < numDetectors
 
-  // shift a timestamp in order to create a non-commensurate gap
+  // shift a few timestamps around to create gaps
   UINT4 numSFTsPerDet = multiTimestamps->data[0]->length;
-  multiTimestamps->data[0]->data[numSFTsPerDet-1].gpsSeconds += 2000;
+  multiTimestamps->data[0]->data[numSFTsPerDet-1].gpsSeconds += 10000;
+  multiTimestamps->data[0]->data[numSFTsPerDet-2].gpsSeconds += 5000;
+  multiTimestamps->data[1]->data[0].gpsSeconds -= 10000;
+  multiTimestamps->data[1]->data[1].gpsSeconds -=  5000;
 
   SFTCatalog *catalog;
   XLAL_CHECK ( (catalog = XLALMultiAddToFakeSFTCatalog ( NULL, detNames, multiTimestamps )) != NULL, XLAL_EFUNC );
@@ -87,17 +95,17 @@ main ( int argc, char *argv[] )
   // ----- CW sources to injet ----------
   REAL8 Freq = 100.0;
 
-  PulsarParamsVector *sources;
-  XLAL_CHECK ( (sources = XLALCreatePulsarParamsVector(1)) != NULL, XLAL_EFUNC );
+  PulsarParamsVector *injectSources;
+  XLAL_CHECK ( (injectSources = XLALCreatePulsarParamsVector(1)) != NULL, XLAL_EFUNC );
 
-  sources->data[0].Amp.h0   = 1;
-  sources->data[0].Amp.cosi = 0.5;
-  sources->data[0].Amp.psi  = 0.1;
-  sources->data[0].Amp.phi0 = 1.2;
+  injectSources->data[0].Amp.h0   = 1;
+  injectSources->data[0].Amp.cosi = 0.5;
+  injectSources->data[0].Amp.psi  = 0.1;
+  injectSources->data[0].Amp.phi0 = 1.2;
 
-  REAL8 asini = 1.4;	// sco-X1 like
-  REAL8 Period = 19 * 3600;// sco-X1 like
-  REAL8 ecc = 0.1;	// much larger than ScoX1
+  REAL8 asini = 0; // 1.4;	// sco-X1 like
+  REAL8 Period = 0; // 19 * 3600;// sco-X1 like
+  REAL8 ecc = 0; // 0.1;	// much larger than ScoX1
   PulsarDopplerParams XLAL_INIT_DECL(Doppler);
   Doppler.Alpha = 0.5;
   Doppler.Delta = -0.5;
@@ -111,7 +119,7 @@ main ( int argc, char *argv[] )
   Doppler.period = Period;
   Doppler.argp = 0.5;
 
-  sources->data[0].Doppler = Doppler;
+  injectSources->data[0].Doppler = Doppler;
 
   REAL8 dFreq = 0.1 / Tspan;		// 10x finer than native FFT resolution
   REAL8 mis = 0.5;
@@ -127,7 +135,7 @@ main ( int argc, char *argv[] )
 
   PulsarSpinRange XLAL_INIT_DECL(spinRange);
   spinRange.refTime = refTime;
-  memcpy ( &spinRange.fkdot, &sources->data[0].Doppler.fkdot, sizeof(spinRange.fkdot) );
+  memcpy ( &spinRange.fkdot, &injectSources->data[0].Doppler.fkdot, sizeof(spinRange.fkdot) );
   spinRange.fkdotBand[0] = (numFreqBins - 1)*dFreq - 10*LAL_REAL8_EPS;
   spinRange.fkdotBand[1] = (numf1dotPoints - 1)*df1dot - 10*LAL_REAL8_EPS;
 
@@ -136,11 +144,11 @@ main ( int argc, char *argv[] )
   REAL8 minCoverFreq, maxCoverFreq;
   XLAL_CHECK ( XLALCWSignalCoveringBand ( &minCoverFreq, &maxCoverFreq, &startTime, &endTime, &spinRange, asini, Period, ecc ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  // ----- setup extra Fstat method params
-  FstatExtraParams XLAL_INIT_DECL(extraParams);
-  extraParams.randSeed  = 1;
-  extraParams.SSBprec = SSBPREC_RELATIVISTICOPT;
-  extraParams.Dterms = 8;	// constant value that works for all Demod methods
+  // ----- setup optional Fstat arguments
+  FstatOptionalArgs optionalArgs = FstatOptionalArgsDefaults;
+  optionalArgs.injectSources = injectSources;
+  optionalArgs.injectSqrtSX = &injectSqrtSX;
+  optionalArgs.assumeSqrtSX = &assumeSqrtSX;
 
   // ----- prepare input data with injection for all available methods
   FstatInput *input[FMETHOD_END];
@@ -151,8 +159,8 @@ main ( int argc, char *argv[] )
       if ( !XLALFstatMethodIsAvailable(iMethod) ) {
         continue;
       }
-      input[iMethod] = XLALCreateFstatInput ( catalog, minCoverFreq, maxCoverFreq, sources, &injectNoiseFloor, &assumeNoiseFloor, 50, ephem, iMethod, &extraParams );
-      XLAL_CHECK ( input[iMethod] != NULL, XLAL_EFUNC );
+      optionalArgs.FstatMethod = iMethod;
+      XLAL_CHECK ( (input[iMethod] = XLALCreateFstatInput ( catalog, minCoverFreq, maxCoverFreq, dFreq, ephem, &optionalArgs )) != NULL, XLAL_EFUNC );
     }
 
   FstatQuantities whatToCompute = (FSTATQ_2F | FSTATQ_FAFB);
@@ -174,7 +182,7 @@ main ( int argc, char *argv[] )
                     firstMethod = iMethod;
                   }
 
-                  XLAL_CHECK ( XLALComputeFstat ( &results[iMethod], input[iMethod], &Doppler, dFreq, numFreqBins, whatToCompute ) == XLAL_SUCCESS, XLAL_EFUNC );
+                  XLAL_CHECK ( XLALComputeFstat ( &results[iMethod], input[iMethod], &Doppler, numFreqBins, whatToCompute ) == XLAL_SUCCESS, XLAL_EFUNC );
 
                   if ( lalDebugLevel & LALINFOBIT )
                     {
@@ -201,11 +209,14 @@ main ( int argc, char *argv[] )
                     } // if info
 
                   // compare to first result
-                  XLALPrintInfo ("Comparing results between method '%s' and '%s'\n", XLALGetFstatMethodName(firstMethod), XLALGetFstatMethodName(iMethod) );
-                  if ( compareFstatResults ( results[firstMethod], results[iMethod] ) != XLAL_SUCCESS )
+                  if ( iMethod != firstMethod )
                     {
-                      XLALPrintError ("Comparison between method '%s' and '%s' failed\n", XLALGetFstatMethodName(firstMethod), XLALGetFstatMethodName(iMethod) );
-                      XLAL_ERROR ( XLAL_EFUNC );
+                      XLALPrintInfo ("Comparing results between method '%s' and '%s'\n", XLALGetFstatMethodName(firstMethod), XLALGetFstatMethodName(iMethod) );
+                      if ( compareFstatResults ( results[firstMethod], results[iMethod] ) != XLAL_SUCCESS )
+                        {
+                          XLALPrintError ("Comparison between method '%s' and '%s' failed\n", XLALGetFstatMethodName(firstMethod), XLALGetFstatMethodName(iMethod) );
+                          XLAL_ERROR ( XLAL_EFUNC );
+                        }
                     }
 
                 }  // for i < FMETHOD_END
@@ -232,11 +243,12 @@ main ( int argc, char *argv[] )
       XLALDestroyFstatResults ( results[iMethod] );
     } // for i < FMETHOD_END
 
-  XLALDestroyPulsarParamsVector ( sources );
+  XLALDestroyPulsarParamsVector ( injectSources );
   XLALDestroySFTCatalog ( catalog );
   XLALDestroyMultiTimestamps ( multiTimestamps );
   XLALDestroyStringVector ( detNames );
   XLALDestroyEphemerisData ( ephem );
+
   LALCheckMemoryLeaks();
 
   return XLAL_SUCCESS;
@@ -255,11 +267,11 @@ compareFstatResults ( const FstatResults *result1, const FstatResults *result2 )
 
   // ----- set tolerance levels for comparisons ----------
   VectorComparison XLAL_INIT_DECL(tol);
-  tol.relErr_L1 	= 5.3e-2;
-  tol.relErr_L2		= 5e-2;
-  tol.angleV 		= 0.05;  // rad
-  tol.relErr_atMaxAbsx 	= 6e-2;
-  tol.relErr_atMaxAbsy  = 6e-2;
+  tol.relErr_L1 	= 2e-2;
+  tol.relErr_L2		= 2e-2;
+  tol.angleV 		= 0.02;  // rad
+  tol.relErr_atMaxAbsx	= 2e-2;
+  tol.relErr_atMaxAbsy  = 2e-2;
 
   UINT4 numFreqBins = result1->numFreqBins;
   VectorComparison XLAL_INIT_DECL(cmp);
@@ -289,12 +301,12 @@ compareFstatResults ( const FstatResults *result1, const FstatResults *result2 )
       c1.data = result1->Fa;
       c2.data = result2->Fa;
       XLALPrintInfo ("Comparing Fa values:\n");
-      XLAL_CHECK ( XLALCompareCOMPLEX8Vectors ( &cmp, &c1, &c2, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );	 // FIXME: deactivated test
+      XLAL_CHECK ( XLALCompareCOMPLEX8Vectors ( &cmp, &c1, &c2, &tol ) == XLAL_SUCCESS, XLAL_EFUNC );	 // FIXME: deactivated test
       // Fb
       c1.data = result1->Fb;
       c2.data = result2->Fb;
       XLALPrintInfo ("Comparing Fb values:\n");
-      XLAL_CHECK ( XLALCompareCOMPLEX8Vectors ( &cmp, &c1, &c2, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );	 // FIXME: deactivated test
+      XLAL_CHECK ( XLALCompareCOMPLEX8Vectors ( &cmp, &c1, &c2, &tol ) == XLAL_SUCCESS, XLAL_EFUNC );	 // FIXME: deactivated test
     }
 
   return XLAL_SUCCESS;

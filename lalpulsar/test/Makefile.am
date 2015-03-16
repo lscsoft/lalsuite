@@ -5,6 +5,7 @@ include $(top_srcdir)/gnuscripts/lalsuite_test.am
 test_programs += BinarySSBTimesTest
 test_programs += ComputeFstatTest
 test_programs += ConstructPLUTTest
+test_programs += DopplerScanTest
 test_programs += DriveHoughTest
 test_programs += DriveNDHoughTest
 test_programs += ExtrapolatePulsarSpinsTest
@@ -34,6 +35,7 @@ test_programs += SimulateTaylorCWTest
 test_programs += SkyMetricTest
 test_programs += StackMetricTest
 test_programs += StatisticsTest
+test_programs += SuperskyMetricsTest
 test_programs += TwoDMeshTest
 test_programs += UniversalDopplerMetricTest
 test_programs += VelocityTest
@@ -45,6 +47,9 @@ test_programs += XLALMultiNoiseWeightsTest
 if LALXML
 test_programs += LALPulsarXMLTest
 endif
+
+## special benchmark program for CFS, not run as part of tests
+bin_PROGRAMS = ComputeFstatBenchmark
 
 # Add shell, Python, etc. test scripts to this variable
 test_scripts += pulsar_toa_test.sh
@@ -88,6 +93,7 @@ pkgdata_DATA = \
 	tdb_2000-2019.dat.gz \
 	te405_2000-2019.dat.gz \
 	testTimestamps.dat \
+	testTimestampsNew.dat \
 	$(END_OF_LIST)
 
 EXTRA_DIST += \
@@ -126,6 +132,7 @@ EXTRA_DIST += \
 	inputsft.1 \
 	sun98.dat \
 	testTimestamps.dat \
+	testTimestampsNew.dat \
 	TOAtest.par \
 	TOAtest.simulate \
 	pks2gps.clk \

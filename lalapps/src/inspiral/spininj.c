@@ -31,7 +31,6 @@
 #include <ctype.h>
 #include <assert.h>
 #include <string.h>
-#include <getopt.h>
 #include <time.h>
 #include <lalapps.h>
 #include <processtable.h>

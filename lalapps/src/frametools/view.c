@@ -19,7 +19,6 @@
 
 /* vim: set noet ts=4 sw=4: */
 #include <complex.h>
-#include <getopt.h>
 #include <math.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -27,6 +26,7 @@
 #include <string.h>
 
 #include <lal/LALFrameIO.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALCache.h>
 #include <lal/LALFrStream.h>
 #include <lal/BandPassTimeSeries.h>
@@ -76,9 +76,6 @@ int outtype_ = ASCII_OUTPUT;
 int intype_ = READ_INPUT;
 int verboseflg_ = 0;
 int debugflg_ = 0;
-
-extern char *optarg;
-extern int optind;
 
 int verbose( const char *fmt, ... );
 int usage( const char *program );
@@ -166,7 +163,7 @@ int main( int argc, char *argv[] )
 
 int parseopts( int argc, char **argv )
 {
-	struct option long_options[] = {
+	struct LALoption long_options[] = {
 		{ "help", no_argument, 0, 'h' },
 		{ "power-spectrum", required_argument, 0, 'P' },
 		{ "gps-start-time", required_argument, 0, 't' },
@@ -194,14 +191,14 @@ int parseopts( int argc, char **argv )
 	while ( 1 ) {
 		int option_index = 0;
 		int c;
-		c = getopt_long_only( argc, argv, args, long_options, &option_index );
+		c = LALgetopt_long_only( argc, argv, args, long_options, &option_index );
 		if ( c == -1 )
 			break;
 		switch ( c ) {
 			case 0:
 				if ( long_options[option_index].flag )
 					break; /* option set flag: nothing else to do */
-				fprintf( stderr, "error parsing option %s with argument %s\n", long_options[option_index].name, optarg );
+				fprintf( stderr, "error parsing option %s with argument %s\n", long_options[option_index].name, LALoptarg );
 				exit( 1 );
 			case '0':
 				intype_ = ZERO_INPUT;
@@ -213,50 +210,50 @@ int parseopts( int argc, char **argv )
 				usage( argv[0] );
 				exit( 0 );
 			case 'P':
-				numave_ = atoi( optarg );
+				numave_ = atoi( LALoptarg );
 				outtype_ = PSD_OUTPUT;
 				break;
 			case 't':
-				XLALStrToGPS( &start_, optarg, NULL );
+				XLALStrToGPS( &start_, LALoptarg, NULL );
 				texactflg_ = 0;
 				break;
 			case 'T':
-				XLALStrToGPS( &start_, optarg, NULL );
+				XLALStrToGPS( &start_, LALoptarg, NULL );
 				texactflg_ = 1;
 				break;
 			case 'c':
-				channel_ = optarg;
+				channel_ = LALoptarg;
 				break;
 			case 'C':
-				calibfile_ = optarg;
+				calibfile_ = LALoptarg;
 				calibflg_ = 1;
 				break;
 			case 'f':
 				cachefileflg_ = 0;
-				datafile_ = optarg;
+				datafile_ = LALoptarg;
 				break;
 			case 'F':
 				cachefileflg_ = 1;
-				datafile_ = optarg;
+				datafile_ = LALoptarg;
 				break;
 			case 'I':
-				inspinjfile_ = optarg;
+				inspinjfile_ = LALoptarg;
 				break;
 			case 'B':
-				burstinjfile_ = optarg;
+				burstinjfile_ = LALoptarg;
 				break;
 			case 'd':
-				duration_ = atof( optarg );
+				duration_ = atof( LALoptarg );
 				break;
 			case 'o':
-				outfile_ = optarg;
+				outfile_ = LALoptarg;
 				break;
 			case 'O':
-				if ( strstr( optarg, "ASC" ) || strstr( optarg, "asc" ) )
+				if ( strstr( LALoptarg, "ASC" ) || strstr( LALoptarg, "asc" ) )
 					outtype_ = ASCII_OUTPUT;
-				else if ( strstr( optarg, "WAV" ) || strstr( optarg, "wav" ) )
+				else if ( strstr( LALoptarg, "WAV" ) || strstr( LALoptarg, "wav" ) )
 					outtype_ = WAVE_OUTPUT;
-				else if ( strstr( optarg, "AU" ) || strstr( optarg, "au" ) )
+				else if ( strstr( LALoptarg, "AU" ) || strstr( LALoptarg, "au" ) )
 					outtype_ = AU_OUTPUT;
 				else {
 					fprintf( stderr, "error: unrecognized output type\n" );
@@ -264,13 +261,13 @@ int parseopts( int argc, char **argv )
 				}
 				break;
 			case 's':
-				srate_ = atof( optarg );
+				srate_ = atof( LALoptarg );
 				break;
 			case 'm':
-				minfreq_ = atof( optarg );
+				minfreq_ = atof( LALoptarg );
 				break;
 			case 'M':
-				maxfreq_ = atof( optarg );
+				maxfreq_ = atof( LALoptarg );
 				break;
 			case '?':
 			default:
@@ -279,10 +276,10 @@ int parseopts( int argc, char **argv )
 		}
 	}
 
-	if ( optind < argc ) {
+	if ( LALoptind < argc ) {
 		fprintf( stderr, "extraneous command line arguments:\n" );
-		while ( optind < argc )
-			fprintf( stderr, "%s\n", argv[optind++] );
+		while ( LALoptind < argc )
+			fprintf( stderr, "%s\n", argv[LALoptind++] );
 		exit( 1 );
 	}
 

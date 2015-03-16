@@ -17,11 +17,6 @@ if [ -n "$DEBUG" ]; then
     debug=${DEBUG}
 fi
 
-## ----- allow user-control of (Demod) FstatMethod variant to use
-if [ -n "$FSTAT_METHOD" ]; then
-    FstatMethod="--FstatMethod=${FSTAT_METHOD}"
-fi
-
 ##---------- names of codes and input/output files
 mfd_code="${injectdir}lalapps_Makefakedata_v5"
 cmp_code="${builddir}lalapps_compareFstats"
@@ -61,14 +56,14 @@ mfd_fmin=$(echo $Freq $mfd_FreqBand | awk '{printf "%g", $1 - $2 / 2.0}');
 
 ## cfs search bands
 Nfreq=500
-cfs_dFreq=$(echo $duration | awk '{printf "%.16g", 1.0 / ( 2.0 * $1 ) }');		## 1/(2T) frequency resolution
-cfs_FreqBand=$(echo $Nfreq $cfs_dFreq | awk '{printf "%.16g", $1 * $2 - 0.5*$2 }');	## band corresponding to fixed number of frequency bins
-cfs_Freq=$(echo $Freq $cfs_FreqBand | awk '{printf "%.16g", $1 - $2 / 2.0}');		## center search band on signal frequency
+cfs_dFreq=$(echo $duration | awk '{printf "%.16g", 1.0 / ( 2.0 * $1 ) }');		## 1/(4T) frequency resolution
+cfs_FreqBand=$(echo $Nfreq $cfs_dFreq | awk '{printf "%.16g", $1 * $2 }');		## band corresponding to fixed number of frequency bins
+cfs_Freq=$(echo $Freq $Nfreq $cfs_dFreq | awk '{printf "%.16g", $1 - $2/2 * $3}');	## center search bin on exact signal frequency (for parameter estimation)
 
 Nf1dot=10
-cfs_df1dot=$(echo $duration | awk '{printf "%g", 0.005 / ($1 * $1) }');			## 1/(T^2) resolution in f1dot
-cfs_f1dotBand=$(echo $Nf1dot $cfs_df1dot | awk '{printf "%.16g", $1 * $2 - 0.5*$2 }');	## band corresponding to fixed number of f1dot bins
-cfs_f1dot=$(echo $f1dot $cfs_f1dotBand | awk '{printf "%.16g", $1 - $2 / 2.0}');	## center f1dot band on signal f1dot
+cfs_df1dot=$(echo $duration | awk '{printf "%g", 1.0 / ($1 * $1) }');			## 1/(T^2) resolution in f1dot
+cfs_f1dotBand=$(echo $Nf1dot $cfs_df1dot | awk '{printf "%.16g", $1 * $2 }');		## band corresponding to fixed number of f1dot bins
+cfs_f1dot=$(echo $f1dot $Nf1dot $cfs_cf1dot | awk '{printf "%.16g", $1 - $2/2 * $3 }');	## center f1dot band bin on exact signal f1dot (for parameter estimation)
 
 cfs_nCands=100000	## toplist length: keep N cands
 
@@ -82,7 +77,11 @@ mkdir -p $testDir
 SFTdir=${testDir}
 
 outfile_Demod=${testDir}/Fstat_Demod.dat
+loudest_Demod=${testDir}/Loudest_Demod.dat
+
 outfile_Resamp=${testDir}/Fstat_Resamp.dat
+loudest_Resamp=${testDir}/Loudest_Resamp.dat
+
 timefile_Demod=${testDir}/timing_Demod.dat
 timefile_Resamp=${testDir}/timing_Resamp.dat
 
@@ -105,17 +104,16 @@ if ! eval "$cmdline &> /dev/null"; then
     exit 1
 fi
 
+cfs_CL=" --refTime=${refTime} --Dterms=8 --Alpha=$Alpha --Delta=$Delta  --AlphaBand=$AlphaBand --DeltaBand=$DeltaBand --dAlpha=$dAlpha --dDelta=$dDelta --Freq=$cfs_Freq --FreqBand=$cfs_FreqBand --dFreq=$cfs_dFreq --f1dot=$cfs_f1dot --f1dotBand=$cfs_f1dotBand --df1dot=${cfs_df1dot} --DataFiles='$SFTdir/*.sft' --NumCandidatesToKeep=${cfs_nCands}"
+if [ "$haveNoise" != "true" ]; then
+    cfs_CL="$cfs_CL --SignalOnly"
+fi
 echo
 echo "----------------------------------------------------------------------"
 echo "STEP 2: run directed CFS_v2 with LALDemod method"
 echo "----------------------------------------------------------------------"
 echo
-cfs_CL=" --refTime=${refTime} --Dterms=8 --Alpha=$Alpha --Delta=$Delta  --AlphaBand=$AlphaBand --DeltaBand=$DeltaBand --dAlpha=$dAlpha --dDelta=$dDelta --Freq=$cfs_Freq --FreqBand=$cfs_FreqBand --dFreq=$cfs_dFreq --f1dot=$cfs_f1dot --f1dotBand=$cfs_f1dotBand --df1dot=${cfs_df1dot} --DataFiles='$SFTdir/*.sft' --NumCandidatesToKeep=${cfs_nCands} ${FstatMethod}"
-if [ "$haveNoise" != "true" ]; then
-    cfs_CL="$cfs_CL --SignalOnly"
-fi
-
-cmdline="$cfs_code $cfs_CL --outputFstat=$outfile_Demod --outputTiming=$timefile_Demod"
+cmdline="$cfs_code $cfs_CL --FstatMethod=DemodBest --outputFstat=$outfile_Demod --outputTiming=$timefile_Demod --outputLoudest=${loudest_Demod} "
 echo $cmdline;
 if ! eval "$cmdline &> /dev/null"; then
     echo "Error.. something failed when running '$cfs_code' ..."
@@ -127,7 +125,7 @@ echo "----------------------------------------------------------------------"
 echo " STEP 3: run directed CFS_v2 with resampling"
 echo "----------------------------------------------------------------------"
 echo
-cmdline="$cfs_code $cfs_CL --FstatMethod=ResampGeneric --outputFstat=$outfile_Resamp --outputTiming=$timefile_Resamp"
+cmdline="$cfs_code $cfs_CL --FstatMethod=ResampBest --outputFstat=$outfile_Resamp --outputTiming=$timefile_Resamp  --outputLoudest=${loudest_Resamp}"
 echo $cmdline;
 if ! eval "$cmdline 2> /dev/null"; then
     echo "Error.. something failed when running '$cfs_code' ..."
@@ -143,7 +141,7 @@ sort $outfile_Resamp > __tmp_sorted && mv __tmp_sorted $outfile_Resamp
 
 ## compare absolute differences instead of relative, allow deviations of up to sigma=sqrt(8)~2.8
 echo
-cmdline="$cmp_code -1 ./${outfile_Demod} -2 ./${outfile_Resamp}"
+cmdline="$cmp_code -1 ./${outfile_Demod} -2 ./${outfile_Resamp} --tol_L1=8e-2 --tol_L2=8e-2 --tol_angle=0.08 --tol_atMax=8e-2"
 echo -n $cmdline
 if ! eval $cmdline; then
     echo "==> OUCH... files differ. Something might be wrong..."
@@ -151,6 +149,48 @@ if ! eval $cmdline; then
 else
     echo "	==> OK."
 fi
+
+echo
+echo "----------------------------------------------------------------------"
+echo " STEP 5: Sanity-check Resampling parameter estimation: "
+echo "----------------------------------------------------------------------"
+echo
+
+if grep -q 'nan;' ${loudest_Resamp}; then
+    echo "ERROR: ${loudest_Resamp} contains NaNs!"
+    exit 2
+fi
+
+esth0=$(grep '^h0' ${loudest_Resamp} | awk -F '[ ;]*' '{print $3}')
+estdh0=$(grep '^dh0' ${loudest_Resamp} | awk -F '[ ;]*' '{print $3}')
+
+estPhi0=$(grep '^phi0' ${loudest_Resamp} | awk -F '[ ;]*' '{print $3}')
+estdPhi0=$(grep '^dphi0' ${loudest_Resamp} | awk -F '[ ;]*' '{print $3}')
+
+echo "Estimated h0 = $esth0 +/- $estdh0: Injected h0 = $h0"
+h0inrange=$(echo $h0 $esth0 $estdh0 | awk '{printf "%i\n", (($1 - $2)^2 < 3 * $3^2)}')
+if test x$h0inrange != x1; then
+    echo "ERROR: estimated h0 was not within 3 x sigma of injected h0!"
+    echo
+    exit 2
+else
+    echo "OK: Estimated h0 is within 3 x sigma of injected h0"
+    echo
+fi
+
+echo "Estimated phi0 = $estPhi0 +/- $estdPhi0: Injected phi0 = $phi0"
+phi0inrange=$(echo $phi0 $estPhi0 $estdPhi0 | awk '{printf "%i\n", (($1 - $2)^2 < 3 * $3^2)}')
+if test x$phi0inrange != x1; then
+    echo "ERROR: estimated phi0 was not within 3 x sigma of injected phi0!"
+    echo
+    exit 2
+else
+    echo "OK: Estimated phi0 is within 3 x sigma of injected phi0"
+    echo
+fi
+
+
+
 
 ## -------------------------------------------
 ## clean up files

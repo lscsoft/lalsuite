@@ -10,6 +10,7 @@
 /_build/
 /_inst/
 /lalsimulation-*/
+AUTHORS
 Makefile
 Makefile.in
 config.lt
@@ -41,6 +42,8 @@ src/lalsim-bh-qnmode
 src/lalsim-bh-ringdown
 src/lalsim-bh-sphwf
 src/lalsim-detector-noise
+src/lalsim-detector-strain
+src/lalsim-inject
 src/lalsim-inspiral
 src/lalsim-ns-eos-table
 src/lalsim-ns-mass-radius

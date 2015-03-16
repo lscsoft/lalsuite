@@ -41,7 +41,9 @@ parser = OptionParser(
             help="plot contour enclosing this percentage of"
             + " probability mass [default: %default]"),
         Option("--alpha", metavar="ALPHA", type=float, default=0.1,
-            help="alpha blending for each sky map [default: %default]")
+            help="alpha blending for each sky map [default: %default]"),
+        Option("--transparent", action="store_true", default=False,
+            help="Save image with transparent background [default: %default]")
     ]
 )
 opts, args = parser.parse_args()
@@ -97,9 +99,10 @@ progress.update(-1, 'saving figure')
 # add a white outline to all text to make it stand out from the background.
 plot.outline_text(ax)
 
-fig.patch.set_alpha(0.)
-ax.patch.set_alpha(0.)
-ax.set_alpha(0.)
+if opts.transparent:
+    fig.patch.set_alpha(0.)
+    ax.patch.set_alpha(0.)
+    ax.set_alpha(0.)
 
 if opts.output is None:
     plt.show()

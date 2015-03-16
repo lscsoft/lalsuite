@@ -10,6 +10,7 @@
 /_build/
 /_inst/
 /lalburst-*/
+AUTHORS
 Makefile
 Makefile.in
 config.lt

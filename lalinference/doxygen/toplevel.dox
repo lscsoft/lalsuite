@@ -12,3 +12,8 @@
 \defgroup lalinference_python		Python Packages
 
 */
+
+/**
+\page lalinference_authors		Author List
+\verbinclude AUTHORS
+*/

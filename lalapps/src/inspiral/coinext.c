@@ -101,18 +101,21 @@
 /******************************
 include
 *******************************/
+#include <config.h>
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <errno.h>
 #include <signal.h>
-#include <getopt.h>
 #include <time.h>
 #include <math.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <lal/LALStdio.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALStdlib.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/LIGOLwXML.h>
@@ -1641,8 +1644,8 @@ int arg_parse_check( int argc, char *argv[])
 {
   int flagRun=0;
 
-  /* getopt arguments */
-  struct option long_options[] =
+  /* LALgetopt arguments */
+  struct LALoption long_options[] =
     {
       /* these options set a flag */
       {"restart",                 no_argument,       &flagRestart,  1 },
@@ -1675,11 +1678,11 @@ int arg_parse_check( int argc, char *argv[])
   
   
   while ( 1 ) {
-    /* getopt_long stores long option here */
+    /* LALgetopt_long stores long option here */
     int option_index = 0;
-    size_t optarg_len;
+    size_t LALoptarg_len;
     
-    c = getopt_long_only( argc, argv, 
+    c = LALgetopt_long_only( argc, argv,
                           "A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:S:T:U:V:W:X:Y:Z:"
                           "a:b:c:d:e:f:g:h:i:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:z:",
                           long_options, &option_index );
@@ -1696,7 +1699,7 @@ int arg_parse_check( int argc, char *argv[])
         break;
       } else {
         fprintf( stderr, "error parsing option %s with argument %s\n",
-                 long_options[option_index].name, optarg );
+                 long_options[option_index].name, LALoptarg );
         exit( 1 );
       }
       break;
@@ -1704,23 +1707,23 @@ int arg_parse_check( int argc, char *argv[])
     case 'a': 
       
       /* get name for inspiral data path */
-      optarg_len = strlen( optarg ) + 1;
-      memcpy( dirInspiral, optarg, optarg_len );
-      ADD_PROCESS_PARAM( "string" , "%s", optarg);              
+      LALoptarg_len = strlen( LALoptarg ) + 1;
+      memcpy( dirInspiral, LALoptarg, LALoptarg_len );
+      ADD_PROCESS_PARAM( "string" , "%s", LALoptarg);
       break;
       
     case 'A': { 
       
       /* get name for directory to put the data in */
-      optarg_len = strlen( optarg ) + 1;
-      memcpy( dirData, optarg, optarg_len );              
-      ADD_PROCESS_PARAM( "string" , "%s", optarg);
+      LALoptarg_len = strlen( LALoptarg ) + 1;
+      memcpy( dirData, LALoptarg, LALoptarg_len );
+      ADD_PROCESS_PARAM( "string" , "%s", LALoptarg);
       flagDirData=1;
       break;
     }
       
     case 'b': {
-      waitingTime = atol( optarg );
+      waitingTime = atol( LALoptarg );
       if ( waitingTime < 0 ) {
         fprintf( stderr, "invalid argument to --%s:\n"
                  "waiting time can'y be negative\n",
@@ -1732,60 +1735,60 @@ int arg_parse_check( int argc, char *argv[])
       break;
       
     case 'B': {
-      timeWindow = atoi( optarg );
+      timeWindow = atoi( LALoptarg );
       if ( timeWindow < 0 ) {
         fprintf( stderr, "invalid argument to --%s:\n"
                  "window time must be positive number\n",
                  long_options[option_index].name );
         exit( 1 );
       } 
-      ADD_PROCESS_PARAM( "float" , "%s", optarg);              
+      ADD_PROCESS_PARAM( "float" , "%s", LALoptarg);
     }
       break;
       
       
     case 'd': {
-      snrCut = atof( optarg );
+      snrCut = atof( LALoptarg );
       if ( snrCut < 0 ) {
         fprintf( stderr, "invalid argument to --%s:\n"
                  "snrCut must be a positive number\n",
                  long_options[option_index].name );
         exit( 1 );
       } 
-      ADD_PROCESS_PARAM( "float" , "%f", snrCut);              
+      ADD_PROCESS_PARAM( "float" , "%f", snrCut);
     }
       break;
       
     case 'i': {
       /* read IFO site */
-      optarg_len = strlen( optarg ) + 1;
-      memcpy( ifo, optarg, optarg_len );        
-      ADD_PROCESS_PARAM( "string" , "%s", optarg);                            
+      LALoptarg_len = strlen( LALoptarg ) + 1;
+      memcpy( ifo, LALoptarg, LALoptarg_len );
+      ADD_PROCESS_PARAM( "string" , "%s", LALoptarg);
       break;
     }
       
     case 't': {
       /* read triger file */
-      optarg_len = strlen( optarg ) + 1;
-      memcpy( nameInputList, optarg, optarg_len );        
-      ADD_PROCESS_PARAM( "string" , "%s", optarg);
-      flagTriggerFile=1;                            
+      LALoptarg_len = strlen( LALoptarg ) + 1;
+      memcpy( nameInputList, LALoptarg, LALoptarg_len );
+      ADD_PROCESS_PARAM( "string" , "%s", LALoptarg);
+      flagTriggerFile=1;
       break;
     }
 
     case 'c': {
       /* read calibration vesrion to use */
-      optarg_len = strlen( optarg ) + 1;
-      memcpy( calibrationVersion, optarg, optarg_len );        
-      ADD_PROCESS_PARAM( "string" , "%s", optarg);
+      LALoptarg_len = strlen( LALoptarg ) + 1;
+      memcpy( calibrationVersion, LALoptarg, LALoptarg_len );
+      ADD_PROCESS_PARAM( "string" , "%s", LALoptarg);
       break;
     }
 
     case 'r': {
       /* read run file */
-      optarg_len = strlen( optarg ) + 1;
-      memcpy( run, optarg, optarg_len );        
-      ADD_PROCESS_PARAM( "string" , "%s", optarg);
+      LALoptarg_len = strlen( LALoptarg ) + 1;
+      memcpy( run, LALoptarg, LALoptarg_len );
+      ADD_PROCESS_PARAM( "string" , "%s", LALoptarg);
       flagRun=1;
       break;
     }
@@ -1809,10 +1812,10 @@ int arg_parse_check( int argc, char *argv[])
     }
   }
   
-  if ( optind < argc ) {
+  if ( LALoptind < argc ) {
     fprintf( stderr, "extraneous command line arguments:\n" );
-    while ( optind < argc ) {
-      fprintf ( stderr, "%s\n", argv[optind++] );
+    while ( LALoptind < argc ) {
+      fprintf ( stderr, "%s\n", argv[LALoptind++] );
     }
     exit( 1 );
   }

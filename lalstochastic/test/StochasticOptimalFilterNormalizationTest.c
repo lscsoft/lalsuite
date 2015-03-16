@@ -124,7 +124,7 @@
  * LALCHARDestroyVector()
  * XLALUnitAsString()
  * XLALUnitCompare()
- * getopt()
+ * LALgetopt()
  * printf()
  * fprintf()
  * freopen()
@@ -173,15 +173,8 @@
 #include <stdio.h>
 #include <config.h>
 
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-
-#ifdef HAVE_GETOPT_H
-#include <getopt.h>
-#endif
-
 #include <lal/StochasticCrossCorrelation.h>
+#include <lal/LALgetopt.h>
 #include <lal/AVFactories.h>
 #include <lal/ReadFTSeries.h>
 #include <lal/PrintFTSeries.h>
@@ -201,9 +194,6 @@
 #define STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_VARPERT1    4.822422518205
 #define STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_LAMBDA2     .4474881517327
 #define STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_VARPERT2    .700859760794
-
-extern char *optarg;
-extern int   optind;
 
 BOOLEAN optVerbose = STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_FALSE;
 BOOLEAN optHetero = STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_FALSE;
@@ -1208,7 +1198,7 @@ ParseOptions (int argc, char *argv[])
   {
     int c = -1;
 
-    c = getopt (argc, argv, "hqvd:n:f:w:g:i:j:s:t:o:y");
+    c = LALgetopt (argc, argv, "hqvd:n:f:w:g:i:j:s:t:o:y");
     if (c == -1)
     {
       break;
@@ -1217,31 +1207,31 @@ ParseOptions (int argc, char *argv[])
     switch (c)
     {
       case 'o': /* specify output file */
-        strncpy (optOptimalFile, optarg, LALNameLength);
+        strncpy (optOptimalFile, LALoptarg, LALNameLength);
         break;
 
       case 'f': /* specify refernce frequency */
-        optFRef = atoi (optarg);
+        optFRef = atoi (LALoptarg);
         break;
 
       case 'n': /* specify number of points in frequency series */
-        optLength = atoi (optarg);
+        optLength = atoi (LALoptarg);
         break;
 
       case 'w': /* specify omegaGW file */
-        strncpy (optOmegaFile, optarg, LALNameLength);
+        strncpy (optOmegaFile, LALoptarg, LALNameLength);
         break;
 
       case 'g': /* specify overlap file */
-        strncpy (optOverlapFile, optarg, LALNameLength);
+        strncpy (optOverlapFile, LALoptarg, LALNameLength);
         break;
 
       case 'i': /* specify InvNoise1 file */
-        strncpy (optInvNoise1File, optarg, LALNameLength);
+        strncpy (optInvNoise1File, LALoptarg, LALNameLength);
         break;
 
       case 'j': /* specify InvNoise2 file */
-        strncpy (optInvNoise2File, optarg, LALNameLength);
+        strncpy (optInvNoise2File, LALoptarg, LALNameLength);
         break;
 
       case 'd': /* set debug level */
@@ -1280,7 +1270,7 @@ ParseOptions (int argc, char *argv[])
 
   }
 
-  if (optind < argc)
+  if (LALoptind < argc)
   {
     Usage (argv[0], 1);
   }

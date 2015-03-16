@@ -31,7 +31,9 @@
 int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", stderr);return 1;}
 #else
 
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -42,7 +44,6 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <time.h>
 #include <glob.h>
 #include <errno.h>
-#include <getopt.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -52,6 +53,7 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <time.h>
 
 #include <lal/LALDatatypes.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>
@@ -79,9 +81,6 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/LALVCSInfo.h>
 #include <lalapps.h>
 #include <LALAppsVCSInfo.h>
-
-extern char *optarg;
-extern int optind, opterr, optopt;
 
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 100; } else ((void)0)
@@ -609,7 +608,7 @@ static FrChanIn chanin_lay;  /* light in y-arm */
 int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 {
   INT4 errflg=0;
-  struct option long_options[] = {
+  struct LALoption long_options[] = {
     {"factors-time",        required_argument, NULL,  't'},
     {"filters-file",        required_argument, NULL,  'F'},
     {"frame-cache",         required_argument, NULL,  'C'},
@@ -661,10 +660,10 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   /* Scan through list of command line arguments */
   while ( 1 )
   {
-    int option_index = 0; /* getopt_long stores long option here */
+    int option_index = 0; /* LALgetopt_long stores long option here */
     int c;
 
-    c = getopt_long_only( argc, argv, args, long_options, &option_index );
+    c = LALgetopt_long_only( argc, argv, args, long_options, &option_index );
     if ( c == -1 ) /* end of options */
       break;
 
@@ -672,24 +671,24 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {
     case 't':
       /* factors integration time */
-      CLA->To=atof(optarg);
+      CLA->To=atof(LALoptarg);
       break;
     case 'C':
       /* name of frame cache file */
-      CLA->FrCacheFile=optarg;
+      CLA->FrCacheFile=LALoptarg;
       break;
     case 'F':
       /* name of filter cache file */
-      CLA->filterfile=optarg;
+      CLA->filterfile=LALoptarg;
       break;
     case 'i':
       /* name of interferometer */
-      if (strcmp(optarg, "H1") != 0 && strcmp(optarg, "H2") != 0 &&
-          strcmp(optarg, "L1") != 0) {
-        fprintf(stderr, "Bad ifo: %s   (must be H1, H2 or L1)\n", optarg);
+      if (strcmp(LALoptarg, "H1") != 0 && strcmp(LALoptarg, "H2") != 0 &&
+          strcmp(LALoptarg, "L1") != 0) {
+        fprintf(stderr, "Bad ifo: %s   (must be H1, H2 or L1)\n", LALoptarg);
         exit(1);
       }
-      CLA->ifo=optarg;
+      CLA->ifo=LALoptarg;
       {
         int i;
         char *cnames[] = { sv_cname, lax_cname, lay_cname, asq_cname,
@@ -700,11 +699,11 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       break;
     case 's':
       /* GPS start */
-      CLA->GPSStart=atof(optarg);
+      CLA->GPSStart=atof(LALoptarg);
       break;
     case 'e':
       /* GPS end */
-      CLA->GPSEnd=atof(optarg);
+      CLA->GPSEnd=atof(LALoptarg);
       break;
     case 'd':
       /*  use unit impulse*/
@@ -720,7 +719,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       break;
     case 'o':
       /*  wing size (at each end have this many extra seconds) */
-      InputData.wings=atoi(optarg);
+      InputData.wings=atoi(LALoptarg);
       break;
     case 'u':
       /* don't use calibration factors in teh strain computation */
@@ -731,16 +730,16 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       InputData.fftconv=0;
       break;
     case 'T':
-      CLA->frametype=optarg;
+      CLA->frametype=LALoptarg;
       break;
     case 'S':
-      CLA->strainchannel=optarg;
+      CLA->strainchannel=LALoptarg;
       break;
     case 'z':
-      CLA->datadirL1=optarg;
+      CLA->datadirL1=LALoptarg;
       break;
     case 'p':
-      CLA->datadirL2=optarg;
+      CLA->datadirL2=LALoptarg;
       break;
     case 'v':
       CLA->checkfilename=1;
@@ -750,7 +749,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       InputData.darmctrl=0;
       break;
     case 'y':
-      InputData.gamma_fudgefactor=atof(optarg);
+      InputData.gamma_fudgefactor=atof(LALoptarg);
       break;
     case 'h':
       /* print usage/help message */

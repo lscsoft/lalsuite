@@ -454,9 +454,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <getopt.h>
 #include <sys/types.h>
 #include <lal/LALStdio.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALStdlib.h>
 #include <lal/Date.h>
 #include <lal/LIGOLwXML.h>
@@ -614,8 +614,8 @@ int main( int argc, char *argv[] )
 
   INT4                  i, j;
 
-  /* getopt arguments */
-  struct option long_options[] =
+  /* LALgetopt arguments */
+  struct LALoption long_options[] =
   {
     {"verbose",                 no_argument,       &vrbflg,           1 },
     {"write-compress",          no_argument,       &outCompress,      1 },
@@ -694,12 +694,12 @@ int main( int argc, char *argv[] )
   /* parse the arguments */
   while ( 1 )
   {
-    /* getopt_long stores long option here */
+    /* LALgetopt_long stores long option here */
     int option_index = 0;
     long int gpstime;
-    size_t optarg_len;
+    size_t LALoptarg_len;
 
-    c = getopt_long_only( argc, argv, 
+    c = LALgetopt_long_only( argc, argv,
         "a:b:e:k:A:m:p:P:F:t:q:r:s:hI:Z:M:T:S:c:n:QRD", long_options, 
         &option_index );
 
@@ -720,61 +720,61 @@ int main( int argc, char *argv[] )
         else
         {
           fprintf( stderr, "Error parsing option %s with argument %s\n",
-              long_options[option_index].name, optarg );
+              long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
         break;
 
       case 'a':
         /* name of interferometer a */
-        snprintf( ifoName[0], LIGOMETA_IFO_MAX, "%s", optarg );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        snprintf( ifoName[0], LIGOMETA_IFO_MAX, "%s", LALoptarg );
+        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
         break;
 
       case 'b':
         /* name of interferometer b */
-        snprintf( ifoName[1], LIGOMETA_IFO_MAX, "%s", optarg );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        snprintf( ifoName[1], LIGOMETA_IFO_MAX, "%s", LALoptarg );
+        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
         break;
 
       case 'e':
         /* epsilon */
-        errorParams.epsilon = atof(optarg);
+        errorParams.epsilon = atof(LALoptarg);
         if ( errorParams.epsilon < 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "epsilon must be non-negative: "
               "(%s given)\n", 
-              long_options[option_index].name, optarg );
+              long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
 
       case 'k':
         /* kappa */
-        errorParams.kappa = atof(optarg);
+        errorParams.kappa = atof(LALoptarg);
         if ( errorParams.kappa < 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "epsilon must be non-negative: "
               "(%s given)\n", 
-              long_options[option_index].name, optarg );
+              long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
 
       case 'A':
-        if ( ! strcmp( "m1_and_m2", optarg ) )
+        if ( ! strcmp( "m1_and_m2", LALoptarg ) )
         {
           errorParams.test = m1_and_m2;
         }
-        else if ( ! strcmp( "psi0_and_psi3", optarg ) )
+        else if ( ! strcmp( "psi0_and_psi3", LALoptarg ) )
         {
           errorParams.test = psi0_and_psi3;
         }
-        else if ( ! strcmp( "mchirp_and_eta", optarg ) )
+        else if ( ! strcmp( "mchirp_and_eta", LALoptarg ) )
         {
           errorParams.test = mchirp_and_eta;
         }
@@ -783,74 +783,74 @@ int main( int argc, char *argv[] )
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown test specified: "
               "%s (must be m1_and_m2, psi0_and_psi3 or mchirp_and_eta)\n",
-              long_options[option_index].name, optarg );
+              long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
         haveTest = 1;
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
         break;
 
 
       case 'S':
         /* set the snr threshold in ifo b.  Used when deciding if ifo b
          * could have seen the triggers. */
-        ifob_snrthresh = atof(optarg);
+        ifob_snrthresh = atof(LALoptarg);
         if ( ifob_snrthresh < 0.0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "IFO B snr threshold must be positive"
               "(%s given)\n", 
-              long_options[option_index].name, optarg );
+              long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
 
       case 'm':
         /* mass errors allowed */
-        errorParams.dm = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        errorParams.dm = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
 
       case 'p':
         /* psi0 errors allowed */
-        errorParams.dpsi0 = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        errorParams.dpsi0 = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
 
       case 'P':
         /* psi3 errors allowed */
-        errorParams.dpsi3 = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        errorParams.dpsi3 = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
 
       case 'F':
         /* alphaF cut for coincidence */
-        alphaFcut = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        alphaFcut = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
 
       case 'c':
         /* mass errors allowed */
-        errorParams.dmchirp = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        errorParams.dmchirp = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
 
       case 'n':
         /* mass errors allowed */
-        errorParams.deta = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        errorParams.deta = atof(LALoptarg);
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
 
       case 't':
         /* time coincidence window, argument is in milliseconds */
-        errorParams.dt = atof(optarg) * 1000000LL;
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        errorParams.dt = atof(LALoptarg) * 1000000LL;
+        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
         break;
 
       case 'q':
         /* time coincidence window */
-        gpstime = atol( optarg );
+        gpstime = atol( LALoptarg );
         if ( gpstime < 441417609 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -866,7 +866,7 @@ int main( int argc, char *argv[] )
 
       case 'r':
         /* time coincidence window */
-        gpstime = atol( optarg );
+        gpstime = atol( LALoptarg );
         if ( gpstime < 441417609 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -881,7 +881,7 @@ int main( int argc, char *argv[] )
         break;
 
       case 's':
-        if ( strlen( optarg ) > LIGOMETA_COMMENT_MAX - 1 )
+        if ( strlen( LALoptarg ) > LIGOMETA_COMMENT_MAX - 1 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "comment must be less than %d characters\n",
@@ -890,7 +890,7 @@ int main( int argc, char *argv[] )
         }
         else
         {
-          snprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
+          snprintf( comment, LIGOMETA_COMMENT_MAX, "%s", LALoptarg);
         }
         break;
 
@@ -917,9 +917,9 @@ int main( int argc, char *argv[] )
 
       case 'Z':
         /* create storage for the usertag */
-        optarg_len = strlen(optarg) + 1;
-        userTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
-        memcpy( userTag, optarg, optarg_len );
+        LALoptarg_len = strlen(LALoptarg) + 1;
+        userTag = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR) );
+        memcpy( userTag, LALoptarg, LALoptarg_len );
 
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
@@ -928,26 +928,26 @@ int main( int argc, char *argv[] )
         snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
         snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
         snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
-            optarg );
+            LALoptarg );
         break;
 
       case 'I':
         /* create storage for the ifo-tag */
-        optarg_len = strlen(optarg) + 1;
-        ifoTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
-        memcpy( ifoTag, optarg, optarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        LALoptarg_len = strlen(LALoptarg) + 1;
+        ifoTag = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR) );
+        memcpy( ifoTag, LALoptarg, LALoptarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
         break;
 
       case 'T':
-        optarg_len = strlen( optarg ) + 1;
-        trigBankFile = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-        memcpy( trigBankFile, optarg, optarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        trigBankFile = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
+        memcpy( trigBankFile, LALoptarg, LALoptarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
         break;
 
       case 'M':
-        minMatch = (REAL4) atof( optarg );
+        minMatch = (REAL4) atof( LALoptarg );
         if ( minMatch <= 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -960,12 +960,12 @@ int main( int argc, char *argv[] )
         break;
 
       case 'X':
-        slideData.gpsSeconds = (INT4) atoi( optarg );
+        slideData.gpsSeconds = (INT4) atoi( LALoptarg );
         ADD_PROCESS_PARAM( "int", "%d", slideData.gpsSeconds );
         break;
 
       case 'Y':
-        slideData.gpsNanoSeconds = (INT4) atoi( optarg );
+        slideData.gpsNanoSeconds = (INT4) atoi( LALoptarg );
         ADD_PROCESS_PARAM( "int", "%d", slideData.gpsNanoSeconds );
         break;
 
@@ -1148,9 +1148,9 @@ int main( int argc, char *argv[] )
    */
 
 
-  if ( optind < argc )
+  if ( LALoptind < argc )
   {
-    for( i = optind; i < argc; ++i )
+    for( i = LALoptind; i < argc; ++i )
     {
       INT4 numFileTriggers = 0;
       SnglInspiralTable *inputData = NULL;

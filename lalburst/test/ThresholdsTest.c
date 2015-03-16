@@ -53,14 +53,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <unistd.h>
 
 #include <lal/LALStdlib.h>
+#include <lal/LALgetopt.h>
 #include <lal/Thresholds.h>
-
-extern char *optarg;
-extern int optind, opterr, optopt;
-
 
 int verbose = 1;
 
@@ -95,7 +91,7 @@ static void ParseOptions(int argc, char *argv[])
 	int c;
 
 	while(1) {
-		c = getopt(argc, argv, "hqvd:");
+		c = LALgetopt(argc, argv, "hqvd:");
 		if(c == -1)
 			break;
 		switch(c) {
@@ -131,7 +127,7 @@ static void ParseOptions(int argc, char *argv[])
 
 	}
 
-	if(optind < argc)
+	if(LALoptind < argc)
 		Usage(argv[0], 1);
 
 	return;

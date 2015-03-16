@@ -65,7 +65,7 @@ This example shows how to add a package called "mypackage" to LAL.
        echo "SUBDIRS = include src test doc" > Makefile.am
 
 (3)  Enter the doc directory and copy doc/Makefile.am from
-     packages/sample
+     src/lal/sample
 
        cd doc
        cp ../../sample/doc/Makefile.am .
@@ -84,7 +84,7 @@ This example shows how to add a package called "mypackage" to LAL.
      to be created in the doc directory.
 
 (4)  Enter the include directory and copy include/Makefile.am from
-     packages/sample
+     src/lal/sample
 
        cd ../include
        cp ../../sample/include/Makefile.am .
@@ -102,7 +102,7 @@ This example shows how to add a package called "mypackage" to LAL.
      pkginclude_HEADERS = MyHeaderA.h MyHeaderB.h MyHeaderC.h
 
 (5)  Enter the src directory and copy src/Makefile.am from
-     packages/sample
+     src/lal/sample
 
        cd ../src
        cp ../../sample/src/Makefile.am .
@@ -126,11 +126,11 @@ This example shows how to add a package called "mypackage" to LAL.
 
      If your package requires any of the optional packages in LAL (frame
      and/or mpi) use the Makefile.am's in
-     packages/[framedata|comm|findchirp]/src
+     src/lal/[framedata|comm|findchirp]/src
      as a guide to constructing your own.
 
 (6)  Enter the test directory and copy test/Makefile.am from
-     packages/sample
+     src/lal/sample
 
        cd ../test
        cp ../../sample/test/Makefile.am .
@@ -147,16 +147,16 @@ This example shows how to add a package called "mypackage" to LAL.
      sources and link them to LAL. Change the lines
 
      LALSampleTest_SOURCES = LALSampleTest.c
-     LALSampleTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+     LALSampleTest_LDADD = $(top_builddir)/src/lal/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
      LALTemplateTest_SOURCES = LALTemplateTest.c
-     LALTemplateTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+     LALTemplateTest_LDADD = $(top_builddir)/src/lal/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 
      to
 
      MyTestProgA_SOURCES = MyTestProgA.c
-     MyTestProgA_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+     MyTestProgA_LDADD = $(top_builddir)/src/lal/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
      MyTestProgB_SOURCES = MyTestProgB.c
-     MyTestProgB_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+     MyTestProgB_LDADD = $(top_builddir)/src/lal/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 
      and the line
 
@@ -205,7 +205,7 @@ Appendix: how to use laldoc to generate documentation.
      mypackage.tex
 
      This file is read by a driver texfile to make the documentation in
-     the packages/mypackage/doc directory and is also read by lsd.tex in
+     the src/lal/mypackage/doc directory and is also read by lsd.tex in
      the top-level doc directory to make the mypackage documentation in
      the lsd
 
@@ -248,8 +248,8 @@ Appendix: how to use laldoc to generate documentation.
        make dvi LATEX=latex
 
      The package will have its own documentation in a file
-     packages/mypackage/doc/main.[dvi|pdf].
+     src/lal/mypackage/doc/main.[dvi|pdf].
 
-     In the directory packages/mypackage.  If any errors occur, consult
-     the file packages/mypackage/doc/.adoc/laldoc.log for laldoc errors
-     or the file packages/mypackage/doc/.adoc/main.log for tex errors.
+     In the directory src/lal/mypackage.  If any errors occur, consult
+     the file src/lal/mypackage/doc/.adoc/laldoc.log for laldoc errors
+     or the file src/lal/mypackage/doc/.adoc/main.log for tex errors.

@@ -27,7 +27,6 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <ftw.h>
-#include <unistd.h>
 #include <dirent.h>
 #include <errno.h>
 

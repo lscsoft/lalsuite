@@ -164,9 +164,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <getopt.h>
 #include <sys/types.h>
 #include <lal/LALStdio.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALStdlib.h>
 #include <lal/Date.h>
 #include <lal/LIGOLwXML.h>
@@ -288,8 +288,8 @@ int main( int argc, char *argv[] )
 
   INT4                  i;
 
-  /* getopt arguments */
-  struct option long_options[] =
+  /* LALgetopt arguments */
+  struct LALoption long_options[] =
   {
     {"verbose",                no_argument,     &vrbflg,                  1 },
     {"check-times",            no_argument, &checkTimes,                  1 },
@@ -338,12 +338,12 @@ int main( int argc, char *argv[] )
   /* parse the arguments */
   while ( 1 )
   {
-    /* getopt_long stores long option here */
+    /* LALgetopt_long stores long option here */
     int option_index = 0;
     long int gpstime;
-    size_t optarg_len;
+    size_t LALoptarg_len;
 
-    c = getopt_long_only( argc, argv,
+    c = LALgetopt_long_only( argc, argv,
         "a:b:hq:r:s:t:A:I:VZ:", long_options,
         &option_index );
 
@@ -364,42 +364,42 @@ int main( int argc, char *argv[] )
         else
         {
           fprintf( stderr, "Error parsing option %s with argument %s\n",
-              long_options[option_index].name, optarg );
+              long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
         break;
 
       case 'a':
         /* name of input ifo*/
-        strncpy( inputIFO, optarg, LIGOMETA_IFO_MAX );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        strncpy( inputIFO, LALoptarg, LIGOMETA_IFO_MAX );
+        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
         break;
 
       case 'b':
         /* name of output ifo */
-        strncpy( outputIFO, optarg, LIGOMETA_IFO_MAX );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        strncpy( outputIFO, LALoptarg, LIGOMETA_IFO_MAX );
+        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
         break;
 
       case 'A':
         /* comparison used to test for uniqueness of triggers */
-        if ( ! strcmp( "m1_and_m2", optarg ) )
+        if ( ! strcmp( "m1_and_m2", LALoptarg ) )
         {
           test = m1_and_m2;
         }
-        else if ( ! strcmp( "psi0_and_psi3", optarg ) )
+        else if ( ! strcmp( "psi0_and_psi3", LALoptarg ) )
         {
           test = psi0_and_psi3;
         }
-        else if ( ! strcmp( "mchirp_and_eta", optarg ) )
+        else if ( ! strcmp( "mchirp_and_eta", LALoptarg ) )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "mchirp_and_eta test specified, not implemented for trigbank: "
               "%s (must be m1_and_m2, psi0_and_psi3, no_test)\n",
-              long_options[option_index].name, optarg );
+              long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
-        else if ( ! strcmp( "no_test", optarg ) )
+        else if ( ! strcmp( "no_test", LALoptarg ) )
         {
           test = no_test;
         }
@@ -408,24 +408,24 @@ int main( int argc, char *argv[] )
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown test specified: "
               "%s (must be m1_and_m2, psi0_and_psi3,no_test, or mchirp_and_eta)\n",
-              long_options[option_index].name, optarg );
+              long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
         break;
 
 
       case 'D':
         /* type of data to analyze */
-        if ( ! strcmp( "playground_only", optarg ) )
+        if ( ! strcmp( "playground_only", LALoptarg ) )
         {
           dataType = playground_only;
         }
-        else if ( ! strcmp( "exclude_play", optarg ) )
+        else if ( ! strcmp( "exclude_play", LALoptarg ) )
         {
           dataType = exclude_play;
         }
-        else if ( ! strcmp( "all_data", optarg ) )
+        else if ( ! strcmp( "all_data", LALoptarg ) )
         {
           dataType = all_data;
         }
@@ -434,15 +434,15 @@ int main( int argc, char *argv[] )
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown data type, %s, specified: "
               "(must be playground_only, exclude_play or all_data)\n",
-              long_options[option_index].name, optarg );
+              long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
         break;
 
       case 'q':
         /* start time */
-        gpstime = atol( optarg );
+        gpstime = atol( LALoptarg );
         if ( gpstime < 441417609 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -459,7 +459,7 @@ int main( int argc, char *argv[] )
 
       case 'r':
         /* end time  */
-        gpstime = atol( optarg );
+        gpstime = atol( LALoptarg );
         if ( gpstime < 441417609 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -475,7 +475,7 @@ int main( int argc, char *argv[] )
         break;
 
       case 's':
-        if ( strlen( optarg ) > LIGOMETA_COMMENT_MAX - 1 )
+        if ( strlen( LALoptarg ) > LIGOMETA_COMMENT_MAX - 1 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "comment must be less than %d characters\n",
@@ -484,12 +484,12 @@ int main( int argc, char *argv[] )
         }
         else
         {
-          snprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
+          snprintf( comment, LIGOMETA_COMMENT_MAX, "%s", LALoptarg);
         }
         break;
 
       case 't':
-        coherentBuffer = (INT4) atoi( optarg );
+        coherentBuffer = (INT4) atoi( LALoptarg );
         if ( coherentBuffer < 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -509,9 +509,9 @@ int main( int argc, char *argv[] )
 
       case 'Z':
         /* create storage for the usertag */
-        optarg_len = strlen(optarg) + 1;
-        userTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
-        memcpy( userTag, optarg, optarg_len );
+        LALoptarg_len = strlen(LALoptarg) + 1;
+        userTag = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR) );
+        memcpy( userTag, LALoptarg, LALoptarg_len );
 
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
@@ -520,15 +520,15 @@ int main( int argc, char *argv[] )
         snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
         snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
         snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
-            optarg );
+            LALoptarg );
         break;
 
       case 'I':
         /* create storage for the ifo-tag */
-        optarg_len = strlen(optarg) + 1;
-        ifoTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
-        memcpy( ifoTag, optarg, optarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        LALoptarg_len = strlen(LALoptarg) + 1;
+        ifoTag = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR) );
+        memcpy( ifoTag, LALoptarg, LALoptarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
         break;
 
       case 'V':
@@ -616,9 +616,9 @@ int main( int argc, char *argv[] )
    */
 
 
-  if ( optind < argc )
+  if ( LALoptind < argc )
   {
-    for( i = optind; i < argc; ++i )
+    for( i = LALoptind; i < argc; ++i )
     {
       INT4 numFileTriggers = 0;
 

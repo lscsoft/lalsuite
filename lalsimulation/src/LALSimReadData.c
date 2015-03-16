@@ -17,9 +17,13 @@
 *  MA  02111-1307  USA
 */
 
+#include <config.h>
+
 #include <limits.h>
 #include <string.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <lal/LALStdlib.h>
 #include <lal/LALString.h>
 #include <lal/LALSimReadData.h>

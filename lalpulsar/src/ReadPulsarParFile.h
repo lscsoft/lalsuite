@@ -37,7 +37,6 @@
 #define _READPULSARPARFILE_H
 
 #include <ctype.h>
-#include <unistd.h>
 
 #include <lal/LALStdlib.h>
 #include <lal/StringVector.h>
@@ -217,7 +216,8 @@ tagBinaryPulsarParams
 
   /* gravitational wave parameters */
   REAL8 h0;     /**< gravitational wave amplitude */
-  REAL8 cosiota;/**< cosine of the pulsars orientation angle */
+  REAL8 cosiota;/**< cosine of the pulsars inclination angle */
+  REAL8 iota;   /**< inclination angle */
   REAL8 psi;    /**< polarisation angle */
   REAL8 phi0;   /**< initial phase */
   REAL8 Aplus;  /**< 0.5*h0*(1+cos^2iota) */
@@ -239,7 +239,8 @@ tagBinaryPulsarParams
   REAL8 I21;    /**< parameter for pinsf model.**/
   REAL8 I31;    /**< parameter for pinsf model.**/
   REAL8 lambda; /**< this is a longitude like angle between pinning axis and line of sight */
-  REAL8 costheta;  /**< angle between rotation axis and pinning axis */
+  REAL8 costheta;  /**< cosine of angle between rotation axis and pinning axis */
+  REAL8 theta;
 
   /* complex amplitude and phase parameters for l=2, m=1 and 2 harmonics */
   REAL8 C22;
@@ -317,6 +318,7 @@ tagBinaryPulsarParams
   /* gravitational wave parameters */
   REAL8 h0Err;
   REAL8 cosiotaErr;
+  REAL8 iotaErr;
   REAL8 psiErr;
   REAL8 phi0Err;
   REAL8 AplusErr;
@@ -325,6 +327,7 @@ tagBinaryPulsarParams
   REAL8 I31Err;
   REAL8 lambdaErr;
   REAL8 costhetaErr;
+  REAL8 thetaErr;
   REAL8 C22Err;
   REAL8 C21Err;
   REAL8 phi22Err;

@@ -25,9 +25,9 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
-#include <getopt.h>
 #include <time.h>
 #include <lal/Date.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALVCSInfo.h>
 #include <LALAppsVCSInfo.h>
 

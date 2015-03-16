@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2014 Reinhard Prix
  * Copyright (C) 2009 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -29,9 +30,6 @@
 /* System includes */
 #include <stdio.h>
 #include <time.h>
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
 
 /* GSL includes */
 #include <gsl/gsl_rng.h>
@@ -232,7 +230,7 @@ test_XLALSincInterpolateCOMPLEX8TimeSeries ( void )
       times_out->data[j] = t_j;
     } // for j < numSamplesOut
 
-  XLAL_CHECK ( XLALSincInterpolateCOMPLEX8TimeSeries ( &(tsOut->data), times_out, tsIn, Dterms ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALSincInterpolateCOMPLEX8TimeSeries ( tsOut->data, times_out, tsIn, Dterms ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLALDestroyREAL8Vector ( times_out );
 
   // ---------- check accuracy of interpolation

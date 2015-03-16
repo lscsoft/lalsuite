@@ -129,8 +129,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <getopt.h>
-#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -141,6 +139,7 @@
 #include <processtable.h>
 
 #include <lal/LALConfig.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALError.h>
@@ -205,8 +204,8 @@ int main ( int argc, char *argv[] )
   SnglInspiralTable *thisTmplt = NULL;
   SnglInspiralTable *tmpTmplt = NULL;
 
-  /* getopt arguments */
-  struct option long_options[] =
+  /* LALgetopt arguments */
+  struct LALoption long_options[] =
   {
     {"verbose",                 no_argument,       &vrbflg,           1 },
     {"version",                 no_argument,       0,                'V'},
@@ -251,11 +250,11 @@ int main ( int argc, char *argv[] )
 
   while ( 1 )
   {
-    /* getopt_long stores long option here */
+    /* LALgetopt_long stores long option here */
     int option_index = 0;
-    size_t optarg_len;
+    size_t LALoptarg_len;
 
-    c = getopt_long_only( argc, argv, 
+    c = LALgetopt_long_only( argc, argv,
         "i:n:VZ:hs:M:", 
         long_options, &option_index );
 
@@ -276,15 +275,15 @@ int main ( int argc, char *argv[] )
         else
         {
           fprintf( stderr, "error parsing option %s with argument %s\n",
-              long_options[option_index].name, optarg );
+              long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
         break;
 
       case 'v':
-        optarg_len = strlen( optarg ) + 1;
-        bankFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-        memcpy( bankFileName, optarg, optarg_len );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        bankFileName = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
+        memcpy( bankFileName, LALoptarg, LALoptarg_len );
         snprintf( procparams.processParamsTable->program, 
             LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME );
         snprintf( procparams.processParamsTable->type, 
@@ -292,11 +291,11 @@ int main ( int argc, char *argv[] )
         snprintf( procparams.processParamsTable->param, 
             LIGOMETA_PARAM_MAX, "--%s", long_options[option_index].name );
         snprintf( procparams.processParamsTable->value, 
-            LIGOMETA_VALUE_MAX, "%s", optarg );
+            LIGOMETA_VALUE_MAX, "%s", LALoptarg );
         break;
 
       case 'n':
-        numOutBanks = (INT4) atoi( optarg );
+        numOutBanks = (INT4) atoi( LALoptarg );
         if ( numOutBanks < 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -322,7 +321,7 @@ int main ( int argc, char *argv[] )
         break;
 
       case 's':
-        if ( strlen( optarg ) > LIGOMETA_COMMENT_MAX - 1 )
+        if ( strlen( LALoptarg ) > LIGOMETA_COMMENT_MAX - 1 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "comment must be less than %d characters\n",
@@ -331,15 +330,15 @@ int main ( int argc, char *argv[] )
         }
         else
         {
-          snprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg );
+          snprintf( comment, LIGOMETA_COMMENT_MAX, "%s", LALoptarg );
         }
         break;
 
       case 'Z':
         /* create storage for the usertag */
-        optarg_len = strlen( optarg ) + 1;
-        userTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
-        memcpy( userTag, optarg, optarg_len );
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        userTag = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR) );
+        memcpy( userTag, LALoptarg, LALoptarg_len );
 
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
@@ -348,11 +347,11 @@ int main ( int argc, char *argv[] )
         snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
         snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
         snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
-            optarg );
+            LALoptarg );
         break;
 
       case 'M':
-        minMatch = (REAL4) atof( optarg );
+        minMatch = (REAL4) atof( LALoptarg );
         if ( minMatch <= 0 )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
@@ -392,12 +391,12 @@ int main ( int argc, char *argv[] )
     }
   }
 
-  if ( optind < argc )
+  if ( LALoptind < argc )
   {
     fprintf( stderr, "extraneous command line arguments:\n" );
-    while ( optind < argc )
+    while ( LALoptind < argc )
     {
-      fprintf ( stderr, "%s\n", argv[optind++] );
+      fprintf ( stderr, "%s\n", argv[LALoptind++] );
     }
     exit( 1 );
   }

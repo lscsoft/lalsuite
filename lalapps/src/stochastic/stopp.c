@@ -84,9 +84,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
-#include <getopt.h>
 
 #include <lal/Date.h>
+#include <lal/LALgetopt.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLStochasticRead.h>
 #include <lal/LIGOMetadataTables.h>
@@ -116,7 +116,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* status */
   LALStatus status = blank_status;
 
-  /* getopt flags */
+  /* LALgetopt flags */
   static int text_flag;
   static int cat_flag;
   static int analyse_flag;
@@ -147,8 +147,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* parse command line arguments */
   while (1)
   {
-    /* getopt arguments */
-    static struct option long_options[] =
+    /* LALgetopt arguments */
+    static struct LALoption long_options[] =
     {
       /* options that set a flag */
       {"verbose", no_argument, &vrbflg, 1},
@@ -163,11 +163,11 @@ INT4 main(INT4 argc, CHAR *argv[])
     };
     int c;
 
-    /* getopt_long stores the option index here. */
+    /* LALgetopt_long stores the option index here. */
     int option_index = 0;
-    size_t optarg_len;
+    size_t LALoptarg_len;
 
-    c = getopt_long_only(argc, argv, "hvo:", long_options, &option_index);
+    c = LALgetopt_long_only(argc, argv, "hvo:", long_options, &option_index);
 
     /* detect the end of the options */
     if (c == - 1)
@@ -187,7 +187,7 @@ INT4 main(INT4 argc, CHAR *argv[])
         else
         {
           fprintf(stderr, "error parseing option %s with argument %s\n", \
-              long_options[option_index].name, optarg);
+              long_options[option_index].name, LALoptarg);
           exit(1);
         }
         break;
@@ -206,9 +206,9 @@ INT4 main(INT4 argc, CHAR *argv[])
 
       case 'o':
         /* create storage for the output file name */
-        optarg_len = strlen(optarg) + 1;
-        outputFileName = (CHAR *)calloc(optarg_len, sizeof(CHAR));
-        memcpy(outputFileName, optarg, optarg_len);
+        LALoptarg_len = strlen(LALoptarg) + 1;
+        outputFileName = (CHAR *)calloc(LALoptarg_len, sizeof(CHAR));
+        memcpy(outputFileName, LALoptarg, LALoptarg_len);
         break;
 
       case '?':
@@ -222,9 +222,9 @@ INT4 main(INT4 argc, CHAR *argv[])
   }
 
   /* read in the input data from the rest of the arguments */
-  if (optind < argc)
+  if (LALoptind < argc)
   {
-    for (i = optind; i < argc; ++i)
+    for (i = LALoptind; i < argc; ++i)
     {
       struct stat infileStatus;
 

@@ -353,6 +353,7 @@ void add_initial_variables( LALInferenceVariables *ini,  LALInferenceVariables *
   add_variable_scale( ini, scaleFac, "H0", pars.h0 );
   add_variable_scale( ini, scaleFac, "PHI0", pars.phi0 ); /* note that this is rotational phase */
   add_variable_scale( ini, scaleFac, "COSIOTA", pars.cosiota );
+  add_variable_scale( ini, scaleFac, "IOTA", pars.iota );
   add_variable_scale( ini, scaleFac, "PSI", pars.psi );
 
   /* amplitude model parameters for l=2, m=1 and 2 harmonic emission from Jones (2010) */
@@ -360,6 +361,7 @@ void add_initial_variables( LALInferenceVariables *ini,  LALInferenceVariables *
   add_variable_scale( ini, scaleFac, "I31", pars.I31 );
   add_variable_scale( ini, scaleFac, "LAMBDA", pars.lambda );
   add_variable_scale( ini, scaleFac, "COSTHETA", pars.costheta );
+  add_variable_scale( ini, scaleFac, "THETA", pars.costheta );
 
   /* amplitude model parameters in phase and amplitude form */
   add_variable_scale( ini, scaleFac, "C22", pars.C22 );
@@ -388,7 +390,7 @@ void add_initial_variables( LALInferenceVariables *ini,  LALInferenceVariables *
   add_variable_scale( ini, scaleFac, "HVECTORX", pars.hVectorX );
   add_variable_scale( ini, scaleFac, "HVECTORY", pars.hVectorY );
   add_variable_scale( ini, scaleFac, "PSIVECTOR", pars.psiVector );
-  add_variable_scale( ini, scaleFac, "PHI0VECTOR", pars.psiVector );
+  add_variable_scale( ini, scaleFac, "PHI0VECTOR", pars.phi0Vector );
 
   /* sky position */
   add_variable_scale( ini, scaleFac, "RA", pars.ra );
@@ -477,14 +479,23 @@ void add_variable_scale( LALInferenceVariables *var, LALInferenceVariables *scal
  * This function sets up any parameters that you require the code to search over and specifies the prior range and type
  * for each. This information is contained in a prior file specified by the command line argument \c prior-file. This
  * file should contain four columns: the first has the name of a parameter to be searched over; the second has the prior
- * type (e.g. "uniform" for a prior that is flat over the given range or "gaussian"); the third has the lower limit, or
- * mean, of the prior, for "uniform" and "gaussian" priors respectively; and the fourth has the upper limit, or standard
- * deviation, for "uniform" and "gaussian" priors respectively. E.g.
+ * type (e.g. "uniform" for a prior that is flat over the given range, or "gaussian" with a certain mean and standard
+ * deviation, or "predefined", which means that the prior for that variable is already hardcoded into the prior function);
+ * the third has the lower limit, or mean, of the prior, for "uniform"/"predefined" and "gaussian" priors respectively;
+ * and the fourth has the upper limit, or standard deviation, for "uniform"/"predefined" and "gaussian" priors respectively.
+ * E.g.
  * \code
- * h0 uniform 0 1e-21
- * phi0 uniform 0 3.14159265359
- * cosiota uniform -1 1
- * psi uniform -0.785398163397448 0.785398163397448
+ * H0 uniform 0 1e-21
+ * PHI0 uniform 0 3.14159265359
+ * COSIOTA uniform -1 1
+ * PSI uniform -0.785398163397448 0.785398163397448
+ * \endcode
+ * or
+ * \code
+ * H0 uniform 0 1e-21
+ * PHI0 uniform 0 3.14159265359
+ * IOTA predefined 0 3.14159265359
+ * PSI uniform -0.785398163397448 0.785398163397448
  * \endcode
  *
  * Any parameter specified in the file will have its vary type set to \c LALINFERENCE_PARAM_LINEAR, (except
@@ -559,9 +570,11 @@ void initialise_prior( LALInferenceRunState *runState )
     /* convert tempPar to all uppercase letters */
     strtoupper( tempPar );
 
-    if( high < low ){
-      fprintf(stderr, "Error... In %s the %s parameters ranges are wrongly set.\n", propfile, tempPar);
-      exit(3);
+    if ( !strcmp(tempPrior, "uniform") ){
+      if( high < low ){
+        fprintf(stderr, "Error... In %s the %s parameters ranges are wrongly set.\n", propfile, tempPar);
+        exit(3);
+      }
     }
 
     sprintf(tempParScale, "%s_scale", tempPar);
@@ -574,7 +587,7 @@ void initialise_prior( LALInferenceRunState *runState )
     /* remove variable value */
     LALInferenceRemoveVariable( runState->currentParams, tempPar );
 
-    if ( !strcmp(tempPrior, "uniform") ){
+    if ( !strcmp(tempPrior, "uniform") || !strcmp(tempPrior, "predefined") ){
       scale = high - low; /* the prior range */
       scaleMin = low;     /* the lower limit of the prior range */
     }
@@ -610,7 +623,6 @@ void initialise_prior( LALInferenceRunState *runState )
     /* scale variable and priors */
     tempVar = (tempVar - scaleMin) / scale;
     low = 0.;
-    high = (high - scaleMin) / scale;
 
     /* default variable type to LINEAR */
     varyType = LALINFERENCE_PARAM_LINEAR;
@@ -628,10 +640,12 @@ void initialise_prior( LALInferenceRunState *runState )
     LALInferenceAddVariable( runState->currentParams, tempPar, &tempVar, type, varyType );
 
     /* Add the prior variables */
-    if ( !strcmp(tempPrior, "uniform") ){
+    if ( !strcmp(tempPrior, "uniform") || !strcmp(tempPrior, "predefined") ){
+      high = (high - scaleMin) / scale;
       LALInferenceAddMinMaxPrior( runState->priorArgs, tempPar, &low, &high, type );
     }
     else if( !strcmp(tempPrior, "gaussian") ){
+      high = 1.; /* for Gaussian prior the sigma value will be scaled to unity */
       LALInferenceAddGaussianPrior( runState->priorArgs, tempPar, &low, &high, LALINFERENCE_REAL8_t );
     }
 
@@ -1001,7 +1015,7 @@ void sum_data( LALInferenceRunState *runState ){
 
     chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( ifomodel->params, "chunkLength" );
 
-    length = runState->model->ifo->times->length + 1 - chunkLengths->data[chunkLengths->length - 1];
+    length = ifomodel->times->length + 1 - chunkLengths->data[chunkLengths->length - 1];
 
     sumdat = XLALCreateREAL8Vector( chunkLengths->length );
 
@@ -1066,8 +1080,6 @@ void sum_data( LALInferenceRunState *runState ){
     }
 
     REAL8 tsv = LAL_DAYSID_SI / tsteps, T = 0., timeMin = 0., timeMax = 0.;
-
-    REAL8 logGaussianNorm = 0.; /* normalisation constant for Gaussian distribution */
 
     for( i = 0, count = 0 ; i < length ; i+= chunkLength, count++ ){
       chunkLength = chunkLengths->data[count];
@@ -1140,10 +1152,7 @@ void sum_data( LALInferenceRunState *runState ){
         B = data->compTimeData->data->data[j];
 
         /* if using a Gaussian likelihood divide all these values by the variance */
-        if ( gaussianLike ) {
-          vari = data->varTimeData->data->data[j];
-          logGaussianNorm -= 0.5*log(LAL_TWOPI*vari);
-        }
+        if ( gaussianLike ) { vari = data->varTimeData->data->data[j]; }
 
         /* sum up the data */
         sumdat->data[count] += (creal(B)*creal(B) + cimag(B)*cimag(B))/vari;
@@ -1318,8 +1327,6 @@ void sum_data( LALInferenceRunState *runState ){
            * would fail if this was set */
       LALInferenceAddVariable( ifomodel->params, "roq", &roq, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
     }
-
-    LALInferenceAddVariable( ifomodel->params, "logGaussianNorm", &logGaussianNorm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
 
     data = data->next;
     ifomodel = ifomodel->next;

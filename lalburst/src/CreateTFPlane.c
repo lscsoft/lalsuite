@@ -105,68 +105,20 @@ INT4 XLALOverlappedSegmentsCommensurate(
 /**
  * Compute and return the timing parameters for an excess power analysis.
  * Pass NULL for any optional pointer to not compute and return that
- * parameter.
- *
- * Input:
- * window_length:
- * number of samples in a window used for the time-frequency
- * plane
- *
- * max_tile_length:
- * number of samples in the tile of longest duration
- *
- * fractional_tile_shift:
- * number of samples by which the start of the longest tile is
- * shifted from the start of the tile preceding it, as a
- * fraction of its length
- *
- * psd_length (optional, required for psd_shift):
- * user's desired number of samples to use in computing a PSD
- * estimate
- *
- * Output:
- * psd_length (optional):
- * actual number of samples to use in computing a PSD estimate
- * (rounded down to be comensurate with the windowing)
- *
- * psd_shift (optional):
- * number of samples by which the start of a PSD is to be
- * shifted from the start of the PSD that preceded it in order
- * that the tiling pattern continue smoothly across the
- * boundary
- *
- * window_shift (optional):
- * number of samples by which the start of a time-frequency
- * plane window is shifted from the window preceding it in
- * order that the tiling pattern continue smoothly across the
- * boundary
- *
- * window_pad (optional):
- * how many samples at the start and end of each window are
- * treated as padding, and will not be covered by the tiling
- *
- * tiling_length (optional):
- * how many samples will be covered by the tiling
- *
- * NOTE:  this function is wrapped in the pyLAL package to teach the
- * Python-based DAG construction scripts how the search code's internal
- * timing works.  If you change this function, you need to update pyLAL.
+ * parameter.  The return is 0 on success, negative on failure.
  */
-INT4 XLALEPGetTimingParameters(
-	INT4 window_length,
-	INT4 max_tile_length,
-	REAL8 fractional_tile_shift,
-	INT4 *psd_length,
-	INT4 *psd_shift,
-	INT4 *window_shift,
-	INT4 *window_pad,
-	INT4 *tiling_length
+int XLALEPGetTimingParameters(
+	int window_length,	/**< Number of samples in a window used for the time-frequency plane */
+	int max_tile_length,	/**< Number of samples in the tile of longest duration */
+	double fractional_tile_shift,	/**< Number of samples by which the start of the longest tile is shifted from the start of the tile preceding it, as a fraction of its length */
+	int *psd_length,	/**<> (optional) User's desired number of samples to use in computing a PSD estimate.  Will be replaced with actual number of samples to use in computing a PSD estimate (rounded down to be comensurate with the windowing). */
+	int *psd_shift,	/**> (optional) Number of samples by which the start of a PSD is to be shifted from the start of the PSD that preceded it in order that the tiling pattern continue smoothly across the boundary. */
+	int *window_shift,	/**> Number of samples by which the start of a time-frequency plane window is shifted from the window preceding it in order that the tiling pattern continue smoothly across the boundary. */
+	int *window_pad,	/**> How many samples at the start and end of each window are treated as padding, and will not be covered by the tiling. */
+	int *tiling_length	/**> How many samples will be covered by the tiling. */
 )
 {
 	int max_tile_shift = fractional_tile_shift * max_tile_length;
-	int wpad;
-	int tlength;
-	int wshift;
 
 	/*
 	 * check input parameters
@@ -210,62 +162,54 @@ INT4 XLALEPGetTimingParameters(
 	 * be safe, we double that to 4096 samples at each end.
 	 */
 
-	wpad = 4096;
+	*window_pad = 4096;
 
 	/*
 	 * tiling covers the remainder, rounded down to fit an integer
 	 * number of tiles
 	 */
 
-	tlength = window_length - 2 * wpad;
-	tlength = XLALOverlappedSegmentsCommensurate(tlength, max_tile_length, max_tile_shift);
-	if(tlength < 1) {
-		XLALPrintError("tiling_length < 1");
+	*tiling_length = window_length - 2 * *window_pad;
+	*tiling_length = XLALOverlappedSegmentsCommensurate(*tiling_length, max_tile_length, max_tile_shift);
+	if(*tiling_length <= 0) {
+		XLALPrintError("window_length too small for tiling, must be >= 2 * %d + %d", *window_pad, max_tile_length);
 		XLAL_ERROR(XLAL_EINVAL);
 	}
-	if(tiling_length)
-		*tiling_length = tlength;
 
 	/*
 	 * now re-compute window_pad from rounded-off tiling_length
 	 */
 
-	wpad = (window_length - tlength) / 2;
-	if(tlength + 2 * wpad != window_length) {
-		XLALPrintError("cannot find window parameters consistent with tiling parameters");
+	*window_pad = (window_length - *tiling_length) / 2;
+	if(*tiling_length + 2 * *window_pad != window_length) {
+		XLALPrintError("window_length does not permit equal padding before and after tiling");
 		XLAL_ERROR(XLAL_EINVAL);
 	}
-	if(window_pad)
-		*window_pad = wpad;
 
 	/*
 	 * adjacent tilings overlap so that their largest tiles overlap the
 	 * same as within each tiling
 	 */
 
-	wshift = tlength - (max_tile_length - max_tile_shift);
-	if(wshift < 1) {
+	*window_shift = *tiling_length - (max_tile_length - max_tile_shift);
+	if(*window_shift < 1) {
 		XLALPrintError("window_shift < 1");
 		XLAL_ERROR(XLAL_EINVAL);
 	}
-	if(window_shift)
-		*window_shift = wshift;
 
 	/*
 	 * compute the adjusted PSD length if desired
 	 */
 
 	if(psd_length) {
-		*psd_length = XLALOverlappedSegmentsCommensurate(*psd_length, window_length, wshift);
+		*psd_length = XLALOverlappedSegmentsCommensurate(*psd_length, window_length, *window_shift);
 		if(*psd_length < 0)
 			XLAL_ERROR(XLAL_EFUNC);
 
-		if(psd_shift) {
-			*psd_shift = *psd_length - (window_length - wshift);
-			if(*psd_shift < 1) {
-				XLALPrintError("psd_shift < 1");
-				XLAL_ERROR(XLAL_EINVAL);
-			}
+		*psd_shift = *psd_length - (window_length - *window_shift);
+		if(*psd_shift < 1) {
+			XLALPrintError("psd_shift < 1");
+			XLAL_ERROR(XLAL_EINVAL);
 		}
 	} else if(psd_shift) {
 		/* for safety */
@@ -285,103 +229,6 @@ INT4 XLALEPGetTimingParameters(
  *
  * ============================================================================
  */
-
-
-/**
- * Compute the two-point spectral correlation function for a whitened
- * frequency series from the window applied to the original time series.
- *
- * If \f$x_{j}\f$ is a stationary process then the components of its Fourier
- * transform, \f$X_{k}\f$, are independent random variables, and let their mean
- * square be \f$\langle|X_{k}|^{2}\rangle = 1\f$.  If \f$x_{j}\f$ is multiplied by the window
- * function \f$w_{j}\f$ then it is no longer stationary and the components of its
- * Fourier transform are no longer independent.  Their correlations are
- *
- * \f[\langle X_{k} X*_{k'}\rangle\f]
- *
- * and depend only on \f$|k - k'|\f$.
- *
- * Given the window function \f$w_{j}\f$, this function computes and returns a
- * sequence containing \f$\langle X_{k} X*_{k'}\rangle\f$.  The sequence's indices are
- * \f$|k - k'|\f$.  A straight-forward normalization factor can be applied to convert
- * this for use with a sequence \f$x_{j}\f$ whose Fourier transform does not have
- * bins with equal mean square.
- *
- * The FFT plan argument must be a forward plan (time to frequency) whose
- * length equals that of the window.  If the window has length N the return
- * value is the address of a newly-allocated sequence of length floor(N/2 +
- * 1), or NULL on error.  This function assumes the window is symmetric
- * about its midpoint (is an even function of the sample index if the
- * midpoint is index 0), so that its Fourier transform is real-valued.
- */
-REAL8Sequence *XLALREAL8WindowTwoPointSpectralCorrelation(
-	const REAL8Window *window,	/**< window function used to prevent leakage when measuring PSD.  see XLALCreateHannREAL8Window() and friends. */
-	const REAL8FFTPlan *plan	/**< forward FFT plan.  see XLALCreateREAL8FFTPlan(). */
-)
-{
-	REAL8Sequence *wsquared;
-	COMPLEX16Sequence *tilde_wsquared;
-	REAL8Sequence *correlation;
-	unsigned i;
-
-	if(window->sumofsquares <= 0)
-		XLAL_ERROR_NULL(XLAL_EDOM);
-
-	/*
-	 * Create a sequence to hold the normalized square of the window
-	 * and its Fourier transform.
-	 */
-
-	wsquared = XLALCopyREAL8Sequence(window->data);
-	tilde_wsquared = XLALCreateCOMPLEX16Sequence(window->data->length / 2 + 1);
-	if(!wsquared || !tilde_wsquared) {
-		XLALDestroyREAL8Sequence(wsquared);
-		XLALDestroyCOMPLEX16Sequence(tilde_wsquared);
-		XLAL_ERROR_NULL(XLAL_EFUNC);
-	}
-
-	/*
-	 * Compute the normalized square of the window.
-	 */
-
-	for(i = 0; i < wsquared->length; i++)
-		wsquared->data[i] *= wsquared->data[i] / window->sumofsquares;
-
-	/*
-	 * Fourier transform.
-	 */
-
-	if(XLALREAL8ForwardFFT(tilde_wsquared, wsquared, plan)) {
-		XLALDestroyREAL8Sequence(wsquared);
-		XLALDestroyCOMPLEX16Sequence(tilde_wsquared);
-		XLAL_ERROR_NULL(XLAL_EFUNC);
-	}
-	XLALDestroyREAL8Sequence(wsquared);
-
-	/*
-	 * Create space to hold the two-point correlation function.
-	 */
-
-	correlation = XLALCreateREAL8Sequence(tilde_wsquared->length);
-	if(!correlation) {
-		XLALDestroyCOMPLEX16Sequence(tilde_wsquared);
-		XLAL_ERROR_NULL(XLAL_EFUNC);
-	}
-
-	/*
-	 * Extract real components from Fourier transform.
-	 */
-
-	for(i = 0; i < correlation->length; i++)
-		correlation->data[i] = creal(tilde_wsquared->data[i]);
-	XLALDestroyCOMPLEX16Sequence(tilde_wsquared);
-
-	/*
-	 * Done.
-	 */
-
-	return correlation;
-}
 
 
 /**

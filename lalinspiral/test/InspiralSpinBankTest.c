@@ -79,10 +79,10 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
 #include <lal/LALConfig.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALInspiralBank.h>
 #include <lal/LALMalloc.h>
@@ -94,8 +94,6 @@
   #include <lal/LIGOLwXMLRead.h>
 #endif
 
-
-extern char *optarg;
 
 /**\name Error Codes */
 /*@{*/
@@ -125,7 +123,7 @@ int main( int argc, char *argv[] )
   InspiralCoarseBankIn coarseIn;
   INT4 ntiles = 0;                 /* number of tiles */
   INT2 Math3DPlot = 0;             /* option flag for Mathematica plot */
-  INT4 opt = 0;                    /* returning value of getopt() */
+  INT4 opt = 0;                    /* returning value of LALgetopt() */
   INT4 optflag = -1;               /* Command Line option */
   REAL8Vector *psd = NULL;
   REAL8 df = 1.0;
@@ -157,7 +155,7 @@ int main( int argc, char *argv[] )
     {
       case 'b':
 #if LAL_METAIO_ENABLED
-	if( (ntiles = LALSnglInspiralTableFromLIGOLw( &bankHead, optarg, 1,
+	if( (ntiles = LALSnglInspiralTableFromLIGOLw( &bankHead, LALoptarg, 1,
             20000)) < 1 )
         {
           fprintf( stderr, INSPIRALSPINBANKTESTC_MSGEFILE );
@@ -167,10 +165,10 @@ int main( int argc, char *argv[] )
 #endif
         break;
       case 'm':
-        coarseIn.mmCoarse = atof( optarg );
+        coarseIn.mmCoarse = atof( LALoptarg );
         break;
       case 'n':
-        coarseIn.mMin = atof( optarg );
+        coarseIn.mMin = atof( LALoptarg );
         break;
       case 'p':
         Math3DPlot = 1;
@@ -178,7 +176,7 @@ int main( int argc, char *argv[] )
       case 's':
         break;
       case 'x':
-        coarseIn.MMax = atof( optarg );
+        coarseIn.MMax = atof( LALoptarg );
         break;
       default:
         coarseIn.mmCoarse = 0.1;
@@ -188,7 +186,7 @@ int main( int argc, char *argv[] )
         break;
     }
   }
-  while( (opt = getopt( argc, argv, "b:n:m:x:ps" )) != -1 );
+  while( (opt = LALgetopt( argc, argv, "b:n:m:x:ps" )) != -1 );
 
   /* Generate template bank from model noise if not given an XML file. */
   if( !haveXML )

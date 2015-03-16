@@ -85,7 +85,8 @@ class ProxyHTTPSConnection(ProxyHTTPConnection):
 
     default_port = 443
 
-    def __init__(self, host, port = None, context = None):
+    def __init__(self, host, port = None, key_file = None, cert_file = None,
+        strict = None, context = None):
         ProxyHTTPConnection.__init__(self, host, port)
         self.key_file = key_file
         self.cert_file = cert_file
@@ -94,10 +95,11 @@ class ProxyHTTPSConnection(ProxyHTTPConnection):
     def connect(self):
         ProxyHTTPConnection.connect(self)
         #make the sock ssl-aware
-        #ssl = socket.ssl(self.sock, self.key_file, self.cert_file)
-        #self.sock = httplib.FakeSocket(self.sock, ssl)
-        # XXX Modified for compatibility with Python 2.7.
-        self.sock = self.context.wrap_socket(self.sock)
+        if sys.hexversion < 0x20709f0:
+            ssl = socket.ssl(self.sock, self.key_file, self.cert_file)
+            self.sock = httplib.FakeSocket(self.sock, ssl)
+        else:
+            self.sock = self.context.wrap_socket(self.sock)
 
 #-----------------------------------------------------------------
 # Generic GSI REST
@@ -122,25 +124,37 @@ class GsiRest(object):
         host = o.hostname
         port = port or 443
 
-        # Prepare SSL context
-        ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
-        ssl_context.load_cert_chain(self.cert, self.key)
-        # Generally speaking, test boxes use cheap/free certs from the LIGO CA.
-        # These cannot be verified by the client.
-        if host in KNOWN_TEST_HOSTS:
-            ssl_context.verify_mode = ssl.CERT_NONE
-        else:
-            ssl_context.verify_mode = ssl.CERT_REQUIRED
-            ssl_context.check_hostname = True
-            # Find the various CA cert bundles stored on the system
-            ssl_context.load_default_certs()        
+        # Versions of Python earlier than 2.7.9 don't use SSL Context
+        # objects for this purpose, and do not do any server cert verification.
+        ssl_context = None
+        if sys.hexversion >= 0x20709f0:
+            # Use the new method with SSL Context
+            # Prepare SSL context
+            ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+            ssl_context.load_cert_chain(self.cert, self.key)
+            # Generally speaking, test boxes use cheap/free certs from the LIGO CA.
+            # These cannot be verified by the client.
+            if host in KNOWN_TEST_HOSTS:
+                ssl_context.verify_mode = ssl.CERT_NONE
+            else:
+                ssl_context.verify_mode = ssl.CERT_REQUIRED
+                ssl_context.check_hostname = True
+                # Find the various CA cert bundles stored on the system
+                ssl_context.load_default_certs()        
 
-        if proxy_host:
-            self.connector = lambda: ProxyHTTPSConnection(
-                    proxy_host, proxy_port, context=ssl_context)
+            if proxy_host:
+                self.connector = lambda: ProxyHTTPSConnection(proxy_host, proxy_port, context=ssl_context)
+            else:
+                self.connector = lambda: httplib.HTTPSConnection(host, port, context=ssl_context)            
         else:
-            self.connector = lambda: httplib.HTTPSConnection(
-                    host, port, context=ssl_context)
+            # Using and older version of python. We'll pass in the cert and key files.
+            if proxy_host:
+                self.connector = lambda: ProxyHTTPSConnection(proxy_host, proxy_port, 
+                    key_file=self.key, cert_file=self.cert)
+            else:
+                self.connector = lambda: httplib.HTTPSConnection(host, port, 
+                    key_file=self.key, cert_file=self.cert)
+
 
     def getConnection(self):
         return self.connector()
@@ -283,6 +297,10 @@ class GraceDb(GsiRest):
     @property
     def obs_statuses(self):
         return self.service_info.get('obs-statuses')
+
+    @property
+    def voevent_types(self):
+        return self.service_info.get('voevent-types')
 
     def request(self, method, *args, **kwargs):
         if method.lower() in ['post', 'put']:
@@ -759,6 +777,47 @@ class GraceDb(GsiRest):
 
         """
         return self.get(self.links['self'])
+
+    def voevents(self, graceid):
+        """Given a GraceID, get a list of VOEvents
+
+        Example:
+        
+            >>> g = GraceDb()       
+            >>> r = g.voevents('T101383') 
+            >>> voevent_list = r.json()['voevents'] 
+
+        """
+    
+        template = self.templates['voevent-list-template']
+        uri = template.format(graceid=graceid)
+        return self.get(uri)
+
+    def createVOEvent(self, graceid, voevent_type, **kwargs):
+        """Create a new VOEvent
+        
+        Required args: graceid, voevent_type
+
+        Additional keyword arguments may be passed in to be sent in the POST
+        data. Only the following kwargs are recognized:
+            skymap_filename
+            skyamp_type
+
+        Any other kwargs will be ignored.
+        """ 
+        # validate facility, waveband, eel_status, and obs_status
+        voevent_type = self._getCode(voevent_type.lower(), self.voevent_types)
+        if not voevent_type:
+            raise ValueError("voevent_type must be one of: %s" % self.voevent_types.values())
+        template = self.templates['voevent-list-template']
+        uri = template.format(graceid=graceid)
+
+        body = {
+            'voevent_type' : voevent_type,
+        }
+        body.update(**kwargs)
+        return self.post(uri, body=body)
+
 
 #-----------------------------------------------------------------
 # TBD

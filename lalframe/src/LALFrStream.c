@@ -95,7 +95,6 @@
  */
 
 #include <config.h>
-#include <unistd.h>
 #ifndef HAVE_GETHOSTNAME_PROTOTYPE
 int gethostname(char *name, int len);
 #endif

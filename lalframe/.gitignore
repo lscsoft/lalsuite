@@ -10,6 +10,7 @@
 /_build/
 /_inst/
 /lalframe-*/
+AUTHORS
 Makefile
 Makefile.in
 config.lt

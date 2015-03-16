@@ -32,15 +32,14 @@
       \brief This package contains the general purpose LAL tools.
    @}
 
-   \defgroup lal_vectorops			Vector Manipulation Routines
-   @{
-      \brief This package contains routines for manipulating vectors.
-   @}
-
 @}
 
 \defgroup lal_math			Math and Signal Analysis Packages
 @{
+   \defgroup lal_vectorops			Vector Manipulation Routines
+   @{
+      \brief This package contains routines for vector manipulation and math.
+   @}
 
    \defgroup lal_fft				Fast Fourier Transform Routines
    @{
@@ -104,4 +103,9 @@
 
 \defgroup lal_python			Python Packages
 
+*/
+
+/**
+\page lal_authors			Author List
+\verbinclude AUTHORS
 */

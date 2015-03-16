@@ -192,7 +192,7 @@ int XLALComputeExtraStatsSemiCoherent ( RecalcStatsComponents *recalcStats,		/**
       XLAL_CHECK ( XLALExtrapolatePulsarSpins( dopplerParams_temp.fkdot, dopplerParams->fkdot, deltaTau ) == XLAL_SUCCESS, XLAL_EFUNC, "XLALExtrapolatePulsarSpins() failed." );
 
       /* recompute multi-detector Fstat and atoms */
-      XLAL_CHECK ( XLALComputeFstat(&Fstat_res, recalcParams->Fstat_in_vec->data[k], &dopplerParams_temp, 0.0, 1, FSTATQ_2F | FSTATQ_2F_PER_DET) == XLAL_SUCCESS, XLAL_EFUNC, "XLALComputeFstat() failed with errno=%d", xlalErrno );
+      XLAL_CHECK ( XLALComputeFstat(&Fstat_res, recalcParams->Fstat_in_vec->data[k], &dopplerParams_temp, 1, FSTATQ_2F | FSTATQ_2F_PER_DET) == XLAL_SUCCESS, XLAL_EFUNC, "XLALComputeFstat() failed with errno=%d", xlalErrno );
 
       sumTwoF  += Fstat_res->twoF[0]; /* sum up multi-detector Fstat for this segment*/
 

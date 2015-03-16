@@ -10,6 +10,7 @@
 /_inst/
 /index.html
 /lalsuite-*/
+/lalsuiterc
 TAGS
 aclocal.m4
 auto/

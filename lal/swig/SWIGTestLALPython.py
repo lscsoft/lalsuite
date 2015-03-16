@@ -801,6 +801,26 @@ del plan
 lal.CheckMemoryLeaks()
 print("PASSED FFT functions with input views ...")
 
+# check aligned vector math
+print("checking aligned vector math ...")
+theta = lal.PI * numpy.array([0, 1.0/6, 1.0/4, 1.0/2])
+sin_theta = numpy.array([0.0, 0.5, 1.0/numpy.sqrt(2), 1.0])
+r4aout = lal.CreateREAL4VectorAligned(4, 32)
+r4ain = lal.CreateREAL4VectorAligned(4, 32)
+r4ain.data = theta
+lal.VectorSinf(r4aout.cast2REAL4Vector(), r4ain.cast2REAL4Vector())
+assert((abs(r4aout.data - sin_theta) < 1e-3).all())
+r4out = r4aout.cast2REAL4Vector()
+r4in = r4ain.cast2REAL4Vector()
+del r4aout
+del r4ain
+lal.VectorSinf(r4out, r4in)
+assert((abs(r4out.data - sin_theta) < 1e-3).all())
+del r4out
+del r4in
+lal.CheckMemoryLeaks()
+print("PASSED aligned vector math")
+
 # check dynamic array of pointers access
 print("checking dynamic array of pointers access ...")
 ap = lal.swig_lal_test_Create_arrayofptrs(3)

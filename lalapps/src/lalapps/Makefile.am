@@ -34,9 +34,6 @@ noinst_LTLIBRARIES = liblalapps.la
 liblalapps_la_SOURCES = \
 	lalapps.c \
 	lalapps.h \
-	getopt.c \
-	getopt1.c \
-	getopt.h \
 	LALAppsVCSInfo.c \
 	LALAppsVCSInfo.h \
 	$(FRAMESRCS) \

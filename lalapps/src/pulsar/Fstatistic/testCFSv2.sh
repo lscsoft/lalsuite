@@ -52,7 +52,6 @@ Delta=-0.5
 
 h0=1
 cosi=-0.3
-
 psi=0.6
 phi0=1.5
 
@@ -110,7 +109,7 @@ echo
 # this part of the command-line is compatible with SemiAnalyticF:
 saf_CL=" --Alpha=$Alpha --Delta=$Delta --IFO=$IFO --Tsft=$Tsft --startTime=$startTime --duration=$duration --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0"
 # concatenate this with the mfd-specific switches:
-mfd_CL="${saf_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir/$IFO-sfts.sft --f1dot=$f1dot --outSingleSFT"
+mfd_CL="${saf_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir/$IFO-sfts.sft --f1dot=$f1dot --outSingleSFT  --refTime=$startTime"
 if [ "$haveNoise" = true ]; then
     mfd_CL="$mfd_CL --noiseSqrtSh=$sqrtSh";
 fi
@@ -139,7 +138,7 @@ echo "STEP 2: run CFS_v2 with perfect match"
 echo "----------------------------------------------------------------------"
 echo
 
-cfs_CL="--IFO=$IFO --Alpha=$Alpha --Delta=$Delta --Freq=$cfs_Freq --dFreq=$cfs_dFreq --f1dot=$cfs_f1dot --f1dotBand=$cfs_f1dotBand --df1dot=$cfs_df1dot --DataFiles='$SFTdir/*.sft' --NumCandidatesToKeep=${cfs_nCands} --Dterms=${Dterms} --outputLoudest=${outfile_Loudest} ${FstatMethod}"
+cfs_CL="--IFO=$IFO --Alpha=$Alpha --Delta=$Delta --Freq=$cfs_Freq --dFreq=$cfs_dFreq --f1dot=$cfs_f1dot --f1dotBand=$cfs_f1dotBand --df1dot=$cfs_df1dot --DataFiles='$SFTdir/*.sft' --NumCandidatesToKeep=${cfs_nCands} --Dterms=${Dterms} --outputLoudest=${outfile_Loudest} ${FstatMethod} --refTime=$startTime"
 if [ "$haveNoise" != "true" ]; then
     cfs_CL="$cfs_CL --SignalOnly"
 fi
@@ -186,13 +185,29 @@ fi
 esth0=$(grep '^h0' ${outfile_Loudest} | awk -F '[ ;]*' '{print $3}')
 estdh0=$(grep '^dh0' ${outfile_Loudest} | awk -F '[ ;]*' '{print $3}')
 
-echo "Estimated h0 = $esth0 +/- $estdh0"
+estPhi0=$(grep '^phi0' ${outfile_Loudest} | awk -F '[ ;]*' '{print $3}')
+estdPhi0=$(grep '^dphi0' ${outfile_Loudest} | awk -F '[ ;]*' '{print $3}')
+
+echo "Estimated h0 = $esth0 +/- $estdh0: Injected h0 = $h0"
 h0inrange=$(echo $h0 $esth0 $estdh0 | awk '{printf "%i\n", (($1 - $2)^2 < $3^2)}')
 if test x$h0inrange != x1; then
     echo "ERROR: estimated h0 was not within error of injected h0!"
+    echo
     exit 2
 else
     echo "OK: Estimated h0 is within error of injected h0"
+    echo
+fi
+
+echo "Estimated phi0 = $estPhi0 +/- $estdPhi0: Injected phi0 = $phi0"
+phi0inrange=$(echo $phi0 $estPhi0 $estdPhi0 | awk '{printf "%i\n", (($1 - $2)^2 < $3^2)}')
+if test x$phi0inrange != x1; then
+    echo "ERROR: estimated phi0 was not within error of injected phi0!"
+    echo
+    exit 2
+else
+    echo "OK: Estimated phi0 is within error of injected phi0"
+    echo
 fi
 
 

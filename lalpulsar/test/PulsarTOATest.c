@@ -10,9 +10,9 @@
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
-#include <getopt.h>
 
 #include <lal/LALStdlib.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALBarycenter.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/LALConstants.h>
@@ -349,7 +349,7 @@ x,y,z components are got from tempo */
 } // main()
 
 void get_input_args(InputParams *pars, int argc, char *argv[]){
-  struct option long_options[] =
+  struct LALoption long_options[] =
   {
     { "help",                     no_argument,        0, 'h' },
     { "par-file",                 required_argument,  0, 'p' },
@@ -376,7 +376,7 @@ void get_input_args(InputParams *pars, int argc, char *argv[]){
     int option_index = 0;
     int c;
 
-    c = getopt_long( argc, argv, args, long_options, &option_index );
+    c = LALgetopt_long( argc, argv, args, long_options, &option_index );
     if ( c == -1 ) /* end of options */
       break;
 
@@ -386,7 +386,7 @@ void get_input_args(InputParams *pars, int argc, char *argv[]){
           break;
         else
           fprintf(stderr, "Error parsing option %s with argument %s\n",
-            long_options[option_index].name, optarg );
+            long_options[option_index].name, LALoptarg );
       case 'h': /* help message */
         fprintf(stderr, USAGE, program);
         exit(0);
@@ -394,16 +394,16 @@ void get_input_args(InputParams *pars, int argc, char *argv[]){
         verbose = 1;
         break;
       case 'p': /* par file */
-        pars->parfile = XLALStringDuplicate( optarg );
+        pars->parfile = XLALStringDuplicate( LALoptarg );
         break;
       case 't': /* TEMPO2 timing file */
-        pars->timfile = XLALStringDuplicate( optarg );
+        pars->timfile = XLALStringDuplicate( LALoptarg );
         break;
       case 'e': /* ephemeris (DE405/DE200) */
-        pars->ephem = XLALStringDuplicate( optarg );
+        pars->ephem = XLALStringDuplicate( LALoptarg );
         break;
       case 'c': /* clock file */
-        pars->clock = XLALStringDuplicate( optarg );
+        pars->clock = XLALStringDuplicate( LALoptarg );
         break;
       case 's': /* simulated data */
         pars->simulated = 1;

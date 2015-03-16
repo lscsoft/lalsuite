@@ -21,7 +21,7 @@ html-local: Makefile $(CONFIG_CLEAN_FILES)
 	export doxygen_tagfiles="$(DOXYGEN_TAGFILES)"; \
 	export doxygen_quiet="$(doxygen_quiet)"; \
 	export doxygen_input=; \
-	for dir in packages lib src test python; do \
+	for dir in src test python; do \
 		test -d "$(abs_top_srcdir)/$${dir}" && doxygen_input="$${doxygen_input} $(abs_top_srcdir)/$${dir}"; \
 	done; \
 	for file in swig/SWIGCommon.i swig/SWIG$(PACKAGE_NAME)Alpha.i swig/SWIG$(PACKAGE_NAME)Omega.i; do \

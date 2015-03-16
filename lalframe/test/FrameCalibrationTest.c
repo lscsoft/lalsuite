@@ -90,13 +90,8 @@
 
 #include <stdio.h>
 #include <math.h>
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-#ifdef HAVE_GETOPT_H
-#include <getopt.h>
-#endif
 #include <lal/LALStdlib.h>
+#include <lal/LALgetopt.h>
 #include <lal/AVFactories.h>
 #include <lal/PrintFTSeries.h>
 #include <lal/LALFrStream.h>
@@ -117,8 +112,6 @@
 #define CAL_CATALOG "%s-CAL-V03-%s.cache"
 
 
-extern char *optarg;
-extern int   optind;
 int verbose = 0;
 int output = 0;
 
@@ -281,7 +274,7 @@ ParseOptions (int argc, char *argv[])
   while (1)
   {
     int c = -1;
-    c = getopt (argc, argv, "hvo");
+    c = LALgetopt (argc, argv, "hvo");
     if (c == -1)
     {
       break;
@@ -306,7 +299,7 @@ ParseOptions (int argc, char *argv[])
     }
   }
 
-  if (optind < argc)
+  if (LALoptind < argc)
   {
     Usage (argv[0], 1);
   }

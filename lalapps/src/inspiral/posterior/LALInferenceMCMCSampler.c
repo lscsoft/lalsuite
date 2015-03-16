@@ -21,8 +21,12 @@
  *  MA  02111-1307  USA
  */
 
+#include <config.h>
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 #include <lal/LALInspiral.h>
 #include <lal/DetResponse.h>
 #include <lal/SeqFactories.h>
@@ -1766,9 +1770,9 @@ void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
     } else {
       LALInferenceSetVariable(runState->currentParams, "phase", &phase);
     }
-
+    REAL8 cosinclination=cos(inclination);
     LALInferenceSetVariable(runState->currentParams, "distance", &dist);
-    LALInferenceSetVariable(runState->currentParams, "theta_jn", &inclination);
+    LALInferenceSetVariable(runState->currentParams, "costheta_jn", &cosinclination);
     LALInferenceSetVariable(runState->currentParams, "polarisation", &(psi));
     LALInferenceSetVariable(runState->currentParams, "declination", &dec);
     LALInferenceSetVariable(runState->currentParams, "rightascension", &ra);

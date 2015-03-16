@@ -4,7 +4,6 @@ SUBDIRS = \
 	Fstatistic \
 	hough \
 	GCT \
-	templateBanks \
 	crosscorr \
 	HeterodyneSearch \
 	fscan \

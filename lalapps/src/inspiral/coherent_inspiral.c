@@ -161,13 +161,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <getopt.h>
-
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
 
 #include <lal/LALFrameIO.h>
+#include <lal/LALgetopt.h>
 #include <lal/TimeSeries.h>
 #include <lal/TimeDelay.h>
 
@@ -1803,7 +1799,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 
 int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 {
-   struct option long_options[] =
+   struct LALoption long_options[] =
      {
      {"verbose",                  no_argument,       &vrbflg,            1 },
      {"write-compress",           no_argument,       &outCompress,       1 },
@@ -1860,11 +1856,11 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
    while (1)
      {
-       /* getopt_long stores long options here */
+       /* LALgetopt_long stores long options here */
        int option_index = 0;
-       size_t optarg_len;
+       size_t LALoptarg_len;
 
-       c = getopt_long_only( argc, argv,
+       c = LALgetopt_long_only( argc, argv,
 	   "A:B:a:b:c:D:F:G:I:L:l:e:g:W:X:Y:t:w:P:R:T:V:Z:f:h:p:s:C:r:u:U:v:",
            long_options, &option_index );
 
@@ -1883,103 +1879,103 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
            else
              {
                fprintf( stderr, "error parsing option %s with argument %s\n",
-                        long_options[option_index].name, optarg );
+                        long_options[option_index].name, LALoptarg );
                exit( 1 );
              }
            break;
 
          case 'A':
-           optarg_len = strlen( optarg ) + 1;
-           ifoframefile[1] = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-           memcpy( ifoframefile[1], optarg, optarg_len );
+           LALoptarg_len = strlen( LALoptarg ) + 1;
+           ifoframefile[1] = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
+           memcpy( ifoframefile[1], LALoptarg, LALoptarg_len );
            H1file = 1;
-           ADD_PROCESS_PARAM( "string", "%s", optarg );
+           ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
            break;
 
          case 'D': /* set right-ascension step-size (in degrees) */
-           decStep = atof (optarg);
+           decStep = atof (LALoptarg);
            ADD_PROCESS_PARAM( "float", "%e", decStep );
            break;
 
          case 'E': /* effective SNR's denominator factor */
-           eff_snr_denom_fac = atof (optarg);
+           eff_snr_denom_fac = atof (LALoptarg);
            ADD_PROCESS_PARAM( "float", "%e", eff_snr_denom_fac );
            break;
 
          case 'F': /* parameter for computing new-snrsq */
-           chisq_index = atof (optarg);
+           chisq_index = atof (LALoptarg);
            ADD_PROCESS_PARAM( "float", "%e", chisq_index );
            break;
 
          case 'R': /* set right-ascension step-size (in degrees) */
-           raStep = atof (optarg);
+           raStep = atof (LALoptarg);
            ADD_PROCESS_PARAM( "float", "%e", raStep );
            break;
 
          case 'G':
-           optarg_len = strlen( optarg ) + 1;
-           ifoframefile[0] = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-           memcpy( ifoframefile[0], optarg, optarg_len );
+           LALoptarg_len = strlen( LALoptarg ) + 1;
+           ifoframefile[0] = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
+           memcpy( ifoframefile[0], LALoptarg, LALoptarg_len );
            G1file = 1;
-           ADD_PROCESS_PARAM( "string", "%s", optarg );
+           ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
            break;
 
          case 'L':
-           optarg_len = strlen( optarg ) + 1;
-           ifoframefile[3] = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-           memcpy( ifoframefile[3], optarg, optarg_len );
+           LALoptarg_len = strlen( LALoptarg ) + 1;
+           ifoframefile[3] = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
+           memcpy( ifoframefile[3], LALoptarg, LALoptarg_len );
            L1file = 1;
-           ADD_PROCESS_PARAM( "string", "%s", optarg );
+           ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
            break;
 
          case 'T':
-           optarg_len = strlen( optarg ) + 1;
-           ifoframefile[4] = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-           memcpy( ifoframefile[4], optarg, optarg_len );
+           LALoptarg_len = strlen( LALoptarg ) + 1;
+           ifoframefile[4] = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
+           memcpy( ifoframefile[4], LALoptarg, LALoptarg_len );
            T1file = 1;
-           ADD_PROCESS_PARAM( "string", "%s", optarg );
+           ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
            break;
 
          case 'V':
-           optarg_len = strlen( optarg ) + 1;
-           ifoframefile[5] = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-           memcpy( ifoframefile[5], optarg, optarg_len );
+           LALoptarg_len = strlen( LALoptarg ) + 1;
+           ifoframefile[5] = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
+           memcpy( ifoframefile[5], LALoptarg, LALoptarg_len );
            V1file = 1;
-           ADD_PROCESS_PARAM( "string", "%s", optarg );
+           ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
            break;
 
          case 'Z':
-           optarg_len = strlen( optarg ) + 1;
-           ifoframefile[2] = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-           memcpy( ifoframefile[2], optarg, optarg_len );
+           LALoptarg_len = strlen( LALoptarg ) + 1;
+           ifoframefile[2] = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
+           memcpy( ifoframefile[2], LALoptarg, LALoptarg_len );
            H2file = 1;
-           ADD_PROCESS_PARAM( "string", "%s", optarg );
+           ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
            break;
 
          case 'B':
            /* create storage for the user-tag */
-           optarg_len = strlen( optarg ) + 1;
-           userTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
-           memcpy( userTag, optarg, optarg_len );
-           ADD_PROCESS_PARAM( "string", "%s", optarg );
+           LALoptarg_len = strlen( LALoptarg ) + 1;
+           userTag = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR) );
+           memcpy( userTag, LALoptarg, LALoptarg_len );
+           ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
            break;
 
          case 'I':
            /* create storage for the ifo-tag */
-           optarg_len = strlen( optarg ) + 1;
-           ifos = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
-           memcpy( ifos, optarg, optarg_len );
-           ADD_PROCESS_PARAM( "string", "%s", optarg );
+           LALoptarg_len = strlen( LALoptarg ) + 1;
+           ifos = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR) );
+           memcpy( ifos, LALoptarg, LALoptarg_len );
+           ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
            break;
 
          case 'P':
            memset( outputPath, 0, FILENAME_MAX * sizeof(CHAR) );
-           snprintf( outputPath, FILENAME_MAX, "%s", optarg );
+           snprintf( outputPath, FILENAME_MAX, "%s", LALoptarg );
            ADD_PROCESS_PARAM( "string", "%s", outputPath );
            break;
 
          case 'f': /* set fLow */
-           fLow = (REAL4) atof (optarg);
+           fLow = (REAL4) atof (LALoptarg);
            ADD_PROCESS_PARAM( "float", "%e", fLow );
            break;
 
@@ -1991,40 +1987,40 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
            break;
 
          case 'p': /* set coherent SNR threshold */
-           cohSNRThresh = atof (optarg);
+           cohSNRThresh = atof (LALoptarg);
            ADD_PROCESS_PARAM( "float", "%e", cohSNRThresh );
            break;
 
          case 's': /* set length of CData segment */
-           cohSegLength = atof (optarg);
+           cohSegLength = atof (LALoptarg);
            ADD_PROCESS_PARAM( "float", "%e", cohSegLength );
            break;
 
          case 'C': /* set null-stream regulator */
-           nullStatRegul = atof (optarg);
+           nullStatRegul = atof (LALoptarg);
            ADD_PROCESS_PARAM( "float", "%e", nullStatRegul );
            break;
 
          case 'l':
-           numPointsSeg = (INT4) atoi(optarg);
+           numPointsSeg = (INT4) atoi(LALoptarg);
            ADD_PROCESS_PARAM("int", "%d", numPointsSeg );
            break;
 
          case 'e':
-           dynRangeExponent = (REAL4) atof(optarg);
+           dynRangeExponent = (REAL4) atof(LALoptarg);
            ADD_PROCESS_PARAM("float", "%e", dynRangeExponent );
            break;
 
          case 'r':
-           sampleRate = (INT4) atoi(optarg);
+           sampleRate = (INT4) atoi(LALoptarg);
            ADD_PROCESS_PARAM("int", "%d", sampleRate );
            break;
 
          case 'u':
            /* create storage for the bank filename */
-           optarg_len = strlen( optarg ) + 1;
-           cohbankFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-           memcpy(cohbankFileName, optarg, optarg_len );
+           LALoptarg_len = strlen( LALoptarg ) + 1;
+           cohbankFileName = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
+           memcpy(cohbankFileName, LALoptarg, LALoptarg_len );
            char tempName[256];
            strcpy(tempName, cohbankFileName);
            duration = strtok(tempName,"-");
@@ -2038,7 +2034,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
          case 'U':
            /* create storage for the chia trigger filename */
-           strcpy(chiaFileName, optarg);
+           strcpy(chiaFileName, LALoptarg);
            char tmpName[256];
            strcpy(tmpName, chiaFileName);
            dur = strtok(tmpName,"-");
@@ -2053,37 +2049,37 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
            /* Read in time-slide steps for all detectors */
            /* Read in time-slide step for G1 */
          case 'g':
-           slideStep[LAL_IFO_G1] = (REAL8) atof(optarg);
+           slideStep[LAL_IFO_G1] = (REAL8) atof(LALoptarg);
            ADD_PROCESS_PARAM("float", "%e", slideStep[LAL_IFO_G1] );
            break;
 
            /* Read in time-slide step for H1 */
          case 'W':
-           slideStep[LAL_IFO_H1] = (REAL8) atof(optarg);
+           slideStep[LAL_IFO_H1] = (REAL8) atof(LALoptarg);
            ADD_PROCESS_PARAM("float", "%e", slideStep[LAL_IFO_H1]);
            break;
 
            /* Read in time-slide step for H2 */
          case 'X':
-           slideStep[LAL_IFO_H2] = (REAL8) atof(optarg);
+           slideStep[LAL_IFO_H2] = (REAL8) atof(LALoptarg);
            ADD_PROCESS_PARAM("float", "%e", slideStep[LAL_IFO_H2]);
            break;
 
            /* Read in time-slide step for L1 */
          case 'Y':
-           slideStep[LAL_IFO_L1] = (REAL8) atof(optarg);
+           slideStep[LAL_IFO_L1] = (REAL8) atof(LALoptarg);
            ADD_PROCESS_PARAM("float", "%e", slideStep[LAL_IFO_L1]);
            break;
 
            /* Read in time-slide step for T1 */
          case 't':
-           slideStep[LAL_IFO_T1] = (REAL8) atof(optarg);
+           slideStep[LAL_IFO_T1] = (REAL8) atof(LALoptarg);
            ADD_PROCESS_PARAM("float", "%e", slideStep[LAL_IFO_T1]);
            break;
 
            /* Read in time-slide step for V1 */
          case 'w':
-           slideStep[LAL_IFO_V1] = (REAL8) atof(optarg);
+           slideStep[LAL_IFO_V1] = (REAL8) atof(LALoptarg);
            ADD_PROCESS_PARAM("float", "%e", slideStep[LAL_IFO_V1]);
            break;
 
@@ -2097,7 +2093,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
          case 'a':
            {
-             long int gstartt = atol( optarg );
+             long int gstartt = atol( LALoptarg );
              if ( gstartt < 441417609 )
                {
                fprintf( stderr, "invalid argument to --%s:\n"
@@ -2115,7 +2111,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
          case 'b':
            {
-             long int gendt = atol( optarg );
+             long int gendt = atol( LALoptarg );
              if ( gendt < 441417609 )
              {
                fprintf( stderr, "invalid argument to --%s:\n"
@@ -2134,15 +2130,15 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
          case 'c':
            /* choose the coinc statistic */
            {
-             if ( ! strcmp( "snrsq", optarg ) )
+             if ( ! strcmp( "snrsq", LALoptarg ) )
              {
                coincStat = snrsq;
              }
-             else if ( ! strcmp( "effective_snrsq", optarg) )
+             else if ( ! strcmp( "effective_snrsq", LALoptarg) )
              {
                coincStat = effective_snrsq;
              }
-	     else if ( ! strcmp( "new_snrsq", optarg) )
+	     else if ( ! strcmp( "new_snrsq", LALoptarg) )
 	     {
                coincStat = new_snrsq;
              }
@@ -2152,10 +2148,10 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 		 "unknown coinc statistic:\n "
 		 "%s (must be one of:\n"
 		 "snrsq, effective_snrsq, new_snrsq)\n",
-		 long_options[option_index].name, optarg);
+		 long_options[option_index].name, LALoptarg);
                exit( 1 );
              }
-             ADD_PROCESS_PARAM( "string", "%s", optarg );
+             ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
            }
            break;
 
@@ -2171,12 +2167,12 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
      }
 
-   if (optind < argc)
+   if (LALoptind < argc)
      {
        fprintf( stderr, "extraneous command line arguments:\n" );
-       while ( optind < argc )
+       while ( LALoptind < argc )
          {
-           fprintf ( stderr, "%s\n", argv[optind++] );
+           fprintf ( stderr, "%s\n", argv[LALoptind++] );
          }
        exit( 1 );
      }

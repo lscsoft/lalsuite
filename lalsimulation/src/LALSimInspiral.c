@@ -38,6 +38,7 @@
 #include <lal/SphericalHarmonics.h>
 #include <lal/LALSimBlackHoleRingdown.h>
 
+#include "LALSimInspiralPNCoefficients.c"
 #include "check_series_macros.h"
 
 #ifdef __GNUC__
@@ -115,6 +116,125 @@ int checkTidesZero(REAL8 lambda1, REAL8 lambda2)
 }
 
 
+/**
+ * @brief Routine to compute an overestimate of the inspiral time from a given frequency.
+ * @details
+ * This routine estimates the time it will take for point-particle inspiral from a
+ * specified frequency to infinite frequency.  The estimate is intended to be an
+ * over-estimate, so that the true inspiral time is always smaller than the time this
+ * routine returns.  To obtain this estimate, the 2pN chirp time is used where all
+ * negative contributions are discarded.
+ * @param fstart The starting frequency in Hz.
+ * @param m1 The mass of the first component in kg.
+ * @param m2 The mass of the second component in kg.
+ * @param s1 The dimensionless spin of the first component.
+ * @param s2 The dimensionless spin of the second component.
+ * @return Upper bound on chirp time of post-Newtonian inspiral in seconds.
+ */
+REAL8 XLALSimInspiralChirpTimeBound(REAL8 fstart, REAL8 m1, REAL8 m2, REAL8 s1, REAL8 s2)
+{
+    double M = m1 + m2; // total mass
+    double mu = m1 * m2 / M; // reduced mass
+    double eta = mu / M; // symmetric mass ratio
+    /* chi = (s1*m1 + s2*m2)/M <= max(|s1|,|s2|) */
+    double chi = fabs(fabs(s1) > fabs(s2) ? s1 : s2); // over-estimate of chi
+    /* note: for some reason these coefficients are named wrong...
+     * "2PN" should be "1PN", "4PN" should be "2PN", etc. */
+    double c0 = fabs(XLALSimInspiralTaylorT2Timing_0PNCoeff(M, eta));
+    double c2 = XLALSimInspiralTaylorT2Timing_2PNCoeff(eta);
+    /* the 1.5pN spin term is in TaylorT2 is 8*beta/5 [Citation ??]
+     * where beta = (113/12 + (25/4)(m2/m1))*(s1*m1^2/M^2) + 2 <-> 1
+     * [Cutler & Flanagan, Physical Review D 49, 2658 (1994), Eq. (3.21)]
+     * which can be written as (113/12)*chi - (19/6)(s1 + s2)
+     * and we drop the negative contribution */
+    double c3 = (226.0/15.0) * chi;
+    /* there is also a 1.5PN term with eta, but it is negative so do not include it */
+    double c4 = XLALSimInspiralTaylorT2Timing_4PNCoeff(eta);
+    double v = cbrt(LAL_PI * LAL_G_SI * M * fstart) / LAL_C_SI;
+    return c0 * pow(v, -8) * (1.0 + (c2 + (c3 + c4 * v) * v) * v * v);
+}
+
+/**
+ * @brief Routine to compute an overestimate of the merger time.
+ * @details
+ * This routine provides an upper bound on the time it will take for compact
+ * binaries to plunge and merge at the end of the quasi-stationary inspiral.
+ * This is quite vague since the notion of a innermost stable circular orbit
+ * is ill-defined except in a test mass limit. Nevertheless, this routine
+ * assumes (i) that the innermost stable circular orbit occurs at v = c / 3,
+ * or r = 9 G M / c^3 (in Boyer-Lindquist coordinates), which is roughly right
+ * for an extreme Kerr black hole counter-rotating with a test particle,
+ * and (ii) the plunge lasts for a shorter period than one cycle at this
+ * innermost stable circular orbit.
+ * @param m1 The mass of the first component in kg.
+ * @param m2 The mass of the second component in kg.
+ * @return Upper bound on the merger time in seconds.
+ */
+REAL8 XLALSimInspiralMergeTimeBound(REAL8 m1, REAL8 m2)
+{
+    const double norbits = 1;
+    double M = m1 + m2; // total mass
+    double r = 9.0 * M * LAL_MRSUN_SI / LAL_MSUN_SI;
+    double v = LAL_C_SI / 3.0;
+    return norbits * (2.0 * LAL_PI * r / v);
+}
+
+/**
+ * @brief Routine to compute an overestimate of the ringdown time.
+ * @details
+ * This routine provides an upper bound on the time it will take for a
+ * black hole produced by compact binary merger to ring down through
+ * quasinormal mode radiation.  An approximate formula for the frequency
+ * and quality of the longest-lived fundamental (n=0) dominant (l=m=2)
+ * quasinormal mode * is given by Eqs. (E1) and (E2) along with Table VIII
+ * of Berti, Cardoso, and Will, Physical Review D (2006) 064030.
+ * Waveform generators produce 10 e-folds of ringdown radiation, so
+ * this routine goes up to 11 to provide an over-estimate of the ringdown time.
+ * @param M The mass of the final black hole in kg.
+ * @param s The dimensionless spin of the final black hole.
+ * @return Upper bound on the merger time in seconds.
+ * @see Emanuele Berti, Vitor Cardoso, and Clifford M. Will, Physical Review D 73, 064030 (2006) DOI: 10.1103/PhysRevD.73.064030
+ */
+REAL8 XLALSimInspiralRingdownTimeBound(REAL8 M, REAL8 s)
+{
+    const double nefolds = 11; /* waveform generators only go up to 10 */
+
+    /* these values come from Table VIII of Berti, Cardoso, and Will with n=0, m=2 */
+    const double f1 = +1.5251;
+    const double f2 = -1.1568;
+    const double f3 = +0.1292;
+    const double q1 = +0.7000;
+    const double q2 = +1.4187;
+    const double q3 = -0.4990;
+
+    double omega = (f1 + f2 * pow(1.0 - s, f3)) / (M * LAL_MTSUN_SI / LAL_MSUN_SI);
+    double Q = q1 + q2 * pow(1.0 - s, q3);
+    double tau = 2.0 * Q / omega; /* see Eq. (2.1) of Berti, Cardoso, and Will */
+    return nefolds * tau;
+}
+
+/**
+ * @brief Routine to compute an underestimate of the starting frequency for a given chirp time.
+ * @details
+ * This routine estimates a start frequency for a binary inspiral from which the
+ * actual inspiral chirp time will be shorter than the specified chirp time.
+ * To obtain this estimate, only the leading order Newtonian coefficient is used.
+ * The frequency returned by this routine is guaranteed to be less than the frequency
+ * passed to XLALSimInspiralChirpTimeBound() if the returned value of that routine
+ * is passed to this routine as tchirp.
+ * @param fstart The chirp time of post-Newtonian inspiral s.
+ * @param m1 The mass of the first component in kg.
+ * @param m2 The mass of the second component in kg.
+ * @return Lower bound on the starting frequency of a post-Newtonian inspiral in Hz.
+ */
+REAL8 XLALSimInspiralChirpStartFrequencyBound(REAL8 tchirp, REAL8 m1, REAL8 m2)
+{
+    double M = m1 + m2; // total mass
+    double mu = m1 * m2 / M; // reduced mass
+    double eta = mu / M; // symmetric mass ratio
+    double c0 = XLALSimInspiralTaylorT3Frequency_0PNCoeff(M);
+    return c0 * pow(5.0 * M * (LAL_MTSUN_SI / LAL_MSUN_SI) / (eta * tchirp), 3.0 / 8.0);
+}
 
 /**
  * Function that gives the value of the desired frequency given some physical parameters
@@ -251,7 +371,7 @@ double XLALSimInspiralGetFinalFreq(
 {
     FrequencyFunction freqFunc;
 
-    /* select the frequency function that is associated with each approximant */ 
+    /* select the frequency function that is associated with each approximant */
     switch (approximant)
     {
         /* non-spinning inspiral-only models */
@@ -370,7 +490,7 @@ double XLALSimInspiralGetFinalFreq(
 
     return XLALSimInspiralGetFrequency(m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, freqFunc);
 }
-    
+
 
 /**
  * Compute the polarizations from all the -2 spin-weighted spherical harmonic
@@ -2840,20 +2960,15 @@ int XLALSimInspiralTD(
     Approximant approximant                     /**< post-Newtonian approximant to use for waveform production */
     )
 {
+    const double maximum_black_hole_spin = 0.998;
     const double extra_time_fraction = 0.1; /* fraction of waveform duration to add as extra time for tapering */
-    const double extra_time_seconds = 1.0; /* extra time to add for waveform tapering */
-    const size_t end_taper_samples = 8; /* samples at end to taper off to make sure waveform ends at zero */
-    LALSimulationDomain domain = LAL_SIM_DOMAIN_TIME;
-    double tchirp, textra, fstart;
+    const double extra_cycles = 3.0; /* more extra time measured in cycles at the starting frequency */
+    double original_f_min = f_min; /* f_min might be overwritten below, so keep original value */
+    double tchirp, tmerge, textra;
+    double fisco, fstart;
+    double s;
+    size_t j, ntaper;
     int retval;
-
-    /* decide if this is a TD or an FD approximant */
-    if (XLALSimInspiralImplementedTDApproximants(approximant))
-        domain = LAL_SIM_DOMAIN_TIME;
-    else if (XLALSimInspiralImplementedFDApproximants(approximant))
-        domain = LAL_SIM_DOMAIN_FREQUENCY;
-    else
-        XLAL_ERROR(XLAL_EINVAL, "Invalid approximant");
 
     /* apply redshift correction to dimensionful source-frame quantities */
     if (z != 0.0) {
@@ -2861,134 +2976,185 @@ int XLALSimInspiralTD(
         m2 *= (1.0 + z);
         r *= (1.0 + z);  /* change from comoving (transverse) distance to luminosity distance */
     }
+    /* set redshift to zero so we don't accidentally apply it again later */
+    z = 0.0;
 
-    /* rough estimate of chirp time from f_min based on 0 PN term */
-    tchirp = XLALSimInspiralTaylorF2ReducedSpinChirpTime(f_min, m1, m2, 0, 0);
-    textra = extra_time_fraction * tchirp + extra_time_seconds;
+    /* if the requested low frequency is below the lowest Kerr ISCO
+     * frequency then change it to that frequency */
+    fisco = 1.0 / (pow(9.0, 1.5) * LAL_PI * (m1 + m2) * LAL_MTSUN_SI / LAL_MSUN_SI);
+    if (f_min > fisco)
+        f_min = fisco;
 
-    /* we start the waveform at a lower frequency so we can put tapers in */
-    {
-        /* this should be the inverse of XLALSimInspiralTaylorF2ReducedSpinChirpTime */
-        /* perhaps there should be an actual routine to do this? */
-        double M = m1 + m2;
-        double mu = m1 * m2 / M;
-        double nu = mu / M;
-        double theta = pow(nu * (tchirp + textra) * pow(LAL_C_SI, 3) / (5.0 * LAL_G_SI * M), -1.0 / 8.0);
-        fstart = pow(theta * LAL_C_SI, 3) / (8.0 * M_PI * LAL_G_SI * M);
-    }
+    /* lower bound on the chirp time starting at f_min */
+    tchirp = XLALSimInspiralChirpTimeBound(f_min, m1, m2, S1z, S2z);
 
-    switch (domain) {
-    case LAL_SIM_DOMAIN_TIME: {
-        size_t j, nextra;
-        /* generate the waveform starting at fstart */
+    /* lower bound on the final plunge, merger, and ringdown time here
+     * the final black hole spin is overestimated by using the formula
+     * in Tichy and Marronetti, Physical Review D 78 081501 (2008),
+     * Eq. (1) and Table 1, for equal mass black holes, or the larger
+     * of the two spins (which covers the extreme mass case) */
+    /* TODO: it has been suggested that Barausse, Rezzolla (arXiv: 0904.2577)
+     * is more accurate */
+    s = 0.686 + 0.15 * (S1z + S2z);
+    if (s < fabs(S1z))
+        s = fabs(S1z);
+    if (s < fabs(S2z))
+        s = fabs(S2z);
+    /* it is possible that |S1z| or |S2z| >= 1, but s must be less than 1
+     * (0th law of thermodynamics) so provide a maximum value for s */
+    if (s > maximum_black_hole_spin)
+        s = maximum_black_hole_spin;
+    tmerge = XLALSimInspiralMergeTimeBound(m1, m2) + XLALSimInspiralRingdownTimeBound(m1 + m2, s);
+
+    /* extra time to include for all waveforms to take care of situations
+     * where the frequency is close to merger (and is sweeping rapidly):
+     * this is a few cycles at the low frequency */
+    textra = extra_cycles / f_min;
+
+    /* decide if this is a TD or an FD approximant */
+
+    if (XLALSimInspiralImplementedTDApproximants(approximant)) {
+
+        size_t nzeros = 0;
+
+        /* time domain approximant: condition by generating a waveform
+         * with a lower starting frequency and apply tapers in the
+         * region between that lower frequency and the requested
+         * frequency f_min; here compute a new lower frequency */
+        fstart = XLALSimInspiralChirpStartFrequencyBound((1.0 + extra_time_fraction) * tchirp + tmerge + textra, m1, m2);
+    
+        /* generate the waveform in the time domain starting at fstart */
         retval = XLALSimInspiralChooseTDWaveform(hplus, hcross, phiRef, deltaT, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, fstart, f_ref, r, i, lambda1, lambda2, waveFlags, nonGRparams, amplitudeO, phaseO, approximant);
         if (retval < 0)
             XLAL_ERROR(XLAL_EFUNC);
 
-        /* extra time for tapers */
-        nextra = round(textra / deltaT);
-
-        /* sanity check on our crudely estimated duration */
-        if (nextra > (*hplus)->data->length / 2) {
-            /* compute textra more accurately */
-            REAL8TimeSeries *dummyplus = NULL;
-            REAL8TimeSeries *dummycross = NULL;
-            retval = XLALSimInspiralChooseTDWaveform(&dummyplus, &dummycross, phiRef, deltaT, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_ref, r, i, lambda1, lambda2, waveFlags, nonGRparams, amplitudeO, phaseO, approximant);
-            if (retval < 0)
-                XLAL_ERROR(XLAL_EFUNC);
-            nextra = (*hplus)->data->length - dummyplus->data->length;
+        /* some generators zero-pad the end of the waveform: remove this */
+        nzeros = 0;
+        while ((*hplus)->data->data[(*hplus)->data->length - nzeros - 1] == 0.0 && (*hcross)->data->data[(*hcross)->data->length - nzeros - 1] == 0.0)
+            ++nzeros;
+        if (nzeros) {
+            XLALShrinkREAL8TimeSeries(*hplus, 0, (*hplus)->data->length - nzeros);
+            XLALShrinkREAL8TimeSeries(*hcross, 0, (*hcross)->data->length - nzeros);
         }
         
-        /* taper early part of waveform */
-        for (j = 0; j < nextra; ++j) {
-            double w = 0.5 - 0.5 * cos(M_PI * j / (double)nextra);
+        /* apply tapers over the extra duration at the beginning */
+        ntaper = round((extra_time_fraction * tchirp + textra) / deltaT);
+        for (j = 0; j < ntaper; ++j) {
+            double w = 0.5 - 0.5 * cos(j * LAL_PI / ntaper);
             (*hplus)->data->data[j] *= w;
             (*hcross)->data->data[j] *= w;
         }
 
-	break;
-    }
+        /* apply time domain filter at original f_min */
+        XLALHighPassREAL8TimeSeries(*hplus, original_f_min, 0.99, 8);
+        XLALHighPassREAL8TimeSeries(*hcross, original_f_min, 0.99, 8);
 
-    case LAL_SIM_DOMAIN_FREQUENCY: {
-        COMPLEX16FrequencySeries *htildeplus = NULL;
-        COMPLEX16FrequencySeries *htildecross = NULL;
+        /* remaining conditioning is the same as with the frequency domain case */
+
+    } else if (XLALSimInspiralImplementedFDApproximants(approximant)) {
+
+        /* create a conditioned frequency-domain waveform and transform
+         * it into the time-domain */
+
+        COMPLEX16FrequencySeries *hptilde = NULL;
+        COMPLEX16FrequencySeries *hctilde = NULL;
         REAL8FFTPlan *plan;
-        double chirplen, df;
-        int chirplen_exp;
-        size_t k, k0, k1;
+        size_t chirplen, end, k;
+        double tshift;
 
-        /* need a long enough segment to hold a whole chirp */
-        /* length of the chirp in samples */
-        chirplen = (tchirp + textra) / deltaT;
-        /* make chirplen next power of two */
-        frexp(chirplen, &chirplen_exp);
-        chirplen = ldexp(1.0, chirplen_exp);
-        /* frequency resolution */
-        df = 1.0 / (chirplen * deltaT);
-        
-        /* generate the waveform in the frequency domain starting at fstart */
-        retval = XLALSimInspiralChooseFDWaveform(&htildeplus, &htildecross, phiRef, df, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, fstart, 0.5/deltaT, f_ref, r, i, lambda1, lambda2, waveFlags, nonGRparams, amplitudeO, phaseO, approximant);
+        /* generate the conditioned waveform in the frequency domain */
+        /* note: redshift factor has already been applied above */
+        /* set deltaF = 0 to get a small enough resolution */
+        retval = XLALSimInspiralFD(&hptilde, &hctilde, phiRef, 0.0, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, 0.5/deltaT, f_ref, r, 0.0, i, lambda1, lambda2, waveFlags, nonGRparams, amplitudeO, phaseO, approximant);
         if (retval < 0)
             XLAL_ERROR(XLAL_EFUNC);
 
-        /* taper frequencies between fstart and f_min */
-        k = k0 = round(fstart / htildeplus->deltaF);
-        k1 = round(f_min / htildeplus->deltaF);
-        for ( ; k < k1; ++k) {
-            double w = 0.5 - 0.5 * cos(M_PI * (k - k0) / (double)(k1 - k0));
-            htildeplus->data->data[k] *= w;
-            htildecross->data->data[k] *= w;
+        /* we want to make sure that this waveform will give something
+         * sensible if it is later transformed into the time domain:
+         * to avoid the end of the waveform wrapping around to the beginning,
+         * we shift waveform backwards in time and compensate for this
+         * shift by adjusting the epoch -- note that XLALSimInspiralFD
+         * guarantees that there is extra padding to do this */
+        tshift = round(textra / deltaT) * deltaT; /* integer number of samples */
+        for (k = 0; k < hptilde->data->length; ++k) {
+            double complex phasefac = cexp(2.0 * M_PI * I * k * hptilde->deltaF * tshift);
+            hptilde->data->data[k] *= phasefac;
+            hctilde->data->data[k] *= phasefac;
         }
-
-        /* to avoid the end of the waveform wrapping around to the beginning: */
-        /* shift waveform backwards in time; compensate in the epoch */
-        for (k = 0; k < htildeplus->data->length; ++k) {
-            double complex phasefac = cexp(2.0 * M_PI * I * k * df * extra_time_seconds);
-            htildeplus->data->data[k] *= phasefac;
-            htildecross->data->data[k] *= phasefac;
-        }
-        XLALGPSAdd(&htildeplus->epoch, extra_time_seconds);
-        XLALGPSAdd(&htildecross->epoch, extra_time_seconds);
+        XLALGPSAdd(&hptilde->epoch, tshift);
+        XLALGPSAdd(&hctilde->epoch, tshift);
 
         /* transform the waveform into the time domain */
-        *hplus = XLALCreateREAL8TimeSeries("H_PLUS", &htildeplus->epoch, 0.0, deltaT, &lalStrainUnit, (size_t) chirplen);
-        *hcross = XLALCreateREAL8TimeSeries("H_CROSS", &htildecross->epoch, 0.0, deltaT, &lalStrainUnit, (size_t) chirplen);
-        plan = XLALCreateReverseREAL8FFTPlan((size_t) chirplen, 0);
+        chirplen = 2 * (hptilde->data->length - 1);
+        *hplus = XLALCreateREAL8TimeSeries("H_PLUS", &hptilde->epoch, 0.0, deltaT, &lalStrainUnit, chirplen);
+        *hcross = XLALCreateREAL8TimeSeries("H_CROSS", &hctilde->epoch, 0.0, deltaT, &lalStrainUnit, chirplen);
+        plan = XLALCreateReverseREAL8FFTPlan(chirplen, 0);
         if (!(*hplus) || !(*hcross) || !plan) {
+            XLALDestroyCOMPLEX16FrequencySeries(hptilde);
+            XLALDestroyCOMPLEX16FrequencySeries(hctilde);
             XLALDestroyREAL8TimeSeries(*hcross);
             XLALDestroyREAL8TimeSeries(*hplus);
             XLALDestroyREAL8FFTPlan(plan);
             XLAL_ERROR(XLAL_EFUNC);
         }
-        XLALREAL8FreqTimeFFT(*hcross, htildecross, plan);
-        XLALREAL8FreqTimeFFT(*hplus, htildeplus, plan);
+        XLALREAL8FreqTimeFFT(*hplus, hptilde, plan);
+        XLALREAL8FreqTimeFFT(*hcross, hctilde, plan);
 
-	    /* snip off extra time at the end */
-        XLALResizeREAL8TimeSeries(*hplus, 0, (*hplus)->data->length - round(extra_time_seconds/deltaT));
-        XLALResizeREAL8TimeSeries(*hplus, 0, (*hcross)->data->length - round(extra_time_seconds/deltaT));
+        /* apply time domain filter at original f_min */
+        XLALHighPassREAL8TimeSeries(*hplus, original_f_min, 0.99, 8);
+        XLALHighPassREAL8TimeSeries(*hcross, original_f_min, 0.99, 8);
+
+        /* compute how long a chirp we should have */
+        /* revised estimate of chirp length from new start frequency */
+        fstart = XLALSimInspiralChirpStartFrequencyBound((1.0 + extra_time_fraction) * tchirp, m1, m2);
+        tchirp = XLALSimInspiralChirpTimeBound(fstart, m1, m2, S1z, S2z);
+        
+        /* total expected chirp length includes merger */
+        chirplen = round((tchirp + tmerge) / deltaT);
+
+        /* amount to snip off at the end is tshift */
+        end = (*hplus)->data->length - round(tshift / deltaT);
+
+        /* snip off extra time at beginning and at the end */
+        XLALResizeREAL8TimeSeries(*hplus, end - chirplen, chirplen);
+        XLALResizeREAL8TimeSeries(*hcross, end - chirplen, chirplen);
 
         /* clean up */
         XLALDestroyREAL8FFTPlan(plan);
-        XLALDestroyCOMPLEX16FrequencySeries(htildeplus);
-        XLALDestroyCOMPLEX16FrequencySeries(htildecross);
+        XLALDestroyCOMPLEX16FrequencySeries(hptilde);
+        XLALDestroyCOMPLEX16FrequencySeries(hctilde);
 
-	break;
+        /* remaining conditioning is the same as with the time domain case */
+
+    } else
+        XLAL_ERROR(XLAL_EINVAL, "Invalid approximant");
+
+    /* final tapering at the beginning and at the end */
+
+    /* waveform should terminate at a frequency >= Schwarzschild ISCO
+     * so taper one cycle at this frequency at the end; should not make
+     * any difference to IMR waveforms */
+    /* note: this tapering is done so the waveform goes to zero at the
+     * next point beyond the end of the data */
+    fisco = 1.0 / (pow(6.0, 1.5) * LAL_PI * (m1 + m2) * LAL_MTSUN_SI / LAL_MSUN_SI);
+    ntaper = round(1.0 / (fisco * deltaT));
+    if (ntaper < 4)
+        ntaper = 4;
+    for (j = 1; j < ntaper; ++j) {
+        double w = 0.5 - 0.5 * cos(j * LAL_PI / ntaper);
+        (*hplus)->data->data[(*hplus)->data->length - j] *= w;
+        (*hcross)->data->data[(*hcross)->data->length - j] *= w;
     }
 
-    default: /* can never get here: exhausted enum list */
-	XLAL_ERROR(XLAL_EERR, "Not reached.");
-    }
-
-    /* common stage of conditioning: high-pass filter and taper end samples */
-    XLALHighPassREAL8TimeSeries(*hplus, f_min, 0.9, 8);
-    XLALHighPassREAL8TimeSeries(*hcross, f_min, 0.9, 8);
-    if ((*hplus)->data->length > end_taper_samples) {
-        size_t j;
-        for (j = (*hplus)->data->length - end_taper_samples; j < (*hplus)->data->length; ++j) {
-            double w = 0.5 + 0.5 * cos(M_PI * (j - (*hplus)->data->length + end_taper_samples) / (double)end_taper_samples);
-            (*hplus)->data->data[j] *= w;
-            (*hcross)->data->data[j] *= w;
-        }
+    /* there could be a filter transient at the beginning too:
+     * we should have some safety there owing to the fact that
+     * we are starting at a lower frequency than is needed, so
+     * taper off one cycle at the low frequency */
+    ntaper = round(1.0 / (f_min * deltaT));
+    for (j = 0; j < ntaper; ++j) {
+        double w = 0.5 - 0.5 * cos(j * LAL_PI / ntaper);
+        (*hplus)->data->data[j] *= w;
+        (*hcross)->data->data[j] *= w;
     }
 
     return 0;
@@ -3010,15 +3176,13 @@ int XLALSimInspiralTD(
  * resulting waveform to be Fourier transformed into the time domain without wrapping
  * the end of the waveform to the beginning.
  *
- * This routine has a few parameters that differ from XLALSimInspiralChooseFDWaveform.
- * Rather than f_max, this routine takes deltaT, the sampling interval of the corresponding
- * time domain waveform.  The Nyquist frequency, 2/deltaT, thus determines the maximum
- * frequency for the FD waveform.  Also, this routine does not take a deltaF parameter,
- * and instead computes the necessary value of deltaF based on the duration of the
- * corresponding time domain waveform, deltaF <= 1/duration.  The total number of points
- * in the FD waveform is a power of two plus one (the Nyquist frequency).  Thus, the FD
- * waveform returned could be directly Fourier transformed to the time domain without
- * further manipulation.
+ * This routine assumes that f_max is the Nyquist frequency of a corresponding time-domain
+ * waveform, so that deltaT = 0.5 / f_max.  If deltaF is set to 0 then this routine computes
+ * a deltaF that is small enough to represent the Fourier transform of a time-domain waveform.
+ * If deltaF is specified but f_max / deltaF is not a power of 2, and the waveform approximant
+ * is a time-domain approximant, then f_max is increased so that f_max / deltaF is the next
+ * power of 2.  (If the user wishes to discard the extra high frequency content, this must
+ * be done separately.)
  *
  * This routine has one additional parameter relative to XLALSimInspiralChooseFDWaveform.
  * The additional parameter is the redshift, z, of the waveform.  This should be set to
@@ -3036,7 +3200,7 @@ int XLALSimInspiralFD(
     COMPLEX16FrequencySeries **hptilde,         /**< +-polarization waveform */
     COMPLEX16FrequencySeries **hctilde,         /**< x-polarization waveform */
     REAL8 phiRef,                               /**< reference orbital phase (rad) */
-    REAL8 deltaT,                               /**< sampling interval (s) */
+    REAL8 deltaF,                               /**< frequency interval (Hz), or 0 to compute necessary interval */
     REAL8 m1,                                   /**< mass of companion 1 (kg) */
     REAL8 m2,                                   /**< mass of companion 2 (kg) */
     REAL8 S1x,                                  /**< x-component of the dimensionless spin of object 1 */
@@ -3046,6 +3210,7 @@ int XLALSimInspiralFD(
     REAL8 S2y,                                  /**< y-component of the dimensionless spin of object 2 */
     REAL8 S2z,                                  /**< z-component of the dimensionless spin of object 2 */
     REAL8 f_min,                                /**< starting GW frequency (Hz) */
+    REAL8 f_max,                                /**< ending GW frequency (Hz) */
     REAL8 f_ref,                                /**< reference GW frequency (Hz) */
     REAL8 r,                                    /**< distance of source (m) */
     REAL8 z,                                    /**< redshift of source frame relative to observer frame */
@@ -3059,21 +3224,12 @@ int XLALSimInspiralFD(
     Approximant approximant                     /**< post-Newtonian approximant to use for waveform production */
     )
 {
+    const double maximum_black_hole_spin = 0.998;
     const double extra_time_fraction = 0.1; /* fraction of waveform duration to add as extra time for tapering */
-    const double extra_time_seconds = 1.0; /* extra time to add for waveform tapering */
-    LALSimulationDomain domain = LAL_SIM_DOMAIN_FREQUENCY;
-    double tchirp, textra, fstart;
-    double chirplen, df;
+    const double extra_cycles = 3.0; /* more extra time measured in cycles at the starting frequency */
+    double chirplen, deltaT;
     int chirplen_exp;
     int retval;
-
-    /* decide if this is a TD or an FD approximant */
-    if (XLALSimInspiralImplementedFDApproximants(approximant))
-        domain = LAL_SIM_DOMAIN_FREQUENCY;
-    else if (XLALSimInspiralImplementedTDApproximants(approximant))
-        domain = LAL_SIM_DOMAIN_TIME;
-    else
-        XLAL_ERROR(XLAL_EINVAL, "Invalid approximant");
 
     /* apply redshift correction to dimensionful source-frame quantities */
     if (z != 0.0) {
@@ -3081,64 +3237,165 @@ int XLALSimInspiralFD(
         m2 *= (1.0 + z);
         r *= (1.0 + z);  /* change from comoving (transverse) distance to luminosity distance */
     }
+    /* set redshift to zero so we don't accidentally apply it again later */
+    z = 0.0;
 
-    /* rough estimate of chirp time from f_min based on 0 PN term */
-    tchirp = XLALSimInspiralTaylorF2ReducedSpinChirpTime(f_min, m1, m2, 0, 0);
-    textra = extra_time_fraction * tchirp + extra_time_seconds;
+    /* FIXME: assume that f_max is the Nyquist frequency, and use it
+     * to compute the requested deltaT */
+    deltaT = 0.5 / f_max;
 
-    /* we start the waveform at a lower frequency so we can put tapers in */
-    {
-        /* this should be the inverse of XLALSimInspiralTaylorF2ReducedSpinChirpTime */
-        /* perhaps there should be an actual routine to do this? */
-        double M = m1 + m2;
-        double mu = m1 * m2 / M;
-        double nu = mu / M;
-        double theta = pow(nu * (tchirp + textra) * pow(LAL_C_SI, 3) / (5.0 * LAL_G_SI * M), -1.0 / 8.0);
-        fstart = pow(theta * LAL_C_SI, 3) / (8.0 * M_PI * LAL_G_SI * M);
-    }
+    if (XLALSimInspiralImplementedFDApproximants(approximant)) {
 
-    /* need a long enough segment to hold a whole chirp */
-    /* length of the chirp in samples */
-    chirplen = (tchirp + textra) / deltaT;
-    /* make chirplen next power of two */
-    frexp(chirplen, &chirplen_exp);
-    chirplen = ldexp(1.0, chirplen_exp);
-    /* frequency resolution */
-    df = 1.0 / (chirplen * deltaT);
+        /* generate a FD waveform and condition it by applying tapers at
+         * frequencies between a frequency below the requested f_min and
+         * f_min; also wind the waveform in phase in case it would wrap-
+         * around at the merger time */
 
-    switch (domain) {
-    case LAL_SIM_DOMAIN_TIME: {
-        REAL8TimeSeries *hplus = NULL;
-        REAL8TimeSeries *hcross = NULL;
-        REAL8FFTPlan *plan;
-        size_t j, nextra;
+        double tchirp, tmerge, textra, tshift;
+        double fstart, fisco;
+        double s;
+        size_t k, k0, k1;
 
-        /* generate the waveform starting at fstart */
-        retval = XLALSimInspiralChooseTDWaveform(&hplus, &hcross, phiRef, deltaT, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, fstart, f_ref, r, i, lambda1, lambda2, waveFlags, nonGRparams, amplitudeO, phaseO, approximant);
+        /* if the requested low frequency is below the lowest Kerr ISCO
+         * frequency then change it to that frequency */
+        fisco = 1.0 / (pow(9.0, 1.5) * LAL_PI * (m1 + m2) * LAL_MTSUN_SI / LAL_MSUN_SI);
+        if (f_min > fisco)
+            f_min = fisco;
+    
+        /* lower bound on the chirp time starting at f_min */
+        tchirp = XLALSimInspiralChirpTimeBound(f_min, m1, m2, S1z, S2z);
+
+        /* lower bound on the final plunge, merger, and ringdown time here
+         * the final black hole spin is overestimated by using the formula
+         * in Tichy and Marronetti, Physical Review D 78 081501 (2008),
+         * Eq. (1) and Table 1, for equal mass black holes, or the larger
+         * of the two spins (which covers the extreme mass case) */
+        /* TODO: it has been suggested that Barausse, Rezzolla (arXiv: 0904.2577)
+         * is more accurate */
+        switch (approximant) {
+        case TaylorF2:
+        case SpinTaylorF2:
+        case TaylorF2RedSpin:
+        case TaylorF2RedSpinTidal:
+        case SpinTaylorT4Fourier:
+            /* inspiral-only models: no merger time */
+            tmerge = 0.0;
+            break;
+        default:
+            /* IMR model: estimate plunge and merger time */
+            /* sometimes these waveforms have phases that
+             * cause them to wrap-around an amount equal to
+             * the merger-ringodwn time, so we will undo
+             * that here */
+            s = 0.686 + 0.15 * (S1z + S2z);
+            if (s < fabs(S1z))
+                s = fabs(S1z);
+            if (s < fabs(S2z))
+                s = fabs(S2z);
+            /* it is possible that |S1z| or |S2z| >= 1, but s must be less than 1
+             * (0th law of thermodynamics) so provide a maximum value for s */
+            if (s > maximum_black_hole_spin)
+                s = maximum_black_hole_spin;
+            tmerge = XLALSimInspiralMergeTimeBound(m1, m2) + XLALSimInspiralRingdownTimeBound(m1 + m2, s);
+            break;
+        }
+
+        /* new lower frequency to start the waveform: add some extra early
+         * part over which tapers may be applied, the extra amount being
+         * a fixed fraction of the chirp time; add some additional padding
+         * equal to a few extra cycles at the low frequency as well for
+         * safety and for other routines to use */
+        textra = extra_cycles / f_min;
+        fstart = XLALSimInspiralChirpStartFrequencyBound((1.0 + extra_time_fraction) * tchirp, m1, m2);
+
+        /* revise (over-)estimate of chirp from new start frequency */
+        tchirp = XLALSimInspiralChirpTimeBound(fstart, m1, m2, S1z, S2z);
+
+        /* need a long enough segment to hold a whole chirp with some padding */
+        /* length of the chirp in samples */
+        chirplen = round((tchirp + tmerge + 2.0 * textra) / deltaT);
+        /* make chirplen next power of two */
+        frexp(chirplen, &chirplen_exp);
+        chirplen = ldexp(1.0, chirplen_exp);
+        /* frequency resolution */
+        if (deltaF == 0.0)
+            deltaF = 1.0 / (chirplen * deltaT);
+        else if (deltaF > 1.0 / (chirplen * deltaT))
+            XLAL_PRINT_WARNING("Specified frequency interval of %g Hz is too large for a chirp of duration %g s", deltaF, chirplen * deltaT);
+        
+        /* generate the waveform in the frequency domain starting at fstart */
+        retval = XLALSimInspiralChooseFDWaveform(hptilde, hctilde, phiRef, deltaF, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, fstart, f_max, f_ref, r, i, lambda1, lambda2, waveFlags, nonGRparams, amplitudeO, phaseO, approximant);
         if (retval < 0)
             XLAL_ERROR(XLAL_EFUNC);
 
-        /* extra time for tapers */
-        nextra = round(textra / deltaT);
-
-        /* sanity check on our crudely estimated duration */
-        if (nextra > hplus->data->length / 2) {
-            /* compute textra more accurately */
-            REAL8TimeSeries *dummyplus = NULL;
-            REAL8TimeSeries *dummycross = NULL;
-            retval = XLALSimInspiralChooseTDWaveform(&dummyplus, &dummycross, phiRef, deltaT, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_ref, r, i, lambda1, lambda2, waveFlags, nonGRparams, amplitudeO, phaseO, approximant);
-            if (retval < 0)
-                XLAL_ERROR(XLAL_EFUNC);
-            nextra = hplus->data->length - dummyplus->data->length;
-            XLALDestroyREAL8TimeSeries(dummycross);
-            XLALDestroyREAL8TimeSeries(dummyplus);
+        /* taper frequencies between fstart and f_min */
+        k0 = round(fstart / (*hptilde)->deltaF);
+        k1 = round(f_min / (*hptilde)->deltaF);
+        /* make sure it is zero below fstart */
+        for (k = 0; k < k0; ++k) {
+            (*hptilde)->data->data[k] = 0.0;
+            (*hctilde)->data->data[k] = 0.0;
         }
-        
-        /* taper early part of waveform */
-        for (j = 0; j < nextra; ++j) {
-            double w = 0.5 - 0.5 * cos(M_PI * j / (double)nextra);
-            hplus->data->data[j] *= w;
-            hcross->data->data[j] *= w;
+        /* taper between fstart and f_min */
+        for ( ; k < k1; ++k) {
+            double w = 0.5 - 0.5 * cos(M_PI * (k - k0) / (double)(k1 - k0));
+            (*hptilde)->data->data[k] *= w;
+            (*hctilde)->data->data[k] *= w;
+        }
+        /* make sure Nyquist frequency is zero */
+        (*hptilde)->data->data[(*hptilde)->data->length - 1] = 0.0;
+        (*hctilde)->data->data[(*hctilde)->data->length - 1] = 0.0;
+
+        /* we want to make sure that this waveform will give something
+         * sensible if it is later transformed into the time domain:
+         * to avoid the end of the waveform wrapping around to the beginning,
+         * we shift waveform backwards in time and compensate for this
+         * shift by adjusting the epoch */
+        tshift = round(tmerge / deltaT) * deltaT; /* integer number of time samples */
+        for (k = 0; k < (*hptilde)->data->length; ++k) {
+            double complex phasefac = cexp(2.0 * M_PI * I * k * deltaF * tshift);
+            (*hptilde)->data->data[k] *= phasefac;
+            (*hctilde)->data->data[k] *= phasefac;
+        }
+        XLALGPSAdd(&(*hptilde)->epoch, tshift);
+        XLALGPSAdd(&(*hctilde)->epoch, tshift);
+
+    } else if (XLALSimInspiralImplementedTDApproximants(approximant)) {
+
+        /* generate a conditioned waveform in the time domain and Fourier-transform it */
+
+        REAL8TimeSeries *hplus = NULL;
+        REAL8TimeSeries *hcross = NULL;
+        REAL8FFTPlan *plan;
+
+        /* generate conditioned waveform in time domain */
+        /* note: redshift factor has already been applied */
+        retval = XLALSimInspiralTD(&hplus, &hcross, phiRef, deltaT, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_ref, r, 0.0, i, lambda1, lambda2, waveFlags, nonGRparams, amplitudeO, phaseO, approximant);
+        if (retval < 0)
+            XLAL_ERROR(XLAL_EFUNC);
+
+        /* determine chirp length and round up to next power of two */
+        chirplen = hplus->data->length;
+        frexp(chirplen, &chirplen_exp);
+        chirplen = ldexp(1.0, chirplen_exp);
+        /* frequency resolution */
+        if (deltaF == 0.0)
+            deltaF = 1.0 / (chirplen * hplus->deltaT);
+        else { /* recompute chirplen based on deltaF and f_max */
+            size_t n;
+            if (deltaF > 1.0 / (chirplen * deltaT))
+                XLAL_PRINT_WARNING("Specified frequency interval of %g Hz is too large for a chirp of duration %g s", deltaF, chirplen * deltaT);
+            n = chirplen = round(2.0 * f_max / deltaF);
+            if ((n & (n - 1))) { /* not a power of 2 */
+                /* what do we do here?... we need to change either
+                 * f_max or deltaF so that chirplen is a power of 2
+                 * so that the FFT can be done, so choose to change f_max */
+                /* round chirplen up to next power of 2 */
+                frexp(chirplen, &chirplen_exp);
+                chirplen = ldexp(1.0, chirplen_exp);
+                XLAL_PRINT_WARNING("f_max/deltaF = %g/%g = %g is not a power of two: changing f_max to %g", f_max, deltaF, f_max/deltaF, (chirplen / 2) * deltaF);
+                f_max = (chirplen / 2) * deltaF;
+            }
         }
 
         /* resize waveforms to the required length */
@@ -3147,8 +3404,8 @@ int XLALSimInspiralFD(
 
         /* put the waveform in the frequency domain */
         /* (the units will correct themselves) */
-        *hptilde = XLALCreateCOMPLEX16FrequencySeries("FD H_PLUS", &hplus->epoch, 0.0, deltaT, &lalDimensionlessUnit, (size_t) chirplen / 2 + 1);
-        *hctilde = XLALCreateCOMPLEX16FrequencySeries("FD H_CROSS", &hcross->epoch, 0.0, deltaT, &lalDimensionlessUnit, (size_t) chirplen / 2 + 1);
+        *hptilde = XLALCreateCOMPLEX16FrequencySeries("FD H_PLUS", &hplus->epoch, 0.0, deltaF, &lalDimensionlessUnit, (size_t) chirplen / 2 + 1);
+        *hctilde = XLALCreateCOMPLEX16FrequencySeries("FD H_CROSS", &hcross->epoch, 0.0, deltaF, &lalDimensionlessUnit, (size_t) chirplen / 2 + 1);
         plan = XLALCreateForwardREAL8FFTPlan((size_t) chirplen, 0);
         XLALREAL8TimeFreqFFT(*hctilde, hcross, plan);
         XLALREAL8TimeFreqFFT(*hptilde, hplus, plan);
@@ -3158,45 +3415,8 @@ int XLALSimInspiralFD(
         XLALDestroyREAL8TimeSeries(hcross);
         XLALDestroyREAL8TimeSeries(hplus);
 
-	break;
-    }
-
-    case LAL_SIM_DOMAIN_FREQUENCY: {
-        size_t k, k0, k1;
-        
-        /* generate the waveform in the frequency domain starting at fstart */
-        retval = XLALSimInspiralChooseFDWaveform(hptilde, hctilde, phiRef, df, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, fstart, 0.5/deltaT, f_ref, r, i, lambda1, lambda2, waveFlags, nonGRparams, amplitudeO, phaseO, approximant);
-        if (retval < 0)
-            XLAL_ERROR(XLAL_EFUNC);
-
-        /* taper frequencies between fstart and f_min */
-        k = k0 = round(fstart / (*hptilde)->deltaF);
-        k1 = round(f_min / (*hptilde)->deltaF);
-        for ( ; k < k1; ++k) {
-            double w = 0.5 - 0.5 * cos(M_PI * (k - k0) / (double)(k1 - k0));
-            (*hptilde)->data->data[k] *= w;
-            (*hctilde)->data->data[k] *= w;
-        }
-
-        /* we want to make sure that this waveform will give something
-         * sensible if it is later transformed into the time domain:
-         * to avoid the end of the waveform wrapping around to the beginning,
-         * we shift waveform backwards in time and compensate for this
-         * shift by adjusting the epoch */
-        for (k = 0; k < (*hptilde)->data->length; ++k) {
-            double complex phasefac = cexp(2.0 * M_PI * I * k * df * extra_time_seconds);
-            (*hptilde)->data->data[k] *= phasefac;
-            (*hctilde)->data->data[k] *= phasefac;
-        }
-        XLALGPSAdd(&(*hptilde)->epoch, extra_time_seconds);
-        XLALGPSAdd(&(*hctilde)->epoch, extra_time_seconds);
-
-	break;
-    }
-
-    default: /* can never get here: exhausted enum list */
-	XLAL_ERROR(XLAL_EERR, "Not reached.");
-    }
+    } else /* error: neither a FD nor a TD approximant */
+        XLAL_ERROR(XLAL_EINVAL, "Invalid approximant");
 
     return 0;
 }

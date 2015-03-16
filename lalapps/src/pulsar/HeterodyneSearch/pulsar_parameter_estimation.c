@@ -607,7 +607,7 @@ defined!\n");
 
 /* function to get the input arguments from the command line */
 void get_input_args(InputParams *inputParams, INT4 argc, CHAR *argv[]){
-  struct option long_options[] =
+  struct LALoption long_options[] =
   {
     { "help",           no_argument,       0, 'h' },
     { "verbose",        no_argument,    NULL, 'R' },
@@ -746,7 +746,7 @@ W:y:g:G:K:N:X:O:J:M:{:(r:fFR><)[:" ;
     INT4 option_index = 0;
     INT4 c;
 
-    c = getopt_long_only( argc, argv, args, long_options, &option_index );
+    c = LALgetopt_long_only( argc, argv, args, long_options, &option_index );
     if( c == -1 ) /* end of options */
       break;
 
@@ -756,7 +756,7 @@ W:y:g:G:K:N:X:O:J:M:{:(r:fFR><)[:" ;
           break;
         else
           fprintf(stderr, "Error passing option %s with argument %s\n",
-            long_options[option_index].name, optarg);
+            long_options[option_index].name, LALoptarg);
       case 'h': /* help message */
         printf("Usage: %s [options]\n\n%s%s\n", program, USAGE1, USAGE2);
         exit(0);
@@ -770,158 +770,158 @@ W:y:g:G:K:N:X:O:J:M:{:(r:fFR><)[:" ;
         inputParams->mcmc.doMCMC = 1;
         break;
       case 'D': /* detectors */
-        sprintf(inputParams->detectors, "%s", optarg);
+        sprintf(inputParams->detectors, "%s", LALoptarg);
         break;
       case 'p': /* pulsar name */
-        sprintf(inputParams->pulsar, "%s", optarg);
+        sprintf(inputParams->pulsar, "%s", LALoptarg);
         break;
       case 'P': /* pulsar parameter file */
-        sprintf(inputParams->parFile, "%s", optarg);
+        sprintf(inputParams->parFile, "%s", LALoptarg);
         break;
       case 'i': /* input data file directory */
-        sprintf(inputParams->inputDir, "%s", optarg);
+        sprintf(inputParams->inputDir, "%s", LALoptarg);
         break;
       case 'o': /* output directory */
-        sprintf(inputParams->outputDir, "%s", optarg);
+        sprintf(inputParams->outputDir, "%s", LALoptarg);
         break;
       case 'a': /* minimum of h0 range */
-        inputParams->mesh.minVals.h0 = atof(optarg);
+        inputParams->mesh.minVals.h0 = atof(LALoptarg);
         break;
       case 'A': /* maxmimum of h0 range */
-        inputParams->mesh.maxVals.h0 = atof(optarg);
+        inputParams->mesh.maxVals.h0 = atof(LALoptarg);
         break;
       case 'j': /* number of grid steps in h0 space */
-        inputParams->mesh.h0Steps = atoi(optarg);
+        inputParams->mesh.h0Steps = atoi(LALoptarg);
         break;
       case 'b': /* minimum of phi0 range */
-        inputParams->mesh.minVals.phi0 = atof(optarg);
+        inputParams->mesh.minVals.phi0 = atof(LALoptarg);
         break;
       case 'B': /* maxmimum of phi0 range */
-        inputParams->mesh.maxVals.phi0 = atof(optarg);
+        inputParams->mesh.maxVals.phi0 = atof(LALoptarg);
         break;
       case 'k': /* number of grid steps in phi0 space */
-        inputParams->mesh.phiSteps = atoi(optarg);
+        inputParams->mesh.phiSteps = atoi(LALoptarg);
         break;
       case 's': /* minimum of psi range */
-        inputParams->mesh.minVals.psi = atof(optarg);
+        inputParams->mesh.minVals.psi = atof(LALoptarg);
         break;
       case 'S': /* maximum of psi range */
-        inputParams->mesh.maxVals.psi = atof(optarg);
+        inputParams->mesh.maxVals.psi = atof(LALoptarg);
         break;
       case 'm': /* number of grid steps in psi space */
-        inputParams->mesh.psiSteps = atoi(optarg);
+        inputParams->mesh.psiSteps = atoi(LALoptarg);
         break;
       case 'c': /* minimum of cos(iota) range */
-        inputParams->mesh.minVals.ci = atof(optarg);
+        inputParams->mesh.minVals.ci = atof(LALoptarg);
         break;
       case 'C': /* maximum of cos(iota) range */
-        inputParams->mesh.maxVals.ci = atof(optarg);
+        inputParams->mesh.maxVals.ci = atof(LALoptarg);
         break;
       case 'n': /* number of grid steps in cos(iota) space */
-        inputParams->mesh.ciotaSteps = atoi(optarg);
+        inputParams->mesh.ciotaSteps = atoi(LALoptarg);
         break;
       case 'l': /* number of bins in psi for the lookup table */
-        inputParams->mesh.psiRangeSteps = atoi(optarg);
+        inputParams->mesh.psiRangeSteps = atoi(LALoptarg);
         break;
       case 'L': /* number of bins in time for the lookup table */
-        inputParams->mesh.timeRangeSteps = atoi(optarg);
+        inputParams->mesh.timeRangeSteps = atoi(LALoptarg);
         break;
       case 'q': /* prior on h0 */
-        inputParams->priors.h0Prior = optarg;
+        inputParams->priors.h0Prior = LALoptarg;
         break;
       case ']': /* prior file for h0 */
-        inputParams->priors.priorFile = XLALStringDuplicate( optarg );
-        inputParams->priors.h0Prior = optarg;
+        inputParams->priors.priorFile = XLALStringDuplicate( LALoptarg );
+        inputParams->priors.h0Prior = LALoptarg;
         break;
       case 'Q': /* prior on phi0 */
-        inputParams->priors.phiPrior = optarg;
+        inputParams->priors.phiPrior = LALoptarg;
         break;
       case 'U': /* prior on psi */
-        inputParams->priors.psiPrior = optarg;
+        inputParams->priors.psiPrior = LALoptarg;
         break;
       case 'u': /* prior on iota */
-        inputParams->priors.iotaPrior = optarg;
+        inputParams->priors.iotaPrior = LALoptarg;
         break;
       case 'Y': /* mean of h0 Gaussian prior */
-        inputParams->priors.meanh0 = atof(optarg);
+        inputParams->priors.meanh0 = atof(LALoptarg);
         break;
       case 'T': /* standard deviation of Gaussian h0 prior */
-        inputParams->priors.stdh0 = atof(optarg);
+        inputParams->priors.stdh0 = atof(LALoptarg);
         break;
       case 'v': /* mean of phi0 Gaussian prior */
-        inputParams->priors.meanphi = atof(optarg);
+        inputParams->priors.meanphi = atof(LALoptarg);
         break;
       case 'V': /* standard deviation of Gaussian phi0 prior */
-        inputParams->priors.stdphi = atof(optarg);
+        inputParams->priors.stdphi = atof(LALoptarg);
         break;
       case 'z': /* mean of psi Gaussian prior */
-        inputParams->priors.meanpsi = atof(optarg);
+        inputParams->priors.meanpsi = atof(LALoptarg);
         break;
       case 'Z': /* standard deviation of Gaussian psi prior */
-        inputParams->priors.stdpsi = atof(optarg);
+        inputParams->priors.stdpsi = atof(LALoptarg);
         break;
       case 'e': /* mean of iota Gaussian prior */
-        inputParams->priors.meaniota = atof(optarg);
+        inputParams->priors.meaniota = atof(LALoptarg);
         break;
       case 'E': /* standard deviation of Gaussian iota prior */
-        inputParams->priors.stdiota = atof(optarg);
+        inputParams->priors.stdiota = atof(LALoptarg);
         break;
       case 'd': /* percentage degree-of-belief at which to get UL */
-        inputParams->dob = atof(optarg);
+        inputParams->dob = atof(LALoptarg);
         break;
       case 'I': /* number of iterations in the MCMC chain */
-        inputParams->mcmc.iterations = atoi(optarg);
+        inputParams->mcmc.iterations = atoi(LALoptarg);
         break;
       case 'x': /* number of point in the burn in stage */
-        inputParams->mcmc.burnIn = atoi(optarg);
+        inputParams->mcmc.burnIn = atoi(LALoptarg);
         break;
       case 't': /* temperature of the simulated annealing during burn in */
-        inputParams->mcmc.temperature = atof(optarg);
+        inputParams->mcmc.temperature = atof(LALoptarg);
         break;
       case 'H': /* standard deviation of h0 proposal distribution */
-        inputParams->mcmc.sigmas.h0 = atof(optarg);
+        inputParams->mcmc.sigmas.h0 = atof(LALoptarg);
         break;
       case 'w': /* standard deviation of psi proposal distribution */
-        inputParams->mcmc.sigmas.psi = atof(optarg);
+        inputParams->mcmc.sigmas.psi = atof(LALoptarg);
         break;
       case 'W': /* standard deviation of phi0 proposal distribution */
-        inputParams->mcmc.sigmas.phi0 = atof(optarg);
+        inputParams->mcmc.sigmas.phi0 = atof(LALoptarg);
         break;
       case 'y': /* standard deviation of cos(iota) proposal distribution */
-        inputParams->mcmc.sigmas.ci = atof(optarg);
+        inputParams->mcmc.sigmas.ci = atof(LALoptarg);
         break;
       case 'g':
-        sprintf(inputParams->mcmc.glitchTimes, "%s", optarg);
+        sprintf(inputParams->mcmc.glitchTimes, "%s", LALoptarg);
         break;
       case 'G':
-        inputParams->mcmc.glitchCut = atof(optarg);
+        inputParams->mcmc.glitchCut = atof(LALoptarg);
         break;
       case 'K':
-        inputParams->chunkMin = atoi(optarg);
+        inputParams->chunkMin = atoi(LALoptarg);
         break;
       case 'N':
-        inputParams->chunkMax = atoi(optarg);
+        inputParams->chunkMax = atoi(LALoptarg);
         break;
       case 'X':
-        inputParams->mcmc.outputRate = atoi(optarg);
+        inputParams->mcmc.outputRate = atoi(LALoptarg);
         break;
       case 'O':
-        inputParams->mcmc.nGlitches = atoi(optarg);
+        inputParams->mcmc.nGlitches = atoi(LALoptarg);
         break;
       case 'J':
-        sprintf(inputParams->earthfile, "%s", optarg);
+        sprintf(inputParams->earthfile, "%s", LALoptarg);
         break;
       case 'M':
-        sprintf(inputParams->sunfile, "%s", optarg);
+        sprintf(inputParams->sunfile, "%s", LALoptarg);
         break;
       case '{':
-        sprintf(inputParams->timefile, "%s", optarg);
+        sprintf(inputParams->timefile, "%s", LALoptarg);
         break;
       case '(':
         inputParams->usecov = 1;
         break;
       case 'r':
-        inputParams->matrixFile = optarg;
+        inputParams->matrixFile = LALoptarg;
         break;
       case '>': /* use priors on parameters */
         inputParams->usepriors = 1;
@@ -933,7 +933,7 @@ W:y:g:G:K:N:X:O:J:M:{:(r:fFR><)[:" ;
         inputParams->mcmc.outputBI = 1;
         break;
       case '[': /* scale factor for stdev of h0 proposal distribution */
-        inputParams->mcmc.h0scale = atof(optarg);
+        inputParams->mcmc.h0scale = atof(LALoptarg);
         break;
       case '?':
         fprintf(stderr, "Unknown error while parsing options\n");

@@ -32,6 +32,8 @@ from laldetchar import git_version
 
 #===================================================================================================
 
+__prog__ = 'laldetchar-idq-realtime'
+
 __author__ = \
     'Lindy Blackburn (<lindy.blackburn@ligo.org>), Reed Essick (<reed.essick@ligo.org>), Ruslan Vaulin (<ruslan.vaulin@ligo.org>)'
 __version__ = git_version.id
@@ -697,8 +699,8 @@ while t + stride < options.endgps:
     ### retrieve GW trigger central times
     gw_gps = [a[2] for a in gw_trig]
 
-    ### generate clean times as a poisson time series
-    clean_gps = event.randomrate(float(myconf['clean_rate']), [[t, t + stride]])
+    ### generate random clean times as a poisson time series
+    random_gps = event.randomrate(float(myconf['clean_rate']), [[t, t + stride]])
 
     ### define segemnts that are too close to glitch times to be really "clean"
     ### we use all GW triggers that are above "clean_threshold" to define dirty times
@@ -706,19 +708,21 @@ while t + stride < options.endgps:
 
     ### set up the "samples" list that is passed to classifiers
     samples = []
+    clean_gps = []
     for trig in gw_trig: 
         ### check whether the trigger lives in the dirty segments
         unclean = 1 ### by definition, this must be true
         samples.append([trig[2], 1, unclean, trig[-1], math.sqrt(trig[-3] - trig[-2])]) ### magic numbers correspond to KW trigger parameters
                                                                                         ### FIXME: MAGIC NUMBERS ARE EVIL
 
-    for gps in clean_gps:
+    for gps in random_gps:
         ### check whether the trigger lives in the dirty segments
         unclean = len(event.include([[gps]], dirtyseg, tcent=0))  # will be 1 if inside dirtyseg
         ### only include clean samples if they are truly clean
         ### THIS IS IMPORTANT FOR TRAINING JOBS THAT RELY ON PAT FILES GENERATED IN THIS SCRIPT
         if unclean == 0: ### truly clean
             samples.append([gps, 0, unclean, 0, 0])
+            clean_gps.append(gps)
 
 
     ### check whether we need to include auxiliary triggers from neighboring strides
@@ -816,6 +820,7 @@ while t + stride < options.endgps:
         # generating auxmvc vector samples. result is saved into pat file
         # FIXME: depending how padding is done we  should adjust behavior of  build_auxmvc_vectors
         # Currently it keeps gw trigger from [t, t + stride] and uses time_window to pad this segment for auxiliary triggers
+		# we do not filter out unclean beacuse it is already done when clean_gps times are formed
         auxmvc_vectors = idq.build_auxmvc_vectors(
             kwdict,
             config.get('general', 'gwchannel'),
@@ -828,6 +833,7 @@ while t + stride < options.endgps:
             unsafe_channels=auxmvc_unsafe_channels,
             clean_times=clean_gps,
             clean_window=float(myconf['clean_window']),
+            filter_out_unclean=False
             )
 
         logger.info('Done: building auxmvc feature vectors.')
@@ -938,6 +944,11 @@ while t + stride < options.endgps:
                 Lmap=False,
                 Effmap=mvsc_Effmap,
                 classifier='mvsc',
+                gwchan = gwchannel,
+                gwtrigs=gw_trig,
+                prog = __prog__,
+                options = options.__dict__,
+                version = __version__
                 )
 
             ### write documents
@@ -1061,6 +1072,11 @@ while t + stride < options.endgps:
                 Lmap=False,
                 Effmap=ovl_Effmap,
                 classifier='ovl',
+                gwchan = gwchannel,
+                gwtrigs=gw_trig,
+                prog = __prog__,
+                options = options.__dict__,
+                version = __version__
                 )
 
             ### write documents
@@ -1188,6 +1204,11 @@ while t + stride < options.endgps:
                 Lmap=False,
                 Effmap=svm_Effmap,
                 classifier='svm',
+                gwchan = gwchannel,
+                gwtrigs=gw_trig,
+                prog = __prog__,
+                options = options.__dict__,
+                version = __version__
                 )
 
             ### write documents

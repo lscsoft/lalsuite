@@ -12,3 +12,8 @@
 \defgroup lalsimulation_python		Python Packages
 
 */
+
+/**
+\page lalsimulation_authors		Author List
+\verbinclude AUTHORS
+*/

@@ -210,6 +210,33 @@ int XLALSimIMRPhenomP(
 );
 
 /**
+ * Driver routine to compute the plus and cross polarizations for the IMRPhenomP model
+ * for precessing binaries in the frequency domain for a specified sequence of frequencies.
+ *
+ * This function takes effective model parameters that should be computed with
+ * XLALSimIMRPhenomPCalculateModelParameters().
+ *
+ * Reference: http://arxiv.org/abs/1308.3271
+ *
+ */
+
+int XLALSimIMRPhenomPFrequencySequence(
+  COMPLEX16FrequencySeries **hptilde,   /**< Output: Frequency-domain waveform h+ */
+  COMPLEX16FrequencySeries **hctilde,   /**< Output: Frequency-domain waveform hx */
+  const REAL8Sequence *freqs,           /**< Frequency points at which to evaluate the waveform (Hz) */
+  const REAL8 chi_eff,                  /**< Effective aligned spin */
+  const REAL8 chip,                     /**< Effective spin in the orbital plane */
+  const REAL8 eta,                      /**< Symmetric mass-ratio */
+  const REAL8 thetaJ,                   /**< Angle between J0 and line of sight (z-direction) */
+  const REAL8 Mtot_SI,                  /**< Total mass of binary (kg) */
+  const REAL8 distance,                 /**< Distance of source (m) */
+  const REAL8 alpha0,                   /**< Initial value of alpha angle (azimuthal precession angle) */
+  const REAL8 phic,                     /**< Orbital phase at the peak of the underlying non precessing model (rad) */
+  const REAL8 f_ref                     /**< Reference frequency */
+);
+
+
+/**
  * Function that transforms from the LAL frame to model effective parameters for the IMRPhenomP model.
  *
  * Reference: http://arxiv.org/abs/1308.3271
@@ -364,6 +391,20 @@ int XLALSimIMRSEOBNRv1ROMSingleSpin(
     REAL8 chi                                     /**< Effective aligned spin */
 );
 
+/** Compute waveform in LAL format at specified frequencies */
+int XLALSimIMRSEOBNRv1ROMSingleSpinFrequencySequence(
+    struct tagCOMPLEX16FrequencySeries **hptilde, /**< Output: Frequency-domain waveform h+ */
+    struct tagCOMPLEX16FrequencySeries **hctilde, /**< Output: Frequency-domain waveform hx */
+    const REAL8Sequence *freqs,                   /**< Frequency points at which to evaluate the waveform (Hz) */
+    REAL8 phiRef,                                 /**< Phase at reference frequency */
+    REAL8 fRef,                                   /**< Reference frequency; 0 defaults to fLow */
+    REAL8 distance,                               /**< Distance of source (m) */
+    REAL8 inclination,                            /**< Inclination of source (rad) */
+    REAL8 m1SI,                                   /**< Mass of companion 1 (kg) */
+    REAL8 m2SI,                                   /**< Mass of companion 2 (kg) */
+    REAL8 chi                                     /**< Effective aligned spin */
+);
+
 int XLALSimIMRSEOBNRv1ROMDoubleSpin(
     struct tagCOMPLEX16FrequencySeries **hptilde, /**< Output: Frequency-domain waveform h+ */
     struct tagCOMPLEX16FrequencySeries **hctilde, /**< Output: Frequency-domain waveform hx */
@@ -379,6 +420,22 @@ int XLALSimIMRSEOBNRv1ROMDoubleSpin(
     REAL8 chi1,                                   /**< Dimensionless aligned component spin 1 */
     REAL8 chi2                                    /**< Dimensionless aligned component spin 2 */
 );
+
+/** Compute waveform in LAL format at specified frequencies */
+int XLALSimIMRSEOBNRv1ROMDoubleSpinFrequencySequence(
+    struct tagCOMPLEX16FrequencySeries **hptilde, /**< Output: Frequency-domain waveform h+ */
+    struct tagCOMPLEX16FrequencySeries **hctilde, /**< Output: Frequency-domain waveform hx */
+    const REAL8Sequence *freqs,                   /**< Frequency points at which to evaluate the waveform (Hz) */
+    REAL8 phiRef,                                 /**< Phase at reference frequency */
+    REAL8 fRef,                                   /**< Reference frequency; 0 defaults to fLow */
+    REAL8 distance,                               /**< Distance of source (m) */
+    REAL8 inclination,                            /**< Inclination of source (rad) */
+    REAL8 m1SI,                                   /**< Mass of companion 1 (kg) */
+    REAL8 m2SI,                                   /**< Mass of companion 2 (kg) */
+    REAL8 chi1,                                   /**< Dimensionless aligned component spin 1 */
+    REAL8 chi2                                    /**< Dimensionless aligned component spin 2 */
+);
+
 
 /*
  * SEOBNRv2 reduced order models PRELIMINARY!
@@ -400,6 +457,44 @@ int XLALSimIMRSEOBNRv2ROMSingleSpin(
     REAL8 chi                                     /**< Effective aligned spin */
 );
 
+/** Compute waveform in LAL format at specified frequencies */
+int XLALSimIMRSEOBNRv2ROMSingleSpinFrequencySequence(
+  struct tagCOMPLEX16FrequencySeries **hptilde, /**< Output: Frequency-domain waveform h+ */
+  struct tagCOMPLEX16FrequencySeries **hctilde, /**< Output: Frequency-domain waveform hx */
+  const REAL8Sequence *freqs,                   /**< Frequency points at which to evaluate the waveform (Hz) */
+  REAL8 phiRef,                                 /**< Phase at reference time */
+  REAL8 fRef,                                   /**< Reference frequency (Hz); 0 defaults to fLow */
+  REAL8 distance,                               /**< Distance of source (m) */
+  REAL8 inclination,                            /**< Inclination of source (rad) */
+  REAL8 m1SI,                                   /**< Mass of companion 1 (kg) */
+  REAL8 m2SI,                                   /**< Mass of companion 2 (kg) */
+  REAL8 chi                                     /**< Effective aligned spin */
+);
+
+/**
+ * Compute the time at a given frequency. The origin of time is at the merger.
+ * The allowed frequency range for the input is Mf \in [0.0001, 0.3].
+ */
+int XLALSimIMRSEOBNRv2ROMSingleSpinTimeOfFrequency(
+  REAL8 *t,         /**< Output: time (s) at frequency */
+  REAL8 frequency,  /**< Frequency (Hz) */
+  REAL8 m1SI,       /**< Mass of companion 1 (kg) */
+  REAL8 m2SI,       /**< Mass of companion 2 (kg) */
+  REAL8 chi         /**< Effective aligned spin */
+);
+
+/**
+ * Compute the frequency at a given time. The origin of time is at the merger.
+ * The frequency range for the output is Mf \in [0.0001, 0.3].
+ */
+int XLALSimIMRSEOBNRv2ROMSingleSpinFrequencyOfTime(
+  REAL8 *frequency,   /**< Output: Frequency (Hz) */
+  REAL8 t,            /**< Time (s) at frequency */
+  REAL8 m1SI,         /**< Mass of companion 1 (kg) */
+  REAL8 m2SI,         /**< Mass of companion 2 (kg) */
+  REAL8 chi           /**< Effective aligned spin */
+);
+
 int XLALSimIMRSEOBNRv2ROMDoubleSpin(
     struct tagCOMPLEX16FrequencySeries **hptilde, /**< Output: Frequency-domain waveform h+ */
     struct tagCOMPLEX16FrequencySeries **hctilde, /**< Output: Frequency-domain waveform hx */
@@ -416,6 +511,59 @@ int XLALSimIMRSEOBNRv2ROMDoubleSpin(
     REAL8 chi2                                    /**< Dimensionless aligned component spin 2 */
 );
 
+/** Compute waveform in LAL format at specified frequencies */
+int XLALSimIMRSEOBNRv2ROMDoubleSpinFrequencySequence(
+  struct tagCOMPLEX16FrequencySeries **hptilde, /**< Output: Frequency-domain waveform h+ */
+  struct tagCOMPLEX16FrequencySeries **hctilde, /**< Output: Frequency-domain waveform hx */
+  const REAL8Sequence *freqs,                   /**< Frequency points at which to evaluate the waveform (Hz) */
+  REAL8 phiRef,                                 /**< Phase at reference time */
+  REAL8 fRef,                                   /**< Reference frequency (Hz); 0 defaults to fLow */
+  REAL8 distance,                               /**< Distance of source (m) */
+  REAL8 inclination,                            /**< Inclination of source (rad) */
+  REAL8 m1SI,                                   /**< Mass of companion 1 (kg) */
+  REAL8 m2SI,                                   /**< Mass of companion 2 (kg) */
+  REAL8 chi1,                                   /**< Dimensionless aligned component spin 1 */
+  REAL8 chi2                                    /**< Dimensionless aligned component spin 2 */
+);
+
+ /**
+  * Compute the time at a given frequency. The origin of time is at the merger.
+  * The allowed frequency range for the input is from Mf = 0.00053 to half the ringdown frequency.
+  */
+ int XLALSimIMRSEOBNRv2ROMDoubleSpinTimeOfFrequency(
+   REAL8 *t,         /**< Output: time (s) at frequency */
+   REAL8 frequency,  /**< Frequency (Hz) */
+   REAL8 m1SI,       /**< Mass of companion 1 (kg) */
+   REAL8 m2SI,       /**< Mass of companion 2 (kg) */
+   REAL8 chi1,       /**< Dimensionless aligned component spin 1 */
+   REAL8 chi2        /**< Dimensionless aligned component spin 2 */
+ );
+
+ /**
+  * Compute the frequency at a given time. The origin of time is at the merger.
+  * The frequency range for the output is from Mf = 0.00053 to half the ringdown frequency.
+  */
+ int XLALSimIMRSEOBNRv2ROMDoubleSpinFrequencyOfTime(
+   REAL8 *frequency,   /**< Output: Frequency (Hz) */
+   REAL8 t,            /**< Time (s) at frequency */
+   REAL8 m1SI,         /**< Mass of companion 1 (kg) */
+   REAL8 m2SI,         /**< Mass of companion 2 (kg) */
+   REAL8 chi1,         /**< Dimensionless aligned component spin 1 */
+   REAL8 chi2          /**< Dimensionless aligned component spin 2 */
+ );
+
+
+/**
+ * Compute SEOBNRv2 chirp time from interpolant assuming a single-spin.
+ */
+REAL8 XLALSimIMRSEOBNRv2ChirpTimeSingleSpin(
+  const REAL8 m1_SI,    /**< Mass of companion 1 [kg] */
+  const REAL8 m2_SI,    /**< Mass of companion 2 [kg] */
+  const REAL8 chi,      /**< Effective aligned spin */
+  const REAL8 f_min     /**< Starting frequency [Hz] */
+);
+
+  
 /**
  * Routine to compute the mass and spin of the final black hole given
  * the masses, spins, binding energy, and orbital angular momentum vector.

@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <getopt.h>
 #include <math.h>
 #include <zlib.h>
 
@@ -9,6 +8,7 @@
 #endif
 
 #include <lal/LALConstants.h>
+#include <lal/LALgetopt.h>
 #include <lal/Skymap.h>
 
 #include <lal/LALFrStream.h>
@@ -105,7 +105,7 @@ int main(int argc, char** argv)
  
   while (1)
     {
-      static struct option long_options[] =
+      static struct LALoption long_options[] =
 	{
 	  {"h1-frame-file", required_argument, 0, 'h'},
 	  {"l1-frame-file", required_argument, 0, 'l'},
@@ -127,62 +127,62 @@ int main(int argc, char** argv)
 	  {0, 0, 0, 0}
 	};
       int option_index = 0;
-      c = getopt_long_only(argc, argv, "h:l:v:i:o:a:d:t:s:r:q:e:f:j:k:m:n:", long_options, &option_index);
+      c = LALgetopt_long_only(argc, argv, "h:l:v:i:o:a:d:t:s:r:q:e:f:j:k:m:n:", long_options, &option_index);
       if (c == -1)
 	break;
       
       switch (c)
         {
 	case 'h':
-	  frame_file[LAL_LHO_4K_DETECTOR] = optarg;
+	  frame_file[LAL_LHO_4K_DETECTOR] = LALoptarg;
 	  break;
 	case 'l':
-	  frame_file[LAL_LLO_4K_DETECTOR] = optarg;
+	  frame_file[LAL_LLO_4K_DETECTOR] = LALoptarg;
 	  break;
 	case 'v':
-	  frame_file[LAL_VIRGO_DETECTOR] = optarg;
+	  frame_file[LAL_VIRGO_DETECTOR] = LALoptarg;
 	  break;
 	case 'i':
-	  frame_file[LAL_LHO_2K_DETECTOR] = optarg;
+	  frame_file[LAL_LHO_2K_DETECTOR] = LALoptarg;
 	  break;              
 	case 'o':
-	  output_file = optarg;
+	  output_file = LALoptarg;
 	  break;
 	case 'a':
-	  ra_res = atoi(optarg);
+	  ra_res = atoi(LALoptarg);
 	  break;
 	case 'd':
-	  dec_res = atoi(optarg);
+	  dec_res = atoi(LALoptarg);
 	  break;
 	case 't':
-	  xml_file[LAL_LHO_4K_DETECTOR] = optarg;
+	  xml_file[LAL_LHO_4K_DETECTOR] = LALoptarg;
 	  break;
 	case 's':
-	  xml_file[LAL_LLO_4K_DETECTOR] = optarg;
+	  xml_file[LAL_LLO_4K_DETECTOR] = LALoptarg;
 	  break;
 	case 'r':
-	  xml_file[LAL_VIRGO_DETECTOR] = optarg;
+	  xml_file[LAL_VIRGO_DETECTOR] = LALoptarg;
 	  break;
 	case 'q':
-	  xml_file[LAL_LHO_2K_DETECTOR] = optarg;
+	  xml_file[LAL_LHO_2K_DETECTOR] = LALoptarg;
 	  break;
 	case 'j':
-	  channel_name[LAL_LHO_4K_DETECTOR] = optarg;
+	  channel_name[LAL_LHO_4K_DETECTOR] = LALoptarg;
 	  break;
 	case 'k':
-	  channel_name[LAL_LLO_4K_DETECTOR] = optarg;
+	  channel_name[LAL_LLO_4K_DETECTOR] = LALoptarg;
 	  break;
 	case 'm':
-	  channel_name[LAL_VIRGO_DETECTOR] = optarg;
+	  channel_name[LAL_VIRGO_DETECTOR] = LALoptarg;
 	  break;
 	case 'n':
-	  channel_name[LAL_LHO_2K_DETECTOR] = optarg;
+	  channel_name[LAL_LHO_2K_DETECTOR] = LALoptarg;
 	  break;
 	case 'e':
-	  event_id = optarg;
+	  event_id = LALoptarg;
 	  break;
 	case 'f':
-	  frequency = atoi(optarg);
+	  frequency = atoi(LALoptarg);
 	  break;
 	default:
 	  fprintf(stderr, "unknown error while parsing options\n");
@@ -190,12 +190,12 @@ int main(int argc, char** argv)
         }// end switch
     }// end while
   
-  if (optind < argc)
+  if (LALoptind < argc)
     {
       fprintf(stderr, "error: extraneous command line argument ");
-      while (optind < argc)
+      while (LALoptind < argc)
         {
-	  fprintf(stderr, "%s\n", argv[optind++]);
+	  fprintf(stderr, "%s\n", argv[LALoptind++]);
         }
       exit(1);
     }// end if

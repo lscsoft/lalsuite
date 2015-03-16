@@ -36,7 +36,6 @@ example$ ./lalapps_sw_inj_frames -p /Users/erinmacdonald/lsc/analyses/test_par_f
 /* 27/06/13 v.13: Allow 2nd and 3rd frequency derivatives and make compatible with new frame functions */
 
 #include <stdio.h>
-#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>

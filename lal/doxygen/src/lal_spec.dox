@@ -1745,8 +1745,8 @@ Name</td><td>Value</td><td>Description</td></tr>
 
 
 The following cosmological parameters are derived from measurements of
-the Hubble expansion rate and of the cosmic background radiation
-(CBR).  Data are taken from \cite Barnet_1996 .  In what follows, the
+the Hubble expansion rate and of the cosmic microwave background radiation
+(CMB).  Data are taken from \cite Barnet_1996 .  In what follows, the
 normalized Hubble constant \f$h_0\f$ is equal to the actual Hubble
 constant \f$H_0\f$ divided by \f$\langle H
 \rangle=100\,\mathrm{km}\,\mathrm{s}^{-1}\mathrm{Mpc}^{-1}\f$.  Thus the
@@ -1775,16 +1775,14 @@ Name</td><td>Value</td><td>Description</td></tr>
         Approx.\ critical energy density \f$\rho_c\f$</td></tr>
 <tr><td>::LAL_RHOCFAC_SI</td><td>\f$1.68860\times10^{-9}\,\mathrm{J}\,\mathrm{m}^{-3}\f$</td><td>
         \f$\rho_c/h_0^2\f$</td></tr>
-<tr><td>::LAL_TCBR_SI</td><td>\f$2.726 \mathrm{K}\f$</td><td>
-        CBR temperature</td></tr>
-<tr><td>::LAL_VCBR_SI</td><td>\f$3.695\times10^5\,\mathrm{m}\,\mathrm{s}^{-1}\f$</td><td>
-        Solar velocity with respect to CBR</td></tr>
-<tr><td>::LAL_RHOCBR_SI</td><td>\f$4.177\times10^{-14}\,\mathrm{J}\,\mathrm{m}^{-3}\f$</td><td>
-        Energy density of CBR</td></tr>
-<tr><td>::LAL_NCBR_SI</td><td>\f$4.109\times10^8\,\mathrm{m}^{-3}\f$</td><td>
-        Number density of CBR photons</td></tr>
-<tr><td>::LAL_SCBR_SI</td><td>\f$3.993\times10^{-14}\,\mathrm{J}\,\mathrm{K}^{-1}
-        \mathrm{m}^{-3}\f$</td><td>Entropy density of CBR</td></tr>
+<tr><td>::LAL_TCMB_SI</td><td>\f$2.726 \mathrm{K}\f$</td><td>
+        CMB temperature</td></tr>
+<tr><td>::LAL_VCMB_SI</td><td>\f$3.695\times10^5\,\mathrm{m}\,\mathrm{s}^{-1}\f$</td><td>
+        Solar velocity with respect to CMB</td></tr>
+<tr><td>::LAL_NCMB_SI</td><td>\f$4.109\times10^8\,\mathrm{m}^{-3}\f$</td><td>
+        Number density of CMB photons</td></tr>
+<tr><td>::LAL_SCMB_SI</td><td>\f$3.993\times10^{-14}\,\mathrm{J}\,\mathrm{K}^{-1}
+        \mathrm{m}^{-3}\f$</td><td>Entropy density of CMB</td></tr>
 <tr><td>
 </td></tr></table>
 

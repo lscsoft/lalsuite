@@ -181,7 +181,7 @@ class TestGracedb(unittest.TestCase):
         cwb_event = r.json()
         self.assertEqual(cwb_event['group'], "Test")
         self.assertEqual(cwb_event['pipeline'], "CWB")
-        self.assertEqual(cwb_event['gpstime'], 1042312876)
+        self.assertEqual(float(cwb_event['gpstime']), 1042312876.5090)
 
     def test_create_lowmass(self):
         """Create a Low Mass event"""
@@ -197,7 +197,7 @@ class TestGracedb(unittest.TestCase):
                 "Test", "MBTAOnline", eventFile).json()
         self.assertEqual(mbta_event['group'], "Test")
         self.assertEqual(mbta_event['pipeline'], "MBTAOnline")
-        self.assertEqual(mbta_event['gpstime'], 1078903329)
+        self.assertEqual(float(mbta_event['gpstime']), 1078903329.421037)
         self.assertEqual(mbta_event['far'], 4.006953918826065e-7)
 
     def test_replace_event(self):
@@ -206,7 +206,7 @@ class TestGracedb(unittest.TestCase):
         old_event = gracedb.event(graceid).json()
         self.assertEqual(old_event['group'], "Test")
         self.assertEqual(old_event['search'], "LowMass")
-        self.assertEqual(old_event['gpstime'], 971609248)
+        self.assertEqual(float(old_event['gpstime']), 971609248.151741)
 
         replacementFile = os.path.join(testdatadir, "cbc-lm2.xml")
 
@@ -216,7 +216,7 @@ class TestGracedb(unittest.TestCase):
         new_event = gracedb.event(graceid).json()
         self.assertEqual(new_event['group'], "Test")
         self.assertEqual(new_event['search'], "LowMass")
-        self.assertEqual(new_event['gpstime'], 971609249)
+        self.assertEqual(float(new_event['gpstime']), 971609249.151741)
 
     def test_upload_binary(self):
         """

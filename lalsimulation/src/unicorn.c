@@ -1,5 +1,4 @@
 #include <math.h>
-#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,6 +6,7 @@
 #include <gsl/gsl_rng.h>
 
 #include <lal/LALStdlib.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALConstants.h>
 #include <lal/LALDetectors.h>
 #include <lal/LALSimulation.h>
@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
 
 int parseargs(int argc, char **argv)
 {
-	struct option long_options[] = {
+	struct LALoption long_options[] = {
 			{ "help", no_argument, 0, 'h' },
 			{ "detector-site", required_argument, 0, 'd' },
 			{ "min-frequency", required_argument, 0, 'f' },
@@ -111,7 +111,7 @@ int parseargs(int argc, char **argv)
 		int option_index = 0;
 		int c;
 	
-		c = getopt_long_only(argc, argv, args, long_options, &option_index);
+		c = LALgetopt_long_only(argc, argv, args, long_options, &option_index);
 		if (c == -1) /* end of options */
 			break;
 	
@@ -120,14 +120,14 @@ int parseargs(int argc, char **argv)
 				if (long_options[option_index].flag)
 					break;
 				else {
-					fprintf(stderr, "error parsing option %s with argument %s\n", long_options[option_index].name, optarg);
+					fprintf(stderr, "error parsing option %s with argument %s\n", long_options[option_index].name, LALoptarg);
 					exit(1);
 				}
 			case 'h': /* help */
 				usage(argv[0]);
 				exit(0);
 			case 'd': /* detector-site */
-				switch (*optarg) {
+				switch (*LALoptarg) {
 					case 'G':
 						detector = lalCachedDetectors[LAL_GEO_600_DETECTOR];
 						break;
@@ -141,29 +141,29 @@ int parseargs(int argc, char **argv)
 						detector = lalCachedDetectors[LAL_VIRGO_DETECTOR];
 						break;
 					default:
-						fprintf(stderr, "unrecognized detector site %s - must be 'G', 'H', 'L' or 'V'\n", optarg);
+						fprintf(stderr, "unrecognized detector site %s - must be 'G', 'H', 'L' or 'V'\n", LALoptarg);
 						exit(1);
 				}
 			case 'f': /* min-frequency */
-				f_min = atof(optarg);
+				f_min = atof(LALoptarg);
 				break;
 			case 'F': /* max-frequency */
-				f_max = atof(optarg);
+				f_max = atof(LALoptarg);
 				break;
 			case 'H': /* hrss */
-				hrss = atof(optarg);
+				hrss = atof(LALoptarg);
 				break;
 			case 'o': /* output-file */
-				strncpy(output, optarg, sizeof(output) - 1);
+				strncpy(output, LALoptarg, sizeof(output) - 1);
 				break;
 			case 's': /* sample-rate */
-				deltaT = 1.0 / atof(optarg);
+				deltaT = 1.0 / atof(LALoptarg);
 				break;
 			case 't': /* gps-start-time */
-				XLALGPSSetREAL8(&epoch, atof(optarg));
+				XLALGPSSetREAL8(&epoch, atof(LALoptarg));
 				break;
 			case 'V': /* time-freq-volume */
-				V = atof(optarg);
+				V = atof(LALoptarg);
 				break;
 			case '?':
 			default:
@@ -172,10 +172,10 @@ int parseargs(int argc, char **argv)
 		}
 	}
 	
-	if (optind < argc) {
+	if (LALoptind < argc) {
 		fprintf(stderr, "extraneous command line arguments:\n");
-		while (optind < argc)
-			fprintf(stderr, "%s\n", argv[optind++]);
+		while (LALoptind < argc)
+			fprintf(stderr, "%s\n", argv[LALoptind++]);
 		exit(1);
 	}
 

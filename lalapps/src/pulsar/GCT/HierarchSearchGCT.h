@@ -25,7 +25,6 @@
 #define _HIERARCHSEARCHGCTH
 
 /* standard includes */
-#include <unistd.h>
 #include <sys/types.h>
 #include <fcntl.h>
 #include <string.h>

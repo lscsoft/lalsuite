@@ -96,7 +96,7 @@
  *
  * \code
  * lalDebugLevel
- * getopt()
+ * LALgetopt()
  * LALSCreateVector()
  * LALStochasticOmegaGW()
  * LALSPrintFrequencySeries
@@ -157,15 +157,8 @@
 #include <stdio.h>
 #include <config.h>
 
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-
-#ifdef HAVE_GETOPT_H
-#include <getopt.h>
-#endif
-
 #include <lal/StochasticCrossCorrelation.h>
+#include <lal/LALgetopt.h>
 #include <lal/AVFactories.h>
 #include <lal/PrintFTSeries.h>
 #include <lal/Units.h>
@@ -182,9 +175,6 @@
 
 #define STOCHASTICOMEGAGWTESTC_TRUE     1
 #define STOCHASTICOMEGAGWTESTC_FALSE    0
-
-extern char *optarg;
-extern int   optind;
 
 BOOLEAN optVerbose    = STOCHASTICOMEGAGWTESTC_FALSE;
 REAL8 optDeltaF     = -1.0;
@@ -591,7 +581,7 @@ ParseOptions (int argc, char *argv[])
   {
     int c = -1;
 
-    c = getopt (argc, argv, "hqvd:a:O:F:e:f:n:o:");
+    c = LALgetopt (argc, argv, "hqvd:a:O:F:e:f:n:o:");
     if (c == -1)
     {
       break;
@@ -600,31 +590,31 @@ ParseOptions (int argc, char *argv[])
     switch (c)
     {
       case 'o': /* specify output file */
-        strncpy (optFile, optarg, LALNameLength);
+        strncpy (optFile, LALoptarg, LALNameLength);
         break;
 
       case 'n': /* specify number of points in frequency series */
-        optLength = atoi (optarg);
+        optLength = atoi (LALoptarg);
         break;
 
       case 'e': /* specify frequency resolution */
-        optDeltaF = atof (optarg);
+        optDeltaF = atof (LALoptarg);
         break;
 
       case 'f': /* specify start frequency */
-        optF0 = atof (optarg);
+        optF0 = atof (LALoptarg);
         break;
 
       case 'O': /* specify amplitude at reference frequency */
-        optOmegaR = atof (optarg);
+        optOmegaR = atof (LALoptarg);
         break;
 
       case 'F': /* specify reference frequency */
-        optFR = atof (optarg);
+        optFR = atof (LALoptarg);
         break;
 
       case 'a': /* specify power law exponent */
-        optAlpha = atof (optarg);
+        optAlpha = atof (LALoptarg);
         break;
 
       case 'd': /* set debug level */
@@ -659,7 +649,7 @@ ParseOptions (int argc, char *argv[])
 
   }
 
-  if (optind < argc)
+  if (LALoptind < argc)
   {
     Usage (argv[0], 1);
   }

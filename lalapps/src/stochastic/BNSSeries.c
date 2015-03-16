@@ -15,9 +15,8 @@
 #include <math.h>
 #include <string.h>
 #include <time.h>
-#include <unistd.h>
-#include <getopt.h>
 #include <lal/LALStdio.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConfig.h>
 #include <lal/Units.h>
@@ -47,11 +46,7 @@
 #define CVS_DATE "$Date$"
 #define PROGRAM_NAME "BNSSeries"
 
-/* variables for getopt options parsing */
-extern char *optarg;
-extern int optind;
-
-/* flag for getopt_long */
+/* flag for LALgetopt_long */
 static int verbose_flag = 0;
 static int condor_flag = 0;
 
@@ -357,7 +352,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
   
   while(1)
    {
-    static struct option long_options[] =
+    static struct LALoption long_options[] =
      {
 	  /* options that set a flag */
       {"verbose", no_argument, &verbose_flag, 1},
@@ -375,10 +370,10 @@ void parseOptions(INT4 argc, CHAR *argv[])
       {0, 0, 0, 0}
      };
 
-    /* getopt_long stores the option here */
+    /* LALgetopt_long stores the option here */
     int option_index = 0;
 
-    c = getopt_long(argc, argv, 
+    c = LALgetopt_long(argc, argv,
                   "hs:j:T:t:p:f:z:v:",
  		   long_options, &option_index);
 
@@ -395,8 +390,8 @@ void parseOptions(INT4 argc, CHAR *argv[])
              if (long_options[option_index].flag != 0)
               break;
              printf ("option %s", long_options[option_index].name);
-             if (optarg)
-              printf (" with arg %s", optarg);
+             if (LALoptarg)
+              printf (" with arg %s", LALoptarg);
              printf ("\n");
              break;
 
@@ -407,37 +402,37 @@ void parseOptions(INT4 argc, CHAR *argv[])
 			   
 	  case 's':
 			   /* seed */
-	           seed = atoi(optarg);
+	           seed = atoi(LALoptarg);
 	           break;
 			   	   
       case 'j':
 			   /* job number */
-	           job = atoi(optarg);
+	           job = atoi(LALoptarg);
 	           break;
 			   
       case 'T':
 			   /* duration */
-	           Tobs = atof(optarg);
+	           Tobs = atof(LALoptarg);
 	           break;
 			   
 	  case 't':
 			   /* sampling time */
-	           deltaT = atof(optarg);
+	           deltaT = atof(LALoptarg);
 	           break;
 			   
 	  case 'p':
 			   /* poisson parameter */
-	           mu = atof(optarg);
+	           mu = atof(LALoptarg);
 	           break;
 
       case 'f':
 			   /* minimal frequency */
-	           fMin = atof(optarg);
+	           fMin = atof(LALoptarg);
 	           break;
 			   
 	  case 'z':
 			   /* maximal redshift */
-	           zMax = atof(optarg);
+	           zMax = atof(LALoptarg);
 	           break;
 			   
       case 'v':
@@ -451,7 +446,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
      }
     }
 
-   if (optind < argc)
+   if (LALoptind < argc)
     {
      displayUsage(1);
     }

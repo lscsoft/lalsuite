@@ -26,6 +26,8 @@
 
 #include <lal/SynthesizeCWDraws.h>
 
+#include <lal/EstimateAmplitudeParams.h>
+
 /*---------- DEFINES ----------*/
 #define SQ(x) ((x)*(x))
 

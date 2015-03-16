@@ -23,9 +23,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <getopt.h>
 
 #include <lal/LALMalloc.h>
+#include <lal/LALgetopt.h>
 
 /* program information */
 #define PROGRAM_NAME "lalapps_version"
@@ -67,8 +67,8 @@ static void parse_options(int argc, char **argv)
   /* counters */
   int c;
 
-  /* getopt arguments */
-  struct option long_options[] =
+  /* LALgetopt arguments */
+  struct LALoption long_options[] =
   {
     /* options that set a flag */
     {"verbose", no_argument, &vrbflg, 1},
@@ -82,11 +82,11 @@ static void parse_options(int argc, char **argv)
   /* parse the arguments */
   while(1)
   {
-    /* getopt_long stores option here */
+    /* LALgetopt_long stores option here */
     int option_index = 0;
 
     /* parse options */
-    c = getopt_long_only(argc, argv, "h", long_options, &option_index);
+    c = LALgetopt_long_only(argc, argv, "h", long_options, &option_index);
 
     /* detect the end of the options */
     if (c == -1)
@@ -101,7 +101,7 @@ static void parse_options(int argc, char **argv)
         else
         {
           fprintf(stderr, "Error parsing option %s with argument %s\n",
-              long_options[option_index].name, optarg);
+              long_options[option_index].name, LALoptarg);
           exit(1);
         }
         break;
@@ -126,11 +126,11 @@ static void parse_options(int argc, char **argv)
   }
 
   /* check for extraneous command line arguments */
-  if (optind < argc)
+  if (LALoptind < argc)
   {
     fprintf(stderr, "Extraneous command line arguments:\n");
-    while(optind < argc)
-      fprintf(stderr, "\t%s\n", argv[optind++]);
+    while(LALoptind < argc)
+      fprintf(stderr, "\t%s\n", argv[LALoptind++]);
     exit(1);
   }
 }

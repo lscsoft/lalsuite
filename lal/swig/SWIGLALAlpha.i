@@ -29,9 +29,9 @@
 ///
 
 ///
-/// Custom GSL/LAL error handlers which raise XLAL errors, so that they will be
-/// caught by the SWIG \c %exception handler (instead of aborting, which will
-/// crash the user's scripting language session).
+/// Custom GSL/LAL error handlers which raise XLAL errors, so that they will be caught by the SWIG
+/// \c %exception handler (instead of aborting, which will crash the user's scripting language
+/// session).
 %header %{
 /// <ul><li>
 
@@ -70,8 +70,8 @@ static void swig_lal_abort_hook(const char *fmt, ...) {
 ///
 
 ///
-/// Replace default GSL/LAL error handler with nice custom handlers, and ensure
-/// default XLAL error handler is used.
+/// Replace default GSL/LAL error handler with nice custom handlers, and ensure default XLAL error
+/// handler is used.
 ///
 %inline %{
 void swig_set_nice_error_handlers(void) {
@@ -83,8 +83,8 @@ void swig_set_nice_error_handlers(void) {
 %}
 
 ///
-/// Use \c abort() error handlers in GSL/LAL/XLAL, which can be useful when
-/// running scripting language interpreter under a debugger.
+/// Use \c abort() error handlers in GSL/LAL/XLAL, which can be useful when running scripting
+/// language interpreter under a debugger.
 ///
 %inline %{
 void swig_set_nasty_error_handlers(void) {
@@ -324,8 +324,8 @@ typedef struct {
 ///
 
 ///
-/// Specialised input typemaps for ::LIGOTimeGPS structs.  Accepts a
-/// SWIG-wrapped ::LIGOTimeGPS or a double as input.
+/// Specialised input typemaps for ::LIGOTimeGPS structs.  Accepts a SWIG-wrapped ::LIGOTimeGPS or a
+/// double as input.
 ///
 %fragment("swiglal_specialised_tagLIGOTimeGPS", "header", fragment=SWIG_AsVal_frag(double)) {
   int swiglal_specialised_tagLIGOTimeGPS(SWIG_Object in, LIGOTimeGPS *out) {
@@ -345,8 +345,8 @@ typedef struct {
 ///
 
 ///
-/// Specialised input typemaps for ::LALUnit structs.  Accepts a SWIG-wrapped
-/// ::LALUnit or power-of-10 double as input.
+/// Specialised input typemaps for ::LALUnit structs.  Accepts a SWIG-wrapped ::LALUnit or
+/// power-of-10 double as input.
 ///
 %fragment("swiglal_specialised_tagLALUnit", "header", fragment="SWIG_AsCharPtr", fragment=SWIG_AsVal_frag(double)) {
   int swiglal_specialised_tagLALUnit(SWIG_Object in, LALUnit *out) {

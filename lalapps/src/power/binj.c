@@ -32,8 +32,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <getopt.h>
-#include <unistd.h>
 #include <time.h>
 #include <math.h>
 #include <limits.h>
@@ -42,6 +40,7 @@
 
 
 #include <lal/Date.h>
+#include <lal/LALgetopt.h>
 #include <lal/GenerateBurst.h>
 #include <lal/LALConstants.h>
 #include <lal/LALSimBurst.h>
@@ -252,7 +251,7 @@ static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param, c
 
 	
 #define ADD_PROCESS_PARAM(process, type) \
-	do { paramaddpoint = add_process_param(paramaddpoint, process, type, long_options[option_index].name, optarg); } while(0)
+	do { paramaddpoint = add_process_param(paramaddpoint, process, type, long_options[option_index].name, LALoptarg); } while(0)
 
 
 static struct options parse_command_line(int *argc, char **argv[], const ProcessTable *process, ProcessParamsTable **paramaddpoint)
@@ -260,7 +259,7 @@ static struct options parse_command_line(int *argc, char **argv[], const Process
 	struct options options = options_defaults();
 	int c;
 	int option_index;
-	struct option long_options[] = {
+	struct LALoption long_options[] = {
 		{"gps-end-time", required_argument, NULL, 'A'},
 		{"gps-start-time", required_argument, NULL, 'B'},
 		{"help", no_argument, NULL, 'C'},
@@ -288,16 +287,16 @@ static struct options parse_command_line(int *argc, char **argv[], const Process
 		{NULL, 0, NULL, 0}
 	};
 
-	do switch(c = getopt_long(*argc, *argv, "", long_options, &option_index)) {
+	do switch(c = LALgetopt_long(*argc, *argv, "", long_options, &option_index)) {
 	case 'A':
 		XLALClearErrno();
 		{
 			LIGOTimeGPS tmp;
-			XLALStrToGPS(&tmp, optarg, NULL);
+			XLALStrToGPS(&tmp, LALoptarg, NULL);
 			options.gps_end_time = XLALGPSToINT8NS(&tmp);
 		}
 		if(xlalErrno) {
-			fprintf(stderr, "invalid --%s (%s specified)\n", long_options[option_index].name, optarg);
+			fprintf(stderr, "invalid --%s (%s specified)\n", long_options[option_index].name, LALoptarg);
 			exit(1);
 		}
 		ADD_PROCESS_PARAM(process, "lstring");
@@ -307,11 +306,11 @@ static struct options parse_command_line(int *argc, char **argv[], const Process
 		XLALClearErrno();
 		{
 			LIGOTimeGPS tmp;
-			XLALStrToGPS(&tmp, optarg, NULL);
+			XLALStrToGPS(&tmp, LALoptarg, NULL);
 			options.gps_start_time = XLALGPSToINT8NS(&tmp);
 		}
 		if(xlalErrno) {
-			fprintf(stderr, "invalid --%s (%s specified)\n", long_options[option_index].name, optarg);
+			fprintf(stderr, "invalid --%s (%s specified)\n", long_options[option_index].name, LALoptarg);
 			exit(1);
 		}
 		ADD_PROCESS_PARAM(process, "lstring");
@@ -322,116 +321,116 @@ static struct options parse_command_line(int *argc, char **argv[], const Process
 		exit(0);
 
 	case 'D':
-		options.maxA = atof(optarg);
+		options.maxA = atof(LALoptarg);
 		ADD_PROCESS_PARAM(process, "real_8");
 		break;
 
 	case 'E':
-		options.minA = atof(optarg);
+		options.minA = atof(LALoptarg);
 		ADD_PROCESS_PARAM(process, "real_8");
 		break;
 
 	case 'F':
-		options.maxbandwidth = atof(optarg);
+		options.maxbandwidth = atof(LALoptarg);
 		ADD_PROCESS_PARAM(process, "real_8");
 		break;
 
 	case 'G':
-		options.minbandwidth = atof(optarg);
+		options.minbandwidth = atof(LALoptarg);
 		ADD_PROCESS_PARAM(process, "real_8");
 		break;
 
 	case 'H':
-		options.maxduration = atof(optarg);
+		options.maxduration = atof(LALoptarg);
 		ADD_PROCESS_PARAM(process, "real_8");
 		break;
 
 	case 'I':
-		options.minduration = atof(optarg);
+		options.minduration = atof(LALoptarg);
 		ADD_PROCESS_PARAM(process, "real_8");
 		break;
 
 	case 'J':
-		options.maxf = atof(optarg);
+		options.maxf = atof(LALoptarg);
 		ADD_PROCESS_PARAM(process, "real_8");
 		break;
 
 	case 'K':
-		options.minf = atof(optarg);
+		options.minf = atof(LALoptarg);
 		ADD_PROCESS_PARAM(process, "real_8");
 		break;
 
 	case 'L':
-		options.maxhrss = atof(optarg);
+		options.maxhrss = atof(LALoptarg);
 		ADD_PROCESS_PARAM(process, "real_8");
 		break;
 
 	case 'M':
-		options.minhrss = atof(optarg);
+		options.minhrss = atof(LALoptarg);
 		ADD_PROCESS_PARAM(process, "real_8");
 		break;
 
 	case 'N':
-		if(!strcmp(optarg, "targeted"))
+		if(!strcmp(LALoptarg, "targeted"))
 			options.population = POPULATION_TARGETED;
-		else if(!strcmp(optarg, "string_cusp"))
+		else if(!strcmp(LALoptarg, "string_cusp"))
 			options.population = POPULATION_STRING_CUSP;
-		else if(!strcmp(optarg, "all_sky_sinegaussian"))
+		else if(!strcmp(LALoptarg, "all_sky_sinegaussian"))
 			options.population = POPULATION_ALL_SKY_SINEGAUSSIAN;
-		else if(!strcmp(optarg, "all_sky_btlwnb"))
+		else if(!strcmp(LALoptarg, "all_sky_btlwnb"))
 			options.population = POPULATION_ALL_SKY_BTLWNB;
 		else {
-			fprintf(stderr, "error: unrecognized population \"%s\"", optarg);
+			fprintf(stderr, "error: unrecognized population \"%s\"", LALoptarg);
 			exit(1);
 		}
 		ADD_PROCESS_PARAM(process, "lstring");
 		break;
 
 	case 'O':
-		options.q = atof(optarg);
+		options.q = atof(LALoptarg);
 		ADD_PROCESS_PARAM(process, "real_8");
 		break;
 
 	case 'P':
-		options.seed = atol(optarg);
+		options.seed = atol(LALoptarg);
 		ADD_PROCESS_PARAM(process, "int_8u");
 		break;
 
 	case 'Q':
-		options.time_step = atof(optarg);
+		options.time_step = atof(LALoptarg);
 		ADD_PROCESS_PARAM(process, "real_8");
 		break;
 
 	case 'R':
-		options.user_tag = optarg;
+		options.user_tag = LALoptarg;
 		ADD_PROCESS_PARAM(process, "lstring");
 		break;
 
 	case 'S':
-		options.maxEoverr2 = atof(optarg);
+		options.maxEoverr2 = atof(LALoptarg);
 		ADD_PROCESS_PARAM(process, "real_8");
 		break;
 
 	case 'T':
-		options.minEoverr2 = atof(optarg);
+		options.minEoverr2 = atof(LALoptarg);
 		ADD_PROCESS_PARAM(process, "real_8");
 		break;
 
 	case 'U':
 		{
 			char *end;
-			options.ra = strtod(optarg, &end);
+			options.ra = strtod(LALoptarg, &end);
 			while(isspace(*end))
 				end++;
 			if(*end != ',') {
-				fprintf(stderr, "error: cannot parse --ra-dec \"%s\"\n", optarg);
+				fprintf(stderr, "error: cannot parse --ra-dec \"%s\"\n", LALoptarg);
 				exit(1);
 			}
 			options.dec = strtod(end + 1, &end);
 			while(isspace(*end))
 				end++;
 			if(*end != '\0') {
-				fprintf(stderr, "error: cannot parse --ra-dec \"%s\"\n", optarg);
+				fprintf(stderr, "error: cannot parse --ra-dec \"%s\"\n", LALoptarg);
 				exit(1);
 			}
 		}
@@ -439,16 +438,16 @@ static struct options parse_command_line(int *argc, char **argv[], const Process
 		break;
 
 	case 'V':
-		options.output = optarg;
+		options.output = LALoptarg;
 		break;
 
 	case 'W':
-		options.time_slide_file = optarg;
+		options.time_slide_file = LALoptarg;
 		ADD_PROCESS_PARAM(process, "lstring");
 		break;
 
 	case 'X':
-		options.jitter = atof(optarg);
+		options.jitter = atof(LALoptarg);
 		ADD_PROCESS_PARAM(process, "lstring");
 		break;
 

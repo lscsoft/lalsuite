@@ -30,10 +30,10 @@ e-Print: arXiv:0710.2335 [gr-qc]
 #include <lal/AVFactories.h>
 #include <lal/LALInspiral.h>
 #include <lal/PrintFTSeries.h>
-#include <getopt.h>
 #include <string.h>
 
 #include <lal/LALConfig.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALError.h>
@@ -183,7 +183,7 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
   REAL8 totalMass = -1, massRatio = -1;
   REAL8 lowFreq = -1, df, fLow;
   CHAR  *outFile = NULL, *outFileLong = NULL, tail[50];
-  size_t optarg_len;
+  size_t LALoptarg_len;
   REAL8 eta;
   REAL8 newtonianChirpTime, PN1ChirpTime, mergTime;
   UINT4 numPts;
@@ -209,8 +209,8 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
   INT4 hPLength;
   REAL8 linearWindow;
 
-  /* getopt arguments */
-  struct option long_options[] =
+  /* LALgetopt arguments */
+  struct LALoption long_options[] =
   {
     {"mass-ratio",              required_argument, 0,                'q'},
     {"low-freq (Hz)",           required_argument, 0,                'f'},
@@ -225,11 +225,11 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
   /* parse the arguments */
   while ( 1 )
   {
-    /* getopt_long stores long option here */
+    /* LALgetopt_long stores long option here */
     int option_index = 0;
 
     /* parse command line arguments */
-    c = getopt_long_only( argc, argv, "q:t:d:hV",
+    c = LALgetopt_long_only( argc, argv, "q:t:d:hV",
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -242,7 +242,7 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
     {
       case 0:
         fprintf( stderr, "Error parsing option '%s' with argument '%s'\n",
-            long_options[option_index].name, optarg );
+            long_options[option_index].name, LALoptarg );
         exit( 1 );
         break;
 
@@ -263,29 +263,29 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
 
       case 'q':
         /* set mass ratio */
-        massRatio = atof( optarg );
+        massRatio = atof( LALoptarg );
         break;
 
       case 'f':
         /* set low freq */
-        lowFreq = atof( optarg );
+        lowFreq = atof( LALoptarg );
         break;
 
       case 'm':
         /* set total mass */
-        totalMass = atof( optarg );
+        totalMass = atof( LALoptarg );
         break;
 
       case 's':
         /* set sample rate */
-        sampleRate = atof( optarg );
+        sampleRate = atof( LALoptarg );
         break;
 
       case 'o':
 	/* set name of output file */
-        optarg_len = strlen(optarg) + 1;
-        outFile = (CHAR *)calloc(optarg_len, sizeof(CHAR));
-        memcpy(outFile, optarg, optarg_len);
+        LALoptarg_len = strlen(LALoptarg) + 1;
+        outFile = (CHAR *)calloc(LALoptarg_len, sizeof(CHAR));
+        memcpy(outFile, LALoptarg, LALoptarg_len);
 	break;
 
       case '?':
@@ -300,12 +300,12 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
     }
   }
 
-  if ( optind < argc )
+  if ( LALoptind < argc )
   {
     fprintf( stderr, "ERROR: Extraneous command line arguments:\n" );
-    while ( optind < argc )
+    while ( LALoptind < argc )
       {
-	fprintf ( stderr, "%s\n", argv[optind++] );
+	fprintf ( stderr, "%s\n", argv[LALoptind++] );
       }
     exit( 1 );
   }
@@ -379,8 +379,8 @@ INT4 main ( INT4 argc, CHAR *argv[] ) {
 
   /* Complete file name with details of the input variables */
   sprintf(tail, "%s-Phenom_M%3.1f_R%2.1f.dat", outFile, totalMass, massRatio);
-  optarg_len = strlen(tail) + strlen(outFile) + 1;
-  outFileLong = (CHAR *)calloc(optarg_len, sizeof(CHAR));
+  LALoptarg_len = strlen(tail) + strlen(outFile) + 1;
+  outFileLong = (CHAR *)calloc(LALoptarg_len, sizeof(CHAR));
   strcpy(outFileLong, tail);
 
   /* check sample rate is enough */

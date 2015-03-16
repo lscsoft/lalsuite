@@ -704,7 +704,7 @@ file!\n");
 
 /* function to parse the input arguments */
 void get_input_args(InputParams *inputParams, int argc, char *argv[]){
-  struct option long_options[] =
+  struct LALoption long_options[] =
   {
     { "help",                     no_argument,        0, 'h' },
     { "ifo",                      required_argument,  0, 'i' },
@@ -775,7 +775,7 @@ the pulsar parameter file */
     int option_index = 0;
     int c;
 
-    c = getopt_long( argc, argv, args, long_options, &option_index );
+    c = LALgetopt_long( argc, argv, args, long_options, &option_index );
     if ( c == -1 ) /* end of options */
       break;
 
@@ -785,7 +785,7 @@ the pulsar parameter file */
           break;
         else
           fprintf(stderr, "Error parsing option %s with argument %s\n",
-            long_options[option_index].name, optarg );
+            long_options[option_index].name, LALoptarg );
       case 'h': /* help message */
         fprintf(stderr, USAGE, program);
         exit(0);
@@ -793,14 +793,14 @@ the pulsar parameter file */
         inputParams->verbose = 1;
         break;
       case 'i': /* interferometer */
-        snprintf(inputParams->ifo, sizeof(inputParams->ifo), "%s", optarg);
+        snprintf(inputParams->ifo, sizeof(inputParams->ifo), "%s", LALoptarg);
         break;
       case 'z': /* heterodyne flag - 0 for coarse, 1 for fine, 2 for update to
                    params, 3 for a one step fine heteroydne (like old code)*/
-        inputParams->heterodyneflag = atoi(optarg);
+        inputParams->heterodyneflag = atoi(LALoptarg);
         break;
       case 'p': /* pulsar name */
-        inputParams->pulsar = XLALStringDuplicate( optarg );
+        inputParams->pulsar = XLALStringDuplicate( LALoptarg );
         break;
       case 'A': /* calibration flag */
         inputParams->calibrate = 1;
@@ -813,11 +813,11 @@ the pulsar parameter file */
         break;
       case 'f': /* initial heterodyne parameter file */
         snprintf(inputParams->paramfile, sizeof(inputParams->paramfile), "%s",
-          optarg);
+          LALoptarg);
         break;
       case 'g': /*secondary heterodyne parameter file - for updated parameters*/
         snprintf(inputParams->paramfileupdate,
-          sizeof(inputParams->paramfileupdate), "%s", optarg);
+          sizeof(inputParams->paramfileupdate), "%s", LALoptarg);
         break;
       case 'k': /* low-pass filter knee frequency */
         {/* find if the string contains a / and get its position */
@@ -825,9 +825,9 @@ the pulsar parameter file */
           CHAR numerator[10]="", *denominator=NULL;
           INT4 n;
 
-          if((loc = strchr(optarg, '/'))!=NULL){
-            n = loc-optarg; /* length of numerator i.e. bit before / */
-            XLALStringCopy(numerator, optarg, n+1);
+          if((loc = strchr(LALoptarg, '/'))!=NULL){
+            n = loc-LALoptarg; /* length of numerator i.e. bit before / */
+            XLALStringCopy(numerator, LALoptarg, n+1);
 
             /*set the denominator i.e. the point after / */
             denominator = XLALStringDuplicate(loc+1);
@@ -835,7 +835,7 @@ the pulsar parameter file */
             inputParams->filterknee = atof(numerator)/atof(denominator);
           }
           else
-            inputParams->filterknee = atof(optarg);
+            inputParams->filterknee = atof(LALoptarg);
         }
         break;
       case 's': /* sample rate of input data */
@@ -844,16 +844,16 @@ the pulsar parameter file */
           CHAR numerator[10]="", *denominator=NULL;
           INT4 n;
 
-          if((loc = strchr(optarg, '/'))!=NULL){
-            n = loc-optarg; /* length of numerator i.e. bit before / */
-            XLALStringCopy(numerator, optarg, n+1);
+          if((loc = strchr(LALoptarg, '/'))!=NULL){
+            n = loc-LALoptarg; /* length of numerator i.e. bit before / */
+            XLALStringCopy(numerator, LALoptarg, n+1);
 
             denominator = XLALStringDuplicate(loc+1);
 
             inputParams->samplerate = atof(numerator)/atof(denominator);
           }
           else
-            inputParams->samplerate = atof(optarg);
+            inputParams->samplerate = atof(LALoptarg);
         }
         break;
       case 'r': /* resample rate - allow fractions e.g. 1/60 Hz*/
@@ -862,60 +862,60 @@ the pulsar parameter file */
           CHAR numerator[10]="", *denominator=NULL;
           INT4 n;
 
-          if((loc = strchr(optarg, '/'))!=NULL){
-            n = loc-optarg; /* length of numerator i.e. bit before / */
-            XLALStringCopy(numerator, optarg, n+1);
+          if((loc = strchr(LALoptarg, '/'))!=NULL){
+            n = loc-LALoptarg; /* length of numerator i.e. bit before / */
+            XLALStringCopy(numerator, LALoptarg, n+1);
 
             denominator = XLALStringDuplicate(loc+1);
 
             inputParams->resamplerate = atof(numerator)/atof(denominator);
           }
           else
-            inputParams->resamplerate = atof(optarg);
+            inputParams->resamplerate = atof(LALoptarg);
         }
         break;
       case 'd': /* file containing list of frame files, or file with previously
                    heterodyned data */
         snprintf(inputParams->datafile, sizeof(inputParams->datafile), "%s",
-          optarg);
+          LALoptarg);
         break;
       case 'c': /* frame channel */
         snprintf(inputParams->channel, sizeof(inputParams->channel), "%s",
-          optarg);
+          LALoptarg);
         break;
       case 'o': /* output data directory */
         snprintf(inputParams->outputdir, sizeof(inputParams->outputdir), "%s",
-          optarg);
+          LALoptarg);
         break;
       case 'e': /* earth ephemeris file */
         snprintf(inputParams->earthfile, sizeof(inputParams->earthfile), "%s",
-          optarg);
+          LALoptarg);
         break;
       case 'S': /* sun ephemeris file */
         snprintf(inputParams->sunfile, sizeof(inputParams->sunfile), "%s",
-          optarg);
+          LALoptarg);
         break;
       case 't': /* Einstein delay time correction file */
-        inputParams->timeCorrFile = XLALStringDuplicate(optarg);
+        inputParams->timeCorrFile = XLALStringDuplicate(LALoptarg);
         break;
       case 'l':
         snprintf(inputParams->segfile, sizeof(inputParams->segfile), "%s",
-          optarg);
+          LALoptarg);
         break;
       case 'R':
-        inputParams->calibfiles.responsefunctionfile = optarg;
+        inputParams->calibfiles.responsefunctionfile = LALoptarg;
         break;
       case 'C':
-        inputParams->calibfiles.calibcoefficientfile = optarg;
+        inputParams->calibfiles.calibcoefficientfile = LALoptarg;
         break;
       case 'F':
-        inputParams->calibfiles.sensingfunctionfile = optarg;
+        inputParams->calibfiles.sensingfunctionfile = LALoptarg;
         break;
       case 'O':
-        inputParams->calibfiles.openloopgainfile = optarg;
+        inputParams->calibfiles.openloopgainfile = LALoptarg;
         break;
       case 'T':
-        inputParams->stddevthresh = atof(optarg);
+        inputParams->stddevthresh = atof(LALoptarg);
         break;
       case 'm': /* this can be defined as a real number or fraction e.g. 2.0 or
                    4/3 */
@@ -924,27 +924,27 @@ the pulsar parameter file */
           CHAR numerator[10]="", *denominator=NULL;
           INT4 n;
 
-          if((loc = strchr(optarg, '/'))!=NULL){
-            n = loc-optarg; /* length of numerator i.e. bit before / */
+          if((loc = strchr(LALoptarg, '/'))!=NULL){
+            n = loc-LALoptarg; /* length of numerator i.e. bit before / */
 
-            XLALStringCopy(numerator, optarg, n+1);
+            XLALStringCopy(numerator, LALoptarg, n+1);
 
             denominator = XLALStringDuplicate(loc+1);
 
             inputParams->freqfactor = atof(numerator)/atof(denominator);
           }
           else
-            inputParams->freqfactor = atof(optarg);
+            inputParams->freqfactor = atof(LALoptarg);
         }
         break;
       case 'G':
-        inputParams->scaleFac = atof(optarg);
+        inputParams->scaleFac = atof(LALoptarg);
         break;
       case 'H':
-        inputParams->highPass = atof(optarg);
+        inputParams->highPass = atof(LALoptarg);
         break;
       case 'M':
-        inputParams->manualEpoch = atof(optarg);
+        inputParams->manualEpoch = atof(LALoptarg);
         break;
       case '?':
         fprintf(stderr, "unknown error while parsing options\n" );

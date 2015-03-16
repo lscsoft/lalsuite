@@ -24,12 +24,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <unistd.h>
-
-#define _GNU_SOURCE
-#include "getopt.h"
 
 #include <lal/LALStdlib.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALConstants.h>
 #include <lal/Date.h>
 #include "getdate.h"
@@ -705,7 +702,7 @@ void usage( const char *program, int exitcode )
 
 char * parse_options( char *buf, int buflen, int argc, char **argv )
 {
-  struct option long_options[] =
+  struct LALoption long_options[] =
   {
     { "date",           no_argument,            0,      'd'     },
     { "format",         required_argument,      0,      'f'     },
@@ -739,7 +736,7 @@ char * parse_options( char *buf, int buflen, int argc, char **argv )
     int option_index = 0;
     int c;
 
-    c = getopt_long_only( argc, argv, args, long_options, &option_index );
+    c = LALgetopt_long_only( argc, argv, args, long_options, &option_index );
     if ( c == -1 ) /* end of options */
       break;
 
@@ -750,7 +747,7 @@ char * parse_options( char *buf, int buflen, int argc, char **argv )
         if ( ! long_options[option_index].flag )
         {
           fprintf( stderr, "error parsing option %s with argument %s\n",
-              long_options[option_index].name, optarg );
+              long_options[option_index].name, LALoptarg );
           usage( program, 1 );
         }
         break;
@@ -760,7 +757,7 @@ char * parse_options( char *buf, int buflen, int argc, char **argv )
         break;
 
       case 'f': /* format */
-        output_date_format = optarg;
+        output_date_format = LALoptarg;
         break;
 
       case 'G': /* gps-epoch */
@@ -797,15 +794,15 @@ char * parse_options( char *buf, int buflen, int argc, char **argv )
 
       case 's': /* sidereal-time */
         output_type = OUTPUT_GMST;
-        if ( optarg )
+        if ( LALoptarg )
         {
-          if ( ! strcmp( optarg, "rad" ) || ! strcmp( optarg, "RAD" ) )
+          if ( ! strcmp( LALoptarg, "rad" ) || ! strcmp( LALoptarg, "RAD" ) )
             sidereal_format = SIDEREAL_RAD;
-          else if ( ! strcmp( optarg, "hms" ) || ! strcmp( optarg, "HMS" ) )
+          else if ( ! strcmp( LALoptarg, "hms" ) || ! strcmp( LALoptarg, "HMS" ) )
             sidereal_format = SIDEREAL_HMS;
           else
           {
-            fprintf( stderr, "unrecognized sidereal time format %s\n", optarg );
+            fprintf( stderr, "unrecognized sidereal time format %s\n", LALoptarg );
             fprintf( stderr, "expect \"HMS\" (hours:minutes:seconds)" );
             fprintf( stderr, "or \"RAD\" (radians)\n" );
             exit( 1 );
@@ -839,17 +836,17 @@ char * parse_options( char *buf, int buflen, int argc, char **argv )
         break;
 
       case 'z': /* zone */
-        tz = optarg;
+        tz = LALoptarg;
         break;
 
       case 'Z': /* site */
-        if ( strcmp( optarg, "LHO" ) == 0 || strcmp( optarg, "lho" ) == 0 )
+        if ( strcmp( LALoptarg, "LHO" ) == 0 || strcmp( LALoptarg, "lho" ) == 0 )
           site = SITE_LHO;
-        else if ( strcmp( optarg, "LLO" ) == 0 || strcmp( optarg, "llo" ) == 0 )
+        else if ( strcmp( LALoptarg, "LLO" ) == 0 || strcmp( LALoptarg, "llo" ) == 0 )
           site = SITE_LLO;
         else
         {
-          fprintf( stderr, "unrecognized detector site %s\n", optarg );
+          fprintf( stderr, "unrecognized detector site %s\n", LALoptarg );
           fprintf( stderr, "expect either \"LHO\" or \"LLO\"\n" );
           exit( 1 );
         }
@@ -863,18 +860,18 @@ char * parse_options( char *buf, int buflen, int argc, char **argv )
     }
   }
 
-  if ( optind == argc && fp )
+  if ( LALoptind == argc && fp )
   {
       char UNUSED *c;
       c = fgets( buf, buflen, fp );
   }
   else
   {
-    for ( ; optind < argc; ++optind )
+    for ( ; LALoptind < argc; ++LALoptind )
     {
       int len;
       len = strlen( buf );
-      strncat( buf + len, argv[optind], buflen - len );
+      strncat( buf + len, argv[LALoptind], buflen - len );
       len = strlen( buf );
       if ( len == buflen )
       {

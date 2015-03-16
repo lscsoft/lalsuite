@@ -43,9 +43,13 @@
  * obscure a mystery factor in command-line record even if given with long option --factor
  */
 
+#include <config.h>
+
 #include <math.h>
 #include <time.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

@@ -156,7 +156,7 @@ else:
 
 
 # timing params
-timing_params = power.get_timing_parameters(config_parser)
+timing_params = power.TimingParameters(config_parser)
 
 
 #

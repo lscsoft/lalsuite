@@ -29,9 +29,9 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <math.h>
-#include <getopt.h>
 
 #include <lal/AVFactories.h>
+#include <lal/LALgetopt.h>
 #include <lal/Date.h>
 #include <lal/LALFrStream.h>
 #include <lal/LALFrameL.h>

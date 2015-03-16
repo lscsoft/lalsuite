@@ -387,6 +387,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state)
 (--spinAligned or --aligned-spin)  template will assume spins aligned with the orbital angular momentum.\n\
 (--singleSpin)                  template will assume only the spin of the most massive binary component exists.\n\
 (--noSpin, --disable-spin)      template will assume no spins (giving this will void spinOrder!=0) \n\
+(--detector-frame)              model will use detector-centred coordinates instead of RA,dec\n\
 \n\
 ------------------------------------------------------------------------------------------------------------------\n\
 --- Starting Parameters ------------------------------------------------------------------------------------------\n\
@@ -397,17 +398,15 @@ You can generally have MCMC chains to start from a given parameter value by usin
  eta                          Symmetric massratio (needs --use-eta)\n\
  q                            Asymmetric massratio (a.k.a. q=m2/m1 with m1>m2)\n\
  phase                        Coalescence phase.\n\
- theta_jn                     Angle between J and line of sight [rads]\n\
+ costheta_jn                  Cosine of angle between J and line of sight [rads]\n\
  distance                     Distance [Mpc]\n\
  logdistance                  Log Distance (requires --use-logdistance)\n\
  rightascension               Rightascensions\n\
  declination                  Declination.\n\
  polarisation                 Polarisation angle.\n\
 * Spin Parameters:\n\
- a1                           Spin1 magnitude (for precessing spins)\n\
- a_spin1                      Spin1 magnitude (for aligned spins)\n\
- a2                           Spin2 magnitude (for precessing spins)\n\
- a_spin2                      Spin2 magnitude (for aligned spins)\n\
+ a_spin1                      Spin1 magnitude\n\
+ a_spin2                      Spin2 magnitude\n\
  tilt_spin1                   Angle between spin1 and orbital angular momentum\n\
  tilt_spin2                   Angle between spin2 and orbital angular momentum \n\
  phi_12                       Difference between spins' azimuthal angles \n\
@@ -483,7 +482,7 @@ where the known names have been listed above\n\
   REAL8 decMin=-LAL_PI/2.0,decMax=LAL_PI/2.0;
   REAL8 raMin=0.0,raMax=LAL_TWOPI;
   REAL8 phiMin=0.0,phiMax=LAL_TWOPI;
-  REAL8 thetaJNmin=0.0,thetaJNmax=LAL_PI;
+  REAL8 costhetaJNmin=-1.0 , costhetaJNmax=1.0;
   REAL8 dt=0.1;  /* Half the width of time prior */
   REAL8 lambda1Min=0.0;
   REAL8 lambda1Max=3000.0;
@@ -867,21 +866,6 @@ where the known names have been listed above\n\
     else
       LALInferenceRegisterUniformVariableREAL8(state, model->params, "q", zero, qMin, qMax, LALINFERENCE_PARAM_LINEAR);
 
-    LALInferenceRegisterUniformVariableREAL8(state, model->params, "time", timeParam, timeMin, timeMax,LALINFERENCE_PARAM_LINEAR);
-
-    /* If we are marginalising over the time, remove that variable from the model (having set the prior above) */
-    /* Also set the prior in model->params, since Likelihood can't access the state! (ugly hack) */
-    if(LALInferenceGetProcParamVal(commandLine,"--margtime") || LALInferenceGetProcParamVal(commandLine, "--margtimephi")){
-        LALInferenceVariableItem *p=LALInferenceGetItem(state->priorArgs,"time_min");
-        LALInferenceAddVariable(model->params,"time_min",p->value,p->type,p->vary);
-        p=LALInferenceGetItem(state->priorArgs,"time_max");
-        LALInferenceAddVariable(model->params,"time_max",p->value,p->type,p->vary);
-        LALInferenceRemoveVariable(model->params,"time");
-        if (LALInferenceGetProcParamVal(commandLine, "--margtimephi")) {
-            UINT4 margphi = 1;
-            LALInferenceAddVariable(model->params, "margtimephi", &margphi, LALINFERENCE_UINT4_t,LALINFERENCE_PARAM_FIXED);
-        }
-    }
 
     if(!LALInferenceGetProcParamVal(commandLine,"--margphi") && !LALInferenceGetProcParamVal(commandLine, "--margtimephi")){
       LALInferenceRegisterUniformVariableREAL8(state, model->params, "phase", zero, phiMin, phiMax, LALINFERENCE_PARAM_CIRCULAR);
@@ -896,10 +880,42 @@ where the known names have been listed above\n\
   } else {
     LALInferenceRegisterUniformVariableREAL8(state, model->params, "distance", zero, Dmin, Dmax, LALINFERENCE_PARAM_LINEAR);
   }
-  LALInferenceRegisterUniformVariableREAL8(state, model->params, "rightascension", zero, raMin, raMax, LALINFERENCE_PARAM_CIRCULAR);
-  LALInferenceRegisterUniformVariableREAL8(state, model->params, "declination", zero, decMin, decMax, LALINFERENCE_PARAM_LINEAR);
   LALInferenceRegisterUniformVariableREAL8(state, model->params, "polarisation", zero, psiMin, psiMax, LALINFERENCE_PARAM_LINEAR);
-  LALInferenceRegisterUniformVariableREAL8(state, model->params, "theta_jn", zero, thetaJNmin, thetaJNmax,LALINFERENCE_PARAM_LINEAR);
+  LALInferenceRegisterUniformVariableREAL8(state, model->params, "costheta_jn", zero, costhetaJNmin, costhetaJNmax,LALINFERENCE_PARAM_LINEAR);
+
+  /* Option to use the detector-aligned frame */ 
+  if(LALInferenceGetProcParamVal(commandLine,"--detector-frame"))
+  {
+      printf("Using detector-based sky frame\n");
+      LALInferenceRegisterUniformVariableREAL8(state,model->params,"t0",timeParam,timeMin,timeMax,LALINFERENCE_PARAM_LINEAR);
+      LALInferenceRegisterUniformVariableREAL8(state,model->params,"cosalpha",0,-1,1,LALINFERENCE_PARAM_LINEAR);
+      LALInferenceRegisterUniformVariableREAL8(state,model->params,"azimuth",0.0,0.0,LAL_TWOPI,LALINFERENCE_PARAM_CIRCULAR);
+      /* add the time parameter then remove it so that the prior is set up properly */
+      LALInferenceRegisterUniformVariableREAL8(state, model->params, "time", timeParam, timeMin, timeMax,LALINFERENCE_PARAM_LINEAR);
+      LALInferenceRemoveVariable(model->params,"time");
+      INT4 one=1;
+      LALInferenceAddVariable(model->params,"SKY_FRAME",&one,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
+  }
+  else
+  {
+		  LALInferenceRegisterUniformVariableREAL8(state, model->params, "rightascension", zero, raMin, raMax, LALINFERENCE_PARAM_CIRCULAR);
+		  LALInferenceRegisterUniformVariableREAL8(state, model->params, "declination", zero, decMin, decMax, LALINFERENCE_PARAM_LINEAR);
+		  LALInferenceRegisterUniformVariableREAL8(state, model->params, "time", timeParam, timeMin, timeMax,LALINFERENCE_PARAM_LINEAR);
+  }
+  /* If we are marginalising over the time, remove that variable from the model (having set the prior above) */
+  /* Also set the prior in model->params, since Likelihood can't access the state! (ugly hack) */
+  if(LALInferenceGetProcParamVal(commandLine,"--margtime") || LALInferenceGetProcParamVal(commandLine, "--margtimephi")){
+	  LALInferenceVariableItem *p=LALInferenceGetItem(state->priorArgs,"time_min");
+	  LALInferenceAddVariable(model->params,"time_min",p->value,p->type,p->vary);
+	  p=LALInferenceGetItem(state->priorArgs,"time_max");
+	  LALInferenceAddVariable(model->params,"time_max",p->value,p->type,p->vary);
+	  if (LALInferenceCheckVariable(model->params,"time")) LALInferenceRemoveVariable(model->params,"time");
+	  if (LALInferenceGetProcParamVal(commandLine, "--margtimephi")) {
+		  UINT4 margphi = 1;
+		  LALInferenceAddVariable(model->params, "margtimephi", &margphi, LALINFERENCE_UINT4_t,LALINFERENCE_PARAM_FIXED);
+	  }
+  }
+      
   /* PPE parameters */
 
   ppt=LALInferenceGetProcParamVal(commandLine, "--TaylorF2ppE");
@@ -1042,7 +1058,7 @@ LALInferenceModel *LALInferenceInitModelReviewEvidence(LALInferenceRunState *sta
 		{.name="m1", .val=16., .min=14.927715, .max=17.072285},
 		{.name="m2", .val=7., .min=5.829675, .max=8.170325},
 		{.name="distance", .val=50., .min=37.986000000000004, .max=62.013999999999996},
-		{.name="theta_jn", .val=LAL_PI/2., .min=1.4054428267948966, .max=1.7361498267948965},
+		{.name="costheta_jn", .val=LAL_PI/2., .min=1.4054428267948966, .max=1.7361498267948965},
 		{.name="phase", .val=LAL_PI, .min=2.8701521535897934, .max=3.413033153589793},
 		{.name="polarisation", .val=LAL_PI/2., .min=1.3885563267948966, .max=1.7530363267948965},
 		{.name="rightascension", .val=LAL_PI, .min=2.813050153589793, .max=3.4701351535897933},
@@ -1096,7 +1112,7 @@ LALInferenceModel *LALInferenceInitModelReviewEvidence_bimod(LALInferenceRunStat
     {.name="m1", .val=16.857828, .min=14.927715, .max=18.787941},
     {.name="m2", .val=7.93626, .min=5.829675, .max=10.042845},
     {.name="distance", .val=34.6112, .min=12.986, .max=56.2364},
-    {.name="theta_jn", .val=0.9176809634, .min=0.6200446634, .max=1.2153172634},
+    {.name="costheta_jn", .val=0.9176809634, .min=0.6200446634, .max=1.2153172634},
     {.name="phase", .val=1.7879487268, .min=1.2993558268, .max=2.2765416268},
     {.name="polarisation", .val=0.9311901634, .min=0.6031581634, .max=1.2592221634},
     {.name="rightascension", .val=1.8336303268, .min=1.2422538268, .max=2.4250068268},
@@ -1148,7 +1164,7 @@ LALInferenceModel *LALInferenceInitModelReviewEvidence_banana(LALInferenceRunSta
     {.name="m1", .val=16., .min=14., .max=18.},
     {.name="m2", .val=7., .min=5., .max=9.},
     {.name="distance", .val=50., .min=45., .max=55.},
-    {.name="theta_jn", .val=LAL_PI/2., .min=-0.429203673, .max=3.570796327},
+    {.name="costheta_jn", .val=LAL_PI/2., .min=-0.429203673, .max=3.570796327},
     {.name="phase", .val=LAL_PI, .min=1.141592654, .max=5.141592654},
     {.name="polarisation", .val=LAL_PI/2., .min=-0.429203673, .max=3.570796327},
     {.name="rightascension", .val=LAL_PI, .min=1.141592654, .max=5.141592654},
@@ -1384,6 +1400,18 @@ void LALInferenceCheckOptionsConsistency(ProcessParamsTable *commandLine)
     exit(1);
   }
 
+  /* Check for small sample rates when margtime-ing. */
+  if (LALInferenceGetProcParamVal(commandLine, "--margtime") || LALInferenceGetProcParamVal(commandLine, "--margtimephi")) {
+    ppt = LALInferenceGetProcParamVal(commandLine, "--srate");
+    if (ppt) {
+      int srate = atoi(ppt->value);
+
+      if (srate < 4096) {
+	XLALPrintWarning("WARNING: you have chosen to marginalise in time with a sample rate of %d, but this typically gives incorrect results for CBCs; use at least 4096 Hz to be safe", srate);
+      }
+    }
+  }
+
   return;
 }
 
@@ -1480,9 +1508,9 @@ void LALInferenceInitSpinVariables(LALInferenceRunState *state, LALInferenceMode
    * otherwise -> add everything */
    /* Note: To get spin aligned is sufficient to not add the spin angles because LALInferenceTemplate will default to aligned spin if it doesn't find spin angle params in model->params. */
   if (!noSpin){
-    LALInferenceRegisterUniformVariableREAL8(state, model->params, spin_support==LAL_SIM_INSPIRAL_ALIGNEDSPIN?"spin1":"a_spin1", 0.0, a1min, a1max,spin1Vary);
+    LALInferenceRegisterUniformVariableREAL8(state, model->params, "a_spin1", 0.0, a1min, a1max,spin1Vary);
     if (!singleSpin)
-      LALInferenceRegisterUniformVariableREAL8(state, model->params, spin_support==LAL_SIM_INSPIRAL_ALIGNEDSPIN?"spin2":"a_spin2", 0.0, a2min, a2max,spin2Vary);
+      LALInferenceRegisterUniformVariableREAL8(state, model->params, "a_spin2", 0.0, a2min, a2max,spin2Vary);
     if (!spinAligned){
       LALInferenceRegisterUniformVariableREAL8(state, model->params, "phi_jl", 0.0, phiJLmin,  phiJLmax, phiJLVary);
       LALInferenceRegisterUniformVariableREAL8(state, model->params, "tilt_spin1", 0.0, tilt1min,tilt1max,tilt1Vary);

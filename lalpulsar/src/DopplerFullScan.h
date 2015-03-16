@@ -62,20 +62,20 @@ SWIGLAL(IMMUTABLE_MEMBERS(tagDopplerFullScanInit, Detector, ephemeris, gridFile)
 typedef struct tagDopplerFullScanInit {
   DopplerRegion searchRegion;		/**< Doppler-space region to be covered + scanned */
   DopplerGridType gridType;		/**< which type of grid to generate */
-  LALPulsarMetricType metricType; 	/**< which metric to use if GRID_METRIC */
+  LALPulsarMetricType metricType;	/**< which metric to use if GRID_METRIC */
   BOOLEAN projectMetric;		/**< project metric on f=const subspace */
   PulsarDopplerParams stepSizes;	/**< user-settings for stepsizes if GRID_FLAT */
   REAL8 metricMismatch;			/**< for GRID_METRIC and GRID_ISOTROPIC */
   LIGOTimeGPS startTime;		/**< start-time of the observation */
   REAL8 Tspan;				/**< total time spanned by observation */
-  const LALDetector *Detector; 		/**< Current detector */
+  const LALDetector *Detector;		/**< Current detector */
   const EphemerisData *ephemeris;	/**< ephemeris-data for numerical metrics */
   const CHAR *gridFile;			/**< filename for sky-grid or full-grid if GRID_FILE_SKYGRID or GRID_FILE_FULLGRID */
   REAL8 extraArgs[3];                   /**< extra grid-specific setup arguments */
 } DopplerFullScanInit;
 
 /** opaque type to reflects the current state of a full multi-dimensional DopplerScan */
-typedef struct tagDopplerFullScanState DopplerFullScanState; 	/* opaque type */
+typedef struct tagDopplerFullScanState DopplerFullScanState;	/* opaque type */
 
 
 /*---------- Global variables ----------*/
@@ -84,13 +84,12 @@ typedef struct tagDopplerFullScanState DopplerFullScanState; 	/* opaque type */
 /*---------- external prototypes [API] ----------*/
 
 /* ----- full-fledged multi-dimensional Doppler scanner functions ----- */
-void InitDopplerFullScan(LALStatus *, DopplerFullScanState **scanState, const DopplerFullScanInit *init);
-void loadFullGridFile ( LALStatus *, DopplerFullScanState *scan, const DopplerFullScanInit *init );
+DopplerFullScanState *XLALInitDopplerFullScan ( const DopplerFullScanInit *init );
 
 int  XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan);
-void FreeDopplerFullScan (LALStatus *status, DopplerFullScanState **scan);
 REAL8 XLALNumDopplerTemplates ( DopplerFullScanState *scan);
 int XLALGetDopplerSpinRange ( PulsarSpinRange *spinRange, const DopplerFullScanState *scan );
+void XLALDestroyDopplerFullScan ( DopplerFullScanState *scan );
 
 /* ----- variout utility functions ----- */
 
@@ -98,7 +97,7 @@ int XLALGetDopplerSpinRange ( PulsarSpinRange *spinRange, const DopplerFullScanS
 /// Set a first spindown bound derived from spindown age and braking indices
 ///
 int XLALSetLatticeTilingF1DotAgeBrakingBound(
-  LatticeTilingSpace* space,		///< [in] Lattice tiling parameter space
+  LatticeTiling* tiling,		///< [in] Lattice tiling
   const size_t freq_dimension,		///< [in] Frequency dimension
   const size_t f1dot_dimension,		///< [in] First spindown dimension
   const double age,			///< [in] Spindown age
@@ -110,13 +109,16 @@ int XLALSetLatticeTilingF1DotAgeBrakingBound(
 /// Set a second spindown bound derived from braking indices
 ///
 int XLALSetLatticeTilingF2DotBrakingBound(
-  LatticeTilingSpace* space,		///< [in] Lattice tiling parameter space
+  LatticeTiling* tiling,		///< [in] Lattice tiling
   const size_t freq_dimension,		///< [in] Frequency dimension
   const size_t f1dot_dimension,		///< [in] First spindown dimension
   const size_t f2dot_dimension,		///< [in] Second spindown dimension
   const double min_braking,		///< [in] Minimum braking index
   const double max_braking		///< [in] Maximum braking index
   );
+
+// ========== deprecated LAL functions ==========
+void InitDopplerFullScan(LALStatus *, DopplerFullScanState **scanState, const DopplerFullScanInit *init);
 
 #ifdef  __cplusplus
 }

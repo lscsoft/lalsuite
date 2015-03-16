@@ -35,22 +35,14 @@
  */
 #include <config.h>
 
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-
-#ifdef HAVE_GETOPT_H
-#include <getopt.h>
-#endif
-
 #include <math.h>
 #include <sys/times.h>
 
 #include <lal/ComputeFstat.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALBarycenter.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/AVFactories.h>
-extern char *optarg;
 
 /** \name Error codes */
 /*@{*/
@@ -141,7 +133,7 @@ int main(int argc, char *argv[])
   Tsft = 2154.1; */
 
 
-  while ((opt = getopt( argc, argv, "n:qv:" )) != -1) {
+  while ((opt = LALgetopt( argc, argv, "n:qv:" )) != -1) {
     switch (opt) {
     case 'v': /* set lalDebugLevel */
       break;
@@ -149,7 +141,7 @@ int main(int argc, char *argv[])
       ignoreErrors = 1;
       break;
     case 'n': /* number of times to check */
-      numChecks = atoi( optarg );
+      numChecks = atoi( LALoptarg );
       break;
     }
   }

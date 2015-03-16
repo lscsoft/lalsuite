@@ -27,14 +27,13 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
-#include <getopt.h>
-#include <unistd.h>
 #include <complex.h>
 #include <time.h>
 #include <sys/time.h>
 
 /* LAL headers */
 #include <lal/LALStdlib.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALAtomicDatatypes.h>
 #include <lal/LALDatatypes.h>
 #include <lal/AVFactories.h>
@@ -93,6 +92,9 @@ extern "C" {
 #define UNUSED
 #endif
 
+/** Macro defining the natural logarithm of pi \f$ \log{\pi}\f$ from http://math.stackexchange.com/questions/239438/natural-log-of-pi-to-sixty-digits-a-reference-needed */
+#define PPE_LNPI 1.1447298858494001741434273513530587
+
 /** Macro to round a value to the nearest integer. */
 #define ROUND(x) (floor(x+0.5))
 
@@ -141,7 +143,7 @@ extern "C" {
  *
  * Note: These should be increased if additional model parameters are added.
  */
-#define NUMAMPPARS 20
+#define NUMAMPPARS 22
 
 /**
  * The total number of frequency parameters that can defined a signal e.g.
@@ -213,6 +215,8 @@ extern "C" {
 " --Nlive             (INT4) no. of live points for nested sampling\n"\
 " --Nmcmc             (INT4) no. of for MCMC used to find new live points\n\
                      (if not specified an adaptive number of points is used)\n"\
+" --Nmcmcinitial      (INT4) no. of MCMC points to use in the initial resampling of\n\
+                     the prior (default is to use MAXMCMC).\n"\
 " --Nruns             (INT4) no. of parallel runs\n"\
 " --tolerance         (REAL8) tolerance of nested sampling integrator\n"\
 " --randomseed        seed for random number generator\n"\
@@ -321,6 +325,8 @@ extern "C" {
 " --time-it          Set if wanting to time the various parts of the code.\n\
                     A output file with the \"outfile\" filename appended with\n\
                     \"_timings\" will contain the timings.\n"\
+" --sampleprior      (UINT4) Set this to be a number of samples generated from\n\
+                    the prior. The nested sampling will not be performed.\n"\
 "\n"
 
 /**
@@ -330,7 +336,7 @@ extern "C" {
 static const CHAR amppars[NUMAMPPARS][VARNAME_MAX] = { "H0", "PHI0", "PSI",
 "COSIOTA", "C22", "C21", "PHI22", "PHI21", "HSCALARB", "HSCALARL", "HVECTORX",
 "HVECTORY", "PSIVECTOR", "PHI0VECTOR", "PHI0SCALAR", "PHI0TENSOR", "I21", "I31",
-"LAMBDA", "COSTHETA" };
+"LAMBDA", "COSTHETA", "IOTA", "THETA" };
 
 /**
  * A list of the frequency parameters. The names given here are those that are

@@ -103,7 +103,6 @@ so that you can load the libawg.so and libtestpoint.so shared objects.
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <string.h>
 #include <sys/types.h>
 #include <time.h>

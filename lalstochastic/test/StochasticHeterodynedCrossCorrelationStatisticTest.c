@@ -113,7 +113,7 @@
  * LALCHARDestroyVector()
  * XLALUnitAsString()
  * XLALUnitCompare()
- * getopt()
+ * LALgetopt()
  * printf()
  * fprintf()
  * freopen()
@@ -160,15 +160,8 @@
 #include <stdio.h>
 #include <config.h>
 
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-
-#ifdef HAVE_GETOPT_H
-#include <getopt.h>
-#endif
-
 #include <lal/StochasticCrossCorrelation.h>
+#include <lal/LALgetopt.h>
 #include <lal/AVFactories.h>
 #include <lal/ReadFTSeries.h>
 #include <lal/Units.h>
@@ -188,9 +181,6 @@
 
 #define STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TRUE     1
 #define STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_FALSE    0
-
-extern char *optarg;
-extern int   optind;
 
 BOOLEAN optVerbose = STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_FALSE;
 BOOLEAN optMatch   = STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TRUE;
@@ -1016,7 +1006,7 @@ ParseOptions (int argc, char *argv[])
   {
     int c = -1;
 
-    c = getopt (argc, argv, "hqvd:i:j:k:n:t");
+    c = LALgetopt (argc, argv, "hqvd:i:j:k:n:t");
     if (c == -1)
     {
       break;
@@ -1029,19 +1019,19 @@ ParseOptions (int argc, char *argv[])
         break;
 
       case 'i': /* specify file containing first data stream */
-        strncpy (optData1File, optarg, LALNameLength);
+        strncpy (optData1File, LALoptarg, LALNameLength);
         break;
 
       case 'j': /* specify file containing second data stream */
-        strncpy (optData2File, optarg, LALNameLength);
+        strncpy (optData2File, LALoptarg, LALNameLength);
         break;
 
       case 'k': /* specify file containing optimal filter */
-        strncpy (optFilterFile, optarg, LALNameLength);
+        strncpy (optFilterFile, LALoptarg, LALNameLength);
         break;
 
       case 'n': /* specify number of points in frequency series */
-        optLength = atoi (optarg);
+        optLength = atoi (LALoptarg);
         break;
 
       case 'd': /* set debug level */
@@ -1076,7 +1066,7 @@ ParseOptions (int argc, char *argv[])
 
   }
 
-  if (optind < argc)
+  if (LALoptind < argc)
   {
     Usage (argv[0], 1);
   }

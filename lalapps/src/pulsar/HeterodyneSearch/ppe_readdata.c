@@ -187,7 +187,6 @@ void read_pulsar_data( LALInferenceRunState *runState ){
       tempdet = strsep( &tempdets, "," );
       XLALStringCopy( dets[i], tempdet, strlen(tempdet)+1 );
     }
-
   }
   /*Get psd values for generating fake data.*/
   /*=========================================================================*/

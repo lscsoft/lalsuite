@@ -35,3 +35,8 @@
 \defgroup lalapps_stochastic		Stochastic Applications
 
 */
+
+/**
+\page lalapps_authors			Author List
+\verbinclude AUTHORS
+*/

@@ -1,4 +1,5 @@
 //
+// Copyright (C) 2014 Reinhard Prix
 // Copyright (C) 2012, 2013, 2014 David Keitel, Bernd Machenschalk, Reinhard Prix, Karl Wette
 //
 // This program is free software; you can redistribute it and/or modify
@@ -65,6 +66,11 @@ extern "C" {
 /// \f$\mathcal{F}\f$-statistic methods.
 ///
 typedef struct tagFstatInput FstatInput;
+
+///
+/// pre-allocated 'workspace' memory for Resampling Fstat computation; can be shared over segments via XLALTakeOverFstatWorkspace()
+///
+typedef struct tagFstatWorkspace FstatWorkspace;
 
 ///
 /// A vector of XLALComputeFstat() input data structures, for e.g. computing the
@@ -144,14 +150,26 @@ extern const int FMETHOD_DEMOD_BEST;
 extern const int FMETHOD_RESAMP_BEST;
 
 ///
-/// Struct for collecting 'lower-level' tuning and method-specific parameters to be passed to the
-/// \f$\mathcal{F}\f$-statistic setup function.
+/// Struct of optional 'advanced level' and (potentially method-specific) arguments to be passed to the
+/// \f$\mathcal{F}\f$-statistic setup function XLALCreateFstatInput().
 ///
-typedef struct tagFstatExtraParams {
-  UINT4 randSeed;                 ///< Random-number seed value used for fake Gaussian noise generation.
-  SSBprecision SSBprec;           ///< Barycentric transformation precision.
-  UINT4 Dterms;                   ///< Number of Dirichlet kernel terms, used by some \a Demod methods; see #FstatMethodType
-} FstatExtraParams;
+typedef struct tagFstatOptionalArgs {
+  UINT4 randSeed;			///< Random-number seed value used in case of fake Gaussian noise generation (\c injectSqrtSX)
+  SSBprecision SSBprec;			///< Barycentric transformation precision.
+  UINT4 Dterms;                  	///< Number of Dirichlet kernel terms, used by some \a Demod methods; see #FstatMethodType.
+  UINT4 runningMedianWindow;	  	///< If SFT noise weights are calculated from the SFTs, the running median window length to use.
+  FstatMethodType FstatMethod;	  	///< Method to use for computing the \f$\mathcal{F}\f$-statistic.
+  PulsarParamsVector *injectSources;	///< Vector of parameters of CW signals to simulate and inject.
+  MultiNoiseFloor *injectSqrtSX;  	///< Single-sided PSD values for fake Gaussian noise to be added to SFT data.
+  MultiNoiseFloor *assumeSqrtSX;  	///< Single-sided PSD values to be used for computing SFT noise weights instead of from a running median of the SFTs themselves.
+  FstatWorkspace *sharedWorkspace;	///< use this shared workspace instead of creating our own one
+} FstatOptionalArgs;
+#ifdef SWIG // SWIG interface directives
+SWIGLAL(COPY_CONSTRUCTOR(tagFstatOptionalArgs));
+#endif // SWIG
+
+/// global initializer for setting FstatOptionalArgs to default values
+extern const FstatOptionalArgs FstatOptionalArgsDefaults;
 
 ///
 /// An \f$\mathcal{F}\f$-statistic 'atom', i.e. the elementary per-SFT quantities required to compute the
@@ -255,7 +273,7 @@ typedef struct tagFstatResults {
   /// This array should not be accessed if #whatWasComputed & FSTATQ_PARTS_PER_DET is false.
 #ifdef SWIG // SWIG interface directives
   SWIGLAL(ARRAY_1D_PTR_1D(FstatResults, COMPLEX8, FaPerDet, UINT4, numDetectors, numFreqBins));
-  SWIGLAL(ARRAY_1D_PTR_1D(FstatResults, COMPLEX8, FaPerDet, UINT4, numDetectors, numFreqBins));
+  SWIGLAL(ARRAY_1D_PTR_1D(FstatResults, COMPLEX8, FbPerDet, UINT4, numDetectors, numFreqBins));
 #endif // SWIG
   COMPLEX8 *FaPerDet[PULSAR_MAX_DETECTORS];
   COMPLEX8 *FbPerDet[PULSAR_MAX_DETECTORS];
@@ -288,11 +306,8 @@ MultiFstatAtomVector* XLALCreateMultiFstatAtomVector ( const UINT4 length );
 void XLALDestroyMultiFstatAtomVector ( MultiFstatAtomVector *atoms );
 
 FstatInput *
-XLALCreateFstatInput ( const SFTCatalog *SFTcatalog, const REAL8 minCoverFreq, const REAL8 maxCoverFreq,
-                       const PulsarParamsVector *injectSources, const MultiNoiseFloor *injectSqrtSX,
-                       const MultiNoiseFloor *assumeSqrtSX, const UINT4 runningMedianWindow,
-                       const EphemerisData *ephemerides,
-                       const FstatMethodType FstatMethod, const FstatExtraParams *extraParams );
+XLALCreateFstatInput ( const SFTCatalog *SFTcatalog, const REAL8 minCoverFreq, const REAL8 maxCoverFreq, const REAL8 dFreq,
+                       const EphemerisData *ephemerides, const FstatOptionalArgs *optionalArgs );
 
 const MultiLALDetector* XLALGetFstatInputDetectors ( const FstatInput* input );
 const MultiLIGOTimeGPSVector* XLALGetFstatInputTimestamps ( const FstatInput* input );
@@ -303,17 +318,15 @@ const MultiDetectorStateSeries* XLALGetFstatInputDetectorStates ( const FstatInp
 SWIGLAL(INOUT_STRUCTS(FstatResults**, Fstats));
 #endif
 int XLALComputeFstat ( FstatResults **Fstats, FstatInput *input, const PulsarDopplerParams *doppler,
-                       const REAL8 dFreq, const UINT4 numFreqBins, const FstatQuantities whatToCompute );
+                       const UINT4 numFreqBins, const FstatQuantities whatToCompute );
+
+
+FstatWorkspace *XLALGetSharedFstatWorkspace ( FstatInput *input );
+void XLALDestroyFstatWorkspace ( FstatWorkspace *ws );
 
 void XLALDestroyFstatInput ( FstatInput* input );
 void XLALDestroyFstatResults ( FstatResults* Fstats );
 int XLALAdd4ToFstatResults ( FstatResults* Fstats );
-
-int XLALEstimatePulsarAmplitudeParams ( PulsarCandidate *pulsarParams, const LIGOTimeGPS* FaFb_refTime,
-                                        const COMPLEX8 Fa, const COMPLEX8 Fb, const AntennaPatternMatrix *Mmunu );
-
-int XLALAmplitudeParams2Vect ( PulsarAmplitudeVect A_Mu, const PulsarAmplitudeParams Amp );
-int XLALAmplitudeVect2Params( PulsarAmplitudeParams *Amp, const PulsarAmplitudeVect A_Mu );
 
 REAL4 XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms, const INT4 X );
 REAL4 XLALComputeFstatFromFaFb ( COMPLEX8 Fa, COMPLEX8 Fb, REAL4 A, REAL4 B, REAL4 C, REAL4 E, REAL4 Dinv );

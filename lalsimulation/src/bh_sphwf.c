@@ -21,9 +21,9 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <getopt.h>
 
 #include <lal/LALStdlib.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALConstants.h>
 #include <lal/LALSimBlackHoleRingdown.h>
 
@@ -65,7 +65,7 @@ int main( int argc, char *argv[] )
 
 int parseargs(int argc, char **argv)
 {
-	struct option long_options[] = {
+	struct LALoption long_options[] = {
 			{ "help", no_argument, 0, 'h' },
 			{ "spin", required_argument, 0, 'a' },
 			{ "inclination", required_argument, 0, 'i' },
@@ -79,7 +79,7 @@ int parseargs(int argc, char **argv)
 		int option_index = 0;
 		int c;
 
-		c = getopt_long_only(argc, argv, args, long_options, &option_index);
+		c = LALgetopt_long_only(argc, argv, args, long_options, &option_index);
 		if (c == -1) /* end of options */
 			break;
 
@@ -88,26 +88,26 @@ int parseargs(int argc, char **argv)
 				if (long_options[option_index].flag)
 					break;
 				else {
-					fprintf(stderr, "error parsing option %s with argument %s\n", long_options[option_index].name, optarg);
+					fprintf(stderr, "error parsing option %s with argument %s\n", long_options[option_index].name, LALoptarg);
 					exit(1);
 				}
 			case 'h': /* help */
 				usage(argv[0]);
 				exit(0);
 			case 'a': /* spin */
-				a = atof(optarg);
+				a = atof(LALoptarg);
 				break;
 			case 'i': /* inclination */
-				theta = atof(optarg);
+				theta = atof(LALoptarg);
 				break;
 			case 'l':
-				l = atoi(optarg);
+				l = atoi(LALoptarg);
 				break;
 			case 'm':
-				m = atoi(optarg);
+				m = atoi(LALoptarg);
 				break;
 			case 's':
-				s = atoi(optarg);
+				s = atoi(LALoptarg);
 				break;
 			case '?':
 			default:
@@ -116,10 +116,10 @@ int parseargs(int argc, char **argv)
 		}
 	}
 
-	if (optind < argc) {
+	if (LALoptind < argc) {
 		fprintf( stderr, "extraneous command line arguments:\n" );
-		while (optind < argc)
-			fprintf(stderr, "%s\n", argv[optind++]);
+		while (LALoptind < argc)
+			fprintf(stderr, "%s\n", argv[LALoptind++]);
 		exit(1);
 	}
 

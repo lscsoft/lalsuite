@@ -32,9 +32,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <getopt.h>
 
 #include <lal/LALConstants.h>
+#include <lal/LALgetopt.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALDetectors.h>
 #include <lal/TimeSeries.h>
@@ -400,7 +400,7 @@ struct params parseargs(int argc, char **argv)
         .dec = HUGE_VAL,
         .psi = HUGE_VAL,
     };
-    struct option long_options[] = {
+    struct LALoption long_options[] = {
         {"help", no_argument, 0, 'h'},
         {"verbose", no_argument, 0, 'v'},
         {"detector-prefix", required_argument, 0, 'D'},
@@ -421,7 +421,7 @@ struct params parseargs(int argc, char **argv)
     while (1) {
         int option_index = 0;
         int c;
-        c = getopt_long_only(argc, argv, args, long_options, &option_index);
+        c = LALgetopt_long_only(argc, argv, args, long_options, &option_index);
         if (c == -1)    /* end of options */
             break;
         switch (c) {
@@ -429,7 +429,7 @@ struct params parseargs(int argc, char **argv)
             if (long_options[option_index].flag)
                 break;
             else {
-                fprintf(stderr, "error parsing option %s with argument %s\n", long_options[option_index].name, optarg);
+                fprintf(stderr, "error parsing option %s with argument %s\n", long_options[option_index].name, LALoptarg);
                 exit(1);
             }
         case 'h':      /* help */
@@ -440,23 +440,23 @@ struct params parseargs(int argc, char **argv)
             break;
         case 'D':      /* detector-prefix */
             for (d = 0; d < LAL_NUM_DETECTORS; ++d) {
-                if (strcmp(optarg, lalCachedDetectors[d].frDetector.prefix) == 0) {
+                if (strcmp(LALoptarg, lalCachedDetectors[d].frDetector.prefix) == 0) {
                     p.detector = lalCachedDetectors + d;
                     break;
                 }
             }
             break;
         case 't':      /* gps-time */
-            XLALStrToGPS(&p.epoch, optarg, NULL);
+            XLALStrToGPS(&p.epoch, LALoptarg, NULL);
             break;
         case 'a':      /* right-ascension */
-            p.ra = strtora(optarg);
+            p.ra = strtora(LALoptarg);
             break;
         case 'd':      /* right-ascension */
-            p.dec = strtodec(optarg);
+            p.dec = strtodec(LALoptarg);
             break;
         case 'p':      /* polarization-angle */
-            p.psi = atof(optarg) * LAL_PI_180;
+            p.psi = atof(LALoptarg) * LAL_PI_180;
             break;
         case '?':
         default:
@@ -464,21 +464,21 @@ struct params parseargs(int argc, char **argv)
             exit(1);
         }
     }
-    switch (argc - optind) {
+    switch (argc - LALoptind) {
     case 0:
         break;
     case 1:    /* the input file name */
-        p.fp = fopen(argv[optind], "r");
+        p.fp = fopen(argv[LALoptind], "r");
         if (!p.fp) {
-            fprintf(stderr, "error: could not open file %s\n", argv[optind]);
+            fprintf(stderr, "error: could not open file %s\n", argv[LALoptind]);
             exit(1);
         }
 
         break;
     default:
         fprintf(stderr, "extraneous command line arguments:\n");
-        while (++optind < argc)
-            fprintf(stderr, "%s\n", argv[optind]);
+        while (++LALoptind < argc)
+            fprintf(stderr, "%s\n", argv[LALoptind]);
         exit(1);
     }
 

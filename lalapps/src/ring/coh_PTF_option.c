@@ -19,7 +19,7 @@
 
 #include "coh_PTF.h"
 
-/* parse command line arguments using getopt_long to get ring params */
+/* parse command line arguments using LALgetopt_long to get ring params */
 int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
 {
 
@@ -27,7 +27,7 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
   UINT4                        ifoNumber;
   static struct coh_PTF_params localparams;
   memset( &localparams.haveTrig, 0, LAL_NUM_IFO * sizeof(int) );
-  struct option                long_options[] =
+  struct LALoption                long_options[] =
   {
     { "verbose",            no_argument, &vrbflg, 1 },
     { "strain-data",        no_argument, &localparams.strainData, 1 },
@@ -141,7 +141,7 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     int option_index = 0;
     int c;
 
-    c = getopt_long_only( argc, argv, args, long_options, &option_index );
+    c = LALgetopt_long_only( argc, argv, args, long_options, &option_index );
     if ( c == -1 ) /* end of options */
       break;
 
@@ -152,103 +152,103 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
           break;
         else
           error( "error parsing option %s with argument %s\n",
-              long_options[option_index].name, optarg );
+              long_options[option_index].name, LALoptarg );
       case 'a': /* gps-start-time */
-        localparams.startTime.gpsSeconds = atol( optarg );
+        localparams.startTime.gpsSeconds = atol( LALoptarg );
         break;
       case 'A': /* gps-start-time-ns */
-        localparams.startTime.gpsNanoSeconds = atol( optarg );
+        localparams.startTime.gpsNanoSeconds = atol( LALoptarg );
         break;
       case 'b': /* gps-end-time */
-        localparams.endTime.gpsSeconds = atol( optarg );
+        localparams.endTime.gpsSeconds = atol( LALoptarg );
         break;
       case 'B': /* gps-end-time-ns */
-        localparams.endTime.gpsNanoSeconds = atol( optarg );
+        localparams.endTime.gpsNanoSeconds = atol( LALoptarg );
         break;
       case '<': /* trigger-time */
-        localparams.trigTime.gpsSeconds = atol( optarg );
+        localparams.trigTime.gpsSeconds = atol( LALoptarg );
         break;
       case '>': /* trigger-time-ns */ 
-        localparams.trigTime.gpsNanoSeconds = atol( optarg );
+        localparams.trigTime.gpsNanoSeconds = atol( LALoptarg );
         break;
       case 'c': /* h1 channel-name */
-        localparams.channel[LAL_IFO_H1] = optarg;
+        localparams.channel[LAL_IFO_H1] = LALoptarg;
         break;
       case 'D': /* h1 frame-cache */
-        localparams.dataCache[LAL_IFO_H1] = optarg;
+        localparams.dataCache[LAL_IFO_H1] = LALoptarg;
         break;
       case 'y': /* l1 channel-name */
-        localparams.channel[LAL_IFO_L1] = optarg;
+        localparams.channel[LAL_IFO_L1] = LALoptarg;
         break;
       case 'Y': /* l1 frame-cache */
-        localparams.dataCache[LAL_IFO_L1] = optarg;
+        localparams.dataCache[LAL_IFO_L1] = LALoptarg;
         break;
       case 'z': /* v1 channel-name */
-        localparams.channel[LAL_IFO_V1] = optarg;
+        localparams.channel[LAL_IFO_V1] = LALoptarg;
         break;
       case 'Z': /* v1 frame-cache */
-        localparams.dataCache[LAL_IFO_V1] = optarg;
+        localparams.dataCache[LAL_IFO_V1] = LALoptarg;
         break;
       case 'x': /* h2 channel-name */
-        localparams.channel[LAL_IFO_H2] = optarg;
+        localparams.channel[LAL_IFO_H2] = LALoptarg;
         break;
       case 'X': /* h2 frame-cache */
-        localparams.dataCache[LAL_IFO_H2] = optarg;
+        localparams.dataCache[LAL_IFO_H2] = LALoptarg;
         break;
       case 'e': /* start frequency of template generation */
-        localparams.lowTemplateFrequency = atof( optarg );
+        localparams.lowTemplateFrequency = atof( LALoptarg );
         break;
       case 'H': /* start frequency of matched filter */
-        localparams.lowFilterFrequency = atof( optarg );
+        localparams.lowFilterFrequency = atof( LALoptarg );
         break;
       case 'I': /* End frequency of matched filter */
-        localparams.highFilterFrequency = atof( optarg );
+        localparams.highFilterFrequency = atof( LALoptarg );
         break;
       case 'E': /* highpass-frequency */
-        localparams.highpassFrequency = atof( optarg );
+        localparams.highpassFrequency = atof( LALoptarg );
         break;
       case 'C': /* waveform approximant */
-        if ( ! strcmp( "FindChirpSP", optarg ) )
+        if ( ! strcmp( "FindChirpSP", LALoptarg ) )
         {
           localparams.approximant = FindChirpSP;
         }
-        else if ( ! strcmp( "FindChirpPTF", optarg ) )
+        else if ( ! strcmp( "FindChirpPTF", LALoptarg ) )
         {
           localparams.approximant = FindChirpPTF;
         }
-        else if ( ! strcmp( "TaylorT1", optarg) )
+        else if ( ! strcmp( "TaylorT1", LALoptarg) )
         {
           localparams.approximant = TaylorT1;
         }
-        else if ( ! strcmp( "TaylorT2", optarg) )
+        else if ( ! strcmp( "TaylorT2", LALoptarg) )
         {
           localparams.approximant = TaylorT2;
         }
-        else if ( ! strcmp( "TaylorT3", optarg) )
+        else if ( ! strcmp( "TaylorT3", LALoptarg) )
         {
           localparams.approximant = TaylorT3;
         }
-        else if ( ! strcmp( "TaylorT4", optarg) )
+        else if ( ! strcmp( "TaylorT4", LALoptarg) )
         {
           localparams.approximant = TaylorT4;
         }
-        else if ( ! strcmp( "GeneratePPN", optarg) )
+        else if ( ! strcmp( "GeneratePPN", LALoptarg) )
         {
           localparams.approximant = GeneratePPN;
         }
-        else if ( ! strcmp( "PadeT1", optarg) )
+        else if ( ! strcmp( "PadeT1", LALoptarg) )
         {
           localparams.approximant = PadeT1;
         }
-        else if ( ! strcmp( "EOB", optarg) )
+        else if ( ! strcmp( "EOB", LALoptarg) )
         {
           localparams.approximant = EOB;
         }
-        else if ( ! strcmp( "EOBNR", optarg) )
+        else if ( ! strcmp( "EOBNR", LALoptarg) )
         {
           localparams.approximant = EOBNR;
         }
-        else if ( ! strcmp( "IMRPhenomB", optarg) )
+        else if ( ! strcmp( "IMRPhenomB", LALoptarg) )
         {
           localparams.approximant = IMRPhenomB;
         }
@@ -257,21 +257,21 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown order specified: "
               "%s (must be either FindChirpSP, FindChirpPTF or TaylorT4)\n",
-              long_options[option_index].name, optarg );
+              long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
         break;
       case '6': /* Simulated data option */
         localparams.simData = 1;
-        if ( ! strcmp( "WhiteNoise",optarg))
+        if ( ! strcmp( "WhiteNoise",LALoptarg))
         {
           localparams.simDataType = WHITE_PSD;
         }
-        else if ( ! strcmp( "ILIGONoise",optarg))
+        else if ( ! strcmp( "ILIGONoise",LALoptarg))
         {
           localparams.simDataType = ILIGO_PSD;
         }
-        else if ( ! strcmp( "ALIGONoise",optarg))
+        else if ( ! strcmp( "ALIGONoise",LALoptarg))
         {
           localparams.simDataType = ALIGO_PSD;
         }
@@ -280,28 +280,28 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown data type specified:"
               "%s valid options are WhiteNoise, ILIGONoise or ALIGONoise",
-              long_options[option_index].name, optarg );
+              long_options[option_index].name, LALoptarg );
           exit(1);
         }
         break;
       case 'v': /* PN order of waveform */        
-        if ( ! strcmp( "twoPN", optarg ) )
+        if ( ! strcmp( "twoPN", LALoptarg ) )
         {
           localparams.order = LAL_PNORDER_TWO;
         }
-        else if ( ! strcmp( "twoPointFivePN", optarg ) )
+        else if ( ! strcmp( "twoPointFivePN", LALoptarg ) )
         {
           localparams.order = LAL_PNORDER_TWO_POINT_FIVE;
         }
-        else if ( ! strcmp( "threePN", optarg ) )
+        else if ( ! strcmp( "threePN", LALoptarg ) )
         {
           localparams.order = LAL_PNORDER_THREE;
         }
-        else if ( ! strcmp( "threePointFivePN", optarg ) )
+        else if ( ! strcmp( "threePointFivePN", LALoptarg ) )
         {
           localparams.order = LAL_PNORDER_THREE_POINT_FIVE;
         }
-        else if ( ! strcmp( "pseudoFourPN", optarg ) )
+        else if ( ! strcmp( "pseudoFourPN", LALoptarg ) )
         {
           localparams.order = LAL_PNORDER_PSEUDO_FOUR;
         }
@@ -310,156 +310,156 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown order specified: "
               "%s (must be one of twoPN, twoPointFivePN, threePN, threePointFivePN, pseudoFourPN)\n",
-              long_options[option_index].name, optarg );
+              long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
         break;
       case 'f': /* right-ascension */
-        localparams.rightAscension = atof( optarg ) * LAL_PI_180;
+        localparams.rightAscension = atof( LALoptarg ) * LAL_PI_180;
         break;
       case 'F': /* Declination */
-        localparams.declination = atof( optarg ) * LAL_PI_180;
+        localparams.declination = atof( LALoptarg ) * LAL_PI_180;
         break;
       case 'g': /* Error in declination */
-        localparams.skyError = atof( optarg ) * LAL_PI_180;
+        localparams.skyError = atof( LALoptarg ) * LAL_PI_180;
         break;
       case 'G': /* timing accuracy of network */
-        localparams.timingAccuracy = atof( optarg );
+        localparams.timingAccuracy = atof( LALoptarg );
         break;
       case 'h': /* help */
         coh_PTF_usage( program );
         exit( 0 );
       case 'i': /* injection-file */
-        localparams.injectFile = optarg;
+        localparams.injectFile = LALoptarg;
         break;
       case 'j':
-        localparams.threshold = atof(optarg); 
+        localparams.threshold = atof(LALoptarg);
         break;
       case '2':
-        localparams.spinThreshold = atof(optarg);
+        localparams.spinThreshold = atof(LALoptarg);
         break;
       case '1':
-        localparams.snglSNRThreshold = atof(optarg);
+        localparams.snglSNRThreshold = atof(LALoptarg);
         break;
       case 'J':
-        localparams.timeWindow = atof(optarg);
+        localparams.timeWindow = atof(LALoptarg);
         break;
       case 'k': /* user-tag */
-        strncpy( localparams.userTag, optarg, sizeof( localparams.userTag ) - 1 );
+        strncpy( localparams.userTag, LALoptarg, sizeof( localparams.userTag ) - 1 );
         break;
       case 'K': /* ifo-tag */
-        strncpy( localparams.ifoTag, optarg, sizeof( localparams.ifoTag ) - 1 );
+        strncpy( localparams.ifoTag, LALoptarg, sizeof( localparams.ifoTag ) - 1 );
         break;
       case 'l':
-        localparams.nonspinSNR2threshold = atof(optarg);
+        localparams.nonspinSNR2threshold = atof(LALoptarg);
         break;
       case 'L':
-        localparams.spinSNR2threshold = atof(optarg);
+        localparams.spinSNR2threshold = atof(LALoptarg);
         break;
       case 'm': /* spin bank */
         localparams.spinBank = 1;
-        strncpy( localparams.spinBankName, optarg, sizeof( localparams.spinBankName ) - 1 );
+        strncpy( localparams.spinBankName, LALoptarg, sizeof( localparams.spinBankName ) - 1 );
         break;
       case 'M': /* non spin bank */
         localparams.noSpinBank = 1;
-        strncpy( localparams.noSpinBankName, optarg, sizeof( localparams.noSpinBankName ) - 1 );
+        strncpy( localparams.noSpinBankName, LALoptarg, sizeof( localparams.noSpinBankName ) - 1 );
         break;
       case 'n': /* only-segment-numbers */
-        localparams.segmentsToDoList = optarg;
+        localparams.segmentsToDoList = LALoptarg;
         break;
       case 'N': /* only-template-number */
-        localparams.templatesToDoList = optarg;
+        localparams.templatesToDoList = LALoptarg;
         break;
       case 'o': /* output-file */
-        strncpy( localparams.outputFile, optarg, sizeof( localparams.outputFile ) - 1 );
+        strncpy( localparams.outputFile, LALoptarg, sizeof( localparams.outputFile ) - 1 );
         break;
       case 'O': /* bank-file */
-        localparams.bankFile = optarg;
+        localparams.bankFile = LALoptarg;
         break;
       case 'p': /* num auto chisq points */
-        localparams.numAutoPoints = atoi( optarg );
+        localparams.numAutoPoints = atoi( LALoptarg );
         break;
       case 'P': /* Auto veto time step */
-        localparams.autoVetoTimeStep = atof( optarg );
+        localparams.autoVetoTimeStep = atof( LALoptarg );
         break;
       case 'q': /* num chi square bins */
-        localparams.numChiSquareBins = atoi( optarg );
+        localparams.numChiSquareBins = atoi( LALoptarg );
         break;
       case 'Q': 
-        localparams.chiSquareCalcThreshold = atof( optarg );
+        localparams.chiSquareCalcThreshold = atof( LALoptarg );
         break;
       case 'r': /* random seed */
-        localparams.randomSeed = atoi( optarg );
+        localparams.randomSeed = atoi( LALoptarg );
         break;
       case 'R': /* dynamic range factor */
-        localparams.dynRangeFac = atof( optarg );
+        localparams.dynRangeFac = atof( LALoptarg );
         break;
       case 's': /* sample rate */
-        localparams.sampleRate = atof( optarg );
+        localparams.sampleRate = atof( LALoptarg );
         break;
       case 'S': /* segment-duration */
-        localparams.segmentDuration = atof( optarg );
+        localparams.segmentDuration = atof( LALoptarg );
         break;
       case '9': /* PSD segment-duration */
-        localparams.psdSegmentDuration = atof( optarg );
+        localparams.psdSegmentDuration = atof( LALoptarg );
         break;
       case 't': /* bank veto template bank */
-        localparams.bankVetoBankName = optarg;
+        localparams.bankVetoBankName = LALoptarg;
         break;
       case 'T': /* inverse-spec-length */
-        localparams.truncateDuration = atof( optarg );
+        localparams.truncateDuration = atof( LALoptarg );
         break;
       case 'u': /* trig-start-time */
-        localparams.trigStartTimeNS = (INT8) atol( optarg ) * LAL_INT8_C(1000000000);
+        localparams.trigStartTimeNS = (INT8) atol( LALoptarg ) * LAL_INT8_C(1000000000);
         break;
       case 'U': /* trig-end-time */
-        localparams.trigEndTimeNS = (INT8) atol( optarg ) * LAL_INT8_C(1000000000);
+        localparams.trigEndTimeNS = (INT8) atol( LALoptarg ) * LAL_INT8_C(1000000000);
         break;
       case 'w': /* block-duration */
-        localparams.duration = atof( optarg );
+        localparams.duration = atof( LALoptarg );
         break;
       case 'W': /* pad-data */
-        localparams.padData = atof( optarg );
+        localparams.padData = atof( LALoptarg );
         break;
       case '!': /* h1-slide-segment */
-        localparams.slideSegments[LAL_IFO_H1] = atoi( optarg );
+        localparams.slideSegments[LAL_IFO_H1] = atoi( LALoptarg );
         break;
       case '&': /* h2-slide-segments */
-        localparams.slideSegments[LAL_IFO_H2] = atoi( optarg );
+        localparams.slideSegments[LAL_IFO_H2] = atoi( LALoptarg );
         break;
       case '(': /* l1-slide-segments */
-        localparams.slideSegments[LAL_IFO_L1] = atoi( optarg );
+        localparams.slideSegments[LAL_IFO_L1] = atoi( LALoptarg );
         break;
       case ')': /* v1-slide-segments */
-        localparams.slideSegments[LAL_IFO_V1] = atoi( optarg );
+        localparams.slideSegments[LAL_IFO_V1] = atoi( LALoptarg );
         break;
       case '@': /* Short slide offset time */
-        localparams.shortSlideOffset = atoi( optarg );
+        localparams.shortSlideOffset = atoi( LALoptarg );
         break;
       case 'V': /* version */
         XLALOutputVersionString(stderr, 0);
         exit( 0 );
      case '#': /* sky grid file */
-        localparams.skyPositionsFile = optarg;
+        localparams.skyPositionsFile = LALoptarg;
         break;
      case '|': /* FFT-level for plans */
-        localparams.fftLevel = atoi( optarg );
+        localparams.fftLevel = atoi( LALoptarg );
         break;
       case '4': /* Cluster window */
-        localparams.clusterWindow = atof(optarg);
+        localparams.clusterWindow = atof(LALoptarg);
         break;
       case '3': /* Injection search window */
-        localparams.injSearchWindow = atof( optarg );
+        localparams.injSearchWindow = atof( LALoptarg );
         break;
       case '5': /* Injection search window */
-        localparams.injMchirpWindow = atof( optarg );
+        localparams.injMchirpWindow = atof( LALoptarg );
         break;
       case '7':
-        if (!strcmp("real_4", optarg))
+        if (!strcmp("real_4", LALoptarg))
         {
           localparams.ligoDoubleData = 0;
         }
-        else if (!strcmp("real_8", optarg))
+        else if (!strcmp("real_8", LALoptarg))
         {
           localparams.ligoDoubleData = 1;
         }
@@ -468,15 +468,15 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
           fprintf(stderr, "invalid argument to --%s:\n"
                   "unknown data type specified;\n"
                   "%s (must be one of: real_4, real_8)\n",
-                  long_options[option_index].name, optarg);
+                  long_options[option_index].name, LALoptarg);
         }
         break;
       case '8':
-        if (!strcmp("real_4", optarg))
+        if (!strcmp("real_4", LALoptarg))
         {
           localparams.virgoDoubleData = 0;
         }
-        else if (!strcmp("real_8", optarg))
+        else if (!strcmp("real_8", LALoptarg))
         {
           localparams.virgoDoubleData = 1;
         }
@@ -485,7 +485,7 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
           fprintf(stderr, "invalid argument to --%s:\n"
                   "unknown data type specified;\n"
                   "%s (must be one of: real_4, real_8)\n",
-                  long_options[option_index].name, optarg);
+                  long_options[option_index].name, LALoptarg);
         }
         break;
       case '?':
@@ -495,11 +495,11 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     }
   }
 
-  if ( optind < argc )
+  if ( LALoptind < argc )
   {
     fprintf( stderr, "extraneous command line arguments:\n" );
-    while ( optind < argc )
-      fprintf( stderr, "%s\n", argv[optind++] );
+    while ( LALoptind < argc )
+      fprintf( stderr, "%s\n", argv[LALoptind++] );
     exit( 1 );
   }
 
