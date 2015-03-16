@@ -61,6 +61,7 @@ typedef enum {
 
   UVAR_TYPE_STRING, 		// normal string
   UVAR_TYPE_STRINGVector,	// list of comma-separated strings
+  UVAR_TYPE_REAL8Vector,	// list of comma-separated REAL8's
 
   UVAR_TYPE_END      	// internal end marker for range checking
 } UserVarType;
@@ -92,7 +93,7 @@ DEFN_REGISTER_UVAR(DECJ,REAL8);
 DEFN_REGISTER_UVAR(EPOCH,LIGOTimeGPS);
 DEFN_REGISTER_UVAR(STRING,CHAR*);
 DEFN_REGISTER_UVAR(STRINGVector,LALStringVector*);
-
+DEFN_REGISTER_UVAR(REAL8Vector,REAL8Vector*);
 
 // ----- define helper types for casting
 typedef int (*parserT)(void*, const char*);
@@ -109,11 +110,12 @@ typedef char *(*printerT)(const void*);
 // 2) provide
 //   a)  a parser function XLALParseStringValueAs<UTYPE>() (recommended to be added in \ref UserInputParse_h)
 //   b)  a printer function XLALPrintStringValueOf<UTYPE>() (recommended to be added in \ref UserInputPrint_h)
-// 3) generate a corresponding registration function using the macro-templates
+//   c)  a unit test for the new parser+printer, ideally checking identity of print(parse(x)) or parse(print(x))
+// 3) generate a corresponding registration function declaration + definition using the macro-templates
 //    DECL_REGISTER_UVAR_AS<VALUE|POINTER>() and DEFN_REGISTER_UVAR_AS<VALUE|POINTER>(),
 // 4) add an entry in the master map 'UserInputTypeMap', specifying the parser, printer and (if required) a destructor
 //    If these follow the standard naming and API, the template macro REGULAR_MAP_ENTRY() can be used for that.
-
+//
 // ---------- Master 'map' defining all UserInput types and how to handle them ----------
 // in particular, lists their name, and how to parse and print them, and (if required) how to destroy them
 static const struct
@@ -135,7 +137,8 @@ static const struct
   REGULAR_MAP_ENTRY ( STRINGVector, XLALDestroyStringVector ),
   REGULAR_MAP_ENTRY ( EPOCH, NULL ),
   REGULAR_MAP_ENTRY ( RAJ, NULL ),
-  REGULAR_MAP_ENTRY ( DECJ, NULL )
+  REGULAR_MAP_ENTRY ( DECJ, NULL ),
+  REGULAR_MAP_ENTRY ( REAL8Vector, XLALDestroyREAL8Vector )
 };
 
 

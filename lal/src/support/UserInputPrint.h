@@ -56,6 +56,7 @@ char *XLALPrintStringValueOfREAL8 ( const REAL8 *valREAL8 );
 char *XLALPrintStringValueOfEPOCH ( const LIGOTimeGPS *valGPS );
 char *XLALPrintStringValueOfSTRING ( char **valSTRING );
 char *XLALPrintStringValueOfSTRINGVector ( LALStringVector **valSTRINGVector );
+char *XLALPrintStringValueOfREAL8Vector ( REAL8Vector **valSTRINGVector );
 
 /*@}*/
 

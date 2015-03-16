@@ -239,6 +239,7 @@ DECL_REGISTER_UVAR(DECJ,REAL8);
 
 DECL_REGISTER_UVAR(STRING,CHAR*);
 DECL_REGISTER_UVAR(STRINGVector,LALStringVector*);
+DECL_REGISTER_UVAR(REAL8Vector,REAL8Vector*);
 
 /* ========== Deprecated LAL interface wrappers ========== */
 

@@ -29,6 +29,7 @@
 #include <lal/LALMalloc.h>
 #include <lal/LALConstants.h>
 #include <lal/StringVector.h>
+#include <lal/AVFactories.h>
 #include <lal/UserInputPrint.h>
 
 #include <lal/UserInputParse.h>
@@ -36,6 +37,7 @@
 // ---------- local prototypes ----------
 int test_ParseStringValue ( void );
 int test_ParseStringVector(void);
+int test_ParseREAL8Vector(void);
 
 // ==================== function definitions ====================
 int main(void)
@@ -44,6 +46,8 @@ int main(void)
   XLAL_CHECK_MAIN ( test_ParseStringValue() == XLAL_SUCCESS, XLAL_EFUNC );
 
   XLAL_CHECK_MAIN ( test_ParseStringVector() == XLAL_SUCCESS, XLAL_EFUNC );
+
+  XLAL_CHECK_MAIN ( test_ParseREAL8Vector() == XLAL_SUCCESS, XLAL_EFUNC );
 
   // check for memory leaks
   LALCheckMemoryLeaks();
@@ -230,3 +234,36 @@ test_ParseStringVector(void)
   return XLAL_SUCCESS;
 
 } // test_ParseStringVector()
+
+
+// test string-vector parsing function XLALParseStringValueAsStringVector()
+int
+test_ParseREAL8Vector(void)
+{
+  const char *csvIn = "0.1,5,-5.1e+99,1.23456789e-99,inf,nan";
+  REAL8 vals[] = {0.1, 5, -5.1e+99, 1.23456789e-99 }; // only finite values for comparison
+
+  // parse csv string as REAL8Vector:
+  REAL8Vector *vect1 = NULL;
+  XLAL_CHECK ( XLALParseStringValueAsREAL8Vector ( &vect1, csvIn ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // test1: re-print as string, compare strings
+  char *csvOut;
+  XLAL_CHECK ( (csvOut = XLALPrintStringValueOfREAL8Vector ( &vect1 )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK ( strcmp ( csvIn, csvOut ) == 0, XLAL_EFAILED, "csvIn != csvOut:\ncsvIn  = %s\ncsvOut = %s\n", csvIn, csvOut );
+
+  // test2: compare finite parsed values:
+  for ( UINT4 i = 0; i < 4; i ++ ) {
+    XLAL_CHECK ( vect1->data[i] == vals[i], XLAL_EFAILED, "Parsed %d-th value differs from input: %.16g != %.16g\n", i, vect1->data[i], vals[i] );
+  }
+  // check non-finite values
+  XLAL_CHECK ( fpclassify ( vect1->data[4] ) == FP_INFINITE, XLAL_EFAILED, "Failed to parse 'inf'\n");
+  XLAL_CHECK ( fpclassify ( vect1->data[5] ) == FP_NAN, XLAL_EFAILED, "Failed to parse 'nan'\n");
+
+  // clean up memory
+  XLALFree ( csvOut );
+  XLALDestroyREAL8Vector ( vect1  );
+
+  return XLAL_SUCCESS;
+
+} // test_ParseREAL8Vector()
