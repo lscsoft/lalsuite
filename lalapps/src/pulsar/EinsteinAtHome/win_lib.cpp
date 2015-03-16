@@ -57,8 +57,9 @@ static inline double drand() {
 /*
   sleep() based on Win32 APIs
 */
-void sleep(unsigned int s) {
+int unsigned sleep(unsigned int s) {
   Sleep(s*1000L);
+  return 0;
 }
 
 
