@@ -582,6 +582,7 @@ else
             log_and_do make -f "$makefile"
 	    log_and_do make -f "$makefile" install
         fi
+        sed -i~ '/#include "boinc_win.h"/d' "$INSTALL/include/boinc/filesys.h"
     else
 	log_and_do cd "$SOURCE/boinc"
 	log_and_do ./_autosetup
