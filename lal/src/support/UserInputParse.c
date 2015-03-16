@@ -24,6 +24,7 @@
 
 #include <lal/Date.h>
 #include <lal/StringInput.h>
+#include <lal/AVFactories.h>
 #include <lal/StringVector.h>
 #include <lal/LALConstants.h>
 #include <lal/LALString.h>
@@ -402,7 +403,7 @@ XLALParseStringValueAsSTRING ( CHAR **out,		///< [out] return allocated string
 
 ///
 /// Parse a string containing a list of comma-separated values (CSV) into a StringVector.
-/// \note surrounding whitespace is removed from the individual list entries.
+/// \note surrounding whitespace and quotes (\' or \") are removed from the individual list entries.
 ///
 /// \note The output string-vector (*strVect) must be NULL
 ///
@@ -425,19 +426,44 @@ XLALParseStringValueAsSTRINGVector ( LALStringVector **strVect,	///< [out] alloc
       ret->length ++;
       XLAL_CHECK ( (ret->data = XLALRealloc ( ret->data, ret->length * sizeof(ret->data[0]) )) != NULL, XLAL_ENOMEM );
 
-      // determine length of next CSV string value
+      // determine length of next CSV string value, taking account of quotes
       size_t len;
-      if ( ( tmp = strchr ( start, ',' ) ) ) {
-	len = tmp - start;
+      CHAR inQuotes = 0;
+      tmp = start;
+      do {
+
+        // simple comma outside of quotes
+        if ( !inQuotes && ((*tmp) == ',') ) {
+          break;	// found a separator-comma
+        }
+
+        // handle quotes
+        if ( (*tmp) == '\'' || (*tmp) == '\"' ) // found quotes
+          {
+            if ( !inQuotes ) {
+              inQuotes = (*tmp);			// we've intered quotes
+            } else if ( inQuotes == (*tmp) ) {
+              inQuotes = 0;			// we've left quotes, only if closing quotes match opening ones
+            }
+          } // end: if quotes found
+
+        tmp ++;
+      } while ( (*tmp) != 0 );
+
+      if ( (*tmp) == 0 ) {
+        len = strlen ( start );
       } else {
-	len = strlen ( start );
+	len = tmp - start;
       }
 
-      // copy this value with surrounding whitespace removed
-      XLAL_CHECK ( (ret->data[ret->length-1] = XLALDeblankString ( start, len ) ) != NULL, XLAL_EFUNC );
+      // copy this string value with surrounding whitespace removed
+      char *deblanked;
+      XLAL_CHECK ( (deblanked = XLALDeblankString ( start, len ) ) != NULL, XLAL_EFUNC );
+      ret->data[ret->length-1] = NULL;
+      XLAL_CHECK ( XLALParseStringValueAsSTRING ( &(ret->data[ret->length-1]), deblanked ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLALFree ( deblanked );
 
-    } while ( (tmp != NULL) && ((start = tmp + 1) != NULL) );
-
+    } while ( ( (*tmp) != 0) && ( *(start = tmp + 1) != 0 ) );
 
   (*strVect) = ret;
 

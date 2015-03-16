@@ -29,6 +29,7 @@
 #include <lal/LALMalloc.h>
 #include <lal/LALConstants.h>
 #include <lal/StringVector.h>
+#include <lal/UserInputPrint.h>
 
 #include <lal/UserInputParse.h>
 
@@ -175,9 +176,9 @@ test_ParseStringValue ( void )
 int
 test_ParseStringVector(void)
 {
-#define STR1 "Hello"
-#define STR2 "World"
-#define STR3 "foo"
+#define STR1 "Hello, world!"
+#define STR2 "xyda 3!#4134"
+#define STR3 "&\\//.. :: some junk"
 #define STR4 "H1"
 #define STR5 "H2"
 #define STR6 "L1"
@@ -187,34 +188,44 @@ test_ParseStringVector(void)
 
   XLAL_CHECK ( (strVect1 = XLALAppendString2Vector ( strVect1, STR6 )) != NULL, XLAL_EFUNC );
 
-  // now sort string-vector according to strcmp()
-  XLAL_CHECK ( XLALSortStringVector ( strVect1 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  // now 'print' this string-vector as a 'string-value', then re-parse back into a vector:
+  CHAR *strValue1 = NULL;
+  LALStringVector *strVect2 = NULL;
+  XLAL_CHECK ( (strValue1 = XLALPrintStringValueOfSTRINGVector ( &strVect1 )) != NULL, XLAL_EFUNC );
+  XLALPrintInfo ("String value of initial string-vector:   %s\n", strValue1 );
 
-  // generate 'manually' sorted string-vector, using CSV function instead
-  // sort-order according to "LC_ALL=C sort"
-  LALStringVector *strVectCmp = NULL;
-  XLAL_CHECK ( XLALParseStringValueAsSTRINGVector ( &strVectCmp, STR4 "," STR5 "," STR1 "," STR6 "," STR2 "," STR3 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALParseStringValueAsSTRINGVector ( &strVect2, strValue1 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  CHAR *strValue2 = NULL;
+  XLAL_CHECK ( (strValue2 = XLALPrintStringValueOfSTRINGVector ( &strVect2 )) != NULL, XLAL_EFUNC );
+  XLALPrintInfo ("String value of re-parsed string-vector: %s\n", strValue2 );
 
-  // compare results
+  // ----- compare results
+  // 1) compare string values
+  XLAL_CHECK ( strcmp ( strValue1, strValue2 ) == 0, XLAL_EFAILED, "String values differ:\nstrValue1 = %s\nstrValue2 = %s\n", strValue1, strValue2 );
+
+  // 2) compare string vectors
   UINT4 len1 = strVect1->length;
-  UINT4 len2 = strVectCmp->length;
-  XLAL_CHECK ( len1 == len2, XLAL_EFAILED, "String vectors have different lengths (%d != %d )\n", len1, len2 );
+  UINT4 len2 = strVect2->length;
+  XLAL_CHECK ( len1 == len2, XLAL_EFAILED, "String vectors vect1 and vect2 have different lengths (%d != %d )\n", len1, len2 );
 
   for ( UINT4 i = 0; i < len1; i++ )
     {
-      if ( 0 != strcmp ( strVect1->data[i], strVectCmp->data[i] ) )
+      if ( strcmp ( strVect1->data[i], strVect2->data[i] ) != 0 )
         {
-          XLALPrintError ( "%s: Sorted string-vector differs from expectation!\n", __func__ );
           for ( UINT4 j=0; j < len1; j ++ ) {
-            XLALPrintError ("j = %d:  s1[j] = %6s, s2[j] = %6s\n", j, strVect1->data[j], strVectCmp->data[j] );
+            XLALPrintError ("j = %d:  s1[j] = %6s, s2[j] = %6s\n", j, strVect1->data[j], strVect2->data[j] );
           }
-          XLAL_ERROR ( XLAL_EFAILED, "String sorting failed.\n");
+          XLAL_ERROR ( XLAL_EFAILED, "Printed and re-parsed string-vector differ!\n" );
         } // if s1[i] != s2[i]
+
     } // for i < len
 
   // clean up memory
+  XLALFree ( strValue1 );
+  XLALFree ( strValue2 );
+
   XLALDestroyStringVector ( strVect1  );
-  XLALDestroyStringVector ( strVectCmp );
+  XLALDestroyStringVector ( strVect2 );
 
   return XLAL_SUCCESS;
 

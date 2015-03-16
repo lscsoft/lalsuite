@@ -90,11 +90,11 @@ XLALPrintStringValueOfEPOCH ( const LIGOTimeGPS *valGPS )
   return XLALStringDuplicate ( buf );
 }
 
-/// Return 'string value' (allocated here) of a STRING, surrounded by single quotes.
+/// Return 'string value' (allocated here) of a STRING, surrounded by double quotes.
 /// The output is parseable by XLALParseStringValueAsSTRING().
 /// In case of NULL input, returns the string 'NULL'.
 char *
-XLALPrintStringValueOfSTRING ( const CHAR **valSTRING )
+XLALPrintStringValueOfSTRING ( CHAR **valSTRING )
 {
   XLAL_CHECK_NULL ( valSTRING != NULL, XLAL_EINVAL );
 
@@ -106,7 +106,7 @@ XLALPrintStringValueOfSTRING ( const CHAR **valSTRING )
   else
     {
       XLAL_CHECK_NULL ( (ret = XLALMalloc ( strlen((*valSTRING)) + 2 + 1)) != NULL, XLAL_ENOMEM );	// +surrounding quotes + terminating-0
-      sprintf ( ret, "'%s'", (*valSTRING) );
+      sprintf ( ret, "\"%s\"", (*valSTRING) );
     }
 
   return ret;
@@ -114,11 +114,11 @@ XLALPrintStringValueOfSTRING ( const CHAR **valSTRING )
 } // XLALPrintStringValueOfSTRING()
 
 
-/// Return 'string value' (allocated here) of a STRINGVector, by turning into comma-separated list, surrounded by single quotes.
+/// Return 'string value' (allocated here) of a STRINGVector, by turning into comma-separated list of strings, each surrounded by single quotes.
 /// The output is parseable by XLALParseStringValueAsSTRINGVector().
-/// In case of a NULL or empty vector (data==NULL|length==0), or in case of NULL string pointers, generate the string 'NULL'.
+/// In case of a NULL or empty vector (data==NULL|length==0), generate the string 'NULL'.
 char *
-XLALPrintStringValueOfSTRINGVector ( const LALStringVector **valSTRINGVector )
+XLALPrintStringValueOfSTRINGVector ( LALStringVector **valSTRINGVector )
 {
   XLAL_CHECK_NULL ( valSTRINGVector != NULL, XLAL_EINVAL );
   char *ret = NULL;
@@ -130,9 +130,13 @@ XLALPrintStringValueOfSTRINGVector ( const LALStringVector **valSTRINGVector )
     {
       for ( UINT4 i=0; i < (*valSTRINGVector)->length; i++ )
         {
-          XLAL_CHECK_NULL ( (ret = XLALStringAppend ( ret, (i==0) ? "'" : "," )) != NULL, XLAL_EFUNC );
-          const char *stringi = (*valSTRINGVector)->data[i];
-          XLAL_CHECK_NULL ( (ret = XLALStringAppend ( ret, (stringi != NULL) ? stringi : "NULL" )) != NULL, XLAL_EFUNC );
+          if ( i != 0 ) {
+            XLAL_CHECK_NULL ( (ret = XLALStringAppend ( ret, "," )) != NULL, XLAL_EFUNC );
+          }
+          char *stringi;
+          XLAL_CHECK_NULL ( (stringi = XLALPrintStringValueOfSTRING ( &((*valSTRINGVector)->data[i]) )) != NULL, XLAL_EFUNC );
+          XLAL_CHECK_NULL ( (ret = XLALStringAppend ( ret, stringi )) != NULL, XLAL_EFUNC );
+          XLALFree ( stringi );
         } // for i < length
     } // end: if valSTRING != NULL
 

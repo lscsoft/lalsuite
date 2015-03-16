@@ -54,8 +54,8 @@ char *XLALPrintStringValueOfINT8 ( const INT8 *valINT8 );
 char *XLALPrintStringValueOfREAL4 ( const REAL4 *valREAL4 );
 char *XLALPrintStringValueOfREAL8 ( const REAL8 *valREAL8 );
 char *XLALPrintStringValueOfEPOCH ( const LIGOTimeGPS *valGPS );
-char *XLALPrintStringValueOfSTRING ( const char **valSTRING );
-char *XLALPrintStringValueOfSTRINGVector ( const LALStringVector **valSTRINGVector );
+char *XLALPrintStringValueOfSTRING ( char **valSTRING );
+char *XLALPrintStringValueOfSTRINGVector ( LALStringVector **valSTRINGVector );
 
 /*@}*/
 
