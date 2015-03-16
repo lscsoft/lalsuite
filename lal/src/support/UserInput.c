@@ -62,6 +62,7 @@ typedef enum {
   UVAR_TYPE_STRING, 		// normal string
   UVAR_TYPE_STRINGVector,	// list of comma-separated strings
   UVAR_TYPE_REAL8Vector,	// list of comma-separated REAL8's
+  UVAR_TYPE_INT4Vector,		// list of comma-separated INT4's
 
   UVAR_TYPE_END      	// internal end marker for range checking
 } UserVarType;
@@ -94,6 +95,7 @@ DEFN_REGISTER_UVAR(EPOCH,LIGOTimeGPS);
 DEFN_REGISTER_UVAR(STRING,CHAR*);
 DEFN_REGISTER_UVAR(STRINGVector,LALStringVector*);
 DEFN_REGISTER_UVAR(REAL8Vector,REAL8Vector*);
+DEFN_REGISTER_UVAR(INT4Vector,INT4Vector*);
 
 // ----- define helper types for casting
 typedef int (*parserT)(void*, const char*);
@@ -138,7 +140,8 @@ static const struct
   REGULAR_MAP_ENTRY ( EPOCH, NULL ),
   REGULAR_MAP_ENTRY ( RAJ, NULL ),
   REGULAR_MAP_ENTRY ( DECJ, NULL ),
-  REGULAR_MAP_ENTRY ( REAL8Vector, XLALDestroyREAL8Vector )
+  REGULAR_MAP_ENTRY ( REAL8Vector, XLALDestroyREAL8Vector ),
+  REGULAR_MAP_ENTRY ( INT4Vector, XLALDestroyINT4Vector )
 };
 
 

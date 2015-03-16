@@ -53,7 +53,14 @@ int XLALParseStringValueAsDECJ ( REAL8 *valDECJ, const char *valString );
 
 int XLALParseStringValueAsSTRING ( CHAR **valOut, const char *valString );
 int XLALParseStringValueAsSTRINGVector ( LALStringVector **valSTRINGVector, const CHAR *valString );
-int XLALParseStringValueAsREAL8Vector ( REAL8Vector **valSTRINGVector, const CHAR *valString );
+
+// use macro templating to define parsers for numerical <CTYPE>vectors
+#define DECL_XLALParseStringValueAsVector(CTYPE)                        \
+  int XLALParseStringValueAs ##CTYPE## Vector ( CTYPE ## Vector **vect, const CHAR *valString )
+
+DECL_XLALParseStringValueAsVector(REAL8);
+DECL_XLALParseStringValueAsVector(INT4);
+
 
 
 /*@}*/

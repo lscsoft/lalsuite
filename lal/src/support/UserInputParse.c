@@ -472,37 +472,36 @@ XLALParseStringValueAsSTRINGVector ( LALStringVector **strVect,	///< [out] alloc
 } // XLALParseStringValueAsSTRINGVector()
 
 ///
-/// Parse a string containing a list of comma-separated values (CSV) into a REAL8Vector.
+/// Parse a string containing a list of comma-separated values (CSV) into a <CTYPE>Vector.
 ///
 /// \note The output string-vector (*vect) must be NULL
 ///
-int
-XLALParseStringValueAsREAL8Vector ( REAL8Vector **vect,		///< [out] allocated REAL8-vector
-                                    const CHAR *valString	///< [in] input string value
-                                    )
-{
-  XLAL_CHECK ( valString != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( (vect != NULL) && (*vect == NULL) , XLAL_EINVAL );
+#define DEFN_XLALParseStringValueAsVector(CTYPE)                        \
+DECL_XLALParseStringValueAsVector(CTYPE)                                \
+{                                                                       \
+ XLAL_CHECK ( valString != NULL, XLAL_EINVAL );                         \
+ XLAL_CHECK ( (vect != NULL) && (*vect == NULL) , XLAL_EINVAL );        \
+                                                                        \
+ /* parse this as a string vector first */                              \
+ LALStringVector *strVect = NULL;                                       \
+ XLAL_CHECK ( XLALParseStringValueAsSTRINGVector ( &strVect, valString ) == XLAL_SUCCESS, XLAL_EFUNC ); \
+ UINT4 numElements = strVect->length;                                   \
+                                                                        \
+ /* create corresponding output vector */                               \
+ CTYPE##Vector *ret;                                                  \
+ XLAL_CHECK ( (ret = XLALCreate##CTYPE##Vector ( numElements )) != NULL, XLAL_EFUNC ); \
+                                                                        \
+ /* parse each string value into a REAL8 */                             \
+ for ( UINT4 i = 0; i < numElements; i ++ )                             \
+   {                                                                    \
+     XLAL_CHECK ( XLALParseStringValueAs##CTYPE ( &(ret->data[i]), strVect->data[i] ) == XLAL_SUCCESS, XLAL_EFUNC ); \
+   }                                                                    \
+                                                                        \
+ XLALDestroyStringVector ( strVect );                                   \
+ (*vect) = ret;                                                         \
+ return XLAL_SUCCESS;                                                   \
+                                                                        \
+} /* XLALParseStringValueAs<CTYPE>Vector() */
 
-  // parse this as a string vector first
-  LALStringVector *strVect = NULL;
-  XLAL_CHECK ( XLALParseStringValueAsSTRINGVector ( &strVect, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
-  UINT4 numElements = strVect->length;
-
-  // create corresponding output vector
-  REAL8Vector *ret;
-  XLAL_CHECK ( (ret = XLALCreateREAL8Vector ( numElements )) != NULL, XLAL_EFUNC );
-
-  // parse each string value into a REAL8
-  for ( UINT4 i = 0; i < numElements; i ++ )
-    {
-      XLAL_CHECK ( XLALParseStringValueAsREAL8 ( &(ret->data[i]), strVect->data[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
-    }
-
-  XLALDestroyStringVector ( strVect );
-  (*vect) = ret;
-
-  return XLAL_SUCCESS;
-
-} // XLALParseStringValueAsREAL8Vector()
-
+DEFN_XLALParseStringValueAsVector(REAL8);
+DEFN_XLALParseStringValueAsVector(INT4);

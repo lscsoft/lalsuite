@@ -145,32 +145,36 @@ XLALPrintStringValueOfSTRINGVector ( LALStringVector **valSTRINGVector )
 } // XLALPrintStringValueOfSTRINGVector()
 
 ///
-/// Return 'string value' (allocated here) of a REAL8Vector, by turning into comma-separated list of REAL8 values.
-/// The output is parseable by XLALParseStringValueAsREAL8Vector().
+/// Return 'string value' (allocated here) of a <CTYPE>Vector, by turning into comma-separated list of <CTYPE> values.
+/// The output is parseable by XLALParseStringValueAs<CTYPE>Vector().
 /// In case of a NULL or empty vector (data==NULL|length==0), generate the string 'NULL'.
-char *
-XLALPrintStringValueOfREAL8Vector ( REAL8Vector **valREAL8Vector )
-{
-  XLAL_CHECK_NULL ( valREAL8Vector != NULL, XLAL_EINVAL );
-  char *ret = NULL;
-  if ( (*valREAL8Vector == NULL) || ((*valREAL8Vector)->data == NULL) || ((*valREAL8Vector)->length == 0) )
-    {
-      XLAL_CHECK_NULL ( (ret = XLALStringDuplicate("NULL")) != NULL, XLAL_EFUNC );
-    }
-  else
-    {
-      for ( UINT4 i=0; i < (*valREAL8Vector)->length; i++ )
-        {
-          if ( i != 0 ) {
-            XLAL_CHECK_NULL ( (ret = XLALStringAppend ( ret, "," )) != NULL, XLAL_EFUNC );
-          }
-          char *tmp;
-          XLAL_CHECK_NULL ( (tmp = XLALPrintStringValueOfREAL8 ( &(*valREAL8Vector)->data[i])) != NULL, XLAL_EFUNC );
-          XLAL_CHECK_NULL ( (ret = XLALStringAppend ( ret, tmp )) != NULL, XLAL_EFUNC );
-          XLALFree ( tmp );
-        } // for i < length
-    } // end: if non-empty input vector
+#define DEFN_XLALPrintStringValueOfVector(CTYPE)                        \
+DECL_XLALPrintStringValueOfVector(CTYPE)                                \
+{                                                                       \
+ XLAL_CHECK_NULL ( valVector != NULL, XLAL_EINVAL );                    \
+ char *ret = NULL;                                                      \
+ if ( (*valVector == NULL) || ((*valVector)->data == NULL) || ((*valVector)->length == 0) ) \
+   {                                                                    \
+     XLAL_CHECK_NULL ( (ret = XLALStringDuplicate("NULL")) != NULL, XLAL_EFUNC ); \
+   }                                                                    \
+ else                                                                   \
+   {                                                                    \
+     for ( UINT4 i=0; i < (*valVector)->length; i++ )                   \
+       {                                                                \
+         if ( i != 0 ) {                                                \
+           XLAL_CHECK_NULL ( (ret = XLALStringAppend ( ret, "," )) != NULL, XLAL_EFUNC ); \
+         }                                                              \
+         char *tmp;                                                     \
+         XLAL_CHECK_NULL ( (tmp = XLALPrintStringValueOf##CTYPE ( &(*valVector)->data[i])) != NULL, XLAL_EFUNC ); \
+         XLAL_CHECK_NULL ( (ret = XLALStringAppend ( ret, tmp )) != NULL, XLAL_EFUNC ); \
+         XLALFree ( tmp );                                              \
+       } /* for i < length */                                           \
+   } /* end: if non-empty input vector */                               \
+                                                                        \
+ return ret;                                                            \
+                                                                        \
+} /* XLALPrintStringValueOf<CYPTE>Vector() */
 
-  return ret;
+DEFN_XLALPrintStringValueOfVector(REAL8);
+DEFN_XLALPrintStringValueOfVector(INT4);
 
-} // XLALPrintStringValueOfREAL8Vector()
