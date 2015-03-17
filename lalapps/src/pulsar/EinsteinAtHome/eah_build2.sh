@@ -594,6 +594,9 @@ else
 fi
 
 lalsuite_copts="--disable-gcc-flags --disable-debug --disable-frame --disable-metaio --disable-lalsimulation --disable-lalxml --enable-boinc --disable-silent-rules --without-simd $shared_copt $cross_copt --prefix=$INSTALL"
+if [ ."$build_win32" = ."true" ] ; then
+    export BOINC_EXTRA_LIBS="-lpsapi"
+fi
 if test -z "$rebuild_lal" && pkg-config --exists lal; then
     log_and_show "using existing lal"
 else
