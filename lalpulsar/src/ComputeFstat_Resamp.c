@@ -75,6 +75,7 @@ struct tagFstatWorkspace
   COMPLEX8 *FbX_k;					// properly normalized F_b^X(f_k) over output bins
   COMPLEX8 *Fa_k;					// properly normalized F_a(f_k) over output bins
   COMPLEX8 *Fb_k;					// properly normalized F_b(f_k) over output bins
+  UINT4 numFreqBinsAlloc;				// internal: keep track of allocated length of frequency-arrays
 
   ResampTimingInfo timingInfo;	 // temporary storage for collecting timing data
 };
@@ -457,7 +458,6 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
 
   // ----- workspace that depends on number of output frequency bins 'numFreqBins' ----------
   UINT4 numFreqBins = Fstats->numFreqBins;
-  ws->numFreqBinsOut = numFreqBins;
 
 #ifdef COLLECT_TIMING
   tic = XLALGetCPUTime();
@@ -475,8 +475,11 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
     } // end: if returning FaFb we can use that return-struct as 'workspace'
   else	// otherwise: we (re)allocate it locally
     {
-      XLAL_CHECK ( (ws->Fa_k = XLALRealloc ( ws->Fa_k, numFreqBins * sizeof(COMPLEX8))) != NULL, XLAL_ENOMEM );
-      XLAL_CHECK ( (ws->Fb_k = XLALRealloc ( ws->Fb_k, numFreqBins * sizeof(COMPLEX8))) != NULL, XLAL_ENOMEM );
+      if ( numFreqBins > ws->numFreqBinsAlloc )
+        {
+          XLAL_CHECK ( (ws->Fa_k = XLALRealloc ( ws->Fa_k, numFreqBins * sizeof(COMPLEX8))) != NULL, XLAL_ENOMEM );
+          XLAL_CHECK ( (ws->Fb_k = XLALRealloc ( ws->Fb_k, numFreqBins * sizeof(COMPLEX8))) != NULL, XLAL_ENOMEM );
+        } // only increase workspace arrays
     }
 
   if ( whatToCompute & FSTATQ_FAFB_PER_DET )
@@ -488,10 +491,16 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
     } // end: if returning FaFbPerDet we can use that return-struct as 'workspace'
   else	// otherwise: we (re)allocate it locally
     {
-      XLAL_CHECK ( (ws->FaX_k = XLALRealloc ( ws->FaX_k, numFreqBins * sizeof(COMPLEX8))) != NULL, XLAL_ENOMEM );
-      XLAL_CHECK ( (ws->FbX_k = XLALRealloc ( ws->FbX_k, numFreqBins * sizeof(COMPLEX8))) != NULL, XLAL_ENOMEM );
+      if ( numFreqBins > ws->numFreqBinsAlloc )
+        {
+          XLAL_CHECK ( (ws->FaX_k = XLALRealloc ( ws->FaX_k, numFreqBins * sizeof(COMPLEX8))) != NULL, XLAL_ENOMEM );
+          XLAL_CHECK ( (ws->FbX_k = XLALRealloc ( ws->FbX_k, numFreqBins * sizeof(COMPLEX8))) != NULL, XLAL_ENOMEM );
+        } // only increase workspace arrays
     }
-
+  if ( numFreqBins > ws->numFreqBinsAlloc ) {
+    ws->numFreqBinsAlloc = numFreqBins;	// keep track of allocated array length
+  }
+  ws->numFreqBinsOut = numFreqBins;
   // ====================================================================================================
 
   // store AM coefficient integrals in local variables
@@ -501,9 +510,6 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
   REAL4 Ed = multiAMcoef->Mmunu.Ed;
   REAL4 Dd = multiAMcoef->Mmunu.Dd;
   REAL4 Dd_inv = 1.0f / Dd;
-
-  memset ( ws->Fa_k, 0, numFreqBins * sizeof(COMPLEX8) );
-  memset ( ws->Fb_k, 0, numFreqBins * sizeof(COMPLEX8) );
 
 #ifdef COLLECT_TIMING
   toc = XLALGetCPUTime();
@@ -529,11 +535,22 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
 #ifdef COLLECT_TIMING
       tic = XLALGetCPUTime();
 #endif
-      for ( UINT4 k = 0; k < numFreqBins; k++ )
-        {
-          ws->Fa_k[k] += ws->FaX_k[k];
-          ws->Fb_k[k] += ws->FbX_k[k];
-        }
+      if ( X == 0 )
+        { // avoid having to memset this array: for the first detector we *copy* results
+          for ( UINT4 k = 0; k < numFreqBins; k++ )
+            {
+              ws->Fa_k[k] = ws->FaX_k[k];
+              ws->Fb_k[k] = ws->FbX_k[k];
+            }
+        } // end: if X==0
+      else
+        { // for subsequent detectors we *add to* them
+          for ( UINT4 k = 0; k < numFreqBins; k++ )
+            {
+              ws->Fa_k[k] += ws->FaX_k[k];
+              ws->Fb_k[k] += ws->FbX_k[k];
+            }
+        } // end:if X>0
 #ifdef COLLECT_TIMING
       toc = XLALGetCPUTime();
       ti->tauSumFabX += (toc-tic);
