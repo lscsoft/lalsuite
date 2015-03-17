@@ -28,7 +28,6 @@
 
 /* some more functions with just different names */
 #define fsync _commit
-#define snprintf _snprintf
 
 /* functions actually implemented in win_lib.cpp */
 #ifdef __cplusplus
