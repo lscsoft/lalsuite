@@ -399,7 +399,9 @@ if test ."$build_zlib" = ."true"; then
     elif test -z "$noupdate"; then
         log_and_show "retrieving $zlib"
         download $zlib.tar.gz
-        log_and_do tar xzf "$zlib.tar.gz"
+        log_and_do cd "$BUILD"
+        log_and_do tar xzf "$SOURCE/$zlib.tar.gz"
+        log_and_do cd "$SOURCE"
     fi
 fi
 
@@ -452,7 +454,7 @@ if test ."$build_zlib" = ."true"; then
         log_and_show "using existing zlib"
     else
         log_and_show "compiling zlib"
-        log_and_do cd "$SOURCE/$zlib"
+        log_and_do cd "$BUILD/$zlib"
         if [ "$zlib_shared" = "--shared" -a "$zlib" = "zlib-1.2.3" ] && echo "$CFLAGS" | grep -w -e -m64 >/dev/null; then
             CC="gcc -m64" log_and_do "./configure" $zlib_shared --prefix="$INSTALL"
         else
