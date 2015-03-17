@@ -837,16 +837,16 @@ print("PASSED dynamic array of pointers access")
 print("checking 'tm' struct conversions ...")
 gps = 989168284
 utc = [2011, 5, 11, 16, 57, 49, 2, 131, 0]
-assert(lal.GPSToUTC(gps) == utc)
+assert(lal.GPSToUTC(gps) == tuple(utc))
 assert(lal.UTCToGPS(utc) == gps)
-assert(lal.UTCToGPS(utc[0:6]) == gps)
-utc[6] = utc[7] = 0
 for i in [-1, 0, 1]:
     utc[8] = i
     assert(lal.UTCToGPS(utc) == gps)
-utcd = utc
 for i in range(0, 10):
-    utcd[2] = utc[2] + i
+    utcd = utc
+    utcd[2] += i
+    utcd[6] += i
+    utcd[7] += i
     utcd = lal.GPSToUTC(lal.UTCToGPS(utcd))
     dt = datetime.datetime(*utcd[0:6])
     assert(utcd[6] == dt.weekday())
