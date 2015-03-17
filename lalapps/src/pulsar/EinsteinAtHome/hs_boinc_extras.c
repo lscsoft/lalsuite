@@ -44,6 +44,20 @@
 
 /** INCLUDES **/
 
+/* headers of our own code */
+#include <lal/LogPrintf.h>
+#include "HierarchicalSearch.h"
+#include "hs_boinc_extras.h"
+#include "hs_boinc_options.h"
+
+/* avoid collision between LAL and Windows (U)INT8 */
+#ifdef INT8
+#undef INT8
+#endif
+#ifdef UINT8
+#undef UINT8
+#endif
+
 /* BOINC includes - need to be before the #defines in hs_boinc_extras.h */
 #include "boinc/boinc_api.h"
 #include "boinc/diagnostics.h"
@@ -85,12 +99,6 @@ extern int boinc_resolve_filename(const char*, char*, int len);
 #if HAVE_EXCHNDL
 #include "exchndl.h"
 #endif
-
-/* headers of our own code */
-#include <lal/LogPrintf.h>
-#include "HierarchicalSearch.h"
-#include "hs_boinc_extras.h"
-#include "hs_boinc_options.h"
 
 /* for Linux extended backtrace */
 #if defined(__GLIBC__) && defined(__i386__) && defined(EXT_STACKTRACE)

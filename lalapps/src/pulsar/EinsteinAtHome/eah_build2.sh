@@ -609,6 +609,7 @@ else
     log_and_dont_fail make uninstall
     log_and_do make
     log_and_do make install
+    log_and_do sed -i~ 's/.*typedef .* UINT8 *;.*/#define UINT8 uint64_t/;s/.*typedef .* INT8 *;.*/#define INT8 int64_t/' "$INSTALL/include/lal/LALAtomicDatatypes.h"
 fi
 
 if test -z "$rebuild_lal" && pkg-config --exists lalpulsar; then
