@@ -270,8 +270,8 @@ compareFstatResults ( const FstatResults *result1, const FstatResults *result2 )
   tol.relErr_L1 	= 2e-2;
   tol.relErr_L2		= 2e-2;
   tol.angleV 		= 0.02;  // rad
-  tol.relErr_atMaxAbsx	= 2e-2;
-  tol.relErr_atMaxAbsy  = 2e-2;
+  tol.relErr_atMaxAbsx	= 2.1e-2;
+  tol.relErr_atMaxAbsy  = 2.1e-2;
 
   UINT4 numFreqBins = result1->numFreqBins;
   VectorComparison XLAL_INIT_DECL(cmp);

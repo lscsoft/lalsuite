@@ -305,6 +305,8 @@ SetupFstatInput_Resamp ( FstatInput_Resamp *resamp,
   // determine resampled timeseries parameters */
   REAL8 TspanFFT = 1.0 / common->dFreq;
   UINT4 numSamplesFFT = (UINT4) ceil ( TspanFFT / dt_DET );      // we use ceil() so that we artificially widen the band rather than reduce it
+  // round numSamplesFFT to next power of 2
+  numSamplesFFT = (UINT4) pow ( 2, ceil(log2(numSamplesFFT)));
   REAL8 dt_SRC = TspanFFT / numSamplesFFT;			// adjust sampling rate to allow achieving exact requested dFreq=1/TspanFFT !
 
   // ----- prepare memory for the SRC-frame resampled timeseries buffer
