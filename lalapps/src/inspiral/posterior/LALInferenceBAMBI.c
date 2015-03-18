@@ -785,10 +785,12 @@ Arguments for each section follow:\n\n";
     else
         state->model = LALInferenceInitCBCModel(state);
 
-    state->currentParams = XLALMalloc(sizeof(LALInferenceVariables));
-    memset(state->currentParams, 0, sizeof(LALInferenceVariables));
-    LALInferenceCopyVariables(state->model->params, state->currentParams);
-    state->templt = state->model->templt;
+    if (state->model) {
+        state->currentParams = XLALMalloc(sizeof(LALInferenceVariables));
+        memset(state->currentParams, 0, sizeof(LALInferenceVariables));
+        LALInferenceCopyVariables(state->model->params, state->currentParams);
+        state->templt = state->model->templt;
+    }
 
     /* Choose the likelihood */
     LALInferenceInitLikelihood(state);
