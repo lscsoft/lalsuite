@@ -835,21 +835,22 @@ print("PASSED dynamic array of pointers access")
 
 # check 'tm' struct conversions
 print("checking 'tm' struct conversions ...")
-gps = 989168284
-utc = [2011, 5, 11, 16, 57, 49, 2, 131, 0]
-assert(lal.GPSToUTC(gps) == tuple(utc))
-assert(lal.UTCToGPS(utc) == gps)
-for i in [-1, 0, 1]:
-    utc[8] = i
-    assert(lal.UTCToGPS(utc) == gps)
+gps0 = 989168284
+utc0 = [2011, 5, 11, 16, 57, 49, 2, 131, 0]
+assert(lal.GPSToUTC(gps0) == tuple(utc0))
+assert(lal.UTCToGPS(utc0) == gps0)
 for i in range(0, 10):
-    utcd = utc
-    utcd[2] += i
-    utcd[6] += i
-    utcd[7] += i
-    utcd = lal.GPSToUTC(lal.UTCToGPS(utcd))
-    dt = datetime.datetime(*utcd[0:6])
-    assert(utcd[6] == dt.weekday())
+    gps = gps0 + i * 86400
+    utc = list(utc0)
+    utc[2] = utc[2] + i
+    utc[6] = (utc[6] + i) % 7
+    utc[7] = utc[7] + i
+    utc[8] = -1 + (i % 3)
+    assert(lal.GPSToUTC(gps)[0:8] == tuple(utc[0:8]))
+    assert(lal.UTCToGPS(utc) == gps)
+    utc = lal.GPSToUTC(lal.UTCToGPS(utc))
+    dt = datetime.datetime(*utc[0:6])
+    assert(utc[6] == dt.weekday())
 lal.CheckMemoryLeaks()
 print("PASSED 'tm' struct conversions")
 
