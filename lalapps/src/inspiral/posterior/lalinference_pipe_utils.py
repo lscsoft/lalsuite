@@ -79,6 +79,9 @@ def readLValert(SNRthreshold=0,gid=None,flow=40.0,gracedb="gracedb"):
   from glue.ligolw import utils
   from glue.ligolw import lsctables
   from glue.ligolw import ligolw
+  class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
+    pass
+  lsctables.use_in(LIGOLWContentHandler)
   from glue.ligolw import param
   from glue.ligolw import array
   from pylal import series as lalseries
@@ -87,7 +90,7 @@ def readLValert(SNRthreshold=0,gid=None,flow=40.0,gracedb="gracedb"):
   from subprocess import Popen, PIPE
   print "gracedb download %s coinc.xml" % gid
   subprocess.call([gracedb,"download", gid ,"coinc.xml"])
-  xmldoc=utils.load_filename("coinc.xml")
+  xmldoc=utils.load_filename("coinc.xml",contenthandler = LIGOLWContentHandler)
   coinctable = lsctables.getTablesByType(xmldoc, lsctables.CoincInspiralTable)[0]
   coinc_events = [event for event in coinctable]
   sngltable = lsctables.getTablesByType(xmldoc, lsctables.SnglInspiralTable)[0]
