@@ -49,7 +49,7 @@
 #ifdef _WIN32
 
 /* errno */
-extern int errno;
+#include <errno.h>
 #ifndef _doserrno
 extern int _doserrno;
 #endif
