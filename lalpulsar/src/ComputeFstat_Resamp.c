@@ -31,6 +31,7 @@
 // ----- local macros ----------
 #define MYMAX(x,y) ( (x) > (y) ? (x) : (y) )
 #define MYMIN(x,y) ( (x) < (y) ? (x) : (y) )
+#define GPSDIFF(x,y) (1.0*((x).gpsSeconds - (y).gpsSeconds) + ((x).gpsNanoSeconds - (y).gpsNanoSeconds)*1e-9)
 
 // ----- local constants
 #define COLLECT_TIMING 1
@@ -401,12 +402,12 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
 
   // ============================== BEGIN: handle buffering =============================
   BOOLEAN same_skypos = (resamp->prev_doppler.Alpha == thisPoint.Alpha) && (resamp->prev_doppler.Delta == thisPoint.Delta);
-  BOOLEAN same_refTime = ( XLALGPSCmp ( &resamp->prev_doppler.refTime, &thisPoint.refTime ) == 0 );
+  BOOLEAN same_refTime = ( GPSDIFF ( resamp->prev_doppler.refTime, thisPoint.refTime ) == 0 );
   BOOLEAN same_binary = \
     (resamp->prev_doppler.asini == thisPoint.asini) &&
     (resamp->prev_doppler.period == thisPoint.period) &&
     (resamp->prev_doppler.ecc == thisPoint.ecc) &&
-    (XLALGPSCmp( &resamp->prev_doppler.tp, &thisPoint.tp ) == 0 ) &&
+    (GPSDIFF( resamp->prev_doppler.tp, thisPoint.tp ) == 0 ) &&
     (resamp->prev_doppler.argp == thisPoint.argp);
 
   SkyPosition skypos;
@@ -737,7 +738,7 @@ XLALComputeFaFb_Resamp ( FstatWorkspace *ws,				//!< [in,out] pre-allocated 'wor
 #endif
 
   // ----- normalization factors to be applied to Fa and Fb:
-  const REAL8 dtauX = XLALGPSDiff ( &TimeSeries_SRC->epoch, &thisPoint.refTime );
+  const REAL8 dtauX = GPSDIFF ( TimeSeries_SRC->epoch, thisPoint.refTime );
   for ( UINT4 k = 0; k < ws->numFreqBinsOut; k++ )
     {
       REAL8 f_k = FreqOut0 + k * dFreq;
@@ -784,8 +785,8 @@ XLALApplySpindownAndFreqShift ( COMPLEX8Vector *xOut,      		///< [out] the spin
   UINT4 numSamplesOut = xOut->length;
   XLAL_CHECK ( numSamplesOut >= numSamplesIn, XLAL_EINVAL );
 
-  const LIGOTimeGPS *epoch = &(xIn->epoch);
-  REAL8 Dtau0 = XLALGPSDiff ( epoch, &(doppler->refTime) );
+  LIGOTimeGPS epoch = xIn->epoch;
+  REAL8 Dtau0 = GPSDIFF ( epoch, doppler->refTime );
 
   UINT4 numSFTs = SFTinds->length / 2;
 
