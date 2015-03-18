@@ -817,21 +817,16 @@ disp("PASSED dynamic array of pointers access");
 
 ## check 'tm' struct conversions
 disp("checking 'tm' struct conversions ...");
-gps = 989168284;
-utc = [2011, 5, 11, 16, 57, 49, 4, 131, 0];
-assert(all(XLALGPSToUTC(gps) == utc));
-assert(XLALUTCToGPS(utc) == gps);
-assert(XLALUTCToGPS(utc(1:6)) == gps);
-utc(7) = utc(8) = 0;
-for i = [-1, 0, 1]
-  utc(9) = i;
-  assert(XLALUTCToGPS(utc) == gps);
-endfor
-utcd = utc;
+gps0 = 989168284;
+utc0 = [2011, 5, 11, 16, 57, 49];
+assert(all(XLALGPSToUTC(gps0) == utc0));
+assert(XLALUTCToGPS(utc0) == gps0);
 for i = 0:9
-  utcd(3) = utc(3) + i;
-  utcd = XLALGPSToUTC(XLALUTCToGPS(utcd));
-  assert(utcd(7) == weekday(datenum(utcd(1:6))));
+  gps = gps0 + i * 86400;
+  utc = utc0;
+  utc(3) = utc(3) + i;
+  assert(all(XLALGPSToUTC(gps) == utc));
+  assert(XLALUTCToGPS(utc) == gps);
 endfor
 LALCheckMemoryLeaks();
 disp("PASSED 'tm' struct conversions");

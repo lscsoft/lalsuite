@@ -119,44 +119,28 @@ extern "C++" {
 %typemaps_primitive(%checkcode(CPLXDBL), COMPLEX16);
 
 // Typemaps which convert to/from the C broken-down date/time struct.
-%typemap(in) struct tm* (struct tm temptm) {
+%typemap(in, fragment=SWIG_AsVal_frag(double)) struct tm* (struct tm temptm) {
 
-  // Set 'tm' struct to zero
+  // Convert '$input' to an Octave date number 'datenum'
+  octave_value_list retn = feval("datenum", $input, 1);
+  if (retn.length() != 1) {
+    %argument_fail(SWIG_ValueError, "$type", $symname, $argnum);
+  }
+  double datenum = 0;
+  int res = SWIG_AsVal(double)(retn(0), &datenum);
+  if (!SWIG_IsOK(res)) {
+    %argument_fail(res, "$type", $symname, $argnum);
+  }
+
+  // Convert 'datenum' to a C time_t 't', using the following:
+  //   1970-01-01 00:00:00 +0000: 'datenum'=719529, 't'=0
+  //   1970-01-02 00:00:00 +0000: 'datenum'=719530, 't'=86400
+  time_t t = (time_t) llround((datenum - 719529) * 86400);
+
+  // Convert 't' to a C struct tm 'temptm'
   memset(&temptm, 0, sizeof(temptm));
-
-  if (!$input.is_empty()) {
-
-    // Check that the $input octave_value is a vector of either 6 or 9 integer elements.
-    // Note that the 7th ('tm_wday') and 8th ('tm_yday') elements are ignored; see below.
-    if (!$input.dims().is_vector() || $input.is_complex_type()) {
-      %argument_fail(SWIG_TypeError, "$type (not a non-complex vector)", $symname, $argnum);
-    }
-    RowVector octtm = $input.row_vector_value();
-    if (octtm.numel() != 6 && octtm.numel() != 9) {
-      %argument_fail(SWIG_ValueError, "$type (must have 6 or 9 elements)", $symname, $argnum);
-    }
-    for (int i = 0; i < octtm.numel(); ++i) {
-      if (octtm(i) != int(octtm(i))) {
-        %argument_fail(SWIG_ValueError, "$type (must have integer elements)", $symname, $argnum);
-      }
-    }
-
-    // Assign members of 'tm' struct, converting Octave date ranges to 'tm' struct date ranges
-    temptm.tm_year  = int(octtm(0)) - 1900;   // 'tm' struct years start from 1900
-    temptm.tm_mon   = int(octtm(1)) - 1;      // 'tm' struct months start from 0
-    temptm.tm_mday  = int(octtm(2));
-    temptm.tm_hour  = int(octtm(3));
-    temptm.tm_min   = int(octtm(4));
-    temptm.tm_sec   = int(octtm(5));
-    temptm.tm_isdst = octtm.numel() > 8 ? int(octtm(8)) : -1;
-
-    // Fill in values for 'tm_wday' and 'tm_yday', and normalise member ranges
-    int errnum = 0;
-    XLAL_TRY( XLALFillBrokenDownTime(&temptm), errnum );
-    if (errnum != XLAL_SUCCESS) {
-      %argument_fail(SWIG_ValueError, "$type (invalid date/time)", $symname, $argnum);
-    }
-
+  if (gmtime_r(&t, &temptm) == NULL) {
+    %argument_fail(SWIG_RuntimeError, "$type", $symname, $argnum);
   }
 
   $1 = &temptm;
@@ -165,21 +149,18 @@ extern "C++" {
 %typemap(freearg) struct tm* "";
 %typemap(out) struct tm* {
 
-  // Create a 9-element row vector
-  RowVector octtm(9);
+  // Create an Octave date vector 'datevec'
+  RowVector datevec(6);
 
-  // Assign members of vector, converting 'tm' struct date ranges to Octave date ranges
-  octtm(0) = $1->tm_year + 1900;   // Octave stores 4-digit years
-  octtm(1) = $1->tm_mon  + 1;      // Octave months start from 1
-  octtm(2) = $1->tm_mday;
-  octtm(3) = $1->tm_hour;
-  octtm(4) = $1->tm_min;
-  octtm(5) = $1->tm_sec;
-  octtm(6) = $1->tm_wday + 1;      // Octave week day starts from 1=Sunday
-  octtm(7) = $1->tm_yday + 1;      // Octave year day should start from 1
-  octtm(8) = $1->tm_isdst;
+  // Assign members 'datevec', converting 'tm' struct date ranges to Octave date ranges
+  datevec(0) = $1->tm_year + 1900;   // Octave stores 4-digit years
+  datevec(1) = $1->tm_mon  + 1;      // Octave months start from 1
+  datevec(2) = $1->tm_mday;
+  datevec(3) = $1->tm_hour;
+  datevec(4) = $1->tm_min;
+  datevec(5) = $1->tm_sec;
 
-  $result = octave_value(octtm);
+  $result = octave_value(datevec);
 
 }
 
