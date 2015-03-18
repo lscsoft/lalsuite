@@ -1,5 +1,4 @@
 /*
-*  Copyright (C) 2012 Karl Wette
 *  Copyright (C) 2007 Duncan Brown, David Chin, Jolien Creighton, Kipp Cannon, Reinhard Prix, Stephen Fairhurst
 *
 *  This program is free software; you can redistribute it and/or modify
@@ -208,9 +207,6 @@ INT4 XLALModifiedJulianDayUTC( const struct tm *utc );
 INT4 XLALModifiedJulianDay( const struct tm *utc );
 /* deprecated wrapper to XLALJulianDayUTC() for pylal backwards compatibility (see #1856) */
 REAL8 XLALJulianDay( const struct tm *utc );
-
-/* Fill in missing fields of a C 'tm' broken-down time struct. */
-int XLALFillBrokenDownTime( struct tm *tm );
 
 /* Returns the Greenwich mean or aparent sideral time in radians. */
 REAL8 XLALGreenwichSiderealTime(
