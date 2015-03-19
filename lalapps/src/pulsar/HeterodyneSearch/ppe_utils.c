@@ -259,12 +259,10 @@ COMPLEX16Vector *subtract_running_median( COMPLEX16Vector *data ){
       n = N+i;
       sidx = 0;
     }
-    else if ( i > length - N ){
-      n = length - i + N;
-      sidx = (i-N)-1;
-    }
     else{
-      n = mrange;
+      if ( i > length - N ){ n = length - i + N; }
+      else{ n = mrange; }
+
       sidx = i-N;
     }
 
@@ -394,7 +392,8 @@ UINT4 find_change_point( gsl_vector_complex *data, REAL8 *logodds, INT4 minlengt
   REAL8 logdouble = 0., logdouble_min = -INFINITY;
   REAL8 logratio = 0.;
 
-  REAL8Vector *sumforward = NULL, *sumback = NULL;
+  REAL8 sumforward = 0., sumback = 0.;
+  gsl_complex dval;
 
   /* check that data is at least twice the minimum length, if not return an odds ratio of zero (log odds = -inf [or close to that!]) */
   if ( length < (UINT4)(2*minlength) ){
@@ -405,33 +404,19 @@ UINT4 find_change_point( gsl_vector_complex *data, REAL8 *logodds, INT4 minlengt
 
   /* calculate the sum of the data squared */
   for (i = 0; i < length; i++) {
-    gsl_complex dval = gsl_vector_complex_get( data, i );
+    dval = gsl_vector_complex_get( data, i );
     datasum += SQUARE( gsl_complex_abs( dval ) );
   }
 
   /* calculate the evidence that the data consists of a Gaussian data with a single standard deviation */
   logsingle = -LAL_LN2 - (REAL8)length*LAL_LNPI + gsl_sf_lnfact(length-1) - (REAL8)length * log( datasum );
 
-  /* to speed up process calculate data sums first */
   lsum = length - 2*minlength + 1;
-  sumforward = XLALCreateREAL8Vector( lsum );
-  sumback = XLALCreateREAL8Vector( lsum );
 
-  sumforward->data[0] = 0.;
-  sumback->data[0] = 0.;
-
-  for ( i = 0; i < length - minlength; i++ ){
-    gsl_complex dval1 = gsl_vector_complex_get( data, i );
-    gsl_complex dval2 = gsl_vector_complex_get( data, length-(i+1) );
-
-    if ( i < (UINT4)minlength ){
-      sumforward->data[0] += SQUARE( gsl_complex_abs( dval1 ) );
-      sumback->data[0] += SQUARE( gsl_complex_abs( dval2 ) );
-    }
-    else{
-      sumforward->data[i+1-minlength] = sumforward->data[i-minlength] + SQUARE( gsl_complex_abs( dval1 ) );
-      sumback->data[i+1-minlength] = sumback->data[i-minlength] + SQUARE( gsl_complex_abs( dval2 ) );
-    }
+  for ( i = 0; i < length; i++ ){
+    dval = gsl_vector_complex_get( data, i );
+    if ( i < (UINT4)minlength-1 ){ sumforward += SQUARE( gsl_complex_abs( dval ) ); }
+    else{ sumback += SQUARE( gsl_complex_abs( dval ) ); }
   }
 
   /* go through each possible change point and calculate the evidence for the data consisting of two independent
@@ -442,9 +427,14 @@ UINT4 find_change_point( gsl_vector_complex *data, REAL8 *logodds, INT4 minlengt
 
     REAL8 log_1 = 0., log_2 = 0.;
 
+    dval = gsl_vector_complex_get( data, ln1-1 );
+    REAL8 adval = SQUARE( gsl_complex_abs( dval ) );
+    sumforward += adval;
+    sumback -= adval;
+
     /* get log evidences for the individual segments */
-    log_1 = -LAL_LN2 - (REAL8)ln1*LAL_LNPI + gsl_sf_lnfact(ln1-1) - (REAL8)ln1 * log( sumforward->data[i] );
-    log_2 = -LAL_LN2 - (REAL8)ln2*LAL_LNPI + gsl_sf_lnfact(ln2-1) - (REAL8)ln2 * log( sumback->data[lsum-i-1] );
+    log_1 = -LAL_LN2 - (REAL8)ln1*LAL_LNPI + gsl_sf_lnfact(ln1-1) - (REAL8)ln1 * log( sumforward );
+    log_2 = -LAL_LN2 - (REAL8)ln2*LAL_LNPI + gsl_sf_lnfact(ln2-1) - (REAL8)ln2 * log( sumback );
 
     /* get evidence for the two segments */
     logdouble = log_1 + log_2;
@@ -462,9 +452,6 @@ UINT4 find_change_point( gsl_vector_complex *data, REAL8 *logodds, INT4 minlengt
   /* get the log odds ratio of segmented versus non-segmented model */
   logratio = logtot - logsingle;
   memcpy(logodds, &logratio, sizeof(REAL8));
-
-  XLALDestroyREAL8Vector( sumforward );
-  XLALDestroyREAL8Vector( sumback );
 
   return changepoint;
 }
