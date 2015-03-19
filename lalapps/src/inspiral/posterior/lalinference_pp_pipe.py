@@ -92,6 +92,12 @@ elif prior_cp.get('analysis','engine')=='lalinferencebambimpi':
   prior_cp.set('engine','zeroLogLike','')
   prior_cp.set('engine','nlive',str(opts.trials))
 
+# Remove marg options for prior sample generation
+for option in 'margphi','margtime','margtimephi:
+  if prior_cp.has_option('engine',option):
+        prior_cp.remove_option('engine',option)
+
+
 # Create a DAG to contain the other scripts
 outerdaglog=os.path.join(daglogdir,'lalinference_injection_test_'+str(uuid.uuid1())+'.log')
 outerdag=pipeline.CondorDAG(outerdaglog,dax=opts.dax)
