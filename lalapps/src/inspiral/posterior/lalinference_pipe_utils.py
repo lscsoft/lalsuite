@@ -98,8 +98,8 @@ def readLValert(SNRthreshold=0,gid=None,flow=40.0,gracedb="gracedb",savepsdpath=
   #Issues to identify IFO with good data that did not produce a trigger
   #search_summary = lsctables.getTablesByType(xmldoc, lsctables.SearchSummaryTable)[0]
   #ifos = search_summary[0].ifos.split(",")
-  coinc_table = lsctables.getTablesByType(xmldoc, lsctables.CoincTable)[0]
-  ifos = coinc_table[0].instruments.split(",")
+  #coinc_table = lsctables.getTablesByType(xmldoc, lsctables.CoincTable)[0]
+  #ifos = coinc_table[0].instruments.split(",")
   trigSNR = coinctable[0].snr
   # Parse PSD
   srate_psdfile=16384
@@ -107,6 +107,8 @@ def readLValert(SNRthreshold=0,gid=None,flow=40.0,gracedb="gracedb",savepsdpath=
   cwd=os.getcwd()
   os.chdir(savepsdpath)
   subprocess.call([gracedb,"download", gid ,"psd.xml.gz"])
+  xmlpsd = lalseries.read_psd_xmldoc(utils.load_filename('psd.xml.gz',contenthandler = lalseries.LIGOLWContentHandler))
+  ifos = xmlpsd.keys()
   psdasciidic=None
   fhigh=None
   if os.path.exists("psd.xml.gz"):
