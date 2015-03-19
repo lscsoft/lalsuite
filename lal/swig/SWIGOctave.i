@@ -122,8 +122,23 @@ extern "C++" {
 %typemap(in, fragment=SWIG_AsVal_frag(double)) struct tm* (struct tm temptm) {
 
   // Convert '$input' to an Octave date number 'datenum'
-  octave_value_list retn = feval("datenum", $input, 1);
-  if (retn.length() != 1) {
+  octave_value_list datenum_args;
+  if ($input.is_string()) {
+    datenum_args.append($input);
+  } else {
+    dim_vector dims = $input.dims();
+    if (dims.length() == 2 && dims.num_ones() == 1 && 3 <= dims.numel() && dims.numel() <= 6) {
+      RowVector datevec = $input.row_vector_value();
+      for (int i = 0; i < datevec.length(); ++i) {
+        datenum_args.append(octave_value(datevec(i)));
+      }
+    }
+  }
+  octave_value_list retn;
+  if (datenum_args.length() > 0) {
+    retn = feval("datenum", datenum_args, 1);
+  }
+  if (retn.length() == 0) {
     %argument_fail(SWIG_ValueError, "$type", $symname, $argnum);
   }
   double datenum = 0;
