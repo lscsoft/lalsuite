@@ -260,6 +260,38 @@ XLALGetTimeOfDay ( void )
 #endif
 } /* XLALGetTimeOfDay() */
 
+
+///
+/// High-resolution CPU timer (returns result in seconds), aimed for code-timing purposes.
+/// Attempts to provide the highest time resolution available, while adding as little overhead as possible.
+///
+/// \note uses clock_gettime() with ns precision if available, or falls back to XLALGetTimeOfDay() with
+/// mus-precision otherwise.
+///
+///
+REAL8
+XLALGetCPUTime ( void )
+{
+#ifndef HAVE_CLOCK_GETTIME
+  return XLALGetTimeOfDay();
+#else
+
+  struct timespec ut;
+  clockid_t clk_id;
+#ifdef CLOCK_THREAD_CPUTIME_ID
+  clk_id = CLOCK_THREAD_CPUTIME_ID;	// according to man-page: (since Linux 2.6.12)
+#else
+  clk_id = CLOCK_REALTIME;	// use this as fallback, guaranteed to exist.
+#endif
+
+  clock_gettime ( clk_id, &ut);	// don't bother testing to avoid overheads, and we would notice in timing if unavailable
+
+  return ut.tv_sec + ut.tv_nsec * 1.e-9;
+
+#endif
+} // XLALGetCPUTime()
+
+
 /* returns static timestamps-string for 'now' */
 static const char *
 LogGetTimestamp (void)

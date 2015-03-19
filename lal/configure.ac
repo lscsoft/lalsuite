@@ -290,7 +290,7 @@ AC_TYPE_SSIZE_T
 AC_HEADER_TIME
 
 # checks for library functions
-AC_CHECK_FUNCS([gmtime_r localtime_r stat putenv posix_memalign backtrace])
+AC_CHECK_FUNCS([gmtime_r localtime_r stat putenv posix_memalign backtrace clock_gettime])
 
 # set automake conditionals
 AM_CONDITIONAL([INTELFFT],[test x$intelfft = xtrue])

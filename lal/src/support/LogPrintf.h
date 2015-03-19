@@ -29,11 +29,11 @@
 extern "C" {
 #endif
 
-#include <lal/LALDatatypes.h>
-
 /*---------- INCLUDES ----------*/
 #include <stdarg.h>
 #include <gsl/gsl_matrix.h>
+
+#include <lal/LALDatatypes.h>
 
 /**
  * \defgroup LogPrintf_h Header LogPrintf.h
@@ -73,6 +73,8 @@ int XLALfprintfGSLvector ( FILE *fp, const char *fmt, const gsl_vector *vect ) _
 int XLALfprintfGSLvector_int ( FILE *fp, const char *fmt, const gsl_vector_int *vect ) _LAL_GCC_VPRINTF_FORMAT_(2);
 
 REAL8 XLALGetTimeOfDay(void);
+REAL8 XLALGetCPUTime ( void );
+
 REAL8 XLALGetPeakHeapUsageMB ( void );
 
 char * XLALClearLinebreaks ( const char *str );

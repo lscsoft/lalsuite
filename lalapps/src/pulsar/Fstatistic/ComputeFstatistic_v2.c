@@ -329,12 +329,7 @@ int XLALAdvanceScanlineWindow ( const FstatCandidate *nextCand, scanlineWindow_t
 BOOLEAN XLALCenterIsLocalMax ( const scanlineWindow_t *scanWindow, const UINT4 sortingStatistic );
 
 /* ----- which timing function to use ----- */
-#ifdef HIGHRES_TIMING
-REAL8 XLALGetUserCPUTime ( void );
-#define GETTIME XLALGetUserCPUTime
-#else
-#define GETTIME XLALGetTimeOfDay
-#endif
+#define GETTIME XLALGetCPUTime
 
 /*----------------------------------------------------------------------*/
 /* Function definitions start here */
@@ -2170,31 +2165,6 @@ write_TimingInfo ( const CHAR *fname, const timingInfo_t *ti )
   return XLAL_SUCCESS;
 
 } /* write_TimingInfo() */
-
-#ifdef HIGHRES_TIMING
-/**
- * Return process User CPU time used.
- */
-REAL8
-XLALGetUserCPUTime ( void )
-{
-  struct timespec res;
-  struct timespec ut;
-  clockid_t clk_id = CLOCK_PROCESS_CPUTIME_ID;
-
-  if ( clock_getres ( clk_id, &res ) != 0 ) {
-    XLAL_ERROR_REAL8 (XLAL_ESYS, "failed to call clock_getres(), errno = %d\n", errno );
-  }
-  XLALPrintError ("%s: Clock-precision: {%ld s, %ld ns}\n", __func__, res.tv_sec, res.tv_nsec );
-
-  if ( clock_gettime ( clk_id, &ut) != 0 ) {
-    XLAL_ERROR_REAL8 ( XLAL_ESYS, "failed to call clock_gettime(), errno = %d\n", errno );
-  }
-
-  return ut.tv_sec + (ut.tv_nsec/1.e9);
-
-} /* XLALGetUserCPUTime() */
-#endif
 
 /* Resize histogram */
 gsl_vector_int *resize_histogram(gsl_vector_int *old_hist, size_t size) {
