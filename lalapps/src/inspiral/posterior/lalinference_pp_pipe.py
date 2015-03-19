@@ -93,7 +93,7 @@ elif prior_cp.get('analysis','engine')=='lalinferencebambimpi':
   prior_cp.set('engine','nlive',str(opts.trials))
 
 # Remove marg options for prior sample generation
-for option in 'margphi','margtime','margtimephi:
+for option in 'margphi','margtime','margtimephi':
   if prior_cp.has_option('engine',option):
         prior_cp.remove_option('engine',option)
 
