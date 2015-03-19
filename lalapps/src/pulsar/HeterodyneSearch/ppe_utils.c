@@ -298,7 +298,7 @@ COMPLEX16Vector *subtract_running_median( COMPLEX16Vector *data ){
  *
  * The threshold for the natural logarithm of the odds ratio is empirically set to be
  * \f[
- * T = 4.0 + 1.35\log{}_{10}{N},
+ * T = 4.07 + 1.33\log{}_{10}{N},
  * \f]
  * where \f$N\f$ is the length in samples of the dataset. This is based on Monte Carlo simulations of
  * many realisations of Gaussian noise for data of different lengths. The threshold comes from a linear
@@ -330,7 +330,7 @@ UINT4Vector *chop_data( gsl_vector_complex *data, INT4 chunkMin ){
   changepoint = find_change_point( data, &logodds, chunkMin );
 
   /* threshold scaling for a 0.5% false alarm probability of splitting Gaussian data */
-  threshold = 4.0 + 1.35*log10((REAL8)length);
+  threshold = 4.07 + 1.33*log10((REAL8)length);
 
   if ( logodds > threshold ){
     UINT4Vector *cp1 = NULL;
