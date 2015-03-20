@@ -111,11 +111,11 @@ int XLALEPGetTimingParameters(
 	int window_length,	/**< Number of samples in a window used for the time-frequency plane */
 	int max_tile_length,	/**< Number of samples in the tile of longest duration */
 	double fractional_tile_shift,	/**< Number of samples by which the start of the longest tile is shifted from the start of the tile preceding it, as a fraction of its length */
-	int *psd_length,	/**<> (optional) User's desired number of samples to use in computing a PSD estimate.  Will be replaced with actual number of samples to use in computing a PSD estimate (rounded down to be comensurate with the windowing). */
-	int *psd_shift,	/**> (optional) Number of samples by which the start of a PSD is to be shifted from the start of the PSD that preceded it in order that the tiling pattern continue smoothly across the boundary. */
-	int *window_shift,	/**> Number of samples by which the start of a time-frequency plane window is shifted from the window preceding it in order that the tiling pattern continue smoothly across the boundary. */
-	int *window_pad,	/**> How many samples at the start and end of each window are treated as padding, and will not be covered by the tiling. */
-	int *tiling_length	/**> How many samples will be covered by the tiling. */
+	int *psd_length,	/**< (optional) User's desired number of samples to use in computing a PSD estimate.  Will be replaced with actual number of samples to use in computing a PSD estimate (rounded down to be comensurate with the windowing). */
+	int *psd_shift,	/**< (optional) Number of samples by which the start of a PSD is to be shifted from the start of the PSD that preceded it in order that the tiling pattern continue smoothly across the boundary. */
+	int *window_shift,	/**< Number of samples by which the start of a time-frequency plane window is shifted from the window preceding it in order that the tiling pattern continue smoothly across the boundary. */
+	int *window_pad,	/**< How many samples at the start and end of each window are treated as padding, and will not be covered by the tiling. */
+	int *tiling_length	/**< How many samples will be covered by the tiling. */
 )
 {
 	int max_tile_shift = fractional_tile_shift * max_tile_length;
