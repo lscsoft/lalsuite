@@ -421,10 +421,10 @@ static int SEOBNRv2ROMDoubleSpinTimeFrequencySetup(
   gsl_interp_accel **acc_phi,                   // phase spline accelerator
   REAL8 *Mf_final,                              // ringdown frequency in Mf
   REAL8 *Mtot_sec,                              // total mass in seconds
-  REAL8 m1SI,                                   /**< Mass of companion 1 (kg) */
-  REAL8 m2SI,                                   /**< Mass of companion 2 (kg) */
-  REAL8 chi1,                                   /**< Aligned spin of companion 1 */
-  REAL8 chi2                                    /**< Aligned spin of companion 2 */
+  REAL8 m1SI,                                   // Mass of companion 1 (kg)
+  REAL8 m2SI,                                   // Mass of companion 2 (kg)
+  REAL8 chi1,                                   // Aligned spin of companion 1
+  REAL8 chi2                                    // Aligned spin of companion 2
 );
 
 /********************* Definitions begin here ********************/
@@ -1214,10 +1214,10 @@ static int SEOBNRv2ROMDoubleSpinTimeFrequencySetup(
   gsl_interp_accel **acc_phi,                   // phase spline accelerator
   REAL8 *Mf_final,                              // ringdown frequency in Mf
   REAL8 *Mtot_sec,                              // total mass in seconds
-  REAL8 m1SI,                                   /**< Mass of companion 1 (kg) */
-  REAL8 m2SI,                                   /**< Mass of companion 2 (kg) */
-  REAL8 chi1,                                   /**< Aligned spin of companion 1 */
-  REAL8 chi2                                    /**< Aligned spin of companion 2 */
+  REAL8 m1SI,                                   // Mass of companion 1 (kg)
+  REAL8 m2SI,                                   // Mass of companion 2 (kg)
+  REAL8 chi1,                                   // Aligned spin of companion 1
+  REAL8 chi2                                    // Aligned spin of companion 2
 )
 {
   /* Get masses in terms of solar mass */

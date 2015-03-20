@@ -222,7 +222,7 @@ REAL8 XLALSimInspiralRingdownTimeBound(REAL8 M, REAL8 s)
  * The frequency returned by this routine is guaranteed to be less than the frequency
  * passed to XLALSimInspiralChirpTimeBound() if the returned value of that routine
  * is passed to this routine as tchirp.
- * @param fstart The chirp time of post-Newtonian inspiral s.
+ * @param tchirp The chirp time of post-Newtonian inspiral s.
  * @param m1 The mass of the first component in kg.
  * @param m2 The mass of the second component in kg.
  * @return Lower bound on the starting frequency of a post-Newtonian inspiral in Hz.

@@ -264,9 +264,9 @@ static int SEOBNRv2ROMSingleSpinTimeFrequencySetup(
   gsl_interp_accel **acc_phi,                   // phase spline accelerator
   REAL8 *Mf_final,                              // ringdown frequency in Mf
   REAL8 *Mtot_sec,                              // total mass in seconds
-  REAL8 m1SI,                                   /**< Mass of companion 1 (kg) */
-  REAL8 m2SI,                                   /**< Mass of companion 2 (kg) */
-  REAL8 chi                                     /**< Effective aligned spin */
+  REAL8 m1SI,                                   // Mass of companion 1 (kg)
+  REAL8 m2SI,                                   // Mass of companion 2 (kg)
+  REAL8 chi                                     // Effective aligned spin
 );
 
 /********************* Definitions begin here ********************/
@@ -872,9 +872,9 @@ static int SEOBNRv2ROMSingleSpinTimeFrequencySetup(
   gsl_interp_accel **acc_phi,                   // phase spline accelerator
   REAL8 *Mf_final,                              // ringdown frequency in Mf
   REAL8 *Mtot_sec,                              // total mass in seconds
-  REAL8 m1SI,                                   /**< Mass of companion 1 (kg) */
-  REAL8 m2SI,                                   /**< Mass of companion 2 (kg) */
-  REAL8 chi                                     /**< Effective aligned spin */
+  REAL8 m1SI,                                   // Mass of companion 1 (kg)
+  REAL8 m2SI,                                   // Mass of companion 2 (kg)
+  REAL8 chi                                     // Effective aligned spin
 )
 {
   /* Get masses in terms of solar mass */
@@ -940,7 +940,7 @@ static int SEOBNRv2ROMSingleSpinTimeFrequencySetup(
 
 /**
  * Compute the time at a given frequency. The origin of time is at the merger.
- * The allowed frequency range for the input is Mf \in [0.0001, 0.3].
+ * The allowed frequency range for the input is Mf in [0.0001, 0.3].
  */
 int XLALSimIMRSEOBNRv2ROMSingleSpinTimeOfFrequency(
   REAL8 *t,         /**< Output: time (s) at frequency */
@@ -982,7 +982,7 @@ int XLALSimIMRSEOBNRv2ROMSingleSpinTimeOfFrequency(
 
 /**
  * Compute the frequency at a given time. The origin of time is at the merger.
- * The frequency range for the output is Mf \in [0.0001, 0.3].
+ * The frequency range for the output is Mf in [0.0001, 0.3].
  */
 int XLALSimIMRSEOBNRv2ROMSingleSpinFrequencyOfTime(
   REAL8 *frequency,   /**< Output: Frequency (Hz) */
