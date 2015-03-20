@@ -36,21 +36,21 @@
 #define BENCH_FUNCF_1OUT(funcf,abstol0,reltol0)                         \
   {                                                                     \
     XLAL_CHECK ( XLALVectorDeviceSet ( VECTORDEVICE_FPU ) == XLAL_SUCCESS, XLAL_EFUNC ); \
-    XLAL_CHECK ( XLALVector##funcf( xOut_Ref, xIn ) == XLAL_SUCCESS, XLAL_EFUNC ); \
+    XLAL_CHECK ( XLALVector##funcf( xOut_Ref, xIn, Ntrials ) == XLAL_SUCCESS, XLAL_EFUNC ); \
     for ( UINT4 dev = VECTORDEVICE_START+1; dev < VECTORDEVICE_END; dev ++ )  \
       {                                                                 \
         if ( !XLALVectorDeviceIsAvailable ( dev ) ) { continue; };      \
         XLAL_CHECK ( XLALVectorDeviceSet ( dev ) == XLAL_SUCCESS, XLAL_EFUNC ); \
         tic = XLALGetTimeOfDay();                                       \
         for (UINT4 l=0; l < Nruns; l ++ ) {                             \
-          XLAL_CHECK ( XLALVector##funcf( xOut, xIn ) == XLAL_SUCCESS, XLAL_EFUNC ); \
+          XLAL_CHECK ( XLALVector##funcf( xOut, xIn, Ntrials ) == XLAL_SUCCESS, XLAL_EFUNC ); \
         }                                                               \
         toc = XLALGetTimeOfDay();                                       \
         maxErr = maxRelerr = 0;                                         \
-        for ( UINT4 i = 0; i < xIn->length; i ++ )                      \
+        for ( UINT4 i = 0; i < Ntrials; i ++ )                          \
           {                                                             \
-            REAL4 err = fabsf ( xOut->data[i] - xOut_Ref->data[i] );    \
-            REAL4 relerr = Relerr ( err, xOut_Ref->data[i] );           \
+            REAL4 err = fabsf ( xOut[i] - xOut_Ref[i] );                \
+            REAL4 relerr = Relerr ( err, xOut_Ref[i] );                 \
             maxErr    = fmaxf ( err, maxErr );                          \
             maxRelerr = fmaxf ( relerr, maxRelerr );                    \
           }                                                             \
@@ -58,7 +58,7 @@
         char buf[256];                                                  \
         sprintf (buf, "%s() %s", #funcf, devName );                     \
         XLALPrintInfo ( "%-16s: %4.0f Mops/sec [maxErr = %7.2g (tol=%7.2g), maxRelerr = %7.2g (tol=%7.2g)]\n", \
-                        buf, (REAL8)xIn->length * Nruns / (toc - tic)/1e6, maxErr, (abstol0), maxRelerr, (reltol0) ); \
+                        buf, (REAL8)Ntrials * Nruns / (toc - tic)/1e6, maxErr, (abstol0), maxRelerr, (reltol0) ); \
         XLAL_CHECK ( (maxErr <= (abstol0)), XLAL_ETOL, "%s: absolute error (%g) exceeds tolerance (%g)\n", devName, maxErr, abstol0 ); \
         XLAL_CHECK ( (maxRelerr <= (reltol0)), XLAL_ETOL, "%s: relative error (%g) exceeds tolerance (%g)\n", devName, maxRelerr, reltol0 ); \
       }                                                                 \
@@ -67,22 +67,22 @@
 #define BENCH_FUNCF_2OUT(funcf,abstol0,reltol0)                         \
   {                                                                     \
     XLAL_CHECK ( XLALVectorDeviceSet ( VECTORDEVICE_FPU ) == XLAL_SUCCESS, XLAL_EFUNC ); \
-    XLAL_CHECK ( XLALVector##funcf( xOut_Ref, xOut2_Ref, xIn ) == XLAL_SUCCESS, XLAL_EFUNC ); \
+    XLAL_CHECK ( XLALVector##funcf( xOut_Ref, xOut2_Ref, xIn, Ntrials ) == XLAL_SUCCESS, XLAL_EFUNC ); \
     for ( UINT4 dev = VECTORDEVICE_START+1; dev < VECTORDEVICE_END; dev ++ )  \
       {                                                                 \
         if ( !XLALVectorDeviceIsAvailable ( dev ) ) { continue; };      \
         XLAL_CHECK ( XLALVectorDeviceSet ( dev ) == XLAL_SUCCESS, XLAL_EFUNC ); \
         tic = XLALGetTimeOfDay();                                       \
         for (UINT4 l=0; l < Nruns; l ++ ) {                             \
-          XLAL_CHECK ( XLALVector##funcf( xOut, xOut2, xIn ) == XLAL_SUCCESS, XLAL_EFUNC ); \
+          XLAL_CHECK ( XLALVector##funcf( xOut, xOut2, xIn, Ntrials ) == XLAL_SUCCESS, XLAL_EFUNC ); \
         }                                                               \
         toc = XLALGetTimeOfDay();                                       \
         maxErr = maxRelerr = 0;                                         \
-        for ( UINT4 i = 0; i < xIn->length; i ++ ) {                    \
-          REAL4 err  = fabsf ( xOut->data[i] - xOut_Ref->data[i] );     \
-          REAL4 err2 = fabsf ( xOut2->data[i] - xOut2_Ref->data[i] );   \
-          REAL4 relerr  = Relerr ( err, xOut_Ref->data[i] );            \
-          REAL4 relerr2 = Relerr ( err2, xOut2_Ref->data[i] );          \
+        for ( UINT4 i = 0; i < Ntrials; i ++ ) {                    \
+          REAL4 err  = fabsf ( xOut[i] - xOut_Ref[i] );     \
+          REAL4 err2 = fabsf ( xOut2[i] - xOut2_Ref[i] );   \
+          REAL4 relerr  = Relerr ( err, xOut_Ref[i] );            \
+          REAL4 relerr2 = Relerr ( err2, xOut2_Ref[i] );          \
           maxErr    = fmaxf ( err, maxErr );                            \
           maxErr    = fmaxf ( err2, maxErr );                           \
           maxRelerr = fmaxf ( relerr, maxRelerr );                      \
@@ -92,7 +92,7 @@
         char buf[256];                                                  \
         sprintf (buf, "%s() %s", #funcf, devName );                     \
         XLALPrintInfo ( "%-16s: %4.0f Mops/sec [maxErr = %7.2g (tol=%7.2g), maxRelerr = %7.2g (tol=%7.2g)]\n", \
-                        buf, (REAL8)xIn->length * Nruns / (toc - tic)/1e6, maxErr, (abstol0), maxRelerr, (reltol0) ); \
+                        buf, (REAL8)Ntrials * Nruns / (toc - tic)/1e6, maxErr, (abstol0), maxRelerr, (reltol0) ); \
         XLAL_CHECK ( (maxErr <= (abstol0)), XLAL_ETOL, "%s: absolute error (%g) exceeds tolerance (%g)\n", devName, maxErr, abstol0 ); \
         XLAL_CHECK ( (maxRelerr <= (reltol0)), XLAL_ETOL, "%s: relative error (%g) exceeds tolerance (%g)\n", devName, maxRelerr, reltol0 ); \
       }                                                                 \
@@ -135,13 +135,16 @@ main ( int argc, char *argv[] )
   XLAL_CHECK ( ( xIn_a  =  XLALCreateREAL4VectorAligned ( Ntrials, 32 )) != NULL, XLAL_EFUNC );
   XLAL_CHECK ( ( xOut_a =  XLALCreateREAL4VectorAligned ( Ntrials, 32 )) != NULL, XLAL_EFUNC );
   XLAL_CHECK ( ( xOut2_a = XLALCreateREAL4VectorAligned ( Ntrials, 32 )) != NULL, XLAL_EFUNC );
-  // alias these into standard REAL4Vectors for convenience
-  REAL4Vector *xIn   = (REAL4Vector*)xIn_a;
-  REAL4Vector *xOut  = (REAL4Vector*)xOut_a;
-  REAL4Vector *xOut2 = (REAL4Vector*)xOut2_a;
-  REAL4Vector *xOut_Ref, *xOut2_Ref;
-  XLAL_CHECK ( (xOut_Ref = XLALCreateREAL4Vector ( Ntrials )) != NULL, XLAL_EFUNC );
-  XLAL_CHECK ( (xOut2_Ref = XLALCreateREAL4Vector ( Ntrials )) != NULL, XLAL_EFUNC );
+  REAL4VectorAligned *xOut_Ref_a, *xOut2_Ref_a;
+  XLAL_CHECK ( (xOut_Ref_a  = XLALCreateREAL4VectorAligned ( Ntrials, 32 )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK ( (xOut2_Ref_a = XLALCreateREAL4VectorAligned ( Ntrials, 32 )) != NULL, XLAL_EFUNC );
+
+  // extract aligned REAL4 vectors from these
+  REAL4 *xIn      = xIn_a->data;
+  REAL4 *xOut     = xOut_a->data;
+  REAL4 *xOut2    = xOut2_a->data;
+  REAL4 *xOut_Ref = xOut_Ref_a->data;
+  REAL4 *xOut2_Ref= xOut2_Ref_a->data;
 
   REAL8 tic, toc;
   REAL4 maxErr = 0, maxRelerr = 0;
@@ -153,8 +156,8 @@ main ( int argc, char *argv[] )
 
   // ---------- input data x in [-1000, 1000] for sin(),cos() ----------
   XLALPrintInfo ("Testing sinf(x), cosf(x) for x in [-1000, 1000]\n");
-  for ( UINT4 i = 0; i < xIn->length; i ++ ) {
-    xIn->data[i] = 2000 * ( frand() - 0.5 );
+  for ( UINT4 i = 0; i < Ntrials; i ++ ) {
+    xIn[i] = 2000 * ( frand() - 0.5 );
   }
   abstol = 2e-7, reltol = 1e-5;
   // ==================== SINF() ====================
@@ -176,8 +179,8 @@ main ( int argc, char *argv[] )
   // ==================== EXPF() ====================
   // ---------- input data x in [-10, 10] for sin(),cos() ----------
   XLALPrintInfo ("Testing expf(x) for x in [-10, 10]\n");
-  for ( UINT4 i = 0; i < xIn->length; i ++ ) {
-    xIn->data[i] = 20 * ( frand() - 0.5 );
+  for ( UINT4 i = 0; i < Ntrials; i ++ ) {
+    xIn[i] = 20 * ( frand() - 0.5 );
   }
   abstol = 3e-3, reltol = 2e-7;
 
@@ -187,8 +190,8 @@ main ( int argc, char *argv[] )
   // ==================== LOGF() ====================
   // ---------- input data x in [0, 10000] for logf(x) ----------
   XLALPrintInfo ("Testing logf(x) for x in (0, 10000]\n");
-  for ( UINT4 i = 0; i < xIn->length; i ++ ) {
-    xIn->data[i] = 10000.0f * frand() + 1e-6;
+  for ( UINT4 i = 0; i < Ntrials; i ++ ) {
+    xIn[i] = 10000.0f * frand() + 1e-6;
   } // for i < Ntrials
   abstol = 2e-6, reltol = 2e-7;
 
@@ -200,8 +203,8 @@ main ( int argc, char *argv[] )
   XLALDestroyREAL4VectorAligned ( xOut_a );
   XLALDestroyREAL4VectorAligned ( xOut2_a );
 
-  XLALDestroyREAL4Vector ( xOut_Ref );
-  XLALDestroyREAL4Vector ( xOut2_Ref );
+  XLALDestroyREAL4VectorAligned ( xOut_Ref_a );
+  XLALDestroyREAL4VectorAligned ( xOut2_Ref_a );
 
   XLALDestroyUserVars();
 
