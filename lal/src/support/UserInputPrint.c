@@ -145,8 +145,8 @@ XLALPrintStringValueOfSTRINGVector ( LALStringVector **valSTRINGVector )
 } // XLALPrintStringValueOfSTRINGVector()
 
 ///
-/// Return 'string value' (allocated here) of a <CTYPE>Vector, by turning into comma-separated list of <CTYPE> values.
-/// The output is parseable by XLALParseStringValueAs<CTYPE>Vector().
+/// Return 'string value' (allocated here) of a \<CTYPE\>Vector, by turning into comma-separated list of \<CTYPE\> values.
+/// The output is parseable by XLALParseStringValueAs\<CTYPE\>Vector().
 /// In case of a NULL or empty vector (data==NULL|length==0), generate the string 'NULL'.
 #define DEFN_XLALPrintStringValueOfVector(CTYPE)                        \
 DECL_XLALPrintStringValueOfVector(CTYPE)                                \

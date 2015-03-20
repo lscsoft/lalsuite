@@ -31,7 +31,7 @@ extern "C" {
  * \defgroup UserInputParse_h Header UserInputParse.h
  * \ingroup UserInput_h
  * \author Reinhard Prix
- * \brief Sub-model for parsing of input 'string values' as various 'types' (as defined in \ref UserInput_h).
+ * \brief Sub-module for parsing of input 'string values' as various 'types' (as defined in \ref UserInput_h).
  *
  */
 
@@ -40,7 +40,7 @@ extern "C" {
 // ---------- Function prototypes ----------
 int XLALParseStringValueAsINT4PlusFrac ( INT4 *valINT4, REAL8 *valFrac, const char *valString );
 
-// --------------- parsers for various USER_TYPE_<UTYPE>s ----------
+// --------------- parsers for various USER_TYPE_\<UTYPE\>s ----------
 int XLALParseStringValueAsINT8 ( INT8 *valINT8, const char *valString );
 int XLALParseStringValueAsINT4 ( INT4 *valINT4, const char *valString );
 int XLALParseStringValueAsREAL8 ( REAL8 *valREAL8, const char *valString );

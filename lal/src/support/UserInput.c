@@ -107,11 +107,11 @@ typedef char *(*printerT)(const void*);
   [UVAR_TYPE_##UTYPE] = { #UTYPE, (parserT)XLALParseStringValueAs##UTYPE,	(printerT)XLALPrintStringValueOf##UTYPE, (destructorT)DESTRUCTOR }
 
 // ---------- HOWTO add new UserInput variable types ----------
-// In order to add a new type <UTYPE> to be handled by the UserInput module, you just need to
-// 1) add an entry 'UVAR_TYPE_<UTYPE>' in the UserVarType enum
+// In order to add a new type \<UTYPE\> to be handled by the UserInput module, you just need to
+// 1) add an entry 'UVAR_TYPE_\<UTYPE\>' in the UserVarType enum
 // 2) provide
-//   a)  a parser function XLALParseStringValueAs<UTYPE>() (recommended to be added in \ref UserInputParse_h)
-//   b)  a printer function XLALPrintStringValueOf<UTYPE>() (recommended to be added in \ref UserInputPrint_h)
+//   a)  a parser function XLALParseStringValueAs\<UTYPE\>() (recommended to be added in \ref UserInputParse_h)
+//   b)  a printer function XLALPrintStringValueOf\<UTYPE\>() (recommended to be added in \ref UserInputPrint_h)
 //   c)  a unit test for the new parser+printer, ideally checking identity of print(parse(x)) or parse(print(x))
 // 3) generate a corresponding registration function declaration + definition using the macro-templates
 //    DECL_REGISTER_UVAR_AS<VALUE|POINTER>() and DEFN_REGISTER_UVAR_AS<VALUE|POINTER>(),
@@ -129,9 +129,9 @@ static const struct
 } UserVarTypeMap[UVAR_TYPE_END]
 = {
   // either use 'manual' entries of the form
-  // [UVAR_TYPE_<UTYPE>] = { "<UTYPE>",	(parserT)XLALParseStringValueAs<UTYPE>, (printerT)XLALPrintStringValueOf<UTYPE>, (destructorT)XLALDestroy<UTYPE> },
+  // [UVAR_TYPE_\<UTYPE\>] = { "\<UTYPE\>",	(parserT)XLALParseStringValueAs\<UTYPE\>, (printerT)XLALPrintStringValueOf\<UTYPE\>, (destructorT)XLALDestroy\<UTYPE\> },
   // or the convenience macro for cases using 'standard' function names and API
-  // REGULAR_MAP_ENTRY ( <UTYPE>, XLALDestroy<UTYPE> ),
+  // REGULAR_MAP_ENTRY ( \<UTYPE\>, XLALDestroy\<UTYPE\> ),
   REGULAR_MAP_ENTRY ( BOOLEAN, NULL ),
   REGULAR_MAP_ENTRY ( INT4, NULL ),
   REGULAR_MAP_ENTRY ( REAL8, NULL ),

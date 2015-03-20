@@ -472,7 +472,7 @@ XLALParseStringValueAsSTRINGVector ( LALStringVector **strVect,	///< [out] alloc
 } // XLALParseStringValueAsSTRINGVector()
 
 ///
-/// Parse a string containing a list of comma-separated values (CSV) into a <CTYPE>Vector.
+/// Parse a string containing a list of comma-separated values (CSV) into a \<CTYPE\>Vector.
 ///
 /// \note The output string-vector (*vect) must be NULL
 ///
@@ -501,7 +501,7 @@ DECL_XLALParseStringValueAsVector(CTYPE)                                \
  (*vect) = ret;                                                         \
  return XLAL_SUCCESS;                                                   \
                                                                         \
-} /* XLALParseStringValueAs<CTYPE>Vector() */
+} /* XLALParseStringValueAs\<CTYPE\>Vector() */
 
 DEFN_XLALParseStringValueAsVector(REAL8);
 DEFN_XLALParseStringValueAsVector(INT4);

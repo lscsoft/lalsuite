@@ -32,7 +32,7 @@ extern "C" {
  * \ingroup UserInput_h
  * \author Reinhard Prix
  * \brief Sub-module for general printing of various input 'types' (as defined in \ref UserInput_h) as 'string values',
- * These can be thought of as the 'inverse functions' to \ref ParseStringValue_h.
+ * These can be thought of as the 'inverse functions' to \ref UserInputParse_h.
  *
  */
 
