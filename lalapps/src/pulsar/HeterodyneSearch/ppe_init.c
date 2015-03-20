@@ -1080,6 +1080,7 @@ void sum_data( LALInferenceRunState *runState ){
     }
 
     REAL8 tsv = LAL_DAYSID_SI / tsteps, T = 0., timeMin = 0., timeMax = 0.;
+    REAL8 logGaussianNorm = 0.; /* normalisation constant for Gaussian distribution */
 
     for( i = 0, count = 0 ; i < length ; i+= chunkLength, count++ ){
       chunkLength = chunkLengths->data[count];
@@ -1152,7 +1153,10 @@ void sum_data( LALInferenceRunState *runState ){
         B = data->compTimeData->data->data[j];
 
         /* if using a Gaussian likelihood divide all these values by the variance */
-        if ( gaussianLike ) { vari = data->varTimeData->data->data[j]; }
+        if ( gaussianLike ) {
+          vari = data->varTimeData->data->data[j];
+          logGaussianNorm -= log(LAL_TWOPI*vari);
+        }
 
         /* sum up the data */
         sumdat->data[count] += (creal(B)*creal(B) + cimag(B)*cimag(B))/vari;
@@ -1327,6 +1331,8 @@ void sum_data( LALInferenceRunState *runState ){
            * would fail if this was set */
       LALInferenceAddVariable( ifomodel->params, "roq", &roq, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
     }
+
+    LALInferenceAddVariable( ifomodel->params, "logGaussianNorm", &logGaussianNorm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
 
     data = data->next;
     ifomodel = ifomodel->next;
