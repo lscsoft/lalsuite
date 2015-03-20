@@ -12,8 +12,3 @@
 \defgroup lalxml_python			Python Packages
 
 */
-
-/**
-\page lalxml_authors			Author List
-\verbinclude AUTHORS
-*/

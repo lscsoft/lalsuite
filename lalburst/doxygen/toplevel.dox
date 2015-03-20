@@ -36,8 +36,3 @@
 \defgroup lalburst_python		Python Packages
 
 */
-
-/**
-\page lalburst_authors			Author List
-\verbinclude AUTHORS
-*/

@@ -733,8 +733,8 @@ WARN_LOGFILE           = @abs_builddir@/warnings.log
 # spaces.
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                  = @abs_srcdir@/toplevel.dox \
-                         @abs_srcdir@/src \
+INPUT                  = @abs_builddir@/autogen.dox \
+                         @abs_srcdir@/toplevel.dox \
                          $(doxygen_input)
 
 # This tag can be used to specify the character encoding of the source files
@@ -808,8 +808,7 @@ EXCLUDE_SYMBOLS        = UNUSED
 # that contain example code fragments that are included (see the \include
 # command).
 
-EXAMPLE_PATH           = @abs_top_builddir@ \
-                         @abs_top_srcdir@
+EXAMPLE_PATH           =
 
 # If the value of the EXAMPLE_PATH tag contains directories, you can use the
 # EXAMPLE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp and

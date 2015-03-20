@@ -12,8 +12,3 @@
 \defgroup lalframe_python		Python Packages
 
 */
-
-/**
-\page lalframe_authors			Author List
-\verbinclude AUTHORS
-*/

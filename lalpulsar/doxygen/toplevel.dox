@@ -67,8 +67,3 @@
 \defgroup lalpulsar_python		Python Packages
 
 */
-
-/**
-\page lalpulsar_authors			Author List
-\verbinclude AUTHORS
-*/

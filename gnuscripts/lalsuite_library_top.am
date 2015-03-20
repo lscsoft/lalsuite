@@ -24,9 +24,6 @@ $(PACKAGE)-user-env.csh $(PACKAGE)-user-env.sh: $(PACKAGE)-user-env.shell
 	$(SED) -n -e "s|[@]SED[@]|$(SED)|g;s|^$$prefix:||p" $< >>$@
 
 EXTRA_DIST += AUTHORS
-if DOXYGEN
-html-recursive install-html-recursive: AUTHORS
-endif # DOXYGEN
 
 .PHONY: force-author-generation
 if HAVE_GIT_REPO
