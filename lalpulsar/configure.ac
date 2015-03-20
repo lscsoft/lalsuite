@@ -177,7 +177,6 @@ LALPulsar has now been successfully configured:
 * SIMD extensions are $SIMD_ENABLE_VAL
 * LALXML library support is $LALXML_ENABLE_VAL
 * BOINC support is $BOINC_ENABLE_VAL
-* SWIG binding generation is $SWIG_GENERATE_ENABLE_VAL
 * SWIG bindings for Octave are $SWIG_BUILD_OCTAVE_ENABLE_VAL
 * SWIG bindings for Python are $SWIG_BUILD_PYTHON_ENABLE_VAL
 * Doxygen documentation is $DOXYGEN_ENABLE_VAL
