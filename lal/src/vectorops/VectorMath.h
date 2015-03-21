@@ -64,15 +64,8 @@ VectorDevice_type;
 /** We provide our own local aligned-memory handling functions, until this
  * may later be merged upstream into the LALMalloc module
  */
-#ifdef SWIG /* SWIG interface directives */
-SWIGLAL(IGNORE_MEMBERS(tagREAL4VectorAligned, data0));
-#endif /* SWIG */
 typedef struct tagREAL4VectorAligned
 {
-#ifdef SWIG /* SWIG interface directives */
-  SWIGLAL(CAST_STRUCT_TO(REAL4Vector));
-  SWIGLAL(ARRAY_1D(REAL4VectorAligned, REAL4, data, UINT4, length));
-#endif /* SWIG */
   UINT4 length;		/**< number of 'usable' array entries (fully aligned) */
   REAL4 *data;		/**< start of aligned memory block */
   REAL4 *data0;		/**< actual physical start of memory block, possibly not aligned */
