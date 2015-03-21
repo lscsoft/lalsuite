@@ -976,18 +976,18 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     if self.config.has_option('lalinference','fhigh'):
       node.fhighs=ast.literal_eval(self.config.get('lalinference','fhigh'))
       prenode.fhighs=ast.literal_eval(self.config.get('lalinference','fhigh'))
-      prenode.set_max_psdlength(self.config.getint('input','max-psd-length'))
-      prenode.set_padding(self.config.getint('input','padding'))
-      #prenode[ifo].set_output_file('/dev/null')
-      prenode.add_var_arg('--Niter 1')
-      prenode.add_var_arg('--outfile '+roqeventpath)
-      prenode.add_var_arg('--data-dump')
-      if self.config.has_option('lalinference','seglen'):
-        prenode.set_seglen(self.config.getint('lalinference','seglen'))
-      elif self.config.has_option('engine','seglen'):
-        prenode.set_seglen(self.config.getint('engine','seglen'))
-      else:
-        prenode.set_seglen(event.duration)
+    prenode.set_max_psdlength(self.config.getint('input','max-psd-length'))
+    prenode.set_padding(self.config.getint('input','padding'))
+    #prenode[ifo].set_output_file('/dev/null')
+    prenode.add_var_arg('--Niter 1')
+    prenode.add_var_arg('--outfile '+roqeventpath)
+    prenode.add_var_arg('--data-dump')
+    if self.config.has_option('lalinference','seglen'):
+      prenode.set_seglen(self.config.getint('lalinference','seglen'))
+    elif self.config.has_option('engine','seglen'):
+      prenode.set_seglen(self.config.getint('engine','seglen'))
+    else:
+      prenode.set_seglen(event.duration)
     # Add the nodes it depends on
     for ifokey, seg in node.scisegs.items():
       dfnode=seg.get_df_node()
