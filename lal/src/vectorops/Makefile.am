@@ -1,34 +1,22 @@
 include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 
 pkginclude_HEADERS = \
-	VectorOps.h \
-	Matrix.h \
-	VectorIndexRange.h \
 	VectorMath.h \
+	VectorOps.h \
 	$(END_OF_LIST)
 
 noinst_LTLIBRARIES = libvectorops.la
 
 libvectorops_la_SOURCES = \
-	MatrixDivide.c \
-	MatrixMultiply.c \
-	MatrixPower.c \
-	MiscMatlab.c \
 	VectorMath.c \
-	VectorMath_sse_mathfun.h \
-	VectorMath_avx_mathfun.h \
 	VectorMath_AVX.c \
 	VectorMath_FPU.c \
 	VectorMath_SSE.c \
+	VectorMath_avx_mathfun.h \
+	VectorMath_sse_mathfun.h \
 	VectorMultiply.c \
 	VectorPolar.c \
-	VectorIndexRange.c \
 	$(END_OF_LIST)
 
 noinst_HEADERS = \
-	MatrixDivide_source.c \
-	MatrixMultiply_source.c \
-	MatrixPower_source.c \
-	MiscMatlab_source.c \
-	VectorIndexRange_source.c \
 	$(END_OF_LIST)
