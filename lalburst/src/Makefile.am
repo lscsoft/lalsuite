@@ -15,7 +15,6 @@ pkginclude_HEADERS = \
 	TFTransform.h \
 	TSData.h \
 	TSSearch.h \
-	Thresholds.h \
 	TimeFreq.h \
 	TrackSearch.h \
 	cs_cosmo.h \
@@ -43,7 +42,6 @@ liblalburst_la_SOURCES = \
 	TfrRsp.c \
 	TfrSp.c \
 	TfrWv.c \
-	Thresholds.c \
 	TrackSearch.c \
 	cs_lambda_cosmo.c
 nodist_liblalburst_la_SOURCES = LALBurstBuildInfo.c

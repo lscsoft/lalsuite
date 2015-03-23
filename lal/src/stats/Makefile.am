@@ -2,6 +2,7 @@ include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 
 pkginclude_HEADERS = \
 	LALMoment.h \
+	LALChisq.h \
 	LALCorrelation.h \
 	LALMarcumQ.h \
 	$(END_OF_LIST)
@@ -11,6 +12,7 @@ noinst_LTLIBRARIES = libstats.la
 libstats_la_SOURCES = \
 	LALMoment.c \
 	LALCorrelation.c \
+	XLALChisq.c \
 	XLALMarcumQ.c \
 	$(END_OF_LIST)
 

@@ -7,7 +7,6 @@ test_programs += TfrPswvTest
 test_programs += TfrRspTest
 test_programs += TfrSpTest
 test_programs += TfrWvTest
-test_programs += ThresholdsTest
 test_programs += TrackSearchTest
 
 # Add shell, Python, etc. test scripts to this variable

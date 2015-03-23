@@ -56,7 +56,7 @@
 
 #include <lal/LALStdlib.h>
 #include <lal/LALgetopt.h>
-#include <lal/Thresholds.h>
+#include <lal/LALChisq.h>
 
 int verbose = 1;
 

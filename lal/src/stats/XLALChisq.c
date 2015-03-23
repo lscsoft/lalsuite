@@ -24,8 +24,8 @@
 #include <gsl/gsl_sf.h>
 
 
+#include <lal/LALChisq.h>
 #include <lal/XLALGSL.h>
-#include <lal/Thresholds.h>
 #include <lal/XLALError.h>
 
 
@@ -33,11 +33,13 @@
  * Natural logarithm of complementary cumulative probability function for
  * Chi Squared distribution.
  *
- * Returns natural logarithm of probability that \f$x_1^2 + .. x_dof^2 >=
- * chi2\f$, where \f$x_1, ..\f$ x_dof are independent Gaussians of zero
- * mean and unit variance.  The integral expression is \f$prob =
- * \int_{chi^2/2}^\infty dx  x^((n/2)-1) e^(-x) / Gamma(n/2)\f$, where n =
- * dof = number of degrees of freedom.
+ * Returns natural logarithm of probability that \f$x_{1}^{2} + \cdots +
+ * x_{\mathrm{dof}}^{2} \geq \chi^{2}\f$, where \f$x_{1}, \ldots,
+ * x_{\mathrm{dof}}\f$ are independent zero mean unit variance Gaussian
+ * random variables.  The integral expression is \f$\ln Q = \ln
+ * \int_{\chi^{2}/2}^{\infty} x^{\frac{n}{2}-1} \mathrm{e}^{-x} /
+ * \Gamma(n/2) \, \mathrm{d}x\f$, where \f$n = \mathrm{dof} =\f$ number of
+ * degrees of freedom.
  */
 double XLALLogChisqCCDF(
 	double chi2,

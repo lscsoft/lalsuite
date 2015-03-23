@@ -49,5 +49,4 @@ test/TfrPswvTest
 test/TfrRspTest
 test/TfrSpTest
 test/TfrWvTest
-test/ThresholdsTest
 test/TrackSearchTest

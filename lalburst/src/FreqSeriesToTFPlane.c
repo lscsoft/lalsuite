@@ -36,13 +36,13 @@
 
 
 #include <lal/Date.h>
+#include <lal/LALChisq.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataBurstUtils.h>
 #include <lal/RealFFT.h>
 #include <lal/Sequence.h>
 #include <lal/TFTransform.h>
-#include <lal/Thresholds.h>
 #include <lal/XLALError.h>
 
 /*

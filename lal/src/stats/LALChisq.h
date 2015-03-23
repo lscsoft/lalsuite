@@ -17,8 +17,8 @@
  */
 
 
-#ifndef _THRESHOLDS_H
-#define _THRESHOLDS_H
+#ifndef _LALCHISQ_H_
+#define _LALCHISQ_H_
 
 
 #ifdef  __cplusplus   /* C++ protection. */
@@ -26,8 +26,9 @@ extern "C" {
 #endif
 
 /**
- * \defgroup Thresholds_h Header Thresholds.h
- * \ingroup lalburst_burstsearch
+ * \defgroup LALChisq_h Header LALChisq.h
+ * \ingroup lal_stats
+ * \author Cannon, Kipp
  *
  * \brief UNDOCUMENTED
  */
@@ -47,4 +48,4 @@ double XLALLogChisqCCDF(
 #endif  /* C++ protection. */
 
 
-#endif
+#endif	/* _LALCHISQ_H_ */
