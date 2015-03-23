@@ -51,6 +51,8 @@ def setup_module():
     # XXX May want some more error handling.
     r = g.writeLog(graceid, "Fake skymap file.", filename = "fake_skymap.txt",
         filecontents = "Fake skymap.", tagname = "sky_loc")
+    r = g.writeLog(graceid, "Fake skymap image file.", filename = "fake_skymap_image.txt",
+        filecontents = "Fake skymap image.", tagname = "sky_loc")
     f.write("successfully wrote log\n")
 
 def teardown_module():
@@ -83,7 +85,7 @@ def test_retrieve_voevent():
 def test_create_update_voevent():
     global update_voevent
     r = g.createVOEvent(graceid, "Update", skymap_filename = "fake_skymap.txt",
-        skymap_type = "FAKE")
+        skymap_type = "FAKE", skymap_image_filename = "fake_skymap_image.txt")
     rdict = r.json()
     f.write("got update text = %s\n"  % rdict['text'])
     assert_true('voevent_type' in rdict.keys())
