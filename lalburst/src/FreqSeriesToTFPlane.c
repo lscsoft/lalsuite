@@ -403,7 +403,7 @@ SnglBurst *XLALComputeExcessPower(
 		 * independent of one another as a consequence of a
 		 * non-zero inner product of the time-domain impulse
 		 * response of the channel filter for adjacent pixels */
-		confidence = -XLALlnOneMinusChisqCdf(sumsquares * .62, tile_dof * .62);
+		confidence = -XLALLogChisqCCDF(sumsquares * .62, tile_dof * .62);
 		if(XLALIsREAL8FailNaN(confidence)) {
 			gsl_vector_free(channel_buffer);
 			gsl_vector_free(unwhitened_channel_buffer);
