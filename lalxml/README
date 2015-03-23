@@ -1,7 +1,7 @@
-LAL
+LALXML
 ================================
 
-Core gravitational wave analysis routines.
+LAL wrapping of the libxml2 XML library.
 
 Acknowledgment
 --------------------------------

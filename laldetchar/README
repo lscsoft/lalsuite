@@ -1,7 +1,7 @@
-LAL
+LALDetChar
 ================================
 
-Core gravitational wave analysis routines.
+LAL routines for detector characterisation.
 
 Acknowledgment
 --------------------------------

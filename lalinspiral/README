@@ -1,7 +1,8 @@
-LAL
+LALInspiral
 ================================
 
-Core gravitational wave analysis routines.
+LAL routines for inspiral and ringdown CBC gravitational wave data
+analysis.
 
 Acknowledgment
 --------------------------------

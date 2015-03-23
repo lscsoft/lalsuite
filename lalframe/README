@@ -1,7 +1,7 @@
-LAL
+LALFrame
 ================================
 
-Core gravitational wave analysis routines.
+LAL wrapping of the LIGO/Virgo Frame library.
 
 Acknowledgment
 --------------------------------

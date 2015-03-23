@@ -1,7 +1,7 @@
-LAL
+LALSimulation
 ================================
 
-Core gravitational wave analysis routines.
+LAL routines for gravitational waveform and noise generation.
 
 Acknowledgment
 --------------------------------

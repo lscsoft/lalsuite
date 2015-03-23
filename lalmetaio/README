@@ -1,7 +1,7 @@
-LAL
+LALMetaIO
 ================================
 
-Core gravitational wave analysis routines.
+LAL wrapping of the MetaIO LIGO_LW XML library.
 
 Acknowledgment
 --------------------------------

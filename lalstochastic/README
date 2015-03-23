@@ -1,7 +1,7 @@
-LAL
+LALStochastic
 ================================
 
-Core gravitational wave analysis routines.
+LAL routines for stochastic background gravitational wave data analysis.
 
 Acknowledgment
 --------------------------------

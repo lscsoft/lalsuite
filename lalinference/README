@@ -1,7 +1,7 @@
-LAL
+LALInference
 ================================
 
-Core gravitational wave analysis routines.
+LAL routines for Bayesian inference data analysis.
 
 Acknowledgment
 --------------------------------

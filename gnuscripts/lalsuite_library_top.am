@@ -1,3 +1,5 @@
+EXTRA_DIST += README
+
 if HAVE_GIT_REPO
 # Override automake's default rule for rebuilding aclocal.m4, to ensure that
 # ./configure is successfully recreated after certain build system changes which

@@ -1,7 +1,8 @@
-LAL
+LALPulsar
 ================================
 
-Core gravitational wave analysis routines.
+LAL routines for pulsar and continuous wave gravitational wave data
+analysis.
 
 Acknowledgment
 --------------------------------

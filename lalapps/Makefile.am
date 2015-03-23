@@ -7,9 +7,6 @@ include $(top_srcdir)/gnuscripts/lalsuite_library_top.am
 ACLOCAL_AMFLAGS = -I gnuscripts
 
 EXTRA_DIST += \
-	README \
-	README.bugs \
-	README.contrib \
 	lalapps.spec \
 	$(DATA)
 
