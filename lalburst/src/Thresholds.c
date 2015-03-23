@@ -1,6 +1,5 @@
 /*
- *
- * Copyright (C) 2007,2015  Kipp Cannon and Flanagan, E.
+ * Copyright (C) 2005,2007,2008,2010,2015  Kipp Cannon
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -25,7 +24,6 @@
 #include <gsl/gsl_sf.h>
 
 
-#include <lal/LALDatatypes.h>
 #include <lal/XLALGSL.h>
 #include <lal/Thresholds.h>
 #include <lal/XLALError.h>
@@ -41,9 +39,9 @@
  * \int_{chi^2/2}^\infty dx  x^((n/2)-1) e^(-x) / Gamma(n/2)\f$, where n =
  * dof = number of degrees of freedom.
  */
-REAL8 XLALlnOneMinusChisqCdf(
-	REAL8 chi2,
-	REAL8 dof
+double XLALLogChisqCCDF(
+	double chi2,
+	double dof
 )
 {
 	/*
@@ -59,10 +57,7 @@ REAL8 XLALlnOneMinusChisqCdf(
 	 * See Abramowitz and Stegun, (6.5.32).
 	 */
 
-	const REAL8 a = dof / 2;
-	const REAL8 x = chi2 / 2;
-	REAL8 ln_prob, term;
-	int i;
+	double ln_prob;
 
 	if((chi2 < 0.0) || (dof <= 0.0))
 		XLAL_ERROR_REAL8(XLAL_EDOM);
@@ -72,9 +67,14 @@ REAL8 XLALlnOneMinusChisqCdf(
 
 	/* if the result turned out to be very small, then recompute it using
 	 * an asymptotic approximation */
-	if(ln_prob < -600) {
+	if(ln_prob < -600.) {
+		const double a = dof / 2.;
+		const double x = chi2 / 2.;
+		double term;
+		int i;
+
 		/* calculate the log of the numerator */
-		for(i = 1, ln_prob = term = 1; (i < a) && fabs(term/ln_prob) > 1e-17; i++) {
+		for(i = 1, ln_prob = term = 1.; (i < a) && fabs(term/ln_prob) > 1e-17; i++) {
 			term *= (a - i) / x;
 			ln_prob += term;
 		}

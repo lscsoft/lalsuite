@@ -24,20 +24,14 @@ $(PACKAGE)-user-env.csh $(PACKAGE)-user-env.sh: $(PACKAGE)-user-env.shell
 	$(SED) -n -e "s|[@]SED[@]|$(SED)|g;s|^$$prefix:||p" $< >>$@
 
 EXTRA_DIST += AUTHORS
-if DOXYGEN
-html-recursive install-html-recursive: AUTHORS
-endif # DOXYGEN
 
 .PHONY: force-author-generation
 if HAVE_GIT_REPO
-# 'since' should be any public commit ancestral to when .AUTHORS was last
-# updated, e.g. the tag of the most recent LALSuite release. To ensure that the
-# 'git log' execution time remain negligible, .AUTHORS should very occasionally
-# be updated by copying AUTHORS to .AUTHORS and committing the result; 'since'
-# can then be changed to a more recent commit. See Redmine issue #1877.
+# 'since' is any public, non-tag commit ancestral to when .AUTHORS was last updated.
+# It should not be changed without first updating .AUTHORS. See Redmine issue #1877.
 AUTHORS: force-author-generation
-	$(AM_V_GEN)export LC_ALL=C; since=lalsuite-v6.28; \
-	( cat .AUTHORS && git log --pretty="%aN" $${since}..HEAD -- . 2>/dev/null ) | sort -f -u > $@
+	$(AM_V_GEN)export LC_ALL=C; since=8ac5f8d18482c381c4bb1a96f7f29692e1528606; \
+	( cat $(srcdir)/.AUTHORS && git log --pretty="%aN" $${since}..HEAD -- . 2>/dev/null ) | sort -f -u > $@
 endif # HAVE_GIT_REPO
 
 .PHONY: print-build-success

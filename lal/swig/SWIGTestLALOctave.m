@@ -778,28 +778,6 @@ clear ans;
 LALCheckMemoryLeaks();
 disp("PASSED FFT functions with input views ...");
 
-# check aligned vector math
-disp("checking aligned vector math ...");
-theta = LAL_PI * [0; 1.0/6; 1.0/4; 1.0/2];
-sin_theta = [0.0; 0.5; 1.0/sqrt(2); 1.0];
-r4aout = XLALCreateREAL4VectorAligned(4, 32);
-r4ain = XLALCreateREAL4VectorAligned(4, 32);
-r4ain.data = theta;
-XLALVectorSinf(r4aout.cast2REAL4Vector(), r4ain.cast2REAL4Vector());
-assert(all(abs(r4aout.data - sin_theta) < 1e-3));
-r4out = r4aout.cast2REAL4Vector();
-r4in = r4ain.cast2REAL4Vector();
-clear r4aout;
-clear r4ain;
-clear ans;
-XLALVectorSinf(r4out, r4in);
-assert(all(abs(r4out.data - sin_theta) < 1e-3));
-clear r4out;
-clear r4in;
-clear ans;
-LALCheckMemoryLeaks();
-disp("PASSED aligned vector math");
-
 ## check dynamic array of pointers access
 disp("checking dynamic array of pointers access ...");
 ap = swig_lal_test_Create_arrayofptrs(3);
@@ -817,21 +795,16 @@ disp("PASSED dynamic array of pointers access");
 
 ## check 'tm' struct conversions
 disp("checking 'tm' struct conversions ...");
-gps = 989168284;
-utc = [2011, 5, 11, 16, 57, 49, 4, 131, 0];
-assert(all(XLALGPSToUTC(gps) == utc));
-assert(XLALUTCToGPS(utc) == gps);
-assert(XLALUTCToGPS(utc(1:6)) == gps);
-utc(7) = utc(8) = 0;
-for i = [-1, 0, 1]
-  utc(9) = i;
-  assert(XLALUTCToGPS(utc) == gps);
-endfor
-utcd = utc;
+gps0 = 989168284;
+utc0 = [2011, 5, 11, 16, 57, 49];
+assert(all(XLALGPSToUTC(gps0) == utc0));
+assert(XLALUTCToGPS(utc0) == gps0);
 for i = 0:9
-  utcd(3) = utc(3) + i;
-  utcd = XLALGPSToUTC(XLALUTCToGPS(utcd));
-  assert(utcd(7) == weekday(datenum(utcd(1:6))));
+  gps = gps0 + i * 86400;
+  utc = utc0;
+  utc(3) = utc(3) + i;
+  assert(all(XLALGPSToUTC(gps) == utc));
+  assert(XLALUTCToGPS(utc) == gps);
 endfor
 LALCheckMemoryLeaks();
 disp("PASSED 'tm' struct conversions");

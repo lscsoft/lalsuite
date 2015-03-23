@@ -27,7 +27,9 @@
 #include <lal/StringInput.h>
 #include <lal/LALConstants.h>
 #include <lal/LALString.h>
-#include <lal/ParseStringValue.h>
+
+#include <lal/UserInputParse.h>
+
 #include <lal/TranslateMJD.h>
 
 // ---------- global variables ----------
@@ -94,7 +96,7 @@ XLALTranslateStringMJDTTtoGPS ( LIGOTimeGPS *gps,		///< [out] returned GPS time
 
   INT4 mjdDays;
   REAL8 mjdFracDays;
-  XLAL_CHECK_NULL ( XLALParseStringValueToINT4PlusFrac ( &mjdDays, &mjdFracDays, mjdString ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_NULL ( XLALParseStringValueAsINT4PlusFrac ( &mjdDays, &mjdFracDays, mjdString ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   XLAL_CHECK_NULL ( XLALTranslateMJDTTtoGPS ( gps, mjdDays, mjdFracDays ) != NULL, XLAL_EFUNC );
 

@@ -1,6 +1,5 @@
 /*
- *
- * Copyright (C) 2007  Kipp Cannon and Flanagan, E
+ * Copyright (C) 2005,2007,2008,2010,2015  Kipp Cannon
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -22,9 +21,6 @@
 #define _THRESHOLDS_H
 
 
-#include <lal/LALDatatypes.h>
-
-
 #ifdef  __cplusplus   /* C++ protection. */
 extern "C" {
 #endif
@@ -38,9 +34,9 @@ extern "C" {
   /*@{*/
 
 
-REAL8 XLALlnOneMinusChisqCdf(
-	REAL8 chi2,
-	REAL8 dof
+double XLALLogChisqCCDF(
+	double chi2,
+	double dof
 );
 
 

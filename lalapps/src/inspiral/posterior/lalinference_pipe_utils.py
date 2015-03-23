@@ -69,7 +69,7 @@ class Event():
 
 dummyCacheNames=['LALLIGO','LALVirgo','LALAdLIGO','LALAdVirgo']
 
-def readLValert(SNRthreshold=0,gid=None,flow=40.0,gracedb="gracedb"):
+def readLValert(SNRthreshold=0,gid=None,flow=40.0,gracedb="gracedb",savepsdpath="./"):
   """
   Parse LV alert file, continaing coinc, sngl, coinc_event_map.
   and create a list of Events as input for pipeline
@@ -79,6 +79,9 @@ def readLValert(SNRthreshold=0,gid=None,flow=40.0,gracedb="gracedb"):
   from glue.ligolw import utils
   from glue.ligolw import lsctables
   from glue.ligolw import ligolw
+  class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
+    pass
+  lsctables.use_in(LIGOLWContentHandler)
   from glue.ligolw import param
   from glue.ligolw import array
   from pylal import series as lalseries
@@ -87,7 +90,7 @@ def readLValert(SNRthreshold=0,gid=None,flow=40.0,gracedb="gracedb"):
   from subprocess import Popen, PIPE
   print "gracedb download %s coinc.xml" % gid
   subprocess.call([gracedb,"download", gid ,"coinc.xml"])
-  xmldoc=utils.load_filename("coinc.xml")
+  xmldoc=utils.load_filename("coinc.xml",contenthandler = LIGOLWContentHandler)
   coinctable = lsctables.getTablesByType(xmldoc, lsctables.CoincInspiralTable)[0]
   coinc_events = [event for event in coinctable]
   sngltable = lsctables.getTablesByType(xmldoc, lsctables.SnglInspiralTable)[0]
@@ -95,13 +98,17 @@ def readLValert(SNRthreshold=0,gid=None,flow=40.0,gracedb="gracedb"):
   #Issues to identify IFO with good data that did not produce a trigger
   #search_summary = lsctables.getTablesByType(xmldoc, lsctables.SearchSummaryTable)[0]
   #ifos = search_summary[0].ifos.split(",")
-  coinc_table = lsctables.getTablesByType(xmldoc, lsctables.CoincTable)[0]
-  ifos = coinc_table[0].instruments.split(",")
+  #coinc_table = lsctables.getTablesByType(xmldoc, lsctables.CoincTable)[0]
+  #ifos = coinc_table[0].instruments.split(",")
   trigSNR = coinctable[0].snr
   # Parse PSD
   srate_psdfile=16384
   print "gracedb download %s psd.xml.gz" % gid
+  cwd=os.getcwd()
+  os.chdir(savepsdpath)
   subprocess.call([gracedb,"download", gid ,"psd.xml.gz"])
+  xmlpsd = lalseries.read_psd_xmldoc(utils.load_filename('psd.xml.gz',contenthandler = lalseries.LIGOLWContentHandler))
+  ifos = xmlpsd.keys()
   psdasciidic=None
   fhigh=None
   if os.path.exists("psd.xml.gz"):
@@ -134,6 +141,7 @@ def readLValert(SNRthreshold=0,gid=None,flow=40.0,gracedb="gracedb"):
     if(coinc.snr>SNRthreshold): output.append(ev)
   
   print "Found %d coinc events in table." % len(coinc_events)
+  os.chdir(cwd)
   return output
 
 def open_pipedown_database(database_filename,tmp_space):
@@ -473,6 +481,15 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     # Generate the DAG according to the config given
     for event in self.events: self.add_full_analysis(event)
 
+    # Add skyarea jobs if the executable is given                                                                                                                                                                                                # Do one for each results page for now                                                                                                                                                                                                    
+    if cp.has_option('condor','skyarea'):
+      self.skyareajob=SkyAreaJob(self.config,os.path.join(self.basepath,'skyarea.sub'),self.logpath,dax=self.is_dax())
+      respagenodes=filter(lambda x: isinstance(x,ResultsPageNode) ,self.get_nodes())
+      for p in respagenodes:
+          skyareanode=SkyAreaNode(self.skyareajob)
+          skyareanode.add_resultspage_parent(p)
+          self.add_node(skyareanode)
+
     self.dagfilename="lalinference_%s-%s"%(self.config.get('input','gps-start-time'),self.config.get('input','gps-end-time'))
     self.set_dag_file(self.dagfilename)
     if self.is_dax():
@@ -642,7 +659,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       flow=40.0
       if self.config.has_option('lalinference','flow'):
         flow=min(ast.literal_eval(self.config.get('lalinference','flow')).values())
-      events = readLValert(gid=gid,flow=flow,gracedb=self.config.get('condor','gracedb'))
+      events = readLValert(gid=gid,flow=flow,gracedb=self.config.get('condor','gracedb'),savepsdpath=self.basepath)
     # pipedown-database
     else: gid=None
     if self.config.has_option('input','pipedown-db'):
@@ -959,18 +976,18 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     if self.config.has_option('lalinference','fhigh'):
       node.fhighs=ast.literal_eval(self.config.get('lalinference','fhigh'))
       prenode.fhighs=ast.literal_eval(self.config.get('lalinference','fhigh'))
-      prenode.set_max_psdlength(self.config.getint('input','max-psd-length'))
-      prenode.set_padding(self.config.getint('input','padding'))
-      #prenode[ifo].set_output_file('/dev/null')
-      prenode.add_var_arg('--Niter 1')
-      prenode.add_var_arg('--outfile '+roqeventpath)
-      prenode.add_var_arg('--data-dump')
-      if self.config.has_option('lalinference','seglen'):
-        prenode.set_seglen(self.config.getint('lalinference','seglen'))
-      elif self.config.has_option('engine','seglen'):
-        prenode.set_seglen(self.config.getint('engine','seglen'))
-      else:
-        prenode.set_seglen(event.duration)
+    prenode.set_max_psdlength(self.config.getint('input','max-psd-length'))
+    prenode.set_padding(self.config.getint('input','padding'))
+    #prenode[ifo].set_output_file('/dev/null')
+    prenode.add_var_arg('--Niter 1')
+    prenode.add_var_arg('--outfile '+roqeventpath)
+    prenode.add_var_arg('--data-dump')
+    if self.config.has_option('lalinference','seglen'):
+      prenode.set_seglen(self.config.getint('lalinference','seglen'))
+    elif self.config.has_option('engine','seglen'):
+      prenode.set_seglen(self.config.getint('engine','seglen'))
+    else:
+      prenode.set_seglen(event.duration)
     # Add the nodes it depends on
     for ifokey, seg in node.scisegs.items():
       dfnode=seg.get_df_node()
@@ -1517,6 +1534,8 @@ class ResultsPageNode(pipeline.CondorDAGNode):
         pipeline.CondorDAGNode.__init__(self,results_page_job)
         if outpath is not None:
             self.set_output_path(path)
+        self.__event=0
+        self.injfile=None
     def set_gzip_output(self,path):
         self.add_file_opt('archive',path,file_is_output_file=True)
     def set_output_path(self,path):
@@ -1526,10 +1545,14 @@ class ResultsPageNode(pipeline.CondorDAGNode):
         #self.add_file_opt('archive','results.tar.gz',file_is_output_file=True)
         mkdirs(path)
         self.posfile=os.path.join(path,'posterior_samples.dat')
+    def get_output_path(self):
+        return self.webpath
     def set_injection(self,injfile,eventnumber):
         self.injfile=injfile
         self.add_file_opt('inj',injfile)
         self.set_event_number(eventnumber)
+    def get_injection(self):
+        return self.injfile
     def set_event_number(self,event):
         """
         Set the event number in the injection XML.
@@ -1538,6 +1561,8 @@ class ResultsPageNode(pipeline.CondorDAGNode):
             self.__event=int(event)
             self.add_var_arg('--eventnum '+str(event))
             
+    def get_event_number(self):
+      return self.__event
     def set_psd_files(self,st):
       if st is None:
         return
@@ -1764,3 +1789,48 @@ class ROMNode(pipeline.CondorDAGNode):
     if self.__finalized:
       return
     self.__finalized=True
+
+
+class SkyAreaNode(pipeline.CondorDAGNode):
+  """
+  Node to run sky area code
+  """
+  def __init__(self,skyarea_job,posfile=None,parent=None):
+      pipeline.CondorDAGNode.__init__(self,skyarea_job)
+      if parent:
+          self.add_parent(parent)
+      if posfile:
+          self.set_posterior_file(posfile)
+  
+  def set_posterior_file(self,posfile):
+      self.add_file_opt('samples',posfile,file_is_output_file=False)
+      self.posfile=posfile
+  def set_outdir(self,outdir):
+      self.add_var_opt('outdir',outdir)
+  def set_injection(self,injfile,eventnum):
+      if injfile is not None:
+        self.add_file_opt('inj',injfile)
+        self.add_var_opt('eventnum',str(eventnum))
+  def set_objid(self,objid):
+      self.add_var_opt('objid',objid)
+  def add_resultspage_parent(self,resultspagenode):
+      self.set_posterior_file(resultspagenode.get_pos_file())
+      self.set_outdir(resultspagenode.get_output_path())
+      self.add_parent(resultspagenode) 
+      self.set_injection(resultspagenode.get_injection(),resultspagenode.get_event_number())
+
+class SkyAreaJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
+  """
+  Class for Sky Area Jobs
+  """
+  def __init__(self,cp,submitFile,logdir,dax=False):
+      exe=cp.get('condor','skyarea')
+      pipeline.CondorDAGJob.__init__(self,"vanilla",exe)
+      pipeline.AnalysisJob.__init__(self,cp,dax=dax)
+      self.set_sub_file(submitFile)
+      self.set_stdout_file(os.path.join(logdir,'skyarea-$(cluster)-$(process).out'))
+      self.set_stderr_file(os.path.join(logdir,'skyarea-$(cluster)-$(process).err'))
+      self.add_condor_cmd('getenv','True')
+      # Add user-specified options from ini file
+      self.add_ini_opts(cp,'skyarea')
+      

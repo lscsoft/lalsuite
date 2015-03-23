@@ -597,7 +597,7 @@ REAL8Window *XLALCreateCreightonREAL8Window(UINT4 length, REAL8 beta)
 REAL8Window *XLALCreateTukeyREAL8Window(UINT4 length, REAL8 beta)
 {
 	REAL8Sequence *sequence;
-	UINT4 transition_length = beta * length + 0.5;
+	UINT4 transition_length = round(beta * length);
 	UINT4 i;
 
 	if(beta < 0 || beta > 1)

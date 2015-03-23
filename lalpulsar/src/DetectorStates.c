@@ -25,7 +25,7 @@
 #include <lal/SinCosLUT.h>
 #include <lal/DetectorStates.h>
 #include <lal/LISAspecifics.h>
-#include <lal/ConfigFile.h>
+#include <lal/UserInputParse.h>
 
 /*---------- local DEFINES ----------*/
 #define TRUE (1==1)
@@ -778,7 +778,7 @@ XLALParseMultiNoiseFloor ( MultiNoiseFloor *multiNoiseFloor,	/**< [out] parsed m
       UINT4 X0 = X % numSqrtSX;		// always = 0 if (numSqrtSX == 1), otherwise = X if (numSqrtSX==numDetectors)
       const char *sqrtSnStr = sqrtSX->data[X0];
       REAL8 sqrtSn;
-      XLAL_CHECK ( XLALParseStringValueToREAL8 ( &sqrtSn, sqrtSnStr ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK ( XLALParseStringValueAsREAL8 ( &sqrtSn, sqrtSnStr ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK ( sqrtSn >= 0, XLAL_EDOM );
       multiNoiseFloor->sqrtSn[X] = sqrtSn;
     } /* for X < numDetectors */

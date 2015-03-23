@@ -54,6 +54,7 @@
 #include <lal/StringVector.h>
 #include <lal/Sequence.h>
 #include <lal/ConfigFile.h>
+#include <lal/UserInputParse.h>
 #include <lal/LogPrintf.h>
 #include <lal/SFTutils.h>
 
@@ -1099,7 +1100,7 @@ XLALReadTimestampsFile ( const CHAR *fname )
         } // end: if old-style format 'sec ns' is found
       else
         {
-          if ( XLALParseStringValueToEPOCH ( &gps, flines->lines->tokens[iTS] ) == NULL )
+          if ( XLALParseStringValueAsEPOCH ( &gps, flines->lines->tokens[iTS] ) != XLAL_SUCCESS )
             {
               XLALDestroyTimestampVector ( timestamps );
               XLALDestroyParsedDataFile ( flines );

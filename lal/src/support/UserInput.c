@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2015 Reinhard Prix
  * Copyright (C) 2010 Reinhard Prix (xlalified)
  * Copyright (C) 2004, 2005, 2015 Reinhard Prix
  *
@@ -18,135 +19,138 @@
  *  MA  02111-1307  USA
  */
 
+// ---------- local includes ----------
 #include <lal/LALStdio.h>
 #include <lal/LALgetopt.h>
-#include <lal/UserInput.h>
 #include <lal/LogPrintf.h>
 #include <lal/LALString.h>
 #include <lal/Date.h>
 #include <lal/StringVector.h>
+#include <lal/AVFactories.h>
 
+#include <lal/UserInputParse.h>
+#include <lal/UserInputPrint.h>
+
+#include <lal/UserInput.h>
+// ---------- local defines ----------
 #define TRUE  (1==1)
 #define FALSE (1==0)
 
-/* Defines the type of a "user-variable": bool, int, real or string.
- * Should be used only internally !!
- */
+
+// ---------- local Macro definitions ----------
+
+// ----- macro template for defining registration functions for UserInput variables
+#define DEFN_REGISTER_UVAR(UTYPE,CTYPE)                     \
+DECL_REGISTER_UVAR(UTYPE,CTYPE)                             \
+{                                                                       \
+  return XLALRegisterUserVar (name, UVAR_TYPE_ ## UTYPE, optchar, category, helpstr, cvar); \
+}
+
+// ---------- local type definitions ----------
+
+// Define the type of a "user-variable": bool, int, real or string, ...
 typedef enum {
-  UVAR_TYPE_BOOL,    /* boolean */
-  UVAR_TYPE_INT4,    /* integer */
-  UVAR_TYPE_REAL8,   /* float */
-  UVAR_TYPE_STRING,  /* string */
-  UVAR_TYPE_CSVLIST, /* list of comma-separated values */
-  UVAR_TYPE_EPOCH,   /* time 'epoch', specified in either GPS or MJD(TT) format, translated into GPS */
-  UVAR_TYPE_RAJ,     /* sky equatorial longitude (aka right-ascencion or RA), in either radians or hours:minutes:seconds format, translated into radians */
-  UVAR_TYPE_DECJ,    /* sky equatorial latitude (aka declination or DEC), in either radians or degrees:minutes:seconds format, translated into radians */
-  UVAR_TYPE_LAST
+  UVAR_TYPE_START=0, 		// internal start marker for range checking
+
+  UVAR_TYPE_BOOLEAN, 		// boolean
+  UVAR_TYPE_INT4,    		// integer
+  UVAR_TYPE_REAL8,   		// float
+  UVAR_TYPE_EPOCH,   		// time 'epoch', specified in either GPS or MJD(TT) format, translated into GPS
+  UVAR_TYPE_RAJ,     		// sky equatorial longitude (aka right-ascencion or RA), in either radians or hours:minutes:seconds format, translated into radians
+  UVAR_TYPE_DECJ,    		// sky equatorial latitude (aka declination or DEC), in either radians or degrees:minutes:seconds format, translated into radians
+
+  UVAR_TYPE_STRING, 		// normal string
+  UVAR_TYPE_STRINGVector,	// list of comma-separated strings
+  UVAR_TYPE_REAL8Vector,	// list of comma-separated REAL8's
+  UVAR_TYPE_INT4Vector,		// list of comma-separated INT4's
+
+  UVAR_TYPE_END      	// internal end marker for range checking
 } UserVarType;
 
-
-/**
- * Array of descriptors for each UserVarType type
- */
-static const struct {
-  const char *const name;	/**< type name */
-} UserVarTypeDescription[UVAR_TYPE_LAST] = {
-
-  [UVAR_TYPE_BOOL]     = {"BOOLEAN"},
-  [UVAR_TYPE_INT4]     = {"INT4"},
-  [UVAR_TYPE_REAL8]    = {"REAL8"},
-  [UVAR_TYPE_STRING]   = {"STRING"},
-  [UVAR_TYPE_CSVLIST]  = {"CSVLIST"},
-  [UVAR_TYPE_EPOCH]    = {"EPOCH"},
-  [UVAR_TYPE_RAJ]= {"RAJ"},
-  [UVAR_TYPE_DECJ] = {"DECJ"}
-};
-
-/**
- * Linked list to hold the complete information about the user-variables.
- */
+//
+// Linked list to hold the complete information about the user-variables.
+//
 typedef struct tagLALUserVariable {
-  const CHAR *name;	/**< full name */
-  UserVarType type;	/**< type: bool, int, float or string */
-  CHAR optchar;		/**< cmd-line character */
-  const CHAR *help;	/**< help-string */
-  void *varp;		/**< pointer to the actual C-variable */
-  UserVarFlag state;	/**< state (empty, default, set) */
-  struct tagLALUserVariable *next; /* linked list */
+  const CHAR *name;			// full name
+  UserVarType type;			// variable type: BOOLEAN, INT4, REAL8, ...
+  CHAR optchar;				// cmd-line character
+  const CHAR *help;			// help-string
+  void *varp;				// pointer to the actual C-variable
+  UserVarCategory category;		// category (optional, required, developer, ... )
+  BOOLEAN was_set;			// was this set by the user in any way? (ie vie cmdline or cfg-file)
+  struct tagLALUserVariable *next; 	// linked list
 } LALUserVariable;
 
-/** The module-local linked list to hold the user-variables */
-static LALUserVariable UVAR_vars;	/**< empty head */
-static const CHAR *program_name;	/**< keep a pointer to the program name */
-
-/* ---------- internal prototypes ---------- */
-
-/* ----- XLAL interface ----- */
-int XLALRegisterUserVar (const CHAR *name, UserVarType type, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, void *cvar);
-CHAR *XLALUvarValue2String (LALUserVariable *uvar);
-CHAR *XLAL_copy_string_unquoted ( const CHAR *in );
+// ---------- local prototypes ----------
+int XLALRegisterUserVar (const CHAR *name, UserVarType type, CHAR optchar, UserVarCategory category, const CHAR *helpstr, void *cvar);
 void check_and_mark_as_set ( LALUserVariable *varp );
+
+// ----- define templated registration functions for all supported UVAR_TYPE_ 'UTYPES'
+DEFN_REGISTER_UVAR(BOOLEAN,BOOLEAN);
+DEFN_REGISTER_UVAR(INT4,INT4);
+DEFN_REGISTER_UVAR(REAL8,REAL8);
+DEFN_REGISTER_UVAR(RAJ,REAL8);
+DEFN_REGISTER_UVAR(DECJ,REAL8);
+DEFN_REGISTER_UVAR(EPOCH,LIGOTimeGPS);
+DEFN_REGISTER_UVAR(STRING,CHAR*);
+DEFN_REGISTER_UVAR(STRINGVector,LALStringVector*);
+DEFN_REGISTER_UVAR(REAL8Vector,REAL8Vector*);
+DEFN_REGISTER_UVAR(INT4Vector,INT4Vector*);
+
+// ----- define helper types for casting
+typedef int (*parserT)(void*, const char*);
+typedef void (*destructorT)(void*);
+typedef char *(*printerT)(const void*);
+
+// ----- handy macro to simplify adding 'regular' entries for new UTYPES into UserVarTypeMap
+#define REGULAR_MAP_ENTRY(UTYPE,DESTRUCTOR)                             \
+  [UVAR_TYPE_##UTYPE] = { #UTYPE, (parserT)XLALParseStringValueAs##UTYPE,	(printerT)XLALPrintStringValueOf##UTYPE, (destructorT)DESTRUCTOR }
+
+// ---------- HOWTO add new UserInput variable types ----------
+// In order to add a new type \<UTYPE\> to be handled by the UserInput module, you just need to
+// 1) add an entry 'UVAR_TYPE_\<UTYPE\>' in the UserVarType enum
+// 2) provide
+//   a)  a parser function XLALParseStringValueAs\<UTYPE\>() (recommended to be added in \ref UserInputParse_h)
+//   b)  a printer function XLALPrintStringValueOf\<UTYPE\>() (recommended to be added in \ref UserInputPrint_h)
+//   c)  a unit test for the new parser+printer, ideally checking identity of print(parse(x)) or parse(print(x))
+// 3) generate a corresponding registration function declaration + definition using the macro-templates
+//    DECL_REGISTER_UVAR_AS<VALUE|POINTER>() and DEFN_REGISTER_UVAR_AS<VALUE|POINTER>(),
+// 4) add an entry in the master map 'UserInputTypeMap', specifying the parser, printer and (if required) a destructor
+//    If these follow the standard naming and API, the template macro REGULAR_MAP_ENTRY() can be used for that.
+//
+// ---------- Master 'map' defining all UserInput types and how to handle them ----------
+// in particular, lists their name, and how to parse and print them, and (if required) how to destroy them
+static const struct
+{
+  const char *const name;			///< type name
+  int (*parser)(void*, const char*);		///< parser function to parse string as this type
+  char *(*printer)(const void *);		///< 'printer' function returning string value for given type
+  void (*destructor)(void*);			///< destructor for this variable type, NULL if none required
+} UserVarTypeMap[UVAR_TYPE_END]
+= {
+  // either use 'manual' entries of the form
+  // [UVAR_TYPE_\<UTYPE\>] = { "\<UTYPE\>",	(parserT)XLALParseStringValueAs\<UTYPE\>, (printerT)XLALPrintStringValueOf\<UTYPE\>, (destructorT)XLALDestroy\<UTYPE\> },
+  // or the convenience macro for cases using 'standard' function names and API
+  // REGULAR_MAP_ENTRY ( \<UTYPE\>, XLALDestroy\<UTYPE\> ),
+  REGULAR_MAP_ENTRY ( BOOLEAN, NULL ),
+  REGULAR_MAP_ENTRY ( INT4, NULL ),
+  REGULAR_MAP_ENTRY ( REAL8, NULL ),
+  REGULAR_MAP_ENTRY ( STRING, XLALFree ),
+  REGULAR_MAP_ENTRY ( STRINGVector, XLALDestroyStringVector ),
+  REGULAR_MAP_ENTRY ( EPOCH, NULL ),
+  REGULAR_MAP_ENTRY ( RAJ, NULL ),
+  REGULAR_MAP_ENTRY ( DECJ, NULL ),
+  REGULAR_MAP_ENTRY ( REAL8Vector, XLALDestroyREAL8Vector ),
+  REGULAR_MAP_ENTRY ( INT4Vector, XLALDestroyINT4Vector )
+};
+
+
+// ---------- The module-local linked list to hold the user-variables
+static LALUserVariable UVAR_vars;	// empty head
+static const CHAR *program_name;	// keep a pointer to the program name
 
 
 // ==================== Function definitions ====================
-
-/* these are type-specific wrappers to allow tighter type-checking! */
-/** Register a user-variable of type REAL8, see XLALRegisterUserVar() for API documentation */
-int
-XLALRegisterREALUserVar ( const CHAR *name, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, REAL8 *cvar )
-{
-  return XLALRegisterUserVar (name, UVAR_TYPE_REAL8, optchar, flag, helpstr, cvar);
-}
-
-/** Register a user-variable of type INT4, see XLALRegisterUserVar() for API documentation */
-int
-XLALRegisterINTUserVar ( const CHAR *name, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, INT4 *cvar )
-{
-  return XLALRegisterUserVar (name, UVAR_TYPE_INT4, optchar, flag, helpstr, cvar);
-}
-
-/** Register a user-variable of type BOOLEAN, see XLALRegisterUserVar() for API documentation */
-int
-XLALRegisterBOOLUserVar ( const CHAR *name, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, BOOLEAN *cvar )
-{
-  return XLALRegisterUserVar (name, UVAR_TYPE_BOOL, optchar, flag, helpstr, cvar);
-}
-
-/** Register a user-variable of type CHAR*, see XLALRegisterUserVar() for API documentation */
-int
-XLALRegisterSTRINGUserVar ( const CHAR *name, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, CHAR **cvar )
-{
-  return XLALRegisterUserVar (name, UVAR_TYPE_STRING, optchar, flag, helpstr, cvar);
-}
-
-/** Register a user-variable of 'list' type LALStringVector, see XLALRegisterUserVar() for API documentation */
-int
-XLALRegisterLISTUserVar ( const CHAR *name, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, LALStringVector **cvar)
-{
-  return XLALRegisterUserVar ( name, UVAR_TYPE_CSVLIST, optchar, flag, helpstr, cvar );
-}
-
-/** Register a user-variable of 'EPOCH' type LIGOTimeGPS, allowing both GPS and MJD string inputs, see XLALRegisterUserVar() for API documentation */
-int
-XLALRegisterEPOCHUserVar ( const CHAR *name, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, LIGOTimeGPS *cvar)
-{
-  return XLALRegisterUserVar ( name, UVAR_TYPE_EPOCH, optchar, flag, helpstr, cvar );
-}
-
-/** Register a user-variable of 'RAJ' type (REAL8), allowing both "hours:minutes:seconds" or radians as input */
-int
-XLALRegisterRAJUserVar ( const CHAR *name, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, REAL8 *cvar)
-{
-  return XLALRegisterUserVar ( name, UVAR_TYPE_RAJ, optchar, flag, helpstr, cvar );
-}
-
-/** Register a user-variable of 'DECJ' type (REAL8), allowing both "degrees:minutes:seconds" or radians as input */
-int
-XLALRegisterDECJUserVar ( const CHAR *name, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, REAL8 *cvar)
-{
-  return XLALRegisterUserVar ( name, UVAR_TYPE_DECJ, optchar, flag, helpstr, cvar );
-}
-
 
 /**
  * \ingroup UserInput_h
@@ -157,18 +161,19 @@ XLALRegisterDECJUserVar ( const CHAR *name, CHAR optchar, UserVarFlag flag, cons
  * if a previous option name collides.
  *
  * \note don't use this function directly, as it is not type-safe!!
- * ==> use one of the appropriate typed wrappers:  XLALRegisterREALUserVar(), XLALRegisterINTUserVar(), ...
+ * ==> use the type-safe macro XLALRegisterUvarMember(name,type,option,category,help) instead!
  */
 int
 XLALRegisterUserVar ( const CHAR *name,		/**< name of user-variable to register */
                       UserVarType type,		/**< variable type (int,bool,string,real) */
                       CHAR optchar,		/**< optional short-option character */
-                      UserVarFlag flag,	/**< sets state flag to this */
+                      UserVarCategory category,		/**< sets category to this */
                       const CHAR *helpstr,	/**< help-string explaining this input-variable */
                       void *cvar		/**< pointer to the actual C-variabe to link to this user-variable */
                       )
 {
   XLAL_CHECK ( (cvar != NULL) && (name != NULL), XLAL_EINVAL );
+  XLAL_CHECK ( (category > UVAR_CATEGORY_START) && (category < UVAR_CATEGORY_END), XLAL_EINVAL );
 
   // find end of uvar-list && check that neither short- nor long-option are taken already
   LALUserVariable *ptr = &UVAR_vars;
@@ -194,7 +199,7 @@ XLALRegisterUserVar ( const CHAR *name,		/**< name of user-variable to register 
   ptr->optchar 	= optchar;
   ptr->help 	= helpstr;
   ptr->varp 	= cvar;
-  ptr->state 	= flag;
+  ptr->category = category;
 
   return XLAL_SUCCESS;
 
@@ -212,34 +217,27 @@ XLALDestroyUserVars ( void )
   // step through user-variables: free list-entries and all allocated strings
   while ( (ptr=ptr->next) != NULL )
     {
-      // is an allocated string here?
-      if ( (ptr->type == UVAR_TYPE_STRING) && (*(CHAR**)(ptr->varp) != NULL) )
-	{
-	  XLALFree ( *(CHAR**)(ptr->varp) );
-	  *(CHAR**)(ptr->varp) = NULL;
-	}
-      else if ( ptr->type == UVAR_TYPE_CSVLIST )
+      XLAL_CHECK_VOID ( (ptr->type > UVAR_TYPE_START) && (ptr->type < UVAR_TYPE_END), XLAL_EFAILED, "Invalid UVAR_TYPE '%d' outside of [%d,%d]\n", ptr->type, UVAR_TYPE_START+1, UVAR_TYPE_END-1 );
+
+      // is there a destructor function registered for this type?
+      if ( UserVarTypeMap [ ptr->type ].destructor != NULL )
         {
-          XLALDestroyStringVector ( *(LALStringVector**)ptr->varp );
-          *(LALStringVector**)(ptr->varp) = NULL;
+          UserVarTypeMap [ ptr->type ].destructor ( *(CHAR**)ptr->varp );
+          *(CHAR**)ptr->varp = NULL;
         }
 
       /* free list-entry behind us (except for the head) */
-      if ( lastptr != NULL )
-        {
-          XLALFree ( lastptr );
-          lastptr = NULL;
-        }
+      if ( lastptr != NULL ) {
+        XLALFree ( lastptr );
+      }
 
       lastptr = ptr;
 
     } // while ptr->next
 
-  if ( lastptr != NULL )
-    {
-      XLALFree ( lastptr );
-      lastptr=NULL;
-    }
+  if ( lastptr != NULL ) {
+    XLALFree ( lastptr );
+  }
 
   // clean head
   memset (&UVAR_vars, 0, sizeof(UVAR_vars));
@@ -274,7 +272,7 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
       }
       optstring[pos++] = ptr->optchar;
       optstring[pos++] = ':';		/* everything but bool takes an argument */
-      if (ptr->type == UVAR_TYPE_BOOL) {	/* but for BOOL its optional */
+      if (ptr->type == UVAR_TYPE_BOOLEAN) {	/* but for BOOL its optional */
 	optstring[pos++] = ':';
       }
     } // while ptr->next
@@ -290,8 +288,8 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
 	continue;
       }
       long_options[pos].name 	= ptr->name;
-      long_options[pos].has_arg = (ptr->type == UVAR_TYPE_BOOL) ? optional_argument : required_argument;
-      long_options[pos].flag 	= NULL;	// get val returned from LALgetopt_long()
+      long_options[pos].has_arg = (ptr->type == UVAR_TYPE_BOOLEAN) ? optional_argument : required_argument;
+      long_options[pos].flag = NULL;	// get val returned from LALgetopt_long()
       long_options[pos].val 	= 0;	// we use longindex to find long-options
       pos ++;
     } // while ptr->next
@@ -338,10 +336,11 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
 	} // end: if long-option
 
       XLAL_CHECK ( ptr != NULL, XLAL_EFAILED, "ERROR: failed to find matching option ... this points to a coding-error!\n" );
+      XLAL_CHECK ( (ptr->type > UVAR_TYPE_START) && (ptr->type < UVAR_TYPE_END), XLAL_EFAILED, "Invalid UVAR_TYPE '%d' outside of [%d,%d]\n", ptr->type, UVAR_TYPE_START+1, UVAR_TYPE_END-1 );
 
       switch (ptr->type)
 	{
-	case UVAR_TYPE_BOOL:
+	case UVAR_TYPE_BOOLEAN:
 	  // subtlety with optional arguments: it's not necessarily found in the *same* argv-entry
           // eg, if no '=' was used, so we have to check for that case by hand:
 	  // if the next entry is not an option, take it as an argument
@@ -354,43 +353,18 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
 	  if ( LALoptarg == NULL ) { // if no argument given, defaults to TRUE
             *(BOOLEAN*)(ptr->varp) = TRUE;
           } else {
-            XLAL_CHECK ( XLALParseStringValueToBOOLEAN ( (BOOLEAN*)(ptr->varp), LALoptarg ) == XLAL_SUCCESS, XLAL_EFUNC );
+            XLAL_CHECK ( UserVarTypeMap [ ptr->type ].parser( ptr->varp, LALoptarg ) == XLAL_SUCCESS, XLAL_EFUNC );
           }
 	  break;
 
-	case UVAR_TYPE_INT4:
-          XLAL_CHECK ( XLALParseStringValueToINT4 ( (INT4*)(ptr->varp), LALoptarg ) == XLAL_SUCCESS, XLAL_EFUNC );
-	  break;
-
-	case UVAR_TYPE_REAL8:
-          XLAL_CHECK ( XLALParseStringValueToREAL8 ( (REAL8*)(ptr->varp), LALoptarg ) == XLAL_SUCCESS, XLAL_EFUNC );
-	  break;
-
-	case UVAR_TYPE_STRING:
-	  XLALFree ( *(CHAR**)(ptr->varp) ); // in case something allocated here before
-	  XLAL_CHECK ( ( *(CHAR**)(ptr->varp) = XLAL_copy_string_unquoted ( LALoptarg )) != NULL, XLAL_EFUNC );
-	  break;
-
-	case UVAR_TYPE_CSVLIST:	// list of comma-separated string values
-	  XLALDestroyStringVector ( *(LALStringVector**)(ptr->varp) );	// in case sth allocated here before
-	  XLAL_CHECK ( (*(LALStringVector**)(ptr->varp) = XLALParseCSV2StringVector ( LALoptarg )) != NULL, XLAL_EFUNC );
-	  break;
-
-        case UVAR_TYPE_EPOCH:
-          XLAL_CHECK ( XLALParseStringValueToEPOCH ( (LIGOTimeGPS *)(ptr->varp), LALoptarg ) != NULL, XLAL_EFUNC );
-	  break;
-
-        case UVAR_TYPE_RAJ:
-          XLAL_CHECK ( XLALParseStringValueToRAJ ( (REAL8 *)(ptr->varp), LALoptarg ) == XLAL_SUCCESS, XLAL_EFUNC );
-	  break;
-
-        case UVAR_TYPE_DECJ:
-          XLAL_CHECK ( XLALParseStringValueToDECJ ( (REAL8 *)(ptr->varp), LALoptarg ) == XLAL_SUCCESS, XLAL_EFUNC );
-	  break;
-
 	default:
-	  XLALPrintError ( "%s: ERROR: unkown UserVariable-type encountered... points to a coding error!\n", __func__ );
-	  XLAL_ERROR ( XLAL_EINVAL );
+          // all other UVAR_TYPE_ types can be handled canonically: first destroy previous value, the parse new one
+          if ( UserVarTypeMap [ ptr->type ].destructor != NULL )
+            {
+              UserVarTypeMap [ ptr->type ].destructor( *(char**)ptr->varp );
+              *(char**)ptr->varp = NULL;
+            } // if a destructor was registered
+          XLAL_CHECK ( UserVarTypeMap [ ptr->type ].parser( ptr->varp, LALoptarg ) == XLAL_SUCCESS, XLAL_EFUNC );
 	  break;
 
 	} // switch ptr->type
@@ -433,7 +407,6 @@ XLALUserVarReadCfgfile ( const CHAR *cfgfile ) 	   /**< [in] name of config-file
   XLAL_CHECK ( cfgfile != NULL, XLAL_EINVAL );
   XLAL_CHECK ( UVAR_vars.next != NULL, XLAL_EINVAL, "No memory allocated in UVAR_vars.next, did you register any user-variables?\n" );
 
-  CHAR *stringbuf;
   LALParsedDataFile *cfg = NULL;
   XLAL_CHECK ( XLALParseDataFile ( &cfg, cfgfile ) == XLAL_SUCCESS, XLAL_EFUNC );
 
@@ -445,72 +418,30 @@ XLALUserVarReadCfgfile ( const CHAR *cfgfile ) 	   /**< [in] name of config-file
 	continue;
       }
 
-      BOOLEAN wasRead = FALSE;
+      XLAL_CHECK ( (ptr->type > UVAR_TYPE_START) && (ptr->type < UVAR_TYPE_END), XLAL_EFAILED, "Invalid UVAR_TYPE '%d' outside of [%d,%d]\n", ptr->type, UVAR_TYPE_START+1, UVAR_TYPE_END-1 );
 
-      switch (ptr->type)
-	{
-	case UVAR_TYPE_BOOL:
-          XLAL_CHECK ( XLALReadConfigBOOLVariable ( ptr->varp, cfg, NULL, ptr->name, &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
-	  if (wasRead) { check_and_mark_as_set ( ptr ); }
-	  break;
-
-	case UVAR_TYPE_INT4:
-	  XLAL_CHECK ( XLALReadConfigINT4Variable ( ptr->varp, cfg, NULL, ptr->name, &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
-	  if (wasRead) { check_and_mark_as_set ( ptr ); }
-	  break;
-
-	case UVAR_TYPE_REAL8:
-	  XLAL_CHECK ( XLALReadConfigREAL8Variable(ptr->varp, cfg, NULL, ptr->name, &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
-	  if (wasRead) { check_and_mark_as_set ( ptr ); }
-	  break;
-
-	case UVAR_TYPE_STRING:
-	  stringbuf = NULL;
-	  XLAL_CHECK ( XLALReadConfigSTRINGVariable ( &stringbuf, cfg, NULL, ptr->name, &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
-	  if ( wasRead )
-	    {
-	      XLALFree ( *(CHAR**)(ptr->varp) ); // if anything allocated here before
-	      *(CHAR**)(ptr->varp) = stringbuf;
-	      check_and_mark_as_set ( ptr );
-	    }
-	  break;
-
-	case UVAR_TYPE_CSVLIST:
-	  stringbuf = NULL;
-	  XLAL_CHECK ( XLALReadConfigSTRINGVariable ( &stringbuf, cfg, NULL, ptr->name,&wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
-	  if ( wasRead )
-	    {
-	      XLALDestroyStringVector ( *(LALStringVector**)(ptr->varp) ); // if anything allocated here before
-	      XLAL_CHECK ( (*(LALStringVector**)(ptr->varp) = XLALParseCSV2StringVector ( stringbuf )) != NULL, XLAL_EFUNC );
-	      check_and_mark_as_set ( ptr );
-	    }
-	  break;
-
-        case UVAR_TYPE_EPOCH:
-	  XLAL_CHECK ( XLALReadConfigEPOCHVariable ( ptr->varp, cfg, NULL, ptr->name, &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
-	  if (wasRead) { check_and_mark_as_set ( ptr ); }
-	  break;
-
-        case UVAR_TYPE_RAJ:
-	  XLAL_CHECK ( XLALReadConfigRAJVariable ( ptr->varp, cfg, NULL, ptr->name, &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
-	  if (wasRead) { check_and_mark_as_set ( ptr ); }
-	  break;
-
-        case UVAR_TYPE_DECJ:
-	  XLAL_CHECK ( XLALReadConfigDECJVariable ( ptr->varp, cfg, NULL, ptr->name, &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
-	  if (wasRead) { check_and_mark_as_set ( ptr ); }
-	  break;
-
-	default:
-          XLAL_ERROR ( XLAL_EFAILED, "ERROR: unkown UserVariable-type encountered...points to a coding error!\n" );
-          break;
-
-	} // switch ptr->type
+      BOOLEAN wasRead;
+      CHAR *valString = NULL;       // first read the value as a string
+      XLAL_CHECK ( XLALReadConfigSTRINGVariable ( &valString, cfg, NULL, ptr->name, &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
+      if ( wasRead ) {	// if successful, parse this as the desired type
+        XLAL_CHECK ( UserVarTypeMap [ ptr->type ].parser( ptr->varp, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLALFree (valString);
+        check_and_mark_as_set ( ptr );
+      }
 
     } // while ptr->next
 
   // ok, that should be it: check if there were more definitions we did not read
-  XLAL_CHECK ( XLALCheckConfigReadComplete ( cfg, CONFIGFILE_WARN ) == XLAL_SUCCESS, XLAL_EFUNC );
+  UINT4Vector *unread = XLALConfigFileGetUnreadEntries ( cfg );
+  XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "XLALConfigFileGetUnreadEntries() failed\n");
+  if ( unread != NULL )
+    {
+      XLALPrintWarning ("The following entries in config-file '%s' have not been parsed:\n", cfgfile );
+      for ( UINT4 i = 0; i < unread->length; i ++ ) {
+        XLALPrintWarning ("%s\n", cfg->lines->tokens[ unread->data[i] ] );
+      }
+      XLALDestroyUINT4Vector ( unread );
+    }
 
   XLALDestroyParsedDataFile ( cfg );
 
@@ -539,10 +470,10 @@ XLALUserVarHelpString ( const CHAR *progname )
   BOOLEAN haveDevOpts = 0;
   while ( (ptr=ptr->next) != NULL )
     {
-      if (ptr->state & UVAR_DEVELOPER) {
+      if (ptr->category == UVAR_CATEGORY_DEVELOPER) {
         haveDevOpts = 1;
       }
-      if ( !showDeveloperOptions && (ptr->state & UVAR_DEVELOPER) ) {
+      if ( !showDeveloperOptions && (ptr->category == UVAR_CATEGORY_DEVELOPER) ) {
 	continue;	// skip developer-options if not requested
       }
 
@@ -555,7 +486,7 @@ XLALUserVarHelpString ( const CHAR *progname )
         }
 
       // max type name length
-      len = strlen ( UserVarTypeDescription[ptr->type].name );
+      len = strlen ( UserVarTypeMap[ptr->type].name );
       typeFieldLen = (len > typeFieldLen) ? len : typeFieldLen;
 
     } // while ptr=ptr->next
@@ -576,16 +507,16 @@ XLALUserVarHelpString ( const CHAR *progname )
   ptr = &UVAR_vars;
   while ( (ptr=ptr->next) != NULL )
     {
-      if ( ptr->state & UVAR_REQUIRED ) {
+      if ( ptr->category == UVAR_CATEGORY_REQUIRED ) {
 	strcpy (defaultstr, "REQUIRED");
       }
-      else if ( ptr->state & UVAR_HELP ) {
+      else if ( ptr->category == UVAR_CATEGORY_HELP ) {
         strcpy ( defaultstr, "");
       }
       else // write the current default-value into a string
 	{
-	  CHAR *valstr = NULL;
-	  XLAL_CHECK_NULL ( (valstr = XLALUvarValue2String ( ptr )) != NULL, XLAL_EFUNC );
+	  CHAR *valstr;
+	  XLAL_CHECK_NULL ( (valstr = UserVarTypeMap [ ptr->type ].printer( ptr->varp )) != NULL, XLAL_EFUNC );
 	  strncpy ( defaultstr, valstr, sizeof(defaultstr) );	// cut short for default-entry
 	  defaultstr[sizeof(defaultstr)-1] = 0;
 	  XLALFree (valstr);
@@ -601,14 +532,14 @@ XLALUserVarHelpString ( const CHAR *progname )
       snprintf ( strbuf, sizeof(strbuf),  fmtStr,
                  optstr,
                  ptr->name ? ptr->name : "-NONE-",
-                 UserVarTypeDescription[ptr->type].name,
+                 UserVarTypeMap[ptr->type].name,
                  ptr->help ? ptr->help : "-NONE-",
                  defaultstr
                  );
       strbuf[sizeof(strbuf)-1] = 0;
 
       // now append new line to the appropriate helpstring
-      if ( ptr->state & UVAR_DEVELOPER ) {
+      if ( ptr->category == UVAR_CATEGORY_DEVELOPER ) {
         if ( showDeveloperOptions ) {
           helpstr_developer = XLALStringAppend ( helpstr_developer, strbuf );
         }
@@ -691,7 +622,7 @@ XLALUserVarReadAllInput ( int argc, char *argv[] )
   LALUserVariable *ptr = &UVAR_vars;
   while ( (ptr=ptr->next) != NULL )
     {
-      if ( (ptr->state & UVAR_HELP) && ( *((BOOLEAN*)ptr->varp) ) )
+      if ( (ptr->category == UVAR_CATEGORY_HELP) && ( *((BOOLEAN*)ptr->varp) ) )
 	{
 	  CHAR *helpstring;
 	  XLAL_CHECK ( ( helpstring = XLALUserVarHelpString(argv[0])) != NULL, XLAL_EFUNC );
@@ -700,8 +631,8 @@ XLALUserVarReadAllInput ( int argc, char *argv[] )
 	  return XLAL_SUCCESS;
 	} // if help requested
 
-      // check 'special' flag, which suppresses the CheckRequired test
-      if ( (ptr->state & UVAR_SPECIAL) && (ptr->state & UVAR_WAS_SET) ) {
+      // check 'special' category, which suppresses the CheckRequired test
+      if ( (ptr->category == UVAR_CATEGORY_SPECIAL) && ptr->was_set ) {
 	skipCheckRequired = TRUE;
       }
     } // while ptr = ptr->next
@@ -738,7 +669,7 @@ XLALUserVarWasSet ( const void *cvar )
   XLAL_CHECK ( ptr != NULL, XLAL_EINVAL, "Variable pointer passed UVARwasSet is not a registered User-variable\n" );
 
   // we found it: has it been set by user?
-  if ( (ptr->state & UVAR_WAS_SET) != 0 ) {
+  if ( ptr->was_set ) {
     return 1;
   } else {
     return 0;
@@ -760,7 +691,7 @@ XLALUserVarCheckRequired (void)
   LALUserVariable *ptr = &UVAR_vars;
   while ( (ptr = ptr->next) != NULL )
     {
-      XLAL_CHECK ( ((ptr->state & UVAR_REQUIRED) == 0) || ((ptr->state & UVAR_WAS_SET) != 0), XLAL_EFAILED, "Required user-variable '%s' has not been specified!\n\n", ptr->name );
+      XLAL_CHECK ( ! ( ptr->category == UVAR_CATEGORY_REQUIRED && !ptr->was_set), XLAL_EFAILED, "Required user-variable '%s' has not been specified!\n\n", ptr->name );
     }
 
   return XLAL_SUCCESS;
@@ -789,12 +720,12 @@ XLALUserVarGetLog ( UserVarLogFormat format 	/**< output format: return as confi
   LALUserVariable *ptr = &UVAR_vars;
   while ( (ptr = ptr->next) )
     {
-      if ( (ptr->state & UVAR_WAS_SET) == FALSE ) {	// skip unset variables
+      if ( ! ptr->was_set ) { // skip unset variables
 	continue;
       }
 
       CHAR *valstr;
-      XLAL_CHECK_NULL ( (valstr = XLALUvarValue2String ( ptr )) != NULL, XLAL_EFUNC );
+      XLAL_CHECK_NULL ( (valstr = UserVarTypeMap [ ptr->type ].printer( ptr->varp )) != NULL, XLAL_EFUNC );
 
       char append[256];
       switch (format)
@@ -808,7 +739,7 @@ XLALUserVarGetLog ( UserVarLogFormat format 	/**< output format: return as confi
 	  break;
 
 	case UVAR_LOGFMT_PROCPARAMS:
-	  snprintf (append, sizeof(append), "--%s = %s :%s;", ptr->name, valstr, UserVarTypeDescription[ptr->type].name );
+	  snprintf (append, sizeof(append), "--%s = %s :%s;", ptr->name, valstr, UserVarTypeMap[ptr->type].name );
 	  break;
 
 	default:
@@ -826,117 +757,6 @@ XLALUserVarGetLog ( UserVarLogFormat format 	/**< output format: return as confi
 
 } // XLALUserVarGetLog()
 
-/* Return the value of the given UserVariable as a string.
- * For INTERNAL use only!
- */
-CHAR *
-XLALUvarValue2String ( LALUserVariable *uvar )
-{
-  XLAL_CHECK_NULL ( uvar != NULL, XLAL_EINVAL );
-  XLAL_CHECK_NULL ( uvar->varp != NULL, XLAL_EINVAL );
-
-  char buf[512];
-  char *retstr = NULL;
-
-  switch ( uvar->type )
-    {
-    case UVAR_TYPE_BOOL:
-      sprintf (buf, *(BOOLEAN*)(uvar->varp) ? "TRUE" : "FALSE");
-      break;
-
-    case UVAR_TYPE_INT4:
-      sprintf (buf, "%" LAL_INT4_FORMAT, *(INT4*)(uvar->varp) );
-      break;
-
-    case UVAR_TYPE_REAL8:
-    case UVAR_TYPE_RAJ:
-    case UVAR_TYPE_DECJ:
-      if (*(REAL8*)(uvar->varp) == 0) {
-	strcpy (buf, "0.0");	// makes it more explicit that's it a REAL
-      } else {
-	sprintf (buf, "%.16g", *(REAL8*)(uvar->varp) );
-      }
-      break;
-
-    case UVAR_TYPE_STRING:
-      if ( *(CHAR**)(uvar->varp) != NULL ) {
-        snprintf (buf, sizeof(buf), "\"%s\"", *(CHAR**)(uvar->varp) );
-        buf[sizeof(buf)-1] = 0;
-      } else {
-        strcpy (buf, "NULL");
-      }
-      break;
-
-    case UVAR_TYPE_EPOCH:
-      XLAL_CHECK_NULL ( XLALGPSToStr ( buf, (const LIGOTimeGPS *)(uvar->varp) ) != NULL, XLAL_EFUNC );
-      strcat ( buf, "GPS" );	// postfix this with 'units' for explicitness (as opposed to 'MJD')
-      break;
-
-    case UVAR_TYPE_CSVLIST:
-      if ( *(LALStringVector**)(uvar->varp) != NULL ) {
-        XLAL_CHECK_NULL ( (retstr = XLALStringVector2CSV ( *(LALStringVector**)(uvar->varp) )) != NULL, XLAL_EFUNC );
-      } else {
-        strcpy (buf, "NULL");
-      }
-      break;
-
-    default:
-      XLAL_ERROR_NULL ( XLAL_EINVAL, "\nUnkown UserVariable-type encountered... this points to a coding error!\n" );
-      break;
-
-    } // switch uvar->type
-
-  if ( retstr == NULL ) {
-    XLAL_CHECK_NULL ( (retstr = XLALStringDuplicate ( buf )) != NULL, XLAL_EFUNC );
-  }
-
-  return retstr;
-
-} // XLALUvarValue2String()
-
-
-/**
- * Copy (and allocate) string 'in', possibly with quotes \" or \' removed.
- * If quotes are present at the beginning of 'in', they must have a matching
- * quote at the end of string, otherwise an error is printed and return=NULL
- */
-CHAR *
-XLAL_copy_string_unquoted ( const CHAR *in )
-{
-  XLAL_CHECK_NULL ( in != NULL, XLAL_EINVAL );
-
-
-  CHAR opening_quote = 0;
-  CHAR closing_quote = 0;
-  UINT4 inlen = strlen ( in );
-
-  if ( (in[0] == '\'') || (in[0] == '\"') ) {
-    opening_quote = in[0];
-  }
-  if ( (inlen >= 2) && ( (in[inlen-1] == '\'') || (in[inlen-1] == '\"') ) ) {
-    closing_quote = in[inlen-1];
-  }
-
-  // check matching quotes
-  XLAL_CHECK_NULL ( opening_quote == closing_quote, XLAL_EINVAL, "Unmatched quotes in string [%s]\n", in );
-
-  const CHAR *start = in;
-  UINT4 outlen = inlen;
-  if ( opening_quote )
-    {
-      start = in + 1;
-      outlen = inlen - 2;
-    }
-
-  CHAR *ret;
-  XLAL_CHECK_NULL ( (ret = LALCalloc (1, outlen + 1)) != NULL, XLAL_ENOMEM );
-  strncpy ( ret, start, outlen );
-  ret[outlen] = 0;
-
-  return ret;
-
-} // XLAL_copy_string_unquoted()
-
 /**
  * Mark the user-variable as set, check if it has been
  * set previously and issue a warning if set more than once ...
@@ -945,11 +765,11 @@ void
 check_and_mark_as_set ( LALUserVariable *varp )
 {
   // output warning if this variable has been set before ...
-  if ( (varp->state & UVAR_WAS_SET) ) {
+  if ( varp->was_set ) {
     XLALPrintWarning ( "User-variable '%s' was set more than once!\n", varp->name ? varp->name : "(NULL)" );
   }
 
-  varp->state = (UserVarFlag)( varp->state |  UVAR_WAS_SET );
+  varp->was_set = 1;
 
   return;
 } // check_and_mark_as_set()
@@ -1046,12 +866,12 @@ void
 LALRegisterREALUserVar (LALStatus *status,
 			const CHAR *name,
 			CHAR optchar,
-			UserVarFlag flag,
+			UserVarCategory category,
 			const CHAR *helpstr,
 			REAL8 *cvar)
 {
   INITSTATUS(status);
-  if ( XLALRegisterUserVar ( name, UVAR_TYPE_REAL8, optchar, flag, helpstr, cvar ) != XLAL_SUCCESS ) {
+  if ( XLALRegisterUserVar ( name, UVAR_TYPE_REAL8, optchar, category, helpstr, cvar ) != XLAL_SUCCESS ) {
     XLALPrintError ("Call to XLALRegisterUserVar() failed: %d\n", xlalErrno );
     ABORT ( status, USERINPUTH_EXLAL, USERINPUTH_MSGEXLAL );
   }
@@ -1063,12 +883,12 @@ void
 LALRegisterINTUserVar (LALStatus *status,
 		       const CHAR *name,
 		       CHAR optchar,
-		       UserVarFlag flag,
+		       UserVarCategory category,
 		       const CHAR *helpstr,
 		       INT4 *cvar)
 {
   INITSTATUS(status);
-  if ( XLALRegisterUserVar ( name, UVAR_TYPE_INT4, optchar, flag, helpstr, cvar ) != XLAL_SUCCESS ) {
+  if ( XLALRegisterUserVar ( name, UVAR_TYPE_INT4, optchar, category, helpstr, cvar ) != XLAL_SUCCESS ) {
     XLALPrintError ("Call to XLALRegisterUserVar() failed: %d\n", xlalErrno );
     ABORT ( status, USERINPUTH_EXLAL, USERINPUTH_MSGEXLAL );
   }
@@ -1080,12 +900,12 @@ void
 LALRegisterBOOLUserVar (LALStatus *status,
 			const CHAR *name,
 			CHAR optchar,
-			UserVarFlag flag,
+			UserVarCategory category,
 			const CHAR *helpstr,
 			BOOLEAN *cvar)
 {
   INITSTATUS(status);
-  if ( XLALRegisterUserVar ( name, UVAR_TYPE_BOOL, optchar, flag, helpstr, cvar ) != XLAL_SUCCESS ) {
+  if ( XLALRegisterUserVar ( name, UVAR_TYPE_BOOLEAN, optchar, category, helpstr, cvar ) != XLAL_SUCCESS ) {
     XLALPrintError ("Call to XLALRegisterUserVar() failed: %d\n", xlalErrno );
     ABORT ( status, USERINPUTH_EXLAL, USERINPUTH_MSGEXLAL );
   }
@@ -1097,29 +917,29 @@ void
 LALRegisterSTRINGUserVar (LALStatus *status,
 			  const CHAR *name,
 			  CHAR optchar,
-			  UserVarFlag flag,
+			  UserVarCategory category,
 			  const CHAR *helpstr,
 			  CHAR **cvar)
 {
   INITSTATUS(status);
-  if ( XLALRegisterUserVar ( name, UVAR_TYPE_STRING, optchar, flag, helpstr, cvar ) != XLAL_SUCCESS ) {
+  if ( XLALRegisterUserVar ( name, UVAR_TYPE_STRING, optchar, category, helpstr, cvar ) != XLAL_SUCCESS ) {
     XLALPrintError ("Call to XLALRegisterUserVar() failed: %d\n", xlalErrno );
     ABORT ( status, USERINPUTH_EXLAL, USERINPUTH_MSGEXLAL );
   }
   RETURN(status);
 }
 
-/** \deprecated use XLALRegisterLISTUserVar() instead */
+/** \deprecated use XLALRegisterSTRINGVectorUserVar() instead */
 void
 LALRegisterLISTUserVar (LALStatus *status,
 			const CHAR *name,
 			CHAR optchar,
-			UserVarFlag flag,
+			UserVarCategory category,
 			const CHAR *helpstr,
 			LALStringVector **cvar)
 {
   INITSTATUS(status);
-  if ( XLALRegisterUserVar ( name, UVAR_TYPE_CSVLIST, optchar, flag, helpstr, cvar ) != XLAL_SUCCESS ) {
+  if ( XLALRegisterUserVar ( name, UVAR_TYPE_STRINGVector, optchar, category, helpstr, cvar ) != XLAL_SUCCESS ) {
     XLALPrintError ("Call to XLALRegisterUserVar() failed: %d\n", xlalErrno );
     ABORT ( status, USERINPUTH_EXLAL, USERINPUTH_MSGEXLAL );
   }

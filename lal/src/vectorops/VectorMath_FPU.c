@@ -29,72 +29,60 @@
 #include <lal/VectorMath.h>
 
 // ---------- local prototypes ----------
-static int XLALVectorFuncf_FPU ( REAL4Vector *out, const REAL4Vector *in, float (*f)(float x) );
+static int XLALVectorFuncf_FPU ( REAL4 *out, const REAL4 *in, UINT4 length, float (*f)(float x) );
 
 // ========== function definitions ==========
 // ---------- Vanilla FPU versions of vector mathfun() ----------
 static int
-XLALVectorFuncf_FPU ( REAL4Vector *out, const REAL4Vector *in, float (*f)(float x) )
+XLALVectorFuncf_FPU ( REAL4 *out, const REAL4 *in, UINT4 length, float (*f)(float x) )
 {
-  XLAL_CHECK ( (out != NULL) && (in != NULL) && (f != NULL), XLAL_EINVAL );
-  XLAL_CHECK ( in->length == out->length, XLAL_EINVAL );
-
-  UINT4 N = in->length;
-  for ( UINT4 i = 0; i < N; i ++ )
+  for ( UINT4 i = 0; i < length; i ++ )
     {
-      out->data[i] = (*f) ( in->data[i] );
-    } // for i < N
+      out[i] = (*f) ( in[i] );
+    } // for i < length
   return XLAL_SUCCESS;
 } // XLALVectorFuncf_FPU()
 
 int
-XLALVectorSinCosf_FPU ( REAL4Vector *sinx, REAL4Vector *cosx, const REAL4Vector *x )
+XLALVectorSinCosf_FPU ( REAL4 *sinx, REAL4 *cosx, const REAL4 *x, UINT4 length )
 {
-  XLAL_CHECK ( (sinx != NULL) && (cosx != NULL) && (x != NULL), XLAL_EINVAL );
-  XLAL_CHECK ( (sinx->length == cosx->length) && ( x->length == sinx->length), XLAL_EINVAL );
-
-  UINT4 N = x->length;
-  for ( UINT4 i = 0; i < N; i ++ )
+  for ( UINT4 i = 0; i < length; i ++ )
     {
-      sinx->data[i] = sinf ( x->data[i] );
-      cosx->data[i] = cosf ( x->data[i] );
-    } // for i < N
+      sinx[i] = sinf ( x[i] );
+      cosx[i] = cosf ( x[i] );
+    } // for i < length
   return XLAL_SUCCESS;
 } // XLALVectorSinCosf_FPU()
 
 int
-XLALVectorSinCosf2PI_FPU ( REAL4Vector *sin2pix, REAL4Vector *cos2pix, const REAL4Vector *x )
+XLALVectorSinCosf2PI_FPU ( REAL4 *sin2pix, REAL4 *cos2pix, const REAL4 *x, UINT4 length )
 {
-  XLAL_CHECK ( (sin2pix != NULL) && (cos2pix != NULL) && (x != NULL), XLAL_EINVAL );
-  XLAL_CHECK ( (sin2pix->length == cos2pix->length) && ( x->length == sin2pix->length), XLAL_EINVAL );
-
-  UINT4 N = x->length;
-  for ( UINT4 i = 0; i < N; i ++ )
+  for ( UINT4 i = 0; i < length; i ++ )
     {
-      sin2pix->data[i] = sinf ( (REAL4)LAL_TWOPI * x->data[i] );
-      cos2pix->data[i] = cosf ( (REAL4)LAL_TWOPI * x->data[i] );
+      sin2pix[i] = sinf ( (REAL4)LAL_TWOPI * x[i] );
+      cos2pix[i] = cosf ( (REAL4)LAL_TWOPI * x[i] );
     } // for i < N
   return XLAL_SUCCESS;
 } // XLALVectorSinCosf2PI_FPU()
 
 // convenience wrappers for specific functions
 int
-XLALVectorSinf_FPU ( REAL4Vector *out, const REAL4Vector *in )
+XLALVectorSinf_FPU ( REAL4 *out, const REAL4 *in, UINT4 length )
 {
-  return XLALVectorFuncf_FPU ( out, in, sinf );
+  return XLALVectorFuncf_FPU ( out, in, length, sinf );
 }
 int
-XLALVectorCosf_FPU ( REAL4Vector *out, const REAL4Vector *in )
+XLALVectorCosf_FPU ( REAL4 *out, const REAL4 *in, UINT4 length )
 {
-  return XLALVectorFuncf_FPU ( out, in, cosf );
+  return XLALVectorFuncf_FPU ( out, in, length, cosf );
 }
 int
-XLALVectorExpf_FPU ( REAL4Vector *out, const REAL4Vector *in )
+XLALVectorExpf_FPU ( REAL4 *out, const REAL4 *in, UINT4 length )
 {
-  return XLALVectorFuncf_FPU ( out, in, expf );
+  return XLALVectorFuncf_FPU ( out, in, length, expf );
 }
 int
-XLALVectorLogf_FPU ( REAL4Vector *out, const REAL4Vector *in )
+XLALVectorLogf_FPU ( REAL4 *out, const REAL4 *in, UINT4 length )
 {
-  return XLALVectorFuncf_FPU ( out, in, logf );
+  return XLALVectorFuncf_FPU ( out, in, length, logf );
 }

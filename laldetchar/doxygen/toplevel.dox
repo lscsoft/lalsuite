@@ -12,8 +12,3 @@
 \defgroup laldetchar_python		Python Packages
 
 */
-
-/**
-\page laldetchar_authors		Author List
-\verbinclude AUTHORS
-*/

@@ -12,8 +12,3 @@
 \defgroup lalmetaio_python		Python Packages
 
 */
-
-/**
-\page lalmetaio_authors			Author List
-\verbinclude AUTHORS
-*/

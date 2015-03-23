@@ -179,7 +179,9 @@ UINT4Vector *chop_n_merge( LALInferenceIFOData *data, INT4 chunkMin, INT4 chunkM
    * might affect the chunk calculations (which can assume the data is Gaussian with zero mean). */
   meddata = subtract_running_median( data->compTimeData->data );
 
-  chunkIndex = chop_data( meddata, chunkMin );
+  /* pass chop data a gsl_vector_view, so that internally it can use vector views rather than having to create new vectors */
+  gsl_vector_complex_view meddatagsl = gsl_vector_complex_view_array((double*)meddata->data, meddata->length);
+  chunkIndex = chop_data( &meddatagsl.vector, chunkMin );
 
   /* DON'T BOTHER WITH THE MERGING AS IT WILL MAKE VERY LITTLE DIFFERENCE */
   /* merge_data( meddata, chunkIndex ); */
@@ -257,12 +259,10 @@ COMPLEX16Vector *subtract_running_median( COMPLEX16Vector *data ){
       n = N+i;
       sidx = 0;
     }
-    else if ( i > length - N ){
-      n = length - i + N;
-      sidx = (i-N)-1;
-    }
     else{
-      n = mrange;
+      if ( i > length - N ){ n = length - i + N; }
+      else{ n = mrange; }
+
       sidx = i-N;
     }
 
@@ -296,10 +296,17 @@ COMPLEX16Vector *subtract_running_median( COMPLEX16Vector *data ){
  * This function splits data into two (and recursively runs on those two segments) if it is found that the odds ratio
  * for them being from two independent Gaussian distributions is greater than a certain threshold.
  *
- * The threshold for the natural logarithm of the odds ratio is empirically set to be 6.0. This comes from a fit
- * to the threshold value required to give an approximately 0.1% chance of splitting actual Gaussian data (drawn from one distribution).
- * A value of 6.0 (which is an odds ratio of ~400) falls well into the "evidence against q decisive" category of Jeffreys,
- * where "q" is the hypothesis that the data is drawn from only one distinct distributions.
+ * The threshold for the natural logarithm of the odds ratio is empirically set to be
+ * \f[
+ * T = 4.07 + 1.33\log{}_{10}{N},
+ * \f]
+ * where \f$N\f$ is the length in samples of the dataset. This is based on Monte Carlo simulations of
+ * many realisations of Gaussian noise for data of different lengths. The threshold comes from a linear
+ * fit to the log odds ratios required to give a 1% chance of splitting Gaussian data (drawn from a single
+ * distribution) for data of various lengths.  Note, however, that this relation is not good for stretches of data
+ * with lengths of less than about 30 points, and in fact is rather consevative for such short stretches
+ * of data, i.e. such short stretches of data will require relatively larger odds ratios for splitting than
+ * longer stretches.
  *
  * \param data [in] A complex data vector
  * \param chunkMin [in] The minimum allowed segment length
@@ -308,12 +315,12 @@ COMPLEX16Vector *subtract_running_median( COMPLEX16Vector *data ){
  *
  * \sa find_change_point
  */
-UINT4Vector *chop_data( COMPLEX16Vector *data, INT4 chunkMin ){
+UINT4Vector *chop_data( gsl_vector_complex *data, INT4 chunkMin ){
   UINT4Vector *chunkIndex = NULL;
 
-  UINT4 length = data->length;
+  UINT4 length = (UINT4)data->size;
 
-  REAL8 logodds = 0;
+  REAL8 logodds = 0.;
   UINT4 changepoint = 0;
 
   REAL8 threshold = 0.; /* may need tuning or setting globally */
@@ -322,24 +329,20 @@ UINT4Vector *chop_data( COMPLEX16Vector *data, INT4 chunkMin ){
 
   changepoint = find_change_point( data, &logodds, chunkMin );
 
-  threshold = 6.0;
+  /* threshold scaling for a 0.5% false alarm probability of splitting Gaussian data */
+  threshold = 4.07 + 1.33*log10((REAL8)length);
 
   if ( logodds > threshold ){
     UINT4Vector *cp1 = NULL;
     UINT4Vector *cp2 = NULL;
 
-    COMPLEX16Vector *data1 = XLALCreateCOMPLEX16Vector( changepoint );
-    COMPLEX16Vector *data2 = XLALCreateCOMPLEX16Vector( length - changepoint );
+    gsl_vector_complex_view data1 = gsl_vector_complex_subvector( data, 0, changepoint );
+    gsl_vector_complex_view data2 = gsl_vector_complex_subvector( data, changepoint, length-changepoint );
 
     UINT4 i = 0, l = 0;
 
-    /* fill in data */
-    for (i = 0; i < changepoint; i++) { data1->data[i] = data->data[i]; }
-
-    for (i = 0; i < length - changepoint; i++) { data2->data[i] = data->data[i+changepoint]; }
-
-    cp1 = chop_data( data1, chunkMin );
-    cp2 = chop_data( data2, chunkMin );
+    cp1 = chop_data( &data1.vector, chunkMin );
+    cp2 = chop_data( &data2.vector, chunkMin );
 
     l = cp1->length + cp2->length;
 
@@ -347,12 +350,7 @@ UINT4Vector *chop_data( COMPLEX16Vector *data, INT4 chunkMin ){
 
     /* combine new chunks */
     for (i = 0; i < cp1->length; i++) { chunkIndex->data[i] = cp1->data[i]; }
-
     for (i = 0; i < cp2->length; i++) { chunkIndex->data[i+cp1->length] = cp2->data[i] + changepoint; }
-
-    /* free memory */
-    XLALDestroyCOMPLEX16Vector( data1 );
-    XLALDestroyCOMPLEX16Vector( data2 );
   }
   else{ chunkIndex->data[0] = length; }
 
@@ -384,9 +382,9 @@ UINT4Vector *chop_data( COMPLEX16Vector *data, INT4 chunkMin ){
  *
  * \return The position of the change point
  */
-UINT4 find_change_point( COMPLEX16Vector *data, REAL8 *logodds, INT4 minlength ){
+UINT4 find_change_point( gsl_vector_complex *data, REAL8 *logodds, INT4 minlength ){
   UINT4 changepoint = 0, i = 0;
-  UINT4 length = data->length, lsum = 0;
+  UINT4 length = (UINT4)data->size, lsum = 0;
 
   REAL8 datasum = 0.;
 
@@ -394,10 +392,10 @@ UINT4 find_change_point( COMPLEX16Vector *data, REAL8 *logodds, INT4 minlength )
   REAL8 logdouble = 0., logdouble_min = -INFINITY;
   REAL8 logratio = 0.;
 
-  REAL8Vector *sumforward = NULL, *sumback = NULL;
+  REAL8 sumforward = 0., sumback = 0.;
+  gsl_complex dval;
 
-  /* check that data is at least twice the minimum length, if not return an odds ratio of zero (log odds = -inf [or
-   * close to that!]) */
+  /* check that data is at least twice the minimum length, if not return an odds ratio of zero (log odds = -inf [or close to that!]) */
   if ( length < (UINT4)(2*minlength) ){
     logratio = -INFINITY;
     memcpy(logodds, &logratio, sizeof(REAL8));
@@ -405,29 +403,20 @@ UINT4 find_change_point( COMPLEX16Vector *data, REAL8 *logodds, INT4 minlength )
   }
 
   /* calculate the sum of the data squared */
-  for (i = 0; i < length; i++) { datasum += SQUARE( cabs(data->data[i]) ); }
+  for (i = 0; i < length; i++) {
+    dval = gsl_vector_complex_get( data, i );
+    datasum += SQUARE( gsl_complex_abs( dval ) );
+  }
 
-  /* calculate the evidence that the data consists of a Gaussian data with a
-     single standard deviation */
-  logsingle = -LAL_LN2 - (REAL8)length*PPE_LNPI + gsl_sf_lnfact(length-1) - (REAL8)length * log( datasum );
+  /* calculate the evidence that the data consists of a Gaussian data with a single standard deviation */
+  logsingle = -LAL_LN2 - (REAL8)length*LAL_LNPI + gsl_sf_lnfact(length-1) - (REAL8)length * log( datasum );
 
-  /* to speed up process calculate data sums first */
   lsum = length - 2*minlength + 1;
-  sumforward = XLALCreateREAL8Vector( lsum );
-  sumback = XLALCreateREAL8Vector( lsum );
 
-  sumforward->data[0] = 0.;
-  sumback->data[0] = 0.;
-
-  for ( i = 0; i < length - minlength; i++ ){
-    if ( i < (UINT4)minlength ){
-      sumforward->data[0] += SQUARE( cabs(data->data[i]) );
-      sumback->data[0] += SQUARE( cabs(data->data[length-(i+1)]) );
-    }
-    else{
-      sumforward->data[i+1-minlength] = sumforward->data[i-minlength] + SQUARE( cabs(data->data[i]) );
-      sumback->data[i+1-minlength] = sumback->data[i-minlength] + SQUARE( cabs(data->data[length-(i+1)]) );
-    }
+  for ( i = 0; i < length; i++ ){
+    dval = gsl_vector_complex_get( data, i );
+    if ( i < (UINT4)minlength-1 ){ sumforward += SQUARE( gsl_complex_abs( dval ) ); }
+    else{ sumback += SQUARE( gsl_complex_abs( dval ) ); }
   }
 
   /* go through each possible change point and calculate the evidence for the data consisting of two independent
@@ -438,9 +427,14 @@ UINT4 find_change_point( COMPLEX16Vector *data, REAL8 *logodds, INT4 minlength )
 
     REAL8 log_1 = 0., log_2 = 0.;
 
+    dval = gsl_vector_complex_get( data, ln1-1 );
+    REAL8 adval = SQUARE( gsl_complex_abs( dval ) );
+    sumforward += adval;
+    sumback -= adval;
+
     /* get log evidences for the individual segments */
-    log_1 = -LAL_LN2 - (REAL8)ln1*PPE_LNPI + gsl_sf_lnfact(ln1-1) - (REAL8)ln1 * log( sumforward->data[i] );
-    log_2 = -LAL_LN2 - (REAL8)ln2*PPE_LNPI + gsl_sf_lnfact(ln2-1) - (REAL8)ln2 * log( sumback->data[lsum-i-1] );
+    log_1 = -LAL_LN2 - (REAL8)ln1*LAL_LNPI + gsl_sf_lnfact(ln1-1) - (REAL8)ln1 * log( sumforward );
+    log_2 = -LAL_LN2 - (REAL8)ln2*LAL_LNPI + gsl_sf_lnfact(ln2-1) - (REAL8)ln2 * log( sumback );
 
     /* get evidence for the two segments */
     logdouble = log_1 + log_2;
@@ -458,9 +452,6 @@ UINT4 find_change_point( COMPLEX16Vector *data, REAL8 *logodds, INT4 minlength )
   /* get the log odds ratio of segmented versus non-segmented model */
   logratio = logtot - logsingle;
   memcpy(logodds, &logratio, sizeof(REAL8));
-
-  XLALDestroyREAL8Vector( sumforward );
-  XLALDestroyREAL8Vector( sumback );
 
   return changepoint;
 }
@@ -486,8 +477,7 @@ void rechop_data( UINT4Vector *chunkIndex, INT4 chunkMax, INT4 chunkMin ){
   UINT4Vector *newindex = NULL;
   newindex = XLALCreateUINT4Vector( ceil((REAL8)endIndex / (REAL8)chunkMax ) );
 
-  /* chop any chunks that are greater than chunkMax into chunks smaller than, or equal to chunkMax, and greater than
-   * chunkMin */
+  /* chop any chunks that are greater than chunkMax into chunks smaller than, or equal to chunkMax, and greater than chunkMin */
   for ( i = 0; i < length; i++ ){
     if ( i == 0 ) { startindex = 0; }
     else { startindex = chunkIndex->data[i-1]+1; }

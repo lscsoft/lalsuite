@@ -14,6 +14,7 @@ AUTHORS
 Makefile
 Makefile.in
 config.lt
+doxygen/autogen.dox
 doxygen/doxygen.cfg
 doxygen/filter
 doxygen/out/

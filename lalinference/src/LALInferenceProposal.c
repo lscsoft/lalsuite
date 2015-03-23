@@ -1846,7 +1846,7 @@ REAL8 LALInferenceSkyRingProposal(LALInferenceRunState *runState, LALInferenceVa
 
     dataPtr = dataPtr->next;
   }
-  newDL = dL*sqrt(Fy/Fx);
+  newDL = dL;//*sqrt(Fy/Fx);
 
   /*
    update new parameters and exit.  woo!

@@ -19,7 +19,10 @@
  */
 
 //---------- INCLUDES ----------
+#include <lal/UserInputParse.h>
+
 #include <lal/LineRobustStats.h>
+
 
 //---------- local DEFINES ----------
 
@@ -207,7 +210,7 @@ XLALParseLinePriors ( REAL4 oLGX[PULSAR_MAX_DETECTORS],		//!< [out] array of par
   // parse input string
   for ( UINT4 X = 0; X < numDetectors; X ++ )
     {
-      XLAL_CHECK ( XLALParseStringValueToREAL4 ( &oLGX[X], oLGX_string->data[X] ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK ( XLALParseStringValueAsREAL4 ( &oLGX[X], oLGX_string->data[X] ) == XLAL_SUCCESS, XLAL_EFUNC );
     } // for X < numDetectors
 
   return XLAL_SUCCESS;

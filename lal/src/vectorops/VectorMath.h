@@ -64,15 +64,8 @@ VectorDevice_type;
 /** We provide our own local aligned-memory handling functions, until this
  * may later be merged upstream into the LALMalloc module
  */
-#ifdef SWIG /* SWIG interface directives */
-SWIGLAL(IGNORE_MEMBERS(tagREAL4VectorAligned, data0));
-#endif /* SWIG */
 typedef struct tagREAL4VectorAligned
 {
-#ifdef SWIG /* SWIG interface directives */
-  SWIGLAL(CAST_STRUCT_TO(REAL4Vector));
-  SWIGLAL(ARRAY_1D(REAL4VectorAligned, REAL4, data, UINT4, length));
-#endif /* SWIG */
   UINT4 length;		/**< number of 'usable' array entries (fully aligned) */
   REAL4 *data;		/**< start of aligned memory block */
   REAL4 *data0;		/**< actual physical start of memory block, possibly not aligned */
@@ -93,41 +86,41 @@ REAL4VectorAligned *XLALCreateREAL4VectorAligned ( UINT4 length, UINT4 align );
 void XLALDestroyREAL4VectorAligned ( REAL4VectorAligned *in );
 
 /* ----- exported vector math functions */
-int XLALVectorSinf     ( REAL4Vector *out, const REAL4Vector *in );
-int XLALVectorCosf     ( REAL4Vector *out, const REAL4Vector *in );
-int XLALVectorExpf     ( REAL4Vector *out, const REAL4Vector *in );
-int XLALVectorLogf     ( REAL4Vector *out, const REAL4Vector *in );
-int XLALVectorSinCosf  ( REAL4Vector *sinx,    REAL4Vector *cosx,    const REAL4Vector *x );
-int XLALVectorSinCosf2PI(REAL4Vector *sin2pix, REAL4Vector *cos2pix, const REAL4Vector *x );
+  int XLALVectorSinf     ( REAL4 *out, const REAL4 *in, UINT4 length );
+int XLALVectorCosf     ( REAL4 *out, const REAL4 *in, UINT4 length );
+int XLALVectorExpf     ( REAL4 *out, const REAL4 *in, UINT4 length );
+int XLALVectorLogf     ( REAL4 *out, const REAL4 *in, UINT4 length );
+int XLALVectorSinCosf  ( REAL4 *sinx,    REAL4 *cosx,    const REAL4 *x, UINT4 length );
+int XLALVectorSinCosf2PI(REAL4 *sin2pix, REAL4 *cos2pix, const REAL4 *x, UINT4 length );
 
 /* ---------- module internal prototypes ---------- */
 /* these should not be used except within this module, that's why the
  * exported API only declared the device-generic XLALVector<Funcf>() functions
  */
 #ifdef IN_VECTORMATH
-int XLALVectorSinf_FPU ( REAL4Vector *out, const REAL4Vector *in );
-int XLALVectorSinf_SSE ( REAL4Vector *out, const REAL4Vector *in );
-int XLALVectorSinf_AVX ( REAL4Vector *out, const REAL4Vector *in );
+int XLALVectorSinf_FPU ( REAL4 *out, const REAL4 *in, UINT4 length );
+int XLALVectorSinf_SSE ( REAL4 *out, const REAL4 *in, UINT4 length );
+int XLALVectorSinf_AVX ( REAL4 *out, const REAL4 *in, UINT4 length );
 
-int XLALVectorCosf_FPU ( REAL4Vector *out, const REAL4Vector *in );
-int XLALVectorCosf_SSE ( REAL4Vector *out, const REAL4Vector *in );
-int XLALVectorCosf_AVX ( REAL4Vector *out, const REAL4Vector *in );
+int XLALVectorCosf_FPU ( REAL4 *out, const REAL4 *in, UINT4 length );
+int XLALVectorCosf_SSE ( REAL4 *out, const REAL4 *in, UINT4 length );
+int XLALVectorCosf_AVX ( REAL4 *out, const REAL4 *in, UINT4 length );
 
-int XLALVectorExpf_FPU ( REAL4Vector *out, const REAL4Vector *in );
-int XLALVectorExpf_SSE ( REAL4Vector *out, const REAL4Vector *in );
-int XLALVectorExpf_AVX ( REAL4Vector *out, const REAL4Vector *in );
+int XLALVectorExpf_FPU ( REAL4 *out, const REAL4 *in, UINT4 length );
+int XLALVectorExpf_SSE ( REAL4 *out, const REAL4 *in, UINT4 length );
+int XLALVectorExpf_AVX ( REAL4 *out, const REAL4 *in, UINT4 length );
 
-int XLALVectorLogf_FPU ( REAL4Vector *out, const REAL4Vector *in );
-int XLALVectorLogf_SSE ( REAL4Vector *out, const REAL4Vector *in );
-int XLALVectorLogf_AVX ( REAL4Vector *out, const REAL4Vector *in );
+int XLALVectorLogf_FPU ( REAL4 *out, const REAL4 *in, UINT4 length );
+int XLALVectorLogf_SSE ( REAL4 *out, const REAL4 *in, UINT4 length );
+int XLALVectorLogf_AVX ( REAL4 *out, const REAL4 *in, UINT4 length );
 
-int XLALVectorSinCosf_FPU ( REAL4Vector *sinx, REAL4Vector *cosx, const REAL4Vector *x );
-int XLALVectorSinCosf_SSE ( REAL4Vector *sinx, REAL4Vector *cosx, const REAL4Vector *x );
-int XLALVectorSinCosf_AVX ( REAL4Vector *sinx, REAL4Vector *cosx, const REAL4Vector *x );
+int XLALVectorSinCosf_FPU ( REAL4 *sinx, REAL4 *cosx, const REAL4 *x, UINT4 length );
+int XLALVectorSinCosf_SSE ( REAL4 *sinx, REAL4 *cosx, const REAL4 *x, UINT4 length );
+int XLALVectorSinCosf_AVX ( REAL4 *sinx, REAL4 *cosx, const REAL4 *x, UINT4 length );
 
-int XLALVectorSinCosf2PI_FPU ( REAL4Vector *sin2pix, REAL4Vector *cos2pix, const REAL4Vector *x );
-int XLALVectorSinCosf2PI_SSE ( REAL4Vector *sin2pix, REAL4Vector *cos2pix, const REAL4Vector *x );
-int XLALVectorSinCosf2PI_AVX ( REAL4Vector *sin2pix, REAL4Vector *cos2pix, const REAL4Vector *x );
+int XLALVectorSinCosf2PI_FPU ( REAL4 *sin2pix, REAL4 *cos2pix, const REAL4 *x, UINT4 length );
+int XLALVectorSinCosf2PI_SSE ( REAL4 *sin2pix, REAL4 *cos2pix, const REAL4 *x, UINT4 length );
+int XLALVectorSinCosf2PI_AVX ( REAL4 *sin2pix, REAL4 *cos2pix, const REAL4 *x, UINT4 length );
 #endif
 
 /** @} */

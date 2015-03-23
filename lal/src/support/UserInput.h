@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2015 Reinhard Prix
  * Copyright (C) 2010 Reinhard Prix (xlalified)
  * Copyright (C) 2004, 2005 Reinhard Prix
  *
@@ -26,10 +27,6 @@ extern "C" {
 #endif
 
 #include <lal/ConfigFile.h>
-#include <lal/ParseStringValue.h>
-#if 0
-#include <lal/LIGOMetadataTables.h>
-#endif
 
 /**
  * \defgroup UserInput_h Header UserInput.h
@@ -153,46 +150,59 @@ someEpoch = {2147483596 s, 816000000 ns}, RA = 2.727813 rad, DEC = -0.523599 rad
 /*@{*/
 
 /**
- * \name Shortcut Macros
- * With this family of short-cut macros one can conveniently register User-variables
- * that are accessible via a \e struct-pointer &quot;uvar->&quot;
+ * \name Shortcut Macro for registering new user variables, which are assumed
+ * to be accessible via the \e struct-pointer '*uvar'
+ */
+#define XLALRegisterUvarMember(name,type,option,category,help)             \
+  XLALRegister ##type## UserVar( #name, option, UVAR_CATEGORY_ ## category, help, &(uvar-> name))
+
+/** \deprecated Use XLALRegisterUvarMember() instead.
  */
 /*@{*/
-#define XLALregREALUserStruct(name,option,flag,help) \
-  XLALRegisterREALUserVar(#name, option, flag, help, &(uvar-> name))
+#define XLALregREALUserStruct(name,option,category,help) \
+  XLALRegisterREAL8UserVar(#name, option, category, help, &(uvar-> name))
 
-#define XLALregINTUserStruct(name,option,flag,help) \
-  XLALRegisterINTUserVar(#name, option,flag, help, &(uvar-> name))
+#define XLALregINTUserStruct(name,option,category,help) \
+  XLALRegisterINT4UserVar(#name, option,category, help, &(uvar-> name))
 
-#define XLALregBOOLUserStruct(name,option,flag,help) \
-  XLALRegisterBOOLUserVar(#name, option, flag, help, &(uvar-> name))
+#define XLALregBOOLUserStruct(name,option,category,help) \
+  XLALRegisterBOOLEANUserVar(#name, option, category, help, &(uvar-> name))
 
-#define XLALregSTRINGUserStruct(name,option,flag,help) \
-  XLALRegisterSTRINGUserVar(#name, option, flag, help, &(uvar-> name))
+#define XLALregSTRINGUserStruct(name,option,category,help) \
+  XLALRegisterSTRINGUserVar(#name, option, category, help, &(uvar-> name))
 
-#define XLALregLISTUserStruct(name,option,flag,help)                    \
-  XLALRegisterLISTUserVar(#name, option, flag, help, &(uvar-> name))
+#define XLALregLISTUserStruct(name,option,category,help)                    \
+  XLALRegisterSTRINGVectorUserVar(#name, option, category, help, &(uvar-> name))
 
-#define XLALregEPOCHUserStruct(name,option,flag,help)                    \
-  XLALRegisterEPOCHUserVar(#name, option, flag, help, &(uvar-> name))
+#define XLALregEPOCHUserStruct(name,option,category,help)                    \
+  XLALRegisterEPOCHUserVar(#name, option, category, help, &(uvar-> name))
 
-#define XLALregRAJUserStruct(name,option,flag,help)                    \
-  XLALRegisterRAJUserVar(#name, option, flag, help, &(uvar-> name))
+#define XLALregRAJUserStruct(name,option,category,help)                    \
+  XLALRegisterRAJUserVar(#name, option, category, help, &(uvar-> name))
 
-#define XLALregDECJUserStruct(name,option,flag,help)               \
-  XLALRegisterDECJUserVar(#name, option, flag, help, &(uvar-> name))
+#define XLALregDECJUserStruct(name,option,category,help)               \
+  XLALRegisterDECJUserVar(#name, option, category, help, &(uvar-> name))
 
 /*@}*/
 
-/** State-flags: variable is optional, required, help, developer or was_set */
+/** State-categorys: variable is optional, required, help, developer or was_set */
 typedef enum {
-  UVAR_OPTIONAL		= 0,	/**< not required, and hasn't been set */
-  UVAR_REQUIRED 	= 1<<0,	/**< we require the user to set this variable */
-  UVAR_HELP		= 1<<1,	/**< special variable: trigger output of help-string */
-  UVAR_DEVELOPER	= 1<<2,	/**< OPTIONAL and hidden in help-output at lalDebugLevel==0 */
-  UVAR_SPECIAL		= 1<<3,	/**< OPTIONAL and *turns off* checking of required variables (LALUserVarCheckRequired) */
-  UVAR_WAS_SET 		= 1<<7	/**< flag that this user-var has been set by user */
-} UserVarFlag;
+  UVAR_CATEGORY_START = 0,	/* internal start marker for range checking */
+  UVAR_CATEGORY_OPTIONAL,	/* optional */
+  UVAR_CATEGORY_REQUIRED,	/* required */
+  UVAR_CATEGORY_HELP,	/* special variable: trigger output of help-string */
+  UVAR_CATEGORY_DEVELOPER,	/* optional and hidden in help-output until lalDebugLevel>1 */
+  UVAR_CATEGORY_SPECIAL,	/* optional and *turns off* all checking of required variables, useful for output of version info */
+  UVAR_CATEGORY_END		/* internal end marker for range checking */
+} UserVarCategory;
+
+// ***** the following are provided only for backwards compatibility until full transition to new XLAL interface *****
+#define UVAR_OPTIONAL  	UVAR_CATEGORY_OPTIONAL
+#define UVAR_REQUIRED  	UVAR_CATEGORY_REQUIRED
+#define UVAR_HELP 	UVAR_CATEGORY_HELP
+#define UVAR_DEVELOPER	UVAR_CATEGORY_DEVELOPER
+#define UVAR_SPECIAL	UVAR_CATEGORY_SPECIAL
+// **********
 
 /**
  * Format for logging User-input: configFile- or cmdLine-style.
@@ -215,16 +225,22 @@ int XLALUserVarCheckRequired( void );
 int XLALUserVarWasSet (const void *cvar);
 CHAR * XLALUserVarGetLog ( UserVarLogFormat format );
 
-/* type-specific wrappers to XLALRegisterUserVar() to allow type-checking! */
-int XLALRegisterREALUserVar ( const CHAR *name, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, REAL8 *cvar );
-int XLALRegisterINTUserVar ( const CHAR *name, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, INT4 *cvar );
-int XLALRegisterBOOLUserVar ( const CHAR *name, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, BOOLEAN *cvar );
-int XLALRegisterSTRINGUserVar ( const CHAR *name, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, CHAR **cvar );
-int XLALRegisterLISTUserVar ( const CHAR *name, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, LALStringVector **cvar);
-int XLALRegisterEPOCHUserVar ( const CHAR *name, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, LIGOTimeGPS *cvar);
-int XLALRegisterRAJUserVar ( const CHAR *name, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, REAL8 *cvar);
-int XLALRegisterDECJUserVar ( const CHAR *name, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, REAL8 *cvar);
+// declare type-specific wrappers to XLALRegisterUserVar() to allow for strict C type-checking!
+#define DECL_REGISTER_UVAR(UTYPE,CTYPE)                                 \
+  int XLALRegister ##UTYPE## UserVar ( const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *helpstr, CTYPE *cvar )
 
+// ------ declare registration functions
+DECL_REGISTER_UVAR(REAL8,REAL8);
+DECL_REGISTER_UVAR(INT4,INT4);
+DECL_REGISTER_UVAR(BOOLEAN,BOOLEAN);
+DECL_REGISTER_UVAR(EPOCH,LIGOTimeGPS);
+DECL_REGISTER_UVAR(RAJ,REAL8);
+DECL_REGISTER_UVAR(DECJ,REAL8);
+
+DECL_REGISTER_UVAR(STRING,CHAR*);
+DECL_REGISTER_UVAR(STRINGVector,LALStringVector*);
+DECL_REGISTER_UVAR(REAL8Vector,REAL8Vector*);
+DECL_REGISTER_UVAR(INT4Vector,INT4Vector*);
 
 /* ========== Deprecated LAL interface wrappers ========== */
 
@@ -234,11 +250,11 @@ int XLALRegisterDECJUserVar ( const CHAR *name, CHAR optchar, UserVarFlag flag, 
  */
 /*@{*/
 
-void LALRegisterREALUserVar(LALStatus *, const CHAR *name, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, REAL8 *cvar);
-void LALRegisterINTUserVar (LALStatus *, const CHAR *name, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, INT4 *cvar);
-void LALRegisterBOOLUserVar (LALStatus *, const CHAR *name, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, BOOLEAN *cvar);
-void LALRegisterSTRINGUserVar (LALStatus *, const CHAR *name, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, CHAR **cvar);
-void LALRegisterLISTUserVar (LALStatus *, const CHAR *name, CHAR optchar, UserVarFlag flag, const CHAR *helpstr, LALStringVector **cvar);
+void LALRegisterREALUserVar(LALStatus *, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *helpstr, REAL8 *cvar);
+void LALRegisterINTUserVar (LALStatus *, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *helpstr, INT4 *cvar);
+void LALRegisterBOOLUserVar (LALStatus *, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *helpstr, BOOLEAN *cvar);
+void LALRegisterSTRINGUserVar (LALStatus *, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *helpstr, CHAR **cvar);
+void LALRegisterLISTUserVar (LALStatus *, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *helpstr, LALStringVector **cvar);
 
 void LALDestroyUserVars (LALStatus *);
 

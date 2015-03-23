@@ -176,7 +176,7 @@ int main(int argc, char *argv[])
 	dof = 8.0;
 
 	/* check forward functions */
-	CHECKOUTPUT("XLALlnOneMinusChisqCdf(chi2, dof)", XLALlnOneMinusChisqCdf(chi2, dof), -0.030040797757, 1e-9);
+	CHECKOUTPUT("XLALLogChisqCCDF(chi2, dof)", XLALLogChisqCCDF(chi2, dof), -0.030040797757, 1e-9);
 
 	LALCheckMemoryLeaks();
 

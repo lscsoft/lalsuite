@@ -42,7 +42,6 @@ extern "C" {
 #include <lal/PulsarDataTypes.h>
 #include <lal/StringVector.h>
 #include <lal/LALConstants.h>
-#include <lal/ConfigFile.h>
 #include <math.h>
 
 /* additional includes */

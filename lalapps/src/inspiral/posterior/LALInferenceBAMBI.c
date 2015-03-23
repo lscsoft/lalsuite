@@ -413,48 +413,6 @@ void LALInferenceMultiNestAlgorithm(LALInferenceRunState *runState)
     strcpy(&info[2][0],"-1");
     void *context = (void *)info;
 
-    /* Read injection XML file for parameters if specified */
-    /* Used to print injection likelihood and prior */
-    /*ppt=LALInferenceGetProcParamVal(runState->commandLine,"--inj");
-    if(ppt){
-      SimInspiralTable *injTable=NULL;
-      SimInspiralTableFromLIGOLw(&injTable,ppt->value,0,0);
-      if(!injTable){
-        fprintf(stderr,"Unable to open injection file %s\n",ppt->value);
-        exit(1);
-      }
-      ppt=LALInferenceGetProcParamVal(runState->commandLine,"--event");
-      if(ppt){
-        int event= atoi(ppt->value);
-        int i=0;
-        while(i<event) {i++; injTable=injTable->next;} // select event
-       LALInferenceVariables tempParams;
-    memset(&tempParams,0,sizeof(tempParams));
-    LALInferenceInjectionToVariables(injTable,&tempParams);
-    LALInferenceVariableItem *node=NULL;
-    item=runState->currentParams->head;
-    for(;item;item=item->next) {
-      node=LALInferenceGetItem(&tempParams,item->name);
-      if(node) {
-        LALInferenceSetVariable(runState->currentParams,node->name,node->value);
-      }
-    }
-    double linj,pinj,lz;
-        char finjname[150];
-        sprintf(finjname,"%sinjlike.txt",root);
-    linj=runState->likelihood(runState->currentParams, runState->data, runState->model);
-        lz = (*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams, "logZnoise"));
-    linj -= lz;
-    pinj = runState->prior(runState,runState->currentParams);
-    FILE *finj=fopen(finjname,"w");
-    fprintf(finj,"Log-likelihood value returned = %g\n",linj);
-    fprintf(finj,"Log-prior value returned = %g\n",pinj);
-    fprintf(finj,"Log-posterior value returned = %g\n",linj+pinj);
-    fprintf(finj,"Noise log-evidence value = %g\n",lz);
-    fclose(finj);
-      }
-    }*/
-
     BAMBIRun(mmodal, ceff, nlive, mntol, efr, ndims, nPar, nClsPar, maxModes, updInt, Ztol, root, rseed, pWrap, fb,
     bresume, outfile, initMPI, logZero, maxiter, LogLike, dumper, bambi, context);
 
@@ -827,10 +785,12 @@ Arguments for each section follow:\n\n";
     else
         state->model = LALInferenceInitCBCModel(state);
 
-    state->currentParams = XLALMalloc(sizeof(LALInferenceVariables));
-    memset(state->currentParams, 0, sizeof(LALInferenceVariables));
-    LALInferenceCopyVariables(state->model->params, state->currentParams);
-    state->templt = state->model->templt;
+    if (state->model) {
+        state->currentParams = XLALMalloc(sizeof(LALInferenceVariables));
+        memset(state->currentParams, 0, sizeof(LALInferenceVariables));
+        LALInferenceCopyVariables(state->model->params, state->currentParams);
+        state->templt = state->model->templt;
+    }
 
     /* Choose the likelihood */
     LALInferenceInitLikelihood(state);

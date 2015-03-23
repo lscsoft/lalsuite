@@ -36,9 +36,7 @@
  * where \f$\mathbf{B}\f$ is a vector of the complex data, \f$y(\mathbf{\theta})\f$ is the model for a set of parameters
  * \f$\mathbf{\theta}\f$, \f$M\f$ is the total number of independent data chunks with lengths \f$m_j\f$ and \f$k_0 =
  * \sum_{i=1}^j 1 + m_{i-1}\f$ (with \f$m_0 = 0\f$) is the index of the first data point in each chunk. The product of
- * this for each detector will give the full joint likelihood. In the calculation here the unnecessary proportionality
- * factors are left out (this would effect the actual value of the marginal likelihood/evidence, but since we are only
- * interested in evidence ratios/Bayes factors these factors would cancel out anyway). See \cite DupuisWoan2005 for a
+ * this for each detector will give the full joint likelihood. See \cite DupuisWoan2005 for a
  * more detailed description.
  *
  * In this function data in chunks smaller than a certain minimum length \c chunkMin are ignored.
@@ -217,6 +215,7 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
         chiSquare = sumDat->data[count] - 2.*sumDataModel + sumModel;
 
         if ( !gaussianLike ){ /* using Students-t likelihood */
+          logliketmp += (gsl_sf_lnfact(chunkLength-1) - LAL_LN2 - chunkLength*LAL_LNPI);
           logliketmp -= chunkLength*log(chiSquare);
         }
         else{ /* using Gaussian likelihood */
@@ -257,6 +256,7 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
         chiSquare = sumDat->data[count] - 2.*creal(dm) + creal(mm);
 
         if ( !gaussianLike ){ /* using Students-t likelihood */
+          logliketmp += (gsl_sf_lnfact(chunkLength-1) - LAL_LN2 - chunkLength*LAL_LNPI);
           logliketmp -= chunkLength*log(chiSquare);
         }
         else{ /* using Gaussian likelihood */
@@ -267,6 +267,12 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
         vstart += numbases->data[i];
         mstart += numbases->data[i]*numbases->data[i];
       }
+    }
+
+    /* add normalisation constant for the Gaussian likelihoods */
+    if ( gaussianLike ){
+      REAL8 logGaussianNorm = *(REAL8 *)LALInferenceGetVariable( ifomodeltemp->params,  "logGaussianNorm" );
+      logliketmp += logGaussianNorm;
     }
 
     get_model->ifo_loglikelihoods[ifo] = logliketmp;
@@ -342,12 +348,14 @@ REAL8 noise_only_likelihood( LALInferenceRunState *runState ){
     if ( !gaussianLike ){
       for (i=0; i<chunkLengths->length; i++){
         chunkLength = (REAL8)chunkLengths->data[i];
-
+        logLtmp += (gsl_sf_lnfact(chunkLength-1) - LAL_LN2 - chunkLength*LAL_LNPI);
         logLtmp -= chunkLength * log(sumDat->data[i]);
       }
     }
     else{
       /* for Gaussian likelihood there's only one chunk */
+      REAL8 logGaussianNorm = *(REAL8 *)LALInferenceGetVariable( ifo->params,  "logGaussianNorm" );
+      logLtmp += logGaussianNorm;
       logLtmp -= 0.5*sumDat->data[0];
     }
 

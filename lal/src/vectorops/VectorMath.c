@@ -176,16 +176,17 @@ XLALVectorDeviceParseString ( VectorDevice_type *device,//!< [out] Parsed #Vecto
 /// Vector version of 1-output math functions to take advantage of parallel-math devices (SSE,AVX,GPU...)
 
 #define DEFINE_FN_1OUT(funcf)                                           \
-  int XLALVector##funcf ( REAL4Vector *out, const REAL4Vector *in ) {   \
+int XLALVector##funcf ( REAL4 *out, const REAL4 *in, UINT4 length ) {   \
+  XLAL_CHECK ( (out != NULL) && (in != NULL), XLAL_EINVAL );            \
     switch ( currentVectorDevice ) {                                    \
     case VECTORDEVICE_FPU:                                              \
-      return XLALVector##funcf##_FPU ( out, in );                       \
+      return XLALVector##funcf##_FPU ( out, in, length );               \
       break;                                                            \
     case VECTORDEVICE_SSE:                                              \
-      return XLALVector##funcf##_SSE ( out, in );                       \
+      return XLALVector##funcf##_SSE ( out, in, length );               \
       break;                                                            \
     case VECTORDEVICE_AVX:                                              \
-      return XLALVector##funcf##_AVX ( out, in );                       \
+      return XLALVector##funcf##_AVX ( out, in, length );               \
       break;                                                            \
     default:                                                            \
       XLAL_ERROR ( XLAL_EINVAL, "Invalid device selected '%d' unknown! [coding error]\n", currentVectorDevice ); \
@@ -195,16 +196,17 @@ XLALVectorDeviceParseString ( VectorDevice_type *device,//!< [out] Parsed #Vecto
   } /* XLALVector##funcf() */
 
 #define DEFINE_FN_2OUT(funcf)                                           \
-  int XLALVector##funcf ( REAL4Vector *out, REAL4Vector *out2, const REAL4Vector *in ) { \
+  int XLALVector##funcf ( REAL4 *out, REAL4 *out2, const REAL4 *in, UINT4 length ) { \
+    XLAL_CHECK ( (out != NULL) && (in != NULL) && (out2 != NULL), XLAL_EINVAL ); \
     switch ( currentVectorDevice ) {                                    \
     case VECTORDEVICE_FPU:                                              \
-      return XLALVector##funcf##_FPU ( out, out2, in );                 \
+      return XLALVector##funcf##_FPU ( out, out2, in, length );         \
       break;                                                            \
     case VECTORDEVICE_SSE:                                              \
-      return XLALVector##funcf##_SSE ( out, out2, in );                 \
+      return XLALVector##funcf##_SSE ( out, out2, in, length );         \
       break;                                                            \
     case VECTORDEVICE_AVX:                                              \
-      return XLALVector##funcf##_AVX ( out, out2, in );                 \
+      return XLALVector##funcf##_AVX ( out, out2, in, length );         \
       break;                                                            \
     default:                                                            \
       XLAL_ERROR ( XLAL_EINVAL, "Invalid device selected '%d' unknown! [coding error]\n", currentVectorDevice ); \

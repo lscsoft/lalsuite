@@ -39,8 +39,3 @@
 \defgroup lalinspiral_python		Python Packages
 
 */
-
-/**
-\page lalinspiral_authors		Author List
-\verbinclude AUTHORS
-*/
