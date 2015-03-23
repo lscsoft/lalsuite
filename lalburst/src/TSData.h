@@ -25,7 +25,6 @@
 #include <lal/LALDatatypes.h>
 #include <lal/LALMoment.h>
 #include <lal/LALStdlib.h>
-#include <lal/Matrix.h>
 #include <lal/RealFFT.h>
 #include <lal/TSSearch.h>
 #include <lal/TimeSeries.h>
