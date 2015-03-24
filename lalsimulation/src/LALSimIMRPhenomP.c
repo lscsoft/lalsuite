@@ -372,7 +372,7 @@ static int PhenomPCore(
   /* Check inputs for sanity */
   if (*hptilde)       XLAL_ERROR(XLAL_EFAULT);
   if (*hctilde)       XLAL_ERROR(XLAL_EFAULT);
-  if (deltaF <= 0)    XLAL_ERROR(XLAL_EDOM);
+  if (deltaF < 0)    XLAL_ERROR(XLAL_EDOM);
   if (M <= 0)         XLAL_ERROR(XLAL_EDOM);
   if (f_min <= 0)     XLAL_ERROR(XLAL_EDOM);
   if (f_max < 0)      XLAL_ERROR(XLAL_EDOM);
@@ -445,6 +445,7 @@ static int PhenomPCore(
   /* Allocate hp, hc */
   XLAL_PRINT_INFO("f_max / deltaF = %g\n", f_max_prime / deltaF);
 
+  UINT4 L_fCut = 0; // number of frequency points before we hit fCut
   size_t n = 0;
   UINT4 offset = 0; // Index shift between freqs and the frequency series
   REAL8Sequence *freqs = NULL;
@@ -464,19 +465,30 @@ static int PhenomPCore(
     size_t i_min = (size_t) (f_min / deltaF);
     size_t i_max = (size_t) (f_max_prime / deltaF);
     freqs = XLALCreateREAL8Sequence(i_max - i_min);
-    for (UINT4 i=i_min; i<i_max; i++)
+    for (UINT4 i=i_min; i<i_max; i++, L_fCut++)
       freqs->data[i-i_min] = i*deltaF;
 
     offset = i_min;
   } else { // freqs contains frequencies with non-uniform spacing; we start at lowest given frequency
     n = freqs_in->length;
+
     *hptilde = XLALCreateCOMPLEX16FrequencySeries("hptilde: FD waveform", &ligotimegps_zero, f_min, 0, &lalStrainUnit, n);
     *hctilde = XLALCreateCOMPLEX16FrequencySeries("hctilde: FD waveform", &ligotimegps_zero, f_min, 0, &lalStrainUnit, n);
     offset = 0;
 
-    freqs = XLALCreateREAL8Sequence(freqs_in->length);
-    for (UINT4 i=0; i<freqs_in->length; i++)
-      freqs->data[i] = freqs_in->data[i];
+    // Enforce that FS is strictly increasing
+    // (This is needed for phase correction towards the end of this function.)
+    for (UINT4 i=1; i<n; i++)
+      if (!(freqs_in->data[i] > freqs_in->data[i-1]))
+        XLAL_ERROR(XLAL_EDOM, "Frequency sequence must be strictly increasing!\n");
+
+    freqs = XLALCreateREAL8Sequence(n);
+    // Restrict sequence to frequencies <= fCut
+    for (UINT4 i=0; i<n; i++)
+      if (freqs_in->data[i] <= PCparams->fCut) {
+        freqs->data[i] = freqs_in->data[i];
+        L_fCut++;
+      }
   }
 
 
@@ -499,8 +511,7 @@ static int PhenomPCore(
 
   int errcode = XLAL_SUCCESS;
 
-  UINT4 L = freqs->length;
-  REAL8 *phis = XLALMalloc(L*sizeof(REAL8)); // array for waveform phase
+  REAL8 *phis = XLALMalloc(L_fCut*sizeof(REAL8)); // array for waveform phase
   REAL8 phasing = 0;
 
   /*
@@ -509,7 +520,7 @@ static int PhenomPCore(
     the parallel for loop as soon as possible if something went wrong in any thread.
   */
   #pragma omp parallel for
-  for (UINT4 i=0; i<freqs->length; i++) { // loop over frequency points in sequence
+  for (UINT4 i=0; i<L_fCut; i++) { // loop over frequency points in sequence
     COMPLEX16 hp_val = 0.0;
     COMPLEX16 hc_val = 0.0;
     double f = freqs->data[i];
@@ -544,19 +555,18 @@ static int PhenomPCore(
   /* We apply the same time shift to hptilde and hctilde based on the overall phasing returned by PhenomPCoreOneFrequency */
   if (deltaF<=0)
     XLAL_PRINT_WARNING("Warning: Depending on specified frequency sequence correction to time of coalescence may not be accurate.\n");
-
   /* Set up spline for phase */
   gsl_interp_accel *acc = gsl_interp_accel_alloc();
-  gsl_spline *phiI = gsl_spline_alloc(gsl_interp_cspline, L);
+  gsl_spline *phiI = gsl_spline_alloc(gsl_interp_cspline, L_fCut);
 
-  gsl_spline_init(phiI, freqs->data, phis, L);
+  gsl_spline_init(phiI, freqs->data, phis, L_fCut);
 
   REAL8 f_final = PCparams->fRingDown; // This isn't quite the same as the SEOBNRv2 ringdown frequency
   XLAL_PRINT_INFO("f_ringdown = %g\n", f_final);
 
   // Prevent gsl interpolation errors
-  if (f_final > freqs->data[L-1])
-    f_final = freqs->data[L-1];
+  if (f_final > freqs->data[L_fCut-1])
+    f_final = freqs->data[L_fCut-1];
   if (f_final < freqs->data[0])
     XLAL_ERROR(XLAL_EDOM, "f_ringdown < f_min\n");
 
@@ -565,7 +575,7 @@ static int PhenomPCore(
   XLAL_PRINT_INFO("t_corr = %g\n", t_corr);
 
   /* Now correct phase */
-  for (UINT4 i=0; i<freqs->length; i++) { // loop over frequency points in sequence
+  for (UINT4 i=0; i<L_fCut; i++) { // loop over frequency points in sequence
     double f = freqs->data[i];
     int j = i + offset; // shift index for frequency series if needed
     ((*hptilde)->data->data)[j] *= cexp(-2*LAL_PI * I * f * t_corr);
