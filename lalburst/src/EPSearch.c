@@ -61,6 +61,14 @@
  */
 
 
+typedef struct tagLALExcessPowerFilterBank {
+	int n_filters;
+	ExcessPowerFilter *basis_filters;
+	REAL8Sequence *twice_channel_overlap;	/**< twice the inner product of filters for neighbouring channels;  twice_channel_overlap[0] is twice the inner product of the filters for channels 0 and 1, and so on (for n channels, there are n - 1 channel_overlaps) */
+	REAL8Sequence *unwhitened_cross;	/**< the mean square cross terms for wide channels (indices same as for twice_channel_overlap) */
+} LALExcessPowerFilterBank;
+
+
 /**
  * From the power spectral density function, generate the comb of channel
  * filters for the time-frequency plane --- an excess power filter bank.
