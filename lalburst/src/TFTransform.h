@@ -199,21 +199,6 @@ COMPLEX16FrequencySeries *XLALCreateExcessPowerFilter(
 );
 
 
-LALExcessPowerFilterBank *XLALCreateExcessPowerFilterBank(
-	double filter_deltaF,
-	double flow,
-	double channel_bandwidth,
-	int n_channels,
-	const REAL8FrequencySeries *psd,
-	const REAL8Sequence *two_point_spectral_correlation
-);
-
-
-void XLALDestroyExcessPowerFilterBank(
-	LALExcessPowerFilterBank *bank
-);
-
-
 REAL8TimeFrequencyPlane *XLALCreateTFPlane(
 	UINT4 tseries_length,
 	REAL8 tseries_deltaT,

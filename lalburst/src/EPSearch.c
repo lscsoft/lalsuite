@@ -18,6 +18,18 @@
  */
 
 
+/*
+ * ============================================================================
+ *
+ *                                  Preamble
+ *
+ * ============================================================================
+ */
+
+
+#include <math.h>
+
+
 #include <lal/EPSearch.h>
 #include <lal/FrequencySeries.h>
 #include <lal/LALDatatypes.h>
@@ -31,6 +43,109 @@
 #include <lal/Units.h>
 #include <lal/XLALError.h>
 #include <lal/Window.h>
+
+
+/*
+ * ============================================================================
+ *
+ *                                Filter Bank
+ *
+ * ============================================================================
+ */
+
+
+/**
+ * From the power spectral density function, generate the comb of channel
+ * filters for the time-frequency plane --- an excess power filter bank.
+ */
+static LALExcessPowerFilterBank *XLALCreateExcessPowerFilterBank(
+	double filter_deltaF,
+	double flow,
+	double channel_bandwidth,
+	int n_channels,
+	const REAL8FrequencySeries *psd,
+	const REAL8Sequence *two_point_spectral_correlation
+)
+{
+	LALExcessPowerFilterBank *new;
+	ExcessPowerFilter *basis_filters;
+	REAL8Sequence *twice_channel_overlap;
+	REAL8Sequence *unwhitened_cross;
+	int i;
+
+	new = malloc(sizeof(*new));
+	basis_filters = calloc(n_channels, sizeof(*basis_filters));
+	twice_channel_overlap = XLALCreateREAL8Sequence(n_channels - 1);
+	unwhitened_cross = XLALCreateREAL8Sequence(n_channels - 1);
+	if(!new || !basis_filters || !twice_channel_overlap || !unwhitened_cross) {
+		free(new);
+		free(basis_filters);
+		XLALDestroyREAL8Sequence(twice_channel_overlap);
+		XLALDestroyREAL8Sequence(unwhitened_cross);
+		XLAL_ERROR_NULL(XLAL_ENOMEM);
+	}
+
+	new->n_filters = n_channels;
+	new->basis_filters = basis_filters;
+	new->twice_channel_overlap = twice_channel_overlap;
+	new->unwhitened_cross = unwhitened_cross;
+
+	for(i = 0; i < n_channels; i++) {
+		basis_filters[i].fseries = XLALCreateExcessPowerFilter(flow + i * channel_bandwidth, channel_bandwidth, psd, two_point_spectral_correlation);
+		if(!basis_filters[i].fseries) {
+			while(i--)
+				XLALDestroyCOMPLEX16FrequencySeries(basis_filters[i].fseries);
+			free(new);
+			XLALDestroyREAL8Sequence(twice_channel_overlap);
+			XLALDestroyREAL8Sequence(unwhitened_cross);
+			XLAL_ERROR_NULL(XLAL_EFUNC);
+		}
+
+		/* compute the unwhitened root mean square for this channel */
+		basis_filters[i].unwhitened_rms = sqrt(XLALExcessPowerFilterInnerProduct(basis_filters[i].fseries, basis_filters[i].fseries, two_point_spectral_correlation, psd) * filter_deltaF / 2);
+	}
+
+	/* compute the cross terms for the channel normalizations and
+	 * unwhitened mean squares */
+	for(i = 0; i < new->n_filters - 1; i++) {
+		twice_channel_overlap->data[i] = 2 * XLALExcessPowerFilterInnerProduct(basis_filters[i].fseries, basis_filters[i + 1].fseries, two_point_spectral_correlation, NULL);
+		unwhitened_cross->data[i] = XLALExcessPowerFilterInnerProduct(basis_filters[i].fseries, basis_filters[i + 1].fseries, two_point_spectral_correlation, psd) * psd->deltaF;
+	}
+
+	return new;
+}
+
+
+/**
+ * Destroy and excess power filter bank.
+ */
+static void XLALDestroyExcessPowerFilterBank(
+	LALExcessPowerFilterBank *bank
+)
+{
+	if(bank) {
+		if(bank->basis_filters) {
+			int i;
+			for(i = 0; i < bank->n_filters; i++)
+				XLALDestroyCOMPLEX16FrequencySeries(bank->basis_filters[i].fseries);
+			free(bank->basis_filters);
+		}
+		XLALDestroyREAL8Sequence(bank->twice_channel_overlap);
+		XLALDestroyREAL8Sequence(bank->unwhitened_cross);
+	}
+
+	free(bank);
+}
+
+
+/*
+ * ============================================================================
+ *
+ *                                Entry Point
+ *
+ * ============================================================================
+ */
+
 
 /**
  * Generate a linked list of burst events from a time series.
