@@ -224,14 +224,6 @@ int XLALFreqSeriesToTFPlane(
 );
 
 
-SnglBurst *XLALComputeExcessPower(
-	const REAL8TimeFrequencyPlane *plane,
-	const LALExcessPowerFilterBank *filter_bank,
-	SnglBurst *head,
-	double confidence_threshold
-);
-
-
 INT4 XLALOverlappedSegmentsCommensurate(
 	INT4 target_length,
 	INT4 segment_length,
