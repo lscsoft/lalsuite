@@ -67,8 +67,9 @@ struct tagFstatWorkspace
 
   // input padded timeseries ts(t) and output Fab(f) of length 'numSamplesFFT' and corresponding fftw plan
   UINT4 numSamplesFFT;					// keep track of previous padded SRC-frame samples (ie dFreq)
-  COMPLEX8 *FabX_Raw;					// raw full-band FFT result Fa,Fb and zero-padded, AM weighted + spindown-corr SRC-frame TS
   fftwf_plan fftplan;					// buffer FFT plan for given numSamplesOut length
+  COMPLEX8 *TS_FFT;					// zero-padded, AM weighted + spindown-corr SRC-frame TS
+  COMPLEX8 *FabX_Raw;					// raw full-band FFT result Fa,Fb
 
   // arrays of size numFreqBinsOut over frequency bins f_k:
   UINT4 numFreqBinsOut;					// number of output frequency bins {f_k}
@@ -156,10 +157,11 @@ XLALCreateFstatWorkspace ( UINT4 numSamplesSRC,
   FstatWorkspace *ws;
   XLAL_CHECK_NULL ( (ws = XLALCalloc ( 1, sizeof(*ws))) != NULL, XLAL_ENOMEM );
   XLAL_CHECK_NULL ( (ws->TimeSeriesSpinCorr_SRC = XLALCreateCOMPLEX8Vector ( numSamplesSRC )) != NULL, XLAL_EFUNC );
-  XLAL_CHECK_NULL ( (ws->FabX_Raw = fftw_malloc ( numSamplesFFT * sizeof(ws->FabX_Raw[0]) )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_NULL ( (ws->FabX_Raw = fftw_malloc ( numSamplesFFT * sizeof(COMPLEX8) )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_NULL ( (ws->TS_FFT   = fftw_malloc ( numSamplesFFT * sizeof(COMPLEX8) )) != NULL, XLAL_EFUNC );
 
   LAL_FFTW_WISDOM_LOCK;
-  XLAL_CHECK_NULL ( (ws->fftplan = fftwf_plan_dft_1d ( numSamplesFFT, ws->FabX_Raw, ws->FabX_Raw, FFTW_FORWARD, FFTW_MEASURE )) != NULL, XLAL_EFAILED, "fftwf_plan_dft_1d() failed\n");
+  XLAL_CHECK_NULL ( (ws->fftplan = fftwf_plan_dft_1d ( numSamplesFFT, ws->TS_FFT, ws->FabX_Raw, FFTW_FORWARD, FFTW_MEASURE )) != NULL, XLAL_EFAILED, "fftwf_plan_dft_1d() failed\n");
   LAL_FFTW_WISDOM_UNLOCK;
   ws->numSamplesFFT = numSamplesFFT;
 
@@ -201,6 +203,7 @@ XLALDestroyFstatWorkspace ( FstatWorkspace *ws )
   LAL_FFTW_WISDOM_UNLOCK;
 
   fftw_free ( ws->FabX_Raw );
+  fftw_free ( ws->TS_FFT );
 
   XLALFree ( ws->FaX_k );
   XLALFree ( ws->FbX_k );
@@ -655,6 +658,7 @@ XLALComputeFaFb_Resamp ( FstatWorkspace *restrict ws,				//!< [in,out] pre-alloc
   // check workspace properly setup
   XLAL_CHECK ( ws->TimeSeriesSpinCorr_SRC != NULL, XLAL_EINVAL );
   XLAL_CHECK ( ws->FabX_Raw != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( ws->TS_FFT != NULL, XLAL_EINVAL );
   XLAL_CHECK ( ws->FaX_k != NULL, XLAL_EINVAL );
   XLAL_CHECK ( ws->FbX_k != NULL, XLAL_EINVAL );
   XLAL_CHECK ( ws->fftplan != NULL, XLAL_EINVAL );
@@ -691,8 +695,8 @@ XLALComputeFaFb_Resamp ( FstatWorkspace *restrict ws,				//!< [in,out] pre-alloc
 #endif
   // ----- compute FaX_k
   // apply amplitude modulation factors {a,b}, store result in zero-padded timeseries for FFTing
-  memset ( ws->FabX_Raw, 0, ws->numSamplesFFT * sizeof(ws->FabX_Raw[0]) );
-  XLAL_CHECK ( XLALApplyAmplitudeModulation ( ws->FabX_Raw, ws->TimeSeriesSpinCorr_SRC, SFTinds_SRC, ab->a ) == XLAL_SUCCESS, XLAL_EFUNC );
+  memset ( ws->TS_FFT, 0, ws->numSamplesFFT * sizeof(ws->TS_FFT[0]) );
+  XLAL_CHECK ( XLALApplyAmplitudeModulation ( ws->TS_FFT, ws->TimeSeriesSpinCorr_SRC, SFTinds_SRC, ab->a ) == XLAL_SUCCESS, XLAL_EFUNC );
 
 #ifdef COLLECT_TIMING
   toc = XLALGetCPUTime();
@@ -715,8 +719,8 @@ XLALComputeFaFb_Resamp ( FstatWorkspace *restrict ws,				//!< [in,out] pre-alloc
 
   // ----- compute FbX_k
   // apply amplitude modulation factors {a,b}, store result in zero-padded timeseries for FFTing
-  memset ( ws->FabX_Raw, 0, ws->numSamplesFFT * sizeof(ws->FabX_Raw[0]) );
-  XLAL_CHECK ( XLALApplyAmplitudeModulation ( ws->FabX_Raw, ws->TimeSeriesSpinCorr_SRC, SFTinds_SRC, ab->b ) == XLAL_SUCCESS, XLAL_EFUNC );
+  memset ( ws->TS_FFT, 0, ws->numSamplesFFT * sizeof(ws->TS_FFT[0]) );
+  XLAL_CHECK ( XLALApplyAmplitudeModulation ( ws->TS_FFT, ws->TimeSeriesSpinCorr_SRC, SFTinds_SRC, ab->b ) == XLAL_SUCCESS, XLAL_EFUNC );
 
 #ifdef COLLECT_TIMING
   toc = XLALGetCPUTime();
