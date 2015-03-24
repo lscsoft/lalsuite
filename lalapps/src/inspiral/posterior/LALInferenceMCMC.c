@@ -812,15 +812,21 @@ int main(int argc, char *argv[]){
 
   /* Set up structures for MCMC */
   initializeMCMC(runState);
-  if (runState)
+  if (runState){
     LALInferenceAddVariable(runState->algorithmParams,"MPIrank", &MPIrank, LALINFERENCE_UINT4_t,
                           LALINFERENCE_PARAM_FIXED);
-  else return 0;
-  /* Apply calibration errors if desired*/
-   LALInferenceApplyCalibrationErrors(runState,runState->commandLine);
-
-  /* Set up model struct and set currentVariables to match the initialized model params */
-  runState->model = LALInferenceInitCBCModel(runState);
+    /* Apply calibration errors if desired*/
+    LALInferenceApplyCalibrationErrors(runState,runState->commandLine);
+    
+    /* Set up model struct and set currentVariables to match the initialized model params */
+    runState->model = LALInferenceInitCBCModel(runState);
+  }
+  else{
+    //Just to get the help messages
+    LALInferenceApplyCalibrationErrors(NULL,NULL);
+    LALInferenceInitCBCModel(NULL);
+    return 0;
+  }
   runState->currentParams = XLALMalloc(sizeof(LALInferenceVariables));
   memset(runState->currentParams, 0, sizeof(LALInferenceVariables));
   LALInferenceCopyVariables(runState->model->params, runState->currentParams);
