@@ -286,20 +286,18 @@ int main(int argc,char *argv[])
   /****** FindStringBurst ******/
   XLALPrintInfo("FindStringBurst()\n");
   if (FindStringBurst(CommandLineArgs, ht, seg_length, strtemplate, NTemplates, fplan, rplan, &events)) return 12;
-  if(!XLALSortSnglBurst(&events, XLALCompareSnglBurstByExactPeakTime)) return 12;
   XLALDestroyREAL8TimeSeries(ht);
   XLALDestroyREAL8FFTPlan(fplan);
   XLALDestroyREAL8FFTPlan(rplan);
 
   /****** XLALClusterSnglBurstTable ******/
   XLALPrintInfo("XLALClusterSnglBurstTable()\n");
-  if (CommandLineArgs.cluster != 0.0 && events){
+  if (CommandLineArgs.cluster != 0.0 && events)
     XLALClusterSnglBurstTable(&events, XLALCompareStringBurstByTime, XLALCompareStringBurstByTime, XLALStringBurstCluster);
-    XLALSortSnglBurst(&events, XLALCompareSnglBurstByPeakTimeAndSNR);
-  }
 
   /****** XLALSnglBurstAssignIDs ******/
   XLALPrintInfo("XLALSnglBurstAssignIDs()\n");
+  if(!XLALSortSnglBurst(&events, XLALCompareSnglBurstByPeakTimeAndSNR)) return 12;
   XLALSnglBurstAssignIDs(events, process.processTable->process_id, 0);
 
   /****** OutputEvents ******/

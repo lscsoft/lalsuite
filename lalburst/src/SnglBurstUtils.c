@@ -24,28 +24,6 @@
 #include <lal/Date.h>
 #include <lal/XLALError.h>
 
-/*
- * A few quickies for convenience.
- */
-
-
-static INT8 int8_start_time(const SnglBurst *x)
-{
-	return XLALGPSToINT8NS(&x->start_time);
-}
-
-
-static INT8 int8_peak_time(const SnglBurst *x)
-{
-	return XLALGPSToINT8NS(&x->peak_time);
-}
-
-
-static REAL4 lo_freq(const SnglBurst *x)
-{
-	return x->central_freq - x->bandwidth / 2;
-}
-
 
 /**
  * Free a SnglBurst.
@@ -149,122 +127,31 @@ SnglBurst **XLALSortSnglBurst(
 
 
 /**
- * Compare the start times of two SnglBurst events.
- */
-int XLALCompareSnglBurstByStartTime(
-	const SnglBurst * const *a,
-	const SnglBurst * const *b
-)
-{
-	INT8 ta, tb;
-
-	ta = int8_start_time(*a);
-	tb = int8_start_time(*b);
-
-	if(ta > tb)
-		return 1;
-	if(ta < tb)
-		return -1;
-	return 0;
-}
-
-
-/**
  * Compare the peak times and SNRs of two SnglBurst events.
  */
 
 
-int XLALCompareSnglBurstByExactPeakTime(
-	const SnglBurst * const *a,
-	const SnglBurst * const *b
-)
-{
-	INT8 ta, tb;
-
-	ta = int8_peak_time(*a);
-	tb = int8_peak_time(*b);
-
-	if(ta > tb)
-		return 1;
-	if(ta < tb)
-		return -1;
-	return 0;
-}
-
-
-/**
- * Compare the SNRs of two SnglBurst events.
- */
-int XLALCompareSnglBurstBySNR(
-	const SnglBurst * const *a,
-	const SnglBurst * const *b
-)
-{
-	REAL4 snra = (*a)->snr;
-	REAL4 snrb = (*b)->snr;
-
-	if(snra < snrb)
-		return 1;
-	if(snra > snrb)
-		return -1;
-	return 0;
-}
-
-
-/**
- * Compare the peak times and SNRs of two SnglBurst events.
- */
 int XLALCompareSnglBurstByPeakTimeAndSNR(
 	const SnglBurst * const *a,
 	const SnglBurst * const *b
 )
 {
-	int result;
+	INT8 ta = XLALGPSToINT8NS(&(*a)->peak_time);
+	INT8 tb = XLALGPSToINT8NS(&(*b)->peak_time);
+	float snra = (*a)->snr;
+	float snrb = (*b)->snr;
 
-	result = XLALCompareSnglBurstByExactPeakTime(a, b);
-	if(!result)
-		result = XLALCompareSnglBurstBySNR(a, b);
-
-	return result;
-}
-
-
-/**
- * Compare the low frequency limits of two SnglBurst events.
- */
-int XLALCompareSnglBurstByLowFreq(
-	const SnglBurst * const *a,
-	const SnglBurst * const *b
-)
-{
-	REAL4 flowa, flowb;
-
-	flowa = lo_freq(*a);
-	flowb = lo_freq(*b);
-
-	if(flowa > flowb)
+	if(ta > tb)
 		return 1;
-	if(flowa < flowb)
+	if(ta < tb)
 		return -1;
+	/* ta == tb */
+	if(snra < snrb)
+		return 1;
+	if(snra > snrb)
+		return -1;
+	/* snra == snrb */
 	return 0;
-}
-
-
-/**
- * Compare two events first by start time, then by lowest frequency to break
- * ties.
- */
-int XLALCompareSnglBurstByStartTimeAndLowFreq(
-	const SnglBurst * const *a,
-	const SnglBurst * const *b
-)
-{
-	int result;
-
-	result = XLALCompareSnglBurstByStartTime(a, b);
-	if(!result)
-		result = XLALCompareSnglBurstByLowFreq(a, b);
-	return result;
 }
 
 

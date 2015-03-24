@@ -60,37 +60,7 @@ XLALSortSnglBurst(
 );
 
 int
-XLALCompareSnglBurstByStartTime(
-	const SnglBurst * const *a,
-	const SnglBurst * const *b
-);
-
-int
-XLALCompareSnglBurstByExactPeakTime(
-	const SnglBurst * const *a,
-	const SnglBurst * const *b
-);
-
-int
-XLALCompareSnglBurstBySNR(
-	const SnglBurst * const *a,
-	const SnglBurst * const *b
-);
-
-int
 XLALCompareSnglBurstByPeakTimeAndSNR(
-	const SnglBurst * const *a,
-	const SnglBurst * const *b
-);
-
-int
-XLALCompareSnglBurstByLowFreq(
-	const SnglBurst * const *a,
-	const SnglBurst * const *b
-);
-
-int
-XLALCompareSnglBurstByStartTimeAndLowFreq(
 	const SnglBurst * const *a,
 	const SnglBurst * const *b
 );

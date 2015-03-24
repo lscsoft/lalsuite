@@ -1682,7 +1682,7 @@ int main(int argc, char *argv[])
 	 * Sort the events, and assign IDs.
 	 */
 
-	XLALSortSnglBurst(&_sngl_burst_table, XLALCompareSnglBurstByStartTimeAndLowFreq);
+	XLALSortSnglBurst(&_sngl_burst_table, XLALCompareSnglBurstByPeakTimeAndSNR);
 	XLALSnglBurstAssignIDs(_sngl_burst_table, _process_table->process_id, 0);
 
 	/*
