@@ -186,7 +186,7 @@ void get_pulsar_model( LALInferenceModel *model ){
  * \brief Set amplitude parameters for specific non-GR models.
  *
  * Turns physical parameters from a particular nonGR model into the corresponding antenna pattern amplitudes and phases. All nonGR models must be included here.
- * \param params [in] parameter structure
+ * \param pars [in] parameter structure
  * \param nonGRmodel [in] name of model requested
  */
 void set_nonGR_model_parameters( BinaryPulsarParams *pars, char* nonGRmodel ){
