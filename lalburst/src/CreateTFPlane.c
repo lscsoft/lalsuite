@@ -34,6 +34,7 @@
 #include <gsl/gsl_matrix.h>
 
 
+#include <lal/Date.h>
 #include <lal/FrequencySeries.h>
 #include <lal/LALAtomicDatatypes.h>
 #include <lal/LALMalloc.h>
@@ -372,8 +373,7 @@ REAL8TimeFrequencyPlane *XLALCreateTFPlane(
 	 */
 
 	plane->name[0] = '\0';
-	plane->epoch.gpsSeconds = 0;
-	plane->epoch.gpsNanoSeconds = 0;
+	XLALGPSSetREAL8(&plane->epoch, 0.0);
 	plane->deltaT = tseries_deltaT;
 	plane->fseries_deltaF = fseries_deltaF;
 	plane->deltaF = deltaF;

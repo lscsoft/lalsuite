@@ -82,10 +82,10 @@ static COMPLEX16Sequence *apply_filter(
 	/* find bounds of common frequencies */
 	const double flo = max(filterseries->f0, inputseries->f0);
 	const double fhi = min(filterseries->f0 + filterseries->data->length * filterseries->deltaF, inputseries->f0 + inputseries->data->length * inputseries->deltaF);
-	COMPLEX16 *output = outputseq->data + (int) floor((flo - inputseries->f0) / inputseries->deltaF + 0.5);
-	COMPLEX16 *last = outputseq->data + (int) floor((fhi - inputseries->f0) / inputseries->deltaF + 0.5);
-	const COMPLEX16 *input = inputseries->data->data + (int) floor((flo - inputseries->f0) / inputseries->deltaF + 0.5);
-	const COMPLEX16 *filter = filterseries->data->data + (int) floor((flo - filterseries->f0) / filterseries->deltaF + 0.5);
+	COMPLEX16 *output = outputseq->data + (int) round((flo - inputseries->f0) / inputseries->deltaF);
+	COMPLEX16 *last = outputseq->data + (int) round((fhi - inputseries->f0) / inputseries->deltaF);
+	const COMPLEX16 *input = inputseries->data->data + (int) round((flo - inputseries->f0) / inputseries->deltaF);
+	const COMPLEX16 *filter = filterseries->data->data + (int) round((flo - filterseries->f0) / filterseries->deltaF);
 
 	if(outputseq->length != inputseries->data->length)
 		XLAL_ERROR_NULL(XLAL_EBADLEN);
@@ -286,7 +286,13 @@ SnglBurst *XLALComputeExcessPower(
 	double confidence_threshold
 )
 {
-	gsl_vector filter_output;
+	gsl_vector filter_output = {
+		.size = plane->tiles.tiling_end - plane->tiles.tiling_start,
+		.stride = plane->channel_data->size2,
+		.data = NULL,
+		.block = NULL,
+		.owner = 0
+	};
 	gsl_vector_view filter_output_view;
 	gsl_vector *channel_buffer;
 	gsl_vector *unwhitened_channel_buffer;
@@ -299,13 +305,6 @@ SnglBurst *XLALComputeExcessPower(
 	 * "virtual pixels" in tile. */
 	double tile_dof;
 	unsigned i;
-
-	/* argh!  C90 ... */
-	filter_output.size = plane->tiles.tiling_end - plane->tiles.tiling_start;
-	filter_output.stride = plane->channel_data->size2;
-	filter_output.data = NULL;
-	filter_output.block = NULL;
-	filter_output.owner = 0;
 
 	/*
 	 * create work spaces
@@ -322,13 +321,14 @@ SnglBurst *XLALComputeExcessPower(
 	}
 
 	/*
-	 * enter loops
+	 * enter loops.  note:  this is a quadruply-nested loop that is not
+	 * indented to help fit the code on a terminal display.
 	 */
 
 	for(channels = plane->tiles.min_channels; channels <= plane->tiles.max_channels; channels *= 2) {
 		/* compute distance between "virtual pixels" for this
 		 * (wide) channel */
-		const unsigned stride = floor(1.0 / (channels * plane->tiles.dof_per_pixel) + 0.5);
+		const unsigned stride = round(1.0 / (channels * plane->tiles.dof_per_pixel));
 
 	for(channel_end = (channel = 0) + channels; channel_end <= plane->channel_data->size2; channel_end = (channel += channels / plane->tiles.inv_fractional_stride) + channels) {
 		/* the root mean square of the "virtual channel",

@@ -18,13 +18,9 @@
  */
 
 
-#include <math.h>
-#include <stdio.h>
-#include <lal/LALAtomicDatatypes.h>
 #include <lal/EPSearch.h>
 #include <lal/FrequencySeries.h>
 #include <lal/LALDatatypes.h>
-#include <lal/LALStatusMacros.h>
 #include <lal/LALStdlib.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataBurstUtils.h>
@@ -43,12 +39,12 @@ SnglBurst *XLALEPSearch(
 	struct XLALEPSearchDiagnostics *diagnostics,
 	const REAL8TimeSeries *tseries,
 	REAL8Window *window,
-	REAL8 flow,
-	REAL8 bandwidth,
-	REAL8 confidence_threshold,
-	REAL8 fractional_stride,
-	REAL8 maxTileBandwidth,
-	REAL8 maxTileDuration
+	double flow,
+	double bandwidth,
+	double confidence_threshold,
+	double fractional_stride,
+	double maxTileBandwidth,
+	double maxTileDuration
 )
 {
 	SnglBurst *head = NULL;
