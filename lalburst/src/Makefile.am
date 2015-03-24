@@ -30,7 +30,6 @@ liblalburst_la_SOURCES = \
 	DestroyTimeFreqRep.c \
 	Dwindow.c \
 	EPSearch.c \
-	FreqSeriesToTFPlane.c \
 	GenerateBurst.c \
 	HarmonicFinder.c \
 	LALBurstVCSInfo.c \

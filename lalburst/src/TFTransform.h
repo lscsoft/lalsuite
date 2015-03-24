@@ -216,14 +216,6 @@ void XLALDestroyTFPlane(
 );
 
 
-int XLALFreqSeriesToTFPlane(
-	REAL8TimeFrequencyPlane *tfplane,
-	const LALExcessPowerFilterBank *filter_bank,
-	const COMPLEX16FrequencySeries *fseries,
-	const REAL8FFTPlan *reverseplan
-);
-
-
 INT4 XLALOverlappedSegmentsCommensurate(
 	INT4 target_length,
 	INT4 segment_length,
