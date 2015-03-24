@@ -48,7 +48,7 @@ static REAL4 lo_freq(const SnglBurst *x)
 
 
 /**
- * Free a sngl_burst
+ * Free a SnglBurst.
  */
 void XLALDestroySnglBurst(SnglBurst *event)
 {
@@ -70,9 +70,9 @@ void XLALDestroySnglBurstTable(SnglBurst *head)
 
 
 /**
- * Assign event_id values to the entries in a sngl_burst linked list.  All
- * sngl_burst rows in the list will be blamed on the given process_id, and
- * assigned event_ids in order starting with the given event_id.  The
+ * Assign event_id values to the entries in a SnglBurst linked list.  All
+ * SnglBurst rows in the list will be blamed on the given process_id, and
+ * assigned sequential event_ids starting with the given event_id.  The
  * return value is the next event_id after the last one assigned to a row
  * in the list.
  */
@@ -170,7 +170,7 @@ int XLALCompareSnglBurstByStartTime(
 
 
 /**
- * Compare two sngl_burst events by their peak times, with no slack.
+ * Compare the peak times and SNRs of two SnglBurst events.
  */
 
 
@@ -315,11 +315,10 @@ void XLALClusterSnglBurstTable (
 					prev->next = b->next;
 					XLALDestroySnglBurst(b);
 					did_cluster = 1;
-				} else {
-					if(bailoutfunc && bailoutfunc((const SnglBurst * const *) &a, (const SnglBurst * const *) &b))
-						break;
+				} else if(bailoutfunc && bailoutfunc((const SnglBurst * const *) &a, (const SnglBurst * const *) &b))
+					break;
+				else
 					prev = b;
-				}
 			}
 	} while(did_cluster);
 }
