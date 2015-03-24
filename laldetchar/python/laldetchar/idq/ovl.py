@@ -2401,7 +2401,7 @@ def _gser(
         if abs(delta) < abs(sum) * eps:
             return (sum * math.exp(-x + a * math.log(x) - gln), gln)
         n = n + 1
-    raise max_iters, str((abs(delta), abs(sum) * eps))
+    raise StandardError, "%s_%s"%(max_iters, str((abs(delta), abs(sum) * eps)))
 
 
 # ========================
@@ -2430,7 +2430,7 @@ def _gserln(
         if abs(delta) < abs(sum) * eps:
             return (math.log(sum) + -x + a * math.log(x) - gln, gln)
         n = n + 1
-    raise max_iters, str((abs(delta), abs(sum) * eps))
+    raise StandardError, "%s_%s"%(max_iters, str((abs(delta), abs(sum) * eps)))
 
 
 # ========================
@@ -2466,7 +2466,7 @@ def _gcf(
                 return (g * math.exp(-x + a * math.log(x) - gln), gln)
             gold = g
         n = n + 1
-    raise max_iters, str(abs((g - gold) / g))
+    raise StandardError, "%s_%s"%(max_iters, str((abs(delta), abs(sum) * eps)))
 
 
 # ========================
@@ -2502,7 +2502,7 @@ def _gcfln(
                 return (math.log(g) + -x + a * math.log(x) - gln, gln)
             gold = g
         n = n + 1
-    raise max_iters, str(abs((g - gold) / g))
+    raise StandardError, "%s_%s"%(max_iters, str((abs(delta), abs(sum) * eps)))
 
 
 # ========================
