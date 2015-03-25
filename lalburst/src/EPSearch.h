@@ -1,5 +1,4 @@
 /*
- *
  * Copyright (C) 2007  Kipp Cannon and Flanagan, E
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -22,7 +21,7 @@
 #define _EPSEARCH_H
 
 
-#include <lal/LALDatatypes.h>
+#include <lal/LIGOLwXML.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/TimeSeries.h>
 #include <lal/Window.h>
@@ -43,26 +42,8 @@ extern "C" {
  */
   /*@{*/
 
-
-/**
- * liblal.so can't resolve symbols from liblalsupport.so, so to call
- * diagnostics dump functions from lal, they have to be passed in as
- * pointers.  The prototypes here must match those in LIGOLwXMLArray.h or
- * memory problems will occur.  Since this is only used for diagnostics,
- * not production runs, there isn't any need to do this more robustly.
- * Note, also that the LIGOLwXMLStream structure is defined in a header
- * from liblalsupport, so here it has to be refered to as a void *.
- */
-struct XLALEPSearchDiagnostics {
-	void *LIGOLwXMLStream;
-	int (*XLALWriteLIGOLwXMLArrayREAL8FrequencySeries)(void *, const char *, const REAL8FrequencySeries *);
-	int (*XLALWriteLIGOLwXMLArrayREAL8TimeSeries)(void *, const char *, const REAL8TimeSeries *);
-	int (*XLALWriteLIGOLwXMLArrayCOMPLEX16FrequencySeries)(void *, const char *, const COMPLEX16FrequencySeries *);
-};
-
-
 SnglBurst *XLALEPSearch(
-	struct XLALEPSearchDiagnostics *diagnostics,
+	LIGOLwXMLStream *diagnostics,
 	const REAL8TimeSeries  *tseries,
 	REAL8Window *window,
 	double flow,

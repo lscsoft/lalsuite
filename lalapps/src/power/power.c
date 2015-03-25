@@ -242,8 +242,7 @@ struct options {
 	 * diagnostics support
 	 */
 
-	/* diagnostics call back for passing to LAL (NULL = disable) */
-	struct XLALEPSearchDiagnostics *diagnostics;
+	LIGOLwXMLStream *diagnostics;
 };
 
 
@@ -636,11 +635,7 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 
 	case 'X':
 #if 0
-		options->diagnostics = malloc(sizeof(*options->diagnostics));
-		options->diagnostics->LIGOLwXMLStream = XLALOpenLIGOLwXMLFile(LALoptarg);
-		options->diagnostics->XLALWriteLIGOLwXMLArrayREAL8FrequencySeries = XLALWriteLIGOLwXMLArrayREAL8FrequencySeries;
-		options->diagnostics->XLALWriteLIGOLwXMLArrayREAL8TimeSeries = XLALWriteLIGOLwXMLArrayREAL8TimeSeries;
-		options->diagnostics->XLALWriteLIGOLwXMLArrayCOMPLEX16FrequencySeries = XLALWriteLIGOLwXMLArrayCOMPLEX16FrequencySeries;
+		options->diagnostics = XLALOpenLIGOLwXMLFile(LALoptarg);
 #else
 		sprintf(msg, "--dump-diagnostics given but diagnostic code not included at compile time");
 		args_are_bad = 1;
@@ -1716,7 +1711,7 @@ int main(int argc, char *argv[])
 	destroy_injection_document(injection_document);
 
 	if(options->diagnostics)
-		XLALCloseLIGOLwXMLFile(options->diagnostics->LIGOLwXMLStream);
+		XLALCloseLIGOLwXMLFile(options->diagnostics);
 	options_free(options);
 
 	LALCheckMemoryLeaks();

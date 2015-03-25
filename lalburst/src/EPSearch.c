@@ -43,6 +43,7 @@
 #include <lal/LALDatatypes.h>
 #include <lal/LALMalloc.h>
 #include <lal/LALStdlib.h>
+#include <lal/LIGOLwXMLArray.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataBurstUtils.h>
 #include <lal/RealFFT.h>
@@ -966,7 +967,7 @@ static SnglBurst *XLALComputeExcessPower(
  * Generate a linked list of burst events from a time series.
  */
 SnglBurst *XLALEPSearch(
-	struct XLALEPSearchDiagnostics *diagnostics,
+	LIGOLwXMLStream *diagnostics,
 	const REAL8TimeSeries *tseries,
 	REAL8Window *window,
 	double flow,
@@ -1045,7 +1046,7 @@ SnglBurst *XLALEPSearch(
 	}
 
 	if(diagnostics)
-		diagnostics->XLALWriteLIGOLwXMLArrayREAL8FrequencySeries(diagnostics->LIGOLwXMLStream, NULL, psd);
+		XLALWriteLIGOLwXMLArrayREAL8FrequencySeries(diagnostics, NULL, psd);
 
 	/*
 	 * Construct the time-frequency plane's channel filters.
@@ -1082,7 +1083,7 @@ SnglBurst *XLALEPSearch(
 		}
 		XLALPrintInfo("%s(): analyzing %u samples (%.9lf s) at offset %u (%.9lf s) from epoch %d.%09u s\n", __func__, cuttseries->data->length, cuttseries->data->length * cuttseries->deltaT, start_sample, start_sample * cuttseries->deltaT, tseries->epoch.gpsSeconds, tseries->epoch.gpsNanoSeconds);
 		if(diagnostics)
-			diagnostics->XLALWriteLIGOLwXMLArrayREAL8TimeSeries(diagnostics->LIGOLwXMLStream, NULL, cuttseries);
+			XLALWriteLIGOLwXMLArrayREAL8TimeSeries(diagnostics, NULL, cuttseries);
 
 		/*
 		 * Window and DFT the time series.
@@ -1111,7 +1112,7 @@ SnglBurst *XLALEPSearch(
 			goto error;
 		}
 		if(diagnostics)
-			diagnostics->XLALWriteLIGOLwXMLArrayCOMPLEX16FrequencySeries(diagnostics->LIGOLwXMLStream, "whitened", fseries);
+			XLALWriteLIGOLwXMLArrayCOMPLEX16FrequencySeries(diagnostics, "whitened", fseries);
 #endif
 
 		/*
