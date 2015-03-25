@@ -124,53 +124,6 @@ extern "C" {
 /*@{*/
 
 
-/* ---------- Data types ---------- */
-
-/**
- * A time-frequency plane
- */
-typedef struct tagREAL8TimeFrequencyPlaneTiles {
-  unsigned max_length;
-  unsigned min_channels;
-  unsigned max_channels;
-  unsigned tiling_start;
-  unsigned tiling_end;
-  unsigned inv_fractional_stride;
-  double dof_per_pixel;
-} REAL8TimeFrequencyPlaneTiles;
-typedef struct tagREAL8TimeFrequencyPlane {
-  CHAR name[LALNameLength];	/**< name of data from which this was computed */
-  LIGOTimeGPS epoch;		/**< epoch of data from which this was computed */
-  REAL8 deltaT;			/**< time resolution of the plane */
-  REAL8 fseries_deltaF;		/**< input frequency series' resolution */
-  REAL8 deltaF;			/**< TF plane's frequency resolution (channel spacing) */
-  REAL8 flow;			/**< low frequency boundary of TF plane */
-  gsl_matrix *channel_data;   	/**< channel data.  each channel is placed into its own column.
-                                 * channel_data[i * channels + j] corresponds to time
-                                 *
-                                 * epoch + i * deltaT
-                                 *
-                                 * and the frequency band
-                                 *
-                                 * [flow + j * deltaF, flow + (j + 1) * deltaF)
-                                 */
-
-  REAL8Sequence *channel_buffer;/**< re-usable holding area for the data for a single channel */
-  REAL8Sequence *unwhitened_channel_buffer;	/**< UNDOCUMENTED */
-  REAL8TimeFrequencyPlaneTiles tiles;	  	/**< time-frequency plane's tiling information */
-
-	REAL8Window *window;	/**< time-domain window applied to input time series for tapering edges to 0 */
-	INT4 window_shift;	/**< by how many samples a window's start should be shifted from the start of the window preceding it */
-	REAL8Sequence *two_point_spectral_correlation;		/**< two-point spectral correlation of the whitened frequency series, computed from the time-domain window function */
-} REAL8TimeFrequencyPlane;
-
-/** UNDOCUMENTED */
-typedef struct tagExcessPowerFilter {
-  COMPLEX16FrequencySeries *fseries;
-  REAL8 unwhitened_rms;			/**< root mean square of the unwhitened time series corresponding to this filter */
-} ExcessPowerFilter;
-
-
 /* ---------- Function prototypes ---------- */
 
 double XLALExcessPowerFilterInnerProduct(
@@ -186,23 +139,6 @@ COMPLEX16FrequencySeries *XLALCreateExcessPowerFilter(
 	REAL8 channel_width,
 	const REAL8FrequencySeries *psd,
 	const REAL8Sequence *correlation
-);
-
-
-REAL8TimeFrequencyPlane *XLALCreateTFPlane(
-	UINT4 tseries_length,
-	REAL8 tseries_deltaT,
-	REAL8 flow,
-	REAL8 bandwidth,
-	REAL8 tiling_fractional_stride,
-	REAL8 tiling_max_bandwidth,
-	REAL8 tiling_max_duration,
-	const REAL8FFTPlan *plan
-);
-
-
-void XLALDestroyTFPlane(
-	REAL8TimeFrequencyPlane *plane
 );
 
 
