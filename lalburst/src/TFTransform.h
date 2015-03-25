@@ -22,15 +22,8 @@
 #define _TFTRANSFORM_H
 
 
-#include <gsl/gsl_matrix.h>
-
-
-#include <lal/LALDatatypes.h>
-#include <lal/LIGOMetadataTables.h>
-#include <lal/RealFFT.h>
+#include <lal/FrequencySeries.h>
 #include <lal/Sequence.h>
-#include <lal/TimeFreqFFT.h>
-#include <lal/Window.h>
 
 
 #ifdef  __cplusplus		/* C++ protection. */
@@ -142,10 +135,10 @@ COMPLEX16FrequencySeries *XLALCreateExcessPowerFilter(
 );
 
 
-INT4 XLALOverlappedSegmentsCommensurate(
-	INT4 target_length,
-	INT4 segment_length,
-	INT4 segment_shift
+int XLALOverlappedSegmentsCommensurate(
+	int target_length,
+	int segment_length,
+	int segment_shift
 );
 
 

@@ -77,7 +77,7 @@ static double max(double a, double b)
 
 typedef struct tagExcessPowerFilter {
 	COMPLEX16FrequencySeries *fseries;
-	REAL8 unwhitened_rms;			/**< root mean square of the unwhitened time series corresponding to this filter */
+	double unwhitened_rms;			/**< root mean square of the unwhitened time series corresponding to this filter */
 } ExcessPowerFilter;
 
 
@@ -187,13 +187,13 @@ static void XLALDestroyExcessPowerFilterBank(
  * length segment_length, each shifted by segment_shift with respect to the
  * interval preceding it, fits into the result.
  */
-INT4 XLALOverlappedSegmentsCommensurate(
-	INT4 target_length,
-	INT4 segment_length,
-	INT4 segment_shift
+int XLALOverlappedSegmentsCommensurate(
+	int target_length,
+	int segment_length,
+	int segment_shift
 )
 {
-	UINT4 segments;
+	unsigned segments;
 
 	/*
 	 * check input
@@ -371,18 +371,18 @@ typedef struct tagREAL8TimeFrequencyPlaneTiles {
 
 
 typedef struct tagREAL8TimeFrequencyPlane {
-	CHAR name[LALNameLength];	/**< name of data from which this was computed */
+	char name[LALNameLength];	/**< name of data from which this was computed */
 	LIGOTimeGPS epoch;		/**< epoch of data from which this was computed */
-	REAL8 deltaT;			/**< time resolution of the plane */
-	REAL8 fseries_deltaF;		/**< input frequency series' resolution */
-	REAL8 deltaF;			/**< TF plane's frequency resolution (channel spacing) */
-	REAL8 flow;			/**< low frequency boundary of TF plane */
+	double deltaT;			/**< time resolution of the plane */
+	double fseries_deltaF;		/**< input frequency series' resolution */
+	double deltaF;			/**< TF plane's frequency resolution (channel spacing) */
+	double flow;			/**< low frequency boundary of TF plane */
 	gsl_matrix *channel_data;   	/**< channel data.  each channel is placed into its own column.  channel_data[i * channels + j] corresponds to time epoch + i * deltaT and the frequency band [flow + j * deltaF, flow + (j + 1) * deltaF) */
 	REAL8Sequence *channel_buffer;	/**< re-usable holding area for the data for a single channel */
 	REAL8Sequence *unwhitened_channel_buffer;	/**< UNDOCUMENTED */
 	REAL8TimeFrequencyPlaneTiles tiles;	/**< time-frequency plane's tiling information */
 	REAL8Window *window;		/**< time-domain window applied to input time series for tapering edges to 0 */
-	INT4 window_shift;		/**< by how many samples a window's start should be shifted from the start of the window preceding it */
+	int window_shift;		/**< by how many samples a window's start should be shifted from the start of the window preceding it */
 	REAL8Sequence *two_point_spectral_correlation;	/**< two-point spectral correlation of the whitened frequency series, computed from the time-domain window function */
 } REAL8TimeFrequencyPlane;
 
@@ -393,14 +393,14 @@ typedef struct tagREAL8TimeFrequencyPlane {
 
 
 static REAL8TimeFrequencyPlane *XLALCreateTFPlane(
-	UINT4 tseries_length,		/**< length of time series from which TF plane will be computed */
-	REAL8 tseries_deltaT,		/**< sample rate of time series */
-	REAL8 flow,			/**< minimum frequency to search for */
-	REAL8 bandwidth,		/**< bandwidth of TF plane */
-	REAL8 tiling_fractional_stride,	/**< overlap of adjacent tiles */
-	REAL8 max_tile_bandwidth,	/**< largest tile's bandwidth */
-	REAL8 max_tile_duration,	/**< largest tile's duration */
-	const REAL8FFTPlan *plan	/**< forward plan whose length is tseries_length */
+	unsigned tseries_length,		/**< length of time series from which TF plane will be computed */
+	double tseries_deltaT,			/**< sample rate of time series */
+	double flow,				/**< minimum frequency to search for */
+	double bandwidth,			/**< bandwidth of TF plane */
+	double tiling_fractional_stride,	/**< overlap of adjacent tiles */
+	double max_tile_bandwidth,		/**< largest tile's bandwidth */
+	double max_tile_duration,		/**< largest tile's duration */
+	const REAL8FFTPlan *plan		/**< forward plan whose length is tseries_length */
 )
 {
 	REAL8TimeFrequencyPlane *plane;
@@ -603,10 +603,10 @@ static COMPLEX16Sequence *apply_filter(
 	/* find bounds of common frequencies */
 	const double flo = max(filterseries->f0, inputseries->f0);
 	const double fhi = min(filterseries->f0 + filterseries->data->length * filterseries->deltaF, inputseries->f0 + inputseries->data->length * inputseries->deltaF);
-	COMPLEX16 *output = outputseq->data + (int) round((flo - inputseries->f0) / inputseries->deltaF);
-	COMPLEX16 *last = outputseq->data + (int) round((fhi - inputseries->f0) / inputseries->deltaF);
-	const COMPLEX16 *input = inputseries->data->data + (int) round((flo - inputseries->f0) / inputseries->deltaF);
-	const COMPLEX16 *filter = filterseries->data->data + (int) round((flo - filterseries->f0) / filterseries->deltaF);
+	double complex *output = outputseq->data + (int) round((flo - inputseries->f0) / inputseries->deltaF);
+	double complex *last = outputseq->data + (int) round((fhi - inputseries->f0) / inputseries->deltaF);
+	const double complex *input = inputseries->data->data + (int) round((flo - inputseries->f0) / inputseries->deltaF);
+	const double complex *filter = filterseries->data->data + (int) round((flo - filterseries->f0) / filterseries->deltaF);
 
 	if(outputseq->length != inputseries->data->length)
 		XLAL_ERROR_NULL(XLAL_EBADLEN);
