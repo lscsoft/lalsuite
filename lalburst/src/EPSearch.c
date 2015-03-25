@@ -52,6 +52,18 @@
 #include <lal/Window.h>
 
 
+static double min(double a, double b)
+{
+	return a < b ? a : b;
+}
+
+
+static double max(double a, double b)
+{
+	return a > b ? a : b;
+}
+
+
 /*
  * ============================================================================
  *
@@ -156,6 +168,178 @@ static void XLALDestroyExcessPowerFilterBank(
 /*
  * ============================================================================
  *
+ *                             Timing Arithmetic
+ *
+ * ============================================================================
+ */
+
+
+/**
+ * Round target_length down so that an integer number of intervals of
+ * length segment_length, each shifted by segment_shift with respect to the
+ * interval preceding it, fits into the result.
+ */
+INT4 XLALOverlappedSegmentsCommensurate(
+	INT4 target_length,
+	INT4 segment_length,
+	INT4 segment_shift
+)
+{
+	UINT4 segments;
+
+	/*
+	 * check input
+	 */
+
+	if(segment_length < 1) {
+		XLALPrintError("segment_length < 1");
+		XLAL_ERROR(XLAL_EINVAL);
+	}
+	if(segment_shift < 1) {
+		XLALPrintError("segment_shift < 1");
+		XLAL_ERROR(XLAL_EINVAL);
+	}
+
+	/*
+	 * trivial case
+	 */
+
+	if(target_length < segment_length)
+		return 0;
+
+	/*
+	 * do the arithmetic
+	 */
+
+	segments = (target_length - segment_length) / segment_shift;
+
+	return segments * segment_shift + segment_length;
+}
+
+
+/**
+ * Compute and return the timing parameters for an excess power analysis.
+ * Pass NULL for any optional pointer to not compute and return that
+ * parameter.  The return is 0 on success, negative on failure.
+ */
+int XLALEPGetTimingParameters(
+	int window_length,	/**< Number of samples in a window used for the time-frequency plane */
+	int max_tile_length,	/**< Number of samples in the tile of longest duration */
+	double fractional_tile_shift,	/**< Number of samples by which the start of the longest tile is shifted from the start of the tile preceding it, as a fraction of its length */
+	int *psd_length,	/**< (optional) User's desired number of samples to use in computing a PSD estimate.  Will be replaced with actual number of samples to use in computing a PSD estimate (rounded down to be comensurate with the windowing). */
+	int *psd_shift,	/**< (optional) Number of samples by which the start of a PSD is to be shifted from the start of the PSD that preceded it in order that the tiling pattern continue smoothly across the boundary. */
+	int *window_shift,	/**< Number of samples by which the start of a time-frequency plane window is shifted from the window preceding it in order that the tiling pattern continue smoothly across the boundary. */
+	int *window_pad,	/**< How many samples at the start and end of each window are treated as padding, and will not be covered by the tiling. */
+	int *tiling_length	/**< How many samples will be covered by the tiling. */
+)
+{
+	int max_tile_shift = fractional_tile_shift * max_tile_length;
+
+	/*
+	 * check input parameters
+	 */
+
+	if(window_length % 4 != 0) {
+		XLALPrintError("window_length is not a multiple of 4");
+		XLAL_ERROR(XLAL_EINVAL);
+	}
+	if(max_tile_length < 1) {
+		XLALPrintError("max_tile_length < 1");
+		XLAL_ERROR(XLAL_EINVAL);
+	}
+	if(fractional_tile_shift <= 0) {
+		XLALPrintError("fractional_tile_shift <= 0");
+		XLAL_ERROR(XLAL_EINVAL);
+	}
+	if(fmod(fractional_tile_shift * max_tile_length, 1) != 0) {
+		XLALPrintError("fractional_tile_shift * max_tile_length not an integer");
+		XLAL_ERROR(XLAL_EINVAL);
+	}
+	if(max_tile_shift < 1) {
+		XLALPrintError("fractional_tile_shift * max_tile_length < 1");
+		XLAL_ERROR(XLAL_EINVAL);
+	}
+
+	/*
+	 * discard first and last 4096 samples
+	 *
+	 * FIXME.  this should be tied to the sample frequency and
+	 * time-frequency plane's channel spacing.  multiplying the time
+	 * series by a window has the effect of convolving the Fourier
+	 * transform of the data by the F.T. of the window, and we don't
+	 * want this to blur the spectrum by an amount larger than 1
+	 * channel --- a delta function in the spectrum should remain
+	 * confined to a single bin.  a channel width of 2 Hz means the
+	 * notch feature created in the time series by the window must be
+	 * at least .5 s long to not result in undesired leakage.  at a
+	 * sample frequency of 8192 samples / s, it must be at least 4096
+	 * samples long (2048 samples at each end of the time series).  to
+	 * be safe, we double that to 4096 samples at each end.
+	 */
+
+	*window_pad = 4096;
+
+	/*
+	 * tiling covers the remainder, rounded down to fit an integer
+	 * number of tiles
+	 */
+
+	*tiling_length = window_length - 2 * *window_pad;
+	*tiling_length = XLALOverlappedSegmentsCommensurate(*tiling_length, max_tile_length, max_tile_shift);
+	if(*tiling_length <= 0) {
+		XLALPrintError("window_length too small for tiling, must be >= 2 * %d + %d", *window_pad, max_tile_length);
+		XLAL_ERROR(XLAL_EINVAL);
+	}
+
+	/*
+	 * now re-compute window_pad from rounded-off tiling_length
+	 */
+
+	*window_pad = (window_length - *tiling_length) / 2;
+	if(*tiling_length + 2 * *window_pad != window_length) {
+		XLALPrintError("window_length does not permit equal padding before and after tiling");
+		XLAL_ERROR(XLAL_EINVAL);
+	}
+
+	/*
+	 * adjacent tilings overlap so that their largest tiles overlap the
+	 * same as within each tiling
+	 */
+
+	*window_shift = *tiling_length - (max_tile_length - max_tile_shift);
+	if(*window_shift < 1) {
+		XLALPrintError("window_shift < 1");
+		XLAL_ERROR(XLAL_EINVAL);
+	}
+
+	/*
+	 * compute the adjusted PSD length if desired
+	 */
+
+	if(psd_length) {
+		*psd_length = XLALOverlappedSegmentsCommensurate(*psd_length, window_length, *window_shift);
+		if(*psd_length < 0)
+			XLAL_ERROR(XLAL_EFUNC);
+
+		*psd_shift = *psd_length - (window_length - *window_shift);
+		if(*psd_shift < 1) {
+			XLALPrintError("psd_shift < 1");
+			XLAL_ERROR(XLAL_EINVAL);
+		}
+	} else if(psd_shift) {
+		/* for safety */
+		*psd_shift = -1;
+		/* can't compute psd_shift without psd_length input */
+		XLAL_ERROR(XLAL_EFAULT);
+	}
+
+	return 0;
+}
+
+
+/*
+ * ============================================================================
+ *
  *                      Time-Frequency Plane Projection
  *
  * ============================================================================
@@ -167,18 +351,6 @@ static void XLALDestroyExcessPowerFilterBank(
  * resolutions and units are compatible is omitted because it is implied by
  * the calling code.
  */
-
-
-static double min(double a, double b)
-{
-	return a < b ? a : b;
-}
-
-
-static double max(double a, double b)
-{
-	return a > b ? a : b;
-}
 
 
 static COMPLEX16Sequence *apply_filter(
