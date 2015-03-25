@@ -146,9 +146,9 @@ int XLALCompareSnglBurstByPeakTimeAndSNR(
 	if(ta < tb)
 		return -1;
 	/* ta == tb */
-	if(snra < snrb)
-		return 1;
 	if(snra > snrb)
+		return 1;
+	if(snra < snrb)
 		return -1;
 	/* snra == snrb */
 	return 0;
