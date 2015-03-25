@@ -11,7 +11,7 @@ pkginclude_HEADERS = \
 	LALBurstVCSInfo.h \
 	LALBurstVCSInfoHeader.h \
 	LIGOLwXMLBurstRead.h \
-	LIGOMetadataBurstUtils.h \
+	SnglBurstUtils.h \
 	TSData.h \
 	TSSearch.h \
 	TimeFreq.h \

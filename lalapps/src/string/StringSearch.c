@@ -65,7 +65,7 @@
 
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
-#include <lal/LIGOMetadataBurstUtils.h>
+#include <lal/SnglBurstUtils.h>
 
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLBurstRead.h>

@@ -67,12 +67,12 @@
 #include <lal/LIGOLwXMLBurstRead.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/LIGOMetadataTables.h>
-#include <lal/LIGOMetadataBurstUtils.h>
 #include <lal/Random.h>
 #include <lal/RealFFT.h>
 #include <lal/ResampleTimeSeries.h>
 #include <lal/SeqFactories.h>
 #include <lal/SimulateCoherentGW.h>
+#include <lal/SnglBurstUtils.h>
 #include <lal/TimeFreqFFT.h>
 #include <lal/TimeSeries.h>
 #include <lal/Units.h>

@@ -20,7 +20,7 @@
 #include <lal/LALDetCharGlibTypes.h>
 #include <lal/XLALError.h>
 #include <lal/LALString.h>
-#include <lal/LIGOMetadataBurstUtils.h>
+#include <lal/SnglBurstUtils.h>
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))

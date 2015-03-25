@@ -19,9 +19,9 @@
 
 
 #include <string.h>
-#include <lal/LIGOMetadataTables.h>
-#include <lal/LIGOMetadataBurstUtils.h>
 #include <lal/Date.h>
+#include <lal/LIGOMetadataTables.h>
+#include <lal/SnglBurstUtils.h>
 #include <lal/XLALError.h>
 
 

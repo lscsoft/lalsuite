@@ -29,7 +29,7 @@
 #include <lal/LALDetCharGlibTypes.h>
 #include <lal/LIGOLwXMLBurstRead.h>
 #include <lal/LIGOMetadataTables.h>
-#include <lal/LIGOMetadataBurstUtils.h>
+#include <lal/SnglBurstUtils.h>
 
 #include <lal/Segments.h>
 

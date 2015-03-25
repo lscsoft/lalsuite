@@ -22,7 +22,7 @@
 
 #include <lal/LALDetCharGlibTypes.h>
 #include <lal/LIGOMetadataTables.h>
-#include <lal/LIGOMetadataBurstUtils.h>
+#include <lal/SnglBurstUtils.h>
 #include <lal/LIGOLwXMLBurstRead.h>
 
 #ifdef  __cplusplus

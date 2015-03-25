@@ -40,7 +40,7 @@
 #include <lal/TimeFreqFFT.h>
 #include <lal/Units.h>
 #include <lal/LIGOMetadataTables.h>
-#include <lal/LIGOMetadataBurstUtils.h>
+#include <lal/SnglBurstUtils.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOLwXMLBurstRead.h>
