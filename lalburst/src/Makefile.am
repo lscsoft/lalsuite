@@ -23,12 +23,12 @@ pkginclude_HEADERS = \
 lib_LTLIBRARIES = liblalburst.la
 liblalburst_la_SOURCES = \
 	CleanAll.c \
-	CreateTFPlane.c \
 	CreateTimeFreqParam.c \
 	CreateTimeFreqRep.c \
 	DestroyTimeFreqParam.c \
 	DestroyTimeFreqRep.c \
 	Dwindow.c \
+	EPFilters.c \
 	EPSearch.c \
 	GenerateBurst.c \
 	HarmonicFinder.c \

@@ -135,8 +135,8 @@ double XLALExcessPowerFilterInnerProduct(
 
 
 COMPLEX16FrequencySeries *XLALCreateExcessPowerFilter(
-	REAL8 channel_flow,
-	REAL8 channel_width,
+	double channel_flow,
+	double channel_width,
 	const REAL8FrequencySeries *psd,
 	const REAL8Sequence *correlation
 );

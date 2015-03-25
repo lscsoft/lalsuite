@@ -1,6 +1,6 @@
 /*
- *
- * Copyright (C) 2007  Kipp Cannon and Flanagan, E
+ * Copyright (C) 2007,2011,2012  Kipp Cannon
+ * Copyright (C) 2012,2013  Reinhard Prix, Karl Wette
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -70,6 +70,8 @@ static double max(double a, double b) { return a > b ? a : b; }
  * left as an excercise for the calling code to ensure the two-point
  * spectral correlation is appropriate.
  */
+
+
 double XLALExcessPowerFilterInnerProduct(
 	const COMPLEX16FrequencySeries *filter1,	/**< frequency-domain filter */
 	const COMPLEX16FrequencySeries *filter2,	/**< frequency-domain filter */
@@ -145,9 +147,11 @@ double XLALExcessPowerFilterInnerProduct(
  * understood --- it's easy to say "the channel filter is a Tukey window of
  * variable central width".
  */
+
+
 COMPLEX16FrequencySeries *XLALCreateExcessPowerFilter(
-	REAL8 channel_flow,			/**< Hz */
-	REAL8 channel_width,			/**< Hz */
+	double channel_flow,			/**< Hz */
+	double channel_width,			/**< Hz */
 	const REAL8FrequencySeries *psd,	/**< power spectral density function.  see XLALREAL8AverageSpectrumWelch() and friends. */
 	const REAL8Sequence *correlation	/**< two-point spectral correlation function.  see XLALREAL8WindowTwoPointSpectralCorrelation(). */
 )
@@ -156,7 +160,7 @@ COMPLEX16FrequencySeries *XLALCreateExcessPowerFilter(
 	REAL8Window *hann;
 	COMPLEX16FrequencySeries *filter;
 	unsigned i;
-	REAL8 norm;
+	double norm;
 
 	/*
 	 * create frequency series for filter
