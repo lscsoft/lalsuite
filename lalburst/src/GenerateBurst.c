@@ -80,12 +80,11 @@ int XLALGenerateSimBurst(
 		 * the LAL constants, the total factor multiplying
 		 * egw_over_rsquared is 1.8597e-21. */
 
-		double int_hdot_squared_dt = sim_burst->egw_over_rsquared * LAL_MSUN_SI * 4 * LAL_G_SI / LAL_C_SI / LAL_PC_SI / LAL_PC_SI;
+		double int_hdot_squared_dt = sim_burst->egw_over_rsquared * LAL_GMSUN_SI * 4 / LAL_C_SI / LAL_PC_SI / LAL_PC_SI;
 
 		/* the waveform number is interpreted as the seed for GSL's
 		 * Mersenne twister random number generator */
 		gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
-
 		if(!rng) {
 			XLALPrintError("%s(): failure creating random number generator\n", __func__);
 			XLAL_ERROR(XLAL_ENOMEM);
