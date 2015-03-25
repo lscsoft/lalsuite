@@ -559,6 +559,7 @@ int usage(const char *program)
     fprintf(stderr, "\t-c, --condition-waveform \tapply waveform conditioning\n");
     fprintf(stderr, "\t-Q, --amp-phase          \toutput data as amplitude and phase\n");
     fprintf(stderr, "\t-a APPROX, --approximant=APPROX \n\t\tapproximant [%s]\n", DEFAULT_APPROX);
+    fprintf(stderr, "\t-w WAVEFORM, --waveform=WAVEFORM \n\t\twaveform string giving both approximant and order\n");
     fprintf(stderr, "\t-d domain, --domain=DOMAIN      \n\t\tdomain for waveform generation when both are available\n\t\t{\"time\", \"freq\"} [use natural domain for output]\n");
     fprintf(stderr, "\t-O PHASEO, --phase-order=PHASEO \n\t\ttwice pN order of phase (-1 == highest) [%d]\n", DEFAULT_PHASEO);
     fprintf(stderr, "\t-o AMPO, --amp-order=AMPO       \n\t\ttwice pN order of amplitude (-1 == highest) [%d]\n", DEFAULT_AMPO);
@@ -648,6 +649,7 @@ struct params parseargs(int argc, char **argv)
         {"condition-waveform", no_argument, 0, 'c'},
         {"amp-phase", no_argument, 0, 'Q'},
         {"approximant", required_argument, 0, 'a'},
+        {"waveform", required_argument, 0, 'w'},
         {"domain", required_argument, 0, 'D'},
         {"phase-order", required_argument, 0, 'O'},
         {"amp-order", required_argument, 0, 'o'},
@@ -675,7 +677,7 @@ struct params parseargs(int argc, char **argv)
         {"nonGRpar", required_argument, 0, 'p'},
         {0, 0, 0, 0}
     };
-    char args[] = "hvFcQa:D:O:o:q:r:R:M:m:X:x:Y:y:Z:z:L:l:s:t:f:d:i:A:n:p:";
+    char args[] = "hvFcQa:w:D:O:o:q:r:R:M:m:X:x:Y:y:Z:z:L:l:s:t:f:d:i:A:n:p:";
 
     while (1) {
         int option_index = 0;
@@ -712,6 +714,18 @@ struct params parseargs(int argc, char **argv)
             p.approx = XLALGetApproximantFromString(LALoptarg);
             if ((int)p.approx == XLAL_FAILURE) {
                 fprintf(stderr, "error: invalid value %s for %s\n", LALoptarg, long_options[option_index].name);
+                exit(1);
+            }
+            break;
+        case 'w':      /* waveform */
+            p.approx = XLALGetApproximantFromString(LALoptarg);
+            if ((int)p.approx == XLAL_FAILURE) {
+                fprintf(stderr, "error: could not parse approximant from %s for %s\n", LALoptarg, long_options[option_index].name);
+                exit(1);
+            }
+            p.phaseO = XLALGetOrderFromString(LALoptarg);
+            if ((int)p.approx == XLAL_FAILURE) {
+                fprintf(stderr, "error: could not parse order from %s for %s\n", LALoptarg, long_options[option_index].name);
                 exit(1);
             }
             break;
