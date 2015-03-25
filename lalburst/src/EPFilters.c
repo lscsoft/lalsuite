@@ -31,11 +31,11 @@
 #include <math.h>
 
 
+#include <lal/EPSearch.h>
 #include <lal/FrequencySeries.h>
 #include <lal/LALAtomicDatatypes.h>
 #include <lal/LALStdlib.h>
 #include <lal/Sequence.h>
-#include <lal/TFTransform.h>
 #include <lal/TimeFreqFFT.h>
 #include <lal/Units.h>
 #include <lal/Window.h>

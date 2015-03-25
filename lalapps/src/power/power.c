@@ -73,7 +73,6 @@
 #include <lal/ResampleTimeSeries.h>
 #include <lal/SeqFactories.h>
 #include <lal/SimulateCoherentGW.h>
-#include <lal/TFTransform.h>
 #include <lal/TimeFreqFFT.h>
 #include <lal/TimeSeries.h>
 #include <lal/Units.h>
