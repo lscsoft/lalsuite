@@ -19,11 +19,19 @@
 
 // ---------- SEE LALError.dox for doxygen documentation ----------
 
+#include <config.h>
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <signal.h>
+
+#ifdef HAVE_EXECINFO_H
+#include <execinfo.h>
+#define BACKTRACE_LEVELMAX 0100
+#endif
+
 #include <lal/LALMalloc.h>
 #include <lal/LALError.h>
 
@@ -62,8 +70,15 @@ int LALRaise(int sig, const char *fmt, ...)
     va_start(ap, fmt);
     (void) vfprintf(stderr, fmt, ap);
     va_end(ap);
+#if defined(HAVE_BACKTRACE) && defined(BACKTRACE_LEVELMAX)
+    void *callstack[BACKTRACE_LEVELMAX];
+    size_t frames = backtrace(callstack, BACKTRACE_LEVELMAX);
+    fprintf(stderr, "backtrace:\n");
+    backtrace_symbols_fd(callstack, frames, fileno(stderr));
+#endif
     return raise(sig);
 }
+
 
 
 void (*lalAbortHook) (const char *, ...) = LALAbort;
@@ -73,6 +88,12 @@ void LALAbort(const char *fmt, ...)
     va_start(ap, fmt);
     (void) vfprintf(stderr, fmt, ap);
     va_end(ap);
+#if defined(HAVE_BACKTRACE) && defined(BACKTRACE_LEVELMAX)
+    void *callstack[BACKTRACE_LEVELMAX];
+    size_t frames = backtrace(callstack, BACKTRACE_LEVELMAX);
+    fprintf(stderr, "backtrace:\n");
+    backtrace_symbols_fd(callstack, frames, fileno(stderr));
+#endif
     abort();
 }
 

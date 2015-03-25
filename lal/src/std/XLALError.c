@@ -25,6 +25,12 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
+
+#ifdef HAVE_EXECINFO_H
+#include <execinfo.h>
+#define BACKTRACE_LEVELMAX 0100
+#endif
+
 #include <lal/XLALError.h>
 #include <lal/LALStdlib.h>
 
@@ -600,150 +606,16 @@ void XLALExitErrorHandler(const char *func, const char *file, int line,
     exit(1);
 }
 
-static int print_stack(void);
 /* XLAL error handler to abort on error and print a backtrace (if possible). */
 void XLALBacktraceErrorHandler(const char *func, const char *file,
                                int line, int errnum)
 {
     XLALPerror(func, file, line, errnum);
-    print_stack();
+#if defined(HAVE_BACKTRACE) && defined(BACKTRACE_LEVELMAX)
+    void *callstack[BACKTRACE_LEVELMAX];
+    size_t frames = backtrace(callstack, BACKTRACE_LEVELMAX);
+    fprintf(stderr, "backtrace:\n");
+    backtrace_symbols_fd(callstack, frames, fileno(stderr));
+#endif
     abort();
 }
-
-/*
- * Internal routine to print call list.
- * Requires GCC.
- */
-
-#ifdef __GNUC__
-
-#if defined(__DARWIN_UNIX03) || defined(__GLIBC__)
-
-#define LEVELMAX 0100
-
-#if defined(__GLIBC__)
-
-/* Using GLIBC: there is a backtrace function avaliable */
-#include <execinfo.h>
-
-static int print_stack(void)
-{
-    void *array[LEVELMAX];
-    size_t size;
-    size = backtrace(array, LEVELMAX);
-    fprintf(stderr, "Call list:\n");
-    backtrace_symbols_fd(array, size, fileno(stderr));
-    return 0;
-}
-
-#else
-
-
-/* Using DARWIN_UNIX03 */
-
-#ifdef __GLIBC__
-#define __USE_GNU       /* required to get dladdr */
-#endif
-#include <dlfcn.h>
-
-#define get_return_address(addr,level) \
-  do switch (level) { \
-    case 000: addr = __builtin_frame_address(000) ? __builtin_return_address(000) : NULL; break; \
-    case 001: addr = __builtin_frame_address(001) ? __builtin_return_address(001) : NULL; break; \
-    case 002: addr = __builtin_frame_address(002) ? __builtin_return_address(002) : NULL; break; \
-    case 003: addr = __builtin_frame_address(003) ? __builtin_return_address(003) : NULL; break; \
-    case 004: addr = __builtin_frame_address(004) ? __builtin_return_address(004) : NULL; break; \
-    case 005: addr = __builtin_frame_address(005) ? __builtin_return_address(005) : NULL; break; \
-    case 006: addr = __builtin_frame_address(006) ? __builtin_return_address(006) : NULL; break; \
-    case 007: addr = __builtin_frame_address(007) ? __builtin_return_address(007) : NULL; break; \
-    case 010: addr = __builtin_frame_address(010) ? __builtin_return_address(010) : NULL; break; \
-    case 011: addr = __builtin_frame_address(011) ? __builtin_return_address(011) : NULL; break; \
-    case 012: addr = __builtin_frame_address(012) ? __builtin_return_address(012) : NULL; break; \
-    case 013: addr = __builtin_frame_address(013) ? __builtin_return_address(013) : NULL; break; \
-    case 014: addr = __builtin_frame_address(014) ? __builtin_return_address(014) : NULL; break; \
-    case 015: addr = __builtin_frame_address(015) ? __builtin_return_address(015) : NULL; break; \
-    case 016: addr = __builtin_frame_address(016) ? __builtin_return_address(016) : NULL; break; \
-    case 017: addr = __builtin_frame_address(017) ? __builtin_return_address(017) : NULL; break; \
-    case 020: addr = __builtin_frame_address(020) ? __builtin_return_address(020) : NULL; break; \
-    case 021: addr = __builtin_frame_address(021) ? __builtin_return_address(021) : NULL; break; \
-    case 022: addr = __builtin_frame_address(022) ? __builtin_return_address(022) : NULL; break; \
-    case 023: addr = __builtin_frame_address(023) ? __builtin_return_address(023) : NULL; break; \
-    case 024: addr = __builtin_frame_address(024) ? __builtin_return_address(024) : NULL; break; \
-    case 025: addr = __builtin_frame_address(025) ? __builtin_return_address(025) : NULL; break; \
-    case 026: addr = __builtin_frame_address(026) ? __builtin_return_address(026) : NULL; break; \
-    case 027: addr = __builtin_frame_address(027) ? __builtin_return_address(027) : NULL; break; \
-    case 030: addr = __builtin_frame_address(030) ? __builtin_return_address(030) : NULL; break; \
-    case 031: addr = __builtin_frame_address(031) ? __builtin_return_address(031) : NULL; break; \
-    case 032: addr = __builtin_frame_address(032) ? __builtin_return_address(032) : NULL; break; \
-    case 033: addr = __builtin_frame_address(033) ? __builtin_return_address(033) : NULL; break; \
-    case 034: addr = __builtin_frame_address(034) ? __builtin_return_address(034) : NULL; break; \
-    case 035: addr = __builtin_frame_address(035) ? __builtin_return_address(035) : NULL; break; \
-    case 036: addr = __builtin_frame_address(036) ? __builtin_return_address(036) : NULL; break; \
-    case 037: addr = __builtin_frame_address(037) ? __builtin_return_address(037) : NULL; break; \
-    case 040: addr = __builtin_frame_address(040) ? __builtin_return_address(040) : NULL; break; \
-    case 041: addr = __builtin_frame_address(041) ? __builtin_return_address(041) : NULL; break; \
-    case 042: addr = __builtin_frame_address(042) ? __builtin_return_address(042) : NULL; break; \
-    case 043: addr = __builtin_frame_address(043) ? __builtin_return_address(043) : NULL; break; \
-    case 044: addr = __builtin_frame_address(044) ? __builtin_return_address(044) : NULL; break; \
-    case 045: addr = __builtin_frame_address(045) ? __builtin_return_address(045) : NULL; break; \
-    case 046: addr = __builtin_frame_address(046) ? __builtin_return_address(046) : NULL; break; \
-    case 047: addr = __builtin_frame_address(047) ? __builtin_return_address(047) : NULL; break; \
-    case 050: addr = __builtin_frame_address(050) ? __builtin_return_address(050) : NULL; break; \
-    case 051: addr = __builtin_frame_address(051) ? __builtin_return_address(051) : NULL; break; \
-    case 052: addr = __builtin_frame_address(052) ? __builtin_return_address(052) : NULL; break; \
-    case 053: addr = __builtin_frame_address(053) ? __builtin_return_address(053) : NULL; break; \
-    case 054: addr = __builtin_frame_address(054) ? __builtin_return_address(054) : NULL; break; \
-    case 055: addr = __builtin_frame_address(055) ? __builtin_return_address(055) : NULL; break; \
-    case 056: addr = __builtin_frame_address(056) ? __builtin_return_address(056) : NULL; break; \
-    case 057: addr = __builtin_frame_address(057) ? __builtin_return_address(057) : NULL; break; \
-    case 060: addr = __builtin_frame_address(060) ? __builtin_return_address(060) : NULL; break; \
-    case 061: addr = __builtin_frame_address(061) ? __builtin_return_address(061) : NULL; break; \
-    case 062: addr = __builtin_frame_address(062) ? __builtin_return_address(062) : NULL; break; \
-    case 063: addr = __builtin_frame_address(063) ? __builtin_return_address(063) : NULL; break; \
-    case 064: addr = __builtin_frame_address(064) ? __builtin_return_address(064) : NULL; break; \
-    case 065: addr = __builtin_frame_address(065) ? __builtin_return_address(065) : NULL; break; \
-    case 066: addr = __builtin_frame_address(066) ? __builtin_return_address(066) : NULL; break; \
-    case 067: addr = __builtin_frame_address(067) ? __builtin_return_address(067) : NULL; break; \
-    case 070: addr = __builtin_frame_address(070) ? __builtin_return_address(070) : NULL; break; \
-    case 071: addr = __builtin_frame_address(071) ? __builtin_return_address(071) : NULL; break; \
-    case 072: addr = __builtin_frame_address(072) ? __builtin_return_address(072) : NULL; break; \
-    case 073: addr = __builtin_frame_address(073) ? __builtin_return_address(073) : NULL; break; \
-    case 074: addr = __builtin_frame_address(074) ? __builtin_return_address(074) : NULL; break; \
-    case 075: addr = __builtin_frame_address(075) ? __builtin_return_address(075) : NULL; break; \
-    case 076: addr = __builtin_frame_address(076) ? __builtin_return_address(076) : NULL; break; \
-    case 077: addr = __builtin_frame_address(077) ? __builtin_return_address(077) : NULL; break; \
-    default: addr = NULL; break; \
-  } while (0)
-
-int print_stack(void)
-{
-    Dl_info info;
-    int level;
-    fprintf(stderr, "Call list:\n");
-    for (level = 0; level < LEVELMAX; ++level) {
-        void *addr;
-        get_return_address(addr, level);
-        if (!addr)
-            break;
-        dladdr(addr, &info);
-        fprintf(stderr, "%s(%s+%p)[%p]\n", info.dli_fname, info.dli_sname,
-                (void *) ((char *) addr - (char *) info.dli_saddr), addr);
-    }
-    return 0;
-}
-
-#endif
-
-#else /* Not using GLIBC or DARWIN ... don't do anything. */
-static int print_stack(void)
-{
-    return 0;
-}
-#endif
-
-#else /* Not using GCC ... don't do anything. */
-static int print_stack(void)
-{
-    return 0;
-}
-#endif
