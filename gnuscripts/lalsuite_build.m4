@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 107
+# serial 108
 
 # not present in older versions of pkg.m4
 m4_pattern_allow([^PKG_CONFIG(_(PATH|LIBDIR|SYSROOT_DIR|ALLOW_SYSTEM_(CFLAGS|LIBS)))?$])
@@ -75,6 +75,44 @@ AC_DEFUN([LALSUITE_POP_UVARS],[
     uvar="${uvar_prefix[]uvar}"
    _AS_ECHO_LOG([popped uvar from line ${uvar_prefix[]uvar[]_lineno}])
   ])
+  # end $0
+])
+
+AC_DEFUN([_LALSUITE_CHECK_ERROR_FLAGS],[
+  # $0: check for flags required to trigger an error for unknown flags
+  #   gcc, clang: -Werror
+  #   icc: -we10006
+  error_flags=
+  for flag in -Werror -we10006; do
+    AX_CHECK_COMPILE_FLAG([${flag}],[error_flags="${error_flags} ${flag}"])
+  done
+  AS_IF([test x"${error_flags}" = x],[
+    AC_MSG_ERROR([could not determine error flags])
+  ])
+  # end $0
+])
+
+AC_DEFUN([LALSUITE_CHECK_COMPILE_FLAGS],[
+  # $0: check multiple compile flags
+  LALSUITE_PUSH_UVARS
+  LALSUITE_CLEAR_UVARS
+  _LALSUITE_CHECK_ERROR_FLAGS
+  for flag in m4_normalize($1); do
+    AX_CHECK_COMPILE_FLAG([${flag}],[$2],[$3],[${error_flags}])
+  done
+  LALSUITE_POP_UVARS
+  # end $0
+])
+
+AC_DEFUN([LALSUITE_CHECK_LINK_FLAGS],[
+  # $0: check multiple link flags
+  LALSUITE_PUSH_UVARS
+  LALSUITE_CLEAR_UVARS
+  _LALSUITE_CHECK_ERROR_FLAGS
+  for flag in m4_normalize($1); do
+    AX_CHECK_LINK_FLAG([${flag}],[$2],[$3],[${error_flags}])
+  done
+  LALSUITE_POP_UVARS
   # end $0
 ])
 
