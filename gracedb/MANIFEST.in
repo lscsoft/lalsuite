@@ -1,2 +1,0 @@
-recursive-include debian *
-recursive-include ligo/gracedb/test *
