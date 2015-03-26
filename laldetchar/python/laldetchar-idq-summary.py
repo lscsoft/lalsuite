@@ -14,20 +14,29 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import ConfigParser
-from optparse import *
+
 import sys
 import os
 import glob
 import time
-from laldetchar.idq import idq
-from laldetchar.idq import idq_summary_plots as idq_s_p
-from laldetchar.idq import event
-import numpy
+
 import traceback
 import logging
+import ConfigParser
+from optparse import OptionParser
 
-from glue.ligolw import table, lsctables, utils, ligolw
+import numpy
+
+from laldetchar.idq import idq
+from laldetchar.idq import reed
+from laldetchar.idq import idq_summary_plots as idq_s_p
+from laldetchar.idq import reed_summary_plots as rsp 
+from laldetchar.idq import event
+
+from glue.ligolw import ligolw
+from glue.ligolw import utils
+from glue.ligolw import lsctables
+from glue.ligolw import table
 
 from laldetchar import git_version
 
@@ -42,6 +51,574 @@ description = \
     """This program generates summary html pages from iDQ pipeline output. The summmary pages provide variety of diagnostic and interpretational plots and data."""
 
 #===================================================================================================
+
+parser = OptionParser(version='Name: %%prog\n%s'
+                      % git_version.verbose_msg, usage='%prog [options]'
+                      , description=description)
+
+parser.add_option('-c', '--config', default='idq.ini', type='string', help='configuration file')
+parser.add_option('-s', '--gps-start', dest="gpsstart", default=False, type='int', help='a GPS start time for the analysis. If default, gpsstart is calculated from the current time.')
+parser.add_option('-e', '--gps-stop', dest="gpsstop", default=False, type='int', help='a GPS stop time for the analysis. If default, gpsstop is calculated from the current time.')
+
+parser.add_option('-b', '--lookback', default='0', type='string', help="Number of seconds to look back and get data for training. Default is zero.\
+        Can be either positive integer or 'infinity'. In the latter case, the lookback will be incremented at every stride and all data after --gps-start will be used in every training.")
+
+parser.add_option('-t', '--trending', default=[], action='append', type='string', help='Number of seconds to look back for trending plots')
+
+parser.add_option('-l', '--log-file', default='idq_summary.log', type='string', help='log file')
+
+parser.add_option("", "--ignore-science-segments", default=False, action="store_true")
+
+parser.add_option('-f','--force',default=False, action='store_true', help="forces *uroc cache file to be updated, even if we have no data. Use with caution.")
+
+parser.add_option("", "--no-robot-cert", default=False, action="store_true")
+
+(opts, args) = parser.parse_args()
+
+if opts.lookback != "infinity":
+    lookback = int(opts.lookback)
+
+for ind, trend in opts.trending:
+    if trend != "infinity":
+        opts.trending[ind] = int(trend)
+
+#===================================================================================================
+### setup logger to record processes
+logger = reed.setup_logger('idq_logger', opts.log_file, sys.stdout, format='%(asctime)s %(message)s')
+
+sys.stdout = reed.LogFile(logger)
+sys.stderr = reed.LogFile(logger)
+
+#===================================================================================================
+### read global configuration file
+
+config = ConfigParser.SafeConfigParser()
+config.read(opts.config_file)
+
+mainidqdir = config.get('general', 'idqdir') ### get the main directory where idq pipeline is going to be running.
+
+reed.dieiflocked('%s/%s'%(config.get('general', 'idqdir'),opts.lockfile) ) ### prevent multiple copies from running
+
+usertag = config.get('general', 'usertag')
+if usertag:
+    usertag = "_%s"%usertag
+
+ifo = config.get('general', 'ifo')
+
+#========================
+# which classifiers
+#========================
+classifiers = sorted(set(config.get('general', 'classifiers').split()))
+if not classifiers:
+    raise ValueError("no classifiers in general section of %s"%opts.config_file)
+
+### ensure we have a section for each classifier and fill out dictionary of options
+classifiersD, mla, ovl = reed.config_to_classifiersD( config )
+
+if mla:
+    ### reading parameters from config file needed for mla
+    auxmvc_coinc_window = config.getfloat('build_auxmvc_vectors','time-window')
+    auxmc_gw_signif_thr = config.getfloat('build_auxmvc_vectors','signif-threshold')
+    auxmvc_selected_channels = config.get('general','selected-channels')
+    auxmvc_unsafe_channels = config.get('general','unsafe-channels')
+
+colors = dict( zip( classifiers, 'r b g c m k y'.split() ) )
+if len(colors) < len(classifiers):
+    raise ValueError("ran out of colors for classifiers!")
+
+#========================
+# realtime 
+#========================
+realtimedir = config.get('general', 'realtimedir')### output directory for realtime predictions
+
+dat_columns = config.get('realtime', 'dat_columns').split()
+
+#========================
+# calibration jobs
+#========================
+calibrationdir = config.get('general', 'calibrationdir')
+
+#========================
+# summary jobs
+#========================
+summarydir = config.get('general', 'summarydir')
+
+summary_stride = config.getint('summary', 'stride')
+summary_delay = config.getint('summary', 'delay')
+
+emaillist = config.get('warnings', 'summary')
+errorthr = config.getfloat('warnings', 'summary_errorthr')
+
+summary_script = config.get('condor', 'summary')
+
+#summary_cache = dict( (classifier, reed.Cachefile(reed.cache(summarydir, classifier, tag='summary'))) for classifier in classifiers ) ### not needed?
+
+kde_nsamples = 101 ### FIXME: pull from config file!
+kde = np.linspace(0, 1, kde_nsamples) ### uniformly spaced ranks used to sample kde
+
+cln_linestyle='--' ### FIXME: pull from config file?
+gch_linestyle='-' 
+
+FAPthrs = [0.01, 0.05, 0.10] ### FIXME: pull from config file?
+
+#========================
+# data discovery
+#========================
+if not opts.ignore_science_segments:
+    ### load settings for accessing dmt segment files
+    dmt_segments_location = config.get('get_science_segments', 'xmlurl')
+    dmtdq_name = config.get('get_science_segments', 'include').split(':')[1]
+
+#==================================================
+### set up ROBOT certificates
+### IF ligolw_segement_query FAILS, THIS IS A LIKELY CAUSE
+if opts.no_robot_cert:
+    logger.warning("Warning: running without a robot certificate. Your personal certificate may expire and this job may fail")
+else:
+    ### unset ligo-proxy just in case
+    if os.environ.has_key("X509_USER_PROXY"):
+        del os.environ['X509_USER_PROXY']
+
+    ### get cert and key from ini file
+    robot_cert = config.get('ldg_certificate', 'robot_certificate')
+    robot_key = config.get('ldg_certificate', 'robot_key')
+
+    ### set cert and key
+    os.environ['X509_USER_CERT'] = robot_cert
+    os.environ['X509_USER_KEY'] = robot_key
+
+#==================================================
+### current time and boundaries
+
+t = int(reed.nowgps())
+
+gpsstop = opts.gpsstop
+if not gpsstop: ### stop time of this analysis
+    logger.info('computing gpsstop from current time')
+    gpsstop = t ### We do not require boundaries to be integer multiples of stride
+
+gpsstart = opts.gpsstart
+if not gpsstart:
+    logger.info('computing gpsstart from gpsstop')
+    gpsstart = gpsstop - stride
+
+#===================================================================================================
+#
+# LOOP
+#
+#===================================================================================================
+logger.info('Begin: summary')
+
+### wait until all jobs are finished
+wait = gpsstart + stride + delay - t
+if wait > 0:
+    logger.info('----------------------------------------------------')
+    logger.info('waiting %.1f seconds to reach gpsstop+delay=%d' % (wait, delay))
+    time.sleep(wait)
+
+global_start = gpsstart
+
+### iterate over all ranges
+while gpsstart < gpsstop:
+
+    logger.info('----------------------------------------------------')
+
+    wait = gpsstart + stride + delay - t
+    if wait > 0:
+        logger.info('waiting %.1f seconds to reach gpsstart+stride+delay=%d' %(wait, gpstart+stride+delay))
+        time.sleep(wait)
+
+    logger.info('Begin: stride [%d, %d]'%(gpsstart, gpsstart+stride))
+
+    ### directory into which we write data
+    output_dir = "%s/%d_%d/"%(summarydir, gpsstart, gpsstart + stride)
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    if opts.lookback=="infinity":
+        lookback = gpsstart - global_start
+
+    for ind, trend in opts.trending:
+        if trend == "infinity":
+            opts.trending[ind] = gpsstart - global_start
+
+    #===============================================================================================
+    # science segments
+    # we query the segdb right now, although that latency may be an issue...
+    #===============================================================================================
+    if opts.ignore_science_segments:
+        logger.info('analyzing data regardless of science segements')
+        scisegs = [[gpsstart-lookback], [gpstart+stride]] ### set segs to be this stride range
+        coveredsegs = [[gpsstart-lookback], [gpstart+stride]] ### set segs to be this stride range
+
+    else:
+        logger.info('Begin: querrying science segments')
+
+        try:
+            ### this returns a string
+            seg_xml_file = reed.segment_query(config, gpsstart - lookback , gpsstart + stride, url=segdb_url)
+
+            ### write seg_xml_file to disk
+            lsctables.use_in(ligolw.LIGOLWContentHandler)
+            xmldoc = ligolw_utils.load_fileobj(seg_xml_file, contenthandler=ligolw.LIGOLWContentHandler)[0]
+
+            ### science segments xml filename
+            seg_file = reed.segxml(output_dir, "_%s"%dq_name, gpsstart - lookback , lookback+stride)
+
+            logger.info('writing science segments to file : '+seg_file)
+            ligolw_utils.write_filename(xmldoc, seg_file, gz=seg_file.endswith(".gz"))
+
+            (scisegs, coveredseg) = reed.extract_dq_segments(seg_file, dq_name) ### read in segments from xml file
+
+        except Exception as e:
+            traceback.print_exc()
+            logger.info('ERROR: segment generation failed. Skipping this training period.')
+
+            if opts.force: ### we are require successful training or else we want errors
+                logger.info(traceback.print_exc())
+                raise e
+            else: ### we don't care if any particular training job fails
+                gpsstart += stride
+                continue
+
+    logger.info('finding idq segments')
+    idqsegs = idq.get_idq_segments(realtimedir, gpsstart-lookback, gpsstart+stride, suffix='.dat')
+
+    logger.info('taking intersection between science segments and idq segments')
+    idqsegs = event.andsegments( [scisegs, idqsegs] )
+
+    ### write segment file
+    idqseg_path = reed.idqsegascii(output_dir, '_%s'%dq_name, gpsstart - lookback, lookback+stride)
+    f = open(idqseg_path, 'w')
+    for seg in idqsegs:
+        print >> f, seg[0], seg[1]
+    f.close()
+
+    #===============================================================================================
+    # find data
+    #===============================================================================================
+    ### find all *dat files, bin them according to classifier
+    logger.info('finding all *dag files')
+    datsD = defaultdict( list )
+    for dat in reed.get_all_files_in_range(realtimedir, gpsstart-lookback, gpsstart+stride, pad=0, suffix='.dat' ):
+        datsD[reed.extract_dat_name( dat )].append( dat )
+
+    ### throw away any un-needed files
+    for key in datsD.keys():
+        if key not in classifiers:
+            datsD.pop(key)
+        else: ### throw out files that don't contain any science time
+            datsD[key] = [ dat for dat in datsD[key] if event.livetime(event.andsegments([idqsegs, reed.extract_start_stop(dat, suffix='.dat')])) ]
+
+    #===============================================================================================
+    # build plots
+    #===============================================================================================
+    fignames = {'roc':{}, 'hst':{}, 'kde':{}, 'trg':{}, 'bwh':{}}
+    ### roc -> Receiver Operating Characteristic curves
+    ### hst -> raw histograms of distributions
+    ### kde -> kde smoothed histograms of distributions
+    ### trg -> histograms of gch features
+    ### bwh -> bit-word histograms
+
+    ### axes for overlay plots
+    roc_figax = None
+    hst_figax = None
+    kde_figax = None
+
+    ### bit-word storage
+    gch_bitword = dict( (FAP, {}) for FAP in FAPthrs )
+    cln_bitword = dict( (FAP, {}) for FAP in FAPthrs )
+
+    #====================
+    # build plots for classifiers separately and add to overlays
+    # only plots that depend on this stride alone!
+    #====================
+    for classifier in classifiers:
+        color = colors[classifiers]
+
+        ### write list of dats to cache file
+        cache = reed.cache(output_dir, classifier, "_datcache%s"%usertag)
+        logger.info('writing list of dat files to %s'%cache)
+        f = open(cache, 'w')
+        for dat in datsD[classifier]:
+            print >>f, dat
+        f.close()
+
+        logger.info('building plots for %s'%classifier)
+
+        ### load dat files
+        output = reed.slim_load_datfiles(datsD[classifier], skip_lines=0, columns=dat_columns)
+
+        ### filter times by scisegs -> keep only the ones within scisegs
+        out = np.array(event.include( [ [output['GPS'][i]] + [output[column][i] for column in dat_columns] for i in xrange(len(output['GPS'])) ], idqsegs, tcent=0 ))
+        for ind, column in enumerate(columns):
+            output[column] = out[:,1+ind]
+
+        ### compute rcg from output
+        r, c, g = reed.dat_to_rcg( output )
+        dc, dg = reed.rcg_to_diff( c, g ) ### get the numbers at each rank
+
+        ### dump into roc file
+        roc = reed.roc(output_dir, classifer, ifo, usertag, gpsstart-lookback, lookback+stride)
+        logger.info('  writting %s'%roc)
+        reed.rcg_to_file(roc, r, c, g)
+
+        ### generate ROC plot
+        rocfig = rsp.rocfig(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
+        fignames['roc'][classifier] = rocfig ### store for reference
+        logger.info('  plotting %s'%rocfig)
+
+        fig, ax = rsp.rcg_to_rocFig(c, g, color=color, label=classifier)
+        ax.legend(loc='best')
+
+        fig.savefig(rocfig)
+        rsp.close(fig)
+
+        roc_figax = rsp.rcg_to_rocFig(c, g, color=color, label=classifier, figax=roc_figax) ### for overlay plot
+
+        ### generate histogram, cdf 
+        histfig = rsp.histfig(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
+        fignames['hst'][classifier] = histfig ### store for reference
+        logger.info('  plotting %s'%histfig)
+
+        fig, axh, axc = rsp.stacked_hist(r, dc, color=color, linestyle=cln_linestyle, label="%s cln"%classifier)
+        fig, axh, axc = rsp.stacked_hist(r, dg, color=color, linestyle=gch_linestyle, label="%s gch"%classifier, figax=(fig, axh, axc))
+        axc.legend(loc='best')
+
+        fig.savefig(histfig)
+        rsp.close(fig)
+
+        hst_figax = rsp.stacked_hist(r, dc, color=color, linestyle=cln_linestyle, label="%s cln"%classifier, figax=hst_figax) ### for overlay plots
+        hst_figax = rsp.stacked_hist(r, dg, color=color, linestyle=gch_linestyle, label="%s gch"%classifier, figax=hst_figax)
+
+        ### compute kde estimates
+        logger.info('  computing kde_pwg estimates')
+        kde_cln = rsp.kde_pwg( kde, r, dc )
+        kde_gch = rsp.kde_pwd( kde, r, dg )
+
+        ### write kde points to file
+        kde_cln_name = rsp.kdename(output_dir, classifier, ifo, "_cln%s"%usertag, gpsstart-lookback, lookback+stride)
+        logger.info('  writing %s'%kde_cln_name)
+        np.save(kde_cln_name, (kde, kde_cln))
+
+        kde_gch_name = rsp.kdename(output_dir, classifier, ifo, "_gch%s"%usertag, gpsstart-lookback, lookback+stride)
+        logger.info('  writing %s'%kde_gch_name)
+        np.save(kde_gch_name, (kde, kde_gch))
+
+        ### generate kde pdf, cdf (above)
+        kdefig = rsp.kdefig(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
+        fignames['kde'][classifier] = kdefig ### store for reference
+        logger.info(' plotting %s'%kdefig)
+
+        fig, axh, axc = rsp.stacked_kde(kde, kde_cln, color=color, linestyle=cln_linestyle, label="%s cln"%classifier, figax=None)
+        fig, axh, axc = rsp.stacked_kde(kde, kde_gch, color=color, linestyle=cln_linestyle, label="%s gch"%classifier, figax=(fig, axh, axc))
+        axc.legend(loc='best')
+
+        fig.savefig(kdefig)
+        rsp.close(fig)
+
+        kde_figax = rsp.stacked_kde(kde, kde_cln, color=color, linestyle=cln_linestyle, label="%s cln"%classifier, figax=kde_figax) ### for overlay plot
+        kde_figax = rsp.stacked_kde(kde, kde_gch, color=color, linestyle=cln_linestyle, label="%s gch"%classifier, figax=kde_figax)
+
+        ### figure out which gch and cln are removed below FAP thresholds
+        rankthrs = []
+        for FAP in FAPthrs:
+            rankthr = min(r[c<=FAP*c[-1]]) ### smallest rank below FAP
+            rankthrs.append( rankthr )
+            cln_bitword[FAP][classifier], gch_bitword[FAP][classifier] = rsp.bin_by_rankthr(rankthr, output, columns=dat_columns)
+                
+        ### generate histograms of glitch parameters
+        for column in dat_columns:
+            paramhist = rsp.histfig(output_dir, classifier, ifo, "%s_%s"%(usertag, column), gpsstart-lookback, lookback+stride)
+            fignames['trg'][(classifier, column)] = paramhist
+            logger.info('  plotting %s'%paramhist)
+
+            figax = None
+            for rankthr, FAP in zip(rankthrs, FAPthrs):
+                thr = min(r[c<=FAP*c[-1]]) ### smallest rank below FAP
+                x = [output[column][i] for i in xrange(len(output[column])) if output['rank'][i] >= thr]
+                figax = rsp.stacked_hist( x, np.ones_like(x), color=None, label="$FAP\leq%E$"%FAP)
+            fig, ax = figax
+            ax.legend(loc='best')
+
+            fig.savefig(paramhist)
+            rsp.close(fig)
+
+    #====================
+    # save overlays for this stride
+    #====================
+
+    ### roc overlay
+    rocfig = rsp.rocfig(output_dir, "overlay", ifo, usertag, gpsstart-lookback, lookback+stride)
+    fignames['roc']["overlay"] = rocfig ### store for reference
+    logger.info('  plotting %s'%rocfig)
+    fig, ax = roc_figax
+    ax.legend(loc='best')
+    fig.savefig(rocfig)
+    rsp.close(fig)
+
+    ### histogram overlay
+    histfig = rsp.histfig(output_dir, "overlay", ifo, usertag, gpsstart-lookback, lookback+stride)
+    fignames['hst']["overlay"] = histfig ### store for reference
+    logger.info('  plotting %s'%histfig)
+    fig, axh, axc = hst_figax
+    axc.legend(loc='best')
+    fig.savefig(histfig)
+    rsp.close(fig)
+
+    ### kde overlay
+    kdefig = rsp.kdefig(output_dir, "overlay", ifo, usertag, gpsstart-lookback, lookback+stride)
+    fignames['kde']["overlay"] = kdefig ### store for reference
+    logger.info(' plotting %s'%kdefig)
+    fig, axh, axc = kde_figax
+    axc.legend(loc='best')
+    fig.savefig(kdefig)
+    rsp.close(fig)
+
+    #====================
+    # bitword histograms
+    #====================
+
+    ### gch bitword histogram
+    bitfig = rsp.bitfig(output_dir, ifo, "%s_gch"%usertag, gpsstart-lookback, lookback+stride)
+    fignames['bit']['gch'] = bitfig
+    logger.info('  plotting %s'%bitfig)
+
+    figax=None
+    for FAP in FAPthrs:
+        figax = rsp.bitword( gch_bitword[FAP], classifiers, label="$FAP\leq%E"%FAP, figax=figax )
+    fig, ax = figax
+    ax.legend(loc='best')
+
+    fig.savefig(bitfig)
+    rsp.close(fig)
+
+    ### cln bitword histogram
+    bitfig = rsp.bitfig(output_dir, ifo, "%s_cln"%usertag, gpsstart-lookback, lookback+stride)
+    fignaes['bit']['cln'] = bitfig
+    logger.info('  plotting %s'%bitfig)
+
+    figax=None
+    for FAP in FAPthrs:
+        figax = rsp.bitword( cln_bitword[FAP], classifiers, label="$FAP\leq%E"%FAP, figax=figax )
+    ax.legend(loc='best')
+
+    fig.savefig(bitfig)
+    rsp.close(fig)
+
+
+    #=============================================
+    # trending plots!
+    # data depends on previous strides as well
+    #=============================================
+
+    logger.warning("WARNING: write trending plots!")
+    """
+TRENDING:
+
+    NEED A GOOD WAY OF FINDING HISTORICAL DATA/FIGURES
+
+    reference to historical plots that rely on only a single stride?
+        overlay those plots on the same axis? (need to save plotting data into pickles for easy reference)
+        just reproduce the old figures (point to them on disk) with an option to collapse a tab and hide these?
+
+    first and second moment of residuals between historical ROC curves (trending)
+
+    livetime trending plot: both instrument livetime (scisegs) and idq livetime (idqsegs)
+    clean rate trending
+    glitch rate trending
+    eff at fixed FAP trending
+
+    channel rank trending
+    channel eff trending
+    channel fap trending
+    repeat for configurations?
+    """
+
+    #===============================================================================================
+    # write html page
+    #===============================================================================================
+
+    """
+REPORT:
+time-stamp of page creation
+command line options used to generate this page
+
+science segments used: link to ascii file and xml file
+idq segments used: link to ascii file and xml file
+
+GWchannels, frequency band, signif_thr, etc
+auxchannels, frequency bands, signif_thrs, etc
+unsafe channels (not used, but report them for reference)
+
+vetolist/configuration lists -> make human readable
+segment lists -> a form to request segments?
+
+all plots, figures built above
+try to make them in expandable sections
+    different trending ranges
+    different types of plots
+    else?
+    """
+
+    #=============================================
+    # format index.html for summary_dir
+    #=============================================
+
+    """
+    make this formatted so that it doesn't take forever to load.
+    mirroring the current implementation is ok, but we can probably make the pages better using some standard python library?
+    """
+
+    #===============================================================================================
+
+    gpsstart += stride
+
+#===================================================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 def generate_html(
     path,
@@ -255,7 +832,7 @@ config.read(opts.config)
 #=================================================
 ### generate a dictionary for idq_summary specific options
 
-myconf = dict(config.items('idq_summary'))
+myconf = dict(config.items('summary'))
 
 stride = int(myconf['stride']) ### summary stride
 delay = int(myconf['delay']) ### delay for summary job
@@ -293,13 +870,13 @@ classifiers = config.get('general', 'classifiers').split()
 
 vetolist_cache = config.get('general', 'ovl_train_cache')
 
-unsafe_win = float(config.get('idq_realtime', 'clean_window'))
+unsafe_win = float(config.get('realtime', 'clean_window'))
 
-columns = config.get('idq_realtime', 'dat_columns').split() + ['rank']
+columns = config.get('realtime', 'dat_columns').split() + ['rank']
 
 kwtrgdir = config.get('general', 'kwtrgdir')
 
-kde_num_samples = int(config.get('idq_summary', 'kde_num_samples'))
+kde_num_samples = int(config.get('summary', 'kde_num_samples'))
 
 ### kleineWelle config
 kwconfig = idq.loadkwconfig(config.get('general', 'kwconfig'))

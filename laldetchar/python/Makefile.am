@@ -16,7 +16,7 @@ pybin_scripts = \
 	laldetchar-idq-build-auxmvc-vectors \
 	laldetchar-idq-convertkwtosb \
 	laldetchar-idq-evaluate-times \
-	laldetchar-idq-fap-calibration \
+	laldetchar-idq-calibration \
         laldetchar-idq-gdb-alert-handler \
 	laldetchar-idq-gdb-glitch-tables \
         laldetchar-idq-gdb-processor \

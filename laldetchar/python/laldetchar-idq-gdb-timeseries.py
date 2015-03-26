@@ -26,6 +26,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 from laldetchar.idq import idq
+from laldetchar.idq import reed
 from laldetchar.idq import event
 from laldetchar.idq import idq_gdb_utils
 from laldetchar.idq import idq_tables
@@ -291,7 +292,7 @@ if opts.verbose:
 # merge time-series
 if opts.verbose:
     print "merging rank timeseries"
-(r_times, r_timeseries) = idq_gdb_utils.combine_ts(rank_filenames)
+(r_times, r_timeseries) = reed.combine_ts(rank_filenames)
 
 # for each bit of continuous data:
 #   add to plot
@@ -348,7 +349,7 @@ for (t, ts) in zip(r_times, r_timeseries):
     merged_rank_filenames.append(merged_rank_filename)
 
     # generate and write summary statistics
-    (r_min, r_max, r_mean, r_stdv) = idq_gdb_utils.stats_ts(ts)
+    (r_min, r_max, r_mean, r_stdv) = reed.stats_ts(ts)
     if r_max > max_rank:
         max_rank = r_max
         max_rank_segNo = segNo
@@ -392,7 +393,9 @@ if opts.verbose:
 # merge time-series
 if opts.verbose:
     print "merging fap timeseries"
-(f_times, f_timeseries) = idq_gdb_utils.combine_ts(fap_filenames)
+(f_times, f_timeseries) = reed.combine_ts(fap_filenames)
+fUL_timeseries = [l[1] for l in f_timeseries]
+f_timeseries = [l[0] for l in f_timeseries]
 
 # for each bit of continuous data:
 #   add to plot
@@ -406,7 +409,7 @@ fap_summaries = []
 min_fap = np.infty
 min_fap_segNo = 0
 segNo = 0
-for (t, ts) in zip(f_times, f_timeseries):
+for (t, ts, ul) in zip(f_times, f_timeseries, fUL_timeseries):
     # ensure time series only fall within desired range
     ts = ts[(opts.plotting_gps_start <= t) * (t <= opts.plotting_gps_end)]
     t = t[(opts.plotting_gps_start <= t) * (t <= opts.plotting_gps_end)]
@@ -416,7 +419,8 @@ for (t, ts) in zip(f_times, f_timeseries):
 
     # add to plot...
     if (ts > 0).any():
-        f_ax.semilogy(t - opts.plotting_gps_start, ts, color='b', alpha=0.75)
+        f_ax.semilogy(t - opts.plotting_gps_start, ts, color='b', alpha=0.75) ### point estimate
+        f_ax.semilogy(t - opts.plotting_gps_start, ul, color='b', alpha=0.5, linestyle=":") ### upper limit
     else:
         if opts.verbose:
             print "No non-zero FAP values between %d and %d" % (_start, _end)
@@ -434,11 +438,11 @@ for (t, ts) in zip(f_times, f_timeseries):
 
     if opts.verbose:
         print "\twriting " + merged_fap_filename
-    np.save(event.gzopen(merged_fap_filename, 'w'), ts)
+    np.save(event.gzopen(merged_fap_filename, 'w'), (ts, ul))
     merged_fap_filenames.append(merged_fap_filename)
 
     # generate and write summary statistics
-    (f_min, f_max, f_mean, f_stdv) = idq_gdb_utils.stats_ts(ts)
+    (f_min, f_max, f_mean, f_stdv) = reed.stats_ts(ts)
     if f_min < min_fap:
         min_fap = f_min
         min_fap_segNo = segNo
@@ -633,7 +637,7 @@ if not opts.skip_gracedb_upload:
 
         if len(t): # some surviving data
             # generate and write summary statistics
-            (f_min, f_max, f_mean, f_stdv) = idq_gdb_utils.stats_ts(ts)
+            (f_min, f_max, f_mean, f_stdv) = reed.stats_ts(ts)
 
             # update min_fap
             if min_fap > f_min:

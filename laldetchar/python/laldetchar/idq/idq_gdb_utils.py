@@ -39,70 +39,6 @@ import re as re
 from laldetchar.idq import event
 from laldetchar.idq import idq
 
-
-def combine_ts(filenames):
-    """ 
-....combine multiple files into a single time-series. Assumes filenames have the standard LIGO naming covention: *-start-dur.suffix
-....Also assumes that filenames are sorted into chronological order
-
-....returns lists of arrays, with each array consisting of only contiguous data
-........return timeseries, times
-...."""
-
-    t = np.array([])  # the array storing continuous data
-    ts = np.array([])
-    times = []  # a list that will contain stretches of continuous data
-    timeseries = []
-
-    matchfile = re.compile('.*-([0-9]*)-([0-9]*).*$')
-
-    end = False
-    for filename in filenames:
-        m = matchfile.match(filename)
-        (_start, _dur) = (int(m.group(1)), int(m.group(2)))
-
-        # ## check to see if we have continuous data
-
-        if not end or end == _start:  # beginning of data
-            end = _start + _dur
-
-            _file = event.gzopen(filename)
-            _ts = np.load(_file)
-            _file.close()
-
-            ts = np.concatenate((ts, _ts))
-            t = np.concatenate((t, np.arange(_start, _start + _dur, 1.0
-                               * _dur / len(_ts))))
-        else:
-
-            # gap in the data!
-
-            times.append(t)  # put old continuous data into lists
-            timeseries.append(ts)
-
-            _file = event.gzopen(filename)  # start new continuous data
-            ts = np.load(_file)
-            _file.close()
-            t = np.arange(_start, _start + _dur, 1.0 * _dur / len(ts))
-            end = _start + _dur
-
-    times.append(t)
-    timeseries.append(ts)
-
-    return (times, timeseries)
-
-
-def stats_ts(ts):
-    """ 
-....compute basic statistics about ts 
-
-....return min(ts), max(ts), mean(ts), stdv(ts)
-...."""
-
-    return (np.min(ts), np.max(ts), np.mean(ts), np.var(ts) ** 0.5)
-
-
-
 def execute_gdb_timeseries(
     gps_start,
     gps_end,
@@ -142,8 +78,6 @@ def execute_gdb_timeseries(
     exit_status = idq.submit_command(cmd_line, 'gdb_timeseries', verbose=True)
 	
     return exit_status
-	
-	
 	
 def execute_gdb_glitch_tables(
     gps_start,

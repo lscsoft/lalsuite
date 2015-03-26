@@ -24,6 +24,8 @@ pymodule_PYTHON = \
 	ovl.py \
 	pdf_estimation.py \
 	svmkit.py \
+	reed.py \
+	calibration.py \
 	$(END_OF_LIST)
 
 endif

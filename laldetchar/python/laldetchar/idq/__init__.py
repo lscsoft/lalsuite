@@ -27,6 +27,7 @@ pdf_estimation: functions for estimation of probability density function(s) of g
 svmkit: utility functions for Support Vector Machine (SVM) - one of the algorithms used by the iDQ pipeline.  
 auxmvc: classes for defining jobs and nodes for machine learning algorithms (MLAs)
 auxmvc_utils: functions for handling auxmvc feature vectors used in MLAs 
+reed: temporary module for testing
 """
 
 # \author Lindy Blackburn (<lindy.blackburn@ligo.org>), Reed Essick (<reed.essick@ligo.org>) and Ruslan Vaulin (<ruslan.vaulin@ligo.org)
@@ -58,4 +59,6 @@ __date__ = version.date
 #       \defgroup       pkg_py_laldetchar_idq_ovl OVL Module
 #       \defgroup       pkg_py_laldetchar_idq_pdf_estimation PDF Estimation Module
 #       \defgroup       pkg_py_laldetchar_idq_svmkit SVM Utils
+#       \defgroup       pkg_py_laldetchar_idq_calibration methods used to calibrate output
+#       \defgroup       pkg_py_laldetchar_idq_reed temporary module for testing
 #@}

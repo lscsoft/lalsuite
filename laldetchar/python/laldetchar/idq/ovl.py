@@ -2227,7 +2227,7 @@ def _gammln(xx):
 def _gser(
     a,
     x,
-    itmax=700,
+    itmax=10000,
     eps=3.e-7,
     ):
     """Series approx'n to the incomplete gamma function."""
@@ -2256,7 +2256,7 @@ def _gser(
 def _gserln(
     a,
     x,
-    itmax=700,
+    itmax=10000,
     eps=3.e-7,
     ):
     """Series approx'n to the incomplete gamma function."""
@@ -2285,7 +2285,7 @@ def _gserln(
 def _gcf(
     a,
     x,
-    itmax=200,
+    itmax=1000,
     eps=3.e-7,
     ):
     """Continued fraction approx'n of the incomplete gamma function."""
@@ -2321,7 +2321,7 @@ def _gcf(
 def _gcfln(
     a,
     x,
-    itmax=200,
+    itmax=1000,
     eps=3.e-7,
     ):
     """Continued fraction approx'n of the incomplete gamma function."""

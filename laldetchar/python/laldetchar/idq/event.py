@@ -374,6 +374,13 @@ class trigdict(dict):
     def channels(self):
         return self.keys()
 
+    def add(self, otherdict):
+        for key, value in otherdict.items():
+            if self.has_key(key):
+                self[key] += value
+            else:
+                self[key] = value
+
     def get_triggers_from_channel(self, channel):
         """
         Return triggers from a given channel
