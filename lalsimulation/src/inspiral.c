@@ -411,29 +411,16 @@ int create_fd_waveform(COMPLEX16FrequencySeries ** htilde_plus, COMPLEX16Frequen
 /* routine to crudely overestimate the duration of the inspiral, merger, and ringdown */
 double imr_time_bound(double f_min, double m1, double m2, double s1z, double s2z)
 {
-    const double maximum_black_hole_spin = 0.998;
     double tchirp, tmerge;
     double s;
 
     /* lower bound on the chirp time starting at f_min */
     tchirp = XLALSimInspiralChirpTimeBound(f_min, m1, m2, s1z, s2z);
 
-    /* lower bound on the final plunge, merger, and ringdown time here
-     * the final black hole spin is overestimated by using the formula
-     * in Tichy and Marronetti, Physical Review D 78 081501 (2008),
-     * Eq. (1) and Table 1, for equal mass black holes, or the larger
-     * of the two spins (which covers the extreme mass case) */
-    /* TODO: it has been suggested that Barausse, Rezzolla (arXiv: 0904.2577)
-     * is more accurate */
-    s = 0.686 + 0.15 * (s1z + s2z);
-    if (s < fabs(s1z))
-        s = fabs(s1z);
-    if (s < fabs(s2z))
-        s = fabs(s2z);
-    /* it is possible that |s1z| or |s2z| >= 1, but s must be less than 1
-     * (0th law of thermodynamics) so provide a maximum value for s */
-    if (s > maximum_black_hole_spin)
-        s = maximum_black_hole_spin;
+    /* upper bound on the final black hole spin */
+    s = XLALSimInspiralFinalBlackHoleSpinBound(s1z, s2z);
+
+    /* lower bound on the final plunge, merger, and ringdown time */
     tmerge = XLALSimInspiralMergeTimeBound(m1, m2) + XLALSimInspiralRingdownTimeBound(m1 + m2, s);
 
     return tchirp + tmerge;

@@ -323,6 +323,7 @@ typedef enum {
 REAL8 XLALSimInspiralChirpTimeBound(REAL8 fstart, REAL8 m1, REAL8 m2, REAL8 s1, REAL8 s2);
 REAL8 XLALSimInspiralMergeTimeBound(REAL8 m1, REAL8 m2);
 REAL8 XLALSimInspiralRingdownTimeBound(REAL8 M, REAL8 s);
+REAL8 XLALSimInspiralFinalBlackHoleSpinBound(REAL8 S1z, REAL8 S2z);
 REAL8 XLALSimInspiralChirpStartFrequencyBound(REAL8 tchirp, REAL8 m1, REAL8 m2);
 
 /**
@@ -1302,6 +1303,9 @@ int XLALSimInspiralChooseFDWaveform(
     int phaseO,                                 /**< twice post-Newtonian order */
     Approximant approximant                     /**< post-Newtonian approximant to use for waveform production */
     );
+
+int XLALSimInspiralTDConditionStage1(REAL8TimeSeries *hplus, REAL8TimeSeries *hcross, REAL8 textra, REAL8 f_min);
+int XLALSimInspiralTDConditionStage2(REAL8TimeSeries *hplus, REAL8TimeSeries *hcross, REAL8 f_min, REAL8 f_max);
 
 /**
  * @brief Generates an time domain inspiral waveform using the specified approximant; the

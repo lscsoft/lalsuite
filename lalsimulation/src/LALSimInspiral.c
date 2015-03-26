@@ -214,6 +214,45 @@ REAL8 XLALSimInspiralRingdownTimeBound(REAL8 M, REAL8 s)
 }
 
 /**
+ * @brief Routine to compute an overestimate of a final black hole dimensionless spin.
+ * @details
+ * This routine provides an upper bound on the dimensionless spin of a black
+ * hole produced in a compact binary merger.  Uses the formula in Tichy and
+ * Marronetti, Physical Review D 78 081501 (2008), Eq. (1) and Table 1, for
+ * equal mass black holes, or the larger of the two spins (which covers the
+ * extreme mass case).  If the result is larger than a maximum realistic
+ * black hole spin, truncate at this maximum value.
+ * @param S1z The z-component of the dimensionless spin of body 1.
+ * @param S2z The z-component of the dimensionless spin of body 2.
+ * @return Upper bound on final black hole dimensionless spin.
+ * @see Tichy and Marronetti, Physical Review D 78 081501 (2008).
+ * @todo It has been suggested that Barausse, Rezzolla (arXiv: 0904.2577) is
+ * more accurate
+ */
+REAL8 XLALSimInspiralFinalBlackHoleSpinBound(REAL8 S1z, REAL8 S2z)
+{
+    const double maximum_black_hole_spin = 0.998;
+    double s;
+    /* lower bound on the final plunge, merger, and ringdown time here the
+     * final black hole spin is overestimated by using the formula in Tichy and
+     * Marronetti, Physical Review D 78 081501 (2008), Eq. (1) and Table 1, for
+     * equal mass black holes, or the larger of the two spins (which covers the
+     * extreme mass case) */
+    /* TODO: it has been suggested that Barausse, Rezzolla (arXiv: 0904.2577)
+     * is more accurate */
+    s = 0.686 + 0.15 * (S1z + S2z);
+    if (s < fabs(S1z))
+        s = fabs(S1z);
+    if (s < fabs(S2z))
+        s = fabs(S2z);
+    /* it is possible that |S1z| or |S2z| >= 1, but s must be less than 1
+     * (0th law of thermodynamics) so provide a maximum value for s */
+    if (s > maximum_black_hole_spin)
+        s = maximum_black_hole_spin;
+    return s;
+}
+
+/**
  * @brief Routine to compute an underestimate of the starting frequency for a given chirp time.
  * @details
  * This routine estimates a start frequency for a binary inspiral from which the
@@ -2983,6 +3022,140 @@ int XLALSimInspiralChooseFDWaveform(
 }
 
 /**
+ * @brief First stage of conditioning of time-domain waveforms.
+ * @details
+ * The conditioning of time-domain waveforms is done in two stages:
+ *
+ * 1. Take a waveform that is generated so that begins a time at least textra
+ * before it reaches f_min and apply a taper over this duration textra; follow
+ * this up by high-pass filtering the data at frequency f_min; finally, if the
+ * original waveform was zero-padded, strip off this padding.
+ * 
+ * 2. The high-pass filtered waveform might have transients remaining at the
+ * beginning and at the end; furthermore, the waveform might end at a non-zero
+ * value (especially for non-IMR waveforms).  The second stage tapers one
+ * cycle at f_min from the beginning of the waveform and one cycle at f_max
+ * from the end of the waveform.  There is a minimum number of samples that
+ * will be used in the tapering and if the waveform is shorter than twice
+ * this minimum number then no Stage 2 conditioning is done.
+ *
+ * This routine performs Stage 1 conditioning.  This stage is only performed
+ * for waveforms originally produced in the time domain.  (Frequency domain
+ * waveforms that have been transformed into the time domain have a different
+ * Stage 1 conditioning.)
+ *
+ * @param hplus  Pointer to the plus-polarization timeseries.
+ * @param hcross Pointer to the cross-polarization timeseries.
+ * @param textra Extra time at beginning of waveform to taper (s).
+ * @param f_min  Minimum frequency for high-pass filtering (Hz).
+ * @retval  0 Success.
+ * @retval <0 Failure.
+ */
+int XLALSimInspiralTDConditionStage1(REAL8TimeSeries *hplus, REAL8TimeSeries *hcross, REAL8 textra, REAL8 f_min)
+{
+    size_t nzeros;
+    size_t ntaper;
+    size_t j;
+
+    /* some generators zero-pad the end of the waveform: will remove this */
+    nzeros = 0;
+    while (hplus->data->data[hplus->data->length - nzeros - 1] == 0.0 && hcross->data->data[hcross->data->length - nzeros - 1] == 0.0)
+        ++nzeros;
+
+    /* apply tapers over the extra duration at the beginning */
+    ntaper = round(textra / hplus->deltaT);
+    for (j = 0; j < ntaper; ++j) {
+        double w = 0.5 - 0.5 * cos(j * LAL_PI / ntaper);
+        hplus->data->data[j] *= w;
+        hcross->data->data[j] *= w;
+    }
+
+    /* apply time domain filter at f_min */
+    XLALHighPassREAL8TimeSeries(hplus, f_min, 0.99, 8);
+    XLALHighPassREAL8TimeSeries(hcross, f_min, 0.99, 8);
+
+    /* now take off the zero padded end */
+    if (nzeros) {
+        XLALShrinkREAL8TimeSeries(hplus, 0, hplus->data->length - nzeros);
+        XLALShrinkREAL8TimeSeries(hcross, 0, hcross->data->length - nzeros);
+    }
+
+    return 0;
+}
+
+/**
+ * @brief Second stage of conditioning of time-domain waveforms.
+ * @details
+ * The conditioning of time-domain waveforms is done in two stages:
+ *
+ * 1. Take a waveform that is generated so that begins a time at least textra
+ * before it reaches f_min and apply a taper over this duration textra; follow
+ * this up by high-pass filtering the data at frequency f_min; finally, if the
+ * original waveform was zero-padded, strip off this padding.
+ * 
+ * 2. The high-pass filtered waveform might have transients remaining at the
+ * beginning and at the end; furthermore, the waveform might end at a non-zero
+ * value (especially for non-IMR waveforms).  The second stage tapers one
+ * cycle at f_min from the beginning of the waveform and one cycle at f_max
+ * from the end of the waveform.  There is a minimum number of samples that
+ * will be used in the tapering and if the waveform is shorter than twice
+ * this minimum number then no Stage 2 conditioning is done.
+ *
+ * This routine performs Stage 2 conditioning.  This stage is performed both
+ * for waveforms originally produced in the time domain, and for waveforms that
+ * were originally produced in the frequency domain and then transformed to
+ * the time domain. This stage follows some form of Stage 1 conditioning,
+ * which is different depending on whether the original waveform was generated
+ * in the time domain or in the frequency domain.
+ *
+ * @param hplus  Pointer to the plus-polarization timeseries.
+ * @param hcross Pointer to the cross-polarization timeseries.
+ * @param f_min  Minimum frequency for tapering at the start (Hz).
+ * @param f_max  Minimum frequency for tapering at the end (Hz).
+ * @retval  0 Success.
+ * @retval <0 Failure.
+ */
+int XLALSimInspiralTDConditionStage2(REAL8TimeSeries *hplus, REAL8TimeSeries *hcross, REAL8 f_min, REAL8 f_max)
+{
+    const size_t min_taper_samples = 4;
+    size_t ntaper;
+    size_t j;
+
+    /* final tapering at the beginning and at the end */
+    /* if this waveform is shorter than 2*min_taper_samples, do nothing */
+    if (hplus->data->length < 2 * min_taper_samples) {
+        XLAL_PRINT_WARNING("waveform is too shorter than %zu samples: no final tapering applied", 2 * min_taper_samples);
+        return 0;
+    }
+
+    /* taper end of waveform: 1 cycle at f_max; at least min_taper_samples
+     * note: this tapering is done so the waveform goes to zero at the next
+     * point beyond the end of the data */
+    ntaper = round(1.0 / (f_max * hplus->deltaT));
+    if (ntaper < min_taper_samples)
+        ntaper = min_taper_samples;
+    for (j = 1; j < ntaper; ++j) {
+        double w = 0.5 - 0.5 * cos(j * LAL_PI / ntaper);
+        hplus->data->data[hplus->data->length - j] *= w;
+        hcross->data->data[hcross->data->length - j] *= w;
+    }
+
+    /* there could be a filter transient at the beginning too: we should have
+     * some safety there owing to the fact that we are starting at a lower
+     * frequency than is needed, so taper off one cycle at the low frequency */
+    ntaper = round(1.0 / (f_min * hplus->deltaT));
+    if (ntaper < min_taper_samples)
+        ntaper = min_taper_samples;
+    for (j = 0; j < ntaper; ++j) {
+        double w = 0.5 - 0.5 * cos(j * LAL_PI / ntaper);
+        hplus->data->data[j] *= w;
+        hcross->data->data[j] *= w;
+    }
+
+    return 0;
+}
+
+/**
  * @brief Generates an time domain inspiral waveform using the specified approximant; the
  * resulting waveform is appropriately conditioned and suitable for injection into data.
  *
@@ -3032,14 +3205,12 @@ int XLALSimInspiralTD(
     Approximant approximant                     /**< post-Newtonian approximant to use for waveform production */
     )
 {
-    const double maximum_black_hole_spin = 0.998;
     const double extra_time_fraction = 0.1; /* fraction of waveform duration to add as extra time for tapering */
     const double extra_cycles = 3.0; /* more extra time measured in cycles at the starting frequency */
     double original_f_min = f_min; /* f_min might be overwritten below, so keep original value */
     double tchirp, tmerge, textra;
     double fisco, fstart;
     double s;
-    size_t j, ntaper;
     int retval;
 
     /* apply redshift correction to dimensionful source-frame quantities */
@@ -3057,25 +3228,13 @@ int XLALSimInspiralTD(
     if (f_min > fisco)
         f_min = fisco;
 
-    /* lower bound on the chirp time starting at f_min */
+    /* upper bound on the chirp time starting at f_min */
     tchirp = XLALSimInspiralChirpTimeBound(f_min, m1, m2, S1z, S2z);
 
-    /* lower bound on the final plunge, merger, and ringdown time here
-     * the final black hole spin is overestimated by using the formula
-     * in Tichy and Marronetti, Physical Review D 78 081501 (2008),
-     * Eq. (1) and Table 1, for equal mass black holes, or the larger
-     * of the two spins (which covers the extreme mass case) */
-    /* TODO: it has been suggested that Barausse, Rezzolla (arXiv: 0904.2577)
-     * is more accurate */
-    s = 0.686 + 0.15 * (S1z + S2z);
-    if (s < fabs(S1z))
-        s = fabs(S1z);
-    if (s < fabs(S2z))
-        s = fabs(S2z);
-    /* it is possible that |S1z| or |S2z| >= 1, but s must be less than 1
-     * (0th law of thermodynamics) so provide a maximum value for s */
-    if (s > maximum_black_hole_spin)
-        s = maximum_black_hole_spin;
+    /* upper bound on the final black hole spin */
+    s = XLALSimInspiralFinalBlackHoleSpinBound(S1z, S2z);
+
+    /* upper bound on the final plunge, merger, and ringdown time */
     tmerge = XLALSimInspiralMergeTimeBound(m1, m2) + XLALSimInspiralRingdownTimeBound(m1 + m2, s);
 
     /* extra time to include for all waveforms to take care of situations
@@ -3086,8 +3245,6 @@ int XLALSimInspiralTD(
     /* decide if this is a TD or an FD approximant */
 
     if (XLALSimInspiralImplementedTDApproximants(approximant)) {
-
-        size_t nzeros = 0;
 
         /* time domain approximant: condition by generating a waveform
          * with a lower starting frequency and apply tapers in the
@@ -3100,26 +3257,9 @@ int XLALSimInspiralTD(
         if (retval < 0)
             XLAL_ERROR(XLAL_EFUNC);
 
-        /* some generators zero-pad the end of the waveform: remove this */
-        nzeros = 0;
-        while ((*hplus)->data->data[(*hplus)->data->length - nzeros - 1] == 0.0 && (*hcross)->data->data[(*hcross)->data->length - nzeros - 1] == 0.0)
-            ++nzeros;
-        if (nzeros) {
-            XLALShrinkREAL8TimeSeries(*hplus, 0, (*hplus)->data->length - nzeros);
-            XLALShrinkREAL8TimeSeries(*hcross, 0, (*hcross)->data->length - nzeros);
-        }
-        
-        /* apply tapers over the extra duration at the beginning */
-        ntaper = round((extra_time_fraction * tchirp + textra) / deltaT);
-        for (j = 0; j < ntaper; ++j) {
-            double w = 0.5 - 0.5 * cos(j * LAL_PI / ntaper);
-            (*hplus)->data->data[j] *= w;
-            (*hcross)->data->data[j] *= w;
-        }
-
-        /* apply time domain filter at original f_min */
-        XLALHighPassREAL8TimeSeries(*hplus, original_f_min, 0.99, 8);
-        XLALHighPassREAL8TimeSeries(*hcross, original_f_min, 0.99, 8);
+        /* condition the time domain waveform by tapering in the extra time
+         * at the beginning and high-pass filtering above original f_min */
+        XLALSimInspiralTDConditionStage1(*hplus, *hcross, extra_time_fraction * tchirp + textra, original_f_min);
 
         /* remaining conditioning is the same as with the frequency domain case */
 
@@ -3201,33 +3341,13 @@ int XLALSimInspiralTD(
     } else
         XLAL_ERROR(XLAL_EINVAL, "Invalid approximant");
 
-    /* final tapering at the beginning and at the end */
+    /* final tapering at the beginning and at the end to remove filter transients */
 
     /* waveform should terminate at a frequency >= Schwarzschild ISCO
      * so taper one cycle at this frequency at the end; should not make
      * any difference to IMR waveforms */
-    /* note: this tapering is done so the waveform goes to zero at the
-     * next point beyond the end of the data */
     fisco = 1.0 / (pow(6.0, 1.5) * LAL_PI * (m1 + m2) * LAL_MTSUN_SI / LAL_MSUN_SI);
-    ntaper = round(1.0 / (fisco * deltaT));
-    if (ntaper < 4)
-        ntaper = 4;
-    for (j = 1; j < ntaper; ++j) {
-        double w = 0.5 - 0.5 * cos(j * LAL_PI / ntaper);
-        (*hplus)->data->data[(*hplus)->data->length - j] *= w;
-        (*hcross)->data->data[(*hcross)->data->length - j] *= w;
-    }
-
-    /* there could be a filter transient at the beginning too:
-     * we should have some safety there owing to the fact that
-     * we are starting at a lower frequency than is needed, so
-     * taper off one cycle at the low frequency */
-    ntaper = round(1.0 / (f_min * deltaT));
-    for (j = 0; j < ntaper; ++j) {
-        double w = 0.5 - 0.5 * cos(j * LAL_PI / ntaper);
-        (*hplus)->data->data[j] *= w;
-        (*hcross)->data->data[j] *= w;
-    }
+    XLALSimInspiralTDConditionStage2(*hplus, *hcross, f_min, fisco);
 
     return 0;
 }
@@ -3296,7 +3416,6 @@ int XLALSimInspiralFD(
     Approximant approximant                     /**< post-Newtonian approximant to use for waveform production */
     )
 {
-    const double maximum_black_hole_spin = 0.998;
     const double extra_time_fraction = 0.1; /* fraction of waveform duration to add as extra time for tapering */
     const double extra_cycles = 3.0; /* more extra time measured in cycles at the starting frequency */
     double chirplen, deltaT;
@@ -3334,16 +3453,10 @@ int XLALSimInspiralFD(
         if (f_min > fisco)
             f_min = fisco;
     
-        /* lower bound on the chirp time starting at f_min */
+        /* upper bound on the chirp time starting at f_min */
         tchirp = XLALSimInspiralChirpTimeBound(f_min, m1, m2, S1z, S2z);
 
-        /* lower bound on the final plunge, merger, and ringdown time here
-         * the final black hole spin is overestimated by using the formula
-         * in Tichy and Marronetti, Physical Review D 78 081501 (2008),
-         * Eq. (1) and Table 1, for equal mass black holes, or the larger
-         * of the two spins (which covers the extreme mass case) */
-        /* TODO: it has been suggested that Barausse, Rezzolla (arXiv: 0904.2577)
-         * is more accurate */
+        /* upper bound on the final plunge, merger, and ringdown time */
         switch (approximant) {
         case TaylorF2:
         case SpinTaylorF2:
@@ -3359,15 +3472,7 @@ int XLALSimInspiralFD(
              * cause them to wrap-around an amount equal to
              * the merger-ringodwn time, so we will undo
              * that here */
-            s = 0.686 + 0.15 * (S1z + S2z);
-            if (s < fabs(S1z))
-                s = fabs(S1z);
-            if (s < fabs(S2z))
-                s = fabs(S2z);
-            /* it is possible that |S1z| or |S2z| >= 1, but s must be less than 1
-             * (0th law of thermodynamics) so provide a maximum value for s */
-            if (s > maximum_black_hole_spin)
-                s = maximum_black_hole_spin;
+            s = XLALSimInspiralFinalBlackHoleSpinBound(S1z, S2z);
             tmerge = XLALSimInspiralMergeTimeBound(m1, m2) + XLALSimInspiralRingdownTimeBound(m1 + m2, s);
             break;
         }
