@@ -69,6 +69,7 @@
 
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLBurstRead.h>
+#include <lal/LIGOLwXMLRead.h>
 
 #include <lal/FrequencySeries.h>
 #include <lal/TimeSeries.h>

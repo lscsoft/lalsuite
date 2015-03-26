@@ -17,11 +17,11 @@
  * 02111-1307  USA
  */
 
-#ifndef _LIGOLWXMLBURSTREAD_H
-#define _LIGOLWXMLBURSTREAD_H
+#ifndef _LIGOLWXMLBURSTREAD_H_
+#define _LIGOLWXMLBURSTREAD_H_
 
-#include <lal/LIGOLwXMLRead.h>
 #include <lal/Date.h>
+#include <lal/LIGOMetadataTables.h>
 
 #ifdef  __cplusplus
 extern "C" {
@@ -31,16 +31,18 @@ extern "C" {
  * function prototypes
  */
 
-SnglBurst *XLALSnglBurstTableFromLIGOLw( \
-    const char *filename);
+SnglBurst *XLALSnglBurstTableFromLIGOLw(
+    const char *filename
+);
 
-SimBurst *XLALSimBurstTableFromLIGOLw( \
-    const char *filename, \
-    const LIGOTimeGPS *start, \
-    const LIGOTimeGPS *end);
+SimBurst *XLALSimBurstTableFromLIGOLw(
+    const char *filename,
+    const LIGOTimeGPS *start,
+    const LIGOTimeGPS *end
+);
 
 #ifdef  __cplusplus
 }
 #endif
 
-#endif /* _LIGOLWXMLBURSTREAD_H */
+#endif /* _LIGOLWXMLBURSTREAD_H_ */
