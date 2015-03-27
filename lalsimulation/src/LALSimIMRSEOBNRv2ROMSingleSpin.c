@@ -54,10 +54,6 @@
 #include <string.h>
 #include <libgen.h>
 
-#ifdef LAL_PTHREAD_LOCK
-#include <pthread.h>
-#endif
-
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_bspline.h>
 #include <gsl/gsl_blas.h>
@@ -76,6 +72,11 @@
 
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimIMR.h>
+
+#include <lal/LALConfig.h>
+#ifdef LAL_PTHREAD_LOCK
+#include <pthread.h>
+#endif
 
 
 /********* Input data for spline basis points **************/
