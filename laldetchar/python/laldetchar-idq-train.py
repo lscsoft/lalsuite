@@ -31,7 +31,7 @@ from glue.ligolw import utils as ligolw_utils
 from glue.ligolw import lsctables
 from glue.ligolw import table
 
-from laldetchar.idq import idq
+#from laldetchar.idq import idq
 from laldetchar.idq import reed
 from laldetchar.idq import event
 from laldetchar.idq import auxmvc_utils
@@ -77,7 +77,7 @@ parser.add_option("", "--sngl_chan-xml", default=False, action="store_true", hel
 (opts, args) = parser.parse_args()
 
 if opts.lookback != "infinity":
-    opts.lookback = int(train_lookback)
+    opts.lookback = int(opts.lookback)
 
 cwd = os.getcwd()
 

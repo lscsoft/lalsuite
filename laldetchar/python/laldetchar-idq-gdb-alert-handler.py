@@ -22,7 +22,8 @@ import optparse
 import subprocess
 import ConfigParser
 from ligo.gracedb.rest import GraceDb
-from laldetchar.idq import idq
+#from laldetchar.idq import idq
+from laldetchar.idq import reed
 from laldetchar.idq import idq_gdb_utils
 import traceback
 

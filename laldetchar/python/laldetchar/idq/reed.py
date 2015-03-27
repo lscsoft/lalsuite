@@ -189,9 +189,9 @@ def extract_start_stop(filename, suffix='.dat'):
     picks of start, dur information from filename and returns [start, stop]
     """
     matchfile = re.compile('.*-([0-9]*)-([0-9]*)\%s$' % suffix)
-    m = matchfile.match(file)
+    m = matchfile.match(filename)
     (st, dur) = (int(m.group(1)), int(m.group(2)))
-    return st, st+dur
+    return [st, st+dur]
 
 #=================================================
 # extract classifier name
@@ -784,6 +784,9 @@ class BinomialMap(object):
         """
         returns the point estimate for the fraction of events
         """
+        if not self.n_samples:
+            return 0.0
+
         if self.kind == "linear":
             return numpy.interp(r, self.ranks, self.c_samples) / self.n_samples
         else:

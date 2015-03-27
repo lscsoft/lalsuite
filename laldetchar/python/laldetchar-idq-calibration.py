@@ -35,8 +35,14 @@ import numpy as np
 
 from collections import defaultdict
 
+import traceback
 import ConfigParser
 from optparse import OptionParser
+
+from glue.ligolw import ligolw
+from glue.ligolw import utils as ligolw_utils
+from glue.ligolw import lsctables
+from glue.ligolw import table
 
 #from laldetchar.idq import idq
 from laldetchar.idq import reed
@@ -77,7 +83,7 @@ parser.add_option('', '--FAPthr', default=[], action="append", type='float', hel
 opts, args = parser.parse_args()
 
 if opts.lookback != "infinity":
-    lookback = int(train_lookback)
+    lookback = int(opts.lookback)
 
 #===================================================================================================
 ### setup logger to record processes
@@ -159,7 +165,8 @@ UL \% difference = %.5E\%
 if not opts.ignore_science_segments:
     ### load settings for accessing dmt segment files
 #    dmt_segments_location = config.get('get_science_segments', 'xmlurl')
-    dq_name = config.get('get_science_segments', 'include').split(':')[1]
+    dq_name = config.get('get_science_segments', 'include')
+#    dq_name = config.get('get_science_segments', 'include').split(':')[1]
     segdb_url = config.get('get_science_segments', 'segdb')
 
 #==================================================
@@ -237,8 +244,8 @@ while gpsstart < gpsstop:
     #===============================================================================================
     if opts.ignore_science_segments:
         logger.info('analyzing data regardless of science segements')
-        scisegs = [[gpsstart-lookback], [gpsstart+stride]] ### set segs to be this stride range
-        coveredsegs = [[gpsstart-lookback], [gpsstart+stride]] ### set segs to be this stride range
+        scisegs = [[gpsstart-lookback, gpsstart+stride]] ### set segs to be this stride range
+        coveredsegs = [[gpsstart-lookback, gpsstart+stride]] ### set segs to be this stride range
 
     else:
         logger.info('Begin: querrying science segments')
@@ -261,7 +268,7 @@ while gpsstart < gpsstop:
 
         except Exception as e:
             traceback.print_exc()
-            logger.info('ERROR: segment generation failed. Skipping this training period.')
+            logger.info('ERROR: segment generation failed. Skipping this calibration period.')
 
             if opts.force: ### we are require successful training or else we want errors
                 logger.info(traceback.print_exc())
@@ -291,7 +298,7 @@ while gpsstart < gpsstop:
     #===============================================================================================
 
     ### find all *dat files, bin them according to classifier
-    logger.info('finding all *dag files')
+    logger.info('finding all *dat files')
     datsD = defaultdict( list )
     for dat in reed.get_all_files_in_range(realtimedir, gpsstart-lookback, gpsstart+stride, pad=0, suffix='.dat' ):
         datsD[reed.extract_dat_name( dat )].append( dat )
@@ -301,7 +308,7 @@ while gpsstart < gpsstop:
         if key not in classifiers:
             datsD.pop(key) 
         else: ### throw out files that don't contain any science time
-            datsD[key] = [ dat for dat in datsD[key] if event.livetime(event.andsegments([idqsegs, reed.extract_start_stop(dat, suffix='.dat')])) ]
+            datsD[key] = [ dat for dat in datsD[key] if event.livetime(event.andsegments([idqsegs, [reed.extract_start_stop(dat, suffix='.dat')]])) ]
 
     #====================
     # update uroc for each classifier
@@ -321,7 +328,7 @@ while gpsstart < gpsstop:
         output = reed.slim_load_datfiles(datsD[classifier], skip_lines=0, columns='GPS i rank'.split())
 
         ### filter times by scisegs -> keep only the ones within scisegs
-        out = np.array(event.include( [ [output['GPS'][i], output['i'][i], output['rank'][i] ] for i in xrange(len(output['GPS'])) ], idqsegs, tcent=0 ))
+        out = np.array(event.include( [ [float(output['GPS'][i]), int(output['i'][i]), float(output['rank'][i]) ] for i in xrange(len(output['GPS'])) ], idqsegs, tcent=0 ))
         if not len(out): ### no data remains!
             output['GPS'] = []
             output['i'] = []
@@ -376,7 +383,7 @@ while gpsstart < gpsstop:
             if key not in classifiers: ### throw away unwanted files
                 fapsD.pop(key)
             else: ### keep only files that overlap with scisegs
-                fapsD[key] = [ dat for dat in datsD[key] if event.livetime(event.andsegments([idqsegs, reed.extract_start_stop(dat, suffix='.npy.gz')])) ]
+                fapsD[key] = [ dat for dat in datsD[key] if event.livetime(event.andsegments([idqsegs, [reed.extract_start_stop(dat, suffix='.npy.gz')]])) ]
 
         ### iterate through classifiers
         alerts = {} ### files that we should be alerted about

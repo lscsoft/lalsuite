@@ -19,7 +19,8 @@ description = \
 
 
 from ligo.gracedb.rest import GraceDb
-from laldetchar.idq import idq
+#from laldetchar.idq import idq
+from laldetchar.idq import reed
 from laldetchar.idq import idq_tables
 from laldetchar.idq import idq_tables_dbutils
 

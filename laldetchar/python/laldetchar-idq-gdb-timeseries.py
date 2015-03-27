@@ -25,7 +25,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-from laldetchar.idq import idq
+#from laldetchar.idq import idq
 from laldetchar.idq import reed
 from laldetchar.idq import event
 from laldetchar.idq import idq_gdb_utils

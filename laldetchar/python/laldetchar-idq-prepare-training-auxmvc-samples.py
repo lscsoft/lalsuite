@@ -28,7 +28,8 @@ from optparse import *
 from laldetchar.idq import auxmvc_utils
 import numpy
 from laldetchar.idq import event
-from laldetchar.idq import idq
+#from laldetchar.idq import idq
+from laldetchar.idq import reed
 
 from laldetchar import git_version
 

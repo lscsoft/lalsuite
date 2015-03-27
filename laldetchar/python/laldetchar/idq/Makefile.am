@@ -25,6 +25,7 @@ pymodule_PYTHON = \
 	pdf_estimation.py \
 	svmkit.py \
 	reed.py \
+	reed_summary_plots.py \
 	calibration.py \
 	$(END_OF_LIST)
 

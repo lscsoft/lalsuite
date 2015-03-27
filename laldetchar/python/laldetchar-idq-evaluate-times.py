@@ -30,7 +30,7 @@ import ConfigParser
 from optparse import OptionParser
 
 from laldetchar.idq import event
-from laldetchar.idq import idq
+#from laldetchar.idq import idq
 from laldetchar.idq import reed
 #from laldetchar.idq import ovl
 
@@ -125,7 +125,8 @@ twopadding = 2*padding ### useful to have
 if not opts.ignore_science_segments:
     ### load settings for accessing dmt segment files
     dmt_segments_location = config.get('get_science_segments', 'xmlurl')
-    dmtdq_name = config.get('get_science_segments', 'include').split(':')[1]
+    dmtdq_name = config.get('get_science_segments', 'include')
+#    dmtdq_name = config.get('get_science_segments', 'include').split(':')[1]
 
 ### define the gravitational wave channel/what is a glitch
 gwchannel = config.get('general', 'gwchannel')

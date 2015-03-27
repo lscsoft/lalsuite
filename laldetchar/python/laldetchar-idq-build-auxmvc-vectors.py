@@ -31,7 +31,8 @@ from pylal import auxmvc_utils
 import numpy
 import random
 from laldetchar.idq import event
-from laldetchar.idq import idq
+#from laldetchar.idq import idq
+from laldetchar.idq import reed
 
 ######################################################################################
 #

@@ -40,6 +40,7 @@ plt.rcParams.update( {'text.usetex':True} )
 
 from laldetchar.idq import pdf_estimation as pdf_e
 from laldetchar.idq import ovl
+from laldetchar.idq import reed
 
 from laldetchar import git_version
 
@@ -96,8 +97,8 @@ def kde_pwg(eval, r, ds, scale=0.1, s=0.1):
     for R, dS in zip(r, ds):
         observ += [R]*dS
 
-    if np.sum(dc):
-        return pdf_e.point_wise_gaussian_kde(kde, observ, scale=scale, s=s)
+    if np.sum(ds):
+        return pdf_e.point_wise_gaussian_kde(eval, observ, scale=scale, s=s)
     else:
         return np.ones_like(eval)
 
@@ -147,9 +148,9 @@ def rcg_to_rocFig(c, g, color='b', label=None, figax=None):
         cln_CR = reed.binomialCR( _c, n_c, conf=0.68 )
         gch_CR = reed.binomialCR( _g, n_g, conf=0.68 )
         if color:
-            ax.fill_between( cln_CR, gch_CR, color=color, alpha=0.25, linestyle="none" )
+            ax.fill_between( cln_CR, 2*[gch_CR[0]], 2*[gch_CR[1]], color=color, alpha=0.25)
         else:
-            ax.fill_between( cln_CR, gch_CR, alpha=0.25, linestyle="none" )
+            ax.fill_between( cln_CR, 2*[gch_CR[0]], 2*[gch_CR[1]], alpha=0.25)
 
     ax.grid(True, which='both')
 
@@ -164,7 +165,7 @@ def rcg_to_rocFig(c, g, color='b', label=None, figax=None):
 
     return fig, ax
 
-def stacked_hist(r, s, color='b', linestyle='-', histtype='step', label=None, figax=None, nperbin=10):
+def stacked_hist(r, s, color='b', linestyle='-', histtype='step', label=None, figax=None, nperbin=10, bmin=0, bmax=1):
 
     if figax==None:
         fig = plt.figure(figsize=default_figsize)
@@ -174,7 +175,7 @@ def stacked_hist(r, s, color='b', linestyle='-', histtype='step', label=None, fi
         fig, axh, axc = figax
 
     nbins = int(max(5, np.sum(s)/nperbin))
-    bins = np.linspace(0, 1, nbins+1)
+    bins = np.linspace(bmin, bmax, nbins+1)
 
     if color:
         n, b, p = axh.hist( r, bins, weights=s, color=color, label=label , linestyle=linestyle, histtype=histtype)
@@ -185,7 +186,7 @@ def stacked_hist(r, s, color='b', linestyle='-', histtype='step', label=None, fi
     rsamples = np.linspace(0, 1, nsamples)
     cum = np.zeros(nsamples)
     for _r, _s in zip(r, s):
-        cum[rsamples>=_r] += s
+        cum[rsamples>=_r] += _s
     if color:
         axc.plot( rsamples, cum, color=color, label=label , linestyle=linestyle )
     else:
@@ -234,7 +235,7 @@ def stacked_kde(r, s, color='b', linestyle='-', label=None, figax=None):
     axh.set_xlim(xmin=0, xmax=1)
     axc.set_xlim(xmin=0, xmax=1)
 
-    axh.set_ylim(ymin=0, ymax=max(n)*1.1)
+    axh.set_ylim(ymin=0, ymax=max(s)*1.1)
     axc.set_ylim(ymin=0, ymax=np.sum(s))
 
     plt.setp(axc.get_xticklabels(), visible=False)
@@ -285,8 +286,10 @@ def bitword( samples, classifiers, figax=None, label=None):
 
         for output in samples[classifier]:
             gps[ output['GPS'] ] += dint
-                
-    ax.hist( gps.values(), bins, histtype="step", label=label )
+    
+    bins = np.arange(2**len(classifiers)+1)-0.5
+    if gps.values(): 
+        ax.hist( gps.values(), bins, histtype="step", label=label )
 
     ax.set_ylabel('count')
     ax.set_xlabel(None)
