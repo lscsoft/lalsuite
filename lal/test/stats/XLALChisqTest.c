@@ -138,17 +138,26 @@ static void ParseOptions(int argc, char *argv[])
  * Check the output of functions
  */
 
-#define CHECKOUTPUT(msg, expr, value, acc) { \
-	REAL8 result = expr; \
-	if(fabs(result - value) > acc) { \
-		fprintf(stderr, msg ": expected %.11g, got %.11g\n", value, result); \
+#define CHECKOUTPUT(msg, expr, value, acc) do { \
+	double result = expr; \
+	if(fabs((result - value) / value) > acc) { \
+		fprintf(stderr, "%s:  expected %.17g, got %.17g (fractional error is %g;  upto %g allowed)\n", msg, value, result, fabs((result - value) / value), acc); \
 		exit(1); \
+	} else if(verbose) { \
+		fprintf(stderr, "%s:  expected %.17g, got %.17g (fractional error is %g;  upto %g allowed)\n", msg, value, result, fabs((result - value) / value), acc); \
 	} \
 	if(XLALGetBaseErrno()) { \
-		fprintf(stderr, msg ": returned error\n"); \
+		fprintf(stderr, "%s:  returned error\n", msg); \
 		exit(1); \
 	} \
-};
+} while(0)
+
+
+#define CHECKXLALLogChisqCCDF(chi2, dof, value, acc) do { \
+	char msg[100]; \
+	sprintf(msg, "XLALLogChisqCCDF(%.17g, %.17g)", chi2, dof); \
+	CHECKOUTPUT(msg, XLALLogChisqCCDF(chi2, dof), value, acc); \
+} while(0)
 
 
 /*
@@ -157,28 +166,30 @@ static void ParseOptions(int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
-	REAL8 chi2;
-	REAL8 dof;
-
 	/*
 	 * Parse the command line options
 	 */
 
 	ParseOptions(argc, argv);
 
-
 	/*
-	 *  Check to make sure the functions return the correct values.
-	 *  First time around
+	 * Check to make sure the functions return the correct values.
+	 * "Correct" values obtained with Mathematica, computing
+	 * intermediate results to 1000 digits.  E.g., the second result
+	 * can be obtained with Mathematica using the expression
+	 *
+	 * N[Log[1-Q[8 / 2, 0, 2.3 / 2]], 1000]
 	 */
 
-	chi2 = 2.3l;
-	dof = 8.0;
+	CHECKXLALLogChisqCCDF(8., 8., -0.83593241162679427, 1e-15);
+	CHECKXLALLogChisqCCDF(2.3, 8., -0.030040797756978235, 1e-15);
+	CHECKXLALLogChisqCCDF(2.3, 0.5, -2.9095189371057191, 1e-15);
+	CHECKXLALLogChisqCCDF(1.2e3, 8., -582.59596635081904, 1e-15);
+	CHECKXLALLogChisqCCDF(2e4, 1e4, -1539.4420486763690, 1e-15);
 
-	/* check forward functions */
-	CHECKOUTPUT("XLALLogChisqCCDF(chi2, dof)", XLALLogChisqCCDF(chi2, dof), -0.030040797757, 1e-9);
-
-	LALCheckMemoryLeaks();
+	/*
+	 * Done.
+	 */
 
 	if(verbose)
 		printf("PASS: all tests\n");
