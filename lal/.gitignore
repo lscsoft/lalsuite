@@ -77,9 +77,9 @@ test/fft/TimeFreqFFTTest
 test/inject/GeocentricGeodeticTest
 test/inject/SkyCoordinatesTest
 test/noisemodels/NoisePSDTest
-test/stats/XLALChisqTest
 test/stats/LALCorrelationTest
 test/stats/LALMomentTest
+test/stats/XLALChisqTest
 test/std/LALConstantsTest
 test/std/LALGSLTest
 test/std/LALMallocTest
@@ -101,6 +101,7 @@ test/support/StreamInputTest
 test/support/StreamSeriesInputTest
 test/support/TranslateAnglesTest
 test/support/TranslateMJDTest
+test/support/UserInputParseTest
 test/support/UserInputTest
 test/tdfilter/BandPassTest
 test/tdfilter/IIRFilterTest
