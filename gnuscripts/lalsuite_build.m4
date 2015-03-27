@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 109
+# serial 110
 
 # not present in older versions of pkg.m4
 m4_pattern_allow([^PKG_CONFIG(_(PATH|LIBDIR|SYSROOT_DIR|ALLOW_SYSTEM_(CFLAGS|LIBS)))?$])
@@ -345,22 +345,10 @@ AC_DEFUN([LALSUITE_PROG_COMPILERS],[
   AC_REQUIRE([AC_PROG_CC_C99])
   AC_REQUIRE([AC_PROG_CPP])
 
-  # check for clang
-  AS_IF([test "x$GCC" = xyes],
-    [AS_IF([test "`$CC -v 2>&1 | grep -c 'clang'`" != "0"],[CLANG_CC=1])],
-    [CLANG_CC=])
-  AC_SUBST(CLANG_CC)
-
   # check for C++ compiler, if needed
   AS_IF([test "${lalsuite_require_cxx}" = true],[
     AC_PROG_CXX
     AC_PROG_CXXCPP
-
-    # check for clang++
-    AS_IF([test "x$GXX" = xyes],
-      [AS_IF([test "`$CXX -v 2>&1 | grep -c 'clang'`" != "0"],[CLANG_CXX=1])],
-      [CLANG_CXX=])
-    AC_SUBST(CLANG_CXX)
 
     # define C99 constant and limit macros for C++ sources
     CXXFLAGS="${CXXFLAGS} -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS"
