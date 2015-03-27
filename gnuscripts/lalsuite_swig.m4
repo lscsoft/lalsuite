@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2014
 #
-# serial 76
+# serial 77
 
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
   # $0: check the version of $1, and store it in ${swig_version}
@@ -15,27 +15,6 @@ AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
   AS_IF([test "x${swig_version}" = x],[
     AC_MSG_ERROR([could not determine version of $1])
   ])
-  # end $0
-])
-
-AC_DEFUN([_LALSUITE_SWIG_CHECK_COMPILER_FLAGS],[
-  # $0: check flags used to compile SWIG bindings
-  LALSUITE_PUSH_UVARS
-  LALSUITE_CLEAR_UVARS
-  for flag in m4_normalize($2); do
-    AC_MSG_CHECKING([if ]_AC_LANG[ compiler supports ${flag}])
-    CFLAGS="-Werror ${flag}"
-    CXXFLAGS="${CFLAGS}"
-    AC_COMPILE_IFELSE([
-      AC_LANG_PROGRAM([AC_INCLUDES_DEFAULT],[])
-    ],[
-      AC_MSG_RESULT([yes])
-      $1="${$1} ${flag}"
-    ],[
-      AC_MSG_RESULT([no])
-    ])
-  done
-  LALSUITE_POP_UVARS
   # end $0
 ])
 
@@ -280,29 +259,37 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
 
     # determine Octave compiler flags
     AC_SUBST([SWIG_OCTAVE_CXXFLAGS],[])
+    swig_octave_cxxflags=
     for arg in CXXPICFLAG ALL_CXXFLAGS; do
       for flag in `${mkoctfile} -p ${arg} 2>/dev/null`; do
-        SWIG_OCTAVE_CXXFLAGS="${SWIG_OCTAVE_CXXFLAGS} ${flag}"
+        swig_octave_cxxflags="${swig_octave_cxxflags} ${flag}"
       done
     done
     AC_LANG_PUSH([C++])
-    _LALSUITE_SWIG_CHECK_COMPILER_FLAGS([SWIG_OCTAVE_CXXFLAGS],[
+    LALSUITE_CHECK_COMPILE_FLAGS([
+      ${swig_octave_cxxflags}
       -Wno-uninitialized -Wno-unused-variable -Wno-unused-but-set-variable
-      -Wno-format-extra-args -Wno-tautological-compare -fno-strict-aliasing -g
-      -O0 -Wp[,]-U_FORTIFY_SOURCE
-    ])
+      -Wno-format-extra-args -Wno-tautological-compare -fno-strict-aliasing
+      -g -O0 -Wp[,]-U_FORTIFY_SOURCE
+      ],[SWIG_OCTAVE_CXXFLAGS="${SWIG_OCTAVE_CXXFLAGS} ${flag}"]
+    )
     AC_LANG_POP([C++])
 
     # determine Octave linker flags
     AC_SUBST([SWIG_OCTAVE_LDFLAGS],[])
+    swig_octave_ldflags=
     for arg in LFLAGS LIBOCTINTERP LIBOCTAVE LIBCRUFT OCT_LINK_OPTS OCT_LINK_DEPS; do
       for flag in `${mkoctfile} -p ${arg} 2>/dev/null`; do
         AS_CASE([${flag}],
           [-L/usr/lib|-L/usr/lib64],[:],
-          [SWIG_OCTAVE_LDFLAGS="${SWIG_OCTAVE_LDFLAGS} ${flag}"]
+          [swig_octave_ldflags="${swig_octave_ldflags} ${flag}"]
         )
       done
     done
+    LALSUITE_CHECK_LINK_FLAGS([
+      ${swig_octave_ldflags}
+      ],[SWIG_OCTAVE_LDFLAGS="${SWIG_OCTAVE_LDFLAGS} ${flag}"]
+    )
 
     # check for Octave headers
     AC_LANG_PUSH([C++])
@@ -383,13 +370,15 @@ EOD`]
       AC_MSG_ERROR([could not determine Python compiler flags])
     ])
     for flag in ${python_out}; do
-      SWIG_PYTHON_CFLAGS="${SWIG_PYTHON_CFLAGS} ${flag}"
+      swig_python_cflags="${swig_python_cflags} ${flag}"
     done
     AC_LANG_PUSH([C])
-    _LALSUITE_SWIG_CHECK_COMPILER_FLAGS([SWIG_PYTHON_CFLAGS],[
+    LALSUITE_CHECK_COMPILE_FLAGS([
+      ${swig_python_cflags}
       -Wno-uninitialized -Wno-unused-variable -Wno-unused-but-set-variable
       -Wno-format-extra-args -Wno-tautological-compare -fno-strict-aliasing -g
-    ])
+      ],[SWIG_PYTHON_CFLAGS="${SWIG_PYTHON_CFLAGS} ${flag}"]
+    )
     AC_LANG_POP([C])
 
     # determine Python linker flags
@@ -409,9 +398,13 @@ EOD`]
     for flag in ${python_out}; do
       AS_CASE([${flag}],
         [-L/usr/lib|-L/usr/lib64],[:],
-        [SWIG_PYTHON_LDFLAGS="${SWIG_PYTHON_LDFLAGS} ${flag}"]
+        [swig_python_ldflags="${swig_python_ldflags} ${flag}"]
       )
     done
+    LALSUITE_CHECK_LINK_FLAGS([
+      ${swig_python_ldflags}
+      ],[SWIG_PYTHON_LDFLAGS="${SWIG_PYTHON_LDFLAGS} ${flag}"]
+    )
 
     # check for Python and NumPy headers
     AC_LANG_PUSH([C])
