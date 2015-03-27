@@ -30,6 +30,12 @@
 #include "CudaFunctions.h"
 #include "CudaFFT.h"
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 struct
 tagREAL4FFTPlan
 {
@@ -56,7 +62,7 @@ tagREAL8FFTPlan
  */
 
 
-REAL4FFTPlan * XLALCreateREAL4FFTPlan( UINT4 size, int fwdflg, int measurelvl )
+REAL4FFTPlan * XLALCreateREAL4FFTPlan( UINT4 size, int fwdflg, UNUSED int measurelvl )
 {
   UINT4 createSize;
   REAL4FFTPlan *plan;
@@ -80,15 +86,13 @@ REAL4FFTPlan * XLALCreateREAL4FFTPlan( UINT4 size, int fwdflg, int measurelvl )
    * in performing FFT to array with size 1
    */
 
-  int retval;
-	
   if( size == 1 ) createSize = 2;
   else	createSize = size;
   /* LAL_FFTW_WISDOM_LOCK; */
   if ( fwdflg ) /* forward */
-    retval= cufftPlan1d( &plan->plan, createSize, CUFFT_R2C, 1 );
+    cufftPlan1d( &plan->plan, createSize, CUFFT_R2C, 1 );
   else /* reverse */
-    retval= cufftPlan1d( &plan->plan, createSize, CUFFT_C2R, 1 );
+    cufftPlan1d( &plan->plan, createSize, CUFFT_C2R, 1 );
   /* LAL_FFTW_WISDOM_UNLOCK; */
   /* check to see success of plan creation */
 	
@@ -583,7 +587,7 @@ int XLALREAL8VectorFFT( REAL8Vector * _LAL_RESTRICT_ output, const REAL8Vector *
 }
 
 
-int XLALREAL8PowerSpectrum( REAL8Vector *spec, REAL8Vector *data,
+int XLALREAL8PowerSpectrum( REAL8Vector *spec, const REAL8Vector *data,
     const REAL8FFTPlan *plan )
 {
   REAL8 *tmp;

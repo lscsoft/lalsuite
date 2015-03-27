@@ -31,6 +31,12 @@
 #include "CudaFunctions.h"
 #include "CudaFFT.h"
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 /*
  *
  * XLAL COMPLEX8 functions
@@ -38,7 +44,7 @@
  */
 
 
-COMPLEX8FFTPlan * XLALCreateCOMPLEX8FFTPlan( UINT4 size, int fwdflg, int measurelvl )
+COMPLEX8FFTPlan * XLALCreateCOMPLEX8FFTPlan( UINT4 size, int fwdflg, UNUSED int measurelvl )
 {
   COMPLEX8FFTPlan *plan;
   UINT4 createSize;
