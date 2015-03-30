@@ -18,7 +18,6 @@
 */
 
 #include <math.h>
-#include <lal/LALErrno.h>
 #include <lal/XLALError.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>

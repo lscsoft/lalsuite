@@ -31,7 +31,6 @@
 
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
-#include <lal/LALErrno.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataInspiralUtils.h>
 #include <lal/Date.h>

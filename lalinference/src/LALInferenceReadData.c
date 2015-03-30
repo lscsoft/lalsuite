@@ -65,7 +65,6 @@
 #include <lal/GenerateInspiral.h>
 #include <lal/NRWaveInject.h>
 #include <lal/GenerateInspRing.h>
-#include <lal/LALErrno.h>
 #include <math.h>
 #include <lal/LALInspiral.h>
 #include <lal/LALSimulation.h>

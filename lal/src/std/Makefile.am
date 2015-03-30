@@ -6,7 +6,6 @@ pkginclude_HEADERS = \
 	LALConstants.h \
 	LALDatatypes.h \
 	LALDebugLevel.h \
-	LALErrno.h \
 	LALError.h \
 	LALGSL.h \
 	LALMalloc.h \

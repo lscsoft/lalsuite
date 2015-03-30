@@ -137,6 +137,23 @@ void REPORTSTATUS(LALStatus * status);
 
 #endif /* SWIG */
 
+/*
+ * Error codes and corresponding error messages.
+ */
+
+#define LAL_FAIL_ERR	XLAL_EFAILED
+#define LAL_FAIL_MSG	"operation failed"
+#define LAL_NULL_ERR	XLAL_EFAULT
+#define LAL_NULL_MSG	"unexpected NULL pointer"
+#define LAL_NNULL_ERR	XLAL_EFAULT
+#define LAL_NNULL_MSG	"unexpected non-NULL pointer"
+#define LAL_NOMEM_ERR	XLAL_ENOMEM
+#define LAL_NOMEM_MSG	"out of memory"
+#define LAL_RANGE_ERR	XLAL_ERANGE
+#define LAL_RANGE_MSG	"parameter out of range"
+#define LAL_BADPARM_ERR XLAL_EINVAL
+#define LAL_BADPARM_MSG "invalid parameter value"
+
 #if 0
 {       /* so that editors will match succeeding brace */
 #elif defined(__cplusplus)
