@@ -1243,7 +1243,7 @@ def datfilename_to_xmldocs(
 
         # ## add info to GlitchTable() objects. Commmon for all classifiers
 
-        idq_glitch_row = lsctables.IDQGlitch()  # define row object
+        idq_glitch_row = idq_tables.IDQGlitch()  # define row object
 
         idq_glitch_row.ifo = ifo
         idq_glitch_row.gps = int(GPS)  # fill in relevant data
@@ -1264,7 +1264,7 @@ def datfilename_to_xmldocs(
                 # ## add info to OVLDataTable() objects
 
         if classifier == 'ovl':
-            ovl_row = lsctables.OVLData()  # define row object
+            ovl_row = idq_tables.OVLData()  # define row object
             ovl_row.ifo = ifo
             ovl_row.aux_channel = dat['vchan'][ind]
             ovl_row.veto_thr = float(dat['vthr'][ind])
