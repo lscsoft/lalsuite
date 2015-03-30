@@ -1444,6 +1444,8 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
     Approximant approximant                     /**< post-Newtonian approximant to use for waveform production */
     );
 
+SphHarmTimeSeries *XLALSimInspiralModesTD(REAL8 phiRef, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 f_min, REAL8 f_ref, REAL8 r, REAL8 lambda1, REAL8 lambda2, LALSimInspiralWaveformFlags *waveFlags, LALSimInspiralTestGRParam *nonGRparams, int amplitudeO, int phaseO, int lmax, Approximant approximant);
+
 /**
  * Interface to compute a single -2 spin-weighted spherical harmonic mode
  * for a binary inspiral of any available amplitude and phase PN order.
