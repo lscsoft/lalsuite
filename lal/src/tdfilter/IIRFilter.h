@@ -173,18 +173,40 @@ typedef struct tagREAL8IIRFilter{
   REAL8Vector *history;    /**< The previous values of w. */
 } REAL8IIRFilter;
 
+/**
+ * This structure stores the direct and recursive REAL8 filter coefficients, as
+ * well as the complex-valued history of the auxiliary sequence \f$w\f$.
+ * The length of the history vector gives the order of the filter
+ */
+#ifdef SWIG /* SWIG interface directives */
+SWIGLAL(IMMUTABLE_MEMBERS(tagCOMPLEX16IIRFilter, name));
+#endif /* SWIG */
+typedef struct tagCOMPLEX16IIRFilter{
+  const CHAR *name;        /**< User assigned name. */
+  REAL8 deltaT;            /**< Sampling time interval of the filter; If \f$\leq0\f$, it will be ignored (ie it will be taken from the data stream). */
+  REAL8Vector *directCoef; /**< The direct filter coefficients. */
+  REAL8Vector *recursCoef; /**< The recursive filter coefficients. */
+  COMPLEX16Vector *history;    /**< The previous values of w. */
+} COMPLEX16IIRFilter;
+
 /*@}*/
 
 /* Function prototypes. */
 REAL4IIRFilter *XLALCreateREAL4IIRFilter( COMPLEX8ZPGFilter *input );
 REAL8IIRFilter *XLALCreateREAL8IIRFilter( COMPLEX16ZPGFilter *input );
+COMPLEX16IIRFilter *XLALCreateCOMPLEX16IIRFilter( COMPLEX16ZPGFilter *input );
 void XLALDestroyREAL4IIRFilter( REAL4IIRFilter *filter );
 void XLALDestroyREAL8IIRFilter( REAL8IIRFilter *filter );
+void XLALDestroyCOMPLEX16IIRFilter( COMPLEX16IIRFilter *filter );
 
 int XLALIIRFilterREAL4Vector( REAL4Vector *vector, REAL8IIRFilter *filter );
 int XLALIIRFilterREAL8Vector( REAL8Vector *vector, REAL8IIRFilter *filter );
+int XLALIIRFilterCOMPLEX8Vector( COMPLEX8Vector *vector, COMPLEX16IIRFilter *filter );
+int XLALIIRFilterCOMPLEX16Vector( COMPLEX16Vector *vector, COMPLEX16IIRFilter *filter );
 int XLALIIRFilterReverseREAL4Vector( REAL4Vector *vector, REAL8IIRFilter *filter );
 int XLALIIRFilterReverseREAL8Vector( REAL8Vector *vector, REAL8IIRFilter *filter );
+int XLALIIRFilterReverseCOMPLEX8Vector( COMPLEX8Vector *vector, COMPLEX16IIRFilter *filter );
+int XLALIIRFilterReverseCOMPLEX16Vector( COMPLEX16Vector *vector, COMPLEX16IIRFilter *filter );
 
 REAL4 XLALIIRFilterREAL4( REAL4 x, REAL8IIRFilter *filter );
 REAL8 XLALIIRFilterREAL8( REAL8 x, REAL8IIRFilter *filter );

@@ -63,6 +63,19 @@ void XLALDestroyREAL8IIRFilter( REAL8IIRFilter *filter )
   return;
 }
 
+/** \see See \ref DestroyIIRFilter_c for documentation */
+void XLALDestroyCOMPLEX16IIRFilter( COMPLEX16IIRFilter *filter )
+{
+  if ( filter )
+  {
+    XLALDestroyREAL8Vector( filter->directCoef );
+    XLALDestroyREAL8Vector( filter->recursCoef );
+    XLALDestroyCOMPLEX16Vector( filter->history );
+    LALFree( filter );
+  }
+  return;
+}
+
 /**
  * Deprecated.
  * \deprecated Use XLALDestroyREAL4IIRFilter() instead

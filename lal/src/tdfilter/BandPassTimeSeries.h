@@ -88,13 +88,23 @@ typedef struct tagPassBandParamStruc{
 /* Function prototypes. */
 int XLALButterworthREAL4TimeSeries( REAL4TimeSeries *series, PassBandParamStruc *params );
 int XLALButterworthREAL8TimeSeries( REAL8TimeSeries *series, PassBandParamStruc *params );
+int XLALButterworthCOMPLEX8TimeSeries( COMPLEX8TimeSeries *series, PassBandParamStruc *params );
+int XLALButterworthCOMPLEX16TimeSeries( COMPLEX16TimeSeries *series, PassBandParamStruc *params );
 int XLALLowPassREAL4TimeSeries( REAL4TimeSeries *series,
     REAL8 frequency, REAL8 amplitude, INT4 filtorder );
 int XLALLowPassREAL8TimeSeries( REAL8TimeSeries *series,
     REAL8 frequency, REAL8 amplitude, INT4 filtorder );
+int XLALLowPassCOMPLEX8TimeSeries( COMPLEX8TimeSeries *series,
+    REAL8 frequency, REAL8 amplitude, INT4 filtorder );
+int XLALLowPassCOMPLEX16TimeSeries( COMPLEX16TimeSeries *series,
+    REAL8 frequency, REAL8 amplitude, INT4 filtorder );
 int XLALHighPassREAL4TimeSeries( REAL4TimeSeries *series,
     REAL8 frequency, REAL8 amplitude, INT4 filtorder );
 int XLALHighPassREAL8TimeSeries( REAL8TimeSeries *series,
+    REAL8 frequency, REAL8 amplitude, INT4 filtorder );
+int XLALHighPassCOMPLEX8TimeSeries( COMPLEX8TimeSeries *series,
+    REAL8 frequency, REAL8 amplitude, INT4 filtorder );
+int XLALHighPassCOMPLEX16TimeSeries( COMPLEX16TimeSeries *series,
     REAL8 frequency, REAL8 amplitude, INT4 filtorder );
 
 

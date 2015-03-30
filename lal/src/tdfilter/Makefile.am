@@ -19,3 +19,10 @@ libtdfilter_la_SOURCES = \
 	DestroyZPGFilter.c \
 	IIRFilterVectorR.c \
 	$(END_OF_LIST)
+
+noinst_HEADERS = \
+	ButterworthTimeSeries_source.c \
+	CreateIIRFilter_source.c \
+	IIRFilterVectorR_source.c \
+	IIRFilterVector_source.c \
+	$(END_OF_LIST)

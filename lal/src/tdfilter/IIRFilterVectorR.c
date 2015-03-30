@@ -55,126 +55,19 @@
  */
 /*@{*/
 
-/** \see See \ref IIRFilterVectorR_c for documentation */
-int XLALIIRFilterReverseREAL4Vector( REAL4Vector *vector, REAL8IIRFilter *filter )
-{
-  INT4 j;            /* Index for filter coeficients. */
-  INT4 length;       /* Length of vector. */
-  REAL4 *data;       /* Vector data. */
-  REAL8 w, datum;    /* Current auxiliary and output values. */
-  INT4 directOrder;  /* Number of direct filter coefficients. */
-  INT4 recursOrder;  /* Number of recursive filter coefficients. */
-  INT4 numHist;      /* The number of auxiliary data kept. */
-  REAL8 *directCoef; /* Direct filter coefficients. */
-  REAL8 *recursCoef; /* Recursive filter coefficients. */
-  REAL8 *temp=NULL;  /* Temporary storage for auxiliary sequence. */
+#undef COMPLEX_DATA
+#undef SINGLE_PRECISION
 
-  /* Make sure all the structures have been initialized. */
-  if ( ! vector || ! filter )
-    XLAL_ERROR( XLAL_EFAULT );
-  if ( ! vector->data )
-    XLAL_ERROR( XLAL_EINVAL );
-  if ( ! filter->directCoef || ! filter->recursCoef || ! filter->history
-      || !  filter->directCoef->data || ! filter->recursCoef->data
-      || !  filter->history->data )
-    XLAL_ERROR( XLAL_EINVAL );
-
-  length=vector->length;
-  data=vector->data+length-1;
-  directOrder=filter->directCoef->length;
-  recursOrder=filter->recursCoef->length;
-  directCoef=filter->directCoef->data;
-  recursCoef=filter->recursCoef->data;
-  numHist=filter->history->length+1;
-  temp = LALMalloc( numHist*sizeof(*temp) );
-  if ( ! temp )
-    XLAL_ERROR( XLAL_ENOMEM );
-  memset(temp,0,(numHist-1)*sizeof(*temp));
-
-  /* Run through the vector. */
-  while(length--){
-
-    /* Compute the auxiliary variable. */
-    for(j=numHist-1;j>=recursOrder;j--)
-      temp[j]=temp[j-1];
-    w=*data;
-    for(;j;j--)
-      w+=recursCoef[j]*(temp[j]=temp[j-1]);
-
-    /* Compute filter output. */
-    datum=*directCoef*(*temp=w);
-    for(j=1;j<directOrder;j++)
-      datum+=directCoef[j]*temp[j];
-    *(data--)=datum;
-  }
-  LALFree(temp);
-
-  /* Normal exit */
-  return 0;
-}
-
-/** \see See \ref IIRFilterVectorR_c for documentation */
-int XLALIIRFilterReverseREAL8Vector( REAL8Vector *vector, REAL8IIRFilter *filter )
-{
-  INT4 i;            /* Loop counter for data vector. */
-  INT4 j;            /* Index for filter coeficients. */
-  INT4 length;       /* Length of vector. */
-  REAL8 *data;       /* Vector data. */
-  REAL8 datum;       /* Temporary working variable. */
-  INT4 directOrder;  /* Number of direct filter coefficients. */
-  INT4 recursOrder;  /* Number of recursive filter coefficients. */
-  REAL8 *directCoef; /* Direct filter coefficients. */
-  REAL8 *recursCoef; /* Recursive filter coefficients. */
-
-  /* Make sure all the structures have been initialized. */
-  if ( ! vector || ! filter )
-    XLAL_ERROR( XLAL_EFAULT );
-  if ( ! vector->data )
-    XLAL_ERROR( XLAL_EINVAL );
-  if ( ! filter->directCoef || ! filter->recursCoef || ! filter->history
-      || !  filter->directCoef->data || ! filter->recursCoef->data
-      || !  filter->history->data )
-    XLAL_ERROR( XLAL_EINVAL );
-
-  length=vector->length;
-  data=vector->data+length-1;
-  directOrder=filter->directCoef->length;
-  recursOrder=filter->recursCoef->length;
-  directCoef=filter->directCoef->data;
-  recursCoef=filter->recursCoef->data;
-
-  /* Perform the auxilliary piece of the filter. */
-  for(i=0;(i<recursOrder)&&(i<length);i++,data--){
-    datum=*data;
-    for(j=1;j<=i;j++)
-      datum+=data[j]*recursCoef[j];
-    *data=datum;
-  }
-  for(;i<length;i++,data--){
-    datum=*data;
-    for(j=1;j<recursOrder;j++)
-      datum+=data[j]*recursCoef[j];
-    *data=datum;
-  }
-  data++;
-
-  /* Perform the direct piece of the filter. */
-  for(;i>directOrder;i--,data++){
-    datum=*data*directCoef[0];
-    for(j=1;j<directOrder;j++)
-      datum+=data[j]*directCoef[j];
-    *data=datum;
-  }
-  for(;i>0;i--,data++){
-    datum=*data*directCoef[0];
-    for(j=1;j<i;j++)
-      datum+=data[j]*directCoef[j];
-    *data=datum;
-  }
-
-  /* Normal exit */
-  return 0;
-}
+#define COMPLEX_DATA
+#define SINGLE_PRECISION
+#include "IIRFilterVectorR_source.c"
+#undef SINGLE_PRECISION
+#include "IIRFilterVectorR_source.c"
+#undef COMPLEX_DATA
+#define SINGLE_PRECISION
+#include "IIRFilterVectorR_source.c"
+#undef SINGLE_PRECISION
+#include "IIRFilterVectorR_source.c"
 
 /**
  * WARNING: THIS FUNCTION IS OBSOLETE.
