@@ -585,6 +585,39 @@ int XLALSimAddMode(
 	return 0;
 }
 
+/**
+ * For all valid TimeSeries contained within hmode structure,
+ * multiplies a mode h(l,m) by a spin-2 weighted spherical harmonic
+ * to obtain hplus - i hcross, which is added to the time series.
+ *
+ * Implements the sum of Eq. (11) of:
+ * Lawrence E. Kidder, \"Using Full Information When Computing Modes of
+ * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
+ * Orbit\", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
+ *
+ */
+int XLALSimAddModeFromModes(
+		    REAL8TimeSeries *hplus,      /**< +-polarization waveform */
+	       	REAL8TimeSeries *hcross,     /**< x-polarization waveform */
+	       	SphHarmTimeSeries *hmode,    /**< complex modes h(l,m) */
+	       	REAL8 theta,                 /**< polar angle (rad) */
+	       	REAL8 phi                    /**< azimuthal angle (rad) */
+		)
+{
+    SphHarmTimeSeries* this = hmode;
+
+    while ( this ) {
+        if ( !this->tdata ) {
+            this = this->next;
+            continue;
+        }
+
+        XLALSimAddMode(hplus, hcross, hmode->mode, theta, phi, this->l, this->m, 1);
+        this = this->next;
+    }
+	return 0;
+}
+
 
 /**
  * Computes h(l,m) mode timeseries of spherical harmonic decomposition of
