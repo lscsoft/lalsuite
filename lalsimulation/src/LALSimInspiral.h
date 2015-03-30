@@ -908,6 +908,22 @@ int XLALSimAddModeFromModes(
 	       	REAL8 phi                    /**< azimuthal angle (rad) */
 		);
 
+
+/**
+ * Returns the h+, hx waveforms constructed from all valid TimeSeries 
+ * contained within hmode structure. 
+ *
+ * See XLALSimAddModeFromModes and XLALSimAddMode
+ *
+ */
+int XLALSimNewTimeSeriesFromModes(
+		    REAL8TimeSeries **hplus,     /**< +-polarization waveform */
+	       	REAL8TimeSeries **hcross,    /**< x-polarization waveform */
+	       	SphHarmTimeSeries *hmode,    /**< complex modes h(l,m) */
+	       	REAL8 theta,                 /**< polar angle (rad) */
+	       	REAL8 phi                    /**< azimuthal angle (rad) */
+		);
+
 /**
  * Computes h(l,m) mode timeseries of spherical harmonic decomposition of
  * the post-Newtonian inspiral waveform.

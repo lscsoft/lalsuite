@@ -618,6 +618,45 @@ int XLALSimAddModeFromModes(
 	return 0;
 }
 
+/**
+ * Returns the h+, hx waveforms constructed from all valid TimeSeries 
+ * contained within hmode structure. 
+ *
+ * See XLALSimAddModeFromModes and XLALSimAddMode
+ *
+ */
+int XLALSimNewTimeSeriesFromModes(
+		    REAL8TimeSeries **hplus,     /**< +-polarization waveform */
+	       	REAL8TimeSeries **hcross,    /**< x-polarization waveform */
+	       	SphHarmTimeSeries *hmode,    /**< complex modes h(l,m) */
+	       	REAL8 theta,                 /**< polar angle (rad) */
+	       	REAL8 phi                    /**< azimuthal angle (rad) */
+		)
+{
+
+    if (!hmode) {
+        XLALPrintError("NULL mode structure passed.\n");
+        XLAL_ERROR(XLAL_EINVAL);
+    }
+    if (*hplus || *hcross) {
+        XLALPrintError("hplus and hcross time series must be NULL.\n");
+        XLAL_ERROR(XLAL_EINVAL);
+    }
+
+    *hplus = XLALCreateREAL8TimeSeries("hplus", &(hmode->mode->epoch),
+                hmode->mode->f0, hmode->mode->deltaT, &lalStrainUnit,
+                hmode->mode->data->length);
+    *hcross = XLALCreateREAL8TimeSeries("hplus", &(hmode->mode->epoch),
+                hmode->mode->f0, hmode->mode->deltaT, &lalStrainUnit,
+                hmode->mode->data->length);
+    memset((*hplus)->data->data, 0, (*hplus)->data->length*sizeof(REAL8));
+    memset((*hcross)->data->data, 0, (*hcross)->data->length*sizeof(REAL8));
+
+    XLALSimAddModeFromModes(*hplus, *hcross, hmode, theta, phi);
+
+	return 0;
+}
+
 
 /**
  * Computes h(l,m) mode timeseries of spherical harmonic decomposition of
