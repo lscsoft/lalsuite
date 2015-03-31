@@ -268,38 +268,24 @@ def point_wise_gaussian_kde(
 
     if pilot_interp == 'NONE':  # pilot_interp not supplied
         if pilot_x == 'NONE' and pilot_y == 'NONE':  # neither pilot_x nor pilot_y supplied
-            pilot_x = np.linspace(min(observ), max(observ), np.ceil(10
-                                  * (max(observ) - min(observ)) / s)
-                                  + 4)
-            pilot_y = fixed_bandwidth_gaussian_kde(pilot_x, observ, v=s
-                    ** 2)
-        elif not (pilot_x != 'NONE' and pilot_y != 'NONE'):
-
-                                                        # pilot_x or pilot_y supplied, but not both
-
+            pilot_x = np.linspace(min(0, min(observ)), max(1, max(observ)), np.ceil(10 * (max(observ) - min(observ)) / s) + 4)
+            pilot_y = fixed_bandwidth_gaussian_kde(pilot_x, observ, v=s** 2)
+        elif not (pilot_x != 'NONE' and pilot_y != 'NONE'): # pilot_x or pilot_y supplied, but not both
             print 'ERROR: one of pilot_x and pilot_y supplied. please supply both'
             return False
 
     # both pilot_x and pilot_y are supplied, or have now been defined
-
         if len(pilot_x) != len(pilot_y):
             print 'ERROR: pilot_x and pilot_y are not the same length'
             return False
         else:
-            pilot_interp = \
-                scipy.interpolate.InterpolatedUnivariateSpline(pilot_x,
-                    pilot_y, k=3)  # we automatically look for a cubic spline
+            pilot_interp = scipy.interpolate.InterpolatedUnivariateSpline(pilot_x, pilot_y, k=3)  # we automatically look for a cubic spline
     else:
-
         # pilot_interp is supplied
         # we require pilot_interp to be an intsance of scipy.interpolate.InterpolatedUnivariateSpline or scipy.interpolate.interp1d
-
-        if not isinstance(pilot_interp,
-                          scipy.interpolate.InterpolatedUnivariateSpline):
+        if not isinstance(pilot_interp, scipy.interpolate.InterpolatedUnivariateSpline):
             if isinstance(pilot_interp, scipy.interpolate.interp1d):
-                pilot_interp = \
-                    scipy.interpolate.InterpolatedUnivariateSpline(pilot_interp.__dict__['x'
-                        ], pilot_interp.__dict__['y'], k=3)  # if the object supplied is an instance of scipy.interpolate.interp1d, we convert it
+                pilot_interp = scipy.interpolate.InterpolatedUnivariateSpline(pilot_interp.__dict__['x'], pilot_interp.__dict__['y'], k=3)  # if the object supplied is an instance of scipy.interpolate.interp1d, we convert it
             else:
                 print "ERROR: data structure 'pilot_interp' not understood"
                 return False
@@ -308,17 +294,11 @@ def point_wise_gaussian_kde(
         eval = [eval]
 
     kde = []
-    s_optimal = [__point_wise_optimal_s(o, scale, pilot_interp)
-                 for o in observ]  # we base the optimal bandwidth off the observed observations
+    s_optimal = [__point_wise_optimal_s(o, scale, pilot_interp) for o in observ]  # we base the optimal bandwidth off the observed observations
     len_observ = len(observ)
     for e in eval:
-
 #    s_optimal = __point_wise_optimal_s(e, scale, pilot_interp)
-
-        kde.append(sum([__Nd_gaussian_kernel(e, o, s_optimal[ind] ** 2)
-                   / ((2. * np.pi) ** 0.5 * len_observ
-                   * s_optimal[ind]) for (ind, o) in
-                   enumerate(observ)]))
+        kde.append(sum([__Nd_gaussian_kernel(e, o, s_optimal[ind] ** 2) / ((2. * np.pi) ** 0.5 * len_observ * s_optimal[ind]) for (ind, o) in enumerate(observ)]))
 
     return kde
 
