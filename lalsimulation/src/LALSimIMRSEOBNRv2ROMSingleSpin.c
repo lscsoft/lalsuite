@@ -1055,7 +1055,7 @@ void SEOBNRv2ROMSingleSpin_Init_LALDATA(void)
   // then we expect the remaining datafiles to also be there.
   char datafile[] = "SEOBNRv2ROM_SS_Phase_ciall.dat";
 
-  char *path = XLALFileResolvePath(datafile);
+  char *path = XLALFileResolvePathLong(datafile, PKG_DATA_DIR);
   if (path==NULL)
     XLAL_ERROR_VOID(XLAL_EIO, "Unable to resolve data file %s in $LAL_DATA_PATH\n", datafile);
   char *dir = dirname(path);
