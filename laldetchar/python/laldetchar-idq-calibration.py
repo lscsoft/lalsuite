@@ -145,7 +145,7 @@ emaillist = config.get('warnings', 'calibration')
 errorthr = config.getfloat('warnings', 'calibration_errorthr')
 
 uroc_nsamples = config.getint('calibration','urank_nsamples')
-urank = np.linspace(0, 1, uroc_nsamples) ### uniformly spaced ranks used to sample ROC curves -> uroc
+urank = np.linspace(1, 0, uroc_nsamples) ### uniformly spaced ranks used to sample ROC curves -> uroc
 
 ### used for calibration check output files
 report_str = \
@@ -173,7 +173,7 @@ if not opts.ignore_science_segments:
 ### set up ROBOT certificates
 ### IF ligolw_segement_query FAILS, THIS IS A LIKELY CAUSE
 if opts.no_robot_cert:
-    logger.warning("Warning: running without a robot certificate. Your personal certificate may expire and this job may fail")
+    logger.warning("WARNING: running without a robot certificate. Your personal certificate may expire and this job may fail")
 else:
     ### unset ligo-proxy just in case
     if os.environ.has_key("X509_USER_PROXY"):
@@ -343,6 +343,8 @@ while gpsstart < gpsstop:
 
         ### compute rcg from output
         r, c, g = reed.dat_to_rcg( output )
+
+        logger.info('    N_gch = %d , N_cln = %d'%(g[-1], c[-1]))
 
         if opts.force or ((c[-1] >= min_num_cln) and (g[-1] >= min_num_gch)):
 
