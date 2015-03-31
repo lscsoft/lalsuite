@@ -9,6 +9,11 @@ doxygen_quiet_  = $(doxygen_quiet_$(AM_DEFAULT_VERBOSITY))
 doxygen_quiet_0 = YES
 doxygen_quiet_1 = NO
 
+doxygen_redir   = $(doxygen_redir_$(V))
+doxygen_redir_  = $(doxygen_redir_$(AM_DEFAULT_VERBOSITY))
+doxygen_redir_0 = >/dev/null
+doxygen_redir_1 =
+
 html-local: Makefile $(CONFIG_CLEAN_FILES)
 	$(AM_V_at)export doxygen_version="$(VERSION)"; \
 	if test "x$(doxygen_include_gitid)" = xtrue; then \
@@ -39,9 +44,9 @@ html-local: Makefile $(CONFIG_CLEAN_FILES)
 	$(SED) -e 's/^/- /' $(abs_top_builddir)/AUTHORS >> autogen.dox; \
 	echo '*/' >> autogen.dox; \
 	$(MKDIR_P) out/ || exit 1; \
-	$(DOXYGEN) doxygen.cfg 2>&1; \
+	$(DOXYGEN) doxygen.cfg $(doxygen_redir) 2>&1; \
 	$(PYTHON) $(abs_srcdir)/check_tags.py $(abs_builddir)/out/$(PACKAGE).tag >> warnings.log || exit 1; \
-	$(SED) -e '/^$$/d' $(DOXYGEN_WARNING_REGEX) warnings.log > errors.log; \
+	$(SED) $(DOXYGEN_WARNING_REGEX) warnings.log > errors.log; \
 	rm -f warnings.log || exit 1; \
 	cat errors.log >&2 || exit 1; \
 	test `cat errors.log | wc -l` -eq 0 || exit 1; \
