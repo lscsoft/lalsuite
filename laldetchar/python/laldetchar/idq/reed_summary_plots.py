@@ -89,7 +89,7 @@ def close(figure):
     """
     plt.close(figure)
 
-def kde_pwg(eval, r, ds, scale=0.1, s=0.1):
+def kde_pwg(eval, r, ds, scale=0.1, s=0.01):
     """
     delegates to pdf_e.point_wise_gaussian_kde after constructing the correct input values
     """
@@ -140,17 +140,19 @@ def rcg_to_rocFig(c, g, color='b', label=None, figax=None):
 
     if color:
         ax.step(fap, eff, color=color, where='post', label=label) ### plot steps after increase in eff
+        ax.plot(fap, eff, markersize=2, marker='o', markerfacecolor=color, markeredgecolor=color, linestyle='none') ### plot steps after increase in eff
     else:
         ax.step(fap, eff, where='post', label=label) ### plot steps after increase in eff
+        ax.plot(fap, eff, markersize=2, marker='o', markerfacecolor=color, markeredgecolor=color, linestyle='none') ### plot steps after increase in eff
 
     ### plot error bars at sample points
     for _c, _g in zip(c, g):
         cln_CR = reed.binomialCR( _c, n_c, conf=0.68 )
         gch_CR = reed.binomialCR( _g, n_g, conf=0.68 )
         if color:
-            ax.fill_between( cln_CR, 2*[gch_CR[0]], 2*[gch_CR[1]], color=color, alpha=0.25)
+            ax.fill_between( cln_CR, 2*[gch_CR[0]], 2*[gch_CR[1]], color=color, alpha=0.05)
         else:
-            ax.fill_between( cln_CR, 2*[gch_CR[0]], 2*[gch_CR[1]], alpha=0.25)
+            ax.fill_between( cln_CR, 2*[gch_CR[0]], 2*[gch_CR[1]], alpha=0.05)
 
     ax.grid(True, which='both')
 
@@ -165,7 +167,7 @@ def rcg_to_rocFig(c, g, color='b', label=None, figax=None):
 
     return fig, ax
 
-def stacked_hist(r, s, color='b', linestyle='-', histtype='step', label=None, figax=None, nperbin=10, bmin=0, bmax=1):
+def stacked_hist(r, s, color='b', linestyle='solid', histtype='step', label=None, figax=None, nperbin=10, bmin=0, bmax=1):
 
     if figax==None:
         fig = plt.figure(figsize=default_figsize)
@@ -183,10 +185,11 @@ def stacked_hist(r, s, color='b', linestyle='-', histtype='step', label=None, fi
         n, b, p = axh.hist( r, bins, weights=s, label=label , linestyle=linestyle, histtype=histtype)
 
     nsamples = 501
-    rsamples = np.linspace(0, 1, nsamples)
+    rsamples = np.linspace(min(r), max(1, max(r)), nsamples)
     cum = np.zeros(nsamples)
     for _r, _s in zip(r, s):
         cum[rsamples>=_r] += _s
+    cum = cum[-1] - cum ### switch so it is cumulative starting at the right
     if color:
         axc.plot( rsamples, cum, color=color, label=label , linestyle=linestyle )
     else:
@@ -194,9 +197,6 @@ def stacked_hist(r, s, color='b', linestyle='-', histtype='step', label=None, fi
 
     axh.grid(True, which="both")
     axc.grid(True, which="both")
-
-    axh.set_xlim(xmin=0, xmax=1)
-    axc.set_xlim(xmin=0, xmax=1)
 
     axh.set_ylim(ymin=0, ymax=max(n)*1.1)
     axc.set_ylim(ymin=0, ymax=np.sum(s))
@@ -209,7 +209,7 @@ def stacked_hist(r, s, color='b', linestyle='-', histtype='step', label=None, fi
 
     return fig, axh, axc
 
-def stacked_kde(r, s, color='b', linestyle='-', label=None, figax=None):
+def stacked_kde(r, s, color='b', linestyle='solid', label=None, figax=None):
 
     if figax==None:
         fig = plt.figure(figsize=default_figsize)
@@ -223,10 +223,12 @@ def stacked_kde(r, s, color='b', linestyle='-', label=None, figax=None):
     c = np.zeros_like(r)
     _s = 0.0
     cum = 0.0
-    for i, S in enumerate(s): ### integrate by hand
+    for i, S in enumerate(s[::-1]): ### integrate by hand, and start at the right
         cum += 0.5*(S+_s)
         c[i] = cum
         _s = S
+    c /= c[-1]
+    c = c[::-1] ### reverse order to match r
     axc.plot( r, c, color=color, linestyle=linestyle, label=label)
 
     axh.grid(True, which="both")
@@ -235,8 +237,8 @@ def stacked_kde(r, s, color='b', linestyle='-', label=None, figax=None):
     axh.set_xlim(xmin=0, xmax=1)
     axc.set_xlim(xmin=0, xmax=1)
 
-    axh.set_ylim(ymin=0, ymax=max(s)*1.1)
-    axc.set_ylim(ymin=0, ymax=np.sum(s))
+    axh.set_ylim(ymin=0, ymax=max(axh.get_ylim()[1], max(s)*1.1) )
+    axc.set_ylim(ymin=0, ymax=1.0)
 
     plt.setp(axc.get_xticklabels(), visible=False)
     axc.set_ylabel('cumulative fraction of events')
@@ -276,26 +278,34 @@ def bitword( samples, classifiers, figax=None, label=None):
    
     ### make associations by gps times
     gps = defaultdict( int ) ### get all gps times
-    ticks = []
+    ticks = [0]
     ticklabels = [""]
     for ind, classifier in enumerate(classifiers):
         dint = 2**ind ### value for by which we increment gps's int to signify detection by this classifier
 
         ticks += [t+dint for t in ticks] ### set up ticks and tick labels
-        ticklabels = ["%s\n!%s"%(l, classifier) for l in ticklabels] + ["%s\n%s"%(l, classifier) for l in ticklabels]
+#        ticklabels = ["%s\n!%s"%(l, classifier) for l in ticklabels] + ["%s\n%s"%(l, classifier) for l in ticklabels]
+        ticklabels += ["%s\n%s"%(l, classifier) for l in ticklabels]
 
         for output in samples[classifier]:
             gps[ output['GPS'] ] += dint
     
-    bins = np.arange(2**len(classifiers)+1)-0.5
-    if gps.values(): 
-        ax.hist( gps.values(), bins, histtype="step", label=label )
+#    bins = np.arange(2**len(classifiers)+1)-0.5
+    bins = np.arange(2**len(classifiers))+0.5
+    values = gps.values()
+    if values: 
+#        ax.hist( values, bins, histtype='step', label=label )
+        N = len(values)
+        ax.hist( values, bins, weights=np.ones(N, dtype=float)/N, histtype="step", label=label )
 
-    ax.set_ylabel('count')
-    ax.set_xlabel(None)
+#    ax.set_ylabel('count')
+    ax.set_ylabel('fraction of identified events')
 
     ax.xaxis.set_ticks(ticks)
     ax.xaxis.set_ticklabels([l.strip("\n") for l in ticklabels])
+
+    ax.set_xlim(xmin=bins[0], xmax=bins[-1])
+    ax.set_ylim(ymin=0, ymax=1)
 
     return fig, ax 
 
