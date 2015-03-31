@@ -25,6 +25,7 @@ import ConfigParser
 from optparse import OptionParser
 
 import subprocess
+import multiprocessing as mp
 
 from glue.ligolw import ligolw
 from glue.ligolw import utils as ligolw_utils
@@ -148,7 +149,7 @@ if ovl: ### need snglchandir
 stride = config.getint('train', 'stride')
 delay = config.getint('train', 'delay')
 
-train_script = config.get('condor', 'train')
+#train_script = config.get('condor', 'train')
 
 train_cache = dict( (classifier, reed.Cachefile(reed.cache(traindir, classifier, tag='_train%s'%usertag))) for classifier in classifiers )
 
@@ -318,7 +319,7 @@ while gpsstart < gpsstop:
                 continue
 
         if ovl:
-            if build_auxmvc_vectors or (not os.path.exists(realtimedir)): ### mla will use science segments, so we need to write those for ovl
+            if (not mla) or build_auxmvc_vectors or (not os.path.exists(realtimedir)): ### mla will use science segments, so we need to write those for ovl
                                                                          ### if realtimedir doesn't exits, we need to use queried scisegs
                 try:
                     (scisegs, coveredseg) = reed.extract_dq_segments(seg_file, dq_name) ### read in segments from xml file
@@ -438,7 +439,10 @@ while gpsstart < gpsstop:
             logger.warning("WARNING: mla training samples could not be built. skipping %s training"%classifier)
             continue
 
-        if opts.force or ((N_clean >= classD['min_num_cln']) and (N_glitch >= classD['min_num_gch'])):
+        min_num_cln = float(classD['min_num_cln'])
+        min_num_gch = float(classD['min_num_gch'])
+
+        if opts.force or ((N_clean >= min_num_cln) and (N_glitch >= min_num_gch)):
 
             logger.info('submitting %s training dag'%classifier)
 
@@ -458,9 +462,9 @@ while gpsstart < gpsstop:
                 dags[dag_file] = "incomplete"
                 logger.info('dag file %s/%s'%(train_dir, dag_file))
 
-        elif (N_clean > classD['min_num_cln']):
+        elif (N_clean >= min_num_cln):
             logger.warning("WARNING: not enough glitches in training set. skipping %s training"%classifier)
-        elif (N_glitch >= classD['min_num_gch']):
+        elif (N_glitch >= min_num_gch):
             logger.warning("WARNING: not enough cleans in training set. skipping %s training"%classifier)
         else:
             logger.warning("WARNING: neither enough cleans nor enough glitches in training set. skipping %s training"%classifier)
@@ -482,6 +486,7 @@ while gpsstart < gpsstop:
     #=============================================
     # training on submit node
     #=============================================
+    blk_procs = [] ### for parallelization
     for classifier in blk_classifiers: ### these are trained via routines on the head node
                                        ### right now, this is just OVL, so we're safe putting sngl_chan routine ahead of this 
         classD = classifiersD[classifier]
@@ -492,13 +497,35 @@ while gpsstart < gpsstop:
             os.makedirs(train_dir)
 
         logger.info('launching %s training job'%classifier)
-        exit_status, _ = reed.blk_train(flavor, config, classifiersD[classifier], gpsstart-lookback, gpsstart+stride, ovlsegs=ovlsegs, vetosegs=vetosegs, train_dir=train_dir, cwd=cwd, force=opts.force, cache=train_cache[classifier], min_num_gch=classD['min_num_gch'], min_num_cln=classD['min_num_cln'], padding=padding)
 
+        min_num_cln = float(classD['min_num_cln'])
+        min_num_gch = float(classD['min_num_gch'])
+
+        ### parallelize through multiprocessing module!
+        conn1, conn2 = mp.Pipe()
+
+        proc = mp.Process(target=reed.blk_train, args=(flavor, config, classifiersD[classifier], gpsstart-lookback, gpsstart+stride, ovlsegs, vetosegs, train_dir, cwd, opts.force, train_cache[classifier], min_num_gch, min_num_cln, padding, conn2) )
+	proc.start()
+        conn2.close()
+        blk_procs.append( (proc, classifier, conn1) )
+
+        ### run in series
+#        exit_status, _ = reed.blk_train(flavor, config, classifiersD[classifier], gpsstart-lookback, gpsstart+stride, ovlsegs=ovlsegs, vetosegs=vetosegs, train_dir=train_dir, cwd=cwd, force=opts.force, cache=train_cache[classifier], min_num_gch=min_num_gch, min_num_cln=min_num_cln, padding=padding)
+
+    ### loop over processes and wait...
+    while blk_procs:
+        proc, classifier, conn = blk_procs.pop(0)
+        proc.join()
+
+        logger.info('%s training finished'%classifier)
+
+        exit_status, _ = conn.recv()
+        conn.close()
         if exit_status:
-            logger.info('WARNING: number glitches in the training set is less than %d'%int(classD['min_num_gch']))
+            logger.info('WARNING: number glitches in the training set is less than %s'%classifiersD[classifier]['min_num_gch'])
             logger.info('WARNING: Not enough glitches in the training set. Skip %s training.'%classifier)
 
-        logger.info('Done.')
+    logger.info('Done.')
 
     #===============================================================================================
     # jobs completion checkpoint (for dags)

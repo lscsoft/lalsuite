@@ -216,7 +216,7 @@ def extract_trained_range(lines, flavor):
         trained_range = "%d_%d"%(mvsc_start_training_period, mvsc_end_training_period)
 
     elif flavor == "ovl":
-        trained_range = [v for v in lines[0].split('/') if v != ''][-3]  # we assume a particular directory structure
+        trained_range = [v for v in lines[0].split('/') if v != ''][-4]  # we assume a particular directory structure
 
     elif flavor == "svm":
         svm_model, svm_range_file = lines
@@ -680,7 +680,7 @@ def resample_rcg(uranks, r, c, g):
     for ur in uranks:
         while ind < N and r[ind] >= ur:
             cc = c[ind]
-            cg = c[ind]
+            cg = g[ind]
             ind += 1
         ucln.append(cc)
         ugch.append(cg)
@@ -1518,7 +1518,7 @@ def dag_train(flavor, pat, cache, config, train_dir='.', cwd='.'):
     else:
         raise ValueError("do not know how to dag_train flavor=%s"%flavor)
 
-def blk_train(flavor, config, classifierD, start, stop, ovlsegs=False, vetosegs=False, train_dir='.', cwd='.', force=False, cache=None, min_num_gch=0, min_num_cln=0, padding=0):
+def blk_train(flavor, config, classifierD, start, stop, ovlsegs=False, vetosegs=False, train_dir='.', cwd='.', force=False, cache=None, min_num_gch=0, min_num_cln=0, padding=0, conn=False):
     """
     a delegation function that calls the correct function based on flavor
     """
@@ -1527,8 +1527,7 @@ def blk_train(flavor, config, classifierD, start, stop, ovlsegs=False, vetosegs=
             ovlsegs = [ovlsegs]
 
         vetolists = ovl_train( start, stop, dict(config.items('general')), classifierD, scisegs=ovlsegs, vetosegs=vetosegs, output_dir=train_dir, padding=padding)
-        vetolist = vetolists[0]
-
+        vetolist = vetolists[0].replace("//","/")### make sure the path doesn't contain any "//" elements
 
         if cache: ### we're told where we might append
             ### append new vetolist to training cache
@@ -1543,14 +1542,17 @@ def blk_train(flavor, config, classifierD, start, stop, ovlsegs=False, vetosegs=
                 f.close()
 
             if force or go_ahead_and_append:
-                ### make sure the path doesn't contain any "//" elements............
-                vetolist = vetolist.replace("//","/")
                 cache.append( vetolist )
 
-                return 0, vetolist ### there should be only one list...
-
+                if conn:
+                    conn.send((0, vetolist))
+                else:
+                    return 0, vetolist ### there should be only one list...
             else:
-                return 1, vetolist
+                if conn:
+                    conn.send((1, vetolist))
+                else:
+                    return 1, vetolist
 
     else:
         raise ValueError("do not know how to blk_train flavor=%s"%flavor)

@@ -67,7 +67,7 @@ parser.add_option('-e', '--end-time', dest='endgps',
     metavar='GPS', default=1e10 )
 
 parser.add_option('-k', '--lock-file', dest='lockfile',
-    help='use custom lockfile', metavar='FILE', default='.idq_realtime.lock',
+    help='use custom lockfile', metavar='FILE', default='',
  )
 parser.add_option('-l', '--log-file', default='idq_realtime.log',
                   type='string', help='log file')
@@ -120,8 +120,10 @@ config = ConfigParser.SafeConfigParser()
 config.read(opts.config_file)
 
 mainidqdir = config.get('general', 'idqdir') ### get the main directory where idq pipeline is going to be running.
+if not opts.lockfile:
+    opts.lockfile = "%s/.idq_realtime.lock"%mainidqdir
 
-reed.dieiflocked('%s/%s'%(config.get('general', 'idqdir'),opts.lockfile) ) ### prevent multiple copies from running
+reed.dieiflocked( opts.lockfile ) ### prevent multiple copies from running
 
 gchtag = "_glitch" ### used for xml filenames
 clntag = "_clean"
@@ -213,7 +215,7 @@ summary_trending = config.get('summary', 'trending')
 if summary_trending != 'infinity':
     summary_trending = int(summary_trending)
 
-summary_script = config.get('condor', 'summary')
+summary_script = config.get('summary', 'executable')
 
 #summary_cache = dict( (classifier, reed.Cachefile(reed.cache(summarydir, classifier, tag='_summary%s'%usertag))) for classifier in classifiers ) ### not needed?
 #for cache in summary_cache.values():
@@ -236,7 +238,7 @@ train_lookback = config.get('train', 'lookback')
 if train_lookback != "infinity":
     train_lookback = int(train_lookback)
 
-train_script = config.get('condor', 'train')
+train_script = config.get('train', 'executable')
 
 train_cache = dict( (classifier, reed.Cachefile(reed.cache(traindir, classifier, tag='_train%s'%usertag))) for classifier in classifiers )
 for cache in train_cache.values():
@@ -263,7 +265,7 @@ calibration_cache = dict( (classifier, reed.Cachefile(reed.cache(calibrationdir,
 for cache in calibration_cache.values():
     cache.time = 0
 
-calibration_script = config.get('condor', 'calibration')
+calibration_script = config.get('calibration', 'executable')
 
 calibration_log = "%s/calibration%s.log"%(mainidqdir, usertag)
 calibration_out = "%s/calibration%s.out"%(mainidqdir, usertag)

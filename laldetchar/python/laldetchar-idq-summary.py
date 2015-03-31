@@ -36,7 +36,7 @@ from laldetchar.idq import reed_summary_plots as rsp
 from laldetchar.idq import event
 
 from glue.ligolw import ligolw
-from glue.ligolw import utils
+from glue.ligolw import utils as ligolw_utils
 from glue.ligolw import lsctables
 from glue.ligolw import table
 
@@ -131,7 +131,8 @@ if len(colors) < len(classifiers):
 #========================
 realtimedir = config.get('general', 'realtimedir')### output directory for realtime predictions
 
-dat_columns = list(set( config.get('realtime', 'dat_columns').split() + "GPS i rank".split() ))
+dat_columns = config.get('realtime', 'dat_columns').split()
+columns = list(set( dat_columns + "GPS i rank".split() ) )
 
 #========================
 # calibration jobs
@@ -149,17 +150,19 @@ delay = config.getint('summary', 'delay')
 emaillist = config.get('warnings', 'summary')
 errorthr = config.getfloat('warnings', 'summary_errorthr')
 
-summary_script = config.get('condor', 'summary')
+#summary_script = config.get('condor', 'summary')
 
 #summary_cache = dict( (classifier, reed.Cachefile(reed.cache(summarydir, classifier, tag='summary'))) for classifier in classifiers ) ### not needed?
 
-kde_nsamples = 101 ### FIXME: pull from config file!
+kde_nsamples = config.getint('summary', 'kde_num_samples')
 kde = np.linspace(0, 1, kde_nsamples) ### uniformly spaced ranks used to sample kde
+
+faircoin = kde[:] ### used for ROC plots
 
 cln_linestyle='dashed' ### FIXME: pull from config file?
 gch_linestyle='solid' 
 
-FAPthrs = [0.01, 0.05, 0.10] ### FIXME: pull from config file?
+FAPthrs = [float(l) for l in config.get('summary','FAPthrs').split()]
 
 #========================
 # data discovery
@@ -169,6 +172,7 @@ if not opts.ignore_science_segments:
 #    dmt_segments_location = config.get('get_science_segments', 'xmlurl')
     dq_name = config.get('get_science_segments', 'include')
 #    dq_name = config.get('get_science_segments', 'include').split(':')[1]
+    segdb_url = config.get('get_science_segments', 'segdb')
 
 #==================================================
 ### set up ROBOT certificates
@@ -351,11 +355,11 @@ while gpsstart < gpsstop:
         logger.info('building plots for %s'%classifier)
 
         ### load dat files
-        output = reed.slim_load_datfiles(datsD[classifier], skip_lines=0, columns=dat_columns)
+        output = reed.slim_load_datfiles(datsD[classifier], skip_lines=0, columns=columns)
 
         ### filter times by scisegs -> keep only the ones within scisegs
-        out = np.array(event.include( [ [ float(output['GPS'][i]) ] + [output[column][i] for column in dat_columns] for i in xrange(len(output['GPS'])) ], idqsegs, tcent=0 ))
-        for ind, column in enumerate(dat_columns):
+        out = np.array(event.include( [ [ float(output['GPS'][i]) ] + [output[column][i] for column in columns] for i in xrange(len(output['GPS'])) ], idqsegs, tcent=0 ))
+        for ind, column in enumerate(columns):
             if column == 'GPS':
                 output[column] = out[:,1+ind].astype(float)
             elif column == 'i':
@@ -380,6 +384,7 @@ while gpsstart < gpsstop:
         logger.info('  plotting %s'%rocfig)
 
         fig, ax = rsp.rcg_to_rocFig(c, g, color=color, label=classifier)
+        ax.plot(faircoin, faircoin, 'k--')
         ax.legend(loc='best')
 
         fig.savefig(rocfig)
@@ -399,10 +404,11 @@ while gpsstart < gpsstop:
             fig, axh, axc = rsp.stacked_hist(r, dg, color=color, linestyle=gch_linestyle, label="%s gch"%classifier, figax=(fig, axh, axc))
             hst_figax = rsp.stacked_hist(r, dg, color=color, linestyle=gch_linestyle, label="%s gch"%classifier, figax=hst_figax)
         if np.any(dc) or np.any(dg):
+            axh.set_xlim(xmin=0, xmax=1)
+            axc.set_xlim(xmin=0, xmax=1)
             axc.legend(loc='best')
             fig.savefig(histfig)
             rsp.close(fig)
-
 
         ### compute kde estimates
         logger.info('  computing kde_pwg estimates')
@@ -412,11 +418,11 @@ while gpsstart < gpsstop:
         ### write kde points to file
         kde_cln_name = rsp.kdename(output_dir, classifier, ifo, "_cln%s"%usertag, gpsstart-lookback, lookback+stride)
         logger.info('  writing %s'%kde_cln_name)
-        np.save(kde_cln_name, (kde, kde_cln))
+        np.save(event.gzopen(kde_cln_name, "w"), (kde, kde_cln))
 
         kde_gch_name = rsp.kdename(output_dir, classifier, ifo, "_gch%s"%usertag, gpsstart-lookback, lookback+stride)
         logger.info('  writing %s'%kde_gch_name)
-        np.save(kde_gch_name, (kde, kde_gch))
+        np.save(event.gzopen(kde_gch_name, "w"), (kde, kde_gch))
 
         ### generate kde pdf, cdf (above)
         kdefig = rsp.kdefig(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
@@ -424,14 +430,14 @@ while gpsstart < gpsstop:
         logger.info(' plotting %s'%kdefig)
 
         fig, axh, axc = rsp.stacked_kde(kde, kde_cln, color=color, linestyle=cln_linestyle, label="%s cln"%classifier, figax=None)
-        fig, axh, axc = rsp.stacked_kde(kde, kde_gch, color=color, linestyle=cln_linestyle, label="%s gch"%classifier, figax=(fig, axh, axc))
+        fig, axh, axc = rsp.stacked_kde(kde, kde_gch, color=color, linestyle=gch_linestyle, label="%s gch"%classifier, figax=(fig, axh, axc))
         axc.legend(loc='best')
 
         fig.savefig(kdefig)
         rsp.close(fig)
 
         kde_figax = rsp.stacked_kde(kde, kde_cln, color=color, linestyle=cln_linestyle, label="%s cln"%classifier, figax=kde_figax) ### for overlay plot
-        kde_figax = rsp.stacked_kde(kde, kde_gch, color=color, linestyle=cln_linestyle, label="%s gch"%classifier, figax=kde_figax)
+        kde_figax = rsp.stacked_kde(kde, kde_gch, color=color, linestyle=gch_linestyle, label="%s gch"%classifier, figax=kde_figax)
 
         ### figure out which gch and cln are removed below FAP thresholds
         rankthrs = []
@@ -449,11 +455,13 @@ while gpsstart < gpsstop:
             figax = None
             for rankthr, FAP in zip(rankthrs, FAPthrs):
                 thr = min(r[c<=FAP*c[-1]]) ### smallest rank below FAP
-                x = [output[column][i] for i in xrange(len(output[column])) if output['rank'][i] >= thr]
+                x = [float(output[column][i]) for i in xrange(len(output[column])) if output['rank'][i] >= thr]
                 if x: ### will break if x is empty
                     figax = rsp.stacked_hist( x, np.ones_like(x), color=None, label="$FAP\leq%E$"%FAP, bmin=min(x), bmax=max(x))
             if figax: ### only save if we plotted something...
-                fig, ax = figax
+                fig, axh, axc = figax
+                axh.set_xlabel(column)
+                axc.set_xlim(axh.get_xlim())
                 ax.legend(loc='best')
                 fig.savefig(paramhist)
                 rsp.close(fig)
@@ -467,6 +475,7 @@ while gpsstart < gpsstop:
     fignames['roc']["overlay"] = rocfig ### store for reference
     logger.info('  plotting %s'%rocfig)
     fig, ax = roc_figax
+    ax.plot(faircoin, faircoin, 'k--')
     ax.legend(loc='best')
     fig.savefig(rocfig)
     rsp.close(fig)
@@ -477,6 +486,8 @@ while gpsstart < gpsstop:
         fignames['hst']["overlay"] = histfig ### store for reference
         logger.info('  plotting %s'%histfig)
         fig, axh, axc = hst_figax
+        axh.set_xlim(xmin=0, xmax=1)
+        axc.set_xlim(xmin=0, xmax=1)
         axc.legend(loc='best')
         fig.savefig(histfig)
         rsp.close(fig)
@@ -501,12 +512,13 @@ while gpsstart < gpsstop:
 
     figax=None
     for FAP in FAPthrs:
-        figax = rsp.bitword( gch_bitword[FAP], classifiers, label="$FAP\leq%E"%FAP, figax=figax )
-    fig, ax = figax
-    ax.legend(loc='best')
+        figax = rsp.bitword( gch_bitword[FAP], classifiers, label="FAP$\leq$%.3e"%FAP, figax=figax )
+    if figax:
+        fig, ax = figax
+        ax.legend(loc='upper center')
 
-    fig.savefig(bitfig)
-    rsp.close(fig)
+        fig.savefig(bitfig)
+        rsp.close(fig)
 
     ### cln bitword histogram
     bitfig = rsp.bitfig(output_dir, ifo, "%s_cln"%usertag, gpsstart-lookback, lookback+stride)
@@ -515,11 +527,13 @@ while gpsstart < gpsstop:
 
     figax=None
     for FAP in FAPthrs:
-        figax = rsp.bitword( cln_bitword[FAP], classifiers, label="$FAP\leq%E"%FAP, figax=figax )
-    ax.legend(loc='best')
+        figax = rsp.bitword( cln_bitword[FAP], classifiers, label="FAP$\leq$%.3e"%FAP, figax=figax )
+    if figax:
+        fig, ax = figax
+        ax.legend(loc='upper center')
 
-    fig.savefig(bitfig)
-    rsp.close(fig)
+        fig.savefig(bitfig)
+        rsp.close(fig)
 
 
     #=============================================
@@ -529,6 +543,10 @@ while gpsstart < gpsstop:
 
     logger.warning("WARNING: write trending plots!")
     """
+    figure showing FAP calibration: 
+        stated FAP vs deadtime <- pick up fap*npy.gz files for this!
+        do this for both point estimates and 90% UL
+
 TRENDING:
 
     NEED A GOOD WAY OF FINDING HISTORICAL DATA/FIGURES
@@ -568,6 +586,8 @@ unsafe channels (not used, but report them for reference)
 
 vetolist/configuration lists -> make human readable
 segment lists -> a form to request segments?
+
+table showing number of cln, gch for each classifier
 
 all plots, figures built above
 try to make them in expandable sections
@@ -988,11 +1008,11 @@ while gpsstart < gpsstop:
             seg_xml_file = idq.segment_query(config, gpsstart, gpsstart+stride, url=config.get("get_science_segments","segdb"))
 
             lsctables.use_in(ligolw.LIGOLWContentHandler)
-            xmldoc = utils.load_fileobj(seg_xml_file, contenthandler=ligolw.LIGOLWContentHandler)[0]
+            xmldoc = ligolw_utils.load_fileobj(seg_xml_file, contenthandler=ligolw.LIGOLWContentHandler)[0]
 
             seg_file = "%s/science_segements-%d-%d.xml.gz"%(this_sumdir, int(gpsstart), int(stride))
             logger.info("writting science segments to file : %s"%seg_file)
-            utils.write_filename(xmldoc, seg_file, gz=seg_file.endswith(".gz"))
+            ligolw_utils.write_filename(xmldoc, seg_file, gz=seg_file.endswith(".gz"))
 
             (scisegs, coveredseg) = idq.extract_dq_segments(seg_file, config.get('get_science_segments', 'include'))
 
