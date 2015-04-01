@@ -203,20 +203,18 @@ def factored_log_likelihood_time_marginalized(tvals, extr_params, rholms_intp, r
 
         # This is the GPS time at the detector
         t_det = compute_arrival_time_at_detector(det, RA, DEC, tref)
+        tfirst = float(t_det)+tvals[0]
+        ifirst = int(tfirst / (tvals[1] - tvals[0]) + 0.5)
+        ilast = ifirst + len(tvals)
+
         det_rholms = {}  # rholms evaluated at time at detector
-        if ( interpolate ):
+        if interpolate:
             # use the interpolating functions. 
             for key, func in rholms_intp[det].iteritems():
                 det_rholms[key] = func(float(t_det)+tvals)
         else:
             # do not interpolate, just use nearest neighbors.
             for key, rhoTS in rholms[det].iteritems():
-                # FIXME: These indexes end up not being detector specific when
-                # the time series are synchronized --- pull it out of the loop
-                tfirst = float(t_det)+tvals[0]
-                delta_t = tvals[1] - tvals[0]
-                ifirst = int(tfirst / delta_t + 0.5)
-                ilast = ifirst + len(tvals)
                 det_rholms[key] = rhoTS[ifirst:ilast]
 
         lnL += single_detector_log_likelihood(det_rholms, CT, Ylms, F, dist)
