@@ -26,6 +26,8 @@
 #include <fftw3.h>
 #include <lal/FFTWMutex.h>
 #include <lal/Units.h>
+#include <lal/Factorial.h>
+
 // ========== Resamp internals ==========
 
 // ----- local macros ----------
@@ -47,8 +49,6 @@
 
 // ----- local constants
 #define COLLECT_TIMING 1
-#define NUM_FACT 7
-static const REAL8 inv_fact[NUM_FACT] = { 1.0, 1.0, (1.0/2.0), (1.0/6.0), (1.0/24.0), (1.0/120.0), (1.0/720.0) };
 
 // ----- local types ----------
 typedef struct tagMultiUINT4Vector
@@ -761,7 +761,7 @@ XLALApplySpindownAndFreqShift ( COMPLEX8 *restrict xOut,      			///< [out] the 
       for ( UINT4 k = 1; k <= s_max; k++ )
         {
           Dtau_pow_kp1 *= Dtau_alpha_j;
-          cycles += - inv_fact[k+1] * doppler->fkdot[k] * Dtau_pow_kp1;
+          cycles += - LAL_FACT_INV[k+1] * doppler->fkdot[k] * Dtau_pow_kp1;
         } // for k = 1 ... s_max
 
       REAL4 cosphase, sinphase;

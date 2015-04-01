@@ -32,6 +32,7 @@
 #include <lal/ComplexFFT.h>
 #include <lal/ComputeFstat.h>
 #include <lal/SinCosLUT.h>
+#include <lal/Factorial.h>
 
 /*---------- DEFINES ----------*/
 #define MYMAX(x,y) ( (x) > (y) ? (x) : (y) )
@@ -45,9 +46,6 @@
 
 /*---------- Global variables ----------*/
 static LALUnit emptyLALUnit;
-
-#define NUM_FACT 7
-static const REAL8 inv_fact[NUM_FACT] = { 1.0, 1.0, (1.0/2.0), (1.0/6.0), (1.0/24.0), (1.0/120.0), (1.0/720.0) };
 
 /* ---------- local prototypes ---------- */
 
@@ -498,7 +496,7 @@ XLALSpinDownCorrectionMultiTS ( MultiCOMPLEX8TimeSeries *multiTimeSeries,       
         {
           tk_pow_jp1 *= tk;
           /* compute fractional number of cycles the spin-derivitive has added since the reftime */
-          cycles_k += inv_fact[j+1] * doppler->fkdot[j] * tk_pow_jp1;
+          cycles_k += LAL_FACT_INV[j+1] * doppler->fkdot[j] * tk_pow_jp1;
         } // for j < nspins
 
       REAL4 cosphase, sinphase;
