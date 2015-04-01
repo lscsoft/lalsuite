@@ -363,7 +363,7 @@ while gpsstart < gpsstop:
             if column == 'GPS':
                 output[column] = out[:,1+ind].astype(float)
             elif column == 'i':
-                output['i'] = out[:,1+ind].astype(int)
+                output['i'] = out[:,1+ind].astype(float)
             elif column == 'rank':
                 output['rank'] = out[:,1+ind].astype(float)
             else:
@@ -543,10 +543,14 @@ while gpsstart < gpsstop:
 
     logger.warning("WARNING: write trending plots!")
     """
+for classifiers individually and as an overlay:
     figure showing FAP calibration: 
         stated FAP vs deadtime <- pick up fap*npy.gz files for this!
         do this for both point estimates and 90% UL
 
+    figure showing likelihood ratio as a function of rank? We should do this with KDE curves: 
+        like a stacked_kde, but plotting the ratio of the two curves.
+        
 TRENDING:
 
     NEED A GOOD WAY OF FINDING HISTORICAL DATA/FIGURES

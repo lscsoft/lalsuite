@@ -328,7 +328,7 @@ while gpsstart < gpsstop:
         output = reed.slim_load_datfiles(datsD[classifier], skip_lines=0, columns='GPS i rank'.split())
 
         ### filter times by scisegs -> keep only the ones within scisegs
-        out = np.array(event.include( [ [float(output['GPS'][i]), int(output['i'][i]), float(output['rank'][i]) ] for i in xrange(len(output['GPS'])) ], idqsegs, tcent=0 ))
+        out = np.array(event.include( [ [float(output['GPS'][i]), float(output['i'][i]), float(output['rank'][i]) ] for i in xrange(len(output['GPS'])) ], idqsegs, tcent=0 ))
         if not len(out): ### no data remains!
             output['GPS'] = []
             output['i'] = []
