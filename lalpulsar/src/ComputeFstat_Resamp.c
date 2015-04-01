@@ -136,8 +136,11 @@ XLALComputeFaFb_Resamp ( FstatWorkspace *ws,
                          const COMPLEX8TimeSeries *TimeSeries_SRC_b
                          );
 
-int XLALAppendResampInfo2File ( FILE *fp, const FstatInput *input );
 static FstatWorkspace *XLALCreateFstatWorkspace ( UINT4 numSamplesSRC, UINT4 numSamplesFFT );
+
+// pseudo-internal: don't export API but allow using them from test/benchmark codes
+int XLALAppendResampInfo2File ( FILE *fp, const FstatInput *input );
+int XLALGetResampTimingInfo ( REAL8 *tauF1NoBuf, REAL8 *tauF1Buf, const FstatInput *input );
 
 // ==================== function definitions ====================
 
@@ -217,6 +220,22 @@ XLALDestroyFstatWorkspace ( FstatWorkspace *ws )
   return;
 
 } // XLALDestroyFstatWorkspace()
+
+// return resampling timing coefficients 'tauF1' for buffered and unbuffered calls
+int
+XLALGetResampTimingInfo ( REAL8 *tauF1NoBuf, REAL8 *tauF1Buf, const FstatInput *input )
+{
+  XLAL_CHECK ( input != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( input->resamp != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( input->resamp->ws != NULL, XLAL_EINVAL );
+  const ResampTimingInfo *ti = &(input->resamp->ws->timingInfo);
+
+  (*tauF1NoBuf) = ti->tauF1NoBuf;
+  (*tauF1Buf) = ti->tauF1Buf;
+
+  return XLAL_SUCCESS;
+
+} // XLALGetResampTimingInfo()
 
 /// debug/optimizer helper function: dump internal info from resampling code into a file
 /// if called with input==NULL, output a header-comment-line

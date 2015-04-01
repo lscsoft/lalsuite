@@ -52,6 +52,7 @@ typedef struct
 } UserInput_t;
 
 int XLALAppendResampInfo2File ( FILE *fp, const FstatInput *input );
+int XLALGetResampTimingInfo ( REAL8 *tauF1NoBuf, REAL8 *tauF1Buf, const FstatInput *input );
 
 // ---------- main ----------
 int
@@ -198,6 +199,8 @@ main ( int argc, char *argv[] )
   FstatInputVector *inputs;
   FstatQuantities whatToCompute = (FSTATQ_2F | FSTATQ_2F_PER_DET);
   FstatResults *results = NULL;
+  REAL8 tauF1NoBuf = 0;
+  REAL8 tauF1Buf = 0;
   // ---------- main loop over repeated trials ----------
   for ( INT4 i = 0; i < uvar->numTrials; i ++ )
     {
@@ -231,40 +234,42 @@ main ( int argc, char *argv[] )
         }
 
       // ----- compute Fstatistics over segments
-      REAL8 tauFSumUnbuffered = 0;
-      REAL8 tauFSumBuffered = 0;
+      REAL8 tauF1NoBuf_i = 0;
+      REAL8 tauF1Buf_i = 0;
       for ( INT4 l = 0; l < uvar->numSegments; l ++ )
         {
-          REAL8 tic = XLALGetTimeOfDay();
           XLAL_CHECK ( XLALComputeFstat ( &results, inputs->data[l], &Doppler, numFreqBins_i, whatToCompute ) == XLAL_SUCCESS, XLAL_EFUNC );
-          REAL8 toc = XLALGetTimeOfDay();
-          tauFSumUnbuffered += ( toc - tic );
 
-          // ----- output more details if requested [only from first segment]
-          if ( (l == 0) && (fpInfo != NULL) ) {
-            XLALAppendResampInfo2File ( fpInfo, inputs->data[0] );
+          // ----- output timing details if requested
+          if ( (fpInfo != NULL) ) {
+            XLALAppendResampInfo2File ( fpInfo, inputs->data[l] );
           }
-
-          if ( uvar->runBuffered )
-            {
-              tic = XLALGetTimeOfDay();
-              XLAL_CHECK ( XLALComputeFstat ( &results, inputs->data[l], &Doppler, numFreqBins_i, whatToCompute ) == XLAL_SUCCESS, XLAL_EFUNC );
-              toc = XLALGetTimeOfDay();
-              tauFSumBuffered += ( toc - tic );
-            }
-
+          REAL8 tauF1NoBuf_il, tauF1Buf_il;
+          XLAL_CHECK ( XLALGetResampTimingInfo ( &tauF1NoBuf_il, &tauF1Buf_il, inputs->data[l] ) == XLAL_SUCCESS, XLAL_EFUNC );
+          tauF1NoBuf_i += tauF1NoBuf_il;
+          tauF1Buf_i   += tauF1Buf_il;
         } // for l < numSegments
-      REAL8 tauF1Unbuffered = tauFSumUnbuffered / ( uvar->numSegments * numFreqBins_i * numDetectors );
-      REAL8 tauF1Buffered   = tauFSumBuffered   / ( uvar->numSegments * numFreqBins_i * numDetectors );
+
+      tauF1NoBuf_i /= uvar->numSegments;
+      tauF1Buf_i   /= uvar->numSegments;
       REAL8 memMaxCompute = XLALGetPeakHeapUsageMB() - memBase;
 
-      fprintf (stderr, "%-15s: tauF1Buffered = %.2g s, tauF1Unbuffered = %.2g s, memSFTs = %.1f MB, memMaxCompute = %.1f MB\n",
-               XLALGetFstatMethodName ( FstatMethod ), (tauF1Buffered > 0) ? tauF1Buffered : -1, tauF1Unbuffered, memSFTs, memMaxCompute  );
+      tauF1Buf   += tauF1Buf_i;
+      tauF1NoBuf += tauF1NoBuf_i;
+
+      fprintf (stderr, "%-15s: tauF1Buf = %.2g s, tauF1NoBuf = %.2g s, memSFTs = %.1f MB, memMaxCompute = %.1f MB\n",
+               XLALGetFstatMethodName ( FstatMethod ), tauF1Buf_i, tauF1NoBuf_i, memSFTs, memMaxCompute  );
 
       XLALDestroyFstatInputVector ( inputs );
       XLALDestroyFstatWorkspace ( sharedWorkspace );
       optionalArgs.sharedWorkspace = NULL;
+
     } // for i < numTrials
+
+  tauF1Buf   /= uvar->numTrials;
+  tauF1NoBuf /= uvar->numTrials;
+
+  fprintf (stderr, "\nAveraged timings: <tauF1Buf> = %.2g s, <tauF1NoBuf> = %.2g s\n", tauF1Buf, tauF1NoBuf );
 
   // ----- free memory ----------
   if ( fpInfo != NULL ) {
