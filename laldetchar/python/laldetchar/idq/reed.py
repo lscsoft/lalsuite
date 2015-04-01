@@ -30,6 +30,8 @@ import math
 import subprocess
 import tempfile
 
+import ConfigParser
+
 from glue.ligolw import ligolw
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw import lsctables
@@ -65,7 +67,7 @@ __date__ = git_version.date
 
 #===================================================================================================
 ### hard coded magic numbers dependent on classifiers, ETG, etc
-traincache_nlines = { "ovl":1 , "mvsc": 1, "svm": 2}
+traincache_nlines = { "ovl":1 , "forest": 1, "svm": 2}
 
 mla_flavors = ["forest", "svm"]
 
@@ -74,6 +76,7 @@ train_with_dag = ["forest", "svm"]
 #===================================================================================================
 # DEPRECATED FUNCTIONS THAT SHOULD BE REMOVED
 #===================================================================================================
+'''
 def submit_command(
     command,
     process_name='unspecified process',
@@ -117,7 +120,7 @@ def submit_command(
             if line != '':
                 print process_name + ': ' + line.rstrip('\n')
     return exit_code
-
+'''
 
 #===================================================================================================
 # parsing the config file
@@ -133,6 +136,8 @@ def config_to_classifiersD( config ):
         if config.has_section(classifier):
             classifiersDict[classifier] = dict( config.items(classifier) )
             flavor = classifiersDict[classifier]['flavor']
+
+            classifiersDict[classifier]['config'] = classifier_specific_config( config, classifier, flavor )
             classifiersDict[classifier]['mla'] = (flavor in mla_flavors)
 
             mla = mla or classifiersDict[classifier]['mla']
@@ -142,6 +147,75 @@ def config_to_classifiersD( config ):
             raise ValueError("classifier=%s does not have a corresponding section in %s"%(classifier, opts.config_file))
 
     return classifiersDict, mla, ovl
+
+def classifier_specific_config( config, classifier, flavor ):
+
+    ### NOTE: we require all classifiers to have a "condor" option, even though not all of them may use condor...
+    ### this is done for simplicity within this function and throughout, but may seem unnecessary when writing the config object
+
+    if config.has_option('classifier', 'config'):
+        raise ValueError("classifier=%s has option 'config' that will be overwritten. Please remove that option"%classifier)
+   
+    cp = ConfigParser.SafeConfigParser()
+
+    if flavor == "ovl":
+        eval_section = 'ovl_evaluate'
+        train_section = 'train_ovl'
+
+        ### fill in ovl sections here? Not needed because OVL doesn't train with a dag...
+        ### this is just here as a "place-holder"
+        cp.add_section(eval_section)
+        cp.add_section(train_section)
+
+    elif flavor == "forest":
+        eval_section = 'forest_evaluate'
+        train_section = 'train_forest'
+
+        cp.add_section(eval_section)
+        for option in "A a z".split():
+            if config.has_option(classifier, option):
+                cp.set( eval_section, option, config.get(classifier, option) )
+
+        cp.add_section(train_section)
+        for option in "a n l s c g i d z".split():
+            if config.has_option(classifier, option):
+                cp.set( train_section, option, config.get(classifier, option) )
+
+    elif flavor == "svm":
+        eval_section = 'svm_evaluate'
+        train_section = 'train_svm'
+
+        cp.add_section(eval_section)
+        for option in "scale predict rank".split():
+            if config.has_option(classifier, option):
+                cp.set( eval_section, option, config.get(classifier, option) )
+
+        cp.add_section(train_section)
+        for option in "scale train rank gamma cost".split():
+            if config.has_option(classifier, option):
+                cp.set( train_section, option, config.get(classifier, option) )
+
+    else:
+        raise ValueError('flavor=%s not understood for classifier=%s'%(flavor, classifier))
+
+    if not config.has_option(classifier, 'condor'):
+        raise ValueError('classifier=%s section has no option=condor'%classifier)
+    condor_section = config.get(classifier, 'condor')
+    if not config.has_section(condor_section):
+        raise ValueError('config has not section=%s'%condor_section)
+
+    cp.add_section('condor')
+    for option, value in config.items(condor_section):
+        cp.set('condor', option, value)
+
+    cp.add_section('idq_train')
+    cp.set('idq_train', 'condorlogs', config.get('train', 'condorlogs'))
+
+    cp.add_section('general')
+    for option, value in config.items('general'):
+        cp.set('general', option, value)
+
+    return cp
 
 #=================================================
 # standardized names
@@ -208,7 +282,7 @@ def extract_trained_ranges(lines, flavor):
     return [extract_trained_range( line, flavor ) for line in lines]
 
 def extract_trained_range(lines, flavor):
-    if flavor == "mvsc":
+    if flavor == "forest":
         trainedforest = lines[0]
         ### getting start and end of training period from the name of the trained forest file
         mvsc_start_training_period = int(trainedforest.split('-')[-2])
@@ -441,8 +515,7 @@ def get_condor_dag_status(dag):
 
     dag_out_file = dag + '.dagman.out'
     if not os.path.exists(dag_out_file):
-        exit_status = 'incomplete'
-        return exit_status
+        return 'incomplete'
 
     lastline = open(dag_out_file, 'r').readlines()[-1].strip('\n')
 
@@ -1349,13 +1422,11 @@ def execute_build_auxmvc_vectors(
 ...."""
 
     # initiate build_auxmvc_vectors job object
-
     build_auxmvc_vectors_job = auxmvc.build_auxmvc_vectors_job(cp,
             main_channel, channels=channels,
             unsafe_channels=unsafe_channels)
 
     # create node for this job
-
     build_auxmvc_vectors_node = auxmvc.build_auxmvc_vectors_node(
         build_auxmvc_vectors_job,
         trigdir,
@@ -1367,20 +1438,15 @@ def execute_build_auxmvc_vectors(
         )
 
     # get full command line for this job
+    build_auxmvc_vectors_command = auxmvc.construct_command(build_auxmvc_vectors_node)
 
-    build_auxmvc_vectors_command = \
-        auxmvc.construct_command(build_auxmvc_vectors_node)
-
-    print build_auxmvc_vectors_command
+    print " ".join(build_auxmvc_vectors_command)
 
     # submit process
+#    exit_status = submit_command(build_auxmvc_vectors_command, 'build_auxmvc_vectors', execute_dir, verbose=True)
+    exit_status = subprocess.Popen(build_auxmvc_vectors_command, cwd=execute_dir).wait() ### block!
 
-    exit_status = submit_command(build_auxmvc_vectors_command,
-                                 'build_auxmvc_vectors', execute_dir,
-                                 verbose=True)
-
-    return (exit_status,
-            build_auxmvc_vectors_node.get_output_files()[0])
+    return (exit_status, build_auxmvc_vectors_node.get_output_files()[0])
 
 def execute_prepare_training_auxmvc_samples(
     execute_dir,
@@ -1400,11 +1466,9 @@ def execute_prepare_training_auxmvc_samples(
 ...."""
 
     # initiate prepare_training_auxmvc_samples job object
-
     prepare_training_auxmvc_samples_job = auxmvc.prepare_training_auxmvc_samples_job(cp)
 
     # create node for this job
-
     prepare_training_auxmvc_samples_node = \
         auxmvc.prepare_training_auxmvc_samples_node(
         prepare_training_auxmvc_samples_job,
@@ -1417,18 +1481,13 @@ def execute_prepare_training_auxmvc_samples(
         )
 
     # get full command line for this job
-
-    prepare_training_auxmvc_samples_command = \
-        auxmvc.construct_command(prepare_training_auxmvc_samples_node)
+    prepare_training_auxmvc_samples_command =  auxmvc.construct_command(prepare_training_auxmvc_samples_node)
 
     # submit process
+#    exit_status = submit_command(prepare_training_auxmvc_samples_command, 'prepare_training_auxmvc_samples', execute_dir, verbose=True)
+    exit_status = subprocess.Popen(prepare_training_auxmvc_samples_command, cwd=execute_dir).wait() ### block!
 
-    exit_status = submit_command(prepare_training_auxmvc_samples_command,
-                       'prepare_training_auxmvc_samples', execute_dir,
-                       verbose=True)
-
-    return (exit_status,
-            prepare_training_auxmvc_samples_node.get_output_files()[0])
+    return (exit_status, prepare_training_auxmvc_samples_node.get_output_files()[0])
 
 
 
@@ -1460,7 +1519,7 @@ def evaluate(flavor, lines, dat, config, gps_start_time=-numpy.infty, gps_end_ti
         pat = trgdict ### silly way I'm passing this
         if len(auxmvc_vectors):
             trainedforest = lines[0]
-            return forest_evaluate( pat, trainedforest, dat, config, gps_start_time=gps_start_time, gps_end_time=gps_end_time, dir=this_output_dir )[0]
+            return forest_evaluate( pat, trainedforest, dat, config, gps_start_time=gps_start_time, gps_end_time=gps_end_time, dir=dir )[0]
         else:
             nonaux_vars = ['index', 'i', 'w', 'GPS_s', 'GPS_ms', 'signif', 'SNR', 'unclean', 'glitch-rank' ]
             file = open(dat, 'w')
@@ -1474,7 +1533,7 @@ def evaluate(flavor, lines, dat, config, gps_start_time=-numpy.infty, gps_end_ti
             svm_model = lines[0].strip('\n')
             svm_range_file = lines[1].strip('\n')
 
-            return svm_evaluate( config, pat, svm_range_file, svm_model, dat, dir=this_output_dir )
+            return svm_evaluate( config, pat, svm_range_file, svm_model, dat, dir=dir )
         else:
             nonaux_vars = ['index', 'i', 'w', 'GPS_s', 'GPS_ms', 'signif', 'SNR', 'unclean', 'glitch-rank' ]
             file = open(dat, 'w')
@@ -1494,15 +1553,12 @@ def dag_train(flavor, pat, cache, config, train_dir='.', cwd='.'):
     """
     a delegation funtion that call the correct functions based on flavor
     """
-    if flavor not in dag_train:
-        raise ValueError("do not know how to dag_train flavor=%s"%flavor)
-
     if flavor == "forest":
         ### submit mvsc training job
-        (submit_dag_exit_status, dag_file, trained_file) = forest_train(pat, cache.name, config, train_dir)
+        (submit_dag_exit_status, dag_file, trained_file) = execute_forest_train(pat, cache.name, config, train_dir)
         os.chdir(cwd) ### switch back to the current directory
 
-        return submit_dag_exit_status, "%s/%s/"%(train_dir, dag_file)
+        return submit_dag_exit_status, "%s/%s"%(train_dir, dag_file)
 
     elif flavor == "svm":
         ### auxiliary files required for SVM training
@@ -1510,7 +1566,7 @@ def dag_train(flavor, pat, cache, config, train_dir='.', cwd='.'):
         svm_model_file = "%s/%s.model"%(train_dir, os.path.split(pat)[1])
 
         ### submit SVM training job
-        (submit_dag_exit_status, dag_file, output_files) = svm_train( config, pat, svm_range_file, svm_model_file, cache.name, train_dir )
+        (submit_dag_exit_status, dag_file, output_files) = execute_svm_train( config, pat, svm_range_file, svm_model_file, cache.name, train_dir )
         os.chdir(cwd) ### switch back to the current directory
 
         return submit_dag_exit_status, "%s/%s"%(train_dir, dag_file)
@@ -1570,10 +1626,10 @@ def datfile2timeseries(flavor, dat, lines, trgdict=None, start=0, stride=0, wind
         return ovl.vetolist2timeseries(lines[0], trgdict, [start, start + stride], fs=fs)
 
     elif flavor in mla_flavors:
-        datdata = slim_load_datfile(datfile, skip_lines=0, columns='GPS i rank'.split())
+        datdata = slim_load_datfile(dat, skip_lines=0, columns='GPS i rank'.split())
         for (key, val) in datdata.items():
             datdata[key] = map(float, val)
-        (ifo, name, tstart, dur) = os.path.basename(datfile)[:-4].split('-')
+        (ifo, name, tstart, dur) = os.path.basename(dat)[:-4].split('-')
         livetime = float(dur)
         segment = [float(tstart), float(tstart) + livetime]
         ts = numpy.zeros(livetime * fs)

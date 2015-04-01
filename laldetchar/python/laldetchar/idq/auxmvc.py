@@ -305,7 +305,8 @@ class add_file_to_cache_job(auxmvc_analysis_job):
         """
     """
 
-        sections = ['add_file_to_cache']
+#        sections = ['add_file_to_cache']
+        sections = [] ### never actually used, only references "condor" section
         exec_name = 'add_file_to_cache'
         tag_base = 'add_file_to_cache'
         auxmvc_analysis_job.__init__(self, cp, sections, exec_name,
@@ -460,13 +461,12 @@ class forest_add_excluded_vars_job(auxmvc_analysis_job):
         """
     """
 
-        sections = ['forest_add_excluded_vars']
+#        sections = ['forest_add_excluded_vars']
+        sections = [] ### not used...
         exec_name = 'forest_add_excluded_vars'
         tag_base = 'forest_add_excluded_vars'
-        auxmvc_analysis_job.__init__(self, cp, sections, exec_name,
-                tag_base=tag_base)
-        self.add_opt('excluded-variables', cp.get('forest_evaluate', 'z'
-                     ))
+        auxmvc_analysis_job.__init__(self, cp, sections, exec_name, tag_base=tag_base)
+        self.add_opt('excluded-variables', cp.get('forest_evaluate', 'z'))
 
 
 class forest_add_excluded_vars_node(pipeline.CondorDAGNode):

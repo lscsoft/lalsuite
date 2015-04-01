@@ -127,7 +127,7 @@ if mla:
 dag_classifiers = []
 blk_classifiers = []
 for classifier in classifiers:
-    if classifier in reed.train_with_dag:
+    if classifiersD[classifier]['flavor'] in reed.train_with_dag:
         dag_classifiers.append( classifier )
     else:
         blk_classifiers.append( classifier )
@@ -385,13 +385,13 @@ while gpsstart < gpsstop:
     if mla:
         logger.info('preparing training auxmvc samples')
 
-        if not build_auxmvc_vectors: ### we cat together pat files instead of building vectors from scratch
-            ### output file for training samples
-            pat = reed.pat(output_dir, ifo, "mla", gpsstart-lookback, lookback+stride)
+        ### output file for training samples
+        pat = reed.pat(output_dir, ifo, usertag, gpsstart-lookback, lookback+stride)
 
+        if not build_auxmvc_vectors: ### we cat together pat files instead of building vectors from scratch
             ### run job that prepares training samples
             (ptas_exit_status, _) = reed.execute_prepare_training_auxmvc_samples(output_dir, realtimedir, config, gpsstart - lookback, gpsstart + stride, pat, dq_segments=seg_file, dq_segments_name=dq_name )
-            os.chdir(current_dir) ### go back to starting directory
+            os.chdir(cwd) ### go back to starting directory
 
         if build_auxmvc_vectors or ptas_exit_status!=0: ### we need to build vectors
             if build_auxmvc_vectors: ### no realtime directory...
@@ -399,9 +399,9 @@ while gpsstart < gpsstop:
             else:
                 logger.warning('WARNING: patfile generation failed for some reason. Attempt to build auxmvc vectors from scratch')
 
-                ### launch job that builds auxmvc_vectors
-                (ptas_exit_status, _) = reed.execute_build_auxmvc_vectors( config, ptas_execute_dir, AUXkwtrgdir, gwchannel, pat, gpsstart - lookback, gpsstart + stride, channels=auxmvc_selected_channels, unsafe_channels=auxmvc_unsafe_channels, dq_segments=seg_file, dq_segments_name=dq_name )
-                os.chdir(current_dir) ### go back to starting directory
+            ### launch job that builds auxmvc_vectors
+            (ptas_exit_status, _) = reed.execute_build_auxmvc_vectors( config, output_dir, AUXkwtrgdir, gwchannel, pat, gpsstart - lookback, gpsstart + stride, channels=auxmvc_selected_channels, unsafe_channels=auxmvc_unsafe_channels, dq_segments=seg_file, dq_segments_name=dq_name )
+            os.chdir(cwd) ### go back to starting directory
  
         # check if process has been executed correctly
         if ptas_exit_status != 0: ### check that process executed correctly
@@ -449,9 +449,12 @@ while gpsstart < gpsstop:
             train_dir = "%s/%s/"%(output_dir, classifier)
             if not os.path.exists(train_dir):
                 os.makedirs(train_dir)
+            else:
+                os.system("rm %s/*.dag*"%train_dir) ### remove existing condor files!
       
             ### submit training job
-            (submit_dag_exit_status, dag_file) = reed.dag_train(flavor, pat,  train_cache[classifier].name, config, train_dir, cwd)
+            miniconfig = classD['config']
+            (submit_dag_exit_status, dag_file) = reed.dag_train(flavor, pat,  train_cache[classifier], miniconfig, train_dir, cwd)
 
             if submit_dag_exit_status:
                 logger.warning("WARNING: was not able to submit %s training dag"%classifier)
@@ -541,6 +544,8 @@ while gpsstart < gpsstop:
 
         ### if opts.force, we wait for all jobs to finish
         ### otherwise, we wait for some amount of time before proceeding
+        wait = 1 ### amount of time to wait between checking-dags epochs
+        message = True 
         while opts.force or (reed.nowgps() < gpsstop + stride) or (reed.nowgps() < launch_gps_time + stride):
 
             for dag in list_of_dags: ### check dag status
@@ -556,9 +561,10 @@ while gpsstart < gpsstop:
             incompleted_dags = []
 
             if 'incomplete' in dags.values(): ### check if any of the dags are still incomplete
-                logger.info('WARNING: Some dags have not been completed.')
-                time.sleep(300) ### wait 300 seconds before continue the loop
-                                ### 300 is a magic number, although 5 min. should be much shorter than stride
+                if message:
+                    logger.info('WARNING: Some dags have not been completed. Waiting for dags to complete')
+                    message = False
+                time.sleep(wait) 
             else: ### no incomplete dags, break the loop
                 break
 
@@ -582,9 +588,9 @@ while gpsstart < gpsstop:
     if opts.sngl_chan_xml:
         logger.info('launching conversion from .trg to .xml files')
         for dir in new_dirs:
-            current_dir = os.getcwd()
-            trg_to_xml_exit_code = reed.submit_command([config.get('condor', 'convertkwtosb'), dir], process_name='convertkwtosb', dir=dir)
-            os.chdir(current_dir)
+#            trg_to_xml_exit_code = reed.submit_command([config.get('condor', 'convertkwtosb'), dir], process_name='convertkwtosb', dir=dir)
+            trg_to_xml_exit_code = subprocess.Popen([config.get('convertkwtosb','executable'), dir], cwd=dir)
+            os.chdir(cwd)
             if trg_to_xml_exit_code != 0:
                 logger.info('WARNING: Conversion from single-channel KW trig files to xml failed in '+ dir)
 

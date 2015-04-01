@@ -272,7 +272,7 @@ for gps in sorted(opts.gps):
     if mla:  # only build patfiles if machine-learning algorithms are present
         print 'building auxmvc feature vectors ...'
 
-        pat = "%s/%s_%d-%d.pat"%(opts.outdir, ifo, gps_start, twopadding)
+        pat = reed.pat(opts.outdir, ifo, usertag, gps_start, twopadding) #"%s/%s_%d-%d.pat"%(opts.outdir, ifo, gps_start, twopadding)
 
         # generating auxmvc vector samples. result is saved into pat file
         # FIXME: depending how padding is done we should adjust behavior of build_auxmvc_vectors
@@ -327,10 +327,11 @@ for gps in sorted(opts.gps):
 
 
         ### perform evalutation
-        if classifierD[classifier]['mla']:
-            returncode = reed.execute(flavor, lines, dat, config, gps_start_time=gps_start, gps_end_time=gps_padd, dir=this_output_dir, trgdict=pat, auxmvc_vectors=auxmvc_vectors)
+        miniconfig = classifiersD[classifier]['config']
+        if classifiersD[classifier]['mla']:
+            returncode = reed.execute(flavor, lines, dat, miniconfig, gps_start_time=gps_start, gps_end_time=gps_padd, dir=this_output_dir, trgdict=pat, auxmvc_vectors=auxmvc_vectors)
         else:
-            returncode = reed.execute(flavor, lines, dat, config, gps_start_time=gps_start, gps_end_time=gps_padd, dir=this_output_dir, trgdict=trgdict, samples=samples, samples_header=samples_header)
+            returncode = reed.execute(flavor, lines, dat, miniconfig, gps_start_time=gps_start, gps_end_time=gps_padd, dir=this_output_dir, trgdict=trgdict, samples=samples, samples_header=samples_header)
 
         ### check if process has been execited correctly
         if returncode:

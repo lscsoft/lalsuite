@@ -674,7 +674,7 @@ while t  < opts.endgps:
     if mla:  # only build patfiles if machine-learning algorithms are present
         logger.info('Begin: building auxmvc feature vectors ...')
 
-        pat = reed.pat(this_output_dir, GWkwbasename, t, stride)
+        pat = reed.pat(this_output_dir, ifo, usertag, t, stride)
 
         # generating auxmvc vector samples. result is saved into pat file
         # FIXME: depending how padding is done we should adjust behavior of build_auxmvc_vectors
@@ -741,10 +741,11 @@ while t  < opts.endgps:
 
         ### perform evalutation
         logger.info('  Begin %s evaluation -> %s'%(classifier, dat) )
+        miniconfig = classifiersD[classifier]['config']
         if classifiersD[classifier]['mla']:
-            returncode = reed.evaluate(flavor, lines, dat, config, gps_start_time=t, gps_end_time=t+stride, dir=this_output_dir, trgdict=pat, auxmvc_vectors=auxmvc_vectors)
+            returncode = reed.evaluate(flavor, lines, dat, miniconfig, gps_start_time=t, gps_end_time=t+stride, dir=this_output_dir, trgdict=pat, auxmvc_vectors=auxmvc_vectors)
         else:
-            returncode = reed.evaluate(flavor, lines, dat, config, gps_start_time=t, gps_end_time=t+stride, dir=this_output_dir, trgdict=trgdict, samples=samples, samples_header=samples_header)
+            returncode = reed.evaluate(flavor, lines, dat, miniconfig, gps_start_time=t, gps_end_time=t+stride, dir=this_output_dir, trgdict=trgdict, samples=samples, samples_header=samples_header)
 
         ### check if process has been execited correctly
         if returncode:
