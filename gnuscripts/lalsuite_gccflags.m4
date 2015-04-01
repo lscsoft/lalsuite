@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_gccflags.m4 - macros to set strict gcc flags
 #
-# serial 21
+# serial 22
 
 AC_DEFUN([LALSUITE_ENABLE_GCC_FLAGS],[
   # $0: enable GCC warning flags
@@ -20,6 +20,7 @@ AC_DEFUN([LALSUITE_ENABLE_GCC_FLAGS],[
 AC_DEFUN([LALSUITE_ADD_GCC_FLAGS],[
   # $0: add GCC warning flags
   AS_IF([test "x${GCC}" = xyes && test "x${enable_gcc_flags}" = xyes],[
+    AC_LANG_PUSH([C])
     gcc_cflags=
     gcc_ldflags=
 
@@ -47,6 +48,7 @@ AC_DEFUN([LALSUITE_ADD_GCC_FLAGS],[
     # add flags
     LALSUITE_ADD_FLAGS([C],[${gcc_cflags}],[${gcc_ldflags}])
 
+    AC_LANG_POP([C])
   ])
   # end $0
 ])
