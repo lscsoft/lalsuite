@@ -172,7 +172,7 @@ def classifier_specific_config( config, classifier, flavor ):
         train_section = 'train_forest'
 
         cp.add_section(eval_section)
-        for option in "A a z".split():
+        for option in "A a z v".split():
             if config.has_option(classifier, option):
                 cp.set( eval_section, option, config.get(classifier, option) )
 
