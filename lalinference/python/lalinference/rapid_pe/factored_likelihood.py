@@ -215,8 +215,7 @@ def factored_log_likelihood_time_marginalized(tvals, extr_params, rholms_intp, r
                 # the time series are synchronized --- pull it out of the loop
                 tfirst = float(t_det)+tvals[0]
                 delta_t = tvals[1] - tvals[0]
-                # FIXME: ROUNDING!
-                ifirst = int(np.round(float(tfirst) / delta_t) + 0.5)
+                ifirst = int(tfirst / delta_t + 0.5)
                 ilast = ifirst + len(tvals)
                 det_rholms[key] = rhoTS[ifirst:ilast]
 
