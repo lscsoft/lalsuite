@@ -80,7 +80,7 @@ gps_end_time = int(opts.gps_end_time)
 
 # get all *.pat files in the specififed range
 
-patfiles = idq.get_all_files_in_range(opts.source_directory,
+patfiles = reed.get_all_files_in_range(opts.source_directory,
         gps_start_time, gps_end_time, suffix='.pat')
 
 if len(patfiles) == 0:
@@ -99,7 +99,7 @@ if opts.dq_segments:
     # load dq segments
 
     (dq_segments, covered_segments) = \
-        idq.extract_dq_segments(open(opts.dq_segments, 'r'),
+        reed.extract_dq_segments(open(opts.dq_segments, 'r'),
                                 opts.dq_segments_name)
 
     # sort and merge segments
