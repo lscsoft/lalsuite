@@ -1,14 +1,12 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 112
+# serial 113
 
-# not present in older versions of pkg.m4
-m4_pattern_allow([^PKG_CONFIG(_(PATH|LIBDIR|SYSROOT_DIR|ALLOW_SYSTEM_(CFLAGS|LIBS)))?$])
-m4_pattern_allow([^PKG_CONFIG_(DISABLE_UNINSTALLED|TOP_BUILD_DIR|DEBUG_SPEW)$])
-
-# forbid LALSUITE_... from appearing in output (./configure)
-#m4_pattern_forbid([^_?LALSUITE_[A-Z_]+$])
+# restrict which LALSUITE_... patterns can appearing in output (./configure);
+# useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
+m4_pattern_forbid([^_?LALSUITE_[A-Z_]+$])
+m4_pattern_allow([^LALSUITE_(BUILD)$])
 
 # list of user variables; see section 4.8.1 of the Autoconf manual
 m4_define([uvar_list],[CPPFLAGS CFLAGS CXXFLAGS FCFLAGS FFLAGS LDFLAGS])
