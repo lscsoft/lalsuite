@@ -212,7 +212,7 @@ def factored_log_likelihood_time_marginalized(tvals, extr_params, rholms_intp, r
             # do not interpolate, just use nearest neighbors.
             for key, rhoTS in rholms[det].iteritems():
                 tfirst = float(t_det)+tvals[0]
-                ifirst = int(np.round(( float(tfirst) - float(rhoTS.epoch)) / rhoTS.deltaT) + 0.5)
+                ifirst = int((tfirst - rhoTS.epoch) / rhoTS.deltaT + 0.5)
                 ilast = ifirst + len(tvals)
                 det_rholms[key] = rhoTS.data.data[ifirst:ilast]
 
