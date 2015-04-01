@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 110
+# serial 111
 
 # not present in older versions of pkg.m4
 m4_pattern_allow([^PKG_CONFIG(_(PATH|LIBDIR|SYSROOT_DIR|ALLOW_SYSTEM_(CFLAGS|LIBS)))?$])
@@ -117,15 +117,16 @@ AC_DEFUN([LALSUITE_CHECK_LINK_FLAGS],[
 ])
 
 AC_DEFUN([LALSUITE_ADD_FLAGS],[
-  # $0: prepend flags to AM_CPPFLAGS/AM_$1FLAGS/AM_LDFLAGS/LIBS,
+  # $0: prepend/append flags to AM_CPPFLAGS/AM_$1FLAGS/AM_LDFLAGS/LIBS,
   # and update values of CPPFLAGS/$1FLAGS/LDFLAGS for Autoconf tests
   # - arg 1: prefix of the compiler flag variable, e.g. C for CFLAGS, CXX for CXXFLAGS
   # - arg 2: compiler flags
   # - arg 3: linker flags
   m4_ifval([$1],[m4_ifval([$2],[
     pre_AM_CPPFLAGS=
+    post_AM_CPPFLAGS=
     pre_sys_CPPFLAGS=
-    pre_AM_$1FLAGS=
+    post_AM_$1FLAGS=
     for flag in $2; do
       # AM_CPPFLAGS gets unique -I, -D and -U flags
       # sys_CPPFLAGS gets unique system -I flags
@@ -143,27 +144,32 @@ AC_DEFUN([LALSUITE_ADD_FLAGS],[
             [pre_AM_CPPFLAGS="${pre_AM_CPPFLAGS} ${flag}"]
           )
         ],
-        [-D*|-U*],[pre_AM_CPPFLAGS="${pre_AM_CPPFLAGS} ${flag}"],
-        [pre_AM_$1FLAGS="${pre_AM_$1FLAGS} ${flag}"]
+        [-D*|-U*],[post_AM_CPPFLAGS="${post_AM_CPPFLAGS} ${flag}"],
+        [post_AM_$1FLAGS="${post_AM_$1FLAGS} ${flag}"]
       )
     done
     AS_IF([test "x${pre_AM_CPPFLAGS}" != x],[
       AM_CPPFLAGS="${pre_AM_CPPFLAGS} ${AM_CPPFLAGS}"
       _AS_ECHO_LOG([prepended ${pre_AM_CPPFLAGS} to AM_CPPFLAGS])
     ])
+    AS_IF([test "x${post_AM_CPPFLAGS}" != x],[
+      AM_CPPFLAGS="${AM_CPPFLAGS} ${post_AM_CPPFLAGS}"
+      _AS_ECHO_LOG([appended ${post_AM_CPPFLAGS} to AM_CPPFLAGS])
+    ])
     AS_IF([test "x${pre_sys_CPPFLAGS}" != x],[
       sys_CPPFLAGS="${pre_sys_CPPFLAGS} ${sys_CPPFLAGS}"
       _AS_ECHO_LOG([prepended ${pre_sys_CPPFLAGS} to system AM_CPPFLAGS])
     ])
-    AS_IF([test "x${pre_AM_$1FLAGS}" != x],[
-      AM_$1FLAGS="${pre_AM_$1FLAGS} ${AM_$1FLAGS}"
-      _AS_ECHO_LOG([prepended ${pre_AM_$1FLAGS} to AM_$1FLAGS])
+    AS_IF([test "x${post_AM_$1FLAGS}" != x],[
+      AM_$1FLAGS="${AM_$1FLAGS} ${post_AM_$1FLAGS}"
+      _AS_ECHO_LOG([appended ${post_AM_$1FLAGS} to AM_$1FLAGS])
     ])
     CPPFLAGS="${AM_CPPFLAGS} ${sys_CPPFLAGS} ${uvar_orig_prefix[]CPPFLAGS}"
     $1FLAGS="${AM_$1FLAGS} ${uvar_orig_prefix[]$1FLAGS}"
   ])])
   m4_ifval([$3],[
     pre_AM_LDFLAGS=
+    post_AM_LDFLAGS=
     pre_sys_LDFLAGS=
     pre_LIBS=
     for flag in $3; do
@@ -184,12 +190,16 @@ AC_DEFUN([LALSUITE_ADD_FLAGS],[
           )
         ],
         [-l*|*.la],[pre_LIBS="${pre_LIBS} ${flag}"],
-        [pre_AM_LDFLAGS="${pre_AM_LDFLAGS} ${flag}"]
+        [post_AM_LDFLAGS="${post_AM_LDFLAGS} ${flag}"]
       )
     done
     AS_IF([test "x${pre_AM_LDFLAGS}" != x],[
       AM_LDFLAGS="${pre_AM_LDFLAGS} ${AM_LDFLAGS}"
       _AS_ECHO_LOG([prepended ${pre_AM_LDFLAGS} to AM_LDFLAGS])
+    ])
+    AS_IF([test "x${post_AM_LDFLAGS}" != x],[
+      AM_LDFLAGS="${AM_LDFLAGS} ${post_AM_LDFLAGS}"
+      _AS_ECHO_LOG([appended ${post_AM_LDFLAGS} to AM_LDFLAGS])
     ])
     AS_IF([test "x${pre_sys_LDFLAGS}" != x],[
       sys_LDFLAGS="${pre_sys_LDFLAGS} ${sys_LDFLAGS}"
