@@ -219,7 +219,7 @@ def factored_log_likelihood_time_marginalized(tvals, extr_params, rholms_intp, r
         lnL += single_detector_log_likelihood(det_rholms, CT, Ylms, F, dist)
 
     maxlnL = np.max(lnL)
-    return maxlnL + np.log(integrate.simps(np.exp(lnL - maxlnL), dx=tvals[1]-tvals[0]))
+    return maxlnL + np.log(np.sum(np.exp(lnL - maxlnL)) * (tvals[1]-tvals[0]))
 
 def single_detector_log_likelihood(rholm_vals, crossTerms, Ylms, F, dist):
     """
