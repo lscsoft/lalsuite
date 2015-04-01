@@ -211,10 +211,14 @@ def factored_log_likelihood_time_marginalized(tvals, extr_params, rholms_intp, r
         else:
             # do not interpolate, just use nearest neighbors.
             for key, rhoTS in rholms[det].iteritems():
+                # FIXME: These indexes end up not being detector specific when
+                # the time series are synchronized --- pull it out of the loop
                 tfirst = float(t_det)+tvals[0]
-                ifirst = int((tfirst - rhoTS.epoch) / rhoTS.deltaT + 0.5)
+                delta_t = tvals[1] - tvals[0]
+                # FIXME: ROUNDING!
+                ifirst = int(np.round(float(tfirst) / delta_t) + 0.5)
                 ilast = ifirst + len(tvals)
-                det_rholms[key] = rhoTS.data.data[ifirst:ilast]
+                det_rholms[key] = rhoTS[ifirst:ilast]
 
         lnL += single_detector_log_likelihood(det_rholms, CT, Ylms, F, dist)
 
@@ -278,7 +282,10 @@ def compute_mode_ip_time_series(hlms, data, psd, fmin, fMax, fNyq,
     """
     rholms = {}
     assert data.deltaF == hlms[hlms.keys()[0]].deltaF
+    # These two checks assure *full* alignment of the output mode
+    # SNR time series
     assert data.data.length == hlms[hlms.keys()[0]].data.length
+    assert data.data.epoch == hlms[hlms.keys()[0]].data.epoch
     deltaT = data.data.length/(2*fNyq)
 
     # Create an instance of class to compute inner product time series

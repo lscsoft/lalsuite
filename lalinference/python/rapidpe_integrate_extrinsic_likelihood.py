@@ -465,12 +465,28 @@ if not opts.time_marginalization:
     res, var, neff, dict_return = sampler.integrate(likelihood_function, *unpinned_params, **pinned_params)
 
 else: # Sum over time for every point in other extrinsic params
+
+    # Un-LALify the rholms, we don't need the extra information and we end up
+    # invoking lots of data copies in slicing later on.
+    ts_epoch = None
+    for key, rho_ts in rholms.iteritems():
+        if ts_epoch:
+            # Be super careful that we're looking at the *same* start times
+            assert ts_epoch == rho_ts.epoch
+        else:
+            ts_epoch = rho_ts.epoch
+        rholms[key] = rho_ts.data.data
+
+    # Construct the time grid and advance it to the epoch of the mode SNR
+    # time series
+    tvals = numpy.linspace(-t_ref_wind, t_ref_wind, int(t_ref_wind * 2 / P.deltaT)) + float(ts_epoch)
+
     def likelihood_function(right_ascension, declination, phi_orb, inclination,
             psi, distance):
         # use EXTREMELY many bits
         lnL = numpy.zeros(right_ascension.shape,dtype=numpy.float128)
         i = 0
-        tvals = numpy.linspace(-t_ref_wind,t_ref_wind,int((t_ref_wind)*2/P.deltaT))  # choose an array at the target sampling rate. P is inherited globally
+        # choose an array at the target sampling rate. P is inherited globally
         for ph, th, phr, ic, ps, di in zip(right_ascension, declination,
                 phi_orb, inclination, psi, distance):
             P.phi = ph # right ascension
