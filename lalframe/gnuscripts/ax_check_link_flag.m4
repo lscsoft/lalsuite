@@ -1,1 +1,0 @@
-../../gnuscripts/ax_check_link_flag.m4

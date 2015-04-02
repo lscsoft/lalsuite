@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 113
+# serial 114
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -76,28 +76,30 @@ AC_DEFUN([LALSUITE_POP_UVARS],[
   # end $0
 ])
 
-AC_DEFUN([_LALSUITE_CHECK_ERROR_FLAGS],[
-  # $0: check for flags required to trigger an error for unknown flags
-  #   gcc, clang: -Werror
-  #   icc: -we10006
-  error_flags=
-  for flag in -Werror -we10006; do
-    AX_CHECK_COMPILE_FLAG([${flag}],[error_flags="${error_flags} ${flag}"])
-  done
-  AS_IF([test x"${error_flags}" = x],[
-    AC_MSG_ERROR([could not determine error flags])
-  ])
-  # end $0
-])
-
 AC_DEFUN([LALSUITE_CHECK_COMPILE_FLAGS],[
   # $0: check multiple compile flags
   LALSUITE_PUSH_UVARS
   LALSUITE_CLEAR_UVARS
-  _LALSUITE_CHECK_ERROR_FLAGS
+  lalsuite_save_werror_flag=${ac_[]_AC_LANG_ABBREV[]_werror_flag}
+  ac_[]_AC_LANG_ABBREV[]_werror_flag=yes
   for flag in m4_normalize($1); do
-    AX_CHECK_COMPILE_FLAG([${flag}],[$2],[$3],[${error_flags}])
+    AS_VAR_PUSHDEF([CACHEVAR],[lalsuite_cv_check_compile_[]_AC_LANG_ABBREV[]_${flag}])
+    AC_CACHE_CHECK([whether ]_AC_LANG[ compiler accepts ${flag}],CACHEVAR,[
+      _AC_LANG_PREFIX[]FLAGS="${uvar_orig_prefix[]_AC_LANG_PREFIX[]FLAGS} ${flag}"
+      AC_COMPILE_IFELSE([AC_LANG_SOURCE([])],[
+        AS_VAR_SET(CACHEVAR,[yes])
+      ],[
+        AS_VAR_SET(CACHEVAR,[no])
+      ])
+    ])
+    AS_IF([test x"AS_VAR_GET(CACHEVAR)" = xyes],[
+      m4_default([$2], :)
+    ],[
+      m4_default([$3], :)
+    ])
+    AS_VAR_POPDEF([CACHEVAR])
   done
+  ac_[]_AC_LANG_ABBREV[]_werror_flag=${lalsuite_save_werror_flag}
   LALSUITE_POP_UVARS
   # end $0
 ])
@@ -106,10 +108,26 @@ AC_DEFUN([LALSUITE_CHECK_LINK_FLAGS],[
   # $0: check multiple link flags
   LALSUITE_PUSH_UVARS
   LALSUITE_CLEAR_UVARS
-  _LALSUITE_CHECK_ERROR_FLAGS
+  lalsuite_save_werror_flag=${ac_[]_AC_LANG_ABBREV[]_werror_flag}
+  ac_[]_AC_LANG_ABBREV[]_werror_flag=yes
   for flag in m4_normalize($1); do
-    AX_CHECK_LINK_FLAG([${flag}],[$2],[$3],[${error_flags}])
+    AS_VAR_PUSHDEF([CACHEVAR],[lalsuite_cv_check_link_[]_AC_LANG_ABBREV[]_${flag}])
+    AC_CACHE_CHECK([whether ]_AC_LANG[ linker accepts ${flag}],CACHEVAR,[
+      LDFLAGS="${uvar_orig_prefix[]LDFLAGS} ${flag}"
+      AC_LINK_IFELSE([AC_LANG_PROGRAM([])],[
+        AS_VAR_SET(CACHEVAR,[yes])
+      ],[
+        AS_VAR_SET(CACHEVAR,[no])
+      ])
+    ])
+    AS_IF([test x"AS_VAR_GET(CACHEVAR)" = xyes],[
+      m4_default([$2],[:])
+    ],[
+      m4_default([$3],[:])
+    ])
+    AS_VAR_POPDEF([CACHEVAR])
   done
+  ac_[]_AC_LANG_ABBREV[]_werror_flag=${lalsuite_save_werror_flag}
   LALSUITE_POP_UVARS
   # end $0
 ])
