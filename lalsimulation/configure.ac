@@ -136,7 +136,6 @@ AS_IF(
   [test "x$OPENMP_CFLAGS" = "x"],
   [
     OPENMP_ENABLE_VAL="DISABLED"
-    LALSUITE_ADD_FLAGS([C],[-Wno-unknown-pragmas],[])
   ],
   [
     OPENMP_ENABLE_VAL="ENABLED"

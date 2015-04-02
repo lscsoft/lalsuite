@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_gccflags.m4 - macros to set strict gcc flags
 #
-# serial 22
+# serial 23
 
 AC_DEFUN([LALSUITE_ENABLE_GCC_FLAGS],[
   # $0: enable GCC warning flags
@@ -29,7 +29,7 @@ AC_DEFUN([LALSUITE_ADD_GCC_FLAGS],[
       -g3 -Wall -W -Werror -Wmissing-prototypes -Wstrict-prototypes -Wshadow
       -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -fno-common
       -Wnested-externs -Wno-format-zero-length -fno-strict-aliasing
-      -Wno-unused-result -Qunused-arguments
+      -Wno-unused-result -Wno-unknown-pragmas -Qunused-arguments
       ],[gcc_cflags="${gcc_cflags} ${flag}"]
     )
 
