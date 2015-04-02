@@ -296,6 +296,12 @@ AC_CHECK_FUNCS([gmtime_r localtime_r stat putenv posix_memalign backtrace clock_
 AM_CONDITIONAL([INTELFFT],[test x$intelfft = xtrue])
 AM_CONDITIONAL([QTHREAD],[test x$qthread = xtrue])
 
+# LALSIMD.c container assembler so needs to be compiled as non-PIC on some platforms
+AC_SUBST([LALSIMD_CFLAGS],[])
+LALSUITE_CHECK_COMPILE_FLAGS([-fno-pic],[LALSIMD_CFLAGS="${LALSIMD_CFLAGS} ${flag}"])
+AC_SUBST([LALSIMD_LDFLAGS],[])
+LALSUITE_CHECK_LINK_FLAGS(['-Wl[,]-read_only_relocs -Wl[,]suppress'],[LALSIMD_LDFLAGS="${LALSIMD_LDFLAGS} ${flag}"])
+
 # add gcc specific flags --- must be done at end or tests will break!
 LALSUITE_ADD_GCC_FLAGS
 
@@ -304,7 +310,7 @@ AC_SUBST([LDADD], ["\$(top_builddir)/src/liblal.la \$(top_builddir)/src/support/
 
 # add extra preprocessor flags
 AM_CPPFLAGS="-DPKG_DATA_DIR='\"\$(pkgdatadir)/\"' ${AM_CPPFLAGS}"
-AM_CPPFLAGS="-I\$(top_builddir)/include ${AM_CPPFLAGS}"
+AM_CPPFLAGS="-I\$(top_builddir)/include -I\$(top_srcdir)/src ${AM_CPPFLAGS}"
 
 # force all python modules into the exec dir to prevent mixed C and
 # pure-python library code from being split across lib and lib64 on
@@ -319,7 +325,6 @@ LAL has now been successfully configured:
 
 * Python support is $PYTHON_ENABLE_VAL
 * CUDA support is $CUDA_ENABLE_VAL
-* SIMD extensions are $SIMD_ENABLE_VAL
 * BOINC support is $BOINC_ENABLE_VAL
 * SWIG bindings for Octave are $SWIG_BUILD_OCTAVE_ENABLE_VAL
 * SWIG bindings for Python are $SWIG_BUILD_PYTHON_ENABLE_VAL

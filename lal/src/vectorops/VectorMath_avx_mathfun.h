@@ -59,13 +59,13 @@ typedef ALIGN32_BEG union {
 
 
 // ---------- Prototypes ----------
-v8sf sin256_ps(v8sf x);
-v8sf cos256_ps(v8sf x);
-v8sf exp256_ps(v8sf x);
-v8sf log256_ps(v8sf x);
-v8sf log256_ps(v8sf x);
-void sincos256_ps(v8sf x, v8sf *s, v8sf *c);
-void sincos256_ps_2pi(v8sf xx, v8sf *s, v8sf *c);
+static v8sf sin256_ps(v8sf x);
+static v8sf cos256_ps(v8sf x);
+static v8sf exp256_ps(v8sf x);
+static v8sf log256_ps(v8sf x);
+static v8sf log256_ps(v8sf x);
+static void sincos256_ps(v8sf x, v8sf *s, v8sf *c);
+static void sincos256_ps_2pi(v8sf xx, v8sf *s, v8sf *c);
 // --------------------------------
 
 
@@ -375,11 +375,11 @@ v8sf sin256_ps(v8sf x) { // any x
   /* j=(j+1) & (~1) (see the cephes sources) */
   // another two AVX2 instruction
   imm2 = _mm256_add_epi32(imm2, _pi32_256_1.vi);
-  imm2 = _mm256_and_si128(imm2, _pi32_256_inv1.vi);
+  imm2 = _mm256_and_si256(imm2, _pi32_256_inv1.vi);
   y = _mm256_cvtepi32_ps(imm2);
 
   /* get the swap sign flag */
-  imm0 = _mm256_and_si128(imm2, _pi32_256_4.vi);
+  imm0 = _mm256_and_si256(imm2, _pi32_256_4.vi);
   imm0 = _mm256_slli_epi32(imm0, 29);
   /* get the polynom selection mask
      there is one polynom for 0 <= x <= Pi/4
@@ -387,7 +387,7 @@ v8sf sin256_ps(v8sf x) { // any x
 
      Both branches will be computed.
   */
-  imm2 = _mm256_and_si128(imm2, _pi32_256_2.vi);
+  imm2 = _mm256_and_si256(imm2, _pi32_256_2.vi);
   imm2 = _mm256_cmpeq_epi32(imm2,_pi32_256_0.vi);
 #else
   /* we use SSE2 routines to perform the integer ops */
@@ -492,15 +492,15 @@ v8sf cos256_ps(v8sf x) { // any x
   imm2 = _mm256_cvttps_epi32(y);
   /* j=(j+1) & (~1) (see the cephes sources) */
   imm2 = _mm256_add_epi32(imm2, _pi32_256_1.vi);
-  imm2 = _mm256_and_si128(imm2, _pi32_256_inv1.vi);
+  imm2 = _mm256_and_si256(imm2, _pi32_256_inv1.vi);
   y = _mm256_cvtepi32_ps(imm2);
   imm2 = _mm256_sub_epi32(imm2, _pi32_256_2.vi);
 
   /* get the swap sign flag */
-  imm0 = _mm256_andnot_si128(imm2, _pi32_256_4.vi);
+  imm0 = _mm256_andnot_si256(imm2, _pi32_256_4.vi);
   imm0 = _mm256_slli_epi32(imm0, 29);
   /* get the polynom selection mask */
-  imm2 = _mm256_and_si128(imm2, _pi32_256_2.vi);
+  imm2 = _mm256_and_si256(imm2, _pi32_256_2.vi);
   imm2 = _mm256_cmpeq_epi32(imm2, _pi32_256_0.vi);
 #else
 
@@ -615,18 +615,18 @@ void sincos256_ps(v8sf x, v8sf *s, v8sf *c) {
 
   /* j=(j+1) & (~1) (see the cephes sources) */
   imm2 = _mm256_add_epi32(imm2, _pi32_256_1.vi);
-  imm2 = _mm256_and_si128(imm2, _pi32_256_inv1.vi);
+  imm2 = _mm256_and_si256(imm2, _pi32_256_inv1.vi);
 
   y = _mm256_cvtepi32_ps(imm2);
   imm4 = imm2;
 
   /* get the swap sign flag for the sine */
-  imm0 = _mm256_and_si128(imm2, _pi32_256_4.vi);
+  imm0 = _mm256_and_si256(imm2, _pi32_256_4.vi);
   imm0 = _mm256_slli_epi32(imm0, 29);
   //v8sf swap_sign_bit_sin = _mm256_castsi256_ps(imm0);
 
   /* get the polynom selection mask for the sine*/
-  imm2 = _mm256_and_si128(imm2, _pi32_256_2.vi);
+  imm2 = _mm256_and_si256(imm2, _pi32_256_2.vi);
   imm2 = _mm256_cmpeq_epi32(imm2, _pi32_256_0.vi);
   //v8sf poly_mask = _mm256_castsi256_ps(imm2);
 #else
@@ -678,7 +678,7 @@ void sincos256_ps(v8sf x, v8sf *s, v8sf *c) {
 
 #ifdef __AVX2__
   imm4 = _mm256_sub_epi32(imm4, _pi32_256_2.vi);
-  imm4 = _mm256_andnot_si128(imm4, _pi32_256_4.vi);
+  imm4 = _mm256_andnot_si256(imm4, _pi32_256_4.vi);
   imm4 = _mm256_slli_epi32(imm4, 29);
 #else
   imm4_1 = _mm_sub_epi32(imm4_1, _pi32avx_2.v4i);

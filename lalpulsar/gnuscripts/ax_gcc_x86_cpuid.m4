@@ -1,1 +1,0 @@
-../../gnuscripts/ax_gcc_x86_cpuid.m4

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Reinhard Prix
+ * Copyright (C) 2015 Reinhard Prix, Karl Wette
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,29 +41,9 @@ extern "C" {
  */
 /** @{ */
 
-/* ---------- Macros ---------- */
-#define isMemAligned(x,align)  (((size_t)(x) % (align)) == 0)
+/* -------------------- our own failsafe aligned memory handling -------------------- */
 
-/* ---------- exported Types ---------- */
-/** enumerate all supported vector 'devices' (SSE, AVX, ...) that can be chosen from at runtime
- */
-typedef enum tagVectorDevice_type
-{
-  /* \cond DONT_DOXYGEN */
-  VECTORDEVICE_START,	/**< start marker for range checking */
-  /* \endcond */
-  VECTORDEVICE_FPU,	/**< not really a vector device, but added here as failsafe fallback option */
-  VECTORDEVICE_SSE,	/**< SSE extension */
-  VECTORDEVICE_AVX,	/**< AVX extension */
-  /* \cond DONT_DOXYGEN */
-  VECTORDEVICE_END	/**< end marker for range checking */
-  /* \endcond */
-}
-VectorDevice_type;
-
-/** We provide our own local aligned-memory handling functions, until this
- * may later be merged upstream into the LALMalloc module
- */
+/** A special REAL4 Vector with n-byte aligned memory \c data array */
 typedef struct tagREAL4VectorAligned
 {
   UINT4 length;		/**< number of 'usable' array entries (fully aligned) */
@@ -71,57 +51,28 @@ typedef struct tagREAL4VectorAligned
   REAL4 *data0;		/**< actual physical start of memory block, possibly not aligned */
 } REAL4VectorAligned;
 
-/* ---------- Prototypes ---------- */
-
-/* ----- runtime handling of vector device switching */
-int XLALVectorDeviceSet ( VectorDevice_type device );
-VectorDevice_type XLALVectorDeviceGet ( void );
-int XLALVectorDeviceIsAvailable ( VectorDevice_type device );
-const CHAR *XLALVectorDeviceName ( VectorDevice_type device );
-CHAR *XLALVectorDeviceHelpString ( void );
-int XLALVectorDeviceParseString ( VectorDevice_type *device, const char *s );
-
-/* ----- aligned-memory handling */
-REAL4VectorAligned *XLALCreateREAL4VectorAligned ( UINT4 length, UINT4 align );
+REAL4VectorAligned *XLALCreateREAL4VectorAligned ( const UINT4 length, const UINT4 align );
 void XLALDestroyREAL4VectorAligned ( REAL4VectorAligned *in );
 
-/* ----- exported vector math functions */
-  int XLALVectorSinf     ( REAL4 *out, const REAL4 *in, UINT4 length );
-int XLALVectorCosf     ( REAL4 *out, const REAL4 *in, UINT4 length );
-int XLALVectorExpf     ( REAL4 *out, const REAL4 *in, UINT4 length );
-int XLALVectorLogf     ( REAL4 *out, const REAL4 *in, UINT4 length );
-int XLALVectorSinCosf  ( REAL4 *sinx,    REAL4 *cosx,    const REAL4 *x, UINT4 length );
-int XLALVectorSinCosf2PI(REAL4 *sin2pix, REAL4 *cos2pix, const REAL4 *x, UINT4 length );
+/* -------------------- exported vector math functions -------------------- */
 
-/* ---------- module internal prototypes ---------- */
-/* these should not be used except within this module, that's why the
- * exported API only declared the device-generic XLALVector<Funcf>() functions
- */
-#ifdef IN_VECTORMATH
-int XLALVectorSinf_FPU ( REAL4 *out, const REAL4 *in, UINT4 length );
-int XLALVectorSinf_SSE ( REAL4 *out, const REAL4 *in, UINT4 length );
-int XLALVectorSinf_AVX ( REAL4 *out, const REAL4 *in, UINT4 length );
+/** Compute \f$y = \sin(in)\f$ over single-precision vectors \c out, \c in with \c len elements */
+int XLALVectorSinf ( REAL4 *out, const REAL4 *in, const UINT4 len );
 
-int XLALVectorCosf_FPU ( REAL4 *out, const REAL4 *in, UINT4 length );
-int XLALVectorCosf_SSE ( REAL4 *out, const REAL4 *in, UINT4 length );
-int XLALVectorCosf_AVX ( REAL4 *out, const REAL4 *in, UINT4 length );
+/** Compute \f$y = \cos(in)\f$ over single-precision vectors \c out, \c in with \c len elements */
+int XLALVectorCosf ( REAL4 *out, const REAL4 *in, const UINT4 len );
 
-int XLALVectorExpf_FPU ( REAL4 *out, const REAL4 *in, UINT4 length );
-int XLALVectorExpf_SSE ( REAL4 *out, const REAL4 *in, UINT4 length );
-int XLALVectorExpf_AVX ( REAL4 *out, const REAL4 *in, UINT4 length );
+/** Compute \f$y = \exp(in)\f$ over single-precision vectors \c out, \c in with \c len elements */
+int XLALVectorExpf ( REAL4 *out, const REAL4 *in, const UINT4 len );
 
-int XLALVectorLogf_FPU ( REAL4 *out, const REAL4 *in, UINT4 length );
-int XLALVectorLogf_SSE ( REAL4 *out, const REAL4 *in, UINT4 length );
-int XLALVectorLogf_AVX ( REAL4 *out, const REAL4 *in, UINT4 length );
+/** Compute \f$y = \log(in)\f$ over single-precision vectors \c out, \c in with \c len elements */
+int XLALVectorLogf ( REAL4 *out, const REAL4 *in, const UINT4 len );
 
-int XLALVectorSinCosf_FPU ( REAL4 *sinx, REAL4 *cosx, const REAL4 *x, UINT4 length );
-int XLALVectorSinCosf_SSE ( REAL4 *sinx, REAL4 *cosx, const REAL4 *x, UINT4 length );
-int XLALVectorSinCosf_AVX ( REAL4 *sinx, REAL4 *cosx, const REAL4 *x, UINT4 length );
+/** Compute \f$y_1 = \sin(in), out_2 = \cos(in)\f$ over single-precision vectors \c out1, \c out2, \c in with \c len elements */
+int XLALVectorSinCosf ( REAL4 *out1, REAL4 *out2, const REAL4 *in, const UINT4 len );
 
-int XLALVectorSinCosf2PI_FPU ( REAL4 *sin2pix, REAL4 *cos2pix, const REAL4 *x, UINT4 length );
-int XLALVectorSinCosf2PI_SSE ( REAL4 *sin2pix, REAL4 *cos2pix, const REAL4 *x, UINT4 length );
-int XLALVectorSinCosf2PI_AVX ( REAL4 *sin2pix, REAL4 *cos2pix, const REAL4 *x, UINT4 length );
-#endif
+/** Compute \f$y_1 = \sin(2\pi in), out_2 = \cos(2\pi in)\f$ over single-precision vectors \c out1, \c out2, \c in with \c len elements */
+int XLALVectorSinCosf2PI ( REAL4 *out1, REAL4 *out2, const REAL4 *in, const UINT4 len );
 
 /** @} */
 

@@ -45,6 +45,7 @@ src/config.h
 src/config.h.in
 src/fft/CudaFFT.cpp
 src/git_version
+src/lal-simd-detect
 src/lal-version
 src/stamp-h1
 src/stamp-h2

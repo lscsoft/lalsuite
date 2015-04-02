@@ -1,1 +1,0 @@
-../../gnuscripts/ax_ext.m4

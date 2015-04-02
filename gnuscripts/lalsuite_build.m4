@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 114
+# serial 115
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -1188,47 +1188,102 @@ AC_DEFUN([LALSUITE_USE_DOXYGEN],[
 
 AC_DEFUN([LALSUITE_WITH_SIMD],[
   # $0: check for SIMD extensions
-  AC_ARG_WITH(
-    [simd],
-    AC_HELP_STRING([--with-simd],[use SIMD extensions @<:@default: no@:>@]),
-    [],[with_simd=no]
-  )
-  AS_IF([test "${cross_compiling}" = yes],[
-    AC_MSG_WARN([cross compiling: disabling SIMD extension checks])
-  ],[
-    LALSUITE_PUSH_UVARS
-    LALSUITE_CLEAR_UVARS
-    SIMD_FLAGS=
-    AS_CASE([${with_simd}],
-      [yes],[
-        AX_EXT
-        AX_CHECK_COMPILE_FLAG([-mfpmath=sse],[SIMD_FLAGS="${SIMD_FLAGS} -mfpmath=sse"],[:],[-Werror])
-        AX_GCC_ARCHFLAG([no],[SIMD_FLAGS="${SIMD_FLAGS} ${ax_cv_gcc_archflag}"])
-      ],
-      [no],[:],
-      [AC_MSG_ERROR([bad value '${with_simd}' for --with-simd])]
-    )
-    AS_IF([test "x${SIMD_FLAGS}" != x],[
-      CFLAGS="${SIMD_FLAGS} -O0"
-      AC_MSG_CHECKING([whether C compiler assembles basic math with SIMD extensions])
-      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],[[
+
+  # list of recognised SIMD instruction sets
+  m4_define([simd_isets],[m4_normalize([
+    [SSE],[SSE2],[SSE3],[SSSE3],[SSE4.1],[SSE4.2],
+    [AVX],[AVX2]
+  ])])
+
+  # push compiler environment
+  LALSUITE_PUSH_UVARS
+  LALSUITE_CLEAR_UVARS
+  AC_LANG_PUSH([C])
+
+  # check compiler support for each SIMD instruction set
+  simd_supported=
+  m4_foreach([iset],simd_isets,[
+    m4_pushdef([option],m4_translit(iset,[A-Z.],[a-z.]))
+    m4_pushdef([symbol],m4_translit(iset,[A-Z.],[A-Z_]))
+
+    # assume supported until test fails, in which break out of loop
+    for iset_supported in yes; do
+
+      # check -m[]option flag
+      LALSUITE_CHECK_COMPILE_FLAGS([-m[]option],[],[iset_supported=no])
+      AS_IF([test x"${iset_supported}" = xno],[break])
+
+      # check that compiler defines __]symbol[__ preprocessor symbol
+      AC_MSG_CHECKING([whether ]_AC_LANG[ compiler defines __]symbol[__ with -m[]option])
+      CFLAGS="${lalsuite_uvar_CFLAGS} -m[]option"
+      AC_COMPILE_IFELSE([
+        AC_LANG_PROGRAM([],[[
+#if !defined(__]]symbol[[__)
+#error Preprocessor macro not defined by compiler
+#endif
+]])
+      ],[
+        AC_MSG_RESULT([yes])
+      ],[
+        AC_MSG_RESULT([no])
+        iset_supported=no
+      ])
+      AS_IF([test x"${iset_supported}" = xno],[break])
+
+      # check that compiler compiles floating-point math with -m[]option
+      AC_MSG_CHECKING([whether ]_AC_LANG[ compiler compiles floating-point math with -m[]option])
+      CFLAGS="${lalsuite_uvar_CFLAGS} -m[]option"
+      AC_COMPILE_IFELSE([
+        AC_LANG_PROGRAM([
+AC_INCLUDES_DEFAULT
+#include <math.h>
+],[[
 double volatile a = 1.2;
 double volatile b = 3.4;
 double volatile c = a * b;
-]])],[
+double volatile d = round(c);
+]])
+      ],[
         AC_MSG_RESULT([yes])
       ],[
-        AC_MSG_RESULT([no; disabling SIMD extensions])
-        SIMD_FLAGS=
+        AC_MSG_RESULT([no])
+        iset_supported=no
       ])
+      AS_IF([test x"${iset_supported}" = xno],[break])
+
+    done
+
+    # define Automake conditional HAVE_<SIMD>_COMPILER
+    AM_CONDITIONAL([HAVE_]symbol[_COMPILER],[test x"${iset_supported}" = xyes])
+    AM_COND_IF([HAVE_]symbol[_COMPILER],[
+
+      # define config.h preprocessor symbol HAVE_<SIMD>_COMPILER
+      AC_DEFINE([HAVE_]symbol[_COMPILER],[1],[Define to 1 if compiler supports ]iset[ SIMD extensions])
+
+      # substitute Automake variable <SIMD>_CFLAGS
+      AC_SUBST(symbol[_CFLAGS],["-DSIMD_INSTRSET=]symbol[ -m[]option"])
+
+      # add to list of supported instruction sets
+      simd_supported="${simd_supported} iset"
+
     ])
-    LALSUITE_POP_UVARS
-    AS_IF([test "x${SIMD_FLAGS}" != x],[
-      LALSUITE_ADD_FLAGS([C],[${SIMD_FLAGS}],[])
-      SIMD_ENABLE_VAL=ENABLED
-    ],[
-      SIMD_ENABLE_VAL=DISABLED
-    ])
+
   ])
+
+  # string listing all the SIMD extensions supported by the compiler
+  simd_supported=`echo ${simd_supported}`
+  AC_DEFINE_UNQUOTED([HAVE_SIMD_COMPILER],["${simd_supported}"],
+    [Define to a string listing all the SIMD extensions supported by the ]_AC_LANG[ compiler]
+  )
+  AS_IF([test x"${simd_supported}" = x],[
+    AC_MSG_NOTICE([]_AC_LANG[ compiler does not support SIMD instruction sets])
+  ],[
+    AC_MSG_NOTICE([]_AC_LANG[ compiler supports SIMD instruction sets: ${simd_supported}])
+  ])
+
+  # pop compiler environment
+  AC_LANG_POP([C])
+  LALSUITE_POP_UVARS
+
   # end $0
 ])

@@ -53,8 +53,11 @@ liblal_la_DEPENDENCIES = \
 liblal_la_LIBADD = $(liblal_la_DEPENDENCIES)
 liblal_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
 
+liblal_la_LDFLAGS += $(LALSIMD_LDFLAGS)
+
 EXTRA_DIST = \
 	config.h.in \
+	simd_dispatch.h \
 	$(END_OF_LIST)
 
 DISTCLEANFILES = config.h
@@ -63,8 +66,15 @@ vcs_info_sources = LALVCSInfoHeader.h
 build_info_source = LALBuildInfo.c
 $(build_info_source): $(liblal_la_DEPENDENCIES)
 
-bin_PROGRAMS = lal-version
+bin_PROGRAMS = \
+	lal-simd-detect \
+	lal-version \
+	$(END_OF_LIST)
+
 lal_version_SOURCES = lal-version.c
 lal_version_LDADD = liblal.la
 
-TESTS = lal-version
+lal_simd_detect_SOURCES = lal-simd-detect.c
+lal_simd_detect_LDADD = liblal.la
+
+TESTS = $(bin_PROGRAMS)

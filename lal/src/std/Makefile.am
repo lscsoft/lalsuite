@@ -9,6 +9,7 @@ pkginclude_HEADERS = \
 	LALError.h \
 	LALGSL.h \
 	LALMalloc.h \
+	LALSIMD.h \
 	LALStatusMacros.h \
 	LALStddef.h \
 	LALStdio.h \
@@ -21,7 +22,7 @@ pkginclude_HEADERS = \
 	XLALGSL.h \
 	$(END_OF_LIST)
 
-noinst_LTLIBRARIES = libstd.la
+noinst_LTLIBRARIES = libstd.la liblalsimd.la
 
 libstd_la_SOURCES = \
 	Grid.c \
@@ -36,6 +37,10 @@ libstd_la_SOURCES = \
 	StringToken.c \
 	XLALError.c \
 	$(END_OF_LIST)
+
+libstd_la_LIBADD = liblalsimd.la
+liblalsimd_la_SOURCES = LALSIMD.c
+liblalsimd_la_CFLAGS = $(AM_CFLAGS) $(LALSIMD_CFLAGS)
 
 noinst_HEADERS = \
 	Grid_source.c \

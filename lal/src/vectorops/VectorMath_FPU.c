@@ -24,65 +24,58 @@
 #include <config.h>
 
 #include <lal/LALConstants.h>
-
-#define IN_VECTORMATH
 #include <lal/VectorMath.h>
 
-// ---------- local prototypes ----------
-static int XLALVectorFuncf_FPU ( REAL4 *out, const REAL4 *in, UINT4 length, float (*f)(float x) );
+#include "VectorMath_internal.h"
 
-// ========== function definitions ==========
-// ---------- Vanilla FPU versions of vector mathfun() ----------
-static int
-XLALVectorFuncf_FPU ( REAL4 *out, const REAL4 *in, UINT4 length, float (*f)(float x) )
+#define SIMD_INSTRSET FPU
+
+// ---------- local math functions ----------
+
+static void local_sincosf(float in, float *out1, float *out2) {
+  *out1 = sinf ( in );
+  *out2 = cosf ( in );
+}
+
+static void local_sincosf_2pi(float in, float *out1, float *out2) {
+  *out1 = sinf ( (REAL4)LAL_TWOPI * in );
+  *out2 = cosf ( (REAL4)LAL_TWOPI * in );
+}
+
+// ========== internal generic FPU functions ==========
+
+static inline int
+XLALVectorFuncf1T1_FPU ( REAL4 *out, const REAL4 *in, const UINT4 len, float (*f)(float) )
 {
-  for ( UINT4 i = 0; i < length; i ++ )
+  for ( UINT4 i = 0; i < len; i ++ )
     {
       out[i] = (*f) ( in[i] );
-    } // for i < length
+    } // for i < len
   return XLAL_SUCCESS;
-} // XLALVectorFuncf_FPU()
+} // XLALVectorFuncf1T1_FPU()
 
-int
-XLALVectorSinCosf_FPU ( REAL4 *sinx, REAL4 *cosx, const REAL4 *x, UINT4 length )
+static inline int
+XLALVectorFuncf1T2_FPU ( REAL4 *out1, REAL4 *out2, const REAL4 *in, const UINT4 len, void (*f)(float, float*, float*) )
 {
-  for ( UINT4 i = 0; i < length; i ++ )
+  for ( UINT4 i = 0; i < len; i ++ )
     {
-      sinx[i] = sinf ( x[i] );
-      cosx[i] = cosf ( x[i] );
-    } // for i < length
+      (*f) ( in[i], &(out1[i]), &(out2[i]) );
+    } // for i < len
   return XLAL_SUCCESS;
-} // XLALVectorSinCosf_FPU()
+} // XLALVectorFuncf1T1_FPU()
 
-int
-XLALVectorSinCosf2PI_FPU ( REAL4 *sin2pix, REAL4 *cos2pix, const REAL4 *x, UINT4 length )
-{
-  for ( UINT4 i = 0; i < length; i ++ )
-    {
-      sin2pix[i] = sinf ( (REAL4)LAL_TWOPI * x[i] );
-      cos2pix[i] = cosf ( (REAL4)LAL_TWOPI * x[i] );
-    } // for i < N
-  return XLAL_SUCCESS;
-} // XLALVectorSinCosf2PI_FPU()
+// ========== internal FPU vector math functions ==========
 
-// convenience wrappers for specific functions
-int
-XLALVectorSinf_FPU ( REAL4 *out, const REAL4 *in, UINT4 length )
-{
-  return XLALVectorFuncf_FPU ( out, in, length, sinf );
-}
-int
-XLALVectorCosf_FPU ( REAL4 *out, const REAL4 *in, UINT4 length )
-{
-  return XLALVectorFuncf_FPU ( out, in, length, cosf );
-}
-int
-XLALVectorExpf_FPU ( REAL4 *out, const REAL4 *in, UINT4 length )
-{
-  return XLALVectorFuncf_FPU ( out, in, length, expf );
-}
-int
-XLALVectorLogf_FPU ( REAL4 *out, const REAL4 *in, UINT4 length )
-{
-  return XLALVectorFuncf_FPU ( out, in, length, logf );
-}
+#define DEFINE_VECTORMATH_FUNCF_1T1(NAME, SSE_FUNC) \
+  DEFINE_VECTORMATH_ANY( XLALVectorFuncf1T1_FPU, NAME, ( REAL4 *out, const REAL4 *in, const UINT4 len ), ( (out != NULL) && (in != NULL) ), ( out, in, len, SSE_FUNC ) )
+
+DEFINE_VECTORMATH_FUNCF_1T1(Sinf, sinf)
+DEFINE_VECTORMATH_FUNCF_1T1(Cosf, cosf)
+DEFINE_VECTORMATH_FUNCF_1T1(Expf, expf)
+DEFINE_VECTORMATH_FUNCF_1T1(Logf, logf)
+
+#define DEFINE_VECTORMATH_FUNCF_1T2(NAME, SSE_FUNC) \
+  DEFINE_VECTORMATH_ANY( XLALVectorFuncf1T2_FPU, NAME, ( REAL4 *out1, REAL4 *out2, const REAL4 *in, const UINT4 len ), ( (out1 != NULL) && (out2 != NULL) && (in != NULL) ), ( out1, out2, in, len, SSE_FUNC ) )
+
+DEFINE_VECTORMATH_FUNCF_1T2(SinCosf, local_sincosf)
+DEFINE_VECTORMATH_FUNCF_1T2(SinCosf2PI, local_sincosf_2pi)

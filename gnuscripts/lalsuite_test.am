@@ -5,6 +5,8 @@ TEST_EXTENSIONS = .sh .m .py
 TESTS_ENVIRONMENT = \
 	export LC_ALL; LC_ALL=C; \
 	export LAL_DEBUG_LEVEL; LAL_DEBUG_LEVEL=msglvl1,memdbg; \
+	export LAL_TEST_SRCDIR; LAL_TEST_SRCDIR="$(abs_srcdir)"; \
+	export LAL_TEST_BUILDDIR; LAL_TEST_BUILDDIR="$(abs_builddir)"; \
 	lalsuite_path="$(abs_top_builddir)/octave"; \
 	test "x$(builddir)" = "x$(srcdir)" || lalsuite_path="$${lalsuite_path}:$(abs_top_srcdir)/octave"; \
 	test "x$(LAL_OCTAVE_PATH)" = x || lalsuite_path="$${lalsuite_path}:$(LAL_OCTAVE_PATH)"; \
