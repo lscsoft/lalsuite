@@ -32,7 +32,7 @@ int main(void) {
          PACKAGE_STRING, XLALSIMDInstructionSetName(0), HAVE_SIMD_COMPILER);
 
   printf("This machine supports executing the following instruction sets:\n  ");
-  for (SIMDISet iset = 0; XLALHaveSIMDInstructionSet(iset); ++iset) {
+  for (LAL_SIMD_ISET iset = 0; XLALHaveSIMDInstructionSet(iset); ++iset) {
     printf(" %s", XLALSIMDInstructionSetName(iset));
   }
   printf("\n");

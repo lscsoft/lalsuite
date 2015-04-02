@@ -57,19 +57,19 @@
 #endif
 
 /* selected SIMD instruction set */
-static SIMDISet selected_iset;
+static LAL_SIMD_ISET selected_iset;
 
 /* array of instruction set names */
-static const char *const iset_names[SIMDISet_MAX] = {
-  [SIMDISet_FPU]		= "FPU",
-  [SIMDISet_SSE]		= "SSE",
-  [SIMDISet_SSE2]		= "SSE2",
-  [SIMDISet_SSE3]		= "SSE3",
-  [SIMDISet_SSSE3]		= "SSSE3",
-  [SIMDISet_SSE4_1]		= "SSE4.1",
-  [SIMDISet_SSE4_2]		= "SSE4.2",
-  [SIMDISet_AVX]		= "AVX",
-  [SIMDISet_AVX2]		= "AVX2",
+static const char *const iset_names[LAL_SIMD_ISET_MAX] = {
+  [LAL_SIMD_ISET_FPU]		= "FPU",
+  [LAL_SIMD_ISET_SSE]		= "SSE",
+  [LAL_SIMD_ISET_SSE2]		= "SSE2",
+  [LAL_SIMD_ISET_SSE3]		= "SSE3",
+  [LAL_SIMD_ISET_SSSE3]		= "SSSE3",
+  [LAL_SIMD_ISET_SSE4_1]	= "SSE4.1",
+  [LAL_SIMD_ISET_SSE4_2]	= "SSE4.2",
+  [LAL_SIMD_ISET_AVX]		= "AVX",
+  [LAL_SIMD_ISET_AVX2]		= "AVX2",
 };
 
 /* pthread locking to make SIMD detection thread-safe */
@@ -179,12 +179,12 @@ static inline UNUSED int64_t xgetbv( UNUSED int ctr ) {
 /*
  * Detect instruction set
  */
-static SIMDISet detect_instruction_set(void) {
+static LAL_SIMD_ISET detect_instruction_set(void) {
 
   /* cpuid results */
   int abcd[4] = {0, 0, 0, 0};
 
-  SIMDISet iset = SIMDISet_FPU;
+  LAL_SIMD_ISET iset = LAL_SIMD_ISET_FPU;
 
   cpuid(abcd, 0);					/* call cpuid function 0 */
   if (abcd[0] == 0) return iset;			/* no further cpuid function supported */
@@ -194,32 +194,32 @@ static SIMDISet detect_instruction_set(void) {
   if ((abcd[3] & (1 << 15)) == 0) return iset;		/* no conditional move */
   if ((abcd[3] & (1 << 24)) == 0) return iset;		/* no FXSAVE */
   if ((abcd[3] & (1 << 25)) == 0) return iset;		/* no SSE */
-  iset = SIMDISet_SSE;					/* SSE detected */
+  iset = LAL_SIMD_ISET_SSE;				/* SSE detected */
 
   if ((abcd[3] & (1 << 26)) == 0) return iset;		/* no SSE2 */
-  iset = SIMDISet_SSE2;					/* SSE2 detected */
+  iset = LAL_SIMD_ISET_SSE2;				/* SSE2 detected */
 
   if ((abcd[2] & (1 <<  0)) == 0) return iset;		/* no SSE3 */
-  iset = SIMDISet_SSE3;					/* SSE3 detected */
+  iset = LAL_SIMD_ISET_SSE3;				/* SSE3 detected */
 
   if ((abcd[2] & (1 <<  9)) == 0) return iset;		/* no SSSE3 */
-  iset = SIMDISet_SSSE3;				/* SSSE3 detected */
+  iset = LAL_SIMD_ISET_SSSE3;				/* SSSE3 detected */
 
   if ((abcd[2] & (1 << 19)) == 0) return iset;		/* no SSE4.1 */
-  iset = SIMDISet_SSE4_1;				/* SSE4.1 detected */
+  iset = LAL_SIMD_ISET_SSE4_1;				/* SSE4.1 detected */
 
   if ((abcd[2] & (1 << 23)) == 0) return iset;		/* no POPCNT */
   if ((abcd[2] & (1 << 20)) == 0) return iset;		/* no SSE4.2 */
-  iset = SIMDISet_SSE4_2;				/* SSE4.2 detected */
+  iset = LAL_SIMD_ISET_SSE4_2;				/* SSE4.2 detected */
 
   if ((abcd[2] & (1 << 27)) == 0) return iset;		/* XSAVE not enabled in O.S. */
   if ((xgetbv(0) & 6) != 6) return iset;		/* AVX not enabled in O.S. */
   if ((abcd[2] & (1 << 28)) == 0) return iset;		/* no AVX */
-  iset = SIMDISet_AVX;					/* AVX detected */
+  iset = LAL_SIMD_ISET_AVX;				/* AVX detected */
 
   cpuid(abcd, 7);					/* call cpuid function 7 for feature flags */
   if ((abcd[1] & (1 <<  5)) == 0) return iset;		/* no AVX2 */
-  iset = SIMDISet_AVX2;					/* AVX2 detected */
+  iset = LAL_SIMD_ISET_AVX2;				/* AVX2 detected */
 
   return iset;
 
@@ -232,7 +232,7 @@ static void select_instruction_set(void) {
 
   /* Detect instruction set */
   selected_iset = detect_instruction_set();
-  if (selected_iset >= SIMDISet_MAX) {
+  if (selected_iset >= LAL_SIMD_ISET_MAX) {
     lalAbortHook("%s: SIMD instruction set detection failed!!\n", __func__);
     return;
   }
@@ -244,14 +244,14 @@ static void select_instruction_set(void) {
   }
 
   /* Try to match LAL_SIMD_ISET to an instruction set name */
-  SIMDISet user_iset = SIMDISet_MAX;
-  for (SIMDISet i = 0; i < SIMDISet_MAX; ++i) {
+  LAL_SIMD_ISET user_iset = LAL_SIMD_ISET_MAX;
+  for (LAL_SIMD_ISET i = 0; i < LAL_SIMD_ISET_MAX; ++i) {
     if (strcmp(env, iset_names[i]) == 0) {
       user_iset = i;
       break;
     }
   }
-  if (user_iset == SIMDISet_MAX) {
+  if (user_iset == LAL_SIMD_ISET_MAX) {
     lalAbortHook("%s: LAL_SIMD_ISET='%s' does not match a SIMD instruction set\n", __func__, env);
     return;
   }
@@ -269,12 +269,12 @@ static void select_instruction_set(void) {
 
 }
 
-int XLALHaveSIMDInstructionSet(SIMDISet iset) {
+int XLALHaveSIMDInstructionSet(LAL_SIMD_ISET iset) {
   LAL_ONCE(select_instruction_set);
-  return (iset < SIMDISet_MAX) && (iset <= selected_iset);
+  return (iset < LAL_SIMD_ISET_MAX) && (iset <= selected_iset);
 }
 
-const char *XLALSIMDInstructionSetName(SIMDISet iset) {
-  XLAL_CHECK_NULL(iset < SIMDISet_MAX, XLAL_EINVAL);
+const char *XLALSIMDInstructionSetName(LAL_SIMD_ISET iset) {
+  XLAL_CHECK_NULL(iset < LAL_SIMD_ISET_MAX, XLAL_EINVAL);
   return iset_names[iset];
 }

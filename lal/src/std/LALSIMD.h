@@ -34,7 +34,7 @@ extern "C" {
  * \code
  * #include <lal/LALSIMD.h>
  *
- * if (HAVE_SSE_RUNTIME()) {
+ * if (LAL_HAVE_SSE_RUNTIME()) {
  *   perform_sse_magic(out, in, ...);
  * }
  * \endcode
@@ -44,41 +44,41 @@ extern "C" {
 /**
  * SIMD instruction sets this module can detect
  */
-typedef enum tagSIMDISet {
+typedef enum tagLAL_SIMD_ISET {
 
-  SIMDISet_FPU,			/**< FPU (floating-point unit) */
-  SIMDISet_SSE,			/**< SSE (Streaming SIMD Extensions) */
-  SIMDISet_SSE2,		/**< SSE version 2 */
-  SIMDISet_SSE3,		/**< SSE version 3 */
-  SIMDISet_SSSE3,		/**< Supplemental SSE version 3 */
-  SIMDISet_SSE4_1,		/**< SSE version 4.1 */
-  SIMDISet_SSE4_2,		/**< SSE version 4.2 */
-  SIMDISet_AVX,			/**< AVX (Advanced Vector Extensions) */
-  SIMDISet_AVX2,		/**< AVX version 2 */
+  LAL_SIMD_ISET_FPU,		/**< FPU (floating-point unit) */
+  LAL_SIMD_ISET_SSE,		/**< SSE (Streaming SIMD Extensions) */
+  LAL_SIMD_ISET_SSE2,		/**< SSE version 2 */
+  LAL_SIMD_ISET_SSE3,		/**< SSE version 3 */
+  LAL_SIMD_ISET_SSSE3,		/**< Supplemental SSE version 3 */
+  LAL_SIMD_ISET_SSE4_1,		/**< SSE version 4.1 */
+  LAL_SIMD_ISET_SSE4_2,		/**< SSE version 4.2 */
+  LAL_SIMD_ISET_AVX,		/**< AVX (Advanced Vector Extensions) */
+  LAL_SIMD_ISET_AVX2,		/**< AVX version 2 */
 
-  SIMDISet_MAX
-} SIMDISet;
+  LAL_SIMD_ISET_MAX
+} LAL_SIMD_ISET;
 
 /**
  * Return true if the executing machine supports the given instruction set
  */
-int XLALHaveSIMDInstructionSet(SIMDISet iset);
+int XLALHaveSIMDInstructionSet(LAL_SIMD_ISET iset);
 
 /**
  * Return the name of a given instruction set as a string
  */
-const char *XLALSIMDInstructionSetName(SIMDISet iset);
+const char *XLALSIMDInstructionSetName(LAL_SIMD_ISET iset);
 
 /** \name Convenience macros for SIMD runtime selection */
 /*@{*/
-#define HAVE_SSE_RUNTIME()		(XLALHaveSIMDInstructionSet(SIMDISet_SSE))
-#define HAVE_SSE2_RUNTIME()		(XLALHaveSIMDInstructionSet(SIMDISet_SSE2))
-#define HAVE_SSE3_RUNTIME()		(XLALHaveSIMDInstructionSet(SIMDISet_SSE3))
-#define HAVE_SSSE3_RUNTIME()		(XLALHaveSIMDInstructionSet(SIMDISet_SSSE3))
-#define HAVE_SSE4_1_RUNTIME()		(XLALHaveSIMDInstructionSet(SIMDISet_SSE4_1))
-#define HAVE_SSE4_2_RUNTIME()		(XLALHaveSIMDInstructionSet(SIMDISet_SSE4_2))
-#define HAVE_AVX_RUNTIME()		(XLALHaveSIMDInstructionSet(SIMDISet_AVX))
-#define HAVE_AVX2_RUNTIME()		(XLALHaveSIMDInstructionSet(SIMDISet_AVX2))
+#define LAL_HAVE_SSE_RUNTIME()		(XLALHaveSIMDInstructionSet(LAL_SIMD_ISET_SSE))
+#define LAL_HAVE_SSE2_RUNTIME()		(XLALHaveSIMDInstructionSet(LAL_SIMD_ISET_SSE2))
+#define LAL_HAVE_SSE3_RUNTIME()		(XLALHaveSIMDInstructionSet(LAL_SIMD_ISET_SSE3))
+#define LAL_HAVE_SSSE3_RUNTIME()	(XLALHaveSIMDInstructionSet(LAL_SIMD_ISET_SSSE3))
+#define LAL_HAVE_SSE4_1_RUNTIME()	(XLALHaveSIMDInstructionSet(LAL_SIMD_ISET_SSE4_1))
+#define LAL_HAVE_SSE4_2_RUNTIME()	(XLALHaveSIMDInstructionSet(LAL_SIMD_ISET_SSE4_2))
+#define LAL_HAVE_AVX_RUNTIME()		(XLALHaveSIMDInstructionSet(LAL_SIMD_ISET_AVX))
+#define LAL_HAVE_AVX2_RUNTIME()		(XLALHaveSIMDInstructionSet(LAL_SIMD_ISET_AVX2))
 /*@}*/
 
 /*@}*/
