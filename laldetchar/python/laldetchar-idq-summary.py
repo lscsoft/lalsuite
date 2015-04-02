@@ -584,7 +584,7 @@ command line options used to generate this page
 science segments used: link to ascii file and xml file
 idq segments used: link to ascii file and xml file
 
-GWchannels, frequency band, signif_thr, etc
+GWchannels, frequency band, signif_thr (and clean_thr?), etc
 auxchannels, frequency bands, signif_thrs, etc
 unsafe channels (not used, but report them for reference)
 
