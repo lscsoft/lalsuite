@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 111
+# serial 112
 
 # not present in older versions of pkg.m4
 m4_pattern_allow([^PKG_CONFIG(_(PATH|LIBDIR|SYSROOT_DIR|ALLOW_SYSTEM_(CFLAGS|LIBS)))?$])
@@ -318,47 +318,36 @@ m4_foreach([lang],[[C++],[Fortran 77],[Fortran]],[
   m4_defun([AC_LANG_PREPROC(]lang[)],[])
 ])
 
-AC_DEFUN([_LALSUITE_PRE_PROG_COMPILERS],[
-  # $0: just before LALSUITE_PROG_COMPILERS:
-  # save current values of user variables, then unset them
-  LALSUITE_PUSH_UVARS
-  LALSUITE_CLEAR_UVARS
-  # end $0
-])
-
-AC_DEFUN([_LALSUITE_POST_PROG_COMPILERS],[
-  # $0: just after LALSUITE_PROG_COMPILERS:
-  # save values of user variables set during compiler configuration,
-  # restore previous values of user variables, then add compiler values
-  # of user variables to then using LALSUITE_ADD_FLAGS
-  m4_foreach_w([uvar],uvar_list,[
-    lalsuite_compiler_[]uvar="${uvar}"
-  ])
-  LALSUITE_POP_UVARS
-  LALSUITE_ADD_FLAGS([C],[${lalsuite_compiler_CPPFLAGS} ${lalsuite_compiler_CFLAGS}],[${lalsuite_compiler_LDFLAGS}])
-  AS_IF([test "${lalsuite_require_cxx}" = true],[
-    LALSUITE_ADD_FLAGS([CXX],[${lalsuite_compiler_CXXFLAGS}],[])
-  ])
-  AS_IF([test "${lalsuite_require_f77}" = true],[
-    LALSUITE_ADD_FLAGS([FC],[${lalsuite_compiler_FCFLAGS}],[])
-    LALSUITE_ADD_FLAGS([F],[${lalsuite_compiler_FFLAGS}],[])
-  ])
-  # end $0
-])
-
 AC_DEFUN([LALSUITE_PROG_COMPILERS],[
   # $0: check for C/C++/Fortran compilers
-  AC_REQUIRE([_LALSUITE_PRE_PROG_COMPILERS])
 
   # check for C99 compiler
   AC_REQUIRE([AC_PROG_CC])
   AC_REQUIRE([AC_PROG_CC_C99])
   AC_REQUIRE([AC_PROG_CPP])
 
+  # set default CFLAGS
+  CFLAGS=
+  AS_IF([test "x${GCC}" = xyes],[
+    CFLAGS="${CFLAGS} -O2"
+  ])
+  AS_IF([test "x${ac_cv_prog_cc_g}" = xyes],[
+    CFLAGS="${CFLAGS} -g"
+  ])
+
   # check for C++ compiler, if needed
   AS_IF([test "${lalsuite_require_cxx}" = true],[
     AC_PROG_CXX
     AC_PROG_CXXCPP
+
+    # set default CXXFLAGS
+    CXXFLAGS=
+    AS_IF([test "x${GXX}" = xyes],[
+      CXXFLAGS="${CXXFLAGS} -O2"
+    ])
+    AS_IF([test "x${ac_cv_prog_cxx_g}" = xyes],[
+      CXXFLAGS="${CXXFLAGS} -g"
+    ])
 
     # define C99 constant and limit macros for C++ sources
     CXXFLAGS="${CXXFLAGS} -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS"
@@ -366,17 +355,33 @@ AC_DEFUN([LALSUITE_PROG_COMPILERS],[
   ],[
     CXX=
     CXXCPP=
+    CXXFLAGS=
     AM_CONDITIONAL([am__fastdepCXX],[false])
   ])
 
   # check for F77 compiler, if needed
   AS_IF([test "${lalsuite_require_f77}" = true],[
     AC_PROG_F77
+
+    # set default FFLAGS
+    FFLAGS=
+    AS_IF([test "x${ac_cv_f77_compiler_gnu}" = xyes],[
+      FFLAGS="${FFLAGS} -O2"
+    ])
+    AS_IF([test "x${ac_cv_prog_f77_g}" = xyes],[
+      FFLAGS="${FFLAGS} -g"
+    ])
+
   ],[
     F77=
+    FFLAGS=
   ])
 
-  _LALSUITE_POST_PROG_COMPILERS
+  # add flags
+  LALSUITE_ADD_FLAGS([C],[${CFLAGS}])
+  LALSUITE_ADD_FLAGS([CXX],[${CXXFLAGS}])
+  LALSUITE_ADD_FLAGS([F],[${FFLAGS}])
+
   # end $0
 ])
 
