@@ -468,18 +468,22 @@ else: # Sum over time for every point in other extrinsic params
 
     # Un-LALify the rholms, we don't need the extra information and we end up
     # invoking lots of data copies in slicing later on.
-    ts_epoch = None
-    for key, rho_ts in rholms.iteritems():
-        if ts_epoch:
-            # Be super careful that we're looking at the *same* start times
-            assert ts_epoch == rho_ts.epoch
-        else:
-            ts_epoch = rho_ts.epoch
-        rholms[key] = rho_ts.data.data
+    det_epochs = {}
+    for det, rho_ts in rholms.iteritems():
+        ts_epoch = None
+        for mode, mode_ts in rho_ts.iteritems():
+            if ts_epoch:
+                # Be super careful that we're looking at the *same* start times
+                assert ts_epoch == mode_ts.epoch
+            else:
+                ts_epoch = mode_ts.epoch
+            rholms[det][mode] = mode_ts.data.data
+
+        det_epochs[det] = ts_epoch
 
     # Construct the time grid and advance it to the epoch of the mode SNR
     # time series
-    tvals = numpy.linspace(-t_ref_wind, t_ref_wind, int(t_ref_wind * 2 / P.deltaT)) + float(ts_epoch)
+    tvals = numpy.linspace(-t_ref_wind, t_ref_wind, int(t_ref_wind * 2 / P.deltaT))
 
     def likelihood_function(right_ascension, declination, phi_orb, inclination,
             psi, distance):
@@ -497,7 +501,7 @@ else: # Sum over time for every point in other extrinsic params
             P.psi = ps # polarization angle
             P.dist = di* 1.e6 * lal.PC_SI # luminosity distance
 
-            lnL[i] = factored_likelihood.factored_log_likelihood_time_marginalized(tvals, P, rholms_intp, rholms, cross_terms, opts.l_max,interpolate=opts.interpolate_time)
+            lnL[i] = factored_likelihood.factored_log_likelihood_time_marginalized(tvals, P, rholms_intp, rholms, cross_terms, det_epochs, opts.l_max,interpolate=opts.interpolate_time)
             i+=1
     
         return numpy.exp(lnL)

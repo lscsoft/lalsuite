@@ -162,7 +162,7 @@ def factored_log_likelihood(extr_params, rholms_intp, crossTerms, Lmax):
 
     return lnL
 
-def factored_log_likelihood_time_marginalized(tvals, extr_params, rholms_intp, rholms, crossTerms, Lmax, interpolate=False):
+def factored_log_likelihood_time_marginalized(tvals, extr_params, rholms_intp, rholms, crossTerms, det_epochs, Lmax, interpolate=False):
     """
     Compute the log-likelihood = -1/2 < d - h | d - h > from:
         - extr_params is an object containing values of all extrinsic parameters
@@ -197,24 +197,25 @@ def factored_log_likelihood_time_marginalized(tvals, extr_params, rholms_intp, r
     Ylms = compute_spherical_harmonics(Lmax, incl, -phiref)
 
     lnL = 0.
+    delta_t = tvals[1] - tvals[0]
     for det in detectors:
         CT = crossTerms[det]
         F = complex_antenna_factor(det, RA, DEC, psi, tref)
+        rho_epoch = float(det_epochs[det])
 
         # This is the GPS time at the detector
         t_det = compute_arrival_time_at_detector(det, RA, DEC, tref)
-        tfirst = float(t_det)+tvals[0]
-        ifirst = int(tfirst / (tvals[1] - tvals[0]) + 0.5)
-        ilast = ifirst + len(tvals)
-
         det_rholms = {}  # rholms evaluated at time at detector
-        if interpolate:
+        if ( interpolate ):
             # use the interpolating functions. 
             for key, func in rholms_intp[det].iteritems():
                 det_rholms[key] = func(float(t_det)+tvals)
         else:
             # do not interpolate, just use nearest neighbors.
             for key, rhoTS in rholms[det].iteritems():
+                tfirst = float(t_det)+tvals[0]
+                ifirst = int((tfirst - rho_epoch) / delta_t + 0.5)
+                ilast = ifirst + len(tvals)
                 det_rholms[key] = rhoTS[ifirst:ilast]
 
         lnL += single_detector_log_likelihood(det_rholms, CT, Ylms, F, dist)
@@ -279,10 +280,7 @@ def compute_mode_ip_time_series(hlms, data, psd, fmin, fMax, fNyq,
     """
     rholms = {}
     assert data.deltaF == hlms[hlms.keys()[0]].deltaF
-    # These two checks assure *full* alignment of the output mode
-    # SNR time series
     assert data.data.length == hlms[hlms.keys()[0]].data.length
-    assert data.data.epoch == hlms[hlms.keys()[0]].data.epoch
     deltaT = data.data.length/(2*fNyq)
 
     # Create an instance of class to compute inner product time series
