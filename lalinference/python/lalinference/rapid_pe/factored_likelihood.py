@@ -213,6 +213,7 @@ def factored_log_likelihood_time_marginalized(tvals, extr_params, rholms_intp, r
         else:
             # do not interpolate, just use nearest neighbors.
             for key, rhoTS in rholms[det].iteritems():
+	        # PRB: these can be moved outside this loop to after t_det
                 tfirst = float(t_det)+tvals[0]
                 ifirst = int((tfirst - rho_epoch) / delta_t + 0.5)
                 ilast = ifirst + len(tvals)
@@ -241,25 +242,26 @@ def single_detector_log_likelihood(rholm_vals, crossTerms, Ylms, F, dist):
 
     Outputs: The value of ln L for a single detector given the inputs.
     """
-    distMpc = dist/(lal.PC_SI*1e6)
+
+    invDistMpc = (lal.PC_SI*1e6*distMpcRef)/dist
+    Fstar = np.conj(F)
 
     # Eq. 35 of Richard's notes
-    term1 = 0.
-    for mode in rholm_vals:
-        term1 += np.conj(F * Ylms[mode]) * rholm_vals[mode]
-    term1 = np.real(term1) / (distMpc/distMpcRef)
-
     # Eq. 26 of Richard's notes
-    term2 = 0.
+    term1 = 0.
+    term20 = 0.
+    term21 = 0.
+    # PRB: I think this loop can be vectorized with some work
     for pair1 in rholm_vals:
+        term1 += np.conj(Ylms[pair1]) * rholm_vals[pair1]
         for pair2 in rholm_vals:
-            term2 += F * np.conj(F) * ( crossTerms[(pair1,pair2)])\
-                    * np.conj(Ylms[pair1]) * Ylms[pair2]\
-                    + F*F*Ylms[pair1]*Ylms[pair2]*((-1)**pair1[0])\
-                    * crossTerms[((pair1[0],-pair1[1]),pair2)]
-    term2 = -np.real(term2) / 4. /(distMpc/distMpcRef)**2
+	    # PRB: should also re-pack the crossterms into arrays
+            term20 += ( crossTerms[(pair1,pair2)]) * np.conj(Ylms[pair1]) * Ylms[pair2]
+            term21 += Ylms[pair1]*Ylms[pair2]*((-1)**pair1[0]) * crossTerms[((pair1[0],-pair1[1]),pair2)]
+    term1 = np.real( Fstar * term1 ) * invDistMpc 
+    term1 += -0.25 * np.real( F * ( Fstar * term20 + F * term21 ) ) * invDistMpc * invDistMpc 
 
-    return term1 + term2
+    return term1
 
 def compute_mode_ip_time_series(hlms, data, psd, fmin, fMax, fNyq,
         N_shift, N_window, analyticPSD_Q=False,
@@ -402,6 +404,7 @@ def compute_spherical_harmonics(Lmax, theta, phi):
     l <= Lmax
     -l <= m <= l
     """
+    # PRB: would this be faster if we made it a 2d numpy array?  
     Ylms = {}
     for l in range(2,Lmax+1):
         for m in range(-l,l+1):

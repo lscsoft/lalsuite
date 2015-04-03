@@ -489,6 +489,7 @@ else: # Sum over time for every point in other extrinsic params
             psi, distance):
         # use EXTREMELY many bits
         lnL = numpy.zeros(right_ascension.shape,dtype=numpy.float128)
+	# PRB: can we move this loop inside the factored_likelihood? It might help.
         i = 0
         # choose an array at the target sampling rate. P is inherited globally
         for ph, th, phr, ic, ps, di in zip(right_ascension, declination,
