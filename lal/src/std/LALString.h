@@ -42,6 +42,8 @@ size_t XLALStringCopy(char *dst, const char *src, size_t size);
 size_t XLALStringConcatenate(char *dst, const char *src, size_t size);
 int XLALStringToLowerCase(char * string);
 int XLALStringToUpperCase(char * string);
+int XLALStringCaseCompare(const char *s1, const char *s2);
+int XLALStringNCaseCompare(const char *s1, const char *s2, size_t n);
 
 /*@}*/
 

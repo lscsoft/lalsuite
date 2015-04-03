@@ -84,6 +84,7 @@ test/stats/XLALChisqTest
 test/std/LALConstantsTest
 test/std/LALGSLTest
 test/std/LALMallocTest
+test/std/LALStringTest
 test/std/LALVersionTest
 test/std/StringConvertTest
 test/support/ConfigFileTest

@@ -1,4 +1,5 @@
 /*
+*  Copyright (C) 2015 Karl Wette
 *  Copyright (C) 2007 Jolien Creighton
 *
 *  This program is free software; you can redistribute it and/or modify
@@ -155,3 +156,59 @@ int XLALStringToUpperCase(char * string)
     return XLAL_SUCCESS;
 
 }       /* XLALStringToUpperCase() */
+
+/**
+ * Compare two strings, ignoring case and without using locale-dependent functions.
+ */
+int XLALStringCaseCompare(const char *s1, const char *s2)
+{
+    size_t n = ( (s1 == NULL) ? 0 : strlen(s1) ) + ( (s2 == NULL) ? 0 : strlen(s2) );
+    return XLALStringNCaseCompare(s1, s2, n);
+}
+
+/**
+ * Compare the first N characters of two strings, ignoring case and without using locale-dependent functions.
+ */
+int XLALStringNCaseCompare(const char *s1, const char *s2, size_t n)
+{
+
+    /* ctype replacements w/o locale */
+    const char upper_chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const char lower_chars[] = "abcdefghijklmnopqrstuvwxyz";
+
+    int c1 = 0, c2 = 0;
+
+    /* based on implementation of strncmp() in glibc */
+    while (n-- > 0) {
+
+        c1 = (s1 == NULL) ? 0 : *s1++;
+        c2 = (s2 == NULL) ? 0 : *s2++;
+
+        /* convert c1 to lower case */
+        if (c1) {
+            char *p = strchr(upper_chars, c1);
+            if (p) {
+                int offset = p - upper_chars;
+                c1 = lower_chars[offset];
+            }
+        }
+
+        /* convert c2 to lower case */
+        if (c2) {
+            char *p = strchr(upper_chars, c2);
+            if (p) {
+                int offset = p - upper_chars;
+                c2 = lower_chars[offset];
+            }
+        }
+
+        /* compare characters */
+        if (c1 == '\0' || c1 != c2) {
+            return c1 - c2;
+        }
+
+    }
+
+    return c1 - c2;
+
+}
