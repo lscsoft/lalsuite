@@ -100,12 +100,10 @@ size_t XLALStringConcatenate(char *dst, const char *src, size_t size)
 
 
 /**
- * Helper function:  turn a string in-place into lowercase without
- * using locale-dependent functions.
+ * Turn a string in-place into lowercase without using locale-dependent functions.
  */
-int XLALStringToLowerCase(CHAR * string)
+int XLALStringToLowerCase(char * string)
 {
-/**< [in/out] string to convert */
     XLAL_CHECK(string != NULL, XLAL_EINVAL);
 
     /* ctype replacements w/o locale */
@@ -131,12 +129,10 @@ int XLALStringToLowerCase(CHAR * string)
 
 
 /**
- * Helper function:  turn a string in-place into uppercase without
- * using locale-dependent functions.
+ * Turn a string in-place into uppercase without using locale-dependent functions.
  */
-int XLALStringToUpperCase(CHAR * string)
+int XLALStringToUpperCase(char * string)
 {
-/**< [in/out] string to convert */
     XLAL_CHECK(string != NULL, XLAL_EINVAL);
 
     /* ctype replacements w/o locale */
