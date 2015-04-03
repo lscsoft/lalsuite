@@ -48,7 +48,7 @@ typedef struct {
   const EphemerisData *ephemerides;                     // Ephemerides for the time-span of the SFTs
   SSBprecision SSBprec;                                 // Barycentric transformation precision
   FstatMethodType FstatMethod;                          // Method to use for computing the F-statistic
-  REAL8 dFreq;	  		  			// Requested spacing of \f$\mathcal{F}\f$-statistic frequency bins.
+  REAL8 dFreq;                                          // Requested spacing of \f$\mathcal{F}\f$-statistic frequency bins.
 } FstatInput_Common;
 
 // Input data specific to F-statistic methods
@@ -262,12 +262,12 @@ XLALDestroyMultiFstatAtomVector ( MultiFstatAtomVector *multiAtoms  ///< [in] #M
 /// Create a fully-setup \c FstatInput structure for computing the \f$\mathcal{F}\f$-statistic using XLALComputeFstat().
 ///
 FstatInput *
-XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,		  ///< [in] Catalog of SFTs to either load from files, or generate in memory.
+XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Catalog of SFTs to either load from files, or generate in memory.
                                                                   ///< The \c locator field of each ::SFTDescriptor must be \c !=NULL for SFT loading, and \c ==NULL for SFT generation.
-                       const REAL8 minCoverFreq,		  ///< [in] Minimum instantaneous frequency which will be covered over the SFT time span.
-                       const REAL8 maxCoverFreq,		  ///< [in] Maximum instantaneous frequency which will be covered over the SFT time span.
-                       const REAL8 dFreq,	  		  ///< [in] Requested spacing of \f$\mathcal{F}\f$-statistic frequency bins.
-                       const EphemerisData *ephemerides,	  ///< [in] Ephemerides for the time-span of the SFTs.
+                       const REAL8 minCoverFreq,                  ///< [in] Minimum instantaneous frequency which will be covered over the SFT time span.
+                       const REAL8 maxCoverFreq,                  ///< [in] Maximum instantaneous frequency which will be covered over the SFT time span.
+                       const REAL8 dFreq,                         ///< [in] Requested spacing of \f$\mathcal{F}\f$-statistic frequency bins.
+                       const EphemerisData *ephemerides,          ///< [in] Ephemerides for the time-span of the SFTs.
                        const FstatOptionalArgs *optionalArgs      ///< [in] Optional 'advanced-level' and method-specific extra arguments; NULL: use defaults from FstatOptionalArgsDefaults.
                        )
 {
@@ -311,7 +311,7 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,		  ///< [in] Catalog of SFT
 
   // create common input data
   XLAL_CHECK_NULL ( (input->common = XLALCalloc ( 1, sizeof(*input->common))) != NULL, XLAL_ENOMEM );
-  FstatInput_Common *const common = input->common;	// handy shortcut
+  FstatInput_Common *const common = input->common;      // handy shortcut
 
   // create method-specific input data
   if ( XLALFstatMethodClassIsDemod ( optArgs->FstatMethod ) )
@@ -501,7 +501,7 @@ XLALGetFstatInputDetectors ( const FstatInput* input    ///< [in] \c FstatInput 
 /// Returns the SFT timestamps stored in a \c FstatInput structure.
 ///
 const MultiLIGOTimeGPSVector*
-XLALGetFstatInputTimestamps ( const FstatInput* input	///< [in] \c FstatInput structure.
+XLALGetFstatInputTimestamps ( const FstatInput* input   ///< [in] \c FstatInput structure.
                               )
 {
   // Check input
@@ -531,7 +531,7 @@ XLALGetFstatInputNoiseWeights ( const FstatInput* input     ///< [in] \c FstatIn
 /// Returns the multi-detector state series stored in a \c FstatInput structure.
 ///
 const MultiDetectorStateSeries*
-XLALGetFstatInputDetectorStates ( const FstatInput* input	///< [in] \c FstatInput structure.
+XLALGetFstatInputDetectorStates ( const FstatInput* input       ///< [in] \c FstatInput structure.
                                   )
 {
   // Check input
@@ -546,11 +546,11 @@ XLALGetFstatInputDetectorStates ( const FstatInput* input	///< [in] \c FstatInpu
 /// Compute the \f$\mathcal{F}\f$-statistic over a band of frequencies.
 ///
 int
-XLALComputeFstat ( FstatResults **Fstats,	  	///< [in/out] Address of a pointer to a #FstatResults results structure; if \c NULL, allocate here.
-                   FstatInput *input,		  	///< [in] Input data structure created by one of the setup functions.
+XLALComputeFstat ( FstatResults **Fstats,               ///< [in/out] Address of a pointer to a #FstatResults results structure; if \c NULL, allocate here.
+                   FstatInput *input,                   ///< [in] Input data structure created by one of the setup functions.
                    const PulsarDopplerParams *doppler,  ///< [in] Doppler parameters, including starting frequency, at which to compute \f$2\mathcal{F}\f$
-                   const UINT4 numFreqBins,		///< [in] Number of frequencies at which the \f$2\mathcal{F}\f$ are to be computed.
-                   const FstatQuantities whatToCompute	///< [in] Bit-field of which \f$\mathcal{F}\f$-statistic quantities to compute.
+                   const UINT4 numFreqBins,             ///< [in] Number of frequencies at which the \f$2\mathcal{F}\f$ are to be computed.
+                   const FstatQuantities whatToCompute  ///< [in] Bit-field of which \f$\mathcal{F}\f$-statistic quantities to compute.
                    )
 {
   // Check input
@@ -676,7 +676,7 @@ XLALComputeFstat ( FstatResults **Fstats,	  	///< [in/out] Address of a pointer 
 /// Free all memory associated with a \c FstatInput structure.
 ///
 void
-XLALDestroyFstatInput ( FstatInput* input	///< [in] \c FstatInput structure to be freed.
+XLALDestroyFstatInput ( FstatInput* input       ///< [in] \c FstatInput structure to be freed.
                         )
 {
   if ( input == NULL ) {
@@ -848,7 +848,7 @@ XLALComputeFstatFromFaFb ( COMPLEX8 Fa, COMPLEX8 Fb, REAL4 A, REAL4 B, REAL4 C, 
   REAL4 F = Dinv * (  B * ( SQ(Fa_re) + SQ(Fa_im) )
                       + A * ( SQ(Fb_re) + SQ(Fb_im) )
                       - 2.0 * C * (   Fa_re * Fb_re + Fa_im * Fb_im )
-                      - 2.0 * E * ( - Fa_re * Fb_im + Fa_im * Fb_re )		// nonzero only in RAA case where Ed!=0
+                      - 2.0 * E * ( - Fa_re * Fb_im + Fa_im * Fb_re )           // nonzero only in RAA case where Ed!=0
                       );
   return 2*F;
 
@@ -927,8 +927,8 @@ XLALFstatMethodHelpString ( void )
 /// return error otherwise.
 ///
 int
-XLALParseFstatMethodString ( FstatMethodType *Fmethod, 	//!< [out] Parsed #FstatMethodType enum
-                             const char *s		//!< [in] String to parse
+XLALParseFstatMethodString ( FstatMethodType *Fmethod,          //!< [out] Parsed #FstatMethodType enum
+                             const char *s                      //!< [in] String to parse
                              )
 {
   XLAL_CHECK ( s != NULL, XLAL_EINVAL );
