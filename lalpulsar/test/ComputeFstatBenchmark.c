@@ -258,7 +258,7 @@ main ( int argc, char *argv[] )
       tauF1NoBuf += tauF1NoBuf_i;
 
       fprintf (stderr, "%-15s: tauF1Buf = %.2g s, tauF1NoBuf = %.2g s, memSFTs = %.1f MB, memMaxCompute = %.1f MB\n",
-               XLALGetFstatMethodName ( FstatMethod ), tauF1Buf_i, tauF1NoBuf_i, memSFTs, memMaxCompute  );
+               XLALGetFstatInputMethodName ( inputs->data[0] ), tauF1Buf_i, tauF1NoBuf_i, memSFTs, memMaxCompute  );
 
       XLALDestroyFstatInputVector ( inputs );
       XLALDestroyFstatWorkspace ( sharedWorkspace );

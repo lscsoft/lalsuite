@@ -57,6 +57,7 @@ typedef struct tagFstatInput_Resamp FstatInput_Resamp;
 
 // Internal definition of input data structure
 struct tagFstatInput {
+  FstatMethodType method;                           // Method to use for computing the F-statistic
   FstatInput_Common common;                         // Common input data
   FstatInput_Demod* demod;                          // Demodulation input data
   FstatInput_Resamp* resamp;                        // Resampling input data
@@ -300,6 +301,7 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
   FstatInput* input;
   XLAL_CHECK_NULL ( (input = XLALCalloc ( 1, sizeof(*input) )) != NULL, XLAL_ENOMEM );
   FstatInput_Common *common = &input->common;      // handy shortcut
+  input->method = optArgs->FstatMethod;
 
   // create method-specific input data
   if ( XLALFstatMethodClassIsDemod ( optArgs->FstatMethod ) )
@@ -469,6 +471,20 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
   return input;
 
 } // XLALCreateFstatInput()
+
+///
+/// Returns the human-readable name of the \f$\mathcal{F}\f$-statistic method being used by a \c FstatInput structure.
+///
+const CHAR *
+XLALGetFstatInputMethodName ( const FstatInput* input    ///< [in] \c FstatInput structure.
+                             )
+{
+  // Check input
+  XLAL_CHECK_NULL ( input != NULL, XLAL_EINVAL );
+
+  return FstatMethodNames[input->method].name;
+
+} // XLALGetFstatMethodName()
 
 ///
 /// Returns the detector information stored in a \c FstatInput structure.
@@ -850,16 +866,6 @@ XLALFstatMethodIsAvailable ( FstatMethodType i )
   return 1;
 } // XLALFstatMethodIsAvailable()
 
-
-///
-/// Provide human-readable names for the different \f$\mathcal{F}\f$-statistic method variants in #FstatMethodType.
-///
-const CHAR *
-XLALGetFstatMethodName ( FstatMethodType i )
-{
-  XLAL_CHECK_NULL ( (i > FMETHOD_START) && (i < FMETHOD_END) && FstatMethodNames[i].name!=NULL, XLAL_EDOM, "Invalid FstatMethodType = %d\n", i );
-  return FstatMethodNames[i].name;
-} // XLALGetFstatMethodName()
 
 ///
 /// Return pointer to a static help string enumerating all (available) #FstatMethodType options.

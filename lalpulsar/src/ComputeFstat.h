@@ -294,7 +294,6 @@ typedef struct tagFstatResults {
 } FstatResults;
 
 // ---------- API function prototypes ----------
-const CHAR *XLALGetFstatMethodName ( FstatMethodType i);
 int XLALFstatMethodIsAvailable ( FstatMethodType i );
 const CHAR *XLALFstatMethodHelpString ( void );
 int XLALParseFstatMethodString ( FstatMethodType *Fmethod, const char *s );
@@ -310,6 +309,7 @@ FstatInput *
 XLALCreateFstatInput ( const SFTCatalog *SFTcatalog, const REAL8 minCoverFreq, const REAL8 maxCoverFreq, const REAL8 dFreq,
                        const EphemerisData *ephemerides, const FstatOptionalArgs *optionalArgs );
 
+const CHAR *XLALGetFstatInputMethodName ( const FstatInput* input );
 const MultiLALDetector* XLALGetFstatInputDetectors ( const FstatInput* input );
 const MultiLIGOTimeGPSVector* XLALGetFstatInputTimestamps ( const FstatInput* input );
 const MultiNoiseWeights* XLALGetFstatInputNoiseWeights ( const FstatInput* input );

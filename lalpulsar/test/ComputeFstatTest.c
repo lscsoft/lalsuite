@@ -188,7 +188,7 @@ main ( int argc, char *argv[] )
                     {
                       FILE *fp;
                       char fname[1024]; XLAL_INIT_MEM ( fname );
-                      snprintf ( fname, sizeof(fname)-1, "twoF%s-iSky%02d-if1dot%02d-iPeriod%02d.dat", XLALGetFstatMethodName(iMethod), iSky, if1dot, iPeriod );
+                      snprintf ( fname, sizeof(fname)-1, "twoF%s-iSky%02d-if1dot%02d-iPeriod%02d.dat", XLALGetFstatInputMethodName(input[iMethod]), iSky, if1dot, iPeriod );
                       XLAL_CHECK ( (fp = fopen ( fname, "wb" )) != NULL, XLAL_EFUNC );
                       for ( UINT4 k = 0; k < results[iMethod]->numFreqBins; k ++ )
                         {
@@ -211,10 +211,10 @@ main ( int argc, char *argv[] )
                   // compare to first result
                   if ( iMethod != firstMethod )
                     {
-                      XLALPrintInfo ("Comparing results between method '%s' and '%s'\n", XLALGetFstatMethodName(firstMethod), XLALGetFstatMethodName(iMethod) );
+                      XLALPrintInfo ("Comparing results between method '%s' and '%s'\n", XLALGetFstatInputMethodName(input[firstMethod]), XLALGetFstatInputMethodName(input[iMethod]) );
                       if ( compareFstatResults ( results[firstMethod], results[iMethod] ) != XLAL_SUCCESS )
                         {
-                          XLALPrintError ("Comparison between method '%s' and '%s' failed\n", XLALGetFstatMethodName(firstMethod), XLALGetFstatMethodName(iMethod) );
+                          XLALPrintError ("Comparison between method '%s' and '%s' failed\n", XLALGetFstatInputMethodName(input[firstMethod]), XLALGetFstatInputMethodName(input[iMethod]) );
                           XLAL_ERROR ( XLAL_EFUNC );
                         }
                     }

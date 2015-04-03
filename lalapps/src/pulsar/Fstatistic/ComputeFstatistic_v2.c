@@ -126,8 +126,6 @@ typedef struct
   REAL8 tauTemplate;		/**< total loop time per template, includes candidate-handling (transient stats, toplist etc) */
   REAL8 tauF0;			/**< Demod timing constant = time per template per SFT */
 
-  FstatMethodType FstatMethod;	/**< Fstat-method used */
-
   /* ----- transient-specific timings */
   UINT4 tauMin;			/**< shortest transient timescale [s] */
   UINT4 tauMax;			/**< longest transient timescale [s] */
@@ -318,7 +316,7 @@ int compareFstatCandidates_BSGL ( const void *candA, const void *candB );
 int WriteFstatLog ( const CHAR *log_fname, const CHAR *logstr );
 CHAR *XLALGetLogString ( const ConfigVariables *cfg );
 
-int write_TimingInfo ( const CHAR *timingFile, const timingInfo_t *ti );
+int write_TimingInfo ( const CHAR *timingFile, const timingInfo_t *ti, const ConfigVariables *cfg );
 
 gsl_vector_int *resize_histogram(gsl_vector_int *old_hist, size_t size);
 
@@ -760,14 +758,12 @@ int main(int argc,char *argv[])
       timing.NSFTs = GV.NSFTs;
       timing.NFreq = (UINT4) ( 1 + floor ( GV.searchRegion.fkdotBand[0] / GV.dFreq ) );
 
-      timing.FstatMethod = GV.FstatMethod;
-
       // compute averages:
       timing.tauFstat    /= num_templates;
       timing.tauTemplate /= num_templates;
       timing.tauF0       =  timing.tauFstat / timing.NSFTs;
 
-      XLAL_CHECK_MAIN ( write_TimingInfo ( uvar.outputTiming, &timing ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN ( write_TimingInfo ( uvar.outputTiming, &timing, &GV ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     } /* if timing output requested */
 
@@ -1550,7 +1546,7 @@ XLALGetLogString ( const ConfigVariables *cfg )
   XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, "\n" )) != NULL, XLAL_EFUNC );
   XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, cfg->VCSInfoString )) != NULL, XLAL_EFUNC );
 
-  XLAL_CHECK_NULL ( snprintf ( buf, BUFLEN, "%%%% FstatMethod used: '%s'\n", XLALGetFstatMethodName ( cfg->FstatMethod ) ) < BUFLEN, XLAL_EBADLEN );
+  XLAL_CHECK_NULL ( snprintf ( buf, BUFLEN, "%%%% FstatMethod used: '%s'\n", XLALGetFstatInputMethodName ( cfg->Fstat_in ) ) < BUFLEN, XLAL_EBADLEN );
   XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, buf )) != NULL, XLAL_EFUNC );
 
   XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, "%% Started search: " )) != NULL, XLAL_EFUNC );
@@ -2141,7 +2137,7 @@ XLALCenterIsLocalMax ( const scanlineWindow_t *scanWindow, const UINT4 rankingSt
  *
  */
 int
-write_TimingInfo ( const CHAR *fname, const timingInfo_t *ti )
+write_TimingInfo ( const CHAR *fname, const timingInfo_t *ti, const ConfigVariables *cfg )
 {
   XLAL_CHECK ( (fname != NULL) && (ti != NULL), XLAL_EINVAL );
 
@@ -2159,7 +2155,7 @@ write_TimingInfo ( const CHAR *fname, const timingInfo_t *ti )
     }
 
   fprintf ( fp, "%8d %10d %10.1e %10.1e %10.1e %10s\n",
-            ti->NSFTs, ti->NFreq, ti->tauFstat, ti->tauTemplate, ti->tauF0, XLALGetFstatMethodName(ti->FstatMethod) );
+            ti->NSFTs, ti->NFreq, ti->tauFstat, ti->tauTemplate, ti->tauF0, XLALGetFstatInputMethodName(cfg->Fstat_in) );
 
   fclose ( fp );
   return XLAL_SUCCESS;
