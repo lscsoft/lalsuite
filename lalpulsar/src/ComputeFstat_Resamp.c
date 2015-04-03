@@ -253,7 +253,7 @@ XLALAppendResampInfo2File ( FILE *fp, const FstatInput *input )
   }
   XLAL_CHECK ( input->resamp != NULL, XLAL_EINVAL );
   const FstatInput_Resamp *resamp = input->resamp;
-  const FstatInput_Common *common = input->common;
+  const FstatInput_Common *common = &input->common;
   const FstatWorkspace *ws = resamp->ws;
 
   fprintf (fp, "%10d %10d", ws->numFreqBinsOut, ws->numSamplesFFT );

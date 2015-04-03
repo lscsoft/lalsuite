@@ -57,7 +57,7 @@ typedef struct tagFstatInput_Resamp FstatInput_Resamp;
 
 // Internal definition of input data structure
 struct tagFstatInput {
-  FstatInput_Common* common;                        // Common input data
+  FstatInput_Common common;                         // Common input data
   FstatInput_Demod* demod;                          // Demodulation input data
   FstatInput_Resamp* resamp;                        // Resampling input data
 };
@@ -299,10 +299,7 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
   // Create top-level input data struct
   FstatInput* input;
   XLAL_CHECK_NULL ( (input = XLALCalloc ( 1, sizeof(*input) )) != NULL, XLAL_ENOMEM );
-
-  // create common input data
-  XLAL_CHECK_NULL ( (input->common = XLALCalloc ( 1, sizeof(*input->common))) != NULL, XLAL_ENOMEM );
-  FstatInput_Common *const common = input->common;      // handy shortcut
+  FstatInput_Common *common = &input->common;      // handy shortcut
 
   // create method-specific input data
   if ( XLALFstatMethodClassIsDemod ( optArgs->FstatMethod ) )
@@ -482,9 +479,8 @@ XLALGetFstatInputDetectors ( const FstatInput* input    ///< [in] \c FstatInput 
 {
   // Check input
   XLAL_CHECK_NULL ( input != NULL, XLAL_EINVAL );
-  XLAL_CHECK_NULL ( input->common != NULL, XLAL_EINVAL, "'input' has not yet been set up" );
 
-  return &input->common->detectors;
+  return &input->common.detectors;
 
 } // XLALGetFstatInputDetectors()
 
@@ -497,9 +493,8 @@ XLALGetFstatInputTimestamps ( const FstatInput* input   ///< [in] \c FstatInput 
 {
   // Check input
   XLAL_CHECK_NULL ( input != NULL, XLAL_EINVAL );
-  XLAL_CHECK_NULL ( input->common != NULL, XLAL_EINVAL, "'input' has not yet been set up" );
 
-  return input->common->multiTimestamps;
+  return input->common.multiTimestamps;
 
 } // XLALGetFstatInputTimestamps()
 
@@ -512,9 +507,8 @@ XLALGetFstatInputNoiseWeights ( const FstatInput* input     ///< [in] \c FstatIn
 {
   // Check input
   XLAL_CHECK_NULL ( input != NULL, XLAL_EINVAL );
-  XLAL_CHECK_NULL ( input->common != NULL, XLAL_EINVAL, "'input' has not yet been set up" );
 
-  return input->common->multiNoiseWeights;
+  return input->common.multiNoiseWeights;
 
 } // XLALGetFstatInputNoiseWeights()
 
@@ -527,9 +521,8 @@ XLALGetFstatInputDetectorStates ( const FstatInput* input       ///< [in] \c Fst
 {
   // Check input
   XLAL_CHECK_NULL ( input != NULL, XLAL_EINVAL );
-  XLAL_CHECK_NULL ( input->common != NULL, XLAL_EINVAL, "'input' has not yet been set up" );
 
-  return input->common->multiDetectorStates;
+  return input->common.multiDetectorStates;
 
 } // XLALGetFstatInputDetectorStates()
 
@@ -547,7 +540,6 @@ XLALComputeFstat ( FstatResults **Fstats,               ///< [in/out] Address of
   // Check input
   XLAL_CHECK ( Fstats != NULL, XLAL_EINVAL);
   XLAL_CHECK ( input != NULL, XLAL_EINVAL);
-  XLAL_CHECK ( input->common != NULL, XLAL_EINVAL, "'input' has not yet been set up");
   XLAL_CHECK ( doppler != NULL, XLAL_EINVAL);
   XLAL_CHECK ( doppler->asini >= 0, XLAL_EINVAL);
   XLAL_CHECK ( numFreqBins > 0, XLAL_EINVAL);
@@ -559,7 +551,7 @@ XLALComputeFstat ( FstatResults **Fstats,               ///< [in/out] Address of
   }
 
   // Get constant pointer to common input data
-  const FstatInput_Common *common = input->common;
+  const FstatInput_Common *common = &input->common;
   const UINT4 numDetectors = common->detectors.length;
 
   // Enlarge result arrays if they are too small
@@ -674,13 +666,10 @@ XLALDestroyFstatInput ( FstatInput* input       ///< [in] \c FstatInput structur
     return;
   }
 
-  if (input->common != NULL)
-    {
-      XLALDestroyMultiTimestamps ( input->common->multiTimestamps );
-      XLALDestroyMultiNoiseWeights ( input->common->multiNoiseWeights );
-      XLALDestroyMultiDetectorStateSeries ( input->common->multiDetectorStates );
-      XLALFree ( input->common );
-    }
+  XLALDestroyMultiTimestamps ( input->common.multiTimestamps );
+  XLALDestroyMultiNoiseWeights ( input->common.multiNoiseWeights );
+  XLALDestroyMultiDetectorStateSeries ( input->common.multiDetectorStates );
+
   if (input->demod != NULL)
     {
       DestroyFstatInput_Demod ( input->demod );
