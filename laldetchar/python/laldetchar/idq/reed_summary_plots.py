@@ -73,6 +73,9 @@ def histfig(directory, classifier, ifo, tag, t, stride, figtype="png"):
 def kdefig(directory, classifier, ifo, tag, t, stride, figtype="png"):
     return "%s/%s_%s%s_KDE-%d-%d.%s"%(directory, ifo, classifier, tag, t, stride, figtype)
 
+def Lfig(directory, classifier, ifo, tag, t, stride, figtype="png"):
+    return "%s/%s_%s%s_L-%d-%d.%s"%(directory, ifo, classifier, tag, t, stride, figtype)
+
 def kdename(directory, classifier, ifo, tag, t, stride):
     return "%s/%s_%s%s_KDE-%d-%d.npy.gz"%(directory, ifo, classifier, tag, t, stride)
 
@@ -245,6 +248,61 @@ def stacked_kde(r, s, color='b', linestyle='solid', label=None, figax=None):
 
     axh.set_xlabel('rank')
     axh.set_ylabel('p(rank)')
+
+    return fig, axh, axc
+
+def stacked_L(r, c, g, color='b', linestyle='solid', label=None, figax=None):
+
+    if not isinstance(c, np.ndarray):
+        c = np.array(c)
+    if not isinstance(g, np.ndarray):
+        g = np.array(g)
+
+    if figax==None:
+        fig = plt.figure(figsize=default_figsize)
+        axh = fig.add_axes([0.1, 0.1, 0.8, 0.4])
+        axc = fig.add_axes([0.1, 0.5, 0.8, 0.4])
+    else:
+        fig, axh, axc = figax
+
+    truth = c > 0
+    axh.plot( r[truth], g[truth]/c[truth], color=color, linestyle=linestyle, label=label)
+
+    G = np.zeros_like(r)
+    C = np.zeros_like(r)
+    _c = 0.0
+    _g = 0.0
+    ccum = 0.0
+    gcum = 0.0
+    for i, (_c_, _g_) in enumerate(zip(c[::-1], g[::-1])):
+        ccum += 0.5*(_c_+_c)
+        C[i] = ccum
+        _c = _c_
+        gcum += 0.5*(_g_+_g)
+        G[i] = gcum
+        _g = _g_
+    C /= C[-1]
+    C = C[::-1]
+    G /= G[-1]
+    G = G[::-1]
+
+    Truth = C > 0
+    axc.plot( r[Truth], G[Truth]/C[Truth], color=color, linestyle=linestyle, label=label)
+
+    axh.grid(True, which='both')
+    axc.grid(True, which='both')
+
+    axh.set_xlim(xmin=0, xmax=1)
+    axc.set_xlim(xmin=0, xmax=1)
+
+    axh.set_ylim(ymin=0, ymax=max(axh.get_ylim()[1], max(g[truth]/c[truth])*1.1))
+    axc.set_ylim(ymin=0, ymax=max(axc.get_ylim()[1], max(G[Truth]/C[Truth])*1.1))
+
+    plt.setp(axc.get_xticklabels(), visible=False)
+    axc.set_ylabel('cdf(g)/cdf(c)')
+
+    axh.set_xlabel('rank')
+    axh.set_ylabel('pdf(g)/pdf(c)')
 
     return fig, axh, axc
 

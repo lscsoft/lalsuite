@@ -40,6 +40,8 @@ from glue.ligolw import utils as ligolw_utils
 from glue.ligolw import lsctables
 from glue.ligolw import table
 
+from glue import markup ### an easy way to write html pages. THIS MAY BE REPLACED???
+
 from laldetchar import git_version
 
 #===================================================================================================
@@ -75,6 +77,8 @@ parser.add_option('-f','--force',default=False, action='store_true', help="force
 
 parser.add_option("", "--no-robot-cert", default=False, action="store_true")
 
+parser.add_option("", "--no-html", default=False, action="store_true")
+
 (opts, args) = parser.parse_args()
 
 if opts.lookback != "infinity":
@@ -83,6 +87,24 @@ if opts.lookback != "infinity":
 for ind, trend in enumerate(opts.trending):
     if trend != "infinity":
         opts.trending[ind] = int(trend)
+
+
+
+
+### these should be set somewhere else!
+html_width=500
+html_height=500
+
+thumbnail_width=100
+thumbnail_height=100
+
+
+
+
+
+
+
+
 
 #===================================================================================================
 ### setup logger to record processes
@@ -104,6 +126,13 @@ if usertag:
     usertag = "_%s"%usertag
 
 ifo = config.get('general', 'ifo')
+
+channels = config.get('general','selected-channels')
+unsafechannels = config.get('general', 'unsafe-channels')
+
+gwchannel = config.get('general', 'gwchannel')
+gch_kwsignif_thr = config.getfloat('general', 'gw_kwsignif_thr')
+cln_kwsignif_thr = config.getfloat('realtime', 'clean_threshold')
 
 #========================
 # which classifiers
@@ -137,7 +166,7 @@ columns = list(set( dat_columns + "GPS i rank".split() ) )
 #========================
 # calibration jobs
 #========================
-calibrationdir = config.get('general', 'calibrationdir')
+#calibrationdir = config.get('general', 'calibrationdir')
 
 #========================
 # summary jobs
@@ -247,6 +276,12 @@ while gpsstart < gpsstop:
         if trend == "infinity":
             opts.trending[ind] = gpsstart - global_start
 
+    ### dictionary to hold onto filenames we want to keep
+    files = {'segs':{}, 'dat':{}, 'kde':{}, 'roc':{}}
+
+    ### dictionary to hold data
+    data = {}
+
     #===============================================================================================
     # science segments
     # we query the segdb right now, although that latency may be an issue...
@@ -269,9 +304,9 @@ while gpsstart < gpsstop:
 
             ### science segments xml filename
             seg_file = reed.segxml(output_dir, "_%s"%dq_name, gpsstart - lookback , lookback+stride)
-
             logger.info('writing science segments to file : '+seg_file)
             ligolw_utils.write_filename(xmldoc, seg_file, gz=seg_file.endswith(".gz"))
+            files['segs']['sci'] = seg_file
 
             (scisegs, coveredseg) = reed.extract_dq_segments(seg_file, dq_name) ### read in segments from xml file
 
@@ -302,6 +337,8 @@ while gpsstart < gpsstop:
         print >> f, seg[0], seg[1]
     f.close()
 
+    files['segs']['idq'] = idqseg_path
+
     #===============================================================================================
     # find data
     #===============================================================================================
@@ -321,7 +358,7 @@ while gpsstart < gpsstop:
     #===============================================================================================
     # build plots
     #===============================================================================================
-    fignames = {'roc':{}, 'hst':{}, 'kde':{}, 'trg':{}, 'bwh':{}}
+    fignames = {'roc':{}, 'hst':{}, 'kde':{}, 'L':{}, 'trg':{}, 'bwh':{}}
     ### roc -> Receiver Operating Characteristic curves
     ### hst -> raw histograms of distributions
     ### kde -> kde smoothed histograms of distributions
@@ -332,6 +369,7 @@ while gpsstart < gpsstop:
     roc_figax = None
     hst_figax = None
     kde_figax = None
+    L_figax = None
 
     ### bit-word storage
     gch_bitword = dict( (FAP, {}) for FAP in FAPthrs )
@@ -351,6 +389,8 @@ while gpsstart < gpsstop:
         for dat in datsD[classifier]:
             print >>f, dat
         f.close()
+
+        files['dat'][classifier] = cache
 
         logger.info('building plots for %s'%classifier)
 
@@ -373,10 +413,14 @@ while gpsstart < gpsstop:
         r, c, g = reed.dat_to_rcg( output )
         dc, dg = reed.rcg_to_diff( c, g ) ### get the numbers at each rank
 
+        data[classifier] = {'num_cln':c[-1], 'num_gch':g[-1]}
+
         ### dump into roc file
         roc = reed.roc(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
         logger.info('  writting %s'%roc)
         reed.rcg_to_file(roc, r, c, g)
+
+        files['roc'][classifier] = roc
 
         ### generate ROC plot
         rocfig = rsp.rocfig(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
@@ -424,10 +468,12 @@ while gpsstart < gpsstop:
         logger.info('  writing %s'%kde_gch_name)
         np.save(event.gzopen(kde_gch_name, "w"), (kde, kde_gch))
 
+        files['kde'][classifier] = {'cln':kde_cln_name, 'gch':kde_gch_name}
+
         ### generate kde pdf, cdf (above)
         kdefig = rsp.kdefig(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
         fignames['kde'][classifier] = kdefig ### store for reference
-        logger.info(' plotting %s'%kdefig)
+        logger.info('  plotting %s'%kdefig)
 
         fig, axh, axc = rsp.stacked_kde(kde, kde_cln, color=color, linestyle=cln_linestyle, label="%s cln"%classifier, figax=None)
         fig, axh, axc = rsp.stacked_kde(kde, kde_gch, color=color, linestyle=gch_linestyle, label="%s gch"%classifier, figax=(fig, axh, axc))
@@ -438,6 +484,19 @@ while gpsstart < gpsstop:
 
         kde_figax = rsp.stacked_kde(kde, kde_cln, color=color, linestyle=cln_linestyle, label="%s cln"%classifier, figax=kde_figax) ### for overlay plot
         kde_figax = rsp.stacked_kde(kde, kde_gch, color=color, linestyle=gch_linestyle, label="%s gch"%classifier, figax=kde_figax)
+
+        ### likelihood ratio
+        Lfig = rsp.Lfig(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
+        fignames['L'][classifier] = Lfig
+        logger.info('  plotting %s'%Lfig)
+
+        fig, axh, axc = rsp.stacked_L(kde, kde_cln, kde_gch, color=color, linestyle='solid', label=classifier, figax=None)
+        axc.legend(loc='best')
+
+        fig.savefig(Lfig)
+        rsp.close(fig)
+
+        L_figax = rsp.stacked_L(kde, kde_cln, kde_gch, color=color, linestyle='solid', label=classifier, figax=L_figax) ### for overlay plot
 
         ### figure out which gch and cln are removed below FAP thresholds
         rankthrs = []
@@ -495,10 +554,19 @@ while gpsstart < gpsstop:
     ### kde overlay
     kdefig = rsp.kdefig(output_dir, "overlay", ifo, usertag, gpsstart-lookback, lookback+stride)
     fignames['kde']["overlay"] = kdefig ### store for reference
-    logger.info(' plotting %s'%kdefig)
+    logger.info('  plotting %s'%kdefig)
     fig, axh, axc = kde_figax
     axc.legend(loc='best')
     fig.savefig(kdefig)
+    rsp.close(fig)
+
+    ### L overlay
+    Lfig = rsp.Lfig(output_dir, "overlay", ifo, usertag, gpsstart-lookback, lookback+stride)
+    fignames['L']["overlay"] = Lfig
+    logger.info('  plotting %s'%Lfig)
+    fig, axh, axc = L_figax
+    axc.legend(loc='best')
+    fig.savefig(Lfig)
     rsp.close(fig)
 
     #====================
@@ -535,6 +603,12 @@ while gpsstart < gpsstop:
         fig.savefig(bitfig)
         rsp.close(fig)
 
+    """
+for classifiers individually and as an overlay:
+    figure showing FAP calibration: 
+        stated FAP vs deadtime <- pick up fap*npy.gz files for this!
+        do this for both point estimates and 90% UL
+    """
 
     #=============================================
     # trending plots!
@@ -543,14 +617,6 @@ while gpsstart < gpsstop:
 
     logger.warning("WARNING: write trending plots!")
     """
-for classifiers individually and as an overlay:
-    figure showing FAP calibration: 
-        stated FAP vs deadtime <- pick up fap*npy.gz files for this!
-        do this for both point estimates and 90% UL
-
-    figure showing likelihood ratio as a function of rank? We should do this with KDE curves: 
-        like a stacked_kde, but plotting the ratio of the two curves.
-        
 TRENDING:
 
     NEED A GOOD WAY OF FINDING HISTORICAL DATA/FIGURES
@@ -575,18 +641,11 @@ TRENDING:
     #===============================================================================================
     # write html page
     #===============================================================================================
-
-    """
+    if not opts.no_html:
+        """
 REPORT:
 time-stamp of page creation
 command line options used to generate this page
-
-science segments used: link to ascii file and xml file
-idq segments used: link to ascii file and xml file
-
-GWchannels, frequency band, signif_thr (and clean_thr?), etc
-auxchannels, frequency bands, signif_thrs, etc
-unsafe channels (not used, but report them for reference)
 
 vetolist/configuration lists -> make human readable
 segment lists -> a form to request segments?
@@ -598,16 +657,166 @@ try to make them in expandable sections
     different trending ranges
     different types of plots
     else?
-    """
+        """
+        logger.info('writing index.html for %s'%output_dir)
 
-    #=============================================
-    # format index.html for summary_dir
-    #=============================================
+        title = "idq%s : %d-%d"%(usertag, gpsstart, stride)
+        header = "lalapps_tconvert reed.nowgps()"
+        footer = "process params for job that built this page. Try to give full paths"
 
-    """
-    make this formatted so that it doesn't take forever to load.
-    mirroring the current implementation is ok, but we can probably make the pages better using some standard python library?
-    """
+        page = markup.page()
+        page.init( title=title, header=header, footer=footer)
+
+        lensumdir = len(output_dir)
+
+        page.hr( )
+
+        #=========================================
+        # info about parameters
+        #=========================================
+
+        ### copy channels, unsafe_channels into output_dir
+        os.system("cp %s %s"%(channels, output_dir) )
+        os.system("cp %s %s"%(unsafechannels, output_dir) )
+
+        minipage = markup.page()
+        minipage.a( 'AUX channels', href="./%s"%(channels.split('/')[-1]) )
+        minipage.br( )
+        minipage.a( 'unsafe AUX channels', href='./%s'%(unsafechannels.split("/")[-1]) )
+        minipage.br( )
+        minipage.p( ('GW channel : %s'%gwchannel, 'gch_thr : %.1f'%gch_kwsignif_thr, 'cln_thr : %.1f'%cln_kwsignif_thr) )
+
+        page.p( str(minipage) )
+
+        #=========================================
+        # pointers to data
+        #=========================================
+
+        ### pointers to segments!
+        page.hr( )
+
+        minipage = markup.page()
+        if files['segs'].has_key('sci'):
+            minipage.a( dq_name, href="./%s"%files['segs']['sci'][lensumdir:] )
+            minipage.br( )
+        minipage.a( 'idq_segments', href="./%s"%files['segs']['idq'][lensumdir:] )
+
+        page.p( (str(minipage)) )
+
+        ### pointers to data storage
+        page.hr( )
+
+        minipage = markup.page()
+        for classifier in classifiers[:-1]:
+            minipage.a( classifier, href="./%s"%files['dat'][classifier][lensumdir:] )
+            minipage.addcontent( ", " )
+        minipage.a( classifiers[-1], href="./%s"%files['dat'][classifiers[-1]][lensumdir:] )
+
+        page.p( "datfile caches: %s"%str(minipage) )
+
+        minipage = markup.page()
+        for classifier in classifiers[:-1]:
+            minipage.a( classifier, href="./%s"%files['roc'][classifier][lensumdir:] )
+            minipage.addcontent( ", " )
+        minipage.a( classifiers[-1], href="./%s"%files['roc'][classifiers[-1]][lensumdir:] )
+
+        page.p( "rocfiles: %s"%str(minipage) )
+
+        minipage = markup.page()
+        for classifier in classifiers[:-1]:
+            minipage.a( classifier, href="./%s"%files['kde'][classifier]['cln'][lensumdir:] )
+            minipage.addcontent( ", ")
+        minipage.a( classifiers[-1], href="./%s"%files['kde'][classifiers[-1]]['cln'][lensumdir:] )
+
+        page.p( "cln kde files: %s"%str(minipage) )
+
+        minipage = markup.page()
+        for classifier in classifiers[:-1]:
+            minipage.a( classifier, href="./%s"%files['kde'][classifier]['gch'][lensumdir:] )
+            minipage.addcontent( ", ")
+        minipage.a( classifiers[-1], href="./%s"%files['kde'][classifiers[-1]]['gch'][lensumdir:] )
+
+        page.p( "gch kde files: %s"%str(minipage) )
+
+        #=========================================
+        # number of samples for this stride
+        #=========================================
+
+        ### print "num_cln", "num_gch" from "data" dictionary -> table
+
+        #=========================================
+        # images for this stride 
+        #=========================================
+        page.hr( )
+
+        for figflavor in 'roc hst kde L'.split():
+            page.img( width=html_width, height=html_height, alt="%s overlay"%figflavor, src="./%s"%fignames[figflavor]['overlay'][lensumdir:] )
+            page.br( )
+
+            minipage = markup.page()
+            for classifier in classifiers[:-1]:
+                minipage.a( classifier, href="./%s"%fignames[figflavor][classifier][lensumdir:] )
+                minipage.addcontent( ", " )
+            minipage.a( classifiers[-1], href="./%s"%fignames[figflavor][classifiers[-1]][lensumdir:] )
+
+            page.p( "%s figures: %s"%(figflavor, str(minipage)) )
+
+        page.img( width=html_width, height=html_height, alt='bitword cln', src="./%s"%fignames['bwh']['cln'][lensumdir:] )
+        page.img( width=html_width, height=html_height, alt='bitword gch', src="./%s"%fignames['bwh']['gch'][lensumdir:] )
+        page.br( )
+    
+        ### print trg histograms, or at least links!
+        for column in dat_columns:
+            minipage = markup.page()
+            for classifier in classifiers:
+                minipage.a( classifier, href="./%s"%fignames['trg'][(classifier, column)][lensumdir:] )
+                minipage.addcontent( ", " )
+            minipage.a( classifiers[-1], href="./%s"%fignames['trg'][(classifiers[-1], column)][lensumdir:] )
+            
+            page.p( "%s : %s"%(column,str(minipage)) )
+
+        page.hr( )
+
+        #=========================================
+        # trending images
+        #=========================================
+
+        ### WRITE THESE AND ADD THEM HERE
+
+        #=========================================
+        ### write page to disk
+        file_obj = open("%s/index.html"%output_dir, "w")
+        print >> file_obj, page
+        file_obj.close()
+
+        #===========================================================================================
+        # format index.html for summary_dir
+        #===========================================================================================
+
+        logger.info('updating index.html for %s'%summarydir)
+
+        title = "idq%s"%usertag
+        header = ""
+        footer = "lalapps_tconver reed.nowgps()? process params for last job that updated this?"
+
+        index = markup.page()
+        index.init( title=title, header=header, footer=footer )
+#        index.br( )
+
+        ### iterate over existing subdirectories
+        for subdir in sorted(glob.glob("%s/*_*/"%summarydir)):
+            sub = subdir.split('/')[-2]
+            index.a( sub, href="./%s"%sub )
+            roc = glob.glob("%s/*overlay*ROC*png"%subdir)[0]
+            index.img( width=thumbnail_width, height=thumbnail_height, alt="%s roc overlay"%sub, src="./%s/%s"%(sub, roc.split('/')[-1] ) )
+            index.br( )
+
+        index.hr( )
+
+        ### write page to disk
+        file_obj = open("%s/index.html"%summarydir, "w")
+        print >> file_obj, index
+        file_obj.close()
 
     #===============================================================================================
 

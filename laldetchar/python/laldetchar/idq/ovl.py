@@ -164,7 +164,7 @@ def rank_to_vsig(rank):
 def useP_to_rank(useP):
     """ conversion from useP to rank """
 
-    return 1. - math.exp(-useP / 0.5)
+    return 1. - math.exp(- useP / 0.5)
 
 
 def rank_to_useP(rank):
@@ -1557,11 +1557,11 @@ def stats_to_ROC(
     if cleans_statsfilename:
         print >> f, '# line 2 : total number of clean samples'
         print >> f, \
-            '# line 3 : rank(eff/dt) cumulative_number_of_cleans_removed cumulative_number_of_GWtrg_removed'
+            '# line 3 : rank(%s) cumulative_number_of_cleans_removed cumulative_number_of_GWtrg_removed'%__params.metric
     else:
         print >> f, '# line 2 : total amount of livetime'
         print >> f, \
-            '# line 3 : rank(eff/dt) cumulative_deadtime cumulative_number_of_GWtrg_removed'
+            '# line 3 : rank(%s) cumulative_deadtime cumulative_number_of_GWtrg_removed'%__params.metric
 
     print >> f, stats[0][sD['#gwtrg']]  # total number of gwtrg
     if cleans_statsfilename:
@@ -1582,7 +1582,12 @@ def stats_to_ROC(
             c_dsec += line[sD['dsec']]  # the number of seconds removed
 
         if rank_statsfilename and __params:
-            rank = effbydt_to_rank(rank_stats[index][sD['eff/dt']])
+            if __params.metric == "eff/dt":
+                rank = effbydt_to_rank(rank_stats[index][sD['eff/dt']])
+            elif __params.metric == "vsig":
+                rank = vsig_to_rank(rank_stats[index][sD['vsig']]) 
+            elif __params.metric == "useP":
+                rank = useP_to_rank(rank_stats[index][sD['useP']])
         else:
             rank = 'na'
 

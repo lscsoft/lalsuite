@@ -806,7 +806,7 @@ def rcg_to_EffFAPmap(rs, c_cln, c_gch, kind='linear'):
 #=================================================
 # mapping objects for r --> fraction of events
 #=================================================
-def binomialUL( k, n , conf=0.99):
+def binomialUL( k, n , conf=0.99, jefferys=False):
     """
     returns the binomial UL consistent with "conf" and observing k successes after n trials
     delegates to scipy.stats.beta, because we assume a jeffery's prior for the binomial process
@@ -818,10 +818,12 @@ def binomialUL( k, n , conf=0.99):
     where p = k/n (the MLE estimate for the binomial success rate)
     """
     from scipy.stats import beta
+    if jefferys:
+        return beta.ppf( 1.0-conf, k + 0.5, n-k + 0.5 ) ### probably the fastest implementation available...
+    else:
+        return beta.ppf( 1.0-conf, k, n-k )
 
-    return beta.ppf( 1.0-conf, k + 0.5, n-k + 0.5 ) ### probably the fastest implementation available...
-
-def binomialCR( k, n, conf=0.99):
+def binomialCR( k, n, conf=0.99, jefferys=False):
     """
     returns the symetric CR consistent with "conf" and observing k successes after n trials
     delegates to scipy.stats.beta, because we assume a jeffery's prior for the binomial process
@@ -835,7 +837,10 @@ def binomialCR( k, n, conf=0.99):
     from scipy.stats import beta
     alpha = (1.0-conf)/2
 
-    return beta.ppf( alpha, k + 0.5, n-k + 0.5) , beta.ppf( 1-alpha, k+0.5, n-k+0.5)
+    if jefferys:
+        return beta.ppf( alpha, k + 0.5, n-k + 0.5) , beta.ppf( 1-alpha, k+0.5, n-k+0.5)
+    else:
+        return beta.ppf( alpha, k, n-k), beta.ppf( 1-alpha, k, n-k)
 
 class BinomialMap(object):
     """
