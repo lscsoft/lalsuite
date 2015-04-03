@@ -72,6 +72,10 @@ typedef struct tagResampTimingInfo
   REAL8 tauF1NoBuf;		// Resampling timing 'constant': Fstat time per template per detector for an 'unbuffered' usage (different skypos and numFreqBins)
 } ResampTimingInfo;
 
+// hidden global variables used to pass timings to test/benchmark programs
+REAL8 Resamp_tauF1Buf = 0.0;
+REAL8 Resamp_tauF1NoBuf = 0.0;
+
 typedef struct tagResampWorkspace
 {
   // intermediate quantities to interpolate and operate on SRC-frame timeseries
@@ -107,6 +111,8 @@ struct tagFstatInput_Resamp
 
   MultiCOMPLEX8TimeSeries *multiTimeSeries_SRC_a;	// multi-detector SRC-frame timeseries, multiplied by AM function a(t)
   MultiCOMPLEX8TimeSeries *multiTimeSeries_SRC_b;	// multi-detector SRC-frame timeseries, multiplied by AM function b(t)
+
+  FILE *timingLogFile;					// file to write timing info to
 };
 
 
@@ -131,10 +137,6 @@ XLALComputeFaFb_Resamp ( ResampWorkspace *ws,
                          const COMPLEX8TimeSeries *TimeSeries_SRC_a,
                          const COMPLEX8TimeSeries *TimeSeries_SRC_b
                          );
-
-// pseudo-internal: don't export API but allow using them from test/benchmark codes
-int XLALAppendResampInfo2File ( FILE *fp, const FstatInput *input );
-int XLALGetResampTimingInfo ( REAL8 *tauF1NoBuf, REAL8 *tauF1Buf, const FstatInput *input );
 
 // ==================== function definitions ====================
 
@@ -191,40 +193,21 @@ XLALDestroyResampWorkspace ( void *workspace )
 
 } // XLALDestroyResampWorkspace()
 
-// return resampling timing coefficients 'tauF1' for buffered and unbuffered calls
-int
-XLALGetResampTimingInfo ( REAL8 *tauF1NoBuf, REAL8 *tauF1Buf, const FstatInput *input )
-{
-  XLAL_CHECK ( input != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( input->method >= FMETHOD_RESAMP_GENERIC, XLAL_EINVAL );
-  const FstatInput_Common *common = &input->common;
-  const ResampWorkspace *ws = (ResampWorkspace*) common->workspace;
-  const ResampTimingInfo *ti = &(ws->timingInfo);
-
-  (*tauF1NoBuf) = ti->tauF1NoBuf;
-  (*tauF1Buf) = ti->tauF1Buf;
-
-  return XLAL_SUCCESS;
-
-} // XLALGetResampTimingInfo()
-
 /// debug/optimizer helper function: dump internal info from resampling code into a file
-/// if called with input==NULL, output a header-comment-line
-int
-XLALAppendResampInfo2File ( FILE *fp, const FstatInput *input )
+static void
+AppendResampInfo2File ( FILE *fp, const FstatInput_Common *common, const FstatInput_Resamp *resamp )
 {
-  XLAL_CHECK ( fp != NULL, XLAL_EINVAL );
 
-  if ( input == NULL ) {
+  // print header on first call
+  static BOOLEAN print_header = 1;
+  if ( print_header ) {
     fprintf (fp, "%%%%%8s %10s %6s %10s %10s ",
              "Nfreq", "NsFFT", "Nsft0", "Ns_DET0", "Ns_SRC0" );
     fprintf (fp, "%10s %10s %10s %10s %10s %10s %10s %10s %10s %10s %10s\n",
              "tauTotal", "tauFFT", "tauBary", "tauSpin", "tauAM", "tauNorm", "tauFab2F", "tauMem", "tauSumFabX", "tauF1NoBuf", "tauF1Buf" );
-    return XLAL_SUCCESS;
+    print_header = 0;
   }
-  XLAL_CHECK ( input->method >= FMETHOD_RESAMP_GENERIC, XLAL_EINVAL );
-  const FstatInput_Resamp *resamp = input->resamp;
-  const FstatInput_Common *common = &input->common;
+
   const ResampWorkspace *ws = (ResampWorkspace*) common->workspace;
 
   fprintf (fp, "%10d %10d", ws->numFreqBinsOut, ws->numSamplesFFT );
@@ -238,9 +221,7 @@ XLALAppendResampInfo2File ( FILE *fp, const FstatInput *input )
   fprintf (fp, "%10.1e %10.1e %10.1e %10.1e %10.1e %10.1e %10.1e %10.1e %10.1e %10.1e %10.1e\n",
            ti->tauTotal, ti->tauFFT, ti->tauBary, ti->tauSpin, 0.0, ti->tauNorm, ti->tauFab2F, ti->tauMem, ti->tauSumFabX, ti->tauF1NoBuf, ti->tauF1Buf );
 
-  return XLAL_SUCCESS;
-
-} // XLALAppendResampInfo2File()
+} // AppendResampInfo2File()
 
 // ---------- internal functions ----------
 static void
@@ -260,9 +241,10 @@ DestroyFstatInput_Resamp ( FstatInput_Resamp* resamp )
 
 static int
 SetupFstatInput_Resamp ( FstatInput_Resamp *resamp,
-                        FstatInput_Common *common,
-                        FstatInput_MethodFuncs* funcs,
-                        MultiSFTVector *multiSFTs
+                         FstatInput_Common *common,
+                         FstatInput_MethodFuncs* funcs,
+                         MultiSFTVector *multiSFTs,
+                         const FstatOptionalArgs *optArgs
                         )
 {
   // Check input
@@ -270,6 +252,7 @@ SetupFstatInput_Resamp ( FstatInput_Resamp *resamp,
   XLAL_CHECK ( common != NULL, XLAL_EFAULT );
   XLAL_CHECK ( funcs != NULL, XLAL_EFAULT );
   XLAL_CHECK ( multiSFTs != NULL, XLAL_EFAULT );
+  XLAL_CHECK ( optArgs != NULL, XLAL_EFAULT );
 
   // Convert SFTs into heterodyned complex timeseries [in detector frame]
   XLAL_CHECK ( (resamp->multiTimeSeries_DET = XLALMultiSFTVectorToCOMPLEX8TimeSeries ( multiSFTs )) != NULL, XLAL_EFUNC );
@@ -346,6 +329,13 @@ SetupFstatInput_Resamp ( FstatInput_Resamp *resamp,
       XLAL_CHECK ( ( common->workspace = XLALCreateResampWorkspace ( numSamplesMax_SRC, numSamplesFFT )) != NULL, XLAL_EFUNC );
       funcs->workspace_dtor = XLALDestroyResampWorkspace;
     } // end: if we create our own workspace
+
+#ifdef COLLECT_TIMING
+  // Set up timing log file
+  resamp->timingLogFile = optArgs->timingLogFile;
+#else
+  resamp->timingLogFile = NULL;
+#endif
 
   return XLAL_SUCCESS;
 
@@ -586,6 +576,15 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
   // compute 'fundamental' timing numbers per template per detector
   ti->tauF1NoBuf = ti->tauTotal / numFreqBins;
   ti->tauF1Buf   = (ti->tauTotal - ti->tauBary - ti->tauMem) / numFreqBins;
+
+  // pass out timings to test/benchmark programs
+  Resamp_tauF1NoBuf = ti->tauF1NoBuf;
+  Resamp_tauF1Buf = ti->tauF1Buf;
+
+  // write timing info to log file
+  if ( resamp->timingLogFile != NULL ) {
+    AppendResampInfo2File ( resamp->timingLogFile, common, resamp );
+  }
 #endif
 
   return XLAL_SUCCESS;

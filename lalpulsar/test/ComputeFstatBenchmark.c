@@ -51,8 +51,9 @@ typedef struct
   BOOLEAN runBuffered;	// only useful for double-checking and Demod timing
 } UserInput_t;
 
-int XLALAppendResampInfo2File ( FILE *fp, const FstatInput *input );
-int XLALGetResampTimingInfo ( REAL8 *tauF1NoBuf, REAL8 *tauF1Buf, const FstatInput *input );
+// hidden global variables used to pass timings to test/benchmark programs
+extern REAL8 Resamp_tauF1Buf;
+extern REAL8 Resamp_tauF1NoBuf;
 
 // ---------- main ----------
 int
@@ -160,13 +161,6 @@ main ( int argc, char *argv[] )
   LIGOTimeGPS endTime = endTime_l;
   UINT4 numSFTsPerSeg = catalogs[0]->length;
 
-  FILE *fpInfo = NULL;
-  if ( (uvar->outputInfo != NULL) && (FstatMethod == FMETHOD_RESAMP_GENERIC) )
-    {
-      XLAL_CHECK ( (fpInfo = fopen (uvar->outputInfo, "ab")) != NULL, XLAL_ESYS, "Failed to open '%s' for appending\n", uvar->outputInfo );
-      XLALAppendResampInfo2File ( fpInfo, NULL ); // create header comment line
-    }
-
   PulsarSpinRange XLAL_INIT_DECL(spinRange);
   LIGOTimeGPS refTime = { startTime.gpsSeconds - 2.3 * uvar->Tseg, 0 };
   spinRange.refTime = refTime;
@@ -194,6 +188,11 @@ main ( int argc, char *argv[] )
   }
   optionalArgs.injectSqrtSX = &injectSqrtSX;
   optionalArgs.FstatMethod = FstatMethod;
+
+  if ( (uvar->outputInfo != NULL) && (FstatMethod == FMETHOD_RESAMP_GENERIC) )
+    {
+      XLAL_CHECK ( (optionalArgs.timingLogFile = fopen (uvar->outputInfo, "ab")) != NULL, XLAL_ESYS, "Failed to open '%s' for appending\n", uvar->outputInfo );
+    }
 
   FstatInputVector *inputs;
   FstatQuantities whatToCompute = (FSTATQ_2F | FSTATQ_2F_PER_DET);
@@ -239,13 +238,8 @@ main ( int argc, char *argv[] )
           XLAL_CHECK ( XLALComputeFstat ( &results, inputs->data[l], &Doppler, numFreqBins_i, whatToCompute ) == XLAL_SUCCESS, XLAL_EFUNC );
 
           // ----- output timing details if requested
-          if ( (fpInfo != NULL) ) {
-            XLALAppendResampInfo2File ( fpInfo, inputs->data[l] );
-          }
-          REAL8 tauF1NoBuf_il, tauF1Buf_il;
-          XLAL_CHECK ( XLALGetResampTimingInfo ( &tauF1NoBuf_il, &tauF1Buf_il, inputs->data[l] ) == XLAL_SUCCESS, XLAL_EFUNC );
-          tauF1NoBuf_i += tauF1NoBuf_il;
-          tauF1Buf_i   += tauF1Buf_il;
+          tauF1NoBuf_i += Resamp_tauF1NoBuf;
+          tauF1Buf_i   += Resamp_tauF1Buf;
         } // for l < numSegments
 
       tauF1NoBuf_i /= uvar->numSegments;
@@ -268,8 +262,8 @@ main ( int argc, char *argv[] )
   fprintf (stderr, "\nAveraged timings: <tauF1Buf> = %.2g s, <tauF1NoBuf> = %.2g s\n", tauF1Buf, tauF1NoBuf );
 
   // ----- free memory ----------
-  if ( fpInfo != NULL ) {
-    fclose ( fpInfo );
+  if ( optionalArgs.timingLogFile != NULL ) {
+    fclose ( optionalArgs.timingLogFile );
   }
 
   for ( INT4 l = 0; l < uvar->numSegments; l ++ )

@@ -303,14 +303,16 @@ static int
 SetupFstatInput_Demod ( FstatInput_Demod *demod,
                         FstatInput_Common *common,
                         FstatInput_MethodFuncs* funcs,
-                        MultiSFTVector *multiSFTs
-                        )
+                        MultiSFTVector *multiSFTs,
+                        const FstatOptionalArgs *optArgs
+                       )
 {
   // Check input
   XLAL_CHECK ( demod != NULL, XLAL_EFAULT );
   XLAL_CHECK ( common != NULL, XLAL_EFAULT );
   XLAL_CHECK ( funcs != NULL, XLAL_EFAULT );
   XLAL_CHECK ( multiSFTs != NULL, XLAL_EFAULT );
+  XLAL_CHECK ( optArgs != NULL, XLAL_EFAULT );
 
   // Save pointer to SFTs
   demod->multiSFTs = multiSFTs;

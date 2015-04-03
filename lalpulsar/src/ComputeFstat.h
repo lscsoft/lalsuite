@@ -157,6 +157,7 @@ typedef struct tagFstatOptionalArgs {
   MultiNoiseFloor *injectSqrtSX;  	///< Single-sided PSD values for fake Gaussian noise to be added to SFT data.
   MultiNoiseFloor *assumeSqrtSX;  	///< Single-sided PSD values to be used for computing SFT noise weights instead of from a running median of the SFTs themselves.
   FstatInput *prevInput;		///< An \c FstatInput structure from a previous call to XLALCreateFstatInput(); may contain common workspace data than can be re-used to save memory.
+  FILE *timingLogFile;			///< Pointer to a file which might be used to log timing information by some \f$\mathcal{F}\f$-statistic methods.
 } FstatOptionalArgs;
 #ifdef SWIG // SWIG interface directives
 SWIGLAL(COPY_CONSTRUCTOR(tagFstatOptionalArgs));

@@ -472,11 +472,11 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
   FstatInput_MethodFuncs *funcs = &input->method_funcs;
   if ( input->demod != NULL )
     {
-      XLAL_CHECK_NULL ( SetupFstatInput_Demod ( input->demod, common, funcs, multiSFTs ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_NULL ( SetupFstatInput_Demod ( input->demod, common, funcs, multiSFTs, optArgs ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
   else if ( input->resamp != NULL )
     {
-      XLAL_CHECK_NULL ( SetupFstatInput_Resamp ( input->resamp, common, funcs, multiSFTs ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_NULL ( SetupFstatInput_Resamp ( input->resamp, common, funcs, multiSFTs, optArgs ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
   else
     {
