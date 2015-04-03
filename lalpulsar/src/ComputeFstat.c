@@ -34,7 +34,8 @@
 #include <lal/SinCosLUT.h>
 #include <lal/NormalizeSFTRngMed.h>
 
-// ----- macro definitions
+// ---------- Macro definitions ---------- //
+
 #define SQ(x) ( (x) * (x) )
 
 // ---------- Internal struct definitions ---------- //
@@ -62,7 +63,8 @@ struct tagFstatInput {
   FstatInput_Resamp* resamp;                        // Resampling input data
 };
 
-// ----- internal prototypes
+// ---------- Internal prototypes ---------- //
+
 static REAL4 XLALComputeFstatFromFaFb ( COMPLEX8 Fa, COMPLEX8 Fb, REAL4 A, REAL4 B, REAL4 C, REAL4 E, REAL4 Dinv );
 
 // ---------- Check for various computer architectures ---------- //
@@ -79,8 +81,6 @@ static REAL4 XLALComputeFstatFromFaFb ( COMPLEX8 Fa, COMPLEX8 Fb, REAL4 A, REAL4
 #define CFS_HAVE_ALTIVEC 0
 #endif
 
-// ---------- Include F-statistic method implementations ---------- //
-
 #if CFS_HAVE_SSE
 #define DEF_FMETHOD_DEMOD_BEST FMETHOD_DEMOD_SSE
 #elif CFS_HAVE_ALTIVEC
@@ -93,6 +93,8 @@ static REAL4 XLALComputeFstatFromFaFb ( COMPLEX8 Fa, COMPLEX8 Fb, REAL4 A, REAL4
 // these are for exporting
 const int FMETHOD_DEMOD_BEST  = DEF_FMETHOD_DEMOD_BEST;
 const int FMETHOD_RESAMP_BEST = DEF_FMETHOD_RESAMP_BEST;
+
+// ---------- Constant variable definitions ---------- //
 
 static const struct {
   const char *const name;
@@ -107,9 +109,6 @@ static const struct {
 } ;
 
 
-// ----- global variables ----------
-
-/// global initializer for setting FstatOptionalArgs to default values
 const FstatOptionalArgs FstatOptionalArgsDefaults = {
   .randSeed = 0,
   .SSBprec = SSBPREC_RELATIVISTICOPT,
@@ -122,6 +121,7 @@ const FstatOptionalArgs FstatOptionalArgsDefaults = {
   .sharedWorkspace = NULL
 };
 
+// ---------- Include F-statistic method implementations ---------- //
 
 #include "ComputeFstat_Demod.c"
 #include "ComputeFstat_Resamp.c"

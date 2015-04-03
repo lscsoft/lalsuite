@@ -168,7 +168,9 @@ typedef struct tagFstatOptionalArgs {
 SWIGLAL(COPY_CONSTRUCTOR(tagFstatOptionalArgs));
 #endif // SWIG
 
-/// global initializer for setting FstatOptionalArgs to default values
+///
+/// Global initializer for setting #FstatOptionalArgs to default values
+///
 extern const FstatOptionalArgs FstatOptionalArgsDefaults;
 
 ///
