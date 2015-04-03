@@ -49,6 +49,7 @@
 #include <lal/LALConfig.h>
 #include <lal/LALError.h>
 #include <lal/XLALError.h>
+#include <lal/LALString.h>
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
@@ -246,7 +247,7 @@ static void select_instruction_set(void) {
   /* Try to match LAL_SIMD_ISET to an instruction set name */
   LAL_SIMD_ISET user_iset = LAL_SIMD_ISET_MAX;
   for (LAL_SIMD_ISET i = 0; i < LAL_SIMD_ISET_MAX; ++i) {
-    if (strcmp(env, iset_names[i]) == 0) {
+    if (XLALStringCaseCompare(env, iset_names[i]) == 0) {
       user_iset = i;
       break;
     }
