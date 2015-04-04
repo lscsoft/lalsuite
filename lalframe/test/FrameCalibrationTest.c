@@ -158,12 +158,12 @@ int main( int argc, char *argv[] )
   response.sampleUnits = strainPerCount;
 
   /* loop over the three interferometers */
-  for ( j = 0; j < sizeof(ifoCode) / sizeof(*ifoCode); ++j )
+  for ( j = 0; j < XLAL_NUM_ELEM(ifoCode); ++j )
   {
     snprintf( response.name, LALNameLength * sizeof(CHAR),
         CHANNEL, ifoCode[j] );
 
-    for ( i = 0; i < sizeof(calTime) / sizeof(*calTime); ++i )
+    for ( i = 0; i < XLAL_NUM_ELEM(calTime); ++i )
     {
       /* set the time of the calibration and the frame cahche file to use */
       snprintf( calCacheName, LALNameLength * sizeof(CHAR), CAL_CATALOG,

@@ -714,7 +714,7 @@ int main ( int argc, char *argv[] )
 
       /* sieve out the requested data type */
       snprintf( ifoRegExPattern,
-          sizeof(ifoRegExPattern) / sizeof(*ifoRegExPattern), ".*%c.*",
+          XLAL_NUM_ELEM(ifoRegExPattern), ".*%c.*",
           fqChanName[0] );
       frInCache = XLALCacheDuplicate(frGlobCache);
       XLALCacheSieve(frInCache, 0, 0, ifoRegExPattern, frInType, NULL);

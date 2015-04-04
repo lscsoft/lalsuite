@@ -332,7 +332,7 @@ LALCache *XLALCacheGlob(const char *dirstr, const char *fnptrn)
         char dirname[PATH_MAX];
         char *nextdir;
         strncpy(dirname, dirstr, sizeof(dirname) - 1);
-        dirname[sizeof(dirname) - 1] = 0;
+        XLAL_LAST_ELEM(dirname) = 0;
         do {
             if ((nextdir = strchr(dirname, ':')))
                 *nextdir++ = 0;

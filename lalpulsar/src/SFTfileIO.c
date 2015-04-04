@@ -1484,7 +1484,7 @@ XLALshowSFTLocator ( const struct tagSFTLocator *locator )
     return NULL;
 
   snprintf ( ret, sizeof(ret), "%s : %ld", locator->fname, locator->offset );
-  ret[ sizeof(ret) - 1 ] = 0;
+  XLAL_LAST_ELEM(ret) = 0;
 
   return ret;
 

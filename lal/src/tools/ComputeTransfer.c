@@ -350,7 +350,7 @@ LALUpdateCalibration(
           (params->epoch.gpsSeconds < CAL_S2END ) )
       {
         /* if the zero is during S2 print a warning... */
-        snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
+        snprintf( warnMsg, XLAL_NUM_ELEM(warnMsg),
             "Zero calibration factors found during S2 at GPS %10.9f",
             first_cal + (REAL8) i * params->sensingFactor->deltaT );
         LALWarning( status, warnMsg );
@@ -358,7 +358,7 @@ LALUpdateCalibration(
       else
       {
         /* ...or abort if we are outside S2 */
-        snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
+        snprintf( warnMsg, XLAL_NUM_ELEM(warnMsg),
             "Zero calibration factor found at GPS %10.9f",
             first_cal + (REAL8) i * params->sensingFactor->deltaT );
         LALWarning( status, warnMsg );
@@ -386,7 +386,7 @@ LALUpdateCalibration(
       (fabs( creal(a) ) < tiny && fabs( cimag(a) ) < tiny) ||
       (fabs( creal(ab) ) < tiny && fabs( cimag(ab) ) < tiny) )
   {
-    snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
+    snprintf( warnMsg, XLAL_NUM_ELEM(warnMsg),
         "Got %d calibration samples\nalpha and/or beta are zero:\n"
         "Re a = %e\tIm a = %e\nRe ab = %e\tIm ab = %e",
         length, creal(a), cimag(a), creal(ab), cimag(ab) );
@@ -401,7 +401,7 @@ LALUpdateCalibration(
   /* return the used values of alpha and alphabeta */
   params->alpha = a;
   params->alphabeta = ab;
-  snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
+  snprintf( warnMsg, XLAL_NUM_ELEM(warnMsg),
       "Got %d calibration samples\n"
       "Re a = %e\tIm a = %e\nRe ab = %e\tIm ab = %e",
       length, creal(a), cimag(a), creal(ab), cimag(ab) );

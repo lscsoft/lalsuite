@@ -151,7 +151,7 @@ XLALParseStringValueAsINT4PlusFrac ( INT4 *valINT4,		///< [out] return INT4 inte
 
   char buf[256];
   strncpy ( buf, valString, sizeof(buf)-1 );
-  buf[ sizeof(buf)-1 ] = 0;
+  XLAL_LAST_ELEM(buf) = 0;
 
   REAL8 sign = 1;
   if ( valString[0] == '-' ) {	 // that's why no initial whitespace is allowed in input string
@@ -260,7 +260,7 @@ XLALParseStringValueAsEPOCH ( LIGOTimeGPS *gps,   	///< [out] return LIGOTimeGPS
 
   char buf[256];
   strncpy ( buf, valString, sizeof(buf)-1 );
-  buf[ sizeof(buf)-1 ] = 0;
+  XLAL_LAST_ELEM(buf) = 0;
 
   // ---------- first check if there's a postfix indicating the time 'units' (GPS or MJD):
   BOOLEAN is_gps;

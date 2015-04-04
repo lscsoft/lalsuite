@@ -260,7 +260,7 @@ LALFindChirpInjectIMR (
           );
     }
 
-    snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
+    snprintf( warnMsg, XLAL_NUM_ELEM(warnMsg),
         "Injected waveform timing:\n"
         "thisEvent->geocent_end_time.gpsSeconds = %d\n"
         "thisEvent->geocent_end_time.gpsNanoSeconds = %d\n"
@@ -306,7 +306,7 @@ LALFindChirpInjectIMR (
     FILE *fp;
     char fname[512];
     UINT4 jj, kplus, kcross;
-    snprintf( fname, sizeof(fname) / sizeof(*fname),
+    snprintf( fname, XLAL_NUM_ELEM(fname),
         "waveform-%d-%d-%s.txt",
         thisEvent->geocent_end_time.gpsSeconds,
         thisEvent->geocent_end_time.gpsNanoSeconds,
@@ -329,7 +329,7 @@ LALFindChirpInjectIMR (
     FILE *fp;
     char fname[512];
     UINT4 jj;
-    snprintf( fname, sizeof(fname) / sizeof(*fname),
+    snprintf( fname, XLAL_NUM_ELEM(fname),
         "waveform-%d-%d-%s.txt",
         thisEvent->geocent_end_time.gpsSeconds,
         thisEvent->geocent_end_time.gpsNanoSeconds,

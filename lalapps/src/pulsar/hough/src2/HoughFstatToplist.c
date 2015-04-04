@@ -190,7 +190,7 @@ int read_houghFstat_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 
 	return -2;
 
     /* make sure the line buffer is terminated correctly */
-    line[sizeof(line)-1]='\0';
+    XLAL_LAST_ELEM(line)='\0';
 
     /* init the checksum if given */
     if(checksum)
@@ -367,7 +367,7 @@ int write_houghFstat_toplist_item_to_fp(HoughFstatOutputEntry fline, FILE*fp, UI
 	for(i=0;i<length;i++)
 	    *checksum += linebuf[i];
 
-    linebuf[sizeof(linebuf)-1] = '\0';
+    XLAL_LAST_ELEM(linebuf) = '\0';
 
     return(fprintf(fp,"%s",linebuf));
 }

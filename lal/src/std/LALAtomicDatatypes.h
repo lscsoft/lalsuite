@@ -65,6 +65,10 @@ typedef uint64_t UINT8;		/**< Eight-byte unsigned integer; on some platforms thi
 /** C99 MACRO to declare and zero-initialize a variable, use as "type XLAL_INIT_DECL(var);" */
 #define XLAL_INIT_DECL(var) var; XLAL_INIT_MEM(var)
 
+/** MACRO which gives the number of elements in a fixed-size array */
+#define XLAL_NUM_ELEM(x) ( sizeof((x)) / sizeof((x)[0]) )
+/** MACRO to access the last element in a fixed-size array */
+#define XLAL_LAST_ELEM(x) (x)[ XLAL_NUM_ELEM(x) - 1 ]
 
 /* Macros for integer constants */
 /**

@@ -153,7 +153,7 @@ REAL4 XLALUniformDeviate( RandomParams *params )
     XLAL_ERROR_REAL4( XLAL_EFAULT );
 
   /* randomly choose which element of the vector of random numbers to use */
-  ndiv = 1 + (m - 1)/(sizeof(params->v)/sizeof(*params->v));
+  ndiv = 1 + (m - 1)/(XLAL_NUM_ELEM(params->v));
   n = params->y/ndiv;
   params->y = params->v[n];
 

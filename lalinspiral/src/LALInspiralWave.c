@@ -659,7 +659,7 @@ LALInspiralWaveForInjection(
          XLALDestroyREAL8TimeSeries(hplus);
          XLALDestroyREAL8TimeSeries(hcross);
          LALFree(waveform->h);
-         snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
+         snprintf( warnMsg, XLAL_NUM_ELEM(warnMsg),
              "Memory allocation error when allocating CoherentGW REAL4VectorSequence.\n");
          LALInfo( status, warnMsg );
          ABORT( status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM );

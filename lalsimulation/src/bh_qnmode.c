@@ -48,7 +48,7 @@ int output_mode_table(void)
 {
 	double avec[] = {0.0,0.1,0.2,0.3,0.4,0.45,0.49,0.4999};
 	int asign;
-	size_t numa = sizeof(avec) / sizeof(*avec);
+	size_t numa = XLAL_NUM_ELEM(avec);
 	size_t i;
 	
 	fprintf(stdout, "# quasinormal mode table for l=%d m=%d s=%d ", l, m, s);

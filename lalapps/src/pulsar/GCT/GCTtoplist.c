@@ -371,7 +371,7 @@ static int write_gctFstat_toplist_item_to_fp(GCTtopOutputEntry fline, FILE*fp, U
     for(i=0;i<length;i++)
       *checksum += linebuf[i];
 
-  linebuf[sizeof(linebuf)-1] = '\0';
+  XLAL_LAST_ELEM(linebuf) = '\0';
 
   return(fprintf(fp,"%s",linebuf));
 }

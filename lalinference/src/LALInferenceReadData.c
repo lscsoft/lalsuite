@@ -200,7 +200,7 @@ static LALCache *GlobFramesPWD(char *ifo)
     LALCache *frInCache=NULL;
     /* sieve out the requested data type */
         snprintf( ifoRegExPattern,
-                sizeof(ifoRegExPattern) / sizeof(*ifoRegExPattern), ".*%c.*",
+                XLAL_NUM_ELEM(ifoRegExPattern), ".*%c.*",
                 ifo[0] );
     {
         fprintf(stderr,"GlobFramesPWD : Found unseived src files:\n");
@@ -1951,7 +1951,7 @@ LALInferenceLALFindChirpInjectSignals (
           );
     }
 
-    snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
+    snprintf( warnMsg, XLAL_NUM_ELEM(warnMsg),
         "Injected waveform timing:\n"
         "thisEvent->geocent_end_time.gpsSeconds = %d\n"
         "thisEvent->geocent_end_time.gpsNanoSeconds = %d\n"

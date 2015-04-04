@@ -83,7 +83,7 @@
 #define FREE_GSL(type, ...) \
   do { \
     gsl_##type *GH_ptrs[] = {__VA_ARGS__}; \
-    for (size_t GH_i = 0; GH_i < sizeof(GH_ptrs)/sizeof(GH_ptrs[0]); ++GH_i) { \
+    for (size_t GH_i = 0; GH_i < XLAL_NUM_ELEM(GH_ptrs); ++GH_i) { \
       gsl_##type##_free(GH_ptrs[GH_i]); \
     } \
   } while (0)

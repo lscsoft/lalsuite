@@ -717,7 +717,7 @@ int grasp_spherical_table(void)
 	/* note: multiply a by 0.5 for Leaver conventions */
 	XLALSimBlackHoleRingdownModeEigenvaluesLeaver(&A, &omega, 0.5*a, l, m, s);
 	norm = XLALSimBlackHoleRingdownSpheroidalWaveFunctionNormLeaver(0.5*a, l, m, s, A, omega);
-	for (i = 0; i < sizeof(muvec)/sizeof(*muvec); ++i) {
+	for (i = 0; i < XLAL_NUM_ELEM(muvec); ++i) {
 		double mu = muvec[i];
 		sphwf = norm * XLALSimBlackHoleRingdownSpheroidalWaveFunction1Leaver( mu, a, l, m, s, A, omega );
 		fprintf(fp, "%+e\t%e\t%e\n", mu, fac*creal(sphwf), exactfac*pow(1.0+mu,2));
@@ -767,7 +767,7 @@ int leaver_table_2(void)
 	fp = fopen(fname, "w");
 
 	/* positive values of a */
-	for ( i = 0; i < sizeof(avec)/sizeof(*avec); ++i ) {
+	for ( i = 0; i < XLAL_NUM_ELEM(avec); ++i ) {
 		double a = avec[i];
 		XLALSimBlackHoleRingdownModeEigenvaluesLeaver( &A, &omega, a, l, m, s);
 		fprintf(fp, "%+.4f \t(%.5f,%+.5f)\t(%+.6f,%.6f)\n", a, creal(A), cimag(A), creal(omega), cimag(omega));
@@ -776,7 +776,7 @@ int leaver_table_2(void)
 	fprintf(fp, "\n");
 
 	/* negative values of a */
-	for (i = 0; i < sizeof(avec)/sizeof(*avec); ++i) {
+	for (i = 0; i < XLAL_NUM_ELEM(avec); ++i) {
 		double a = -avec[i];
 		XLALSimBlackHoleRingdownModeEigenvaluesLeaver(&A, &omega, a, l, m, s);
 		fprintf(fp, "%+.4f \t(%.5f,%+.5f)\t(%+.6f,%.6f)\n", a, creal(A), cimag(A), creal(omega), cimag(omega));
@@ -800,7 +800,7 @@ int leaver_table_3(void)
 	fp = fopen(fname, "w");
 
 	/* positive values of a */
-	for (i = 0; i < sizeof(avec)/sizeof(*avec); ++i) {
+	for (i = 0; i < XLAL_NUM_ELEM(avec); ++i) {
 		double a = avec[i];
 		XLALSimBlackHoleRingdownModeEigenvaluesLeaver(&A, &omega, a, l, m, s);
 		fprintf(fp, "%+.4f \t(%.5f,%+.5f)\t(%+.6f,%.6f)\n", a, creal(A), cimag(A), creal(omega), cimag(omega));
@@ -809,7 +809,7 @@ int leaver_table_3(void)
 	fprintf(fp, "\n");
 
 	/* negative values of a */
-	for (i = 0; i < sizeof(avec)/sizeof(*avec); ++i) {
+	for (i = 0; i < XLAL_NUM_ELEM(avec); ++i) {
 		double a = -avec[i];
 		XLALSimBlackHoleRingdownModeEigenvaluesLeaver(&A, &omega, a, l, m, s);
 		fprintf(fp, "%+.4f \t(%.5f,%+.5f)\t(%+.6f,%.6f)\n", a, creal(A), cimag(A), creal(omega), cimag(omega));

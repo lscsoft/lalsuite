@@ -138,14 +138,14 @@ void LALFrNext(LALStatus * status, LALFrStream * stream)
         XLALClearErrno();
         if (stream->state & LAL_FR_STREAM_ERR) {
             if (stream->state & LAL_FR_STREAM_URL) {    /* must have failed to open a file */
-                snprintf(frErrMsg, sizeof(frErrMsg) / sizeof(*frErrMsg),
+                snprintf(frErrMsg, XLAL_NUM_ELEM(frErrMsg),
                     "Could not open URL %s\n",
                     stream->cache->list[stream->fnum].url);
                 LALError(status, frErrMsg);
                 ABORT(status, FRAMESTREAMH_EOPEN, FRAMESTREAMH_MSGEOPEN);
             }
             if (stream->state & LAL_FR_STREAM_TOC) {    /* must have failed to read a file */
-                snprintf(frErrMsg, sizeof(frErrMsg) / sizeof(*frErrMsg),
+                snprintf(frErrMsg, XLAL_NUM_ELEM(frErrMsg),
                     "Could not read TOC from %s\n",
                     stream->cache->list[stream->fnum].url);
                 LALError(status, frErrMsg);
@@ -179,14 +179,14 @@ void LALFrSeek(LALStatus * status, const LIGOTimeGPS * epoch,
         XLALClearErrno();
         if (stream->state & LAL_FR_STREAM_ERR) {        /* a file error */
             if (stream->state & LAL_FR_STREAM_URL) {    /* must have failed to open a file */
-                snprintf(frErrMsg, sizeof(frErrMsg) / sizeof(*frErrMsg),
+                snprintf(frErrMsg, XLAL_NUM_ELEM(frErrMsg),
                     "Could not open URL %s\n",
                     stream->cache->list[stream->fnum].url);
                 LALError(status, frErrMsg);
                 ABORT(status, FRAMESTREAMH_EOPEN, FRAMESTREAMH_MSGEOPEN);
             }
             if (stream->state & LAL_FR_STREAM_TOC) {    /* must have failed to read a file */
-                snprintf(frErrMsg, sizeof(frErrMsg) / sizeof(*frErrMsg),
+                snprintf(frErrMsg, XLAL_NUM_ELEM(frErrMsg),
                     "Could not read TOC from %s\n",
                     stream->cache->list[stream->fnum].url);
                 LALError(status, frErrMsg);

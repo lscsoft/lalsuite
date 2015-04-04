@@ -493,14 +493,14 @@ XLALUserVarHelpString ( const CHAR *progname )
 
   CHAR fmtStr[256];		// for building a dynamic format-string
   snprintf ( fmtStr, sizeof(fmtStr), "  %%s --%%-%ds   %%-%ds  %%s [%%s]\n", nameFieldLen, typeFieldLen );
-  fmtStr[sizeof(fmtStr)-1]=0;
+  XLAL_LAST_ELEM(fmtStr)=0;
 
   CHAR defaultstr[256]; 	// for display of default-value
   CHAR strbuf[512];
 
   // ---------- provide header line: info about config-file reading
   snprintf (strbuf, sizeof(strbuf), "Usage: %s [@ConfigFile] [options], where options are:\n\n", progname);
-  strbuf[sizeof(strbuf)-1] = 0;
+  XLAL_LAST_ELEM(strbuf) = 0;
   XLAL_CHECK_NULL ( (helpstr_regular = XLALStringDuplicate ( strbuf )) != NULL, XLAL_EFUNC );
 
   // ---------- MAIN LOOP: step through all user variables and add entry to appropriate help string
@@ -518,7 +518,7 @@ XLALUserVarHelpString ( const CHAR *progname )
 	  CHAR *valstr;
 	  XLAL_CHECK_NULL ( (valstr = UserVarTypeMap [ ptr->type ].printer( ptr->varp )) != NULL, XLAL_EFUNC );
 	  strncpy ( defaultstr, valstr, sizeof(defaultstr) );	// cut short for default-entry
-	  defaultstr[sizeof(defaultstr)-1] = 0;
+	  XLAL_LAST_ELEM(defaultstr) = 0;
 	  XLALFree (valstr);
 	}
 
@@ -536,7 +536,7 @@ XLALUserVarHelpString ( const CHAR *progname )
                  ptr->help ? ptr->help : "-NONE-",
                  defaultstr
                  );
-      strbuf[sizeof(strbuf)-1] = 0;
+      XLAL_LAST_ELEM(strbuf) = 0;
 
       // now append new line to the appropriate helpstring
       if ( ptr->category == UVAR_CATEGORY_DEVELOPER ) {
@@ -746,7 +746,7 @@ XLALUserVarGetLog ( UserVarLogFormat format 	/**< output format: return as confi
           XLAL_ERROR_NULL ( XLAL_EINVAL, "Unknown format for recording user-input: '%i'\n", format );
 	  break;
 	} // switch (format)
-      append[sizeof(append)-1] = 0;
+      XLAL_LAST_ELEM(append) = 0;
 
       XLAL_CHECK_NULL ( (record = XLALStringAppend (record, append)) != NULL, XLAL_EFUNC );
 

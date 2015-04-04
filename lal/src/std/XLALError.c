@@ -183,7 +183,7 @@ int XLALPrintProgressBar(double fraction)
         "+++++++++++++++++++++++++++++++++++++++++++++++++)";
     static const char spc[] =
         "-------------------------------------------------)";
-    int l = sizeof(mrk) / sizeof(*mrk) - 1;
+    int l = XLAL_NUM_ELEM(mrk) - 1;
     int offset =
         floor((fraction < 0.0 ? 0.0 : fraction >
                1.0 ? 1.0 : fraction) * l + 0.5);

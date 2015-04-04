@@ -286,7 +286,7 @@ LALFindChirpSPTemplate (
 
   if ( lalDebugLevel & LALINFO )
   {
-    snprintf( infomsg, sizeof(infomsg) / sizeof(*infomsg),
+    snprintf( infomsg, XLAL_NUM_ELEM(infomsg),
         "tmpltNorm = %e\n", fcTmplt->tmpltNorm );
     LALInfo( status, infomsg );
   }

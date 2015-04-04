@@ -375,7 +375,7 @@ LALRingInjectSignals(
         FILE *fp;
         char fname[512];
         UINT4 jj, kplus, kcross;
-        snprintf( fname, sizeof(fname) / sizeof(*fname),
+        snprintf( fname, XLAL_NUM_ELEM(fname),
             "waveform-%d-%d-%s.txt",
             simRingdown->geocent_start_time.gpsSeconds,
             simRingdown->geocent_start_time.gpsNanoSeconds,
@@ -424,7 +424,7 @@ LALRingInjectSignals(
         FILE *fp;
         char fname[512];
         UINT4 jj;
-        snprintf( fname, sizeof(fname) / sizeof(*fname),
+        snprintf( fname, XLAL_NUM_ELEM(fname),
             "signal-%d-%d-%s.txt",
             simRingdown->geocent_start_time.gpsSeconds,
             simRingdown->geocent_start_time.gpsNanoSeconds,

@@ -403,12 +403,12 @@ int OutputEvents(const struct CommandLineArgsTag *CLA, ProcessTable *proctable, 
   char ifo[3];
 
   strncpy( ifo, CLA->ChannelName, 2 );
-  ifo[sizeof(ifo) - 1] = '\0';
+  XLAL_LAST_ELEM(ifo) = '\0';
 
   if (!CLA->outputFileName){
     CHAR outfilename[256];
     snprintf(outfilename, sizeof(outfilename)-1, "%s-STRINGSEARCH-%d-%d.xml", ifo, CLA->GPSStart.gpsSeconds, CLA->GPSEnd.gpsSeconds - CLA->GPSEnd.gpsSeconds);
-    outfilename[sizeof(outfilename)-1] = '\0';
+    XLAL_LAST_ELEM(outfilename) = '\0';
     xml = XLALOpenLIGOLwXMLFile(outfilename);
   } else
     xml = XLALOpenLIGOLwXMLFile(CLA->outputFileName);
@@ -640,7 +640,7 @@ int CreateStringFilters(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, unsi
     if (CLA.printfilterflag){
       CHAR filterfilename[256];
       snprintf(filterfilename, sizeof(filterfilename)-1, "Filter-%d.txt", m);
-      filterfilename[sizeof(filterfilename)-1] = '\0';
+      XLAL_LAST_ELEM(filterfilename) = '\0';
       LALDPrintFrequencySeries( strtemplate[m].StringFilter, filterfilename );
     }
 
@@ -656,7 +656,7 @@ int CreateStringFilters(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, unsi
       XLALREAL8FreqTimeFFT( vector, vtilde, rplan );
 
       snprintf(filterfilename, sizeof(filterfilename)-1, "FIRFilter-%d.txt", m);
-      filterfilename[sizeof(filterfilename)-1] = '\0';
+      XLAL_LAST_ELEM(filterfilename) = '\0';
       LALDPrintTimeSeries( vector, filterfilename );
     }
   }

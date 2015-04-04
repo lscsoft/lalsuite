@@ -228,7 +228,7 @@ int XLALFileIsCompressed( const char *path )
   size_t c;
   if ( ! ( fp = LALFopen( path, "rb" ) ) )
     XLAL_ERROR( XLAL_EIO );
-  c = fread( magic, sizeof(*magic), sizeof(magic)/sizeof(*magic), fp );
+  c = fread( magic, sizeof(*magic), XLAL_NUM_ELEM(magic), fp );
   if (c == 0)
     XLAL_ERROR( XLAL_EIO );
   fclose( fp );

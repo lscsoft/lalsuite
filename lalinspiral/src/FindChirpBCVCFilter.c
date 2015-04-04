@@ -274,7 +274,7 @@ LALFindChirpBCVCFilterSegment (
       CHAR newinfomsg[256];
 
 
-      snprintf( newinfomsg, sizeof(newinfomsg) / sizeof(*newinfomsg),
+      snprintf( newinfomsg, XLAL_NUM_ELEM(newinfomsg),
           "chirp time = %e seconds => %d points\n"
           "invSpecTrunc = %d => ignoreIndex = %d\n",
           chirpTime, deltaEventIndex,
@@ -296,7 +296,7 @@ LALFindChirpBCVCFilterSegment (
   {
     CHAR newinfomsg[256];
 
-    snprintf( newinfomsg, sizeof(newinfomsg) / sizeof(*newinfomsg),
+    snprintf( newinfomsg, XLAL_NUM_ELEM(newinfomsg),
         "filtering from %d to %d\n",
         ignoreIndex, numPoints - ignoreIndex );
     LALInfo( status, newinfomsg );
@@ -323,7 +323,7 @@ LALFindChirpBCVCFilterSegment (
     if ( lalDebugLevel & LALINFO )
     {
        CHAR newinfomsg[256];
-       snprintf( newinfomsg, sizeof(newinfomsg) / sizeof(*newinfomsg),
+       snprintf( newinfomsg, XLAL_NUM_ELEM(newinfomsg),
               "a1 = %e b1 = %e b2 = %e\n"
               "fFinal = %e deltaF = %e numPoints = %d => kFinal = %d\n",
                a1, b1, b2, fFinal, deltaF, numPoints, kFinal );
@@ -613,7 +613,7 @@ LALFindChirpBCVCFilterSegment (
   if ( lalDebugLevel & LALINFO )
     {
       CHAR newinfomsg[256];
-      snprintf( newinfomsg, sizeof(newinfomsg) / sizeof(*newinfomsg),
+      snprintf( newinfomsg, XLAL_NUM_ELEM(newinfomsg),
 		   "thetab = %e and alphaUnity = %e\n",
 		   thetab, alphaUnity);
       LALInfo( status, newinfomsg );
@@ -659,7 +659,7 @@ LALFindChirpBCVCFilterSegment (
       else
       {
 	CHAR newinfomsg[256];
-	snprintf( newinfomsg, sizeof(newinfomsg) / sizeof(*newinfomsg),
+	snprintf( newinfomsg, XLAL_NUM_ELEM(newinfomsg),
 		     "thetab = %e and thetav = %e\n"
 		     "thetav not in the range allowed...V1= %e and V2 = %e\n",
 		     thetab, thetav, V1, V2 );
@@ -682,7 +682,7 @@ LALFindChirpBCVCFilterSegment (
       else
 	{
 	  CHAR newinfomsg[256];
-	  snprintf( newinfomsg, sizeof(newinfomsg) / sizeof(*newinfomsg),
+	  snprintf( newinfomsg, XLAL_NUM_ELEM(newinfomsg),
 		       "thetab = %e and thetav = %e\n"
 		       "thetav not in the range allowed...V1= %e and V2 = %e\n",
 		       thetab, thetav, V1, V2 );

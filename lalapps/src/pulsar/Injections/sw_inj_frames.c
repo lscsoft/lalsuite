@@ -325,14 +325,14 @@ int main(int argc, char **argv)
 	/** extract epoch and duration from gwf file name **/
 
 	strncpy(strepoch, strchr(gwfnamelist[k]->d_name, '9'), 9 ); /*All epochs in S6 begin with 9... potential problem in future */
-	strepoch[sizeof(strepoch)-1] = '\0'; /*Null terminate the string*/
+	XLAL_LAST_ELEM(strepoch) = '\0'; /*Null terminate the string*/
 	epoch.gpsSeconds = atoi(strepoch);  /* convert to integer from string */
 	epoch.gpsNanoSeconds = 0; /* no nanosecond precision */
 	/*	fprintf(stderr, "epoch = %i\n", epoch.gpsSeconds);*/
 
 	char strdur[4];
 	strncpy(strdur, (strrchr(gwfnamelist[k]->d_name, '-')+1), 3); /* duration is last number in frame file */
-	strdur[sizeof(strdur)-1] = '\0';
+	XLAL_LAST_ELEM(strdur) = '\0';
 	/* assigns duration from .gwf frame */
 	ndata = atoi(strdur);
 

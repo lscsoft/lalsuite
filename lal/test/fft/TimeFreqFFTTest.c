@@ -177,7 +177,7 @@ int main( int argc, char *argv[] )
 
   avgSpecParams.method = useMean;
 
-  for ( np = 0; np < sizeof(npts)/sizeof(*npts) ; ++np )
+  for ( np = 0; np < XLAL_NUM_ELEM(npts) ; ++np )
   {
     /* length of time series for 7 segments, overlapped by 1/2 segment */
     UINT4 tsLength = npts[np] * 7 - 6 * npts[np] / 2;
@@ -193,11 +193,11 @@ int main( int argc, char *argv[] )
     LALCreateForwardRealFFTPlan( &status, &avgSpecParams.plan, npts[np], 0 );
     TestStatus( &status, CODES( 0 ), 1 );
 
-    for ( sr = 0; sr < sizeof(srate)/sizeof(*srate) ; ++sr )
+    for ( sr = 0; sr < XLAL_NUM_ELEM(srate) ; ++sr )
     {
       /* set the sample rate of the time series */
       y.deltaT = 1.0 / (REAL8) srate[sr];
-      for ( vr = 0; vr < sizeof(var)/sizeof(*var) ; ++vr )
+      for ( vr = 0; vr < XLAL_NUM_ELEM(var) ; ++vr )
       {
         REAL4 eps = 1e-6; /* very conservative fp precision */
         REAL4 Sfk = 2.0 * var[vr] * var[vr] * y.deltaT;

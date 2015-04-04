@@ -358,7 +358,7 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSByName(const char *name)
         "SLY4",
         "AP4"
     };
-    size_t n = sizeof(eos_names) / sizeof(*eos_names);
+    size_t n = XLAL_NUM_ELEM(eos_names);
     size_t i;
     char fname[FILENAME_MAX];
 

@@ -501,7 +501,7 @@ void xml_put_f0(double f0, FILE *fp)
 void xml_put_det(const char *name, FILE *fp)
 {
     const char *dets[] = {"G1", "H1", "H2", "K1", "L1", "T1", "V1"};
-    size_t ndet = sizeof(dets)/sizeof(*dets);
+    size_t ndet = XLAL_NUM_ELEM(dets);
     size_t d;
     fputs("\t\t<Param Type=\"lstring\" Name=\"instrument:param\">", fp);
     for (d = 0; d < ndet; ++d)
