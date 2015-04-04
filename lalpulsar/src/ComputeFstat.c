@@ -20,45 +20,15 @@
 // MA  02111-1307  USA
 //
 
-#include <config.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
 
-#include <lal/ComputeFstat.h>
-#include <lal/Factorial.h>
-#include <lal/TimeSeries.h>
-#include <lal/LALComputeAM.h>
-#include <lal/LFTandTSutils.h>
-#include <lal/SinCosLUT.h>
+#include "ComputeFstat_internal.h"
+
 #include <lal/NormalizeSFTRngMed.h>
 
-// ---------- Macro definitions ---------- //
-
-#define SQ(x) ( (x) * (x) )
-
 // ---------- Internal struct definitions ---------- //
-
-// Common input data for F-statistic methods
-typedef struct {
-  REAL8 dFreq;						// Requested spacing of \f$\mathcal{F}\f$-statistic frequency bins.
-  MultiLALDetector detectors;				// List of detectors
-  MultiLIGOTimeGPSVector *multiTimestamps;		// Multi-detector list of SFT timestamps
-  MultiNoiseWeights *multiNoiseWeights;			// Multi-detector noise weights
-  MultiDetectorStateSeries *multiDetectorStates;	// Multi-detector state series
-  const EphemerisData *ephemerides;			// Ephemerides for the time-span of the SFTs
-  SSBprecision SSBprec;					// Barycentric transformation precision
-  void *workspace;					// F-statistic method workspace
-} FstatCommon;
-
-// Pointers to function pointers which perform method-specific operations
-typedef struct {
-  int (*compute_func) (					// F-statistic method computation function
-    FstatResults *, const FstatCommon *, void *
-    );
-  void (*method_data_dtor) ( void * );			// F-statistic method data destructor
-  void (*workspace_dtor) ( void * );			// Workspace destructor function
-} FstatMethodFuncs;
 
 // Internal definition of input data structure
 struct tagFstatInput {
@@ -71,7 +41,8 @@ struct tagFstatInput {
 
 // ---------- Internal prototypes ---------- //
 
-static REAL4 XLALComputeFstatFromFaFb ( COMPLEX8 Fa, COMPLEX8 Fb, REAL4 A, REAL4 B, REAL4 C, REAL4 E, REAL4 Dinv );
+int XLALSetupFstatDemod  ( void **method_data, FstatCommon *common, FstatMethodFuncs* funcs, MultiSFTVector *multiSFTs, const FstatOptionalArgs *optArgs );
+int XLALSetupFstatResamp ( void **method_data, FstatCommon *common, FstatMethodFuncs* funcs, MultiSFTVector *multiSFTs, const FstatOptionalArgs *optArgs );
 
 // ---------- Check for various computer architectures ---------- //
 
@@ -118,11 +89,6 @@ const FstatOptionalArgs FstatOptionalArgsDefaults = {
   .assumeSqrtSX = NULL,
   .prevInput = NULL
 };
-
-// ---------- Include F-statistic method implementations ---------- //
-
-#include "ComputeFstat_Demod.c"
-#include "ComputeFstat_Resamp.c"
 
 // ==================== Function definitions =================== //
 
@@ -836,27 +802,6 @@ XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,   ///< 
 
 } // XLALComputeFstatFromAtoms()
 
-
-///
-/// Simple helper function which computes \f$2\mathcal{F}\f$ from given \f$F_a\f$ and \f$F_b\f$, and antenna-pattern
-/// coefficients \f$(A,B,C,E)\f$ with inverse determinant \f$\text{Dinv} = 1/D\f$ where \f$D = A * B - C^2 - E^2\f$.
-///
-static REAL4
-XLALComputeFstatFromFaFb ( COMPLEX8 Fa, COMPLEX8 Fb, REAL4 A, REAL4 B, REAL4 C, REAL4 E, REAL4 Dinv )
-{
-  REAL4 Fa_re = creal(Fa);
-  REAL4 Fa_im = cimag(Fa);
-  REAL4 Fb_re = creal(Fb);
-  REAL4 Fb_im = cimag(Fb);
-
-  REAL4 F = Dinv * (  B * ( SQ(Fa_re) + SQ(Fa_im) )
-                      + A * ( SQ(Fb_re) + SQ(Fb_im) )
-                      - 2.0 * C * (   Fa_re * Fb_re + Fa_im * Fb_im )
-                      - 2.0 * E * ( - Fa_re * Fb_im + Fa_im * Fb_re )           // nonzero only in RAA case where Ed!=0
-                      );
-  return 2*F;
-
-} // XLALComputeFstatFromFaFb()
 
 ///
 /// Return true if given #FstatMethodType corresponds to a valid and *available* Fstat method, false otherwise

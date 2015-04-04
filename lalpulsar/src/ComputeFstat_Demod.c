@@ -21,12 +21,14 @@
 // MA  02111-1307  USA
 //
 
-// This file implements the F-statistic demodulation algorithm. It is not compiled directly, but
-// included from ComputeFstat.c
+#include <stdlib.h>
+#include <stdio.h>
+#include <math.h>
 
-#include <lal/LogPrintf.h>
+#include "ComputeFstat_internal.h"
+
+#include <lal/Factorial.h>
 #include <lal/SinCosLUT.h>
-#include "config.h"
 
 // ========== Demod internals ==========
 
@@ -86,6 +88,9 @@ typedef struct {
 #endif
 // ======================================================================
 
+// ----- local prototypes ----------
+
+int XLALSetupFstatDemod  ( void **method_data, FstatCommon *common, FstatMethodFuncs* funcs, MultiSFTVector *multiSFTs, const FstatOptionalArgs *optArgs );
 
 // ----- local function definitions ----------
 static int
@@ -293,7 +298,7 @@ XLALDestroyDemodMethodData ( void* method_data )
 
 } // XLALDestroyDemodMethodData()
 
-static int
+int
 XLALSetupFstatDemod ( void **method_data,
                       FstatCommon *common,
                       FstatMethodFuncs* funcs,

@@ -70,6 +70,8 @@ liblalpulsar_la_SOURCES = \
 	CoherentMetric.c \
 	ComplexAM.c \
 	ComputeFstat.c \
+	ComputeFstat_Demod.c \
+	ComputeFstat_Resamp.c \
 	ComputeSky.c \
 	ConstructPLUT.c \
 	DTEphemeris.c \
@@ -143,13 +145,12 @@ liblalpulsar_la_SOURCES += LALXMLVOTableSerializersPulsar.c
 endif
 
 EXTRA_liblalpulsar_la_SOURCES = \
-	ComputeFstat_Demod.c \
 	ComputeFstat_DemodHL_Altivec.i \
 	ComputeFstat_DemodHL_Generic.i \
 	ComputeFstat_DemodHL_OptC.i \
 	ComputeFstat_DemodHL_SSE.i \
 	ComputeFstat_Demod_ComputeFaFb.c \
-	ComputeFstat_Resamp.c \
+	ComputeFstat_internal.h \
 	GSLHelpers.h \
 	SFTfileIO-LAL.c \
 	SFTutils-LAL.c \

@@ -19,14 +19,21 @@
 // MA  02111-1307  USA
 //
 
-// This file implements the F-statistic resampling algorithm. It is not compiled directly, but
-// included from ComputeFstat.c
-
+#include <stdlib.h>
+#include <stdio.h>
+#include <math.h>
 #include <complex.h>
 #include <fftw3.h>
+
+#include "ComputeFstat_internal.h"
+
 #include <lal/FFTWMutex.h>
-#include <lal/Units.h>
 #include <lal/Factorial.h>
+#include <lal/LFTandTSutils.h>
+#include <lal/LogPrintf.h>
+#include <lal/SinCosLUT.h>
+#include <lal/TimeSeries.h>
+#include <lal/Units.h>
 
 // ========== Resamp internals ==========
 
@@ -117,6 +124,9 @@ typedef struct
 
 
 // ----- local prototypes ----------
+
+int XLALSetupFstatResamp ( void **method_data, FstatCommon *common, FstatMethodFuncs* funcs, MultiSFTVector *multiSFTs, const FstatOptionalArgs *optArgs );
+
 static int
 XLALComputeFstatResamp ( FstatResults* Fstats,
                          const FstatCommon *common,
@@ -246,7 +256,7 @@ XLALDestroyResampMethodData ( void* method_data )
 
 } // XLALDestroyResampMethodData()
 
-static int
+int
 XLALSetupFstatResamp ( void **method_data,
                        FstatCommon *common,
                        FstatMethodFuncs* funcs,
