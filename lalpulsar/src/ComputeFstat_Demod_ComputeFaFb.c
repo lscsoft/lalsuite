@@ -39,7 +39,6 @@ FUNC ( COMPLEX8 *Fa,                        /* [out] Fa,Fb (and possibly atoms) 
        const UINT4 Dterms                    /* [in] Dterms to keep in Dirichlet kernel */
        )
 {
-  RUNTIME_CHECK
 
   /* ----- check validity of input */
   if ( !Fa || !Fb ) {
@@ -261,4 +260,3 @@ FUNC ( COMPLEX8 *Fa,                        /* [out] Fa,Fb (and possibly atoms) 
 
 #undef FUNC
 #undef HOTLOOP_SOURCE
-#undef RUNTIME_CHECK

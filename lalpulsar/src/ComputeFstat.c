@@ -41,34 +41,32 @@
 
 // Common input data for F-statistic methods
 typedef struct {
-  MultiLALDetector detectors;                           // List of detectors
-  MultiLIGOTimeGPSVector *multiTimestamps;              // Multi-detector list of SFT timestamps
-  MultiNoiseWeights *multiNoiseWeights;                 // Multi-detector noise weights
-  MultiDetectorStateSeries *multiDetectorStates;        // Multi-detector state series
-  const EphemerisData *ephemerides;                     // Ephemerides for the time-span of the SFTs
-  SSBprecision SSBprec;                                 // Barycentric transformation precision
-  FstatMethodType FstatMethod;                          // Method to use for computing the F-statistic
-  REAL8 dFreq;                                          // Requested spacing of \f$\mathcal{F}\f$-statistic frequency bins.
-  void *workspace;                                      // F-statistic method workspace
-} FstatInput_Common;
+  REAL8 dFreq;						// Requested spacing of \f$\mathcal{F}\f$-statistic frequency bins.
+  MultiLALDetector detectors;				// List of detectors
+  MultiLIGOTimeGPSVector *multiTimestamps;		// Multi-detector list of SFT timestamps
+  MultiNoiseWeights *multiNoiseWeights;			// Multi-detector noise weights
+  MultiDetectorStateSeries *multiDetectorStates;	// Multi-detector state series
+  const EphemerisData *ephemerides;			// Ephemerides for the time-span of the SFTs
+  SSBprecision SSBprec;					// Barycentric transformation precision
+  void *workspace;					// F-statistic method workspace
+} FstatCommon;
 
 // Pointers to function pointers which perform method-specific operations
 typedef struct {
-  void (*workspace_dtor)(void *);                   // Workspace destructor function
-} FstatInput_MethodFuncs;
-
-// Input data specific to F-statistic methods
-typedef struct tagFstatInput_Demod FstatInput_Demod;
-typedef struct tagFstatInput_Resamp FstatInput_Resamp;
+  int (*compute_func) (					// F-statistic method computation function
+    FstatResults *, const FstatCommon *, void *
+    );
+  void (*method_data_dtor) ( void * );			// F-statistic method data destructor
+  void (*workspace_dtor) ( void * );			// Workspace destructor function
+} FstatMethodFuncs;
 
 // Internal definition of input data structure
 struct tagFstatInput {
-  FstatMethodType method;                           // Method to use for computing the F-statistic
-  FstatInput_Common common;                         // Common input data
-  BOOLEAN own_workspace;                            // True if we own 'common.workspace', and therefore must destroy it
-  FstatInput_MethodFuncs method_funcs;              // Function pointers for F-statistic method
-  FstatInput_Demod* demod;                          // Demodulation input data
-  FstatInput_Resamp* resamp;                        // Resampling input data
+  FstatMethodType method;				// Method to use for computing the F-statistic
+  FstatCommon common;					// Common input data
+  BOOLEAN own_workspace;				// True if we own 'common.workspace', and therefore must destroy it
+  FstatMethodFuncs method_funcs;			// Function pointers for F-statistic method
+  void *method_data;					// F-statistic method data
 };
 
 // ---------- Internal prototypes ---------- //
@@ -287,18 +285,63 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
   XLAL_CHECK_NULL ( ephemerides != NULL, XLAL_EINVAL );
   XLAL_CHECK_NULL ( dFreq > 0, XLAL_EINVAL);
 
-  // handle optional arguments, if given
+  // Handle optional arguments, if given
   const FstatOptionalArgs *optArgs;
   if ( optionalArgs != NULL ) {
     optArgs = optionalArgs;
   } else {
     optArgs = &FstatOptionalArgsDefaults;
   }
-  // check optional arguments sanity
+
+  // Check optional arguments sanity
   XLAL_CHECK_NULL ( (optArgs->injectSources == NULL) || ((optArgs->injectSources->length > 0) && (optArgs->injectSources->data != NULL)), XLAL_EINVAL );
   XLAL_CHECK_NULL ( (optArgs->injectSqrtSX == NULL) || (optArgs->injectSqrtSX->length > 0), XLAL_EINVAL );
   XLAL_CHECK_NULL ( (optArgs->assumeSqrtSX == NULL) || (optArgs->assumeSqrtSX->length > 0), XLAL_EINVAL );
   XLAL_CHECK_NULL ( optArgs->SSBprec < SSBPREC_LAST, XLAL_EINVAL );
+
+  //
+  // Parse which F-statistic method to use, and set these variables:
+  // - extraBinsMethod:   any extra SFT frequency bins required by the method
+  // - setupFuncMethod:   method setup function, called at end of XLALCreateFstatInput()
+  //
+  int extraBinsMethod = 0;
+  int (*setupFuncMethod) ( void **, FstatCommon *, FstatMethodFuncs*, MultiSFTVector *, const FstatOptionalArgs * );
+  switch (optArgs->FstatMethod) {
+
+  case FMETHOD_DEMOD_GENERIC:		// Demod: generic C hotloop
+    XLAL_CHECK_NULL ( optArgs->Dterms > 0, XLAL_EINVAL );
+    extraBinsMethod = optArgs->Dterms;
+    setupFuncMethod = XLALSetupFstatDemod;
+    break;
+
+  case FMETHOD_DEMOD_OPTC:		// Demod: gptimized C hotloop using Akos' algorithm
+    XLAL_CHECK_NULL ( optArgs->Dterms <= 20, XLAL_EINVAL, "Selected Hotloop variant 'OptC' only works for Dterms <= 20, got %d\n", optArgs->Dterms );
+    extraBinsMethod = optArgs->Dterms;
+    setupFuncMethod = XLALSetupFstatDemod;
+    break;
+
+  case FMETHOD_DEMOD_ALTIVEC:		// Demod: Altivec hotloop variant
+    XLAL_CHECK_NULL ( optArgs->Dterms == 8, XLAL_EINVAL, "Selected Hotloop variant 'Altivec' only works for Dterms == 8, got %d\n", optArgs->Dterms );
+    extraBinsMethod = optArgs->Dterms;
+    setupFuncMethod = XLALSetupFstatDemod;
+    break;
+
+  case FMETHOD_DEMOD_SSE:		// Demod: SSE hotloop with precalc divisors
+    XLAL_CHECK_NULL ( optArgs->Dterms == 8, XLAL_EINVAL, "Selected Hotloop variant 'SSE' only works for Dterms == 8, got %d\n", optArgs->Dterms );
+    extraBinsMethod = optArgs->Dterms;
+    setupFuncMethod = XLALSetupFstatDemod;
+    break;
+
+  case FMETHOD_RESAMP_GENERIC:		// Resamp: generic implementation
+    extraBinsMethod = 8;   // use 8 extra bins to give better agreement with Demod(w Dterms=8) near the boundaries
+    setupFuncMethod = XLALSetupFstatResamp;
+    break;
+
+  default:
+    XLAL_ERROR_NULL ( XLAL_EINVAL, "Received invalid Fstat method enum '%d'\n", optArgs->FstatMethod );
+  }
+  XLAL_CHECK_NULL ( extraBinsMethod >= 0, XLAL_EFAILED );
+  XLAL_CHECK_NULL ( setupFuncMethod != NULL, XLAL_EFAILED );
 
   // Determine whether to load and/or generate SFTs
   const BOOLEAN loadSFTs = (SFTcatalog->data[0].locator != NULL);
@@ -308,24 +351,8 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
   // Create top-level input data struct
   FstatInput* input;
   XLAL_CHECK_NULL ( (input = XLALCalloc ( 1, sizeof(*input) )) != NULL, XLAL_ENOMEM );
-  FstatInput_Common *common = &input->common;      // handy shortcut
   input->method = optArgs->FstatMethod;
-
-  // create method-specific input data
-  if ( XLALFstatMethodClassIsDemod ( optArgs->FstatMethod ) )
-    {
-      XLAL_CHECK_NULL ( (input->demod = XLALCalloc ( 1, sizeof(FstatInput_Demod) )) != NULL, XLAL_ENOMEM );
-      input->demod->Dterms = optArgs->Dterms;
-    }
-  else if ( XLALFstatMethodClassIsResamp ( optArgs->FstatMethod ) )
-    {
-      XLAL_CHECK_NULL ( (input->resamp = XLALCalloc(1, sizeof(FstatInput_Resamp))) != NULL, XLAL_ENOMEM );
-    }
-  else
-    {
-      XLAL_ERROR_NULL ( XLAL_EINVAL, "Received invalid Fstat method enum '%d'\n", optArgs->FstatMethod );
-    }
-  common->FstatMethod = optArgs->FstatMethod;
+  FstatCommon *common = &input->common;      // handy shortcut
   common->dFreq = dFreq;
 
   // Determine whether we can re-used workspace from a previous call to XLALCreateFstatInput()
@@ -348,23 +375,7 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
   REAL8 minFreqMethod, maxFreqMethod;
   REAL8 minFreqFull, maxFreqFull;
   {
-    // Determine whether the method being used requires extra SFT frequency bins
-    int extraBinsMethod = 0;
-    if ( input->demod != NULL )
-      {
-        extraBinsMethod = GetFstatExtraBins_Demod ( input->demod );
-      }
-    else if ( input->resamp != NULL )
-      {
-        extraBinsMethod = GetFstatExtraBins_Resamp ( input->resamp );
-      }
-    else
-      {
-        XLAL_ERROR_NULL ( XLAL_EFAILED, "Invalid FstatInput struct passed to %s()", __func__);
-      }
-    XLAL_CHECK_NULL ( extraBinsMethod >= 0, XLAL_EFAILED );
-
-    // Add number of extra frequency bins required by running median
+    // Number of extra frequency bins required by: F-stat method, and running median
     int extraBinsFull = extraBinsMethod + optArgs->runningMedianWindow/2 + 1; // NOTE: running-median window needed irrespective of assumeSqrtSX!
 
     // Extend frequency range by number of extra bins times SFT bin width
@@ -469,19 +480,8 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
   // Call the appropriate method function to setup their input data structures
   // - The method input data structures are expected to take ownership of the
   //   SFTs, which is why 'input->common' does not retain a pointer to them
-  FstatInput_MethodFuncs *funcs = &input->method_funcs;
-  if ( input->demod != NULL )
-    {
-      XLAL_CHECK_NULL ( SetupFstatInput_Demod ( input->demod, common, funcs, multiSFTs, optArgs ) == XLAL_SUCCESS, XLAL_EFUNC );
-    }
-  else if ( input->resamp != NULL )
-    {
-      XLAL_CHECK_NULL ( SetupFstatInput_Resamp ( input->resamp, common, funcs, multiSFTs, optArgs ) == XLAL_SUCCESS, XLAL_EFUNC );
-    }
-  else
-    {
-      XLAL_ERROR_NULL ( XLAL_EFAILED, "Invalid FstatInput struct passed to %s()", __func__ );
-    }
+  FstatMethodFuncs *funcs = &input->method_funcs;
+  XLAL_CHECK_NULL( (setupFuncMethod) ( &input->method_data, common, funcs, multiSFTs, optArgs ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Cleanup
   XLALDestroyMultiPSDVector ( runningMedian );
@@ -585,7 +585,7 @@ XLALComputeFstat ( FstatResults **Fstats,               ///< [in/out] Address of
   }
 
   // Get constant pointer to common input data
-  const FstatInput_Common *common = &input->common;
+  const FstatCommon *common = &input->common;
   const UINT4 numDetectors = common->detectors.length;
 
   // Enlarge result arrays if they are too small
@@ -672,18 +672,7 @@ XLALComputeFstat ( FstatResults **Fstats,               ///< [in/out] Address of
   (*Fstats)->whatWasComputed = whatToCompute;
 
   // Call the appropriate method function to compute the F-statistic
-  if ( input->demod != NULL )
-    {
-      XLAL_CHECK ( ComputeFstat_Demod(*Fstats, common, input->demod) == XLAL_SUCCESS, XLAL_EFUNC );
-    }
-  else if ( input->resamp != NULL )
-    {
-      XLAL_CHECK ( ComputeFstat_Resamp(*Fstats, common, input->resamp) == XLAL_SUCCESS, XLAL_EFUNC );
-    }
-  else
-    {
-      XLAL_ERROR(XLAL_EFAILED, "Invalid FstatInput struct passed to %s()", __func__);
-    }
+  XLAL_CHECK ( (input->method_funcs.compute_func) ( *Fstats, common, input->method_data ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
 
@@ -709,14 +698,10 @@ XLALDestroyFstatInput ( FstatInput* input       ///< [in] \c FstatInput structur
     (input->method_funcs.workspace_dtor) ( input->common.workspace );
   }
 
-  if (input->demod != NULL)
-    {
-      DestroyFstatInput_Demod ( input->demod );
-    }
-  else if ( input->resamp != NULL )
-    {
-      DestroyFstatInput_Resamp ( input->resamp );
-    }
+  if ( input->method_data != NULL ) {
+    // Free method-specific data using destructor function
+    (input->method_funcs.method_data_dtor) ( input->method_data );
+  }
 
   XLALFree ( input );
 

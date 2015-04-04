@@ -31,19 +31,15 @@
 // ========== Demod internals ==========
 
 // ----- local types ----------
-struct tagFstatInput_Demod {
+typedef struct {
+  FstatMethodType FstatMethod;                  // Method to use for computing the F-statistic
   UINT4 Dterms;                                 // Number of terms to keep in Dirichlet kernel
   MultiSFTVector *multiSFTs;                    // Input multi-detector SFTs
   REAL8 prevAlpha, prevDelta;                   // buffering: previous skyposition computed
   LIGOTimeGPS prevRefTime;			// buffering: keep track of previous refTime for SSBtimes buffering
   MultiSSBtimes *prevMultiSSBtimes;		// buffering: previous multiSSB times, unique to skypos + SFTs
   MultiAMCoeffs *prevMultiAMcoef;		// buffering: previous AM-coeffs, unique to skypos + SFTs
-};
-
-// ----- local prototypes ----------
-static void DestroyFstatInput_Demod ( FstatInput_Demod* demod );
-static int ComputeFstat_Demod ( FstatResults* Fstats, const FstatInput_Common *common, FstatInput_Demod* demod );
-
+} DemodMethodData;
 
 // ========== define various hotloop variants of ComputeFaFb() ==========
 // ComputeFaFb: DTERMS define used for loop unrolling in some hotloop variants
@@ -66,18 +62,15 @@ static int ComputeFstat_Demod ( FstatResults* Fstats, const FstatInput_Common *c
 // ----- old (pre-Akos) LALDemod hotloop variant (unrestricted Dterms) ----------
 #define FUNC XLALComputeFaFb_Generic
 #define HOTLOOP_SOURCE "ComputeFstat_DemodHL_Generic.i"
-#define RUNTIME_CHECK XLAL_CHECK ( Dterms > 0, XLAL_EINVAL );
 #include "ComputeFstat_Demod_ComputeFaFb.c"
 // ----- Akos generic hotloop code (Dterms <= 20) ----------
 #define FUNC XLALComputeFaFb_OptC
 #define HOTLOOP_SOURCE "ComputeFstat_DemodHL_OptC.i"
-#define RUNTIME_CHECK XLAL_CHECK ( Dterms <= 20, XLAL_EINVAL, "Selected Hotloop variant 'OptC' only works for Dterms <= 20, got %d\n", Dterms );
 #include "ComputeFstat_Demod_ComputeFaFb.c"
 // ----- Akos hotloop precalc SSE code (Dterms=8) ----------
 #if CFS_HAVE_SSE
 #define FUNC XLALComputeFaFb_SSE
 #define HOTLOOP_SOURCE "ComputeFstat_DemodHL_SSE.i"
-#define RUNTIME_CHECK XLAL_CHECK ( Dterms == 8, XLAL_EINVAL, "Selected Hotloop variant 'SSE' only works for Dterms == 8, got %d\n", Dterms );
 #include "ComputeFstat_Demod_ComputeFaFb.c"
 #else
 #define XLALComputeFaFb_SSE(...) (XLALPrintError("Selected Hotloop variant 'SSE' unavailable\n") || XLAL_EFAILED)
@@ -87,7 +80,6 @@ static int ComputeFstat_Demod ( FstatResults* Fstats, const FstatInput_Common *c
 #include <altivec.h>
 #define FUNC XLALComputeFaFb_Altivec
 #define HOTLOOP_SOURCE "ComputeFstat_DemodHL_Altivec.i"
-#define RUNTIME_CHECK XLAL_CHECK ( Dterms == 8, XLAL_EINVAL, "Selected Hotloop variant 'Altivec' only works for Dterms == 8, got %d\n", Dterms );
 #include "ComputeFstat_Demod_ComputeFaFb.c"
 #else
 #define XLALComputeFaFb_Altivec(...) (XLALPrintError("Selected Hotloop variant 'Altivec' unavailable\n") || XLAL_EFAILED)
@@ -97,15 +89,17 @@ static int ComputeFstat_Demod ( FstatResults* Fstats, const FstatInput_Common *c
 
 // ----- local function definitions ----------
 static int
-ComputeFstat_Demod ( FstatResults* Fstats,
-                     const FstatInput_Common *common,
-                     FstatInput_Demod* demod
-                     )
+XLALComputeFstatDemod ( FstatResults* Fstats,
+                        const FstatCommon *common,
+                        void *method_data
+                      )
 {
   // Check input
   XLAL_CHECK(Fstats != NULL, XLAL_EFAULT);
   XLAL_CHECK(common != NULL, XLAL_EFAULT);
-  XLAL_CHECK(demod != NULL, XLAL_EFAULT);
+  XLAL_CHECK(method_data != NULL, XLAL_EFAULT);
+
+  DemodMethodData *demod = (DemodMethodData*) method_data;
 
   // Get which F-statistic quantities to compute
   const FstatQuantities whatToCompute = Fstats->whatWasComputed;
@@ -200,7 +194,7 @@ ComputeFstat_Demod ( FstatResults* Fstats,
           FstatAtomVector **FstatAtoms_p = returnAtoms ? (&FstatAtoms) : NULL;
 
           // chose ComputeFaFb main function depending on selected hotloop variant
-          switch ( common->FstatMethod )
+          switch ( demod->FstatMethod )
             {
             case  FMETHOD_DEMOD_GENERIC:
               XLAL_CHECK ( XLALComputeFaFb_Generic ( &FaX, &FbX, FstatAtoms_p, multiSFTs->data[X], thisPoint.fkdot, multiSSBTotal->data[X], multiAMcoef->data[X], Dterms )==XLAL_SUCCESS,XLAL_EFUNC);
@@ -215,7 +209,7 @@ ComputeFstat_Demod ( FstatResults* Fstats,
               XLAL_CHECK ( XLALComputeFaFb_Altivec ( &FaX, &FbX, FstatAtoms_p, multiSFTs->data[X], thisPoint.fkdot, multiSSBTotal->data[X], multiAMcoef->data[X], Dterms)==XLAL_SUCCESS,XLAL_EFUNC);
               break;
             default:
-              XLAL_ERROR ( XLAL_EINVAL, "Invalid Fstat-method %d!\n", common->FstatMethod );
+              XLAL_ERROR ( XLAL_EINVAL, "Invalid Fstat-method %d!\n", demod->FstatMethod );
               break;
             } // switch ( FstatMethod )
 
@@ -283,52 +277,53 @@ ComputeFstat_Demod ( FstatResults* Fstats,
 
   return XLAL_SUCCESS;
 
-} // ComputeFstat_Demod()
+} // XLALComputeFstatDemod()
 
 
 static void
-DestroyFstatInput_Demod ( FstatInput_Demod* demod )
+XLALDestroyDemodMethodData ( void* method_data )
 {
-  if ( demod == NULL ) {
-    return;
-  }
+
+  DemodMethodData *demod = (DemodMethodData*) method_data;
+
   XLALDestroyMultiSFTVector ( demod->multiSFTs);
   XLALDestroyMultiSSBtimes  ( demod->prevMultiSSBtimes );
   XLALDestroyMultiAMCoeffs  ( demod->prevMultiAMcoef );
   XLALFree ( demod );
 
-} // DestroyFstatInput_Demod()
+} // XLALDestroyDemodMethodData()
 
 static int
-SetupFstatInput_Demod ( FstatInput_Demod *demod,
-                        FstatInput_Common *common,
-                        FstatInput_MethodFuncs* funcs,
-                        MultiSFTVector *multiSFTs,
-                        const FstatOptionalArgs *optArgs
-                       )
+XLALSetupFstatDemod ( void **method_data,
+                      FstatCommon *common,
+                      FstatMethodFuncs* funcs,
+                      MultiSFTVector *multiSFTs,
+                      const FstatOptionalArgs *optArgs
+                    )
 {
   // Check input
-  XLAL_CHECK ( demod != NULL, XLAL_EFAULT );
+  XLAL_CHECK ( method_data != NULL, XLAL_EFAULT );
   XLAL_CHECK ( common != NULL, XLAL_EFAULT );
   XLAL_CHECK ( funcs != NULL, XLAL_EFAULT );
   XLAL_CHECK ( multiSFTs != NULL, XLAL_EFAULT );
   XLAL_CHECK ( optArgs != NULL, XLAL_EFAULT );
 
+  // Allocate method data
+  DemodMethodData *demod = *method_data = XLALCalloc( 1, sizeof(*demod) );
+  XLAL_CHECK( demod != NULL, XLAL_ENOMEM );
+
+  // Set method function pointers
+  funcs->compute_func = XLALComputeFstatDemod;
+  funcs->method_data_dtor = XLALDestroyDemodMethodData;
+  funcs->workspace_dtor = NULL;
+
   // Save pointer to SFTs
   demod->multiSFTs = multiSFTs;
 
+  // Save fields
+  demod->FstatMethod = optArgs->FstatMethod;
+  demod->Dterms = optArgs->Dterms;
+
   return XLAL_SUCCESS;
 
-} // SetupFstatInput_Demod()
-
-
-static int
-GetFstatExtraBins_Demod ( FstatInput_Demod* demod )
-{
-  // Check input
-  XLAL_CHECK ( demod != NULL, XLAL_EFAULT );
-
-  // Demodulation requires 'Dterms' extra frequency bins
-  return demod->Dterms;
-
-} // GetFstatExtraBins_Demod()
+} // XLALSetupFstatDemod()
