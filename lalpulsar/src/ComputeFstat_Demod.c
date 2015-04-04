@@ -301,13 +301,15 @@ DestroyFstatInput_Demod ( FstatInput_Demod* demod )
 
 static int
 SetupFstatInput_Demod ( FstatInput_Demod *demod,
-                        const FstatInput_Common *common,
+                        FstatInput_Common *common,
+                        FstatInput_MethodFuncs* funcs,
                         MultiSFTVector *multiSFTs
                         )
 {
   // Check input
-  XLAL_CHECK ( common != NULL, XLAL_EFAULT );
   XLAL_CHECK ( demod != NULL, XLAL_EFAULT );
+  XLAL_CHECK ( common != NULL, XLAL_EFAULT );
+  XLAL_CHECK ( funcs != NULL, XLAL_EFAULT );
   XLAL_CHECK ( multiSFTs != NULL, XLAL_EFAULT );
 
   // Save pointer to SFTs

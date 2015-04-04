@@ -49,7 +49,13 @@ typedef struct {
   SSBprecision SSBprec;                                 // Barycentric transformation precision
   FstatMethodType FstatMethod;                          // Method to use for computing the F-statistic
   REAL8 dFreq;                                          // Requested spacing of \f$\mathcal{F}\f$-statistic frequency bins.
+  void *workspace;                                      // F-statistic method workspace
 } FstatInput_Common;
+
+// Pointers to function pointers which perform method-specific operations
+typedef struct {
+  void (*workspace_dtor)(void *);                   // Workspace destructor function
+} FstatInput_MethodFuncs;
 
 // Input data specific to F-statistic methods
 typedef struct tagFstatInput_Demod FstatInput_Demod;
@@ -59,6 +65,8 @@ typedef struct tagFstatInput_Resamp FstatInput_Resamp;
 struct tagFstatInput {
   FstatMethodType method;                           // Method to use for computing the F-statistic
   FstatInput_Common common;                         // Common input data
+  BOOLEAN own_workspace;                            // True if we own 'common.workspace', and therefore must destroy it
+  FstatInput_MethodFuncs method_funcs;              // Function pointers for F-statistic method
   FstatInput_Demod* demod;                          // Demodulation input data
   FstatInput_Resamp* resamp;                        // Resampling input data
 };
@@ -110,7 +118,7 @@ const FstatOptionalArgs FstatOptionalArgsDefaults = {
   .injectSources = NULL,
   .injectSqrtSX = NULL,
   .assumeSqrtSX = NULL,
-  .sharedWorkspace = NULL
+  .prevInput = NULL
 };
 
 // ---------- Include F-statistic method implementations ---------- //
@@ -320,6 +328,16 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
   common->FstatMethod = optArgs->FstatMethod;
   common->dFreq = dFreq;
 
+  // Determine whether we can re-used workspace from a previous call to XLALCreateFstatInput()
+  if ( optArgs->prevInput != NULL ) {
+    XLAL_CHECK_NULL( optArgs->prevInput->method == input->method, XLAL_EFAILED );
+    common->workspace = optArgs->prevInput->common.workspace;
+    input->own_workspace = 0;   // We do not own this workspace, the original owner will destroy it
+  } else {
+    common->workspace = NULL;
+    input->own_workspace = 1;   // We own this workspace, and therefore have the responsibility to destroy it
+  }
+
   // Determine the time baseline of an SFT
   const REAL8 Tsft = 1.0 / SFTcatalog->data[0].header.deltaF;
 
@@ -451,19 +469,19 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
   // Call the appropriate method function to setup their input data structures
   // - The method input data structures are expected to take ownership of the
   //   SFTs, which is why 'input->common' does not retain a pointer to them
+  FstatInput_MethodFuncs *funcs = &input->method_funcs;
   if ( input->demod != NULL )
     {
-      XLAL_CHECK_NULL ( SetupFstatInput_Demod ( input->demod, common, multiSFTs ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_NULL ( SetupFstatInput_Demod ( input->demod, common, funcs, multiSFTs ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
   else if ( input->resamp != NULL )
     {
-      XLAL_CHECK_NULL ( SetupFstatInput_Resamp ( input->resamp, common, multiSFTs, optArgs->sharedWorkspace ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_NULL ( SetupFstatInput_Resamp ( input->resamp, common, funcs, multiSFTs ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
   else
     {
       XLAL_ERROR_NULL ( XLAL_EFAILED, "Invalid FstatInput struct passed to %s()", __func__ );
     }
-  multiSFTs = NULL;
 
   // Cleanup
   XLALDestroyMultiPSDVector ( runningMedian );
@@ -685,6 +703,11 @@ XLALDestroyFstatInput ( FstatInput* input       ///< [in] \c FstatInput structur
   XLALDestroyMultiTimestamps ( input->common.multiTimestamps );
   XLALDestroyMultiNoiseWeights ( input->common.multiNoiseWeights );
   XLALDestroyMultiDetectorStateSeries ( input->common.multiDetectorStates );
+
+  if ( input->own_workspace && input->common.workspace != NULL ) {
+    // Free method-specific workspace using destructor function
+    (input->method_funcs.workspace_dtor) ( input->common.workspace );
+  }
 
   if (input->demod != NULL)
     {

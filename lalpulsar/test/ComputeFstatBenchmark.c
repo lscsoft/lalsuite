@@ -195,7 +195,6 @@ main ( int argc, char *argv[] )
   optionalArgs.injectSqrtSX = &injectSqrtSX;
   optionalArgs.FstatMethod = FstatMethod;
 
-  FstatWorkspace *sharedWorkspace = NULL;
   FstatInputVector *inputs;
   FstatQuantities whatToCompute = (FSTATQ_2F | FSTATQ_2F_PER_DET);
   FstatResults *results = NULL;
@@ -228,9 +227,8 @@ main ( int argc, char *argv[] )
         {
           XLAL_CHECK ( (inputs->data[l] = XLALCreateFstatInput ( catalogs[l], minCoverFreq, maxCoverFreq, dFreq, ephem, &optionalArgs )) != NULL, XLAL_EFUNC );
           if ( l == 0 ) {
-            sharedWorkspace = XLALGetSharedFstatWorkspace ( inputs->data[0] );
+            optionalArgs.prevInput = inputs->data[0];
           }
-          optionalArgs.sharedWorkspace = sharedWorkspace;
         }
 
       // ----- compute Fstatistics over segments
@@ -261,8 +259,6 @@ main ( int argc, char *argv[] )
                XLALGetFstatInputMethodName ( inputs->data[0] ), tauF1Buf_i, tauF1NoBuf_i, memSFTs, memMaxCompute  );
 
       XLALDestroyFstatInputVector ( inputs );
-      XLALDestroyFstatWorkspace ( sharedWorkspace );
-      optionalArgs.sharedWorkspace = NULL;
 
     } // for i < numTrials
 
