@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 115
+# serial 116
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -1186,7 +1186,7 @@ AC_DEFUN([LALSUITE_USE_DOXYGEN],[
   # end $0
 ])
 
-AC_DEFUN([LALSUITE_WITH_SIMD],[
+AC_DEFUN([LALSUITE_CHECK_SIMD],[
   # $0: check for SIMD extensions
 
   # list of recognised SIMD instruction sets
@@ -1215,7 +1215,7 @@ AC_DEFUN([LALSUITE_WITH_SIMD],[
 
       # check that compiler defines __]symbol[__ preprocessor symbol
       AC_MSG_CHECKING([whether ]_AC_LANG[ compiler defines __]symbol[__ with -m[]option])
-      CFLAGS="${lalsuite_uvar_CFLAGS} -m[]option"
+      CFLAGS="${uvar_orig_prefix[]CFLAGS} -m[]option"
       AC_COMPILE_IFELSE([
         AC_LANG_PROGRAM([],[[
 #if !defined(__]]symbol[[__)
@@ -1232,7 +1232,7 @@ AC_DEFUN([LALSUITE_WITH_SIMD],[
 
       # check that compiler compiles floating-point math with -m[]option
       AC_MSG_CHECKING([whether ]_AC_LANG[ compiler compiles floating-point math with -m[]option])
-      CFLAGS="${lalsuite_uvar_CFLAGS} -m[]option"
+      CFLAGS="${uvar_orig_prefix[]CFLAGS} -m[]option"
       AC_COMPILE_IFELSE([
         AC_LANG_PROGRAM([
 AC_INCLUDES_DEFAULT
