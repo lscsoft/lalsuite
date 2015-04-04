@@ -68,17 +68,9 @@ static REAL4 XLALComputeFstatFromFaFb ( COMPLEX8 Fa, COMPLEX8 Fb, REAL4 A, REAL4
 
 // ---------- Check for various computer architectures ---------- //
 
-#if defined(HAVE_SSE) || defined(__SSE__)
-#define CFS_HAVE_SSE 1
-#else
 #define CFS_HAVE_SSE 0
-#endif
 
-#if defined(HAVE_ALTIVEC) || defined(__ALTIVEC__)
-#define CFS_HAVE_ALTIVEC 1
-#else
 #define CFS_HAVE_ALTIVEC 0
-#endif
 
 #if CFS_HAVE_SSE
 #define DEF_FMETHOD_DEMOD_BEST FMETHOD_DEMOD_SSE
