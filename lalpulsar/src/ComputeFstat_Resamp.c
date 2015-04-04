@@ -1,7 +1,7 @@
 //
-// Copyright (C) 2014 Reinhard Prix
-// Copyright (C) 2012, 2013, 2014 Karl Wette
-// Copyright (C) 2009 Chris Messenger, Reinhard Prix, Pinkesh Patel, Xavier Siemens, Holger Pletsch
+// Copyright (C) 2009, 2014--2015 Reinhard Prix
+// Copyright (C) 2012--2015 Karl Wette
+// Copyright (C) 2009 Chris Messenger, Pinkesh Patel, Xavier Siemens, Holger Pletsch
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

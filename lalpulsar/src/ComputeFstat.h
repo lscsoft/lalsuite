@@ -1,6 +1,5 @@
 //
-// Copyright (C) 2014 Reinhard Prix
-// Copyright (C) 2012, 2013, 2014 David Keitel, Bernd Machenschalk, Reinhard Prix, Karl Wette
+// Copyright (C) 2012--2014 David Keitel, Bernd Machenschalk, Reinhard Prix, Karl Wette
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

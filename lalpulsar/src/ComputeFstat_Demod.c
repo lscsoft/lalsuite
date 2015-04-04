@@ -1,10 +1,9 @@
 //
-// Copyright (C) 2014 Reinhard Prix
-// Copyright (C) 2012, 2013, 2014 Karl Wette
-// Copyright (C) 2007, 2008, 2009, 2010, 2012 Bernd Machenschalk
+// Copyright (C) 2012--2015 Karl Wette
+// Copyright (C) 2005--2007, 2009, 2010, 2012, 2014 Reinhard Prix
+// Copyright (C) 2007--2010, 2012 Bernd Machenschalk
 // Copyright (C) 2007 Chris Messenger
 // Copyright (C) 2006 John T. Whelan, Badri Krishnan
-// Copyright (C) 2005, 2006, 2007, 2009, 2010, 2012 Reinhard Prix
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
