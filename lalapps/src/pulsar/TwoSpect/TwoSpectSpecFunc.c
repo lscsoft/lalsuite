@@ -61,7 +61,7 @@ COMPLEX16 DirichletKernelLargeNHann(REAL8 delta)
  */
 INT4 DirichletKernalLargeNHannRatio(COMPLEX8 *ratio, const REAL4 delta0, const REAL4 delta1, const REAL4 scaling)
 {
-   if (fabsf(delta1)<1.0e-6 || fabsf(delta1*delta1-1.0)<1.0e-6 || fabsf(delta0-roundf(delta0))<1.0e-6) return 1;
+   if (fabsf((REAL4)delta1)<(REAL4)1.0e-6 || fabsf((REAL4)(delta1*delta1-1.0))<(REAL4)1.0e-6 || fabsf((REAL4)(delta0-roundf(delta0)))<(REAL4)1.0e-6) return 1;
    else *ratio = scaling*(cpolarf(1.0, (REAL4)(LAL_TWOPI*delta1))-1.0)/(cpolarf(1.0, (REAL4)(LAL_TWOPI*delta0))-1.0);
    return 0;
 }
