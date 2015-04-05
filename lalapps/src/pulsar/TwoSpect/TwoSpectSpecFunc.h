@@ -32,20 +32,14 @@ struct cheb_series_struct {
 };
 typedef struct cheb_series_struct cheb_series;
 
-REAL8 cdf_chisq_Pinv(REAL8 P, REAL8 nu);
-REAL8 cdf_chisq_Qinv(REAL8 Q, REAL8 nu);
-REAL8 cdf_gamma_Pinv(REAL8 P, REAL8 a, REAL8 b);
-REAL8 cdf_gamma_Qinv(REAL8 Q, REAL8 a, REAL8 b);
-REAL8 cdf_ugaussian_Pinv(REAL8 P);
-REAL8 cdf_ugaussian_Qinv(REAL8 Q);
+COMPLEX16 DirichletKernelLargeN(REAL8 delta);
+COMPLEX16 DirichletKernelLargeNHann(REAL8 delta);
+INT4 DirichletKernalLargeNHannRatio(COMPLEX8 *ratio, const REAL4 delta0, const REAL4 delta1, const REAL4 scaling);
+
 REAL8 twospect_small(REAL8 q);
 REAL8 twospect_intermediate(REAL8 r);
 REAL8 twospect_tail(REAL8 r);
 REAL8 rat_eval(const REAL8 a[], const size_t na, const REAL8 b[], const size_t nb, const REAL8 x);
-REAL8 cdf_gamma_P(REAL8 x, REAL8 a, REAL8 b);
-REAL8 cdf_gamma_P_usingmatlab(REAL8 x, REAL8 a, REAL8 b);
-REAL8 cdf_gamma_Q(REAL8 x, REAL8 a, REAL8 b);
-REAL8 cdf_gamma_Q_usingmatlab(REAL8 x, REAL8 a, REAL8 b);
 REAL8 ran_gamma_pdf(REAL8 x, REAL8 a, REAL8 b);
 REAL8 sf_gamma_inc_P(REAL8 a, REAL8 x);
 REAL8 sf_gamma_inc_Q(REAL8 a, REAL8 x);
@@ -61,7 +55,12 @@ REAL8 gamma_inc_Q_asymp_unif(REAL8 a, REAL8 x);
 REAL8 gamma_inc_Q_CF(REAL8 a, REAL8 x);
 REAL8 gamma_inc_F_CF(REAL8 a, REAL8 x);
 REAL8 gamma_inc_Q_large_x(REAL8 a, REAL8 x);
+REAL8 epsval(REAL8 val);
+REAL8 binodeviance(REAL8 x, REAL8 np);
 
+REAL4 epsval_float(REAL4 val);
 
+void sumseries(REAL8 *computedprob, REAL8 P, REAL8 C, REAL8 E, INT8 counter, REAL8 x, REAL8 dof, REAL8 halfdelta, REAL8 err, INT4 countdown);
+void sumseries_eg(REAL8 *computedprob, REAL8 P, REAL8 C, REAL8 E, INT8 counter, REAL8 x, REAL8 dof, REAL8 halfdelta, REAL8 err, INT4 countdown);
 
 #endif

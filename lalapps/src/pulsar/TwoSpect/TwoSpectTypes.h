@@ -24,23 +24,16 @@
 #include <lal/AVFactories.h>
 #include <lal/DetectorStates.h>
 #include <lal/PulsarDataTypes.h>
+#include <lal/VectorMath.h>
 
 #include <gsl/gsl_rng.h>
 
-typedef struct
-{
-   REAL4Vector *ffdata;    //Doubly Fourier transformed data
-   REAL8 tfnormalization;
-   REAL8 ffnormalization;
-   INT4 numffts;
-   INT4 numfbins;
-   INT4 numfprbins;
-} ffdataStruct;
+extern FILE *LOG;
 
 typedef struct {
    BOOLEAN help;
    REAL8 Tobs;
-   REAL8 Tcoh;
+   REAL8 Tsft;
    REAL8 SFToverlap;
    REAL8 t0;
    REAL8 fmin;
@@ -56,6 +49,7 @@ typedef struct {
    CHAR *ephemEarth;
    CHAR *ephemSun;
    BOOLEAN gaussNoiseWithSFTgaps;
+   CHAR *templatebankfile;
    REAL8 Pmin;
    REAL8 Pmax;
    REAL8 dfmin;
@@ -72,6 +66,7 @@ typedef struct {
    REAL8 templateSearchAsiniSigma;
    REAL8 assumeNScosi;
    REAL8 assumeNSpsi;
+   INT4 cosiSignCoherent;
    INT4 ihsfactor;
    REAL8 ihsfar;
    REAL8 ihsfom;
@@ -89,8 +84,7 @@ typedef struct {
    REAL8 lineDetection;
    INT4 FFTplanFlag;
    BOOLEAN fastchisqinv;
-   BOOLEAN useSSE;
-   BOOLEAN useAVX;
+   INT4 vectorMath;
    BOOLEAN followUpOutsideULrange;
    LALStringVector *timestampsFile;
    LALStringVector *segmentFile;
@@ -117,66 +111,42 @@ typedef struct {
    BOOLEAN printSFTtimes;
    BOOLEAN printData;
    BOOLEAN BrentsMethod;
+   CHAR *saveRvalues;
    CHAR *printSignalData;
    CHAR *printMarginalizedSignalData;
    INT4 randSeed;
    BOOLEAN chooseSeed;
 } UserInput_t;
 
+typedef struct {
+   UINT4 length;
+   REAL8 *data;
+   REAL8 *data0;
+} alignedREAL8Vector;
+typedef struct {
+   UINT4 length;
+   alignedREAL8Vector **data;
+} alignedREAL8VectorArray;
+typedef struct {
+   UINT4 length;
+   REAL4VectorAligned **data;
+} alignedREAL4VectorArray;
+typedef struct {
+   UINT4 length;
+   UINT4 vectorLength;
+   REAL4 *data;
+   REAL4 *data0;
+} alignedREAL4VectorSequence;
+
 typedef struct
 {
-   REAL8 fmin;
-   REAL8 fspan;
-   REAL8 Tobs;
-   REAL8 Tcoh;
-   REAL8 SFToverlap;
-   REAL8 searchstarttime;
-   REAL8 Pmin;
-   REAL8 Pmax;
-   REAL8 dfmin;
-   REAL8 dfmax;
-   REAL4 dopplerMultiplier;
-   REAL8 ihsfar;
-   REAL4 ihsfom;
-   REAL8 ihsfomfar;
-   REAL8 templatefar;
-   REAL8 log10templatefar;
-   REAL8 ULfmin;
-   REAL8 ULfspan;
-   REAL8 ULmindf;
-   REAL8 ULmaxdf;
-   REAL8 lineDetection;
-   REAL8 avesqrtSh;
-   INT4 ihsfactor;
-   INT4 harmonicNumToSearch;
-   INT4 keepOnlyTopNumIHS;
-   INT4 blksize;
-   INT4 maxbinshift;
-   INT4 mintemplatelength;
-   INT4 maxtemplatelength;
-   INT4 rootFindingMethod;
-   INT4 numofIFOs;
-   MultiLALDetector *detectors;
-   CHAR *inputSFTs;
-   INT4 markBadSFTs;
-   INT4 FFTplanFlag;
-   INT4 calcRthreshold;
-   INT4 noNotchHarmonics;
-   INT4 antennaOff;
-   INT4 noiseWeightOff;
-   INT4 printAllULvalues;
-   INT4 fastchisqinv;
-   INT4 useSSE;
-   INT4 useAVX;
-   INT4 followUpOutsideULrange;
-   INT4 randSeed;
-   INT4 ULsolver;
-   INT4 signalOnly;
-   INT4 weightedIHS;
-   INT4 periodHarmToCheck;
-   INT4 periodFracToCheck;
-   gsl_rng *rng;
-} inputParamsStruct;
+   REAL4Vector *ffdata;    //Doubly Fourier transformed data
+   REAL8 tfnormalization;
+   REAL8 ffnormalization;
+   INT4 numffts;
+   INT4 numfbins;
+   INT4 numfprbins;
+} ffdataStruct;
 
 typedef struct
 {
@@ -190,6 +160,7 @@ typedef struct
    REAL8 prob;
    INT4 proberrcode;
    REAL8 normalization;
+   INT4 templateVectorIndex;
 } candidate;
 
 typedef struct
@@ -198,6 +169,18 @@ typedef struct
    UINT4 length;
    UINT4 numofcandidates;
 } candidateVector;
+
+typedef struct {
+   REAL8 fminimum;
+   REAL8 fmaximum;
+   UINT4 numfsteps;
+   UINT4 numperiodslonger;
+   UINT4 numperiodsshorter;
+   REAL4 periodSpacingFactor;
+   REAL8 dfmin;
+   REAL8 dfmax;
+   UINT4 numdfsteps;
+} TwoSpectParamSpaceSearchVals;
 
 typedef struct
 {
@@ -241,7 +224,7 @@ typedef struct
    REAL4Vector *fomfarthresh;
    REAL4Vector *ihsfomdistMean;
    REAL4Vector *ihsfomdistSigma;
-   REAL4Vector *expectedIHSVector;
+   REAL4VectorAligned *expectedIHSVector;
 } ihsfarStruct;
 
 typedef struct
@@ -255,15 +238,21 @@ typedef struct
 
 typedef struct
 {
-   REAL4Vector *templatedata;       //weights
+   REAL4VectorAligned *templatedata;       //weights
    INT4Vector *pixellocations;      //pixel locations
-   INT4Vector *firstfftfrequenciesofpixels;  //pixel first frequency values
-   INT4Vector *secondfftfrequencies;   //pixel second frequency values
    REAL8 f0;
    REAL8 period;
    REAL8 moddepth;
-} templateStruct;
+} TwoSpectTemplate;
 
+typedef struct
+{
+   TwoSpectTemplate **data;
+   UINT4 length;
+   REAL8 Tsft;
+   REAL8 SFToverlap;
+   REAL8 Tobs;
+} TwoSpectTemplateVector;
 
 #endif
 

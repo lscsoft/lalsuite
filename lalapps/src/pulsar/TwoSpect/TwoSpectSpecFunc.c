@@ -20,15 +20,51 @@
 //Based on GSL functions to determine chi-squared inversions
 //Some functions based from Matab 2012a functions, but optimized for TwoSpect analysis
 
-#include <stdlib.h>
 #include <math.h>
-#include <gsl/gsl_cdf.h>
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_sf_log.h>
 #include <lal/LALConstants.h>
 
-#include "fastchisqinv.h"
-#include "statistics.h"
+#include "TwoSpectSpecFunc.h"
+
+/**
+ * Compute the Dirichlet kernel for large N values
+ * \param [in] delta The delta value as the arguement
+ * \return Complex valued Dirichlet kernel
+ */
+COMPLEX16 DirichletKernelLargeN(REAL8 delta)
+{
+   if (fabs(delta)<1.0e-6) return crect(1.0, 0.0);
+
+   COMPLEX16 val = crect(0.0, LAL_TWOPI*delta);
+   return (cexp(val)-1.0)/val;
+}
+
+/**
+ * Compute the Dirichlet kernel for large N values and the Hann window
+ * \param [in] delta The delta value as the arguement
+ * \return Complex valued Dirichlet kernel
+ */
+COMPLEX16 DirichletKernelLargeNHann(REAL8 delta)
+{
+   //return DirichletKernelLargeN(delta) - 0.5*DirichletKernelLargeN(delta+1.0) - 0.5*DirichletKernelLargeN(delta-1.0);
+   return crect(0.0, 1.0)*(cpolar(1.0, LAL_TWOPI*delta) - 1.0)/(2.0*LAL_TWOPI*delta*(delta*delta - 1.0));
+}
+
+/**
+ * Compute the argument of the ratio of Dirichlet kernels for large N values and the Hann window
+ * \param [out] ratio   The complex ratio
+ * \param [in]  delta0  The delta0 value (denominator)
+ * \param [in]  delta1  The delta1 value (numerator)
+ * \param [in]  scaling The real-valued scaling
+ * \return Error code: 0 = no error, 1 = divergent value
+ */
+INT4 DirichletKernalLargeNHannRatio(COMPLEX8 *ratio, const REAL4 delta0, const REAL4 delta1, const REAL4 scaling)
+{
+   if (fabsf(delta1)<1.0e-6 || fabsf(delta1*delta1-1.0)<1.0e-6 || fabsf(delta0-roundf(delta0))<1.0e-6) return 1;
+   else *ratio = scaling*(cpolarf(1.0, (REAL4)(LAL_TWOPI*delta1))-1.0)/(cpolarf(1.0, (REAL4)(LAL_TWOPI*delta0))-1.0);
+   return 0;
+}
 
 /* Chebyshev coefficients for Gamma*(3/4(t+1)+1/2), -1<t<1
  */
@@ -113,187 +149,6 @@ static cheb_series gstar_b_cs = {
 };
 
 
-REAL8 cdf_chisq_Pinv(REAL8 P, REAL8 nu)
-{
-   REAL8 val = cdf_gamma_Pinv(P, 0.5*nu, 2.0);
-   XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
-   return val;
-}
-REAL8 cdf_chisq_Qinv(REAL8 Q, REAL8 nu)
-{
-   REAL8 val = cdf_gamma_Qinv(Q, 0.5*nu, 2.0);
-   XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
-   return val;
-}
-REAL8 cdf_gamma_Pinv(REAL8 P, REAL8 a, REAL8 b)
-{
-   REAL8 x;
-
-   XLAL_CHECK_REAL8( P < 1.0, XLAL_EFPOVRFLW, "Input P of 1.0 or larger returns infinity\n" );
-   if (P == 0.0) return 0.0;
-
-   /* Consider, small, large and intermediate cases separately.  The
-    boundaries at 0.05 and 0.95 have not been optimised, but seem ok
-    for an initial approximation.
-
-    BJG: These approximations aren't really valid, the relevant
-    criterion is P*gamma(a+1) < 1. Need to rework these routines and
-    use a single bisection style solver for all the inverse
-    functions.
-    */
-
-   if (P < 0.05) x = exp((lgamma(a) + log(P))/a);
-   else if (P > 0.95) x = -log1p(-P) + lgamma(a);
-   else {
-      REAL8 xg = cdf_ugaussian_Pinv(P);
-      XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
-      x = (xg < -0.5*sqrt(a)) ? a : sqrt(a) * xg + a;
-   }
-
-   /* Use Lagrange's interpolation for E(x)/phi(x0) to work backwards
-    to an improved value of x (Abramowitz & Stegun, 3.6.6)
-
-    where E(x)=P-integ(phi(u),u,x0,x) and phi(u) is the pdf.
-    */
-
-   REAL8 lambda, dP, phi;
-   UINT4 n = 0;
-
-   INT4 keepgoing = 1;
-   while (keepgoing == 1) {
-      REAL8 val = cdf_gamma_P(x, a, 1.0);
-      XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
-      dP = P - val;
-      phi = ran_gamma_pdf(x, a, 1.0);
-
-      if (dP == 0.0 || n++ > 32) {
-         XLAL_CHECK_REAL8( fabs(dP) <= sqrt(LAL_REAL4_EPS) * P, XLAL_EFPINEXCT, "Inverse failed to converge\n" );
-         return b * x;
-      }
-
-      lambda = dP / fmax (2.0 * fabs (dP / x), phi);
-
-
-      REAL8 step0 = lambda;
-      REAL8 step1 = -((a - 1.0) / x - 1.0) * lambda * lambda / 4.0;
-
-      REAL8 step = step0;
-      if (fabs (step1) < 0.5 * fabs (step0)) step += step1;
-
-      if (x + step > 0) x += step;
-      else x *= 0.5;
-
-      if (fabs (step0) > 1e-6 * x || fabs(step0 * phi) > 1e-6 * P) keepgoing = 1;
-      else keepgoing = 0;
-   }
-
-   XLAL_CHECK_REAL8( fabs(dP) <= sqrt(LAL_REAL4_EPS) * P, XLAL_EFPINEXCT, "Inverse failed to converge\n" );
-   return b * x;
-
-}
-REAL8 cdf_gamma_Qinv(REAL8 Q, REAL8 a, REAL8 b)
-{
-   REAL8 x;
-
-   if (Q == 1.0) return 0.0;
-   XLAL_CHECK_REAL8( Q > 0.0 && Q < 1.0, XLAL_EFPOVRFLW, "Input P of 0.0 returns infinity\n" );
-
-   /* Consider, small, large and intermediate cases separately.  The
-    boundaries at 0.05 and 0.95 have not been optimised, but seem ok
-    for an initial approximation. */
-
-   if (Q < 0.05) x = -log(Q) + lgamma(a);
-   else if (Q > 0.95) x = exp((lgamma(a) + log1p(-Q)) / a);
-   else {
-      REAL8 xg = cdf_ugaussian_Qinv(Q);
-      XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
-      x = (xg < -0.5*sqrt (a)) ? a : sqrt (a) * xg + a;
-   }
-
-   /* Use Lagrange's interpolation for E(x)/phi(x0) to work backwards
-    to an improved value of x (Abramowitz & Stegun, 3.6.6)
-
-    where E(x)=P-integ(phi(u),u,x0,x) and phi(u) is the pdf.
-    */
-
-   REAL8 lambda, dQ, phi;
-   UINT4 n = 0;
-
-   INT4 keepgoing = 1;
-   while (keepgoing == 1) {
-      REAL8 val = cdf_gamma_Q(x, a, 1.0);
-      XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
-      dQ = Q - val;
-      phi = ran_gamma_pdf(x, a, 1.0);
-
-      if (dQ == 0.0 || n++ > 32) return b * x;
-
-      lambda = -dQ / fmax (2 * fabs (dQ / x), phi);
-
-      REAL8 step0 = lambda;
-      REAL8 step1 = -((a - 1) / x - 1) * lambda * lambda / 4.0;
-
-      REAL8 step = step0;
-      if (fabs (step1) < 0.5 * fabs (step0)) step += step1;
-
-      if (x + step > 0) x += step;
-      else x /= 2.0;
-
-      if (fabs (step0) > 1e-6 * x) keepgoing = 1;
-      else keepgoing = 0;
-   }
-
-   return b * x;
-}
-REAL8 cdf_ugaussian_Pinv(REAL8 P)
-{
-   REAL8 r, x, pp;
-
-   REAL8 dP = P - 0.5;
-
-   XLAL_CHECK_REAL8( P != 1.0, XLAL_EFPOVRFLW );
-   XLAL_CHECK_REAL8( P != 0.0, XLAL_EFPOVRFLW );
-
-   if (fabs(dP) <= 0.425) {
-      x = twospect_small(dP);
-      return x;
-   }
-
-   pp = (P < 0.5) ? P : 1.0 - P;
-
-   r = sqrt(-log(pp));
-
-   if (r <= 5.0) x = twospect_intermediate(r);
-   else x = twospect_tail(r);
-
-   if (P < 0.5) return -x;
-   else return x;
-
-}
-REAL8 cdf_ugaussian_Qinv(REAL8 Q)
-{
-   REAL8 r, x, pp;
-
-   REAL8 dQ = Q - 0.5;
-
-   XLAL_CHECK_REAL8( Q != 1.0, XLAL_EFPOVRFLW );
-   XLAL_CHECK_REAL8( Q != 0.0, XLAL_EFPOVRFLW );
-
-   if (fabs(dQ) <= 0.425) {
-      x = twospect_small(dQ);
-      return -x;
-   }
-
-   pp = (Q < 0.5) ? Q : 1.0 - Q;
-
-   r = sqrt(-log(pp));
-
-   if (r <= 5.0) x = twospect_intermediate(r);
-   else x = twospect_tail(r);
-
-   if (Q < 0.5) return x;
-   else return -x;
-}
 REAL8 twospect_small(REAL8 q)
 {
    const REAL8 a[8] = { 3.387132872796366608, 133.14166789178437745,
@@ -367,76 +222,7 @@ REAL8 rat_eval(const REAL8 a[], const size_t na, const REAL8 b[], const size_t n
 
    return r;
 }
-REAL8 cdf_gamma_P(REAL8 x, REAL8 a, REAL8 b)
-{
-   REAL8 P;
-   REAL8 y = x / b;
 
-   if (x <= 0.0) return 0.0;
-
-   if (y > a) {
-      REAL8 val = sf_gamma_inc_Q(a, y);
-      XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
-      P = 1.0 - val;
-   } else {
-      P = sf_gamma_inc_P(a, y);
-      XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
-   }
-
-   return P;
-}
-REAL8 cdf_gamma_P_usingmatlab(REAL8 x, REAL8 a, REAL8 b)
-{
-
-   REAL8 P;
-   REAL8 y = x / b;
-
-   if (x <= 0.0) return 0.0;
-
-   if (y > a) {
-      REAL8 val = matlab_gamma_inc(y, a, 1);
-      P = 1.0 - val;
-   } else {
-      P = matlab_gamma_inc(y, a, 0);
-   }
-
-   return P;
-}
-REAL8 cdf_gamma_Q(REAL8 x, REAL8 a, REAL8 b)
-{
-   REAL8 Q;
-   REAL8 y = x / b;
-
-   if (x <= 0.0) return 1.0;
-
-   if (y < a) {
-      REAL8 val = sf_gamma_inc_P(a, y);
-      XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
-      Q = 1.0 - val;
-   } else {
-      Q = sf_gamma_inc_Q(a, y);
-      XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
-   }
-
-   return Q;
-}
-REAL8 cdf_gamma_Q_usingmatlab(REAL8 x, REAL8 a, REAL8 b)
-{
-
-   REAL8 Q;
-   REAL8 y = x / b;
-
-   if (x <= 0.0) return 1.0;
-
-   if (y < a) {
-      REAL8 val = matlab_gamma_inc(y, a, 0);
-      Q = 1.0 - val;
-   } else {
-      Q = matlab_gamma_inc(y, a, 1);
-   }
-
-   return Q;
-}
 REAL8 ran_gamma_pdf(REAL8 x, REAL8 a, REAL8 b)
 {
    if (x < 0.0) return 0.0;
@@ -1028,3 +814,139 @@ REAL8 gamma_inc_Q_large_x(REAL8 a, REAL8 x)
    return (D * (a/x) * sum);
 
 }
+//Matlab's eps function for REAL8, but written in C
+REAL8 epsval(REAL8 val)
+{
+   //Same as matlab
+   REAL8 absval = fabs(val);
+   int exponentval = 0;
+   frexp(absval, &exponentval);
+   exponentval -= LAL_REAL8_MANT;
+   return ldexp(1.0, exponentval);
+} /* epsval() */
+
+//Matlab's eps function for REAL4, but written in C
+REAL4 epsval_float(REAL4 val)
+{
+   //Same as matlab
+   REAL4 absval = fabsf(val);
+   int exponentval = 0;
+   frexpf(absval, &exponentval);
+   exponentval -= LAL_REAL4_MANT;
+   return ldexpf(1.0, exponentval);
+} /* epsval_float() */
+//Matlab's sumseries function
+void sumseries(REAL8 *computedprob, REAL8 P, REAL8 C, REAL8 E, INT8 counter, REAL8 x, REAL8 dof, REAL8 halfdelta, REAL8 err, INT4 countdown)
+{
+
+   //Exit with error if halfdelta = 0.0
+   XLAL_CHECK_VOID( halfdelta != 0.0, XLAL_EINVAL );
+
+   REAL8 Pint = P, Cint = C, Eint = E;
+   INT8 counterint = counter;
+   INT8 j = 0;
+   if (countdown!=0) {
+      if (counterint>=0) j = 1;
+      if (j==1) {
+         Pint *= (counterint+1.0)/halfdelta;
+         Cint += E;
+      } else counterint = -1;
+   }
+
+   while (counterint!=-1) {
+      REAL8 pplus = Pint*Cint;
+      *(computedprob) += pplus;
+
+      if (pplus > *(computedprob)*err) j = 1;
+      else j = 0;
+      if (countdown!=0 && counterint<0) j = 0;
+      if (j==0) return;
+
+      if (countdown!=0) {
+         counterint--;
+         Pint *= (counterint+1.0)/halfdelta;
+         Eint *= (0.5*dof + counterint+1.0)/(x*0.5);
+         Cint += Eint;
+      } else {
+         counterint++;
+         Pint *= halfdelta/counterint;
+         Eint *= (0.5*x)/(0.5*dof+counterint-1.0);
+         Cint -= Eint;
+      }
+   }
+
+} /* sumseries() */
+
+
+//Evan's sumseries function based on matlab's sumseries() version above, but faster
+void sumseries_eg(REAL8 *computedprob, REAL8 P, REAL8 C, REAL8 E, INT8 counter, REAL8 x, REAL8 dof, REAL8 halfdelta, REAL8 err, INT4 countdown)
+{
+
+   //If halfdelta = 0.0, then exit with error
+   XLAL_CHECK_VOID( halfdelta != 0.0, XLAL_EINVAL );
+
+   REAL8 Pint = P, Cint = C, Eint = E;
+   INT8 counterint = counter;
+   REAL8 oneoverhalfdelta = 1.0/halfdelta;   //pre-compute
+   REAL8 halfdof = 0.5*dof;                  //pre-compute
+   REAL8 halfx = 0.5*x;                      //pre-compute
+
+   if (countdown!=0) {
+      if (counterint>=0) {
+         Pint *= (counterint+1.0)*oneoverhalfdelta;
+         Cint += E;
+      } else counterint = -1;
+   }
+
+   if (counterint==-1) return;
+   else if (countdown!=0) {
+      REAL8 oneoverhalfx = 1.0/halfx;
+      while (counterint!=-1) {
+         REAL8 pplus = Pint*Cint;
+         *(computedprob) += pplus;
+
+         if (pplus<=*(computedprob)*err || counterint<0) return;
+
+         counterint--;
+         Pint *= (counterint+1)*oneoverhalfdelta;
+         Eint *= (halfdof + counterint+1)*oneoverhalfx;
+         Cint += Eint;
+      }
+   } else {
+      while (counterint!=-1) {
+         REAL8 pplus = Pint*Cint;
+         *(computedprob) += pplus;
+
+         if (pplus<=*(computedprob)*err) return;
+
+         counterint++;
+         Pint *= halfdelta/counterint;
+         Eint *= halfx/(halfdof+counterint-1);
+         Cint -= Eint;
+      }
+   }
+
+} /* sumseries_eg() */
+
+//Matlab's binodeviance, a "hidden" function
+REAL8 binodeviance(REAL8 x, REAL8 np)
+{
+   if (fabs(x-np)<0.1*(x+np)) {
+      REAL8 s = (x-np)*(x-np)/(x+np);
+      REAL8 v = (x-np)/(x+np);
+      REAL8 ej = 2.0*x*v;
+      REAL8 s1 = 0.0;
+      INT4 jj = 0;
+      INT4 ok = 1;
+      while (ok==1) {
+         ej *= v*v;
+         jj++;
+         s1 = s + ej/(2.0*jj+1.0);
+         if (s1!=s) s = s1;
+         else ok = 0;
+      }
+      return s;
+   } else {
+      return x*log(x/np)+np-x;
+   }
+} /* binodeviance() */

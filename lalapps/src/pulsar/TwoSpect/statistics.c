@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2011, 2014 Evan Goetz
+ *  Copyright (C) 2011, 2014, 2015 Evan Goetz
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -20,20 +20,16 @@
 //Some functions based from Matab 2012a functions, but optimized for TwoSpect analysis
 
 #include <math.h>
-#include <time.h>
 
-#include <gsl/gsl_math.h>
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_cdf.h>
-#include <gsl/gsl_sf_bessel.h>
 #include <gsl/gsl_statistics_double.h>
 
+#include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/VectorOps.h>
 
 #include "statistics.h"
-#include "fastchisqinv.h"
-
 
 /**
  * Create a exponentially distributed noise value
@@ -46,588 +42,6 @@ REAL8 expRandNum(REAL8 mu, gsl_rng *ptrToGenerator)
    XLAL_CHECK_REAL8( mu > 0.0 && ptrToGenerator != NULL, XLAL_EINVAL );
    return gsl_ran_exponential(ptrToGenerator, mu);
 } /* expRandNum() */
-
-
-/**
- * Compute the CDF P value at value x of a chi squared distribution with nu degrees of freedom
- * Rougly REAL4 precision
- * \param [in] x  CDF value at value x
- * \param [in] nu Number of degrees of freedom
- * \return CDF value
- */
-REAL8 twospect_cdf_chisq_P(REAL8 x, REAL8 nu)
-{
-   REAL8 val = cdf_gamma_P(x, 0.5*nu, 2.0);
-   XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
-   return val;
-} /* twospect_cdf_chisq_P() */
-
-
-/**
- * Compute the CDF P value at value x of a chi squared distrubution with nu degrees of freedom using the Matlab-based function
- * \param [in] x  CDF value at value x
- * \param [in] nu Number of degrees of freedom
- * \return CDF value
- */
-REAL8 matlab_cdf_chisq_P(REAL8 x, REAL8 nu)
-{
-   REAL8 val = cdf_gamma_P_usingmatlab(x, 0.5*nu, 2.0);
-   XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
-   return val;
-} /* matlab_cdf_chisq_P() */
-
-
-/**
- * Matlab's version of the non-central chi-squared CDF with nu degrees of freedom and non-centrality delta at value x
- * \param [in] x     Value at which to compute the CDF
- * \param [in] dof   Number of degrees of freedom
- * \param [in] delta Non-centrality parameter
- * \return CDF value
- */
-REAL8 ncx2cdf(REAL8 x, REAL8 dof, REAL8 delta)
-{
-
-   REAL8 prob = 0.0;
-
-   //Fail for bad inputs or return 0 if x<=0
-   XLAL_CHECK_REAL8( dof >= 0.0 && delta >= 0.0, XLAL_EINVAL );
-   if (x<=0.0) {
-      return prob;
-   }
-
-   REAL8 err = LAL_REAL8_EPS;
-   REAL8 halfdelta = 0.5*delta;
-   INT8 counter = (INT8)floor(halfdelta);
-   REAL8 P = gsl_ran_poisson_pdf(counter, halfdelta);
-   REAL8 C = gsl_cdf_chisq_P(x, dof+2.0*counter);
-   REAL8 E = exp((dof*0.5+counter-1.0)*log(x*0.5) - x*0.5 - lgamma(dof*0.5+counter));
-
-   sumseries_eg(&prob, P, C, E, counter, x, dof, halfdelta, err, 0);
-   XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
-   counter--;
-   if (counter<0) return fmin(prob, 1.0);
-
-   sumseries_eg(&prob, P, C, E, counter, x, dof, halfdelta, err, 1);
-   XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
-
-   //This part computes small probabilities
-   INT4 fromzero = 0;
-   if (prob==0.0) fromzero = 1;
-   if (fromzero==1) {
-      counter = 0;
-      REAL8 pk = gsl_ran_poisson_pdf(0, halfdelta)*gsl_cdf_chisq_P(x, dof);
-      REAL8 dp = 0.0;
-      INT4 ok = 0;
-      if ((REAL8)counter<halfdelta) ok = 1;
-      while (ok==1) {
-         counter++;
-         P = gsl_ran_poisson_pdf(counter, halfdelta);
-         C = gsl_cdf_chisq_P(x, dof+2.0*counter);
-         dp = P*C;
-         pk += dp;
-         if (!(ok==1 && (REAL8)counter<halfdelta && dp>=err*pk)) ok = 0;
-      }
-      prob = pk;
-   }
-
-   return fmin(prob, 1.0);
-
-} /* ncx2cdf() */
-
-//Matlab's sumseries function
-void sumseries(REAL8 *computedprob, REAL8 P, REAL8 C, REAL8 E, INT8 counter, REAL8 x, REAL8 dof, REAL8 halfdelta, REAL8 err, INT4 countdown)
-{
-
-   //Exit with error if halfdelta = 0.0
-   XLAL_CHECK_VOID( halfdelta != 0.0, XLAL_EINVAL );
-
-   REAL8 Pint = P, Cint = C, Eint = E;
-   INT8 counterint = counter;
-   INT8 j = 0;
-   if (countdown!=0) {
-      if (counterint>=0) j = 1;
-      if (j==1) {
-         Pint *= (counterint+1.0)/halfdelta;
-         Cint += E;
-      } else counterint = -1;
-   }
-
-   while (counterint!=-1) {
-      REAL8 pplus = Pint*Cint;
-      *(computedprob) += pplus;
-
-      if (pplus > *(computedprob)*err) j = 1;
-      else j = 0;
-      if (countdown!=0 && counterint<0) j = 0;
-      if (j==0) return;
-
-      if (countdown!=0) {
-         counterint--;
-         Pint *= (counterint+1.0)/halfdelta;
-         Eint *= (0.5*dof + counterint+1.0)/(x*0.5);
-         Cint += Eint;
-      } else {
-         counterint++;
-         Pint *= halfdelta/counterint;
-         Eint *= (0.5*x)/(0.5*dof+counterint-1.0);
-         Cint -= Eint;
-      }
-   }
-
-} /* sumseries() */
-
-
-//Evan's sumseries function based on matlab's sumseries() version above, but faster
-void sumseries_eg(REAL8 *computedprob, REAL8 P, REAL8 C, REAL8 E, INT8 counter, REAL8 x, REAL8 dof, REAL8 halfdelta, REAL8 err, INT4 countdown)
-{
-
-   //If halfdelta = 0.0, then exit with error
-   XLAL_CHECK_VOID( halfdelta != 0.0, XLAL_EINVAL );
-
-   REAL8 Pint = P, Cint = C, Eint = E;
-   INT8 counterint = counter;
-   REAL8 oneoverhalfdelta = 1.0/halfdelta;   //pre-compute
-   REAL8 halfdof = 0.5*dof;                  //pre-compute
-   REAL8 halfx = 0.5*x;                      //pre-compute
-
-   if (countdown!=0) {
-      if (counterint>=0) {
-         Pint *= (counterint+1.0)*oneoverhalfdelta;
-         Cint += E;
-      } else counterint = -1;
-   }
-
-   if (counterint==-1) return;
-   else if (countdown!=0) {
-      REAL8 oneoverhalfx = 1.0/halfx;
-      while (counterint!=-1) {
-         REAL8 pplus = Pint*Cint;
-         *(computedprob) += pplus;
-
-         if (pplus<=*(computedprob)*err || counterint<0) return;
-
-         counterint--;
-         Pint *= (counterint+1)*oneoverhalfdelta;
-         Eint *= (halfdof + counterint+1)*oneoverhalfx;
-         Cint += Eint;
-      }
-   } else {
-      while (counterint!=-1) {
-         REAL8 pplus = Pint*Cint;
-         *(computedprob) += pplus;
-
-         if (pplus<=*(computedprob)*err) return;
-
-         counterint++;
-         Pint *= halfdelta/counterint;
-         Eint *= halfx/(halfdof+counterint-1);
-         Cint -= Eint;
-      }
-   }
-
-} /* sumseries_eg() */
-
-//Matlab's non-central chi square CDF up to REAL4 precision
-REAL4 ncx2cdf_float(REAL4 x, REAL4 dof, REAL4 delta)
-{
-
-   REAL8 prob = 0.0;
-
-   //Fail for bad inputs or return 0 if x<=0
-   XLAL_CHECK_REAL4( dof >= 0.0 && delta >= 0.0, XLAL_EINVAL );
-   if (x<=0.0) {
-      return (REAL4)prob;
-   }
-
-   REAL8 err = (REAL8)LAL_REAL4_EPS;
-   REAL8 halfdelta = 0.5*delta;
-   INT8 counter = (INT8)floor(halfdelta);
-   REAL8 P = gsl_ran_poisson_pdf(counter, halfdelta);
-   REAL8 C = twospect_cdf_chisq_P((REAL8)x, (REAL8)(dof+2.0*counter));
-   XLAL_CHECK_REAL4( xlalErrno == 0, XLAL_EFUNC );
-   REAL8 E = exp((dof*0.5+counter-1.0)*log(x*0.5) - x*0.5 - lgamma(dof*0.5+counter));
-
-   sumseries_eg(&prob, P, C, E, counter, x, dof, halfdelta, err, 0);
-   XLAL_CHECK_REAL4( xlalErrno == 0, XLAL_EFUNC );
-   counter--;
-   if (counter<0) return (REAL4)fmin(prob, 1.0);
-
-   sumseries_eg(&prob, P, C, E, counter, x, dof, halfdelta, err, 1);
-   XLAL_CHECK_REAL4( xlalErrno == 0, XLAL_EFUNC );
-
-   //This part computes small probabilities
-   INT4 fromzero = 0;
-   if (prob==0.0) fromzero = 1;
-   if (fromzero==1) {
-      counter = 0;
-      REAL8 pk = gsl_ran_poisson_pdf(0, halfdelta)*twospect_cdf_chisq_P(x, dof);
-      REAL8 dp = 0.0;
-      INT4 ok = 0;
-      if ((REAL8)counter<halfdelta) ok = 1;
-      while (ok==1) {
-         counter++;
-         P = gsl_ran_poisson_pdf(counter, halfdelta);
-         C = twospect_cdf_chisq_P(x, dof+2.0*counter);
-         XLAL_CHECK_REAL4( xlalErrno == 0, XLAL_EFUNC );
-         dp = P*C;
-         pk += dp;
-         if (!(ok==1 && (REAL8)counter<halfdelta && dp>=err*pk)) ok = 0;
-      }
-      prob = pk;
-   }
-
-   return (REAL4)fmin(prob, 1.0);
-
-} /* ncx2cdf_float() */
-
-//Matlab's non-central chi-square tries to compute very small probabilities. We don't normally need this,
-//so this function leaves out the last part to compute small probabilities.
-REAL8 ncx2cdf_withouttinyprob(REAL8 x, REAL8 dof, REAL8 delta)
-{
-
-   REAL8 prob = 0.0;
-
-   //Fail for bad inputs or return 0 if x<=0
-   XLAL_CHECK_REAL8( dof >= 0.0 && delta >= 0.0, XLAL_EINVAL );
-   if (x<=0.0) return prob;
-
-   REAL8 err = LAL_REAL8_EPS;
-   REAL8 halfdelta = 0.5*delta;
-   INT8 counter = (INT8)floor(halfdelta);
-   REAL8 P = gsl_ran_poisson_pdf(counter, halfdelta);
-   REAL8 C = gsl_cdf_chisq_P(x, dof+2.0*counter);
-   REAL8 E = exp((dof*0.5+counter-1.0)*log(x*0.5) - x*0.5 - lgamma(dof*0.5+counter));
-
-   sumseries_eg(&prob, P, C, E, counter, x, dof, halfdelta, err, 0);
-   XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
-   counter--;
-   if (counter<0) return fmin(prob, 1.0);
-
-   sumseries_eg(&prob, P, C, E, counter, x, dof, halfdelta, err, 1);
-   XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
-
-   return fmin(prob, 1.0);
-
-} /* ncx2cdf_withouttinyprob() */
-
-//Without small probabilities up to REAL4 precision
-REAL4 ncx2cdf_float_withouttinyprob(REAL4 x, REAL4 dof, REAL4 delta)
-{
-
-   REAL8 prob = 0.0;
-
-   //Fail for bad inputs or return 0 if x<=0
-   XLAL_CHECK_REAL4( dof >= 0.0 && delta >= 0.0, XLAL_EINVAL );
-   if (x<=0.0) return (REAL4)prob;
-
-   REAL8 err = (REAL8)LAL_REAL4_EPS;
-   REAL8 halfdelta = 0.5*delta;
-   INT8 counter = (INT8)floor(halfdelta);
-   REAL8 P = gsl_ran_poisson_pdf(counter, halfdelta);
-   REAL8 C = twospect_cdf_chisq_P((REAL8)x, (REAL8)(dof+2.0*counter));
-   XLAL_CHECK_REAL4( xlalErrno == 0, XLAL_EFUNC );
-   REAL8 E = exp((dof*0.5+counter-1.0)*log(x*0.5) - x*0.5 - lgamma(dof*0.5+counter));
-
-   sumseries_eg(&prob, P, C, E, counter, x, dof, halfdelta, err, 0);
-   XLAL_CHECK_REAL4( xlalErrno == 0, XLAL_EFUNC );
-   counter--;
-   if (counter<0) return (REAL4)fmin(prob, 1.0);
-
-   sumseries_eg(&prob, P, C, E, counter, x, dof, halfdelta, err, 1);
-   XLAL_CHECK_REAL4( xlalErrno == 0, XLAL_EFUNC );
-
-   return (REAL4)fmin(prob, 1.0);
-
-} /* ncx2cdf_float_withouttinyprob() */
-
-
-//This is ncx2cdf function like in Matlab, but using the Matlab version of the central chi square calculation instead of the GSL version
-REAL8 ncx2cdf_withouttinyprob_withmatlabchi2cdf(REAL8 x, REAL8 dof, REAL8 delta)
-{
-
-   REAL8 prob = 0.0;
-
-   //Fail for bad inputs or return 0 if x<=0
-   XLAL_CHECK_REAL8( dof >= 0.0 && delta >= 0.0, XLAL_EINVAL );
-   if (x<=0.0) return prob;
-
-   REAL8 err = LAL_REAL8_EPS;
-   REAL8 halfdelta = 0.5*delta;
-   INT8 counter = (INT8)floor(halfdelta);
-   REAL8 P = gsl_ran_poisson_pdf(counter, halfdelta);
-   REAL8 C = matlab_cdf_chisq_P(x, dof+2.0*counter);  //Matlab chi square cdf calculation
-   XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
-   REAL8 E = exp((dof*0.5+counter-1.0)*log(x*0.5) - x*0.5 - lgamma(dof*0.5+counter));
-
-   sumseries_eg(&prob, P, C, E, counter, x, dof, halfdelta, err, 0);
-   XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
-   counter--;
-   if (counter<0) return fmin(prob, 1.0);
-
-   sumseries_eg(&prob, P, C, E, counter, x, dof, halfdelta, err, 1);
-   XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
-
-   return fmin(prob, 1.0);
-
-} /* ncx2cdf_withouttinyprob_withmatlabchi2cdf() */
-
-//This is ncx2cdf function like in Matlab, but using the Matlab version of the central chi square calculation instead of the GSL version; up to REAL4 precision
-REAL4 ncx2cdf_float_withouttinyprob_withmatlabchi2cdf(REAL4 x, REAL4 dof, REAL4 delta)
-{
-
-   REAL8 prob = 0.0;
-
-   //Fail for bad inputs or return 0 if x<=0
-   XLAL_CHECK_REAL4( dof >= 0.0 && delta >= 0.0, XLAL_EINVAL );
-   if (x<=0.0) return (REAL4)prob;
-
-   REAL8 err = (REAL8)LAL_REAL4_EPS;
-   REAL8 halfdelta = 0.5*delta;
-   INT8 counter = (INT8)floor(halfdelta);
-   REAL8 P = gsl_ran_poisson_pdf(counter, halfdelta);
-   REAL8 C = matlab_cdf_chisq_P((REAL8)x, (REAL8)(dof+2.0*counter));  //Matlab chi2cdf
-   XLAL_CHECK_REAL4( xlalErrno == 0, XLAL_EFUNC );
-   REAL8 E = exp((dof*0.5+counter-1.0)*log(x*0.5) - x*0.5 - lgamma(dof*0.5+counter));
-
-   sumseries_eg(&prob, P, C, E, counter, x, dof, halfdelta, err, 0);
-   XLAL_CHECK_REAL4( xlalErrno == 0, XLAL_EFUNC );
-   counter--;
-   if (counter<0) return (REAL4)fmin(prob, 1.0);
-
-   sumseries_eg(&prob, P, C, E, counter, x, dof, halfdelta, err, 1);
-   XLAL_CHECK_REAL4( xlalErrno == 0, XLAL_EFUNC );
-
-   return (REAL4)fmin(prob, 1.0);
-
-} /* ncx2cdf_float_withouttinyprob_withmatlabchi2cdf() */
-
-
-//Like Matlabs ncx2pdf
-REAL8 ncx2pdf(REAL8 x, REAL8 dof, REAL8 delta)
-{
-
-   REAL8 dofint = 0.5*dof-1.0;
-   REAL8 x1 = sqrt(x);
-   REAL8 delta1 = sqrt(delta);
-   REAL8 logreal8min = -708.3964185322641;
-
-   REAL8 ul = 0.0;
-   if (dofint<=-0.5) ul = -0.5*(delta+x) + 0.5*x1*delta1/(dofint+1.0) + dofint*(log(x)-LAL_LN2) - LAL_LN2 - lgamma(dofint+1.0);
-   else ul = -0.5*(delta1-x1)*(delta1-x1) + dofint*(log(x)-LAL_LN2) - LAL_LN2 - lgamma(dofint+1.0) + (dofint+0.5)*log((dofint+0.5)/(x1*delta1+dofint+0.5));
-
-   if (ul<logreal8min) return 0.0;
-
-   //Scaled Bessel function?
-   gsl_sf_result sbes = {0,0};
-   INT4 status = gsl_sf_bessel_Inu_scaled_e(dofint, delta1*x1, &sbes);
-   if (status==GSL_SUCCESS && sbes.val>0.0) return exp(-LAL_LN2 - 0.5*(x1-delta1)*(x1-delta1) + dofint*log(x1/delta1))*sbes.val;
-
-   //Bessel function without scaling?
-   gsl_sf_result bes;
-   status = gsl_sf_bessel_Inu_e(dofint, delta1*x1, &bes);
-   if (status==GSL_SUCCESS && bes.val>0.0) return exp(-LAL_LN2 - 0.5*(x+delta) + dofint*log(x1/delta1))*bes.val;
-
-   //Okay, now recursion
-   REAL8 lnsr2pi = log(sqrt(LAL_TWOPI));
-   REAL8 dx = delta*x*0.25;
-   INT8 K = GSL_MAX_INT(0, (INT8)floor(0.5*(sqrt(dofint*dofint+4.0*dx) - dofint)));
-   REAL8 lntK = 0.0;
-   if (K==0) lntK = -lnsr2pi - 0.5*(delta+log(dofint)) - (lgamma(dofint+1)-0.5*log(LAL_TWOPI*dofint)+dofint*log(dofint)-dofint) - binodeviance(dofint, 0.5*x);
-   else lntK = -2.0*lnsr2pi - 0.5*(log(K) + log(dofint+K)) - (lgamma(K+1)-0.5*log(LAL_TWOPI*K)+K*log(K)-K) - (lgamma(dofint+K+1)-0.5*log(LAL_TWOPI*(dofint+K))+(dofint+K)*log(dofint+K)-(dofint+K)) - binodeviance(K, 0.5*delta) - binodeviance(dofint+K, 0.5*x);
-   REAL8 sumK = 1.0;
-   INT4 keep = 0;
-   if (K>0) keep = 1;
-   REAL8 term = 1.0;
-   REAL8 k = K;
-   while (keep==1) {
-      term *= (dofint+k)*k/dx;
-      sumK += term;
-      if (k<=0 || term<=epsval(sumK) || keep!=1) keep = 0;
-      k--;
-   }
-   keep = 1;
-   term = 1.0;
-   k = K+1;
-   while (keep==1) {
-      term /= (dofint+k)*k/dx;
-      sumK += term;
-      if (term<=epsval(sumK) || keep!=1) keep = 0;
-      k++;
-   }
-   return 0.5*exp(lntK + log(sumK));
-
-} /* ncx2pdf() */
-
-//Matlab's binodeviance, a "hidden" function
-REAL8 binodeviance(REAL8 x, REAL8 np)
-{
-   if (fabs(x-np)<0.1*(x+np)) {
-      REAL8 s = (x-np)*(x-np)/(x+np);
-      REAL8 v = (x-np)/(x+np);
-      REAL8 ej = 2.0*x*v;
-      REAL8 s1 = 0.0;
-      INT4 jj = 0;
-      INT4 ok = 1;
-      while (ok==1) {
-         ej *= v*v;
-         jj++;
-         s1 = s + ej/(2.0*jj+1.0);
-         if (s1!=s) s = s1;
-         else ok = 0;
-      }
-      return s;
-   } else {
-      return x*log(x/np)+np-x;
-   }
-} /* binodeviance() */
-
-//Matlab's eps function for REAL8, but written in C
-REAL8 epsval(REAL8 val)
-{
-   //Same as matlab
-   REAL8 absval = fabs(val);
-   int exponentval = 0;
-   frexp(absval, &exponentval);
-   exponentval -= LAL_REAL8_MANT;
-   return ldexp(1.0, exponentval);
-} /* epsval() */
-
-//Matlab's eps function for REAL4, but written in C
-REAL4 epsval_float(REAL4 val)
-{
-   //Same as matlab
-   REAL4 absval = fabsf(val);
-   int exponentval = 0;
-   frexpf(absval, &exponentval);
-   exponentval -= LAL_REAL4_MANT;
-   return ldexpf(1.0, exponentval);
-} /* epsval_float() */
-
-
-/**
- * Matlab's ncx2inv function
- * \param [in] p     CDF P value from which to compute the inversion
- * \param [in] dof   Number of degrees of freedom
- * \param [in] delta Non-centrality parameter
- * \return The x value that corresponds to the P value
- */
-REAL8 ncx2inv(REAL8 p, REAL8 dof, REAL8 delta)
-{
-
-   //Fail if bad input
-   XLAL_CHECK_REAL8( delta >= 0.0, XLAL_EINVAL );
-
-   if (delta==0.0) return gsl_cdf_chisq_Pinv(p, dof);
-
-   REAL8 pk = p;
-   INT4 count_limit = 100;
-   INT4 count = 0;
-   REAL8 crit = sqrt(LAL_REAL8_EPS);
-   REAL8 mn = dof + delta;
-   REAL8 variance = 2.0*(dof + 2.0*delta);
-   REAL8 temp = log(variance + mn*mn);
-   REAL8 mu = 2.0*log(mn) - 0.5*temp;
-   REAL8 sigma = -2.0*log(mn) + temp;
-   REAL8 xk = exp(norminv(pk, mu, sigma));
-   REAL8 h = 0.0;
-   REAL8 F = ncx2cdf(xk, dof, delta);
-   XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
-   while (count < count_limit) {
-      count++;
-      REAL8 f = ncx2pdf(xk, dof, delta);
-      XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
-      h = (F-pk)/f;
-      REAL8 xnew = fmax(0.2*xk, fmin(5.0*xk, xk-h));
-      REAL8 newF = ncx2cdf(xnew, dof, delta);
-      XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
-      INT4 worse = 0;
-      while (worse==0) {
-         if (!(fabs(newF-pk)>fabs(F-pk)*(1.0+crit) && fabs(xk-xnew)>crit*xk)) worse = 1;
-         else {
-            xnew = 0.5*(xnew + xk);
-            newF = ncx2cdf(xnew, dof, delta);
-            XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
-         }
-      }
-      h = xk-xnew;
-      if (!(fabs(h)>crit*fabs(xk) && fabs(h)>crit)) return xk;
-      xk = xnew;
-      F = newF;
-   }
-
-   fprintf(stderr, "%s: Warning! ncx2inv(%g, %g, %g) failed to converge!\n", __func__, p, dof, delta);
-   return xk;
-
-} /* ncx2inv() */
-
-
-//Matlab's ncx2inv() function to REAL4 precision
-REAL4 ncx2inv_float(REAL8 p, REAL8 dof, REAL8 delta)
-{
-
-   //Fail if bad input
-   XLAL_CHECK_REAL4( delta >= 0.0, XLAL_EINVAL );
-
-   if (delta==0.0) return (REAL4)gsl_cdf_chisq_Pinv(p, dof);
-
-   REAL8 pk = p;
-   INT4 count_limit = 100;
-   INT4 count = 0;
-   REAL8 crit = sqrt(LAL_REAL4_EPS);
-   REAL8 mn = dof + delta;
-   REAL8 variance = 2.0*(dof + 2.0*delta);
-   REAL8 temp = log(variance + mn*mn);
-   REAL8 mu = 2.0*log(mn) - 0.5*temp;
-   REAL8 sigma = -2.0*log(mn) + temp;
-   REAL8 xk = exp(norminv(pk, mu, sigma));
-   REAL8 h = 0.0;
-   REAL8 F = ncx2cdf_float_withouttinyprob_withmatlabchi2cdf(xk, dof, delta);
-   XLAL_CHECK_REAL4( xlalErrno == 0, XLAL_EFUNC );
-   while (count < count_limit) {
-      count++;
-      REAL8 f = ncx2pdf(xk, dof, delta);
-      XLAL_CHECK_REAL4( xlalErrno == 0, XLAL_EFUNC );
-      h = (F-pk)/f;
-      REAL8 xnew = fmax(0.2*xk, fmin(5.0*xk, xk-h));
-      REAL8 newF = ncx2cdf_float_withouttinyprob_withmatlabchi2cdf(xnew, dof, delta);
-      XLAL_CHECK_REAL4( xlalErrno == 0, XLAL_EFUNC );
-      INT4 worse = 0;
-      while (worse==0) {
-         if (!(fabs(newF-pk)>fabs(F-pk)*(1.0+crit) && fabs(xk-xnew)>crit*xk)) worse = 1;
-         else {
-            xnew = 0.5*(xnew + xk);
-            newF = ncx2cdf_float_withouttinyprob_withmatlabchi2cdf(xnew, dof, delta);
-            XLAL_CHECK_REAL4( xlalErrno == 0, XLAL_EFUNC );
-         }
-      }
-      h = xk-xnew;
-      if (!(fabs(h)>crit*fabs(xk) && fabs(h)>crit)) return xk;
-      xk = xnew;
-      F = newF;
-   }
-
-   fprintf(stderr, "%s: Warning! ncx2inv_float() failed to converge!\n", __func__);
-   return xk;
-
-} /* ncx2inv_float() */
-
-
-//Matlab's norminv function
-REAL8 norminv(REAL8 p, REAL8 mu, REAL8 sigma)
-{
-   return mu - sigma*gsl_cdf_ugaussian_Qinv(p);
-} /* norminv() */
-
-
-//For the normal distribution, what is the SNR of a given value
-REAL8 unitGaussianSNR(REAL8 value, REAL8 dof)
-{
-   REAL8 snr = (value - dof) / sqrt(2.0*dof);
-   return snr;
-} /* unitGaussianSNR() */
-
-
-
 
 /* Critical values of KS test (from Bickel and Doksum). Does not apply directly (mean determined from distribution)
  alpha=0.01
@@ -784,70 +198,41 @@ void sort_float_ascend(REAL4Vector *vector)
 
 /**
  * Sample a number (sampleSize) of values from a REAL4Vector (input) randomly
- * \param [in] input      Pointer to a REAL4Vector to be sampled from
- * \param [in] sampleSize Integer value for the length of the output vector
- * \param [in] rng        Pointer to a gsl_rng generator
+ * \param [out] output     Pointer to output REAL4Vector with length less than input
+ * \param [in]  input      Pointer to a REAL4Vector to be sampled from
+ * \param [in]  rng        Pointer to a gsl_rng generator
  * \return Newly allocated REAL4Vector of sampled values from the input vector
  */
-REAL4Vector * sampleREAL4Vector(REAL4Vector *input, INT4 sampleSize, gsl_rng *rng)
+INT4 sampleREAL4Vector(REAL4Vector *output, REAL4Vector *input, gsl_rng *rng)
 {
-
-   REAL4Vector *output = NULL;
-   XLAL_CHECK_NULL( (output = XLALCreateREAL4Vector(sampleSize)) != NULL, XLAL_EFUNC );
-
-   for (INT4 ii=0; ii<sampleSize; ii++) output->data[ii] = input->data[(INT4)floor(gsl_rng_uniform(rng)*input->length)];
-
-   return output;
-
+   XLAL_CHECK( output!=NULL && input!=NULL && output->length<input->length, XLAL_EINVAL );
+   for (UINT4 ii=0; ii<output->length; ii++) output->data[ii] = input->data[(INT4)floor(gsl_rng_uniform(rng)*input->length)];
+   return XLAL_SUCCESS;
 } /* sampleREAL4Vector() */
 
-
 /**
- * Sample a number (sampleSize) of values from a REAL4VectorSequence (input) randomly from vector 0 up to numberofvectors
+ * Sample a number (sampleSize) of values from an alignedREAL4VectorArray (input) randomly from vector 0 up to numberofvectors without accepting any values of zero
  * Needs this numberofvectors limit because of the IHS algorithm
- * \param [in] input           Pointer to a REAL4VectorSequence to be sampled from
+ * \param [in] input           Pointer to a alignedREAL4VectorArray to be sampled from
  * \param [in] numberofvectors Number of vectors from the start from which to sample from
  * \param [in] sampleSize      Integer value for the length of the output vector
  * \param [in] rng             Pointer to a gsl_rng generator
  * \return Newly allocated REAL4Vector of sampled values from the input vector
  */
-REAL4Vector * sampleREAL4VectorSequence(REAL4VectorSequence *input, INT4 numberofvectors, INT4 sampleSize, gsl_rng *rng)
-{
-
-   REAL4Vector *output = NULL;
-   XLAL_CHECK_NULL( (output = XLALCreateREAL4Vector(sampleSize)) != NULL, XLAL_EFUNC );
-
-   for (INT4 ii=0; ii<sampleSize; ii++) output->data[ii] = input->data[(INT4)floor(gsl_rng_uniform(rng)*numberofvectors*input->vectorLength)];
-
-   return output;
-
-} /* sampleREAL4VectorSequence() */
-
-
-/**
- * Sample a number (sampleSize) of values from a REAL4VectorSequence (input) randomly from vector 0 up to numberofvectors without accepting any values of zero
- * Needs this numberofvectors limit because of the IHS algorithm
- * \param [in] input           Pointer to a REAL4VectorSequence to be sampled from
- * \param [in] numberofvectors Number of vectors from the start from which to sample from
- * \param [in] sampleSize      Integer value for the length of the output vector
- * \param [in] rng             Pointer to a gsl_rng generator
- * \return Newly allocated REAL4Vector of sampled values from the input vector
- */
-REAL4Vector * sampleREAL4VectorSequence_nozerosaccepted(REAL4VectorSequence *input, INT4 numberofvectors, INT4 sampleSize, gsl_rng *rng)
+REAL4Vector * sampleAlignedREAL4VectorArray_nozerosaccepted(alignedREAL4VectorArray *input, INT4 numberofvectors, INT4 sampleSize, gsl_rng *rng)
 {
 
    REAL4Vector *output = NULL;
    XLAL_CHECK_NULL( (output = XLALCreateREAL4Vector(sampleSize)) != NULL, XLAL_EFUNC );
 
    for (INT4 ii=0; ii<sampleSize; ii++) {
-      output->data[ii] = input->data[(INT4)floor(gsl_rng_uniform(rng)*numberofvectors*input->vectorLength)];
-      while (output->data[ii]==0.0) output->data[ii] = input->data[(INT4)floor(gsl_rng_uniform(rng)*numberofvectors*input->vectorLength)];
+      output->data[ii] = input->data[(INT4)floor(gsl_rng_uniform(rng)*numberofvectors)]->data[(INT4)floor(gsl_rng_uniform(rng)*input->data[0]->length)];
+      while (output->data[ii]==0.0) output->data[ii] = input->data[(INT4)floor(gsl_rng_uniform(rng)*numberofvectors)]->data[(INT4)floor(gsl_rng_uniform(rng)*input->data[0]->length)];
    }
 
    return output;
 
 } /* sampleREAL4VectorSequence_nozerosaccepted() */
-
 
 /**
  * Compute the mean value of a REAL4Vector, computed via recursion like in GSL
@@ -1115,8 +500,9 @@ INT4 max_index_from_vector_in_REAL4VectorSequence(REAL4VectorSequence *vectorseq
  * \param [in]  inputvector   Pointer to INT4Vector
  * \param [out] min_index_out Pointer to index value of smallest element
  * \param [out] max_index_out Pointer to index value of largest element
+ * \return Status value
  */
-void min_max_index_INT4Vector(INT4Vector *inputvector, INT4 *min_index_out, INT4 *max_index_out)
+INT4 min_max_index_INT4Vector(INT4Vector *inputvector, INT4 *min_index_out, INT4 *max_index_out)
 {
 
    *min_index_out = 0, *max_index_out = 0;
@@ -1133,6 +519,8 @@ void min_max_index_INT4Vector(INT4Vector *inputvector, INT4 *min_index_out, INT4
          *max_index_out = ii;
       }
    }
+
+   return XLAL_SUCCESS;
 
 } /* min_max_index_INT4Vector() */
 

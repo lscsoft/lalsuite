@@ -20,45 +20,34 @@
 #ifndef __TEMPLATES_H__
 #define __TEMPLATES_H__
 
-#include "TwoSpect.h"
+#include <lal/RealFFT.h>
+#include "TwoSpectTypes.h"
 
-struct gsl_probR_pars {
-   templateStruct *templatestruct;
-   REAL4Vector *ffplanenoise;
-   REAL4Vector *fbinaveratios;
-   REAL4 threshold;
-   inputParamsStruct *inputParams;
-   INT4 errcode;
-};
+TwoSpectTemplate * new_TwoSpectTemplate(INT4 length);
+void resetTwoSpectTemplate(TwoSpectTemplate *template);
+void free_TwoSpectTemplate(TwoSpectTemplate *template);
+TwoSpectTemplateVector * new_TwoSpectTemplateVector(UINT4 numTemplates, UINT4 templateLength);
+void free_TwoSpectTemplateVector(TwoSpectTemplateVector *vector);
+TwoSpectTemplateVector * generateTwoSpectTemplateVector(REAL8 Pmin, REAL8 Pmax, REAL8 dfmin, REAL8 dfmax, REAL8 Tsft, REAL8 SFToverlap, REAL8 Tobs, UINT4 maxvectorlength, UINT4 minTemplateLength, UINT4 maxTemplateLength, UINT4 vectormathflag, BOOLEAN exactflag);
+INT4 writeTwoSpectTemplateVector(TwoSpectTemplateVector *vector, CHAR *filename);
+TwoSpectTemplateVector * readTwoSpectTemplateVector(CHAR *filename);
+INT4 convertTemplateForSpecificFbin(TwoSpectTemplate *output, TwoSpectTemplate *input, REAL8 freq, UserInput_t *params);
 
-farStruct * new_farStruct(void);
-void free_farStruct(farStruct *farstruct);
-INT4 estimateFAR(farStruct *output, templateStruct *templatestruct, INT4 trials, REAL8 thresh, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios);
-INT4 numericFAR(farStruct *output, templateStruct *templatestruct, REAL8 thresh, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios, inputParamsStruct *inputParams, INT4 method);
-REAL8 gsl_probR(REAL8 R, void *pars);
-REAL8 gsl_dprobRdR(REAL8 R, void *pars);
-void gsl_probRandDprobRdR(REAL8 R, void *pars, REAL8 *probabilityR, REAL8 *dprobRdR);
+INT4 makeTemplateGaussians(TwoSpectTemplate *output, candidate input, UserInput_t *params);
+INT4 makeTemplateGaussians2(TwoSpectTemplate *output, REAL8 offset, REAL8 P, REAL8 deltaf, REAL8 Tsft, REAL8 SFToverlap, REAL8 Tobs, UINT4 minTemplateLength, UINT4 vectormathflag);
+INT4 makeTemplate(TwoSpectTemplate *output, candidate intput, UserInput_t *params, INT4Vector *sftexist, REAL4FFTPlan *plan);
+INT4 makeTemplate2(TwoSpectTemplate *output, REAL8 offset, REAL8 P, REAL8 deltaf, REAL8 Tsft, REAL8 SFToverlap, REAL8 Tobs, UINT4 minTemplateLength, UINT4 vectormathflag, REAL4FFTPlan *plan);
+void insertionSort_template(TwoSpectTemplate *output, REAL4 weight, INT4 pixelloc);
 
-templateStruct * new_templateStruct(INT4 length);
-void resetTemplateStruct(templateStruct *templatestruct);
-void free_templateStruct(templateStruct *nameoftemplate);
-
-INT4 makeTemplateGaussians(templateStruct *output, candidate input, inputParamsStruct *params, INT4 numfbins, INT4 numfprbins);
-INT4 makeTemplate(templateStruct *output, candidate intput, inputParamsStruct *params, INT4Vector *sftexist, REAL4FFTPlan *plan);
-void insertionSort_template(templateStruct *output, REAL4 weight, INT4 pixelloc, INT4 firstfftfreq, INT4 secfftfreq);
-INT4 analyzeOneTemplate(candidate *output, candidate *input, ffdataStruct *ffdata, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, inputParamsStruct *params, INT4Vector *sftexist, REAL4FFTPlan *plan);
-INT4 bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum, REAL8 fmaximum, INT4 numfsteps, INT4 numperiodslonger, INT4 numperiodsshorter, REAL4 periodSpacingFactor, REAL8 dfmin, REAL8 dfmax, INT4 numdfsteps, inputParamsStruct *params, REAL4Vector *ffdata, INT4Vector *sftexist, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, REAL4FFTPlan *secondFFTplan, INT4 useExactTemplates);
-INT4 bruteForceTemplateTest(candidateVector **output, candidate input, REAL8 fminimum, REAL8 fmaximum, INT4 numfsteps, INT4 numperiodslonger, INT4 numperiodsshorter, REAL4 periodSpacingFactor, REAL8 dfmin, REAL8 dfmax, INT4 numdfsteps, inputParamsStruct *params, REAL4Vector *ffdata, INT4Vector *sftexist, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, REAL4FFTPlan *secondFFTplan, INT4 useExactTemplates);
-INT4 templateSearch_scox1Style(candidateVector **output, REAL8 fminimum, REAL8 fspan, REAL8 period, REAL8 asini, REAL8 asinisigma, REAL4 ra, REAL4 dec, inputParamsStruct *params, REAL4Vector *ffdata, INT4Vector *sftexist, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, REAL4FFTPlan *secondFFTplan, INT4 useExactTemplates);
-
-void efficientTemplateSearch(candidate *output, candidate input, REAL8 fminimum, REAL8 fmaximum, REAL8 minfstep, INT4 numperiods, REAL8 dfmin, REAL8 dfmax, REAL8 minDfstep, inputParamsStruct *params, REAL4Vector *ffdata, INT4Vector *sftexist, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, REAL4FFTPlan *secondFFTplan, INT4 useExactTemplates);
-
-REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios, REAL8 R, inputParamsStruct *params, INT4 *errcode);
 REAL8 sincxoverxsqminusone(REAL8 overage);
 REAL8 sqsincxoverxsqminusone(REAL8 x);
 
-INT4 twospect_sin_cos_2PI_LUT(REAL8 *sin2pix, REAL8 *cos2pix, REAL8 x);
-INT4 twospect_sin_cos_LUT(REAL8 *sinx, REAL8 *cosx, REAL8 x);
+INT4 truncated_sseScaleREAL4Vector(REAL4VectorAligned *output, REAL4VectorAligned *input, REAL4 scale, UINT4 length);
+INT4 truncated_sseAddScalarToREAL4Vector(REAL4VectorAligned *output, REAL4VectorAligned *input, REAL4 scalar, UINT4 length);
+INT4 truncated_sseSSVectorMultiply(REAL4VectorAligned *output, REAL4VectorAligned *input1, REAL4VectorAligned *input2, UINT4 length);
+INT4 truncated_avxScaleREAL4Vector(REAL4VectorAligned *output, REAL4VectorAligned *input, REAL4 scale, UINT4 length);
+INT4 truncated_avxAddScalarToREAL4Vector(REAL4VectorAligned *output, REAL4VectorAligned *input, REAL4 scalar, UINT4 length);
+INT4 truncated_avxSSVectorMultiply(REAL4VectorAligned *output, REAL4VectorAligned *input1, REAL4VectorAligned *input2, UINT4 length);
 
 #endif
 

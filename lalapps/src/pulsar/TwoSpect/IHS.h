@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2010, 2011 Evan Goetz
+*  Copyright (C) 2010, 2011, 2015 Evan Goetz
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 
 ihsMaximaStruct *new_ihsMaxima(INT4 fbins, INT4 rows);
 void free_ihsMaxima(ihsMaximaStruct *data);
-INT4 runIHS(ihsMaximaStruct *output, ffdataStruct *input, ihsfarStruct *ihsfarinput, inputParamsStruct *params, INT4 rows, REAL4Vector *aveNoise, REAL4Vector *FbinMean);
+INT4 runIHS(ihsMaximaStruct *output, ffdataStruct *input, ihsfarStruct *ihsfarinput, UserInput_t *params, INT4 rows, REAL4Vector *aveNoise, REAL4Vector *FbinMean);
 
 ihsVals * new_ihsVals(void);
 void free_ihsVals(ihsVals *ihsvals);
@@ -32,18 +32,18 @@ INT4 incHarmSum(ihsVals *output, REAL4Vector *input, INT4 ihsfactor);
 INT4 incHarmSumVector(REAL4Vector *output, REAL4Vector *input, INT4 ihsfactor);
 INT4 incHarmSumVectorWeighted(REAL4Vector *output, REAL4Vector *input, REAL4Vector *aveNoise, INT4 ihsfactor);
 
-ihsfarStruct * new_ihsfarStruct(INT4 rows, inputParamsStruct *params);
+ihsfarStruct * new_ihsfarStruct(INT4 rows, UserInput_t *params);
 void free_ihsfarStruct(ihsfarStruct *ihsfarstruct);
-INT4 genIhsFar(ihsfarStruct *output, inputParamsStruct *params, INT4 rows, REAL4Vector *aveNoise);
+INT4 genIhsFar(ihsfarStruct *output, UserInput_t *params, INT4 rows, REAL4Vector *aveNoise, gsl_rng *rng);
 
-INT4 sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorsequence, INT4 rows, REAL4Vector *FbinMean, inputParamsStruct *params);
-INT4 sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4VectorSequence *ihsvectorsequence, INT4 rows, REAL4Vector *FbinMean, inputParamsStruct *params);
+INT4 sumIHSarrayFAR(ihsfarStruct *outputfar, alignedREAL4VectorArray *ihsvectorarray, INT4 rows, REAL4Vector *FbinMean, UserInput_t *params, gsl_rng *rng);
+INT4 sumIHSarray(ihsMaximaStruct *output, ihsfarStruct *inputfar, alignedREAL4VectorArray *ihsvectorarray, INT4 rows, REAL4Vector *FbinMean, UserInput_t *params);
 
-INT4 findIHScandidates(candidateVector **candlist, ihsfarStruct *ihsfarstruct, inputParamsStruct *params, ffdataStruct *ffdata, ihsMaximaStruct *ihsmaxima, REAL4Vector *fbinavgs, REAL4VectorSequence *trackedlines);
+INT4 findIHScandidates(candidateVector **candlist, ihsfarStruct *ihsfarstruct, UserInput_t *params, ffdataStruct *ffdata, ihsMaximaStruct *ihsmaxima, REAL4Vector *fbinavgs, REAL4VectorSequence *trackedlines);
 
 REAL4 ihsFOM(INT4Vector *locs, INT4 fomnorm);
 
-REAL8 ihs2h0(REAL8 ihsval, inputParamsStruct *params);
+REAL8 ihs2h0(REAL8 ihsval, UserInput_t *params);
 
 #endif
 

@@ -17,14 +17,9 @@
  *  MA  02111-1307  USA
  */
 
-#include <math.h>
-
-#include <lal/LALMalloc.h>
-
 #include <gsl/gsl_roots.h>
-
 #include "upperlimits.h"
-#include "statistics.h"
+#include "cdfdist.h"
 #include "IHS.h"
 
 
@@ -36,8 +31,6 @@
 UpperLimitVector * new_UpperLimitVector(UINT4 length)
 {
 
-   INT4 ii;
-
    UpperLimitVector *vector = NULL;
    XLAL_CHECK_NULL( (vector = XLALMalloc(sizeof(*vector))) != NULL, XLAL_ENOMEM );
 
@@ -45,7 +38,7 @@ UpperLimitVector * new_UpperLimitVector(UINT4 length)
    if (length==0) vector->data = NULL;
    else {
       XLAL_CHECK_NULL( (vector->data = XLALMalloc( length*sizeof(*vector->data) )) != NULL, XLAL_ENOMEM );
-      for (ii=0; ii<(INT4)length; ii++) reset_UpperLimitStruct(&(vector->data[ii]));
+      for (UINT4 ii=0; ii<length; ii++) reset_UpperLimitStruct(&(vector->data[ii]));
    }
 
    return vector;
@@ -69,11 +62,10 @@ UpperLimitVector * resize_UpperLimitVector(UpperLimitVector *vector, UINT4 lengt
    }
 
    UINT4 oldlength = vector->length;
-   INT4 ii;
 
    XLAL_CHECK_NULL( (vector->data = XLALRealloc(vector->data, length*sizeof(*vector->data))) != NULL, XLAL_ENOMEM );
    vector->length = length;
-   for (ii=(INT4)oldlength; ii<(INT4)length; ii++) reset_UpperLimitStruct(&(vector->data[ii]));
+   for (UINT4 ii=oldlength; ii<length; ii++) reset_UpperLimitStruct(&(vector->data[ii]));
 
    return vector;
 
@@ -87,12 +79,10 @@ UpperLimitVector * resize_UpperLimitVector(UpperLimitVector *vector, UINT4 lengt
 void free_UpperLimitVector(UpperLimitVector *vector)
 {
 
-   INT4 ii;
-
    if (vector==NULL) return;
    if ((!vector->length || !vector->data) && (vector->length || vector->data)) XLAL_ERROR_VOID(XLAL_EINVAL);
    if (vector->data) {
-      for (ii=0; ii<(INT4)vector->length; ii++) free_UpperLimitStruct(&(vector->data[ii]));
+      for (UINT4 ii=0; ii<vector->length; ii++) free_UpperLimitStruct(&(vector->data[ii]));
       XLALFree((UpperLimit*)vector->data);
    }
    vector->data = NULL;
@@ -133,21 +123,21 @@ void free_UpperLimitStruct(UpperLimit *ul)
 /**
  * Determine the 95% confidence level upper limit at a particular sky location from the loudest IHS value
  * \param [out] ul        Pointer to an UpperLimit struct
- * \param [in]  params    Pointer to inputParamsStruct
+ * \param [in]  params    Pointer to UserInput_t
  * \param [in]  ffdata    Pointer to ffdataStruct
  * \param [in]  ihsmaxima Pointer to an ihsMaximaStruct
  * \param [in]  ihsfar    Pointer to an ihsfarStruct
  * \param [in]  fbinavgs  Pointer to a REAL4Vector of the 2nd FFT background powers
  * \return Status value
  */
-INT4 skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdata, ihsMaximaStruct *ihsmaxima, ihsfarStruct *ihsfar, REAL4Vector *fbinavgs)
+INT4 skypoint95UL(UpperLimit *ul, UserInput_t *params, ffdataStruct *ffdata, ihsMaximaStruct *ihsmaxima, ihsfarStruct *ihsfar, REAL4Vector *fbinavgs)
 {
 
    XLAL_CHECK( ul != NULL && params != NULL && ffdata != NULL && ihsmaxima != NULL && ihsfar!= NULL && fbinavgs != NULL, XLAL_EINVAL );
 
-   INT4 ii, jj, kk, ULdetermined = 0;
+   INT4 ULdetermined = 0;
 
-   INT4 minrows = (INT4)round(2.0*params->dfmin*params->Tcoh)+1;
+   INT4 minrows = (INT4)round(2.0*params->dfmin*params->Tsft)+1;
 
    //Allocate vectors
    XLAL_CHECK( (ul->fsig = XLALCreateREAL8Vector((ihsmaxima->rows-minrows)+1)) != NULL, XLAL_EFUNC );
@@ -184,29 +174,29 @@ INT4 skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
    struct ncx2cdf_solver_params pars;
 
    //loop over modulation depths
-   for (ii=minrows; ii<=ihsmaxima->rows; ii++) {
+   for (INT4 ii=minrows; ii<=ihsmaxima->rows; ii++) {
       REAL8 loudestoutlier = 0.0, loudestoutlierminusnoise = 0.0, loudestoutliernoise = 0.0;
       INT4 jjbinofloudestoutlier = 0, locationofloudestoutlier = -1;
       INT4 startpositioninmaximavector = (ii-2)*ffdata->numfbins - ((ii-1)*(ii-1)-(ii-1))/2;
-      REAL8 moddepth = 0.5*(ii-1.0)/params->Tcoh;                             //"Signal" modulation depth
+      REAL8 moddepth = 0.5*(ii-1.0)/params->Tsft;                             //"Signal" modulation depth
 
       //loop over frequency bins
-      for (jj=0; jj<ffdata->numfbins-(ii-1); jj++) {
+      for (INT4 jj=0; jj<ffdata->numfbins-(ii-1); jj++) {
          INT4 locationinmaximavector = startpositioninmaximavector + jj;      //Current location in IHS maxima vector
          REAL8 noise = ihsfar->expectedIHSVector->data[ihsmaxima->locations->data[locationinmaximavector] - 5];  //Expected noise
 
          //Sum across multiple frequency bins scaling noise each time with average noise floor
          REAL8 totalnoise = 0.0;
-         for (kk=0; kk<ii; kk++) totalnoise += fbinavgs->data[jj+kk];
+         for (INT4 kk=0; kk<ii; kk++) totalnoise += fbinavgs->data[jj+kk];
          totalnoise = noise*totalnoise;
 
          REAL8 ihsminusnoise = ihsmaxima->maxima->data[locationinmaximavector] - totalnoise;    //IHS value minus noise
 
-         REAL8 fsig = params->fmin - params->dfmax + (0.5*(ii-1.0) + jj - 6.0)/params->Tcoh;        //"Signal" frequency
+         REAL8 fsig = params->fmin - params->dfmax + (0.5*(ii-1.0) + jj - 6.0)/params->Tsft;        //"Signal" frequency
 
          if (ihsminusnoise>loudestoutlierminusnoise &&
              (fsig>=params->ULfmin && fsig<params->ULfmin+params->ULfspan) &&
-             (moddepth>=params->ULmindf && moddepth<=params->ULmaxdf)) {
+             (moddepth>=params->ULminimumDeltaf && moddepth<=params->ULmaximumDeltaf)) {
             loudestoutlier = ihsmaxima->maxima->data[locationinmaximavector];
             loudestoutliernoise = totalnoise;
             loudestoutlierminusnoise = ihsminusnoise;
@@ -231,7 +221,7 @@ INT4 skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
          INT4 status = GSL_CONTINUE;
          INT4 max_iter = 100;
          REAL8 root = 0.0;
-         jj = 0;
+         INT4 jj = 0;
          while (status==GSL_CONTINUE && jj<max_iter) {
             jj++;
             status = gsl_root_fsolver_iterate(s);
@@ -248,9 +238,9 @@ INT4 skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
          REAL8 h0 = ihs2h0(root, params);
 
          //Store values in the upper limit struct
-         ul->fsig->data[ii-minrows] = params->fmin - params->dfmax + (0.5*(ii-1.0) + jjbinofloudestoutlier - 6.0)/params->Tcoh;
+         ul->fsig->data[ii-minrows] = params->fmin - params->dfmax + (0.5*(ii-1.0) + jjbinofloudestoutlier - 6.0)/params->Tsft;
          ul->period->data[ii-minrows] = params->Tobs/locationofloudestoutlier;
-         ul->moddepth->data[ii-minrows] = 0.5*(ii-1.0)/params->Tcoh;
+         ul->moddepth->data[ii-minrows] = 0.5*(ii-1.0)/params->Tsft;
          ul->ULval->data[ii-minrows] = h0;
          ul->effSNRval->data[ii-minrows] = unitGaussianSNR(root, pars.dof);
          ULdetermined++;
@@ -353,9 +343,8 @@ INT4 outputUpperLimitToFile(CHAR *outputfile, UpperLimit ul, INT4 printAllULvalu
    FILE *ULFILE = NULL;
    XLAL_CHECK( (ULFILE = fopen(outputfile, "a")) != NULL, XLAL_EIO, "Couldn't fopen file %s to output upper limits\n", outputfile );
 
-   INT4 ii;
    REAL8 highesth0 = 0.0, snr = 0.0, fsig = 0.0, period = 0.0, moddepth = 0.0;
-   for (ii=0; ii<(INT4)ul.moddepth->length; ii++) {
+   for (UINT4 ii=0; ii<ul.moddepth->length; ii++) {
       if (printAllULvalues==1) {
          fprintf(ULFILE, "%.6f %.6f %.6g %.6f %.6f %.6f %.6f %.6g\n", ul.alpha, ul.delta, ul.ULval->data[ii], ul.effSNRval->data[ii], ul.fsig->data[ii], ul.period->data[ii], ul.moddepth->data[ii], ul.normalization);
       } else if (printAllULvalues==0 && ul.ULval->data[ii]>highesth0) {

@@ -36,11 +36,10 @@ typedef struct
    INT4 lim;         //Limit to number of integration terms
    INT4 arrayNotSorted;      //Array has not been sorted
    INT4 fail;        //Fail flag if integration failes
-   INT4 useSSE;      //Flag to specify use SSE integration function
-   INT4 useAVX;      //Flag to specify use AVX integration function
+   INT4 vectorMath;  //Vector math flag
    INT4Vector *dofs;     //Array to hold values of the d.o.f. for each chi-squared variable
    INT4Vector *sorting;      //Array to hold the sorted element values for weights*noise
-   REAL8Vector *weights;         //Array of weights in front of each chi-squared variable to sum (in my case, weight*noise/2.0)
+   alignedREAL8Vector *weights;         //Array of weights in front of each chi-squared variable to sum (in my case, weight*noise/2.0)
    REAL8Vector *noncentrality;   //Array of non-centrality parameters for each chi-squared variable in sum
 } qfvars;
 
