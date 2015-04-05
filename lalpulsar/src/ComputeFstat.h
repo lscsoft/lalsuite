@@ -100,48 +100,23 @@ typedef enum tagFstatQuantities {
 typedef enum tagFstatMethodType {
 
   /// \cond DONT_DOXYGEN
-  // Overall/demod start marker; set to 1 to allow range-check without warnings
-  FMETHOD_START = 1, FMETHOD_DEMOD_START = FMETHOD_START,
+  FMETHOD_START = 1,
   /// \endcond
 
   FMETHOD_DEMOD_GENERIC,	///< \a Demod: generic C hotloop, works for any number of Dirichlet kernel terms \f$\text{Dterms}\f$
   FMETHOD_DEMOD_OPTC,		///< \a Demod: gptimized C hotloop using Akos' algorithm, only works for \f$\text{Dterms} \lesssim 20\f$
-  FMETHOD_DEMOD_SSE,		///< \a Demod: SSE hotloop with precalc divisors, uses fixed \f$\text{Dterms} = 8\f$
   FMETHOD_DEMOD_ALTIVEC,	///< \a Demod: Altivec hotloop variant, uses fixed \f$\text{Dterms} = 8\f$
-
-  /// \cond DONT_DOXYGEN
-  // Demod end marker, resamp start marker
-  FMETHOD_DEMOD_END, FMETHOD_RESAMP_START = FMETHOD_DEMOD_END,
-  /// \endcond
+  FMETHOD_DEMOD_SSE,		///< \a Demod: SSE hotloop with precalc divisors, uses fixed \f$\text{Dterms} = 8\f$
+  FMETHOD_DEMOD_BEST,		///< \a Demod: best guess of the fastest available hotloop
 
   FMETHOD_RESAMP_GENERIC,	///< \a Resamp: generic implementation
+  FMETHOD_RESAMP_BEST,		///< \a Resamp: best guess of the fastest available implementation
 
   /// \cond DONT_DOXYGEN
-  // Resamp/overall end marker
-  FMETHOD_RESAMP_END, FMETHOD_END = FMETHOD_RESAMP_END
+  FMETHOD_END
   /// \endcond
 
 } FstatMethodType;
-
-///
-/// Determine if #FstatMethodType value \c x belongs to the \a Demod class
-///
-#define XLALFstatMethodClassIsDemod(x)  ( ((x) > FMETHOD_DEMOD_START )  && ((x) < FMETHOD_DEMOD_END ) )
-
-///
-/// Determine if #FstatMethodType value \c x belongs to the \a Resamp class
-///
-#define XLALFstatMethodClassIsResamp(x) ( ((x) > FMETHOD_RESAMP_START ) && ((x) < FMETHOD_RESAMP_END ) )
-
-///
-/// Provide a 'best guess' of the fastest available \a Demod method variant. Useful as a user default value.
-///
-extern const int FMETHOD_DEMOD_BEST;
-
-///
-/// Provide a 'best guess' of the fastest available \a Resamp method variant. Useful as a user default value.
-///
-extern const int FMETHOD_RESAMP_BEST;
 
 ///
 /// Struct of optional 'advanced level' and (potentially method-specific) arguments to be passed to the

@@ -26,6 +26,7 @@
 
 #include "ComputeFstat_internal.h"
 
+#include <lal/LALString.h>
 #include <lal/NormalizeSFTRngMed.h>
 
 // ---------- Internal struct definitions ---------- //
@@ -44,38 +45,18 @@ struct tagFstatInput {
 int XLALSetupFstatDemod  ( void **method_data, FstatCommon *common, FstatMethodFuncs* funcs, MultiSFTVector *multiSFTs, const FstatOptionalArgs *optArgs );
 int XLALSetupFstatResamp ( void **method_data, FstatCommon *common, FstatMethodFuncs* funcs, MultiSFTVector *multiSFTs, const FstatOptionalArgs *optArgs );
 
-// ---------- Check for various computer architectures ---------- //
-
-#define CFS_HAVE_SSE 0
-
-#define CFS_HAVE_ALTIVEC 0
-
-#if CFS_HAVE_SSE
-#define DEF_FMETHOD_DEMOD_BEST FMETHOD_DEMOD_SSE
-#elif CFS_HAVE_ALTIVEC
-#define DEF_FMETHOD_DEMOD_BEST FMETHOD_DEMOD_ALTIVEC
-#else
-#define DEF_FMETHOD_DEMOD_BEST FMETHOD_DEMOD_OPTC
-#endif
-#define DEF_FMETHOD_RESAMP_BEST FMETHOD_RESAMP_GENERIC
-
-// these are for exporting
-const int FMETHOD_DEMOD_BEST  = DEF_FMETHOD_DEMOD_BEST;
-const int FMETHOD_RESAMP_BEST = DEF_FMETHOD_RESAMP_BEST;
-
 // ---------- Constant variable definitions ---------- //
 
-static const struct {
-  const char *const name;
-  BOOLEAN available;
-} FstatMethodNames[FMETHOD_END] = {
-  [FMETHOD_DEMOD_GENERIC]	= {"DemodGeneric",	1 },
-  [FMETHOD_DEMOD_OPTC] 		= {"DemodOptC", 	1 },
-  [FMETHOD_DEMOD_SSE] 		= {"DemodSSE", 		CFS_HAVE_SSE},
-  [FMETHOD_DEMOD_ALTIVEC] 	= {"DemodAltivec", 	CFS_HAVE_ALTIVEC},
+static const char *const FstatMethodNames[FMETHOD_END] = {
+  [FMETHOD_DEMOD_GENERIC]	= "DemodGeneric",
+  [FMETHOD_DEMOD_OPTC]		= "DemodOptC",
+  [FMETHOD_DEMOD_ALTIVEC]	= "DemodAltivec",
+  [FMETHOD_DEMOD_SSE]		= "DemodSSE",
+  [FMETHOD_DEMOD_BEST]		= "DemodBest",
 
-  [FMETHOD_RESAMP_GENERIC]	= {"ResampGeneric", 	1 }
-} ;
+  [FMETHOD_RESAMP_GENERIC]	= "ResampGeneric",
+  [FMETHOD_RESAMP_BEST]		= "ResampBest",
+};
 
 
 const FstatOptionalArgs FstatOptionalArgsDefaults = {
@@ -83,7 +64,7 @@ const FstatOptionalArgs FstatOptionalArgsDefaults = {
   .SSBprec = SSBPREC_RELATIVISTICOPT,
   .Dterms = 8,
   .runningMedianWindow = 50,
-  .FstatMethod = DEF_FMETHOD_DEMOD_BEST,
+  .FstatMethod = FMETHOD_DEMOD_BEST,
   .injectSources = NULL,
   .injectSqrtSX = NULL,
   .assumeSqrtSX = NULL,
@@ -251,19 +232,47 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
   XLAL_CHECK_NULL ( ephemerides != NULL, XLAL_EINVAL );
   XLAL_CHECK_NULL ( dFreq > 0, XLAL_EINVAL);
 
-  // Handle optional arguments, if given
-  const FstatOptionalArgs *optArgs;
+  // Create local copy of optional arguments, or use defaults if not given
+  FstatOptionalArgs optArgs;
   if ( optionalArgs != NULL ) {
-    optArgs = optionalArgs;
+    optArgs = *optionalArgs;
   } else {
-    optArgs = &FstatOptionalArgsDefaults;
+    optArgs = FstatOptionalArgsDefaults;
   }
 
   // Check optional arguments sanity
-  XLAL_CHECK_NULL ( (optArgs->injectSources == NULL) || ((optArgs->injectSources->length > 0) && (optArgs->injectSources->data != NULL)), XLAL_EINVAL );
-  XLAL_CHECK_NULL ( (optArgs->injectSqrtSX == NULL) || (optArgs->injectSqrtSX->length > 0), XLAL_EINVAL );
-  XLAL_CHECK_NULL ( (optArgs->assumeSqrtSX == NULL) || (optArgs->assumeSqrtSX->length > 0), XLAL_EINVAL );
-  XLAL_CHECK_NULL ( optArgs->SSBprec < SSBPREC_LAST, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( (optArgs.injectSources == NULL) || ((optArgs.injectSources->length > 0) && (optArgs.injectSources->data != NULL)), XLAL_EINVAL );
+  XLAL_CHECK_NULL ( (optArgs.injectSqrtSX == NULL) || (optArgs.injectSqrtSX->length > 0), XLAL_EINVAL );
+  XLAL_CHECK_NULL ( (optArgs.assumeSqrtSX == NULL) || (optArgs.assumeSqrtSX->length > 0), XLAL_EINVAL );
+  XLAL_CHECK_NULL ( optArgs.SSBprec < SSBPREC_LAST, XLAL_EINVAL );
+
+  // Check optional Fstat method type argument
+  XLAL_CHECK_NULL ( ( FMETHOD_START < optArgs.FstatMethod ) && ( optArgs.FstatMethod < FMETHOD_END ), XLAL_EINVAL );
+  XLAL_CHECK_NULL ( FstatMethodNames[optArgs.FstatMethod] != NULL, XLAL_EFAULT );
+  switch (optArgs.FstatMethod) {
+
+  case FMETHOD_DEMOD_BEST:
+  case FMETHOD_RESAMP_BEST:
+    // If user asks for a 'best' method:
+    //   Decrement the current method, then check for the first available Fstat method. This assumes the FstatMethodType enum is ordered as follows:
+    //     FMETHOD_..._GENERIC,      (must **always** avaiable)
+    //     FMETHOD_..._OPTIMISED,    (always avaiable)
+    //     FMETHOD_..._SUPERFAST     (not always available; requires special hardware)
+    //     FMETHOD_..._BEST          (must **always** avaiable)
+    XLALPrintInfo( "%s: trying to find best available Fstat method for '%s'\n", __func__, FstatMethodNames[optArgs.FstatMethod] );
+    while ( !XLALFstatMethodIsAvailable( --optArgs.FstatMethod ) ) {
+      XLAL_CHECK_NULL ( FMETHOD_START < optArgs.FstatMethod, XLAL_EFAILED );
+      XLALPrintInfo( "%s: Fstat method '%s' is unavailable\n",  __func__, FstatMethodNames[optArgs.FstatMethod] );
+    }
+    XLALPrintInfo( "%s: Fstat method '%s' is available; selected as best method\n", __func__, FstatMethodNames[optArgs.FstatMethod] );
+    break;
+
+  default:
+    // If user asks for a specific method:
+    //   Check that method is available
+    XLAL_CHECK_NULL ( XLALFstatMethodIsAvailable(optArgs.FstatMethod), XLAL_EINVAL, "Fstat method '%s' is unavailable", FstatMethodNames[optArgs.FstatMethod] );
+    break;
+  }
 
   //
   // Parse which F-statistic method to use, and set these variables:
@@ -272,29 +281,29 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
   //
   int extraBinsMethod = 0;
   int (*setupFuncMethod) ( void **, FstatCommon *, FstatMethodFuncs*, MultiSFTVector *, const FstatOptionalArgs * );
-  switch (optArgs->FstatMethod) {
+  switch (optArgs.FstatMethod) {
 
   case FMETHOD_DEMOD_GENERIC:		// Demod: generic C hotloop
-    XLAL_CHECK_NULL ( optArgs->Dterms > 0, XLAL_EINVAL );
-    extraBinsMethod = optArgs->Dterms;
+    XLAL_CHECK_NULL ( optArgs.Dterms > 0, XLAL_EINVAL );
+    extraBinsMethod = optArgs.Dterms;
     setupFuncMethod = XLALSetupFstatDemod;
     break;
 
   case FMETHOD_DEMOD_OPTC:		// Demod: gptimized C hotloop using Akos' algorithm
-    XLAL_CHECK_NULL ( optArgs->Dterms <= 20, XLAL_EINVAL, "Selected Hotloop variant 'OptC' only works for Dterms <= 20, got %d\n", optArgs->Dterms );
-    extraBinsMethod = optArgs->Dterms;
+    XLAL_CHECK_NULL ( optArgs.Dterms <= 20, XLAL_EINVAL, "Selected Hotloop variant 'OptC' only works for Dterms <= 20, got %d\n", optArgs.Dterms );
+    extraBinsMethod = optArgs.Dterms;
     setupFuncMethod = XLALSetupFstatDemod;
     break;
 
   case FMETHOD_DEMOD_ALTIVEC:		// Demod: Altivec hotloop variant
-    XLAL_CHECK_NULL ( optArgs->Dterms == 8, XLAL_EINVAL, "Selected Hotloop variant 'Altivec' only works for Dterms == 8, got %d\n", optArgs->Dterms );
-    extraBinsMethod = optArgs->Dterms;
+    XLAL_CHECK_NULL ( optArgs.Dterms == 8, XLAL_EINVAL, "Selected Hotloop variant 'Altivec' only works for Dterms == 8, got %d\n", optArgs.Dterms );
+    extraBinsMethod = optArgs.Dterms;
     setupFuncMethod = XLALSetupFstatDemod;
     break;
 
   case FMETHOD_DEMOD_SSE:		// Demod: SSE hotloop with precalc divisors
-    XLAL_CHECK_NULL ( optArgs->Dterms == 8, XLAL_EINVAL, "Selected Hotloop variant 'SSE' only works for Dterms == 8, got %d\n", optArgs->Dterms );
-    extraBinsMethod = optArgs->Dterms;
+    XLAL_CHECK_NULL ( optArgs.Dterms == 8, XLAL_EINVAL, "Selected Hotloop variant 'SSE' only works for Dterms == 8, got %d\n", optArgs.Dterms );
+    extraBinsMethod = optArgs.Dterms;
     setupFuncMethod = XLALSetupFstatDemod;
     break;
 
@@ -304,27 +313,27 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
     break;
 
   default:
-    XLAL_ERROR_NULL ( XLAL_EINVAL, "Received invalid Fstat method enum '%d'\n", optArgs->FstatMethod );
+    XLAL_ERROR_NULL ( XLAL_EFAILED, "Missing switch case for optArgs.FstatMethod='%d'\n", optArgs.FstatMethod );
   }
   XLAL_CHECK_NULL ( extraBinsMethod >= 0, XLAL_EFAILED );
   XLAL_CHECK_NULL ( setupFuncMethod != NULL, XLAL_EFAILED );
 
   // Determine whether to load and/or generate SFTs
   const BOOLEAN loadSFTs = (SFTcatalog->data[0].locator != NULL);
-  const BOOLEAN generateSFTs = (optArgs->injectSources != NULL) || (optArgs->injectSqrtSX != NULL);
+  const BOOLEAN generateSFTs = (optArgs.injectSources != NULL) || (optArgs.injectSqrtSX != NULL);
   XLAL_CHECK_NULL ( loadSFTs || generateSFTs, XLAL_EINVAL, "Can neither load nor generate SFTs with given parameters" );
 
   // Create top-level input data struct
   FstatInput* input;
   XLAL_CHECK_NULL ( (input = XLALCalloc ( 1, sizeof(*input) )) != NULL, XLAL_ENOMEM );
-  input->method = optArgs->FstatMethod;
+  input->method = optArgs.FstatMethod;
   FstatCommon *common = &input->common;      // handy shortcut
   common->dFreq = dFreq;
 
   // Determine whether we can re-used workspace from a previous call to XLALCreateFstatInput()
-  if ( optArgs->prevInput != NULL ) {
-    XLAL_CHECK_NULL( optArgs->prevInput->method == input->method, XLAL_EFAILED );
-    common->workspace = optArgs->prevInput->common.workspace;
+  if ( optArgs.prevInput != NULL ) {
+    XLAL_CHECK_NULL( optArgs.prevInput->method == input->method, XLAL_EFAILED );
+    common->workspace = optArgs.prevInput->common.workspace;
     input->own_workspace = 0;   // We do not own this workspace, the original owner will destroy it
   } else {
     common->workspace = NULL;
@@ -342,7 +351,7 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
   REAL8 minFreqFull, maxFreqFull;
   {
     // Number of extra frequency bins required by: F-stat method, and running median
-    int extraBinsFull = extraBinsMethod + optArgs->runningMedianWindow/2 + 1; // NOTE: running-median window needed irrespective of assumeSqrtSX!
+    int extraBinsFull = extraBinsMethod + optArgs.runningMedianWindow/2 + 1; // NOTE: running-median window needed irrespective of assumeSqrtSX!
 
     // Extend frequency range by number of extra bins times SFT bin width
     const REAL8 extraFreqMethod = extraBinsMethod / Tsft;
@@ -382,8 +391,8 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
     } // end: if !loadSFTs
 
   // Check length of multi-noise floor arrays
-  XLAL_CHECK_NULL ( (optArgs->injectSqrtSX == NULL) || (optArgs->injectSqrtSX->length == common->detectors.length), XLAL_EINVAL );
-  XLAL_CHECK_NULL ( (optArgs->assumeSqrtSX == NULL) || (optArgs->assumeSqrtSX->length == common->detectors.length), XLAL_EINVAL );
+  XLAL_CHECK_NULL ( (optArgs.injectSqrtSX == NULL) || (optArgs.injectSqrtSX->length == common->detectors.length), XLAL_EINVAL );
+  XLAL_CHECK_NULL ( (optArgs.assumeSqrtSX == NULL) || (optArgs.assumeSqrtSX->length == common->detectors.length), XLAL_EINVAL );
 
   // Generate SFTs with injections and noise, if required
   if (generateSFTs)
@@ -394,18 +403,18 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
       MFDparams.Band = maxFreqFull - minFreqFull;
       MFDparams.multiIFO = common->detectors;
       MFDparams.multiTimestamps = *(common->multiTimestamps);
-      MFDparams.randSeed = optArgs->randSeed;
+      MFDparams.randSeed = optArgs.randSeed;
 
       // Set noise floors if sqrtSX is given; otherwise noise floors are zero
-      if ( optArgs->injectSqrtSX != NULL ) {
-        MFDparams.multiNoiseFloor = *(optArgs->injectSqrtSX);
+      if ( optArgs.injectSqrtSX != NULL ) {
+        MFDparams.multiNoiseFloor = *(optArgs.injectSqrtSX);
       } else {
         MFDparams.multiNoiseFloor.length = common->detectors.length;
       }
 
       // Generate SFTs with injections
       MultiSFTVector *fakeMultiSFTs = NULL;
-      XLAL_CHECK_NULL ( XLALCWMakeFakeMultiData ( &fakeMultiSFTs, NULL, optArgs->injectSources, &MFDparams, ephemerides ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_NULL ( XLALCWMakeFakeMultiData ( &fakeMultiSFTs, NULL, optArgs.injectSources, &MFDparams, ephemerides ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       // If SFTs were loaded, add generated SFTs to then, otherwise just used generated SFTs
       if (multiSFTs != NULL) {
@@ -424,10 +433,10 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
 
   // Normalise SFTs using either running median or assumed PSDs
   MultiPSDVector *runningMedian;
-  XLAL_CHECK_NULL ( (runningMedian = XLALNormalizeMultiSFTVect ( multiSFTs, optArgs->runningMedianWindow, optArgs->assumeSqrtSX )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_NULL ( (runningMedian = XLALNormalizeMultiSFTVect ( multiSFTs, optArgs.runningMedianWindow, optArgs.assumeSqrtSX )) != NULL, XLAL_EFUNC );
 
   // Calculate SFT noise weights from PSD
-  XLAL_CHECK_NULL ( (common->multiNoiseWeights = XLALComputeMultiNoiseWeights ( runningMedian, optArgs->runningMedianWindow, 0 )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_NULL ( (common->multiNoiseWeights = XLALComputeMultiNoiseWeights ( runningMedian, optArgs.runningMedianWindow, 0 )) != NULL, XLAL_EFUNC );
 
   // at this point we're done with running-median noise estimation and can 'trim' the SFTs back to
   // the width actually required by the Fstat-methods *methods*.
@@ -441,13 +450,13 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
 
   // Save ephemerides and SSB precision
   common->ephemerides = ephemerides;
-  common->SSBprec = optArgs->SSBprec;
+  common->SSBprec = optArgs.SSBprec;
 
   // Call the appropriate method function to setup their input data structures
   // - The method input data structures are expected to take ownership of the
   //   SFTs, which is why 'input->common' does not retain a pointer to them
   FstatMethodFuncs *funcs = &input->method_funcs;
-  XLAL_CHECK_NULL( (setupFuncMethod) ( &input->method_data, common, funcs, multiSFTs, optArgs ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_NULL( (setupFuncMethod) ( &input->method_data, common, funcs, multiSFTs, &optArgs ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Cleanup
   XLALDestroyMultiPSDVector ( runningMedian );
@@ -465,8 +474,9 @@ XLALGetFstatInputMethodName ( const FstatInput* input    ///< [in] \c FstatInput
 {
   // Check input
   XLAL_CHECK_NULL ( input != NULL, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( FstatMethodNames[input->method] != NULL, XLAL_EFAULT );
 
-  return FstatMethodNames[input->method].name;
+  return FstatMethodNames[input->method];
 
 } // XLALGetFstatMethodName()
 
@@ -809,14 +819,40 @@ XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,   ///< 
 int
 XLALFstatMethodIsAvailable ( FstatMethodType i )
 {
-  if ( (i <= FMETHOD_START) || (i >= FMETHOD_END) ) {
-    return 0;
-  }
-  if ( (FstatMethodNames[i].name == NULL) || !FstatMethodNames[i].available ) {
-    return 0;
-  }
+  switch (i) {
 
-  return 1;
+  case FMETHOD_DEMOD_GENERIC:
+  case FMETHOD_DEMOD_BEST:
+  case FMETHOD_RESAMP_GENERIC:
+  case FMETHOD_RESAMP_BEST:
+    // 'Generic' and 'Best' methods must **always** be available
+    return 1;
+
+  case FMETHOD_DEMOD_OPTC:
+    // This method is always avalable
+    return 1;
+
+  case FMETHOD_DEMOD_ALTIVEC:
+    // This method is available only if compiled with Altivec support
+#ifdef HAVE_ALTIVEC
+    return 1;
+#else
+    return 0;
+#endif
+
+  case FMETHOD_DEMOD_SSE:
+    // This method is available only if compiled with SSE support,
+    // and SSE is available on the current execution machine
+#ifdef HAVE_SSE_COMPILER
+    return LAL_HAVE_SSE_RUNTIME();
+#else
+    return 0;
+#endif
+
+  default:
+    return 0;
+
+  }
 } // XLALFstatMethodIsAvailable()
 
 
@@ -831,29 +867,26 @@ XLALFstatMethodHelpString ( void )
   static CHAR helpstr[1024];
   if ( firstCall )
     {
-      CHAR buf[1024];
-      strncpy (helpstr, "Available methods: (", sizeof(helpstr));
-      UINT4 len = strlen(helpstr);
-      const CHAR *separator = "";
+      XLAL_LAST_ELEM ( helpstr ) = '\0';
+      strcpy ( helpstr, "Available methods:" );
+      CHAR separator = ' ';
       for (int i = FMETHOD_START + 1; i < FMETHOD_END; i++ )
         {
-          if ( ! FstatMethodNames[i].available ) {
+          if ( ! XLALFstatMethodIsAvailable(i) ) {
             continue;
           }
-          snprintf ( buf, sizeof(buf), "%s%s", separator, FstatMethodNames[i].name );
-          separator="|";
-          if ( i == FMETHOD_DEMOD_BEST ) {
-            strncat ( buf, "=DemodBest", sizeof(buf) - strlen(buf) - 1 );
+          XLAL_CHECK_NULL ( FstatMethodNames[i] != NULL, XLAL_EFAULT );
+          if ( strcmp ( FstatMethodNames[i] + strlen(FstatMethodNames[i]) - 4, "Best" ) == 0 ) {
+            strcat ( helpstr, "=" );
+          } else {
+            strncat ( helpstr, &separator, 1 );
           }
-          if ( i == FMETHOD_RESAMP_BEST ) {
-            strncat ( buf, "=ResampBest", sizeof(buf) - strlen(buf) - 1 );
-          }
-          len += strlen(buf);
-          XLAL_CHECK_NULL ( len < sizeof(helpstr), XLAL_EBADLEN, "FstatMethod help-string exceeds buffer length (%lu)\n", sizeof(helpstr) );
-          strcat ( helpstr, buf );
+          strcat ( helpstr, FstatMethodNames[i] );
+          separator = '|';
         } // for i < FMETHOD_LAST
 
-      strcat(helpstr, ") ");
+      XLAL_CHECK_NULL ( XLAL_LAST_ELEM ( helpstr ) == '\0', XLAL_EBADLEN, "FstatMethod help-string exceeds buffer length (%lu)\n", sizeof(helpstr) );
+
       firstCall = 0;
 
     } // if firstCall
@@ -873,24 +906,13 @@ XLALParseFstatMethodString ( FstatMethodType *Fmethod,          //!< [out] Parse
   XLAL_CHECK ( s != NULL, XLAL_EINVAL );
   XLAL_CHECK ( Fmethod != NULL, XLAL_EINVAL );
 
-  // handle special user-input strings to select respective (guessed) best method
-  if ( strcmp ( s, "DemodBest" ) == 0 )
-    {
-      (*Fmethod) = FMETHOD_DEMOD_BEST;
-      return XLAL_SUCCESS;
-    }
-  if ( strcmp ( s, "ResampBest" ) == 0 )
-    {
-      (*Fmethod) = FMETHOD_RESAMP_BEST;
-      return XLAL_SUCCESS;
-    }
-
   // find matching FstatMethod string
   for (int i = FMETHOD_START + 1; i < FMETHOD_END; i++ )
     {
-      if ( (FstatMethodNames[i].name != NULL) && (strcmp ( s, FstatMethodNames[i].name ) == 0) )
+      XLAL_CHECK ( FstatMethodNames[i] != NULL, XLAL_EFAULT );
+      if ( XLALStringCaseCompare ( s, FstatMethodNames[i] ) == 0 )
         {
-          if ( FstatMethodNames[i].available )
+          if ( XLALFstatMethodIsAvailable(i) )
             {
               (*Fmethod) = i;
               return XLAL_SUCCESS;

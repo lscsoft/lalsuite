@@ -1107,13 +1107,7 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
   /* ----- set computational parameters for F-statistic from User-input ----- */
   XLAL_CHECK ( XLALParseFstatMethodString ( &cfg->FstatMethod, uvar->FstatMethod ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  if ( XLALFstatMethodClassIsResamp ( cfg->FstatMethod ) ) { // use resampling
-    cfg->useResamp = 1;
-  } else if ( XLALFstatMethodClassIsDemod ( cfg->FstatMethod ) ) { // use demodulation
-    cfg->useResamp = 0;
-  } else {
-    XLAL_ERROR ( XLAL_EINVAL, "Something went wrong: couldn't classify '%s'(=%d) into {Demod | Resamp}\n", uvar->FstatMethod, cfg->FstatMethod );
-  }
+  cfg->useResamp = ( cfg->FstatMethod >= FMETHOD_RESAMP_GENERIC ); // use resampling;
 
   /* use IFO-contraint if one given by the user */
   if ( XLALUserVarWasSet ( &uvar->IFO ) ) {

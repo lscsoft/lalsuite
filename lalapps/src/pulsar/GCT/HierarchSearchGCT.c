@@ -150,7 +150,6 @@ typedef struct {
   UINT4 nf3dot;			/**< number of 3rd spindown Fstat bins */
   SSBprecision SSBprec;            /**< SSB transform precision */
   FstatMethodType Fmethod;         //!< which Fstat-method/algorithm to use
-  BOOLEAN useResamp;               /**< user-input switch whether to use resampling */
   REAL8 mismatch1;                 /**< 'mismatch1' user-input needed here internally ... */
   UINT4 nSFTs;                     /**< total number of SFTs */
   LALStringVector *detectorIDs;    /**< vector of detector IDs */
@@ -748,7 +747,6 @@ int MAIN( int argc, char *argv[]) {
     XLALPrintError ("XLALParseFstatMethodString() failed.\n");
     return( HIERARCHICALSEARCH_EBAD );
   }
-  usefulParams.useResamp = XLALFstatMethodClassIsResamp ( usefulParams.Fmethod );
 
   usefulParams.mismatch1 = uvar_mismatch1;
 
