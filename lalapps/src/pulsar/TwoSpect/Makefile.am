@@ -22,4 +22,4 @@ compareCandidates_SOURCES = helperprograms/compareCandidates.c
 testVectorMath_SOURCES = helperprograms/testVectorMath.c vectormath.c vectormath.h
 
 computeSignalDetector_SOURCES = helperprograms/computeSignalDetector.c TwoSpectSpecFunc.c \
-				TwoSpectSpecfunc.h
+				TwoSpectSpecFunc.h
