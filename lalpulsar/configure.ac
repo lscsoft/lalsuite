@@ -80,6 +80,10 @@ AM_SILENT_RULES([yes])
 # check for required compilers
 LALSUITE_PROG_COMPILERS
 
+# check for SIMD extensions
+LALSUITE_CHECK_SIMD
+LALPULSAR_CHECK_ALTIVEC
+
 # checks for programs
 AC_PROG_INSTALL
 AC_PROG_LN_S

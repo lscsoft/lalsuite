@@ -71,6 +71,8 @@ liblalpulsar_la_SOURCES = \
 	ComplexAM.c \
 	ComputeFstat.c \
 	ComputeFstat_Demod.c \
+	ComputeFstat_DemodHL_Generic.c \
+	ComputeFstat_DemodHL_OptC.c \
 	ComputeFstat_Resamp.c \
 	ComputeSky.c \
 	ConstructPLUT.c \
@@ -142,6 +144,22 @@ nodist_liblalpulsar_la_SOURCES = LALPulsarBuildInfo.c
 if LALXML
 pkginclude_HEADERS += LALXMLVOTableSerializersPulsar.h
 liblalpulsar_la_SOURCES += LALXMLVOTableSerializersPulsar.c
+endif
+
+noinst_LTLIBRARIES =
+liblalpulsar_la_LIBADD =
+
+if HAVE_ALTIVEC
+noinst_LTLIBRARIES += libcomputefstat_demodhl_altivec.la
+liblalpulsar_la_LIBADD += libcomputefstat_demodhl_altivec.la
+libcomputefstat_demodhl_altivec_la_SOURCES = ComputeFstat_DemodHL_Altivec.c
+endif
+
+if HAVE_SSE_COMPILER
+noinst_LTLIBRARIES += libcomputefstat_demodhl_sse.la
+liblalpulsar_la_LIBADD += libcomputefstat_demodhl_sse.la
+libcomputefstat_demodhl_sse_la_SOURCES = ComputeFstat_DemodHL_SSE.c
+libcomputefstat_demodhl_sse_la_CFLAGS = $(AM_CFLAGS) $(SSE_CFLAGS)
 endif
 
 EXTRA_liblalpulsar_la_SOURCES = \

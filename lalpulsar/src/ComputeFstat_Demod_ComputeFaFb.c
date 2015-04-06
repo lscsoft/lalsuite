@@ -25,13 +25,30 @@
 // FUNC: the function name
 // HOTLOOP_SOURCE: the filename to be included containing the hotloop source
 
-/* Revamped version of LALDemod() (based on TestLALDemod() in CFS).
- * Compute JKS's Fa and Fb, which are ingredients for calculating the F-statistic.
- */
-static int
-FUNC ( COMPLEX8 *Fa,                        /* [out] Fa,Fb (and possibly atoms) returned */
-       COMPLEX8 *Fb,
-       FstatAtomVector **FstatAtoms,         // if !NULL: return Fstat atoms vector
+int FUNC ( COMPLEX8 *Fa, COMPLEX8 *Fb, FstatAtomVector **FstatAtoms, const SFTVector *sfts,
+           const PulsarSpins fkdot, const SSBtimes *tSSB, const AMCoeffs *amcoe, const UINT4 Dterms );
+
+// ComputeFaFb: DTERMS define used for loop unrolling in some hotloop variants
+#define DTERMS 8
+#define LD_SMALL4       (2.0e-4)                /* "small" number for REAL4*/
+#define OOTWOPI         (1.0 / LAL_TWOPI)       /* 1/2pi */
+#define TWOPI_FLOAT     6.28318530717958f       /* single-precision 2*pi */
+#define OOTWOPI_FLOAT   (1.0f / TWOPI_FLOAT)    /* single-precision 1 / (2pi) */
+
+// somehow the branch prediction of gcc-4.1.2 terribly fails
+// So let's give gcc a hint which path has a higher probablility
+#ifdef __GNUC__
+#define likely(x)       __builtin_expect((x),1)
+#else
+#define likely(x)       (x)
+#endif
+
+// Revamped version of LALDemod() (based on TestLALDemod() in CFS).
+// Compute JKS's Fa and Fb, which are ingredients for calculating the F-statistic.
+int
+FUNC ( COMPLEX8 *Fa,                         /* [out] Fa returned */
+       COMPLEX8 *Fb,                         /* [out] Fb returned */
+       FstatAtomVector **FstatAtoms,         /* [in,out] if !NULL: return Fstat atoms vector */
        const SFTVector *sfts,                /* [in] input SFTs */
        const PulsarSpins fkdot,              /* [in] frequency and derivatives fkdot = d^kf/dt^k */
        const SSBtimes *tSSB,                 /* [in] SSB timing series for particular sky-direction */
@@ -256,7 +273,4 @@ FUNC ( COMPLEX8 *Fa,                        /* [out] Fa,Fb (and possibly atoms) 
 
   return XLAL_SUCCESS;
 
-} // XLALComputeFaFb<VARIANT>()
-
-#undef FUNC
-#undef HOTLOOP_SOURCE
+} // FUNC()

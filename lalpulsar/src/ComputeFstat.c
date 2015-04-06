@@ -27,6 +27,7 @@
 #include "ComputeFstat_internal.h"
 
 #include <lal/LALString.h>
+#include <lal/LALSIMD.h>
 #include <lal/NormalizeSFTRngMed.h>
 
 // ---------- Internal struct definitions ---------- //
