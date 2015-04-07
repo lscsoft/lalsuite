@@ -49,6 +49,7 @@ typedef struct
   // ----- developer options
   REAL8 Tsft;
   BOOLEAN runBuffered;	// only useful for double-checking and Demod timing
+  BOOLEAN reuseInput;   // only useful for checking workspace management
 } UserInput_t;
 
 // hidden global variables used to pass timings to test/benchmark programs
@@ -78,6 +79,7 @@ main ( int argc, char *argv[] )
 
   uvar->Tsft = 1800;
   uvar->runBuffered = 0;
+  uvar->reuseInput = 1;
 
   XLAL_CHECK ( (uvar->IFOs = XLALCreateStringVector ( "H1", NULL )) != NULL, XLAL_EFUNC );
   uvar->outputInfo = NULL;
@@ -97,6 +99,7 @@ main ( int argc, char *argv[] )
 
   XLAL_CHECK ( XLALRegisterUvarMember ( Tsft,           REAL8,          0, DEVELOPER, "SFT length" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember ( runBuffered,    BOOLEAN,        0, DEVELOPER, "Explicitly time buffered Fstat call (only useful for double-checking and Demod timing)" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember ( reuseInput,     BOOLEAN,        0, DEVELOPER, "Re-use FstatInput from previous setups (only useful for checking workspace management)" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   XLAL_CHECK ( XLALUserVarReadAllInput(argc, argv) == XLAL_SUCCESS, XLAL_EFUNC );
   if (uvar->help) {	// if help was requested, we're done here
@@ -225,7 +228,7 @@ main ( int argc, char *argv[] )
       for ( INT4 l = 0; l < uvar->numSegments; l ++ )
         {
           XLAL_CHECK ( (inputs->data[l] = XLALCreateFstatInput ( catalogs[l], minCoverFreq, maxCoverFreq, dFreq, ephem, &optionalArgs )) != NULL, XLAL_EFUNC );
-          if ( l == 0 ) {
+          if ( uvar->reuseInput && l == 0 ) {
             optionalArgs.prevInput = inputs->data[0];
           }
         }
