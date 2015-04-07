@@ -36,7 +36,7 @@
 struct tagFstatInput {
   FstatMethodType method;				// Method to use for computing the F-statistic
   FstatCommon common;					// Common input data
-  BOOLEAN own_workspace;				// True if we own 'common.workspace', and therefore must destroy it
+  int *workspace_refcount;				// Reference counter for the shared workspace 'common.workspace'
   FstatMethodFuncs method_funcs;			// Function pointers for F-statistic method
   void *method_data;					// F-statistic method data
 };
@@ -333,12 +333,30 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
 
   // Determine whether we can re-used workspace from a previous call to XLALCreateFstatInput()
   if ( optArgs.prevInput != NULL ) {
-    XLAL_CHECK_NULL( optArgs.prevInput->method == input->method, XLAL_EFAILED );
+
+    // Check that F-stat method being used agrees with 'prevInput'
+    XLAL_CHECK_NULL( optArgs.prevInput->method == input->method, XLAL_EFAILED, "Cannot use workspace from 'prevInput' with different FstatMethod '%d'!='%d'", optArgs.prevInput->method, input->method );
+
+    // Get pointers to workspace and workspace reference counter in 'prevInput'
     common->workspace = optArgs.prevInput->common.workspace;
-    input->own_workspace = 0;   // We do not own this workspace, the original owner will destroy it
+    input->workspace_refcount = optArgs.prevInput->workspace_refcount;
+
+    // Increment reference count
+    ++(*input->workspace_refcount);
+    XLALPrintInfo( "%s: re-using workspace from 'optionalArgs.prevInput', reference count = %i\n", __func__, *input->workspace_refcount );
+
   } else {
+
+    // Workspace must be allocated by method setup function
     common->workspace = NULL;
-    input->own_workspace = 1;   // We own this workspace, and therefore have the responsibility to destroy it
+
+    // Allocate memory for reference counter; when reference count reaches 0, memory must be destroyed
+    XLAL_CHECK_NULL ( ( input->workspace_refcount = XLALCalloc ( 1, sizeof(*input->workspace_refcount) ) ) != NULL, XLAL_ENOMEM );
+
+    // Initialise reference counter to 1
+    (*input->workspace_refcount) = 1;
+    XLALPrintInfo( "%s: allocating new workspace, reference count = %i\n", __func__, *input->workspace_refcount );
+
   }
 
   // Determine the time baseline of an SFT
@@ -458,6 +476,9 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
   //   SFTs, which is why 'input->common' does not retain a pointer to them
   FstatMethodFuncs *funcs = &input->method_funcs;
   XLAL_CHECK_NULL( (setupFuncMethod) ( &input->method_data, common, funcs, multiSFTs, &optArgs ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // If setup function allocated a workspace, check that it also supplied a destructor function
+  XLAL_CHECK_NULL( common->workspace == NULL || funcs->workspace_destroy_func != NULL, XLAL_EFAILED );
 
   // Cleanup
   XLALDestroyMultiPSDVector ( runningMedian );
@@ -670,9 +691,20 @@ XLALDestroyFstatInput ( FstatInput* input       ///< [in] \c FstatInput structur
   XLALDestroyMultiNoiseWeights ( input->common.multiNoiseWeights );
   XLALDestroyMultiDetectorStateSeries ( input->common.multiDetectorStates );
 
-  if ( input->own_workspace && input->common.workspace != NULL ) {
-    // Free method-specific workspace using destructor function
-    (input->method_funcs.workspace_destroy_func) ( input->common.workspace );
+  // Release a reference to 'common.workspace'; if there are no more outstanding references ...
+  if ( --(*input->workspace_refcount) == 0 ) {
+    XLALPrintInfo( "%s: workspace reference count = %i, freeing workspace\n", __func__, *input->workspace_refcount );
+
+    // If allocated, free method-specific workspace using destructor function
+    if ( input->common.workspace != NULL ) {
+      (input->method_funcs.workspace_destroy_func) ( input->common.workspace );
+    }
+
+    // Free memory for workspace reference count
+    XLALFree ( input->workspace_refcount );
+
+  } else {
+    XLALPrintInfo( "%s: workspace reference count = %i\n", __func__, *input->workspace_refcount );
   }
 
   if ( input->method_data != NULL ) {
