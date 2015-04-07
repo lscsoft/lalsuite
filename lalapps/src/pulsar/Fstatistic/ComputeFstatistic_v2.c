@@ -1080,8 +1080,11 @@ initUserVars ( UserInput_t *uvar )
 
   XLALregSTRINGUserStruct(outputTiming,         0,  UVAR_DEVELOPER, "Append timing measurements and parameters into this file");
 
-  XLALRegisterUvarMember ( RA,	STRING, 0, DEPRECATED, "[DEPRECATED] use --Alpha instead" );
-  XLALRegisterUvarMember ( Dec, STRING, 0, DEPRECATED, "[DEPRECATED] use --Delta instead");
+  // ---------- deprecated but still-supported options ----------
+  XLALRegisterUvarMember ( RA,	STRING, 0, DEPRECATED, "Use --Alpha instead" );
+  XLALRegisterUvarMember ( Dec, STRING, 0, DEPRECATED, "Use --Delta instead");
+
+  // ---------- obsolete and unsupported options ----------
 
   return XLAL_SUCCESS;
 

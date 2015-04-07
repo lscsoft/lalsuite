@@ -172,8 +172,9 @@ XLALRegisterUserVar ( const CHAR *name,		/**< name of user-variable to register 
                       void *cvar		/**< pointer to the actual C-variabe to link to this user-variable */
                       )
 {
-  XLAL_CHECK ( (cvar != NULL) && (name != NULL), XLAL_EINVAL );
+  XLAL_CHECK ( name != NULL, XLAL_EINVAL );
   XLAL_CHECK ( (category > UVAR_CATEGORY_START) && (category < UVAR_CATEGORY_END), XLAL_EINVAL );
+  XLAL_CHECK ( cvar != NULL, XLAL_EINVAL );
 
   // find end of uvar-list && check that neither short- nor long-option are taken already
   LALUserVariable *ptr = &UVAR_vars;
@@ -459,7 +460,7 @@ XLALUserVarHelpString ( const CHAR *progname )
   XLAL_CHECK_NULL ( UVAR_vars.next != NULL, XLAL_EINVAL, "No UVAR memory allocated. Did you register any user-variables?\n" );
 
   BOOLEAN showDeveloperOptions  = (lalDebugLevel >= LALWARNING);	// only output for lalDebugLevel >= warning
-  BOOLEAN showDeprecatedOptions = (lalDebugLevel >= LALINFO);		// only output for lalDebugLevel >= info
+  BOOLEAN showDeprecatedOptions  = (lalDebugLevel >= LALINFO);		// only output for lalDebugLevel >= info
 
   // ---------- ZEROTH PASS: find longest long-option and type names, for proper output formatting
   LALUserVariable *ptr = &UVAR_vars;
@@ -481,6 +482,9 @@ XLALUserVarHelpString ( const CHAR *progname )
       }
       if ( (ptr->category == UVAR_CATEGORY_DEPRECATED) && !showDeprecatedOptions ) {
 	continue;	// skip deprecated options if not requested
+      }
+      if ( ptr->category == UVAR_CATEGORY_OBSOLETE ) {
+	continue;	// always skip obsolete options to hide them completely from help string
       }
 
       UINT4 len;
@@ -677,10 +681,16 @@ XLALUserVarReadAllInput ( int argc, char *argv[] )
 	skipCheckRequired = TRUE;
       }
 
-      // handle deprecated options by outputting a warning:
+      // handle DEPRECATED options by outputting a warning:
       if ( ptr->category == UVAR_CATEGORY_DEPRECATED && ptr->was_set ) {
-        XLALPrintWarning ("DEPRECATED UserInput option '%s' used: %s\n", ptr->name, ptr->help );
+        XLALPrintError ("Option '%s' is DEPRECATED: %s\n", ptr->name, ptr->help );	// we output warning on error-level to make this very noticeable!
       }
+
+      // handle DEPREC_ERROR options by throwing an error:
+      if ( ptr->category == UVAR_CATEGORY_OBSOLETE && ptr->was_set ) {
+        XLAL_ERROR ( XLAL_EINVAL, "Option '%s' is OBSOLETE: %s\n", ptr->name, ptr->help );
+      }
+
     } // while ptr = ptr->next
 
   // check that all required input-variables have been specified

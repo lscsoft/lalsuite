@@ -203,6 +203,12 @@ typedef struct
   CHAR *transientWindowType;	/**< name of transient window ('rect', 'exp',...) */
   REAL8 transientStartTime;	/**< GPS start-time of transient window */
   REAL8 transientTauDays;	/**< time-scale in days of transient window */
+
+  // ---------- OBSOLETE & unsupported options [kept for error-reporting] ----------
+  INT4 orbitTpSSBsec;
+  INT4 orbitTpSSBnan;
+  CHAR *orbitTpSSBMJD;
+
 } UserVariables_t;
 
 // ----- global variables ----------
@@ -1334,17 +1340,21 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
 
   XLALregBOOLUserStruct (  exactSignal,          0, UVAR_DEVELOPER, "Generate signal time-series as exactly as possible (slow).");
   XLALregINTUserStruct (   randSeed,             0, UVAR_DEVELOPER, "Specify random-number seed for reproducible noise (use /dev/urandom otherwise).");
+  XLALregBOOLUserStruct ( outSFTv1,	 	 0, UVAR_DEVELOPER,   "[deprecated] Write output-SFTs in obsolete SFT-v1 format." );
 
-  XLALregREALUserStruct (  longitude,            0, UVAR_DEVELOPER, "[DEPRECATED] Use --Alpha instead!");
-  XLALregREALUserStruct (  latitude,             0, UVAR_DEVELOPER, "[DEPRECATED] Use --Delta instead!");
-  XLALregREALUserStruct (  f0,                   0, UVAR_DEVELOPER, "[DEPRECATED] Use --Freq instead!");
-  XLALregSTRINGUserStruct (detector,             0, UVAR_DEVELOPER, "[DEPRECATED] Detector: use --IFO instead!.");
-  XLALregBOOLUserStruct( outSFTv1,	 	 0, UVAR_DEVELOPER, "[DEPRECATED]Write output-SFTs in obsolete SFT-v1 format." );
-  XLALregREALUserStruct (  noiseSigma,           0, UVAR_DEVELOPER, "[DEPRECATED] Alternative: Gaussian noise with standard-deviation sigma");
+  // ----- deprecated but still supported options [throw warning if used] ----------
+  XLALRegisterUvarMember ( longitude,	REAL8, 	 0, DEPRECATED, "Use --Alpha instead!");
+  XLALRegisterUvarMember ( latitude,	REAL8, 	 0, DEPRECATED, "Use --Delta instead!");
+  XLALRegisterUvarMember ( f0,		REAL8,	 0, DEPRECATED, "Use --Freq instead!");
+  XLALRegisterUvarMember ( detector,	STRING,	 0, DEPRECATED, "Use --IFO instead!");
+  XLALRegisterUvarMember ( noiseSigma,	REAL8,   0, DEPRECATED, "Use --noiseSqrtSh to specify PSD instead of Gaussian standard-deviation sigma");
+  XLALRegisterUvarMember ( RA,		STRING,  0, DEPRECATED, "Use --Alpha instead");
+  XLALRegisterUvarMember ( Dec,		STRING,  0, DEPRECATED, "Use --Delta instead");
 
-
-  XLALregSTRINGUserStruct (RA,                   0, UVAR_DEVELOPER, "[DEPRECATED] use --Alpha instead");
-  XLALregSTRINGUserStruct (Dec,                  0, UVAR_DEVELOPER, "[DEPRECATED] use --Delta instead");
+  // ----- deprecated and unsupported options [throw error if used] ----------
+  XLALRegisterUvarMember ( orbitTpSSBsec, INT4,  0, OBSOLETE, "Use --orbitTp instead");
+  XLALRegisterUvarMember ( orbitTpSSBnan, INT4,  0, OBSOLETE, "Use --orbitTp instead");
+  XLALRegisterUvarMember ( orbitTpSSBMJD, STRING,0, OBSOLETE, "Use --orbitTp instead");
 
   /* read cmdline & cfgfile  */
   ret = XLALUserVarReadAllInput ( argc, argv );
