@@ -277,8 +277,8 @@ XLALSetupFstatResamp ( void **method_data,
 
   // Set method function pointers
   funcs->compute_func = XLALComputeFstatResamp;
-  funcs->method_data_dtor = XLALDestroyResampMethodData;
-  funcs->workspace_dtor = XLALDestroyResampWorkspace;
+  funcs->method_data_destroy_func = XLALDestroyResampMethodData;
+  funcs->workspace_destroy_func = XLALDestroyResampWorkspace;
 
   // Convert SFTs into heterodyned complex timeseries [in detector frame]
   XLAL_CHECK ( (resamp->multiTimeSeries_DET = XLALMultiSFTVectorToCOMPLEX8TimeSeries ( multiSFTs )) != NULL, XLAL_EFUNC );

@@ -672,12 +672,12 @@ XLALDestroyFstatInput ( FstatInput* input       ///< [in] \c FstatInput structur
 
   if ( input->own_workspace && input->common.workspace != NULL ) {
     // Free method-specific workspace using destructor function
-    (input->method_funcs.workspace_dtor) ( input->common.workspace );
+    (input->method_funcs.workspace_destroy_func) ( input->common.workspace );
   }
 
   if ( input->method_data != NULL ) {
     // Free method-specific data using destructor function
-    (input->method_funcs.method_data_dtor) ( input->method_data );
+    (input->method_funcs.method_data_destroy_func) ( input->method_data );
   }
 
   XLALFree ( input );

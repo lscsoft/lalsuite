@@ -51,8 +51,8 @@ typedef struct {
   int (*compute_func) (					// F-statistic method computation function
     FstatResults *, const FstatCommon *, void *
     );
-  void (*method_data_dtor) ( void * );			// F-statistic method data destructor
-  void (*workspace_dtor) ( void * );			// Workspace destructor function
+  void (*method_data_destroy_func) ( void * );		// F-statistic method data destructor function
+  void (*workspace_destroy_func) ( void * );		// Workspace destructor function
 } FstatMethodFuncs;
 
 // ---------- Shared internal functions ---------- //

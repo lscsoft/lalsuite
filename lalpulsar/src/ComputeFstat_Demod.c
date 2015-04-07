@@ -275,8 +275,8 @@ XLALSetupFstatDemod ( void **method_data,
 
   // Set method function pointers
   funcs->compute_func = XLALComputeFstatDemod;
-  funcs->method_data_dtor = XLALDestroyDemodMethodData;
-  funcs->workspace_dtor = NULL;
+  funcs->method_data_destroy_func = XLALDestroyDemodMethodData;
+  funcs->workspace_destroy_func = NULL;
 
   // Save pointer to SFTs
   demod->multiSFTs = multiSFTs;
