@@ -55,6 +55,7 @@ AM_INIT_AUTOMAKE([ \
   dist-xz \
   no-dist-gzip \
 ])
+LT_INIT()
 
 AC_CANONICAL_HOST
 
@@ -129,6 +130,13 @@ if test "x$mpi" = "xtrue"; then
 fi
 LALSUITE_ENABLE_MODULE([MPI])
 
+# link tests using libtool
+if test "${static_binaries}" = "true"; then
+  LALSUITE_USE_LIBTOOL([-all-static])
+else
+  LALSUITE_USE_LIBTOOL
+fi
+
 # checks for programs
 AC_PROG_INSTALL
 AC_PROG_LN_S
@@ -164,13 +172,6 @@ fi
 
 # check for supported mac os x version
 LALSUITE_OSX_VERSION_CHECK
-
-# link tests using libtool
-if test "${static_binaries}" = "true"; then
-  LALSUITE_USE_LIBTOOL([-all-static])
-else
-  LALSUITE_USE_LIBTOOL
-fi
 
 # check for system libraries
 AC_CHECK_LIB([m],[sin])
