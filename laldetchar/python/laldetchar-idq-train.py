@@ -115,8 +115,11 @@ classifiersD, mla, ovl = reed.config_to_classifiersD( config )
 
 if mla:
     ### reading parameters from config file needed for mla
-    auxmvc_coinc_window = config.getfloat('build_auxmvc_vectors','time-window')
-    auxmc_gw_signif_thr = config.getfloat('build_auxmvc_vectors','signif-threshold')
+#    auxmvc_coinc_window = config.getfloat('build_auxmvc_vectors','time-window')
+#    auxmc_gw_signif_thr = config.getfloat('build_auxmvc_vectors','signif-threshold')
+    auxmvc_coinc_window = config.getfloat('realtime', 'padding')
+    auxmc_gw_signif_thr = config.getfloat('general', 'gw_kwsignif_thr')
+
     auxmvc_selected_channels = config.get('general','selected-channels')
     auxmvc_unsafe_channels = config.get('general','unsafe-channels')
 
@@ -139,6 +142,10 @@ realtimedir = config.get('general', 'realtimedir')
 
 padding = config.getfloat('realtime', 'padding')
 
+clean_rate = config.getfloat('realtime', 'clean_rate')
+clean_window = config.getfloat('realtime', 'clean_window')
+clean_threshold = config.getfloat('realtime', 'clean_threshold')
+
 #========================
 # train
 #========================
@@ -156,6 +163,9 @@ train_cache = dict( (classifier, reed.Cachefile(reed.cache(traindir, classifier,
 build_auxmvc_vectors = mla and (not os.path.exists(realtimedir)) ### if realtimedir does not exist, we cannot rely on patfiles from the realtime job
                                                                  ### we need to build our own auxmvc_vectors
 
+max_gch_samples = config.getfloat("train", "max-glitch-samples")
+max_cln_samples = config.getfloat("train", "max-clean-samples")
+
 #========================
 # data discovery
 #========================
@@ -165,6 +175,8 @@ if not opts.ignore_science_segments:
     dq_name = config.get('get_science_segments', 'include')
 #    dq_name = config.get('get_science_segments', 'include').split(':')[1]
     segdb_url = config.get('get_science_segments', 'segdb')
+else:
+    dq_name = None ### needs to be defined
 
 ### set up content handler for xml files
 lsctables.use_in(ligolw.LIGOLWContentHandler)
@@ -178,6 +190,7 @@ GWkwconfigpath = config.get('data_discovery', 'GWkwconfig')
 GWkwconfig = reed.loadkwconfig(GWkwconfigpath)
 GWkwbasename = GWkwconfig['basename']
 GWgdsdir = config.get('data_discovery', 'GWgdsdir')
+GWkwstride = int(float(GWkwconfig['stride']))
 
 GWkwtrgdir = "%s/%s"%(GWgdsdir, GWkwbasename)
 
@@ -185,6 +198,7 @@ AUXkwconfigpath = config.get('data_discovery', 'AUXkwconfig')
 AUXkwconfig = reed.loadkwconfig(AUXkwconfigpath)
 AUXkwbasename = AUXkwconfig['basename']
 AUXgdsdir = config.get('data_discovery', 'AUXgdsdir')
+AUXkwstride = int(float(AUXkwconfig['stride']))
 
 AUXkwtrgdir = "%s/%s"%(AUXgdsdir, AUXkwbasename)
 
@@ -398,10 +412,68 @@ while gpsstart < gpsstop:
                 logger.warning('WARNING: building auxmvc vectors, this should be necessary only at the very first training cycle')
             else:
                 logger.warning('WARNING: patfile generation failed for some reason. Attempt to build auxmvc vectors from scratch')
+                if ovl and (not opts.ignore_science_segments): ### need to reset sciseg pointer!
+                    ### write segments to ascii list
+                    sciseg_path = reed.segascii(output_dir, "_%s"%dq_name, gpsstart-lookback, lookback+stride)
+                    logger.info('writing science segments to file : '+sciseg_path)
+                    f = open(sciseg_path, 'w')
+                    for line in scisegs:
+                        print >> f, line[0], line[1]
+                    f.close()
+                    ovlsegs = sciseg_path
 
-            ### launch job that builds auxmvc_vectors
-            (ptas_exit_status, _) = reed.execute_build_auxmvc_vectors( config, output_dir, AUXkwtrgdir, gwchannel, pat, gpsstart - lookback, gpsstart + stride, channels=auxmvc_selected_channels, unsafe_channels=auxmvc_unsafe_channels, dq_segments=seg_file, dq_segments_name=dq_name )
-            os.chdir(cwd) ### go back to starting directory
+            ### build auxmvc_vectors by hand!
+            ### get triggers
+            logger.info('looking for triggers')
+            trigger_dict = reed.retrieve_kwtrigs(GWgdsdir, GWkwbasename, gpsstart-lookback, lookback+stride, GWkwstride, sleep=0, ntrials=1, logger=logger) ### go find GW kwtrgs
+            if gwchannel not in trigger_dict:
+                trigger_dict[gwchannel] = []
+
+            ### keep only relevant gchs
+            if len(trigger_dict[gwchannel]) > max_gch_samples:
+                trgdict.resort() ### make sure they're in the correct order
+                trigger_dict[gwchannel] = trigger_dict[gwchannel][-max_gch_samples:]
+
+            if not identical_trgfile: ### add AUX triggers
+                logger.info('looking for additional AUX triggers')
+                aux_trgdict = reed.retrieve_kwtrigs(AUXgdsdir, AUXkwbasename, gpsstart-lookback-padding, lookback+stride+padding, AUXkwstride, sleep=0, ntrials=1, logger=logger) ### find AUX kwtrgs
+                if aux_trgdict == None:
+                    logger.warning('  no auxiliary triggers were found')
+                    ### we do not skip, although we might want to?
+                else:
+                    triggger_dict.add( aux_trgdict )
+                    trigger_dict.resort()
+
+            trigger_dict.include([[gpsstart-lookback-padding, gpsstart + stride+padding]])
+            trigger_dict.include([[gpsstart-lookback, gpsstart + stride]], channels=[gwchannel])
+                
+            ### define cleans
+            logger.info('  constructing cleans')
+            dirtyseg = event.vetosegs(trigger_dict[gwchannel], clean_window, clean_threshold)
+
+            clean_gps = sorted(event.randomrate(clean_rate, [[gpsstart-lookback, gpsstart + stride]])) ### generate random clean times as a poisson time series
+            clean_gps = [ l[0] for l in event.exclude( [[gps] for gps in clean_gps], dirtyseg, tcent=0)] ### keep only those gps times that are outside of dirtyseg
+
+            ### keep only the most relevant cleans
+            if len(clean_gps) > max_cln_samples:
+                clean_gps = clean_gps[-max_cln_samples:]
+
+            ### keep only times that are within science time
+            if not opts.ignore_science_segments:
+                logger.info('  filtering trigger_dict through scisegs')
+                (scisegs, coveredseg) = reed.extract_dq_segments(seg_file, dq_name)
+                trigger_dict.include(scisegs)
+
+            ### build vectors, also writes them into pat
+            logger.info('  writting %s'%pat)
+            reed.build_auxmvc_vectors(trigger_dict, gwchannel, auxmvc_coinc_window, auxmc_gw_signif_thr, pat, gps_start_time=gpsstart-lookback,
+                                gps_end_time=gpsstart + stride,  channels=auxmvc_selected_channels, unsafe_channels=auxmvc_unsafe_channels, clean_times=clean_gps,
+                                clean_window=clean_window, filter_out_unclean=False )
+
+            ptas_exit_status = 0 ### used to check for success
+
+#            (ptas_exit_status, _) = reed.execute_build_auxmvc_vectors( config, output_dir, AUXkwtrgdir, gwchannel, pat, gpsstart - lookback, gpsstart + stride, channels=auxmvc_selected_channels, unsafe_channels=auxmvc_unsafe_channels, dq_segments=seg_file, dq_segments_name=dq_name )
+#            os.chdir(cwd) ### go back to starting directory
  
         # check if process has been executed correctly
         if ptas_exit_status != 0: ### check that process executed correctly
