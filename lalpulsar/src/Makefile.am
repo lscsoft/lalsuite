@@ -34,6 +34,7 @@ pkginclude_HEADERS = \
 	LUT.h \
 	LatticeTiling.h \
 	LineRobustStats.h \
+	MetricUtils.h \
 	NormalizeSFTRngMed.h \
 	PHMD.h \
 	ProbabilityDensity.h \
@@ -102,6 +103,7 @@ liblalpulsar_la_SOURCES = \
 	LISAspecifics.c \
 	LatticeTiling.c \
 	LineRobustStats.c \
+	MetricUtils.c \
 	NDParamPLUT.c \
 	NormalizeSFTRngMed.c \
 	ParamPLUT.c \
