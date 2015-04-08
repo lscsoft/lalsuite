@@ -79,7 +79,6 @@ gps_start_time = int(opts.gps_start_time)
 gps_end_time = int(opts.gps_end_time)
 
 # get all *.pat files in the specififed range
-
 patfiles = reed.get_all_files_in_range(opts.source_directory,
         gps_start_time, gps_end_time, suffix='.pat')
 
@@ -90,36 +89,30 @@ if len(patfiles) == 0:
     sys.exit(2)
 
 # load auxmvc vector samples
-
 auxmvc_samples = auxmvc_utils.ReadMVSCTriggers(patfiles,
         Classified=False)
 
 if opts.dq_segments:
 
     # load dq segments
-
     (dq_segments, covered_segments) = \
         reed.extract_dq_segments(open(opts.dq_segments, 'r'),
                                 opts.dq_segments_name)
 
     # sort and merge segments
-
     dq_segments = event.fixsegments(dq_segments)
 
     # keep only samples that fall in the dq_segments
-
     auxmvc_samples = \
         auxmvc_utils.get_samples_in_segments(auxmvc_samples,
             dq_segments)
 
 # get clean and glitch samples
-
 random_samples = auxmvc_samples[numpy.nonzero(auxmvc_samples['i']
                                 == 0)[0], :]
 clean_samples = auxmvc_utils.get_clean_samples(random_samples)
 
 # apply upper limit on the number of clean samples if given
-
 if opts.max_clean_samples:
     if len(clean_samples) > opts.max_clean_samples:
         clean_samples = clean_samples[-opts.max_clean_samples:]
@@ -128,7 +121,6 @@ glitch_samples = auxmvc_samples[numpy.nonzero(auxmvc_samples['i']
                                 == 1)[0], :]
 
 # apply upper limit on the number of glitch samples if given
-
 if opts.max_glitch_samples:
     if len(glitch_samples) > opts.max_glitch_samples:
         glitch_samples = glitch_samples[-opts.max_glitch_samples:]
@@ -142,11 +134,9 @@ if opts.verbose:
 auxmvc_samples = numpy.concatenate((glitch_samples, clean_samples))
 
 # construct name for MVSC training pat file....
-
 output_file_name = opts.output_file
 
 # save training samples into a file
-
 auxmvc_utils.WriteMVSCTriggers(auxmvc_samples,
                                output_filename=output_file_name,
                                Classified=False)
