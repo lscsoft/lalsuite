@@ -67,8 +67,8 @@ parser.add_option('-c', '--config', default='idq.ini', type='string', help='conf
 
 parser.add_option('-l', '--log-file', default='idq_calibration.log', type='string', help='log file')
 
-parser.add_option('-s', '--gps-start', dest="gpsstart", default=-np.infty, type='float', help='gps start time')
-parser.add_option('-e', '--gps-stop', dest="gpsstop", default=np.infty, type='float', help='gps end time')
+parser.add_option('-s', '--gpsstart', dest="gpsstart", default=-np.infty, type='float', help='gps start time')
+parser.add_option('-e', '--gpsstop', dest="gpsstop", default=np.infty, type='float', help='gps end time')
 
 parser.add_option('-b', '--lookback', default='0', type='string', help="Number of seconds to look back and get data for training. Default is zero.\
         Can be either positive integer or 'infinity'. In the latter case, the lookback will be incremented at every stride and all data after --gps-start will be used in every training.")
@@ -146,18 +146,6 @@ errorthr = config.getfloat('warnings', 'calibration_errorthr')
 
 uroc_nsamples = config.getint('calibration','urank_nsamples')
 urank = np.linspace(1, 0, uroc_nsamples) ### uniformly spaced ranks used to sample ROC curves -> uroc
-
-### used for calibration check output files
-report_str = \
-"""
-        FAPthr   = %.5E
-      stated FAP = %.5E
-       deadtime  = %.5E
-   \% difference = %.3E\%
-   UL stated FAP = %.5E
-     UL deadtime = %.5E
-UL \% difference = %.5E\%
-"""
 
 #========================
 # data discovery
@@ -392,7 +380,7 @@ while gpsstart < gpsstop:
         for classifier in classifiers:
             logger.info('  checking calibration for %s'%classifier)
 
-            _times, timeseries = reed.combine_ts(fapsD[classifier]) ### read in time-series
+            _times, timeseries = reed.combine_ts(fapsD[classifier], n=2) ### read in time-series
 
             times = []
             faps = []
@@ -419,7 +407,19 @@ while gpsstart < gpsstop:
             print >> file_obj, "livetime = %.3f"%event.livetime(idqsegs)
             for FAPthr, deadtime, statedFAP, deadtimeUL, statedFAPUL in zip(opts.FAPthr, deadtimes, statedFAPs, deadtimesUL, statedFAPsUL):
                 if (deadtime or statedFAP) and (deadtimeUL or statedFAPUL):
-                    print >> file_obj, report_str%(FAPthr, statedFAP, deadtime, 100 * (deadtime / statedFAPthr - 1), statedFAPUL, deadtimeUL, 100 * (deadtimeUL / statedFAPUL - 1.0) )
+                    if statedFAP:
+                        err = deadtime/statedFAP - 1
+                    elif deadtime:
+                        err = 1
+                    else:
+                        err = 0
+                    if statedFAPUL:
+                        errUL = deadtimeUL/statedFAPUL - 1
+                    elif deadtimeUL:
+                        errUL = 1
+                    else:
+                        errUL = 0
+                    print >> file_obj, calibration.report_str%(FAPthr, statedFAP, deadtime, err , statedFAPUL, deadtimeUL, errUL )
             file_obj.close()
 
             if np.any(np.abs(errs) > errorthr) or np.any(np.abs(errsUL) > errorthr):
@@ -430,7 +430,7 @@ while gpsstart < gpsstop:
             alerts_keys_str = " ".join(alerts_keys)
             logger.warning('WARNING: found suspicous historical calibrations for : %s'%alerts_keys_str )
             if emaillist:
-                email_cmd = "echo \"calibration check summary files are attached for: %s\" | mailx -s \"%s idq%s calibration warning\" %s \"%s\""%(alerts_keys_str, ifo, usertag, " ".join("-a \"%s\""%alerts[key] for key in alerts_keys), emaillist)
+                email_cmd = "echo \"calibration check summary files are attached for: %s\" | mailx -s \"%s idq%s calibration warning in laldetchar-idq-calibration\" %s \"%s\""%(alerts_keys_str, ifo, usertag, " ".join("-a \"%s\""%alerts[key] for key in alerts_keys), emaillist)
                 logger.warning("  %s"%email_cmd)
                 exit_code = os.system( email_cmd )
                 if exit_code:
