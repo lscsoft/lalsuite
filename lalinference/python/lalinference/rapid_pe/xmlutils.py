@@ -42,6 +42,8 @@ CMAP = { "right_ascension": "longitude",
     "mass2": "mass2",
     "lam_tilde": "psi0",
     "dlam_tilde": "psi3",
+    "psi0": "psi0",
+    "psi3": "psi3",
     # SHOEHORN ALERT
     "sample_n": assign_id,
     "alpha1":"alpha1",
