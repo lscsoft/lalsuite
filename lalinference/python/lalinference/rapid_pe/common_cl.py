@@ -132,8 +132,8 @@ def add_intrinsic_params(optp):
     intrinsic_params.add_option("--pin-to-sim", help="Pin values to sim_inspiral table entry.")
     intrinsic_params.add_option("--mass1", type=float, help="Value of first component mass, in solar masses. Required if not providing coinc tables.")
     intrinsic_params.add_option("--mass2", type=float, help="Value of second component mass, in solar masses. Required if not providing coinc tables.")
-    intrinsic_params.add_option("--lambda1", type=float, help="Value of first tidal parameter. Optional, ignored if not given.")
-    intrinsic_params.add_option("--lambda2", type=float, help="Value of second tidal parameter. Optional, ignored if not given.")
+    intrinsic_params.add_option("--eff-lambda", type=float, help="Value of effective tidal parameter. Optional, ignored if not given.")
+    intrinsic_params.add_option("--deff-lambda", type=float, help="Value of second effective tidal parameter. Optional, ignored if not given.")
     optp.add_option_group(intrinsic_params)
     return optp
 
@@ -184,6 +184,8 @@ param_limits = { "psi": (0, 2*numpy.pi),
     "right_ascension": (0, 2*numpy.pi),
     "declination": (-numpy.pi/2, numpy.pi/2),
     "t_ref": (-t_ref_wind, t_ref_wind),
-    "inclination": (0, numpy.pi)
+    "inclination": (0, numpy.pi),
+    "lam_tilde": (0, 5000), # FIXME: Needs reference
+    "dlam_tilde": (-500, 500)
 }
 
