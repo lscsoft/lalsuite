@@ -76,6 +76,9 @@ parser.add_option('-b', '--lookback', default='0', type='string', help="Number o
 parser.add_option('-f','--force',default=False, action='store_true', help="forces *uroc cache file to be updated, even if we have no data. Use with caution.")
 
 parser.add_option("", "--ignore-science-segments", default=False, action="store_true")
+
+parser.add_option("", "--dont-cluster", default=False, action="store_true")
+
 parser.add_option("", "--no-robot-cert", default=False, action="store_true")
 
 parser.add_option('', '--FAPthr', default=[], action="append", type='float', help='check calibration at this FAP value. This argument can be supplied multiple times to check multiple values.')
@@ -116,12 +119,12 @@ if not classifiers:
 ### ensure we have a section for each classifier and fill out dictionary of options
 classifiersD, mla, ovl = reed.config_to_classifiersD( config )
 
-if mla:
-    ### reading parameters from config file needed for mla
-    auxmvc_coinc_window = config.getfloat('build_auxmvc_vectors','time-window')
-    auxmc_gw_signif_thr = config.getfloat('build_auxmvc_vectors','signif-threshold')
-    auxmvc_selected_channels = config.get('general','selected-channels')
-    auxmvc_unsafe_channels = config.get('general','unsafe-channels')
+#if mla:
+#    ### reading parameters from config file needed for mla
+#    auxmvc_coinc_window = config.getfloat('build_auxmvc_vectors','time-window')
+#    auxmc_gw_signif_thr = config.getfloat('build_auxmvc_vectors','signif-threshold')
+#    auxmvc_selected_channels = config.get('general','selected-channels')
+#    auxmvc_unsafe_channels = config.get('general','unsafe-channels')
 
 #========================
 # realtime
@@ -146,6 +149,9 @@ errorthr = config.getfloat('warnings', 'calibration_errorthr')
 
 uroc_nsamples = config.getint('calibration','urank_nsamples')
 urank = np.linspace(1, 0, uroc_nsamples) ### uniformly spaced ranks used to sample ROC curves -> uroc
+
+cluster_key = config.get('calibration', 'cluster_key')
+cluster_win = config.getfloat('calibration', 'cluster_win')
 
 #========================
 # data discovery
@@ -313,21 +319,26 @@ while gpsstart < gpsstop:
         logger.info('  computing new calibration for %s'%classifier)
 
         ### extract data from dat files
-        output = reed.slim_load_datfiles(datsD[classifier], skip_lines=0, columns='GPS i rank'.split())
+        output = reed.slim_load_datfiles(datsD[classifier], skip_lines=0, columns='GPS i rank'.split()+[cluster_key])
 
         ### filter times by scisegs -> keep only the ones within scisegs
-        out = np.array(event.include( [ [float(output['GPS'][i]), float(output['i'][i]), float(output['rank'][i]) ] for i in xrange(len(output['GPS'])) ], idqsegs, tcent=0 ))
-        if not len(out): ### no data remains!
-            output['GPS'] = []
-            output['i'] = []
-            output['rank'] = []
-        else:
-            output['GPS'] = out[:,0]
-            output['i'] = out[:,1]
-            output['rank'] = out[:,2]
+        output = reed.filter_datfile_output( output, idqsegs )
+
+        ### cluster
+        if not opts.dont_cluster:
+            output = reed.cluster_datfile_output( output, cluster_key=cluster_key, cluster_win=cluster_win)
 
         ### define weights over time
         output['weight'] = calibration.weights( output['GPS'], weight_type="uniform" )
+
+        if not opts.dont_cluster:
+            cluster_dat = reed.dat(output_dir, classifier, ifo, "clustered", usertag, gpsstart-lookback, lookback+stride) ### write clustered dat file
+            logger.info('  writing %s'%cluster_dat)
+            reed.output_to_datfile( output, cluster_dat )
+        else:
+            cluster_dat = reed.dat(output_dir, classifier, ifo, "unclustered", usertag, gpsstart-lookback, lookback+stride)
+            logger.info('  writing %s'%cluster_dat)
+            reed.output_to_datfile( output, cluster_dat )
 
         ### compute rcg from output
         r, c, g = reed.dat_to_rcg( output )

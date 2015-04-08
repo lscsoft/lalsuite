@@ -74,6 +74,8 @@ parser.add_option('-l', '--log-file', default='idq_summary.log', type='string', 
 
 parser.add_option("", "--ignore-science-segments", default=False, action="store_true")
 
+parser.add_option("", "--dont-cluster", default=False, action="store_true")
+
 parser.add_option('-f','--force',default=False, action='store_true', help="forces *uroc cache file to be updated, even if we have no data. Use with caution.")
 
 parser.add_option("", "--no-robot-cert", default=False, action="store_true")
@@ -167,12 +169,12 @@ if not classifiers:
 ### ensure we have a section for each classifier and fill out dictionary of options
 classifiersD, mla, ovl = reed.config_to_classifiersD( config )
 
-if mla:
-    ### reading parameters from config file needed for mla
-    auxmvc_coinc_window = config.getfloat('build_auxmvc_vectors','time-window')
-    auxmc_gw_signif_thr = config.getfloat('build_auxmvc_vectors','signif-threshold')
-    auxmvc_selected_channels = config.get('general','selected-channels')
-    auxmvc_unsafe_channels = config.get('general','unsafe-channels')
+#if mla:
+#    ### reading parameters from config file needed for mla
+#    auxmvc_coinc_window = config.getfloat('build_auxmvc_vectors','time-window')
+#    auxmc_gw_signif_thr = config.getfloat('build_auxmvc_vectors','signif-threshold')
+#    auxmvc_selected_channels = config.get('general','selected-channels')
+#    auxmvc_unsafe_channels = config.get('general','unsafe-channels')
 
 colors = dict( zip( classifiers, 'r b g c m k y'.split() ) )
 if len(colors) < len(classifiers):
@@ -184,7 +186,11 @@ if len(colors) < len(classifiers):
 realtimedir = config.get('general', 'realtimedir')### output directory for realtime predictions
 
 dat_columns = config.get('realtime', 'dat_columns').split()
-columns = list(set( dat_columns + "GPS i rank".split() ) )
+columns = dat_columns[:]
+for c in "GPS i rank".split():
+    if c not in columns:
+        columns.append( c )
+#columns = list(set( dat_columns + "GPS i rank".split() ) )
 
 #========================
 # summary jobs
@@ -202,6 +208,11 @@ kde_nsamples = config.getint('summary', 'kde_num_samples')
 kde = np.linspace(0, 1, kde_nsamples) ### uniformly spaced ranks used to sample kde
 
 faircoin = kde[:] ### used for ROC plots
+
+cluster_key = config.get('summary', 'cluster_key')
+if cluster_key not in columns:
+    columns.append( cluster_key )
+cluster_win = config.getfloat('summary', 'cluster_win')
 
 #========================
 # data discovery
@@ -409,6 +420,17 @@ while gpsstart < gpsstop:
 
         ### filter times by scisegs -> keep only the ones within scisegs
         output = reed.filter_datfile_output( output, idqsegs )
+
+        if not opts.dont_cluster:
+            output = reed.cluster_datfile_output( output, cluster_key=cluster_key, cluster_win=cluster_win)
+            cluster_dat = reed.dat(output_dir, classifier, ifo, "clustered", usertag, gpsstart-lookback, lookback+stride)
+            logger.info('  writing %s'%cluster_dat)
+            reed.output_to_datfile( output, cluster_dat )
+        else:
+            cluster_dat = reed.dat(output_dir, classifier, ifo, "unclustered", usertag, gpsstart-lookback, lookback+stride)
+            logger.info('  writing %s'%cluster_dat)
+            reed.output_to_datfile( output, cluster_dat )
+
 
         ### compute rcg from output
         r, c, g = reed.dat_to_rcg( output )
@@ -755,10 +777,14 @@ while gpsstart < gpsstop:
             continue
 
         ### load dat files
-        output = reed.slim_load_datfiles(datsD[classifier], skip_lines=0, columns='GPS i vchan'.split()) ### specific columns known to be in ovl dat files
+        output = reed.slim_load_datfiles(datsD[classifier], skip_lines=0, columns='GPS i vchan'.split()+[cluster_key]) ### specific columns known to be in ovl dat files
 
         ### filter times by scisegs -> keep only the ones within scisegs
         output = reed.filter_datfile_output( output, idqsegs )
+        if not opts.dont_cluster:
+            output = reed.cluster_datfile_output( output, cluster_key=cluster_key, cluster_win=cluster_win)
+        
+        ### don't re-write clustered dat files here...
 
         ### extract channel performances
         performance, num_gch, num_cln = reed.dat_to_perf( output )
@@ -901,6 +927,17 @@ while gpsstart < gpsstop:
 
                     output = reed.slim_load_datfiles(datsD[classifier], skip_lines=0, columns=columns)
                     output = reed.filter_datfile_output( output, idqsegs )
+
+                    if not opts.dont_cluster:
+                        output = reed.cluster_datfile_output( output, cluster_key=cluster_key, cluster_win=cluster_win)
+                        cluster_dat = reed.dat(output_trenddir, classifier, ifo, "clustered", usertag, s, e-s)
+                        logger.info('  writing %s'%cluster_dat)
+                        reed.output_to_datfile( output, cluster_dat )
+                    else:
+                        cluster_dat = reed.dat(output_trenddir, classifier, ifo, "unclustered", usertag, gpsstart-lookback, lookback+stride)
+                        logger.info('  writing %s'%cluster_dat)
+                        reed.output_to_datfile( output, cluster_dat )
+
                     r, c, g = reed.dat_to_rcg( output )
                     bindata['rcg'][classifier] = (r, c, g, c[-1], g[-1])
 
@@ -915,10 +952,14 @@ while gpsstart < gpsstop:
                             continue
 
                         ### load dat files
-                        output = reed.slim_load_datfiles(datsD[classifier], skip_lines=0, columns='GPS i vchan'.split()) ### specific columns known to be in ovl dat files
+                        output = reed.slim_load_datfiles(datsD[classifier], skip_lines=0, columns='GPS i vchan'.split()+[cluster_key]) ### specific columns known to be in ovl dat files
 
                         ### filter times by scisegs -> keep only the ones within scisegs
                         output = reed.filter_datfile_output( output, idqsegs )
+                        if not opts.dont_cluster:
+                            output = reed.cluster_datfile_output( output, cluster_key=cluster_key, cluster_win=cluster_win)
+
+                        ### don't re-write clustered dat here...
 
                         ### extract channel performances!
                         performance, num_gch, num_cln = reed.dat_to_perf( output )
@@ -1407,6 +1448,8 @@ segment lists -> a form to request segments?
 
             page.p( "channel performance : %s"%str(minipage) )
 
+        page.hr( )
+
         #=========================================
         # trending images
         #=========================================
@@ -1447,7 +1490,7 @@ segment lists -> a form to request segments?
 #        page.br( )       
 
         for classifier in classifiers:
-            figname = trending['trg_rate'][classifier][N-1]
+            figname = trending['trg_rate'][classifier][-1]
             label = "%d_%d"%tuple(reed.extract_start_stop( figname, suffix=".png" ))
             minipages[classifier].a( label, href="./%s"%figname[lensumdir:] )
             page.p( "%s : %s"%(classifier, str(minipages[classifier])) )
@@ -1463,7 +1506,7 @@ segment lists -> a form to request segments?
                 minipage.img( width=html_width, height=html_height, alt="efficiency at fixed fap", src="./%s"%figname[lensumdir:] )
             page.p( "fap <= %.3e : %s"%(fap, str(minipage) ) )
 
-        minpages = dict( (classifier, markup.page()) for classifier in classifiers )
+        minipages = dict( (classifier, markup.page()) for classifier in classifiers )
         for ind in xrange(N-1):
             for classifier in classifiers:
                 figname = trending['eff@fap'][classifier][ind]

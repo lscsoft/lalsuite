@@ -87,11 +87,16 @@ parser.add_option('', '--ignore-science-segments-summary',
     help="forces summary jobs to ignore science segments as well. \
     This should NOT be used to generate actual DQ information, but may be useful when debugging the pipeline."
     )
+
+parser.add_option("", "--dont-cluster-summary", default=False, action="store_true")
+
 parser.add_option('', '--ignore-science-segments-calibration',
     default=False, action="store_true",
     help="forces calibration jobs to ignore science segments as well. \
     this should NOT be used to generate actual DQ information, but may be useful when debugging the pipeline."
     )
+
+parser.add_option("", "--dont-cluster-calibration", default=False, action="store_true")
 
 parser.add_option("", "--no-robot-cert",
     default=False, action="store_true",
@@ -151,8 +156,10 @@ classifiersD, mla, ovl = reed.config_to_classifiersD( config )
 
 if mla:
     ### reading parameters from config file needed for mla
-    auxmvc_coinc_window = config.getfloat('build_auxmvc_vectors','time-window')
-    auxmc_gw_signif_thr = config.getfloat('build_auxmvc_vectors','signif-threshold')
+#    auxmvc_coinc_window = config.getfloat('build_auxmvc_vectors','time-window')
+#    auxmc_gw_signif_thr = config.getfloat('build_auxmvc_vectors','signif-threshold')
+    auxmvc_coinc_window = config.getfloat('realtime', 'padding')
+    auxmc_gw_signif_thr = config.getfloat('general', 'gw_kwsignif_thr')
     auxmvc_selected_channels = config.get('general','selected-channels')
     auxmvc_unsafe_channels = config.get('general','unsafe-channels')
 
@@ -381,16 +388,20 @@ if opts.ignore_science_segments_training:
     train_template += " --ignore-science-segments"
 
 summary_template = "%s --config %s -l %s -s %d -e %d --lookback %d %s"
-if opts.ignore_science_segments_summary:
-    summary_template += " --ignore-science-segments"
 for fap in summary_FAPthrs:
     summary_template += " --FAPthr %.6e"%fap
+if opts.ignore_science_segments_summary:
+    summary_template += " --ignore-science-segments"
+if opts.dont_cluster_summary:
+    summary_template += " --dont-cluster"
 
 calibration_template = "%s --config %s -l %s -s %d -e %d --lookback %d" 
 for fap in calibration_FAPthrs:
     calibration_template += " --FAPthr %.6e"%fap
 if opts.ignore_science_segments_calibration:
     calibration_template += " --ignore-science-segments"
+if opts.dont_cluster_calibration:
+    calibration_template += " --dont-cluster"
 
 if opts.no_robot_cert:
     train_template += " --no-robot-cert"

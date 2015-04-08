@@ -657,6 +657,27 @@ def slim_load_datfiles(files, skip_lines=1, columns=[]):
 
     return output
 
+def output_to_datfile( output, dat ):
+    """
+    write the info stored in output into a file
+    """
+    columns = output.keys()
+    file_obj = open(dat, "w")
+    
+    if columns:
+        s = ""
+        for c in columns:
+            s += " %s"%str(c)
+        print >> file_obj, s
+
+        for i in xrange(len(output[columns[0]])):
+            s = ""
+            for c in columns:
+                s += " %s"%str(output[c][i])
+            print >> file_obj, s
+
+    file_obj.close()
+
 def filter_datfile_output( output, segs ):
     """
     filters the data in output by segs
@@ -686,6 +707,92 @@ def filter_datfile_output( output, segs ):
             output[column] = out[:,1+ind]
 
     return output
+
+def cluster_datfile_output( output, cluster_key='signif', cluster_win=1.0 ):
+    if not output.has_key("GPS"):
+        raise ValueError("output must have \"GPS\" as a key")
+    if not output.has_key(cluster_key):
+        raise ValueError("output must have cluster_key=\"%s\" as a key"%cluster_key)
+
+    ### separate output into glitches and cleans
+    columns, glitches, cleans = separate_output( output )
+
+    ### cluster glitches and cleans separately
+    glitches = cluster( glitches, columns, cluster_key=cluster_key, cluster_window=cluster_win )
+
+    cleans   = cluster( cleans  , columns, cluster_key=cluster_key, cluster_window=cluster_win ) 
+
+    ### combine into output format
+    output = dict( (c,[]) for c in columns.keys() )
+    for trg in glitches+cleans:
+        for c, i in columns.items():
+            output[c].append( trg[i] )
+
+    return output
+
+def separate_output( output ):
+    """
+    returns lists of glitches and cleans in output
+    """
+    if not output.has_key('i'):
+        raise ValueError("output must have \"i\" as a key")
+
+    columns = output.keys()
+
+    ### separate into glitches and cleans
+    glitches = []
+    cleans = []
+    N = len(output['i'])
+    for ind in xrange(N):
+        i = output['i'][ind]
+        if i:
+            glitches.append( [output[c][ind] for c in columns] )
+        else:
+            cleans.append( [output[c][ind] for c in columns] ) 
+
+    return dict( (c,j) for j, c in enumerate(columns) ), glitches, cleans
+
+def cluster( samples, columns, cluster_key='signif', cluster_window=1.0 ):
+    """
+    Clustering performed with the sliding window cluster_window keeping trigger with the highest rank;
+    glitches is an array of glitches, and we sort it to be in ascending order (by GPS time)
+    Clustering algorithm is borrowed from pylal.CoincInspiralUtils cluster method.
+    """
+
+    # sort glitches so they are in the propper order
+    samples.sort(key=lambda line: line[columns['GPS']])
+
+    # initialize some indices (could work with just one)
+    # but with two it is easier to read
+    this_index = 0
+    next_index = 1
+    while next_index < len(samples):
+
+        # get the time for both indices
+        thisTime = samples[this_index][columns['GPS']]
+        nextTime = samples[next_index][columns['GPS']]
+
+        # are the two coincs within the time-window?
+        if nextTime - thisTime < cluster_window:
+
+            # get the ranks
+            this_rank = samples[this_index][columns[cluster_key]]
+            next_rank = samples[next_index][columns[cluster_key]]
+
+            # and remove the trigger which has the lower rank
+            if next_rank > this_rank:
+                del samples[this_index]  # glitches = numpy.delete(glitches, this_index, 0)
+            else:
+                del samples[next_index]  # glitches = numpy.delete(glitches, next_index, 0)
+
+        else:
+            # NOTE: we don't increment this_index and next_index if we've removed glitches
+            # the two triggers are NOT in the time-window
+            # so must increase index
+            this_index += 1
+            next_index += 1
+
+    return samples
 
 def extract_dq_segments(xmlfile, dq_name):
     """
@@ -1151,7 +1258,7 @@ def retrieve_kwtrig(gdsdir, kwbasename, t, stride, sleep=0, ntrials=1, logger=No
     for i in xrange(ntrials):
         if not os.path.exists(kwfilename):  ### kw files may not have appeared yet
             if logger:
-                logger.info('  missing KW triggers, waiting additional %d seconds' % stride)
+                logger.info('  missing KW triggers, waiting additional %d seconds' % sleep)
             else:
                 print '  missing KW triggers, waiting additional %d seconds' % sleep
             time.sleep(sleep)
@@ -1172,6 +1279,25 @@ def retrieve_kwtrig(gdsdir, kwbasename, t, stride, sleep=0, ntrials=1, logger=No
         print '  loading KW triggers'
 
     return event.loadkwm(kwfilename)
+
+def retrieve_kwtrigs(gdsdir, kwbasename, t, stride, kwstride, sleep=0, ntrials=1, logger=None):
+    t_start = (t / kwstride) * kwstride
+
+    trgdicts = []
+    while t_start < t+stride:
+        trigger_dict = retrieve_kwtrig(gdsdir, kwbasename, t_start, kwstride, sleep=sleep, ntrials=ntrials, logger=logger)
+        if trigger_dict:
+            trgdicts.append( trigger_dict )
+        t_start += kwstride
+
+    if trgdicts:
+        trigger_dict = trgdicts[0]
+        for td in trgdicts[1:]:
+            trigger_dict.add( td )
+        return trigger_dict
+    else:
+        return None
+    
 
 #=================================================
 # trigger generation algorithm interfaces
@@ -1426,6 +1552,8 @@ def build_auxmvc_vectors( trigger_dict, main_channel, time_window, signif_thresh
     # use only channels from the channels file, if provided
     if channels:
         selected_channels = event.read_channels_from_file(channels)
+        if main_channel not in selected_channels:
+            selected_channels.append( main_channel )
         trigger_dict.keep_channels(selected_channels)
 
         # to ensure consistency in dimensionality of auxmvc vectors
@@ -1500,51 +1628,51 @@ def build_auxmvc_vectors( trigger_dict, main_channel, time_window, signif_thresh
 
     return mvsc_evaluation_set
 
-def execute_build_auxmvc_vectors(
-    cp,
-    execute_dir,
-    trigdir,
-    main_channel,
-    output_file,
-    gps_start_time,
-    gps_end_time,
-    channels=None,
-    unsafe_channels=None,
-    dq_segments=None,
-    dq_segments_name='',
-    ):
-    """
-....Submits the job that builds auxmvc feature vectors. Vectors are saved in the output file with .pat extension.
-....Waits until the job is finished, returns its exit status and the output file name.
-....execute_dir is the absolute path of the directory in which the job should be executed. 
-...."""
-
-    # initiate build_auxmvc_vectors job object
-    build_auxmvc_vectors_job = auxmvc.build_auxmvc_vectors_job(cp,
-            main_channel, channels=channels,
-            unsafe_channels=unsafe_channels)
-
-    # create node for this job
-    build_auxmvc_vectors_node = auxmvc.build_auxmvc_vectors_node(
-        build_auxmvc_vectors_job,
-        trigdir,
-        gps_start_time,
-        gps_end_time,
-        output_file,
-        dq_segments=dq_segments,
-        dq_segments_name=dq_segments_name,
-        )
-
-    # get full command line for this job
-    build_auxmvc_vectors_command = auxmvc.construct_command(build_auxmvc_vectors_node)
-
-    print " ".join(build_auxmvc_vectors_command)
-
-    # submit process
-#    exit_status = submit_command(build_auxmvc_vectors_command, 'build_auxmvc_vectors', execute_dir, verbose=True)
-    exit_status = subprocess.Popen(build_auxmvc_vectors_command, cwd=execute_dir).wait() ### block!
-
-    return (exit_status, build_auxmvc_vectors_node.get_output_files()[0])
+#def execute_build_auxmvc_vectors(
+#    cp,
+#    execute_dir,
+#    trigdir,
+#    main_channel,
+#    output_file,
+#    gps_start_time,
+#    gps_end_time,
+#    channels=None,
+#    unsafe_channels=None,
+#    dq_segments=None,
+#    dq_segments_name='',
+#    ):
+#    """
+#....Submits the job that builds auxmvc feature vectors. Vectors are saved in the output file with .pat extension.
+#....Waits until the job is finished, returns its exit status and the output file name.
+#....execute_dir is the absolute path of the directory in which the job should be executed. 
+#...."""
+#
+#    # initiate build_auxmvc_vectors job object
+#    build_auxmvc_vectors_job = auxmvc.build_auxmvc_vectors_job(cp,
+#            main_channel, channels=channels,
+#            unsafe_channels=unsafe_channels)
+#
+#    # create node for this job
+#    build_auxmvc_vectors_node = auxmvc.build_auxmvc_vectors_node(
+#        build_auxmvc_vectors_job,
+#        trigdir,
+#        gps_start_time,
+#        gps_end_time,
+#        output_file,
+#        dq_segments=dq_segments,
+#        dq_segments_name=dq_segments_name,
+#        )
+#
+#    # get full command line for this job
+#    build_auxmvc_vectors_command = auxmvc.construct_command(build_auxmvc_vectors_node)
+#
+#    print " ".join(build_auxmvc_vectors_command)
+#
+#    # submit process
+##    exit_status = submit_command(build_auxmvc_vectors_command, 'build_auxmvc_vectors', execute_dir, verbose=True)
+#    exit_status = subprocess.Popen(build_auxmvc_vectors_command, cwd=execute_dir).wait() ### block!
+#
+#    return (exit_status, build_auxmvc_vectors_node.get_output_files()[0])
 
 def execute_prepare_training_auxmvc_samples(
     execute_dir,
@@ -1727,9 +1855,14 @@ def datfile2timeseries(flavor, dat, lines, trgdict=None, start=0, stride=0, wind
         datdata = slim_load_datfile(dat, skip_lines=0, columns='GPS i rank'.split())
         for (key, val) in datdata.items():
             datdata[key] = map(float, val)
-        (ifo, name, tstart, dur) = os.path.basename(dat)[:-4].split('-')
-        livetime = float(dur)
-        segment = [float(tstart), float(tstart) + livetime]
+
+#        (ifo, name, tstart, dur) = os.path.basename(dat)[:-4].split('-')
+#        livetime = float(dur)
+#        segment = [float(tstart), float(tstart) + livetime]
+        tstart, tstop = extract_start_stop(dat, suffix=".dat")
+        segment = [tstart, tstop]
+        livetime = tstop-tstart
+
         ts = numpy.zeros(livetime * fs)
         sidx = numpy.argsort(datdata['rank'])
         for i in sidx:
