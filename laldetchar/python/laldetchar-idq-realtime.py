@@ -59,10 +59,10 @@ parser = OptionParser(version='Name: %%prog\n%s'%git_version.verbose_msg,
 parser.add_option('-c', '--config-file', dest='config_file',
     help='configuration file', metavar='FILE', default='idq.ini' )
 
-parser.add_option('-s', '--start-time', dest='startgps',
+parser.add_option('-s', '--gpsstart', dest='startgps',
     type='int', help='first stride begins at or after GPS time',
     metavar='GPS', default=reed.nowgps(), )
-parser.add_option('-e', '--end-time', dest='endgps',
+parser.add_option('-e', '--gpsstop', dest='endgps',
     type='int', help='last stride ends at or before GPS time',
     metavar='GPS', default=1e10 )
 
@@ -211,9 +211,12 @@ summary_delay = config.getint('summary', 'delay')
 summary_lookback = config.get('summary', 'lookback')
 if summary_lookback != "infinity":
     summary_lookback = int(summary_lookback)
-summary_trending = config.get('summary', 'trending')
-if summary_trending != 'infinity':
-    summary_trending = int(summary_trending)
+summary_trending = config.get('summary', 'trending').split()
+for ind, trend in enumerate(summary_trending):
+    if trend != 'infinity':
+        summary_trending[ind] = int(trend)
+
+summary_FAPthrs = [float(l) for l in config.get('summary','FAP').split()]
 
 summary_script = config.get('summary', 'executable')
 
@@ -306,7 +309,7 @@ if initial_training:
     initial_training_lookback = config.get("train", "initial-lookback")
 
     train_start_time = t - train_stride
-    train_command = "%s --config %s -l %s --gps-start %d --gps-stop %d --lookback %s --force"%(train_script, opts.config_file, train_log, train_start_time, t, initial_training_lookback)
+    train_command = "%s --config %s -l %s -s %d -e %d --lookback %s --force"%(train_script, opts.config_file, train_log, train_start_time, t, initial_training_lookback)
 
     if opts.ignore_science_segments_training:
         train_command += " --ignore-science-segments" 
@@ -340,7 +343,7 @@ if initial_calibration:
     initial_calibration_lookback = config.get("calibration", "initial-lookback")
 
     calibration_start_time = t - calibration_stride
-    calibration_command = "%s --config %s -l %s --gps-start %d --gps-stop %d --lookback %s --force"%(calibration_script, opts.config_file, calibration_log, calibration_start_time, t, initial_calibration_lookback)
+    calibration_command = "%s --config %s -l %s -s %d -e %d --lookback %s --force"%(calibration_script, opts.config_file, calibration_log, calibration_start_time, t, initial_calibration_lookback)
     ### we skip validation (no FAPthr arguments) for the initial job
 
     if opts.ignore_science_segments_calibration:
@@ -373,15 +376,19 @@ logger.info('Begin: realtime evaluation')
 #========================
 # set up template commands
 #========================
-train_template = "%s --config %s -l %s --gps-start %d --gps-stop %d --lookback %d"
+train_template = "%s --config %s -l %s -s %d -e %d --lookback %d"
 if opts.ignore_science_segments_training:
     train_template += " --ignore-science-segments"
 
-summary_template = "%s --config %s -l %s --gps-start %d --gps-stop %d --lookback %d --trending %d"
+summary_template = "%s --config %s -l %s -s %d -e %d --lookback %d %s"
 if opts.ignore_science_segments_summary:
     summary_template += " --ignore-science-segments"
+for fap in summary_FAPthrs:
+    summary_template += " --FAPthr %.6e"%fap
 
-calibration_template = "%s --config %s -l %s --gps-start %d --gps-stop %d --lookback %d"
+calibration_template = "%s --config %s -l %s -s %d -e %d --lookback %d" 
+for fap in calibration_FAPthrs:
+    calibration_template += " --FAPthr %.6e"%fap
 if opts.ignore_science_segments_calibration:
     calibration_template += " --ignore-science-segments"
 
@@ -494,24 +501,24 @@ while t  < opts.endgps:
     if (2*(t - opts.startgps) > summary_stride) and (t_remainder > 0) and (t_remainder <= stride):
         logger.info('****************************************************')
 
-        if summary_lookback == "infinity" and summary_trending == "infinity":
-            lookback = trending = t-global_start
-        elif summary_lookback == "infinity":
+        if summary_lookback == "infinity":
             lookback = t-global_start
-            trending = summary_trending
-        elif summary_trending == "infinity":
-            lookback = summary_lookback
-            trending = t-global_start
         else:
             lookback = summary_lookback
-            trending = summary_trending
 
+        trend_str = ""
+        for trend in summary_trending:
+            if trend == "infinity":
+                trend_str += " --trending %d"%(t-global_start)
+            else:
+                trend_str += " --trending %d"%(trend)
+        
         summary_stop_time = (t / summary_stride) * summary_stride
         summary_start_time = summary_stop_time - summary_stride
 
         logger.info('Begin: launching summary script for period: %s - %s'%(summary_start_time,summary_stop_time))
 
-        summary_command = summary_template%(summary_script, opts.config_file, summary_log, summary_start_time, summary_stop_time, lookback, trending)
+        summary_command = summary_template%(summary_script, opts.config_file, summary_log, summary_start_time, summary_stop_time, lookback, trend_str)
 
         logger.info('Submiting summary script with the following options:')
         logger.info(summary_command)
@@ -767,7 +774,6 @@ while t  < opts.endgps:
         fapUL_ts = fapmap.ul(ts, conf=0.99) ### upper limit with FAPconf (around interpolated points)
                                             ### we hard-code this intentionally to make it difficult to change/mess up
         numpy.save(event.gzopen(fapnp, 'w'), (fap_ts, fapUL_ts) )
-
         logger.info('  Done: generating %s FAP time-series'%classifier)
 
         ### convert datfiles to xml tables
