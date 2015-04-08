@@ -254,6 +254,12 @@ def uroc(directory, classifier, ifo, tag, t, stride):
 def calib_check(directory, classifier, ifo, tag, t, stride):
     return "%s/%s_%s_calib%s-%d-%d.txt"%(directory, ifo, classifier, tag, t, stride)
 
+def chan_perf(directory, classifier, ifo, tag, t, stride):
+    return "%s/%s_%s_chan-perf%s-%d-%d.txt"%(directory, ifo, classifier, tag, t, stride)
+
+def sumhtml(directory, tag, t, stride):
+    return "%s/summary-index%s-%d-%d.html"%(directory, tag, t, stride)
+
 #=================================================
 # extract start/dur
 #=================================================
@@ -272,7 +278,22 @@ def extract_start_stop(filename, suffix='.dat'):
 #=================================================
 
 def extract_dat_name(datfilename):
+    """
+    WARNING: will break if classifier name contains "_"
+    """
     return datfilename.split("/")[-1].split("_")[1]
+
+def extract_fap_name(fapfilename):
+    """
+    WARNING: will break if classifier name contains "_"
+    """
+    return fapfilename.split("/")[-1].split("_")[2]
+
+def extract_roc_name(rocfilename):
+    """
+    WARNING: will break if classifier name contains "_"
+    """
+    return rocfilename.split("/")[-1].split("_")[1]
 
 #=================================================
 # trained and calibration ranges
@@ -636,6 +657,36 @@ def slim_load_datfiles(files, skip_lines=1, columns=[]):
 
     return output
 
+def filter_datfile_output( output, segs ):
+    """
+    filters the data in output by segs
+    requres "GPS" to be a key in output
+    """
+    if not output.has_key("GPS"):
+        raise ValueError("output must have key: GPS")
+
+    if not output['GPS']: ### empty list
+        return output
+
+    columns = output.keys()
+
+    out = numpy.array(event.include( [ [ float(output['GPS'][i]) ] + [output[column][i] for column in columns] for i in xrange(len(output['GPS'])) ], segs, tcent=0 ))
+
+    if not len(out): ### nothing survived
+        return dict( (column, []) for column in columns )
+
+    for ind, column in enumerate(columns):
+        if column == 'GPS':
+            output[column] = out[:,1+ind].astype(float)
+        elif column == 'i':
+            output['i'] = out[:,1+ind].astype(float)
+        elif column == 'rank':
+            output['rank'] = out[:,1+ind].astype(float)
+        else:
+            output[column] = out[:,1+ind]
+
+    return output
+
 def extract_dq_segments(xmlfile, dq_name):
     """
     Loads xmlfile containing dq segments and extracts segments of the type set by dq_name ( e.g. L1:DMT-SCIENCE:3).
@@ -804,9 +855,51 @@ def rcg_to_EffFAPmap(rs, c_cln, c_gch, kind='linear'):
     return (effmap, fapmap)
 
 #=================================================
+# channel performance data
+#=================================================
+
+def dat_to_perf( output ):
+    vchans = sorted(set(output['vchan']))
+    performance = dict( (vchan,{"cln":0, "gch":0}) for vchan in vchans )
+    num_gch = 0.0
+    num_cln = 0.0
+    for ind in xrange(len(output['vchan'])):
+        vchan = output['vchan'][ind]
+        i = output['i'][ind]
+
+        performance[vchan]['gch'] += i
+        performance[vchan]['cln'] += 1-i
+
+        num_gch += i
+        num_cln += 1-i
+
+    return performance, num_gch, num_cln
+
+def file_to_perf( filename ):
+    perf = {}
+    ngch = 0
+    ncln = 0
+    file_obj = open(filename, "r")
+    for line in file_obj:
+        if line[0] != "#":
+            chan, gch, ngch, cln, ncln, eff, fap = line.strip().split()
+            perf[chan] = {'gch':float(gch), 'cln':float(cln)}
+
+    return perf, float(ngch), float(ncln)
+
+def perf_to_file( performance, num_gch, num_cln, filename ):
+    vchans = sorted(performance.keys() )
+    file_obj = open(filename, "w")
+    print >> file_obj, "# %-48s %6s %6s %6s %5s %10s %10s"%("channel", "No.gch", "totgch", "No.cln", "totcln", "eff", "fap")
+    for vchan in vchans:
+        print >> file_obj, "%-50s %6d %6d %6d %6d %0.8f %0.8f"%(vchan, performance[vchan]['gch'], num_gch, performance[vchan]['cln'], num_cln, performance[vchan]['gch']/num_gch, performance[vchan]['cln']/num_cln)
+    file_obj.close()
+
+
+#=================================================
 # mapping objects for r --> fraction of events
 #=================================================
-def binomialUL( k, n , conf=0.99, jefferys=False):
+def binomialUL( k, n , conf=0.99, jefferys=True):
     """
     returns the binomial UL consistent with "conf" and observing k successes after n trials
     delegates to scipy.stats.beta, because we assume a jeffery's prior for the binomial process
@@ -819,11 +912,11 @@ def binomialUL( k, n , conf=0.99, jefferys=False):
     """
     from scipy.stats import beta
     if jefferys:
-        return beta.ppf( 1.0-conf, k + 0.5, n-k + 0.5 ) ### probably the fastest implementation available...
+        return beta.ppf( conf, k + 0.5, n-k + 0.5 ) ### probably the fastest implementation available...
     else:
-        return beta.ppf( 1.0-conf, k, n-k )
+        return beta.ppf( conf, k, n-k )
 
-def binomialCR( k, n, conf=0.99, jefferys=False):
+def binomialCR( k, n, conf=0.99, jefferys=True):
     """
     returns the symetric CR consistent with "conf" and observing k successes after n trials
     delegates to scipy.stats.beta, because we assume a jeffery's prior for the binomial process
@@ -863,7 +956,7 @@ class BinomialMap(object):
         returns the point estimate for the fraction of events
         """
         if not self.n_samples:
-            return 0.0
+            return numpy.zeros_like(r)
 
         if self.kind == "linear":
             return numpy.interp(r, self.ranks, self.c_samples) / self.n_samples
@@ -1703,7 +1796,7 @@ def combine_ts(filenames, n=1):
     """
     t = numpy.array([])  # the array storing continuous data
     if n > 1:
-        ts = numpy.array([[]*n])
+        ts = numpy.array([[]]*n)
     else:
         ts = numpy.array([])
     times = []  # a list that will contain stretches of continuous data
@@ -1712,7 +1805,7 @@ def combine_ts(filenames, n=1):
 #    matchfile = re.compile('.*-([0-9]*)-([0-9]*).*$')
     end = False
     for filename in filenames:
-        _start, _end = extract_start_stop(filename, suffix='.')
+        _start, _end = extract_start_stop(filename, suffix='.npy.gz')
         _dur = _end-_start
 #        m = matchfile.match(filename)
 #        (_start, _dur) = (int(m.group(1)), int(m.group(2)))
@@ -1726,8 +1819,12 @@ def combine_ts(filenames, n=1):
             _file.close()
 
             ts = numpy.concatenate((ts, _ts), axis=1) ### axis argument takes care of multi-dimensional arrays
+            if n > 1:
+                len_ts = len(_ts[0])
+            else:
+                len_ts = len(_ts)
+            t = numpy.concatenate((t, numpy.arange(_start, _start + _dur, 1.0* _dur / len_ts)))
 
-            t = numpy.concatenate((t, numpy.arange(_start, _start + _dur, 1.0* _dur / len(_ts))))
         else:
             # gap in the data!
             times.append(t)  # put old continuous data into lists
@@ -1736,7 +1833,11 @@ def combine_ts(filenames, n=1):
             _file = event.gzopen(filename)  # start new continuous data
             ts = numpy.load(_file)
             _file.close()
-            t = numpy.arange(_start, _start + _dur, 1.0 * _dur / len(ts))
+            if n > 1:
+                len_ts = len(ts[0])
+            else:
+                len_ts = len(ts)
+            t = numpy.arange(_start, _start + _dur, 1.0 * _dur / len_ts)
             end = _start + _dur
 
     times.append(t)
@@ -1757,6 +1858,9 @@ def timeseries_in_segments(t, ts, segs):
     """
     returns only those elements of the time-series which are contained in the segments
     """
+    if not len(t): ### no sample points...
+        return t, ts
+
     truth = numpy.zeros_like(t).astype(bool)
 
     for start, end in segs:

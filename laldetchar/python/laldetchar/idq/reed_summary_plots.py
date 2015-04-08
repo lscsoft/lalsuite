@@ -1,4 +1,4 @@
-# Copyright (C) 2013 Reed Essick, Ruslan Vaulin
+# Copyright (C) 2015 Reed Essick
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -45,7 +45,7 @@ from laldetchar.idq import reed
 from laldetchar import git_version
 
 __author__ = \
-    'Reed Essick (<reed.essick@ligo.org>), Ruslan Vaulin <ruslan.vaulin@ligo.org>'
+    'Reed Essick (<reed.essick@ligo.org>)'
 __version__ = git_version.id
 __date__ = git_version.date
 
@@ -81,6 +81,15 @@ def kdename(directory, classifier, ifo, tag, t, stride):
 
 def bitfig(directory, ifo, tag, t, stride, figtype="png"):
     return "%s/%s%s_BITWORD-%d-%d.%s"%(directory, ifo, tag, t, stride, figtype)
+
+def ratefig(directory, ifo, tag, t, stride, figtype="png"):
+    return "%s/%s%s_RATE-%d-%d.%s"%(directory, ifo, tag, t, stride, figtype)
+
+def chanfig(directory, ifo, classifier, metric, tag, t, stride, figtype="png"):
+    return "%s/%s_%s%s_chan-perf_%s-%d-%d.%s"%(directory, ifo, classifier, tag, metric, t, stride, figtype)
+
+def calib(directory, ifo, classifier, tag, t, stride, figtype="png"):
+    return "%s/%s_%s%s_calib-%d-%d.%s"%(directory, ifo, classifier, tag, t, stride, figtype)
 
 #===================================================================================================
 # utility
@@ -367,11 +376,7 @@ def bitword( samples, classifiers, figax=None, label=None):
 
     return fig, ax 
 
-#===================================================================================================
-# trending (multi-stride) plotting functions
-#===================================================================================================
-
-def rates( ranges, values, color='b', label=None, figax=None):
+def calibration_scatter( deadtimes, statedFAPs, color='b', label=None, marker='o', figax=None):
 
     if figax==None:
         fig = plt.figure()
@@ -379,14 +384,113 @@ def rates( ranges, values, color='b', label=None, figax=None):
     else:
         fig, ax = figax
 
-    for v, s_e in zip(values, ranges):
+    if color:
+        ax.plot( statedFAPs, deadtimes, label=label, linestyle='none', marker=marker, markeredgecolor=color, markerfacecolor='none' ) 
+    else:
+        ax.plot( statedFAPs, deadtimes, label=label, linestyle='none', marker=marker, markerfacecolor='none' ) 
+
+    ax.set_xlabel( 'stated False Alarm Probability' )
+    ax.set_ylabel( 'observed deadtime' )
+
+    ax.grid(True, which='both')
+
+#    ax.set_xscale('log')
+#    ax.set_yscale('log')
+#    ax.set_xlim(xmin=1e-3, xmax=1)
+#    ax.set_ylim(ymin=1e-3, ymax=1)
+
+    ax.set_xscale('linear')
+    ax.set_yscale('linear')
+    ax.set_xlim(xmin=0, xmax=1)
+    ax.set_ylim(ymin=0, ymax=1)
+
+    return fig, ax
+
+#===================================================================================================
+# trending (multi-stride) plotting functions
+#===================================================================================================
+
+def rates( ranges, values, color='b', label=None, figax=None, linestyle='solid'):
+
+    if figax==None:
+        fig = plt.figure()
+        ax = plt.subplot(1,1,1)
+    else:
+        fig, ax = figax
+
+    S = int(np.max(ranges))
+
+    for v, (s, e) in zip(values, ranges):
         if color:
-            ax.plot(s_e, [v]*2, color=color, label=label)
+            ax.plot((s-S, e-S), [v]*2, color=color, label=None, linestyle=linestyle, alpha=0.25)
         else:
-            ax.plot(s_e, [v]*2, label=label)
-        label=None
+            ax.plot((s-S, e-S), [v]*2, label=None, linestyle=linestyle, alpha=0.25)
+
+    if color:
+         ax.plot( [0.5*(s+e)-S for s, e in ranges], values, color=color, label=label, linestyle=linestyle, marker='o', markerfacecolor=color, markeredgecolor=color, markersize=4)
+    else:
+         ax.plot( [0.5*(s+e)-S for s, e in ranges], values, label=label, linestyle=linestyle, marker='o', markersize=4)
 
     ax.grid(True, which="both")
 
+    ax.set_xlabel('sec relative to %d'%S)
+
     return fig, ax
+
+def channel_performance( vchans, ranges, performances, num_gchs, num_clns, figax=None, cmap=None):
+    
+    if figax == None:
+        figrank = plt.figure()
+        axrank = plt.subplot(1,1,1)
+
+        figeff = plt.figure()
+        axeff = plt.subplot(1,1,1)
+
+        figfap = plt.figure()
+        axfap = plt.subplot(1,1,1)
+    else:
+        (figrank, axrank), (figeff, axeff), (figfap, axfap) = figax
+
+    if cmap==None:
+        cmap = matplotlib.cm.get_cmap()
+
+    S = int(np.max(ranges))
+    ind = 0
+    for ind, vchan in enumerate(vchans):
+        for (s, e), performance, num_gch, num_cln in zip(ranges, performances, num_gchs, num_clns):
+            if performance.has_key(vchan):
+                gch = performance[vchan]['gch']
+                cln = performance[vchan]['cln']
+
+                if num_gch:
+                    eff = 1.0*gch/num_gch
+                else:
+                    eff = 0
+
+                if num_cln:
+                    fap = 1.0*cln/num_cln
+                else:
+                    fap = 0
+
+                if fap > 0:
+                    rank = ovl.effbydt_to_rank( eff/fap )
+                elif eff > 0:
+                    rank = 1
+                else:
+                    rank = 0
+                
+                axrank.fill_between( [s-S, e-S], [ind-0.5]*2, [ind+0.5]*2, color=cmap(rank) )
+                axeff.fill_between( [s-S, e-S], [ind-0.5]*2, [ind+0.5]*2, color=cmap(eff) )
+                axfap.fill_between( [s-S, e-S], [ind-0.5]*2, [ind+0.5]*2, color=cmap(fap) )
+
+    ticks = range(ind+1)
+    for ax in [axrank, axeff, axfap]:
+        ax.yaxis.set_ticks( ticks )
+        ax.yaxis.set_ticklabels( [vchan.replace("_","\_") for vchan in vchans] )
+       
+        ax.set_xlabel('sec relative to %d'%S)
+       
+        ax.set_ylim(ymin=-0.5, ymax=ind+0.5)
+ 
+    return (figrank, axrank), (figeff, axeff), (figfap, axfap)
 
