@@ -36,6 +36,8 @@ extern "C" {
 /// @{
 ///
 
+REAL8 XLALCompareMetrics( const gsl_matrix *g1_ij, const gsl_matrix *g2_ij );
+
 /// @}
 
 #ifdef __cplusplus
