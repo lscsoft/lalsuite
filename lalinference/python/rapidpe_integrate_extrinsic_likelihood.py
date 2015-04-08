@@ -138,8 +138,9 @@ elif opts.coinc_xml is not None:
 else:
     raise ValueError("Need either --mass1 --mass2 or --coinc-xml to retrieve masses.")
 
-if opts.lambda1 is not None or opts.lambda2 is not None:
-    lambda1, lambda2 = opts.lambda1 or 0, opts.lambda2 or 0
+lambda1, lambda2 = 0, 0
+if opts.eff_lambda is not None:
+    lambda1, lambda2 = lalsimutils.tidal_lambda_from_tilde(opts.mass1, opts.mass2, opts.eff_lambda, opts.deff_lambda or 0)
 
 print "Performing integration for intrinsic parameters mass 1: %f, mass 2 %f, lambda1: %f, lambda2: %f" % (m1, m2, lambda1, lambda2)
 
