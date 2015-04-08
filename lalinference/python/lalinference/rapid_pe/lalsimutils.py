@@ -698,6 +698,44 @@ def Mceta(m1, m2):
     return Mc, eta
 
 #
+# Tidal parameter conversion functions
+#
+def tidal_lambda_tilde(mass1, mass2, lambda1, lambda2):
+    """
+    'Effective' lambda parameters.
+    """
+    mt = mass1 + mass2
+    eta = mass1 * mass2 / mt**2
+    q = sqrt(1 - 4*eta)
+    lt1, lt2 = lambda1 / mass1**5, lambda2 / mass2**5
+    lt_sym = lt1 + lt2
+    lt_asym = lt1 - lt2
+
+    lam_til = (1 + 7*eta - 31*eta**2) * lt_sym - q * (1 + 9*eta - 11*eta**2) * lt_asym
+    dlam_til = q * (1 - 13272*eta/1319 + 8944*eta**2/1319) * lt_sym + (1 - 15910*eta/1319 + 32850*eta**2/1319 + 3380*eta**3/1319) * lt_asym
+    dlam_til *= 0.5
+    lam_til *= 8. / 13
+    return lam_til, dlam_til
+
+def tidal_lambda_from_tilde(mass1, mass2, lam_til, dlam_til):
+    """
+    Determine physical lambda parameters from effective parameters.
+    """
+    mt = mass1 + mass2
+    eta = mass1 * mass2 / mt**2
+    q = sqrt(1 - 4*eta)
+
+    a = (8./13) * (1 + 7*eta - 31*eta**2)
+    b = (8./13) * q * (1 + 9*eta - 11*eta**2)
+    c = 0.5 * q * (1 - 13272*eta/1319 + 8944*eta**2/1319)
+    d = 0.5 * (1 - 15910*eta/1319 + 32850*eta**2/1319 + 3380*eta**3/1319)
+
+    lambda1 = 0.5 * ((c - d) * lam_til - (a - b) * dlam_til)/(b*c - a*d)
+    lambda2 = 0.5 * ((c + d) * lam_til - (a + b) * dlam_til)/(a*d - b*c)
+
+    return lambda1, lambda2
+
+#
 # Other utility functions
 #
 def unwind_phase(phase,thresh=5.):
