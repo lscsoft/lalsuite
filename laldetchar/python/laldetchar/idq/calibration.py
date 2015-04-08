@@ -37,6 +37,20 @@ __date__ = git_version.date
 
 
 #===================================================================================================
+
+### used for calibration check output files
+report_str = \
+"""
+        FAPthr   = %.5e
+      stated FAP = %.5e
+       deadtime  = %.5e
+      difference = %.3e
+   UL stated FAP = %.5e
+     UL deadtime = %.5e
+   UL difference = %.5e
+"""
+
+#===================================================================================================
 # weight functions
 #===================================================================================================
 def weights(gps, weight_type="uniform", **kwargs):
