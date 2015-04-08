@@ -705,7 +705,7 @@ while gpsstart < gpsstop:
         fap_figax = rsp.calibration_scatter( deadtimes, statedFAPs, color=color, label=classifier, figax=fap_figax)
 
         ### build upper-limit figures
-        fig, ax = rsp.calibration_scatter( deadtimes, statedFAPs, color=color, label=classifier, figax=None)
+        fig, ax = rsp.calibration_scatter( deadtimesUL, statedFAPsUL, color=color, label=classifier, figax=None)
         figname = rsp.calib(output_dir, ifo, classifier, "%s_UL"%usertag, gpsstart-lookback, lookback+stride)
         logger.info('  plotting %s'%figname)
         fignames['fapUL'][classifier] = figname
