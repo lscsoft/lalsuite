@@ -49,6 +49,7 @@ int XLALInverseTransformMetric( gsl_matrix **p_gpr_ij, const gsl_matrix *transfo
 
 int XLALDiagNormalizeMetric( gsl_matrix **p_gpr_ij, gsl_matrix **p_transform, const gsl_matrix *g_ij );
 int XLALNaturalizeMetric( gsl_matrix **p_gpr_ij, gsl_matrix **p_transform, const gsl_matrix *g_ij, const DopplerMetricParams *metricParams );
+int XLALChangeMetricReferenceTime( gsl_matrix **p_gpr_ij, gsl_matrix **p_transform, const gsl_matrix *g_ij, const DopplerCoordinateSystem *coordSys, const double Dtau );
 
 /// @}
 

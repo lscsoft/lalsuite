@@ -481,3 +481,92 @@ XLALNaturalizeMetric(
   return XLAL_SUCCESS;
 
 } // XLALNaturalizeMetric()
+
+///
+/// Compute the transform which changes the metric reference time \f$ \tau_0 \rightarrow \tau_1 =
+/// \tau_0 + \Delta\tau \f$.
+///
+/// If \c p_transform is non-NULL, return the reference-time transform in \c *p_transform.
+/// If \c p_gpr_ij is non-NULL, apply the transform to the metric \c *p_gpr_ij.
+///
+/// \note \c *p_gpr_ij and \c *p_transform will be allocated if \c NULL. \c *p_gpr_ij and \c g_ij
+/// may point to the same matrix.
+///
+int
+XLALChangeMetricReferenceTime(
+  gsl_matrix **p_gpr_ij,			///< [in,out,optional] Pointer to transformed matrix \f$g^{\prime}_{ij}\f$
+  gsl_matrix **p_transform,			///< [in,out,optional] Pointer to reference time transform
+  const gsl_matrix *g_ij,			///< [in] Matrix to transform \f$g_{ij}\f$
+  const DopplerCoordinateSystem *coordSys,	///< [in] Coordinate system of metric
+  const double Dtau				///< [in] Difference between new and old reference times \f$\Delta\tau\f$
+  )
+{
+
+  // Check input
+  XLAL_CHECK( g_ij != NULL, XLAL_EFAULT );
+  XLAL_CHECK( g_ij->size1 == g_ij->size2, XLAL_ESIZE );
+  if ( p_transform != NULL ) {
+    if ( *p_transform != NULL ) {
+      XLAL_CHECK( (*p_transform)->size1 == g_ij->size1, XLAL_ESIZE );
+      XLAL_CHECK( (*p_transform)->size2 == g_ij->size2, XLAL_ESIZE );
+    } else {
+      GAMAT( *p_transform, g_ij->size1, g_ij->size2 );
+    }
+  }
+  XLAL_CHECK( coordSys != NULL, XLAL_EFAULT );
+  XLAL_CHECK( coordSys->dim == g_ij->size1, XLAL_ESIZE );
+  for( size_t i = 0; i < coordSys->dim; ++i ) {
+    switch( coordSys->coordIDs[i] ) {
+    case DOPPLERCOORD_GC_NU0:
+    case DOPPLERCOORD_GC_NU1:
+    case DOPPLERCOORD_GC_NU2:
+    case DOPPLERCOORD_GC_NU3:
+      XLAL_ERROR( XLAL_EINVAL, "GCT coordinates are not supported" );
+    default:
+      break;
+    }
+  }
+
+  // Compute transformation matrix for frequency-spindown coordinates
+  // from Prix: "Frequency metric for CW searches" (2014-08-17), p. 4
+  gsl_matrix *GAMAT( transform, g_ij->size1, g_ij->size2 );
+  gsl_matrix_set_identity( transform );
+  if( Dtau != 0.0 ) {
+    for( size_t i = 0; i < coordSys->dim; ++i ) {
+      const DopplerCoordinateID icoord = coordSys->coordIDs[i];
+      if (DOPPLERCOORD_FREQ <= icoord && icoord <= DOPPLERCOORD_LASTFDOT) {
+        const size_t ispinorder = icoord - DOPPLERCOORD_FREQ;
+
+        for( size_t j = i + 1; j < coordSys->dim; ++j ) {
+          const DopplerCoordinateID jcoord = coordSys->coordIDs[j];
+          if (DOPPLERCOORD_FREQ <= jcoord && jcoord <= DOPPLERCOORD_LASTFDOT) {
+            const size_t jspinorder = jcoord - DOPPLERCOORD_FREQ;
+
+            if( jspinorder > ispinorder ) {
+              const double tij = LAL_FACT_INV[jspinorder - ispinorder] * pow( -1 * Dtau, jspinorder - ispinorder );
+              gsl_matrix_set( transform, i, j, tij );
+            }
+
+          }
+        }
+
+      }
+    }
+  }
+
+  // Apply transform
+  if ( p_gpr_ij != NULL ) {
+    XLAL_CHECK( XLALTransformMetric( p_gpr_ij, transform, g_ij ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
+  // Return transform
+  if ( p_transform != NULL ) {
+    gsl_matrix_memcpy( *p_transform, transform );
+  }
+
+  // Cleanup
+  GFMAT( transform );
+
+  return XLAL_SUCCESS;
+
+} // XLALPhaseMetricRefTimeTransform()

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012, 2014 Karl Wette
+ * Copyright (C) 2012--2015 Karl Wette
  * Copyright (C) 2008, 2009 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -965,8 +965,8 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
   LIGOTimeGPS *endTime   = &(metricParams->segmentList.segs[0].end);
   REAL8 Tspan = XLALGPSDiff( endTime, startTime );
 
-  const LIGOTimeGPS *refTime   = &(metricParams->signalParams.Doppler.refTime);
-
+  LIGOTimeGPS midTime = *startTime;
+  XLALGPSAdd( &midTime, 0.5 * Tspan );
 
   /* ---------- prepare output metric ---------- */
   if ( (g_ij = gsl_matrix_calloc ( dim, dim )) == NULL ) {
@@ -977,7 +977,7 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
   /* ---------- set up integration parameters ---------- */
   intparams.edat = edat;
   intparams.startTime = XLALGPSGetREAL8 ( startTime );
-  intparams.refTime   = XLALGPSGetREAL8 ( refTime );
+  intparams.refTime   = XLALGPSGetREAL8 ( &midTime );   /* always compute metric at midTime, transform to refTime later */
   intparams.Tspan     = Tspan;
   intparams.dopplerPoint = &(metricParams->signalParams.Doppler);
   intparams.detMotionType = metricParams->detMotionType;
@@ -1091,6 +1091,10 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
     intparams.Tseg = MYMAX(1800, intparams.Tseg / 2);
 
   }
+
+  /* transform phase metric reference time from midTime to refTime */
+  const REAL8 Dtau = XLALGPSDiff( &(metricParams->signalParams.Doppler.refTime), &midTime );
+  XLAL_CHECK_NULL( XLALChangeMetricReferenceTime( &g_ij, NULL, g_ij, &(metricParams->coordSys), Dtau ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   if ( relerr_max )
     (*relerr_max) = maxrelerr;

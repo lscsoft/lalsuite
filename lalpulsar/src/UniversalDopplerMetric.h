@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Karl Wette
+ * Copyright (C) 2012--2015 Karl Wette
  * Copyright (C) 2008, 2009 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -121,6 +121,8 @@ typedef enum {
   DOPPLERCOORD_F1DOT,		/**< First spindown [Units: Hz/s]. */
   DOPPLERCOORD_F2DOT,		/**< Second spindown [Units: Hz/s^2]. */
   DOPPLERCOORD_F3DOT,		/**< Third spindown [Units: Hz/s^3]. */
+
+  DOPPLERCOORD_LASTFDOT = DOPPLERCOORD_F3DOT,
 
   DOPPLERCOORD_GC_NU0,		/**< Global correlation frequency [Units: Hz]. Activates 'reduced' detector position. */
   DOPPLERCOORD_GC_NU1,		/**< Global correlation first spindown [Units: Hz/s]. Activates 'reduced' detector position. */
