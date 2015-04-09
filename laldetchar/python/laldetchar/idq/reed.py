@@ -126,6 +126,42 @@ def submit_command(
 # parsing the config file
 #===================================================================================================
 
+def config_to_combinersD( config ):
+    combiners = sorted(set(config.get('general', 'combiners').split()))
+    classifiers = sorted(set(config.get('general', 'classifiers').split()))
+    for classifier in classifiers:
+        if not config.has_section(classifier):
+            raise ValueError("classifier=%s does not have a corresonding section in config file"%classifier)
+
+    combinersDict = {}
+    referenced_classifiers = []
+    for combiner in combiners:
+        if config.has_section(combiner):
+            combinersDict[combiner] = dict( config.items(combiner) )
+            combinersDict[combiner]['flavor'] = None
+
+            if combinersDict[combiner].has_key('classifiers'): ### check classifiers
+                these_classifiers = combinersDict[combiner]['classifiers'].split()
+                for classifier in these_classifiers:
+                    if classifier not in classifiers:
+                        raise ValueError("classifier=%s referenced by combiner=%s, but is not in the list of classifiers to be run"%(classifier, combiner))
+                combinersDict[combiner]['classifiers'] = these_classifiers
+
+                columns = []
+                for classifier in these_classifiers: ### add section for each classifier
+                    combinersDict[combiner][classifier] = {}
+                    columns += ["%s_rank"%classifier, "%s_p(g)"%classifier, "%s_p(c)"%classifier]
+                combinersDict[combiner]['columns'] = columns               
+
+                referenced_classifiers += these_classifiers
+            else:
+                raise ValueError("combiner=%s does not have an option=\"classifiers\"")
+
+        else:
+            raise ValueError("combiner=%s does not have a corresponding section in config file"%(combiner))
+
+    return combinersDict, sorted(set(referenced_classifiers))
+
 def config_to_classifiersD( config ):
     classifiers = sorted(set(config.get('general', 'classifiers').split()))
 
@@ -144,7 +180,7 @@ def config_to_classifiersD( config ):
             ovl = ovl or (flavor == 'ovl')
 
         else:
-            raise ValueError("classifier=%s does not have a corresponding section in %s"%(classifier, opts.config_file))
+            raise ValueError("classifier=%s does not have a corresponding section in config file"%(classifier))
 
     return classifiersDict, mla, ovl
 
@@ -260,6 +296,9 @@ def chan_perf(directory, classifier, ifo, tag, t, stride):
 def sumhtml(directory, tag, t, stride):
     return "%s/summary-index%s-%d-%d.html"%(directory, tag, t, stride)
 
+def kdename(directory, classifier, ifo, tag, t, stride):
+    return "%s/%s_%s%s_KDE-%d-%d.npy.gz"%(directory, ifo, classifier, tag, t, stride)
+
 #=================================================
 # extract start/dur
 #=================================================
@@ -330,8 +369,15 @@ def extract_calib_ranges(urocs):
     return [extract_calibration_range(uroc) for uroc in urocs]
 
 def extract_calib_range(uroc):
-    calib = uroc.split("/")[-1].split("-")[-3].split("_")[-1]
-    return calib
+    return "%d_%d"%extract_start_stop( uroc, suffix=".uroc" )
+#    calib = uroc.split("/")[-1].split("-")[-3].split("_")[-1]
+#    return calib
+
+def extract_kde_ranges( kde_names ):
+    return [extract_kde_range( kde_name ) for kde_name in kde_names ]
+
+def extract_kde_range( kde_name ):
+    return "%d_%d"%extract_start_stop( kde_name, suffix=".npy.gz" )
 
 def best_range(t, ranges):
     """
@@ -678,6 +724,22 @@ def output_to_datfile( output, dat ):
 
     file_obj.close()
 
+def sort_output( output, key ):
+    if not output.has_key(key):
+        raise ValueError("output does not have key=%s"%key)
+
+    columns = output.keys()
+
+    out = [ [output[key][i]] + [output[column][i] for column in columns] for i in xrange(len(output[key])) ]
+    if not len(out):
+        return output
+
+    out.sort( key=lambda l: l[0] )
+    for ind, column in enumerate(columns):
+        output[column] = out[:,1+ind]
+
+    return output
+
 def filter_datfile_output( output, segs ):
     """
     filters the data in output by segs
@@ -690,6 +752,8 @@ def filter_datfile_output( output, segs ):
         return output
 
     columns = output.keys()
+
+    output = sort_output( output , 'GPS' ) ### make sure these are sorted by GPS
 
     out = numpy.array(event.include( [ [ float(output['GPS'][i]) ] + [output[column][i] for column in columns] for i in xrange(len(output['GPS'])) ], segs, tcent=0 ))
 
@@ -960,6 +1024,47 @@ def rcg_to_EffFAPmap(rs, c_cln, c_gch, kind='linear'):
     fapmap = BinomialMap( rs, c_cln, kind=kind )
 
     return (effmap, fapmap)
+
+def kde_pwg(eval, r, ds, scale=0.1, s=0.01):
+    """
+    delegates to pdf_e.point_wise_gaussian_kde after constructing the correct input values
+    """
+    observ = []
+    for R, dS in zip(r, ds):
+        observ += [R]*dS
+
+    if np.sum(ds):
+        return pdf_e.point_wise_gaussian_kde(eval, observ, scale=scale, s=s)
+    else:
+        return np.ones_like(eval)
+
+def kde_to_ckde( s ):
+    c = numpy.zeros_like(s)
+    _s = 0.0
+    cum = 0.0
+    for i, S in enumerate(s[::-1]): ### integrate from the right
+        cum += 0.5*(S+_s)
+        c[i] = cum
+        _s = S
+    c /= c[-1]
+    return c[::-1] ### reverse to get the order correct
+
+def bin_by_rankthr(rankthr, output, columns=None):
+
+    if columns==None:
+        columns = sorted(output.keys())
+
+    gch = []
+    cln = []
+    for i in xrange(len(output['i'])):
+        if output['rank'][i] >= rankthr:
+            d = dict( (column, output[column][i]) for column in columns )
+            if output['i'][i]:
+                gch.append( d )
+            else:
+                cln.append( d )
+
+    return cln, gch
 
 #=================================================
 # channel performance data

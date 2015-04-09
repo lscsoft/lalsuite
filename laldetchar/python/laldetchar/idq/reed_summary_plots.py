@@ -76,9 +76,6 @@ def kdefig(directory, classifier, ifo, tag, t, stride, figtype="png"):
 def Lfig(directory, classifier, ifo, tag, t, stride, figtype="png"):
     return "%s/%s_%s%s_L-%d-%d.%s"%(directory, ifo, classifier, tag, t, stride, figtype)
 
-def kdename(directory, classifier, ifo, tag, t, stride):
-    return "%s/%s_%s%s_KDE-%d-%d.npy.gz"%(directory, ifo, classifier, tag, t, stride)
-
 def bitfig(directory, ifo, tag, t, stride, figtype="png"):
     return "%s/%s%s_BITWORD-%d-%d.%s"%(directory, ifo, tag, t, stride, figtype)
 
@@ -88,7 +85,7 @@ def ratefig(directory, ifo, tag, t, stride, figtype="png"):
 def chanfig(directory, ifo, classifier, metric, tag, t, stride, figtype="png"):
     return "%s/%s_%s%s_chan-perf_%s-%d-%d.%s"%(directory, ifo, classifier, tag, metric, t, stride, figtype)
 
-def calib(directory, ifo, classifier, tag, t, stride, figtype="png"):
+def calibfig(directory, ifo, classifier, tag, t, stride, figtype="png"):
     return "%s/%s_%s%s_calib-%d-%d.%s"%(directory, ifo, classifier, tag, t, stride, figtype)
 
 #===================================================================================================
@@ -100,37 +97,6 @@ def close(figure):
     straight delegation to pyplot.close 
     """
     plt.close(figure)
-
-def kde_pwg(eval, r, ds, scale=0.1, s=0.01):
-    """
-    delegates to pdf_e.point_wise_gaussian_kde after constructing the correct input values
-    """
-    observ = []
-    for R, dS in zip(r, ds):
-        observ += [R]*dS
-
-    if np.sum(ds):
-        return pdf_e.point_wise_gaussian_kde(eval, observ, scale=scale, s=s)
-    else:
-        return np.ones_like(eval)
-
-
-def bin_by_rankthr(rankthr, output, columns=None):
-
-    if columns==None:
-        columns = sorted(output.keys())
-
-    gch = []
-    cln = []
-    for i in xrange(len(output['i'])):
-        if output['rank'][i] >= rankthr:
-            d = dict( (column, output[column][i]) for column in columns )
-            if output['i'][i]:
-                gch.append( d )
-            else:
-                cln.append( d )
-
-    return cln, gch
 
 #===================================================================================================
 # single-stride plotting functions
@@ -232,15 +198,16 @@ def stacked_kde(r, s, color='b', linestyle='solid', label=None, figax=None):
 
     axh.plot( r, s, color=color, linestyle=linestyle, label=label)
 
-    c = np.zeros_like(r)
-    _s = 0.0
-    cum = 0.0
-    for i, S in enumerate(s[::-1]): ### integrate by hand, and start at the right
-        cum += 0.5*(S+_s)
-        c[i] = cum
-        _s = S
-    c /= c[-1]
-    c = c[::-1] ### reverse order to match r
+    c = reed.kde_to_ckde( s )
+#    c = np.zeros_like(r)
+#    _s = 0.0
+#    cum = 0.0
+#    for i, S in enumerate(s[::-1]): ### integrate by hand, and start at the right
+#        cum += 0.5*(S+_s)
+#        c[i] = cum
+#        _s = S
+#    c /= c[-1]
+#    c = c[::-1] ### reverse order to match r
     axc.plot( r, c, color=color, linestyle=linestyle, label=label)
 
     axh.grid(True, which="both")
@@ -277,23 +244,25 @@ def stacked_L(r, c, g, color='b', linestyle='solid', label=None, figax=None):
     truth = c > 0
     axh.plot( r[truth], g[truth]/c[truth], color=color, linestyle=linestyle, label=label)
 
-    G = np.zeros_like(r)
-    C = np.zeros_like(r)
-    _c = 0.0
-    _g = 0.0
-    ccum = 0.0
-    gcum = 0.0
-    for i, (_c_, _g_) in enumerate(zip(c[::-1], g[::-1])):
-        ccum += 0.5*(_c_+_c)
-        C[i] = ccum
-        _c = _c_
-        gcum += 0.5*(_g_+_g)
-        G[i] = gcum
-        _g = _g_
-    C /= C[-1]
-    C = C[::-1]
-    G /= G[-1]
-    G = G[::-1]
+    G = reed.kde_to_ckde( g )
+    C = reed.kde_to_ckde( c )
+#    G = np.zeros_like(r)
+#    C = np.zeros_like(r)
+#    _c = 0.0
+#    _g = 0.0
+#    ccum = 0.0
+#    gcum = 0.0
+#    for i, (_c_, _g_) in enumerate(zip(c[::-1], g[::-1])):
+#        ccum += 0.5*(_c_+_c)
+#        C[i] = ccum
+#        _c = _c_
+#        gcum += 0.5*(_g_+_g)
+#        G[i] = gcum
+#        _g = _g_
+#    C /= C[-1]
+#    C = C[::-1]
+#    G /= G[-1]
+#    G = G[::-1]
 
     Truth = C > 0
     axc.plot( r[Truth], G[Truth]/C[Truth], color=color, linestyle=linestyle, label=label)
@@ -303,6 +272,9 @@ def stacked_L(r, c, g, color='b', linestyle='solid', label=None, figax=None):
 
     axh.set_xlim(xmin=0, xmax=1)
     axc.set_xlim(xmin=0, xmax=1)
+
+    axh.set_yscale('log')
+    axc.set_yscale('log')
 
     axh.set_ylim(ymin=0, ymax=max(axh.get_ylim()[1], max(g[truth]/c[truth])*1.1))
     axc.set_ylim(ymin=0, ymax=max(axc.get_ylim()[1], max(G[Truth]/C[Truth])*1.1))

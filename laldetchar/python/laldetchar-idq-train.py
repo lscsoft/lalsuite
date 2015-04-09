@@ -106,12 +106,10 @@ if usertag:
 #========================
 # which classifiers
 #========================
-classifiers = sorted(set(config.get('general', 'classifiers').split()))
-if not classifiers:
-    raise ValueError("no classifiers in general section of %s"%opts.config_file)
-
 ### ensure we have a section for each classifier and fill out dictionary of options
 classifiersD, mla, ovl = reed.config_to_classifiersD( config )
+
+classifiers = sorted(classifiersD.keys())
 
 if mla:
     ### reading parameters from config file needed for mla
