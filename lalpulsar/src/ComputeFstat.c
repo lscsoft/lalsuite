@@ -72,6 +72,10 @@ const FstatOptionalArgs FstatOptionalArgsDefaults = {
   .prevInput = NULL
 };
 
+// hidden global variables used to pass timings to test/benchmark programs
+REAL8 Fstat_tauF1Buf = 0.0;
+REAL8 Fstat_tauF1NoBuf = 0.0;
+
 // ==================== Function definitions =================== //
 
 ///

@@ -52,8 +52,8 @@ typedef struct
 } UserInput_t;
 
 // hidden global variables used to pass timings to test/benchmark programs
-extern REAL8 Resamp_tauF1Buf;
-extern REAL8 Resamp_tauF1NoBuf;
+extern REAL8 Fstat_tauF1Buf;
+extern REAL8 Fstat_tauF1NoBuf;
 
 // ---------- main ----------
 int
@@ -238,8 +238,8 @@ main ( int argc, char *argv[] )
           XLAL_CHECK ( XLALComputeFstat ( &results, inputs->data[l], &Doppler, numFreqBins_i, whatToCompute ) == XLAL_SUCCESS, XLAL_EFUNC );
 
           // ----- output timing details if requested
-          tauF1NoBuf_i += Resamp_tauF1NoBuf;
-          tauF1Buf_i   += Resamp_tauF1Buf;
+          tauF1NoBuf_i += Fstat_tauF1NoBuf;
+          tauF1Buf_i   += Fstat_tauF1Buf;
         } // for l < numSegments
 
       tauF1NoBuf_i /= uvar->numSegments;

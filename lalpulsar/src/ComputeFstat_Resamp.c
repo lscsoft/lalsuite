@@ -55,7 +55,6 @@
 
 
 // ----- local constants
-#define COLLECT_TIMING 1
 
 // ----- local types ----------
 
@@ -73,10 +72,6 @@ typedef struct tagResampTimingInfo
   REAL8 tauF1Buf;		// Resampling timing 'constant': Fstat time per template per detector for a 'buffered' case (same skypos, same numFreqBins)
   REAL8 tauF1NoBuf;		// Resampling timing 'constant': Fstat time per template per detector for an 'unbuffered' usage (different skypos and numFreqBins)
 } ResampTimingInfo;
-
-// hidden global variables used to pass timings to test/benchmark programs
-REAL8 Resamp_tauF1Buf = 0.0;
-REAL8 Resamp_tauF1NoBuf = 0.0;
 
 typedef struct tagResampWorkspace
 {
@@ -350,7 +345,7 @@ XLALSetupFstatResamp ( void **method_data,
       XLAL_CHECK ( ( common->workspace = XLALCreateResampWorkspace ( numSamplesMax_SRC, numSamplesFFT )) != NULL, XLAL_EFUNC );
     } // end: if we create our own workspace
 
-#ifdef COLLECT_TIMING
+#if COLLECT_TIMING
   // Set up timing log file
   resamp->timingLogFile = optArgs->timingLogFile;
 #else
@@ -380,7 +375,7 @@ XLALComputeFstatResamp ( FstatResults* Fstats,
 
   ResampWorkspace *ws = (ResampWorkspace*) common->workspace;
 
-#ifdef COLLECT_TIMING
+#if COLLECT_TIMING
   // collect internal timing info
   XLAL_INIT_MEM ( ws->timingInfo );
   ResampTimingInfo *ti = &(ws->timingInfo);
@@ -405,14 +400,14 @@ XLALComputeFstatResamp ( FstatResults* Fstats,
     (resamp->prev_doppler.argp == thisPoint.argp);
 
   // ----- not same skypos+binary+refTime? --> re-compute SRC-frame timeseries, AM-coeffs and store in buffer
-#ifdef COLLECT_TIMING
+#if COLLECT_TIMING
   tic = XLALGetCPUTime();
 #endif
   if ( ! ( same_skypos && same_refTime && same_binary) )
     {
       XLAL_CHECK ( XLALBarycentricResampleMultiCOMPLEX8TimeSeries ( resamp, &thisPoint, common ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
-#ifdef COLLECT_TIMING
+#if COLLECT_TIMING
   toc = XLALGetCPUTime();
   ti->tauBary = (toc-tic);
 #endif
@@ -424,7 +419,7 @@ XLALComputeFstatResamp ( FstatResults* Fstats,
   // ----- workspace that depends on number of output frequency bins 'numFreqBins' ----------
   UINT4 numFreqBins = Fstats->numFreqBins;
 
-#ifdef COLLECT_TIMING
+#if COLLECT_TIMING
   tic = XLALGetCPUTime();
 #endif
 
@@ -468,7 +463,7 @@ XLALComputeFstatResamp ( FstatResults* Fstats,
   ws->numFreqBinsOut = numFreqBins;
   // ====================================================================================================
 
-#ifdef COLLECT_TIMING
+#if COLLECT_TIMING
   toc = XLALGetCPUTime();
   ti->tauMem = (toc-tic);	// this one doesn't scale with number of detector!
 #endif
@@ -488,7 +483,7 @@ XLALComputeFstatResamp ( FstatResults* Fstats,
       // compute {Fa^X(f_k), Fb^X(f_k)}: results returned via workspace ws
       XLAL_CHECK ( XLALComputeFaFb_Resamp ( ws, thisPoint, common->dFreq, TimeSeriesX_SRC_a, TimeSeriesX_SRC_b ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-#ifdef COLLECT_TIMING
+#if COLLECT_TIMING
       tic = XLALGetCPUTime();
 #endif
       if ( X == 0 )
@@ -507,7 +502,7 @@ XLALComputeFstatResamp ( FstatResults* Fstats,
               ws->Fb_k[k] += ws->FbX_k[k];
             }
         } // end:if X>0
-#ifdef COLLECT_TIMING
+#if COLLECT_TIMING
       toc = XLALGetCPUTime();
       ti->tauSumFabX += (toc-tic);
       tic = toc;
@@ -525,14 +520,14 @@ XLALComputeFstatResamp ( FstatResults* Fstats,
               Fstats->twoFPerDet[X][k] = XLALComputeFstatFromFaFb ( ws->FaX_k[k], ws->FbX_k[k], AdX, BdX, CdX, EdX, DdX_inv );
             }  // for k < numFreqBins
         } // end: if compute F_X
-#ifdef COLLECT_TIMING
+#if COLLECT_TIMING
       toc = XLALGetCPUTime();
       ti->tauFab2F += ( toc - tic );
 #endif
 
     } // for X < numDetectors
 
-#ifdef COLLECT_TIMING
+#if COLLECT_TIMING
   ti->tauSumFabX /= numDetectors;
   ti->tauFab2F /= numDetectors;
   tic = XLALGetCPUTime();
@@ -549,7 +544,7 @@ XLALComputeFstatResamp ( FstatResults* Fstats,
           Fstats->twoF[k] = XLALComputeFstatFromFaFb ( ws->Fa_k[k], ws->Fb_k[k], Ad, Bd, Cd, Ed, Dd_inv );
         }
     } // if FSTATQ_2F
-#ifdef COLLECT_TIMING
+#if COLLECT_TIMING
       toc = XLALGetCPUTime();
       ti->tauFab2F += ( toc - tic );
 #endif
@@ -576,7 +571,7 @@ XLALComputeFstatResamp ( FstatResults* Fstats,
       ws->FbX_k = NULL;
     }
 
-#ifdef COLLECT_TIMING
+#if COLLECT_TIMING
   // timings are per-detector
   tocEnd = XLALGetCPUTime();
   ti->tauTotal = (tocEnd - ticStart);
@@ -592,8 +587,8 @@ XLALComputeFstatResamp ( FstatResults* Fstats,
   ti->tauF1Buf   = (ti->tauTotal - ti->tauBary - ti->tauMem) / numFreqBins;
 
   // pass out timings to test/benchmark programs
-  Resamp_tauF1NoBuf = ti->tauF1NoBuf;
-  Resamp_tauF1Buf = ti->tauF1Buf;
+  Fstat_tauF1NoBuf = ti->tauF1NoBuf;
+  Fstat_tauF1Buf = ti->tauF1Buf;
 
   // write timing info to log file
   if ( resamp->timingLogFile != NULL ) {
@@ -627,7 +622,7 @@ XLALComputeFaFb_Resamp ( ResampWorkspace *restrict ws,				//!< [in,out] pre-allo
   REAL8 fMinFFT = fHet + freqShift - dFreq * (ws->numSamplesFFT/2);	// we'll shift DC into the *middle bin* N/2  [N always even!]
   UINT4 offset_bins = (UINT4) lround ( ( FreqOut0 - fMinFFT ) / dFreq );
 
-#ifdef COLLECT_TIMING
+#if COLLECT_TIMING
   // collect some internal timing info
   ResampTimingInfo *ti = &(ws->timingInfo);
   REAL8 tic,toc;
@@ -639,7 +634,7 @@ XLALComputeFaFb_Resamp ( ResampWorkspace *restrict ws,				//!< [in,out] pre-allo
   // apply spindown phase-factors, store result in zero-padded timeseries for 'FFT'ing
   XLAL_CHECK ( XLALApplySpindownAndFreqShift ( ws->TS_FFT, TimeSeries_SRC_a, &thisPoint, freqShift ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-#ifdef COLLECT_TIMING
+#if COLLECT_TIMING
   toc = XLALGetCPUTime();
   ti->tauSpin += ( toc - tic);
   tic = toc;
@@ -652,7 +647,7 @@ XLALComputeFaFb_Resamp ( ResampWorkspace *restrict ws,				//!< [in,out] pre-allo
     ws->FaX_k[k] = ws->FabX_Raw [ offset_bins + k ];
   }
 
-#ifdef COLLECT_TIMING
+#if COLLECT_TIMING
   toc = XLALGetCPUTime();
   ti->tauFFT += ( toc - tic);
   tic = toc;
@@ -662,7 +657,7 @@ XLALComputeFaFb_Resamp ( ResampWorkspace *restrict ws,				//!< [in,out] pre-allo
   // apply spindown phase-factors, store result in zero-padded timeseries for 'FFT'ing
   XLAL_CHECK ( XLALApplySpindownAndFreqShift ( ws->TS_FFT, TimeSeries_SRC_b, &thisPoint, freqShift ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-#ifdef COLLECT_TIMING
+#if COLLECT_TIMING
   toc = XLALGetCPUTime();
   ti->tauSpin += ( toc - tic);
   tic = toc;
@@ -675,7 +670,7 @@ XLALComputeFaFb_Resamp ( ResampWorkspace *restrict ws,				//!< [in,out] pre-allo
     ws->FbX_k[k] = ws->FabX_Raw [ offset_bins + k ];
   }
 
-#ifdef COLLECT_TIMING
+#if COLLECT_TIMING
   toc = XLALGetCPUTime();
   ti->tauFFT += ( toc - tic);
   tic = toc;
@@ -694,7 +689,7 @@ XLALComputeFaFb_Resamp ( ResampWorkspace *restrict ws,				//!< [in,out] pre-allo
       ws->FbX_k[k] *= normX_k;
     } // for k < numFreqBinsOut
 
-#ifdef COLLECT_TIMING
+#if COLLECT_TIMING
   toc = XLALGetCPUTime();
   ti->tauNorm += ( toc - tic);
   tic = toc;

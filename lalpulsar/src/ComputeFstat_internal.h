@@ -28,9 +28,19 @@
 //                                                                                                   //
 // ================================================================================================= //
 
+// ---------- Shared constants/defines ---------- //
+#ifndef COLLECT_TIMING
+#define COLLECT_TIMING 1
+#endif
+
 // ---------- Shared macro definitions ---------- //
 
 #define SQ(x) ( (x) * (x) )
+
+// ---------- Shared global variables ---------- //
+// hidden global variables used to pass timings to test/benchmark programs
+extern REAL8 Fstat_tauF1Buf;
+extern REAL8 Fstat_tauF1NoBuf;
 
 // ---------- Shared struct definitions ---------- //
 

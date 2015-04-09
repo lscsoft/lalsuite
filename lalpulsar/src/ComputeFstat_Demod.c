@@ -28,6 +28,7 @@
 #include "ComputeFstat_internal.h"
 
 #include <lal/Factorial.h>
+#include <lal/LogPrintf.h>
 #include <lal/SinCosLUT.h>
 
 // ========== Demod internals ==========
@@ -77,6 +78,11 @@ XLALComputeFstatDemod ( FstatResults* Fstats,
   XLAL_CHECK(common != NULL, XLAL_EFAULT);
   XLAL_CHECK(method_data != NULL, XLAL_EFAULT);
 
+#if COLLECT_TIMING
+  // get internal timing info
+  REAL8 tic, toc, tauBary, tauTotal;
+#endif
+
   DemodMethodData *demod = (DemodMethodData*) method_data;
 
   // Get which F-statistic quantities to compute
@@ -94,6 +100,9 @@ XLALComputeFstatDemod ( FstatResults* Fstats,
   XLAL_CHECK ( multiDetStates->length == numDetectors, XLAL_EINVAL );
   XLAL_CHECK ( multiWeights==NULL || (multiWeights->length == numDetectors), XLAL_EINVAL );
 
+#if COLLECT_TIMING
+  tic = XLALGetCPUTime();
+#endif
   MultiSSBtimes *multiSSB = NULL;
   MultiAMCoeffs *multiAMcoef = NULL;
   // ----- check if we have buffered SSB+AMcoef for current sky-position
@@ -137,6 +146,10 @@ XLALComputeFstatDemod ( FstatResults* Fstats,
     {
       multiSSBTotal = multiSSB;
     }
+#if COLLECT_TIMING
+  toc = XLALGetCPUTime();
+  tauBary = (toc - tic);
+#endif
 
   // ----- compute final Fstatistic-value -----
   REAL4 Ad = multiAMcoef->Mmunu.Ad;
@@ -232,9 +245,15 @@ XLALComputeFstatDemod ( FstatResults* Fstats,
   // this needs to be free'ed, as it's currently not buffered
   XLALDestroyMultiSSBtimes ( multiBinary );
 
-
   // Return amplitude modulation coefficients
   Fstats->Mmunu = demod->prevMultiAMcoef->Mmunu;
+
+#if COLLECT_TIMING
+  toc = XLALGetCPUTime();
+  tauTotal = (toc - tic);
+  Fstat_tauF1NoBuf = tauTotal / ( Fstats->numFreqBins * numDetectors );
+  Fstat_tauF1Buf   = (tauTotal - tauBary) / ( Fstats->numFreqBins * numDetectors );
+#endif
 
   return XLAL_SUCCESS;
 
