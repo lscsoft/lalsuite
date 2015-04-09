@@ -48,7 +48,6 @@ typedef struct
 
   // ----- developer options
   REAL8 Tsft;
-  BOOLEAN runBuffered;	// only useful for double-checking and Demod timing
   BOOLEAN reuseInput;   // only useful for checking workspace management
 } UserInput_t;
 
@@ -78,7 +77,6 @@ main ( int argc, char *argv[] )
   uvar->numTrials = 1;
 
   uvar->Tsft = 1800;
-  uvar->runBuffered = 0;
   uvar->reuseInput = 1;
 
   XLAL_CHECK ( (uvar->IFOs = XLALCreateStringVector ( "H1", NULL )) != NULL, XLAL_EFUNC );
@@ -98,7 +96,6 @@ main ( int argc, char *argv[] )
   XLAL_CHECK ( XLALRegisterUvarMember ( outputInfo,     STRING,         0, OPTIONAL, "Append Resampling internal info into this file") == XLAL_SUCCESS, XLAL_EFUNC );
 
   XLAL_CHECK ( XLALRegisterUvarMember ( Tsft,           REAL8,          0, DEVELOPER, "SFT length" ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALRegisterUvarMember ( runBuffered,    BOOLEAN,        0, DEVELOPER, "Explicitly time buffered Fstat call (only useful for double-checking and Demod timing)" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember ( reuseInput,     BOOLEAN,        0, DEVELOPER, "Re-use FstatInput from previous setups (only useful for checking workspace management)" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   XLAL_CHECK ( XLALUserVarReadAllInput(argc, argv) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -192,7 +189,7 @@ main ( int argc, char *argv[] )
   optionalArgs.injectSqrtSX = &injectSqrtSX;
   optionalArgs.FstatMethod = FstatMethod;
 
-  if ( (uvar->outputInfo != NULL) && (FstatMethod == FMETHOD_RESAMP_GENERIC) )
+  if ( (uvar->outputInfo != NULL) && (FstatMethod >= FMETHOD_RESAMP_GENERIC) )
     {
       XLAL_CHECK ( (optionalArgs.timingLogFile = fopen (uvar->outputInfo, "ab")) != NULL, XLAL_ESYS, "Failed to open '%s' for appending\n", uvar->outputInfo );
     }

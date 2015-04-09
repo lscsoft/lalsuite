@@ -299,7 +299,7 @@ rm -f checkpoint.cpt # delete checkpoint to start correctly
 outfile_GCT_DM="${testDir}/GCT_DM.dat"
 timingsfile_DM="${testDir}/timing_DM.dat"
 
-cmdline="$gct_code $gct_CL_common --FstatMethod=DemodOptC --fnameout='$outfile_GCT_DM' --outputTiming='$timingsfile_DM' ${BSGL_flags}"
+cmdline="$gct_code $gct_CL_common --FstatMethod=DemodBest --fnameout='$outfile_GCT_DM' --outputTiming='$timingsfile_DM' ${BSGL_flags}"
 if [ -n "$DEBUG" ]; then
     cmdline="$cmdline"
 else
@@ -331,7 +331,7 @@ rm -f checkpoint.cpt # delete checkpoint to start correctly
 outfile_GCT_DM_BSGL="${testDir}/GCT_DM_BSGL.dat"
 timingsfile_DM_BSGL="${testDir}/timing_DM_BSGL.dat"
 
-cmdline="$gct_code $gct_CL_common --FstatMethod=DemodOptC ${BSGL_flags} --SortToplist=2 --fnameout='$outfile_GCT_DM_BSGL' --outputTiming='$timingsfile_DM_BSGL'"
+cmdline="$gct_code $gct_CL_common --FstatMethod=DemodBest ${BSGL_flags} --SortToplist=2 --fnameout='$outfile_GCT_DM_BSGL' --outputTiming='$timingsfile_DM_BSGL'"
 if [ -n "$DEBUG" ]; then
     cmdline="$cmdline"
 else
@@ -360,7 +360,7 @@ rm -f checkpoint.cpt # delete checkpoint to start correctly
 outfile_GCT_DM_DUAL="${testDir}/GCT_DM_DUAL.dat"
 timingsfile_DM_DUAL="${testDir}/timing_DM_DUAL.dat"
 
-cmdline="$gct_code $gct_CL_common --FstatMethod=DemodOptC --SortToplist=3 ${BSGL_flags} --fnameout='$outfile_GCT_DM_DUAL' --outputTiming='$timingsfile_DM_DUAL'"
+cmdline="$gct_code $gct_CL_common --FstatMethod=DemodBest --SortToplist=3 ${BSGL_flags} --fnameout='$outfile_GCT_DM_DUAL' --outputTiming='$timingsfile_DM_DUAL'"
 if [ -n "$DEBUG" ]; then
     cmdline="$cmdline"
 else

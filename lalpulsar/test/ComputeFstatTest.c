@@ -181,6 +181,9 @@ main ( int argc, char *argv[] )
                   if ( firstMethod == FMETHOD_START ) {	// keep track of first available method found
                     firstMethod = iMethod;
                   }
+                  if ( (iMethod == FMETHOD_DEMOD_BEST) || (iMethod == FMETHOD_RESAMP_BEST) ) {
+                    continue;	// avoid re-running comparisons for same method because labelled 'best'
+                  }
 
                   XLAL_CHECK ( XLALComputeFstat ( &results[iMethod], input[iMethod], &Doppler, numFreqBins, whatToCompute ) == XLAL_SUCCESS, XLAL_EFUNC );
 

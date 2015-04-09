@@ -70,6 +70,6 @@ XLALComputeFstatFromFaFb ( COMPLEX8 Fa, COMPLEX8 Fb, REAL4 A, REAL4 B, REAL4 C, 
                       - 2.0 * C * (   Fa_re * Fb_re + Fa_im * Fb_im )
                       - 2.0 * E * ( - Fa_re * Fb_im + Fa_im * Fb_re )           // nonzero only in RAA case where Ed!=0
                       );
-  return 2*F;
+  return 2.0f*F;
 
 } // ComputeFstatFromFaFb()

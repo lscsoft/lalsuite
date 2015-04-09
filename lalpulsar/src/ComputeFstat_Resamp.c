@@ -58,11 +58,6 @@
 #define COLLECT_TIMING 1
 
 // ----- local types ----------
-typedef struct tagMultiUINT4Vector
-{
-  UINT4 length;
-  UINT4Vector **data;
-} MultiUINT4Vector;
 
 // ----- workspace ----------
 typedef struct tagResampTimingInfo
