@@ -53,7 +53,6 @@
 #include <lal/ComputeSky.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/Velocity.h>
-#include <lal/LALDemod.h>
 #include <lal/ExtrapolatePulsarSpins.h>
 #include <lal/Date.h>
 #include <lal/LALHough.h> 

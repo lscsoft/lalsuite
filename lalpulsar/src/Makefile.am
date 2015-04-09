@@ -23,7 +23,6 @@ pkginclude_HEADERS = \
 	HoughMap.h \
 	LALBarycenter.h \
 	LALComputeAM.h \
-	LALDemod.h \
 	LALHough.h \
 	LALInitBarycenter.h \
 	LALPulsarConfig.h \
@@ -96,8 +95,6 @@ liblalpulsar_la_SOURCES = \
 	HoughMap.c \
 	LALBarycenter.c \
 	LALComputeAM.c \
-	LALDemod.c \
-	LALDemodFAST.c \
 	LALInitBarycenter.c \
 	LALPulsarVCSInfo.c \
 	LALXMGRInterface.c \

@@ -48,3 +48,7 @@ git commit --amend
 # 2014-05-14 lalpulsar/src/ComputeFstat_Demod_precalc.i
 # 2014-05-14 lalpulsar/src/ComputeFstat_Demod_sse.i
 # 2014-05-14 lalpulsar/src/ComputeFstat_Demod_sse_msc.i
+# 2015-04-09 lalpulsar/src/LALDemod.c
+# 2015-04-09 lalpulsar/src/LALDemod.h
+# 2015-04-09 lalpulsar/src/LALDemodFAST.c
+# 2015-04-09 lalpulsar/test/LALDemodTest.c
