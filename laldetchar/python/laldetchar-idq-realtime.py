@@ -147,12 +147,13 @@ ifo = config.get('general', 'ifo')
 #========================
 # which classifiers
 #========================
-classifiers = sorted(set(config.get('general', 'classifiers').split()))
-if not classifiers:
-    raise ValueError("no classifiers in general section of %s"%opts.config_file)
-
 ### ensure we have a section for each classifier and fill out dictionary of options
 classifiersD, mla, ovl = reed.config_to_classifiersD( config )
+classifiers = sorted(classifiersD.keys())
+
+### get combiners information and DO NOT add this to classifiersD, we treat them separately!
+combinersD, referenced_classifiers = config_to_combinersD( config )
+combiners = sorted(combinersD.keys())
 
 if mla:
     ### reading parameters from config file needed for mla
@@ -271,9 +272,17 @@ if calibration_lookback != "infinity":
 
 calibration_FAPthrs = [float(l) for l in config.get('calibration','FAP').split()]
 
+### cache for uroc files
 calibration_cache = dict( (classifier, reed.Cachefile(reed.cache(calibrationdir, classifier, tag='_calibration%s'%usertag))) for classifier in classifiers )
 for cache in calibration_cache.values():
     cache.time = 0
+
+### cache for kde estimates
+kde_cache = dict( (classifier, reed.Cachefile(reed.cache(calibrationdir, classifier, tag='_calibration-kde%s'%usertag))) for classifier in classifiers )
+for cache in kde_cache.values():
+    cache.time = 0
+
+kdeD = dict( (classifier,{}) for classifier in classifier ) ### used to store kde information read in from files within kde_cache
 
 calibration_script = config.get('calibration', 'executable')
 
@@ -707,6 +716,8 @@ while t  < opts.endgps:
     #=============================================
     # predictions
     #=============================================
+    dats = {}
+    rnks = {}
     for classifier in classifiers:
         flavor = classifiersD[classifier]['flavor']
 
@@ -757,6 +768,10 @@ while t  < opts.endgps:
         rnknp = reed.timeseries(this_output_dir, classifier, ifo, trained_range, calib_range, rnktag, t, stride)
         fapnp = reed.timeseries(this_output_dir, classifier, ifo, trained_range, calib_range, faptag, t, stride)
 
+        ### store relevant filenames for combiners
+        dats[classifier] = dat
+        rnks[classifier] = rnknp
+
         ### perform evalutation
         logger.info('  Begin %s evaluation -> %s'%(classifier, dat) )
         miniconfig = classifiersD[classifier]['config']
@@ -806,6 +821,217 @@ while t  < opts.endgps:
 
         ### done with this classifier
         logger.info('Done: %s cycle.'%classifier)
+
+    #=============================================
+    # cycle through combiners
+    #=============================================
+    if combiners:
+        ### load in dat files only once!
+        outputs = {}
+        ts = {}
+        for classifier in referenced_classifiers:
+            dat = dats[classifier]
+            logger.info('reading in data from %s'%dat)
+            ### we sort according to GPS so everything is ordered in the same way!
+            outputs[classifier] = reed.sort_output( reed.slim_load_datfile( dat, skip_lines=0, columns=samples_header ), 'GPS' )
+
+            rnk = rnks[classifier]
+            logger.info('reading in data from %s'%rnk)
+            ts[classifier] = np.load(event.gzopen(rnk, 'r'))
+
+            ### check kde_caches
+            if cache.was_modified():
+                kde_cln_name, kde_gch_name = cache.tail(nlines=2)
+
+                kde_range = reed.extract_kde_range( kde_cln_name )
+
+                kde, kde_cln = np.load(gzopen(kde_cln_name, 'r'))
+                _  , kde_gch = np.load(gzopen(kde_gch_name, 'r'))
+
+                ### if we're combining cdfs, we integrate here
+                if c_pofg:
+                    kde_gch = reed.kde_to_ckde( kde_gch )
+                if pofc.endswith('cdf'):
+                    kde_cln = reed.kde_to_ckde( kde_cln )
+
+                kdeD[classifier]['kde'] = kde
+                kdeD[classifier][classifier]['kde_cln'] = kde_cln
+                kdeD[classifier]['kde_gch'] = kde_gch
+
+                kdeD[classifier]['kde_cln_name'] = kde_cln_name
+                kdeD[classifier]['kde_gch_name'] = kde_gch_name
+
+                kdeD[classifier]['kde_range'] = kde_range
+
+                logger.info('using newest %s kde data : %s, %s'%(classifier, kde_cln_name, kde_gch_name))
+                cache.set_time()
+
+        n_samples = len(outputs[classifier]) ### assumes all outputs have the same length, which they should
+
+        ### iterate over each combiner
+        for combiner in combiners:
+            logger.info('Begin: %s cycle'%combiner)
+
+            flavor = combinersD[combiner]['flavor']
+
+            these_classifiers = combinersD[classifier]['classifiers'] ### the classifiers this combiner combines
+
+            c_pofg = classifiersD['joint_p(g)'].endswith("cdf") ### check to see whether we use pdf or cdf
+            c_pofc = classifiersD['joint_p(c)'].endswith("cdf")
+
+            ### check for new calibration data
+            cache = calibration_cache[classifier]
+            if cache.was_modified():
+                uroc = cache.tail(nlines=1)[0]
+                calib_range = reed.extract_calib_range(uroc)
+                r, c, g, _, _ = reed.file_to_rcg(uroc)
+                effmap, fapmap = reed.rcg_to_EffFAPmap(r, c, g)
+
+                combinersD[combiner]['uroc'] = uroc
+                combinersD[combiner]['calib_range'] = calib_range
+                combinersD[combiner]['effmap'] = effmap
+                combinersD[combiner]['fapmap'] = fapmap
+
+                cache.set_time()
+                logger.info('using newest %s calibration data : %s'%(combiner, uroc))
+            else:
+                calib_range = combinersD[combiner]['calib_range']
+                effmap = combinersD[combiner]['effmap']
+                fapmap = combinersD[combiner]['fapmap']
+
+            ### compute filenames
+            trained_range = "__".joint( ["%s-%s"%(classifier, kdeD[classifier]['kde_range']) for classifier in these_classifiers] ) ### string together all kde ranges
+             
+            dat = reed.dat(this_output_dir, combiner, ifo, trained_range, usertag, t, stride)
+
+            gchxml = reed.xml(this_output_dir, combiner, ifo, trained_range, calib_range, gchtag, t, stride)
+            clnxml = reed.xml(this_output_dir, combiner, ifo, trained_range, calib_range, clntag, t, stride)
+
+            rnknp = reed.timeseries(this_output_dir, combiner, ifo, trained_range, calib_range, rnktag, t, stride)
+            fapnp = reed.timeseries(this_output_dir, combiner, ifo, trained_range, calib_range, faptag, t, stride)
+
+            #===========================================================================================
+            #
+            # perform combiners evaluation here!
+            #
+            #===========================================================================================
+
+            combinersD[combiner]['columns']
+            output = dict( [(c,[]) for c in samples_header+combinersD[combiner]['columns']] ) 
+
+            pofg_joint = [] ### store the p(g) data from dat files
+            pofc_joint = []
+
+            ts_pofg_joint = [] ### store the p(g) data from rank files
+            ts_pofc_joint = []
+
+            for classifier in these_classifiers:
+            
+                ### pull out kde data for this classifier
+                kde = kdeD[classifier]['kde']
+                kde_cln = kdeD[classifier]['kde_cln']
+                kde_gch = kdeD[classifier]['kde_gch']
+
+                #========
+                # dat files
+                #========
+                ### pull out ranks
+                ranks = [outputs[classifier]['rank'][i] for i in xrange(n_samples)]
+                
+                ### map ranks into p(g), p(c)
+                pofg = numpy.interpolate( ranks, kde, kde_gch )
+                pofc = numpy.interpolate( ranks, kde, kde_cln )
+
+                ### fill out output dictionary
+                output["%s_rank"%classifier] = ranks
+                output["%s_p(g)"%classifier] = pofg
+                output["%s_p(c)"%classifier] = pofc
+
+                ### add to joint probabilities
+                pofg_joint.append( pofg )
+                pofc_joint.append( pofc )
+
+                ### fill in samples_header if not already there
+                for c in samples_header:
+                    if not output[c]: ### only do this once!
+                        output[c] = outputs[classifier][c]
+
+                #========
+                # rnk files
+                #========
+                ranks = ts[classifier]
+                pofg = np.interpolate( ranks, kde, kde_gch )
+                pofc = np.interpolate( ranks, kde, kde_cln )
+
+                ts_pofg_joint.append( pofg )
+                ts_pofc_joint.append( pofc )
+
+            ### compute joint probabilities
+            if combinersD[combiner]['joint_p(g)'][:3] == "max":
+                pofg_joint = numpy.max( pofg_joint, axis=0 )
+                ts_pofg_joint = np.max( ts_pofg_joint, axis=0 )
+            elif combinersD[combiner]['joint_p(g)'][:4] == "prod":
+                pofg_joint = numpy.prod( pofg_joint, axis=0 )
+                ts_pofg_joint = np.prod( ts_pofg_joint, axis=0 )
+            else:
+                raise ValueError("combiner=%s joint_p(g)=%s not understood"%(combiner, combinersD[combiner]['joint_p(g)']))
+
+            if combinersD[combiner]['joint_p(c)'][:3] == "max":
+                pofc_joint = numpy.max( pofc_joint, axis=0 )
+                ts_pofc_joint = np.max( ts_pofc_joint, axis=0 )
+            elif combinersD[combiner]['joint_p(c)'][:3] == "prod":
+                pofc_joint = numpy.prod( pofc_joint, axis=0 )
+                ts_pofc_joint = np.prod( ts_pofc_joint, axis=0 )
+            else:
+                raise ValueError("combiner=%s joint_p(c)=%s not understood"%(combiner, combinersD[combiner]['joint_p(c)']))
+
+            ### compute combined statistics
+            L_joint = pofg_joint / pofc_joint ### compute likelihood
+            r_joint = L_joint / ( 1 + L_joint ) ### compute rank
+
+            ### put them into output
+            output['rank'] = r_joint
+            ourput['Likelihood'] = L_joint
+
+            ### write datfile
+            logger.info('  writing %s'%dat)
+            reed.output_to_datfile( output, dat )
+           
+            ### create timeseries from datfile and save as gzip numpy array, there are boundary effects here
+            logger.info('  Begin: generating %s rank timeseries -> %s'%(classifier, rnknp))
+            ts_L_joint = ts_pofg_joint / ts_pofc_joint
+            ts_r_joint = ts_L_joint / (1 + ts_L_joint)
+            numpy.save(event.gzopen(rnknp, 'w'), ts_r_joint)
+            logger.info('  Done: generating %s rank timeseries'%classifier)
+
+            ### create FAP timeseries
+            logger.info('  Begin: generating %s FAP time-series -> %s'%(classifier, fapnp))
+
+            fap_ts = fapmap(ts_r_joint) ### MLE estimate of FAP (interpolated)
+            fapUL_ts = fapmap.ul(ts_r_joint, conf=0.99) ### upper limit with FAPconf (around interpolated points)
+                                                        ### we hard-code this intentionally to make it difficult to change/mess up
+            numpy.save(event.gzopen(fapnp, 'w'), (fap_ts, fapUL_ts) )
+            logger.info('  Done: generating %s FAP time-series'%classifier)
+
+            ### convert datfiles to xml tables
+            logger.info('  Begin: converting %s dat file into xml files'%classifier)
+            logger.info('    converting %s to xml tables' % dat)
+
+            ### read dafile -> xml docs
+            (gchxml_doc, clnxml_doc) = reed.datfile2xmldocs(dat, ifo, fapmap, Lmap=False, Effmap=effmap, flavor=flavor,
+                                         gwchan=gwchannel, gwtrigs=gw_trig, prog=__prog__, options=opts.__dict__, version=__version__ )
+
+            ### write documents
+            logger.info('    --> writing ' + gchxml)
+            reed.ligolw_utils.write_filename(gchxml_doc, gchxml, gz=gchxml.endswith('.gz'))
+
+            logger.info('    --> writing ' + clnxml)
+            reed.ligolw_utils.write_filename(clnxml_doc, clnxml, gz=clnxml.endswith('.gz'))
+
+            logger.info('  Done: converting %s dat file into xml files.'%combiner)
+
+            ### done with this classifier
+            logger.info('Done: %s cycle.'%combiner)
 
     #=============================================
     # proceed to next epoch

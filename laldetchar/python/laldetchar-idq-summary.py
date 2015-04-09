@@ -162,12 +162,15 @@ cln_kwsignif_thr = config.getfloat('realtime', 'clean_threshold')
 #========================
 # which classifiers
 #========================
-classifiers = sorted(set(config.get('general', 'classifiers').split()))
-if not classifiers:
-    raise ValueError("no classifiers in general section of %s"%opts.config_file)
-
 ### ensure we have a section for each classifier and fill out dictionary of options
 classifiersD, mla, ovl = reed.config_to_classifiersD( config )
+
+### get combiners information and add these to classifiersD
+combinersD, referenced_classifiers = config_to_combinersD( config )
+for combiner, value in combinersD.items():
+    classifiersD[combiner] = value
+
+classifiers = sorted(classifiersD.keys())
 
 #if mla:
 #    ### reading parameters from config file needed for mla
@@ -487,15 +490,15 @@ while gpsstart < gpsstop:
 
         ### compute kde estimates
         logger.info('  computing kde_pwg estimates')
-        kde_cln = rsp.kde_pwg( kde, r, dc )
-        kde_gch = rsp.kde_pwg( kde, r, dg )
+        kde_cln = reed.kde_pwg( kde, r, dc )
+        kde_gch = reed.kde_pwg( kde, r, dg )
 
         ### write kde points to file
-        kde_cln_name = rsp.kdename(output_dir, classifier, ifo, "_cln%s"%usertag, gpsstart-lookback, lookback+stride)
+        kde_cln_name = reed.kdename(output_dir, classifier, ifo, "_cln%s"%usertag, gpsstart-lookback, lookback+stride)
         logger.info('  writing %s'%kde_cln_name)
         np.save(event.gzopen(kde_cln_name, "w"), (kde, kde_cln))
 
-        kde_gch_name = rsp.kdename(output_dir, classifier, ifo, "_gch%s"%usertag, gpsstart-lookback, lookback+stride)
+        kde_gch_name = reed.kdename(output_dir, classifier, ifo, "_gch%s"%usertag, gpsstart-lookback, lookback+stride)
         logger.info('  writing %s'%kde_gch_name)
         np.save(event.gzopen(kde_gch_name, "w"), (kde, kde_gch))
 
@@ -534,7 +537,7 @@ while gpsstart < gpsstop:
         for FAP in opts.FAPthr:
             rankthr = min(r[c<=FAP*c[-1]]) ### smallest rank below FAP
             rankthrs.append( rankthr )
-            cln_bitword[FAP][classifier], gch_bitword[FAP][classifier] = rsp.bin_by_rankthr(rankthr, output, columns=dat_columns)
+            cln_bitword[FAP][classifier], gch_bitword[FAP][classifier] = reed.bin_by_rankthr(rankthr, output, columns=dat_columns)
                 
         ### generate histograms of glitch parameters
         for column in dat_columns:
@@ -715,7 +718,7 @@ while gpsstart < gpsstop:
         ### build pt. estimate figures
         color = colors[classifier]
         fig, ax = rsp.calibration_scatter( deadtimes, statedFAPs, color=color, label=classifier, figax=None)
-        figname = rsp.calib(output_dir, ifo, classifier, usertag, gpsstart-lookback, lookback+stride)
+        figname = rsp.calibfig(output_dir, ifo, classifier, usertag, gpsstart-lookback, lookback+stride)
         logger.info('  plotting %s'%figname)
         fignames['fap'][classifier] = figname
         ax.plot(faircoin, faircoin, 'k--')
@@ -728,7 +731,7 @@ while gpsstart < gpsstop:
 
         ### build upper-limit figures
         fig, ax = rsp.calibration_scatter( deadtimesUL, statedFAPsUL, color=color, label=classifier, figax=None)
-        figname = rsp.calib(output_dir, ifo, classifier, "%s_UL"%usertag, gpsstart-lookback, lookback+stride)
+        figname = rsp.calibfig(output_dir, ifo, classifier, "%s_UL"%usertag, gpsstart-lookback, lookback+stride)
         logger.info('  plotting %s'%figname)
         fignames['fapUL'][classifier] = figname
         ax.plot(faircoin, faircoin, 'k--')
@@ -740,7 +743,7 @@ while gpsstart < gpsstop:
 
     ### save overlays
     fig, ax = fap_figax
-    figname = rsp.calib(output_dir, ifo, 'overlay', usertag, gpsstart-lookback, lookback+stride)
+    figname = rsp.calibfig(output_dir, ifo, 'overlay', usertag, gpsstart-lookback, lookback+stride)
     logger.info('  plotting %s'%figname)
     fignames['fap']['overlay'] = figname
     ax.plot(faircoin, faircoin, 'k--')
@@ -749,7 +752,7 @@ while gpsstart < gpsstop:
     rsp.close(fig)
 
     fig, ax = fapUL_figax
-    figname = rsp.calib(output_dir, ifo, 'overlay', "%s_UL"%usertag, gpsstart-lookback, lookback+stride)
+    figname = rsp.calibfig(output_dir, ifo, 'overlay', "%s_UL"%usertag, gpsstart-lookback, lookback+stride)
     logger.info('  plotting %s'%figname)
     fignames['fapUL']['overlay'] = figname
     ax.plot(faircoin, faircoin, 'k--')

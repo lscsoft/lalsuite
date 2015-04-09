@@ -112,12 +112,15 @@ if usertag:
 #========================
 # which classifiers
 #========================
-classifiers = sorted(set(config.get('general', 'classifiers').split()))
-if not classifiers:
-    raise ValueError("no classifiers in general section of %s"%opts.config_file)
-
 ### ensure we have a section for each classifier and fill out dictionary of options
 classifiersD, mla, ovl = reed.config_to_classifiersD( config )
+
+### get combiners information and add these to classifiersD
+combinersD, referenced_classifiers = config_to_combinersD( config )
+for combiner, value in combinersD.items():
+    classifiersD[combiner] = value
+
+classifiers = sorted(classifiersD.keys())
 
 #if mla:
 #    ### reading parameters from config file needed for mla
@@ -140,6 +143,7 @@ stride = config.getint('calibration', 'stride')
 delay = config.getint('calibration', 'delay')
 
 calibration_cache = dict( (classifier, reed.Cachefile(reed.cache(calibrationdir, classifier, tag='_calibration%s'%usertag))) for classifier in classifiers )
+kde_cache = dict( (classifier, reed.Cachefile(reed.cache(calibrationdir, classifier, tag='_calibration-kde%s'%usertag))) for classifier in classifiers )
 
 min_num_gch = config.getfloat('calibration', 'min_num_gch')
 min_num_cln = config.getfloat('calibration', 'min_num_cln')
@@ -152,6 +156,9 @@ urank = np.linspace(1, 0, uroc_nsamples) ### uniformly spaced ranks used to samp
 
 cluster_key = config.get('calibration', 'cluster_key')
 cluster_win = config.getfloat('calibration', 'cluster_win')
+
+kde_nsamples = config.getint('calibration','kde_num_samples')
+kde = np.linsapce(0, 1, kde_nsamples ) ### uniformly spaced ranks used to sample kde
 
 #========================
 # data discovery
@@ -307,6 +314,7 @@ while gpsstart < gpsstop:
     #====================
     # update uroc for each classifier
     #====================
+    urocs = {} ### stores uroc files for kde estimation
     for classifier in classifiers:
         ### write list of dats to cache file
         cache = reed.cache(output_dir, classifier, "_datcache%s"%usertag)
@@ -345,27 +353,56 @@ while gpsstart < gpsstop:
 
         logger.info('    N_gch = %d , N_cln = %d'%(g[-1], c[-1]))
 
-        if opts.force or ((c[-1] >= min_num_cln) and (g[-1] >= min_num_gch)):
 
-            ### dump into roc file
-            roc = reed.roc(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
-            logger.info('  writting %s'%roc)
-            reed.rcg_to_file(roc, r, c, g)
+        ### dump into roc file
+        roc = reed.roc(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
+        logger.info('  writting %s'%roc)
+        reed.rcg_to_file(roc, r, c, g)
 
-            ### upsample to roc
-            r, c, g = reed.resample_rcg(urank, r, c, g)
+        ### upsample to roc
+        r, c, g = reed.resample_rcg(urank, r, c, g)
  
-            ### dump uroc to file
-            uroc = reed.uroc(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
-            logger.info('  writing %s'%uroc)
-            reed.rcg_to_file(uroc, r, c, g)
+        ### dump uroc to file
+        uroc = reed.uroc(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
+        logger.info('  writing %s'%uroc)
+        reed.rcg_to_file(uroc, r, c, g)
 
+        urocs[classifier] = (r, c, g)
+
+        if opts.force or ((c[-1] >= min_num_cln) and (g[-1] >= min_num_gch)):
             ### update cache file
             logger.info('  adding %s to %s'%(uroc, calibration_cache[classifier].name) )
             calibration_cache[classifier].append( uroc )
 
         else:
             logger.warning('WARNING: not enough samples to trust calibration. skipping calibration update for %s'%classifier)
+
+    #===============================================================================================
+    # compute KDE estimates
+    #===============================================================================================
+
+    for classifier in classifiers:
+        r, c, g = urocs[classifier] 
+        dc, dg = reed.rcg_to_diff( c, g ) ### get the numbers at each rank
+
+        kde_cln = rsp.kde_pwg( kde, r, dc ) ### compute kde estimate
+        kde_gch = rsp.kde_pwg( kde, r, dg )
+
+        ### write kde points to file
+        kde_cln_name = reed.kdename(output_dir, classifier, ifo, "_cln%s"%usertag, gpsstart-lookback, lookback+stride)
+        logger.info('  writing %s'%kde_cln_name)
+        np.save(event.gzopen(kde_cln_name, "w"), (kde, kde_cln))
+
+        kde_gch_name = reed.kdename(output_dir, classifier, ifo, "_gch%s"%usertag, gpsstart-lookback, lookback+stride)
+        logger.info('  writing %s'%kde_gch_name)
+        np.save(event.gzopen(kde_gch_name, "w"), (kde, kde_gch))
+
+        ### update cache files
+        if opts.force or ((c[-1] > min_num_cln) and (g[-1] >= min_num_gch)): 
+            kde_cache[classifier].append( kde_cln_name )
+            kde_cache[classifier].append( kde_gch_name )
+        else:
+            logger.warning('WARNING: not enough samples to trust calibration. skipping kde update for %s'%classifier)
 
     #===============================================================================================
     # check historical calibration, send alerts
