@@ -56,6 +56,7 @@
 
 #include <lal/FlatPulsarMetric.h>
 #include <lal/UniversalDopplerMetric.h>
+#include <lal/MetricUtils.h>
 
 #include <lalapps.h>
 
@@ -640,8 +641,8 @@ XLALOutputDopplerMetric ( FILE *fp, const DopplerMetric *metric, const ResultHis
       fprintf ( fp, "\ngN_ij = \\\n" ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  gN_ij );
       gsl_matrix_free ( gN_ij );
 
-      gsl_matrix *gDN_ij;
-      if ( (gDN_ij = XLALDiagNormalizeMetric ( metric->g_ij )) == NULL ) {
+      gsl_matrix *gDN_ij = NULL;
+      if ( XLALDiagNormalizeMetric ( &gDN_ij, NULL, metric->g_ij ) != XLAL_SUCCESS ) {
         XLALPrintError ("%s: something failed NormDiagonalizing phase metric g_ij!\n", __func__ );
         XLAL_ERROR ( XLAL_EFUNC );
       }

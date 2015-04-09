@@ -46,6 +46,8 @@ int XLALProjectMetric( gsl_matrix **p_gpr_ij, const gsl_matrix *g_ij, const UINT
 int XLALTransformMetric( gsl_matrix **p_gpr_ij, const gsl_matrix *transform, const gsl_matrix *g_ij );
 int XLALInverseTransformMetric( gsl_matrix **p_gpr_ij, const gsl_matrix *transform, const gsl_matrix *g_ij );
 
+int XLALDiagNormalizeMetric( gsl_matrix **p_gpr_ij, gsl_matrix **p_transform, const gsl_matrix *g_ij );
+
 /// @}
 
 #ifdef __cplusplus

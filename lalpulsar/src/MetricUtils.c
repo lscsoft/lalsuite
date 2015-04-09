@@ -101,32 +101,27 @@ gsl_vector *XLALMetricEllipseBoundingBox(
   // Allocate memory
   gsl_matrix *GAMAT_NULL( LU_decomp, n, n );
   gsl_permutation *GAPERM_NULL( LU_perm, n );
+  gsl_matrix *GAMAT_NULL( diag_norm, n, n );
   gsl_matrix *GAMAT_NULL( inverse, n, n );
   gsl_vector *GAVEC_NULL( bounding_box, n );
 
-  // Copy metric, and ensure it is diagonally normalised
-  for( size_t i = 0; i < n; ++i ) {
-    const double norm_i = gsl_matrix_get( g_ij, i, i );
-    for( size_t j = 0; j < n; ++j ) {
-      const double norm_j = gsl_matrix_get( g_ij, j, j );
-      gsl_matrix_set( LU_decomp, i, j, gsl_matrix_get( g_ij, i, j ) / sqrt( norm_i * norm_j ) );
-    }
-  }
+  // Diagonally normalize metric
+  XLAL_CHECK_NULL( XLALDiagNormalizeMetric( &LU_decomp, &diag_norm, g_ij ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Compute metric inverse
   int LU_sign = 0;
   GCALL_NULL( gsl_linalg_LU_decomp( LU_decomp, LU_perm, &LU_sign ), "'g_ij' cannot be LU-decomposed" );
   GCALL_NULL( gsl_linalg_LU_invert( LU_decomp, LU_perm, inverse ), "'g_ij' cannot be inverted" );
 
-  // Compute bounding box, and reverse diagonal scaling
+  // Compute bounding box, and invert diagonal normalization
   for( size_t i = 0; i < n; ++i ) {
-    const double norm_i = gsl_matrix_get( g_ij, i, i );
-    const double bounding_box_i = 2.0 * sqrt( max_mismatch * gsl_matrix_get( inverse, i, i ) / norm_i );
+    const double diag_norm_i = gsl_matrix_get( diag_norm, i, i );
+    const double bounding_box_i = 2.0 * sqrt( max_mismatch * gsl_matrix_get( inverse, i, i ) ) * diag_norm_i;
     gsl_vector_set( bounding_box, i, bounding_box_i );
   }
 
   // Cleanup
-  GFMAT( LU_decomp, inverse );
+  GFMAT( LU_decomp, diag_norm, inverse );
   GFPERM( LU_perm );
 
   return bounding_box;
@@ -289,3 +284,61 @@ int XLALInverseTransformMetric(
   return XLAL_SUCCESS;
 
 } // XLALInverseTransformMetric()
+
+///
+/// Diagonally-normalize a metric \f$ g_{ij} \f$.  <i>Diagonally-normalize</i> means normalize
+/// metric by its diagonal, namely apply the transformation \f$ g_{ij} \rightarrow g^{\prime}_{ij} =
+/// g_{ij} / \sqrt{g_{ii} g_{jj}} \f$, resulting in a lower condition number and unit diagonal
+/// elements.
+///
+/// If \c p_transform is non-NULL, return the diagonal-normalization transform in \c *p_transform.
+/// If \c p_gpr_ij is non-NULL, apply the transform to the metric \c *p_gpr_ij.
+///
+/// \note \c *p_gpr_ij and \c *p_transform will be allocated if \c NULL. \c *p_gpr_ij and \c g_ij
+/// may point to the same matrix.
+///
+int
+XLALDiagNormalizeMetric(
+  gsl_matrix **p_gpr_ij,			///< [in,out,optional] Pointer to transformed matrix \f$g^{\prime}_{ij}\f$
+  gsl_matrix **p_transform,			///< [in,out,optional] Pointer to diagonal-normalization transform
+  const gsl_matrix *g_ij			///< [in] Matrix to transform \f$g_{ij}\f$
+  )
+{
+
+  // Check input
+  XLAL_CHECK( g_ij != NULL, XLAL_EFAULT );
+  XLAL_CHECK( g_ij->size1 == g_ij->size2, XLAL_ESIZE );
+  if ( p_transform != NULL ) {
+    if ( *p_transform != NULL ) {
+      XLAL_CHECK( (*p_transform)->size1 == g_ij->size1, XLAL_ESIZE );
+      XLAL_CHECK( (*p_transform)->size2 == g_ij->size2, XLAL_ESIZE );
+    } else {
+      GAMAT( *p_transform, g_ij->size1, g_ij->size2 );
+    }
+  }
+
+  // Create diagonal normalization transform
+  gsl_matrix *GAMAT( transform, g_ij->size1, g_ij->size2 );
+  gsl_matrix_set_zero( transform );
+  for ( size_t i = 0; i < g_ij->size1; ++i ) {
+    const double gii = gsl_matrix_get(g_ij, i, i);
+    XLAL_CHECK( gii > 0, XLAL_EINVAL, "Diagonal normalization not defined for non-positive diagonal elements! g_ii(%zu,%zu) = %g\n", i, i, gii );
+    gsl_matrix_set( transform, i, i, 1.0 / sqrt( gii ) );
+  }
+
+  // Apply transform
+  if ( p_gpr_ij != NULL ) {
+    XLAL_CHECK( XLALTransformMetric( p_gpr_ij, transform, g_ij ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
+  // Return transform
+  if ( p_transform != NULL ) {
+    gsl_matrix_memcpy( *p_transform, transform );
+  }
+
+  // Cleanup
+  GFMAT( transform );
+
+  return XLAL_SUCCESS;
+
+} // XLALDiagNormalizeMetric()

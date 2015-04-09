@@ -113,6 +113,26 @@ int main( void )
     GFMAT( transform, gpr_ij );
   }
 
+  // Test XLALDiagNormalizeMetric()
+  fprintf( stderr, "\n=== Test XLALDiagNormalizeMetric() ===\n\n" );
+  {
+    gsl_matrix *transform = NULL, *gpr_ij = NULL;
+
+    // Diagonally normalize metric
+    XLAL_CHECK_MAIN( XLALDiagNormalizeMetric( &gpr_ij, &transform, g_ij ) == XLAL_SUCCESS, XLAL_EFUNC );
+    for( size_t i = 0; i < gpr_ij->size1; ++i ) {
+      XLAL_CHECK_MAIN( fabs( gsl_matrix_get( gpr_ij, i, i ) - 1.0) <= 1e-5, XLAL_ETOL, "gsl_matrix_get( gpr_ij, %zu, %zu ) = %0.6g != 1.0", i, i, gsl_matrix_get( gpr_ij, i, i ) );
+    }
+
+    // Invert transform, should give back same metric
+    XLAL_CHECK_MAIN( XLALInverseTransformMetric( &gpr_ij, transform, gpr_ij ) == XLAL_SUCCESS, XLAL_EFUNC );
+    const REAL8 d = XLALCompareMetrics( gpr_ij, g_ij ), d_max = 1e-10;
+    XLAL_CHECK_MAIN( d <= d_max, XLAL_ETOL, "XLALCompareMetric( gpr_ij, g_ij ) = %0.2g > %0.2g", d, d_max );
+
+    // Cleanup
+    GFMAT( transform, gpr_ij );
+  }
+
   // Cleanup
   GFMAT( g_ij );
   LALCheckMemoryLeaks();
