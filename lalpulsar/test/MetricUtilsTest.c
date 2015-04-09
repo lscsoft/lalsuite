@@ -88,6 +88,31 @@ int main( void )
     GFVEC( bbox );
   }
 
+  // Test XLALTransformMetric() and XLALInverseTransformMetric()
+  fprintf( stderr, "\n=== Test XLALTransformMetric() and XLALInverseTransformMetric() ===\n\n" );
+  {
+
+    // Allocate memory
+    gsl_matrix *GAMAT_MAIN( transform, g_ij->size1, g_ij->size2 );
+    gsl_matrix *GAMAT_MAIN( gpr_ij, g_ij->size1, g_ij->size2 );
+
+    // Create some transform
+    for( size_t i = 0; i < transform->size1; ++i ) {
+      for( size_t j = 0; j < transform->size2; ++j ) {
+        gsl_matrix_set( transform, i, j, (j >= i) ? pow(2, j - i) : 0.0 );
+      }
+    }
+
+    // Apply transform then inverse transfrom, should give back same metric
+    XLAL_CHECK_MAIN( XLALTransformMetric( &gpr_ij, transform, g_ij ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALInverseTransformMetric( &gpr_ij, transform, gpr_ij ) == XLAL_SUCCESS, XLAL_EFUNC );
+    const REAL8 d = XLALCompareMetrics( gpr_ij, g_ij ), d_max = 1e-10;
+    XLAL_CHECK_MAIN( d <= d_max, XLAL_ETOL, "XLALCompareMetric( gpr_ij, g_ij ) = %0.2g > %0.2g", d, d_max );
+
+    // Cleanup
+    GFMAT( transform, gpr_ij );
+  }
+
   // Cleanup
   GFMAT( g_ij );
   LALCheckMemoryLeaks();

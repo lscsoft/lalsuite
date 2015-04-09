@@ -43,6 +43,9 @@ gsl_vector *XLALMetricEllipseBoundingBox( const gsl_matrix *g_ij, const double m
 
 int XLALProjectMetric( gsl_matrix **p_gpr_ij, const gsl_matrix *g_ij, const UINT4 c );
 
+int XLALTransformMetric( gsl_matrix **p_gpr_ij, const gsl_matrix *transform, const gsl_matrix *g_ij );
+int XLALInverseTransformMetric( gsl_matrix **p_gpr_ij, const gsl_matrix *transform, const gsl_matrix *g_ij );
+
 /// @}
 
 #ifdef __cplusplus

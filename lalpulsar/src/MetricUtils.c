@@ -189,3 +189,103 @@ XLALProjectMetric(
   return XLAL_SUCCESS;
 
 } // XLALProjectMetric()
+
+///
+/// Apply a transform \f$\mathbf{A} = (a_{ij})\f$ to a metric \f$\mathbf{G} = (g_{ij})\f$ such that
+/// \f$ \mathbf{G} \rightarrow \mathbf{G}^{\prime} = \mathbf{A}^{\mathrm{T}} \mathbf{G} \mathbf{A}
+/// \f$, or equivalently \f$ g_{ij} \rightarrow g^{\prime}_{kl} = g_{ij} a_{ik} a_{jl} \f$.
+///
+/// \note \c *p_gpr_ij will be allocated if \c NULL. \c *p_gpr_ij and \c g_ij may point to the same
+/// matrix.
+///
+int XLALTransformMetric(
+  gsl_matrix **p_gpr_ij,			///< [in,out] Pointer to transformed matrix \f$\mathbf{G}^{\prime}\f$
+  const gsl_matrix *transform,			///< [in] Transform to apply \f$\mathbf{A}\f$
+  const gsl_matrix *g_ij			///< [in] Matrix to transform \f$\mathbf{G}\f$
+  )
+{
+
+  // Check input
+  XLAL_CHECK( g_ij != NULL, XLAL_EFAULT );
+  XLAL_CHECK( transform != NULL, XLAL_EFAULT );
+  XLAL_CHECK( g_ij->size1 == g_ij->size2, XLAL_ESIZE );
+  XLAL_CHECK( g_ij->size2 == transform->size1, XLAL_ESIZE );
+  XLAL_CHECK( p_gpr_ij != NULL, XLAL_EFAULT );
+  if ( *p_gpr_ij != NULL ) {
+    XLAL_CHECK( (*p_gpr_ij)->size1 == transform->size2, XLAL_ESIZE );
+    XLAL_CHECK( (*p_gpr_ij)->size2 == transform->size2, XLAL_ESIZE );
+  } else {
+    GAMAT( *p_gpr_ij, transform->size2, transform->size2 );
+  }
+
+  // Allocate temporary matrix
+  gsl_matrix *tmp = gsl_matrix_alloc( g_ij->size1, transform->size2 );
+  XLAL_CHECK( tmp != NULL, XLAL_ENOMEM );
+
+  // Perform transform
+  gsl_blas_dgemm( CblasNoTrans, CblasNoTrans, 1.0, g_ij, transform, 0.0, tmp );
+  gsl_blas_dgemm( CblasTrans, CblasNoTrans, 1.0, transform, tmp, 0.0, *p_gpr_ij );
+
+  // Ensure transformed g_ij is exactly symmetric
+  for( size_t i = 0; i < (*p_gpr_ij)->size1; ++i ) {
+    for( size_t j = i + 1; j < (*p_gpr_ij)->size2; ++j ) {
+      const double gij = gsl_matrix_get( *p_gpr_ij, i, j );
+      const double gji = gsl_matrix_get( *p_gpr_ij, j, i );
+      const double g = 0.5 * ( gij + gji );
+      gsl_matrix_set( *p_gpr_ij, i, j, g );
+      gsl_matrix_set( *p_gpr_ij, j, i, g );
+    }
+  }
+
+  // Cleanup
+  gsl_matrix_free( tmp );
+
+  return XLAL_SUCCESS;
+
+} // XLALTransformMetric()
+
+///
+/// Apply the inverse of a transform \f$\mathbf{A}^{-1} = \mathbf{B} = (b_{ij})\f$ to a metric
+/// \f$\mathbf{G} = (g_{ij})\f$ such that \f$ \mathbf{G} \rightarrow \mathbf{G}^{\prime} =
+/// \mathbf{B}^{\mathrm{T}} \mathbf{G} \mathbf{B} \f$, or equivalently \f$ g_{ij} \rightarrow
+/// g^{\prime}_{kl} = g_{ij} b_{ik} b_{jl} \f$.
+///
+/// \note \c *p_gpr_ij will be allocated if \c NULL. \c *p_gpr_ij and \c g_ij may point to the same
+/// matrix.
+///
+int XLALInverseTransformMetric(
+  gsl_matrix **p_gpr_ij,			///< [in,out] Pointer to transformed matrix \f$\mathbf{G}^{\prime}\f$
+  const gsl_matrix *transform,			///< [in] Transform \f$\mathbf{A}\f$, the inverse of which to apply
+  const gsl_matrix *g_ij			///< [in] Matrix to transform \f$\mathbf{G}\f$
+  )
+{
+
+  // Check input
+  XLAL_CHECK( g_ij != NULL, XLAL_EFAULT );
+  XLAL_CHECK( transform != NULL, XLAL_EFAULT );
+  XLAL_CHECK( g_ij->size1 == g_ij->size2, XLAL_ESIZE );
+  XLAL_CHECK( g_ij->size2 == transform->size1, XLAL_ESIZE );
+  XLAL_CHECK( transform->size1 == transform->size2, XLAL_ESIZE );
+  XLAL_CHECK( p_gpr_ij != NULL, XLAL_EFAULT );
+
+  // Allocate memory
+  gsl_matrix *GAMAT( LU_decomp, transform->size1, transform->size2 );
+  gsl_permutation *GAPERM( LU_perm, transform->size1 );
+  gsl_matrix *GAMAT( inverse, transform->size1, transform->size2 );
+
+  // Compute inverse of transform
+  int LU_sign = 0;
+  gsl_matrix_memcpy( LU_decomp, transform );
+  GCALL( gsl_linalg_LU_decomp( LU_decomp, LU_perm, &LU_sign ), "'transform' cannot be LU-decomposed" );
+  GCALL( gsl_linalg_LU_invert( LU_decomp, LU_perm, inverse ), "'transform' cannot be inverted" );
+
+  // Apply transform
+  XLAL_CHECK( XLALTransformMetric( p_gpr_ij, inverse, g_ij ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Cleanup
+  GFMAT( LU_decomp, inverse );
+  GFPERM( LU_perm );
+
+  return XLAL_SUCCESS;
+
+} // XLALInverseTransformMetric()
