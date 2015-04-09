@@ -300,7 +300,7 @@ AM_CONDITIONAL([QTHREAD],[test x$qthread = xtrue])
 AC_SUBST([LALSIMD_CFLAGS],[])
 LALSUITE_CHECK_COMPILE_FLAGS([-fno-pic],[LALSIMD_CFLAGS="${LALSIMD_CFLAGS} ${flag}"])
 AC_SUBST([LALSIMD_LDFLAGS],[])
-LALSUITE_CHECK_LINK_FLAGS(['-Wl[,]-read_only_relocs -Wl[,]suppress'],[LALSIMD_LDFLAGS="${LALSIMD_LDFLAGS} ${flag}"])
+LALSUITE_CHECK_LINK_FLAGS([-Wl[,]-read_only_relocs[,]suppress],[LALSIMD_LDFLAGS="${LALSIMD_LDFLAGS} ${flag}"])
 
 # add gcc specific flags --- must be done at end or tests will break!
 LALSUITE_ADD_GCC_FLAGS
