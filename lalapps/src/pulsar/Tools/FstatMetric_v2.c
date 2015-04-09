@@ -633,8 +633,8 @@ XLALOutputDopplerMetric ( FILE *fp, const DopplerMetric *metric, const ResultHis
       fprintf ( fp, "\ng_ij = \\\n" ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->g_ij );
       fprintf ( fp, "maxrelerr_gPh = %.2e;\n", metric->maxrelerr_gPh );
 
-      gsl_matrix *gN_ij;
-      if ( (gN_ij = XLALNaturalizeMetric ( metric->g_ij, meta )) == NULL ) {
+      gsl_matrix *gN_ij = NULL;
+      if ( XLALNaturalizeMetric ( &gN_ij, NULL, metric->g_ij, meta ) != XLAL_SUCCESS ) {
         XLALPrintError ("%s: something failed Naturalizing phase metric g_ij!\n", __func__ );
         XLAL_ERROR ( XLAL_EFUNC );
       }

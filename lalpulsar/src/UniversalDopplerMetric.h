@@ -287,8 +287,6 @@ const CHAR *XLALDopplerCoordinateName ( DopplerCoordinateID coordID );
 const CHAR *XLALDopplerCoordinateHelp ( DopplerCoordinateID coordID );
 CHAR *XLALDopplerCoordinateHelpAll ( void );
 
-gsl_matrix* XLALNaturalizeMetric( const gsl_matrix* g_ij, const DopplerMetricParams *metricParams );
-
 int XLALAddDopplerMetric ( DopplerMetric **metric1, const DopplerMetric *metric2 );
 int XLALScaleDopplerMetric ( DopplerMetric *m, REAL8 scale );
 // destructor for vect3Dlist_t type

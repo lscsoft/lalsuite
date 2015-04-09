@@ -28,8 +28,15 @@
 #include <lal/MetricUtils.h>
 #include <lal/XLALError.h>
 #include <lal/LogPrintf.h>
+#include <lal/Factorial.h>
 
 #include "GSLHelpers.h"
+
+// Shortcuts for integer powers
+#define POW2(a)  ( (a) * (a) )
+#define POW3(a)  ( (a) * (a) * (a) )
+#define POW4(a)  ( (a) * (a) * (a) * (a) )
+#define POW5(a)  ( (a) * (a) * (a) * (a) * (a) )
 
 ///
 /// Flexible comparison function between two metrics \f$ g^1_{ij} \f$ and \f$ g^2_{ij} \f$.
@@ -342,3 +349,135 @@ XLALDiagNormalizeMetric(
   return XLAL_SUCCESS;
 
 } // XLALDiagNormalizeMetric()
+
+///
+/// Return a metric in <i>naturalized</i> coordinates.
+/// Frequency coordinates of spindown order \f$s\f$ are scaled by
+/// \f[ \frac{2\pi}{(s+1)!} \left(\frac{\overline{\Delta T}}{2}\right)^{s+1} \f]
+/// where \f$\overline{\Delta T}\equiv\sum_{k}^{N} \Delta T_k\f$ is the average segment-length
+/// over all \f$N\f$ segments.
+///
+/// Sky coordinates are scaled by Holgers' units, see Eq.(44) in PRD82,042002(2010),
+/// without the equatorial rotation in alpha:
+/// \f[ \frac{2\pi f R_{E}  \cos(\delta_{D})}{c} \f]
+/// where \f$f\f$ is the frequency and
+/// \f$R_{E}\f$ the Earth radius, and \f$\delta_{D}\f$ is the detectors latitude.
+///
+/// If \c p_transform is non-NULL, return the naturalization transform in \c *p_transform.
+/// If \c p_gpr_ij is non-NULL, apply the transform to the metric \c *p_gpr_ij.
+///
+/// \note \c *p_gpr_ij and \c *p_transform will be allocated if \c NULL. \c *p_gpr_ij and \c g_ij
+/// may point to the same matrix.
+///
+int
+XLALNaturalizeMetric(
+  gsl_matrix **p_gpr_ij,			///< [in,out,optional] Pointer to transformed matrix \f$g^{\prime}_{ij}\f$
+  gsl_matrix **p_transform,			///< [in,out,optional] Pointer to naturalization transform
+  const gsl_matrix *g_ij,			///< [in] Matrix to transform \f$g_{ij}\f$
+  const DopplerMetricParams *metricParams	///< [in] Input parameters used to calculate naturalization transform
+  )
+{
+
+  // Check input
+  XLAL_CHECK( g_ij != NULL, XLAL_EFAULT );
+  XLAL_CHECK( g_ij->size1 == g_ij->size2, XLAL_ESIZE );
+  if ( p_transform != NULL ) {
+    if ( *p_transform != NULL ) {
+      XLAL_CHECK( (*p_transform)->size1 == g_ij->size1, XLAL_ESIZE );
+      XLAL_CHECK( (*p_transform)->size2 == g_ij->size2, XLAL_ESIZE );
+    } else {
+      GAMAT( *p_transform, g_ij->size1, g_ij->size2 );
+    }
+  }
+  XLAL_CHECK( metricParams != NULL, XLAL_EFAULT );
+
+  // Compute average segment length
+  XLAL_CHECK ( XLALSegListIsInitialized ( &(metricParams->segmentList) ), XLAL_EINVAL, "Passed un-initialzied segment list 'metricParams->segmentList'\n");
+  UINT4 Nseg = metricParams->segmentList.length;
+  REAL8 sumTseg = 0;
+  for ( UINT4 k=0; k < Nseg; k ++ )
+    {
+      LIGOTimeGPS *startTime_k = &(metricParams->segmentList.segs[k].start);
+      LIGOTimeGPS *endTime_k   = &(metricParams->segmentList.segs[k].end);
+      sumTseg += XLALGPSDiff( endTime_k, startTime_k );
+    }
+  REAL8 avgTseg = sumTseg / Nseg;
+
+  // Compute naturalization transform
+  gsl_matrix *GAMAT( transform, g_ij->size1, g_ij->size2 );
+  gsl_matrix_set_zero( transform );
+  for (size_t i = 0; i < g_ij->size1; ++i) {
+    const DopplerCoordinateID coordID = metricParams->coordSys.coordIDs[i];
+    const double Freq = metricParams->signalParams.Doppler.fkdot[0];
+    const double T = avgTseg;
+    double scale = 0;
+    switch (coordID) {
+    case DOPPLERCOORD_NONE:
+      scale = 1;
+      break;
+
+    case DOPPLERCOORD_FREQ:
+    case DOPPLERCOORD_GC_NU0:
+      scale = LAL_TWOPI * LAL_FACT_INV[1] * (0.5 * T);
+      break;
+
+    case DOPPLERCOORD_F1DOT:
+    case DOPPLERCOORD_GC_NU1:
+      scale = LAL_TWOPI * LAL_FACT_INV[2] * POW2(0.5 * T);
+      break;
+
+    case DOPPLERCOORD_F2DOT:
+    case DOPPLERCOORD_GC_NU2:
+      scale = LAL_TWOPI * LAL_FACT_INV[3] * POW3(0.5 * T);
+      break;
+
+    case DOPPLERCOORD_F3DOT:
+    case DOPPLERCOORD_GC_NU3:
+      scale = LAL_TWOPI * LAL_FACT_INV[4] * POW4(0.5 * T);
+      break;
+
+    case DOPPLERCOORD_ALPHA:
+    case DOPPLERCOORD_DELTA:
+    case DOPPLERCOORD_N2X_EQU:
+    case DOPPLERCOORD_N2Y_EQU:
+    case DOPPLERCOORD_N2X_ECL:
+    case DOPPLERCOORD_N2Y_ECL:
+    case DOPPLERCOORD_N3X_EQU:
+    case DOPPLERCOORD_N3Y_EQU:
+    case DOPPLERCOORD_N3Z_EQU:
+    case DOPPLERCOORD_N3X_ECL:
+    case DOPPLERCOORD_N3Y_ECL:
+    case DOPPLERCOORD_N3Z_ECL:
+    case DOPPLERCOORD_N3SX_EQU:
+    case DOPPLERCOORD_N3SY_EQU:
+    case DOPPLERCOORD_N3OX_ECL:
+    case DOPPLERCOORD_N3OY_ECL:
+      {
+        const REAL8 rEarth_c = (LAL_REARTH_SI / LAL_C_SI);
+        REAL8 cosdD = cos ( metricParams->multiIFO.sites[0].frDetector.vertexLatitudeRadians );
+        scale = LAL_TWOPI * Freq * rEarth_c * cosdD;
+      }
+      break;
+
+    default:
+      XLAL_ERROR(XLAL_EINVAL, "Unknown phase-derivative type '%d'\n", coordID );
+    }
+    gsl_matrix_set( transform, i, i, 1.0 / scale );
+  }
+
+  // Apply transform
+  if ( p_gpr_ij != NULL ) {
+    XLAL_CHECK( XLALTransformMetric( p_gpr_ij, transform, g_ij ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
+  // Return transform
+  if ( p_transform != NULL ) {
+    gsl_matrix_memcpy( *p_transform, transform );
+  }
+
+  // Cleanup
+  GFMAT( transform );
+
+  return XLAL_SUCCESS;
+
+} // XLALNaturalizeMetric()

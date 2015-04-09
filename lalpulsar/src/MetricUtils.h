@@ -23,6 +23,7 @@
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_matrix.h>
 #include <lal/LALStdlib.h>
+#include <lal/UniversalDopplerMetric.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,6 +48,7 @@ int XLALTransformMetric( gsl_matrix **p_gpr_ij, const gsl_matrix *transform, con
 int XLALInverseTransformMetric( gsl_matrix **p_gpr_ij, const gsl_matrix *transform, const gsl_matrix *g_ij );
 
 int XLALDiagNormalizeMetric( gsl_matrix **p_gpr_ij, gsl_matrix **p_transform, const gsl_matrix *g_ij );
+int XLALNaturalizeMetric( gsl_matrix **p_gpr_ij, gsl_matrix **p_transform, const gsl_matrix *g_ij, const DopplerMetricParams *metricParams );
 
 /// @}
 

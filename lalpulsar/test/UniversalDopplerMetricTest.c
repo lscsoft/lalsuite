@@ -276,7 +276,8 @@ test_XLALDopplerFstatMetric ( void )
   // a) compute metric at refTime = startTime
   pars2.signalParams.Doppler.refTime = startTimeGPS;
   XLAL_CHECK ( (metric2 = XLALDopplerFstatMetric ( &pars2, edat )) != NULL, XLAL_EFUNC );
-  XLAL_CHECK ( (gN_ij = XLALNaturalizeMetric ( metric2->g_ij, &pars2 )) != NULL, XLAL_EFUNC );
+  gN_ij = NULL;
+  XLAL_CHECK ( XLALNaturalizeMetric ( &gN_ij, NULL, metric2->g_ij, &pars2 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   REAL8 gStart_ij[] = {   1.0/3,      2.0/3,    6.0/5,    32.0/15,      \
                           2.0/3,    64.0/45,    8.0/3,  512.0/105,      \
@@ -298,7 +299,8 @@ test_XLALDopplerFstatMetric ( void )
   pars2.signalParams.Doppler.refTime.gpsSeconds += duration / 2;
 
   XLAL_CHECK ( (metric2 = XLALDopplerFstatMetric ( &pars2, edat )) != NULL, XLAL_EFUNC );
-  XLAL_CHECK ( (gN_ij = XLALNaturalizeMetric ( metric2->g_ij, &pars2 )) != NULL, XLAL_EFUNC );
+  gN_ij = NULL;
+  XLAL_CHECK ( XLALNaturalizeMetric ( &gN_ij, NULL, metric2->g_ij, &pars2 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   REAL8 gMid_ij[] = { 1.0/3,    0,        1.0/5,         0,       \
                       0,        4.0/45,       0,   8.0/105,       \
