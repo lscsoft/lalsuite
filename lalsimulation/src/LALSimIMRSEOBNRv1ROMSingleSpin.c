@@ -573,10 +573,8 @@ static int SEOBNRv1ROMSingleSpinCore(
   double deltaF_geom = deltaF * Mtot_sec;
 
   // Enforce allowed geometric frequency range
-  if (fLow_geom < Mf_ROM_min) {
-    XLALPrintWarning("Starting frequency Mflow=%g is smaller than lowest frequency in ROM Mf=%g. Starting at lowest frequency in ROM.\n", fLow_geom, Mf_ROM_min);
-    fLow_geom = Mf_ROM_min;
-  }
+  if (fLow_geom < Mf_ROM_min)
+    XLAL_ERROR(XLAL_EDOM, "Starting frequency Mflow=%g is smaller than lowest frequency in ROM Mf=%g. Starting at lowest frequency in ROM.\n", fLow_geom, Mf_ROM_min);
   if (fHigh_geom == 0 || fHigh_geom > Mf_ROM_max)
     fHigh_geom = Mf_ROM_max;
   else if (fHigh_geom < Mf_ROM_min)
