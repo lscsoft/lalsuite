@@ -104,18 +104,25 @@ classifiers = sorted(set(config.get('general', 'classifiers').split()))
 
 ### ensure we have a section for each classifier and fill out dictionary of options
 classifiersD, mla, ovl = reed.config_to_classifiersD( config )
+classifiers = sorted(classifiersD.keys())
+
+### get combiners information and DO NOT add this to classifiersD, we treat them separately!
+combinersD, referenced_classifiers = reed.config_to_combinersD( config )
+combiners = sorted(combinersD.keys())
+
 
 if mla:
     ### reading parameters from config file needed for mla
-    auxmvc_coinc_window = config.getfloat('build_auxmvc_vectors','time-window')
-    auxmc_gw_signif_thr = config.getfloat('build_auxmvc_vectors','signif-threshold')
+#    auxmvc_coinc_window = config.getfloat('build_auxmvc_vectors','time-window')
+#    auxmc_gw_signif_thr = config.getfloat('build_auxmvc_vectors','signif-threshold')
+    auxmvc_coinc_window = config.getfloat('realtime', 'padding')
+    auxmc_gw_signif_thr = config.getfloat('general', 'gw_kwsignif_thr')
     auxmvc_selected_channels = config.get('general','selected-channels')
     auxmvc_unsafe_channels = config.get('general','unsafe-channels')
 
     ### inflate padding for science time if needed
     if auxmvc_coinc_window > opts.padding:
         print "extending opts.padding to fill the auxmvc_coinc_window"
-        opts.padding = auxmvc_coinc_window
 
 twopadding = 2*padding ### useful to have
 
@@ -168,6 +175,13 @@ calibrationdir = config.get('general', 'calibrationdir')
 calibration_cache = dict( (classifier, reed.Cachefile(reed.cache(calibrationdir, classifier, tag='calibration'))) for classifier in classifiers )
 for cache in calibration_cache.values():
     cache.time = 0
+
+### cache for kde estimates
+kde_cache = dict( (classifier, reed.Cachefile(reed.cache(calibrationdir, classifier, tag='_calibration-kde%s'%usertag))) for classifier in classifiers )
+for cache in kde_cache.values():
+    cache.time = 0
+
+kdeD = dict( (classifier,{}) for classifier in classifiers ) ### used to store kde information read in from files within kde_cache
 
 #===================================================================================================
 #
@@ -285,6 +299,7 @@ for gps in sorted(opts.gps):
     #=============================================
     # predictions
     #=============================================
+    dats = {}
     for classifier in classifiers:
         flavor = classifiersD[classifier]['flavor']
 
@@ -317,14 +332,7 @@ for gps in sorted(opts.gps):
         dat = reed.dat(this_output_dir, classifier, ifo, trained_range, usertag, gps_start, twopadding)
         gchxml = reed.xml(directory, classifier, ifo, trained_range, calib_range, gchtag, gps_start, twopadding)
 
-
-
-
-        ### FIXME : check whether these already exist. If so, we need to append instead of overwrite!
-        raise Warning("We may over-write output files because of the naming convention! This may need some careful thought if we don't just tack on a random string...")
-
-
-
+        dats[classifier] = dat ### store for combiners
 
         ### perform evalutation
         miniconfig = classifiersD[classifier]['config']
@@ -351,4 +359,178 @@ for gps in sorted(opts.gps):
         print '    --> writing ' + gchxml
         reed.ligolw_utils.write_filename(gchxml_doc, gchxml, gz=gchxml.endswith('.gz'))
 
+    ### iterate through combiners
+    if combiners:
+
+        ### load in dat files only once!
+        outputs = {}
+        for classifier in referenced_classifiers:
+            dat = dats[classifier]
+            logger.info('reading in data from %s'%dat)
+            ### we sort according to GPS so everything is ordered in the same way!
+            outputs[classifier] = reed.sort_output( reed.slim_load_datfile( dat, skip_lines=0, columns=samples_header+['rank'] ), 'GPS' )
+
+            ### check kde_caches
+            cache = kde_cache[classifier]
+
+            ### need to find best kde information for each classifier
+            lines = cache.readlines()
+            if len(lines)%2:
+                raise ValueError('there must be an even number of lines in kde_cache for %s'%classifier)
+
+            kde_ranges = {}
+            for ind in xrange(len(lines)/2):
+                kde_cln_name = lines[2*ind]
+                kde_gch_name = lines[2*ind+1]
+                kde_range = reed.extract_kde_range( kde_cln_name )
+
+                kde_ranges[kde_range] = (kde_cln_name, kde_gch_name)
+
+            kde_range = reed.best_range( gps, kde_ranges.keys() )
+            kde_cln_name, kde_gch_name = kde_ranges[kde_range]
+
+            kde_cln_file = event.gzopen(kde_cln_name, 'r')
+            kde, kde_cln = numpy.load(kde_cln_file)
+            kde_cln_file.close()
+
+            kde_gch_file = event.gzopen(kde_gch_name, 'r')
+            _  , kde_gch = numpy.load(kde_gch_file)
+            kde_gch_file.close()
+
+            ### store kdes
+            kdeD[classifier]['kde'] = kde
+
+            kdeD[classifier]['kde_cln'] = kde_cln
+            kdeD[classifier]['ckde_cln'] = reed.kde_to_ckde( kde_cln )
+            kdeD[classifier]['kde_gch'] = kde_gch
+            kdeD[classifier]['ckde_gch'] = reed.kde_to_ckde( kde_gch )
+
+            kdeD[classifier]['kde_cln_name'] = kde_cln_name
+            kdeD[classifier]['kde_gch_name'] = kde_gch_name
+
+            kdeD[classifier]['kde_range'] = kde_range
+
+        n_samples = len(outputs[classifier]['rank']) ### assumes all outputs have the same length, which they should
+
+        for combiner in combiners:
+
+            flavor = combinersD[combiner]['flavor'] ### should always be None, but we pull the reference nonetheless
+
+            these_classifiers = combinersD[combiner]['classifiers'] ### the classifiers this combiner combines
+
+            ### find best calibration data
+            cache = calibration_cache[combiner]
+            lines = cache.readlines() ### calibration caches are forced to have a simpler format that train caches
+            calib_ranges = dict( zip(reed.extract_calibration_ranges( lines ), lines ) )
+            calib_range = reed.best_range( gps, calib_ranges.keys() )
+            effmap, fapmap = reed.rank_to_EffFAPmap( calib_ranges[calib_range] )
+
+            ### compute filenames
+            trained_range = "__".join( ["%s-%s"%(classifier, kdeD[classifier]['kde_range']) for classifier in these_classifiers] ) ### string together all kde ranges
+
+            dat = reed.dat(this_output_dir, classifier, ifo, trained_range, usertag, gps_start, twopadding)
+            gchxml = reed.xml(directory, classifier, ifo, trained_range, calib_range, gchtag, gps_start, twopadding)
+
+            #===========================================================================================
+            #
+            # perform combiners evaluation here!
+            #
+            #===========================================================================================
+
+            c_pofg = combinersD[combiner]['joint_p(g)'].endswith("cdf") ### check to see whether we use pdf or cdf
+            c_pofc = combinersD[combiner]['joint_p(c)'].endswith("cdf")
+
+            combinersD[combiner]['columns']
+            output = dict( [(c,[]) for c in samples_header+combinersD[combiner]['columns']] )
+
+            pofg_joint = [] ### store the p(g) data from dat files
+            pofc_joint = []
+
+            for classifier in these_classifiers:
+                logger.info('  extracting data from %s'%classifier)
+
+                ### pull out kde data for this classifier
+                kde = kdeD[classifier]['kde']
+                if c_pofc:
+                    kde_cln = kdeD[classifier]['ckde_cln']
+                else:
+                    kde_cln = kdeD[classifier]['kde_cln']
+                if c_pofg:
+                    kde_gch = kdeD[classifier]['ckde_gch']
+                else:
+                    kde_gch = kdeD[classifier]['kde_gch']
+
+                #========
+                # dat files
+                #========
+                ### pull out ranks
+                ranks = [outputs[classifier]['rank'][i] for i in xrange(n_samples)]
+
+                ### map ranks into p(g), p(c)
+                pofg = numpy.interp( ranks, kde, kde_gch )
+                pofc = numpy.interp( ranks, kde, kde_cln )
+
+                ### fill out output dictionary
+                output["%s_rank"%classifier] = ranks
+                output["%s_p(g)"%classifier] = pofg
+                output["%s_p(c)"%classifier] = pofc
+
+                ### add to joint probabilities
+                pofg_joint.append( pofg )
+                pofc_joint.append( pofc )
+
+                ### fill in samples_header if not already there
+                for c in samples_header:
+                    if not output[c]: ### only do this once!
+                        output[c] = outputs[classifier][c]
+
+
+            ### compute joint probabilities
+            logger.info('  combining classifier probability distributions')
+            if combinersD[combiner]['joint_p(g)'][:3] == "max":
+                pofg_joint = numpy.max( pofg_joint, axis=0 )
+            elif combinersD[combiner]['joint_p(g)'][:4] == "prod":
+                pofg_joint = numpy.prod( pofg_joint, axis=0 )
+            else:
+                raise ValueError("combiner=%s joint_p(g)=%s not understood"%(combiner, combinersD[combiner]['joint_p(g)']))
+
+            if combinersD[combiner]['joint_p(c)'][:3] == "max":
+                pofc_joint = numpy.max( pofc_joint, axis=0 )
+            elif combinersD[combiner]['joint_p(c)'][:4] == "prod":
+                pofc_joint = numpy.prod( pofc_joint, axis=0 )
+            else:
+                raise ValueError("combiner=%s joint_p(c)=%s not understood"%(combiner, combinersD[combiner]['joint_p(c)']))
+
+            ### compute combined statistics
+            logger.info('  computing approximation to joint likelihood ratio')
+            L_joint = pofg_joint / pofc_joint ### compute likelihood
+            r_joint = L_joint / ( 1 + L_joint ) ### compute rank
+
+            ### put them into output
+            output['rank'] = r_joint
+            output['Likelihood'] = L_joint
+
+            ### write datfile
+            logger.info('  writing %s'%dat)
+            reed.output_to_datfile( output, dat )
+
+            ### convert datfiles to xml tables
+            logger.info('  Begin: converting %s dat file into xml files'%combiner)
+            logger.info('    converting %s to xml tables' % dat)
+
+            ### read dafile -> xml docs
+            (gchxml_doc, clnxml_doc) = reed.datfile2xmldocs(dat, ifo, fapmap, Lmap=False, Effmap=effmap, flavor=flavor,
+                                         gwchan=gwchannel, gwtrigs=gw_trig, prog=__prog__, options=opts.__dict__, version=__version__ )
+
+            ### write documents
+            logger.info('    --> writing ' + gchxml)
+            reed.ligolw_utils.write_filename(gchxml_doc, gchxml, gz=gchxml.endswith('.gz'))
+
+            logger.info('    --> writing ' + clnxml)
+            reed.ligolw_utils.write_filename(clnxml_doc, clnxml, gz=clnxml.endswith('.gz'))
+
+            logger.info('  Done: converting %s dat file into xml files.'%combiner)
+
+            ### done with this classifier
+            logger.info('Done: %s cycle.'%combiner)
 
