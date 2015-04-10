@@ -113,6 +113,7 @@ def check_calibration( segs, times, timeseries, FAPthrs):
     segments = []
     deadtimes = []
     statedFAPs = []
+    errs = []
     for FAPthr in FAPthrs:
         SEGS = []
         max_statedFAP = 0.0
@@ -133,14 +134,22 @@ def check_calibration( segs, times, timeseries, FAPthrs):
             if SEGS_livetime:
                 raise ValueError("something is weird with segments... idq_livetime is zero but SEGS_livetime is not")
             else:
-                deadtimes.append( 0.0 )
+                deadtime = 0.0
         else:
             deadtime = 1.0 * SEGS_livetime / idq_livetime
             if deadtime > 1.0:
-                raise ValueError("deadtime > 1.0, something is weird...")
-            deadtimes.append( deadtime )
+                raise ValueError("deadtime > 1.0, something is weird...\n  SEGS_livetime = %f\n  idq_livetime = %f"%(SEGS_livetime, idq_livetime))
+        deadtimes.append( deadtime )
 
         statedFAPs.append(max_statedFAP)
 
-    return segments, deadtimes, statedFAPs
+        if max_statedFAP > 0:
+            err = deadtime/max_statedFAP - 1
+        elif deadtime:
+            err = 1
+        else:
+            err = 0
+        errs.append( err )
+
+    return segments, deadtimes, statedFAPs, errs
 
