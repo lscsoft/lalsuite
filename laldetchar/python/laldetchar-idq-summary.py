@@ -682,12 +682,12 @@ while gpsstart < gpsstop:
                 fapsUL.append( _ts[1] )
 
         ### check point estimate calibration
-        _, deadtimes, statedFAPs = calibration.check_calibration(idqsegs, times, faps, opts.FAPthr)
-        errs = np.array([ d/F - 1.0 for d, F in zip(deadtimes, statedFAPs) if F ])
+        _, deadtimes, statedFAPs, errs = calibration.check_calibration(idqsegs, times, faps, opts.FAPthr)
+#        errs = np.array([ d/F - 1.0 for d, F in zip(deadtimes, statedFAPs) if F ])
 
         ### check UL estimate calibration
-        _, deadtimesUL, statedFAPsUL = calibration.check_calibration(idqsegs, times, fapsUL, opts.FAPthr)
-        errsUL = np.array([ d/F - 1.0 for d, F in zip(deadtimesUL, statedFAPs) if F ])
+        _, deadtimesUL, statedFAPsUL, errsUL = calibration.check_calibration(idqsegs, times, fapsUL, opts.FAPthr)
+#        errsUL = np.array([ d/F - 1.0 for d, F in zip(deadtimesUL, statedFAPs) if F ])
 
         ### write output file
         calib_check = reed.calib_check(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
@@ -695,20 +695,7 @@ while gpsstart < gpsstop:
 
         file_obj = open(calib_check, "w")
         print >> file_obj, "livetime = %.3f"%event.livetime(idqsegs)
-        for FAPthr, deadtime, statedFAP, deadtimeUL, statedFAPUL in zip(opts.FAPthr, deadtimes, statedFAPs, deadtimesUL, statedFAPsUL):
-            if (deadtime or statedFAP) and (deadtimeUL or statedFAPUL):
-                if statedFAP:
-                    err = deadtime/statedFAP - 1
-                elif deadtime:
-                    err = 1
-                else:
-                    err = 0
-                if statedFAPUL:
-                    errUL = deadtimeUL/statedFAPUL - 1
-                elif deadtimeUL:
-                    errUL = 1
-                else:
-                    errUL = 0
+        for FAPthr, deadtime, statedFAP, err, deadtimeUL, statedFAPUL, errUL in zip(opts.FAPthr, deadtimes, statedFAPs, errs, deadtimesUL, statedFAPsUL, errsUL):
                 print >> file_obj, calibration.report_str%(FAPthr, statedFAP, deadtime, err , statedFAPUL, deadtimeUL, errUL )
         file_obj.close()
 
@@ -1292,6 +1279,8 @@ segment lists -> a form to request segments?
 
         process_params = __file__ ### the script currently executing
         for key, value in vars(opts).items():
+            key = key.replace("_","-")
+
             if isinstance(value, str) and os.path.exists(value):
                 value = os.path.abspath( value )
             

@@ -59,6 +59,12 @@ description = """Module for plotting routines for idq pipeline."""
 default_figsize = [10, 10]
 default_axpos = [0.15, 0.15, 0.8, 0.8]
 
+stacked_axhpos = [0.1, 0.1, 0.8, 0.4]
+stacked_axcpos = [0.1, 0.5, 0.8, 0.4]
+
+chan_perf_figsize = [20, 10]
+chan_perf_axpos = [0.30, 0.15, 0.45, 0.80]
+
 #========================
 # default names
 #========================
@@ -105,15 +111,15 @@ def rcg_to_rocFig(c, g, color='b', label=None, figax=None):
 
     if figax==None:
         fig = plt.figure(figsize=default_figsize)
-        ax = plt.subplot(1,1,1)
+        ax = fig.add_axes(default_axpos)
     else:
         fig, ax = figax
 
     n_c = c[-1]
     n_g = g[-1]
 
-    fap = np.array(c, dtype="float")/c[-1]
-    eff = np.array(g, dtype="float")/g[-1]
+    fap = np.array(c, dtype="float")/n_c
+    eff = np.array(g, dtype="float")/n_g
 
     if color:
         ax.step(fap, eff, color=color, where='post', label=label) ### plot steps after increase in eff
@@ -130,6 +136,16 @@ def rcg_to_rocFig(c, g, color='b', label=None, figax=None):
             ax.fill_between( cln_CR, 2*[gch_CR[0]], 2*[gch_CR[1]], color=color, alpha=0.05)
         else:
             ax.fill_between( cln_CR, 2*[gch_CR[0]], 2*[gch_CR[1]], alpha=0.05)
+
+#    ### plot 90% UL on fap and eff
+#    fap_UL = reed.binomialUL( c, n_c, conf=0.90 )
+#    eff_UL = reed.binomialUL( g, n_g, conf=0.90 )
+#    if color:
+#        ax.plot( fap, eff_UL, color=color, alpha=0.25 )
+#        ax.plot( fap_UL, eff, color=color, alpha=0.25 )
+#    else:
+#        ax.plot( fap, eff_UL, alpha=0.25 )
+#        ax.plot( fap_UL, eff, alpha=0.25 )
 
     ax.grid(True, which='both')
 
@@ -148,8 +164,8 @@ def stacked_hist(r, s, color='b', linestyle='solid', histtype='step', label=None
 
     if figax==None:
         fig = plt.figure(figsize=default_figsize)
-        axh = fig.add_axes([0.1, 0.1, 0.8, 0.4])
-        axc = fig.add_axes([0.1, 0.5, 0.8, 0.4])
+        axh = fig.add_axes(stacked_axhpos)
+        axc = fig.add_axes(stacked_axcpos)
     else:
         fig, axh, axc = figax
 
@@ -190,23 +206,14 @@ def stacked_kde(r, s, color='b', linestyle='solid', label=None, figax=None):
 
     if figax==None:
         fig = plt.figure(figsize=default_figsize)
-        axh = fig.add_axes([0.1, 0.1, 0.8, 0.4])
-        axc = fig.add_axes([0.1, 0.5, 0.8, 0.4])
+        axh = fig.add_axes(stacked_axhpos)
+        axc = fig.add_axes(stacked_axcpos)
     else:
         fig, axh, axc = figax
 
     axh.plot( r, s, color=color, linestyle=linestyle, label=label)
 
     c = reed.kde_to_ckde( s )
-#    c = np.zeros_like(r)
-#    _s = 0.0
-#    cum = 0.0
-#    for i, S in enumerate(s[::-1]): ### integrate by hand, and start at the right
-#        cum += 0.5*(S+_s)
-#        c[i] = cum
-#        _s = S
-#    c /= c[-1]
-#    c = c[::-1] ### reverse order to match r
     axc.plot( r, c, color=color, linestyle=linestyle, label=label)
 
     axh.grid(True, which="both")
@@ -235,8 +242,8 @@ def stacked_L(r, c, g, color='b', linestyle='solid', label=None, figax=None):
 
     if figax==None:
         fig = plt.figure(figsize=default_figsize)
-        axh = fig.add_axes([0.1, 0.1, 0.8, 0.4])
-        axc = fig.add_axes([0.1, 0.5, 0.8, 0.4])
+        axh = fig.add_axes(stacked_axhpos)
+        axc = fig.add_axes(stacked_axcpos)
     else:
         fig, axh, axc = figax
 
@@ -245,23 +252,6 @@ def stacked_L(r, c, g, color='b', linestyle='solid', label=None, figax=None):
 
     G = reed.kde_to_ckde( g )
     C = reed.kde_to_ckde( c )
-#    G = np.zeros_like(r)
-#    C = np.zeros_like(r)
-#    _c = 0.0
-#    _g = 0.0
-#    ccum = 0.0
-#    gcum = 0.0
-#    for i, (_c_, _g_) in enumerate(zip(c[::-1], g[::-1])):
-#        ccum += 0.5*(_c_+_c)
-#        C[i] = ccum
-#        _c = _c_
-#        gcum += 0.5*(_g_+_g)
-#        G[i] = gcum
-#        _g = _g_
-#    C /= C[-1]
-#    C = C[::-1]
-#    G /= G[-1]
-#    G = G[::-1]
 
     Truth = C > 0
     axc.plot( r[Truth], G[Truth]/C[Truth], color=color, linestyle=linestyle, label=label)
@@ -290,7 +280,7 @@ def stacked_params_hist( samples, figax=None, nperbin=10 , labels=None , xlabel=
 
     if figax==None:
         fig = plt.figure(figsize=default_figsize)
-        ax = plt.subplot(1,1,1)
+        ax = fig.add_axes(default_axpos)
     else:
         fig, ax = figax
 
@@ -310,7 +300,7 @@ def bitword( samples, classifiers, figax=None, label=None):
 
     if figax==None:
         fig = plt.figure(figsize=default_figsize)
-        ax = plt.subplot(1,1,1)
+        ax = fig.add_axes(default_axpos)
     else:
         fig, ax = figax
    
@@ -350,8 +340,8 @@ def bitword( samples, classifiers, figax=None, label=None):
 def calibration_scatter( deadtimes, statedFAPs, color='b', label=None, marker='o', figax=None):
 
     if figax==None:
-        fig = plt.figure()
-        ax = plt.subplot(1,1,1)
+        fig = plt.figure(figsize=default_figsize)
+        ax = fig.add_axes(default_axpos)
     else:
         fig, ax = figax
 
@@ -384,8 +374,8 @@ def calibration_scatter( deadtimes, statedFAPs, color='b', label=None, marker='o
 def rates( ranges, values, color='b', label=None, figax=None, linestyle='solid'):
 
     if figax==None:
-        fig = plt.figure()
-        ax = plt.subplot(1,1,1)
+        fig = plt.figure(figsize=default_figsize)
+        ax = fig.add_axes(default_axpos)
     else:
         fig, ax = figax
 
@@ -411,14 +401,14 @@ def rates( ranges, values, color='b', label=None, figax=None, linestyle='solid')
 def channel_performance( vchans, ranges, performances, num_gchs, num_clns, figax=None, cmap=None):
     
     if figax == None:
-        figrank = plt.figure()
-        axrank = plt.subplot(1,1,1)
+        figrank = plt.figure(figsize=chan_perf_figsize)
+        axrank = figrank.add_axes(chan_perf_axpos)
 
-        figeff = plt.figure()
-        axeff = plt.subplot(1,1,1)
+        figeff = plt.figure(figsize=chan_perf_figsize)
+        axeff = figeff.add_axes(chan_perf_axpos)
 
-        figfap = plt.figure()
-        axfap = plt.subplot(1,1,1)
+        figfap = plt.figure(figsize=chan_perf_figsize)
+        axfap = figfap.add_axes(chan_perf_axpos)
     else:
         (figrank, axrank), (figeff, axeff), (figfap, axfap) = figax
 
