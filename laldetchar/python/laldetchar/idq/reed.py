@@ -42,7 +42,8 @@ from glue.ligolw import types as ligolwtypes
 from glue.ligolw.utils import process
 from glue.lal import LIGOTimeGPS
 
-from pylal import frutils
+#from pylal import frutils
+from pylal import Fr
 
 from laldetchar.idq import event
 from laldetchar.idq import ovl
@@ -261,6 +262,9 @@ def classifier_specific_config( config, classifier, flavor ):
 # standardized names
 #=================================================
 
+def channame(ifo, classifier, tag):
+    return "%s:%s%s"%(ifo, classifier, tag)
+
 def cache(directory, classifier, tag):
     return "%s/%s%s.cache"%(directory, classifier, tag)
 
@@ -275,6 +279,9 @@ def xml(directory, classifier, ifo, trained, calib, tag, t, stride):
 
 def timeseries(directory, classifier, ifo, trained, calib, tag, t, stride):
     return "%s/%s_idq_%s_%s-%s%s-%d-%d.npy.gz"%(directory, ifo, classifier, trained, calib, tag, t, stride)
+
+def timeseriesgwf(directory, classifier, ifo, trained, calib, tag, t, stride):
+    return "%s/%s_idq_%s_%s-%s%s-%d-%d.gwf"%(directory, ifo, classifier, trained, calib, tag, t, stride)
 
 def segxml(directory, tag, t, stride):
     return "%s/science_segments%s-%d-%d.xml.gz"%(directory, tag, t, stride)
@@ -1952,6 +1959,12 @@ def blk_train(flavor, config, classifierD, start, stop, ovlsegs=False, vetosegs=
 #=================================================
 # timeseries
 #=================================================
+
+def timeseries2frame( framename, chan_vect, start, dt):
+    commonpar = {'start':start, 'dx':dt, 'type':1}
+    outdict = [dict(name=channel_name, data=x, **commonpar) for channel_name, x in chan_vect.items()]
+
+    Fr.frputvect(framename, outdict)
 
 def datfile2timeseries(flavor, dat, lines, trgdict=None, start=0, stride=0, window=0.1, fs=256):
     """

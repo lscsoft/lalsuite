@@ -155,6 +155,11 @@ classifiers = sorted(classifiersD.keys())
 combinersD, referenced_classifiers = reed.config_to_combinersD( config )
 combiners = sorted(combinersD.keys())
 
+### compute channel names to be stored in frames
+channameD = dict( (name, {'rank':reed.channame(ifo, name, "%s_rank"%usertag), 
+                          'fap':reed.channame(ifo, name, "%s_fap"%usertag),
+                          'fapUL':reed.channame(ifo, name, "%s_fapUL"%usertag)}) for name in classifiers+combiners )
+
 if mla:
     ### reading parameters from config file needed for mla
 #    auxmvc_coinc_window = config.getfloat('build_auxmvc_vectors','time-window')
@@ -192,6 +197,7 @@ identical_trgfile = (GWgdsdir == AUXgdsdir) and (GWkwbasename == AUXkwbasename) 
 # realtime job
 #========================
 ts_fs = config.getfloat('realtime','sampling_rate') ### sampling frequency for time-series files
+ts_dt = 1.0/ts_fs
 
 clean_rate = config.getfloat('realtime', 'clean_rate')
 clean_window = config.getfloat('realtime', 'clean_window')
@@ -336,7 +342,11 @@ if initial_training:
     logger.info(train_command)
 
     ### launch training script, wait for it to finish
-    proc = subprocess.Popen( train_command.split() , stdout=open(train_out, 'a'), stderr=open(train_err, 'a'), cwd=cwd )
+    train_out_file = open(train_out, 'a')
+    train_err_file = open(train_err, 'a')
+    proc = subprocess.Popen( train_command.split() , stdout=train_out_file, stderr=train_err_file, cwd=cwd )
+    train_out_file.close()
+    train_err_file.close()
     returncode = proc.wait() ### block
     if returncode:
         logger.info('ERROR: initial training failed.')
@@ -371,7 +381,11 @@ if initial_calibration:
     logger.info(calibration_command) ### block
 
     ### launch calibration script, wait for it to finish
-    proc = subprocess.Popen( calibration_command.split() , stdout=open(calibration_out, 'a'), stderr=open(calibration_err, 'a'), cwd=cwd )
+    calibration_out_file = open(calibration_out, 'a')
+    calibration_err_file = open(calibration_err, 'a')
+    proc = subprocess.Popen( calibration_command.split() , stdout=calibration_out_file, stderr=calibration_err_file, cwd=cwd )
+    calibration_out_file.close()
+    calibration_err_file.close()
     returncode = proc.wait()
     if returncode:
         logger.info('ERROR: initial calibration failed.')
@@ -455,13 +469,19 @@ while t  < opts.endgps:
         logger.info('Submiting train script with the following opts:')
         logger.info(train_command)
 
+        train_out_file = open(train_out, 'a')
+        train_err_file = open(train_err, 'a')
         if opts.offline: ### running in "offline mode"
             logger.info('Running in OFFLINE mode, will wait until train is complete before proceeding with evaluation.')
-            proc = subprocess.Popen( train_command.split() , stdout=open(train_out, 'a'), stderr=open(train_err, 'a') , cwd=cwd )
+            proc = subprocess.Popen( train_command.split() , stdout=train_out_file, stderr=train_err_file , cwd=cwd )
+            train_out_file.close()
+            train_err_file.close()
             proc.wait() ### blocks!
         else:
             ### running in realtime, don't wait for training job to complete so we can keep the latency low
-            train_pid = subprocess.Popen(train_command, stdout=open(train_out, 'a'), stderr=open(train_err, 'a'), cwd=cwd ).pid ### only remember the pid, and let the process float
+            train_pid = subprocess.Popen(train_command, stdout=train_out_file, stderr=train_err_file, cwd=cwd ).pid ### only remember the pid, and let the process float
+            train_out_file.close()
+            train_err_file.close()
 
         logger.info('Done: launching train script for period: %d - %d'%(train_start_time, train_stop_time))
         logger.info('****************************************************')
@@ -496,12 +516,18 @@ while t  < opts.endgps:
         logger.info('Submiting calibration script with the following options:')
         logger.info(calibration_command)
 
+        calibration_out_file = open(calibration_out, 'a')
+        calibration_err_file = open(calibration_err, 'a')
         if opts.offline:
             logger.info("Running in OFFLINE mode, will wait until calibration is complete before proceeding with evaluation")
-            proc = subprocess.Popen(calibration_command.split(), stdout=open(calibration_out, "a"), stderr=open(calibration_err, "a"), cwd=cwd)
+            proc = subprocess.Popen(calibration_command.split(), stdout=calibration_out_file, stderr=calibration_err_file, cwd=cwd)
+            calibration_out_file.close()
+            calibration_err_file.close()
             proc.wait() # block!
         else:
-            summary_pid = subprocess.Popen(calibration_command.split(), stdout=open(calibration_out, 'a'), stderr=open(calibration_err, 'a'), cwd=cwd).pid ### only remember the pid, let the process float
+            summary_pid = subprocess.Popen(calibration_command.split(), stdout=calibration_out_file, stderr=calibration_err_file, cwd=cwd).pid ### only remember the pid, let the process float
+            calibration_out_file.close()
+            calibration_err_file.close()
 
         logger.info('Done: launching calibration script for period: %s - %s'%(calibration_start_time,calibration_stop_time))
         logger.info('****************************************************')
@@ -543,12 +569,18 @@ while t  < opts.endgps:
         logger.info('Submiting summary script with the following options:')
         logger.info(summary_command)
 
+        summary_out_file = open(summary_out, 'a')
+        summary_err_file = open(summary_err, 'a')
         if opts.offline:
             logger.info("Running in OFFLINE mode, will wait until summary is complete before proceeding with evaluation")
-            proc = subprocess.Popen(summary_command.split(), stdout=open(summary_out, "a"), stderr=open(summary_err, "a"), cwd=cwd)
+            proc = subprocess.Popen(summary_command.split(), stdout=summary_out_file, stderr=summary_err_file, cwd=cwd)
+            summary_out_file.close()
+            summary_err_file.close()
             proc.wait() # block!
         else:                                              
-            summary_pid = subprocess.Popen(summary_command.split(), stdout=open(summary_out, 'a'), stderr=open(summary_err, 'a'), cwd=cwd).pid ### only remember the pid, let the process float
+            summary_pid = subprocess.Popen(summary_command.split(), stdout=summary_out_file, stderr=summary_err_file, cwd=cwd).pid ### only remember the pid, let the process float
+            summary_out_file.close()
+            summary_err_file.close()
 
         logger.info('Done: launching summary script for period: %s - %s'%(summary_start_time,summary_stop_time))
         logger.info('****************************************************')
@@ -766,7 +798,10 @@ while t  < opts.endgps:
         clnxml = reed.xml(this_output_dir, classifier, ifo, trained_range, calib_range, clntag, t, stride)
 
         rnknp = reed.timeseries(this_output_dir, classifier, ifo, trained_range, calib_range, rnktag, t, stride)
+        rnkfr = reed.timeseriesgwf(this_output_dir, classifier, ifo, trained_range, calib_range, rnktag, t, stride)
+
         fapnp = reed.timeseries(this_output_dir, classifier, ifo, trained_range, calib_range, faptag, t, stride)
+        fapfr = reed.timeseriesgwf(this_output_dir, classifier, ifo, trained_range, calib_range, faptag, t, stride)
 
         ### store relevant filenames for combiners
         dats[classifier] = dat
@@ -789,8 +824,15 @@ while t  < opts.endgps:
 
         ### create timeseries from datfile and save as gzip numpy array, there are boundary effects here
         logger.info('  Begin: generating %s rank timeseries -> %s'%(classifier, rnknp))
-        ts = reed.datfile2timeseries(flavor, dat, lines, trgdict=trgdict, start=t, stride=stride, window=0.1, fs=256)
-        numpy.save(event.gzopen(rnknp, 'w'), ts)
+        ts = reed.datfile2timeseries(flavor, dat, lines, trgdict=trgdict, start=t, stride=stride, window=0.1, fs=ts_fs)
+
+        rnknp_file = event.gzopen(rnknp, 'w')
+        numpy.save(rnknp_file, ts)
+        rnknp_file.close()
+
+        logger.info('    writing %s'%rnkfr)
+        reed.timeseries2frame( rnkfr, {channameD[classifier]['rank']:ts}, t, ts_dt )
+
         logger.info('  Done: generating %s rank timeseries'%classifier)
 
         ### create FAP timeseries
@@ -799,7 +841,13 @@ while t  < opts.endgps:
         fap_ts = fapmap(ts) ### MLE estimate of FAP (interpolated)
         fapUL_ts = fapmap.ul(ts, conf=0.99) ### upper limit with FAPconf (around interpolated points)
                                             ### we hard-code this intentionally to make it difficult to change/mess up
-        numpy.save(event.gzopen(fapnp, 'w'), (fap_ts, fapUL_ts) )
+        fapnp_file = event.gzopen(fapnp, 'w')
+        numpy.save(fapnp_file, (fap_ts, fapUL_ts) )
+        fapnp_file.close()
+
+        logger.info('    writing %s'%fapfr)
+        reed.timeseries2frame( fapfr, {channameD[classifier]['fap']:fap_ts, channameD[classifier]['fapUL']:fapUL_ts}, t, ts_dt )
+
         logger.info('  Done: generating %s FAP time-series'%classifier)
 
         ### convert datfiles to xml tables
@@ -837,7 +885,9 @@ while t  < opts.endgps:
 
             rnk = rnks[classifier]
             logger.info('reading in data from %s'%rnk)
-            ts[classifier] = numpy.load(event.gzopen(rnk, 'r'))
+            rnk_file = event.gzopen(rnk, 'r')
+            ts[classifier] = numpy.load(rnk_file)
+            rnk_file.close()
 
             ### check kde_caches
             cache = kde_cache[classifier]
@@ -846,8 +896,13 @@ while t  < opts.endgps:
 
                 kde_range = reed.extract_kde_range( kde_cln_name )
 
-                kde, kde_cln = numpy.load(event.gzopen(kde_cln_name, 'r'))
-                _  , kde_gch = numpy.load(event.gzopen(kde_gch_name, 'r'))
+                kde_cln_file = event.gzopen(kde_cln_name, 'r')
+                kde, kde_cln = numpy.load(kde_cln_file)
+                kde_cln_file.close()
+
+                kde_gch_file = event.gzopen(kde_gch_name, 'r')
+                _  , kde_gch = numpy.load(kde_gch_file)
+                kde_gch_file.close()
 
                 ### store kdes
                 kdeD[classifier]['kde'] = kde
@@ -904,7 +959,10 @@ while t  < opts.endgps:
             clnxml = reed.xml(this_output_dir, combiner, ifo, trained_range, calib_range, clntag, t, stride)
 
             rnknp = reed.timeseries(this_output_dir, combiner, ifo, trained_range, calib_range, rnktag, t, stride)
+            rnkfr = reed.timeseriesgwf(this_output_dir, combiner, ifo, trained_range, calib_range, rnktag, t, stride)
+
             fapnp = reed.timeseries(this_output_dir, combiner, ifo, trained_range, calib_range, faptag, t, stride)
+            fapfr = reed.timeseriesgwf(this_output_dir, combiner, ifo, trained_range, calib_range, faptag, t, stride)
 
             #===========================================================================================
             #
@@ -1009,7 +1067,13 @@ while t  < opts.endgps:
             logger.info('  writing %s'%(rnknp))
             ts_L_joint = ts_pofg_joint / ts_pofc_joint
             ts_r_joint = ts_L_joint / (1 + ts_L_joint)
-            numpy.save(event.gzopen(rnknp, 'w'), ts_r_joint)
+
+            rnknp_file = event.gzopen(rnknp, 'w')
+            numpy.save(rnknp_file, ts_r_joint)
+            rnknp_file.close()
+
+            logger.info('    writing %s'%rnkfr)
+            reed.timeseries2frame( rnkfr, {channameD[combiner]['rank']:ts_r_joint}, t, ts_dt )
 
             ### create FAP timeseries
             logger.info('  Begin: generating %s FAP time-series -> %s'%(combiner, fapnp))
@@ -1017,7 +1081,13 @@ while t  < opts.endgps:
             fap_ts = fapmap(ts_r_joint) ### MLE estimate of FAP (interpolated)
             fapUL_ts = fapmap.ul(ts_r_joint, conf=0.99) ### upper limit with FAPconf (around interpolated points)
                                                         ### we hard-code this intentionally to make it difficult to change/mess up
-            numpy.save(event.gzopen(fapnp, 'w'), (fap_ts, fapUL_ts) )
+            fapnp_file = event.gzopen(fapnp, 'w')
+            numpy.save(fapnp_file, (fap_ts, fapUL_ts) )
+            fapnp_file.close()
+
+            logger.info('    writing %s'%fapfr)
+            reed.timeseries2frame( fapfr, {channameD[combiner]['fap']:fap_ts, channameD[combiner]['fapUL']:fapUL_ts}, t, ts_dt )
+
             logger.info('  Done: generating %s FAP time-series'%combiner)
 
             ### convert datfiles to xml tables
