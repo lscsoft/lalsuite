@@ -91,9 +91,9 @@ def readLValert(SNRthreshold=0,gid=None,flow=40.0,gracedb="gracedb",savepsdpath=
   print "gracedb download %s coinc.xml" % gid
   subprocess.call([gracedb,"download", gid ,"coinc.xml"])
   xmldoc=utils.load_filename("coinc.xml",contenthandler = LIGOLWContentHandler)
-  coinctable = lsctables.getTablesByType(xmldoc, lsctables.CoincInspiralTable)[0]
+  coinctable = lsctables.CoincInspiralTable.get_table(xmldoc)
   coinc_events = [event for event in coinctable]
-  sngltable = lsctables.getTablesByType(xmldoc, lsctables.SnglInspiralTable)[0]
+  sngltable = lsctables.SnglInspiralTable.get_table(xmldoc)
   sngl_events = [event for event in sngltable]
   #Issues to identify IFO with good data that did not produce a trigger
   #search_summary = lsctables.getTablesByType(xmldoc, lsctables.SearchSummaryTable)[0]
@@ -118,7 +118,7 @@ def readLValert(SNRthreshold=0,gid=None,flow=40.0,gracedb="gracedb",savepsdpath=
   else:
     print "Failed to gracedb download %s psd.xml.gz. lalinference will estimate the psd itself." % gid
   # Logic for template duration and sample rate disabled
-  coinc_map = lsctables.getTablesByType(xmldoc, lsctables.CoincMapTable)[0]
+  coinc_map = lsctables.CoincMapTable.get_table(xmldoc)
   for coinc in coinc_events:
     these_sngls = [e for e in sngl_events if e.event_id in [c.event_id for c in coinc_map if c.coinc_event_id == coinc.coinc_event_id] ]
     #if these_sngls[0].template_duration:
