@@ -2009,9 +2009,7 @@ def timeseries_to_segments(t, ts, thr):
                 in_seg = False
             else:
                 pass
-        else:
-
-              # TS >= thr
+        else: ### TS >= thr
 
             if min_TS > TS:
                 min_TS = TS
@@ -2019,7 +2017,6 @@ def timeseries_to_segments(t, ts, thr):
                 start = T
                 in_seg = True
     if in_seg:
-        dt = t[1] - t[0]
         segs.append([start, T])
 
     if len(segs):

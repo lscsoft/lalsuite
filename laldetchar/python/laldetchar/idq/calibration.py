@@ -117,7 +117,7 @@ def check_calibration( segs, times, timeseries, FAPthrs):
         SEGS = []
         max_statedFAP = 0.0
         for (t, ts) in zip(times, timeseries):
-            (_segs, _min_ts) = reed.timeseries_to_segments(t, -ts, -FAPthr)  # we want FAP <= FAPthr <--> -FAP >= FAPthr
+            (_segs, _min_ts) = reed.timeseries_to_segments(t, -ts, -FAPthr)  # we want FAP <= FAPthr <--> -FAP >= -FAPthr
             SEGS += _segs
             if _min_ts != None:
                 statedFAP = -_min_ts
@@ -126,13 +126,19 @@ def check_calibration( segs, times, timeseries, FAPthrs):
 
         SEGS = event.andsegments([SEGS, segs])
         segments.append(SEGS)
+
+        SEGS_livetime = event.livetime(SEGS)
+
         if not idq_livetime:
-            if event.livetime(SEGS):
+            if SEGS_livetime:
                 raise ValueError("something is weird with segments... idq_livetime is zero but SEGS_livetime is not")
             else:
                 deadtimes.append( 0.0 )
         else:
-            deadtimes.append(1.0 * event.livetime(SEGS) / idq_livetime)
+            deadtime = 1.0 * SEGS_livetime / idq_livetime
+            if deadtime > 1.0:
+                raise ValueError("deadtime > 1.0, something is weird...")
+            deadtimes.append( deadtime )
 
         statedFAPs.append(max_statedFAP)
 
