@@ -77,6 +77,17 @@ int main( void )
     XLALDestroyEphemerisData( edat );
   }
 
+  // Test XLALMetricEllipseBoundingBox()
+  fprintf( stderr, "\n=== Test XLALMetricEllipseBoundingBox() ===\n\n" );
+  {
+    gsl_vector *bbox = XLALMetricEllipseBoundingBox( g_ij, 0.3 );
+    XLAL_CHECK_MAIN( bbox != NULL, XLAL_EFUNC );
+    GPVEC( bbox, "%0.6g" );
+    const double bbox_0 = 0.148608;
+    XLAL_CHECK_MAIN( fabs( gsl_vector_get( bbox, 0 ) - bbox_0 ) <= 1e-5, XLAL_ETOL, "gsl_vector_get( bbox, 0 ) = %0.6g != %0.6g", gsl_vector_get( bbox, 0 ), bbox_0 );
+    GFVEC( bbox );
+  }
+
   // Cleanup
   GFMAT( g_ij );
   LALCheckMemoryLeaks();
