@@ -170,7 +170,7 @@ REAL4Vector * coherentlyAddSFTs(MultiSFTVector *multiSFTvector, MultiSSBtimes *m
    XLAL_CHECK_NULL( (sin2psiVector = XLALCreateREAL4VectorAligned(twoPsiVector->length, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK_NULL( (cos2psiVector = XLALCreateREAL4VectorAligned(twoPsiVector->length, 32)) != NULL, XLAL_EFUNC );
    for (UINT4 ii=0; ii<twoPsiVector->length; ii++) twoPsiVector->data[ii] = 0.0625*ii;
-   XLAL_CHECK_NULL( XLALVectorSinCosf2PI(sin2psiVector->data, cos2psiVector->data, twoPsiVector->data, twoPsiVector->length) == XLAL_SUCCESS, XLAL_EFUNC );
+   XLAL_CHECK_NULL( XLALVectorSinCos2PiREAL4(sin2psiVector->data, cos2psiVector->data, twoPsiVector->data, twoPsiVector->length) == XLAL_SUCCESS, XLAL_EFUNC );
    XLAL_CHECK_NULL( (Fplus0s = XLALCreateREAL4VectorAligned(twoPsiVector->length, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK_NULL( (Fcross0s = XLALCreateREAL4VectorAligned(twoPsiVector->length, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK_NULL( (FplusXs = XLALCreateREAL4VectorAligned(twoPsiVector->length, 32)) != NULL, XLAL_EFUNC );

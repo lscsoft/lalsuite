@@ -56,23 +56,23 @@ void XLALDestroyREAL4VectorAligned ( REAL4VectorAligned *in );
 
 /* -------------------- exported vector math functions -------------------- */
 
-/** Compute \f$y = \sin(in)\f$ over single-precision vectors \c out, \c in with \c len elements */
-int XLALVectorSinf ( REAL4 *out, const REAL4 *in, const UINT4 len );
+/** Compute \f$y = \sin(in)\f$ over REAL4 vectors \c out, \c in with \c len elements */
+int XLALVectorSinREAL4 ( REAL4 *out, const REAL4 *in, const UINT4 len );
 
-/** Compute \f$y = \cos(in)\f$ over single-precision vectors \c out, \c in with \c len elements */
-int XLALVectorCosf ( REAL4 *out, const REAL4 *in, const UINT4 len );
+/** Compute \f$y = \cos(in)\f$ over REAL4 vectors \c out, \c in with \c len elements */
+int XLALVectorCosREAL4 ( REAL4 *out, const REAL4 *in, const UINT4 len );
 
-/** Compute \f$y = \exp(in)\f$ over single-precision vectors \c out, \c in with \c len elements */
-int XLALVectorExpf ( REAL4 *out, const REAL4 *in, const UINT4 len );
+/** Compute \f$y = \exp(in)\f$ over REAL4 vectors \c out, \c in with \c len elements */
+int XLALVectorExpREAL4 ( REAL4 *out, const REAL4 *in, const UINT4 len );
 
-/** Compute \f$y = \log(in)\f$ over single-precision vectors \c out, \c in with \c len elements */
-int XLALVectorLogf ( REAL4 *out, const REAL4 *in, const UINT4 len );
+/** Compute \f$y = \log(in)\f$ over REAL4 vectors \c out, \c in with \c len elements */
+int XLALVectorLogREAL4 ( REAL4 *out, const REAL4 *in, const UINT4 len );
 
-/** Compute \f$y_1 = \sin(in), out_2 = \cos(in)\f$ over single-precision vectors \c out1, \c out2, \c in with \c len elements */
-int XLALVectorSinCosf ( REAL4 *out1, REAL4 *out2, const REAL4 *in, const UINT4 len );
+/** Compute \f$y_1 = \sin(in), out_2 = \cos(in)\f$ over REAL4 vectors \c out1, \c out2, \c in with \c len elements */
+int XLALVectorSinCosREAL4 ( REAL4 *out1, REAL4 *out2, const REAL4 *in, const UINT4 len );
 
-/** Compute \f$y_1 = \sin(2\pi in), out_2 = \cos(2\pi in)\f$ over single-precision vectors \c out1, \c out2, \c in with \c len elements */
-int XLALVectorSinCosf2PI ( REAL4 *out1, REAL4 *out2, const REAL4 *in, const UINT4 len );
+/** Compute \f$y_1 = \sin(2\pi in), out_2 = \cos(2\pi in)\f$ over REAL4 vectors \c out1, \c out2, \c in with \c len elements */
+int XLALVectorSinCos2PiREAL4 ( REAL4 *out1, REAL4 *out2, const REAL4 *in, const UINT4 len );
 
 /** @} */
 

@@ -546,7 +546,7 @@ INT4 makeTemplateGaussians2(TwoSpectTemplate *output, REAL8 offset, REAL8 P, REA
          }
          UINT4 truncationLength = 1;
          while (truncationLength<omegapr_squared->length && exp_neg_sigma_sq_times_omega_pr_sq->data[truncationLength]>-88.0) truncationLength++;
-         XLAL_CHECK( XLALVectorExpf(exp_neg_sigma_sq_times_omega_pr_sq->data, exp_neg_sigma_sq_times_omega_pr_sq->data, truncationLength) == XLAL_SUCCESS, XLAL_EFUNC );
+         XLAL_CHECK( XLALVectorExpREAL4(exp_neg_sigma_sq_times_omega_pr_sq->data, exp_neg_sigma_sq_times_omega_pr_sq->data, truncationLength) == XLAL_SUCCESS, XLAL_EFUNC );
 
          //Compute phi_actual*fpr
          if (vectormathflag==1) XLAL_CHECK( truncated_sseScaleREAL4Vector(phi_times_fpr, fpr, phi_actual->data[ii], truncationLength) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -556,7 +556,7 @@ INT4 makeTemplateGaussians2(TwoSpectTemplate *output, REAL8 offset, REAL8 P, REA
          INT4 maxindex = max_index_in_range((REAL4Vector*)phi_times_fpr, 0, truncationLength-1);
          if (phi_times_fpr->data[maxindex]<=2.147483647e9) {
             //Compute cos(2*pi*phi_actual*fpr) using LUT and SSE
-            XLAL_CHECK( XLALVectorSinCosf2PI(sin_phi_times_omega_pr->data, cos_phi_times_omega_pr->data, phi_times_fpr->data, truncationLength) == XLAL_SUCCESS, XLAL_EFUNC );
+            XLAL_CHECK( XLALVectorSinCos2PiREAL4(sin_phi_times_omega_pr->data, cos_phi_times_omega_pr->data, phi_times_fpr->data, truncationLength) == XLAL_SUCCESS, XLAL_EFUNC );
          } else {
             //Compute cos(2*pi*phi_actual*fpr) without using LUT
             for (UINT4 jj=0; jj<truncationLength; jj++) cos_phi_times_omega_pr->data[jj] = cosf((REAL4)LAL_TWOPI*phi_times_fpr->data[jj]);
@@ -831,17 +831,17 @@ INT4 makeTemplate2(TwoSpectTemplate *output, REAL8 offset, REAL8 P, REAL8 deltaf
    for (UINT4 ii=0; ii<numffts; ii++) t->data[ii] = 0.5*Tsft*(ii+1); //Assumed 50% overlapping SFTs
    if (vectormathflag==1) {
       XLAL_CHECK( sseScaleREAL4Vector(t, t, periodf) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK( XLALVectorSinCosf2PI(sigbin_sin2PiPeriodfT->data, cos2PiPeriodfT->data, t->data, t->length) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( XLALVectorSinCos2PiREAL4(sigbin_sin2PiPeriodfT->data, cos2PiPeriodfT->data, t->data, t->length) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK( sseScaleREAL4Vector(sigbin_sin2PiPeriodfT, sigbin_sin2PiPeriodfT, binamplitude) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK( sseAddScalarToREAL4Vector(sigbin_sin2PiPeriodfT, sigbin_sin2PiPeriodfT, offset) == XLAL_SUCCESS, XLAL_EFUNC );
    } else if (vectormathflag==2) {
       XLAL_CHECK( avxScaleREAL4Vector(t, t, periodf) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK( XLALVectorSinCosf2PI(sigbin_sin2PiPeriodfT->data, cos2PiPeriodfT->data, t->data, t->length) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( XLALVectorSinCos2PiREAL4(sigbin_sin2PiPeriodfT->data, cos2PiPeriodfT->data, t->data, t->length) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK( avxScaleREAL4Vector(sigbin_sin2PiPeriodfT, sigbin_sin2PiPeriodfT, binamplitude) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK( avxAddScalarToREAL4Vector(sigbin_sin2PiPeriodfT, sigbin_sin2PiPeriodfT, offset) == XLAL_SUCCESS, XLAL_EFUNC );
    } else {
       for (UINT4 ii=0; ii<numffts; ii++) t->data[ii] *= periodf;
-      XLAL_CHECK( XLALVectorSinCosf2PI(sigbin_sin2PiPeriodfT->data, cos2PiPeriodfT->data, t->data, t->length) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( XLALVectorSinCos2PiREAL4(sigbin_sin2PiPeriodfT->data, cos2PiPeriodfT->data, t->data, t->length) == XLAL_SUCCESS, XLAL_EFUNC );
       for (UINT4 ii=0; ii<numffts; ii++) {
          sigbin_sin2PiPeriodfT->data[ii] *= binamplitude;
          sigbin_sin2PiPeriodfT->data[ii] += offset;

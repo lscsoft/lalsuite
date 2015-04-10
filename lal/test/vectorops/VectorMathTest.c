@@ -142,19 +142,19 @@ main ( int argc, char *argv[] )
   }
   abstol = 2e-7, reltol = 1e-5;
   // ==================== SINF() ====================
-  BENCH_VECTORMATH_FUNCF_1T1(Sinf,abstol,reltol);
+  BENCH_VECTORMATH_FUNCF_1T1(SinREAL4,abstol,reltol);
   XLALPrintInfo ("\n");
 
   // ==================== COSF() ====================
-  BENCH_VECTORMATH_FUNCF_1T1(Cosf,abstol,reltol);
+  BENCH_VECTORMATH_FUNCF_1T1(CosREAL4,abstol,reltol);
   XLALPrintInfo ("\n");
 
   // ==================== SINCOSF() ====================
-  BENCH_VECTORMATH_FUNCF_1T2(SinCosf,abstol,reltol);
+  BENCH_VECTORMATH_FUNCF_1T2(SinCosREAL4,abstol,reltol);
   XLALPrintInfo ("\n");
 
   // ==================== SINCOSF(2PI*x) ====================
-  BENCH_VECTORMATH_FUNCF_1T2(SinCosf2PI,abstol,reltol);
+  BENCH_VECTORMATH_FUNCF_1T2(SinCos2PiREAL4,abstol,reltol);
   XLALPrintInfo ("\n");
 
   // ==================== EXPF() ====================
@@ -165,7 +165,7 @@ main ( int argc, char *argv[] )
   }
   abstol = 3e-3, reltol = 2e-7;
 
-  BENCH_VECTORMATH_FUNCF_1T1(Expf,abstol,reltol);
+  BENCH_VECTORMATH_FUNCF_1T1(ExpREAL4,abstol,reltol);
   XLALPrintInfo ("\n");
 
   // ==================== LOGF() ====================
@@ -176,7 +176,7 @@ main ( int argc, char *argv[] )
   } // for i < Ntrials
   abstol = 2e-6, reltol = 2e-7;
 
-  BENCH_VECTORMATH_FUNCF_1T1(Logf,abstol,reltol);
+  BENCH_VECTORMATH_FUNCF_1T1(LogREAL4,abstol,reltol);
   XLALPrintInfo ("\n");
 
   // ---------- clean up memory ----------
