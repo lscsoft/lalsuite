@@ -116,7 +116,7 @@ if usertag:
 classifiersD, mla, ovl = reed.config_to_classifiersD( config )
 
 ### get combiners information and add these to classifiersD
-combinersD, referenced_classifiers = config_to_combinersD( config )
+combinersD, referenced_classifiers = reed.config_to_combinersD( config )
 for combiner, value in combinersD.items():
     classifiersD[combiner] = value
 
@@ -158,7 +158,7 @@ cluster_key = config.get('calibration', 'cluster_key')
 cluster_win = config.getfloat('calibration', 'cluster_win')
 
 kde_nsamples = config.getint('calibration','kde_num_samples')
-kde = np.linsapce(0, 1, kde_nsamples ) ### uniformly spaced ranks used to sample kde
+kde = np.linspace(0, 1, kde_nsamples ) ### uniformly spaced ranks used to sample kde
 
 #========================
 # data discovery
@@ -385,8 +385,8 @@ while gpsstart < gpsstop:
         r, c, g = urocs[classifier] 
         dc, dg = reed.rcg_to_diff( c, g ) ### get the numbers at each rank
 
-        kde_cln = rsp.kde_pwg( kde, r, dc ) ### compute kde estimate
-        kde_gch = rsp.kde_pwg( kde, r, dg )
+        kde_cln = reed.kde_pwg( kde, r, dc ) ### compute kde estimate
+        kde_gch = reed.kde_pwg( kde, r, dg )
 
         ### write kde points to file
         kde_cln_name = reed.kdename(output_dir, classifier, ifo, "_cln%s"%usertag, gpsstart-lookback, lookback+stride)
@@ -442,11 +442,11 @@ while gpsstart < gpsstop:
 
             ### check point estimate calibration
             _, deadtimes, statedFAPs = calibration.check_calibration(idqsegs, times, faps, opts.FAPthr) 
-            errs = np.array([ d/F - 1.0 for d, F in zip(deadtimes, statedFAPs) if d or F ])
+            errs = np.array([ d/F - 1.0 for d, F in zip(deadtimes, statedFAPs) if F ])
 
             ### check UL estimate calibration
             _, deadtimesUL, statedFAPsUL = calibration.check_calibration(idqsegs, times, fapsUL, opts.FAPthr)
-            errsUL = np.array([ d/F - 1.0 for d, F in zip(deadtimesUL, statedFAPs) if d or F ])
+            errsUL = np.array([ d/F - 1.0 for d, F in zip(deadtimesUL, statedFAPs) if F ])
 
             calib_check = reed.calib_check(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
             logger.info('  writing %s'%calib_check)            

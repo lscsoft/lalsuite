@@ -49,6 +49,7 @@ from laldetchar.idq import ovl
 from laldetchar.idq import auxmvc_utils
 from laldetchar.idq import auxmvc
 from laldetchar.idq import idq_tables
+from laldetchar.idq import pdf_estimation as pdf_e
 
 from laldetchar import git_version
 
@@ -127,6 +128,9 @@ def submit_command(
 #===================================================================================================
 
 def config_to_combinersD( config ):
+    if not config.has_option('general','combiners'):
+        return {}, []
+
     combiners = sorted(set(config.get('general', 'combiners').split()))
     classifiers = sorted(set(config.get('general', 'classifiers').split()))
     for classifier in classifiers:
@@ -369,7 +373,7 @@ def extract_calib_ranges(urocs):
     return [extract_calibration_range(uroc) for uroc in urocs]
 
 def extract_calib_range(uroc):
-    return "%d_%d"%extract_start_stop( uroc, suffix=".uroc" )
+    return "%d_%d"%tuple(extract_start_stop( uroc, suffix=".uroc" ))
 #    calib = uroc.split("/")[-1].split("-")[-3].split("_")[-1]
 #    return calib
 
@@ -377,7 +381,7 @@ def extract_kde_ranges( kde_names ):
     return [extract_kde_range( kde_name ) for kde_name in kde_names ]
 
 def extract_kde_range( kde_name ):
-    return "%d_%d"%extract_start_stop( kde_name, suffix=".npy.gz" )
+    return "%d_%d"%tuple(extract_start_stop( kde_name, suffix=".npy.gz" ))
 
 def best_range(t, ranges):
     """
@@ -735,8 +739,9 @@ def sort_output( output, key ):
         return output
 
     out.sort( key=lambda l: l[0] )
+    out = numpy.array(out)
     for ind, column in enumerate(columns):
-        output[column] = out[:,1+ind]
+        output[column] = list(out[:,1+ind])
 
     return output
 
@@ -1033,10 +1038,10 @@ def kde_pwg(eval, r, ds, scale=0.1, s=0.01):
     for R, dS in zip(r, ds):
         observ += [R]*dS
 
-    if np.sum(ds):
+    if numpy.sum(ds):
         return pdf_e.point_wise_gaussian_kde(eval, observ, scale=scale, s=s)
     else:
-        return np.ones_like(eval)
+        return numpy.ones_like(eval)
 
 def kde_to_ckde( s ):
     c = numpy.zeros_like(s)

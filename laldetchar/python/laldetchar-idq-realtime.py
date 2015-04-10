@@ -152,7 +152,7 @@ classifiersD, mla, ovl = reed.config_to_classifiersD( config )
 classifiers = sorted(classifiersD.keys())
 
 ### get combiners information and DO NOT add this to classifiersD, we treat them separately!
-combinersD, referenced_classifiers = config_to_combinersD( config )
+combinersD, referenced_classifiers = reed.config_to_combinersD( config )
 combiners = sorted(combinersD.keys())
 
 if mla:
@@ -273,7 +273,7 @@ if calibration_lookback != "infinity":
 calibration_FAPthrs = [float(l) for l in config.get('calibration','FAP').split()]
 
 ### cache for uroc files
-calibration_cache = dict( (classifier, reed.Cachefile(reed.cache(calibrationdir, classifier, tag='_calibration%s'%usertag))) for classifier in classifiers )
+calibration_cache = dict( (classifier, reed.Cachefile(reed.cache(calibrationdir, classifier, tag='_calibration%s'%usertag))) for classifier in classifiers+combiners )
 for cache in calibration_cache.values():
     cache.time = 0
 
@@ -282,7 +282,7 @@ kde_cache = dict( (classifier, reed.Cachefile(reed.cache(calibrationdir, classif
 for cache in kde_cache.values():
     cache.time = 0
 
-kdeD = dict( (classifier,{}) for classifier in classifier ) ### used to store kde information read in from files within kde_cache
+kdeD = dict( (classifier,{}) for classifier in classifiers ) ### used to store kde information read in from files within kde_cache
 
 calibration_script = config.get('calibration', 'executable')
 
@@ -305,12 +305,12 @@ global_tstart = t
 ### calibration jobs allow us to map those ranks into FAP measurements
 
 initial_training = False
-initial_calibration = False
-
 for classifier in classifiers:
     if not initial_training:
         initial_training =  train_cache[classifier].is_empty()
 
+initial_calibration = False
+for classifier in classifiers+combiners:
     if not initial_calibration:		
         initial_calibration = calibration_cache[classifier].is_empty()
 
@@ -833,30 +833,29 @@ while t  < opts.endgps:
             dat = dats[classifier]
             logger.info('reading in data from %s'%dat)
             ### we sort according to GPS so everything is ordered in the same way!
-            outputs[classifier] = reed.sort_output( reed.slim_load_datfile( dat, skip_lines=0, columns=samples_header ), 'GPS' )
+            outputs[classifier] = reed.sort_output( reed.slim_load_datfile( dat, skip_lines=0, columns=samples_header+['rank'] ), 'GPS' )
 
             rnk = rnks[classifier]
             logger.info('reading in data from %s'%rnk)
-            ts[classifier] = np.load(event.gzopen(rnk, 'r'))
+            ts[classifier] = numpy.load(event.gzopen(rnk, 'r'))
 
             ### check kde_caches
+            cache = kde_cache[classifier]
             if cache.was_modified():
                 kde_cln_name, kde_gch_name = cache.tail(nlines=2)
 
                 kde_range = reed.extract_kde_range( kde_cln_name )
 
-                kde, kde_cln = np.load(gzopen(kde_cln_name, 'r'))
-                _  , kde_gch = np.load(gzopen(kde_gch_name, 'r'))
+                kde, kde_cln = numpy.load(event.gzopen(kde_cln_name, 'r'))
+                _  , kde_gch = numpy.load(event.gzopen(kde_gch_name, 'r'))
 
-                ### if we're combining cdfs, we integrate here
-                if c_pofg:
-                    kde_gch = reed.kde_to_ckde( kde_gch )
-                if pofc.endswith('cdf'):
-                    kde_cln = reed.kde_to_ckde( kde_cln )
-
+                ### store kdes
                 kdeD[classifier]['kde'] = kde
-                kdeD[classifier][classifier]['kde_cln'] = kde_cln
+
+                kdeD[classifier]['kde_cln'] = kde_cln
+                kdeD[classifier]['ckde_cln'] = reed.kde_to_ckde( kde_cln )
                 kdeD[classifier]['kde_gch'] = kde_gch
+                kdeD[classifier]['ckde_gch'] = reed.kde_to_ckde( kde_gch )
 
                 kdeD[classifier]['kde_cln_name'] = kde_cln_name
                 kdeD[classifier]['kde_gch_name'] = kde_gch_name
@@ -866,21 +865,18 @@ while t  < opts.endgps:
                 logger.info('using newest %s kde data : %s, %s'%(classifier, kde_cln_name, kde_gch_name))
                 cache.set_time()
 
-        n_samples = len(outputs[classifier]) ### assumes all outputs have the same length, which they should
+        n_samples = len(outputs[classifier]['rank']) ### assumes all outputs have the same length, which they should
 
         ### iterate over each combiner
         for combiner in combiners:
             logger.info('Begin: %s cycle'%combiner)
 
-            flavor = combinersD[combiner]['flavor']
+            flavor = combinersD[combiner]['flavor'] ### should always be None, but we pull the reference nonetheless
 
-            these_classifiers = combinersD[classifier]['classifiers'] ### the classifiers this combiner combines
-
-            c_pofg = classifiersD['joint_p(g)'].endswith("cdf") ### check to see whether we use pdf or cdf
-            c_pofc = classifiersD['joint_p(c)'].endswith("cdf")
+            these_classifiers = combinersD[combiner]['classifiers'] ### the classifiers this combiner combines
 
             ### check for new calibration data
-            cache = calibration_cache[classifier]
+            cache = calibration_cache[combiner]
             if cache.was_modified():
                 uroc = cache.tail(nlines=1)[0]
                 calib_range = reed.extract_calib_range(uroc)
@@ -900,7 +896,7 @@ while t  < opts.endgps:
                 fapmap = combinersD[combiner]['fapmap']
 
             ### compute filenames
-            trained_range = "__".joint( ["%s-%s"%(classifier, kdeD[classifier]['kde_range']) for classifier in these_classifiers] ) ### string together all kde ranges
+            trained_range = "__".join( ["%s-%s"%(classifier, kdeD[classifier]['kde_range']) for classifier in these_classifiers] ) ### string together all kde ranges
              
             dat = reed.dat(this_output_dir, combiner, ifo, trained_range, usertag, t, stride)
 
@@ -916,6 +912,9 @@ while t  < opts.endgps:
             #
             #===========================================================================================
 
+            c_pofg = combinersD[combiner]['joint_p(g)'].endswith("cdf") ### check to see whether we use pdf or cdf
+            c_pofc = combinersD[combiner]['joint_p(c)'].endswith("cdf")
+
             combinersD[combiner]['columns']
             output = dict( [(c,[]) for c in samples_header+combinersD[combiner]['columns']] ) 
 
@@ -926,11 +925,18 @@ while t  < opts.endgps:
             ts_pofc_joint = []
 
             for classifier in these_classifiers:
-            
+                logger.info('  extracting data from %s'%classifier)
+
                 ### pull out kde data for this classifier
                 kde = kdeD[classifier]['kde']
-                kde_cln = kdeD[classifier]['kde_cln']
-                kde_gch = kdeD[classifier]['kde_gch']
+                if c_pofc:
+                    kde_cln = kdeD[classifier]['ckde_cln']
+                else:   
+                    kde_cln = kdeD[classifier]['kde_cln']
+                if c_pofg:
+                    kde_gch = kdeD[classifier]['ckde_gch']
+                else:
+                    kde_gch = kdeD[classifier]['kde_gch']
 
                 #========
                 # dat files
@@ -939,8 +945,8 @@ while t  < opts.endgps:
                 ranks = [outputs[classifier]['rank'][i] for i in xrange(n_samples)]
                 
                 ### map ranks into p(g), p(c)
-                pofg = numpy.interpolate( ranks, kde, kde_gch )
-                pofc = numpy.interpolate( ranks, kde, kde_cln )
+                pofg = numpy.interp( ranks, kde, kde_gch )
+                pofc = numpy.interp( ranks, kde, kde_cln )
 
                 ### fill out output dictionary
                 output["%s_rank"%classifier] = ranks
@@ -960,61 +966,62 @@ while t  < opts.endgps:
                 # rnk files
                 #========
                 ranks = ts[classifier]
-                pofg = np.interpolate( ranks, kde, kde_gch )
-                pofc = np.interpolate( ranks, kde, kde_cln )
+                pofg = numpy.interp( ranks, kde, kde_gch )
+                pofc = numpy.interp( ranks, kde, kde_cln )
 
                 ts_pofg_joint.append( pofg )
                 ts_pofc_joint.append( pofc )
 
             ### compute joint probabilities
+            logger.info('  combining classifier probability distributions')
             if combinersD[combiner]['joint_p(g)'][:3] == "max":
                 pofg_joint = numpy.max( pofg_joint, axis=0 )
-                ts_pofg_joint = np.max( ts_pofg_joint, axis=0 )
+                ts_pofg_joint = numpy.max( ts_pofg_joint, axis=0 )
             elif combinersD[combiner]['joint_p(g)'][:4] == "prod":
                 pofg_joint = numpy.prod( pofg_joint, axis=0 )
-                ts_pofg_joint = np.prod( ts_pofg_joint, axis=0 )
+                ts_pofg_joint = numpy.prod( ts_pofg_joint, axis=0 )
             else:
                 raise ValueError("combiner=%s joint_p(g)=%s not understood"%(combiner, combinersD[combiner]['joint_p(g)']))
 
             if combinersD[combiner]['joint_p(c)'][:3] == "max":
                 pofc_joint = numpy.max( pofc_joint, axis=0 )
-                ts_pofc_joint = np.max( ts_pofc_joint, axis=0 )
-            elif combinersD[combiner]['joint_p(c)'][:3] == "prod":
+                ts_pofc_joint = numpy.max( ts_pofc_joint, axis=0 )
+            elif combinersD[combiner]['joint_p(c)'][:4] == "prod":
                 pofc_joint = numpy.prod( pofc_joint, axis=0 )
-                ts_pofc_joint = np.prod( ts_pofc_joint, axis=0 )
+                ts_pofc_joint = numpy.prod( ts_pofc_joint, axis=0 )
             else:
                 raise ValueError("combiner=%s joint_p(c)=%s not understood"%(combiner, combinersD[combiner]['joint_p(c)']))
 
             ### compute combined statistics
+            logger.info('  computing approximation to joint likelihood ratio')
             L_joint = pofg_joint / pofc_joint ### compute likelihood
             r_joint = L_joint / ( 1 + L_joint ) ### compute rank
 
             ### put them into output
             output['rank'] = r_joint
-            ourput['Likelihood'] = L_joint
+            output['Likelihood'] = L_joint
 
             ### write datfile
             logger.info('  writing %s'%dat)
             reed.output_to_datfile( output, dat )
            
             ### create timeseries from datfile and save as gzip numpy array, there are boundary effects here
-            logger.info('  Begin: generating %s rank timeseries -> %s'%(classifier, rnknp))
+            logger.info('  writing %s'%(rnknp))
             ts_L_joint = ts_pofg_joint / ts_pofc_joint
             ts_r_joint = ts_L_joint / (1 + ts_L_joint)
             numpy.save(event.gzopen(rnknp, 'w'), ts_r_joint)
-            logger.info('  Done: generating %s rank timeseries'%classifier)
 
             ### create FAP timeseries
-            logger.info('  Begin: generating %s FAP time-series -> %s'%(classifier, fapnp))
+            logger.info('  Begin: generating %s FAP time-series -> %s'%(combiner, fapnp))
 
             fap_ts = fapmap(ts_r_joint) ### MLE estimate of FAP (interpolated)
             fapUL_ts = fapmap.ul(ts_r_joint, conf=0.99) ### upper limit with FAPconf (around interpolated points)
                                                         ### we hard-code this intentionally to make it difficult to change/mess up
             numpy.save(event.gzopen(fapnp, 'w'), (fap_ts, fapUL_ts) )
-            logger.info('  Done: generating %s FAP time-series'%classifier)
+            logger.info('  Done: generating %s FAP time-series'%combiner)
 
             ### convert datfiles to xml tables
-            logger.info('  Begin: converting %s dat file into xml files'%classifier)
+            logger.info('  Begin: converting %s dat file into xml files'%combiner)
             logger.info('    converting %s to xml tables' % dat)
 
             ### read dafile -> xml docs

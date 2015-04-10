@@ -166,7 +166,7 @@ cln_kwsignif_thr = config.getfloat('realtime', 'clean_threshold')
 classifiersD, mla, ovl = reed.config_to_classifiersD( config )
 
 ### get combiners information and add these to classifiersD
-combinersD, referenced_classifiers = config_to_combinersD( config )
+combinersD, referenced_classifiers = reed.config_to_combinersD( config )
 for combiner, value in combinersD.items():
     classifiersD[combiner] = value
 
@@ -683,11 +683,11 @@ while gpsstart < gpsstop:
 
         ### check point estimate calibration
         _, deadtimes, statedFAPs = calibration.check_calibration(idqsegs, times, faps, opts.FAPthr)
-        errs = np.array([ d/F - 1.0 for d, F in zip(deadtimes, statedFAPs) if d or F ])
+        errs = np.array([ d/F - 1.0 for d, F in zip(deadtimes, statedFAPs) if F ])
 
         ### check UL estimate calibration
         _, deadtimesUL, statedFAPsUL = calibration.check_calibration(idqsegs, times, fapsUL, opts.FAPthr)
-        errsUL = np.array([ d/F - 1.0 for d, F in zip(deadtimesUL, statedFAPs) if d or F ])
+        errsUL = np.array([ d/F - 1.0 for d, F in zip(deadtimesUL, statedFAPs) if F ])
 
         ### write output file
         calib_check = reed.calib_check(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
@@ -1566,8 +1566,6 @@ segment lists -> a form to request segments?
         logger.info('updating index.html for %s'%summarydir)
 
         title = "idq%s"%usertag
-        header = ""
-        footer = "lalapps_tconver reed.nowgps()? process params for last job that updated this?"
 
         index = markup.page()
         index.init( title=title, header=header, footer=footer )

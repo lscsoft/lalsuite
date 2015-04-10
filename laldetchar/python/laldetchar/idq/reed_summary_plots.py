@@ -38,7 +38,6 @@ from matplotlib import pyplot as plt
 
 plt.rcParams.update( {'text.usetex':True} )
 
-from laldetchar.idq import pdf_estimation as pdf_e
 from laldetchar.idq import ovl
 from laldetchar.idq import reed
 
