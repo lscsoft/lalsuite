@@ -158,7 +158,7 @@ def parse_command_line():
     parser.add_option("--convergence-threshold", metavar="N", help="Set the criterion for convergence of the stochastic bank. The code terminates when there are N rejected proposals for each accepted proposal, averaged over the last ten acceptances. Default 1000.", type="int", default=1000)
     parser.add_option("--cache-waveforms", default = False, action="store_true", help="A given waveform in the template bank will be used many times throughout the bank generation process. You can save a considerable amount of CPU by caching the waveform from the first time it is generated; however, do so only if you are sure that storing the waveforms in memory will not overload the system memory.")
     parser.add_option("--neighborhood-size", metavar="N", default = 0.25, type="float", help="Specify the window size in seconds to define \"nearby\" templates used to compute the match against each proposed template. The neighborhood is chosen symmetric about the proposed template; \"nearby\" is defined using the option --neighborhood-type. The default value of 0.25 is *not a guarantee of performance*. Choosing the neighborhood too small will lead to larger banks (but also higher bank coverage).")
-    parser.add_option("--neighborhood-param", default="tau0", choices=["tau0"], help="Choose how the neighborhood is sorted for match calculations. TODO: Implement duration neighborhoods.")
+    parser.add_option("--neighborhood-param", default="tau0", choices=["tau0","dur"], help="Choose how the neighborhood is sorted for match calculations. TODO: Implement duration neighborhoods.")
 
 
     #
@@ -255,7 +255,7 @@ else:
 if opts.bank_seed is None:
     # seed the process with an empty bank
     # the first proposal will always be accepted
-    bank = Bank(waveform, noise_model, opts.flow, opts.use_metric, opts.cache_waveforms, opts.neighborhood_size)
+    bank = Bank(waveform, noise_model, opts.flow, opts.use_metric, opts.cache_waveforms, opts.neighborhood_size, opts.neighborhood_param)
 else:
     # seed bank with input bank. we do not prune the bank
     # for overcoverage, but take it as is
@@ -263,7 +263,7 @@ else:
         print>>sys.stdout,"Seeding the template bank..."
     tmpdoc = utils.load_filename(opts.bank_seed, contenthandler=ContentHandler)
     sngl_inspiral = table.get_table(tmpdoc, lsctables.SnglInspiralTable.tableName)
-    bank = Bank.from_sngls(sngl_inspiral, waveform, noise_model, opts.flow, opts.use_metric, opts.cache_waveforms, opts.neighborhood_size)
+    bank = Bank.from_sngls(sngl_inspiral, waveform, noise_model, opts.flow, opts.use_metric, opts.cache_waveforms, opts.neighborhood_size, opts.neighborhood_param)
 
     tmpdoc.unlink()
     del sngl_inspiral, tmpdoc

@@ -29,31 +29,32 @@ from lal import PI, MTSUN_SI
 from lalinspiral import CreateSBankWorkspaceCache
 from lalinspiral.sbank.psds import get_neighborhood_ASD, get_neighborhood_PSD
 
-class lazy_mchirps(object):
-    __slots__ = ("seq",)
-
-    def __init__(self, seq):
+class lazy_nhoods(object):
+    __slots__ = ("seq", "nhood_param")
+    def __init__(self, seq, nhood_param="tau0"):
         self.seq = seq
+        self.nhood_param = nhood_param
 
-    def __getitem__(self, ind):
-        return self.seq[ind]._mchirp
+    def __getitem__(self, idx):
+        return getattr(self.seq[idx], self.nhood_param)
 
     def __len__(self):
         return len(self.seq)
 
 class Bank(object):
 
-    def __init__(self, tmplt_class, noise_model, flow, use_metric=False, cache_waveforms=False, nhood_size=1.0):
+    def __init__(self, tmplt_class, noise_model, flow, use_metric=False, cache_waveforms=False, nhood_size=1.0, nhood_param="tau0"):
         self.tmplt_class = tmplt_class
         self.noise_model = noise_model
         self.flow = flow
         self.use_metric = use_metric
         self.cache_waveforms = cache_waveforms
         self.nhood_size = nhood_size
+        self.nhood_param = "_" + nhood_param
 
         self._templates = []
         self._nmatch = 0
-        self._mchirps = lazy_mchirps(self._templates)
+        self._nhoods = lazy_nhoods(self._templates, self.nhood_param)
         if use_metric:
             self._moments = {}
             self.compute_match = self._metric_match
@@ -71,7 +72,7 @@ class Bank(object):
         return repr(self._templates)
 
     def insort(self, new):
-        ind = bisect.bisect_left(self._mchirps, new._mchirp)
+        ind = bisect.bisect_left(self._nhoods, getattr(new, self.nhood_param))
         self._templates.insert(ind, new)
         new.finalize_as_template()
 
@@ -83,7 +84,7 @@ class Bank(object):
         if len(cls_args) > 1:
             return ValueError("bank parameters do not match")
         merged = cls(*cls_args)
-        merged._templates[:] = list(inorder(banks, key=attrgetter("_mchirp")))
+        merged._templates[:] = list(inorder(banks, key=attrgetter(bank.nhood_param)))
         merged._nmatch = sum(b._nmatch for b in banks)
         return merged
 
@@ -91,7 +92,7 @@ class Bank(object):
     def from_sngls(cls, sngls, tmplt_class, *args, **kwargs):
         bank = cls(*((tmplt_class,) + args), **kwargs)
         bank._templates.extend([tmplt_class.from_sngl(s, bank=bank) for s in sngls])
-        bank._templates.sort(key=attrgetter("_mchirp"))
+        bank._templates.sort(key=attrgetter(bank.nhood_param))
         # Mark all templates as seed points
         for template in bank._templates:
             template.is_seed_point = True
@@ -101,7 +102,6 @@ class Bank(object):
     def from_sims(cls, sims, tmplt_class, *args):
         bank = cls(*((tmplt_class,) + args))
         bank._templates.extend([tmplt_class.from_sim(s, bank=bank) for s in sims])
-        bank._templates.sort(key=attrgetter("_mchirp"))
         return bank
 
     def _metric_match(self, tmplt, proposal, f, **kwargs):
@@ -119,7 +119,8 @@ class Bank(object):
         greater than min_match.
         """
         # find templates in the bank "near" this tmplt
-        low, high = _find_neighborhood(self._mchirps, proposal._mchirp, self.flow, self.nhood_size)
+        prop_nhd = getattr(proposal, self.nhood_param)
+        low, high = _find_neighborhood(self._nhoods, prop_nhd, self.nhood_size)
         tmpbank = self._templates[low:high]
         if not tmpbank: return False
 
@@ -127,8 +128,7 @@ class Bank(object):
         # NB: This sort comes up as a dominating cost if you profile,
         # but it cuts the number of match evaluations by 80%, so turns out
         # to be worth it even for metric match, where matches are cheap.
-        pm = proposal._mchirp
-        tmpbank.sort(key=lambda b: abs(b._mchirp - pm))
+        tmpbank.sort(key=lambda b: abs( getattr(b, self.nhood_param) - prop_nhd))
 
         # set parameters of match calculation that are optimized for this block
         df, PSD = get_neighborhood_PSD(tmpbank + [proposal], self.flow, self.noise_model)
@@ -147,8 +147,9 @@ class Bank(object):
         return match, self._templates[best_tmplt_ind]
 
     def argmax_match(self, proposal):
-        # find templates near the proposal
-        low, high = _find_neighborhood(self._mchirps, proposal._mchirp, self.flow, self.nhood_size)
+        # find templates in the bank "near" this tmplt
+        prop_nhd = getattr(proposal, self.nhood_param)
+        low, high = _find_neighborhood(self._nhoods, prop_nhd, self.nhood_size)
         tmpbank = self._templates[low:high]
         if not tmpbank: return (0., 0)
 
@@ -169,15 +170,12 @@ class Bank(object):
             tmplt.clear()
 
 
-def _find_neighborhood(tmplt_mcs, mc0, flow, dt0=0.25):
+def _find_neighborhood(tmplt_locs, prop_loc, nhood_size=0.25):
     """
     Return the min and max indices of templates that cover the given
-    chirp mass (mc0) within a tau0 difference of dt0 (seconds).
-    tmplt_mcs should be a sequence of mchirp values in sorted order.
+    template at prop_loc within a parameter difference of nhood_size (seconds).
+    tmplt_locs should be a sequence of neighborhood values in sorted order.
     """
-    tau0 = 5. * mc0 * MTSUN_SI / (256 * (PI * flow * mc0 * MTSUN_SI)**(8./3))
-    low = mc0 * (1 - 0.6 * dt0 / tau0)  # Taylor expand mchirp = (tau0/A0)**-0.6
-    high = mc0 * (1 + 0.6 * dt0 / tau0)
-    low_ind = bisect.bisect_left(tmplt_mcs, low)
-    high_ind = bisect.bisect_right(tmplt_mcs, high)
+    low_ind = bisect.bisect_left(tmplt_locs, prop_loc - nhood_size)
+    high_ind = bisect.bisect_right(tmplt_locs, prop_loc + nhood_size)
     return low_ind, high_ind
