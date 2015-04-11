@@ -55,6 +55,7 @@ size_t LALInferenceTypeSize[] = {sizeof(INT4),
                                    sizeof(COMPLEX16),
                                    sizeof(gsl_matrix *),
                                    sizeof(REAL8Vector *),
+                                   sizeof(INT4Vector *),
                                    sizeof(UINT4Vector *),
                                    sizeof(COMPLEX16Vector *),
                                    sizeof(CHAR *),
@@ -179,7 +180,6 @@ INT4 LALInferenceGetVariableDimensionNonFixed(LALInferenceVariables *vars)
 {
   INT4 count=0;
   gsl_matrix *m=NULL;
-  UINT4Vector *v=NULL;
   REAL8Vector *v8=NULL;
   COMPLEX16Vector *v16=NULL;
   LALInferenceVariableItem *ptr = vars->head;
@@ -199,7 +199,14 @@ INT4 LALInferenceGetVariableDimensionNonFixed(LALInferenceVariables *vars)
         }
         else if(ptr->type == LALINFERENCE_UINT4Vector_t)
         {
+          UINT4Vector *v=NULL;
           v = *((UINT4Vector **)ptr->value);
+          count += (INT4)( v->length );
+        }
+        else if(ptr->type == LALINFERENCE_INT4Vector_t)
+        {
+          INT4Vector *v=NULL;
+          v = *((INT4Vector **)ptr->value);
           count += (INT4)( v->length );
         }
 	else if(ptr->type == LALINFERENCE_REAL8Vector_t)
@@ -276,6 +283,9 @@ void LALInferenceSetVariable(LALInferenceVariables * vars, const char * name, co
     break;
   case LALINFERENCE_COMPLEX16Vector_t:
     XLALDestroyCOMPLEX16Vector(*(COMPLEX16Vector **)item->value);
+    break;
+  case LALINFERENCE_INT4Vector_t:
+    XLALDestroyINT4Vector(*(INT4Vector **)item->value);
     break;
   case LALINFERENCE_UINT4Vector_t:
     XLALDestroyUINT4Vector(*(UINT4Vector **)item->value);
@@ -369,6 +379,9 @@ void LALInferenceRemoveVariable(LALInferenceVariables *vars,const char *name)
   case LALINFERENCE_REAL8Vector_t:
     XLALDestroyREAL8Vector(*(REAL8Vector **)this->value);
     break;
+  case LALINFERENCE_INT4Vector_t:
+    XLALDestroyINT4Vector(*(INT4Vector **)this->value);
+    break;
   case LALINFERENCE_UINT4Vector_t:
     XLALDestroyUINT4Vector(*(UINT4Vector **)this->value);
     break;
@@ -420,6 +433,7 @@ void LALInferenceClearVariables(LALInferenceVariables *vars)
   if(this) next=this->next;
   while(this){
     if(this->type==LALINFERENCE_gslMatrix_t) gsl_matrix_free(*(gsl_matrix **)this->value);
+    if(this->type==LALINFERENCE_INT4Vector_t) XLALDestroyINT4Vector(*(INT4Vector **)this->value);
     if(this->type==LALINFERENCE_UINT4Vector_t) XLALDestroyUINT4Vector(*(UINT4Vector **)this->value);
     if(this->type==LALINFERENCE_REAL8Vector_t) XLALDestroyREAL8Vector(*(REAL8Vector **)this->value);
     if(this->type==LALINFERENCE_COMPLEX16Vector_t) XLALDestroyCOMPLEX16Vector(*(COMPLEX16Vector **)this->value);
@@ -492,6 +506,15 @@ void LALInferenceCopyVariables(LALInferenceVariables *origin, LALInferenceVariab
             gsl_matrix *new=gsl_matrix_alloc(old->size1,old->size2);
             if(!new) XLAL_ERROR_VOID(XLAL_ENOMEM,"Unable to create %zux%zu matrix\n",old->size1,old->size2);
             gsl_matrix_memcpy(new,old);
+            LALInferenceAddVariable(target,ptr->name,(void *)&new,ptr->type,ptr->vary);
+            break;
+          }
+          case LALINFERENCE_INT4Vector_t:
+          {
+            INT4Vector *old=*(INT4Vector **)ptr->value;
+            INT4Vector *new=XLALCreateINT4Vector(old->length);
+            if(new) memcpy(new->data,old->data,new->length*sizeof(new->data[0]));
+            else XLAL_ERROR_VOID(XLAL_ENOMEM,"Unable to copy vector!\n");
             LALInferenceAddVariable(target,ptr->name,(void *)&new,ptr->type,ptr->vary);
             break;
           }
@@ -570,6 +593,8 @@ void LALInferencePrintVariableItem(char *out, LALInferenceVariableItem *ptr)
           break;
         case LALINFERENCE_UINT4Vector_t:
           sprintf(out, "<can't print vector>");
+        case LALINFERENCE_INT4Vector_t:
+          sprintf(out, "<can't print vector>");
         break;
         case LALINFERENCE_gslMatrix_t:
           sprintf(out, "<can't print matrix>");
@@ -618,6 +643,9 @@ void LALInferencePrintVariables(LALInferenceVariables *var)
         case LALINFERENCE_COMPLEX16_t:
           fprintf(stdout, "'COMPLEX16'");
           break;
+        case LALINFERENCE_INT4Vector_t:
+          fprintf(stdout, "'INT4Vector'");
+          break;
         case LALINFERENCE_UINT4Vector_t:
           fprintf(stdout, "'UINT4Vector'");
           break;
@@ -654,6 +682,11 @@ void LALInferencePrintVariables(LALInferenceVariables *var)
           fprintf(stdout, "%e + i*%e",
                  (REAL8) creal(*(COMPLEX16 *) ptr->value), (REAL8) cimag(*(COMPLEX16 *) ptr->value));
           break;
+        case LALINFERENCE_INT4Vector_t:
+          //fprintf(stdout,"%iD matrix", (int)((INT4Vector **)ptr->value)->size);
+          fprintf(stdout,"[");
+          fprintf(stdout,"%i]",(int)(*(INT4Vector **)ptr->value)->length);
+          break;
         case LALINFERENCE_UINT4Vector_t:
           //fprintf(stdout,"%iD matrix", (int)((UINT4Vector **)ptr->value)->size);
           fprintf(stdout,"[");
@@ -689,7 +722,6 @@ void LALInferencePrintVariables(LALInferenceVariables *var)
 void LALInferencePrintSample(FILE *fp,LALInferenceVariables *sample){
   UINT4 i;//,j;
   //gsl_matrix *m=NULL;
-  UINT4Vector *v=NULL;
   if(sample==NULL) return;
   LALInferenceVariableItem *ptr=sample->head;
   if(fp==NULL) return;
@@ -721,7 +753,13 @@ void LALInferencePrintSample(FILE *fp,LALInferenceVariables *sample){
       case LALINFERENCE_string_t:
         fprintf(fp, "%s", *((CHAR **)ptr->value));
         break;
+      case LALINFERENCE_INT4Vector_t:
+        INT4Vector *v=NULL;
+        v=*((INT4Vector **)ptr->value);
+        for(i=0;i<v->length;i++) fprintf(fp,"%"LAL_INT4_FORMAT" ",v->data[i]);
+        break;
       case LALINFERENCE_UINT4Vector_t:
+        UINT4Vector *v=NULL;
         v=*((UINT4Vector **)ptr->value);
         for(i=0;i<v->length;i++) fprintf(fp,"%"LAL_UINT4_FORMAT" ",v->data[i]);
         break;
@@ -751,7 +789,6 @@ void LALInferencePrintSample(FILE *fp,LALInferenceVariables *sample){
 void LALInferencePrintSampleNonFixed(FILE *fp,LALInferenceVariables *sample){
   UINT4 i;//,j;
   //gsl_matrix *m=NULL;
-  UINT4Vector *v=NULL;
 	if(sample==NULL) return;
 	LALInferenceVariableItem *ptr=sample->head;
 	if(fp==NULL) return;
@@ -781,7 +818,17 @@ void LALInferencePrintSampleNonFixed(FILE *fp,LALInferenceVariables *sample){
 					fprintf(fp, "%e + i*%e",
 							(REAL8) creal(*(COMPLEX16 *) ptr->value), (REAL8) cimag(*(COMPLEX16 *) ptr->value));
 					break;
+                case LALINFERENCE_INT4Vector_t:
+                    INT4Vector *v=NULL;
+                    v = *((INT4Vector **)ptr->value);
+                    for(i=0;i<v->length;i++)
+                    {
+                        fprintf(fp,"%11.7f",(REAL8)v->data[i]);
+                        if( i!=(INT4)(v->length-1) )fprintf(fp,"\t");
+                    }
+                    break;
                 case LALINFERENCE_UINT4Vector_t:
+                    UINT4Vector *v=NULL;
                     v = *((UINT4Vector **)ptr->value);
                     for(i=0;i<v->length;i++)
                     {
@@ -1196,7 +1243,6 @@ int LALInferenceFprintParameterHeaders(FILE *out, LALInferenceVariables *params)
   LALInferenceVariableItem *head = params->head;
   int i,j;
   gsl_matrix *matrix = NULL;
-  UINT4Vector *vector = NULL;
 
   while (head != NULL) {
       if(head->type==LALINFERENCE_gslMatrix_t)
@@ -1212,7 +1258,14 @@ int LALInferenceFprintParameterHeaders(FILE *out, LALInferenceVariables *params)
       }
       else if(head->type==LALINFERENCE_UINT4Vector_t)
       {
+        UINT4Vector *vector = NULL;
         vector = *((UINT4Vector **)head->value);
+        for(i=0; i<(int)vector->length; i++) fprintf(out, "%s%i\t", LALInferenceTranslateInternalToExternalParamName(head->name),i);
+      }
+      else if(head->type==LALINFERENCE_INT4Vector_t)
+      {
+        INT4Vector *vector = NULL;
+        vector = *((INT4Vector **)head->value);
         for(i=0; i<(int)vector->length; i++) fprintf(out, "%s%i\t", LALInferenceTranslateInternalToExternalParamName(head->name),i);
       }
       else fprintf(out, "%s\t", LALInferenceTranslateInternalToExternalParamName(head->name));
@@ -1226,7 +1279,6 @@ int LALInferenceFprintParameterNonFixedHeaders(FILE *out, LALInferenceVariables 
 
   int i;//,j;
   //gsl_matrix *matrix = NULL;
-  UINT4Vector *vector = NULL;
   while (head != NULL) {
     if (LALInferenceCheckVariableNonFixed(params, head->name)) {
       if(head->type==LALINFERENCE_gslMatrix_t)
@@ -1250,7 +1302,14 @@ int LALInferenceFprintParameterNonFixedHeaders(FILE *out, LALInferenceVariables 
       }
       else if(head->type==LALINFERENCE_UINT4Vector_t)
       {
+        UINT4Vector *vector = NULL;
         vector = *((UINT4Vector **)head->value);
+        for(i=0; i<(int)vector->length; i++) fprintf(out, "%s%i\t", LALInferenceTranslateInternalToExternalParamName(head->name),i);
+      }
+      else if(head->type==LALINFERENCE_INT4Vector_t)
+      {
+        INT4Vector *vector = NULL;
+        vector = *((INT4Vector **)head->value);
         for(i=0; i<(int)vector->length; i++) fprintf(out, "%s%i\t", LALInferenceTranslateInternalToExternalParamName(head->name),i);
       }
       else if(head->type==LALINFERENCE_REAL8Vector_t)
@@ -1365,6 +1424,20 @@ int LALInferenceCompareVariables(LALInferenceVariables *var1, LALInferenceVariab
               }
             break;
           }
+          case LALINFERENCE_INT4Vector_t:
+          {
+            INT4Vector *v1=ptr1->value,*v2=ptr2->value;
+            if(v1->length!=v2->length) result=1;
+            else
+              for(INT4 i=0;i<v1->length;i++)
+              {
+                if(v1->data[i]!=v2->data[i]){
+                  result=1;
+                  break;
+                }
+              }
+            break;
+          }
           default:
             XLAL_ERROR(XLAL_EFAILED, "Encountered unknown LALInferenceVariables type (entry: \"%s\").", ptr1->name);
         }
@@ -1447,7 +1520,6 @@ void LALInferenceArrayToBuffer(LALInferenceRunState *runState, REAL8** DEarray, 
 
 void LALInferenceCopyVariablesToArray(LALInferenceVariables *origin, REAL8 *target) {
   gsl_matrix *m = NULL; //for dealing with noise parameters
-  UINT4Vector *v = NULL; //for dealing with dimension parameters
   REAL8Vector *v8 = NULL;
   UINT4 j,k;
 
@@ -1473,10 +1545,31 @@ void LALInferenceCopyVariablesToArray(LALInferenceVariables *origin, REAL8 *targ
       }
       else if(ptr->type == LALINFERENCE_UINT4Vector_t)
       {
+        UINT4Vector *v = NULL;
         v = *(UINT4Vector **)ptr->value;
         for(j=0; j<v->length; j++)
         {
           target[p]=v->data[j];
+          p++;
+        }
+      }
+      else if(ptr->type == LALINFERENCE_INT4Vector_t)
+      {
+        INT4Vector *v = NULL;
+        v = *(INT4Vector **)ptr->value;
+        for(j=0; j<v->length; j++)
+        {
+          target[p]=v->data[j];
+          p++;
+        }
+      }
+      else if(ptr->type == LALINFERENCE_INT4Vector_t)
+      {
+        INT4Vector *v = NULL; //for dealing with dimension parameters
+        v = *(INT4Vector **)ptr->value;
+        for(j=0; j<v->length; j++)
+        {
+          v->data[j] = origin[p];
           p++;
         }
       }
@@ -1503,7 +1596,6 @@ void LALInferenceCopyVariablesToArray(LALInferenceVariables *origin, REAL8 *targ
 
 void LALInferenceCopyArrayToVariables(REAL8 *origin, LALInferenceVariables *target) {
   gsl_matrix *m = NULL; //for dealing with noise parameters
-  UINT4Vector *v = NULL; //for dealing with dimension parameters
   REAL8Vector *v8 = NULL;
   COMPLEX16Vector *v16 = NULL;
   UINT4 j,k;
@@ -1528,6 +1620,7 @@ void LALInferenceCopyArrayToVariables(REAL8 *origin, LALInferenceVariables *targ
       }
       else if(ptr->type == LALINFERENCE_UINT4Vector_t)
       {
+        UINT4Vector *v = NULL; //for dealing with dimension parameters
         v = *(UINT4Vector **)ptr->value;
         for(j=0; j<v->length; j++)
         {
@@ -3123,6 +3216,13 @@ static void COMPLEX16Vector_fwrite(FILE *f, COMPLEX16Vector *vec)
   if(vec->length!=fwrite(vec->data,sizeof(COMPLEX16),vec->length,f)) XLAL_ERROR_VOID(XLAL_EIO);
 }
 
+static void INT4Vector_fwrite(FILE *f, INT4Vector *vec);
+static void INT4Vector_fwrite(FILE *f, INT4Vector *vec)
+{
+  fwrite(&(vec->length),sizeof(vec->length),1,f);
+  fwrite(vec->data,sizeof(vec->data[0]),vec->length,f);
+}
+
 static void UINT4Vector_fwrite(FILE *f, UINT4Vector *vec);
 static void UINT4Vector_fwrite(FILE *f, UINT4Vector *vec)
 {
@@ -3150,6 +3250,18 @@ static COMPLEX16Vector * COMPLEX16Vector_fread(FILE *f)
   out=XLALCreateCOMPLEX16Vector(size);
   if(size!=fread(out->data,sizeof(COMPLEX16),size,f)) XLAL_ERROR_NULL(XLAL_EIO);
   return out;
+}
+
+static INT4Vector * INT4Vector_fread(FILE *f);
+static INT4Vector * INT4Vector_fread(FILE *f)
+{
+  INT4 size = 0;
+  INT4Vector *vec = NULL;
+
+  fread(&size,sizeof(size),1,f);
+  vec = XLALCreateINT4Vector(size);
+  fread(vec->data, sizeof(INT4), size, f);
+  return vec;
 }
 
 static UINT4Vector * UINT4Vector_fread(FILE *f);
@@ -3207,6 +3319,12 @@ int LALInferenceWriteVariablesBinary(FILE *file, LALInferenceVariables *vars)
 	UINT4Vector *vec = *(UINT4Vector **)item->value;
 	UINT4Vector_fwrite(file, vec);
 	break;
+      }
+    case LALINFERENCE_INT4Vector_t:
+      {
+        INT4Vector *vec = *(INT4Vector **)item->value;
+        INT4Vector_fwrite(file, vec);
+        break;
       }
     case LALINFERENCE_string_t:
       {
@@ -3298,6 +3416,12 @@ LALInferenceVariables *LALInferenceReadVariablesBinary(FILE *stream)
 	UINT4Vector *vec = UINT4Vector_fread(stream);
 	LALInferenceAddVariable(vars,name,&vec,type,vary);
 	break;
+      }
+    case LALINFERENCE_INT4Vector_t:
+      {
+        INT4Vector *vec = INT4Vector_fread(stream);
+        LALInferenceAddVariable(vars,name,&vec,type,vary);
+        break;
       }
     case LALINFERENCE_string_t:
       {
@@ -3619,6 +3743,12 @@ void LALInferenceAddUINT4VectorVariable(LALInferenceVariables * vars, const char
   LALInferenceAddVariable(vars,name,(void*)value,LALINFERENCE_UINT4Vector_t,vary);
 }
 
+void LALInferenceAddINT4VectorVariable(LALInferenceVariables * vars, const char * name, INT4Vector* value, LALInferenceParamVaryType vary)
+/* Typed version of LALInferenceAddVariable for INT4Vector values.*/
+{
+  LALInferenceAddVariable(vars,name,(void*)value,LALINFERENCE_INT4Vector_t,vary);
+}
+
 UINT4Vector* LALInferenceGetUINT4VectorVariable(LALInferenceVariables * vars, const char * name)
 /* Typed version of LALInferenceGetVariable for UINT4Vector values.*/
 {
@@ -3632,7 +3762,24 @@ UINT4Vector* LALInferenceGetUINT4VectorVariable(LALInferenceVariables * vars, co
   return rvalue;
 }
 
+INT4Vector* LALInferenceGetINT4VectorVariable(LALInferenceVariables * vars, const char * name)
+/* Typed version of LALInferenceGetVariable for INT4Vector values.*/
+{
+
+  if(LALInferenceGetVariableType(vars,name)!=LALINFERENCE_INT4Vector_t){
+    XLAL_ERROR_NULL(XLAL_ETYPE);
+  }
+
+  INT4Vector* rvalue=(INT4Vector*)LALInferenceGetVariable(vars,name);
+
+  return rvalue;
+}
+
 void LALInferenceSetUINT4VectorVariable(LALInferenceVariables* vars,const char* name,UINT4Vector* value){
+  LALInferenceSetVariable(vars,name,(void*)&value);
+}
+
+void LALInferenceSetINT4VectorVariable(LALInferenceVariables* vars,const char* name,INT4Vector* value){
   LALInferenceSetVariable(vars,name,(void*)&value);
 }
 

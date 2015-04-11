@@ -101,12 +101,13 @@ typedef enum {
   LALINFERENCE_INT4_t,
   LALINFERENCE_INT8_t,
   LALINFERENCE_UINT4_t,
-  LALINFERENCE_REAL4_t, 
-  LALINFERENCE_REAL8_t, 
-  LALINFERENCE_COMPLEX8_t, 
-  LALINFERENCE_COMPLEX16_t, 
+  LALINFERENCE_REAL4_t,
+  LALINFERENCE_REAL8_t,
+  LALINFERENCE_COMPLEX8_t,
+  LALINFERENCE_COMPLEX16_t,
   LALINFERENCE_gslMatrix_t,
   LALINFERENCE_REAL8Vector_t,
+  LALINFERENCE_INT4Vector_t,
   LALINFERENCE_UINT4Vector_t,
   LALINFERENCE_COMPLEX16Vector_t,
   LALINFERENCE_string_t,
@@ -167,7 +168,7 @@ tagLALInferenceVariables
   LALInferenceVariableItem	*hash_table[LALINFERENCE_HASHTABLE_SIZE];
 } LALInferenceVariables;
 
-/** 
+/**
  * Phase of MCMC run (depending on burn-in status, different actions
  * are performed during the run, and this tag controls the activity).
  */
@@ -269,7 +270,7 @@ void LALInferenceSetVariable(LALInferenceVariables * vars, const char * name, co
  * \param value UNDOCUMENTED
  * If the variable already exists it will be over-written UNLESS IT HAS A CONFLICTING TYPE
  */
-void LALInferenceAddVariable(LALInferenceVariables * vars, const char * name, const void * value, 
+void LALInferenceAddVariable(LALInferenceVariables * vars, const char * name, const void * value,
 	LALInferenceVariableType type, LALInferenceParamVaryType vary);
 
 /**
@@ -334,12 +335,12 @@ int LALInferenceCompareVariables(LALInferenceVariables *var1, LALInferenceVariab
     given values at the given frequencies.
 
 */
-int LALInferenceSplineCalibrationFactor(REAL8Vector *freqs, 
-					REAL8Vector *deltaAmps, 
-					REAL8Vector *deltaPhases, 
+int LALInferenceSplineCalibrationFactor(REAL8Vector *freqs,
+					REAL8Vector *deltaAmps,
+					REAL8Vector *deltaPhases,
 					COMPLEX16FrequencySeries *calFactor);
 
-//Wrapper for template computation 
+//Wrapper for template computation
 //(relies on LAL libraries for implementation) <- could be a #DEFINE ?
 //typedef void (LALTemplateFunction) (LALInferenceVariables *currentParams, struct tagLALInferenceIFOData *data); //Parameter Set is modelParams of LALInferenceIFOData
 /**
@@ -457,10 +458,10 @@ typedef struct tagLALInferenceModel
 typedef LALInferenceModel* (*LALInferenceInitModelFunction) (struct tagLALInferenceRunState *runState);
 
 
-//Likelihood calculator 
-//Should take care to perform expensive evaluation of h+ and hx 
-//only once if possible, unless necessary because different IFOs 
-//have different data lengths or sampling rates 
+//Likelihood calculator
+//Should take care to perform expensive evaluation of h+ and hx
+//only once if possible, unless necessary because different IFOs
+//have different data lengths or sampling rates
 /**
  * Type declaration for likelihood function
  * Computes p(\c data | \c currentParams, \c templt )
@@ -487,7 +488,7 @@ typedef void (*LALInferenceLogFunction) (struct tagLALInferenceRunState *runStat
  * This includes pointers to the function types required to run
  * the algorithm, and data structures as required
  */
-typedef struct 
+typedef struct
 tagLALInferenceRunState
 {
   ProcessParamsTable        *commandLine; /** A ProcessParamsTable with command line arguments */
@@ -559,7 +560,7 @@ tagLALInferenceIFOData
      model in freqModel... or timeModel....  When a jump is accepted,
      that value is copied into acceptedloglikelihood, which is the
      quantity that is actually output in the output files. */
-  REAL8                      nullloglikelihood; 
+  REAL8                      nullloglikelihood;
   REAL8                      fPlus, fCross; /** Detector responses */
   REAL8                      timeshift;     /** What is this? */
   COMPLEX16FrequencySeries  *freqData,      /** Buffer for frequency domain data */
@@ -1005,11 +1006,17 @@ COMPLEX16Vector* LALInferenceGetCOMPLEX16VectorVariable(LALInferenceVariables * 
 
 void LALInferenceSetCOMPLEX16VectorVariable(LALInferenceVariables* vars,const char* name,COMPLEX16Vector* value);
 
+void LALInferenceAddINT4VectorVariable(LALInferenceVariables * vars, const char * name, INT4Vector* value, LALInferenceParamVaryType vary);
+
 void LALInferenceAddUINT4VectorVariable(LALInferenceVariables * vars, const char * name, UINT4Vector* value, LALInferenceParamVaryType vary);
+
+INT4Vector* LALInferenceGetINT4VectorVariable(LALInferenceVariables * vars, const char * name);
 
 UINT4Vector* LALInferenceGetUINT4VectorVariable(LALInferenceVariables * vars, const char * name);
 
-void LALInferenceSetUINT4VectorVariable(LALInferenceVariables* vars,const char* name,UINT4Vector* value);
+void LALInferenceSetINT4VectorVariable(LALInferenceVariables* vars, const char* name, INT4Vector* value);
+
+void LALInferenceSetUINT4VectorVariable(LALInferenceVariables* vars, const char* name, UINT4Vector* value);
 
 void LALInferenceAddMCMCrunphase_ptrVariable(LALInferenceVariables * vars, const char * name, LALInferenceMCMCRunPhase* value, LALInferenceParamVaryType vary);
 
