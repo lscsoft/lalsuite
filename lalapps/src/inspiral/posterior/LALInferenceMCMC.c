@@ -47,26 +47,26 @@
 int MPIrank, MPIsize;
 
 static INT4 readSquareMatrix(gsl_matrix *m, UINT4 N, FILE *inp) {
-  UINT4 i, j;
+    UINT4 i, j;
 
-  for (i = 0; i < N; i++) {
-    for (j = 0; j < N; j++) {
-      REAL8 value;
-      INT4 nread;
+    for (i = 0; i < N; i++) {
+        for (j = 0; j < N; j++) {
+            REAL8 value;
+            INT4 nread;
 
-      nread = fscanf(inp, " %lg ", &value);
+            nread = fscanf(inp, " %lg ", &value);
 
-      if (nread != 1) {
-	fprintf(stderr, "Cannot read from matrix file (in %s, line %d)\n",
-		__FILE__, __LINE__);
-	exit(1);
-      }
+            if (nread != 1) {
+                fprintf(stderr, "Cannot read from matrix file (in %s, line %d)\n",
+                        __FILE__, __LINE__);
+                exit(1);
+            }
 
-      gsl_matrix_set(m, i, j, value);
+            gsl_matrix_set(m, i, j, value);
+        }
     }
-  }
 
-  return 0;
+    return 0;
 }
 
 
@@ -76,11 +76,10 @@ void init_mpi_randomstate(LALInferenceRunState *run_state);
 REAL8 **parseMCMCoutput(char ***params, UINT4 *nInPar, UINT4 *nInSamps, char *infilename, UINT4 burnin);
 
 
-/* Initialize an bare-bones run-state */
-LALInferenceRunState *init_runstate(ProcessParamsTable *command_line)
-/* calls the "ReadData()" function to gather data & PSD from files, */
-/* and initializes other variables accordingly.                     */
-{
+/* Initialize an bare-bones run-state
+/*  calls the "ReadData()" function to gather data & PSD from files,
+/*  and initializes other variables accordingly.                     */
+LALInferenceRunState *init_runstate(ProcessParamsTable *command_line) {
     LALInferenceRunState *run_state = XLALCalloc(1, sizeof(LALInferenceRunState));
 
     /* Check that command line is consistent first */
@@ -103,16 +102,11 @@ LALInferenceRunState *init_runstate(ProcessParamsTable *command_line)
     run_state->priorArgs = XLALCalloc(1, sizeof(LALInferenceVariables));
     run_state->proposalArgs = XLALCalloc(1, sizeof(LALInferenceVariables));
 
-    /* Explicitly zero out DE, in case it's not used later */
-    run_state->differentialPoints = NULL;
-    run_state->differentialPointsLength = 0;
-    run_state->differentialPointsSize = 0;
-
     return(run_state);
 }
 
 
-void init_chains(LALInferenceRunState *run_state, INT4 nchains) {
+void init_threads(LALInferenceRunState *run_state, INT4 nthreads) {
     char help[]="\
                  ---------------------------------------------------------------------------------------------------\n\
                  --- Noise Model -----------------------------------------------------------------------------------\n\
@@ -134,7 +128,7 @@ void init_chains(LALInferenceRunState *run_state, INT4 nchains) {
                  ---------------------------------------------------------------------------------------------------\n\
                  (--randomseed seed)              Random seed of sampling distribution (random).\n";
 
-    INT4 i, chain;
+    INT4 i, t;
     ProcessParamsTable *command_line, *ppt = NULL;
     struct timeval tv;
     REAL8 timestamp;
@@ -165,37 +159,37 @@ void init_chains(LALInferenceRunState *run_state, INT4 nchains) {
     timestamp = tv.tv_sec + tv.tv_usec/1E6;
 
     /* Set up CBC model and parameter array */
-    run_state->modelArray =
-        XLALCalloc(nchains, sizeof(LALInferenceModel*));
+    LALInferenceThreadState *thread;
+    run_state->threads = XLALCalloc(nthreads, sizeof(LALInferenceThreadState*));
+    LALInferenceThreadState *threads = XLALCalloc(nthreads, sizeof(LALInferenceThreadState));
 
-    run_state->currentParamArray =
-        XLALCalloc(nchains, sizeof(LALInferenceVariables*));
+    for (c = 0; c < nthread; c++) {
+        thread = &threads[c];
+        thread->currentPropDensity = -DBL_MAX;
+        thread->model = LALInferenceInitCBCModel(run_state);
 
-    for (chain = 0; chain < nchain; chain++) {
-        run_state->currentPropDensityArray[chain] = -DBL_MAX;
-        run_state->modelArray[chain] = LALInferenceInitCBCModel(run_state);
+        /* Setup ROQ */
+        LALInferenceSetupROQ(run_state->data, thread->model, command_line);
 
-        run_state->currentParamArray[chain] =
-            XLALCalloc(1, sizeof(LALInferenceVariables));
+        thread->currentParams = XLALCalloc(1, sizeof(LALInferenceVariables));
 
-        LALInferenceCopyVariables(run_state->modelArray[chain]->params,
-                                    run_state->currentParamArray[chain]);
+        LALInferenceCopyVariables(thread->model->params, thread->currentParams);
+
+        /* Use the same proposal for all chains by default */
+        thread->proposal = run_state->proposal;
+
+        /* Explicitly zero out DE, in case it's not used later */
+        thread->differentialPoints = NULL;
+        thread->differentialPointsLength = 0;
+        thread->differentialPointsSize = 0;
+
+        run_state->threads[c] = thread;
     }
-
-    /* Have currentParams and model in run_state point to the first elements
-     *  of the respective arrays.  Neither are used explicitly by the ensemble
-     *  sampler, but are sometimes used to count dimensions, etc. */
-    run_state->currentParams = run_state->currentParamArray[0];
-    run_state->model = run_state->modelArray[0];
-    run_state->templt = run_state->model->templt;
-
-    /* Setup ROQ */
-    LALInferenceSetupROQ(run_state->data, run_state->model, command_line);
 
     /* Store flags to keep from checking the command line all the time */
     LALInferenceVariables *algorithm_params = run_state->algorithmParams;
 
-    LALInferenceAddVariable(algorithm_params, "nchains", &nchains,
+    LALInferenceAddVariable(algorithm_params, "nthreads", &nthreads,
                             LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
 
     LALInferenceAddVariable(algorithm_params, "verbose", &verbose,
@@ -275,10 +269,10 @@ void init_mpi_randomstate(LALInferenceRunState *run_state) {
      return;
 }
 
-void LALInferenceDrawChains(LALInferenceRunState *state) {
-    INT4 nchains;
+void LALInferenceDrawThreads(LALInferenceRunState *state) {
+    INT4 c, nthreads;
 
-    nchains = LALInferenceGetINT4Variable(state->algorithmParams, "nchains");
+    nthreads = LALInferenceGetINT4Variable(state->algorithmParams, "nthreads");
 
     /* If using a malmquist prior, force a strict prior window on distance for starting point, otherwise
      * the approximate prior draws are very unlikely to be within the malmquist prior */
@@ -296,22 +290,32 @@ void LALInferenceDrawChains(LALInferenceRunState *state) {
     /* If the currentParams are not in the prior, overwrite and pick paramaters from the priors. OVERWRITE EVEN USER CHOICES.
      *     (necessary for complicated prior shapes where LALInferenceCyclicReflectiveBound() is not enough */
     #pragma omp parallel for
-    for (chain = 0; chain < nchains
-        ; chain++) {
+    for (c = 0; c < nthreads; c++) {
         LALInferenceDrawApproxPrior(state,
-                                    state->currentParamArray[chain],
-                                    state->currentParamArray[chain]);
+                                    state->threads[c]->currentParams,
+                                    state->threads[c]->currentParams);
         while (run_state->prior(state,
-                                state->currentParamArray[chain],
-                                state->modelArray[chain]) <= -DBL_MAX) {
+                                state->threads[c]->currentParams,
+                                state->threads[c]->model) <= -DBL_MAX) {
             LALInferenceDrawApproxPrior(state,
-                                        state->currentParamArray[chain],
-                                        state->currentParamArray[chain]);
+                                        state->threads[c]->currentParams,
+                                        state->threads[c]->currentParams);
         }
 
         /* Make sure that our initial value is within the
         *     prior-supported volume. */
-        LALInferenceCyclicReflectiveBound(run_state->currentParamArray[chain], priorArgs);
+        LALInferenceCyclicReflectiveBound(run_state->threads[c]->currentParams, priorArgs);
+
+        /* Initialize starting likelihood and prior */
+        run_state->threads[c]->currentPrior =
+            run_state->prior(run_state,
+                             run_state->threads[c]->currentParams,
+                             run_state->threads[c]->model);
+
+        run_state->threads[c]->currentLikelihood =
+            run_state->likelihood(run_state,
+                                  run_state->threads[c]->currentParams,
+                                  run_state->threads[c]->model);
     }
 
     /* Replace distance prior if changed for initial sample draw */
@@ -378,8 +382,17 @@ void init_ptmcmc(LALInferenceRunState *runState)
 
     /* Set up the appropriate functions for the MCMC algorithm */
     runState->algorithm = &PTMCMCAlgorithm;
-    runState->evolve = PTMCMCOneStep;
+    runState->evolve = &mcmc_step;
     runState->proposal = &LALInferenceDefaultProposal;
+
+    /* Choose the appropriate swapping method */
+    if (LALInferenceGetProcParamVal(command_line, "--varyFlow")) {
+        /* Metropolis-coupled MCMC Swap (assumes likelihood function differs between chains).*/
+        runState->parallelSwap = &LALInferenceMCMCMCswap;
+    } else {
+        /* Standard parallel tempering swap. */
+        runState->parallelSwap = &LALInferencePTswap;
+    }
 
     /* Number of steps between ensemble updates */
     INT4 nsteps = 100000000;
@@ -424,6 +437,12 @@ void init_ptmcmc(LALInferenceRunState *runState)
     if (ppt)
         tempMax = strtod(ppt->value, (char **)NULL);
 
+    /* Limit the size of the differential evolution buffer */
+    INT4 de_buffer_limit = 1000000;
+    ppt = LALInferenceGetProcParamVal(command_line, "--differential-buffer-limit");
+    if (ppt)
+        de_buffer_limit = atoi(ppt);
+
     /* Network SNR of trigger */
     REAL8 trigSNR = 0.0;
     ppt = LALInferenceGetProcParamVal(command_line, "--trig-snr");
@@ -467,6 +486,9 @@ void init_ptmcmc(LALInferenceRunState *runState)
     LALInferenceAddVariable(algorithm_params, "tempMax", &tempMax,
                             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
 
+    LALInferenceAddVariable(algorithm_params, "de_buffer_limit", &de_buffer_limit,
+                            LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
+
     LALInferenceAddVariable(algorithm_params, "trigSNR", &trigSNR,
                             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
 
@@ -486,7 +508,7 @@ void init_ptmcmc(LALInferenceRunState *runState)
     INT4 ntemp_per_thread = LALInferenceBuildHybridTempLadder(runState);
 
     /* Initialize the walkers on this MPI thread */
-    init_chains(runState, ntemp_per_thread);
+    init_threads(runState, ntemp_per_thread);
 
     /* Establish the random state across MPI threads */
     init_mpi_randomstate(runState);
@@ -595,6 +617,9 @@ INT4 LALInferenceBuildHybridTempLadder(LALInferenceRunState *runState) {
     ladder = XLALCalloc(ntemp, sizeof(REAL8));
     for (t=0; t<ntemp; ++t)
         ladder[t] = tempMin * pow(tempDelta, t);
+
+    for (c = 0; c < ntemp_per_thread; c++)
+        runState->threads[c]->temperature = ladder[MPIrank*ntemp_per_thread + c];
 
     if (MPIrank == 0 && LALInferenceGetVariable(runState->algorithmParams, "verbose")) {
         printf("\nTemperature ladder:\n");
@@ -825,6 +850,9 @@ int main(int argc, char *argv[]){
 
     /* Choose the likelihood */
     LALInferenceInitLikelihood(runState);
+
+    /* Draw starting positions */
+    LALInferenceDrawThreads(runState);
 
     /* Call MCMC algorithm */
     runState->algorithm(runState);

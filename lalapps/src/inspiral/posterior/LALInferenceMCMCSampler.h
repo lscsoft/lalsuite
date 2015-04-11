@@ -1,6 +1,6 @@
 /*
  *
- *  LALInferenceMCMCSampler:    Markov-Chain Monte Carlo sampler for LALInference        
+ *  LALInferenceMCMCSampler:    Markov-Chain Monte Carlo sampler for LALInference
  *  LALInferenceMCMCSampler.h:  main header file
  *
  *  Copyright (C) 2011 Vivien Raymond, Ben Farr, Will Farr, Ilya Mandel, Christian Roever, Marc van der Sluys and John Veitch
@@ -78,11 +78,11 @@ void LALInferenceFlushPTswap(void);
 void LALInferenceLadderUpdate(LALInferenceRunState *runState, INT4 sourceChainFlag, INT4 cycle);
 
 /* Data IO routines */
-FILE* LALInferencePrintPTMCMCHeaderOrResume(LALInferenceRunState *runState);
-void LALInferencePrintPTMCMCHeaderFile(LALInferenceRunState *runState, FILE *file);
+FILE** LALInferencePrintPTMCMCHeadersOrResume(LALInferenceRunState *runState);
+void LALInferencePrintPTMCMCHeaderFiles(LALInferenceRunState *runState, FILE **files);
 void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState);
 void LALInferenceDataDump(LALInferenceIFOData *data, LALInferenceModel *model);
 
 /** Reads final parameter values from the given output file, and
     stores them in the current params to try to continue the run. */
-void LALInferenceMCMCResumeRead(LALInferenceRunState *runState, FILE *resumeFile);
+void LALInferenceMCMCResumeRead(LALInferenceRunState *runState, FILE *resumeFile, INT4 thread);
