@@ -137,66 +137,10 @@ void on_your_marks(LALInferenceRunState *run_state) {
         XLALFree(valid_cols);
         XLALFree(parameters);
         XLALFree(sampleArray);
-    } else {
-        #pragma omp parallel for
-        for (walker = 0; walker < nwalkers_per_thread; walker++) {
-            LALInferenceDrawApproxPrior(run_state,
-                                        run_state->currentParamArray[walker],
-                                        run_state->currentParamArray[walker]);
-            while (run_state->prior(run_state,
-                                run_state->currentParamArray[walker],
-                                run_state->modelArray[walker]) <= -DBL_MAX) {
-                LALInferenceDrawApproxPrior(run_state,
-                                            run_state->currentParamArray[walker],
-                                            run_state->currentParamArray[walker]);
-            }
-        }
-    }
-
-    /* Determine null loglikelihood to be subtracted from printed likelihoods */
-    REAL8 null_likelihood = 0.0;
-    if (run_state->likelihood==&LALInferenceUndecomposedFreqDomainLogLikelihood){
-
-        null_likelihood = LALInferenceNullLogLikelihood(run_state->data);
-
-    /* If no simple null likelihood method exists, scale signal away */
-    } else if (run_state->likelihood == &LALInferenceFreqDomainStudentTLogLikelihood ||
-                (run_state->likelihood == &LALInferenceMarginalisedTimeLogLikelihood &&
-                !(LALInferenceGetProcParamVal(command_line,"--psdFit")))) {
-
-        headData = run_state->data;
-        REAL8 d = LALInferenceGetREAL8Variable(run_state->currentParamArray[0],
-                                                "distance");
-        REAL8 bigD = INFINITY;
-
-        /* Don't store to cache, since distance scaling won't work */
-        LALSimInspiralWaveformCache *cache =
-            run_state->modelArray[0]->waveformCache;
-        run_state->modelArray[0]->waveformCache = NULL;
-
-        LALInferenceSetVariable(run_state->currentParamArray[0], "distance", &bigD);
-        null_likelihood = run_state->likelihood(run_state->currentParamArray[0],
-                                            run_state->data,
-                                            run_state->modelArray[0]);
-
-        /* Restore cache to data structure */
-        while (headData != NULL) {
-            headData->nullloglikelihood = run_state->modelArray[0]->loglikelihood;
-            headData = headData->next;
-        }
-        run_state->modelArray[0]->waveformCache = cache;
-
-        /* Replace finite distance */
-        LALInferenceSetVariable(run_state->currentParamArray[0], "distance", &d);
-    }
-
-    LALInferenceAddVariable(run_state->proposalArgs, "nullLikelihood",
-                            &null_likelihood, LALINFERENCE_REAL8_t,
-                            LALINFERENCE_PARAM_FIXED);
+    } else
+        LALInferenceDrawChains(run_state);
 
     /* Initialize starting likelihood and prior */
-    run_state->currentPriors = XLALCalloc(nwalkers_per_thread, sizeof(REAL8));
-    run_state->currentLikelihoods = XLALCalloc(nwalkers_per_thread, sizeof(REAL8));
     for (walker = 0; walker < nwalkers_per_thread; walker++) {
         run_state->currentPriors[walker] =
             run_state->prior(run_state,
