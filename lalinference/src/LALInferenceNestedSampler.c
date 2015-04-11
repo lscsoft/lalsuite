@@ -518,11 +518,6 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
     i = 0;
     LALInferenceAddVariable(runState->proposalArgs, cycleArrayCounterName, &i, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_CIRCULAR);
   }
-  /* set up k-D tree if required and not already set */
-  if ( ( LALInferenceGetProcParamVal(runState->commandLine,"--kDTree") ||
-    LALInferenceGetProcParamVal(runState->commandLine,"--kdtree")) &&
-    !LALInferenceCheckVariable( runState->proposalArgs, "kDTree" ) )
-      LALInferenceSetupkDTreeNSLivePoints( runState );
 
   if(!LALInferenceCheckVariable(runState->algorithmParams,"Nmcmc")){
     INT4 tmp=MAX_MCMC;
@@ -627,20 +622,6 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   /* Update the covariance matrix for proposal distribution */
   SetupEigenProposals(runState);
 //  LALInferenceNScalcCVM(cvm,runState->livePoints,Nlive);
-
-  /* re-calculate the k-D tree from the new points if required */
-  if ( LALInferenceCheckVariable( runState->proposalArgs, "kDTree" ) ){
-    LALInferenceSetupkDTreeNSLivePoints( runState );
-
-    /* get k-d tree update rate (this is how often the tree gets updated
-     * as a factor the number of live points - default is 4 */
-    if( LALInferenceGetProcParamVal( runState->commandLine,
-      "--kDTreeUpdateFactor") ){
-      kdupdate = atof( LALInferenceGetProcParamVal( runState->commandLine,
-						    "--kDTreeUpdateFactor")->value );
-      }else
-	kdupdate = 4.;
-  }
 
   /* Reset proposal stats before starting */
   resetProposalStats(runState);
