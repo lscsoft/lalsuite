@@ -1452,69 +1452,31 @@ int LALInferenceCompareVariables(LALInferenceVariables *var1, LALInferenceVariab
 
 
 /* Move every *step* entry from the buffer to an array */
-INT4 LALInferenceThinnedBufferToArray(LALInferenceRunState *state, REAL8** DEarray, INT4 step) {
-  LALInferenceVariableItem *ptr;
-  INT4 i=0,p=0;
+INT4 LALInferenceThinnedBufferToArray(LALInferenceThreadState *thread, REAL8** DEarray, INT4 step) {
+    LALInferenceVariableItem *ptr;
+    INT4 i=0, p=0;
 
-  INT4 nPoints = state->differentialPointsLength;
-  for (i = 0; i < nPoints; i+=step) {
-    ptr=state->differentialPoints[i]->head;
-    p=0;
-    while(ptr!=NULL) {
-      if (LALInferenceCheckVariableNonFixed(state->differentialPoints[i], ptr->name) && ptr->type == LALINFERENCE_REAL8_t) {
-        DEarray[i/step][p]=*(REAL8 *)ptr->value;
-        p++;
-      }
-      ptr=ptr->next;
+    INT4 nPoints = thread->differentialPointsLength;
+    for (i = 0; i < nPoints; i+=step) {
+        ptr=thread->differentialPoints[i]->head;
+        p=0;
+        while(ptr!=NULL) {
+            if (LALInferenceCheckVariableNonFixed(thread->differentialPoints[i], ptr->name) && ptr->type == LALINFERENCE_REAL8_t) {
+                DEarray[i/step][p]=*(REAL8 *)ptr->value;
+                p++;
+            }
+            ptr=ptr->next;
+        }
     }
-  }
 
-  return nPoints/step;
+    return nPoints/step;
 }
 
 
 /* Move the entire buffer to an array */
-INT4 LALInferenceBufferToArray(LALInferenceRunState *state, REAL8** DEarray) {
-  INT4 step = 1;
-  return LALInferenceThinnedBufferToArray(state, DEarray, step);
-}
-
-
-void LALInferenceArrayToBuffer(LALInferenceRunState *runState, REAL8** DEarray, INT4 nPoints) {
-  LALInferenceVariableItem *ptr;
-  UINT4 i=0,p=0;
-
-  /* Save last LALInferenceVariables item from buffer to keep fixed params consistent for chain */
-  LALInferenceVariables templateParamSet;
-  LALInferenceCopyVariables(runState->differentialPoints[runState->differentialPointsLength-1], &templateParamSet);
-
-  /* Free old DE buffer */
-  for (i = 0; i < runState->differentialPointsLength; i++)
-      XLALFree(runState->differentialPoints[i]);
-  XLALFree(runState->differentialPoints);
-
-  /* Expand DE buffer */
-  size_t newSize = 1;
-  while ((size_t)nPoints > newSize)
-    newSize *= 2;
-
-  runState->differentialPoints = XLALCalloc(newSize, sizeof(LALInferenceVariables *));
-  runState->differentialPointsLength = nPoints;
-  runState->differentialPointsSize = newSize;
-
-  for (i=0; i<(UINT4)nPoints; i++) {
-    runState->differentialPoints[i] = XLALCalloc(1, sizeof(LALInferenceVariables));
-    LALInferenceCopyVariables(&templateParamSet, runState->differentialPoints[i]);
-    p = 0;
-    ptr = runState->differentialPoints[i]->head;
-    while(ptr!=NULL) {
-      if (LALInferenceCheckVariableNonFixed(runState->differentialPoints[i], ptr->name) && ptr->type == LALINFERENCE_REAL8_t) {
-        *((REAL8 *)ptr->value) = (REAL8)DEarray[i][p];
-        p++;
-      }
-      ptr=ptr->next;
-    }
-  }
+INT4 LALInferenceBufferToArray(LALInferenceThreadState *thread, REAL8** DEarray) {
+    INT4 step = 1;
+    return LALInferenceThinnedBufferToArray(thread, DEarray, step);
 }
 
 
@@ -1560,16 +1522,6 @@ void LALInferenceCopyVariablesToArray(LALInferenceVariables *origin, REAL8 *targ
         for(j=0; j<v->length; j++)
         {
           target[p]=v->data[j];
-          p++;
-        }
-      }
-      else if(ptr->type == LALINFERENCE_INT4Vector_t)
-      {
-        INT4Vector *v = NULL; //for dealing with dimension parameters
-        v = *(INT4Vector **)ptr->value;
-        for(j=0; j<v->length; j++)
-        {
-          v->data[j] = origin[p];
           p++;
         }
       }
@@ -1622,6 +1574,16 @@ void LALInferenceCopyArrayToVariables(REAL8 *origin, LALInferenceVariables *targ
       {
         UINT4Vector *v = NULL; //for dealing with dimension parameters
         v = *(UINT4Vector **)ptr->value;
+        for(j=0; j<v->length; j++)
+        {
+          v->data[j] = origin[p];
+          p++;
+        }
+      }
+      else if(ptr->type == LALINFERENCE_INT4Vector_t)
+      {
+        INT4Vector *v = NULL; //for dealing with dimension parameters
+        v = *(INT4Vector **)ptr->value;
         for(j=0; j<v->length; j++)
         {
           v->data[j] = origin[p];
@@ -3082,7 +3044,7 @@ INT4 LALInferenceSanityCheck(LALInferenceRunState *state)
     data=data->next;
   }
 
-  LALInferenceModel *model = state->model;
+  LALInferenceModel *model = state->threads[0]->model;
   if(!model) {
 	fprintf(stderr,"NULL model pointer!\n");
         return(1);
@@ -3479,38 +3441,19 @@ int LALInferenceReadVariablesArrayBinary(FILE *file, LALInferenceVariables **var
 int LALInferenceWriteRunStateBinary(FILE *file, LALInferenceRunState *runState)
 {
   int flag=0;
-  if(1!=fwrite(&(runState->differentialPointsLength),sizeof(runState->differentialPointsLength),1,file)) XLAL_ERROR(XLAL_EIO);
-  if(1!=fwrite(&(runState->differentialPointsSize),sizeof(runState->differentialPointsSize),1,file)) XLAL_ERROR(XLAL_EIO);
-  if(1!=fwrite(&(runState->currentLikelihood),sizeof(runState->currentLikelihood),1,file)) XLAL_ERROR(XLAL_EIO);
-  if(1!=fwrite(&(runState->currentPrior),sizeof(runState->currentPrior),1,file)) XLAL_ERROR(XLAL_EIO);
   flag|=gsl_rng_fwrite (file , runState->GSLrandom);
-  flag|=LALInferenceWriteVariablesBinary(file, runState->currentParams);
   flag|=LALInferenceWriteVariablesBinary(file, runState->priorArgs);
   flag|=LALInferenceWriteVariablesBinary(file, runState->proposalArgs);
-  flag|=LALInferenceWriteVariablesBinary(file, runState->proposalStats);
   flag|=LALInferenceWriteVariablesBinary(file, runState->algorithmParams);
-  // Currently live points are the same as differential points buffer
-  //flag|=LALInferenceWriteVariablesArrayBinary(file, state->livePoints, state->differentialPointsLength);
-  flag|=LALInferenceWriteVariablesArrayBinary(file, runState->differentialPoints, runState->differentialPointsLength);
   return flag;
 }
 
 int LALInferenceReadRunStateBinary(FILE *file, LALInferenceRunState *runState)
 {
-  if(1!=fread(&(runState->differentialPointsLength),sizeof(runState->differentialPointsLength),1,file)) XLAL_ERROR(XLAL_EIO);
-  if(1!=fread(&(runState->differentialPointsSize),sizeof(runState->differentialPointsSize),1,file)) XLAL_ERROR(XLAL_EIO);
-  runState->differentialPoints=XLALCalloc(runState->differentialPointsSize,sizeof(LALInferenceVariables *));
-  if(1!=fread(&(runState->currentLikelihood),sizeof(runState->currentLikelihood),1,file)) XLAL_ERROR(XLAL_EIO);
-  if(1!=fread(&(runState->currentPrior),sizeof(runState->currentPrior),1,file)) XLAL_ERROR(XLAL_EIO);
-
   gsl_rng_fread(file, runState->GSLrandom);
-  runState->currentParams=LALInferenceReadVariablesBinary(file);
   runState->priorArgs=LALInferenceReadVariablesBinary(file);
   runState->proposalArgs=LALInferenceReadVariablesBinary(file);
-  runState->proposalStats=LALInferenceReadVariablesBinary(file);
   runState->algorithmParams=LALInferenceReadVariablesBinary(file);
-  LALInferenceReadVariablesArrayBinary(file, runState->differentialPoints,runState->differentialPointsLength);
-  runState->livePoints=runState->differentialPoints;
 
   return 0;
 }
@@ -3907,13 +3850,11 @@ int LALInferenceSplineCalibrationFactor(REAL8Vector *logfreqs,
   }
 }
 
-void LALInferenceFprintSplineCalibrationHeader(FILE *output, LALInferenceRunState *runState) {
-  LALInferenceIFOData *ifo = runState->data;
-
+void LALInferenceFprintSplineCalibrationHeader(FILE *output, LALInferenceThreadState *thread, LALInferenceIFOData *ifo) {
   do {
     char parname[VARNAME_MAX];
     size_t i;
-    UINT4 ncal = *(UINT4 *)LALInferenceGetVariable(runState->currentParams, "spcal_npts");
+    UINT4 ncal = *(UINT4 *)LALInferenceGetVariable(thread->currentParams, "spcal_npts");
 
     for (i = 0; i < ncal; i++) {
       snprintf(parname, VARNAME_MAX, "%sspcalamp%02ld", ifo->name, i);
@@ -3929,32 +3870,30 @@ void LALInferenceFprintSplineCalibrationHeader(FILE *output, LALInferenceRunStat
   } while (ifo);
 }
 
-void LALInferencePrintSplineCalibration(FILE *output, LALInferenceRunState *runState) {
-  LALInferenceIFOData *ifo = runState->data;
+void LALInferencePrintSplineCalibration(FILE *output, LALInferenceChain *chain, LALInferenceIFOData *ifo) {
+    do {
+        size_t i;
 
-  do {
-    size_t i;
+        char ampVarName[VARNAME_MAX];
+        char phaseVarName[VARNAME_MAX];
 
-    char ampVarName[VARNAME_MAX];
-    char phaseVarName[VARNAME_MAX];
+        REAL8Vector *amp = NULL;
+        REAL8Vector *phase = NULL;
 
-    REAL8Vector *amp = NULL;
-    REAL8Vector *phase = NULL;
+        snprintf(ampVarName, VARNAME_MAX, "%s_spcal_amp", ifo->name);
+        snprintf(phaseVarName, VARNAME_MAX, "%s_spcal_phase", ifo->name);
 
-    snprintf(ampVarName, VARNAME_MAX, "%s_spcal_amp", ifo->name);
-    snprintf(phaseVarName, VARNAME_MAX, "%s_spcal_phase", ifo->name);
+        amp = *(REAL8Vector **)LALInferenceGetVariable(thread->currentParams, ampVarName);
+        phase = *(REAL8Vector **)LALInferenceGetVariable(thread->currentParams, phaseVarName);
 
-    amp = *(REAL8Vector **)LALInferenceGetVariable(runState->currentParams, ampVarName);
-    phase = *(REAL8Vector **)LALInferenceGetVariable(runState->currentParams, phaseVarName);
+        for (i = 0; i < amp->length; i++) {
+            fprintf(output, "%g\t", amp->data[i]);
+        }
 
-    for (i = 0; i < amp->length; i++) {
-      fprintf(output, "%g\t", amp->data[i]);
-    }
+        for (i = 0; i < phase->length; i++) {
+            fprintf(output, "%g\t", phase->data[i]);
+        }
 
-    for (i = 0; i < phase->length; i++) {
-      fprintf(output, "%g\t", phase->data[i]);
-    }
-
-    ifo = ifo->next;
-  } while (ifo);
+        ifo = ifo->next;
+    } while (ifo);
 }

@@ -83,6 +83,11 @@ void LALInferenceInitLikelihood(LALInferenceRunState *runState)
 
     ProcessParamsTable *commandLine=runState->commandLine;
     LALInferenceIFOData *ifo=runState->data;
+    LALInferenceThreadState *thread;
+    INT4 t = 0;
+
+    thread = runState->threads[t];
+
     REAL8 nullLikelihood = 0.0; // Populated if such a thing exists
 
     /* Print command line arguments if help requested */
@@ -110,13 +115,13 @@ void LALInferenceInitLikelihood(LALInferenceRunState *runState)
     runState->likelihood=&LALInferenceFreqDomainStudentTLogLikelihood;
 
     /* Set the noise model evidence to the student t model value */
-    LALInferenceTemplateNullFreqdomain(runState->model);
-    LALInferenceTemplateFunction temp = runState->model->templt;
-    runState->model->templt = &LALInferenceTemplateNullFreqdomain;
-    REAL8 noiseZ=LALInferenceFreqDomainStudentTLogLikelihood(runState->currentParams,runState->data, runState->model);
-    runState->model->templt = temp;
-    LALInferenceAddVariable(runState->algorithmParams,"logZnoise",&noiseZ,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
-    fprintf(stdout,"Student-t Noise evidence %lf\n",noiseZ);
+    LALInferenceTemplateNullFreqdomain(thread->model);
+    LALInferenceTemplateFunction temp = thread->model->templt;
+    thread->model->templt = &LALInferenceTemplateNullFreqdomain;
+    REAL8 noiseZ = LALInferenceFreqDomainStudentTLogLikelihood(thread->currentParams, runState->data, thread->model);
+    thread->model->templt = temp;
+    LALInferenceAddVariable(runState->algorithmParams, "logZnoise", &noiseZ, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    fprintf(stdout,"Student-t Noise evidence %lf\n", noiseZ);
 
    } else if (LALInferenceGetProcParamVal(commandLine, "--margphi")) {
     fprintf(stderr, "Using marginalised phase likelihood.\n");
@@ -159,28 +164,28 @@ void LALInferenceInitLikelihood(LALInferenceRunState *runState)
            }
    } else {
        ifo = runState->data;
-       REAL8 d = LALInferenceGetREAL8Variable(runState->currentParams, "distance");
+       REAL8 d = LALInferenceGetREAL8Variable(thread->currentParams, "distance");
        REAL8 bigD = INFINITY;
 
        /* Don't store to cache, since distance scaling won't work */
-       LALSimInspiralWaveformCache *cache = runState->model->waveformCache;
-       runState->model->waveformCache = NULL;
+       LALSimInspiralWaveformCache *cache = thread->model->waveformCache;
+       thread->model->waveformCache = NULL;
 
-       LALInferenceSetVariable(runState->currentParams, "distance", &bigD);
-       nullLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->model);
+       LALInferenceSetVariable(thread->currentParams, "distance", &bigD);
+       nullLikelihood = runState->likelihood(thread->currentParams, runState->data, thread->model);
 
-       runState->model->waveformCache = cache;
-       i = 0;
+       thread->model->waveformCache = cache;
+       INT4 i = 0;
        while (ifo != NULL) {
-           ifo->nullloglikelihood = runState->model->ifo_loglikelihoods[i];
+           ifo->nullloglikelihood = thread->model->ifo_loglikelihoods[i];
            ifo = ifo->next;
            i++;
        }
 
-       LALInferenceSetVariable(runState->currentParams, "distance", &d);
+       LALInferenceSetVariable(thread->currentParams, "distance", &d);
    }
 
-   LALInferenceAddVariable(runState->proposalArgs, "nullLikelihood", &nullLikelihood,
+   LALInferenceAddVariable(thread->proposalArgs, "nullLikelihood", &nullLikelihood,
                             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
 
     return;
@@ -281,7 +286,7 @@ REAL8 LALInferenceZeroLogLikelihood(LALInferenceVariables *currentParams,
 
     if(LALInferenceCheckVariable(currentParams,"SKY_FRAME"))
       SKY_FRAME=*(INT4 *)LALInferenceGetVariable(currentParams,"SKY_FRAME");
-    
+
     if(SKY_FRAME==1)
     {
       REAL8 t0=LALInferenceGetREAL8Variable(currentParams,"t0");
@@ -631,7 +636,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
       REAL8 distMpc = exp(*(REAL8*)LALInferenceGetVariable(currentParams,"logdistance"));
       LALInferenceAddVariable(currentParams,"distance",&distMpc,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
     }
-    
+
     if(LALInferenceCheckVariable(currentParams,"logmc")){
       mc=exp(*(REAL8 *)LALInferenceGetVariable(currentParams,"logmc"));
       LALInferenceAddVariable(currentParams,"chirpmass",&mc,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
@@ -640,7 +645,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
     INT4 SKY_FRAME=0;
     if(LALInferenceCheckVariable(currentParams,"SKY_FRAME"))
       SKY_FRAME=*(INT4 *)LALInferenceGetVariable(currentParams,"SKY_FRAME");
-    
+
     if(SKY_FRAME==0){
       /* determine source's sky location & orientation parameters: */
       ra        = *(REAL8*) LALInferenceGetVariable(currentParams, "rightascension"); /* radian      */

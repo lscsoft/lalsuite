@@ -50,6 +50,7 @@ void LALInferenceInitPrior(LALInferenceRunState *runState)
                  (--analyticnullprior)            Use analytic null prior.\n\
                  (--nullprior)                    Use null prior in the sampled parameters.\n";
     ProcessParamsTable *commandLine=runState->commandLine;
+    ProcessParamsTable *ppt = NULL;
 
     /* Print command line arguments if help requested */
     if(LALInferenceGetProcParamVal(commandLine, "--help"))

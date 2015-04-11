@@ -366,19 +366,6 @@ typedef REAL8 (*LALInferenceProposalFunction) (struct tagLALInferenceRunState *r
 	LALInferenceVariables *proposedParams);
 
 /**
- * Jump proposal statistics
- * Stores the weight given for a proposal function, the number of times
- * it has been proposed, and the number of times it has been accepted
- */
-typedef struct
-tagLALInferenceProposalStatistics
-{
-  UINT4   weight;     // Weight of proposal function in cycle
-  UINT4   proposed;   // Number of times proposal has been called
-  UINT4   accepted;   // Number of times a proposal from this function has been accepted
-} LALInferenceProposalStatistics;
-
-/**
  * Type declaration for prior function which returns p(\c params)
  * Can depend on \c runState ->priorArgs
  */
@@ -473,6 +460,9 @@ typedef REAL8 (*LALInferenceLikelihoodFunction) (LALInferenceVariables *currentP
 /** Perform one step of an algorithm, replaces \c runState ->currentParams */
 typedef INT4 (*LALInferenceEvolveOneStepFunction) (struct tagLALInferenceRunState *runState);
 
+/** Propose a swap between chain locations */
+typedef UINT4 (*LALInferenceSwapRoutine) (struct tagLALInferenceRunState *runState, REAL8 *, INT4, FILE *);
+
 /**
  * Type declaration for an algorithm function which is called by the driver code
  * The user must initialise runState before use. The Algorithm manipulates
@@ -482,6 +472,77 @@ typedef void (*LALInferenceAlgorithm) (struct tagLALInferenceRunState *runState)
 
 /** Type declaration for output logging function, can be user-declared */
 typedef void (*LALInferenceLogFunction) (struct tagLALInferenceRunState *runState, LALInferenceVariables *vars);
+
+
+/**
+ * Structure for holding a LALInference proposal, along with name and stats.
+ */
+typedef struct
+tagLALInferenceProposal
+{
+    LALInferenceProposalFunction *func;  /* The actual proposal function */
+    char name[VARNAME_MAX]; /* The name of the proposal.  This is used for printing stats */
+    INT4   weight;     // Weight of proposal function in cycle
+    INT4   proposed;   // Number of times proposal has been called
+    INT4   accepted;   // Number of times a proposal from this function has been accepted
+    LALInferenceVariables *args; /** Local storage for arguments needed by the proposal (e.g. number of detectors) */
+}
+
+/**
+ * Structure for holding a proposal cycle
+ */
+typedef struct
+tagLALInferenceProposalCycle
+{
+    LALInferenceProposal **proposals;  /** Array of proposals (one per proposal function) */
+    INT4 *order; /* Array of proposal orders, with each element giving the index of the funcion in *proposals* */
+    INT4 length; /** Length of cycle */
+    INT4 nProposals; /* The number of unique proposals in the cycle */
+    INT4 counter; /** Counter for cycling through proposals */
+    char last_proposal[VARNAME_MAX]; /** Name of current proposal */
+    LALInferenceVariables *proposalArgs; /** Storage for arguments needed by proposal functions (e.g. number of detectors) */
+} LALInferenceProposalCycle
+
+/**
+ * Structure containing chain-specific variables
+ */
+typedef struct
+tagLALInferenceThreadState
+{
+    INT4 id; /** Unique integer ID of this thread.  Handy of I/O. */
+    LALInferenceProposalFunction *proposal; /** The proposal cycle */
+    LALInferenceProposalCycle *cycle; /** Cycle of proposals to call */
+    LALInferenceModel *model; /** Stucture containing model buffers and parameters */
+    REAL8 currentPropDensity; /** Array containing multiple proposal densities */
+    REAL8 temperature;
+    LALInferenceVariables *proposalArgs, /** Arguments needed by proposals */
+                          *priorArgs; /** Prior boundaries, etc.  This is
+                                          stored at the thread level because proposals
+                                          often need to know about prior boundaries */
+    LALInferenceVariables *currentParams, /** The current parameters */
+                          *preProposalParams, /** Current location going into jump proposal */
+                          *proposedParams; /** Parameters proposed */
+    LALInferenceVariables **differentialPoints; /** Array of points for differential evolution */
+    size_t differentialPointsLength; /** Length of the current differential points stored in
+                                         differentialPoints.  This should be removed can be given
+                                         as an algorithmParams entry */
+    size_t differentialPointsSize; /** Size of the differentialPoints memory block
+                                       (must be >= length of differential points).
+                                        Can also be removed. */
+    size_t differentialPointsSkip; /** When the DE buffer gets too long, start storing
+                                       only every n-th output point; this counter stores n */
+    REAL8 *currentIFOSNRs; /** Array storing single-IFO SNRs of current sample */
+    REAL8 *currentIFOLikelihoods; /** Array storing single-IFO likelihoods of current sample */
+    REAL8 currentSNR; /** Array storing network SNR of current sample */
+    REAL8 nullLikelihood;
+    REAL8 currentLikelihood; /** This should be removed, can be given as an algorithmParams or proposalParams entry */
+    REAL8 currentPrior; /** This should be removed, can be given as an algorithmParams entry */
+    INT4 accepted;
+    INT4 acceptanceCount;
+    gsl_rng *GSLrandom;
+    struct timeval tv;
+} LALInferenceThreadState;
+
 
 /**
  * Structure containing inference run state
@@ -498,46 +559,14 @@ tagLALInferenceRunState
   LALInferencePriorFunction          prior; /** The prior for the parameters */
   LALInferenceCubeToPriorFunction    CubeToPrior; /** MultiNest prior for the parameters */
   LALInferenceLikelihoodFunction     likelihood; /** The likelihood function */
-  LALInferenceProposalFunction       proposal; /** The proposal function */
   LALInferenceLogFunction            logsample; /** Log sample, i.e. to disk */
-  LALInferenceTemplateFunction templt; /** The template generation function */
-  LALInferenceModel        *model; /** Stucture containing model buffers and parameters */
-  LALInferenceModel        **modelArray; /** Array containing multiple models */
   struct tagLALInferenceIFOData      *data; /** The data from the interferometers */
-  LALInferenceVariables **currentParamArray;         /** Array containing multiple currentParams */
-  REAL8 *currentPropDensityArray;         /** Array containing multiple proposal densities */
-  LALInferenceVariables              *currentParams, /** The current parameters */
-    *priorArgs,                                      /** Any special arguments for the prior function */
-    *proposalArgs,                                   /** Any special arguments for the proposal function */
-    *proposalStats,                                  /** Set of structs containing statistics for each proposal*/
-    *algorithmParams,                                /** Parameters which control the running of the algorithm*/
-    *preProposalParams,                              /** Current location going into jump proposal */
-    *proposedParams;                                 /** Parameters proposed */
+  LALInferenceVariables              *priorArgs,     /** Any special arguments for the prior function */
+    *algorithmParams;                                /** Parameters which control the running of the algorithm*/
   LALInferenceVariables				**livePoints; /** Array of live points for Nested Sampling */
-  LALInferenceVariables **differentialPoints;        /** Array of points for differential evolution */
-  size_t differentialPointsLength;                   /** Length of the current differential points stored in 
-                                                         differentialPoints.  This should be removed can be given 
-                                                         as an algorithmParams entry */
-  size_t differentialPointsSize;                     /** Size of the differentialPoints memory block 
-                                                         (must be >= length of differential points).  
-                                                         Can also be removed. */
-  size_t differentialPointsSkip;                     /** When the DE
-							 buffer gets
-							 too long,
-							 start storing
-							 only every
-							 n-th output
-							 point; this
-							 counter
-							 stores n */
-  REAL8*        currentIFOSNRs; /** Array storing single-IFO SNRs of current sample */
-  REAL8*        currentIFOLikelihoods; /** Array storing single-IFO likelihoods of current sample */
-  REAL8         currentSNR; /** Array storing network SNR of current sample */
-  REAL8			currentLikelihood;  /** This should be removed, can be given as an algorithmParams or proposalParams entry */
-  REAL8                 currentPrior;       /** This should be removed, can be given as an algorithmParams entry */
-  gsl_rng               *GSLrandom;         /** A pointer to a GSL random number generator */
-  REAL8                  *currentPriors;
-  REAL8                  *currentLikelihoods;
+  LALInferenceThreadState          **threads; /** Array of chains for this run */
+  LALInferenceSwapRoutine  *parallelSwap;
+  gsl_rng *GSLrandom;
 } LALInferenceRunState;
 
 
@@ -665,7 +694,7 @@ void LALInferencePrintSample(FILE *fp,LALInferenceVariables *sample);
 void LALInferencePrintSampleNonFixed(FILE *fp,LALInferenceVariables *sample);
 
 /** Output spline calibration parameters */
-void LALInferencePrintSplineCalibration(FILE *fp, LALInferenceRunState *state);
+void LALInferencePrintSplineCalibration(FILE *fp, LALInferenceThreadState *thread, LALInferenceIFOData *ifo);
 
 /** Read in the non-fixed parameters from the given file (position in
     the file must be arranged properly before calling this
@@ -710,8 +739,8 @@ void LALInferenceProcessParamLine(FILE *inp, char **headers, LALInferenceVariabl
 void LALInferenceSortVariablesByName(LALInferenceVariables *vars);
 
 /** LALInferenceVariable buffer to array and vica versa */
-INT4 LALInferenceThinnedBufferToArray(LALInferenceRunState *state, REAL8 **array, INT4 step);
-INT4 LALInferenceBufferToArray(LALInferenceRunState *state, REAL8 **array);
+INT4 LALInferenceThinnedBufferToArray(LALInferenceThreadState *thread, REAL8** DEarray, INT4 step);
+INT4 LALInferenceBufferToArray(LALInferenceThreadState *thread, REAL8** DEarray);
 
 void LALInferenceArrayToBuffer(LALInferenceRunState *state, REAL8 **array, INT4 nPoints);
 
@@ -1033,7 +1062,7 @@ void LALInferenceSetstringVariable(LALInferenceVariables* vars,const char* name,
 /**
  * Print spline calibration parameter names as tab-separated ASCII
  */
-void LALInferenceFprintSplineCalibrationHeader(FILE *out, LALInferenceRunState *state);
+void LALInferenceFprintSplineCalibrationHeader(FILE *output, LALInferenceThreadState *thread, LALInferenceIFOData *ifo);
 
 void LALInferenceDetFrameToEquatorial(LALDetector *det0, LALDetector *det1,
                                       REAL8 t0, REAL8 alpha, REAL8 theta,
