@@ -41,6 +41,8 @@ REAL8 XLALCompareMetrics( const gsl_matrix *g1_ij, const gsl_matrix *g2_ij );
 
 gsl_vector *XLALMetricEllipseBoundingBox( const gsl_matrix *g_ij, const double max_mismatch );
 
+int XLALProjectMetric( gsl_matrix **p_gpr_ij, const gsl_matrix *g_ij, const UINT4 c );
+
 /// @}
 
 #ifdef __cplusplus

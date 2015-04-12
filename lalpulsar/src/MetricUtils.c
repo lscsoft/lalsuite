@@ -132,3 +132,60 @@ gsl_vector *XLALMetricEllipseBoundingBox(
   return bounding_box;
 
 } // XLALMetricEllipseBoundingBox()
+
+///
+/// Calculate the projected metric onto the subspace orthogonal to coordinate-axis \c c, namely
+/// \f$ g^{\prime}_{ij} = g_{ij} - ( g_{ic} g_{jc} / g_{cc} ) \f$, where \f$c\f$ is the index of
+/// the projected coordinate.
+///
+/// \note \c *p_gpr_ij will be allocated if \c NULL. \c *p_gpr_ij and \c g_ij may point to the same
+/// matrix.
+///
+int
+XLALProjectMetric(
+  gsl_matrix **p_gpr_ij,			///< [in,out] Pointer to projected matrix \f$g^{\prime}_{ij}\f$
+  const gsl_matrix *g_ij,			///< [in] Matrix to project \f$g_{ij}\f$
+  const UINT4 c					///< [in] Index of projected coordinate
+  )
+{
+
+  // Check input
+  XLAL_CHECK( g_ij != NULL, XLAL_EFAULT );
+  XLAL_CHECK( g_ij->size1 == g_ij->size2, XLAL_ESIZE );
+  XLAL_CHECK( p_gpr_ij != NULL, XLAL_EFAULT );
+  if ( *p_gpr_ij != NULL ) {
+    XLAL_CHECK( (*p_gpr_ij)->size1 == (*p_gpr_ij)->size2, XLAL_ESIZE );
+    XLAL_CHECK( (*p_gpr_ij)->size1 == g_ij->size1, XLAL_ESIZE );
+  } else {
+    GAMAT( *p_gpr_ij, g_ij->size1, g_ij->size2 );
+  }
+  XLAL_CHECK( c < g_ij->size1, XLAL_EINVAL );
+
+  // Allocate temporary matrix
+  gsl_matrix *GAMAT( ret_ij, g_ij->size1, g_ij->size2 );
+
+  // Compute projected matrix
+  for ( UINT4 i=0; i < g_ij->size1; i++)
+    {
+    for ( UINT4 j=0; j < g_ij->size2; j++ )
+      {
+        if ( i==c || j==c )
+          {
+            gsl_matrix_set ( ret_ij, i, j, 0.0 );
+          }
+        else
+          {
+            double proj = gsl_matrix_get(g_ij, i, j) - (gsl_matrix_get(g_ij, i, c) * gsl_matrix_get(g_ij, j, c) / gsl_matrix_get(g_ij, c, c));
+            gsl_matrix_set ( ret_ij, i, j, proj );
+          }
+      } /* for j < dim2 */
+
+    } /* for i < dim1 */
+  gsl_matrix_memcpy( *p_gpr_ij, ret_ij );
+
+  // Cleanup
+  GFMAT( ret_ij );
+
+  return XLAL_SUCCESS;
+
+} // XLALProjectMetric()

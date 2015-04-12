@@ -265,7 +265,6 @@ XLALDetectorPosVel (PosVel3D_t *spin_posvel,
 		    );
 
 int XLALPtolemaicPosVel ( PosVel3D_t *posvel, const LIGOTimeGPS *tGPS );
-gsl_matrix *XLALProjectMetric ( const gsl_matrix * g_ij, const UINT4 c );
 
 void XLALequatorialVect2ecliptic ( vect3D_t out, const vect3D_t in );
 void XLALeclipticVect2equatorial ( vect3D_t out, const vect3D_t in );

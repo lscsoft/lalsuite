@@ -39,6 +39,7 @@
 
 #include <lal/EstimateAmplitudeParams.h>
 #include <lal/UniversalDopplerMetric.h>
+#include <lal/MetricUtils.h>
 
 /**
  * \author Reinhard Prix, Karl Wette
@@ -1211,7 +1212,6 @@ XLALDopplerFstatMetricCoh ( const DopplerMetricParams *metricParams,  	/**< inpu
   DopplerMetric *metric = NULL;
   REAL8 cosi, psi;
   double relerr;
-  gsl_matrix *tmp;
 
   /* ---------- sanity/consistency checks ---------- */
   XLAL_CHECK_NULL ( metricParams, XLAL_EINVAL, "Invalid NULL input 'metricParams'\n" );
@@ -1286,34 +1286,28 @@ XLALDopplerFstatMetricCoh ( const DopplerMetricParams *metricParams,  	/**< inpu
       /* gF_ij */
       if ( metric->gF_ij )
         {
-          if ( (tmp = XLALProjectMetric ( metric->gF_ij, projCoord )) == NULL ) {
+          if ( XLALProjectMetric ( &metric->gF_ij, metric->gF_ij, projCoord ) != XLAL_SUCCESS ) {
             XLALPrintError ("%s: failed to project gF_ij onto coordinate '%d'. errno=%d\n", __func__, projCoord, xlalErrno );
             XLAL_ERROR_NULL ( XLAL_EFUNC );
           }
-          gsl_matrix_free ( metric->gF_ij );
-          metric->gF_ij = tmp;
         }
 
       /* gFav_ij */
       if ( metric->gFav_ij )
         {
-          if ( (tmp = XLALProjectMetric ( metric->gFav_ij, projCoord )) == NULL ) {
+          if ( XLALProjectMetric ( &metric->gFav_ij, metric->gFav_ij, projCoord ) != XLAL_SUCCESS ) {
             XLALPrintError ("%s: failed to project gFav_ij onto coordinate '%d'. errno=%d\n", __func__, projCoord, xlalErrno );
             XLAL_ERROR_NULL ( XLAL_EFUNC );
           }
-          gsl_matrix_free ( metric->gFav_ij );
-          metric->gFav_ij = tmp;
         }
 
       /* phase-metric g_ij */
       if ( metric->g_ij )
         {
-          if ( (tmp = XLALProjectMetric ( metric->g_ij, projCoord )) == NULL ) {
+          if ( XLALProjectMetric ( &metric->g_ij, metric->g_ij, projCoord ) != XLAL_SUCCESS ) {
             XLALPrintError ("%s: failed to project g_ij onto coordinate '%d'. errno=%d\n", __func__, projCoord, xlalErrno );
             XLAL_ERROR_NULL ( XLAL_EFUNC );
           }
-          gsl_matrix_free ( metric->g_ij );
-          metric->g_ij = tmp;
         }
 
     } /* if projectCoordinate >= 0 */
@@ -2165,58 +2159,6 @@ XLALComputeFisherFromAtoms ( const FmetricAtoms_t *atoms, PulsarAmplitudeParams 
 
 } /* XLALComputeFisherFromAtoms() */
 
-
-/**
- * Calculate the projected metric onto the subspace orthogonal to coordinate-axis 'c', namely
- * ret_ij = g_ij - ( g_ic * g_jc / g_cc ) , where c is the value of the projected coordinate
- * The output-matrix is allocate here
- *
- * return 0 = OK, -1 on error.
- */
-gsl_matrix *
-XLALProjectMetric ( const gsl_matrix * g_ij, const UINT4 c )
-{
-  UINT4 i,j, dim1, dim2;
-  gsl_matrix *ret_ij;
-
-  if ( !g_ij ) {
-    XLALPrintError ("%s: invalid NULL input 'g_ij'.\n", __func__ );
-    XLAL_ERROR_NULL ( XLAL_EINVAL );
-  }
-
-  dim1 = g_ij->size1;
-  dim2 = g_ij->size2;
-
-  if ( dim1 != dim2 ) {
-    XLALPrintError ( "%s: input matrix g_ij must be square! (got %d x %d)\n", __func__, dim1, dim2 );
-    XLAL_ERROR_NULL ( XLAL_EINVAL );
-  }
-
-  if ( (ret_ij = gsl_matrix_alloc ( dim1, dim2 )) == NULL ) {
-    XLALPrintError ("%s: failed to gsl_matrix_alloc(%d, %d)\n", __func__, dim1, dim2 );
-    XLAL_ERROR_NULL ( XLAL_ENOMEM );
-  }
-
-  for ( i=0; i < dim1; i++)
-    {
-    for ( j=0; j < dim2; j++ )
-      {
-        if ( i==c || j==c )
-          {
-            gsl_matrix_set ( ret_ij, i, j, 0.0 );
-          }
-        else
-          {
-            double proj = gsl_matrix_get(g_ij, i, j) - (gsl_matrix_get(g_ij, i, c) * gsl_matrix_get(g_ij, j, c) / gsl_matrix_get(g_ij, c, c));
-            gsl_matrix_set ( ret_ij, i, j, proj );
-          }
-      } /* for j < dim2 */
-
-    } /* for i < dim1 */
-
-  return ret_ij;
-
-} /* XLALProjectMetric() */
 
 /** Convert 3-D vector from equatorial into ecliptic coordinates */
 void
