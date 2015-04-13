@@ -36,12 +36,13 @@
 #define frand() (rand() / (REAL4)RAND_MAX)
 #define Relerr(dx,x) (fabsf(x)>0 ? fabsf((dx)/(x)) : fabsf(dx) )
 
-#define BENCH_VECTORMATH_FUNCF_1T1(funcf,abstol0,reltol0)                         \
+// ----- test and benchmark operators with 1 REAL4 vector input and 1 REAL4 vector output (S2S) ----------
+#define TESTBENCH_VECTORMATH_S2S(name)                                  \
   {                                                                     \
-    XLAL_CHECK ( XLALVector##funcf##_FPU( xOut_Ref, xIn, Ntrials ) == XLAL_SUCCESS, XLAL_EFUNC ); \
+    XLAL_CHECK ( XLALVector##name##REAL4_FPU( xOut_Ref, xIn, Ntrials ) == XLAL_SUCCESS, XLAL_EFUNC ); \
     tic = XLALGetCPUTime();                                           \
     for (UINT4 l=0; l < Nruns; l ++ ) {                                 \
-      XLAL_CHECK ( XLALVector##funcf( xOut, xIn, Ntrials ) == XLAL_SUCCESS, XLAL_EFUNC ); \
+      XLAL_CHECK ( XLALVector##name##REAL4( xOut, xIn, Ntrials ) == XLAL_SUCCESS, XLAL_EFUNC ); \
     }                                                                   \
     toc = XLALGetCPUTime();                                           \
     maxErr = maxRelerr = 0;                                             \
@@ -53,17 +54,17 @@
       maxRelerr = fmaxf ( relerr, maxRelerr );                          \
     }                                                                   \
     XLALPrintInfo ( "%-32s: %4.0f Mops/sec [maxErr = %7.2g (tol=%7.2g), maxRelerr = %7.2g (tol=%7.2g)]\n", \
-                    XLALVector##funcf##_name, (REAL8)Ntrials * Nruns / (toc - tic)/1e6, maxErr, (abstol0), maxRelerr, (reltol0) ); \
-    XLAL_CHECK ( (maxErr <= (abstol0)), XLAL_ETOL, "%s: absolute error (%g) exceeds tolerance (%g)\n", #funcf, maxErr, abstol0 ); \
-    XLAL_CHECK ( (maxRelerr <= (reltol0)), XLAL_ETOL, "%s: relative error (%g) exceeds tolerance (%g)\n", #funcf, maxRelerr, reltol0 ); \
+                    XLALVector##name##REAL4_name, (REAL8)Ntrials * Nruns / (toc - tic)/1e6, maxErr, (abstol), maxRelerr, (reltol) ); \
+    XLAL_CHECK ( (maxErr <= (abstol)), XLAL_ETOL, "%s: absolute error (%g) exceeds tolerance (%g)\n", #name "REAL4", maxErr, abstol ); \
+    XLAL_CHECK ( (maxRelerr <= (reltol)), XLAL_ETOL, "%s: relative error (%g) exceeds tolerance (%g)\n", #name "REAL4", maxRelerr, reltol ); \
   }
 
-#define BENCH_VECTORMATH_FUNCF_1T2(funcf,abstol0,reltol0)                         \
+#define TESTBENCH_VECTORMATH_S2SS(name)                                 \
   {                                                                     \
-    XLAL_CHECK ( XLALVector##funcf##_FPU( xOut_Ref, xOut2_Ref, xIn, Ntrials ) == XLAL_SUCCESS, XLAL_EFUNC ); \
-    tic = XLALGetCPUTime();                                           \
+    XLAL_CHECK ( XLALVector##name##REAL4_FPU( xOut_Ref, xOut2_Ref, xIn, Ntrials ) == XLAL_SUCCESS, XLAL_EFUNC ); \
+    tic = XLALGetCPUTime();                                               \
     for (UINT4 l=0; l < Nruns; l ++ ) {                                 \
-      XLAL_CHECK ( XLALVector##funcf( xOut, xOut2, xIn, Ntrials ) == XLAL_SUCCESS, XLAL_EFUNC ); \
+      XLAL_CHECK ( XLALVector##name##REAL4( xOut, xOut2, xIn, Ntrials ) == XLAL_SUCCESS, XLAL_EFUNC ); \
     }                                                                   \
     toc = XLALGetCPUTime();                                           \
     maxErr = maxRelerr = 0;                                             \
@@ -78,9 +79,9 @@
       maxRelerr = fmaxf ( relerr2, maxRelerr );                         \
     }                                                                   \
     XLALPrintInfo ( "%-32s: %4.0f Mops/sec [maxErr = %7.2g (tol=%7.2g), maxRelerr = %7.2g (tol=%7.2g)]\n", \
-                    XLALVector##funcf##_name, (REAL8)Ntrials * Nruns / (toc - tic)/1e6, maxErr, (abstol0), maxRelerr, (reltol0) ); \
-    XLAL_CHECK ( (maxErr <= (abstol0)), XLAL_ETOL, "%s: absolute error (%g) exceeds tolerance (%g)\n", #funcf, maxErr, abstol0 ); \
-    XLAL_CHECK ( (maxRelerr <= (reltol0)), XLAL_ETOL, "%s: relative error (%g) exceeds tolerance (%g)\n", #funcf, maxRelerr, reltol0 ); \
+                    XLALVector##name##REAL4_name, (REAL8)Ntrials * Nruns / (toc - tic)/1e6, maxErr, (abstol), maxRelerr, (reltol) ); \
+    XLAL_CHECK ( (maxErr <= (abstol)), XLAL_ETOL, "%s: absolute error (%g) exceeds tolerance (%g)\n", #name "REAL4", maxErr, abstol ); \
+    XLAL_CHECK ( (maxRelerr <= (reltol)), XLAL_ETOL, "%s: relative error (%g) exceeds tolerance (%g)\n", #name "REAL4", maxRelerr, reltol ); \
   }
 
 // local types
@@ -135,50 +136,42 @@ main ( int argc, char *argv[] )
   REAL4 maxErr = 0, maxRelerr = 0;
   REAL4 abstol, reltol;
 
-  // ---------- input data x in [-1000, 1000] for sin(),cos() ----------
-  XLALPrintInfo ("Testing sinf(x), cosf(x) for x in [-1000, 1000]\n");
+  XLALPrintInfo ("Testing sin(x), cos(x) for x in [-1000, 1000]\n");
   for ( UINT4 i = 0; i < Ntrials; i ++ ) {
     xIn[i] = 2000 * ( frand() - 0.5 );
   }
   abstol = 2e-7, reltol = 1e-5;
-  // ==================== SINF() ====================
-  BENCH_VECTORMATH_FUNCF_1T1(SinREAL4,abstol,reltol);
-  XLALPrintInfo ("\n");
+  // ==================== SIN() ====================
+  TESTBENCH_VECTORMATH_S2S(Sin);
 
-  // ==================== COSF() ====================
-  BENCH_VECTORMATH_FUNCF_1T1(CosREAL4,abstol,reltol);
-  XLALPrintInfo ("\n");
+  // ==================== COS() ====================
+  TESTBENCH_VECTORMATH_S2S(Cos);
 
-  // ==================== SINCOSF() ====================
-  BENCH_VECTORMATH_FUNCF_1T2(SinCosREAL4,abstol,reltol);
-  XLALPrintInfo ("\n");
+  // ==================== SINCOS() ====================
+  TESTBENCH_VECTORMATH_S2SS(SinCos);
 
-  // ==================== SINCOSF(2PI*x) ====================
-  BENCH_VECTORMATH_FUNCF_1T2(SinCos2PiREAL4,abstol,reltol);
-  XLALPrintInfo ("\n");
+  // ==================== SINCOS(2PI*x) ====================
+  TESTBENCH_VECTORMATH_S2SS(SinCos2Pi);
 
-  // ==================== EXPF() ====================
-  // ---------- input data x in [-10, 10] for sin(),cos() ----------
-  XLALPrintInfo ("Testing expf(x) for x in [-10, 10]\n");
+  // ==================== EXP() ====================
+  XLALPrintInfo ("\nTesting exp(x) for x in [-10, 10]\n");
   for ( UINT4 i = 0; i < Ntrials; i ++ ) {
     xIn[i] = 20 * ( frand() - 0.5 );
   }
+
   abstol = 3e-3, reltol = 2e-7;
+  TESTBENCH_VECTORMATH_S2S(Exp);
 
-  BENCH_VECTORMATH_FUNCF_1T1(ExpREAL4,abstol,reltol);
-  XLALPrintInfo ("\n");
-
-  // ==================== LOGF() ====================
-  // ---------- input data x in [0, 10000] for logf(x) ----------
-  XLALPrintInfo ("Testing logf(x) for x in (0, 10000]\n");
+  // ==================== LOG() ====================
+  XLALPrintInfo ("\nTesting log(x) for x in (0, 10000]\n");
   for ( UINT4 i = 0; i < Ntrials; i ++ ) {
     xIn[i] = 10000.0f * frand() + 1e-6;
   } // for i < Ntrials
   abstol = 2e-6, reltol = 2e-7;
 
-  BENCH_VECTORMATH_FUNCF_1T1(LogREAL4,abstol,reltol);
-  XLALPrintInfo ("\n");
+  TESTBENCH_VECTORMATH_S2S(Log);
 
+  XLALPrintInfo ("\n");
   // ---------- clean up memory ----------
   XLALDestroyREAL4VectorAligned ( xIn_a );
   XLALDestroyREAL4VectorAligned ( xOut_a );

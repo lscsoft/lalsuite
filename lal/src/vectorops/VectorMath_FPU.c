@@ -45,37 +45,39 @@ static void local_sincosf_2pi(float in, float *out1, float *out2) {
 // ========== internal generic FPU functions ==========
 
 static inline int
-XLALVectorFuncf1T1_FPU ( REAL4 *out, const REAL4 *in, const UINT4 len, float (*f)(float) )
+XLALVectorMath_S2S_FPU ( REAL4 *out, const REAL4 *in, const UINT4 len, float (*f)(float) )
 {
   for ( UINT4 i = 0; i < len; i ++ )
     {
       out[i] = (*f) ( in[i] );
     } // for i < len
   return XLAL_SUCCESS;
-} // XLALVectorFuncf1T1_FPU()
+}
 
 static inline int
-XLALVectorFuncf1T2_FPU ( REAL4 *out1, REAL4 *out2, const REAL4 *in, const UINT4 len, void (*f)(float, float*, float*) )
+XLALVectorMath_S2SS_FPU ( REAL4 *out1, REAL4 *out2, const REAL4 *in, const UINT4 len, void (*f)(float, float*, float*) )
 {
   for ( UINT4 i = 0; i < len; i ++ )
     {
       (*f) ( in[i], &(out1[i]), &(out2[i]) );
     } // for i < len
   return XLAL_SUCCESS;
-} // XLALVectorFuncf1T1_FPU()
+}
 
 // ========== internal FPU vector math functions ==========
 
-#define DEFINE_VECTORMATH_FUNCF_1T1(NAME, SSE_FUNC) \
-  DEFINE_VECTORMATH_ANY( XLALVectorFuncf1T1_FPU, NAME, ( REAL4 *out, const REAL4 *in, const UINT4 len ), ( (out != NULL) && (in != NULL) ), ( out, in, len, SSE_FUNC ) )
+// ---------- define vector math functions with 1 REAL4 vector input to 1 REAL4 vector output (S2S) ----------
+#define DEFINE_VECTORMATH_S2S(NAME, FPU_OP)                             \
+  DEFINE_VECTORMATH_ANY( XLALVectorMath_S2S_FPU, NAME ## REAL4, ( REAL4 *out, const REAL4 *in, const UINT4 len ), ( (out != NULL) && (in != NULL) ), ( out, in, len, FPU_OP ) )
 
-DEFINE_VECTORMATH_FUNCF_1T1(SinREAL4, sinf)
-DEFINE_VECTORMATH_FUNCF_1T1(CosREAL4, cosf)
-DEFINE_VECTORMATH_FUNCF_1T1(ExpREAL4, expf)
-DEFINE_VECTORMATH_FUNCF_1T1(LogREAL4, logf)
+DEFINE_VECTORMATH_S2S(Sin, sinf)
+DEFINE_VECTORMATH_S2S(Cos, cosf)
+DEFINE_VECTORMATH_S2S(Exp, expf)
+DEFINE_VECTORMATH_S2S(Log, logf)
 
-#define DEFINE_VECTORMATH_FUNCF_1T2(NAME, SSE_FUNC) \
-  DEFINE_VECTORMATH_ANY( XLALVectorFuncf1T2_FPU, NAME, ( REAL4 *out1, REAL4 *out2, const REAL4 *in, const UINT4 len ), ( (out1 != NULL) && (out2 != NULL) && (in != NULL) ), ( out1, out2, in, len, SSE_FUNC ) )
+// ---------- define vector math functions with 1 REAL4 vector input to 2 REAL4 vector outputs (S2SS) ----------
+#define DEFINE_VECTORMATH_S2SS(NAME, FPU_OP)                            \
+  DEFINE_VECTORMATH_ANY( XLALVectorMath_S2SS_FPU, NAME ## REAL4, ( REAL4 *out1, REAL4 *out2, const REAL4 *in, const UINT4 len ), ( (out1 != NULL) && (out2 != NULL) && (in != NULL) ), ( out1, out2, in, len, FPU_OP ) )
 
-DEFINE_VECTORMATH_FUNCF_1T2(SinCosREAL4, local_sincosf)
-DEFINE_VECTORMATH_FUNCF_1T2(SinCos2PiREAL4, local_sincosf_2pi)
+DEFINE_VECTORMATH_S2SS(SinCos, local_sincosf)
+DEFINE_VECTORMATH_S2SS(SinCos2Pi, local_sincosf_2pi)

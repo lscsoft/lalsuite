@@ -40,7 +40,7 @@
 // ========== internal generic SSEx functions ==========
 
 static inline int
-XLALVectorFuncf1T1_SSEx ( REAL4 *out, const REAL4 *in, const UINT4 len, v4sf (*f)(v4sf) )
+XLALVectorMath_S2S_SSEx ( REAL4 *out, const REAL4 *in, const UINT4 len, __m128 (*f)(__m128) )
 {
   XLAL_CHECK ( isMemAligned(out, 16) && isMemAligned(in, 16), XLAL_EINVAL, "All vectors need to be 16-byte aligned (4xfloats\n");
 
@@ -66,10 +66,10 @@ XLALVectorFuncf1T1_SSEx ( REAL4 *out, const REAL4 *in, const UINT4 len, v4sf (*f
 
   return XLAL_SUCCESS;
 
-} // XLALVectorFuncf1T1_SSEx()
+} // XLALVectorMath_S2S_SSEx()
 
 static inline int
-XLALVectorFuncf1T2_SSEx ( REAL4 *out1, REAL4 *out2, const REAL4 *in, const UINT4 len, void (*f)(v4sf, v4sf*, v4sf*) )
+XLALVectorMath_S2SS_SSEx ( REAL4 *out1, REAL4 *out2, const REAL4 *in, const UINT4 len, void (*f)(__m128, __m128*, __m128*) )
 {
   XLAL_CHECK ( isMemAligned(out1, 16) && isMemAligned(out2, 16) && isMemAligned(in, 16), XLAL_EINVAL, "All vectors need to be 16-byte aligned (4xfloats\n");
 
@@ -97,20 +97,23 @@ XLALVectorFuncf1T2_SSEx ( REAL4 *out1, REAL4 *out2, const REAL4 *in, const UINT4
 
   return XLAL_SUCCESS;
 
-} // XLALVectorFuncf1T2_SSEx()
+} // XLALVectorMath_S2SS_SSEx()
+
 
 // ========== internal SSEx vector math functions ==========
 
-#define DEFINE_VECTORMATH_FUNCF_1T1(NAME, SSE_FUNC) \
-  DEFINE_VECTORMATH_ANY( XLALVectorFuncf1T1_SSEx, NAME, ( REAL4 *out, const REAL4 *in, const UINT4 len ), ( (out != NULL) && (in != NULL) ), ( out, in, len, SSE_FUNC ) )
+// ---------- define vector math functions with 1 REAL4 vector input to 1 REAL4 vector output (S2S) ----------
+#define DEFINE_VECTORMATH_S2S(NAME, SSE_OP)                             \
+  DEFINE_VECTORMATH_ANY( XLALVectorMath_S2S_SSEx, NAME ## REAL4, ( REAL4 *out, const REAL4 *in, const UINT4 len ), ( (out != NULL) && (in != NULL) ), ( out, in, len, SSE_OP ) )
 
-DEFINE_VECTORMATH_FUNCF_1T1(SinREAL4, sin_ps)
-DEFINE_VECTORMATH_FUNCF_1T1(CosREAL4, cos_ps)
-DEFINE_VECTORMATH_FUNCF_1T1(ExpREAL4, exp_ps)
-DEFINE_VECTORMATH_FUNCF_1T1(LogREAL4, log_ps)
+DEFINE_VECTORMATH_S2S(Sin, sin_ps)
+DEFINE_VECTORMATH_S2S(Cos, cos_ps)
+DEFINE_VECTORMATH_S2S(Exp, exp_ps)
+DEFINE_VECTORMATH_S2S(Log, log_ps)
 
-#define DEFINE_VECTORMATH_FUNCF_1T2(NAME, SSE_FUNC) \
-  DEFINE_VECTORMATH_ANY( XLALVectorFuncf1T2_SSEx, NAME, ( REAL4 *out1, REAL4 *out2, const REAL4 *in, const UINT4 len ), ( (out1 != NULL) && (out2 != NULL) && (in != NULL) ), ( out1, out2, in, len, SSE_FUNC ) )
+// ---------- define vector math functions with 1 REAL4 vector input to 2 REAL4 vector outputs (S2SS) ----------
+#define DEFINE_VECTORMATH_S2SS(NAME, SSE_OP)                            \
+  DEFINE_VECTORMATH_ANY( XLALVectorMath_S2SS_SSEx, NAME ## REAL4, ( REAL4 *out1, REAL4 *out2, const REAL4 *in, const UINT4 len ), ( (out1 != NULL) && (out2 != NULL) && (in != NULL) ), ( out1, out2, in, len, SSE_OP ) )
 
-DEFINE_VECTORMATH_FUNCF_1T2(SinCosREAL4, sincos_ps)
-DEFINE_VECTORMATH_FUNCF_1T2(SinCos2PiREAL4, sincos_ps_2pi)
+DEFINE_VECTORMATH_S2SS(SinCos, sincos_ps)
+DEFINE_VECTORMATH_S2SS(SinCos2Pi, sincos_ps_2pi)

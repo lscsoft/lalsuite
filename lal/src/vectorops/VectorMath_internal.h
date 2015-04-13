@@ -44,18 +44,18 @@
   int XLALVector##NAME##_SSE  ARG_DEF; \
   int XLALVector##NAME##_FPU  ARG_DEF;
 
-/* declare internal prototypes of SIMD-specific vector math functions with 1 input and 1 output */
-#define DECLARE_VECTORMATH_FUNCF_1T1(NAME) \
-  DECLARE_VECTORMATH_ANY( NAME, ( REAL4 *out, const REAL4 *in, const UINT4 len ) )
+/* declare internal prototypes of SIMD-specific vector math functions with 1 REAL4 vector input to 1 REAL4 vector output (S2S) */
+#define DECLARE_VECTORMATH_S2S(NAME) \
+  DECLARE_VECTORMATH_ANY( NAME ## REAL4, ( REAL4 *out, const REAL4 *in, const UINT4 len ) )
 
-DECLARE_VECTORMATH_FUNCF_1T1(SinREAL4)
-DECLARE_VECTORMATH_FUNCF_1T1(CosREAL4)
-DECLARE_VECTORMATH_FUNCF_1T1(ExpREAL4)
-DECLARE_VECTORMATH_FUNCF_1T1(LogREAL4)
+DECLARE_VECTORMATH_S2S(Sin)
+DECLARE_VECTORMATH_S2S(Cos)
+DECLARE_VECTORMATH_S2S(Exp)
+DECLARE_VECTORMATH_S2S(Log)
 
-/* declare internal prototypes of SIMD-specific vector math functions with 1 input and 2 outputs */
-#define DECLARE_VECTORMATH_FUNCF_1T2(NAME) \
-  DECLARE_VECTORMATH_ANY( NAME, ( REAL4 *out1, REAL4 *out2, const REAL4 *in, const UINT4 len ) )
+/* declare internal prototypes of SIMD-specific vector math functions with 1 REAL4 vector input to 2 REAL4 vector outputs (S2SS) */
+#define DECLARE_VECTORMATH_S2SS(NAME) \
+  DECLARE_VECTORMATH_ANY( NAME ## REAL4, ( REAL4 *out1, REAL4 *out2, const REAL4 *in, const UINT4 len ) )
 
-DECLARE_VECTORMATH_FUNCF_1T2(SinCosREAL4)
-DECLARE_VECTORMATH_FUNCF_1T2(SinCos2PiREAL4)
+DECLARE_VECTORMATH_S2SS(SinCos)
+DECLARE_VECTORMATH_S2SS(SinCos2Pi)

@@ -80,7 +80,7 @@ XLALDestroyREAL4VectorAligned ( REAL4VectorAligned *in )
 
 } // XLALDestroyREAL4VectorAligned()
 
-// -------------------- exported vector math functions --------------------
+// -------------------- export vector-operation functions --------------------
 
 /* Declare the function pointer, define the dispatch function and exported vector math function */
 #define EXPORT_VECTORMATH_ANY(NAME, ARG_DEF, ARG_CALL) \
@@ -109,18 +109,18 @@ XLALDestroyREAL4VectorAligned ( REAL4VectorAligned *in )
     \
   }
 
-/* Define exported vector math functions with 1 input and 1 output */
-#define EXPORT_VECTORMATH_FUNCF_1T1(NAME) \
-  EXPORT_VECTORMATH_ANY( NAME, (REAL4 *out, const REAL4 *in, const UINT4 len), (out, in, len) )
+// ---------- define exported vector math functions with 1 REAL4 vector input to 1 REAL4 vector output (S2S) ----------
+#define EXPORT_VECTORMATH_S2S(NAME)                                     \
+  EXPORT_VECTORMATH_ANY( NAME ## REAL4, (REAL4 *out, const REAL4 *in, const UINT4 len), (out, in, len) )
 
-EXPORT_VECTORMATH_FUNCF_1T1(SinREAL4)
-EXPORT_VECTORMATH_FUNCF_1T1(CosREAL4)
-EXPORT_VECTORMATH_FUNCF_1T1(ExpREAL4)
-EXPORT_VECTORMATH_FUNCF_1T1(LogREAL4)
+EXPORT_VECTORMATH_S2S(Sin)
+EXPORT_VECTORMATH_S2S(Cos)
+EXPORT_VECTORMATH_S2S(Exp)
+EXPORT_VECTORMATH_S2S(Log)
 
-/* Define exported vector math functions with 1 input and 2 outputs */
-#define EXPORT_VECTORMATH_FUNCF_1T2(NAME) \
-  EXPORT_VECTORMATH_ANY( NAME, (REAL4 *out1, REAL4 *out2, const REAL4 *in, const UINT4 len), (out1, out2, in, len) )
+// ---------- define exported vector math functions with 1 REAL4 vector input and 2 REAL4 vector outputs (S2SS) ----------
+#define EXPORT_VECTORMATH_S2SS(NAME) \
+  EXPORT_VECTORMATH_ANY( NAME ## REAL4, (REAL4 *out1, REAL4 *out2, const REAL4 *in, const UINT4 len), (out1, out2, in, len) )
 
-EXPORT_VECTORMATH_FUNCF_1T2(SinCosREAL4)
-EXPORT_VECTORMATH_FUNCF_1T2(SinCos2PiREAL4)
+EXPORT_VECTORMATH_S2SS(SinCos)
+EXPORT_VECTORMATH_S2SS(SinCos2Pi)
