@@ -116,14 +116,19 @@ LIGOTimeGPS * XLALGPSAdd( LIGOTimeGPS *epoch, REAL8 dt )
 }
 
 
-/** Difference between two GPS times. */
+/** Difference between two GPS times.  Computes t1 - t0. */
+LIGOTimeGPS * XLALGPSSubGPS( LIGOTimeGPS *t1, const LIGOTimeGPS *t0 )
+{
+  return XLALINT8NSToGPS(t1, XLALGPSToINT8NS(t1) - XLALGPSToINT8NS(t0));
+}
+
+
+/** Difference between two GPS times as double.  Computes t1 - t0. */
 REAL8 XLALGPSDiff( const LIGOTimeGPS *t1, const LIGOTimeGPS *t0 )
 {
-  LIGOTimeGPS diff;
+  LIGOTimeGPS diff = *t1;
 
-  XLALINT8NSToGPS(&diff, XLALGPSToINT8NS( t1 ) - XLALGPSToINT8NS( t0 ));
-
-  return XLALGPSGetREAL8(&diff);
+  return XLALGPSGetREAL8(XLALGPSSubGPS(&diff, t0));
 }
 
 

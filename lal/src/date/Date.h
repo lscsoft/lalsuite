@@ -141,7 +141,10 @@ LIGOTimeGPS * XLALGPSAdd( LIGOTimeGPS *epoch, REAL8 dt );
 /* Adds two GPS times. */
 LIGOTimeGPS * XLALGPSAddGPS( LIGOTimeGPS *epoch, const LIGOTimeGPS *dt );
 
-/* Difference between two GPS times. */
+/* Subtract a GPS time from a GPS time.  Computes t1 - t0. */
+LIGOTimeGPS * XLALGPSSubGPS( LIGOTimeGPS *t1, const LIGOTimeGPS *t0 );
+
+/* Difference between two GPS times as a double.  Returns t1 - t0. */
 REAL8 XLALGPSDiff( const LIGOTimeGPS *t1, const LIGOTimeGPS *t0 );
 
   /* Compares two GPS times. */
