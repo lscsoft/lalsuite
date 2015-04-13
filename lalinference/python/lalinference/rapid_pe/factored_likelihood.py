@@ -38,7 +38,7 @@ distMpcRef = 100 # a fiducial distance for the template source.
 #
 def precompute_likelihood_terms(event_time_geo, t_window, P, data_dict,
         psd_dict, Lmax, fMax, analyticPSD_Q=False,
-        inv_spec_trunc_Q=False, T_spec=0., verbose=True):
+        inv_spec_trunc_Q=False, T_spec=0., remove_zero=True, verbose=True):
     """
     Compute < h_lm(t) | d > and < h_lm | h_l'm' >
 
@@ -67,6 +67,15 @@ def precompute_likelihood_terms(event_time_geo, t_window, P, data_dict,
     P.deltaF = data_dict[detectors[0]].deltaF
     hlms_list = lsu.hlmoff(P, Lmax) # a linked list of hlms
     hlms = lsu.SphHarmFrequencySeries_to_dict(hlms_list, Lmax) # a dictionary
+
+    # If the hlm time series is identically zero, remove it
+    zero_modes = []
+    for mode in hlms.iterkeys():
+        if remove_zero and np.sum(np.abs(hlms[mode].data.data)) == 0:
+            zero_modes.append(mode)
+
+    for mode in zero_modes:
+        del hlms[mode]
 
     for det in detectors:
         # This is the event time at the detector
@@ -144,7 +153,11 @@ def factored_log_likelihood(extr_params, rholms_intp, crossTerms, Lmax):
     # Said another way, the m^th harmonic of the waveform should transform as
     # e^{- i m phiref}, but the Ylms go as e^{+ i m phiref}, so we must give
     # - phiref as an argument so Y_lm h_lm has the proper phiref dependence
-    Ylms = compute_spherical_harmonics(Lmax, incl, -phiref)
+    # FIXME: Strictly speaking, this should be inside the detector loop because
+    # there *could* be different l,m pairs for different detectors. This never
+    # happens in practice, so it's pulled out here, and we use the first
+    # detector as a reference.
+    Ylms = compute_spherical_harmonics(Lmax, incl, -phiref, rholms_intrp[rholms.keys()[0]])
 
     lnL = 0.
     for det in detectors:
@@ -194,7 +207,11 @@ def factored_log_likelihood_time_marginalized(tvals, extr_params, rholms_intp, r
     # Said another way, the m^th harmonic of the waveform should transform as
     # e^{- i m phiref}, but the Ylms go as e^{+ i m phiref}, so we must give
     # - phiref as an argument so Y_lm h_lm has the proper phiref dependence
-    Ylms = compute_spherical_harmonics(Lmax, incl, -phiref)
+    # FIXME: Strictly speaking, this should be inside the detector loop because
+    # there *could* be different l,m pairs for different detectors. This never
+    # happens in practice, so it's pulled out here, and we use the first
+    # detector as a reference.
+    Ylms = compute_spherical_harmonics(Lmax, incl, -phiref, rholms[rholms.keys()[0]])
 
     lnL = 0.
     delta_t = tvals[1] - tvals[0]
@@ -396,7 +413,7 @@ def complex_antenna_factor(det, RA, DEC, psi, tref):
 
     return Fp + 1j * Fc
 
-def compute_spherical_harmonics(Lmax, theta, phi):
+def compute_spherical_harmonics(Lmax, theta, phi, selected_modes=None):
     """
     Return a dictionary keyed by tuples
     (l,m)
@@ -410,6 +427,8 @@ def compute_spherical_harmonics(Lmax, theta, phi):
     Ylms = {}
     for l in range(2,Lmax+1):
         for m in range(-l,l+1):
+            if selected_modes is not None and (l,m) not in selected_modes:
+                continue
             Ylms[ (l,m) ] = lal.SpinWeightedSphericalHarmonic(theta, phi,-2, l, m)
 
     return Ylms
