@@ -869,6 +869,11 @@ assert(t1 % t2 == 0.5 and isinstance(t1 % t2, LIGOTimeGPS))
 assert(t1 > t2 and t2 < t1 and t1 >= t2 and t2 <= t1)
 assert(LIGOTimeGPS(333333333,333333333) == LIGOTimeGPS(1000000000) / 3)
 assert(LIGOTimeGPS(666666666,666666667) == LIGOTimeGPS(2000000000) / 3)
+assert(LIGOTimeGPS("-62997760.825036067") == LIGOTimeGPS("-47044285.062262587") - LIGOTimeGPS("15953475.76277348"))
+assert(LIGOTimeGPS("-6542354.389038578") == LIGOTimeGPS("-914984.929117316") * 7.1502318572066237)
+# FIXME:  reversed operators broken.  this gives incorrect result
+#assert(LIGOTimeGPS("-6542354.389038578") == 7.1502318572066237 * LIGOTimeGPS("-914984.929117316"))
+assert(LIGOTimeGPS("-127965.770535834") == LIGOTimeGPS("-914984.929117316") / 7.1502318572066237)
 t1 += 812345667.75
 assert(str(t1) == "812345678.250000000")
 assert(LIGOTimeGPS(repr(t1)) == t1)

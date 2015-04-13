@@ -220,7 +220,8 @@ typedef struct {
 
   /// Binary operators need only be implemented for two ::LIGOTimeGPS arguments; the specialised
   /// input typemaps defined above will then allow other suitable types to be substituted as
-  /// arguments.
+  /// arguments.  In some cases, however, we do implement special cases for some types to avoid
+  /// loss of precision.
 
   /// </li><li>
 
@@ -239,19 +240,23 @@ typedef struct {
   /// Return the subtraction of two ::LIGOTimeGPS.
   LIGOTimeGPS* __sub__(LIGOTimeGPS* gps) {
     LIGOTimeGPS* retn = %swiglal_new_copy(*$self, LIGOTimeGPS);
-    return XLALGPSSetREAL8(retn, XLALGPSDiff(retn, gps));
+    return XLALGPSSubGPS(retn, gps);
   }
   LIGOTimeGPS* __rsub__(LIGOTimeGPS* gps) {
     LIGOTimeGPS* retn = %swiglal_new_copy(*gps, LIGOTimeGPS);
-    return XLALGPSSetREAL8(retn, XLALGPSDiff(retn, $self));
+    return XLALGPSSubGPS(retn, $self);
   }
 
   /// </li><li>
 
-  /// Return the multiplication of two ::LIGOTimeGPS.
-  LIGOTimeGPS* __mul__(LIGOTimeGPS* gps) {
+  /// Return the multiplication of a ::LIGOTimeGPS by a number.
+  LIGOTimeGPS* __mul__(double factor) {
     LIGOTimeGPS* retn = %swiglal_new_copy(*$self, LIGOTimeGPS);
-    return XLALGPSMultiply(retn, XLALGPSGetREAL8(gps));
+    return XLALGPSMultiply(retn, factor);
+  }
+  LIGOTimeGPS* __mul__(LIGOTimeGPS* factor) {
+    LIGOTimeGPS* retn = %swiglal_new_copy(*$self, LIGOTimeGPS);
+    return XLALGPSMultiply(retn, XLALGPSGetREAL8(factor));
   }
   LIGOTimeGPS* __rmul__(LIGOTimeGPS* gps) {
     LIGOTimeGPS* retn = %swiglal_new_copy(*gps, LIGOTimeGPS);
@@ -260,10 +265,14 @@ typedef struct {
 
   /// </li><li>
 
-  /// Return the floating-point division of two ::LIGOTimeGPS.
-  LIGOTimeGPS* __div__(LIGOTimeGPS* gps) {
+  /// Return the floating-point division of a ::LIGOTimeGPS by a number.
+  LIGOTimeGPS* __div__(double divisor) {
     LIGOTimeGPS* retn = %swiglal_new_copy(*$self, LIGOTimeGPS);
-    return XLALGPSDivide(retn, XLALGPSGetREAL8(gps));
+    return XLALGPSDivide(retn, divisor);
+  }
+  LIGOTimeGPS* __div__(LIGOTimeGPS* divisor) {
+    LIGOTimeGPS* retn = %swiglal_new_copy(*$self, LIGOTimeGPS);
+    return XLALGPSDivide(retn, XLALGPSGetREAL8(divisor));
   }
   LIGOTimeGPS* __rdiv__(LIGOTimeGPS* gps) {
     LIGOTimeGPS* retn = %swiglal_new_copy(*gps, LIGOTimeGPS);
