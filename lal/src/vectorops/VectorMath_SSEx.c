@@ -46,12 +46,10 @@ XLALVectorFuncf1T1_SSEx ( REAL4 *out, const REAL4 *in, const UINT4 len, v4sf (*f
 
   // walk through vector in blocks of 4
   UINT4 i4Max = len - ( len % 4 );
-  for ( UINT4 i4 = 0; i4 < i4Max/4; i4 ++ )
+  for ( UINT4 i4 = 0; i4 < i4Max; i4 += 4 )
     {
-      UINT4 i0 = i4 * 4;
-
-      const v4sf *in4p = (const void *)&(in[i0]);
-      v4sf *out4p = (void *)&out[i0];
+      const v4sf *in4p = (const void *)&(in[i4]);
+      v4sf *out4p = (void *)&out[i4];
 
       (*out4p) = (*f)( (*in4p) );
 
@@ -78,13 +76,11 @@ XLALVectorFuncf1T2_SSEx ( REAL4 *out1, REAL4 *out2, const REAL4 *in, const UINT4
 
   // walk through vector in blocks of 4
   UINT4 i4Max = len - ( len % 4 );
-  for ( UINT4 i4 = 0; i4 < i4Max/4; i4 ++ )
+  for ( UINT4 i4 = 0; i4 < i4Max; i4 += 4 )
     {
-      UINT4 i0 = i4 * 4;
-
-      const v4sf *in4p = (const void *)&(in[i0]);
-      v4sf *out4p_1 = (void *)&(out1[i0]);
-      v4sf *out4p_2 = (void *)&(out2[i0]);
+      const v4sf *in4p = (const void *)&(in[i4]);
+      v4sf *out4p_1 = (void *)&(out1[i4]);
+      v4sf *out4p_2 = (void *)&(out2[i4]);
 
       (*f) ( (*in4p), out4p_1, out4p_2 );
 

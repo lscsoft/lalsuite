@@ -42,12 +42,10 @@ XLALVectorFuncf1T1_AVXx ( REAL4 *out, const REAL4 *in, const UINT4 len, v8sf (*f
 
   // walk through vector in blocks of 8
   UINT4 i8Max = len - ( len % 8 );
-  for ( UINT4 i8 = 0; i8 < i8Max/8; i8 ++ )
+  for ( UINT4 i8 = 0; i8 < i8Max; i8 += 8 )
     {
-      UINT4 i0 = i8 * 8;
-
-      const v8sf *in8p = (const void *)&(in[i0]);
-      v8sf *out8p = (void *)&(out[i0]);
+      const v8sf *in8p = (const void *)&(in[i8]);
+      v8sf *out8p = (void *)&(out[i8]);
 
       (*out8p) = (*f)( (*in8p) );
 
@@ -72,15 +70,13 @@ XLALVectorFuncf1T2_AVXx ( REAL4 *out1, REAL4 *out2, const REAL4 *in, const UINT4
 {
   XLAL_CHECK ( isMemAligned(out1, 32) && isMemAligned(out2, 32) && isMemAligned(in, 32), XLAL_EINVAL, "All vectors need to be 32-byte aligned (8xfloats\n");
 
-  // walk through vector in blocks of 4
+  // walk through vector in blocks of 8
   UINT4 i8Max = len - ( len % 8 );
-  for ( UINT4 i8 = 0; i8 < i8Max/8; i8 ++ )
+  for ( UINT4 i8 = 0; i8 < i8Max; i8 += 8)
     {
-      UINT4 i0 = i8 * 8;
-
-      const v8sf *in8p = (const void *)&(in[i0]);
-      v8sf *out8p_1 = (void *)&(out1[i0]);
-      v8sf *out8p_2 = (void *)&(out2[i0]);
+      const v8sf *in8p = (const void *)&(in[i8]);
+      v8sf *out8p_1 = (void *)&(out1[i8]);
+      v8sf *out8p_2 = (void *)&(out2[i8]);
 
       (*f) ( (*in8p), out8p_1, out8p_2 );
 
