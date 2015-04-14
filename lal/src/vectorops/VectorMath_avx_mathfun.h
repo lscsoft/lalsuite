@@ -123,16 +123,17 @@ typedef union imm_xmm_union {
   v4sii xmm[2];
 } imm_xmm_union;
 
+
 #define COPY_IMM_TO_XMM(imm_, xmm0_, xmm1_) {    \
-    imm_xmm_union u __attribute__((aligned(32)));  \
-    u.imm = imm_;				   \
-    xmm0_ = u.xmm[0];                            \
-    xmm1_ = u.xmm[1];                            \
+    xmm0_ = _mm256_extractf128_si256(imm_,0); \
+    xmm1_ = _mm256_extractf128_si256(imm_,1); \
 }
 
+
 #define COPY_XMM_TO_IMM(xmm0_, xmm1_, imm_) {                       \
-    imm_xmm_union u __attribute__((aligned(32))); \
-    u.xmm[0]=xmm0_; u.xmm[1]=xmm1_; imm_ = u.imm; \
+    imm_ = _mm256_setzero_si256(); /* just to avoid compiler warning/error about uninitialized imm_ */ \
+    imm_ = _mm256_insertf128_si256(imm_,xmm0_,0);\
+    imm_ = _mm256_insertf128_si256(imm_,xmm1_,1);\
   }
 
 
