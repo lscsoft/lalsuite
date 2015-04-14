@@ -160,6 +160,9 @@ cluster_win = config.getfloat('calibration', 'cluster_win')
 kde_nsamples = config.getint('calibration','kde_num_samples')
 kde = np.linspace(0, 1, kde_nsamples ) ### uniformly spaced ranks used to sample kde
 
+max_num_gch = config.getint('calibration', 'max_num_gch')
+max_num_cln = config.getint('calibration', 'max_num_cln')
+
 #========================
 # data discovery
 #========================
@@ -336,6 +339,18 @@ while gpsstart < gpsstop:
         if not opts.dont_cluster:
             output = reed.cluster_datfile_output( output, cluster_key=cluster_key, cluster_win=cluster_win)
 
+        ### downselect to only keep the most recent max_num_gch and max_num_cln
+        these_columns, glitches, cleans = reed.separate_output( output )
+        glitches.sort(key=lambda l: l[these_columns['GPS']])
+        cleans.sort(key=lambda l: l[these_columns['GPS']])
+        if len(glitches) > max_num_gch:
+            logger.info('  downselecting to the %d most recent glitches'%max_num_gch)
+            glitches = glitches[-max_num_gch:]
+        if len(cleans) > max_num_cln:
+            logger.info('  downselecting to the %d most recent cleans'%max_num_cln)
+            cleans = cleans[-max_num_cln:]
+        output = reed.combine_separated_output( these_columns, [glitches, cleans] )
+
         ### define weights over time
         output['weight'] = calibration.weights( output['GPS'], weight_type="uniform" )
 
@@ -382,10 +397,15 @@ while gpsstart < gpsstop:
     #===============================================================================================
 
     for classifier in classifiers:
+        logger.info('computing KDE pdfs for %s'%classifier)
+
         r, c, g = urocs[classifier] 
+        logger.info('  compute number of samples at each rank')
         dc, dg = reed.rcg_to_diff( c, g ) ### get the numbers at each rank
 
+        logger.info('  computing KDE for cleans')
         kde_cln = reed.kde_pwg( kde, r, dc ) ### compute kde estimate
+        logger.info('  computing KDE for glitches')
         kde_gch = reed.kde_pwg( kde, r, dg )
 
         ### write kde points to file
@@ -399,7 +419,9 @@ while gpsstart < gpsstop:
 
         ### update cache files
         if opts.force or ((c[-1] > min_num_cln) and (g[-1] >= min_num_gch)): 
+            logger.info('  adding %s to %s'%(kde_cln_name, kde_cache[classifier].name))
             kde_cache[classifier].append( kde_cln_name )
+            logger.info('  adding %s to %s'%(kde_gch_name, kde_cache[classifier].name))
             kde_cache[classifier].append( kde_gch_name )
         else:
             logger.warning('WARNING: not enough samples to trust calibration. skipping kde update for %s'%classifier)
@@ -411,23 +433,31 @@ while gpsstart < gpsstop:
         logger.info('checking historical calibration for accuracy')
 
         ### find all *fap*npy.gz files, bin them according to classifier
-        logger.info('    finding all *fap*.npy.gz files')
+        logger.info('  finding all *fap*.npy.gz files')
         fapsD = defaultdict( list )
         for fap in [fap for fap in  reed.get_all_files_in_range(realtimedir, gpsstart-lookback, gpsstart+stride, pad=0, suffix='.npy.gz') if "fap" in fap]:
-            fapsD[reed.extract_fap_name( dat )].append( fap )
+            fapsD[reed.extract_fap_name( fap )].append( fap )
 
         ### throw away files we will never need
         for key in fapsD.keys():
             if key not in classifiers: ### throw away unwanted files
                 fapsD.pop(key)
             else: ### keep only files that overlap with scisegs
-                fapsD[key] = [ dat for dat in datsD[key] if event.livetime(event.andsegments([idqsegs, [reed.extract_start_stop(dat, suffix='.npy.gz')]])) ]
+                fapsD[key] = [ fap for fap in fapsD[key] if event.livetime(event.andsegments([idqsegs, [reed.extract_start_stop(fap, suffix='.npy.gz')]])) ]
 
         ### iterate through classifiers
         alerts = {} ### files that we should be alerted about
         for classifier in classifiers:
             logger.info('  checking calibration for %s'%classifier)
 
+            cache = reed.cache(output_dir, classifier, "_fapcache%s"%usertag)
+            logger.info('    writing list of fap files to %s'%cache)
+            f = open(cache, 'w')
+            for fap in fapsD[classifier]:
+                print >>f, fap
+            f.close()
+
+            logger.info('    analyzing timeseries')
             _times, timeseries = reed.combine_ts(fapsD[classifier], n=2) ### read in time-series
 
             times = []
@@ -440,20 +470,22 @@ while gpsstart < gpsstop:
                     faps.append( _ts[0] )
                     fapsUL.append( _ts[1] )
 
+            logger.info('    checking point estimate calibration')
             ### check point estimate calibration
             _, deadtimes, statedFAPs, errs = calibration.check_calibration(idqsegs, times, faps, opts.FAPthr) 
 #            errs = np.array([ d/F - 1.0 for d, F in zip(deadtimes, statedFAPs) if F ])
 
+            logger.info('    checking upper limit calibration')
             ### check UL estimate calibration
             _, deadtimesUL, statedFAPsUL, errsUL = calibration.check_calibration(idqsegs, times, fapsUL, opts.FAPthr)
 #            errsUL = np.array([ d/F - 1.0 for d, F in zip(deadtimesUL, statedFAPs) if F ])
 
             calib_check = reed.calib_check(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
-            logger.info('  writing %s'%calib_check)            
+            logger.info('    writing %s'%calib_check)            
 
             file_obj = open(calib_check, "w")
             print >> file_obj, "livetime = %.3f"%event.livetime(idqsegs)
-            for FAPthr, deadtime, statedFAP, e, deadtimeUL, statedFAPUL, eUL in zip(opts.FAPthr, deadtimes, statedFAPs, err, deadtimesUL, statedFAPsUL, errUL):
+            for FAPthr, deadtime, statedFAP, err, deadtimeUL, statedFAPUL, errUL in zip(opts.FAPthr, deadtimes, statedFAPs, errs, deadtimesUL, statedFAPsUL, errsUL):
                     print >> file_obj, calibration.report_str%(FAPthr, statedFAP, deadtime, err , statedFAPUL, deadtimeUL, errUL )
             file_obj.close()
 
