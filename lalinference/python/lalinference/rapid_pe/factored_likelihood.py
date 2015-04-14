@@ -31,7 +31,7 @@ from itertools import product
 __author__ = "Evan Ochsner <evano@gravity.phys.uwm.edu>, R. O'Shaughnessy"
 
 # FIXME: BADBADBAD
-distMpcRef = 100 # a fiducial distance for the template source.
+distRef = 100*1e6*lal.PC_SI # a fiducial distance for the template source.
 
 #
 # Main driver functions
@@ -58,7 +58,7 @@ def precompute_likelihood_terms(event_time_geo, t_window, P, data_dict,
     crossTerms = {}
 
     # Compute hlms at a reference distance, distance scaling is applied later
-    P.dist = distMpcRef*1e6*lal.PC_SI
+    P.dist = distRef
 
     P.print_params()
     # Compute all hlm modes with l <= Lmax
@@ -260,7 +260,7 @@ def single_detector_log_likelihood(rholm_vals, crossTerms, Ylms, F, dist):
     Outputs: The value of ln L for a single detector given the inputs.
     """
 
-    invDistMpc = (lal.PC_SI*1e6*distMpcRef)/dist
+    invDistMpc = distRef/dist
     Fstar = np.conj(F)
 
     term1, term20, term21 = 0., 0., 0.
