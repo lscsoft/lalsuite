@@ -799,12 +799,7 @@ def cluster_datfile_output( output, cluster_key='signif', cluster_win=1.0 ):
     cleans   = cluster( cleans  , columns, cluster_key=cluster_key, cluster_window=cluster_win ) 
 
     ### combine into output format
-    output = dict( (c,[]) for c in columns.keys() )
-    for trg in glitches+cleans:
-        for c, i in columns.items():
-            output[c].append( trg[i] )
-
-    return output
+    return combine_separated_output( columns, [glitches, cleans] )
 
 def separate_output( output ):
     """
@@ -827,6 +822,14 @@ def separate_output( output ):
             cleans.append( [output[c][ind] for c in columns] ) 
 
     return dict( (c,j) for j, c in enumerate(columns) ), glitches, cleans
+
+def combine_separated_output( columns, event_lists ):
+    output = dict( (c,[]) for c in columns.keys() )
+    for events in event_lists:
+        for trg in events:
+            for c, i in columns.items():
+                output[c].append( trg[i] )
+    return output
 
 def cluster( samples, columns, cluster_key='signif', cluster_window=1.0 ):
     """
