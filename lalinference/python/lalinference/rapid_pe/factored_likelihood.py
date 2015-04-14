@@ -27,11 +27,9 @@ import numpy as np
 from scipy import interpolate, integrate
 from scipy import special
 from itertools import product
+from common_cl import distRef
 
 __author__ = "Evan Ochsner <evano@gravity.phys.uwm.edu>, R. O'Shaughnessy"
-
-# FIXME: BADBADBAD
-distRef = 100*1e6*lal.PC_SI # a fiducial distance for the template source.
 
 #
 # Main driver functions

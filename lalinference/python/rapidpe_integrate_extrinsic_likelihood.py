@@ -159,7 +159,7 @@ P = lalsimutils.ChooseWaveformParams(
     ampO = opts.amp_order,
     tref = fiducial_epoch,
 
-    dist = factored_likelihood.distMpcRef * 1.e6 * lal.PC_SI,
+    dist = common_cl.distRef,
     incl = 0.0,
     phiref = 0.0,
     theta = 0.0,

@@ -22,6 +22,8 @@ from optparse import OptionParser, OptionGroup
 
 import numpy
 
+import lal
+
 #
 # Command line parsing utilities
 #
@@ -177,6 +179,7 @@ MAXJOBS = {
 t_ref_wind = 50e-3 # Interpolate in a window +/- this width about event time. 
 dmin = 1.    # min distance
 dmax = 300.  # max distance FOR ANY SOURCE EVER. EUCLIDEAN
+distRef = 100*1e6*lal.PC_SI # a fiducial distance for the template source.
 
 param_limits = { "psi": (0, 2*numpy.pi),
     "phi_orb": (0, 2*numpy.pi),
