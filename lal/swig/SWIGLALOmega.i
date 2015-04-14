@@ -147,7 +147,11 @@ typedef struct {
   /// C99, we don't have C++ operators available).  Many SWIG language modules will automatically
   /// map these functions to scripting-language operations in their runtime code. In some cases
   /// (ironically, Python itself when using <tt>-builtin</tt>!) additional directives are needed in
-  /// the scripting-language-specific interface.
+  /// the scripting-language-specific interface.  Note that although C LIGOTimeGPS objects are
+  /// naturally mutable, the SWIG version is exported as an immutable type to emulate other numeric
+  /// types like floats and ints (we do not implement <tt>.__iadd__()</tt> and other in-place
+  /// operators).  In Python this allows LIGOTimeGPS objects to be used as dictionary keys, just as
+  /// other numbers can be.
 
   /// </li><li>
 
