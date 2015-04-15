@@ -58,7 +58,7 @@ LIGOTimeGPS * XLALGPSSet( LIGOTimeGPS *epoch, INT4 gpssec, INT8 gpsnan )
 LIGOTimeGPS * XLALGPSSetREAL8( LIGOTimeGPS *epoch, REAL8 t )
 {
   INT4 gpssec = floor(t);
-  INT4 gpsnan = floor((t - gpssec) * XLAL_BILLION_REAL8 + 0.5);
+  INT4 gpsnan = round((t - gpssec) * XLAL_BILLION_REAL8);
   if(isnan(t)) {
     XLALPrintError("%s(): NaN", __func__);
     XLAL_ERROR_NULL(XLAL_EFPINVAL);
