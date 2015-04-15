@@ -24,7 +24,7 @@
 #include <lal/LALConstants.h>
 #include <lal/XLALError.h>
 #include <lal/AVFactories.h>
-#include <lal/LogPrintf.h>	 // for timing function XLALGetTimeOfDay()
+#include <lal/LogPrintf.h>	 // for timing function XLALGetCPUTime()
 #include <lal/UserInput.h>
 
 #include <lal/VectorMath.h>
@@ -39,11 +39,11 @@
 #define BENCH_VECTORMATH_FUNCF_1T1(funcf,abstol0,reltol0)                         \
   {                                                                     \
     XLAL_CHECK ( XLALVector##funcf##_FPU( xOut_Ref, xIn, Ntrials ) == XLAL_SUCCESS, XLAL_EFUNC ); \
-    tic = XLALGetTimeOfDay();                                           \
+    tic = XLALGetCPUTime();                                           \
     for (UINT4 l=0; l < Nruns; l ++ ) {                                 \
       XLAL_CHECK ( XLALVector##funcf( xOut, xIn, Ntrials ) == XLAL_SUCCESS, XLAL_EFUNC ); \
     }                                                                   \
-    toc = XLALGetTimeOfDay();                                           \
+    toc = XLALGetCPUTime();                                           \
     maxErr = maxRelerr = 0;                                             \
     for ( UINT4 i = 0; i < Ntrials; i ++ )                              \
     {                                                                   \
@@ -61,11 +61,11 @@
 #define BENCH_VECTORMATH_FUNCF_1T2(funcf,abstol0,reltol0)                         \
   {                                                                     \
     XLAL_CHECK ( XLALVector##funcf##_FPU( xOut_Ref, xOut2_Ref, xIn, Ntrials ) == XLAL_SUCCESS, XLAL_EFUNC ); \
-    tic = XLALGetTimeOfDay();                                           \
+    tic = XLALGetCPUTime();                                           \
     for (UINT4 l=0; l < Nruns; l ++ ) {                                 \
       XLAL_CHECK ( XLALVector##funcf( xOut, xOut2, xIn, Ntrials ) == XLAL_SUCCESS, XLAL_EFUNC ); \
     }                                                                   \
-    toc = XLALGetTimeOfDay();                                           \
+    toc = XLALGetCPUTime();                                           \
     maxErr = maxRelerr = 0;                                             \
     for ( UINT4 i = 0; i < Ntrials; i ++ ) {                            \
       REAL4 err  = fabsf ( xOut[i] - xOut_Ref[i] );                     \
