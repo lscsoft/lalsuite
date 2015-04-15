@@ -165,6 +165,8 @@ int XLALGPSCmp( const LIGOTimeGPS *t0, const LIGOTimeGPS *t1 )
  *
  * hi / lo ~= 2^26
  *
+ * (hi and lo have the same sign).
+ *
  * If x is 0, hi and lo are set to 0.  If x is positive (negative)
  * infinity, hi is set to positive (negative) infinity and lo is set to 0.
  * If x is NaN, hi and lo are set to NaN.
@@ -174,60 +176,75 @@ int XLALGPSCmp( const LIGOTimeGPS *t0, const LIGOTimeGPS *t1 )
 
 static void split_double(double x, double *hi, double *lo)
 {
+  /* special case for inf.  nan will take care of itself */
+  if(isinf(x)) {
+    *hi = x;
+    *lo = 0.;
+    return;
+  }
+  /* save leading order bits in *hi */
   *hi = (float) x;
-  *lo = isinf(x) ? 0 : x - *hi;
+  /* tweak to ensure residual will have same sign as *hi */
+  *hi -= LAL_REAL4_EPS * *hi;
+  /* residual */
+  *lo = x - *hi;
 }
 
 
 /** Multiply a GPS time by a number. */
 LIGOTimeGPS *XLALGPSMultiply( LIGOTimeGPS *gps, REAL8 x )
 {
-  int slo = gps->gpsSeconds % (1<<26);
-  int shi = gps->gpsSeconds - slo;
-  int nlo = gps->gpsNanoSeconds % (1<<15);
-  int nhi = gps->gpsNanoSeconds - nlo;
-  double xhi, xlo;
-  double addend;
-  LIGOTimeGPS gps_addend;
+  int seconds = gps->gpsSeconds;
+  int nanoseconds = gps->gpsNanoSeconds;
+  double slo, shi;
+  double xlo, xhi;
+  double addendlo[4], addendhi[4];
 
   if(isnan(x) || isinf(x)) {
     XLALPrintError("%s(): invalid multiplicand %g", __func__, x);
     XLAL_ERROR_NULL(XLAL_EFPINVAL);
   }
 
+  /* ensure the seconds and nanoseconds components have the same sign so
+   * that the addend fragments we compute below all have the same sign */
+
+  if(seconds < 0 && nanoseconds > 0) {
+    seconds += 1;
+    nanoseconds -= 1000000000;
+  } else if(seconds > 0 && nanoseconds < 0) {
+    seconds -= 1;
+    nanoseconds += 1000000000;
+  }
+
+  /* split seconds and multiplicand x into leading-order and low-order
+   * components */
+
+  slo = seconds % (1<<17);
+  shi = seconds - slo;
   split_double(x, &xhi, &xlo);
 
-  /* the count of seconds, the count of nanoseconds, and the multiplicand x
-   * have each been split into two parts, a high part and a low part.  from
-   * these, there are 8 terms in the product of gps and x.  the 8 terms are
-   * added to the result in 6 groups, in increasing order of expected
-   * magnitude using Kahan's compensated summation algorithm.  the
-   * assumption is that within each group the numerical dynamic range is
-   * small enough that the addend can be represented exactly by a
-   * double-precision floating point number. */
+  /* the count of seconds and the multiplicand x have each been split into
+   * two parts, a high part and a low part.  from these, there are 4 terms
+   * in their product, and each term has sufficiently low dynamic range
+   * that it can be computed using double precision floating point
+   * arithmetic.  we compute the 4 terms, split each into an integer and
+   * fractional part on its own, then sum the fractional parts and integer
+   * parts separately, adding the product of the nanoseconds and x into the
+   * fractional parts when summing them.  because the storage locations for
+   * those sums have relatively low dynamic range no care need be taken in
+   * computing the sums. */
 
-  addend = nlo * xlo / XLAL_BILLION_REAL8;
-  addend -= XLALGPSGetREAL8(XLALGPSSetREAL8(&gps_addend, addend));
-  *gps = gps_addend;
+  addendlo[0] = modf(slo * xlo, &addendhi[0]);
+  addendlo[1] = modf(shi * xlo, &addendhi[1]);
+  addendlo[2] = modf(slo * xhi, &addendhi[2]);
+  addendlo[3] = modf(shi * xhi, &addendhi[3]);
 
-  addend += (nlo * xhi + nhi * xlo) / XLAL_BILLION_REAL8;
-  addend -= XLALGPSGetREAL8(XLALGPSSetREAL8(&gps_addend, addend));
-  XLALGPSAddGPS(gps, &gps_addend);
-
-  addend += nhi * xhi / XLAL_BILLION_REAL8;
-  addend -= XLALGPSGetREAL8(XLALGPSSetREAL8(&gps_addend, addend));
-  XLALGPSAddGPS(gps, &gps_addend);
-
-  addend += slo * xlo;
-  addend -= XLALGPSGetREAL8(XLALGPSSetREAL8(&gps_addend, addend));
-  XLALGPSAddGPS(gps, &gps_addend);
-
-  addend += slo * xhi + shi * xlo;
-  addend -= XLALGPSGetREAL8(XLALGPSSetREAL8(&gps_addend, addend));
-  XLALGPSAddGPS(gps, &gps_addend);
-
-  addend += shi * xhi;
-  XLALGPSAddGPS(gps, XLALGPSSetREAL8(&gps_addend, addend));
+  /* initialize result with the sum of components that contribute to the
+   * fractional part */
+  XLALINT8NSToGPS(gps, round((addendlo[0] + addendlo[1] + addendlo[2] + addendlo[3]) * XLAL_BILLION_REAL8 + nanoseconds * x));
+  /* now add the components that contribute only to the integer seconds
+   * part */
+  gps->gpsSeconds += addendhi[0] + addendhi[1] + addendhi[2] + addendhi[3];
 
   return gps;
 }
