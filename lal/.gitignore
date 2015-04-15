@@ -63,6 +63,7 @@ test/date/JulianDayTest
 test/date/LMST2Test
 test/date/LMSTTest
 test/date/LeapSecsTest
+test/date/MultiplyGPSTest
 test/date/StrToGPSTest
 test/date/UTCtoGPSTest
 test/factories/ArrayFactoriesTest

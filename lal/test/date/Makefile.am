@@ -11,6 +11,7 @@ test_programs += JulianDayTest
 test_programs += LMSTTest
 test_programs += LMST2Test
 test_programs += LeapSecsTest
+test_programs += MultiplyGPSTest
 test_programs += StrToGPSTest
 test_programs += UTCtoGPSTest
 
