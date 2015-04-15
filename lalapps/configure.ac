@@ -44,7 +44,6 @@ AC_CONFIG_FILES([\
   src/ring/Makefile \
   src/stochastic/Makefile \
   src/string/Makefile \
-  src/tracksearch/Makefile \
 ])
 # FIXME: -Wno-unsupported is a hack which silences warnings regarding
 # subdir-objects in automake-1.14+. this will be the default, and only,
