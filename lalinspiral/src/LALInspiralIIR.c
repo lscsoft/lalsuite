@@ -39,10 +39,11 @@ static REAL8 clogabs(COMPLEX16 z)
 
 int XLALInspiralGenerateIIRSet(REAL8Vector *amp, REAL8Vector *phase, double epsilon, double alpha, double beta, double padding, COMPLEX16Vector **a1, COMPLEX16Vector **b0, INT4Vector **delay)
 {  
-	int j = amp->length-1, jstep, k;
+	int j = amp->length-1, jstep, jstepThird, k;
 	int nfilters = 0, decimationFactor = 1;
-	double phase_ddot, phase_dot;
+	double phase_tdot, phase_ddot, phase_dot;
 
+	//printf("This is confirming that the LALInspiralIIR.c code has been successfully modified");
 	/* FIXME: Add error checking for lengths of amp and phase */
 	if (amp->length != phase->length) 
 	         XLAL_ERROR(XLAL_EINVAL);
@@ -50,22 +51,49 @@ int XLALInspiralGenerateIIRSet(REAL8Vector *amp, REAL8Vector *phase, double epsi
 	*a1 = XLALCreateCOMPLEX16Vector(0);
 	*b0 = XLALCreateCOMPLEX16Vector(0);
 	*delay = XLALCreateINT4Vector(0);
+	
+	//printf("This is the modified code\n");
 
-	while (j >= 2 ) {
+	while (j > 3 ) {
 		//int prej = j;
 		/* Reset j so that the delay will be an integar number of decimated rate */
 		//j = amp->length-1 - (int) floor((amp->length-1-j)/(double) decimationFactor + 0.5)*decimationFactor;
 
 		/* Get second derivative term */
 		phase_ddot = (phase->data[j-2] - 2.0 * phase->data[j-1] + phase->data[j]) / (2.0 * LAL_PI);
-		/* Avoid negative term and avoid infinite loop */
+		phase_tdot = (phase->data[j-3] - 3.0 * phase->data[j-2] + 3.0 * phase->data[j-1] - phase->data[j]) / (2.0*LAL_PI);
+		phase_ddot = fabs(phase_ddot);
+		phase_tdot = fabs(phase_tdot);
+
 		if (phase_ddot < 0 || phase_ddot > 8*epsilon){
-			j = j - 1;
+				j = j - 1;
 			continue;
 		}
 
-		jstep = (int) floor(sqrt(2.0 * epsilon / phase_ddot)+0.5);
+		jstep = (int) fabs(floor(sqrt(2.0 * epsilon / fabs(phase_ddot))+0.5));
+		jstepThird = (int) fabs(floor(pow(6.0 * epsilon / fabs(phase_tdot),1./3)+0.5));
+		jstep = abs(jstep);
+		jstepThird = abs(jstepThird);
+
+		//jstepThird integer overflow??
+		if(jstep > jstepThird && jstepThird >0){
+		    jstep = jstepThird;
+		}
+		if(jstep == 0){
+		    jstep = 1;
+		}
 		k = (int ) floor((double ) j - alpha * (double ) jstep + 0.5);
+		if (k < 1){
+		    jstep = j;
+		    k = (int ) floor((double ) j - alpha * (double ) jstep + 0.5);
+		}
+		//printf("jstep: %d jstepThird: %d k: %d j:%d \n ", jstep, jstepThird, k, j);
+		
+
+		if(k == 0){
+		    k = 1;
+		}
+
 
 		if (k <= 2) break;
 		nfilters++;
@@ -120,7 +148,8 @@ int XLALInspiralIIRSetResponse(COMPLEX16Vector *a1, COMPLEX16Vector *b0, INT4Vec
 	for (a1_last = a1f + numFilters; a1f < a1_last; a1f++)
 		{
 			y = *b0f / *a1f;
-			length = (int) (logf((1e-13)/cabs(*b0f)))/(logf(cabs(*a1f)));// + *delayf;
+			length = (int) (logf(1e-13))/(logf(cabs(*a1f)));// + *delayf;
+			//length = (int) (logf((1e-13)/cabs(*b0f)))/(logf(cabs(*a1f)));// + *delayf;
 			int maxlength = response->length - *delayf;
 			if (length > maxlength)
 				length = maxlength;
