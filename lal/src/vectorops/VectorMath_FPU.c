@@ -32,35 +32,67 @@
 
 // ---------- local math functions ----------
 
-static void local_sincosf(float in, float *out1, float *out2) {
+static inline void local_sincosf(REAL4 in, REAL4 *out1, REAL4 *out2) {
   *out1 = sinf ( in );
   *out2 = cosf ( in );
 }
 
-static void local_sincosf_2pi(float in, float *out1, float *out2) {
+static inline void local_sincosf_2pi(REAL4 in, REAL4 *out1, REAL4 *out2) {
   *out1 = sinf ( (REAL4)LAL_TWOPI * in );
   *out2 = cosf ( (REAL4)LAL_TWOPI * in );
 }
 
+static inline REAL4 local_addf ( REAL4 x, REAL4 y ) {
+  return x + y;
+}
+
+static inline REAL4 local_mulf ( REAL4 x, REAL4 y ) {
+  return x * y;
+}
+
 // ========== internal generic FPU functions ==========
 
+// ---------- generic FPU operator with 1 REAL4 vector input to 1 REAL4 vector output (S2S) ----------
 static inline int
-XLALVectorMath_S2S_FPU ( REAL4 *out, const REAL4 *in, const UINT4 len, float (*f)(float) )
+XLALVectorMath_S2S_FPU ( REAL4 *out, const REAL4 *in, const UINT4 len, REAL4 (*op)(REAL4) )
 {
   for ( UINT4 i = 0; i < len; i ++ )
     {
-      out[i] = (*f) ( in[i] );
-    } // for i < len
+      out[i] = (*op) ( in[i] );
+    }
   return XLAL_SUCCESS;
 }
 
+// ---------- generic FPU operator with 1 REAL4 vector input to 2 REAL4 vector outputs (S2SS) ----------
 static inline int
-XLALVectorMath_S2SS_FPU ( REAL4 *out1, REAL4 *out2, const REAL4 *in, const UINT4 len, void (*f)(float, float*, float*) )
+XLALVectorMath_S2SS_FPU ( REAL4 *out1, REAL4 *out2, const REAL4 *in, const UINT4 len, void (*op)(REAL4, REAL4*, REAL4*) )
 {
   for ( UINT4 i = 0; i < len; i ++ )
     {
-      (*f) ( in[i], &(out1[i]), &(out2[i]) );
-    } // for i < len
+      (*op) ( in[i], &(out1[i]), &(out2[i]) );
+    }
+  return XLAL_SUCCESS;
+}
+
+// ---------- generic FPU operator with 2 REAL4 vector inputs to 1 REAL4 vector output (SS2S) ----------
+static inline int
+XLALVectorMath_SS2S_FPU ( REAL4 *out, const REAL4 *in1, const REAL4 *in2, const UINT4 len, REAL4 (*op)(REAL4, REAL4) )
+{
+  for ( UINT4 i = 0; i < len; i ++ )
+    {
+      out[i] = (*op) ( in1[i], in2[i] );
+    }
+  return XLAL_SUCCESS;
+}
+
+// ---------- generic FPU operator with 1 REAL4 scalar and 1 REAL4 vector inputs to 1 REAL4 vector output (sS2S) ----------
+static inline int
+XLALVectorMath_sS2S_FPU ( REAL4 *out, REAL4 scalar, const REAL4 *in, const UINT4 len, REAL4 (*op)(REAL4, REAL4) )
+{
+  for ( UINT4 i = 0; i < len; i ++ )
+    {
+      out[i] = (*op) ( scalar, in[i] );
+    }
   return XLAL_SUCCESS;
 }
 
@@ -81,3 +113,17 @@ DEFINE_VECTORMATH_S2S(Log, logf)
 
 DEFINE_VECTORMATH_S2SS(SinCos, local_sincosf)
 DEFINE_VECTORMATH_S2SS(SinCos2Pi, local_sincosf_2pi)
+
+// ---------- define vector math functions with 2 REAL4 vector inputs to 1 REAL4 vector output (SS2S) ----------
+#define DEFINE_VECTORMATH_SS2S(NAME, FPU_OP)                            \
+  DEFINE_VECTORMATH_ANY( XLALVectorMath_SS2S_FPU, NAME ## REAL4, ( REAL4 *out, const REAL4 *in1, const REAL4 *in2, const UINT4 len ), ( (out != NULL) && (in1 != NULL) && (in2 != NULL) ), ( out, in1, in2, len, FPU_OP ) )
+
+DEFINE_VECTORMATH_SS2S(Add, local_addf)
+DEFINE_VECTORMATH_SS2S(Multiply, local_mulf)
+
+// ---------- define vector math functions with 1 REAL4 scalar and 1 REAL4 vector inputs to 1 REAL4 vector output (sS2S) ----------
+#define DEFINE_VECTORMATH_sS2S(NAME, FPU_OP)                            \
+  DEFINE_VECTORMATH_ANY( XLALVectorMath_sS2S_FPU, NAME ## REAL4, ( REAL4 *out, REAL4 scalar, const REAL4 *in, const UINT4 len ), ( (out != NULL) && (in != NULL) ), ( out, scalar, in, len, FPU_OP ) )
+
+DEFINE_VECTORMATH_sS2S(Shift, local_addf)
+DEFINE_VECTORMATH_sS2S(Scale, local_mulf)

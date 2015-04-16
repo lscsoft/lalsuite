@@ -118,9 +118,24 @@ EXPORT_VECTORMATH_S2S(Cos)
 EXPORT_VECTORMATH_S2S(Exp)
 EXPORT_VECTORMATH_S2S(Log)
 
-// ---------- define exported vector math functions with 1 REAL4 vector input and 2 REAL4 vector outputs (S2SS) ----------
-#define EXPORT_VECTORMATH_S2SS(NAME) \
+// ---------- define exported vector math functions with 1 REAL4 vector input to 2 REAL4 vector outputs (S2SS) ----------
+#define EXPORT_VECTORMATH_S2SS(NAME)                                    \
   EXPORT_VECTORMATH_ANY( NAME ## REAL4, (REAL4 *out1, REAL4 *out2, const REAL4 *in, const UINT4 len), (out1, out2, in, len) )
 
 EXPORT_VECTORMATH_S2SS(SinCos)
 EXPORT_VECTORMATH_S2SS(SinCos2Pi)
+
+// ---------- define exported vector math functions with 2 REAL4 vector inputs to 1 REAL4 vector output (SS2S) ----------
+#define EXPORT_VECTORMATH_SS2S(NAME)                                    \
+  EXPORT_VECTORMATH_ANY( NAME ## REAL4, (REAL4 *out, const REAL4 *in1, const REAL4 *in2, const UINT4 len), (out, in1, in2, len) )
+
+EXPORT_VECTORMATH_SS2S(Add);
+EXPORT_VECTORMATH_SS2S(Multiply);
+
+// ---------- define exported vector math functions with 1 REAL4 scalar, 1 REAL4 vector inputs to 1 REAL4 vector output (sS2S) ----------
+#define EXPORT_VECTORMATH_sS2S(NAME)                                    \
+  EXPORT_VECTORMATH_ANY( NAME ## REAL4, (REAL4 *out, REAL4 scalar, const REAL4 *in, const UINT4 len), (out, scalar, in, len) )
+
+EXPORT_VECTORMATH_sS2S(Scale);
+EXPORT_VECTORMATH_sS2S(Shift);
+
