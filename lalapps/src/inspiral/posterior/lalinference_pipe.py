@@ -117,7 +117,8 @@ os.chdir(olddir)
 # End of program
 print 'Successfully created DAG file.'
 fulldagpath=os.path.join(cp.get('paths','basedir'),dag.get_dag_file())
-print 'Now run condor_submit_dag %s\n'%(fulldagpath)
+if not opts.dax:
+    print 'Now run condor_submit_dag %s\n'%(fulldagpath)
 
 if opts.condor_submit:
     import subprocess
