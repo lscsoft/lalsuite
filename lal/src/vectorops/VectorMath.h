@@ -74,6 +74,24 @@ int XLALVectorSinCosREAL4 ( REAL4 *out1, REAL4 *out2, const REAL4 *in, const UIN
 /** Compute \f$y_1 = \sin(2\pi in), out_2 = \cos(2\pi in)\f$ over REAL4 vectors \c out1, \c out2, \c in with \c len elements */
 int XLALVectorSinCos2PiREAL4 ( REAL4 *out1, REAL4 *out2, const REAL4 *in, const UINT4 len );
 
+/* -------------------- exported vector by vector operations -------------------- */
+
+/** Compute \f$y = in1 + in2\f$ over REAL4 vectors \c in1 and \c in2 with \c len elements */
+int XLALVectorAddREAL4 ( REAL4 *out, const REAL4 *in1, const REAL4 *in2, const UINT4 len);
+
+/** Compute \f$y = in1 * in2\f$ over REAL4 vectors \c in1 and \c in2 with \c len elements */
+int XLALVectorMultiplyREAL4 ( REAL4 *out, const REAL4 *in1, const REAL4 *in2, const UINT4 len);
+
+
+/* -------------------- exported vector by scalar operations -------------------- */
+
+/** Compute \f$y = scalar + in\f$ over REAL4 vector \c in with \c len elements */
+int XLALVectorShiftREAL4 ( REAL4 *out, REAL4 scalar, const REAL4 *in, const UINT4 len);
+
+/** Compute \f$y = scalar * in\f$ over REAL4 vector \c in with \c len elements */
+int XLALVectorScaleREAL4 ( REAL4 *out, REAL4 scalar, const REAL4 *in, const UINT4 len);
+
+
 /** @} */
 
 #ifdef  __cplusplus
