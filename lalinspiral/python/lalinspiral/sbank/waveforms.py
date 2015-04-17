@@ -138,7 +138,7 @@ class Template(object):
     __slots__ = ("m1", "m2", "bank", "_mchirp", "_tau0", "_wf", "_metric", "sigmasq", "is_seed_point")
 
     def __init__(self, m1, m2, bank):
-        self._wf = None
+        self._wf = {}
         self._metric = None
         self.sigmasq = 0.
         self._mchirp = compute_mchirp(m1, m2)
@@ -162,7 +162,7 @@ class Template(object):
         match the length of the ASD, so its normalization depends on
         its own length.
         """
-        if self._wf is None or self._wf.deltaF != df:  # need to generate a new wf
+        if not self._wf.has_key(df):
             wf = self._compute_waveform(df, self._f_final)
             if ASD is None:
                 ASD = PSD**0.5
@@ -179,9 +179,9 @@ class Template(object):
             self.sigmasq = compute_sigmasq(arr_view, df)
             arr_view[:] /= self.sigmasq**0.5
 
-            # down-convert to singla precision
-            self._wf = FrequencySeries_to_COMPLEX8FrequencySeries(wf)
-        return self._wf
+            # down-convert to single precision
+            self._wf[df] = FrequencySeries_to_COMPLEX8FrequencySeries(wf)
+        return self._wf[df]
 
     def metric_match(self, other, df, **kwargs):
         raise NotImplementedError
@@ -190,7 +190,7 @@ class Template(object):
         return InspiralSBankComputeMatch(self.get_whitened_normalized(df, **kwargs), other.get_whitened_normalized(df, **kwargs), workspace_cache)
 
     def clear(self):
-        self._wf = None
+        self._wf = {}
         self._metric = None
 
 class TaylorF2RedSpinTemplate(Template):
