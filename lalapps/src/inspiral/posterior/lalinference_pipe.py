@@ -91,7 +91,7 @@ if opts.pipedown_db is not None:
 
 # Create the DAG from the configparser object
 dag=pipe_utils.LALInferencePipelineDAG(cp,dax=opts.dax,site=opts.grid_site)
-if(opts.dax):
+if((opts.dax) and not cp.has_option('lalinference','fake-cache')):
 # Create a text file with the frames listed
   pfnfile = dag.create_frame_pfn_file()
   peg_frame_cache = inspiralutils.create_pegasus_cache_file(pfnfile)
@@ -123,11 +123,10 @@ if not opts.dax:
 if opts.condor_submit:
     import subprocess
     from subprocess import Popen
-           
+
     x = subprocess.Popen(['condor_submit_dag',fulldagpath])
     x.wait()
     if x.returncode==0:
       print 'Submitted DAG file'
     else:
       print 'Unable to submit DAG file'
-
