@@ -1128,14 +1128,10 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     else:
       if self.engine=='lalinferencemcmc':
         exe=cp.get('condor','mpiwrapper')
-        #universe="parallel"
         universe="vanilla"
-        #self.write_sub_file=self.__write_sub_file_mcmc_mpi
       elif self.engine=='lalinferencebambimpi':
-        exe=cp.get('condor','mpirun')
-        self.binary=cp.get('condor','lalinferencebambi')
+        exe=cp.get('condor','mpiwrapper')
         universe="vanilla"
-        #self.write_sub_file=self.__write_sub_file_mcmc_mpi
       elif self.engine=='lalinferencenest':
         exe=cp.get('condor',self.engine)
         if site is not None and site!='local':
@@ -1165,7 +1161,6 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     self.set_sub_file(os.path.abspath(submitFile))
     self.add_condor_cmd('getenv','true')
     if self.engine=='lalinferencemcmc' or self.engine=='lalinferencebambimpi':
-      #openmpipath=cp.get('condor','openmpi')
       self.binary=cp.get('condor',self.engine)
       self.mpirun=cp.get('condor','mpirun')
       if cp.has_section('mpi'):
@@ -1214,27 +1209,6 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
         self.set_universe('standard')
     pipeline.CondorDAGJob.set_grid_site(self,site)
 
-  def __write_sub_file_mcmc_mpi(self):
-    """
-    Nasty hack to insert the MPI stuff into the arguments
-    when write_sub_file is called
-    """
-    # First write the standard sub file
-    pipeline.CondorDAGJob.write_sub_file(self)
-    # Then read it back in to mangle the arguments line
-    outstring=""
-    MPIextraargs= ' -np '+self.machine_count+' '+self.binary#'--verbose --stdout cluster$(CLUSTER).proc$(PROCESS).mpiout --stderr cluster$(CLUSTER).proc$(PROCESS).mpierr '+self.binary+' -- '
-    subfilepath=self.get_sub_file()
-    subfile=open(subfilepath,'r')
-    for line in subfile:
-       if line.startswith('arguments = "'):
-          print 'Hacking sub file for MPI'
-          line=line.replace('arguments = "','arguments = "'+MPIextraargs,1)
-       outstring=outstring+line
-    subfile.close()
-    subfile=open(subfilepath,'w')
-    subfile.write(outstring)
-    subfile.close()
 
 class EngineNode(pipeline.CondorDAGNode):
   new_id = itertools.count().next
@@ -1514,6 +1488,12 @@ class LALInferenceBAMBINode(EngineNode):
     EngineNode.__init__(self,li_job)
     self.engine='lalinferencebambi'
     self.outfilearg='outfile'
+    if li_job.engine=='lalinferencebambimpi'
+      self.add_var_opt('mpirun',li_job.mpirun)
+      self.add_var_opt('np',str(li_job.machine_count))
+      self.add_var_opt('executable',li_job.binary)
+      self.add_pegasus_profile('condor','request_cpus',li_job.machine_count)
+
 
   def set_output_file(self,filename):
     self.fileroot=filename+'_'
