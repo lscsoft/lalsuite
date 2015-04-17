@@ -58,7 +58,7 @@ LIGOTimeGPS * XLALGPSSet( LIGOTimeGPS *epoch, INT4 gpssec, INT8 gpsnan )
 LIGOTimeGPS * XLALGPSSetREAL8( LIGOTimeGPS *epoch, REAL8 t )
 {
   INT4 gpssec = floor(t);
-  INT4 gpsnan = round((t - gpssec) * XLAL_BILLION_REAL8);
+  INT4 gpsnan = nearbyint((t - gpssec) * XLAL_BILLION_REAL8);
   if(isnan(t)) {
     XLALPrintError("%s(): NaN", __func__);
     XLAL_ERROR_NULL(XLAL_EFPINVAL);
@@ -241,7 +241,7 @@ LIGOTimeGPS *XLALGPSMultiply( LIGOTimeGPS *gps, REAL8 x )
 
   /* initialize result with the sum of components that contribute to the
    * fractional part */
-  XLALINT8NSToGPS(gps, round((addendlo[0] + addendlo[1] + addendlo[2] + addendlo[3]) * XLAL_BILLION_REAL8 + nanoseconds * x));
+  XLALINT8NSToGPS(gps, nearbyint((addendlo[0] + addendlo[1] + addendlo[2] + addendlo[3]) * XLAL_BILLION_REAL8 + nanoseconds * x));
   /* now add the components that contribute only to the integer seconds
    * part */
   gps->gpsSeconds += addendhi[0] + addendhi[1] + addendhi[2] + addendhi[3];
