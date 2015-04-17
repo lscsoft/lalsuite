@@ -230,6 +230,9 @@ np.random.mtrand.seed(opts.seed)
 # prepare a new XML document
 xmldoc = ligolw.Document()
 xmldoc.appendChild(ligolw.LIGO_LW())
+lsctables.SnglInspiralTable.RowType = SnglInspiralTable
+tbl = lsctables.New(lsctables.SnglInspiralTable)
+xmldoc.childNodes[-1].appendChild(tbl)
 
 # Prepare process table with information about the current program
 opts_dict = dict((k, v) for k, v in opts.__dict__.iteritems() if v is not False and v is not None)
@@ -305,6 +308,16 @@ while ((k + float(sum(ks)))/len(ks) < opts.convergence_threshold) and len(bank) 
         ks.append(k)
         k = 0
 
+        # Add to single inspiral table. Do not store templates that
+        # were in the original bank, only store the additions.
+        if not hasattr(tmplt, 'is_seed_point'):
+            row = tmplt.to_sngl()
+            # Event ids must be unique, or the table isn't valid, SQL needs this
+            row.event_id = ilwd.ilwdchar('sngl_inspiral:event_id:%d' %(len(bank),))
+            row.ifo = opts.instrument
+            row.process_id = process.process_id
+            tbl.append(row)
+
     # clear the proposal template if caching is not enabled
     if not opts.cache_waveforms:
         tmplt.clear()
@@ -315,23 +328,6 @@ print "total number of match calculations: %d" % bank._nmatch
 print "final bank size: %d" % len(bank)
 
 bank.clear()  # clear caches
-
-# insert our rows
-# Replace row with C datatype; nice side effect: initializes elements to 0 or ""
-lsctables.SnglInspiralTable.RowType = SnglInspiralTable
-tbl = lsctables.New(lsctables.SnglInspiralTable)
-xmldoc.childNodes[-1].appendChild(tbl)
-for idx, template in enumerate(bank):
-    # Do not store templates that were in the original bank, only store the
-    # additions.
-    if hasattr(template, 'is_seed_point'):
-        continue
-    row = template.to_sngl()
-    # Event ids must be unique, or the table isn't valid, SQL needs this
-    row.event_id = ilwd.ilwdchar('sngl_inspiral:event_id:%d' %(idx,))
-    row.ifo = opts.instrument
-    row.process_id = process.process_id
-    tbl.append(row)
 
 # write out the document
 ligolw_process.set_process_end_time(process)
