@@ -535,6 +535,14 @@ else:
         coarse_sbank_node.add_var_opt("match-min", coarse_mm)
         coarse_thresh = cp.get("coarse-sbank", "convergence-threshold")
         coarse_sbank_node.add_var_arg("--convergence-threshold %s" % coarse_thresh)
+
+        if cp.has_option("coarse-sbank", "templates-max"):
+            templates_max = cp.get("coarse-sbank", "templates-max")
+            assert templates_max >= 3*nbanks # you need at least a few templates per bank
+        else:
+            templates_max = 15*nbanks  # to prevent the coarse bank from running forever
+        coarse_sbank_node.add_var_arg("--templates-max %s" % templates_max)
+
         xmlCoarse, = coarse_sbank_node.get_output_files()
         pnode = [coarse_sbank_node]
         bank_names.append(xmlCoarse)

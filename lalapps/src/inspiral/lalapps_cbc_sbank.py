@@ -156,6 +156,7 @@ def parse_command_line():
     parser.add_option("--flow", type="float", help="Required. Set the low-frequency cutoff to use for the match caluclation.")
     parser.add_option("--match-min",help="Set minimum match of the bank. Note that since this is a stochastic process, the requested minimal match may not be strictly guaranteed but should be fulfilled on a statistical basis. Default: 0.95.", type="float", default=0.95)
     parser.add_option("--convergence-threshold", metavar="N", help="Set the criterion for convergence of the stochastic bank. The code terminates when there are N rejected proposals for each accepted proposal, averaged over the last ten acceptances. Default 1000.", type="int", default=1000)
+    parser.add_option("--templates-max", metavar="N", help="Use this option to force the code to exit after generating a specified number N of templates. Note that the code may exit with fewer than N templates if the convergence criterion is met first.", type="int", default=float('inf'))
     parser.add_option("--cache-waveforms", default = False, action="store_true", help="A given waveform in the template bank will be used many times throughout the bank generation process. You can save a considerable amount of CPU by caching the waveform from the first time it is generated; however, do so only if you are sure that storing the waveforms in memory will not overload the system memory.")
     parser.add_option("--neighborhood-size", metavar="N", default = 0.25, type="float", help="Specify the window size in seconds to define \"nearby\" templates used to compute the match against each proposed template. The neighborhood is chosen symmetric about the proposed template; \"nearby\" is defined using the option --neighborhood-type. The default value of 0.25 is *not a guarantee of performance*. Choosing the neighborhood too small will lead to larger banks (but also higher bank coverage).")
     parser.add_option("--neighborhood-param", default="tau0", choices=["tau0","dur"], help="Choose how the neighborhood is sorted for match calculations. TODO: Implement duration neighborhoods.")
@@ -293,7 +294,7 @@ ks = deque(10*[0], maxlen=10)
 k = 0 # k is nprop per iteration
 nprop = 1  # count total number of proposed templates
 status_format = "bank size: %d\tproposed: %d\t" + "\t".join("%s: %s" % name_format for name_format in zip(waveform.param_names, waveform.param_formats))
-while (k + float(sum(ks)))/len(ks) < opts.convergence_threshold:
+while ((k + float(sum(ks)))/len(ks) < opts.convergence_threshold) and len(bank) < opts.templates_max:
     tmplt = waveform(*proposal.next(), bank=bank)
     k += 1
     nprop += 1
