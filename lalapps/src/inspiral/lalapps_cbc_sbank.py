@@ -316,9 +316,6 @@ print "final bank size: %d" % len(bank)
 
 bank.clear()  # clear caches
 
-# Set up PSD for metric computation; calling into pylal, so need pylal types
-psd = REAL8FrequencySeries(name="psd", f0=0., deltaF=1., data=get_PSD(1., opts.flow, 1570., noise_model))
-
 # insert our rows
 # Replace row with C datatype; nice side effect: initializes elements to 0 or ""
 lsctables.SnglInspiralTable.RowType = SnglInspiralTable
@@ -334,9 +331,6 @@ for idx, template in enumerate(bank):
     row.event_id = ilwd.ilwdchar('sngl_inspiral:event_id:%d' %(idx,))
     row.ifo = opts.instrument
     row.process_id = process.process_id
-    row.Gamma0, row.Gamma1, row.Gamma2, row.Gamma3, row.Gamma4, row.Gamma5,\
-        row.Gamma6, row.Gamma7, row.Gamma8, row.Gamma9 = \
-        compute_metric(opts.flow, 1570., 4, row.tau0, row.tau3, psd)
     tbl.append(row)
 
 # write out the document
