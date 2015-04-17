@@ -32,3 +32,4 @@ do
 done
 
 echo "$MPIRUN -np $NP $EXE $MCMCARGS"
+$MPIRUN -np $NP $EXE $MCMCARGS
