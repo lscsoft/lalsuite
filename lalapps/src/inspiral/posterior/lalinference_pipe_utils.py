@@ -1127,16 +1127,15 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
         universe='vanilla'
     else:
       if self.engine=='lalinferencemcmc':
-        exe=cp.get('condor','mpirun')
-        self.binary=cp.get('condor',self.engine)
+        exe=cp.get('condor','mpiwrapper')
         #universe="parallel"
         universe="vanilla"
-        self.write_sub_file=self.__write_sub_file_mcmc_mpi
+        #self.write_sub_file=self.__write_sub_file_mcmc_mpi
       elif self.engine=='lalinferencebambimpi':
         exe=cp.get('condor','mpirun')
         self.binary=cp.get('condor','lalinferencebambi')
         universe="vanilla"
-        self.write_sub_file=self.__write_sub_file_mcmc_mpi
+        #self.write_sub_file=self.__write_sub_file_mcmc_mpi
       elif self.engine=='lalinferencenest':
         exe=cp.get('condor',self.engine)
         if site is not None and site!='local':
@@ -1167,6 +1166,8 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     self.add_condor_cmd('getenv','true')
     if self.engine=='lalinferencemcmc' or self.engine=='lalinferencebambimpi':
       #openmpipath=cp.get('condor','openmpi')
+      self.binary=cp.get('condor',self.engine)
+      self.mpirun=cp.get('condor','mpirun')
       if cp.has_section('mpi'):
         if ispreengine is False:
           self.machine_count=cp.get('mpi','machine-count')
@@ -1495,6 +1496,10 @@ class LALInferenceMCMCNode(EngineNode):
     EngineNode.__init__(self,li_job)
     self.engine='lalinferencemcmc'
     self.outfilearg='outfile'
+    self.add_var_opt('mpirun',li_job.mpirun)
+    self.add_var_opt('np',str(li_job.machine_count))
+    self.add_var_opt('executable',li_job.binary)
+    self.add_pegasus_profile('condor','request_cpus',li_job.machine_count)
 
   def set_output_file(self,filename):
     self.posfile=filename+'.00'

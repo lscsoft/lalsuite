@@ -27,6 +27,9 @@ endif # lalpulsar
 #bayesline_SOURCES = \
 #	BayesLine.c
 
+dist_bin_SCRIPTS = \
+	lalinference_mpi_wrapper
+
 bin_PROGRAMS = \
 	$(metaio_progs) \
 	$(frame_progs) \
