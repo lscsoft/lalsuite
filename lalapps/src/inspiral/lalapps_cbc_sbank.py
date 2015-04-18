@@ -19,7 +19,7 @@ from __future__ import division
 from time import strftime
 from collections import deque
 import numpy as np
-import sys
+import sys, os
 
 from scipy.interpolate import UnivariateSpline
 from glue.ligolw import ligolw
@@ -107,6 +107,26 @@ SBank will fill in whichever gaps remain. See also lalapps_cbc_sbank_pipe.
 """ % '\n\t'.join(sorted(waveforms.keys()))
 
 
+#
+# callback function for periodic checkpointing
+#
+def checkpoint_save(xmldoc, fout, process):
+
+    print >>sys.stderr, "\t[Checkpointing ...]"
+
+    # save rng state
+    rng_state = np.random.get_state()
+    np.savez(fout + "_checkpoint.rng.npz",
+             state1=rng_state[1],
+             state2=np.array(rng_state[2]),
+             state3=np.array(rng_state[3]),
+             state4=np.array(rng_state[4]))
+
+    # write out the document
+    ligolw_process.set_process_end_time(process)
+    utils.write_filename(xmldoc, fout + "_checkpoint.gz",  gz=True)
+
+
 def parse_command_line():
 
     parser = OptionParser(usage = usage)
@@ -160,6 +180,7 @@ def parse_command_line():
     parser.add_option("--cache-waveforms", default = False, action="store_true", help="A given waveform in the template bank will be used many times throughout the bank generation process. You can save a considerable amount of CPU by caching the waveform from the first time it is generated; however, do so only if you are sure that storing the waveforms in memory will not overload the system memory.")
     parser.add_option("--neighborhood-size", metavar="N", default = 0.25, type="float", help="Specify the window size in seconds to define \"nearby\" templates used to compute the match against each proposed template. The neighborhood is chosen symmetric about the proposed template; \"nearby\" is defined using the option --neighborhood-type. The default value of 0.25 is *not a guarantee of performance*. Choosing the neighborhood too small will lead to larger banks (but also higher bank coverage).")
     parser.add_option("--neighborhood-param", default="tau0", choices=["tau0","dur"], help="Choose how the neighborhood is sorted for match calculations. TODO: Implement duration neighborhoods.")
+    parser.add_option("--checkpoint", default=0, metavar="N", help="Periodically save the bank to disk every N templates (set to 0 to disable).", type="int", action="store")
 
 
     #
@@ -234,6 +255,12 @@ lsctables.SnglInspiralTable.RowType = SnglInspiralTable
 tbl = lsctables.New(lsctables.SnglInspiralTable)
 xmldoc.childNodes[-1].appendChild(tbl)
 
+# FIXME output naming conventions to match IHOPE/tmpltbank break sbank_pipe
+if opts.user_tag:
+    fout = "%s-SBANK_%s-%d-%d.xml.gz" % (opts.instrument, opts.user_tag, opts.gps_start_time, opts.gps_end_time-opts.gps_start_time)
+else:
+    fout = "%s-SBANK-%d-%d.xml.gz" % (opts.instrument, opts.gps_start_time, opts.gps_end_time-opts.gps_start_time)
+
 # Prepare process table with information about the current program
 opts_dict = dict((k, v) for k, v in opts.__dict__.iteritems() if v is not False and v is not None)
 #process = ligolw_process.register_to_xmldoc(xmldoc, "lalapps_cbc_sbank", FIXME
@@ -274,6 +301,30 @@ else:
     if opts.verbose:
         print>>sys.stdout,"\tinitial bank size: %d"%len(bank)
         print>>sys.stdout,"Filling regions of parameter space not covered by bank seed..."
+
+
+# check for saved work
+if opts.checkpoint and os.path.exists( fout + "_checkpoint.gz" ):
+
+    tmpdoc = utils.load_filename(fout + "_checkpoint.gz", contenthandler=ContentHandler)
+    sngl_inspiral = table.get_table(tmpdoc, lsctables.SnglInspiralTable.tableName)
+    [bank.insort(t) for t in Bank.from_sngls(sngl_inspiral, waveform, noise_model, opts.flow, opts.use_metric, opts.cache_waveforms, opts.neighborhood_size, opts.neighborhood_param)]
+
+    if opts.verbose:
+        print>>sys.stdout,"Found checkpoint file. Resuming from checkpoint with %d templates..." % len(bank)
+
+    # reset rng state
+    xml = tmpdoc.childNodes[0]
+    rng_state = np.load(fout + "_checkpoint.rng.npz")
+    rng1 = rng_state["state1"]
+    rng2 = rng_state["state2"]
+    rng3 = rng_state["state3"]
+    rng4 = rng_state["state4"]
+    np.random.mtrand.set_state( ("MT19937", rng1, rng2, rng3, rng4) )
+
+else:
+    np.random.mtrand.seed(opts.seed)
+
 
 # Choose proposal function
 # TODO: Implement more of these
@@ -318,6 +369,9 @@ while ((k + float(sum(ks)))/len(ks) < opts.convergence_threshold) and len(bank) 
             row.process_id = process.process_id
             tbl.append(row)
 
+        if opts.checkpoint and not len(bank) % opts.checkpoint:
+            checkpoint_save(xmldoc, fout, process)
+
     # clear the proposal template if caching is not enabled
     if not opts.cache_waveforms:
         tmplt.clear()
@@ -331,11 +385,4 @@ bank.clear()  # clear caches
 
 # write out the document
 ligolw_process.set_process_end_time(process)
-
-# FIXME output naming conventions to match IHOPE/tmpltbank break sbank_pipe
-if opts.user_tag:
-    fout = "%s-SBANK_%s-%d-%d.xml.gz" % (opts.instrument, opts.user_tag, opts.gps_start_time, opts.gps_end_time-opts.gps_start_time)
-else:
-    fout = "%s-SBANK-%d-%d.xml.gz" % (opts.instrument, opts.gps_start_time, opts.gps_end_time-opts.gps_start_time)
-
 utils.write_filename(xmldoc, fout,  gz=fout.endswith("gz"))
