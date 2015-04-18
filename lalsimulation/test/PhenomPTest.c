@@ -723,6 +723,7 @@ int main(int argc, char *argv[]) {
   UNUSED(argc);
   UNUSED(argv);
 
+#ifndef _OPENMP
   Test_alpha_epsilon();
   Test_XLALSimIMRPhenomPCalculateModelParameters();
   Test_PhenomC();
@@ -730,6 +731,15 @@ int main(int argc, char *argv[]) {
   Test_XLALSimIMRPhenomP();
   Test_PhenomC_PhenomP();
   Test_XLALSimIMRPhenomP_f_ref();
+#else
+  UNUSED(Test_alpha_epsilon);
+  UNUSED(Test_XLALSimIMRPhenomPCalculateModelParameters);
+  UNUSED(Test_PhenomC);
+  UNUSED(Test_PhenomPCore);
+  UNUSED(Test_XLALSimIMRPhenomP);
+  UNUSED(Test_PhenomC_PhenomP);
+  UNUSED(Test_XLALSimIMRPhenomP_f_ref);
+#endif
 
   printf("\nAll done!\n");
   return 0;
