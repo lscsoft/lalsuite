@@ -253,19 +253,58 @@ typedef struct {
 
   /// </li><li>
 
-  /// Return the multiplication of a ::LIGOTimeGPS by a number.
+  /// Return the multiplication of a ::LIGOTimeGPS by a number or another ::LIGOTimeGPS. A special
+  /// typemap is needed for Python: since built-in types call the same function for both normal and
+  /// reverse operators, so the function must support (LIGOTimeGPS, LIGOTimeGPS), (LIGOTimeGPS,
+  /// double), and (double, LIGOTimeGPS) as inputs.
+  %typemap(in, noblock=1, fragment=SWIG_AsVal_frag(double)) struct tagLIGOTimeGPS* self (void *argp = 0, int res = 0, int self_set = 0, int factor_set = 0) {
+    res = SWIG_ConvertPtr($input, &argp, $descriptor, $disown | %convertptr_flags);
+    if (SWIG_IsOK(res)) {
+      arg1 = %reinterpret_cast(argp, $ltype);
+      self_set = 1;
+    } else {
+      res = SWIG_AsVal(double)($input, &arg2);
+      if (SWIG_IsOK(res)) {
+        factor_set = 1;
+      } else {
+        %argument_fail(res, "$type", $symname, $argnum);
+      }
+    }
+  }
+  %typemap(in, noblock=1, fragment=SWIG_AsVal_frag(double)) double factor (void *argp = 0, int res = 0) {
+    if (!self_set1) {
+      res = SWIG_ConvertPtr($input, &argp, SWIGTYPE_p_tagLIGOTimeGPS, $disown | %convertptr_flags);
+      if (SWIG_IsOK(res)) {
+        arg1 = %reinterpret_cast(argp, LIGOTimeGPS*);
+        self_set1 = 1;
+      }
+    }
+    if (!factor_set1) {
+      res = SWIG_AsVal(double)($input, &arg2);
+      if (SWIG_IsOK(res)) {
+        factor_set1 = 1;
+      } else {
+        res = SWIG_ConvertPtr($input, &argp, SWIGTYPE_p_tagLIGOTimeGPS, $disown | %convertptr_flags);
+        if (SWIG_IsOK(res)) {
+          arg2 = XLALGPSGetREAL8(%reinterpret_cast(argp, LIGOTimeGPS*));
+          factor_set1 = 1;
+        }
+      }
+    }
+    if (!self_set1 || !factor_set1) {
+      %argument_fail(res, "$type", $symname, $argnum);
+    }
+  }
   LIGOTimeGPS* __mul__(double factor) {
     LIGOTimeGPS* retn = %swiglal_new_copy(*$self, LIGOTimeGPS);
     return XLALGPSMultiply(retn, factor);
   }
-  LIGOTimeGPS* __mul__(LIGOTimeGPS* factor) {
+  LIGOTimeGPS* __rmul__(double factor) {
     LIGOTimeGPS* retn = %swiglal_new_copy(*$self, LIGOTimeGPS);
-    return XLALGPSMultiply(retn, XLALGPSGetREAL8(factor));
+    return XLALGPSMultiply(retn, factor);
   }
-  LIGOTimeGPS* __rmul__(LIGOTimeGPS* gps) {
-    LIGOTimeGPS* retn = %swiglal_new_copy(*gps, LIGOTimeGPS);
-    return XLALGPSMultiply(retn, XLALGPSGetREAL8($self));
-  }
+  %clear struct tagLIGOTimeGPS* self;
+  %clear double factor;
 
   /// </li><li>
 
@@ -274,9 +313,9 @@ typedef struct {
     LIGOTimeGPS* retn = %swiglal_new_copy(*$self, LIGOTimeGPS);
     return XLALGPSDivide(retn, divisor);
   }
-  LIGOTimeGPS* __div__(LIGOTimeGPS* divisor) {
+  LIGOTimeGPS* __div__(LIGOTimeGPS* gps) {
     LIGOTimeGPS* retn = %swiglal_new_copy(*$self, LIGOTimeGPS);
-    return XLALGPSDivide(retn, XLALGPSGetREAL8(divisor));
+    return XLALGPSDivide(retn, XLALGPSGetREAL8(gps));
   }
   LIGOTimeGPS* __rdiv__(LIGOTimeGPS* gps) {
     LIGOTimeGPS* retn = %swiglal_new_copy(*gps, LIGOTimeGPS);
