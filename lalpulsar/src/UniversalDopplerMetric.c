@@ -214,7 +214,7 @@ typedef struct
   int errnum;				/**< store XLAL error of any failures within integrator */
   double epsrel;			/**< relative error tolerance for GSL integration routines */
   double epsabs;			/**< absolute error tolerance for GSL integration routines */
-  double Tseg;				/**< length of integration time segments for phase integrals */
+  double intT;				/**< length of integration time segments for phase integrals */
   DetectorMotionType detMotionType;	/**< which detector-motion to use in metric integration */
   const DopplerCoordinateSystem *coordSys;/**< Doppler coordinate system in use */
   const gsl_matrix *coordTransf;        /**< coordinate transform to apply to coordinate system */
@@ -274,10 +274,8 @@ XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params, double *relerr_max 
 
   integrand.params = (void*)&par;
 
-  REAL8 Tseg = params->Tseg;
-  UINT4 Nseg = (UINT4) ceil ( params->Tspan / Tseg );
-  UINT4 n;
-  REAL8 dT = 1.0 / Nseg;
+  const UINT4 intN = (UINT4) ceil ( params->Tspan / params->intT );
+  const REAL8 dT = 1.0 / intN;
 
   REAL8 res = 0;
   REAL8 abserr2 = 0;
@@ -290,7 +288,7 @@ XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params, double *relerr_max 
 
   /* compute <q_1 q_2 phi_i phi_j> as an integral from tt=0 to tt=1 */
   integrand.function = &CW_am1_am2_Phi_i_Phi_j;
-  for (n=0; n < Nseg; n ++ )
+  for ( UINT4 n = 0; n < intN; n ++ )
     {
       REAL8 ti = 1.0 * n * dT;
       REAL8 tf = MYMIN( (n+1.0) * dT, 1.0 );
@@ -314,7 +312,7 @@ XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params, double *relerr_max 
       res += res_n;
       abserr2 += SQUARE ( err_n );
 
-    } /* for i < Nseg */
+    } /* for n < intN */
 
   REAL8 relerr = RELERR( sqrt(abserr2), fabs(res) );
   if ( relerr_max )
@@ -853,9 +851,8 @@ XLALCovariance_Phi_ij ( const MultiLALDetector *multiIFO,		//!< [in] detectors t
 
   integrand.params = (void*)&par;
 
-  REAL8 Tseg = params->Tseg;
-  UINT4 Nseg = (UINT4) ceil ( params->Tspan / Tseg );
-  REAL8 dT = 1.0 / Nseg;
+  const UINT4 intN = (UINT4) ceil ( params->Tspan / params->intT );
+  const REAL8 dT = 1.0 / intN;
 
   double epsrel = params->epsrel;
   double epsabs = params->epsabs;
@@ -884,7 +881,7 @@ XLALCovariance_Phi_ij ( const MultiLALDetector *multiIFO,		//!< [in] detectors t
     const REAL8 weight = haveNoiseWeights ? multiNoiseFloor->sqrtSn[X] : 1.0;
     total_weight += weight;
 
-    for (UINT4 n=0; n < Nseg; n ++ ) {
+    for (UINT4 n = 0; n < intN; n ++ ) {
 
       REAL8 ti = 1.0 * n * dT;
       REAL8 tf = MYMIN( (n+1.0) * dT, 1.0 );
@@ -928,7 +925,7 @@ XLALCovariance_Phi_ij ( const MultiLALDetector *multiIFO,		//!< [in] detectors t
       av_j += weight * res_n;
       av_j_err += weight * SQUARE (abserr);
 
-    } /* for i < Nseg */
+    } /* for n < intN */
 
   } // for X < numDet
 
@@ -1041,10 +1038,10 @@ XLALComputeDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< 
   /* NOTE: this numerical integration still runs into problems when integrating over
    * long durations (~O(23d)), as the integrands are oscillatory functions on order of ~1d
    * and convergence degrades.
-   * As a solution, we split the integral into N segments of 1 day duration, and compute
-   * the final integral as a sum over partial integrals
+   * As a solution, we split the integral into 'intN' units of 1 day duration, and compute
+   * the final integral as a sum over partial integrals.
    */
-  intparams.Tseg = LAL_DAYSID_SI;
+  intparams.intT = LAL_DAYSID_SI;
 
   /* if using 'global correlation' frequency variables, determine the highest spindown order: */
   UINT4 maxorder = findHighestGCSpinOrder ( coordSys );
@@ -1077,8 +1074,8 @@ XLALComputeDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< 
   int eigvaltries;
   for (eigvaltries = 0; eigvaltries < max_eigvaltries; ++eigvaltries) {
 
-    XLALPrintInfo("%s(): trying (%i<%i) to compute phase metric with epsrel=%g, epsabs=%g, Tseg=%g\n",
-                  __func__, eigvaltries, max_eigvaltries, intparams.epsrel, intparams.epsabs, intparams.Tseg);
+    XLALPrintInfo("%s(): trying (%i<%i) to compute phase metric with epsrel=%g, epsabs=%g, intT=%g\n",
+                  __func__, eigvaltries, max_eigvaltries, intparams.epsrel, intparams.epsabs, intparams.intT);
 
     /* ---------- compute components of the phase-metric ---------- */
     for ( UINT4 i = 0; i < dim; i ++ ) {
@@ -1132,7 +1129,7 @@ XLALComputeDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< 
     intparams.epsrel /= 2;
     intparams.epsabs /= 2;
     /* try also reducing the length of integration time segments, but stop at 1800s */
-    intparams.Tseg = MYMAX(1800, intparams.Tseg / 2);
+    intparams.intT = MYMAX(1800, intparams.intT / 2);
 
   }
 
@@ -1432,10 +1429,10 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
   /* NOTE: this numerical integration runs into problems when integrating over
    * several days (~O(5d)), as the integrands are oscillatory functions on order of ~1/4d
    * and convergence degrades.
-   * As a solution, we split the integral into N segments of 1/4 day duration, and compute
-   * the final integral as a sum over partial integrals
+   * As a solution, we split the integral into 'intN' units of 1/4 day duration, and compute
+   * the final integral as a sum over partial integrals.
    */
-  intparams.Tseg = 0.25 * LAL_DAYSID_SI;
+  intparams.intT = 0.25 * LAL_DAYSID_SI;
 
   /* if using 'global correlation' frequency variables, determine the highest spindown order: */
   UINT4 maxorder = findHighestGCSpinOrder ( coordSys );
