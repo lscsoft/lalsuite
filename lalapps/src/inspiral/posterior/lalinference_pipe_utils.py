@@ -1488,7 +1488,7 @@ class LALInferenceBAMBINode(EngineNode):
     EngineNode.__init__(self,li_job)
     self.engine='lalinferencebambi'
     self.outfilearg='outfile'
-    if li_job.engine=='lalinferencebambimpi'
+    if li_job.engine=='lalinferencebambimpi':
       self.add_var_opt('mpirun',li_job.mpirun)
       self.add_var_opt('np',str(li_job.machine_count))
       self.add_var_opt('executable',li_job.binary)
