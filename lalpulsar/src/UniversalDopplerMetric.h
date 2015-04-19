@@ -271,7 +271,6 @@ void XLALmatrix33_in_vect3 ( vect3D_t out, mat33_t mat, const vect3D_t in );
 vect3Dlist_t *
 XLALComputeOrbitalDerivatives ( UINT4 maxorder, const LIGOTimeGPS *tGPS, const EphemerisData *edat );
 
-FmetricAtoms_t* XLALCreateFmetricAtoms ( UINT4 dim );
 void XLALDestroyFmetricAtoms ( FmetricAtoms_t *atoms );
 
 int XLALParseDetectorMotionString ( const CHAR *detMotionString );

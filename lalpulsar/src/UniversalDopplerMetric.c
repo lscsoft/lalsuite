@@ -1392,10 +1392,13 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
   coordSys = &(metricParams->coordSys);
 
   /* ----- create output structure ---------- */
-  if ( (ret = XLALCreateFmetricAtoms ( dim )) == NULL ) {
-    XLALPrintError ("%s: call to XLALCreateFmetricAtoms (%d) failed. errno = %d\n\n", __func__, dim, xlalErrno );
-    XLAL_ERROR_NULL ( XLAL_EFUNC );
-  }
+  XLAL_CHECK_NULL ( ( ret = XLALCalloc(1,sizeof(*ret))) != NULL, XLAL_ENOMEM, "%s: XLALCalloc(1,%lu) failed.\n", __func__, sizeof(*ret));
+  XLAL_CHECK_NULL ( ( ret->a_a_i = gsl_vector_calloc (dim)) != NULL, XLAL_ENOMEM, "%s: a_a_i = gsl_vector_calloc (%d) failed.\n", __func__, dim );
+  XLAL_CHECK_NULL ( ( ret->a_b_i = gsl_vector_calloc (dim)) != NULL, XLAL_ENOMEM, "%s: a_b_i = gsl_vector_calloc (%d) failed.\n", __func__, dim );
+  XLAL_CHECK_NULL ( ( ret->b_b_i = gsl_vector_calloc (dim)) != NULL, XLAL_ENOMEM, "%s: b_b_i = gsl_vector_calloc (%d) failed.\n", __func__, dim );
+  XLAL_CHECK_NULL ( ( ret->a_a_i_j = gsl_matrix_calloc (dim, dim)) != NULL, XLAL_ENOMEM, "%s: a_a_i_j = gsl_matrix_calloc (%d,%d) failed.\n", __func__, dim, dim );
+  XLAL_CHECK_NULL ( ( ret->a_b_i_j = gsl_matrix_calloc (dim, dim)) != NULL, XLAL_ENOMEM, "%s: a_b_i_j = gsl_matrix_calloc (%d,%d) failed.\n", __func__, dim, dim );
+  XLAL_CHECK_NULL ( ( ret->b_b_i_j = gsl_matrix_calloc (dim, dim)) != NULL, XLAL_ENOMEM, "%s: b_b_i_j = gsl_matrix_calloc (%d,%d) failed.\n", __func__, dim, dim );
 
   /* ---------- set up integration parameters ---------- */
   intparams.coordSys = coordSys;
@@ -1837,62 +1840,6 @@ XLALDestroyFmetricAtoms ( FmetricAtoms_t *atoms )
   return;
 
 } /* XLALDestroyFmetricAtoms() */
-
-
-
-/**
- * Allocate an FmetricAtoms_t structure for given number of dimension.
- */
-FmetricAtoms_t*
-XLALCreateFmetricAtoms ( UINT4 dim )
-{
-  FmetricAtoms_t *ret;		/* output structure */
-
-  if ( ( ret = XLALCalloc(1,sizeof(*ret))) == NULL ) {
-    XLALPrintError ( "%s: XLALCalloc(1,%lu) failed.\n", __func__, sizeof(*ret));
-    XLAL_ERROR_NULL ( XLAL_ENOMEM );
-  }
-
-  if ( ( ret->a_a_i = gsl_vector_calloc (dim)) == NULL ) {
-    XLALPrintError ( "%s: a_a_i = gsl_vector_calloc (%d) failed.\n", __func__, dim );
-    XLALDestroyFmetricAtoms ( ret );
-    XLAL_ERROR_NULL ( XLAL_ENOMEM );
-  }
-
-  if ( ( ret->a_b_i = gsl_vector_calloc (dim)) == NULL ) {
-    XLALPrintError ( "%s: a_b_i = gsl_vector_calloc (%d) failed.\n", __func__, dim );
-    XLALDestroyFmetricAtoms ( ret );
-    XLAL_ERROR_NULL ( XLAL_ENOMEM );
-  }
-
-  if ( ( ret->b_b_i = gsl_vector_calloc (dim)) == NULL ) {
-    XLALPrintError ( "%s: b_b_i = gsl_vector_calloc (%d) failed.\n", __func__, dim );
-    XLALDestroyFmetricAtoms ( ret );
-    XLAL_ERROR_NULL ( XLAL_ENOMEM );
-  }
-
-
-  if ( ( ret->a_a_i_j = gsl_matrix_calloc (dim, dim)) == NULL ) {
-    XLALPrintError ( "%s: a_a_i_j = gsl_matrix_calloc (%d,%d) failed.\n", __func__, dim, dim );
-    XLALDestroyFmetricAtoms ( ret );
-    XLAL_ERROR_NULL ( XLAL_ENOMEM );
-  }
-
-  if ( ( ret->a_b_i_j = gsl_matrix_calloc (dim, dim)) == NULL ) {
-    XLALPrintError ( "%s: a_b_i_j = gsl_matrix_calloc (%d,%d) failed.\n", __func__, dim, dim );
-    XLALDestroyFmetricAtoms ( ret );
-    XLAL_ERROR_NULL ( XLAL_ENOMEM );
-  }
-
-  if ( ( ret->b_b_i_j = gsl_matrix_calloc (dim, dim)) == NULL ) {
-    XLALPrintError ( "%s: b_b_i_j = gsl_matrix_calloc (%d,%d) failed.\n", __func__, dim, dim );
-    XLALDestroyFmetricAtoms ( ret );
-    XLAL_ERROR_NULL ( XLAL_ENOMEM );
-  }
-
-  return ret;
-
-} /* XLALCreateFmetricAtoms() */
 
 
 /**
