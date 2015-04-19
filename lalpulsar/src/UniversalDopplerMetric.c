@@ -135,8 +135,12 @@ static const struct {
 #define TRUE  (1==1)
 #define FALSE (0==1)
 
-/* get the scale associated with Doppler coordinate ID */
-#define GET_SCALE(ID) ( (ID) == DOPPLERCOORD_NONE ? 1.0 : DopplerCoordinates[ID].scale )
+/* get the coordinate ID for a given coordinate index */
+#define GET_COORD_ID(coordSys, coord) ( (coord) >= 0 ? (coordSys)->coordIDs[(coord)] : DOPPLERCOORD_NONE )
+
+/* get the coordinate name and scale associated with a given coordinate index */
+#define GET_COORD_NAME(coordSys, coord) ( (coord) >= 0 ? DopplerCoordinates[GET_COORD_ID(coordSys, coord)].name : "(none)" )
+#define GET_COORD_SCALE(coordSys, coord) ( (coord) >= 0 ? DopplerCoordinates[GET_COORD_ID(coordSys, coord)].scale : 1.0 )
 
 /** copy 3 components of Euklidean vector */
 #define COPY_VECT(dst,src) do { (dst)[0] = (src)[0]; (dst)[1] = (src)[1]; (dst)[2] = (src)[2]; } while(0)
@@ -198,8 +202,10 @@ typedef struct
   double epsabs;			/**< absolute error tolerance for GSL integration routines */
   double Tseg;				/**< length of integration time segments for phase integrals */
   DetectorMotionType detMotionType;	/**< which detector-motion to use in metric integration */
-  DopplerCoordinateID deriv1, deriv2;	/**< the two components of the derivative-product Phi_i_Phi_j to compute*/
-  DopplerCoordinateID deriv;		/**< component for single phase-derivative Phi_i compute */
+  const DopplerCoordinateSystem *coordSys;/**< Doppler coordinate system in use */
+  const gsl_matrix *coordTransf;        /**< coordinate transform to apply to coordinate system */
+  int coord1, coord2;			/**< coordinate indexes of the two components of the derivative-product Phi_i_Phi_j to compute*/
+  int coord;				/**< coordinate index of the component for single phase-derivative Phi_i compute */
   AM_comp_t amcomp1, amcomp2;		/**< two AM components q_l q_m */
   const PulsarDopplerParams *dopplerPoint;/**< Doppler params to compute metric for */
   REAL8 startTime;			/**< GPS start time of observation */
@@ -245,7 +251,7 @@ static UINT4 findHighestGCSpinOrder ( const DopplerCoordinateSystem *coordSys );
 static double
 XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params, double *relerr_max )
 {
-  intparams_t par = (*params);	/* struct-copy, as the 'deriv' field has to be changeable */
+  intparams_t par = (*params);	/* struct-copy, as the 'coord' field has to be changeable */
   gsl_function integrand;
   double epsrel = params->epsrel;
   double epsabs = params->epsabs;
@@ -267,7 +273,7 @@ XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params, double *relerr_max 
   wksp = gsl_integration_workspace_alloc(limit);
   XLAL_CHECK_REAL8(wksp != NULL, XLAL_EFAULT);
 
-  const double scale12 = GET_SCALE(par.deriv1) * GET_SCALE(par.deriv2);
+  const double scale12 = GET_COORD_SCALE(par.coordSys, par.coord1) * GET_COORD_SCALE(par.coordSys, par.coord2);
 
   /* compute <q_1 q_2 phi_i phi_j> as an integral from tt=0 to tt=1 */
   integrand.function = &CW_am1_am2_Phi_i_Phi_j;
@@ -368,18 +374,18 @@ CW_am1_am2_Phi_i_Phi_j ( double tt, void *params )
     } /* if any antenna-pattern components needed */
 
   /* first Doppler phase derivative */
-  if ( par->deriv1 != DOPPLERCOORD_NONE )
+  if ( GET_COORD_ID(par->coordSys, par->coord1) != DOPPLERCOORD_NONE )
     {
-      par->deriv = par->deriv1;
+      par->coord = par->coord1;
       phi_i = CWPhaseDeriv_i ( tt, params );
     }
   else
     phi_i = 1.0;
 
   /* second Doppler phase derivative */
-  if ( par->deriv2 != DOPPLERCOORD_NONE )
+  if ( GET_COORD_ID(par->coordSys, par->coord2) != DOPPLERCOORD_NONE )
     {
-      par->deriv = par->deriv2;
+      par->coord = par->coord2;
       phi_j = CWPhaseDeriv_i ( tt, params );
     }
   else
@@ -388,8 +394,9 @@ CW_am1_am2_Phi_i_Phi_j ( double tt, void *params )
   ret = am1 * am2 * phi_i * phi_j;
 
   LogPrintf( LOG_DETAIL,
-             "amcomp1=%d amcomp2=%d deriv1=%d deriv2=%d tt=%f am1=%f am2=%f phi_i=%f phi_j=%f ret=%f\n",
-             par->amcomp1, par->amcomp2, par->deriv1, par->deriv2,
+             "amcomp1=%d amcomp2=%d coord1='%s' coord2='%s' tt=%f am1=%f am2=%f phi_i=%f phi_j=%f ret=%f\n",
+             par->amcomp1, par->amcomp2,
+             GET_COORD_NAME(par->coordSys, par->coord1), GET_COORD_NAME(par->coordSys, par->coord2),
              tt, am1, am2, phi_i, phi_j, ret );
 
   return ( ret );
@@ -414,7 +421,6 @@ CWPhaseDeriv_i ( double tt, void *params )
     return GSL_NAN;
   }
 
-  REAL8 ret = 0;
   vect3D_t nn_equ, nn_ecl;	/* skypos unit vector */
   vect3D_t nDeriv_i;	/* derivative of sky-pos vector wrt i */
 
@@ -512,8 +518,26 @@ CWPhaseDeriv_i ( double tt, void *params )
     } /* if rOrb_n */
   XLALequatorialVect2ecliptic ( rr_ord_Ecl, rr_ord_Equ );	  /* convert into ecliptic coordinates */
 
-  /* now compute the requested phase derivative */
-  switch ( par->deriv )
+  /* now compute the requested (possibly linear combination of) phase derivative(s) */
+  REAL8 phase_deriv = 0.0;
+  for ( int coord = 0; coord < (int)par->coordSys->dim; ++coord ) {
+
+    /* get the coefficient used to multiply phase derivative term */
+    REAL8 coeff = 0.0;
+    if ( par->coordTransf != NULL ) {
+      coeff = gsl_matrix_get( par->coordTransf, par->coord, coord );
+    } else if ( par->coord == coord ) {
+      coeff = 1.0;
+    }
+    if ( coeff == 0.0 ) {
+      continue;
+    }
+    coeff *= GET_COORD_SCALE(par->coordSys, coord) / GET_COORD_SCALE(par->coordSys, par->coord);
+
+    /* compute the phase derivative term */
+    REAL8 ret = 0.0;
+    const DopplerCoordinateID deriv = GET_COORD_ID(par->coordSys, coord);
+    switch ( deriv )
     {
 
     case DOPPLERCOORD_FREQ:		/**< Frequency [Units: Hz]. */
@@ -599,13 +623,17 @@ CWPhaseDeriv_i ( double tt, void *params )
 
     default:
       par->errnum = XLAL_EINVAL;
-      XLALPrintError("%s: Unknown phase-derivative type '%d'\n", __func__, par->deriv );
+      XLALPrintError("%s: Unknown phase-derivative type '%d'\n", __func__, deriv );
       return GSL_NAN;
       break;
 
-    } /* switch par->deriv */
+    } /* switch deriv */
 
-  return ret;
+    phase_deriv += coeff * ret;
+
+  }
+
+  return phase_deriv;
 
 } /* CWPhaseDeriv_i() */
 
@@ -800,7 +828,7 @@ XLALCWPhase_cov_Phi_ij ( const MultiLALDetector *multiIFO,		//!< [in] detectors 
 
   gsl_function integrand;
 
-  intparams_t par = (*params);	/* struct-copy, as the 'deriv' field has to be changeable */
+  intparams_t par = (*params);	/* struct-copy, as the 'coord' field has to be changeable */
   int stat;
   double ret;
 
@@ -828,8 +856,8 @@ XLALCWPhase_cov_Phi_ij ( const MultiLALDetector *multiIFO,		//!< [in] detectors 
   wksp = gsl_integration_workspace_alloc(limit);
   XLAL_CHECK_REAL8(wksp != NULL, XLAL_EFAULT);
 
-  const double scale1 = GET_SCALE(par.deriv1);
-  const double scale2 = GET_SCALE(par.deriv2);
+  const double scale1 = GET_COORD_SCALE(par.coordSys, par.coord1);
+  const double scale2 = GET_COORD_SCALE(par.coordSys, par.coord2);
   const double scale12 = scale1 * scale2;
 
   // loop over detectors
@@ -863,7 +891,7 @@ XLALCWPhase_cov_Phi_ij ( const MultiLALDetector *multiIFO,		//!< [in] detectors 
 
       /* compute <phi_i> */
       integrand.function = &CWPhaseDeriv_i;
-      par.deriv = par.deriv1;
+      par.coord = par.coord1;
       XLAL_CALLGSL ( stat = gsl_integration_qag (&integrand, ti, tf, epsabs, epsrel, limit, GSL_INTEG_GAUSS61, wksp, &res_n, &abserr) );
       if ( stat != 0 ) {
         XLALPrintWarning ( "\n%s: GSL-integration 'gsl_integration_qag()' of <Phi_i> did not reach requested precision!\n", __func__ );
@@ -876,7 +904,7 @@ XLALCWPhase_cov_Phi_ij ( const MultiLALDetector *multiIFO,		//!< [in] detectors 
 
       /* compute <phi_j> */
       integrand.function = &CWPhaseDeriv_i;
-      par.deriv = par.deriv2;
+      par.coord = par.coord2;
       XLAL_CALLGSL ( stat = gsl_integration_qag (&integrand, ti, tf, epsabs, epsrel, limit, GSL_INTEG_GAUSS61, wksp, &res_n, &abserr) );
       if ( stat != 0 ) {
         XLALPrintWarning ( "\n%s: GSL-integration 'gsl_integration_qag()' of <Phi_j> did not reach requested precision!\n", __func__ );
@@ -975,6 +1003,7 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
   }
 
   /* ---------- set up integration parameters ---------- */
+  intparams.coordSys = coordSys;
   intparams.edat = edat;
   intparams.startTime = XLALGPSGetREAL8 ( startTime );
   intparams.refTime   = XLALGPSGetREAL8 ( &midTime );   /* always compute metric at midTime, transform to refTime later */
@@ -1040,8 +1069,8 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
       for ( UINT4 j = 0; j <= i; j ++ ) {
 
         /* g_ij */
-        intparams.deriv1 = coordSys->coordIDs[i];
-        intparams.deriv2 = coordSys->coordIDs[j];
+        intparams.coord1 = i;
+        intparams.coord2 = j;
         REAL8 gg = XLALCWPhase_cov_Phi_ij ( &metricParams->multiIFO, &metricParams->multiNoiseFloor, &intparams, &err );	/* [Phi_i, Phi_j] */
         maxrelerr = MYMAX ( maxrelerr, err );
         if ( xlalErrno ) {
@@ -1384,6 +1413,7 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
   }
 
   /* ---------- set up integration parameters ---------- */
+  intparams.coordSys = coordSys;
   intparams.detMotionType = metricParams->detMotionType;
   intparams.dopplerPoint = &metricParams->signalParams.Doppler;
   intparams.startTime = XLALGPSGetREAL8 ( startTime );
@@ -1424,8 +1454,8 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
       REAL8 av, relerr;
       intparams.site = &(metricParams->multiIFO.sites[X]);
 
-      intparams.deriv1 = DOPPLERCOORD_NONE;
-      intparams.deriv2 = DOPPLERCOORD_NONE;
+      intparams.coord1 = -1;
+      intparams.coord2 = -1;
 
       /* A = < a^2 > (67)*/
       intparams.amcomp1 = AMCOMP_A;
@@ -1483,8 +1513,8 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
 	      intparams.site = &(metricParams->multiIFO.sites[X]);
 
 	      /* ------------------------------ */
-	      intparams.deriv1 = coordSys->coordIDs[i];
-	      intparams.deriv2 = coordSys->coordIDs[j];
+	      intparams.coord1 = i;
+	      intparams.coord2 = j;
 
 	      /* <a^2 Phi_i Phi_j> */
 	      intparams.amcomp1 = AMCOMP_A;
@@ -1511,8 +1541,8 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
 	      a_b_i_j += weight * av;
 
 	      /* ------------------------------ */
-	      intparams.deriv1 = coordSys->coordIDs[i];
-	      intparams.deriv2 = DOPPLERCOORD_NONE;
+	      intparams.coord1 = i;
+	      intparams.coord2 = -1;
 
 	      /* <a^2 Phi_i> */
 	      intparams.amcomp1 = AMCOMP_A;
@@ -1539,8 +1569,8 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
 	      a_b_i += weight * av;
 
 	      /* ------------------------------ */
-	      intparams.deriv1 = DOPPLERCOORD_NONE;
-	      intparams.deriv2 = coordSys->coordIDs[j];
+	      intparams.coord1 = -1;
+	      intparams.coord2 = j;
 
 	      /* <a^2 Phi_j> */
 	      intparams.amcomp1 = AMCOMP_A;
@@ -1606,10 +1636,10 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
 
  failed:
   XLALDestroyFmetricAtoms ( ret );
-  XLALPrintError ( "%s: XLALAverage_am1_am2_Phi_i_Phi_j() FAILED with errno = %d: am1 = %d, am2 = %d, i = %d : '%s', j = %d : '%s'\n",
+  XLALPrintError ( "%s: XLALAverage_am1_am2_Phi_i_Phi_j() FAILED with errno = %d: am1 = %d, am2 = %d, coord1 = '%s', coord2 = '%s'\n",
 		   __func__, xlalErrno, intparams.amcomp1, intparams.amcomp2,
-                   i, XLALDopplerCoordinateName(intparams.deriv1),
-                   j, XLALDopplerCoordinateName(intparams.deriv2) );
+                   GET_COORD_NAME(intparams.coordSys, intparams.coord1), GET_COORD_NAME(intparams.coordSys, intparams.coord2)
+                 );
   XLAL_ERROR_NULL( XLAL_EFUNC );
 
 } /* XLALComputeAtomsForFmetric() */
