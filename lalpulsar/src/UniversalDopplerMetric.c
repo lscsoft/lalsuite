@@ -162,6 +162,20 @@ static const struct {
 #define ADD_VECT(dst,src) do { (dst)[0] += (src)[0]; (dst)[1] += (src)[1]; (dst)[2] += (src)[2]; } while(0)
 #define SUB_VECT(dst,src) do { (dst)[0] -= (src)[0]; (dst)[1] -= (src)[1]; (dst)[2] -= (src)[2]; } while(0)
 
+/** Convert 3-D vector from equatorial into ecliptic coordinates */
+#define EQU_VECT_TO_ECL(dst,src) do { \
+    (dst)[0] = (src)[0]; \
+    (dst)[1] = (src)[1]*LAL_COSIEARTH + (src)[2]*LAL_SINIEARTH; \
+    (dst)[2] = (src)[2]*LAL_COSIEARTH - (src)[1]*LAL_SINIEARTH; \
+  } while(0)
+
+/** Convert 3-D vector from ecliptic into equatorial coordinates */
+#define ECL_VECT_TO_EQU(dst,src) do { \
+    (dst)[0] = (src)[0]; \
+    (dst)[1] = (src)[1]*LAL_COSIEARTH - (src)[2]*LAL_SINIEARTH; \
+    (dst)[2] = (src)[2]*LAL_COSIEARTH + (src)[1]*LAL_SINIEARTH; \
+  } while(0)
+
 #define SQUARE(x) ((x) * (x))
 
 /** convert GPS-time to REAL8 */
@@ -443,7 +457,7 @@ CW_Phi_i ( double tt, void *params )
   nn_equ[2] = sind;
 
   /* and in an ecliptic coordinate-frame */
-  XLALequatorialVect2ecliptic ( nn_ecl, nn_equ );
+  EQU_VECT_TO_ECL( nn_ecl, nn_equ );
 
   /* get current detector position r(t) and velocity v(t) */
   REAL8 ttSI = par->startTime + tt * par->Tspan;	/* current GPS time in seconds */
@@ -470,7 +484,7 @@ CW_Phi_i ( double tt, void *params )
   ADD_VECT(posvel.vel, orbit_posvel.vel);
 
   /* compute orbital detector positions projected onto ecliptic plane */
-  XLALequatorialVect2ecliptic(ecl_orbit_pos, orbit_posvel.pos);
+  EQU_VECT_TO_ECL(ecl_orbit_pos, orbit_posvel.pos);
 
   /* get frequency of Doppler point */
   const REAL8 Freq = par->dopplerPoint->fkdot[0];
@@ -515,7 +529,7 @@ CW_Phi_i ( double tt, void *params )
           }
         }
     } /* if rOrb_n */
-  XLALequatorialVect2ecliptic ( rr_ord_Ecl, rr_ord_Equ );	  /* convert into ecliptic coordinates */
+  EQU_VECT_TO_ECL( rr_ord_Ecl, rr_ord_Equ );	  /* convert into ecliptic coordinates */
 
   /* now compute the requested (possibly linear combination of) phase derivative(s) */
   REAL8 phase_deriv = 0.0;
