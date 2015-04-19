@@ -55,13 +55,37 @@
 
 // ---------- global variables --------------------
 
+// ---------- local types --------------------
+
+typedef struct tagOldDopplerMetric
+{
+  DopplerMetricParams meta;             /**< "meta-info" describing/specifying the type of Doppler metric */
+
+  gsl_matrix *g_ij;                     /**< symmetric matrix holding the phase-metric, averaged over segments */
+  gsl_matrix *g_ij_seg;                 /**< the phase-metric for each segment, concatenated by column: [g_ij_1, g_ij_2, ...] */
+
+  gsl_matrix *gF_ij;                    /**< full F-statistic metric gF_ij, including antenna-pattern effects (see \cite Prix07) */
+  gsl_matrix *gFav_ij;                  /**< 'average' Fstat-metric */
+  gsl_matrix *m1_ij, *m2_ij, *m3_ij;    /**< Fstat-metric sub components */
+
+  gsl_matrix *Fisher_ab;                /**< Full 4+n dimensional Fisher matrix, ie amplitude + Doppler space */
+
+  double maxrelerr_gPh;                 /**< estimate for largest relative error in phase-metric component integrations */
+  double maxrelerr_gF;                  /**< estimate for largest relative error in Fmetric component integrations */
+
+  REAL8 rho2;                           /**< signal SNR rho^2 = A^mu M_mu_nu A^nu */
+} OldDopplerMetric;
+
 // ---------- local prototypes
 static int test_XLALComputeOrbitalDerivatives ( void );
 static int test_XLALDopplerFstatMetric ( void );
 
 static gsl_matrix *convert_old_metric_2_new ( const REAL8Vector *m0, REAL8 Freq );
 
-DopplerMetric *XLALOldDopplerFstatMetric ( const DopplerMetricParams *metricParams, const EphemerisData *edat );
+OldDopplerMetric *XLALOldDopplerFstatMetric ( const DopplerMetricParams *metricParams, const EphemerisData *edat );
+void XLALDestroyOldDopplerMetric ( OldDopplerMetric *metric );
+int XLALAddOldDopplerMetric ( OldDopplerMetric **metric1, const OldDopplerMetric *metric2 );
+int XLALScaleOldDopplerMetric ( OldDopplerMetric *m, REAL8 scale );
 
 // ---------- function definitions --------------------
 /**
@@ -178,7 +202,8 @@ test_XLALDopplerFstatMetric ( void )
   {
     REAL8Vector *metric0 = 0;
     gsl_matrix *g0_ij;
-    DopplerMetric *metric1, *metric2;
+    OldDopplerMetric *metric1;
+    DopplerMetric *metric2;
     REAL8 diff_2_0, diff_2_1, diff_1_0;
 
     PtoleMetricIn pars0 = master_pars0;
@@ -206,7 +231,7 @@ test_XLALDopplerFstatMetric ( void )
     XLALPrintWarning ("diff_1_0 = %e\n", diff_1_0 );
 
     gsl_matrix_free ( g0_ij );
-    XLALDestroyDopplerMetric ( metric1 );
+    XLALDestroyOldDopplerMetric ( metric1 );
     XLALDestroyDopplerMetric ( metric2 );
   }
 
@@ -215,7 +240,8 @@ test_XLALDopplerFstatMetric ( void )
   {
     REAL8Vector *metric0 = 0;
     gsl_matrix *g0_ij;
-    DopplerMetric *metric1, *metric2;
+    OldDopplerMetric *metric1;
+    DopplerMetric *metric2;
     REAL8 diff_2_0, diff_2_1, diff_1_0;
 
     PtoleMetricIn pars0 = master_pars0;
@@ -246,14 +272,15 @@ test_XLALDopplerFstatMetric ( void )
     XLALPrintWarning ("diff_1_0 = %e\n", diff_1_0 );
 
     gsl_matrix_free ( g0_ij );
-    XLALDestroyDopplerMetric ( metric1 );
+    XLALDestroyOldDopplerMetric ( metric1 );
     XLALDestroyDopplerMetric ( metric2 );
   }
 
 
   XLALPrintWarning("\n---------- ROUND 3: ephemeris-based, multi-IFO F-stat metrics ----------\n");
   {
-    DopplerMetric *metric1, *metric2;
+    OldDopplerMetric *metric1;
+    DopplerMetric *metric2;
     REAL8 diff_2_1;
 
     DopplerMetricParams pars2 = master_pars2;
@@ -274,7 +301,7 @@ test_XLALDopplerFstatMetric ( void )
     XLAL_CHECK ( (diff_2_1 = XLALCompareMetrics ( metric2->gFav_ij, metric1->gFav_ij )) < tolPh, XLAL_ETOL, "Error(gFav2,gFav1)= %e exceeds tolerance of %e\n", diff_2_1, tolPh );
     XLALPrintWarning ("gFav: diff_2_1 = %e\n", diff_2_1 );
 
-    XLALDestroyDopplerMetric ( metric1 );
+    XLALDestroyOldDopplerMetric ( metric1 );
     XLALDestroyDopplerMetric ( metric2 );
   }
 
@@ -342,7 +369,8 @@ test_XLALDopplerFstatMetric ( void )
 
   XLALPrintWarning("\n---------- ROUND 5: ephemeris-based, single-IFO, segment-averaged phase metrics ----------\n");
   {
-    DopplerMetric *metric1, *metric2;
+    OldDopplerMetric *metric1;
+    DopplerMetric *metric2;
     REAL8 diff_2_1;
 
     DopplerMetricParams pars2 = master_pars2;
@@ -376,7 +404,7 @@ test_XLALDopplerFstatMetric ( void )
       // XLALOldDopplerFstatMetric() does not agree numerically with UniversalDopplerMetric when using refTime != startTime
       pars2_k.signalParams.Doppler.refTime = pars2_k.segmentList.segs[0].start;
 
-      DopplerMetric *metric1_k;   // per-segment coherent metric
+      OldDopplerMetric *metric1_k;   // per-segment coherent metric
       XLAL_CHECK ( (metric1_k = XLALOldDopplerFstatMetric ( &pars2_k, edat )) != NULL, XLAL_EFUNC );
 
       // manually correct reference time of metric1_k->g_ij; see Prix, "Frequency metric for CW searches" (2014-08-17), p. 4
@@ -393,10 +421,10 @@ test_XLALDopplerFstatMetric ( void )
       gsl_matrix_set( metric1_k->g_ij, 2, 3, gDf + gFD*dt ); gsl_matrix_set( metric1_k->g_ij, 3, 2, gsl_matrix_get( metric1_k->g_ij, 2, 3 ) );
       gsl_matrix_set( metric1_k->g_ij, 3, 3, gff + 2*gFf*dt + gFF*dt*dt );
 
-      XLAL_CHECK ( XLALAddDopplerMetric ( &metric1, metric1_k ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLALDestroyDopplerMetric ( metric1_k );
+      XLAL_CHECK ( XLALAddOldDopplerMetric ( &metric1, metric1_k ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLALDestroyOldDopplerMetric ( metric1_k );
     }
-    XLAL_CHECK ( XLALScaleDopplerMetric ( metric1, 1.0 / Nseg ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK ( XLALScaleOldDopplerMetric ( metric1, 1.0 / Nseg ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // 2) compute metric using modern UniversalDopplerMetric module: (used in lalapps_FstatMetric_v2)
     XLAL_CHECK ( (metric2 = XLALDopplerFstatMetric ( &pars2, edat )) != NULL, XLAL_EFUNC );
@@ -405,7 +433,7 @@ test_XLALDopplerFstatMetric ( void )
     XLAL_CHECK ( (diff_2_1 = XLALCompareMetrics ( metric2->g_ij, metric1->g_ij )) < tolPh, XLAL_ETOL, "Error(g2,g1)= %g exceeds tolerance of %g\n", diff_2_1, tolPh );
     XLALPrintWarning ("diff_2_1 = %e\n", diff_2_1 );
 
-    XLALDestroyDopplerMetric ( metric1 );
+    XLALDestroyOldDopplerMetric ( metric1 );
     XLALDestroyDopplerMetric ( metric2 );
 
     XLALSegListClear ( &NsegList );
