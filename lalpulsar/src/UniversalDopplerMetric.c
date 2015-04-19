@@ -226,12 +226,8 @@ typedef struct
 #define vOrb_c  (LAL_TWOPI * LAL_AU_SI / LAL_C_SI / LAL_YRSID_SI)
 
 /*---------- internal prototypes ----------*/
-static DopplerFstatMetric* XLALComputeDopplerFstatMetricCoh ( const DopplerMetricParams *metricParams, const EphemerisData *edat );
 static DopplerFstatMetric* XLALComputeFmetricFromAtoms ( const FmetricAtoms_t *atoms, REAL8 cosi, REAL8 psi );
 static gsl_matrix* XLALComputeFisherFromAtoms ( const FmetricAtoms_t *atoms, PulsarAmplitudeParams Amp );
-
-static int XLALAddDopplerFstatMetric ( DopplerFstatMetric **metric1, const DopplerFstatMetric *metric2 );
-static int XLALScaleDopplerFstatMetric ( DopplerFstatMetric *m, REAL8 scale );
 
 static double CW_am1_am2_Phi_i_Phi_j ( double tt, void *params );
 static double CWPhaseDeriv_i ( double tt, void *params );
@@ -1233,80 +1229,29 @@ XLALComputeDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< 
   for ( UINT4 k = 0; k < Nseg; k ++ )
     {
       DopplerFstatMetric *metric_k;	// per-segment coherent metric
+      FmetricAtoms_t *atoms = NULL;
 
       // setup 1-segment segment-list pointing k-th segment
       metricParams_k.segmentList.segs[0] = metricParams->segmentList.segs[k];
 
-      // compute coherent metric (+ Fisher matrix) for segment k
-      metric_k = XLALComputeDopplerFstatMetricCoh ( &metricParams_k, edat );
-      XLAL_CHECK_NULL ( metric_k != NULL, XLAL_EFUNC, "XLALComputeDopplerFstatMetricCoh() failed in iteration k=%d with xlalErrno = %d\n", k, xlalErrno );
-
-      XLAL_CHECK_NULL ( XLALAddDopplerFstatMetric ( &metric, metric_k ) == XLAL_SUCCESS, XLAL_EFUNC, "XLALAddDopplerFstatMetric() failed with xlalErrno = %d\n", xlalErrno );
-
-      XLALDestroyDopplerFstatMetric ( metric_k );
-
-    } // for k < Nseg
-
-  // semi-coherent metric: <g_ij> = (1/Nseg) sum_{k=1}^Nseg g_{k,ij}
-  XLAL_CHECK_NULL ( XLALScaleDopplerFstatMetric ( metric, 1.0/Nseg ) == XLAL_SUCCESS, XLAL_EFUNC, "XLALScaleDopplerFstatMetric() failed with xlalErrno = %d\n", xlalErrno );
-
-  // restore final meta-info with (semi-coherent) input parameters
-  metric->meta = (*metricParams);
-
-  return metric;
-
-} /* XLALComputeDopplerFstatMetric() */
-
-/**
- * Calculate the *coherent* (single-segment) phase-metric, the *full* (multi-IFO) Fstat-metrix
- * and the Fisher-matrix derived in \cite Prix07 .
- *
- * Note: The returned DopplerFstatMetric struct contains the matrices
- * g_ij (the phase metric), gF_ij (the F-metric), gFav_ij (the average F-metric),
- * m1_ij, m2_ij, m3_ij (auxiliary matrices)
- * and Fisher_ab (the full 4+n dimensional Fisher matrix).
- *
- * The returned metric struct also carries the meta-info about
- * the metrics in the field 'DopplerMetricParams meta'.
- *
- * Return NULL on error.
- */
-static DopplerFstatMetric *
-XLALComputeDopplerFstatMetricCoh ( const DopplerMetricParams *metricParams,  	/**< input parameters determining the metric calculation */
-                                   const EphemerisData *edat			/**< ephemeris data */
-                                 )
-{
-  DopplerFstatMetric *metric = NULL;
-  REAL8 cosi, psi;
-
-  /* ---------- sanity/consistency checks ---------- */
-  XLAL_CHECK_NULL ( metricParams, XLAL_EINVAL, "Invalid NULL input 'metricParams'\n" );
-  XLAL_CHECK_NULL ( edat, XLAL_EINVAL, "Invalid NULL input 'edat'\n");
-  XLAL_CHECK_NULL ( XLALSegListIsInitialized ( &(metricParams->segmentList) ), XLAL_EINVAL, "Passed un-initialzied segment list 'metricParams->segmentList'\n");
-  UINT4 Nseg = metricParams->segmentList.length;
-  XLAL_CHECK_NULL ( Nseg == 1, XLAL_EINVAL, "Segment list must only contain Nseg=1 segments, got Nseg=%d", Nseg );
-
-    {
-      FmetricAtoms_t *atoms = NULL;
-
       /* ---------- compute Fmetric 'atoms', ie the averaged <a^2>, <a b Phi_i>, <a^2 Phi_i Phi_j>, etc ---------- */
-      if ( (atoms = XLALComputeAtomsForFmetric ( metricParams, edat )) == NULL ) {
+      if ( (atoms = XLALComputeAtomsForFmetric ( &metricParams_k, edat )) == NULL ) {
         XLALPrintError ("%s: XLALComputeAtomsForFmetric() failed. errno = %d\n\n", __func__, xlalErrno );
         XLAL_ERROR_NULL( XLAL_EFUNC );
       }
 
       /* ----- compute the F-metric gF_ij and related matrices ---------- */
-      cosi = metricParams->signalParams.Amp.cosi;
-      psi  = metricParams->signalParams.Amp.psi;
+      REAL8 cosi = metricParams->signalParams.Amp.cosi;
+      REAL8 psi  = metricParams->signalParams.Amp.psi;
 
-      if ( (metric = XLALComputeFmetricFromAtoms ( atoms, cosi, psi)) == NULL ) {
+      if ( (metric_k = XLALComputeFmetricFromAtoms ( atoms, cosi, psi)) == NULL ) {
         XLALPrintError ("%s: XLALComputeFmetricFromAtoms() failed, errno = %d\n\n", __func__, xlalErrno );
         XLALDestroyFmetricAtoms ( atoms );
         XLAL_ERROR_NULL( XLAL_EFUNC );
       }
 
       /* ----- compute the full 4+n dimensional Fisher matrix ---------- */
-      if ( (metric->Fisher_ab = XLALComputeFisherFromAtoms ( atoms, metricParams->signalParams.Amp )) == NULL ) {
+      if ( (metric_k->Fisher_ab = XLALComputeFisherFromAtoms ( atoms, metricParams->signalParams.Amp )) == NULL ) {
         XLALPrintError ("%s: XLALComputeFisherFromAtoms() failed. errno = %d\n\n", __func__, xlalErrno );
         XLALDestroyFmetricAtoms ( atoms );
         XLALDestroyDopplerFstatMetric ( metric );
@@ -1314,7 +1259,50 @@ XLALComputeDopplerFstatMetricCoh ( const DopplerMetricParams *metricParams,  	/*
       }
 
       XLALDestroyFmetricAtoms ( atoms );
-    }
+
+      /* ---- add DopplerFstatMetric results over segments ----- */
+      if ( metric == NULL ) {
+        metric = metric_k;   // just use DopplerFstatMetric from 1st segment
+      } else {
+
+        // add matrices
+        gsl_matrix_add ( metric->gF_ij,     metric_k->gF_ij );
+        gsl_matrix_add ( metric->gFav_ij,   metric_k->gFav_ij );
+        gsl_matrix_add ( metric->m1_ij,     metric_k->m1_ij );
+        gsl_matrix_add ( metric->m2_ij,     metric_k->m2_ij );
+        gsl_matrix_add ( metric->m3_ij,     metric_k->m3_ij );
+        gsl_matrix_add ( metric->Fisher_ab, metric_k->Fisher_ab );
+
+        // add errors in quadrature
+        metric->maxrelerr = sqrt ( SQUARE(metric->maxrelerr) + SQUARE(metric_k->maxrelerr) );
+
+        // add SNR^2
+        metric->rho2 += metric_k->rho2;
+
+        XLALDestroyDopplerFstatMetric ( metric_k );
+
+      }
+
+    } // for k < Nseg
+
+  // semi-coherent metric: <g_ij> = (1/Nseg) sum_{k=1}^Nseg g_{k,ij}
+  {
+    const double scale = 1.0/Nseg;
+
+    // scale matrices
+    gsl_matrix_scale ( metric->gF_ij,     scale );
+    gsl_matrix_scale ( metric->gFav_ij,   scale );
+    gsl_matrix_scale ( metric->m1_ij,     scale );
+    gsl_matrix_scale ( metric->m2_ij,     scale );
+    gsl_matrix_scale ( metric->m3_ij,     scale );
+    gsl_matrix_scale ( metric->Fisher_ab, scale );
+
+    // scale errors
+    metric->maxrelerr *= scale;
+
+    // scale SNR^2
+    metric->rho2 *= scale;
+  }
 
   /* ----- if requested, project gF_ij and gFav_ij onto coordinate 'projectCoord' */
   if ( metricParams->projectCoord >= 0 )
@@ -1335,7 +1323,7 @@ XLALComputeDopplerFstatMetricCoh ( const DopplerMetricParams *metricParams,  	/*
 
   return metric;
 
-} /* XLALComputeDopplerFstatMetricCoh() */
+} /* XLALComputeDopplerFstatMetric() */
 
 
 /** Free a DopplerFstatMetric structure */
@@ -2364,86 +2352,3 @@ findHighestGCSpinOrder ( const DopplerCoordinateSystem *coordSys )
 
   return maxorder;
 } /*  findHighestSpinOrder() */
-
-
-/**
- * Add 'metric2' to 'metric1', by adding the matrixes and 'rho2', and adding error-estimates in quadrature.
- *
- * Note1: if the '*metric1 == NULL', then it is initialized to the values
- * in 'metric2'. The elements are *copied* and the result is allocated here.
- *
- * Note2: the 'meta' field-information of 'metric2' is simply copied into the output,
- * meta-info consistency is *not* checked.
- */
-int
-XLALAddDopplerFstatMetric ( DopplerFstatMetric **metric1, const DopplerFstatMetric *metric2 )
-{
-  XLAL_CHECK ( metric1, XLAL_EINVAL, "Invalid NULL input 'metric1'\n" );
-  XLAL_CHECK ( metric2, XLAL_EINVAL, "Invalid NULL input 'metric2'\n" );
-
-  DopplerFstatMetric *m1 = (*metric1);
-  const DopplerFstatMetric *m2 = metric2;
-
-  if ( m1 == NULL )	// create new empty matrices for those that exist in 'metric2'
-    {
-      int len, len1, len2;
-      XLAL_CHECK ( (m1 = XLALCalloc ( 1, len=sizeof(*m1) )) != NULL, XLAL_ENOMEM, "Failed to XLALCalloc(1,%d)\n", len );
-
-      XLAL_CHECK ( (m1->gF_ij = gsl_matrix_calloc(len1=m2->gF_ij->size1,len2=m2->gF_ij->size2)),XLAL_ENOMEM, "Failed: gF_ij = gsl_matrix_calloc(%d,%d)\n",len1,len2 );
-      XLAL_CHECK((m1->gFav_ij=gsl_matrix_calloc(len1=m2->gFav_ij->size1,len2=m2->gFav_ij->size2)),XLAL_ENOMEM, "Failed: gFav_ij = gsl_matrix_calloc(%d,%d)\n",len1,len2 );
-      XLAL_CHECK ( (m1->m1_ij = gsl_matrix_calloc(len1=m2->m1_ij->size1,len2=m2->m1_ij->size2 )),XLAL_ENOMEM, "Failed: m1_ij = gsl_matrix_calloc(%d,%d)\n",len1,len2 );
-      XLAL_CHECK ( (m1->m2_ij = gsl_matrix_calloc(len1=m2->m2_ij->size1,len2=m2->m2_ij->size2 )),XLAL_ENOMEM, "Failed: m2_ij = gsl_matrix_calloc(%d,%d)\n",len1,len2 );
-      XLAL_CHECK ( (m1->m3_ij = gsl_matrix_calloc(len1=m2->m3_ij->size1,len2=m2->m3_ij->size2 )),XLAL_ENOMEM, "Failed: m3_ij = gsl_matrix_calloc(%d,%d)\n",len1,len2 );
-      XLAL_CHECK((m1->Fisher_ab=gsl_matrix_calloc(len1=m2->Fisher_ab->size1,len2=m2->Fisher_ab->size2)),XLAL_ENOMEM,"Failed: Fisher_ab = gsl_matrix_calloc(%d,%d)\n",len1,len2 );
-
-      (*metric1) = m1;
-    } // if *metric1==NULL
-
-  // copy meta-information from m2 into m1
-  memcpy ( &(m1->meta), &(m2->meta), sizeof(m1->meta) );
-
-  int ret;
-  // add existing matrices
-  if ( m2->gF_ij ) XLAL_CHECK (  (ret = gsl_matrix_add ( m1->gF_ij,     m2->gF_ij )) == 0, XLAL_EFAILED, "gF_ij: gsl_matrix_add() failed with status=%d\n", ret );
-  if ( m2->gFav_ij ) XLAL_CHECK( (ret = gsl_matrix_add ( m1->gFav_ij,   m2->gFav_ij )) == 0, XLAL_EFAILED, "gFav_ij: gsl_matrix_add() failed with status=%d\n", ret );
-  if ( m2->m1_ij ) XLAL_CHECK (  (ret = gsl_matrix_add ( m1->m1_ij,     m2->m1_ij )) == 0, XLAL_EFAILED, "m1_ij: gsl_matrix_add() failed with status=%d\n", ret );
-  if ( m2->m2_ij ) XLAL_CHECK (  (ret = gsl_matrix_add ( m1->m2_ij,     m2->m2_ij )) == 0, XLAL_EFAILED, "m2_ij: gsl_matrix_add() failed with status=%d\n", ret );
-  if ( m2->m3_ij ) XLAL_CHECK (  (ret = gsl_matrix_add ( m1->m3_ij,     m2->m3_ij )) == 0, XLAL_EFAILED, "m3_ij: gsl_matrix_add() failed with status=%d\n", ret );
-  if ( m2->Fisher_ab) XLAL_CHECK((ret = gsl_matrix_add ( m1->Fisher_ab, m2->Fisher_ab )) == 0, XLAL_EFAILED, "Fisher_ab: gsl_matrix_add() failed with status=%d\n", ret );
-
-  // add errors in quadrature
-  m1->maxrelerr  = sqrt ( SQUARE(m1->maxrelerr)  + SQUARE(m2->maxrelerr) );
-
-  // add SNR^2
-  m1->rho2 += m2->rho2;
-
-  return XLAL_SUCCESS;
-
-} /* XLALAddDopplerFstatMetric() */
-
-/**
- * Scale all (existing) matrices, error-estimates and 'rho2' by 'scale'
- */
-int
-XLALScaleDopplerFstatMetric ( DopplerFstatMetric *m, REAL8 scale )
-{
-  XLAL_CHECK ( m != NULL, XLAL_EINVAL, "Invalid NULL input 'metric'\n" );
-
-  int ret;
-  // scale all existing matrices
-  if ( m->gF_ij ) XLAL_CHECK (  (ret = gsl_matrix_scale ( m->gF_ij,     scale )) == 0, XLAL_EFAILED, "gF_ij: gsl_matrix_scale(%g) failed with status=%d\n", scale, ret );
-  if ( m->gFav_ij ) XLAL_CHECK( (ret = gsl_matrix_scale ( m->gFav_ij,   scale )) == 0, XLAL_EFAILED, "gFav_ij: gsl_matrix_scale(%g) failed with status=%d\n", scale, ret );
-  if ( m->m1_ij ) XLAL_CHECK (  (ret = gsl_matrix_scale ( m->m1_ij,     scale )) == 0, XLAL_EFAILED, "m1_ij: gsl_matrix_scale(%g) failed with status=%d\n", scale, ret );
-  if ( m->m2_ij ) XLAL_CHECK (  (ret = gsl_matrix_scale ( m->m2_ij,     scale )) == 0, XLAL_EFAILED, "m2_ij: gsl_matrix_scale(%g) failed with status=%d\n", scale, ret );
-  if ( m->m3_ij ) XLAL_CHECK (  (ret = gsl_matrix_scale ( m->m3_ij,     scale )) == 0, XLAL_EFAILED, "m3_ij: gsl_matrix_scale(%g) failed with status=%d\n", scale, ret );
-  if ( m->Fisher_ab) XLAL_CHECK((ret = gsl_matrix_scale ( m->Fisher_ab, scale )) == 0, XLAL_EFAILED, "Fisher_ab: gsl_matrix_scale(%g) failed with status=%d\n", scale, ret );
-
-  // scale errors
-  m->maxrelerr *= scale;
-
-  // scale SNR^2
-  m->rho2 *= scale;
-
-  return XLAL_SUCCESS;
-
-} /* XLALScaleDopplerFstatMetric() */
