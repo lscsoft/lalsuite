@@ -48,17 +48,21 @@ extern "C" {
 /** @{ */
 
 /* -------------------- our own failsafe aligned memory handling -------------------- */
+/** A special \<TYPE\>Vector with n-byte aligned memory \c data array */
+#define DECLARE_ALIGNED_VECT_API(TYPE)                                  \
+  typedef struct tag##TYPE##VectorAligned {                             \
+    UINT4 length;	/**< number of 'usable' array entries (fully aligned) */ \
+    TYPE *data;		/**< start of aligned memory block */           \
+    TYPE *data0;	/**< actual physical start of memory block, possibly not aligned */ \
+  } TYPE##VectorAligned;                                                \
+                                                                        \
+TYPE##VectorAligned *XLALCreate##TYPE##VectorAligned ( const UINT4 length, const UINT4 align ); \
+void XLALDestroy##TYPE##VectorAligned ( TYPE##VectorAligned *in );
 
-/** A special REAL4 Vector with n-byte aligned memory \c data array */
-typedef struct tagREAL4VectorAligned
-{
-  UINT4 length;		/**< number of 'usable' array entries (fully aligned) */
-  REAL4 *data;		/**< start of aligned memory block */
-  REAL4 *data0;		/**< actual physical start of memory block, possibly not aligned */
-} REAL4VectorAligned;
-
-REAL4VectorAligned *XLALCreateREAL4VectorAligned ( const UINT4 length, const UINT4 align );
-void XLALDestroyREAL4VectorAligned ( REAL4VectorAligned *in );
+DECLARE_ALIGNED_VECT_API(REAL4);
+DECLARE_ALIGNED_VECT_API(REAL8);
+DECLARE_ALIGNED_VECT_API(COMPLEX8);
+DECLARE_ALIGNED_VECT_API(COMPLEX16);
 
 /* -------------------- exported vector math functions -------------------- */
 
