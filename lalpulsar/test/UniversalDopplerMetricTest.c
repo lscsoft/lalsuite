@@ -110,7 +110,7 @@ test_XLALDopplerFstatMetric ( void )
 
   // ----- set test-parameters ----------
   const LIGOTimeGPS startTimeGPS = { 792576013, 0 };
-  const REAL8 duration = 60000;
+  const REAL8 Tseg = 60000;
 
   const REAL8 Alpha = 1.0;
   const REAL8 Delta = 0.5;
@@ -138,10 +138,8 @@ test_XLALDopplerFstatMetric ( void )
     .fkdot    = { Freq, f1dot },
   };
 
-  const UINT4 Nseg = 1;
-  const REAL8 Tseg = duration / Nseg;
   LALSegList segList;
-  ret = XLALSegListInitSimpleSegments ( &segList, startTimeGPS, Nseg, Tseg );
+  ret = XLALSegListInitSimpleSegments ( &segList, startTimeGPS, 1, Tseg );
   XLAL_CHECK ( ret == XLAL_SUCCESS, XLAL_EFUNC, "XLALSegListInitSimpleSegments() failed with xlalErrno = %d\n", xlalErrno );
 
   const DopplerMetricParams master_pars2 = {
@@ -165,7 +163,7 @@ test_XLALDopplerFstatMetric ( void )
     .position		= { .longitude = Alpha, .latitude = Delta },
     .position.system	= COORDINATESYSTEM_EQUATORIAL,
     .epoch		= startTimeGPS,
-    .duration		= duration,
+    .duration		= Tseg,
     .maxFreq		= Freq,
     .site		= &(multiIFO.sites[0]),	// use first detector for phase-metric
     .ephemeris		= edat,
@@ -320,7 +318,7 @@ test_XLALDopplerFstatMetric ( void )
 
     // b) compute metric at refTime = midTime
     pars2.signalParams.Doppler.refTime = startTimeGPS;
-    pars2.signalParams.Doppler.refTime.gpsSeconds += duration / 2;
+    pars2.signalParams.Doppler.refTime.gpsSeconds += Tseg / 2;
 
     XLAL_CHECK ( (metric2 = XLALDopplerFstatMetric ( &pars2, edat )) != NULL, XLAL_EFUNC );
     gN_ij = NULL;
@@ -339,6 +337,78 @@ test_XLALDopplerFstatMetric ( void )
 
     XLALDestroyDopplerMetric ( metric2 );
     gsl_matrix_free ( gN_ij );
+  }
+
+
+  XLALPrintWarning("\n---------- ROUND 5: ephemeris-based, single-IFO, segment-averaged phase metrics ----------\n");
+  {
+    DopplerMetric *metric1, *metric2;
+    REAL8 diff_2_1;
+
+    DopplerMetricParams pars2 = master_pars2;
+
+    pars2.detMotionType = DETMOTION_SPIN | DETMOTION_ORBIT;
+    pars2.metricType  = METRIC_TYPE_PHASE;
+    pars2.multiIFO.length = 1;	// truncate to first detector
+    pars2.multiNoiseFloor.length = 1;	// truncate to first detector
+    pars2.approxPhase = 1;
+
+    const UINT4 Nseg = 10;
+    LALSegList NsegList;
+    ret = XLALSegListInitSimpleSegments ( &NsegList, startTimeGPS, Nseg, Tseg );
+    XLAL_CHECK ( ret == XLAL_SUCCESS, XLAL_EFUNC, "XLALSegListInitSimpleSegments() failed with xlalErrno = %d\n", xlalErrno );
+    pars2.segmentList = NsegList;
+
+    LALSegList segList_k;
+    LALSeg segment_k;
+    XLALSegListInit( &segList_k );	// prepare single-segment list containing segment k
+    segList_k.arraySize = 1;
+    segList_k.length = 1;
+    segList_k.segs = &segment_k;
+
+    // 1) compute metric using old FstatMetric code, now wrapped into XLALOldDopplerFstatMetric()
+    metric1 = NULL;
+    for (UINT4 k = 0; k < Nseg; ++k) {
+      // setup 1-segment segment-list pointing k-th segment
+      DopplerMetricParams pars2_k = pars2;
+      pars2_k.segmentList = segList_k;
+      pars2_k.segmentList.segs[0] = pars2.segmentList.segs[k];
+      // XLALOldDopplerFstatMetric() does not agree numerically with UniversalDopplerMetric when using refTime != startTime
+      pars2_k.signalParams.Doppler.refTime = pars2_k.segmentList.segs[0].start;
+
+      DopplerMetric *metric1_k;   // per-segment coherent metric
+      XLAL_CHECK ( (metric1_k = XLALOldDopplerFstatMetric ( &pars2_k, edat )) != NULL, XLAL_EFUNC );
+
+      // manually correct reference time of metric1_k->g_ij; see Prix, "Frequency metric for CW searches" (2014-08-17), p. 4
+      const double dt = XLALGPSDiff( &(pars2_k.signalParams.Doppler.refTime), &(pars2.signalParams.Doppler.refTime) );
+      const double gFF = gsl_matrix_get( metric1_k->g_ij, 0, 0 );
+      const double gFA = gsl_matrix_get( metric1_k->g_ij, 0, 1 );
+      const double gFD = gsl_matrix_get( metric1_k->g_ij, 0, 2 );
+      const double gFf = gsl_matrix_get( metric1_k->g_ij, 0, 3 );
+      const double gAf = gsl_matrix_get( metric1_k->g_ij, 1, 3 );
+      const double gDf = gsl_matrix_get( metric1_k->g_ij, 2, 3 );
+      const double gff = gsl_matrix_get( metric1_k->g_ij, 3, 3 );
+      gsl_matrix_set( metric1_k->g_ij, 0, 3, gFf + gFF*dt ); gsl_matrix_set( metric1_k->g_ij, 3, 0, gsl_matrix_get( metric1_k->g_ij, 0, 3 ) );
+      gsl_matrix_set( metric1_k->g_ij, 1, 3, gAf + gFA*dt ); gsl_matrix_set( metric1_k->g_ij, 3, 1, gsl_matrix_get( metric1_k->g_ij, 1, 3 ) );
+      gsl_matrix_set( metric1_k->g_ij, 2, 3, gDf + gFD*dt ); gsl_matrix_set( metric1_k->g_ij, 3, 2, gsl_matrix_get( metric1_k->g_ij, 2, 3 ) );
+      gsl_matrix_set( metric1_k->g_ij, 3, 3, gff + 2*gFf*dt + gFF*dt*dt );
+
+      XLAL_CHECK ( XLALAddDopplerMetric ( &metric1, metric1_k ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLALDestroyDopplerMetric ( metric1_k );
+    }
+    XLAL_CHECK ( XLALScaleDopplerMetric ( metric1, 1.0 / Nseg ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    // 2) compute metric using modern UniversalDopplerMetric module: (used in lalapps_FstatMetric_v2)
+    XLAL_CHECK ( (metric2 = XLALDopplerFstatMetric ( &pars2, edat )) != NULL, XLAL_EFUNC );
+
+    // compare both metrics against each other:
+    XLAL_CHECK ( (diff_2_1 = XLALCompareMetrics ( metric2->g_ij, metric1->g_ij )) < tolPh, XLAL_ETOL, "Error(g2,g1)= %g exceeds tolerance of %g\n", diff_2_1, tolPh );
+    XLALPrintWarning ("diff_2_1 = %e\n", diff_2_1 );
+
+    XLALDestroyDopplerMetric ( metric1 );
+    XLALDestroyDopplerMetric ( metric2 );
+
+    XLALSegListClear ( &NsegList );
   }
 
 
