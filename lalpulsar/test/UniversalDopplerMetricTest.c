@@ -32,6 +32,8 @@
 #include <lal/UniversalDopplerMetric.h>
 #include <lal/MetricUtils.h>
 
+#include "../src/GSLHelpers.h"
+
 /**
  * \author Reinhard Prix
  * \file
@@ -385,7 +387,7 @@ test_XLALComputeDopplerMetrics ( void )
     pars2.multiNoiseFloor.length = 1;	// truncate to first detector
     pars2.approxPhase = 1;
 
-    const UINT4 Nseg = 1;   /* FIXME! */
+    const UINT4 Nseg = 10;
     LALSegList NsegList;
     ret = XLALSegListInitSimpleSegments ( &NsegList, startTimeGPS, Nseg, Tseg );
     XLAL_CHECK ( ret == XLAL_SUCCESS, XLAL_EFUNC, "XLALSegListInitSimpleSegments() failed with xlalErrno = %d\n", xlalErrno );
@@ -432,6 +434,9 @@ test_XLALComputeDopplerMetrics ( void )
 
     // 2) compute metric using modern UniversalDopplerMetric module: (used in lalapps_FstatMetric_v2)
     XLAL_CHECK ( (metric2P = XLALComputeDopplerPhaseMetric ( &pars2, edat )) != NULL, XLAL_EFUNC );
+
+    GPMAT( metric1->g_ij, "%0.4e" );
+    GPMAT( metric2P->g_ij, "%0.4e" );
 
     // compare both metrics against each other:
     XLAL_CHECK ( (diff_2_1 = XLALCompareMetrics ( metric2P->g_ij, metric1->g_ij )) < tolPh, XLAL_ETOL, "Error(g2,g1)= %g exceeds tolerance of %g\n", diff_2_1, tolPh );
