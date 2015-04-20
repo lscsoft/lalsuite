@@ -218,6 +218,7 @@ XLALOldDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< inpu
         }
       else
         {
+          XLAL_CHECK_NULL ( config.multidPhi->length == 1, XLAL_EFAILED, "%s: computePhaseMetric() can only handle a single detector!", __func__ );
           XLAL_CHECK_NULL ( computePhaseMetric ( metric->g_ij, config.multidPhi->data[0], config.GLweights) == XLAL_SUCCESS, XLAL_EFUNC );
         }
     } // endif metricType==PHASE || ALL
