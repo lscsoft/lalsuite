@@ -179,7 +179,7 @@ def parse_command_line():
     parser.add_option("--templates-max", metavar="N", help="Use this option to force the code to exit after generating a specified number N of templates. Note that the code may exit with fewer than N templates if the convergence criterion is met first.", type="int", default=float('inf'))
     parser.add_option("--cache-waveforms", default = False, action="store_true", help="A given waveform in the template bank will be used many times throughout the bank generation process. You can save a considerable amount of CPU by caching the waveform from the first time it is generated; however, do so only if you are sure that storing the waveforms in memory will not overload the system memory.")
     parser.add_option("--neighborhood-size", metavar="N", default = 0.25, type="float", help="Specify the window size in seconds to define \"nearby\" templates used to compute the match against each proposed template. The neighborhood is chosen symmetric about the proposed template; \"nearby\" is defined using the option --neighborhood-type. The default value of 0.25 is *not a guarantee of performance*. Choosing the neighborhood too small will lead to larger banks (but also higher bank coverage).")
-    parser.add_option("--neighborhood-param", default="tau0", choices=["tau0","dur"], help="Choose how the neighborhood is sorted for match calculations. TODO: Implement duration neighborhoods.")
+    parser.add_option("--neighborhood-param", default="tau0", choices=["tau0","dur"], help="Choose how the neighborhood is sorted for match calculations.")
     parser.add_option("--checkpoint", default=0, metavar="N", help="Periodically save the bank to disk every N templates (set to 0 to disable).", type="int", action="store")
 
 
@@ -274,6 +274,10 @@ if opts.reference_psd is not None:
     noise_model = lambda g: np.exp(interpolator(g))
 else:
     noise_model = noise_models[opts.noise_model]
+
+# Set up PSD for metric computation
+# calling into pylal, so need pylal types
+psd = REAL8FrequencySeries(name="psd", f0=0., deltaF=1., data=get_PSD(1., opts.flow, 1570., noise_model))
 
 
 #
@@ -383,6 +387,9 @@ while ((k + float(sum(ks)))/len(ks) < opts.convergence_threshold) and len(bank) 
             row.event_id = ilwd.ilwdchar('sngl_inspiral:event_id:%d' %(len(bank),))
             row.ifo = opts.instrument
             row.process_id = process.process_id
+            row.Gamma0, row.Gamma1, row.Gamma2, row.Gamma3, row.Gamma4, row.Gamma5,\
+                row.Gamma6, row.Gamma7, row.Gamma8, row.Gamma9 = \
+                compute_metric(opts.flow, 1570., 4, row.tau0, row.tau3, psd)
             tbl.append(row)
 
         if opts.checkpoint and not len(bank) % opts.checkpoint:
