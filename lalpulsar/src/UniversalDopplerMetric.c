@@ -57,7 +57,7 @@
 #define POW4(a)  ( (a) * (a) * (a) * (a) )
 #define POW5(a)  ( (a) * (a) * (a) * (a) * (a) )
 
-/* These constants define an internal scale used within CWPhaseDeriv_i().
+/* These constants define an internal scale used within CW_Phi_i().
  * Distances are normalised by SCALE_R, and times are normalised by SCALE_T.
  */
 #define SCALE_R (LAL_AU_SI)
@@ -230,10 +230,10 @@ static DopplerFstatMetric* XLALComputeFmetricFromAtoms ( const FmetricAtoms_t *a
 static gsl_matrix* XLALComputeFisherFromAtoms ( const FmetricAtoms_t *atoms, PulsarAmplitudeParams Amp );
 
 static double CW_am1_am2_Phi_i_Phi_j ( double tt, void *params );
-static double CWPhaseDeriv_i ( double tt, void *params );
+static double CW_Phi_i ( double tt, void *params );
 
 static double XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params, double *relerr_max );
-static double XLALCWPhase_cov_Phi_ij ( const MultiLALDetector *multiIFO, const MultiNoiseFloor *multiNoiseFloor, const intparams_t *params, double *relerr_max );
+static double XLALCovariance_Phi_ij ( const MultiLALDetector *multiIFO, const MultiNoiseFloor *multiNoiseFloor, const intparams_t *params, double *relerr_max );
 
 static UINT4 findHighestGCSpinOrder ( const DopplerCoordinateSystem *coordSys );
 
@@ -376,7 +376,7 @@ CW_am1_am2_Phi_i_Phi_j ( double tt, void *params )
   if ( GET_COORD_ID(par->coordSys, par->coord1) != DOPPLERCOORD_NONE )
     {
       par->coord = par->coord1;
-      phi_i = CWPhaseDeriv_i ( tt, params );
+      phi_i = CW_Phi_i ( tt, params );
     }
   else
     phi_i = 1.0;
@@ -385,7 +385,7 @@ CW_am1_am2_Phi_i_Phi_j ( double tt, void *params )
   if ( GET_COORD_ID(par->coordSys, par->coord2) != DOPPLERCOORD_NONE )
     {
       par->coord = par->coord2;
-      phi_j = CWPhaseDeriv_i ( tt, params );
+      phi_j = CW_Phi_i ( tt, params );
     }
   else
     phi_j = 1.0;
@@ -413,7 +413,7 @@ CW_am1_am2_Phi_i_Phi_j ( double tt, void *params )
  *
  */
 static double
-CWPhaseDeriv_i ( double tt, void *params )
+CW_Phi_i ( double tt, void *params )
 {
   intparams_t *par = (intparams_t*) params;
   if (par->errnum) {
@@ -634,7 +634,7 @@ CWPhaseDeriv_i ( double tt, void *params )
 
   return phase_deriv;
 
-} /* CWPhaseDeriv_i() */
+} /* CW_Phi_i() */
 
 
 /**
@@ -810,11 +810,11 @@ XLALPtolemaicPosVel ( PosVel3D_t *posvel,		/**< [out] instantaneous position and
  * NOTE: for passing unit noise-weights, set MultiNoiseFloor->length=0 (but multiNoiseFloor==NULL is invalid)
  */
 static double
-XLALCWPhase_cov_Phi_ij ( const MultiLALDetector *multiIFO,		//!< [in] detectors to use
-                         const MultiNoiseFloor *multiNoiseFloor,	//!< [in] corresponding noise floors for weights, NULL means unit-weights
-                         const intparams_t *params,			//!< [in] integration parameters
-                         double* relerr_max				//!< [in] maximal error for integration
-                         )
+XLALCovariance_Phi_ij ( const MultiLALDetector *multiIFO,		//!< [in] detectors to use
+                        const MultiNoiseFloor *multiNoiseFloor,	//!< [in] corresponding noise floors for weights, NULL means unit-weights
+                        const intparams_t *params,			//!< [in] integration parameters
+                        double* relerr_max				//!< [in] maximal error for integration
+                      )
 {
   XLAL_CHECK_REAL8 ( multiIFO != NULL, XLAL_EINVAL );
   UINT4 numDet = multiIFO->length;
@@ -889,7 +889,7 @@ XLALCWPhase_cov_Phi_ij ( const MultiLALDetector *multiIFO,		//!< [in] detectors 
       av_ij_err += weight * SQUARE (abserr);
 
       /* compute <phi_i> */
-      integrand.function = &CWPhaseDeriv_i;
+      integrand.function = &CW_Phi_i;
       par.coord = par.coord1;
       XLAL_CALLGSL ( stat = gsl_integration_qag (&integrand, ti, tf, epsabs, epsrel, limit, GSL_INTEG_GAUSS61, wksp, &res_n, &abserr) );
       if ( stat != 0 ) {
@@ -902,7 +902,7 @@ XLALCWPhase_cov_Phi_ij ( const MultiLALDetector *multiIFO,		//!< [in] detectors 
       av_i_err += weight * SQUARE (abserr);
 
       /* compute <phi_j> */
-      integrand.function = &CWPhaseDeriv_i;
+      integrand.function = &CW_Phi_i;
       par.coord = par.coord2;
       XLAL_CALLGSL ( stat = gsl_integration_qag (&integrand, ti, tf, epsabs, epsrel, limit, GSL_INTEG_GAUSS61, wksp, &res_n, &abserr) );
       if ( stat != 0 ) {
@@ -946,7 +946,7 @@ XLALCWPhase_cov_Phi_ij ( const MultiLALDetector *multiIFO,		//!< [in] detectors 
 
   return ret;	/* return covariance */
 
-} /* XLALCWPhase_cov_Phi_ij() */
+} /* XLALCovariance_Phi_ij() */
 
 
 /**
@@ -1073,7 +1073,7 @@ XLALComputeDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< 
         /* metric->g_ij */
         intparams.coord1 = i;
         intparams.coord2 = j;
-        REAL8 gg = XLALCWPhase_cov_Phi_ij ( &metricParams->multiIFO, &metricParams->multiNoiseFloor, &intparams, &err );	/* [Phi_i, Phi_j] */
+        REAL8 gg = XLALCovariance_Phi_ij ( &metricParams->multiIFO, &metricParams->multiNoiseFloor, &intparams, &err );	/* [Phi_i, Phi_j] */
         metric->maxrelerr = MYMAX ( metric->maxrelerr, err );
         if ( xlalErrno ) {
           XLALPrintError ("\n%s: Integration of metric->g_ij (i=%d, j=%d) failed. errno = %d\n", __func__, i, j, xlalErrno );
