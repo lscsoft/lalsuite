@@ -91,6 +91,39 @@ XLALCompareMetrics(
 } // XLALCompareMetrics()
 
 ///
+/// Compute the determinant of a metric \f$ g_{ij} \f$.
+///
+double XLALMetricDeterminant(
+  const gsl_matrix *g_ij		///< [in] Parameter-space metric \f$ g_{ij} \f$
+  )
+{
+
+  // Check input
+  XLAL_CHECK_REAL8( g_ij != NULL, XLAL_EFAULT );
+
+  const size_t n = g_ij->size1;
+
+  // Allocate memory
+  gsl_matrix *GAMAT_REAL8( LU_decomp, n, n );
+  gsl_permutation *GAPERM_REAL8( LU_perm, n );
+
+  // Compute LU decomposition
+  gsl_matrix_memcpy( LU_decomp, g_ij );
+  int LU_sign = 0;
+  GCALL_REAL8( gsl_linalg_LU_decomp( LU_decomp, LU_perm, &LU_sign ), "'g_ij' cannot be LU-decomposed" );
+
+  // Compute determinant
+  const double determinant = gsl_linalg_LU_det( LU_decomp, LU_sign );
+
+  // Cleanup
+  GFMAT( LU_decomp );
+  GFPERM( LU_perm );
+
+  return determinant;
+
+}
+
+///
 /// Compute the extent of the bounding box of the mismatch ellipse of a metric \f$ g_{ij} \f$.
 ///
 gsl_vector *XLALMetricEllipseBoundingBox(

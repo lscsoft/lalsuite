@@ -883,7 +883,8 @@ int XLALSetTilingLatticeAndMetric(
     GCALL( gsl_linalg_LU_decomp( LU_decomp, LU_perm, &LU_sign ), "Generator matrix cannot be LU-decomposed" );
 
     // Compute generator determinant
-    const double generator_determinant = gsl_linalg_LU_det( LU_decomp, LU_sign );
+    const double generator_determinant = XLALMetricDeterminant( tiling->tiled_generator );
+    XLAL_CHECK( !XLAL_IS_REAL8_FAIL_NAN(generator_determinant), XLAL_EFUNC );
 
     // Compute generator covering radius
     const double generator_covering_radius = pow( norm_thickness * generator_determinant, 1.0 / tn );
