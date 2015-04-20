@@ -245,35 +245,28 @@ def parse_command_line():
 
     return opts, args
 
+
+#
+# begin main
+#
 opts, args = parse_command_line()
-np.random.mtrand.seed(opts.seed)
 
-# prepare a new XML document
-xmldoc = ligolw.Document()
-xmldoc.appendChild(ligolw.LIGO_LW())
-lsctables.SnglInspiralTable.RowType = SnglInspiralTable
-tbl = lsctables.New(lsctables.SnglInspiralTable)
-xmldoc.childNodes[-1].appendChild(tbl)
-
-# FIXME output naming conventions to match IHOPE/tmpltbank break sbank_pipe
+#
+# determine output bank filename
+#
 if opts.user_tag:
     fout = "%s-SBANK_%s-%d-%d.xml.gz" % (opts.instrument, opts.user_tag, opts.gps_start_time, opts.gps_end_time-opts.gps_start_time)
 else:
     fout = "%s-SBANK-%d-%d.xml.gz" % (opts.instrument, opts.gps_start_time, opts.gps_end_time-opts.gps_start_time)
 
-# Prepare process table with information about the current program
-opts_dict = dict((k, v) for k, v in opts.__dict__.iteritems() if v is not False and v is not None)
-#process = ligolw_process.register_to_xmldoc(xmldoc, "lalapps_cbc_sbank", FIXME
-#    opts_dict, version=git_version.tag or git_version.id, FIXME
-#    cvs_repository="sbank", cvs_entry_time=git_version.date) FIXME
-process = ligolw_process.register_to_xmldoc(xmldoc, "lalapps_cbc_sbank",
-    opts_dict, version="no version",
-    cvs_repository="sbank", cvs_entry_time=strftime('%Y/%m/%d %H:%M:%S'))
-
-# Choose waveform approximant
+#
+# choose waveform approximant
+#
 waveform = waveforms[opts.approximant]
 
-# Choose noise model
+#
+# choose noise model
+#
 if opts.reference_psd is not None:
     psd = read_psd(opts.reference_psd)[opts.instrument]
     f_orig = psd.f0 + np.arange(len(psd.data)) * psd.deltaF
@@ -282,7 +275,10 @@ if opts.reference_psd is not None:
 else:
     noise_model = noise_models[opts.noise_model]
 
-# Seed the bank
+
+#
+# seed the bank, if applicable
+#
 if opts.bank_seed is None:
     # seed the process with an empty bank
     # the first proposal will always be accepted
@@ -299,22 +295,24 @@ else:
     tmpdoc.unlink()
     del sngl_inspiral, tmpdoc
     if opts.verbose:
-        print>>sys.stdout,"\tinitial bank size: %d"%len(bank)
+        print>>sys.stdout,"\tseed bank size: %d"%len(bank)
         print>>sys.stdout,"Filling regions of parameter space not covered by bank seed..."
 
 
+#
 # check for saved work
+#
 if opts.checkpoint and os.path.exists( fout + "_checkpoint.gz" ):
 
-    tmpdoc = utils.load_filename(fout + "_checkpoint.gz", contenthandler=ContentHandler)
-    sngl_inspiral = table.get_table(tmpdoc, lsctables.SnglInspiralTable.tableName)
-    [bank.insort(t) for t in Bank.from_sngls(sngl_inspiral, waveform, noise_model, opts.flow, opts.use_metric, opts.cache_waveforms, opts.neighborhood_size, opts.neighborhood_param)]
+    xmldoc = utils.load_filename(fout + "_checkpoint.gz", contenthandler=ContentHandler)
+    tbl = table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
+    [bank.insort(t) for t in Bank.from_sngls(tbl, waveform, noise_model, opts.flow, opts.use_metric, opts.cache_waveforms, opts.neighborhood_size, opts.neighborhood_param)]
 
     if opts.verbose:
-        print>>sys.stdout,"Found checkpoint file. Resuming from checkpoint with %d templates..." % len(bank)
+        print >>sys.stdout,"Found checkpoint file with %d precomputed templates." % len(tbl)
+        print >>sys.stdout, "Resuming from checkpoint with %d total templates..." % len(bank)
 
     # reset rng state
-    xml = tmpdoc.childNodes[0]
     rng_state = np.load(fout + "_checkpoint.rng.npz")
     rng1 = rng_state["state1"]
     rng2 = rng_state["state2"]
@@ -323,12 +321,30 @@ if opts.checkpoint and os.path.exists( fout + "_checkpoint.gz" ):
     np.random.mtrand.set_state( ("MT19937", rng1, rng2, rng3, rng4) )
 
 else:
+
+    # prepare a new XML document
+    xmldoc = ligolw.Document()
+    xmldoc.appendChild(ligolw.LIGO_LW())
+    lsctables.SnglInspiralTable.RowType = SnglInspiralTable
+    tbl = lsctables.New(lsctables.SnglInspiralTable)
+    xmldoc.childNodes[-1].appendChild(tbl)
+
+    # initialize random seed
     np.random.mtrand.seed(opts.seed)
 
 
-# Choose proposal function
-# TODO: Implement more of these
+#
+# prepare process table with information about the current program
+#
+opts_dict = dict((k, v) for k, v in opts.__dict__.iteritems() if v is not False and v is not None)
+process = ligolw_process.register_to_xmldoc(xmldoc, "lalapps_cbc_sbank",
+    opts_dict, version="no version",
+    cvs_repository="sbank", cvs_entry_time=strftime('%Y/%m/%d %H:%M:%S'))
+
+
+#
 # populate params dictionary to be passed to the generators
+#
 params = {'mass1': (opts.mass1_min, opts.mass1_max),
           'mass2': (opts.mass2_min, opts.mass2_max),
           'mtotal': (opts.mtotal_min, opts.mtotal_max),
@@ -338,13 +354,13 @@ params = {'mass1': (opts.mass1_min, opts.mass1_max),
 	  'spin2': (opts.spin2_min, opts.spin2_max)
 	  }
 
-# get the correct generator
+# get the correct generator for the chosen approximant
 proposal = proposals[opts.approximant](opts.flow, **params)
+
 
 # For robust convergence, ensure that an average of kmax/len(ks) of
 # the last len(ks) proposals have been rejected by SBank.
 ks = deque(10*[0], maxlen=10)
-
 k = 0 # k is nprop per iteration
 nprop = 1  # count total number of proposed templates
 status_format = "bank size: %d\tproposed: %d\t" + "\t".join("%s: %s" % name_format for name_format in zip(waveform.param_names, waveform.param_formats))
