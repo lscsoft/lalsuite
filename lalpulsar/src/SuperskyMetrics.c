@@ -204,7 +204,26 @@ int XLALComputeSuperskyMetrics(
   // Allocate metrics
   gsl_matrix *GAMAT( rssky_metric, 2 + fsize, 2 + fsize );
   gsl_matrix *GAMAT( rssky_transf, 3 + fsize, 3 );
-  gsl_matrix *GAMAT( ussky_metric, 3 + fsize, 3 + fsize );
+
+  // Build coordinate system for the unrestricted supersky metric
+  DopplerCoordinateSystem XLAL_INIT_DECL( ucoords );
+  ucoords.coordIDs[ucoords.dim++] = DOPPLERCOORD_N3X_EQU;
+  ucoords.coordIDs[ucoords.dim++] = DOPPLERCOORD_N3Y_EQU;
+  ucoords.coordIDs[ucoords.dim++] = DOPPLERCOORD_N3Z_EQU;
+  ucoords.coordIDs[ucoords.dim++] = DOPPLERCOORD_FREQ;
+  if( spindowns >= 1 ) {
+    ucoords.coordIDs[ucoords.dim++] = DOPPLERCOORD_F1DOT;
+  }
+  if( spindowns >= 2 ) {
+    ucoords.coordIDs[ucoords.dim++] = DOPPLERCOORD_F2DOT;
+  }
+  if( spindowns >= 3 ) {
+    ucoords.coordIDs[ucoords.dim++] = DOPPLERCOORD_F3DOT;
+  }
+
+  // Compute the unrestricted supersky metric
+  gsl_matrix *ussky_metric = SM_ComputePhaseMetric( &ucoords, ref_time, segments, fiducial_freq, detectors, detector_weights, detector_motion, ephemerides );
+  XLAL_CHECK( ussky_metric != NULL, XLAL_EFUNC );
 
   //
   // Compute the expanded supersky metric, which separates spin and orbital sky components.
@@ -258,27 +277,6 @@ int XLALComputeSuperskyMetrics(
     gsl_matrix_memcpy( &reconstruct_ss.matrix, &reconstruct_ss_val_view.matrix );
     gsl_matrix_view reconstruct_ff = gsl_matrix_submatrix( reconstruct, 5, 3, fsize, fsize );
     gsl_matrix_set_identity( &reconstruct_ff.matrix );
-  }
-
-  //
-  // Compute the unrestricted supersky metric (3-dimensional sky)
-  //
-  if( ussky_metric != NULL ) {
-
-    // Allocate memory
-    gsl_matrix *GAMAT( tmp, 5 + fsize, 3 + fsize );
-
-    // Reconstruct the unrestricted supersky metric from the expanded supersky metric:
-    //   ussky_metric = reconstruct^T * xssky_metric * reconstruct
-    gsl_blas_dgemm( CblasNoTrans, CblasNoTrans, 1.0, xssky_metric, reconstruct, 0.0, tmp );
-    gsl_blas_dgemm( CblasTrans, CblasNoTrans, 1.0, reconstruct, tmp, 0.0, ussky_metric );
-
-    // Ensure unrestricted supersky metric is symmetric
-    SM_MakeSymmetric( ussky_metric );
-
-    // Cleanup
-    GFMAT( tmp );
-
   }
 
   //
@@ -720,11 +718,6 @@ int XLALConvertSuperskyCoordinates(
       tmp[1] = sin( alpha ) * cos_delta;
       tmp[2] = sin( delta );
 
-      // Move frequency to last dimension
-      const double freq = tmp[3];
-      memmove( &tmp[3], &tmp[4], ( fsize - 1 ) * sizeof( tmp[0] ) );
-      tmp[2 + fsize] = freq;
-
       // Update current coordinate system
       curr = SC_USSKY;
 
@@ -732,6 +725,11 @@ int XLALConvertSuperskyCoordinates(
 
     // Convert supersky coordinates to reduced supersky coordinates
     if( curr == SC_USSKY && out > curr ) {
+
+      // Move frequency to after spindowns
+      const double freq = tmp[3];
+      memmove( &tmp[3], &tmp[4], ( fsize - 1 ) * sizeof( tmp[0] ) );
+      tmp[2 + fsize] = freq;
 
       // Create views of the sky alignment transform and sky offset vectors
       gsl_matrix_const_view align_sky = gsl_matrix_const_submatrix( rssky_transf, 0, 0, 3, 3 );
@@ -777,6 +775,11 @@ int XLALConvertSuperskyCoordinates(
       //   ssky = align_sky^T * asky
       gsl_blas_dgemv( CblasTrans, 1.0, &align_sky.matrix, &asky_v.vector, 0.0, &tmp_sky.vector );
 
+      // Move frequency to before spindowns
+      const double freq = tmp[2 + fsize];
+      memmove( &tmp[4], &tmp[3], ( fsize - 1 ) * sizeof( tmp[0] ) );
+      tmp[3] = freq;
+
       // Update current coordinate system
       curr = SC_USSKY;
 
@@ -792,11 +795,6 @@ int XLALConvertSuperskyCoordinates(
       tmp[0] = atan2( ny, nx );
       tmp[1] = atan2( nz, sqrt( SQR( nx ) + SQR( ny ) ) );
       XLALNormalizeSkyPosition( &tmp[0], &tmp[1] );
-
-      // Move frequency to first dimension
-      const double freq = tmp[2 + fsize];
-      memmove( &tmp[4], &tmp[3], ( fsize - 1 ) * sizeof( tmp[0] ) );
-      tmp[3] = freq;
 
       // Update current coordinate system
       curr = SC_PHYS;

@@ -42,9 +42,9 @@ extern "C" {
 /// Coordinate systems associated with the supersky metrics.
 ///
 typedef enum {
-  SC_PHYS,					///< Physical: right ascension, declination, frequency and spindowns
-  SC_USSKY,					///< Unrestricted supersky: 3-dimensional sky (equatorial coordinates), spindowns and frequency
-  SC_RSSKY,					///< Reduced supersky: 2-dimensional sky (reduced supersky coordinates), reduced spindowns and frequency
+  SC_PHYS,					///< Physical coordinates, in order: right ascension, declination, frequency, spindowns
+  SC_USSKY,					///< Unrestricted supersky (equatorial) coordinates, in order: 3-dimensional sky, frequency, spindowns
+  SC_RSSKY,					///< Reduced supersky coordinates, in order: 2-dimensional sky, reduced spindowns, <b>frequency last</b>
   SC_MAX
 } SuperskyCoordinates;
 
