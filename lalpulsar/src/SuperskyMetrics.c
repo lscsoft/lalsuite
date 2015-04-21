@@ -405,6 +405,87 @@ static int SM_ComputeDecoupledSuperskyMetric(
 
 }
 
+///
+/// Align the sky-sky block of the decoupled supersky metric with its eigenvalues by means of a
+/// rotation. Outputs the intermediate \e aligned supersky metric, and updates the reduced supersky
+/// metric coordinate transform data.
+///
+static int SM_ComputeAlignedSuperskyMetric(
+  gsl_matrix *aligned_ssky_metric,		///< [out] Aligned supersky metric
+  gsl_matrix *rssky_transf,			///< [in,out] Reduced supersky metric coordinate transform data
+  const gsl_matrix *decoupled_ssky_metric,	///< [in] Decoupled supersky metric
+  const size_t spindowns			///< [in] Number of frequency+spindown coordinates
+  )
+{
+
+  // Check input
+  XLAL_CHECK( aligned_ssky_metric != NULL, XLAL_EFAULT );
+  XLAL_CHECK( rssky_transf != NULL, XLAL_EFAULT );
+  XLAL_CHECK( decoupled_ssky_metric != NULL, XLAL_EFAULT );
+
+  // Size of the frequency+spindowns block
+  const size_t fsize = 1 + spindowns;
+
+  // Allocate memory
+  gsl_eigen_symmv_workspace *GALLOC( wksp, gsl_eigen_symmv_alloc( 3 ) );
+  gsl_matrix *GAMAT( sky_evec, 3, 3 );
+  gsl_matrix *GAMAT( tmp, fsize, 3 );
+  gsl_permutation *GAPERM( luperm, 3 );
+  gsl_vector *GAVEC( sky_eval, 3 );
+
+  // Copy decoupled metric to aligned metric
+  gsl_matrix_memcpy(aligned_ssky_metric, decoupled_ssky_metric);
+
+  // Compute the eigenvalues/vectors of the sky-sky block
+  gsl_matrix_view sky_sky = gsl_matrix_submatrix( aligned_ssky_metric, 0, 0, 3, 3 );
+  GCALL( gsl_eigen_symmv( &sky_sky.matrix, sky_eval, sky_evec, wksp ) );
+
+  // Sort the eigenvalues/vectors by descending absolute eigenvalue
+  GCALL( gsl_eigen_symmv_sort( sky_eval, sky_evec, GSL_EIGEN_SORT_ABS_DESC ) );
+
+  // Set the sky-sky block to the diagonal matrix of eigenvalues
+  gsl_matrix_set_zero( &sky_sky.matrix );
+  gsl_vector_view sky_sky_diag = gsl_matrix_diagonal( &sky_sky.matrix );
+  gsl_vector_memcpy( &sky_sky_diag.vector, sky_eval );
+
+  // Ensure that the matrix of eigenvalues has a positive diagonal; this and
+  // the determinant constraints ensures fully constraints the eigenvector signs
+  for( size_t j = 0; j < 3; ++j ) {
+    gsl_vector_view col = gsl_matrix_column( sky_evec, j );
+    if( gsl_vector_get( &col.vector, j ) < 0.0 ) {
+      gsl_vector_scale( &col.vector, -1.0 );
+    }
+  }
+
+  // Store the alignment transform in the reduced supersky coordinate transform data
+  gsl_matrix_view align_sky = gsl_matrix_submatrix( rssky_transf, 0, 0, 3, 3 );
+  gsl_matrix_transpose_memcpy( &align_sky.matrix, sky_evec );
+
+  // Ensure that the alignment transform has a positive determinant,
+  // to ensure that that it represents a rotation
+  int lusign = 0;
+  GCALL( gsl_linalg_LU_decomp( sky_evec, luperm, &lusign ) );
+  if( gsl_linalg_LU_det( sky_evec, lusign ) < 0.0 ) {
+    gsl_vector_view col = gsl_matrix_column( &align_sky.matrix, 2 );
+    gsl_vector_scale( &col.vector, -1.0 );
+  }
+
+  // Multiply the sky offsets by the alignment transform to transform to aligned sky coordinates:
+  //   aligned_sky_off = sky_offsets * alignsky^T;
+  gsl_matrix_view aligned_sky_offsets = gsl_matrix_submatrix( rssky_transf, 3, 0, fsize, 3 );
+  gsl_matrix_memcpy( tmp, &aligned_sky_offsets.matrix );
+  gsl_blas_dgemm( CblasNoTrans, CblasTrans, 1.0, tmp, &align_sky.matrix, 0.0, &aligned_sky_offsets.matrix );
+
+  // Cleanup
+  gsl_eigen_symmv_free( wksp );
+  GFMAT( sky_evec, tmp );
+  GFPERM( luperm );
+  GFVEC( sky_eval );
+
+  return XLAL_SUCCESS;
+
+}
+
 int XLALComputeSuperskyMetrics(
   gsl_matrix **p_rssky_metric,
   gsl_matrix **p_rssky_transf,
@@ -521,71 +602,8 @@ int XLALComputeSuperskyMetrics(
     XLAL_CHECK( SM_ComputeDecoupledSuperskyMetric( intm_ussky_metric, tmp_rssky_transf, intm_ussky_metric, spindowns ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Align the sky-sky metric with its eigenvalues by means of a rotation
-    // Produces the intermediate "aligned" supersky metric
-    {
-
-      // Allocate memory
-      gsl_eigen_symmv_workspace *GALLOC( wksp, gsl_eigen_symmv_alloc( 3 ) );
-      gsl_matrix *GAMAT( sky_evec, 3, 3 );
-      gsl_matrix *GAMAT( tmp, fsize, 3 );
-      gsl_permutation *GAPERM( luperm, 3 );
-      gsl_vector *GAVEC( sky_eval, 3 );
-
-      // Compute the eigenvalues/vectors of the sky-sky block
-      gsl_matrix_view sky_sky = gsl_matrix_submatrix( intm_ussky_metric, 0, 0, 3, 3 );
-      GCALL( gsl_eigen_symmv( &sky_sky.matrix, sky_eval, sky_evec, wksp ) );
-
-      // Sort the eigenvalues/vectors by descending absolute eigenvalue
-      GCALL( gsl_eigen_symmv_sort( sky_eval, sky_evec, GSL_EIGEN_SORT_ABS_DESC ) );
-
-      // Check that the first two eigenvalues are strictly positive
-      for( size_t i = 0; i < 2; ++i ) {
-        XLAL_CHECK( gsl_vector_get( sky_eval, i ) > 0.0, XLAL_ELOSS, "Negative eigenvalue #%zu = %0.6e", i, gsl_vector_get( sky_eval, i ) );
-      }
-
-      // Set the sky-sky block to the diagonal matrix of eigenvalues
-      gsl_matrix_set_zero( &sky_sky.matrix );
-      gsl_vector_view sky_sky_diag = gsl_matrix_diagonal( &sky_sky.matrix );
-      gsl_vector_memcpy( &sky_sky_diag.vector, sky_eval );
-
-      // Ensure that the matrix of eigenvalues has a positive diagonal; this and
-      // the determinant constraints ensures fully constraints the eigenvector signs
-      for( size_t j = 0; j < 3; ++j ) {
-        gsl_vector_view col = gsl_matrix_column( sky_evec, j );
-        if( gsl_vector_get( &col.vector, j ) < 0.0 ) {
-          gsl_vector_scale( &col.vector, -1.0 );
-        }
-      }
-
-      // Store the alignment transform in the reduced supersky coordinate transform data
-      gsl_matrix_view align_sky = gsl_matrix_submatrix( tmp_rssky_transf, 0, 0, 3, 3 );
-      gsl_matrix_transpose_memcpy( &align_sky.matrix, sky_evec );
-
-      // Ensure that the alignment transform has a positive determinant,
-      // to ensure that that it represents a rotation
-      int lusign = 0;
-      GCALL( gsl_linalg_LU_decomp( sky_evec, luperm, &lusign ) );
-      if( gsl_linalg_LU_det( sky_evec, lusign ) < 0.0 ) {
-        gsl_vector_view col = gsl_matrix_column( &align_sky.matrix, 2 );
-        gsl_vector_scale( &col.vector, -1.0 );
-      }
-
-      // Multiply the sky offsets by the alignment transform to transform to aligned sky coordinates:
-      //   aligned_sky_off = sky_offsets * alignsky^T;
-      gsl_matrix_view aligned_sky_offsets = gsl_matrix_submatrix( tmp_rssky_transf, 3, 0, fsize, 3 );
-      gsl_matrix_memcpy( tmp, &aligned_sky_offsets.matrix );
-      gsl_blas_dgemm( CblasNoTrans, CblasTrans, 1.0, tmp, &align_sky.matrix, 0.0, &aligned_sky_offsets.matrix );
-
-      // Cleanup
-      gsl_eigen_symmv_free( wksp );
-      GFMAT( sky_evec, tmp );
-      GFPERM( luperm );
-      GFVEC( sky_eval );
-
-      // Ensure intermediate metric is symmetric
-      SM_MakeSymmetric( intm_ussky_metric );
-
-    }
+    // Produces the intermediate aligned supersky metric
+    XLAL_CHECK( SM_ComputeAlignedSuperskyMetric( intm_ussky_metric, tmp_rssky_transf, intm_ussky_metric, spindowns ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Drop the 3rd row/column of the metric, corresponding to the smallest sky eigenvalue
     // Produces the final reduced supersky metric
