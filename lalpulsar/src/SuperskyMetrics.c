@@ -531,9 +531,11 @@ int XLALComputeSuperskyMetrics(
 {
 
   // Check input
-  XLAL_CHECK( p_rssky_metric == NULL || *p_rssky_metric == NULL, XLAL_EINVAL );
-  XLAL_CHECK( p_rssky_transf == NULL || *p_rssky_transf == NULL, XLAL_EINVAL );
-  XLAL_CHECK( p_ussky_metric == NULL || *p_ussky_metric == NULL, XLAL_EINVAL );
+  XLAL_CHECK( p_rssky_metric == NULL || *p_rssky_metric == NULL, XLAL_EINVAL, "'*p_rssky_metric' must be NULL of 'p_rssky_metric' is non-NULL" );
+  XLAL_CHECK( p_rssky_transf == NULL || *p_rssky_transf == NULL, XLAL_EINVAL, "'*p_rssky_transf' must be NULL of 'p_rssky_transf' is non-NULL" );
+  XLAL_CHECK( p_ussky_metric == NULL || *p_ussky_metric == NULL, XLAL_EINVAL, "'*p_ussky_metric' must be NULL of 'p_ussky_metric' is non-NULL" );
+  XLAL_CHECK( (p_rssky_metric != NULL) == (p_rssky_transf != NULL), XLAL_EINVAL, "Both 'p_rssky_metric' and 'p_rssky_transf' must be either NULL or non-NULL" );
+  XLAL_CHECK( (p_rssky_metric != NULL) || (p_ussky_metric != NULL), XLAL_EINVAL, "At least one of 'p_rssky_metric' or 'p_ussky_metric' must be non-NULL" );
   XLAL_CHECK( spindowns <= 3, XLAL_EINVAL );
   XLAL_CHECK( ref_time != NULL, XLAL_EFAULT );
   XLAL_CHECK( segments != NULL, XLAL_EFAULT );
@@ -548,11 +550,7 @@ int XLALComputeSuperskyMetrics(
   // Size of the frequency+spindowns block
   const size_t fsize = 1 + spindowns;
 
-  // Allocate metrics
-  gsl_matrix *GAMAT( rssky_metric, 2 + fsize, 2 + fsize );
-  gsl_matrix *GAMAT( rssky_transf, 3 + fsize, 3 );
-
-  // Build coordinate system for the unrestricted supersky metric
+  // Build coordinate system for the unrestricted supersky metric and expanded supersky metric
   DopplerCoordinateSystem XLAL_INIT_DECL( ucoords );
   ucoords.coordIDs[ucoords.dim++] = DOPPLERCOORD_N3X_EQU;
   ucoords.coordIDs[ucoords.dim++] = DOPPLERCOORD_N3Y_EQU;
@@ -567,104 +565,51 @@ int XLALComputeSuperskyMetrics(
   if( spindowns >= 3 ) {
     ucoords.coordIDs[ucoords.dim++] = DOPPLERCOORD_F3DOT;
   }
+  DopplerCoordinateSystem XLAL_INIT_DECL( xcoords );
+  xcoords.coordIDs[xcoords.dim++] = DOPPLERCOORD_N3SX_EQU;
+  xcoords.coordIDs[xcoords.dim++] = DOPPLERCOORD_N3SY_EQU;
+  xcoords.coordIDs[xcoords.dim++] = DOPPLERCOORD_N3OX_ECL;
+  xcoords.coordIDs[xcoords.dim++] = DOPPLERCOORD_N3OY_ECL;
+  xcoords.coordIDs[xcoords.dim++] = DOPPLERCOORD_N3OZ_ECL;
+  if( spindowns >= 1 ) {
+    xcoords.coordIDs[xcoords.dim++] = DOPPLERCOORD_F1DOT;
+  }
+  if( spindowns >= 2 ) {
+    xcoords.coordIDs[xcoords.dim++] = DOPPLERCOORD_F2DOT;
+  }
+  if( spindowns >= 3 ) {
+    xcoords.coordIDs[xcoords.dim++] = DOPPLERCOORD_F3DOT;
+  }
+  xcoords.coordIDs[xcoords.dim++] = DOPPLERCOORD_FREQ;
 
   // Compute the unrestricted supersky metric
   gsl_matrix *ussky_metric = SM_ComputePhaseMetric( &ucoords, ref_time, segments, fiducial_freq, detectors, detector_weights, detector_motion, ephemerides );
   XLAL_CHECK( ussky_metric != NULL, XLAL_EFUNC );
 
-  //
-  // Compute the expanded supersky metric, which separates spin and orbital sky components.
-  //
-  gsl_matrix *xssky_metric = NULL;
-  {
-
-    // Set expanded supersky coordinate system: x,y spin motion in equatorial coordinates,
-    // then X,Y,Z orbital motion in ecliptic coordinates, then spindowns, then frequency
-    DopplerCoordinateSystem XLAL_INIT_DECL( coordSys );
-    {
-      size_t i = 0;
-      coordSys.coordIDs[i++] = DOPPLERCOORD_N3SX_EQU;
-      coordSys.coordIDs[i++] = DOPPLERCOORD_N3SY_EQU;
-      coordSys.coordIDs[i++] = DOPPLERCOORD_N3OX_ECL;
-      coordSys.coordIDs[i++] = DOPPLERCOORD_N3OY_ECL;
-      coordSys.coordIDs[i++] = DOPPLERCOORD_N3OZ_ECL;
-      if( spindowns >= 1 ) {
-        coordSys.coordIDs[i++] = DOPPLERCOORD_F1DOT;
-      }
-      if( spindowns >= 2 ) {
-        coordSys.coordIDs[i++] = DOPPLERCOORD_F2DOT;
-      }
-      if( spindowns >= 3 ) {
-        coordSys.coordIDs[i++] = DOPPLERCOORD_F3DOT;
-      }
-      coordSys.coordIDs[i++] = DOPPLERCOORD_FREQ;
-      coordSys.dim = i;
-    }
-
-    // Compute metric
-    xssky_metric = SM_ComputePhaseMetric( &coordSys, ref_time, segments, fiducial_freq, detectors, detector_weights, detector_motion, ephemerides );
-    XLAL_CHECK( xssky_metric != NULL, XLAL_EFUNC );
-
-  }
-
-  //
-  // Compute the reduced supersky metric (2-dimensional sky), and/or the unrestricted supersky metric
-  // (3-dimensional sky), from the expanded supersky metric (5-dimensional sky).
-  //
-
-  //
-  // Compute the reduced supersky metric (2-dimensional sky) and/or metric transform data
-  //
-  if( rssky_metric != NULL || rssky_transf != NULL ) {
+  // Compute the reduced supersky metric and coordinate transform data
+  if( p_rssky_metric != NULL ) {
 
     // Allocate memory
-    gsl_matrix *GAMAT( tmp_rssky_metric, 2 + fsize, 2 + fsize );
-    gsl_matrix *GAMAT( tmp_rssky_transf, 3 + fsize, 3 );
-    gsl_matrix *GAMAT( intm_ussky_metric, 3 + fsize, 3 + fsize );
+    GAMAT( *p_rssky_metric, 2 + fsize, 2 + fsize );
+    GAMAT( *p_rssky_transf, 3 + fsize, 3 );
+    gsl_matrix *GAMAT( interm_ssky_metric, 3 + fsize, 3 + fsize );
 
-    // Find least-squares linear fit to orbital X and Y by frequency and spindowns
-    // Produces the intermediate fitted supersky metric
-    XLAL_CHECK( SM_ComputeFittedSuperskyMetric( intm_ussky_metric, tmp_rssky_transf, xssky_metric, spindowns ) == XLAL_SUCCESS, XLAL_EFUNC );
+    // Compute the expanded supersky metric, which separates spin and orbital sky components
+    gsl_matrix *xssky_metric = SM_ComputePhaseMetric( &xcoords, ref_time, segments, fiducial_freq, detectors, detector_weights, detector_motion, ephemerides );
+    XLAL_CHECK( xssky_metric != NULL, XLAL_EFUNC );
 
-    // De-couple the sky-sky and frequency-frequency blocks
-    // Produces the intermediate decoupled supersky metric
-    XLAL_CHECK( SM_ComputeDecoupledSuperskyMetric( intm_ussky_metric, tmp_rssky_transf, intm_ussky_metric, spindowns ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-    // Align the sky-sky metric with its eigenvalues by means of a rotation
-    // Produces the intermediate aligned supersky metric
-    XLAL_CHECK( SM_ComputeAlignedSuperskyMetric( intm_ussky_metric, tmp_rssky_transf, intm_ussky_metric, spindowns ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-    // Drop the 3rd row/column of the metric, corresponding to the smallest sky eigenvalue
-    // Produces the final reduced supersky metric
-    XLAL_CHECK( SM_ExtractReducedSuperskyMetric( tmp_rssky_metric, intm_ussky_metric, spindowns ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-    // Copy reduced supersky metric and transform data to output matrices
-    if( rssky_metric != NULL ) {
-      gsl_matrix_memcpy( rssky_metric, tmp_rssky_metric );
-    }
-    if( rssky_transf != NULL ) {
-      gsl_matrix_memcpy( rssky_transf, tmp_rssky_transf );
-    }
+    // Compute the reduced supersky metric from the expanded supersky metric
+    XLAL_CHECK( SM_ComputeFittedSuperskyMetric( interm_ssky_metric, *p_rssky_transf, xssky_metric, spindowns ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( SM_ComputeDecoupledSuperskyMetric( interm_ssky_metric, *p_rssky_transf, interm_ssky_metric, spindowns ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( SM_ComputeAlignedSuperskyMetric( interm_ssky_metric, *p_rssky_transf, interm_ssky_metric, spindowns ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( SM_ExtractReducedSuperskyMetric( *p_rssky_metric, interm_ssky_metric, spindowns ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Cleanup
-    GFMAT( tmp_rssky_metric, tmp_rssky_transf, intm_ussky_metric );
+    GFMAT( xssky_metric, interm_ssky_metric );
 
   }
 
-  // Cleanup
-  GFMAT( xssky_metric );
-
-  // Return or free metrics
-  if( p_rssky_metric != NULL ) {
-    *p_rssky_metric = rssky_metric;
-  } else {
-    GFMAT( rssky_metric );
-  }
-  if( p_rssky_transf != NULL ) {
-    *p_rssky_transf = rssky_transf;
-  } else {
-    GFMAT( rssky_transf );
-  }
+  // Return or free unrestricted supersky metric
   if( p_ussky_metric != NULL ) {
     *p_ussky_metric = ussky_metric;
   } else {
