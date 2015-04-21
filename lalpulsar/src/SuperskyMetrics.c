@@ -31,6 +31,7 @@
 
 #include <lal/SuperskyMetrics.h>
 #include <lal/LALConstants.h>
+#include <lal/MetricUtils.h>
 
 #include "GSLHelpers.h"
 
@@ -168,6 +169,167 @@ static gsl_matrix *SM_ComputePhaseMetric(
 
 }
 
+///
+/// Find a least-squares linear fit to the orbital X and Y metric elements using the frequency and
+/// spindown metric elements. Outputs the intermediate \e fitted supersky metric, and updates the
+/// reduced supersky metric coordinate transform data.
+///
+static int SM_ComputeFittedSuperskyMetric(
+  gsl_matrix *fitted_ssky_metric,		///< [out] Fitted supersky metric
+  gsl_matrix *rssky_transf,			///< [in,out] Reduced supersky metric coordinate transform data
+  const gsl_matrix *xssky_metric,		///< [in] Expanded supersky metric
+  const size_t spindowns			///< [in] Number of frequency+spindown coordinates
+  )
+{
+
+  // Check input
+  XLAL_CHECK( fitted_ssky_metric != NULL, XLAL_EFAULT );
+  XLAL_CHECK( rssky_transf != NULL, XLAL_EFAULT );
+  XLAL_CHECK( xssky_metric != NULL, XLAL_EFAULT );
+
+  // Size of the frequency+spindowns block
+  const size_t fsize = 1 + spindowns;
+
+  // Allocate memory
+  gsl_matrix *GAMAT( xssky_dnorm, 5 + fsize, 5 + fsize );
+  gsl_matrix *GAMAT( xssky_dnorm_transf, 5 + fsize, 5 + fsize );
+  gsl_matrix *GAMAT( residual, 5 + fsize, 3 + fsize );
+  gsl_matrix *GAMAT( subtractfit, 5 + fsize, 5 + fsize );
+  gsl_matrix *GAMAT( tmp, 5 + fsize, 3 + fsize );
+
+  // Build matrix to reconstruct the unrestricted supersky metric in equatorial coordinates from the expanded supersky metric
+  gsl_matrix *GAMAT( reconstruct, 5 + fsize, 3 + fsize );
+  {
+    gsl_matrix_set_zero( reconstruct );
+    const double reconstruct_ss_val[5][3] = {
+      {1, 0, 0}, {0, 1, 0}, {1, 0, 0}, {0, LAL_COSIEARTH, LAL_SINIEARTH}, {0, -LAL_SINIEARTH, LAL_COSIEARTH}
+    };
+    gsl_matrix_const_view reconstruct_ss_val_view = gsl_matrix_const_view_array( &reconstruct_ss_val[0][0], 5, 3 );
+    gsl_matrix_view reconstruct_ss = gsl_matrix_submatrix( reconstruct, 0, 0, 5, 3 );
+    gsl_matrix_memcpy( &reconstruct_ss.matrix, &reconstruct_ss_val_view.matrix );
+    gsl_matrix_view reconstruct_ff = gsl_matrix_submatrix( reconstruct, 5, 3, fsize, fsize );
+    gsl_matrix_set_identity( &reconstruct_ff.matrix );
+  }
+
+  // Diagonal-normalise the expanded supersky metric
+  gsl_matrix_memcpy( xssky_dnorm, xssky_metric );
+  SM_DiagonalNormalise( xssky_dnorm, xssky_dnorm_transf );
+
+  gsl_matrix *fitA = NULL;
+  gsl_matrix *fitAt_fitA = NULL;
+  gsl_matrix *fitAt_fitA_svd_AU = NULL;
+  gsl_matrix *fitAt_fitA_svd_V = NULL;
+  gsl_vector *fitAt_fitA_svd_S = NULL;
+  gsl_vector *tmpv = NULL;
+  for( size_t n = fsize; n > 0; --n ) {
+
+    // Allocate memory
+    GAMAT( fitA, 5 + fsize, n );
+    GAMAT( fitAt_fitA, n, n );
+    GAMAT( fitAt_fitA_svd_AU, n, n );
+    GAMAT( fitAt_fitA_svd_V, n, n );
+    GAVEC( fitAt_fitA_svd_S, n );
+    GAVEC( tmpv, n );
+
+    // Copy to fitA the fitting columns of the expanded supersky metric. The order is always:
+    //   f1dot, ... f(n-1)dot, freq
+    gsl_vector_view freq = gsl_matrix_column( xssky_dnorm, 5 + fsize - 1 );
+    gsl_vector_view fitA_freq = gsl_matrix_column( fitA, n - 1 );
+    gsl_vector_memcpy( &fitA_freq.vector, &freq.vector );
+    if( n > 1 ) {
+      gsl_matrix_view nspins = gsl_matrix_submatrix( xssky_dnorm, 0, 5, 5 + fsize, n - 1 );
+      gsl_matrix_view fitA_nspins = gsl_matrix_submatrix( fitA, 0, 0, 5 + fsize, n - 1 );
+      gsl_matrix_memcpy( &fitA_nspins.matrix, &nspins.matrix );
+    }
+
+    // Compute fitA^T * fitA
+    gsl_blas_dgemm( CblasTrans, CblasNoTrans, 1.0, fitA, fitA, 0.0, fitAt_fitA );
+
+    // Find the singular value decomposition of fitA^T * fitA
+    gsl_matrix_memcpy( fitAt_fitA_svd_AU, fitAt_fitA );
+    GCALL( gsl_linalg_SV_decomp( fitAt_fitA_svd_AU, fitAt_fitA_svd_V, fitAt_fitA_svd_S, tmpv ) );
+
+    // Determine if fitA^T * fitA is rank deficient, by looking at whether singular values
+    // are below a given tolerance - taken from the Octave rank() function
+    bool rank_deficient = false;
+    const double tolerance = fsize * gsl_vector_get( fitAt_fitA_svd_S, 0 ) * DBL_EPSILON;
+    for( size_t i = 0; i < fitAt_fitA_svd_S->size; ++i ) {
+      if( gsl_vector_get( fitAt_fitA_svd_S, i ) <= tolerance ) {
+        rank_deficient = true;
+      }
+    }
+
+    // If fitA^T * fitA is not rank deficient, we can use it for fitting
+    if( !rank_deficient ) {
+      break;
+    }
+
+    // Otherwise cleanup for next loop, where we will reduce the rank of the fitting matrix
+    GFMAT( fitA, fitAt_fitA, fitAt_fitA_svd_AU, fitAt_fitA_svd_V );
+    GFVEC( fitAt_fitA_svd_S, tmpv );
+
+  }
+
+  // Get the rank of the fitting matrix, which is guaranteed to be at least 1
+  const size_t n = fitA->size2;
+
+  // Allocate memory
+  gsl_vector *GAVEC( fitcoeff, n );
+
+  // Construct subtraction matrix, which subtracts the least-squares linear fit by
+  // frequency and spindowns from the orbital X and Y, using the singular value
+  // decomposition of fitA^T * fitA to perform its inverse:
+  //   fit_coeff = inv(fitAt_fitA) * fitA^T * fity);
+  gsl_matrix_set_identity( subtractfit );
+  for( size_t j = 2; j < 4; ++j ) {
+
+    // Construct a view of the column of the expanded supersky metric to be fitted:
+    // these are the X,Y orbital motion in ecliptic coordinates
+    gsl_vector_view fity = gsl_matrix_column( xssky_dnorm, j );
+
+    // Compute the least-square fitting coefficients, using SVD for the inverse:
+    //   fitcoeff = inv(fitA^T * fitA) * fitA^T * fity
+    gsl_blas_dgemv( CblasTrans, 1.0, fitA, &fity.vector, 0.0, tmpv );
+    GCALL( gsl_linalg_SV_solve( fitAt_fitA_svd_AU, fitAt_fitA_svd_V, fitAt_fitA_svd_S, tmpv, fitcoeff ) );
+
+    // To subtract the fit, the fitting coefficients must be negated
+    gsl_vector_scale( fitcoeff, -1.0 );
+
+    // Copy the fitting coefficents to the subtraction matrix
+    gsl_matrix_set( subtractfit, 5 + fsize - 1, j, gsl_vector_get( fitcoeff, n - 1 ) );
+    if( n > 1 ) {
+      gsl_matrix_view subtractfit_fitcoeff_nspins = gsl_matrix_submatrix( subtractfit, 5, j, n - 1, 1 );
+      gsl_matrix_view fitcoeff_nspins = gsl_matrix_view_vector( fitcoeff, n - 1, 1 );
+      gsl_matrix_memcpy( &subtractfit_fitcoeff_nspins.matrix, &fitcoeff_nspins.matrix );
+    }
+
+  }
+
+  // Build matrix which constructs the intermediate fitted supersky metric:
+  //   residual = xssky_dnorm_transf * subtractfit * inv(xssky_dnorm_transf) * reconstruct
+  gsl_matrix_memcpy( tmp, reconstruct );
+  gsl_blas_dtrsm( CblasLeft, CblasUpper, CblasNoTrans, CblasNonUnit, 1.0, xssky_dnorm_transf, tmp );
+  gsl_blas_dgemm( CblasNoTrans, CblasNoTrans, 1.0, subtractfit, tmp, 0.0, residual );
+  gsl_blas_dtrmm( CblasLeft, CblasUpper, CblasNoTrans, CblasNonUnit, 1.0, xssky_dnorm_transf, residual );
+
+  // Construct the intermediate fitted supersky metric from the fitted expanded supersky metric:
+  //    fitted_ssky_metric = residual^T * xssky_metric * residual
+  XLAL_CHECK( XLALTransformMetric( &fitted_ssky_metric, residual, xssky_metric ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Extract the sky offset vectors from the residual transform matrix,
+  // and subtract them from the reduced supersky coordinate transform data
+  gsl_matrix_view residual_sky_offsets = gsl_matrix_submatrix( residual, 5, 0, fsize, 3 );
+  gsl_matrix_view sky_offsets = gsl_matrix_submatrix( rssky_transf, 3, 0, fsize, 3 );
+  gsl_matrix_sub( &sky_offsets.matrix, &residual_sky_offsets.matrix );
+
+  // Cleanup
+  GFMAT( xssky_dnorm, xssky_dnorm_transf, fitA, fitAt_fitA, fitAt_fitA_svd_AU, fitAt_fitA_svd_V, reconstruct, residual, subtractfit, tmp );
+  GFVEC( fitAt_fitA_svd_S, fitcoeff, tmpv );
+
+  return XLAL_SUCCESS;
+
+}
+
 int XLALComputeSuperskyMetrics(
   gsl_matrix **p_rssky_metric,
   gsl_matrix **p_rssky_transf,
@@ -265,20 +427,6 @@ int XLALComputeSuperskyMetrics(
   // (3-dimensional sky), from the expanded supersky metric (5-dimensional sky).
   //
 
-  // Build matrix to reconstruct the unrestricted supersky metric in equatorial coordinates from the expanded supersky metric
-  gsl_matrix *GAMAT( reconstruct, 5 + fsize, 3 + fsize );
-  {
-    gsl_matrix_set_zero( reconstruct );
-    const double reconstruct_ss_val[5][3] = {
-      {1, 0, 0}, {0, 1, 0}, {1, 0, 0}, {0, LAL_COSIEARTH, LAL_SINIEARTH}, {0, -LAL_SINIEARTH, LAL_COSIEARTH}
-    };
-    gsl_matrix_const_view reconstruct_ss_val_view = gsl_matrix_const_view_array( &reconstruct_ss_val[0][0], 5, 3 );
-    gsl_matrix_view reconstruct_ss = gsl_matrix_submatrix( reconstruct, 0, 0, 5, 3 );
-    gsl_matrix_memcpy( &reconstruct_ss.matrix, &reconstruct_ss_val_view.matrix );
-    gsl_matrix_view reconstruct_ff = gsl_matrix_submatrix( reconstruct, 5, 3, fsize, fsize );
-    gsl_matrix_set_identity( &reconstruct_ff.matrix );
-  }
-
   //
   // Compute the reduced supersky metric (2-dimensional sky) and/or metric transform data
   //
@@ -290,136 +438,8 @@ int XLALComputeSuperskyMetrics(
     gsl_matrix *GAMAT( intm_ussky_metric, 3 + fsize, 3 + fsize );
 
     // Find least-squares linear fit to orbital X and Y by frequency and spindowns
-    // Produces the intermediate "residual" supersky metric
-    {
-
-      // Allocate memory
-      gsl_matrix *GAMAT( xssky_dnorm, 5 + fsize, 5 + fsize );
-      gsl_matrix *GAMAT( xssky_dnorm_transf, 5 + fsize, 5 + fsize );
-      gsl_matrix *GAMAT( residual, 5 + fsize, 3 + fsize );
-      gsl_matrix *GAMAT( subtractfit, 5 + fsize, 5 + fsize );
-      gsl_matrix *GAMAT( tmp, 5 + fsize, 3 + fsize );
-
-      // Diagonal-normalise the expanded supersky metric
-      gsl_matrix_memcpy( xssky_dnorm, xssky_metric );
-      SM_DiagonalNormalise( xssky_dnorm, xssky_dnorm_transf );
-
-      gsl_matrix *fitA = NULL;
-      gsl_matrix *fitAt_fitA = NULL;
-      gsl_matrix *fitAt_fitA_svd_AU = NULL;
-      gsl_matrix *fitAt_fitA_svd_V = NULL;
-      gsl_vector *fitAt_fitA_svd_S = NULL;
-      gsl_vector *tmpv = NULL;
-      for( size_t n = fsize; n > 0; --n ) {
-
-        // Allocate memory
-        GAMAT( fitA, 5 + fsize, n );
-        GAMAT( fitAt_fitA, n, n );
-        GAMAT( fitAt_fitA_svd_AU, n, n );
-        GAMAT( fitAt_fitA_svd_V, n, n );
-        GAVEC( fitAt_fitA_svd_S, n );
-        GAVEC( tmpv, n );
-
-        // Copy to fitA the fitting columns of the expanded supersky metric. The order is always:
-        //   f1dot, ... f(n-1)dot, freq
-        gsl_vector_view freq = gsl_matrix_column( xssky_dnorm, 5 + fsize - 1 );
-        gsl_vector_view fitA_freq = gsl_matrix_column( fitA, n - 1 );
-        gsl_vector_memcpy( &fitA_freq.vector, &freq.vector );
-        if( n > 1 ) {
-          gsl_matrix_view nspins = gsl_matrix_submatrix( xssky_dnorm, 0, 5, 5 + fsize, n - 1 );
-          gsl_matrix_view fitA_nspins = gsl_matrix_submatrix( fitA, 0, 0, 5 + fsize, n - 1 );
-          gsl_matrix_memcpy( &fitA_nspins.matrix, &nspins.matrix );
-        }
-
-        // Compute fitA^T * fitA
-        gsl_blas_dgemm( CblasTrans, CblasNoTrans, 1.0, fitA, fitA, 0.0, fitAt_fitA );
-
-        // Find the singular value decomposition of fitA^T * fitA
-        gsl_matrix_memcpy( fitAt_fitA_svd_AU, fitAt_fitA );
-        GCALL( gsl_linalg_SV_decomp( fitAt_fitA_svd_AU, fitAt_fitA_svd_V, fitAt_fitA_svd_S, tmpv ) );
-
-        // Determine if fitA^T * fitA is rank deficient, by looking at whether singular values
-        // are below a given tolerance - taken from the Octave rank() function
-        bool rank_deficient = false;
-        const double tolerance = fsize * gsl_vector_get( fitAt_fitA_svd_S, 0 ) * DBL_EPSILON;
-        for( size_t i = 0; i < fitAt_fitA_svd_S->size; ++i ) {
-          if( gsl_vector_get( fitAt_fitA_svd_S, i ) <= tolerance ) {
-            rank_deficient = true;
-          }
-        }
-
-        // If fitA^T * fitA is not rank deficient, we can use it for fitting
-        if( !rank_deficient ) {
-          break;
-        }
-
-        // Otherwise cleanup for next loop, where we will reduce the rank of the fitting matrix
-        GFMAT( fitA, fitAt_fitA, fitAt_fitA_svd_AU, fitAt_fitA_svd_V );
-        GFVEC( fitAt_fitA_svd_S, tmpv );
-
-      }
-
-      // Get the rank of the fitting matrix, which is guaranteed to be at least 1
-      const size_t n = fitA->size2;
-
-      // Allocate memory
-      gsl_vector *GAVEC( fitcoeff, n );
-
-      // Construct subtraction matrix, which subtracts the least-squares linear fit by
-      // frequency and spindowns from the orbital X and Y, using the singular value
-      // decomposition of fitA^T * fitA to perform its inverse:
-      //   fit_coeff = inv(fitAt_fitA) * fitA^T * fity);
-      gsl_matrix_set_identity( subtractfit );
-      for( size_t j = 2; j < 4; ++j ) {
-
-        // Construct a view of the column of the expanded supersky metric to be fitted:
-        // these are the X,Y orbital motion in ecliptic coordinates
-        gsl_vector_view fity = gsl_matrix_column( xssky_dnorm, j );
-
-        // Compute the least-square fitting coefficients, using SVD for the inverse:
-        //   fitcoeff = inv(fitA^T * fitA) * fitA^T * fity
-        gsl_blas_dgemv( CblasTrans, 1.0, fitA, &fity.vector, 0.0, tmpv );
-        GCALL( gsl_linalg_SV_solve( fitAt_fitA_svd_AU, fitAt_fitA_svd_V, fitAt_fitA_svd_S, tmpv, fitcoeff ) );
-
-        // To subtract the fit, the fitting coefficients must be negated
-        gsl_vector_scale( fitcoeff, -1.0 );
-
-        // Copy the fitting coefficents to the subtraction matrix
-        gsl_matrix_set( subtractfit, 5 + fsize - 1, j, gsl_vector_get( fitcoeff, n - 1 ) );
-        if( n > 1 ) {
-          gsl_matrix_view subtractfit_fitcoeff_nspins = gsl_matrix_submatrix( subtractfit, 5, j, n - 1, 1 );
-          gsl_matrix_view fitcoeff_nspins = gsl_matrix_view_vector( fitcoeff, n - 1, 1 );
-          gsl_matrix_memcpy( &subtractfit_fitcoeff_nspins.matrix, &fitcoeff_nspins.matrix );
-        }
-
-      }
-
-      // Build matrix which constructs the intermediate "residual" supersky metric:
-      //   residual = xssky_dnorm_transf * subtractfit * inv(xssky_dnorm_transf) * reconstruct
-      gsl_matrix_memcpy( tmp, reconstruct );
-      gsl_blas_dtrsm( CblasLeft, CblasUpper, CblasNoTrans, CblasNonUnit, 1.0, xssky_dnorm_transf, tmp );
-      gsl_blas_dgemm( CblasNoTrans, CblasNoTrans, 1.0, subtractfit, tmp, 0.0, residual );
-      gsl_blas_dtrmm( CblasLeft, CblasUpper, CblasNoTrans, CblasNonUnit, 1.0, xssky_dnorm_transf, residual );
-
-      // Construct the intermediate "residual" supersky metric from the fitted expanded supersky metric:
-      //    intm_ussky_metric = residual^T * xssky_metric * residual
-      gsl_blas_dgemm( CblasNoTrans, CblasNoTrans, 1.0, xssky_metric, residual, 0.0, tmp );
-      gsl_blas_dgemm( CblasTrans, CblasNoTrans, 1.0, residual, tmp, 0.0, intm_ussky_metric );
-
-      // Extract the sky offset vectors from the residual transform matrix,
-      // and subtract them from the reduced supersky coordinate transform data
-      gsl_matrix_view residual_sky_offsets = gsl_matrix_submatrix( residual, 5, 0, fsize, 3 );
-      gsl_matrix_view sky_offsets = gsl_matrix_submatrix( tmp_rssky_transf, 3, 0, fsize, 3 );
-      gsl_matrix_sub( &sky_offsets.matrix, &residual_sky_offsets.matrix );
-
-      // Cleanup
-      GFMAT( xssky_dnorm, xssky_dnorm_transf, fitA, fitAt_fitA, fitAt_fitA_svd_AU, fitAt_fitA_svd_V, residual, subtractfit, tmp );
-      GFVEC( fitAt_fitA_svd_S, fitcoeff, tmpv );
-
-      // Ensure intermediate metric is symmetric
-      SM_MakeSymmetric( intm_ussky_metric );
-
-    }
+    // Produces the intermediate fitted supersky metric
+    XLAL_CHECK( SM_ComputeFittedSuperskyMetric( intm_ussky_metric, tmp_rssky_transf, xssky_metric, spindowns ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // De-couple the sky-sky and frequency-frequency blocks
     // Produces the intermediate "decoupled" supersky metric
@@ -572,7 +592,6 @@ int XLALComputeSuperskyMetrics(
   }
 
   // Cleanup
-  GFMAT( reconstruct );
   GFMAT( xssky_metric );
 
   // Return or free metrics
