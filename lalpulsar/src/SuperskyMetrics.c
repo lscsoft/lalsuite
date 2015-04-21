@@ -445,60 +445,6 @@ static int SM_ComputeSuperskyMetrics(
 
 }
 
-/**
- * Convert from 2-dimensional reduced supersky coordinates to 3-dimensional aligned sky
- * coordinates.
- *
- * The 2-dimensional reduced supersky coordinates \c rss = (\c A, \c B) encode the two
- * hemispheres of the sky as two neighbouring unit disks. The conversion to 3-dimensional
- * aligned sky coordinates is illustrated in the following diagram:
- *
- \verbatim
- | as[1] =    ___________________
- |     B = 1_|   _____   _____   |
- |           |  /     \ /     \  |
- |         0-| |       |       | |
- |          _|  \_____/ \_____/  |
- |        -1 |_.___.___.___.___._|
- |             '   '   '   '   '
- |        A = -2  -1   0   1   2
- |    as[0] =  1   0  -1   0   1
- |    as[2] =  0  -1   0   1   0
- \endverbatim
- *
- * Points outside the unit disks are moved radially onto their boundaries.
- */
-static void SM_ReducedToAligned(
-  double as[3],					///< [out] 3-dimensional aligned sky coordinates
-  const gsl_vector *rss				///< [in] 2-dimensional reduced supersky coordinates
-  )
-{
-  const double A = gsl_vector_get( rss, 0 );
-  const double B = gsl_vector_get( rss, 1 );
-  const double dA = fabs( A ) - 1.0;
-  const double R = sqrt( SQR( dA ) + SQR( B ) );
-  const double Rmax = GSL_MAX( 1.0, R );
-  as[0] = dA / Rmax;
-  as[1] = B / Rmax;
-  as[2] = GSL_SIGN( A ) * RE_SQRT( 1.0 - DOT2( as, as ) );
-}
-
-///
-/// Convert from 3-dimensional aligned sky coordinates to 2-dimensional reduced supersky
-/// coordinates.
-///
-static void SM_AlignedToReduced(
-  gsl_vector *rss,				///< [out] 2-dimensional reduced supersky coordinates
-  const double as[3]				///< [in] 3-dimensional aligned sky coordinates
-  )
-{
-  const double r = sqrt( DOT3( as, as ) );
-  const double A = GSL_SIGN( as[2] ) * ( ( as[0] / r ) + 1.0 );
-  const double B = as[1] / r;
-  gsl_vector_set( rss, 0, A );
-  gsl_vector_set( rss, 1, B );
-}
-
 int XLALComputeSuperskyMetrics(
   gsl_matrix **p_rssky_metric,
   gsl_matrix **p_rssky_transf,
@@ -629,6 +575,60 @@ int XLALComputeSuperskyMetrics(
 
   return XLAL_SUCCESS;
 
+}
+
+/**
+ * Convert from 2-dimensional reduced supersky coordinates to 3-dimensional aligned sky
+ * coordinates.
+ *
+ * The 2-dimensional reduced supersky coordinates \c rss = (\c A, \c B) encode the two
+ * hemispheres of the sky as two neighbouring unit disks. The conversion to 3-dimensional
+ * aligned sky coordinates is illustrated in the following diagram:
+ *
+ \verbatim
+ | as[1] =    ___________________
+ |     B = 1_|   _____   _____   |
+ |           |  /     \ /     \  |
+ |         0-| |       |       | |
+ |          _|  \_____/ \_____/  |
+ |        -1 |_.___.___.___.___._|
+ |             '   '   '   '   '
+ |        A = -2  -1   0   1   2
+ |    as[0] =  1   0  -1   0   1
+ |    as[2] =  0  -1   0   1   0
+ \endverbatim
+ *
+ * Points outside the unit disks are moved radially onto their boundaries.
+ */
+static void SM_ReducedToAligned(
+  double as[3],					///< [out] 3-dimensional aligned sky coordinates
+  const gsl_vector *rss				///< [in] 2-dimensional reduced supersky coordinates
+  )
+{
+  const double A = gsl_vector_get( rss, 0 );
+  const double B = gsl_vector_get( rss, 1 );
+  const double dA = fabs( A ) - 1.0;
+  const double R = sqrt( SQR( dA ) + SQR( B ) );
+  const double Rmax = GSL_MAX( 1.0, R );
+  as[0] = dA / Rmax;
+  as[1] = B / Rmax;
+  as[2] = GSL_SIGN( A ) * RE_SQRT( 1.0 - DOT2( as, as ) );
+}
+
+///
+/// Convert from 3-dimensional aligned sky coordinates to 2-dimensional reduced supersky
+/// coordinates.
+///
+static void SM_AlignedToReduced(
+  gsl_vector *rss,				///< [out] 2-dimensional reduced supersky coordinates
+  const double as[3]				///< [in] 3-dimensional aligned sky coordinates
+  )
+{
+  const double r = sqrt( DOT3( as, as ) );
+  const double A = GSL_SIGN( as[2] ) * ( ( as[0] / r ) + 1.0 );
+  const double B = as[1] / r;
+  gsl_vector_set( rss, 0, A );
+  gsl_vector_set( rss, 1, B );
 }
 
 int XLALConvertSuperskyCoordinates(
