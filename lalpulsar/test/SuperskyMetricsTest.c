@@ -89,19 +89,19 @@ static int CompareDoppler(const PulsarDopplerParams *a, const PulsarDopplerParam
 int main( void )
 {
 
-  // Compute super-sky metrics
+  // Compute supersky metrics
   const double Tspan = 3 * 86400;
   LIGOTimeGPS ref_time;
   XLALGPSSetREAL8( &ref_time, 900100100 );
   LALSegList segments;
   {
-    XLAL_CHECK( XLALSegListInit( &segments ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALSegListInit( &segments ) == XLAL_SUCCESS, XLAL_EFUNC );
     LALSeg segment;
     LIGOTimeGPS start_time = ref_time, end_time = ref_time;
     XLALGPSAdd( &start_time, -0.5 * Tspan );
     XLALGPSAdd( &end_time, 0.5 * Tspan );
-    XLAL_CHECK( XLALSegSet( &segment, &start_time, &end_time, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK( XLALSegListAppend( &segments, &segment ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALSegSet( &segment, &start_time, &end_time, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALSegListAppend( &segments, &segment ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
   MultiLALDetector detectors = {
     .length = 1,
@@ -109,9 +109,9 @@ int main( void )
   };
   EphemerisData *edat =  XLALInitBarycenter( TEST_DATA_DIR "earth00-19-DE405.dat.gz",
                                              TEST_DATA_DIR "sun00-19-DE405.dat.gz" );
-  XLAL_CHECK( edat != NULL, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( edat != NULL, XLAL_EFUNC );
   gsl_matrix *rssky_metric = NULL, *rssky_transf = NULL, *ussky_metric = NULL;
-  XLAL_CHECK( XLALComputeSuperskyMetrics( &rssky_metric, &rssky_transf, &ussky_metric, NULL, NULL, NULL, 1, &ref_time, &segments, 100.0, &detectors, NULL, DETMOTION_SPIN | DETMOTION_PTOLEORBIT, edat ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALComputeSuperskyMetrics( &rssky_metric, &rssky_transf, &ussky_metric, NULL, NULL, NULL, 1, &ref_time, &segments, 100.0, &detectors, NULL, DETMOTION_SPIN | DETMOTION_PTOLEORBIT, edat ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLALSegListClear( &segments );
   XLALDestroyEphemerisData( edat );
 
@@ -122,7 +122,7 @@ int main( void )
       PulsarDopplerParams XLAL_INIT_DECL(point);
       XLAL_CHECK_MAIN( XLALConvertPhysicalToSupersky( SC_USSKY, ussky_point, &phys_points[i], NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( XLALConvertSuperskyToPhysical( &point, SC_USSKY, ussky_point, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK( CompareDoppler( &phys_points[i], &point ) == EXIT_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( CompareDoppler( &phys_points[i], &point ) == EXIT_SUCCESS, XLAL_EFUNC );
     }
     GFVEC( ussky_point );
   }
@@ -132,7 +132,7 @@ int main( void )
       PulsarDopplerParams XLAL_INIT_DECL(point);
       XLAL_CHECK_MAIN( XLALConvertPhysicalToSupersky( SC_RSSKY, rssky_point, &phys_points[i], rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( XLALConvertSuperskyToPhysical( &point, SC_RSSKY, rssky_point, rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK( CompareDoppler( &phys_points[i], &point ) == EXIT_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( CompareDoppler( &phys_points[i], &point ) == EXIT_SUCCESS, XLAL_EFUNC );
     }
     GFVEC( rssky_point );
   }
