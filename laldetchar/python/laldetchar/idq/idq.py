@@ -1,8 +1,9 @@
-# Copyright (C) 2013 Lindy Blackburn, Reed Essick and Ruslan Vaulin.
+# Copyright (C) 2013 Lindy Blackburn, Reed Essick and Ruslan Vaulin
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
-# Free Software Foundation; either version 3 of the License, or (at your# option) any later version.
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
 #
 # This program is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,126 +14,435 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-## \addtogroup laldetchar_py_idq
-## Synopsis
-# ~~~
-# from laldetchar.idq import idq
-# ~~~
-# \author Lindy Blackburn (<lindy.blackburn@ligo.org>), Reed Essick (<reed.essick@ligo.org>), Ruslan Vaulin (<ruslan.vaulin@ligo.org>)
+#=================================================
 
-"""Module with basic functions and classes of idq pipeline.
-"""
-
-import glob
 import os
-import re
 import sys
+import glob
+import re
+
+import logging
 import time
+
 import numpy
 import math
-from laldetchar.idq import event
-from laldetchar.idq import ovl
-from laldetchar.idq import auxmvc_utils
-from laldetchar.idq import auxmvc
-from laldetchar.idq import idq_tables
-from pylal import frutils
+
 import subprocess
 import tempfile
-import logging
+
+import ConfigParser
 
 from glue.ligolw import ligolw
-from glue.ligolw import table
-from glue.ligolw import lsctables
 from glue.ligolw import utils as ligolw_utils
+from glue.ligolw import lsctables
+from glue.ligolw import table
+
 from glue.ligolw import ilwd
 from glue.ligolw import types as ligolwtypes
 from glue.ligolw.utils import process
 from glue.lal import LIGOTimeGPS
 
+#from pylal import frutils
+from pylal import Fr
+
+from laldetchar.idq import event
+from laldetchar.idq import ovl
+from laldetchar.idq import auxmvc_utils
+from laldetchar.idq import auxmvc
+from laldetchar.idq import idq_tables
+from laldetchar.idq import pdf_estimation as pdf_e
+
 from laldetchar import git_version
+
+#===================================================================================================
+
+description = """ a placeholder for a cleaned up idq.py """
+
+__prog__ = 'idq.py'
 
 __author__ = \
     'Lindy Blackburn (<lindy.blackburn@ligo.org>), Reed Essick (<reed.essick@ligo.org>), Ruslan Vaulin (<ruslan.vaulin@ligo.org>)'
+
 __version__ = git_version.id
 __date__ = git_version.date
 
-## \addtogroup laldetchar_py_idq_idq
-# @{
 
-# common routines for idq codes
-# idq-specific rountines should go here
-# generic event processing should go in event.py
+#===================================================================================================
+### hard coded magic numbers dependent on classifiers, ETG, etc
+traincache_nlines = { "ovl":1 , "forest": 1, "svm": 2}
 
-#=================================================
-# timing utilities
-#=================================================
-gpsref = time.mktime(time.strptime('Tue Jan 06 00:00:00 1980')) \
-    - time.timezone  # GPS ref in UNIX time
+mla_flavors = ["forest", "svm"]
 
+train_with_dag = ["forest", "svm"]
 
-### return current GPS time, assume 16 leap-seconds
-def nowgps():
-    return time.time() - gpsref + 16  # add in leap-seconds
-
-def cluster(
-    glitches,
-    columns,
-    cluster_key='signif',
-    cluster_window=1.0,
+#===================================================================================================
+# DEPRECATED FUNCTIONS THAT SHOULD BE REMOVED
+#===================================================================================================
+'''
+def submit_command(
+    command,
+    process_name='unspecified process',
+    dir='.',
+    verbose=False,
     ):
     """
-        Clustering performed with the sliding window cluster_window keeping trigger with the highest rank;
-        glitches is an array of glitches, and we sort it to be in ascending order (by GPS time)
-        Clustering algorithm is borrowed from pylal.CoincInspiralUtils cluster method.
-        """
+....Utility function for submiting jobs via python's subprocess. 
+....@param command is a list, first element of which is interpretted as an executable
+....and all others as options and values for that executable.
+....@param process_name is the name identifying the submitted job.
+....@param dir is directory in which the job is to be executed.
+....@param verbose UNDOCUMENTED.
+...."""
 
-    # sort glitches so they are in the propper order
+    print "WARNING: submit_command is deprecated and should be replaced by direct calls to the subprocess module"
 
-    glitches.sort(key=lambda line: line[columns['GPS']])
+    process = subprocess.Popen(command, stderr=subprocess.PIPE,
+                               stdout=subprocess.PIPE, cwd=dir)
+    (output, errors) = process.communicate()
+    if process.returncode:
+        print 'Error! ' + process_name + ' failed.'
+        print 'Error! ' + process_name + ' ' + 'exit code: ' \
+            + str(process.returncode)
+        if errors:
+            for line in errors.split('\n'):
+                if line != '':
+                    print 'Error! ' + process_name + ' error out: ' \
+                        + line.rstrip('\n')
+        if output:
+            for line in output.split('\n'):
+                if line != '':
+                    print 'Error! ' + process_name + ' standard out: ' \
+                        + line.rstrip('\n')
+        exit_code = 1
+        return exit_code
+    else:
+        exit_code = 0
+    if verbose:
+        for line in output.split('\n'):
+            if line != '':
+                print process_name + ': ' + line.rstrip('\n')
+    return exit_code
+'''
 
-    # initialize some indices (could work with just one)
-    # but with two it is easier to read
+#===================================================================================================
+# parsing the config file
+#===================================================================================================
 
-    this_index = 0
-    next_index = 1
-    while next_index < len(glitches):
+def config_to_combinersD( config ):
+    if not config.has_option('general','combiners'):
+        return {}, []
 
-        # get the time for both indices
+    combiners = sorted(set(config.get('general', 'combiners').split()))
+    classifiers = sorted(set(config.get('general', 'classifiers').split()))
+    for classifier in classifiers:
+        if not config.has_section(classifier):
+            raise ValueError("classifier=%s does not have a corresonding section in config file"%classifier)
 
-        thisTime = glitches[this_index][columns['GPS']]
-        nextTime = glitches[next_index][columns['GPS']]
+    combinersDict = {}
+    referenced_classifiers = []
+    for combiner in combiners:
+        if config.has_section(combiner):
+            combinersDict[combiner] = dict( config.items(combiner) )
+            combinersDict[combiner]['flavor'] = None
 
-        # are the two coincs within the time-window?
+            if combinersDict[combiner].has_key('classifiers'): ### check classifiers
+                these_classifiers = combinersDict[combiner]['classifiers'].split()
+                for classifier in these_classifiers:
+                    if classifier not in classifiers:
+                        raise ValueError("classifier=%s referenced by combiner=%s, but is not in the list of classifiers to be run"%(classifier, combiner))
+                combinersDict[combiner]['classifiers'] = these_classifiers
 
-        if nextTime - thisTime < cluster_window:
+                columns = []
+                for classifier in these_classifiers: ### add section for each classifier
+                    combinersDict[combiner][classifier] = {}
+                    columns += ["%s_rank"%classifier, "%s_p(g)"%classifier, "%s_p(c)"%classifier]
+                combinersDict[combiner]['columns'] = columns               
 
-            # get the ranks
-
-            this_rank = glitches[this_index][columns[cluster_key]]
-            next_rank = glitches[next_index][columns[cluster_key]]
-
-            # and remove the trigger which has the lower rank
-
-            if next_rank > this_rank:
-                del glitches[this_index]  # glitches = numpy.delete(glitches, this_index, 0)
+                referenced_classifiers += these_classifiers
             else:
-                del glitches[next_index]  # glitches = numpy.delete(glitches, next_index, 0)
+                raise ValueError("combiner=%s does not have an option=\"classifiers\"")
+
         else:
+            raise ValueError("combiner=%s does not have a corresponding section in config file"%(combiner))
 
-            # NOTE: we don't increment this_index and next_index if we've removed glitches
-            # the two triggers are NOT in the time-window
-            # so must increase index
+    return combinersDict, sorted(set(referenced_classifiers))
 
-            this_index += 1
-            next_index += 1
+def config_to_classifiersD( config ):
+    classifiers = sorted(set(config.get('general', 'classifiers').split()))
 
-    return glitches
+    classifiersDict = {}
+    mla = False
+    ovl = False
+    for classifier in classifiers:
+        if config.has_section(classifier):
+            classifiersDict[classifier] = dict( config.items(classifier) )
+            flavor = classifiersDict[classifier]['flavor']
+
+            classifiersDict[classifier]['config'] = classifier_specific_config( config, classifier, flavor )
+            classifiersDict[classifier]['mla'] = (flavor in mla_flavors)
+
+            mla = mla or classifiersDict[classifier]['mla']
+            ovl = ovl or (flavor == 'ovl')
+
+        else:
+            raise ValueError("classifier=%s does not have a corresponding section in config file"%(classifier))
+
+    return classifiersDict, mla, ovl
+
+def classifier_specific_config( config, classifier, flavor ):
+
+    ### NOTE: we require all classifiers to have a "condor" option, even though not all of them may use condor...
+    ### this is done for simplicity within this function and throughout, but may seem unnecessary when writing the config object
+
+    if config.has_option('classifier', 'config'):
+        raise ValueError("classifier=%s has option 'config' that will be overwritten. Please remove that option"%classifier)
+   
+    cp = ConfigParser.SafeConfigParser()
+
+    if flavor == "ovl":
+        eval_section = 'ovl_evaluate'
+        train_section = 'train_ovl'
+
+        ### fill in ovl sections here? Not needed because OVL doesn't train with a dag...
+        ### this is just here as a "place-holder"
+        cp.add_section(eval_section)
+        cp.add_section(train_section)
+
+    elif flavor == "forest":
+        eval_section = 'forest_evaluate'
+        train_section = 'train_forest'
+
+        cp.add_section(eval_section)
+        for option in "A a z v".split():
+            if config.has_option(classifier, option):
+                cp.set( eval_section, option, config.get(classifier, option) )
+
+        cp.add_section(train_section)
+        for option in "a n l s c g i d z".split():
+            if config.has_option(classifier, option):
+                cp.set( train_section, option, config.get(classifier, option) )
+
+    elif flavor == "svm":
+        eval_section = 'svm_evaluate'
+        train_section = 'train_svm'
+
+        cp.add_section(eval_section)
+        for option in "scale predict rank".split():
+            if config.has_option(classifier, option):
+                cp.set( eval_section, option, config.get(classifier, option) )
+
+        cp.add_section(train_section)
+        for option in "scale train rank gamma cost".split():
+            if config.has_option(classifier, option):
+                cp.set( train_section, option, config.get(classifier, option) )
+
+    else:
+        raise ValueError('flavor=%s not understood for classifier=%s'%(flavor, classifier))
+
+    if not config.has_option(classifier, 'condor'):
+        raise ValueError('classifier=%s section has no option=condor'%classifier)
+    condor_section = config.get(classifier, 'condor')
+    if not config.has_section(condor_section):
+        raise ValueError('config has not section=%s'%condor_section)
+
+    cp.add_section('condor')
+    for option, value in config.items(condor_section):
+        cp.set('condor', option, value)
+
+    cp.add_section('idq_train')
+    cp.set('idq_train', 'condorlogs', config.get('train', 'condorlogs'))
+
+    cp.add_section('general')
+    for option, value in config.items('general'):
+        cp.set('general', option, value)
+
+    return cp
 
 #=================================================
-# lock-file utilities
+# standardized names
 #=================================================
-### try to set lockfile, die if cannot establish lock
+
+def channame(ifo, classifier, tag):
+    return "%s:%s%s"%(ifo, classifier, tag)
+
+def cache(directory, classifier, tag):
+    return "%s/%s%s.cache"%(directory, classifier, tag)
+
+def pat(directory, ifo, tag, t, stride):
+    return "%s/%s_mla%s-%d-%d.pat"%(directory, ifo, tag, t, stride)
+
+def dat(directory, classifier, ifo, trained, tag, t, stride):
+    return "%s/%s_%s_%s%s-%d-%d.dat"%(directory, ifo, classifier, trained, tag, t, stride)
+
+def xml(directory, classifier, ifo, trained, calib, tag, t, stride):
+    return "%s/%s_idq_%s_%s-%s%s-%d-%d.xml.gz"%(directory, ifo, classifier, trained, calib, tag, t, stride)
+
+def gdb_xml(directory, classifier, ifo, tag, t, stride):
+    return "%s/%s_idq_%s%s-%d-%d.xml.gz"%(directory, ifo, classifier, tag, t, stride)
+
+def timeseries(directory, classifier, ifo, trained, calib, tag, t, stride):
+    return "%s/%s_idq_%s_%s-%s%s-%d-%d.npy.gz"%(directory, ifo, classifier, trained, calib, tag, t, stride)
+
+def gdb_timeseries(directory, classifier, ifo, tag, t, stride):
+    return "%s/%s_idq_%s%s-%d-%d.npy.gz"%(directory, ifo, classifier, tag, t, stride)
+
+def timeseriesgwf(directory, classifier, ifo, trained, calib, tag, t, stride):
+    return "%s/%s_idq_%s_%s-%s%s-%d-%d.gwf"%(directory, ifo, classifier, trained, calib, tag, t, stride)
+
+def gdb_timeseriesgwf(directory, classifier, ifo, tag, t, stride):
+    return "%s/%s_idq_%s%s-%d-%d.gwf"%(directory, ifo, classifier, tag, t, stride)
+
+def segxml(directory, tag, t, stride):
+    return "%s/science_segments%s-%d-%d.xml.gz"%(directory, tag, t, stride)
+
+def segascii(directory, tag, t, stride):
+    return "%s/science_segments%s-%d-%d.seg"%(directory, tag, t, stride)
+
+def idqsegascii(directory, tag, t, stride):
+    return "%s/idq_segments%s-%d-%d.seg"%(directory, tag, t, stride)
+
+def roc(directory, classifier, ifo, tag, t, stride):
+    return "%s/%s_%s%s-%d-%d.roc"%(directory, ifo, classifier, tag, t, stride)
+
+def uroc(directory, classifier, ifo, tag, t, stride):
+    return "%s/%s_%s%s-%d-%d.uroc"%(directory, ifo, classifier, tag, t, stride)
+
+def calib_check(directory, classifier, ifo, tag, t, stride):
+    return "%s/%s_%s_calib%s-%d-%d.txt"%(directory, ifo, classifier, tag, t, stride)
+
+def chan_perf(directory, classifier, ifo, tag, t, stride):
+    return "%s/%s_%s_chan-perf%s-%d-%d.txt"%(directory, ifo, classifier, tag, t, stride)
+
+def sumhtml(directory, tag, t, stride):
+    return "%s/summary-index%s-%d-%d.html"%(directory, tag, t, stride)
+
+def kdename(directory, classifier, ifo, tag, t, stride):
+    return "%s/%s_%s%s_KDE-%d-%d.npy.gz"%(directory, ifo, classifier, tag, t, stride)
+
+def gdb_summary(directory, classifier, ifo, tag, t, stride):
+    return "%s/%s_idq_%s_summary%s-%d-%d.txt"%(directory, ifo, classifier, tag, t, stride)
+
+#=================================================
+# extract start/dur
+#=================================================
+
+def extract_start_stop(filename, suffix='.dat'):
+    """
+    picks of start, dur information from filename and returns [start, stop]
+    """
+    matchfile = re.compile('.*-([0-9]*)-([0-9]*)\%s$' % suffix)
+    m = matchfile.match(filename)
+    (st, dur) = (int(m.group(1)), int(m.group(2)))
+    return [st, st+dur]
+
+#=================================================
+# extract classifier name
+#=================================================
+
+def extract_dat_name(datfilename):
+    """
+    WARNING: will break if classifier name contains "_"
+    """
+    return datfilename.split("/")[-1].split("_")[1]
+
+def extract_fap_name(fapfilename):
+    """
+    WARNING: will break if classifier name contains "_"
+    """
+    return fapfilename.split("/")[-1].split("_")[2]
+
+def extract_roc_name(rocfilename):
+    """
+    WARNING: will break if classifier name contains "_"
+    """
+    return rocfilename.split("/")[-1].split("_")[1]
+
+def extract_xml_name(xmlfilename):
+    """
+    WARNING: will break if classifier name contains "_"
+    """
+    return xmlfilename.split("/")[-1].split("_")[2]
+
+#=================================================
+# trained and calibration ranges
+#=================================================
+
+def extract_trained_ranges(lines, flavor):
+    return [extract_trained_range( line, flavor ) for line in lines]
+
+def extract_trained_range(lines, flavor):
+    if flavor == "forest":
+        trainedforest = lines[0]
+        ### getting start and end of training period from the name of the trained forest file
+        mvsc_start_training_period = int(trainedforest.split('-')[-2])
+        mvsc_end_training_period = mvsc_start_training_period + int(trainedforest.split('-')[-1].split('.')[0])
+        trained_range = "%d_%d"%(mvsc_start_training_period, mvsc_end_training_period)
+
+    elif flavor == "ovl":
+        trained_range = [v for v in lines[0].split('/') if v != ''][-4]  # we assume a particular directory structure
+
+    elif flavor == "svm":
+        svm_model, svm_range_file = lines
+
+        ## start and end of training period from the name of the svm model file
+        svm_start_training_period = int(svm_model.split('-')[-2])
+        svm_end_training_period = svm_start_training_period + int(svm_model.split('-')[-1].split('.')[0])
+        trained_range = "%d_%d"%(svm_start_training_period,svm_end_training_period)
+
+    else:
+        raise ValueError("do not know how to extract trained range for flavor=%s"%flavor)
+
+    return trained_range
+
+def extract_calib_ranges(urocs):
+    return [extract_calibration_range(uroc) for uroc in urocs]
+
+def extract_calib_range(uroc):
+    return "%d_%d"%tuple(extract_start_stop( uroc, suffix=".uroc" ))
+#    calib = uroc.split("/")[-1].split("-")[-3].split("_")[-1]
+#    return calib
+
+def extract_kde_ranges( kde_names ):
+    return [extract_kde_range( kde_name ) for kde_name in kde_names ]
+
+def extract_kde_range( kde_name ):
+    return "%d_%d"%tuple(extract_start_stop( kde_name, suffix=".npy.gz" ))
+
+def best_range(t, ranges):
+    """
+    finds the best range for time t
+    """
+    dists = []
+    for r in ranges:
+        start, stop = [int(l) for l in r.split("_")]
+        if start <= gps and gps <= stop:
+            dists.append( (r, start-gps, start, stop-start) )
+
+    dists.sort(key=lambda l: l[2])  # sort by start times, earlier times at the top
+    dists.sort(key=lambda l: l[3], reverse=True)  # sort by durations, longer durations at the top
+    dists.sort(key=lambda l: l[1])  # sort by distance, smaller distances at the top
+
+    return dists[0][0]
+
+#=================================================
+# current-time and scheduling
+#=================================================
+gpsref = time.mktime(time.strptime('Tue Jan 06 00:00:00 1980')) - time.timezone  # GPS ref in UNIX time
+
+def nowgps():
+    """
+    return current GPS time, assume 16 leap-seconds
+    """
+    return time.time() - gpsref + 16  # add in leap-seconds
+
+#=================================================
+# managing duplicate processes
+#=================================================
+
 def dieiflocked(lockfile='.idq.lock'):
+    """
+    try to set lockfile, die if cannot establish lock
+    """
     import fcntl
     global lockfp
     lockfp = open(lockfile, 'w')
@@ -140,72 +450,13 @@ def dieiflocked(lockfile='.idq.lock'):
         fcntl.lockf(lockfp, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except IOError:
         import sys
-        sys.exit('ERROR: cannot establish lock on \'' + lockfile
-                 + '\', possible duplicate process, exiting..')
-
-
-def findCredential():
-    """
-....This function is a modifcation of frutils.findCredential() function to adopt to a new file naming convention for ligo
-....certificates. Depricate it when the orginal function is modified accordingly. 
-...."""
-
-    rfc_proxy_msg = \
-        """\
-	Could not find a RFC 3820 compliant proxy credential.
-Please run 'grid-proxy-init -rfc' and try again.
-"""
-
-    # use X509_USER_PROXY from environment if set
-
-    if os.environ.has_key('X509_USER_PROXY'):
-        filePath = os.environ['X509_USER_PROXY']
-        try:
-            if frutils.validateProxy(filePath):
-                return (filePath, filePath)
-        except:
-            pass
-
-        # ....raise RuntimeError(rfc_proxy_msg)
-
-    # use X509_USER_CERT and X509_USER_KEY if set
-
-    if os.environ.has_key('X509_USER_CERT'):
-        if os.environ.has_key('X509_USER_KEY'):
-            certFile = os.environ['X509_USER_CERT']
-            keyFile = os.environ['X509_USER_KEY']
-            return (certFile, keyFile)
-
-    # search for proxy file on disk
-
-    uid = os.getuid()
-
-    # path = "/tmp/x509up_u%d" % uid
-
-    certFiles = [path for path in glob.glob('/tmp/x509*')
-                 if os.stat(path).st_uid == uid]
-    certFiles.sort(key=lambda x: os.stat(x).st_mtime)
-
-    # return the most recent valid certificate
-
-    for path in reversed(certFiles):
-        if os.access(path, os.R_OK):
-            try:
-                if frutils.validateProxy(path):
-                    return (path, path)
-            except:
-                pass
-
-    # if we get here could not find a credential
-
-    raise RuntimeError(rfc_proxy_msg)
-
+        sys.exit('ERROR: cannot establish lock on \'%s\', possible duplicate process, exiting..'%lockfile)
 
 #=================================================
-# logfile object for use with logging module
+### reporting/logging utilities
 #=================================================
+
 class LogFile(object):
-
     """File-like object to log text using the `logging` module."""
 
     def __init__(self, logger):
@@ -220,9 +471,32 @@ class LogFile(object):
         for handler in self.logger.handlers:
             handler.flush()
 
-#=================================================
-# logfile status and file manipulation, general I/O
-#=================================================
+
+def setup_logger(name, logfile, stdout, format='%(asctime)s %(message)s'):
+    """
+    sets up the standard logger for all iDQ processes
+    """
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.INFO)
+
+    formatter = logging.Formatter(format)
+
+    hdlr1 = logging.StreamHandler(stdout)
+    hdlr1.setFormatter(formatter)
+    hdlr1.setLevel(logging.INFO)
+    logger.addHandler(hdlr1)
+
+    hdlr2 = logging.FileHandler(logfile)
+    hdlr2.setFormatter(formatter)
+    hdlr2.setLevel(logging.INFO)
+    logger.addHandler(hdlr2)
+
+    return logger
+
+#========================
+# log parsing functionality
+#========================
+
 def start_of_line(file_obj, byte_stride=80):
     """
     moves back one line in the file and returns both that line and the number of bytes moved
@@ -256,7 +530,6 @@ def start_of_line(file_obj, byte_stride=80):
 
     return current_byte - tell ### return the number of bytes we moved back
 
-###
 def most_recent_realtime_stride(file_obj):
     """
     works backward through file_obj until it finds realtime-stride information
@@ -266,7 +539,7 @@ def most_recent_realtime_stride(file_obj):
     starting_tell = file_obj.tell()
     tell = starting_tell
     bytes = 0
-	
+
     while tell > 0: ### not at the beginning of the file
         ### move to the start of this line
         ### blocksize is the number of bytes moved
@@ -301,7 +574,6 @@ def most_recent_realtime_stride(file_obj):
 
     return (stride_start, stride_end)
 
-###
 def block_until(t, file_obj, max_wait=600, timeout=600, wait=0.1):
     """
     this function blocks until the stride_start information from file_obj (which should be an open realtime logger file object) shows that the realtime process has passed "t"
@@ -332,45 +604,112 @@ def block_until(t, file_obj, max_wait=600, timeout=600, wait=0.1):
     ### return statement conditioned on how the loop exited
     return stride_start > t, waited > max_wait, time.time()-to > timeout
 
-
-###
 def get_condor_dag_status(dag):
     """
-....Check on status of the condor dag by parsing the last line of .dagman.out file.
-...."""
+    Check on status of the condor dag by parsing the last line of .dagman.out file.
+    """
 
     dag_out_file = dag + '.dagman.out'
     if not os.path.exists(dag_out_file):
-        exit_status = 'incomplete'
-        return exit_status
+        return 'incomplete'
+
     lastline = open(dag_out_file, 'r').readlines()[-1].strip('\n')
+
     if 'EXITING WITH STATUS' in lastline:
         exit_status = int(lastline.split('EXITING WITH STATUS')[-1])
+
     else:
         exit_status = 'incomplete'
 
     return exit_status
 
-# load *.dat files
+#=================================================
+# cachefiles
+#=================================================
+
+class Cachefile():
+    """
+    interface between a cachefile and the pipeline
+    """
+
+    def __init__(self, name):
+        self.name = name
+        if not self.exists():
+            self.touch()
+        self.set_time()
+
+    def exists(self):
+        """
+        checks to see whether the file exists
+        """
+        return os.path.exists(self.name)
+
+    def is_empty(self):
+        """
+        checks whether this file is empty
+        """
+        return len(open(self.name, 'r').readlines()) == 0
+
+    def touch(self):
+        """
+        touch the file
+        """
+        base = os.path.dirname(self.name)
+        if not os.path.exists(base):
+            os.makedirs(base)
+
+        return open(self.name, 'a').close()
+		
+    def append(self, string):
+        """
+        append "string" to this cachefile
+        """
+        file_obj = open(self.name, 'a')
+        print >> file_obj, string
+        file_obj.close()
+
+        self.set_time()
+
+    def timestamp(self):
+        """
+        get the current timestamp of this file
+        """
+        return int(os.path.getmtime(self.name))
+
+    def was_modified(self):
+        """
+        determines whether this file has been modified
+        """
+        return (self.timestamp() != self.time)
+
+    def set_time(self):
+        self.time = self.timestamp()
+
+    def tail(self, nlines=1):
+        """
+        reads the last nlines of the cache file
+        """
+        return [line.strip() for line in open(self.name, 'r').readlines()[-nlines:]]
+
+    def readlines(self):
+        return [line.strip() for line in self.readlines()]
+
+#=================================================
+# general I/O
+#=================================================
 def slim_load_datfile(file, skip_lines=1, columns=[]):
     """ 
-....loads only the given columns from a *.dat file. assumes the variable names are given by the first line after skip_lines 
-....left so that if an element in columns is not in the variables list, an error will be raised
-...."""
+    loads only the given columns from a *.dat file. assumes the variable names are given by the first line after skip_lines left so that if an element in columns is not in the variables list, an error will be raised
+    """
 
     output = dict([(c, []) for c in columns])
-
     f_lines = open(file).readlines()[skip_lines:]
 
     if f_lines:
-
         # find variable names
-
-        variables = dict([(line, i) for (i, line) in
-                         enumerate(f_lines[0].strip('\n').split())])
+        variables = dict([(line, i) for (i, line) in enumerate(f_lines[0].strip('\n').split())])
 
         # fill in output
-
         for line in f_lines[1:]:
             if line[0] != '#' and line != '':
                 line = line.strip('\n').split()
@@ -378,81 +717,185 @@ def slim_load_datfile(file, skip_lines=1, columns=[]):
                     output[c].append(line[variables[c]])
         return output
     else:
-
         # file is empty, return empty dictionary
-
         return output
 
-#=================================================
-# subprocess wrappers
-#=================================================
-def submit_command(
-    command,
-    process_name='unspecified process',
-    dir='.',
-    verbose=False,
-    ):
+def slim_load_datfiles(files, skip_lines=1, columns=[]):
     """
-....Utility function for submiting jobs via python's subprocess. 
-....@param command is a list, first element of which is interpretted as an executable
-....and all others as options and values for that executable.
-....@param process_name is the name identifying the submitted job.
-....@param dir is directory in which the job is to be executed.
-....@param verbose UNDOCUMENTED.
-...."""
+    delegates to slim_load_datfile, and combines the total output into a single structure
+    """
+    output = dict( (c, []) for c in columns )
+    for file in files:
+        o = slim_load_datfile(file, skip_lines=skip_lines, columns=columns)
+        for c in columns:
+            output[c] += o[c]
 
-    process = subprocess.Popen(command, stderr=subprocess.PIPE,
-                               stdout=subprocess.PIPE, cwd=dir)
-    (output, errors) = process.communicate()
-    if process.returncode:
-        print 'Error! ' + process_name + ' failed.'
-        print 'Error! ' + process_name + ' ' + 'exit code: ' \
-            + str(process.returncode)
-        if errors:
-            for line in errors.split('\n'):
-                if line != '':
-                    print 'Error! ' + process_name + ' error out: ' \
-                        + line.rstrip('\n')
-        if output:
-            for line in output.split('\n'):
-                if line != '':
-                    print 'Error! ' + process_name + ' standard out: ' \
-                        + line.rstrip('\n')
-        exit_code = 1
-        return exit_code
-    else:
-        exit_code = 0
-    if verbose:
-        for line in output.split('\n'):
-            if line != '':
-                print process_name + ': ' + line.rstrip('\n')
-    return exit_code
+    return output
 
+def output_to_datfile( output, dat ):
+    """
+    write the info stored in output into a file
+    """
+    columns = output.keys()
+    file_obj = open(dat, "w")
+    
+    if columns:
+        s = ""
+        for c in columns:
+            s += " %s"%str(c)
+        print >> file_obj, s
 
-def condor_command(dag, process_name):
-    command = 'condor_submit_dag ' + dag.basename + '.dag'
-    process = subprocess.Popen(command, shell=True,
-                               stderr=subprocess.PIPE,
-                               stdout=subprocess.PIPE)  # , cwd=dir)
-    (errors, output) = process.communicate()
-    if process.returncode:
-        print process_name + ' failed, Error:', [output]  # [process.returncode, errors, output]
-        exit_code = 1
-    else:
-        exit_code = 0
-    return exit_code
+        for i in xrange(len(output[columns[0]])):
+            s = ""
+            for c in columns:
+                s += " %s"%str(output[c][i])
+            print >> file_obj, s
 
+    file_obj.close()
 
-def execute_dag_create(cp, log_path, run_tag):
+def sort_output( output, key ):
+    if not output.has_key(key):
+        raise ValueError("output does not have key=%s"%key)
 
-    return auxmvc.create_DAG(cp, log_path, run_tag)
+    columns = output.keys()
 
+    out = [ [output[key][i]] + [output[column][i] for column in columns] for i in xrange(len(output[key])) ]
+    if not len(out):
+        return output
+
+    out.sort( key=lambda l: l[0] )
+    out = numpy.array(out)
+    for ind, column in enumerate(columns):
+        output[column] = list(out[:,1+ind])
+
+    return output
+
+def filter_datfile_output( output, segs ):
+    """
+    filters the data in output by segs
+    requres "GPS" to be a key in output
+    """
+    if not output.has_key("GPS"):
+        raise ValueError("output must have key: GPS")
+
+    if not output['GPS']: ### empty list
+        return output
+
+    columns = output.keys()
+
+    output = sort_output( output , 'GPS' ) ### make sure these are sorted by GPS
+
+    out = numpy.array(event.include( [ [ float(output['GPS'][i]) ] + [output[column][i] for column in columns] for i in xrange(len(output['GPS'])) ], segs, tcent=0 ))
+
+    if not len(out): ### nothing survived
+        return dict( (column, []) for column in columns )
+
+    for ind, column in enumerate(columns):
+        if column == 'GPS':
+            output[column] = out[:,1+ind].astype(float)
+        elif column == 'i':
+            output['i'] = out[:,1+ind].astype(float)
+        elif column == 'rank':
+            output['rank'] = out[:,1+ind].astype(float)
+        else:
+            output[column] = out[:,1+ind]
+
+    return output
+
+def cluster_datfile_output( output, cluster_key='signif', cluster_win=1.0 ):
+    if not output.has_key("GPS"):
+        raise ValueError("output must have \"GPS\" as a key")
+    if not output.has_key(cluster_key):
+        raise ValueError("output must have cluster_key=\"%s\" as a key"%cluster_key)
+
+    ### separate output into glitches and cleans
+    columns, glitches, cleans = separate_output( output )
+
+    ### cluster glitches and cleans separately
+    glitches = cluster( glitches, columns, cluster_key=cluster_key, cluster_window=cluster_win )
+
+    cleans   = cluster( cleans  , columns, cluster_key=cluster_key, cluster_window=cluster_win ) 
+
+    ### combine into output format
+    return combine_separated_output( columns, [glitches, cleans] )
+
+def separate_output( output ):
+    """
+    returns lists of glitches and cleans in output
+    """
+    if not output.has_key('i'):
+        raise ValueError("output must have \"i\" as a key")
+
+    columns = output.keys()
+
+    ### separate into glitches and cleans
+    glitches = []
+    cleans = []
+    N = len(output['i'])
+    for ind in xrange(N):
+        i = output['i'][ind]
+        if i:
+            glitches.append( [output[c][ind] for c in columns] )
+        else:
+            cleans.append( [output[c][ind] for c in columns] ) 
+
+    return dict( (c,j) for j, c in enumerate(columns) ), glitches, cleans
+
+def combine_separated_output( columns, event_lists ):
+    output = dict( (c,[]) for c in columns.keys() )
+    for events in event_lists:
+        for trg in events:
+            for c, i in columns.items():
+                output[c].append( trg[i] )
+    return output
+
+def cluster( samples, columns, cluster_key='signif', cluster_window=1.0 ):
+    """
+    Clustering performed with the sliding window cluster_window keeping trigger with the highest rank;
+    glitches is an array of glitches, and we sort it to be in ascending order (by GPS time)
+    Clustering algorithm is borrowed from pylal.CoincInspiralUtils cluster method.
+    """
+
+    # sort glitches so they are in the propper order
+    samples.sort(key=lambda line: line[columns['GPS']])
+
+    # initialize some indices (could work with just one)
+    # but with two it is easier to read
+    this_index = 0
+    next_index = 1
+    while next_index < len(samples):
+
+        # get the time for both indices
+        thisTime = samples[this_index][columns['GPS']]
+        nextTime = samples[next_index][columns['GPS']]
+
+        # are the two coincs within the time-window?
+        if nextTime - thisTime < cluster_window:
+
+            # get the ranks
+            this_rank = samples[this_index][columns[cluster_key]]
+            next_rank = samples[next_index][columns[cluster_key]]
+
+            # and remove the trigger which has the lower rank
+            if next_rank > this_rank:
+                del samples[this_index]  # glitches = numpy.delete(glitches, this_index, 0)
+            else:
+                del samples[next_index]  # glitches = numpy.delete(glitches, next_index, 0)
+
+        else:
+            # NOTE: we don't increment this_index and next_index if we've removed glitches
+            # the two triggers are NOT in the time-window
+            # so must increase index
+            this_index += 1
+            next_index += 1
+
+    return samples
 
 def extract_dq_segments(xmlfile, dq_name):
     """
-....Loads xmlfile containing dq segments and extracts segments of the type set by dq_name ( e.g. L1:DMT-SCIENCE:3).
-....dq_name is what was given as an --include-segments option to ligolw_segment_query that generated the xmlfileobj"
-...."""
+    Loads xmlfile containing dq segments and extracts segments of the type set by dq_name ( e.g. L1:DMT-SCIENCE:3).
+    dq_name is what was given as an --include-segments option to ligolw_segment_query that generated the xmlfileobj"
+    """
 
     lsctables.use_in(ligolw.LIGOLWContentHandler)
     if type(xmlfile) == str:
@@ -461,142 +904,336 @@ def extract_dq_segments(xmlfile, dq_name):
         xmldoc = ligolw_utils.load_fileobj(xmlfile, contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler))[0]  # laod as file object
 
     # get segment tables
-
     sdef = table.get_table(xmldoc, lsctables.SegmentDefTable.tableName)
     ssum = table.get_table(xmldoc, lsctables.SegmentSumTable.tableName)
     seg = table.get_table(xmldoc, lsctables.SegmentTable.tableName)
 
     # segment definer ID corresponding to dq_name, which was use in segment data base query
-
-    id = next(a.segment_def_id for a in sdef if a.name
-              == dq_name.split(':')[1])
+    id = next(a.segment_def_id for a in sdef if (a.name == dq_name.split(':')[1]) ) ### fragile because based on naming convention
 
     # list of covered segments (e.g. where SCIENCE mode is defined)
-
-    covered = [[a.start_time, a.end_time] for a in ssum
-               if a.segment_def_id == id]
+    covered = [[a.start_time, a.end_time] for a in ssum if (a.segment_def_id == id)]
 
     # final RESULT segment from query
+    result_id = next(a.segment_def_id for a in sdef if (a.name == 'RESULT'))
+    good = [[a.start_time, a.end_time] for a in seg if (a.segment_def_id == result_id) ]
 
-    result_id = next(a.segment_def_id for a in sdef if a.name
-                     == 'RESULT')
-    good = [[a.start_time, a.end_time] for a in seg if a.segment_def_id
-            == result_id]
     return (good, covered)
 
 #=================================================
-# segment manipulations
+# ROC manipulation via output
 #=================================================
-def extract_lldq_segments(xmlfiles, lldq_name, hoft_name):
+
+def dat_to_rcg( output ):
     """
-....Loads the low-latency science and hoft segments from xml files.
-....lldq_name is the segment definer name for the low-latency science segments,
-....hoft_name is the segment definer name for the hoft segments.
-...."""
-
-    good = []
-    covered = []
-    lsctables.use_in(ligolw.LIGOLWContentHandler)
-    for file in xmlfiles:
-        xmldoc = ligolw_utils.load_filename(file, contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler))  # load file
-        # get segment tables
-
-        sdef = table.get_table(xmldoc,
-                               lsctables.SegmentDefTable.tableName)
-        seg = table.get_table(xmldoc, lsctables.SegmentTable.tableName)
-
-        # segment definer ID corresponding to  hoft_name
-        # FIXME: a.ifos should be replace by a.name when gstlal_segment_parser files are fixed
-
-        hoft_seg_def_id = next(a.segment_def_id for a in sdef if a.name
-                               == hoft_name)
-
-        # get list of covered hoft segments (e.g. where SCIENCE mode is defined)
-
-        covered.extend([[a.start_time, a.end_time] for a in seg
-                       if a.segment_def_id == hoft_seg_def_id])
-
-        # segmen definer ID correspodning to low-latency science segments
-        # FIXME: a.ifos should be replace by a.name when gstlal_segment_parser files are fixed
-
-        lldq_seg_def_id = next(a.segment_def_id for a in sdef if a.name
-                               == lldq_name)
-
-        # get list of science segments
-
-        good.extend([[a.start_time, a.end_time] for a in seg
-                    if a.segment_def_id == lldq_seg_def_id])
-
-    return (good, covered)
-
-
-def extract_dmt_segments(xmlfiles, dq_name):
+    returns ranks, cum_num_cln, cum_num_gch based on the data in output
+    assumes output is like the outarg from slim_load_datfile
+    output must have keys: rank, i
+    if output.has_key('weight'): we use those
+    else: we set all weights = 1
     """
-....Loads the segments from the dmt xml files. Determines segments covered by dmt process from the file names
-....dq_name is the segment definer name.
-...."""
+    if not output.has_key('weight'):
+        output['weight'] = numpy.ones(len(output['rank']), dtype='float')
 
-    good = []
-    covered = []
-    lsctables.use_in(ligolw.LIGOLWContentHandler)
-    for file in xmlfiles:
-        xmldoc = ligolw_utils.load_filename(file, contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler))  # load file
-        # get segment tables
+    tmp = zip( output['rank'], output['i'], output['weight'] )
+    tmp.sort(key=lambda l: l[0], reverse=True) ### sort by decending rank
+    r = []
+    c = []
+    g = []
+    n_c = 0
+    n_g = 0
+    _rank = 1.0
+    for rank, i, w in tmp:
+        if rank != _rank: ### new rank is different
+            r.append( _rank )
+            c.append( n_c )
+            g.append( n_g )
+            _rank = rank
+        n_c += (1-i)*w
+        n_g += i*w
+    r.append( _rank )
+    c.append( n_c )
+    g.append( n_g )
 
-        sdef = table.get_table(xmldoc,
-                               lsctables.SegmentDefTable.tableName)
-        seg = table.get_table(xmldoc, lsctables.SegmentTable.tableName)
+    return numpy.array( (r, c, g) )
 
-        # segment definer ID correspodning to dq_name
-        # FIX ME: in case of multiple segment versions this matching becomes ambiguous
-
-        dq_seg_def_id = next(a.segment_def_id for a in sdef if a.name
-                             == dq_name)
-
-        # get list of  segments
-
-        good.extend([[a.start_time, a.end_time] for a in seg
-                    if a.segment_def_id == dq_seg_def_id])
-
-    # coalesce segments....
-
-    good = event.fixsegments(good)
-
-    # convert file names into segments
-
-    covered = map(filename_to_segment, xmlfiles)
-
-    # coalesce segments
-
-    covered = event.fixsegments(covered)
-
-    return (good, covered)
-
-
-def filename_to_segment(filename):
+def rcg_to_file(ROCfile, r, c, g):
     """
-....Get start and duration from the file name, and convert them into a segment
-...."""
-
-    start = int(os.path.split(filename)[1].split('.')[0].split('-')[-2])
-    duration = int(os.path.split(filename)[1].split('.')[0].split('-'
-                   )[-1])
-    end = start + duration
-    return [start, end]
-
-
-def segment_query(
-    config,
-    start,
-    end,
-    url=None,
-    ):
+    prints rcg to file
     """
-....Performes ligolw_segment query for segments in the given gps time range and returns segment xml file.
-...."""
+    f = open(ROCfile, "w")
+    print >> f, g[-1]
+    print >> f, c[-1]
+    for R, C, G in zip(r, c, g):
+        print >> f, R, C, G
+    f.close()
 
-# ....from glue.ligolw import table,lsctables,utils
-    # ligolw_segment_query -t file:///gds-l1/dmt/triggers/DQ_Segments -q --include-segments=L1:DMT-SCIENCE -s 1042257690 -e 1042257715
+def file_to_rcg(ROCfile):
+    """ 
+    reads in a standard ROC file and returns lists of ranks, cumulative_cleans, cumulative_glitches 
+    """
+    ranks = []
+    c_cln = []
+    c_gch = []
+    tot_cln = False
+    tot_gch = False
+    i = 0  # counter to find first lines not commented
+    f = open(ROCfile, 'r')
+    for line in f:
+        if line[0] != '#':
+            if i == 0:
+                tot_gch = float(line)
+                i += 1
+            elif i == 1:
+                tot_cln = float(line)
+                i += 1
+            else:
+                fields = line.strip().split()
+                ranks.append(float(fields[0]))
+                c_cln.append(float(fields[1]))
+                c_gch.append(float(fields[2]))
+
+    return (ranks, c_cln, c_gch, tot_cln, tot_gch)
+
+def resample_rcg(uranks, r, c, g):
+    """
+    returns the cum_num_cln and cum_num_gch sampled at uranks rather than r
+    """
+    N = len(r)
+    ucln = []
+    ugch = []
+    ind = 0
+    cc = 0  # current value of c_cln corresponding to 'ind'
+    cg = 0
+    for ur in uranks:
+        while ind < N and r[ind] >= ur:
+            cc = c[ind]
+            cg = g[ind]
+            ind += 1
+        ucln.append(cc)
+        ugch.append(cg)
+
+    return uranks, ucln, ugch
+
+def rcg_to_diff( c, g):
+    """
+    returns list corresponding to the number of glitches, cleans at each element in the list, instead of cumulative counts
+    """
+    dc = []
+    dg = []
+    _c = 0
+    _g = 0
+    for C, G in zip(c, g):
+        dc.append( C-_c )
+        dg.append( G-_g )
+        _c = C
+        _g = G
+    return dc, dg
+
+def rcg_to_EffFAPmap(rs, c_cln, c_gch, kind='linear'):
+    """
+    generates both FAP and Eff maps from r, c, g
+      return Effmap, FAPmap
+    """
+    from scipy.interpolate import interp1d
+
+    tot_cln = c_cln[-1]
+    tot_gch = c_gch[-1]
+
+    #ensure interpolation range covers allowable range for rank
+    if rs[0] != 1.0:
+        rs.insert(0, 1.0)
+        c_gch.insert(0, 0.0)
+        c_cln.insert(0, 0.0)
+    if rs[-1] != 0.0:
+        rs.append(0.0)
+        c_gch.append(tot_gch)
+        c_cln.append(tot_cln)
+
+    ### construct Effmap object
+    effmap = BinomialMap( rs, c_gch, kind=kind )
+
+    ### construct FAPmap object
+    fapmap = BinomialMap( rs, c_cln, kind=kind )
+
+    return (effmap, fapmap)
+
+def kde_pwg(eval, r, ds, scale=0.1, s=0.01):
+    """
+    delegates to pdf_e.point_wise_gaussian_kde after constructing the correct input values
+    """
+    observ = []
+    for R, dS in zip(r, ds):
+        observ += [R]*dS
+
+    if numpy.sum(ds):
+        return pdf_e.point_wise_gaussian_kde(eval, observ, scale=scale, s=s)
+    else:
+        return numpy.ones_like(eval)
+
+def kde_to_ckde( s ):
+    c = numpy.zeros_like(s)
+    _s = 0.0
+    cum = 0.0
+    for i, S in enumerate(s[::-1]): ### integrate from the right
+        cum += 0.5*(S+_s)
+        c[i] = cum
+        _s = S
+    c /= c[-1]
+    return c[::-1] ### reverse to get the order correct
+
+def bin_by_rankthr(rankthr, output, columns=None):
+
+    if columns==None:
+        columns = sorted(output.keys())
+
+    gch = []
+    cln = []
+    for i in xrange(len(output['i'])):
+        if output['rank'][i] >= rankthr:
+            d = dict( (column, output[column][i]) for column in columns )
+            if output['i'][i]:
+                gch.append( d )
+            else:
+                cln.append( d )
+
+    return cln, gch
+
+#=================================================
+# channel performance data
+#=================================================
+
+def dat_to_perf( output ):
+    vchans = sorted(set(output['vchan']))
+    performance = dict( (vchan,{"cln":0, "gch":0}) for vchan in vchans )
+    num_gch = 0.0
+    num_cln = 0.0
+    for ind in xrange(len(output['vchan'])):
+        vchan = output['vchan'][ind]
+        i = output['i'][ind]
+
+        performance[vchan]['gch'] += i
+        performance[vchan]['cln'] += 1-i
+
+        num_gch += i
+        num_cln += 1-i
+
+    return performance, num_gch, num_cln
+
+def file_to_perf( filename ):
+    perf = {}
+    ngch = 0
+    ncln = 0
+    file_obj = open(filename, "r")
+    for line in file_obj:
+        if line[0] != "#":
+            chan, gch, ngch, cln, ncln, eff, fap = line.strip().split()
+            perf[chan] = {'gch':float(gch), 'cln':float(cln)}
+
+    return perf, float(ngch), float(ncln)
+
+def perf_to_file( performance, num_gch, num_cln, filename ):
+    vchans = sorted(performance.keys() )
+    file_obj = open(filename, "w")
+    print >> file_obj, "# %-48s %6s %6s %6s %5s %10s %10s"%("channel", "No.gch", "totgch", "No.cln", "totcln", "eff", "fap")
+    for vchan in vchans:
+        print >> file_obj, "%-50s %6d %6d %6d %6d %0.8f %0.8f"%(vchan, performance[vchan]['gch'], num_gch, performance[vchan]['cln'], num_cln, performance[vchan]['gch']/num_gch, performance[vchan]['cln']/num_cln)
+    file_obj.close()
+
+
+#=================================================
+# mapping objects for r --> fraction of events
+#=================================================
+def binomialUL( k, n , conf=0.99, jefferys=True):
+    """
+    returns the binomial UL consistent with "conf" and observing k successes after n trials
+    delegates to scipy.stats.beta, because we assume a jeffery's prior for the binomial process
+
+    if we apply a prior: Beta(0.5, 0.5)
+
+    the posterior for is : p ~ Beta( n*p + 0.5, n*(1-p) + 0.5 )
+
+    where p = k/n (the MLE estimate for the binomial success rate)
+    """
+    from scipy.stats import beta
+    if jefferys:
+        return beta.ppf( conf, k + 0.5, n-k + 0.5 ) ### probably the fastest implementation available...
+    else:
+        return beta.ppf( conf, k, n-k )
+
+def binomialCR( k, n, conf=0.99, jefferys=True):
+    """
+    returns the symetric CR consistent with "conf" and observing k successes after n trials
+    delegates to scipy.stats.beta, because we assume a jeffery's prior for the binomial process
+
+    if we apply a prior: Beta(0.5, 0.5)
+
+    the posterior for is : p ~ Beta( n*p + 0.5, n*(1-p) + 0.5 )
+
+    where p = k/n (the MLE estimate for the binomial success rate)
+    """
+    from scipy.stats import beta
+    alpha = (1.0-conf)/2
+
+    if jefferys:
+        return beta.ppf( alpha, k + 0.5, n-k + 0.5) , beta.ppf( 1-alpha, k+0.5, n-k+0.5)
+    else:
+        return beta.ppf( alpha, k, n-k), beta.ppf( 1-alpha, k, n-k)
+
+class BinomialMap(object):
+    """
+    a class that can stores the mapping between rank --> fraction of events.
+    does this in a callable way
+    can also return error bars on the point estimate (quantiles, how do we want to do this?)
+    """
+
+    def __init__(self, ranks, c_samples, kind='linear'):
+        if len(ranks) != len(c_samples):
+            raise ValueError("incompatible lenghts between ranks and c_samples")
+
+        self.ranks = ranks
+        self.c_samples = c_samples
+        self.n_samples = c_samples[-1]
+        self.kind = kind
+
+    def __call__(self, r):
+        """
+        returns the point estimate for the fraction of events
+        """
+        if not self.n_samples:
+            return numpy.ones_like(r) ### no samples, so we have a big FAP
+
+        if self.kind == "linear":
+            return numpy.interp(r, self.ranks, self.c_samples) / self.n_samples
+        else:
+            raise ValueError("do not know how to interpolate with kind=%s"%kind)
+
+    def ul(self, r, conf=0.99):
+        """
+        returns the upper-limit on the fraction of events corresponding to confidence="conf"
+        delegates to binomialUL
+        """
+        p = self(r) ### get point estimate
+        return binomialUL( self.n_samples*p , self.n_samples*(1-p), conf=conf)
+
+    def cr(self, r, conf=0.99):
+        """
+        returns the symmetric conficence region on the fraction of events corresponding to confidence="conf"
+        delegates to binomialCR
+        """ 
+        p = self(r)
+        return binomialCR( self.n_samples*p , self.n_samples*(1-p), conf=conf)
+
+#=================================================
+# segment queries
+#=================================================
+def segment_query( config, start, end, url=None ):
+    """
+    Performes ligolw_segment query for segments in the given gps time range and returns segment xml file.
+    """
+
+#   from glue.ligolw import table,lsctables,utils
+#   ligolw_segment_query -t file:///gds-l1/dmt/triggers/DQ_Segments -q --include-segments=L1:DMT-SCIENCE -s 1042257690 -e 1042257715
 
     program = config.get('get_science_segments', 'program')
     if url is None:
@@ -605,92 +1242,51 @@ def segment_query(
     args = '%s -t %s -q -a %s -s %d -e %d' % (program, url, include,
             start, end)
 
+    print 'segment query: ', args
+
     # query to database is faster
     # need to set export S6_SEGMENT_SERVER=https://segdb-er.ligo.caltech.edu
     # and then run with -d option instead of -t
     # args....= '%s -d -q -a %s -s %d -e %d' % (program, include, start, end)
 
     xmlfileobj = tempfile.TemporaryFile()
-    print 'segment query: ', args.split()
-    p = subprocess.Popen(args.split(), stdout=xmlfileobj,
-                         stderr=sys.stderr)
+    p = subprocess.Popen(args.split(), stdout=xmlfileobj) #, stderr=sys.stderr)
     p.wait()
     xmlfileobj.seek(0)  # go back to beginning of file
 
     return xmlfileobj
 
-def get_idq_segments(
-    realtimedir,
-    start,
-    stop,
-    suffix='.pat',
-    ):
-    import re
-    matchfile = re.compile('.*-([0-9]*)-([0-9]*)\%s$' % suffix)
+def get_idq_segments( realtimedir, start, stop, suffix='.pat'):
 
-       # (dirname, starttime, endtime, pad=0, suffix='.xml')
+    fileseg = event.fixsegments( [extract_start_stop(filename, suffix=suffix) for filename in get_all_files_in_range(realtimedir, start, stop, suffix=suffix)] )
+    return event.andsegments([[start,stop]], fileseg)
 
-    ls = get_all_files_in_range(realtimedir, start, stop, suffix=suffix)
-    fileseg = []
-    for file in ls:
-        m = matchfile.match(file)
-        (st, dur) = (int(m.group(1)), int(m.group(2)))
-        fileseg.append([st, st + dur])
-    fileseg = event.fixsegments(fileseg)
-    return event.andsegments([[start, stop]], fileseg)
+#    matchfile = re.compile('.*-([0-9]*)-([0-9]*)\%s$' % suffix)
+#
+#    # (dirname, starttime, endtime, pad=0, suffix='.xml')
+#    ls = get_all_files_in_range(realtimedir, start, stop, suffix=suffix)
+#    fileseg = []
+#    for file in ls:
+#        m = matchfile.match(file)
+#        (st, dur) = (int(m.group(1)), int(m.group(2)))
+#        fileseg.append([st, st + dur])
+#    fileseg = event.fixsegments(fileseg)
+#
+#    return event.andsegments([[start, stop]], fileseg)
 
 #=================================================
-# trigger generation algorithm interfaces
+# data discovery
 #=================================================
 
-# load in KW configuration file as dictionary
-# note that nothing will be converted to numerical values, they will all be saved as string values
-# also produce list of channel_flow_fhigh names
-# original order of channels is preserved
-def loadkwconfig(file):
-    table = event.loadstringtable(file)
-    kwconfig = dict()
-    singleopt = \
-        'stride basename segname threshold significance maxDist decimateFactor transientDuration'.split()
-    multiopt = 'vetoseg rateflag channel'
-    for line in table:
-        (key, par) = (line[0], (line[1] if len(line)
-                      == 2 else line[1:]))
-        if key in singleopt:
-            if key in kwconfig:
-                raise '%s is defined twice in %s' % (key, file)
-            kwconfig[key] = par
-        if key in multiopt:
-            if key in kwconfig:
-                kwconfig[key].append(par)
-            else:
-                kwconfig[key] = [par]
-    if 'channel' in kwconfig:
-        kwconfig['names'] = ['_'.join(cpar).replace(':', '_')
-                             for cpar in kwconfig['channel']]
-    return kwconfig
-
-
-#=================================================
-# file discovery methods
-#=================================================
-# this is a modified (bugfix, efficiency fix, suffix option) version from the original in glue
-def get_all_files_in_range(
-    dirname,
-    starttime,
-    endtime,
-    pad=0,
-    suffix='.xml',
-    ):
-    """Returns all files in dirname and all its subdirectories whose
-....names indicate that they contain segments in the range starttime
-....to endtime"""
+def get_all_files_in_range(dirname, starttime, endtime, pad=0, suffix='.xml' ):
+    """
+    Returns all files in dirname and all its subdirectories whose names indicate that they contain segments in the range starttime to endtime
+    """
 
     ret = []
     matchfile = re.compile('.*-([0-9]*)-([0-9]*)\%s$' % suffix)
 
     # Maybe the user just wants one file...
-
     if os.path.isfile(dirname):
         m = matchfile.match(dirname)
         if m:
@@ -710,6 +1306,7 @@ def get_all_files_in_range(
             (start, dur) = (int(m.group(1)), int(m.group(2)))
             if start + dur + pad > starttime and start - pad < endtime:
                 ret.append(os.path.join(dirname, filename))
+
         elif re.match('.*-[0-9]{5}$', filename):
             dirtime = int(filename[-5:])
             if dirtime >= first_four_start and dirtime \
@@ -717,6 +1314,7 @@ def get_all_files_in_range(
                 ret += get_all_files_in_range(os.path.join(dirname,
                         filename), starttime, endtime, pad=pad,
                         suffix=suffix)
+
         elif re.match('.*-[0-9]{4}$', filename):
             dirtime = int(filename[-4:])
             if dirtime >= first_four_start and dirtime \
@@ -724,1386 +1322,152 @@ def get_all_files_in_range(
                 ret += get_all_files_in_range(os.path.join(dirname,
                         filename), starttime, endtime, pad=pad,
                         suffix=suffix)
+
         elif '.' not in filename and filename != 'latest':
 
             # FIX for dealing with dmt segments files. We need to avoid 'latest' which is a peropidically updated file.
             # It causes transient failures.
             # Keep recursing, we may be looking at directories of
             # ifos, each of which has directories with times
-
             ret += get_all_files_in_range(os.path.join(dirname,
                     filename), starttime, endtime, pad=pad,
                     suffix=suffix)
 
     return ret
 
+def get_scisegs(segments_location, dq_name, start, end, pad=0, logger=None):
+    """
+    finds and returns dq segments in this range
+    a helper function for retrieve_scisegs, which builds in waiting logic
+    """
+    try:
+        dmtfiles = get_all_files_in_range(segments_location, start, end, pad=pad, suffix='.xml')
+        (good, covered) = extract_dmt_segments(dmtfiles, dq_name)
+    except Exception as e:
+        if logger:
+            logger.warning('error from DMT segment query: %s, %s, %s' % (e[0], e[1], e[2]))
+        else:
+            print 'error from DMT segment query: %s, %s, %s' % (e[0], e[1], e[2])
+        (good, covered) = ([], [])
 
-def gather_trig_files(
-    source_dir,
-    gps_start_time,
-    gps_end_time,
-    glob_pattern='*',
-    file_tag='',
-    extension='',
-    ):
+    return (good, covered)
 
-    dirs = glob.glob(source_dir + '/' + glob_pattern)
-    dirs.sort()
-    dirs_in_segment = []
-    dir_times = []
-    for dir in dirs:
-        dir_times.append(int(dir.split('-')[-1] + '00000'))
-    dir_times = numpy.asarray(dir_times)
-    first_time_in_segment = numpy.searchsorted(dir_times,
-            gps_start_time, 'right')
-    last_time_in_segment = numpy.searchsorted(dir_times, gps_end_time,
-            'left')
+def retrieve_scisegs(segments_location, dq_name, start, stride, pad=0, sleep=0, nretry=0, logger=None):
+    """
+    finds and returns dq segments in this range via delegation to get_scisegs.
+    included logic about waiting and re-trying through optional arguments.
+    will sleep for "sleep" seconds if there is not enough coverage, and will re-try "nretry" times.
+    """
+    if sleep < 0:
+        sleep = 0
+    end = start+stride
 
-    # expand by one directory on each end just to be safe
+    ### get DMT xml segments (changing the query)
+    good, covered = get_scisegs(segments_location, dq_name, start, end, pad=pad)
 
-    dirs_in_segment = dirs[first_time_in_segment
-        - 2:last_time_in_segment + 1]
+    ntrial = 0
+    while (event.livetime(covered) < stride) and ntrial < nretry:
+        if logger:
+            logger.info(' unknown science coverage, waiting additional %d seconds' % sleep)
+        else:
+            print ' unknown science coverage, waiting additional %d seconds' % sleep
 
-    files = []
-    for dir in dirs_in_segment:
-        files.extend(glob.glob(dir + '/*' + file_tag + '*.'
-                     + extension))
+        time.sleep(sleep)
+        if sleep < stride: ### automatically increase sleep to 1 stride if needed
+            sleep = stride
 
-    files.sort()
-    file_times = []
-    for file in files:
-        file_times.append(int(file.split('-')[-2]))
-    file_times = numpy.asarray(file_times)
+        good, covered = get_scisegs(segments_location, dq_name, start, end, pad=pad)
 
-    first_time_in_segment = numpy.searchsorted(file_times,
-            gps_start_time, 'right')
-    last_time_in_segment = numpy.searchsorted(file_times, gps_end_time,
-            'right')
-    files_in_segment = files[first_time_in_segment
-        - 1:last_time_in_segment]
+    return good, covered
 
-    return files_in_segment
+def retrieve_kwtrig(gdsdir, kwbasename, t, stride, sleep=0, ntrials=1, logger=None):
+    """
+    looks for kwtriggers and includes logic about waiting.
+    will wait "sleep" seconds between each check that the file has appeared. Will check "ntrials" times
+    """
+    if ntrials < 1:
+        raise ValueError("ntrials must be >= 1, otherwise we don't do anything....")
+    if sleep < 0:
+        sleep = 0
 
+    ### check if KW file is there
+    kwfilename = '%s/%s/%s-%d/%s-%d-%d.trg' % ( gdsdir, kwbasename, kwbasename, t / 1e5, kwbasename, t, stride )
 
-# find *.dat files within a certain time range. looks at just the files in the specified directory
-def gather_datfiles(
-    gpsstart,
-    gpsstop,
-    classifier=False,
-    source_dir='./',
-    ):
-    """ 
-....looks for *.dat files in source_dir that fall within GPSstart and GPSstop and are generated by a given classifier. Assumes the files have the following structure:
-....  *-GPSstart-DUR.dat
-....where DUR = GPSstop - GPSstart
-
-...."""
-
-# ....if classifiers:
-# ........classifiers = list(classifiers)
-
-    # find only those files that overlap [GPSstart, GPSstop]
-
-    files = []
-    for f in glob.glob(source_dir + '/*.dat'):  # glob.glob(source_dir + "/*.dat"): # iterate through all *.dat files
-
-        if not classifier or classifier in f:
-            name = f.strip('.dat').split('/')[-1].split('-')
-            start = int(name[-2])
-            stop = start + int(name[-1])
-            if gpsstart <= start < gpsstop or gpsstart < stop \
-                <= gpsstop:
-                files.append(f)
+    for i in xrange(ntrials):
+        if not os.path.exists(kwfilename):  ### kw files may not have appeared yet
+            if logger:
+                logger.info('  missing KW triggers, waiting additional %d seconds' % sleep)
             else:
-                pass
+                print '  missing KW triggers, waiting additional %d seconds' % sleep
+            time.sleep(sleep)
+            if sleep < stride: ### automatically increase sleep to 1 stride if needed
+                sleep = stride
+        else:
+            break
+    else:
+        if logger:
+            logger.warning('  still missing KW triggers, skipping')
+        else:
+            print '  still missing KW triggers, skipping'
+        return None
 
-# ....print gpsstart, gpsstop
+    if logger:
+        logger.info('  loading KW triggers')
+    else:
+        print '  loading KW triggers'
 
-    return files
+    return event.loadkwm(kwfilename)
+
+def retrieve_kwtrigs(gdsdir, kwbasename, t, stride, kwstride, sleep=0, ntrials=1, logger=None):
+    t_start = (t / kwstride) * kwstride
+
+    trgdicts = []
+    while t_start < t+stride:
+        trigger_dict = retrieve_kwtrig(gdsdir, kwbasename, t_start, kwstride, sleep=sleep, ntrials=ntrials, logger=logger)
+        if trigger_dict:
+            trgdicts.append( trigger_dict )
+        t_start += kwstride
+
+    if trgdicts:
+        trigger_dict = trgdicts[0]
+        for td in trgdicts[1:]:
+            trigger_dict.add( td )
+        return trigger_dict
+    else:
+        return None
+    
 
 #=================================================
-# methods that convert datfiles into other data products
+# trigger generation algorithm interfaces
 #=================================================
-def datarray_to_roc(
-    datarray,
-    columns,
-    filename,
-    cluster_win=False,
-    unsafe_win=False,
-    gw_thr=False,
-    ):
-    """ 
-....takes a 'datarray' and computes the appropriate standard roc file 
-....includes steps like clustering and filtering cleans for times that are too close to glitches
-....datarray is defined in datfiles_to_roc() (essentially a list of events, columns defines the indexies for values)
-...."""
 
-    if (cluster_win or unsafe_win) and ('GPS' not in columns or 'signif'
-             not in columns):
-        sys.exit('must supply a GPS column in order to cluster or determine unsafe cleans'
-                 )
-    if cluster_win and 'signif' not in columns:
-        sys.exit('must supply signif column to cluster')
-    if gw_thr and 'signif' not in columns:
-        sys.exit('must supply signif column to threshold')
-
-    roc = dict([(k, ind) for (ind, k) in enumerate(columns)])
-
-    print 'No. events ' + str(len(datarray))
-
-    # filter into cleans and glitches
-
-    gw_gps = []
-    cl_gps = []
-    for l in datarray:
-        if float(l[roc['i']]) == 1:
-            gw_gps.append([float(line) for line in l])  #  gw events
-        else:
-            cl_gps.append([float(line) for line in l])
-
-    # threshold
-
-    if gw_thr:
-        print '\tNo. gw_gps before thresholding ' + str(len(gw_gps))
-        gw_gps = [gps for gps in gw_gps if gps[roc['signif']] >= gw_thr]
-        print '\tNo. gw_gps after thresholding ' + str(len(gw_gps))
-
-    # cluster
-
-    if cluster_win:  # cluster gps times for glitches
-        print '\tNo. gw_gps before clustering ' + str(len(gw_gps))
-        gw_gps = cluster(gw_gps, roc, cluster_window=cluster_win)
-        print '\tNo. gw_gps after clustering = ' + str(len(gw_gps))
-
-    # remove cleans that are too close to glitches
-
-    if unsafe_win:
-        gw_seg = event.vetosegs(gw_gps, unsafe_win, tcent=roc['GPS'])  # define the "unclean" segments
-        print '\tNo. cl_gps before windowing ' + str(len(cl_gps))
-        cl_gps = event.exclude(cl_gps, gw_seg, tcent=roc['GPS'])  # only keep the cleans that fall outside of gw_seg
-        print '\tNo. cl_gps after windowing ' + str(len(cl_gps))
-
-    # compute cumulative statistics and write file
-# ....f = open(filename, "w")
-
-    datarray = gw_gps + cl_gps
-    datarray.sort(key=lambda line: line[roc['rank']], reverse=True)  # sort roc list by ranks (High to Low)
-    print 'No. events ' + str(len(datarray))
-
-    if len(datarray) == 0:  # no data
-
-# ........print >>f, "0\n0\n0 0 0"
-# ........f.close()
-
-        from laldetchar.idq.idq_summary_plots import rcg_to_ROC
-        return rcg_to_ROC(
-            filename,
-            [0],
-            [0],
-            [0],
-            0,
-            0,
-            )
-
-# ........return filename
-
-    i_vec = [int(l[roc['i']]) for l in datarray]
-    r_vec = [float(l[roc['rank']]) for l in datarray]
-    tot_n_g = sum(i_vec)  # total number of glitches
-    tot_n_c = len(i_vec) - tot_n_g  # total number of clean samples
-
-# ....print >>f, tot_n_g
-# ....print >>f, tot_n_c
-
-    rank = r_vec[0]
-    c_n_g = 0  # cumulative number of glitches
-    c_n_c = 0  # cumulative number of cleans
-    c_cln = []
-    c_gch = []
-    c_ranks = []
-    for (ind, i) in enumerate(i_vec):
-        if rank != r_vec[ind]:
-            c_ranks.append(rank)
-            c_cln.append(c_n_c)
-            c_gch.append(c_n_g)
-
-# ............print >>f, rank, c_n_c, c_n_g
-
-            rank = r_vec[ind]
-        c_n_g += i
-        c_n_c += 1 - i
-
-    c_ranks.append(rank)
-    c_cln.append(c_n_c)
-    c_gch.append(c_n_g)
-
-# ....print >>f, rank, c_n_c, c_n_g
-# ....f.close()
-
-    from laldetchar.idq.idq_summary_plots import rcg_to_ROC
-    return rcg_to_ROC(
-        filename,
-        c_ranks,
-        c_cln,
-        c_gch,
-        tot_n_c,
-        tot_n_g,
-        )
-
-
-# ....return filename
-
-# gather short-stride *.dat output files and write a combined *.roc file
-
-def datfiles_to_roc(
-    gpsstart,
-    gpsstop,
-    columns=False,
-    classifiers=False,
-    basename=False,
-    source_dir='./',
-    output_dir='./',
-    cluster_win=False,
-    unsafe_win=False,
-    gw_thr=False,
-    switch_snr_signif=[],
-    ):
-    """ 
-....looks for all *.dat files in a directory structure and combines their contents into a single ROC file. 
-....assumes the directory structue is as follows:
-....  source_dir / *-time / *.dat
-....where time = GPSstart % 1e5
-....if classifiers:
-....  only returns the *.dat files that have the structre *-classifier-gpsstart-dur.dat if (classifier in classifiers)
-....  where dur = gpsstop - gpsstart
-...."""
-
-    if not columns:
-        columns = ['rank', 'i']
-    elif 'rank' not in columns or 'i' not in columns:
-        sys.exit("columns must contain  fields 'rank' and 'i', exiting...."
-                 )
-    elif switch_snr_signif and ('SNR' not in columns or 'signif'
-                                not in columns):
-        sys.exit("columns must contain fields 'SNR' and 'signif' to switch snr and signif"
-                 )
-
-    roc_paths = []
-
-    # if not classifier is supplied, accept all classifiers
-
-    if not classifiers:
-        classifiers = ['']
-
-    # iterate for each classifier
-
-    for classifier in classifiers:
-        print classifier
-
-        # find all appropriate subdirectories of source_dir and gather datfiles
-
-        datfiles = get_all_files_in_range(source_dir, gpsstart, gpsstop, suffix=".dat")
-        if classifier:
-            datfiles = [datfile for datfile in datfiles if classifier in datfile]
-#        datfiles = []
-#        for dir in os.listdir(source_dir):
-#            try:
-#                d = dir.strip('/').split('-')
-#                start = int(d[-1])  # last element of d must be castable as an integer
-#                if start * 1e5 <= gpsstart < (start + 1) * 1e5 or start \
-#                    * 1e5 < gpsstop <= (start + 1) * 1e5:
-#                    if not basename or basename in dir:  # check basename
-#                        datfiles += gather_datfiles(gpsstart, gpsstop,
-#                                classifier=classifier,
-#                                source_dir=source_dir + '/' + dir)
-#            except:
-#                pass
-
-        # gather roc information as tuples: (rank, i)
-        # i=1 --> glitch
-        # i=0 --> clean
-
-        roc = dict([(k, ind) for (ind, k) in enumerate(columns)])
-        dat = []
-        livetime = 0
-        for f in datfiles:
-            try:
-                output = slim_load_datfile(f, skip_lines=0,
-                        columns=columns)
-            except:
-                print 'ERROR loading ' + f
-            else:
-                dat += [[output[k][ind] for k in columns] for ind in
-                        range(len(output['rank']))]
-
-                # get live time from the file name and add it to the total livetime.
-
-                livetime += float(f.split('-')[-1].split('.')[0])
-
-        # switch snr and signif
-
-        if classifier in switch_snr_signif:
-            print "  --> switching 'SNR' and 'signif' column labels for " \
-                + classifier
-            snr_ind = columns.index('SNR')
-            signif_ind = columns.index('signif')
-            columns[snr_ind] = 'signif'
-            columns[signif_ind] = 'SNR'
-
-        # compute cumulative statistics and write file
-
-        roc_path = output_dir + '/'
-        if basename:
-            roc_path += basename + '-'
-        if classifier != '':
-            roc_path += classifier + '-'
-        roc_path += repr(gpsstart) + '-' + repr(gpsstop - gpsstart) \
-            + '.roc'
-
-        roc_paths.append((datarray_to_roc(
-            dat,
-            columns,
-            filename=roc_path,
-            cluster_win=cluster_win,
-            unsafe_win=unsafe_win,
-            gw_thr=gw_thr,
-            ), classifier))
-
-        # read number of glitches and cleans for roc file
-
-        roc_file = open(roc_path, 'r')
-        lines = roc_file.readlines()
-        n_glitches = int(lines[0].strip())
-        n_cleans = int(lines[1].strip())
-        roc_file.close()
-
-        # append livetime, total number of glitches and cleans to the stat.txt file
-
-        stat_path = output_dir + '/'
-        if basename:
-            stat_path += basename + '_'
-        stat_path += 'stat-'
-        stat_path += repr(gpsstart) + '-' + repr(gpsstop - gpsstart) \
-            + '.stat'
-
-        # check if summary stat file already exist
-        # if it does append to it, if not creat one and add period analyzed on the first line
-
-        if os.path.exists(stat_path):
-            stat_file = open(stat_path, 'a')
-        else:
-            stat_file = open(stat_path, 'w')
-            stat_file.write('Period ' + repr(gpsstart) + '-'
-                            + repr(gpsstop - gpsstart) + '\n')
-        stat_file.write(classifier + '\n')
-        stat_file.write('Livetime = ' + str(livetime) + '\n')
-        stat_file.write('Glitches = ' + str(n_glitches) + '\n')
-        stat_file.write('Cleans = ' + str(n_cleans) + '\n')
-        stat_file.close()
-    return roc_paths
-
-
-def datfilename_to_xmldocs(
-    datfilename,
-    ifo,
-    FAPmap,
-    Lmap=False,
-    Effmap=False,
-    classifier=None,
-    gwchan = None,
-    gwtrigs=None,
-    prog = None,
-    options = None,
-    version = None
-    ):
+def loadkwconfig(file):
     """
-....reads in a datfile and generates xml tables containing the equivalent information, but adds FAP and likelihood as computed by FAPmap and Lmap (expected to be callable)
-........if Lmap is not supplied, attempts to use L = Eff/FAP as estimate with Effmap
-........==> must supply either Lmap or Effmap
-
-....return gchxmldoc, clnxmldoc
-...."""
-
-    if not (Lmap or Effmap):
-        raise StandardError('must supply either Lmap or Effmap in idq.datfilename_to_xmldocs()')
-
-    gchxml_doc = ligolw.Document()  # generate the xml document object
-    gch_ligolw_element = ligolw.LIGO_LW()  # generate the table-tree element
-    gchxml_doc.appendChild(gch_ligolw_element)  # put table-tree into xml document
-
-    clnxml_doc = ligolw.Document()  # repeat for clnTable
-    cln_ligolw_element = ligolw.LIGO_LW()
-    clnxml_doc.appendChild(cln_ligolw_element)
-	
-    # add process and process_params tables to xml docs
-    gchproc = process.register_to_xmldoc(gchxml_doc, prog, options, version = version)
-    clnproc = process.register_to_xmldoc(clnxml_doc, prog, options, version = version)
-
-    gchTable = lsctables.New(idq_tables.IDQGlitchTable)  # instantiate glitch table objects
-    clnTable = lsctables.New(idq_tables.IDQGlitchTable)
-	
-    gchCoincDefTable = lsctables.New(lsctables.CoincDefTable) # instantiate coinc_def table objects
-    clnCoincDefTable = lsctables.New(lsctables.CoincDefTable)
-	
-    gchCoincTable = lsctables.New(lsctables.CoincTable) # instantiate coinc_event table objects
-    clnCoincTable = lsctables.New(lsctables.CoincTable)
-	
-    gchCoincMapTable = lsctables.New(lsctables.CoincMapTable) # instantiate coinc_event_map table objects
-    clnCoincMapTable = lsctables.New(lsctables.CoincMapTable)
-	
-    if gwtrigs:
-        gchSnglBurstTable = lsctables.New(lsctables.SnglBurstTable) # instantiate sngl_burst table for gw triggers
-
-	
-
-    gch_ligolw_element.appendChild(gchTable)  # put gchTable into table-tree
-    cln_ligolw_element.appendChild(clnTable)
-
-    gch_ligolw_element.appendChild(gchCoincDefTable)  # put coinc_def table into table-tree
-    cln_ligolw_element.appendChild(clnCoincDefTable)
-
-	
-    gch_ligolw_element.appendChild(gchCoincTable)  # put coinc_event table into table-tree
-    cln_ligolw_element.appendChild(clnCoincTable)
-
-    gch_ligolw_element.appendChild(gchCoincMapTable)  # put coinc_map table into table-tree
-    cln_ligolw_element.appendChild(clnCoincMapTable)
-
-    if gwtrigs:
-        gch_ligolw_element.appendChild(gchSnglBurstTable)  # put sngl_burst table into table-tree
-
-    # iterate over dat and place info into appropriate tables
-
-    # load data and fill out xml tables
-
-    if classifier == 'ovl':  # ovl records more info than the other classifiers
-
-        # setup ovl specific tables
-
-        gchOVLTable = lsctables.New(idq_tables.OVLDataTable)  # instantiate table objects
-        clnOVLTable = lsctables.New(idq_tables.OVLDataTable)
-        gch_ligolw_element.appendChild(gchOVLTable)  # add tables to document tree
-        cln_ligolw_element.appendChild(clnOVLTable)
-
-        # read in data
-
-        dat = slim_load_datfile(datfilename, skip_lines=0, columns=[  # read in relevant information from datfile
-            'GPS',
-            'i',
-            'rank',
-            'vchan',
-            'vthr',
-            'vwin',
-            ])
-    else:
-        dat = slim_load_datfile(datfilename, skip_lines=0,
-                                columns=['GPS', 'i', 'rank'])  # read in relevant information from datfile
-
-    no_events = len(dat['GPS'])
-    no_glitch_events = len([a for a in dat['i'] if float(a) == 1])
-    no_clean_events = len([a for a in dat['i'] if float(a) == 0])
-
-    #generate coinc_def tables
-    if no_glitch_events > 0:
-        if gwtrigs:
-            gchCoincDefTable.get_coinc_def_id(
-                search=idq_tables.IDQCoincDef['idq_glitch<-->sngl_burst'][0],
-                search_coinc_type=idq_tables.IDQCoincDef['idq_glitch<-->sngl_burst'][1],
-                create_new = True,
-                description = 'idq_glitch<-->sngl_burst')
-        if classifier == 'ovl':
-            gchCoincDefTable.get_coinc_def_id(
-                search=idq_tables.IDQCoincDef['idq_glitch<-->ovl_data'][0],\
-                search_coinc_type=idq_tables.IDQCoincDef['idq_glitch<-->ovl_data'][1],\
-                create_new = True,\
-                description = 'idq_glitch<-->ovl_data')
-
-    if no_clean_events > 0:
-        if classifier == 'ovl':
-            clnCoincDefTable.get_coinc_def_id(
-                search=idq_tables.IDQCoincDef['idq_glitch<-->ovl_data'][0],\
-                search_coinc_type=idq_tables.IDQCoincDef['idq_glitch<-->ovl_data'][1],\
-                create_new = True,\
-                description = 'idq_glitch<-->ovl_data')
-
-	
-    #WARNING: Below we associate glitches with GW triggers relying on the fact  that both lists are time ordered and one-to-one.
-    # It is OK as long as dat files are generated from the same GW triggers and order of elements was not changed.
-	
-    # check that the number of glitches in dat file is the same as number of gwtrigs
-    if gwtrigs:
-        if not len(gwtrigs) == no_glitch_events:
-            print "WARNING: Length of gwtrigs does not match number of glitch events in the dat file."
-            print "Glitch <-> GW trigger association will probably be incorrect"
-    glitch_index = 0
-    for ind in range(no_events):
-        GPS = float(dat['GPS'][ind])
-        i = float(dat['i'][ind])
-        rank = float(dat['rank'][ind])
-
-        # ## add info to GlitchTable() objects. Commmon for all classifiers
-
-        idq_glitch_row = idq_tables.IDQGlitch()  # define row object
-
-        idq_glitch_row.ifo = ifo
-        idq_glitch_row.gps = int(GPS)  # fill in relevant data
-        idq_glitch_row.gps_ns = int( round( GPS % 1.0, ndigits=9 ) * 10**9 )
-        idq_glitch_row.rank = float(rank)
-        idq_glitch_row.fap = FAPmap(idq_glitch_row.rank)
-        if Lmap:
-            idq_glitch_row.likelihood = Lmap(idq_glitch_row.rank)
-        else:
-            if idq_glitch_row.fap == 0:
-                if Effmap(idq_glitch_row.rank) == 0:
-                    idq_glitch_row.likelihood = 0
-                else:
-                    idq_glitch_row.likelihood = numpy.infty
-            else:
-                idq_glitch_row.likelihood = Effmap(idq_glitch_row.rank) / idq_glitch_row.fap
-
-                # ## add info to OVLDataTable() objects
-
-        if classifier == 'ovl':
-            ovl_row = idq_tables.OVLData()  # define row object
-            ovl_row.ifo = ifo
-            ovl_row.aux_channel = dat['vchan'][ind]
-            ovl_row.veto_thr = float(dat['vthr'][ind])
-            ovl_row.veto_win = float(dat['vwin'][ind])
-
-        # ## define coincs, update rows, etc. Do this all at once so the index counters don't get confused
-
-        if i == 1:  # glitch sample
-            idq_glitch_row.event_id = gchTable.get_next_id()
-            gchTable.append(idq_glitch_row)
-            if gwtrigs: # add gw trigger to sngl_burst table and add idq_glitch<-->sngl_burst coinc
-                sngl_burst_row = lsctables.SnglBurst()
-                sngl_burst_columns = lsctables.SnglBurstTable.validcolumns
-                gw_trig = gwtrigs[glitch_index] # columns for kw triggers are defined in event.py
-                sngl_burst_row.process_id = gchproc.process_id
-                sngl_burst_row.ifo = ifo
-                sngl_burst_row.search = "kleineWelle"
-                sngl_burst_row.channel = gwchan
-                sngl_burst_row.set_start(LIGOTimeGPS(gw_trig[0]))
-                #sngl_burst_row.start_time = int(gw_trig[0])
-                #sngl_burst_row.start_time_ns = int( round( gw_trig[0] % 1.0, ndigits=9 ) * 10**9 )
-                sngl_burst_row.set_peak(LIGOTimeGPS(gw_trig[2]))
-                #sngl_burst_row.peak_time = int(gw_trig[2])
-                #sngl_burst_row.peak_time_ns = int( round( gw_trig[2] % 1.0, ndigits=9 ) * 10**9 )
-                sngl_burst_row.set_stop(LIGOTimeGPS(gw_trig[1]))
-                sngl_burst_row.duration = (sngl_burst_row.stop_time - sngl_burst_row.start_time) + \
-                                          (sngl_burst_row.stop_time_ns - sngl_burst_row.start_time_ns)*10**(-9)
-                sngl_burst_row.central_freq = gw_trig[3]
-                sngl_burst_row.snr = math.sqrt(gw_trig[-3] - gw_trig[-2])
-                sngl_burst_row.confidence = gw_trig[7]
-                sngl_burst_row.event_id = gchSnglBurstTable.get_next_id()
-                # define list of columns which we filled in
-                used_valid_columns = ['process_id', 'ifo', 'search', 'channel', 'start_time', 'start_time_ns', 'stop_time', 'stop_time_ns',
-                                      'peak_time', 'peak_time_ns', 'duration', 'central_freq',
-                                      'snr', 'confidence', 'event_id']
-                # fill all other columns with None
-                for (column, type) in sngl_burst_columns.iteritems():
-                    if not column in used_valid_columns: setattr(sngl_burst_row, column, None)
-                gchSnglBurstTable.append(sngl_burst_row)
-				
-                # creat idq_glitch<-->sngl_burst coinc event
-                coinc_row = lsctables.Coinc()
-                coinc_row.process_id = gchproc.process_id
-                coinc_row.coinc_def_id = gchCoincDefTable.get_coinc_def_id(
-                    search=idq_tables.IDQCoincDef['idq_glitch<-->sngl_burst'][0],\
-                    search_coinc_type=idq_tables.IDQCoincDef['idq_glitch<-->sngl_burst'][1],\
-                    description = 'idq_glitch<-->sngl_burst'
-                    )
-                coinc_row.time_slide_id = lsctables.TimeSlideID(0)
-                coinc_row.instruments = ifo
-                coinc_row.nevents = 1
-                coinc_row.likelihood = idq_glitch_row.likelihood
-                coinc_row.coinc_event_id = gchCoincTable.get_next_id()
-                gchCoincTable.append(coinc_row)
-				
-                # add entries to coinc_map table
-                coinc_map_row = lsctables.CoincMap()
-                coinc_map_row.coinc_event_id = coinc_row.coinc_event_id
-                coinc_map_row.table_name = table.StripTableName(idq_tables.IDQGlitchTable.tableName)
-                coinc_map_row.event_id = idq_glitch_row.event_id
-                gchCoincMapTable.append(coinc_map_row)
-				
-                coinc_map_row = lsctables.CoincMap()
-                coinc_map_row.coinc_event_id = coinc_row.coinc_event_id
-                coinc_map_row.table_name = table.StripTableName(lsctables.SnglBurstTable.tableName)
-                coinc_map_row.event_id = sngl_burst_row.event_id
-                gchCoincMapTable.append(coinc_map_row)
-                
-            if classifier == 'ovl':
-                ovl_row.event_id = gchOVLTable.get_next_id()
-                gchOVLTable.append(ovl_row)
-				
-                # creat idq_glitch<-->ovl_data coinc event
-                coinc_row = lsctables.Coinc()
-                coinc_row.process_id = gchproc.process_id
-                coinc_row.coinc_def_id = gchCoincDefTable.get_coinc_def_id(
-                    search=idq_tables.IDQCoincDef['idq_glitch<-->ovl_data'][0],\
-                    search_coinc_type=idq_tables.IDQCoincDef['idq_glitch<-->ovl_data'][1],\
-                    description = 'idq_glitch<-->ovl_data'
-                    )
-                coinc_row.time_slide_id = lsctables.TimeSlideID(0)
-                coinc_row.instruments = ifo
-                coinc_row.nevents = 1
-                coinc_row.likelihood = idq_glitch_row.likelihood
-                coinc_row.coinc_event_id = gchCoincTable.get_next_id()
-                gchCoincTable.append(coinc_row)
-
-                # add entries to coinc_map table
-                coinc_map_row = lsctables.CoincMap()
-                coinc_map_row.coinc_event_id = coinc_row.coinc_event_id
-                coinc_map_row.table_name = table.StripTableName(idq_tables.IDQGlitchTable.tableName)
-                coinc_map_row.event_id = idq_glitch_row.event_id
-                gchCoincMapTable.append(coinc_map_row)
-				
-                coinc_map_row = lsctables.CoincMap()
-                coinc_map_row.coinc_event_id = coinc_row.coinc_event_id
-                coinc_map_row.table_name = table.StripTableName(idq_tables.OVLDataTable.tableName)
-                coinc_map_row.event_id = ovl_row.event_id
-                gchCoincMapTable.append(coinc_map_row)
-				
-            glitch_index += 1
-        else:
-            idq_glitch_row.event_id = clnTable.get_next_id()
-            clnTable.append(idq_glitch_row)
-            if classifier == 'ovl':
-                ovl_row.event_id = clnOVLTable.get_next_id()
-                clnOVLTable.append(ovl_row)
-                # creat idq_glitch<-->ovl_data coinc event
-                coinc_row = lsctables.Coinc()
-                coinc_row.process_id = clnproc.process_id
-                coinc_row.coinc_def_id = clnCoincDefTable.get_coinc_def_id(
-                    search=idq_tables.IDQCoincDef['idq_glitch<-->ovl_data'][0],\
-                    search_coinc_type=idq_tables.IDQCoincDef['idq_glitch<-->ovl_data'][1],\
-                    description = 'idq_glitch<-->ovl_data'
-                    )
-                coinc_row.time_slide_id = lsctables.TimeSlideID(0)
-                coinc_row.instruments = ifo
-                coinc_row.nevents = 1
-                coinc_row.likelihood = idq_glitch_row.likelihood
-                coinc_row.coinc_event_id = clnCoincTable.get_next_id()
-                clnCoincTable.append(coinc_row)
-
-                # add entries to coinc_map table
-                coinc_map_row = lsctables.CoincMap()
-                coinc_map_row.coinc_event_id = coinc_row.coinc_event_id
-                coinc_map_row.table_name = table.StripTableName(idq_tables.IDQGlitchTable.tableName)
-                coinc_map_row.event_id = idq_glitch_row.event_id
-                clnCoincMapTable.append(coinc_map_row)
-				
-                coinc_map_row = lsctables.CoincMap()
-                coinc_map_row.coinc_event_id = coinc_row.coinc_event_id
-                coinc_map_row.table_name = table.StripTableName(idq_tables.OVLDataTable.tableName)
-                coinc_map_row.event_id = ovl_row.event_id
-                clnCoincMapTable.append(coinc_map_row)
-
-    return (gchxml_doc, clnxml_doc)
-
-
-##################################################
-
-def datfiles_to_chanlist(
-    gpsstart,
-    gpsstop,
-    columns=False,
-    classifiers=['ovl'],
-    basename=False,
-    source_dir='./',
-    output_dir='./',
-    cluster_win=False,
-    unsafe_win=False,
-    gw_thr=False,
-    switch_snr_signif=False,
-    ):
+    load in KW configuration file as dictionary
+    note that nothing will be converted to numerical values, they will all be saved as string values
+    also produce list of channel_flow_fhigh names
+    original order of channels is preserved
     """
-....computes the performance of each auxiliary channel based off datfile output.
-....currently only supports ovl datfile output, but could be adapted to other classifiers assuming they have a column 'vchan' in their output.
-...."""
-
-    if not columns:
-        columns = ['i', 'vchan']
-    elif 'i' not in columns or 'vchan' not in columns:
-        sys.exit("columns must contain fields 'i', 'vchan'. exiting...")
-    elif cluster_win and 'signif' not in columns:
-        sys.exit('must supply a signif column to cluster')
-    elif gw_thr and 'signif' not in columns:
-        sys.exit('must supply a signif column to cluster')
-    elif switch_snr_signif and ('SNR' not in columns or 'signif'
-                                not in columns):
-        sys.exit("must supply 'SNR' and 'signif' columns to switch them"
-                 )
-
-    chanlist = []
-
-    # pick up each classifier separately
-
-    for classifier in classifiers:
-        datfiles = [datfile for datfile in get_all_files_in_range(source_dir, gpsstart, gpsstop, suffix=".dat") if classifier in datfile]
-#        datfiles = []
-#        for dir in os.listdir(source_dir):
-#            try:
-#                d = dir.strip('/').split('-')
-#                start = int(d[-1])  # expect a particular directory structure
-#                if start * 1e5 <= gpsstart < (start + 1) * 1e5 or start \
-#                    * 1e5 < gpsstop <= (start + 1) * 1e5:
-#                    if not basename or basename in dir:
-#                        datfiles += gather_datfiles(gpsstart, gpsstop,
-#                                classifier=classifier,
-#                                source_dir=source_dir + '/' + dir)
-#            except:
-#                pass
-
-        # gather chan performance measures
-
-        dat = []
-        for f in datfiles:
-            try:
-                output = slim_load_datfile(f, skip_lines=0,
-                        columns=columns)
-            except:
-                print 'ERROR loading ' + f
+    table = event.loadstringtable(file)
+    kwconfig = dict()
+    singleopt = 'stride basename segname threshold significance maxDist decimateFactor transientDuration'.split()
+    multiopt = 'vetoseg rateflag channel'
+    for line in table:
+        (key, par) = (line[0], (line[1] if len(line)
+                      == 2 else line[1:]))
+        if key in singleopt:
+            if key in kwconfig:
+                raise '%s is defined twice in %s' % (key, file)
+            kwconfig[key] = par
+        if key in multiopt:
+            if key in kwconfig:
+                kwconfig[key].append(par)
             else:
-                dat += [[output[k][ind] for k in columns] for ind in
-                        range(len(output['vchan']))]
-
-        # switch SNR and significance
-
-        if switch_snr_signif:
-            print '  --> switching SNR and signif column labels'
-            snr_ind = columns.index('SNR')
-            signif_ind = columns.index('signif')
-            columns[snr_ind] = 'signif'
-            columns[signif_ind] = 'SNR'
-
-        columnD = dict([(c, ind) for (ind, c) in enumerate(columns)])
-
-        # compute cumulative statistics and write file
-
-        print 'No. events ' + str(len(dat))
-
-        # filter into cleans and glitches
-
-        gw_gps = []
-        cl_gps = []
-        for l in dat:
-            L = []
-            for c in columns:
-                if c == 'vchan':
-                    L.append(l[columnD['vchan']])
-                elif c == 'i':
-                    L.append(int(float(l[columnD['i']])))
-                else:
-                    L.append(float(l[columnD[c]]))
-            if L[columnD['i']] == 1:
-                gw_gps.append(L)  #  gw events
-            else:
-                cl_gps.append(L)
-
-        # threshold
-
-        if gw_thr:
-            print '\tNo. gw_gps before thresholding ' + str(len(gw_gps))
-            gw_gps = [gps for gps in gw_gps if gps[columnD['signif']]
-                      >= gw_thr]
-            print '\tNo. gw_gps after thresholding ' + str(len(gw_gps))
-
-        # cluster
-
-        if cluster_win:  # cluster gps times for glitches
-            print '\tNo. gw_gps before clustering ' + str(len(gw_gps))
-            gw_gps = cluster(gw_gps, columnD,
-                             cluster_window=cluster_win)
-            print '\tNo. gw_gps after clustering = ' + str(len(gw_gps))
-
-        # remove cleans that are too close to glitches
-
-        if unsafe_win:
-            gw_seg = event.vetosegs(gw_gps, unsafe_win,
-                                    tcent=columnD['GPS'])  # define the "unclean" segments
-            print '\tNo. cl_gps before windowing ' + str(len(cl_gps))
-            cl_gps = event.exclude(cl_gps, gw_seg, tcent=columnD['GPS'])  # only keep the cleans that fall outside of gw_seg
-            print '\tNo. cl_gps after windowing ' + str(len(cl_gps))
-
-        n_gch = float(len(gw_gps))
-        n_cln = float(len(cl_gps))
-        dat = gw_gps + cl_gps
-        dat.sort(key=lambda line: line[columnD['GPS']], reverse=True)
-        print 'No. events ' + str(len(dat))
-
-        # associate glitches with a channel, configuration, etc
-
-        chan_perform = {}
-        for d in dat:
-
-            # associate events with channel name
-
-            chan = d[columnD['vchan']]
-            if chan not in chan_perform.keys():
-                chan_perform[chan] = {'c_cln': 0, 'c_gch': 0}
-            if int(d[columnD['i']]) == 1:
-                chan_perform[chan]['c_gch'] += 1
-            else:
-                chan_perform[chan]['c_cln'] += 1
-
-        # write channel list file
-
-        path = output_dir + '/'
-        if basename:
-            path += basename + '-'
-        if classifier != '':
-            path += classifier + '-'
-        path += repr(gpsstart) + '-' + repr(gpsstop - gpsstart) \
-            + '_channel_summary.txt'
-
-        f = open(path, 'w')
-        print >> f, '%-44s %7s %7s %9s %9s %12s' % (
-            'channel',
-            'n_cln',
-            'n_gch',
-            'c_fap',
-            'c_eff',
-            'eff/fap',
-            )
-
-        # compute statistics for each channel
-
-        for chan in sorted(chan_perform.keys()):
-            this_chanD = chan_perform[chan]
-            c_cln = this_chanD['c_cln']
-            c_gch = this_chanD['c_gch']
-            if n_cln != 0:
-                c_fap = c_cln / n_cln
-            else:
-                c_fap = 0
-            if n_gch != 0:
-                c_eff = c_gch / n_gch
-            else:
-                c_eff = 0
-            chan_perform[chan]['c_fap'] = c_fap
-            chan_perform[chan]['c_eff'] = c_eff
-            if c_fap != 0:
-                eff_fap = c_eff / c_fap
-            elif c_eff == 0:
-                eff_fap = 0
-            else:
-                eff_fap = numpy.inf
-
-            # write statisitics to file
-
-            print >> f, '%-44s %7.1f %7.1f %8.7f %8.7f %12.5f' % (
-                chan,
-                c_cln,
-                c_gch,
-                c_fap,
-                c_eff,
-                eff_fap,
-                )
-
-        f.close()
-        chanlist.append((chan_perform, classifier, path))
-
-    return chanlist
-
-
-##################################################
-
-def datfiles_to_ranklist(
-    gpsstart,
-    gpsstop,
-    columns=False,
-    classifiers=['ovl'],
-    basename=False,
-    source_dir='./',
-    output_dir='./',
-    cluster_win=False,
-    unsafe_win=False,
-    gw_thr=False,
-    switch_snr_signif=False,
-    ):
-    """
-....generates a list that associates gps times with each rank for all datfiles.
-...."""
-
-    if not columns:
-        columns = ['i', 'GPS', 'rank']
-    elif 'GPS' not in columns or 'i' not in columns or 'rank' \
-        not in columns:
-        sys.exit("columns must contain fields 'GPS', 'i', and 'rank'. exiting..."
-                 )
-    elif cluster_win and 'signif' not in columns:
-        sys.exit('must supply a signif column to cluster')
-    elif gw_thr and 'signif' not in columns:
-        sys.exit('must supply a signif column to cluster')
-    elif switch_snr_signif and ('SNR' not in columns or 'signif'
-                                not in columns):
-        sys.exit("must supply 'SNR' and 'signif' columns to switch them"
-                 )
-
-    ranklist = []
-
-    # pick up each classifier separately
-
-    for classifier in classifiers:
-        
-        datfiles = [datfile for datfile in get_all_files_in_range(source_dir, gpsstart, gpsstop, suffix=".dat") if classifier in datfile]
-#        for dir in os.listdir(source_dir):
-#            try:
-#                d = dir.strip('/').split('-')
-#                start = int(d[-1])  # expect a particular directory structure
-#                if start * 1e5 <= gpsstart < (start + 1) * 1e5 or start \
-#                    * 1e5 < gpsstop <= (start + 1) * 1e5:
-#                    if not basename or basename in dir:
-#                        datfiles += gather_datfiles(gpsstart, gpsstop,
-#                                classifier=classifier,
-#                                source_dir=source_dir + '/' + dir)
-#            except:
-#                pass
-
-        # gather chan performance measures
-
-        dat = []
-        for f in datfiles:
-            try:
-                output = slim_load_datfile(f, skip_lines=0,
-                        columns=columns)
-            except:
-                print 'ERROR loading ' + f
-            else:
-                dat += [[output[k][ind] for k in columns] for ind in
-                        range(len(output['rank']))]
-
-        # switch SNR and significance
-
-        if switch_snr_signif:
-            print '  --> switching SNR and signif column labels'
-            snr_ind = columns.index('SNR')
-            signif_ind = columns.index('signif')
-            columns[snr_ind] = 'signif'
-            columns[signif_ind] = 'SNR'
-
-        columnD = dict([(c, ind) for (ind, c) in enumerate(columns)])
-
-        # compute cumulative statistics and write file
-
-        print 'No. events ' + str(len(dat))
-
-        # filter into cleans and glitches
-
-        gw_gps = []
-        cl_gps = []
-        for l in dat:
-            L = []
-            for c in columns:
-                if c == 'vchan':
-                    L.append(l[columnD['vchan']])
-                elif c == 'i':
-                    L.append(int(float(l[columnD['i']])))
-                else:
-                    L.append(float(l[columnD[c]]))
-            if L[columnD['i']] == 1:
-                gw_gps.append(L)  #  gw events
-            else:
-                cl_gps.append(L)
-
-        # threshold
-
-        if gw_thr:
-            print '\tNo. gw_gps before thresholding ' + str(len(gw_gps))
-            gw_gps = [gps for gps in gw_gps if gps[columnD['signif']]
-                      >= gw_thr]
-            print '\tNo. gw_gps after thresholding ' + str(len(gw_gps))
-
-        # cluster
-
-        if cluster_win:  # cluster gps times for glitches
-            print '\tNo. gw_gps before clustering ' + str(len(gw_gps))
-            gw_gps = cluster(gw_gps, columnD,
-                             cluster_window=cluster_win)
-            print '\tNo. gw_gps after clustering = ' + str(len(gw_gps))
-
-        # remove cleans that are too close to glitches
-
-        if unsafe_win:
-            gw_seg = event.vetosegs(gw_gps, unsafe_win,
-                                    tcent=columnD['GPS'])  # define the "unclean" segments
-            print '\tNo. cl_gps before windowing ' + str(len(cl_gps))
-            cl_gps = event.exclude(cl_gps, gw_seg, tcent=columnD['GPS'])  # only keep the cleans that fall outside of gw_seg
-            print '\tNo. cl_gps after windowing ' + str(len(cl_gps))
-
-        n_gch = float(len(gw_gps))
-        n_cln = float(len(cl_gps))
-        dat = gw_gps + cl_gps
-        dat.sort(key=lambda line: line[columnD['GPS']], reverse=True)
-        print 'No. events ' + str(len(dat))
-
-        # associate glitches with a channel, configuration, etc
-
-        rank_gps = {}
-        for d in dat:
-
-            # associate events with rank
-
-            rank = d[columnD['rank']]
-            if rank not in rank_gps.keys():
-                rank_gps[rank] = {'cln': [], 'gch': []}
-            if int(d[columnD['i']]) == 1:
-                rank_gps[rank]['gch'].append(d[columnD['GPS']])
-            else:
-                rank_gps[rank]['cln'].append(d[columnD['GPS']])
-
-        # write channel list file
-
-        path = output_dir + '/'
-        if basename:
-            path += basename + '-'
-        if classifier != '':
-            path += classifier + '-'
-        path += repr(gpsstart) + '-' + repr(gpsstop - gpsstart) \
-            + '_rank_summary.txt'
-
-        f = open(path, 'w')
-        print >> f, '''# rank
-# gch_gps
-# cln_gps'''
-        for rank in sorted(rank_gps.keys(), reverse=True):
-            gch_gps = ''
-            for g in rank_gps[rank]['gch']:
-                gch_gps += '%f ' % g
-            cln_gps = ''
-            for c in rank_gps[rank]['cln']:
-                cln_gps += '%f ' % c
-            print >> f, '''%10.9f
-%s
-%s
-#''' % (rank, gch_gps, cln_gps)
-
-        f.close()
-        ranklist.append((rank_gps, classifier, path))
-
-        return ranklist
-
-
-##################################################
-
-def datfiles_to_configlist(
-    gpsstart,
-    gpsstop,
-    columns=False,
-    classifiers=['ovl'],
-    basename=False,
-    source_dir='./',
-    output_dir='./',
-    cluster_win=False,
-    unsafe_win=False,
-    gw_thr=False,
-    switch_snr_signif=False,
-    ):
-    """
-....generates an output structure similar to ovl vetolists using (channel name, threshold, window) and associates with it statistics and a rank.
-...."""
-
-    if not columns:
-        columns = ['i', 'vchan', 'vthr', 'vwin', 'rank']
-    elif 'i' not in columns or 'vchan' not in columns or 'vthr' \
-        not in columns or 'vwin' not in columns or 'rank' \
-        not in columns:
-        sys.exit("columns must contain fields 'i', 'vchan', 'vthr', 'vwin', 'rank'. exiting..."
-                 )
-    elif cluster_win and 'signif' not in columns:
-        sys.exit('must supply a signif column to cluster')
-    elif gw_thr and 'signif' not in columns:
-        sys.exit('must supply a signif column to cluster')
-    elif switch_snr_signif and ('SNR' not in columns or 'signif'
-                                not in columns):
-        sys.exit("must supply 'SNR' and 'signif' columns to switch them"
-                 )
-
-    configlist = []
-
-    # pick up each classifier separately
-
-    for classifier in classifiers:
-        
-        datfiles = [datfile for datfile in get_all_files_in_range(source_dir, gpsstart, gpsstop, suffix=".dat") if classifier in datfile]
-#        for dir in os.listdir(source_dir):
-#            try:
-#                d = dir.strip('/').split('-')
-#                start = int(d[-1])  # expect a particular directory structure
-#                if start * 1e5 <= gpsstart < (start + 1) * 1e5 or start \
-#                    * 1e5 < gpsstop <= (start + 1) * 1e5:
-#                    if not basename or basename in dir:
-#                        datfiles += gather_datfiles(gpsstart, gpsstop,
-#                                classifier=classifier,
-#                                source_dir=source_dir + '/' + dir)
-#            except:
-#                pass
-
-        # gather chan performance measures
-
-        dat = []
-        for f in datfiles:
-            try:
-                output = slim_load_datfile(f, skip_lines=0,
-                        columns=columns)
-            except:
-                print 'ERROR loading ' + f
-            else:
-                dat += [[output[k][ind] for k in columns] for ind in
-                        range(len(output['vchan']))]
-
-        # switch SNR and significance
-
-        if switch_snr_signif:
-            print '  --> switching SNR and signif column labels'
-            snr_ind = columns.index('SNR')
-            signif_ind = columns.index('signif')
-            columns[snr_ind] = 'signif'
-            columns[signif_ind] = 'SNR'
-
-        columnD = dict([(c, ind) for (ind, c) in enumerate(columns)])
-
-        # compute cumulative statistics and write file
-
-        print 'No. events ' + str(len(dat))
-
-        # filter into cleans and glitches
-
-        gw_gps = []
-        cl_gps = []
-        for l in dat:
-            L = []
-            for c in columns:
-                if c == 'vchan':
-                    L.append(l[columnD['vchan']])
-                elif c == 'i':
-                    L.append(int(float(l[columnD['i']])))
-                else:
-                    L.append(float(l[columnD[c]]))
-            if L[columnD['i']] == 1:
-                gw_gps.append(L)  #  gw events
-            else:
-                cl_gps.append(L)
-
-        # threshold
-
-        if gw_thr:
-            print '\tNo. gw_gps before thresholding ' + str(len(gw_gps))
-            gw_gps = [gps for gps in gw_gps if gps[columnD['signif']]
-                      >= gw_thr]
-            print '\tNo. gw_gps after thresholding ' + str(len(gw_gps))
-
-        # cluster
-
-        if cluster_win:  # cluster gps times for glitches
-            print '\tNo. gw_gps before clustering ' + str(len(gw_gps))
-            gw_gps = cluster(gw_gps, columnD,
-                             cluster_window=cluster_win)
-            print '\tNo. gw_gps after clustering = ' + str(len(gw_gps))
-
-        # remove cleans that are too close to glitches
-
-        if unsafe_win:
-            gw_seg = event.vetosegs(gw_gps, unsafe_win,
-                                    tcent=columnD['GPS'])  # define the "unclean" segments
-            print '\tNo. cl_gps before windowing ' + str(len(cl_gps))
-            cl_gps = event.exclude(cl_gps, gw_seg, tcent=columnD['GPS'])  # only keep the cleans that fall outside of gw_seg
-            print '\tNo. cl_gps after windowing ' + str(len(cl_gps))
-
-        n_gch = float(len(gw_gps))
-        n_cln = float(len(cl_gps))
-        dat = gw_gps + cl_gps
-        dat.sort(key=lambda line: line[columnD['GPS']], reverse=True)
-        print 'No. events ' + str(len(dat))
-
-        # associate glitches with a channel, configuration, etc
-
-        config_perform = {}
-        for d in dat:
-
-            # associate events with channel name
-
-            chan = d[columnD['vchan']]
-            vthr = d[columnD['vthr']]
-            vwin = d[columnD['vwin']]
-            rank = d[columnD['rank']]
-            config = (chan, vthr, vwin, rank)
-            if config not in config_perform.keys():
-                config_perform[config] = {'c_cln': 0, 'c_gch': 0}
-            if int(d[columnD['i']]) == 1:
-                config_perform[config]['c_gch'] += 1
-            else:
-                config_perform[config]['c_cln'] += 1
-
-        # write channel list file
-
-        path = output_dir + '/'
-        if basename:
-            path += basename + '-'
-        if classifier != '':
-            path += classifier + '-'
-        path += repr(gpsstart) + '-' + repr(gpsstop - gpsstart) \
-            + '_config_summary.txt'
-
-        f = open(path, 'w')
-        print >> f, '%-44s %5s %5s %11s %7s %7s %9s %9s %12s' % (
-            'channel',
-            'vthr',
-            'vwin',
-            'rank',
-            'n_cln',
-            'n_gch',
-            'c_fap',
-            'c_eff',
-            'eff/fap',
-            )
-
-        # compute statistics for each channel
-
-        sorted_keys = config_perform.keys()
-        sorted_keys.sort(key=lambda line: line[3], reverse=True)
-        for config in sorted_keys:
-            (chan, vthr, vwin, rank) = config
-            this_configD = config_perform[config]
-            c_cln = this_configD['c_cln']
-            c_gch = this_configD['c_gch']
-            if n_cln != 0:
-                c_fap = c_cln / n_cln
-            else:
-                c_fap = 0
-            if n_gch != 0:
-                c_eff = c_gch / n_gch
-            else:
-                c_eff = 0
-            config_perform[config]['c_fap'] = c_fap
-            config_perform[config]['c_eff'] = c_eff
-            if c_fap != 0:
-                eff_fap = c_eff / c_fap
-            elif c_eff == 0:
-                eff_fap = 0
-            else:
-                eff_fap = numpy.inf
-
-            # write statisitics to file
-
-            print >> f, \
-                '%-44s %5.1f %5.3f %10.9f %7.1f %7.1f %8.7f %8.7f %12.5f' \
-                % (
-                chan,
-                vthr,
-                vwin,
-                rank,
-                c_cln,
-                c_gch,
-                c_fap,
-                c_eff,
-                eff_fap,
-                )
-
-        f.close()
-        configlist.append((config_perform, classifier, path))
-
-    return configlist
-
-
-### convert a list of ranks into a set of FAP estimates
-
-def rank_to_FAPmap(roc_filename, kind='linear'):
-    """
-    generates mapping for FAP estimates using the data stored in 'roc_filename'
-        expect 'roc_filename' to be a string corresponding to the location of an roc file
-    """
-
-    from laldetchar.idq.idq_summary_plots import ROC_to_rcg
-    from scipy.interpolate import interp1d
-
-    (rs, c_cln, _, tot_cln, _) = ROC_to_rcg(roc_filename)
-
-    # ensure interpolation range covers allowable range for rank
-
-    if rs[0] != 1.0:
-        rs.insert(0, 1.0)
-        c_cln.insert(0, 0.0)
-    if rs[-1] != 0.0:
-        rs.append(0.0)
-        c_cln.append(tot_cln)
-
-    if tot_cln == 0:
-        return interp1d(rs[::-1], numpy.ones((len(rs), )), kind=kind)
-    else:
-        return interp1d(rs[::-1], 1.0 * numpy.array(c_cln)[::-1]
-                        / tot_cln, kind=kind)
-
-
-def rank_to_Effmap(roc_filename, kind='linear'):
-    """
-    generates mapping for Efficiency estimates using the data stored in 'roc_filename'
-        expect 'roc_filename' to be a string corresponding to the location of an roc file
-    """
-
-    from laldetchar.idq.idq_summary_plots import ROC_to_rcg
-    from scipy.interpolate import interp1d
-
-    (rs, _, c_gch, _, tot_gch) = ROC_to_rcg(roc_filename)
-
-    # ensure interpolation range covers allowable range for rank
-
-    if rs[0] != 1.0:
-        rs.insert(0, 1.0)
-        c_gch.insert(0, 0.0)
-    if rs[-1] != 0.0:
-        rs.append(0.0)
-        c_gch.append(tot_gch)
-
-    if tot_gch == 0:
-        return interp1d(rs[::-1], numpy.zeros((len(rs), )), kind=kind)
-    else:
-        return interp1d(rs[::-1], 1.0 * numpy.array(c_gch)[::-1]
-                        / tot_gch, kind=kind)
-
-
-def rank_to_EffFAPmap(roc_filename, kind='linear'):
-    """
-    generates both FAP and Eff maps from roc_filename
-      return Effmap, FAPmap
-    """
-
-    from laldetchar.idq.idq_summary_plots import ROC_to_rcg
-    from scipy.interpolate import interp1d
-
-    (rs, c_cln, c_gch, tot_cln, tot_gch) = ROC_to_rcg(roc_filename)
-
-    # ensure interpolation range covers allowable range for rank
-
-    if rs[0] != 1.0:
-        rs.insert(0, 1.0)
-        c_gch.insert(0, 0.0)
-        c_cln.insert(0, 0.0)
-    if rs[-1] != 0.0:
-        rs.append(0.0)
-        c_gch.append(tot_gch)
-        c_cln.append(tot_cln)
-
-    if tot_gch == 0:
-        Effmap = interp1d(rs[::-1], numpy.zeros((len(rs), )), kind=kind)
-    else:
-        Effmap = interp1d(rs[::-1], 1.0 * numpy.array(c_gch)[::-1]
-                          / tot_gch, kind=kind)
-
-    if tot_cln == 0:
-        FAPmap = interp1d(rs[::-1], numpy.ones((len(rs), )), kind=kind)
-    else:
-        FAPmap = interp1d(rs[::-1], 1.0 * numpy.array(c_cln)[::-1]
-                          / tot_cln, kind=kind)
-
-    return (Effmap, FAPmap)
-
-
-############################ Single channel KW trigger collection functions ######################################################
-
-### collect and generate single-channel KW trig files
+                kwconfig[key] = [par]
+    if 'channel' in kwconfig:
+        kwconfig['names'] = ['_'.join(cpar).replace(':', '_')
+                             for cpar in kwconfig['channel']]
+    return kwconfig
 
 def collect_sngl_chan_kw(
     gpsstart,
@@ -2308,83 +1672,57 @@ def collect_sngl_chan_kw(
     return new_dirs
 
 
-############  Generic functions for AuxMVC algorithms  ###########################
-
-def build_auxmvc_vectors(
-    trigger_dict,
-    main_channel,
-    time_window,
-    signif_threshold,
-    output_file_name,
-    gps_start_time,
-    gps_end_time,
-    channels=None,
-    unsafe_channels=None,
-    science_segments=None,
-    clean_times=None,
-    clean_samples_rate=None,
-    clean_window=None,
-    filter_out_unclean=False,
-    max_clean_samples=None,
-    max_glitch_samples=None,
-    ):
+#=================================================
+# auxmvc helper functions
+#=================================================
+def build_auxmvc_vectors( trigger_dict, main_channel, time_window, signif_threshold, output_file_name, gps_start_time, gps_end_time, channels=None, unsafe_channels=None, science_segments=None, clean_times=None, clean_samples_rate=None, clean_window=None, filter_out_unclean=False, max_clean_samples=None, max_glitch_samples=None, verbose=False):
     """
-....Given dictionary of triggers from multiple channels, the function constructs auxmvc
-....vectors out of them. Result is saved into output_file_name. 
-...."""
+    Given dictionary of triggers from multiple channels, the function constructs auxmvc
+    vectors out of them. Result is saved into output_file_name. 
+    """
 
-    if trigger_dict:
-        print 'Number of triggers in the main channel before thresholding:', \
-            len(trigger_dict[main_channel])
-    else:
-        # empty trig-dictionary, raise an error
-        raise StandardError('Empty trig-dictionary. Can not build auxmvc vectors.'
-                            )
+    if not trigger_dict: # empty trig-dictionary
+        raise StandardError('Empty trig-dictionary. Can not build auxmvc vectors.')
+
+    if verbose:
+        print 'Number of triggers in the main channel before thresholding:', len(trigger_dict[main_channel])
 
     # use only channels from the channels file, if provided
     if channels:
         selected_channels = event.read_channels_from_file(channels)
+        if main_channel not in selected_channels:
+            selected_channels.append( main_channel )
         trigger_dict.keep_channels(selected_channels)
 
         # to ensure consistency in dimensionality of auxmvc vectors
         # add the channels from the selected channels that are absent in trigger_dict
-
         for channel in selected_channels:
             if not channel in trigger_dict.channels():
                 trigger_dict[channel] = []
 
     # get rid of unsafe channels if provided
-
     if unsafe_channels:
         unsafe_channels = event.read_channels_from_file(unsafe_channels)
         trigger_dict.remove_channels([channel for channel in unsafe_channels if channel != main_channel]) ### never remove the main channel
 
     # keep only the triggers from the [gps_start_time, gps_end_time] segment
-
     # first keep all triggers from the segment expanded by the time concidence window, so that not to loose coincidences
-    trigger_dict.include([[gps_start_time - time_window, gps_end_time
-                         + time_window]])
+    trigger_dict.include([[gps_start_time - time_window, gps_end_time + time_window]])
 
     # then in the main channel keep triggers that fall within the segment.
     trigger_dict.include([[gps_start_time, gps_end_time]], channels=[main_channel])
 
     # keep only triggers from the science segments if given........
     if science_segments:
-        science_segments = event.andsegments([[gps_start_time
-                - time_window, gps_end_time + time_window]],
-                science_segments)
+        science_segments = event.andsegments([[gps_start_time - time_window, gps_end_time + time_window]], science_segments)
         trigger_dict.include(science_segments)
 
     # apply significance threshold to the triggers from the main channel
-    trigger_dict.apply_signif_threshold(channels=[main_channel],
-            threshold=signif_threshold)
-    print 'Number of triggers in the main channel after thresholding:', \
-        len(trigger_dict[main_channel])
+    trigger_dict.apply_signif_threshold(channels=[main_channel], threshold=signif_threshold)
+    print 'Number of triggers in the main channel after thresholding:', len(trigger_dict[main_channel])
 
     # construct glitch auxmvc vectors
-    aux_glitch_vecs = event.build_auxmvc_vectors(trigger_dict,
-            main_channel=main_channel,
-            coincidence_time_window=time_window)
+    aux_glitch_vecs = event.build_auxmvc_vectors(trigger_dict, main_channel=main_channel, coincidence_time_window=time_window)
 
     # apply upper limit on the number of glitch samples if given
     if max_glitch_samples:
@@ -2408,166 +1746,71 @@ def build_auxmvc_vectors(
             clean_times = []
 
     # construct clean auxmvc vectors
-    aux_clean_vecs = event.build_auxmvc_vectors(
-        trigger_dict,
-        main_channel=main_channel,
-        coincidence_time_window=time_window,
-        build_clean_samples=True,
-        clean_times=clean_times,
-        clean_window=clean_window,
-        )
+    aux_clean_vecs = event.build_auxmvc_vectors( trigger_dict, main_channel=main_channel, coincidence_time_window=time_window, build_clean_samples=True, clean_times=clean_times, clean_window=clean_window )
 
     # get rid of clean samples that are near real triggers in the main channel.
-
     if filter_out_unclean:
         aux_clean_vecs = auxmvc_utils.get_clean_samples(aux_clean_vecs)
 
     # apply upper limit on the number of clean samples if given
-
     if max_clean_samples:
         if len(aux_clean_vecs) > max_clean_samples:
             aux_clean_vecs = aux_clean_vecs[-max_clean_samples:]
 
     # convert glitch and clean auxmvc vectors into MVSC evaluation set
-
     mvsc_evaluation_set = \
-        auxmvc_utils.ConvertKWAuxToMVSC(KWAuxGlitchTriggers=aux_glitch_vecs,
-            KWAuxCleanTriggers=aux_clean_vecs)
+        auxmvc_utils.ConvertKWAuxToMVSC(KWAuxGlitchTriggers=aux_glitch_vecs, KWAuxCleanTriggers=aux_clean_vecs)
 
     # save MVSC evaluation set in file........
-    auxmvc_utils.WriteMVSCTriggers(mvsc_evaluation_set,
-                                   output_filename=output_file_name,
-                                   Classified=False)
+    auxmvc_utils.WriteMVSCTriggers(mvsc_evaluation_set, output_filename=output_file_name, Classified=False)
 
     return mvsc_evaluation_set
 
-
-def build_auxmvc_vector_at_gps(
-    gps,
-    trigger_dict,
-    main_channel,
-    time_window,
-    output_file_name,
-    channels=None,
-    unsafe_channels=None,
-    ):
-    """
-        build auxmvc vectors at the specified gps times regardless of what is actually in the main channel
-...."""
-
-    if isinstance(gps, (int, float)):
-        gps = [gps]
-    gps_start_time = min(gps)
-    gps_end_time = max(gps)
-
-    print 'Number of triggers in the main channel before thresholding:', \
-        len(gps)
-
-        # use only channels from the channels file, if provided
-
-    if channels:
-        selected_channels = event.read_channels_from_file(channels)
-        trigger_dict.keep_channels(selected_channels)
-
-                # to ensure consistency in dimensionality of auxmvc vectors
-                # add the channels from the selected channels that are absent in trigger_dict
-
-        for channel in selected_channels:
-            if not channel in trigger_dict.channels():
-                trigger_dict[channel] = []
-
-        # get rid of unsafe channels if provided
-
-    if unsafe_channels:
-        unsafe_channels = event.read_channels_from_file(unsafe_channels)
-        trigger_dict.remove_channels([channel for channel in unsafe_channels if channel != main_channel]) ### never remove the main channel
-
-        # keep only the triggers from the [gps_start_time, gps_end_time] segment
-
-        # first keep all triggers from the segment expanded by the time concidence window, so that not to loose coincidences
-
-    trigger_dict.include([[gps_start_time - time_window, gps_end_time
-                         + time_window]])
-
-        # construct glitch auxmvc vectors
-
-    aux_glitch_vecs = event.build_auxmvc_vectors_at_gps(gps,
-            trigger_dict, main_channel=main_channel,
-            coincidence_time_window=time_window)
-
-      # only here for syntactic reasons fucntion call to ConvertKWAuxToMVSC
-
-    aux_clean_vecs = event.build_auxmvc_vectors_at_gps([],
-            trigger_dict, main_channel=main_channel,
-            coincidence_time_window=time_window)
-
-        # convert glitch and clean auxmvc vectors into MVSC evaluation set
-
-    mvsc_evaluation_set = \
-        auxmvc_utils.ConvertKWAuxToMVSC(aux_glitch_vecs, aux_clean_vecs)
-
-        # save MVSC evaluation set in file
-
-    auxmvc_utils.WriteMVSCTriggers(mvsc_evaluation_set,
-                                   output_filename=output_file_name,
-                                   Classified=False)
-
-    return mvsc_evaluation_set
-
-
-def execute_build_auxmvc_vectors(
-    cp,
-    execute_dir,
-    trigdir,
-    main_channel,
-    output_file,
-    gps_start_time,
-    gps_end_time,
-    channels=None,
-    unsafe_channels=None,
-    dq_segments=None,
-    dq_segments_name='',
-    ):
-    """
-....Submits the job that builds auxmvc feature vectors. Vectors are saved in the output file with .pat extension.
-....Waits until the job is finished, returns its exit status and the output file name.
-....execute_dir is the absolute path of the directory in which the job should be executed. 
-...."""
-
-    # initiate build_auxmvc_vectors job object
-
-    build_auxmvc_vectors_job = auxmvc.build_auxmvc_vectors_job(cp,
-            main_channel, channels=channels,
-            unsafe_channels=unsafe_channels)
-
-    # create node for this job
-
-    build_auxmvc_vectors_node = auxmvc.build_auxmvc_vectors_node(
-        build_auxmvc_vectors_job,
-        trigdir,
-        gps_start_time,
-        gps_end_time,
-        output_file,
-        dq_segments=dq_segments,
-        dq_segments_name=dq_segments_name,
-        )
-
-    # get full command line for this job
-
-    build_auxmvc_vectors_command = \
-        auxmvc.construct_command(build_auxmvc_vectors_node)
-
-    print build_auxmvc_vectors_command
-
-    # submit process
-
-    exit_status = submit_command(build_auxmvc_vectors_command,
-                                 'build_auxmvc_vectors', execute_dir,
-                                 verbose=True)
-
-    return (exit_status,
-            build_auxmvc_vectors_node.get_output_files()[0])
-
+#def execute_build_auxmvc_vectors(
+#    cp,
+#    execute_dir,
+#    trigdir,
+#    main_channel,
+#    output_file,
+#    gps_start_time,
+#    gps_end_time,
+#    channels=None,
+#    unsafe_channels=None,
+#    dq_segments=None,
+#    dq_segments_name='',
+#    ):
+#    """
+#....Submits the job that builds auxmvc feature vectors. Vectors are saved in the output file with .pat extension.
+#....Waits until the job is finished, returns its exit status and the output file name.
+#....execute_dir is the absolute path of the directory in which the job should be executed. 
+#...."""
+#
+#    # initiate build_auxmvc_vectors job object
+#    build_auxmvc_vectors_job = auxmvc.build_auxmvc_vectors_job(cp,
+#            main_channel, channels=channels,
+#            unsafe_channels=unsafe_channels)
+#
+#    # create node for this job
+#    build_auxmvc_vectors_node = auxmvc.build_auxmvc_vectors_node(
+#        build_auxmvc_vectors_job,
+#        trigdir,
+#        gps_start_time,
+#        gps_end_time,
+#        output_file,
+#        dq_segments=dq_segments,
+#        dq_segments_name=dq_segments_name,
+#        )
+#
+#    # get full command line for this job
+#    build_auxmvc_vectors_command = auxmvc.construct_command(build_auxmvc_vectors_node)
+#
+#    print " ".join(build_auxmvc_vectors_command)
+#
+#    # submit process
+##    exit_status = submit_command(build_auxmvc_vectors_command, 'build_auxmvc_vectors', execute_dir, verbose=True)
+#    exit_status = subprocess.Popen(build_auxmvc_vectors_command, cwd=execute_dir).wait() ### block!
+#
+#    return (exit_status, build_auxmvc_vectors_node.get_output_files()[0])
 
 def execute_prepare_training_auxmvc_samples(
     execute_dir,
@@ -2587,12 +1830,9 @@ def execute_prepare_training_auxmvc_samples(
 ...."""
 
     # initiate prepare_training_auxmvc_samples job object
-
-    prepare_training_auxmvc_samples_job = \
-        auxmvc.prepare_training_auxmvc_samples_job(cp)
+    prepare_training_auxmvc_samples_job = auxmvc.prepare_training_auxmvc_samples_job(cp)
 
     # create node for this job
-
     prepare_training_auxmvc_samples_node = \
         auxmvc.prepare_training_auxmvc_samples_node(
         prepare_training_auxmvc_samples_job,
@@ -2605,203 +1845,595 @@ def execute_prepare_training_auxmvc_samples(
         )
 
     # get full command line for this job
-
-    prepare_training_auxmvc_samples_command = \
-        auxmvc.construct_command(prepare_training_auxmvc_samples_node)
+    prepare_training_auxmvc_samples_command =  auxmvc.construct_command(prepare_training_auxmvc_samples_node)
 
     # submit process
+#    exit_status = submit_command(prepare_training_auxmvc_samples_command, 'prepare_training_auxmvc_samples', execute_dir, verbose=True)
+    exit_status = subprocess.Popen(prepare_training_auxmvc_samples_command, cwd=execute_dir).wait() ### block!
 
-    exit_status = \
-        submit_command(prepare_training_auxmvc_samples_command,
-                       'prepare_training_auxmvc_samples', execute_dir,
-                       verbose=True)
-
-    return (exit_status,
-            prepare_training_auxmvc_samples_node.get_output_files()[0])
+    return (exit_status, prepare_training_auxmvc_samples_node.get_output_files()[0])
 
 
-##########.... FOREST FUNCTIONS........####################################
 
-def execute_forest_evaluate(
-    patfile,
-    trainedforest,
-    ranked_file,
-    cp,
-    gps_start_time,
-    gps_end_time,
-    dir,
-    ):
+#===================================================================================================
+#
+# EXECUTION
+#
+#===================================================================================================
+def evaluate(flavor, lines, dat, config, gps_start_time=-numpy.infty, gps_end_time=numpy.infty, dir=".", samples=[], trgdict=None, auxmvc_vectors=None, samples_header=['GPS','i','rank']):
     """
-....Submits job that evaluates samples of auxmvc feature vectors using random forest (MVSC).........
-...."""
+    a delegation function that calls the correct functions based on flavor
+    """
+    Ntotal = len(samples)
 
-    # initiate use forest job
+    if flavor == "ovl":
+        vetolist = lines[0]
+        if len(samples):
+            (gw_predict, dat) = ovl_evaluate(vetolist, GPStimes=samples, GPS_headers=samples_header, allvtrg=trgdict, filename=dat.split("/")[-1], output_dir=dir )
+            return 0
+        else:
+            ovl_dat_vars = ['rank', 'eff/dt', 'vchan', 'vthr', 'vwin']
+            varline = ' '.join(samples_header) + ' ' + ' '.join(ovl_dat_vars) + '\n'
+            file = open(dat, 'w')
+            print >>file, "%s %s"%(' '.join(samples_header), ' '.join(ovl_dat_vars))
+            file.close()
+            return 0
 
-    use_forest_job = auxmvc.use_forest_job(cp)
+    elif flavor == "forest":
+        pat = trgdict ### silly way I'm passing this
+        if len(auxmvc_vectors):
+            trainedforest = lines[0]
+            return forest_evaluate( pat, trainedforest, dat, config, gps_start_time=gps_start_time, gps_end_time=gps_end_time, dir=dir )[0]
+        else:
+            nonaux_vars = ['index', 'i', 'w', 'GPS_s', 'GPS_ms', 'signif', 'SNR', 'unclean', 'glitch-rank' ]
+            file = open(dat, 'w')
+            print >> file, 'GPS i w unclean signif SNR rank %s' % (' '.join([var for var in auxmvc_vectors.dtype.names if not var in nonaux_vars]))
+            file.close()
+            return 0
 
-    # create node for this job
+    elif flavor == "svm":
+        pat = trgdict ### silly way I'm passing this
+        if len(auxmvc_vectors):
+            svm_model = lines[0].strip('\n')
+            svm_range_file = lines[1].strip('\n')
 
-    use_forest_node = auxmvc.use_forest_node(use_forest_job,
-            trainedforest, patfile, ranked_file)
+            return svm_evaluate( config, pat, svm_range_file, svm_model, dat, dir=dir )
+        else:
+            nonaux_vars = ['index', 'i', 'w', 'GPS_s', 'GPS_ms', 'signif', 'SNR', 'unclean', 'glitch-rank' ]
+            file = open(dat, 'w')
+            print >> file, 'GPS i w unclean signif SNR rank %s' % (' '.join([var for var in auxmvc_vectors.dtype.names if not var in nonaux_vars]))
+            file.close()
+            return 0
 
-    # get full command line for this job
-
-    use_forest_command = auxmvc.construct_command(use_forest_node)
-
-    # submit process
-
-    exit_status = submit_command(use_forest_command, 'forest_evaluate',
-                                 dir)
-
-    if exit_status == 0:
-
-        # run postscript
-
-        forest_add_excluded_variables_job = \
-            auxmvc.forest_add_excluded_vars_job(cp)
-        forest_add_excluded_variables_node = \
-            auxmvc.forest_add_excluded_vars_node(forest_add_excluded_variables_job,
-                patfile, ranked_file)
-
-        # get full command line for this job
-
-        forest_add_excluded_variables_command = \
-            auxmvc.construct_command(forest_add_excluded_variables_node)
-
-        # submit process
-
-        exit_status = \
-            submit_command(forest_add_excluded_variables_command,
-                           'forest_add_excluded_variables', dir)
-
-        return (exit_status, use_forest_node.get_output_files())
     else:
-        return (exit_status, use_forest_node.get_output_files())
+        raise ValueError("do not know how to execute for flavor=%s"%flavor)
 
-
-def execute_forest_train(
-    training_samples_file,
-    cache,
-    cp,
-    submit_dir,
-    ):
+#===================================================================================================
+#
+# TRAINING
+#
+#===================================================================================================
+def dag_train(flavor, pat, cache, config, train_dir='.', cwd='.'):
     """
-....Builds small dag to train  random forest (MVSC) and condor submits it.
-...."""
-
-    # set current directory to submit_dir
-
-    os.chdir(submit_dir)
-
-    # set path to condor log
-
-    logpath = cp.get('idq_train', 'condorlogs')
-
-    # set basename for condor dag
-
-    basename = cp.get('general', 'ifo') + '_train_mvsc_' \
-        + cp.get('general', 'usertag') + '-' \
-        + training_samples_file.split('-')[-2] + '-' \
-        + training_samples_file.split('-')[-1].split('.')[0]
-
-    # creat directory for jobs .err and .out files
-
-    if not os.path.exists('logs'):
-        os.makedirs('logs')
-
-    # initiate dag
-
-    dag = auxmvc.auxmvc_DAG(basename, logpath)
-
-    # get dag file
-
-    dag_file = dag.get_dag_file()
-
-    # initiate train forest job
-
-    train_forest_job = auxmvc.train_forest_job(cp)
-
-    # construct name for trained forest file
-
-    trained_forest_filename = os.path.split(training_samples_file)[0] \
-        + '/mvsc/' \
-        + os.path.split(training_samples_file)[1].replace('.pat', '.spr'
-            )
-
-    # create node for this job
-
-    train_forest_node = auxmvc.train_forest_node(train_forest_job,
-            training_samples_file, trained_forest_filename)
-
-    # append the node to dag
-
-    dag.add_node(train_forest_node)
-
-    # initiate add file to cache job
-
-    add_file_to_cache_job = auxmvc.add_file_to_cache_job(cp)
-
-    # create node for this job
-
-    add_file_to_cache_node = \
-        auxmvc.add_file_to_cache_node(add_file_to_cache_job,
-            [train_forest_node.trainedforest], cache,
-            p_node=[train_forest_node])
-
-    # add the node to dag
-
-    dag.add_node(add_file_to_cache_node)
-
-    # write dag
-
-    dag.write_sub_files()
-    dag.write_dag()
-    dag.write_script()
-
-    # condor dag submit command....
-
-    dag_submit_cmd = ['condor_submit_dag', dag_file]
-
-    # submit dag
-
-    exit_status = submit_command(dag_submit_cmd,
-                                 'submit_forest_train_dag', submit_dir)
-
-    return (exit_status, dag_file, train_forest_node.get_output_files())
-
-
-############################## OVL functions ########################################....
-# many of these functions simply delegate to ovl.py after building the appropriate params objects, etc. Essentially, these will be parsing/handling scripts that let ovl.py interface more smoothly with the idq code.
-
-def ovl_evaluate(
-    vetolist,
-    GPS_headers=False,
-    GPStimes=False,
-    allvtrg=False,
-    kw_trgfiles=False,
-    gwchan=False,
-    patfiles=False,
-    skip_lines=1,
-    filename='ovl_predict',
-    output_dir='./',
-    ):
+    a delegation funtion that call the correct functions based on flavor
     """
-....takes the last line of vetolist_cache file and uses that as a pointer to the most recent vetolist information.
-....generates vetosegment from kw_trgfiles
-....if patfiles:
-........generates GPStimes from patfiles
-....else:
-........generates GPStimes from kw_trgfiles using gwchan (REQUIRED)
+    if flavor == "forest":
+        ### submit mvsc training job
+        (submit_dag_exit_status, dag_file, trained_file) = execute_forest_train(pat, cache.name, config, train_dir)
+        os.chdir(cwd) ### switch back to the current directory
 
-....expects vetolsit to be a file path
-........kw_trgfiles, patfiles to be lists of file paths
-........gwchan to be a string
-...."""
+        return submit_dag_exit_status, "%s/%s"%(train_dir, dag_file)
 
+    elif flavor == "svm":
+        ### auxiliary files required for SVM training
+        svm_range_file = "%s/%s.range"%(train_dir, os.path.split(pat)[1])
+        svm_model_file = "%s/%s.model"%(train_dir, os.path.split(pat)[1])
+
+        ### submit SVM training job
+        (submit_dag_exit_status, dag_file, output_files) = execute_svm_train( config, pat, svm_range_file, svm_model_file, cache.name, train_dir )
+        os.chdir(cwd) ### switch back to the current directory
+
+        return submit_dag_exit_status, "%s/%s"%(train_dir, dag_file)
+
+    else:
+        raise ValueError("do not know how to dag_train flavor=%s"%flavor)
+
+def blk_train(flavor, config, classifierD, start, stop, ovlsegs=False, vetosegs=False, train_dir='.', cwd='.', force=False, cache=None, min_num_gch=0, min_num_cln=0, padding=0, conn=False):
+    """
+    a delegation function that calls the correct function based on flavor
+    """
+    if flavor == "ovl":
+        if ovlsegs: ### silly formatting thing
+            ovlsegs = [ovlsegs]
+
+        vetolists = ovl_train( start, stop, dict(config.items('general')), classifierD, scisegs=ovlsegs, vetosegs=vetosegs, output_dir=train_dir, padding=padding)
+        vetolist = vetolists[0].replace("//","/")### make sure the path doesn't contain any "//" elements
+
+        if cache: ### we're told where we might append
+            ### append new vetolist to training cache
+            if not force:
+                go_ahead_and_append = False
+                f = open(vetolist, 'r')
+                for line in f:
+                    if line[0] != '#': ### the first un-commented line will contain the total number of gwtriggers
+                                   # require certain number of glitches for this to be a good training set
+                        go_ahead_and_append = float(line.strip().split()[ovl.vD['#gwtrg']]) >= min_num_gch
+                        break
+                f.close()
+
+            if force or go_ahead_and_append:
+                cache.append( vetolist )
+
+                if conn:
+                    conn.send((0, vetolist))
+                else:
+                    return 0, vetolist ### there should be only one list...
+            else:
+                if conn:
+                    conn.send((1, vetolist))
+                else:
+                    return 1, vetolist
+
+    else:
+        raise ValueError("do not know how to blk_train flavor=%s"%flavor)
+
+#=================================================
+# timeseries
+#=================================================
+
+def timeseries2frame( framename, chan_vect, start, dt):
+    commonpar = {'start':start, 'dx':dt, 'type':1}
+    outdict = [dict(name=channel_name, data=x, **commonpar) for channel_name, x in chan_vect.items()]
+
+    Fr.frputvect(framename, outdict)
+
+def datfile2timeseries(flavor, dat, lines, trgdict=None, start=0, stride=0, window=0.1, fs=256):
+    """
+    create veto timeseries from datefile glitch events
+    will create square window timeseries with +/-window around each event
+    """
+    if flavor == "ovl":
+        return ovl.vetolist2timeseries(lines[0], trgdict, [start, start + stride], fs=fs)
+
+    elif flavor in mla_flavors:
+        datdata = slim_load_datfile(dat, skip_lines=0, columns='GPS i rank'.split())
+        for (key, val) in datdata.items():
+            datdata[key] = map(float, val)
+
+#        (ifo, name, tstart, dur) = os.path.basename(dat)[:-4].split('-')
+#        livetime = float(dur)
+#        segment = [float(tstart), float(tstart) + livetime]
+        tstart, tstop = extract_start_stop(dat, suffix=".dat")
+        segment = [tstart, tstop]
+        livetime = tstop-tstart
+
+        ts = numpy.zeros(livetime * fs)
+        sidx = numpy.argsort(datdata['rank'])
+        for i in sidx:
+            if datdata['i'][i] == 0:  # skip clean samples
+                continue
+            gps = datdata['GPS'][i]
+            seg = [gps - window, gps + window]
+            rank = datdata['rank'][i]
+            istart = max(0, int(math.floor((seg[0] - segment[0]) * fs)))  # start index
+            istop = min(len(ts), int(math.ceil((seg[1] - segment[0]) * fs)))  # 1 + stop index
+            ts[istart:istop] = rank
+
+        return ts
+
+    else:
+        raise ValueError("don't know how to compute timeseries for flavor=%s"%flavor)
+
+def timeseries_to_segments(t, ts, thr):
+    """
+    computes segments from t  = time stamps
+                            ts = time series (values)
+                            thr=threshold on time series
+    so that t \f$\in\f$ segments iff ts(t) >= thr
+
+    pad is added to the end of the time-series points when generating segments
+    """
+    segs = []
+    in_seg = False
+    min_TS = numpy.infty
+    for (T, TS) in zip(t, ts):
+        if TS < thr:
+            if in_seg:
+                segs.append([start, T])
+                in_seg = False
+            else:
+                pass
+        else: ### TS >= thr
+
+            if min_TS > TS:
+                min_TS = TS
+            if not in_seg:
+                start = T
+                in_seg = True
+    if in_seg:
+        segs.append([start, T])
+
+    if len(segs):
+        return (segs, min_TS)
+    else:
+        return ([], None)
+
+def combine_ts(filenames, n=1):
+    """ 
+    combine multiple files into a single time-series. Assumes filenames have the standard LIGO naming covention: *-start-dur.suffix
+    Also assumes that filenames are sorted into chronological order
+
+    returns lists of arrays, with each array consisting of only contiguous data
+        return timeseries, times
+
+    n=number of columns expected in the ts arrays -> len(ts) = n
+    """
+    t = numpy.array([])  # the array storing continuous data
+    if n > 1:
+        ts = numpy.array([[]]*n)
+    else:
+        ts = numpy.array([])
+    times = []  # a list that will contain stretches of continuous data
+    timeseries = []
+
+#    matchfile = re.compile('.*-([0-9]*)-([0-9]*).*$')
+    end = False
+    for filename in filenames:
+        _start, _end = extract_start_stop(filename, suffix='.npy.gz')
+        _dur = _end-_start
+#        m = matchfile.match(filename)
+#        (_start, _dur) = (int(m.group(1)), int(m.group(2)))
+
+        ### check to see if we have continuous data
+        if not end or end == _start:  # beginning of data
+            end = _start + _dur
+
+            _file = event.gzopen(filename)
+            _ts = numpy.load(_file)
+            _file.close()
+
+            ts = numpy.concatenate((ts, _ts), axis=1) ### axis argument takes care of multi-dimensional arrays
+            if n > 1:
+                len_ts = len(_ts[0])
+            else:
+                len_ts = len(_ts)
+            t = numpy.concatenate((t, numpy.arange(_start, _start + _dur, 1.0* _dur / len_ts)))
+
+        else:
+            # gap in the data!
+            times.append(t)  # put old continuous data into lists
+            timeseries.append(ts)
+
+            _file = event.gzopen(filename)  # start new continuous data
+            ts = numpy.load(_file)
+            _file.close()
+            if n > 1:
+                len_ts = len(ts[0])
+            else:
+                len_ts = len(ts)
+            t = numpy.arange(_start, _start + _dur, 1.0 * _dur / len_ts)
+            end = _start + _dur
+
+    times.append(t)
+    timeseries.append(ts)
+
+    return (times, timeseries)
+
+def stats_ts(ts):
+    """ 
+    compute basic statistics about ts 
+
+    return min(ts), max(ts), mean(ts), stdv(ts)
+    """
+
+    return (numpy.min(ts), numpy.max(ts), numpy.mean(ts), numpy.std(ts))
+
+def timeseries_in_segments(t, ts, segs):
+    """
+    returns only those elements of the time-series which are contained in the segments
+    """
+    if not len(t): ### no sample points...
+        return t, ts
+
+    truth = numpy.zeros_like(t).astype(bool)
+
+    for start, end in segs:
+        truth += (start <= t)*(t <= end) ### keep only times within this segment
+
+    return t[truth], numpy.transpose( numpy.transpose(ts)[truth] ) ### fancy ts stuff will handle multiple rows
+
+#=================================================
+# idq's xmltables
+#=================================================
+def datfile2xmldocs(datfilename, ifo, FAPmap, Lmap=False, Effmap=False, flavor=None, gwchan = None, gwtrigs=None, prog = None, options = None, version = None ):
+    """
+    reads in a datfile and generates xml tables containing the equivalent information, but adds FAP and likelihood as computed by FAPmap and Lmap (expected to be callable)
+        if Lmap is not supplied, attempts to use L = Eff/FAP as estimate with Effmap
+        ==> must supply either Lmap or Effmap
+
+    return gchxmldoc, clnxmldoc
+    """
+
+    if not (Lmap or Effmap):
+        raise StandardError('must supply either Lmap or Effmap')
+
+    gchxml_doc = ligolw.Document()  # generate the xml document object
+    gch_ligolw_element = ligolw.LIGO_LW()  # generate the table-tree element
+    gchxml_doc.appendChild(gch_ligolw_element)  # put table-tree into xml document
+
+    clnxml_doc = ligolw.Document()  # repeat for clnTable
+    cln_ligolw_element = ligolw.LIGO_LW()
+    clnxml_doc.appendChild(cln_ligolw_element)
+
+    # add process and process_params tables to xml docs
+    gchproc = process.register_to_xmldoc(gchxml_doc, prog, options, version = version)
+    clnproc = process.register_to_xmldoc(clnxml_doc, prog, options, version = version)
+
+    gchTable = lsctables.New(idq_tables.IDQGlitchTable)  # instantiate glitch table objects
+    clnTable = lsctables.New(idq_tables.IDQGlitchTable)
+
+    gchCoincDefTable = lsctables.New(lsctables.CoincDefTable) # instantiate coinc_def table objects
+    clnCoincDefTable = lsctables.New(lsctables.CoincDefTable)
+
+    gchCoincTable = lsctables.New(lsctables.CoincTable) # instantiate coinc_event table objects
+    clnCoincTable = lsctables.New(lsctables.CoincTable)
+
+    gchCoincMapTable = lsctables.New(lsctables.CoincMapTable) # instantiate coinc_event_map table objects
+    clnCoincMapTable = lsctables.New(lsctables.CoincMapTable)
+
+    if gwtrigs:
+        gchSnglBurstTable = lsctables.New(lsctables.SnglBurstTable) # instantiate sngl_burst table for gw triggers
+
+    gch_ligolw_element.appendChild(gchTable)  # put gchTable into table-tree
+    cln_ligolw_element.appendChild(clnTable)
+
+    gch_ligolw_element.appendChild(gchCoincDefTable)  # put coinc_def table into table-tree
+    cln_ligolw_element.appendChild(clnCoincDefTable)
+
+    gch_ligolw_element.appendChild(gchCoincTable)  # put coinc_event table into table-tree
+    cln_ligolw_element.appendChild(clnCoincTable)
+
+    gch_ligolw_element.appendChild(gchCoincMapTable)  # put coinc_map table into table-tree
+    cln_ligolw_element.appendChild(clnCoincMapTable)
+
+    if gwtrigs:
+        gch_ligolw_element.appendChild(gchSnglBurstTable)  # put sngl_burst table into table-tree
+
+    # iterate over dat and place info into appropriate tables
+    # load data and fill out xml tables
+    if flavor == 'ovl':  # ovl records more info than the other classifiers
+        # setup ovl specific tables
+        gchOVLTable = lsctables.New(idq_tables.OVLDataTable)  # instantiate table objects
+        clnOVLTable = lsctables.New(idq_tables.OVLDataTable)
+        gch_ligolw_element.appendChild(gchOVLTable)  # add tables to document tree
+        cln_ligolw_element.appendChild(clnOVLTable)
+
+        # read in data
+        dat = slim_load_datfile(datfilename, skip_lines=0, columns=['GPS', 'i', 'rank', 'vchan', 'vthr', 'vwin' ])
+    else:
+        dat = slim_load_datfile(datfilename, skip_lines=0, columns=['GPS', 'i', 'rank'])  # read in relevant information from datfile
+
+    no_events = len(dat['GPS'])
+    no_glitch_events = len([a for a in dat['i'] if float(a) == 1])
+    no_clean_events = len([a for a in dat['i'] if float(a) == 0])
+
+    #generate coinc_def tables
+    if no_glitch_events > 0:
+        if gwtrigs:
+            gchCoincDefTable.get_coinc_def_id( search=idq_tables.IDQCoincDef['idq_glitch<-->sngl_burst'][0], search_coinc_type=idq_tables.IDQCoincDef['idq_glitch<-->sngl_burst'][1], create_new = True, description = 'idq_glitch<-->sngl_burst')
+        if flavor == 'ovl':
+            gchCoincDefTable.get_coinc_def_id( search=idq_tables.IDQCoincDef['idq_glitch<-->ovl_data'][0], search_coinc_type=idq_tables.IDQCoincDef['idq_glitch<-->ovl_data'][1], create_new = True, description = 'idq_glitch<-->ovl_data')
+
+    if no_clean_events > 0:
+        if flavor == 'ovl':
+            clnCoincDefTable.get_coinc_def_id( search=idq_tables.IDQCoincDef['idq_glitch<-->ovl_data'][0], search_coinc_type=idq_tables.IDQCoincDef['idq_glitch<-->ovl_data'][1], create_new = True, description = 'idq_glitch<-->ovl_data')
+
+
+    #WARNING: Below we associate glitches with GW triggers relying on the fact that both lists are time ordered and one-to-one.
+    # It is OK as long as dat files are generated from the same GW triggers and order of elements was not changed.
+    # check that the number of glitches in dat file is the same as number of gwtrigs
+    if gwtrigs:
+        if not len(gwtrigs) == no_glitch_events:
+            print "WARNING: Length of gwtrigs does not match number of glitch events in the dat file."
+            print "Glitch <-> GW trigger association will probably be incorrect"
+    glitch_index = 0
+    for ind in range(no_events):
+        GPS = float(dat['GPS'][ind])
+        i = float(dat['i'][ind])
+        rank = float(dat['rank'][ind])
+
+        ### add info to GlitchTable() objects. Commmon for all classifiers
+        idq_glitch_row = idq_tables.IDQGlitch()  # define row object
+
+        idq_glitch_row.ifo = ifo
+        idq_glitch_row.gps = int(GPS)  # fill in relevant data
+        idq_glitch_row.gps_ns = int( round( GPS % 1.0, ndigits=9 ) * 10**9 )
+        idq_glitch_row.rank = float(rank)
+        idq_glitch_row.fap = FAPmap(idq_glitch_row.rank)
+        if Lmap:
+            idq_glitch_row.likelihood = Lmap(idq_glitch_row.rank)
+        else:
+            if idq_glitch_row.fap == 0:
+                if Effmap(idq_glitch_row.rank) == 0:
+                    idq_glitch_row.likelihood = 0
+                else:
+                    idq_glitch_row.likelihood = numpy.infty
+            else:
+                idq_glitch_row.likelihood = Effmap(idq_glitch_row.rank) / idq_glitch_row.fap
+
+                # ## add info to OVLDataTable() objects
+
+        if flavor == 'ovl':
+            ovl_row = idq_tables.OVLData()  # define row object
+            ovl_row.ifo = ifo
+            ovl_row.aux_channel = dat['vchan'][ind]
+            ovl_row.veto_thr = float(dat['vthr'][ind])
+            ovl_row.veto_win = float(dat['vwin'][ind])
+
+        ### define coincs, update rows, etc. Do this all at once so the index counters don't get confused
+        if i == 1:  # glitch sample
+            idq_glitch_row.event_id = gchTable.get_next_id()
+            gchTable.append(idq_glitch_row)
+            if gwtrigs: # add gw trigger to sngl_burst table and add idq_glitch<-->sngl_burst coinc
+                sngl_burst_row = lsctables.SnglBurst()
+                sngl_burst_columns = lsctables.SnglBurstTable.validcolumns
+
+                gw_trig = gwtrigs[glitch_index] # columns for kw triggers are defined in event.py
+
+                sngl_burst_row.process_id = gchproc.process_id
+                sngl_burst_row.ifo = ifo
+                sngl_burst_row.search = "kleineWelle"
+                sngl_burst_row.channel = gwchan
+                sngl_burst_row.set_start(LIGOTimeGPS(gw_trig[0]))
+                #sngl_burst_row.start_time = int(gw_trig[0])
+                #sngl_burst_row.start_time_ns = int( round( gw_trig[0] % 1.0, ndigits=9 ) * 10**9 )
+                sngl_burst_row.set_peak(LIGOTimeGPS(gw_trig[2]))
+                #sngl_burst_row.peak_time = int(gw_trig[2])
+                #sngl_burst_row.peak_time_ns = int( round( gw_trig[2] % 1.0, ndigits=9 ) * 10**9 )
+                sngl_burst_row.set_stop(LIGOTimeGPS(gw_trig[1]))
+                sngl_burst_row.duration = (sngl_burst_row.stop_time - sngl_burst_row.start_time) + (sngl_burst_row.stop_time_ns - sngl_burst_row.start_time_ns)*10**(-9)
+                sngl_burst_row.central_freq = gw_trig[3]
+                sngl_burst_row.snr = math.sqrt(gw_trig[-3] - gw_trig[-2])
+                sngl_burst_row.confidence = gw_trig[7]
+                sngl_burst_row.event_id = gchSnglBurstTable.get_next_id()
+
+                # define list of columns which we filled in
+                used_valid_columns = ['process_id', 'ifo', 'search', 'channel', 'start_time', 'start_time_ns', 'stop_time', 'stop_time_ns',
+                                      'peak_time', 'peak_time_ns', 'duration', 'central_freq',
+                                      'snr', 'confidence', 'event_id']
+
+                # fill all other columns with None
+                for (column, type) in sngl_burst_columns.iteritems():
+                    if not column in used_valid_columns: setattr(sngl_burst_row, column, None)
+
+                gchSnglBurstTable.append(sngl_burst_row)
+
+                # creat idq_glitch<-->sngl_burst coinc event
+                coinc_row = lsctables.Coinc()
+                coinc_row.process_id = gchproc.process_id
+                coinc_row.coinc_def_id = gchCoincDefTable.get_coinc_def_id(
+                    search=idq_tables.IDQCoincDef['idq_glitch<-->sngl_burst'][0],\
+                    search_coinc_type=idq_tables.IDQCoincDef['idq_glitch<-->sngl_burst'][1],\
+                    description = 'idq_glitch<-->sngl_burst'
+                    )
+                coinc_row.time_slide_id = lsctables.TimeSlideID(0)
+                coinc_row.instruments = ifo
+                coinc_row.nevents = 1
+                coinc_row.likelihood = idq_glitch_row.likelihood
+                coinc_row.coinc_event_id = gchCoincTable.get_next_id()
+
+                gchCoincTable.append(coinc_row)
+
+                # add entries to coinc_map table
+                coinc_map_row = lsctables.CoincMap()
+                coinc_map_row.coinc_event_id = coinc_row.coinc_event_id
+                coinc_map_row.table_name = table.StripTableName(idq_tables.IDQGlitchTable.tableName)
+                coinc_map_row.event_id = idq_glitch_row.event_id
+
+                gchCoincMapTable.append(coinc_map_row)
+
+                coinc_map_row = lsctables.CoincMap()
+                coinc_map_row.coinc_event_id = coinc_row.coinc_event_id
+                coinc_map_row.table_name = table.StripTableName(lsctables.SnglBurstTable.tableName)
+                coinc_map_row.event_id = sngl_burst_row.event_id
+
+                gchCoincMapTable.append(coinc_map_row)
+
+            if flavor == 'ovl':
+                ovl_row.event_id = gchOVLTable.get_next_id()
+                gchOVLTable.append(ovl_row)
+
+                # creat idq_glitch<-->ovl_data coinc event
+                coinc_row = lsctables.Coinc()
+                coinc_row.process_id = gchproc.process_id
+                coinc_row.coinc_def_id = gchCoincDefTable.get_coinc_def_id(
+                    search=idq_tables.IDQCoincDef['idq_glitch<-->ovl_data'][0],\
+                    search_coinc_type=idq_tables.IDQCoincDef['idq_glitch<-->ovl_data'][1],\
+                    description = 'idq_glitch<-->ovl_data'
+                    )
+                coinc_row.time_slide_id = lsctables.TimeSlideID(0)
+                coinc_row.instruments = ifo
+                coinc_row.nevents = 1
+                coinc_row.likelihood = idq_glitch_row.likelihood
+                coinc_row.coinc_event_id = gchCoincTable.get_next_id()
+
+                gchCoincTable.append(coinc_row)
+
+                # add entries to coinc_map table
+                coinc_map_row = lsctables.CoincMap()
+                coinc_map_row.coinc_event_id = coinc_row.coinc_event_id
+                coinc_map_row.table_name = table.StripTableName(idq_tables.IDQGlitchTable.tableName)
+                coinc_map_row.event_id = idq_glitch_row.event_id
+
+                gchCoincMapTable.append(coinc_map_row)
+
+                coinc_map_row = lsctables.CoincMap()
+                coinc_map_row.coinc_event_id = coinc_row.coinc_event_id
+                coinc_map_row.table_name = table.StripTableName(idq_tables.OVLDataTable.tableName)
+                coinc_map_row.event_id = ovl_row.event_id
+
+                gchCoincMapTable.append(coinc_map_row)
+
+            glitch_index += 1
+
+        else:
+            idq_glitch_row.event_id = clnTable.get_next_id()
+            clnTable.append(idq_glitch_row)
+            if flavor == 'ovl':
+                ovl_row.event_id = clnOVLTable.get_next_id()
+                clnOVLTable.append(ovl_row)
+
+                # creat idq_glitch<-->ovl_data coinc event
+                coinc_row = lsctables.Coinc()
+                coinc_row.process_id = clnproc.process_id
+                coinc_row.coinc_def_id = clnCoincDefTable.get_coinc_def_id(
+                    search=idq_tables.IDQCoincDef['idq_glitch<-->ovl_data'][0],\
+                    search_coinc_type=idq_tables.IDQCoincDef['idq_glitch<-->ovl_data'][1],\
+                    description = 'idq_glitch<-->ovl_data'
+                    )
+                coinc_row.time_slide_id = lsctables.TimeSlideID(0)
+                coinc_row.instruments = ifo
+                coinc_row.nevents = 1
+                coinc_row.likelihood = idq_glitch_row.likelihood
+                coinc_row.coinc_event_id = clnCoincTable.get_next_id()
+
+                clnCoincTable.append(coinc_row)
+
+                # add entries to coinc_map table
+                coinc_map_row = lsctables.CoincMap()
+                coinc_map_row.coinc_event_id = coinc_row.coinc_event_id
+                coinc_map_row.table_name = table.StripTableName(idq_tables.IDQGlitchTable.tableName)
+                coinc_map_row.event_id = idq_glitch_row.event_id
+
+                clnCoincMapTable.append(coinc_map_row)
+
+                coinc_map_row = lsctables.CoincMap()
+                coinc_map_row.coinc_event_id = coinc_row.coinc_event_id
+                coinc_map_row.table_name = table.StripTableName(idq_tables.OVLDataTable.tableName)
+                coinc_map_row.event_id = ovl_row.event_id
+
+                clnCoincMapTable.append(coinc_map_row)
+
+    return (gchxml_doc, clnxml_doc)
+
+#===================================================================================================
+# OVL WRAPPERS
+#===================================================================================================
+def ovl_evaluate( vetolist, GPS_headers=False, GPStimes=False, allvtrg=False, kw_trgfiles=False, gwchan=False, patfiles=False, skip_lines=1, filename='ovl_predict', output_dir='./'):
+    """
+    takes the last line of vetolist_cache file and uses that as a pointer to the most recent vetolist information.
+    generates vetosegment from kw_trgfiles
+    if patfiles:
+        generates GPStimes from patfiles
+    else:
+        generates GPStimes from kw_trgfiles using gwchan (REQUIRED)
+
+    expects vetolsit to be a file path
+        kw_trgfiles, patfiles to be lists of file paths
+        gwchan to be a string
+    """
     if not GPStimes:
-
         # generate list of GPStimes to classify
-
         GPStimes = []
         if patfiles:
             for patfile in patfiles:
@@ -2817,213 +2449,197 @@ def ovl_evaluate(
         GPS_headers = ['GPS', 'i']
 
     # generate ovl prediction output
-
     gps_tcent = GPS_headers.index('GPS')
-    return ovl.predict(
-        vetolist,
-        GPS_headers,
-        GPStimes,
-        gps_tcent,
-        allvtrg=allvtrg,
-        kw_trgfiles=kw_trgfiles,
-        predict_filename=filename,
-        output_dir=output_dir,
-        )
+    return ovl.predict( vetolist, GPS_headers, GPStimes, gps_tcent, allvtrg=allvtrg, kw_trgfiles=kw_trgfiles, predict_filename=filename, output_dir=output_dir )
 
-
-def ovl_train(
-    gpsstart,
-    gpsstop,
-    cp,
-    scisegs=False,
-    vetosegs=False,
-    output_dir='./',
-    ):
+def ovl_train(gpsstart, gpsstop, generalD, classifierD, scisegs=False, vetosegs=False, output_dir='./' , padding = 1.0 ):
     """ 
-....builds an ovl.params object and launches ovl training jobs on the specified data.
-....pulls many parameters from "cp" config object
-
-...."""
-
+    builds an ovl.params object and launches ovl training jobs on the specified data.
+    pulls many parameters from "cp" config object
+    """
     # build params object
-
     analysis_range = [gpsstart, gpsstop]
 
     # load from cp object
+    auxdir = generalD['snglchndir']
+    gwdir = generalD['snglchndir']
+    gwchans = generalD['gwchannel'].split()
+    gwthr = float(generalD['gw_kwsignif_thr'])
+    ifos = generalD['ifo'].split()
 
-    auxdir = cp.get('general', 'snglchndir')
-    gwdir = cp.get('general', 'snglchndir')
-    gwchans = cp.get('general', 'gwchannel').split()
-    gwthr = float(cp.get('general', 'gw_kwsignif_thr'))
-    ifos = cp.get('ovl_train', 'ifos').split()
-    gwsets = cp.get('ovl_train', 'gwsets').split()
-    safety = cp.get('ovl_train', 'safety')
-    windows = [float(l) for l in cp.get('ovl_train', 'windows').split()]
-    thresholds = [float(l) for l in cp.get('ovl_train', 'thresholds'
-                  ).split()]
-    Psigthr = float(cp.get('ovl_train', 'Psigthr'))
-    effbydtthr = float(cp.get('ovl_train', 'effbydtthr'))
+    metric = classifierD['metric']
 
-# ....channels = False
-# ....notused = []
+    gwsets = classifierD['gwsets'].split()
+    safety = classifierD['safety']
+    windows = [float(l) for l in classifierD['windows'].split()]
+    thresholds = [float(l) for l in classifierD['thresholds'].split()]
+    Psigthr = float(classifierD['psigthr'])
+    effbydtthr = float(classifierD['effbydtthr'])
 
-    channels = cp.get('general', 'selected-channels')
-    notused = cp.get('general', 'unsafe-channels')
-    if channels == '':
+    #channels = False
+    #notused = []
+
+    channels = generalD['selected-channels']
+    notused = generalD['unsafe-channels']
+    if channels:
         channels = False
-    if notused != '':
-        notused = [l.strip('\n') for l in open(notused, 'r'
-                   ).readlines()]
+    if notused:
+        notused = [l.strip('\n') for l in open(notused, 'r').readlines()]
     else:
         notused = []
 
-    params = ovl.params(
-        analysis_range,
-        auxdir,
-        gwdir,
-        gwchans,
-        gwthr,
-        ifos,
-        gwsets,
-        scisegs=scisegs,
-        vetosegs=vetosegs,
-        channels=channels,
-        notused=notused,
-        windows=windows,
-        thresholds=thresholds,
-        Psigthr=Psigthr,
-        effbydtthr=effbydtthr,
-        safety=safety,
-        )
+    params = ovl.params( analysis_range, auxdir, gwdir, gwchans, gwthr, ifos, gwsets, scisegs=scisegs, vetosegs=vetosegs, channels=channels, notused=notused, windows=windows, thresholds=thresholds, Psigthr=Psigthr, effbydtthr=effbydtthr, safety=safety, metric=metric )
 
     # double check that windows are not bigger than padding set in idq_realtime
-
     len_windows = len(windows)
-    windows = [w for w in windows if w <= float(cp.get('idq_realtime',
-               'padding'))]
+    windows = [w for w in windows if w <= padding]
     if len_windows > len(windows):
-        print 'WARNING: ovl windows are not consistent with idq_realtime padding! %d windows were removed.' \
-            % (len_windows - len(windows))
+        print 'WARNING: ovl windows are not consistent with idq_realtime padding! %d windows were removed.' % (len_windows - len(windows))
 
     # load training parameters from cp object
-
-    num_runs = int(cp.get('ovl_train', 'num_runs'))
-    incremental = int(cp.get('ovl_train', 'incremental'))
+    num_runs = int(classifierD['num_runs'])
+    incremental = int(classifierD['incremental'])
 
     # launch training job
-
-    vetolists = ovl.train(
-        params,
-        num_runs=num_runs,
-        incremental=incremental,
-        output_dir=output_dir,
-        verbose=False,
-        write_channels=True,
-        )
-
-    # append ovl_train.cach with most recent vetolist
-    # ovl_train_cache = cp.get("general", "ovl_cache")
-    # f = open(ovl_train_cache, "a")
-    # for vetolist in vetolists:
-     #  print >>f, vetolist
-    # f.close()
+    vetolists = ovl.train(params, num_runs=num_runs, incremental=incremental, output_dir=output_dir, verbose=False, write_channels=True )
 
     return vetolists
 
-
-# create veto timeseries from datefile glitch events
-# will create square window timeseries with +/-window around each event
-
-def datfile2timeseries(datfile, window=.1, fs=256):
-
-    # slim_load_datfile(file, skip_lines=1, columns=[])
-    # GPS i w unclean signif SNR rank
-    # L-KW_TRIGGERS_mvsc_1043300000_1043400000-1043896320-64.dat
-
-    datdata = slim_load_datfile(datfile, skip_lines=0,
-                                columns='GPS i rank'.split())
-    for (key, val) in datdata.items():
-        datdata[key] = map(float, val)
-    (ifo, name, tstart, dur) = os.path.basename(datfile)[:-4].split('-')
-    livetime = float(dur)
-    segment = [float(tstart), float(tstart) + livetime]
-    ts = numpy.zeros(livetime * fs)
-    sidx = numpy.argsort(datdata['rank'])
-    for i in sidx:
-        if datdata['i'][i] == 0:  # skip clean samples
-            continue
-        gps = datdata['GPS'][i]
-        seg = [gps - window, gps + window]
-        rank = datdata['rank'][i]
-        istart = max(0, int(math.floor((seg[0] - segment[0]) * fs)))  # start index
-        istop = min(len(ts), int(math.ceil((seg[1] - segment[0]) * fs)))  # 1 + stop index
-        ts[istart:istop] = rank
-
-    return ts
-
-
-######################  SVM functions  #######################
-
-def execute_svm_evaluate(
-    cp,
-    test_file,
-    range_file,
-    model_file,
-    predict_file,
-    dir,
-    ):
-
-    use_svm_job = auxmvc.use_svm_job(cp)
-    use_svm_node = auxmvc.use_svm_node(
-        use_svm_job,
-        cp,
-        test_file,
-        range_file,
-        model_file,
-        predict_file,
-        )
-    use_svm_command = auxmvc.construct_command(use_svm_node)
-    exit_status = submit_command(use_svm_command, 'svm_evaluate', dir)
-    return exit_status
-
-
-def execute_svm_train(
-    cp,
-    train_file,
-    range_file,
-    model_file,
-    cache_file,
-    submit_dir,
-    ):
+#===================================================================================================
+# FOREST WRAPPERS
+#===================================================================================================
+def forest_evaluate( patfile, trainedforest, ranked_file, cp, gps_start_time, gps_end_time, dir):
     """
-....Builds small condor dag to train SVM and submits it.
-...."""
+    Submits job that evaluates samples of auxmvc feature vectors using random forest (MVSC)
+    """
+
+    # initiate use forest job
+    use_forest_job = auxmvc.use_forest_job(cp)
+
+    # create node for this job
+    use_forest_node = auxmvc.use_forest_node(use_forest_job, trainedforest, patfile, ranked_file)
+
+    # get full command line for this job
+    use_forest_command = auxmvc.construct_command(use_forest_node)
+
+    # submit process
+#    exit_status = submit_command(use_forest_command, 'forest_evaluate', dir)
+    exit_status = subprocess.Popen(use_forest_command, cwd=dir).wait() ### block!
+
+    if exit_status == 0:
+        # run postscript
+        forest_add_excluded_variables_job = auxmvc.forest_add_excluded_vars_job(cp)
+        forest_add_excluded_variables_node = auxmvc.forest_add_excluded_vars_node(forest_add_excluded_variables_job, patfile, ranked_file)
+
+        # get full command line for this job
+        forest_add_excluded_variables_command = auxmvc.construct_command(forest_add_excluded_variables_node)
+
+        # submit process
+#        exit_status = submit_command(forest_add_excluded_variables_command, 'forest_add_excluded_variables', dir)
+        exit_status = subprocess.Popen(forest_add_excluded_variables_command, cwd=dir).wait() ### block!
+
+        return (exit_status, use_forest_node.get_output_files())
+
+    else:
+        return (exit_status, use_forest_node.get_output_files())
+
+
+def execute_forest_train(training_samples_file, cache, cp, submit_dir ):
+    """
+    Builds small dag to train  random forest (MVSC) and condor submits it.
+    """
 
     # set current directory to submit_dir
-
     os.chdir(submit_dir)
 
     # set path to condor log
-
     logpath = cp.get('idq_train', 'condorlogs')
 
     # set basename for condor dag
-
-    basename = cp.get('general', 'ifo') + '_train_svm_' \
-        + cp.get('general', 'usertag') + '-' + train_file.split('-'
-            )[-2] + '-' + train_file.split('-')[-1].split('.')[0]
+    basename = cp.get('general', 'ifo') + '_train_mvsc_' + cp.get('general', 'usertag') + '-' + training_samples_file.split('-')[-2] + '-' + training_samples_file.split('-')[-1].split('.')[0]
 
     # creat directory for jobs .err and .out files
-
     if not os.path.exists('logs'):
         os.makedirs('logs')
 
     # initiate dag
-
     dag = auxmvc.auxmvc_DAG(basename, logpath)
 
     # get dag file
+    dag_file = dag.get_dag_file()
 
+    # initiate train forest job
+    train_forest_job = auxmvc.train_forest_job(cp)
+
+    # construct name for trained forest file
+    trained_forest_filename = os.path.split(training_samples_file)[0] + '/mvsc/' + os.path.split(training_samples_file)[1].replace('.pat', '.spr')
+
+    # create node for this job
+    train_forest_node = auxmvc.train_forest_node(train_forest_job, training_samples_file, trained_forest_filename)
+
+    # append the node to dag
+    dag.add_node(train_forest_node)
+
+    # initiate add file to cache job
+    add_file_to_cache_job = auxmvc.add_file_to_cache_job(cp)
+
+    # create node for this job
+    add_file_to_cache_node = auxmvc.add_file_to_cache_node(add_file_to_cache_job, [train_forest_node.trainedforest], cache, p_node=[train_forest_node])
+
+    # add the node to dag
+    dag.add_node(add_file_to_cache_node)
+
+    # write dag
+    dag.write_sub_files()
+    dag.write_dag()
+    dag.write_script()
+
+    # condor dag submit command....
+    dag_submit_cmd = ['condor_submit_dag', dag_file]
+
+    # submit dag
+#    exit_status = submit_command(dag_submit_cmd, 'submit_forest_train_dag', submit_dir)
+    exit_status = subprocess.Popen(dag_submit_cmd, cwd=submit_dir).wait() ### block!
+
+    return (exit_status, dag_file, train_forest_node.get_output_files())
+
+#===================================================================================================
+# SVM WRAPPERS
+#===================================================================================================
+
+def svm_evaluate( cp, test_file, range_file, model_file, predict_file, dir ):
+
+    use_svm_job = auxmvc.use_svm_job(cp)
+    use_svm_node = auxmvc.use_svm_node( use_svm_job, cp, test_file, range_file, model_file, predict_file )
+    use_svm_command = auxmvc.construct_command(use_svm_node)
+
+#    exit_status = submit_command(use_svm_command, 'svm_evaluate', dir)
+    exit_status = subprocess.Popen(use_svm_command, cwd=dir).wait() ### block!
+
+    return exit_status
+
+
+def execute_svm_train( cp, train_file, range_file, model_file, cache_file, submit_dir ):
+    """
+    Builds small condor dag to train SVM and submits it.
+    """
+    # set current directory to submit_dir
+    os.chdir(submit_dir)
+
+    # set path to condor log
+    logpath = cp.get('idq_train', 'condorlogs')
+
+    # set basename for condor dag
+    basename = cp.get('general', 'ifo') + '_train_svm_'  + cp.get('general', 'usertag') + '-' + train_file.split('-')[-2] + '-' + train_file.split('-')[-1].split('.')[0]
+
+    # creat directory for jobs .err and .out files
+    if not os.path.exists('logs'):
+        os.makedirs('logs')
+
+    # initiate dag
+    dag = auxmvc.auxmvc_DAG(basename, logpath)
+
+    # get dag file
     dag_file = dag.get_dag_file()
 
     train_data = os.path.split(train_file)[1]
@@ -3031,7 +2647,6 @@ def execute_svm_train(
     model_data = os.path.split(model_file)[1]
 
     # cache_data = os.path.split(cache_file)[1]
-
     if not os.path.exists(range_file):
         os.mknod(range_file, 0644)
     if not os.path.exists(model_file):
@@ -3048,52 +2663,35 @@ def execute_svm_train(
 
     # initiate svm train job
     # if not os.path.exists(cache_data): os.symlink(os.path.abspath(cache_file),os.path.join(os.getcwd(),cache_data))
-
     train_svm_job = auxmvc.train_svm_job(cp)
 
     # create node for this job
-
-    train_svm_node = auxmvc.train_svm_node(train_svm_job, cp,
-            train_data, range_data, model_data)
+    train_svm_node = auxmvc.train_svm_node(train_svm_job, cp, train_data, range_data, model_data)
 
     # append the node to dag
-
     dag.add_node(train_svm_node)
 
     # initiate add file to cache job
-
     add_file_to_cache_job = auxmvc.add_file_to_cache_job(cp)
 
     # create node for this job
-
-    add_file_to_cache_node = \
-        auxmvc.add_file_to_cache_node(add_file_to_cache_job,
-            [submit_dir + train_svm_node.model_file, submit_dir
-            + train_svm_node.range_file], cache_file,
-            p_node=[train_svm_node])
+    add_file_to_cache_node = auxmvc.add_file_to_cache_node(add_file_to_cache_job, [submit_dir + train_svm_node.model_file, submit_dir + train_svm_node.range_file], cache_file, p_node=[train_svm_node])
 
     # add the node to dag
-
     dag.add_node(add_file_to_cache_node)
 
     # post_script = cp.get("svm_evaluate", "svm_train_post_script")
     # train_svm_node = auxmvc.train_svm_node(train_svm_job, dag, cp, train_data, range_data, model_data, post_script, cache_data, model_file, range_file)
-
     dag.write_sub_files()
     dag.write_dag()
     dag.write_script()
 
     # condor dag submit command....
-
     dag_submit_cmd = ['condor_submit_dag', dag_file]
 
     # submit dag
-
-    exit_status = submit_command(dag_submit_cmd, 'submit_svm_train_dag'
-                                 , submit_dir)
+#    exit_status = submit_command(dag_submit_cmd, 'submit_svm_train_dag', submit_dir)
+    exit_status = subprocess.Popen(dag_submit_cmd, cwd=submit_dir).wait() ### block!
 
     return (exit_status, dag_file, train_svm_node.get_output_files())
-
-
-##@}
 

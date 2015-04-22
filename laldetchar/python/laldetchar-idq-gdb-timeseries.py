@@ -25,14 +25,15 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-#from laldetchar.idq import idq
-from laldetchar.idq import reed
-from laldetchar.idq import reed_summary_plots as rsp
+from laldetchar.idq import idq
+from laldetchar.idq import idq_summary_plots as isp
+#from laldetchar.idq import reed as idq
+#from laldetchar.idq import reed_summary_plots as isp
 
 from laldetchar.idq import event
 
-#from laldetchar.idq import idq_gdb_utils
-from laldetchar.idq import reed_gdb_utils as rgu
+from laldetchar.idq import idq_gdb_utils as igu
+#from laldetchar.idq import reed_gdb_utils as igu
 
 from optparse import OptionParser
 
@@ -181,9 +182,9 @@ if not opts.skip_gracedb_upload:
 
 #===================================================================================================
 
-rank_channame = reed.channame(opts.ifo, opts.classifier, "%s_rank"%opts.tag)
-fap_channame = reed.channame(opts.ifo, opts.classifier, "%s_fap"%opts.tag)
-fapUL_channame = reed.channame(opts.ifo, opts.classifier, "%s_fapUL"%opts.tag)
+rank_channame = idq.channame(opts.ifo, opts.classifier, "%s_rank"%opts.tag)
+fap_channame = idq.channame(opts.ifo, opts.classifier, "%s_fap"%opts.tag)
+fapUL_channame = idq.channame(opts.ifo, opts.classifier, "%s_fapUL"%opts.tag)
 
 #===================================================================================================
 
@@ -193,10 +194,10 @@ if opts.verbose:
     print "Finding relevant *.npy.gz files"
 rank_filenames = []
 fap_filenames = []
-all_files = reed.get_all_files_in_range(opts.input_dir, opts.plotting_gps_start,
+all_files = idq.get_all_files_in_range(opts.input_dir, opts.plotting_gps_start,
     opts.plotting_gps_end, pad=0, suffix='.npy.gz')
 for filename in all_files:
-    if opts.classifier == reed.extract_fap_name(filename): # and opts.ifo in filename: ### this last bit not needed?
+    if opts.classifier == idq.extract_fap_name(filename): # and opts.ifo in filename: ### this last bit not needed?
         if 'rank' in filename:
             rank_filenames.append(filename)
         if 'fap' in filename:
@@ -234,7 +235,7 @@ if opts.verbose:
 # merge time-series
 if opts.verbose:
     print "merging rank timeseries"
-(r_times, r_timeseries) = reed.combine_ts(rank_filenames)
+(r_times, r_timeseries) = idq.combine_ts(rank_filenames)
 
 # for each bit of continuous data:
 #   add to plot
@@ -287,21 +288,21 @@ for (t, ts) in zip(r_times, r_timeseries):
 #        int(_start),
 #        int(_dur))
 
-    merged_rank_filename = reed.gdb_timeseries(opts.output_dir, opts.classifier, opts.ifo, "_rank%s"%opts.tag, int(_start), int(_dur))
+    merged_rank_filename = idq.gdb_timeseries(opts.output_dir, opts.classifier, opts.ifo, "_rank%s"%opts.tag, int(_start), int(_dur))
 
     if opts.verbose:
         print "\twriting " + merged_rank_filename
     np.save(event.gzopen(merged_rank_filename, 'w'), ts)
     merged_rank_filenames.append(merged_rank_filename)
 
-    rankfr = reed.gdb_timeseriesgwf(opts.output_dir, opts.classifier, opts.ifo, "_rank%s"%opts.tag, int(_start), int(_dur))
+    rankfr = idq.gdb_timeseriesgwf(opts.output_dir, opts.classifier, opts.ifo, "_rank%s"%opts.tag, int(_start), int(_dur))
     if opts.verbose:
         print "\twriting " + rankfr
-    reed.timeseries2frame( rankfr, {rank_channame:ts}, _start, _dur/(len(t)-1) )
+    idq.timeseries2frame( rankfr, {rank_channame:ts}, _start, _dur/(len(t)-1) )
     merged_rank_frames.append( rankfr )
 
     # generate and write summary statistics
-    (r_min, r_max, r_mean, r_stdv) = reed.stats_ts(ts)
+    (r_min, r_max, r_mean, r_stdv) = idq.stats_ts(ts)
     if r_max > max_rank:
         max_rank = r_max
         max_rank_segNo = segNo
@@ -348,7 +349,7 @@ if opts.verbose:
 # merge time-series
 if opts.verbose:
     print "merging fap timeseries"
-(f_times, f_timeseries) = reed.combine_ts(fap_filenames, n=2)
+(f_times, f_timeseries) = idq.combine_ts(fap_filenames, n=2)
 fUL_timeseries = [l[1] for l in f_timeseries]
 f_timeseries = [l[0] for l in f_timeseries]
 
@@ -398,21 +399,21 @@ for (t, ts, ul) in zip(f_times, f_timeseries, fUL_timeseries):
 #        int(_start),
 #        int(_end - _start))
 
-    merged_fap_filename = reed.gdb_timeseries(opts.output_dir, opts.classifier, opts.ifo, "_fap%s"%opts.tag, int(_start), int(_dur))
+    merged_fap_filename = idq.gdb_timeseries(opts.output_dir, opts.classifier, opts.ifo, "_fap%s"%opts.tag, int(_start), int(_dur))
 
     if opts.verbose:
         print "\twriting " + merged_fap_filename
     np.save(event.gzopen(merged_fap_filename, 'w'), (ts, ul))
     merged_fap_filenames.append(merged_fap_filename)
 
-    fapfr = reed.gdb_timeseriesgwf(opts.output_dir, opts.classifier, opts.ifo, "_fap%s"%opts.tag, int(_start), int(_dur))
+    fapfr = idq.gdb_timeseriesgwf(opts.output_dir, opts.classifier, opts.ifo, "_fap%s"%opts.tag, int(_start), int(_dur))
     if opts.verbose:
         print "\twriting " + fapfr
-    reed.timeseries2frame( fapfr, {fap_channame:ts, fapUL_channame:ul}, _start, _dur/(len(t)-1) )
+    idq.timeseries2frame( fapfr, {fap_channame:ts, fapUL_channame:ul}, _start, _dur/(len(t)-1) )
     merged_fap_frames.append( fapfr )
 
     # generate and write summary statistics
-    (f_min, f_max, f_mean, f_stdv) = reed.stats_ts(ts)
+    (f_min, f_max, f_mean, f_stdv) = idq.stats_ts(ts)
     if f_min < min_fap:
         min_fap = f_min
         min_fap_segNo = segNo
@@ -469,7 +470,7 @@ if opts.gps!=None:
 
 if opts.gch_xml:
     ### annotate glitches
-    gps_times = [ gps + gps_ns * 1e-9 for (gps, gps_ns) in rgu.get_glitch_times(opts.gch_xml)]
+    gps_times = [ gps + gps_ns * 1e-9 for (gps, gps_ns) in igu.get_glitch_times(opts.gch_xml)]
     gps_times = np.asarray(gps_times)
     # channel annotation looks awfull on the static plot, must find a better way to visualize it
     #r_ax.text(gps - opts.plotting_gps_start, 0.1, auxchannel, ha="left", va="bottom", rotation=45)
@@ -505,7 +506,7 @@ plt.setp(fig, figwidth=10, figheight=4)
 #        opts.tag,
 #        int(opts.plotting_gps_start),
 #        int(opts.plotting_gps_end - opts.plotting_gps_start))
-figname = rsp.timeseriesfig(opts.output_dir, opts.ifo, opts.classifier, opts.tag, int(opts.plotting_gps_start), int(opts.plotting_gps_end-opts.plotting_gps_start))
+figname = isp.timeseriesfig(opts.output_dir, opts.ifo, opts.classifier, opts.tag, int(opts.plotting_gps_start), int(opts.plotting_gps_end-opts.plotting_gps_start))
 
 if opts.verbose:
     print '\tsaving ' + figname
@@ -526,7 +527,7 @@ if not opts.skip_gracedb_upload:
 #        opts.tag,
 #        int(opts.plotting_gps_start),
 #        int(opts.plotting_gps_end - opts.plotting_gps_start))
-summary_filename = reed.gdb_summary(opts.output_dir, opts.classifier, opts.ifo, opts.tag, int(opts.plotting_gps_start), int(opts.plotting_gps_end-opts.plotting_gps_start))
+summary_filename = idq.gdb_summary(opts.output_dir, opts.classifier, opts.ifo, opts.tag, int(opts.plotting_gps_start), int(opts.plotting_gps_end-opts.plotting_gps_start))
 
 if opts.verbose:
     print "\twriting " + summary_filename
@@ -584,7 +585,7 @@ for segNo in range(No_segs):
         ovl_columns = ['aux_channel']
         snglburst_columns = ['search', 'snr']
         # get the data from xml tables
-        summary_data = rgu.get_glitch_ovl_snglburst_summary_info(opts.gch_xml, glitch_columns,\
+        summary_data = igu.get_glitch_ovl_snglburst_summary_info(opts.gch_xml, glitch_columns,\
             ovl_columns, snglburst_columns)
 
         print >> summary_file, '\n'
@@ -613,7 +614,7 @@ if not opts.skip_gracedb_upload:
 
         if len(t): # some surviving data
             # generate and write summary statistics
-            (f_min, f_max, f_mean, f_stdv) = reed.stats_ts(ts)
+            (f_min, f_max, f_mean, f_stdv) = idq.stats_ts(ts)
 
             # update min_fap
             if min_fap > f_min:

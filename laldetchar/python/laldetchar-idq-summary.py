@@ -31,10 +31,10 @@ from collections import defaultdict
 
 from lal import gpstime
 
-#from laldetchar.idq import idq
-from laldetchar.idq import reed
-#from laldetchar.idq import idq_summary_plots as idq_s_p
-from laldetchar.idq import reed_summary_plots as rsp 
+from laldetchar.idq import idq
+from laldetchar.idq import idq_summary_plots as isp
+#from laldetchar.idq import reed as idq
+#from laldetchar.idq import reed_summary_plots as isp 
 from laldetchar.idq import event
 from laldetchar.idq import calibration
 
@@ -133,10 +133,10 @@ gch_linestyle='solid'
 
 #===================================================================================================
 ### setup logger to record processes
-logger = reed.setup_logger('idq_logger', opts.log_file, sys.stdout, format='%(asctime)s %(message)s')
+logger = idq.setup_logger('idq_logger', opts.log_file, sys.stdout, format='%(asctime)s %(message)s')
 
-sys.stdout = reed.LogFile(logger)
-sys.stderr = reed.LogFile(logger)
+sys.stdout = idq.LogFile(logger)
+sys.stderr = idq.LogFile(logger)
 
 #===================================================================================================
 ### read global configuration file
@@ -163,10 +163,10 @@ cln_kwsignif_thr = config.getfloat('realtime', 'clean_threshold')
 # which classifiers
 #========================
 ### ensure we have a section for each classifier and fill out dictionary of options
-classifiersD, mla, ovl = reed.config_to_classifiersD( config )
+classifiersD, mla, ovl = idq.config_to_classifiersD( config )
 
 ### get combiners information and add these to classifiersD
-combinersD, referenced_classifiers = reed.config_to_combinersD( config )
+combinersD, referenced_classifiers = idq.config_to_combinersD( config )
 for combiner, value in combinersD.items():
     classifiersD[combiner] = value
 
@@ -248,7 +248,7 @@ else:
 #==================================================
 ### current time and boundaries
 
-t = int(reed.nowgps())
+t = int(idq.nowgps())
 
 gpsstop = opts.gpsstop
 if not gpsstop: ### stop time of this analysis
@@ -320,19 +320,19 @@ while gpsstart < gpsstop:
 
         try:
             ### this returns a string
-            seg_xml_file = reed.segment_query(config, gpsstart - lookback , gpsstart + stride, url=segdb_url)
+            seg_xml_file = idq.segment_query(config, gpsstart - lookback , gpsstart + stride, url=segdb_url)
 
             ### write seg_xml_file to disk
             lsctables.use_in(ligolw.LIGOLWContentHandler)
             xmldoc = ligolw_utils.load_fileobj(seg_xml_file, contenthandler=ligolw.LIGOLWContentHandler)[0]
 
             ### science segments xml filename
-            seg_file = reed.segxml(output_dir, "_%s"%dq_name, gpsstart - lookback , lookback+stride)
+            seg_file = idq.segxml(output_dir, "_%s"%dq_name, gpsstart - lookback , lookback+stride)
             logger.info('writing science segments to file : '+seg_file)
             ligolw_utils.write_filename(xmldoc, seg_file, gz=seg_file.endswith(".gz"))
             files['segs']['sci'] = seg_file
 
-            (scisegs, coveredseg) = reed.extract_dq_segments(seg_file, dq_name) ### read in segments from xml file
+            (scisegs, coveredseg) = idq.extract_dq_segments(seg_file, dq_name) ### read in segments from xml file
 
         except Exception as e:
             traceback.print_exc()
@@ -346,16 +346,16 @@ while gpsstart < gpsstop:
                 continue
 
     logger.info('finding idq segments')
-    idqsegs = reed.get_idq_segments(realtimedir, gpsstart-lookback, gpsstart+stride, suffix='.dat')
+    idqsegs = idq.get_idq_segments(realtimedir, gpsstart-lookback, gpsstart+stride, suffix='.dat')
 
     logger.info('taking intersection between science segments and idq segments')
     idqsegs = event.andsegments( [scisegs, idqsegs] )
 
     ### write segment file
     if opts.ignore_science_segments:
-        idqseg_path = reed.idqsegascii(output_dir, '', gpsstart - lookback, lookback+stride)
+        idqseg_path = idq.idqsegascii(output_dir, '', gpsstart - lookback, lookback+stride)
     else:
-        idqseg_path = reed.idqsegascii(output_dir, '_%s'%dq_name, gpsstart - lookback, lookback+stride)
+        idqseg_path = idq.idqsegascii(output_dir, '_%s'%dq_name, gpsstart - lookback, lookback+stride)
     f = open(idqseg_path, 'w')
     for seg in idqsegs:
         print >> f, seg[0], seg[1]
@@ -369,15 +369,15 @@ while gpsstart < gpsstop:
     ### find all *dat files, bin them according to classifier
     logger.info('finding all *dat files')
     datsD = defaultdict( list )
-    for dat in reed.get_all_files_in_range(realtimedir, gpsstart-lookback, gpsstart+stride, pad=0, suffix='.dat' ):
-        datsD[reed.extract_dat_name( dat )].append( dat )
+    for dat in idq.get_all_files_in_range(realtimedir, gpsstart-lookback, gpsstart+stride, pad=0, suffix='.dat' ):
+        datsD[idq.extract_dat_name( dat )].append( dat )
 
     ### throw away any un-needed files
     for key in datsD.keys():
         if key not in classifiers:
             datsD.pop(key)
         else: ### throw out files that don't contain any science time
-            datsD[key] = [ dat for dat in datsD[key] if event.livetime(event.andsegments([idqsegs, [reed.extract_start_stop(dat, suffix='.dat')]])) ]
+            datsD[key] = [ dat for dat in datsD[key] if event.livetime(event.andsegments([idqsegs, [idq.extract_start_stop(dat, suffix='.dat')]])) ]
 
     #===============================================================================================
     # build plots
@@ -407,7 +407,7 @@ while gpsstart < gpsstop:
         color = colors[classifier]
 
         ### write list of dats to cache file
-        cache = reed.cache(output_dir, classifier, "_datcache%s"%usertag)
+        cache = idq.cache(output_dir, classifier, "_datcache%s"%usertag)
         logger.info('writing list of dat files to %s'%cache)
         f = open(cache, 'w')
         for dat in datsD[classifier]:
@@ -419,129 +419,129 @@ while gpsstart < gpsstop:
         logger.info('building plots for %s'%classifier)
 
         ### load dat files
-        output = reed.slim_load_datfiles(datsD[classifier], skip_lines=0, columns=columns)
+        output = idq.slim_load_datfiles(datsD[classifier], skip_lines=0, columns=columns)
 
         ### filter times by scisegs -> keep only the ones within scisegs
-        output = reed.filter_datfile_output( output, idqsegs )
+        output = idq.filter_datfile_output( output, idqsegs )
 
         if not opts.dont_cluster:
-            output = reed.cluster_datfile_output( output, cluster_key=cluster_key, cluster_win=cluster_win)
-            cluster_dat = reed.dat(output_dir, classifier, ifo, "clustered", usertag, gpsstart-lookback, lookback+stride)
+            output = idq.cluster_datfile_output( output, cluster_key=cluster_key, cluster_win=cluster_win)
+            cluster_dat = idq.dat(output_dir, classifier, ifo, "clustered", usertag, gpsstart-lookback, lookback+stride)
             logger.info('  writing %s'%cluster_dat)
-            reed.output_to_datfile( output, cluster_dat )
+            idq.output_to_datfile( output, cluster_dat )
         else:
-            cluster_dat = reed.dat(output_dir, classifier, ifo, "unclustered", usertag, gpsstart-lookback, lookback+stride)
+            cluster_dat = idq.dat(output_dir, classifier, ifo, "unclustered", usertag, gpsstart-lookback, lookback+stride)
             logger.info('  writing %s'%cluster_dat)
-            reed.output_to_datfile( output, cluster_dat )
+            idq.output_to_datfile( output, cluster_dat )
 
 
         ### compute rcg from output
-        r, c, g = reed.dat_to_rcg( output )
-        dc, dg = reed.rcg_to_diff( c, g ) ### get the numbers at each rank
+        r, c, g = idq.dat_to_rcg( output )
+        dc, dg = idq.rcg_to_diff( c, g ) ### get the numbers at each rank
 
         data[classifier] = {'num_cln':c[-1], 'num_gch':g[-1]}
 
         ### dump into roc file
-        roc = reed.roc(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
+        roc = idq.roc(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
         logger.info('  writting %s'%roc)
-        reed.rcg_to_file(roc, r, c, g)
+        idq.rcg_to_file(roc, r, c, g)
 
         files['roc'][classifier] = roc
 
         ### generate ROC plot
-        rocfig = rsp.rocfig(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
+        rocfig = isp.rocfig(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
         fignames['roc'][classifier] = rocfig ### store for reference
         logger.info('  plotting %s'%rocfig)
 
-        fig, ax = rsp.rcg_to_rocFig(c, g, color=color, label=classifier)
+        fig, ax = isp.rcg_to_rocFig(c, g, color=color, label=classifier)
         ax.plot(faircoin, faircoin, 'k--')
         ax.legend(loc='best')
 
         fig.savefig(rocfig)
-        rsp.close(fig)
+        isp.close(fig)
 
-        rocfig = rsp.rocfig(output_dir, classifier, ifo, "%s_lin"%usertag, gpsstart-lookback, lookback+stride)
+        rocfig = isp.rocfig(output_dir, classifier, ifo, "%s_lin"%usertag, gpsstart-lookback, lookback+stride)
         fignames['linroc'][classifier] = rocfig
         logger.info('  plotting %s'%rocfig)
         ax.set_xscale('linear')
         ax.set_xlim(xmin=0, xmax=1)
         fig.savefig(rocfig)
-        rsp.close(fig)
+        isp.close(fig)
 
-        roc_figax = rsp.rcg_to_rocFig(c, g, color=color, label=classifier, figax=roc_figax) ### for overlay plot
+        roc_figax = isp.rcg_to_rocFig(c, g, color=color, label=classifier, figax=roc_figax) ### for overlay plot
 
         ### generate histogram, cdf 
-        histfig = rsp.histfig(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
+        histfig = isp.histfig(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
         fignames['hst'][classifier] = histfig ### store for reference
         logger.info('  plotting %s'%histfig)
 
         if np.any(dc):
-            fig, axh, axc = rsp.stacked_hist(r, dc, color=color, linestyle=cln_linestyle, label="%s cln"%classifier)
-            hst_figax = rsp.stacked_hist(r, dc, color=color, linestyle=cln_linestyle, label="%s cln"%classifier, figax=hst_figax) ### for overlay plots
+            fig, axh, axc = isp.stacked_hist(r, dc, color=color, linestyle=cln_linestyle, label="%s cln"%classifier)
+            hst_figax = isp.stacked_hist(r, dc, color=color, linestyle=cln_linestyle, label="%s cln"%classifier, figax=hst_figax) ### for overlay plots
         if np.any(dg):
-            fig, axh, axc = rsp.stacked_hist(r, dg, color=color, linestyle=gch_linestyle, label="%s gch"%classifier, figax=(fig, axh, axc))
-            hst_figax = rsp.stacked_hist(r, dg, color=color, linestyle=gch_linestyle, label="%s gch"%classifier, figax=hst_figax)
+            fig, axh, axc = isp.stacked_hist(r, dg, color=color, linestyle=gch_linestyle, label="%s gch"%classifier, figax=(fig, axh, axc))
+            hst_figax = isp.stacked_hist(r, dg, color=color, linestyle=gch_linestyle, label="%s gch"%classifier, figax=hst_figax)
         if np.any(dc) or np.any(dg):
             axh.set_xlim(xmin=0, xmax=1)
             axc.set_xlim(xmin=0, xmax=1)
             axc.legend(loc='best')
             fig.savefig(histfig)
-            rsp.close(fig)
+            isp.close(fig)
 
         ### compute kde estimates
         logger.info('  computing kde_pwg estimates')
-        kde_cln = reed.kde_pwg( kde, r, dc )
-        kde_gch = reed.kde_pwg( kde, r, dg )
+        kde_cln = idq.kde_pwg( kde, r, dc )
+        kde_gch = idq.kde_pwg( kde, r, dg )
 
         ### write kde points to file
-        kde_cln_name = reed.kdename(output_dir, classifier, ifo, "_cln%s"%usertag, gpsstart-lookback, lookback+stride)
+        kde_cln_name = idq.kdename(output_dir, classifier, ifo, "_cln%s"%usertag, gpsstart-lookback, lookback+stride)
         logger.info('  writing %s'%kde_cln_name)
         np.save(event.gzopen(kde_cln_name, "w"), (kde, kde_cln))
 
-        kde_gch_name = reed.kdename(output_dir, classifier, ifo, "_gch%s"%usertag, gpsstart-lookback, lookback+stride)
+        kde_gch_name = idq.kdename(output_dir, classifier, ifo, "_gch%s"%usertag, gpsstart-lookback, lookback+stride)
         logger.info('  writing %s'%kde_gch_name)
         np.save(event.gzopen(kde_gch_name, "w"), (kde, kde_gch))
 
         files['kde'][classifier] = {'cln':kde_cln_name, 'gch':kde_gch_name}
 
         ### generate kde pdf, cdf (above)
-        kdefig = rsp.kdefig(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
+        kdefig = isp.kdefig(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
         fignames['kde'][classifier] = kdefig ### store for reference
         logger.info('  plotting %s'%kdefig)
 
-        fig, axh, axc = rsp.stacked_kde(kde, kde_cln, color=color, linestyle=cln_linestyle, label="%s cln"%classifier, figax=None)
-        fig, axh, axc = rsp.stacked_kde(kde, kde_gch, color=color, linestyle=gch_linestyle, label="%s gch"%classifier, figax=(fig, axh, axc))
+        fig, axh, axc = isp.stacked_kde(kde, kde_cln, color=color, linestyle=cln_linestyle, label="%s cln"%classifier, figax=None)
+        fig, axh, axc = isp.stacked_kde(kde, kde_gch, color=color, linestyle=gch_linestyle, label="%s gch"%classifier, figax=(fig, axh, axc))
         axc.legend(loc='best')
 
         fig.savefig(kdefig)
-        rsp.close(fig)
+        isp.close(fig)
 
-        kde_figax = rsp.stacked_kde(kde, kde_cln, color=color, linestyle=cln_linestyle, label="%s cln"%classifier, figax=kde_figax) ### for overlay plot
-        kde_figax = rsp.stacked_kde(kde, kde_gch, color=color, linestyle=gch_linestyle, label="%s gch"%classifier, figax=kde_figax)
+        kde_figax = isp.stacked_kde(kde, kde_cln, color=color, linestyle=cln_linestyle, label="%s cln"%classifier, figax=kde_figax) ### for overlay plot
+        kde_figax = isp.stacked_kde(kde, kde_gch, color=color, linestyle=gch_linestyle, label="%s gch"%classifier, figax=kde_figax)
 
         ### likelihood ratio
-        Lfig = rsp.Lfig(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
+        Lfig = isp.Lfig(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
         fignames['L'][classifier] = Lfig
         logger.info('  plotting %s'%Lfig)
 
-        fig, axh, axc = rsp.stacked_L(kde, kde_cln, kde_gch, color=color, linestyle='solid', label=classifier, figax=None)
+        fig, axh, axc = isp.stacked_L(kde, kde_cln, kde_gch, color=color, linestyle='solid', label=classifier, figax=None)
         axc.legend(loc='best')
 
         fig.savefig(Lfig)
-        rsp.close(fig)
+        isp.close(fig)
 
-        L_figax = rsp.stacked_L(kde, kde_cln, kde_gch, color=color, linestyle='solid', label=classifier, figax=L_figax) ### for overlay plot
+        L_figax = isp.stacked_L(kde, kde_cln, kde_gch, color=color, linestyle='solid', label=classifier, figax=L_figax) ### for overlay plot
 
         ### figure out which gch and cln are removed below FAP thresholds
         rankthrs = []
         for FAP in opts.FAPthr:
             rankthr = min(r[c<=FAP*c[-1]]) ### smallest rank below FAP
             rankthrs.append( rankthr )
-            cln_bitword[FAP][classifier], gch_bitword[FAP][classifier] = reed.bin_by_rankthr(rankthr, output, columns=dat_columns)
+            cln_bitword[FAP][classifier], gch_bitword[FAP][classifier] = idq.bin_by_rankthr(rankthr, output, columns=dat_columns)
                 
         ### generate histograms of glitch parameters
         for column in dat_columns:
-            paramhist = rsp.histfig(output_dir, classifier, ifo, "%s_%s"%(usertag, column), gpsstart-lookback, lookback+stride)
+            paramhist = isp.histfig(output_dir, classifier, ifo, "%s_%s"%(usertag, column), gpsstart-lookback, lookback+stride)
             fignames['trg'][(classifier, column)] = paramhist
             logger.info('  plotting %s'%paramhist)
 
@@ -550,40 +550,40 @@ while gpsstart < gpsstop:
                 thr = min(r[c<=FAP*c[-1]]) ### smallest rank below FAP
                 x = [float(output[column][i]) for i in xrange(len(output[column])) if output['rank'][i] >= thr]
                 if x: ### will break if x is empty
-                    figax = rsp.stacked_hist( x, np.ones_like(x), color=None, label="$FAP\leq%E$"%FAP, bmin=min(x), bmax=max(x), figax=figax)
+                    figax = isp.stacked_hist( x, np.ones_like(x), color=None, label="$FAP\leq%E$"%FAP, bmin=min(x), bmax=max(x), figax=figax)
             if figax: ### only save if we plotted something...
                 fig, axh, axc = figax
                 axh.set_xlabel(column)
                 axc.set_xlim(axh.get_xlim())
                 axc.legend(loc='best')
                 fig.savefig(paramhist)
-                rsp.close(fig)
+                isp.close(fig)
 
     #====================
     # save overlays for this stride
     #====================
 
     ### roc overlay
-    rocfig = rsp.rocfig(output_dir, "overlay", ifo, usertag, gpsstart-lookback, lookback+stride)
+    rocfig = isp.rocfig(output_dir, "overlay", ifo, usertag, gpsstart-lookback, lookback+stride)
     fignames['roc']["overlay"] = rocfig ### store for reference
     logger.info('  plotting %s'%rocfig)
     fig, ax = roc_figax
     ax.plot(faircoin, faircoin, 'k--')
     ax.legend(loc='best')
     fig.savefig(rocfig)
-    rsp.close(fig)
+    isp.close(fig)
 
-    rocfig = rsp.rocfig(output_dir, "overlay", ifo, "%s_lin"%usertag, gpsstart-lookback, lookback+stride)
+    rocfig = isp.rocfig(output_dir, "overlay", ifo, "%s_lin"%usertag, gpsstart-lookback, lookback+stride)
     fignames['linroc']['overlay'] = rocfig
     logger.info('  plotting %s'%rocfig)
     ax.set_xscale('linear')
     ax.set_xlim(xmin=0, xmax=1)
     fig.savefig(rocfig)
-    rsp.close(fig)
+    isp.close(fig)
 
     ### histogram overlay
     if hst_figax: ### breaks if we have zero samples...
-        histfig = rsp.histfig(output_dir, "overlay", ifo, usertag, gpsstart-lookback, lookback+stride)
+        histfig = isp.histfig(output_dir, "overlay", ifo, usertag, gpsstart-lookback, lookback+stride)
         fignames['hst']["overlay"] = histfig ### store for reference
         logger.info('  plotting %s'%histfig)
         fig, axh, axc = hst_figax
@@ -591,59 +591,59 @@ while gpsstart < gpsstop:
         axc.set_xlim(xmin=0, xmax=1)
         axc.legend(loc='best')
         fig.savefig(histfig)
-        rsp.close(fig)
+        isp.close(fig)
 
     ### kde overlay
-    kdefig = rsp.kdefig(output_dir, "overlay", ifo, usertag, gpsstart-lookback, lookback+stride)
+    kdefig = isp.kdefig(output_dir, "overlay", ifo, usertag, gpsstart-lookback, lookback+stride)
     fignames['kde']["overlay"] = kdefig ### store for reference
     logger.info('  plotting %s'%kdefig)
     fig, axh, axc = kde_figax
     axc.legend(loc='best')
     fig.savefig(kdefig)
-    rsp.close(fig)
+    isp.close(fig)
 
     ### L overlay
-    Lfig = rsp.Lfig(output_dir, "overlay", ifo, usertag, gpsstart-lookback, lookback+stride)
+    Lfig = isp.Lfig(output_dir, "overlay", ifo, usertag, gpsstart-lookback, lookback+stride)
     fignames['L']["overlay"] = Lfig
     logger.info('  plotting %s'%Lfig)
     fig, axh, axc = L_figax
     axc.legend(loc='best')
     fig.savefig(Lfig)
-    rsp.close(fig)
+    isp.close(fig)
 
     #====================
     # bitword histograms
     #====================
 
     ### gch bitword histogram
-    bitfig = rsp.bitfig(output_dir, ifo, "%s_gch"%usertag, gpsstart-lookback, lookback+stride)
+    bitfig = isp.bitfig(output_dir, ifo, "%s_gch"%usertag, gpsstart-lookback, lookback+stride)
     fignames['bwh']['gch'] = bitfig
     logger.info('  plotting %s'%bitfig)
 
     figax=None
     for FAP in opts.FAPthr:
-        figax = rsp.bitword( gch_bitword[FAP], classifiers, label="FAP$\leq$%.3e"%FAP, figax=figax )
+        figax = isp.bitword( gch_bitword[FAP], classifiers, label="FAP$\leq$%.3e"%FAP, figax=figax )
     if figax:
         fig, ax = figax
         ax.legend(loc='upper center')
 
         fig.savefig(bitfig)
-        rsp.close(fig)
+        isp.close(fig)
 
     ### cln bitword histogram
-    bitfig = rsp.bitfig(output_dir, ifo, "%s_cln"%usertag, gpsstart-lookback, lookback+stride)
+    bitfig = isp.bitfig(output_dir, ifo, "%s_cln"%usertag, gpsstart-lookback, lookback+stride)
     fignames['bwh']['cln'] = bitfig
     logger.info('  plotting %s'%bitfig)
 
     figax=None
     for FAP in opts.FAPthr:
-        figax = rsp.bitword( cln_bitword[FAP], classifiers, label="FAP$\leq$%.3e"%FAP, figax=figax )
+        figax = isp.bitword( cln_bitword[FAP], classifiers, label="FAP$\leq$%.3e"%FAP, figax=figax )
     if figax:
         fig, ax = figax
         ax.legend(loc='upper center')
 
         fig.savefig(bitfig)
-        rsp.close(fig)
+        isp.close(fig)
 
     #====================
     # fap calibration
@@ -652,16 +652,16 @@ while gpsstart < gpsstop:
     ### find all *dat files, bin them according to classifier
     logger.info('  finding all *fap*npy.gz files')
     fapsD = defaultdict( list )
-    for npygz in reed.get_all_files_in_range(realtimedir, gpsstart-lookback, gpsstart+stride, pad=0, suffix='.npy.gz' ):
+    for npygz in idq.get_all_files_in_range(realtimedir, gpsstart-lookback, gpsstart+stride, pad=0, suffix='.npy.gz' ):
         if "fap" in npygz:
-            fapsD[reed.extract_fap_name( npygz )].append( npygz )
+            fapsD[idq.extract_fap_name( npygz )].append( npygz )
 
     ### throw away any un-needed files
     for key in fapsD.keys():
         if key not in classifiers:
             fapsD.pop(key)
         else: ### throw out files that don't contain any science time
-            fapsD[key] = [ fap for fap in fapsD[key] if event.livetime(event.andsegments([idqsegs, [reed.extract_start_stop(fap, suffix='.npy.gz')]])) ]
+            fapsD[key] = [ fap for fap in fapsD[key] if event.livetime(event.andsegments([idqsegs, [idq.extract_start_stop(fap, suffix='.npy.gz')]])) ]
 
     ### check calibration and build figures
     alerts = {}
@@ -669,13 +669,13 @@ while gpsstart < gpsstop:
     fapUL_figax = None
     for classifier in classifiers:
 
-        _times, timeseries = reed.combine_ts(fapsD[classifier], n=2) ### read in time-series
+        _times, timeseries = idq.combine_ts(fapsD[classifier], n=2) ### read in time-series
 
         times = []
         faps = []
         fapsUL = []
         for t, ts in zip(_times, timeseries):
-            _t, _ts = reed.timeseries_in_segments(t, ts, idqsegs)
+            _t, _ts = idq.timeseries_in_segments(t, ts, idqsegs)
             if len(_ts):
                 times.append( _t )
                 faps.append( _ts[0] )
@@ -690,7 +690,7 @@ while gpsstart < gpsstop:
 #        errsUL = np.array([ d/F - 1.0 for d, F in zip(deadtimesUL, statedFAPs) if F ])
 
         ### write output file
-        calib_check = reed.calib_check(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
+        calib_check = idq.calib_check(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
         logger.info('  writing %s'%calib_check)
 
         file_obj = open(calib_check, "w")
@@ -704,48 +704,48 @@ while gpsstart < gpsstop:
 
         ### build pt. estimate figures
         color = colors[classifier]
-        fig, ax = rsp.calibration_scatter( deadtimes, statedFAPs, color=color, label=classifier, figax=None)
-        figname = rsp.calibfig(output_dir, ifo, classifier, usertag, gpsstart-lookback, lookback+stride)
+        fig, ax = isp.calibration_scatter( deadtimes, statedFAPs, color=color, label=classifier, figax=None)
+        figname = isp.calibfig(output_dir, ifo, classifier, usertag, gpsstart-lookback, lookback+stride)
         logger.info('  plotting %s'%figname)
         fignames['fap'][classifier] = figname
         ax.plot(faircoin, faircoin, 'k--')
         ax.legend(loc='best')
         fig.savefig(figname)
-        rsp.close(fig)
+        isp.close(fig)
 
         ### for overlay
-        fap_figax = rsp.calibration_scatter( deadtimes, statedFAPs, color=color, label=classifier, figax=fap_figax)
+        fap_figax = isp.calibration_scatter( deadtimes, statedFAPs, color=color, label=classifier, figax=fap_figax)
 
         ### build upper-limit figures
-        fig, ax = rsp.calibration_scatter( deadtimesUL, statedFAPsUL, color=color, label=classifier, figax=None)
-        figname = rsp.calibfig(output_dir, ifo, classifier, "%s_UL"%usertag, gpsstart-lookback, lookback+stride)
+        fig, ax = isp.calibration_scatter( deadtimesUL, statedFAPsUL, color=color, label=classifier, figax=None)
+        figname = isp.calibfig(output_dir, ifo, classifier, "%s_UL"%usertag, gpsstart-lookback, lookback+stride)
         logger.info('  plotting %s'%figname)
         fignames['fapUL'][classifier] = figname
         ax.plot(faircoin, faircoin, 'k--')
         ax.legend(loc='best')
         fig.savefig(figname)
-        rsp.close(fig)
+        isp.close(fig)
 
-        fapUL_figax = rsp.calibration_scatter( deadtimesUL, statedFAPsUL, color=color, label=classifier, figax=fapUL_figax)
+        fapUL_figax = isp.calibration_scatter( deadtimesUL, statedFAPsUL, color=color, label=classifier, figax=fapUL_figax)
 
     ### save overlays
     fig, ax = fap_figax
-    figname = rsp.calibfig(output_dir, ifo, 'overlay', usertag, gpsstart-lookback, lookback+stride)
+    figname = isp.calibfig(output_dir, ifo, 'overlay', usertag, gpsstart-lookback, lookback+stride)
     logger.info('  plotting %s'%figname)
     fignames['fap']['overlay'] = figname
     ax.plot(faircoin, faircoin, 'k--')
     ax.legend(loc='best')
     fig.savefig(figname)
-    rsp.close(fig)
+    isp.close(fig)
 
     fig, ax = fapUL_figax
-    figname = rsp.calibfig(output_dir, ifo, 'overlay', "%s_UL"%usertag, gpsstart-lookback, lookback+stride)
+    figname = isp.calibfig(output_dir, ifo, 'overlay', "%s_UL"%usertag, gpsstart-lookback, lookback+stride)
     logger.info('  plotting %s'%figname)
     fignames['fapUL']['overlay'] = figname
     ax.plot(faircoin, faircoin, 'k--')
     ax.legend(loc='best')
     fig.savefig(figname)
-    rsp.close(fig)
+    isp.close(fig)
 
     ### send alerts if needed
     if alerts: ### there are some interesting files
@@ -767,22 +767,22 @@ while gpsstart < gpsstop:
             continue
 
         ### load dat files
-        output = reed.slim_load_datfiles(datsD[classifier], skip_lines=0, columns='GPS i vchan'.split()+[cluster_key]) ### specific columns known to be in ovl dat files
+        output = idq.slim_load_datfiles(datsD[classifier], skip_lines=0, columns='GPS i vchan'.split()+[cluster_key]) ### specific columns known to be in ovl dat files
 
         ### filter times by scisegs -> keep only the ones within scisegs
-        output = reed.filter_datfile_output( output, idqsegs )
+        output = idq.filter_datfile_output( output, idqsegs )
         if not opts.dont_cluster:
-            output = reed.cluster_datfile_output( output, cluster_key=cluster_key, cluster_win=cluster_win)
+            output = idq.cluster_datfile_output( output, cluster_key=cluster_key, cluster_win=cluster_win)
         
         ### don't re-write clustered dat files here...
 
         ### extract channel performances
-        performance, num_gch, num_cln = reed.dat_to_perf( output )
+        performance, num_gch, num_cln = idq.dat_to_perf( output )
 
         ### write to file!
-        chanperf = reed.chan_perf(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
+        chanperf = idq.chan_perf(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
         logger.info('  writing : %s'%chanperf)
-        reed.perf_to_file( performance, num_gch, num_cln, chanperf )
+        idq.perf_to_file( performance, num_gch, num_cln, chanperf )
 
         files['chn'][classifier] = chanperf
 
@@ -845,18 +845,18 @@ while gpsstart < gpsstop:
 
                     try:
                         ### this returns a string
-                        seg_xml_file = reed.segment_query(config, s, e, url=segdb_url)
+                        seg_xml_file = idq.segment_query(config, s, e, url=segdb_url)
 
                         ### write seg_xml_file to disk
                         lsctables.use_in(ligolw.LIGOLWContentHandler)
                         xmldoc = ligolw_utils.load_fileobj(seg_xml_file, contenthandler=ligolw.LIGOLWContentHandler)[0]
 
                         ### science segments xml filename
-                        seg_file = reed.segxml(output_trenddir, "_%s"%dq_name, s , e-s)
+                        seg_file = idq.segxml(output_trenddir, "_%s"%dq_name, s , e-s)
                         logger.info('    writing science segments to file : '+seg_file)
                         ligolw_utils.write_filename(xmldoc, seg_file, gz=seg_file.endswith(".gz"))
 
-                        (scisegs, coveredseg) = reed.extract_dq_segments(seg_file, dq_name) ### read in segments from xml file
+                        (scisegs, coveredseg) = idq.extract_dq_segments(seg_file, dq_name) ### read in segments from xml file
  
                         bindata['sci'] = scisegs
  
@@ -871,7 +871,7 @@ while gpsstart < gpsstop:
                             continue
 
                 logger.info('    finding idq segments')
-                idqsegs = reed.get_idq_segments(realtimedir, s, e, suffix='.dat')
+                idqsegs = idq.get_idq_segments(realtimedir, s, e, suffix='.dat')
 
                 logger.info('    taking intersection between science segments and idq segments')
                 idqsegs = event.andsegments( [scisegs, idqsegs] )
@@ -880,9 +880,9 @@ while gpsstart < gpsstop:
 
                 ### write segment file
                 if opts.ignore_science_segments:
-                    idqseg_path = reed.idqsegascii(output_trenddir, '', s, e-s)
+                    idqseg_path = idq.idqsegascii(output_trenddir, '', s, e-s)
                 else:
-                    idqseg_path = reed.idqsegascii(output_trenddir, '_%s'%dq_name, s, e-s)
+                    idqseg_path = idq.idqsegascii(output_trenddir, '_%s'%dq_name, s, e-s)
                 f = open(idqseg_path, 'w')
                 for seg in idqsegs:
                     print >> f, seg[0], seg[1]
@@ -894,47 +894,47 @@ while gpsstart < gpsstop:
                 ### find all *dat files, bin them according to classifier
                 logger.info('    finding all *dat files')
                 datsD = defaultdict( list )
-                for dat in reed.get_all_files_in_range(realtimedir, s, e, pad=0, suffix='.dat' ):
-                    datsD[reed.extract_dat_name( dat )].append( dat )
+                for dat in idq.get_all_files_in_range(realtimedir, s, e, pad=0, suffix='.dat' ):
+                    datsD[idq.extract_dat_name( dat )].append( dat )
 
                 ### throw away any un-needed files
                 for key in datsD.keys():
                     if key not in classifiers:
                         datsD.pop(key)
                     else: ### throw out files that don't contain any science time
-                        datsD[key] = [ dat for dat in datsD[key] if event.livetime(event.andsegments([idqsegs, [reed.extract_start_stop(dat, suffix='.dat')]])) ]
+                        datsD[key] = [ dat for dat in datsD[key] if event.livetime(event.andsegments([idqsegs, [idq.extract_start_stop(dat, suffix='.dat')]])) ]
 
                 bindata['rcg'] = {}
                 bindata['chn'] = {}
                 for classifier in classifiers:
                     ### write list of dats to cache file
-                    cache = reed.cache(output_trenddir, classifier, "_datcache%s"%usertag)
+                    cache = idq.cache(output_trenddir, classifier, "_datcache%s"%usertag)
                     logger.info('  writing list of dat files to %s'%cache)
                     f = open(cache, 'w')
                     for dat in datsD[classifier]:
                         print >>f, dat
                     f.close()
 
-                    output = reed.slim_load_datfiles(datsD[classifier], skip_lines=0, columns=columns)
-                    output = reed.filter_datfile_output( output, idqsegs )
+                    output = idq.slim_load_datfiles(datsD[classifier], skip_lines=0, columns=columns)
+                    output = idq.filter_datfile_output( output, idqsegs )
 
                     if not opts.dont_cluster:
-                        output = reed.cluster_datfile_output( output, cluster_key=cluster_key, cluster_win=cluster_win)
-                        cluster_dat = reed.dat(output_trenddir, classifier, ifo, "clustered", usertag, s, e-s)
+                        output = idq.cluster_datfile_output( output, cluster_key=cluster_key, cluster_win=cluster_win)
+                        cluster_dat = idq.dat(output_trenddir, classifier, ifo, "clustered", usertag, s, e-s)
                         logger.info('  writing %s'%cluster_dat)
-                        reed.output_to_datfile( output, cluster_dat )
+                        idq.output_to_datfile( output, cluster_dat )
                     else:
-                        cluster_dat = reed.dat(output_trenddir, classifier, ifo, "unclustered", usertag, gpsstart-lookback, lookback+stride)
+                        cluster_dat = idq.dat(output_trenddir, classifier, ifo, "unclustered", usertag, gpsstart-lookback, lookback+stride)
                         logger.info('  writing %s'%cluster_dat)
-                        reed.output_to_datfile( output, cluster_dat )
+                        idq.output_to_datfile( output, cluster_dat )
 
-                    r, c, g = reed.dat_to_rcg( output )
+                    r, c, g = idq.dat_to_rcg( output )
                     bindata['rcg'][classifier] = (r, c, g, c[-1], g[-1])
 
                     ### save roc file
-                    roc = reed.roc(output_trenddir, classifier, ifo, usertag, s, e-s)
+                    roc = idq.roc(output_trenddir, classifier, ifo, usertag, s, e-s)
                     logger.info('  writing %s'%roc)
-                    reed.rcg_to_file(roc, r, c, g)
+                    idq.rcg_to_file(roc, r, c, g)
 
                     ### build/save chan-perf files
                     for classifier in classifiers:
@@ -942,35 +942,35 @@ while gpsstart < gpsstop:
                             continue
 
                         ### load dat files
-                        output = reed.slim_load_datfiles(datsD[classifier], skip_lines=0, columns='GPS i vchan'.split()+[cluster_key]) ### specific columns known to be in ovl dat files
+                        output = idq.slim_load_datfiles(datsD[classifier], skip_lines=0, columns='GPS i vchan'.split()+[cluster_key]) ### specific columns known to be in ovl dat files
 
                         ### filter times by scisegs -> keep only the ones within scisegs
-                        output = reed.filter_datfile_output( output, idqsegs )
+                        output = idq.filter_datfile_output( output, idqsegs )
                         if not opts.dont_cluster:
-                            output = reed.cluster_datfile_output( output, cluster_key=cluster_key, cluster_win=cluster_win)
+                            output = idq.cluster_datfile_output( output, cluster_key=cluster_key, cluster_win=cluster_win)
 
                         ### don't re-write clustered dat here...
 
                         ### extract channel performances!
-                        performance, num_gch, num_cln = reed.dat_to_perf( output )
+                        performance, num_gch, num_cln = idq.dat_to_perf( output )
 
                         ### write to file!
-                        chanperf = reed.chan_perf(output_trenddir, classifier, ifo, usertag, s, e-s)
+                        chanperf = idq.chan_perf(output_trenddir, classifier, ifo, usertag, s, e-s)
                         logger.info('  writing : %s'%chanperf)
-                        reed.perf_to_file( performance, num_gch, num_cln, chanperf )
+                        idq.perf_to_file( performance, num_gch, num_cln, chanperf )
                         bindata['chn'][classifier] = (performance, num_gch, num_cln)
 
             else: ### information already exists, just read it in
                 logger.info('    %s exists. Reading in existing data'%output_trenddir)
 
                 if not opts.ignore_science_segments:
-                    seg_file = seg_file = reed.segxml(output_trenddir, "_%s"%dq_name, s , e-s)
+                    seg_file = seg_file = idq.segxml(output_trenddir, "_%s"%dq_name, s , e-s)
                     logger.info('    reading %s'%seg_file)
-                    bindata['sci'] = reed.extract_dq_segments(seg_file, dq_name)[0]
+                    bindata['sci'] = idq.extract_dq_segments(seg_file, dq_name)[0]
 
-                    idq_file = reed.idqsegascii(output_trenddir, '_%s'%dq_name, s, e-s)
+                    idq_file = idq.idqsegascii(output_trenddir, '_%s'%dq_name, s, e-s)
                 else:
-                    idq_file = reed.idqsegascii(output_trenddir, '', s, e-s)
+                    idq_file = idq.idqsegascii(output_trenddir, '', s, e-s)
                
                 logger.info('    reading %s'%idq_file)
                 try:
@@ -981,14 +981,14 @@ while gpsstart < gpsstop:
                 bindata['rcg'] = {}
                 bindata['chn'] = {}
                 for classifier in classifiers:
-                    roc = reed.roc(output_trenddir, classifier, ifo, usertag, s, e-s)
+                    roc = idq.roc(output_trenddir, classifier, ifo, usertag, s, e-s)
                     logger.info('    reading %s'%roc)
-                    bindata['rcg'][classifier] = reed.file_to_rcg( roc )
+                    bindata['rcg'][classifier] = idq.file_to_rcg( roc )
  
                     if classifiersD[classifier]['flavor'] == 'ovl':
-                        chanperf = reed.chan_perf(output_trenddir, classifier, ifo, usertag, s, e-s)
+                        chanperf = idq.chan_perf(output_trenddir, classifier, ifo, usertag, s, e-s)
                         logger.info('    reading %s'%chanperf)
-                        bindata['chn'][classifier] = reed.file_to_perf( chanperf )
+                        bindata['chn'][classifier] = idq.file_to_perf( chanperf )
 
             ### store data for plotting!
             bindatas.append( bindata )
@@ -1007,20 +1007,20 @@ while gpsstart < gpsstop:
             ranges.append( (s, e) )
             values.append( 1.0*uptime/(e-s) )
 
-        fig, ax = rsp.rates( ranges, values, color='b', label='idq-segs', figax=None )
+        fig, ax = isp.rates( ranges, values, color='b', label='idq-segs', figax=None )
         ax.set_ylim(ymin=0, ymax=1)
         ax.set_ylabel('duty cycle')
         ax.legend(loc='lower left')
 
-        figname = rsp.ratefig(output_dir, ifo, "%s_idq-segments"%(usertag), trend_start, gpsstart+stride-trend_start)
+        figname = isp.ratefig(output_dir, ifo, "%s_idq-segments"%(usertag), trend_start, gpsstart+stride-trend_start)
         logger.info('  plotting %s'%figname)
         fig.savefig(figname)
-        rsp.close(fig)
+        isp.close(fig)
 
         trending['idq'].append( figname )
 
         ### plot for overlay
-        uptime_overlay_figax = rsp.rates( ranges, values, color='b', label='idq-segs', figax=None )
+        uptime_overlay_figax = isp.rates( ranges, values, color='b', label='idq-segs', figax=None )
 
         if not opts.ignore_science_segments:
             ranges = []
@@ -1032,30 +1032,30 @@ while gpsstart < gpsstop:
                 ranges.append( (s, e) )
                 values.append( 1.0*uptime/(e-s) )
 
-            fig, ax = rsp.rates( ranges, values, color='g', label=dq_name.replace("_","\_"), figax=None)
+            fig, ax = isp.rates( ranges, values, color='g', label=dq_name.replace("_","\_"), figax=None)
             ax.set_ylim(ymin=0, ymax=1)
             ax.set_ylabel('duty cycle')
             ax.legend(loc='lower left')
 
-            figname = rsp.ratefig(output_dir, ifo, "%s_%s"%(usertag, dq_name), trend_start, gpsstart+stride-trend_start)
+            figname = isp.ratefig(output_dir, ifo, "%s_%s"%(usertag, dq_name), trend_start, gpsstart+stride-trend_start)
             logger.info('  plotting %s'%figname)
             fig.savefig(figname)
-            rsp.close(fig)
+            isp.close(fig)
 
             trending['sci'].append( figname )
 
             ### plot overlay
-            uptime_overlay_figax = rsp.rates( ranges, values, color='g', label=dq_name.replace("_","\_"), figax=uptime_overlay_figax )
+            uptime_overlay_figax = isp.rates( ranges, values, color='g', label=dq_name.replace("_","\_"), figax=uptime_overlay_figax )
 
         fig, ax = uptime_overlay_figax
         ax.set_ylim(ymin=0, ymax=1)
         ax.set_ylabel('duty cycle')
         ax.legend(loc='lower left')
 
-        figname = rsp.ratefig(output_dir, ifo, "%s_segments"%(usertag), trend_start, gpsstart+stride-trend_start)
+        figname = isp.ratefig(output_dir, ifo, "%s_segments"%(usertag), trend_start, gpsstart+stride-trend_start)
         logger.info('  plotting %s'%figname)
         fig.savefig(figname)
-        rsp.close(fig)
+        isp.close(fig)
 
         trending['seg'].append( figname )
 
@@ -1091,29 +1091,29 @@ while gpsstart < gpsstop:
 
             effs = np.array(effs )
 
-            figname = rsp.ratefig(output_dir, ifo, "_%s%s_trg"%(classifier, usertag), trend_start, gpsstart+stride-trend_start)
+            figname = isp.ratefig(output_dir, ifo, "_%s%s_trg"%(classifier, usertag), trend_start, gpsstart+stride-trend_start)
             trending['trg_rate'][classifier].append( figname )
             logger.info('  plotting %s'%figname)
             
-            figax = rsp.rates( ranges, cvalues, linestyle=cln_linestyle , color=color, label='%s cln'%classifier, figax=None)
-            fig, ax = rsp.rates( ranges, gvalues, linestyle=gch_linestyle , color=color, label='%s gch'%classifier, figax=figax)
+            figax = isp.rates( ranges, cvalues, linestyle=cln_linestyle , color=color, label='%s cln'%classifier, figax=None)
+            fig, ax = isp.rates( ranges, gvalues, linestyle=gch_linestyle , color=color, label='%s gch'%classifier, figax=figax)
 
             ax.set_ylabel('event rate [Hz]')
             ax.legend(loc='best')
 
             fig.savefig(figname)
-            rsp.close(fig)
+            isp.close(fig)
 
-            trg_rate_overlay_figax = rsp.rates( ranges, cvalues, linestyle=cln_linestyle , color=color, label='%s cln'%classifier, figax=trg_rate_overlay_figax)
-            trg_rate_overlay_figax = rsp.rates( ranges, gvalues, linestyle=gch_linestyle , color=color, label='%s gch'%classifier, figax=trg_rate_overlay_figax)
+            trg_rate_overlay_figax = isp.rates( ranges, cvalues, linestyle=cln_linestyle , color=color, label='%s cln'%classifier, figax=trg_rate_overlay_figax)
+            trg_rate_overlay_figax = isp.rates( ranges, gvalues, linestyle=gch_linestyle , color=color, label='%s gch'%classifier, figax=trg_rate_overlay_figax)
 
             ### eff@fap
             figax = None
             c = 'b g r m c y k'.split()
             cind = 0
             for ind, fap in enumerate(opts.FAPthr):
-                figax = rsp.rates( ranges, effs[:,ind], color=c[cind], label='%s fap<=%.3e'%(classifier, fap), figax=figax)
-                eff_fap_overlay_figax[ind] = rsp.rates( ranges, effs[:,ind], color=color, label=classifier, figax=eff_fap_overlay_figax[ind])
+                figax = isp.rates( ranges, effs[:,ind], color=c[cind], label='%s fap<=%.3e'%(classifier, fap), figax=figax)
+                eff_fap_overlay_figax[ind] = isp.rates( ranges, effs[:,ind], color=color, label=classifier, figax=eff_fap_overlay_figax[ind])
                 cind = (cind+1)%len(c)
 
             fig, ax = figax
@@ -1121,22 +1121,22 @@ while gpsstart < gpsstop:
             ax.set_ylabel('Glitch Detection Efficiency')
             ax.legend(loc='lower left')
 
-            figname = rsp.ratefig(output_dir, ifo, "_%s%s_eff"%(classifier, usertag), trend_start, gpsstart+stride-trend_start)
+            figname = isp.ratefig(output_dir, ifo, "_%s%s_eff"%(classifier, usertag), trend_start, gpsstart+stride-trend_start)
             trending['eff@fap'][classifier].append( figname )
             logger.info('  plotting %s'%figname)
             fig.savefig(figname)
-            rsp.close(fig)
+            isp.close(fig)
 
         ### clean/glitch rates overlay
         fig, ax = trg_rate_overlay_figax
         ax.set_ylabel('event rate [Hz]')
         ax.legend(loc='best')
 
-        figname = rsp.ratefig(output_dir, ifo, "_overlay%s_trg"%(usertag), trend_start, gpsstart+stride-trend_start)
+        figname = isp.ratefig(output_dir, ifo, "_overlay%s_trg"%(usertag), trend_start, gpsstart+stride-trend_start)
         trending['trg_rate']['overlay'].append( figname )
         logger.info('  plotting %s'%figname)
         fig.savefig( figname )
-        rsp.close(fig)
+        isp.close(fig)
 
         eff_fap_overlays = []
         ### eff@fap overlay
@@ -1145,11 +1145,11 @@ while gpsstart < gpsstop:
             ax.set_ylabel('Glitch Detection Efficiency')
             ax.legend(loc='lower left')
 
-            figname = rsp.ratefig(output_dir, ifo, "_overlay%s_eff-fap<%.3e"%(usertag, fap), trend_start, gpsstart+stride-trend_start)
+            figname = isp.ratefig(output_dir, ifo, "_overlay%s_eff-fap<%.3e"%(usertag, fap), trend_start, gpsstart+stride-trend_start)
             logger.info('  plotting %s'%figname)
             eff_fap_overlays.append( figname )
             fig.savefig( figname )
-            rsp.close( fig )
+            isp.close( fig )
 
         trending['eff@fap']['overlay'].append( eff_fap_overlays )
 
@@ -1173,26 +1173,26 @@ while gpsstart < gpsstop:
                 num_clns.append( cln )
             vchans = sorted([vchan for vchan in vchans if vchan != "none"])
 
-            (figr, axr), (fige, axe), (figf, axf) = rsp.channel_performance( vchans, ranges, performances, num_gchs, num_clns, figax=None, cmap=None)
+            (figr, axr), (fige, axe), (figf, axf) = isp.channel_performance( vchans, ranges, performances, num_gchs, num_clns, figax=None, cmap=None)
 
-            rnkname = rsp.chanfig(output_dir, ifo, classifier, "eff-fap", usertag, trend_start, gpsstart+stride-trend_start)
-            effname = rsp.chanfig(output_dir, ifo, classifier, "eff", usertag, trend_start, gpsstart+stride-trend_start)
-            fapname = rsp.chanfig(output_dir, ifo, classifier, "fap", usertag, trend_start, gpsstart+stride-trend_start)
+            rnkname = isp.chanfig(output_dir, ifo, classifier, "eff-fap", usertag, trend_start, gpsstart+stride-trend_start)
+            effname = isp.chanfig(output_dir, ifo, classifier, "eff", usertag, trend_start, gpsstart+stride-trend_start)
+            fapname = isp.chanfig(output_dir, ifo, classifier, "fap", usertag, trend_start, gpsstart+stride-trend_start)
 
             logger.info('  plotting %s'%rnkname)
             trending['rank'][classifier].append( rnkname )
             figr.savefig(rnkname)
-            rsp.close(figr)
+            isp.close(figr)
 
             logger.info('  plotting %s'%effname)
             trending['eff'][classifier].append( effname )
             fige.savefig(effname)
-            rsp.close(fige)
+            isp.close(fige)
 
             logger.info('  plotting %s'%fapname)
             trending['fap'][classifier].append( fapname )
             figf.savefig(fapname)
-            rsp.close(figf)
+            isp.close(figf)
 
 
 
@@ -1275,7 +1275,7 @@ segment lists -> a form to request segments?
         title = "idq%s : %d-%d"%(usertag, gpsstart, stride)
         header = ""
 
-        creation_time = reed.nowgps()
+        creation_time = idq.nowgps()
 
         process_params = __file__ ### the script currently executing
         for key, value in vars(opts).items():
@@ -1455,11 +1455,11 @@ segment lists -> a form to request segments?
             if trending[segtype]:
                 minipage = markup.page()
                 for figname in trending[segtype][:-1]:
-                    label = "%d_%d"%tuple(reed.extract_start_stop( figname, suffix=".png" ))
+                    label = "%d_%d"%tuple(idq.extract_start_stop( figname, suffix=".png" ))
                     minipage.a( label, href="./%s"%figname[lensumdir:] )    
                     minipage.addcontent(", ")
                 figname = trending[segtype][-1]
-                label = "%d_%d"%tuple(reed.extract_start_stop( figname, suffix=".png" ))
+                label = "%d_%d"%tuple(idq.extract_start_stop( figname, suffix=".png" ))
                 minipage.a( label, href="./%s"%figname[lensumdir:] )
 
             page.p( "%s : %s"%(segtype, str(minipage)) )
@@ -1474,7 +1474,7 @@ segment lists -> a form to request segments?
             page.img( width=html_width, height=html_height, alt="trigger rates", src="./%s"%figname[lensumdir:] )
             for classifier in classifiers:
                 figname = trending['trg_rate'][classifier][ind]
-                label = "%d_%d"%tuple(reed.extract_start_stop( figname, suffix=".png" ))
+                label = "%d_%d"%tuple(idq.extract_start_stop( figname, suffix=".png" ))
                 minipages[classifier].a( label, href="./%s"%figname[lensumdir:] )
                 minipages[classifier].addcontent(", ")
         figname = trending['trg_rate']['overlay'][-1]
@@ -1483,7 +1483,7 @@ segment lists -> a form to request segments?
 
         for classifier in classifiers:
             figname = trending['trg_rate'][classifier][-1]
-            label = "%d_%d"%tuple(reed.extract_start_stop( figname, suffix=".png" ))
+            label = "%d_%d"%tuple(idq.extract_start_stop( figname, suffix=".png" ))
             minipages[classifier].a( label, href="./%s"%figname[lensumdir:] )
             page.p( "%s : %s"%(classifier, str(minipages[classifier])) )
 
@@ -1502,12 +1502,12 @@ segment lists -> a form to request segments?
         for ind in xrange(N-1):
             for classifier in classifiers:
                 figname = trending['eff@fap'][classifier][ind]
-                label = "%d_%d"%tuple(reed.extract_start_stop( figname, suffix=".png" ))
+                label = "%d_%d"%tuple(idq.extract_start_stop( figname, suffix=".png" ))
                 minipages[classifier].a( label, href="./%s"%figname[lensumdir:] )
                 minipages[classifier].addcontent(", ")
         for classifier in classifiers:
             figname = trending['eff@fap'][classifier][-1]
-            label = "%d_%d"%tuple(reed.extract_start_stop( figname, suffix=".png" ))
+            label = "%d_%d"%tuple(idq.extract_start_stop( figname, suffix=".png" ))
             minipages[classifier].a( label, href="./%s"%figname[lensumdir:] )
             page.p( "%s : %s"%(classifier, str(minipages[classifier])) )
 
@@ -1542,7 +1542,7 @@ segment lists -> a form to request segments?
 
         #=========================================
         ### write page to disk
-        html = reed.sumhtml( output_dir, usertag, gpsstart-lookback, lookback+stride)
+        html = idq.sumhtml( output_dir, usertag, gpsstart-lookback, lookback+stride)
         logger.info('writing %s'%html)
         file_obj = open(html, "w")
         print >> file_obj, page

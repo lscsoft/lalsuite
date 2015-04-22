@@ -19,8 +19,8 @@ description = \
 
 
 from ligo.gracedb.rest import GraceDb
-#from laldetchar.idq import idq
-from laldetchar.idq import reed
+from laldetchar.idq import idq
+#from laldetchar.idq import reed as idq
 from laldetchar.idq import idq_tables
 from laldetchar.idq import idq_tables_dbutils
 
@@ -147,8 +147,8 @@ if not opts.skip_gracedb_upload:
 if opts.verbose:
     print 'Finding relevant *glitch*.xml files'
 gchxml_filenames = sorted([filename for filename in 
-                          reed.get_all_files_in_range(opts.input_dir, opts.start, opts.end, pad=0, suffix='.xml.gz') 
-                          if opts.classifier == reed.extract_xml_name(filename) 
+                          idq.get_all_files_in_range(opts.input_dir, opts.start, opts.end, pad=0, suffix='.xml.gz') 
+                          if opts.classifier == idq.extract_xml_name(filename) 
                           and 'glitch' in filename
                           and opts.ifo in filename])
                         
@@ -200,7 +200,7 @@ idq_tables_dbutils.delete_glitch_events_in_segmentlist(connection, cursor, segli
 #    int(opts.start),
 #    int(opts.end - opts.start)
 #    )
-merged_xmldoc_filename = reed.gdb_xml(opts.output_dir, opts.classifier, opts.ifo, opts.tag, int(opts.start), int(opts.end-opts.start))
+merged_xmldoc_filename = idq.gdb_xml(opts.output_dir, opts.classifier, opts.ifo, opts.tag, int(opts.start), int(opts.end-opts.start))
 
 if opts.verbose:
     print 'saving ' + merged_xmldoc_filename

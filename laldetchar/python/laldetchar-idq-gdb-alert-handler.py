@@ -27,8 +27,8 @@ import subprocess
 
 from ligo.gracedb.rest import GraceDb
 
-#from laldetchar.idq import idq
-from laldetchar.idq import reed
+from laldetchar.idq import idq
+#from laldetchar.idq import reed as idq
 from laldetchar.idq import idq_gdb_utils
 
 import time
@@ -141,10 +141,10 @@ if not alert_type=='new': ### only process new events
 #=================================================
 ### logging setup
 
-logger = reed.setup_logger('idq_gdb_logger', "%s_%s"%(gdb_id, options.log_file), sys.stdout, format='%(asctime)s %(message)s')
+logger = idq.setup_logger('idq_gdb_logger', "%s_%s"%(gdb_id, options.log_file), sys.stdout, format='%(asctime)s %(message)s')
 
-sys.stdout = reed.LogFile(logger)
-sys.stderr = reed.LogFile(logger)
+sys.stdout = idq.LogFile(logger)
+sys.stderr = idq.LogFile(logger)
 
 #=================================================
 ### process the event in full
@@ -233,7 +233,7 @@ gracedb.writeLog(gdb_id, message="Started searching for iDQ information within [
 # LOGIC for waiting for idq data 
 #=================================================
 ### figure out if we need to wait for time to pass
-wait = gps_end - (reed.nowgps()+delay)
+wait = gps_end - (idq.nowgps()+delay)
 if wait > 0:
     logger.info("waiting %.2f seconds until we pass gps=%.3f"%(wait, gps_end))
     time.sleep(wait)
@@ -246,7 +246,7 @@ realtime_log = open(realtime_logname, "r") ### open realtime log for reading
 realtime_log.seek(0, 2) ### go to end of file
 
 ### wait until realtime has passed gps_end+delay
-past, dead, timed_out = reed.block_until(gps_end, realtime_log, max_wait=max_wait, timeout=2*max_wait)
+past, dead, timed_out = idq.block_until(gps_end, realtime_log, max_wait=max_wait, timeout=2*max_wait)
 
 if past:
     logger.info("found realtime stride starting after t=%.3f"%(gps_end))
@@ -291,7 +291,7 @@ for classifier in classifiers:
         gch_xml = None
     else:
         logger.info("    Done: idq-gdb-glitch-tables for " + classifier + ".")
-        gch_xml = reed.gdb_xml(idq_gdb_main_dir, classifier, ifo, "_%s"%usertag, gps_start, gps_end-gps_start) ### compute name
+        gch_xml = idq.gdb_xml(idq_gdb_main_dir, classifier, ifo, "_%s"%usertag, gps_start, gps_end-gps_start) ### compute name
 
     ### run idq-gdb-timeseries for each classifier
     logger.info("    Begin: executing idq-gdb-timeseries for " + classifier + " ...")

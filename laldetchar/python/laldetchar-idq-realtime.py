@@ -27,8 +27,9 @@ import ConfigParser
 import numpy
 import math
 
-#from laldetchar.idq import idq
-from laldetchar.idq import reed
+from laldetchar.idq import idq
+#from laldetchar.idq import reed as idq
+
 from laldetchar.idq import event
 
 from laldetchar import git_version
@@ -61,7 +62,7 @@ parser.add_option('-c', '--config-file', dest='config_file',
 
 parser.add_option('-s', '--gpsstart', dest='startgps',
     type='int', help='first stride begins at or after GPS time',
-    metavar='GPS', default=reed.nowgps(), )
+    metavar='GPS', default=idq.nowgps(), )
 parser.add_option('-e', '--gpsstop', dest='endgps',
     type='int', help='last stride ends at or before GPS time',
     metavar='GPS', default=1e10 )
@@ -113,10 +114,10 @@ cwd = os.getcwd()
 
 #===================================================================================================
 ### setup logger to record processes
-logger = reed.setup_logger('idq_logger', opts.log_file, sys.stdout, format='%(asctime)s %(message)s')
+logger = idq.setup_logger('idq_logger', opts.log_file, sys.stdout, format='%(asctime)s %(message)s')
 
-sys.stdout = reed.LogFile(logger)
-sys.stderr = reed.LogFile(logger)
+sys.stdout = idq.LogFile(logger)
+sys.stderr = idq.LogFile(logger)
 
 #===================================================================================================
 ### read global configuration file
@@ -128,7 +129,7 @@ mainidqdir = config.get('general', 'idqdir') ### get the main directory where id
 if not opts.lockfile:
     opts.lockfile = "%s/.idq_realtime.lock"%mainidqdir
 
-reed.dieiflocked( opts.lockfile ) ### prevent multiple copies from running
+idq.dieiflocked( opts.lockfile ) ### prevent multiple copies from running
 
 gchtag = "_glitch" ### used for xml filenames
 clntag = "_clean"
@@ -148,17 +149,17 @@ ifo = config.get('general', 'ifo')
 # which classifiers
 #========================
 ### ensure we have a section for each classifier and fill out dictionary of options
-classifiersD, mla, ovl = reed.config_to_classifiersD( config )
+classifiersD, mla, ovl = idq.config_to_classifiersD( config )
 classifiers = sorted(classifiersD.keys())
 
 ### get combiners information and DO NOT add this to classifiersD, we treat them separately!
-combinersD, referenced_classifiers = reed.config_to_combinersD( config )
+combinersD, referenced_classifiers = idq.config_to_combinersD( config )
 combiners = sorted(combinersD.keys())
 
 ### compute channel names to be stored in frames
-channameD = dict( (name, {'rank':reed.channame(ifo, name, "%s_rank"%usertag), 
-                          'fap':reed.channame(ifo, name, "%s_fap"%usertag),
-                          'fapUL':reed.channame(ifo, name, "%s_fapUL"%usertag)}) for name in classifiers+combiners )
+channameD = dict( (name, {'rank':idq.channame(ifo, name, "%s_rank"%usertag), 
+                          'fap':idq.channame(ifo, name, "%s_fap"%usertag),
+                          'fapUL':idq.channame(ifo, name, "%s_fapUL"%usertag)}) for name in classifiers+combiners )
 
 if mla:
     ### reading parameters from config file needed for mla
@@ -183,11 +184,11 @@ gwchannel = config.get('general', 'gwchannel')
 gwthreshold = config.getfloat('general', 'gw_kwsignif_thr')
 
 ### kleineWelle config
-GWkwconfig = reed.loadkwconfig(config.get('data_discovery', 'GWkwconfig'))
+GWkwconfig = idq.loadkwconfig(config.get('data_discovery', 'GWkwconfig'))
 GWkwbasename = GWkwconfig['basename']
 GWgdsdir = config.get('data_discovery', 'GWgdsdir')
 
-AUXkwconfig = reed.loadkwconfig(config.get('data_discovery', 'AUXkwconfig'))
+AUXkwconfig = idq.loadkwconfig(config.get('data_discovery', 'AUXkwconfig'))
 AUXkwbasename = AUXkwconfig['basename']
 AUXgdsdir = config.get('data_discovery', 'AUXgdsdir')
 
@@ -234,7 +235,7 @@ summary_FAPthrs = [float(l) for l in config.get('summary','FAP').split()]
 
 summary_script = config.get('summary', 'executable')
 
-#summary_cache = dict( (classifier, reed.Cachefile(reed.cache(summarydir, classifier, tag='_summary%s'%usertag))) for classifier in classifiers ) ### not needed?
+#summary_cache = dict( (classifier, idq.Cachefile(idq.cache(summarydir, classifier, tag='_summary%s'%usertag))) for classifier in classifiers ) ### not needed?
 #for cache in summary_cache.values():
 #    cache.time = 0
 
@@ -257,7 +258,7 @@ if train_lookback != "infinity":
 
 train_script = config.get('train', 'executable')
 
-train_cache = dict( (classifier, reed.Cachefile(reed.cache(traindir, classifier, tag='_train%s'%usertag))) for classifier in classifiers )
+train_cache = dict( (classifier, idq.Cachefile(idq.cache(traindir, classifier, tag='_train%s'%usertag))) for classifier in classifiers )
 for cache in train_cache.values():
     cache.time = 0
 
@@ -279,12 +280,12 @@ if calibration_lookback != "infinity":
 calibration_FAPthrs = [float(l) for l in config.get('calibration','FAP').split()]
 
 ### cache for uroc files
-calibration_cache = dict( (classifier, reed.Cachefile(reed.cache(calibrationdir, classifier, tag='_calibration%s'%usertag))) for classifier in classifiers+combiners )
+calibration_cache = dict( (classifier, idq.Cachefile(idq.cache(calibrationdir, classifier, tag='_calibration%s'%usertag))) for classifier in classifiers+combiners )
 for cache in calibration_cache.values():
     cache.time = 0
 
 ### cache for kde estimates
-kde_cache = dict( (classifier, reed.Cachefile(reed.cache(calibrationdir, classifier, tag='_calibration-kde%s'%usertag))) for classifier in classifiers )
+kde_cache = dict( (classifier, idq.Cachefile(idq.cache(calibrationdir, classifier, tag='_calibration-kde%s'%usertag))) for classifier in classifiers )
 for cache in kde_cache.values():
     cache.time = 0
 
@@ -593,7 +594,7 @@ while t  < opts.endgps:
     logger.info('Begin: stride %d-%d' % (t, t + stride))
 
     ### make sure end time of analysis stride is not ahead of now-delay
-    wait = t + stride + delay - int(reed.nowgps())
+    wait = t + stride + delay - int(idq.nowgps())
     if wait > 0:
         logger.info('  waiting %.1f seconds before processing' % wait)
         time.sleep(wait)
@@ -609,7 +610,7 @@ while t  < opts.endgps:
 
         ### get DMT xml segments from disk
         ### logic about waiting and re-trying is built into retrieve_scisegs
-        good, covered = reed.retrieve_scisegs(dmt_segments_location, dmtdq_name, t, stride, pad=0, sleep=delay, nretry=1, logger=logger)
+        good, covered = idq.retrieve_scisegs(dmt_segments_location, dmtdq_name, t, stride, pad=0, sleep=delay, nretry=1, logger=logger)
 
         logger.info('Done: querrying science segments')
 
@@ -629,7 +630,7 @@ while t  < opts.endgps:
     #===================
     logger.info('Begin: aggregating triggers')
 
-    trgdict = reed.retrieve_kwtrig(GWgdsdir, GWkwbasename, t, stride, sleep=(t+stride-reed.nowgps()) + delay, ntrials=2, logger=logger)
+    trgdict = idq.retrieve_kwtrig(GWgdsdir, GWkwbasename, t, stride, sleep=(t+stride-idq.nowgps()) + delay, ntrials=2, logger=logger)
     if trgdict == None: ### no file found, so we skip this stride
         logger.warning('  skipping this stride because no gwchannel kwtrg found')
         t += stride
@@ -673,7 +674,7 @@ while t  < opts.endgps:
     #====================
     ### load auxiliary triggers from current stride
     if not identical_trgfile: ### current AUX file is different from current GW file
-        aux_trgdict = reed.retrieve_kwtrig(AUXgdsdir, AUXkwbasename, t, stride, sleep=(t+stride-reed.nowgps()) + delay, ntrials=2, logger=logger)
+        aux_trgdict = idq.retrieve_kwtrig(AUXgdsdir, AUXkwbasename, t, stride, sleep=(t+stride-idq.nowgps()) + delay, ntrials=2, logger=logger)
         if aux_trgdict == None:
             logger.warning('  no auxiliary triggers were found')
             ### we do not skip, although we might want to?
@@ -690,7 +691,7 @@ while t  < opts.endgps:
 
     if mintime < t + padding: ### previous triggers must be included
         logger.info('  previous stride KW triggers are needed')
-        prev_trgdict = reed.retrieve_kwtrig(AUXgdsdir, AUXkwbasename, t-stride, stride, sleep=0, ntrials=1, logger=logger)
+        prev_trgdict = idq.retrieve_kwtrig(AUXgdsdir, AUXkwbasename, t-stride, stride, sleep=0, ntrials=1, logger=logger)
         if prev_trgdict == None:
             logger.warning('  missing previous stride KW triggers')
             ### we do not skip this stride when previous kw stride is required and missing!
@@ -699,7 +700,7 @@ while t  < opts.endgps:
 
     if maxtime > t + stride - padding: ### triggers from the following stride must be included
         logger.info('  next stride KW triggers are needed')
-        next_trgdict = reed.retrieve_kwtrig(AUXgdsdir, AUXkwbasename, t+stride, stride, sleep=(t+stride+stride-reed.nowgps()) + delay, ntrials=2, logger=logger)
+        next_trgdict = idq.retrieve_kwtrig(AUXgdsdir, AUXkwbasename, t+stride, stride, sleep=(t+stride+stride-idq.nowgps()) + delay, ntrials=2, logger=logger)
         if next_trgdict == None:
             logger.warning('  missing next KW triggers')
             ### we do not skip this stride when next kw stride is required and missing!
@@ -733,13 +734,13 @@ while t  < opts.endgps:
     if mla:  # only build patfiles if machine-learning algorithms are present
         logger.info('Begin: building auxmvc feature vectors ...')
 
-        pat = reed.pat(this_output_dir, ifo, usertag, t, stride)
+        pat = idq.pat(this_output_dir, ifo, usertag, t, stride)
 
         # generating auxmvc vector samples. result is saved into pat file
         # FIXME: depending how padding is done we should adjust behavior of build_auxmvc_vectors
         # Currently it keeps gw trigger from [t, t + stride] and uses time_window to pad this segment for auxiliary triggers
 		# we do not filter out unclean beacuse it is already done when clean_gps times are formed
-        auxmvc_vectors = reed.build_auxmvc_vectors(trgdict, gwchannel, auxmvc_coinc_window, auxmc_gw_signif_thr, pat, gps_start_time=t,
+        auxmvc_vectors = idq.build_auxmvc_vectors(trgdict, gwchannel, auxmvc_coinc_window, auxmc_gw_signif_thr, pat, gps_start_time=t,
                                 gps_end_time=t + stride,  channels=auxmvc_selected_channels, unsafe_channels=auxmvc_unsafe_channels, clean_times=clean_gps,
                                 clean_window=clean_window, filter_out_unclean=False )
 
@@ -758,8 +759,8 @@ while t  < opts.endgps:
         ### check for new training data
         cache = train_cache[classifier]
         if cache.was_modified():
-            lines = cache.tail(nlines=reed.traincache_nlines[flavor])
-            trained_range = reed.extract_trained_range(lines, flavor)
+            lines = cache.tail(nlines=idq.traincache_nlines[flavor])
+            trained_range = idq.extract_trained_range(lines, flavor)
             
             classifiersD[classifier]['lines'] = lines
             classifiersD[classifier]['trained_range'] = trained_range
@@ -775,9 +776,9 @@ while t  < opts.endgps:
         cache = calibration_cache[classifier]
         if cache.was_modified():
             uroc = cache.tail(nlines=1)[0]
-            calib_range = reed.extract_calib_range(uroc)
-            r, c, g, _, _ = reed.file_to_rcg(uroc)
-            effmap, fapmap = reed.rcg_to_EffFAPmap(r, c, g)
+            calib_range = idq.extract_calib_range(uroc)
+            r, c, g, _, _ = idq.file_to_rcg(uroc)
+            effmap, fapmap = idq.rcg_to_EffFAPmap(r, c, g)
             
             classifiersD[classifier]['uroc'] = uroc
             classifiersD[classifier]['calib_range'] = calib_range
@@ -792,16 +793,16 @@ while t  < opts.endgps:
             fapmap = classifiersD[classifier]['fapmap']
 
         ### compute filenames
-        dat = reed.dat(this_output_dir, classifier, ifo, trained_range, usertag, t, stride)
+        dat = idq.dat(this_output_dir, classifier, ifo, trained_range, usertag, t, stride)
 
-        gchxml = reed.xml(this_output_dir, classifier, ifo, trained_range, calib_range, gchtag, t, stride)
-        clnxml = reed.xml(this_output_dir, classifier, ifo, trained_range, calib_range, clntag, t, stride)
+        gchxml = idq.xml(this_output_dir, classifier, ifo, trained_range, calib_range, gchtag, t, stride)
+        clnxml = idq.xml(this_output_dir, classifier, ifo, trained_range, calib_range, clntag, t, stride)
 
-        rnknp = reed.timeseries(this_output_dir, classifier, ifo, trained_range, calib_range, rnktag, t, stride)
-        rnkfr = reed.timeseriesgwf(this_output_dir, classifier, ifo, trained_range, calib_range, rnktag, t, stride)
+        rnknp = idq.timeseries(this_output_dir, classifier, ifo, trained_range, calib_range, rnktag, t, stride)
+        rnkfr = idq.timeseriesgwf(this_output_dir, classifier, ifo, trained_range, calib_range, rnktag, t, stride)
 
-        fapnp = reed.timeseries(this_output_dir, classifier, ifo, trained_range, calib_range, faptag, t, stride)
-        fapfr = reed.timeseriesgwf(this_output_dir, classifier, ifo, trained_range, calib_range, faptag, t, stride)
+        fapnp = idq.timeseries(this_output_dir, classifier, ifo, trained_range, calib_range, faptag, t, stride)
+        fapfr = idq.timeseriesgwf(this_output_dir, classifier, ifo, trained_range, calib_range, faptag, t, stride)
 
         ### store relevant filenames for combiners
         dats[classifier] = dat
@@ -811,9 +812,9 @@ while t  < opts.endgps:
         logger.info('  Begin %s evaluation -> %s'%(classifier, dat) )
         miniconfig = classifiersD[classifier]['config']
         if classifiersD[classifier]['mla']:
-            returncode = reed.evaluate(flavor, lines, dat, miniconfig, gps_start_time=t, gps_end_time=t+stride, dir=this_output_dir, trgdict=pat, auxmvc_vectors=auxmvc_vectors)
+            returncode = idq.evaluate(flavor, lines, dat, miniconfig, gps_start_time=t, gps_end_time=t+stride, dir=this_output_dir, trgdict=pat, auxmvc_vectors=auxmvc_vectors)
         else:
-            returncode = reed.evaluate(flavor, lines, dat, miniconfig, gps_start_time=t, gps_end_time=t+stride, dir=this_output_dir, trgdict=trgdict, samples=samples, samples_header=samples_header)
+            returncode = idq.evaluate(flavor, lines, dat, miniconfig, gps_start_time=t, gps_end_time=t+stride, dir=this_output_dir, trgdict=trgdict, samples=samples, samples_header=samples_header)
 
         ### check if process has been execited correctly
         if returncode:
@@ -824,14 +825,14 @@ while t  < opts.endgps:
 
         ### create timeseries from datfile and save as gzip numpy array, there are boundary effects here
         logger.info('  Begin: generating %s rank timeseries -> %s'%(classifier, rnknp))
-        ts = reed.datfile2timeseries(flavor, dat, lines, trgdict=trgdict, start=t, stride=stride, window=0.1, fs=ts_fs)
+        ts = idq.datfile2timeseries(flavor, dat, lines, trgdict=trgdict, start=t, stride=stride, window=0.1, fs=ts_fs)
 
         rnknp_file = event.gzopen(rnknp, 'w')
         numpy.save(rnknp_file, ts)
         rnknp_file.close()
 
         logger.info('    writing %s'%rnkfr)
-        reed.timeseries2frame( rnkfr, {channameD[classifier]['rank']:ts}, t, ts_dt )
+        idq.timeseries2frame( rnkfr, {channameD[classifier]['rank']:ts}, t, ts_dt )
 
         logger.info('  Done: generating %s rank timeseries'%classifier)
 
@@ -846,7 +847,7 @@ while t  < opts.endgps:
         fapnp_file.close()
 
         logger.info('    writing %s'%fapfr)
-        reed.timeseries2frame( fapfr, {channameD[classifier]['fap']:fap_ts, channameD[classifier]['fapUL']:fapUL_ts}, t, ts_dt )
+        idq.timeseries2frame( fapfr, {channameD[classifier]['fap']:fap_ts, channameD[classifier]['fapUL']:fapUL_ts}, t, ts_dt )
 
         logger.info('  Done: generating %s FAP time-series'%classifier)
 
@@ -855,15 +856,15 @@ while t  < opts.endgps:
         logger.info('    converting %s to xml tables' % dat)
 
         ### read dafile -> xml docs
-        (gchxml_doc, clnxml_doc) = reed.datfile2xmldocs(dat, ifo, fapmap, Lmap=False, Effmap=effmap, flavor=flavor,
+        (gchxml_doc, clnxml_doc) = idq.datfile2xmldocs(dat, ifo, fapmap, Lmap=False, Effmap=effmap, flavor=flavor,
                                          gwchan=gwchannel, gwtrigs=gw_trig, prog=__prog__, options=opts.__dict__, version=__version__ )
 
         ### write documents
         logger.info('    --> writing ' + gchxml)
-        reed.ligolw_utils.write_filename(gchxml_doc, gchxml, gz=gchxml.endswith('.gz'))
+        idq.ligolw_utils.write_filename(gchxml_doc, gchxml, gz=gchxml.endswith('.gz'))
 
         logger.info('    --> writing ' + clnxml)
-        reed.ligolw_utils.write_filename(clnxml_doc, clnxml, gz=clnxml.endswith('.gz'))
+        idq.ligolw_utils.write_filename(clnxml_doc, clnxml, gz=clnxml.endswith('.gz'))
 
         logger.info('  Done: converting %s dat file into xml files.'%classifier)
 
@@ -881,7 +882,7 @@ while t  < opts.endgps:
             dat = dats[classifier]
             logger.info('reading in data from %s'%dat)
             ### we sort according to GPS so everything is ordered in the same way!
-            outputs[classifier] = reed.sort_output( reed.slim_load_datfile( dat, skip_lines=0, columns=samples_header+['rank'] ), 'GPS' )
+            outputs[classifier] = idq.sort_output( idq.slim_load_datfile( dat, skip_lines=0, columns=samples_header+['rank'] ), 'GPS' )
 
             rnk = rnks[classifier]
             logger.info('reading in data from %s'%rnk)
@@ -894,7 +895,7 @@ while t  < opts.endgps:
             if cache.was_modified():
                 kde_cln_name, kde_gch_name = cache.tail(nlines=2)
 
-                kde_range = reed.extract_kde_range( kde_cln_name )
+                kde_range = idq.extract_kde_range( kde_cln_name )
 
                 kde_cln_file = event.gzopen(kde_cln_name, 'r')
                 kde, kde_cln = numpy.load(kde_cln_file)
@@ -908,9 +909,9 @@ while t  < opts.endgps:
                 kdeD[classifier]['kde'] = kde
 
                 kdeD[classifier]['kde_cln'] = kde_cln
-                kdeD[classifier]['ckde_cln'] = reed.kde_to_ckde( kde_cln )
+                kdeD[classifier]['ckde_cln'] = idq.kde_to_ckde( kde_cln )
                 kdeD[classifier]['kde_gch'] = kde_gch
-                kdeD[classifier]['ckde_gch'] = reed.kde_to_ckde( kde_gch )
+                kdeD[classifier]['ckde_gch'] = idq.kde_to_ckde( kde_gch )
 
                 kdeD[classifier]['kde_cln_name'] = kde_cln_name
                 kdeD[classifier]['kde_gch_name'] = kde_gch_name
@@ -934,9 +935,9 @@ while t  < opts.endgps:
             cache = calibration_cache[combiner]
             if cache.was_modified():
                 uroc = cache.tail(nlines=1)[0]
-                calib_range = reed.extract_calib_range(uroc)
-                r, c, g, _, _ = reed.file_to_rcg(uroc)
-                effmap, fapmap = reed.rcg_to_EffFAPmap(r, c, g)
+                calib_range = idq.extract_calib_range(uroc)
+                r, c, g, _, _ = idq.file_to_rcg(uroc)
+                effmap, fapmap = idq.rcg_to_EffFAPmap(r, c, g)
 
                 combinersD[combiner]['uroc'] = uroc
                 combinersD[combiner]['calib_range'] = calib_range
@@ -953,16 +954,16 @@ while t  < opts.endgps:
             ### compute filenames
             trained_range = "__".join( ["%s-%s"%(classifier, kdeD[classifier]['kde_range']) for classifier in these_classifiers] ) ### string together all kde ranges
              
-            dat = reed.dat(this_output_dir, combiner, ifo, trained_range, usertag, t, stride)
+            dat = idq.dat(this_output_dir, combiner, ifo, trained_range, usertag, t, stride)
 
-            gchxml = reed.xml(this_output_dir, combiner, ifo, trained_range, calib_range, gchtag, t, stride)
-            clnxml = reed.xml(this_output_dir, combiner, ifo, trained_range, calib_range, clntag, t, stride)
+            gchxml = idq.xml(this_output_dir, combiner, ifo, trained_range, calib_range, gchtag, t, stride)
+            clnxml = idq.xml(this_output_dir, combiner, ifo, trained_range, calib_range, clntag, t, stride)
 
-            rnknp = reed.timeseries(this_output_dir, combiner, ifo, trained_range, calib_range, rnktag, t, stride)
-            rnkfr = reed.timeseriesgwf(this_output_dir, combiner, ifo, trained_range, calib_range, rnktag, t, stride)
+            rnknp = idq.timeseries(this_output_dir, combiner, ifo, trained_range, calib_range, rnktag, t, stride)
+            rnkfr = idq.timeseriesgwf(this_output_dir, combiner, ifo, trained_range, calib_range, rnktag, t, stride)
 
-            fapnp = reed.timeseries(this_output_dir, combiner, ifo, trained_range, calib_range, faptag, t, stride)
-            fapfr = reed.timeseriesgwf(this_output_dir, combiner, ifo, trained_range, calib_range, faptag, t, stride)
+            fapnp = idq.timeseries(this_output_dir, combiner, ifo, trained_range, calib_range, faptag, t, stride)
+            fapfr = idq.timeseriesgwf(this_output_dir, combiner, ifo, trained_range, calib_range, faptag, t, stride)
 
             #===========================================================================================
             #
@@ -1061,7 +1062,7 @@ while t  < opts.endgps:
 
             ### write datfile
             logger.info('  writing %s'%dat)
-            reed.output_to_datfile( output, dat )
+            idq.output_to_datfile( output, dat )
            
             ### create timeseries from datfile and save as gzip numpy array, there are boundary effects here
             logger.info('  writing %s'%(rnknp))
@@ -1073,7 +1074,7 @@ while t  < opts.endgps:
             rnknp_file.close()
 
             logger.info('    writing %s'%rnkfr)
-            reed.timeseries2frame( rnkfr, {channameD[combiner]['rank']:ts_r_joint}, t, ts_dt )
+            idq.timeseries2frame( rnkfr, {channameD[combiner]['rank']:ts_r_joint}, t, ts_dt )
 
             ### create FAP timeseries
             logger.info('  Begin: generating %s FAP time-series -> %s'%(combiner, fapnp))
@@ -1086,7 +1087,7 @@ while t  < opts.endgps:
             fapnp_file.close()
 
             logger.info('    writing %s'%fapfr)
-            reed.timeseries2frame( fapfr, {channameD[combiner]['fap']:fap_ts, channameD[combiner]['fapUL']:fapUL_ts}, t, ts_dt )
+            idq.timeseries2frame( fapfr, {channameD[combiner]['fap']:fap_ts, channameD[combiner]['fapUL']:fapUL_ts}, t, ts_dt )
 
             logger.info('  Done: generating %s FAP time-series'%combiner)
 
@@ -1095,15 +1096,15 @@ while t  < opts.endgps:
             logger.info('    converting %s to xml tables' % dat)
 
             ### read dafile -> xml docs
-            (gchxml_doc, clnxml_doc) = reed.datfile2xmldocs(dat, ifo, fapmap, Lmap=False, Effmap=effmap, flavor=flavor,
+            (gchxml_doc, clnxml_doc) = idq.datfile2xmldocs(dat, ifo, fapmap, Lmap=False, Effmap=effmap, flavor=flavor,
                                          gwchan=gwchannel, gwtrigs=gw_trig, prog=__prog__, options=opts.__dict__, version=__version__ )
 
             ### write documents
             logger.info('    --> writing ' + gchxml)
-            reed.ligolw_utils.write_filename(gchxml_doc, gchxml, gz=gchxml.endswith('.gz'))
+            idq.ligolw_utils.write_filename(gchxml_doc, gchxml, gz=gchxml.endswith('.gz'))
 
             logger.info('    --> writing ' + clnxml)
-            reed.ligolw_utils.write_filename(clnxml_doc, clnxml, gz=clnxml.endswith('.gz'))
+            idq.ligolw_utils.write_filename(clnxml_doc, clnxml, gz=clnxml.endswith('.gz'))
 
             logger.info('  Done: converting %s dat file into xml files.'%combiner)
 

@@ -32,8 +32,8 @@ from glue.ligolw import utils as ligolw_utils
 from glue.ligolw import lsctables
 from glue.ligolw import table
 
-#from laldetchar.idq import idq
-from laldetchar.idq import reed
+from laldetchar.idq import idq
+#from laldetchar.idq import reed as idq
 from laldetchar.idq import event
 from laldetchar.idq import auxmvc_utils
 
@@ -84,10 +84,10 @@ cwd = os.getcwd()
 
 #===================================================================================================
 ### setup logger to record processes
-logger = reed.setup_logger('idq_logger', opts.log_file, sys.stdout, format='%(asctime)s %(message)s')
+logger = idq.setup_logger('idq_logger', opts.log_file, sys.stdout, format='%(asctime)s %(message)s')
 
-sys.stdout = reed.LogFile(logger)
-sys.stderr = reed.LogFile(logger)
+sys.stdout = idq.LogFile(logger)
+sys.stderr = idq.LogFile(logger)
 
 #===================================================================================================
 ### read global configuration file
@@ -107,7 +107,7 @@ if usertag:
 # which classifiers
 #========================
 ### ensure we have a section for each classifier and fill out dictionary of options
-classifiersD, mla, ovl = reed.config_to_classifiersD( config )
+classifiersD, mla, ovl = idq.config_to_classifiersD( config )
 
 classifiers = sorted(classifiersD.keys())
 
@@ -128,7 +128,7 @@ if mla:
 dag_classifiers = []
 blk_classifiers = []
 for classifier in classifiers:
-    if classifiersD[classifier]['flavor'] in reed.train_with_dag:
+    if classifiersD[classifier]['flavor'] in idq.train_with_dag:
         dag_classifiers.append( classifier )
     else:
         blk_classifiers.append( classifier )
@@ -156,7 +156,7 @@ delay = config.getint('train', 'delay')
 
 #train_script = config.get('condor', 'train')
 
-train_cache = dict( (classifier, reed.Cachefile(reed.cache(traindir, classifier, tag='_train%s'%usertag))) for classifier in classifiers )
+train_cache = dict( (classifier, idq.Cachefile(idq.cache(traindir, classifier, tag='_train%s'%usertag))) for classifier in classifiers )
 
 build_auxmvc_vectors = mla and (not os.path.exists(realtimedir)) ### if realtimedir does not exist, we cannot rely on patfiles from the realtime job
                                                                  ### we need to build our own auxmvc_vectors
@@ -185,7 +185,7 @@ gwthreshold = config.getfloat('general', 'gw_kwsignif_thr')
 
 ### kleineWelle config
 GWkwconfigpath = config.get('data_discovery', 'GWkwconfig')
-GWkwconfig = reed.loadkwconfig(GWkwconfigpath)
+GWkwconfig = idq.loadkwconfig(GWkwconfigpath)
 GWkwbasename = GWkwconfig['basename']
 GWgdsdir = config.get('data_discovery', 'GWgdsdir')
 GWkwstride = int(float(GWkwconfig['stride']))
@@ -193,7 +193,7 @@ GWkwstride = int(float(GWkwconfig['stride']))
 GWkwtrgdir = "%s/%s"%(GWgdsdir, GWkwbasename)
 
 AUXkwconfigpath = config.get('data_discovery', 'AUXkwconfig')
-AUXkwconfig = reed.loadkwconfig(AUXkwconfigpath)
+AUXkwconfig = idq.loadkwconfig(AUXkwconfigpath)
 AUXkwbasename = AUXkwconfig['basename']
 AUXgdsdir = config.get('data_discovery', 'AUXgdsdir')
 AUXkwstride = int(float(AUXkwconfig['stride']))
@@ -231,7 +231,7 @@ if not os.path.exists(condorlogs):
 #==================================================
 ### current time and boundaries
 
-t = int(reed.nowgps())
+t = int(idq.nowgps())
 
 gpsstop = opts.gpsstop
 if not gpsstop: ### stop time of this analysis
@@ -271,7 +271,7 @@ while gpsstart < gpsstop:
         logger.info('waiting %.1f seconds to reach gpsstart+stride+delay=%d' %(wait, gpsstart+stride+delay))
         time.sleep(wait)
 
-    launch_gps_time = reed.nowgps()
+    launch_gps_time = idq.nowgps()
 
     ### increment lookback time if it is set to infinity
     ### this forces the job to pick up all data since opts.gps_start
@@ -308,13 +308,13 @@ while gpsstart < gpsstop:
 
         try: 
            ### this returns a string
-            seg_xml_file = reed.segment_query(config, gpsstart - lookback , gpsstart + stride, url=segdb_url)
+            seg_xml_file = idq.segment_query(config, gpsstart - lookback , gpsstart + stride, url=segdb_url)
 
             ### load xml document
             xmldoc = ligolw_utils.load_fileobj(seg_xml_file, contenthandler=ligolw.LIGOLWContentHandler)[0]
 
             ### science segments xml filename
-            seg_file = reed.segxml(output_dir, "_%s"%dq_name, gpsstart - lookback , lookback+stride)
+            seg_file = idq.segxml(output_dir, "_%s"%dq_name, gpsstart - lookback , lookback+stride)
 
             logger.info('writing science segments to file : '+seg_file)
             ligolw_utils.write_filename(xmldoc, seg_file, gz=seg_file.endswith(".gz"))
@@ -334,10 +334,10 @@ while gpsstart < gpsstop:
             if (not mla) or build_auxmvc_vectors or (not os.path.exists(realtimedir)): ### mla will use science segments, so we need to write those for ovl
                                                                          ### if realtimedir doesn't exits, we need to use queried scisegs
                 try:
-                    (scisegs, coveredseg) = reed.extract_dq_segments(seg_file, dq_name) ### read in segments from xml file
+                    (scisegs, coveredseg) = idq.extract_dq_segments(seg_file, dq_name) ### read in segments from xml file
 
                     ### write segments to ascii list
-                    sciseg_path = reed.segascii(output_dir, "_%s"%dq_name, gpsstart-lookback, lookback+stride)
+                    sciseg_path = idq.segascii(output_dir, "_%s"%dq_name, gpsstart-lookback, lookback+stride)
                     logger.info('writing science segments to file : '+sciseg_path)
                     f = open(sciseg_path, 'w')
                     for line in scisegs:
@@ -362,16 +362,16 @@ while gpsstart < gpsstop:
             else: ### we're re-using pat files!
                 try:
                     ### determine segments from realtime filenames
-                    realtime_segs = reed.get_idq_segments(realtimedir, gpsstart - lookback, gpsstart + stride, suffix='.pat')
+                    realtime_segs = idq.get_idq_segments(realtimedir, gpsstart - lookback, gpsstart + stride, suffix='.pat')
 
                     ### read in science segments
-                    (scisegs, coveredseg) = reed.extract_dq_segments(seg_file, dq_name)
+                    (scisegs, coveredseg) = idq.extract_dq_segments(seg_file, dq_name)
 
                     ### take the intersection of these segments
                     idq_segs = event.andsegments([scisegs, realtime_segs])
 
                     ### write segment file
-                    idqseg_path = reed.idqsegascii(output_dir, '_%s'%dq_name, gpsstart - lookback, lookback+stride)
+                    idqseg_path = idq.idqsegascii(output_dir, '_%s'%dq_name, gpsstart - lookback, lookback+stride)
                     f = open(idqseg_path, 'w')
                     for seg in idq_segs:
                         print >> f, seg[0], seg[1]
@@ -398,11 +398,11 @@ while gpsstart < gpsstop:
         logger.info('preparing training auxmvc samples')
 
         ### output file for training samples
-        pat = reed.pat(output_dir, ifo, usertag, gpsstart-lookback, lookback+stride)
+        pat = idq.pat(output_dir, ifo, usertag, gpsstart-lookback, lookback+stride)
 
         if not build_auxmvc_vectors: ### we cat together pat files instead of building vectors from scratch
             ### run job that prepares training samples
-            (ptas_exit_status, _) = reed.execute_prepare_training_auxmvc_samples(output_dir, realtimedir, config, gpsstart - lookback, gpsstart + stride, pat, dq_segments=seg_file, dq_segments_name=dq_name )
+            (ptas_exit_status, _) = idq.execute_prepare_training_auxmvc_samples(output_dir, realtimedir, config, gpsstart - lookback, gpsstart + stride, pat, dq_segments=seg_file, dq_segments_name=dq_name )
             os.chdir(cwd) ### go back to starting directory
 
         if build_auxmvc_vectors or ptas_exit_status!=0: ### we need to build vectors
@@ -412,7 +412,7 @@ while gpsstart < gpsstop:
                 logger.warning('WARNING: patfile generation failed for some reason. Attempt to build auxmvc vectors from scratch')
                 if ovl and (not opts.ignore_science_segments): ### need to reset sciseg pointer!
                     ### write segments to ascii list
-                    sciseg_path = reed.segascii(output_dir, "_%s"%dq_name, gpsstart-lookback, lookback+stride)
+                    sciseg_path = idq.segascii(output_dir, "_%s"%dq_name, gpsstart-lookback, lookback+stride)
                     logger.info('writing science segments to file : '+sciseg_path)
                     f = open(sciseg_path, 'w')
                     for line in scisegs:
@@ -423,7 +423,7 @@ while gpsstart < gpsstop:
             ### build auxmvc_vectors by hand!
             ### get triggers
             logger.info('looking for triggers')
-            trigger_dict = reed.retrieve_kwtrigs(GWgdsdir, GWkwbasename, gpsstart-lookback, lookback+stride, GWkwstride, sleep=0, ntrials=1, logger=logger) ### go find GW kwtrgs
+            trigger_dict = idq.retrieve_kwtrigs(GWgdsdir, GWkwbasename, gpsstart-lookback, lookback+stride, GWkwstride, sleep=0, ntrials=1, logger=logger) ### go find GW kwtrgs
             if gwchannel not in trigger_dict:
                 trigger_dict[gwchannel] = []
 
@@ -434,7 +434,7 @@ while gpsstart < gpsstop:
 
             if not identical_trgfile: ### add AUX triggers
                 logger.info('looking for additional AUX triggers')
-                aux_trgdict = reed.retrieve_kwtrigs(AUXgdsdir, AUXkwbasename, gpsstart-lookback-padding, lookback+stride+padding, AUXkwstride, sleep=0, ntrials=1, logger=logger) ### find AUX kwtrgs
+                aux_trgdict = idq.retrieve_kwtrigs(AUXgdsdir, AUXkwbasename, gpsstart-lookback-padding, lookback+stride+padding, AUXkwstride, sleep=0, ntrials=1, logger=logger) ### find AUX kwtrgs
                 if aux_trgdict == None:
                     logger.warning('  no auxiliary triggers were found')
                     ### we do not skip, although we might want to?
@@ -459,18 +459,18 @@ while gpsstart < gpsstop:
             ### keep only times that are within science time
             if not opts.ignore_science_segments:
                 logger.info('  filtering trigger_dict through scisegs')
-                (scisegs, coveredseg) = reed.extract_dq_segments(seg_file, dq_name)
+                (scisegs, coveredseg) = idq.extract_dq_segments(seg_file, dq_name)
                 trigger_dict.include(scisegs)
 
             ### build vectors, also writes them into pat
             logger.info('  writting %s'%pat)
-            reed.build_auxmvc_vectors(trigger_dict, gwchannel, auxmvc_coinc_window, auxmc_gw_signif_thr, pat, gps_start_time=gpsstart-lookback,
+            idq.build_auxmvc_vectors(trigger_dict, gwchannel, auxmvc_coinc_window, auxmc_gw_signif_thr, pat, gps_start_time=gpsstart-lookback,
                                 gps_end_time=gpsstart + stride,  channels=auxmvc_selected_channels, unsafe_channels=auxmvc_unsafe_channels, clean_times=clean_gps,
                                 clean_window=clean_window, filter_out_unclean=False )
 
             ptas_exit_status = 0 ### used to check for success
 
-#            (ptas_exit_status, _) = reed.execute_build_auxmvc_vectors( config, output_dir, AUXkwtrgdir, gwchannel, pat, gpsstart - lookback, gpsstart + stride, channels=auxmvc_selected_channels, unsafe_channels=auxmvc_unsafe_channels, dq_segments=seg_file, dq_segments_name=dq_name )
+#            (ptas_exit_status, _) = idq.execute_build_auxmvc_vectors( config, output_dir, AUXkwtrgdir, gwchannel, pat, gpsstart - lookback, gpsstart + stride, channels=auxmvc_selected_channels, unsafe_channels=auxmvc_unsafe_channels, dq_segments=seg_file, dq_segments_name=dq_name )
 #            os.chdir(cwd) ### go back to starting directory
  
         # check if process has been executed correctly
@@ -505,7 +505,7 @@ while gpsstart < gpsstop:
         classD = classifiersD[classifier]
         flavor = classD['flavor']
 
-        if flavor in reed.mla_flavors and ptas_exit_status:
+        if flavor in idq.mla_flavors and ptas_exit_status:
             logger.warning("WARNING: mla training samples could not be built. skipping %s training"%classifier)
             continue
 
@@ -524,7 +524,7 @@ while gpsstart < gpsstop:
       
             ### submit training job
             miniconfig = classD['config']
-            (submit_dag_exit_status, dag_file) = reed.dag_train(flavor, pat,  train_cache[classifier], miniconfig, train_dir, cwd)
+            (submit_dag_exit_status, dag_file) = idq.dag_train(flavor, pat,  train_cache[classifier], miniconfig, train_dir, cwd)
 
             if submit_dag_exit_status:
                 logger.warning("WARNING: was not able to submit %s training dag"%classifier)
@@ -552,9 +552,9 @@ while gpsstart < gpsstop:
     if ovl:
         logger.info('generating single-channel summary files')
     
-        new_dirs = reed.collect_sngl_chan_kw( gpsstart, gpsstart + stride, GWkwconfigpath, width=stride, source_dir=GWkwtrgdir, output_dir=snglchndir )
+        new_dirs = idq.collect_sngl_chan_kw( gpsstart, gpsstart + stride, GWkwconfigpath, width=stride, source_dir=GWkwtrgdir, output_dir=snglchndir )
         if not identical_trgfile:
-            new_dirs += reed.collect_sngl_chan_kw( gpsstart, gpsstart+stride, AUXkwconfigpath, width=stride, source_dir=AUXkwtrgdir, output_dir=snglchndir )
+            new_dirs += idq.collect_sngl_chan_kw( gpsstart, gpsstart+stride, AUXkwconfigpath, width=stride, source_dir=AUXkwtrgdir, output_dir=snglchndir )
 
     #=============================================
     # training on submit node
@@ -577,13 +577,13 @@ while gpsstart < gpsstop:
         ### parallelize through multiprocessing module!
         conn1, conn2 = mp.Pipe()
 
-        proc = mp.Process(target=reed.blk_train, args=(flavor, config, classifiersD[classifier], gpsstart-lookback, gpsstart+stride, ovlsegs, vetosegs, train_dir, cwd, opts.force, train_cache[classifier], min_num_gch, min_num_cln, padding, conn2) )
+        proc = mp.Process(target=idq.blk_train, args=(flavor, config, classifiersD[classifier], gpsstart-lookback, gpsstart+stride, ovlsegs, vetosegs, train_dir, cwd, opts.force, train_cache[classifier], min_num_gch, min_num_cln, padding, conn2) )
 	proc.start()
         conn2.close()
         blk_procs.append( (proc, classifier, conn1) )
 
         ### run in series
-#        exit_status, _ = reed.blk_train(flavor, config, classifiersD[classifier], gpsstart-lookback, gpsstart+stride, ovlsegs=ovlsegs, vetosegs=vetosegs, train_dir=train_dir, cwd=cwd, force=opts.force, cache=train_cache[classifier], min_num_gch=min_num_gch, min_num_cln=min_num_cln, padding=padding)
+#        exit_status, _ = idq.blk_train(flavor, config, classifiersD[classifier], gpsstart-lookback, gpsstart+stride, ovlsegs=ovlsegs, vetosegs=vetosegs, train_dir=train_dir, cwd=cwd, force=opts.force, cache=train_cache[classifier], min_num_gch=min_num_gch, min_num_cln=min_num_cln, padding=padding)
 
     ### loop over processes and wait...
     while blk_procs:
@@ -616,10 +616,10 @@ while gpsstart < gpsstop:
         ### otherwise, we wait for some amount of time before proceeding
         wait = 1 ### amount of time to wait between checking-dags epochs
         message = True 
-        while opts.force or (reed.nowgps() < gpsstop + stride) or (reed.nowgps() < launch_gps_time + stride):
+        while opts.force or (idq.nowgps() < gpsstop + stride) or (idq.nowgps() < launch_gps_time + stride):
 
             for dag in list_of_dags: ### check dag status
-                dag_status = reed.get_condor_dag_status(dag)
+                dag_status = idq.get_condor_dag_status(dag)
                 dags[dag] = dag_status
 
                 if dag_status == 0:
@@ -658,7 +658,7 @@ while gpsstart < gpsstop:
     if opts.sngl_chan_xml:
         logger.info('launching conversion from .trg to .xml files')
         for dir in new_dirs:
-#            trg_to_xml_exit_code = reed.submit_command([config.get('condor', 'convertkwtosb'), dir], process_name='convertkwtosb', dir=dir)
+#            trg_to_xml_exit_code = idq.submit_command([config.get('condor', 'convertkwtosb'), dir], process_name='convertkwtosb', dir=dir)
             trg_to_xml_exit_code = subprocess.Popen([config.get('convertkwtosb','executable'), dir], cwd=dir)
             os.chdir(cwd)
             if trg_to_xml_exit_code != 0:

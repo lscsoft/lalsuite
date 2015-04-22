@@ -44,8 +44,8 @@ from glue.ligolw import utils as ligolw_utils
 from glue.ligolw import lsctables
 from glue.ligolw import table
 
-#from laldetchar.idq import idq
-from laldetchar.idq import reed
+from laldetchar.idq import idq
+#from laldetchar.idq import reed as idq
 from laldetchar.idq import event
 from laldetchar.idq import calibration
 
@@ -90,10 +90,10 @@ if opts.lookback != "infinity":
 
 #===================================================================================================
 ### setup logger to record processes
-logger = reed.setup_logger('idq_logger', opts.log_file, sys.stdout, format='%(asctime)s %(message)s')
+logger = idq.setup_logger('idq_logger', opts.log_file, sys.stdout, format='%(asctime)s %(message)s')
 
-sys.stdout = reed.LogFile(logger)
-sys.stderr = reed.LogFile(logger)
+sys.stdout = idq.LogFile(logger)
+sys.stderr = idq.LogFile(logger)
 
 #===================================================================================================
 ### read global configuration file
@@ -113,10 +113,10 @@ if usertag:
 # which classifiers
 #========================
 ### ensure we have a section for each classifier and fill out dictionary of options
-classifiersD, mla, ovl = reed.config_to_classifiersD( config )
+classifiersD, mla, ovl = idq.config_to_classifiersD( config )
 
 ### get combiners information and add these to classifiersD
-combinersD, referenced_classifiers = reed.config_to_combinersD( config )
+combinersD, referenced_classifiers = idq.config_to_combinersD( config )
 for combiner, value in combinersD.items():
     classifiersD[combiner] = value
 
@@ -142,8 +142,8 @@ calibrationdir = config.get('general', 'calibrationdir')
 stride = config.getint('calibration', 'stride')
 delay = config.getint('calibration', 'delay')
 
-calibration_cache = dict( (classifier, reed.Cachefile(reed.cache(calibrationdir, classifier, tag='_calibration%s'%usertag))) for classifier in classifiers )
-kde_cache = dict( (classifier, reed.Cachefile(reed.cache(calibrationdir, classifier, tag='_calibration-kde%s'%usertag))) for classifier in classifiers )
+calibration_cache = dict( (classifier, idq.Cachefile(idq.cache(calibrationdir, classifier, tag='_calibration%s'%usertag))) for classifier in classifiers )
+kde_cache = dict( (classifier, idq.Cachefile(idq.cache(calibrationdir, classifier, tag='_calibration-kde%s'%usertag))) for classifier in classifiers )
 
 min_num_gch = config.getfloat('calibration', 'min_num_gch')
 min_num_cln = config.getfloat('calibration', 'min_num_cln')
@@ -194,7 +194,7 @@ else:
 #==================================================
 ### current time and boundaries
 
-t = int(reed.nowgps())
+t = int(idq.nowgps())
 
 gpsstop = opts.gpsstop
 if not gpsstop: ### stop time of this analysis
@@ -256,19 +256,19 @@ while gpsstart < gpsstop:
 
         try:
             ### this returns a string
-            seg_xml_file = reed.segment_query(config, gpsstart - lookback , gpsstart + stride, url=segdb_url)
+            seg_xml_file = idq.segment_query(config, gpsstart - lookback , gpsstart + stride, url=segdb_url)
 
             ### write seg_xml_file to disk
             lsctables.use_in(ligolw.LIGOLWContentHandler)
             xmldoc = ligolw_utils.load_fileobj(seg_xml_file, contenthandler=ligolw.LIGOLWContentHandler)[0]
 
             ### science segments xml filename
-            seg_file = reed.segxml(output_dir, "_%s"%dq_name, gpsstart - lookback , lookback+stride)
+            seg_file = idq.segxml(output_dir, "_%s"%dq_name, gpsstart - lookback , lookback+stride)
 
             logger.info('writing science segments to file : '+seg_file)
             ligolw_utils.write_filename(xmldoc, seg_file, gz=seg_file.endswith(".gz"))
 
-            (scisegs, coveredseg) = reed.extract_dq_segments(seg_file, dq_name) ### read in segments from xml file
+            (scisegs, coveredseg) = idq.extract_dq_segments(seg_file, dq_name) ### read in segments from xml file
 
         except Exception as e:
             traceback.print_exc()
@@ -282,16 +282,16 @@ while gpsstart < gpsstop:
                 continue
 
     logger.info('finding idq segments')
-    idqsegs = reed.get_idq_segments(realtimedir, gpsstart-lookback, gpsstart+stride, suffix='.dat')
+    idqsegs = idq.get_idq_segments(realtimedir, gpsstart-lookback, gpsstart+stride, suffix='.dat')
 
     logger.info('taking intersection between science segments and idq segments')
     idqsegs = event.andsegments( [scisegs, idqsegs] )
 
     ### write segment file
     if opts.ignore_science_segments:
-        idqseg_path = reed.idqsegascii(output_dir, '', gpsstart-lookback, lookback+stride)
+        idqseg_path = idq.idqsegascii(output_dir, '', gpsstart-lookback, lookback+stride)
     else:
-        idqseg_path = reed.idqsegascii(output_dir, '_%s'%dq_name, gpsstart - lookback, lookback+stride)
+        idqseg_path = idq.idqsegascii(output_dir, '_%s'%dq_name, gpsstart - lookback, lookback+stride)
     f = open(idqseg_path, 'w')
     for seg in idqsegs:
         print >> f, seg[0], seg[1]
@@ -304,15 +304,15 @@ while gpsstart < gpsstop:
     ### find all *dat files, bin them according to classifier
     logger.info('finding all *dat files')
     datsD = defaultdict( list )
-    for dat in reed.get_all_files_in_range(realtimedir, gpsstart-lookback, gpsstart+stride, pad=0, suffix='.dat' ):
-        datsD[reed.extract_dat_name( dat )].append( dat )
+    for dat in idq.get_all_files_in_range(realtimedir, gpsstart-lookback, gpsstart+stride, pad=0, suffix='.dat' ):
+        datsD[idq.extract_dat_name( dat )].append( dat )
 
     ### throw away any un-needed files
     for key in datsD.keys():
         if key not in classifiers:
             datsD.pop(key) 
         else: ### throw out files that don't contain any science time
-            datsD[key] = [ dat for dat in datsD[key] if event.livetime(event.andsegments([idqsegs, [reed.extract_start_stop(dat, suffix='.dat')]])) ]
+            datsD[key] = [ dat for dat in datsD[key] if event.livetime(event.andsegments([idqsegs, [idq.extract_start_stop(dat, suffix='.dat')]])) ]
 
     #====================
     # update uroc for each classifier
@@ -320,7 +320,7 @@ while gpsstart < gpsstop:
     urocs = {} ### stores uroc files for kde estimation
     for classifier in classifiers:
         ### write list of dats to cache file
-        cache = reed.cache(output_dir, classifier, "_datcache%s"%usertag)
+        cache = idq.cache(output_dir, classifier, "_datcache%s"%usertag)
         logger.info('writing list of dat files to %s'%cache)
         f = open(cache, 'w')
         for dat in datsD[classifier]:
@@ -330,17 +330,17 @@ while gpsstart < gpsstop:
         logger.info('  computing new calibration for %s'%classifier)
 
         ### extract data from dat files
-        output = reed.slim_load_datfiles(datsD[classifier], skip_lines=0, columns='GPS i rank'.split()+[cluster_key])
+        output = idq.slim_load_datfiles(datsD[classifier], skip_lines=0, columns='GPS i rank'.split()+[cluster_key])
 
         ### filter times by scisegs -> keep only the ones within scisegs
-        output = reed.filter_datfile_output( output, idqsegs )
+        output = idq.filter_datfile_output( output, idqsegs )
 
         ### cluster
         if not opts.dont_cluster:
-            output = reed.cluster_datfile_output( output, cluster_key=cluster_key, cluster_win=cluster_win)
+            output = idq.cluster_datfile_output( output, cluster_key=cluster_key, cluster_win=cluster_win)
 
         ### downselect to only keep the most recent max_num_gch and max_num_cln
-        these_columns, glitches, cleans = reed.separate_output( output )
+        these_columns, glitches, cleans = idq.separate_output( output )
         glitches.sort(key=lambda l: l[these_columns['GPS']])
         cleans.sort(key=lambda l: l[these_columns['GPS']])
         if len(glitches) > max_num_gch:
@@ -349,38 +349,38 @@ while gpsstart < gpsstop:
         if len(cleans) > max_num_cln:
             logger.info('  downselecting to the %d most recent cleans'%max_num_cln)
             cleans = cleans[-max_num_cln:]
-        output = reed.combine_separated_output( these_columns, [glitches, cleans] )
+        output = idq.combine_separated_output( these_columns, [glitches, cleans] )
 
         ### define weights over time
         output['weight'] = calibration.weights( output['GPS'], weight_type="uniform" )
 
         if not opts.dont_cluster:
-            cluster_dat = reed.dat(output_dir, classifier, ifo, "clustered", usertag, gpsstart-lookback, lookback+stride) ### write clustered dat file
+            cluster_dat = idq.dat(output_dir, classifier, ifo, "clustered", usertag, gpsstart-lookback, lookback+stride) ### write clustered dat file
             logger.info('  writing %s'%cluster_dat)
-            reed.output_to_datfile( output, cluster_dat )
+            idq.output_to_datfile( output, cluster_dat )
         else:
-            cluster_dat = reed.dat(output_dir, classifier, ifo, "unclustered", usertag, gpsstart-lookback, lookback+stride)
+            cluster_dat = idq.dat(output_dir, classifier, ifo, "unclustered", usertag, gpsstart-lookback, lookback+stride)
             logger.info('  writing %s'%cluster_dat)
-            reed.output_to_datfile( output, cluster_dat )
+            idq.output_to_datfile( output, cluster_dat )
 
         ### compute rcg from output
-        r, c, g = reed.dat_to_rcg( output )
+        r, c, g = idq.dat_to_rcg( output )
 
         logger.info('    N_gch = %d , N_cln = %d'%(g[-1], c[-1]))
 
 
         ### dump into roc file
-        roc = reed.roc(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
+        roc = idq.roc(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
         logger.info('  writting %s'%roc)
-        reed.rcg_to_file(roc, r, c, g)
+        idq.rcg_to_file(roc, r, c, g)
 
         ### upsample to roc
-        r, c, g = reed.resample_rcg(urank, r, c, g)
+        r, c, g = idq.resample_rcg(urank, r, c, g)
  
         ### dump uroc to file
-        uroc = reed.uroc(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
+        uroc = idq.uroc(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
         logger.info('  writing %s'%uroc)
-        reed.rcg_to_file(uroc, r, c, g)
+        idq.rcg_to_file(uroc, r, c, g)
 
         urocs[classifier] = (r, c, g)
 
@@ -401,19 +401,19 @@ while gpsstart < gpsstop:
 
         r, c, g = urocs[classifier] 
         logger.info('  compute number of samples at each rank')
-        dc, dg = reed.rcg_to_diff( c, g ) ### get the numbers at each rank
+        dc, dg = idq.rcg_to_diff( c, g ) ### get the numbers at each rank
 
         logger.info('  computing KDE for cleans')
-        kde_cln = reed.kde_pwg( kde, r, dc ) ### compute kde estimate
+        kde_cln = idq.kde_pwg( kde, r, dc ) ### compute kde estimate
         logger.info('  computing KDE for glitches')
-        kde_gch = reed.kde_pwg( kde, r, dg )
+        kde_gch = idq.kde_pwg( kde, r, dg )
 
         ### write kde points to file
-        kde_cln_name = reed.kdename(output_dir, classifier, ifo, "_cln%s"%usertag, gpsstart-lookback, lookback+stride)
+        kde_cln_name = idq.kdename(output_dir, classifier, ifo, "_cln%s"%usertag, gpsstart-lookback, lookback+stride)
         logger.info('  writing %s'%kde_cln_name)
         np.save(event.gzopen(kde_cln_name, "w"), (kde, kde_cln))
 
-        kde_gch_name = reed.kdename(output_dir, classifier, ifo, "_gch%s"%usertag, gpsstart-lookback, lookback+stride)
+        kde_gch_name = idq.kdename(output_dir, classifier, ifo, "_gch%s"%usertag, gpsstart-lookback, lookback+stride)
         logger.info('  writing %s'%kde_gch_name)
         np.save(event.gzopen(kde_gch_name, "w"), (kde, kde_gch))
 
@@ -435,22 +435,22 @@ while gpsstart < gpsstop:
         ### find all *fap*npy.gz files, bin them according to classifier
         logger.info('  finding all *fap*.npy.gz files')
         fapsD = defaultdict( list )
-        for fap in [fap for fap in  reed.get_all_files_in_range(realtimedir, gpsstart-lookback, gpsstart+stride, pad=0, suffix='.npy.gz') if "fap" in fap]:
-            fapsD[reed.extract_fap_name( fap )].append( fap )
+        for fap in [fap for fap in  idq.get_all_files_in_range(realtimedir, gpsstart-lookback, gpsstart+stride, pad=0, suffix='.npy.gz') if "fap" in fap]:
+            fapsD[idq.extract_fap_name( fap )].append( fap )
 
         ### throw away files we will never need
         for key in fapsD.keys():
             if key not in classifiers: ### throw away unwanted files
                 fapsD.pop(key)
             else: ### keep only files that overlap with scisegs
-                fapsD[key] = [ fap for fap in fapsD[key] if event.livetime(event.andsegments([idqsegs, [reed.extract_start_stop(fap, suffix='.npy.gz')]])) ]
+                fapsD[key] = [ fap for fap in fapsD[key] if event.livetime(event.andsegments([idqsegs, [idq.extract_start_stop(fap, suffix='.npy.gz')]])) ]
 
         ### iterate through classifiers
         alerts = {} ### files that we should be alerted about
         for classifier in classifiers:
             logger.info('  checking calibration for %s'%classifier)
 
-            cache = reed.cache(output_dir, classifier, "_fapcache%s"%usertag)
+            cache = idq.cache(output_dir, classifier, "_fapcache%s"%usertag)
             logger.info('    writing list of fap files to %s'%cache)
             f = open(cache, 'w')
             for fap in fapsD[classifier]:
@@ -458,13 +458,13 @@ while gpsstart < gpsstop:
             f.close()
 
             logger.info('    analyzing timeseries')
-            _times, timeseries = reed.combine_ts(fapsD[classifier], n=2) ### read in time-series
+            _times, timeseries = idq.combine_ts(fapsD[classifier], n=2) ### read in time-series
 
             times = []
             faps = []
             fapsUL = []
             for t, ts in zip(_times, timeseries):
-                _t, _ts = reed.timeseries_in_segments(t, ts, idqsegs)
+                _t, _ts = idq.timeseries_in_segments(t, ts, idqsegs)
                 if len(_ts):
                     times.append( _t )
                     faps.append( _ts[0] )
@@ -480,7 +480,7 @@ while gpsstart < gpsstop:
             _, deadtimesUL, statedFAPsUL, errsUL = calibration.check_calibration(idqsegs, times, fapsUL, opts.FAPthr)
 #            errsUL = np.array([ d/F - 1.0 for d, F in zip(deadtimesUL, statedFAPs) if F ])
 
-            calib_check = reed.calib_check(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
+            calib_check = idq.calib_check(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
             logger.info('    writing %s'%calib_check)            
 
             file_obj = open(calib_check, "w")

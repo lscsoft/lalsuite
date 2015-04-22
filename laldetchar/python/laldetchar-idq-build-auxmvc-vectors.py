@@ -31,8 +31,8 @@ from pylal import auxmvc_utils
 import numpy
 import random
 from laldetchar.idq import event
-#from laldetchar.idq import idq
-from laldetchar.idq import reed
+from laldetchar.idq import idq
+#from laldetchar.idq import reed as idq
 
 ######################################################################################
 #
@@ -76,7 +76,7 @@ if opts.gps_start_time and opts.gps_end_time:
 
 # get list of trigger files
 if opts.trigger_dir:
-	trig_files = reed.get_all_files_in_range(opts.trigger_dir, gps_start_time, gps_end_time, pad=0, suffix='.trg')
+	trig_files = idq.get_all_files_in_range(opts.trigger_dir, gps_start_time, gps_end_time, pad=0, suffix='.trg')
 else:
 	trig_files = glob.glob(opts.trigger_files)
 
@@ -100,17 +100,20 @@ if not trigger_dict:
 
 if opts.dq_segments:
 	# load dq segments
-	(dq_segments, covered_segments) = reed.extract_dq_segments(open(opts.dq_segments, "r"), opts.dq_segments_name)
+	(dq_segments, covered_segments) = idq.extract_dq_segments(open(opts.dq_segments, "r"), opts.dq_segments_name)
 	# sort and merge segments
 	dq_segments = event.fixsegments(dq_segments)
 else:
 	dq_segments = None
 
 # construct auxmvc feature vectors
-auxmvc_vectors = reed.build_auxmvc_vectors(trigger_dict, main_channel, opts.time_window, opts.signif_threshold, opts.output_file,\
+auxmvc_vectors = idq.build_auxmvc_vectors(trigger_dict, main_channel, opts.time_window, opts.signif_threshold, opts.output_file,\
   gps_start_time=gps_start_time, gps_end_time=gps_end_time, channels=opts.channels, unsafe_channels=opts.unsafe_channels,\
   science_segments = dq_segments, clean_samples_rate=opts.clean_samples_rate, filter_out_unclean=opts.filter_out_unclean,\
   max_clean_samples = opts.max_clean_samples, max_glitch_samples = opts.max_glitch_samples)
+#  gps_start_time=gps_start_time, gps_end_time=gps_end_time, channels=opts.channels, unsafe_channels=opts.unsafe_channels,\
+#  science_segments = dq_segments, clean_samples_rate=opts.clean_samples_rate, filter_out_unclean=opts.filter_out_unclean,\
+#  max_clean_samples = opts.max_clean_samples, max_glitch_samples = opts.max_glitch_samples)
 
 clean_samples = auxmvc_vectors[numpy.nonzero(auxmvc_vectors['i']==0)[0],:]
 glitch_samples = auxmvc_vectors[numpy.nonzero(auxmvc_vectors['i']==1)[0],:]
