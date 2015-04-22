@@ -268,7 +268,7 @@ while gpsstart < gpsstop:
 
     wait = gpsstart + stride + delay - t
     if wait > 0:
-        logger.info('waiting %.1f seconds to reach gpsstart+stride+delay=%d' %(wait, gpstart+stride+delay))
+        logger.info('waiting %.1f seconds to reach gpsstart+stride+delay=%d' %(wait, gpsstart+stride+delay))
         time.sleep(wait)
 
     launch_gps_time = reed.nowgps()
