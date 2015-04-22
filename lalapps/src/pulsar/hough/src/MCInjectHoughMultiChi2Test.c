@@ -404,6 +404,12 @@ int main(int argc, char *argv[]){
     fpNc= fopen(filename, "w"); /* where to write the parameters */
     /*setlinebuf(fpNc);*/  /* line buffered on */
     setvbuf(fpNc, (char *)NULL, _IOLBF, 0);
+   
+    strcpy( filename, uvar_dirnameOut);
+    strcat( filename, uvar_fnameOut);
+    strcat( filename, "_xhi");
+    fp = fopen(filename , "w");
+    setvbuf(fp, (char *)NULL, _IOLBF, 0);
 
     for (k=0; k<uvar_nh0; ++k){ fprintf(fpH0, "%g \n",  h0V.data[k] ); }  
     fclose(fpH0);
@@ -684,9 +690,6 @@ int main(int argc, char *argv[]){
   
   /* ****************************************************************/
   /*  HERE SHOULD START THE MONTE-CARLO */
-  
-      fp = fopen("./outChi2Test" , "w");
-      setvbuf(fp, (char *)NULL, _IOLBF, 0);
 
   for(MCloopId=0; MCloopId < uvar_nMCloop; ++MCloopId){
     
