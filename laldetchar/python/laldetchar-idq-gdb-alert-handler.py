@@ -15,27 +15,33 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import os
-import glob
+#import glob
 import sys
+from sys import stdin
+
 import logging
-import optparse
-import subprocess
+import traceback
 import ConfigParser
+
+import subprocess
+
 from ligo.gracedb.rest import GraceDb
+
 #from laldetchar.idq import idq
 from laldetchar.idq import reed
 from laldetchar.idq import idq_gdb_utils
-import traceback
 
 import time
 
 from laldetchar import git_version
-from sys import stdin
 
 # get_LVAdata_from_stdin will be depricate starting from ER6, we might need it only for pre-ER6 testing.
 #from ligo.lvalert.utils import get_LVAdata_from_stdin
 # json will be used instead of get_LVAdata_from_stdin. We will use it as default here.
 import json
+
+
+from optparse import OptionParser
 
 #===================================================================================================
 
@@ -50,7 +56,7 @@ It gets necessary information about the event and runs idq tasks that upload rel
 
 #===================================================================================================
 
-parser = optparse.OptionParser(version='Name: %%prog\n%s'
+parser = OptionParser(version='Name: %%prog\n%s'
                                % git_version.verbose_msg,
                                usage='%prog [options]',
                                description=description)
@@ -89,6 +95,13 @@ classifiers = config.get('general', 'classifiers').split(' ')
 usertag = config.get('general', 'usertag')
 idq_dir = config.get('general', 'idqdir')
 
+if usertag:
+    usertag = "_%s"%usertag
+
+### get script names
+tables_script = config.get('executables','idq_gdb_glitch_tables')
+timeseries_script = config.get('executables','idq_gdb_timeseries')
+
 #=================================================
 ### local gdb directory where script will run and store its output
 idq_gdb_main_dir = config.get('general', 'main_gdb_dir')
@@ -97,6 +110,7 @@ if not os.path.exists(idq_gdb_main_dir):
 
 ### cd into this directory
 os.chdir(idq_gdb_main_dir)
+cwd = os.getcwd()
 
 #=================================================
 ### read gracedb id for event and other attributes from stdin
@@ -109,6 +123,15 @@ gdb_id = eventdata['uid']
 alert_type = eventdata['alert_type']
 description = eventdata['description']
 
+usertag = "%s%s"%(gdb_id, usertag)
+
+### out/err files
+tables_out = "%s/glitch-tables_%s.out"%(idq_gdb_main_dir, usertag)
+tables_err = "%s/glitch-tables_%s.err"%(idq_gdb_main_dir, usertag)
+
+timeseries_out = "%s/timeseries_%s.out"%(idq_gdb_main_dir, usertag)
+timeseries_err = "%s/timeseries_%s.err"%(idq_gdb_main_dir, usertag)
+
 #=================================================
 # LOGIC TO SKIP EVENTS BASED ON MESSAGE DATA
 #=================================================
@@ -118,21 +141,10 @@ if not alert_type=='new': ### only process new events
 #=================================================
 ### logging setup
 
-logger = logging.getLogger('idq_gdb_logger')
-logger.setLevel(logging.INFO)
-formatter = logging.Formatter('%(asctime)s %(message)s')
-hdlr1 = logging.StreamHandler(sys.stdout)
-hdlr1.setFormatter(formatter)
-hdlr1.setLevel(logging.INFO)
-logger.addHandler(hdlr1)
-hdlr2 = logging.FileHandler(gdb_id+'_'+options.log_file)
-hdlr2.setFormatter(formatter)
-hdlr2.setLevel(logging.INFO)
-logger.addHandler(hdlr2)
+logger = reed.setup_logger('idq_gdb_logger', "%s_%s"%(gdb_id, options.log_file), sys.stdout, format='%(asctime)s %(message)s')
 
-### redirect stdout and stderr into logger
-sys.stdout = idq.LogFile(logger)
-sys.err = idq.LogFile(logger)
+sys.stdout = reed.LogFile(logger)
+sys.stderr = reed.LogFile(logger)
 
 #=================================================
 ### process the event in full
@@ -221,7 +233,7 @@ gracedb.writeLog(gdb_id, message="Started searching for iDQ information within [
 # LOGIC for waiting for idq data 
 #=================================================
 ### figure out if we need to wait for time to pass
-wait = gps_end - (idq.nowgps()+delay)
+wait = gps_end - (reed.nowgps()+delay)
 if wait > 0:
     logger.info("waiting %.2f seconds until we pass gps=%.3f"%(wait, gps_end))
     time.sleep(wait)
@@ -234,7 +246,7 @@ realtime_log = open(realtime_logname, "r") ### open realtime log for reading
 realtime_log.seek(0, 2) ### go to end of file
 
 ### wait until realtime has passed gps_end+delay
-past, dead, timed_out = idq.block_until(gps_end, realtime_log, max_wait=max_wait, timeout=2*max_wait)
+past, dead, timed_out = reed.block_until(gps_end, realtime_log, max_wait=max_wait, timeout=2*max_wait)
 
 if past:
     logger.info("found realtime stride starting after t=%.3f"%(gps_end))
@@ -250,22 +262,64 @@ else: # dead
 #=================================================
 # launch the actual processes
 #=================================================
-### run idq-gdb-glitch-tables for each classifier
 for classifier in classifiers:
+
+    ### run idq-gdb-glitch-tables for each classifier
     logger.info("    Begin: executing idq-gdb-glitch-tables for " + classifier + " ...")
-    exit_status = idq_gdb_utils.execute_gdb_glitch_tables(str(gps_start), str(gps_end), gdb_id, ifo, classifier, config, idq_dir, config.get('executables', 'idq_gdb_glitch_tables'), usertag = str(gdb_id)+'_'+usertag)
+
+    tables_cmd = "%s -s %f -e %f -g %s --ifo %s -c %s -i %s -t %s"%(tables_script, gps_start, gps_end, gdb_id, ifo, classifier, idq_dir, usertag)
+    if config.has_option("general","gdb_url"):
+        tables_cmd += " --gdb-url %s"%config.get('general','gdb_url')
+    for option, value in config.items("gdb-glitch-tables"):
+        tables_cmd += " --%s %s"%(option, value)
+
+    logger.info('    Submitting glitch-tables script with the following options')
+    logger.info(tables_cmd)
+
+    tables_out_file = open(tables_out, 'a')
+    tables_err_file = open(tables_err, 'a')
+    proc = subprocess.Popen(tables_cmd.split(), stdout=tables_out_file, stderr=tables_err_file, cwd=cwd)
+    tables_out_file.close()
+    tables_err_file.close()
+    exit_status = proc.wait() # block!
+
+#    exit_status = idq_gdb_utils.execute_gdb_glitch_tables(str(gps_start), str(gps_end), gdb_id, ifo, classifier, config, idq_dir, config.get('executables', 'idq_gdb_glitch_tables'), usertag = str(gdb_id)+'_'+usertag)
 
     if exit_status != 0:
         logger.info("    WARNING: idq-gdb-glitch-tables failed for " + classifier)
         gracedb.writeLog(gdb_id, message="FAILED: iDQ glitch tables for " + classifier + " at " + ifo)
+        gch_xml = None
     else:
         logger.info("    Done: idq-gdb-glitch-tables for " + classifier + ".")
+        gch_xml = reed.gdb_xml(idq_gdb_main_dir, classifier, ifo, "_%s"%usertag, gps_start, gps_end-gps_start) ### compute name
 
-#=================================================
-### run idq-gdb-timeseries for each classifier
-for classifier in classifiers:
+    ### run idq-gdb-timeseries for each classifier
     logger.info("    Begin: executing idq-gdb-timeseries for " + classifier + " ...")
-    exit_status = idq_gdb_utils.execute_gdb_timeseries(str(gps_start), str(gps_end), str(event_gps_time), gdb_id, ifo, classifier, config, idq_dir, config.get('executables', 'idq_gdb_timeseries'), usertag = str(gdb_id)+'_'+usertag, plotting_gps_start=plotting_gps_start, plotting_gps_end=plotting_gps_end) #, gch_xml=glob.glob("%s/*glitch*%s*.xml*"%(idq_gdb_main_dir, gdb_id))) ### un-comment when adding tables is not broken!
+
+    timeseries_cmd = "%s -s %f -e %f --gps %f -g %s --ifo %s -c %s -i %s -t %s --plotting-gps-start %f --plotting-gps-end %f"%(timeseries_script, gps_start, gps_end, event_gps_time, gdb_id, ifo, classifier, idq_dir, usertag, plotting_gps_start, plotting_gps_end)
+
+    if config.has_option("general","gdb_url"):
+        timeseries_cmd += " --gdb-url %s"%config.get("general", "gdb_url")
+
+    if gch_xml:
+        timeseries_cmd += " --gch-xml %s"%gch_xml
+#    if cln_xml: ### never built!
+#        timeseries_cmd += " --cln-xml %s"%scln
+
+    for (option,value) in config.items('gdb-time-series'):
+        timeseries_cmd += " --%s %s"%(option, value)
+
+    logger.info('    Submitting timeseries script with the following options')
+    logger.info(timeseries_cmd)
+
+    timeseries_out_file = open(timeseries_out, 'a')
+    timeseries_err_file = open(timeseries_err, 'a')
+    proc = subprocess.Popen(timeseries_cmd.split(), stdout=timeseries_out_file, stderr=timeseries_err_file, cwd=cwd)
+    timeseries_out_file.close()
+    timeseries_err_file.close()
+    exit_status = proc.wait() # block !
+
+#    exit_status = idq_gdb_utils.execute_gdb_timeseries(str(gps_start), str(gps_end), str(event_gps_time), gdb_id, ifo, classifier, config, idq_dir, config.get('executables', 'idq_gdb_timeseries'), usertag = str(gdb_id)+'_'+usertag, plotting_gps_start=plotting_gps_start, plotting_gps_end=plotting_gps_end) #, gch_xml=glob.glob("%s/*glitch*%s*.xml*"%(idq_gdb_main_dir, gdb_id))) ### un-comment when adding tables is not broken!
 
     if exit_status != 0:
         logger.info("    WARNING: idq-gdb-timeseries failed for " + classifier)
