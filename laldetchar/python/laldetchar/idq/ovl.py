@@ -183,7 +183,7 @@ def __check_dirname(dir):
     return dir
 
 
-# =================================================
+#=================================================
 
 def __load_channels(auxdir, analysis_range=False):
     """ loads channels for OVL analysis 
@@ -215,7 +215,7 @@ def __load_channels(auxdir, analysis_range=False):
     return channels
 
 
-# =================================================
+#=================================================
 
 def load_trg(
     trgdir,
@@ -278,7 +278,7 @@ def load_trg(
     return (trg, seg)
 
 
-# =================================================
+#=================================================
 
 def round_robin_bin_to_segments(binNo, totBins, __params):
     """ defines segments for a round-robin analysis 
@@ -517,6 +517,154 @@ def write_params(__params, params_filename, params_dir=''):
 #
 #
 # ===================================================================================================
+
+def redundancies(__params, output_dir="./", verbose=False, write_channels=False):
+    """
+    computes the intersection and overlap of vetosegments for each possible configuration. 
+    This should contain all information necessary to determine which channels are redundant.
+    """
+
+    output_dir = __check_dirname(output_dir)
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    # path to auxiliary channel KW triggers
+    auxdir = __params.auxdir
+
+    # path to gw channel KW triggers
+    gwdir = __params.gwdir
+
+    # load list of auxiliary channels
+    if vars(__params).has_key('channels'):
+        channels = event.loadlist(__params.channels)
+    else:
+        channels = __load_channels(auxdir,
+                                   analysis_range=__params.analysis_range)
+
+    # we need the same channels list as for recalculate.py so we can associate numbers with channels
+    for remove in __params.notused:
+        channels = [channel for channel in channels
+                    if channel.find(remove) == -1]
+
+    # create a channels file
+    if write_channels:
+        ch_file = open(output_dir + 'channels.txt', 'w')
+        for chan in channels:
+            print >> ch_file, chan
+        ch_file.close()
+
+    ### segments for this analysis range
+    gwseg = [__params.analysis_range]
+
+    # load (and clean) a list of segments for science runs
+    scisegs = dict()
+    if vars(__params).has_key('scisegs'):
+        for (i, ifo) in enumerate(__params.ifos):
+            segs = event.load(__params.scisegs[i])
+
+            # segwizard format
+            if len(segs) > 0 and len(segs[0]) > 2:
+                # assume that the biggest number will be the stop time of the first segment
+                index = segs[0].index(max(segs[0]))
+                segs = [seg[index - 1:index + 1] for seg in segs]
+            gwseg = event.andsegments([gwseg, segs])  # intersect segs with analysis range
+    
+    # load (and clean) a list of veto segements
+    vetosegs = dict()
+    if vars(__params).has_key('vetosegs'):
+        for (i, ifo) in enumerate(__params.ifos):
+            segs = event.load(params.vetosegs[i])
+            if len(segs) > 0 and len(segs[0]) > 2:
+                index = (segs[0], index(max(segs[0])))
+                segs = [seg[index - 1:index + 1] for seg in segs]
+            gwseg = event.removesegments( gwseg, segs )
+
+    livetime = event.livetime(gwseg) ### total amount of time in the analysis
+
+    # create a list of all veto triggers to avoid loading multiple times
+    allvtrg = [0 for i in channels]
+    allvseg = [[[0 for i in __params.thresholds] for j in __params.windows] for k in channels]
+
+    nthr = len(__params.thresholds)
+    nwin = len(__params.windows)
+    nconfig = nthr*nwin
+
+    ### iterate over channels, creating segments and comparing them
+    filename = "redundancies.txt"
+    f = open(output_dir + filename, "w")
+
+    print >>f, livetime
+    if verbose:
+        print livetime
+
+    s = ""
+    for chan in channels:
+        for vwin in __params.windows:
+            for vthr in __params.thresholds:
+                s += " (%s,%f,%f)"%(chan, vwin, vthr)
+    print >>f, s
+    if verbose:
+        print s
+
+    event.col = event.col_veto
+    for indA, chanA in enumerate(channels):
+        if allvtrg[indA] == 0: ### load chanA triggers
+            allvtrg[indA], _ = load_trg( auxdir, __params.analysis_range, [chanA], __params.thresholds[0], trgtype=__params.trgtype, loadtype='veto', suffix=__params.suffix)
+  
+        for indvwinA, vwinA in enumerate(__params.windows):
+            for indvthrA, vthrA in enumerate(__params.thresholds):
+
+                if allvseg[indA][indvwinA][indvthrA] == 0:
+                    vetosegA = event.vetosegs(allvtrg[indA], vwinA, vthrA) ### generate chanA segments
+                    vetosegA = event.andsegments([vetosegA, gwseg])              
+                    livetimeA = event.livetime(vetosegA)
+                    allvseg[indA][indvwinA][indvthrA] = (vetosegA, livetimeA)
+                else:
+                    vetosegA, livetimeA = allvseg[indA][indvwinA][indvthrA]
+
+                s = ""
+
+                for indB, chanB in enumerate(channels[indA+1:]):
+                    indB += indA+1
+                    if allvtrg[indB] == 0: ### load chanB triggers
+                        allvtrg[indB], _ = load_trg( auxdir, __params.analysis_range, [chanB], __params.thresholds[0], trgtype=__params.trgtype, loadtype='veto', suffix=__params.suffix)
+                    for indvwinB, vwinB in enumerate(__params.windows):
+                        for indvthrB, vthrB in enumerate(__params.thresholds):
+
+                            if allvseg[indB][indvwinB][indvthrB] == 0:
+                                vetosegB = event.vetosegs(allvtrg[indB], vwinB, vthrB) ### generate chanB segments
+                                vetosegB = event.andsegments([vetosegB, gwseg])
+                                livetimeB = event.livetime(vetosegB)
+                                allvseg[indB][indvwinB][indvthrB] = (vetosegB, livetimeB)
+                            else:
+                                vetosegB, livetimeB = allvseg[indB][indvwinB][indvthrB]
+
+                            ### compare segments
+                            i = event.livetime( event.andsegments([vetosegA, vetosegB]) )
+                            u = event.livetime( event.andsegments([vetosegA, vetosegB]) )
+
+                            if livetimeA and livetimeB:
+                                stat1 = i*livetime/(livetimeA*livetimeB)
+                            else:
+                                stat1 = 1
+                            if u:
+                                stat2 = i/u
+                            else:
+                                stat2 = 0
+
+                            s += "(%9.3f,%9.3f,%9.3f,%9.3f,%5.1f,%1.4f) "%(livetimeA, livetimeB, i, u, stat1, stat2)
+
+                print >> f, s
+                if verbose:
+                    print s
+
+                allvseg[indA][indvwinA][indvthrA] = 0 ### forget about segments for this config
+                            
+        allvtrg[indA] = 0 ### forget about triggers we don't need anymore
+
+    return filename
+
+#=================================================
 
 def recalculate(
     run,
@@ -880,7 +1028,7 @@ def recalculate(
             livetime = event.livetime(gwseg)
             if ngwtrg <= 0 or livetime <= 0:  # stop if there are no more gwtrg
                 if verbose:
-                    print 'ngwtrg = ' + strg(ngwtrg)
+                    print 'ngwtrg = ' + str(ngwtrg)
                     print 'livetime = ' + str(livetime)
                     print 'gwseg = ' + str(gwseg)
                     print 'line = ' + str(line)
