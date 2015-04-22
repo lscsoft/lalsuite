@@ -240,7 +240,7 @@ summary_script = config.get('summary', 'executable')
 
 summary_log = "%s/summary%s.log"%(mainidqdir, usertag)
 summary_out = "%s/summary%s.out"%(mainidqdir, usertag)
-summary_err = "%s/summary%s.out"%(mainidqdir, usertag)
+summary_err = "%s/summary%s.err"%(mainidqdir, usertag)
 
 #========================
 # training jobs
