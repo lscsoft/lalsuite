@@ -161,8 +161,8 @@ train_cache = dict( (classifier, idq.Cachefile(idq.cache(traindir, classifier, t
 build_auxmvc_vectors = mla and (not os.path.exists(realtimedir)) ### if realtimedir does not exist, we cannot rely on patfiles from the realtime job
                                                                  ### we need to build our own auxmvc_vectors
 
-max_gch_samples = config.getfloat("train", "max-glitch-samples")
-max_cln_samples = config.getfloat("train", "max-clean-samples")
+max_gch_samples = config.getint("train", "max-glitch-samples")
+max_cln_samples = config.getint("train", "max-clean-samples")
 
 #========================
 # data discovery
