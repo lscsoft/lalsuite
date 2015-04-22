@@ -53,8 +53,6 @@ liblal_la_DEPENDENCIES = \
 liblal_la_LIBADD = $(liblal_la_DEPENDENCIES)
 liblal_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
 
-liblal_la_LDFLAGS += $(LALSIMD_LDFLAGS)
-
 EXTRA_DIST = \
 	config.h.in \
 	simd_dispatch.h \

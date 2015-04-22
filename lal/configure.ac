@@ -296,12 +296,6 @@ AC_CHECK_FUNCS([gmtime_r localtime_r stat putenv posix_memalign backtrace clock_
 AM_CONDITIONAL([INTELFFT],[test x$intelfft = xtrue])
 AM_CONDITIONAL([QTHREAD],[test x$qthread = xtrue])
 
-# LALSIMD.c container assembler so needs to be compiled as non-PIC on some platforms
-AC_SUBST([LALSIMD_CFLAGS],[])
-LALSUITE_CHECK_COMPILE_FLAGS([-fno-pic],[LALSIMD_CFLAGS="${LALSIMD_CFLAGS} ${flag}"])
-AC_SUBST([LALSIMD_LDFLAGS],[])
-LALSUITE_CHECK_LINK_FLAGS([-Wl[,]-read_only_relocs[,]suppress],[LALSIMD_LDFLAGS="${LALSIMD_LDFLAGS} ${flag}"])
-
 # add gcc specific flags --- must be done at end or tests will break!
 LALSUITE_ADD_GCC_FLAGS
 

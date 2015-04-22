@@ -85,9 +85,11 @@ static int lalOnce = 1;
 
 /* Check that this file is being compiled for x86 */
 #if defined(__x86_64__) || defined(_M_X64)
-#define HAVE_X86   /* x86 64-bit */
+#define HAVE_X86      /* x86 */
+#define HAVE_X86_64   /* x86 64-bit */
 #elif defined(__i386) || defined(_M_IX86)
-#define HAVE_X86   /* x86 32-bit */
+#define HAVE_X86      /* x86 */
+#define HAVE_X86_32   /* x86 32-bit */
 #endif
 
 /*
@@ -102,15 +104,22 @@ static inline UNUSED void cpuid( int output[4], UNUSED int functionnumber ) {
 #if defined(__GNUC__) || defined(__clang__)
 
   /* Use GNU/AT&T inline assembly */
-  int a, b, c, d;
-  __asm__("cpuid" \
-          : "=a"(a),"=b"(b),"=c"(c),"=d"(d) \
-          : "a"(functionnumber),"c"(0)
-         );
-  output[0] = a;
-  output[1] = b;
-  output[2] = c;
-  output[3] = d;
+  __asm__ __volatile__(
+#if defined(HAVE_X86_64)
+    "pushq %%rbx \n\t"
+#else
+    "pushl %%ebx \n\t"
+#endif
+    "cpuid \n\t"
+    "movl %%ebx, %[ebx] \n\t"
+#if defined(HAVE_X86_64)
+    "popq %%rbx \n\t"
+#else
+    "popl %%ebx \n\t"
+#endif
+    : "=a"(output[0]), [ebx] "=r"(output[1]), "=c"(output[2]), "=d"(output[3])
+    : "a"(functionnumber), "c"(0)
+  );
 
 #else
 
@@ -147,10 +156,11 @@ static inline UNUSED int64_t xgetbv( UNUSED int ctr ) {
 
   /* Use GNU/AT&T inline assembly */
   uint32_t a, d;
-  __asm__(".byte 0x0f,0x01,0xd0" \
-          : "=a"(a),"=d"(d) \
-          : "c"(ctr)
-          );
+  __asm__ __volatile__(
+    ".byte 0x0f,0x01,0xd0 \n\t"
+    : "=a"(a), "=d"(d)
+    : "c"(ctr)
+  );
   return a | (((uint64_t) d) << 32);
 
 #else
