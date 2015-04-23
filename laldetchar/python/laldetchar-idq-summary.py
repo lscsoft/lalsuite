@@ -799,7 +799,7 @@ while gpsstart < gpsstop:
                 'idq':[],
                 'seg':[],
                 'trg_rate':dict( [('overlay',[])] + [(classifier, []) for classifier in classifiers] ), 
-                'eff@fap':dict( [('overlay',[])] + [(classifier, []) for classifier in classifiers] ), 
+                'effatfap':dict( [('overlay',[])] + [(classifier, []) for classifier in classifiers] ), 
                 'rank':dict( (classifier, []) for classifier in classifiers ),
                 'eff':dict( (classifier, []) for classifier in classifiers ),
                 'fap':dict( (classifier, []) for classifier in classifiers )
@@ -1059,7 +1059,7 @@ while gpsstart < gpsstop:
 
         trending['seg'].append( figname )
 
-        ### glitch/clean rates and eff@fap
+        ### glitch/clean rates and effatfap
         trg_rate_overlay_figax = None
         eff_fap_overlay_figax = [None]*len(opts.FAPthr)
         for classifier in classifiers:
@@ -1107,7 +1107,7 @@ while gpsstart < gpsstop:
             trg_rate_overlay_figax = isp.rates( ranges, cvalues, linestyle=cln_linestyle , color=color, label='%s cln'%classifier, figax=trg_rate_overlay_figax)
             trg_rate_overlay_figax = isp.rates( ranges, gvalues, linestyle=gch_linestyle , color=color, label='%s gch'%classifier, figax=trg_rate_overlay_figax)
 
-            ### eff@fap
+            ### effatfap
             figax = None
             c = 'b g r m c y k'.split()
             cind = 0
@@ -1122,7 +1122,7 @@ while gpsstart < gpsstop:
             ax.legend(loc='lower left')
 
             figname = isp.ratefig(output_dir, ifo, "_%s%s_eff"%(classifier, usertag), trend_start, gpsstart+stride-trend_start)
-            trending['eff@fap'][classifier].append( figname )
+            trending['effatfap'][classifier].append( figname )
             logger.info('  plotting %s'%figname)
             fig.savefig(figname)
             isp.close(fig)
@@ -1139,7 +1139,7 @@ while gpsstart < gpsstop:
         isp.close(fig)
 
         eff_fap_overlays = []
-        ### eff@fap overlay
+        ### effatfap overlay
         for (fig, ax), fap in zip(eff_fap_overlay_figax, opts.FAPthr):
             ax.set_ylim(ymin=0, ymax=1)
             ax.set_ylabel('Glitch Detection Efficiency')
@@ -1151,7 +1151,7 @@ while gpsstart < gpsstop:
             fig.savefig( figname )
             isp.close( fig )
 
-        trending['eff@fap']['overlay'].append( eff_fap_overlays )
+        trending['effatfap']['overlay'].append( eff_fap_overlays )
 
         ### channel performance
         for classifier in classifiers:
@@ -1489,24 +1489,24 @@ segment lists -> a form to request segments?
 
         page.hr( )
 
-        ### eff@fap
+        ### effatfap
         for ind, fap in enumerate(opts.FAPthr):
             minipage = markup.page()
             minipage.br( )
             for trendind in xrange(N):
-                figname = trending['eff@fap']['overlay'][trendind][ind]
+                figname = trending['effatfap']['overlay'][trendind][ind]
                 minipage.img( width=html_width, height=html_height, alt="efficiency at fixed fap", src="./%s"%figname[lensumdir:] )
             page.p( "fap <= %.3e : %s"%(fap, str(minipage) ) )
 
         minipages = dict( (classifier, markup.page()) for classifier in classifiers )
         for ind in xrange(N-1):
             for classifier in classifiers:
-                figname = trending['eff@fap'][classifier][ind]
+                figname = trending['effatfap'][classifier][ind]
                 label = "%d_%d"%tuple(idq.extract_start_stop( figname, suffix=".png" ))
                 minipages[classifier].a( label, href="./%s"%figname[lensumdir:] )
                 minipages[classifier].addcontent(", ")
         for classifier in classifiers:
-            figname = trending['eff@fap'][classifier][-1]
+            figname = trending['effatfap'][classifier][-1]
             label = "%d_%d"%tuple(idq.extract_start_stop( figname, suffix=".png" ))
             minipages[classifier].a( label, href="./%s"%figname[lensumdir:] )
             page.p( "%s : %s"%(classifier, str(minipages[classifier])) )
