@@ -480,7 +480,7 @@ while t  < opts.endgps:
             proc.wait() ### blocks!
         else:
             ### running in realtime, don't wait for training job to complete so we can keep the latency low
-            train_pid = subprocess.Popen(train_command, stdout=train_out_file, stderr=train_err_file, cwd=cwd ).pid ### only remember the pid, and let the process float
+            train_pid = subprocess.Popen(train_command.split(), stdout=train_out_file, stderr=train_err_file, cwd=cwd ).pid ### only remember the pid, and let the process float
             train_out_file.close()
             train_err_file.close()
 
