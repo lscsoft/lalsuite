@@ -29,7 +29,7 @@ __author__ = 'Reed Essick <reed.essick@ligo.org>'
 __version__ = git_version.id
 __date__ = git_version.date
 
-## \addtogroup laldetchar_py_idq_auxmvc
+## \addtogroup laldetchar_py_idq_idq_gdb_utils
 # @{
 
 # Utility functions used for generating iDQ input to GraceDB.

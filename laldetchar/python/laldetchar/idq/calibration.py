@@ -16,6 +16,14 @@
 #
 #
 
+## \addtogroup laldetchar_py_idq
+## Synopsis
+# ~~~
+# from laldetchar.idq import calibration
+# ~~~
+# \author Reed Essick (<reed.essick@ligo.org>)
+
+
 description = \
 """
 a module to store functions useful when computing and checking calibration.
@@ -35,6 +43,8 @@ __author__ = 'Reed Essick <reed.essick@ligo.org>'
 __version__ = git_version.id
 __date__ = git_version.date
 
+## \addtogroup laldetchar_py_idq_calibration
+# @{
 
 #===================================================================================================
 
@@ -153,3 +163,4 @@ def check_calibration( segs, times, timeseries, FAPthrs):
 
     return segments, deadtimes, statedFAPs, errs
 
+##@}

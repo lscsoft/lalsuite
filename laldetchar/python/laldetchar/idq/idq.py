@@ -14,6 +14,14 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+## \addtogroup laldetchar_py_idq
+## Synopsis
+# ~~~
+# from laldetchar.idq import idq
+# ~~~
+# \author Reed Essick (<reed.essick@ligo.org>), Ruslan Vaulin (<ruslan.vaulin@ligo.org>), Lindy Blackburn (<lindy.blackburn@ligo.org>)
+
+
 #=================================================
 
 import os
@@ -66,6 +74,8 @@ __author__ = \
 __version__ = git_version.id
 __date__ = git_version.date
 
+## \addtogroup laldetchar_py_idq_idq
+# @{
 
 #===================================================================================================
 ### hard coded magic numbers dependent on classifiers, ETG, etc
@@ -1185,15 +1195,24 @@ class BinomialMap(object):
     a class that can stores the mapping between rank --> fraction of events.
     does this in a callable way
     can also return error bars on the point estimate (quantiles, how do we want to do this?)
+
+    sorts ranks and stores them in that order, along with c_samples
     """
 
     def __init__(self, ranks, c_samples, kind='linear'):
         if len(ranks) != len(c_samples):
             raise ValueError("incompatible lenghts between ranks and c_samples")
+        if not isinstance(ranks, numpy.ndarray):
+            ranks = numpy.array( ranks )
+        if not isinstance(c_samples, numpy.ndarray):
+            c_samples = numpy.array( c_samples )
 
-        self.ranks = ranks
-        self.c_samples = c_samples
-        self.n_samples = c_samples[-1]
+        argorder = ranks.argsort() ### make sure ranks are sorted in ascending order
+
+        self.ranks = ranks[argorder]
+        self.c_samples = c_samples[argorder] 
+
+        self.n_samples = numpy.max(c_samples) ### the biggest number of cumulative samples is the total number of samples
         self.kind = kind
 
     def __call__(self, r):
@@ -2695,3 +2714,4 @@ def execute_svm_train( cp, train_file, range_file, model_file, cache_file, submi
 
     return (exit_status, dag_file, train_svm_node.get_output_files())
 
+##@}

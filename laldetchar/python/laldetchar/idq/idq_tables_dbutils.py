@@ -38,6 +38,8 @@ from glue import segments, segmentsUtils
 from glue import lal
 import sqlite3
 
+## \addtogroup laldetchar_py_idq_idq_tables_dbutils
+# @{
 
 # idq content handler 
 # atribute connection must be set to sqlite.connection object 
@@ -363,4 +365,4 @@ def get_get_glitch_ovl_sngburst_data(connection, cursor, glitch_columns, ovl_col
     
     return data
    
-
+##@}

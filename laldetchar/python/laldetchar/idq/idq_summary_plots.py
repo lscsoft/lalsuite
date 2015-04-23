@@ -53,6 +53,9 @@ __date__ = git_version.date
 
 description = """Module for plotting routines for idq pipeline."""
 
+## \addtogroup laldetchar_py_idq_summary_plots
+# @{
+
 #===================================================================================================
 # defaults
 #===================================================================================================
@@ -269,8 +272,10 @@ def stacked_L(r, c, g, color='b', linestyle='solid', label=None, figax=None):
     axh.set_yscale('log')
     axc.set_yscale('log')
 
-    axh.set_ylim(ymin=0, ymax=max(axh.get_ylim()[1], max(g[truth]/c[truth])*1.1))
-    axc.set_ylim(ymin=0, ymax=max(axc.get_ylim()[1], max(G[Truth]/C[Truth])*1.1))
+    if np.any(truth):
+        axh.set_ylim(ymin=0, ymax=max(axh.get_ylim()[1], max(g[truth]/c[truth])*1.1))
+    if np.any(Truth):
+        axc.set_ylim(ymin=0, ymax=max(axc.get_ylim()[1], max(G[Truth]/C[Truth])*1.1))
 
     plt.setp(axc.get_xticklabels(), visible=False)
     axc.set_ylabel('cdf(g)/cdf(c)')
@@ -459,3 +464,4 @@ def channel_performance( vchans, ranges, performances, num_gchs, num_clns, figax
  
     return (figrank, axrank), (figeff, axeff), (figfap, axfap)
 
+##@}
