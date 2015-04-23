@@ -59,4 +59,5 @@ __date__ = version.date
 #       \defgroup       pkg_py_laldetchar_idq_pdf_estimation PDF Estimation Module
 #       \defgroup       pkg_py_laldetchar_idq_svmkit SVM Utils
 #       \defgroup       pkg_py_laldetchar_idq_calibration methods used to calibrate output
+#       \defgroup       pkg_py_laldetchar_idq_idq_gdb_utils methods used for GraceDB interface
 #@}
