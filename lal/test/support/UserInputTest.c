@@ -20,6 +20,8 @@
 #include <math.h>
 
 #include <lal/Date.h>
+#include <lal/LALString.h>
+
 #include <lal/UserInput.h>
 
 typedef struct
@@ -62,6 +64,8 @@ main(int argc, char *argv[])
 
   /* ---------- Register all test user-variables ---------- */
   UserInput_t *uvar = &my_uvars;
+  uvar->string2 = XLALStringDuplicate ( "this is the default value");
+
   XLAL_CHECK ( XLALregREALUserStruct( argNum, 0, UVAR_REQUIRED, "Testing float argument") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALregSTRINGUserStruct( argStr, 0, UVAR_REQUIRED, "Testing string argument") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALregBOOLUserStruct( argBool, 0, UVAR_REQUIRED, "Testing bool argument") == XLAL_SUCCESS, XLAL_EFUNC );

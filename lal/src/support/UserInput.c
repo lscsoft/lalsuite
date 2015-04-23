@@ -424,11 +424,18 @@ XLALUserVarReadCfgfile ( const CHAR *cfgfile ) 	   /**< [in] name of config-file
       BOOLEAN wasRead;
       CHAR *valString = NULL;       // first read the value as a string
       XLAL_CHECK ( XLALReadConfigSTRINGVariable ( &valString, cfg, NULL, ptr->name, &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
-      if ( wasRead ) {	// if successful, parse this as the desired type
-        XLAL_CHECK ( UserVarTypeMap [ ptr->type ].parser( ptr->varp, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
-        XLALFree (valString);
-        check_and_mark_as_set ( ptr );
-      }
+      if ( wasRead ) // if successful, parse this as the desired type
+        {
+          // destroy previous value, is applicable, then parse new one
+          if ( UserVarTypeMap [ ptr->type ].destructor != NULL )
+            {
+              UserVarTypeMap [ ptr->type ].destructor( *(char**)ptr->varp );
+              *(char**)ptr->varp = NULL;
+            } // if a destructor was registered
+          XLAL_CHECK ( UserVarTypeMap [ ptr->type ].parser( ptr->varp, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
+          XLALFree (valString);
+          check_and_mark_as_set ( ptr );
+        } // if wasRead
 
     } // while ptr->next
 
