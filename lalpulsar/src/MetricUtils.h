@@ -44,6 +44,7 @@ double XLALMetricDeterminant( const gsl_matrix *g_ij );
 gsl_vector *XLALMetricEllipseBoundingBox( const gsl_matrix *g_ij, const double max_mismatch );
 
 int XLALProjectMetric( gsl_matrix **p_gpr_ij, const gsl_matrix *g_ij, const UINT4 c );
+int XLALCholeskyLDLTDecompMetric( gsl_matrix **p_cholesky, const gsl_matrix *g_ij );
 
 int XLALTransformMetric( gsl_matrix **p_gpr_ij, const gsl_matrix *transform, const gsl_matrix *g_ij );
 int XLALInverseTransformMetric( gsl_matrix **p_gpr_ij, const gsl_matrix *transform, const gsl_matrix *g_ij );

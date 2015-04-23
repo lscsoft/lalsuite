@@ -226,6 +226,59 @@ XLALProjectMetric(
 } // XLALProjectMetric()
 
 ///
+/// Decompose a metric \f$\mathbf{G}\f$ as \f$ \mathbf{G} = \mathbf{L} \mathbf{D}
+/// \mathbf{L}^{\mathrm{T}} \f$, where \f$\mathbf{L}$ is a lower-triangular matrix
+/// with unit diagonal, and \f$\mathbf{D}\f$ is a diagonal matrix. This decomposition
+/// may be useful if the metric cannot yet be guaranteed to be positive definite.
+///
+int XLALCholeskyLDLTDecompMetric(
+  gsl_matrix **p_cholesky,			///< [in,out] Pointer to decomposition; stores \f$\mathbf{L}\f$ in lower triangular part \f$\mathbf{D}\f$ on diagonal
+  const gsl_matrix *g_ij			///< [in] Matrix to decompose \f$\mathbf{G}\f$
+  )
+{
+
+
+  // Check input
+  XLAL_CHECK( g_ij != NULL, XLAL_EFAULT );
+  XLAL_CHECK( g_ij->size1 == g_ij->size2, XLAL_ESIZE );
+  XLAL_CHECK( p_cholesky != NULL, XLAL_EFAULT );
+  if ( *p_cholesky != NULL ) {
+    XLAL_CHECK( (*p_cholesky)->size1 == g_ij->size1, XLAL_ESIZE );
+    XLAL_CHECK( (*p_cholesky)->size2 == g_ij->size2, XLAL_ESIZE );
+  } else {
+    GAMAT( *p_cholesky, g_ij->size1, g_ij->size2 );
+  }
+
+  // Straightforward implementation of Cholesky–Banachiewicz algorithm
+  gsl_matrix_set_zero( *p_cholesky );
+#define A(i,j) *gsl_matrix_const_ptr( g_ij, i, j )
+#define D(j)   *gsl_matrix_ptr( *p_cholesky, j, j )
+#define L(i,j) *gsl_matrix_ptr( *p_cholesky, i, j )
+  for ( size_t i = 0; i < g_ij->size1; ++i ) {
+    for ( size_t j = 0; j <= i; ++j ) {
+      if ( i == j ) {
+        D(j) = A(j, j);
+        for ( size_t k = 0; k < j; ++k ) {
+          D(j) -= L(j, k) * L(j, k) * D(k);
+        }
+      } else {
+        L(i, j) = A(i, j);
+        for ( size_t k = 0; k < j; ++k ) {
+          L(i, j) -= L(i, k) * L(j, k) * D(k);
+        }
+        L(i, j) /= D(j);
+      }
+    }
+  }
+#undef A
+#undef D
+#undef L
+
+  return XLAL_SUCCESS;
+
+}
+
+///
 /// Apply a transform \f$\mathbf{A} = (a_{ij})\f$ to a metric \f$\mathbf{G} = (g_{ij})\f$ such that
 /// \f$ \mathbf{G} \rightarrow \mathbf{G}^{\prime} = \mathbf{A}^{\mathrm{T}} \mathbf{G} \mathbf{A}
 /// \f$, or equivalently \f$ g_{ij} \rightarrow g^{\prime}_{kl} = g_{ij} a_{ik} a_{jl} \f$.
