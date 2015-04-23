@@ -1010,15 +1010,14 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
     XLALPrintError ("%s: XLALComputeOrbitalDerivatives() failed.\n", __func__);
     XLAL_ERROR_NULL( XLAL_EFUNC );
   }
-
-#if 0
-  /* diagnostic / debug output */
-  UINT4 n;
-  printf (" rOrb_n(%d) = [ ", intparams.dopplerPoint->refTime.gpsSeconds );
-  for ( n=0; n < intparams.rOrb_n->length; n ++)
-    printf ("[%g, %g, %g]%s", intparams.rOrb_n->data[n][0], intparams.rOrb_n->data[n][1], intparams.rOrb_n->data[n][2],
-            (n < intparams.rOrb_n->length -1 ) ? ", " : " ]\n" );
-#endif
+  if (lalDebugLevel & LALINFOBIT) {
+    /* diagnostic / debug output */
+    fprintf( stderr, "%s: rOrb_n(%d) = [ ", __func__, intparams.dopplerPoint->refTime.gpsSeconds );
+    for ( UINT4 n = 0; n < intparams.rOrb_n->length; n++ ) {
+      fprintf( stderr, "[%g, %g, %g]%s", intparams.rOrb_n->data[n][0], intparams.rOrb_n->data[n][1], intparams.rOrb_n->data[n][2],
+               (n < intparams.rOrb_n->length -1 ) ? ", " : " ]\n" );
+    }
+  }
 
   double maxrelerr = 0, err = 0;
 
