@@ -52,24 +52,6 @@
 #define DOT3(x,y)    ((x)[0]*(y)[0] + (x)[1]*(y)[1] + (x)[2]*(y)[2])
 
 ///
-/// Ensure a matrix is exactly symmetric, by ensuring it is equal to its transpose.
-///
-static void SM_MakeSymmetric(
-  gsl_matrix *matrix				///< [in/out] Matrix to make symmetric
-  )
-{
-  for( size_t i = 0; i < matrix->size1; ++i ) {
-    for( size_t j = i + 1; j < matrix->size2; ++j ) {
-      const double mij = gsl_matrix_get( matrix, i, j );
-      const double mji = gsl_matrix_get( matrix, j, i );
-      const double m = 0.5 * ( mij + mji );
-      gsl_matrix_set( matrix, i, j, m );
-      gsl_matrix_set( matrix, j, i, m );
-    }
-  }
-}
-
-///
 /// Diagonal-normalise the given matrix, and return the normalisation transform.
 ///
 static void SM_DiagonalNormalise(
@@ -486,6 +468,53 @@ static int SM_ComputeAlignedSuperskyMetric(
 
 }
 
+///
+/// Extract the reduced supersky metric from the aligned supersky metric.
+///
+static int SM_ExtractReducedSuperskyMetric(
+  gsl_matrix *rssky_metric,			///< [out] Reduced supersky metric
+  const gsl_matrix *aligned_ssky_metric,	///< [in] Aligned supersky metric
+  const size_t spindowns			///< [in] Number of frequency+spindown coordinates
+  )
+{
+
+  // Check input
+  XLAL_CHECK( rssky_metric != NULL, XLAL_EFAULT );
+  XLAL_CHECK( aligned_ssky_metric != NULL, XLAL_EFAULT );
+
+  // Size of the frequency+spindowns block
+  const size_t fsize = 1 + spindowns;
+
+  // Drop the 3rd row/column of the metric, corresponding to the smallest sky eigenvalue
+  gsl_matrix_const_view aligned_sky2_sky2 = gsl_matrix_const_submatrix( aligned_ssky_metric, 0, 0, 2, 2 );
+  gsl_matrix_view reduced_sky_sky = gsl_matrix_submatrix( rssky_metric, 0, 0, 2, 2 );
+  gsl_matrix_memcpy( &reduced_sky_sky.matrix, &aligned_sky2_sky2.matrix );
+  gsl_matrix_const_view aligned_freq_freq = gsl_matrix_const_submatrix( aligned_ssky_metric, 3, 3, fsize, fsize );
+  gsl_matrix_view reduced_freq_freq = gsl_matrix_submatrix( rssky_metric, 2, 2, fsize, fsize );
+  gsl_matrix_memcpy( &reduced_freq_freq.matrix, &aligned_freq_freq.matrix );
+
+  // Ensure reduced supersky metric is symmetric
+  for( size_t i = 0; i < rssky_metric->size1; ++i ) {
+    for( size_t j = i + 1; j < rssky_metric->size2; ++j ) {
+      const double mij = gsl_matrix_get( rssky_metric, i, j );
+      const double mji = gsl_matrix_get( rssky_metric, j, i );
+      const double m = 0.5 * ( mij + mji );
+      gsl_matrix_set( rssky_metric, i, j, m );
+      gsl_matrix_set( rssky_metric, j, i, m );
+    }
+  }
+
+  // Ensure reduced supersky metric is positive definite
+  for ( size_t s = 1; s <= rssky_metric->size1; ++s ) {
+    gsl_matrix_view rssky_metric_s = gsl_matrix_submatrix( rssky_metric, 0, 0, s, s );
+    const double det_s = XLALMetricDeterminant( &rssky_metric_s.matrix );
+    XLAL_CHECK( det_s > 0, XLAL_EFAILED, "Reduced supersky metric is not positive definite (s=%zu, det_s=%0.3e)", s, det_s );
+  }
+
+  return XLAL_SUCCESS;
+
+}
+
 int XLALComputeSuperskyMetrics(
   gsl_matrix **p_rssky_metric,
   gsl_matrix **p_rssky_transf,
@@ -607,17 +636,7 @@ int XLALComputeSuperskyMetrics(
 
     // Drop the 3rd row/column of the metric, corresponding to the smallest sky eigenvalue
     // Produces the final reduced supersky metric
-    {
-      gsl_matrix_view aligned_sky2_sky2 = gsl_matrix_submatrix( intm_ussky_metric, 0, 0, 2, 2 );
-      gsl_matrix_view reduced_sky_sky = gsl_matrix_submatrix( tmp_rssky_metric, 0, 0, 2, 2 );
-      gsl_matrix_memcpy( &reduced_sky_sky.matrix, &aligned_sky2_sky2.matrix );
-      gsl_matrix_view aligned_freq_freq = gsl_matrix_submatrix( intm_ussky_metric, 3, 3, fsize, fsize );
-      gsl_matrix_view reduced_freq_freq = gsl_matrix_submatrix( tmp_rssky_metric, 2, 2, fsize, fsize );
-      gsl_matrix_memcpy( &reduced_freq_freq.matrix, &aligned_freq_freq.matrix );
-    }
-
-    // Ensured reduced supersky metric is symmetric
-    SM_MakeSymmetric( tmp_rssky_metric );
+    XLAL_CHECK( SM_ExtractReducedSuperskyMetric( tmp_rssky_metric, intm_ussky_metric, spindowns ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Copy reduced supersky metric and transform data to output matrices
     if( rssky_metric != NULL ) {
