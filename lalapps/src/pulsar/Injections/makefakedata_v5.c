@@ -131,7 +131,7 @@ typedef struct
   CHAR *ephemSun;		/**< Sun ephemeris file to use */
 
   /* pulsar parameters */
-  LALStringVector *injectionSources;	///< either a file-specification ("@file-pattern") or a config-string defining the sources to inject
+  LALStringVector *injectionSources;	///< Source parameters to inject: comma-separated list of file-patterns and/or direct config-strings ('{...}')
 
   BOOLEAN version;		/**< output version information */
 
@@ -509,7 +509,7 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALregREALUserStruct (  SFTWindowBeta,        0, UVAR_OPTIONAL, "Window 'beta' parameter required for a few window-types (eg. 'tukey')");
 
   /* pulsar params */
-  XLALregLISTUserStruct( injectionSources,     0, UVAR_OPTIONAL, "Either a file-specification (\"@file-pattern\") or a config-string defining the sources to inject" );
+  XLALregLISTUserStruct( injectionSources,     0, UVAR_OPTIONAL,  "Source parameters to inject: comma-separated list of file-patterns and/or direct config-strings ('{...}')" );
 
   /* noise */
   XLALregSTRINGUserStruct ( noiseSFTs,          'D', UVAR_OPTIONAL, "Noise-SFTs to be added to signal (Used also to set IFOs and timestamps)");
