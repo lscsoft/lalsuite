@@ -582,9 +582,9 @@ while gpsstart < gpsstop:
     isp.close(fig)
 
     ### histogram overlay
-    if hst_figax: ### breaks if we have zero samples...
-        histfig = isp.histfig(output_dir, "overlay", ifo, usertag, gpsstart-lookback, lookback+stride)
-        fignames['hst']["overlay"] = histfig ### store for reference
+    histfig = isp.histfig(output_dir, "overlay", ifo, usertag, gpsstart-lookback, lookback+stride)
+    fignames['hst']["overlay"] = histfig ### store for reference
+    if hst_figax:
         logger.info('  plotting %s'%histfig)
         fig, axh, axc = hst_figax
         axh.set_xlim(xmin=0, xmax=1)
