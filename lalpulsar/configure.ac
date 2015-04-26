@@ -104,6 +104,34 @@ AC_CHECK_HEADERS([unistd.h])
 # check for required libraries
 AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 
+# check for OpenMP
+AC_OPENMP
+
+# check that compiler supports C99 variable length arrays in OpenMP for loops.
+# Apple's llvm-gcc-4.2 is buggy and does not.
+AS_IF([test "x$OPENMP_CFLAGS" != "x"],
+  [
+    AC_MSG_CHECKING([if compiler supports C99 VLAs in OpenMP for loops])
+    LALSUITE_PUSH_UVARS
+    CFLAGS="$OPENMP_CFLAGS"
+    AC_LINK_IFELSE([
+        AC_LANG_PROGRAM(, [
+          int i, n = 10;
+          #pragma omp parallel for
+          for (i = 0; i < 10; i ++)
+          { int a@<:@n@:>@; }
+        ])
+      ],
+      [AC_MSG_RESULT([yes])],
+      [
+        AC_MSG_RESULT([no, disabling OpenMP])
+        OPENMP_CFLAGS=
+      ]
+    )
+    LALSUITE_POP_UVARS
+  ]
+)
+
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
 LALSUITE_ADD_FLAGS([C],[${GSL_CFLAGS}],[${GSL_LIBS}])
@@ -150,6 +178,24 @@ LALSUITE_USE_SWIG
 # configure Doxygen documentation
 LALSUITE_USE_DOXYGEN
 
+# Disable OpenMP by default.
+# FIXME: OpenMP should be on by default, but it breaks condor_compiling lalapps.
+AS_IF(
+  [test "x$enable_openmp" = "x"],
+  [OPENMP_CFLAGS=]
+)
+# add compiler flags for OpenMP
+AS_IF(
+  [test "x$OPENMP_CFLAGS" = "x"],
+  [
+    OPENMP_ENABLE_VAL="DISABLED"
+  ],
+  [
+    OPENMP_ENABLE_VAL="ENABLED"
+    LALSUITE_ADD_FLAGS([C],[${OPENMP_CFLAGS}],[])
+  ]
+)
+
 # add gcc specific flags
 LALSUITE_ADD_GCC_FLAGS
 
@@ -179,6 +225,7 @@ LALPulsar has now been successfully configured:
 * BOINC support is $BOINC_ENABLE_VAL
 * SWIG bindings for Octave are $SWIG_BUILD_OCTAVE_ENABLE_VAL
 * SWIG bindings for Python are $SWIG_BUILD_PYTHON_ENABLE_VAL
+* OpenMP acceleration is $OPENMP_ENABLE_VAL
 * Doxygen documentation is $DOXYGEN_ENABLE_VAL
 
 and will be installed under the directory:
