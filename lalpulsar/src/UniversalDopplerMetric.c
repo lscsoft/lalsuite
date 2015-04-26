@@ -20,6 +20,9 @@
 
 /*---------- INCLUDES ----------*/
 #include <math.h>
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 /* gsl includes */
 #include <gsl/gsl_block.h>
@@ -927,8 +930,11 @@ XLALCovariance_Phi_ij ( const MultiLALDetector *multiIFO,		//!< [in] detectors t
   saveGSLErrorHandler = gsl_set_error_handler_off();
 
   // loop over segments, detectors, and integration 'units'
+#pragma omp parallel for
   for ( size_t k = 0; k < Nseg; ++k ) {
+#pragma omp parallel for
     for ( size_t X = 0; X < numDet; ++X ) {
+#pragma omp parallel for
       for ( size_t n = 0; n < intN[k][X]; ++n ) {
 
         InputOutputInfo *io = &intInOut[k][X][n];
