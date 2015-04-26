@@ -842,133 +842,201 @@ XLALCovariance_Phi_ij ( const MultiLALDetector *multiIFO,		//!< [in] detectors t
   XLAL_CHECK_REAL8 ( segList != NULL, XLAL_EINVAL );
   UINT4 Nseg = segList->length;
 
-  gsl_function integrand;
-
-  intparams_t par = (*params);	/* struct-copy, as the 'coord' field has to be changeable */
-
   /* sanity-check: don't allow any AM-coeffs being turned on here! */
-  if ( par.amcomp1 != AMCOMP_NONE || par.amcomp2 != AMCOMP_NONE ) {
+  if ( params->amcomp1 != AMCOMP_NONE || params->amcomp2 != AMCOMP_NONE ) {
     XLALPrintError ( "%s: Illegal input, amcomp[12] must be set to AMCOMP_NONE!\n", __func__ );
     XLAL_ERROR_REAL8( XLAL_EINVAL );
   }
 
-  integrand.params = (void*)&par;
+  /* store detector weights and accumulate total weight */
+  REAL8 total_weight = 0.0, weights[numDet];
+  for (UINT4 X = 0; X < numDet; X ++) {
+    weights[X] = haveNoiseWeights ? multiNoiseFloor->sqrtSn[X] : 1.0;
+    total_weight += weights[X];
+  }
+  XLAL_CHECK_REAL8 (total_weight > 0, XLAL_EDOM, "Detectors noise-floors given but all zero!" );
 
-  double epsrel = params->epsrel;
-  double epsabs = params->epsabs;
+  /* ---------- set up GSL integration ---------- */
+
+  /* constants passed to GSL integration function */
+  const double epsrel = params->epsrel;
+  const double epsabs = params->epsabs;
   const size_t limit = 512;
-  gsl_integration_workspace *wksp = NULL;
 
-  /* allocate workspace for adaptive integration */
-  wksp = gsl_integration_workspace_alloc(limit);
-  XLAL_CHECK_REAL8(wksp != NULL, XLAL_EFAULT);
+  /* array of structs storing input and output info for GSL integration */
+  UINT4 intN[Nseg][numDet];
+  typedef struct { 
+    intparams_t par;			/* integration parameters */
+    double ti;				/* integration start time */
+    double tf;				/* integration end time */
+    gsl_integration_workspace *wksp ;	/* GSL integration workspace */
+    double av_ij;			/* value of integral <phi_i phi_j> */
+    double av_i;			/* value of integral <phi_i> */
+    double av_j;			/* value of integral <phi_j> */
+    double av_ij_err_sq;		/* squared error in value of integral <phi_i phi_j> */
+    double av_i_err_sq;			/* squared error in value of integral <phi_i> */
+    double av_j_err_sq;			/* squared error in value of integral <phi_j> */
+  } InputOutputInfo;
+  InputOutputInfo *intInOut[Nseg][numDet];
 
-  const double scale1 = GET_COORD_SCALE(par.coordSys, par.coord1);
-  const double scale2 = GET_COORD_SCALE(par.coordSys, par.coord2);
-  const double scale12 = scale1 * scale2;
+  // loop over segments and detectors
+  for ( size_t k = 0; k < Nseg; ++k ) {
+    for ( size_t X = 0; X < numDet; ++X ) {
+
+      intparams_t par = (*params);   /* struct-copy, as the 'coord' field has to be changeable */
+
+      // set start time and time span for this segment
+      const LIGOTimeGPS *startTime = &(segList->segs[k].start);
+      const LIGOTimeGPS *endTime   = &(segList->segs[k].end);
+      const REAL8 Tspan = XLALGPSDiff( endTime, startTime );
+      par.startTime = XLALGPSGetREAL8 ( startTime );
+      par.Tspan     = Tspan;
+
+      // set detector for phase integrals
+      par.site = &multiIFO->sites[X];
+
+      // calculate how many 'units' integral is split into
+      intN[k][X] = (UINT4) ceil ( par.Tspan / par.intT );
+
+      // allocate memory of input/output info
+      intInOut[k][X] = XLALCalloc( intN[k][X], sizeof(*intInOut[k][X]) );
+      XLAL_CHECK_REAL8( intInOut[k][X] != NULL, XLAL_ENOMEM );
+
+      // initialise input info
+      for ( size_t n = 0; n < intN[k][X]; ++n ) {
+
+        InputOutputInfo *io = &intInOut[k][X][n];
+
+        io->par = par;
+
+        const double dT = 1.0 / intN[k][X];
+        io->ti = 1.0 * n * dT;
+        io->tf = MYMIN( (n+1.0) * dT, 1.0 );
+
+        XLAL_CHECK_REAL8( ( io->wksp = gsl_integration_workspace_alloc(limit) ) != NULL, XLAL_ENOMEM );
+
+      } /* for n < intN */
+
+    } // for X < numDet
+  } // for k < Nseg
+
+  /* ---------- perform GSL integration ---------- */
+
+  // turn off GSL error handling
+  gsl_error_handler_t *saveGSLErrorHandler;
+  saveGSLErrorHandler = gsl_set_error_handler_off();
+
+  // loop over segments, detectors, and integration 'units'
+  for ( size_t k = 0; k < Nseg; ++k ) {
+    for ( size_t X = 0; X < numDet; ++X ) {
+      for ( size_t n = 0; n < intN[k][X]; ++n ) {
+
+        InputOutputInfo *io = &intInOut[k][X][n];
+
+        gsl_function integrand;
+        integrand.params = (void*)&( io->par );
+
+        int stat;
+        double res, abserr;
+
+        const double scale1 = GET_COORD_SCALE(io->par.coordSys, io->par.coord1);
+        const double scale2 = GET_COORD_SCALE(io->par.coordSys, io->par.coord2);
+        const double scale12 = scale1 * scale2;
+
+        /* compute <phi_i phi_j> */
+        integrand.function = &CW_am1_am2_Phi_i_Phi_j;
+        stat = gsl_integration_qag (&integrand, io->ti, io->tf, epsabs, epsrel, limit, GSL_INTEG_GAUSS61, io->wksp, &res, &abserr);
+        if ( stat != 0 ) {
+          XLALPrintWarning ( "\n%s: GSL-integration 'gsl_integration_qag()' of <Phi_i Phi_j> did not reach requested precision!\n", __func__ );
+          XLALPrintWarning ( "xlalErrno=%i, seg=%zu, av_ij_n=%g, abserr=%g\n", io->par.errnum, n, res, abserr );
+          io->av_ij = GSL_NAN;
+        } else {
+          io->av_ij = scale12 * res;
+          io->av_ij_err_sq = SQUARE( scale12 * abserr);
+        }
+
+        /* compute <phi_i> */
+        integrand.function = &CW_Phi_i;
+        io->par.coord = io->par.coord1;
+        stat = gsl_integration_qag (&integrand, io->ti, io->tf, epsabs, epsrel, limit, GSL_INTEG_GAUSS61, io->wksp, &res, &abserr);
+        if ( stat != 0 ) {
+          XLALPrintWarning ( "\n%s: GSL-integration 'gsl_integration_qag()' of <Phi_i> did not reach requested precision!\n", __func__ );
+          XLALPrintWarning ( "xlalErrno=%i, seg=%zu, av_i_n=%g, abserr=%g\n", io->par.errnum, n, res, abserr );
+          io->av_i = GSL_NAN;
+        } else {
+          io->av_i = scale1 * res;
+          io->av_i_err_sq = SQUARE( scale1 * abserr);
+        }
+
+        /* compute <phi_j> */
+        integrand.function = &CW_Phi_i;
+        io->par.coord = io->par.coord2;
+        stat = gsl_integration_qag (&integrand, io->ti, io->tf, epsabs, epsrel, limit, GSL_INTEG_GAUSS61, io->wksp, &res, &abserr);
+        if ( stat != 0 ) {
+          XLALPrintWarning ( "\n%s: GSL-integration 'gsl_integration_qag()' of <Phi_j> did not reach requested precision!\n", __func__ );
+          XLALPrintWarning ( "xlalErrno=%i, seg=%zu, av_j_n=%g, abserr=%g\n", io->par.errnum, n, res, abserr );
+          io->av_j = GSL_NAN;
+        } else {
+          io->av_j = scale2 * res;
+          io->av_j_err_sq = SQUARE( scale2 * abserr);
+        }
+
+      } /* for n < intN */
+    } // for X < numDet
+  } // for k < Nseg
+
+  // restore GSL error handling
+  gsl_set_error_handler( saveGSLErrorHandler );
+
+  /* ---------- compute final result ---------- */
 
   double ret = 0, relerr_max_sq = 0;
 
   // loop over segments
   for (UINT4 k = 0; k < Nseg; k ++) {
 
-    // set start time and time span for this segment
-    {
-      const LIGOTimeGPS *startTime = &(segList->segs[k].start);
-      const LIGOTimeGPS *endTime   = &(segList->segs[k].end);
-      const REAL8 Tspan = XLALGPSDiff( endTime, startTime );
-      par.startTime = XLALGPSGetREAL8 ( startTime );
-      par.Tspan     = Tspan;
-    }
+    double av_ij = 0, av_ij_err_sq = 0;
+    double av_i = 0, av_i_err_sq = 0;
+    double av_j = 0, av_j_err_sq = 0;
 
-    double abserr, maxrelerr = 0;
-    double av_ij = 0, av_i = 0, av_j = 0;
-    double av_ij_err = 0, av_i_err = 0, av_j_err = 0;
-
-    // loop over detectors
-    REAL8 total_weight = 0;
+    // loop over detectors and integration 'units'
     for (UINT4 X = 0; X < numDet; X ++) {
+      for ( size_t n = 0; n < intN[k][X]; ++n ) {
 
-      // set detector for phase integrals
-      par.site = &multiIFO->sites[X];
+        const InputOutputInfo *io = &intInOut[k][X][n];
 
-      // accumulate detector weights
-      const REAL8 weight = haveNoiseWeights ? multiNoiseFloor->sqrtSn[X] : 1.0;
-      total_weight += weight;
+        /* accumulate <phi_i phi_j> */
+        av_ij += weights[X] * io->av_ij;
+        av_ij_err_sq += weights[X] * io->av_ij_err_sq;
 
-      const UINT4 intN = (UINT4) ceil ( par.Tspan / par.intT );
-      const REAL8 dT = 1.0 / intN;
+        /* accumulate <phi_i> */
+        av_i += weights[X] * io->av_i;
+        av_i_err_sq += weights[X] * io->av_i_err_sq;
 
-      for ( UINT4 n = 0; n < intN; n ++ ) {
-
-        REAL8 ti = 1.0 * n * dT;
-        REAL8 tf = MYMIN( (n+1.0) * dT, 1.0 );
-        int stat;
-        double res_n;
-
-        /* compute <phi_i phi_j> */
-        integrand.function = &CW_am1_am2_Phi_i_Phi_j;
-        XLAL_CALLGSL ( stat = gsl_integration_qag (&integrand, ti, tf, epsabs, epsrel, limit, GSL_INTEG_GAUSS61, wksp, &res_n, &abserr) );
-        if ( stat != 0 ) {
-          XLALPrintWarning ( "\n%s: GSL-integration 'gsl_integration_qag()' of <Phi_i Phi_j> did not reach requested precision!\n", __func__ );
-          XLALPrintWarning ( "xlalErrno=%i, seg=%d, av_ij_n=%g, abserr=%g\n", par.errnum, n, res_n, abserr );
-        }
-        res_n *= scale12;
-        abserr *= scale12;
-        av_ij += weight * res_n;
-        av_ij_err += weight * SQUARE (abserr);
-
-        /* compute <phi_i> */
-        integrand.function = &CW_Phi_i;
-        par.coord = par.coord1;
-        XLAL_CALLGSL ( stat = gsl_integration_qag (&integrand, ti, tf, epsabs, epsrel, limit, GSL_INTEG_GAUSS61, wksp, &res_n, &abserr) );
-        if ( stat != 0 ) {
-          XLALPrintWarning ( "\n%s: GSL-integration 'gsl_integration_qag()' of <Phi_i> did not reach requested precision!\n", __func__ );
-          XLALPrintWarning ( "xlalErrno=%i, seg=%d, av_ij_n=%g, abserr=%g\n", par.errnum, n, res_n, abserr );
-        }
-        res_n *= scale1;
-        abserr *= scale1;
-        av_i += weight * res_n;
-        av_i_err += weight * SQUARE (abserr);
-
-        /* compute <phi_j> */
-        integrand.function = &CW_Phi_i;
-        par.coord = par.coord2;
-        XLAL_CALLGSL ( stat = gsl_integration_qag (&integrand, ti, tf, epsabs, epsrel, limit, GSL_INTEG_GAUSS61, wksp, &res_n, &abserr) );
-        if ( stat != 0 ) {
-          XLALPrintWarning ( "\n%s: GSL-integration 'gsl_integration_qag()' of <Phi_j> did not reach requested precision!\n", __func__ );
-          XLALPrintWarning ( "xlalErrno=%i, seg=%d, av_ij_n=%g, abserr=%g\n", par.errnum, n, res_n, abserr );
-        }
-        res_n *= scale2;
-        abserr *= scale2;
-        av_j += weight * res_n;
-        av_j_err += weight * SQUARE (abserr);
+        /* accumulate <phi_j> */
+        av_j += weights[X] * io->av_j;
+        av_j_err_sq += weights[X] * io->av_j_err_sq;
 
       } /* for n < intN */
 
     } // for X < numDet
 
-    // raise error if no detector weights were given
-    XLAL_CHECK_REAL8 (total_weight > 0, XLAL_EDOM, "Detectors noise-floors given but all zero!" );
-
     // normalise by total weight
-    const REAL8 inv_total_weight = 1.0 / total_weight;
-    av_ij *= inv_total_weight;
-    av_i *= inv_total_weight;
-    av_j *= inv_total_weight;
-    av_ij_err *= inv_total_weight;
-    av_i_err *= inv_total_weight;
-    av_j_err *= inv_total_weight;
+    av_ij /= total_weight;
+    av_i /= total_weight;
+    av_j /= total_weight;
+    av_ij_err_sq /= total_weight;
+    av_i_err_sq /= total_weight;
+    av_j_err_sq /= total_weight;
 
-    av_ij_err = RELERR( sqrt(av_ij_err), fabs(av_ij) );
-    av_i_err = RELERR( sqrt(av_i_err), fabs (av_i) );
-    av_j_err = RELERR( sqrt(av_j_err), fabs (av_j) );
-
-    maxrelerr = MYMAX ( av_ij_err, av_i_err );
-    maxrelerr = MYMAX ( maxrelerr, av_j_err );
+    // work out maximum relative error for this segment
+    const double av_ij_relerr = RELERR( sqrt(av_ij_err_sq), fabs(av_ij) );
+    const double av_i_relerr = RELERR( sqrt(av_i_err_sq), fabs (av_i) );
+    const double av_j_relerr = RELERR( sqrt(av_j_err_sq), fabs (av_j) );
+    const double relerr_max_k = MYMAX ( av_ij_relerr, MYMAX ( av_i_relerr, av_j_relerr ) );
 
     ret += av_ij - av_i * av_j;
-    relerr_max_sq += SQUARE( maxrelerr );
+    relerr_max_sq += SQUARE( relerr_max_k );
 
   } // for k < Nseg
 
@@ -978,9 +1046,19 @@ XLALCovariance_Phi_ij ( const MultiLALDetector *multiIFO,		//!< [in] detectors t
   if ( relerr_max )
     (*relerr_max) = sqrt( relerr_max_sq );
 
-  gsl_integration_workspace_free(wksp);
+  /* ----- cleanup ----- */
 
-  return ret;	/* return covariance */
+  for ( size_t k = 0; k < Nseg; ++k ) {
+    for ( size_t X = 0; X < numDet; ++X ) {
+      for ( size_t n = 0; n < intN[k][X]; ++n ) {
+        InputOutputInfo *io = &intInOut[k][X][n];
+        gsl_integration_workspace_free( io->wksp );
+      }
+      XLALFree( intInOut[k][X] );
+    }
+  }
+
+  return ret;
 
 } /* XLALCovariance_Phi_ij() */
 
