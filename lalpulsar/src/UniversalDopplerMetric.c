@@ -269,7 +269,7 @@ XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params, double *relerr_max 
   gsl_function integrand;
   double epsrel = params->epsrel;
   double epsabs = params->epsabs;
-  const size_t limit = 64;
+  const size_t limit = 512;
   gsl_integration_workspace *wksp = NULL;
   int stat;
 
@@ -856,7 +856,7 @@ XLALCovariance_Phi_ij ( const MultiLALDetector *multiIFO,		//!< [in] detectors t
 
   double epsrel = params->epsrel;
   double epsabs = params->epsabs;
-  const size_t limit = 64;
+  const size_t limit = 512;
   gsl_integration_workspace *wksp = NULL;
 
   /* allocate workspace for adaptive integration */
