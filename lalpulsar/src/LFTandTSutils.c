@@ -43,7 +43,7 @@
 #define fRELERR(x,y) ( fabsf( (x) - (y) ) / ( 0.5 * (fabsf(x) + fabsf(y)) ) )
 #define OOTWOPI         (1.0 / LAL_TWOPI)      // 1/2pi
 #define OOPI         (1.0 / LAL_PI)      // 1/pi
-
+#define LD_SMALL4       (2.0e-4)                // "small" number for REAL4: taken from Demod()
 /*---------- Global variables ----------*/
 static LALUnit emptyLALUnit;
 
@@ -903,9 +903,10 @@ XLALSincInterpolateCOMPLEX8TimeSeries ( COMPLEX8Vector *y_out,		///< [out] outpu
           continue;
         }
 
-      INT8 jstar = lround ( t * oodt );		// bin closest to 't', guaranteed to be in [0, numSamples-1]
+      REAL8 t_by_dt = t  * oodt;
+      INT8 jstar = lround ( t_by_dt );		// bin closest to 't', guaranteed to be in [0, numSamples-1]
 
-      if ( fabs ( t - jstar * dt ) < 1e-6 )	// avoid numerical problems near peak
+      if ( fabs ( t_by_dt - jstar ) < LD_SMALL4 )	// avoid numerical problems near peak
         {
           y_out->data[l] = ts_in->data->data[jstar];	// known analytic solution for exact bin
           continue;
@@ -914,7 +915,7 @@ XLALSincInterpolateCOMPLEX8TimeSeries ( COMPLEX8Vector *y_out,		///< [out] outpu
       UINT8 jStart = MYMAX ( jstar - Dterms, 0 );
       UINT8 jEnd = MYMIN ( jstar + Dterms, numSamplesIn - 1 );
 
-      REAL4 delta_jStart = (t - jStart * dt) * oodt;
+      REAL4 delta_jStart = (t_by_dt - jStart);
       REAL4 sin0, cos0;
       XLALSinCosLUT ( &sin0, &cos0, LAL_PI * delta_jStart );
       REAL4 sin0oopi = sin0 * OOPI;
