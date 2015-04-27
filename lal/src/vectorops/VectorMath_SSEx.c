@@ -39,13 +39,13 @@
 #include "VectorMath_sse_mathfun.h"
 
 // ---------- local operators and operator-wrappers ----------
-static inline __m128
+UNUSED static inline __m128
 local_add_ps ( __m128 in1, __m128 in2 )
 {
   return _mm_add_ps ( in1, in2 );
 }
 
-static inline __m128
+UNUSED static inline __m128
 local_mul_ps ( __m128 in1, __m128 in2 )
 {
   return _mm_mul_ps ( in1, in2 );

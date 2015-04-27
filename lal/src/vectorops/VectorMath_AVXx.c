@@ -35,13 +35,13 @@
 #include "VectorMath_avx_mathfun.h"
 
 // ---------- local operators and operator-wrappers ----------
-static inline __m256
+UNUSED static inline __m256
 local_add_ps ( __m256 in1, __m256 in2 )
 {
   return _mm256_add_ps ( in1, in2 );
 }
 
-static inline __m256
+UNUSED static inline __m256
 local_mul_ps ( __m256 in1, __m256 in2 )
 {
   return _mm256_mul_ps ( in1, in2 );
