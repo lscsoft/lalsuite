@@ -282,7 +282,7 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
   REAL8 sqrtSn = dataParams->multiNoiseFloor.sqrtSn[0];
   if ( sqrtSn > 0)
     {
-      REAL8 noiseSigma = sqrtSn * sqrt ( fBand );
+      REAL8 noiseSigma = sqrtSn * sqrt ( 0.5 * fSamp );
       XLAL_CHECK ( XLALAddGaussianNoise ( Tseries_sum, noiseSigma, dataParams->randSeed ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
 
