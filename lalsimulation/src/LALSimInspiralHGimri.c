@@ -46,7 +46,7 @@ INT4 XLALHGimri_CrossEquations(const gsl_vector * z, void *params, gsl_vector * 
 REAL8 XLALHGimri_dFdr(REAL8 E, REAL8 Lz, REAL8 a, REAL8 r);
 REAL8 XLALHGimri_initialP(REAL8 p0, void *params);
 REAL8 XLALHGimri_dLzdr(REAL8 q, REAL8 r);
-INT4 HGimri_start(REAL8 m, REAL8 M, REAL8 q, REAL8 D, REAL8 Sdotn, REAL8 phi0, REAL8 p0, REAL8Sequence *hplus, REAL8Sequence *hcross, REAL8 dt, INT4 Npts);
+INT4 HGimri_start(REAL8 m, REAL8 M, REAL8 q, REAL8 D, REAL8 Sdotn, REAL8 phi0, REAL8 p0, REAL8Sequence *hplus, REAL8Sequence *hcross, REAL8 dt, UINT4 Npts);
 INT4 XLALHGimri_generator(REAL8TimeSeries **hplus,REAL8TimeSeries **hcross,REAL8 phi0,REAL8 dt,REAL8 m1,REAL8 m2,REAL8 f_min,REAL8 r,REAL8 inc,REAL8 s1z);
 
 //Data type to hold current simulation regime
@@ -430,7 +430,7 @@ REAL8 XLALHGimri_dFdr(REAL8 E, REAL8 Lz, REAL8 a, REAL8 r) {
 	}
 
 INT4 HGimri_start(REAL8 m, REAL8 M, REAL8 q, REAL8 D, REAL8 Sdotn, REAL8 phi0, REAL8 p0,
-	REAL8Sequence *hplus, REAL8Sequence *hcross, REAL8 dt, INT4 Npts) {
+	REAL8Sequence *hplus, REAL8Sequence *hcross, REAL8 dt, UINT4 Npts) {
 
 	//====================================================================================================
 	// Function which evolves an inspiral trajectory and gravitational waveform for a circular intermediate
@@ -574,7 +574,7 @@ INT4 HGimri_start(REAL8 m, REAL8 M, REAL8 q, REAL8 D, REAL8 Sdotn, REAL8 phi0, R
 	// Runge-Kutta integrator
 	//==========================================
 
-	for (INT4 i=0; i<Npts; i++) {
+	for (UINT4 i=0; i<Npts; i++) {
 
 		//Direct to the appropriate iterator
 		switch (currentStage) {
@@ -1065,7 +1065,7 @@ INT4 HGimri_start(REAL8 m, REAL8 M, REAL8 q, REAL8 D, REAL8 Sdotn, REAL8 phi0, R
 	atwo = 2.+ Sdotn - 4.*Sdotn*Sdotn - 3.*Sdotn*Sdotn*Sdotn;
 	ringdown_amp = (1./8.)*sqrt(5./pi)*(final_mass/D);
 
-	for (INT4 i=i_lightring; i<Npts; i++) {
+	for (UINT4 i=i_lightring; i<Npts; i++) {
 
 		//NOTE: final_q and the ringdown frequencies wi are nondimensionalized by final_mass. Their direct product is therefore already
 		//dimensionless. When multiplying the wi's by dt, however, factors of (M/final_mass), however, are needed to properly rescale the wi's.
