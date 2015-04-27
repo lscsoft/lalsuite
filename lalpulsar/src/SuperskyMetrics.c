@@ -90,6 +90,84 @@ static void SM_DiagonalNormalise(
   }
 }
 
+///
+/// Call XLALComputeDopplerPhaseMetric() to compute the phase metric for a given coordinate system.
+///
+static gsl_matrix *SM_ComputePhaseMetric(
+  const DopplerCoordinateSystem *coords,	///< [in] Coordinate system to compute metric for
+  const LIGOTimeGPS *ref_time,			///< [in] Reference time for the metric
+  const LALSegList *segments,			///< [in] List of segments to average metric over
+  const double fiducial_freq,			///< [in] Fiducial frequency for sky-position coordinates
+  const MultiLALDetector *detectors,		///< [in] List of detectors to average metric over
+  const MultiNoiseFloor *detector_weights,	///< [in] Weights used to combine single-detector metrics (default: unit weights)
+  const DetectorMotionType detector_motion,	///< [in] Which detector motion to use
+  const EphemerisData *ephemerides		///< [in] Earth/Sun ephemerides
+  )
+{
+
+  // Check input
+  XLAL_CHECK_NULL( coords != NULL, XLAL_EFAULT );
+  XLAL_CHECK_NULL( ref_time != NULL, XLAL_EFAULT );
+  XLAL_CHECK_NULL( segments != NULL, XLAL_EFAULT );
+  XLAL_CHECK_NULL( XLALSegListIsInitialized( segments ), XLAL_EINVAL );
+  XLAL_CHECK_NULL( segments->length > 0, XLAL_EINVAL );
+  XLAL_CHECK_NULL( fiducial_freq > 0, XLAL_EINVAL );
+  XLAL_CHECK_NULL( detectors != NULL, XLAL_EFAULT );
+  XLAL_CHECK_NULL( detectors->length > 0, XLAL_EINVAL );
+  XLAL_CHECK_NULL( detector_motion > 0, XLAL_EINVAL );
+  XLAL_CHECK_NULL( ephemerides != NULL, XLAL_EINVAL );
+
+  // Create parameters struct for XLALDopplerFstatMetric()
+  DopplerMetricParams XLAL_INIT_DECL( par );
+
+  // Set coordinate system
+  par.coordSys = *coords;
+
+  // Set detector motion type
+  par.detMotionType = detector_motion;
+
+  // Set segment list
+  par.segmentList = *segments;
+
+  // Set detectors and detector weights
+  par.multiIFO = *detectors;
+  if( detector_weights != NULL ) {
+    par.multiNoiseFloor = *detector_weights;
+  } else {
+    par.multiNoiseFloor.length = 0;   // Indicates unit weights
+  }
+
+  // Set reference time and fiducial frequency
+  par.signalParams.Doppler.refTime = *ref_time;
+  par.signalParams.Doppler.fkdot[0] = fiducial_freq;
+
+  // Do not project metric
+  par.projectCoord = -1;
+
+  // Only compute the phase metric
+  par.metricType = METRIC_TYPE_PHASE;
+
+  // Do not include sky-position-dependent Roemer delay in time variable
+  par.approxPhase = 1;
+
+  // Allow metric to have at most 1 non-positive eigenvalue
+  par.nonposEigValThresh = 2;
+
+  // Call XLALDopplerFstatMetric() and check output
+  DopplerMetric *metric = XLALDopplerFstatMetric( &par, ephemerides );
+  XLAL_CHECK_NULL( metric != NULL && metric->g_ij != NULL, XLAL_EFUNC, "XLALDopplerFstatMetric() failed" );
+
+  // Extract metric
+  gsl_matrix *g_ij = metric->g_ij;
+  metric->g_ij = NULL;
+
+  // Cleanup
+  XLALDestroyDopplerMetric( metric );
+
+  return g_ij;
+
+}
+
 int XLALComputeSuperskyMetrics(
   gsl_matrix **p_rssky_metric,
   gsl_matrix **p_rssky_transf,
@@ -131,80 +209,36 @@ int XLALComputeSuperskyMetrics(
   //
   // Compute the expanded supersky metric, which separates spin and orbital sky components.
   //
-  DopplerMetric *metric = NULL;
+  gsl_matrix *xssky_metric = NULL;
   {
-
-    // Create parameters struct for XLALDopplerFstatMetric()
-    DopplerMetricParams XLAL_INIT_DECL( par );
 
     // Set expanded supersky coordinate system: x,y spin motion in equatorial coordinates,
     // then X,Y,Z orbital motion in ecliptic coordinates, then spindowns, then frequency
+    DopplerCoordinateSystem XLAL_INIT_DECL( coordSys );
     {
       size_t i = 0;
-      par.coordSys.coordIDs[i++] = DOPPLERCOORD_N3SX_EQU;
-      par.coordSys.coordIDs[i++] = DOPPLERCOORD_N3SY_EQU;
-      par.coordSys.coordIDs[i++] = DOPPLERCOORD_N3OX_ECL;
-      par.coordSys.coordIDs[i++] = DOPPLERCOORD_N3OY_ECL;
-      par.coordSys.coordIDs[i++] = DOPPLERCOORD_N3OZ_ECL;
+      coordSys.coordIDs[i++] = DOPPLERCOORD_N3SX_EQU;
+      coordSys.coordIDs[i++] = DOPPLERCOORD_N3SY_EQU;
+      coordSys.coordIDs[i++] = DOPPLERCOORD_N3OX_ECL;
+      coordSys.coordIDs[i++] = DOPPLERCOORD_N3OY_ECL;
+      coordSys.coordIDs[i++] = DOPPLERCOORD_N3OZ_ECL;
       if( spindowns >= 1 ) {
-        par.coordSys.coordIDs[i++] = DOPPLERCOORD_F1DOT;
+        coordSys.coordIDs[i++] = DOPPLERCOORD_F1DOT;
       }
       if( spindowns >= 2 ) {
-        par.coordSys.coordIDs[i++] = DOPPLERCOORD_F2DOT;
+        coordSys.coordIDs[i++] = DOPPLERCOORD_F2DOT;
       }
       if( spindowns >= 3 ) {
-        par.coordSys.coordIDs[i++] = DOPPLERCOORD_F3DOT;
+        coordSys.coordIDs[i++] = DOPPLERCOORD_F3DOT;
       }
-      par.coordSys.coordIDs[i++] = DOPPLERCOORD_FREQ;
-      par.coordSys.dim = i;
+      coordSys.coordIDs[i++] = DOPPLERCOORD_FREQ;
+      coordSys.dim = i;
     }
 
-    // Set detector motion type
-    par.detMotionType = detector_motion;
+    // Compute metric
+    xssky_metric = SM_ComputePhaseMetric( &coordSys, ref_time, segments, fiducial_freq, detectors, detector_weights, detector_motion, ephemerides );
+    XLAL_CHECK( xssky_metric != NULL, XLAL_EFUNC );
 
-    // Set segment list
-    par.segmentList = *segments;
-
-    // Set detectors and detector weights
-    par.multiIFO = *detectors;
-    if( detector_weights != NULL ) {
-      par.multiNoiseFloor = *detector_weights;
-    } else {
-      par.multiNoiseFloor.length = 0;   // Indicates unit weights
-    }
-
-    // Set reference time and fiducial frequency
-    par.signalParams.Doppler.refTime = *ref_time;
-    par.signalParams.Doppler.fkdot[0] = fiducial_freq;
-
-    // Do not project metric
-    par.projectCoord = -1;
-
-    // Only compute the phase metric
-    par.metricType = METRIC_TYPE_PHASE;
-
-    // Do not include sky-position-dependent Roemer delay in time variable
-    par.approxPhase = 1;
-
-    // Allow metric to have at most 1 non-positive eigenvalue
-    par.nonposEigValThresh = 2;
-
-    // Call XLALDopplerFstatMetric() and check output
-    metric = XLALDopplerFstatMetric( &par, ephemerides );
-    XLAL_CHECK( metric != NULL, XLAL_EFUNC, "XLALDopplerFstatMetric() failed" );
-    XLAL_CHECK( metric->g_ij != NULL, XLAL_EFAILED );
-    XLAL_CHECK( metric->g_ij->size1 == 5 + fsize, XLAL_EFAILED );
-    XLAL_CHECK( metric->g_ij->size2 == 5 + fsize, XLAL_EFAILED );
-
-  }
-  const gsl_matrix *const xssky_metric = metric->g_ij;
-
-  // Check metric is symmetric and has positive diagonal elements
-  for( size_t i = 0; i < xssky_metric->size1; ++i ) {
-    XLAL_CHECK( gsl_matrix_get( xssky_metric, i, i ) > 0, XLAL_EINVAL, "Expanded supersky metric xssky_metric(%zu,%zu) <= 0", i, i );
-    for( size_t j = i + 1; j < xssky_metric->size2; ++j ) {
-      XLAL_CHECK( gsl_matrix_get( xssky_metric, i, j ) == gsl_matrix_get( xssky_metric, j, i ), XLAL_EINVAL, "Expanded supersky metric xssky_metric(%zu,%zu) != xssky_metric(%zu,%zu)", i, j, j, i );
-    }
   }
 
   //
@@ -541,7 +575,7 @@ int XLALComputeSuperskyMetrics(
 
   // Cleanup
   GFMAT( reconstruct );
-  XLALDestroyDopplerMetric( metric );
+  GFMAT( xssky_metric );
 
   // Return or free metrics
   if( p_rssky_metric != NULL ) {
