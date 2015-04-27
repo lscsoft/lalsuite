@@ -135,7 +135,7 @@ int main( void )
                                              TEST_DATA_DIR "sun00-19-DE405.dat.gz" );
   XLAL_CHECK_MAIN( edat != NULL, XLAL_EFUNC );
   gsl_matrix *rssky_metric = NULL, *rssky_transf = NULL, *ussky_metric = NULL;
-  XLAL_CHECK_MAIN( XLALComputeSuperskyMetrics( &rssky_metric, &rssky_transf, &ussky_metric, NULL, NULL, NULL, 1, &ref_time, &segments, 100.0, &detectors, NULL, DETMOTION_SPIN | DETMOTION_PTOLEORBIT, edat ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALComputeSuperskyMetrics( &rssky_metric, &rssky_transf, &ussky_metric, 1, &ref_time, &segments, 100.0, &detectors, NULL, DETMOTION_SPIN | DETMOTION_PTOLEORBIT, edat ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLALSegListClear( &segments );
   XLALDestroyEphemerisData( edat );
 

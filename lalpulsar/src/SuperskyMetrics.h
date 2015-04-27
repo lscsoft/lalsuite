@@ -49,19 +49,16 @@ typedef enum {
 } SuperskyCoordinates;
 
 ///
-/// Compute the reduced supersky metric (2-dimensional sky), and/or the unrestricted supersky metric
-/// (3-dimensional sky), for individual segments and/or appropriately averaged over a segment list.
+/// Compute the reduced supersky metric (2-dimensional sky) and coordinate transform data, and/or
+/// the unrestricted supersky metric (3-dimensional sky).
 ///
 #ifdef SWIG // SWIG interface directives
-SWIGLAL( INOUT_STRUCTS( gsl_matrix **, out_rssky_metric, out_rssky_transf, out_ussky_metric, out_rssky_metric_seg, out_rssky_transf_seg, out_ussky_metric_seg ) );
+SWIGLAL( INOUT_STRUCTS( gsl_matrix **, p_rssky_metric, p_rssky_transf, p_ussky_metric ) );
 #endif
 int XLALComputeSuperskyMetrics(
-  gsl_matrix **out_rssky_metric,		///< [out] Output reduced supersky metric, appropriately averaged over segments
-  gsl_matrix **out_rssky_transf,		///< [out] Output reduced supersky metric transform data
-  gsl_matrix **out_ussky_metric,		///< [out] Output unrestricted supersky metric, appropriately averaged over segments
-  gsl_matrix **out_rssky_metric_seg,		///< [out] Output reduced supersky metrics for each segment, concatenated by column: [rssky_metric_1, rssky_metric_2, ...]
-  gsl_matrix **out_rssky_transf_seg,		///< [out] Output reduced supersky metric transform data for each segment, concatenated by column: [rssky_transf_1, rssky_transf_2, ...]
-  gsl_matrix **out_ussky_metric_seg,		///< [out] Output unrestricted supersky metrics for each segment, concatenated by column: [ussky_metric_1, ussky_metric_2, ...]
+  gsl_matrix **p_rssky_metric,			///< [out] Output reduced supersky metric, appropriately averaged over segments
+  gsl_matrix **p_rssky_transf,			///< [out] Output reduced supersky metric coordinate transform data
+  gsl_matrix **p_ussky_metric,			///< [out] Output unrestricted supersky metric, appropriately averaged over segments
   const size_t spindowns,			///< [in] Number of frequency+spindown coordinates
   const LIGOTimeGPS *ref_time,			///< [in] Reference time for the metrics
   const LALSegList *segments,			///< [in] List of segments to average metrics over

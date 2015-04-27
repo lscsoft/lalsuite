@@ -500,12 +500,9 @@ static void SM_AlignedToReduced(
 }
 
 int XLALComputeSuperskyMetrics(
-  gsl_matrix **out_rssky_metric,
-  gsl_matrix **out_rssky_transf,
-  gsl_matrix **out_ussky_metric,
-  gsl_matrix **out_rssky_metric_seg,
-  gsl_matrix **out_rssky_transf_seg,
-  gsl_matrix **out_ussky_metric_seg,
+  gsl_matrix **p_rssky_metric,
+  gsl_matrix **p_rssky_transf,
+  gsl_matrix **p_ussky_metric,
   const size_t spindowns,
   const LIGOTimeGPS *ref_time,
   const LALSegList *segments,
@@ -518,12 +515,9 @@ int XLALComputeSuperskyMetrics(
 {
 
   // Check input
-  XLAL_CHECK( out_rssky_metric == NULL || *out_rssky_metric == NULL, XLAL_EINVAL );
-  XLAL_CHECK( out_rssky_metric_seg == NULL || *out_rssky_metric_seg == NULL, XLAL_EINVAL );
-  XLAL_CHECK( out_rssky_transf == NULL || *out_rssky_transf == NULL, XLAL_EINVAL );
-  XLAL_CHECK( out_rssky_transf_seg == NULL || *out_rssky_transf_seg == NULL, XLAL_EINVAL );
-  XLAL_CHECK( out_ussky_metric == NULL || *out_ussky_metric == NULL, XLAL_EINVAL );
-  XLAL_CHECK( out_ussky_metric_seg == NULL || *out_ussky_metric_seg == NULL, XLAL_EINVAL );
+  XLAL_CHECK( p_rssky_metric == NULL || *p_rssky_metric == NULL, XLAL_EINVAL );
+  XLAL_CHECK( p_rssky_transf == NULL || *p_rssky_transf == NULL, XLAL_EINVAL );
+  XLAL_CHECK( p_ussky_metric == NULL || *p_ussky_metric == NULL, XLAL_EINVAL );
   XLAL_CHECK( spindowns <= 3, XLAL_EINVAL );
   XLAL_CHECK( ref_time != NULL, XLAL_EFAULT );
   XLAL_CHECK( segments != NULL, XLAL_EFAULT );
@@ -539,23 +533,14 @@ int XLALComputeSuperskyMetrics(
   const size_t fsize = 1 + spindowns;
 
   // Allocate matrices for output metrics
-  if( out_rssky_metric != NULL ) {
-    GAMAT( *out_rssky_metric, 2 + fsize, 2 + fsize );
+  if( p_rssky_metric != NULL ) {
+    GAMAT( *p_rssky_metric, 2 + fsize, 2 + fsize );
   }
-  if( out_rssky_metric_seg != NULL ) {
-    GAMAT( *out_rssky_metric_seg, 2 + fsize, ( 2 + fsize ) * segments->length );
+  if( p_rssky_transf != NULL ) {
+    GAMAT( *p_rssky_transf, 3 + fsize, 3 );
   }
-  if( out_rssky_transf != NULL ) {
-    GAMAT( *out_rssky_transf, 3 + fsize, 3 );
-  }
-  if( out_rssky_transf_seg != NULL ) {
-    GAMAT( *out_rssky_transf_seg, 3 + fsize, ( 3 ) * segments->length );
-  }
-  if( out_ussky_metric != NULL ) {
-    GAMAT( *out_ussky_metric, 3 + fsize, 3 + fsize );
-  }
-  if( out_ussky_metric_seg != NULL ) {
-    GAMAT( *out_ussky_metric_seg, 3 + fsize, ( 3 + fsize ) * segments->length );
+  if( p_ussky_metric != NULL ) {
+    GAMAT( *p_ussky_metric, 3 + fsize, 3 + fsize );
   }
 
   //
@@ -622,11 +607,9 @@ int XLALComputeSuperskyMetrics(
     // Call XLALDopplerFstatMetric() and check output
     metric = XLALDopplerFstatMetric( &par, ephemerides );
     XLAL_CHECK( metric != NULL, XLAL_EFUNC, "XLALDopplerFstatMetric() failed" );
-    XLAL_CHECK( metric->g_ij != NULL && metric->g_ij_seg != NULL, XLAL_EFAILED );
+    XLAL_CHECK( metric->g_ij != NULL, XLAL_EFAILED );
     XLAL_CHECK( metric->g_ij->size1 == 5 + fsize, XLAL_EFAILED );
     XLAL_CHECK( metric->g_ij->size2 == 5 + fsize, XLAL_EFAILED );
-    XLAL_CHECK( metric->g_ij_seg->size1 == 5 + fsize, XLAL_EFAILED );
-    XLAL_CHECK( metric->g_ij_seg->size2 == ( 5 + fsize ) * segments->length, XLAL_EFAILED );
 
   }
 
@@ -635,42 +618,10 @@ int XLALComputeSuperskyMetrics(
   // (3-dimensional sky), from the expanded supersky metric (5-dimensional sky).
   //
   {
-
-    // Compute averaged metrics
-    if( out_rssky_metric != NULL || out_rssky_transf != NULL || out_ussky_metric != NULL ) {
-      gsl_matrix *const rssky_metric = ( out_rssky_metric != NULL ) ? *out_rssky_metric : NULL;
-      gsl_matrix *const rssky_transf = ( out_rssky_transf != NULL ) ? *out_rssky_transf : NULL;
-      gsl_matrix *const ussky_metric = ( out_ussky_metric != NULL ) ? *out_ussky_metric : NULL;
-      XLAL_CHECK( SM_ComputeSuperskyMetrics( rssky_metric, rssky_transf, ussky_metric, metric->g_ij, fsize ) == XLAL_SUCCESS, XLAL_EFUNC );
-    }
-
-    // Compute per-segment metrics
-    if( out_rssky_metric_seg != NULL || out_rssky_transf_seg != NULL || out_ussky_metric_seg != NULL ) {
-      for( size_t n = 0; n < segments->length; ++n ) {
-        gsl_matrix_view rssky_metric_view;
-        gsl_matrix *rssky_metric = NULL;
-        if( out_rssky_metric_seg != NULL ) {
-          rssky_metric_view = gsl_matrix_submatrix( *out_rssky_metric_seg, 0, ( 2 + fsize ) * n, 2 + fsize, 2 + fsize );
-          rssky_metric = &rssky_metric_view.matrix;
-        }
-        gsl_matrix_view rssky_transf_view;
-        gsl_matrix *rssky_transf = NULL;
-        if( out_rssky_transf_seg != NULL ) {
-          rssky_transf_view = gsl_matrix_submatrix( *out_rssky_transf_seg, 0, ( 3 ) * n, 3 + fsize, 3 );
-          rssky_transf = &rssky_transf_view.matrix;
-        }
-        gsl_matrix_view ussky_metric_view;
-        gsl_matrix *ussky_metric = NULL;
-        if( out_ussky_metric_seg != NULL ) {
-          ussky_metric_view = gsl_matrix_submatrix( *out_ussky_metric_seg, 0, ( 3 + fsize ) * n, 3 + fsize, 3 + fsize );
-          ussky_metric = &ussky_metric_view.matrix;
-        }
-        gsl_matrix_const_view xssky_metric_view = gsl_matrix_const_submatrix( metric->g_ij_seg, 0, ( 5 + fsize ) * n, 5 + fsize, 5 + fsize );
-        const gsl_matrix *xssky_metric = &xssky_metric_view.matrix;
-        XLAL_CHECK( SM_ComputeSuperskyMetrics( rssky_metric, rssky_transf, ussky_metric, xssky_metric, fsize ) == XLAL_SUCCESS, XLAL_EFUNC );
-      }
-    }
-
+    gsl_matrix *const rssky_metric = ( p_rssky_metric != NULL ) ? *p_rssky_metric : NULL;
+    gsl_matrix *const rssky_transf = ( p_rssky_transf != NULL ) ? *p_rssky_transf : NULL;
+    gsl_matrix *const ussky_metric = ( p_ussky_metric != NULL ) ? *p_ussky_metric : NULL;
+    XLAL_CHECK( SM_ComputeSuperskyMetrics( rssky_metric, rssky_transf, ussky_metric, metric->g_ij, fsize ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
   // Cleanup
