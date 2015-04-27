@@ -222,7 +222,6 @@ typedef struct tagDopplerMetric
   DopplerMetricParams meta;		/**< "meta-info" describing/specifying the type of Doppler metric */
 
   gsl_matrix *g_ij;			/**< symmetric matrix holding the phase-metric, averaged over segments */
-  gsl_matrix *g_ij_seg;			/**< the phase-metric for each segment, concatenated by column: [g_ij_1, g_ij_2, ...] */
 
   gsl_matrix *gF_ij;			/**< full F-statistic metric gF_ij, including antenna-pattern effects (see \cite Prix07) */
   gsl_matrix *gFav_ij;			/**< 'average' Fstat-metric */

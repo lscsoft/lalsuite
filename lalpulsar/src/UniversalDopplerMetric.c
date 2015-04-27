@@ -1346,15 +1346,6 @@ XLALDopplerFstatMetricCoh ( const DopplerMetricParams *metricParams,  	/**< inpu
 
     } /* if projectCoordinate >= 0 */
 
-  /* copy phase-metric to per-segment matrix */
-  if ( metric->g_ij )
-    {
-      if ( metric->g_ij_seg ) gsl_matrix_free( metric->g_ij_seg );
-      XLAL_CHECK_NULL( ( metric->g_ij_seg = gsl_matrix_alloc ( metric->g_ij->size1, metric->g_ij->size2 ) ) != NULL,
-                       XLAL_ENOMEM, "%s: failed to gsl_matrix_alloc(%zu, %zu)\n", __func__, metric->g_ij->size1, metric->g_ij->size2 );
-      gsl_matrix_memcpy( metric->g_ij_seg, metric->g_ij );
-    }
-
   /*  attach the metricParams struct as 'meta-info' to the output */
   metric->meta = (*metricParams);
 
@@ -1653,7 +1644,6 @@ XLALDestroyDopplerMetric ( DopplerMetric *metric )
     return;
 
   if ( metric->g_ij )      gsl_matrix_free ( metric->g_ij );
-  if ( metric->g_ij_seg )  gsl_matrix_free ( metric->g_ij_seg );
   if ( metric->gF_ij )     gsl_matrix_free ( metric->gF_ij );
   if ( metric->gFav_ij )   gsl_matrix_free ( metric->gFav_ij );
   if ( metric->m1_ij )     gsl_matrix_free ( metric->m1_ij );
@@ -2438,34 +2428,6 @@ XLALAddDopplerMetric ( DopplerMetric **metric1, const DopplerMetric *metric2 )
   if ( m2->m2_ij ) XLAL_CHECK (  (ret = gsl_matrix_add ( m1->m2_ij,     m2->m2_ij )) == 0, XLAL_EFAILED, "m2_ij: gsl_matrix_add() failed with status=%d\n", ret );
   if ( m2->m3_ij ) XLAL_CHECK (  (ret = gsl_matrix_add ( m1->m3_ij,     m2->m3_ij )) == 0, XLAL_EFAILED, "m3_ij: gsl_matrix_add() failed with status=%d\n", ret );
   if ( m2->Fisher_ab) XLAL_CHECK((ret = gsl_matrix_add ( m1->Fisher_ab, m2->Fisher_ab )) == 0, XLAL_EFAILED, "Fisher_ab: gsl_matrix_add() failed with status=%d\n", ret );
-
-  // concatenate phase metrics per segment by column
-  if ( m1->g_ij && m2->g_ij )
-    {
-      const size_t g_ij_seg_cols = ( m1->g_ij_seg ? m1->g_ij_seg->size2 : 0 ) + ( m2->g_ij_seg ? m2->g_ij_seg->size2 : 0 );
-      XLAL_CHECK( g_ij_seg_cols % m1->g_ij->size2 == 0, XLAL_EINVAL );
-      if ( g_ij_seg_cols > 0 )
-        {
-          size_t col = 0, len1, len2;
-          gsl_matrix* g_ij_seg = gsl_matrix_alloc( len1=m1->g_ij->size1, len2=g_ij_seg_cols );
-          XLAL_CHECK( g_ij_seg != NULL, XLAL_ENOMEM, "Failed: g_ij_seg = gsl_matrix_calloc(%zu,%zu)\n", len1, len2 );
-          if ( m1->g_ij_seg )
-            {
-              gsl_matrix_view g_ij_seg_view = gsl_matrix_submatrix( g_ij_seg, 0, col, m1->g_ij_seg->size1, m1->g_ij_seg->size2 );
-              gsl_matrix_memcpy( &g_ij_seg_view.matrix, m1->g_ij_seg );
-              col += m1->g_ij_seg->size2;
-            }
-          if ( m2->g_ij_seg )
-            {
-              gsl_matrix_view g_ij_seg_view = gsl_matrix_submatrix( g_ij_seg, 0, col, m2->g_ij_seg->size1, m2->g_ij_seg->size2 );
-              gsl_matrix_memcpy( &g_ij_seg_view.matrix, m2->g_ij_seg );
-              col += m2->g_ij_seg->size2;
-            }
-          XLAL_CHECK( col == g_ij_seg->size2, XLAL_EFAILED );
-          if ( m1->g_ij_seg ) gsl_matrix_free( m1->g_ij_seg );
-          m1->g_ij_seg = g_ij_seg;
-        }
-    }
 
   // add errors in quadrature
   m1->maxrelerr_gPh = sqrt ( SQUARE(m1->maxrelerr_gPh) + SQUARE(m2->maxrelerr_gPh) );
