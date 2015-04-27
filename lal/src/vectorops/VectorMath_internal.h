@@ -45,7 +45,7 @@
   int XLALVector##NAME##_FPU  ARG_DEF;
 
 /* declare internal prototypes of SIMD-specific vector math functions with 1 REAL4 vector input to 1 REAL4 vector output (S2S) */
-#define DECLARE_VECTORMATH_S2S(NAME)                                    \
+#define DECLARE_VECTORMATH_S2S(NAME) \
   DECLARE_VECTORMATH_ANY( NAME ## REAL4, ( REAL4 *out, const REAL4 *in, const UINT4 len ) )
 
 DECLARE_VECTORMATH_S2S(Sin)
@@ -54,23 +54,8 @@ DECLARE_VECTORMATH_S2S(Exp)
 DECLARE_VECTORMATH_S2S(Log)
 
 /* declare internal prototypes of SIMD-specific vector math functions with 1 REAL4 vector input to 2 REAL4 vector outputs (S2SS) */
-#define DECLARE_VECTORMATH_S2SS(NAME)                                   \
+#define DECLARE_VECTORMATH_S2SS(NAME) \
   DECLARE_VECTORMATH_ANY( NAME ## REAL4, ( REAL4 *out1, REAL4 *out2, const REAL4 *in, const UINT4 len ) )
 
 DECLARE_VECTORMATH_S2SS(SinCos)
 DECLARE_VECTORMATH_S2SS(SinCos2Pi)
-
-/* declare internal prototypes of SIMD-specific vector math functions with 2 REAL4 vector inputs to 1 REAL4 vector output (SS2S) */
-#define DECLARE_VECTORMATH_SS2S(NAME)                                   \
-  DECLARE_VECTORMATH_ANY( NAME ## REAL4, ( REAL4 *out, const REAL4 *in1, const REAL4 *in2, const UINT4 len ) )
-
-DECLARE_VECTORMATH_SS2S(Add);
-DECLARE_VECTORMATH_SS2S(Multiply);
-
-/* declare internal prototypes of SIMD-specific vector math functions with 1 REAL4 scalar and 1 REAL4 vector input to 1 REAL4 vector output (sS2S) */
-#define DECLARE_VECTORMATH_sS2S(NAME) \
-  DECLARE_VECTORMATH_ANY( NAME ## REAL4, ( REAL4 *out, REAL4 scalar, const REAL4 *in, const UINT4 len ) )
-
-DECLARE_VECTORMATH_sS2S(Shift);
-DECLARE_VECTORMATH_sS2S(Scale);
-
