@@ -1098,9 +1098,6 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   memset( sigReVec->data, 0, sigReVec->length * sizeof( REAL8 ) );
   memset( sigImVec->data, 0, sigImVec->length * sizeof( REAL8 ) );
 
-  COMPLEX16TimeSeries *ts_tmp = XLALCreateCOMPLEX16TimeSeries( "h_22", &tc, 0, deltaT, &lalStrainUnit, sigReVec->length );
-  memset( ts_tmp->data->data, 0, ts_tmp->data->length * sizeof( COMPLEX16 ) );
- 
   /* Generate full inspiral waveform using desired sampling frequency */
   /* TODO - Check vectors were allocated */
   for ( i = 0; i < (INT4)rVec.length; i++ )
