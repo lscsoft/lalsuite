@@ -78,7 +78,7 @@ static gsl_matrix *SM_ComputePhaseMetric(
   XLAL_CHECK_NULL( detector_motion > 0, XLAL_EINVAL );
   XLAL_CHECK_NULL( ephemerides != NULL, XLAL_EINVAL );
 
-  // Create parameters struct for XLALDopplerFstatMetric()
+  // Create parameters struct for XLALComputeDopplerPhaseMetric()
   DopplerMetricParams XLAL_INIT_DECL( par );
 
   // Set coordinate system
@@ -105,25 +105,22 @@ static gsl_matrix *SM_ComputePhaseMetric(
   // Do not project metric
   par.projectCoord = -1;
 
-  // Only compute the phase metric
-  par.metricType = METRIC_TYPE_PHASE;
-
   // Do not include sky-position-dependent Roemer delay in time variable
   par.approxPhase = 1;
 
   // Allow metric to have at most 1 non-positive eigenvalue
   par.nonposEigValThresh = 2;
 
-  // Call XLALDopplerFstatMetric() and check output
-  DopplerMetric *metric = XLALDopplerFstatMetric( &par, ephemerides );
-  XLAL_CHECK_NULL( metric != NULL && metric->g_ij != NULL, XLAL_EFUNC, "XLALDopplerFstatMetric() failed" );
+  // Call XLALComputeDopplerPhaseMetric() and check output
+  DopplerPhaseMetric *metric = XLALComputeDopplerPhaseMetric( &par, ephemerides );
+  XLAL_CHECK_NULL( metric != NULL && metric->g_ij != NULL, XLAL_EFUNC, "XLALComputeDopplerPhaseMetric() failed" );
 
   // Extract metric
   gsl_matrix *g_ij = metric->g_ij;
   metric->g_ij = NULL;
 
   // Cleanup
-  XLALDestroyDopplerMetric( metric );
+  XLALDestroyDopplerPhaseMetric( metric );
 
   return g_ij;
 

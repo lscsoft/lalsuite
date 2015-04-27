@@ -182,7 +182,7 @@ extern int vrbflg;
 int initUserVars (UserVariables_t *uvar);
 int XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *app_name);
 
-int XLALOutputDopplerMetric ( FILE *fp, const DopplerMetric *metric, const ResultHistory_t *history );
+int XLALOutputDopplerMetric ( FILE *fp, const DopplerPhaseMetric *Pmetric, const DopplerFstatMetric *Fmetric, const ResultHistory_t *history );
 
 int XLALDestroyConfig ( ConfigVariables *cfg );
 void XLALDestroyResultHistory ( ResultHistory_t * history );
@@ -258,7 +258,6 @@ main(int argc, char *argv[])
 
   metricParams.segmentList   = config.segmentList;
   metricParams.coordSys      = config.coordSys;
-  metricParams.metricType    = uvar.metricType;
   metricParams.multiIFO      = config.multiIFO;
   metricParams.multiNoiseFloor = config.multiNoiseFloor;
   metricParams.signalParams  = config.signalParams;
@@ -267,10 +266,19 @@ main(int argc, char *argv[])
 
 
   /* ----- compute metric full metric + Fisher matrix ---------- */
-  DopplerMetric *metric;
-  if ( (metric = XLALDopplerFstatMetric ( &metricParams, config.edat )) == NULL ) {
-    LogPrintf (LOG_CRITICAL, "Something failed in XLALDopplerFstatMetric(). xlalErrno = %d\n\n", xlalErrno);
-    return -1;
+  DopplerPhaseMetric *Pmetric = NULL;
+  if ( uvar.metricType == 0 || uvar.metricType == 2 ) {
+    if ( (Pmetric = XLALComputeDopplerPhaseMetric ( &metricParams, config.edat )) == NULL ) {
+      LogPrintf (LOG_CRITICAL, "Something failed in XLALComputeDopplerPhaseMetric(). xlalErrno = %d\n\n", xlalErrno);
+      return -1;
+    }
+  }
+  DopplerFstatMetric *Fmetric = NULL;
+  if ( uvar.metricType == 1 || uvar.metricType == 2 ) {
+    if ( (Fmetric = XLALComputeDopplerFstatMetric ( &metricParams, config.edat )) == NULL ) {
+      LogPrintf (LOG_CRITICAL, "Something failed in XLALComputeDopplerFstatMetric(). xlalErrno = %d\n\n", xlalErrno);
+      return -1;
+    }
   }
 
   /* ---------- output results ---------- */
@@ -283,7 +291,7 @@ main(int argc, char *argv[])
 	return FSTATMETRIC_EFILE;
       }
 
-      if ( XLALOutputDopplerMetric ( fpMetric, metric, config.history ) != XLAL_SUCCESS  ) {
+      if ( XLALOutputDopplerMetric ( fpMetric, Pmetric, Fmetric, config.history ) != XLAL_SUCCESS  ) {
 	LogPrintf (LOG_CRITICAL, "%s: failed to write Doppler metric into output-file '%s'. xlalErrno = %d\n\n",
 		   __func__, uvar.outputMetric, xlalErrno );
 	return FSTATMETRIC_EFILE;
@@ -294,7 +302,8 @@ main(int argc, char *argv[])
     } /* if outputMetric */
 
   /* ----- done: free all memory */
-  XLALDestroyDopplerMetric ( metric );
+  XLALDestroyDopplerPhaseMetric ( Pmetric );
+  XLALDestroyDopplerFstatMetric ( Fmetric );
   if ( XLALDestroyConfig( &config ) != XLAL_SUCCESS ) {
     LogPrintf (LOG_CRITICAL, "%s: XLADestroyConfig() failed, xlalErrno = %d.\n\n", __func__, xlalErrno );
     return FSTATMETRIC_EXLAL;
@@ -540,27 +549,22 @@ XLALDestroyConfig ( ConfigVariables *cfg )
 
 
 int
-XLALOutputDopplerMetric ( FILE *fp, const DopplerMetric *metric, const ResultHistory_t *history )
+XLALOutputDopplerMetric ( FILE *fp, const DopplerPhaseMetric *Pmetric, const DopplerFstatMetric *Fmetric, const ResultHistory_t *history )
 {
   UINT4 i;
   REAL8 A, B, C, D;
-  const DopplerMetricParams *meta;
-  const PulsarDopplerParams *doppler;
-  const PulsarAmplitudeParams *Amp;
 
   // ----- input sanity checks
-  if ( !fp || !metric ) {
-    LogPrintf (LOG_CRITICAL, "%s: illegal NULL input.\n\n", __func__ );
-    XLAL_ERROR ( XLAL_EINVAL );
-  }
-  XLAL_CHECK ( XLALSegListIsInitialized ( &(metric->meta.segmentList) ), XLAL_EINVAL, "Got un-initialized segment list in 'metric->meta.segmentList'\n" );
-  UINT4 Nseg = metric->meta.segmentList.length;
+  XLAL_CHECK ( fp != NULL, XLAL_EFAULT );
+  XLAL_CHECK ( Pmetric != NULL || Fmetric != NULL, XLAL_EFAULT );
+  const DopplerMetricParams *meta = (Pmetric != NULL) ? &(Pmetric->meta) : &(Fmetric->meta);
+  XLAL_CHECK ( XLALSegListIsInitialized ( &(meta->segmentList) ), XLAL_EINVAL, "Got un-initialized segment list in 'metric->meta.segmentList'\n" );
+  UINT4 Nseg = meta->segmentList.length;
   XLAL_CHECK ( Nseg >= 1, XLAL_EDOM, "Got invalid zero-length segment list 'metric->meta.segmentList'\n" );
 
   /* useful shortcuts */
-  meta = &(metric->meta);
-  doppler = &(meta->signalParams.Doppler);
-  Amp = &(meta->signalParams.Amp);
+  const PulsarDopplerParams *doppler = &(meta->signalParams.Doppler);
+  const PulsarAmplitudeParams *Amp = &(meta->signalParams.Amp);
 
   /* output history info */
   if ( history )
@@ -628,13 +632,13 @@ XLALOutputDopplerMetric ( FILE *fp, const DopplerMetric *metric, const ResultHis
   fprintf ( fp, "];\n");
 
   /* ----- output phase metric ---------- */
-  if ( metric->g_ij )
+  if ( Pmetric != NULL )
     {
-      fprintf ( fp, "\ng_ij = \\\n" ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->g_ij );
-      fprintf ( fp, "maxrelerr_gPh = %.2e;\n", metric->maxrelerr_gPh );
+      fprintf ( fp, "\ng_ij = \\\n" ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  Pmetric->g_ij );
+      fprintf ( fp, "maxrelerr_gPh = %.2e;\n", Pmetric->maxrelerr );
 
       gsl_matrix *gN_ij = NULL;
-      if ( XLALNaturalizeMetric ( &gN_ij, NULL, metric->g_ij, meta ) != XLAL_SUCCESS ) {
+      if ( XLALNaturalizeMetric ( &gN_ij, NULL, Pmetric->g_ij, meta ) != XLAL_SUCCESS ) {
         XLALPrintError ("%s: something failed Naturalizing phase metric g_ij!\n", __func__ );
         XLAL_ERROR ( XLAL_EFUNC );
       }
@@ -642,7 +646,7 @@ XLALOutputDopplerMetric ( FILE *fp, const DopplerMetric *metric, const ResultHis
       gsl_matrix_free ( gN_ij );
 
       gsl_matrix *gDN_ij = NULL;
-      if ( XLALDiagNormalizeMetric ( &gDN_ij, NULL, metric->g_ij ) != XLAL_SUCCESS ) {
+      if ( XLALDiagNormalizeMetric ( &gDN_ij, NULL, Pmetric->g_ij ) != XLAL_SUCCESS ) {
         XLALPrintError ("%s: something failed NormDiagonalizing phase metric g_ij!\n", __func__ );
         XLAL_ERROR ( XLAL_EFUNC );
       }
@@ -651,29 +655,29 @@ XLALOutputDopplerMetric ( FILE *fp, const DopplerMetric *metric, const ResultHis
     }
 
   /* ----- output F-metric (and related matrices ---------- */
-  if ( metric->gF_ij )
+  if ( Fmetric != NULL )
     {
-      fprintf ( fp, "\ngF_ij = \\\n" );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->gF_ij );
-      fprintf ( fp, "\ngFav_ij = \\\n" ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->gFav_ij );
-      fprintf ( fp, "\nm1_ij = \\\n" );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->m1_ij );
-      fprintf ( fp, "\nm2_ij = \\\n" );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->m2_ij );
-      fprintf ( fp, "\nm3_ij = \\\n" );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->m3_ij );
-      fprintf ( fp, "maxrelerr_gF = %.2e;\n", metric->maxrelerr_gF );
+      fprintf ( fp, "\ngF_ij = \\\n" );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  Fmetric->gF_ij );
+      fprintf ( fp, "\ngFav_ij = \\\n" ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  Fmetric->gFav_ij );
+      fprintf ( fp, "\nm1_ij = \\\n" );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  Fmetric->m1_ij );
+      fprintf ( fp, "\nm2_ij = \\\n" );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  Fmetric->m2_ij );
+      fprintf ( fp, "\nm3_ij = \\\n" );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  Fmetric->m3_ij );
+      fprintf ( fp, "maxrelerr_gF = %.2e;\n", Fmetric->maxrelerr );
     }
 
   /*  ----- output Fisher matrix ---------- */
-  if ( metric->Fisher_ab )
+  if ( Fmetric != NULL && Fmetric->Fisher_ab != NULL )
     {
-      A = gsl_matrix_get ( metric->Fisher_ab, 0, 0 );
-      B = gsl_matrix_get ( metric->Fisher_ab, 1, 1 );
-      C = gsl_matrix_get ( metric->Fisher_ab, 0, 1 );
+      A = gsl_matrix_get ( Fmetric->Fisher_ab, 0, 0 );
+      B = gsl_matrix_get ( Fmetric->Fisher_ab, 1, 1 );
+      C = gsl_matrix_get ( Fmetric->Fisher_ab, 0, 1 );
 
       D = A * B - C * C;
 
       fprintf ( fp, "\nA = %.16g;\nB = %.16g;\nC = %.16g;\nD = %.16g;\n", A, B, C, D );
-      fprintf ( fp, "\nrho2 = %.16g;\n", metric->rho2 );
+      fprintf ( fp, "\nrho2 = %.16g;\n", Fmetric->rho2 );
 
-      fprintf (fp, "\nFisher_ab = \\\n" ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->Fisher_ab );
+      fprintf (fp, "\nFisher_ab = \\\n" ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  Fmetric->Fisher_ab );
     }
 
   // ---------- output segment list at the end, as this can potentially become quite long and distracting

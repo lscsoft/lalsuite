@@ -102,14 +102,6 @@ typedef enum {
 } DetectorMotionType;
 
 
-typedef enum {
-  METRIC_TYPE_PHASE = 0,	/**< compute phase metric only */
-  METRIC_TYPE_FSTAT = 1,	/**< compute full F-metric only */
-  METRIC_TYPE_ALL   = 2,	/**< compute both F-metric and phase-metric */
-  METRIC_TYPE_LAST
-} MetricType_t;
-
-
 /**
  * enum listing symbolic 'names' for all Doppler Coordinates
  * supported by the metric codes in FstatMetric
@@ -182,7 +174,6 @@ typedef struct tagDopplerMetricParams
   PulsarParams signalParams;			/**< parameter-space point to compute metric for (doppler + amplitudes) */
   INT4 projectCoord;				/**< project metric onto subspace orthogonal to this axis (-1 = none, 0 = 1st coordinate, etc) */
 
-  MetricType_t metricType;			/**< switch controlling which types of metric to compute: 0 = PhaseMetric g_ij, 1 = Fmetrics gF.., 2=BOTH */
   BOOLEAN approxPhase;				/**< use an approximate phase-model, neglecting Roemer delay in spindown coordinates */
   UINT4 nonposEigValThresh;			/**< if >0, and metric has this or more non-positive eigenvalues, recompute using smaller error tolerances */
 } DopplerMetricParams;
@@ -214,14 +205,12 @@ typedef struct tagFmetricAtoms_t
 
 
 /**
- * struct to hold a DopplerMetric, including meta-info on the number of
+ * Struct to hold the output of XLALComputeDopplerFstatMetric(), including meta-info on the number of
  * dimensions, the coordinate-system and type of metric.
  */
-typedef struct tagDopplerMetric
+typedef struct tagDopplerFstatMetric
 {
   DopplerMetricParams meta;		/**< "meta-info" describing/specifying the type of Doppler metric */
-
-  gsl_matrix *g_ij;			/**< symmetric matrix holding the phase-metric, averaged over segments */
 
   gsl_matrix *gF_ij;			/**< full F-statistic metric gF_ij, including antenna-pattern effects (see \cite Prix07) */
   gsl_matrix *gFav_ij;			/**< 'average' Fstat-metric */
@@ -229,26 +218,34 @@ typedef struct tagDopplerMetric
 
   gsl_matrix *Fisher_ab;		/**< Full 4+n dimensional Fisher matrix, ie amplitude + Doppler space */
 
-  double maxrelerr_gPh;			/**< estimate for largest relative error in phase-metric component integrations */
-  double maxrelerr_gF;			/**< estimate for largest relative error in Fmetric component integrations */
-
   REAL8 rho2;				/**< signal SNR rho^2 = A^mu M_mu_nu A^nu */
-} DopplerMetric;
+
+  double maxrelerr;			/**< estimate for largest relative error in Fmetric component integrations */
+} DopplerFstatMetric;
+
+
+/**
+ * Struct to hold the output of XLALComputeDopplerPhaseMetric(), including meta-info on the number of
+ * dimensions, the coordinate-system and type of metric.
+ */
+typedef struct tagDopplerPhaseMetric
+{
+  DopplerMetricParams meta;		/**< "meta-info" describing/specifying the type of Doppler metric */
+
+  gsl_matrix *g_ij;			/**< symmetric matrix holding the phase-metric, averaged over segments */
+
+  double maxrelerr;			/**< estimate for largest relative error in phase-metric component integrations */
+} DopplerPhaseMetric;
 
 
 /*---------- Global variables ----------*/
 
 /*---------- exported prototypes [API] ----------*/
-gsl_matrix *
-XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,
-			 const EphemerisData *edat,
-                         double *relerr_max
-			 );
+DopplerFstatMetric* XLALComputeDopplerFstatMetric ( const DopplerMetricParams *metricParams, const EphemerisData *edat );
+void XLALDestroyDopplerFstatMetric ( DopplerFstatMetric *metric );
 
-DopplerMetric*
-XLALDopplerFstatMetric ( const DopplerMetricParams *metricParams,
-			 const EphemerisData *edat
-			 );
+DopplerPhaseMetric* XLALComputeDopplerPhaseMetric ( const DopplerMetricParams *metricParams, const EphemerisData *edat );
+void XLALDestroyDopplerPhaseMetric ( DopplerPhaseMetric *metric );
 
 FmetricAtoms_t*
 XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,
@@ -277,8 +274,6 @@ XLALComputeOrbitalDerivatives ( UINT4 maxorder, const LIGOTimeGPS *tGPS, const E
 FmetricAtoms_t* XLALCreateFmetricAtoms ( UINT4 dim );
 void XLALDestroyFmetricAtoms ( FmetricAtoms_t *atoms );
 
-void XLALDestroyDopplerMetric ( DopplerMetric *metric );
-
 int XLALParseDetectorMotionString ( const CHAR *detMotionString );
 int XLALParseDopplerCoordinateString ( const CHAR *coordName );
 int XLALDopplerCoordinateNames2System ( DopplerCoordinateSystem *coordSys, const LALStringVector *coordNames );
@@ -288,8 +283,6 @@ const CHAR *XLALDopplerCoordinateName ( DopplerCoordinateID coordID );
 const CHAR *XLALDopplerCoordinateHelp ( DopplerCoordinateID coordID );
 CHAR *XLALDopplerCoordinateHelpAll ( void );
 
-int XLALAddDopplerMetric ( DopplerMetric **metric1, const DopplerMetric *metric2 );
-int XLALScaleDopplerMetric ( DopplerMetric *m, REAL8 scale );
 // destructor for vect3Dlist_t type
 void XLALDestroyVect3Dlist ( vect3Dlist_t *list );
 

@@ -70,6 +70,13 @@
 #define SQ(x) ((x) * (x))
 
 /* ---------- local types ---------- */
+typedef enum {
+  OLDMETRIC_TYPE_PHASE = 0,        /**< compute phase metric only */
+  OLDMETRIC_TYPE_FSTAT = 1,        /**< compute full F-metric only */
+  OLDMETRIC_TYPE_ALL   = 2,        /**< compute both F-metric and phase-metric */
+  OLDMETRIC_TYPE_LAST
+} OldMetricType_t;
+
 typedef struct tagOldDopplerMetric
 {
   DopplerMetricParams meta;             /**< "meta-info" describing/specifying the type of Doppler metric */
@@ -164,7 +171,7 @@ void XLALDestroyMultiPhaseDerivs ( MultiPhaseDerivs *mdPhi );
 
 void gauleg(double x1, double x2, double x[], double w[], int n);
 
-OldDopplerMetric *XLALOldDopplerFstatMetric ( const DopplerMetricParams *metricParams, const EphemerisData *edat );
+OldDopplerMetric *XLALOldDopplerFstatMetric ( const OldMetricType_t metricType, const DopplerMetricParams *metricParams, const EphemerisData *edat );
 void XLALDestroyOldDopplerMetric ( OldDopplerMetric *metric );
 int XLALAddOldDopplerMetric ( OldDopplerMetric **metric1, const OldDopplerMetric *metric2 );
 int XLALScaleOldDopplerMetric ( OldDopplerMetric *m, REAL8 scale );
@@ -184,7 +191,8 @@ int XLALScaleOldDopplerMetric ( OldDopplerMetric *m, REAL8 scale );
  *
  */
 OldDopplerMetric *
-XLALOldDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< input parameters determining the metric calculation */
+XLALOldDopplerFstatMetric ( const OldMetricType_t metricType,		/**< type of metric to compute */
+                            const DopplerMetricParams *metricParams,  	/**< input parameters determining the metric calculation */
                             const EphemerisData *edat			/**< ephemeris data */
                             )
 {
@@ -195,8 +203,7 @@ XLALOldDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< inpu
   UINT4 Nseg = metricParams->segmentList.length;
   XLAL_CHECK_NULL ( Nseg == 1, XLAL_EINVAL, "Segment list must only contain Nseg=1 segments, got Nseg=%d", Nseg );
 
-  MetricType_t metricType = metricParams->metricType;
-  XLAL_CHECK_NULL ( metricType < METRIC_TYPE_LAST, XLAL_EDOM );
+  XLAL_CHECK_NULL ( metricType < OLDMETRIC_TYPE_LAST, XLAL_EDOM );
 
   LIGOTimeGPS *startTime = &(metricParams->segmentList.segs[0].start);
   LIGOTimeGPS *endTime   = &(metricParams->segmentList.segs[0].end);
@@ -228,11 +235,11 @@ XLALOldDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< inpu
   config.multidPhi = getMultiPhaseDerivs ( config.multiDetStates, &(config.dopplerPoint), config.phaseType );
   XLAL_CHECK_NULL ( config.multidPhi != NULL, XLAL_EFUNC, "getMultiPhaseDerivs() failed.\n" );
 
-  if ( (metricType == METRIC_TYPE_FSTAT) || (metricType == METRIC_TYPE_ALL) )
+  if ( (metricType == OLDMETRIC_TYPE_FSTAT) || (metricType == OLDMETRIC_TYPE_ALL) )
     {
       XLAL_CHECK_NULL ( computeFstatMetric ( metric->gF_ij, metric->gFav_ij, metric->m1_ij, metric->m2_ij, metric->m3_ij, &config ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
-  if ( (metricType == METRIC_TYPE_PHASE) || (metricType == METRIC_TYPE_ALL) )
+  if ( (metricType == OLDMETRIC_TYPE_PHASE) || (metricType == OLDMETRIC_TYPE_ALL) )
     {
       if ( metricParams->detMotionType == (DETMOTION_SPINXY | DETMOTION_ORBIT) )
         {

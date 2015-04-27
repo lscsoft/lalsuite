@@ -61,18 +61,17 @@ int main( void )
     par.signalParams.Doppler.refTime = startTime;
     par.signalParams.Doppler.fkdot[0] = 100;
     par.projectCoord = -1;
-    par.metricType = METRIC_TYPE_PHASE;
     par.approxPhase = 1;
     par.nonposEigValThresh = 1;
 
     // Compute phase metric
-    DopplerMetric *metric = XLALDopplerFstatMetric( &par, edat );
+    DopplerPhaseMetric *metric = XLALComputeDopplerPhaseMetric( &par, edat );
     XLAL_CHECK_MAIN( metric != NULL, XLAL_EFUNC );
     g_ij = metric->g_ij;
     metric->g_ij = NULL;
 
     // Cleanup
-    XLALDestroyDopplerMetric( metric );
+    XLALDestroyDopplerPhaseMetric( metric );
     XLALSegListClear( &par.segmentList );
     XLALDestroyEphemerisData( edat );
   }
