@@ -421,9 +421,15 @@ while gpsstart < gpsstop:
                     ovlsegs = sciseg_path
 
             ### build auxmvc_vectors by hand!
+            ### get sciseg info
+            if not opts.ignore_science_segments:
+                (scisegs, coveredseg) = idq.extract_dq_segments(seg_file, dq_name)
+            else:
+                scisegs = None
+
             ### get triggers
             logger.info('looking for triggers')
-            trigger_dict = idq.retrieve_kwtrigs(GWgdsdir, GWkwbasename, gpsstart-lookback, lookback+stride, GWkwstride, sleep=0, ntrials=1, logger=logger) ### go find GW kwtrgs
+            trigger_dict = idq.retrieve_kwtrigs(GWgdsdir, GWkwbasename, gpsstart-lookback, lookback+stride, GWkwstride, sleep=0, ntrials=1, logger=logger, segments=scisegs) ### go find GW kwtrgs
             if gwchannel not in trigger_dict:
                 trigger_dict[gwchannel] = []
 
@@ -434,7 +440,7 @@ while gpsstart < gpsstop:
 
             if not identical_trgfile: ### add AUX triggers
                 logger.info('looking for additional AUX triggers')
-                aux_trgdict = idq.retrieve_kwtrigs(AUXgdsdir, AUXkwbasename, gpsstart-lookback-padding, lookback+stride+padding, AUXkwstride, sleep=0, ntrials=1, logger=logger) ### find AUX kwtrgs
+                aux_trgdict = idq.retrieve_kwtrigs(AUXgdsdir, AUXkwbasename, gpsstart-lookback-padding, lookback+stride+padding, AUXkwstride, sleep=0, ntrials=1, logger=logger, segments=scisegs) ### find AUX kwtrgs
                 if aux_trgdict == None:
                     logger.warning('  no auxiliary triggers were found')
                     ### we do not skip, although we might want to?
@@ -449,7 +455,10 @@ while gpsstart < gpsstop:
             logger.info('  constructing cleans')
             dirtyseg = event.vetosegs(trigger_dict[gwchannel], clean_window, clean_threshold)
 
-            clean_gps = sorted(event.randomrate(clean_rate, [[gpsstart-lookback, gpsstart + stride]])) ### generate random clean times as a poisson time series
+            if not opts.ignore_science_segments:
+                clean_gps = sorted(event.randomrate(clean_rate, scisegs)) ### generate random clean times as a poisson time series within scisegs
+            else:
+                clean_gps = sorted(event.randomrate(clean_rate, [[gpsstart-lookback, gpsstart + stride]])) ### generate random clean times as a poisson time series within analysis range
             clean_gps = [ l[0] for l in event.exclude( [[gps] for gps in clean_gps], dirtyseg, tcent=0)] ### keep only those gps times that are outside of dirtyseg
 
             ### keep only the most relevant cleans
@@ -459,8 +468,7 @@ while gpsstart < gpsstop:
             ### keep only times that are within science time
             if not opts.ignore_science_segments:
                 logger.info('  filtering trigger_dict through scisegs')
-                (scisegs, coveredseg) = idq.extract_dq_segments(seg_file, dq_name)
-                trigger_dict.include(scisegs)
+                trigger_dict.include(scisegs) ### already loaded into memory above here
 
             ### build vectors, also writes them into pat
             logger.info('  writting %s'%pat)

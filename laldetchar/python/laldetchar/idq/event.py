@@ -1210,6 +1210,9 @@ def randomtimes(ntimes, segments):
 # random (poisson) times corresponding to a particular rate
 
 def randomrate(rate, segments):
+    if not livetime(segments): ### no time in which to place events
+        return []
+
     import random
     randomtimes = []
     if isinstance(segments[0], (int, long, float)):

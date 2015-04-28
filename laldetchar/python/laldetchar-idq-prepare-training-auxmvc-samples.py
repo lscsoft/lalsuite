@@ -79,8 +79,28 @@ gps_start_time = int(opts.gps_start_time)
 gps_end_time = int(opts.gps_end_time)
 
 # get all *.pat files in the specififed range
-patfiles = idq.get_all_files_in_range(opts.source_directory,
-        gps_start_time, gps_end_time, suffix='.pat')
+patfiles = idq.get_all_files_in_range(opts.source_directory, gps_start_time, gps_end_time, suffix='.pat')
+
+if opts.verbose:
+    print "found %d pat files"%len(patfiles)
+
+if opts.dq_segments:
+    # load dq segments
+    if opts.verbose:
+        print "reading segments from %s"%opts.dq_segments
+
+    (dq_segments, covered_segments) = \
+        idq.extract_dq_segments(open(opts.dq_segments, 'r'),
+                                opts.dq_segments_name)
+
+    # sort and merge segments
+    dq_segments = event.fixsegments(dq_segments)
+
+    ### filter patfiles by scisegs, keep only those events with non-zero overlap with science time
+    patfiles = [ pat for pat in patfiles if event.livetime(event.andsegments([dq_segments, [idq.extract_start_stop(pat, suffix=".pat")]])) ]
+
+    if opts.verbose:
+        print "%d patfiles remain after taking overlap with segments"%len(patfiles)
 
 if len(patfiles) == 0:
     print 'No *.pat files found in the gps range ' \
@@ -89,40 +109,32 @@ if len(patfiles) == 0:
     sys.exit(2)
 
 # load auxmvc vector samples
-auxmvc_samples = auxmvc_utils.ReadMVSCTriggers(patfiles,
-        Classified=False)
+auxmvc_samples = auxmvc_utils.ReadMVSCTriggers(patfiles, Classified=False)
 
 if opts.dq_segments:
-
-    # load dq segments
-    (dq_segments, covered_segments) = \
-        idq.extract_dq_segments(open(opts.dq_segments, 'r'),
-                                opts.dq_segments_name)
-
-    # sort and merge segments
-    dq_segments = event.fixsegments(dq_segments)
-
     # keep only samples that fall in the dq_segments
     auxmvc_samples = \
         auxmvc_utils.get_samples_in_segments(auxmvc_samples,
             dq_segments)
 
 # get clean and glitch samples
-random_samples = auxmvc_samples[numpy.nonzero(auxmvc_samples['i']
-                                == 0)[0], :]
+random_samples = auxmvc_samples[numpy.nonzero(auxmvc_samples['i'] == 0)[0], :]
 clean_samples = auxmvc_utils.get_clean_samples(random_samples)
 
 # apply upper limit on the number of clean samples if given
 if opts.max_clean_samples:
     if len(clean_samples) > opts.max_clean_samples:
+        if opts.verbose:
+            print "too many cleans. Downsampling to most recent %d samples"%opts.max_clean_samples
         clean_samples = clean_samples[-opts.max_clean_samples:]
 
-glitch_samples = auxmvc_samples[numpy.nonzero(auxmvc_samples['i']
-                                == 1)[0], :]
+glitch_samples = auxmvc_samples[numpy.nonzero(auxmvc_samples['i']  == 1)[0], :]
 
 # apply upper limit on the number of glitch samples if given
 if opts.max_glitch_samples:
     if len(glitch_samples) > opts.max_glitch_samples:
+        if opts.verbose:
+            print "too many glitches. Downsampling to most recent %d samples"%opts.max_glitch_samples
         glitch_samples = glitch_samples[-opts.max_glitch_samples:]
 
 if opts.verbose:

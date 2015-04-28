@@ -1437,14 +1437,15 @@ def retrieve_kwtrig(gdsdir, kwbasename, t, stride, sleep=0, ntrials=1, logger=No
 
     return event.loadkwm(kwfilename)
 
-def retrieve_kwtrigs(gdsdir, kwbasename, t, stride, kwstride, sleep=0, ntrials=1, logger=None):
+def retrieve_kwtrigs(gdsdir, kwbasename, t, stride, kwstride, sleep=0, ntrials=1, logger=None, segments=None):
     t_start = (t / kwstride) * kwstride
 
     trgdicts = []
     while t_start < t+stride:
-        trigger_dict = retrieve_kwtrig(gdsdir, kwbasename, t_start, kwstride, sleep=sleep, ntrials=ntrials, logger=logger)
-        if trigger_dict:
-            trgdicts.append( trigger_dict )
+        if (segments==None) or (event.livetime(event.andsegments([[t_start, t_start+kwstride], segments]))): ### only keep if we've got some overlap
+            trigger_dict = retrieve_kwtrig(gdsdir, kwbasename, t_start, kwstride, sleep=sleep, ntrials=ntrials, logger=logger)
+            if trigger_dict:
+                trgdicts.append( trigger_dict )
         t_start += kwstride
 
     if trgdicts:
@@ -1453,7 +1454,8 @@ def retrieve_kwtrigs(gdsdir, kwbasename, t, stride, kwstride, sleep=0, ntrials=1
             trigger_dict.add( td )
         return trigger_dict
     else:
-        return None
+        return event.trigdict()
+#        return None
     
 
 #=================================================
