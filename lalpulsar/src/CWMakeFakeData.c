@@ -105,6 +105,17 @@ XLALCWMakeFakeMultiData ( MultiSFTVector **multiSFTs,			///< [out] pointer to op
       outMTS->length = numDet;
     } // if multiTseries
 
+  /* if no user-specified seed available,
+   * use system clock to get seed
+   * if we would leave it as NULL here and only set it from time() later in XLALCreateRandomParams(),
+   * all IFOs with X > 0 would always have a constant noise realization!
+   */
+  INT4 seed = dataParams->randSeed;
+  while ( seed == 0 ) {
+    REAL8 currenttime = XLALGetCPUTime();
+    seed = round(1e9*(currenttime-floor(currenttime))); // use fractional part only of XLALGetCPUTime() result, because seed must be an INT4 and overflows otherwise
+  }
+
   for ( UINT4 X=0; X < numDet; X ++ )
     {
       /* detector params */
@@ -117,7 +128,10 @@ XLALCWMakeFakeMultiData ( MultiSFTVector **multiSFTs,			///< [out] pointer to op
       mTimestamps.length = 1;
       mTimestamps.data = &(multiTimestamps->data[X]); // such that pointer mTimestamps.data[0] = multiTimestamps->data[X]
       dataParamsX.multiTimestamps = mTimestamps;
-      dataParamsX.randSeed = dataParams->randSeed + X;	// increase seed in deterministic way: allows comparison w mfd_v4 !!
+      /* increase seed in deterministic way: allows comparison w mfd_v4 !!
+       * this should be safe as long as the seed is 'randomized' e.g. by calling time()
+       */
+      dataParamsX.randSeed = seed + X;
 
       SFTVector **svp = NULL;
       REAL4TimeSeries **tsp = NULL;
