@@ -517,7 +517,7 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALregBOOLUserStruct (  version,             'V', UVAR_SPECIAL, "Output version information");
 
   /* ----- 'expert-user/developer' options ----- */
-  XLALregINTUserStruct (   randSeed,             0, UVAR_DEVELOPER, "Specify random-number seed for reproducible noise (use /dev/urandom otherwise).");
+  XLALregINTUserStruct (   randSeed,             0, UVAR_DEVELOPER, "Specify random-number seed for reproducible noise (use system time otherwise).");
 
   /* read cmdline & cfgfile  */
   ret = XLALUserVarReadAllInput ( argc, argv );
