@@ -14,6 +14,7 @@ pymodule_PYTHON = \
     mcsampler.py \
     statutils.py \
     xmlutils.py \
+    amrlib.py \
     common_cl.py \
     dagutils.py \
     effectiveFisher.py \
