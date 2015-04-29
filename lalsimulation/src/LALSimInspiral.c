@@ -3790,8 +3790,9 @@ SphHarmTimeSeries *XLALSimInspiralModesTD(REAL8 phiRef, REAL8 deltaT, REAL8 m1, 
     const double extra_time_fraction = 0.1; /* fraction of waveform duration to add as extra time for tapering */
     const double extra_cycles = 3.0; /* more extra time measured in cycles at the starting frequency */
     double original_f_min = f_min; /* f_min might be overwritten below, so keep original value */
-    double tchirp, tmerge, textra;
+    //double tchirp, tmerge, textra;
     //double fisco, fstart;
+    double tchirp, textra;
     double fisco;
     double s;
     size_t length, nzeros, ntaper;
@@ -3811,7 +3812,7 @@ SphHarmTimeSeries *XLALSimInspiralModesTD(REAL8 phiRef, REAL8 deltaT, REAL8 m1, 
     s = XLALSimInspiralFinalBlackHoleSpinBound(0.0, 0.0);
 
     /* upper bound on the final plunge, merger, and ringdown time */
-    tmerge = XLALSimInspiralMergeTimeBound(m1, m2) + XLALSimInspiralRingdownTimeBound(m1 + m2, s);
+    //tmerge = XLALSimInspiralMergeTimeBound(m1, m2) + XLALSimInspiralRingdownTimeBound(m1 + m2, s);
 
     /* extra time to include for all waveforms to take care of situations
      * where the frequency is close to merger (and is sweeping rapidly):
