@@ -3791,7 +3791,8 @@ SphHarmTimeSeries *XLALSimInspiralModesTD(REAL8 phiRef, REAL8 deltaT, REAL8 m1, 
     const double extra_cycles = 3.0; /* more extra time measured in cycles at the starting frequency */
     double original_f_min = f_min; /* f_min might be overwritten below, so keep original value */
     double tchirp, tmerge, textra;
-    double fisco, fstart;
+    //double fisco, fstart;
+    double fisco;
     double s;
     size_t length, nzeros, ntaper;
     size_t j;
@@ -3820,7 +3821,7 @@ SphHarmTimeSeries *XLALSimInspiralModesTD(REAL8 phiRef, REAL8 deltaT, REAL8 m1, 
     /* condition by generating a waveform with a lower starting frequency and
      * apply tapers in the region between that lower frequency and the
      * requested frequency f_min; here compute a new lower frequency */
-    fstart = XLALSimInspiralChirpStartFrequencyBound((1.0 + extra_time_fraction) * tchirp + tmerge + textra, m1, m2);
+    // fstart = XLALSimInspiralChirpStartFrequencyBound((1.0 + extra_time_fraction) * tchirp + tmerge + textra, m1, m2);
 
     modes = XLALSimInspiralChooseTDModes(phiRef, deltaT, m1, m2, f_min, f_ref, r, lambda1, lambda2, waveFlags, nonGRparams, amplitudeO, phaseO, lmax, approximant);
     if (!modes)
