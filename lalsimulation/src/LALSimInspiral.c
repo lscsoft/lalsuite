@@ -3794,7 +3794,7 @@ SphHarmTimeSeries *XLALSimInspiralModesTD(REAL8 phiRef, REAL8 deltaT, REAL8 m1, 
     //double fisco, fstart;
     double tchirp, textra;
     double fisco;
-    double s;
+    //double s;
     size_t length, nzeros, ntaper;
     size_t j;
     SphHarmTimeSeries *modes, *hlm;
@@ -3809,7 +3809,7 @@ SphHarmTimeSeries *XLALSimInspiralModesTD(REAL8 phiRef, REAL8 deltaT, REAL8 m1, 
     tchirp = XLALSimInspiralChirpTimeBound(f_min, m1, m2, 0.0, 0.0);
 
     /* upper bound on the final black hole spin */
-    s = XLALSimInspiralFinalBlackHoleSpinBound(0.0, 0.0);
+    //s = XLALSimInspiralFinalBlackHoleSpinBound(0.0, 0.0);
 
     /* upper bound on the final plunge, merger, and ringdown time */
     //tmerge = XLALSimInspiralMergeTimeBound(m1, m2) + XLALSimInspiralRingdownTimeBound(m1 + m2, s);
