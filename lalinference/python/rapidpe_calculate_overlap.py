@@ -16,29 +16,6 @@ lsctables.use_in(ligolw.LIGOLWContentHandler)
 from pylal.series import read_psd_xmldoc, LIGOLWContentHandler
 
 # Adapted from similar code in gstlal.cbc_template_fir
-def generate_waveform_from_tmplt_old(tmplt, approximant, delta_f=0.125, sample_rate=16384, f_low=40, amporder=-1, phaseorder=7):
-    hfp, hfx = lalsimulation.SimInspiralChooseFDWaveform(
-        0., # phase
-        delta_f,
-        lal.MSUN_SI * tmplt.mass1, lal.MSUN_SI * tmplt.mass2,
-        tmplt.spin1x, tmplt.spin1y, tmplt.spin1z,
-        tmplt.spin2x, tmplt.spin2y, tmplt.spin2z,
-        f_low,
-        2048.0, #FIXME
-        0, #FIXME chosen until suitable default value for f_ref is defined
-        1.e6 * lal.PC_SI, # distance
-        0, # inclination
-        0., # tidal deformability lambda 1
-        0., # tidal deformability lambda 2
-        None, # waveform flags
-        None, # Non GR params
-        amporder, phaseorder,
-        lalsimulation.GetApproximantFromString(str(approximant))
-    )
-    hfp.data.data += 1j*hfx.data.data
-    return hfp
-
-# FIXME: Check for discrepancies between this and the old waveform generator
 def generate_waveform_from_tmplt(tmplt, approximant, delta_f=0.125, f_low=40, amporder=-1, phaseorder=7):
 
     params = lalsimutils.ChooseWaveformParams(
