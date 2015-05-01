@@ -628,6 +628,45 @@ int XLALSimIMRPhenSpinInspiralRDGenerator(
     LALSimInspiralTestGRParam *testGRparam  /**< Choice of axis for input spin params */
 					  );
 
+/**
+ * Compute the template-space metric of the IMRPhenomB templates in
+ * M-eta-chi parameter space.
+ * Ref. http://xxx.lanl.gov/abs/1501.04418
+ */
+int XLALSimIMRPhenomBMetricInMEtaChi(
+    REAL8 *gamma00,  /**< template metric coeff. 00 in PN Chirp Time */
+    REAL8 *gamma01,  /**< template metric coeff. 01/10 PN Chirp Time */
+    REAL8 *gamma02,  /**< template metric coeff. 01/10 PN Chirp Time */
+    REAL8 *gamma11,  /**< template metric coeff. 11 in PN Chirp Time */
+    REAL8 *gamma12,  /**< template metric coeff. 01/10 PN Chirp Time */
+    REAL8 *gamma22,  /**< template metric coeff. 01/10 PN Chirp Time */
+    const REAL8 m1,     /**< component mass 1 (kg) */
+    const REAL8 m2,     /**< component mass 2 (kg) */
+    const REAL8 chi,    /**< effective spin parameter of IMRPhenomB: chi = (m1 chi1 + m2 chi2)/(m1+m2)  */
+    const REAL8 fLow,   /**< low-frequency cutoff (Hz) */
+    const REAL8FrequencySeries *Sh
+);
+
+/**
+ * Compute the template-space metric of the IMRPhenomB templates in
+ * the modified chirp time parameter space.
+ * Ref. http://xxx.lanl.gov/abs/1501.04418
+ */
+int XLALSimIMRPhenomBMetricInTheta0Theta3Theta3S(
+    REAL8 *gamma00,  /**< template metric coeff. 00 in PN Chirp Time */
+    REAL8 *gamma01,  /**< template metric coeff. 01/10 PN Chirp Time */
+    REAL8 *gamma02,  /**< template metric coeff. 01/10 PN Chirp Time */
+    REAL8 *gamma11,  /**< template metric coeff. 11 in PN Chirp Time */
+    REAL8 *gamma12,  /**< template metric coeff. 01/10 PN Chirp Time */
+    REAL8 *gamma22,  /**< template metric coeff. 01/10 PN Chirp Time */
+    const REAL8 m1,     /**< component mass 1 (kg) */
+    const REAL8 m2,     /**< component mass 2 (kg) */
+    const REAL8 chi,    /**< effective spin parameter of IMRPhenomB: chi = (m1 chi1 + m2 chi2)/(m1+m2)  */
+    const REAL8 fLow,   /**< low-frequency cutoff (Hz) */
+    const REAL8FrequencySeries *Sh  /**< PSD in strain per root Hertz */
+);
+
+
 #if 0
 { /* so that editors will match succeeding brace */
 #elif defined(__cplusplus)
