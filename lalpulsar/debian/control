@@ -3,7 +3,7 @@ Section: lscsoft
 Priority: optional
 Maintainer: Adam Mercer <adam.mercer@ligo.org>
 Build-Depends: debhelper (>= 7), pkg-config, python-all-dev,
-  libgsl0-dev (>= 1.9), swig (>=2.0.11~), octave3.2-headers,
+  libgsl0-dev (>= 1.9), libfftw3-dev, swig (>=2.0.11~), octave3.2-headers,
   python-numpy (>= 1.3), lal-dev (>= 6.13.4~), lal-python (>= 6.13.4~),
   lal-octave (>= 6.13.4~), lalxml-dev (>= 1.1.15~), lalxml-python (>= 1.1.15~),
   lalxml-octave (> 1.1.15~)
@@ -13,7 +13,7 @@ Standards-Version: 3.8.6
 Package: lalpulsar
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
-  libgsl0 (>= 1.9) | libgsl0ldbl (>= 1.10), lal (>= 6.13.4~),
+  libgsl0 (>= 1.9) | libgsl0ldbl (>= 1.10), fftw, lal (>= 6.13.4~),
   lalxml (>= 1.1.15~)
 Description: LSC Algorithm Library Pulsar
  The LSC Algorithm Pulsar Library for gravitational wave data analysis.
@@ -23,7 +23,7 @@ Description: LSC Algorithm Library Pulsar
 Package: lalpulsar-dev
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, libgsl0-dev (>= 1.9),
-  lal-dev (>= 6.13.4~), lalxml-dev (>= 1.1.15~),
+  libfftw3-dev, lal-dev (>= 6.13.4~), lalxml-dev (>= 1.1.15~),
   lalpulsar (= ${binary:Version})
 Description: LSC Algorithm Library Pulsar Developers
  The LSC Algorithm Pulsar Library for gravitational wave data analysis.
