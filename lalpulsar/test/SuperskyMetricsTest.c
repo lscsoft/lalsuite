@@ -162,7 +162,7 @@ int main( void )
         }
       }
     }
-    const double err_tol = 5e-9;
+    const double err_tol = 1e-6;
     XLAL_CHECK_MAIN( max_err <= err_tol, XLAL_ETOL, "'rssky_transf' check failed: max(err) = %0.3e > %0.3e = err_tol", max_err, err_tol );
   }
 
