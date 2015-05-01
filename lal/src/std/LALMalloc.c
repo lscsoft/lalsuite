@@ -127,7 +127,7 @@ int XLALIsMemoryAligned(void *ptr)
 
 void *XLALMallocAlignedLong(size_t size, const char *file, int line)
 {
-	void *p;
+	void *p=NULL;
 	int retval;
 	retval = posix_memalign(&p, LAL_MEM_ALIGNMENT, size);
 	XLAL_TEST_POINTER_ALIGNED_LONG(p, size, retval, file, line);
@@ -136,7 +136,7 @@ void *XLALMallocAlignedLong(size_t size, const char *file, int line)
 
 void *(XLALMallocAligned)(size_t size)
 {
-	void *p;
+	void *p=NULL;
 	int retval;
 	retval = posix_memalign(&p, LAL_MEM_ALIGNMENT, size);
 	XLAL_TEST_POINTER_ALIGNED(p, size, retval);
