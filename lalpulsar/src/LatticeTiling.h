@@ -74,14 +74,6 @@ typedef double( *LatticeTilingBound )(
   );
 
 ///
-/// Compute the extent of the bounding box of the mismatch ellipse of a metric.
-///
-gsl_vector *XLALMetricEllipseBoundingBox(
-  const gsl_matrix *metric,		///< [in] Parameter-space metric
-  const double max_mismatch		///< [in] Maximum prescribed mismatch
-  );
-
-///
 /// Create a new lattice tiling.
 ///
 LatticeTiling *XLALCreateLatticeTiling(

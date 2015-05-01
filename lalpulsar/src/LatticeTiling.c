@@ -26,6 +26,7 @@
 
 #include <lal/LatticeTiling.h>
 #include <lal/LALStdio.h>
+#include <lal/MetricUtils.h>
 
 #include "GSLHelpers.h"
 
@@ -548,54 +549,6 @@ static void LT_PrintIndexTrie(
 
 }
 
-gsl_vector *XLALMetricEllipseBoundingBox(
-  const gsl_matrix *metric,
-  const double max_mismatch
-  )
-{
-
-  // Check input
-  XLAL_CHECK_NULL( metric != NULL, XLAL_EFAULT );
-  XLAL_CHECK_NULL( metric->size1 == metric->size2, XLAL_ESIZE );
-
-  const size_t n = metric->size1;
-
-  // Allocate memory
-  gsl_matrix *GAMAT_NULL( LU_decomp, n, n );
-  gsl_permutation *GAPERM_NULL( LU_perm, n );
-  gsl_matrix *GAMAT_NULL( inverse, n, n );
-  gsl_vector *GAVEC_NULL( bounding_box, n );
-
-  // Copy metric, and ensure it is diagonally normalised
-  for( size_t i = 0; i < n; ++i ) {
-    const double norm_i = gsl_matrix_get( metric, i, i );
-    for( size_t j = 0; j < n; ++j ) {
-      const double norm_j = gsl_matrix_get( metric, j, j );
-      const double metric_i_j = gsl_matrix_get( metric, i, j );
-      gsl_matrix_set( LU_decomp, i, j, metric_i_j / sqrt( norm_i * norm_j ) );
-    }
-  }
-
-  // Compute metric inverse
-  int LU_sign = 0;
-  GCALL_NULL( gsl_linalg_LU_decomp( LU_decomp, LU_perm, &LU_sign ), "'metric' cannot be LU-decomposed" );
-  GCALL_NULL( gsl_linalg_LU_invert( LU_decomp, LU_perm, inverse ), "'metric' cannot be inverted" );
-
-  // Compute bounding box, and reverse diagonal scaling
-  for( size_t i = 0; i < n; ++i ) {
-    const double norm_i = gsl_matrix_get( metric, i, i );
-    const double bounding_box_i = 2.0 * sqrt( max_mismatch * gsl_matrix_get( inverse, i, i ) / norm_i );
-    gsl_vector_set( bounding_box, i, bounding_box_i );
-  }
-
-  // Cleanup
-  GFMAT( LU_decomp, inverse );
-  GFPERM( LU_perm );
-
-  return bounding_box;
-
-}
-
 LatticeTiling *XLALCreateLatticeTiling(
   const size_t ndim
   )
@@ -930,7 +883,8 @@ int XLALSetTilingLatticeAndMetric(
     GCALL( gsl_linalg_LU_decomp( LU_decomp, LU_perm, &LU_sign ), "Generator matrix cannot be LU-decomposed" );
 
     // Compute generator determinant
-    const double generator_determinant = gsl_linalg_LU_det( LU_decomp, LU_sign );
+    const double generator_determinant = XLALMetricDeterminant( tiling->tiled_generator );
+    XLAL_CHECK( !XLAL_IS_REAL8_FAIL_NAN(generator_determinant), XLAL_EFUNC );
 
     // Compute generator covering radius
     const double generator_covering_radius = pow( norm_thickness * generator_determinant, 1.0 / tn );

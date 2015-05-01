@@ -71,6 +71,7 @@ test/LALPulsarXMLTest
 test/LFTandTSutilsTest
 test/LatticeTilingTest
 test/LineRobustStatsTest
+test/MetricUtilsTest
 test/NDConstructPLUTTest
 test/NDHoughMapTest
 test/NDPeak2PHMDTest

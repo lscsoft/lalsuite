@@ -29,6 +29,7 @@
 
 #include <lal/PtoleMetric.h>
 #include <lal/UniversalDopplerMetric.h>
+#include <lal/MetricUtils.h>
 
 /**
  * \author Reinhard Prix
@@ -57,7 +58,6 @@
 static int test_XLALComputeOrbitalDerivatives ( void );
 static int test_XLALDopplerFstatMetric ( void );
 
-static REAL8 compare_metrics ( const gsl_matrix *m1, const gsl_matrix *m2 );
 static gsl_matrix *convert_old_metric_2_new ( const REAL8Vector *m0, REAL8 Freq );
 
 DopplerMetric *XLALOldDopplerFstatMetric ( const DopplerMetricParams *metricParams, const EphemerisData *edat );
@@ -198,9 +198,9 @@ test_XLALDopplerFstatMetric ( void )
   XLAL_CHECK ( (metric2 = XLALDopplerFstatMetric ( &pars2, edat )) != NULL, XLAL_EFUNC );
 
   // compare all 3 metrics against each other:
-  XLAL_CHECK ( (diff_2_0 = compare_metrics ( metric2->g_ij, g0_ij )) < tolPh, XLAL_ETOL, "Error(g2,g0)= %g exceeds tolerance of %g\n", diff_2_0, tolPh );
-  XLAL_CHECK ( (diff_2_1 = compare_metrics ( metric2->g_ij, metric1->g_ij )) < tolPh, XLAL_ETOL, "Error(g2,g1)= %g exceeds tolerance of %g\n", diff_2_1, tolPh );
-  XLAL_CHECK ( (diff_1_0 = compare_metrics ( metric1->g_ij, g0_ij )) < tolPh, XLAL_ETOL, "Error(g1,g0)= %g exceeds tolerance of %g\n", diff_1_0, tolPh );
+  XLAL_CHECK ( (diff_2_0 = XLALCompareMetrics ( metric2->g_ij, g0_ij )) < tolPh, XLAL_ETOL, "Error(g2,g0)= %g exceeds tolerance of %g\n", diff_2_0, tolPh );
+  XLAL_CHECK ( (diff_2_1 = XLALCompareMetrics ( metric2->g_ij, metric1->g_ij )) < tolPh, XLAL_ETOL, "Error(g2,g1)= %g exceeds tolerance of %g\n", diff_2_1, tolPh );
+  XLAL_CHECK ( (diff_1_0 = XLALCompareMetrics ( metric1->g_ij, g0_ij )) < tolPh, XLAL_ETOL, "Error(g1,g0)= %g exceeds tolerance of %g\n", diff_1_0, tolPh );
 
   gsl_matrix_free ( g0_ij );
   XLALDestroyDopplerMetric ( metric1 );
@@ -227,9 +227,9 @@ test_XLALDopplerFstatMetric ( void )
   XLAL_CHECK ( (metric2 = XLALDopplerFstatMetric ( &pars2, edat )) != NULL, XLAL_EFUNC );
 
   // compare all 3 metrics against each other:
-  XLAL_CHECK ( (diff_2_0 = compare_metrics ( metric2->g_ij, g0_ij )) < tolPh, XLAL_ETOL, "Error(g2,g0)= %e exceeds tolerance of %e\n", diff_2_0, tolPh );
-  XLAL_CHECK ( (diff_2_1 = compare_metrics ( metric2->g_ij, metric1->g_ij )) < tolPh, XLAL_ETOL, "Error(g2,g1)= %e exceeds tolerance of %e\n", diff_2_1, tolPh );
-  XLAL_CHECK ( (diff_1_0 = compare_metrics ( metric1->g_ij, g0_ij )) < tolPh, XLAL_ETOL, "Error(g1,g0)= %e exceeds tolerance of %e\n", diff_1_0, tolPh );
+  XLAL_CHECK ( (diff_2_0 = XLALCompareMetrics ( metric2->g_ij, g0_ij )) < tolPh, XLAL_ETOL, "Error(g2,g0)= %e exceeds tolerance of %e\n", diff_2_0, tolPh );
+  XLAL_CHECK ( (diff_2_1 = XLALCompareMetrics ( metric2->g_ij, metric1->g_ij )) < tolPh, XLAL_ETOL, "Error(g2,g1)= %e exceeds tolerance of %e\n", diff_2_1, tolPh );
+  XLAL_CHECK ( (diff_1_0 = XLALCompareMetrics ( metric1->g_ij, g0_ij )) < tolPh, XLAL_ETOL, "Error(g1,g0)= %e exceeds tolerance of %e\n", diff_1_0, tolPh );
 
   gsl_matrix_free ( g0_ij );
   XLALDestroyDopplerMetric ( metric1 );
@@ -253,9 +253,9 @@ test_XLALDopplerFstatMetric ( void )
   XLAL_CHECK ( (metric2 = XLALDopplerFstatMetric ( &pars2, edat )) != NULL, XLAL_EFUNC );
 
   // compare both metrics against each other:
-  XLAL_CHECK ( (diff_2_1 = compare_metrics ( metric2->gF_ij,   metric1->gF_ij ))   < tolPh, XLAL_ETOL, "Error(gF2,gF1)= %e exceeds tolerance of %e\n", diff_2_1, tolPh );
+  XLAL_CHECK ( (diff_2_1 = XLALCompareMetrics ( metric2->gF_ij,   metric1->gF_ij ))   < tolPh, XLAL_ETOL, "Error(gF2,gF1)= %e exceeds tolerance of %e\n", diff_2_1, tolPh );
   XLALPrintWarning ("gF:   diff_2_1 = %e\n", diff_2_1 );
-  XLAL_CHECK ( (diff_2_1 = compare_metrics ( metric2->gFav_ij, metric1->gFav_ij )) < tolPh, XLAL_ETOL, "Error(gFav2,gFav1)= %e exceeds tolerance of %e\n", diff_2_1, tolPh );
+  XLAL_CHECK ( (diff_2_1 = XLALCompareMetrics ( metric2->gFav_ij, metric1->gFav_ij )) < tolPh, XLAL_ETOL, "Error(gFav2,gFav1)= %e exceeds tolerance of %e\n", diff_2_1, tolPh );
   XLALPrintWarning ("gFav: diff_2_1 = %e\n", diff_2_1 );
 
   XLALDestroyDopplerMetric ( metric1 );
@@ -276,7 +276,8 @@ test_XLALDopplerFstatMetric ( void )
   // a) compute metric at refTime = startTime
   pars2.signalParams.Doppler.refTime = startTimeGPS;
   XLAL_CHECK ( (metric2 = XLALDopplerFstatMetric ( &pars2, edat )) != NULL, XLAL_EFUNC );
-  XLAL_CHECK ( (gN_ij = XLALNaturalizeMetric ( metric2->g_ij, &pars2 )) != NULL, XLAL_EFUNC );
+  gN_ij = NULL;
+  XLAL_CHECK ( XLALNaturalizeMetric ( &gN_ij, NULL, metric2->g_ij, &pars2 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   REAL8 gStart_ij[] = {   1.0/3,      2.0/3,    6.0/5,    32.0/15,      \
                           2.0/3,    64.0/45,    8.0/3,  512.0/105,      \
@@ -285,7 +286,7 @@ test_XLALDopplerFstatMetric ( void )
   const gsl_matrix_view gStart = gsl_matrix_view_array ( gStart_ij, 4, 4 );
 
   // compare natural-units metric against analytic solution
-  XLAL_CHECK ( (diff_2_1 = compare_metrics ( gN_ij,   &(gStart.matrix) )) < tolPh, XLAL_ETOL,
+  XLAL_CHECK ( (diff_2_1 = XLALCompareMetrics ( gN_ij,   &(gStart.matrix) )) < tolPh, XLAL_ETOL,
                "RefTime=StartTime: Error(g_ij,g_analytic)= %e exceeds tolerance of %e\n", diff_2_1, tolPh );
   XLALPrintWarning ("Analytic (refTime=startTime): diff_2_1 = %e\n", diff_2_1 );
 
@@ -298,7 +299,8 @@ test_XLALDopplerFstatMetric ( void )
   pars2.signalParams.Doppler.refTime.gpsSeconds += duration / 2;
 
   XLAL_CHECK ( (metric2 = XLALDopplerFstatMetric ( &pars2, edat )) != NULL, XLAL_EFUNC );
-  XLAL_CHECK ( (gN_ij = XLALNaturalizeMetric ( metric2->g_ij, &pars2 )) != NULL, XLAL_EFUNC );
+  gN_ij = NULL;
+  XLAL_CHECK ( XLALNaturalizeMetric ( &gN_ij, NULL, metric2->g_ij, &pars2 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   REAL8 gMid_ij[] = { 1.0/3,    0,        1.0/5,         0,       \
                       0,        4.0/45,       0,   8.0/105,       \
@@ -307,7 +309,7 @@ test_XLALDopplerFstatMetric ( void )
   const gsl_matrix_view gMid = gsl_matrix_view_array ( gMid_ij, 4, 4 );
 
   // compare natural-units metric against analytic solution
-  XLAL_CHECK ( (diff_2_1 = compare_metrics ( gN_ij,   &(gMid.matrix) )) < tolPh, XLAL_ETOL,
+  XLAL_CHECK ( (diff_2_1 = XLALCompareMetrics ( gN_ij,   &(gMid.matrix) )) < tolPh, XLAL_ETOL,
                "RefTime=MidTime: Error(g_ij,g_analytic)= %e exceeds tolerance of %e\n", diff_2_1, tolPh );
   XLALPrintWarning ("Analytic (refTime=midTime):   diff_2_1 = %e\n\n", diff_2_1 );
 
@@ -357,48 +359,6 @@ convert_old_metric_2_new ( const REAL8Vector *m0, REAL8 Freq )
   return gij;
 
 } // convert_old_metric_2_new()
-
-
-// flexible comparison function for 2 metrics
-// returns maximal relative deviation, measured in terms of diagnal entries,
-// ie  dg_ij = (g1_ij - g2_ij) / sqrt( g_ii * g_jj )
-// this should always be well-defined, as we deal with positive-definite square matrices
-static REAL8
-compare_metrics ( const gsl_matrix *g1_ij, const gsl_matrix *g2_ij )
-{
-  XLAL_CHECK_REAL8 ( g1_ij, XLAL_EINVAL, "Invalid NULL input metric 'g1_ij'\n");
-  XLAL_CHECK_REAL8 ( g2_ij, XLAL_EINVAL, "Invalid NULL input metric 'g2_ij'\n");
-
-  UINT4 dim = g1_ij->size1;
-  XLAL_CHECK_REAL8 ( g1_ij->size1 == g1_ij->size2, XLAL_EDOM, "Input matrix 'g1_ij' is not square, got %zu x %zu\n", g1_ij->size1, g1_ij->size2 );
-  XLAL_CHECK_REAL8 ( g2_ij->size1 == g2_ij->size2, XLAL_EDOM, "Input matrix 'g2_ij' is not square, got %zu x %zu\n", g2_ij->size1, g2_ij->size2 );
-  XLAL_CHECK_REAL8 ( g1_ij->size1 == g2_ij->size1, XLAL_EDOM, "Input metrics have different sizes: g1_ij = %zu-dim, g2_ij = %zu-dim\n", g1_ij->size1, g2_ij->size1 );
-
-  //XLALfprintfGSLmatrix ( stderr, "%.15e", g1_ij );
-  //XLALfprintfGSLmatrix ( stderr, "%.15e", g2_ij );
-
-  REAL8 errmax = 0;
-  for ( UINT4 i = 0; i < dim; i ++ )
-    {
-      for ( UINT4 j = 0; j < dim; j ++ )
-        {
-          REAL8 norm = sqrt ( gsl_matrix_get ( g1_ij, i, i ) * gsl_matrix_get ( g1_ij, j, j ) );
-          REAL8 e1 = gsl_matrix_get ( g1_ij, i, j ) / norm;
-          REAL8 e2 = gsl_matrix_get ( g2_ij, i, j ) / norm;
-          REAL8 base;
-          if ( e2 == 0 )
-            base = 1;
-          else
-            base = e2;
-          REAL8 reldiff = fabs ( e1 - e2 ) / base;
-
-          errmax = fmax ( errmax, reldiff );
-        } // for j < dim
-    } // for i < dim
-
-  return errmax;
-
-} /* compare_metrics() */
 
 
 /**

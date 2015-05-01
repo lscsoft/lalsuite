@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012, 2014 Karl Wette
+ * Copyright (C) 2012--2015 Karl Wette
  * Copyright (C) 2008, 2009 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -36,9 +36,11 @@
 #include <lal/XLALGSL.h>
 #include <lal/Factorial.h>
 #include <lal/LogPrintf.h>
+#include <lal/MetricUtils.h>
 
 #include <lal/EstimateAmplitudeParams.h>
 #include <lal/UniversalDopplerMetric.h>
+#include <lal/MetricUtils.h>
 
 /**
  * \author Reinhard Prix, Karl Wette
@@ -963,8 +965,8 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
   LIGOTimeGPS *endTime   = &(metricParams->segmentList.segs[0].end);
   REAL8 Tspan = XLALGPSDiff( endTime, startTime );
 
-  const LIGOTimeGPS *refTime   = &(metricParams->signalParams.Doppler.refTime);
-
+  LIGOTimeGPS midTime = *startTime;
+  XLALGPSAdd( &midTime, 0.5 * Tspan );
 
   /* ---------- prepare output metric ---------- */
   if ( (g_ij = gsl_matrix_calloc ( dim, dim )) == NULL ) {
@@ -975,7 +977,7 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
   /* ---------- set up integration parameters ---------- */
   intparams.edat = edat;
   intparams.startTime = XLALGPSGetREAL8 ( startTime );
-  intparams.refTime   = XLALGPSGetREAL8 ( refTime );
+  intparams.refTime   = XLALGPSGetREAL8 ( &midTime );   /* always compute metric at midTime, transform to refTime later */
   intparams.Tspan     = Tspan;
   intparams.dopplerPoint = &(metricParams->signalParams.Doppler);
   intparams.detMotionType = metricParams->detMotionType;
@@ -1061,7 +1063,8 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
 
     /* diagonally normalise g_ij (for numerical stability), compute eigenvalues,
        then check there are less than nonposEigValThresh non-positive eigenvalues */
-    gsl_matrix* g_diagnorm_ij = XLALDiagNormalizeMetric(g_ij);
+    gsl_matrix* g_diagnorm_ij = NULL;
+    XLAL_CHECK_NULL( XLALDiagNormalizeMetric( &g_diagnorm_ij, NULL, g_ij ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK_NULL( g_diagnorm_ij != NULL, XLAL_EFUNC );
     XLAL_CHECK_NULL( gsl_eigen_symm(g_diagnorm_ij, eval, eval_wksp) == 0, XLAL_ESYS );
     gsl_matrix_free(g_diagnorm_ij);
@@ -1088,6 +1091,10 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
     intparams.Tseg = MYMAX(1800, intparams.Tseg / 2);
 
   }
+
+  /* transform phase metric reference time from midTime to refTime */
+  const REAL8 Dtau = XLALGPSDiff( &(metricParams->signalParams.Doppler.refTime), &midTime );
+  XLAL_CHECK_NULL( XLALChangeMetricReferenceTime( &g_ij, NULL, g_ij, &(metricParams->coordSys), Dtau ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   if ( relerr_max )
     (*relerr_max) = maxrelerr;
@@ -1211,7 +1218,6 @@ XLALDopplerFstatMetricCoh ( const DopplerMetricParams *metricParams,  	/**< inpu
   DopplerMetric *metric = NULL;
   REAL8 cosi, psi;
   double relerr;
-  gsl_matrix *tmp;
 
   /* ---------- sanity/consistency checks ---------- */
   XLAL_CHECK_NULL ( metricParams, XLAL_EINVAL, "Invalid NULL input 'metricParams'\n" );
@@ -1286,34 +1292,28 @@ XLALDopplerFstatMetricCoh ( const DopplerMetricParams *metricParams,  	/**< inpu
       /* gF_ij */
       if ( metric->gF_ij )
         {
-          if ( (tmp = XLALProjectMetric ( metric->gF_ij, projCoord )) == NULL ) {
+          if ( XLALProjectMetric ( &metric->gF_ij, metric->gF_ij, projCoord ) != XLAL_SUCCESS ) {
             XLALPrintError ("%s: failed to project gF_ij onto coordinate '%d'. errno=%d\n", __func__, projCoord, xlalErrno );
             XLAL_ERROR_NULL ( XLAL_EFUNC );
           }
-          gsl_matrix_free ( metric->gF_ij );
-          metric->gF_ij = tmp;
         }
 
       /* gFav_ij */
       if ( metric->gFav_ij )
         {
-          if ( (tmp = XLALProjectMetric ( metric->gFav_ij, projCoord )) == NULL ) {
+          if ( XLALProjectMetric ( &metric->gFav_ij, metric->gFav_ij, projCoord ) != XLAL_SUCCESS ) {
             XLALPrintError ("%s: failed to project gFav_ij onto coordinate '%d'. errno=%d\n", __func__, projCoord, xlalErrno );
             XLAL_ERROR_NULL ( XLAL_EFUNC );
           }
-          gsl_matrix_free ( metric->gFav_ij );
-          metric->gFav_ij = tmp;
         }
 
       /* phase-metric g_ij */
       if ( metric->g_ij )
         {
-          if ( (tmp = XLALProjectMetric ( metric->g_ij, projCoord )) == NULL ) {
+          if ( XLALProjectMetric ( &metric->g_ij, metric->g_ij, projCoord ) != XLAL_SUCCESS ) {
             XLALPrintError ("%s: failed to project g_ij onto coordinate '%d'. errno=%d\n", __func__, projCoord, xlalErrno );
             XLAL_ERROR_NULL ( XLAL_EFUNC );
           }
-          gsl_matrix_free ( metric->g_ij );
-          metric->g_ij = tmp;
         }
 
     } /* if projectCoordinate >= 0 */
@@ -2166,58 +2166,6 @@ XLALComputeFisherFromAtoms ( const FmetricAtoms_t *atoms, PulsarAmplitudeParams 
 } /* XLALComputeFisherFromAtoms() */
 
 
-/**
- * Calculate the projected metric onto the subspace orthogonal to coordinate-axis 'c', namely
- * ret_ij = g_ij - ( g_ic * g_jc / g_cc ) , where c is the value of the projected coordinate
- * The output-matrix is allocate here
- *
- * return 0 = OK, -1 on error.
- */
-gsl_matrix *
-XLALProjectMetric ( const gsl_matrix * g_ij, const UINT4 c )
-{
-  UINT4 i,j, dim1, dim2;
-  gsl_matrix *ret_ij;
-
-  if ( !g_ij ) {
-    XLALPrintError ("%s: invalid NULL input 'g_ij'.\n", __func__ );
-    XLAL_ERROR_NULL ( XLAL_EINVAL );
-  }
-
-  dim1 = g_ij->size1;
-  dim2 = g_ij->size2;
-
-  if ( dim1 != dim2 ) {
-    XLALPrintError ( "%s: input matrix g_ij must be square! (got %d x %d)\n", __func__, dim1, dim2 );
-    XLAL_ERROR_NULL ( XLAL_EINVAL );
-  }
-
-  if ( (ret_ij = gsl_matrix_alloc ( dim1, dim2 )) == NULL ) {
-    XLALPrintError ("%s: failed to gsl_matrix_alloc(%d, %d)\n", __func__, dim1, dim2 );
-    XLAL_ERROR_NULL ( XLAL_ENOMEM );
-  }
-
-  for ( i=0; i < dim1; i++)
-    {
-    for ( j=0; j < dim2; j++ )
-      {
-        if ( i==c || j==c )
-          {
-            gsl_matrix_set ( ret_ij, i, j, 0.0 );
-          }
-        else
-          {
-            double proj = gsl_matrix_get(g_ij, i, j) - (gsl_matrix_get(g_ij, i, c) * gsl_matrix_get(g_ij, j, c) / gsl_matrix_get(g_ij, c, c));
-            gsl_matrix_set ( ret_ij, i, j, proj );
-          }
-      } /* for j < dim2 */
-
-    } /* for i < dim1 */
-
-  return ret_ij;
-
-} /* XLALProjectMetric() */
-
 /** Convert 3-D vector from equatorial into ecliptic coordinates */
 void
 XLALequatorialVect2ecliptic ( vect3D_t out, const vect3D_t in )
@@ -2414,183 +2362,6 @@ findHighestGCSpinOrder ( const DopplerCoordinateSystem *coordSys )
   return maxorder;
 } /*  findHighestSpinOrder() */
 
-
-/**
- * Return a metric in "naturalized" coordinates.
- * Frequency coordinates of spindown order \f$s\f$ are scaled by
- * \f[ \frac{2\pi}{(s+1)!} \left(\frac{\overline{\Delta T}}{2}\right)^{s+1} \f]
- * where \f$\overline{\Delta T}\equiv\sum_{k}^{N} \Delta T_k\f$ is the average segment-length
- * over all \f$N\f$ segments.
- *
- * Sky coordinates are scaled by Holgers' units, see Eq.(44) in PRD82,042002(2010),
- * without the equatorial rotation in alpha:
- * \f[ \frac{2\pi f R_{E}  \cos(\delta_{D})}{c} \f]
- * where \f$f\f$ is the frequency and
- * \f$R_{E}\f$ the Earth radius, and \f$\delta_{D}\f$ is the detectors latitude.
- *
- * Returns NULL on error, otherwise a new matrix is allocated.
- */
-gsl_matrix* XLALNaturalizeMetric(
-  const gsl_matrix* g_ij,			/**< [in] Input metric */
-  const DopplerMetricParams *metricParams	/**< [in] Input parameters used to calculate g_ij */
-  )
-{
-  /* Check input */
-  XLAL_CHECK_NULL( g_ij, XLAL_EINVAL );
-  XLAL_CHECK_NULL( g_ij->size1 == g_ij->size2, XLAL_EINVAL, "Input matrix g_ij must be square! (got %zu x %zu)\n", g_ij->size1, g_ij->size2 );
-
-  XLAL_CHECK_NULL ( XLALSegListIsInitialized ( &(metricParams->segmentList) ), XLAL_EINVAL, "Passed un-initialzied segment list 'metricParams->segmentList'\n");
-  UINT4 Nseg = metricParams->segmentList.length;
-  REAL8 sumTseg = 0;
-  for ( UINT4 k=0; k < Nseg; k ++ )
-    {
-      LIGOTimeGPS *startTime_k = &(metricParams->segmentList.segs[k].start);
-      LIGOTimeGPS *endTime_k   = &(metricParams->segmentList.segs[k].end);
-      sumTseg += XLALGPSDiff( endTime_k, startTime_k );
-    }
-  REAL8 avgTseg = sumTseg / Nseg;
-
-  /* Compute naturalization scale */
-  double nat_scale[g_ij->size1];
-  for (size_t i = 0; i < g_ij->size1; ++i) {
-    const DopplerCoordinateID coordID = metricParams->coordSys.coordIDs[i];
-    const double Freq = metricParams->signalParams.Doppler.fkdot[0];
-    const double T = avgTseg;
-    double scale;
-    switch (coordID) {
-    case DOPPLERCOORD_NONE:
-      scale = 1;
-      break;
-
-    case DOPPLERCOORD_FREQ:
-    case DOPPLERCOORD_GC_NU0:
-      scale = LAL_TWOPI * LAL_FACT_INV[1] * (0.5 * T);
-      break;
-
-    case DOPPLERCOORD_F1DOT:
-    case DOPPLERCOORD_GC_NU1:
-      scale = LAL_TWOPI * LAL_FACT_INV[2] * POW2(0.5 * T);
-      break;
-
-    case DOPPLERCOORD_F2DOT:
-    case DOPPLERCOORD_GC_NU2:
-      scale = LAL_TWOPI * LAL_FACT_INV[3] * POW3(0.5 * T);
-      break;
-
-    case DOPPLERCOORD_F3DOT:
-    case DOPPLERCOORD_GC_NU3:
-      scale = LAL_TWOPI * LAL_FACT_INV[4] * POW4(0.5 * T);
-      break;
-
-    case DOPPLERCOORD_ALPHA:
-    case DOPPLERCOORD_DELTA:
-    case DOPPLERCOORD_N2X_EQU:
-    case DOPPLERCOORD_N2Y_EQU:
-    case DOPPLERCOORD_N2X_ECL:
-    case DOPPLERCOORD_N2Y_ECL:
-    case DOPPLERCOORD_N3X_EQU:
-    case DOPPLERCOORD_N3Y_EQU:
-    case DOPPLERCOORD_N3Z_EQU:
-    case DOPPLERCOORD_N3X_ECL:
-    case DOPPLERCOORD_N3Y_ECL:
-    case DOPPLERCOORD_N3Z_ECL:
-    case DOPPLERCOORD_N3SX_EQU:
-    case DOPPLERCOORD_N3SY_EQU:
-    case DOPPLERCOORD_N3OX_ECL:
-    case DOPPLERCOORD_N3OY_ECL:
-      {
-        REAL8 cosdD = cos ( metricParams->multiIFO.sites[0].frDetector.vertexLatitudeRadians );
-        scale = LAL_TWOPI * Freq * rEarth_c * cosdD;
-      }
-      break;
-
-    default:
-      XLAL_ERROR_NULL(XLAL_EINVAL, "Unknown phase-derivative type '%d'\n", coordID );
-    }
-    nat_scale[i] = scale;
-  }
-
-  /* Allocate return matrix */
-  gsl_matrix* ret_ij = gsl_matrix_alloc ( g_ij->size1, g_ij->size2 );
-  XLAL_CHECK_NULL( ret_ij, XLAL_ENOMEM );
-
-  /* Rescale metric to naturalized coordinates */
-  for (size_t i = 0; i < g_ij->size1; ++i) {
-    for (size_t j = 0; j < g_ij->size2; ++j) {
-      double tmp = gsl_matrix_get(g_ij, i, j);
-      tmp /= nat_scale[i] * nat_scale[j];
-      gsl_matrix_set(ret_ij, i, j, tmp);
-    }
-  }
-
-  return ret_ij;
-
-} /* XLALNaturalizeMetric() */
-
-
-/**
- * "DiagNormalize" a metric matrix.
- * DiagNormalization means normalize metric by its diagonal, namely apply the transformation
- * G_ij = g_ij /sqrt(g_ii * g_jj), to all elements, resulting in lower
- * condition number and unit diagonal elements.
- *
- * return NULL on error, otherwise new matrix is allocated here.
- */
-gsl_matrix *
-XLALDiagNormalizeMetric ( const gsl_matrix * g_ij )
-{
-  const char *fn = __func__;
-  UINT4 i,j, dim1, dim2;
-  gsl_matrix *ret_ij;
-
-  if ( !g_ij ) {
-    XLALPrintError ("%s: invalid NULL input 'g_ij'.\n", fn );
-    XLAL_ERROR_NULL ( XLAL_EINVAL );
-  }
-
-  dim1 = g_ij->size1;
-  dim2 = g_ij->size2;
-
-  if ( dim1 != dim2 ) {
-    XLALPrintError ( "%s: input matrix g_ij must be square! (got %d x %d)\n", fn, dim1, dim2 );
-    XLAL_ERROR_NULL ( XLAL_EINVAL );
-  }
-
-  if ( (ret_ij = gsl_matrix_alloc ( dim1, dim2 )) == NULL ) {
-    XLALPrintError ("%s: failed to gsl_matrix_alloc(%d, %d)\n", fn, dim1, dim2 );
-    XLAL_ERROR_NULL ( XLAL_ENOMEM );
-  }
-
-  for ( i=0; i < dim1; i++)
-    {
-    for ( j=0; j < dim2; j++ )
-      {
-        if ( i == j )
-          {
-            gsl_matrix_set ( ret_ij, i, j, 1.0 );	/* use exact result on diagonal */
-          }
-        else
-          {
-            double gtmp_ii = gsl_matrix_get(g_ij, i, i);
-            double gtmp_jj = gsl_matrix_get(g_ij, j, j);
-
-            if ( (gtmp_ii <= 0) || (gtmp_jj <= 0 ) ) {
-              XLALPrintError ("%s: DiagNormalize not defined for non-positive diagonal elements! i=%d, j=%d, g_ii=%g, g_jj=%g\n", __func__, i, j, gtmp_ii, gtmp_jj );
-              XLAL_ERROR_NULL ( XLAL_EDOM );
-            }
-
-            double gtmp_ij = gsl_matrix_get(g_ij, i, j);
-            double new_ij = gtmp_ij / sqrt ( gtmp_ii * gtmp_jj );
-
-            gsl_matrix_set ( ret_ij, i, j, new_ij );
-          }
-      } /* for j < dim2 */
-
-    } /* for i < dim1 */
-
-  return ret_ij;
-
-} /* XLALDiagNormalizeMetric() */
 
 /**
  * Add 'metric2' to 'metric1', by adding the matrixes and 'rho2', and adding error-estimates in quadrature.

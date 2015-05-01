@@ -21,6 +21,7 @@ test_programs += LALBarycenterTest
 test_programs += LFTandTSutilsTest
 test_programs += LatticeTilingTest
 test_programs += LineRobustStatsTest
+test_programs += MetricUtilsTest
 test_programs += NDConstructPLUTTest
 test_programs += NDHoughMapTest
 test_programs += NDPeak2PHMDTest

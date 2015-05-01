@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Karl Wette
+ * Copyright (C) 2012--2015 Karl Wette
  * Copyright (C) 2008, 2009 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -121,6 +121,8 @@ typedef enum {
   DOPPLERCOORD_F1DOT,		/**< First spindown [Units: Hz/s]. */
   DOPPLERCOORD_F2DOT,		/**< Second spindown [Units: Hz/s^2]. */
   DOPPLERCOORD_F3DOT,		/**< Third spindown [Units: Hz/s^3]. */
+
+  DOPPLERCOORD_LASTFDOT = DOPPLERCOORD_F3DOT,
 
   DOPPLERCOORD_GC_NU0,		/**< Global correlation frequency [Units: Hz]. Activates 'reduced' detector position. */
   DOPPLERCOORD_GC_NU1,		/**< Global correlation first spindown [Units: Hz/s]. Activates 'reduced' detector position. */
@@ -265,7 +267,6 @@ XLALDetectorPosVel (PosVel3D_t *spin_posvel,
 		    );
 
 int XLALPtolemaicPosVel ( PosVel3D_t *posvel, const LIGOTimeGPS *tGPS );
-gsl_matrix *XLALProjectMetric ( const gsl_matrix * g_ij, const UINT4 c );
 
 void XLALequatorialVect2ecliptic ( vect3D_t out, const vect3D_t in );
 void XLALeclipticVect2equatorial ( vect3D_t out, const vect3D_t in );
@@ -288,9 +289,6 @@ const CHAR *XLALDopplerCoordinateName ( DopplerCoordinateID coordID );
 const CHAR *XLALDopplerCoordinateHelp ( DopplerCoordinateID coordID );
 CHAR *XLALDopplerCoordinateHelpAll ( void );
 
-gsl_matrix* XLALNaturalizeMetric( const gsl_matrix* g_ij, const DopplerMetricParams *metricParams );
-
-gsl_matrix *XLALDiagNormalizeMetric ( const gsl_matrix * g_ij );
 int XLALAddDopplerMetric ( DopplerMetric **metric1, const DopplerMetric *metric2 );
 int XLALScaleDopplerMetric ( DopplerMetric *m, REAL8 scale );
 // destructor for vect3Dlist_t type
