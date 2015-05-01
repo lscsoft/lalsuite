@@ -142,12 +142,12 @@ int main( void )
   // Check supersky metrics
   {
     gsl_matrix_const_view ussky_metric_ref_view = gsl_matrix_const_view_array( (double*)ussky_metric_ref, 5, 5 );
-    const double err = XLALCompareMetrics( ussky_metric, &ussky_metric_ref_view.matrix ), err_tol = 1e-10;
+    const double err = XLALCompareMetrics( ussky_metric, &ussky_metric_ref_view.matrix ), err_tol = 5e-9;
     XLAL_CHECK_MAIN( err <= err_tol, XLAL_ETOL, "'ussky_metric' check failed: err = %0.3e > %0.3e = err_tol", err, err_tol );
   }
   {
     gsl_matrix_const_view rssky_metric_ref_view = gsl_matrix_const_view_array( (double*)rssky_metric_ref, 4, 4 );
-    const double err = XLALCompareMetrics( rssky_metric, &rssky_metric_ref_view.matrix ), err_tol = 1e-10;
+    const double err = XLALCompareMetrics( rssky_metric, &rssky_metric_ref_view.matrix ), err_tol = 5e-9;
     XLAL_CHECK_MAIN( err <= err_tol, XLAL_ETOL, "'rssky_metric' check failed: err = %0.3e > %0.3e = err_tol", err, err_tol );
   }
   {
@@ -162,7 +162,7 @@ int main( void )
         }
       }
     }
-    const double err_tol = 1e-10;
+    const double err_tol = 5e-9;
     XLAL_CHECK_MAIN( max_err <= err_tol, XLAL_ETOL, "'rssky_transf' check failed: max(err) = %0.3e > %0.3e = err_tol", max_err, err_tol );
   }
 
