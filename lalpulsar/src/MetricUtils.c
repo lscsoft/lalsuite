@@ -227,7 +227,7 @@ XLALProjectMetric(
 
 ///
 /// Decompose a metric \f$\mathbf{G}\f$ as \f$ \mathbf{G} = \mathbf{L} \mathbf{D}
-/// \mathbf{L}^{\mathrm{T}} \f$, where \f$\mathbf{L}$ is a lower-triangular matrix
+/// \mathbf{L}^{\mathrm{T}} \f$, where \f$\mathbf{L}\f$ is a lower-triangular matrix
 /// with unit diagonal, and \f$\mathbf{D}\f$ is a diagonal matrix. This decomposition
 /// may be useful if the metric cannot yet be guaranteed to be positive definite.
 ///
