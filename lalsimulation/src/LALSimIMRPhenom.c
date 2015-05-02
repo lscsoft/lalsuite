@@ -997,10 +997,10 @@ static int apply_inclination(const REAL8TimeSeries *hp, const REAL8TimeSeries *h
 /************************************************************************************/
 
 /**
- * * Structure containing the coefficients of various powers of the Fourier frequency
- * * f in the derivative of the amplitude and phase of IMRPhenomB w.r.t. the parameters
- * * of the binary
- * */
+ * Structure containing the coefficients of various powers of the Fourier frequency
+ * f in the derivative of the amplitude and phase of IMRPhenomB w.r.t. the parameters
+ * of the binary
+ */
 typedef struct tagIMRDerivCoeffs{
   REAL8 dA1dM_0; /*Coef of k = 0 term in (2k-7)/6 expansion of inspiral phase of amplitude*/
   REAL8 dA1dM_1; /*Coef of k = 2 term in (2k-7)/6 expansion of inspiral phase of amplitude*/
@@ -1073,9 +1073,6 @@ typedef struct tagIMRDerivCoeffs{
 }
 IMRDerivCoeffs;
 
-/**
- * * Fisher matrix of the IMRPhenomB waveform in the M-eta-chi-t0-phi0 coordinate system
- * */
 static gsl_matrix *XLALSimIMRPhenomBFisherMatrix(
     const REAL8 m1,     /**< component mass 1 (M_sun) */
     const REAL8 m2,     /**< component mass 2 (M_sun) */
@@ -1084,33 +1081,26 @@ static gsl_matrix *XLALSimIMRPhenomBFisherMatrix(
     const REAL8FrequencySeries *Sh  /**< PSD in strain per root Hertz */
 );
 
-/**
- * * Function to compute the coefficients of f in the derivative of the amplitude and phase w.r.t.
- * * the physical parameters
- * */
 static IMRDerivCoeffs *XLALComputeIMRPhenomBDerivativeCoeffs(
     const REAL8 m1,   /**< component mass 1 (M_sun) */
     const REAL8 m2,   /**< component mass 2 (M_sun) */
     const REAL8 chi,  /**< effective spin parameter of IMRPhenomB: chi = (m1 chi1 + m2 chi2)/(m1+m2)  */
-    BBHPhenomParams *params
+    BBHPhenomParams *params  /**<  phenomenological parameters of IMRPhenomB */
 );
 
-/**
- * * Function to project the Fisher matrix orthogonal to the extrinsic parameters t0 and phi0
- * */
 static gsl_matrix *XLALSimIMRPhenomBProjectExtrinsicParam(
-  gsl_matrix *g
+  gsl_matrix *g  /**<  Fisher matrix of IMRPhenomB */
 );
 
 /**
- *  * Compute the coefficients of the series expansion (in Fourier frequency) of the derivatives of the
- *   * IMRPhenomB waveform with respect to parameters M, eta, chi
- *    */
+ * Compute the coefficients of the series expansion (in Fourier frequency) of the derivatives of the
+ * IMRPhenomB waveform with respect to parameters M, eta, chi
+ */
 static IMRDerivCoeffs *XLALComputeIMRPhenomBDerivativeCoeffs(
     const REAL8 m1,   /**< component mass 1 (M_sun) */
     const REAL8 m2,   /**< component mass 2 (M_sun) */
     const REAL8 chi,  /**< effective spin parameter of IMRPhenomB: chi = (m1 chi1 + m2 chi2)/(m1+m2)  */
-    BBHPhenomParams *params
+    BBHPhenomParams *params  /**<  phenomenological parameters of IMRPhenomB */
 ){
   /* allocate memory for the structure IMRDerivCoeffs */
   IMRDerivCoeffs *derCoeffs = (IMRDerivCoeffs *) XLALMalloc(sizeof(IMRDerivCoeffs));
@@ -1299,9 +1289,9 @@ static IMRDerivCoeffs *XLALComputeIMRPhenomBDerivativeCoeffs(
 };
 
 /**
- *  * Compute the Fisher information matrix of the IMRPhenomB waveform in the
- *   * M, eta, chi, t0, phi0 parameter space, for an SNR=1/sqrt(2) signal.
- *    */
+ * Compute the Fisher information matrix of the IMRPhenomB waveform in the
+ * M, eta, chi, t0, phi0 parameter space, for an SNR=1/sqrt(2) signal.
+ */
 
 static gsl_matrix *XLALSimIMRPhenomBFisherMatrix(
     const REAL8 m1,     /**< component mass 1 (M_sun) */
@@ -1487,10 +1477,10 @@ static gsl_matrix *XLALSimIMRPhenomBFisherMatrix(
 };
 
 /**
- * * Project the Fisher matrix orthogonal to the extrnsic parameters t0 and phi0
- * */
+ * Project the Fisher matrix orthogonal to the extrnsic parameters t0 and phi0
+ */
 static gsl_matrix *XLALSimIMRPhenomBProjectExtrinsicParam(
-  gsl_matrix *g
+  gsl_matrix *g   /**<  Fisher matrix of IMRPhenomB */
 ){
   int s = 0;
 
@@ -1538,9 +1528,9 @@ static gsl_matrix *XLALSimIMRPhenomBProjectExtrinsicParam(
 };
 
 /**
- *  * Compute the template-space metric of the IMRPhenomB waveform in the
- *   * M, eta, chi coordinates
- *    */
+ * Compute the template-space metric of the IMRPhenomB waveform in the
+ * M, eta, chi coordinates
+ */
 int XLALSimIMRPhenomBMetricInMEtaChi(
     REAL8 *gamma00,  /**< template metric coeff. 00 in PN Chirp Time */
     REAL8 *gamma01,  /**< template metric coeff. 01/10 PN Chirp Time */
@@ -1578,9 +1568,9 @@ int XLALSimIMRPhenomBMetricInMEtaChi(
 
 
 /**
- *  * Compute the template-space metric of the IMRPhenomB waveform in the
- *   * theta0, theta3, theta3S coordinates
- *    */
+ * Compute the template-space metric of the IMRPhenomB waveform in the
+ * theta0, theta3, theta3S coordinates
+ */
 int XLALSimIMRPhenomBMetricInTheta0Theta3Theta3S(
     REAL8 *gamma00,  /**< template metric coeff. 00 in PN Chirp Time */
     REAL8 *gamma01,  /**< template metric coeff. 01/10 PN Chirp Time */
