@@ -2147,7 +2147,7 @@ int main( int argc, char *argv[] )
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name, "float",
               "%le", localRate );
-        if ( ! localRate > 0. )
+        if ( !(localRate > 0.) )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "local coalescence rate must be positive"
