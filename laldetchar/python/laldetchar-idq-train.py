@@ -27,17 +27,17 @@ from optparse import OptionParser
 import subprocess
 import multiprocessing as mp
 
-from glue.ligolw import ligolw
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw import lsctables
-from glue.ligolw import table
-
 from laldetchar.idq import idq
 #from laldetchar.idq import reed as idq
 from laldetchar.idq import event
 from laldetchar.idq import auxmvc_utils
 
 from pylal import frutils
+
+from glue.ligolw import ligolw
+from glue.ligolw import utils as ligolw_utils
+from glue.ligolw import lsctables
+from glue.ligolw import table
 
 from laldetchar import git_version
 
