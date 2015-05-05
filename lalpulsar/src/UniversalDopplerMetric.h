@@ -175,7 +175,6 @@ typedef struct tagDopplerMetricParams
   INT4 projectCoord;				/**< project metric onto subspace orthogonal to this axis (-1 = none, 0 = 1st coordinate, etc) */
 
   BOOLEAN approxPhase;				/**< use an approximate phase-model, neglecting Roemer delay in spindown coordinates */
-  UINT4 nonposEigValThresh;			/**< if >0, and metric has this or more non-positive eigenvalues, recompute using smaller error tolerances */
 } DopplerMetricParams;
 
 

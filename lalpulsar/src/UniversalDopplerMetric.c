@@ -45,6 +45,8 @@
 #include <lal/UniversalDopplerMetric.h>
 #include <lal/MetricUtils.h>
 
+#include "GSLHelpers.h"
+
 /**
  * \author Reinhard Prix, Karl Wette
  * \ingroup UniversalDopplerMetric_h
@@ -1135,25 +1137,6 @@ XLALComputeDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< 
   intparams.amcomp1 = AMCOMP_NONE;
   intparams.amcomp2 = AMCOMP_NONE;
 
-  /* NOTE: this level of accuracy is only achievable *without* AM-coefficients involved
-   * which are computed in REAL4 precision. For the current function this is OK, as this
-   * function is only supposed to compute *pure* phase-derivate covariances.
-   */
-  intparams.epsrel = 1e-6;
-  /* we need an abs-cutoff as well, as epsrel can be too restrictive for small integrals */
-  intparams.epsabs = 1e-3;
-  /* NOTE: this numerical integration still runs into problems when integrating over
-   * long durations (~O(23d)), as the integrands are oscillatory functions on order of ~1d
-   * and convergence degrades.
-   * As a solution, we split the integral into 'intN' units of ~1 day duration, and compute
-   * the final integral as a sum over partial integrals.
-   * It is VERY important to ensure that 'intT' is not exactly 1 day, since then an integrand
-   * with period ~1 day may integrate to zero, which is both slower and MUCH more difficult
-   * for the numerical integration functions (since the integrand them becomes small with
-   * respect to any integration errors).
-   */
-  intparams.intT = 0.9 * LAL_DAYSID_SI;
-
   /* if using 'global correlation' frequency variables, determine the highest spindown order: */
   UINT4 maxorder = findHighestGCSpinOrder ( coordSys );
 
@@ -1174,79 +1157,106 @@ XLALComputeDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< 
   metric->maxrelerr = 0;
   double err = 0;
 
-  /*** try to compute a metric with less than nonposEigValThresh non-positive eigenvalues ***/
-  gsl_vector* eval = NULL;
-  gsl_eigen_symm_workspace* eval_wksp = NULL;
-  if (metricParams->nonposEigValThresh > 0) {
-    XLAL_CHECK_NULL( (eval = gsl_vector_alloc(dim)) != NULL, XLAL_ENOMEM );
-    XLAL_CHECK_NULL( (eval_wksp = gsl_eigen_symm_alloc(dim)) != NULL, XLAL_ENOMEM );
-  }
-  const int max_eigvaltries = 32;
-  int eigvaltries;
-  for (eigvaltries = 0; eigvaltries < max_eigvaltries; ++eigvaltries) {
+  /* ========== use numerically-robust method to compute metric ========== */
 
-    XLALPrintInfo("%s(): trying (%i<%i) to compute phase metric with epsrel=%g, epsabs=%g, intT=%g\n",
-                  __func__, eigvaltries, max_eigvaltries, intparams.epsrel, intparams.epsabs, intparams.intT);
+  /* allocate memory for coordinate transform */
+  gsl_matrix *transform = gsl_matrix_alloc(dim, dim);
+  XLAL_CHECK_NULL( transform != NULL, XLAL_ENOMEM );
+  gsl_matrix_set_identity( transform );
+  intparams.coordTransf = transform;
 
-    /* ---------- compute components of the phase-metric ---------- */
-    for ( UINT4 i = 0; i < dim; i ++ ) {
-      for ( UINT4 j = 0; j <= i; j ++ ) {
+  for ( size_t n = 1; n <= dim; ++n ) {
 
-        /* metric->g_ij = [Phi_i, Phi_j] */
+    /* NOTE: this level of accuracy is only achievable *without* AM-coefficients involved
+     * which are computed in REAL4 precision. For the current function this is OK, as this
+     * function is only supposed to compute *pure* phase-derivate covariances.
+     */
+    intparams.epsrel = 1e-6;
+    /* we need an abs-cutoff as well, as epsrel can be too restrictive for small integrals */
+    intparams.epsabs = 1e-3;
+    /* NOTE: this numerical integration still runs into problems when integrating over
+     * long durations (~O(23d)), as the integrands are oscillatory functions on order of ~1d
+     * and convergence degrades.
+     * As a solution, we split the integral into 'intN' units of ~1 day duration, and compute
+     * the final integral as a sum over partial integrals.
+     * It is VERY important to ensure that 'intT' is not exactly 1 day, since then an integrand
+     * with period ~1 day may integrate to zero, which is both slower and MUCH more difficult
+     * for the numerical integration functions (since the integrand them becomes small with
+     * respect to any integration errors).
+     */
+    intparams.intT = 0.9 * LAL_DAYSID_SI;
+
+    /* allocate memory for Cholesky decomposition */
+    gsl_matrix *cholesky = gsl_matrix_alloc(n, n);
+    XLAL_CHECK_NULL( cholesky != NULL, XLAL_ENOMEM );
+
+    /* create views of n-by-n submatrices of metric and coordinate transform */
+    gsl_matrix_view g_ij_n = gsl_matrix_submatrix( metric->g_ij, 0, 0, n, n );
+    gsl_matrix_view transform_n = gsl_matrix_submatrix( transform, 0, 0, n, n );
+
+    /* try this loop a certain number of times */
+    const size_t max_tries = 30;
+    size_t tries = 0;
+    while ( ++tries <= max_tries ) {
+
+      /* ----- compute last row/column of n-by-n submatrix of metric ----- */
+      for ( size_t i = 0; i < n; ++i ) {
+        const size_t j = n - 1;
+
+        /* g_ij = [Phi_i, Phi_j] */
         intparams.coord1 = i;
         intparams.coord2 = j;
         REAL8 gg = XLALCovariance_Phi_ij ( &metricParams->multiIFO, &metricParams->multiNoiseFloor, &metricParams->segmentList,
                                            &intparams, &err );
+        XLAL_CHECK_NULL( !gsl_isnan(gg), XLAL_EFUNC, "%s: integration of phase metric g_{i=%zu,j=%zu} failed (n=%zu, tries=%zu)", __func__, i, j, n, tries );
+        gsl_matrix_set (&g_ij_n.matrix, i, j, gg);
+        gsl_matrix_set (&g_ij_n.matrix, j, i, gg);
         metric->maxrelerr = MYMAX ( metric->maxrelerr, err );
-        if ( xlalErrno ) {
-          XLALPrintError ("\n%s: Integration of metric->g_ij (i=%d, j=%d) failed. errno = %d\n", __func__, i, j, xlalErrno );
-          XLAL_ERROR_NULL( XLAL_EFUNC );
-        }
-        gsl_matrix_set (metric->g_ij, i, j, gg);
-        gsl_matrix_set (metric->g_ij, j, i, gg);
 
-      } /* for j <= i */
+      } /* for i < n */
 
-    } /* for i < dim */
-
-    /* if nonposEigValThresh == 0, do not check eigenvalues */
-    if (metricParams->nonposEigValThresh == 0) {
-      break;
-    }
-
-    /* diagonally normalise metric->g_ij (for numerical stability), compute eigenvalues,
-       then check there are less than nonposEigValThresh non-positive eigenvalues */
-    gsl_matrix* g_diagnorm_ij = NULL;
-    XLAL_CHECK_NULL( XLALDiagNormalizeMetric( &g_diagnorm_ij, NULL, metric->g_ij ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK_NULL( g_diagnorm_ij != NULL, XLAL_EFUNC );
-    XLAL_CHECK_NULL( gsl_eigen_symm(g_diagnorm_ij, eval, eval_wksp) == 0, XLAL_ESYS );
-    gsl_matrix_free(g_diagnorm_ij);
-    UINT4 nonposEigVals = 0;
-    for (UINT4 i = 0; i < dim; i ++ ) {
-      if (gsl_vector_get(eval, i) <= 0) {
-        ++nonposEigVals;
+      /* ----- compute L D L^T Cholesky decomposition of metric ----- */
+      XLAL_CHECK_NULL( XLALCholeskyLDLTDecompMetric( &cholesky, &g_ij_n.matrix ) == XLAL_SUCCESS, XLAL_EFUNC );
+      gsl_vector_view D = gsl_matrix_diagonal( cholesky );
+      if ( ( tries > 1 ) && ( lalDebugLevel & LALINFOBIT ) ) {
+        /* diagnostic / debug output */
+        fprintf(stdout, "%s: n=%zu, try=%zu, Cholesky diagonal =", __func__, n, tries);
+        XLALfprintfGSLvector(stdout, "%0.2e", &D.vector);
       }
-    }
-    if (lalDebugLevel & LALINFOBIT) {
-      fprintf(stdout, "%s(): phase metric eigenvalues:", __func__);
-      XLALfprintfGSLvector(stdout, "%0.4e", eval);
-    }
-    if (nonposEigVals < metricParams->nonposEigValThresh) {
-      break;
-    }
 
-    /* non-positive eigenvalue condition failed; try decreasing error tolerances;
-       don't do this too quickly, since too-stringent tolerances will just make
-       GSL integration fail to converge */
-    intparams.epsrel /= 2;
-    intparams.epsabs /= 2;
-    /* try also reducing the length of integration time segments, but stop at 1800s */
-    intparams.intT = MYMAX(1800, intparams.intT / 2);
+      /* ----- check that all diagonal elements D are positive after at least 1 try; if so, exit try loop */
+      if ( ( tries > 1 ) && ( gsl_vector_min( &D.vector ) > 0.0 ) ) {
+        break;
+      }
+
+      /* zero out all but last row of L, since we do not want to coordinates before 'n' */
+      if ( n > 1 ) {
+        gsl_matrix_view cholesky_nm1 = gsl_matrix_submatrix( cholesky, 0, 0, n - 1, n );
+        gsl_matrix_set_identity( &cholesky_nm1.matrix );
+      }
+
+      /* multiply transform by inverse of L (with unit diagonal), to transform 'n'th coordinates so that metric is diagonal */
+      gsl_blas_dtrsm( CblasLeft, CblasLower, CblasNoTrans, CblasUnit, 1.0, cholesky, &transform_n.matrix );
+
+      /* decrease relative error tolerances; don't do this too quickly, since
+         too-stringent tolerances may make GSL integration fail to converge */
+      intparams.epsrel = intparams.epsrel * 0.9;
+      /* reduce the length of integration time units, but stop at 1800s,
+         and ensure that 'intT' does NOT become divisible by 1/day, for
+         the same reason given at the initialisation of 'intT' above */
+      intparams.intT = MYMAX(1800, intparams.intT * 0.9);
+
+    }
+    XLAL_CHECK_NULL( tries <= max_tries, XLAL_EMAXITER, "%s: convergence of phase metric failed (n=%zu)", __func__, n );
+
+    /* free memory which is then re-allocated in next loop */
+    gsl_matrix_free( cholesky );
 
   }
 
-  XLAL_CHECK_NULL( eigvaltries < max_eigvaltries, XLAL_ETOL,
-                   "Could not compute metric with less than %i non-positive eigenvalues", metricParams->nonposEigValThresh );
+  /* apply inverse of transform^T to metric, to get back original coordinates */
+  gsl_matrix_transpose( transform );
+  XLAL_CHECK_NULL( XLALInverseTransformMetric( &metric->g_ij, transform, metric->g_ij ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* transform phase metric reference time from midTime to refTime */
   const REAL8 Dtau = XLALGPSDiff( &(metricParams->signalParams.Doppler.refTime), &midTime );
@@ -1262,13 +1272,24 @@ XLALComputeDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< 
       }
     } /* if projectCoordinate >= 0 */
 
+  /* ---- check that metric is positive definite, by checking determinants of submatrices */
+  for ( size_t n = 1; n <= dim; ++n ) {
+    gsl_matrix_view g_ij_n = gsl_matrix_submatrix( metric->g_ij, 0, 0, n, n );
+    const double det_n = XLALMetricDeterminant( &g_ij_n.matrix );
+    XLAL_CHECK_NULL( det_n > 0, XLAL_EFAILED, "%s: could not compute a positive-definite phase metric (n=%zu, det_n=%0.3e)", __func__, n, det_n );
+  }
+  if (lalDebugLevel & LALINFOBIT) {
+    /* diagnostic / debug output */
+    fprintf(stdout, "%s: phase metric:", __func__);
+    XLALfprintfGSLmatrix(stdout, "%0.15e", metric->g_ij);
+  }
+
   /*  attach the metricParams struct as 'meta-info' to the output */
   metric->meta = (*metricParams);
 
   /* free memory */
   XLALDestroyVect3Dlist ( intparams.rOrb_n );
-  if (eval) gsl_vector_free(eval);
-  if (eval_wksp) gsl_eigen_symm_free(eval_wksp);
+  gsl_matrix_free(transform);
 
   return metric;
 

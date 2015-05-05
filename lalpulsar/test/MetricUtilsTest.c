@@ -62,7 +62,6 @@ int main( void )
     par.signalParams.Doppler.fkdot[0] = 100;
     par.projectCoord = -1;
     par.approxPhase = 1;
-    par.nonposEigValThresh = 1;
 
     // Compute phase metric
     DopplerPhaseMetric *metric = XLALComputeDopplerPhaseMetric( &par, edat );

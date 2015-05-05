@@ -108,9 +108,6 @@ static gsl_matrix *SM_ComputePhaseMetric(
   // Do not include sky-position-dependent Roemer delay in time variable
   par.approxPhase = 1;
 
-  // Allow metric to have at most 1 non-positive eigenvalue
-  par.nonposEigValThresh = 2;
-
   // Call XLALComputeDopplerPhaseMetric() and check output
   DopplerPhaseMetric *metric = XLALComputeDopplerPhaseMetric( &par, ephemerides );
   XLAL_CHECK_NULL( metric != NULL && metric->g_ij != NULL, XLAL_EFUNC, "XLALComputeDopplerPhaseMetric() failed" );
