@@ -1061,10 +1061,14 @@ XLALComputeDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< 
   /* NOTE: this numerical integration still runs into problems when integrating over
    * long durations (~O(23d)), as the integrands are oscillatory functions on order of ~1d
    * and convergence degrades.
-   * As a solution, we split the integral into 'intN' units of 1 day duration, and compute
+   * As a solution, we split the integral into 'intN' units of ~1 day duration, and compute
    * the final integral as a sum over partial integrals.
+   * It is VERY important to ensure that 'intT' is not exactly 1 day, since then an integrand
+   * with period ~1 day may integrate to zero, which is both slower and MUCH more difficult
+   * for the numerical integration functions (since the integrand them becomes small with
+   * respect to any integration errors).
    */
-  intparams.intT = LAL_DAYSID_SI;
+  intparams.intT = 0.9 * LAL_DAYSID_SI;
 
   /* if using 'global correlation' frequency variables, determine the highest spindown order: */
   UINT4 maxorder = findHighestGCSpinOrder ( coordSys );
