@@ -193,8 +193,7 @@ test_XLALComputeDopplerMetrics ( void )
   REAL4Vector master_pars0_spindown = { .length = 1, .data = master_pars0_spindown_data };
   const PtoleMetricIn master_pars0 = {
     .spindown		= &master_pars0_spindown,
-    .position		= { .longitude = Alpha, .latitude = Delta },
-    .position.system	= COORDINATESYSTEM_EQUATORIAL,
+    .position		= { .longitude = Alpha, .latitude = Delta, .system = COORDINATESYSTEM_EQUATORIAL },
     .epoch		= startTimeGPS,
     .duration		= Tseg,
     .maxFreq		= Freq,
