@@ -144,9 +144,14 @@ h5file = H5File("%s.h5" % usertag, "w")
 xmldoc = utils.load_filename(tmplt_file, contenthandler=ContentHandler)
 ligolw_copy_process(xmldoc, fake_xmldoc)
 sngls = table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
+bank = Bank.from_sngls(sngls, tmplt_approx, noise_model, flow, use_metric=False, cache_waveforms=opts.cache_waveforms, nhood_size=opts.neighborhood_size, nhood_param=opts.neighborhood_param)
+# write bank to h5 file, but note that from_sngls() has resorted the
+# bank by neighborhood_param
+sngls = lsctables.SnglInspiralTable()
+for s in bank._templates:
+    sngls.append(s.to_sngl())
 h5file.create_dataset("/sngl_inspiral", data=ligolw_table_to_array(sngls), compression='gzip', compression_opts=1)
 h5file.flush()
-bank = Bank.from_sngls(sngls, tmplt_approx, noise_model, flow, use_metric=False, cache_waveforms=opts.cache_waveforms, nhood_size=opts.neighborhood_size, nhood_param=opts.neighborhood_param)
 del xmldoc, sngls[:]
 if verbose:
     print "Loaded %d templates" % len(bank)
