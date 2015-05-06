@@ -512,7 +512,8 @@ double XLALSimInspiralGetFinalFreq(
         /* Spinning inspiral-only time domain */
         case SpinTaylorT2:
         case SpinTaylorT4:
-        case PhenSpinTaylor:
+        case SpinTaylorT1:
+	case PhenSpinTaylor:
         /* Spinning with ringdown attachment */
         case PhenSpinTaylorRD:
         /* Spinning inspiral-only frequency domain */
@@ -2430,6 +2431,36 @@ int XLALSimInspiralChooseTDWaveform(
                     XLALSimInspiralGetTidalOrder(waveFlags),
                     phaseO, amplitudeO);
             break;
+
+	 case SpinTaylorT1:
+            /* Waveform-specific sanity checks */
+            /* Sanity check unused fields of waveFlags */
+            if( !XLALSimInspiralFrameAxisIsDefault(
+                    XLALSimInspiralGetFrameAxis(waveFlags) ) )
+                ABORT_NONDEFAULT_FRAME_AXIS(waveFlags);
+            if( !XLALSimInspiralModesChoiceIsDefault(
+                    XLALSimInspiralGetModesChoice(waveFlags) ) )
+                ABORT_NONDEFAULT_MODES_CHOICE(waveFlags);
+            LNhatx = sin(i);
+            LNhaty = 0.;
+            LNhatz = cos(i);
+            E1x = cos(i);
+            E1y = 0.;
+            E1z = - sin(i);
+            /* Maximum PN amplitude order for precessing waveforms is
+             * MAX_PRECESSING_AMP_PN_ORDER */
+            amplitudeO = amplitudeO <= MAX_PRECESSING_AMP_PN_ORDER ?
+                    amplitudeO : MAX_PRECESSING_AMP_PN_ORDER;
+            /* Call the waveform driver routine */
+            ret = XLALSimInspiralSpinTaylorT1(hplus, hcross, phiRef, v0, deltaT,
+                    m1, m2, f_min, f_ref, r, S1x, S1y, S1z, S2x, S2y, S2z,
+                    LNhatx, LNhaty, LNhatz, E1x, E1y, E1z, lambda1, lambda2,
+                    quadparam1, quadparam2,
+                    XLALSimInspiralGetSpinOrder(waveFlags),
+                    XLALSimInspiralGetTidalOrder(waveFlags),
+                    phaseO, amplitudeO);
+            break;
+
         case SpinDominatedWf:
                 // waveform specific sanity checks
                 if (S2x != 0. || S2y != 0. || S2z != 0.){
@@ -4049,7 +4080,8 @@ int XLALSimInspiralImplementedTDApproximants(
         case EOBNRv2HM:
         case SpinTaylorT2:
         case SpinTaylorT4:
-        case IMRPhenomB:
+        case SpinTaylorT1:
+	case IMRPhenomB:
         case PhenSpinTaylor:
         case IMRPhenomC:
         case PhenSpinTaylorRD:
@@ -4151,6 +4183,12 @@ int XLALGetApproximantFromString(const CHAR *inString)
   else if ( strstr(inString, "SpinTaylorT4" ) )
   {
     return SpinTaylorT4;
+
+  }
+ else if ( strstr(inString, "SpinTaylorT1" ) )
+  {
+    return SpinTaylorT1;
+
   }
   else if ( strstr(inString, "SpinTaylorFrameless" ) )
   {
@@ -4365,6 +4403,8 @@ char* XLALGetStringFromApproximant(Approximant approximant)
       return strdup("SpinTaylorT2");
     case SpinTaylorT4:
       return strdup("SpinTaylorT4");
+    case SpinTaylorT1:
+      return strdup("SpinTaylorT1");
     case SpinTaylorFrameless:
       return strdup("SpinTaylorFrameless");
     case SpinTaylorT3:
