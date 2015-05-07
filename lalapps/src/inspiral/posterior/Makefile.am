@@ -5,7 +5,6 @@ include $(top_srcdir)/gnuscripts/lalsuite_python.am
 include $(top_srcdir)/gnuscripts/lalapps.am
 
 SUBDIRS = \
-	SPINspiral \
 	mpi
 
 if LALPULSAR
