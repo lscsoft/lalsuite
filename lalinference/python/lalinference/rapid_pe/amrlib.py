@@ -1,16 +1,93 @@
+import copy
 import numpy
 import lal
 from lalinference.rapid_pe import lalsimutils
 m1m2 = numpy.vectorize(lalsimutils.m1m2)
 
+#
+# Refinement strategies
+#
+
+# Take midpoint between target point and neighbor
 def midpoint(pt1, pt2):
     diff = pt2 - pt1
     mid = diff / 2
     return pt1 + mid
 
+class Cell(object):
+    def __init__(self, boundaries, center=None):
+        self._bounds = boundaries
+        if center is not None:
+            self._center = center
+            assert len(self._center) == len(self._bounds)
+            assert all([b[0] < c < b[1] for c, b in zip(self._center, self._bounds)])
+        else:
+            self._center = [(a+b)/2.0 for a, b in self._bounds]
+
+    def divide(self):
+        """
+        Subdivide once along each dimension, recursively.
+        """
+        return self.__recursive_divide(len(self._bounds)-1)
+            
+    def __recursive_divide(self, dim):
+        """
+        Do not call directly!
+        """
+
+        if dim > 0:
+            cells = self.__recursive_divide(dim-1)
+        else:
+            cells = [self]
+
+        divided_cells = []
+        for cell in cells:
+            d1, d2 = copy.deepcopy(cell), copy.deepcopy(cell)
+            # Divide left
+            d1._bounds[dim][1] = self._center[dim]
+            d1._center[dim] = (self._bounds[dim][0] + self._center[dim]) / 2.0
+            # Divide right
+            d2._bounds[dim][0] = self._center[dim]
+            d2._center[dim] = (self._bounds[dim][1] + self._center[dim]) / 2.0
+            divided_cells.extend([d1, d2])
+
+        return divided_cells
+
+    @staticmethod
+    def make_cell_from_boundaries(inpt_pt, pts, symmetric=True):
+        """
+        Construct a 'virtual cell' from the extent of the points, centered on inpt_pt. If symmetric is True, the boundaries will be symmetric about the input point, if False, the cell will follow the extent of the points on either side.
+        """
+        cell_bounds = []
+
+        pts = numpy.array(pts)
+
+        # Find the extent of points in each dimension
+        ext_right = numpy.max(pts, axis=0)
+        ext_left = numpy.min(pts, axis=0)
+        for el, er, pt in zip(ext_left, ext_right, inpt_pt):
+            print el, er, pt
+            if symmetric:
+                max_ext = max(abs(pt - el), abs(pt - er))
+                bound = (pt - max_ext, pt + max_ext)
+            else:
+                bound = (el, er)
+            cell_bounds.append(bound)
+
+        return Cell(numpy.array(cell_bounds), inpt_pt)
+
+#
+# Utilities
+#
 def prune_duplicate_pts(pts):
+    """
+    Remove identical points from list.
+    """
     return numpy.array(list(set([tuple(pt) for pt in pts])))
 
+#
+# Coordinate transformations
+#
 def transform_m1m2_mceta(m1, m2):
     return lalsimutils.Mceta(m1, m2)
 
