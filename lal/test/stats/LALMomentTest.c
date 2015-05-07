@@ -26,6 +26,7 @@
 
 #include <lal/LALMoment.h>
 #include <lal/LALgetopt.h>
+#include "CheckStatus.h"
 
 /**
  * \author Tibbits, M. M.
