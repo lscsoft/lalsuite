@@ -304,7 +304,7 @@ int LALInferenceExecuteFTTEST_NULLPLAN(void){
     
     UINT4 i, length;
     REAL8 deltaF;
-    LIGOTimeGPS epoch;
+    LIGOTimeGPS epoch={0,0};
     int errnum;
     
     length = 1;
