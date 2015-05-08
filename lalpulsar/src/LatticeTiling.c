@@ -77,11 +77,13 @@ struct tagLatticeTilingIterator {
   LatticeTiling *tiling;		///< Lattice tiling
   size_t itr_ndim;			///< Number of parameter-space dimensions to iterate over
   size_t tiled_itr_ndim;		///< Number of tiled parameter-space dimensions to iterate over
+  TilingOrder order;			///< Order in which to iterate over lattice tiling points
   int state;				///< Iterator state: 0=initialised, 1=in progress, 2=finished
   gsl_vector *phys_point;		///< Current lattice point in physical coordinates
   gsl_vector_long *int_point;		///< Current lattice point in generating integers
   gsl_vector_long *int_lower;		///< Current lower parameter-space bound in generating integers
   gsl_vector_long *int_upper;		///< Current upper parameter-space bound in generating integers
+  gsl_vector_long *direction;		///< Direction of iteration in each tiled parameter-space dimension
   UINT8 index;				///< Index of current lattice tiling point
   UINT8 total_points;			///< Total number of points
   gsl_vector_long *min_points_dim;	///< Minimum number of points per dimension
@@ -338,7 +340,7 @@ static int LT_ComputeStatistics(
   }
 
   // Clone iterator
-  LatticeTilingIterator *itr_clone = XLALCreateLatticeTilingIterator( itr->tiling, itr->itr_ndim );
+  LatticeTilingIterator *itr_clone = XLALCreateLatticeTilingIterator( itr->tiling, itr->itr_ndim, TILING_ORDER_POSITIVE );
   XLAL_CHECK( itr_clone != NULL, XLAL_EFUNC );
 
   // Start iterator at first point
@@ -1030,7 +1032,8 @@ int XLALRandomLatticeTilingPoints(
 
 LatticeTilingIterator *XLALCreateLatticeTilingIterator(
   const LatticeTiling *tiling,
-  const size_t itr_ndim
+  const size_t itr_ndim,
+  const TilingOrder order
   )
 {
 
@@ -1038,6 +1041,7 @@ LatticeTilingIterator *XLALCreateLatticeTilingIterator(
   XLAL_CHECK_NULL( tiling != NULL, XLAL_EFAULT );
   XLAL_CHECK_NULL( tiling->lattice < TILING_LATTICE_MAX, XLAL_EINVAL );
   XLAL_CHECK_NULL( itr_ndim <= tiling->ndim, XLAL_EINVAL );
+  XLAL_CHECK_NULL( order < TILING_ORDER_MAX, XLAL_EINVAL );
 
   // Allocate memory
   LatticeTilingIterator *itr = XLALCalloc( 1, sizeof( *itr ) );
@@ -1049,6 +1053,7 @@ LatticeTilingIterator *XLALCreateLatticeTilingIterator(
 
   // Set fields
   itr->itr_ndim = itr_ndim;
+  itr->order = order;
 
   // Determine the maximum tiled dimension to iterate over
   itr->tiled_itr_ndim = 0;
@@ -1070,6 +1075,7 @@ LatticeTilingIterator *XLALCreateLatticeTilingIterator(
     GAVECLI_NULL( itr->int_lower, tn );
     GAVECLI_NULL( itr->int_point, tn );
     GAVECLI_NULL( itr->int_upper, tn );
+    GAVECLI_NULL( itr->direction, tn );
   }
 
   // Set iterator to beginning of lattice tiling
@@ -1085,7 +1091,7 @@ void XLALDestroyLatticeTilingIterator(
 {
   if( itr ) {
     GFVEC( itr->phys_point, itr->avg_points_dim );
-    GFVECLI( itr->int_lower, itr->int_point, itr->int_upper, itr->min_points_dim, itr->max_points_dim );
+    GFVECLI( itr->int_lower, itr->int_point, itr->int_upper, itr->direction, itr->min_points_dim, itr->max_points_dim );
     XLALDestroyLatticeTiling( itr->tiling );
     XLALFree( itr );
   }
@@ -1127,7 +1133,7 @@ int XLALNextLatticeTilingPoint(
   // Which dimensions have changed?
   size_t changed_ti;
 
-  // Which dimensions need to be reset to lower bounds?
+  // Which dimensions need to be reset?
   size_t reset_ti;
 
   if( itr->state == 0 ) {	// Iterator has been initialised
@@ -1136,13 +1142,18 @@ int XLALNextLatticeTilingPoint(
     gsl_vector_long_set_zero( itr->int_point );
     gsl_vector_set_zero( itr->phys_point );
 
+    // Initialise iteration order to -1 for negative order. When resetting dimensions (below):
+    // - TILING_ORDER_POSITIVE ignores this value and sets direction to 1 for positive order
+    // - TILING_ORDER_ALTERNATING flips this value to 1 for an initial positive order
+    gsl_vector_long_set_all( itr->direction, -1 );
+
     // Initialise index
     itr->index = 0;
 
-    // ALl dimensions have changed
+    // All dimensions have changed
     changed_ti = 0;
 
-    // All dimensions need to be reset to lower bounds
+    // All dimensions need to be reset
     reset_ti = 0;
 
     // Iterator is in progress
@@ -1169,18 +1180,20 @@ int XLALNextLatticeTilingPoint(
       // Decrement current dimension index
       --ti;
 
-      // Increment integer point in this dimension
-      const long int_point_ti = gsl_vector_long_get( itr->int_point, ti ) + 1;
+      // Increment integer point in this dimension, in current direction
+      const long direction = gsl_vector_long_get( itr->direction, ti );
+      const long int_point_ti = gsl_vector_long_get( itr->int_point, ti ) + direction;
       gsl_vector_long_set( itr->int_point, ti, int_point_ti );
 
-      // Increment physical point in this dimension
+      // Increment physical point in this dimension, in current direction
       const size_t i = itr->tiling->tiled_idx[ti];
       gsl_vector_const_view phys_from_int_i = gsl_matrix_const_column( itr->tiling->phys_from_int, i );
-      gsl_vector_add( itr->phys_point, &phys_from_int_i.vector );
+      gsl_blas_daxpy( direction, &phys_from_int_i.vector, itr->phys_point );
 
       // If point is not out of bounds, we have found the next lattice point
+      const long int_lower_ti = gsl_vector_long_get( itr->int_lower, ti );
       const long int_upper_ti = gsl_vector_long_get( itr->int_upper, ti );
-      if( int_point_ti <= int_upper_ti ) {
+      if( ( direction > 0 && int_point_ti <= int_upper_ti ) || ( direction < 0 && int_point_ti >= int_lower_ti ) ) {
         break;
       }
 
@@ -1195,12 +1208,12 @@ int XLALNextLatticeTilingPoint(
     // This dimension and higher have changed
     changed_ti = ti;
 
-    // Higher dimensions need to be reset to lower bounds
+    // Higher dimensions need to be reset
     reset_ti = ti + 1;
 
   }
 
-  // Reset specified dimensions to lower bounds
+  // Reset specified dimensions
   for( size_t i = 0, ti = 0; i < n; ++i ) {
 
     // Get extremal physical bounds
@@ -1213,8 +1226,17 @@ int XLALNextLatticeTilingPoint(
       continue;
     }
 
-    // If tiled dimension needs to be reset to lower bound:
+    // If tiled dimension needs to be reset:
     if( ti >= reset_ti ) {
+
+      // Switch iterator direction, depending on given order
+      long direction = gsl_vector_long_get( itr->direction, ti );
+      if( itr->order == TILING_ORDER_ALTERNATING ) {
+        direction = -direction;
+      } else {
+        direction = 1;
+      }
+      gsl_vector_long_set( itr->direction, ti, direction );
 
       // Transform physical point in lower dimensions to generating integer offset
       const double phys_origin_i = gsl_vector_get( itr->tiling->phys_origin, i );
@@ -1242,8 +1264,8 @@ int XLALNextLatticeTilingPoint(
       gsl_vector_long_set( itr->int_lower, ti, int_lower_i );
       gsl_vector_long_set( itr->int_upper, ti, ( ti < itr->tiled_itr_ndim ) ? int_upper_i : int_lower_i );
 
-      // Set integer point to lower bound
-      gsl_vector_long_set( itr->int_point, ti, gsl_vector_long_get( itr->int_lower, ti ) );
+      // Set integer point to lower or bound, depending on current direction
+      gsl_vector_long_set( itr->int_point, ti, gsl_vector_long_get( ( direction > 0 ) ? itr->int_lower : itr->int_upper, ti ) );
 
       // Set current physical point from integer point
       double phys_point_i = phys_origin_i;
@@ -1344,7 +1366,7 @@ LatticeTilingLocator *XLALCreateLatticeTilingLocator(
   if( loc->tiling->tiled_ndim > 0 && bound_ndim > 0 ) {
 
     // Create iterator over the bounded dimensions
-    LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator( tiling, bound_ndim );
+    LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator( tiling, bound_ndim, TILING_ORDER_POSITIVE );
 
     const size_t tn = itr->tiling->tiled_ndim;
 

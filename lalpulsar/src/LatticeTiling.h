@@ -65,6 +65,15 @@ typedef enum tagTilingLattice {
 } TilingLattice;
 
 ///
+/// Order in which to iterate over lattice tiling points with a lattice tiling iterator.
+///
+typedef enum tagTilingOrder {
+  TILING_ORDER_POSITIVE,		///< Iterate in positive order (i.e. lower bound to upper bound)
+  TILING_ORDER_ALTERNATING,		///< Alternate between positive and negative order (i.e. upper bound to lower bound) after every pass over each dimension
+  TILING_ORDER_MAX
+} TilingOrder;
+
+///
 /// Function which returns a bound on a dimension of the lattice tiling.
 ///
 typedef double( *LatticeTilingBound )(
@@ -165,7 +174,8 @@ int XLALRandomLatticeTilingPoints(
 ///
 LatticeTilingIterator *XLALCreateLatticeTilingIterator(
   const LatticeTiling *tiling,		///< [in] Lattice tiling
-  const size_t itr_ndim			///< [in] Number of parameter-space dimensions to iterate over
+  const size_t itr_ndim,		///< [in] Number of parameter-space dimensions to iterate over
+  const TilingOrder order		///< [in] Order in which to iterate over lattice tiling points
   );
 
 ///

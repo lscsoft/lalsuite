@@ -97,11 +97,10 @@ static int BasicTest(
     GFMAT( metric );
   }
 
-  // Check number of generated points is expected
   for( size_t i = 0; i < n; ++i ) {
 
-    // Create lattice tiling iterator and locator over 'i+1' dimensions
-    LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator( tiling, i+1 );
+    // Create lattice tiling iterator (using positive order) and locator over 'i+1' dimensions
+    LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator( tiling, i+1, TILING_ORDER_POSITIVE );
     XLAL_CHECK( itr != NULL, XLAL_EFUNC );
     LatticeTilingLocator *loc = XLALCreateLatticeTilingLocator( tiling, i+1 );
     XLAL_CHECK( loc != NULL, XLAL_EFUNC );
@@ -154,6 +153,21 @@ static int BasicTest(
 
   }
 
+  for( size_t i = 0; i < n; ++i ) {
+
+    // Create lattice tiling iterator (using alternating order) over 'i+1' dimensions
+    LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator( tiling, i+1, TILING_ORDER_ALTERNATING );
+    XLAL_CHECK( itr != NULL, XLAL_EFUNC );
+
+    // Count number of points
+    const UINT8 total = XLALNumberOfLatticeTilingPoints( itr );
+    XLAL_CHECK( total == total_ref[i], XLAL_EFUNC, "ERROR: total = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = total_ref (alternating order)", total, total_ref[i] );
+
+    // Cleanup
+    XLALDestroyLatticeTilingIterator( itr );
+
+  }
+
   // Cleanup
   XLALDestroyLatticeTiling( tiling );
   LALCheckMemoryLeaks();
@@ -174,8 +188,8 @@ static int MismatchTest(
 
   const size_t n = XLALNumberOfLatticeTilingDimensions( tiling );
 
-  // Create lattice tiling iterator and locator
-  LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator( tiling, n );
+  // Create lattice tiling iterator (using alternating order) and locator
+  LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator( tiling, n, TILING_ORDER_ALTERNATING );
   XLAL_CHECK( itr != NULL, XLAL_EFUNC );
   LatticeTilingLocator *loc = XLALCreateLatticeTilingLocator( tiling, n );
   XLAL_CHECK( loc != NULL, XLAL_EFUNC );
