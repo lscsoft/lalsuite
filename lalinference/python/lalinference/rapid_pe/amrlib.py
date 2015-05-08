@@ -66,7 +66,6 @@ class Cell(object):
         ext_right = numpy.max(pts, axis=0)
         ext_left = numpy.min(pts, axis=0)
         for el, er, pt in zip(ext_left, ext_right, inpt_pt):
-            print el, er, pt
             if symmetric:
                 max_ext = max(abs(pt - el), abs(pt - er))
                 bound = (pt - max_ext, pt + max_ext)
