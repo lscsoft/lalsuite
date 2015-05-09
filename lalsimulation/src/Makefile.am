@@ -87,7 +87,8 @@ noinst_HEADERS = \
 	LALSimNeutronStarEOSPiecewisePolytrope.c \
 	LALSimNeutronStarEOSTabular.c \
 	LALSimIMRPhenomC_internals.c \
-	LALSimIMRPhenomP.c
+	LALSimIMRPhenomP.c \
+	LALSimIMRSEOBNRROMUtilities.c
 
 lib_LTLIBRARIES = liblalsimulation.la
 liblalsimulation_la_SOURCES = \

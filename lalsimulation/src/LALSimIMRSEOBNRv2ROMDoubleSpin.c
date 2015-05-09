@@ -35,8 +35,6 @@
  *   Mtot >= 12Msun
  */
 
-#define _XOPEN_SOURCE 500
-
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
 #else
@@ -71,6 +69,7 @@
 
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimIMR.h>
+#include "LALSimIMRSEOBNRROMUtilities.c"
 
 #include <lal/LALConfig.h>
 #ifdef LAL_PTHREAD_LOCK
@@ -333,6 +332,26 @@ static bool SEOBNRv2ROMDoubleSpin_IsSetup(void);
 static int SEOBNRROMdataDS_Init(SEOBNRROMdataDS *romdata, const char dir[]);
 static void SEOBNRROMdataDS_Cleanup(SEOBNRROMdataDS *romdata);
 
+static int TP_Spline_interpolation_3d(
+  REAL8 eta,                // Input: eta-value for which projection coefficients should be evaluated
+  REAL8 chi1,               // Input: chi1-value for which projection coefficients should be evaluated
+  REAL8 chi2,               // Input: chi2-value for which projection coefficients should be evaluated
+  gsl_vector *cvec_amp,     // Input: data for spline coefficients for amplitude
+  gsl_vector *cvec_phi,     // Input: data for spline coefficients for phase
+  gsl_vector *cvec_amp_pre, // Input: data for spline coefficients for amplitude prefactor
+  int nk_amp,               // number of SVD-modes == number of basis functions for amplitude
+  int nk_phi,               // number of SVD-modes == number of basis functions for phase
+  int ncx,                  // Number of points in eta  + 2
+  int ncy,                  // Number of points in chi1 + 2
+  int ncz,                  // Number of points in chi2 + 2
+  const double *etavec,     // B-spline knots in eta
+  const double *chi1vec,    // B-spline knots in chi1
+  const double *chi2vec,    // B-spline knots in chi2
+  gsl_vector *c_amp,        // Output: interpolated projection coefficients for amplitude
+  gsl_vector *c_phi,        // Output: interpolated projection coefficients for phase
+  REAL8 *amp_pre            // Output: interpolated amplitude prefactor
+);
+
 static int SEOBNRROMdataDS_Init_submodel(
   SEOBNRROMdataDS_submodel **submodel,
   const int nk_amp,
@@ -390,32 +409,9 @@ static void SplineData_Init(
   const double *chi2vec   // B-spline knots in chi2
 );
 
-static int read_vector(const char dir[], const char fname[], gsl_vector *v);
-static int read_matrix(const char dir[], const char fname[], gsl_matrix *m);
-
 static int load_data_sub1(const char dir[], gsl_vector *cvec_amp, gsl_vector *cvec_phi, gsl_matrix *Bamp, gsl_matrix *Bphi, gsl_vector *cvec_amp_pre);
 static int load_data_sub2(const char dir[], gsl_vector *cvec_amp, gsl_vector *cvec_phi, gsl_matrix *Bamp, gsl_matrix *Bphi, gsl_vector *cvec_amp_pre);
 static int load_data_sub3(const char dir[], gsl_vector *cvec_amp, gsl_vector *cvec_phi, gsl_matrix *Bamp, gsl_matrix *Bphi, gsl_vector *cvec_amp_pre);
-
-static int TP_Spline_interpolation_3d(
-  REAL8 eta,                // Input: eta-value for which projection coefficients should be evaluated
-  REAL8 chi1,               // Input: chi1-value for which projection coefficients should be evaluated
-  REAL8 chi2,               // Input: chi2-value for which projection coefficients should be evaluated
-  gsl_vector *cvec_amp,     // Input: data for spline coefficients for amplitude
-  gsl_vector *cvec_phi,     // Input: data for spline coefficients for phase
-  gsl_vector *cvec_amp_pre, // Input: data for spline coefficients for amplitude prefactor
-  int nk_amp,               // number of SVD-modes == number of basis functions for amplitude
-  int nk_phi,               // number of SVD-modes == number of basis functions for phase
-  int ncx,                  // Number of points in eta  + 2
-  int ncy,                  // Number of points in chi1 + 2
-  int ncz,                  // Number of points in chi2 + 2
-  const double *etavec,     // B-spline knots in eta
-  const double *chi1vec,    // B-spline knots in chi1
-  const double *chi2vec,    // B-spline knots in chi2
-  gsl_vector *c_amp,        // Output: interpolated projection coefficients for amplitude
-  gsl_vector *c_phi,        // Output: interpolated projection coefficients for phase
-  REAL8 *amp_pre            // Output: interpolated amplitude prefactor
-);
 
 static int SEOBNRv2ROMDoubleSpinTimeFrequencySetup(
   gsl_spline **spline_phi,                      // phase spline
@@ -426,6 +422,16 @@ static int SEOBNRv2ROMDoubleSpinTimeFrequencySetup(
   REAL8 m2SI,                                   // Mass of companion 2 (kg)
   REAL8 chi1,                                   // Aligned spin of companion 1
   REAL8 chi2                                    // Aligned spin of companion 2
+);
+
+UNUSED static REAL8 Interpolate_Coefficent_Matrix(
+  gsl_vector *v,
+  REAL8 eta,
+  REAL8 chi,
+  int ncx,
+  int ncy,
+  gsl_bspline_workspace *bwx,
+  gsl_bspline_workspace *bwy
 );
 
 /********************* Definitions begin here ********************/
@@ -454,45 +460,6 @@ bool SEOBNRv2ROMDoubleSpin_IsSetup(void) {
     return true;
   else
     return false;
-}
-
-// Helper functions to read gsl_vector and gsl_matrix data with error checking
-static int read_vector(const char dir[], const char fname[], gsl_vector *v) {
-  char *path=alloca(strlen(dir)+32);
-
-  sprintf(path,"%s/%s", dir, fname);
-  FILE *f = fopen(path, "rb");
-  if (!f) {
-    XLALPrintInfo("%s : Could not find ROM data file at path %s.\n", __func__, path);
-    return(XLAL_FAILURE);
-  }
-  int ret = gsl_vector_fread(f, v);
-  if (ret != 0) {
-    XLALPrintError("%s : Error reading data from %s.\n", __func__, path);
-    return(XLAL_FAILURE);
-  }
-  fclose(f);
-  XLALPrintInfo("%s : sucessfully read ROM data file %s.\n", __func__, path);
-  return(XLAL_SUCCESS);
-}
-
-static int read_matrix(const char dir[], const char fname[], gsl_matrix *m) {
-  char *path=alloca(strlen(dir)+32);
-
-  sprintf(path,"%s/%s", dir, fname);
-  FILE *f = fopen(path, "rb");
-  if (!f) {
-    XLALPrintInfo("%s : Could not find ROM data file at path %s.\n", __func__, path);
-    return(XLAL_FAILURE);
-  }
-  int ret = gsl_matrix_fread(f, m);
-  if (ret != 0) {
-    XLALPrintError("%s : Error reading data from %s.\n", __func__, path);
-    return(XLAL_FAILURE);
-  }
-  fclose(f);
-  XLALPrintInfo("%s : sucessfully read ROM data file %s.\n", __func__, path);
-  return(XLAL_SUCCESS);
 }
 
 // Read binary ROM data for basis functions and coefficients for submodel 1
@@ -599,60 +566,6 @@ static void SplineData_Destroy(SplineData *splinedata)
   XLALFree(splinedata);
 }
 
-// Helper function to perform tensor product spline interpolation with gsl
-// The gsl_vector v contains the ncx x ncy x ncz dimensional coefficient tensor in vector form
-// that should be interpolated and evaluated at position (eta,chi1,chi2).
-static REAL8 Interpolate_Coefficent_Tensor(
-  gsl_vector *v,
-  REAL8 eta,
-  REAL8 chi1,
-  REAL8 chi2,
-  int ncy,
-  int ncz,
-  gsl_bspline_workspace *bwx,
-  gsl_bspline_workspace *bwy,
-  gsl_bspline_workspace *bwz
-) {
-  // Store nonzero cubic (order k=4) B-spline basis functions in the eta and chi directions.
-  gsl_vector *Bx4 = gsl_vector_alloc(4);
-  gsl_vector *By4 = gsl_vector_alloc(4);
-  gsl_vector *Bz4 = gsl_vector_alloc(4);
-
-  size_t isx, isy, isz; // first non-zero spline
-  size_t iex, iey, iez; // last non-zero spline
-  // Evaluate all potentially nonzero cubic B-spline basis functions for
-  // positions (eta,chi) and store them in the vectors Bx4, By4, Bz4.
-  // Since the B-splines are of compact support we only need to store a small
-  // number of basis functions to avoid computing terms that would be zero anyway.
-  // https://www.gnu.org/software/gsl/manual/html_node/Overview-of-B_002dsplines.html#Overview-of-B_002dsplines
-  gsl_bspline_eval_nonzero(eta,  Bx4, &isx, &iex, bwx);
-  gsl_bspline_eval_nonzero(chi1, By4, &isy, &iey, bwy);
-  gsl_bspline_eval_nonzero(chi2, Bz4, &isz, &iez, bwz);
-
-  // Now compute coefficient at desired parameters (q,chi1,chi2)
-  // from C(eta,chi1,chi2) = c_ijk * Beta_i * Bchi1_j * Bchi2_k
-  // while summing over indices i,j,k where the B-splines are nonzero.
-  // Note: in the 2D case we were able to use gsl_matrix c = gsl_matrix_view_vector(&v, ncx, ncy).matrix
-  // to convert vector view of the coefficient matrix to a matrix view.
-  // However, since tensors are not supported in gsl, we have to do the indexing explicitly.
-  double sum = 0;
-  for (int i=0; i<4; i++)
-    for (int j=0; j<4; j++)
-      for (int k=0; k<4; k++) {
-        int ii = isx + i;
-        int jj = isy + j;
-        int kk = isz + k;
-        double cijk = gsl_vector_get(v, (ii*ncy + jj)*ncz + kk);
-        sum += cijk * gsl_vector_get(Bx4, i) * gsl_vector_get(By4, j) * gsl_vector_get(Bz4, k);
-      }
-
-  gsl_vector_free(Bx4);
-  gsl_vector_free(By4);
-  gsl_vector_free(Bz4);
-
-  return sum;
-}
-
 // Interpolate projection coefficients for amplitude and phase over the parameter space (q, chi).
 // The multi-dimensional interpolation is carried out via a tensor product decomposition.
 static int TP_Spline_interpolation_3d(
@@ -703,10 +616,6 @@ static int TP_Spline_interpolation_3d(
   SplineData_Destroy(splinedata);
 
   return(0);
-}
-
-static void err_handler(const char *reason, const char *file, int line, int gsl_errno) {
-  XLALPrintError("gsl: %s:%d: %s - %d\n", file, line, reason, gsl_errno);
 }
 
 /* Set up a new ROM submodel, using data contained in dir */
