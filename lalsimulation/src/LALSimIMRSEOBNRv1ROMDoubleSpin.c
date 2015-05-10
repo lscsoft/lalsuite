@@ -215,15 +215,6 @@ int SEOBNRv1ROMDoubleSpinCore(
    * Then we will use deltaF = 0 to create the frequency series we return. */
 );
 
-UNUSED static REAL8 Interpolate_Coefficent_Matrix(
-  gsl_vector *v,
-  REAL8 eta,
-  REAL8 chi,
-  int ncx,
-  int ncy,
-  gsl_bspline_workspace *bwx,
-  gsl_bspline_workspace *bwy
-);
 
 /********************* Definitions begin here ********************/
 

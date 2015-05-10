@@ -8,9 +8,9 @@
 
 static void err_handler(const char *reason, const char *file, int line, int gsl_errno);
 static int read_vector(const char dir[], const char fname[], gsl_vector *v);
-static int read_matrix(const char dir[], const char fname[], gsl_matrix *m);
+UNUSED static int read_matrix(const char dir[], const char fname[], gsl_matrix *m);
 
-static REAL8 Interpolate_Coefficent_Tensor(
+UNUSED static REAL8 Interpolate_Coefficent_Tensor(
   gsl_vector *v,
   REAL8 eta,
   REAL8 chi1,
@@ -22,7 +22,7 @@ static REAL8 Interpolate_Coefficent_Tensor(
   gsl_bspline_workspace *bwz
 );
 
-static REAL8 Interpolate_Coefficent_Matrix(
+UNUSED static REAL8 Interpolate_Coefficent_Matrix(
   gsl_vector *v,
   REAL8 eta,
   REAL8 chi,

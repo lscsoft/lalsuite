@@ -275,16 +275,6 @@ static REAL8 TP_Spline_interpolation_3d(
   const double *zvec        // B-spline knots in z
 );
 
-UNUSED static int read_matrix(const char dir[], const char fname[], gsl_matrix *m);
-UNUSED static REAL8 Interpolate_Coefficent_Matrix(
-  gsl_vector *v,
-  REAL8 eta,
-  REAL8 chi,
-  int ncx,
-  int ncy,
-  gsl_bspline_workspace *bwx,
-  gsl_bspline_workspace *bwy
-);
 
 /**************** Internal functions **********************/
 

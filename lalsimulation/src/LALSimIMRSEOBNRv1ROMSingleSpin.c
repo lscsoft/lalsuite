@@ -223,17 +223,6 @@ static int TP_Spline_interpolation_2d(
   REAL8 *amp_pre            // Output: interpolated amplitude prefactor
 );
 
-UNUSED static REAL8 Interpolate_Coefficent_Tensor(
-  gsl_vector *v,
-  REAL8 eta,
-  REAL8 chi1,
-  REAL8 chi2,
-  int ncy,
-  int ncz,
-  gsl_bspline_workspace *bwx,
-  gsl_bspline_workspace *bwy,
-  gsl_bspline_workspace *bwz
-);
 
 /********************* Definitions begin here ********************/
 
