@@ -1262,15 +1262,6 @@ int XLALNextLatticeTilingPoint(
     // If tiled dimension needs to be reset:
     if( ti >= reset_ti ) {
 
-      // Switch iterator direction, depending on given order
-      long direction = gsl_vector_long_get( itr->direction, ti );
-      if( itr->order == TILING_ORDER_ALTERNATING ) {
-        direction = -direction;
-      } else {
-        direction = 1;
-      }
-      gsl_vector_long_set( itr->direction, ti, direction );
-
       // Transform physical point in lower dimensions to generating integer offset
       const double phys_origin_i = gsl_vector_get( itr->tiling->phys_origin, i );
       double int_from_phys_point_i = 0;
@@ -1281,24 +1272,48 @@ int XLALNextLatticeTilingPoint(
         int_from_phys_point_i += int_from_phys_i_j * ( phys_point_j - phys_origin_j );
       }
 
-      // Transform physical bounds to generating integers
-      const double int_from_phys_i_i = gsl_matrix_get( itr->tiling->int_from_phys, i, i );
-      const double dbl_int_lower_i = int_from_phys_point_i + int_from_phys_i_i * ( phys_lower - phys_origin_i );
-      const double dbl_int_upper_i = int_from_phys_point_i + int_from_phys_i_i * ( phys_upper - phys_origin_i );
+      {
+        // Transform physical bounds to generating integers
+        const double int_from_phys_i_i = gsl_matrix_get( itr->tiling->int_from_phys, i, i );
+        const double dbl_int_lower_i = int_from_phys_point_i + int_from_phys_i_i * ( phys_lower - phys_origin_i );
+        const double dbl_int_upper_i = int_from_phys_point_i + int_from_phys_i_i * ( phys_upper - phys_origin_i );
 
-      // Compute integer lower/upper bounds, rounded up/down to avoid extra boundary points
-      feclearexcept( FE_ALL_EXCEPT );
-      const long int_lower_i = lround( ceil( dbl_int_lower_i ) );
-      const long int_upper_i = lround( floor( dbl_int_upper_i ) );
-      XLAL_CHECK( fetestexcept( FE_INVALID ) == 0, XLAL_EFAILED, "Integer bounds on dimension #%zu are too large: %0.2e to %0.2e", i, dbl_int_lower_i, dbl_int_upper_i );
+        // Compute integer lower/upper bounds, rounded up/down to avoid extra boundary points
+        feclearexcept( FE_ALL_EXCEPT );
+        const long int_lower_i = lround( ceil( dbl_int_lower_i ) );
+        const long int_upper_i = lround( floor( dbl_int_upper_i ) );
+        XLAL_CHECK( fetestexcept( FE_INVALID ) == 0, XLAL_EFAILED, "Integer bounds on dimension #%zu are too large: %0.2e to %0.2e", i, dbl_int_lower_i, dbl_int_upper_i );
 
-      // Set integer lower/upper bounds; if this is not an iterated-over
-      // dimension, set both bounds to the lower bound
-      gsl_vector_long_set( itr->int_lower, ti, int_lower_i );
-      gsl_vector_long_set( itr->int_upper, ti, ( ti < itr->tiled_itr_ndim ) ? int_upper_i : int_lower_i );
+        // Set integer lower/upper bounds; if this is not an iterated-over dimension, set both bounds to the lower bound
+        gsl_vector_long_set( itr->int_lower, ti, int_lower_i );
+        gsl_vector_long_set( itr->int_upper, ti, ( ti < itr->tiled_itr_ndim ) ? int_upper_i : int_lower_i );
+      }
+      const long int_lower_i = gsl_vector_long_get( itr->int_lower, ti );
+      const long int_upper_i = gsl_vector_long_get( itr->int_upper, ti );
+
+      // Switch iterator direction, depending on given order
+      long direction = gsl_vector_long_get( itr->direction, ti );
+      if( itr->order == TILING_ORDER_ALTERNATING ) {
+
+        // Only switch direction for iterated-over dimensions; otherwise use a positive direction
+        if( ti < itr->tiled_itr_ndim ) {
+
+          // Only switch direction if there is more than one point in this dimension; otherwise keep the same direction
+          if( int_lower_i < int_upper_i ) {
+            direction = -direction;
+          }
+
+        } else {
+          direction = 1;
+        }
+
+      } else {
+        direction = 1;
+      }
+      gsl_vector_long_set( itr->direction, ti, direction );
 
       // Set integer point to lower or bound, depending on current direction
-      gsl_vector_long_set( itr->int_point, ti, gsl_vector_long_get( ( direction > 0 ) ? itr->int_lower : itr->int_upper, ti ) );
+      gsl_vector_long_set( itr->int_point, ti, ( direction > 0 ) ? int_lower_i : int_upper_i );
 
       // Set current physical point from integer point
       double phys_point_i = phys_origin_i;
