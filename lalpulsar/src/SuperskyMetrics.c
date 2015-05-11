@@ -1028,6 +1028,7 @@ int XLALSetSuperskyLatticeTilingAllSkyBounds(
 
   // Set the parameter-space bound on reduced supersky A coordinate
   XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, 0, skyA_bounds[0], skyA_bounds[1] ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetLatticeTilingBoundPadding( tiling, 0, patch_index_A == 0, patch_index_A == patch_count_A - 1 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // The reduced supersky B coordinate is bounded from below and above by ellipses, with semi-major
   // axes (in A) of 1.0, and semi-minor axes (in B) given by 'semiB', which has values:
@@ -1046,6 +1047,7 @@ int XLALSetSuperskyLatticeTilingAllSkyBounds(
   data_lower[0] = -1.0 + 2.0 * ( ( double ) patch_index_B + 0 ) / patch_count_B;
   data_upper[0] = -1.0 + 2.0 * ( ( double ) patch_index_B + 1 ) / patch_count_B;
   XLAL_CHECK( XLALSetLatticeTilingBound( tiling, 1, SuperskyBCoordBound, data_len, data_lower, data_upper ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetLatticeTilingBoundPadding( tiling, 1, patch_index_B == 0, patch_index_B == patch_count_B - 1 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Cleanup
   gsl_root_fsolver_free( skyA_bounds_fsolver );
