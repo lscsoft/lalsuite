@@ -45,6 +45,8 @@ typedef struct tagLT_Bound {
   size_t data_len;			///< Length of arbitrary data describing parameter-space bounds
   void *data_lower;			///< Arbitrary data describing lower parameter-space bound
   void *data_upper;			///< Arbitrary data describing upper parameter-space bound
+  bool pad_lower;			///< Whether lower parameter space bound should be padded
+  bool pad_upper;			///< Whether upper parameter space bound should be padded
 } LT_Bound;
 
 ///
@@ -285,8 +287,12 @@ static void LT_GetExtremalBounds(
 
     // Add padding of half the metric ellipse bounding box in this dimension
     const double phys_bbox_dim = 0.5 * gsl_vector_get( tiling->phys_bbox, dim );
-    *phys_lower -= phys_bbox_dim;
-    *phys_upper += phys_bbox_dim;
+    if( tiling->bounds[dim].pad_lower ) {
+      *phys_lower -= phys_bbox_dim;
+    }
+    if( tiling->bounds[dim].pad_upper ) {
+      *phys_upper += phys_bbox_dim;
+    }
 
   }
 
@@ -623,6 +629,33 @@ int XLALSetLatticeTilingBound(
   tiling->bounds[dim].data_len = data_len;
   tiling->bounds[dim].data_lower = data_lower;
   tiling->bounds[dim].data_upper = data_upper;
+  tiling->bounds[dim].pad_lower = true;
+  tiling->bounds[dim].pad_upper = true;
+
+  return XLAL_SUCCESS;
+
+}
+
+int XLALSetLatticeTilingBoundPadding(
+  LatticeTiling *tiling,
+  const size_t dim,
+  bool pad_lower,
+  bool pad_upper
+  )
+{
+
+  // Check input
+  XLAL_CHECK( tiling != NULL, XLAL_EFAULT );
+  XLAL_CHECK( tiling->lattice == TILING_LATTICE_MAX, XLAL_EINVAL );
+  XLAL_CHECK( dim < tiling->ndim, XLAL_ESIZE );
+
+  // Check that bound has been set and is tiled
+  XLAL_CHECK( tiling->bounds[dim].func != NULL, XLAL_EINVAL, "Lattice tiling dimension #%zu has not been bounded", dim );
+  XLAL_CHECK( tiling->bounds[dim].is_tiled, XLAL_EINVAL, "Lattice tiling dimension #%zu is not tiled, so has no padding", dim );
+
+  // Set the parameter-space bound padding
+  tiling->bounds[dim].pad_lower = pad_lower;
+  tiling->bounds[dim].pad_upper = pad_upper;
 
   return XLAL_SUCCESS;
 
