@@ -17,11 +17,16 @@
 *  MA  02111-1307  USA
 */
 
+#define _BSD_SOURCE     /* for setenv() */
+#define _XOPEN_SOURCE   /* for putenv() */
+#include <stdlib.h>
+#undef _BSD_SOURCE
+#undef _XOPEN_SOURCE
+
 #include <ctype.h>
 #include <errno.h>
 #include <math.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
@@ -31,6 +36,8 @@
 #include <lal/Date.h>
 #include "getdate.h"
 #include "lalapps.h"
+
+#include "config.h"
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
