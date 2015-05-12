@@ -31,6 +31,10 @@
 #include <lal/XLALError.h>
 #include <lal/LALFrameL.h>
 
+#ifndef P_tmpdir
+#define P_tmpdir "/tmp"
+#endif
+
 #include <FrIO.h>
 
 #ifdef __GNUC__
