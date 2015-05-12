@@ -156,7 +156,7 @@ void read_pulsar_data( LALInferenceRunState *runState ){
 
   tmpharms = XLALStringDuplicate( harmonics );
   for( i = 0; i < ml; i++ ){
-    tmpharm = strsep( &tmpharms, "," );
+    tmpharm = XLALStringToken( &tmpharms, "," , 0);
     XLALStringCopy( harmval, tmpharm, strlen(tmpharm)+1 );
 
     modelFreqFactors->data[i] = atof(harmval);
@@ -184,7 +184,7 @@ void read_pulsar_data( LALInferenceRunState *runState ){
     }
 
     for( i = 0; i < numDets; i++ ){
-      tempdet = strsep( &tempdets, "," );
+      tempdet = XLALStringToken( &tempdets, "," , 0);
       XLALStringCopy( dets[i], tempdet, strlen(tempdet)+1 );
     }
   }
@@ -221,13 +221,13 @@ detectors specified (no. dets = %d)\n", ml, ml, numDets);
       for( i = 0; i < ml*numDets; i++ ){
         CHAR *tmpstr = NULL;
 
-        tmppsd = strsep( &tmppsds, "," );
+        tmppsd = XLALStringToken( &tmppsds, "," , 0);
         XLALStringCopy( psdval, tmppsd, strlen(tmppsd)+1 );
         fpsds[i] = atof(psdval);
 
         /* set detector */
         if ( i%ml == 0 ){
-          tempdet = strsep( &tempdets, "," );
+          tempdet = XLALStringToken( &tempdets, "," , 0);
 
           if( (tmpstr = strstr(tempdet, "A")) != NULL ){ /* have advanced */
             XLALStringCopy( dets[FACTOR(i,ml)], tmpstr+1, strlen(tmpstr)+1 );
@@ -251,7 +251,7 @@ detectors specified (no. dets = %d)\n", ml, ml, numDets);
 
         numPsds++;
 
-        if( i%ml == 0 ) { tempdet = strsep( &tempdets, "," ); }
+        if( i%ml == 0 ) { tempdet = XLALStringToken( &tempdets, "," , 0); }
 
         if( (tmpstr = strstr(tempdet, "A")) != NULL ){ /* have Advanced */
           XLALStringCopy( dets[FACTOR(i,ml)], tmpstr+1, strlen(tmpstr)+1 );
@@ -311,7 +311,7 @@ of detectors specified (no. dets = %d)\n", ml, ml, numDets);
 
       tmpstarts = XLALStringDuplicate( fakestarts );
       for( i = 0; i < ml*numDets; i++ ){
-        tmpstart = strsep( &tmpstarts, "," );
+        tmpstart = XLALStringToken( &tmpstarts, "," , 0);
         XLALStringCopy( startval, tmpstart, strlen(tmpstart)+1 );
 
         fstarts[i] = atof(startval);
@@ -335,7 +335,7 @@ number of detectors specified (no. dets = %d)\n", ml, ml, numDets);
 
       tmplengths = XLALStringDuplicate( fakelengths );
       for( i = 0; i < ml*numDets; i++ ){
-        tmplength = strsep( &tmplengths, "," );
+        tmplength = XLALStringToken( &tmplengths, "," , 0);
         XLALStringCopy( lengthval, tmplength, strlen(tmplength)+1 );
         flengths[i] = atof(lengthval);
       }
@@ -359,7 +359,7 @@ number of detectors specified (no. dets =%d)\n", ml, ml, numDets);
       tmpdts = XLALStringDuplicate( fakedt );
 
       for( i = 0; i < ml*numDets; i++ ){
-        tmpdt = strsep( &tmpdts, "," );
+        tmpdt = XLALStringToken( &tmpdts, "," , 0);
         XLALStringCopy( dtval, tmpdt, strlen(tmpdt)+1 );
         fdt[i] = atof(dtval);
       }
@@ -514,7 +514,7 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
     /*============================ GET DATA ==================================*/
     /* get i'th filename from the comma separated list */
     if ( !ppt2 ){ /* if using real data read in from the file */
-      datafile = strsep(&filestr, ",");
+      datafile = XLALStringToken(&filestr, ",", 0);
 
       j=0;
 
@@ -1013,7 +1013,7 @@ void samples_prior( LALInferenceRunState *runState ){
     nsamps = count_csv( tempsamps );
 
     for( i = 0; i < nsamps; i++ ){
-      tempsamp = strsep( &tempsamps, "," );
+      tempsamp = XLALStringToken( &tempsamps, "," , 0);
       sampfilenames = XLALAppendString2Vector( sampfilenames, tempsamp );
     }
   }
@@ -1033,7 +1033,7 @@ void samples_prior( LALInferenceRunState *runState ){
     }
 
     for( i = 0; i < nnlive; i++ ){
-      templive = strsep( &templives, "," );
+      templive = XLALStringToken( &templives, "," , 0);
       nlive = XLALResizeUINT4Vector( nlive, i+1 );
       nlive->data[i] = atoi( templive );
     }
