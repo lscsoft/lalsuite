@@ -952,11 +952,10 @@ REAL8 LALInferenceEnsembleStretchNames(LALInferenceRunState *runState,
    size_t i;
    REAL8 logPropRatio;
 
+   size_t N = LALInferenceGetVariableDimension(currentParams) + 1; /* More names than we need. */
+   const char* local_names[N];
    if (names == NULL) {
-    size_t N = LALInferenceGetVariableDimension(currentParams) + 1; /* More names than we need. */
-    names = alloca(N*sizeof(char *)); /* Hope we have alloca---saves
-    having to deallocate after
-    proposal. */
+    names = local_names;
 
     LALInferenceVariableItem *item = currentParams->head;
     i = 0;
@@ -1073,12 +1072,11 @@ REAL8 LALInferenceEnsembleWalkNames(LALInferenceRunState *runState,
   REAL8 logPropRatio;
 
   LALInferenceCopyVariables(currentParams, proposedParams);
-  if (names == NULL) {
 
-    size_t N = LALInferenceGetVariableDimension(currentParams) + 1; /* More names than we need. */
-    names = alloca(N*sizeof(char *)); /* Hope we have alloca---saves
-                                         having to deallocate after
-                                         proposal. */
+  size_t N = LALInferenceGetVariableDimension(currentParams) + 1; /* More names than we need. */
+  const char* local_names[N];
+  if (names == NULL) {
+    names = local_names;
 
     LALInferenceVariableItem *item = currentParams->head;
     i = 0;
@@ -1113,14 +1111,14 @@ REAL8 LALInferenceEnsembleWalkNames(LALInferenceRunState *runState,
     return logPropRatio; /* Quit now, since we don't have any points to use. */
   }
 
-  UINT4 *indeces=alloca(sample_size*sizeof(int));
-  UINT4 *all_indeces=alloca(nPts*sizeof(int));
+  UINT4 indeces[sample_size];
+  UINT4 all_indeces[nPts];
 
   for (i=0;i<nPts;i++) all_indeces[i]=i;
   gsl_ran_choose(runState->GSLrandom,indeces, sample_size, all_indeces, nPts, sizeof(UINT4));
 
-  REAL8 *center_of_mass=alloca(sizeof(REAL8)*Ndim);
-  double *w=alloca(sizeof(REAL8)*Ndim);
+  REAL8 center_of_mass[Ndim];
+  double w[Ndim];
   for(k=0;k<Ndim;k++) {center_of_mass[k]=0.0;w[k]=0.0;}
   for (i=0;i<sample_size;i++)
   {
@@ -1132,7 +1130,7 @@ REAL8 LALInferenceEnsembleWalkNames(LALInferenceRunState *runState,
 		  }
   }
 
-  double *univariate_normals=alloca(D*sizeof(double));
+  double univariate_normals[D];
   for(i=0;i<sample_size;i++) univariate_normals[i] = gsl_ran_ugaussian(runState->GSLrandom);
 
   for (i=0;i<sample_size;i++)
@@ -1165,12 +1163,11 @@ REAL8 LALInferenceDifferentialEvolutionNames(LALInferenceRunState *runState,
   REAL8 logPropRatio;
 
   LALInferenceCopyVariables(currentParams, proposedParams);
-  if (names == NULL) {
 
-    size_t N = LALInferenceGetVariableDimension(currentParams) + 1; /* More names than we need. */
-    names = alloca(N*sizeof(char *)); /* Hope we have alloca---saves
-                                         having to deallocate after
-                                         proposal. */
+  size_t N = LALInferenceGetVariableDimension(currentParams) + 1; /* More names than we need. */
+  const char* local_names[N];
+  if (names == NULL) {
+    names = local_names;
 
     LALInferenceVariableItem *item = currentParams->head;
     i = 0;
