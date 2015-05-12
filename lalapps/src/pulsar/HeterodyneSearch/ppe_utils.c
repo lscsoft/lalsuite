@@ -863,7 +863,7 @@ INT4 count_csv( CHAR *csvline ){
 
   /* count number of commas */
   while(1){
-    if( strsep(&inputstr, ",") == NULL ){
+    if( XLALStringToken(&inputstr, ",", 0) == NULL ){
       XLALPrintError("Error... problem counting number of commas!\n");
       XLAL_ERROR( XLAL_EFUNC );
     }
