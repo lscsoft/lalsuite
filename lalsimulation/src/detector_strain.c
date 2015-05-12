@@ -166,7 +166,7 @@ int printparams(struct params p)
         fputs("\n", stderr);
         fputs("Greenwich mean sidereal time: HH:MM:SS = ", stderr);
         fputra(gmst_rad, stderr);
-        fprintf(stderr, " (%g deg)", fmod(gmst_rad, 2.0 * M_PI) / LAL_PI_180);
+        fprintf(stderr, " (%g deg)", fmod(gmst_rad, 2.0 * LAL_PI) / LAL_PI_180);
         fputs("\n", stderr);
         fputs("right ascension:              HH:MM:SS = ", stderr);
         fputra(p.ra, stderr);
@@ -201,11 +201,11 @@ int printparams(struct params p)
         fputs("\n", stderr);
         fputs("local mean sidereal time:     HH:MM:SS = ", stderr);
         fputra(lmst_rad, stderr);
-        fprintf(stderr, " (%g deg)", fmod(lmst_rad, 2.0 * M_PI) / LAL_PI_180);
+        fprintf(stderr, " (%g deg)", fmod(lmst_rad, 2.0 * LAL_PI) / LAL_PI_180);
         fputs("\n", stderr);
         fputs("hour angle:                   HH:MM:SS = ", stderr);
         fputra(ha, stderr);
-        fprintf(stderr, " (%g deg)", fmod(ha, 2.0 * M_PI) / LAL_PI_180);
+        fprintf(stderr, " (%g deg)", fmod(ha, 2.0 * LAL_PI) / LAL_PI_180);
         fputs("\n", stderr);
         fputs("altitude:                     ", stderr);
         fprintf(stderr, "%g deg", altitude / LAL_PI_180);
@@ -332,9 +332,9 @@ double strtora(const char *string)
     ra = (h + m + s) * 15.0 * LAL_PI_180;
 
   done:
-    ra = fmod(ra, 2.0 * M_PI);
+    ra = fmod(ra, 2.0 * LAL_PI);
     if (ra < 0.0)
-        ra += 2.0 * M_PI;
+        ra += 2.0 * LAL_PI;
     return ra;
 }
 
@@ -360,7 +360,7 @@ double strtodec(const char *string)
     s = copysign(s, d) / 3600.0;
     dec = (d + m + s) * LAL_PI_180;
   done:
-    dec = fmod(dec + M_PI, 2.0 * M_PI) - M_PI;
+    dec = fmod(dec + LAL_PI, 2.0 * LAL_PI) - LAL_PI;
     return dec;
 }
 
@@ -368,9 +368,9 @@ double strtodec(const char *string)
 int fputra(double ra, FILE * fp)
 {
     double h, m, s;
-    ra = fmod(ra, 2.0 * M_PI);
+    ra = fmod(ra, 2.0 * LAL_PI);
     if (ra < 0.0)
-        ra += 2.0 * M_PI;
+        ra += 2.0 * LAL_PI;
     ra /= 15.0 * LAL_PI_180;    /* convert to hours */
     m = 60.0 * modf(ra, &h);
     s = 60.0 * modf(m, &s);
@@ -381,7 +381,7 @@ int fputra(double ra, FILE * fp)
 int fputdec(double dec, FILE * fp)
 {
     double d, m, s;
-    dec = fmod(dec + M_PI, 2.0 * M_PI) - M_PI;
+    dec = fmod(dec + LAL_PI, 2.0 * LAL_PI) - LAL_PI;
     dec /= LAL_PI_180;  /* convert to degrees */
     m = 60.0 * modf(dec, &d);
     s = 60.0 * modf(m, &s);
