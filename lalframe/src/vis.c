@@ -269,28 +269,28 @@ void output_ts(const char *fname, REAL8TimeSeries *series)
     /* determine output type from extension */
     ext = strrchr(fname ? fname : "", '.');
     ext = ext ? ext + 1 : "";
-    if (strcasecmp(ext, "wav") == 0) {
+    if (XLALStringCaseCompare(ext, "wav") == 0) {
         fp = fopen(fname, "w");
         XLALAudioWAVRecordREAL8TimeSeries(fp, series);
         fclose(fp);
     }
-    else if (strcasecmp(ext, "au") == 0) {
+    else if (XLALStringCaseCompare(ext, "au") == 0) {
         fp = fopen(fname, "w");
         XLALAudioAURecordREAL8TimeSeries(fp, series);
         fclose(fp);
     }
     else if (
-        strcasecmp(ext, "eps") == 0
-        || strcasecmp(ext, "jpeg") == 0
-        || strcasecmp(ext, "jpg") == 0
-        || strcasecmp(ext, "gif") == 0
-        || strcasecmp(ext, "png") == 0
-        || strcasecmp(ext, "ps") == 0
-        || strcasecmp(ext, "pdf") == 0
-        || strcasecmp(ext, "svg") == 0
+        XLALStringCaseCompare(ext, "eps") == 0
+        || XLALStringCaseCompare(ext, "jpeg") == 0
+        || XLALStringCaseCompare(ext, "jpg") == 0
+        || XLALStringCaseCompare(ext, "gif") == 0
+        || XLALStringCaseCompare(ext, "png") == 0
+        || XLALStringCaseCompare(ext, "ps") == 0
+        || XLALStringCaseCompare(ext, "pdf") == 0
+        || XLALStringCaseCompare(ext, "svg") == 0
         )
         gnuplot_output_ts(fname, ext, series);
-    else if (strcasecmp(ext, "xml") == 0)
+    else if (XLALStringCaseCompare(ext, "xml") == 0)
         xml_output_ts(fname, series);
     else { /* default is an ascii file */
         size_t i;
@@ -314,26 +314,26 @@ void output_fs(const char *fname, REAL8FrequencySeries *series)
     /* determine output type from extension */
     ext = strrchr(fname ? fname : "", '.');
     ext = ext ? ext + 1 : "";
-    if (strcasecmp(ext, "wav") == 0) {
+    if (XLALStringCaseCompare(ext, "wav") == 0) {
         fprintf(stderr, "cannot output a spectrum to an audio file\n");
         exit(1);
     }
-    else if (strcasecmp(ext, "au") == 0) {
+    else if (XLALStringCaseCompare(ext, "au") == 0) {
         fprintf(stderr, "cannot output a spectrum to an audio file\n");
         exit(1);
     }
     else if (
-        strcasecmp(ext, "eps") == 0
-        || strcasecmp(ext, "jpeg") == 0
-        || strcasecmp(ext, "jpg") == 0
-        || strcasecmp(ext, "gif") == 0
-        || strcasecmp(ext, "png") == 0
-        || strcasecmp(ext, "ps") == 0
-        || strcasecmp(ext, "pdf") == 0
-        || strcasecmp(ext, "svg") == 0
+        XLALStringCaseCompare(ext, "eps") == 0
+        || XLALStringCaseCompare(ext, "jpeg") == 0
+        || XLALStringCaseCompare(ext, "jpg") == 0
+        || XLALStringCaseCompare(ext, "gif") == 0
+        || XLALStringCaseCompare(ext, "png") == 0
+        || XLALStringCaseCompare(ext, "ps") == 0
+        || XLALStringCaseCompare(ext, "pdf") == 0
+        || XLALStringCaseCompare(ext, "svg") == 0
         )
         gnuplot_output_fs(fname, ext, series);
-    else if (strcasecmp(ext, "xml") == 0)
+    else if (XLALStringCaseCompare(ext, "xml") == 0)
         xml_output_fs(fname, series);
     else { /* default is an ascii file */
         size_t i;
