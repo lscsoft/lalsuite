@@ -860,7 +860,7 @@ void add_correlation_matrix( LALInferenceVariables *ini, LALInferenceVariables *
     for( ; checkPrior ; checkPrior = checkPrior->next ){
       if( LALInferenceCheckGaussianPrior(priors, checkPrior->name) ){
         /* ignore parameter name case */
-        if( !strcasecmp(parMat->data[i], checkPrior->name) ){
+        if( !XLALStringCaseCompare(parMat->data[i], checkPrior->name) ){
           incor = 1;
 
           /* add parameter to new parameter string vector */
@@ -909,7 +909,7 @@ void add_correlation_matrix( LALInferenceVariables *ini, LALInferenceVariables *
 
     for( ; checkPrior ; checkPrior = checkPrior->next ){
       if( LALInferenceCheckGaussianPrior(priors, checkPrior->name) ){
-        if( !strcasecmp(parMat->data[i], checkPrior->name) ){
+        if( !XLALStringCaseCompare(parMat->data[i], checkPrior->name) ){
           /* remove the Gaussian prior */
           LALInferenceRemoveGaussianPrior( priors, checkPrior->name );
 
