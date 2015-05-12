@@ -17,9 +17,12 @@
 *  MA  02111-1307  USA
 */
 
+#define _BSD_SOURCE   /* for realpath() */
+#include <stdlib.h>
+#undef _BSD_SOURCE
+
 #include <limits.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include <config.h>
