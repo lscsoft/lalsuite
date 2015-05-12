@@ -507,7 +507,7 @@ int main(int argc, char *argv[]){
     }
 
     /* replace first NEWLINE to null terminate string */
-    if ((newlineloc=index(command, '\n')))
+    if ((newlineloc=strchr(command, '\n')))
 	*newlineloc='\0';
 
     /* append additional arguments to command line */
