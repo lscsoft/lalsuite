@@ -2424,9 +2424,9 @@ LALStringVector *XLALReadTEMPOCorFile( REAL8Array *cormat, CHAR *corfile ){
     tmpparams = XLALAppendString2Vector( tmpparams, tmpStr );
 
     /* convert some parameter names to a more common convention */
-    if ( !strcasecmp(tmpStr, "RAJ") ) /* convert RAJ to ra */
+    if ( !XLALStringCaseCompare(tmpStr, "RAJ") ) /* convert RAJ to ra */
       params = XLALAppendString2Vector( params, "ra" );
-    else if ( !strcasecmp(tmpStr, "DECJ") ) /* convert DECJ to dec */
+    else if ( !XLALStringCaseCompare(tmpStr, "DECJ") ) /* convert DECJ to dec */
       params = XLALAppendString2Vector( params, "dec" );
     else
       params = XLALAppendString2Vector( params, tmpStr );
