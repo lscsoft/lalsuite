@@ -1112,8 +1112,6 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     self.ispreengine=ispreengine
     self.engine=cp.get('analysis','engine')
     basepath=cp.get('paths','basedir')
-    if cp.has_option('analysis','accounting_group'):
-      self.add_condor_cmd('accounting_group',cp.get('analysis','accounting_group'))
     if ispreengine is True:
       roqpath=os.path.join(basepath,'ROQdata')
       self.roqpath=roqpath
@@ -1150,6 +1148,8 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
 
     pipeline.CondorDAGJob.__init__(self,universe,exe)
     pipeline.AnalysisJob.__init__(self,cp,dax=dax)
+    if cp.has_option('analysis','accounting_group'):
+      self.add_condor_cmd('accounting_group',cp.get('analysis','accounting_group'))
     # Set grid site if needed
     if cp.has_option('engine','resume'):
         self.resume=True
