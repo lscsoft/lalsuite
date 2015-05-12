@@ -35,6 +35,7 @@
 #include <lal/LALConstants.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALError.h>
+#include <lal/LALString.h>
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimIMR.h>
 
@@ -813,8 +814,8 @@ struct params parseargs(int argc, char **argv)
             }
             break;
         case 'p':      /* nonGRpar */
-            while ((kv = strsep(&LALoptarg, ","))) {
-                char *key = strsep(&kv, "=");
+            while ((kv = XLALStringToken(&LALoptarg, ",", 0))) {
+                char *key = XLALStringToken(&kv, "=", 0);
                 if (kv == NULL || key == NULL || *key == '\0') {
                     fprintf(stderr, "error: invalid key-value pair for %s\n", long_options[option_index].name);
                     exit(1);
