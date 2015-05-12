@@ -30,15 +30,15 @@ static int test_random_doubles(unsigned int seed)
 {
 	int i;
 
-	srandom(seed);
+	srand(seed);
 
 	for(i = 0; i < 100000000; i++) {
 		double in;
 		double out;
 		LIGOTimeGPS gps;
 
-		in = random() * 2000000000.0 / RAND_MAX;
-		in += (double) random() / RAND_MAX;
+		in = rand() * 2000000000.0 / RAND_MAX;
+		in += (double) rand() / RAND_MAX;
 
 		out = XLALGPSGetREAL8(XLALGPSSetREAL8(&gps, in));
 
