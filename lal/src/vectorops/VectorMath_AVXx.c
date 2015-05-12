@@ -18,9 +18,6 @@
 // MA  02111-1307  USA
 //
 
-/* prevent inclusion of conflicting non-C99 symbols */
-#define _ISOC99_SOURCE
-
 // ---------- INCLUDES ----------
 #include <stdlib.h>
 #include <stdio.h>

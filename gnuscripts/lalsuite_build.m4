@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 116
+# serial 117
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -350,6 +350,9 @@ AC_DEFUN([LALSUITE_PROG_COMPILERS],[
   AS_IF([test "x${ac_cv_prog_cc_g}" = xyes],[
     CFLAGS="${CFLAGS} -g"
   ])
+
+  # only include ISO C99 definitions from system headers
+  CFLAGS="${CFLAGS} -D_ISOC99_SOURCE"
 
   # check for C++ compiler, if needed
   AS_IF([test "${lalsuite_require_cxx}" = true],[
