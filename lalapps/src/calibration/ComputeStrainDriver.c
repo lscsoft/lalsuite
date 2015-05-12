@@ -32,7 +32,9 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #else
 
 #ifdef HAVE_UNISTD_H
+#define _BSD_SOURCE   /* for getdomainname() */
 #include <unistd.h>
+#undef _BSD_SOURCE
 #endif
 #include <sys/types.h>
 #include <sys/stat.h>
