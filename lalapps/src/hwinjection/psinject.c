@@ -61,6 +61,7 @@
 #include "SIStr.h"
 #endif
 
+#include <lal/LALConstants.h>
 #include <lal/LALFrameL.h>
 #include <lal/LALgetopt.h>
 #include <lal/XLALError.h>
@@ -694,7 +695,7 @@ int main(int argc, char *argv[]){
 	  cycles3            = tlocal_fra*f_fra;
 	  cycles3           -= (int)cycles3;
 
-	  total[j]=calamp[line]*sin(2*M_PI*(cycles1+cycles2+cycles3));
+	  total[j]=calamp[line]*sin(2*LAL_PI*(cycles1+cycles2+cycles3));
 	}
       }
     }
