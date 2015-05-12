@@ -212,3 +212,35 @@ int XLALStringNCaseCompare(const char *s1, const char *s2, size_t n)
     return c1 - c2;
 
 }
+
+/**
+ * Return the next token delimited by any character in 'delim' from the string 's', which is updated
+ * to point just pass the returned token. If 'empty' is true, empty tokens are accepted.
+ */
+char *XLALStringToken(char **s, const char *delim, int empty)
+{
+
+    if (*s == NULL) {
+        return NULL;
+    }
+
+    /* based on implementations of strtok_r() and strsep() in glibc */
+    char *begin = *s;
+    if (!empty) {
+        begin += strspn(begin, delim);
+        if (*begin == '\0') {
+            *s = NULL;
+            return NULL;
+        }
+    }
+    char *end = strpbrk(begin, delim);
+    if (end != NULL) {
+        *end++ = '\0';
+        *s = end;
+    } else {
+        *s = NULL;
+    }
+
+    return begin;
+
+}

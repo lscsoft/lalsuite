@@ -83,6 +83,31 @@ int main( void )
 
   }
 
+  {
+    char s[] = "abc,def-,ghij k-lmn, ,-";
+    char *p = s;
+    XLAL_CHECK_MAIN( strcmp( XLALStringToken(&p, ",-", 0), "abc" ) == 0, XLAL_EFAILED );
+    XLAL_CHECK_MAIN( strcmp( XLALStringToken(&p, ",-", 0), "def" ) == 0, XLAL_EFAILED );
+    XLAL_CHECK_MAIN( strcmp( XLALStringToken(&p, ",-", 0), "ghij k" ) == 0, XLAL_EFAILED );
+    XLAL_CHECK_MAIN( strcmp( XLALStringToken(&p, ",-", 0), "lmn" ) == 0, XLAL_EFAILED );
+    XLAL_CHECK_MAIN( strcmp( XLALStringToken(&p, ",-", 0), " " ) == 0, XLAL_EFAILED );
+    XLAL_CHECK_MAIN( XLALStringToken(&p, ",-", 0) == NULL, XLAL_EFAILED );
+  }
+
+  {
+    char s[] = "abc,def-,ghij k-lmn, ,-";
+    char *p = s;
+    XLAL_CHECK_MAIN( strcmp( XLALStringToken(&p, ",-", 1), "abc" ) == 0, XLAL_EFAILED );
+    XLAL_CHECK_MAIN( strcmp( XLALStringToken(&p, ",-", 1), "def" ) == 0, XLAL_EFAILED );
+    XLAL_CHECK_MAIN( strcmp( XLALStringToken(&p, ",-", 1), "" ) == 0, XLAL_EFAILED );
+    XLAL_CHECK_MAIN( strcmp( XLALStringToken(&p, ",-", 1), "ghij k" ) == 0, XLAL_EFAILED );
+    XLAL_CHECK_MAIN( strcmp( XLALStringToken(&p, ",-", 1), "lmn" ) == 0, XLAL_EFAILED );
+    XLAL_CHECK_MAIN( strcmp( XLALStringToken(&p, ",-", 1), " " ) == 0, XLAL_EFAILED );
+    XLAL_CHECK_MAIN( strcmp( XLALStringToken(&p, ",-", 1), "" ) == 0, XLAL_EFAILED );
+    XLAL_CHECK_MAIN( strcmp( XLALStringToken(&p, ",-", 1), "" ) == 0, XLAL_EFAILED );
+    XLAL_CHECK_MAIN( XLALStringToken(&p, ",-", 1) == NULL, XLAL_EFAILED );
+  }
+
   return 0;
 
 }
