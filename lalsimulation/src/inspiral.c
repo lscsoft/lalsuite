@@ -193,7 +193,7 @@ int output_td_waveform(REAL8TimeSeries * h_plus, REAL8TimeSeries * h_cross, stru
         /* extrapolate the end of the waveform using last and second last points */
         phi0 = 2 * phi->data[phi->length - 1] - phi->data[phi->length - 2];
         // phi0 = phi->data[phi->length - 1];
-        phi0 -= fmod(phi0 + copysign(M_PI, phi0), 2.0 * M_PI) - copysign(M_PI, phi0);
+        phi0 -= fmod(phi0 + copysign(LAL_PI, phi0), 2.0 * LAL_PI) - copysign(LAL_PI, phi0);
         for (j = 0; j < phi->length; ++j)
             phi->data[j] -= phi0;
 
@@ -236,12 +236,12 @@ int output_fd_waveform(COMPLEX16FrequencySeries * htilde_plus, COMPLEX16Frequenc
         /* make sure that unwound phases are in -pi to pi at fRef */
         kref = round((p.fRef > 0 ? p.fRef : p.f_min) / htilde_plus->deltaF);
         arg0 = arg_plus->data[kref];
-        arg0 -= fmod(arg0 + copysign(M_PI, arg0), 2.0 * M_PI) - copysign(M_PI, arg0);
+        arg0 -= fmod(arg0 + copysign(LAL_PI, arg0), 2.0 * LAL_PI) - copysign(LAL_PI, arg0);
         for (k = 0; k < arg_plus->length; ++k)
             arg_plus->data[k] -= arg0;
 
         arg0 = arg_cross->data[kref];
-        arg0 -= fmod(arg0 + copysign(M_PI, arg0), 2.0 * M_PI) - copysign(M_PI, arg0);
+        arg0 -= fmod(arg0 + copysign(LAL_PI, arg0), 2.0 * LAL_PI) - copysign(LAL_PI, arg0);
         for (k = 0; k < arg_cross->length; ++k)
             arg_cross->data[k] -= arg0;
 
