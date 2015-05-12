@@ -527,7 +527,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
 
   int Nifos=0;
   for(dataPtr=data;dataPtr;dataPtr=dataPtr->next) Nifos++;
-  void **generatedFreqModels=alloca((1+Nifos)*sizeof(void *));
+  void *generatedFreqModels[1+Nifos];
   for(i=0;i<=Nifos;i++) generatedFreqModels[i]=NULL;
 
   //noise model meta parameters
@@ -1577,7 +1577,7 @@ void LALInferenceNetworkSNR(LALInferenceVariables *currentParams,
 
   int Nifos=0;
   for(dataPtr=data;dataPtr;dataPtr=dataPtr->next) Nifos++;
-  void **generatedFreqModels=alloca((1+Nifos)*sizeof(void *));
+  void *generatedFreqModels[1+Nifos];
   for(i=0;i<=Nifos;i++) generatedFreqModels[i]=NULL;
 
   //check if signal model is being used
