@@ -976,7 +976,7 @@ int XLALSetTilingLatticeAndMetric(
 
 }
 
-size_t XLALNumberOfLatticeTilingDimensions(
+size_t XLALTotalLatticeTilingDimensions(
   const LatticeTiling *tiling
   )
 {
@@ -988,7 +988,7 @@ size_t XLALNumberOfLatticeTilingDimensions(
 
 }
 
-size_t XLALNumberOfTiledLatticeDimensions(
+size_t XLALTiledLatticeTilingDimensions(
   const LatticeTiling *tiling
   )
 {
@@ -1341,7 +1341,7 @@ int XLALNextLatticeTilingPoint(
 
 }
 
-UINT8 XLALNumberOfLatticeTilingPoints(
+UINT8 XLALTotalLatticeTilingPoints(
   LatticeTilingIterator *itr
   )
 {

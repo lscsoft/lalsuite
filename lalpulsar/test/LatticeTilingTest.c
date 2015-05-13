@@ -106,7 +106,7 @@ static int BasicTest(
     XLAL_CHECK( loc != NULL, XLAL_EFUNC );
 
     // Count number of points
-    const UINT8 total = XLALNumberOfLatticeTilingPoints( itr );
+    const UINT8 total = XLALTotalLatticeTilingPoints( itr );
     printf( "Number of lattice points in %zu dimensions: %" LAL_UINT8_FORMAT "\n", i+1, total );
     XLAL_CHECK( total == total_ref[i], XLAL_EFUNC, "ERROR: total = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = total_ref", total, total_ref[i] );
     printf( "Minimum/average/maximum number of points per dimension:\n" );
@@ -160,7 +160,7 @@ static int BasicTest(
     XLAL_CHECK( itr != NULL, XLAL_EFUNC );
 
     // Count number of points
-    const UINT8 total = XLALNumberOfLatticeTilingPoints( itr );
+    const UINT8 total = XLALTotalLatticeTilingPoints( itr );
     XLAL_CHECK( total == total_ref[i], XLAL_EFUNC, "ERROR: total = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = total_ref (alternating order)", total, total_ref[i] );
 
     // Cleanup
@@ -186,7 +186,7 @@ static int MismatchTest(
   )
 {
 
-  const size_t n = XLALNumberOfLatticeTilingDimensions( tiling );
+  const size_t n = XLALTotalLatticeTilingDimensions( tiling );
 
   // Create lattice tiling iterator (using alternating order) and locator
   LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator( tiling, n, TILING_ORDER_ALTERNATING );
@@ -195,7 +195,7 @@ static int MismatchTest(
   XLAL_CHECK( loc != NULL, XLAL_EFUNC );
 
   // Count number of points
-  const UINT8 total = XLALNumberOfLatticeTilingPoints( itr );
+  const UINT8 total = XLALTotalLatticeTilingPoints( itr );
   printf( "Number of lattice points: %" LAL_UINT8_FORMAT "\n", total );
   XLAL_CHECK( total == total_ref, XLAL_EFUNC, "ERROR: total = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = total_ref", total, total_ref );
 

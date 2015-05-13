@@ -388,7 +388,7 @@ XLALNumDopplerTemplates ( DopplerFullScanState *scan)
         case GRID_SPINDOWN_SQUARE: /* square parameter space */
         case GRID_SPINDOWN_AGEBRK: /* age-braking index parameter space */
           LogPrintf(LOG_DEBUG, "Counting spindown lattice templates ... ");
-          scan->numTemplates = (REAL8)XLALNumberOfLatticeTilingPoints(scan->spindownTilingItr);
+          scan->numTemplates = (REAL8)XLALTotalLatticeTilingPoints(scan->spindownTilingItr);
           LogPrintfVerbatim(LOG_DEBUG, "%0.0f\n", scan->numTemplates);
           break;
 

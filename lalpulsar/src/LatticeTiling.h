@@ -152,14 +152,14 @@ int XLALSetTilingLatticeAndMetric(
 ///
 /// Return the total number of dimensions of the lattice tiling.
 ///
-size_t XLALNumberOfLatticeTilingDimensions(
+size_t XLALTotalLatticeTilingDimensions(
   const LatticeTiling *tiling		///< [in] Lattice tiling
   );
 
 ///
-/// Return the number of tiled dimensions of the lattice tiling.
+/// Return the number of tiled (i.e. not a single point) dimensions of the lattice tiling.
 ///
-size_t XLALNumberOfTiledLatticeDimensions(
+size_t XLALTiledLatticeTilingDimensions(
   const LatticeTiling *tiling		///< [in] Lattice tiling
   );
 
@@ -218,7 +218,7 @@ int XLALNextLatticeTilingPoint(
 ///
 /// Return the total number of points in the lattice tiling.
 ///
-UINT8 XLALNumberOfLatticeTilingPoints(
+UINT8 XLALTotalLatticeTilingPoints(
   LatticeTilingIterator *itr		///< [in] Lattice tiling iterator
   );
 
