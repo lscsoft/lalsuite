@@ -141,9 +141,11 @@ static int BasicTest(
       XLAL_ERROR( XLAL_EFAILED, "ERROR: number of failed index lookups = %" LAL_UINT8_FORMAT " > 0", failed );
     }
 
-    // Print index trie
-    printf( "Index trie in %zu dimensions:\n", i+1 );
-    XLAL_CHECK( XLALPrintLatticeTilingIndexTrie( loc, stdout ) == XLAL_SUCCESS, XLAL_EFUNC );
+    if ( lalDebugLevel & LALINFOBIT ) {
+      // Print index trie
+      printf( "Index trie in %zu dimensions:\n", i+1 );
+      XLAL_CHECK( XLALPrintLatticeTilingIndexTrie( loc, stdout ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
 
     // Cleanup
     XLALDestroyLatticeTilingIterator( itr );
