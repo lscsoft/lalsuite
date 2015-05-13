@@ -223,14 +223,15 @@ UINT8 XLALTotalLatticeTilingPoints(
   );
 
 ///
-/// Return ranges of the number of lattice tiling points per dimension.
+/// Return statistics related to the number of lattice tiling points in a dimension.
 ///
-int XLALRangesOfLatticeTilingPoints(
+int XLALLatticeTilingStatistics(
   LatticeTilingIterator *itr,		///< [in] Lattice tiling iterator
   const size_t dim,			///< [in] Dimension in which to return ranges
-  long *min_points,			///< [out] Minimum number of points in this dimension
-  double *avg_points,			///< [out] Average number of points in this dimension
-  long *max_points			///< [out] Maximum number of points in this dimension
+  UINT8 *total_points,			///< [out] Total number of points up to this dimension
+  long *min_points_pass,		///< [out] Minimum number of points per pass in this dimension
+  double *avg_points_pass,		///< [out] Average number of points per pass in this dimension
+  long *max_points_pass			///< [out] Maximum number of points per pass in this dimension
   );
 
 ///

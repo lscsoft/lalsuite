@@ -75,6 +75,16 @@ struct tagLatticeTiling {
   gsl_matrix *tiled_generator;		///< Lattice generator matrix in tiled dimensions
 };
 
+///
+/// Lattice tiling parameter-space statistics for one dimension.
+///
+typedef struct tagLT_Stats {
+  UINT8 total_points;			///< Total number of points up to this dimension
+  long min_points_pass;			///< Minimum number of points per pass in this dimension
+  double avg_points_pass;		///< Average number of points per pass in this dimension
+  long max_points_pass;			///< Maximum number of points per pass in this dimension
+} LT_Stats;
+
 struct tagLatticeTilingIterator {
   LatticeTiling *tiling;		///< Lattice tiling
   size_t itr_ndim;			///< Number of parameter-space dimensions to iterate over
@@ -87,10 +97,7 @@ struct tagLatticeTilingIterator {
   gsl_vector_long *int_upper;		///< Current upper parameter-space bound in generating integers
   gsl_vector_long *direction;		///< Direction of iteration in each tiled parameter-space dimension
   UINT8 index;				///< Index of current lattice tiling point
-  UINT8 total_points;			///< Total number of points
-  gsl_vector_long *min_points_dim;	///< Minimum number of points per dimension
-  gsl_vector *avg_points_dim;		///< Average number of points per dimension
-  gsl_vector_long *max_points_dim;	///< Maximum number of points per dimension
+  LT_Stats *stats;			///< Array of parameter-space statistics for each dimension
 };
 
 struct tagLatticeTilingLocator {
@@ -328,20 +335,27 @@ static int LT_ComputeStatistics(
 {
 
   // Return if statistics have already been computed.
-  if( itr->total_points > 0 ) {
+  if( itr->stats != NULL ) {
     return XLAL_SUCCESS;
   }
 
+  const size_t n = itr->tiling->ndim;
   const size_t tn = itr->tiling->tiled_ndim;
 
+  // Allocate memory
+  itr->stats = XLALCalloc( n, sizeof( *itr->stats ) );
+  XLAL_CHECK( itr->stats != NULL, XLAL_ENOMEM );
+
   // Initialise statistics
-  gsl_vector_long_set_all( itr->min_points_dim, 1 );
-  gsl_vector_set_all( itr->avg_points_dim, 1 );
-  gsl_vector_long_set_all( itr->max_points_dim, 1 );
+  for( size_t i = 0; i < n; ++i ) {
+    itr->stats[i].total_points = 1;
+    itr->stats[i].min_points_pass = 1;
+    itr->stats[i].avg_points_pass = 1;
+    itr->stats[i].max_points_pass = 1;
+  }
 
   // Return if lattice tiling contains only a single point
   if( tn == 0 ) {
-    itr->total_points = 1;
     return XLAL_SUCCESS;
   }
 
@@ -354,13 +368,13 @@ static int LT_ComputeStatistics(
 
   // Allocate and initialise arrays for computing statistics
   UINT8 t_num_points[tn];
-  long t_num_bands[tn], t_min_points[tn], t_max_points[tn];
+  long t_num_passes[tn], t_min_points[tn], t_max_points[tn];
   for( size_t tj = 0; tj < tn; ++tj ) {
     const long int_lower = gsl_vector_long_get( itr_clone->int_lower, tj );
     const long int_upper = gsl_vector_long_get( itr_clone->int_upper, tj );
     const long num_points = int_upper - int_lower + 1;
     t_num_points[tj] = 1;
-    t_num_bands[tj] = 1;
+    t_num_passes[tj] = 1;
     t_min_points[tj] = num_points;
     t_max_points[tj] = num_points;
   }
@@ -379,7 +393,7 @@ static int LT_ComputeStatistics(
       const long int_upper = gsl_vector_long_get( itr_clone->int_upper, tj );
       const long num_points = int_upper - int_lower + 1;
       t_num_points[tj] += 1;
-      t_num_bands[tj] += 1;
+      t_num_passes[tj] += 1;
       t_min_points[tj] = GSL_MIN( t_min_points[tj], num_points );
       t_max_points[tj] = GSL_MAX( t_max_points[tj], num_points );
     }
@@ -393,12 +407,15 @@ static int LT_ComputeStatistics(
   }
 
   // Store statistics
-  itr->total_points = 1 + itr_clone->index;
   for( size_t tj = 0; tj < tn; ++tj ) {
     const size_t j = itr_clone->tiling->tiled_idx[tj];
-    gsl_vector_long_set( itr->min_points_dim, j, t_min_points[tj] );
-    gsl_vector_set( itr->avg_points_dim, j, ( ( double ) t_num_points[tj] ) / t_num_bands[tj] );
-    gsl_vector_long_set( itr->max_points_dim, j, t_max_points[tj] );
+    for( size_t k = j; k < n; ++k ) {
+      // Non-tiled dimensions should inherit their total number of points from lower dimensions
+      itr->stats[k].total_points = t_num_points[tj];
+    }
+    itr->stats[j].min_points_pass = t_min_points[tj];
+    itr->stats[j].avg_points_pass = ( ( double ) t_num_points[tj] ) / t_num_passes[tj];
+    itr->stats[j].max_points_pass = t_max_points[tj];
   }
 
   // Cleanup
@@ -1101,9 +1118,6 @@ LatticeTilingIterator *XLALCreateLatticeTilingIterator(
 
   // Allocate and initialise vectors and matrices
   GAVEC_NULL( itr->phys_point, n );
-  GAVEC_NULL( itr->avg_points_dim, n );
-  GAVECLI_NULL( itr->min_points_dim, n );
-  GAVECLI_NULL( itr->max_points_dim, n );
   if( tn > 0 ) {
     GAVECLI_NULL( itr->int_lower, tn );
     GAVECLI_NULL( itr->int_point, tn );
@@ -1123,9 +1137,10 @@ void XLALDestroyLatticeTilingIterator(
   )
 {
   if( itr ) {
-    GFVEC( itr->phys_point, itr->avg_points_dim );
-    GFVECLI( itr->int_lower, itr->int_point, itr->int_upper, itr->direction, itr->min_points_dim, itr->max_points_dim );
+    GFVEC( itr->phys_point );
+    GFVECLI( itr->int_lower, itr->int_point, itr->int_upper, itr->direction );
     XLALDestroyLatticeTiling( itr->tiling );
+    XLALFree( itr->stats );
     XLALFree( itr );
   }
 }
@@ -1352,16 +1367,17 @@ UINT8 XLALTotalLatticeTilingPoints(
   // Ensure lattice tiling statistics have been computed
   XLAL_CHECK_VAL( 0, LT_ComputeStatistics( itr ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  return itr->total_points;
+  return itr->stats[itr->tiling->ndim - 1].total_points;
 
 }
 
-int XLALRangesOfLatticeTilingPoints(
+int XLALLatticeTilingStatistics(
   LatticeTilingIterator *itr,
   const size_t dim,
-  long *min_points,
-  double *avg_points,
-  long *max_points
+  UINT8 *total_points,
+  long *min_points_pass,
+  double *avg_points_pass,
+  long *max_points_pass
   )
 {
 
@@ -1373,15 +1389,18 @@ int XLALRangesOfLatticeTilingPoints(
   // Ensure lattice tiling statistics have been computed
   XLAL_CHECK( LT_ComputeStatistics( itr ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  // Return ranges
-  if( min_points != NULL ) {
-    *min_points = gsl_vector_long_get( itr->min_points_dim, dim );
+  // Return lattice tiling statistics
+  if( total_points != NULL ) {
+    *total_points = itr->stats[dim].total_points;
   }
-  if( avg_points != NULL ) {
-    *avg_points = gsl_vector_get( itr->avg_points_dim, dim );
+  if( min_points_pass != NULL ) {
+    *min_points_pass = itr->stats[dim].min_points_pass;
   }
-  if( max_points != NULL ) {
-    *max_points = gsl_vector_long_get( itr->max_points_dim, dim );
+  if( avg_points_pass != NULL ) {
+    *avg_points_pass = itr->stats[dim].avg_points_pass;
+  }
+  if( max_points_pass != NULL ) {
+    *max_points_pass = itr->stats[dim].max_points_pass;
   }
 
   return XLAL_SUCCESS;

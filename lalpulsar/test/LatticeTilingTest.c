@@ -109,13 +109,20 @@ static int BasicTest(
     const UINT8 total = XLALTotalLatticeTilingPoints( itr );
     printf( "Number of lattice points in %zu dimensions: %" LAL_UINT8_FORMAT "\n", i+1, total );
     XLAL_CHECK( total == total_ref[i], XLAL_EFUNC, "ERROR: total = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = total_ref", total, total_ref[i] );
-    printf( "Minimum/average/maximum number of points per dimension:\n" );
+    printf( "Minimum/average/maximum number of points per pass:\n" );
     for( size_t j = 0; j < n; ++j ) {
-      long min_dim = 0, max_dim = 0;
-      double avg_dim = 0;
-      XLAL_CHECK( XLALRangesOfLatticeTilingPoints( itr, j, &min_dim, &avg_dim, &max_dim ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK( min_dim <= avg_dim && avg_dim <= max_dim, XLAL_EFAILED );
-      printf( "   %li <= %0.3g <= %li\n", min_dim, avg_dim, max_dim );
+      UINT8 total_j = 0;
+      long min_pass = 0, max_pass = 0;
+      double avg_pass = 0;
+      XLAL_CHECK( XLALLatticeTilingStatistics( itr, j, &total_j, &min_pass, &avg_pass, &max_pass ) == XLAL_SUCCESS, XLAL_EFUNC );
+      printf( "   %li <= %0.3g <= %li (total=%" LAL_UINT8_FORMAT ")\n", min_pass, avg_pass, max_pass, total_j );
+      if( j <= i ) {
+        XLAL_CHECK( total_j == total_ref[j], XLAL_EFUNC, "ERROR: total = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = total_ref", total_j, total_ref[j] );
+      } else {
+        XLAL_CHECK( total_j == total_ref[i], XLAL_EFUNC, "ERROR: total = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = total_ref", total_j, total_ref[i] );
+        XLAL_CHECK( min_pass == 1 && max_pass == 1, XLAL_EFAILED );
+      }
+      XLAL_CHECK( min_pass <= avg_pass && avg_pass <= max_pass, XLAL_EFAILED );
     }
 
     // Get all points
