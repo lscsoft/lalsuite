@@ -301,8 +301,9 @@ for classifier in classifiers:
     if config.has_option("general","gdb_url"):
         timeseries_cmd += " --gdb-url %s"%config.get("general", "gdb_url")
 
-    if gch_xml:
-        timeseries_cmd += " --gch-xml %s"%gch_xml
+#    if gch_xml: ### currently broken, uncomment when fixed!
+#        timeseries_cmd += " --gch-xml %s"%gch_xml
+
 #    if cln_xml: ### never built!
 #        timeseries_cmd += " --cln-xml %s"%scln
 
