@@ -1748,6 +1748,7 @@ void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
       LALInferenceSetVariable(runState->currentParams, "eta", &eta);
     } else {
       /* Restore state, cleanup, and throw error */
+      LALInferenceClearVariables(runState->currentParams);
       LALInferenceCopyVariables(saveParams, runState->currentParams);
       XLALFree(fname);
       LALInferenceClearVariables(saveParams);
@@ -1810,6 +1811,7 @@ void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
       LALInferenceRemoveMinMaxPrior(runState->priorArgs, "phase");
     }
 
+    LALInferenceClearVariables(runState->currentParams);
     LALInferenceCopyVariables(saveParams, runState->currentParams);
     runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->model);
     runState->currentPrior = runState->prior(runState, runState->currentParams, runState->model);
