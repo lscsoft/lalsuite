@@ -550,7 +550,7 @@ else:
         xmlCoarse, = coarse_sbank_node.get_output_files()
         pnode = [coarse_sbank_node]
         bank_names.append(xmlCoarse)
-        bank_nodes.append(None)
+        bank_nodes.append(coarse_sbank_node)
 
     # use coarse bank to choose mchirp regions of roughly equal template number
     sbankChooseMchirpBoundariesJob = SBankChooseMchirpBoundariesJob(cp)
@@ -621,7 +621,7 @@ for inj_run in cp.options("injections"):
     inj_name, = inj_node.get_output_files()
     waveform = cp.get(inj_run, "waveform")
     sim_nodes = []
-    for bank_name, bank_node in izip(bank_names, cycle(bank_nodes)):
+    for bank_name, bank_node in zip(bank_names, bank_nodes):
         ind = bank_name.index("-", 3)  # start searching for hyphens after ind 3
         base, _ = os.path.splitext(bank_name)
         sim_name = "%s_%s-%s" % (base[:ind], "SIM_%s"%inj_run.upper(), base[ind + 1:])
