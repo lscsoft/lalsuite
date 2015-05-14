@@ -597,7 +597,7 @@ static int SEOBNRv1ROMSingleSpinCore(
   double amp0 = Mtot * amp_pre * Mtot_sec * LAL_MRSUN_SI / (distance); // Correct overall amplitude to undo mass-dependent scaling used in single-spin ROM
 
   // Evaluate reference phase for setting phiRef correctly
-  double phase_change = gsl_spline_eval(spline_phi, fRef_geom, acc_phi) - phiRef;
+  double phase_change = gsl_spline_eval(spline_phi, fRef_geom, acc_phi) - 2*phiRef;
 
   // Assemble waveform from aplitude and phase
   for (UINT4 i=0; i<freqs->length; i++) { // loop over frequency points in sequence
@@ -660,7 +660,7 @@ int XLALSimIMRSEOBNRv1ROMSingleSpinFrequencySequence(
   struct tagCOMPLEX16FrequencySeries **hptilde, /**< Output: Frequency-domain waveform h+ */
   struct tagCOMPLEX16FrequencySeries **hctilde, /**< Output: Frequency-domain waveform hx */
   const REAL8Sequence *freqs,                   /**< Frequency points at which to evaluate the waveform (Hz) */
-  REAL8 phiRef,                                 /**< Phase at reference time */
+  REAL8 phiRef,                                 /**< Orbital phase at reference time */
   REAL8 fRef,                                   /**< Reference frequency (Hz); 0 defaults to fLow */
   REAL8 distance,                               /**< Distance of source (m) */
   REAL8 inclination,                            /**< Inclination of source (rad) */
