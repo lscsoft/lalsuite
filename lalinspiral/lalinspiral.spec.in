@@ -13,7 +13,11 @@ URL: https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 BuildRequires: swig, python-devel, octave-devel
-Requires: gsl, libframe, libmetaio, lal, lalframe, lalmetaio, lalsimulation
+Requires: gsl, libframe, libmetaio
+Requires: lal >= 6.14.0
+Requires: lalframe >= 1.2.0
+Requires: lalmetaio >= 1.2.0
+Requires: lalsimulation >= 1.3.0
 Prefix: %{_prefix}
 
 %description
@@ -25,7 +29,11 @@ that use the LAL Inspiral library.
 Summary: Files and documentation needed for compiling programs that use LAL Inspiral
 Group: LAL
 Requires: %{name} = %{version}
-Requires: gsl-devel, libframe-devel, libmetaio-devel, lal-devel, lalframe-devel, lalmetaio-devel, lalsimulation-devel
+Requires: gsl-devel, libframe-devel, libmetaio-devel
+Requires: lal-devel >= 6.14.0
+Requires: lalframe-devel >= 1.2.0
+Requires: lalmetaio-devel >= 1.2.0
+Requires: lalsimulation-devel >= 1.2.0
 %description devel
 The LSC Algorithm Inspiral Library for gravitational wave data analysis. This
 package contains files needed build applications that use the LAL Inspiral
@@ -35,7 +43,11 @@ library.
 Summary: Python bindings for LALInspiral
 Group: LAL
 Requires: %{name} = %{version}
-Requires: python, numpy, lal-python, lalframe-python, lalmetaio-python, lalsimulation-python
+Requires: python, numpy
+Requires: lal-python >= 6.14.0
+Requires: lalframe-python >= 1.2.0
+Requires: lalmetaio-python >= 1.2.0
+Requires: lalsimulation-python >= 1.3.0
 %description python
 This package provides the Python bindings for LALInspiral.
 
@@ -43,7 +55,11 @@ This package provides the Python bindings for LALInspiral.
 Summary: Octave bindings for LALInspiral
 Group: LAL
 Requires: %{name} = %{version}
-Requires: octave, lal-octave, lalframe-octave, lalmetaio-octave, lalsimulation-octave
+Requires: octave
+Requires: lal-octave >= 6.14.0
+Requires: lalframe-octave >= 1.2.0
+Requires: lalmetaio-octave >= 1.2.0
+Requires: lalsimulation-octave >= 1.3.0
 %description octave
 This package provides the Octave bindings for LALInspiral.
 
