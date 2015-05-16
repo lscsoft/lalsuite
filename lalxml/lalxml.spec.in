@@ -12,8 +12,8 @@ Source: %{name}-%{version}.tar.gz
 URL: https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: swig python-devel octave-devel
-Requires: gsl libxml2 lal
+BuildRequires: swig, python-devel, octave-devel
+Requires: gsl, libxml2, lal
 Prefix: %{_prefix}
 
 %description
@@ -25,7 +25,7 @@ that use the LAL XML library.
 Summary: Files and documentation needed for compiling programs that use LAL XML
 Group: LAL
 Requires: %{name} = %{version}
-Requires: gsl-devel libxml2-devel lal-devel
+Requires: gsl-devel, libxml2-devel, lal-devel
 %description devel
 The LSC Algorithm XML Library for gravitational wave data analysis. This
 package contains files needed build applications that use the LAL XML
@@ -35,7 +35,7 @@ library.
 Summary: Python bindings for LALXML
 Group: LAL
 Requires: %{name} = %{version}
-Requires: python numpy lal-python
+Requires: python, numpy, lal-python
 %description python
 This package provides the Python bindings for LALXML.
 
@@ -43,7 +43,7 @@ This package provides the Python bindings for LALXML.
 Summary: Octave bindings for LALXML
 Group: LAL
 Requires: %{name} = %{version}
-Requires: octave lal-octave
+Requires: octave, lal-octave
 %description octave
 This package provides the Octave bindings for LALXML.
 
