@@ -13,7 +13,8 @@ URL: https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 BuildRequires: swig, python-devel, octave-devel
-Requires: gsl, lal
+Requires: gsl
+Requires: lal >= 6.14.0
 Prefix: %{_prefix}
 
 %description
@@ -25,7 +26,8 @@ that use the LAL Simulation library.
 Summary: Files and documentation needed for compiling programs that use LAL Simulation
 Group: LAL
 Requires: %{name} = %{version}
-Requires: gsl-devel, lal-devel
+Requires: gsl-devel
+Requires: lal-devel >= 6.14.0
 %description devel
 The LSC Algorithm Simulation Library for gravitational wave data analysis. This
 package contains files needed build applications that use the LAL Simulation
@@ -35,7 +37,8 @@ library.
 Summary: Python bindings for LALSimulation
 Group: LAL
 Requires: %{name} = %{version}
-Requires: python, numpy, lal-python
+Requires: python, numpy
+Requires: lal-python >= 6.14.0
 %description python
 This package provides the Python Bindings for LALSimulation.
 
@@ -43,7 +46,8 @@ This package provides the Python Bindings for LALSimulation.
 Summary: Octave bindings for LALSimulation
 Group: LAL
 Requires: %{name} = %{version}
-Requires: octave, lal-octave
+Requires: octave
+Requires: lal-octave >= 6.14.0
 %description octave
 This package provides the Octave Bindings for LALSimulation.
 
