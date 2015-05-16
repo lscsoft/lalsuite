@@ -1195,7 +1195,7 @@ XLALComputeDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< 
     gsl_matrix_view transform_n = gsl_matrix_submatrix( transform, 0, 0, n, n );
 
     /* try this loop a certain number of times */
-    const size_t max_tries = 30;
+    const size_t max_tries = 64;
     size_t tries = 0;
     while ( ++tries <= max_tries ) {
 
@@ -1241,6 +1241,13 @@ XLALComputeDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< 
       /* decrease relative error tolerances; don't do this too quickly, since
          too-stringent tolerances may make GSL integration fail to converge */
       intparams.epsrel = intparams.epsrel * 0.9;
+      /* decrease absolute error tolerances; don't do this too quickly, since
+         too-stringent tolerances may make GSL integration fail to converge,
+         and only after a certain number of tries, otherwise small integrals
+         fail to converge */
+      if ( tries >= 8  ) {
+        intparams.epsabs = intparams.epsabs * 0.9;
+      }
       /* reduce the length of integration time units, but stop at 1800s,
          and ensure that 'intT' does NOT become divisible by 1/day, for
          the same reason given at the initialisation of 'intT' above */
