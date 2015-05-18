@@ -127,7 +127,7 @@ typedef enum {
 	LALINFERENCE_PARAM_OUTPUT    /** A parameter changed by an inner code and passed out */
 } LALInferenceParamVaryType;
 
-extern size_t LALInferenceTypeSize[14];
+extern size_t LALInferenceTypeSize[];
 
 /**
  * The LALInferenceVariableItem list node structure
@@ -486,7 +486,7 @@ tagLALInferenceProposal
     INT4   proposed;   // Number of times proposal has been called
     INT4   accepted;   // Number of times a proposal from this function has been accepted
     LALInferenceVariables *args; /** Local storage for arguments needed by the proposal (e.g. number of detectors) */
-}
+} LALInferenceProposal;
 
 /**
  * Structure for holding a proposal cycle
@@ -501,7 +501,7 @@ tagLALInferenceProposalCycle
     INT4 counter; /** Counter for cycling through proposals */
     char last_proposal[VARNAME_MAX]; /** Name of current proposal */
     LALInferenceVariables *proposalArgs; /** Storage for arguments needed by proposal functions (e.g. number of detectors) */
-} LALInferenceProposalCycle
+} LALInferenceProposalCycle;
 
 /**
  * Structure containing chain-specific variables
