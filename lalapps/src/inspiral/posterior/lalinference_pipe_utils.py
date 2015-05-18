@@ -1150,6 +1150,13 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     pipeline.AnalysisJob.__init__(self,cp,dax=dax)
     if cp.has_option('analysis','accounting_group'):
       self.add_condor_cmd('accounting_group',cp.get('analysis','accounting_group'))
+    try:
+      hostname=socket.gethostbyaddr(socket.gethostname())[0]
+    except:
+      hostname='Unknown'
+    if cp.has_option('condor','queue'):
+      self.add_condor_cmd('+'+cp.get('condor','queue'),'True')
+      self.add_condor_cmd('Requirements','(TARGET.'+cp.get('condor','queue')+' =?= True)')
     # Set grid site if needed
     if cp.has_option('engine','resume'):
         self.resume=True
@@ -1177,18 +1184,11 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
         self.machine_memory=str(1024) # default value if the user did not specify something
       #self.add_condor_cmd('machine_count',machine_count)
       #self.add_condor_cmd('environment','CONDOR_MPI_PATH=%s'%(openmpipath))
-      try:
-        hostname=socket.gethostbyaddr(socket.gethostname())[0]
-      except:
-        hostname='Unknown'
       if hostname=='pcdev1.phys.uwm.edu':
         self.add_condor_cmd('Requirements','CAN_RUN_MULTICORE')
         self.add_condor_cmd('+RequiresMultipleCores','True')
       self.add_condor_cmd('request_cpus',self.machine_count)
       self.add_condor_cmd('request_memory',str(float(self.machine_count)*float(self.machine_memory)))
-      if cp.has_option('condor','queue'):
-        self.add_condor_cmd('+'+cp.get('condor','queue'),'True')
-        self.add_condor_cmd('Requirements','(TARGET.'+cp.get('condor','queue')+' =?= True)')
     if cp.has_section(self.engine):
       if ispreengine is False:
         self.add_ini_opts(cp,self.engine)
