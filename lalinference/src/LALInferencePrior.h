@@ -25,7 +25,6 @@
 #define LALInferencePrior_h
 
 #include <lal/LALInference.h>
-#include <lal/LALInferenceNestedSampler.h>
 
 #ifdef SWIG // SWIG interface directives
 SWIGLAL(
