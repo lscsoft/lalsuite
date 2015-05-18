@@ -126,19 +126,19 @@ REAL8 incrementEvidenceSamples(LALInferenceRunState *runState, REAL8 logL, NSint
   return(mean(s->logZarray,s->size));
 }
 
-static void printAdaptiveJumpSizes(FILE *file, LALInferenceRunState *runState);
-static void printAdaptiveJumpSizes(FILE *file, LALInferenceRunState *runState)
+static void printAdaptiveJumpSizes(FILE *file, LALInferenceRunState *threadState);
+static void printAdaptiveJumpSizes(FILE *file, LALInferenceRunState *threadState)
 {
-    LALInferenceVariableItem *this=runState->currentParams->head;
+    LALInferenceVariableItem *this=threadState->currentParams->head;
     REAL8 *val=NULL;
     char tmpname[1000]="";
     fprintf(file,"Adaptive proposal step size:\n");
     while(this)
     {
         sprintf(tmpname,"%s_%s",this->name,ADAPTSUFFIX);
-        if(LALInferenceCheckVariable(runState->proposalArgs,tmpname))
+        if(LALInferenceCheckVariable(threadState->proposalArgs,tmpname))
         {
-            val=(REAL8 *)LALInferenceGetVariable(runState->proposalArgs,tmpname);
+            val=(REAL8 *)LALInferenceGetVariable(threadState->proposalArgs,tmpname);
             fprintf(file,"%s: %lf\n",this->name,*val);
         }
         this=this->next;
@@ -146,20 +146,17 @@ static void printAdaptiveJumpSizes(FILE *file, LALInferenceRunState *runState)
 
 }
 
-static void resetProposalStats(LALInferenceRunState *runState);
-static void resetProposalStats(LALInferenceRunState *runState)
+static void resetProposalStats(LALInferenceProposalCycle *cycle);
+static void resetProposalStats(LALInferenceProposalCycle *cycle)
 {
-    LALInferenceProposalStatistics *propStat;
-    LALInferenceVariableItem *this;
-    this = runState->proposalStats->head;
-    while(this){
-        propStat = (LALInferenceProposalStatistics *)this->value;
-        propStat->accepted = 0;
-        propStat->proposed = 0;
-        this = this->next;
-    }
+  UINT4 i=0;
+  LALInferenceVariableItem *this;
+  for (i=0;i<threadState->cycle->nProposals;i++)
+  {
+    threadState->proposals[i].accepted=0;
+    threadState->proposals[i].rejected=0;
+  }
 }
-
 
 
 /* Create Internal arrays for sampling the integral */
@@ -400,6 +397,7 @@ void LALInferenceNScalcCVM(gsl_matrix **cvm, LALInferenceVariables **Live, UINT4
 void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 {
   UINT4 iter=0,i,j,minpos;
+  LALInferenceThreadState *threadState = runState->threads[0]; /* single threaded */
   UINT4 Nlive=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
   UINT4 Nruns=100;
   REAL8 *logZarray,*oldZarray,*Harray,*logwarray,*logtarray;

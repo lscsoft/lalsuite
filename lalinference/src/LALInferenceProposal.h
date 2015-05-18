@@ -142,7 +142,7 @@ extern const char *const LALInferenceCurrentProposalName;
 /** Creates a new proposal object from the given func pointer and name
  */
 
-LALInferenceProposal *LALInferenceInitProposal(LALInferenceProposalFunction *func, const char *name);
+LALInferenceProposal *LALInferenceInitProposal(LALInferenceProposalFunction func, const char *name);
 
 /**
  * Adds \a weight copies of the proposal \a prop to the end of the
