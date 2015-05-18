@@ -52,6 +52,9 @@ This package provides the Octave bindings for LALStochastic.
 %prep
 %setup -q
 
+%check
+%{__make} V=1 check
+
 %build
 %configure --disable-gcc-flags --enable-swig
 %{__make} V=1
