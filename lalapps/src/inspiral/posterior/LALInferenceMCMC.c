@@ -77,8 +77,8 @@ REAL8 **parseMCMCoutput(char ***params, UINT4 *nInPar, UINT4 *nInSamps, char *in
 
 
 /* Initialize an bare-bones run-state
-/*  calls the "ReadData()" function to gather data & PSD from files,
-/*  and initializes other variables accordingly.                     */
+   calls the "ReadData()" function to gather data & PSD from files,
+   and initializes other variables accordingly.                     */
 LALInferenceRunState *init_runstate(ProcessParamsTable *command_line) {
     LALInferenceRunState *run_state = XLALCalloc(1, sizeof(LALInferenceRunState));
 
@@ -100,7 +100,6 @@ LALInferenceRunState *init_runstate(ProcessParamsTable *command_line) {
     /* Initialize parameters structure */
     run_state->algorithmParams = XLALCalloc(1, sizeof(LALInferenceVariables));
     run_state->priorArgs = XLALCalloc(1, sizeof(LALInferenceVariables));
-    run_state->proposalArgs = XLALCalloc(1, sizeof(LALInferenceVariables));
 
     return(run_state);
 }
