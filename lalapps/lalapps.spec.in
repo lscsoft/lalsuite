@@ -31,6 +31,9 @@ nightly_version=@NIGHTLY_VERSION@
 %configure --enable-nightly=${nightly_version:-no} --disable-gcc-flags --disable-debug
 %{__make} V=1
 
+%check
+%{__make} V=1 check
+
 %install
 %make_install
 
