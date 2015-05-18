@@ -94,11 +94,11 @@ typedef enum {
 } DistanceParam;
 
 
-static INT4 same_detector_location(LALDetector d1, LALDetector d2) {
+static INT4 same_detector_location(LALDetector *d1, LALDetector *d2) {
     INT4 i;
 
     for (i = 0; i < 3; i++) {
-        if (d1.location[i] != d2.location[i])
+        if (d1->location[i] != d2->location[i])
             return 0;
     }
 
@@ -129,16 +129,14 @@ static INT4 numDetectorsUniquePositions(LALInferenceIFOData *data) {
     return nIFO - nCollision;
 }
 
-LALInferenceProposal *LALInferenceInitProposal(LALInferenceProposalFunction *func, const char *name) {
-    LALInferenceProposal proposal = {
-        .func = func;
-        .proposed = 0;
-        .accepted = 0;
-    };
-
-    strcpy(proposal.name, name);
-
-    return &proposal;
+LALInferenceProposal *LALInferenceInitProposal(LALInferenceProposalFunction *func, const char *name)
+{
+  LALInferenceProposal *proposal = XLALCalloc(1,sizeof(LALInferenceProposal));
+  proposal->func = func;
+  proposal->proposed = 0;
+  proposal->accepted = 0;
+  strcpy(proposal->name, name);
+  return proposal;
 }
 
 void LALInferenceAddProposalToCycle(LALInferenceProposalCycle *cycle, LALInferenceProposal *prop, INT4 weight) {
@@ -157,17 +155,19 @@ void LALInferenceAddProposalToCycle(LALInferenceProposalCycle *cycle, LALInferen
 
     for (i = cycle->length; i < cycle->length + weight; i++) {
         cycle->order[i] = cycle->nProposals;
+    }
 
     cycle->proposals = XLALRealloc(cycle->proposals, (cycle->nProposals)*sizeof(LALInferenceProposal));
     if (cycle->proposals == NULL) {
         XLALError(fname, __FILE__, __LINE__, XLAL_ENOMEM);
         exit(1);
     }
-    cycle->proposals[nProposals] = prop;
+    cycle->proposals[cycle->nProposals] = prop;
 
     cycle->length += weight;
     cycle->nProposals += 1;
 }
+
 
 
 void LALInferenceRandomizeProposalCycle(LALInferenceProposalCycle *cycle, gsl_rng *rng) {
@@ -189,8 +189,7 @@ REAL8 LALInferenceCyclicProposal(LALInferenceThreadState *thread,
                                  LALInferenceVariables *proposedParams) {
     INT4 length = 0;
     INT4 i = 0;
-    LALInferenceProposalFunction *cycle = NULL;
-    LALInferenceProposalCycle *cycle;
+    LALInferenceProposalCycle *cycle=NULL;
 
     LALInferenceVariables *propArgs = thread->proposalArgs;
     LALInferenceCopyVariables(currentParams, proposedParams);

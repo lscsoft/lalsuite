@@ -138,6 +138,12 @@ extern const char *const clusteredKDEProposalName;
  */
 extern const char *const LALInferenceCurrentProposalName;
 
+
+/** Creates a new proposal object from the given func pointer and name
+ */
+
+LALInferenceProposal *LALInferenceInitProposal(LALInferenceProposalFunction *func, const char *name);
+
 /**
  * Adds \a weight copies of the proposal \a prop to the end of the
  * proposal cycle.
@@ -146,16 +152,16 @@ extern const char *const LALInferenceCurrentProposalName;
  * LALInferenceRandomizeProposalCycle() to randomize the order of
  * sub-proposal application.
  */
-void
-LALInferenceAddProposalToCycle(LALInferenceRunState *runState, const char *propName, LALInferenceProposalFunction prop, UINT4 weight);
+void LALInferenceAddProposalToCycle(LALInferenceProposalCycle *cycle, LALInferenceProposal *prop, INT4 weight);
 
 /** Randomizes the order of the proposals in the proposal cycle. */
-void
-LALInferenceRandomizeProposalCycle(LALInferenceRunState *runState);
+void LALInferenceRandomizeProposalCycle(LALInferenceProposalCycle *cycle, gsl_rng *rng);
+
 
 /** Proposes a jump from the next proposal in the proposal cycle.*/
-REAL8
-LALInferenceCyclicProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+REAL8 LALInferenceCyclicProposal(LALInferenceThreadState *thread,
+                                 LALInferenceVariables *currentParams,
+                                 LALInferenceVariables *proposedParams);
 
 /** Completely remove the current proposal cycle, freeing the associated memory. */
 void
