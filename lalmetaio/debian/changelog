@@ -1,3 +1,9 @@
+lalmetaio (1.2.6-1) unstable; urgency=low
+
+  * LALMetaIO 1.2.6
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Mon, 18 May 2015 14:32:44 -0500
+
 lalmetaio (1.2.5-1) unstable; urgency=low
 
   * LALMetaIO 1.2.5
