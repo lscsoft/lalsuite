@@ -530,86 +530,86 @@ LALInferenceProposalCycle* LALInferenceSetupDefaultProposalCycle(LALInferenceVar
     LALInferenceProposalCycle *cycle = XLALCalloc(1, sizeof(LALInferenceProposalCycle));
 
     if (LALInferenceGetINT4Variable(propArgs, "singleadapt")) {
-        prop = LALInferenceInitProposal(&LALInferenceSingleAdaptProposal, singleAdaptProposalName, cycle->proposalArgs);
+        prop = LALInferenceInitProposal(&LALInferenceSingleAdaptProposal, singleAdaptProposalName, propArgs);
         LALInferenceAddProposalToCycle(cycle, prop, BIGWEIGHT);
     }
 
     if (LALInferenceGetINT4Variable(propArgs, "psiphi")) {
-        prop = LALInferenceInitProposal(&LALInferencePolarizationPhaseJump, polarizationPhaseJumpName, cycle->proposalArgs);
+        prop = LALInferenceInitProposal(&LALInferencePolarizationPhaseJump, polarizationPhaseJumpName, propArgs);
         LALInferenceAddProposalToCycle(cycle, prop, TINYWEIGHT);
     }
 
     if (LALInferenceGetINT4Variable(propArgs, "ext_param")) {
-        prop = LALInferenceInitProposal(&LALInferenceExtrinsicParamProposal, extrinsicParamProposalName, cycle->proposalArgs);
+        prop = LALInferenceInitProposal(&LALInferenceExtrinsicParamProposal, extrinsicParamProposalName, propArgs);
         LALInferenceAddProposalToCycle(cycle, prop, SMALLWEIGHT);
     }
 
     if (LALInferenceGetINT4Variable(propArgs, "skywander")) {
-        prop = LALInferenceInitProposal(&LALInferenceSkyLocWanderJump, skyLocWanderJumpName, cycle->proposalArgs);
+        prop = LALInferenceInitProposal(&LALInferenceSkyLocWanderJump, skyLocWanderJumpName, propArgs);
         LALInferenceAddProposalToCycle(cycle, prop, SMALLWEIGHT);
     }
 
     if (LALInferenceGetINT4Variable(propArgs, "skyreflect")) {
-        prop = LALInferenceInitProposal(&LALInferenceSkyReflectDetPlane, skyReflectDetPlaneName, cycle->proposalArgs);
+        prop = LALInferenceInitProposal(&LALInferenceSkyReflectDetPlane, skyReflectDetPlaneName, propArgs);
         LALInferenceAddProposalToCycle(cycle, prop, TINYWEIGHT);
     }
 
     if (LALInferenceGetINT4Variable(propArgs, "drawprior")) {
-        prop = LALInferenceInitProposal(&LALInferenceDrawApproxPrior, drawApproxPriorName, cycle->proposalArgs);
+        prop = LALInferenceInitProposal(&LALInferenceDrawApproxPrior, drawApproxPriorName, propArgs);
         LALInferenceAddProposalToCycle(cycle, prop, TINYWEIGHT);
     }
 
     if (LALInferenceGetINT4Variable(propArgs, "phasejump")) {
-        prop = LALInferenceInitProposal(&LALInferenceOrbitalPhaseJump, orbitalPhaseJumpName, cycle->proposalArgs);
+        prop = LALInferenceInitProposal(&LALInferenceOrbitalPhaseJump, orbitalPhaseJumpName, propArgs);
         LALInferenceAddProposalToCycle(cycle, prop, TINYWEIGHT);
     }
 
     if (LALInferenceGetINT4Variable(propArgs, "covjump")) {
-        prop = LALInferenceInitProposal(&LALInferenceCovarianceEigenvectorJump, covarianceEigenvectorJumpName, cycle->proposalArgs);
+        prop = LALInferenceInitProposal(&LALInferenceCovarianceEigenvectorJump, covarianceEigenvectorJumpName, propArgs);
         LALInferenceAddProposalToCycle(cycle, prop, BIGWEIGHT);
     }
 
     if (LALInferenceGetINT4Variable(propArgs, "diffevo")) {
-        prop = LALInferenceInitProposal(&LALInferenceDifferentialEvolutionFull, differentialEvolutionFullName, cycle->proposalArgs);
+        prop = LALInferenceInitProposal(&LALInferenceDifferentialEvolutionFull, differentialEvolutionFullName, propArgs);
         LALInferenceAddProposalToCycle(cycle, prop, BIGWEIGHT);
 
-        prop = LALInferenceInitProposal(&LALInferenceDifferentialEvolutionIntrinsic, differentialEvolutionIntrinsicName, cycle->proposalArgs);
+        prop = LALInferenceInitProposal(&LALInferenceDifferentialEvolutionIntrinsic, differentialEvolutionIntrinsicName, propArgs);
         LALInferenceAddProposalToCycle(cycle, prop, SMALLWEIGHT);
 
-        prop = LALInferenceInitProposal(&LALInferenceDifferentialEvolutionExtrinsic, differentialEvolutionExtrinsicName, cycle->proposalArgs);
+        prop = LALInferenceInitProposal(&LALInferenceDifferentialEvolutionExtrinsic, differentialEvolutionExtrinsicName, propArgs);
         LALInferenceAddProposalToCycle(cycle, prop, SMALLWEIGHT);
     }
 
     if (LALInferenceGetINT4Variable(propArgs, "skyring")) {
-        prop = LALInferenceInitProposal(&LALInferenceSkyRingProposal, skyRingProposalName, cycle->proposalArgs);
+        prop = LALInferenceInitProposal(&LALInferenceSkyRingProposal, skyRingProposalName, propArgs);
         LALInferenceAddProposalToCycle(cycle, prop, SMALLWEIGHT);
     }
 
     if (LALInferenceGetINT4Variable(propArgs, "corr_psiphi")) {
-        prop = LALInferenceInitProposal(&LALInferenceCorrPolarizationPhaseJump, polarizationCorrPhaseJumpName, cycle->proposalArgs);
+        prop = LALInferenceInitProposal(&LALInferenceCorrPolarizationPhaseJump, polarizationCorrPhaseJumpName, propArgs);
         LALInferenceAddProposalToCycle(cycle, prop, SMALLWEIGHT);
     }
 
     if (LALInferenceGetINT4Variable(propArgs, "spline_cal")) {
-        prop = LALInferenceInitProposal(&LALInferenceSplineCalibrationProposal, splineCalibrationProposalName, cycle->proposalArgs);
+        prop = LALInferenceInitProposal(&LALInferenceSplineCalibrationProposal, splineCalibrationProposalName, propArgs);
         LALInferenceAddProposalToCycle(cycle, prop, SMALLWEIGHT)
     }
 
     if (LALInferenceGetINT4Variable(propArgs, "psdfit")) {
-        prop = LALInferenceInitProposal(&LALInferencePSDFitJump, PSDFitJumpName, cycle->proposalArgs);
+        prop = LALInferenceInitProposal(&LALInferencePSDFitJump, PSDFitJumpName, propArgs);
         LALInferenceAddProposalToCycle(cycle, prop, SMALLWEIGHT);
     }
 
     if (LALInferenceGetINT4Variable(propArgs, "glitchfit")) {
-        prop = LALInferenceInitProposal(&LALInferenceGlitchMorletProposal, GlitchMorletJumpName, cycle->proposalArgs);
+        prop = LALInferenceInitProposal(&LALInferenceGlitchMorletProposal, GlitchMorletJumpName, propArgs);
         LALInferenceAddProposalToCycle(cycle, prop, SMALLWEIGHT);
 
-        prop = LALInferenceInitProposal(&LALInferenceGlitchMorletReverseJump, GlitchMorletReverseJumpName, cycle->proposalArgs);
+        prop = LALInferenceInitProposal(&LALInferenceGlitchMorletReverseJump, GlitchMorletReverseJumpName, propArgs);
         LALInferenceAddProposalToCycle(cycle, prop, SMALLWEIGHT);
     }
 
     if (LALInferenceGetINT4Variable(propArgs, "kde")) {
-        prop = LALInferenceInitProposal(&LALInferenceClusteredKDEProposal, clusteredKDEProposalName, cycle->proposalArgs);
+        prop = LALInferenceInitProposal(&LALInferenceClusteredKDEProposal, clusteredKDEProposalName, propArgs);
         LALInferenceAddProposalToCycle(cycle, prop, BIGWEIGHT);
     }
 
