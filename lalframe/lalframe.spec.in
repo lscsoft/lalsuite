@@ -12,7 +12,10 @@ Source: %{name}-%{version}.tar.gz
 URL: https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: swig, python-devel, octave-devel
+BuildRequires: swig, python-devel, octave-devel, libframe-devel, numpy
+BuildRequires: lal-devel >= 6.14.0
+BuildRequires: lal-python >= 6.14.0
+BuildRequires: lal-octave >= 6.14.0
 Requires: libframe
 Requires: lal >= 6.14.0
 Prefix: %{_prefix}
