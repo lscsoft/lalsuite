@@ -720,7 +720,9 @@ void LALInferencePrintVariables(LALInferenceVariables *var)
 }
 
 void LALInferencePrintSample(FILE *fp,LALInferenceVariables *sample){
-  UINT4 i;//,j;
+  UINT4 i;
+  UINT4Vector *u=NULL;
+  INT4Vector *v=NULL;
   //gsl_matrix *m=NULL;
   if(sample==NULL) return;
   LALInferenceVariableItem *ptr=sample->head;
@@ -753,15 +755,13 @@ void LALInferencePrintSample(FILE *fp,LALInferenceVariables *sample){
       case LALINFERENCE_string_t:
         fprintf(fp, "%s", *((CHAR **)ptr->value));
         break;
+      case LALINFERENCE_UINT4Vector_t:
+        u=*((UINT4Vector **)ptr->value);
+        for(i=0;i<u->length;i++) fprintf(fp,"%"LAL_UINT4_FORMAT" ",u->data[i]);
+        break;
       case LALINFERENCE_INT4Vector_t:
-        INT4Vector *v=NULL;
         v=*((INT4Vector **)ptr->value);
         for(i=0;i<v->length;i++) fprintf(fp,"%"LAL_INT4_FORMAT" ",v->data[i]);
-        break;
-      case LALINFERENCE_UINT4Vector_t:
-        UINT4Vector *v=NULL;
-        v=*((UINT4Vector **)ptr->value);
-        for(i=0;i<v->length;i++) fprintf(fp,"%"LAL_UINT4_FORMAT" ",v->data[i]);
         break;
 	  case LALINFERENCE_gslMatrix_t:
         /*
@@ -787,7 +787,9 @@ void LALInferencePrintSample(FILE *fp,LALInferenceVariables *sample){
 }
 
 void LALInferencePrintSampleNonFixed(FILE *fp,LALInferenceVariables *sample){
-  UINT4 i;//,j;
+    UINT4 i;
+    UINT4Vector *u=NULL;
+    INT4Vector *v=NULL;
   //gsl_matrix *m=NULL;
 	if(sample==NULL) return;
 	LALInferenceVariableItem *ptr=sample->head;
@@ -818,22 +820,20 @@ void LALInferencePrintSampleNonFixed(FILE *fp,LALInferenceVariables *sample){
 					fprintf(fp, "%e + i*%e",
 							(REAL8) creal(*(COMPLEX16 *) ptr->value), (REAL8) cimag(*(COMPLEX16 *) ptr->value));
 					break;
+               case LALINFERENCE_UINT4Vector_t:
+                    u = *((UINT4Vector **)ptr->value);
+                    for(i=0;i<u->length;i++)
+                    {
+                        fprintf(fp,"%11.7f",(REAL8)u->data[i]);
+                        if( i!=(u->length-1) )fprintf(fp,"\t");
+                    }
+                    break;
                 case LALINFERENCE_INT4Vector_t:
-                    INT4Vector *v=NULL;
                     v = *((INT4Vector **)ptr->value);
                     for(i=0;i<v->length;i++)
                     {
                         fprintf(fp,"%11.7f",(REAL8)v->data[i]);
-                        if( i!=(INT4)(v->length-1) )fprintf(fp,"\t");
-                    }
-                    break;
-                case LALINFERENCE_UINT4Vector_t:
-                    UINT4Vector *v=NULL;
-                    v = *((UINT4Vector **)ptr->value);
-                    for(i=0;i<v->length;i++)
-                    {
-                        fprintf(fp,"%11.7f",(REAL8)v->data[i]);
-                        if( i!=(UINT4)(v->length-1) )fprintf(fp,"\t");
+                        if( i!=(v->length-1) )fprintf(fp,"\t");
                     }
                     break;
           /*
