@@ -510,7 +510,7 @@ typedef struct
 tagLALInferenceThreadState
 {
     INT4 id; /** Unique integer ID of this thread.  Handy of I/O. */
-    LALInferenceProposalFunction *proposal; /** The proposal cycle */
+    LALInferenceProposalFunction proposal; /** The proposal cycle */
     LALInferenceProposalCycle *cycle; /** Cycle of proposals to call */
     LALInferenceModel *model; /** Stucture containing model buffers and parameters */
     REAL8 currentPropDensity; /** Array containing multiple proposal densities */
