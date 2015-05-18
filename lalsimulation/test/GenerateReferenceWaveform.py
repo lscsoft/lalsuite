@@ -33,13 +33,7 @@ NEW_DATA_STR = '######### NEW DATASET #############\n'
 defstr = ' [default: %default]'
 parameterInfo = [['domain', 'string', 'TD', 'Generate either a time (TD) or ' +
         'frequency (FD) domain waveform'+defstr , 'DOM'],
-        ['approximant', 'string', 'TaylorT1', 'Supported TD approximants: ' +
-        'TaylorT1, TaylorT2, TaylorT3, ' +
-        'TaylorT4, TaylorEt, IMRPhenomA, IMRPhenomB, IMRPhenomC, EOBNRv2, ' +
-        'EOBNRv2HM, SEOBNRv1, SpinTaylorT4, SpinTaylorT2, PhenSpinTaylor, ' +
-        'PhenSpinTaylorRD. Supported FD approximants: IMRPhenomA, IMRPhenomB,' +
-        'IMRPhenomC, IMRPhenomP, TaylorF2, TaylorF2RedSpin, ' +
-        'TaylorF2RedSpinTidal, TaylorR2F4, SpinTaylorF2'+defstr, 'APPROX'],
+        ['approximant', 'string', 'TaylorT1', 'Approximant name'+defstr, 'APPROX'],
         ['phaseOrder', 'int', -1, 'Twice PN order of phase, [default -1 ' +
         'for highest available order]', 'ORD'],
         ['ampOrder', 'int', -1, 'Twice PN order of amplitude, [default -1 ' +
