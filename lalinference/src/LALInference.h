@@ -723,10 +723,10 @@ void LALInferenceReadAsciiHeader(FILE *input, char params[][VARNAME_MAX], INT4 *
 REAL8 **LALInferenceSelectColsFromArray(REAL8 **inarray, INT4 nRows, INT4 nCols, INT4 nSelCols, INT4 *selCols);
 
 /** Output proposal statistics header to file *fp */
-int LALInferencePrintProposalStatsHeader(FILE *fp,LALInferenceVariables *propStats);
+int LALInferencePrintProposalStatsHeader(FILE *fp, LALInferenceProposalCycle *cycle);
 
 /** Output proposal statistics to file *fp */
-void LALInferencePrintProposalStats(FILE *fp,LALInferenceVariables *propStats);
+void LALInferencePrintProposalStats(FILE *fp, LALInferenceProposalCycle *cycle);
 
 /**
  * Reads one line from the given file and stores the values there into

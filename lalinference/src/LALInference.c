@@ -1143,35 +1143,35 @@ REAL8 **LALInferenceSelectColsFromArray(REAL8 **inarray, INT4 nRows, INT4 nCols,
     return array;
 }
 
-int LALInferencePrintProposalStatsHeader(FILE *fp,LALInferenceVariables *propStats) {
-  LALInferenceVariableItem *head = propStats->head;
-  while (head != NULL) {
-    fprintf(fp, "%s\t", head->name);
-    head = head->next;
-  }
-  fprintf(fp, "\n");
-  return 0;
+int LALInferencePrintProposalStatsHeader(FILE *fp, LALInferenceProposalCycle *cycle) {
+    INT4 i;
+
+    for (i=0; i<cycle->nProposals; i++)
+        fprintf(fp, "%s\t", cycle->proposals[i]->name);
+
+    fprintf(fp, "\n");
+    
+    return 0;
 }
 
-void LALInferencePrintProposalStats(FILE *fp,LALInferenceVariables *propStats){
-  REAL8 accepted = 0;
-  REAL8 proposed = 0;
-  REAL8 acceptanceRate = 0;
-  LALInferenceProposalStatistics *propStat;
+void LALInferencePrintProposalStats(FILE *fp, LALInferenceProposalCycle *cycle){
+    INT4 i;
+    REAL8 accepted = 0;
+    REAL8 proposed = 0;
+    REAL8 acceptanceRate = 0;
 
-  if(propStats==NULL || fp==NULL) return;
-  LALInferenceVariableItem *ptr=propStats->head;
-  while(ptr!=NULL) {
-    propStat = ((LALInferenceProposalStatistics *) LALInferenceGetVariable(propStats, ptr->name));
+    if(cycle==NULL || fp==NULL)
+        return;
 
-    accepted = (REAL8) propStat->accepted;
-    proposed = (REAL8) propStat->proposed;
-    acceptanceRate = accepted/(proposed==0 ? 1.0 : proposed);
-    fprintf(fp, "%9.5f\t", acceptanceRate);
-    ptr=ptr->next;
-  }
-  fprintf(fp, "\n");
-  return;
+    for (i=0; i<cycle->nProposals; i++) {
+        accepted = (REAL8) cycle->proposals[i]->accepted;
+        proposed = (REAL8) cycle->proposals[i]->proposed;
+        acceptanceRate = accepted/(proposed==0 ? 1.0 : proposed);
+        fprintf(fp, "%9.5f\t", acceptanceRate);
+    }
+
+    fprintf(fp, "\n");
+    return;
 }
 
 const char *LALInferenceTranslateInternalToExternalParamName(const char *inName) {
@@ -1359,6 +1359,7 @@ int LALInferenceCompareVariables(LALInferenceVariables *var1, LALInferenceVariab
 /*  cannot (yet?) be checked for equality.                       */
 {
   int result = 0;
+  UINT4 i;
   LALInferenceVariableItem *ptr1 = var1->head;
   LALInferenceVariableItem *ptr2 = NULL;
   if (var1->dimension != var2->dimension) result = 1;  // differing dimension
@@ -1401,7 +1402,7 @@ int LALInferenceCompareVariables(LALInferenceVariables *var1, LALInferenceVariab
             REAL8Vector *v1=ptr1->value,*v2=ptr2->value;
             if(v1->length!=v2->length) result=1;
             else
-              for(UINT4 i=0;i<v1->length;i++)
+              for(i=0;i<v1->length;i++)
               {
                 if(v1->data[i]!=v2->data[i]){
                   result=1;
@@ -1415,7 +1416,7 @@ int LALInferenceCompareVariables(LALInferenceVariables *var1, LALInferenceVariab
             UINT4Vector *v1=ptr1->value,*v2=ptr2->value;
             if(v1->length!=v2->length) result=1;
             else
-              for(UINT4 i=0;i<v1->length;i++)
+              for(i=0;i<v1->length;i++)
               {
                 if(v1->data[i]!=v2->data[i]){
                   result=1;
@@ -1429,7 +1430,7 @@ int LALInferenceCompareVariables(LALInferenceVariables *var1, LALInferenceVariab
             INT4Vector *v1=ptr1->value,*v2=ptr2->value;
             if(v1->length!=v2->length) result=1;
             else
-              for(INT4 i=0;i<v1->length;i++)
+              for(i=0;i<v1->length;i++)
               {
                 if(v1->data[i]!=v2->data[i]){
                   result=1;
@@ -3870,7 +3871,7 @@ void LALInferenceFprintSplineCalibrationHeader(FILE *output, LALInferenceThreadS
   } while (ifo);
 }
 
-void LALInferencePrintSplineCalibration(FILE *output, LALInferenceChain *chain, LALInferenceIFOData *ifo) {
+void LALInferencePrintSplineCalibration(FILE *output, LALInferenceThreadState *thread, LALInferenceIFOData *ifo) {
     do {
         size_t i;
 
