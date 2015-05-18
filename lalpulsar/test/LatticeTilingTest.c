@@ -134,8 +134,9 @@ static int BasicTest(
     XLAL_CHECK( XLALNextLatticeTilingPoint( itr, NULL ) == 0, XLAL_EFUNC );
 
     // Get nearest point to each template; should be template itself
-    gsl_matrix *nearest = NULL;
-    UINT8Vector *indexes = NULL;
+    gsl_matrix *GAMAT( nearest, n, total );
+    UINT8Vector *indexes = XLALCreateUINT8Vector( total );
+    XLAL_CHECK( indexes != NULL, XLAL_ENOMEM );
     XLAL_CHECK( XLALNearestLatticeTilingPoints( loc, points, &nearest, NULL, &indexes ) == XLAL_SUCCESS, XLAL_EFUNC );
     UINT8 failed = 0;
     for( UINT8 j = 0; j < total; ++j ) {
@@ -297,8 +298,9 @@ static int MismatchTest(
   // Perform 10 injections outside parameter space
   {
     gsl_matrix *GAMAT( injections, 3, 10 );
-    gsl_matrix *nearest = NULL;
-    UINT8Vector *indexes = NULL;
+    gsl_matrix *GAMAT( nearest, n, total );
+    UINT8Vector *indexes = XLALCreateUINT8Vector( total );
+    XLAL_CHECK( indexes != NULL, XLAL_ENOMEM );
     RandomParams *rng = XLALCreateRandomParams( total );
     XLAL_CHECK( rng != NULL, XLAL_EFUNC );
 

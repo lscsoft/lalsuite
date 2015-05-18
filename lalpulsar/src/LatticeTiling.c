@@ -1608,43 +1608,38 @@ int XLALNearestLatticeTilingPoints(
   XLAL_CHECK( loc != NULL, XLAL_EFAULT );
   XLAL_CHECK( points != NULL, XLAL_EFAULT );
   XLAL_CHECK( points->size1 == loc->tiling->ndim, XLAL_ESIZE );
-  XLAL_CHECK( nearest_points != NULL, XLAL_EFAULT );
+  XLAL_CHECK( nearest_points != NULL && *nearest_points != NULL, XLAL_EFAULT );
+  XLAL_CHECK( ( *nearest_points )->size1 == loc->tiling->ndim, XLAL_ESIZE );
+  XLAL_CHECK( nearest_int_points == NULL || *nearest_int_points != NULL, XLAL_EFAULT );
+  XLAL_CHECK( nearest_int_points == NULL || ( *nearest_points )->size1 == loc->tiling->ndim, XLAL_ESIZE );
+  XLAL_CHECK( nearest_indexes == NULL || *nearest_indexes != NULL, XLAL_EFAULT );
   XLAL_CHECK( nearest_indexes == NULL || loc->tiling->tiled_ndim == 0 || loc->index_trie != NULL, XLAL_EINVAL );
 
   const size_t n = loc->tiling->ndim;
   const size_t tn = loc->tiling->tiled_ndim;
   const size_t npoints = points->size2;
 
-  // (Re)Allocate nearest point matrix, and create view of correct size
-  if( *nearest_points != NULL && ( ( *nearest_points )->size1 != n || ( *nearest_points )->size2 < npoints ) ) {
+  // Resize nearest point matrix, if required, and create view of correct size
+  if( ( *nearest_points )->size2 != npoints ) {
     GFMAT( *nearest_points );
-    *nearest_points = NULL;
-  }
-  if( *nearest_points == NULL ) {
     GAMAT( *nearest_points, n, npoints );
   }
   gsl_matrix_view nearest_view = gsl_matrix_submatrix( *nearest_points, 0, 0, n, npoints );
   gsl_matrix *const nearest = &nearest_view.matrix;
 
-  // (Re)Allocate nearest generating integer matrix, if supplied, and initialise to zero
+  // Resize nearest generating integer matrix, if required, and initialise to zero
   if( nearest_int_points != NULL ) {
-    if( *nearest_int_points != NULL && ( ( *nearest_int_points )->size1 != n || ( *nearest_int_points )->size2 < npoints ) ) {
+    if( ( *nearest_int_points )->size2 != npoints ) {
       GFMATLI( *nearest_int_points );
-      *nearest_int_points = NULL;
-    }
-    if( *nearest_int_points == NULL ) {
       GAMATLI( *nearest_int_points, n, npoints );
     }
     gsl_matrix_long_set_zero( *nearest_int_points );
   }
 
-  // (Re)Allocate nearest point unique tiling index vector, if supplied, and initialise to zero
+  // Resize nearest point unique tiling index vector, if required, and initialise to zero
   if( nearest_indexes != NULL ) {
-    if( *nearest_indexes != NULL && ( *nearest_indexes )->length < npoints ) {
+    if( ( *nearest_indexes )->length != npoints ) {
       XLALDestroyUINT8Vector( *nearest_indexes );
-      *nearest_indexes = NULL;
-    }
-    if( *nearest_indexes == NULL ) {
       *nearest_indexes = XLALCreateUINT8Vector( npoints );
       XLAL_CHECK( *nearest_indexes != NULL, XLAL_ENOMEM );
     }
