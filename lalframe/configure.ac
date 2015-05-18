@@ -54,11 +54,14 @@ AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 # nightly build
 LALSUITE_ENABLE_NIGHTLY
 
-# enable check for FrameC
-LALFRAME_ENABLE_FRAMEC
-
 # enable check for inotify
 LALFRAME_ENABLE_INOTIFY
+
+# enable check for framec
+LALFRAME_ENABLE_FRAMEC
+
+# enable check for framel
+LALFRAME_ENABLE_FRAMEL
 
 # enable strict gcc flags
 LALSUITE_ENABLE_GCC_FLAGS
@@ -116,24 +119,31 @@ AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 AC_CHECK_FUNCS([gmtime_r localtime_r])
 
 # check for framec or libframe libraries and headers
-FRAMEC_AVAILABLE="no"
-FRAMEL_AVAILABLE="yes"
 PKG_PROG_PKG_CONFIG
-AS_IF([test "${framec}" = "true"],[
+FRAMEC_AVAILABLE="no"
+FRAMEL_AVAILABLE="no"
+
+AS_IF([test "${framec}" = "true"], [
 	FRAMEC_AVAILABLE="yes"
 	PKG_CHECK_MODULES([FRAMECPPC],[framecppc >= 1.19.32],[true],[false])
 	LALSUITE_ADD_FLAGS([C],[${FRAMECPPC_CFLAGS}],[${FRAMECPPC_LIBS}])
 	AC_CHECK_LIB([framecppc],[FrameCFileOpen],,[FRAMEC_AVAILABLE="no"])
-	AC_CHECK_HEADERS([framecppc/FrameC.h],,[FRAMEC_AVAILABLE="no"])])
-PKG_CHECK_MODULES([LIBFRAME],[libframe],[true],[false])
-LALSUITE_ADD_FLAGS([C],[${LIBFRAME_CFLAGS}],[${LIBFRAME_LIBS}])
-AC_CHECK_LIB([Frame],[FrLibIni],,[FRAMEL_AVAILABLE="no"])
-AC_CHECK_HEADERS([FrameL.h],,[FRAMEL_AVAILABLE="no"])
+	AC_CHECK_HEADERS([framecppc/FrameC.h],,[FRAMEC_AVAILABLE="no"])
+])
+
+AS_IF([test "${framel}" = "true"], [
+	FRAMEL_AVAILABLE="yes"
+	PKG_CHECK_MODULES([LIBFRAME],[libframe],[true],[false])
+	LALSUITE_ADD_FLAGS([C],[${LIBFRAME_CFLAGS}],[${LIBFRAME_LIBS}])
+	AC_CHECK_LIB([Frame],[FrLibIni],,[FRAMEL_AVAILABLE="no"])
+	AC_CHECK_HEADERS([FrameL.h],,[FRAMEL_AVAILABLE="no"])
+])
 
 # make sure a frame library was found
 AS_IF([test "${FRAMEC_AVAILABLE}" = "no" -a "${FRAMEL_AVAILABLE}" = "no"], [
 	AC_MSG_ERROR([no frame library available])
 ])
+
 AM_CONDITIONAL([FRAMEC],[test "${FRAMEC_AVAILABLE}" = "yes"])
 AM_CONDITIONAL([FRAMEL],[test "${FRAMEL_AVAILABLE}" = "yes"])
 
