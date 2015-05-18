@@ -64,14 +64,14 @@ static void
 thinDifferentialEvolutionPoints(LALInferenceRunState *runState) {
   size_t i;
   size_t newSize;
-  
+
   /* Delete all the even-index points. */
   for (i = 0; i < runState->differentialPointsLength; i += 2) {
     LALInferenceClearVariables(runState->differentialPoints[i]);
     XLALFree(runState->differentialPoints[i]);
     runState->differentialPoints[i] = NULL;
   }
-  
+
   /* Copy the odd points into the first part of the array. */
   for (i = 1; i < runState->differentialPointsLength; i += 2) {
     runState->differentialPoints[i/2] = runState->differentialPoints[i];
@@ -361,7 +361,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
 
   /* Parallel tempering settings */
-  INT4 Tskip            = 100;                                // Number of iterations between proposed temperature swaps 
+  INT4 Tskip            = 100;                                // Number of iterations between proposed temperature swaps
   if (LALInferenceGetProcParamVal(runState->commandLine,"--tempSkip"))
     Tskip = atoi(LALInferenceGetProcParamVal(runState->commandLine,"--tempSkip")->value);
   LALInferenceAddVariable(runState->algorithmParams, "tempSkip", &Tskip,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
@@ -385,11 +385,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
   if (runState->likelihood==&LALInferenceUndecomposedFreqDomainLogLikelihood){
     nullLikelihood = LALInferenceNullLogLikelihood(runState->data);
-  } else if (runState->likelihood==&LALInferenceFreqDomainStudentTLogLikelihood || 
+  } else if (runState->likelihood==&LALInferenceFreqDomainStudentTLogLikelihood ||
 	     (runState->likelihood==&LALInferenceMarginalisedTimeLogLikelihood &&
-	      !LALInferenceGetProcParamVal(runState->commandLine, "--malmquistPrior")) || 
+	      !LALInferenceGetProcParamVal(runState->commandLine, "--malmquistPrior")) ||
 	     (runState->likelihood==&LALInferenceMarginalisedTimePhaseLogLikelihood &&
-	      !LALInferenceGetProcParamVal(runState->commandLine, "--malmquistPrior")) || 
+	      !LALInferenceGetProcParamVal(runState->commandLine, "--malmquistPrior")) ||
 	     (runState->likelihood==&LALInferenceMarginalisedPhaseLogLikelihood &&
 	      !LALInferenceGetProcParamVal(runState->commandLine, "--malmquistPrior"))) {
     LALInferenceIFOData *headData = runState->data;
@@ -800,7 +800,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
           s_gamma = 0.0;
         }
         fprintf(statfile,"%f\t",s_gamma);
-        
+
         for(LALInferenceVariableItem *item=runState->currentParams->head;item;item=item->next){
             char tmpname[MAX_STRLEN]="";
             sprintf(tmpname,"%s_%s",item->name,ADAPTSUFFIX);
@@ -808,11 +808,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
               fprintf(statfile,"%g\t",*sigma);
         }
         for(LALInferenceVariableItem *item=runState->currentParams->head;item;item=item->next){
-            char tmpname[MAX_STRLEN]=""; 
+            char tmpname[MAX_STRLEN]="";
             sprintf(tmpname,"%s_%s",item->name,ACCEPTSUFFIX);
-            REAL8 *naccepted=(REAL8 *)LALInferenceGetVariable(runState->proposalArgs,tmpname); 
+            REAL8 *naccepted=(REAL8 *)LALInferenceGetVariable(runState->proposalArgs,tmpname);
             sprintf(tmpname,"%s_%s",item->name,PROPOSEDSUFFIX);
-            REAL8 *nproposed=(REAL8 *)LALInferenceGetVariable(runState->proposalArgs,tmpname); 
+            REAL8 *nproposed=(REAL8 *)LALInferenceGetVariable(runState->proposalArgs,tmpname);
               fprintf(statfile,"%f\t",*naccepted/( *nproposed==0 ? 1.0 : *nproposed ));
         }
         fprintf(statfile,"\n");
@@ -834,7 +834,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
     /* Excute swap proposal. */
     if (*runPhase_p == LALINFERENCE_ONLY_PT || *runPhase_p == LALINFERENCE_TEMP_PT) {
-      swapReturn = parallelSwap(runState, ladder, i, swapfile); 
+      swapReturn = parallelSwap(runState, ladder, i, swapfile);
       if (propStats) {
         if (swapReturn != NO_SWAP_PROPOSED) {
           propStat = ((LALInferenceProposalStatistics *)LALInferenceGetVariable(propStats, parallelSwapProposalName));
@@ -849,7 +849,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
       runComplete=1;
 
   }// while (!runComplete)
-  
+
   /* Send complete message to hottest chain, and it will propogate down to ensure no
    * hanging swap proposals happen */
   LALInferenceShutdownLadder();
@@ -919,7 +919,7 @@ INT4 PTMCMCOneStep(LALInferenceRunState *runState)
   //REAL8 nullLikelihood = *(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "nullLikelihood");
   //printf("%10.10f\t%10.10f\t%10.10f\n", logPriorProposed-logPriorCurrent, logLikelihoodProposed-nullLikelihood, logProposalRatio);
   //LALInferencePrintVariables(&proposedParams);
-  
+
   // determine acceptance probability:
   logAcceptanceProbability = (1.0/temperature)*(logLikelihoodProposed - logLikelihoodCurrent)
     + (logPriorProposed - logPriorCurrent)
@@ -1507,7 +1507,7 @@ FILE *LALInferencePrintPTMCMCHeaderOrResume(LALInferenceRunState *runState) {
       XLALPrintError("Error reading resume file (in %s, line %d)\n", __FILE__, __LINE__);
       XLAL_ERROR_NULL(XLAL_EIO);
     }
-    
+
     LALInferenceMCMCResumeRead(runState, chainoutput);
 
     fclose(chainoutput);
@@ -1518,7 +1518,7 @@ FILE *LALInferencePrintPTMCMCHeaderOrResume(LALInferenceRunState *runState) {
       XLALPrintError("Output file error. Please check that the specified path exists. (in %s, line %d)\n",__FILE__, __LINE__);
       XLAL_ERROR_NULL(XLAL_EIO);
     }
-    
+
     LALInferencePrintPTMCMCHeaderFile(runState, chainoutput);
 
     fclose(chainoutput);
@@ -1530,7 +1530,9 @@ FILE *LALInferencePrintPTMCMCHeaderOrResume(LALInferenceRunState *runState) {
     XLALPrintError("Output file error. Please check that the specified path exists. (in %s, line %d)\n",__FILE__, __LINE__);
     XLAL_ERROR_NULL(XLAL_EIO);
   }
-  
+  if(setvbuf(chainoutput,NULL,_IOFBF,0x100000)) /* Set buffer to 1MB so as to not thrash NFS */
+    fprintf(stderr,"Warning: Unable to set output file buffer!");
+
   XLALFree(outFileName);
 
   return chainoutput;
@@ -1676,7 +1678,7 @@ void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
     SimInspiralTable *theEventTable = NULL;
 
     SimInspiralTableFromLIGOLw(&injTable,ppt->value,0,0);
-    
+
     ppt2 = LALInferenceGetProcParamVal(runState->commandLine, "--event");
     if (ppt2) {
       UINT4 event = atoi(ppt2->value);
@@ -1703,7 +1705,7 @@ void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
     REAL8 sz = theEventTable->spin1z;
 
     REAL8 a_spin1 = sqrt(sx*sx + sy*sy + sz*sz);
-    
+
     REAL8 theta_spin1, phi_spin1;
     if (a_spin1 == 0.0) {
       theta_spin1 = 0.0;
@@ -1717,7 +1719,7 @@ void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
     sx = theEventTable->spin2x;
     sy = theEventTable->spin2y;
     sz = theEventTable->spin2z;
-    
+
     REAL8 a_spin2 = sqrt(sx*sx + sy*sy + sz*sz), theta_spin2, phi_spin2;
     if (a_spin2 == 0.0) {
       theta_spin2 = 0.0;
@@ -1907,7 +1909,7 @@ void LALInferenceMCMCResumeRead(LALInferenceRunState *runState, FILE *resumeFile
   char *last_line = NULL;
   long flen, line_length;
   int cycle;
-  float loglike, logprior;  
+  float loglike, logprior;
 
   fseek(resumeFile, 0L, SEEK_END);
   flen = ftell(resumeFile);
