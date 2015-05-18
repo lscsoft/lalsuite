@@ -54,6 +54,9 @@ This package provides the Octave bindings for LALInspiral.
 %configure --disable-gcc-flags --enable-swig
 %{__make} V=1
 
+%check
+%{__make} V=1 check
+
 %install
 %make_install
 rm -f $RPM_BUILD_ROOT%{_libdir}/*.la
