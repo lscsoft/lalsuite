@@ -73,6 +73,7 @@
 #include <lal/LALInferenceReadData.h>
 #include <lal/LALInferenceLikelihood.h>
 #include <lal/LALInferenceTemplate.h>
+#include <lal/LALInferenceInit.h>
 #include <lal/LALSimNoise.h>
 #include <LALInferenceRemoveLines.h>
 
@@ -2581,104 +2582,88 @@ void LALInferenceInjectionToVariables(SimInspiralTable *theEventTable, LALInfere
 
 }
 
-void LALInferencePrintInjectionSample(LALInferenceRunState *runState)
-{
-    ProcessParamsTable *ppt=LALInferenceGetProcParamVal(runState->commandLine,"--inj");
-    LALInferenceVariables backup;
-    LALInferenceVariables injparams;
-    memset(&injparams,0,sizeof(LALInferenceVariables));
-    memset(&backup,0,sizeof(LALInferenceVariables));
+void LALInferencePrintInjectionSample(LALInferenceRunState *runState) {
+    int errnum=0;
     char *fname=NULL;
     char defaultname[]="injection_params.dat";
     FILE *outfile=NULL;
-    if(!ppt) return;
-    SimInspiralTable *injTable=NULL,*theEventTable=NULL;
-    SimInspiralTableFromLIGOLw(&injTable,ppt->value,0,0);
 
-    ppt=LALInferenceGetProcParamVal(runState->commandLine,"--outfile");
-    if(ppt) {
-      fname = XLALCalloc((strlen(ppt->value)+255)*sizeof(char),1);
-      sprintf(fname,"%s.injection",ppt->value);
-    }
-    else fname=defaultname;
+    SimInspiralTable *injTable=NULL, *theEventTable=NULL;
+    LALInferenceModel *model = LALInferenceInitCBCModel(runState);
+    LALInferenceVariables *injparams = XLALCalloc(1, sizeof(LALInferenceVariables));
+    LALInferenceCopyVariables(model->params, injparams);
 
-    ppt=LALInferenceGetProcParamVal(runState->commandLine,"--event");
+    ProcessParamsTable *ppt = LALInferenceGetProcParamVal(runState->commandLine,"--inj");
+    if (!ppt)
+        return;
+
+    SimInspiralTableFromLIGOLw(&injTable, ppt->value, 0, 0);
+
+    ppt = LALInferenceGetProcParamVal(runState->commandLine, "--outfile");
     if (ppt) {
-      UINT4 event = atoi(ppt->value);
-      UINT4 i;
-      theEventTable = injTable;
-      for (i = 0; i < event; i++) {
-        theEventTable = theEventTable->next;
-      }
-      theEventTable->next = NULL;
+        fname = XLALCalloc((strlen(ppt->value)+255)*sizeof(char),1);
+        sprintf(fname,"%s.injection",ppt->value);
+    }
+    else
+        fname = defaultname;
+
+    ppt = LALInferenceGetProcParamVal(runState->commandLine, "--event");
+    if (ppt) {
+        UINT4 event = atoi(ppt->value);
+        UINT4 i;
+        theEventTable = injTable;
+        for (i = 0; i < event; i++) {
+            theEventTable = theEventTable->next;
+        }
+        theEventTable->next = NULL;
     } else {
-      theEventTable=injTable;
-      theEventTable->next = NULL;
+        theEventTable=injTable;
+        theEventTable->next = NULL;
     }
 
-    LALPNOrder *order=LALInferenceGetVariable(runState->currentParams,"LAL_PNORDER");
-    Approximant *approx=LALInferenceGetVariable(runState->currentParams,"LAL_APPROXIMANT");
+    LALPNOrder *order = LALInferenceGetVariable(injparams, "LAL_PNORDER");
+    Approximant *approx = LALInferenceGetVariable(injparams, "LAL_APPROXIMANT");
 
-    if(!(approx && order)){
-      fprintf(stdout,"Unable to print injection sample: No approximant/PN order set\n");
-      return;
+    if (!(approx && order)){
+        fprintf(stdout,"Unable to print injection sample: No approximant/PN order set\n");
+        return;
     }
-    /* Save old variables */
-    LALInferenceCopyVariables(runState->currentParams,&backup);
     /* Fill named variables */
-    LALInferenceInjectionToVariables(theEventTable,runState->currentParams);
+    LALInferenceInjectionToVariables(theEventTable, injparams);
 
-    /* If the time prior is stored in currentParams for the margtime likelihood, this will copy its range over */
-    if(LALInferenceCheckVariable(&backup,"time_min"))
-    {
-            REAL8 time_min=LALInferenceGetREAL8Variable(&backup,"time_min");
-            LALInferenceAddVariable(runState->currentParams,"time_min",&time_min,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
-    }
-    if(LALInferenceCheckVariable(&backup,"time_max"))
-    {
-            REAL8 time_max=LALInferenceGetREAL8Variable(&backup,"time_max");
-            LALInferenceAddVariable(runState->currentParams,"time_max",&time_max,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
-    }
-
-    REAL8 injPrior = runState->prior(runState,runState->currentParams,runState->model);
-    LALInferenceAddVariable(runState->currentParams,"logPrior",&injPrior,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
-    int errnum=0;
+    REAL8 injPrior = runState->prior(runState, injparams, model);
+    LALInferenceAddVariable(injparams, "logPrior", &injPrior, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
     REAL8 injL=0.;
     if ( (int) *approx == XLALGetApproximantFromString(theEventTable->waveform)){
-      XLAL_TRY(injL = runState->likelihood(runState->currentParams, runState->data, runState->model), errnum);
-      if(errnum){
-          fprintf(stderr,"ERROR: Cannot print injection sample. Received error code %s\n",XLALErrorString(errnum));
-      }
+        XLAL_TRY(injL = runState->likelihood(injparams, runState->data, model), errnum);
+        if(errnum){
+            fprintf(stderr,"ERROR: Cannot print injection sample. Received error code %s\n",XLALErrorString(errnum));
+        }
     }
-    LALInferenceAddVariable(runState->currentParams,"logL",(void *)&injL,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
-    if(LALInferenceCheckVariable(runState->algorithmParams,"logZnoise")){
+    LALInferenceAddVariable(injparams, "logL", (void *)&injL,LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
+    if (LALInferenceCheckVariable(runState->algorithmParams, "logZnoise")){
         REAL8 tmp=injL-*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logZnoise");
-        LALInferenceAddVariable(runState->currentParams,"deltalogL",(void *)&tmp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+        LALInferenceAddVariable(injparams,"deltalogL",(void *)&tmp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
     }
     LALInferenceIFOData *data=runState->data;
-    while(data)
-    {
+    while(data) {
         char tmpName[50];
-        REAL8 tmp=runState->model->loglikelihood - data->nullloglikelihood;
+        REAL8 tmp=model->loglikelihood - data->nullloglikelihood;
         sprintf(tmpName,"deltalogl%s",data->name);
-        LALInferenceAddVariable(runState->currentParams,tmpName,&tmp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+        LALInferenceAddVariable(injparams, tmpName, &tmp, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
         data=data->next;
     }
     /* Save to file */
     outfile=fopen(fname,"w");
     if(!outfile) {fprintf(stderr,"ERROR: Unable to open file %s for injection saving\n",fname); exit(1);}
-    LALInferenceSortVariablesByName(runState->currentParams);
-    LALInferenceFprintParameterHeaders(outfile, runState->currentParams);
+    LALInferenceSortVariablesByName(injparams);
+    LALInferenceFprintParameterHeaders(outfile, injparams);
     fprintf(outfile,"\n");
-    LALInferencePrintSample(outfile, runState->currentParams);
+    LALInferencePrintSample(outfile, injparams);
 
-    //for(LALInferenceVariableItem *this=runState->currentParams->head; this; this=this->next)
-    //    fprintf(outfile,"%s\t",this->name);
-    //fprintf(outfile,"\n");
-    //LALInferencePrintSample(outfile,runState->currentParams);
     fclose(outfile);
-    LALInferenceCopyVariables(&backup,runState->currentParams);
-    LALInferenceClearVariables(&backup);
+    LALInferenceClearVariables(injparams);
+    XLALFree(injparams);
     return;
 }
 
