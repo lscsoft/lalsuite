@@ -480,7 +480,7 @@ typedef void (*LALInferenceLogFunction) (struct tagLALInferenceRunState *runStat
 typedef struct
 tagLALInferenceProposal
 {
-    LALInferenceProposalFunction *func;  /* The actual proposal function */
+    LALInferenceProposalFunction func;  /* The actual proposal function */
     char name[VARNAME_MAX]; /* The name of the proposal.  This is used for printing stats */
     INT4   weight;     // Weight of proposal function in cycle
     INT4   proposed;   // Number of times proposal has been called

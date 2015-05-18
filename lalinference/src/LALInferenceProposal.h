@@ -157,6 +157,8 @@ void LALInferenceAddProposalToCycle(LALInferenceProposalCycle *cycle, LALInferen
 /** Randomizes the order of the proposals in the proposal cycle. */
 void LALInferenceRandomizeProposalCycle(LALInferenceProposalCycle *cycle, gsl_rng *rng);
 
+/** Create a new proposal cycle */
+LALInferenceProposalCycle* LALInferenceInitProposalCycle();
 
 /** Proposes a jump from the next proposal in the proposal cycle.*/
 REAL8 LALInferenceCyclicProposal(LALInferenceThreadState *thread,

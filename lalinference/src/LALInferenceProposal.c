@@ -129,7 +129,7 @@ static INT4 numDetectorsUniquePositions(LALInferenceIFOData *data) {
     return nIFO - nCollision;
 }
 
-LALInferenceProposal *LALInferenceInitProposal(LALInferenceProposalFunction *func, const char *name)
+LALInferenceProposal *LALInferenceInitProposal(LALInferenceProposalFunction func, const char *name)
 {
   LALInferenceProposal *proposal = XLALCalloc(1,sizeof(LALInferenceProposal));
   proposal->func = func;
@@ -197,19 +197,19 @@ REAL8 LALInferenceCyclicProposal(LALInferenceThreadState *thread,
     /* Must have cycle array and cycle array length in propArgs. */
     cycle = thread->cycle;
     if (cycle == NULL) {
-        XLALError(fname, __FILE__, __LINE__, XLAL_FAILURE);
+        XLALError("LALInferenceCyclicProposal()",__FILE__,__LINE__,XLAL_FAILURE);
         exit(1);
     }
 
     if (cycle->counter >= cycle->length) {
-        XLALError(fname, __FILE__, __LINE__, XLAL_FAILURE);
+        XLALError("LALInferenceCyclicProposal()",__FILE__,__LINE__,XLAL_FAILURE);
         exit(1);
     }
 
     /* One instance of each proposal object is stored in cycle->proposals.
         cycle->order is a list of elements to call from the proposals */
     i = cycle->order[cycle->counter];
-    REAL8 logPropRatio = (cycle->proposals[i])(thread, currentParams, proposedParams);
+    REAL8 logPropRatio = cycle->proposals[i]->func(thread, currentParams, proposedParams);
     strcpy(cycle->last_proposal, cycle->proposals[i]->name);
 
     /* Call proposals until one succeeds */
@@ -217,7 +217,7 @@ REAL8 LALInferenceCyclicProposal(LALInferenceThreadState *thread,
         LALInferenceClearVariables(proposedParams);
 
         i = cycle->order[cycle->counter];
-        logPropRatio = (cycle->proposals[i])(thread, currentParams, proposedParams);
+        logPropRatio = cycle->proposals[i]->func(thread, currentParams, proposedParams);
         strcpy(cycle->last_proposal, cycle->proposals[i]->name);
 
         /* Increment counter for the next time around. */
@@ -231,15 +231,8 @@ REAL8 LALInferenceCyclicProposal(LALInferenceThreadState *thread,
 }
 
 LALInferenceProposalCycle* LALInferenceInitProposalCycle(LALInferenceVariables *proposalArgs) {
-    LALInferenceProposalCycle cycle = {
-        .proposals = NULL;
-        .order = NULL;
-        .length = 0;
-        .nProposals = 0;
-        .count = 0;
-    }
-
-    return &cycle;
+  LALInferenceProposalCycle *cycle = XLALCalloc(1,sizeof(LALInferenceProposalCycle));
+  return cycle;
 }
 
 void LALInferenceDeleteProposalCycle(LALInferenceProposalCycle *cycle) {
