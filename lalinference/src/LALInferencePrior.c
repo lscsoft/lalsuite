@@ -893,7 +893,7 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
         Cube[i] = lat; i++; strcat(header, "dec ");
     }
 
-    Cube[i] = LALInferenceInspiralPrior(runState,params,runState->model);
+    Cube[i] = LALInferenceInspiralPrior(runState,params,model);
     i++; strcat(header,"logprior ");
 
     // f_ref for system-frame parameters
