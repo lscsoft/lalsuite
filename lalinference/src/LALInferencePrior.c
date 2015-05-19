@@ -37,7 +37,7 @@ static double qInnerIntegrand(double M2, void *viData);
 static double etaInnerIntegrand(double M2, void *viData);
 static double outerIntegrand(double M1, void *voData);
 
-void LALInferenceInitPrior(LALInferenceRunState *runState)
+void LALInferenceInitCBCPrior(LALInferenceRunState *runState)
 {
     char help[]="\
                  ------------------------------------------------------------------------------------------------------------------\n\

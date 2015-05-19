@@ -50,7 +50,7 @@ SWIGLAL(INPUT_SCALARS(REAL8*, min, max));
 /**
  * Initialize the prior based on command line arguments.
 */
-void LALInferenceInitPrior(LALInferenceRunState *runState);
+void LALInferenceInitCBCPrior(LALInferenceRunState *runState);
 
 /**
  * Return the log Prior for the glitch amplitude

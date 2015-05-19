@@ -44,21 +44,6 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine);
 void initializeNS(LALInferenceRunState *runState);
 void initializeMalmquistPrior(LALInferenceRunState *runState);
 
-void LogNSSampleAsMCMCSampleToArray(LALInferenceRunState *state, LALInferenceVariables *vars);                             
-void LogNSSampleAsMCMCSampleToFile(LALInferenceRunState *state, LALInferenceVariables *vars);                              
-
-void LogNSSampleAsMCMCSampleToArray(LALInferenceRunState *state, LALInferenceVariables *vars)
-{
-  LALInferenceLogSampleToArray(state, vars);
-  return;
-}
-
-void LogNSSampleAsMCMCSampleToFile(LALInferenceRunState *state, LALInferenceVariables *vars)
-{
-  LALInferenceLogSampleToFile(state, vars);
-  return;
-}
-
 
 /***** Initialise Nested Sampling structures ****/
 /* Fill in samples from the prior distribution */
@@ -156,34 +141,10 @@ void initializeNS(LALInferenceRunState *runState)
   REAL8 temp=1.0;
   LALInferenceAddVariable(threadState->proposalArgs,"temperature",&temp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
   
-  /* Default likelihood is the frequency domain one */
-  runState->likelihood=&LALInferenceUndecomposedFreqDomainLogLikelihood;
-  
-  /* Check whether to use the SkyLocalization prior. Otherwise uses the default LALInferenceInspiralPrior. That should probably be replaced with a swhich over the possible priors. */
-  ppt=LALInferenceGetProcParamVal(commandLine,"--prior");
-  if(ppt){
-    if(!strcmp(ppt->value,"SkyLoc")) runState->prior = &LALInferenceInspiralSkyLocPrior;
-    if(!strcmp(ppt->value,"malmquist")) initializeMalmquistPrior(runState);
-  }
-  else{
-    runState->prior = &LALInferenceInspiralPrior;
-  }
-  
-  /* Set up the prior for analytic tests if needed */
-  if(LALInferenceGetProcParamVal(commandLine,"--correlatedGaussianLikelihood")){
-    runState->prior=LALInferenceAnalyticNullPrior;
-  }
-  if(LALInferenceGetProcParamVal(commandLine,"--bimodalGaussianLikelihood")){
-    runState->prior=LALInferenceAnalyticNullPrior;
-  }
-  if(LALInferenceGetProcParamVal(commandLine,"--rosenbrockLikelihood")){
-    runState->prior=LALInferenceAnalyticNullPrior;
-  }
-  
 #ifdef HAVE_LIBLALXML
-  threadState->logsample=LogNSSampleAsMCMCSampleToArray;
+  threadState->logsample=LALInferenceLogSampleToArray;
 #else
-  threadState->logsample=LogNSSampleAsMCMCSampleToFile;
+  threadState->logsample=LALInferenceLogSampleToFile;
 #endif
   
   printf("set number of live points.\n");
@@ -280,6 +241,7 @@ int main(int argc, char *argv[]){
   /* Set the CBC model */
   state->model = LALInferenceInitCBCModel(state);
   state->templt = LALInferenceInitCBCTemplate(state);
+  state->prior = LALInferenceInitCBCPrior(state);
   /* Choose the likelihood */
   LALInferenceInitLikelihood(state);
   
