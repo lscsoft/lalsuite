@@ -137,6 +137,9 @@ void initialise_algorithm( LALInferenceRunState *runState )
   runState->algorithmParams = XLALCalloc( 1, sizeof(LALInferenceVariables) );
   runState->priorArgs = XLALCalloc( 1, sizeof(LALInferenceVariables) );
   runState->proposalArgs = XLALCalloc( 1, sizeof(LALInferenceVariables) );
+  /* Initialise threads - single thread */
+  runState->threads=XLALCalloc(1,sizeof(LALInferenceThreadState *));
+  runState->threads[0]=LALInferenceInitThread();
 
   ppt = LALInferenceGetProcParamVal( commandLine, "--verbose" );
   if( ppt ) {
@@ -259,9 +262,11 @@ void setup_lookup_tables( LALInferenceRunState *runState, LALSource *source ){
   /* Using psi bins, time bins */
   ProcessParamsTable *ppt;
   ProcessParamsTable *commandLine = runState->commandLine;
-
+  /* Single thread here */
+  LALInferenceThreadState *threadState = runState->threads[0];
+  
   LALInferenceIFOData *data = runState->data;
-  LALInferenceIFOModel *ifo_model = runState->model->ifo;
+  LALInferenceIFOModel *ifo_model = threadState->model->ifo;
 
   REAL8 t0;
   LALDetAndSource detAndSource;
@@ -521,6 +526,8 @@ void add_variable_scale( LALInferenceVariables *var, LALInferenceVariables *scal
 void initialise_prior( LALInferenceRunState *runState )
 {
   CHAR *propfile = NULL;
+  /* Single thread here */
+  LALInferenceThreadState *threadState = runState->threads[0];
   ProcessParamsTable *ppt;
   ProcessParamsTable *commandLine = runState->commandLine;
   FILE *fp=NULL;
@@ -528,7 +535,7 @@ void initialise_prior( LALInferenceRunState *runState )
   CHAR tempPar[VARNAME_MAX] = "", tempPrior[VARNAME_MAX] = "";
   REAL8 low, high;
 
-  LALInferenceIFOModel *ifo = runState->model->ifo;
+  LALInferenceIFOModel *ifo = threadState->model->ifo;
 
   /* parameters in correlation matrix */
   LALStringVector *corParams = NULL;
@@ -583,11 +590,11 @@ void initialise_prior( LALInferenceRunState *runState )
     sprintf(tempParScaleMin, "%s_scale_min", tempPar);
     sprintf(tempParPrior, "%s_gaussian_mean", tempPar);
 
-    tempVar = *(REAL8*)LALInferenceGetVariable( runState->currentParams, tempPar );
-    type = LALInferenceGetVariableType( runState->currentParams, tempPar );
+    tempVar = *(REAL8*)LALInferenceGetVariable( threadState->currentParams, tempPar );
+    type = LALInferenceGetVariableType( threadState->currentParams, tempPar );
 
     /* remove variable value */
-    LALInferenceRemoveVariable( runState->currentParams, tempPar );
+    LALInferenceRemoveVariable( threadState->currentParams, tempPar );
 
     if ( !strcmp(tempPrior, "uniform") || !strcmp(tempPrior, "predefined") ){
       scale = high - low; /* the prior range */
@@ -639,7 +646,7 @@ void initialise_prior( LALInferenceRunState *runState )
       if ( fabs( 1.-(scale/phirange) ) < 0.01 ) { varyType = LALINFERENCE_PARAM_CIRCULAR; }
     }
 
-    LALInferenceAddVariable( runState->currentParams, tempPar, &tempVar, type, varyType );
+    LALInferenceAddVariable( threadState->currentParams, tempPar, &tempVar, type, varyType );
 
     /* Add the prior variables */
     if ( !strcmp(tempPrior, "uniform") || !strcmp(tempPrior, "predefined") ){
@@ -708,7 +715,7 @@ void initialise_prior( LALInferenceRunState *runState )
 
     /* if the correlation matrix is given then add it as the prior for values with Gaussian errors specified in the par
      * file */
-    add_correlation_matrix( runState->currentParams, runState->priorArgs, corMat, corParams );
+    add_correlation_matrix( threadState->currentParams, runState->priorArgs, corMat, corParams );
 
     XLALDestroyUINT4Vector( dims );
   }
@@ -774,22 +781,28 @@ void initialise_proposal( LALInferenceRunState *runState ){
     XLAL_ERROR_VOID(XLAL_EFAILED);
   }
 
-  runState->proposalStats = NULL;
-  if(!runState->proposalStats) runState->proposalStats = XLALCalloc(1,sizeof(LALInferenceVariables));
-
+  /* Single thread here */
+  LALInferenceThreadState *threadState = runState->threads[0];
+  threadState->cycle = LALInferenceInitProposalCycle();
+  LALInferenceProposalCycle *cycle=threadState->cycle;
   /* add proposals */
   if( covfrac ){
-    LALInferenceAddProposalToCycle( runState, covarianceEigenvectorJumpName, &LALInferenceCovarianceEigenvectorJump,
-                                    covfrac );
+    LALInferenceAddProposalToCycle(
+                                   cycle,
+                                   LALInferenceInitProposal(&LALInferenceCovarianceEigenvectorJump, covarianceEigenvectorJumpName ),
+                                   covfrac);
   }
 
   if( defrac ){
-    LALInferenceAddProposalToCycle( runState, differentialEvolutionFullName, &LALInferenceDifferentialEvolutionFull,
-                                    defrac );
+    LALInferenceAddProposalToCycle(
+                                   cycle,
+                                   LALInferenceInitProposal(&LALInferenceDifferentialEvolutionFull,differentialEvolutionFullName),
+                                   defrac);
   }
 
+  /* THIS FUNCTION DOES NOT EXIST ANY MORE! */
+  /*
   if( kdfrac ){
-    /* set the maximum number of points in a kd-tree cell if given */
     ppt = LALInferenceGetProcParamVal( runState->commandLine, "--kDNCell" );
     if( ppt ){
       INT4 kdncells = atoi( ppt->value );
@@ -802,21 +815,30 @@ void initialise_proposal( LALInferenceRunState *runState ){
 
     LALInferenceSetupkDTreeNSLivePoints( runState );
   }
-
+  */
   if ( freqfrac ){
-    LALInferenceAddProposalToCycle( runState, frequencyBinJumpName, &LALInferenceFrequencyBinJump, freqfrac );
+    LALInferenceAddProposalToCycle(
+                                   cycle,
+                                   LALInferenceInitProposal(&LALInferenceFrequencyBinJump,frequencyBinJumpName),
+                                   freqfrac);
   }
 
   /* Use ensemble moves */
   if ( esfrac ){
-    LALInferenceAddProposalToCycle( runState, ensembleStretchFullName, &LALInferenceEnsembleStretchFull, esfrac );
+    LALInferenceAddProposalToCycle(
+                                   cycle,
+                                   LALInferenceInitProposal(&LALInferenceEnsembleStretchFull,ensembleStretchFullName),
+                                   esfrac);
   }
 
   if ( ewfrac ){
-    LALInferenceAddProposalToCycle( runState, ensembleWalkFullName, &LALInferenceEnsembleWalkFull, ewfrac );
+    LALInferenceAddProposalToCycle(
+                                   cycle,
+                                   LALInferenceInitProposal(&LALInferenceEnsembleWalkFull,ensembleWalkFullName),
+                                   ewfrac);
   }
 
-  LALInferenceRandomizeProposalCycle( runState );
+  LALInferenceRandomizeProposalCycle( cycle, runState->GSLrandom );
   /* set temperature */
   ppt = LALInferenceGetProcParamVal( runState->commandLine, "--temperature" );
   if( ppt ) { temperature = atof( ppt->value ); }
@@ -830,7 +852,9 @@ void initialise_proposal( LALInferenceRunState *runState ){
                            LALINFERENCE_string_t, LALINFERENCE_PARAM_OUTPUT );
 
   /* set proposal */
-  runState->proposal = LALInferenceDefaultProposal;
+  threadState->proposal = LALInferenceCyclicProposal;
+  LALInferenceZeroProposalStats(threadState->cycle);
+
 }
 
 
@@ -938,7 +962,7 @@ void add_correlation_matrix( LALInferenceVariables *ini, LALInferenceVariables *
  */
 void sum_data( LALInferenceRunState *runState ){
   LALInferenceIFOData *data = runState->data;
-  LALInferenceIFOModel *ifomodel = runState->model->ifo;
+  LALInferenceIFOModel *ifomodel = runState->threads[0]->model->ifo;
 
   UINT4 gaussianLike = 0, roq = 0, nonGR = 0;
 

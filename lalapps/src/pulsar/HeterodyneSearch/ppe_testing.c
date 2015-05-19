@@ -25,6 +25,7 @@
  * \param runState [in] The analysis information structure
  */
 void gridOutput( LALInferenceRunState *runState ){
+  LALInferenceThreadState *threadState=runState->threads[0];
   REAL8 h0min = 0.;
   REAL8 h0max = 0.;
   REAL8 h0range = 0, h0step = 0;
@@ -99,18 +100,18 @@ void gridOutput( LALInferenceRunState *runState ){
   logL = XLALCreateREAL8Vector( h0steps );
 
   /* reset rescale value for h0 */
-  tmpscale = *(REAL8*)LALInferenceGetVariable( runState->model->ifo->params,
+  tmpscale = *(REAL8*)LALInferenceGetVariable( threadState->model->ifo->params,
                                                parscale );
-  tmpmin = *(REAL8*)LALInferenceGetVariable( runState->model->ifo->params,
+  tmpmin = *(REAL8*)LALInferenceGetVariable( threadState->model->ifo->params,
                                              parmin );
-  LALInferenceRemoveVariable( runState->model->ifo->params, parscale );
-  LALInferenceAddVariable( runState->model->ifo->params, parscale, &scale,
+  LALInferenceRemoveVariable( threadState->model->ifo->params, parscale );
+  LALInferenceAddVariable( threadState->model->ifo->params, parscale, &scale,
                            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
-  LALInferenceRemoveVariable( runState->model->ifo->params, parmin );
-  LALInferenceAddVariable( runState->model->ifo->params, parmin, &scalemin,
+  LALInferenceRemoveVariable( threadState->model->ifo->params, parmin );
+  LALInferenceAddVariable( threadState->model->ifo->params, parmin, &scalemin,
                            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
 
-  tmpgridval = *(REAL8*)LALInferenceGetVariable( runState->currentParams,
+  tmpgridval = *(REAL8*)LALInferenceGetVariable( threadState->currentParams,
                                                  parname );
 
   sprintf(outputgrid, "%s_grid_posterior.txt", parname);
@@ -124,10 +125,10 @@ void gridOutput( LALInferenceRunState *runState ){
   for( i = 0; i < h0steps; i++ ){
     REAL8 h0val = h0min + i*h0step;
 
-    LALInferenceSetVariable( runState->currentParams, parname, &h0val );
+    LALInferenceSetVariable( threadState->currentParams, parname, &h0val );
 
-    logL->data[i] = runState->likelihood( runState->currentParams,
-                                          runState->data, runState->model );
+    logL->data[i] = runState->likelihood( threadState->currentParams,
+                                          runState->data, threadState->model );
 
     if ( logL->data[i] < minL ) minL = logL->data[i];
   }
@@ -149,15 +150,15 @@ void gridOutput( LALInferenceRunState *runState ){
   XLALDestroyREAL8Vector( logL );
 
   /* reset scale value and parameter value in currentParams */
-  LALInferenceRemoveVariable( runState->model->ifo->params, parscale );
-  LALInferenceAddVariable( runState->model->ifo->params, parscale, &tmpscale,
+  LALInferenceRemoveVariable( threadState->model->ifo->params, parscale );
+  LALInferenceAddVariable( threadState->model->ifo->params, parscale, &tmpscale,
                            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
 
-  LALInferenceRemoveVariable( runState->model->ifo->params, parmin );
-  LALInferenceAddVariable( runState->model->ifo->params, parmin, &tmpmin,
+  LALInferenceRemoveVariable( threadState->model->ifo->params, parmin );
+  LALInferenceAddVariable( threadState->model->ifo->params, parmin, &tmpmin,
                            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
 
-  LALInferenceSetVariable( runState->currentParams, parname, &tmpgridval );
+  LALInferenceSetVariable( threadState->currentParams, parname, &tmpgridval );
 }
 
 /**
@@ -209,6 +210,7 @@ REAL8 test_gaussian_log_likelihood( LALInferenceVariables *vars,
  * \param runState [in]
  */
 void outputPriorSamples( LALInferenceRunState *runState ){
+  LALInferenceThreadState *threadState = runState->threads[0];
   ProcessParamsTable *ppt = LALInferenceGetProcParamVal( runState->commandLine,
                                                          "--output-prior" );
   INT4 Nlive = *(INT4 *)LALInferenceGetVariable( runState->algorithmParams,
@@ -256,12 +258,12 @@ void outputPriorSamples( LALInferenceRunState *runState ){
 
           /* get scale factors */
           sprintf(scalePar, "%s_scale", item->name);
-          scale = *(REAL8 *)LALInferenceGetVariable( runState->model->ifo->params,
+          scale = *(REAL8 *)LALInferenceGetVariable( threadState->model->ifo->params,
                                                      scalePar );
 
           sprintf(scaleMinPar, "%s_scale_min", item->name);
           scaleMin = *(REAL8 *)LALInferenceGetVariable(
-            runState->model->ifo->params, scaleMinPar );
+            threadState->model->ifo->params, scaleMinPar );
 
           var = scaleMin + *(REAL8 *)item->value*scale;
 

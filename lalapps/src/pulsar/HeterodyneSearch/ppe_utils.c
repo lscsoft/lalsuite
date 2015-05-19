@@ -616,6 +616,8 @@ void merge_data( COMPLEX16Vector *data, UINT4Vector *segs ){
  * \param runState [in] The analysis information structure
  */
 void rescale_output( LALInferenceRunState *runState ){
+  /* Single thread here */
+  LALInferenceThreadState *threadState = runState->threads[0];
   /* Open original output output file */
   CHAR *outfile, outfiletmp[256] = "";
   CHAR outfilepars[256] = "", outfileparstmp[256] = "";
@@ -660,8 +662,8 @@ void rescale_output( LALInferenceRunState *runState ){
     while( fscanf(fppars, "%s", v) != EOF ){
       /* if outputing only non-fixed values then only re-output names of those non-fixed things */
       if ( nonfixed ){
-        if ( LALInferenceCheckVariable( runState->currentParams, v ) ){
-          if ( LALInferenceGetVariableVaryType( runState->currentParams, v ) != LALINFERENCE_PARAM_FIXED ){
+        if ( LALInferenceCheckVariable( threadState->currentParams, v ) ){
+          if ( LALInferenceGetVariableVaryType( threadState->currentParams, v ) != LALINFERENCE_PARAM_FIXED ){
             fprintf(fpparstmp, "%s\t", v);
             paramsStrIdx = XLALResizeUINT4Vector( paramsStrIdx, counter+1 );
             paramsStrIdx->data[counter] = idx;
@@ -715,10 +717,10 @@ void rescale_output( LALInferenceRunState *runState ){
         sprintf(scalename, "%s_scale", paramsStr->data[paramsStrIdx->data[i]]);
         sprintf(scaleminname, "%s_scale_min", paramsStr->data[paramsStrIdx->data[i]]);
 
-        if ( LALInferenceCheckVariable( runState->model->ifo->params, scalename ) &&
-          LALInferenceCheckVariable( runState->model->ifo->params, scaleminname ) ){
-          scalefac = *(REAL8 *)LALInferenceGetVariable( runState->model->ifo->params, scalename );
-          scalemin = *(REAL8 *)LALInferenceGetVariable( runState->model->ifo->params, scaleminname );
+        if ( LALInferenceCheckVariable( threadState->model->ifo->params, scalename ) &&
+          LALInferenceCheckVariable( threadState->model->ifo->params, scaleminname ) ){
+          scalefac = *(REAL8 *)LALInferenceGetVariable( threadState->model->ifo->params, scalename );
+          scalemin = *(REAL8 *)LALInferenceGetVariable( threadState->model->ifo->params, scaleminname );
 
           fprintf(fptemp, "%.12le\t", atof(tline->tokens[j])*scalefac + scalemin);
         }
@@ -788,10 +790,10 @@ void rescale_output( LALInferenceRunState *runState ){
         sprintf(scaleminname, "%s_scale_min", scaleitem->name);
 
         /* check if scale values are present */
-        if ( LALInferenceCheckVariable( runState->model->ifo->params, scalename ) &&
-          LALInferenceCheckVariable( runState->model->ifo->params, scaleminname ) ){
-          scalefac = *(REAL8 *)LALInferenceGetVariable( runState->model->ifo->params, scalename );
-          scalemin = *(REAL8 *)LALInferenceGetVariable( runState->model->ifo->params, scaleminname );
+        if ( LALInferenceCheckVariable( threadState->model->ifo->params, scalename ) &&
+          LALInferenceCheckVariable( threadState->model->ifo->params, scaleminname ) ){
+          scalefac = *(REAL8 *)LALInferenceGetVariable( threadState->model->ifo->params, scalename );
+          scalemin = *(REAL8 *)LALInferenceGetVariable( threadState->model->ifo->params, scaleminname );
 
           /* get the value and scale it */
           value = *(REAL8 *)LALInferenceGetVariable( output_array[i], scaleitem->name );
@@ -1038,8 +1040,10 @@ void check_and_add_fixed_variable( LALInferenceVariables *vars, const char *name
  */
 void remove_variable_and_prior( LALInferenceRunState *runState, LALInferenceIFOModel *ifo, const CHAR *var ){
   /* remove variable from currentParams */
-  if( LALInferenceCheckVariable( runState->currentParams, var ) ){
-    LALInferenceRemoveVariable( runState->currentParams, var );
+  /* Single thread here */
+  LALInferenceThreadState *threadState = runState->threads[0];
+  if( LALInferenceCheckVariable( threadState->currentParams, var ) ){
+    LALInferenceRemoveVariable( threadState->currentParams, var );
   }
   else{
     fprintf(stderr, "Error... variable %s cannot be removed as it does not exist!\n", var);
