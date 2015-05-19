@@ -323,7 +323,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
                 runComplete = 1;          // Sampling is done!
             }
 
-            runState->evolve(runState, c); //evolve the chain at temperature ladder[t]
+            mcmc_step(runState, c); //evolve the chain at temperature ladder[t]
 
             LALInferenceTrackProposalAcceptance(thread);
 
@@ -540,8 +540,8 @@ void LALInferencePTswap(LALInferenceRunState *runState, INT4 i, FILE *swapfile) 
     MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
     MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
 
-    n_local_threads = LALInferenceGetINT4Variable(runState->algorithmParams, "nthreads");
-    Tskip = LALInferenceGetINT4Variable(runState->algorithmParams, "tempSkip");
+    n_local_threads = runState->nthreads;
+    Tskip = LALInferenceGetINT4Variable(runState->algorithmParams, "tskip");
 
     ntemps = MPIsize*n_local_threads;
     cold_inds = XLALCalloc(ntemp, sizeof(INT4));

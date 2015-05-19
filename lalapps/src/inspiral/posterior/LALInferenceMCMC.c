@@ -46,43 +46,22 @@
 
 int MPIrank, MPIsize;
 
-static INT4 readSquareMatrix(gsl_matrix *m, UINT4 N, FILE *inp) {
-    UINT4 i, j;
-
-    for (i = 0; i < N; i++) {
-        for (j = 0; j < N; j++) {
-            REAL8 value;
-            INT4 nread;
-
-            nread = fscanf(inp, " %lg ", &value);
-
-            if (nread != 1) {
-                fprintf(stderr, "Cannot read from matrix file (in %s, line %d)\n",
-                        __FILE__, __LINE__);
-                exit(1);
-            }
-
-            gsl_matrix_set(m, i, j, value);
-        }
-    }
-
-    return 0;
-}
-
-
 void initializeMCMC(LALInferenceRunState *runState);
 void init_mpi_randomstate(LALInferenceRunState *run_state);
+INT4 init_ptmcmc(LALInferenceRunState *runState);
+INT4 LALInferenceBuildHybridTempLadder(LALInferenceRunState *runState);
+ProcessParamsTable *LALInferenceContinueMCMC(char *infileName);
+
 REAL8 **parseMCMCoutput(char ***params, UINT4 *nInPar, UINT4 *nInSamps, char *infilename, UINT4 burnin);
+void LALInferenceDrawThreads(LALInferenceRunState *state);
 
 /* Set the starting seed of rank 0, and give the rest of the threads
     a seed based on it */
 void init_mpi_randomstate(LALInferenceRunState *run_state) {
-    ProcessParamsTable *ppt = NULL;
     INT4 i, randomseed;
-    INT4 mpi_rank, mpi_size;
+    INT4 mpi_rank;
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+    mpi_rank = LALInferenceGetINT4Variable(run_state->algorithmParams, "mpirank");
 
     /* Broadcast rank=0's randomseed to everyone */
     randomseed = LALInferenceGetINT4Variable(run_state->algorithmParams, "random_seed");
@@ -104,7 +83,8 @@ void init_mpi_randomstate(LALInferenceRunState *run_state) {
      return;
 }
 
-void LALInferenceDrawThreads(LALInferenceRunState *state) {
+void LALInferenceDrawThreads(LALInferenceRunState *run_state) {
+    LALInferenceThreadState *thread;
     INT4 c;
 
     /* If using a malmquist prior, force a strict prior window on distance for starting point, otherwise
@@ -113,56 +93,54 @@ void LALInferenceDrawThreads(LALInferenceRunState *state) {
     REAL8 restricted_dist_low = 10.0;
     REAL8 restricted_dist_high = 100.0;
     INT4 changed_dist = 0;
-    if (LALInferenceCheckVariable(state->priorArgs, "malmquist") && LALInferenceCheckVariableNonFixed(currentParams, "distance")) {
+    if (LALInferenceCheckVariable(run_state->priorArgs, "malmquist") && LALInferenceCheckVariableNonFixed(run_state->threads[0]->currentParams, "distance")) {
         changed_dist = 1;
-        LALInferenceGetMinMaxPrior(state->priorArgs, "distance", &dist_low, &dist_high);
-        LALInferenceRemoveMinMaxPrior(state->priorArgs, "distance");
-        LALInferenceAddMinMaxPrior(state->priorArgs, "distance", &restricted_dist_low, &restricted_dist_high, LALINFERENCE_REAL8_t);
+        LALInferenceGetMinMaxPrior(run_state->priorArgs, "distance", &dist_low, &dist_high);
+        LALInferenceRemoveMinMaxPrior(run_state->priorArgs, "distance");
+        LALInferenceAddMinMaxPrior(run_state->priorArgs, "distance", &restricted_dist_low, &restricted_dist_high, LALINFERENCE_REAL8_t);
     }
 
     /* If the currentParams are not in the prior, overwrite and pick paramaters from the priors. OVERWRITE EVEN USER CHOICES.
      *     (necessary for complicated prior shapes where LALInferenceCyclicReflectiveBound() is not enough */
     #pragma omp parallel for
-    for (c = 0; c < state->nthreads; c++) {
-        LALInferenceDrawApproxPrior(state,
-                                    state->threads[c]->currentParams,
-                                    state->threads[c]->currentParams);
-        while (run_state->prior(state,
-                                state->threads[c]->currentParams,
-                                state->threads[c]->model) <= -DBL_MAX) {
-            LALInferenceDrawApproxPrior(state,
-                                        state->threads[c]->currentParams,
-                                        state->threads[c]->currentParams);
+    for (c = 0; c < run_state->nthreads; c++) {
+        thread = run_state->threads[c];
+        LALInferenceDrawApproxPrior(thread,
+                                    thread->currentParams,
+                                    thread->currentParams);
+        while (run_state->prior(run_state,
+                                thread->currentParams,
+                                thread->model) <= -DBL_MAX) {
+            LALInferenceDrawApproxPrior(thread,
+                                        thread->currentParams,
+                                        thread->currentParams);
         }
 
         /* Make sure that our initial value is within the
         *     prior-supported volume. */
-        LALInferenceCyclicReflectiveBound(run_state->threads[c]->currentParams, priorArgs);
+        LALInferenceCyclicReflectiveBound(thread->currentParams, run_state->priorArgs);
 
         /* Initialize starting likelihood and prior */
-        run_state->threads[c]->currentPrior =
-            run_state->prior(run_state,
-                             run_state->threads[c]->currentParams,
-                             run_state->threads[c]->model);
+        thread->currentPrior  = run_state->prior(run_state,
+                                                 thread->currentParams,
+                                                 thread->model);
 
-        run_state->threads[c]->currentLikelihood =
-            run_state->likelihood(run_state,
-                                  run_state->threads[c]->currentParams,
-                                  run_state->threads[c]->model);
+        thread->currentLikelihood = run_state->likelihood(thread->currentParams,
+                                                          run_state->data,
+                                                          thread->model);
     }
 
     /* Replace distance prior if changed for initial sample draw */
     if (changed_dist) {
-        LALInferenceRemoveMinMaxPrior(state->priorArgs, "distance");
-        LALInferenceAddMinMaxPrior(state->priorArgs, "distance", &dist_low, &dist_high, LALINFERENCE_REAL8_t);
+        LALInferenceRemoveMinMaxPrior(run_state->priorArgs, "distance");
+        LALInferenceAddMinMaxPrior(run_state->priorArgs, "distance", &dist_low, &dist_high, LALINFERENCE_REAL8_t);
     }
 }
 
 /********** Initialise MCMC structures *********/
 
 /************************************************/
-void init_ptmcmc(LALInferenceRunState *runState)
-{
+INT4 init_ptmcmc(LALInferenceRunState *runState) {
   char help[]="\
                ---------------------------------------------------------------------------------------------------\n\
                --- General Algorithm Parameters ------------------------------------------------------------------\n\
@@ -179,7 +157,7 @@ void init_ptmcmc(LALInferenceRunState *runState)
                ---------------------------------------------------------------------------------------------------\n\
                (--temp-skip N)                  Number of steps between temperature swap proposals (100).\n\
                (--tempKill N)                   Iteration number to stop temperature swapping (Niter).\n\
-               (--ntemp N)                      Number of temperature chains in ladder (as many as needed).\n
+               (--ntemp N)                      Number of temperature chains in ladder (as many as needed).\n\
                (--temp-min T)                   Lowest temperature for parallel tempering (1.0).\n\
                (--temp-max T)                   Highest temperature for parallel tempering (50.0).\n\
                (--anneal)                       Anneal hot temperature linearly to T=1.0.\n\
@@ -203,36 +181,40 @@ void init_ptmcmc(LALInferenceRunState *runState)
                (--temp-verbose)                 Output temperature swapping stats to file.\n\
                (--prop-verbose)                 Output proposal stats to file.\n\
                (--outfile file)                 Write output files <file>.<chain_number> (PTMCMC.output.<random_seed>.<mpi_thread>).\n";
-    INT4 i, t;
+    INT4 i;
+    INT4 mpi_rank, mpi_size;
     INT4 ntemp_per_thread;
-    ProcessParamsTable *command_line, *ppt = NULL;
+    ProcessParamsTable *command_line = NULL, *ppt = NULL;
     LALInferenceThreadState *thread;
     LALInferenceVariables *propArgs;
 
     /* Send help if runState was not allocated */
     if(runState == NULL || LALInferenceGetProcParamVal(runState->commandLine, "--help")) {
         fprintf(stdout, "%s", help);
-        return;
+        return XLAL_FAILURE;
     }
+
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
 
     /* Set up the appropriate functions for the MCMC algorithm */
     runState->algorithm = &PTMCMCAlgorithm;
-    runState->evolve = &mcmc_step;
-    runState->proposal = &LALInferenceCyclicProposal;
 
     /* Choose the appropriate swapping method */
     if (LALInferenceGetProcParamVal(command_line, "--varyFlow")) {
         /* Metropolis-coupled MCMC Swap (assumes likelihood function differs between chains).*/
-        runState->parallelSwap = &LALInferenceMCMCMCswap;
+        //runState->parallelSwap = &LALInferenceMCMCMCswap;
+        fprintf(stderr, "ERROR: MCMCMC samping hasn't been brought up-to-date since restructuring.\n");
+        return XLAL_FAILURE;
     } else {
         /* Standard parallel tempering swap. */
         runState->parallelSwap = &LALInferencePTswap;
     }
 
-    command_line = run_state->commandLine;
+    command_line = runState->commandLine;
 
     /* Store flags to keep from checking the command line all the time */
-    LALInferenceVariables *algorithm_params = run_state->algorithmParams;
+    LALInferenceVariables *algorithm_params = runState->algorithmParams;
 
     /* Print more stuff */
     INT4 verbose = 0;
@@ -294,7 +276,7 @@ void init_ptmcmc(LALInferenceRunState *runState)
     INT4 de_buffer_limit = 1000000;
     ppt = LALInferenceGetProcParamVal(command_line, "--differential-buffer-limit");
     if (ppt)
-        de_buffer_limit = atoi(ppt);
+        de_buffer_limit = atoi(ppt->value);
 
     /* Network SNR of trigger */
     REAL8 trigSNR = 0.0;
@@ -337,6 +319,12 @@ void init_ptmcmc(LALInferenceRunState *runState)
     LALInferenceAddVariable(algorithm_params, "tskip", &Tskip,
                             LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
 
+    LALInferenceAddVariable(algorithm_params, "mpirank", &mpi_rank,
+                            LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
+
+    LALInferenceAddVariable(algorithm_params, "mpisize", &mpi_size,
+                            LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
+
     LALInferenceAddVariable(algorithm_params, "ntemp", &ntemp,
                             LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
 
@@ -352,9 +340,6 @@ void init_ptmcmc(LALInferenceRunState *runState)
     LALInferenceAddVariable(algorithm_params, "trig_snr", &trigSNR,
                             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
 
-    LALInferenceAddVariable(algorithm_params, "mpirank", &mpi_rank,
-                            LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
-
     LALInferenceAddVariable(algorithm_params, "acl", &acl,
                             LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
 
@@ -365,7 +350,7 @@ void init_ptmcmc(LALInferenceRunState *runState)
                             LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
 
     /* Build the temperature ladder */
-    INT4 ntemp_per_thread = LALInferenceBuildHybridTempLadder(runState);
+    ntemp_per_thread = LALInferenceBuildHybridTempLadder(runState);
 
     /* Initialize the walkers on this MPI thread */
     LALInferenceInitCBCThreads(runState, ntemp_per_thread);
@@ -380,6 +365,8 @@ void init_ptmcmc(LALInferenceRunState *runState)
         thread->cycle = LALInferenceSetupDefaultInspiralProposalCycle(propArgs);
         LALInferenceRandomizeProposalCycle(thread->cycle, thread->GSLrandom);
     }
+
+    return XLAL_SUCCESS;
 }
 
 
@@ -390,14 +377,13 @@ INT4 LALInferenceBuildHybridTempLadder(LALInferenceRunState *runState) {
     REAL8 *ladder=NULL;
     INT4 flexible_tempmax;
     INT4 ndim, ntemp, ntemp_per_thread;
-    INT4 mpi_rank, mpi_size;
+    INT4 mpi_size;
     INT4 t;
     LALInferenceIFOData *ifo;
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+    mpi_size = LALInferenceGetINT4Variable(runState->algorithmParams, "mpisize");
 
-    ndim = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
+    ndim = LALInferenceGetVariableDimensionNonFixed(runState->threads[0]->currentParams);
     ntemp = LALInferenceGetINT4Variable(runState->algorithmParams, "ntemp");
     tempMin = LALInferenceGetREAL8Variable(runState->algorithmParams, "temp_min");
     tempMax = LALInferenceGetREAL8Variable(runState->algorithmParams, "temp_max");
@@ -408,8 +394,7 @@ INT4 LALInferenceBuildHybridTempLadder(LALInferenceRunState *runState) {
     /* Set maximum temperature (command line value take precidence) */
     if (LALInferenceGetProcParamVal(runState->commandLine,"--temp-max")) {
         if (MPIrank==0)
-            fprintf(stdout,"Using tempMax specified by commandline: %f.\n", ladderMax);
-
+            fprintf(stdout,"Using tempMax specified by commandline: %f.\n", tempMax);
     } else if (LALInferenceGetProcParamVal(runState->commandLine,"--trigger-snr")) {        //--trigSNR given, choose ladderMax to get targetHotLike
         trigSNR = LALInferenceGetREAL8Variable(runState->algorithmParams, "trigger-snr");
         networkSNRsqrd = trigSNR * trigSNR;
@@ -460,7 +445,7 @@ INT4 LALInferenceBuildHybridTempLadder(LALInferenceRunState *runState) {
         temp = tempMin;
         while (temp < tempMax) {
             t++;
-            temp = tempMin * pow(tempDelta, t)
+            temp = tempMin * pow(tempDelta, t);
         }
 
         ntemp = t;
@@ -486,8 +471,8 @@ INT4 LALInferenceBuildHybridTempLadder(LALInferenceRunState *runState) {
     for (t=0; t<ntemp; ++t)
         ladder[t] = tempMin * pow(tempDelta, t);
 
-    for (c = 0; c < ntemp_per_thread; c++)
-        runState->threads[c]->temperature = ladder[MPIrank*ntemp_per_thread + c];
+    for (t = 0; t < ntemp_per_thread; t++)
+        runState->threads[t]->temperature = ladder[MPIrank*ntemp_per_thread + t];
 
     if (MPIrank == 0 && LALInferenceGetVariable(runState->algorithmParams, "verbose")) {
         printf("\nTemperature ladder:\n");
@@ -637,7 +622,8 @@ REAL8 **parseMCMCoutput(char ***params, UINT4 *nInPar, UINT4 *nInSamps, char *in
 ProcessParamsTable *LALInferenceContinueMCMC(char *infileName) {
     INT4 n;
     INT4 fileargc=1;
-    char *infileName, *pch;
+    char *pch;
+    ProcessParamsTable *procParams = NULL;
     char *fileargv[99], str[999], buffer[99];
     FILE *infile;
 
@@ -674,18 +660,20 @@ ProcessParamsTable *LALInferenceContinueMCMC(char *infileName) {
     /* In order to get rid of the '\n' than fgets returns when reading the command line. */
     fileargv[fileargc-1][strlen(fileargv[fileargc-1])-1] = '\0';
     procParams = LALInferenceParseCommandLine(fileargc, fileargv);
+
+    return procParams;
 }
 
 
 int main(int argc, char *argv[]){
-    INT4 mpiRank;
-    ProcessParamsTable *procParams = NULL;
+    INT4 mpirank;
+    ProcessParamsTable *procParams = NULL, *ppt = NULL;
     LALInferenceRunState *runState = NULL;
 
     MPI_Init(&argc, &argv);
-    MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);
 
-    if (MPIrank == 0) fprintf(stdout," ========== LALInference_MCMC ==========\n");
+    if (mpirank == 0) fprintf(stdout," ========== LALInference_MCMC ==========\n");
 
     /* Read command line and parse */
     procParams = LALInferenceParseCommandLine(argc, argv);
@@ -701,9 +689,9 @@ int main(int argc, char *argv[]){
     runState = LALInferenceInitCBCRunState(procParams);
 
     if (runState == NULL) {
-        if (LALInferenceGetProcParamVal(proc_params, "--help")) {
+        if (LALInferenceGetProcParamVal(procParams, "--help")) {
             exit(0);
-        else {
+        } else {
             fprintf(stderr, "run_state not allocated (%s, line %d).\n",
                     __FILE__, __LINE__);
             exit(1);
@@ -714,7 +702,7 @@ int main(int argc, char *argv[]){
     init_ptmcmc(runState);
 
     /* Choose the prior */
-    LALInferenceInitPrior(runState);
+    LALInferenceInitCBCPrior(runState);
 
     /* Choose the likelihood */
     LALInferenceInitLikelihood(runState);
@@ -725,7 +713,7 @@ int main(int argc, char *argv[]){
     /* Call MCMC algorithm */
     runState->algorithm(runState);
 
-    if (MPIrank == 0) printf(" ========== main(): finished. ==========\n");
+    if (mpirank == 0) printf(" ========== main(): finished. ==========\n");
     MPI_Finalize();
 
     return 0;

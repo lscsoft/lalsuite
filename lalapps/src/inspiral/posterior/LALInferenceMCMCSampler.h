@@ -45,7 +45,7 @@
 /** Implements the parallel tempered MCMC algorithm. Designes to use PTMCMCOneStep() as the runstate->evolve function */
 void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState);
 /** Implements one MCMC step forward, updating the sigma values for the jump proposals if required.*/
-INT4 PTMCMCOneStep(LALInferenceRunState *runState);
+void mcmc_step(LALInferenceRunState *runState, INT4 thread);
 
 /* MPI communications */
 typedef enum {
@@ -63,7 +63,7 @@ typedef enum {
 } LALInferenceMPIswapAcceptance;
 
 /* Standard parallel temperature swap proposal function */
-UINT4 LALInferencePTswap(LALInferenceRunState *runState, REAL8 *ladder, INT4 i, FILE *swapfile);
+void LALInferencePTswap(LALInferenceRunState *runState, INT4 i, FILE *swapfile);
 
 /* Metropolis-coupled MCMC swap proposal, when the likelihood is not identical between chains */
 UINT4 LALInferenceMCMCMCswap(LALInferenceRunState *runState, REAL8 *ladder, INT4 i, FILE *swapfile);
