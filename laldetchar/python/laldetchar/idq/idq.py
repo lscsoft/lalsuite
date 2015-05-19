@@ -1442,7 +1442,7 @@ def retrieve_kwtrigs(gdsdir, kwbasename, t, stride, kwstride, sleep=0, ntrials=1
 
     trgdicts = []
     while t_start < t+stride:
-        if (segments==None) or (event.livetime(event.andsegments([[t_start, t_start+kwstride], segments]))): ### only keep if we've got some overlap
+        if (segments==None) or (event.livetime(event.andsegments([[[t_start, t_start+kwstride]], segments]))): ### only keep if we've got some overlap
             trigger_dict = retrieve_kwtrig(gdsdir, kwbasename, t_start, kwstride, sleep=sleep, ntrials=ntrials, logger=logger)
             if trigger_dict:
                 trgdicts.append( trigger_dict )
@@ -1498,13 +1498,14 @@ def collect_sngl_chan_kw(
     source_dir='./',
     output_dir='./',
     verbose=False,
+    chans=None,
+    scisegs=None,
     ):
     """ 
 ....replicates the action of collect.py in that it moves KW triggers from multi-channel (low-latency) files to single channel files. These files will be written in to output_dir in a subdirecitory titled `gpsstart`_`gpsstop`
 ...."""
 
     # find the start time of the day which includes start
-
     if width:
         t0 = 847497600  # 00:00 GPS from a reference day?
         t = t0 + int((gpsstart - t0) / width) * width  # beginning time from reference time with strides of width
@@ -1513,7 +1514,6 @@ def collect_sngl_chan_kw(
         width = gpsstop - gpsstart
 
     # wait for previous jobs to finish
-
     if t + 128 > nowgps():  # wait 128sec after the start of a day before processing jobs
         if verbose:
             print 'sleeping ' + `wait` \
@@ -1524,7 +1524,6 @@ def collect_sngl_chan_kw(
 
     # add periods to process until we run into the end time
     # if a directory does not exist, we create it.
-
     if verbose:
         print t  # start of first day to be processed
     while t + width <= gpsstop:
@@ -1538,7 +1537,6 @@ def collect_sngl_chan_kw(
 
     # process channels (listed in confg file)
     # generate a list of channels in the config file
-
     if verbose:
         print 'processing configuration file ' + kw_config
     stride = False
@@ -1555,6 +1553,10 @@ def collect_sngl_chan_kw(
             channels.append([fields[1], (fields[1])[:2] + '_'
                             + (fields[1])[3:] + '_' + fields[2] + '_'
                             + fields[3]])
+    f.close()
+    
+    if chans: ### if supplied, only keep those channels that are specified
+        channels = [chan for chan in channels if chan in chans]
 
     if not stride:
         print 'stride not defined in ' + config.kwconfig
@@ -1562,17 +1564,14 @@ def collect_sngl_chan_kw(
     if not basename:
         print 'basename not defined in ' + config.kwconfig
         sys.exit(1)
-    f.close()
 
     if verbose:
         print ' found ' + repr(len(channels)) + ' channels'
 
     # generate single-channel summary files
-
     new_dirs = []  # record which new directories are created (for training jobs)
 
     # iterate through new data sets
-
     for day_start in gps_start:
         triggers = dict()  # dictionary holding triggers
         for (channel, tag) in channels:
@@ -1580,7 +1579,6 @@ def collect_sngl_chan_kw(
         day_end = day_start + width
 
         # in case stride does not fit neatly into GPS day
-
         t = day_start - day_start % stride  # beginning time for this day
         range = repr(day_start) + '_' + repr(day_end)
         stride_S = int(stride)
@@ -1589,45 +1587,40 @@ def collect_sngl_chan_kw(
         new_dirs.append(output_dir + '/' + range)  # add new directory to list for training jobs (created in output_dir)
 
         # gather all the KW triggers and sort them by channel
-
         segments = []  # segment list for this day
         while t < day_end:
-            t_S = int(t + 0.0000001)  # make sure we don'ti have a rounding error?
+            t_S = int(t + 0.0000001)  # make sure we don't have a rounding error?
             t_dir = t_S / 100000  # the digits in the GPS time beyond 1e5, used for structure of KW output
             file = source_dir + '/' + basename + '-' + repr(t_dir) \
                 + '/' + basename + '-' + repr(t_S) + '-' \
                 + repr(stride_S) + '.trg'
 
-            # build segment list for this day
+            ### check sciseg overlap
+            if scisegs!=None and (not event.livetime( event.andsegments([scisegs, [[t, t+stride]]]) ) ): ### check for overlap with scisegs
+                if verbose:
+                    print "%s has no overlap with scisegs. Skipping"%file
+                t += stride
+                continue
 
+            # build segment list for this day
             if os.path.exists(file):
                 if len(segments) == 0:  # first segment
                     segments.append([t, t + stride])
                     lastt = t
-                elif segments[-1][1] == t:
-
-                                           # continuous data segment already generated
-
+                elif segments[-1][1] == t: # continuous data segment already generated
                     segments[-1][1] = t + stride
                     lastt = t
-                else:
-
-                      # discontinuous data, we skip one section of data to eschew filter transients
-
+                else: # discontinuous data, we skip one section of data to eschew filter transients
                     if lastt + stride == t:  # not continuous with anything in segments, but we've already skipped one section of data
                         if verbose:
                             print 'forming new segment at ' + `t`
                         segments.append([t, t + stride])
-                    else:
-
-                          # skip the first section of data in a new segment because of 'filter transients'
-
+                    else: # skip the first section of data in a new segment because of 'filter transients'
                         lastt = t
                         t += stride
                         continue
 
                 # read in triggers from file and sort by channel
-
                 if verbose:
                     print ' -> reading ' + file
                 try:
@@ -1663,7 +1656,6 @@ def collect_sngl_chan_kw(
             t += stride
 
         # write the single-channel summary files
-
         for tag in triggers.keys():
             file = output_dir + '/' + range + '/' + tag + '.trg'
             if verbose:
@@ -1683,7 +1675,6 @@ def collect_sngl_chan_kw(
                     + file
 
         # write segment file
-
         file = output_dir + '/' + range + '/' + basename + '.seg'
         f = open(file, 'w')
         for segment in segments:

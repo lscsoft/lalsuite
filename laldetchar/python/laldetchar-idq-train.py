@@ -58,6 +58,8 @@ parser = OptionParser(version='Name: %%prog\n%s'
                       , description=description)
 parser.add_option('-c', '--config', default='idq.ini', type='string', help='configuration file')
 
+parser.add_option('-k', '--lock-file', dest='lockfile', help='use custom lockfile', metavar='FILE', default=None )
+
 parser.add_option('-s', '--gpsstart', dest="gpsstart", default=False, type='int', help='a GPS start time for the analysis. If default, gpsstart is calculated from the current time.')
 parser.add_option('-e', '--gpsstop', dest="gpsstop", default=False, type='int', help='a GPS stop time for the analysis. If default, gpsstop is calculated from the current time.')
 parser.add_option('-b', '--lookback', default='0', type='string', help="Number of seconds to look back and get data for training. Default is zero.\
@@ -90,12 +92,15 @@ sys.stdout = idq.LogFile(logger)
 sys.stderr = idq.LogFile(logger)
 
 #===================================================================================================
+### check lockfile
+if opts.lockfile:
+    idq.dieiflocked( opts.lockfile )
+
+#===================================================================================================
 ### read global configuration file
 
 config = ConfigParser.SafeConfigParser()
 config.read(opts.config)
-
-#mainidqdir = config.get('general', 'idqdir') ### get the main directory where idq pipeline is going to be running.
 
 ifo = config.get('general', 'ifo')
 
@@ -118,8 +123,8 @@ if mla:
     auxmvc_coinc_window = config.getfloat('realtime', 'padding')
     auxmc_gw_signif_thr = config.getfloat('general', 'gw_kwsignif_thr')
 
-    auxmvc_selected_channels = config.get('general','selected-channels')
-    auxmvc_unsafe_channels = config.get('general','unsafe-channels')
+auxmvc_selected_channels = config.get('general','selected-channels')
+auxmvc_unsafe_channels = config.get('general','unsafe-channels')
 
 #min_samples = config.getint('train', 'min_samples') ### minimum number of samples a training set should have
 #min_svm_samples = config.getint('idq_train', 'min_svm_samples')
@@ -376,7 +381,7 @@ while gpsstart < gpsstop:
                     for seg in idq_segs:
                         print >> f, seg[0], seg[1]
                     f.close()
-
+ ### we may want to remove the unsafe channels, but this could be tricky and we don't want to throw away GW channels accidentally
                     ovlsegs = idqseg_path
 
                 except Exception as e:
@@ -559,10 +564,22 @@ while gpsstart < gpsstop:
     ### a possible work around is to define yet another group of flavors to distinguish "blk_train" from "sngchn_train"
     if ovl:
         logger.info('generating single-channel summary files')
-    
-        new_dirs = idq.collect_sngl_chan_kw( gpsstart, gpsstart + stride, GWkwconfigpath, width=stride, source_dir=GWkwtrgdir, output_dir=snglchndir )
+
+        ### pull out only the channels we want to move   
+        file_obj = open(auxmvc_selected_channels, "r")
+        channels = [line.strip() for line in file_obj.readlines() if line.strip()] ### we may want to remove the unsafe channels, but this could be tricky and we don't want to throw away GW channels accidentally
+        file_obj.close()
+
+        ### pull out scisegs from ovlsegs. Will already contain any sciseg info and idq_seg info
+        if ovlsegs:
+            file_obj = open(ovlsegs, "r")
+            ovl_segments = [ [float(l) for l in line.strip().split()] for line in file_obj.readlines() ]
+            file_obj.close()
+        else:
+            ovl_segments = None
+        new_dirs = idq.collect_sngl_chan_kw( gpsstart, gpsstart + stride, GWkwconfigpath, width=stride, source_dir=GWkwtrgdir, output_dir=snglchndir, chans=channels, scisegs=ovl_segments )
         if not identical_trgfile:
-            new_dirs += idq.collect_sngl_chan_kw( gpsstart, gpsstart+stride, AUXkwconfigpath, width=stride, source_dir=AUXkwtrgdir, output_dir=snglchndir )
+            new_dirs += idq.collect_sngl_chan_kw( gpsstart, gpsstart+stride, AUXkwconfigpath, width=stride, source_dir=AUXkwtrgdir, output_dir=snglchndir, chans=channels, scisegs=ovl_segments )
 
     #=============================================
     # training on submit node
