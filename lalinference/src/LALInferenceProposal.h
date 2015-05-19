@@ -173,9 +173,6 @@ void LALInferenceDeleteProposalCycle(LALInferenceProposalCycle *cycle);
  */
 LALInferenceProposalCycle* LALInferenceSetupDefaultInspiralProposalCycle(LALInferenceVariables *propArgs);
 
-/** Proposal for after annealing is over. */
-REAL8 LALInferencePostPTProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
-
 /**
  * Non-adaptive, sigle-variable update proposal with reasonable
  * widths in each dimension.
@@ -269,13 +266,13 @@ REAL8 LALInferenceExtrinsicParamProposal(LALInferenceThreadState *thread, LALInf
 REAL8 LALInferenceFrequencyBinJump(LALInferenceThreadState *thread, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
 /* Zero out proposal statistics */
-void LALInferenceZeroProposalStats(LALInferenceRunState *runState);
+void LALInferenceZeroProposalStats(LALInferenceThreadState *thread);
 
 /** Function for updating proposal acceptance rates if tracking. */
-void LALInferenceTrackProposalAcceptance(LALInferenceRunState *runState, INT4 accepted);
+void LALInferenceTrackProposalAcceptance(LALInferenceThreadState *thread);
 
 /** Helper function to update the adaptive steps after each jump. Set accepted=1 if accepted, 0 otherwise */
-void LALInferenceUpdateAdaptiveJumps(LALInferenceThreadState *thread, INT4 accepted, REAL8 targetAcceptance);
+void LALInferenceUpdateAdaptiveJumps(LALInferenceThreadState *thread, REAL8 targetAcceptance);
 
 /** Struct to hold clustered-KDE estimates */
 typedef struct
@@ -290,26 +287,29 @@ tagLALInferenceClusteredKDEProposal
 } LALInferenceClusteredKDE;
 
 /* Setup all clustered-KDE proposals with samples read from file. */
-void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runState);
+void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceThreadState *thread);
 
+/* Setup all clustered-KDE proposals with samples read from file. */
+void LALInferenceSetupClusteredKDEProposalsFromASCII(LALInferenceThreadState *thread, FILE *input, INT4 burnin, REAL8 weight, INT4 ptmcmc);
+ 
 /* Add a KDE proposal to the KDE proposal set. */
-void LALInferenceAddClusteredKDEProposalToSet(LALInferenceRunState *runState, LALInferenceClusteredKDE *kde);
+void LALInferenceAddClusteredKDEProposalToSet(LALInferenceThreadState *thread, LALInferenceClusteredKDE *kde);
 
 /* Destroy an existing clustered-KDE proposal. */
 void LALInferenceDestroyClusteredKDEProposal(LALInferenceClusteredKDE *proposal);
 
 /* Setup a clustered-KDE proposal from the differential evolution buffer. */
-void LALInferenceSetupClusteredKDEProposalFromDEBuffer(LALInferenceRunState *runState);
+void LALInferenceSetupClusteredKDEProposalFromDEBuffer(LALInferenceThreadState *thread);
 
 /* Setup a clustered-KDE proposal from the parameters in a run. */
-void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceRunState *runState, REAL8 *samples, INT4 size, INT4 cyclic_reflective, INT4 ntrials);
+void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceThreadState *thread, REAL8 *samples, INT4 size, INT4 cyclic_reflective, INT4 ntrials);
 
 /* A proposal based on the clustered kernal density estimate of a set of samples. */
 REAL8 LALInferenceClusteredKDEProposal(LALInferenceThreadState *thread, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 REAL8 LALInferenceStoredClusteredKDEProposal(LALInferenceThreadState *thread, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams, REAL8 *propDensity);
 
 /* Initialize a clustered-KDE proposal. */
-void LALInferenceInitClusteredKDEProposal(LALInferenceRunState *runState, LALInferenceClusteredKDE *kde, REAL8 *array, INT4 nSamps, LALInferenceVariables *params, const char *name, REAL8 weight, LALInferenceKmeans* (*cluster_method)(gsl_matrix*, INT4, gsl_rng*), INT4 cyclic_reflective, INT4 ntrials);
+void LALInferenceInitClusteredKDEProposal(LALInferenceThreadState *thread, LALInferenceClusteredKDE *kde, REAL8 *array, INT4 nSamps, LALInferenceVariables *params, const char *name, REAL8 weight, LALInferenceKmeans* (*cluster_method)(gsl_matrix*, INT4, gsl_rng*), INT4 cyclic_reflective, INT4 ntrials);
 
 /* Dump clustered KDE information to file. */
 void LALInferenceDumpClusteredKDE(LALInferenceClusteredKDE *kde, char *outp_name, REAL8 *array);
@@ -332,11 +332,8 @@ INT4 LALInferenceComputeEffectiveSampleSize(LALInferenceThreadState *thread);
 /* Initialize differential evolution proposal */
 void LALInferenceSetupDifferentialEvolutionProposal(LALInferenceThreadState *thread);
 
-/* Initialize kD-tree proposal */
-void LALInferenceSetupKDTreeProposal(LALInferenceRunState *state);
-
 /* Initialize covariance eigenvector proposal. */
-void LALInferenceSetupCovarianceEigenvectorProposal(LALInferenceRunState *state);
+void LALInferenceSetupCovarianceEigenvectorProposal(LALInferenceThreadState *thread);
 
 /** Helper function to setup the adaptive step proposals before the run */
 void LALInferenceSetupAdaptiveProposals(LALInferenceVariables *propArgs, LALInferenceVariables *params);

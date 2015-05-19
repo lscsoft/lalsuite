@@ -258,6 +258,15 @@ LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runSt
     ProcessParamsTable *ppt;
     LALInferenceIFOData *ifo = runState->data;
 
+    LALInferenceVariables *propArgs = XLALCalloc(1, sizeof(LALInferenceVariables));
+    
+    /* Copy over any common proposal args from runstate */
+    LALInferenceCopyVariables(runState->proposalArgs, propArgs);
+
+    INT4 Nskip = 1;
+    INT4 noise_only = 0;
+    INT4 cyclic_reflective_kde = 0;
+
     /* Flags for proposals, initialized with the MCMC defaults */
     INT4 singleadapt = 1;
     INT4 psiphi = 1;
@@ -293,12 +302,16 @@ LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runSt
         glitchfit = 0;
     }
 
-    LALInferenceVariables *propArgs = XLALCalloc(1, sizeof(LALInferenceVariables));
 
     ProcessParamsTable *command_line = runState->commandLine;
 
     LIGOTimeGPS epoch = ifo->epoch;
     LALInferenceAddVariable(propArgs, "epoch", &(epoch), LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_FIXED);
+
+    /* Determine the number of iterations between each entry in the DE buffer */
+    if (LALInferenceCheckVariable(runState->algorithmParams, "Nskip"))
+        Nskip = LALInferenceGetINT4Variable(runState->algorithmParams, "Nskip");
+    LALInferenceAddINT4Variable(propArgs, "Nskip", Nskip, LALINFERENCE_PARAM_FIXED);
 
     /* Count the number of IFOs and uniquely-located IFOs to decide which sky-related proposals to use */
     INT4 nDet = 0;
@@ -315,6 +328,17 @@ LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runSt
     for (i=0; i<nDet; i++)
         detectors[i] = *(ifo->detector);
     LALInferenceAddVariable(propArgs, "detectors", &detectors, LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_FIXED);
+
+    ifo = runState->data;
+    char **ifo_names = XLALCalloc(nDet, sizeof(char*));
+    i = 0;
+    while (ifo) {
+        ifo_names[i] = XLALCalloc(DETNAMELEN, sizeof(char));
+        strcpy(ifo_names[i], ifo->name);
+        ifo = ifo->next;
+        i++;
+    }
+    LALInferenceAddVariable(propArgs, "detector_names", ifo_names, LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_FIXED);
 
     INT4 marg_timephi = 0;
     if (LALInferenceGetProcParamVal(command_line, "--margtimephi"))
@@ -368,7 +392,11 @@ LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runSt
     if (LALInferenceGetProcParamVal(command_line, "--glitch-fit"))
        glitchfit = 1;
 
-    INT4 noise_only = 0;
+    /* Check if imposing cyclic reflective bounds */
+    if (LALInferenceGetProcParamVal(runState->commandLine, "--cyclic-reflective-kde"))
+        cyclic_reflective_kde = 1;
+    LALInferenceAddINT4Variable(propArgs, "cyclic_reflective_kde", cyclic_reflective_kde, LALINFERENCE_PARAM_FIXED);
+
     if (LALInferenceGetProcParamVal(command_line, "--noiseonly"))
         noise_only = 1;
     LALInferenceAddINT4Variable(propArgs, "noiseonly", noise_only, LALINFERENCE_PARAM_FIXED);
@@ -1347,7 +1375,7 @@ REAL8 LALInferenceDrawApproxPrior(LALInferenceThreadState *thread,
 
     LALInferenceVariables *args = thread->proposalArgs;
 
-    analytic_test = LALInferenceGetINT4Variable(args, "analytical_test")
+    analytic_test = LALInferenceGetINT4Variable(args, "analytical_test");
 
     if (analytic_test) {
         ptr = currentParams->head;
@@ -1362,9 +1390,9 @@ REAL8 LALInferenceDrawApproxPrior(LALInferenceThreadState *thread,
         logBackwardJump = approxLogPrior(currentParams);
 
         for (i = 0; flat_params[i] != NULL; i++) {
-            if (LALInferenceCheckVariableNonFixed(proposedParams, names[i])) {
-                REAL8 val = draw_flat(thread, names[i]);
-                LALInferenceSetVariable(proposedParams, names[i], &val);
+            if (LALInferenceCheckVariableNonFixed(proposedParams, flat_params[i])) {
+                REAL8 val = draw_flat(thread, flat_params[i]);
+                LALInferenceSetVariable(proposedParams, flat_params[i], &val);
             }
         }
 
@@ -1395,12 +1423,12 @@ REAL8 LALInferenceDrawApproxPrior(LALInferenceThreadState *thread,
 
         if (LALInferenceCheckVariableNonFixed(proposedParams, "psdscale")) {
             REAL8 x, min, max;
-            INT4 i,j;
+            INT4 j;
 
             min=0.10;
             max=10.0;
 
-            gsl_matrix *eta = LALInferenceGetgslMatrixVariable(proposedParams, "psdscale"));
+            gsl_matrix *eta = LALInferenceGetgslMatrixVariable(proposedParams, "psdscale");
 
             for(i=0; i<(INT8)eta->size1; i++) {
                 for(j=0; j<(INT8)eta->size2; j++) {
@@ -1418,9 +1446,6 @@ REAL8 LALInferenceDrawApproxPrior(LALInferenceThreadState *thread,
         logPropRatio = logBackwardJump - approxLogPrior(proposedParams);
     }
 
-    dataPtr = dataPtr->next;
-  }
-  newDL = dL;//*sqrt(Fy/Fx);
     return logPropRatio;
 }
 
@@ -1502,7 +1527,6 @@ static void reflected_position_and_time(LALInferenceThreadState *thread, const R
     memset(&status, 0, sizeof(status));
     SkyPosition currentEqu, currentGeo, newEqu, newGeo;
     LALDetector *detectors;
-    INT4 nDet;
     LIGOTimeGPS *epoch;
     REAL8 x[3], y[3], z[3];
     REAL8 currentLoc[3], newLoc[3];
@@ -1519,7 +1543,6 @@ static void reflected_position_and_time(LALInferenceThreadState *thread, const R
 
     epoch = (LIGOTimeGPS *)LALInferenceGetVariable(args, "epoch");
     detectors = *(LALDetector **)LALInferenceGetVariable(args, "detectors");
-    nDet = LALInferenceGetINT4Variable(args, "nDet");
 
     LALEquatorialToGeographic(&status, &currentGeo, &currentEqu, epoch);
 
@@ -1530,7 +1553,7 @@ static void reflected_position_and_time(LALInferenceThreadState *thread, const R
 
     INT4 det = 1;
     yD = detectors[det];
-    while (same_detector_location(yD, xD)) {
+    while (same_detector_location(&yD, &xD)) {
         det++;
         yD = detectors[det];
     }
@@ -1538,7 +1561,7 @@ static void reflected_position_and_time(LALInferenceThreadState *thread, const R
     det++;
 
     zD = detectors[det];
-    while (same_detector_location(zD, yD) || same_detector_location(zD, xD)) {
+    while (same_detector_location(&zD, &yD) || same_detector_location(&zD, &xD)) {
         det++;
         zD = detectors[det];
     }
@@ -1574,8 +1597,8 @@ static REAL8 evaluate_morlet_proposal(LALInferenceThreadState *thread,
     REAL8 A, f, Q, Anorm;
     gsl_matrix *glitch_f, *glitch_Q, *glitch_A;
 
-    component_min = LALInferenceGetREAL8Variable(runState->priorArgs,"morlet_f0_prior_min");
-    component_max = LALInferenceGetREAL8Variable(runState->priorArgs,"morlet_f0_prior_max");
+    component_min = LALInferenceGetREAL8Variable(thread->priorArgs,"morlet_f0_prior_min");
+    component_max = LALInferenceGetREAL8Variable(thread->priorArgs,"morlet_f0_prior_max");
     prior -= log(component_max - component_min);
 
     component_min = LALInferenceGetREAL8Variable(thread->priorArgs, "morlet_Q_prior_min");
@@ -1587,7 +1610,7 @@ static REAL8 evaluate_morlet_proposal(LALInferenceThreadState *thread,
     prior -= log(component_max - component_min);
 
     component_min = LALInferenceGetREAL8Variable(thread->priorArgs, "morlet_phi_prior_min");
-    component_max = LALInferenceGetVariable(thread->priorArgs, "morlet_phi_prior_max");
+    component_max = LALInferenceGetREAL8Variable(thread->priorArgs, "morlet_phi_prior_max");
     prior -= log(component_max - component_min);
 
     //"Malmquist" prior on A
@@ -1797,7 +1820,6 @@ REAL8 LALInferenceSkyRingProposal(LALInferenceThreadState *thread,
     Fx=0;
     Fy=0;
 
-    dataPtr = runState->data;
     for (i=0; i<nifo; i++) {
         XLALComputeDetAMResponse(&Fp, &Fc, (const REAL4(*)[3])detectors[i].response, ra, dec, psi, gmst);
         Fx += Fp*Fp+Fc*Fc;
@@ -1839,6 +1861,7 @@ REAL8 LALInferenceSkyReflectDetPlane(LALInferenceThreadState *thread,
     REAL8 pForward, pReverse;
     REAL8 logPropRatio = 0.0;
     INT4 nUniqueDet;
+    LIGOTimeGPS *epoch;
 
     LALInferenceCopyVariables(currentParams, proposedParams);
 
@@ -1855,7 +1878,7 @@ REAL8 LALInferenceSkyReflectDetPlane(LALInferenceThreadState *thread,
 
     if (nUniqueDet != 3) {
         if (!warningDelivered) {
-            fprintf(stderr, "WARNING: trying to reflect through the decector plane with %d\n", numDetectorsUniquePositions(runState));
+            fprintf(stderr, "WARNING: trying to reflect through the decector plane with %d\n", nUniqueDet);
             fprintf(stderr, "WARNING: geometrically independent locations,\n");
             fprintf(stderr, "WARNING: but this proposal should only be used with exactly 3 independent detectors.\n");
             fprintf(stderr, "WARNING: %s, line %d\n", __FILE__, __LINE__);
@@ -1948,11 +1971,11 @@ REAL8 LALInferencePSDFitJump(LALInferenceThreadState *thread,
 static void UpdateWaveletSum(LALInferenceThreadState *thread,
                              LALInferenceVariables *proposedParams,
                              gsl_matrix *glitchFD, INT4 ifo, INT4 n, INT4 flag) {
-    INT4 i=0, j=0, nDet;
+    INT4 i=0;
     INT4 lower, upper;
     INT4 glitchLower, glitchUpper;
     REAL8FrequencySeries **asds, *asd = NULL;
-    REAL8Vector flows, fhighs;
+    REAL8Vector *flows;
     REAL8 deltaT, Tobs, deltaF;
     REAL8 Q, Amp, t0, ph0, f0; //sine-Gaussian parameters
     REAL8 amparg, phiarg, Ai;//helpers for computing sineGaussian
@@ -1961,22 +1984,18 @@ static void UpdateWaveletSum(LALInferenceThreadState *thread,
     gsl_matrix *glitch_f, *glitch_Q, *glitch_A;
     gsl_matrix *glitch_t, *glitch_p;
     REAL8TimeSeries **td_data;
-    COMPLEX16FrequencySeries **fd_data;
 
     LALInferenceVariables *args = thread->proposalArgs;
 
-    nDet = LALInferenceGetINT4Variable(args, "nDet");
     asds = *(REAL8FrequencySeries ***)LALInferenceGetVariable(args, "asds");
     flows = LALInferenceGetREAL8VectorVariable(args, "flows");
-    fhighs = LALInferenceGetREAL8VectorVariable(args, "fhighs");
     td_data = *(REAL8TimeSeries ***)LALInferenceGetVariable(args, "td_data");
-    fd_data = *(COMPLEX16FrequencySeries ***)LALInferenceGetVariable(args, "fd_data");
 
     /* get dataPtr pointing to correct IFO */
-    asd = asds->data[ifo];
+    asd = asds[ifo];
 
-    deltaT = td_data->data[ifo]->deltaT;
-    Tobs = (((REAL8)td_data->data[ifo]->data->length) * deltaT);
+    deltaT = td_data[ifo]->deltaT;
+    Tobs = (((REAL8)td_data[ifo]->data->length) * deltaT);
     deltaF = 1.0 / Tobs;
 
     lower = (INT4)ceil(flows->data[ifo] / deltaF);
@@ -2001,19 +2020,19 @@ static void UpdateWaveletSum(LALInferenceThreadState *thread,
 
     //set glitch model to zero
     if (flag==0) {
-        for(j=lower; j<=upper; j++) {
-            gsl_matrix_set(glitchFD, ifo, 2*j, 0.0);
-            gsl_matrix_set(glitchFD, ifo, 2*j+1, 0.0);
+        for(i=lower; i<=upper; i++) {
+            gsl_matrix_set(glitchFD, ifo, 2*i, 0.0);
+            gsl_matrix_set(glitchFD, ifo, 2*i+1, 0.0);
         }
     }
 
-    for (j=glitchLower; j<glitchUpper; j++) {
-        if (j>=lower && j<=upper) {
-            gRe = gsl_matrix_get(glitchFD, ifo, 2*j);
-            gIm = gsl_matrix_get(glitchFD, ifo, 2*j+1);
-            amparg = ((REAL8)j*deltaF - f0)*LAL_PI*tau;
-            phiarg = LAL_PI*(REAL8)j + ph0 - LAL_TWOPI*(REAL8)j*deltaF*(t0-Tobs/2.);//TODO: SIMPLIFY PHASE FOR SINEGAUSSIAN
-            Ai = Amp*tau*0.5*sqrt(LAL_PI)*exp(-amparg*amparg)*asd->data->data[j]/sqrt(Tobs);
+    for (i=glitchLower; i<glitchUpper; i++) {
+        if (i>=lower && i<=upper) {
+            gRe = gsl_matrix_get(glitchFD, ifo, 2*i);
+            gIm = gsl_matrix_get(glitchFD, ifo, 2*i+1);
+            amparg = ((REAL8)i*deltaF - f0)*LAL_PI*tau;
+            phiarg = LAL_PI*(REAL8)i + ph0 - LAL_TWOPI*(REAL8)i*deltaF*(t0-Tobs/2.);//TODO: SIMPLIFY PHASE FOR SINEGAUSSIAN
+            Ai = Amp*tau*0.5*sqrt(LAL_PI)*exp(-amparg*amparg)*asd->data->data[i]/sqrt(Tobs);
 
             switch(flag) {
                 // Remove wavelet from model
@@ -2037,27 +2056,26 @@ static void UpdateWaveletSum(LALInferenceThreadState *thread,
             }//end switch
 
             //update glitch model
-            gsl_matrix_set(glitchFD, ifo, 2*j, gRe);
-            gsl_matrix_set(glitchFD, ifo, 2*j+1, gIm);
+            gsl_matrix_set(glitchFD, ifo, 2*i, gRe);
+            gsl_matrix_set(glitchFD, ifo, 2*i+1, gIm);
 
         }//end upper/lower check
     }//end loop over glitch samples
 }
 
 static void phase_blind_time_shift(REAL8 *corr, REAL8 *corrf, COMPLEX16Vector *data1,
-                                   COMPLEX16Vector *data2, INT4 ifo) {
+                                   COMPLEX16Vector *data2, INT4 ifo, LALInferenceVariables *args) {
     INT4 i, N, N2;
     INT4 lower, upper;
     REAL8 deltaF, deltaT;
     REAL8FrequencySeries **psds;
-    REAL8Vector *psd;
+    REAL8FrequencySeries *psd;
     COMPLEX16FrequencySeries *corrFD, *corrfFD;
-    REAL8TimeSeries *corrT, *corrfTD;
+    REAL8TimeSeries *corrTD, *corrfTD;
     REAL8TimeSeries **td_data;
     COMPLEX16FrequencySeries **fd_data;
     REAL8FFTPlan **plans;
-
-    LALInferenceVariables *args = thread->proposalArgs;
+    REAL8Vector *flows, *fhighs;
 
     psds = *(REAL8FrequencySeries ***)LALInferenceGetVariable(args, "psds");
     flows = LALInferenceGetREAL8VectorVariable(args, "flows");
@@ -2069,22 +2087,22 @@ static void phase_blind_time_shift(REAL8 *corr, REAL8 *corrf, COMPLEX16Vector *d
     plans = *(REAL8FFTPlan ***)LALInferenceGetVariable(args, "f2t_plans");
 
     /* get dataPtr pointing to correct IFO */
-    psd = psds->data[ifo]->data;
+    psd = psds[ifo];
 
-    N  = td_data->data[ifo]->data->length;   // Number of data points
-    N2 = fd_data->data[ifo]->data->length-1; // 1/2 number of data points (plus 1)
+    N  = td_data[ifo]->data->length;   // Number of data points
+    N2 = fd_data[ifo]->data->length-1; // 1/2 number of data points (plus 1)
 
-    deltaF = fd_data->data[ifo]->deltaF;
-    deltaT = td_data->data[ifo]->deltaT;
+    deltaF = fd_data[ifo]->deltaF;
+    deltaT = td_data[ifo]->deltaT;
 
     lower  = (INT4)ceil(flows->data[ifo]  / deltaF);
     upper  = (INT4)floor(fhighs->data[ifo] / deltaF);
 
-    corrFD  = XLALCreateCOMPLEX16FrequencySeries("cf1", &(fd_data->data[ifo]->epoch), 0.0, deltaF, &lalDimensionlessUnit, N2+1);
-    corrfFD = XLALCreateCOMPLEX16FrequencySeries("cf2", &(fd_data->data[ifo]->epoch), 0.0, deltaF, &lalDimensionlessUnit, N2+1);
+    corrFD  = XLALCreateCOMPLEX16FrequencySeries("cf1", &(fd_data[ifo]->epoch), 0.0, deltaF, &lalDimensionlessUnit, N2+1);
+    corrfFD = XLALCreateCOMPLEX16FrequencySeries("cf2", &(fd_data[ifo]->epoch), 0.0, deltaF, &lalDimensionlessUnit, N2+1);
 
-    corrTD  = XLALCreateREAL8TimeSeries("ct1", &(td_data->data[ifo]->epoch), 0.0, deltaT, &lalDimensionlessUnit, N);
-    corrfTD = XLALCreateREAL8TimeSeries("ct2", &(td_data->data[ifo]->epoch), 0.0, deltaT, &lalDimensionlessUnit, N);
+    corrTD  = XLALCreateREAL8TimeSeries("ct1", &(td_data[ifo]->epoch), 0.0, deltaT, &lalDimensionlessUnit, N);
+    corrfTD = XLALCreateREAL8TimeSeries("ct2", &(td_data[ifo]->epoch), 0.0, deltaT, &lalDimensionlessUnit, N);
 
     //convolution of signal & template
     for (i=0; i < N2; i++) {
@@ -2092,16 +2110,16 @@ static void phase_blind_time_shift(REAL8 *corr, REAL8 *corrf, COMPLEX16Vector *d
         corrfFD->data->data[i] = crect(0.0,0.0);
 
         if(i>lower && i<upper) {
-            corrFD->data->data[i] = crect( ( creal(data1->data[i])*creal(data2->data[i]) + cimag(data1->data[i])*cimag(data2->data[i])) / psd->data[i],
-                                           ( cimag(data1->data[i])*creal(data2->data[i]) - creal(data1->data[i])*cimag(data2->data[i])) / psd->data[i] );
-            corrfFD->data->data[i] = crect( ( creal(data1->data[i])*cimag(data2->data[i]) - cimag(data1->data[i])*creal(data2->data[i])) / psd->data[i],
-                                            ( cimag(data1->data[i])*cimag(data2->data[i]) + creal(data1->data[i])*creal(data2->data[i])) / psd->data[i] );
+            corrFD->data->data[i] = crect( ( creal(data1->data[i])*creal(data2->data[i]) + cimag(data1->data[i])*cimag(data2->data[i])) / psd->data->data[i],
+                                           ( cimag(data1->data[i])*creal(data2->data[i]) - creal(data1->data[i])*cimag(data2->data[i])) / psd->data->data[i] );
+            corrfFD->data->data[i] = crect( ( creal(data1->data[i])*cimag(data2->data[i]) - cimag(data1->data[i])*creal(data2->data[i])) / psd->data->data[i],
+                                            ( cimag(data1->data[i])*cimag(data2->data[i]) + creal(data1->data[i])*creal(data2->data[i])) / psd->data->data[i] );
         }
     }
 
     //invFFT convolutions to find time offset
-    XLALREAL8FreqTimeFFT(corrTD, corrFD, plans->data[ifo]->freqToTimeFFTPlan);
-    XLALREAL8FreqTimeFFT(corrfTD, corrfFD, plans->data[ifo]->freqToTimeFFTPlan);
+    XLALREAL8FreqTimeFFT(corrTD, corrFD, plans[ifo]);
+    XLALREAL8FreqTimeFFT(corrfTD, corrfFD, plans[ifo]);
 
     for (i=0; i < N; i++) {
         corr[i]  = corrTD->data->data[i];
@@ -2131,23 +2149,23 @@ static void MaximizeGlitchParameters(LALInferenceThreadState *thread,
     REAL8FrequencySeries **psds;
     REAL8Vector *flows, *fhighs, *Sn;
     INT4Vector *gsize;
-    COMPLEX16Vector *s, *h, *r;
+    COMPLEX16Sequence *s, *h, *r;
     gsl_matrix *glitchFD, *glitch_A, *glitch_t, *glitch_p, *hmatrix;
     REAL8TimeSeries **td_data;
     COMPLEX16FrequencySeries **fd_data;
 
     LALInferenceVariables *args = thread->proposalArgs;
 
-    nDet = LALInferenceGetINT4Variable(args, "nDet");
+    INT4 nDet = LALInferenceGetINT4Variable(args, "nDet");
     psds = *(REAL8FrequencySeries ***)LALInferenceGetVariable(args, "psds");
     flows = LALInferenceGetREAL8VectorVariable(args, "flows");
     fhighs = LALInferenceGetREAL8VectorVariable(args, "fhighs");
 
-    td_data = XLALCalloc(nDet, sizeof(REAL8TimeSeries *))
+    td_data = XLALCalloc(nDet, sizeof(REAL8TimeSeries *));
     fd_data = XLALCalloc(nDet, sizeof(COMPLEX16FrequencySeries *));
 
-    N = td_data->data[ifo]->data->length;
-    deltaT = td_data->data[ifo]->deltaT;
+    N = td_data[ifo]->data->length;
+    deltaT = td_data[ifo]->deltaT;
     Tobs = (REAL8)(deltaT*N);
     sqTwoDeltaToverN = sqrt(2.0 * deltaT / ((REAL8) N) );
 
@@ -2155,10 +2173,10 @@ static void MaximizeGlitchParameters(LALInferenceThreadState *thread,
     lower = (INT4)ceil(flows->data[ifo] / deltaF);
     upper = (INT4)floor(fhighs->data[ifo] / deltaF);
 
-    *s = fd_data->data[ifo]->data;
-    *h = XLALCreateCOMPLEX16Vector(N/2);
-    *r = XLALCreateCOMPLEX16Vector(N/2);
-    *Sn = psds->data[ifo]->data;
+    s = fd_data[ifo]->data;
+    h = XLALCreateCOMPLEX16Vector(N/2);
+    r = XLALCreateCOMPLEX16Vector(N/2);
+    Sn = psds[ifo]->data;
 
     /* Get parameters for new wavelet */
     gsize = LALInferenceGetINT4VectorVariable(currentParams, "glitch_size");
@@ -2214,7 +2232,7 @@ static void MaximizeGlitchParameters(LALInferenceThreadState *thread,
         corr[i] = 0.0;
 
     /* Cross-correlate template & residual */
-    phase_blind_time_shift(AC, AF, r, h, ifo);
+    phase_blind_time_shift(AC, AF, r, h, ifo, thread->cycle->proposalArgs);
 
     for(i=0; i<N; i++)
         corr[i] += sqrt(AC[i]*AC[i] + AF[i]*AF[i]);
@@ -2328,7 +2346,7 @@ REAL8 LALInferenceGlitchMorletProposal(LALInferenceThreadState *thread,
 
     LALInferenceCopyVariables(currentParams, proposedParams);
 
-    gsl_matrix *glitchFD, *glitch_f, *glitch_Q, *glitch_Am, *glitch_t, *glitch_p;
+    gsl_matrix *glitchFD, *glitch_f, *glitch_Q, *glitch_A, *glitch_t, *glitch_p;
 
     gsl_rng *rng = thread->GSLrandom;
     /*
@@ -2483,8 +2501,8 @@ REAL8 LALInferenceGlitchMorletReverseJump(LALInferenceThreadState *thread,
     INT4Vector *gsize = LALInferenceGetINT4VectorVariable(proposedParams, "glitch_size");
     gsl_matrix *glitchFD = LALInferenceGetgslMatrixVariable(proposedParams, "morlet_FD");
 
-    INT4 nmin = (INT4)(LALInferenceGetREAL8Variable(runState->priorArgs,"glitch_dim_min"));
-    INT4 nmax = (INT4)(LALInferenceGetREAL8Variable(runState->priorArgs,"glitch_dim_max"));
+    INT4 nmin = (INT4)(LALInferenceGetREAL8Variable(thread->priorArgs,"glitch_dim_min"));
+    INT4 nmax = (INT4)(LALInferenceGetREAL8Variable(thread->priorArgs,"glitch_dim_max"));
 
     if (LALInferenceCheckVariable(propArgs, "adapting"))
         adapting = LALInferenceGetINT4Variable(propArgs, "adapting");
@@ -2533,7 +2551,7 @@ REAL8 LALInferenceGlitchMorletReverseJump(LALInferenceThreadState *thread,
             //Amplitude
             params = LALInferenceGetgslMatrixVariable(proposedParams, "morlet_Amp");
             val = glitchAmplitudeDraw(Q, f, rng);
-            Anorm = LALInferenceGetREAL8Variable(runState->priorArgs, "glitch_norm");
+            Anorm = LALInferenceGetREAL8Variable(thread->priorArgs, "glitch_norm");
             A = val/Anorm;
 
             gsl_matrix_set(params, ifo, nx, A);
@@ -2625,7 +2643,7 @@ REAL8 LALInferenceGlitchMorletReverseJump(LALInferenceThreadState *thread,
     return logPropRatio;
 }
 
-REAL8 LALInferencePolarizationPhaseJump(LALInferenceThreadState *thread,
+REAL8 LALInferencePolarizationPhaseJump(UNUSED LALInferenceThreadState *thread,
                                         LALInferenceVariables *currentParams,
                                         LALInferenceVariables *proposedParams) {
     REAL8 logPropRatio = 0.0;
@@ -2726,10 +2744,11 @@ static void reflected_extrinsic_parameters(LALInferenceThreadState *thread, cons
     REAL8 a, a2, b, c12;
     REAL8 cosnewIota, cosnewIota2;
     LIGOTimeGPS GPSlal;
+    INT4 nUniqueDet, det;
     LALDetector *detectors;
-    LALInferenceIFOData *dataPtr;
 
-    detectors = (LALDetector *)LALInferenceGetVariable(thread->proposalArgs, "detectors");
+    detectors = (LALDetector *)LALInferenceGetVariable(thread->cycle->proposalArgs, "detectors");
+    nUniqueDet = LALInferenceGetINT4Variable(thread->cycle->proposalArgs, "nUniqueDet");
 
     XLALGPSSetREAL8(&GPSlal, baryTime);
     gmst = XLALGreenwichMeanSiderealTime(&GPSlal);
@@ -2744,19 +2763,17 @@ static void reflected_extrinsic_parameters(LALInferenceThreadState *thread, cons
     cosIota = cos(iota);
     cosIota2 = cosIota*cosIota;
 
-    dataPtr = runState->data;
     /* Loop over interferometers */
-    INT4 i=1, j=0, det=0;
-    while (dataPtr != NULL) {
+    INT4 i=1, j=0;
+    for (det=0; det < nUniqueDet; det++) {
         psi_temp = 0.0;
 
         XLALComputeDetAMResponse(&Fplus, &Fcross, (const REAL4(*)[3])detectors[det].response, *newRA, *newDec, psi_temp, newGmst);
         j=i-1;
         while (j>0){
             if (Fplus==x[j]){
-                dataPtr = dataPtr->next;
                 det++;
-                XLALComputeDetAMResponse(&Fplus, &Fcross, (const REAL4(*)[3])detector[det].response, *newRA, *newDec, psi_temp, newGmst);
+                XLALComputeDetAMResponse(&Fplus, &Fcross, (const REAL4(*)[3])detectors[det].response, *newRA, *newDec, psi_temp, newGmst);
             }
             j--;
         }
@@ -2765,12 +2782,10 @@ static void reflected_extrinsic_parameters(LALInferenceThreadState *thread, cons
         y[i]=Fcross;
         y2[i]=Fcross*Fcross;
 
-        XLALComputeDetAMResponse(&Fplus, &Fcross, (const REAL4(*)[3])detector[det].response, ra, dec, psi, gmst);
+        XLALComputeDetAMResponse(&Fplus, &Fcross, (const REAL4(*)[3])detectors[det].response, ra, dec, psi, gmst);
         R2[i] = (((1.0+cosIota2)*(1.0+cosIota2))/(4.0*dist2))*Fplus*Fplus
                 + ((cosIota2)/(dist2))*Fcross*Fcross;
 
-        dataPtr = dataPtr->next;
-        det++;
         i++;
     }
 
@@ -2872,7 +2887,7 @@ REAL8 LALInferenceExtrinsicParamProposal(LALInferenceThreadState *thread,
     nUniqueDet = LALInferenceGetINT4Variable(args, "nUniqueDet");
     if (nUniqueDet != 3) {
         if (!warningDelivered) {
-            fprintf(stderr, "WARNING: trying to reflect through the decector plane with %d\n", nDet);
+            fprintf(stderr, "WARNING: trying to reflect through the decector plane with %d\n", nUniqueDet);
             fprintf(stderr, "WARNING: geometrically independent locations,\n");
             fprintf(stderr, "WARNING: but this proposal should only be used with exactly 3 independent detectors.\n");
             fprintf(stderr, "WARNING: %s, line %d\n", __FILE__, __LINE__);
@@ -2974,8 +2989,6 @@ REAL8 LALInferenceExtrinsicParamProposal(LALInferenceThreadState *thread,
 
 void LALInferenceSetupGlitchProposal(LALInferenceIFOData *data, LALInferenceVariables *propArgs) {
     INT4 i, nDet;
-    REAL8 deltaT;
-    REAL8 flow, fhigh;
     REAL8Vector *flows, *fhighs;
     REAL8FrequencySeries **asds, **psds;
     REAL8TimeSeries **td_data;
@@ -2988,7 +3001,7 @@ void LALInferenceSetupGlitchProposal(LALInferenceIFOData *data, LALInferenceVari
     fhighs = XLALCreateREAL8Vector(nDet);
     asds = XLALCalloc(nDet, sizeof(REAL8FrequencySeries *));
     psds = XLALCalloc(nDet, sizeof(REAL8FrequencySeries *));
-    td_data = XLALCalloc(nDet, sizeof(REAL8TimeSeries *))
+    td_data = XLALCalloc(nDet, sizeof(REAL8TimeSeries *));
     fd_data = XLALCalloc(nDet, sizeof(COMPLEX16FrequencySeries *));
     plans = XLALCalloc(nDet, sizeof(REAL8FFTPlan *));
 
@@ -3002,7 +3015,7 @@ void LALInferenceSetupGlitchProposal(LALInferenceIFOData *data, LALInferenceVari
         td_data[i] = data->timeData;
         fd_data[i] = data->freqData;
 
-        plans = data->freqToTimeFFTPlan;
+        plans[i] = data->freqToTimeFFTPlan;
         data = data->next;
     }
 
@@ -3029,7 +3042,7 @@ void LALInferenceSetupAdaptiveProposals(LALInferenceVariables *propArgs, LALInfe
     INT4 adaptationOn, adapting;
     INT4 adaptTau, adaptLength, adaptResetBuffer, adaptStart;
     REAL8 sigma, s_gamma;
-    REAL8 logLAtAdaptStart = -INF;
+    REAL8 logLAtAdaptStart = -DBL_MAX;
 
     char *nameBuffer;
 
@@ -3065,7 +3078,7 @@ void LALInferenceSetupAdaptiveProposals(LALInferenceVariables *propArgs, LALInfe
 
     nameBuffer = XLALCalloc(MAX_STRLEN, sizeof(char));
     sprintf(nameBuffer, "none");
-    LALInferenceAddstringVariable(propArgs, "proposedVariableName", &nameBuffer, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddstringVariable(propArgs, "proposedVariableName", nameBuffer, LALINFERENCE_PARAM_OUTPUT);
 
     adaptTau = LALInferenceGetINT4Variable(propArgs, "adaptTau");  // Sets decay of adaption function
     adaptLength = pow(10, adaptTau);  // Number of iterations to adapt before turning off
@@ -3120,7 +3133,7 @@ void LALInferenceZeroProposalStats(LALInferenceThreadState *thread) {
 
 /** Update the adaptive proposal. Whether or not a jump was accepted is passed with accepted */
 void LALInferenceUpdateAdaptiveJumps(LALInferenceThreadState *thread, REAL8 targetAcceptance){
-    INT4 adaptableStep = 0;
+    INT4 *adaptableStep = NULL;
     INT4 adapting = 0;
     REAL8 priorMin, priorMax, dprior, s_gamma;
     REAL8 *accept, *propose, *sigma;
@@ -3130,8 +3143,8 @@ void LALInferenceUpdateAdaptiveJumps(LALInferenceThreadState *thread, REAL8 targ
 
     if (LALInferenceCheckVariable(args, "adaptableStep" ) &&
         LALInferenceCheckVariable(args, "adapting" )){
-        adaptableStep = LALInferenceGetINT4Variable(args, "adaptableStep"));
-        adapting = LALInferenceGetINT4Variable(args, "adapting"));
+        adaptableStep = (INT4 *)LALInferenceGetVariable(args, "adaptableStep");
+        adapting = LALInferenceGetINT4Variable(args, "adapting");
     }
     /* Don't do anything if these are not found */
     else return;
@@ -3201,7 +3214,7 @@ void LALInferenceUpdateAdaptiveJumps(LALInferenceThreadState *thread, REAL8 targ
 //     INT4 nBurnins=0, nWeights=0, nPostEsts=0;
 //     INT4 inChain;
 //     INT4 burnin;
-//     INT4 cyclic_reflective = 0;
+//     INT4 cyclic_reflective = LALInferenceGetINT4Variable(thread->cycle->proposalArgs, "cyclic_reflective_kde");
 //     REAL8 weight;
 //     ProcessParamsTable *command;
 //
@@ -3215,9 +3228,6 @@ void LALInferenceUpdateAdaptiveJumps(LALInferenceThreadState *thread, REAL8 targ
 //             if (chain == inChain) nPostEsts++;
 //         } else if (!strcmp(command->param, "--ascii-samples")) {
 //             nPostEsts++;
-//         } else if (!strcmp(command->param, "--cyclic-reflective-kde")) {
-//             cyclic_reflective = 1;
-//         }
 //     }
 //
 //     INT4 *burnins = XLALCalloc(nPostEsts, sizeof(INT4));
@@ -3384,20 +3394,15 @@ void LALInferenceUpdateAdaptiveJumps(LALInferenceThreadState *thread, REAL8 targ
  *
  * Constructed clustered-KDE proposals from all sample lists provided in
  * files given on the command line.
- * @param runState The LALInferenceRunState to get command line options from and to the proposal cycle of.
+ * @param thread The LALInferenceThreadState to get command line options from and to the proposal cycle of.
  */
 void LALInferenceSetupClusteredKDEProposalsFromASCII(LALInferenceThreadState *thread, FILE *input, INT4 burnin, REAL8 weight, INT4 ptmcmc) {
     LALInferenceVariableItem *item;
-    INT4 i=0, j=0, k=0;
-    INT4 nBurnins=0, nWeights=0, nPostEsts=0;
-    INT4 inChain;
+    INT4 j=0, k=0;
 
-    INT4 cyclic_reflective = LALInferenceGetINT4Variable(thread->proposalArgs, "cyclic_reflective_kde");
+    INT4 cyclic_reflective = LALInferenceGetINT4Variable(thread->cycle->proposalArgs, "cyclic_reflective_kde");
 
     LALInferenceClusteredKDE *kde = XLALCalloc(1, sizeof(LALInferenceClusteredKDE));
-
-    char *propName = XLALCalloc(512, sizeof(char));
-    sprintf(propName, "%s_%s", clusteredKDEProposalName, infilename);
 
     INT4 nInSamps;
     INT4 nCols;
@@ -3427,9 +3432,9 @@ void LALInferenceSetupClusteredKDEProposalsFromASCII(LALInferenceThreadState *th
         char* internal_param_name = XLALCalloc(512, sizeof(char));
         LALInferenceTranslateExternalToInternalParamName(internal_param_name, params[j]);
 
-        for (item = runState->currentParams->head; item; item = item->next) {
+        for (item = thread->currentParams->head; item; item = item->next) {
             if (!strcmp(item->name, internal_param_name) &&
-                LALInferenceCheckVariableNonFixed(runState->currentParams, item->name)) {
+                LALInferenceCheckVariableNonFixed(thread->currentParams, item->name)) {
                 nValidCols++;
                 validCols[j] = 1;
                 LALInferenceAddVariable(backwardClusterParams, item->name, item->value, item->type, item->vary);
@@ -3458,7 +3463,7 @@ void LALInferenceSetupClusteredKDEProposalsFromASCII(LALInferenceThreadState *th
         if (acl < 1) acl = 1;
         INT4 downsampled_size = ceil((REAL8)nInSamps/acl);
         REAL8 *downsampled_array = (REAL8 *)XLALCalloc(downsampled_size * nValidCols, sizeof(REAL8));
-        printf("Chain %i downsampling to achieve %i samples.\n", chain, downsampled_size);
+        printf("Downsampling to achieve %i samples.\n", downsampled_size);
         for (k=0; k < downsampled_size; k++) {
             for (j=0; j < nValidCols; j++)
                 downsampled_array[k*nValidCols + j] = sampleArray[k*nValidCols*acl + j];
@@ -3470,7 +3475,7 @@ void LALInferenceSetupClusteredKDEProposalsFromASCII(LALInferenceThreadState *th
 
     /* Build the KDE estimate and add to the KDE proposal set */
     INT4 ntrials = 50;  // Number of trials at fixed-k to find optimal BIC
-    LALInferenceInitClusteredKDEProposal(runState, kde, sampleArray, nInSamps, clusterParams, propName, weight, LALInferenceOptimizedKmeans, cyclic_reflective, ntrials);
+    LALInferenceInitClusteredKDEProposal(thread, kde, sampleArray, nInSamps, clusterParams, clusteredKDEProposalName, weight, LALInferenceOptimizedKmeans, cyclic_reflective, ntrials);
 
     /* If kmeans construction failed, halt the run */
     if (!kde->kmeans) {
@@ -3479,11 +3484,10 @@ void LALInferenceSetupClusteredKDEProposalsFromASCII(LALInferenceThreadState *th
         exit(-1);
     }
 
-    LALInferenceAddClusteredKDEProposalToSet(runState, kde);
+    LALInferenceAddClusteredKDEProposalToSet(thread, kde);
 
     LALInferenceClearVariables(backwardClusterParams);
     XLALFree(backwardClusterParams);
-    XLALFree(propName);
     XLALFree(sampleArray);
 }
 
@@ -3493,7 +3497,7 @@ void LALInferenceSetupClusteredKDEProposalsFromASCII(LALInferenceThreadState *th
  *
  * Estimates the underlying distribution of a set of points with a clustered kernel density estimate
  * and constructs a jump proposal from the estimated distribution.
- * @param      runState The current LALInferenceRunState.
+ * @param      thread   The current LALInferenceThreadState.
  * @param[out] kde      An empty proposal structure to populate with the clustered-KDE estimate.
  * @param[in]  array    The data to estimate the underlying distribution of.
  * @param[in]  nSamps   Number of samples contained in \a array.
@@ -3504,7 +3508,7 @@ void LALInferenceSetupClusteredKDEProposalsFromASCII(LALInferenceThreadState *th
  * @param[in]  cyclic_reflective Flag to check for cyclic/reflective bounds.
  * @param[in]  ntrials  Number of kmeans attempts at fixed k to find optimal BIC.
  */
-void LALInferenceInitClusteredKDEProposal(LALInferenceRunState *runState,
+void LALInferenceInitClusteredKDEProposal(LALInferenceThreadState *thread,
                                           LALInferenceClusteredKDE *kde,
                                           REAL8 *array,
                                           INT4 nSamps,
@@ -3515,7 +3519,6 @@ void LALInferenceInitClusteredKDEProposal(LALInferenceRunState *runState,
                                           INT4 cyclic_reflective,
                                           INT4 ntrials) {
     INT4 dim;
-    INT4 out_num = 0;
     INT4 ndraws = 1000;
     gsl_matrix_view mview;
     char outp_name[256];
@@ -3547,11 +3550,8 @@ void LALInferenceInitClusteredKDEProposal(LALInferenceRunState *runState,
     if (LALInferenceGetINT4Variable(thread->proposalArgs, "verbose")) {
         printf("Thread %i found %i clusters.\n", thread->id, kde->kmeans->k);
 
-        if (LALInferenceCheckVariable(thread->algorithmParams, "step"))
-            out_num = LALInferenceGetINT4Variable(thread->algorithmParams, "step");
-
-        sprintf(outp_name, "clustered_samples_%2.2d.%2.2d", out_num, thread->id);
-        sprintf(outp_draws_name, "clustered_draws_%2.2d.%2.2d", out_num, thread->id);
+        sprintf(outp_name, "clustered_samples.%2.2d", thread->id);
+        sprintf(outp_draws_name, "clustered_draws.%2.2d", thread->id);
 
         LALInferenceDumpClusteredKDE(kde, outp_name, array);
         LALInferenceDumpClusteredKDEDraws(kde, outp_draws_name, ndraws);
@@ -3622,11 +3622,11 @@ void LALInferenceDumpClusteredKDEDraws(LALInferenceClusteredKDE *kde, char *outp
  *
  * If other KDE proposals already exist, the provided KDE is appended to the list, otherwise it is added
  * as the first of such proposals.
- * @param     runState The current LALInferenceRunState.
- * @param[in] kde      The proposal to be added to \a runState.
+ * @param     thread The current LALInferenceThreadState.
+ * @param[in] kde      The proposal to be added to \a thread->cycle.
  */
 void LALInferenceAddClusteredKDEProposalToSet(LALInferenceThreadState *thread, LALInferenceClusteredKDE *kde) {
-    LALInferenceVariables *propArgs = thread->proposalArgs;
+    LALInferenceVariables *propArgs = thread->cycle->proposalArgs;
 
     /* If proposal doesn't already exist, add to proposal args */
     if (!LALInferenceCheckVariable(propArgs, clusteredKDEProposalName)) {
@@ -3688,14 +3688,14 @@ void LALInferenceDestroyClusteredKDEProposal(LALInferenceClusteredKDE *proposal)
  *
  * Reads the samples currently in the differential evolution buffer and construct a
  * jump proposal from its clustered kernel density estimate.
- * @param runState The LALInferenceRunState to get the buffer from and add the proposal to.
+ * @param thread The LALInferenceThreadState to get the buffer from and add the proposal to.
  */
-void LALInferenceSetupClusteredKDEProposalFromDEBuffer(LALInferenceChain *chain) {
+void LALInferenceSetupClusteredKDEProposalFromDEBuffer(LALInferenceThreadState *thread) {
     INT4 i;
 
     /* If ACL can be estimated, thin DE buffer to only have independent samples */
-    REAL8 bufferSize = (REAL8) chain->differentialPointsLength;
-    REAL8 effSampleSize = (REAL8) LALInferenceComputeEffectiveSampleSize(runState);
+    REAL8 bufferSize = (REAL8) thread->differentialPointsLength;
+    REAL8 effSampleSize = (REAL8) LALInferenceComputeEffectiveSampleSize(thread);
 
     /* Correlations wont effect the proposal much, so floor is taken instead of ceil
      * when determining the step size */
@@ -3708,21 +3708,19 @@ void LALInferenceSetupClusteredKDEProposalFromDEBuffer(LALInferenceChain *chain)
     INT4 nPoints = (INT4) ceil(bufferSize/(REAL8)step);
 
     /* Get points to be clustered from the differential evolution buffer. */
-    INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
+    INT4 nPar = LALInferenceGetVariableDimensionNonFixed(thread->currentParams);
     REAL8** DEsamples = (REAL8**) XLALCalloc(nPoints, sizeof(REAL8*));
     REAL8*  temp = (REAL8*) XLALCalloc(nPoints * nPar, sizeof(REAL8));
     for (i=0; i < nPoints; i++)
       DEsamples[i] = temp + (i*nPar);
 
-    LALInferenceThinnedBufferToArray(runState, DEsamples, step);
+    LALInferenceThinnedBufferToArray(thread, DEsamples, step);
 
     /* Check if imposing cyclic reflective bounds */
-    INT4 cyclic_reflective = 0;
-    if (LALInferenceGetProcParamVal(runState->commandLine, "--cyclic-reflective-kde"))
-        cyclic_reflective = 1;
+    INT4 cyclic_reflective = LALInferenceGetINT4Variable(thread->cycle->proposalArgs, "cyclic_reflective_kde");
 
     INT4 ntrials = 5;
-    LALInferenceSetupClusteredKDEProposalFromRun(runState, DEsamples[0], nPoints, cyclic_reflective, ntrials);
+    LALInferenceSetupClusteredKDEProposalFromRun(thread, DEsamples[0], nPoints, cyclic_reflective, ntrials);
 
     /* The proposal copies the data, so the local array can be freed */
     XLALFree(temp);
@@ -3741,26 +3739,26 @@ void LALInferenceSetupClusteredKDEProposalFromDEBuffer(LALInferenceChain *chain)
  * @param cyclic_reflective Flag to check for cyclic/reflective bounds.
  * @param ntrials  Number of tirals at fixed-k to find optimal BIC
  */
-void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceRunState *runState, REAL8 *samples, INT4 size, INT4 cyclic_reflective, INT4 ntrials) {
+void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceThreadState *thread, REAL8 *samples, INT4 size, INT4 cyclic_reflective, INT4 ntrials) {
     REAL8 weight=2.;
 
     /* Keep track of clustered parameter names */
     LALInferenceVariables *backwardClusterParams = XLALCalloc(1, sizeof(LALInferenceVariables));
     LALInferenceVariables *clusterParams = XLALCalloc(1, sizeof(LALInferenceVariables));
     LALInferenceVariableItem *item;
-    for (item = runState->currentParams->head; item; item = item->next)
-        if (LALInferenceCheckVariableNonFixed(runState->currentParams, item->name))
+    for (item = thread->currentParams->head; item; item = item->next)
+        if (LALInferenceCheckVariableNonFixed(thread->currentParams, item->name))
             LALInferenceAddVariable(backwardClusterParams, item->name, item->value, item->type, item->vary);
     for (item = backwardClusterParams->head; item; item = item->next)
         LALInferenceAddVariable(clusterParams, item->name, item->value, item->type, item->vary);
 
     /* Build the proposal */
     LALInferenceClusteredKDE *proposal = XLALCalloc(1, sizeof(LALInferenceClusteredKDE));
-    LALInferenceInitClusteredKDEProposal(runState, proposal, samples, size, clusterParams, clusteredKDEProposalName, weight, LALInferenceOptimizedKmeans, cyclic_reflective, ntrials);
+    LALInferenceInitClusteredKDEProposal(thread, proposal, samples, size, clusterParams, clusteredKDEProposalName, weight, LALInferenceOptimizedKmeans, cyclic_reflective, ntrials);
 
     /* Only add the kmeans was successfully setup */
     if (proposal->kmeans)
-        LALInferenceAddClusteredKDEProposalToSet(runState, proposal);
+        LALInferenceAddClusteredKDEProposalToSet(thread, proposal);
     else {
         LALInferenceClearVariables(clusterParams);
         XLALFree(clusterParams);
@@ -3779,10 +3777,10 @@ void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceRunState *runState
  * The distribution is estimated with a clustered kernel density estimator.  This
  * proposal is added to the proposal cycle with a specified weight, and in turn
  * chooses at random a KDE-estimate from a linked list.
- * @param      runState      The current LALInferenceRunState.
- * @param      currentParams The current parameters.
+ * @param      thread         The current LALInferenceThreadState.
+ * @param      currentParams  The current parameters.
  * @param[out] proposedParams The proposed parameters.
- * @return proposal_ratio    The (log) proposal ratio for maintaining detailed balance
+ * @return proposal_ratio     The (log) proposal ratio for maintaining detailed balance
  */
 REAL8 LALInferenceClusteredKDEProposal(LALInferenceThreadState *thread, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams) {
     REAL8 logPropRatio;
@@ -3797,22 +3795,21 @@ REAL8 LALInferenceClusteredKDEProposal(LALInferenceThreadState *thread, LALInfer
  *
  * If the value of the KDE at the current location is known, use it.  Otherwise
  * calculate and return.
- * @param      runState      The current LALInferenceRunState.
- * @param      currentParams The current parameters.
+ * @param      thread         The current LALInferenceThreadState.
+ * @param      currentParams  The current parameters.
  * @param[out] proposedParams The proposed parameters.
- * @param      propDensity   If input is not NULL or >-DBL_MAX, assume this is the
+ * @param      propDensity    If input is not NULL or >-DBL_MAX, assume this is the
  *                              proposal density at \a currentParams, otherwise
  *                              calculate.  It is then replaced with the proposal
  *                              density at \a proposedParams.
  * @return proposal_ratio    The (log) proposal ratio for maintaining detailed balance
  */
 REAL8 LALInferenceStoredClusteredKDEProposal(LALInferenceThreadState *thread, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams, REAL8 *propDensity) {
-    const char *propName = (const char *) clusteredKDEProposalName;
     REAL8 cumulativeWeight, totalWeight;
     REAL8 logPropRatio = 0.0;
 
     LALInferenceVariableItem *item;
-    LALInferenceVariables *propArgs = runState->proposalArgs;
+    LALInferenceVariables *propArgs = thread->cycle->proposalArgs;
 
     if (!LALInferenceCheckVariable(propArgs, clusteredKDEProposalName)) {
         LALInferenceClearVariables(proposedParams);
@@ -3832,7 +3829,7 @@ REAL8 LALInferenceStoredClusteredKDEProposal(LALInferenceThreadState *thread, LA
     }
 
     /* If multiple KDE estimates exists, draw one at random */
-    REAL8 randomDraw = gsl_rng_uniform(runState->GSLrandom);
+    REAL8 randomDraw = gsl_rng_uniform(thread->GSLrandom);
 
     kde = kdes;
     cumulativeWeight = kde->weight;
@@ -3886,39 +3883,31 @@ REAL8 LALInferenceStoredClusteredKDEProposal(LALInferenceThreadState *thread, LA
  *
  * Given the current differential evolution buffer, the maximum
  * one-dimensional autocorrelation length is found.
- * @param runState The run state containing the differential evolution buffer.
+ * @param thread The thread state containing the differential evolution buffer.
  * @param maxACL UNDOCUMENTED
 */
 void LALInferenceComputeMaxAutoCorrLenFromDE(LALInferenceThreadState *thread, INT4* maxACL) {
     INT4 nPar, nPoints;
     INT4 Nskip = 1;
-    INT4 nchains = 1;
-    INT4 i, j;
+    INT4 i;
     REAL8** DEarray;
     REAL8*  temp;
-    REAL8 acl, max_acl;
+    REAL8 max_acl;
 
     nPar = LALInferenceGetVariableDimensionNonFixed(thread->currentParams);
     nPoints = thread->differentialPointsLength;
 
     /* Determine the number of iterations between each entry in the DE buffer */
-    if (LALInferenceCheckVariable(thread->algorithmParams, "Nskip"))
-        Nskip = LALInferenceGetINT4Variable(thread->algorithmParams, "Nskip");
+    Nskip = LALInferenceGetINT4Variable(thread->cycle->proposalArgs, "Nskip");
 
     /* Prepare 2D array for DE points */
     DEarray = (REAL8**) XLALCalloc(nPoints, sizeof(REAL8*));
     temp = (REAL8*) XLALCalloc(nPoints * nPar, sizeof(REAL8));
-    for (j=0; j < nPoints; j++)
-        DEarray[j] = temp + (j*nPar);
+    for (i=0; i < nPoints; i++)
+        DEarray[i] = temp + (i*nPar);
 
-    max_acl = -1;
-    for (i = 0; i < nchains; i++) {
-        LALInferenceThinnedBufferToArray(thread, DEarray);
-        acl = Nskip * LALInferenceComputeMaxAutoCorrLen(DEarray[nPoints/2], nPoints-nPoints/2, nPar);
-
-        if (acl > max_acl)
-            max_acl = acl;
-    }
+    LALInferenceBufferToArray(thread, DEarray);
+    max_acl = Nskip * LALInferenceComputeMaxAutoCorrLen(DEarray[nPoints/2], nPoints-nPoints/2, nPar);
 
     *maxACL = (INT4)max_acl;
     XLALFree(temp);
@@ -3990,7 +3979,7 @@ REAL8 LALInferenceComputeMaxAutoCorrLen(REAL8 *array, INT4 nPoints, INT4 nPar) {
 /**
  * Update the estimatate of the autocorrelation length.
  *
- * @param      runState      The current LALInferenceRunState.
+ * @param      thread      The current LALInferenceThreadState.
 */
 void LALInferenceUpdateMaxAutoCorrLen(LALInferenceThreadState *thread) {
   // Calculate ACL with latter half of data to avoid ACL overestimation from chain equilibrating after adaptation
@@ -4005,14 +3994,14 @@ void LALInferenceUpdateMaxAutoCorrLen(LALInferenceThreadState *thread) {
  *
  * Compute the number of independent samples in the differential evolution
  * buffer.
- * @param      runState      The current LALInferenceRunState.
+ * @param      thread      The current LALInferenceThreadState.
  */
 INT4 LALInferenceComputeEffectiveSampleSize(LALInferenceThreadState *thread) {
     /* Update the ACL estimate, assuming a thinned DE buffer if ACL isn't available */
     INT4 acl = 1;
     if (LALInferenceCheckVariable(thread->proposalArgs, "acl")) {
         LALInferenceUpdateMaxAutoCorrLen(thread);
-        acl = LALInferenceGetINT4Variable(thread->proposalArgs, "acl"));
+        acl = LALInferenceGetINT4Variable(thread->proposalArgs, "acl");
     }
 
     /* Estimate the total number of samples post-burnin based on samples in DE buffer */
@@ -4041,24 +4030,19 @@ void LALInferencePrintProposalTracking(FILE *fp, LALInferenceProposalCycle *cycl
   return;
 }
 
-REAL8 LALInferenceSplineCalibrationProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams) {
+REAL8 LALInferenceSplineCalibrationProposal(LALInferenceThreadState *thread, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams) {
   const char *proposalName = splineCalibrationProposalName;
-  LALInferenceIFOData *ifo = NULL;
-  INT4 nifo = 0;
-  REAL8 ampWidth = *(REAL8 *)LALInferenceGetVariable(runState->priorArgs, "spcal_amp_uncertainty");
-  REAL8 phaseWidth = *(REAL8 *)LALInferenceGetVariable(runState->priorArgs, "spcal_phase_uncertainty");
+  char **ifo_names;
+  INT4 ifo;
+  INT4 nifo = LALInferenceGetINT4Variable(thread->cycle->proposalArgs, "nDet");
+  REAL8 ampWidth = *(REAL8 *)LALInferenceGetVariable(thread->priorArgs, "spcal_amp_uncertainty");
+  REAL8 phaseWidth = *(REAL8 *)LALInferenceGetVariable(thread->priorArgs, "spcal_phase_uncertainty");
 
   LALInferenceCopyVariables(currentParams, proposedParams);
-  LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &proposalName);
+  LALInferenceSetVariable(thread->cycle->proposalArgs, LALInferenceCurrentProposalName, &proposalName);
 
-  ifo = runState->data;
-  do {
-    nifo++;
-    ifo = ifo->next;
-  } while (ifo);
-
-  ifo = runState->data;
-  do {
+  ifo_names = *(char ***)LALInferenceGetVariable(thread->cycle->proposalArgs, "detector_names");
+  for (ifo=0; ifo<nifo; ifo++) {
     size_t i;
 
     char ampName[VARNAME_MAX];
@@ -4067,19 +4051,17 @@ REAL8 LALInferenceSplineCalibrationProposal(LALInferenceRunState *runState, LALI
     REAL8Vector *amps;
     REAL8Vector *phases;
 
-    snprintf(ampName, VARNAME_MAX, "%s_spcal_amp", ifo->name);
-    snprintf(phaseName, VARNAME_MAX, "%s_spcal_phase", ifo->name);
+    snprintf(ampName, VARNAME_MAX, "%s_spcal_amp", ifo_names[ifo]);
+    snprintf(phaseName, VARNAME_MAX, "%s_spcal_phase", ifo_names[ifo]);
 
     amps = *(REAL8Vector **)LALInferenceGetVariable(proposedParams, ampName);
     phases = *(REAL8Vector **)LALInferenceGetVariable(proposedParams, phaseName);
 
     for (i = 0; i < amps->length; i++) {
-      amps->data[i] += ampWidth*gsl_ran_ugaussian(runState->GSLrandom)/sqrt(nifo*amps->length);
-      phases->data[i] += phaseWidth*gsl_ran_ugaussian(runState->GSLrandom)/sqrt(nifo*amps->length);
+      amps->data[i] += ampWidth*gsl_ran_ugaussian(thread->GSLrandom)/sqrt(nifo*amps->length);
+      phases->data[i] += phaseWidth*gsl_ran_ugaussian(thread->GSLrandom)/sqrt(nifo*amps->length);
     }
-
-    ifo = ifo->next;
-  } while (ifo);
+  };
 
   return 0.0;
 }
