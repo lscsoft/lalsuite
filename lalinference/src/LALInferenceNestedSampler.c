@@ -213,8 +213,9 @@ static UINT4 UpdateNMCMC(LALInferenceRunState *runState){
         }
         LALInferenceSetVariable(runState->algorithmParams,"Nmcmc",&max);
     }
+    /* Single threaded here */
     if (LALInferenceGetProcParamVal(runState->commandLine,"--proposal-kde"))
-        LALInferenceSetupClusteredKDEProposalFromDEBuffer(runState);
+        LALInferenceSetupClusteredKDEProposalFromDEBuffer(runState->threads[0]);
     return(max);
 }
 
@@ -997,12 +998,12 @@ UINT4 LALInferenceMCMCSamplePrior(LALInferenceRunState *runState)
     if((!outOfBounds))
     {
       thislogL=runState->likelihood(threadState->currentParams,runState->data,threadState->model);
-      if(logLmin<thislogL) LALInferenceUpdateAdaptiveJumps(threadState, accepted, 0.35);
-      else LALInferenceUpdateAdaptiveJumps(threadState, 0, 0.35);
-
+      if(logLmin<thislogL) threadState->accepted = accepted;
+      else threadState->accepted=0;
+      LALInferenceUpdateAdaptiveJumps(threadState, 0.35);
     }
 
-    LALInferenceTrackProposalAcceptance(runState, accepted);
+    LALInferenceTrackProposalAcceptance(threadState);
 
     return(accepted);
 }
