@@ -128,7 +128,7 @@ typedef enum {
 	LALINFERENCE_PARAM_OUTPUT    /** A parameter changed by an inner code and passed out */
 } LALInferenceParamVaryType;
 
-extern size_t LALInferenceTypeSize[];
+extern size_t LALInferenceTypeSize[15];
 
 /**
  * The LALInferenceVariableItem list node structure
@@ -562,6 +562,7 @@ tagLALInferenceRunState
   LALInferenceLikelihoodFunction     likelihood; /** The likelihood function */
   LALInferenceLogFunction            logsample; /** Log sample, i.e. to disk */
   struct tagLALInferenceIFOData      *data; /** The data from the interferometers */
+  LALInferenceVariables *proposalArgs; /** Common arguments needed by proposals, to be copied to thread->cycle */
   LALInferenceVariables              *priorArgs,     /** Any special arguments for the prior function */
     *algorithmParams;                                /** Parameters which control the running of the algorithm*/
   LALInferenceVariables				**livePoints; /** Array of live points for Nested Sampling */
