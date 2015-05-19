@@ -46,14 +46,23 @@ static void LALInferenceCheckApproximantNeeds(LALInferenceRunState *state,Approx
 
 /* Initialize a bare-bones run-state,
    calling the "ReadData()" function to gather data & PSD from files,
-   and initializes other variables accordingly.
+   sets up the random seed and rng, and initializes other variables accordingly.
 */
-LALInferenceRunState *LALInferenceInitRunState(ProcessParamsTable *command_line) {
+LALInferenceRunState *LALInferenceInitCBCRunState(ProcessParamsTable *command_line) {
+    ProcessParamsTable *ppt=NULL;
+    INT4 randomseed;
+    FILE *devrandom;
+    struct timeval tv;
     LALInferenceRunState *run_state = XLALCalloc(1, sizeof(LALInferenceRunState));
 
     /* Check that command line is consistent first */
     LALInferenceCheckOptionsConsistency(command_line);
     run_state->commandLine = command_line;
+
+    /* Initialize parameters structure */
+    run_state->algorithmParams = XLALCalloc(1, sizeof(LALInferenceVariables));
+    run_state->priorArgs = XLALCalloc(1, sizeof(LALInferenceVariables));
+    run_state->proposalArgs = XLALCalloc(1, sizeof(LALInferenceVariables));
 
     /* Read data from files or generate fake data */
     run_state->data = LALInferenceReadData(command_line);
@@ -66,10 +75,28 @@ LALInferenceRunState *LALInferenceInitRunState(ProcessParamsTable *command_line)
     /* Apply calibration errors if desired*/
     LALInferenceApplyCalibrationErrors(run_state, command_line);
 
-    /* Initialize parameters structure */
-    run_state->algorithmParams = XLALCalloc(1, sizeof(LALInferenceVariables));
-    run_state->priorArgs = XLALCalloc(1, sizeof(LALInferenceVariables));
-    run_state->proposalArgs = XLALCalloc(1, sizeof(LALInferenceVariables));
+    /* Setup the random number generator */
+    gsl_rng_env_setup();
+    run_state->GSLrandom = gsl_rng_alloc(gsl_rng_mt19937);
+
+    /* Use clocktime if seed isn't provided */
+    ppt = LALInferenceGetProcParamVal(command_line, "--randomseed");
+    if (ppt)
+        randomseed = atoi(ppt->value);
+    else {
+        if ((devrandom = fopen("/dev/urandom","r")) == NULL) {
+            gettimeofday(&tv, 0);
+            randomseed = tv.tv_sec + tv.tv_usec;
+        } else {
+            fread(&randomseed, sizeof(randomseed), 1, devrandom);
+            fclose(devrandom);
+        }
+    }
+    gsl_rng_set(run_state->GSLrandom, randomseed);
+
+    /* Save the random seed */
+    LALInferenceAddVariable(run_state->algorithmParams, "random_seed", &randomseed,
+                            LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
 
     return(run_state);
 }

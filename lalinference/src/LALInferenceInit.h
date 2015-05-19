@@ -33,7 +33,7 @@
 #include <lal/LALInference.h>
 
 /* Initialize a bare-bones run-state. */
-LALInferenceRunState *LALInferenceInitRunState(ProcessParamsTable *command_line);
+LALInferenceRunState *LALInferenceInitCBCRunState(ProcessParamsTable *command_line);
 
 /* Initialize threads in memory, using LALInferenceInitCBCModel() to init models. */
 void LALInferenceInitCBCThreads(LALInferenceRunState *run_state, INT4 nthreads);
