@@ -234,7 +234,7 @@ def ts_from_stream(stream, channels, start=None, duration=None, datatype=None,
     lalframe.FrSetMode(verbose and lalframe.FR_STREAM_VERBOSE_MODE or
                        lalframe.FR_STREAM_DEFAULT_MODE, stream)
     # determine default start time and duration
-    epoch = stream.epoch
+    epoch = lal.LIGOTimeGPS(stream.epoch)
     if start is None:
         start = epoch
     if not duration:
