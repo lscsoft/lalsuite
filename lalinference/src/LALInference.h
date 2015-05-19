@@ -541,7 +541,7 @@ tagLALInferenceThreadState
     INT4 accepted;
     INT4 acceptanceCount;
     gsl_rng *GSLrandom;
-    struct timeval tv;
+    REAL8 creation_time;
 } LALInferenceThreadState;
 
 
@@ -645,6 +645,11 @@ tagLALInferenceROQModel
   REAL8 trigtime;
 } LALInferenceROQModel;
 
+/* Initialize an empty thread, saving a timestamp for benchmarking */
+LALInferenceThreadState *LALInferenceInitThread(void);
+
+/* Initialize a bunch of threads using LALInferenceInitThread */
+LALInferenceThreadState **LALInferenceInitThreads(INT4 nthreads);
 
 /** Returns the element of the process params table with "name" */
 ProcessParamsTable *LALInferenceGetProcParamVal(ProcessParamsTable *procparams,const char *name);
