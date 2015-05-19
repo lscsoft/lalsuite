@@ -59,11 +59,6 @@ SWIGLAL(
  */
 void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState);
 
-/** Calculate covariance matrix from a collection of live points */
-void LALInferenceNScalcCVM(gsl_matrix **cvm, LALInferenceVariables **Live, UINT4 Nlive);
-/** This should be moved */
-/* double logadd(double a,double b); */
-
 /** A single iteration of the NS algorithm */
 INT4 LALInferenceNestedSamplingOneStep(LALInferenceRunState *runState);
 
