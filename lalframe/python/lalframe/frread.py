@@ -176,8 +176,8 @@ def ts_from_cache(cache, channels, start=None, duration=None, datatype=None,
     # open the cache into a stream
     stream = lalframe.FrCacheOpen(cache)
     # read the stream
-    return ts_from_stream(stream, channel, start=start, duration=duration,
-                       datatype=datatype, verbose=verbose)
+    return ts_from_stream(stream, channels, start=start, duration=duration,
+                          datatype=datatype, verbose=verbose)
 
 
 def ts_from_frame_file(framefile, channels, start=None, duration=None,
