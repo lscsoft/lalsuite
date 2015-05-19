@@ -3748,7 +3748,8 @@ int main( int argc, char *argv[] )
 
   if ( spinInjections==1 && spinAligned==1 && strncmp(waveform, "IMRPhenomB", 10)
     && strncmp(waveform, "IMRPhenomC", 10) && strncmp(waveform, "SpinTaylor", 10)
-    && strncmp(waveform, "IMRPhenomP", 10) && strncmp(waveform, "SEOBNR", 6) )
+    && strncmp(waveform, "IMRPhenomP", 10) && strncmp(waveform, "SEOBNR", 6)
+    && strncmp(waveform, "TaylorF2", 8) )
   {
     fprintf( stderr,
         "Sorry, I only know to make spin aligned injections for SEOBNR, \n"
