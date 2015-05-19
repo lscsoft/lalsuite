@@ -88,6 +88,7 @@
 //...other includes
 
 struct tagLALInferenceRunState;
+struct tagLALInferenceThreadState;
 struct tagLALInferenceIFOData;
 struct tagLALInferenceModel;
 
@@ -361,7 +362,7 @@ typedef void (*LALInferenceTemplateFunction) (struct tagLALInferenceModel *model
  * distribution functions with various probabilities to allow for multiple
  * jump proposal distributions
  */
-typedef REAL8 (*LALInferenceProposalFunction) (struct tagLALInferenceRunState *runState,
+typedef REAL8 (*LALInferenceProposalFunction) (struct tagLALInferenceThreadState *thread,
 	LALInferenceVariables *currentParams,
 	LALInferenceVariables *proposedParams);
 
@@ -565,6 +566,7 @@ tagLALInferenceRunState
     *algorithmParams;                                /** Parameters which control the running of the algorithm*/
   LALInferenceVariables				**livePoints; /** Array of live points for Nested Sampling */
   LALInferenceThreadState          **threads; /** Array of chains for this run */
+  INT4 nthreads; /** Number of threads stored in ``threads``. */
   LALInferenceSwapRoutine  *parallelSwap;
   gsl_rng *GSLrandom;
 } LALInferenceRunState;

@@ -1024,8 +1024,8 @@ UINT4 LALInferenceMCMCSamplePrior(LALInferenceRunState *runState)
     if((!outOfBounds))
     {
       thislogL=runState->likelihood(threadState->currentParams,runState->data,threadState->model);
-      if(logLmin<thislogL) LALInferenceUpdateAdaptiveJumps(runState, accepted, 0.35);
-      else LALInferenceUpdateAdaptiveJumps(runState, 0, 0.35);
+      if(logLmin<thislogL) LALInferenceUpdateAdaptiveJumps(threadState, accepted, 0.35);
+      else LALInferenceUpdateAdaptiveJumps(threadState, 0, 0.35);
 
     }
 
