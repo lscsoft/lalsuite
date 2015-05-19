@@ -77,42 +77,20 @@ REAL8 **parseMCMCoutput(char ***params, UINT4 *nInPar, UINT4 *nInSamps, char *in
 /* Set the starting seed of rank 0, and give the rest of the threads
     a seed based on it */
 void init_mpi_randomstate(LALInferenceRunState *run_state) {
+    ProcessParamsTable *ppt = NULL;
     INT4 i, randomseed;
     INT4 mpi_rank, mpi_size;
-    FILE *devrandom;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
 
-    /* Initialize a random number generator. */
-    gsl_rng_env_setup();
-    run_state->GSLrandom = gsl_rng_alloc(gsl_rng_mt19937);
-
-    /* Use clocktime if seed isn't provided */
-    ppt = LALInferenceGetProcParamVal(command_line, "--randomseed");
-    if (ppt)
-        randomseed = atoi(ppt->value);
-    else {
-        if ((devrandom = fopen("/dev/urandom","r")) == NULL) {
-            if (mpi_rank == 0) {
-                gettimeofday(&tv, 0);
-                randomseed = tv.tv_sec + tv.tv_usec;
-            }
-        } else {
-            if (mpi_rank == 0) {
-                fread(&randomseed, sizeof(randomseed), 1, devrandom);
-                fclose(devrandom);
-            }
-        }
-
-        MPI_Bcast(&randomseed, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    }
+    /* Broadcast rank=0's randomseed to everyone */
+    randomseed = LALInferenceGetINT4Variable(run_state->algorithmParams, "random_seed");
+    MPI_Bcast(&randomseed, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    LALInferenceSetVariable(run_state->algorithmParams, "random_seed", &randomseed);
 
     if (mpi_rank == 0)
         printf(" initialize(): random seed: %u\n", randomseed);
-
-    LALInferenceAddVariable(run_state->algorithm_params, "random_seed", &randomseed,
-                            LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
 
     /* Now make sure each MPI-thread is running with un-correlated
         jumps. Re-seed this process with the ith output of
@@ -720,7 +698,7 @@ int main(int argc, char *argv[]){
     /* This includes reading in the data */
     /* And performing any injections specified */
     /* And allocating memory */
-    runState = LALInferenceInitRunState(procParams);
+    runState = LALInferenceInitCBCRunState(procParams);
 
     if (runState == NULL) {
         if (LALInferenceGetProcParamVal(proc_params, "--help")) {
@@ -734,7 +712,6 @@ int main(int argc, char *argv[]){
 
     /* Handle PTMCMC setup */
     init_ptmcmc(runState);
-
 
     /* Choose the prior */
     LALInferenceInitPrior(runState);
