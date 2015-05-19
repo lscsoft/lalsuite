@@ -60,7 +60,8 @@ def read_timeseries(source, channel, start=None, duration=None,
     @param source
         input source, see above for details
     @param channel
-        string name of channel, e.g. 'L1:LDAS-STRAIN'
+        string name of channel, e.g. 'L1:LDAS-STRAIN', or a list of channel
+        names
     @param start
         LIGOTimeGPS start time for output TimeSeries
     @param duration
@@ -117,42 +118,50 @@ def read_timeseries(source, channel, start=None, duration=None,
     \endcode
 
     """
+    # parse channels
+    if isinstance(channel, (str, unicode)):
+        channels = [channel]
+    else:
+        channels = list(channel)
+
+    # read cache file
+    if (isinstance(source, basestring) and
+          re.search('(.lcf|.cache)\Z', source)):
+        source = lal.CacheImport(os.path.expanduser(source))
+    # convert GLUE cache file
+    if _HAS_GLUE and isinstance(source, gcache.Cache):
+        source = lalutils.lalcache_from_gluecache(source)
+
     # read from single frame
     if isinstance(source, basestring) and source.endswith('.gwf'):
-        return ts_from_frame_file(source, channel, start=start,
-                                  duration=duration, datatype=datatype,
-                                  verbose=verbose)
-    # read from cache file
-    elif (isinstance(source, basestring) and
-          re.search('(.lcf|.cache)\Z', source)):
-        cache = lal.CacheImport(os.path.expanduser(source))
-        return ts_from_cache(cache, channel, start=start,
-                             duration=duration, datatype=datatype,
-                             verbose=verbose)
+        out = ts_from_frame_file(source, channels, start=start,
+                                 duration=duration, datatype=datatype,
+                                 verbose=verbose)
     # read from XLALCache
     elif isinstance(source, lal.Cache):
-        return ts_from_cache(source, channel, start=start,
-                             duration=duration, datatype=datatype,
-                             verbose=verbose)
-    # read from GLUE cache
-    elif _HAS_GLUE and isinstance(source, gcache.Cache):
-        cache = lalutils.lalcache_from_gluecache(source)
-        return ts_from_cache(cache, channel, start=start,
-                             duration=duration, datatype=datatype,
-                             verbose=verbose)
+        out = ts_from_cache(source, channels, start=start,
+                            duration=duration, datatype=datatype,
+                            verbose=verbose)
     # otherwise barf
     else:
         raise ValueError("Cannot interpret source '%s'." % source)
 
+    # return
+    if isinstance(channel, (str, unicode)):
+        return out[0]
+    else:
+        return out
 
-def ts_from_cache(cache, channel, start=None, duration=None, datatype=None,
+
+def ts_from_cache(cache, channels, start=None, duration=None, datatype=None,
                   verbose=False):
     """Read a TimeSeries of channel data from a LAL Cache object
 
     @param cache
         XLALCAche() containing list of GWF file paths
     @param channel
-        string name of channel, e.g. 'L1:LDAS-STRAIN'
+        string name of channel, e.g. 'L1:LDAS-STRAIN', or list of
+        channel names
     @param start
         LIGOTimeGPS start time for output TimeSeries
     @param duration
@@ -171,14 +180,15 @@ def ts_from_cache(cache, channel, start=None, duration=None, datatype=None,
                        datatype=datatype, verbose=verbose)
 
 
-def ts_from_frame_file(framefile, channel, start=None, duration=None,
+def ts_from_frame_file(framefile, channels, start=None, duration=None,
                        datatype=None, verbose=False):
     """Read a TimeSeries of channel data from a GWF-format framefile
 
     @param framefile
         path to GWF-format framefile to read
     @param channel
-        string name of channel, e.g. 'L1:LDAS-STRAIN'
+        string name of channel, e.g. 'L1:LDAS-STRAIN', or list of
+        channel names
     @param start
         LIGOTimeGPS start time for output TimeSeries
     @param duration
@@ -195,18 +205,19 @@ def ts_from_frame_file(framefile, channel, start=None, duration=None,
     framefile = os.path.abspath(framefile)
     stream = lalframe.FrOpen('', framefile)
     # read the stream
-    return ts_from_stream(stream, channel, start=start, duration=duration,
-                       datatype=datatype, verbose=verbose)
+    return ts_from_stream(stream, channels, start=start, duration=duration,
+                          datatype=datatype, verbose=verbose)
 
 
-def ts_from_stream(stream, channel, start=None, duration=None, datatype=None,
-                verbose=False):
+def ts_from_stream(stream, channels, start=None, duration=None, datatype=None,
+                   verbose=False):
     """Read a TimeSeries of channel data from an open FrStream
 
     @param stream
         XLALFrStream() of data from which to read
     @param channel
-        string name of channel, e.g. 'L1:LDAS-STRAIN'
+        string name of channel, e.g. 'L1:LDAS-STRAIN', or list of
+        channel names
     @param start
         LIGOTimeGPS start time for output TimeSeries
     @param duration
@@ -230,30 +241,39 @@ def ts_from_stream(stream, channel, start=None, duration=None, datatype=None,
         startoffset = float(start - epoch)
         duration = float(get_stream_duration(stream)) - startoffset
 
+    out = []
+    for channel in channels:
+        out.append(read_channel_from_stream(stream, channel, start, duration,
+                                            datatype=datatype))
+        lalframe.FrStreamSeek(stream, epoch)
+    return out
+
+
+def read_channel_from_stream(stream, channel, start, duration, datatype=None):
+    """Read the TimeSeries of a single channel from an open stream
+    """
     # get series type
     frdatatype = lalframe.FrStreamGetTimeSeriesType(channel, stream)
     if datatype is None:
         datatype = frdatatype
     else:
-        datatype = _parse_datatype(datatype)
+        datatype = lalutils.get_lal_type(datatype)
 
     # read original data
     read = getattr(lalframe, 'FrStreamRead%sTimeSeries'
-                             % lalutils.LAL_TYPE_STR[frdatatype])
+                             % lalutils.get_lal_type_str(frdatatype))
     origin = read(stream, channel, start, duration, 0)
     # format to output data-type if required
     if datatype == frdatatype:
-        series = origin
+        return origin
     if datatype != frdatatype:
-        create = lalutils.func_factory('create', '%stimeseries'
-                                              % lalutils.LAL_TYPE_STR[datatype])
+        create = lalutils.func_factory(
+            'create', '%stimeseries' % lalutils.get_lal_type_str(datatype))
         series = create(channel, start, origin.f0, origin.deltaT,
                         origin.sampleUnits, origin.data.length)
         series.data.data = origin.data.data.astype(
-                               lalutils.NUMPY_TYPE_FROM_LAL[datatype])
-    # rewind the stream and return
-    lalframe.FrStreamSeek(stream, epoch)
-    return series
+                               lalutils.get_numpy_type(datatype))
+        return series
 
 
 def get_stream_length(stream, channel):
@@ -301,21 +321,3 @@ def get_stream_duration(stream):
     # rewind stream and return
     lalframe.FrStreamSeek(stream, epoch)
     return duration
-
-
-def _parse_datatype(datatype):
-    """Internal helper to format an abitrary datatype reference into
-    an integer element of the LALTYPECODE enum
-    """
-    # return already formatted int
-    if isinstance(datatype, int) and lalutils.LAL_TYPE_STR.has_key(datatype):
-        return datatype
-    # convert from string, e.g. 'real8'
-    elif (isinstance(datatype, basestring) and
-         lalutils.LAL_TYPE_FROM_STR.has_key(datatype.upper())):
-        return lalutils.LAL_TYPE_FROM_STR[datatype.upper()]
-    # convert from numpy dtype
-    elif lalutils.LAL_TYPE_FROM_NUMPY.has_key(datatype):
-        return lalutils.LAL_TYPE_FROM_NUMPY[datatype]
-    # otherwise barf
-    raise ValueError("Cannot interpret datatype '%s'" % datatype)
