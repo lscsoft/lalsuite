@@ -335,13 +335,21 @@ for function_name in sorted(functions):
     # apply %newobject to all functions
     f.write('%%newobject %s;\n' % function_name)
 
+    # get function declaration and type
+    func_decl = get_swig_attr(functions[function_name], 'decl')
+    func_type = get_swig_attr(functions[function_name], 'type')
+    func_decl_type = func_decl + func_type
+
+    # apply the SWIGLAL_MAYBE_RETURN_INT typemap to all functions which return 'int';
+    # this causes the 'int' return to be ignored in most cases, unless the typemap
+    # SWIGLAL(RETURN_VALUE(int, ...)) is applies to disable this behaviour
+    if func_type == 'int':
+        f.write('%%apply int SWIGLAL_MAYBE_RETURN_INT { int %s };\n' % function_name)
+
     # indicate if the return type of a function is a pointer type, and matches the
     # type of its first argument; many LAL functions return their first argument
     # after performing some operation on it, but we want to prevent two different
     # SWIG wrapping objects from owning the same LAL memory
-    func_decl = get_swig_attr(functions[function_name], 'decl')
-    func_type = get_swig_attr(functions[function_name], 'type')
-    func_decl_type = func_decl + func_type
     if func_retn_1starg_regexp.match(func_decl_type) != None:
         f.write('%%header %%{#define swiglal_return_1starg_%s%%}\n' % function_name)
 

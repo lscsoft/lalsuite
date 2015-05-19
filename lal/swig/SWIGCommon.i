@@ -1258,14 +1258,14 @@ if (strides[I-1] == 0) {
 /// <tt>$owner=0</tt>, so the int return is set straight away, and the \c newfree typemap is never
 /// applied.
 ///
-%typemap(out, noblock=1, fragment=SWIG_From_frag(int)) int {
+%typemap(out, noblock=1, fragment=SWIG_From_frag(int)) int SWIGLAL_MAYBE_RETURN_INT {
 %#if $owner
   %set_output(VOID_Object);
 %#else
   %set_output(SWIG_From(int)($1));
 %#endif
 }
-%typemap(newfree, noblock=1, fragment=SWIG_From_frag(int)) int {
+%typemap(newfree, noblock=1, fragment=SWIG_From_frag(int)) int SWIGLAL_MAYBE_RETURN_INT {
   swiglal_append_output_if_empty(SWIG_From(int)($1));
 }
 
