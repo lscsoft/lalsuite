@@ -83,6 +83,8 @@
 #include <gsl/gsl_complex_math.h>
 #include <sys/time.h>
 
+#define LALINFERENCE_HASHTABLE_SIZE 256 /* Max entries in hash table */
+
 //...other includes
 
 struct tagLALInferenceRunState;
@@ -162,6 +164,7 @@ tagLALInferenceVariables
 {
   LALInferenceVariableItem	*head;
   INT4 				dimension;
+  LALInferenceVariableItem	*hash_table[LALINFERENCE_HASHTABLE_SIZE];
 } LALInferenceVariables;
 
 /** 

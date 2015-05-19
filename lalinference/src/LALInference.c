@@ -71,6 +71,15 @@ static INT4 checkREAL8TimeSeries(REAL8TimeSeries *series);
 static INT4 checkREAL8FrequencySeries(REAL8FrequencySeries *series);
 static INT4 checkCOMPLEX16FrequencySeries(COMPLEX16FrequencySeries *series);
 static INT4 matrix_equal(gsl_matrix *a, gsl_matrix *b);
+static LALInferenceVariableItem *LALInferenceGetItemSlow(const LALInferenceVariables *vars,const char *name);
+
+static UINT4 hash(const char *name)
+{
+  UINT4 hashval=0;
+  for(;*name!='\0';name++)
+    hashval = *name + 31 *hashval;
+  return (hashval % LALINFERENCE_HASHTABLE_SIZE);
+}
 
 /* This replaces gsl_matrix_equal which is only available with gsl 1.15+ */
 /* Return 1 if matrices are equal, 0 otherwise */
@@ -91,8 +100,24 @@ LALInferenceVariableItem *LALInferenceGetItem(const LALInferenceVariables *vars,
 /* (this function is only to be used internally) */
 /* Returns pointer to item for given item name.  */
 {
+  LALInferenceVariableItem *item=NULL;
   if(vars==NULL) return NULL;
+  if(vars->dimension==0) return NULL;
+  item=vars->hash_table[hash(name)];
+  if(!item) return LALInferenceGetItemSlow(vars,name); /* Not found in the hash table but need to check 
+  because collision with an item previous Removed() will put a NULL in the hash table */
+  
+  if(strcmp(item->name,name)) /* Check for hash collision */
+    return LALInferenceGetItemSlow(vars,name);
+  else
+    return item;
+}
+/* Walk through the list to check for an item */
+LALInferenceVariableItem *LALInferenceGetItemSlow(const LALInferenceVariables *vars,const char *name)
+{  
   LALInferenceVariableItem *this = vars->head;
+  if(vars->dimension==0) return NULL;
+  
   while (this != NULL) {
     if (!strcmp(this->name,name)) break;
     else this = this->next;
@@ -271,20 +296,32 @@ void LALInferenceAddVariable(LALInferenceVariables * vars, const char * name, co
 /* If variable already exists, it will over-write the current value if type compatible*/
 {
   LALInferenceVariableItem *old=NULL;
+  /* This is a bit of a hack to make sure the hash table is initialised
+   * before it is accessed, assuming nobody is silly enough to Get() 
+   * from a just-declared LALInferenceVariable */
+  if(vars->dimension==0) LALInferenceClearVariables(vars);
+
+  /* Check input value is accessible */
+  if(!value) {
+    XLAL_ERROR_VOID(XLAL_EFAULT, "Unable to access value through null pointer; trying to add \"%s\".", name);
+  }
+
   /* Check the name doesn't already exist */
   if(LALInferenceCheckVariable(vars,name)) {
     old=LALInferenceGetItem(vars,name);
     if(old->type != type)
     {
-      XLAL_ERROR_VOID(XLAL_EINVAL, "Cannot re-add \"%s\" as previous definition has wrong type.", name);
+      LALInferenceRemoveVariable(vars,name);
+      //XLAL_ERROR_VOID(XLAL_EINVAL, "Cannot re-add \"%s\" as previous definition has wrong type.", name);
     }
-    LALInferenceSetVariable(vars,name,value);
-    return;
+    else{
+      LALInferenceSetVariable(vars,name,value);
+      return;
+    }
   }
-
-  if(!value) {
-    XLAL_ERROR_VOID(XLAL_EFAULT, "Unable to access value through null pointer; trying to add \"%s\".", name);
-  }
+  //if(!value) {
+   // XLAL_ERROR_VOID(XLAL_EFAULT, "Unable to access value through null pointer; trying to add \"%s\".", name);
+  //}
 
   LALInferenceVariableItem *new=XLALMalloc(sizeof(LALInferenceVariableItem));
 
@@ -301,6 +338,7 @@ void LALInferenceAddVariable(LALInferenceVariables * vars, const char * name, co
   memcpy(new->value,value,LALInferenceTypeSize[type]);
   new->next = vars->head;
   vars->head = new;
+  vars->hash_table[hash(new->name)]=new;
   vars->dimension++;
   return;
 }
@@ -345,10 +383,13 @@ void LALInferenceRemoveVariable(LALInferenceVariables *vars,const char *name)
   }
 
   XLALFree(this->value);
+  if(this==vars->hash_table[hash(name)]) /* Have to check the name in case there was a collision */
+    vars->hash_table[hash(name)]=NULL;
   this->value=NULL;
   XLALFree(this);
   this=NULL;
   vars->dimension--;
+  if(vars->dimension==0) LALInferenceClearVariables(vars);
   return;
 }
 
@@ -389,6 +430,7 @@ void LALInferenceClearVariables(LALInferenceVariables *vars)
   }
   vars->head=NULL;
   vars->dimension=0;
+  memset(vars->hash_table,0,LALINFERENCE_HASHTABLE_SIZE*sizeof(LALInferenceVariableItem *));
   return;
 }
 
@@ -409,11 +451,19 @@ void LALInferenceCopyVariables(LALInferenceVariables *origin, LALInferenceVariab
   /* Make sure the structure is initialised */
   if(!target) XLAL_ERROR_VOID(XLAL_EFAULT, "Unable to copy to uninitialised LALInferenceVariables structure.");
   /* first dispose contents of "target" (if any): */
-  LALInferenceClearVariables(target);
-
+  //LALInferenceClearVariables(target);
+  if(target->dimension==0) LALInferenceClearVariables(target);
+  LALInferenceVariableItem *this,*next;
+  for(this=target->head;this;this=next){
+    next=this->next;
+    if(!LALInferenceCheckVariable(origin,this->name)) {
+      LALInferenceRemoveVariable(target,this->name);
+    }
+  }
   /* get the number of elements in origin */
   dims = LALInferenceGetVariableDimension( origin );
-
+  if(target->dimension==0) LALInferenceClearVariables(target);
+  
   if ( !dims ){
     XLAL_ERROR_VOID(XLAL_EFAULT, "Origin variables has zero dimensions!");
   }
