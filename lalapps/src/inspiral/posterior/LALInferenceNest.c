@@ -121,33 +121,26 @@ void initializeNS(LALInferenceRunState *runState)
       }
     }
     else verbose=LALMSGLVL2; /* Errors and warnings */
-    LALInferenceAddVariable(irs->algorithmParams,"verbose", &verbose , LALINFERENCE_INT4_t,
+    LALInferenceAddVariable(runState->algorithmParams,"verbose", &verbose , LALINFERENCE_INT4_t,
                             LALINFERENCE_PARAM_FIXED);
   }
   
-  INT4 tmpi=0,randomseed=0;
+  INT4 tmpi=0;
   REAL8 tmp=0;
   
   /* Single thread only */
   runState->threads=LALInferenceInitThreads(1);
-  LALInferenceThreadState *threadState = runState->threads[0];
   
   /* Set up the appropriate functions for the nested sampling algorithm */
   runState->algorithm=&LALInferenceNestedSamplingAlgorithm;
   runState->evolve=&LALInferenceNestedSamplingOneStep;
   
-  /* use the ptmcmc proposal to sample prior */
-  threadState->proposal=&NSWrapMCMCLALProposal;
-  REAL8 temp=1.0;
-  LALInferenceAddVariable(threadState->proposalArgs,"temperature",&temp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
-  
 #ifdef HAVE_LIBLALXML
-  threadState->logsample=LALInferenceLogSampleToArray;
+  runState->logsample=LALInferenceLogSampleToArray;
 #else
-  threadState->logsample=LALInferenceLogSampleToFile;
+  runState->logsample=LALInferenceLogSampleToFile;
 #endif
   
-  printf("set number of live points.\n");
   /* Number of live points */
   ppt=LALInferenceGetProcParamVal(commandLine,"--Nlive");
   if (!ppt) ppt=LALInferenceGetProcParamVal(commandLine,"--nlive");
@@ -166,7 +159,7 @@ void initializeNS(LALInferenceRunState *runState)
     tmpi=atoi(ppt->value);
     LALInferenceAddVariable(runState->algorithmParams,"Nmcmc",&tmpi,
                             LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
-    printf("set number of MCMC points, over-riding auto-determination!\n");
+    printf("set number of MCMC points to %i, over-riding auto-determination!\n",tmpi);
   }
   if((ppt=LALInferenceGetProcParamVal(commandLine,"--sloppyfraction")))
     tmp=atof(ppt->value);
@@ -182,7 +175,6 @@ void initializeNS(LALInferenceRunState *runState)
                             LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
   }
   
-  printf("set number of parallel runs.\n");
   /* Optionally specify number of parallel runs */
   ppt=LALInferenceGetProcParamVal(commandLine,"--Nruns");
   if(ppt) {
@@ -190,7 +182,6 @@ void initializeNS(LALInferenceRunState *runState)
     LALInferenceAddVariable(runState->algorithmParams,"Nruns",&tmpi,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
   }
   
-  printf("set tolerance.\n");
   /* Tolerance of the Nested sampling integrator */
   ppt=LALInferenceGetProcParamVal(commandLine,"--tolerance");
   if(ppt){
@@ -199,12 +190,6 @@ void initializeNS(LALInferenceRunState *runState)
                             LALINFERENCE_PARAM_FIXED);
   }
   
-  /* Get initial noise model likelihood */
-  if (runState->data != NULL) {
-    irs->currentLikelihood=LALInferenceNullLogLikelihood(irs->data);
-    printf("Null Log Likelihood: %g\n", irs->currentLikelihood);
-  }
-
   return;
   
 }
@@ -239,16 +224,16 @@ int main(int argc, char *argv[]){
   initializeNS(state);
   
   /* Set the CBC model */
-  state->model = LALInferenceInitCBCModel(state);
-  state->templt = LALInferenceInitCBCTemplate(state);
-  state->prior = LALInferenceInitCBCPrior(state);
+  state->threads[0]->model = LALInferenceInitCBCModel(state);
+  state->threads[0]->model->templt = LALInferenceInitCBCTemplate(state);
+  LALInferenceInitCBCPrior(state);
   /* Choose the likelihood */
   LALInferenceInitLikelihood(state);
   
   /* Set up the threads */
   LALInferenceInitCBCThreads(state,1);
   LALInferenceVariables *propArgs = LALInferenceParseProposalArgs(state);
-  for(UINT4 i=0;i<state->nthreads;i++)
+  for(INT4 i=0;i<state->nthreads;i++)
   {
     state->threads[i]->cycle=LALInferenceSetupDefaultInspiralProposalCycle(propArgs);
     LALInferenceRandomizeProposalCycle(state->threads[i]->cycle,state->GSLrandom);
@@ -265,6 +250,13 @@ int main(int argc, char *argv[]){
   
   /* write injection with noise evidence information from algorithm */
   LALInferencePrintInjectionSample(state);
+  
+  /* Get initial noise model likelihood */
+  if (state->data != NULL) {
+    state->threads[0]->currentLikelihood=LALInferenceNullLogLikelihood(state->data);
+    printf("Null Log Likelihood: %g\n", state->threads[0]->currentLikelihood);
+  }
+
   
   /* Call nested sampling algorithm */
   state->algorithm(state);
