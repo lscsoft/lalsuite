@@ -462,7 +462,7 @@ typedef REAL8 (*LALInferenceLikelihoodFunction) (LALInferenceVariables *currentP
 typedef INT4 (*LALInferenceEvolveOneStepFunction) (struct tagLALInferenceRunState *runState);
 
 /** Propose a swap between chain locations */
-typedef UINT4 (*LALInferenceSwapRoutine) (struct tagLALInferenceRunState *runState, REAL8 *, INT4, FILE *);
+typedef UINT4 (*LALInferenceSwapRoutine) (struct tagLALInferenceRunState *runState, INT4, FILE *);
 
 /**
  * Type declaration for an algorithm function which is called by the driver code
