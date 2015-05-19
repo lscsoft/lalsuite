@@ -81,9 +81,6 @@ INT4 LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState);
 /* Cache wrapper around the sloppy sampler */
 INT4 LALInferenceNestedSamplingCachedSampler(LALInferenceRunState *runState);
 
-/* REAL8 mean(REAL8 *array,int N); */
-REAL8 LALInferenceNSSample_logt(int Nlive,gsl_rng *RNG);
-
 /**
  * Setup the live points by calling runState->initVariables on each of them
  * if it is specified. Otherwise clones runState->currentParams (legacy)

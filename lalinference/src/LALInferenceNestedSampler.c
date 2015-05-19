@@ -87,6 +87,9 @@ static void catch_alarm(UNUSED int sig, UNUSED siginfo_t *siginfo,UNUSED void *c
 
 static UINT4 UpdateNMCMC(LALInferenceRunState *runState);
 /* Prototypes for private "helper" functions. */
+
+static REAL8 LALInferenceNSSample_logt(int Nlive,gsl_rng *RNG);
+
 //static void SamplePriorDiscardAcceptance(LALInferenceRunState *runState);
 static REAL8 mean(REAL8 *array,int N);
 
