@@ -1005,7 +1005,7 @@ UINT4 LALInferenceMCMCSamplePrior(LALInferenceRunState *runState)
     //LALInferenceCopyVariables(runState->currentParams,oldParams);
     LALInferenceCopyVariables(threadState->currentParams,&proposedParams);
 
-    logProposalRatio = threadState->proposal(runState,threadState->currentParams,&proposedParams);
+    logProposalRatio = threadState->proposal(threadState,threadState->currentParams,&proposedParams);
     REAL8 logPriorNew=runState->prior(runState, &proposedParams, threadState->model);
     if(logPriorNew==-DBL_MAX || isnan(logPriorNew) || log(gsl_rng_uniform(runState->GSLrandom)) > (logPriorNew-logPriorOld) + logProposalRatio)
     {
