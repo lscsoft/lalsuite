@@ -231,9 +231,12 @@ xmlNodePtr XLALInferenceStateVariables2VOTResource(const LALInferenceRunState *s
 	priorNode=XLALCreateVOTTableNode("Prior Arguments",XLALInferenceVariables2VOTParamNode(state->priorArgs),NULL);
 	xmlNewProp(priorNode, CAST_CONST_XMLCHAR("utype"), CAST_CONST_XMLCHAR("lalinference:state:priorparams"));
 	if(priorNode) xmlAddChild(resNode,priorNode);
-	propNode=XLALCreateVOTTableNode("Proposal Arguments",XLALInferenceVariables2VOTParamNode(state->proposalArgs),NULL);
+	/* Disabled for new struct */
+    /*
+    propNode=XLALCreateVOTTableNode("Proposal Arguments",XLALInferenceVariables2VOTParamNode(state->proposalArgs),NULL);
 	xmlNewProp(propNode, CAST_CONST_XMLCHAR("utype"), CAST_CONST_XMLCHAR("lalinference:state:proposalparams"));
 	if(propNode) xmlAddChild(resNode,propNode);
+    */
 	return(resNode);
 
 }
