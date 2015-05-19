@@ -64,6 +64,35 @@ size_t LALInferenceTypeSize[] = {sizeof(INT4),
 };
 
 
+/* Initialize an empty thread, saving a timestamp for benchmarking */
+LALInferenceThreadState *LALInferenceInitThread(void) {
+    struct timeval tv;
+
+    /* Get creation time */
+    gettimeofday(&tv, NULL);
+
+    LALInferenceThreadState *thread = XLALCalloc(1, sizeof(LALInferenceThreadState));
+
+    thread->creation_time = tv.tv_sec + tv.tv_usec/1E6;
+    thread->currentPropDensity = -DBL_MAX;
+    thread->currentParams = XLALCalloc(1, sizeof(LALInferenceVariables));
+
+    return thread;
+}
+
+/* Initialize a bunch of threads using LALInferenceInitThread */
+LALInferenceThreadState **LALInferenceInitThreads(INT4 nthreads) {
+    INT4 t;
+
+    LALInferenceThreadState **threads = XLALCalloc(nthreads, sizeof(LALInferenceThreadState*));
+
+    for (t = 0; t < nthreads; t++)
+        threads[t] = LALInferenceInitThread();
+
+    return threads;
+}
+
+
 /* ============ Accessor functions for the Variable structure: ========== */
 
 static char *colNameToParamName(const char *colName);
