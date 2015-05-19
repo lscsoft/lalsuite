@@ -207,12 +207,26 @@ int XLALResetLatticeTilingIterator(
   );
 
 ///
-/// Advance lattice tiling iterator, and optionally return the current point in \c point. Returns >0
+/// Advance lattice tiling iterator, and optionally return the next point in \c point. Returns >0
 /// if there are points remaining, 0 if there are no more points, and XLAL_FAILURE on error.
 ///
 int XLALNextLatticeTilingPoint(
   LatticeTilingIterator *itr,		///< [in] Lattice tiling iterator
-  gsl_vector *point			///< [out] Current point
+  gsl_vector *point			///< [out] Next point in lattice tiling
+  );
+
+///
+/// Advance lattice tiling iterator, and optionally return the next set of points in \c points.
+/// Returns the number of points stored in \points if there are points remaining, 0 if there are
+/// no more points, and XLAL_FAILURE on error.
+///
+#ifdef SWIG // SWIG interface directives
+SWIGLAL( RETURN_VALUE( int, XLALNextLatticeTilingPoints ) );
+SWIGLAL( INOUT_STRUCTS( gsl_matrix **, points ) );
+#endif
+int XLALNextLatticeTilingPoints(
+  LatticeTilingIterator *itr,		///< [in] Lattice tiling iterator
+  gsl_matrix **points			///< [out] Columns are next set of points in lattice tiling
   );
 
 ///

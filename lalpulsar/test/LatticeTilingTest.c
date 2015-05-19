@@ -127,10 +127,7 @@ static int BasicTest(
 
     // Get all points
     gsl_matrix *GAMAT( points, n, total );
-    for( size_t j = 0; j < total; ++j ) {
-      gsl_vector_view points_col = gsl_matrix_column( points, j );
-      XLAL_CHECK( XLALNextLatticeTilingPoint( itr, &points_col.vector ) > 0, XLAL_EFUNC );
-    }
+    XLAL_CHECK( XLALNextLatticeTilingPoints( itr, &points ) == (int)total, XLAL_EFUNC );
     XLAL_CHECK( XLALNextLatticeTilingPoint( itr, NULL ) == 0, XLAL_EFUNC );
 
     // Get nearest point to each template; should be template itself
@@ -211,10 +208,7 @@ static int MismatchTest(
 
   // Get all points
   gsl_matrix *GAMAT( points, n, total );
-  for( size_t j = 0; j < total; ++j ) {
-    gsl_vector_view points_col = gsl_matrix_column( points, j );
-    XLAL_CHECK( XLALNextLatticeTilingPoint( itr, &points_col.vector ) > 0, XLAL_EFUNC );
-  }
+  XLAL_CHECK( XLALNextLatticeTilingPoints( itr, &points ) == (int)total, XLAL_EFUNC );
   XLAL_CHECK( XLALNextLatticeTilingPoint( itr, NULL ) == 0, XLAL_EFUNC );
 
   // Initialise mismatch histogram counts

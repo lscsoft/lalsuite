@@ -1356,6 +1356,41 @@ int XLALNextLatticeTilingPoint(
 
 }
 
+int XLALNextLatticeTilingPoints(
+  LatticeTilingIterator *itr,
+  gsl_matrix **points
+  )
+{
+
+  // Check input
+  XLAL_CHECK( itr != NULL, XLAL_EFAULT );
+  XLAL_CHECK( points != NULL && *points != NULL, XLAL_EFAULT );
+  XLAL_CHECK( (*points)->size1 == itr->tiling->ndim, XLAL_EINVAL );
+
+  // Fill 'points' with points from XLALNextLatticeTilingPoint(), but stop if there are none left
+  size_t j = 0;
+  for( ; j < (*points)->size2; ++j ) {
+    gsl_vector_view point_j = gsl_matrix_column( *points, j );
+    int retn = XLALNextLatticeTilingPoint( itr, &point_j.vector );
+    XLAL_CHECK( retn >= 0, XLAL_EFUNC, "XLALNextLatticeTilingPoint() failed at j=%zu", j );
+    if( retn == 0 ) {
+      break;
+    }
+  }
+
+  // If there are fewer points than the size of 'points', resize 'points' to fit
+  if( 0 < j && j < (*points)->size2 ) {
+    gsl_matrix *GAMAT( new_points, (*points)->size1, j );
+    gsl_matrix_view points_view = gsl_matrix_submatrix( *points, 0, 0, (*points)->size1, j );
+    gsl_matrix_memcpy( new_points, &points_view.matrix );
+    GFMAT( *points );
+    *points = new_points;
+  }
+
+  return j;
+
+}
+
 UINT8 XLALTotalLatticeTilingPoints(
   LatticeTilingIterator *itr
   )
