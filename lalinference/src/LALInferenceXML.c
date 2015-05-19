@@ -220,7 +220,7 @@ xmlNodePtr XLALInferenceStateVariables2VOTResource(const LALInferenceRunState *s
 {
 	xmlNodePtr algNode=NULL;
 	xmlNodePtr priorNode=NULL;
-	xmlNodePtr propNode=NULL;
+	//xmlNodePtr propNode=NULL;
 	xmlNodePtr resNode=NULL;
 	/* Serialise various params to VOT Table nodes */
 	resNode=XLALCreateVOTResourceNode("lalinference:state",name,NULL);
