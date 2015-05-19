@@ -62,6 +62,9 @@ parser = OptionParser(version='Name: %%prog\n%s'
                       , description=description)
 
 parser.add_option('-c', '--config', default='idq.ini', type='string', help='configuration file')
+
+parser.add_option('-k', '--lock-file', dest='lockfile', help='use custom lockfile', metavar='FILE', default=None )
+
 parser.add_option('-s', '--gpsstart', dest="gpsstart", default=False, type='int', help='a GPS start time for the analysis. If default, gpsstart is calculated from the current time.')
 parser.add_option('-e', '--gpsstop', dest="gpsstop", default=False, type='int', help='a GPS stop time for the analysis. If default, gpsstop is calculated from the current time.')
 
@@ -137,6 +140,11 @@ logger = idq.setup_logger('idq_logger', opts.log_file, sys.stdout, format='%(asc
 
 sys.stdout = idq.LogFile(logger)
 sys.stderr = idq.LogFile(logger)
+
+#===================================================================================================
+### check lockfile
+if opts.lockfile:
+    idq.dieiflocked( opts.lockfile )
 
 #===================================================================================================
 ### read global configuration file

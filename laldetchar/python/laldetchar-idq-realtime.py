@@ -83,6 +83,8 @@ parser.add_option('', '--ignore-science-segments-training',
     help="forces training jobs to ignore science segments as well. \
     This should NOT be used to generate actual DQ information, but may be useful when debugging the pipeline."
     )
+parser.add_option('', '--lock-training', default=False, action="store_true", help="forces training jobs to use a lock file. Useful when preventing jobs from stacking up.")
+
 parser.add_option('', '--ignore-science-segments-summary', 
     default=False, action="store_true", 
     help="forces summary jobs to ignore science segments as well. \
@@ -90,6 +92,7 @@ parser.add_option('', '--ignore-science-segments-summary',
     )
 
 parser.add_option("", "--dont-cluster-summary", default=False, action="store_true")
+parser.add_option('', '--lock-summary', default=False, action="store_true", help="forces summary jobs to use a lock file. Useful when preventing jobs from stacking up.")
 
 parser.add_option('', '--ignore-science-segments-calibration',
     default=False, action="store_true",
@@ -98,6 +101,7 @@ parser.add_option('', '--ignore-science-segments-calibration',
     )
 
 parser.add_option("", "--dont-cluster-calibration", default=False, action="store_true")
+parser.add_option('', '--lock-calibration', default=False, action="store_true", help="forces calibration jobs to use a lock file. Useful when preventing jobs from stacking up.")
 
 parser.add_option("", "--no-robot-cert",
     default=False, action="store_true",
@@ -336,8 +340,10 @@ if initial_training:
 
     if opts.ignore_science_segments_training:
         train_command += " --ignore-science-segments" 
-    elif opts.no_robot_cert:
+    if opts.no_robot_cert:
         train_command += " --no-robot-cert"
+    if opts.lock_training:
+        train_command += " --lock-file %s/.idq_train.lock"%mainidqdir
 
     logger.info('Submiting training job with the following options:')
     logger.info(train_command)
@@ -375,8 +381,10 @@ if initial_calibration:
 
     if opts.ignore_science_segments_calibration:
         calibration_command += " --ignore-science-segments" 
-    elif opts.no_robot_cert:
+    if opts.no_robot_cert:
         calibration_command += " --no-robot-cert" 
+    if opts.lock_calibration:
+        calibration_command += " --lock-file %s/.idq_calibration.lock"%mainidqdir
 
     logger.info('Submiting calibration job with the following options:')
     logger.info(calibration_command) ### block
@@ -410,6 +418,8 @@ logger.info('Begin: realtime evaluation')
 train_template = "%s --config %s -l %s -s %d -e %d --lookback %d"
 if opts.ignore_science_segments_training:
     train_template += " --ignore-science-segments"
+if opts.lock_training:
+    train_template += " --lock-file %s/.idq_train.lock"%mainidqdir
 
 summary_template = "%s --config %s -l %s -s %d -e %d --lookback %d %s"
 for fap in summary_FAPthrs:
@@ -418,6 +428,8 @@ if opts.ignore_science_segments_summary:
     summary_template += " --ignore-science-segments"
 if opts.dont_cluster_summary:
     summary_template += " --dont-cluster"
+if opts.lock_summary:
+    summary_template += " --lock-file %s/.idq_summary.lock"%mainidqdir
 
 calibration_template = "%s --config %s -l %s -s %d -e %d --lookback %d" 
 for fap in calibration_FAPthrs:
@@ -426,6 +438,8 @@ if opts.ignore_science_segments_calibration:
     calibration_template += " --ignore-science-segments"
 if opts.dont_cluster_calibration:
     calibration_template += " --dont-cluster"
+if opts.lock_calibration:
+    calibration_template += " --lock-file %s/.idq_calibration.lock"%mainidqdir
 
 if opts.no_robot_cert:
     train_template += " --no-robot-cert"
