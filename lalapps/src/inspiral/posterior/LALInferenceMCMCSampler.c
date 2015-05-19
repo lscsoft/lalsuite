@@ -117,7 +117,7 @@ resetDifferentialEvolutionBuffer(LALInferenceThreadState *thread) {
     INT4 Nskip;
     size_t i, j;
 
-    Nskip = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Nskip");
+    Nskip = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "skip");
 
     for (i = 0; i < thread->differentialPointsLength; i++) {
         LALInferenceClearVariables(thread->differentialPoints[i]);
@@ -160,10 +160,10 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
     /* Get all algorithm params */
     INT4 n_local_threads = LALInferenceGetINT4Variable(algorithm_params, "nthreads");
     INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->threads[0]->currentParams);
-    INT4 Niter = LALInferenceGetINT4Variable(algorithm_params, "Niter");
-    INT4 Neff = LALInferenceGetINT4Variable(algorithm_params, "Neff");
-    INT4 Nskip = LALInferenceGetINT4Variable(algorithm_params, "Nskip");
-    INT4 Tskip = LALInferenceGetINT4Variable(algorithm_params, "Tskip");
+    INT4 Niter = LALInferenceGetINT4Variable(algorithm_params, "nsteps");
+    INT4 Neff = LALInferenceGetINT4Variable(algorithm_params, "neff");
+    INT4 Nskip = LALInferenceGetINT4Variable(algorithm_params, "skip");
+    INT4 Tskip = LALInferenceGetINT4Variable(algorithm_params, "tskip");
     INT4 de_buffer_limit = LALInferenceGetINT4Variable(algorithm_params, "de_buffer_limit");
     INT4 randomseed = LALInferenceGetINT4Variable(algorithm_params, "random_seed");
 
@@ -186,10 +186,10 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
     for (c=0; c<n_local_threads; c++) {
         thread = runState->threads[c];
 
-        INT4 adaptationOn = LALInferenceGetINT4Variable(thread->proposalArgs, "adaptationOn"));
-        INT4 adaptTau = LALInferenceGetINT4Variable(thread->proposalArgs, "adaptTau")); // Sets decay of adaption function
-        INT4 adaptLength = LALInferenceGetINT4Variable(thread->proposalArgs, "adaptLength")); // Number of iterations to adapt before turning off
-        REAL8 s_gamma = LALInferenceGetREAL8Variable(thread->proposalArgs, "s_gamma")); // Sets the size of changes to jump size during adaptation
+        INT4 adaptationOn = LALInferenceGetINT4Variable(thread->proposalArgs, "adaptationOn");
+        INT4 adaptTau = LALInferenceGetINT4Variable(thread->proposalArgs, "adaptTau"); // Sets decay of adaption function
+        INT4 adaptLength = LALInferenceGetINT4Variable(thread->proposalArgs, "adaptLength"); // Number of iterations to adapt before turning off
+        REAL8 s_gamma = LALInferenceGetREAL8Variable(thread->proposalArgs, "s_gamma"); // Sets the size of changes to jump size during adaptation
 
         /* burnin settings */
         INT4 burnin = 1; // Burnin phase where proposal ratio is ignored
@@ -310,7 +310,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
 
             //ACL calculation
             if (i % (100*Nskip) == 0) {
-                adapting = LALInferenceGetINT4Variable(thread->proposalArgs, "adapting"));
+                adapting = LALInferenceGetINT4Variable(thread->proposalArgs, "adapting");
 
                 if (adapting)
                     iEff = 0;
@@ -698,6 +698,7 @@ void LALInferencePTswap(LALInferenceRunState *runState, INT4 i, FILE *swapfile) 
                 }
             }
         }
+    }
 
     XLALFree(cold_inds);
 
@@ -955,7 +956,7 @@ void LALInferenceAdaptationRestart(LALInferenceThreadState *thread, INT4 cycle) 
         }
     }
 
-    Niter = LALInferenceGetINT4Variable(thread->proposalArgs, "Niter");
+    Niter = LALInferenceGetINT4Variable(thread->proposalArgs, "nsteps");
 
     LALInferenceSetVariable(thread->proposalArgs, "adapting", &adapting);
     LALInferenceSetVariable(thread->proposalArgs, "adaptStart", &cycle);
@@ -1073,11 +1074,11 @@ void LALInferencePrintPTMCMCHeaderFiles(LALInferenceRunState *runState, FILE **t
     thread = runState->threads[0];
 
     n_local_threads = LALInferenceGetINT4Variable(runState->algorithmParams, "nthreads");
-    nthreads = LALInferenceGetINT4Variable(runState->algorithmParams, "Ntemp");
+    nthreads = LALInferenceGetINT4Variable(runState->algorithmParams, "ntemp");
 
     randomseed = LALInferenceGetINT4Variable(runState->algorithmParams, "random_seed");
     nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
-    Niter = LALInferenceGetINT4Variable(runState->algorithmParams, "Niter");
+    Niter = LALInferenceGetINT4Variable(runState->algorithmParams, "nsteps");
 
     REAL8 f_ref = 0.0;
     if(LALInferenceCheckVariable(thread->currentParams, "f_ref"))

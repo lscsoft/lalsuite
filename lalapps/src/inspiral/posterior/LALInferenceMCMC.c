@@ -70,157 +70,15 @@ static INT4 readSquareMatrix(gsl_matrix *m, UINT4 N, FILE *inp) {
 }
 
 
-LALInferenceRunState *init_runstate(ProcessParamsTable *commandLine);
 void initializeMCMC(LALInferenceRunState *runState);
 void init_mpi_randomstate(LALInferenceRunState *run_state);
 REAL8 **parseMCMCoutput(char ***params, UINT4 *nInPar, UINT4 *nInSamps, char *infilename, UINT4 burnin);
-
-
-/* Initialize an bare-bones run-state
-   calls the "ReadData()" function to gather data & PSD from files,
-   and initializes other variables accordingly.                     */
-LALInferenceRunState *init_runstate(ProcessParamsTable *command_line) {
-    LALInferenceRunState *run_state = XLALCalloc(1, sizeof(LALInferenceRunState));
-
-    /* Check that command line is consistent first */
-    LALInferenceCheckOptionsConsistency(command_line);
-    run_state->commandLine = command_line;
-
-    /* Read data from files or generate fake data */
-    run_state->data = LALInferenceReadData(command_line);
-    if (run_state->data == NULL)
-        return(NULL);
-
-    /* Perform injections if data successful read or created */
-    LALInferenceInjectInspiralSignal(run_state->data, command_line);
-
-    /* Apply calibration errors if desired*/
-    LALInferenceApplyCalibrationErrors(run_state, command_line);
-
-    /* Initialize parameters structure */
-    run_state->algorithmParams = XLALCalloc(1, sizeof(LALInferenceVariables));
-    run_state->priorArgs = XLALCalloc(1, sizeof(LALInferenceVariables));
-
-    return(run_state);
-}
-
-
-void init_threads(LALInferenceRunState *run_state, INT4 nthreads) {
-    char help[]="\
-                 ---------------------------------------------------------------------------------------------------\n\
-                 --- Noise Model -----------------------------------------------------------------------------------\n\
-                 ---------------------------------------------------------------------------------------------------\n\
-                 (--psdFit)                       Run with PSD fitting\n\
-                 (--psdNblock)                    Number of noise parameters per IFO channel (8)\n\
-                 (--psdFlatPrior)                 Use flat prior on psd parameters (Gaussian)\n\
-                 (--removeLines)                  Do include persistent PSD lines in fourier-domain integration\n\
-                 (--KSlines)                      Run with the KS test line removal\n\
-                 (--KSlinesWidth)                 Width of the lines removed by the KS test (deltaF)\n\
-                 (--chisquaredlines)              Run with the Chi squared test line removal\n\
-                 (--chisquaredlinesWidth)         Width of the lines removed by the Chi squared test (deltaF)\n\
-                 (--powerlawlines)                Run with the power law line removal\n\
-                 (--powerlawlinesWidth)           Width of the lines removed by the power law test (deltaF)\n\
-                 (--xcorrbands)                   Run PSD fitting with correlated frequency bands\n\
-                 \n\
-                 ---------------------------------------------------------------------------------------------------\n\
-                 --- Misc. -----------------------------------------------------------------------------------------\n\
-                 ---------------------------------------------------------------------------------------------------\n\
-                 (--randomseed seed)              Random seed of sampling distribution (random).\n";
-
-    INT4 i, t;
-    ProcessParamsTable *command_line, *ppt = NULL;
-    struct timeval tv;
-    REAL8 timestamp;
-
-    /* Send help! */
-    if (run_state == NULL || LALInferenceGetProcParamVal(run_state->command_line, "--help")) {
-        printf("%s", help);
-        return;
-    }
-
-    command_line = run_state->commandLine;
-
-    /* Print more stuff */
-    INT4 verbose = 0;
-    if (LALInferenceGetProcParamVal(command_line, "--verbose"))
-        verbose = 1;
-
-    /* Step counter */
-    INT4 step = 0;
-
-    /* Keep track of time if benchmarking */
-    INT4 benchmark = 0;
-    if (LALInferenceGetProcParamVal(command_line, "--benchmark"))
-        benchmark = 1;
-
-    /* Get reference time */
-    gettimeofday(&tv, NULL);
-    timestamp = tv.tv_sec + tv.tv_usec/1E6;
-
-    /* Set up CBC model and parameter array */
-    LALInferenceThreadState *thread;
-    run_state->threads = XLALCalloc(nthreads, sizeof(LALInferenceThreadState*));
-    LALInferenceThreadState *threads = XLALCalloc(nthreads, sizeof(LALInferenceThreadState));
-
-    for (c = 0; c < nthread; c++) {
-        thread = &threads[c];
-        thread->currentPropDensity = -DBL_MAX;
-        thread->model = LALInferenceInitCBCModel(run_state);
-
-        /* Setup ROQ */
-        LALInferenceSetupROQ(run_state->data, thread->model, command_line);
-
-        thread->currentParams = XLALCalloc(1, sizeof(LALInferenceVariables));
-
-        LALInferenceCopyVariables(thread->model->params, thread->currentParams);
-
-        /* Use the same proposal for all chains by default */
-        thread->proposal = run_state->proposal;
-
-        /* Explicitly zero out DE, in case it's not used later */
-        thread->differentialPoints = NULL;
-        thread->differentialPointsLength = 0;
-        thread->differentialPointsSize = 0;
-
-        run_state->threads[c] = thread;
-    }
-
-    /* Store flags to keep from checking the command line all the time */
-    LALInferenceVariables *algorithm_params = run_state->algorithmParams;
-
-    LALInferenceAddVariable(algorithm_params, "nthreads", &nthreads,
-                            LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
-
-    LALInferenceAddVariable(algorithm_params, "verbose", &verbose,
-                            LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
-
-    LALInferenceAddVariable(algorithm_params, "nsteps", &nsteps,
-                            LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
-
-    LALInferenceAddVariable(algorithm_params, "skip", &skip,
-                            LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
-
-    LALInferenceAddVariable(algorithm_params, "update_interval", &update_interval,
-                            LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
-
-    LALInferenceAddVariable(algorithm_params, "benchmark", &benchmark,
-                            LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
-
-    LALInferenceAddVariable(algorithm_params, "timestamp_epoch", &timestamp,
-                            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
-
-    LALInferenceAddVariable(algorithm_params, "step", &step,
-                            LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
-
-    return;
-}
 
 /* Set the starting seed of rank 0, and give the rest of the threads
     a seed based on it */
 void init_mpi_randomstate(LALInferenceRunState *run_state) {
     INT4 i, randomseed;
     INT4 mpi_rank, mpi_size;
-    struct timeval tv;
     FILE *devrandom;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
@@ -269,9 +127,7 @@ void init_mpi_randomstate(LALInferenceRunState *run_state) {
 }
 
 void LALInferenceDrawThreads(LALInferenceRunState *state) {
-    INT4 c, nthreads;
-
-    nthreads = LALInferenceGetINT4Variable(state->algorithmParams, "nthreads");
+    INT4 c;
 
     /* If using a malmquist prior, force a strict prior window on distance for starting point, otherwise
      * the approximate prior draws are very unlikely to be within the malmquist prior */
@@ -289,7 +145,7 @@ void LALInferenceDrawThreads(LALInferenceRunState *state) {
     /* If the currentParams are not in the prior, overwrite and pick paramaters from the priors. OVERWRITE EVEN USER CHOICES.
      *     (necessary for complicated prior shapes where LALInferenceCyclicReflectiveBound() is not enough */
     #pragma omp parallel for
-    for (c = 0; c < nthreads; c++) {
+    for (c = 0; c < state->nthreads; c++) {
         LALInferenceDrawApproxPrior(state,
                                     state->threads[c]->currentParams,
                                     state->threads[c]->currentParams);
@@ -369,20 +225,22 @@ void init_ptmcmc(LALInferenceRunState *runState)
                (--temp-verbose)                 Output temperature swapping stats to file.\n\
                (--prop-verbose)                 Output proposal stats to file.\n\
                (--outfile file)                 Write output files <file>.<chain_number> (PTMCMC.output.<random_seed>.<mpi_thread>).\n";
+    INT4 i, t;
+    INT4 ntemp_per_thread;
+    ProcessParamsTable *command_line, *ppt = NULL;
+    LALInferenceThreadState *thread;
+    LALInferenceVariables *propArgs;
 
-    /* Print command line arguments if runState was not allocated */
+    /* Send help if runState was not allocated */
     if(runState == NULL || LALInferenceGetProcParamVal(runState->commandLine, "--help")) {
         fprintf(stdout, "%s", help);
         return;
     }
 
-    ProcessParamsTable *commandLine = runState->commandLine;
-    ProcessParamsTable *ppt = NULL;
-
     /* Set up the appropriate functions for the MCMC algorithm */
     runState->algorithm = &PTMCMCAlgorithm;
     runState->evolve = &mcmc_step;
-    runState->proposal = &LALInferenceDefaultProposal;
+    runState->proposal = &LALInferenceCyclicProposal;
 
     /* Choose the appropriate swapping method */
     if (LALInferenceGetProcParamVal(command_line, "--varyFlow")) {
@@ -392,6 +250,24 @@ void init_ptmcmc(LALInferenceRunState *runState)
         /* Standard parallel tempering swap. */
         runState->parallelSwap = &LALInferencePTswap;
     }
+
+    command_line = run_state->commandLine;
+
+    /* Store flags to keep from checking the command line all the time */
+    LALInferenceVariables *algorithm_params = run_state->algorithmParams;
+
+    /* Print more stuff */
+    INT4 verbose = 0;
+    if (LALInferenceGetProcParamVal(command_line, "--verbose"))
+        verbose = 1;
+
+    /* Step counter */
+    INT4 step = 0;
+
+    /* Keep track of time if benchmarking */
+    INT4 benchmark = 0;
+    if (LALInferenceGetProcParamVal(command_line, "--benchmark"))
+        benchmark = 1;
 
     /* Number of steps between ensemble updates */
     INT4 nsteps = 100000000;
@@ -444,7 +320,7 @@ void init_ptmcmc(LALInferenceRunState *runState)
 
     /* Network SNR of trigger */
     REAL8 trigSNR = 0.0;
-    ppt = LALInferenceGetProcParamVal(command_line, "--trig-snr");
+    ppt = LALInferenceGetProcParamVal(command_line, "--trigger-snr");
     if (ppt)
         trigSNR = strtod(ppt->value, (char **)NULL);
 
@@ -462,55 +338,70 @@ void init_ptmcmc(LALInferenceRunState *runState)
         adapt_verbose = 1;
 
     /* Save everything in the run state */
-    LALInferenceVariables *algorithm_params = runState->algorithmParams;
-
-    LALInferenceAddVariable(algorithm_params, "Niter", &nsteps,
+    LALInferenceAddVariable(algorithm_params, "verbose", &verbose,
                             LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
 
-    LALInferenceAddVariable(algorithm_params, "Neff", &neff,
+    LALInferenceAddVariable(algorithm_params, "benchmark", &benchmark,
                             LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
 
-    LALInferenceAddVariable(algorithm_params, "Nskip", &skip,
+    LALInferenceAddVariable(algorithm_params, "step", &step,
                             LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
 
-    LALInferenceAddVariable(algorithm_params, "Tskip", &Tskip,
+    LALInferenceAddVariable(algorithm_params, "nsteps", &nsteps,
                             LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
 
-    LALInferenceAddVariable(algorithm_params, "Ntemp", &ntemp,
+    LALInferenceAddVariable(algorithm_params, "skip", &skip,
                             LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
 
-    LALInferenceAddVariable(algorithm_params, "tempMin", &tempMin,
+    LALInferenceAddVariable(algorithm_params, "neff", &neff,
+                            LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
+
+    LALInferenceAddVariable(algorithm_params, "tskip", &Tskip,
+                            LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
+
+    LALInferenceAddVariable(algorithm_params, "ntemp", &ntemp,
+                            LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
+
+    LALInferenceAddVariable(algorithm_params, "temp_min", &tempMin,
                             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
 
-    LALInferenceAddVariable(algorithm_params, "tempMax", &tempMax,
+    LALInferenceAddVariable(algorithm_params, "temp_max", &tempMax,
                             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
 
     LALInferenceAddVariable(algorithm_params, "de_buffer_limit", &de_buffer_limit,
                             LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
 
-    LALInferenceAddVariable(algorithm_params, "trigSNR", &trigSNR,
+    LALInferenceAddVariable(algorithm_params, "trig_snr", &trigSNR,
                             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
 
-    LALInferenceAddVariable(algorithm_params, "MPIrank", &mpi_rank,
+    LALInferenceAddVariable(algorithm_params, "mpirank", &mpi_rank,
                             LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
 
     LALInferenceAddVariable(algorithm_params, "acl", &acl,
                             LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
 
-    LALInferenceAddVariable(algorithm_params, "tempVerbose", &temp_verbose,
+    LALInferenceAddVariable(algorithm_params, "temp_verbose", &temp_verbose,
                             LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
 
-    LALInferenceAddVariable(algorithm_params, "adaptVerbose", &adapt_verbose,
+    LALInferenceAddVariable(algorithm_params, "adapt_verbose", &adapt_verbose,
                             LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
 
     /* Build the temperature ladder */
     INT4 ntemp_per_thread = LALInferenceBuildHybridTempLadder(runState);
 
     /* Initialize the walkers on this MPI thread */
-    init_threads(runState, ntemp_per_thread);
+    LALInferenceInitCBCThreads(runState, ntemp_per_thread);
 
     /* Establish the random state across MPI threads */
     init_mpi_randomstate(runState);
+
+    /* Build the proposals and randomize */
+    propArgs = LALInferenceParseProposalArgs(runState);
+    for (i=0; i<runState->nthreads; i++) {
+        thread = runState->threads[i];
+        thread->cycle = LALInferenceSetupDefaultInspiralProposalCycle(propArgs);
+        LALInferenceRandomizeProposalCycle(thread->cycle, thread->GSLrandom);
+    }
 }
 
 
@@ -529,25 +420,25 @@ INT4 LALInferenceBuildHybridTempLadder(LALInferenceRunState *runState) {
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
 
     ndim = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
-    ntemp = LALInferenceGetINT4Variable(runState->algorithmParams, "Ntemp");
-    tempMin = LALInferenceGetREAL8Variable(runState->algorithmParams, "tempMin");
-    tempMax = LALInferenceGetREAL8Variable(runState->algorithmParams, "tempMax");
+    ntemp = LALInferenceGetINT4Variable(runState->algorithmParams, "ntemp");
+    tempMin = LALInferenceGetREAL8Variable(runState->algorithmParams, "temp_min");
+    tempMax = LALInferenceGetREAL8Variable(runState->algorithmParams, "temp_max");
 
     /* Targeted max 'experienced' log(likelihood) of hottest chain */
     targetHotLike = ndim/2.;
 
     /* Set maximum temperature (command line value take precidence) */
-    if (LALInferenceGetProcParamVal(runState->commandLine,"--tempMax")) {
+    if (LALInferenceGetProcParamVal(runState->commandLine,"--temp-max")) {
         if (MPIrank==0)
             fprintf(stdout,"Using tempMax specified by commandline: %f.\n", ladderMax);
 
-    } else if (LALInferenceGetProcParamVal(runState->commandLine,"--trigSNR")) {        //--trigSNR given, choose ladderMax to get targetHotLike
-        trigSNR = LALInferenceGetREAL8Variable(runState->algorithmParams, "trigSNR");
+    } else if (LALInferenceGetProcParamVal(runState->commandLine,"--trigger-snr")) {        //--trigSNR given, choose ladderMax to get targetHotLike
+        trigSNR = LALInferenceGetREAL8Variable(runState->algorithmParams, "trigger-snr");
         networkSNRsqrd = trigSNR * trigSNR;
         tempMax = networkSNRsqrd/(2*targetHotLike);
 
         if (MPIrank==0)
-            fprintf(stdout,"Trigger SNR of %f specified, setting tempMax to %f.\n", trigSNR, tempMax);
+            fprintf(stdout,"Trigger SNR of %f specified, setting max temperature to %f.\n", trigSNR, tempMax);
 
     } else {
         /* Determine network SNR if injection was done */
@@ -565,18 +456,18 @@ INT4 LALInferenceBuildHybridTempLadder(LALInferenceRunState *runState) {
         /* If all else fails, use the default */
         } else {
             if (MPIrank==0)
-                fprintf(stdout, "No --trig-snr or --temp-max specified, and \
-                        not injecting a signal. Setting tempMax to default of %f.\n", tempMax);
+                fprintf(stdout, "No --trigger-snr or --temp-max specified, and \
+                        not injecting a signal. Setting max temperature to default of %f.\n", tempMax);
         }
     }
 
-    LALInferenceSetVariable(runState->algorithmParams, "tempMax", &tempMax);
+    LALInferenceSetVariable(runState->algorithmParams, "temp_max", &tempMax);
 
     if (tempMin > tempMax) {
-        fprintf(stdout,"WARNING: tempMin > tempMax.  Forcing tempMin=1.0.\n");
+        fprintf(stdout,"WARNING: temp_min > temp_max.  Forcing temp_min=1.0.\n");
         tempMin = 1.0;
 
-        LALInferenceSetVariable(runState->algorithmParams, "tempMin", &tempMin);
+        LALInferenceSetVariable(runState->algorithmParams, "temp_min", &tempMin);
     }
 
     /* Construct temperature ladder */
@@ -606,7 +497,7 @@ INT4 LALInferenceBuildHybridTempLadder(LALInferenceRunState *runState) {
         ntemp = mpi_size * ntemp_per_thread;
     }
 
-    LALInferenceSetVariable(runState->algorithmParams, "Ntemp", &ntemp);
+    LALInferenceSetVariable(runState->algorithmParams, "ntemp", &ntemp);
 
     if (flexible_tempmax)
         tempDelta = 1. + sqrt(2./(REAL8)ndim);
@@ -829,7 +720,7 @@ int main(int argc, char *argv[]){
     /* This includes reading in the data */
     /* And performing any injections specified */
     /* And allocating memory */
-    runState = init_runstate(procParams);
+    runState = LALInferenceInitRunState(procParams);
 
     if (runState == NULL) {
         if (LALInferenceGetProcParamVal(proc_params, "--help")) {
@@ -843,6 +734,7 @@ int main(int argc, char *argv[]){
 
     /* Handle PTMCMC setup */
     init_ptmcmc(runState);
+
 
     /* Choose the prior */
     LALInferenceInitPrior(runState);
