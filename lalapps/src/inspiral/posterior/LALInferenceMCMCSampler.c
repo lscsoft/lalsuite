@@ -60,6 +60,11 @@
 const char *const parallelSwapProposalName = "ParallelSwap";
 const char *const clusteredKDEProposalName = "ClusteredKDEProposal";
 
+typedef enum {
+  USES_DISTANCE_VARIABLE,
+  USES_LOG_DISTANCE_VARIABLE
+} DistanceParam;
+
 static void
 thinDifferentialEvolutionPoints(LALInferenceRunState *runState) {
   size_t i;
@@ -393,14 +398,30 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	     (runState->likelihood==&LALInferenceMarginalisedPhaseLogLikelihood &&
 	      !LALInferenceGetProcParamVal(runState->commandLine, "--malmquistPrior"))) {
     LALInferenceIFOData *headData = runState->data;
-    REAL8 d = *(REAL8 *)LALInferenceGetVariable(runState->currentParams, "distance");
+    REAL8 d;
+    DistanceParam distParam;
+    if (LALInferenceCheckVariable(runState->currentParams, "distance")) {
+      distParam = USES_DISTANCE_VARIABLE;
+      d = *(REAL8 *)LALInferenceGetVariable(runState->currentParams, "distance");
+    } else if (LALInferenceCheckVariable(runState->currentParams, "logdistance")) {
+      distParam = USES_LOG_DISTANCE_VARIABLE;
+      d = *(REAL8 *)LALInferenceGetVariable(runState->currentParams, "logdistance");
+    } else {
+      XLAL_ERROR_VOID(XLAL_FAILURE, "could not find 'distance' or 'logdistance' in current params");
+    }
+
     REAL8 bigD = INFINITY;
 
     /* Don't store to cache, since distance scaling won't work */
     LALSimInspiralWaveformCache *cache = runState->model->waveformCache;
     runState->model->waveformCache = NULL;
 
-    LALInferenceSetVariable(runState->currentParams, "distance", &bigD);
+    if (distParam == USES_DISTANCE_VARIABLE) {
+      LALInferenceSetVariable(runState->currentParams, "distance", &bigD);
+    } else {
+      LALInferenceSetVariable(runState->currentParams, "logdistance", &bigD);
+    }
+
     nullLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->model);
 
     runState->model->waveformCache = cache;
@@ -411,7 +432,12 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
       i++;
     }
 
-    LALInferenceSetVariable(runState->currentParams, "distance", &d);
+    if (distParam == USES_DISTANCE_VARIABLE) {
+      LALInferenceSetVariable(runState->currentParams, "distance", &d);
+    } else {
+      LALInferenceSetVariable(runState->currentParams, "logdistance", &d);
+    }
+
   } else {
     nullLikelihood = 0.0;
     LALInferenceIFOData *headData = runState->data;
@@ -1491,7 +1517,12 @@ FILE *LALInferencePrintPTMCMCHeaderOrResume(LALInferenceRunState *runState) {
   ppt = LALInferenceGetProcParamVal(runState->commandLine, "--outfile");
   if (ppt) {
     outFileName = (char*)XLALCalloc(strlen(ppt->value)+255,sizeof(char*));
-    sprintf(outFileName,"%s.%2.2d",ppt->value,MPIrank);
+    if (MPIrank == 0) {
+      sprintf(outFileName,"%s",ppt->value);
+      //Because of the way Pegasus handles file names, it needs exact match between --output and filename
+    } else {
+      sprintf(outFileName,"%s.%2.2d",ppt->value,MPIrank);
+    }
   } else {
     outFileName = (char*)XLALCalloc(255,sizeof(char*));
     sprintf(outFileName,"PTMCMC.output.%u.%2.2d",randomseed,MPIrank);

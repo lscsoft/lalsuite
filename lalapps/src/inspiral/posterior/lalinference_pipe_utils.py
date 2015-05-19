@@ -1119,7 +1119,7 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
       self.engine='lalinferencemcmc'
       exe=cp.get('condor',self.engine)
       if cp.has_option('engine','site'):
-        if self.site is not None and self.self!='local':
+        if self.site is not None and self.site!='local':
           universe='vanilla'
         else:
           universe="standard"
@@ -1202,13 +1202,16 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     """
     Over-load base class method to choose condor universe properly
     """
-    if site is not None and site!='local':
-      self.set_universe('vanilla')
-    else:
-      if self.resume:
+    if self.engine=='lalinferencenest':
+      if site is not None and site!='local':
         self.set_universe('vanilla')
       else:
-        self.set_universe('standard')
+        if self.resume:
+          self.set_universe('vanilla')
+        else:
+          self.set_universe('standard')
+    else:
+      self.set_universe('vanilla')
     pipeline.CondorDAGJob.set_grid_site(self,site)
 
 
@@ -1478,9 +1481,10 @@ class LALInferenceMCMCNode(EngineNode):
     self.add_pegasus_profile('condor','request_cpus',li_job.machine_count)
 
   def set_output_file(self,filename):
-    self.posfile=filename+'.00'
-    self.add_file_opt(self.outfilearg,filename,file_is_output_file=True)
-    self.add_output_file(self.posfile)
+    self.posfile=filename
+    # Should also take care of the higher temperature outpufiles with
+    # self.add_output_file, getting the number of files from machine_count
+    self.add_file_opt(self.outfilearg,self.posfile,file_is_output_file=True)
 
   def get_pos_file(self):
     return self.posfile
@@ -1548,6 +1552,7 @@ class ResultsPageNode(pipeline.CondorDAGNode):
         #self.add_file_opt('archive','results.tar.gz',file_is_output_file=True)
         mkdirs(path)
         self.posfile=os.path.join(path,'posterior_samples.dat')
+        self.add_output_file(self.posfile)
     def get_output_path(self):
         return self.webpath
     def set_injection(self,injfile,eventnumber):
@@ -1604,7 +1609,7 @@ class CoherenceTestJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     def __init__(self,cp,submitFile,logdir,dax=False):
       exe=cp.get('condor','coherencetest')
       pipeline.CondorDAGJob.__init__(self,"vanilla",exe)
-      pipeline.AnalysisJob.__init__(self,cp,dax=dax) 
+      pipeline.AnalysisJob.__init__(self,cp,dax=dax)
       if cp.has_option('analysis','accounting_group'):
         self.add_condor_cmd('accounting_group',cp.get('analysis','accounting_group'))
       self.add_opt('coherent-incoherent','')
@@ -1658,7 +1663,7 @@ class MergeNSJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     def __init__(self,cp,submitFile,logdir,dax=False):
       exe=cp.get('condor','mergescript')
       pipeline.CondorDAGJob.__init__(self,"vanilla",exe)
-      pipeline.AnalysisJob.__init__(self,cp,dax=dax) 
+      pipeline.AnalysisJob.__init__(self,cp,dax=dax)
       if cp.has_option('analysis','accounting_group'):
         self.add_condor_cmd('accounting_group',cp.get('analysis','accounting_group'))
       self.set_sub_file(os.path.abspath(submitFile))
