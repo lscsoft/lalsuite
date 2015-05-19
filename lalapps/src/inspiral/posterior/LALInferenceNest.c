@@ -164,37 +164,6 @@ Initialisation arguments:\n\
 	return(irs);
 }
 
-void initializeMalmquistPrior(LALInferenceRunState *runState)
-{
-  
-  REAL8 malmquist_loudest = 0.0;
-  REAL8 malmquist_second_loudest = 5.0;
-  REAL8 malmquist_network = 0.0;
-  ProcessParamsTable *commandLine=runState->commandLine;
-  ProcessParamsTable *ppt=NULL;
-  
-  ppt=LALInferenceGetProcParamVal(commandLine,"--malmquist-loudest-snr");
-  if(ppt)
-    malmquist_loudest = atof(ppt->value);
-  ppt=LALInferenceGetProcParamVal(commandLine,"--malmquist-second-loudest-snr");
-  if(ppt)
-    malmquist_second_loudest = atof(ppt->value);
-  ppt=LALInferenceGetProcParamVal(commandLine,"--malmquist-network-snr");
-  if(ppt)
-    malmquist_network = atof(ppt->value);
-  LALInferenceAddVariable(runState->priorArgs, "malmquist_loudest_snr", &malmquist_loudest, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-  LALInferenceAddVariable(runState->priorArgs, "malmquist_second_loudest_snr", &malmquist_second_loudest, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
-  LALInferenceAddVariable(runState->priorArgs, "malmquist_network_snr", &malmquist_network, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-  UINT4 malmquist=1;
-  LALInferenceAddVariable(runState->priorArgs, "malmquist", &malmquist, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
-  runState->prior=&LALInferenceInspiralPrior;
-  fprintf(stdout,"\nUsing Malmquist Prior with limits:\n");
-  fprintf(stdout,"Loudest SNR >= %lf\n",malmquist_loudest);
-  fprintf(stdout,"Second Loudest SNR >= %lf\n",malmquist_second_loudest);
-  fprintf(stdout,"Network SNR >= %lf\n",malmquist_network);
-  
-}
-
 
 /***** Initialise Nested Sampling structures ****/
 /* Fill in samples from the prior distribution */
@@ -248,16 +217,19 @@ Nested sampling arguments:\n\
 	INT4 tmpi=0,randomseed=0;
 	REAL8 tmp=0;
 	
-
+    /* Single thread only */
+    runState->threads=XLALCalloc(1,sizeof(LALInferenceThreadState *));
+    runState->threads[0]=XLALCalloc(1,sizeof(LALInferenceThreadState));
+    LALInferenceThreadState *threadState = runState->threads[0];
 	
-	/* Set up the appropriate functions for the nested sampling algorithm */
+    /* Set up the appropriate functions for the nested sampling algorithm */
 	runState->algorithm=&LALInferenceNestedSamplingAlgorithm;
-        runState->evolve=&LALInferenceNestedSamplingOneStep;
+    runState->evolve=&LALInferenceNestedSamplingOneStep;
 	
 	/* use the ptmcmc proposal to sample prior */
-	runState->proposal=&NSWrapMCMCLALProposal;
+	threadState->proposal=&NSWrapMCMCLALProposal;
 	REAL8 temp=1.0;
-	LALInferenceAddVariable(runState->proposalArgs,"temperature",&temp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
+	LALInferenceAddVariable(threadState->proposalArgs,"temperature",&temp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
 	
 	/* Default likelihood is the frequency domain one */
 	runState->likelihood=&LALInferenceUndecomposedFreqDomainLogLikelihood;
@@ -271,24 +243,22 @@ Nested sampling arguments:\n\
     else{
       runState->prior = &LALInferenceInspiralPrior;
     }
-    /* For Compatibility with MCMC command line */
-    if(LALInferenceGetProcParamVal(commandLine,"--malmquist-prior")) initializeMalmquistPrior(runState);
 	
 	/* Set up the prior for analytic tests if needed */
 	if(LALInferenceGetProcParamVal(commandLine,"--correlatedGaussianLikelihood")){
 		runState->prior=LALInferenceAnalyticNullPrior;
 	}
-    	if(LALInferenceGetProcParamVal(commandLine,"--bimodalGaussianLikelihood")){
+  	if(LALInferenceGetProcParamVal(commandLine,"--bimodalGaussianLikelihood")){
 		runState->prior=LALInferenceAnalyticNullPrior;
 	}
-        if(LALInferenceGetProcParamVal(commandLine,"--rosenbrockLikelihood")){
+    if(LALInferenceGetProcParamVal(commandLine,"--rosenbrockLikelihood")){
                 runState->prior=LALInferenceAnalyticNullPrior;
-        }
+    }
     
 	#ifdef HAVE_LIBLALXML
-	runState->logsample=LogNSSampleAsMCMCSampleToArray;
+	threadState->logsample=LogNSSampleAsMCMCSampleToArray;
 	#else
-	runState->logsample=LogNSSampleAsMCMCSampleToFile;
+	threadState->logsample=LogNSSampleAsMCMCSampleToFile;
 	#endif
 	
 	printf("set number of live points.\n");

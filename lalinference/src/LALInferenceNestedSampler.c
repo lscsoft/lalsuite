@@ -375,7 +375,9 @@ void LALInferenceNScalcCVM(gsl_matrix **cvm, LALInferenceVariables **Live, UINT4
 void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 {
   UINT4 iter=0,i,j,minpos;
+  
   LALInferenceThreadState *threadState = runState->threads[0]; /* single threaded */
+  
   UINT4 Nlive=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
   UINT4 Nruns=100;
   REAL8 *logZarray,*oldZarray,*Harray,*logwarray,*logtarray;
