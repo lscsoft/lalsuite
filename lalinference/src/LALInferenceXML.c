@@ -52,7 +52,7 @@
  * \author John Veitch
  *
  */
-xmlNodePtr XLALInferenceVariablesArray2VOTTable(const LALInferenceVariables *varsArray, UINT4 N, const char *tablename)
+xmlNodePtr XLALInferenceVariablesArray2VOTTable(LALInferenceVariables **varsArray, UINT4 N, const char *tablename)
 {
   xmlNodePtr fieldNodeList=NULL;
   xmlNodePtr paramNodeList=NULL;
@@ -75,7 +75,7 @@ xmlNodePtr XLALInferenceVariablesArray2VOTTable(const LALInferenceVariables *var
 	
 	field_ptr=fieldNodeList;
 	param_ptr=paramNodeList;
-	varitem=varsArray[0].head;
+	varitem=varsArray[0]->head;
 	
   /* Build a list of PARAM and FIELD elements */
   while(varitem)
@@ -116,18 +116,18 @@ xmlNodePtr XLALInferenceVariablesArray2VOTTable(const LALInferenceVariables *var
   valuearrays=XLALCalloc(Nfields,sizeof(void *));
   VOTABLE_DATATYPE *dataTypes=XLALCalloc(Nfields,sizeof(VOTABLE_DATATYPE));
   /* Build array of DATA for fields */
-	for(j=0,varitem=varsArray[0].head; varitem; varitem=varitem->next)
+	for(j=0,varitem=varsArray[0]->head; varitem; varitem=varitem->next)
 	{
 		switch(varitem->vary){
 			case LALINFERENCE_PARAM_LINEAR:
 			case LALINFERENCE_PARAM_CIRCULAR:
 			case LALINFERENCE_PARAM_OUTPUT:
 			{
-				UINT4 typesize = LALInferenceTypeSize[LALInferenceGetVariableType(&varsArray[0],varitem->name)];
+				UINT4 typesize = LALInferenceTypeSize[LALInferenceGetVariableType(varsArray[0],varitem->name)];
 				valuearrays[j]=XLALCalloc(N,typesize);
 				dataTypes[j]=LALInferenceVariableType2VOT(varitem->type);
 				for(i=0;i<N;i++)
-					memcpy((char *)valuearrays[j]+i*typesize,LALInferenceGetVariable(&varsArray[i],varitem->name),typesize);
+					memcpy((char *)valuearrays[j]+i*typesize,LALInferenceGetVariable(varsArray[i],varitem->name),typesize);
 				j++;
 			}	
 			default:
