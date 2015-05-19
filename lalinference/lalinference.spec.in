@@ -12,8 +12,33 @@ Source: %{name}-%{version}.tar.gz
 URL: https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: swig python-devel octave-devel
-Requires: chealpix healpy gsl >= 1.15 libmetaio lal lalmetaio lalxml lalsimulation lalinspiral lalpulsar
+BuildRequires: swig, python-devel, octave-devel, chealpix-devel, gsl-devel
+BuildRequires: libmetaio-devel, libxml2-devel, numpy
+BuildRequires: lal-devel >= 6.14.0
+BuildRequires: lal-python >= 6.14.0
+BuildRequires: lal-octave >= 6.14.0
+BuildRequires: lalmetaio-devel >= 1.2.0
+BuildRequires: lalmetaio-python >= 1.2.0
+BuildRequires: lalmetaio-octave >= 1.2.0
+BuildRequires: lalxml-devel >= 1.1.0
+BuildRequires: lalxml-python >= 1.1.0
+BuildRequires: lalxml-octave >= 1.1.0
+BuildRequires: lalsimulation-devel >= 1.3.0
+BuildRequires: lalsimulation-python >= 1.3.0
+BuildRequires: lalsimulation-octave >= 1.3.0
+BuildRequires: lalinspiral-devel >= 1.6.0
+BuildRequires: lalinspiral-python >= 1.6.0
+BuildRequires: lalinspiral-octave >= 1.6.0
+BuildRequires: lalpulsar-devel >= 1.11.0
+BuildRequires: lalpulsar-python >= 1.11.0
+BuildRequires: lalpulsar-octave >= 1.11.0
+Requires: chealpix, healpy, gsl >= 1.15, libmetaio, libxml2
+Requires: lal >= 6.14.0
+Requires: lalmetaio >= 1.2.0
+Requires: lalxml >= 1.1.0
+Requires: lalsimulation >= 1.3.0
+Requires: lalinspiral >= 1.6.0
+Requires: lalpulsar >= 1.11.0
 Prefix: %{_prefix}
 
 %description
@@ -25,7 +50,13 @@ that use the LAL Inference library.
 Summary: Files and documentation needed for compiling programs that use LAL Inference
 Group: LAL
 Requires: %{name} = %{version}
-Requires: chealpix-devel gsl-devel >= 1.15 libmetaio-devel lal-devel lalmetaio-devel lalxml-devel lalsimulation-devel lalinspiral-devel lalpulsar-devel
+Requires: chealpix-devel, gsl-devel >= 1.15, libmetaio-devel, libxml2-devel
+Requires: lal-devel >= 6.14.0
+Requires: lalmetaio-devel >= 1.2.0
+Requires: lalxml-devel >= 1.1.0
+Requires: lalsimulation-devel >= 1.3.0
+Requires: lalinspiral-devel >= 1.6.0
+Requires: lalpulsar-devel >= 1.11.0
 %description devel
 The LSC Algorithm Inference Library for gravitational wave data analysis. This
 package contains files needed build applications that use the LAL Inference
@@ -35,7 +66,13 @@ library.
 Summary: Python Bindings for LALInference
 Group: LAL
 Requires: %{name} = %{version}
-Requires: python numpy lal-python lalmetaio-python lalxml-python lalsimulation-python lalinspiral-python lalpulsar-python
+Requires: python, numpy
+Requires: lal-python >= 6.14.0
+Requires: lalmetaio-python >= 1.2.0
+Requires: lalxml-python >= 1.1.0
+Requires: lalsimulation-python >= 1.3.0
+Requires: lalinspiral-python >= 1.6.0
+Requires: lalpulsar-python >= 1.11.0
 %description python
 The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Python bindings for LALInference.
@@ -44,7 +81,13 @@ This package provides the Python bindings for LALInference.
 Summary: Octave Bindings for LALInference
 Group: LAL
 Requires: %{name} = %{version}
-Requires: octave lal-octave lalmetaio-octave lalxml-octave lalsimulation-octave lalinspiral-octave lalpulsar-octave
+Requires: octave
+Requires: lal-octave >= 6.14.0
+Requires: lalmetaio-octave >= 1.2.0
+Requires: lalxml-octave >= 1.1.0
+Requires: lalsimulation-octave >= 1.3.0
+Requires: lalinspiral-octave >= 1.6.0
+Requires: lalpulsar-octave >= 1.11.0
 %description octave
 The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Octave bindings for LALInference.
@@ -55,6 +98,9 @@ This package provides the Octave bindings for LALInference.
 %build
 %configure --disable-gcc-flags --enable-swig --enable-openmp
 %{__make} V=1
+
+%check
+%{__make} V=1 check
 
 %install
 %make_install
@@ -84,6 +130,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %files python
 %defattr(-,root,root)
 %{_bindir}/bayestar_*
+%{_bindir}/rapidpe_*
 %{_libdir}/python*/site-packages/lalinference/*.py
 %{_libdir}/python*/site-packages/lalinference/*.pyc
 %{_libdir}/python*/site-packages/lalinference/bayestar/*.py
@@ -91,10 +138,13 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %{_libdir}/python*/site-packages/lalinference/bayestar/sky_map.so*
 %{_libdir}/python*/site-packages/lalinference/cylon.csv
 %{_libdir}/python*/site-packages/lalinference/ne_simplified_coastline.json
+%{_libdir}/python*/site-packages/lalinference/rapid_pe/*.py
+%{_libdir}/python*/site-packages/lalinference/rapid_pe/*.pyc
 %{_libdir}/python*/site-packages/lalinference/_lalinference.so*
 %exclude %{_libdir}/python*/site-packages/lalinference/*.pyo
 %exclude %{_libdir}/python*/site-packages/lalinference/bayestar/*.pyo
 %exclude %{_libdir}/python*/site-packages/lalinference/bayestar/*.la
+%exclude %{_libdir}/python*/site-packages/lalinference/rapid_pe/*.pyo
 
 %files octave
 %defattr(-,root,root)

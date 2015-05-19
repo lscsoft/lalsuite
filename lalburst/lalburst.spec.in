@@ -12,8 +12,21 @@ Source: %{name}-%{version}.tar.gz
 URL: https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: swig python-devel octave-devel
-Requires: gsl libmetaio lal lalmetaio lalsimulation
+BuildRequires: swig, python-devel, octave-devel, gsl-devel
+BuildRequires: libmetaio-devel, numpy
+BuildRequires: lal-devel >= 6.14.0
+BuildRequires: lal-python >= 6.14.0
+BuildRequires: lal-octave >= 6.14.0
+BuildRequires: lalmetaio-devel >= 1.2.0
+BuildRequires: lalmetaio-python >= 1.2.0
+BuildRequires: lalmetaio-octave >= 1.2.0
+BuildRequires: lalsimulation-devel >= 1.3.0
+BuildRequires: lalsimulation-python >= 1.3.0
+BuildRequires: lalsimulation-octave >= 1.3.0
+Requires: gsl, libmetaio
+Requires: lal >= 6.14.0
+Requires: lalmetaio >= 1.2.0
+Requires: lalsimulation >= 1.3.0
 Prefix: %{_prefix}
 
 %description
@@ -25,7 +38,10 @@ that use the LAL Burst library.
 Summary: Files and documentation needed for compiling programs that use LAL Burst
 Group: LAL
 Requires: %{name} = %{version}
-Requires: gsl-devel libmetaio-devel lal-devel lalmetaio-devel lalsimulation-devel
+Requires: gsl-devel, libmetaio-devel
+Requires: lal-devel >= 6.14.0
+Requires: lalmetaio-devel >= 1.2.0
+Requires: lalsimulation-devel >= 1.3.0
 %description devel
 The LSC Algorithm Burst Library for gravitational wave data analysis. This
 package contains files needed build applications that use the LAL Burst
@@ -35,7 +51,10 @@ library.
 Summary: Python Bindings for LALBurst
 Group: LAL
 Requires: %{name} = %{version}
-Requires: python numpy lal-python lalmetaio-python lalsimulation-python
+Requires: python, numpy
+Requires: lal-python >= 6.14.0
+Requires: lalmetaio-python >= 1.2.0
+Requires: lalsimulation-python >= 1.3.0
 %description python
 The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Python bindings for LALBurst.
@@ -44,7 +63,10 @@ This package provides the Python bindings for LALBurst.
 Summary: Octave Bindings for LALBurst
 Group: LAL
 Requires: %{name} = %{version}
-Requires: octave lal-octave lalmetaio-octave lalsimulation-octave
+Requires: octave
+Requires: lal-octave >= 6.14.0
+Requires: lalmetaio-octave >= 1.2.0
+Requires: lalsimulation-octave >= 1.3.0
 %description octave
 The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Octave bindings for LALBurst.
@@ -55,6 +77,9 @@ This package provides the Octave bindings for LALBurst.
 %build
 %configure --disable-gcc-flags --enable-swig
 %{__make} V=1
+
+%check
+%{__make} V=1 check
 
 %install
 %make_install

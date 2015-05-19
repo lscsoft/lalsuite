@@ -12,8 +12,14 @@ Source: %{name}-%{version}.tar.gz
 URL: https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: swig python-devel octave-devel
-Requires: gsl fftw lal lalxml
+BuildRequires: swig, python-devel, octave-devel, gsl-devel, fftw-devel, numpy
+BuildRequires: lal-devel >= 6.14.0
+BuildRequires: lal-python >= 6.14.0
+BuildRequires: lal-octave >= 6.14.0
+BuildRequires: lalxml-devel >= 1.1.0
+Requires: gsl, fftw
+Requires: lal >= 6.14.0
+Requires: lalxml >= 1.1.0
 Prefix: %{_prefix}
 
 %description
@@ -25,7 +31,9 @@ that use the LAL Pulsar library.
 Summary: Files and documentation needed for compiling programs that use LAL Pulsar
 Group: LAL
 Requires: %{name} = %{version}
-Requires: gsl-devel fftw-devel fftw-static lal-devel lalxml-devel
+Requires: gsl-devel, fftw-devel, fftw-static
+Requires: lal-devel >= 6.14.0
+Requires: lalxml-devel >= 1.1.0
 %description devel
 The LSC Algorithm Pulsar Library for gravitational wave data analysis.
 This package contains files needed build applications that use the LAL
@@ -35,7 +43,9 @@ Pulsar library.
 Summary: Python bindings for LALPulsar
 Group: LAL
 Requires: %{name} = %{version}
-Requires: python numpy lal-python lalxml-python
+Requires: python, numpy
+Requires: lal-python >= 6.14.0
+Requires: lalxml-python >= 1.1.0
 %description python
 This package provides the Python bindings for LALPulsar.
 
@@ -43,7 +53,9 @@ This package provides the Python bindings for LALPulsar.
 Summary: Octave bindings for LALPulsar
 Group: LAL
 Requires: %{name} = %{version}
-Requires: octave lal-octave lalxml-octave
+Requires: octave
+Requires: lal-octave >= 6.14.0
+Requires: lalxml-octave >= 1.1.0
 %description octave
 This package provides the Octave bindings for LALPulsar.
 
@@ -53,6 +65,9 @@ This package provides the Octave bindings for LALPulsar.
 %build
 %configure --disable-gcc-flags --enable-swig --without-simd
 %{__make} V=1
+
+%check
+%{__make} V=1 check
 
 %install
 %make_install

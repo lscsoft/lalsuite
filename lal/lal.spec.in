@@ -12,8 +12,8 @@ Source: %{name}-%{version}.tar.gz
 URL: https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html
 Packager: Jolien Creighton <jolien@uwm.edu>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: swig python-devel octave-devel
-Requires: gsl fftw
+BuildRequires: swig, python-devel, octave-devel, gsl-devel, fftw-devel, numpy
+Requires: gsl, fftw
 Prefix: %{_prefix}
 
 %description
@@ -25,7 +25,7 @@ that use the LAL library.
 Summary: Files and documentation needed for compiling programs that use LAL
 Group: LAL
 Requires: %{name} = %{version}
-Requires: gsl-devel fftw-devel fftw-static
+Requires: gsl-devel, fftw-devel, fftw-static
 %description devel
 The LSC Algorithm Library for gravitational wave data analysis.
 This package contains files needed build applications that use the LAL library
@@ -35,7 +35,7 @@ as well as the documentation for the library.
 Summary: Python bindings for LAL
 Group: LAL
 Requires: %{name} = %{version}
-Requires: python numpy
+Requires: python, numpy
 %description python
 The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Python bindings.
@@ -56,6 +56,9 @@ This package provides the Octave bindings.
 %configure --disable-gcc-flags --disable-debug --enable-swig
 %{__make} V=1
 
+%check
+%{__make} V=1 check
+
 %install
 %make_install
 rm -f $RPM_BUILD_ROOT%{_libdir}/*.la
@@ -73,6 +76,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %files
 %defattr(-,root,root)
 %{_bindir}/lal-version
+%{_bindir}/lal-simd-detect
 %{_libdir}/*.so*
 %{_sysconfdir}/lal-user-env.*
 

@@ -12,8 +12,13 @@ Source: %{name}-%{version}.tar.gz
 URL: https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: swig python-devel octave-devel
-Requires: libframe lal
+BuildRequires: swig, python-devel, octave-devel, libframe-devel
+BuildRequires: ldas-tools-framecppc-devel, numpy
+BuildRequires: lal-devel >= 6.14.0
+BuildRequires: lal-python >= 6.14.0
+BuildRequires: lal-octave >= 6.14.0
+Requires: libframe, ldas-tools-framecppc
+Requires: lal >= 6.14.0
 Prefix: %{_prefix}
 
 %description
@@ -25,7 +30,8 @@ that use the LAL Frame library.
 Summary: Files and documentation needed for compiling programs that use LAL Frame
 Group: LAL
 Requires: %{name} = %{version}
-Requires: libframe-devel lal-devel
+Requires: libframe-devel, ldas-tools-framecppc-devel
+Requires: lal-devel >= 6.14.0
 %description devel
 The LSC Algorithm Frame Library for gravitational wave data analysis. This
 package contains files needed build applications that use the LAL Frame
@@ -35,7 +41,8 @@ library.
 Summary: Python Bindings for LALFrame
 Group: LAL
 Requires: %{name} = %{version}
-Requires: python numpy lal-python
+Requires: python, numpy
+Requires: lal-python >= 6.14.0
 %description python
 The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Python bindings for LALFrame.
@@ -44,7 +51,8 @@ This package provides the Python bindings for LALFrame.
 Summary: Octave Bindings for LALFrame
 Group: LAL
 Requires: %{name} = %{version}
-Requires: octave lal-octave
+Requires: octave
+Requires: lal-octave >= 6.14.0
 %description octave
 The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Octave bindings for LALFrame.
@@ -55,6 +63,9 @@ This package provides the Octave bindings for LALFrame.
 %build
 %configure --disable-gcc-flags --enable-swig
 %{__make} V=1
+
+%check
+%{__make} V=1 check
 
 %install
 %make_install
