@@ -125,7 +125,7 @@ void generate_interpolant( LALInferenceRunState *runState ){
   /* check if using a Gaussian likelihoodm and therefore need variance weighted ROQ values */
   if ( LALInferenceGetProcParamVal( runState->commandLine, "--gaussian-like" ) ){ gaussianLike = 1; }
 
-  ifo = runState->model->ifo;
+  ifo = runState->threads[0]->model->ifo;
 
   /* we need to get the frequency factors */
   REAL8Vector *freqFactors = *(REAL8Vector**)LALInferenceGetVariable( ifo->params, "freqfactors" );
@@ -195,11 +195,12 @@ void generate_interpolant( LALInferenceRunState *runState ){
         LALInferenceRunState *tmpRS = XLALMalloc(sizeof(LALInferenceRunState));
         LALInferenceIFOModel *ifotmp = XLALMalloc(sizeof(LALInferenceIFOModel));
         ifotmp->next = NULL;
-        tmpRS->model = XLALMalloc(sizeof(LALInferenceModel));
-        tmpRS->model->templt = runState->model->templt;
-        tmpRS->currentParams = runState->currentParams;
-        tmpRS->model->params = XLALCalloc(1, sizeof(LALInferenceVariables));
-        tmpRS->model->ifo = ifotmp;
+        tmpRS->threads = LALInferenceInitThreads(1);
+        tmpRS->threads[0]->model = XLALMalloc(sizeof(LALInferenceModel));
+        tmpRS->threads[0]->model->templt = runState->threads[0]->model->templt;
+        tmpRS->threads[0]->currentParams = runState->threads[0]->currentParams;
+        tmpRS->threads[0]->model->params = XLALCalloc(1, sizeof(LALInferenceVariables));
+        tmpRS->threads[0]->model->ifo = ifotmp;
         tmpRS->GSLrandom = runState->GSLrandom;
         tmpRS->priorArgs = runState->priorArgs;
 
@@ -259,8 +260,9 @@ void generate_interpolant( LALInferenceRunState *runState ){
         XLALDestroyTimestampVector( ifotmp->times );
         XLALDestroyCOMPLEX16TimeSeries( ifotmp->compTimeSignal );
         XLALDestroyREAL8TimeSeries( ifotmp->timeData );
-        LALInferenceClearVariables( tmpRS->model->params );
-        XLALFree( tmpRS->model );
+        LALInferenceClearVariables( tmpRS->threads[0]->model->params );
+        XLALFree( tmpRS->threads[0]->model );
+        XLALFree( tmpRS->threads );
         XLALFree( tmpRS );
 
         /* generate the interpolants (pass the data noise variances for weighting the interpolants in the case of using a Gaussian likelihood) */
@@ -458,7 +460,7 @@ void generate_interpolant( LALInferenceRunState *runState ){
     XLAL_CALLGSL( gsl_matrix_complex_memcpy(data->roq->mmweights, &mmview.matrix) );
     XLALFree( mmweights );
 
-    /* add interpolation weights and nodes to a variable in runState->model->ifo->params */
+    /* add interpolation weights and nodes to a variable in runState->threads[0]->model->ifo->params */
     LALInferenceAddVariable( ifo->params, "numBases", &nbases, LALINFERENCE_UINT4Vector_t, LALINFERENCE_PARAM_FIXED );
 
     /* reset freqfactors to the correct value */
@@ -507,19 +509,19 @@ void generate_interpolant( LALInferenceRunState *runState ){
  */
 gsl_matrix_complex *generate_training_set( LALInferenceRunState *rs, UINT4 n, UINT4 freqnodes ){
   UINT4 j = 0;
-  gsl_matrix_complex *ts = gsl_matrix_complex_alloc(n, rs->model->ifo->times->length);
+  gsl_matrix_complex *ts = gsl_matrix_complex_alloc(n, rs->threads[0]->model->ifo->times->length);
   REAL8 *fnodes = NULL;
 
   for ( j=0; j<n; j++ ){
-    /* choose random variables values and fill in runState->model->params */
-    LALInferenceVariableItem *item = rs->currentParams->head;
+    /* choose random variables values and fill in runState->threads[0]->model->params */
+    LALInferenceVariableItem *item = rs->threads[0]->currentParams->head;
 
     /* there's no need to re-scale values, so I can drawn from the scaled values */
     for(; item; item = item->next ){
       REAL8 value;
 
       if( item->vary == LALINFERENCE_PARAM_FIXED || item->vary == LALINFERENCE_PARAM_OUTPUT ){
-        LALInferenceAddVariable( rs->model->params, item->name, item->value, item->type, item->vary );
+        LALInferenceAddVariable( rs->threads[0]->model->params, item->name, item->value, item->type, item->vary );
         continue;
       }
 
@@ -547,16 +549,16 @@ gsl_matrix_complex *generate_training_set( LALInferenceRunState *rs, UINT4 n, UI
         }
         else{ XLAL_ERROR_NULL( XLAL_EFUNC, "Error... no prior specified!\n" ); }
 
-        LALInferenceAddVariable( rs->model->params, item->name, &value, item->type, item->vary );
+        LALInferenceAddVariable( rs->threads[0]->model->params, item->name, &value, item->type, item->vary );
       }
     }
 
     /* generate model */
-    rs->model->templt( rs->model );
+    rs->threads[0]->model->templt( rs->threads[0]->model );
 
     /* place model into an array */
     gsl_vector_complex_view cview;
-    cview = gsl_vector_complex_view_array((double*)rs->model->ifo->compTimeSignal->data->data, rs->model->ifo->times->length);
+    cview = gsl_vector_complex_view_array((double*)rs->threads[0]->model->ifo->compTimeSignal->data->data, rs->threads[0]->model->ifo->times->length);
     gsl_matrix_complex_set_row(ts, j, &cview.vector);
   }
 

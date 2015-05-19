@@ -185,7 +185,7 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   runState.prior = &priorFunction;
 
   /* set signal model/template */
-  runState.model->templt = &get_pulsar_model;
+  runState.threads[0]->model->templt = &get_pulsar_model;
 
   /* Generate the lookup tables and read parameters from par file */
   setup_from_par_file( &runState );
