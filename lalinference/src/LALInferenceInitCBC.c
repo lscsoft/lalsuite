@@ -35,12 +35,71 @@
 #include <lal/LALInferenceLikelihood.h>
 #include <lal/LALInferenceReadData.h>
 #include <lal/LALInferenceInit.h>
+#include <lal/LALInferenceCalibrationErrors.h>
 
 
 static void print_flags_orders_warning(SimInspiralTable *injt, ProcessParamsTable *commline);
 static void LALInferenceInitSpinVariables(LALInferenceRunState *state, LALInferenceModel *model);
 static void LALInferenceInitMassVariables(LALInferenceRunState *state);
 static void LALInferenceCheckApproximantNeeds(LALInferenceRunState *state,Approximant approx);
+
+
+/* Initialize a bare-bones run-state,
+   calling the "ReadData()" function to gather data & PSD from files,
+   and initializes other variables accordingly.
+*/
+LALInferenceRunState *LALInferenceInitRunState(ProcessParamsTable *command_line) {
+    LALInferenceRunState *run_state = XLALCalloc(1, sizeof(LALInferenceRunState));
+
+    /* Check that command line is consistent first */
+    LALInferenceCheckOptionsConsistency(command_line);
+    run_state->commandLine = command_line;
+
+    /* Read data from files or generate fake data */
+    run_state->data = LALInferenceReadData(command_line);
+    if (run_state->data == NULL)
+        return(NULL);
+
+    /* Perform injections if data successful read or created */
+    LALInferenceInjectInspiralSignal(run_state->data, command_line);
+
+    /* Apply calibration errors if desired*/
+    LALInferenceApplyCalibrationErrors(run_state, command_line);
+
+    /* Initialize parameters structure */
+    run_state->algorithmParams = XLALCalloc(1, sizeof(LALInferenceVariables));
+    run_state->priorArgs = XLALCalloc(1, sizeof(LALInferenceVariables));
+    run_state->proposalArgs = XLALCalloc(1, sizeof(LALInferenceVariables));
+
+    return(run_state);
+}
+
+
+/* 
+ * Initialize threads in memory, using LALInferenceInitCBCModel() to init models.
+ */
+void LALInferenceInitCBCThreads(LALInferenceRunState *run_state, INT4 nthreads) {
+    LALInferenceThreadState *thread;
+    INT4 t;
+
+    run_state->nthreads = nthreads;
+    run_state->threads = LALInferenceInitThreads(nthreads);
+
+    for (t = 0; t < nthreads; t++) {
+        thread = run_state->threads[t];
+
+        /* Set up CBC model and parameter array */
+        thread->model = LALInferenceInitCBCModel(run_state);
+
+        /* Setup ROQ */
+        LALInferenceSetupROQ(run_state->data, thread->model, run_state->commandLine);
+
+        LALInferenceCopyVariables(thread->model->params, thread->currentParams);
+    }
+
+    return;
+}
+
 
 /* Setup the template generation */
 /* Defaults to using LALSimulation */

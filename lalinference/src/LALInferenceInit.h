@@ -32,6 +32,12 @@
 
 #include <lal/LALInference.h>
 
+/* Initialize a bare-bones run-state. */
+LALInferenceRunState *LALInferenceInitRunState(ProcessParamsTable *command_line);
+
+/* Initialize threads in memory, using LALInferenceInitCBCModel() to init models. */
+void LALInferenceInitCBCThreads(LALInferenceRunState *run_state, INT4 nthreads);
+
 /**
  * Register a variable in vars for the model with given name, and a uniform prior.
  * Use the min and max arguments to specify a default range
