@@ -43,7 +43,7 @@ extern "C" {
 
 xmlNodePtr XLALInferenceStateVariables2VOTResource(const LALInferenceRunState *state, const char *name);
 
-xmlNodePtr XLALInferenceVariablesArray2VOTTable(LALInferenceVariables **varsArray, UINT4 N, const char *name);
+xmlNodePtr XLALInferenceVariablesArray2VOTTable(const LALInferenceVariables *varsArray, UINT4 N, const char *name);
 
 xmlNodePtr XLALInferenceVariables2VOTParamNode(const LALInferenceVariables *const vars);
 

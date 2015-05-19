@@ -2049,14 +2049,14 @@ void LALInferenceLogSampleToFile(LALInferenceRunState *state, LALInferenceVariab
  */
 void LALInferenceLogSampleToArray(LALInferenceRunState *state, LALInferenceVariables *vars)
 {
-  LALInferenceVariables **output_array=NULL;
+  LALInferenceVariables *output_array=NULL;
   UINT4 N_output_array=0;
   LALInferenceSortVariablesByName(vars);
   LALInferenceLogSampleToFile(state,vars);
 
   /* Set up the array if it is not already allocated */
   if(LALInferenceCheckVariable(state->algorithmParams,"outputarray"))
-    output_array=*(LALInferenceVariables ***)LALInferenceGetVariable(state->algorithmParams,"outputarray");
+    output_array=*(LALInferenceVariables **)LALInferenceGetVariable(state->algorithmParams,"outputarray");
   else
     LALInferenceAddVariable(state->algorithmParams,"outputarray",&output_array,LALINFERENCE_void_ptr_t,LALINFERENCE_PARAM_OUTPUT);
 
@@ -2066,16 +2066,15 @@ void LALInferenceLogSampleToArray(LALInferenceRunState *state, LALInferenceVaria
     LALInferenceAddVariable(state->algorithmParams,"N_outputarray",&N_output_array,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
 
   /* Expand the array for new sample */
-  output_array=XLALRealloc(output_array, (N_output_array+1) *sizeof(LALInferenceVariables *));
+  output_array=XLALRealloc(output_array, (N_output_array+1) *sizeof(LALInferenceVariables));
   if(!output_array){
     XLAL_ERROR_VOID(XLAL_EFAULT, "Unable to allocate array for samples.");
   }
   else
   {
     /* Save sample and update */
-      
-    output_array[N_output_array]=XLALCalloc(1,sizeof(LALInferenceVariables));
-    LALInferenceCopyVariables(vars,output_array[N_output_array]);
+    memset(&(output_array[N_output_array]),0,sizeof(LALInferenceVariables));
+    LALInferenceCopyVariables(vars,&output_array[N_output_array]);
     N_output_array++;
 
     LALInferenceSetVariable(state->algorithmParams,"outputarray",&output_array);

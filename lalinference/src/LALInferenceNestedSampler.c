@@ -805,13 +805,12 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 
     #ifdef HAVE_LIBLALXML
     /* Write out the XML if requested */
-    LALInferenceVariables **output_array=NULL;
-    
+    LALInferenceVariables *output_array=NULL;
     UINT4 N_output_array=0;
     if(LALInferenceCheckVariable(runState->algorithmParams,"outputarray")
       &&LALInferenceCheckVariable(runState->algorithmParams,"N_outputarray") )
     {
-      output_array=*(LALInferenceVariables ***)LALInferenceGetVariable(runState->algorithmParams,"outputarray");
+      output_array=*(LALInferenceVariables **)LALInferenceGetVariable(runState->algorithmParams,"outputarray");
       N_output_array=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"N_outputarray");
     }
     if(output_array && outVOTable && N_output_array>0){
@@ -834,10 +833,6 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
       fclose(fpout);
 
 
-    }
-    for(i=0;i<N_output_array;i++){
-        LALInferenceClearVariables(output_array[i]);
-        XLALFree(output_array[i]);
     }
     if(output_array) XLALFree(output_array);
     #endif
@@ -1570,15 +1565,6 @@ static int WriteNSCheckPoint(CHAR *filename, LALInferenceRunState *runState, NSi
         return 1;
     }
     LALInferenceWriteVariablesArrayBinary(progfile,runState->livePoints, Nlive);
-    INT4 N_output_array=0;
-    if(LALInferenceCheckVariable(runState->algorithmParams,"N_outputarray")) N_output_array=LALInferenceGetINT4Variable(runState->algorithmParams,"N_outputarray");
-      fwrite(&N_output_array,sizeof(INT4),1,progfile);
-    if(N_output_array!=0 )
-    {
-      LALInferenceVariables **output_array=NULL;
-      output_array=*(LALInferenceVariables ***)LALInferenceGetVariable(runState->algorithmParams,"outputarray");
-      LALInferenceWriteVariablesArrayBinary(progfile,output_array, N_output_array);
-    }
     fclose(progfile);
     return 0;
   }
@@ -1603,15 +1589,6 @@ static int ReadNSCheckPoint(CHAR *filename, LALInferenceRunState *runState, NSin
     }
     //if(retcode) return 1;
     LALInferenceReadVariablesArrayBinary(progfile,runState->livePoints,Nlive);
-      INT4 N_output_array;
-      fread(&N_output_array,sizeof(INT4),1,progfile);
-      LALInferenceVariables **output_array=NULL;
-      if(N_output_array!=0){
-          output_array=XLALCalloc(N_output_array,sizeof(LALInferenceVariables *));
-          LALInferenceReadVariablesArrayBinary(progfile,output_array,N_output_array);
-          LALInferenceAddVariable(runState->algorithmParams,"N_outputarray",&N_output_array,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
-          LALInferenceAddVariable(runState->algorithmParams,"outputarray",&output_array,LALINFERENCE_void_ptr_t,LALINFERENCE_PARAM_FIXED);
-    }
     fclose(progfile);
     return 0;
   }

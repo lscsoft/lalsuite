@@ -752,7 +752,7 @@ void rescale_output( LALInferenceRunState *runState ){
 /* if we have XML enabled */
 #ifdef HAVE_LIBLALXML
   ProcessParamsTable *ppt2 = LALInferenceGetProcParamVal( runState->commandLine, "--outXML" );
-  LALInferenceVariables **output_array = NULL;
+  LALInferenceVariables *output_array = NULL;
   UINT4 N_output_array = 0, i = 0;
   CHAR *outVOTable = NULL;
 
@@ -768,7 +768,7 @@ void rescale_output( LALInferenceRunState *runState ){
 
     if( LALInferenceCheckVariable(runState->algorithmParams,"outputarray")
       && LALInferenceCheckVariable(runState->algorithmParams,"N_outputarray")){
-      output_array = *(LALInferenceVariables ***)LALInferenceGetVariable( runState->algorithmParams, "outputarray" );
+      output_array = *(LALInferenceVariables **)LALInferenceGetVariable( runState->algorithmParams, "outputarray" );
       N_output_array = *(UINT4 *)LALInferenceGetVariable( runState->algorithmParams, "N_outputarray" );
     }
 
@@ -776,7 +776,7 @@ void rescale_output( LALInferenceRunState *runState ){
     for( i = 0; i < N_output_array; i++ ){
       LALInferenceVariableItem *scaleitem = NULL;
 
-      scaleitem = output_array[i]->head;
+      scaleitem = output_array[i].head;
 
       /* loop through tmparr parameters and scale if necessary */
       for( ; scaleitem; scaleitem = scaleitem->next ){
@@ -794,11 +794,11 @@ void rescale_output( LALInferenceRunState *runState ){
           scalemin = *(REAL8 *)LALInferenceGetVariable( runState->model->ifo->params, scaleminname );
 
           /* get the value and scale it */
-          value = *(REAL8 *)LALInferenceGetVariable( output_array[i], scaleitem->name );
+          value = *(REAL8 *)LALInferenceGetVariable( &output_array[i], scaleitem->name );
           value = value*scalefac + scalemin;
 
           /* reset the value */
-          LALInferenceSetVariable( output_array[i], scaleitem->name, &value );
+          LALInferenceSetVariable( &output_array[i], scaleitem->name, &value );
 
           /* change type to be REAL8 */
           scaleitem->type = LALINFERENCE_REAL8_t;
@@ -829,12 +829,7 @@ void rescale_output( LALInferenceRunState *runState ){
     }
   }
 
-    for(i=0;i<N_output_array;i++){
-        LALInferenceClearVariables(output_array[i]);
-        XLALFree(output_array[i]);
-    }
-    if(output_array) XLALFree(output_array);
-    
+  if( output_array ) { XLALFree( output_array ); }
 #else
   if ( !ppt1 ){
     XLALPrintError("Error... --outfile not defined!\n");
