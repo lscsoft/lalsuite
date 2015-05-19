@@ -266,7 +266,7 @@ REAL8 LALInferenceExtrinsicParamProposal(LALInferenceThreadState *thread, LALInf
 REAL8 LALInferenceFrequencyBinJump(LALInferenceThreadState *thread, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
 /* Zero out proposal statistics */
-void LALInferenceZeroProposalStats(LALInferenceThreadState *thread);
+void LALInferenceZeroProposalStats(LALInferenceProposalCycle *cycle);
 
 /** Function for updating proposal acceptance rates if tracking. */
 void LALInferenceTrackProposalAcceptance(LALInferenceThreadState *thread);

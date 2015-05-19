@@ -3118,11 +3118,11 @@ void LALInferenceTrackProposalAcceptance(LALInferenceThreadState *thread) {
 }
 
 /* Zero out proposal statistics counters */
-void LALInferenceZeroProposalStats(LALInferenceThreadState *thread) {
+void LALInferenceZeroProposalStats(LALInferenceProposalCycle *cycle) {
     INT4 i=0;
 
-    for (i=0; i<thread->cycle->nProposals; i++) {
-        LALInferenceProposal *prop = thread->cycle->proposals[i];
+    for (i=0; i<cycle->nProposals; i++) {
+        LALInferenceProposal *prop = cycle->proposals[i];
 
         prop->proposed = 0;
         prop->accepted = 0;
