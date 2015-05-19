@@ -1578,7 +1578,6 @@ static int WriteNSCheckPoint(CHAR *filename, LALInferenceRunState *runState, NSi
       LALInferenceVariables **output_array=NULL;
       output_array=*(LALInferenceVariables ***)LALInferenceGetVariable(runState->algorithmParams,"outputarray");
       LALInferenceWriteVariablesArrayBinary(progfile,output_array, N_output_array);
-      fprintf(stderr,"Resume --> wrote %d past chain samples\n\n",N_output_array);
     }
     fclose(progfile);
     return 0;
@@ -1609,12 +1608,9 @@ static int ReadNSCheckPoint(CHAR *filename, LALInferenceRunState *runState, NSin
       LALInferenceVariables **output_array=NULL;
       if(N_output_array!=0){
           output_array=XLALCalloc(N_output_array,sizeof(LALInferenceVariables *));
-          fprintf(stderr,"Resume --> read %d past chain samples\n",N_output_array);
           LALInferenceReadVariablesArrayBinary(progfile,output_array,N_output_array);
-          if(LALInferenceCheckVariable(runState->algorithmParams,"N_outputarray")) LALInferenceRemoveVariable(runState->algorithmParams,"N_outputarray");
-          if(LALInferenceCheckVariable(runState->algorithmParams,"outputarray")) LALInferenceRemoveVariable(runState->algorithmParams,"outputarray");
-          LALInferenceAddVariable(runState->algorithmParams,"N_outputarray",&N_output_array,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
-          LALInferenceAddVariable(runState->algorithmParams,"outputarray",&output_array,LALINFERENCE_void_ptr_t,LALINFERENCE_PARAM_OUTPUT);
+          LALInferenceAddVariable(runState->algorithmParams,"N_outputarray",&N_output_array,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
+          LALInferenceAddVariable(runState->algorithmParams,"outputarray",&output_array,LALINFERENCE_void_ptr_t,LALINFERENCE_PARAM_FIXED);
     }
     fclose(progfile);
     return 0;
