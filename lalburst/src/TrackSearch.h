@@ -145,7 +145,7 @@ typedef struct tagTrackSearchStore
  */
 typedef enum tagTrackSearchCut
   {
-    none, PandL, nPandnL, PandnL, nPandL
+    TRACKSEARCH_none, TRACKSEARCH_PandL, TRACKSEARCH_nPandnL, TRACKSEARCH_PandnL, TRACKSEARCH_nPandL
   }TrackSearchCut;
 
 /**

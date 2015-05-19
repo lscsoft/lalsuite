@@ -135,7 +135,7 @@ int main( int argc, char *argv[] )
   INT4 numTmplts = 0;
   INT4 numCoincSegCutTrigs = 0;
   CoincInspiralStatistic coincstat = no_stat;
-  SnglInspiralClusterChoice clusterchoice = none;
+  SnglInspiralClusterChoice clusterchoice = SNGL_INSPIRAL_CLUSTER_CHOICE_NONE;
   CohbankRunType runType = cohbank;
   REAL4 statThreshold = 0;
   INT8 cluster_dt = 0;
@@ -370,7 +370,7 @@ int main( int argc, char *argv[] )
         {
           if ( ! strcmp( "none", LALoptarg ) )
           {
-            clusterchoice = none;
+            clusterchoice = SNGL_INSPIRAL_CLUSTER_CHOICE_NONE;
           }
           else if ( ! strcmp( "snr", LALoptarg ) )
           {
@@ -788,7 +788,7 @@ int main( int argc, char *argv[] )
 
       if ( vrbflg ) fprintf( stdout,
                              "Clustering triggers in event-id\n" );
-      if ( ! ( clusterchoice == none ) ) {
+      if ( ! ( clusterchoice == SNGL_INSPIRAL_CLUSTER_CHOICE_NONE ) ) {
         numTriggers = XLALClusterInEventID(&inspiralEventList,clusterchoice);
       }
       else {

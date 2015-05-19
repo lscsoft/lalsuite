@@ -413,7 +413,7 @@ int main( int argc, char *argv[] )
   REAL4 rsqAboveSnrCoeff = -1;
   REAL4 rsqAboveSnrPow     = -1;
   LALSegList vetoSegs;
-  SnglInspiralClusterChoice clusterchoice = none;
+  SnglInspiralClusterChoice clusterchoice = SNGL_INSPIRAL_CLUSTER_CHOICE_NONE;
   INT8 cluster_dt = -1;
   INT8 injectWindowNS = -1;
   int j;

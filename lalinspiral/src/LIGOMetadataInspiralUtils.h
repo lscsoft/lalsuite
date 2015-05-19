@@ -135,7 +135,7 @@ CoincInspiralStatParams;
  */
 typedef enum
 {
-  none,
+  SNGL_INSPIRAL_CLUSTER_CHOICE_NONE,
   snr_and_chisq,
   snrsq_over_chisq,
   new_snr,

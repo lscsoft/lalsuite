@@ -141,7 +141,7 @@ int main( int argc, char *argv[] )
   char *tamaFileName = NULL;
   char *summFileName = NULL;
   REAL4 snrStar = -1;
-  SnglInspiralClusterChoice clusterchoice = none;
+  SnglInspiralClusterChoice clusterchoice = SNGL_INSPIRAL_CLUSTER_CHOICE_NONE;
   INT8 cluster_dt = -1;
   char *injectFileName = NULL;
   INT8 inject_dt = -1;
