@@ -166,7 +166,8 @@ void LALInferenceDrawThreads(LALInferenceRunState *run_state) {
  */
 void LALInferenceInitCBCThreads(LALInferenceRunState *run_state, INT4 nthreads) {
   LALInferenceThreadState *thread;
-  INT4 t;
+  INT4 t, nifo;
+  LALInferenceIFOData *data = run_state->data;
   UINT4 randomseed;
   FILE *devrandom;
   struct timeval tv;
@@ -178,6 +179,14 @@ void LALInferenceInitCBCThreads(LALInferenceRunState *run_state, INT4 nthreads) 
 
     /* Set up CBC model and parameter array */
     thread->model = LALInferenceInitCBCModel(run_state);
+
+    /* Allocate IFO likelihood holders */
+    nifo = 0;
+    while (data != NULL) {
+        data = data->next;
+        nifo++;
+    }
+    thread->currentIFOLikelihoods = XLALCalloc(nifo, sizeof(REAL8));
 
     /* Setup ROQ */
     LALInferenceSetupROQ(run_state->data, thread->model, run_state->commandLine);
