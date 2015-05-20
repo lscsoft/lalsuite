@@ -233,6 +233,8 @@ int main(int argc, char *argv[]){
   /* And performing any injections specified */
   /* And allocating memory */
   state = LALInferenceInitCBCRunState(procParams);
+  state->proposalArgs = LALInferenceParseProposalArgs(state);
+
   /* Set up the threads */
   LALInferenceInitCBCThreads(state,1);
   
@@ -247,10 +249,9 @@ int main(int argc, char *argv[]){
   /* Set up structures for nested sampling */
   initializeNS(state);
   
-  LALInferenceVariables *propArgs = LALInferenceParseProposalArgs(state);
   for(INT4 i=0;i<state->nthreads;i++)
   {
-    state->threads[i]->cycle=LALInferenceSetupDefaultInspiralProposalCycle(propArgs);
+    state->threads[i]->cycle=LALInferenceSetupDefaultInspiralProposalCycle(state->threads[i]->proposalArgs);
     LALInferenceRandomizeProposalCycle(state->threads[i]->cycle,state->GSLrandom);
   }
 

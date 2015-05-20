@@ -254,9 +254,6 @@ LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runSt
 
     LALInferenceVariables *propArgs = XLALCalloc(1, sizeof(LALInferenceVariables));
 
-    /* Copy over any common proposal args from runstate */
-    LALInferenceCopyVariables(runState->proposalArgs, propArgs);
-
     INT4 Nskip = 1;
     INT4 noise_only = 0;
     INT4 cyclic_reflective_kde = 0;
@@ -1291,15 +1288,15 @@ static REAL8 draw_distance(LALInferenceThreadState *thread) {
     return cbrt(x*(dmax*dmax*dmax - dmin*dmin*dmin) + dmin*dmin*dmin);
 }
 
-static REAL8 draw_logdistance(LALInferenceRunState *runState) {
+static REAL8 draw_logdistance(LALInferenceThreadState *thread) {
     REAL8 logdmin, logdmax;
 
-    LALInferenceGetMinMaxPrior(runState->priorArgs, "logdistance", &logdmin, &logdmax);
+    LALInferenceGetMinMaxPrior(thread->priorArgs, "logdistance", &logdmin, &logdmax);
 
     REAL8 dmin=exp(logdmin);
     REAL8 dmax=exp(logdmax);
 
-    REAL8 x = gsl_rng_uniform(runState->GSLrandom);
+    REAL8 x = gsl_rng_uniform(thread->GSLrandom);
 
     return log(cbrt(x*(dmax*dmax*dmax - dmin*dmin*dmin) + dmin*dmin*dmin));
 }
@@ -1714,7 +1711,6 @@ REAL8 LALInferenceSkyRingProposal(LALInferenceThreadState *thread,
         XLAL_ERROR_REAL8(XLAL_FAILURE, "could not find 'distance' or 'logdistance' in current params");
     }
 
-    REAL8 dL;
     if (distParam == USES_DISTANCE_VARIABLE) {
         dL = LALInferenceGetREAL8Variable(proposedParams, "distance");
     } else {

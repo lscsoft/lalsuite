@@ -106,27 +106,44 @@ LALInferenceRunState *LALInferenceInitCBCRunState(ProcessParamsTable *command_li
  * Initialize threads in memory, using LALInferenceInitCBCModel() to init models.
  */
 void LALInferenceInitCBCThreads(LALInferenceRunState *run_state, INT4 nthreads) {
-    LALInferenceThreadState *thread;
-    INT4 t;
-
-    run_state->nthreads = nthreads;
-    run_state->threads = LALInferenceInitThreads(nthreads);
-
-    for (t = 0; t < nthreads; t++) {
-        thread = run_state->threads[t];
-
-        /* Set up CBC model and parameter array */
-        thread->model = LALInferenceInitCBCModel(run_state);
-
-        /* Setup ROQ */
-        LALInferenceSetupROQ(run_state->data, thread->model, run_state->commandLine);
-
-        LALInferenceCopyVariables(thread->model->params, thread->currentParams);
-        LALInferenceCopyVariables(run_state->priorArgs,thread->priorArgs);
-        LALInferenceCopyVariables(run_state->proposalArgs,thread->proposalArgs);
+  LALInferenceThreadState *thread;
+  INT4 t;
+  UINT4 randomseed;
+  FILE *devrandom;
+  struct timeval tv;
+  run_state->nthreads = nthreads;
+  run_state->threads = LALInferenceInitThreads(nthreads);
+  
+  for (t = 0; t < nthreads; t++) {
+    thread = run_state->threads[t];
+    
+    /* Set up CBC model and parameter array */
+    thread->model = LALInferenceInitCBCModel(run_state);
+    
+    /* Setup ROQ */
+    LALInferenceSetupROQ(run_state->data, thread->model, run_state->commandLine);
+    
+    LALInferenceCopyVariables(thread->model->params, thread->currentParams);
+    LALInferenceCopyVariables(run_state->priorArgs,thread->priorArgs);
+    LALInferenceCopyVariables(run_state->proposalArgs,thread->proposalArgs);
+    
+    /* Use clocktime if seed isn't provided */
+    ProcessParamsTable *ppt = LALInferenceGetProcParamVal(run_state->commandLine, "--randomseed");
+    if (ppt)
+      randomseed = atoi(ppt->value);
+    else {
+      if ((devrandom = fopen("/dev/urandom","r")) == NULL) {
+        gettimeofday(&tv, 0);
+        randomseed = tv.tv_sec + tv.tv_usec;
+      } else {
+        fread(&randomseed, sizeof(randomseed), 1, devrandom);
+        fclose(devrandom);
+      }
     }
-
-    return;
+    gsl_rng_set(thread->GSLrandom, randomseed + t);
+    
+  }
+  return;
 }
 
 
