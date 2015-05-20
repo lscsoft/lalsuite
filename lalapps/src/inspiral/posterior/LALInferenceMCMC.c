@@ -47,95 +47,11 @@
 int MPIrank, MPIsize;
 
 void initializeMCMC(LALInferenceRunState *runState);
-void init_mpi_randomstate(LALInferenceRunState *run_state);
 INT4 init_ptmcmc(LALInferenceRunState *runState);
 INT4 LALInferenceBuildHybridTempLadder(LALInferenceRunState *runState);
 ProcessParamsTable *LALInferenceContinueMCMC(char *infileName);
 
 REAL8 **parseMCMCoutput(char ***params, UINT4 *nInPar, UINT4 *nInSamps, char *infilename, UINT4 burnin);
-void LALInferenceDrawThreads(LALInferenceRunState *state);
-
-/* Set the starting seed of rank 0, and give the rest of the threads
-    a seed based on it */
-void init_mpi_randomstate(LALInferenceRunState *run_state) {
-    INT4 i, randomseed;
-    INT4 mpi_rank;
-
-    mpi_rank = LALInferenceGetINT4Variable(run_state->algorithmParams, "mpirank");
-
-    /* Broadcast rank=0's randomseed to everyone */
-    randomseed = LALInferenceGetINT4Variable(run_state->algorithmParams, "random_seed");
-    MPI_Bcast(&randomseed, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    LALInferenceSetVariable(run_state->algorithmParams, "random_seed", &randomseed);
-
-    if (mpi_rank == 0)
-        printf(" initialize(): random seed: %u\n", randomseed);
-
-    /* Now make sure each MPI-thread is running with un-correlated
-        jumps. Re-seed this process with the ith output of
-        the RNG stream from the rank 0 thread. Otherwise the
-        random stream is the same across all threads. */
-     for (i = 0; i < mpi_rank; i++)
-         randomseed = gsl_rng_get(run_state->GSLrandom);
-
-     gsl_rng_set(run_state->GSLrandom, randomseed);
-
-     return;
-}
-
-void LALInferenceDrawThreads(LALInferenceRunState *run_state) {
-    LALInferenceThreadState *thread;
-    INT4 c;
-
-    /* If using a malmquist prior, force a strict prior window on distance for starting point, otherwise
-     * the approximate prior draws are very unlikely to be within the malmquist prior */
-    REAL8 dist_low, dist_high;
-    REAL8 restricted_dist_low = 10.0;
-    REAL8 restricted_dist_high = 100.0;
-    INT4 changed_dist = 0;
-    if (LALInferenceCheckVariable(run_state->priorArgs, "malmquist") && LALInferenceCheckVariableNonFixed(run_state->threads[0]->currentParams, "distance")) {
-        changed_dist = 1;
-        LALInferenceGetMinMaxPrior(run_state->priorArgs, "distance", &dist_low, &dist_high);
-        LALInferenceRemoveMinMaxPrior(run_state->priorArgs, "distance");
-        LALInferenceAddMinMaxPrior(run_state->priorArgs, "distance", &restricted_dist_low, &restricted_dist_high, LALINFERENCE_REAL8_t);
-    }
-
-    /* If the currentParams are not in the prior, overwrite and pick paramaters from the priors. OVERWRITE EVEN USER CHOICES.
-     *     (necessary for complicated prior shapes where LALInferenceCyclicReflectiveBound() is not enough */
-    #pragma omp parallel for
-    for (c = 0; c < run_state->nthreads; c++) {
-        thread = run_state->threads[c];
-        LALInferenceDrawApproxPrior(thread,
-                                    thread->currentParams,
-                                    thread->currentParams);
-        while (run_state->prior(run_state,
-                                thread->currentParams,
-                                thread->model) <= -DBL_MAX) {
-            LALInferenceDrawApproxPrior(thread,
-                                        thread->currentParams,
-                                        thread->currentParams);
-        }
-
-        /* Make sure that our initial value is within the
-        *     prior-supported volume. */
-        LALInferenceCyclicReflectiveBound(thread->currentParams, run_state->priorArgs);
-
-        /* Initialize starting likelihood and prior */
-        thread->currentPrior  = run_state->prior(run_state,
-                                                 thread->currentParams,
-                                                 thread->model);
-
-        thread->currentLikelihood = run_state->likelihood(thread->currentParams,
-                                                          run_state->data,
-                                                          thread->model);
-    }
-
-    /* Replace distance prior if changed for initial sample draw */
-    if (changed_dist) {
-        LALInferenceRemoveMinMaxPrior(run_state->priorArgs, "distance");
-        LALInferenceAddMinMaxPrior(run_state->priorArgs, "distance", &dist_low, &dist_high, LALINFERENCE_REAL8_t);
-    }
-}
 
 /********** Initialise MCMC structures *********/
 

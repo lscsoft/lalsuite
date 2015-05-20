@@ -51,6 +51,7 @@ void ensemble_sampler(struct tagLALInferenceRunState *run_state) {
     REAL8 *prop_priors, *prop_likelihoods, *prop_densities;
     INT4 update = 0;
     FILE *output = NULL;
+    LALInferenceThreadState *thread;
 
     /* Initialize LIGO status */
     LALStatus status;
@@ -111,32 +112,20 @@ void ensemble_sampler(struct tagLALInferenceRunState *run_state) {
         /* Update all walkers on this MPI-thread */
         #pragma omp parallel for
         for (walker=0; walker<nwalkers_per_thread; walker++) {
-            INT4 accepted;
+            thread = run_state->threads[walker];
 
-            LALInferenceVariables *proposed_params =
-                XLALCalloc(1, sizeof(LALInferenceVariables));
-
-            accepted = walker_step(run_state, run_state->modelArray[walker],
-                                    run_state->currentParamArray[walker], proposed_params,
-                                    &(run_state->currentPriors[walker]),
-                                    &(run_state->currentLikelihoods[walker]),
-                                    &(run_state->currentPropDensityArray[walker]),
-                                    &(prop_priors[walker]),
-                                    &(prop_likelihoods[walker]),
-                                    &(prop_densities[walker]));
+            walker_step(run_state, thread, &(prop_priors[walker]),
+                        &(prop_likelihoods[walker]), &(prop_densities[walker]));
 
             /* Track acceptance rates */
-            acceptance_buffer[walker + (*step % tracking_interval)] = accepted;
+            acceptance_buffer[walker + (*step % tracking_interval)] = thread->accepted;
             acceptance_rates[walker] = 0.0;
             for (i = 0; i < tracking_interval; i++)
                 acceptance_rates[walker] += acceptance_buffer[walker+i];
             acceptance_rates[walker] /= tracking_interval;
 
             if (verbose)
-                print_proposed_sample(run_state, proposed_params, walker, accepted);
-
-            LALInferenceClearVariables(proposed_params);
-            XLALFree(proposed_params);
+                print_proposed_sample(thread);
         }
 
         /* Update if acceptance rate has fallen by more than 10% */
@@ -164,58 +153,49 @@ void ensemble_sampler(struct tagLALInferenceRunState *run_state) {
 
     /* Sampling complete, so clean up and return */
     for (walker=0; walker<nwalkers_per_thread; walker++)
-        run_state->currentPropDensityArray[walker] = -DBL_MAX;
+        run_state->threads[walker]->currentPropDensity = -DBL_MAX;
 
     fclose(output);
     return;
 }
 
-INT4 walker_step(LALInferenceRunState *run_state,
-                    LALInferenceModel *model,
-                    LALInferenceVariables *current_params,
-                    LALInferenceVariables *proposed_params,
-                    REAL8 *current_prior, REAL8 *current_likelihood,
-                    REAL8 *current_prop_density,
-                    REAL8 *proposed_prior, REAL8 *proposed_likelihood,
-                    REAL8 *proposed_prop_density) {
+void walker_step(LALInferenceRunState *run_state, LALInferenceThreadState *thread,
+                 REAL8 *proposed_prior, REAL8 *proposed_likelihood, REAL8 *proposed_prop_density) {
     REAL8 proposal_ratio, acceptance_probability;
-    INT4 accepted = 0;
+
+    thread->accepted = 0;
 
     *proposed_prior = -INFINITY;
     *proposed_likelihood = -INFINITY;
 
-    /* Propose a new sample */
-    LALInferenceClearVariables(proposed_params);
-
     /* Get the probability of proposing the reverse jump */
-    *proposed_prop_density = *current_prop_density;
-    proposal_ratio = LALInferenceStoredClusteredKDEProposal(run_state,
-                                                            current_params,
-                                                            proposed_params,
+    *proposed_prop_density = thread->currentPropDensity;
+    proposal_ratio = LALInferenceStoredClusteredKDEProposal(thread,
+                                                            thread->currentParams,
+                                                            thread->proposedParams,
                                                             proposed_prop_density);
 
     /* Only bother calculating likelihood if within prior boundaries */
-    *proposed_prior = run_state->prior(run_state, proposed_params, model);
+    *proposed_prior = run_state->prior(run_state, thread->proposedParams, thread->model);
     if (*proposed_prior > -DBL_MAX)
-        *proposed_likelihood = run_state->likelihood(proposed_params, run_state->data, model);
+        *proposed_likelihood = run_state->likelihood(thread->proposedParams,
+                                                     run_state->data, thread->model);
 
     /* Find jump acceptance probability */
     acceptance_probability = (*proposed_prior + *proposed_likelihood)
-                            - (*current_prior + *current_likelihood)
+                            - (thread->currentPrior + thread->currentLikelihood)
                             + proposal_ratio;
 
     /* Accept the jump with the calculated probability */
     if (acceptance_probability > 0
-            || (log(gsl_rng_uniform(run_state->GSLrandom)) < acceptance_probability)) {
-        LALInferenceCopyVariables(proposed_params, current_params);
-        *current_prior = *proposed_prior;
-        *current_likelihood = *proposed_likelihood;
-        *current_prop_density = *proposed_prop_density;
+            || (log(gsl_rng_uniform(thread->GSLrandom)) < acceptance_probability)) {
+        LALInferenceCopyVariables(thread->proposedParams, thread->currentParams);
+        thread->currentPrior = *proposed_prior;
+        thread->currentLikelihood = *proposed_likelihood;
+        thread->currentPropDensity = *proposed_prop_density;
 
-        accepted = 1;
+        thread->accepted = 1;
     }
-
-    return accepted;
 }
 
 
@@ -251,28 +231,29 @@ REAL8 get_acceptance_rate(LALInferenceRunState *run_state, REAL8 *local_acceptan
 
 
 void ensemble_update(LALInferenceRunState *run_state) {
-    INT4 nwalkers, nwalkers_per_thread, walker, ndim, cyclic_reflective;
+    INT4 nwalkers, walker, ndim, cyclic_reflective;
     REAL8 *parameters, *samples, *param_array;
+    LALInferenceThreadState *thread = run_state->threads[0];
 
     LALInferenceVariables *algorithm_params = run_state->algorithmParams;
     nwalkers = LALInferenceGetINT4Variable(algorithm_params, "nwalkers");
-    nwalkers_per_thread = LALInferenceGetINT4Variable(algorithm_params, "nwalkers_per_thread");
     cyclic_reflective = LALInferenceGetINT4Variable(algorithm_params, "cyclic_reflective");
 
     /* Prepare array to contain samples */
-    ndim = LALInferenceGetVariableDimensionNonFixed(run_state->currentParamArray[0]);
+    ndim = LALInferenceGetVariableDimensionNonFixed(thread->currentParams);
     samples = XLALCalloc(nwalkers * ndim, sizeof(REAL8));
 
     /* Get this thread's walkers' locations */
-    param_array = XLALCalloc(nwalkers_per_thread * ndim, sizeof(REAL8));
-    for (walker = 0; walker < nwalkers_per_thread; walker++) {
+    param_array = XLALCalloc(run_state->nthreads * ndim, sizeof(REAL8));
+    for (walker = 0; walker < run_state->nthreads; walker++) {
+        thread = run_state->threads[walker];
         parameters = &(param_array[ndim*walker]);
-        LALInferenceCopyVariablesToArray(run_state->currentParamArray[walker], parameters);
+        LALInferenceCopyVariablesToArray(thread->currentParams, parameters);
     }
 
     /* Send all walker locations to all MPI threads */
-    MPI_Allgather(param_array, nwalkers_per_thread*ndim,
-                    MPI_DOUBLE, samples, nwalkers_per_thread*ndim,
+    MPI_Allgather(param_array, run_state->nthreads*ndim,
+                    MPI_DOUBLE, samples, run_state->nthreads*ndim,
                     MPI_DOUBLE, MPI_COMM_WORLD);
 
     /* Update the KDE proposal */
@@ -297,6 +278,8 @@ void parallel_incremental_kmeans(LALInferenceRunState *run_state,
     REAL8 best_bic = -INFINITY;
     REAL8 *bics;
 
+    LALInferenceThreadState *thread = run_state->threads[0];
+
     LALInferenceKmeans *kmeans;
     LALInferenceKmeans *best_clustering = NULL;
 
@@ -310,15 +293,15 @@ void parallel_incremental_kmeans(LALInferenceRunState *run_state,
 
     bics = XLALCalloc(mpi_size, sizeof(REAL8));
 
-    ndim = LALInferenceGetVariableDimensionNonFixed(run_state->currentParamArray[0]);
+    ndim = LALInferenceGetVariableDimensionNonFixed(thread->currentParams);
     gsl_matrix_view mview = gsl_matrix_view_array(samples, nwalkers, ndim);
 
     /* Keep track of clustered parameter names */
     LALInferenceVariables *backward_params = XLALCalloc(1, sizeof(LALInferenceVariables));
     LALInferenceVariables *cluster_params = XLALCalloc(1, sizeof(LALInferenceVariables));
     LALInferenceVariableItem *item;
-    for (item = run_state->currentParamArray[0]->head; item; item = item->next)
-        if (LALInferenceCheckVariableNonFixed(run_state->currentParamArray[0], item->name))
+    for (item = thread->currentParams->head; item; item = item->next)
+        if (LALInferenceCheckVariableNonFixed(thread->currentParams, item->name))
             LALInferenceAddVariable(backward_params, item->name,
                                     item->value, item->type, item->vary);
 
@@ -381,12 +364,12 @@ void parallel_incremental_kmeans(LALInferenceRunState *run_state,
 
     proposal->kmeans = best_clustering;
 
-    LALInferenceInitClusteredKDEProposal(run_state, proposal,
+    LALInferenceInitClusteredKDEProposal(thread, proposal,
                                             samples, nwalkers,
                                             cluster_params, "ClusteredKDEProposal",
                                             1.0, NULL, cyclic_reflective, 0);
 
-    LALInferenceAddClusteredKDEProposalToSet(run_state, proposal);
+    LALInferenceAddClusteredKDEProposalToSet(run_state->proposalArgs, proposal);
 
     LALInferenceClearVariables(backward_params);
     XLALFree(backward_params);
@@ -413,16 +396,11 @@ FILE *init_ensemble_output(LALInferenceRunState *run_state,
 }
 
 
-char* ensemble_output_name(LALInferenceRunState *run_state,
-                            const char *out_type,
-                            INT4 rank) {
+char* ensemble_output_name(const char *out_type, INT4 rank) {
     char *name = NULL;
-    INT4 randomseed;
-
-    randomseed = LALInferenceGetINT4Variable(run_state->algorithmParams, "random_seed");
 
     name = (char*) XLALCalloc(255, sizeof(char*));
-    sprintf(name, "ensemble.%s.%u.%i", out_type, randomseed, rank);
+    sprintf(name, "ensemble.%s.%i", out_type, rank);
     return name;
 }
 
@@ -436,13 +414,12 @@ void print_samples(LALInferenceRunState *run_state,
                     INT4 rank) {
     REAL8 null_likelihood, timestamp_epoch;
     REAL8 timestamp = 0.0;
-    REAL8 *current_priors, *current_likelihoods;
     REAL8 evidence_ratio;
-    LALInferenceVariables **current_params;
     INT4 nwalkers_per_thread;
     INT4 walker, start_id, step;
     INT4 benchmark;
     struct timeval tv;
+    LALInferenceThreadState *thread;
 
     LALInferenceVariables *algorithm_params = run_state->algorithmParams;
     nwalkers_per_thread = LALInferenceGetINT4Variable(algorithm_params, "nwalkers_per_thread");
@@ -451,9 +428,6 @@ void print_samples(LALInferenceRunState *run_state,
     step = LALInferenceGetINT4Variable(run_state->algorithmParams, "step");
 
     null_likelihood = LALInferenceGetREAL8Variable(run_state->proposalArgs, "nullLikelihood");
-    current_priors = run_state->currentPriors;
-    current_likelihoods = run_state->currentLikelihoods;
-    current_params = run_state->currentParamArray;
 
     /* Keep track of wall time if benchmarking */
     benchmark = LALInferenceGetINT4Variable(run_state->algorithmParams, "benchmark");
@@ -466,17 +440,19 @@ void print_samples(LALInferenceRunState *run_state,
 
 
     for (walker = 0; walker < nwalkers_per_thread; walker++) {
+        thread = run_state->threads[walker];
+
         /* Print step number, log(posterior) */
         fprintf(output, "%d\t", step);
         fprintf(output, "%f\t",
-                (current_likelihoods[walker] - null_likelihood) + current_priors[walker]);
+                (thread->currentLikelihood - null_likelihood) + thread->currentPrior);
 
         /* Print the non-fixed parameter values */
-        LALInferencePrintSampleNonFixed(output, current_params[walker]);
+        LALInferencePrintSampleNonFixed(output, thread->currentParams);
 
         /* Print log(prior) and log(likelihood)  */
-        fprintf(output, "%f\t", current_priors[walker]);
-        fprintf(output, "%f\t", current_likelihoods[walker] - null_likelihood);
+        fprintf(output, "%f\t", thread->currentPrior);
+        fprintf(output, "%f\t", thread->currentLikelihood - null_likelihood);
 
         if (benchmark)
             fprintf(output, "%f\t", timestamp);
@@ -494,24 +470,15 @@ void print_samples(LALInferenceRunState *run_state,
 }
 
 
-void print_proposed_sample(LALInferenceRunState *run_state,
-                            LALInferenceVariables *proposed_params,
-                            INT4 walker,
-                            INT4 accepted) {
-    INT4 mpi_rank, nwalkers_per_thread;
+void print_proposed_sample(LALInferenceThreadState *thread) {
     FILE *output = NULL;
     char *outname;
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);    // This thread's index
-
-    LALInferenceVariables *algorithm_params = run_state->algorithmParams;
-    nwalkers_per_thread = LALInferenceGetINT4Variable(algorithm_params, "nwalkers_per_thread");
-
-    outname = ensemble_output_name(run_state, "proposed", nwalkers_per_thread*mpi_rank+walker);
+    outname = ensemble_output_name("proposed", thread->id);
     output = fopen(outname, "a");
 
-    LALInferencePrintSampleNonFixed(output, proposed_params);
-    fprintf(output, "%i\n", accepted);
+    LALInferencePrintSampleNonFixed(output, thread->proposedParams);
+    fprintf(output, "%i\n", thread->accepted);
 
     fclose(output);
     XLALFree(outname);
@@ -550,11 +517,9 @@ void print_evidence(LALInferenceRunState *run_state,
 
 FILE *print_ensemble_header(LALInferenceRunState *run_state, INT4 rank) {
     ProcessParamsTable *ppt;
-    LALInferenceVariables **current_param_array;
-    LALInferenceVariables *sample_params;
     LALInferenceIFOData *ifo_data;
     REAL8TimeSeries *time_data;
-    INT4 walker, start_id;
+    INT4 walker;
     INT4 nwalkers_per_thread;
     INT4 ndim, int_pn_order, waveform = 0;
     INT4 nifo, randomseed, benchmark;
@@ -564,11 +529,11 @@ FILE *print_ensemble_header(LALInferenceRunState *run_state, INT4 rank) {
     char *outfile_name = NULL;
     FILE *output = NULL;
     char *cmd_str;
+    LALInferenceThreadState *thread = run_state->threads[0];
 
     /* Get ensemble size */
     LALInferenceVariables *algorithm_params = run_state->algorithmParams;
     nwalkers_per_thread = LALInferenceGetINT4Variable(algorithm_params, "nwalkers_per_thread");
-    start_id = rank * nwalkers_per_thread;
 
     /* Decide on file name(s) and open */
     ppt = LALInferenceGetProcParamVal(run_state->commandLine, "--outfile");
@@ -576,7 +541,7 @@ FILE *print_ensemble_header(LALInferenceRunState *run_state, INT4 rank) {
         outfile_name = (char*) XLALCalloc(255, sizeof(char*));
         sprintf(outfile_name, "%s.%i", ppt->value, rank);
     } else
-        outfile_name = ensemble_output_name(run_state, "output", rank);
+        outfile_name = ensemble_output_name("output", rank);
 
     output = fopen(outfile_name, "w");
     if (output == NULL){
@@ -589,17 +554,13 @@ FILE *print_ensemble_header(LALInferenceRunState *run_state, INT4 rank) {
     /* Save the command line for repoducability */
     cmd_str = LALInferencePrintCommandLine(run_state->commandLine);
 
-    /* Use the first set of current params to get information */
-    current_param_array = run_state->currentParamArray;
-    sample_params = current_param_array[0];
-
     randomseed = LALInferenceGetINT4Variable(run_state->algorithmParams, "random_seed");
     null_likelihood = LALInferenceGetREAL8Variable(run_state->proposalArgs, "nullLikelihood");
-    ndim = LALInferenceGetVariableDimensionNonFixed(sample_params);
+    ndim = LALInferenceGetVariableDimensionNonFixed(thread->currentParams);
 
     /* Reference frequency for evolving parameters */
-    if (LALInferenceCheckVariable(sample_params, "f_ref"))
-        f_ref = LALInferenceGetREAL8Variable(sample_params, "f_ref");
+    if (LALInferenceCheckVariable(thread->currentParams, "f_ref"))
+        f_ref = LALInferenceGetREAL8Variable(thread->currentParams, "f_ref");
 
     /* Count number of detectors */
     ifo_data = run_state->data;
@@ -610,12 +571,12 @@ FILE *print_ensemble_header(LALInferenceRunState *run_state, INT4 rank) {
     }
 
     /* Integer (from an enum) identfying the waveform family used */
-    if (LALInferenceCheckVariable(sample_params, "LAL_APPROXIMANT"))
-        waveform = (INT4) LALInferenceGetUINT4Variable(sample_params, "LAL_APPROXIMANT");
+    if (LALInferenceCheckVariable(thread->currentParams, "LAL_APPROXIMANT"))
+        waveform = (INT4) LALInferenceGetUINT4Variable(thread->currentParams, "LAL_APPROXIMANT");
 
     /* Determine post-Newtonian (pN) order (half of the integer stored in currentParams) */
-    if (LALInferenceCheckVariable(sample_params, "LAL_PNORDER")) {
-        int_pn_order = LALInferenceGetINT4Variable(sample_params, "LAL_PNORDER");
+    if (LALInferenceCheckVariable(thread->currentParams, "LAL_PNORDER")) {
+        int_pn_order = LALInferenceGetINT4Variable(thread->currentParams, "LAL_PNORDER");
         pn_order = int_pn_order/2.0;
     }
 
@@ -664,7 +625,7 @@ FILE *print_ensemble_header(LALInferenceRunState *run_state, INT4 rank) {
     /* These are the actual column headers for the samples to be output */
     fprintf(output, "cycle\tlogpost\t");
 
-    LALInferenceFprintParameterNonFixedHeaders(output, sample_params);
+    LALInferenceFprintParameterNonFixedHeaders(output, thread->currentParams);
 
     fprintf(output, "logprior\tlogl\t");
 
@@ -676,14 +637,16 @@ FILE *print_ensemble_header(LALInferenceRunState *run_state, INT4 rank) {
 
     /* Print starting values as 0th iteration */
     for (walker = 0; walker < nwalkers_per_thread; walker++) {
-        normed_logl = run_state->currentLikelihoods[walker]-null_likelihood;
-        fprintf(output, "%d\t%f\t", 0, run_state->currentPriors[walker] + normed_logl);
+        thread = run_state->threads[walker];
 
-        LALInferencePrintSampleNonFixed(output, current_param_array[walker]);
+        normed_logl = thread->currentLikelihood-null_likelihood;
+        fprintf(output, "%d\t%f\t", 0, thread->currentPrior + normed_logl);
+
+        LALInferencePrintSampleNonFixed(output, thread->currentParams);
 
         /* Starting prior and likelihood values */
-        fprintf(output, "%f\t%f\t", run_state->currentPriors[walker],
-                run_state->currentLikelihoods[walker] - null_likelihood);
+        fprintf(output, "%f\t%f\t", thread->currentPrior,
+                thread->currentLikelihood - null_likelihood);
 
         /* Elapsed dime in seconds */
         if (benchmark)
@@ -696,7 +659,7 @@ FILE *print_ensemble_header(LALInferenceRunState *run_state, INT4 rank) {
         fprintf(output, "%f\t", 0.0);
 
         /* Unique walker ID */
-        fprintf(output, "%i\t", start_id + walker);
+        fprintf(output, "%i\t", thread->id);
 
         fprintf(output,"\n");
     }
@@ -708,10 +671,10 @@ FILE *print_ensemble_header(LALInferenceRunState *run_state, INT4 rank) {
 
 
 void print_proposal_header(LALInferenceRunState *run_state, INT4 rank) {
-    char *name = ensemble_output_name(run_state, "proposal", rank);
+    char *name = ensemble_output_name("proposal", rank);
     FILE *output = fopen(name, "w");
 
-    LALInferenceFprintParameterNonFixedHeaders(output, run_state->currentParamArray[0]);
+    LALInferenceFprintParameterNonFixedHeaders(output, run_state->threads[0]->currentParams);
     fprintf(output, "accepted\n");
 
     fclose(output);

@@ -293,7 +293,7 @@ void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceThreadState *thr
 void LALInferenceSetupClusteredKDEProposalsFromASCII(LALInferenceThreadState *thread, FILE *input, INT4 burnin, REAL8 weight, INT4 ptmcmc);
  
 /* Add a KDE proposal to the KDE proposal set. */
-void LALInferenceAddClusteredKDEProposalToSet(LALInferenceThreadState *thread, LALInferenceClusteredKDE *kde);
+void LALInferenceAddClusteredKDEProposalToSet(LALInferenceVariables *propArgs, LALInferenceClusteredKDE *kde);
 
 /* Destroy an existing clustered-KDE proposal. */
 void LALInferenceDestroyClusteredKDEProposal(LALInferenceClusteredKDE *proposal);

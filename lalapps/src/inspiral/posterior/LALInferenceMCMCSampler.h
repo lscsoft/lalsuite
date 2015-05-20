@@ -80,3 +80,5 @@ void LALInferencePrintMCMCSample(LALInferenceThreadState *thread, LALInferenceIF
 /** Reads final parameter values from the given output file, and
     stores them in the current params to try to continue the run. */
 void LALInferenceMCMCResumeRead(LALInferenceThreadState *thread, FILE *resumeFile);
+
+void init_mpi_randomstate(LALInferenceRunState *run_state);

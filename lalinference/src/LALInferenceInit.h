@@ -38,6 +38,9 @@ LALInferenceRunState *LALInferenceInitCBCRunState(ProcessParamsTable *command_li
 /* Initialize threads in memory, using LALInferenceInitCBCModel() to init models. */
 void LALInferenceInitCBCThreads(LALInferenceRunState *run_state, INT4 nthreads);
 
+/* Draw initial parameters for each of the threads in run state */
+void LALInferenceDrawThreads(LALInferenceRunState *run_state);
+
 /**
  * Register a variable in vars for the model with given name, and a uniform prior.
  * Use the min and max arguments to specify a default range

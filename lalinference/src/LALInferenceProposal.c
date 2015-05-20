@@ -3517,7 +3517,7 @@ void LALInferenceSetupClusteredKDEProposalsFromASCII(LALInferenceThreadState *th
         exit(-1);
     }
 
-    LALInferenceAddClusteredKDEProposalToSet(thread, kde);
+    LALInferenceAddClusteredKDEProposalToSet(thread->proposalArgs, kde);
 
     LALInferenceClearVariables(backwardClusterParams);
     XLALFree(backwardClusterParams);
@@ -3655,12 +3655,10 @@ void LALInferenceDumpClusteredKDEDraws(LALInferenceClusteredKDE *kde, char *outp
  *
  * If other KDE proposals already exist, the provided KDE is appended to the list, otherwise it is added
  * as the first of such proposals.
- * @param     thread The current LALInferenceThreadState.
+ * @param     propArgs The proposal arguments to be added to.
  * @param[in] kde      The proposal to be added to \a thread->cycle.
  */
-void LALInferenceAddClusteredKDEProposalToSet(LALInferenceThreadState *thread, LALInferenceClusteredKDE *kde) {
-    LALInferenceVariables *propArgs = thread->cycle->proposalArgs;
-
+void LALInferenceAddClusteredKDEProposalToSet(LALInferenceVariables *propArgs, LALInferenceClusteredKDE *kde) {
     /* If proposal doesn't already exist, add to proposal args */
     if (!LALInferenceCheckVariable(propArgs, clusteredKDEProposalName)) {
         LALInferenceAddVariable(propArgs, clusteredKDEProposalName, (void *)&kde, LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_LINEAR);
@@ -3791,7 +3789,7 @@ void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceThreadState *threa
 
     /* Only add the kmeans was successfully setup */
     if (proposal->kmeans)
-        LALInferenceAddClusteredKDEProposalToSet(thread, proposal);
+        LALInferenceAddClusteredKDEProposalToSet(thread->proposalArgs, proposal);
     else {
         LALInferenceClearVariables(clusterParams);
         XLALFree(clusterParams);

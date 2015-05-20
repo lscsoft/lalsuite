@@ -101,6 +101,65 @@ LALInferenceRunState *LALInferenceInitCBCRunState(ProcessParamsTable *command_li
     return(run_state);
 }
 
+/* Draw initial parameters for each of the threads in run state */
+void LALInferenceDrawThreads(LALInferenceRunState *run_state) {
+    LALInferenceThreadState *thread = run_state->threads[0];
+    INT4 t;
+
+    /* If using a malmquist prior, force a strict prior window on distance for starting point, otherwise
+     * the approximate prior draws are very unlikely to be within the malmquist prior */
+    REAL8 dist_low, dist_high;
+    REAL8 restricted_dist_low = 10.0;
+    REAL8 restricted_dist_high = 100.0;
+    INT4 changed_dist = 0;
+    if (LALInferenceCheckVariable(run_state->priorArgs, "malmquist") &&
+        LALInferenceCheckVariableNonFixed(thread->currentParams, "distance")) {
+        changed_dist = 1;
+        LALInferenceGetMinMaxPrior(run_state->priorArgs, "distance", &dist_low, &dist_high);
+        LALInferenceRemoveMinMaxPrior(run_state->priorArgs, "distance");
+        LALInferenceAddMinMaxPrior(run_state->priorArgs, "distance",
+                                   &restricted_dist_low, &restricted_dist_high, LALINFERENCE_REAL8_t);
+    }
+
+    /* If the currentParams are not in the prior, overwrite and pick paramaters
+     *   from the priors. OVERWRITE EVEN USER CHOICES.
+     *   (necessary for complicated prior shapes where
+     *   LALInferenceCyclicReflectiveBound() is not enough) */
+    #pragma omp parallel for
+    for (t = 0; t < run_state->nthreads; t++) {
+        thread = run_state->threads[t];
+        LALInferenceDrawApproxPrior(thread,
+                                    thread->currentParams,
+                                    thread->currentParams);
+        while (run_state->prior(run_state,
+                                thread->currentParams,
+                                thread->model) <= -DBL_MAX) {
+            LALInferenceDrawApproxPrior(thread,
+                                        thread->currentParams,
+                                        thread->currentParams);
+        }
+
+        /* Make sure that our initial value is within the
+        *     prior-supported volume. */
+        LALInferenceCyclicReflectiveBound(thread->currentParams, run_state->priorArgs);
+
+        /* Initialize starting likelihood and prior */
+        thread->currentPrior  = run_state->prior(run_state,
+                                                 thread->currentParams,
+                                                 thread->model);
+
+        thread->currentLikelihood = run_state->likelihood(thread->currentParams,
+                                                          run_state->data,
+                                                          thread->model);
+    }
+
+    /* Replace distance prior if changed for initial sample draw */
+    if (changed_dist) {
+        LALInferenceRemoveMinMaxPrior(run_state->priorArgs, "distance");
+        LALInferenceAddMinMaxPrior(run_state->priorArgs, "distance",
+                                   &dist_low, &dist_high, LALINFERENCE_REAL8_t);
+    }
+}
 
 /* 
  * Initialize threads in memory, using LALInferenceInitCBCModel() to init models.
