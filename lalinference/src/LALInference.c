@@ -820,19 +820,19 @@ void LALInferenceReadSampleNonFixed(FILE *fp, LALInferenceVariables *p) {
     if (item->vary != LALINFERENCE_PARAM_FIXED) {
       switch (item->type) {
       case LALINFERENCE_INT4_t:
-	fscanf(fp, "%"LAL_INT4_FORMAT, (INT4 *)item->value);
+	if(1!=fscanf(fp, "%"LAL_INT4_FORMAT, (INT4 *)item->value)) XLAL_ERROR_VOID(XLAL_EIO);
 	break;
       case LALINFERENCE_INT8_t:
-	fscanf(fp, "%"LAL_INT8_FORMAT, (INT8 *)item->value);
+	if(1!=fscanf(fp, "%"LAL_INT8_FORMAT, (INT8 *)item->value)) XLAL_ERROR_VOID(XLAL_EIO);
 	break;
       case LALINFERENCE_UINT4_t:
-	fscanf(fp, "%"LAL_UINT4_FORMAT, (UINT4 *)item->value);
+	if(1!=fscanf(fp, "%"LAL_UINT4_FORMAT, (UINT4 *)item->value)) XLAL_ERROR_VOID(XLAL_EIO);
 	break;
       case LALINFERENCE_REAL4_t:
-	fscanf(fp, "%"LAL_REAL4_FORMAT, (REAL4 *)item->value);
+	if(1!=fscanf(fp, "%"LAL_REAL4_FORMAT, (REAL4 *)item->value)) XLAL_ERROR_VOID(XLAL_EIO);
 	break;
       case LALINFERENCE_REAL8_t:
-	fscanf(fp, "%"LAL_REAL8_FORMAT, (REAL8 *)item->value);
+	if(1!=fscanf(fp, "%"LAL_REAL8_FORMAT, (REAL8 *)item->value)) XLAL_ERROR_VOID(XLAL_EIO);
 	break;
       default:
 	/* Pass on reading */
@@ -947,11 +947,11 @@ void LALInferenceDiscardPTMCMCHeader(FILE *filestream) {
     INT4 nCols;
     INT4 last_line = 0;
 
-    fgets(str, sizeof(str), filestream);
+    if(!fgets(str, sizeof(str), filestream)) XLAL_ERROR_VOID(XLAL_EIO);
     parseLine(str, delimiters, row, &nCols);
     while (strcmp(row[0], "cycle") && str != NULL) {
         last_line = ftell(filestream);
-        fgets(str, sizeof(str), filestream);
+        if(!fgets(str, sizeof(str), filestream)) XLAL_ERROR_VOID(XLAL_EIO);
         parseLine(str, delimiters, row, &nCols);
     }
 
@@ -1030,7 +1030,7 @@ void LALInferenceBurninStream(FILE *filestream, INT4 burnin) {
     INT4 i=0;
 
     for (i=0; i<burnin; i++)
-        fgets(str, sizeof(str), filestream);
+        if(!fgets(str, sizeof(str), filestream)) XLAL_ERROR_VOID(XLAL_EIO);
 
     if (str == NULL) {
         if (burnin > 0) {
@@ -1057,7 +1057,7 @@ void LALInferenceReadAsciiHeader(FILE *input, char params[][VARNAME_MAX], INT4 *
     const char *delimiters = " \n\t";
     INT4 col_count=0;
 
-    fgets(str, sizeof(str), input);
+    if(!fgets(str, sizeof(str), input)) XLAL_ERROR_VOID(XLAL_EIO);
     parseLine(str, delimiters, row, &col_count);
 
     for (i=0; i<col_count; i++)
@@ -3112,22 +3112,22 @@ void LALInferenceDumpWaveforms(LALInferenceModel *model, const char *basefilenam
 static void REAL8Vector_fwrite(FILE *f, REAL8Vector *vec);
 static void REAL8Vector_fwrite(FILE *f, REAL8Vector *vec)
 {
-  fwrite(&(vec->length),sizeof(UINT4),1,f);
-  fwrite(vec->data,sizeof(REAL8),vec->length,f);
+  if(1!=fwrite(&(vec->length),sizeof(UINT4),1,f)) XLAL_ERROR_VOID(XLAL_EIO);
+  if(vec->length!=fwrite(vec->data,sizeof(REAL8),vec->length,f)) XLAL_ERROR_VOID(XLAL_EIO);
 }
 
 static void COMPLEX16Vector_fwrite(FILE *f, COMPLEX16Vector *vec);
 static void COMPLEX16Vector_fwrite(FILE *f, COMPLEX16Vector *vec)
 {
-  fwrite(&(vec->length),sizeof(UINT4),1,f);
-  fwrite(vec->data,sizeof(COMPLEX16),vec->length,f);
+  if(1!=fwrite(&(vec->length),sizeof(UINT4),1,f)) XLAL_ERROR_VOID(XLAL_EIO);
+  if(vec->length!=fwrite(vec->data,sizeof(COMPLEX16),vec->length,f)) XLAL_ERROR_VOID(XLAL_EIO);
 }
 
 static void UINT4Vector_fwrite(FILE *f, UINT4Vector *vec);
 static void UINT4Vector_fwrite(FILE *f, UINT4Vector *vec)
 {
-  fwrite(&(vec->length),sizeof(vec->length),1,f);
-  fwrite(vec->data,sizeof(vec->data[0]),vec->length,f);
+  if(1!=fwrite(&(vec->length),sizeof(vec->length),1,f)) XLAL_ERROR_VOID(XLAL_EIO);
+  if(vec->length!=fwrite(vec->data,sizeof(vec->data[0]),vec->length,f)) XLAL_ERROR_VOID(XLAL_EIO);
 }
 
 static REAL8Vector * REAL8Vector_fread(FILE *f);
@@ -3135,9 +3135,9 @@ static REAL8Vector * REAL8Vector_fread(FILE *f)
 {
   REAL8Vector *out=NULL;
   UINT4 size;
-  fread(&size,sizeof(size),1,f);
+  if(1!=fread(&size,sizeof(size),1,f)) XLAL_ERROR_NULL(XLAL_EIO);
   out=XLALCreateREAL8Vector(size);
-  fread(out->data,sizeof(REAL8),size,f);
+  if(size!=fread(out->data,sizeof(REAL8),size,f)) XLAL_ERROR_NULL(XLAL_EIO);
   return out;
 }
 
@@ -3146,9 +3146,9 @@ static COMPLEX16Vector * COMPLEX16Vector_fread(FILE *f)
 {
   COMPLEX16Vector *out=NULL;
   UINT4 size;
-  fread(&size,sizeof(size),1,f);
+  if(1!=fread(&size,sizeof(size),1,f)) XLAL_ERROR_NULL(XLAL_EIO);
   out=XLALCreateCOMPLEX16Vector(size);
-  fread(out->data,sizeof(COMPLEX16),size,f);
+  if(size!=fread(out->data,sizeof(COMPLEX16),size,f)) XLAL_ERROR_NULL(XLAL_EIO);
   return out;
 }
 
@@ -3158,9 +3158,9 @@ static UINT4Vector * UINT4Vector_fread(FILE *f)
   UINT4 size = 0;
   UINT4Vector *vec = NULL;
 
-  fread(&size,sizeof(size),1,f);
+  if(1!=fread(&size,sizeof(size),1,f)) XLAL_ERROR_NULL(XLAL_EIO);
   vec = XLALCreateUINT4Vector(size);
-  fread(vec->data, sizeof(UINT4), size, f);
+  if(size!=fread(vec->data, sizeof(UINT4), size, f)) XLAL_ERROR_NULL(XLAL_EIO);
   return vec;
 }
 
@@ -3171,22 +3171,22 @@ int LALInferenceWriteVariablesBinary(FILE *file, LALInferenceVariables *vars)
   if(!vars) return -1;
   LALInferenceVariableItem *item=vars->head;
   /* Write initial info (number of dimensions) */
-  fwrite(&(vars->dimension),sizeof(vars->dimension),1,file);
+  if(1!=fwrite(&(vars->dimension),sizeof(vars->dimension),1,file)) XLAL_ERROR(XLAL_EIO);
   /* Write each item */
   for(i=0;item;i++)
   {
     /* Name */
     fputs(item->name,file);
-    fwrite(&termchar,sizeof(char),1,file);
-    fwrite(&(item->type),sizeof(item->type),1,file);
-    fwrite(&(item->vary),sizeof(item->vary),1,file);
+    if(1!=fwrite(&termchar,sizeof(char),1,file)) XLAL_ERROR(XLAL_EIO);
+    if(1!=fwrite(&(item->type),sizeof(item->type),1,file)) XLAL_ERROR(XLAL_EIO);
+    if(1!=fwrite(&(item->vary),sizeof(item->vary),1,file)) XLAL_ERROR(XLAL_EIO);
     switch(item->type)
     {
       case LALINFERENCE_gslMatrix_t:
       {
 	gsl_matrix *matrix=*(gsl_matrix **)item->value;
-	fwrite(&(matrix->size1),sizeof(matrix->size1),1,file);
-	fwrite(&(matrix->size2),sizeof(matrix->size2),1,file);
+	if(1!=fwrite(&(matrix->size1),sizeof(matrix->size1),1,file)) XLAL_ERROR(XLAL_EIO);
+	if(1!=fwrite(&(matrix->size2),sizeof(matrix->size2),1,file)) XLAL_ERROR(XLAL_EIO);
 	gsl_matrix_fwrite(file,matrix);
 	break;
       }
@@ -3212,14 +3212,14 @@ int LALInferenceWriteVariablesBinary(FILE *file, LALInferenceVariables *vars)
       {
 	char *value = *((char **)item->value);
 	size_t len = strlen(value);
-	fwrite(&len, sizeof(size_t),1, file);
-	fwrite(value, sizeof(char), len, file);
+	if(1!=fwrite(&len, sizeof(size_t),1, file)) XLAL_ERROR(XLAL_EIO);
+	if(len!=fwrite(value, sizeof(char), len, file)) XLAL_ERROR(XLAL_EIO);
 	break;
       }
     case LALINFERENCE_MCMCrunphase_ptr_t:
       {
 	LALInferenceMCMCRunPhase *ph = *((LALInferenceMCMCRunPhase **)item->value);
-	fwrite(ph, sizeof(LALInferenceMCMCRunPhase), 1, file);
+	if(1!=fwrite(ph, sizeof(LALInferenceMCMCRunPhase), 1, file)) XLAL_ERROR(XLAL_EIO);
 	break;
       }
     case LALINFERENCE_void_ptr_t:
@@ -3227,12 +3227,12 @@ int LALInferenceWriteVariablesBinary(FILE *file, LALInferenceVariables *vars)
 	/* Write void_ptr as NULL, so fails if used without
 	   initialization on restart. */
 	void *out = NULL;
-	fwrite(&out,sizeof(void*),1,file);
+	if(1!=fwrite(&out,sizeof(void*),1,file)) XLAL_ERROR(XLAL_EIO);
 	break;
       }
       default:
       {
-	fwrite(item->value,LALInferenceTypeSize[item->type],1,file);
+	if(1!=fwrite(item->value,LALInferenceTypeSize[item->type],1,file)) XLAL_ERROR(XLAL_EIO);
 	break;
       }
     }
@@ -3248,7 +3248,7 @@ LALInferenceVariables *LALInferenceReadVariablesBinary(FILE *stream)
   LALInferenceVariables *vars=XLALCalloc(1,sizeof(LALInferenceVariables));
 
   /* Number of variables to read */
-  fread(&dim, sizeof(vars->dimension), 1, stream);
+  if(1!=fread(&dim, sizeof(vars->dimension), 1, stream)) XLAL_ERROR_NULL(XLAL_EIO);
 
   /* Now read them in */
   for(;dim>0;dim--)
@@ -3256,7 +3256,7 @@ LALInferenceVariables *LALInferenceReadVariablesBinary(FILE *stream)
     char name[VARNAME_MAX];
     LALInferenceVariableType type;
     LALInferenceParamVaryType vary;
-    fgets(name,sizeof(name),stream);
+    if(!fgets(name,sizeof(name),stream)) XLAL_ERROR_NULL(XLAL_EIO);
 
     for(j=0;j<sizeof(name);j++) if(name[j]=='\n') {name[j]='\0'; break;}
     if(j==sizeof(name))
@@ -3264,15 +3264,15 @@ LALInferenceVariables *LALInferenceReadVariablesBinary(FILE *stream)
       fprintf(stderr,"ERROR reading saved variable!");
       return(NULL);
     }
-    fread(&type,sizeof(type),1,stream);
-    fread(&vary,sizeof(vary),1,stream);
+    if(1!=fread(&type,sizeof(type),1,stream)) XLAL_ERROR_NULL(XLAL_EIO);
+    if(1!=fread(&vary,sizeof(vary),1,stream)) XLAL_ERROR_NULL(XLAL_EIO);
     switch(type)
     {
       case  LALINFERENCE_gslMatrix_t:
       {
 	size_t size1,size2;
-	fread(&size1,sizeof(size1),1,stream);
-	fread(&size2,sizeof(size2),1,stream);
+	if(1!=fread(&size1,sizeof(size1),1,stream)) XLAL_ERROR_NULL(XLAL_EIO);
+	if(1!=fread(&size2,sizeof(size2),1,stream)) XLAL_ERROR_NULL(XLAL_EIO);
 	gsl_matrix *matrix=gsl_matrix_alloc(size1,size2);
 	gsl_matrix_fread(stream,matrix);
 	LALInferenceAddVariable(vars,name,&matrix,type,vary);
@@ -3304,22 +3304,22 @@ LALInferenceVariables *LALInferenceReadVariablesBinary(FILE *stream)
 	size_t len = 0;
 	char *string = NULL;
 
-	fread(&len, sizeof(size_t), 1, stream);
+	if(1!=fread(&len, sizeof(size_t), 1, stream)) XLAL_ERROR_NULL(XLAL_EIO);
 	string = XLALCalloc(sizeof(char), len+1); /* One extra character: '\0' */
-	fread(string, sizeof(char), len, stream);
+	if(len!=fread(string, sizeof(char), len, stream)) XLAL_ERROR_NULL(XLAL_EIO);
 	LALInferenceAddVariable(vars,name,&string,type,vary);
       }
     case LALINFERENCE_MCMCrunphase_ptr_t:
       {
 	LALInferenceMCMCRunPhase *ph = XLALCalloc(sizeof(LALInferenceMCMCRunPhase),1);
-	fread(ph, sizeof(LALInferenceMCMCRunPhase), 1, stream);
+	if(1!=fread(ph, sizeof(LALInferenceMCMCRunPhase), 1, stream)) XLAL_ERROR_NULL(XLAL_EIO);
 	LALInferenceAddVariable(vars,name,&ph,type,vary);
 	break;
       }
     case LALINFERENCE_void_ptr_t:
       {
 	void *ptr = NULL;
-	fread(&ptr,sizeof(void *), 1, stream);
+	if(1!=fread(&ptr,sizeof(void *), 1, stream)) XLAL_ERROR_NULL(XLAL_EIO);
 	LALInferenceAddVariable(vars,name,&ptr,type,vary);
 	break;
       }
@@ -3328,7 +3328,7 @@ LALInferenceVariables *LALInferenceReadVariablesBinary(FILE *stream)
 	void *value=NULL;
 	UINT4 storagesize=LALInferenceTypeSize[type];
 	value=XLALCalloc(1,storagesize);
-	fread(value, storagesize, 1, stream);
+	if(1!=fread(value, storagesize, 1, stream)) XLAL_ERROR_NULL(XLAL_EIO);
 	LALInferenceAddVariable(vars,name,value,type,vary);
       }
     }
@@ -3355,10 +3355,10 @@ int LALInferenceReadVariablesArrayBinary(FILE *file, LALInferenceVariables **var
 int LALInferenceWriteRunStateBinary(FILE *file, LALInferenceRunState *runState)
 {
   int flag=0;
-  fwrite(&(runState->differentialPointsLength),sizeof(runState->differentialPointsLength),1,file);
-  fwrite(&(runState->differentialPointsSize),sizeof(runState->differentialPointsSize),1,file);
-  fwrite(&(runState->currentLikelihood),sizeof(runState->currentLikelihood),1,file);
-  fwrite(&(runState->currentPrior),sizeof(runState->currentPrior),1,file);
+  if(1!=fwrite(&(runState->differentialPointsLength),sizeof(runState->differentialPointsLength),1,file)) XLAL_ERROR(XLAL_EIO);
+  if(1!=fwrite(&(runState->differentialPointsSize),sizeof(runState->differentialPointsSize),1,file)) XLAL_ERROR(XLAL_EIO);
+  if(1!=fwrite(&(runState->currentLikelihood),sizeof(runState->currentLikelihood),1,file)) XLAL_ERROR(XLAL_EIO);
+  if(1!=fwrite(&(runState->currentPrior),sizeof(runState->currentPrior),1,file)) XLAL_ERROR(XLAL_EIO);
   flag|=gsl_rng_fwrite (file , runState->GSLrandom);
   flag|=LALInferenceWriteVariablesBinary(file, runState->currentParams);
   flag|=LALInferenceWriteVariablesBinary(file, runState->priorArgs);
@@ -3373,11 +3373,11 @@ int LALInferenceWriteRunStateBinary(FILE *file, LALInferenceRunState *runState)
 
 int LALInferenceReadRunStateBinary(FILE *file, LALInferenceRunState *runState)
 {
-  fread(&(runState->differentialPointsLength),sizeof(runState->differentialPointsLength),1,file);
-  fread(&(runState->differentialPointsSize),sizeof(runState->differentialPointsSize),1,file);
+  if(1!=fread(&(runState->differentialPointsLength),sizeof(runState->differentialPointsLength),1,file)) XLAL_ERROR(XLAL_EIO);
+  if(1!=fread(&(runState->differentialPointsSize),sizeof(runState->differentialPointsSize),1,file)) XLAL_ERROR(XLAL_EIO);
   runState->differentialPoints=XLALCalloc(runState->differentialPointsSize,sizeof(LALInferenceVariables *));
-  fread(&(runState->currentLikelihood),sizeof(runState->currentLikelihood),1,file);
-  fread(&(runState->currentPrior),sizeof(runState->currentPrior),1,file);
+  if(1!=fread(&(runState->currentLikelihood),sizeof(runState->currentLikelihood),1,file)) XLAL_ERROR(XLAL_EIO);
+  if(1!=fread(&(runState->currentPrior),sizeof(runState->currentPrior),1,file)) XLAL_ERROR(XLAL_EIO);
 
   gsl_rng_fread(file, runState->GSLrandom);
   runState->currentParams=LALInferenceReadVariablesBinary(file);
