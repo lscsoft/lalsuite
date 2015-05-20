@@ -46,6 +46,7 @@
 
 int MPIrank, MPIsize;
 
+void init_mpi_randomstate(LALInferenceRunState *run_state);
 void initializeMCMC(LALInferenceRunState *runState);
 INT4 init_ptmcmc(LALInferenceRunState *runState);
 INT4 LALInferenceBuildHybridTempLadder(LALInferenceRunState *runState);
@@ -56,6 +57,36 @@ REAL8 **parseMCMCoutput(char ***params, UINT4 *nInPar, UINT4 *nInSamps, char *in
 /********** Initialise MCMC structures *********/
 
 /************************************************/
+/* Set the starting seed of rank 0, and give the rest of the threads
+    a seed based on it.  This is a cut-and-paste from kombine, which needs
+    to be unified in LALInference when MPI-enabled.*/
+void init_mpi_randomstate(LALInferenceRunState *run_state) {
+    INT4 i, randomseed;
+    INT4 mpi_rank;
+
+    mpi_rank = LALInferenceGetINT4Variable(run_state->algorithmParams, "mpirank");
+
+    /* Broadcast rank=0's randomseed to everyone */
+    randomseed = LALInferenceGetINT4Variable(run_state->algorithmParams, "random_seed");
+    MPI_Bcast(&randomseed, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    LALInferenceSetVariable(run_state->algorithmParams, "random_seed", &randomseed);
+
+    if (mpi_rank == 0)
+        printf(" initialize(): random seed: %u\n", randomseed);
+
+    /* Now make sure each MPI-thread is running with un-correlated
+        jumps. Re-seed this process with the ith output of
+        the RNG stream from the rank 0 thread. Otherwise the
+        random stream is the same across all threads. */
+     for (i = 0; i < mpi_rank; i++)
+         randomseed = gsl_rng_get(run_state->GSLrandom);
+
+     gsl_rng_set(run_state->GSLrandom, randomseed);
+
+     return;
+}
+
+
 INT4 init_ptmcmc(LALInferenceRunState *runState) {
   char help[]="\
                ---------------------------------------------------------------------------------------------------\n\

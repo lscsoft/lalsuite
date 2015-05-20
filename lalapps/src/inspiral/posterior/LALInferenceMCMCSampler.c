@@ -1512,33 +1512,3 @@ void LALInferenceMCMCResumeRead(LALInferenceThreadState *thread, FILE *resumeFil
 
     LALInferenceReadSampleNonFixed(resumeFile, thread->currentParams);
 }
-
-/* Set the starting seed of rank 0, and give the rest of the threads
-    a seed based on it.  This belongs somewhere else, preferrably in
-    lalinference, but for now it's the only place that is mpi-enabled
-    and sharable.*/
-void init_mpi_randomstate(LALInferenceRunState *run_state) {
-    INT4 i, randomseed;
-    INT4 mpi_rank;
-
-    mpi_rank = LALInferenceGetINT4Variable(run_state->algorithmParams, "mpirank");
-
-    /* Broadcast rank=0's randomseed to everyone */
-    randomseed = LALInferenceGetINT4Variable(run_state->algorithmParams, "random_seed");
-    MPI_Bcast(&randomseed, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    LALInferenceSetVariable(run_state->algorithmParams, "random_seed", &randomseed);
-
-    if (mpi_rank == 0)
-        printf(" initialize(): random seed: %u\n", randomseed);
-
-    /* Now make sure each MPI-thread is running with un-correlated
-        jumps. Re-seed this process with the ith output of
-        the RNG stream from the rank 0 thread. Otherwise the
-        random stream is the same across all threads. */
-     for (i = 0; i < mpi_rank; i++)
-         randomseed = gsl_rng_get(run_state->GSLrandom);
-
-     gsl_rng_set(run_state->GSLrandom, randomseed);
-
-     return;
-}
