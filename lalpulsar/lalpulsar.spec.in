@@ -17,6 +17,8 @@ BuildRequires: lal-devel >= 6.14.0
 BuildRequires: lal-python >= 6.14.0
 BuildRequires: lal-octave >= 6.14.0
 BuildRequires: lalxml-devel >= 1.1.0
+BuildRequires: lalxml-python >= 1.1.0
+BuildRequires: lalxml-octave >= 1.1.0
 Requires: gsl, fftw
 Requires: lal >= 6.14.0
 Requires: lalxml >= 1.1.0
