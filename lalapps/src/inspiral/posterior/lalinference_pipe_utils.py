@@ -269,6 +269,20 @@ def chooseEngineNode(name):
     return LALInferenceBAMBINode
   return EngineNode
 
+def get_engine_name(cp):
+    name=cp.get('analysis','engine')
+    if name=='random':
+        engine_list=['lalinferencenest','lalinferencemcmc']#,'lalinferencebambimpi']
+        if cp.has_option('input','gid'):
+            gid=cp.get('input','gid')
+            engine_number=int(''.join(i for i in gid if i.isdigit())) % 2
+        else:
+            engine_number=random.randint(0,1)
+        return engine_list[engine_number]
+    else:
+        return name
+
+
 def scan_timefile(timefile):
     import re
     p=re.compile('[\d.]+')
@@ -380,7 +394,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
   def __init__(self,cp,dax=False,site='local'):
     self.subfiles=[]
     self.config=cp
-    self.engine=cp.get('analysis','engine')
+    self.engine=get_engine_name(cp)
     self.EngineNode=chooseEngineNode(self.engine)
     self.site=site
     if cp.has_option('paths','basedir'):
@@ -703,7 +717,10 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     evstring=str(event.event_id)
     if event.trig_time is not None:
         evstring=str(event.trig_time)+'-'+str(event.event_id)
-    Npar=self.config.getint('analysis','nparallel')
+    if self.config.has_option('analysis','nparallel'):
+        Npar=self.config.getint('analysis','nparallel')
+    else:
+        Npar=4
     # Set up the parallel engine nodes
     enginenodes=[]
     for i in range(Npar):
@@ -791,7 +808,10 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     evstring=str(event.event_id)
     if event.trig_time is not None:
         evstring=str(event.trig_time)+'-'+str(event.event_id)
-    Npar=self.config.getint('analysis','nparallel')
+    if self.config.has_option('analysis','nparallel'):
+        Npar=self.config.getint('analysis','nparallel')
+    else:
+        Npar=2
     enginenodes=[]
     for i in range(Npar):
         enginenodes.append(self.add_engine_node(event))
@@ -1110,7 +1130,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
 class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
   def __init__(self,cp,submitFile,logdir,ispreengine=False,dax=False,site=None):
     self.ispreengine=ispreengine
-    self.engine=cp.get('analysis','engine')
+    self.engine=get_engine_name(cp)
     basepath=cp.get('paths','basedir')
     if ispreengine is True:
       roqpath=os.path.join(basepath,'ROQdata')
