@@ -89,12 +89,6 @@ const char *const clusteredKDEProposalName = "ClusteredKDEProposal";
 const char *const splineCalibrationProposalName = "SplineCalibration";
 
 
-typedef enum {
-    USES_DISTANCE_VARIABLE,
-    USES_LOG_DISTANCE_VARIABLE
-} DistanceParam;
-
-
 static INT4 same_detector_location(LALDetector *d1, LALDetector *d2) {
     INT4 i;
 

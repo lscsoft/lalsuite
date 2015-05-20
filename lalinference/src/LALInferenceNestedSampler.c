@@ -740,12 +740,12 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   
   #ifdef HAVE_LIBLALXML
   /* Write out the XML if requested */
-  LALInferenceVariables *output_array=NULL;
+  LALInferenceVariables **output_array=NULL;
   UINT4 N_output_array=0;
   if(LALInferenceCheckVariable(runState->algorithmParams,"outputarray")
      &&LALInferenceCheckVariable(runState->algorithmParams,"N_outputarray") )
   {
-    output_array=*(LALInferenceVariables **)LALInferenceGetVariable(runState->algorithmParams,"outputarray");
+    output_array=*(LALInferenceVariables ***)LALInferenceGetVariable(runState->algorithmParams,"outputarray");
     N_output_array=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"N_outputarray");
   }
   if(output_array && outVOTable && N_output_array>0){
@@ -769,7 +769,13 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
     
     
   }
-  if(output_array) XLALFree(output_array);
+  if(output_array) {
+    for(i=0;i<N_output_array;i++){
+      LALInferenceClearVariables(output_array[i]);
+      XLALFree(output_array[i]);
+    }
+    XLALFree(output_array);
+  }
   #endif
   
   /* Clean up resume file */
