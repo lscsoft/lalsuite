@@ -33,6 +33,7 @@
 #include <lal/TimeDelay.h>
 #include <lal/SkyCoordinates.h>
 #include <lal/LALInference.h>
+#include <lal/LALInferenceInit.h>
 #include <lal/LALInferencePrior.h>
 #include <lal/LALInferenceLikelihood.h>
 #include <lal/LALInferenceTemplate.h>
@@ -289,7 +290,6 @@ LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runSt
         glitchfit = 0;
     }
 
-
     ProcessParamsTable *command_line = runState->commandLine;
 
     LIGOTimeGPS epoch = ifo->epoch;
@@ -339,12 +339,12 @@ LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runSt
     LALInferenceAddINT4Variable(propArgs, "marg_phi", marg_phi, LALINFERENCE_PARAM_FIXED);
 
     INT4 analytic_test = 0;
-    if (runState->likelihood==&LALInferenceCorrelatedAnalyticLogLikelihood ||
-        runState->likelihood==&LALInferenceBimodalCorrelatedAnalyticLogLikelihood ||
-        runState->likelihood==&LALInferenceRosenbrockLogLikelihood) {
+    if (LALInferenceGetProcParamVal(command_line, "--correlatedGaussianLikelihood") ||
+        LALInferenceGetProcParamVal(command_line, "--bimodalGaussianLikelihood") ||
+        LALInferenceGetProcParamVal(command_line, "--rosenbrockLikelihood")) {
         analytic_test = 1;
     }
-    LALInferenceAddINT4Variable(propArgs, "analytic_test", analytic_test, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddINT4Variable(propArgs, "analytical_test", analytic_test, LALINFERENCE_PARAM_FIXED);
 
     INT4 skyframe = 1;
     if (LALInferenceGetProcParamVal(command_line, "--no-sky-frame"))
@@ -447,7 +447,9 @@ LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runSt
     LALInferenceRegisterProposal(propArgs, "glitchfit", &glitchfit, command_line);
 
     /* Setup adaptive proposals */
-    LALInferenceSetupAdaptiveProposals(propArgs, runState->threads[0]->currentParams);
+    LALInferenceModel *model = LALInferenceInitCBCModel(runState);
+    LALInferenceSetupAdaptiveProposals(propArgs, model->params);
+    XLALFree(model);
 
     /* Setup buffer now since threads aren't accessible to the main setup function */
     if (diffevo || stretch || walk) {
@@ -1373,6 +1375,8 @@ REAL8 LALInferenceDrawApproxPrior(LALInferenceThreadState *thread,
     REAL8 logPropRatio;
     LALInferenceVariableItem *ptr;
 
+    LALInferenceCopyVariables(currentParams, proposedParams);
+
     const char *flat_params[] = {"q", "eta", "time", "phase", "polarisation",
                                  "rightascension", "costheta_jn", "phi_jl",
                                  "phi12", "a_spin1", "a_spin2", NULL};
@@ -1382,6 +1386,7 @@ REAL8 LALInferenceDrawApproxPrior(LALInferenceThreadState *thread,
     analytic_test = LALInferenceGetINT4Variable(args, "analytical_test");
 
     if (analytic_test) {
+        printf("Analytic test!\n");
         ptr = currentParams->head;
         while (ptr!=NULL) {
             if (LALInferenceCheckVariableNonFixed(currentParams, ptr->name)) {
@@ -1391,6 +1396,7 @@ REAL8 LALInferenceDrawApproxPrior(LALInferenceThreadState *thread,
             ptr=ptr->next;
         }
     } else {
+        printf("NOT analytic test!\n");
         logBackwardJump = approxLogPrior(currentParams);
 
         for (i = 0; flat_params[i] != NULL; i++) {

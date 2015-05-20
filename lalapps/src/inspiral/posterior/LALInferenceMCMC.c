@@ -134,7 +134,6 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
     INT4 i, ndim;
     ProcessParamsTable *command_line = NULL, *ppt = NULL;
     LALInferenceThreadState *thread;
-    LALInferenceVariables *propArgs;
     LALInferenceModel *model;
     REAL8 *ladder;
 
@@ -295,7 +294,7 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
     ntemp_per_thread = LALInferenceGetINT4Variable(runState->algorithmParams, "ntemp_per_thread");
 
     /* Extract proposal arguments from command line */
-    propArgs = LALInferenceParseProposalArgs(runState);
+    runState->proposalArgs = LALInferenceParseProposalArgs(runState);
 
     /* Initialize the walkers on this MPI thread */
     LALInferenceInitCBCThreads(runState, ntemp_per_thread);
@@ -304,18 +303,17 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
     init_mpi_randomstate(runState);
 
     /* Spread proposal args across threads */
-    propArgs = LALInferenceParseProposalArgs(runState);
     for (i=0; i<runState->nthreads; i++) {
         thread = runState->threads[i];
         thread->temperature = ladder[mpi_rank*ntemp_per_thread + i];
-        thread->cycle = LALInferenceSetupDefaultInspiralProposalCycle(propArgs);
+        thread->cycle = LALInferenceSetupDefaultInspiralProposalCycle(runState->proposalArgs);
         LALInferenceRandomizeProposalCycle(thread->cycle, thread->GSLrandom);
     }
 
     /* Add adaptation settings to algorithm params */
-    noAdapt = LALInferenceGetINT4Variable(propArgs, "no_adapt");
-    adaptTau = LALInferenceGetINT4Variable(propArgs, "adaptTau");
-    adaptLength = LALInferenceGetINT4Variable(propArgs, "adaptLength");
+    noAdapt = LALInferenceGetINT4Variable(runState->proposalArgs, "no_adapt");
+    adaptTau = LALInferenceGetINT4Variable(runState->proposalArgs, "adaptTau");
+    adaptLength = LALInferenceGetINT4Variable(runState->proposalArgs, "adaptLength");
 
     LALInferenceAddINT4Variable(algorithm_params, "no_adapt", noAdapt, LALINFERENCE_PARAM_OUTPUT);
 

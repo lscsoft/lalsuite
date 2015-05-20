@@ -144,7 +144,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
     algorithm_params = runState->algorithmParams;
 
     /* Get all algorithm params */
-    INT4 n_local_threads = LALInferenceGetINT4Variable(algorithm_params, "nthreads");
+    INT4 n_local_threads = runState->nthreads;
     INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->threads[0]->currentParams);
     INT4 Niter = LALInferenceGetINT4Variable(algorithm_params, "nsteps");
     INT4 Neff = LALInferenceGetINT4Variable(algorithm_params, "neff");
@@ -959,7 +959,7 @@ FILE **LALInferencePrintPTMCMCHeadersOrResume(LALInferenceRunState *runState) {
 
     MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
 
-    n_local_threads = LALInferenceGetINT4Variable(runState->algorithmParams, "nthreads");
+    n_local_threads = runState->nthreads;
     randomseed = LALInferenceGetUINT4Variable(runState->algorithmParams,"random_seed");
 
     threadoutputs = XLALCalloc(n_local_threads, sizeof(FILE*));
@@ -1039,7 +1039,7 @@ void LALInferencePrintPTMCMCHeaderFiles(LALInferenceRunState *runState, FILE **t
     MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
     thread = runState->threads[0];
 
-    n_local_threads = LALInferenceGetINT4Variable(runState->algorithmParams, "nthreads");
+    n_local_threads = runState->nthreads;
     nthreads = LALInferenceGetINT4Variable(runState->algorithmParams, "ntemp");
 
     randomseed = LALInferenceGetINT4Variable(runState->algorithmParams, "random_seed");
@@ -1328,7 +1328,7 @@ void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
         thread->currentLikelihood = runState->likelihood(thread->currentParams, runState->data, thread->model);
         thread->currentPrior = runState->prior(runState, thread->currentParams, thread->model);
 
-        n_local_threads = LALInferenceGetINT4Variable(runState->algorithmParams, "nthreads");
+        n_local_threads = runState->nthreads;
 
         LALInferenceSetVariable(runState->algorithmParams, "nthreads", &single_thread);
         LALInferencePrintPTMCMCHeaderFiles(runState, &out);

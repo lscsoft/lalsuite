@@ -83,10 +83,8 @@ void LALInferenceInitLikelihood(LALInferenceRunState *runState)
 
     ProcessParamsTable *commandLine=runState->commandLine;
     LALInferenceIFOData *ifo=runState->data;
-    LALInferenceThreadState *thread;
-    INT4 t = 0;
 
-    thread = runState->threads[t];
+    LALInferenceThreadState *thread = runState->threads[0];
 
     REAL8 nullLikelihood = 0.0; // Populated if such a thing exists
 
@@ -153,8 +151,13 @@ void LALInferenceInitLikelihood(LALInferenceRunState *runState)
 
    }
 
-   //null log likelihood logic doesn't work with noise parameters
-   if (LALInferenceGetProcParamVal(runState->commandLine,"--psdFit") ||
+
+   if (runState->likelihood==&LALInferenceCorrelatedAnalyticLogLikelihood ||
+       runState->likelihood==&LALInferenceBimodalCorrelatedAnalyticLogLikelihood ||
+       runState->likelihood==&LALInferenceRosenbrockLogLikelihood) {
+
+    //null log likelihood logic doesn't work with noise parameters
+    } else if (LALInferenceGetProcParamVal(runState->commandLine,"--psdFit") ||
        LALInferenceGetProcParamVal(runState->commandLine,"--glitchFit")) {
            nullLikelihood = 0.0;
            ifo = runState->data;
@@ -163,7 +166,6 @@ void LALInferenceInitLikelihood(LALInferenceRunState *runState)
                ifo = ifo->next;
            }
    } else {
-       ifo = runState->data;
        REAL8 logd = LALInferenceGetREAL8Variable(thread->currentParams, "logdistance");
        REAL8 bigD = INFINITY;
 
@@ -176,6 +178,7 @@ void LALInferenceInitLikelihood(LALInferenceRunState *runState)
 
        thread->model->waveformCache = cache;
        INT4 i = 0;
+       ifo = runState->data;
        while (ifo != NULL) {
            ifo->nullloglikelihood = thread->model->ifo_loglikelihoods[i];
            ifo = ifo->next;
@@ -186,7 +189,7 @@ void LALInferenceInitLikelihood(LALInferenceRunState *runState)
    }
 
    LALInferenceAddVariable(runState->proposalArgs, "nullLikelihood", &nullLikelihood,
-                            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
+                           LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
 
     return;
 }
