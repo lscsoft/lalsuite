@@ -157,8 +157,6 @@ LALInferenceVariableItem *LALInferenceGetItemSlow(const LALInferenceVariables *v
     if (!strcmp(this->name,name)) break;
     else this = this->next;
   }
-  if (this == NULL)
-      printf("Unable to find item %s.\n", name);
 
   return(this);
 }
