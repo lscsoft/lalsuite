@@ -59,11 +59,6 @@
 
 const char *const clusteredKDEProposalName = "ClusteredKDEProposal";
 
-typedef enum {
-  USES_DISTANCE_VARIABLE,
-  USES_LOG_DISTANCE_VARIABLE
-} DistanceParam;
-
 static void
 thinDifferentialEvolutionPoints(LALInferenceThreadState *thread) {
     size_t i;
@@ -975,7 +970,13 @@ FILE **LALInferencePrintPTMCMCHeadersOrResume(LALInferenceRunState *runState) {
         ppt = LALInferenceGetProcParamVal(runState->commandLine, "--outfile");
         if (ppt) {
             outFileName = (char*)XLALCalloc(strlen(ppt->value)+255, sizeof(char*));
-            sprintf(outFileName, "%s.%2.2d", ppt->value, n_local_threads*MPIrank+t);
+            if (n_local_threads*MPIrank+t == 0) {
+                sprintf(outFileName,"%s",ppt->value);
+                //Because of the way Pegasus handles file names, it needs exact match between --output and filename
+            } else {
+                sprintf(outFileName, "%s.%2.2d", ppt->value, n_local_threads*MPIrank+t);
+            }
+
         } else {
             outFileName = (char*)XLALCalloc(255, sizeof(char*));
             sprintf(outFileName, "PTMCMC.output.%u.%2.2d", randomseed, n_local_threads*MPIrank+t);
@@ -1014,6 +1015,9 @@ FILE **LALInferencePrintPTMCMCHeadersOrResume(LALInferenceRunState *runState) {
             XLALPrintError("Output file error. Please check that the specified path exists. (in %s, line %d)\n",__FILE__, __LINE__);
             XLAL_ERROR_NULL(XLAL_EIO);
         }
+
+        if(setvbuf(threadoutput,NULL,_IOFBF,0x100000)) /* Set buffer to 1MB so as to not thrash NFS */
+          fprintf(stderr,"Warning: Unable to set output file buffer!");
 
         threadoutputs[t] = threadoutput;
         XLALFree(outFileName);
