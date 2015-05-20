@@ -86,7 +86,6 @@ void init_mpi_randomstate(LALInferenceRunState *run_state) {
      return;
 }
 
-
 INT4 init_ptmcmc(LALInferenceRunState *runState) {
   char help[]="\
                ---------------------------------------------------------------------------------------------------\n\

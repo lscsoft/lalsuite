@@ -119,11 +119,6 @@ static INT4 numDetectorsUniquePositions(LALInferenceIFOData *data) {
     return nIFO - nCollision;
 }
 
-typedef enum {
-  USES_DISTANCE_VARIABLE,
-  USES_LOG_DISTANCE_VARIABLE
-} DistanceParam;
-
 LALInferenceProposal *LALInferenceInitProposal(LALInferenceProposalFunction func, const char *name)
 {
   LALInferenceProposal *proposal = XLALCalloc(1,sizeof(LALInferenceProposal));
@@ -259,7 +254,7 @@ LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runSt
     INT4 cyclic_reflective_kde = 0;
 
     /* Flags for proposals, initialized with the MCMC defaults */
-    
+
     INT4 singleadapt = 1;
     INT4 psiphi = 1;
     INT4 ext_param = 1;
@@ -1407,14 +1402,12 @@ REAL8 LALInferenceDrawApproxPrior(LALInferenceThreadState *thread,
             LALInferenceSetVariable(proposedParams, "chirpmass", &Mc);
         }
 
-        if (LALInferenceCheckVariableNonFixed(proposedParams, "distance")) {
-            REAL8 dist = draw_distance(thread);
-            LALInferenceSetVariable(proposedParams, "distance", &dist);
-        }
-
         if (LALInferenceCheckVariableNonFixed(proposedParams, "logdistance")) {
             REAL8 logdist = draw_logdistance(thread);
             LALInferenceSetVariable(proposedParams, "logdistance", &logdist);
+        } else if (LALInferenceCheckVariableNonFixed(proposedParams, "distance")) {
+            REAL8 dist = draw_distance(thread);
+            LALInferenceSetVariable(proposedParams, "distance", &dist);
         }
 
         if (LALInferenceCheckVariableNonFixed(proposedParams, "declination")) {
@@ -1702,22 +1695,7 @@ REAL8 LALInferenceSkyRingProposal(LALInferenceThreadState *thread,
     epoch = (LIGOTimeGPS *)LALInferenceGetVariable(args, "epoch");
     detectors = *(LALDetector **)LALInferenceGetVariable(args, "detectors");
 
-    DistanceParam distParam;
-    if (LALInferenceCheckVariable(proposedParams, "distance")) {
-        distParam = USES_DISTANCE_VARIABLE;
-    } else if (LALInferenceCheckVariable(proposedParams, "logdistance")) {
-        distParam = USES_LOG_DISTANCE_VARIABLE;
-    } else {
-        XLAL_ERROR_REAL8(XLAL_FAILURE, "could not find 'distance' or 'logdistance' in current params");
-    }
-
-    if (distParam == USES_DISTANCE_VARIABLE) {
-        dL = LALInferenceGetREAL8Variable(proposedParams, "distance");
-    } else {
-        dL = exp(LALInferenceGetREAL8Variable(proposedParams, "logdistance"));
-    }
-
-
+    REAL8 dL = exp(LALInferenceGetREAL8Variable(proposedParams, "logdistance"));
 
     ra = LALInferenceGetREAL8Variable(proposedParams, "rightascension");
     dec = LALInferenceGetREAL8Variable(proposedParams, "declination");
@@ -1859,12 +1837,8 @@ REAL8 LALInferenceSkyRingProposal(LALInferenceThreadState *thread,
     /*
     update new parameters and exit.  woo!
     */
-    if (distParam == USES_DISTANCE_VARIABLE) {
-        LALInferenceSetVariable(proposedParams, "distance", &newDL);
-    } else {
-        REAL8 logNewDL = log(newDL);
-        LALInferenceSetVariable(proposedParams, "logdistance", &logNewDL);
-    }
+    REAL8 logNewDL = log(newDL);
+    LALInferenceSetVariable(proposedParams, "logdistance", &logNewDL);
 
     LALInferenceSetVariable(proposedParams, "polarisation", &newPsi);
     LALInferenceSetVariable(proposedParams, "rightascension", &newRA);
@@ -2930,16 +2904,6 @@ REAL8 LALInferenceExtrinsicParamProposal(LALInferenceThreadState *thread,
         return logPropRatio;
     }
 
-    DistanceParam distParam;
-
-    if (LALInferenceCheckVariable(proposedParams, "distance")) {
-        distParam = USES_DISTANCE_VARIABLE;
-    } else if (LALInferenceCheckVariable(proposedParams, "logdistance")) {
-        distParam = USES_LOG_DISTANCE_VARIABLE;
-    } else {
-        XLAL_ERROR_REAL8(XLAL_FAILURE, "could not find 'distance' or 'logdistance' in current params");
-    }
-
     ra = LALInferenceGetREAL8Variable(proposedParams, "rightascension");
     dec = LALInferenceGetREAL8Variable(proposedParams, "declination");
 
@@ -2956,11 +2920,8 @@ REAL8 LALInferenceExtrinsicParamProposal(LALInferenceThreadState *thread,
         fprintf(stderr, "LALInferenceExtrinsicParamProposal: No  theta_jn parameter!\n");
 
     psi = LALInferenceGetREAL8Variable(proposedParams, "polarisation");
-    if (distParam == USES_DISTANCE_VARIABLE) {
-        dist = LALInferenceGetREAL8Variable(proposedParams, "distance");
-    } else {
-        dist = exp(LALInferenceGetREAL8Variable(proposedParams, "logdistance"));
-    }
+
+    dist = exp(LALInferenceGetREAL8Variable(proposedParams, "logdistance"));
 
     reflected_extrinsic_parameters(thread, ra, dec, baryTime, dist, iota, psi, &newRA, &newDec, &newTime, &newDist, &newIota, &newPsi);
 
@@ -3004,12 +2965,10 @@ REAL8 LALInferenceExtrinsicParamProposal(LALInferenceThreadState *thread,
     LALInferenceSetVariable(proposedParams, "declination", &newDec);
     if (timeflag)
         LALInferenceSetVariable(proposedParams, "time", &newTime);
-    if (distParam == USES_DISTANCE_VARIABLE) {
-        LALInferenceSetVariable(proposedParams, "distance", &newDist);
-    } else {
-        REAL8 logNewDist = log(newDist);
-        LALInferenceSetVariable(proposedParams, "logdistance", &logNewDist);
-    }
+
+    REAL8 logNewDist = log(newDist);
+    LALInferenceSetVariable(proposedParams, "logdistance", &logNewDist);
+
     REAL8 newcosIota = cos(newIota);
     LALInferenceSetVariable(proposedParams, "costheta_jn", &newcosIota);
     LALInferenceSetVariable(proposedParams, "polarisation", &newPsi);

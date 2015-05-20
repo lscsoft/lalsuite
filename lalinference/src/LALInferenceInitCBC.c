@@ -161,7 +161,7 @@ void LALInferenceDrawThreads(LALInferenceRunState *run_state) {
     }
 }
 
-/* 
+/*
  * Initialize threads in memory, using LALInferenceInitCBCModel() to init models.
  */
 void LALInferenceInitCBCThreads(LALInferenceRunState *run_state, INT4 nthreads) {
@@ -172,20 +172,20 @@ void LALInferenceInitCBCThreads(LALInferenceRunState *run_state, INT4 nthreads) 
   struct timeval tv;
   run_state->nthreads = nthreads;
   run_state->threads = LALInferenceInitThreads(nthreads);
-  
+
   for (t = 0; t < nthreads; t++) {
     thread = run_state->threads[t];
-    
+
     /* Set up CBC model and parameter array */
     thread->model = LALInferenceInitCBCModel(run_state);
-    
+
     /* Setup ROQ */
     LALInferenceSetupROQ(run_state->data, thread->model, run_state->commandLine);
-    
+
     LALInferenceCopyVariables(thread->model->params, thread->currentParams);
     LALInferenceCopyVariables(run_state->priorArgs,thread->priorArgs);
     LALInferenceCopyVariables(run_state->proposalArgs,thread->proposalArgs);
-    
+
     /* Use clocktime if seed isn't provided */
     ProcessParamsTable *ppt = LALInferenceGetProcParamVal(run_state->commandLine, "--randomseed");
     if (ppt)
@@ -201,7 +201,7 @@ void LALInferenceInitCBCThreads(LALInferenceRunState *run_state, INT4 nthreads) 
     }
     thread->GSLrandom=gsl_rng_alloc(gsl_rng_mt19937);
     gsl_rng_set(thread->GSLrandom, randomseed + t);
-    
+
   }
   return;
 }
@@ -525,7 +525,6 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state)
 --- Template Arguments -------------------------------------------------------------------------------------------\n\
 ------------------------------------------------------------------------------------------------------------------\n\
 (--use-eta)                    Jump in symmetric mass ratio eta, instead of q=m1/m2 (m1>m2).\n\
-(--use-logdistance)             Jump in log(distance) instead of distance.\n\
 (--approx)                      Specify a template approximant and phase order to use.\n\
                                (default TaylorF2threePointFivePN). Available approximants:\n\
                                default modeldomain=\"time\": GeneratePPN, TaylorT1, TaylorT2, TaylorT3, TaylorT4,\n\
@@ -554,9 +553,8 @@ You can generally have MCMC chains to start from a given parameter value by usin
  eta                          Symmetric massratio (needs --use-eta)\n\
  q                            Asymmetric massratio (a.k.a. q=m2/m1 with m1>m2)\n\
  phase                        Coalescence phase.\n\
- costheta_jn                  Cosine of angle between J and line of sight [rads]\n\
- distance                     Distance [Mpc]\n\
- logdistance                  Log Distance (requires --use-logdistance)\n\
+ costheta_jn                  Cosine of angle between J and line of sight [rads]\n\\n\
+ logdistance                  Log Distance [log(Mpc)]\n\
  rightascension               Rightascensions\n\
  declination                  Declination.\n\
  polarisation                 Polarisation angle.\n\
@@ -1035,7 +1033,8 @@ where the known names have been listed above\n\
   LALInferenceRegisterUniformVariableREAL8(state, model->params, "polarisation", zero, psiMin, psiMax, LALINFERENCE_PARAM_LINEAR);
   LALInferenceRegisterUniformVariableREAL8(state, model->params, "costheta_jn", zero, costhetaJNmin, costhetaJNmax,LALINFERENCE_PARAM_LINEAR);
 
-  if(!LALInferenceGetProcParamVal(commandLine,"--no-detector-frame"))
+  /* Option to use the detector-aligned frame */
+  if(LALInferenceGetProcParamVal(commandLine,"--detector-frame"))
   {
         printf("Using detector-based sky frame\n");
         LALInferenceRegisterUniformVariableREAL8(state,model->params,"t0",timeParam,timeMin,timeMax,LALINFERENCE_PARAM_LINEAR);
@@ -1053,8 +1052,8 @@ where the known names have been listed above\n\
         LALInferenceRegisterUniformVariableREAL8(state, model->params, "declination", zero, decMin, decMax, LALINFERENCE_PARAM_LINEAR);
         LALInferenceRegisterUniformVariableREAL8(state, model->params, "time", timeParam, timeMin, timeMax,LALINFERENCE_PARAM_LINEAR);
    }
-    
-  /* Option to use the detector-aligned frame */ 
+
+  /* Option to use the detector-aligned frame */
   LALInferenceRegisterUniformVariableREAL8(state,model->params,"t0",timeParam,timeMin,timeMax,LALINFERENCE_PARAM_LINEAR);
   LALInferenceRegisterUniformVariableREAL8(state,model->params,"cosalpha",0,-1,1,LALINFERENCE_PARAM_LINEAR);
   LALInferenceRegisterUniformVariableREAL8(state,model->params,"azimuth",0.0,0.0,LAL_TWOPI,LALINFERENCE_PARAM_CIRCULAR);
@@ -1077,7 +1076,7 @@ where the known names have been listed above\n\
 		  LALInferenceAddVariable(model->params, "margtimephi", &margphi, LALINFERENCE_UINT4_t,LALINFERENCE_PARAM_FIXED);
 	  }
   }
-      
+
   /* PPE parameters */
 
   ppt=LALInferenceGetProcParamVal(commandLine, "--TaylorF2ppE");
