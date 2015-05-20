@@ -974,20 +974,25 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
 /* Perform one MCMC iteration on runState->currentParams. Return 1 if accepted or 0 if not */
 UINT4 LALInferenceMCMCSamplePrior(LALInferenceRunState *runState)
 {
-  /* Single threaded here */
-  LALInferenceThreadState * threadState=runState->threads[0];
+    /* Single threaded here */
+    LALInferenceThreadState * threadState=runState->threads[0];
     UINT4 outOfBounds=0;
+    UINT4 adaptProp=checkForSingleAdapt(runState);
     //LALInferenceVariables tempParams;
     REAL8 logProposalRatio=0.0;
     //LALInferenceVariables *oldParams=&tempParams;
     LALInferenceVariables proposedParams;
     memset(&proposedParams,0,sizeof(proposedParams));
     REAL8 logLmin=*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logLmin");
-    REAL8 thislogL;
+    REAL8 thislogL=-DBL_MAX;
     UINT4 accepted=0;
 
     REAL8 logPriorOld=*(REAL8 *)LALInferenceGetVariable(threadState->currentParams,"logPrior");
-    //LALInferenceCopyVariables(runState->currentParams,oldParams);
+    if(adaptProp)
+    {
+          thislogL=runState->likelihood(runState->currentParams,runState->data,runState->model);
+          if (logLmin<thislogL) outOfBounds=0;
+    }
     LALInferenceCopyVariables(threadState->currentParams,&proposedParams);
 
     logProposalRatio = threadState->proposal(threadState,threadState->currentParams,&proposedParams);
@@ -999,21 +1004,22 @@ UINT4 LALInferenceMCMCSamplePrior(LALInferenceRunState *runState)
     }
     else {
         accepted=1;
-	LALInferenceCopyVariables(&proposedParams,threadState->currentParams);
+        //printf("Accepted line %i\n",__LINE__);
+        LALInferenceCopyVariables(&proposedParams,threadState->currentParams);
         LALInferenceSetVariable(threadState->currentParams,"logPrior",&logPriorNew);
     }
     LALInferenceClearVariables(&proposedParams);
 
-    if((!outOfBounds))
+    if((!outOfBounds) && adaptProp)
     {
       thislogL=runState->likelihood(threadState->currentParams,runState->data,threadState->model);
       if(logLmin<thislogL) threadState->accepted = accepted;
-      else threadState->accepted=0;
+      else threadState->accepted=accepted=0;
       LALInferenceUpdateAdaptiveJumps(threadState, 0.35);
     }
-
+    //printf("logLnew = %lf, logPriorNew = %lf, logProposalRatio = %lf\n",thislogL,logPriorNew,logProposalRatio);
     LALInferenceTrackProposalAcceptance(threadState);
-
+    //printf("Accepted = %i\n",accepted);
     return(accepted);
 }
 
@@ -1147,18 +1153,19 @@ INT4 LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
         subchain_length=0;
         /* Draw an independent sample from the prior */
         do{
+
             sub_accepted+=LALInferenceMCMCSamplePrior(runState);
             subchain_length++;
             counter+=(1.-sloppyfraction);
         }while(counter<1);
-	/* Check that there was at least one accepted point */
-	if(sub_accepted==0) {
-	    tries++;
-	    sub_iter+=subchain_length;
-	    mcmc_iter++;
-            LALInferenceCopyVariables(&oldParams,threadState->currentParams);
-            threadState->currentLikelihood=logLold;
-	    continue;
+        /* Check that there was at least one accepted point */
+        if(sub_accepted==0) {
+          tries++;
+          sub_iter+=subchain_length;
+          mcmc_iter++;
+          LALInferenceCopyVariables(&oldParams,threadState->currentParams);
+          threadState->currentLikelihood=logLold;
+          continue;
         }
         tries=0;
         mcmc_iter++;
