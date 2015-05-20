@@ -14,7 +14,7 @@ int testLALInferenceVariables(void);
 
 int testLALInferenceVariables(void){
   LALInferenceVariables var;
-  LALInferenceVariables *vars;
+  LALInferenceVariables **vars;
   char *xmlString = NULL;
   xmlDocPtr xmlDocument = NULL;
   var.dimension=0;
@@ -63,12 +63,13 @@ int testLALInferenceVariables(void){
     /* Convert array of variables into table */
     printf( "--> Serializing array of variables into XML Table ... ");
 
-    vars=XLALCalloc(3,sizeof(LALInferenceVariables));
+    vars=XLALCalloc(3,sizeof(LALInferenceVariables *));
     int i;
     for(i=0;i<3;i++)
     {
       printf("Copying %i\n",i);
-      LALInferenceCopyVariables(&var,&(vars[i]));
+      vars[i] = XLALCalloc(1,sizeof(LALInferenceVariables));
+      LALInferenceCopyVariables(&var,vars[i]);
     }
     printf("Creating XML Table...\n");
       xmlTable=XLALInferenceVariablesArray2VOTTable(vars, 3, "Test table");
@@ -100,7 +101,12 @@ int testLALInferenceVariables(void){
     xmlFreeDoc(xmlDocument);
     xmlFreeNode ( xmlTable );
     XLALFree ( xmlString );
-
+    for(i=0;i<3;i++)
+    {
+      LALInferenceClearVariables(vars[i]);
+      XLALFree(vars[i]);
+    }
+    XLALFree(vars);
     return 0;
 }
 
