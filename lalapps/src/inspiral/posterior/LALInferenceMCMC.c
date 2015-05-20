@@ -294,15 +294,17 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
     ladder = LALInferenceBuildHybridTempLadder(runState, ndim);
     ntemp_per_thread = LALInferenceGetINT4Variable(runState->algorithmParams, "ntemp_per_thread");
 
+    /* Extract proposal arguments from command line */
+    propArgs = LALInferenceParseProposalArgs(runState);
+
     /* Initialize the walkers on this MPI thread */
     LALInferenceInitCBCThreads(runState, ntemp_per_thread);
 
     /* Establish the random state across MPI threads */
     init_mpi_randomstate(runState);
 
-    /* Build the proposals and randomize */
+    /* Spread proposal args across threads */
     propArgs = LALInferenceParseProposalArgs(runState);
-    printf("Built prop args\n");
     for (i=0; i<runState->nthreads; i++) {
         thread = runState->threads[i];
         thread->temperature = ladder[mpi_rank*ntemp_per_thread + i];
