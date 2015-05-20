@@ -276,7 +276,7 @@ LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runSt
     INT4 psdfit = 0;
     INT4 glitchfit = 0;
 
-    if (runState->algorithm == LALInferenceNestedSamplingAlgorithm) {
+    if (runState->algorithm == &LALInferenceNestedSamplingAlgorithm) {
         singleadapt = 0;
         psiphi = 0;
         ext_param = 0;

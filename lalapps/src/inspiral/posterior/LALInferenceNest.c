@@ -233,6 +233,10 @@ int main(int argc, char *argv[]){
   /* And performing any injections specified */
   /* And allocating memory */
   state = LALInferenceInitCBCRunState(procParams);
+  /* Set up the appropriate functions for the nested sampling algorithm */
+  state->algorithm=&LALInferenceNestedSamplingAlgorithm;
+  state->evolve=&LALInferenceNestedSamplingOneStep;
+
   state->proposalArgs = LALInferenceParseProposalArgs(state);
 
   /* Set up the threads */
