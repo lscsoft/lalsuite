@@ -109,15 +109,15 @@ void LALInferenceDrawThreads(LALInferenceRunState *run_state) {
     /* If using a malmquist prior, force a strict prior window on distance for starting point, otherwise
      * the approximate prior draws are very unlikely to be within the malmquist prior */
     REAL8 dist_low, dist_high;
-    REAL8 restricted_dist_low = 10.0;
-    REAL8 restricted_dist_high = 100.0;
+    REAL8 restricted_dist_low = log(10.0);
+    REAL8 restricted_dist_high = log(100.0);
     INT4 changed_dist = 0;
     if (LALInferenceCheckVariable(run_state->priorArgs, "malmquist") &&
-        LALInferenceCheckVariableNonFixed(thread->currentParams, "distance")) {
+        LALInferenceCheckVariableNonFixed(thread->currentParams, "logdistance")) {
         changed_dist = 1;
-        LALInferenceGetMinMaxPrior(run_state->priorArgs, "distance", &dist_low, &dist_high);
-        LALInferenceRemoveMinMaxPrior(run_state->priorArgs, "distance");
-        LALInferenceAddMinMaxPrior(run_state->priorArgs, "distance",
+        LALInferenceGetMinMaxPrior(run_state->priorArgs, "logdistance", &dist_low, &dist_high);
+        LALInferenceRemoveMinMaxPrior(run_state->priorArgs, "logdistance");
+        LALInferenceAddMinMaxPrior(run_state->priorArgs, "logdistance",
                                    &restricted_dist_low, &restricted_dist_high, LALINFERENCE_REAL8_t);
     }
 
@@ -155,8 +155,8 @@ void LALInferenceDrawThreads(LALInferenceRunState *run_state) {
 
     /* Replace distance prior if changed for initial sample draw */
     if (changed_dist) {
-        LALInferenceRemoveMinMaxPrior(run_state->priorArgs, "distance");
-        LALInferenceAddMinMaxPrior(run_state->priorArgs, "distance",
+        LALInferenceRemoveMinMaxPrior(run_state->priorArgs, "logdistance");
+        LALInferenceAddMinMaxPrior(run_state->priorArgs, "logdistance",
                                    &dist_low, &dist_high, LALINFERENCE_REAL8_t);
     }
 }
@@ -1218,7 +1218,7 @@ LALInferenceModel *LALInferenceInitModelReviewEvidence(LALInferenceRunState *sta
 		{.name="time", .val=0.0, .min=-0.1073625, .max=0.1073625},
 		{.name="m1", .val=16., .min=14.927715, .max=17.072285},
 		{.name="m2", .val=7., .min=5.829675, .max=8.170325},
-		{.name="distance", .val=50., .min=37.986000000000004, .max=62.013999999999996},
+		{.name="logdistance", .val=50., .min=37.986000000000004, .max=62.013999999999996},
 		{.name="costheta_jn", .val=LAL_PI/2., .min=1.4054428267948966, .max=1.7361498267948965},
 		{.name="phase", .val=LAL_PI, .min=2.8701521535897934, .max=3.413033153589793},
 		{.name="polarisation", .val=LAL_PI/2., .min=1.3885563267948966, .max=1.7530363267948965},
@@ -1272,7 +1272,7 @@ LALInferenceModel *LALInferenceInitModelReviewEvidence_bimod(LALInferenceRunStat
     {.name="time", .val=0.05589, .min=-0.1373625, .max=0.2491425},
     {.name="m1", .val=16.857828, .min=14.927715, .max=18.787941},
     {.name="m2", .val=7.93626, .min=5.829675, .max=10.042845},
-    {.name="distance", .val=34.6112, .min=12.986, .max=56.2364},
+    {.name="logdistance", .val=34.6112, .min=12.986, .max=56.2364},
     {.name="costheta_jn", .val=0.9176809634, .min=0.6200446634, .max=1.2153172634},
     {.name="phase", .val=1.7879487268, .min=1.2993558268, .max=2.2765416268},
     {.name="polarisation", .val=0.9311901634, .min=0.6031581634, .max=1.2592221634},
@@ -1324,7 +1324,7 @@ LALInferenceModel *LALInferenceInitModelReviewEvidence_banana(LALInferenceRunSta
     {.name="time", .val=0.0, .min=-2., .max=2.},
     {.name="m1", .val=16., .min=14., .max=18.},
     {.name="m2", .val=7., .min=5., .max=9.},
-    {.name="distance", .val=50., .min=45., .max=55.},
+    {.name="logdistance", .val=50., .min=45., .max=55.},
     {.name="costheta_jn", .val=LAL_PI/2., .min=-0.429203673, .max=3.570796327},
     {.name="phase", .val=LAL_PI, .min=1.141592654, .max=5.141592654},
     {.name="polarisation", .val=LAL_PI/2., .min=-0.429203673, .max=3.570796327},

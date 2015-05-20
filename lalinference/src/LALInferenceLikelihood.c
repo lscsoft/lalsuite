@@ -628,11 +628,6 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
 
   if(signalFlag)
   {
-    if(LALInferenceCheckVariable(currentParams, "logdistance")){
-      REAL8 distMpc = exp(*(REAL8*)LALInferenceGetVariable(currentParams,"logdistance"));
-      LALInferenceAddVariable(currentParams,"distance",&distMpc,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
-    }
-
     if(LALInferenceCheckVariable(currentParams,"logmc")){
       mc=exp(*(REAL8 *)LALInferenceGetVariable(currentParams,"logmc"));
       LALInferenceAddVariable(currentParams,"chirpmass",&mc,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
@@ -1314,9 +1309,7 @@ static void extractDimensionlessVariableVector(LALInferenceVariables *currentPar
   	}
   }
 
-  if (LALInferenceCheckVariable(currentParams, "distance")) {
-    d = *(REAL8 *)LALInferenceGetVariable(currentParams, "distance");
-  } else if (LALInferenceCheckVariable(currentParams, "logdistance")) {
+  if (LALInferenceCheckVariable(currentParams, "logdistance")) {
     d = exp(*(REAL8 *)LALInferenceGetVariable(currentParams, "logdistance"));
   } else {
     fprintf(stderr, "Could not find distance or log(d) in LALInferenceCorrelatedAnalyticLogLikelihood (in %s, line %d)\n",
@@ -1648,11 +1641,6 @@ void LALInferenceNetworkSNR(LALInferenceVariables *currentParams,
 
   if (!signalFlag)
       return;
-
-  if(LALInferenceCheckVariable(currentParams, "logdistance")){
-    REAL8 distMpc = exp(*(REAL8*)LALInferenceGetVariable(currentParams,"logdistance"));
-    LALInferenceAddVariable(currentParams,"distance",&distMpc,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
-  }
 
   if(LALInferenceCheckVariable(currentParams,"logmc")){
     mc=exp(*(REAL8 *)LALInferenceGetVariable(currentParams,"logmc"));

@@ -484,7 +484,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
 /*                                                                                                                       */
 /*   ORIENTATION AND SPIN PARAMETERS                                                                                     */
 /*   - "phi0"               reference phase as per LALSimulation convention; REAL8                                       */
-/*   - "distance"           distance in Mpc                                                                              */
+/*   - "logdistance"           distance in Mpc                                                                              */
 /*   - "costheta_jn");      cos of zenith angle between J and N in radians;            REAL8                                    */
 /*   - "phi_jl");        azimuthal angle of L_N on its cone about J radians; REAL8                                    */
 /*   - "tilt_spin1");    zenith angle between S1 and LNhat in radians;       REAL8                                    */
@@ -584,7 +584,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
       exit(0);
     }
 
-  distance	= LALInferenceGetREAL8Variable(model->params,"distance")* LAL_PC_SI * 1.0e6;        /* distance (1 Mpc) in units of metres */
+  distance	= exp(LALInferenceGetREAL8Variable(model->params, "logdistance"))* LAL_PC_SI * 1.0e6;        /* distance (1 Mpc) in units of metres */
   
   phi0		= LALInferenceGetREAL8Variable(model->params, "phase"); /* START phase as per lalsimulation convention, radians*/
   
