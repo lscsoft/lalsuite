@@ -52,11 +52,7 @@ __date__ = git_version.date
 #
 # ===================================================================================================
 # dictionary for indecies for .stats files
-
 global sD
-
-# sD = {'livetime':0, '#gwtrg':1, 'vchan':2, 'vthr':3, 'vwin':4, 'dsec':5, '#auxtrg':6, 'vexp':7, 'vact':8, 'vsig':9, 'eff':10, 'dt':11, 'eff/dt':12}
-
 sD = {
     'livetime': 0,
     '#gwtrg': 1,
@@ -75,11 +71,7 @@ sD = {
     }
 
 # dictionary for indecies for .vetolist files
-
 global vD
-
-# vD = {'livetime':0, '#gwtrg':1, 'bin':2, 'vchan':3, 'vthr':4, 'vwin':5, 'dsec':6, '#auxtrg':7, 'vexp':8, 'vact':9, 'vsig':10, 'eff':11, 'dt':12, 'eff/dt':13, 'c_vact':14, 'c_dsec':15, 'c_auxtrg':16, 'eff/dt_exp':17}
-
 vD = {
     'livetime': 0,
     '#gwtrg': 1,
@@ -104,7 +96,6 @@ vD = {
 
 
 # dictionary for indecies for KW-TRIGGERS 32 second .trg files
-
 global kw_trgD
 kw_trgD = {
     'GPSstart': 0,
@@ -127,70 +118,49 @@ kw_trgD['tcent'] = kw_trgD['GPScent']
 #
 #
 # ===================================================================================================
-
 def effbydt_to_rank(effbydt_exp):
     """ conversion from eff/dt to rank """
-
     return 1. - math.exp(-effbydt_exp / 100.0)  # a transformend version of eff/dt, mapping it to [0,1]
-
-
                                               # normalization by 100 chosen based off of previous experience to make "ranks" reasonable
 ###
-
 def rank_to_effbydt(rank):
     """ conversion from rank to eff/dt """
-
     return -100 * math.log(1. - rank)
 
-
 ###
-
 def vsig_to_rank(vsig):
     """ conversion from vsig to rank """
-
     return 1. - math.exp(-vsig / 100.0)
 
-
 ###
-
 def rank_to_vsig(rank):
     """ conversoin from rank to vsig """
-
     return -100.0 * math.log(1. - rank)
 
-
 ###
-
 def useP_to_rank(useP):
     """ conversion from useP to rank """
-
     return 1. - math.exp(- useP / 0.5)
 
-
+###
 def rank_to_useP(rank):
     """ conversion from rank to useP """
-
     return -0.5 * math.log(1. - rank)
 
-
-# =================================================
-
+# ================================================
 def __check_dirname(dir):
     """ ensures that dir ends in '/' or is an empty string"""
-
     if dir != '' and dir[-1] != '/':
         dir += '/'
     return dir
 
 
 #=================================================
-
 def __load_channels(auxdir, analysis_range=False):
     """ loads channels for OVL analysis 
   expect auxdir to be a directory in which auxiliary triggers are stored. Specifically, expect the following directory structure:
     ~/auxdir/GPSstart_GPSstop/channel_name.trg
   """
-
     auxdir = __check_dirname(auxdir)
     channels = []
 
@@ -206,8 +176,7 @@ def __load_channels(auxdir, analysis_range=False):
                     for l in os.listdir(auxdir + dir):
                         if '.trg' in l:
                             chan = l.split('.trg')[0]
-                            if chan not in channels or len(channels) \
-                                == 0:
+                            if chan not in channels or len(channels) == 0:
                                 channels.append(chan)
             except:
                 pass
@@ -237,7 +206,6 @@ def load_trg(
         raise ValueError('unkown trgtype=%s' % trgtype)
 
   # determine which directories overlap with analysis_range
-
     dirs = [l for l in os.listdir(trgdir) if '_' in l and '.' not in l
             and '-' not in l]  # and ("H" not in l) and ("L" not in l)]
     target_dirs = []
@@ -249,7 +217,6 @@ def load_trg(
             target_dirs.append(_dir)
 
   # iterate over directories and load triggers
-
     trg = []
     seg = [analysis_range]
     for _dir in sorted(target_dirs):
@@ -288,13 +255,11 @@ def round_robin_bin_to_segments(binNo, totBins, __params):
   """
 
   # slice the analysis range into small segments, each a minute in duration
-
     min_segs = [[min, min + 60] for min in
                 range(__params.analysis_range[0],
                 __params.analysis_range[1], 60)]
 
   # create a list for desired segments
-
     win_segs = []
     for index in range(len(min_segs) / totBins):
         win_segs.append(min_segs[binNo + index * totBins])
@@ -303,7 +268,6 @@ def round_robin_bin_to_segments(binNo, totBins, __params):
                         % totBins + binNo])
 
     return win_segs
-
 
 # ===================================================================================================
 #
@@ -314,7 +278,6 @@ def round_robin_bin_to_segments(binNo, totBins, __params):
 # ===================================================================================================
 
 class params(object):
-
     """ an object that represents the params structure. contains all information necessary for ovl to run. """
 
     required_keys = [
@@ -371,9 +334,7 @@ class params(object):
         """ constructs a params object. "metric" can be any of the columns defined in ovl.sD, but should "eff/dt", "vsig" (poisson probability), or "useP" (use percentage)"""
 
     # comments after a variable are examples of what that variable should be
-
     # these fileds do not have ``standard'' values and must be supplied
-
         self.analysis_range = analysis_range  # [959126400, 959731200]
         self.auxdir = auxdir  # '/archive/home/lindy/public_html/triggers/s6-merged/'
         self.gwdir = gwdir  # '/archive/home/lindy/public_html/auxmvc/test3/'
@@ -383,7 +344,6 @@ class params(object):
         self.gwsets = gwsets  # ['kwl1-35', 'gwset', ...]
 
     # these fields have ``standard'' values and do not have to be supplied
-
         self.windows = sorted(windows)
         self.thresholds = sorted(thresholds)
         self.Psigthr = Psigthr
@@ -398,7 +358,6 @@ class params(object):
         self.trgtype = trgtype
 
     # these parameters are only included if they are supplied
-
         if scisegs:
             self.scisegs = scisegs  # ['/archive/home/lindy/public_html/triggers/s6-segments/l1_science.seg']
         if vetosegs:
@@ -408,7 +367,6 @@ class params(object):
 
     def check(self):
         """ checks to make sure all required fields are supplied """
-
         keys = sorted(vars(self).keys())
         for key in self.required_keys:
             if key not in keys:
@@ -429,7 +387,6 @@ def load_params(params_filename, params_dir=''):
   """
 
     params_dir = __check_dirname(params_dir)
-
     f = open(params_dir + params_filename, 'r')
     dic = dict()
     for line in f:
@@ -500,7 +457,6 @@ def write_params(__params, params_filename, params_dir=''):
   expect params_filename to be the name to be assigned to the ASCII version of __params
   expect params_dir to be the directory into which params_filename will be written
   """
-
     params_dir = __check_dirname(params_dir)
     dic = vars(__params)
     f = open(params_dir + params_filename, 'w')
@@ -523,7 +479,6 @@ def redundancies(__params, output_dir="./", verbose=False, write_channels=False)
     computes the intersection and overlap of vetosegments for each possible configuration. 
     This should contain all information necessary to determine which channels are redundant.
     """
-
     output_dir = __check_dirname(output_dir)
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -690,7 +645,6 @@ def recalculate(
   """
 
   # check for consistent input, specifically round_robin binning
-
     source_dir = __check_dirname(source_dir)
     output_dir = __check_dirname(output_dir)
     if not os.path.exists(output_dir):
@@ -709,20 +663,16 @@ def recalculate(
         print 'eval = ' + repr(eval)
 
   # load thresholds
-
     sigthr = -math.log(__params.Psigthr)
     effbydtthr = __params.effbydtthr
 
   # path to auxiliary channel KW triggers
-
     auxdir = __params.auxdir
 
   # path to gw channel KW triggers
-
     gwdir = __params.gwdir
 
   # load list of auxiliary channels
-
     if vars(__params).has_key('channels'):
         channels = event.loadlist(__params.channels)
     else:
@@ -730,13 +680,11 @@ def recalculate(
                                    analysis_range=__params.analysis_range)
 
   # we need the same channels list as for recalculate.py so we can associate numbers with channels
-
     for remove in __params.notused:
         channels = [channel for channel in channels
                     if channel.find(remove) == -1]
 
   # create a channels file
-
     if write_channels:
         ch_file = open(output_dir + 'channels.txt', 'w')
         for chan in channels:
@@ -744,23 +692,19 @@ def recalculate(
         ch_file.close()
 
   # create a checkeroard windo array within the analysis range
-
     if round_robin:
         win_segs = round_robin_bin_to_segments(binNo, totBins, __params)
 
   # load (and clean) a list of segments for science runs
-
     scisegs = dict()
     if vars(__params).has_key('scisegs'):
         for (i, ifo) in enumerate(__params.ifos):
             segs = event.load(__params.scisegs[i])
 
       # segwizard format
-
             if len(segs) > 0 and len(segs[0]) > 2:
 
         # assume that the biggest number will be the stop time of the first segment
-
                 index = segs[0].index(max(segs[0]))
                 segs = [seg[index - 1:index + 1] for seg in segs]
             scisegs[ifo] = \
@@ -770,7 +714,6 @@ def recalculate(
             scisegs[ifo] = [__params.analysis_range]
 
   # window science segments for round-robin analysis
-
     if round_robin:
         for ifo in __params.ifos:
             if not eval:  # use all segments except win_segs
@@ -781,7 +724,6 @@ def recalculate(
                         scisegs[ifo]])
 
   # load (and clean) a list of veto segements
-
     vetosegs = dict()
     if vars(__params).has_key('vetosegs'):
         for (i, ifo) in enumerate(__params.ifos):
@@ -793,19 +735,16 @@ def recalculate(
                 event.andsegments([[__params.analysis_range], segs])
 
   # create a list of all veto triggers to avoid loading multiple times
-
     allvtrg = [0 for i in range(len(channels))]
 
     statsfiles = []  # a list of the completed stats files
     trackfiles = []  # list of completed track files
 
   # iterate analysi over all sets of GW triggers listed in __params.gwsets
-
     for gwset in __params.gwsets:
         gwset += '-' + str(__params.gwthr)
 
     # main output file
-
         filename = gwset + '.stats.' + repr(run)
         if eval:
             filename += '.eval'
@@ -819,7 +758,6 @@ def recalculate(
         f = open(output_dir + filename, 'w')
 
     # tracking file
-
         if track:
             trackfilename = gwset + '.track.' + repr(run)
             if eval:
@@ -842,7 +780,6 @@ def recalculate(
             raise ValueError('unkown trgtype=%s' % __params.trgtype)
 
     # get the appropriate directories (which are bounded by days and do not necessarily line up with params.analysis_range)
-
         (gwtrg, gwseg) = load_trg(
             gwdir,
             __params.analysis_range,
@@ -854,12 +791,10 @@ def recalculate(
             )
 
     # exclude GW triggers which fall outside of analysis segments
-
         for index in event.ifo[method].values():
             gwtrg = event.include(gwtrg, gwseg, tcent=index)
 
     # exclude GW triggers which fall outside of science segments
-
         if vars(__params).has_key('scisegs'):
             for ifo in event.ifo[method].keys():
                 gwtrg = event.include(gwtrg, scisegs[ifo],
@@ -867,7 +802,6 @@ def recalculate(
                 gwseg = event.andsegments([gwseg, scisegs[ifo]])
 
     # apply prior veto segments to prefilter events
-
         if vars(__params).has_key('vetosegs'):
             for ifo in event.ifo[method].keys():
                 gwtrg = event.exclude(gwtrg, vetosegs[ifo],
@@ -881,7 +815,6 @@ def recalculate(
                 safethr = dict()
 
       # create a channel list including all possible combinations of channel, threshold and window
-
             stats = [[
                 0,
                 0,
@@ -903,25 +836,21 @@ def recalculate(
                     __params.thresholds for vwin in __params.windows]
 
       # remove veto channels wich aren't at the site that we are interested in
-
             stats = [line for line in stats if len([key for key in
                      event.ifo[method].keys() if key[0]
                      == channels[line[sD['vchan']]][0]]) > 0]
 
       # remove veto parameters whcih are determined to be unsafe
-
             stats = [line for line in stats
                      if not safethr.has_key(channels[line[sD['vchan'
                      ]]]) or float(safethr[channels[line[sD['vchan'
                      ]]]]) <= line[sD['vthr']]]
 
       # never calculate incremental statistics for the first pass
-
             incremental = 0
         else:
 
           # load data from previous run
-
             o_filename = gwset + '.stats.' + repr(run - 1)
             if round_robin:
                 o_filename += '.training.bin_' + repr(binNo) \
@@ -929,22 +858,18 @@ def recalculate(
             stats = event.load(source_dir + o_filename)
 
       # keep only those configurations that perform well enough
-
             stats = [line for line in stats if line[sD['vsig']]
                      > sigthr and line[sD['eff/dt']] > effbydtthr]
 
       # reverse sort by threshold so highest thresholds are chosen first
-
             stats.sort(key=lambda line: line[sD['vthr']], reverse=True)
 
       # sort by metric : "eff/dt", "vsig", else?
 #      stats.sort(key=lambda line: line[sD['eff/dt']], reverse=True)
-
             stats.sort(key=lambda line: line[sD[__params.metric]],
                        reverse=True)
 
     # print heading and identifiers into main output file
-
         print >> f, '# analysis_range = ' \
             + repr(__params.analysis_range)
         print >> f, '# run = ' + repr(run)
@@ -1020,7 +945,6 @@ def recalculate(
     # ###########
     # BEGIN the analysis
     # ###########
-
         for lineidx in xrange(len(stats)):
             line = stats[lineidx]
 
@@ -1037,7 +961,6 @@ def recalculate(
             gwrate = float(ngwtrg) / float(livetime)
 
       # only load the veto channel once and save it for later use
-
             (vchan, vthr, vwin) = (int(line[sD['vchan']]),
                                    line[sD['vthr']], line[sD['vwin']])
 
@@ -1045,7 +968,6 @@ def recalculate(
                 allvtrg[vchan] = []
 
         # find the bounds so that we pull the correct directories
-
                 (allvtrg[vchan], _) = load_trg(
                     auxdir,
                     __params.analysis_range,
@@ -1070,7 +992,6 @@ def recalculate(
             vexpected = deadsecs * gwrate
 
       # Identify coincident gwtrgs
-
             gwtrg_postveto = gwtrg[:]
             if track:
                 for ifo in [key for key in event.ifo[method].keys()
@@ -1105,7 +1026,6 @@ def recalculate(
                 effbydt = veff / deadfrac
 
       # print results to main output file
-
             print >> f, \
                 '%12.3f %7d %5d %4d %7.3f %11.3f %8d %6.2f %5d %8.2f %9.6f %9.5f %9.5f %9.4f %9.2f %9.2f' \
                 % (
@@ -1187,6 +1107,489 @@ def recalculate(
 
     return (statsfiles, trackfiles)
 
+#==================================================
+
+def optimize(
+    run,
+    __params,
+    output_dir='./',
+    source_dir='./',
+    binNo=False,
+    totBins=False,
+    track=False,
+    verbose=False,
+    write_channels=False,
+    ):
+    """ given a set of configurations, this finds the optimal order in which to apply them. 
+    Computationally expensive, so recalculate() should be called first to reduce the number of configurations. 
+    This should be called between recalculate(eval=False) and vetolist_eval() during training
+    """
+
+    eval=True ### this will always be the case for ovl.optimize, and saves me editing work below...
+
+  # check for consistent input, specifically round_robin binning
+    source_dir = __check_dirname(source_dir)
+    output_dir = __check_dirname(output_dir)
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    if binNo or totBins:
+        if binNo >= totBins:
+            sys.exit('binNo not consistent with totBins')
+        else:
+            round_robin = True
+    else:
+        round_robin = False
+    if verbose:
+        print 'round_robin = ' + repr(round_robin)
+        print 'track = ' + repr(track)
+        print 'eval = ' + repr(eval)
+        print 'optimize = True'
+
+  # load thresholds
+    sigthr = -math.log(__params.Psigthr)
+    effbydtthr = __params.effbydtthr
+
+  # path to auxiliary channel KW triggers
+    auxdir = __params.auxdir
+
+  # path to gw channel KW triggers
+    gwdir = __params.gwdir
+
+  # load list of auxiliary channels
+    if vars(__params).has_key('channels'):
+        channels = event.loadlist(__params.channels)
+    else:
+        channels = __load_channels(auxdir,
+                                   analysis_range=__params.analysis_range)
+
+  # we need the same channels list as for recalculate.py so we can associate numbers with channels
+    for remove in __params.notused:
+        channels = [channel for channel in channels
+                    if channel.find(remove) == -1]
+
+  # create a channels file
+    if write_channels:
+        ch_file = open(output_dir + 'channels.txt', 'w')
+        for chan in channels:
+            print >> ch_file, chan
+        ch_file.close()
+
+  # create a checkeroard windo array within the analysis range
+    if round_robin:
+        win_segs = round_robin_bin_to_segments(binNo, totBins, __params)
+
+  # load (and clean) a list of segments for science runs
+    scisegs = dict()
+    if vars(__params).has_key('scisegs'):
+        for (i, ifo) in enumerate(__params.ifos):
+            segs = event.load(__params.scisegs[i])
+
+      # segwizard format
+            if len(segs) > 0 and len(segs[0]) > 2:
+
+        # assume that the biggest number will be the stop time of the first segment
+                index = segs[0].index(max(segs[0]))
+                segs = [seg[index - 1:index + 1] for seg in segs]
+            scisegs[ifo] = \
+                event.andsegments([[__params.analysis_range], segs])  # intersect segs with analysis range
+    else:
+        for (i, ifo) in enumerate(__params.ifos):
+            scisegs[ifo] = [__params.analysis_range]
+
+  # window science segments for round-robin analysis
+    if round_robin:
+        for ifo in __params.ifos:
+            if not eval:  # use all segments except win_segs
+                scisegs[ifo] = event.removesegments([scisegs[ifo],
+                        event.andsegments([win_segs, scisegs[ifo]])])
+            if eval:  # use only win_segs
+                scisegs[ifo] = event.andsegments([win_segs,
+                        scisegs[ifo]])
+
+  # load (and clean) a list of veto segements
+    vetosegs = dict()
+    if vars(__params).has_key('vetosegs'):
+        for (i, ifo) in enumerate(__params.ifos):
+            segs = event.load(params.vetosegs[i])
+            if len(segs) > 0 and len(segs[0]) > 2:
+                index = (segs[0], index(max(segs[0])))
+                segs = [seg[index - 1:index + 1] for seg in segs]
+            vetosegs[ifo] = \
+                event.andsegments([[__params.analysis_range], segs])
+
+  # create a list of all veto triggers to avoid loading multiple times
+    allvtrg = [0 for i in range(len(channels))]
+
+    statsfiles = []  # a list of the completed stats files
+    trackfiles = []  # list of completed track files
+
+  # iterate analysi over all sets of GW triggers listed in __params.gwsets
+    for gwset in __params.gwsets:
+        gwset += '-' + str(__params.gwthr)
+
+    # main output file
+        filename = gwset + '.stats.' + repr(run)
+        if eval:
+            filename += '.eval'
+        if round_robin:
+            if not eval:
+                filename += '.training.bin_' + repr(binNo) + '_out_of_' \
+                    + repr(totBins)
+            else:
+                filename += '.analysis.bin_' + repr(binNo) + '_out_of_' \
+                    + repr(totBins)
+        f = open(output_dir + filename, 'w')
+
+    # tracking file
+        if track:
+            trackfilename = gwset + '.track.' + repr(run)
+            if eval:
+                trackfilename += '.eval'
+            if round_robin:
+                if not eval:
+                    trackfilename += '.training.bin_' + repr(binNo) \
+                        + '_out_of_' + repr(totBins)
+                else:
+                    trackfilename += '.analysis.bin_' + repr(binNo) \
+                        + '_out_of_' + repr(totBins)
+            trackfilename = output_dir + trackfilename + '.pickle'
+            tfp = open(trackfilename, 'w')
+
+        [method, type] = gwset.split('-')
+
+        if __params.trgtype == 'kw':
+            event.col = event.col_kw
+        else:
+            raise ValueError('unkown trgtype=%s' % __params.trgtype)
+
+    # get the appropriate directories (which are bounded by days and do not necessarily line up with params.analysis_range)
+        (gwtrg, gwseg) = load_trg(
+            gwdir,
+            __params.analysis_range,
+            __params.gwchans,
+            __params.gwthr,
+            trgtype=__params.trgtype,
+            loadtype='full',
+            suffix=__params.suffix,
+            )
+
+    # exclude GW triggers which fall outside of analysis segments
+        for index in event.ifo[method].values():
+            gwtrg = event.include(gwtrg, gwseg, tcent=index)
+
+    # exclude GW triggers which fall outside of science segments
+        if vars(__params).has_key('scisegs'):
+            for ifo in event.ifo[method].keys():
+                gwtrg = event.include(gwtrg, scisegs[ifo],
+                        tcent=event.ifo[method][ifo])
+                gwseg = event.andsegments([gwseg, scisegs[ifo]])
+
+    # apply prior veto segments to prefilter events
+        if vars(__params).has_key('vetosegs'):
+            for ifo in event.ifo[method].keys():
+                gwtrg = event.exclude(gwtrg, vetosegs[ifo],
+                        tcent=event.ifo[method][ifo])
+                gwseg = event.removesegments(gwseg, vetosegs[ifo])
+
+        if run == 0:
+            if __params.safety != None:
+                safethr = dict(event.loadstringtable(params.safety))
+            else:
+                safethr = dict()
+
+      # create a channel list including all possible combinations of channel, threshold and window
+            stats = [[
+                0,
+                0,
+                vchan,
+                vthr,
+                vwin,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                ] for vchan in range(len(channels)) for vthr in
+                    __params.thresholds for vwin in __params.windows]
+
+      # remove veto channels wich aren't at the site that we are interested in
+            stats = [line for line in stats if len([key for key in
+                     event.ifo[method].keys() if key[0]
+                     == channels[line[sD['vchan']]][0]]) > 0]
+
+      # remove veto parameters whcih are determined to be unsafe
+            stats = [line for line in stats
+                     if not safethr.has_key(channels[line[sD['vchan'
+                     ]]]) or float(safethr[channels[line[sD['vchan'
+                     ]]]]) <= line[sD['vthr']]]
+
+        else:
+
+          # load data from previous run
+            o_filename = gwset + '.stats.' + repr(run - 1)
+            if round_robin:
+                o_filename += '.training.bin_' + repr(binNo) \
+                    + '_out_of_' + repr(totBins)
+            stats = event.load(source_dir + o_filename)
+
+      # keep only those configurations that perform well enough
+            stats = [line for line in stats if line[sD['vsig']]
+                     > sigthr and line[sD['eff/dt']] > effbydtthr]
+
+      # reverse sort by threshold so highest thresholds are chosen first
+            stats.sort(key=lambda line: line[sD['vthr']], reverse=True)
+
+      # sort by metric : "eff/dt", "vsig", else?
+#      stats.sort(key=lambda line: line[sD['eff/dt']], reverse=True)
+            stats.sort(key=lambda line: line[sD[__params.metric]],
+                       reverse=True)
+
+    # print heading and identifiers into main output file
+        print >> f, '# analysis_range = ' \
+            + repr(__params.analysis_range)
+        print >> f, '# run = ' + repr(run)
+        print >> f, '# incremental = optimize'
+        if round_robin:
+            print >> f, '# binNo = ' + repr(binNo)
+            print >> f, '# totBins = ' + repr(totBins)
+        print >> f, \
+            '# %10s %7s %5s %4s %7s %11s %8s %6s %5s %8s %9s %9s %9s %9s %9s %9s' \
+            % (
+            'livetime',
+            '#gwtrg',
+            'vchan',
+            'vthr',
+            'vwin',
+            'dsec',
+            '#auxtrg',
+            'vexp',
+            'vact',
+            'vsig',
+            'useP',
+            'veff',
+            'dt',
+            'eff/dt',
+            'time(usr)',
+            'time(real)',
+            )
+        t0 = time.clock()
+        t1 = time.time()
+
+        if track:  # build headers in tfp
+            tfparray = [0] * (len(stats) + 1)
+            tfparray[0] = [
+                'livetime',
+                '#gwtrg',
+                'vchan',
+                'vthr',
+                'vwin',
+                'dsec',
+                '#auxtrg',
+                'vact',
+                'vsig',
+                'gwtrg_vetoed',
+                ]
+        if verbose:  # print column headings, etc
+            print 'analysis_range = ' + repr(__params.analysis_range)
+            print 'run = ' + repr(run)
+            print 'incremental = optimize'
+            if round_robin:
+                print 'binNo = ' + repr(binNo)
+                print 'totBins = ' + repr(totBins)
+            print '%12s %7s %5s %4s %7s %11s %8s %6s %5s %8s %9s %9s %9s %9s %9s %9s' \
+                % (
+                'livetime',
+                '#gwtrg',
+                'vchan',
+                'vthr',
+                'vwin',
+                'dsec',
+                '#auxtrg',
+                'vexp',
+                'vact',
+                'vsig',
+                'useP',
+                'eff',
+                'dt',
+                'eff/dt',
+                'time(usr)',
+                'time(real)',
+                )
+
+    ############
+    # BEGIN the analysis
+    ############
+
+        lineidx = 0 ### used for track arrays
+        while len(stats): ### iterate until we're done with all configurations
+            ngwtrg = len(gwtrg)  # '#gwtrg'
+            livetime = event.livetime(gwseg)
+            if ngwtrg <= 0 or livetime <= 0:  # stop if there are no more gwtrg
+                if verbose:
+                    print 'ngwtrg = ' + str(ngwtrg)
+                    print 'livetime = ' + str(livetime)
+                    print 'gwseg = ' + str(gwseg)
+                    print 'line = ' + str(line)
+                    print 'no more gwtrg or livetime'
+                break
+            gwrate = float(ngwtrg) / float(livetime)
+
+            ### iterate over remaining veto configurations and find the best one
+            result = None
+            track_result = None
+            best_metric = -10000
+            best_lineid = None
+            best_gwtrg = None
+            best_gwseg = None
+            for lineid, line in enumerate(stats):
+                vchan, vthr, vwin = int(line[sD['vchan']]), line[sD['vthr']], line[sD['vwin']]
+
+                if allvtrg[vchan] == 0:
+                    allvtrg[vchan] = []
+
+                    # find the bounds so that we pull the correct directories
+                    (allvtrg[vchan], _) = load_trg(
+                        auxdir,
+                        __params.analysis_range,
+                        [channels[vchan]],
+                        __params.thresholds[0],
+                        trgtype=__params.trgtype,
+                        loadtype='veto',
+                        suffix=__params.suffix,
+                        )
+
+                vtrg = allvtrg[vchan]  # full set of veto triggers
+                nauxtrg = len(event.include([trg for trg in vtrg
+                              if trg[event.col_veto['signif']] >= vthr],
+                              gwseg, tcent=event.col_veto['tcent']))  # number of auxiliary triggers
+                event.col = event.col_veto
+
+                vetoseg = event.vetosegs(vtrg, vwin, vthr)  # builds veto segments based on configuration parameters
+                vetoseg = event.andsegments(vetoseg, gwseg)  # only count the intersection
+
+                deadsecs = event.livetime(vetoseg)
+                deadfrac = float(deadsecs) / float(livetime)
+                vexpected = deadsecs * gwrate
+
+                # Identify coincident gwtrgs
+                gwtrg_postveto = gwtrg[:]
+                if track:
+                    for ifo in [key for key in event.ifo[method].keys()
+                                if key == (channels[vchan])[:2]
+                                or channels[vchan][1] == '0' and key[0]
+                                == channels[vchan][0]]:
+                        [gwtrg_vetoed, gwtrg_postveto] = \
+                            event.includeexclude(gwtrg_postveto, vetoseg,
+                                tcent=event.ifo[method][ifo])
+                else:
+                    for ifo in [key for key in event.ifo[method].keys()
+                                if key == (channels[vchan])[:2]
+                                or channels[vchan][1] == '0' and key[0]
+                                == channels[vchan][0]]:
+                        gwtrg_postveto = event.exclude(gwtrg_postveto,
+                                vetoseg, tcent=event.ifo[method][ifo])
+
+                gwseg_postveto = event.removesegments(gwseg, vetoseg)
+
+                vactual = ngwtrg - len(gwtrg_postveto)
+
+                if nauxtrg > 0:
+                    useP = 1. * vactual / nauxtrg
+                else:
+                    useP = 0.
+
+                vsig = 0. - _gammpln(vactual, vexpected)
+                veff = float(vactual) / float(ngwtrg)
+                if deadfrac == 0:
+                    effbydt = 0.
+                else:
+                    effbydt = veff / deadfrac
+
+                r = [
+                    livetime,
+                    ngwtrg,
+                    vchan,
+                    vthr,
+                    vwin,
+                    deadsecs,
+                    nauxtrg,
+                    vexpected,
+                    vactual,
+                    vsig,
+                    useP,
+                    veff,
+                    deadfrac,
+                    effbydt,
+                    ]
+                if r[sD[__params.metric]] > best_metric:
+                    best_metric = r[sD[__params.metric]]
+                    best_lineid = lineid
+                    best_gwtrg = gwtrg_postveto
+                    bets_gwseg = gwseg_postveto
+
+                    result = r
+                    if track:
+                        if len(gwtrg_vetoed) == 0:
+                            gwtrg_vetoed = ['NONE']
+                        track_result = [
+                            livetime,
+                            ngwtrg,
+                            vchan,
+                            vthr,
+                            vwin,
+                            deadsecs,
+                            nauxtrg,
+                            vactual,
+                            vsig,
+                            gwtrg_vetoed,
+                            ]
+
+            ### we now know which is the best
+            if best_gwtrg == None:
+                raise ValueError("could not find a new \"best\" veto config. Perhaps initial best_metric is too high?")
+
+            stats.pop( best_lineid ) ### remove the line
+            gwtrg = best_gwtrg ### remove the triggers
+            gwseg = bets_gwseg ### remove the segments
+
+            for line in stats:  # check if we need to remember the triggers for vchan
+                if int(line[sD['vchan']]) == vchan:
+                    break
+            else:
+                allvtrg[vchan] = 0
+
+            ### report data
+            # print results to main output file
+            print >> f, \
+                '%12.3f %7d %5d %4d %7.3f %11.3f %8d %6.2f %5d %8.2f %9.6f %9.5f %9.5f %9.4f %9.2f %9.2f' \
+                % tuple(result + [time.clock() - t0, time.time() - t1] )
+
+            if track:
+                tfparray[lineidx + 1] = track_result
+                lineidx += 1
+
+            if verbose:
+                print '%12.3f %7d %5d %4d %7.3f %11.3f %8d %6.2f %5d %8.2f %9.6f %9.5f %9.5f %9.4f %9.2f %9.2f' \
+                    % tuple( result + [time.clock() - t0, time.time() - t1] )
+
+            f.flush()
+
+        ### we've now exhausted all veto configurations in the list
+        f.close()
+        statsfiles.append(filename)
+        if track:
+            pickle.dump(tfparray, tfp)
+            tfp.close()
+            trackfiles.append(trackfilename)
+
+    return (statsfiles, trackfiles)
 
 # =================================================
 
@@ -2219,6 +2622,7 @@ def train(
     output_dir='./',
     verbose=False,
     write_channels=False,
+    optimal=True,
     ):
     """ trains OVL on a specified data set 
   num_runs is a non-negative integer corresponding to the maximum number of iterations for the algorithm
@@ -2251,25 +2655,35 @@ def train(
             eval=False,
             verbose=verbose,
             )
-    recalculate(  # we only write the channel list on the last iteration
-        num_runs,
-        incremental,
-        __params,
-        source_dir=OVL_dir,
-        output_dir=OVL_dir,
-        track=True,
-        eval=True,
-        verbose=verbose,
-        write_channels=write_channels,
-        )
+
+    if optimal: ### find the best order for the remaining channels. More expensive than just another recalculate, but guaranteed to produce an optimal result
+        optimize(
+            num_runs,
+            __params,
+            source_dir=OVL_dir,
+            output_dir=OVL_dir,
+            track=True,
+            verbose=verbose,
+            write_channels=write_channels,
+            )
+    else: ### just another recalculate
+        recalculate(  # we only write the channel list on the last iteration
+            num_runs,
+            incremental,
+            __params,
+            source_dir=OVL_dir,
+            output_dir=OVL_dir,
+            track=True,
+            eval=True,
+            verbose=verbose,
+            write_channels=write_channels,
+            )
 
   # generate vetolist
-
     vetolists = vetolist_eval(num_runs, __params, output_dir=OVL_dir,
                               source_dir=OVL_dir, verbose=verbose)
 
   # generate standard ROC file
-
     for v in vetolists:
         v = v.split('/')[-1]
         roc_filename = vetolist_to_ROC(v, source_dir=OVL_dir,
@@ -2278,7 +2692,7 @@ def train(
     return vetolists
 
 ###
-def convergent_train(__params, num_runs=5, output_dir="./", verbose=False, write_channels=False):
+def convergent_train(__params, output_dir="./", verbose=False, write_channels=False):
     """
     trains OVL on a specified data set
     increments incremental to keep pace with num_runs and auto-terminates iteration only when incremental==num_configs_in_list
@@ -2312,12 +2726,10 @@ def convergent_train(__params, num_runs=5, output_dir="./", verbose=False, write
 
     incremental = run-1
 
-    for run in xrange(run, run+num_runs):
-        recalculate( run, incremental, __params, source_dir=OVL_dir, output_dir=OVL_dir, eval=False, verbose=verbose, write_channels=False)
-    run += 1
-
     # we only write the channel list on the last iteration
-    recalculate( run, incremental, __params, source_dir=OVL_dir, output_dir=OVL_dir, track=True, eval=True, verbose=verbose, write_channels=write_channels)
+    ### find the best possible order for these configurations
+    ### more expensive than a simple recalculate run, but guaranteed to reach an optimal result
+    optimize( run, __params, source_dir=OVL_dir, output_dir=OVL_dir, track=True, verbose=verbose, write_channels=False)
 
     # generate vetolist
     vetolists = vetolist_eval(run, __params, output_dir=OVL_dir, source_dir=OVL_dir, verbose=verbose)
