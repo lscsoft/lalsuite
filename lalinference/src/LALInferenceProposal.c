@@ -366,10 +366,12 @@ LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runSt
     if (LALInferenceGetProcParamVal(command_line, "--no-sky-frame"))
         skyframe = 0;
 
-    INT4 adaptationOn = 1;
+    INT4 noAdapt = 0;
     if (LALInferenceGetProcParamVal(command_line, "--no-adapt"))
-        adaptationOn = 0;
-    LALInferenceAddINT4Variable(propArgs, "adaptationOn", adaptationOn, LALINFERENCE_PARAM_FIXED);
+        noAdapt = 1;
+    INT4 adapting = !noAdapt;
+    LALInferenceAddINT4Variable(propArgs, "no_adapt", noAdapt, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddINT4Variable(propArgs, "adapting", adapting, LALINFERENCE_PARAM_FIXED);
 
     INT4 tau = 5;
     ppt = LALInferenceGetProcParamVal(command_line, "--adaptTau");
@@ -597,7 +599,7 @@ REAL8 LALInferenceSingleAdaptProposal(LALInferenceThreadState *thread,
     LALInferenceVariables *args = thread->proposalArgs;
     gsl_rng *rng = thread->GSLrandom;
 
-    if (LALInferenceGetINT4Variable(args, "adaptationOn")) {
+    if (!LALInferenceGetINT4Variable(args, "no_adapt")) {
         if (!LALInferenceCheckVariable(args, "adapting"))
             LALInferenceSetupAdaptiveProposals(args, currentParams);
 
@@ -3039,7 +3041,7 @@ void LALInferenceSetupDifferentialEvolutionProposal(LALInferenceThreadState *thr
 
 /** Setup adaptive proposals. Should be called when state->currentParams is already filled with an initial sample */
 void LALInferenceSetupAdaptiveProposals(LALInferenceVariables *propArgs, LALInferenceVariables *params) {
-    INT4 adaptationOn, adapting;
+    INT4 no_adapt, adapting;
     INT4 adaptTau, adaptLength, adaptResetBuffer, adaptStart;
     REAL8 sigma, s_gamma;
     REAL8 logLAtAdaptStart = -DBL_MAX;
@@ -3072,8 +3074,8 @@ void LALInferenceSetupAdaptiveProposals(LALInferenceVariables *propArgs, LALInfe
         LALInferenceAddREAL8Variable(propArgs, varname, sigma, LALINFERENCE_PARAM_LINEAR);
     }
 
-    adaptationOn = LALInferenceGetINT4Variable(propArgs, "adaptationOn");
-    adapting = adaptationOn;      // Indicates if current iteration is being adapted
+    no_adapt = LALInferenceGetINT4Variable(propArgs, "no_adapt");
+    adapting = !no_adapt;      // Indicates if current iteration is being adapted
     LALInferenceAddINT4Variable(propArgs, "adapting", adapting, LALINFERENCE_PARAM_OUTPUT);
 
     nameBuffer = XLALCalloc(MAX_STRLEN, sizeof(char));

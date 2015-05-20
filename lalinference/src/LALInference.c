@@ -3881,29 +3881,40 @@ int LALInferenceSplineCalibrationFactor(REAL8Vector *logfreqs,
   }
 }
 
-void LALInferenceFprintSplineCalibrationHeader(FILE *output, LALInferenceThreadState *thread, LALInferenceIFOData *ifo) {
-  do {
-    char parname[VARNAME_MAX];
-    size_t i;
+void LALInferenceFprintSplineCalibrationHeader(FILE *output, LALInferenceThreadState *thread) {
+    INT4 i, nifo;
+    char **ifo_names = NULL;
+
     UINT4 ncal = *(UINT4 *)LALInferenceGetVariable(thread->currentParams, "spcal_npts");
 
-    for (i = 0; i < ncal; i++) {
-      snprintf(parname, VARNAME_MAX, "%sspcalamp%02ld", ifo->name, i);
-      fprintf(output, "%s\t", parname);
-    }
+    nifo = LALInferenceGetINT4Variable(thread->cycle->proposalArgs, "nDet");
+    ifo_names = *(char ***)LALInferenceGetVariable(thread->cycle->proposalArgs, "detector_names");
 
-    for (i = 0; i < ncal; i++) {
-      snprintf(parname, VARNAME_MAX, "%sspcalphase%02ld", ifo->name, i);
-      fprintf(output, "%s\t", parname);
-    }
+    for (i=0; i<nifo; i++) {
+        char parname[VARNAME_MAX];
+        size_t j;
 
-    ifo = ifo->next;
-  } while (ifo);
+        for (j = 0; j < ncal; j++) {
+            snprintf(parname, VARNAME_MAX, "%sspcalamp%02ld", ifo_names[i], j);
+            fprintf(output, "%s\t", parname);
+        }
+
+        for (j = 0; j < ncal; j++) {
+          snprintf(parname, VARNAME_MAX, "%sspcalphase%02ld", ifo_names[i], j);
+          fprintf(output, "%s\t", parname);
+        }
+    }
 }
 
-void LALInferencePrintSplineCalibration(FILE *output, LALInferenceThreadState *thread, LALInferenceIFOData *ifo) {
-    do {
-        size_t i;
+void LALInferencePrintSplineCalibration(FILE *output, LALInferenceThreadState *thread) {
+    INT4 i, nifo;
+    char **ifo_names = NULL;
+
+    nifo = LALInferenceGetINT4Variable(thread->cycle->proposalArgs, "nDet");
+    ifo_names = *(char ***)LALInferenceGetVariable(thread->cycle->proposalArgs, "detector_names");
+
+    for (i=0; i<nifo; i++) {
+        size_t j;
 
         char ampVarName[VARNAME_MAX];
         char phaseVarName[VARNAME_MAX];
@@ -3911,20 +3922,18 @@ void LALInferencePrintSplineCalibration(FILE *output, LALInferenceThreadState *t
         REAL8Vector *amp = NULL;
         REAL8Vector *phase = NULL;
 
-        snprintf(ampVarName, VARNAME_MAX, "%s_spcal_amp", ifo->name);
-        snprintf(phaseVarName, VARNAME_MAX, "%s_spcal_phase", ifo->name);
+        snprintf(ampVarName, VARNAME_MAX, "%s_spcal_amp", ifo_names[i]);
+        snprintf(phaseVarName, VARNAME_MAX, "%s_spcal_phase",  ifo_names[i]);
 
         amp = *(REAL8Vector **)LALInferenceGetVariable(thread->currentParams, ampVarName);
         phase = *(REAL8Vector **)LALInferenceGetVariable(thread->currentParams, phaseVarName);
 
-        for (i = 0; i < amp->length; i++) {
-            fprintf(output, "%g\t", amp->data[i]);
+        for (j = 0; j < amp->length; j++) {
+            fprintf(output, "%g\t", amp->data[j]);
         }
 
-        for (i = 0; i < phase->length; i++) {
-            fprintf(output, "%g\t", phase->data[i]);
+        for (j = 0; j < phase->length; i++) {
+            fprintf(output, "%g\t", phase->data[j]);
         }
-
-        ifo = ifo->next;
-    } while (ifo);
+    }
 }

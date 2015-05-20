@@ -568,7 +568,7 @@ tagLALInferenceRunState
   LALInferenceVariables				**livePoints; /** Array of live points for Nested Sampling */
   LALInferenceThreadState          **threads; /** Array of chains for this run */
   INT4 nthreads; /** Number of threads stored in ``threads``. */
-  LALInferenceSwapRoutine  *parallelSwap;
+  LALInferenceSwapRoutine  parallelSwap;
   gsl_rng *GSLrandom;
 } LALInferenceRunState;
 
@@ -702,7 +702,7 @@ void LALInferencePrintSample(FILE *fp,LALInferenceVariables *sample);
 void LALInferencePrintSampleNonFixed(FILE *fp,LALInferenceVariables *sample);
 
 /** Output spline calibration parameters */
-void LALInferencePrintSplineCalibration(FILE *fp, LALInferenceThreadState *thread, LALInferenceIFOData *ifo);
+void LALInferencePrintSplineCalibration(FILE *fp, LALInferenceThreadState *thread);
 
 /** Read in the non-fixed parameters from the given file (position in
     the file must be arranged properly before calling this
@@ -1070,7 +1070,7 @@ void LALInferenceSetstringVariable(LALInferenceVariables* vars,const char* name,
 /**
  * Print spline calibration parameter names as tab-separated ASCII
  */
-void LALInferenceFprintSplineCalibrationHeader(FILE *output, LALInferenceThreadState *thread, LALInferenceIFOData *ifo);
+void LALInferenceFprintSplineCalibrationHeader(FILE *output, LALInferenceThreadState *thread);
 
 void LALInferenceDetFrameToEquatorial(LALDetector *det0, LALDetector *det1,
                                       REAL8 t0, REAL8 alpha, REAL8 theta,

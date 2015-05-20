@@ -59,6 +59,4 @@ endif
 
 EXTRA_DIST += \
 	LALInferenceMCMCSampler.c \
-	LALInferenceMCMCSampler.h \
-	LALInferenceEnsembleSampler.c \
-	LALInferenceEnsembleSampler.h
+	LALInferenceMCMCSampler.h

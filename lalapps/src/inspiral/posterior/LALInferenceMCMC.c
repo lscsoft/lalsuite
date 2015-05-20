@@ -180,10 +180,12 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
                (--adapt-verbose)                Output parameter jump sizes and acceptance rate stats to file.\n\
                (--temp-verbose)                 Output temperature swapping stats to file.\n\
                (--prop-verbose)                 Output proposal stats to file.\n\
+               (--prop-track)                   Output proposal parameters.\n\
                (--outfile file)                 Write output files <file>.<chain_number> (PTMCMC.output.<random_seed>.<mpi_thread>).\n";
     INT4 i;
     INT4 mpi_rank, mpi_size;
     INT4 ntemp_per_thread;
+    INT4 noAdapt, adaptTau, adaptLength;
     ProcessParamsTable *command_line = NULL, *ppt = NULL;
     LALInferenceThreadState *thread;
     LALInferenceVariables *propArgs;
@@ -220,6 +222,14 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
     INT4 verbose = 0;
     if (LALInferenceGetProcParamVal(command_line, "--verbose"))
         verbose = 1;
+
+    INT4 propVerbose = 0;
+    if (LALInferenceGetProcParamVal(command_line, "--prop-verbose"))
+        propVerbose = 1;
+
+    INT4 propTrack = 0;
+    if (LALInferenceGetProcParamVal(command_line, "--prop-track"))
+        propTrack = 1;
 
     /* Step counter */
     INT4 step = 0;
@@ -297,57 +307,36 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
     if (LALInferenceGetProcParamVal(command_line, "--adapt-verbose"))
         adapt_verbose = 1;
 
+    /* Output SNRs */
+    INT4 outputSNRs = 0;
+    if (LALInferenceGetProcParamVal(command_line, "--output-snrs"))
+        outputSNRs = 1;
+
     /* Save everything in the run state */
-    LALInferenceAddVariable(algorithm_params, "verbose", &verbose,
-                            LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddINT4Variable(algorithm_params, "verbose", verbose, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddINT4Variable(algorithm_params, "prop_verbose", propVerbose, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddINT4Variable(algorithm_params, "prop_track", propTrack, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddINT4Variable(algorithm_params, "benchmark", benchmark, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddINT4Variable(algorithm_params, "step", step, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddINT4Variable(algorithm_params, "nsteps", nsteps, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddINT4Variable(algorithm_params, "skip", skip, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddINT4Variable(algorithm_params, "neff", neff, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddINT4Variable(algorithm_params, "tskip", Tskip, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddINT4Variable(algorithm_params, "mpirank", mpi_rank, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddINT4Variable(algorithm_params, "mpisize", mpi_size, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddINT4Variable(algorithm_params, "ntemp", ntemp, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddREAL8Variable(algorithm_params, "temp_min", tempMin, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddREAL8Variable(algorithm_params, "temp_max", tempMax, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddINT4Variable(algorithm_params, "de_buffer_limit", de_buffer_limit, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddREAL8Variable(algorithm_params, "trig_snr", trigSNR, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddINT4Variable(algorithm_params, "acl", acl, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddINT4Variable(algorithm_params, "temp_verbose", temp_verbose, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddINT4Variable(algorithm_params, "adapt_verbose", adapt_verbose, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddINT4Variable(algorithm_params, "output_snrs", outputSNRs, LALINFERENCE_PARAM_OUTPUT);
 
-    LALInferenceAddVariable(algorithm_params, "benchmark", &benchmark,
-                            LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
-
-    LALInferenceAddVariable(algorithm_params, "step", &step,
-                            LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
-
-    LALInferenceAddVariable(algorithm_params, "nsteps", &nsteps,
-                            LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
-
-    LALInferenceAddVariable(algorithm_params, "skip", &skip,
-                            LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
-
-    LALInferenceAddVariable(algorithm_params, "neff", &neff,
-                            LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
-
-    LALInferenceAddVariable(algorithm_params, "tskip", &Tskip,
-                            LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
-
-    LALInferenceAddVariable(algorithm_params, "mpirank", &mpi_rank,
-                            LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
-
-    LALInferenceAddVariable(algorithm_params, "mpisize", &mpi_size,
-                            LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
-
-    LALInferenceAddVariable(algorithm_params, "ntemp", &ntemp,
-                            LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
-
-    LALInferenceAddVariable(algorithm_params, "temp_min", &tempMin,
-                            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
-
-    LALInferenceAddVariable(algorithm_params, "temp_max", &tempMax,
-                            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
-
-    LALInferenceAddVariable(algorithm_params, "de_buffer_limit", &de_buffer_limit,
-                            LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
-
-    LALInferenceAddVariable(algorithm_params, "trig_snr", &trigSNR,
-                            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
-
-    LALInferenceAddVariable(algorithm_params, "acl", &acl,
-                            LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
-
-    LALInferenceAddVariable(algorithm_params, "temp_verbose", &temp_verbose,
-                            LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
-
-    LALInferenceAddVariable(algorithm_params, "adapt_verbose", &adapt_verbose,
-                            LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
+    /* Add adaptation settings to proposal args */
+    LALInferenceAddINT4Variable(runState->proposalArgs, "de_skip", skip, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddINT4Variable(runState->proposalArgs, "output_snrs", outputSNRs, LALINFERENCE_PARAM_OUTPUT);
 
     /* Build the temperature ladder */
     ntemp_per_thread = LALInferenceBuildHybridTempLadder(runState);
@@ -365,6 +354,17 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
         thread->cycle = LALInferenceSetupDefaultInspiralProposalCycle(propArgs);
         LALInferenceRandomizeProposalCycle(thread->cycle, thread->GSLrandom);
     }
+
+    /* Add adaptation settings to algorithm params */
+    noAdapt = LALInferenceGetINT4Variable(propArgs, "no_adapt");
+    adaptTau = LALInferenceGetINT4Variable(propArgs, "adaptTau");
+    adaptLength = LALInferenceGetINT4Variable(propArgs, "adaptLength");
+
+    LALInferenceAddINT4Variable(algorithm_params, "no_adapt", noAdapt, LALINFERENCE_PARAM_OUTPUT);
+
+    LALInferenceAddINT4Variable(algorithm_params, "adaptTau", adaptTau, LALINFERENCE_PARAM_OUTPUT);
+
+    LALInferenceAddINT4Variable(algorithm_params, "adaptLength", adaptLength, LALINFERENCE_PARAM_OUTPUT);
 
     return XLAL_SUCCESS;
 }

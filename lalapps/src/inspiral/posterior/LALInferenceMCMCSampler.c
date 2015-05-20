@@ -99,25 +99,22 @@ accumulateDifferentialEvolutionSample(LALInferenceThreadState *thread, size_t bu
         if (buffer_limit < newSize) {
             /* Then thin, and record sample. */
             thinDifferentialEvolutionPoints(thread);
-            return accumulateDifferentialEvolutionSample(thread);
+            return accumulateDifferentialEvolutionSample(thread, buffer_limit);
         } else {
             thread->differentialPoints = XLALRealloc(thread->differentialPoints, newSize*sizeof(LALInferenceVariables *));
             thread->differentialPointsSize = newSize;
         }
     }
 
-    thread->differentialPoints[i*thread->differentialPointsLength] = XLALCalloc(1, sizeof(LALInferenceVariables));
-    LALInferenceCopyVariables(thread->currentParams, thread->differentialPoints[i*thread->differentialPointsLength]);
+    thread->differentialPoints[thread->differentialPointsLength] = XLALCalloc(1, sizeof(LALInferenceVariables));
+    LALInferenceCopyVariables(thread->currentParams, thread->differentialPoints[thread->differentialPointsLength]);
 
     thread->differentialPointsLength += 1;
 }
 
 static void
 resetDifferentialEvolutionBuffer(LALInferenceThreadState *thread) {
-    INT4 Nskip;
-    size_t i, j;
-
-    Nskip = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "skip");
+    size_t i;
 
     for (i = 0; i < thread->differentialPointsLength; i++) {
         LALInferenceClearVariables(thread->differentialPoints[i]);
@@ -125,28 +122,22 @@ resetDifferentialEvolutionBuffer(LALInferenceThreadState *thread) {
         thread->differentialPoints[i] = NULL;
     }
 
-    thread->differentialPoints = XLALRealloc(thread->differentialPoints, nthreads*sizeof(LALInferenceVariables *));
+    thread->differentialPoints = XLALRealloc(thread->differentialPoints, sizeof(LALInferenceVariables *));
     thread->differentialPointsLength = 0;
     thread->differentialPointsSize = 1;
-    thread->differentialPointsSkip = Nskip;
+    thread->differentialPointsSkip = LALInferenceGetINT4Variable(thread->proposalArgs, "de_skip");
 }
 
 
 void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
-    INT4 i, t, c; //indexes for for() loops
+    INT4 i, t; //indexes for for() loops
     INT4 runComplete = 0;
     INT4 iEff = 0;
     REAL8 timestamp=-1.0, timestamp_epoch=0.0;
-    INT4 *acceptanceCounts;
     struct timeval tv;
-    REAL8 nullLikelihood;
     INT4 MPIrank, MPIsize;
-    MPI_Request MPIrequest;
-    MPI_Status MPIstatus;
     LALStatus status;
-    LALInferenceMPIswapAcceptance swapReturn;
     LALInferenceVariables *algorithm_params;
-    LALInferenceProposalStatistics *propStat;
     LALInferenceVariableItem *ptr;
     LALInferenceThreadState *thread;
 
@@ -163,15 +154,15 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
     INT4 Niter = LALInferenceGetINT4Variable(algorithm_params, "nsteps");
     INT4 Neff = LALInferenceGetINT4Variable(algorithm_params, "neff");
     INT4 Nskip = LALInferenceGetINT4Variable(algorithm_params, "skip");
-    INT4 Tskip = LALInferenceGetINT4Variable(algorithm_params, "tskip");
     INT4 de_buffer_limit = LALInferenceGetINT4Variable(algorithm_params, "de_buffer_limit");
     INT4 randomseed = LALInferenceGetINT4Variable(algorithm_params, "random_seed");
 
     INT4 verbose = LALInferenceGetINT4Variable(algorithm_params, "verbose");
-    INT4 propVerbose = LALInferenceGetINT4Variable(algorithm_params, "propVerbose");
-    INT4 tempVerbose = LALInferenceGetINT4Variable(algorithm_params, "tempVerbose");
-    INT4 adaptVerbose = LALInferenceGetINT4Variable(algorithm_params, "adaptVerbose");
-    INT4 benchmark = LALInferenceGetINT4Variable(algorithm_params, "benchmark")
+    INT4 propVerbose = LALInferenceGetINT4Variable(algorithm_params, "prop_verbose");
+    INT4 propTrack = LALInferenceGetINT4Variable(algorithm_params, "prop_track");
+    INT4 tempVerbose = LALInferenceGetINT4Variable(algorithm_params, "temp_verbose");
+    INT4 adaptVerbose = LALInferenceGetINT4Variable(algorithm_params, "adapt_verbose");
+    INT4 benchmark = LALInferenceGetINT4Variable(algorithm_params, "benchmark");
 
     /* Clustered-KDE proposal updates */
     INT4 kde_update_start = 200;  // rough number of effective samples to start KDE updates
@@ -183,22 +174,10 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
         diffEvo = 0;
 
     /* Adaptation settings */
-    for (c=0; c<n_local_threads; c++) {
-        thread = runState->threads[c];
-
-        INT4 adaptationOn = LALInferenceGetINT4Variable(thread->proposalArgs, "adaptationOn");
-        INT4 adaptTau = LALInferenceGetINT4Variable(thread->proposalArgs, "adaptTau"); // Sets decay of adaption function
-        INT4 adaptLength = LALInferenceGetINT4Variable(thread->proposalArgs, "adaptLength"); // Number of iterations to adapt before turning off
-        REAL8 s_gamma = LALInferenceGetREAL8Variable(thread->proposalArgs, "s_gamma"); // Sets the size of changes to jump size during adaptation
-
-        /* burnin settings */
-        INT4 burnin = 1; // Burnin phase where proposal ratio is ignored
-        INT4 burninLength = (INT4)(0.25 * adaptLength);  // Number of iterations to turn off proposal ratio
-
-        LALInferenceAddVariable(thread->proposalArgs, "burnin", &burnin, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
-        LALInferenceAddVariable(thread->proposalArgs, "burninLength", &burninLength, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
-        LALInferenceAddVariable(thread->proposalArgs, "acceptanceCount", &acceptanceCount,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
-    }
+    INT4 adapting;
+    INT4 no_adapt = LALInferenceGetINT4Variable(runState->algorithmParams, "no_adapt");
+    INT4 adaptTau = LALInferenceGetINT4Variable(runState->algorithmParams, "adaptTau");
+    INT4 adaptLength = LALInferenceGetINT4Variable(runState->algorithmParams, "adaptLength"); // Number of iterations to adapt before turning off
 
     /* File outputs */
     FILE *threadoutput = NULL;
@@ -212,8 +191,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
     char swapfilename[256];
 
     if (tempVerbose) {
-        for (c = 0; c < n_local_threads; c++) {
-            sprintf(swapfilename, "PTMCMC.tempswaps.%u.%2.2d", randomseed, n_local_threads*MPIrank+c);
+        for (t = 0; t < n_local_threads; t++) {
+            sprintf(swapfilename, "PTMCMC.tempswaps.%u.%2.2d", randomseed, n_local_threads*MPIrank+t);
             swapfile = fopen(swapfilename, "w");
 
             fprintf(swapfile,
@@ -223,57 +202,59 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
         }
     }
 
-    if (adaptationOn && adaptVerbose) {
-        for (c = 0; c < n_local_threads; c++) {
-            thread = runState->threads[c];
+    if (adaptVerbose) {
+        for (t = 0; t < n_local_threads; t++) {
+            thread = runState->threads[t];
+            if (!no_adapt) {
+                sprintf(statfilename, "PTMCMC.statistics.%u.%2.2d",
+                        randomseed, n_local_threads*MPIrank+t);
+                statfile = fopen(statfilename, "w");
 
-            sprintf(statfilename, "PTMCMC.statistics.%u.%2.2d", randomseed, n_local_threads*MPIrank+t);
-            statfile = fopen(statfilename, "w");
-
-            fprintf(statfile, "cycle\ts_gamma");
-            ptr = thread->currentParams->head;
-            while (ptr != NULL) {
-                if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
-                    fprintf(statfile, "\tsigma_%s",
-                            LALInferenceTranslateInternalToExternalParamName(ptr->name));
+                fprintf(statfile, "cycle\ts_gamma");
+                ptr = thread->currentParams->head;
+                while (ptr != NULL) {
+                    if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
+                        fprintf(statfile, "\tsigma_%s",
+                                LALInferenceTranslateInternalToExternalParamName(ptr->name));
+                    }
+                    ptr = ptr->next;
                 }
-                ptr = ptr->next;
-            }
-            ptr = thread->currentParams->head;
-            while ( ptr != NULL) {
-                if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
-                    fprintf(statfile, "\tPaccept_%s",
-                            LALInferenceTranslateInternalToExternalParamName(ptr->name));
+                ptr = thread->currentParams->head;
+                while ( ptr != NULL) {
+                    if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
+                        fprintf(statfile, "\tPaccept_%s",
+                                LALInferenceTranslateInternalToExternalParamName(ptr->name));
+                    }
+                    ptr=ptr->next;
                 }
-                ptr=ptr->next;
-            }
-            fprintf(statfile,"\n");
+                fprintf(statfile,"\n");
 
-            fclose(statfile);
+                fclose(statfile);
+            }
         }
     }
 
     if (propVerbose) {
-        for (c = 0; c < n_local_threads; c++) {
-            thread = runState->threads[c];
+        for (t = 0; t < n_local_threads; t++) {
+            thread = runState->threads[t];
             thread->preProposalParams = XLALCalloc(1, sizeof(LALInferenceVariableItem));
             thread->proposedParams = XLALCalloc(1, sizeof(LALInferenceVariableItem));
         }
     }
 
-    threadoutputs = LALInferencePrintPTMCMCHeadersOrResume(runState);
+    FILE **threadoutputs = LALInferencePrintPTMCMCHeadersOrResume(runState);
     if (MPIrank == 0)
         LALInferencePrintPTMCMCInjectionSample(runState);
 
     if (benchmark)
-        timestamp_epoch = LALInferenceGetREAL8Variable(runState->algorithmParams, "timestamp_epoch"));
+        timestamp_epoch = LALInferenceGetREAL8Variable(runState->algorithmParams, "timestamp_epoch");
 
     /* Print run details */
     if (MPIrank == 0) {
         thread = runState->threads[0];
         if (verbose) {
             printf("\nParallel Behavior:\n");
-            if (adaptationOn)
+            if (!no_adapt)
                 printf(" Adapting with decay power %i for %i iterations after max log(L) increases by nParams/2 (%1.2f).\n", adaptTau, adaptLength, (double)nPar/2.0);
             else
                 printf(" Adaptation off.\n");
@@ -302,16 +283,15 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
         i++;
 
         #pragma omp parallel for
-        for (c = 0; c < n_local_threads; c++) {
-            thread = runState->threads[c];
+        for (t = 0; t < n_local_threads; t++) {
+            thread = runState->threads[t];
+            adapting = LALInferenceGetINT4Variable(thread->proposalArgs, "adapting");
 
-            if (adaptationOn)
+            if (!no_adapt)
                 LALInferenceAdaptation(thread, i);
 
             //ACL calculation
             if (i % (100*Nskip) == 0) {
-                adapting = LALInferenceGetINT4Variable(thread->proposalArgs, "adapting");
-
                 if (adapting)
                     iEff = 0;
                 else
@@ -323,18 +303,18 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
                 runComplete = 1;          // Sampling is done!
             }
 
-            mcmc_step(runState, c); //evolve the chain at temperature ladder[t]
+            mcmc_step(runState, t); //evolve the chain at temperature ladder[t]
 
             LALInferenceTrackProposalAcceptance(thread);
 
             /* Print proposal tracking headers now that the proposal cycle should be built. */
             if (i==1){
-                if (thread->proposalStats) {
+                if (propVerbose) {
                     sprintf(propstatfilename, "PTMCMC.propstats.%u.%2.2d", randomseed, n_local_threads*MPIrank+t);
                     propstatfile = fopen(propstatfilename, "w");
 
                     fprintf(propstatfile, "cycle\t");
-                    LALInferencePrintProposalStatsHeader(propstatfile, thread->proposalStats);
+                    LALInferencePrintProposalStatsHeader(propstatfile, thread->cycle);
 
                     if (propTrack) {
                         sprintf(proptrackfilename, "PTMCMC.proptrack.%u.%2.2d", randomseed, n_local_threads*MPIrank+t);
@@ -357,13 +337,6 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
                     /* Update 5 times each decade.  This keeps hot chains (with lower ACLs) under control */
                     kde_update_interval = 2 * ((INT4) pow(10.0, floor(log10((REAL8) iEff))));
 
-                    /* Reset proposal counting */
-                    if (thread->proposalStats && LALInferenceCheckVariable(thread->proposalStats, clusteredKDEProposalName)) {
-                        propStat = (LALInferenceProposalStatistics *)LALInferenceGetVariable(thread->proposalStats, clusteredKDEProposalName);
-                        propStat->proposed = 0;
-                        propStat->accepted = 0;
-                    }
-
                     last_kde_update = iEff;
                 }
 
@@ -375,12 +348,12 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
                     timestamp = tv.tv_sec + tv.tv_usec/1E6 - timestamp_epoch;
                 }
 
-                LALInferencePrintMCMCSample(thread, runState->data, i, timestamp, threadoutputs[c]);
+                LALInferencePrintMCMCSample(thread, runState->data, i, timestamp, threadoutputs[t]);
 
-                if (adaptVerbose && adaptationOn == 1) {
+                if (adaptVerbose && !no_adapt == 1) {
                     fseek(statfile, 0L, SEEK_END);
                     fprintf(statfile,"%d\t",i);
-                    s_gamma = 0.0;
+                    REAL8 s_gamma = 0.0;
                     if (LALInferenceCheckVariable(thread->proposalArgs, "s_gamma"))
                         s_gamma = LALInferenceGetREAL8Variable(thread->proposalArgs, "s_gamma");
                     fprintf(statfile,"%f\t",s_gamma);
@@ -403,22 +376,22 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
                     fflush(statfile);
                 }
 
-                if (propStats){
+                if (propVerbose){
                     fprintf(propstatfile, "%d\t", i);
-                    LALInferencePrintProposalStats(propstatfile, propStats);
+                    LALInferencePrintProposalStats(propstatfile, thread->cycle);
                     fflush(propstatfile);
                 }
 
                 if (propTrack) {
                     REAL8 logProposalRatio = LALInferenceGetREAL8Variable(thread->proposalArgs, "logProposalRatio");
                     fprintf(proptrackfile, "%d\t", i);
-                    LALInferencePrintProposalTracking(proptrackfile, thread->proposalArgs, thread->preProposalParams, thread->proposedParams, logProposalRatio, accepted);
+                    LALInferencePrintProposalTracking(proptrackfile, thread->cycle, thread->preProposalParams, thread->proposedParams, logProposalRatio, thread->accepted);
                 }
             }
         }
 
         /* Excute swap proposal. */
-        runState->parallelSwap(runState, ladder, i, swapfile);
+        runState->parallelSwap(runState, i, swapfile);
 
         if (MPIrank==0 && i > Niter)
             runComplete=1;
@@ -433,16 +406,14 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
             fclose(statfile);
         if (tempVerbose)
             fclose(swapfile);
-        if (propStats)
+        if (propVerbose)
             fclose(propstatfile);
         if (propTrack)
             fclose(proptrackfile);
     }
-
-    XLALFree(annealDecay);
 }
 
-void mcmc_step(LALInferenceRunState *runState, INT4 c) {
+void mcmc_step(LALInferenceRunState *runState, INT4 t) {
     // Metropolis-Hastings sampler.
     INT4 MPIrank;
     REAL8 logPriorCurrent, logPriorProposed;
@@ -454,16 +425,16 @@ void mcmc_step(LALInferenceRunState *runState, INT4 c) {
 
     MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
 
-    LALInferenceThreadState *thread = runState->threads[c];
+    thread = runState->threads[t];
 
-    LALInferenceVariables *proposedParams;
+    LALInferenceVariables *proposedParams = XLALCalloc(1, sizeof(LALInferenceVariables));
 
     // current values:
     logPriorCurrent = thread->currentPrior;
     logLikelihoodCurrent = thread->currentLikelihood;
 
     // generate proposal:
-    logProposalRatio = thread->proposal(runState, thread->currentParams, proposedParams);
+    logProposalRatio = thread->proposal(thread, thread->currentParams, proposedParams);
 
     // compute prior & likelihood:
     logPriorProposed = runState->prior(runState, proposedParams, thread->model);
@@ -530,12 +501,16 @@ void LALInferencePTswap(LALInferenceRunState *runState, INT4 i, FILE *swapfile) 
     INT4 MPIrank, MPIsize;
     MPI_Status MPIstatus;
     INT4 nPar, n_local_threads, ntemps, Tskip;
+    INT4 low;
     INT4 ind, cold_ind, hot_ind;
+    INT4 cold_rank, hot_rank;
+    INT4 swapAccepted;
     INT4 *cold_inds;
     REAL8 adjCurrentLikelihood, adjCurrentPrior;
     REAL8 logThreadSwap, temp_prior, temp_like, cold_temp;
-    LALInferenceThreadState *cold_thread, *hot_thread;
-    LALInferenceVariables temp_params;
+    LALInferenceThreadState *cold_thread = runState->threads[0];
+    LALInferenceThreadState *hot_thread;
+    LALInferenceVariables *temp_params;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
     MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
@@ -544,7 +519,7 @@ void LALInferencePTswap(LALInferenceRunState *runState, INT4 i, FILE *swapfile) 
     Tskip = LALInferenceGetINT4Variable(runState->algorithmParams, "tskip");
 
     ntemps = MPIsize*n_local_threads;
-    cold_inds = XLALCalloc(ntemp, sizeof(INT4));
+    cold_inds = XLALCalloc(ntemps, sizeof(INT4));
 
     if ((i % Tskip) == 0) {
         /* Have the root process choose a random order of ladder swaps and share it */
@@ -561,9 +536,6 @@ void LALInferencePTswap(LALInferenceRunState *runState, INT4 i, FILE *swapfile) 
             cold_ind = cold_inds[ind];
             hot_ind = cold_ind+1;
 
-            cold_is_local = 0;
-            hot_is_local = 0;
-
             /* Check if cold chain is handled by this thread */
             cold_rank = cold_ind/n_local_threads;
             hot_rank = hot_ind/n_local_threads;
@@ -578,14 +550,14 @@ void LALInferencePTswap(LALInferenceRunState *runState, INT4 i, FILE *swapfile) 
                     logThreadSwap *= hot_thread->currentLikelihood - cold_thread->currentLikelihood;
 
                     if ((logThreadSwap > 0) || (log(gsl_rng_uniform(runState->GSLrandom)) < logThreadSwap ))
-                        swapAccepted = 1
+                        swapAccepted = 1;
                     else
-                        swapAccepted = 0
+                        swapAccepted = 0;
 
                     /* Print to file if verbose is chosen */
                     if (swapfile != NULL) {
                         fprintf(swapfile, "%d\t%f\t%f\t%f\t%f\t%f\t%i\n",
-                                i, cold_thread->temperature, hot_thread->temperaure,
+                                i, cold_thread->temperature, hot_thread->temperature,
                                 logThreadSwap, cold_thread->currentLikelihood,
                                 hot_thread->currentLikelihood, swapAccepted);
                         fflush(swapfile);
@@ -602,11 +574,11 @@ void LALInferencePTswap(LALInferenceRunState *runState, INT4 i, FILE *swapfile) 
 
                         cold_thread->currentParams = temp_params;
                         cold_thread->currentPrior = temp_prior;
-                        cold_thread->currentLike = temp_like;
+                        cold_thread->currentLikelihood = temp_like;
                     }
                 }
             } else {
-                nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
+                nPar = LALInferenceGetVariableDimensionNonFixed(cold_thread->currentParams);
 
                 if (MPIrank == cold_rank) {
                     cold_thread = runState->threads[cold_ind % n_local_threads];
@@ -880,53 +852,45 @@ void LALInferencePTswap(LALInferenceRunState *runState, INT4 i, FILE *swapfile) 
 //-----------------------------------------
 // Adaptation:
 //-----------------------------------------
-void LALInferenceAdaptation(LALInferenceRunState *runState, INT4 cycle) {
-    INT4 c, nthreads = 1;
-    LALInferenceThreadState *thread;
-    INT4 MPIrank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
+void LALInferenceAdaptation(LALInferenceThreadState *thread, INT4 cycle) {
+    REAL8 s_gamma;
 
-    if (LALInferenceCheckVariable(runState->algorithmParams, "nthreads")
-        nthreads = LALInferenceGetINT4Variable(runState->algorithmParams, "nthreads");
-
-    INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
-    INT4 burninLength = LALInferenceGetINT4Variable(runState->algorithmParams, "burninLength");
-    INT4 adaptLength = LALInferenceGetINT4Variable(runState->algorithmParams, "adaptLength");
+    INT4 nPar = LALInferenceGetVariableDimensionNonFixed(thread->currentParams);
+    INT4 adaptLength = LALInferenceGetINT4Variable(thread->proposalArgs, "adapt_length");
 
     /* if maximum logL has increased by more than nParam/2, restart it */
-    for (c = 0; c < nthreads; c++) {
-        thread = runState->threads[c];
+    INT4 adapting = LALInferenceGetINT4Variable(thread->proposalArgs, "adapting");
+    INT4 adaptStart = LALInferenceGetINT4Variable(thread->proposalArgs, "adapt_start");
+    INT4 adaptTau = LALInferenceGetINT4Variable(thread->proposalArgs, "adaptTau");
+    INT4 adaptRestartBuffer = LALInferenceGetINT4Variable(thread->proposalArgs, "adaptResetBuffer");
 
-        INT4 burnin = LALInferenceGetINT4Variable(thread->proposalArgs, "burnin");
-        INT4 *adapting = LALInferenceGetINT4Variable(thread->proposalArgs, "adapting");
-        INT4 *adaptStart = LALInferenceGetINT4Variable(thread->proposalArgs, "adaptStart");
-        REAL8 *logLAtAdaptStart = LALInferenceGetREAL8Variable(thread->proposalArgs, "logLAtAdaptStart");
+    if (!LALInferenceCheckVariable(thread->proposalArgs, "logl_at_adapt_start"))
+        LALInferenceAddVariable(thread->proposalArgs, "logl_at_adapt_start", &(thread->currentLikelihood),
+                                LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
 
-        /* Only burnin at the beginning of the run */
-        if (burnin && (cycle > burninLength)) {
-            burnin = 0;
-            LALInferenceSetVariable(thread->proposalArgs, "burnin", &burnin);
-        }
+    REAL8 logLAtAdaptStart = LALInferenceGetREAL8Variable(thread->proposalArgs, "logLAtAdaptStart");
 
-        if (thread->currentLikelihood > logLAtAdaptStart+(REAL8)nPar/2) {
-            if (!adapting)
-                fprintf(stdout, "Turning on adaptation for chain %u at iteration %u.\n", MPIrank*nthreads + c, cycle);
-            LALInferenceAdaptationRestart(thread, cycle);
-        } else if (adapting) {
-            /* Turn off adaption after adaptLength steps without restarting */
-            if ((cycle-adaptStart) > adaptLength) {
-                adapting = 0;  //turn off adaptation
-                LALInferenceSetVariable(thread->proposalArgs, "adapting", &adapting);
-                LALInferenceRemoveVariable(thread->proposalArgs, "s_gamma");
+    if (thread->currentLikelihood > logLAtAdaptStart+(REAL8)nPar/2) {
+        if (!adapting)
+            fprintf(stdout, "Turning on adaptation for thread %u at iteration %u.\n", thread->id, cycle);
+        LALInferenceAdaptationRestart(thread, cycle);
+    } else if (adapting) {
+        /* Turn off adaption after adaptLength steps without restarting */
+        if ((cycle-adaptStart) > adaptLength) {
+            adapting = 0;  //turn off adaptation
+            LALInferenceSetVariable(thread->proposalArgs, "adapting", &adapting);
+            LALInferenceRemoveVariable(thread->proposalArgs, "s_gamma");
 
-                /* Clear differential buffer so that it contains only post-burnin samples */
-                resetDifferentialEvolutionBuffer(thread);
+            /* Clear differential buffer so that it contains only post-burnin samples */
+            resetDifferentialEvolutionBuffer(thread);
 
-                fprintf(stdout, "Ending adaptation for chain %u at iteration %u.\n", MPIrank*nthreads + c, cycle);
+            fprintf(stdout, "Ending adaptation for thread %u at iteration %u.\n", thread->id, cycle);
 
-            /* Else set adaptation envelope */
-            } else
-                LALInferenceAdaptationEnvelope(thread, cycle);
+        /* Else set adaptation envelope */
+        } else {
+            s_gamma = LALInferenceAdaptationEnvelope(cycle, adaptStart, adaptLength,
+                                                     adaptTau, adaptRestartBuffer);
+            LALInferenceSetVariable(thread->proposalArgs, "s_gamma", &s_gamma);
         }
     }
 }
@@ -937,12 +901,9 @@ void LALInferenceAdaptation(LALInferenceRunState *runState, INT4 cycle) {
 //-----------------------------------------
 void LALInferenceAdaptationRestart(LALInferenceThreadState *thread, INT4 cycle) {
     INT4 adapting=1, Niter;
-    INT4 MPIrank;
     LALInferenceVariableItem *item;
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
-
-    for (item=thread->currentParams->head; item; item=item->next){
+    for (item=thread->currentParams->head; item; item=item->next) {
         if (item->vary != LALINFERENCE_PARAM_FIXED && item->vary != LALINFERENCE_PARAM_OUTPUT) {
             char tmpname[MAX_STRLEN]="";
 
@@ -956,38 +917,36 @@ void LALInferenceAdaptationRestart(LALInferenceThreadState *thread, INT4 cycle) 
         }
     }
 
+    INT4 length = LALInferenceGetINT4Variable(thread->proposalArgs, "adapt_length");
+    INT4 tau = LALInferenceGetINT4Variable(thread->proposalArgs, "adapt_tau");
+    INT4 restartBuffer = LALInferenceGetINT4Variable(thread->proposalArgs, "adaptResetBuffer");
+    REAL8 s_gamma = LALInferenceAdaptationEnvelope(cycle, cycle, length, tau, restartBuffer);
+    LALInferenceAddVariable(thread->proposalArgs, "s_gamma", &s_gamma, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
+
     Niter = LALInferenceGetINT4Variable(thread->proposalArgs, "nsteps");
 
     LALInferenceSetVariable(thread->proposalArgs, "adapting", &adapting);
-    LALInferenceSetVariable(thread->proposalArgs, "adaptStart", &cycle);
-    LALInferenceSetVariable(thread->proposalArgs, "logLAtAdaptStart", &(runState->currentLikelihood));
+    LALInferenceSetVariable(thread->proposalArgs, "adapt_start", &cycle);
+    LALInferenceSetVariable(thread->proposalArgs, "logl_at_adapt_start", &(thread->currentLikelihood));
     LALInferenceSetVariable(thread->proposalArgs, "acl", &Niter);
-    LALInferenceAdaptationEnvelope(thread, cycle);
 }
 
 //-----------------------------------------
 // Adaptation envelope function:
 //-----------------------------------------
-void LALInferenceAdaptationEnvelope(LALInferenceThreadState *thread, INT4 cycle) {
+REAL8 LALInferenceAdaptationEnvelope(INT4 cycle, INT4 start, INT4 length, INT4 tau, INT4 reset) {
     REAL8 s_gamma = 0.0;
 
-    INT4 adaptStart = LALInferenceGetINT4Variable(thread->proposalArgs, "adaptStart");
-    INT4 adaptTau = LALInferenceGetINT4Variable(thread->proposalArgs, "adaptTau");
-    INT4 adaptLength = LALInferenceGetINT4Variable(thread->proposalArgs, "adaptLength");
-    INT4 adaptResetBuffer = LALInferenceGetINT4Variable(thread->proposalArgs, "adaptResetBuffer");
-
-    if (cycle-adaptStart <= adaptResetBuffer) {
-        s_gamma=(((REAL8)cycle-(REAL8)adaptStart)/(REAL8)adaptResetBuffer)*(((REAL8)cycle-(REAL8)adaptStart)/(REAL8)(adaptResetBuffer));
-    } else if (cycle-adaptStart < adaptLength) {
-        s_gamma=10.0*exp(-(1.0/adaptTau)*log((REAL8)(cycle-adaptStart)))-1;
+    if (cycle-start <= reset) {
+        s_gamma=((REAL8)(cycle-start)/(REAL8)reset);
+        s_gamma *= s_gamma;
+    } else if (cycle-start < length) {
+        s_gamma = 10.0*exp(-(1.0/tau)*log((REAL8)(cycle-start)))-1;
     } else {
-        s_gamma=0.0;
+        s_gamma = 0.0;
     }
 
-    if (LALInferenceCheckVariable(thread->proposalArgs, "s_gamma"))
-        LALInferenceSetVariable(thread->proposalArgs, "s_gamma", &s_gamma);
-    else
-        LALInferenceAddVariable(thread->proposalArgs, "s_gamma", &s_gamma, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+    return s_gamma;
 }
 
 
@@ -1001,15 +960,18 @@ FILE **LALInferencePrintPTMCMCHeadersOrResume(LALInferenceRunState *runState) {
     char *outFileName = NULL;
     FILE *threadoutput = NULL;
     FILE **threadoutputs = NULL;
+    LALInferenceThreadState *thread;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
 
     n_local_threads = LALInferenceGetINT4Variable(runState->algorithmParams, "nthreads");
     randomseed = LALInferenceGetUINT4Variable(runState->algorithmParams,"random_seed");
 
-    threadoutputs = XLALCalloc(n_local_threads, sizeof(*FILE));
+    threadoutputs = XLALCalloc(n_local_threads, sizeof(FILE*));
 
     for (t = 0; t < n_local_threads; t++) {
+        thread = runState->threads[t];
+
         ppt = LALInferenceGetProcParamVal(runState->commandLine, "--outfile");
         if (ppt) {
             outFileName = (char*)XLALCalloc(strlen(ppt->value)+255, sizeof(char*));
@@ -1030,7 +992,7 @@ FILE **LALInferencePrintPTMCMCHeadersOrResume(LALInferenceRunState *runState) {
                 XLAL_ERROR_NULL(XLAL_EIO);
             }
 
-            LALInferenceMCMCResumeRead(runState, threadoutput, t);
+            LALInferenceMCMCResumeRead(thread, threadoutput);
 
             fclose(threadoutput);
         } else {
@@ -1061,9 +1023,9 @@ FILE **LALInferencePrintPTMCMCHeadersOrResume(LALInferenceRunState *runState) {
 }
 
 void LALInferencePrintPTMCMCHeaderFiles(LALInferenceRunState *runState, FILE **threadoutputs) {
-    INT4 MPIrank, c, n_local_threads, nthreads;
+    INT4 MPIrank, t, n_local_threads, nthreads;
     INT4 randomseed, nPar, Niter;
-    REAL8 nullLikelihood, timestamp;
+    REAL8 timestamp;
     LALInferenceIFOData *ifodata1;
     struct timeval tv;
     char *arg_str;
@@ -1077,7 +1039,7 @@ void LALInferencePrintPTMCMCHeaderFiles(LALInferenceRunState *runState, FILE **t
     nthreads = LALInferenceGetINT4Variable(runState->algorithmParams, "ntemp");
 
     randomseed = LALInferenceGetINT4Variable(runState->algorithmParams, "random_seed");
-    nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
+    nPar = LALInferenceGetVariableDimensionNonFixed(thread->currentParams);
     Niter = LALInferenceGetINT4Variable(runState->algorithmParams, "nsteps");
 
     REAL8 f_ref = 0.0;
@@ -1117,9 +1079,9 @@ void LALInferencePrintPTMCMCHeaderFiles(LALInferenceRunState *runState, FILE **t
     if(LALInferenceGetProcParamVal(runState->commandLine, "--benchmark"))
         benchmark = 1;
 
-    for(c=0; c<n_local_threads; c++) {
-        thread = runState->threads[c];
-        threadoutput = threadoutputs[c];
+    for(t=0; t<n_local_threads; t++) {
+        thread = runState->threads[t];
+        threadoutput = threadoutputs[t];
 
         /* Print version info */
         fprintf(threadoutput, "  LALInference version:%s,%s,%s,%s,%s\n", lalAppsVCSId,lalAppsVCSDate,lalAppsVCSBranch,lalAppsVCSAuthor,lalAppsVCSStatus);
@@ -1129,8 +1091,8 @@ void LALInferencePrintPTMCMCHeaderFiles(LALInferenceRunState *runState, FILE **t
         fprintf(threadoutput, "%10s  %6s  %20s  %6s %6s  %10s  %12s  %9s  %9s %8s %8s\n",
                 "nIter", "seed", "null_likelihood", "Ndet", "nTemps",
                 "Tchain", "NetworkSNR", "Waveform", "pNorder", "Npar", "f_ref");
-        fprintf(threadoutput, "%10d  %10d  %u  %20.10lf  %6d %8d   %6d%12.1f%14.6f  %9i  %9.1f  %8i %12.1f\n",
-                Niter, randomseed, nullLikelihood, nIFO, nthreads,
+        fprintf(threadoutput, "%10d  %u  %20.10lf  %6d %6d %12.1f %14.6f  %9i  %9.1f  %8i %12.1f\n",
+                Niter, randomseed, thread->nullLikelihood, nIFO, nthreads,
                 thread->temperature, networkSNR, waveform, pnorder, nPar, f_ref);
 
         /* Print detector-specific settings */
@@ -1154,7 +1116,7 @@ void LALInferencePrintPTMCMCHeaderFiles(LALInferenceRunState *runState, FILE **t
         /* Check for spline calibration parameters */
         if (LALInferenceCheckVariable(thread->currentParams, "spcal_active") &&
             (LALInferenceGetUINT4Variable(thread->currentParams, "spcal_active")))
-            LALInferenceFprintSplineCalibrationHeader(threadoutput, thread, runState->data);
+            LALInferenceFprintSplineCalibrationHeader(threadoutput, thread);
 
         /* Print the likelihood and SNR of each individual detector */
         fprintf(threadoutput, "logl\t");
@@ -1189,7 +1151,7 @@ void LALInferencePrintPTMCMCHeaderFiles(LALInferenceRunState *runState, FILE **t
         LALInferencePrintSampleNonFixed(threadoutput, thread->currentParams);
         if (LALInferenceCheckVariable(thread->currentParams, "spcal_active") &&
             (LALInferenceGetUINT4Variable(thread->currentParams, "spcal_active")))
-            LALInferencePrintSplineCalibration(threadoutput, t, runState->data);
+            LALInferencePrintSplineCalibration(threadoutput, thread);
 
         fprintf(threadoutput, "%f\t", thread->currentLikelihood - thread->nullLikelihood);
         headIFO = runState->data;
@@ -1202,7 +1164,7 @@ void LALInferencePrintPTMCMCHeaderFiles(LALInferenceRunState *runState, FILE **t
         if(benchmark) {
             gettimeofday(&tv, NULL);
             timestamp = tv.tv_sec + tv.tv_usec/1E6;
-            LALInferenceAddVariable(runState->algorithmParams, "timestamp_epoch", &timestamp,  LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+            LALInferenceAddVariable(runState->algorithmParams, "timestamp_epoch", &timestamp, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
             fprintf(threadoutput, "%f\t", 0.0);
         }
         fprintf(threadoutput,"\n");
@@ -1311,8 +1273,8 @@ void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
             LALInferenceSetVariable(thread->currentParams, "eta", &eta);
         } else {
             /* Restore state, cleanup, and throw error */
-            LALInferenceClearVariables(runState->currentParams);
-            LALInferenceCopyVariables(saveParams, runState->currentParams);
+            LALInferenceClearVariables(thread->currentParams);
+            LALInferenceCopyVariables(saveParams, thread->currentParams);
             XLALFree(fname);
             LALInferenceClearVariables(saveParams);
             XLALFree(saveParams);
@@ -1403,7 +1365,7 @@ void LALInferencePrintMCMCSample(LALInferenceThreadState *thread, LALInferenceIF
 
     if (LALInferenceCheckVariable(thread->currentParams, "spcal_active") &&
         (LALInferenceGetUINT4Variable(thread->currentParams, "spcal_active"))) {
-        LALInferencePrintSplineCalibration(threadoutput, t, runState->data);
+        LALInferencePrintSplineCalibration(threadoutput, thread);
     }
 
     fprintf(threadoutput,"%f\t", thread->currentLikelihood - thread->nullLikelihood);
@@ -1416,7 +1378,7 @@ void LALInferencePrintMCMCSample(LALInferenceThreadState *thread, LALInferenceIF
         headIFO = headIFO->next;
     }
 
-    if (LALInferenceGetProcParamVal(runState->commandLine, "--output-SNRs")) {
+    if (LALInferenceGetINT4Variable(thread->cycle->proposalArgs, "output_snrs")) {
         headIFO = data;
         ifo = 0;
         while (headIFO != NULL) {
@@ -1512,7 +1474,7 @@ void LALInferenceDataDump(LALInferenceIFOData *data, LALInferenceModel *model) {
     }
 }
 
-void LALInferenceMCMCResumeRead(LALInferenceRunState *runState, FILE *resumeFile, INT4 t) {
+void LALInferenceMCMCResumeRead(LALInferenceThreadState *thread, FILE *resumeFile) {
     /* Hope that the line is shorter than 16K! */
     const long len = 16384;
     char linebuf[len];
@@ -1544,5 +1506,5 @@ void LALInferenceMCMCResumeRead(LALInferenceRunState *runState, FILE *resumeFile
 
     fscanf(resumeFile, "%d %f %f", &cycle, &loglike, &logprior);
 
-    LALInferenceReadSampleNonFixed(resumeFile, runState->currentParamArray[t]);
+    LALInferenceReadSampleNonFixed(resumeFile, thread->currentParams);
 }

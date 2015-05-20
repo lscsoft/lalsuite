@@ -55,13 +55,6 @@ typedef enum {
     RUN_COMPLETE       /** Run complete */
 } LALInferenceMPIcomm;
 
-/* PT swap return values  */
-typedef enum {
-    NO_SWAP_PROPOSED, /** No proposal was made */
-    REJECTED_SWAP,    /** A jump was proposed, but not accepted */
-    ACCEPTED_SWAP     /** A jump was proposed and accepted */
-} LALInferenceMPIswapAcceptance;
-
 /* Standard parallel temperature swap proposal function */
 void LALInferencePTswap(LALInferenceRunState *runState, INT4 i, FILE *swapfile);
 
@@ -70,9 +63,9 @@ UINT4 LALInferenceMCMCMCswap(LALInferenceRunState *runState, REAL8 *ladder, INT4
 
 /* Functions for controlling adaptation */
 void acknowledgePhase(LALInferenceRunState *runState);
-void LALInferenceAdaptation(LALInferenceRunState *runState, INT4 cycle);
-void LALInferenceAdaptationRestart(LALInferenceRunState *runState, INT4 cycle);
-void LALInferenceAdaptationEnvelope(LALInferenceRunState *runState, INT4 cycle);
+void LALInferenceAdaptation(LALInferenceThreadState *thread, INT4 cycle);
+void LALInferenceAdaptationRestart(LALInferenceThreadState *thread, INT4 cycle);
+REAL8 LALInferenceAdaptationEnvelope(INT4 cycle, INT4 start, INT4 length, INT4 tau, INT4 reset);
 void LALInferenceShutdownLadder(void);
 void LALInferenceFlushPTswap(void);
 void LALInferenceLadderUpdate(LALInferenceRunState *runState, INT4 sourceChainFlag, INT4 cycle);
@@ -82,7 +75,8 @@ FILE** LALInferencePrintPTMCMCHeadersOrResume(LALInferenceRunState *runState);
 void LALInferencePrintPTMCMCHeaderFiles(LALInferenceRunState *runState, FILE **files);
 void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState);
 void LALInferenceDataDump(LALInferenceIFOData *data, LALInferenceModel *model);
+void LALInferencePrintMCMCSample(LALInferenceThreadState *thread, LALInferenceIFOData *data, INT4 iteration, REAL8 timestamp, FILE *threadoutput);
 
 /** Reads final parameter values from the given output file, and
     stores them in the current params to try to continue the run. */
-void LALInferenceMCMCResumeRead(LALInferenceRunState *runState, FILE *resumeFile, INT4 thread);
+void LALInferenceMCMCResumeRead(LALInferenceThreadState *thread, FILE *resumeFile);
