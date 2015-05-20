@@ -185,7 +185,7 @@ void LALInferenceInitLikelihood(LALInferenceRunState *runState)
        LALInferenceSetVariable(thread->currentParams, "logdistance", &logd);
    }
 
-   LALInferenceAddVariable(thread->proposalArgs, "nullLikelihood", &nullLikelihood,
+   LALInferenceAddVariable(runState->proposalArgs, "nullLikelihood", &nullLikelihood,
                             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
 
     return;

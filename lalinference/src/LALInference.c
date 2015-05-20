@@ -77,6 +77,10 @@ LALInferenceThreadState *LALInferenceInitThread(void) {
     thread->creation_time = tv.tv_sec + tv.tv_usec/1E6;
     thread->currentPropDensity = -DBL_MAX;
     thread->currentParams = XLALCalloc(1, sizeof(LALInferenceVariables));
+    thread->priorArgs=XLALCalloc(1,sizeof(LALInferenceVariables));
+    thread->proposalArgs=XLALCalloc(1,sizeof(LALInferenceVariables));
+    thread->preProposalParams=XLALCalloc(1,sizeof(LALInferenceVariables));
+    thread->proposedParams=XLALCalloc(1,sizeof(LALInferenceVariables));
 
     return thread;
 }

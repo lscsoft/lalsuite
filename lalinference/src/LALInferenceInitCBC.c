@@ -122,6 +122,8 @@ void LALInferenceInitCBCThreads(LALInferenceRunState *run_state, INT4 nthreads) 
         LALInferenceSetupROQ(run_state->data, thread->model, run_state->commandLine);
 
         LALInferenceCopyVariables(thread->model->params, thread->currentParams);
+        LALInferenceCopyVariables(run_state->priorArgs,thread->priorArgs);
+        LALInferenceCopyVariables(run_state->proposalArgs,thread->proposalArgs);
     }
 
     return;
@@ -465,7 +467,6 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state)
 (--spinAligned or --aligned-spin)  template will assume spins aligned with the orbital angular momentum.\n\
 (--singleSpin)                  template will assume only the spin of the most massive binary component exists.\n\
 (--noSpin, --disable-spin)      template will assume no spins (giving this will void spinOrder!=0) \n\
-(--detector-frame)              model will use detector-centred coordinates instead of RA,dec\n\
 \n\
 ------------------------------------------------------------------------------------------------------------------\n\
 --- Starting Parameters ------------------------------------------------------------------------------------------\n\
@@ -557,8 +558,6 @@ where the known names have been listed above\n\
   REAL8 qMin=1./30.; // The ratio between min and max component mass (see InitMassVariables)
   REAL8 qMax=1.0;
   REAL8 psiMin=0.0,psiMax=LAL_PI;
-  REAL8 decMin=-LAL_PI/2.0,decMax=LAL_PI/2.0;
-  REAL8 raMin=0.0,raMax=LAL_TWOPI;
   REAL8 phiMin=0.0,phiMax=LAL_TWOPI;
   REAL8 costhetaJNmin=-1.0 , costhetaJNmax=1.0;
   REAL8 dt=0.1;  /* Half the width of time prior */
@@ -953,33 +952,20 @@ where the known names have been listed above\n\
   if((ppt=LALInferenceGetProcParamVal(commandLine,"--distance-max"))) Dmax=atof(ppt->value);
   if((ppt=LALInferenceGetProcParamVal(commandLine,"--distance-min"))) Dmin=atof(ppt->value);
 
-  if(LALInferenceGetProcParamVal(commandLine,"--use-logdistance")){
-    LALInferenceRegisterUniformVariableREAL8(state, model->params, "logdistance", zero, log(Dmin), log(Dmax),LALINFERENCE_PARAM_LINEAR);
-  } else {
-    LALInferenceRegisterUniformVariableREAL8(state, model->params, "distance", zero, Dmin, Dmax, LALINFERENCE_PARAM_LINEAR);
-  }
+  LALInferenceRegisterUniformVariableREAL8(state, model->params, "logdistance", zero, log(Dmin), log(Dmax),LALINFERENCE_PARAM_LINEAR);
   LALInferenceRegisterUniformVariableREAL8(state, model->params, "polarisation", zero, psiMin, psiMax, LALINFERENCE_PARAM_LINEAR);
   LALInferenceRegisterUniformVariableREAL8(state, model->params, "costheta_jn", zero, costhetaJNmin, costhetaJNmax,LALINFERENCE_PARAM_LINEAR);
 
   /* Option to use the detector-aligned frame */ 
-  if(LALInferenceGetProcParamVal(commandLine,"--detector-frame"))
-  {
-      printf("Using detector-based sky frame\n");
-      LALInferenceRegisterUniformVariableREAL8(state,model->params,"t0",timeParam,timeMin,timeMax,LALINFERENCE_PARAM_LINEAR);
-      LALInferenceRegisterUniformVariableREAL8(state,model->params,"cosalpha",0,-1,1,LALINFERENCE_PARAM_LINEAR);
-      LALInferenceRegisterUniformVariableREAL8(state,model->params,"azimuth",0.0,0.0,LAL_TWOPI,LALINFERENCE_PARAM_CIRCULAR);
-      /* add the time parameter then remove it so that the prior is set up properly */
-      LALInferenceRegisterUniformVariableREAL8(state, model->params, "time", timeParam, timeMin, timeMax,LALINFERENCE_PARAM_LINEAR);
-      LALInferenceRemoveVariable(model->params,"time");
-      INT4 one=1;
-      LALInferenceAddVariable(model->params,"SKY_FRAME",&one,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
-  }
-  else
-  {
-		  LALInferenceRegisterUniformVariableREAL8(state, model->params, "rightascension", zero, raMin, raMax, LALINFERENCE_PARAM_CIRCULAR);
-		  LALInferenceRegisterUniformVariableREAL8(state, model->params, "declination", zero, decMin, decMax, LALINFERENCE_PARAM_LINEAR);
-		  LALInferenceRegisterUniformVariableREAL8(state, model->params, "time", timeParam, timeMin, timeMax,LALINFERENCE_PARAM_LINEAR);
-  }
+  LALInferenceRegisterUniformVariableREAL8(state,model->params,"t0",timeParam,timeMin,timeMax,LALINFERENCE_PARAM_LINEAR);
+  LALInferenceRegisterUniformVariableREAL8(state,model->params,"cosalpha",0,-1,1,LALINFERENCE_PARAM_LINEAR);
+  LALInferenceRegisterUniformVariableREAL8(state,model->params,"azimuth",0.0,0.0,LAL_TWOPI,LALINFERENCE_PARAM_CIRCULAR);
+  /* add the time parameter then remove it so that the prior is set up properly */
+  LALInferenceRegisterUniformVariableREAL8(state, model->params, "time", timeParam, timeMin, timeMax,LALINFERENCE_PARAM_LINEAR);
+  LALInferenceRemoveVariable(model->params,"time");
+  INT4 one=1;
+  LALInferenceAddVariable(model->params,"SKY_FRAME",&one,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
+
   /* If we are marginalising over the time, remove that variable from the model (having set the prior above) */
   /* Also set the prior in model->params, since Likelihood can't access the state! (ugly hack) */
   if(LALInferenceGetProcParamVal(commandLine,"--margtime") || LALInferenceGetProcParamVal(commandLine, "--margtimephi")){

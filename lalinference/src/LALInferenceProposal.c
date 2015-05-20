@@ -262,6 +262,7 @@ LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runSt
     INT4 cyclic_reflective_kde = 0;
 
     /* Flags for proposals, initialized with the MCMC defaults */
+    
     INT4 singleadapt = 1;
     INT4 psiphi = 1;
     INT4 ext_param = 1;
@@ -309,6 +310,7 @@ LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runSt
 
     /* Count the number of IFOs and uniquely-located IFOs to decide which sky-related proposals to use */
     INT4 nDet = 0;
+    ifo=runState->data;
     while (ifo) {
         nDet++;
         ifo = ifo->next;
@@ -319,18 +321,14 @@ LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runSt
     LALInferenceAddINT4Variable(propArgs, "nUniqueDet", nUniqueDet, LALINFERENCE_PARAM_FIXED);
 
     LALDetector *detectors = XLALCalloc(nDet, sizeof(LALDetector));
-    for (i=0; i<nDet; i++)
+    for (i=0,ifo=runState->data; i<nDet; i++)
         detectors[i] = *(ifo->detector);
     LALInferenceAddVariable(propArgs, "detectors", &detectors, LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_FIXED);
 
-    ifo = runState->data;
     char **ifo_names = XLALCalloc(nDet, sizeof(char*));
-    i = 0;
-    while (ifo) {
+    for(ifo=runState->data,i=0;ifo;ifo=ifo->next,i++) {
         ifo_names[i] = XLALCalloc(DETNAMELEN, sizeof(char));
         strcpy(ifo_names[i], ifo->name);
-        ifo = ifo->next;
-        i++;
     }
     LALInferenceAddVariable(propArgs, "detector_names", ifo_names, LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_FIXED);
 
