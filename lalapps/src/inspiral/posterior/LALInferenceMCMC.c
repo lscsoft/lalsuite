@@ -276,7 +276,7 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
     LALInferenceAddREAL8Variable(algorithm_params, "temp_min", tempMin, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddREAL8Variable(algorithm_params, "temp_max", tempMax, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddINT4Variable(algorithm_params, "de_buffer_limit", de_buffer_limit, LALINFERENCE_PARAM_OUTPUT);
-    LALInferenceAddREAL8Variable(algorithm_params, "trig_snr", trigSNR, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddREAL8Variable(algorithm_params, "trigger_snr", trigSNR, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddINT4Variable(algorithm_params, "acl", acl, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddINT4Variable(algorithm_params, "temp_verbose", temp_verbose, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddINT4Variable(algorithm_params, "adapt_verbose", adapt_verbose, LALINFERENCE_PARAM_OUTPUT);
@@ -353,7 +353,7 @@ REAL8 *LALInferenceBuildHybridTempLadder(LALInferenceRunState *runState, INT4 nd
         if (MPIrank==0)
             fprintf(stdout,"Using tempMax specified by commandline: %f.\n", tempMax);
     } else if (LALInferenceGetProcParamVal(runState->commandLine,"--trigger-snr")) {        //--trigSNR given, choose ladderMax to get targetHotLike
-        trigSNR = LALInferenceGetREAL8Variable(runState->algorithmParams, "trigger-snr");
+        trigSNR = LALInferenceGetREAL8Variable(runState->algorithmParams, "trigger_snr");
         networkSNRsqrd = trigSNR * trigSNR;
         tempMax = networkSNRsqrd/(2*targetHotLike);
 

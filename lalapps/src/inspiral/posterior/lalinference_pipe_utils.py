@@ -1282,7 +1282,7 @@ class EngineNode(pipeline.CondorDAGNode):
     self.add_var_opt('srate',str(srate))
 
   def set_trigSNR(self,trigSNR):
-    self.add_var_opt('trigSNR',str(trigSNR))
+    self.add_var_opt('trigger-snr',str(trigSNR))
 
   def set_dataseed(self,seed):
     self.add_var_opt('dataseed',str(seed))
