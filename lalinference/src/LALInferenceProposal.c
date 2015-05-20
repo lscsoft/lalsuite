@@ -1695,7 +1695,7 @@ REAL8 LALInferenceSkyRingProposal(LALInferenceThreadState *thread,
     epoch = (LIGOTimeGPS *)LALInferenceGetVariable(args, "epoch");
     detectors = *(LALDetector **)LALInferenceGetVariable(args, "detectors");
 
-    REAL8 dL = exp(LALInferenceGetREAL8Variable(proposedParams, "logdistance"));
+    dL = exp(LALInferenceGetREAL8Variable(proposedParams, "logdistance"));
 
     ra = LALInferenceGetREAL8Variable(proposedParams, "rightascension");
     dec = LALInferenceGetREAL8Variable(proposedParams, "declination");

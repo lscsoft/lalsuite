@@ -977,7 +977,7 @@ UINT4 LALInferenceMCMCSamplePrior(LALInferenceRunState *runState)
     /* Single threaded here */
     LALInferenceThreadState * threadState=runState->threads[0];
     UINT4 outOfBounds=0;
-    UINT4 adaptProp=checkForSingleAdapt(runState);
+    UINT4 adaptProp=0;
     //LALInferenceVariables tempParams;
     REAL8 logProposalRatio=0.0;
     //LALInferenceVariables *oldParams=&tempParams;
@@ -990,7 +990,7 @@ UINT4 LALInferenceMCMCSamplePrior(LALInferenceRunState *runState)
     REAL8 logPriorOld=*(REAL8 *)LALInferenceGetVariable(threadState->currentParams,"logPrior");
     if(adaptProp)
     {
-          thislogL=runState->likelihood(runState->currentParams,runState->data,runState->model);
+          thislogL=runState->likelihood(threadState->currentParams,runState->data,threadState->model);
           if (logLmin<thislogL) outOfBounds=0;
     }
     LALInferenceCopyVariables(threadState->currentParams,&proposedParams);

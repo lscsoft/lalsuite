@@ -320,7 +320,6 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams,
   double timeTmp;
   int different;
 	double mc;
-	UINT4 logDistFlag=0;
   LALStatus status;
   memset(&status,0,sizeof(status));
   LALInferenceVariables intrinsicParams;
