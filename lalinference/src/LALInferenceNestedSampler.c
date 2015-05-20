@@ -938,7 +938,7 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   }
 
   /* Get the location of the sample array */
-  LALInferenceVariables *variables_array=*(LALInferenceVariables **)LALInferenceGetVariable(runState->algorithmParams,"outputarray");
+  LALInferenceVariables **variables_array=*(LALInferenceVariables ***)LALInferenceGetVariable(runState->algorithmParams,"outputarray");
 
   /* Convert to a 2D array for ACF calculation */
   data_array=XLALCalloc(nPar,sizeof(REAL8 *));
@@ -950,7 +950,7 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   /* Measure autocorrelation in each dimension */
   /* Not ideal, should be measuring something like the det(autocorrelation-crosscorrelation matrix) */
   for (i=0;i<max_iterations;i++){
-    for(j=0;j<nPar;j++) data_array[j][i]=*(REAL8 *)LALInferenceGetVariable(&variables_array[i],param_names[j]);
+    for(j=0;j<nPar;j++) data_array[j][i]=*(REAL8 *)LALInferenceGetVariable(variables_array[i],param_names[j]);
   }
   this=myCurrentParams.head;
   for(i=0;i<(UINT4)nPar;i++){
@@ -1001,12 +1001,12 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
     REAL8 oldLogL=-DBL_MAX;
     for(i=stride,j=*Ncache;j<Nnew+*Ncache&&i<max_iterations;i+=stride,j++)
     {
-      REAL8 newlogL=*(REAL8 *)LALInferenceGetVariable(&(variables_array[i]),"logL");
+      REAL8 newlogL=*(REAL8 *)LALInferenceGetVariable(variables_array[i],"logL");
       if(newlogL==oldLogL) {j--; continue;}
       cache=XLALRealloc(cache,(j+1)*sizeof(LALInferenceVariables) );
       if(!cache) fprintf(stderr,"ERROR!!! Could not resize cache to %i!\n",j+1);
       memset(&(cache[j]),0,sizeof(LALInferenceVariables));
-      LALInferenceCopyVariables(&(variables_array[i]),&(cache[j]));
+      LALInferenceCopyVariables(variables_array[i],&(cache[j]));
       oldLogL=newlogL;
     }
 
@@ -1018,7 +1018,8 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   /* Clean up */
   for(i=0;i<(UINT4)nPar;i++) {XLALFree(data_array[i]); XLALFree(acf_array[i]);}
   for (i=0;i<max_iterations;i++){
-    LALInferenceClearVariables(&variables_array[i]);
+    LALInferenceClearVariables(variables_array[i]);
+    XLALFree(variables_array[i]);
   }
   XLALFree(variables_array);
   XLALFree(data_array); XLALFree(acf_array);
