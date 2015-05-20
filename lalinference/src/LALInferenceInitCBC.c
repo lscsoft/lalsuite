@@ -140,6 +140,7 @@ void LALInferenceInitCBCThreads(LALInferenceRunState *run_state, INT4 nthreads) 
         fclose(devrandom);
       }
     }
+    thread->GSLrandom=gsl_rng_alloc(gsl_rng_mt19937);
     gsl_rng_set(thread->GSLrandom, randomseed + t);
     
   }
