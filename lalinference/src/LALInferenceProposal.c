@@ -1386,7 +1386,6 @@ REAL8 LALInferenceDrawApproxPrior(LALInferenceThreadState *thread,
     analytic_test = LALInferenceGetINT4Variable(args, "analytical_test");
 
     if (analytic_test) {
-        printf("Analytic test!\n");
         ptr = currentParams->head;
         while (ptr!=NULL) {
             if (LALInferenceCheckVariableNonFixed(currentParams, ptr->name)) {
@@ -1396,7 +1395,6 @@ REAL8 LALInferenceDrawApproxPrior(LALInferenceThreadState *thread,
             ptr=ptr->next;
         }
     } else {
-        printf("NOT analytic test!\n");
         logBackwardJump = approxLogPrior(currentParams);
 
         for (i = 0; flat_params[i] != NULL; i++) {
