@@ -49,7 +49,7 @@ int MPIrank, MPIsize;
 void init_mpi_randomstate(LALInferenceRunState *run_state);
 void initializeMCMC(LALInferenceRunState *runState);
 INT4 init_ptmcmc(LALInferenceRunState *runState);
-INT4 LALInferenceBuildHybridTempLadder(LALInferenceRunState *runState);
+REAL8 *LALInferenceBuildHybridTempLadder(LALInferenceRunState *runState, INT4 ndim);
 ProcessParamsTable *LALInferenceContinueMCMC(char *infileName);
 
 REAL8 **parseMCMCoutput(char ***params, UINT4 *nInPar, UINT4 *nInSamps, char *infilename, UINT4 burnin);
@@ -128,19 +128,23 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
                (--prop-verbose)                 Output proposal stats to file.\n\
                (--prop-track)                   Output proposal parameters.\n\
                (--outfile file)                 Write output files <file>.<chain_number> (PTMCMC.output.<random_seed>.<mpi_thread>).\n";
-    INT4 i;
     INT4 mpi_rank, mpi_size;
     INT4 ntemp_per_thread;
     INT4 noAdapt, adaptTau, adaptLength;
+    INT4 i, ndim;
     ProcessParamsTable *command_line = NULL, *ppt = NULL;
     LALInferenceThreadState *thread;
     LALInferenceVariables *propArgs;
+    LALInferenceModel *model;
+    REAL8 *ladder;
 
     /* Send help if runState was not allocated */
     if(runState == NULL || LALInferenceGetProcParamVal(runState->commandLine, "--help")) {
         fprintf(stdout, "%s", help);
         return XLAL_FAILURE;
     }
+
+    command_line = runState->commandLine;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
@@ -158,8 +162,6 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
         /* Standard parallel tempering swap. */
         runState->parallelSwap = &LALInferencePTswap;
     }
-
-    command_line = runState->commandLine;
 
     /* Store flags to keep from checking the command line all the time */
     LALInferenceVariables *algorithm_params = runState->algorithmParams;
@@ -284,8 +286,13 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
     LALInferenceAddINT4Variable(runState->proposalArgs, "de_skip", skip, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddINT4Variable(runState->proposalArgs, "output_snrs", outputSNRs, LALINFERENCE_PARAM_OUTPUT);
 
+    /* Make a single model just to cound dimensions */
+    model = LALInferenceInitCBCModel(runState);
+    ndim = LALInferenceGetVariableDimensionNonFixed(model->params);
+
     /* Build the temperature ladder */
-    ntemp_per_thread = LALInferenceBuildHybridTempLadder(runState);
+    ladder = LALInferenceBuildHybridTempLadder(runState, ndim);
+    ntemp_per_thread = LALInferenceGetINT4Variable(runState->algorithmParams, "ntemp_per_thread");
 
     /* Initialize the walkers on this MPI thread */
     LALInferenceInitCBCThreads(runState, ntemp_per_thread);
@@ -295,8 +302,10 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
 
     /* Build the proposals and randomize */
     propArgs = LALInferenceParseProposalArgs(runState);
+    printf("Built prop args\n");
     for (i=0; i<runState->nthreads; i++) {
         thread = runState->threads[i];
+        thread->temperature = ladder[mpi_rank*ntemp_per_thread + i];
         thread->cycle = LALInferenceSetupDefaultInspiralProposalCycle(propArgs);
         LALInferenceRandomizeProposalCycle(thread->cycle, thread->GSLrandom);
     }
@@ -312,24 +321,24 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
 
     LALInferenceAddINT4Variable(algorithm_params, "adaptLength", adaptLength, LALINFERENCE_PARAM_OUTPUT);
 
+    XLALFree(ladder);
     return XLAL_SUCCESS;
 }
 
 
-INT4 LALInferenceBuildHybridTempLadder(LALInferenceRunState *runState) {
+REAL8 *LALInferenceBuildHybridTempLadder(LALInferenceRunState *runState, INT4 ndim) {
     REAL8 temp, tempMin, tempMax, tempDelta;
     REAL8 targetHotLike;
     REAL8 trigSNR, networkSNRsqrd=0.0;
     REAL8 *ladder=NULL;
     INT4 flexible_tempmax;
-    INT4 ndim, ntemp, ntemp_per_thread;
+    INT4 ntemp, ntemp_per_thread;
     INT4 mpi_size;
     INT4 t;
     LALInferenceIFOData *ifo;
 
     mpi_size = LALInferenceGetINT4Variable(runState->algorithmParams, "mpisize");
 
-    ndim = LALInferenceGetVariableDimensionNonFixed(runState->threads[0]->currentParams);
     ntemp = LALInferenceGetINT4Variable(runState->algorithmParams, "ntemp");
     tempMin = LALInferenceGetREAL8Variable(runState->algorithmParams, "temp_min");
     tempMax = LALInferenceGetREAL8Variable(runState->algorithmParams, "temp_max");
@@ -364,9 +373,11 @@ INT4 LALInferenceBuildHybridTempLadder(LALInferenceRunState *runState) {
 
         /* If all else fails, use the default */
         } else {
-            if (MPIrank==0)
-                fprintf(stdout, "No --trigger-snr or --temp-max specified, and \
-                        not injecting a signal. Setting max temperature to default of %f.\n", tempMax);
+            if (MPIrank==0) {
+                fprintf(stdout, "No --trigger-snr or --temp-max specified, and ");
+                fprintf(stdout, "not injecting a signal. Setting max temperature");
+                fprintf(stdout, "to default of %f.\n", tempMax);
+            }
         }
     }
 
@@ -406,7 +417,10 @@ INT4 LALInferenceBuildHybridTempLadder(LALInferenceRunState *runState) {
         ntemp = mpi_size * ntemp_per_thread;
     }
 
-    LALInferenceSetVariable(runState->algorithmParams, "ntemp", &ntemp);
+    LALInferenceAddINT4Variable(runState->algorithmParams, "ntemp",
+                                ntemp, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddINT4Variable(runState->algorithmParams, "ntemp_per_thread",
+                                ntemp_per_thread, LALINFERENCE_PARAM_OUTPUT);
 
     if (flexible_tempmax)
         tempDelta = 1. + sqrt(2./(REAL8)ndim);
@@ -417,16 +431,7 @@ INT4 LALInferenceBuildHybridTempLadder(LALInferenceRunState *runState) {
     for (t=0; t<ntemp; ++t)
         ladder[t] = tempMin * pow(tempDelta, t);
 
-    for (t = 0; t < ntemp_per_thread; t++)
-        runState->threads[t]->temperature = ladder[MPIrank*ntemp_per_thread + t];
-
-    if (MPIrank == 0 && LALInferenceGetVariable(runState->algorithmParams, "verbose")) {
-        printf("\nTemperature ladder:\n");
-        for (t=0; t<ntemp; ++t)
-            printf(" ladder[%d]=%f\n", t, ladder[t]);
-    }
-
-    return ntemp_per_thread;
+    return ladder;
 }
 
 
