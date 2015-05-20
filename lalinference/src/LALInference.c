@@ -3660,7 +3660,7 @@ gsl_matrix* LALInferenceGetgslMatrixVariable(LALInferenceVariables * vars, const
     XLAL_ERROR_NULL(XLAL_ETYPE);
   }
 
-  gsl_matrix* rvalue=(gsl_matrix*)LALInferenceGetVariable(vars,name);
+  gsl_matrix* rvalue=*(gsl_matrix **)LALInferenceGetVariable(vars,name);
 
   return rvalue;
 }
