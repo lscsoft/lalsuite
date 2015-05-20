@@ -446,6 +446,9 @@ LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runSt
     LALInferenceRegisterProposal(propArgs, "psdfit", &psdfit, command_line);
     LALInferenceRegisterProposal(propArgs, "glitchfit", &glitchfit, command_line);
 
+    /* Setup adaptive proposals */
+    LALInferenceSetupAdaptiveProposals(propArgs, runState->threads[0]->currentParams);
+
     /* Setup buffer now since threads aren't accessible to the main setup function */
     if (diffevo || stretch || walk) {
         for (i=0; i<runState->nthreads; i++)
