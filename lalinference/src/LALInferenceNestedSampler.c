@@ -1018,6 +1018,7 @@ UINT4 LALInferenceMCMCSamplePrior(LALInferenceRunState *runState)
       LALInferenceUpdateAdaptiveJumps(threadState, 0.35);
     }
     //printf("logLnew = %lf, logPriorNew = %lf, logProposalRatio = %lf\n",thislogL,logPriorNew,logProposalRatio);
+    threadState->accepted=accepted;
     LALInferenceTrackProposalAcceptance(threadState);
     //printf("Accepted = %i\n",accepted);
     return(accepted);
