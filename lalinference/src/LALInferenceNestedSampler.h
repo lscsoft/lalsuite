@@ -54,6 +54,12 @@ SWIGLAL(
 /* double logadd(double a,double b); */
 
 /**
+ * Initialise the nested sampling algorithm by reading from the commandLine
+ * and setting up algorithmParams
+ */
+void LALInferenceNestedSamplingAlgorithmInit(LALInferenceRunState *runState);
+
+/**
  * NestedSamplingAlgorithm implements the nested sampling algorithm,
  * see e.g. Sivia "Data Analysis: A Bayesian Tutorial, 2nd edition
  */
