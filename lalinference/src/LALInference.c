@@ -744,6 +744,9 @@ void LALInferencePrintVariables(LALInferenceVariables *var)
           fprintf(stdout,"]");
            */
           break;
+        case LALINFERENCE_string_t:
+          fprintf(stdout,"%s",*(CHAR **)ptr->value);
+          break;
         default:
           fprintf(stdout, "<can't print>");
       }
@@ -3788,7 +3791,7 @@ void LALInferenceSetMCMCrunphase_ptrVariable(LALInferenceVariables* vars,const c
 void LALInferenceAddstringVariable(LALInferenceVariables * vars, const char * name, CHAR* value, LALInferenceParamVaryType vary)
 /* Typed version of LALInferenceAddVariable for CHAR values.*/
 {
-  LALInferenceAddVariable(vars,name,value,LALINFERENCE_string_t,vary);
+  LALInferenceAddVariable(vars,name,&value,LALINFERENCE_string_t,vary);
 }
 
 CHAR* LALInferenceGetstringVariable(LALInferenceVariables * vars, const char * name)
@@ -3799,13 +3802,13 @@ CHAR* LALInferenceGetstringVariable(LALInferenceVariables * vars, const char * n
     XLAL_ERROR_NULL(XLAL_ETYPE);
   }
 
-  CHAR* rvalue=(CHAR*)LALInferenceGetVariable(vars,name);
+  CHAR* rvalue=*(CHAR**)LALInferenceGetVariable(vars,name);
 
   return rvalue;
 }
 
 void LALInferenceSetstringVariable(LALInferenceVariables* vars,const char* name,CHAR* value){
-  LALInferenceSetVariable(vars,name,(void*)&value);
+  LALInferenceSetVariable(vars,name,&value);
 }
 
 int LALInferenceSplineCalibrationFactor(REAL8Vector *logfreqs,
