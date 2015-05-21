@@ -113,7 +113,7 @@ def add_integration_params(optp):
     integration_params = OptionGroup(optp, "Integration Parameters", "Control the integration with these options.")
     integration_params.add_option("-m", "--time-marginalization", action="store_true", help="Perform marginalization over time via direct numerical integration. Default is false.")
     # Default is actually None, but that tells the integrator to go forever or until n_eff is hit.
-    integration_params.add_option("--n-max", type=int, help="Total number of samples points to draw. If this number is hit before n_eff, then the integration will terminate. Default is 'infinite'.",default=1e7)
+    integration_params.add_option("--n-max", type=int, help="Total number of samples points to draw. If this number is hit before n_eff, then the integration will terminate. Default is 'infinite'.",default=None)
     integration_params.add_option("--n-eff", type=int, default=100, help="Total number of effective samples points to calculate before the integration will terminate. Default is 100")
     integration_params.add_option("--n-chunk", type=int, help="Chunk'.",default=100)
     integration_params.add_option("--convergence-tests-on",default=False,action='store_true')
