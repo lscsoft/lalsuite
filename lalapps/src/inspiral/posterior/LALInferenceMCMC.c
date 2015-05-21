@@ -331,7 +331,7 @@ REAL8 *LALInferenceBuildHybridTempLadder(LALInferenceRunState *runState, INT4 nd
     REAL8 targetHotLike;
     REAL8 trigSNR, networkSNRsqrd=0.0;
     REAL8 *ladder=NULL;
-    INT4 flexible_tempmax;
+    INT4 flexible_tempmax=0;
     INT4 ntemp, ntemp_per_thread;
     INT4 mpi_size;
     INT4 t;
@@ -452,16 +452,18 @@ REAL8 **parseMCMCoutput(char ***params, UINT4 *nInPar, UINT4 *nInSamps, char *in
     strcpy(header, str);
     word = strtok(header, " \t");
     // Find column headers
-    while (strcmp(word,"cycle") && str != NULL) {
+    while (strcmp(word,"cycle")) {
         fgets(str, 999, infile);
         strcpy(header, str);
         word = strtok(header, " \t");
     }
-
+    /* Commented as always false */
+    /*
     if (str == NULL) {
         fprintf(stderr, "Couldn't find column headers in file %s\n",infileName);
         exit(1);
     }
+    */
 
     // Read in column names and check if they are parameters
     strcpy(header, str);
