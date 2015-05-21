@@ -139,9 +139,9 @@ LALInferenceVariableItem *LALInferenceGetItem(const LALInferenceVariables *vars,
   if(vars==NULL) return NULL;
   if(vars->dimension==0) return NULL;
   item=vars->hash_table[hash(name)];
-  if(!item) return LALInferenceGetItemSlow(vars,name); /* Not found in the hash table but need to check 
+  if(!item) return LALInferenceGetItemSlow(vars,name); /* Not found in the hash table but need to check
   because collision with an item previous Removed() will put a NULL in the hash table */
-  
+
   if(strcmp(item->name,name)) /* Check for hash collision */
     return LALInferenceGetItemSlow(vars,name);
   else
@@ -149,10 +149,10 @@ LALInferenceVariableItem *LALInferenceGetItem(const LALInferenceVariables *vars,
 }
 /* Walk through the list to check for an item */
 LALInferenceVariableItem *LALInferenceGetItemSlow(const LALInferenceVariables *vars,const char *name)
-{  
+{
   LALInferenceVariableItem *this = vars->head;
   if(vars->dimension==0) return NULL;
-  
+
   while (this != NULL) {
     if (!strcmp(this->name,name)) break;
     else this = this->next;
@@ -342,7 +342,7 @@ void LALInferenceAddVariable(LALInferenceVariables * vars, const char * name, co
 {
   LALInferenceVariableItem *old=NULL;
   /* This is a bit of a hack to make sure the hash table is initialised
-   * before it is accessed, assuming nobody is silly enough to Get() 
+   * before it is accessed, assuming nobody is silly enough to Get()
    * from a just-declared LALInferenceVariable */
   if(vars->dimension==0) LALInferenceClearVariables(vars);
 
@@ -512,7 +512,7 @@ void LALInferenceCopyVariables(LALInferenceVariables *origin, LALInferenceVariab
   /* get the number of elements in origin */
   dims = LALInferenceGetVariableDimension( origin );
   if(target->dimension==0) LALInferenceClearVariables(target);
-  
+
   if ( !dims ){
     XLAL_ERROR_VOID(XLAL_EFAULT, "Origin variables has zero dimensions!");
   }
@@ -1188,7 +1188,7 @@ int LALInferencePrintProposalStatsHeader(FILE *fp, LALInferenceProposalCycle *cy
         fprintf(fp, "%s\t", cycle->proposals[i]->name);
 
     fprintf(fp, "\n");
-    
+
     return 0;
 }
 
@@ -2167,7 +2167,7 @@ void LALInferenceLogSampleToArray(LALInferenceRunState *state, LALInferenceVaria
   else
   {
     /* Save sample and update */
-      
+
     output_array[N_output_array]=XLALCalloc(1,sizeof(LALInferenceVariables));
     LALInferenceCopyVariables(vars,output_array[N_output_array]);
     N_output_array++;
@@ -3508,7 +3508,7 @@ INT4 LALInferenceGetINT4Variable(LALInferenceVariables * vars, const char * name
 {
 
   if(LALInferenceGetVariableType(vars,name)!=LALINFERENCE_INT4_t){
-    XLAL_ERROR(XLAL_ETYPE);
+    XLAL_ERROR(XLAL_ETYPE, "Entry \"%s\" not found or of wrong type.", name);
   }
 
   INT4* rvalue=(INT4*)LALInferenceGetVariable(vars,name);
@@ -3531,7 +3531,7 @@ INT8 LALInferenceGetINT8Variable(LALInferenceVariables * vars, const char * name
 {
 
   if(LALInferenceGetVariableType(vars,name)!=LALINFERENCE_INT8_t){
-    XLAL_ERROR(XLAL_ETYPE);
+    XLAL_ERROR(XLAL_ETYPE, "Entry \"%s\" not found or of wrong type.", name);
   }
 
   INT8* rvalue=(INT8*)LALInferenceGetVariable(vars,name);
@@ -3554,7 +3554,7 @@ UINT4 LALInferenceGetUINT4Variable(LALInferenceVariables * vars, const char * na
 {
 
   if(LALInferenceGetVariableType(vars,name)!=LALINFERENCE_UINT4_t){
-    XLAL_ERROR(XLAL_ETYPE);
+    XLAL_ERROR(XLAL_ETYPE, "Entry \"%s\" not found or of wrong type.", name);
   }
 
   UINT4* rvalue=(UINT4*)LALInferenceGetVariable(vars,name);
@@ -3577,7 +3577,7 @@ REAL4 LALInferenceGetREAL4Variable(LALInferenceVariables * vars, const char * na
 {
 
   if(LALInferenceGetVariableType(vars,name)!=LALINFERENCE_REAL4_t){
-    XLAL_ERROR_REAL4(XLAL_ETYPE);
+    XLAL_ERROR_REAL4(XLAL_ETYPE, "Entry \"%s\" not found or of wrong type.", name);
   }
 
   REAL4* rvalue=(REAL4*)LALInferenceGetVariable(vars,name);
@@ -3600,7 +3600,7 @@ REAL8 LALInferenceGetREAL8Variable(LALInferenceVariables * vars, const char * na
 {
 
   if(LALInferenceGetVariableType(vars,name)!=LALINFERENCE_REAL8_t){
-    XLAL_ERROR_REAL8(XLAL_ETYPE);
+    XLAL_ERROR_REAL8(XLAL_ETYPE, "Entry \"%s\" not found or of wrong type.", name);
   }
 
   REAL8* rvalue=(REAL8*)LALInferenceGetVariable(vars,name);
@@ -3661,7 +3661,7 @@ gsl_matrix* LALInferenceGetgslMatrixVariable(LALInferenceVariables * vars, const
 {
 
   if(LALInferenceGetVariableType(vars,name)!=LALINFERENCE_gslMatrix_t){
-    XLAL_ERROR_NULL(XLAL_ETYPE);
+    XLAL_ERROR_NULL(XLAL_ETYPE, "Entry \"%s\" not found or of wrong type.", name);
   }
 
   gsl_matrix* rvalue=*(gsl_matrix **)LALInferenceGetVariable(vars,name);
@@ -3684,7 +3684,7 @@ REAL8Vector* LALInferenceGetREAL8VectorVariable(LALInferenceVariables * vars, co
 {
 
   if(LALInferenceGetVariableType(vars,name)!=LALINFERENCE_REAL8Vector_t){
-    XLAL_ERROR_NULL(XLAL_ETYPE);
+    XLAL_ERROR_NULL(XLAL_ETYPE, "Entry \"%s\" not found or of wrong type.", name);
   }
 
   REAL8Vector* rvalue= *(REAL8Vector**)LALInferenceGetVariable(vars,name);
@@ -3707,7 +3707,7 @@ COMPLEX16Vector* LALInferenceGetCOMPLEX16VectorVariable(LALInferenceVariables * 
 {
 
   if(LALInferenceGetVariableType(vars,name)!=LALINFERENCE_COMPLEX16Vector_t){
-    XLAL_ERROR_NULL(XLAL_ETYPE);
+    XLAL_ERROR_NULL(XLAL_ETYPE, "Entry \"%s\" not found or of wrong type.", name);
   }
 
   COMPLEX16Vector* rvalue= *(COMPLEX16Vector**)LALInferenceGetVariable(vars,name);
@@ -3736,7 +3736,7 @@ UINT4Vector* LALInferenceGetUINT4VectorVariable(LALInferenceVariables * vars, co
 {
 
   if(LALInferenceGetVariableType(vars,name)!=LALINFERENCE_UINT4Vector_t){
-    XLAL_ERROR_NULL(XLAL_ETYPE);
+    XLAL_ERROR_NULL(XLAL_ETYPE, "Entry \"%s\" not found or of wrong type.", name);
   }
 
   UINT4Vector* rvalue=(UINT4Vector*)LALInferenceGetVariable(vars,name);
@@ -3749,7 +3749,7 @@ INT4Vector* LALInferenceGetINT4VectorVariable(LALInferenceVariables * vars, cons
 {
 
   if(LALInferenceGetVariableType(vars,name)!=LALINFERENCE_INT4Vector_t){
-    XLAL_ERROR_NULL(XLAL_ETYPE);
+    XLAL_ERROR_NULL(XLAL_ETYPE, "Entry \"%s\" not found or of wrong type.", name);
   }
 
   INT4Vector* rvalue=(INT4Vector*)LALInferenceGetVariable(vars,name);
@@ -3776,7 +3776,7 @@ LALInferenceMCMCRunPhase* LALInferenceGetMCMCrunphase_ptrVariable(LALInferenceVa
 {
 
   if(LALInferenceGetVariableType(vars,name)!=LALINFERENCE_MCMCrunphase_ptr_t){
-    XLAL_ERROR_NULL(XLAL_ETYPE);
+    XLAL_ERROR_NULL(XLAL_ETYPE, "Entry \"%s\" not found or of wrong type.", name);
   }
 
   LALInferenceMCMCRunPhase* rvalue=(LALInferenceMCMCRunPhase*)LALInferenceGetVariable(vars,name);
@@ -3799,7 +3799,7 @@ CHAR* LALInferenceGetstringVariable(LALInferenceVariables * vars, const char * n
 {
 
   if(LALInferenceGetVariableType(vars,name)!=LALINFERENCE_string_t){
-    XLAL_ERROR_NULL(XLAL_ETYPE);
+    XLAL_ERROR_NULL(XLAL_ETYPE, "Entry \"%s\" not found or of wrong type.", name);
   }
 
   CHAR* rvalue=*(CHAR**)LALInferenceGetVariable(vars,name);
