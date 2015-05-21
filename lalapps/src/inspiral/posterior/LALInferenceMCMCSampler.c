@@ -45,6 +45,7 @@
 #include <lal/LALInferenceProposal.h>
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
+#include <lal/LALInferenceReadData.h>
 #include <sys/time.h>
 
 #include <LALAppsVCSInfo.h>
@@ -231,7 +232,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
 
     FILE **threadoutputs = LALInferencePrintPTMCMCHeadersOrResume(runState);
     if (MPIrank == 0)
-        LALInferencePrintPTMCMCInjectionSample(runState);
+        LALInferencePrintInjectionSample(runState);
 
     if (benchmark)
         timestamp_epoch = LALInferenceGetREAL8Variable(runState->algorithmParams, "timestamp_epoch");

@@ -657,6 +657,14 @@ int main(int argc, char *argv[]){
     /* Choose the prior */
     LALInferenceInitCBCPrior(runState);
 
+    for(INT4 i=0;i<runState->nthreads;i++)
+    {
+      runState->threads[i]->cycle=LALInferenceSetupDefaultInspiralProposalCycle(runState->threads[i]->proposalArgs);
+      LALInferenceRandomizeProposalCycle(runState->threads[i]->cycle,runState->GSLrandom);
+      runState->threads[i]->proposal = &LALInferenceCyclicProposal;
+    }
+
+  
     /* Choose the likelihood */
     LALInferenceInitLikelihood(runState);
 
