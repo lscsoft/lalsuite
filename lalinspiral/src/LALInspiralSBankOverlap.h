@@ -14,3 +14,5 @@ typedef struct tagWS {
 WS *XLALCreateSBankWorkspaceCache(void);
 void XLALDestroySBankWorkspaceCache(WS *workspace_cache);
 REAL8 XLALInspiralSBankComputeMatch(const COMPLEX8FrequencySeries *inj, const COMPLEX8FrequencySeries *tmplt, WS *workspace_cache);
+
+REAL8 XLALInspiralSBankComputeMatchMaxSkyLoc(const COMPLEX8FrequencySeries *hp, const COMPLEX8FrequencySeries *hc, const REAL8 hpsigmasq, const REAL8 hcsigmasq, const REAL8 hphccorr, const COMPLEX8FrequencySeries *proposal, WS *workspace_cache1, WS *workspace_cache2);
