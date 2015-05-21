@@ -651,10 +651,11 @@ int main(int argc, char *argv[]){
             exit(1);
         }
     }
-
+  
     /* Handle PTMCMC setup */
     init_ptmcmc(runState);
 
+  
     /* Choose the prior */
     LALInferenceInitCBCPrior(runState);
 
@@ -665,6 +666,14 @@ int main(int argc, char *argv[]){
     /* Draw starting positions */
     LALInferenceDrawThreads(runState);
 
+  /* Random hacks that have no known place */
+  /* Nsteps is accessed by LALInferenceAdaptationRestart() LALInferenceMCMCSampler.c:907 */
+  INT4 nsteps=LALInferenceGetINT4Variable(runState->algorithmParams,"nsteps");
+  LALInferenceAddINT4Variable(runState->proposalArgs,"nsteps",nsteps,LALINFERENCE_PARAM_LINEAR);
+  for(INT4 i=0;i<runState->nthreads;i++)    LALInferenceAddINT4Variable(runState->threads[i]->proposalArgs,"nsteps",nsteps,LALINFERENCE_PARAM_LINEAR);
+  
+
+  
     /* Call MCMC algorithm */
     runState->algorithm(runState);
 

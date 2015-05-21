@@ -1367,6 +1367,9 @@ void LALInferencePrintMCMCSample(LALInferenceThreadState *thread, LALInferenceIF
         headIFO = headIFO->next;
     }
 
+  
+    /* This doesn't exist in proposalArgs */
+  /*
     if (LALInferenceGetINT4Variable(thread->cycle->proposalArgs, "output_snrs")) {
         headIFO = data;
         ifo = 0;
@@ -1377,7 +1380,7 @@ void LALInferencePrintMCMCSample(LALInferenceThreadState *thread, LALInferenceIF
         }
         fprintf(threadoutput, "%f\t", thread->model->SNR);
     }
-
+*/
     if (timestamp > 0)
         fprintf(threadoutput, "%f\t", timestamp);
 

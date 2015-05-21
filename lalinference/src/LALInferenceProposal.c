@@ -3089,7 +3089,7 @@ void LALInferenceSetupAdaptiveProposals(LALInferenceVariables *propArgs, LALInfe
     LALInferenceAddINT4Variable(propArgs, "adaptResetBuffer", adaptResetBuffer, LALINFERENCE_PARAM_LINEAR);
     LALInferenceAddREAL8Variable(propArgs, "s_gamma", s_gamma, LALINFERENCE_PARAM_LINEAR);
     LALInferenceAddINT4Variable(propArgs, "adaptStart", adaptStart, LALINFERENCE_PARAM_LINEAR);
-    LALInferenceAddVariable(propArgs, "logLAtAdaptStart", (void *)&logLAtAdaptStart, LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_LINEAR);
+    LALInferenceAddREAL8Variable(propArgs, "logLAtAdaptStart", logLAtAdaptStart, LALINFERENCE_PARAM_LINEAR);
 
     return;
 }
