@@ -199,17 +199,17 @@ INT4 writeTwoSpectTemplateVector(TwoSpectTemplateVector *vector, CHAR *filename)
 {
    FILE *fp = NULL;
    XLAL_CHECK( (fp = fopen(filename, "wb")) != NULL, XLAL_EIO, "Couldn't fopen %s for writing\n", filename );
-   fwrite(&(vector->length), sizeof(UINT4), 1, fp);
-   fwrite(&(vector->data[0]->templatedata->length), sizeof(UINT4), 1, fp);
-   fwrite(&(vector->Tsft), sizeof(REAL8), 1, fp);
-   fwrite(&(vector->SFToverlap), sizeof(REAL8), 1, fp);
-   fwrite(&(vector->Tobs), sizeof(REAL8), 1, fp);
+   XLAL_CHECK( fwrite(&(vector->length), sizeof(UINT4), 1, fp) == 1, XLAL_EIO );
+   XLAL_CHECK( fwrite(&(vector->data[0]->templatedata->length), sizeof(UINT4), 1, fp) == 1, XLAL_EIO );
+   XLAL_CHECK( fwrite(&(vector->Tsft), sizeof(REAL8), 1, fp) == 1, XLAL_EIO );
+   XLAL_CHECK( fwrite(&(vector->SFToverlap), sizeof(REAL8), 1, fp) == 1, XLAL_EIO );
+   XLAL_CHECK( fwrite(&(vector->Tobs), sizeof(REAL8), 1, fp) == 1, XLAL_EIO );
    for (UINT4 ii=0; ii<vector->length; ii++) {
-      fwrite(vector->data[ii]->templatedata->data, sizeof(REAL4), vector->data[ii]->templatedata->length, fp);
-      fwrite(vector->data[ii]->pixellocations->data, sizeof(INT4), vector->data[ii]->pixellocations->length, fp);
-      fwrite(&(vector->data[ii]->f0), sizeof(REAL8), 1, fp);
-      fwrite(&(vector->data[ii]->period), sizeof(REAL8), 1, fp);
-      fwrite(&(vector->data[ii]->moddepth), sizeof(REAL8), 1, fp);
+      XLAL_CHECK( fwrite(vector->data[ii]->templatedata->data, sizeof(REAL4), vector->data[ii]->templatedata->length, fp) == vector->data[ii]->templatedata->length, XLAL_EIO );
+      XLAL_CHECK( fwrite(vector->data[ii]->pixellocations->data, sizeof(INT4), vector->data[ii]->pixellocations->length, fp) == vector->data[ii]->pixellocations->length, XLAL_EIO );
+      XLAL_CHECK( fwrite(&(vector->data[ii]->f0), sizeof(REAL8), 1, fp) == 1, XLAL_EIO );
+      XLAL_CHECK( fwrite(&(vector->data[ii]->period), sizeof(REAL8), 1, fp) == 1, XLAL_EIO );
+      XLAL_CHECK( fwrite(&(vector->data[ii]->moddepth), sizeof(REAL8), 1, fp) == 1, XLAL_EIO );
    }
    fclose(fp);
 
@@ -229,18 +229,18 @@ TwoSpectTemplateVector * readTwoSpectTemplateVector(CHAR *filename)
    FILE *fp = NULL;
    XLAL_CHECK_NULL( (fp = fopen(filename, "rb")) != NULL, XLAL_EIO, "Couldn't fopen %s for reading\n", filename );
    
-   fread(&vectorlength, sizeof(UINT4), 1, fp);
-   fread(&templatelength, sizeof(UINT4), 1, fp);
+   XLAL_CHECK_NULL( fread(&vectorlength, sizeof(UINT4), 1, fp) == 1, XLAL_EIO );
+   XLAL_CHECK_NULL( fread(&templatelength, sizeof(UINT4), 1, fp) == 1, XLAL_EIO );
    XLAL_CHECK_NULL( (vector = new_TwoSpectTemplateVector(vectorlength, templatelength)) != NULL, XLAL_EFUNC );
-   fread(&(vector->Tsft), sizeof(REAL8), 1, fp);
-   fread(&(vector->SFToverlap), sizeof(REAL8), 1, fp);
-   fread(&(vector->Tobs), sizeof(REAL8), 1, fp);
+   XLAL_CHECK_NULL( fread(&(vector->Tsft), sizeof(REAL8), 1, fp) == 1, XLAL_EIO );
+   XLAL_CHECK_NULL( fread(&(vector->SFToverlap), sizeof(REAL8), 1, fp) == 1, XLAL_EIO );
+   XLAL_CHECK_NULL( fread(&(vector->Tobs), sizeof(REAL8), 1, fp) == 1, XLAL_EIO );
    for (UINT4 ii=0; ii<vectorlength; ii++) {
-      fread(vector->data[ii]->templatedata->data, sizeof(REAL4), templatelength, fp);
-      fread(vector->data[ii]->pixellocations->data, sizeof(INT4), templatelength, fp);
-      fread(&(vector->data[ii]->f0), sizeof(REAL8), 1, fp);
-      fread(&(vector->data[ii]->period), sizeof(REAL8), 1, fp);
-      fread(&(vector->data[ii]->moddepth), sizeof(REAL8), 1, fp);
+      XLAL_CHECK_NULL( fread(vector->data[ii]->templatedata->data, sizeof(REAL4), templatelength, fp) == templatelength, XLAL_EIO );
+      XLAL_CHECK_NULL( fread(vector->data[ii]->pixellocations->data, sizeof(INT4), templatelength, fp) == templatelength, XLAL_EIO );
+      XLAL_CHECK_NULL( fread(&(vector->data[ii]->f0), sizeof(REAL8), 1, fp) == 1, XLAL_EIO );
+      XLAL_CHECK_NULL( fread(&(vector->data[ii]->period), sizeof(REAL8), 1, fp) == 1, XLAL_EIO );
+      XLAL_CHECK_NULL( fread(&(vector->data[ii]->moddepth), sizeof(REAL8), 1, fp) == 1, XLAL_EIO );
    }
    fclose(fp);
    
