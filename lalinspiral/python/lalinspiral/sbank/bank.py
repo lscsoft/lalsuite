@@ -43,12 +43,20 @@ class lazy_nhoods(object):
 
 class Bank(object):
 
-    def __init__(self, tmplt_class, noise_model, flow, use_metric=False, cache_waveforms=False, nhood_size=1.0, nhood_param="tau0"):
+    def __init__(self, tmplt_class, noise_model, flow, use_metric=False, cache_waveforms=False, nhood_size=1.0, nhood_param="tau0", quick_df=None, highest_df=None):
         self.tmplt_class = tmplt_class
         self.noise_model = noise_model
         self.flow = flow
         self.use_metric = use_metric
         self.cache_waveforms = cache_waveforms
+        self.quick_df = quick_df
+        self.highest_df = highest_df
+        if self.quick_df and self.highest_df:
+            if self.quick_df < self.highest_df:
+                # If this case occurs quick_df offers no improvement, turn off
+                self.quick_df = None
+        self.max_freq_df = self.quick_df or self.highest_df or 0
+
         self.nhood_size = nhood_size
         self.nhood_param = "_" + nhood_param
 
@@ -132,7 +140,7 @@ class Bank(object):
 
         # set parameters of match calculation that are optimized for this block
         df_end, f_max = get_neighborhood_df_fmax(tmpbank + [proposal], self.flow)
-        df_start = min(128*df_end, 4.0)
+        df_start = max(df_end, self.highest_df)
 
         # find and test matches
         for tmplt in tmpbank:
@@ -140,6 +148,15 @@ class Bank(object):
             self._nmatch += 1
             df = df_start
             match_last = 0
+
+            if self.quick_df:
+                # Perform a match at high df to see if point can be quickly
+                # rejected.
+                PSD = get_PSD(self.quick_df, self.flow, f_max, self.noise_model)
+                match = self.compute_match(tmplt, proposal, self.quick_df,
+                                           PSD=PSD)
+                if (1 - match) > 4.0*(1 - min_match):
+                    continue 
 
             while df >= df_end:
 
