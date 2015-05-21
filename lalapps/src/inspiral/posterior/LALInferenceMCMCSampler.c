@@ -504,7 +504,7 @@ void LALInferencePTswap(LALInferenceRunState *runState, INT4 i, FILE *swapfile) 
     cold_inds = XLALCalloc(ntemps, sizeof(INT4));
 
   if(ntemps<2) return;
-  
+
     if ((i % Tskip) == 0) {
         /* Have the root process choose a random order of ladder swaps and share it */
         if (MPIrank == 0) {
@@ -1049,7 +1049,7 @@ void LALInferencePrintPTMCMCHeaderFiles(LALInferenceRunState *runState, FILE **t
     if(LALInferenceCheckVariable(thread->currentParams, "LAL_APPROXIMANT"))
         waveform = LALInferenceGetUINT4Variable(thread->currentParams, "LAL_APPROXIMANT");
 
-    INT4 pnorder = 0;
+    REAL8 pnorder = 0.0;
     if(LALInferenceCheckVariable(thread->currentParams,"LAL_PNORDER"))
         pnorder = ((REAL8)LALInferenceGetINT4Variable(thread->currentParams, "LAL_PNORDER"))/2.0;
 
@@ -1370,7 +1370,7 @@ void LALInferencePrintMCMCSample(LALInferenceThreadState *thread, LALInferenceIF
         headIFO = headIFO->next;
     }
 
-  
+
     if (LALInferenceGetINT4Variable(thread->proposalArgs, "output_snrs")) {
         headIFO = data;
         ifo = 0;
