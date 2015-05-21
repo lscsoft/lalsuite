@@ -909,7 +909,7 @@ void LALInferenceAdaptationRestart(LALInferenceThreadState *thread, INT4 cycle) 
     LALInferenceSetVariable(thread->proposalArgs, "adapting", &adapting);
     LALInferenceSetVariable(thread->proposalArgs, "adaptStart", &cycle);
     LALInferenceSetVariable(thread->proposalArgs, "logLAtAdaptStart", &(thread->currentLikelihood));
-    LALInferenceSetVariable(thread->proposalArgs, "acl", &Niter);
+    LALInferenceAddVariable(thread->proposalArgs, "acl", &Niter, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
 }
 
 //-----------------------------------------
@@ -1368,9 +1368,7 @@ void LALInferencePrintMCMCSample(LALInferenceThreadState *thread, LALInferenceIF
     }
 
   
-    /* This doesn't exist in proposalArgs */
-  /*
-    if (LALInferenceGetINT4Variable(thread->cycle->proposalArgs, "output_snrs")) {
+    if (LALInferenceGetINT4Variable(thread->proposalArgs, "output_snrs")) {
         headIFO = data;
         ifo = 0;
         while (headIFO != NULL) {
@@ -1380,7 +1378,7 @@ void LALInferencePrintMCMCSample(LALInferenceThreadState *thread, LALInferenceIF
         }
         fprintf(threadoutput, "%f\t", thread->model->SNR);
     }
-*/
+
     if (timestamp > 0)
         fprintf(threadoutput, "%f\t", timestamp);
 

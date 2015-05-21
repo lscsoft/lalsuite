@@ -281,9 +281,6 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
     LALInferenceAddINT4Variable(algorithm_params, "adapt_verbose", adapt_verbose, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddINT4Variable(algorithm_params, "output_snrs", outputSNRs, LALINFERENCE_PARAM_OUTPUT);
 
-    /* Add adaptation settings to proposal args */
-    LALInferenceAddINT4Variable(runState->proposalArgs, "de_skip", skip, LALINFERENCE_PARAM_OUTPUT);
-    LALInferenceAddINT4Variable(runState->proposalArgs, "output_snrs", outputSNRs, LALINFERENCE_PARAM_OUTPUT);
 
     /* Make a single model just to cound dimensions */
     model = LALInferenceInitCBCModel(runState);
@@ -295,6 +292,10 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
 
     /* Extract proposal arguments from command line */
     runState->proposalArgs = LALInferenceParseProposalArgs(runState);
+
+    /* Add adaptation settings to proposal args */
+    LALInferenceAddINT4Variable(runState->proposalArgs, "de_skip", skip, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddINT4Variable(runState->proposalArgs, "output_snrs", outputSNRs, LALINFERENCE_PARAM_OUTPUT);
 
     /* Initialize the walkers on this MPI thread */
     LALInferenceInitCBCThreads(runState, ntemp_per_thread);
@@ -655,11 +656,9 @@ int main(int argc, char *argv[]){
     /* Handle PTMCMC setup */
     init_ptmcmc(runState);
 
-  
     /* Choose the prior */
     LALInferenceInitCBCPrior(runState);
 
-  
     /* Choose the likelihood */
     LALInferenceInitLikelihood(runState);
 
@@ -671,6 +670,13 @@ int main(int argc, char *argv[]){
   INT4 nsteps=LALInferenceGetINT4Variable(runState->algorithmParams,"nsteps");
   LALInferenceAddINT4Variable(runState->proposalArgs,"nsteps",nsteps,LALINFERENCE_PARAM_LINEAR);
   for(INT4 i=0;i<runState->nthreads;i++)    LALInferenceAddINT4Variable(runState->threads[i]->proposalArgs,"nsteps",nsteps,LALINFERENCE_PARAM_LINEAR);
+
+  INT4 de_skip=LALInferenceGetINT4Variable(runState->proposalArgs,"de_skip");
+  /* Add adaptation settings to proposal args */
+  for(INT4 i=0;i<runState->nthreads;i++) LALInferenceAddINT4Variable(runState->threads[i]->proposalArgs, "de_skip", de_skip, LALINFERENCE_PARAM_OUTPUT);
+  INT4 output_snrs=LALInferenceGetINT4Variable(runState->proposalArgs,"output_snrs");
+  for(INT4 i=0;i<runState->nthreads;i++) LALInferenceAddINT4Variable(runState->threads[i]->proposalArgs, "output_snrs", output_snrs, LALINFERENCE_PARAM_OUTPUT);
+  
   
 
   
