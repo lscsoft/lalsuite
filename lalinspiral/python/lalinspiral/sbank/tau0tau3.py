@@ -483,6 +483,7 @@ def SpinTaylorT4_param_generator(flow, **kwargs):
 proposals = {"IMRPhenomB":IMRPhenomB_param_generator,
              "IMRPhenomC":IMRPhenomC_param_generator,
              "IMRPhenomP":precessing_spin_param_generator,
+             "IMRPhenomPMaxed":precessing_spin_param_generator,
              "TaylorF2RedSpin":aligned_spin_param_generator,
              "EOBNRv2":nonspin_param_generator,
              "SEOBNRv1":aligned_spin_param_generator,
