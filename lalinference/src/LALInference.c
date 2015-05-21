@@ -3788,7 +3788,7 @@ void LALInferenceSetMCMCrunphase_ptrVariable(LALInferenceVariables* vars,const c
 void LALInferenceAddstringVariable(LALInferenceVariables * vars, const char * name, CHAR* value, LALInferenceParamVaryType vary)
 /* Typed version of LALInferenceAddVariable for CHAR values.*/
 {
-  LALInferenceAddVariable(vars,name,&value,LALINFERENCE_string_t,vary);
+  LALInferenceAddVariable(vars,name,value,LALINFERENCE_string_t,vary);
 }
 
 CHAR* LALInferenceGetstringVariable(LALInferenceVariables * vars, const char * name)
@@ -3892,8 +3892,8 @@ void LALInferenceFprintSplineCalibrationHeader(FILE *output, LALInferenceThreadS
 
     UINT4 ncal = *(UINT4 *)LALInferenceGetVariable(thread->currentParams, "spcal_npts");
 
-    nifo = LALInferenceGetINT4Variable(thread->cycle->proposalArgs, "nDet");
-    ifo_names = *(char ***)LALInferenceGetVariable(thread->cycle->proposalArgs, "detector_names");
+    nifo = LALInferenceGetINT4Variable(thread->proposalArgs, "nDet");
+    ifo_names = *(char ***)LALInferenceGetVariable(thread->proposalArgs, "detector_names");
 
     for (i=0; i<nifo; i++) {
         char parname[VARNAME_MAX];
@@ -3915,8 +3915,8 @@ void LALInferencePrintSplineCalibration(FILE *output, LALInferenceThreadState *t
     INT4 i, nifo;
     char **ifo_names = NULL;
 
-    nifo = LALInferenceGetINT4Variable(thread->cycle->proposalArgs, "nDet");
-    ifo_names = *(char ***)LALInferenceGetVariable(thread->cycle->proposalArgs, "detector_names");
+    nifo = LALInferenceGetINT4Variable(thread->proposalArgs, "nDet");
+    ifo_names = *(char ***)LALInferenceGetVariable(thread->proposalArgs, "detector_names");
 
     for (i=0; i<nifo; i++) {
         size_t j;

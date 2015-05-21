@@ -501,7 +501,6 @@ tagLALInferenceProposalCycle
     INT4 nProposals; /* The number of unique proposals in the cycle */
     INT4 counter; /** Counter for cycling through proposals */
     char last_proposal[VARNAME_MAX]; /** Name of current proposal */
-    LALInferenceVariables *proposalArgs; /** Storage for arguments needed by proposal functions (e.g. number of detectors) */
 } LALInferenceProposalCycle;
 
 /**
