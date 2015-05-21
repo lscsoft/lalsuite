@@ -256,7 +256,7 @@ LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runSt
 
     /* Flags for proposals, initialized with the MCMC defaults */
 
-    INT4 singleadapt = 1;
+    INT4 singleadapt = 0; /* Disabled for bug checking */
     INT4 psiphi = 1;
     INT4 ext_param = 1;
     INT4 skywander = 1;

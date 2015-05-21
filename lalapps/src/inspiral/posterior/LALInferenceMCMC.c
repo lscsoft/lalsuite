@@ -308,6 +308,7 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
         thread->temperature = ladder[mpi_rank*ntemp_per_thread + i];
         thread->cycle = LALInferenceSetupDefaultInspiralProposalCycle(runState->proposalArgs);
         LALInferenceRandomizeProposalCycle(thread->cycle, thread->GSLrandom);
+        runState->threads[i]->proposal = &LALInferenceCyclicProposal;
     }
 
     /* Add adaptation settings to algorithm params */
@@ -656,13 +657,6 @@ int main(int argc, char *argv[]){
 
     /* Choose the prior */
     LALInferenceInitCBCPrior(runState);
-
-    for(INT4 i=0;i<runState->nthreads;i++)
-    {
-      runState->threads[i]->cycle=LALInferenceSetupDefaultInspiralProposalCycle(runState->threads[i]->proposalArgs);
-      LALInferenceRandomizeProposalCycle(runState->threads[i]->cycle,runState->GSLrandom);
-      runState->threads[i]->proposal = &LALInferenceCyclicProposal;
-    }
 
   
     /* Choose the likelihood */
