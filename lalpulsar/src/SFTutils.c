@@ -1953,3 +1953,35 @@ XLALDuplicateSFTVector ( const SFTVector *sftsIn )
   return sftsOut;
 
 } // XLALDuplicateSFTVector()
+
+/**
+ * Reorder the MultiSFTVector with specified list of IFOs
+ */
+int XLALReorderMultiSFTVector( MultiSFTVector *multiSFTs, const LALStringVector *IFOs)
+{
+  XLAL_CHECK( multiSFTs!=NULL && IFOs!=NULL && multiSFTs->length==IFOs->length && multiSFTs->length<=PULSAR_MAX_DETECTORS, XLAL_EINVAL );
+
+  // Initialize array of reordered SFTVector pointers
+  SFTVector *reordered[PULSAR_MAX_DETECTORS];
+  XLAL_INIT_MEM(reordered);
+
+  // Loop through IFO list and reorder if necessary
+  for (UINT4 i=0; i < IFOs->length; i ++ )
+    {
+      UINT4 j=0;
+      while ( (j < IFOs->length) && (strncmp ( IFOs->data[i], multiSFTs->data[j]->data[0].name, 2 ) != 0) ) {
+        j++;
+      }
+      XLAL_CHECK ( j < IFOs->length, XLAL_EINVAL, "IFO %c%c not found", IFOs->data[i][0], IFOs->data[i][1] );
+      reordered[i] = multiSFTs->data[j]; // copy the SFTVector pointer
+    }
+
+  // Replace the old pointers with the new values
+  for ( UINT4 i=0; i < multiSFTs->length; i ++ )
+    {
+      multiSFTs->data[i] = reordered[i];
+    }
+
+  return XLAL_SUCCESS;
+
+} // XLALReorderMultiSFTVector()
