@@ -256,7 +256,7 @@ LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runSt
 
     /* Flags for proposals, initialized with the MCMC defaults */
 
-    INT4 singleadapt = 0;
+    INT4 singleadapt = 0; /* Disabled for bug checking */
     INT4 psiphi = 1;
     INT4 ext_param = 1;
     INT4 skywander = 1;
@@ -354,8 +354,8 @@ LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runSt
     if (LALInferenceGetProcParamVal(command_line, "--no-adapt"))
         noAdapt = 1;
     INT4 adapting = !noAdapt;
-    LALInferenceAddINT4Variable(propArgs, "no_adapt", noAdapt, LALINFERENCE_PARAM_FIXED);
-    LALInferenceAddINT4Variable(propArgs, "adapting", adapting, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddINT4Variable(propArgs, "no_adapt", noAdapt, LALINFERENCE_PARAM_LINEAR);
+    LALInferenceAddINT4Variable(propArgs, "adapting", adapting, LALINFERENCE_PARAM_LINEAR);
 
     INT4 tau = 5;
     ppt = LALInferenceGetProcParamVal(command_line, "--adaptTau");
@@ -3073,7 +3073,7 @@ void LALInferenceSetupAdaptiveProposals(LALInferenceVariables *propArgs, LALInfe
 
     no_adapt = LALInferenceGetINT4Variable(propArgs, "no_adapt");
     adapting = !no_adapt;      // Indicates if current iteration is being adapted
-    LALInferenceAddINT4Variable(propArgs, "adapting", adapting, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddINT4Variable(propArgs, "adapting", adapting, LALINFERENCE_PARAM_LINEAR);
 
     nameBuffer = XLALCalloc(MAX_STRLEN, sizeof(char));
     sprintf(nameBuffer, "none");
