@@ -3788,7 +3788,7 @@ void LALInferenceSetMCMCrunphase_ptrVariable(LALInferenceVariables* vars,const c
 void LALInferenceAddstringVariable(LALInferenceVariables * vars, const char * name, CHAR* value, LALInferenceParamVaryType vary)
 /* Typed version of LALInferenceAddVariable for CHAR values.*/
 {
-  LALInferenceAddVariable(vars,name,(void*)value,LALINFERENCE_string_t,vary);
+  LALInferenceAddVariable(vars,name,&value,LALINFERENCE_string_t,vary);
 }
 
 CHAR* LALInferenceGetstringVariable(LALInferenceVariables * vars, const char * name)
