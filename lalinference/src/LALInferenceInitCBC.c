@@ -128,15 +128,21 @@ void LALInferenceDrawThreads(LALInferenceRunState *run_state) {
     #pragma omp parallel for
     for (t = 0; t < run_state->nthreads; t++) {
         thread = run_state->threads[t];
-        LALInferenceDrawApproxPrior(thread,
+        
+         LALInferenceDrawApproxPrior(thread,
                                     thread->currentParams,
                                     thread->currentParams);
+         
+        //LALInferenceDrawFromPrior(thread->currentParams,run_state->priorArgs,run_state->GSLrandom);
         while (run_state->prior(run_state,
                                 thread->currentParams,
                                 thread->model) <= -DBL_MAX) {
             LALInferenceDrawApproxPrior(thread,
                                         thread->currentParams,
                                         thread->currentParams);
+          
+          //LALInferenceDrawFromPrior(thread->currentParams,run_state->priorArgs,run_state->GSLrandom);
+
         }
 
         /* Make sure that our initial value is within the

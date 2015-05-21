@@ -230,6 +230,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
         }
     }
 
+    /* This is mangling currentParams */
     FILE **threadoutputs = LALInferencePrintPTMCMCHeadersOrResume(runState);
     if (MPIrank == 0)
         LALInferencePrintInjectionSample(runState);
@@ -1044,11 +1045,11 @@ void LALInferencePrintPTMCMCHeaderFiles(LALInferenceRunState *runState, FILE **t
         ifodata1 = ifodata1->next;
     }
 
-    INT4 waveform = 0;
+    UINT4 waveform = 0;
     if(LALInferenceCheckVariable(thread->currentParams, "LAL_APPROXIMANT"))
-        waveform = LALInferenceGetINT4Variable(thread->currentParams, "LAL_APPROXIMANT");
+        waveform = LALInferenceGetUINT4Variable(thread->currentParams, "LAL_APPROXIMANT");
 
-    REAL8 pnorder = 0.0;
+    INT4 pnorder = 0;
     if(LALInferenceCheckVariable(thread->currentParams,"LAL_PNORDER"))
         pnorder = ((REAL8)LALInferenceGetINT4Variable(thread->currentParams, "LAL_PNORDER"))/2.0;
 
@@ -1082,7 +1083,7 @@ void LALInferencePrintPTMCMCHeaderFiles(LALInferenceRunState *runState, FILE **t
         fprintf(threadoutput, "%10s  %6s  %20s  %6s %6s  %10s  %12s  %9s  %9s %8s %8s\n",
                 "nIter", "seed", "null_likelihood", "Ndet", "nTemps",
                 "Tchain", "NetworkSNR", "Waveform", "pNorder", "Npar", "f_ref");
-        fprintf(threadoutput, "%10d  %u  %20.10lf  %6d %6d %12.1f %14.6f  %9i  %9.1f  %8i %12.1f\n",
+        fprintf(threadoutput, "%10d  %u  %20.10lf  %6d %6d %12.1f %14.6f  %9i  %9i  %8i %12.1f\n",
                 Niter, randomseed, thread->nullLikelihood, nIFO, nthreads,
                 thread->temperature, networkSNR, waveform, pnorder, nPar, f_ref);
 
