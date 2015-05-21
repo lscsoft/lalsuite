@@ -36,6 +36,7 @@ import lalsimulation as lalsim
 
 import glue.lal
 from glue.ligolw import utils, ligolw, lsctables, table, ilwd
+lsctables.use_in(ligolw.LIGOLWContentHandler)
 from glue.ligolw.utils import process
 from glue import pipeline
 
@@ -85,7 +86,7 @@ if opts.N_tidal_pts is not None and (opts.delta_eff_lambda or opts.eff_lambda):
 # Get end time from coinc inspiral table or command line
 xmldoc = None
 if opts.coinc_xml is not None:
-    xmldoc = utils.load_filename(opts.coinc_xml)
+    xmldoc = utils.load_filename(opts.coinc_xml, contenthandler=ligolw.LIGOLWContentHandler)
     coinc_table = table.get_table(xmldoc, lsctables.CoincInspiralTable.tableName)
     assert len(coinc_table) == 1
     coinc_row = coinc_table[0]
