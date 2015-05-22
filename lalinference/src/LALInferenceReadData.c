@@ -540,14 +540,6 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
             !(LALInferenceGetProcParamVal(commandLine,"--PSDlength")||LALInferenceGetProcParamVal(commandLine,"--psdlength")) ||!LALInferenceGetProcParamVal(commandLine,"--seglen"))
     {fprintf(stderr,USAGE); return(NULL);}
 
-
-    //TEMPORARY. JUST FOR CHECKING USING SPINSPIRAL PSD
-    char **spinspiralPSD=NULL;
-    UINT4 NspinspiralPSD = 0;
-    if (LALInferenceGetProcParamVal(commandLine, "--spinspiralPSD")) {
-        LALInferenceParseCharacterOptionString(LALInferenceGetProcParamVal(commandLine,"--spinspiralPSD")->value,&spinspiralPSD,&NspinspiralPSD);
-    }
-
     if(LALInferenceGetProcParamVal(commandLine,"--dataseed")){
         procparam=LALInferenceGetProcParamVal(commandLine,"--dataseed");
         dataseed=atoi(procparam->value);
@@ -622,98 +614,6 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
         if(!strcmp(IFOnames[i],"E3")){
             memcpy(IFOdata[i].detector,&lalCachedDetectors[LALDetectorIndexE3DIFF],sizeof(LALDetector));
             if(!Nchannel) sprintf((channels[i]),"E3:STRAIN"); continue;}
-        if(!strcmp(IFOnames[i],"HM1")){
-            /* Note, this is a sqrt(2)*7.5-km 3rd gen detector */
-            LALFrDetector ETHomestakeFr;
-            sprintf(ETHomestakeFr.name,"ET-HomeStake1");
-            sprintf(ETHomestakeFr.prefix,"M1");
-            /* Location of Homestake Mine vertex is */
-            /* 44d21'23.11" N, 103d45'54.71" W */
-            ETHomestakeFr.vertexLatitudeRadians = (44.+ 21./60  + 23.11/3600)*LAL_PI/180.0;
-            ETHomestakeFr.vertexLongitudeRadians = - (103. +45./60 + 54.71/3600)*LAL_PI/180.0;
-            ETHomestakeFr.vertexElevation=0.0;
-            ETHomestakeFr.xArmAltitudeRadians=0.0;
-            ETHomestakeFr.xArmAzimuthRadians=LAL_PI/2.0;
-            ETHomestakeFr.yArmAltitudeRadians=0.0;
-            ETHomestakeFr.yArmAzimuthRadians=0.0;
-            ETHomestakeFr.xArmMidpoint = ETHomestakeFr.yArmMidpoint = sqrt(2.0)*7.5/2.0;
-            IFOdata[i].detector=XLALCalloc(1,sizeof(LALDetector));
-            XLALCreateDetector(IFOdata[i].detector,&ETHomestakeFr,LALDETECTORTYPE_IFODIFF);
-            printf("Created Homestake Mine ET detector, location: %lf, %lf, %lf\n",IFOdata[i].detector->location[0],IFOdata[i].detector->location[1],IFOdata[i].detector->location[2]);
-            printf("detector tensor:\n");
-            for(int jdx=0;jdx<3;jdx++){
-                for(j=0;j<3;j++) printf("%f ",IFOdata[i].detector->response[jdx][j]);
-                printf("\n");
-            }
-            continue;
-        }
-        if(!strcmp(IFOnames[i],"HM2")){
-            /* Note, this is a sqrt(2)*7.5-km 3rd gen detector */
-            LALFrDetector ETHomestakeFr;
-            sprintf(ETHomestakeFr.name,"ET-HomeStake2");
-            sprintf(ETHomestakeFr.prefix,"M2");
-            /* Location of Homestake Mine vertex is */
-            /* 44d21'23.11" N, 103d45'54.71" W */
-            ETHomestakeFr.vertexLatitudeRadians = (44.+ 21./60  + 23.11/3600)*LAL_PI/180.0;
-            ETHomestakeFr.vertexLongitudeRadians = - (103. +45./60 + 54.71/3600)*LAL_PI/180.0;
-            ETHomestakeFr.vertexElevation=0.0;
-            ETHomestakeFr.xArmAltitudeRadians=0.0;
-            ETHomestakeFr.xArmAzimuthRadians=3.0*LAL_PI/4.0;
-            ETHomestakeFr.yArmAltitudeRadians=0.0;
-            ETHomestakeFr.yArmAzimuthRadians=LAL_PI/4.0;
-            ETHomestakeFr.xArmMidpoint = ETHomestakeFr.yArmMidpoint = sqrt(2.0)*7500./2.0;
-            IFOdata[i].detector=XLALCalloc(1,sizeof(LALDetector));
-            XLALCreateDetector(IFOdata[i].detector,&ETHomestakeFr,LALDETECTORTYPE_IFODIFF);
-            printf("Created Homestake Mine ET detector, location: %lf, %lf, %lf\n",IFOdata[i].detector->location[0],IFOdata[i].detector->location[1],IFOdata[i].detector->location[2]);
-            printf("detector tensor:\n");
-            for(int jdx=0;jdx<3;jdx++){
-                for(j=0;j<3;j++) printf("%f ",IFOdata[i].detector->response[jdx][j]);
-                printf("\n");
-            }
-            continue;
-        }
-        if(!strcmp(IFOnames[i],"EM1")){
-            LALFrDetector ETmic1;
-            sprintf(ETmic1.name,"ET_Michelson_1");
-            sprintf(ETmic1.prefix,"F1");
-            ETmic1.vertexLatitudeRadians = (43. + 37./60. + 53.0921/3600)*LAL_PI/180.0;
-            ETmic1.vertexLongitudeRadians = (10. + 30./60. + 16.1878/3600.)*LAL_PI/180.0;
-            ETmic1.vertexElevation = 0.0;
-            ETmic1.xArmAltitudeRadians = ETmic1.yArmAltitudeRadians = 0.0;
-            ETmic1.xArmAzimuthRadians = LAL_PI/2.0;
-            ETmic1.yArmAzimuthRadians = 0.0;
-            ETmic1.xArmMidpoint = ETmic1.yArmMidpoint = sqrt(2.0)*7500./2.;
-            IFOdata[i].detector=XLALCalloc(1,sizeof(LALDetector));
-            XLALCreateDetector(IFOdata[i].detector,&ETmic1,LALDETECTORTYPE_IFODIFF);
-            printf("Created ET L-detector 1 (N/E) arms, location: %lf, %lf, %lf\n",IFOdata[i].detector->location[0],IFOdata[i].detector->location[1],IFOdata[i].detector->location[2]);
-            printf("detector tensor:\n");
-            for(int jdx=0;jdx<3;jdx++){
-                for(j=0;j<3;j++) printf("%f ",IFOdata[i].detector->response[jdx][j]);
-                printf("\n");
-            }
-            continue;
-        }
-        if(!strcmp(IFOnames[i],"EM2")){
-            LALFrDetector ETmic2;
-            sprintf(ETmic2.name,"ET_Michelson_2");
-            sprintf(ETmic2.prefix,"F2");
-            ETmic2.vertexLatitudeRadians = (43. + 37./60. + 53.0921/3600)*LAL_PI/180.0;
-            ETmic2.vertexLongitudeRadians = (10. + 30./60. + 16.1878/3600.)*LAL_PI/180.0;
-            ETmic2.vertexElevation = 0.0;
-            ETmic2.xArmAltitudeRadians = ETmic2.yArmAltitudeRadians = 0.0;
-            ETmic2.xArmAzimuthRadians = 3.0*LAL_PI/4.0;
-            ETmic2.yArmAzimuthRadians = LAL_PI/4.0;
-            ETmic2.xArmMidpoint = ETmic2.yArmMidpoint = sqrt(2.0)*7500./2.;
-            IFOdata[i].detector=XLALCalloc(1,sizeof(LALDetector));
-            XLALCreateDetector(IFOdata[i].detector,&ETmic2,LALDETECTORTYPE_IFODIFF);
-            printf("Created ET L-detector 2 (NE/SE) arms, location: %lf, %lf, %lf\n",IFOdata[i].detector->location[0],IFOdata[i].detector->location[1],IFOdata[i].detector->location[2]);
-            printf("detector tensor:\n");
-            for(int jdx=0;jdx<3;jdx++){
-                for(j=0;j<3;j++) printf("%f ",IFOdata[i].detector->response[jdx][j]);
-                printf("\n");
-            }
-            continue;
-        }
         if(!strcmp(IFOnames[i],"I1")||!strcmp(IFOnames[i],"LIGOIndia")){
             /* Detector in India with 4k arms */
             LALFrDetector LIGOIndiaFr;
@@ -952,14 +852,14 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
                 }
             }else{
                 fprintf(stderr,"Estimating PSD for %s using %i segments of %i samples (%lfs)\n",IFOnames[i],nSegs,(int)seglen,SegmentLength);
-                LIGOTimeGPS trueGPSstart=GPSstart;
+                /*LIGOTimeGPS trueGPSstart=GPSstart;
                 if(Ntimeslides) {
                   REAL4 deltaT=-atof(timeslides[i]);
                   XLALGPSAdd(&GPSstart, deltaT);
                   fprintf(stderr,"Slid PSD estimation of %s by %f s from %10.10lf to %10.10lf\n",IFOnames[i],deltaT,trueGPSstart.gpsSeconds+1e-9*trueGPSstart.gpsNanoSeconds,GPSstart.gpsSeconds+1e-9*GPSstart.gpsNanoSeconds);
-                }
+                }*/
                 PSDtimeSeries=readTseries(cache,channels[i],GPSstart,PSDdatalength);
-                GPSstart=trueGPSstart;
+                //GPSstart=trueGPSstart;
                 if(!PSDtimeSeries) {XLALPrintError("Error reading PSD data for %s\n",IFOnames[i]); XLAL_ERROR_NULL(XLAL_EFUNC);}
                 XLALResampleREAL8TimeSeries(PSDtimeSeries,1.0/SampleRate);
                 PSDtimeSeries=(REAL8TimeSeries *)XLALShrinkREAL8TimeSeries(PSDtimeSeries,(size_t) 0, (size_t) seglen*nSegs);
@@ -1193,40 +1093,6 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
       IFOdata[i].noiseASD=(REAL8FrequencySeries *)XLALCreateREAL8FrequencySeries("asd",&GPSstart,0.0,(REAL8)(SampleRate)/seglen,&lalDimensionlessUnit,seglen/2 +1);
       for(j=0;j<IFOdata[i].oneSidedNoisePowerSpectrum->data->length;j++)
         IFOdata[i].noiseASD->data->data[j]=sqrt(IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]);
-
-        if (LALInferenceGetProcParamVal(commandLine, "--spinspiralPSD")) {
-            FILE *in;
-            double freq_temp, psd_temp, temp;
-            int n=0;
-            int k=0;
-            int templen=0;
-            char buffer[256];
-            char * line=buffer;
-
-            in = fopen(spinspiralPSD[i], "r");
-            while(fgets(buffer, 256, in)){
-                templen++;
-            }
-
-            rewind(in);
-            IFOdata[i].oneSidedNoisePowerSpectrum->data->data[0] = 1.0;
-            while(fgets(buffer, 256, in)){
-                line=buffer;
-
-                sscanf(line, "%lg%n", &freq_temp,&n);
-                line+=n;
-                sscanf(line, "%lg%n", &psd_temp,&n);
-                line+=n;
-                sscanf(line, "%lg%n", &temp,&n);
-                line+=n;
-
-                IFOdata[i].oneSidedNoisePowerSpectrum->data->data[k+1]=psd_temp*psd_temp;
-
-                k++;
-            }
-            fclose(in);
-        }
-
         /* Save to file the PSDs so that they can be used in the PP pages */
         const UINT4 nameLength=FILENAME_MAX;
         char filename[nameLength];
