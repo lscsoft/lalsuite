@@ -230,6 +230,7 @@ for gps in sorted(opts.gps):
     # samples -> just the supplied gps time
     #====================
     samples = [[gps, 1, 1.0, 0.0, 0.0]]  # fake sample with fields filled in for kw data
+    clean_gps = [] ### we don't need this, but it's faster to define this than to clean up the following code...
 
     #====================
     # aux triggers
