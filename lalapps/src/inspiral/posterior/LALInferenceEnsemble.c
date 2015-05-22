@@ -355,7 +355,7 @@ int main(int argc, char *argv[]){
 
     /* Initialise run_state based on command line. This includes allocating
      *   memory, reading data, and performing any injections specified. */
-    run_state = LALInferenceInitCBCRunState(proc_params);
+    run_state = LALInferenceInitRunState(proc_params);
 
     if (run_state == NULL) {
         if (LALInferenceGetProcParamVal(proc_params, "--help")) {
