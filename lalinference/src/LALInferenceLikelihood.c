@@ -68,36 +68,41 @@ static double integrate_interpolated_log(double h, REAL8 *log_ys, size_t n, doub
 void LALInferenceInitLikelihood(LALInferenceRunState *runState)
 {
     char help[]="\
- ------------------------------------------------------------------------------------------------------------------\n\
- --- Likelihood Arguments     -------------------------------------------------------------------------------------\n\
- ------------------------------------------------------------------------------------------------------------------\n\
-(--zeroLogLike)                  Use flat, null likelihood.\n\
-(--studentTLikelihood)           Use the Student-T Likelihood that marginalizes over noise.\n\
-(--correlatedGaussianLikelihood) Use analytic, correlated Gaussian for Likelihood.\n\
-(--bimodalGaussianLikelihood)    Use analytic, bimodal correlated Gaussian for Likelihood.\n\
-(--rosenbrockLikelihood)         Use analytic, Rosenbrock banana for Likelihood.\n\
-(--noiseonly)                    Using noise-only likelihood.\n\
-(--margphi)                      Using marginalised phase likelihood.\n\
-(--margtime)                     Using marginalised time likelihood.\n\
-(--margtimephi)                  Using marginalised in time and phase likelihood\n";
+               ---------------------------------------------------------------------------------------------------\n\
+               --- Likelihood Arguments --------------------------------------------------------------------------\n\
+               ---------------------------------------------------------------------------------------------------\n\
+               (--zeroLogLike)                  Use flat, null likelihood\n\
+               (--studentTLikelihood)           Use the Student-T Likelihood that marginalizes over noise\n\
+               (--correlatedGaussianLikelihood) Use analytic, correlated Gaussian for Likelihood\n\
+               (--bimodalGaussianLikelihood)    Use analytic, bimodal correlated Gaussian for Likelihood\n\
+               (--rosenbrockLikelihood)         Use analytic, Rosenbrock banana for Likelihood\n\
+               (--noiseonly)                    Using noise-only likelihood\n\
+               (--margphi)                      Using marginalised phase likelihood\n\
+               (--margtime)                     Using marginalised time likelihood\n\
+               (--margtimephi)                  Using marginalised in time and phase likelihood\n\
+               \n";
+
+    /* Print command line arguments if help requested */
+    LALInferenceIFOData *ifo=NULL;
+    if(runState == NULL || LALInferenceGetProcParamVal(runState->commandLine,"--help"))
+    {
+        fprintf(stdout,"%s",help);
+        if (runState){
+            ifo=runState->data;
+            while(ifo) {
+                fprintf(stdout,"(--dof-%s DoF)\tDegrees of freedom for %s\n",ifo->name,ifo->name);
+                ifo=ifo->next;
+            }
+        }
+        return;
+    }
 
     ProcessParamsTable *commandLine=runState->commandLine;
-    LALInferenceIFOData *ifo=runState->data;
+    ifo=runState->data;
 
     LALInferenceThreadState *thread = runState->threads[0];
 
     REAL8 nullLikelihood = 0.0; // Populated if such a thing exists
-
-    /* Print command line arguments if help requested */
-    if(LALInferenceGetProcParamVal(runState->commandLine,"--help"))
-    {
-        fprintf(stdout,"%s",help);
-        while(ifo) {
-            fprintf(stdout,"(--dof-%s DoF)\tDegrees of freedom for %s\n",ifo->name,ifo->name);
-            ifo=ifo->next;
-        }
-        return;
-    }
 
    if (LALInferenceGetProcParamVal(commandLine, "--zeroLogLike")) {
     /* Use zero log(L) */

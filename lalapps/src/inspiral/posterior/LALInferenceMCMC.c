@@ -89,26 +89,26 @@ void init_mpi_randomstate(LALInferenceRunState *run_state) {
 INT4 init_ptmcmc(LALInferenceRunState *runState) {
   char help[]="\
                ---------------------------------------------------------------------------------------------------\n\
-               --- General Algorithm Parameters ------------------------------------------------------------------\n\
+               --- MCMC Algorithm Parameters ---------------------------------------------------------------------\n\
                ---------------------------------------------------------------------------------------------------\n\
-               (--nsteps n)                     Maximum number of steps to take (1e7).\n\
-               (--neff N)                       Number of independent samples to collect (nsteps).\n\
-               (--skip n)                       Number of steps between writing samples to file (100).\n\
-               (--adapt-tau)                    Adaptation decay power, results in adapt length of 10^tau (5).\n\
-               (--no-adapt)                     Do not adapt run.\n\
-               (--randomseed seed)              Random seed of sampling distribution (random).\n\
+               (--nsteps n)                     Maximum number of steps to take (1e7)\n\
+               (--neff N)                       Number of independent samples to collect (nsteps)\n\
+               (--skip n)                       Number of steps between writing samples to file (100)\n\
+               (--adapt-tau)                    Adaptation decay power, results in adapt length of 10^tau (5)\n\
+               (--no-adapt)                     Do not adapt run\n\
+               (--randomseed seed)              Random seed of sampling distribution (random)\n\
                \n\
                ---------------------------------------------------------------------------------------------------\n\
                --- Parallel Tempering Algorithm Parameters -------------------------------------------------------\n\
                ---------------------------------------------------------------------------------------------------\n\
-               (--temp-skip N)                  Number of steps between temperature swap proposals (100).\n\
-               (--tempKill N)                   Iteration number to stop temperature swapping (Niter).\n\
-               (--ntemp N)                      Number of temperature chains in ladder (as many as needed).\n\
-               (--temp-min T)                   Lowest temperature for parallel tempering (1.0).\n\
-               (--temp-max T)                   Highest temperature for parallel tempering (50.0).\n\
-               (--anneal)                       Anneal hot temperature linearly to T=1.0.\n\
-               (--annealStart N)                Iteration number to start annealing (5*10^5).\n\
-               (--annealLength N)               Number of iterations to anneal all chains to T=1.0 (1*10^5).\n\
+               (--temp-skip N)                  Number of steps between temperature swap proposals (100)\n\
+               (--tempKill N)                   Iteration number to stop temperature swapping (Niter)\n\
+               (--ntemp N)                      Number of temperature chains in ladder (as many as needed)\n\
+               (--temp-min T)                   Lowest temperature for parallel tempering (1.0)\n\
+               (--temp-max T)                   Highest temperature for parallel tempering (50.0)\n\
+               (--anneal)                       Anneal hot temperature linearly to T=1.0\n\
+               (--annealStart N)                Iteration number to start annealing (5*10^5)\n\
+               (--annealLength N)               Number of iterations to anneal all chains to T=1.0 (1*10^5)\n\
                \n\
                ---------------------------------------------------------------------------------------------------\n\
                --- Noise Model -----------------------------------------------------------------------------------\n\
@@ -122,12 +122,14 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
                ---------------------------------------------------------------------------------------------------\n\
                --- Output ----------------------------------------------------------------------------------------\n\
                ---------------------------------------------------------------------------------------------------\n\
-               (--data-dump)                    Output waveforms to file.\n\
-               (--adapt-verbose)                Output parameter jump sizes and acceptance rate stats to file.\n\
-               (--temp-verbose)                 Output temperature swapping stats to file.\n\
-               (--prop-verbose)                 Output proposal stats to file.\n\
-               (--prop-track)                   Output proposal parameters.\n\
-               (--outfile file)                 Write output files <file>.<chain_number> (PTMCMC.output.<random_seed>.<mpi_thread>).\n";
+               (--data-dump)                    Output waveforms to file\n\
+               (--adapt-verbose)                Output parameter jump sizes and acceptance rate stats to file\n\
+               (--temp-verbose)                 Output temperature swapping stats to file\n\
+               (--prop-verbose)                 Output proposal stats to file\n\
+               (--prop-track)                   Output proposal parameters\n\
+               (--outfile file)                 Write output files <file>.<chain_number> \n\
+                                                (PTMCMC.output.<random_seed>.<mpi_thread>)\n\
+               \n";
     INT4 mpi_rank, mpi_size;
     INT4 ntemp_per_thread;
     INT4 noAdapt, adaptTau, adaptLength;
@@ -155,7 +157,7 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
     if (LALInferenceGetProcParamVal(command_line, "--varyFlow")) {
         /* Metropolis-coupled MCMC Swap (assumes likelihood function differs between chains).*/
         //runState->parallelSwap = &LALInferenceMCMCMCswap;
-        fprintf(stderr, "ERROR: MCMCMC samping hasn't been brought up-to-date since restructuring.\n");
+        fprintf(stderr, "ERROR: MCMCMC sampling hasn't been brought up-to-date since restructuring.\n");
         return XLAL_FAILURE;
     } else {
         /* Standard parallel tempering swap. */
@@ -646,15 +648,13 @@ int main(int argc, char *argv[]){
     LALInferenceInjectInspiralSignal(runState->data, runState->commandLine);
 
     if (runState == NULL) {
-        if (LALInferenceGetProcParamVal(procParams, "--help")) {
-            exit(0);
-        } else {
+        if (!LALInferenceGetProcParamVal(procParams, "--help")) {
             fprintf(stderr, "run_state not allocated (%s, line %d).\n",
                     __FILE__, __LINE__);
             exit(1);
         }
     }
-  
+
     /* Handle PTMCMC setup */
     init_ptmcmc(runState);
 
@@ -667,6 +667,9 @@ int main(int argc, char *argv[]){
     /* Draw starting positions */
     LALInferenceDrawThreads(runState);
 
+    if (runState == NULL)
+        return 0;
+
   /* Random hacks that have no known place */
   /* Nsteps is accessed by LALInferenceAdaptationRestart() LALInferenceMCMCSampler.c:907 */
   INT4 nsteps=LALInferenceGetINT4Variable(runState->algorithmParams,"nsteps");
@@ -678,10 +681,10 @@ int main(int argc, char *argv[]){
   for(INT4 i=0;i<runState->nthreads;i++) LALInferenceAddINT4Variable(runState->threads[i]->proposalArgs, "de_skip", de_skip, LALINFERENCE_PARAM_OUTPUT);
   INT4 output_snrs=LALInferenceGetINT4Variable(runState->proposalArgs,"output_snrs");
   for(INT4 i=0;i<runState->nthreads;i++) LALInferenceAddINT4Variable(runState->threads[i]->proposalArgs, "output_snrs", output_snrs, LALINFERENCE_PARAM_OUTPUT);
-  
-  
 
-  
+
+
+
     /* Call MCMC algorithm */
     runState->algorithm(runState);
 

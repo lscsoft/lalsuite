@@ -1,4 +1,4 @@
-/* 
+/*
  *  InferenceNest.c:  Nested Sampling using LALInference
  *
  *  Copyright (C) 2009 Ilya Mandel, Vivien Raymond, Christian Roever, Marc van der Sluys and John Veitch
@@ -49,17 +49,17 @@ int main(int argc, char *argv[]){
   Bayesian analysis tool using Nested Sampling algorithm\n\
   for CBC analysis. Uses LALInference library for back-end.\n\n\
   Arguments for each section follow:\n\n";
-  
+
   LALInferenceRunState *state;
   ProcessParamsTable *procParams=NULL;
-  
+
   /* Read command line and parse */
   procParams=LALInferenceParseCommandLine(argc,argv);
   if(LALInferenceGetProcParamVal(procParams,"--help"))
   {
     fprintf(stdout,"%s",help);
   }
-  
+
   /* initialise runstate based on command line */
   /* This includes reading in the data */
   /* And performing any injections specified */
@@ -69,10 +69,12 @@ int main(int argc, char *argv[]){
   LALInferenceInjectInspiralSignal(state->data, state->commandLine);
 
   /* Set up the appropriate functions for the nested sampling algorithm */
-  state->algorithm=&LALInferenceNestedSamplingAlgorithm;
-  state->evolve=&LALInferenceNestedSamplingOneStep;
+  if (state){
+    state->algorithm=&LALInferenceNestedSamplingAlgorithm;
+    state->evolve=&LALInferenceNestedSamplingOneStep;
 
-  state->proposalArgs = LALInferenceParseProposalArgs(state);
+    state->proposalArgs = LALInferenceParseProposalArgs(state);
+  }
 
   /* Set up the threads */
   LALInferenceInitCBCThreads(state,1);
@@ -82,33 +84,33 @@ int main(int argc, char *argv[]){
 
   /* Set up structures for nested sampling */
   LALInferenceNestedSamplingAlgorithmInit(state);
-  
-  for(INT4 i=0;i<state->nthreads;i++)
-  {
-    state->threads[i]->cycle=LALInferenceSetupDefaultInspiralProposalCycle(state->threads[i]->proposalArgs);
-    LALInferenceRandomizeProposalCycle(state->threads[i]->cycle,state->GSLrandom);
+
+  if (state){
+    for(INT4 i=0;i<state->nthreads;i++)
+    {
+      state->threads[i]->cycle=LALInferenceSetupDefaultInspiralProposalCycle(state->threads[i]->proposalArgs);
+      LALInferenceRandomizeProposalCycle(state->threads[i]->cycle,state->GSLrandom);
+    }
   }
 
   /* Choose the likelihood and set some auxiliary variables */
   LALInferenceInitLikelihood(state);
-  
+
   /* Exit since we printed all command line arguments */
-  if(LALInferenceGetProcParamVal(state->commandLine,"--help"))
+  if(state == NULL || LALInferenceGetProcParamVal(state->commandLine,"--help"))
   {
     exit(0);
   }
-  
+
   /* Call setupLivePointsArray() to populate live points structures */
   LALInferenceSetupLivePointsArray(state);
-  
+
   /* write injection with noise evidence information from algorithm */
   LALInferencePrintInjectionSample(state);
-  
+
   /* Call nested sampling algorithm */
   state->algorithm(state);
-  
+
   /* end */
   return(0);
 }
-
-

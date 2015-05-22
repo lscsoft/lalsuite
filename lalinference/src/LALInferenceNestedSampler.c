@@ -356,31 +356,38 @@ static void LALInferenceNScalcCVM(gsl_matrix **cvm, LALInferenceVariables **Live
 void LALInferenceNestedSamplingAlgorithmInit(LALInferenceRunState *runState)
 {
   char help[]="\
-  Nested sampling arguments:\n\
-  --Nlive N\tNumber of live points to use\n\
-  (--Nmcmc M)\tOver-ride auto chain length determination and use this number of MCMC samples.\n\
-  (--maxmcmc M)\tUse at most this number of MCMC points when autodetermining the chain (5000).\n\
-  (--Nmcmcinitial M)\tUse this number of MCMC points when initially resampling from the prior (otherwise default is to use maxmcmc).\n\
-  (--sloppyratio S)\tNumber of sub-samples of the prior for every sample from the limited prior\n\
-  (--Nruns R)\tNumber of parallel samples from logt to use(1)\n\
-  (--tolerance dZ)\tTolerance of nested sampling algorithm (0.1)\n\
-  (--randomseed seed)\tRandom seed of sampling distribution\n\
-  (--prior )\t Set the prior to use (InspiralNormalised,SkyLoc,malmquist) default: InspiralNormalised\n\n\
-  (--sampleprior N)\t For Testing: Draw N samples from the prior, will not perform the nested sampling integral\n\
-  (--progress)\tOutput some progress information at each iteration\n\
-  (--verbose)\tOutput more info. N=1: errors, N=2 (default): warnings, N=3: info \n\
-  (--resume)\tAllow non-condor checkpointing every 4 hours. If give will check for OUTFILE_resume and continue if possible\n";
-  
+               ---------------------------------------------------------------------------------------------------\n\
+               --- Nested Sampling Algorithm Parameters ----------------------------------------------------------\n\
+               ---------------------------------------------------------------------------------------------------\n\
+               --Nlive N                        Number of live points to use\n\
+               (--Nmcmc M)                      Over-ride auto chain length determination and use <M> MCMC samples\n\
+               (--maxmcmc M)                    Use at most M MCMC points when autodetermining the chain (5000)\n\
+               (--Nmcmcinitial M)               Use M MCMC points when initially resampling from the prior\n\
+                                                (otherwise default is to use maxmcmc)\n\
+               (--sloppyratio S)                Number of sub-samples of the prior for every sample from the\n\
+                                                limited prior\n\
+               (--Nruns R)                      Number of parallel samples from logt to use(1)\n\
+               (--tolerance dZ)                 Tolerance of nested sampling algorithm (0.1)\n\
+               (--randomseed seed)              Random seed of sampling distribution\n\
+               (--prior )                       Set the prior to use (InspiralNormalised,SkyLoc,malmquist)\n\
+                                                (default: InspiralNormalised)\n\
+               (--sampleprior N)                For Testing: Draw N samples from the prior, will not perform the\n\
+                                                nested sampling integral\n\
+               (--progress)                     Output some progress information at each iteration\n\
+               (--verbose)                      Output more info. N=1: errors, N=2 (default): warnings, N=3: info\n\
+               (--resume)                       Allow non-condor checkpointing every 4 hours. If given will check \n\
+                                                for OUTFILE_resume and continue if possible\n\
+               \n";
+
   ProcessParamsTable *ppt=NULL;
-  ProcessParamsTable *commandLine=runState->commandLine;
   /* Print command line arguments if help requested */
-  ppt=LALInferenceGetProcParamVal(commandLine,"--help");
-  if(ppt)
+  if(runState == NULL || LALInferenceGetProcParamVal(runState->commandLine,"--help"))
   {
     fprintf(stdout,"%s",help);
     return;
   }
-  
+  ProcessParamsTable *commandLine=runState->commandLine;
+
   INT4 verbose=0;
   INT4 x=0;
   ppt=LALInferenceGetProcParamVal(commandLine,"--verbose");
@@ -411,25 +418,25 @@ void LALInferenceNestedSamplingAlgorithmInit(LALInferenceRunState *runState)
   }
   INT4 tmpi=0;
   REAL8 tmp=0;
-  
+
   /* Single thread only */
   LALInferenceThreadState *threadState = runState->threads[0];
-  
+
   /* Set up the appropriate functions for the nested sampling algorithm */
   runState->algorithm=&LALInferenceNestedSamplingAlgorithm;
   runState->evolve=&LALInferenceNestedSamplingOneStep;
-  
+
   /* use the ptmcmc proposal to sample prior */
   threadState->proposal=&LALInferenceCyclicProposal;
   REAL8 temp=1.0;
   LALInferenceAddVariable(runState->proposalArgs,"temperature",&temp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
-  
+
 #ifdef HAVE_LIBLALXML
   runState->logsample=LALInferenceLogSampleToArray;
 #else
   runState->logsample=LALInferenceLogSampleToFile;
 #endif
-  
+
   /* Number of live points */
   ppt=LALInferenceGetProcParamVal(commandLine,"--Nlive");
   if (!ppt) ppt=LALInferenceGetProcParamVal(commandLine,"--nlive");
@@ -440,7 +447,7 @@ void LALInferenceNestedSamplingAlgorithmInit(LALInferenceRunState *runState)
     exit(1);
   }
   LALInferenceAddVariable(runState->algorithmParams,"Nlive",&tmpi, LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
-  
+
   /* Number of points in MCMC chain */
   ppt=LALInferenceGetProcParamVal(commandLine,"--Nmcmc");
   if(!ppt) ppt=LALInferenceGetProcParamVal(commandLine,"--nmcmc");
@@ -450,7 +457,7 @@ void LALInferenceNestedSamplingAlgorithmInit(LALInferenceRunState *runState)
                             LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
     printf("set number of MCMC points, over-riding auto-determination!\n");
   }
-  
+
   /* Maximum number of points in MCMC chain */
   ppt=LALInferenceGetProcParamVal(commandLine,"--maxmcmc");
   if(ppt){
@@ -458,21 +465,21 @@ void LALInferenceNestedSamplingAlgorithmInit(LALInferenceRunState *runState)
     LALInferenceAddVariable(runState->algorithmParams,"maxmcmc",&tmpi,
                             LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
   }
-  
+
   /* Set fraction for sloppy sampling */
   if((ppt=LALInferenceGetProcParamVal(commandLine,"--sloppyfraction")))
     tmp=atof(ppt->value);
   else tmp=0.0;
   LALInferenceAddVariable(runState->algorithmParams,"sloppyfraction",&tmp,
                           LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
-  
+
   /* Optionally specify number of parallel runs */
   ppt=LALInferenceGetProcParamVal(commandLine,"--Nruns");
   if(ppt) {
     tmpi=atoi(ppt->value);
     LALInferenceAddVariable(runState->algorithmParams,"Nruns",&tmpi,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
   }
-  
+
   printf("set tolerance.\n");
   /* Tolerance of the Nested sampling integrator */
   ppt=LALInferenceGetProcParamVal(commandLine,"--tolerance");
@@ -482,7 +489,7 @@ void LALInferenceNestedSamplingAlgorithmInit(LALInferenceRunState *runState)
                             LALINFERENCE_PARAM_FIXED);
   }
   return;
-  
+
 }
 
 
@@ -501,7 +508,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   UINT4 iter=0,i,j,minpos;
   /* Single thread here */
   LALInferenceThreadState *threadState = runState->threads[0];
-  
+
   UINT4 Nlive=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
   UINT4 Nruns=100;
   REAL8 *logZarray,*oldZarray,*Harray,*logwarray,*logtarray;
@@ -852,11 +859,11 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
       //logwarray[j]+=LALInferenceNSSample_logt(Nlive,runState->GSLrandom);
       logZarray[j]=logaddexp(logZarray[j],logLikelihoods[i]+logwarray[j]-log(Nlive));
     }
-    
+
     if(runState->logsample) runState->logsample(runState,runState->livePoints[i]);
-    
+
   }
-  
+
   /* Write out the evidence */
   fclose(fpout);
   char bayesfile[FILENAME_MAX];
@@ -869,7 +876,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   LALInferenceAddVariable(runState->algorithmParams,"logZ",(void *)&logZ,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
   LALInferenceAddVariable(runState->algorithmParams,"logB",(void *)&logB,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
   LALInferenceAddVariable(runState->algorithmParams,"logLmax",(void *)&logLmax,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
-  
+
   #ifdef HAVE_LIBLALXML
   /* Write out the XML if requested */
   LALInferenceVariables **output_array=NULL;
@@ -883,23 +890,23 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   if(output_array && outVOTable && N_output_array>0){
     xmlNodePtr votable=XLALInferenceVariablesArray2VOTTable(output_array, N_output_array, "Nested Samples");
     xmlNewProp(votable, CAST_CONST_XMLCHAR("utype"), CAST_CONST_XMLCHAR("lalinference:results:nestedsamples"));
-    
+
     xmlNodePtr stateResource=XLALInferenceStateVariables2VOTResource(runState, "Run State Configuration");
-    
+
     xmlNodePtr nestResource=XLALCreateVOTResourceNode("lalinference:results","Nested sampling run",votable);
-    
+
     if(stateResource)
       xmlAddChild(nestResource,stateResource);
-    
-    
+
+
     char *xmlString = XLALCreateVOTStringFromTree ( nestResource );
-    
+
     /* Write to disk */
     fpout=fopen(outVOTable,"w");
     fprintf(fpout,"%s",xmlString);
     fclose(fpout);
-    
-    
+
+
   }
   if(output_array) {
     for(i=0;i<N_output_array;i++){
@@ -909,14 +916,14 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
     XLALFree(output_array);
   }
   #endif
-  
+
   /* Clean up resume file */
   if(LALInferenceGetProcParamVal(runState->commandLine,"--resume"))
   {
     if(!access(resumefilename,W_OK)) remove(resumefilename);
     if(!access(outfilebackup,W_OK)) remove(outfilebackup);
   }
-  
+
   /* Free memory */
   XLALFree(logtarray); XLALFree(logwarray); XLALFree(logZarray);
 }
@@ -1388,7 +1395,7 @@ void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
 
     /* Single thread here */
     LALInferenceThreadState *threadState = runState->threads[0];
-  
+
 	UINT4 Nlive=(UINT4)*(INT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
 	UINT4 i;
 	REAL8Vector *logLs;

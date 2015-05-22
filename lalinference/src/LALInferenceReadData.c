@@ -81,8 +81,8 @@
 #include <lal/LIGOLwXMLBurstRead.h>
 
 struct fvec {
-	REAL8 f;
-	REAL8 x;
+  REAL8 f;
+  REAL8 x;
 };
 
 #define LALINFERENCE_DEFAULT_FLOW "40.0"
@@ -426,32 +426,48 @@ void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, ProcessPar
 }
 
 #define USAGE "\
- --ifo IFO1 [--ifo IFO2 ...]    IFOs can be H1,L1,V1\n\
- --IFO1-cache cache1 [--IFO2-cache2 cache2 ...]    cache files (LALLIGO, LALAdLIGO, LALVirgo to simulate these detectors using lal; LALSimLIGO, LALSimAdLIGO, LALSimVirgo, LALSimAdVirgo to use lalsimuation)\n\
- --psdstart GPStime             GPS start time of PSD estimation data\n\
- --psdlength length             length of PSD estimation data in seconds\n\
- --seglen length                length of segments for PSD estimation and analysis in seconds\n\
-(--dont-dump-extras             If given, won't save PSD and SNR files\n\
-(--trigtime GPStime)            GPS time of the trigger to analyse (optional when using --margtime or --margtimephi)\n\
-(--segment-start)               GPS time of the start of the segment (optional when --trigtime given, default is seglen-2 s before --trigtime)\n\
-(--srate rate)                  Downsample data to rate in Hz (4096.0,)\n\
-(--padding PAD [sec]            Override default 0.4 seconds padding\n\
-(--injectionsrate rate)         Downsample injection signal to rate in Hz (--srate)\n\
-(--IFO1-flow freq1 [--IFO2-flow freq2 ...])      Specify lower frequency cutoff for overlap integral (40.0)\n\
-(--IFO1-fhigh freq1 [--IFO2-fhigh freq2 ...])     Specify higher frequency cutoff for overlap integral (Nyquist freq 0.5*srate)\n\
-(--IFO1-channel chan1 [--IFO2-channel chan2 ...])   Specify channel names when reading cache files\n\
-(--IFO1-psd psd1-ascii.txt [--IFO2-psd psd2-ascii.txt ...])  Read in PSD from ascii file. This is not equivalent to using --IFO1-cache interp:file.txt since the former won't use the ascii psd to generate fake noise. \n\
-(--dataseed number)             Specify random seed to use when generating data\n\
-(--lalinspiralinjection)      Enables injections via the LALInspiral package\n\
-(--inj-fref)                    Reference frequency for parameters in injection XML (default 100Hz)\n\
-(--inj-lambda1)                 value of lambda1 to be injected, LALSimulation only (0)\n\
-(--inj-lambda2)                 value of lambda2 to be injected, LALSimulation only (0)\n\
-(--inj-lambdaT                  value of lambdaT to be injected (0)\n\
-(--inj-dlambdaT                  value of dlambdaT to be injected (0)\n\
-(--inj-spinOrder PNorder)           Specify twice the PN order (e.g. 5 <==> 2.5PN) of spin effects to use, only for LALSimulation (default: -1 <==> Use all spin effects).\n\
-(--inj-tidalOrder PNorder)          Specify twice the PN order (e.g. 10 <==> 5PN) of tidal effects to use, only for LALSimulation (default: -1 <==> Use all tidal effects).\n\
-(--0noise)                      Sets the noise realisation to be identically zero (for the fake caches above only)\n"
-
+               ---------------------------------------------------------------------------------------------------\n\
+               --- Data Parameters -------------------------------------------------------------------------------\n\
+               ---------------------------------------------------------------------------------------------------\n\
+               --ifo IFO1 [--ifo IFO2 ...]    IFOs can be H1,L1,V1\n\
+               --IFO1-cache cache1 [--IFO2-cache2 cache2 ...]    cache files\n\
+                                         (LALLIGO, LALAdLIGO, LALVirgo to simulate these detectors using lal;\n\
+                                         LALSimLIGO, LALSimAdLIGO, LALSimVirgo, LALSimAdVirgo to use lalsimuation)\n\
+               --psdstart GPStime               GPS start time of PSD estimation data\n\
+               --psdlength length               length of PSD estimation data in seconds\n\
+               --seglen length                  length of segments for PSD estimation and analysis in seconds\n\
+               (--dont-dump-extras              If given, won't save PSD and SNR files\n\
+               (--trigtime GPStime)             GPS time of the trigger to analyse\n\
+                                                (optional when using --margtime or --margtimephi)\n\
+               (--segment-start)                GPS time of the start of the segment\n\
+                                                (optional with --trigtime, default: seglen-2 s before --trigtime)\n\
+               (--srate rate)                   Downsample data to rate in Hz (4096.0,)\n\
+               (--padding PAD [sec]             Override default 0.4 seconds padding\n\
+               (--injectionsrate rate)          Downsample injection signal to rate in Hz (--srate)\n\
+               (--IFO1-flow freq1 [--IFO2-flow freq2 ...])          Specify lower frequency cutoff\n\
+                                                                    for overlap integral (40.0)\n\
+               (--IFO1-fhigh freq1 [--IFO2-fhigh freq2 ...])        Specify higher frequency cutoff \n\
+                                                                    for overlap integral (Nyquist freq 0.5*srate)\n\
+               (--IFO1-channel chan1 [--IFO2-channel chan2 ...])    Specify channel names when reading cache files\n\
+               (--IFO1-psd psd1-ascii.txt [--IFO2-psd psd2-ascii.txt ...])    Read in PSD from ascii file.\n\
+                                                This is not equivalent to using --IFO1-cache interp:file.txt since\n\
+                                                the former won't use the ascii psd to generate fake noise. \n\
+               (--dataseed number)              Specify random seed to use when generating data\n\
+               (--lalinspiralinjection)         Enables injections via the LALInspiral package\n\
+               (--inj-fref)                     Reference frequency of parameters in injection XML (default 100Hz)\n\
+               (--inj-lambda1)                  value of lambda1 to be injected, LALSimulation only (0)\n\
+               (--inj-lambda2)                  value of lambda2 to be injected, LALSimulation only (0)\n\
+               (--inj-lambdaT                   value of lambdaT to be injected (0)\n\
+               (--inj-dlambdaT                  value of dlambdaT to be injected (0)\n\
+               (--inj-spinOrder PNorder)        Specify twice the injection PN order (e.g. 5 <==> 2.5PN)\n\
+                                                of spin effects effects to use, only for LALSimulation\n\
+                                                (default: -1 <==> Use all spin effects).\n\
+               (--inj-tidalOrder PNorder)       Specify twice the injection PN order (e.g. 10 <==> 5PN)\n\
+                                                of tidal effects to use, only for LALSimulation\n\
+                                                (default: -1 <==> Use all tidal effects).\n\
+               (--0noise)                       Sets the noise realisation to be identically zero\n\
+                                                (for the fake caches above only)\n\
+               \n"
 
 LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 /* Read in the data and store it in a LALInferenceIFOData structure */
@@ -552,7 +568,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
     if (!procparam) procparam=LALInferenceGetProcParamVal(commandLine,"--PSDstart");
     LALStringToGPS(&status,&GPSstart,procparam->value,&chartmp);
     if(status.statusCode) REPORTSTATUS(&status);
-    
+
     /*Set trigtime in GPStrig using either inj file or --trigtime*/
     LALInferenceSetGPSTrigtime(&GPStrig,commandLine);
 
@@ -847,7 +863,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
                 if(!IFOdata[i].oneSidedNoisePowerSpectrum) XLAL_ERROR_NULL(XLAL_EFUNC);
                 for(j=0;j<IFOdata[i].oneSidedNoisePowerSpectrum->data->length;j++)
                 {
-                    MetaNoiseFunc(&status,&(IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]),j*IFOdata[i].oneSidedNoisePowerSpectrum->deltaF,interp,NULL); 
+                    MetaNoiseFunc(&status,&(IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]),j*IFOdata[i].oneSidedNoisePowerSpectrum->deltaF,interp,NULL);
                     //fprintf(stdout,"%lf\n",IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]);
                 }
             }else{
@@ -2718,7 +2734,7 @@ void LALInferenceSetupROQ(LALInferenceIFOData *IFOdata, LALInferenceModel *model
 }
 
 static void LALInferenceSetGPSTrigtime(LIGOTimeGPS *GPStrig, ProcessParamsTable *commandLine){
-    
+
     ProcessParamsTable *procparam;
     SimInspiralTable *inspiralTable=NULL;
     SimBurst *burstTable=NULL;
@@ -2806,13 +2822,13 @@ static void LALInferenceSetGPSTrigtime(LIGOTimeGPS *GPStrig, ProcessParamsTable 
 }
 
 void LALInferenceInjectFromMDC(ProcessParamsTable *commandLine, LALInferenceIFOData *IFOdata){
-    
+
     /* Read time domain WF present in an mdc frame file, FFT it and inject into the frequency domain stream */
-    
+
     char mdcname[]="GW";
     char **mdc_caches=NULL;
     char **mdc_channels=NULL;
-    ProcessParamsTable * ppt=commandLine; 
+    ProcessParamsTable * ppt=commandLine;
 
     UINT4 nIFO=0;
     int i=0;
@@ -2828,23 +2844,23 @@ void LALInferenceInjectFromMDC(ProcessParamsTable *commandLine, LALInferenceIFOD
     REAL8 tmp=0.0;
     REAL8 net_snr=0.0;
     while (data) {nIFO++; data=data->next;}
-    UINT4 Nmdc=0,Nchannel=0;    
-    
+    UINT4 Nmdc=0,Nchannel=0;
+
     ppt=LALInferenceGetProcParamVal(commandLine,"--MDC-cache");
     if (!ppt){
-        
+
         fprintf(stderr,"You must provide the path of an MDC lal cache file for each IFO, using --MDC-cache [ XXX, YYY, ZZZ]\n");
         exit(1);
-        
+
         }
     ppt=LALInferenceGetProcParamVal(commandLine,"--inj");
     if (ppt){
-        
+
         fprintf(stderr,"You cannot use both injfile (--inj) and MDCs (--MDC-cache) Exiting... \n");
         exit(1);
-        
+
         }
-        
+
     ppt=LALInferenceGetProcParamVal(commandLine,"--MDC-cache");
     LALInferenceParseCharacterOptionString(ppt->value,&mdc_caches,&Nmdc);
 
@@ -2853,11 +2869,11 @@ void LALInferenceInjectFromMDC(ProcessParamsTable *commandLine, LALInferenceIFOD
         exit(1);
         }
     else printf("got %i ifos and %i MDC cache files\n",nIFO,Nmdc);
-    
-    
+
+
     ppt=LALInferenceGetProcParamVal(commandLine,"--MDC-channel");
     if (ppt){
-        
+
         LALInferenceParseCharacterOptionString(ppt->value,&mdc_channels,&Nchannel);
         if (Nchannel!=Nmdc){
             fprintf(stderr,"You must provide a channel name for eache mdc frame, using --MDC-channel [X, Y, Z] . Exiting...\n");
@@ -2873,32 +2889,32 @@ void LALInferenceInjectFromMDC(ProcessParamsTable *commandLine, LALInferenceIFOD
            mdc_channels[i] =  malloc(512*sizeof(char));
             if(!strcmp(data->name,"H1")) {
                sprintf(mdc_channels[i],"H1:%s-H",mdcname);}
-            else if(!strcmp(data->name,"L1")) {		
+            else if(!strcmp(data->name,"L1")) {
                  sprintf(mdc_channels[i],"L1:%s-H",mdcname); }
-            else if(!strcmp(data->name,"V1")) {		
+            else if(!strcmp(data->name,"V1")) {
                  sprintf(mdc_channels[i],"V1:%s-16K",mdcname);}
             data=data->next;
             i++;
-            
+
             }
     }
-    
+
     LIGOTimeGPS epoch=IFOdata->timeData->epoch;
     REAL8 deltaT=IFOdata->timeData->deltaT ;
     int seglen=IFOdata->timeData->data->length;
     REAL8 SampleRate=4096.0,SegmentLength=0.0;
     if(LALInferenceGetProcParamVal(commandLine,"--srate")) SampleRate=atof(LALInferenceGetProcParamVal(commandLine,"--srate")->value);
     SegmentLength=(REAL8) seglen/SampleRate;
-    
+
     REAL8TimeSeries * timeData=NULL;
     REAL8TimeSeries * windTimeData=(REAL8TimeSeries *)XLALCreateREAL8TimeSeries("WindMDCdata",&epoch,0.0,deltaT,&lalDimensionlessUnit,(size_t)seglen);
     COMPLEX16FrequencySeries* injF=(COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("injF",&IFOdata->timeData->epoch,0.0,IFOdata->freqData->deltaF,&lalDimensionlessUnit,	IFOdata->freqData->data->length);
-    
+
     if(!injF) {
       XLALPrintError("Unable to allocate memory for injection buffer\n");
       XLAL_ERROR_VOID(XLAL_EFUNC);
     }
-    
+
     REAL4 WinNorm = sqrt(IFOdata->window->sumofsquares/IFOdata->window->data->length);
 
     data=IFOdata;
@@ -2911,33 +2927,33 @@ void LALInferenceInjectFromMDC(ProcessParamsTable *commandLine, LALInferenceIFOD
       tmp=0.0;
         LALCache *mdc_cache=NULL;
         mdc_cache  = XLALCacheImport(mdc_caches[i] );
-        
+
         /* Read MDC frame */
         timeData=readTseries(mdc_cache,mdc_channels[i],epoch,SegmentLength);
-        /* downsample */ 
-        XLALResampleREAL8TimeSeries(timeData,1.0/SampleRate);	 
+        /* downsample */
+        XLALResampleREAL8TimeSeries(timeData,1.0/SampleRate);
         /* window timeData and store it in windTimeData */
         XLALDDVectorMultiply(windTimeData->data,timeData->data,IFOdata->window->data);
 
-        /*for(j=0;j< timeData->data->length;j++) 
+        /*for(j=0;j< timeData->data->length;j++)
             fprintf(out,"%lf %10.10e %10.10e %10.10e \n",epoch.gpsSeconds + j*deltaT,data->timeData->data->data[j],data->timeData->data->data[j]+timeData->data->data[j],timeData->data->data[j]);
         fclose(out);
         */
 
         /* set the whole seq to 0 */
         for(j=0;j<injF->data->length;j++) injF->data->data[j]=0.0;
-            
+
         /* FFT */
-        XLALREAL8TimeFreqFFT(injF,windTimeData,IFOdata->timeToFreqFFTPlan);   
-        
-        
+        XLALREAL8TimeFreqFFT(injF,windTimeData,IFOdata->timeToFreqFFTPlan);
+
+
         for(j=lower;j<upper;j++){
                 windTimeData->data->data[j] /= sqrt(data->window->sumofsquares / data->window->data->length);
                 /* Add data in freq stream */
                 data->freqData->data->data[j]+=crect(prefactor *creal(injF->data->data[j])/WinNorm,prefactor *cimag(injF->data->data[j])/WinNorm);
-                tmp+= prefactor*prefactor*(creal(injF ->data->data[j])*creal(injF ->data->data[j])+cimag(injF ->data->data[j])*cimag(injF ->data->data[j]))/data->oneSidedNoisePowerSpectrum->data->data[j];             
+                tmp+= prefactor*prefactor*(creal(injF ->data->data[j])*creal(injF ->data->data[j])+cimag(injF ->data->data[j])*cimag(injF ->data->data[j]))/data->oneSidedNoisePowerSpectrum->data->data[j];
         }
-       
+
         tmp*=2.*injF->deltaF;
         printf("Injected SNR %.3f in IFO %s from MDC \n",sqrt(2*tmp),data->name);
         data->SNR=sqrt(2*tmp);
@@ -2954,11 +2970,11 @@ void LALInferenceInjectFromMDC(ProcessParamsTable *commandLine, LALInferenceIFOD
       exit(1);
     }
     char *outfile=ppt->value;
-    sprintf(SNRpath,"%s_snr.txt",outfile); 
+    sprintf(SNRpath,"%s_snr.txt",outfile);
     ppt=LALInferenceGetProcParamVal(commandLine,"--dont-dump-extras");
     if (!ppt){
       PrintSNRsToFile(IFOdata , SNRpath);
     }
     return ;
-    
+
 }

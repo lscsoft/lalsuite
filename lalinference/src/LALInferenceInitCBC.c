@@ -100,6 +100,8 @@ LALInferenceRunState *LALInferenceInitRunState(ProcessParamsTable *command_line)
 
 /* Draw initial parameters for each of the threads in run state */
 void LALInferenceDrawThreads(LALInferenceRunState *run_state) {
+    if (run_state == NULL)
+        return;
     LALInferenceThreadState *thread = run_state->threads[0];
     INT4 t;
 
@@ -125,11 +127,11 @@ void LALInferenceDrawThreads(LALInferenceRunState *run_state) {
     #pragma omp parallel for
     for (t = 0; t < run_state->nthreads; t++) {
         thread = run_state->threads[t];
-        
+
          LALInferenceDrawApproxPrior(thread,
                                     thread->currentParams,
                                     thread->currentParams);
-         
+
         //LALInferenceDrawFromPrior(thread->currentParams,run_state->priorArgs,run_state->GSLrandom);
         while (run_state->prior(run_state,
                                 thread->currentParams,
@@ -137,7 +139,7 @@ void LALInferenceDrawThreads(LALInferenceRunState *run_state) {
             LALInferenceDrawApproxPrior(thread,
                                         thread->currentParams,
                                         thread->currentParams);
-          
+
           //LALInferenceDrawFromPrior(thread->currentParams,run_state->priorArgs,run_state->GSLrandom);
 
         }
@@ -168,6 +170,8 @@ void LALInferenceDrawThreads(LALInferenceRunState *run_state) {
  * Initialize threads in memory, using LALInferenceInitCBCModel() to init models.
  */
 void LALInferenceInitCBCThreads(LALInferenceRunState *run_state, INT4 nthreads) {
+  if (run_state == NULL)
+    return;
   LALInferenceThreadState *thread;
   INT4 t, nifo;
   LALInferenceIFOData *data = run_state->data;

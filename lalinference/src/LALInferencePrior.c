@@ -41,24 +41,24 @@ static double outerIntegrand(double M1, void *voData);
 void LALInferenceInitCBCPrior(LALInferenceRunState *runState)
 {
     char help[]="\
-                 ------------------------------------------------------------------------------------------------------------------\n\
-                 --- Prior Arguments     ------------------------------------------------------------------------------------------\n\
-                 ------------------------------------------------------------------------------------------------------------------\n\
-                 (--malmquistprior)               Impose selection effects on the prior (False).\n\
-                 (--malmquist-loudest-snr)        Threshold SNR in the loudest detector (0.0).\n\
-                 (--malmquist-second-loudest-snr) Threshold SNR in the second loudest detector (5.0).\n\
-                 (--malmquist-network-snr)        Threshold network SNR (0.0).\n\
-                 (--analyticnullprior)            Use analytic null prior.\n\
-                 (--nullprior)                    Use null prior in the sampled parameters.\n";
-    ProcessParamsTable *commandLine=runState->commandLine;
+               ---------------------------------------------------------------------------------------------------\n\
+               --- Prior Arguments -------------------------------------------------------------------------------\n\
+               ---------------------------------------------------------------------------------------------------\n\
+               (--malmquistprior)               Impose selection effects on the prior (False)\n\
+               (--malmquist-loudest-snr)        Threshold SNR in the loudest detector (0.0)\n\
+               (--malmquist-second-loudest-snr) Threshold SNR in the second loudest detector (5.0)\n\
+               (--malmquist-network-snr)        Threshold network SNR (0.0)\n\
+               (--analyticnullprior)            Use analytic null prior\n\
+               (--nullprior)                    Use null prior in the sampled parameters\n\
+               \n";
     ProcessParamsTable *ppt = NULL;
 
     /* Print command line arguments if help requested */
-    if(LALInferenceGetProcParamVal(commandLine, "--help"))
-    {
-        fprintf(stdout,"%s",help);
+    if(runState == NULL || LALInferenceGetProcParamVal(runState->commandLine, "--help")) {
+        fprintf(stdout, "%s", help);
         return;
     }
+    ProcessParamsTable *commandLine=runState->commandLine;
 
     /* Choose the proper prior */
     if (LALInferenceGetProcParamVal(commandLine, "--correlatedGaussianLikelihood") ||
