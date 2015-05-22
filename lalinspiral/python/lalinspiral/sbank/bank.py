@@ -27,7 +27,7 @@ except ImportError:
 
 from lal import PI, MTSUN_SI
 from lalinspiral import CreateSBankWorkspaceCache
-from lalinspiral.sbank.psds import get_neighborhood_ASD, get_neighborhood_PSD, get_PSD, get_neighborhood_df_fmax
+from lalinspiral.sbank.psds import get_neighborhood_ASD, get_neighborhood_PSD
 
 class lazy_nhoods(object):
     __slots__ = ("seq", "nhood_param")
@@ -131,37 +131,14 @@ class Bank(object):
         tmpbank.sort(key=lambda b: abs( getattr(b, self.nhood_param) - prop_nhd))
 
         # set parameters of match calculation that are optimized for this block
-        df_end, f_max = get_neighborhood_df_fmax(tmpbank + [proposal], self.flow)
-        df_start = min(128*df_end, 4.0)
+        df, PSD = get_neighborhood_PSD(tmpbank + [proposal], self.flow, self.noise_model)
 
         # find and test matches
         for tmplt in tmpbank:
-
             self._nmatch += 1
-            df = df_start
-            match_last = 0
-
-            while df >= df_end:
-
-                PSD = get_PSD(df, self.flow, f_max, self.noise_model)
-                match = self.compute_match(tmplt, proposal, df, PSD=PSD)
-
-                # if the result is a really bad match, trust it isn't
-                # misrepresenting a good match
-                if (1 - match) > 4.0*(1 - min_match):
-                    break
-
-                # calculation converged
-                if match_last > 0 and abs(match_last - match) < 0.001:
-                    break
-
-                # otherwise, refine calculation
-                match_last = match
-                df /= 2.0
-
+            match = self.compute_match(tmplt, proposal, df, PSD=PSD)
             if match > min_match:
                 return True
-
         return False
 
     def max_match(self, proposal):
