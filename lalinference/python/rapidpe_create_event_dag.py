@@ -104,7 +104,6 @@ elif xmldoc is not None:
         # NOTE: gstlal is exact match, but other pipelines may not be
         assert m1 is None or (sngl_row.mass1 == m1 and sngl_row.mass2 == m2)
         m1, m2 = sngl_row.mass1, sngl_row.mass2
-    event_time = glue.lal.LIGOTimeGPS(opts.event_time)
 else:
     raise ValueError("Need either --mass1 --mass2 or --coinc-xml to retrieve masses.")
 
