@@ -1049,7 +1049,7 @@ where the known names have been listed above\n\
   LALInferenceRegisterUniformVariableREAL8(state, model->params, "costheta_jn", zero, costhetaJNmin, costhetaJNmax,LALINFERENCE_PARAM_LINEAR);
 
   /* Option to use the detector-aligned frame */
-  if(LALInferenceGetProcParamVal(commandLine,"--detector-frame"))
+  if(LALInferenceGetProcParamVal(!commandLine,"--no-detector-frame"))
   {
         printf("Using detector-based sky frame\n");
         LALInferenceRegisterUniformVariableREAL8(state,model->params,"t0",timeParam,timeMin,timeMax,LALINFERENCE_PARAM_LINEAR);
@@ -1068,15 +1068,6 @@ where the known names have been listed above\n\
         LALInferenceRegisterUniformVariableREAL8(state, model->params, "time", timeParam, timeMin, timeMax,LALINFERENCE_PARAM_LINEAR);
    }
 
-  /* Option to use the detector-aligned frame */
-  LALInferenceRegisterUniformVariableREAL8(state,model->params,"t0",timeParam,timeMin,timeMax,LALINFERENCE_PARAM_LINEAR);
-  LALInferenceRegisterUniformVariableREAL8(state,model->params,"cosalpha",0,-1,1,LALINFERENCE_PARAM_LINEAR);
-  LALInferenceRegisterUniformVariableREAL8(state,model->params,"azimuth",0.0,0.0,LAL_TWOPI,LALINFERENCE_PARAM_CIRCULAR);
-  /* add the time parameter then remove it so that the prior is set up properly */
-  LALInferenceRegisterUniformVariableREAL8(state, model->params, "time", timeParam, timeMin, timeMax,LALINFERENCE_PARAM_LINEAR);
-  LALInferenceRemoveVariable(model->params,"time");
-  INT4 one=1;
-  LALInferenceAddVariable(model->params,"SKY_FRAME",&one,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
 
   /* If we are marginalising over the time, remove that variable from the model (having set the prior above) */
   /* Also set the prior in model->params, since Likelihood can't access the state! (ugly hack) */
