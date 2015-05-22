@@ -33,11 +33,12 @@
 #include <lal/LALInference.h>
 
 /* Initialize a bare-bones run-state. */
-LALInferenceRunState *LALInferenceInitCBCRunState(ProcessParamsTable *command_line);
+LALInferenceRunState *LALInferenceInitRunState(ProcessParamsTable *command_line);
 
 /* Initialize threads in memory, using LALInferenceInitCBCModel() to init models. */
 void LALInferenceInitCBCThreads(LALInferenceRunState *run_state, INT4 nthreads);
-
+/* Initialize threads in memory, using LALInferenceInitBurstModel() to init models. */
+void LALInferenceInitBurstThreads(LALInferenceRunState *run_state, INT4 nthreads);
 /* Draw initial parameters for each of the threads in run state */
 void LALInferenceDrawThreads(LALInferenceRunState *run_state);
 
@@ -66,9 +67,21 @@ void LALInferenceRegisterUniformVariableREAL8(LALInferenceRunState *state, LALIn
 LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state);
 
 /**
+ * Initialise state variables needed for LALInferenceNest or LALInferenceMCMC to run
+ * on a CBC signal. Reads the command line to get user-specified options
+ */
+LALInferenceModel *LALInferenceInitBurstModel(LALInferenceRunState *state);
+
+
+/**
  * Initialise the template for a standard CBC signal
  */
 LALInferenceTemplateFunction LALInferenceInitCBCTemplate(LALInferenceRunState *runState);
+
+/**
+ * Initialise the template for a standard burst signal
+ */
+LALInferenceTemplateFunction LALInferenceInitBurstTemplate(LALInferenceRunState *runState);
 
 /**
  Initialise the glitch fitting parameters

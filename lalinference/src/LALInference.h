@@ -83,6 +83,9 @@
 #include <gsl/gsl_complex_math.h>
 #include <sys/time.h>
 
+/*LIB imports*/
+#include <lal/LALSimBurstWaveformCache.h>
+
 #define LALINFERENCE_HASHTABLE_SIZE 256 /* Max entries in hash table */
 
 //...other includes
@@ -431,9 +434,10 @@ typedef struct tagLALInferenceModel
 
   LALSimInspiralWaveformFlags *waveFlags;   /** A pointer to the WF flag. Will store here tide and spin order, as well as frame */
   LALSimInspiralWaveformCache *waveformCache;   /** Waveform cache */
-
+  LALSimBurstWaveformCache    *burstWaveformCache;   /** Burst Waveform cache for LIB*/
   REAL8FFTPlan                *timeToFreqFFTPlan, *freqToTimeFFTPlan; /** Pre-calculated FFT plans for forward and reverse FFTs */
   REAL8Window                 *window;        /** A window */
+  REAL8                        padding; /** The padding of the above window */
   struct tagLALInferenceROQModel *roq; /** ROQ data */
 } LALInferenceModel;
 
@@ -602,6 +606,7 @@ tagLALInferenceIFOData
   REAL8FrequencySeries      *noiseASD;  /** (one-sided Noise Power Spectrum)^{-1/2} */
 //  REAL8TimeSeries           *timeDomainNoiseWeights; /** Roughly, InvFFT(1/Noise PSD). */
   REAL8Window               *window;        /** A window */
+  REAL8                      padding; /** Padding for the above window */
   REAL8FFTPlan              *timeToFreqFFTPlan, *freqToTimeFFTPlan; /** Pre-calculated FFT plans for forward and reverse FFTs */
   REAL8FFTPlan              *margFFTPlan; /** FFT plan needed for time/time-and-phase marginalisation */
   REAL8                     fLow, fHigh;	/** integration limits for overlap integral in F-domain */

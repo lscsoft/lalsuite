@@ -25,6 +25,7 @@
 #include <math.h>
 #include <gsl/gsl_integration.h>
 #include <gsl/gsl_cdf.h>
+#include <lal/LALSimBurst.h>
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
@@ -116,6 +117,18 @@ void LALInferenceInitCBCPrior(LALInferenceRunState *runState)
     }
 }
 
+void LALInferenceInitLIBPrior(LALInferenceRunState *runState)
+{   
+    /*Call CBC prior first, in case CBC approx is used, then check for burst approx and eventually overwrite runState->prior */
+    LALInferenceInitCBCPrior(runState);
+    /*LIB specific call in case of burst approximant */
+    ProcessParamsTable *commandLine=runState->commandLine;
+    ProcessParamsTable *ppt = NULL;
+    if ((ppt=LALInferenceGetProcParamVal(commandLine,"--approx"))){
+      if ((XLALCheckBurstApproximantFromString(ppt->value)))
+        runState->prior = &LALInferenceSineGaussianPrior;
+    }
+}
 
 static REAL8 LALInferenceSplineCalibrationPrior(LALInferenceRunState *runState, LALInferenceVariables *params) {
   LALInferenceIFOData *ifo = NULL;
@@ -2557,6 +2570,38 @@ UINT4 LALInferenceCubeToPSDScaleParams(LALInferenceVariables *priorParams, LALIn
   }
 
   return 1;
+}
+
+/* A simple SineGaussianPrior -- will also work for other simple burst templates (gaussians) */
+REAL8 LALInferenceSineGaussianPrior(LALInferenceRunState *runState, LALInferenceVariables *params, LALInferenceModel *model)
+{
+  REAL8 logPrior=0.0;
+  (void)runState;
+  LALInferenceVariableItem *item=params->head;
+  LALInferenceVariables *priorParams=runState->priorArgs;
+  REAL8 min, max;
+  (void) model;
+  /* Check boundaries */
+  for(;item;item=item->next)
+  {
+    // if(item->vary!=PARAM_LINEAR || item->vary!=PARAM_CIRCULAR)
+    if(item->vary==LALINFERENCE_PARAM_FIXED || item->vary==LALINFERENCE_PARAM_OUTPUT)
+      continue;
+    else
+    {
+      LALInferenceGetMinMaxPrior(priorParams, item->name, &min, &max);
+      if(*(REAL8 *) item->value < min || *(REAL8 *)item->value > max) return -DBL_MAX;
+    }
+  }
+  /*Use a distribution uniform in space volume */
+  if(LALInferenceCheckVariable(params,"loghrss"))
+    logPrior+=-3.0* *(REAL8 *)LALInferenceGetVariable(params,"loghrss");
+  else if(LALInferenceCheckVariable(params,"hrss"))
+    logPrior+=-4.0* log(*(REAL8 *)LALInferenceGetVariable(params,"hrss"));
+  if(LALInferenceCheckVariable(params,"declination"))
+    logPrior+=log(fabs(cos(*(REAL8 *)LALInferenceGetVariable(params,"declination"))));
+ 
+  return(logPrior);
 }
 
 /**

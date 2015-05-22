@@ -38,7 +38,10 @@
 #include <lal/LALInferenceTemplate.h>
 #include <lal/LALInferenceProposal.h>
 #include <lal/LALInferenceInit.h>
-
+#include <lal/LALInferenceReadBurstData.h>
+#include <lal/LIGOLwXMLBurstRead.h>
+#include <lal/GenerateBurst.h>
+#include <lal/LALSimBurst.h>
 
 /*************** MAIN **********************/
 
@@ -47,7 +50,7 @@ int main(int argc, char *argv[]){
   char help[]="\
   LALInferenceNest:\n\
   Bayesian analysis tool using Nested Sampling algorithm\n\
-  for CBC analysis. Uses LALInference library for back-end.\n\n\
+  for Burst analysis. Uses LALInference library for back-end.\n\n\
   Arguments for each section follow:\n\n";
   
   LALInferenceRunState *state;
@@ -66,8 +69,11 @@ int main(int argc, char *argv[]){
   /* And allocating memory */
   state = LALInferenceInitRunState(procParams);
   /* Perform injections if data successful read or created */
-  LALInferenceInjectInspiralSignal(state->data, state->commandLine);
-
+  LALInferenceInjectBurstSignal(state->data, state->commandLine);
+  if (LALInferenceGetProcParamVal(state->commandLine,"--inject_from_mdc")){
+      fprintf(stdout,"WARNING: Injecting a signal from MDC has not been carefully tested yet! \n"); 
+      LALInferenceInjectFromMDC(state->commandLine, state->data);
+  }
   /* Set up the appropriate functions for the nested sampling algorithm */
   state->algorithm=&LALInferenceNestedSamplingAlgorithm;
   state->evolve=&LALInferenceNestedSamplingOneStep;
@@ -75,10 +81,10 @@ int main(int argc, char *argv[]){
   state->proposalArgs = LALInferenceParseProposalArgs(state);
 
   /* Set up the threads */
-  LALInferenceInitCBCThreads(state,1);
+  LALInferenceInitBurstThreads(state,1);
 
   /* Init the prior */
-  LALInferenceInitCBCPrior(state);
+  LALInferenceInitLIBPrior(state);
 
   /* Set up structures for nested sampling */
   LALInferenceNestedSamplingAlgorithmInit(state);
@@ -102,7 +108,8 @@ int main(int argc, char *argv[]){
   LALInferenceSetupLivePointsArray(state);
   
   /* write injection with noise evidence information from algorithm */
-  LALInferencePrintInjectionSample(state);
+  // SALVO FIXME
+  //LALInferencePrintInjectionSample(state);
   
   /* Call nested sampling algorithm */
   state->algorithm(state);

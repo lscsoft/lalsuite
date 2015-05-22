@@ -51,6 +51,8 @@ bin_PROGRAMS = \
 pkginclude_HEADERS = \
 	LALSimBlackHoleRingdown.h \
 	LALSimBurst.h \
+        LALSimBurstExtraParams.h \
+        LALSimBurstWaveformCache.h \
 	LALSimInspiralPrecess.h \
 	LALSimInspiralWaveformFlags.h \
 	LALSimInspiralTestGRParams.h \
@@ -94,6 +96,8 @@ lib_LTLIBRARIES = liblalsimulation.la
 liblalsimulation_la_SOURCES = \
 	LALSimBlackHoleRingdown.c \
 	LALSimBurst.c \
+        LALSimBurstExtraParams.c \
+        LALSimBurstWaveformCache.c \
 	LALSimBurstImg.c \
 	LALSimIMREOBNRv2.c \
 	LALSimIMRSpinAlignedEOB.c \

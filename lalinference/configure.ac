@@ -172,6 +172,7 @@ LALSUITE_CHECK_LIB([LALFrame],[1.2.0],[LALFrOpen],[lal/LALFrameL.h])
 LALSUITE_CHECK_LIB([LALSimulation],[1.3.0],[XLALSimDetectorStrainREAL8TimeSeries],[lal/LALSimulation.h])
 LALSUITE_CHECK_LIB([LALInspiral],[1.6.0],[LALInspiralParameterCalc],[lal/LALInspiral.h])
 LALSUITE_CHECK_LIB([LALPulsar],[1.11.0],[XLALComputeFstat],[lal/ComputeFstat.h])
+LALSUITE_CHECK_LIB([LALBurst],[1.3.0.1],[XLALSimBurstTableFromLIGOLw],[lal/LIGOLwXMLBurstRead.h])
 
 # check for lalxml
 LALSUITE_CHECK_OPT_LIB([LALXML],[1.1.5],[XLALXMLFilePrintElements],[lal/LALXML.h])

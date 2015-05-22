@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008 J. Creighton, K. Cannon
+ * Copyright (C) 2008 J. Creighton, K. Cannon, S. Vitale
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -39,7 +39,15 @@
 #include <lal/RealFFT.h>
 #include <lal/Units.h>
 #include <lal/Date.h>
+#include <lal/LALSimBurstExtraParams.h>
 #include "check_series_macros.h"
+
+
+#define LAL_PI_1_2      1.7724538509055160272981674833411451 /* sqrt of PI */
+#define LAL_PI_1_4      1.3313353638003897127975349179502808 /* PI^1/4 */
+#define LAL_4RT2        1.1892071150027210667174999705604759  /* 2^(1/4) */
+#define FRTH_2_Pi       0.8932438417380023314010427521746490  /* (2/Pi)^(1/4)*/
+#define FRTH_2_times_PI 1.5832334870861595385799030344545584  /* (2*Pi)^(1/4)*/
 
 /*
  * ============================================================================
@@ -538,23 +546,6 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 
 	(*hplus)->deltaT = (*hcross)->deltaT = delta_t;
 
-	/* apply a Tukey window for continuity at the start and end of the
-	 * injection.  the window's shape parameter sets what fraction of
-	 * the window is used by the tapers */
-
-	window = XLALCreateTukeyREAL8Window((*hplus)->data->length, 0.5);
-	if(!window) {
-		XLALDestroyREAL8TimeSeries(*hplus);
-		XLALDestroyREAL8TimeSeries(*hcross);
-		*hplus = *hcross = NULL;
-		XLAL_ERROR(XLAL_EFUNC);
-	}
-	for(i = 0; i < window->data->length; i++) {
-		(*hplus)->data->data[i] *= window->data->data[i];
-		(*hcross)->data->data[i] *= window->data->data[i];
-	}
-	XLALDestroyREAL8Window(window);
-
 	/* done */
 
 	return 0;
@@ -564,7 +555,7 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 /*
  * ============================================================================
  *
- *                         Sine-Gaussian and Friends
+ *                         (Sine)-Gaussian and Friends
  *
  * ============================================================================
  */
@@ -609,16 +600,24 @@ int XLALSimBurstSineGaussian(
 	REAL8 hrss,
 	REAL8 eccentricity,
 	REAL8 polarization,
-	REAL8 delta_t
+	REAL8 delta_t // 1 over srate
 )
-{
-	REAL8Window *window;
+{	
+	//REAL8Window *window;
 	/* semimajor and semiminor axes of waveform ellipsoid */
-	const double a = 1.0 / sqrt(2.0 - eccentricity * eccentricity);
-	const double b = a * sqrt(1.0 - eccentricity * eccentricity);
-	/* rss of plus and cross polarizations */
-	const double hplusrss  = hrss * (a * cos(polarization) - b * sin(polarization));
-	const double hcrossrss = hrss * (b * cos(polarization) + a * sin(polarization));
+	//const double a = 1.0 / sqrt(2.0 - eccentricity * eccentricity);
+	//const double b = a * sqrt(1.0 - eccentricity * eccentricity);
+	/* rss of plus and cross polarizations 
+   * 
+   * WARNING!!! I (salvo) have modified this in such a way that polarization=alpha, a=1, b=0 (i.e. eccentricity=1) here. This means that only one of these two parameters is really used, polarization, and is totally equivalent to the alpha parameter of the SineGaussianF
+   * See https://dcc.ligo.org/LIGO-T1400734
+   * */
+
+	//const double hplusrss  = hrss * (a * cos(polarization) - b * sin(polarization));
+	//const double hcrossrss = hrss * (b * cos(polarization) + a * sin(polarization));
+  (void) eccentricity;
+  const double hplusrss  = hrss * cos(polarization) ;
+	const double hcrossrss = hrss * sin(polarization);
 	/* rss of unit amplitude cosine- and sine-gaussian waveforms.  see
 	 * K. Riles, LIGO-T040055-00.pdf */
 	const double cgrss = sqrt((Q / (4.0 * centre_frequency * sqrt(LAL_PI))) * (1.0 + exp(-Q * Q)));
@@ -626,25 +625,24 @@ int XLALSimBurstSineGaussian(
 	/* "peak" amplitudes of plus and cross */
 	const double h0plus  = hplusrss / cgrss;
 	const double h0cross = hcrossrss / sgrss;
-	LIGOTimeGPS epoch;
+	LIGOTimeGPS epoch= LIGOTIMEGPSZERO;
 	int length;
 	unsigned i;
 
-	/* length of the injection time series is 30 * the width of the
+ 	/* length of the injection time series is 30 * the width of the
 	 * Gaussian envelope (sigma_t in the comments above), rounded to
 	 * the nearest odd integer */
 
-	length = (int) floor(30.0 * Q / (LAL_TWOPI * centre_frequency) / delta_t / 2.0);
-	length = 2 * length + 1;
-
+	length = (int) floor(6.0 * Q / (LAL_TWOPI * centre_frequency) / delta_t / 2.0);  // This is 30 tau
+	length = 2 * length + 1; // length is 60 taus +1 bin
 	/* the middle sample is t = 0 */
 
-	XLALGPSSetREAL8(&epoch, -(length - 1) / 2 * delta_t);
+	XLALGPSSetREAL8(&epoch, -(length - 1) / 2 * delta_t); // epoch is set to minus (30 taus) in secs
 
 	/* allocate the time series */
-
-	*hplus = XLALCreateREAL8TimeSeries("sine-Gaussian +", &epoch, 0.0, delta_t, &lalStrainUnit, length);
-	*hcross = XLALCreateREAL8TimeSeries("sine-Gaussian x", &epoch, 0.0, delta_t, &lalStrainUnit, length);
+    
+	*hplus = XLALCreateREAL8TimeSeries("sine-Gaussian +", &epoch, 0.0, delta_t, &lalStrainUnit, length);  // hplus epoch=-30tau length = 60tau+1
+	*hcross = XLALCreateREAL8TimeSeries("sine-Gaussian x", &epoch, 0.0, delta_t, &lalStrainUnit, length); // hplus epoch=-30tau length = 60tau+1
 	if(!*hplus || !*hcross) {
 		XLALDestroyREAL8TimeSeries(*hplus);
 		XLALDestroyREAL8TimeSeries(*hcross);
@@ -653,35 +651,280 @@ int XLALSimBurstSineGaussian(
 	}
 
 	/* populate */
+  //  FILE * testout = fopen("SinGaussTime_WF.txt","w");
+  double t=0.0;
+  double phi=0.0;
+  double fac=0.0;
+  double newRe,newIm,dre,dim,re,im;
+  /* Employ a trick here for avoiding cos(...) and sin(...) in time
+       shifting.  We need to multiply each template frequency bin by
+       exp(-J*twopit*deltaF*i) = exp(-J*twopit*deltaF*(i-1)) +
+       exp(-J*twopit*deltaF*(i-1))*(exp(-J*twopit*deltaF) - 1) .  This
+       recurrance relation has the advantage that the error growth is
+       O(sqrt(N)) for N repetitions. */
+    
+    /* Values for the first iteration: */
+    REAL8 twopif=LAL_TWOPI * centre_frequency;
+    re = cos(twopif*(-((REAL8)length-1.)/ 2.) * delta_t);
+    im = sin(twopif*(-((REAL8)length-1.)/ 2.) * delta_t);
+    
+    // Incremental values, using cos(theta) - 1 = -2*sin(theta/2)^2 
+   dim = sin(twopif*delta_t);
+   dre = -2.0*sin(0.5*twopif*delta_t)*sin(0.5*twopif*delta_t);
+    
+     for(i = 0; i < (*hplus)->data->length; i++) {
+        t = ((REAL8) i - ((REAL8)length - 1.) / 2.) * delta_t; // t in [-30 tau, ??]
+        phi = LAL_TWOPI * centre_frequency * t; // this is the actual time, not t0
+        fac = exp(-0.5 * phi * phi / (Q * Q));
 
-	for(i = 0; i < (*hplus)->data->length; i++) {
-		const double t = ((int) i - (length - 1) / 2) * delta_t;
-		const double phi = LAL_TWOPI * centre_frequency * t;
-		const double fac = exp(-0.5 * phi * phi / (Q * Q));
-		(*hplus)->data->data[i]  = h0plus * fac * cos(phi);
-		(*hcross)->data->data[i] = h0cross * fac * sin(phi);
-	}
+        //(*hplus)->data->data[i]  = h0plus * fac*cos(phi);
+        //(*hcross)->data->data[i] = h0cross * fac*sin(phi);
+        (*hplus)->data->data[i]  = h0plus * fac*re;
+        (*hcross)->data->data[i] = h0cross * fac*im ;
+        // Now update re and im for the next iteration. 
+        newRe = re + re*dre - im*dim;
+        newIm = im + re*dim + im*dre;
+        re = newRe;
+        im = newIm;
+        //
+    }
 
-	/* apply a Tukey window for continuity at the start and end of the
-	 * injection.  the window's shape parameter sets what fraction of
-	 * the window is used by the tapers */
+	return 0;
+}
 
-	window = XLALCreateTukeyREAL8Window((*hplus)->data->length, 0.5);
-	if(!window) {
+int XLALSimBurstGaussian(
+	REAL8TimeSeries **hplus,
+	REAL8TimeSeries **hcross,
+	REAL8 duration,
+	REAL8 hrss,
+	REAL8 eccentricity,
+	REAL8 polarization,
+	REAL8 delta_t // 1 over srate
+)
+{	
+  /*
+   * 
+   * We produce gaussian WFs having the form:
+   * 
+   * h_x=C (hrss /sqrt(tau)) (2/Pi)^1/4 exp(-t^2/tau^2) 
+   * h_x=P (hrss /sqrt(tau)) (2/Pi)^1/4 exp(-t^2/tau^2) 
+   * 
+   *  See https://dcc.ligo.org/LIGO-T1400734
+   * */
+  
+  (void) eccentricity;
+  /* semimajor and semiminor axes of waveform ellipsoid */
+	/* rss of plus and cross polarizations */
+	const double hplusrss  = hrss * cos(polarization);
+	const double hcrossrss = hrss * sin(polarization);
+  REAL8 sdur=sqrt(duration);
+	/* "peak" amplitudes of plus and cross */
+	const double h0plus  = hplusrss /sdur*FRTH_2_Pi ;
+	const double h0cross = hcrossrss/sdur*FRTH_2_Pi;
+	
+  LIGOTimeGPS epoch= LIGOTIMEGPSZERO;
+	int length;
+	unsigned i;
+
+ 	/* length of the injection time series is 30 * the width of the
+	 * Gaussian envelope (sigma_t in the comments above), rounded to
+	 * the nearest odd integer */
+
+	length = (int) floor(6.0 *duration/delta_t);  // This is 30 tau
+	length = 2 * length + 1; // length is 60 taus +1 bin
+	/* the middle sample is t = 0 */
+
+	XLALGPSSetREAL8(&epoch, -(length - 1) / 2 * delta_t); // epoch is set to minus (30 taus) in secs
+
+	/* allocate the time series */
+    
+	*hplus = XLALCreateREAL8TimeSeries("Gaussian +", &epoch, 0.0, delta_t, &lalStrainUnit, length);  // hplus epoch=-30tau length = 60tau+1
+	*hcross = XLALCreateREAL8TimeSeries("Gaussian x", &epoch, 0.0, delta_t, &lalStrainUnit, length); // hplus epoch=-30tau length = 60tau+1
+	if(!*hplus || !*hcross) {
 		XLALDestroyREAL8TimeSeries(*hplus);
 		XLALDestroyREAL8TimeSeries(*hcross);
 		*hplus = *hcross = NULL;
 		XLAL_ERROR(XLAL_EFUNC);
 	}
-	for(i = 0; i < window->data->length; i++) {
-		(*hplus)->data->data[i] *= window->data->data[i];
-		(*hcross)->data->data[i] *= window->data->data[i];
+
+	/* populate */
+  //  FILE * testout = fopen("GaussTime_WF.txt","w");
+  double t=0.0;
+  double fac=0.0;
+	for(i = 0; i < (*hplus)->data->length; i++) {
+		t = ((int) i - (length - 1) / 2) * delta_t; // t in [-30 tau, ??]
+		fac = exp(-t*t/duration/duration);  // centered around zero. Time shift will be applied later by the caller
+		(*hplus)->data->data[i]  = h0plus *fac;
+		(*hcross)->data->data[i] = h0cross*fac;  
 	}
-	XLALDestroyREAL8Window(window);
 
 	return 0;
 }
 
+/* Frequency domain SineGaussians (these are the exact analytic Fourier Transform of the time domain SG.
+ * 
+ * See https://dcc.ligo.org/LIGO-T1400734
+ * 
+ * */
+
+int XLALSimBurstSineGaussianF(
+	COMPLEX16FrequencySeries **hplus,
+	COMPLEX16FrequencySeries **hcross,
+	REAL8 Q,
+	REAL8 centre_frequency,
+	REAL8 hrss,
+	REAL8 alpha,
+	REAL8 deltaF,
+  REAL8 deltaT
+)
+{
+	/* semimajor and semiminor axes of waveform ellipsoid */
+  REAL8 LAL_SQRT_PI=sqrt(LAL_PI);
+	/* rss of plus and cross polarizations */
+	const double hplusrss  = hrss * cos(alpha);
+	const double hcrossrss = hrss * sin(alpha);
+	const double cgrss = sqrt((Q / (4.0 * centre_frequency * LAL_SQRT_PI)) * (1.0 +exp(-Q * Q)));
+	const double sgrss = sqrt((Q / (4.0 * centre_frequency *LAL_SQRT_PI)) * (1.0 - exp(-Q * Q)));
+	/* "peak" amplitudes of plus and cross */
+	const double h0plus  = hplusrss / cgrss;
+	const double h0cross = hcrossrss / sgrss;
+	LIGOTimeGPS epoch= LIGOTIMEGPSZERO;
+	int length;
+	unsigned i;
+    
+ 	/* length of the injection time series is 6 * the width of the
+	 * time domain Gaussian envelope rounded to the nearest odd integer */
+	length = (int) floor(6.0 * Q / (LAL_TWOPI * centre_frequency) / deltaT / 2.0);  // This is 30 tau_t
+	length = 2 * length + 1; // length is 60 taus +1 bin
+  XLALGPSSetREAL8(&epoch, -(length - 1) / 2 * deltaT); // epoch is set to minus (30 taus_t) in secs
+    
+  
+  REAL8 tau=Q/LAL_PI/LAL_SQRT2/centre_frequency;
+  REAL8 tau2pi2=tau*tau*LAL_PI*LAL_PI;
+  
+  /* sigma is the width of the gaussian envelope in the freq domain WF ~ exp(-1/2 X^2/sigma^2)*/
+  REAL8 sigma= centre_frequency/Q; // This is also equal to 1/(sqrt(2) Pi tau)
+  
+  /* set fmax to be f0 + 6sigmas*/
+  REAL8 Fmax=centre_frequency + 7.0*sigma;
+  /* if fmax > nyquist use nyquist */
+  if (Fmax>(1.0/(2.0*deltaT))) 
+    Fmax=1.0/(2.0*deltaT);
+  
+  REAL8 Fmin= centre_frequency -7.0*sigma;
+  /* if fmin <0 use 0 */
+  if (Fmin<0.0 || Fmin >=Fmax)
+    Fmin=0.0;
+  
+  size_t lower =(size_t) ( Fmin/deltaF);    
+  size_t upper= (size_t) ( Fmax/deltaF+1);
+
+  COMPLEX16FrequencySeries *hptilde;
+  COMPLEX16FrequencySeries *hctilde;
+    
+  /* the middle sample is t = 0 */
+  hptilde=XLALCreateCOMPLEX16FrequencySeries("hplus",&epoch,0.0,deltaF,&lalStrainUnit,upper);
+  hctilde=XLALCreateCOMPLEX16FrequencySeries("hcross",&epoch,0.0,deltaF,&lalStrainUnit,upper);
+	
+	if(!hptilde || !hctilde) {
+		XLALDestroyCOMPLEX16FrequencySeries(hptilde);
+		XLALDestroyCOMPLEX16FrequencySeries(hctilde);
+		hctilde=hptilde = NULL;
+		XLAL_ERROR(XLAL_EFUNC);
+	}
+  /* Set to zero below flow */
+  for(i = 0; i < hptilde->data->length; i++) {
+    hptilde->data->data[i] = 0.0;
+    hctilde->data->data[i] = 0.0;
+  }
+  
+  /* populate */
+  REAL8 f=0.0;
+  REAL8 phi2minus=0.0;
+  REAL8 ephimin=0.0;
+  
+  for(i = lower; i < upper; i++) {
+    f=((REAL8 ) i )*deltaF;
+    phi2minus= (f-centre_frequency )*(f-centre_frequency );
+    ephimin=exp(-phi2minus*tau2pi2);
+    hptilde->data->data[i] = h0plus * tau*ephimin/LAL_2_SQRTPI;
+    hctilde->data->data[i] = h0cross *tau*ephimin*(-1.0j)/LAL_2_SQRTPI;
+  }
+
+  *hplus=hptilde;
+  *hcross=hctilde;
+
+  return XLAL_SUCCESS;
+}
+
+int XLALSimBurstGaussianF(
+	COMPLEX16FrequencySeries **hplus,
+	COMPLEX16FrequencySeries **hcross,
+	REAL8 duration,
+	REAL8 hrss,
+	REAL8 alpha,
+	REAL8 deltaF,
+  REAL8 deltaT
+)
+{
+	/* semimajor and semiminor axes of waveform ellipsoid */
+	/* rss of plus and cross polarizations */
+	const double hplusrss  = hrss * cos(alpha);
+	const double hcrossrss = hrss * sin(alpha);
+	
+  REAL8 sdur=sqrt(duration);
+  /* "peak" amplitudes of plus and cross */
+	const double h0plus  = hplusrss  *sdur*FRTH_2_times_PI;
+	const double h0cross = hcrossrss *sdur*FRTH_2_times_PI;
+	LIGOTimeGPS epoch= LIGOTIMEGPSZERO;
+	int length;
+	unsigned i;
+    
+ 	/* length of the injection time series is 30 * the width of the
+	 * Gaussian envelope rounded to the nearest odd integer */
+     
+	  length = (int) floor(6.0 *duration/deltaT);  // This is 30 tau   // SALVO Check factor 2 here
+	  length = 2 * length + 1; // length is 60 taus +1 bin
+    XLALGPSSetREAL8(&epoch, -(length - 1) / 2 * deltaT); // epoch is set to minus (30 taus_t) in secs
+    
+    /* sigma is the width of the gaussian envelope in the freq domain */
+    REAL8 sigma2=0.5/LAL_PI/LAL_PI/duration/duration;
+    
+    REAL8 Fmax=1.0/(2.0*deltaT);
+    size_t upper= (size_t) ( Fmax/deltaF+1);
+    
+    COMPLEX16FrequencySeries *hptilde;
+    COMPLEX16FrequencySeries *hctilde;
+    
+    /* the middle sample is t = 0 */
+    hptilde=XLALCreateCOMPLEX16FrequencySeries("hplus",&epoch,0.0,deltaF,&lalStrainUnit,upper);
+    hctilde=XLALCreateCOMPLEX16FrequencySeries("hcross",&epoch,0.0,deltaF,&lalStrainUnit,upper);
+	
+	if(!hptilde || !hctilde) {
+		XLALDestroyCOMPLEX16FrequencySeries(hptilde);
+		XLALDestroyCOMPLEX16FrequencySeries(hctilde);
+		hctilde=hptilde = NULL;
+		XLAL_ERROR(XLAL_EFUNC);
+	}
+
+	/* populate */
+     REAL8 f=0.0;
+     REAL8 phi=0.0;
+     REAL8 ephi=0.0;
+	for(i = 0; i < upper; i++) {
+      f=((REAL8 ) i )*deltaF;
+		  phi=f*f/sigma2;
+      ephi=exp(-0.5*phi);
+      hptilde->data->data[i] = h0plus *ephi;
+		  hctilde->data->data[i] = h0cross*ephi;
+  }
+	//fclose(testout);
+
+    *hplus=hptilde;
+    *hcross=hctilde;
+	
+	return XLAL_SUCCESS;
+}
 
 /*
  * ============================================================================
@@ -806,4 +1049,593 @@ int XLALGenerateStringCusp(
 	/* done */
 
 	return 0;
+}
+
+/*
+ * ============================================================================
+ *
+ *                         Construct a Damped Sinusoid waveform
+ *
+ * ============================================================================
+ */
+
+int XLALSimBurstDampedSinusoid(
+        REAL8TimeSeries **hplus,
+        REAL8TimeSeries **hcross,
+        REAL8 Q,
+        REAL8 centre_frequency,
+        REAL8 hrss,
+        REAL8 eccentricity,
+        REAL8 polarization,
+        REAL8 delta_t // 1 over srate
+)
+{       
+        //REAL8Window *window;
+        /* semimajor and semiminor axes of waveform ellipsoid */
+        const double a = 1.0 / sqrt(2.0 - eccentricity * eccentricity);
+        const double b = a * sqrt(1.0 - eccentricity * eccentricity);
+        /* rss of plus and cross polarizations */
+        const double hplusrss  = hrss * (a * cos(polarization) - b * sin(polarization));
+        const double hcrossrss = hrss * (b * cos(polarization) + a * sin(polarization));
+        /* rss of unit amplitude damped sinusoid waveforms.  see
+         * K. Riles, LIGO-T040055-00.pdf */
+        const double cgrss = sqrt((Q / (2.0 * centre_frequency * LAL_PI))); 
+        const double sgrss = sqrt((Q / (2.0 * centre_frequency * LAL_PI)));
+        /* "peak" amplitudes of plus and cross */
+        const double h0plus  = hplusrss / cgrss;
+        const double h0cross = hcrossrss / sgrss;
+        LIGOTimeGPS epoch= LIGOTIMEGPSZERO;
+   
+        int length;
+        unsigned i;
+    
+        /* length of the injection time series is 30 * the width of the
+         * Gaussian envelope (sigma_t in the comments above), rounded to
+         * the nearest odd integer */
+
+        length = (int) floor(6.0 * Q / (LAL_TWOPI * centre_frequency) / delta_t / 2.0);  // This is 20 tau
+        length = 2 * length + 1; // length is 40 taus +1 bin
+//printf("deltaT inj %lf semi-length %lf \n",delta_t,length/2.*delta_t);
+        /* the middle sample is t = 0 */
+
+        XLALGPSSetREAL8(&epoch, -(length - 1) / 2 * delta_t); // epoch is set to minus (20 taus) in secs
+
+        /* allocate the time series */
+    
+        *hplus = XLALCreateREAL8TimeSeries("DampedSinusoid +", &epoch, 0.0, delta_t, &lalStrainUnit, length);  // hplus epoch=-40tau length = 40tau+1
+        *hcross = XLALCreateREAL8TimeSeries("DampedSinusoid x", &epoch, 0.0, delta_t, &lalStrainUnit, length); // hplus epoch=-20tau length = 40tau+1
+        if(!*hplus || !*hcross) {
+                XLALDestroyREAL8TimeSeries(*hplus);
+                XLALDestroyREAL8TimeSeries(*hcross);
+                *hplus = *hcross = NULL;
+                XLAL_ERROR(XLAL_EFUNC);
+        }
+
+        /* populate */
+  double t=0.0;
+  double phi=0.0;
+  double fac=0.0;
+  double newRe,newIm,dre,dim,re,im;
+
+   /* Values for the first iteration: */
+   REAL8 twopif=LAL_TWOPI * centre_frequency;
+   re = cos(twopif*(-((REAL8)length-1.)/ 2.) * delta_t);
+   im = sin(twopif*(-((REAL8)length-1.)/ 2.) * delta_t);
+
+   // Incremental values, using cos(theta) - 1 = -2*sin(theta/2)^2 
+   dim = sin(twopif*delta_t);
+   dre = -2.0*sin(0.5*twopif*delta_t)*sin(0.5*twopif*delta_t);
+
+    // FILE * testout = fopen("hcross.txt","w");
+        for(i = 0; i < (*hplus)->data->length; i++) {
+                t = ((int) i - (length - 1) / 2) * delta_t; // t in [-20 tau, ??]
+                if (t < 0.){
+                        (*hplus)->data->data[i]  = 0.0;
+                        (*hcross)->data->data[i] = 0.0;
+                }
+                else{
+                        //fprintf(testout,"hcross %e \n", hcross );
+                        phi = LAL_TWOPI * centre_frequency * t; // this is the actual time, not t0
+                        fac = exp(-0.5 * phi / (Q));
+                        (*hplus)->data->data[i]  = h0plus * fac * re;
+                        (*hcross)->data->data[i] = h0cross * fac * im;
+
+                        // Now update re and im for the next iteration. 
+                        newRe = re + re*dre - im*dim;
+                        newIm = im + re*dim + im*dre;
+
+                        re = newRe;
+                        im = newIm;
+                }
+              //fprintf(testout,"%lf\t%lg\t%lg\n", t, (*hplus)->data->data[i], (*hcross)->data->data[i]);
+        }
+
+
+        return 0;
+}
+
+
+
+int XLALSimBurstDampedSinusoidF(
+        COMPLEX16FrequencySeries **hplus,
+        COMPLEX16FrequencySeries **hcross,
+        REAL8 Q,
+        REAL8 centre_frequency,
+        REAL8 hrss,
+        REAL8 alpha,
+        REAL8 deltaF,
+        REAL8 deltaT
+)
+{
+        /* semimajor and semiminor axes of waveform ellipsoid */
+  //REAL8 LAL_SQRT_PI=sqrt(LAL_PI);
+        /* rss of plus and cross polarizations */
+        const double hplusrss  = hrss * cos(alpha);
+        const double hcrossrss = hrss * sin(alpha);
+        const double cgrss = sqrt(Q / (2.0 * centre_frequency * LAL_PI));
+        const double sgrss = sqrt(Q / (2.0 * centre_frequency * LAL_PI));
+        /* "peak" amplitudes of plus and cross */
+        const double h0plus  = hplusrss / cgrss;
+        const double h0cross = hcrossrss / sgrss;
+        LIGOTimeGPS epoch= LIGOTIMEGPSZERO;
+        int length;
+        unsigned i;
+
+        /* length of the injection time series is 30 * the width of the
+         * time domain Gaussian envelope rounded to the nearest odd integer */
+        length = (int) floor(6.0 * Q / (LAL_TWOPI * centre_frequency) / deltaT / 2.0);  // This is 30 tau_t
+        length = 2 * length + 1; // length is 60 taus +1 bin
+  XLALGPSSetREAL8(&epoch, -(length - 1) / 2 * deltaT); // epoch is set to minus (30 taus_t) in secs
+
+ //REAL8 tau=Q/LAL_PI/LAL_SQRT2/centre_frequency;
+  //REAL8 tau2pi2=tau*tau*LAL_PI*LAL_PI;
+  REAL8 tau= Q/(LAL_PI*centre_frequency);
+  /* sigma is the width of the gaussian envelope in the freq domain WF ~ exp(-1/2 X^2/sigma^2)*/
+  REAL8 sigma= centre_frequency/Q; // This is also equal to 1/(sqrt(2) Pi tau)
+
+  /* set fmax to be f0 + 6sigmas*/
+  REAL8 Fmax=centre_frequency + 6.0*sigma;
+  /* if fmax > nyquist use nyquist */
+  if (Fmax>(1.0/(2.0*deltaT)))
+  Fmax=1.0/(2.0*deltaT);
+  REAL8 Fmin= centre_frequency -6.0*sigma;
+  /* if fmin <0 use 0 */
+  if (Fmin<0.0 || Fmin >=Fmax)
+    Fmin=0.0;
+  size_t lower =(size_t) ( Fmin/deltaF);
+  size_t upper= (size_t) ( Fmax/deltaF+1);
+
+  COMPLEX16FrequencySeries *hptilde;
+  COMPLEX16FrequencySeries *hctilde;
+
+  /* the middle sample is t = 0 */
+  hptilde=XLALCreateCOMPLEX16FrequencySeries("hplus",&epoch,0.0,deltaF,&lalStrainUnit,upper);
+  hctilde=XLALCreateCOMPLEX16FrequencySeries("hcross",&epoch,0.0,deltaF,&lalStrainUnit,upper);
+
+        if(!hptilde || !hctilde) {
+                XLALDestroyCOMPLEX16FrequencySeries(hptilde);
+                XLALDestroyCOMPLEX16FrequencySeries(hctilde);
+                hctilde=hptilde = NULL;
+                XLAL_ERROR(XLAL_EFUNC);
+        }
+  /* Set to zero below flow */
+  for(i = 0; i < lower; i++) {
+    hptilde->data->data[i] = 0.0;
+    hctilde->data->data[i] = 0.0;
+  }
+
+  /* populate */
+  REAL8 f=0.0;
+  REAL8 d = (2.0 * LAL_PI * centre_frequency);
+  REAL8 c = 0.0;
+
+  //FILE * testout = fopen("cippa2.txt","w");
+  for(i = lower; i < upper; i++) {
+
+       f=((REAL8 ) i )*deltaF;
+       c = (2.0 * LAL_PI * f);
+       hptilde->data->data[i]  = h0plus * 0.0;
+       hctilde->data->data[i] = h0cross / ((2.0 * (c + d)) - (2.0 * I) / tau);
+       hctilde->data->data[i] -= h0cross / ((2.0 * (c - d)) - (2.0 * I) / tau);
+
+
+  }
+  //fclose(testout);
+
+  *hplus=hptilde;
+  *hcross=hctilde;
+
+  return 0;
+
+
+
+}
+
+int XLALGetBurstApproximantFromString(const CHAR *inString)
+{
+#ifndef LAL_NDEBUG
+  if ( !inString )
+    XLAL_ERROR( XLAL_EFAULT );
+#endif
+  if ( strstr(inString, "SineGaussianF" ) )
+  {
+    return SineGaussianF;
+  }
+  else if ( strstr(inString, "SineGaussian" ) )
+  {
+    return SineGaussian;
+  }
+  else if ( strstr(inString, "GaussianF" ) )
+  {
+    return GaussianF;
+  }
+  else if ( strstr(inString, "Gaussian" ) )
+  {
+    return Gaussian;
+  }
+  else if ( strstr(inString, "DampedSinusoidF" ) )
+  {
+    return DampedSinusoidF;
+  }
+  else if ( strstr(inString, "DampedSinusoid" ) )
+  {
+    return DampedSinusoid;
+  }
+  else
+  {
+    XLALPrintError( "Cannot parse burst approximant from string: %s \n", inString );
+    XLAL_ERROR( XLAL_EINVAL );
+  }
+}
+
+/* FIXME ORDER*/
+int XLALCheckBurstApproximantFromString(const CHAR *inString)
+{
+#ifndef LAL_NDEBUG
+  if ( !inString )
+    XLAL_ERROR( XLAL_EFAULT );
+#endif
+  if ( strstr(inString, "Gaussian" ) )
+    return 1;
+  else if ( strstr(inString, "GaussianF" ) )
+    return 1;
+  else if ( strstr(inString, "SineGaussian" ) )
+    return 1;
+  else if ( strstr(inString, "SineGaussianF" ) )
+    return 1;
+  else if ( strstr(inString, "DampedSinusoid" ) )
+    return 1;
+  else if ( strstr(inString, "DampedSinusoidF" ) )
+    return 1;
+  else if (strstr(inString,"RingdownF") )
+    return 1;
+  else
+    return 0;
+}
+
+int XLALSimBurstImplementedTDApproximants(
+    BurstApproximant approximant /**< Burst approximant (see enum in LALSimBurst.h) */
+    )
+{
+    switch (approximant)
+    {
+        case SineGaussian:
+        case Gaussian:
+        case DampedSinusoid:
+            return 1;
+
+        default:
+            return 0;
+    }
+}
+
+/**
+ * Checks whether the given approximant is implemented in lalsimulation's XLALSimInspiralChooseFDWaveform().
+ *
+ * returns 1 if the approximant is implemented, 0 otherwise.
+ */
+int XLALSimBurstImplementedFDApproximants(
+    BurstApproximant approximant /**< Burst approximant (see enum in LALSimBurst.h) */
+    )
+{
+    switch (approximant)
+    {
+        case SineGaussianF:
+        case RingdownF:
+        case DampedSinusoidF:
+        case GaussianF:
+            return 1;
+        default:
+            return 0;
+    }
+}
+
+/* Tentative common interface to burst FD WF. Pass all standard burst parameters (as in sim_burst table). 
+ * Parameters which are not defined for the WF of interest will be ignored.
+ * Unconventional parameters can be passed through extraParams 
+ * 
+ * Returned waveforms are centered at t=0, thus must be time shifted to wanted time.
+ * No taper, windowing, etc, is applied. The caller must take care of that.
+ * 
+ * */
+int XLALSimBurstChooseFDWaveform(
+    COMPLEX16FrequencySeries **hptilde,     /**< FD plus polarization */
+    COMPLEX16FrequencySeries **hctilde,     /**< FD cross polarization */
+    REAL8 deltaF,                           /**< sampling interval (Hz) */
+    REAL8 deltaT,                           /**< time step corresponding to consec */
+    REAL8 f0,                               /**< central frequency (Hz) */
+    REAL8 q,                                /**< Q (==sqrt(2) \pi f0 tau ) [dless]*/
+    REAL8 tau,                              /**< Duration [s] */
+    REAL8 f_min,                            /**< starting GW frequency (Hz) */
+    REAL8 f_max,                            /**< ending GW frequency (Hz) (0 for Nyquist) */
+    REAL8 hrss,                             /**< hrss [strain] */
+    REAL8 polar_angle,                      /**< Polar_ellipse_angle as defined in the burst table. Together with polar_ellipse_eccentricity below will fix the ratio of + vs x aplitude. Some WFs uses a single parameter alpha for this. Alpha is passed through extraParams*/
+    REAL8 polar_ecc,                        /**< See above */
+    LALSimBurstExtraParam *extraParams, /**< Linked list of extra burst parameters. Pass in NULL (or None in python) to neglect these */
+    BurstApproximant approximant                 /**< Burst approximant  */
+    )
+{
+  /* General sanity check the input parameters - only give warnings! */
+    if( deltaF > 1. )
+        XLALPrintWarning("XLAL Warning - %s: Large value of deltaF = %e requested...This corresponds to a very short TD signal (with padding). Consider a smaller value.\n", __func__, deltaF);
+    if( deltaF < 1./4096. )
+        XLALPrintWarning("XLAL Warning - %s: Small value of deltaF = %e requested...This corresponds to a very long TD signal. Consider a larger value.\n", __func__, deltaF);
+    if( f_min < 1. )
+        XLALPrintWarning("XLAL Warning - %s: Small value of fmin = %e requested...Check for errors, this could create a very long waveform.\n", __func__, f_min);
+    if( f_min > 40.000001 )
+        XLALPrintWarning("XLAL Warning - %s: Large value of fmin = %e requested...Check for errors, the signal will start in band.\n", __func__, f_min);
+    int ret;
+    
+    /* Check if need to initiate this w/ meaningful values */
+    REAL8 alpha=0.0;
+    
+    switch (approximant)
+    {
+        case SineGaussianF:
+            /* Waveform-specific sanity checks */
+            /* None so far */
+            
+            (void) f_max;
+            if (XLALSimBurstExtraParamExists(extraParams,"alpha")) alpha=XLALSimBurstGetExtraParam(extraParams,"alpha");
+            // if alpha not there (e.g. because we are calling this routine for injecting, and xml tables do not know about alpha) set polar_angle=alpha
+            else alpha=polar_angle;
+            (void) polar_angle;
+            (void) polar_ecc;
+            (void) tau;
+            
+            /* Call the waveform driver routine */
+            ret = XLALSimBurstSineGaussianF(hptilde,hctilde,q,f0,hrss, alpha,deltaF,deltaT);
+            if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
+            break;
+        case GaussianF:
+            /* Waveform-specific sanity checks */
+            /* None so far */
+            
+            (void) f_max;
+            if (XLALSimBurstExtraParamExists(extraParams,"alpha")) alpha=XLALSimBurstGetExtraParam(extraParams,"alpha");
+            // if alpha not there (e.g. because we are calling this routine for injecting, and xml tables do not know about alpha) set polar_angle=alpha
+            else alpha=polar_angle;
+            (void) polar_angle;
+            (void) polar_ecc;
+            (void) f0;
+            (void) q;
+            
+            /* Call the waveform driver routine */
+            ret = XLALSimBurstGaussianF(hptilde,hctilde,tau,hrss, alpha,deltaF,deltaT);
+            if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
+            break;
+        case DampedSinusoidF:
+            /* Waveform-specific sanity checks */
+            /* None so far */
+            
+            (void) f_max;
+            if (XLALSimBurstExtraParamExists(extraParams,"alpha")) alpha=XLALSimBurstGetExtraParam(extraParams,"alpha");
+            // if alpha not there (e.g. because we are calling this routine for injecting, and xml tables do not know about alpha) set polar_angle=alpha
+            else alpha=polar_angle;
+            (void) polar_angle;
+            (void) polar_ecc;
+            (void) tau;
+
+            /* Call the waveform driver routine */
+            ret = XLALSimBurstDampedSinusoidF(hptilde,hctilde,q,f0,hrss, alpha,deltaF,deltaT);
+            if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
+            break;
+        default:
+            XLALPrintError("FD version of burst approximant not implemented in lalsimulation\n");
+            XLAL_ERROR(XLAL_EINVAL);
+    }
+
+    if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
+
+    return ret;
+}
+
+/* Tentative common interface to burst FD WF. Pass all standard burst parameters (as in sim_burst table). 
+ * Parameters which are not defined for the WF of interest can be passe as NULL.
+ * Unconventional parameters can be passed through extraParams 
+ * 
+ * Returned waveforms are centered at t=0, thus must be time shifted to wanted time.
+ * No taper, windowing, etc, is applied. The caller must take care of that.
+ * 
+ * */
+int XLALSimBurstChooseTDWaveform(
+    REAL8TimeSeries **hplus,                    /**< +-polarization waveform */
+    REAL8TimeSeries **hcross,                   /**< x-polarization waveform */
+    REAL8 deltaT,                           /**< time step corresponding to consec */
+    REAL8 f0,                               /**< central frequency (Hz) */
+    REAL8 q,                                /**< Q (==sqrt(2) \pi f0 tau ) [dless]*/
+    REAL8 tau,                              /**< Duration [s] */
+    REAL8 f_min,                            /**< starting GW frequency (Hz) */
+    REAL8 f_max,                            /**< ending GW frequency (Hz) (0 for Nyquist) */
+    REAL8 hrss,                             /**< hrss [strain] */
+    REAL8 polar_angle,                      /**< Polar_ellipse_angle as defined in the burst table. Together with polar_ellipse_eccentricity below will fix the ratio of + vs x aplitude. Some WFs uses a single parameter alpha for this. Alpha is passed through extraParams*/
+    REAL8 polar_ecc,                        /**< See above */
+    LALSimBurstExtraParam *extraParams, /**< Linked list of non-GR parameters. Pass in NULL (or None in python) to neglect these */
+    BurstApproximant approximant                 /**< Burst approximant  */
+    )
+{
+  /* General sanity check the input parameters - only give warnings! */
+    if( f_min < 1. )
+        XLALPrintWarning("XLAL Warning - %s: Small value of fmin = %e requested...Check for errors, this could create a very long waveform.\n", __func__, f_min);
+    if( f_min > 40.000001 )
+        XLALPrintWarning("XLAL Warning - %s: Large value of fmin = %e requested...Check for errors, the signal will start in band.\n", __func__, f_min);
+    int ret;
+        
+    switch (approximant)
+    {
+        case SineGaussian:
+            /* Waveform-specific sanity checks */
+            /* None so far */
+            
+            (void) f_max;
+            (void) tau;
+            (void) extraParams;
+            /* Call the waveform driver routine */
+            ret = XLALSimBurstSineGaussian(hplus,hcross,q,f0,hrss,polar_ecc ,polar_angle,deltaT);
+            if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
+            break;
+        case Gaussian:
+            /* Waveform-specific sanity checks */
+            /* None so far */
+            (void) extraParams;
+            (void) f_max;
+            (void) f0;
+            (void) q;
+            
+            /* Call the waveform driver routine */
+            ret = XLALSimBurstGaussian(hplus,hcross,tau,hrss,polar_ecc ,polar_angle,deltaT);
+            if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
+            break;
+        case DampedSinusoid:
+            /* Waveform-specific sanity checks */
+            /* None so far */
+            (void) extraParams;
+            (void) f_max;
+            (void) tau;
+
+            /* Call the waveform driver routine */
+            ret = XLALSimBurstDampedSinusoid(hplus,hcross,q,f0,hrss,polar_ecc ,polar_angle,deltaT);
+            if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
+            break;
+        default:
+            XLALPrintError("TD version of burst approximant not implemented in lalsimulation\n");
+            XLAL_ERROR(XLAL_EINVAL);
+    }
+
+    if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
+
+    return ret;
+}
+
+/**
+ * XLAL function to determine string from approximant enum.
+ * This function needs to be updated when new approximants are added.
+ */
+char* XLALGetStringFromBurstApproximant(BurstApproximant bapproximant)
+{
+  switch (bapproximant)
+  {
+    case SineGaussianF:
+      return strdup("SineGaussianF");
+    case SineGaussian:
+      return strdup("SineGaussian");
+    case GaussianF:
+      return strdup("GaussianF");
+    case Gaussian:
+      return strdup("Gaussian");
+    case DampedSinusoidF:
+      return strdup("DampedSinusoidF");
+    case DampedSinusoid:
+      return strdup("DampedSinusoid");
+    default:
+        XLALPrintError("Not a valid approximant\n");
+        XLAL_ERROR_NULL(XLAL_EINVAL);
+    }
+}
+
+int XLALSimBurstSineGaussianFFast(
+	COMPLEX16FrequencySeries **hplus,
+	COMPLEX16FrequencySeries **hcross,
+	REAL8 Q,
+	REAL8 centre_frequency,
+	REAL8 hrss,
+	REAL8 alpha,
+	REAL8 deltaF,
+  REAL8 deltaT
+)
+{
+	/* semimajor and semiminor axes of waveform ellipsoid */
+  REAL8 LAL_SQRT_PI=sqrt(LAL_PI);
+	/* rss of plus and cross polarizations */
+	const double hplusrss  = hrss * cos(alpha);
+	const double hcrossrss = hrss * sin(alpha);
+  REAL8 eqq=exp(-Q*Q);
+	const double cgrss = sqrt((Q / (4.0 * centre_frequency * LAL_SQRT_PI)) * (1.0 +eqq));
+	const double sgrss = sqrt((Q / (4.0 * centre_frequency *LAL_SQRT_PI)) * (1.0 - eqq));
+	/* "peak" amplitudes of plus and cross */
+	double h0plus  = hplusrss / cgrss;
+	double h0cross = hcrossrss / sgrss;
+	LIGOTimeGPS epoch= LIGOTIMEGPSZERO;
+	int length;
+	unsigned i;
+    
+ 	/* length of the injection time series is 6 * the width of the
+	 * time domain Gaussian envelope rounded to the nearest odd integer */
+	length = (int) floor(4.0 * Q / (LAL_TWOPI * centre_frequency) / deltaT / 2.0);  // This is 30 tau_t
+	length = 2 * length + 1; // length is 60 taus +1 bin
+  XLALGPSSetREAL8(&epoch, -(length - 1) / 2 * deltaT); // epoch is set to minus (30 taus_t) in secs
+    
+  
+  REAL8 tau=Q/LAL_PI/LAL_SQRT2/centre_frequency;
+  REAL8 tau2pi2=tau*tau*LAL_PI*LAL_PI;
+  
+  /* sigma is the width of the gaussian envelope in the freq domain WF ~ exp(-1/2 X^2/sigma^2)*/
+  REAL8 sigma= centre_frequency/Q; // This is also equal to 1/(sqrt(2) Pi tau)
+  
+  /* set fmax to be f0 + 6sigmas*/
+  REAL8 Fmax=centre_frequency + 4.0*sigma;
+  /* if fmax > nyquist use nyquist */
+  if (Fmax>(1.0/(2.0*deltaT))) 
+    Fmax=1.0/(2.0*deltaT);
+  
+  REAL8 Fmin= centre_frequency -4.0*sigma;
+  /* if fmin <0 use 0 */
+  if (Fmin<0.0 || Fmin >=Fmax)
+    Fmin=0.0;
+  
+  size_t lower =(size_t) ( Fmin/deltaF);    
+  size_t upper= (size_t) ( (Fmax)/deltaF+1);
+  upper=upper-lower;
+  COMPLEX16FrequencySeries *hptilde;
+  COMPLEX16FrequencySeries *hctilde;
+  /* the middle sample is t = 0 */
+  hptilde=XLALCreateCOMPLEX16FrequencySeries("hplus",&epoch,Fmin,deltaF,&lalStrainUnit,upper);
+  hctilde=XLALCreateCOMPLEX16FrequencySeries("hcross",&epoch,Fmin,deltaF,&lalStrainUnit,upper);
+	
+	if(!hptilde || !hctilde) {
+		XLALDestroyCOMPLEX16FrequencySeries(hptilde);
+		XLALDestroyCOMPLEX16FrequencySeries(hctilde);
+		hctilde=hptilde = NULL;
+		XLAL_ERROR(XLAL_EFUNC);
+	}
+
+  /* populate */
+  REAL8 f=0.0;
+  REAL8 phi2minus=0.0;
+  REAL8 ephimin=0.0;
+  h0plus=h0plus * tau/LAL_2_SQRTPI;
+  h0cross=-h0cross* tau/LAL_2_SQRTPI;
+  //#pragma omp parallel for
+  for(i = 0; i < upper; i++) {
+    f=((REAL8 ) (i+lower) )*deltaF;
+    phi2minus= (f-centre_frequency )*(f-centre_frequency );
+    ephimin=exp(-phi2minus*tau2pi2);
+    hptilde->data->data[i] = crect(h0plus *ephimin,0.0);
+    hctilde->data->data[i] = crect(0.0,h0cross *ephimin);
+  }
+
+  *hplus=hptilde;
+  *hcross=hctilde;
+
+  return XLAL_SUCCESS;
 }

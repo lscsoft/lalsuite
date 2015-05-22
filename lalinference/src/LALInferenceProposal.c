@@ -447,10 +447,11 @@ LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runSt
     LALInferenceRegisterProposal(propArgs, "glitchfit", &glitchfit, command_line);
 
     /* Setup adaptive proposals */
-    LALInferenceModel *model = LALInferenceInitCBCModel(runState);
-    LALInferenceSetupAdaptiveProposals(propArgs, model->params);
-    XLALFree(model);
-
+    if (singleadapt){
+      LALInferenceModel *model = LALInferenceInitCBCModel(runState);
+      LALInferenceSetupAdaptiveProposals(propArgs, model->params);
+      XLALFree(model);
+    }
     /* Setup buffer now since threads aren't accessible to the main setup function */
     if (diffevo || stretch || walk) {
         for (i=0; i<runState->nthreads; i++)
@@ -860,7 +861,7 @@ REAL8 LALInferenceEnsembleStretchIntrinsic(LALInferenceThreadState *thread,
                                            LALInferenceVariables *proposedParams) {
     REAL8 logPropRatio;
     const char *names[] = {"chirpmass", "q", "eta", "m1", "m2", "a_spin1", "a_spin2",
-                           "tilt_spin1", "tilt_spin2", "phi12", NULL};
+                           "tilt_spin1", "tilt_spin2", "phi12", "frequency", "quality", "duration","alpha","phase", NULL};
 
     logPropRatio = LALInferenceEnsembleStretchNames(thread, currentParams, proposedParams, names);
 
@@ -876,17 +877,17 @@ REAL8 LALInferenceEnsembleStretchExtrinsic(LALInferenceThreadState *thread,
     LALInferenceVariables *args = thread->proposalArgs;
 
     const char *names[] = {"rightascension", "declination", "polarisation", "distance", "logdistance",
-                           "phase", "time", "costheta_jn", "theta", "cosalpha", "t0", NULL};
+                            "time", "costheta_jn", "theta", "cosalpha", "t0",  "hrss", "loghrss",NULL};
 
     const char *marg_time_names[] = {"rightascension", "declination", "polarisation","distance", "logdistance",
-                                     "phase","costheta_jn", "theta", "cosalpha", "t0", NULL};
+                                     "phase","costheta_jn", "theta", "cosalpha", "t0", "hrss", "loghrss", NULL};
 
     const char *marg_phase_names[] = {"rightascension", "declination", "polarisation","distance", "logdistance",
-                                      "time","costheta_jn", "theta", "cosalpha", "t0", NULL};
+                                      "time","costheta_jn", "theta", "cosalpha", "t0",  "hrss", "loghrss",NULL};
 
 
     const char *marg_time_phase_names[] = {"rightascension", "declination", "polarisation",  "distance", "logdistance",
-                                           "costheta_jn", "theta", "cosalpha", "t0",  NULL};
+                                           "costheta_jn", "theta", "cosalpha", "t0", "hrss", "loghrss",  NULL};
 
     margtime = LALInferenceGetINT4Variable(args, "marg_time");
     margphi = LALInferenceGetINT4Variable(args, "marg_phi");
@@ -1008,7 +1009,7 @@ REAL8 LALInferenceEnsembleWalkIntrinsic(LALInferenceThreadState *thread,
                                         LALInferenceVariables *proposedParams) {
     REAL8 logPropRatio;
     const char *names[] = {"chirpmass", "q", "eta", "m1", "m2", "a_spin1", "a_spin2",
-                           "tilt_spin1", "tilt_spin2", "phi12", NULL};
+                           "tilt_spin1", "tilt_spin2", "phi12", "phase","frequency", "quality", "duration","alpha", NULL};
 
     logPropRatio = LALInferenceEnsembleWalkNames(thread, currentParams, proposedParams, names);
 
@@ -1025,16 +1026,16 @@ REAL8 LALInferenceEnsembleWalkExtrinsic(LALInferenceThreadState *thread,
     LALInferenceVariables *args = thread->proposalArgs;
 
     const char *names[] = {"rightascension", "declination", "polarisation", "distance", "logdistance",
-                           "phase", "time", "costheta_jn", "theta", "cosalpha", "t0", NULL};
+                            "time", "costheta_jn", "theta", "cosalpha", "t0", "hrss", "loghrss", NULL};
 
     const char *marg_time_names[] = {"rightascension", "declination", "polarisation", "distance", "logdistance",
-                                     "phase", "costheta_jn", "theta", "cosalpha", "t0", NULL};
+                                     "costheta_jn", "theta", "cosalpha", "t0", "hrss", "loghrss", NULL};
 
     const char *marg_phase_names[] = {"rightascension", "declination", "polarisation", "distance", "logdistance",
-                                      "time", "costheta_jn", "theta", "cosalpha", "t0", NULL};
+                                      "time", "costheta_jn", "theta", "cosalpha", "t0", "hrss", "loghrss", NULL};
 
     const char *marg_time_phase_names[] = {"rightascension", "declination", "polarisation", "distance", "logdistance",
-                                           "costheta_jn",  "theta", "cosalpha", "t0",NULL};
+                                           "costheta_jn",  "theta", "cosalpha", "t0", "hrss", "loghrss",NULL};
 
     margtime = LALInferenceGetINT4Variable(args, "marg_time");
     margphi = LALInferenceGetINT4Variable(args, "marg_phi");
@@ -1236,7 +1237,7 @@ REAL8 LALInferenceDifferentialEvolutionIntrinsic(LALInferenceThreadState *thread
                                                  LALInferenceVariables *proposedParams) {
     REAL8 logPropRatio;
     const char *names[] = {"chirpmass", "q", "eta", "m1", "m2", "a_spin1", "a_spin2",
-                           "tilt_spin1", "tilt_spin2", "phi12",  NULL};
+                           "tilt_spin1", "tilt_spin2", "phi12","frequency", "quality", "duration","alpha", "phase",  NULL};
 
     logPropRatio = LALInferenceDifferentialEvolutionNames(thread, currentParams, proposedParams, names);
 
@@ -1252,16 +1253,16 @@ REAL8 LALInferenceDifferentialEvolutionExtrinsic(LALInferenceThreadState *thread
     LALInferenceVariables *args = thread->proposalArgs;
 
     const char *names[] = {"rightascension", "declination", "polarisation", "distance", "logdistance",
-                           "phase", "time", "costheta_jn", "cosalpha", "t0", "theta", NULL};
+                            "time", "costheta_jn", "cosalpha", "t0", "theta","hrss", "loghrss", NULL};
 
     const char *marg_time_names[] = {"rightascension", "declination", "polarisation", "distance", "logdistance",
-                                     "phase", "costheta_jn","cosalpha", "t0", "theta", NULL};
+                                      "costheta_jn","cosalpha", "t0", "theta","hrss", "loghrss", NULL};
 
     const char *marg_phase_names[] = {"rightascension", "declination", "polarisation", "distance", "logdistance",
-                                      "time", "costheta_jn", "cosalpha","t0", "theta", NULL};
+                                      "time", "costheta_jn", "cosalpha","t0", "theta","hrss", "loghrss", NULL};
 
     const char *marg_time_phase_names[] = {"rightascension", "declination", "polarisation", "distance", "logdistance",
-                                           "costheta_jn", "cosalpha", "t0", "theta", NULL};
+                                           "costheta_jn", "cosalpha", "t0", "theta","hrss", "loghrss", NULL};
 
     margtime = LALInferenceGetINT4Variable(args, "marg_time");
     margphi = LALInferenceGetINT4Variable(args, "marg_phi");

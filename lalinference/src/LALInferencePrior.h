@@ -53,6 +53,12 @@ SWIGLAL(INPUT_SCALARS(REAL8*, min, max));
 void LALInferenceInitCBCPrior(LALInferenceRunState *runState);
 
 /**
+ * Initialize the LIB prior based on command line arguments.
+*/
+void LALInferenceInitLIBPrior(LALInferenceRunState *runState);
+
+
+/**
  * Return the log Prior for the glitch amplitude
 */
 REAL8 logGlitchAmplitudeDensity(REAL8 A, REAL8 Q, REAL8 f);
@@ -253,6 +259,8 @@ REAL8 LALInferenceCubeToGaussianPrior(double r, double mean, double sigma);
  */
 REAL8 LALInferenceCubeToSinPrior(double r, double x1, double x2);
 
+/* Simple burst prior (only checks for dec and (log)hrss*/
+REAL8 LALInferenceSineGaussianPrior(LALInferenceRunState *runState, LALInferenceVariables *params, LALInferenceModel *model);
 /*@}*/
 
 #endif

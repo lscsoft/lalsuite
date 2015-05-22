@@ -76,6 +76,9 @@
 #include <lal/LALInferenceInit.h>
 #include <lal/LALSimNoise.h>
 #include <LALInferenceRemoveLines.h>
+/* LIB deps */
+#include <lal/LALSimBurst.h>
+#include <lal/LIGOLwXMLBurstRead.h>
 
 struct fvec {
 	REAL8 f;
@@ -84,7 +87,7 @@ struct fvec {
 
 #define LALINFERENCE_DEFAULT_FLOW "40.0"
 
-
+static void LALInferenceSetGPSTrigtime(LIGOTimeGPS *GPStrig, ProcessParamsTable *commandLine);
 struct fvec *interpFromFile(char *filename);
 
 struct fvec *interpFromFile(char *filename){
@@ -358,7 +361,7 @@ void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, ProcessPar
   else{
     if(injTable) memcpy(&GPStrig,&(injTable->geocent_end_time),sizeof(GPStrig));
     else {
-      fprintf(stderr,"Error: No trigger time specifed and no injection given \n");
+      fprintf(stderr,"+++ Error: No trigger time specifed and no injection given \n");
       exit(1);
     }
   }
@@ -432,6 +435,7 @@ void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, ProcessPar
 (--trigtime GPStime)            GPS time of the trigger to analyse (optional when using --margtime or --margtimephi)\n\
 (--segment-start)               GPS time of the start of the segment (optional when --trigtime given, default is seglen-2 s before --trigtime)\n\
 (--srate rate)                  Downsample data to rate in Hz (4096.0,)\n\
+(--padding PAD [sec]            Override default 0.4 seconds padding\n\
 (--injectionsrate rate)         Downsample injection signal to rate in Hz (--srate)\n\
 (--IFO1-flow freq1 [--IFO2-flow freq2 ...])      Specify lower frequency cutoff for overlap integral (40.0)\n\
 (--IFO1-fhigh freq1 [--IFO2-fhigh freq2 ...])     Specify higher frequency cutoff for overlap integral (Nyquist freq 0.5*srate)\n\
@@ -469,13 +473,10 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
     UINT4 i,j;
     //int FakeFlag=0; - set but not used
     char strainname[]="LSC-STRAIN";
-    UINT4 q=0;
     //typedef void (NoiseFunc)(LALStatus *statusPtr,REAL8 *psd,REAL8 f);
     NoiseFunc *PSD=NULL;
     REAL8 scalefactor=1;
-    SimInspiralTable *injTable=NULL;
     RandomParams *datarandparam;
-    UINT4 event=0;
     int globFrames=0; // 0 = no, 1 = will search for frames in PWD
     char *chartmp=NULL;
     char **channels=NULL;
@@ -555,53 +556,14 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
     IFOdata=headIFO=XLALCalloc(sizeof(LALInferenceIFOData),Nifo);
     if(!IFOdata) XLAL_ERROR_NULL(XLAL_ENOMEM);
 
-    if(LALInferenceGetProcParamVal(commandLine,"--injXML"))
-    {
-        XLALPrintError("ERROR: --injXML option is deprecated. Use --inj and update your scripts\n");
-        exit(1);
-    }
-    procparam=LALInferenceGetProcParamVal(commandLine,"--inj");
-    if(procparam){
-        SimInspiralTableFromLIGOLw(&injTable,procparam->value,0,0);
-        if(!injTable){
-            XLALPrintError("Unable to open injection file(LALInferenceReadData) %s\n",procparam->value);
-            XLAL_ERROR_NULL(XLAL_EFUNC);
-        }
-        procparam=LALInferenceGetProcParamVal(commandLine,"--event");
-        if(procparam) {
-            event=atoi(procparam->value);
-            while(q<event) {q++; injTable=injTable->next;}
-        }
-        else if ((procparam=LALInferenceGetProcParamVal(commandLine,"--event-id")))
-        {
-            while(injTable)
-            {
-                if(injTable->event_id->id == (UINT4)atoi(procparam->value)) break;
-                else injTable=injTable->next;
-            }
-            if(!injTable){
-                fprintf(stderr,"Error, cannot find simulation id %s in injection file\n",procparam->value);
-                exit(1);
-            }
-        }
-    }
-
     procparam=LALInferenceGetProcParamVal(commandLine,"--psdstart");
     if (!procparam) procparam=LALInferenceGetProcParamVal(commandLine,"--PSDstart");
     LALStringToGPS(&status,&GPSstart,procparam->value,&chartmp);
     if(status.statusCode) REPORTSTATUS(&status);
+    
+    /*Set trigtime in GPStrig using either inj file or --trigtime*/
+    LALInferenceSetGPSTrigtime(&GPStrig,commandLine);
 
-    if(LALInferenceGetProcParamVal(commandLine,"--trigtime")){
-        procparam=LALInferenceGetProcParamVal(commandLine,"--trigtime");
-        LALStringToGPS(&status,&GPStrig,procparam->value,&chartmp);
-    }
-    else{
-        if(injTable) memcpy(&GPStrig,&(injTable->geocent_end_time),sizeof(GPStrig));
-        else if(!LALInferenceGetProcParamVal(commandLine,"--segment-start")){
-            XLALPrintError("Error: No trigger time specifed and no injection given \n");
-            XLAL_ERROR_NULL(XLAL_EINVAL);
-        }
-    }
     if(status.statusCode) REPORTSTATUS(&status);
     ppt=LALInferenceGetProcParamVal(commandLine,"--psdlength");
     if(!ppt) ppt=LALInferenceGetProcParamVal(commandLine,"--PSDlength");
@@ -845,6 +807,16 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
         IFOdata[i].margFFTPlan = XLALCreateReverseREAL8FFTPlan((UINT4) seglen, 1);
         if(!IFOdata[i].margFFTPlan) XLAL_ERROR_NULL(XLAL_ENOMEM);
         /* Setup windows */
+        ppt=LALInferenceGetProcParamVal(commandLine,"--padding");
+        if (ppt){
+            padding=atof(ppt->value);
+            fprintf(stdout,"Using %lf seconds of padding for IFO %s \n",padding, IFOdata[i].name);
+        }
+        if ((REAL8)2.0*padding*SampleRate/(REAL8)seglen <0.0 ||(REAL8)2.0*padding*SampleRate/(REAL8)seglen >1 ){
+            fprintf(stderr,"Padding is negative or 2*padding is bigger than the whole segment. Consider reducing it using --padding or increase --seglen. Exiting\n");
+            exit(1);
+        }
+        IFOdata[i].padding=padding;
         IFOdata[i].window=XLALCreateTukeyREAL8Window(seglen,(REAL8)2.0*padding*SampleRate/(REAL8)seglen);
         if(!IFOdata[i].window) XLAL_ERROR_NULL(XLAL_EFUNC);
     }
@@ -853,7 +825,12 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
     {
         /* Trigger time = 2 seconds before end of segment (was 1 second, but Common Inputs for The Events are -6 +2*/
         memcpy(&segStart,&GPStrig,sizeof(LIGOTimeGPS));
-        XLALGPSAdd(&segStart,-SegmentLength+2);
+        REAL8 offset=SegmentLength+2.;
+        /* If we are using a burst approximant, put at the center */
+        if ((ppt=LALInferenceGetProcParamVal(commandLine,"--approx"))){
+          if (XLALCheckBurstApproximantFromString(ppt->value)) offset=SegmentLength/2.;
+        }
+        XLALGPSAdd(&segStart,-offset);
     }
     else
     {
@@ -975,7 +952,14 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
                 }
             }else{
                 fprintf(stderr,"Estimating PSD for %s using %i segments of %i samples (%lfs)\n",IFOnames[i],nSegs,(int)seglen,SegmentLength);
+                LIGOTimeGPS trueGPSstart=GPSstart;
+                if(Ntimeslides) {
+                  REAL4 deltaT=-atof(timeslides[i]);
+                  XLALGPSAdd(&GPSstart, deltaT);
+                  fprintf(stderr,"Slid PSD estimation of %s by %f s from %10.10lf to %10.10lf\n",IFOnames[i],deltaT,trueGPSstart.gpsSeconds+1e-9*trueGPSstart.gpsNanoSeconds,GPSstart.gpsSeconds+1e-9*GPSstart.gpsNanoSeconds);
+                }
                 PSDtimeSeries=readTseries(cache,channels[i],GPSstart,PSDdatalength);
+                GPSstart=trueGPSstart;
                 if(!PSDtimeSeries) {XLALPrintError("Error reading PSD data for %s\n",IFOnames[i]); XLAL_ERROR_NULL(XLAL_EFUNC);}
                 XLALResampleREAL8TimeSeries(PSDtimeSeries,1.0/SampleRate);
                 PSDtimeSeries=(REAL8TimeSeries *)XLALShrinkREAL8TimeSeries(PSDtimeSeries,(size_t) 0, (size_t) seglen*nSegs);
@@ -2760,7 +2744,7 @@ void LALInferenceSetupROQ(LALInferenceIFOData *IFOdata, LALInferenceModel *model
   else{
     if(injTable) memcpy(&GPStrig,&(injTable->geocent_end_time),sizeof(GPStrig));
     else {
-      fprintf(stderr,"Error: No trigger time specifed and no injection given \n");
+      fprintf(stderr,">>> Error: No trigger time specifed and no injection given \n");
       exit(1);
     }
   }
@@ -2865,4 +2849,250 @@ void LALInferenceSetupROQ(LALInferenceIFOData *IFOdata, LALInferenceModel *model
       thisData = thisData->next;
     }
   }
+}
+
+static void LALInferenceSetGPSTrigtime(LIGOTimeGPS *GPStrig, ProcessParamsTable *commandLine){
+    
+    ProcessParamsTable *procparam;
+    SimInspiralTable *inspiralTable=NULL;
+    SimBurst *burstTable=NULL;
+    char *chartmp=NULL;
+    UINT4 event=0;
+    UINT4 q=0;
+    LALStatus status;
+    memset(&status,0,sizeof(LALStatus));
+
+    /* First check if trigtime has been given as an option */
+    if(LALInferenceGetProcParamVal(commandLine,"--trigtime")){
+        procparam=LALInferenceGetProcParamVal(commandLine,"--trigtime");
+        LALStringToGPS(&status,GPStrig,procparam->value,&chartmp);
+        fprintf(stdout,"Set trigtime to %.10f\n",GPStrig->gpsSeconds+1.0e-9 * GPStrig->gpsNanoSeconds);
+        return;
+
+    }
+    else{
+        /* If not check if we have an injtable passed with --inj */
+
+        if(LALInferenceGetProcParamVal(commandLine,"--injXML"))
+        {
+            XLALPrintError("ERROR: --injXML option is deprecated. Use --inj and update your scripts\n");
+            exit(1);
+        }
+        if((procparam=LALInferenceGetProcParamVal(commandLine,"--inj"))){
+            fprintf(stdout,"Checking if the xml table is an inspiral table... \n");
+            /* Check if it is a SimInspiralTable */
+            SimInspiralTableFromLIGOLw(&inspiralTable,procparam->value,0,0);
+
+            if (inspiralTable){
+                procparam=LALInferenceGetProcParamVal(commandLine,"--event");
+                if(procparam) {
+                event=atoi(procparam->value);
+                while(q<event) {q++; inspiralTable=inspiralTable->next;}
+                }
+                else if ((procparam=LALInferenceGetProcParamVal(commandLine,"--event-id")))
+                {
+                while(inspiralTable)
+                {
+                if(inspiralTable->event_id->id == (UINT4)atoi(procparam->value)) break;
+                else inspiralTable=inspiralTable->next;
+                }
+                if(!inspiralTable){
+                fprintf(stderr,"Error, cannot find simulation id %s in injection file\n",procparam->value);
+                exit(1);
+                }
+                }
+                else
+                fprintf(stdout,"You did not provide an event number with the injtable. Using event 0 which may not be what you want!!!!!\n");
+                memcpy(GPStrig,&(inspiralTable->geocent_end_time),sizeof(LIGOTimeGPS));
+                printf("Set inspiral injtime %.10f\n",inspiralTable->geocent_end_time.gpsSeconds+1.0e-9* inspiralTable->geocent_end_time.gpsNanoSeconds);
+                return;
+            }
+        }
+        else if((procparam=LALInferenceGetProcParamVal(commandLine,"--binj"))){
+            /* Check if it is a SimBurst table */
+            fprintf(stdout,"Checking if the xml table is a burst table... \n");
+            burstTable=XLALSimBurstTableFromLIGOLw(procparam->value,0,0);
+            if(burstTable){
+                procparam=LALInferenceGetProcParamVal(commandLine,"--event");
+                if(procparam) {
+                    event=atoi(procparam->value);
+                    while(q<event) {q++; burstTable=burstTable->next;}
+                }
+                else if ((procparam=LALInferenceGetProcParamVal(commandLine,"--event-id")))
+                {
+                    fprintf(stderr,"Error, SimBurst tables do not currently support event_id tags \n");
+                    exit(1);
+                }
+                else
+                    fprintf(stdout,"You did not provide an event number with the injtable. Using event 0 which may not be what you want!!!!!\n");
+                memcpy(GPStrig,&(burstTable->time_geocent_gps),sizeof(LIGOTimeGPS));
+                fprintf(stdout,"Set trigtime from burstable to %.10f\n",GPStrig->gpsSeconds+1.0e-9 * GPStrig->gpsNanoSeconds);
+                return;
+            }
+        }
+        else if(!LALInferenceGetProcParamVal(commandLine,"--segment-start")){
+            XLALPrintError("Error: No trigger time specifed and no injection given \n");
+            //XLAL_ERROR_NULL(XLAL_EINVAL);
+            exit(1);
+        }
+
+    }
+}
+
+void LALInferenceInjectFromMDC(ProcessParamsTable *commandLine, LALInferenceIFOData *IFOdata){
+    
+    /* Read time domain WF present in an mdc frame file, FFT it and inject into the frequency domain stream */
+    
+    char mdcname[]="GW";
+    char **mdc_caches=NULL;
+    char **mdc_channels=NULL;
+    ProcessParamsTable * ppt=commandLine; 
+
+    UINT4 nIFO=0;
+    int i=0;
+    UINT4 j=0;
+    LALInferenceIFOData *data=IFOdata;
+    REAL8 prefactor =1.0;
+    ppt=LALInferenceGetProcParamVal(commandLine,"--MDC-prefactor");
+    if (ppt){
+
+        prefactor=atof(ppt->value);
+        fprintf(stdout,"Using prefactor=%f to scale the MDC injection\n",prefactor);
+    }
+    REAL8 tmp=0.0;
+    REAL8 net_snr=0.0;
+    while (data) {nIFO++; data=data->next;}
+    UINT4 Nmdc=0,Nchannel=0;    
+    
+    ppt=LALInferenceGetProcParamVal(commandLine,"--MDC-cache");
+    if (!ppt){
+        
+        fprintf(stderr,"You must provide the path of an MDC lal cache file for each IFO, using --MDC-cache [ XXX, YYY, ZZZ]\n");
+        exit(1);
+        
+        }
+    ppt=LALInferenceGetProcParamVal(commandLine,"--inj");
+    if (ppt){
+        
+        fprintf(stderr,"You cannot use both injfile (--inj) and MDCs (--MDC-cache) Exiting... \n");
+        exit(1);
+        
+        }
+        
+    ppt=LALInferenceGetProcParamVal(commandLine,"--MDC-cache");
+    LALInferenceParseCharacterOptionString(ppt->value,&mdc_caches,&Nmdc);
+
+    if (Nmdc!= nIFO){
+        fprintf(stderr, "You have to provide an MDC cache file for each IFO\n");
+        exit(1);
+        }
+    else printf("got %i ifos and %i MDC cache files\n",nIFO,Nmdc);
+    
+    
+    ppt=LALInferenceGetProcParamVal(commandLine,"--MDC-channel");
+    if (ppt){
+        
+        LALInferenceParseCharacterOptionString(ppt->value,&mdc_channels,&Nchannel);
+        if (Nchannel!=Nmdc){
+            fprintf(stderr,"You must provide a channel name for eache mdc frame, using --MDC-channel [X, Y, Z] . Exiting...\n");
+            exit(1);
+            }
+    }
+    else{
+        fprintf(stdout,"WARNING: You did not provide the name(s) of channel(s) to use with the injection mdc. Using the default which may not be what you want!\n");
+        mdc_channels=  malloc((nIFO+1)*sizeof(char*));
+        data=IFOdata;
+        i=0;
+        while (data){
+           mdc_channels[i] =  malloc(512*sizeof(char));
+            if(!strcmp(data->name,"H1")) {
+               sprintf(mdc_channels[i],"H1:%s-H",mdcname);}
+            else if(!strcmp(data->name,"L1")) {		
+                 sprintf(mdc_channels[i],"L1:%s-H",mdcname); }
+            else if(!strcmp(data->name,"V1")) {		
+                 sprintf(mdc_channels[i],"V1:%s-16K",mdcname);}
+            data=data->next;
+            i++;
+            
+            }
+    }
+    
+    LIGOTimeGPS epoch=IFOdata->timeData->epoch;
+    REAL8 deltaT=IFOdata->timeData->deltaT ;
+    int seglen=IFOdata->timeData->data->length;
+    REAL8 SampleRate=4096.0,SegmentLength=0.0;
+    if(LALInferenceGetProcParamVal(commandLine,"--srate")) SampleRate=atof(LALInferenceGetProcParamVal(commandLine,"--srate")->value);
+    SegmentLength=(REAL8) seglen/SampleRate;
+    
+    REAL8TimeSeries * timeData=NULL;
+    REAL8TimeSeries * windTimeData=(REAL8TimeSeries *)XLALCreateREAL8TimeSeries("WindMDCdata",&epoch,0.0,deltaT,&lalDimensionlessUnit,(size_t)seglen);
+    COMPLEX16FrequencySeries* injF=(COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("injF",&IFOdata->timeData->epoch,0.0,IFOdata->freqData->deltaF,&lalDimensionlessUnit,	IFOdata->freqData->data->length);
+    
+    if(!injF) {
+      XLALPrintError("Unable to allocate memory for injection buffer\n");
+      XLAL_ERROR_VOID(XLAL_EFUNC);
+    }
+    
+    REAL4 WinNorm = sqrt(IFOdata->window->sumofsquares/IFOdata->window->data->length);
+
+    data=IFOdata;
+    i=0;
+    UINT4 lower = (UINT4)ceil(data->fLow / injF->deltaF);
+    UINT4 upper = (UINT4)floor(data->fHigh /injF-> deltaF);
+    //FIXME CHECK WNORM
+    /* Inject into FD data stream and calculate optimal SNR */
+    while(data){
+      tmp=0.0;
+        LALCache *mdc_cache=NULL;
+        mdc_cache  = XLALCacheImport(mdc_caches[i] );
+        
+        /* Read MDC frame */
+        timeData=readTseries(mdc_cache,mdc_channels[i],epoch,SegmentLength);
+        /* downsample */ 
+        XLALResampleREAL8TimeSeries(timeData,1.0/SampleRate);	 
+        /* window timeData and store it in windTimeData */
+        XLALDDVectorMultiply(windTimeData->data,timeData->data,IFOdata->window->data);
+
+        /*for(j=0;j< timeData->data->length;j++) 
+            fprintf(out,"%lf %10.10e %10.10e %10.10e \n",epoch.gpsSeconds + j*deltaT,data->timeData->data->data[j],data->timeData->data->data[j]+timeData->data->data[j],timeData->data->data[j]);
+        fclose(out);
+        */
+
+        /* set the whole seq to 0 */
+        for(j=0;j<injF->data->length;j++) injF->data->data[j]=0.0;
+            
+        /* FFT */
+        XLALREAL8TimeFreqFFT(injF,windTimeData,IFOdata->timeToFreqFFTPlan);   
+        
+        
+        for(j=lower;j<upper;j++){
+                windTimeData->data->data[j] /= sqrt(data->window->sumofsquares / data->window->data->length);
+                /* Add data in freq stream */
+                data->freqData->data->data[j]+=crect(prefactor *creal(injF->data->data[j])/WinNorm,prefactor *cimag(injF->data->data[j])/WinNorm);
+                tmp+= prefactor*prefactor*(creal(injF ->data->data[j])*creal(injF ->data->data[j])+cimag(injF ->data->data[j])*cimag(injF ->data->data[j]))/data->oneSidedNoisePowerSpectrum->data->data[j];             
+        }
+       
+        tmp*=2.*injF->deltaF;
+        printf("Injected SNR %.3f in IFO %s from MDC \n",sqrt(2*tmp),data->name);
+        data->SNR=sqrt(2*tmp);
+        net_snr+=2*tmp;
+        i++;
+        data=data->next;
+    }
+    printf("Injected network SNR %.3f from MDC\n",sqrt(net_snr));
+
+    char SNRpath[FILENAME_MAX];
+    ppt=LALInferenceGetProcParamVal(commandLine,"--outfile");
+    if(!ppt){
+      fprintf(stderr,"Must specify --outfile <filename.dat>\n");
+      exit(1);
+    }
+    char *outfile=ppt->value;
+    sprintf(SNRpath,"%s_snr.txt",outfile); 
+    ppt=LALInferenceGetProcParamVal(commandLine,"--dont-dump-extras");
+    if (!ppt){
+      PrintSNRsToFile(IFOdata , SNRpath);
+    }
+    return ;
+    
 }

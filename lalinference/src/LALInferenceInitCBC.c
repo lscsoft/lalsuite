@@ -48,7 +48,7 @@ static void LALInferenceCheckApproximantNeeds(LALInferenceRunState *state,Approx
    calling the "ReadData()" function to gather data & PSD from files,
    sets up the random seed and rng, and initializes other variables accordingly.
 */
-LALInferenceRunState *LALInferenceInitCBCRunState(ProcessParamsTable *command_line) {
+LALInferenceRunState *LALInferenceInitRunState(ProcessParamsTable *command_line) {
     ProcessParamsTable *ppt=NULL;
     INT4 randomseed;
     FILE *devrandom;
@@ -68,9 +68,6 @@ LALInferenceRunState *LALInferenceInitCBCRunState(ProcessParamsTable *command_li
     run_state->data = LALInferenceReadData(command_line);
     if (run_state->data == NULL)
         return(NULL);
-
-    /* Perform injections if data successful read or created */
-    LALInferenceInjectInspiralSignal(run_state->data, command_line);
 
     /* Apply calibration errors if desired*/
     LALInferenceApplyCalibrationErrors(run_state, command_line);
@@ -1067,7 +1064,6 @@ where the known names have been listed above\n\
         LALInferenceRegisterUniformVariableREAL8(state, model->params, "declination", zero, decMin, decMax, LALINFERENCE_PARAM_LINEAR);
         LALInferenceRegisterUniformVariableREAL8(state, model->params, "time", timeParam, timeMin, timeMax,LALINFERENCE_PARAM_LINEAR);
    }
-
 
   /* If we are marginalising over the time, remove that variable from the model (having set the prior above) */
   /* Also set the prior in model->params, since Likelihood can't access the state! (ugly hack) */
