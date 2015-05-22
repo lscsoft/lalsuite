@@ -1361,8 +1361,8 @@ static REAL8 approxLogPrior(LALInferenceVariables *params) {
     else if(LALInferenceCheckVariable(params,"distance"))
       logP += 2.0*log(*(REAL8 *)LALInferenceGetVariable(params,"distance"));
 
-    REAL8 dec = *(REAL8 *)LALInferenceGetVariable(params, "declination");
-    logP += log(cos(dec));
+    if(LALInferenceCheckVariable(params,"declination"))
+      logP += log(cos(*(REAL8 *)LALInferenceGetVariable(params, "declination")));
 
     return logP;
 }
