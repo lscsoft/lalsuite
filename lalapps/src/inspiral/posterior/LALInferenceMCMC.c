@@ -142,6 +142,7 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
     /* Send help if runState was not allocated */
     if(runState == NULL || LALInferenceGetProcParamVal(runState->commandLine, "--help")) {
         fprintf(stdout, "%s", help);
+        LALInferenceInitCBCThreads(runState,0);
         return XLAL_FAILURE;
     }
 
