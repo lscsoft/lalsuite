@@ -184,6 +184,10 @@ void LALInferenceInitLikelihood(LALInferenceRunState *runState);
 /** Get the intrinsic parameters from currentParams */
 LALInferenceVariables LALInferenceGetInstrinsicParams(LALInferenceVariables *currentParams);
 
+/** fast SineGaussian likelihood for LIB */
+REAL8 LALInferenceFastSineGaussianLogLikelihood(LALInferenceVariables *currentParams,
+                                                        LALInferenceIFOData *data,
+                                                        LALInferenceModel *model);
 
 /** Calculate the SNR across the network */
 void LALInferenceNetworkSNR(LALInferenceVariables *currentParams, LALInferenceIFOData *data, LALInferenceModel *model);

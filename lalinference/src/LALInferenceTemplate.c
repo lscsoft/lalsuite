@@ -350,8 +350,6 @@ void LALInferenceTemplateSineGaussian(LALInferenceModel *model)
   return;
 }
 
-
-
 void LALInferenceTemplateDampedSinusoid(LALInferenceModel *model)
 /*****************************************************/
 /* Damped Sinusoid (burst) template.                 */

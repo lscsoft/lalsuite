@@ -376,7 +376,7 @@ LALInferenceModel * LALInferenceInitBurstModel(LALInferenceRunState *state)
     }
 
     ppt=LALInferenceGetProcParamVal(commandLine,"--approx");
-    if (!strcmp("SineGaussian",ppt->value) || !strcmp("SineGaussianF",ppt->value)|| !strcmp("DampedSinusoid",ppt->value) || !strcmp("DampedSinusoidF",ppt->value)){
+    if (strstr("SineGaussian",ppt->value) || !strcmp("SineGaussianF",ppt->value)|| !strcmp("SineGaussianFFast",ppt->value)|| !strcmp("DampedSinusoid",ppt->value) || !strcmp("DampedSinusoidF",ppt->value)){
       LALInferenceRegisterUniformVariableREAL8(state, model->params, "frequency",  zero, ffMin, ffMax,   LALINFERENCE_PARAM_LINEAR);
       LALInferenceRegisterUniformVariableREAL8(state, model->params, "quality",  zero,qMin, qMax,   LALINFERENCE_PARAM_LINEAR);
     }
