@@ -1123,17 +1123,18 @@ while gpsstart < gpsstop:
                 figax = isp.rates( ranges, effs[:,ind], color=c[cind], label='%s fap<=%.3e'%(classifier, fap), figax=figax)
                 eff_fap_overlay_figax[ind] = isp.rates( ranges, effs[:,ind], color=color, label=classifier, figax=eff_fap_overlay_figax[ind])
                 cind = (cind+1)%len(c)
-
-            fig, ax = figax
-            ax.set_ylim(ymin=0, ymax=1)
-            ax.set_ylabel('Glitch Detection Efficiency')
-            ax.legend(loc='lower left')
+            if figax:
+                fig, ax = figax
+                ax.set_ylim(ymin=0, ymax=1)
+                ax.set_ylabel('Glitch Detection Efficiency')
+                ax.legend(loc='lower left')
 
             figname = isp.ratefig(output_dir, ifo, "_%s%s_eff"%(classifier, usertag), trend_start, gpsstart+stride-trend_start)
             trending['effatfap'][classifier].append( figname )
             logger.info('  plotting %s'%figname)
-            fig.savefig(figname)
-            isp.close(fig)
+            if figax:
+                fig.savefig(figname)
+                isp.close(fig)
 
         ### clean/glitch rates overlay
         fig, ax = trg_rate_overlay_figax
