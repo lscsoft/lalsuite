@@ -88,6 +88,17 @@ int XLALSimBurstSineGaussian(
 	REAL8 delta_t
 );
 
+int XLALSimBurstSineGaussianFast(
+	REAL8TimeSeries **hplus,
+	REAL8TimeSeries **hcross,
+	REAL8 Q,
+	REAL8 centre_frequency,
+	REAL8 hrss,
+	REAL8 eccentricity,
+	REAL8 polarization,
+	REAL8 delta_t
+);
+
 int XLALSimBurstGaussian(
 	REAL8TimeSeries **hplus,
 	REAL8TimeSeries **hcross,
