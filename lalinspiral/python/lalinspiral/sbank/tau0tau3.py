@@ -448,35 +448,6 @@ def aligned_spin_param_generator(flow, **kwargs):
         spin2 = uniform(*spin2_bounds)
         yield mass1, mass2, spin1, spin2
 
-def precessing_spin_param_generator(flow, **kwargs):
-    """
-    Currently a stub to test precessing template generation.
-    """
-    # For now these are ignored
-    spin1_bounds = kwargs.pop('spin1', (-0.9, 0.9))
-    spin2_bounds = kwargs.pop('spin2', (-0.9, 0.9))
-
-    for mass1, mass2 in urand_tau0tau3_generator(flow, **kwargs):
-        # Choose the rest from hardcoded limits
-        spin1mag = uniform(0, 0.9)
-        spin2mag = uniform(0, 0.9)
-        spin1ang1 = uniform(0, numpy.pi)
-        spin1ang2 = uniform(0, 2*numpy.pi)
-        spin2ang1 = uniform(0, numpy.pi)
-        spin2ang2 = uniform(0, 2*numpy.pi)
-        spin1z = spin1mag * numpy.cos(spin1ang1)
-        spin1x = spin1mag * numpy.sin(spin1ang1) * numpy.cos(spin1ang2)
-        spin1y = spin1mag * numpy.sin(spin1ang1) * numpy.sin(spin1ang2)    
-        spin2z = spin2mag * numpy.cos(spin2ang1)
-        spin2x = spin2mag * numpy.sin(spin2ang1) * numpy.cos(spin2ang2)
-        spin2y = spin2mag * numpy.sin(spin2ang1) * numpy.sin(spin2ang2)
-        # Check orientation angles use correct limits
-        theta = uniform(0, numpy.pi)
-        phi = uniform(0, 2*numpy.pi)
-        psi = uniform(0, 2*numpy.pi)
-        iota = uniform(0, numpy.pi)
-        yield mass1, mass2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, theta, phi, iota, psi
-
 
 def SpinTaylorT4_param_generator(flow, **kwargs):
     # FIXME implement!
@@ -484,7 +455,6 @@ def SpinTaylorT4_param_generator(flow, **kwargs):
 
 proposals = {"IMRPhenomB":IMRPhenomB_param_generator,
              "IMRPhenomC":IMRPhenomC_param_generator,
-             "IMRPhenomP":precessing_spin_param_generator,
              "TaylorF2RedSpin":aligned_spin_param_generator,
              "EOBNRv2":nonspin_param_generator,
              "SEOBNRv1":aligned_spin_param_generator,
