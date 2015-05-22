@@ -1083,7 +1083,7 @@ void LALInferencePrintPTMCMCHeaderFiles(LALInferenceRunState *runState, FILE **t
         fprintf(threadoutput, "%10s  %6s  %20s  %6s %6s  %10s  %12s  %9s  %9s %8s %8s\n",
                 "nIter", "seed", "null_likelihood", "Ndet", "nTemps",
                 "Tchain", "NetworkSNR", "Waveform", "pNorder", "Npar", "f_ref");
-        fprintf(threadoutput, "%10d  %u  %20.10lf  %6d %6d %12.1f %14.6f  %9i  %9i  %8i %12.1f\n",
+        fprintf(threadoutput, "%10d  %u  %20.10lf  %6d %6d %12.1f %14.6f  %9i  %12.1f  %8i %12.1f\n",
                 Niter, randomseed, thread->nullLikelihood, nIFO, nthreads,
                 thread->temperature, networkSNR, waveform, pnorder, nPar, f_ref);
 
