@@ -1049,7 +1049,7 @@ where the known names have been listed above\n\
   LALInferenceRegisterUniformVariableREAL8(state, model->params, "costheta_jn", zero, costhetaJNmin, costhetaJNmax,LALINFERENCE_PARAM_LINEAR);
 
   /* Option to use the detector-aligned frame */
-  if(LALInferenceGetProcParamVal(!commandLine,"--no-detector-frame"))
+  if(!LALInferenceGetProcParamVal(commandLine,"--no-detector-frame"))
   {
         printf("Using detector-based sky frame\n");
         LALInferenceRegisterUniformVariableREAL8(state,model->params,"t0",timeParam,timeMin,timeMax,LALINFERENCE_PARAM_LINEAR);
