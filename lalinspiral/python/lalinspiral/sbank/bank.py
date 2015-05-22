@@ -29,8 +29,6 @@ from lal import PI, MTSUN_SI
 from lalinspiral import CreateSBankWorkspaceCache
 from lalinspiral.sbank.psds import get_neighborhood_ASD, get_neighborhood_PSD, get_PSD, get_neighborhood_df_fmax
 
-from lalinspiral.sbank.waveforms import IMRPhenomPSkyLocMaxed
-
 class lazy_nhoods(object):
     __slots__ = ("seq", "nhood_param")
     def __init__(self, seq, nhood_param="tau0"):
@@ -69,11 +67,7 @@ class Bank(object):
             self._moments = {}
             self.compute_match = self._metric_match
         else:
-            if tmplt_class is IMRPhenomPSkyLocMaxed:
-                # The max over skyloc stuff needs a second cache
-                self._workspace_cache = [CreateSBankWorkspaceCache(), CreateSBankWorkspaceCache()]
-            else:
-                self._workspace_cache = CreateSBankWorkspaceCache()
+            self._workspace_cache = CreateSBankWorkspaceCache()
             self.compute_match = self._brute_match
 
     def __len__(self):
@@ -212,7 +206,6 @@ class Bank(object):
     def clear(self):
         if hasattr(self, "_workspace_cache"):
             self._workspace_cache = CreateSBankWorkspaceCache()
-
         for tmplt in self._templates:
             tmplt.clear()
 
