@@ -278,7 +278,7 @@ xmlNodePtr XLALInferenceVariables2VOTParamNode (const LALInferenceVariables *con
     if(!xmlChild) {
 					/* clean up */
 					/* if(xmlChildNodeList) xmlFreeNodeList(xmlChildNodeList); */
-					XLALPrintError("Couldn't create PARAM node: %s\n", marker->name);
+					XLALPrintWarning("Couldn't create PARAM node for %s\n", marker->name);
 					/* XLAL_ERROR_NULL(fn, XLAL_EFAILED); */
 					continue;
     }
@@ -372,7 +372,6 @@ VOTABLE_DATATYPE LALInferenceVariableType2VOT(const LALInferenceVariableType lit
     case LALINFERENCE_COMPLEX8_t: 	return VOT_COMPLEX8;
     case LALINFERENCE_COMPLEX16_t:	return VOT_COMPLEX16;
     case LALINFERENCE_string_t:		return VOT_CHAR;
-    case LALINFERENCE_void_ptr_t:	return sizeof(void *)==4?VOT_INT4:VOT_INT8;
     default: {XLALPrintError("%s: Unsupported LALInferenceVarableType %i\n",__func__,(int)litype); return VOT_DATATYPE_LAST;}
   }
 }
