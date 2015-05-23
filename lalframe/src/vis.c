@@ -162,7 +162,7 @@ int parseargs(int argc, char **argv)
             usage(argv[0]);
             exit(0);
         case 'c':      /* channel */
-            channel = strdup(LALoptarg);
+            channel = XLALStringDuplicate(LALoptarg);
             break;
         case 'f':      /* frame-cache */
             cache = XLALCacheImport(LALoptarg);
@@ -171,7 +171,7 @@ int parseargs(int argc, char **argv)
             cache = XLALCacheGlob(NULL, LALoptarg);
             break;
         case 'o':      /* output */
-            outfile = strdup(LALoptarg);
+            outfile = XLALStringDuplicate(LALoptarg);
             break;
         case 's':      /* start-time */
             t0 = atof(LALoptarg);
