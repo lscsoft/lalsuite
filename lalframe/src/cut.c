@@ -20,6 +20,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <lal/LALMalloc.h>
+#include <lal/LALString.h>
 #include <lal/LALFrameU.h>
 #include "utils.h"
 
@@ -102,7 +104,7 @@ int main(int argc, char *argv[])
 /* creates a vector of channel names from a comma-delimited channel list */
 char **chanvalloc(const char *str)
 {
-    char *s = strdup(str);
+    char *s = XLALStringDuplicate(str);
     char **chanv;
     int chanc = 1;
     int i;
@@ -110,10 +112,10 @@ char **chanvalloc(const char *str)
         ++chanc;
     chanv = calloc(chanc + 1, sizeof(*chanv));
     if (chanc > 1) {
-        chanv[0] = strdup(strtok(s, ","));
+        chanv[0] = XLALStringDuplicate(strtok(s, ","));
         for (i = 1; i < chanc; ++i)
-            chanv[i] = strdup(strtok(NULL, ","));
-        free(s);
+            chanv[i] = XLALStringDuplicate(strtok(NULL, ","));
+        XLALFree(s);
     } else
         chanv[0] = s;
     return chanv;
@@ -125,7 +127,7 @@ void chanvfree(char **chanv)
     if (chanv) {
         char **p;
         for (p = chanv; *p; ++p)
-            free(*p);
+            XLALFree(*p);
         free(chanv);
     }
     return;
