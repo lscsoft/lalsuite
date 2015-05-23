@@ -493,9 +493,7 @@ int print_params(struct params p)
         int tideO = XLALSimInspiralGetTidalOrder(p.waveFlags);
         int axis = XLALSimInspiralGetFrameAxis(p.waveFlags);
         int modes = XLALSimInspiralGetModesChoice(p.waveFlags);
-        char *s;
-        fprintf(stderr, "approximant:                                  %s\n", s = XLALGetStringFromApproximant(p.approx));
-        free(s);
+        fprintf(stderr, "approximant:                                  %s\n", XLALGetStringFromApproximant(p.approx));
         if (p.phaseO == -1)
             fprintf(stderr, "phase post-Newtonian order:                   highest available\n");
         else
@@ -576,9 +574,7 @@ int usage(const char *program)
     fprintf(stderr, "recognized time-domain approximants:");
     for (a = 0, c = 0; a < NumApproximants; ++a) {
         if (XLALSimInspiralImplementedTDApproximants(a)) {
-            char *s = XLALGetStringFromApproximant(a);
-            c += fprintf(stderr, "%s%s", c ? ", " : "\n\t", s);
-            free(s);
+            c += fprintf(stderr, "%s%s", c ? ", " : "\n\t", XLALGetStringFromApproximant(a));
             if (c > 50)
                 c = 0;
         }
@@ -587,9 +583,7 @@ int usage(const char *program)
     fprintf(stderr, "recognized frequency-domain approximants:");
     for (a = 0, c = 0; a < NumApproximants; ++a) {
         if (XLALSimInspiralImplementedFDApproximants(a)) {
-            char *s = XLALGetStringFromApproximant(a);
-            c += fprintf(stderr, "%s%s", c ? ", " : "\n\t", s);
-            free(s);
+            c += fprintf(stderr, "%s%s", c ? ", " : "\n\t", XLALGetStringFromApproximant(a));
             if (c > 50)
                 c = 0;
         }

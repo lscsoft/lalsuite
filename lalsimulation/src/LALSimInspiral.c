@@ -4381,120 +4381,120 @@ int XLALGetApproximantFromString(const CHAR *inString)
  * XLAL function to determine string from approximant enum.
  * This function needs to be updated when new approximants are added.
  */
-char* XLALGetStringFromApproximant(Approximant approximant)
+const char* XLALGetStringFromApproximant(Approximant approximant)
 {
   switch (approximant)
   {
     case TaylorF2RedSpinTidal:
-      return strdup("TaylorF2RedSpinTidal");
+      return "TaylorF2RedSpinTidal";
     case TaylorF2RedSpin:
-      return strdup("TaylorF2RedSpin");
+      return "TaylorF2RedSpin";
     case TaylorF2:
-      return strdup("TaylorF2");
+      return "TaylorF2";
     case PhenSpinTaylor:
-      return strdup("PhenSpinTaylor");
+      return "PhenSpinTaylor";
     case TaylorR2F4:
-      return strdup("TaylorR2F4");
+      return "TaylorR2F4";
     case PhenSpinTaylorRD:
-      return strdup("PhenSpinTaylorRD");
+      return "PhenSpinTaylorRD";
     case SpinTaylorF2:
-      return strdup("SpinTaylorF2");
+      return "SpinTaylorF2";
     case SpinTaylorT2:
-      return strdup("SpinTaylorT2");
+      return "SpinTaylorT2";
     case SpinTaylorT4:
-      return strdup("SpinTaylorT4");
+      return "SpinTaylorT4";
     case SpinTaylorT1:
-      return strdup("SpinTaylorT1");
+      return "SpinTaylorT1";
     case SpinTaylorFrameless:
-      return strdup("SpinTaylorFrameless");
+      return "SpinTaylorFrameless";
     case SpinTaylorT3:
-      return strdup("SpinTaylorT3");
+      return "SpinTaylorT3";
     case SpinTaylor:
-      return strdup("SpinTaylor");
+      return "SpinTaylor";
     case SpinQuadTaylor:
-      return strdup("SpinQuadTaylor");
+      return "SpinQuadTaylor";
     case TaylorT1:
-      return strdup("TaylorT1");
+      return "TaylorT1";
     case TaylorT2:
-      return strdup("TaylorT2");
+      return "TaylorT2";
     case TaylorT3:
-      return strdup("TaylorT3");
+      return "TaylorT3";
     case TaylorT4:
-      return strdup("TaylorT4");
+      return "TaylorT4";
     case IMRPhenomA:
-      return strdup("IMRPhenomA");
+      return "IMRPhenomA";
     case IMRPhenomB:
-      return strdup("IMRPhenomB");
+      return "IMRPhenomB";
     case IMRPhenomC:
-      return strdup("IMRPhenomC");
+      return "IMRPhenomC";
     case IMRPhenomP:
-      return strdup("IMRPhenomP");
+      return "IMRPhenomP";
     case SEOBNRv1_ROM_SingleSpin:
-      return strdup("SEOBNRv1_ROM_SingleSpin");
+      return "SEOBNRv1_ROM_SingleSpin";
     case SEOBNRv1_ROM_DoubleSpin:
-      return strdup("SEOBNRv1_ROM_DoubleSpin");
+      return "SEOBNRv1_ROM_DoubleSpin";
     case SEOBNRv2_ROM_SingleSpin:
-      return strdup("SEOBNRv2_ROM_SingleSpin");
+      return "SEOBNRv2_ROM_SingleSpin";
     case SEOBNRv2_ROM_DoubleSpin:
-      return strdup("SEOBNRv2_ROM_DoubleSpin");
+      return "SEOBNRv2_ROM_DoubleSpin";
     case IMRPhenomFA:
-      return strdup("IMRPhenomFA");
+      return "IMRPhenomFA";
     case IMRPhenomFB:
-      return strdup("IMRPhenomFB");
+      return "IMRPhenomFB";
     case IMRPhenomFC:
-      return strdup("IMRPhenomFC");
+      return "IMRPhenomFC";
     case SEOBNRv1:
-      return strdup("SEOBNRv1");
+      return "SEOBNRv1";
     case SEOBNRv2:
-      return strdup("SEOBNRv2");
+      return "SEOBNRv2";
     case SEOBNRv3:
-      return strdup("SEOBNRv3");
+      return "SEOBNRv3";
     case EOBNRv2HM:
-      return strdup("EOBNRv2HM");
+      return "EOBNRv2HM";
     case EOBNRv2:
-      return strdup("EOBNRv2");
+      return "EOBNRv2";
     case EOBNR:
-      return strdup("EOBNR");
+      return "EOBNR";
     case EOB:
-      return strdup("EOB");
+      return "EOB";
     case AmpCorPPN:
-      return strdup("AmpCorPPN");
+      return "AmpCorPPN";
     case GeneratePPN:
-      return strdup("GeneratePPN");
+      return "GeneratePPN";
     case NumRelNinja2:
-      return strdup("NumRelNinja2");
+      return "NumRelNinja2";
     case NumRel:
-      return strdup("NumRel");
+      return "NumRel";
     case FindChirpSP:
-      return strdup("FindChirpSP");
+      return "FindChirpSP";
     case FindChirpPTF:  
-      return strdup("FindChirpPTF");
+      return "FindChirpPTF";
     case TaylorEt:
-      return strdup("TaylorET");
+      return "TaylorET";
     case TaylorN:  
-      return strdup("TaylorN");
+      return "TaylorN";
     case TaylorF1:
-      return strdup("TaylorF1");
+      return "TaylorF1";
     case PadeT1:
-      return strdup("PadeT1");
+      return "PadeT1";
     case PadeF1:
-      return strdup("PadeF1");
+      return "PadeF1";
     case BCVSpin:
-      return strdup("BCVSpin");
+      return "BCVSpin";
     case BCVC:
-      return strdup("BCVC");
+      return "BCVC";
     case BCV:
-      return strdup("BCV");
+      return "BCV";
     case FrameFile:
-      return strdup("FrameFile");
+      return "FrameFile";
     case Eccentricity:
-      return strdup("Eccentricity");
+      return "Eccentricity";
     case SpinTaylorT2Fourier:
-      return strdup("SpinTaylorT2Fourier");
+      return "SpinTaylorT2Fourier";
     case SpinTaylorT4Fourier:
-      return strdup("SpinTaylorT4Fourier");
+      return "SpinTaylorT4Fourier";
     case SpinDominatedWf:
-      return strdup("SpinDominatedWf");
+      return "SpinDominatedWf";
     default:
         XLALPrintError("Not a valid approximant\n");
         XLAL_ERROR_NULL(XLAL_EINVAL);

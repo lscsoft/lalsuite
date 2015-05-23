@@ -1180,7 +1180,7 @@ int XLALGetApproximantFromString(const CHAR *inString);
  * XLAL function to determine string from approximant enum.
  * This function needs to be updated when new approximants are added.
  */
-char* XLALGetStringFromApproximant(Approximant approximant);
+const char* XLALGetStringFromApproximant(Approximant approximant);
 
 /**
  * XLAL function to determine PN order from a string.  The string need not
