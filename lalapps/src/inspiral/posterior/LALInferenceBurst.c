@@ -68,24 +68,48 @@ int main(int argc, char *argv[]){
   /* And performing any injections specified */
   /* And allocating memory */
   state = LALInferenceInitRunState(procParams);
-  /* Perform injections if data successful read or created */
-  LALInferenceInjectBurstSignal(state->data, state->commandLine);
+  
+  ProcessParamsTable *ppt=NULL;
+  if ((ppt=LALInferenceGetProcParamVal(state->commandLine,"--binj"))){
+    /* Perform injections if data successful read or created */
+    LALInferenceInjectBurstSignal(state->data, state->commandLine);
+  }
+  else{
+    /* Perform CBC injection if required */
+    LALInferenceInjectInspiralSignal(state->data, state->commandLine);
+  }
   if (LALInferenceGetProcParamVal(state->commandLine,"--inject_from_mdc")){
       fprintf(stdout,"WARNING: Injecting a signal from MDC has not been carefully tested yet! \n"); 
       LALInferenceInjectFromMDC(state->commandLine, state->data);
   }
+
   /* Set up the appropriate functions for the nested sampling algorithm */
-  state->algorithm=&LALInferenceNestedSamplingAlgorithm;
-  state->evolve=&LALInferenceNestedSamplingOneStep;
+  if (state){
+    /* Set up the appropriate functions for the nested sampling algorithm */
+    state->algorithm=&LALInferenceNestedSamplingAlgorithm;
+    state->evolve=&LALInferenceNestedSamplingOneStep;
+    state->proposalArgs = LALInferenceParseProposalArgs(state);
+  }
 
-  state->proposalArgs = LALInferenceParseProposalArgs(state);
-
-  /* Set up the threads */
-  LALInferenceInitBurstThreads(state,1);
-
-  /* Init the prior */
-  LALInferenceInitLIBPrior(state);
-
+  /* Check if recovery is LIB or CBC */
+  if ((ppt=LALInferenceGetProcParamVal(state->commandLine,"--approx"))){
+    if (XLALCheckBurstApproximantFromString(ppt->value)){
+      /* Set up the threads */
+      LALInferenceInitBurstThreads(state,1);
+      /* Init the prior */
+      LALInferenceInitLIBPrior(state);
+    }
+    else{
+      /* Set up the threads */
+      LALInferenceInitCBCThreads(state,1);
+      /* Init the prior */
+      LALInferenceInitCBCPrior(state);
+    }
+  }
+  else{
+    fprintf(stderr,"Must specify the approximant while using lalinference_burst\n");
+    exit(1);
+    }
   /* Set up structures for nested sampling */
   LALInferenceNestedSamplingAlgorithmInit(state);
   
@@ -99,7 +123,7 @@ int main(int argc, char *argv[]){
   LALInferenceInitLikelihood(state);
   
   /* Exit since we printed all command line arguments */
-  if(LALInferenceGetProcParamVal(state->commandLine,"--help"))
+  if(state == NULL || LALInferenceGetProcParamVal(state->commandLine,"--help"))
   {
     exit(0);
   }
