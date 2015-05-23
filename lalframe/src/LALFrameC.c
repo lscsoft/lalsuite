@@ -17,6 +17,10 @@
 *  MA  02111-1307  USA
 */
 
+#define _BSD_SOURCE   /* for mkstemp() */
+#include <stdlib.h>
+#undef _BSD_SOURCE
+
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
