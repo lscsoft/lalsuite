@@ -368,12 +368,16 @@
  */
 
 #include <config.h>
+
+#ifdef HAVE_UNISTD_H
+#define _BSD_SOURCE   /* for gethostname() */
+#include <unistd.h>
+#undef _BSD_SOURCE
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/param.h>
