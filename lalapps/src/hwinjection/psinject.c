@@ -40,6 +40,10 @@
               by YYY.
 */
 
+#define _BSD_SOURCE   /* for SA_RESTART */
+#include <signal.h>
+#undef _BSD_SOURCE
+
 #include <config.h>
 
 #include <stdio.h>
@@ -54,7 +58,6 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <time.h>
-#include <signal.h>
 #include <math.h>
 #include <sys/stat.h>
 #ifdef ONLINE
