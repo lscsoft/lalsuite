@@ -159,7 +159,7 @@ def ts_from_cache(cache, channels, start=None, duration=None, datatype=None,
 
     @param cache
         XLALCAche() containing list of GWF file paths
-    @param channel
+    @param channels
         string name of channel, e.g. 'L1:LDAS-STRAIN', or list of
         channel names
     @param start
@@ -186,7 +186,7 @@ def ts_from_frame_file(framefile, channels, start=None, duration=None,
 
     @param framefile
         path to GWF-format framefile to read
-    @param channel
+    @param channels
         string name of channel, e.g. 'L1:LDAS-STRAIN', or list of
         channel names
     @param start
@@ -215,7 +215,7 @@ def ts_from_stream(stream, channels, start=None, duration=None, datatype=None,
 
     @param stream
         XLALFrStream() of data from which to read
-    @param channel
+    @param channels
         string name of channel, e.g. 'L1:LDAS-STRAIN', or list of
         channel names
     @param start
