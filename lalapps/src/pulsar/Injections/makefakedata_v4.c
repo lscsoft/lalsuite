@@ -93,8 +93,6 @@ typedef struct
 
   COMPLEX8FrequencySeries *transfer;  /**< detector's transfer function for use in hardware-injection */
 
-  INT4 randSeed;		/**< random-number seed: either taken from user or /dev/urandom */
-
   transientWindow_t transientWindow;	/**< properties of transient-signal window */
   CHAR *VCSInfoString;          /**< LAL + LALapps Git version string */
 } ConfigVars_t;
@@ -360,7 +358,8 @@ main(int argc, char *argv[])
 
       /* add Gaussian noise if requested */
       if ( GV.noiseSigma > 0) {
-	XLAL_CHECK ( XLALAddGaussianNoise ( Tseries, GV.noiseSigma, GV.randSeed + i_chunk ) == XLAL_SUCCESS, XLAL_EFUNC );
+        // NOTE: seed=0 means randomize seed from /dev/urandom, otherwise we'll have to increment it for each chunk here
+	XLAL_CHECK ( XLALAddGaussianNoise ( Tseries, GV.noiseSigma, (uvar.randSeed == 0) ? 0 : (uvar.randSeed + i_chunk) ) == XLAL_SUCCESS, XLAL_EFUNC );
       }
 
       /* output ASCII time-series if requested */
@@ -1140,34 +1139,6 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
     else
       cfg->noiseSigma = 0;
 
-    /* set random-number generator seed: either taken from user or from /dev/urandom */
-    if ( XLALUserVarWasSet ( &uvar->randSeed ) )
-      {
-        if ( uvar->randSeed == 0 ) {
-          XLALPrintError ("WARNING: setting randSeed==0 results in the system clock being used as a random seed!\n");
-        }
-        cfg->randSeed = uvar->randSeed;
-      }
-    else
-      {
-	/*
-	 * Modified so as to not create random number parameters with seed
-	 * drawn from clock.  Seconds don't change fast enough and sft's
-	 * look alike.  We open /dev/urandom and read a 4 byte integer from
-	 * it and use that as our seed.  Note: /dev/random is slow after the
-	 * first, few accesses.
-	 */
-	FILE *devrandom = fopen ( "/dev/urandom", "r" );
-        XLAL_CHECK ( devrandom != NULL, XLAL_EIO, "fopen() failed to open '/dev/urandom' for reading\n\n");
-
-	if ( fread( (void*)&(cfg->randSeed), sizeof(INT4), 1, devrandom) != 1 )
-	  {
-	    fclose ( devrandom );
-	    XLAL_ERROR ( XLAL_EIO, "Failed to read from '/dev/urandom'\n\n");
-	  }
-	fclose ( devrandom );
-      }
-
   } /* END: Noise params */
 
 
@@ -1333,7 +1304,7 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALregREALUserStruct (  actuationScale,       0,  UVAR_DEVELOPER,  "(Signed) scale-factor to apply to the actuation-function.");
 
   XLALregBOOLUserStruct (  exactSignal,          0, UVAR_DEVELOPER, "Generate signal time-series as exactly as possible (slow).");
-  XLALregINTUserStruct (   randSeed,             0, UVAR_DEVELOPER, "Specify random-number seed for reproducible noise (use /dev/urandom otherwise).");
+  XLALregINTUserStruct (   randSeed,             0, UVAR_DEVELOPER, "Specify random-number seed for reproducible noise (0 means use /dev/urandom for seeding).");
   XLALregBOOLUserStruct ( outSFTv1,	 	 0, UVAR_DEVELOPER,   "[deprecated] Write output-SFTs in obsolete SFT-v1 format." );
 
   // ----- deprecated but still supported options [throw warning if used] ----------
