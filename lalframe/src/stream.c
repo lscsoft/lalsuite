@@ -26,6 +26,7 @@
 #include <lal/Date.h>
 #include <lal/LALgetopt.h>
 #include <lal/LALStdlib.h>
+#include <lal/LALString.h>
 #include <lal/TimeSeries.h>
 #include <lal/LALFrStream.h>
 #include <lal/Units.h>
@@ -175,7 +176,7 @@ int parseargs(int argc, char **argv)
             usage(argv[0]);
             exit(0);
         case 'c':      /* channel */
-            channel = strdup(LALoptarg);
+            channel = XLALStringDuplicate(LALoptarg);
             break;
         case 'f':      /* frame-cache */
             cache = XLALCacheImport(LALoptarg);
