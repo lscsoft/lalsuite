@@ -20,6 +20,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <time.h>
+#include <sys/types.h>
 
 #include <lal/LALConstants.h>
 #include <lal/LALDatatypes.h>
