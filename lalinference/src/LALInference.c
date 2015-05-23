@@ -546,13 +546,13 @@ void LALInferencePrintVariableItem(char *out, LALInferenceVariableItem *ptr)
   }
   switch (ptr->type) {
         case LALINFERENCE_INT4_t:
-          sprintf(out, "%d", *(INT4 *) ptr->value);
+          sprintf(out, "%" LAL_INT4_FORMAT, *(INT4 *) ptr->value);
           break;
         case LALINFERENCE_INT8_t:
           sprintf(out, "%" LAL_INT8_FORMAT, *(INT8 *) ptr->value);
           break;
         case LALINFERENCE_UINT4_t:
-          sprintf(out, "%ud", *(UINT4 *) ptr->value);
+          sprintf(out, "%" LAL_UINT4_FORMAT, *(UINT4 *) ptr->value);
           break;
         case LALINFERENCE_REAL4_t:
           sprintf(out, "%.15lf", *(REAL4 *) ptr->value);
