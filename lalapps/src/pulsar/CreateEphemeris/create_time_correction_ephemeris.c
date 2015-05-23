@@ -192,10 +192,10 @@ void get_input_args(inputParams_t *inputParams, int argc, char *argv[]){
         fprintf(stderr, USAGE, program);
         exit(0);
       case 't':
-        inputParams->ephemtype = strdup(LALoptarg);
+        inputParams->ephemtype = XLALStringDuplicate(LALoptarg);
         break;
       case 'o':
-        inputParams->outputpath = strdup(LALoptarg);
+        inputParams->outputpath = XLALStringDuplicate(LALoptarg);
         break;
       case 's':
         inputParams->startT = atof(LALoptarg);
