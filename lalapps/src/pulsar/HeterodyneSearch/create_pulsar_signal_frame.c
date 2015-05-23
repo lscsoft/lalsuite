@@ -19,6 +19,10 @@
  *  MA  02111-1307  USA
  */
 
+#define _BSD_SOURCE   /* for alphasort() and scandir() */
+#include <dirent.h>
+#undef _BSD_SOURCE
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -30,7 +34,6 @@
 #include <time.h>
 #include <signal.h>
 #include <math.h>
-#include <dirent.h>
 #include <sys/stat.h>
 
 /*LAL Functions */
