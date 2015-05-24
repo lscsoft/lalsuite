@@ -319,15 +319,14 @@ XLALCreateVOTResourceNode ( const char *type,			/**< [in] Type of the \c RESOURC
 
 
 /**
- * \brief Serialize a list of data-arrays into a VOTable \c TABLEDATA %node.
+ * \brief Create a VOTable \c TABLE %node from FIELDs, PARAMs and dataContent.
  *
- * Note: the variable-length argument pointers must be *void pointers*, and match in number,
- * and types with the FIELDs in fieldNodeList
+ * Note: the contents of dataContentNode must match in number and types with the FIELDs in fieldNodeList
  *
  * \return A \c xmlNodePtr that holds the new \c TABLEDATA %node (incl. all children and data).
  * In case of an error, a null-pointer is returned.\n
  *
- * Note: the input nodes 'fieldNodeList' and 'dataContentNode' become part of the returned table node
+ * Note: the input nodes 'fieldNodeList', 'paramNodeList' and 'dataContentNode' become part of the returned table node
  * and are *not* copied. Therefore they should NOT be free'ed individually by the caller!
  *
  * \b Important: the caller is responsible to free the allocated memory (when the
@@ -339,7 +338,8 @@ XLALCreateVOTResourceNode ( const char *type,			/**< [in] Type of the \c RESOURC
  */
 xmlNodePtr
 XLALCreateVOTTableNode ( const char *name,		/**< [in] optional name attribute to assign to this \c TABLE element (may be NULL) */
-                         xmlNode *fieldNodeList, 	/**< [in] linked list of \c xmlNodes that are to be assigned as FIELD children */
+                         xmlNode *fieldNodeList, 	/**< [in] linked list of \c xmlNodes that are to be assigned as FIELD children (may be NULL for no fields) */
+                         xmlNode *paramNodeList,  	/**< [in] linked list of \c xmlNodes that are to be assigned as PARAM children (may be NULL for no params) */
                          xmlNode *dataContentNode 	/**< [in] pointer to xmlNode to be inserted under the \<DATA\> element: TABLEDATA, BINARY or FITS */
                          )
 {
@@ -349,9 +349,15 @@ XLALCreateVOTTableNode ( const char *name,		/**< [in] optional name attribute to
     int err;
 
     /* input sanity check */
-    if ( !fieldNodeList ) {
-      XLALPrintError ("%s: invalid NULL input 'fieldNodeList'\n", __func__ );
+    if ( !fieldNodeList && !paramNodeList) {
+      XLALPrintError ("%s: must specify at least one FIELD or PARAM node to create table.\n",__func__);
       XLAL_ERROR_NULL ( XLAL_EINVAL );
+    }
+
+    if( !fieldNodeList && dataContentNode)
+    {
+      XLALPrintError("%s: cannot specify dataContentNode without FIELDs.\n",__func__);
+      XLAL_ERROR_NULL(XLAL_EINVAL);
     }
 
     /* create master node */
@@ -367,6 +373,19 @@ XLALCreateVOTTableNode ( const char *name,		/**< [in] optional name attribute to
       err = XLAL_EFAILED;
       goto failed;
     }
+
+    /* add PARAM children */
+    xmlChildNode = paramNodeList;
+    while(xmlChildNode)
+    {
+        if(!xmlAddChild(xmlTableNode, xmlChildNode))
+        {
+            XLALPrintError("%s: Couldn't add child PARAM node to TABLE node!\n",__func__);
+            err = XLAL_EFAILED;
+            goto failed;
+        }
+        xmlChildNode = xmlChildNode->next;
+    } /* while xmlChildNode */
 
     /* add FIELD children */
     xmlChildNode = fieldNodeList;	/* init to first field Node */

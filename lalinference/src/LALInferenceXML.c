@@ -198,14 +198,8 @@ xmlNodePtr XLALInferenceVariablesArray2VOTTable(LALInferenceVariables **varsArra
       } /* for row < numRows */
 
   
-  /* Create a TABLE from the FIELDs and TABLEDATA nodes */
-  VOTtableNode= XLALCreateVOTTableNode (tablename, fieldNodeList, xmlTABLEDATAnode );
-  /* Attach PARAMs to TABLE node */
-  if(!(xmlAddChildList(VOTtableNode,paramNodeList))){
-    XLALPrintError("%s: xmlAddChild failed\n",__func__);
-    err=XLAL_EFAILED;
-    goto failed;
-  }
+  /* Create a TABLE from the FIELDs, PARAMs, and TABLEDATA nodes */
+  VOTtableNode= XLALCreateVOTTableNode (tablename, fieldNodeList, paramNodeList, xmlTABLEDATAnode );
   
   return(VOTtableNode);
   
@@ -225,13 +219,13 @@ xmlNodePtr XLALInferenceStateVariables2VOTResource(const LALInferenceRunState *s
 	/* Serialise various params to VOT Table nodes */
 	resNode=XLALCreateVOTResourceNode("lalinference:state",name,NULL);
 	
-	algNode=XLALCreateVOTTableNode("Algorithm Params",XLALInferenceVariables2VOTParamNode(state->algorithmParams),NULL);
+	algNode=XLALCreateVOTTableNode("Algorithm Params",NULL,XLALInferenceVariables2VOTParamNode(state->algorithmParams),NULL);
 	xmlNewProp(algNode, CAST_CONST_XMLCHAR("utype"), CAST_CONST_XMLCHAR("lalinference:state:algorithmparams"));
 	if(algNode) xmlAddChild(resNode,algNode);
-	priorNode=XLALCreateVOTTableNode("Prior Arguments",XLALInferenceVariables2VOTParamNode(state->priorArgs),NULL);
+	priorNode=XLALCreateVOTTableNode("Prior Arguments",NULL,XLALInferenceVariables2VOTParamNode(state->priorArgs),NULL);
 	xmlNewProp(priorNode, CAST_CONST_XMLCHAR("utype"), CAST_CONST_XMLCHAR("lalinference:state:priorparams"));
 	if(priorNode) xmlAddChild(resNode,priorNode);
-	propNode=XLALCreateVOTTableNode("Proposal Arguments",XLALInferenceVariables2VOTParamNode(state->proposalArgs),NULL);
+	propNode=XLALCreateVOTTableNode("Proposal Arguments",NULL,XLALInferenceVariables2VOTParamNode(state->proposalArgs),NULL);
 	xmlNewProp(propNode, CAST_CONST_XMLCHAR("utype"), CAST_CONST_XMLCHAR("lalinference:state:proposalparams"));
 	if(propNode) xmlAddChild(resNode,propNode);
 	return(resNode);
