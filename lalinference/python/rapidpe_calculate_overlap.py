@@ -69,6 +69,8 @@ argp.add_argument("-f", "--f-low", type=float, default=40., help="Lowest frequen
 argp.add_argument("-F", "--delta-f", type=float, default=0.125, help="Frequency binning of the FD waveform. Default is 0.125.")
 argp.add_argument("-a", "--approximant1", default="TaylorF2", help="Approximant to use for target waveform. Default is TaylorF2.")
 argp.add_argument("-b", "--approximant2", default="TaylorF2", help="Approximant to use for overlapped waveform. Default is TaylorF2.")
+argp.add_argument("-v", "--verbose", action="store_true", help="Be verbose.")
+argp.add_argument("-V", "--too-verbose", action="store_true", help="Be absolutely, obnoxiously loquacious.")
 args = argp.parse_args()
 
 ## DEFAULTS ##
@@ -144,7 +146,8 @@ for i1, pt in enumerate(pts):
     h1 = generate_waveform_from_tmplt(t1, args.approximant1, delta_f, args.f_low)
     h1_norm = ovrlp.norm(h1)
     dist, idx = tree.query(pt, k=npts, return_distance=True)
-    print "--- (%f, %f) / (%f, %f)" % (t1.mass1, t1.mass2, t1.mchirp, t1.eta)
+    if args.verbose:
+        print "--- (%f, %f) / (%f, %f)" % (t1.mass1, t1.mass2, t1.mchirp, t1.eta)
 
     ovrlps = []
     for d, i2 in numpy.vstack((dist, idx)).T:
@@ -153,7 +156,8 @@ for i1, pt in enumerate(pts):
         h2 = generate_waveform_from_tmplt(t2, args.approximant2, delta_f, args.f_low)
         h2_norm = ovrlp.norm(h2)
         o12 = ovrlp.ip(h1, h2) / h1_norm / h2_norm
-        #print d, t2.mass1, t2.mass2, t2.mchirp, t2.eta, o12
+        if args.too_verbose:
+            print d, t2.mass1, t2.mass2, t2.mchirp, t2.eta, o12
         ovrlps.append(o12)
 
     opts = amrlib.apply_inv_transform(pts[idx][0], intr_prms, "mchirp_eta")
