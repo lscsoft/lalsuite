@@ -55,9 +55,9 @@ def parse_psd_file(filestr, fvals):
         except:
            exit("Can't parse PSD specifier %s as function or file." % filestr)
 
-    def anon_interp(fvals):
-        return numpy.interp(fvals, f, psd)
-    return numpy.array(map(anon_interp, f))
+    def anon_interp(newf):
+        return numpy.interp(newf, f, psd)
+    return numpy.array(map(anon_interp, fvals))
 
 argp = argparse.ArgumentParser()
 argp.add_argument("-s", "--tmplt-start-index", type=int, help="Start at this index of the template bank.")
