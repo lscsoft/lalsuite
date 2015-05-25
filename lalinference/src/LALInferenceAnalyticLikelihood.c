@@ -163,15 +163,15 @@ static void extractDimensionlessVariableVector(LALInferenceVariables *currentPar
 
   if (LALInferenceCheckVariable(currentParams,"m1")&&LALInferenceCheckVariable(currentParams,"m2"))
   {
-    m1=*(REAL8 *)LALInferenceGetVariable(currentParams,"m1");
-    m2=*(REAL8 *)LALInferenceGetVariable(currentParams,"m2");
+    m1=LALInferenceGetREAL8Variable(currentParams,"m1");
+    m2=LALInferenceGetREAL8Variable(currentParams,"m2");
   }
   else
   {
   	if (LALInferenceCheckVariable(currentParams, "chirpmass")) {
-    	Mc = *(REAL8 *)LALInferenceGetVariable(currentParams, "chirpmass");
+    	Mc = LALInferenceGetREAL8Variable(currentParams, "chirpmass");
   	} else if (LALInferenceCheckVariable(currentParams, "logmc")) {
-    	Mc = exp(*(REAL8 *)LALInferenceGetVariable(currentParams, "logmc"));
+    	Mc = exp(LALInferenceGetREAL8Variable(currentParams, "logmc"));
   	} else {
     	fprintf(stderr, "Could not find chirpmass or logmc in LALInferenceCorrelatedAnalyticLogLikelihood (in %s, line %d)\n",
         	    __FILE__, __LINE__);
@@ -179,10 +179,10 @@ static void extractDimensionlessVariableVector(LALInferenceVariables *currentPar
   	}
 
   	if (LALInferenceCheckVariable(currentParams, "eta")) {
-    	REAL8 eta = *(REAL8 *)LALInferenceGetVariable(currentParams, "eta");
+    	REAL8 eta = LALInferenceGetREAL8Variable(currentParams, "eta");
     	LALInferenceMcEta2Masses(Mc, eta, &m1, &m2);
   	} else if (LALInferenceCheckVariable(currentParams, "q")) {
-    	REAL8 q = *(REAL8 *)LALInferenceGetVariable(currentParams, "q");
+    	REAL8 q = LALInferenceGetREAL8Variable(currentParams, "q");
     	LALInferenceMcQ2Masses(Mc, q, &m1, &m2);
   	} else {
     	fprintf(stderr, "Could not find eta or q in LALInferenceCorrelatedAnalyticLogLikelihood (in %s, line %d)\n",
@@ -191,47 +191,47 @@ static void extractDimensionlessVariableVector(LALInferenceVariables *currentPar
   	}
   }
 
-  d = exp(*(REAL8 *)LALInferenceGetVariable(currentParams, "logdistance"));
+  d = exp(LALInferenceGetREAL8Variable(currentParams, "logdistance"));
 
-  iota = *(REAL8 *)LALInferenceGetVariable(currentParams, "costheta_jn");
-  psi = *(REAL8 *)LALInferenceGetVariable(currentParams, "polarisation");
-  phi = *(REAL8 *)LALInferenceGetVariable(currentParams, "phase");
-  ra = *(REAL8 *)LALInferenceGetVariable(currentParams, "rightascension");
-  dec = *(REAL8 *)LALInferenceGetVariable(currentParams, "declination");
-  t = *(REAL8 *)LALInferenceGetVariable(currentParams, "time");
+  iota = acos(LALInferenceGetREAL8Variable(currentParams, "costheta_jn"));
+  psi = LALInferenceGetREAL8Variable(currentParams, "polarisation");
+  phi = LALInferenceGetREAL8Variable(currentParams, "phase");
+  ra = LALInferenceGetREAL8Variable(currentParams, "rightascension");
+  dec = LALInferenceGetREAL8Variable(currentParams, "declination");
+  t = LALInferenceGetREAL8Variable(currentParams, "time");
 
   if (LALInferenceCheckVariable(currentParams, "a_spin1")) {
-    a1 = *(REAL8 *)LALInferenceGetVariable(currentParams, "a_spin1");
+    a1 = LALInferenceGetREAL8Variable(currentParams, "a_spin1");
   } else {
     a1 = 0.0;
   }
 
   if (LALInferenceCheckVariable(currentParams, "a_spin2")) {
-    a2 = *(REAL8 *)LALInferenceGetVariable(currentParams, "a_spin2");
+    a2 = LALInferenceGetREAL8Variable(currentParams, "a_spin2");
   } else {
     a2 = 0.0;
   }
 
   if (LALInferenceCheckVariable(currentParams, "phi_spin1")) {
-    phi1 = *(REAL8 *)LALInferenceGetVariable(currentParams, "phi_spin1");
+    phi1 = LALInferenceGetREAL8Variable(currentParams, "phi_spin1");
   } else {
     phi1 = 0.0;
   }
 
   if (LALInferenceCheckVariable(currentParams, "phi_spin2")) {
-    phi2 = *(REAL8 *)LALInferenceGetVariable(currentParams, "phi_spin2");
+    phi2 = LALInferenceGetREAL8Variable(currentParams, "phi_spin2");
   } else {
     phi2 = 0.0;
   }
 
   if (LALInferenceCheckVariable(currentParams, "theta_spin1")) {
-    theta1 = *(REAL8 *)LALInferenceGetVariable(currentParams, "theta_spin1");
+    theta1 = LALInferenceGetREAL8Variable(currentParams, "theta_spin1");
   } else {
     theta1 = 0.0;
   }
 
   if (LALInferenceCheckVariable(currentParams, "theta_spin2")) {
-    theta2 = *(REAL8 *)LALInferenceGetVariable(currentParams, "theta_spin2");
+    theta2 = LALInferenceGetREAL8Variable(currentParams, "theta_spin2");
   } else {
     theta2 = 0.0;
   }
@@ -294,14 +294,14 @@ static void extractBurstDimensionlessVariableVector(LALInferenceVariables *curre
     exit(1);
   }
  
-  loghrss = (*(REAL8 *)LALInferenceGetVariable(currentParams, "loghrss"));
-  frequency = *(REAL8 *)LALInferenceGetVariable(currentParams, "frequency");
-  q = *(REAL8 *)LALInferenceGetVariable(currentParams, "quality");
-  psi = *(REAL8 *)LALInferenceGetVariable(currentParams, "polarisation");
-  alpha = *(REAL8 *)LALInferenceGetVariable(currentParams, "alpha");
-  ra = *(REAL8 *)LALInferenceGetVariable(currentParams, "rightascension");
-  dec = *(REAL8 *)LALInferenceGetVariable(currentParams, "declination");
-  t = *(REAL8 *)LALInferenceGetVariable(currentParams, "time");
+  loghrss = LALInferenceGetREAL8Variable(currentParams, "loghrss");
+  frequency = LALInferenceGetREAL8Variable(currentParams, "frequency");
+  q = LALInferenceGetREAL8Variable(currentParams, "quality");
+  psi = LALInferenceGetREAL8Variable(currentParams, "polarisation");
+  alpha = LALInferenceGetREAL8Variable(currentParams, "alpha");
+  ra = LALInferenceGetREAL8Variable(currentParams, "rightascension");
+  dec = LALInferenceGetREAL8Variable(currentParams, "declination");
+  t = LALInferenceGetREAL8Variable(currentParams, "time");
 
   x[0] = burst_scaling[0] * (frequency    - mean[0]);
   x[1] = burst_scaling[1] * (q   - mean[1]);
