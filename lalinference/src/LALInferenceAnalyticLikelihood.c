@@ -191,15 +191,7 @@ static void extractDimensionlessVariableVector(LALInferenceVariables *currentPar
   	}
   }
 
-  if (LALInferenceCheckVariable(currentParams, "distance")) {
-    d = *(REAL8 *)LALInferenceGetVariable(currentParams, "distance");
-  } else if (LALInferenceCheckVariable(currentParams, "logdistance")) {
-    d = exp(*(REAL8 *)LALInferenceGetVariable(currentParams, "logdistance"));
-  } else {
-    fprintf(stderr, "Could not find distance or log(d) in LALInferenceCorrelatedAnalyticLogLikelihood (in %s, line %d)\n",
-            __FILE__, __LINE__);
-    exit(1);
-  }
+  d = exp(*(REAL8 *)LALInferenceGetVariable(currentParams, "logdistance"));
 
   iota = *(REAL8 *)LALInferenceGetVariable(currentParams, "costheta_jn");
   psi = *(REAL8 *)LALInferenceGetVariable(currentParams, "polarisation");
@@ -335,7 +327,7 @@ REAL8 LALInferenceCorrelatedAnalyticLogLikelihood(LALInferenceVariables *current
     data=data->next;
   }
 
-  if (LALInferenceCheckVariable(currentParams, "distance") ||LALInferenceCheckVariable(currentParams, "logdistance") ){
+  if (LALInferenceCheckVariable(currentParams, "logdistance")){
     /* We are dealing with spinning CBC. Set dimensions and CVM accordingly*/
     tmpdim = 15;
     cm=&(CM[0][0]);
@@ -399,7 +391,7 @@ REAL8 LALInferenceBimodalCorrelatedAnalyticLogLikelihood(LALInferenceVariables *
     data=data->next;
   }
 
-  if (LALInferenceCheckVariable(currentParams, "distance") ||LALInferenceCheckVariable(currentParams, "logdistance") ){
+  if (LALInferenceCheckVariable(currentParams, "logdistance")){
     /* We are dealing with spinning CBC. Set dimensions and CVM accordingly*/
     tmpdim = 15;
     cm=&(CM[0][0]);
