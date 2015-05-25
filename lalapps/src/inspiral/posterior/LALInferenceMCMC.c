@@ -135,7 +135,7 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
     INT4 noAdapt, adaptTau, adaptLength;
     INT4 i, ndim;
     ProcessParamsTable *command_line = NULL, *ppt = NULL;
-    LALInferenceThreadState *thread;
+    LALInferenceThreadState *thread = NULL;
     LALInferenceModel *model;
     REAL8 *ladder;
 
@@ -245,7 +245,7 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
         trigSNR = strtod(ppt->value, (char **)NULL);
 
     /* Variable for tracking autocorrelation length */
-    INT4 acl = 0;
+    INT4 acl = INT_MAX;
 
     /* Print out temperature swapping info */
     INT4 temp_verbose = 0;
@@ -279,11 +279,9 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
     LALInferenceAddREAL8Variable(algorithm_params, "temp_max", tempMax, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddINT4Variable(algorithm_params, "de_buffer_limit", de_buffer_limit, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddREAL8Variable(algorithm_params, "trigger_snr", trigSNR, LALINFERENCE_PARAM_OUTPUT);
-    LALInferenceAddINT4Variable(algorithm_params, "acl", acl, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddINT4Variable(algorithm_params, "temp_verbose", temp_verbose, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddINT4Variable(algorithm_params, "adapt_verbose", adapt_verbose, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddINT4Variable(algorithm_params, "output_snrs", outputSNRs, LALINFERENCE_PARAM_OUTPUT);
-
 
     /* Make a single model just to cound dimensions */
     model = LALInferenceInitCBCModel(runState);
@@ -293,38 +291,52 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
     ladder = LALInferenceBuildHybridTempLadder(runState, ndim);
     ntemp_per_thread = LALInferenceGetINT4Variable(runState->algorithmParams, "ntemp_per_thread");
 
-    /* Extract proposal arguments from command line */
-    runState->proposalArgs = LALInferenceParseProposalArgs(runState);
+    /* Extract proposal arguments from command line and add a few more */
+    LALInferenceAddINT4Variable(runState->proposalArgs, "de_skip",
+                                skip, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddINT4Variable(runState->proposalArgs, "output_snrs",
+                                outputSNRs, LALINFERENCE_PARAM_OUTPUT);
 
     /* Add adaptation settings to proposal args */
     LALInferenceAddINT4Variable(runState->proposalArgs, "de_skip", skip, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddINT4Variable(runState->proposalArgs, "output_snrs", outputSNRs, LALINFERENCE_PARAM_OUTPUT);
 
-    /* Initialize the walkers on this MPI thread */
+    /* Parse proposal args for runSTate and initialize the walkers on this MPI thread */
     LALInferenceInitCBCThreads(runState, ntemp_per_thread);
 
     /* Establish the random state across MPI threads */
     init_mpi_randomstate(runState);
 
-    /* Spread proposal args across threads */
+    /* Give a new set of proposal args to each thread */
     for (i=0; i<runState->nthreads; i++) {
         thread = runState->threads[i];
-        thread->temperature = ladder[mpi_rank*ntemp_per_thread + i];
-        thread->cycle = LALInferenceSetupDefaultInspiralProposalCycle(runState->proposalArgs);
+
+        thread->id = mpi_rank*ntemp_per_thread + i;
+        thread->temperature = ladder[thread->id];
+
+        thread->proposal = &LALInferenceCyclicProposal;
+        thread->proposalArgs = LALInferenceParseProposalArgs(runState);
+        thread->cycle = LALInferenceSetupDefaultInspiralProposalCycle(thread->proposalArgs);
+
         LALInferenceRandomizeProposalCycle(thread->cycle, thread->GSLrandom);
-        runState->threads[i]->proposal = &LALInferenceCyclicProposal;
+
+        LALInferenceAddINT4Variable(thread->proposalArgs, "acl",
+                                    acl, LALINFERENCE_PARAM_OUTPUT);
     }
 
-    /* Add adaptation settings to algorithm params */
-    noAdapt = LALInferenceGetINT4Variable(runState->proposalArgs, "no_adapt");
-    adaptTau = LALInferenceGetINT4Variable(runState->proposalArgs, "adaptTau");
-    adaptLength = LALInferenceGetINT4Variable(runState->proposalArgs, "adaptLength");
+    /* Grab adaptation settings from the last thread and add to algorithm params */
+    noAdapt = LALInferenceGetINT4Variable(thread->proposalArgs, "no_adapt");
+    adaptTau = LALInferenceGetINT4Variable(thread->proposalArgs, "adaptTau");
+    adaptLength = LALInferenceGetINT4Variable(thread->proposalArgs, "adaptLength");
 
-    LALInferenceAddINT4Variable(algorithm_params, "no_adapt", noAdapt, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddINT4Variable(algorithm_params, "no_adapt",
+                                noAdapt, LALINFERENCE_PARAM_OUTPUT);
 
-    LALInferenceAddINT4Variable(algorithm_params, "adaptTau", adaptTau, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddINT4Variable(algorithm_params, "adaptTau",
+                                adaptTau, LALINFERENCE_PARAM_OUTPUT);
 
-    LALInferenceAddINT4Variable(algorithm_params, "adaptLength", adaptLength, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddINT4Variable(algorithm_params, "adaptLength",
+                                adaptLength, LALINFERENCE_PARAM_OUTPUT);
 
     XLALFree(ladder);
     return XLAL_SUCCESS;
@@ -670,21 +682,6 @@ int main(int argc, char *argv[]){
 
     if (runState == NULL)
         return 0;
-
-  /* Random hacks that have no known place */
-  /* Nsteps is accessed by LALInferenceAdaptationRestart() LALInferenceMCMCSampler.c:907 */
-  INT4 nsteps=LALInferenceGetINT4Variable(runState->algorithmParams,"nsteps");
-  LALInferenceAddINT4Variable(runState->proposalArgs,"nsteps",nsteps,LALINFERENCE_PARAM_LINEAR);
-  for(INT4 i=0;i<runState->nthreads;i++)    LALInferenceAddINT4Variable(runState->threads[i]->proposalArgs,"nsteps",nsteps,LALINFERENCE_PARAM_LINEAR);
-
-  INT4 de_skip=LALInferenceGetINT4Variable(runState->proposalArgs,"de_skip");
-  /* Add adaptation settings to proposal args */
-  for(INT4 i=0;i<runState->nthreads;i++) LALInferenceAddINT4Variable(runState->threads[i]->proposalArgs, "de_skip", de_skip, LALINFERENCE_PARAM_OUTPUT);
-  INT4 output_snrs=LALInferenceGetINT4Variable(runState->proposalArgs,"output_snrs");
-  for(INT4 i=0;i<runState->nthreads;i++) LALInferenceAddINT4Variable(runState->threads[i]->proposalArgs, "output_snrs", output_snrs, LALINFERENCE_PARAM_OUTPUT);
-
-
-
 
     /* Call MCMC algorithm */
     runState->algorithm(runState);
