@@ -295,7 +295,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
                 runComplete = 1;          // Sampling is done!
             }
 
-            mcmc_step(runState, t); //evolve the chain at temperature ladder[t]
+            mcmc_step(runState, thread); //evolve the chain at temperature ladder[t]
 
             if (propVerbose)
                 LALInferenceTrackProposalAcceptance(thread);
@@ -407,7 +407,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
     }
 }
 
-void mcmc_step(LALInferenceRunState *runState, INT4 t) {
+void mcmc_step(LALInferenceRunState *runState, LALInferenceThreadState *thread) {
     // Metropolis-Hastings sampler.
     INT4 MPIrank;
     REAL8 logPriorCurrent, logPriorProposed;
@@ -415,11 +415,8 @@ void mcmc_step(LALInferenceRunState *runState, INT4 t) {
     REAL8 logProposalRatio = 0.0;  // = log(P(backward)/P(forward))
     REAL8 logAcceptanceProbability;
     REAL8 targetAcceptance = 0.234;
-    LALInferenceThreadState *thread;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
-
-    thread = runState->threads[t];
 
     INT4 outputSNRs = LALInferenceGetINT4Variable(runState->algorithmParams, "output_snrs");
     INT4 propTrack = LALInferenceGetINT4Variable(runState->algorithmParams, "prop_track");
@@ -479,6 +476,8 @@ void mcmc_step(LALInferenceRunState *runState, INT4 t) {
 
         thread->acceptanceCount++;
         thread->accepted = 1;
+    } else {
+        thread->accepted = 0;
     }
 
     LALInferenceUpdateAdaptiveJumps(thread, targetAcceptance);
@@ -512,156 +511,155 @@ void LALInferencePTswap(LALInferenceRunState *runState, INT4 i, FILE *swapfile) 
     Tskip = LALInferenceGetINT4Variable(runState->algorithmParams, "tskip");
 
     ntemps = MPIsize*n_local_threads;
-    cold_inds = XLALCalloc(ntemps, sizeof(INT4));
+    cold_inds = XLALCalloc(ntemps-1, sizeof(INT4));
 
-  if(ntemps<2) return;
+    /* Return if no swap should be proposed */
+    if((i % Tskip) != 0 || ntemps<2) return;
 
-    if ((i % Tskip) == 0) {
-        /* Have the root process choose a random order of ladder swaps and share it */
-        if (MPIrank == 0) {
-            for (low = 0; low < ntemps-1; low++)
-                cold_inds[low] = low;
+    /* Have the root process choose a random order of ladder swaps and share it */
+    if (MPIrank == 0) {
+        for (low = 0; low < ntemps-1; low++)
+            cold_inds[low] = low;
 
-            gsl_ran_shuffle(runState->GSLrandom, cold_inds, ntemps-1, sizeof(INT4));
-        }
+        gsl_ran_shuffle(runState->GSLrandom, cold_inds, ntemps-1, sizeof(INT4));
+    }
 
-        MPI_Bcast(&cold_inds, ntemps-1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&cold_inds, ntemps-1, MPI_INT, 0, MPI_COMM_WORLD);
 
-        for (ind=0; ind < ntemps-1; ind++) {
-            cold_ind = cold_inds[ind];
-            hot_ind = cold_ind+1;
+    for (ind=0; ind < ntemps-1; ind++) {
+        cold_ind = cold_inds[ind];
+        hot_ind = cold_ind+1;
 
-            /* Check if cold chain is handled by this thread */
-            cold_rank = cold_ind/n_local_threads;
-            hot_rank = hot_ind/n_local_threads;
+        /* Check if cold chain is handled by this thread */
+        cold_rank = cold_ind/n_local_threads;
+        hot_rank = hot_ind/n_local_threads;
 
-            if (cold_rank == hot_rank) {
-                if (MPIrank == cold_rank) {
-                    cold_thread = runState->threads[cold_ind % n_local_threads];
-                    hot_thread = runState->threads[hot_ind % n_local_threads];
+        if (cold_rank == hot_rank) {
+            if (MPIrank == cold_rank) {
+                cold_thread = runState->threads[cold_ind % n_local_threads];
+                hot_thread = runState->threads[hot_ind % n_local_threads];
 
-                    /* Determine if swap is accepted and tell the other chain */
-                    logThreadSwap = 1.0/cold_thread->temperature - 1.0/hot_thread->temperature;
-                    logThreadSwap *= hot_thread->currentLikelihood - cold_thread->currentLikelihood;
+                /* Determine if swap is accepted and tell the other chain */
+                logThreadSwap = 1.0/cold_thread->temperature - 1.0/hot_thread->temperature;
+                logThreadSwap *= hot_thread->currentLikelihood - cold_thread->currentLikelihood;
 
-                    if ((logThreadSwap > 0) || (log(gsl_rng_uniform(runState->GSLrandom)) < logThreadSwap ))
-                        swapAccepted = 1;
-                    else
-                        swapAccepted = 0;
+                if ((logThreadSwap > 0) || (log(gsl_rng_uniform(runState->GSLrandom)) < logThreadSwap ))
+                    swapAccepted = 1;
+                else
+                    swapAccepted = 0;
 
-                    /* Print to file if verbose is chosen */
-                    if (swapfile != NULL) {
-                        fprintf(swapfile, "%d\t%f\t%f\t%f\t%f\t%f\t%i\n",
-                                i, cold_thread->temperature, hot_thread->temperature,
-                                logThreadSwap, cold_thread->currentLikelihood,
-                                hot_thread->currentLikelihood, swapAccepted);
-                        fflush(swapfile);
-                    }
-
-                    if (swapAccepted) {
-                        temp_params = hot_thread->currentParams;
-                        temp_prior = hot_thread->currentPrior;
-                        temp_like = hot_thread->currentLikelihood;
-
-                        hot_thread->currentParams = cold_thread->currentParams;
-                        hot_thread->currentPrior = cold_thread->currentPrior;
-                        hot_thread->currentLikelihood = cold_thread->currentLikelihood;
-
-                        cold_thread->currentParams = temp_params;
-                        cold_thread->currentPrior = temp_prior;
-                        cold_thread->currentLikelihood = temp_like;
-                    }
+                /* Print to file if verbose is chosen */
+                if (swapfile != NULL) {
+                    fprintf(swapfile, "%d\t%f\t%f\t%f\t%f\t%f\t%i\n",
+                            i, cold_thread->temperature, hot_thread->temperature,
+                            logThreadSwap, cold_thread->currentLikelihood,
+                            hot_thread->currentLikelihood, swapAccepted);
+                    fflush(swapfile);
                 }
-            } else {
-                nPar = LALInferenceGetVariableDimensionNonFixed(cold_thread->currentParams);
 
-                if (MPIrank == cold_rank) {
-                    cold_thread = runState->threads[cold_ind % n_local_threads];
+                if (swapAccepted) {
+                    temp_params = hot_thread->currentParams;
+                    temp_prior = hot_thread->currentPrior;
+                    temp_like = hot_thread->currentLikelihood;
 
-                    /* Send current likelihood for swap proposal */
-                    MPI_Send(&(cold_thread->temperature), 1, MPI_DOUBLE, hot_rank, PT_COM, MPI_COMM_WORLD);
-                    MPI_Send(&(cold_thread->currentLikelihood), 1, MPI_DOUBLE, hot_rank, PT_COM, MPI_COMM_WORLD);
+                    hot_thread->currentParams = cold_thread->currentParams;
+                    hot_thread->currentPrior = cold_thread->currentPrior;
+                    hot_thread->currentLikelihood = cold_thread->currentLikelihood;
 
-                    /* Determine if swap was accepted */
-                    MPI_Recv(&swapAccepted, 1, MPI_INT, hot_rank, PT_COM, MPI_COMM_WORLD, &MPIstatus);
+                    cold_thread->currentParams = temp_params;
+                    cold_thread->currentPrior = temp_prior;
+                    cold_thread->currentLikelihood = temp_like;
+                }
+            }
+        } else {
+            nPar = LALInferenceGetVariableDimensionNonFixed(cold_thread->currentParams);
 
-                    /* Perform Swap */
-                    if (swapAccepted) {
-                        /* Set new likelihood */
-                        MPI_Recv(&adjCurrentLikelihood, 1, MPI_DOUBLE, hot_rank, PT_COM, MPI_COMM_WORLD, &MPIstatus);
-                        cold_thread->currentLikelihood = adjCurrentLikelihood;
+            if (MPIrank == cold_rank) {
+                cold_thread = runState->threads[cold_ind % n_local_threads];
 
-                        /* Exchange current prior values */
-                        MPI_Send(&(cold_thread->currentPrior), 1, MPI_DOUBLE, hot_rank, PT_COM, MPI_COMM_WORLD);
-                        MPI_Recv(&adjCurrentPrior, 1, MPI_DOUBLE, hot_rank, 0, MPI_COMM_WORLD, &MPIstatus);
-                        cold_thread->currentPrior = adjCurrentPrior;
+                /* Send current likelihood for swap proposal */
+                MPI_Send(&(cold_thread->temperature), 1, MPI_DOUBLE, hot_rank, PT_COM, MPI_COMM_WORLD);
+                MPI_Send(&(cold_thread->currentLikelihood), 1, MPI_DOUBLE, hot_rank, PT_COM, MPI_COMM_WORLD);
 
-                        /* Package and send parameters */
-                        REAL8 *parameters = XLALMalloc(nPar * sizeof(REAL8));
-                        LALInferenceCopyVariablesToArray(cold_thread->currentParams, parameters);
-                        MPI_Send(parameters, nPar, MPI_DOUBLE, hot_rank, PT_COM, MPI_COMM_WORLD);
+                /* Determine if swap was accepted */
+                MPI_Recv(&swapAccepted, 1, MPI_INT, hot_rank, PT_COM, MPI_COMM_WORLD, &MPIstatus);
 
-                        /* Recieve and unpack parameters */
-                        REAL8 *adjParameters = XLALMalloc(nPar * sizeof(REAL8));
-                        MPI_Recv(adjParameters, nPar, MPI_DOUBLE, hot_rank, PT_COM, MPI_COMM_WORLD, &MPIstatus);
-                        LALInferenceCopyArrayToVariables(adjParameters, cold_thread->currentParams);
+                /* Perform Swap */
+                if (swapAccepted) {
+                    /* Set new likelihood */
+                    MPI_Recv(&adjCurrentLikelihood, 1, MPI_DOUBLE, hot_rank, PT_COM, MPI_COMM_WORLD, &MPIstatus);
+                    cold_thread->currentLikelihood = adjCurrentLikelihood;
 
-                        XLALFree(parameters);
-                        XLALFree(adjParameters);
-                    }
-                } else if (MPIrank == hot_rank) {
-                    hot_thread = runState->threads[hot_ind % n_local_threads];
+                    /* Exchange current prior values */
+                    MPI_Send(&(cold_thread->currentPrior), 1, MPI_DOUBLE, hot_rank, PT_COM, MPI_COMM_WORLD);
+                    MPI_Recv(&adjCurrentPrior, 1, MPI_DOUBLE, hot_rank, 0, MPI_COMM_WORLD, &MPIstatus);
+                    cold_thread->currentPrior = adjCurrentPrior;
 
-                    MPI_Recv(&cold_temp, 1, MPI_DOUBLE, cold_rank, PT_COM, MPI_COMM_WORLD, &MPIstatus);
+                    /* Package and send parameters */
+                    REAL8 *parameters = XLALMalloc(nPar * sizeof(REAL8));
+                    LALInferenceCopyVariablesToArray(cold_thread->currentParams, parameters);
+                    MPI_Send(parameters, nPar, MPI_DOUBLE, hot_rank, PT_COM, MPI_COMM_WORLD);
 
-                    /* Receive adjacent likelilhood */
-                    MPI_Recv(&adjCurrentLikelihood, 1, MPI_DOUBLE, cold_rank, PT_COM, MPI_COMM_WORLD, &MPIstatus);
+                    /* Recieve and unpack parameters */
+                    REAL8 *adjParameters = XLALMalloc(nPar * sizeof(REAL8));
+                    MPI_Recv(adjParameters, nPar, MPI_DOUBLE, hot_rank, PT_COM, MPI_COMM_WORLD, &MPIstatus);
+                    LALInferenceCopyArrayToVariables(adjParameters, cold_thread->currentParams);
 
-                    /* Determine if swap is accepted and tell the other chain */
-                    logThreadSwap = 1.0/cold_temp - 1.0/hot_thread->temperature;
-                    logThreadSwap *= hot_thread->currentLikelihood - adjCurrentLikelihood;
-                    if ((logThreadSwap > 0) || (log(gsl_rng_uniform(runState->GSLrandom)) < logThreadSwap ))
-                        swapAccepted = 1;
-                    else
-                        swapAccepted = 0;
+                    XLALFree(parameters);
+                    XLALFree(adjParameters);
+                }
+            } else if (MPIrank == hot_rank) {
+                hot_thread = runState->threads[hot_ind % n_local_threads];
 
-                    MPI_Send(&swapAccepted, 1, MPI_INT, cold_rank, PT_COM, MPI_COMM_WORLD);
+                MPI_Recv(&cold_temp, 1, MPI_DOUBLE, cold_rank, PT_COM, MPI_COMM_WORLD, &MPIstatus);
 
-                    /* Print to file if verbose is chosen */
-                    if (swapfile != NULL) {
-                        fprintf(swapfile, "%d%f\t%f\t\t%f\t%f\t%f\t%i\n",
-                                i, cold_temp, hot_thread->temperature,
-                                logThreadSwap, adjCurrentLikelihood,
-                                hot_thread->currentLikelihood, swapAccepted);
-                        fflush(swapfile);
-                    }
+                /* Receive adjacent likelilhood */
+                MPI_Recv(&adjCurrentLikelihood, 1, MPI_DOUBLE, cold_rank, PT_COM, MPI_COMM_WORLD, &MPIstatus);
 
-                    /* Perform Swap */
-                    if (swapAccepted) {
-                        /* Swap likelihoods */
-                        MPI_Send(&(hot_thread->currentLikelihood), 1, MPI_DOUBLE, cold_rank, PT_COM, MPI_COMM_WORLD);
-                        hot_thread->currentLikelihood = adjCurrentLikelihood;
+                /* Determine if swap is accepted and tell the other chain */
+                logThreadSwap = 1.0/cold_temp - 1.0/hot_thread->temperature;
+                logThreadSwap *= hot_thread->currentLikelihood - adjCurrentLikelihood;
+                if ((logThreadSwap > 0) || (log(gsl_rng_uniform(runState->GSLrandom)) < logThreadSwap ))
+                    swapAccepted = 1;
+                else
+                    swapAccepted = 0;
 
-                        /* Exchange current prior values */
-                        MPI_Recv(&adjCurrentPrior, 1, MPI_DOUBLE, cold_rank, PT_COM, MPI_COMM_WORLD, &MPIstatus);
-                        MPI_Send(&(hot_thread->currentPrior), 1, MPI_DOUBLE, cold_rank, PT_COM, MPI_COMM_WORLD);
-                        hot_thread->currentPrior = adjCurrentPrior;
+                MPI_Send(&swapAccepted, 1, MPI_INT, cold_rank, PT_COM, MPI_COMM_WORLD);
 
-                        /* Package parameters */
-                        REAL8 *parameters = XLALMalloc(nPar * sizeof(REAL8));
-                        LALInferenceCopyVariablesToArray(hot_thread->currentParams, parameters);
+                /* Print to file if verbose is chosen */
+                if (swapfile != NULL) {
+                    fprintf(swapfile, "%d%f\t%f\t\t%f\t%f\t%f\t%i\n",
+                            i, cold_temp, hot_thread->temperature,
+                            logThreadSwap, adjCurrentLikelihood,
+                            hot_thread->currentLikelihood, swapAccepted);
+                    fflush(swapfile);
+                }
 
-                        /* Swap parameters */
-                        REAL8 *adjParameters = XLALMalloc(nPar * sizeof(REAL8));
-                        MPI_Recv(adjParameters, nPar, MPI_DOUBLE, cold_rank, PT_COM, MPI_COMM_WORLD, &MPIstatus);
-                        MPI_Send(parameters, nPar, MPI_DOUBLE, cold_rank, PT_COM, MPI_COMM_WORLD);
+                /* Perform Swap */
+                if (swapAccepted) {
+                    /* Swap likelihoods */
+                    MPI_Send(&(hot_thread->currentLikelihood), 1, MPI_DOUBLE, cold_rank, PT_COM, MPI_COMM_WORLD);
+                    hot_thread->currentLikelihood = adjCurrentLikelihood;
 
-                        /* Unpack parameters */
-                        LALInferenceCopyArrayToVariables(adjParameters, hot_thread->currentParams);
+                    /* Exchange current prior values */
+                    MPI_Recv(&adjCurrentPrior, 1, MPI_DOUBLE, cold_rank, PT_COM, MPI_COMM_WORLD, &MPIstatus);
+                    MPI_Send(&(hot_thread->currentPrior), 1, MPI_DOUBLE, cold_rank, PT_COM, MPI_COMM_WORLD);
+                    hot_thread->currentPrior = adjCurrentPrior;
 
-                        XLALFree(parameters);
-                        XLALFree(adjParameters);
-                    }
+                    /* Package parameters */
+                    REAL8 *parameters = XLALMalloc(nPar * sizeof(REAL8));
+                    LALInferenceCopyVariablesToArray(hot_thread->currentParams, parameters);
+
+                    /* Swap parameters */
+                    REAL8 *adjParameters = XLALMalloc(nPar * sizeof(REAL8));
+                    MPI_Recv(adjParameters, nPar, MPI_DOUBLE, cold_rank, PT_COM, MPI_COMM_WORLD, &MPIstatus);
+                    MPI_Send(parameters, nPar, MPI_DOUBLE, cold_rank, PT_COM, MPI_COMM_WORLD);
+
+                    /* Unpack parameters */
+                    LALInferenceCopyArrayToVariables(adjParameters, hot_thread->currentParams);
+
+                    XLALFree(parameters);
+                    XLALFree(adjParameters);
                 }
             }
         }
