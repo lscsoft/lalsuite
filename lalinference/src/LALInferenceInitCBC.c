@@ -1213,6 +1213,8 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state)
 /* https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/LALInferenceReviewAnalyticGaussianLikelihood */
 LALInferenceModel *LALInferenceInitModelReviewEvidence(LALInferenceRunState *state)
 {
+    LALInferenceIFOData *dataPtr;
+    INT4 nifo=0;
     ProcessParamsTable *commandLine=state->commandLine;
     ProcessParamsTable *ppt=NULL;
     char **strings=NULL;
@@ -1227,6 +1229,16 @@ LALInferenceModel *LALInferenceInitModelReviewEvidence(LALInferenceRunState *sta
 
     LALInferenceModel *model = XLALCalloc(1, sizeof(LALInferenceModel));
     model->params = XLALCalloc(1, sizeof(LALInferenceVariables));
+
+    dataPtr = state->data;
+    while (dataPtr != NULL) {
+      nifo++;
+      dataPtr = dataPtr->next;
+    }
+
+    /* Create arrays for holding single-IFO likelihoods, etc. */
+    model->ifo_loglikelihoods = XLALCalloc(nifo, sizeof(REAL8));
+    model->ifo_SNRs = XLALCalloc(nifo, sizeof(REAL8));
 
 	i=0;
 
@@ -1267,6 +1279,8 @@ LALInferenceModel *LALInferenceInitModelReviewEvidence(LALInferenceRunState *sta
 
 LALInferenceModel *LALInferenceInitModelReviewEvidence_bimod(LALInferenceRunState *state)
 {
+  LALInferenceIFOData *dataPtr;
+  INT4 nifo=0;
   ProcessParamsTable *commandLine=state->commandLine;
   ProcessParamsTable *ppt=NULL;
   char **strings=NULL;
@@ -1281,6 +1295,16 @@ LALInferenceModel *LALInferenceInitModelReviewEvidence_bimod(LALInferenceRunStat
 
   LALInferenceModel *model = XLALCalloc(1, sizeof(LALInferenceModel));
   model->params = XLALCalloc(1, sizeof(LALInferenceVariables));
+
+  dataPtr = state->data;
+  while (dataPtr != NULL) {
+    nifo++;
+    dataPtr = dataPtr->next;
+  }
+
+  /* Create arrays for holding single-IFO likelihoods, etc. */
+  model->ifo_loglikelihoods = XLALCalloc(nifo, sizeof(REAL8));
+  model->ifo_SNRs = XLALCalloc(nifo, sizeof(REAL8));
 
   i=0;
 
@@ -1319,6 +1343,8 @@ LALInferenceModel *LALInferenceInitModelReviewEvidence_bimod(LALInferenceRunStat
 
 LALInferenceModel *LALInferenceInitModelReviewEvidence_banana(LALInferenceRunState *state)
 {
+  LALInferenceIFOData *dataPtr;
+  INT4 nifo = 0;
   ProcessParamsTable *commandLine=state->commandLine;
   ProcessParamsTable *ppt=NULL;
   char **strings=NULL;
@@ -1333,6 +1359,16 @@ LALInferenceModel *LALInferenceInitModelReviewEvidence_banana(LALInferenceRunSta
 
   LALInferenceModel *model = XLALCalloc(1, sizeof(LALInferenceModel));
   model->params = XLALCalloc(1, sizeof(LALInferenceVariables));
+
+  dataPtr = state->data;
+  while (dataPtr != NULL) {
+      nifo++;
+      dataPtr = dataPtr->next;
+  }
+
+  /* Create arrays for holding single-IFO likelihoods, etc. */
+  model->ifo_loglikelihoods = XLALCalloc(nifo, sizeof(REAL8));
+  model->ifo_SNRs = XLALCalloc(nifo, sizeof(REAL8));
 
   i=0;
 
