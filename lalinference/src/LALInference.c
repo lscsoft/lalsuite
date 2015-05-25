@@ -3083,26 +3083,34 @@ INT4 LALInferenceSanityCheck(LALInferenceRunState *state)
     data=data->next;
   }
 
-  LALInferenceModel *model = state->threads[0]->model;
-  if(!model) {
-	fprintf(stderr,"NULL model pointer!\n");
+  LALInferenceThreadState **thread=state->threads;
+  if(!thread) {
+  fprintf(stderr,"NULL thread pointer!\n");
         return(1);
   }
-  if(model->timehPlus) {
-    fprintf(stderr,"Checking timehPlus: ");
-    if(!(retcode|=checkREAL8TimeSeries(model->timehPlus))) fprintf(stderr," OK\n");
-  }
-  if(model->timehCross) {
-    fprintf(stderr,"Checking timehCross: ");
-    if(!(retcode|=checkREAL8TimeSeries(model->timehCross))) fprintf(stderr," OK\n");
-  }
-  if(model->freqhPlus) {
-    fprintf(stderr,"Checking freqhPlus: ");
-    if(!(retcode|=checkCOMPLEX16FrequencySeries(model->freqhPlus))) fprintf(stderr," OK\n");
-  }
-  if(model->freqhCross) {
-    fprintf(stderr,"Checking freqhCross: ");
-    if(!(retcode|=checkCOMPLEX16FrequencySeries(model->freqhCross))) fprintf(stderr," OK\n");
+  for(INT4 i=0;i<state->nthreads;i++){
+    LALInferenceModel *model = state->threads[i]->model;
+    if(!model) {
+  	fprintf(stderr,"NULL model pointer in thread %d!\n",i);
+          return(1);
+    }
+    retcode=0;
+    if(model->timehPlus) {
+      fprintf(stderr,"Checking timehPlus in thread %d: ",i);
+      if(!(retcode|=checkREAL8TimeSeries(model->timehPlus))) fprintf(stderr," OK\n");
+    }
+    if(model->timehCross) {
+      fprintf(stderr,"Checking timehCross in thread %d: ",i);
+      if(!(retcode|=checkREAL8TimeSeries(model->timehCross))) fprintf(stderr," OK\n");
+    }
+    if(model->freqhPlus) {
+      fprintf(stderr,"Checking freqhPlus in thread %d: ",i);
+      if(!(retcode|=checkCOMPLEX16FrequencySeries(model->freqhPlus))) fprintf(stderr," OK\n");
+    }
+    if(model->freqhCross) {
+      fprintf(stderr,"Checking freqhCross in thread %d: ",i);
+      if(!(retcode|=checkCOMPLEX16FrequencySeries(model->freqhCross))) fprintf(stderr," OK\n");
+    }
   }
 
   return(retcode);
