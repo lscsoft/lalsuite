@@ -213,7 +213,7 @@ REAL8 LALInferenceCyclicProposal(LALInferenceThreadState *thread,
         cycle->order is a list of elements to call from the proposals */
     i = cycle->order[cycle->counter];
     REAL8 logPropRatio = cycle->proposals[i]->func(thread, currentParams, proposedParams);
-    strcpy(cycle->last_proposal, cycle->proposals[i]->name);
+    strcpy(cycle->last_proposal_name, cycle->proposals[i]->name);
 
     /* Call proposals until one succeeds */
     while (proposedParams->head == NULL) {
@@ -221,7 +221,7 @@ REAL8 LALInferenceCyclicProposal(LALInferenceThreadState *thread,
 
         i = cycle->order[cycle->counter];
         logPropRatio = cycle->proposals[i]->func(thread, currentParams, proposedParams);
-        strcpy(cycle->last_proposal, cycle->proposals[i]->name);
+        strcpy(cycle->last_proposal_name, cycle->proposals[i]->name);
 
         /* Increment counter for the next time around. */
         cycle->counter = (cycle->counter + 1) % cycle->length;
@@ -235,6 +235,8 @@ REAL8 LALInferenceCyclicProposal(LALInferenceThreadState *thread,
 
 LALInferenceProposalCycle* LALInferenceInitProposalCycle(void) {
   LALInferenceProposalCycle *cycle = XLALCalloc(1,sizeof(LALInferenceProposalCycle));
+  strcpy(cycle->last_proposal_name, nullProposalName);
+
   return cycle;
 }
 
@@ -249,6 +251,7 @@ LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runSt
     LALInferenceIFOData *ifo = runState->data;
 
     LALInferenceVariables *propArgs = XLALCalloc(1, sizeof(LALInferenceVariables));
+    LALInferenceCopyVariables(runState->proposalArgs, propArgs);
 
     INT4 Nskip = 1;
     INT4 noise_only = 0;
@@ -264,7 +267,7 @@ LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runSt
     INT4 drawprior = 1;
     INT4 covjump = 0;
     INT4 diffevo = 1;
-    INT4 stretch = 1;
+    INT4 stretch = 0;
     INT4 walk = 0;
     INT4 skyring = 1;
     INT4 kde = 0;
@@ -586,6 +589,7 @@ REAL8 LALInferenceSingleAdaptProposal(LALInferenceThreadState *thread,
     char tmpname[MAX_STRLEN] = "";
     LALInferenceVariableItem *param = NULL, *dummyParam = NULL;
 
+    LALInferenceCopyVariables(currentParams, proposedParams);
     LALInferenceVariables *args = thread->proposalArgs;
     gsl_rng *rng = thread->GSLrandom;
 
@@ -643,8 +647,7 @@ REAL8 LALInferenceSingleAdaptProposal(LALInferenceThreadState *thread,
 
         /* Save the name of the proposed variable */
         if(LALInferenceCheckVariable(args, "proposedVariableName")){
-            char *nameBuffer = *(char **)LALInferenceGetVariable(args, "proposedVariableName");
-            strncpy(nameBuffer, param->name, MAX_STRLEN-1);
+            LALInferenceSetstringVariable(args,  "proposedVariableName", param->name);
         }
 
         *((REAL8 *)param->value) += gsl_ran_ugaussian(rng) * sigma * sqrttemp;
@@ -930,7 +933,8 @@ REAL8 LALInferenceEnsembleStretchNames(LALInferenceThreadState *thread,
         item = currentParams->head;
         i = 0;
         while (item != NULL) {
-            if (LALInferenceCheckVariableNonFixed(currentParams, item->name) && item->type==LALINFERENCE_REAL8_t ) {
+            if (LALInferenceCheckVariableNonFixed(currentParams, item->name) &&
+                item->type==LALINFERENCE_REAL8_t) {
                 names[i] = item->name;
                 i++;
             }
@@ -976,7 +980,8 @@ REAL8 LALInferenceEnsembleStretchNames(LALInferenceThreadState *thread,
 
     for (i = 0; names[i] != NULL; i++) {
         /* Ignore variable if it's not in each of the params. */
-        if (LALInferenceCheckVariableNonFixed(proposedParams, names[i]) && LALInferenceCheckVariableNonFixed(ptI, names[i])) {
+        if (LALInferenceCheckVariableNonFixed(proposedParams, names[i]) &&
+            LALInferenceCheckVariableNonFixed(ptI, names[i])) {
             cur = LALInferenceGetREAL8Variable(proposedParams, names[i]);
             other= LALInferenceGetREAL8Variable(ptI, names[i]);
             x = other + scale*(cur-other);
@@ -3034,17 +3039,16 @@ void LALInferenceSetupDifferentialEvolutionProposal(LALInferenceThreadState *thr
     thread->differentialPoints = XLALCalloc(1, sizeof(LALInferenceVariables *));
     thread->differentialPointsLength = 0;
     thread->differentialPointsSize = 1;
+    thread->differentialPointsSkip = 1;
 }
 
 
 /** Setup adaptive proposals. Should be called when state->currentParams is already filled with an initial sample */
 void LALInferenceSetupAdaptiveProposals(LALInferenceVariables *propArgs, LALInferenceVariables *params) {
     INT4 no_adapt, adapting;
-    INT4 adaptTau, adaptLength, adaptResetBuffer, adaptStart;
+    INT4 adaptTau, adaptableStep, adaptLength, adaptResetBuffer, adaptStart;
     REAL8 sigma, s_gamma;
     REAL8 logLAtAdaptStart = -DBL_MAX;
-
-    char *nameBuffer;
 
     LALInferenceVariableItem *this;
 
@@ -3076,16 +3080,17 @@ void LALInferenceSetupAdaptiveProposals(LALInferenceVariables *propArgs, LALInfe
     adapting = !no_adapt;      // Indicates if current iteration is being adapted
     LALInferenceAddINT4Variable(propArgs, "adapting", adapting, LALINFERENCE_PARAM_LINEAR);
 
-    nameBuffer = XLALCalloc(MAX_STRLEN, sizeof(char));
-    sprintf(nameBuffer, "none");
-    LALInferenceAddstringVariable(propArgs, "proposedVariableName", nameBuffer, LALINFERENCE_PARAM_OUTPUT);
+    char name[MAX_STRLEN] = "none";
+    LALInferenceAddstringVariable(propArgs, "proposedVariableName", name, LALINFERENCE_PARAM_OUTPUT);
 
+    adaptableStep = 0;
     adaptTau = LALInferenceGetINT4Variable(propArgs, "adaptTau");  // Sets decay of adaption function
     adaptLength = pow(10, adaptTau);  // Number of iterations to adapt before turning off
     adaptResetBuffer = 100; // Number of iterations before adapting after a restart
     s_gamma = 1.0; // Sets the size of changes to jump size during adaptation
     adaptStart = 0; // Keeps track of last iteration adaptation was restarted
 
+    LALInferenceAddINT4Variable(propArgs, "adaptableStep", adaptableStep, LALINFERENCE_PARAM_LINEAR);
     LALInferenceAddINT4Variable(propArgs, "adaptLength", adaptLength, LALINFERENCE_PARAM_LINEAR);
     LALInferenceAddINT4Variable(propArgs, "adaptResetBuffer", adaptResetBuffer, LALINFERENCE_PARAM_LINEAR);
     LALInferenceAddREAL8Variable(propArgs, "s_gamma", s_gamma, LALINFERENCE_PARAM_LINEAR);
@@ -3103,7 +3108,7 @@ void LALInferenceTrackProposalAcceptance(LALInferenceThreadState *thread) {
     LALInferenceProposal *prop = thread->cycle->proposals[i];
 
     /* Find the proposal that was last called (by name) */
-    while (strcmp(prop->name, thread->cycle->last_proposal)) {
+    while (strcmp(prop->name, thread->cycle->last_proposal_name)) {
         i++;
         prop = thread->cycle->proposals[i];
     }
@@ -3133,37 +3138,33 @@ void LALInferenceZeroProposalStats(LALInferenceProposalCycle *cycle) {
 
 /** Update the adaptive proposal. Whether or not a jump was accepted is passed with accepted */
 void LALInferenceUpdateAdaptiveJumps(LALInferenceThreadState *thread, REAL8 targetAcceptance){
-    INT4 *adaptableStep = NULL;
+    INT4 adaptableStep;
     INT4 adapting = 0;
     REAL8 priorMin, priorMax, dprior, s_gamma;
-    REAL8 *accept, *propose, *sigma;
+    REAL8 accept, propose, sigma;
     char *name;
 
     LALInferenceVariables *args = thread->proposalArgs;
 
     if (LALInferenceCheckVariable(args, "adaptableStep" ) &&
         LALInferenceCheckVariable(args, "adapting" )){
-        adaptableStep = (INT4 *)LALInferenceGetVariable(args, "adaptableStep");
+        adaptableStep = LALInferenceGetINT4Variable(args, "adaptableStep");
         adapting = LALInferenceGetINT4Variable(args, "adapting");
     }
     /* Don't do anything if these are not found */
     else return;
 
     if (adaptableStep && adapting) {
-        name = LALInferenceGetstringVariable(thread->proposalArgs, "proposedVariableName");
         char tmpname[MAX_STRLEN] = "";
+        name = LALInferenceGetstringVariable(args, "proposedVariableName");
 
         sprintf(tmpname, "%s_%s", name, PROPOSEDSUFFIX);
+        propose = LALInferenceGetREAL8Variable(args, tmpname) + 1;
+        LALInferenceSetVariable(args, tmpname, &propose);
 
-        propose = (REAL8 *)LALInferenceGetVariable(args, tmpname);
-        *propose += 1;
-
-        sprintf(tmpname, "%s_%s", name, ACCEPTSUFFIX);
-
-        accept = (REAL8 *)LALInferenceGetVariable(args, tmpname);
-
-        if (thread->accepted == 1)
-            *accept += 1;
+        sprintf(tmpname, "%s_%s", name,  ACCEPTSUFFIX);
+        accept = LALInferenceGetREAL8Variable(args, tmpname) + thread->accepted;
+        LALInferenceSetVariable(args, tmpname, &accept);
     }
 
     /* Adapt if desired. */
@@ -3172,32 +3173,34 @@ void LALInferenceUpdateAdaptiveJumps(LALInferenceThreadState *thread, REAL8 targ
         LALInferenceCheckVariable(args, "adapting") &&
         LALInferenceCheckVariable(args, "adaptableStep")) {
 
-        if (*adaptableStep) {
-            name = *(char **)LALInferenceGetVariable(args, "proposedVariableName");
+        if (adaptableStep) {
+            name = LALInferenceGetstringVariable(args, "proposedVariableName");
             char tmpname[MAX_STRLEN]="";
 
-            s_gamma = LALInferenceGetREAL8Variable(args, "s_gamma");
-            sigma = (REAL8 *)LALInferenceGetVariable(args,tmpname);
-
             sprintf(tmpname, "%s_%s", name, ADAPTSUFFIX);
+
+            s_gamma = LALInferenceGetREAL8Variable(args, "s_gamma");
+
+            sigma = LALInferenceGetREAL8Variable(args, tmpname);
 
             LALInferenceGetMinMaxPrior(thread->priorArgs, name, &priorMin, &priorMax);
             dprior = priorMax - priorMin;
 
             if (thread->accepted == 1){
-                *sigma = *sigma + s_gamma * (dprior/100.0) * (1.0-targetAcceptance);
+                sigma += s_gamma * (dprior/100.0) * (1.0-targetAcceptance);
             } else {
-                *sigma = *sigma - s_gamma * (dprior/100.0) * (targetAcceptance);
+                sigma -= s_gamma * (dprior/100.0) * (targetAcceptance);
             }
 
-            *sigma = (*sigma > dprior ? dprior : *sigma);
-            *sigma = (*sigma < DBL_MIN ? DBL_MIN : *sigma);
-
-            /* Make sure we don't do this again until we take another adaptable step.*/
+            sigma = (sigma > dprior ? dprior : sigma);
+            sigma = (sigma < DBL_MIN ? DBL_MIN : sigma);
+            LALInferenceSetVariable(args, tmpname, &sigma);
         }
     }
 
-    *adaptableStep = 0;
+    /* Make sure we don't do this again until we take another adaptable step.*/
+    adaptableStep = 0;
+    LALInferenceSetVariable(args, "adaptableStep", &adaptableStep);
 }
 
 
@@ -3459,8 +3462,15 @@ void LALInferenceSetupClusteredKDEProposalsFromASCII(LALInferenceThreadState *th
 
     /* Downsample PTMCMC file to have independent samples */
     if (ptmcmc) {
-        INT4 acl = (INT4)LALInferenceComputeMaxAutoCorrLen(sampleArray, nInSamps, nValidCols);
-        if (acl < 1) acl = 1;
+        REAL8 acl_real8 = LALInferenceComputeMaxAutoCorrLen(sampleArray, nInSamps, nValidCols);
+        INT4 acl;
+        if (acl_real8 == INFINITY)
+            acl = INT_MAX;
+        else if (acl_real8 < 1.0)
+            acl = 1;
+        else
+            acl = (INT4)acl_real8;
+
         INT4 downsampled_size = ceil((REAL8)nInSamps/acl);
         REAL8 *downsampled_array = (REAL8 *)XLALCalloc(downsampled_size * nValidCols, sizeof(REAL8));
         printf("Downsampling to achieve %i samples.\n", downsampled_size);
@@ -3907,6 +3917,11 @@ void LALInferenceComputeMaxAutoCorrLenFromDE(LALInferenceThreadState *thread, IN
     LALInferenceBufferToArray(thread, DEarray);
     max_acl = Nskip * LALInferenceComputeMaxAutoCorrLen(DEarray[nPoints/2], nPoints-nPoints/2, nPar);
 
+    if (max_acl == INFINITY)
+        max_acl = INT_MAX;
+    else if (max_acl < 1.0)
+        max_acl = 1.0;
+
     *maxACL = (INT4)max_acl;
     XLALFree(temp);
     XLALFree(DEarray);
@@ -3984,6 +3999,7 @@ void LALInferenceUpdateMaxAutoCorrLen(LALInferenceThreadState *thread) {
   INT4 acl;
 
   LALInferenceComputeMaxAutoCorrLenFromDE(thread, &acl);
+
   LALInferenceSetVariable(thread->proposalArgs, "acl", &acl);
 }
 
