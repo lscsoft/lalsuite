@@ -223,8 +223,9 @@ void init_ensemble(LALInferenceRunState *run_state) {
                  ---------------------------------------------------------------------------------------------------\n\
                  (--data-dump)                    Output waveforms to file.\n\
                  (--outfile file)                 Write output files <file>.<chain_number> (ensemble.output.<random_seed>.<mpi_thread>).\n";
-    INT4 mpi_rank, mpi_size;
+    INT4 mpi_rank, mpi_size, i;
     ProcessParamsTable *command_line=NULL, *ppt=NULL;
+    LALInferenceThreadState *thread;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
@@ -310,6 +311,13 @@ void init_ensemble(LALInferenceRunState *run_state) {
 
     /* Establish the random state across MPI threads */
     init_mpi_randomstate(run_state);
+
+    for (i=0; i<run_state->nthreads; i++) {
+        thread = run_state->threads[i];
+
+        thread->id = mpi_rank*nwalkers_per_thread + i;
+        thread->proposalArgs = LALInferenceParseProposalArgs(run_state);
+    }
 }
 
 

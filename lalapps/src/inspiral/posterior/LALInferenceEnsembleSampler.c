@@ -110,7 +110,7 @@ void ensemble_sampler(struct tagLALInferenceRunState *run_state) {
         }
 
         /* Update all walkers on this MPI-thread */
-        #pragma omp parallel for
+        #pragma omp parallel for private(thread)
         for (walker=0; walker<nwalkers_per_thread; walker++) {
             thread = run_state->threads[walker];
 
