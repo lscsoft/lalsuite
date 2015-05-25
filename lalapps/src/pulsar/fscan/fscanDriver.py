@@ -78,6 +78,10 @@ Usage: [options]
   -b, --sub-band             (optional) divide frequency band into sub bands of this size (default is 10 Hz).
   -O, --plot-output-path     (optional) if given then Matlab jobs run and put output plots and data in this directory.
   -m, --matlab-path          (optional) Path to matlab installation, e.g., /ldcg/matlab_r2008a. (Required if --plot-output-path is given.)
+  -A, --accounting-group     (optional) accounting group tag to be added to the condor submit files.
+  -U, --accounting-group-user  (optional) accounting group albert.einstein username to be added to the condor submit files.
+  -n, --max-jobs             (optional) gives -maxjobs to use with condor_submit_dag. (Default is -maxjobs 2.)
+  -w, --window-type          (optional) type of windowing of time-domain to do before generating SFTs (1 = Tukey given by Matlab, 2 = Tukey given in lalapps/src/pulsar/make_sfts.c, 3 = Hann given by Matlab; default is 3)
   -W, --html-filename        (optional) path and filename of output html file that displays output plots and data.
   -r  --html-reference-path  (optional) path to already existing reference output plots and data for display on html page.
   -e  --html-ref-ifo-epoch   (optional) string that give ifo and GPS start and end times of reference plots, e.g.,H1_840412814_845744945.
@@ -102,7 +106,7 @@ Usage: [options]
 ####################################
 # PARSE COMMAND LINE OPTIONS 
 #
-shortop = "s:L:G:d:x:M:k:T:p:f:o:N:i:w:P:u:v:c:F:B:b:O:m:W:r:e:q:y:D:X:g:t:l:J:j:E:z:hSHZCRI" #cg; shortop is a string.
+shortop = "s:L:G:d:x:M:k:T:p:f:o:N:i:P:u:v:c:F:B:b:O:m:A:U:n:w:W:r:e:q:y:D:X:g:t:l:J:j:E:z:hSHZCRI" #cg; shortop is a string.
 longop = [  #cg; longopt is a list
   "help",
   "analysis-start-time=",
@@ -123,7 +127,6 @@ longop = [  #cg; longopt is a list
   "ifo=",
   "intersect-data",
   "frame-struct-type=",
-  "window-type=",
   "overlap-fraction=",
   "sft-version=",
   "comment-field=",
@@ -132,6 +135,10 @@ longop = [  #cg; longopt is a list
   "sub-band=",
   "plot-output-path=",
   "matlab-path=",
+  "accounting-group=",
+  "accounting-group-user=",
+  "max-jobs=",  
+  "window-type=",
   "html-filename=",
   "html-reference-path=",
   "html-ref-ifo-epoch=",
@@ -181,7 +188,6 @@ segIFO = None
 intersectData = False
 makeSFTIFO = None
 frameStructType = None
-windowType = 1
 overlapFraction = 0.0
 sftVersion = 1
 commentField = None
@@ -189,6 +195,10 @@ startFreq = 48.0
 freqBand = 50.0
 freqSubBand = 10.0
 plotOutputPath = None
+accountingGroup = "ligo.prod.o1.detchar.linefind.fscan"
+accountingGroupUser = "gregory.mendell"
+maxJobs = 2
+windowType = 3
 matlabPath = None
 makeMatlabPlots = False
 htmlFilename = None
@@ -249,8 +259,6 @@ for o, a in opts:
     intersectData = True
   elif o in ("-u", "--frame-struct-type"):
     frameStructType = a
-  elif o in ("-w", "--window-type"):
-    windowType = int(a)
   elif o in ("-P", "--overlap-fraction"):
     overlapFraction = float(a)
   elif o in ("-v", "--sft-version"):
@@ -265,6 +273,14 @@ for o, a in opts:
     plotOutputPath = a
   elif o in ("-m", "--matlab-path"):
     matlabPath = a
+  elif o in ("-A", "--accounting-group"):
+    accountingGroup = a
+  elif o in ("-U", "--accounting-group-user"):
+    accountingGroupUser = a
+  elif o in ("-n", "--max-jobs"):
+    maxJobs = int(a)
+  elif o in ("-w", "--window-type"):
+    windowType = int(a)
   elif o in ("-W", "--html-filename"):
     htmlFilename = a
   elif o in ("-r", "--html-reference-path"):
@@ -577,13 +593,17 @@ if (createSFTs):
      sft_freqBand = 2
   else:
      sft_freqBand = freqBand + 1;
-  makeDAGCommand = 'MakeSFTDAG -f %s -G %s -d %s -x %d -k %d -T %d -F %d -B %d -p %s -N %s -m 1 -o %s -X %s -Z -g %s -v %d' % (sftDAGFile,tagString,inputDataType,extraDatafindTime,filterKneeFreq,timeBaseline,startFreq,sft_freqBand,pathToSFTs,channelName,subLogPath,miscDesc,segmentFile,sftVersion)
+  makeDAGCommand = 'MakeSFTDAG -f %s -G %s -d %s -x %d -k %d -T %d -F %d -B %d -p %s -N %s -m 1 -o %s -X %s -Z -g %s -v %d -w %d' % (sftDAGFile,tagString,inputDataType,extraDatafindTime,filterKneeFreq,timeBaseline,startFreq,sft_freqBand,pathToSFTs,channelName,subLogPath,miscDesc,segmentFile,sftVersion,windowType)
   if (useHoT):
      makeDAGCommand = makeDAGCommand + ' -H'
   if (makeSFTIFO != None):
      makeDAGCommand = makeDAGCommand + ' -i %s' % makeSFTIFO
   if (frameStructType != None):
      makeDAGCommand = makeDAGCommand + ' -u %s' % frameStructType
+  if (accountingGroup != None):
+     makeDAGCommand = makeDAGCommand + ' -A %s' % accountingGroup
+  if (accountingGroupUser != None):
+     makeDAGCommand = makeDAGCommand + ' -U %s' % accountingGroupUser   
   print >> sys.stdout,"Trying: ",makeDAGCommand,"\n"
   try:
     makeDAGExit = os.system(makeDAGCommand)
@@ -648,6 +668,10 @@ spectrumAverageLogFile = subLogPath + '/' + 'spectrumAverage_' + dagFileName + '
 spectrumAverageFID.write('universe = vanilla\n') #cg; write these followig lines into the file.
 spectrumAverageFID.write('executable = $ENV(SPECAVG_PATH)/lalapps_spec_avg\n')
 spectrumAverageFID.write('arguments = $(argList)\n')
+if (accountingGroup != None):
+   spectrumAverageFID.write('accounting_group = %s\n' % accountingGroup)
+if (accountingGroupUser != None):
+   spectrumAverageFID.write('accounting_group_user = %s\n' % accountingGroupUser)
 spectrumAverageFID.write('log = %s\n' % spectrumAverageLogFile)
 spectrumAverageFID.write('error = %s/spectrumAverage_$(tagstring).err\n' % logPath)
 spectrumAverageFID.write('output = %s/spectrumAverage_$(tagstring).out\n' % logPath)
@@ -665,6 +689,10 @@ if (makeMatlabPlots):
   runMatlabScriptFID.write('executable = $ENV(PLOTSPECAVGOUTPUT_PATH)/run_plotSpecAvgOutput.sh\n')
   runMatlabScriptFID.write('getenv = True\n')
   runMatlabScriptFID.write('arguments = $(argList)\n')
+  if (accountingGroup != None):
+     runMatlabScriptFID.write('accounting_group = %s\n' % accountingGroup)
+  if (accountingGroupUser != None):
+     runMatlabScriptFID.write('accounting_group_user = %s\n' % accountingGroupUser)
   runMatlabScriptFID.write('log = %s\n' % runMatlabScriptLogFile)
   runMatlabScriptFID.write('error = %s/runMatlabPlotScript_$(tagstring).err\n' % logPath)
   runMatlabScriptFID.write('output = %s/runMatlabPlotScript_$(tagstring).out\n' % logPath)
@@ -940,7 +968,7 @@ if (htmlFilename != None):
 ###################################################
 # SUBMIT THE .dag FILE TO CONDOR; RUN condor_submit_dag
 #
-runDAGCommand = 'condor_submit_dag %s' % dagFileName
+runDAGCommand = 'condor_submit_dag -maxjobs %d %s' % (maxJobs,dagFileName)
 print >> sys.stdout,"Trying: ",runDAGCommand,"\n"
 if (runCondorSubmitDag):
    try:
