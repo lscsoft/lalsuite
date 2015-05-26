@@ -20,6 +20,8 @@ from __future__ import division
 import bisect
 from operator import attrgetter
 
+import numpy as np
+
 try:
     from glue.iterutils import inorder, uniq
 except ImportError:
@@ -43,7 +45,7 @@ class lazy_nhoods(object):
 
 class Bank(object):
 
-    def __init__(self, tmplt_class, noise_model, flow, use_metric=False, cache_waveforms=False, nhood_size=1.0, nhood_param="tau0", coarse_match_df=None, iterative_match_df_max=None):
+    def __init__(self, tmplt_class, noise_model, flow, use_metric=False, cache_waveforms=False, nhood_size=1.0, nhood_param="tau0", coarse_match_df=None, iterative_match_df_max=None, fhigh_max=None):
         self.tmplt_class = tmplt_class
         self.noise_model = noise_model
         self.flow = flow
@@ -55,6 +57,11 @@ class Bank(object):
         if self.coarse_match_df and self.iterative_match_df_max and self.coarse_match_df < self.iterative_match_df_max:
             # If this case occurs coarse_match_df offers no improvement, turn off
             self.coarse_match_df = None
+
+        if fhigh_max is not None:
+            self.fhigh_max = (2**(np.ceil(np.log2( fhigh_max ))))
+        else:
+            self.fhigh_max = fhigh_max
 
         self.nhood_size = nhood_size
         self.nhood_param = "_" + nhood_param
@@ -139,6 +146,8 @@ class Bank(object):
 
         # set parameters of match calculation that are optimized for this block
         df_end, f_max = get_neighborhood_df_fmax(tmpbank + [proposal], self.flow)
+        if self.fhigh_max:
+            f_max = min(f_max, self.fhigh_max)
         df_start = max(df_end, self.iterative_match_df_max)
 
         # find and test matches

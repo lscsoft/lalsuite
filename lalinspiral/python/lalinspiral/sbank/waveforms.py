@@ -135,7 +135,7 @@ class Template(object):
     * Provide a classmethod from_sim, which creates an instance based on
       a sim_inspiral object.
     """
-    __slots__ = ("m1", "m2", "bank", "_mchirp", "_tau0", "_wf", "_metric", "sigmasq", "is_seed_point")
+    __slots__ = ("m1", "m2", "bank", "_mchirp", "_tau0", "_wf", "_metric", "sigmasq", "is_seed_point", "_f_final")
 
     def __init__(self, m1, m2, bank):
         self._wf = {}
@@ -143,6 +143,24 @@ class Template(object):
         self.sigmasq = 0.
         self._mchirp = compute_mchirp(m1, m2)
         self._tau0 = compute_tau0( self._mchirp, bank.flow)
+        self._f_final = None
+        self._fhigh_max = bank.fhigh_max
+
+    @property
+    def f_final(self):
+
+        if self._f_final is None:
+            f_final = self._get_f_final()
+            if self._fhigh_max:
+                f_final = min(f_final, self._fhigh_max)
+            self._f_final = ceil_pow_2(f_final)
+
+        return self._f_final
+
+    def _get_f_final(self):
+        err_msg = "Template classes must provide a function _get_f_final "
+        err_msg += "to compute the appropriate final frequency."
+        raise NotImplementedError(err_msg)
 
     def __repr__(self):
         return "(%s)" % ", ".join(self.param_formats) % self.params
@@ -163,7 +181,7 @@ class Template(object):
         its own length.
         """
         if not self._wf.has_key(df):
-            wf = self._compute_waveform(df, self._f_final)
+            wf = self._compute_waveform(df, self.f_final)
             if ASD is None:
                 ASD = PSD**0.5
             if wf.data.length > len(ASD):
@@ -173,7 +191,7 @@ class Template(object):
             # whiten
             arr_view[:] /= ASD[:wf.data.length]
             arr_view[:int(self.bank.flow / df)] = 0.
-            arr_view[int(self._f_final/df) : wf.data.length] = 0.
+            arr_view[int(self.f_final/df) : wf.data.length] = 0.
 
             # normalize
             self.sigmasq = compute_sigmasq(arr_view, df)
@@ -197,7 +215,7 @@ class TaylorF2RedSpinTemplate(Template):
     param_names = ("m1", "m2", "chi")
     param_formats = ("%.5f", "%.5f", "%+.4f")
 
-    __slots__ = ("m1", "m2", "spin1z", "spin2z", "bank", "chi", "_f_final", "_dur", "_mchirp", "_tau0", "_eta", "_theta0", "_theta3", "_theta3s")
+    __slots__ = ("m1", "m2", "spin1z", "spin2z", "bank", "chi", "_dur", "_mchirp", "_tau0", "_eta", "_theta0", "_theta3", "_theta3s")
 
     def __init__(self, m1, m2, spin1z, spin2z, bank):
         Template.__init__(self, m1, m2, bank)
@@ -214,12 +232,14 @@ class TaylorF2RedSpinTemplate(Template):
         self.bank = bank
 
         # derived quantities
-        self._f_final = 6**-1.5 / (PI * (m1 + m2) * MTSUN_SI)  # ISCO
         self._dur = lalsim.SimInspiralTaylorF2ReducedSpinChirpTime(\
             bank.flow, m1 * MSUN_SI, m2 * MSUN_SI, chi, 7)
         self._mchirp = compute_mchirp(m1, m2)
         self._eta = m1*m2/(m1+m2)**2
         self._theta0, self._theta3, self._theta3s = compute_chirptimes(self._mchirp, self._eta, self.chi, self.bank.flow)
+
+    def _get_f_final(self):
+        return 6**-1.5 / (PI * (self.m1 + self.m2) * MTSUN_SI)  # ISCO
 
     def finalize_as_template(self):
         if not self.bank.use_metric: return
@@ -283,7 +303,7 @@ class TaylorF2RedSpinTemplate(Template):
         row.mchirp = self._mchirp
         row.eta = self._eta
         row.tau0, row.tau3 = m1m2_to_tau0tau3(self.m1, self.m2, self.bank.flow)
-        row.f_final = self._f_final
+        row.f_final = self.f_final
         row.template_duration = self._dur
         row.spin1z = self.spin1z
         row.spin2z = self.spin2z
@@ -296,7 +316,7 @@ class IMRPhenomBTemplate(Template):
     param_names = ("m1", "m2", "chi")
     param_formats = ("%.2f", "%.2f", "%+.2f")
 
-    __slots__ = ("m1", "m2", "spin1z", "spin2z", "bank", "chi", "_f_final", "_dur", "_mchirp", "_tau0")
+    __slots__ = ("m1", "m2", "spin1z", "spin2z", "bank", "chi", "_dur", "_mchirp", "_tau0")
 
     def __init__(self, m1, m2, spin1z, spin2z, bank):
         Template.__init__(self, m1, m2, bank)
@@ -309,9 +329,11 @@ class IMRPhenomBTemplate(Template):
         self.bank = bank
 
         # derived quantities
-        self._f_final = spawaveform.imrffinal(m1, m2, chi)
         self._dur = self._imrdur()
         self._mchirp = compute_mchirp(m1, m2)
+
+    def _get_f_final(self):
+        return spawaveform.imrffinal(self.m1, self.m2, self.chi)  # ISCO
 
     @property
     def params(self):
@@ -349,7 +371,7 @@ class IMRPhenomBTemplate(Template):
         row.mchirp = self._mchirp
         row.eta = row.mass1 * row.mass2 / (row.mtotal * row.mtotal)
         row.tau0, row.tau3 = m1m2_to_tau0tau3(self.m1, self.m2, self.bank.flow)
-        row.f_final = self._f_final
+        row.f_final = self.f_final
         row.template_duration = self._dur
         row.spin1z = self.spin1z
         row.spin2z = self.spin2z
@@ -374,7 +396,7 @@ class PrecessingTemplate(Template):
     """
     param_names = ("m1", "m2", "spin1x", "spin1y", "spin1z", "spin2x", "spin2y", "spin2z", "theta", "phi", "iota", "psi")
     param_formats = ("%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f")
-    __slots__ = param_names + ("bank","_f_final","_dur","_mchirp","_tau0")
+    __slots__ = param_names + ("bank", "_dur","_mchirp","_tau0")
 
     def __init__(self, m1, m2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, theta, phi, iota, psi, bank):
 
@@ -396,6 +418,22 @@ class PrecessingTemplate(Template):
         # derived quantities
         self._mchirp = compute_mchirp(m1, m2)
 
+        # FIXME: What is an appropriate f_final for generic waveforms?
+        self.chieff,_ = SimIMRPhenomPCalculateModelParameters(self.m1, self.m2,
+                           self.bank.flow, np.sin(self.iota), float(0),
+                           np.cos(self.iota), float(self.spin1x),
+                           float(self.spin1y), float(self.spin1z),
+                           float(self.spin2x), float(self.spin2y),
+                           float(self.spin2z))[:2]
+
+        # FIXME: Is this appropriate?
+        self._dur = lalsim.SimInspiralTaylorF2ReducedSpinChirpTime(\
+                       self.bank.flow, self.m1 * MSUN_SI, self.m2 * MSUN_SI,
+                       self.chieff, 7) + 1000 * (self.m1 + self.m2) * MTSUN_SI
+
+    def _get_f_final(self):
+        return spawaveform.imrffinal(self.m1, self.m2, self.chieff)
+
     @property
     def params(self):
         return tuple(getattr(self, attr) for attr in self.param_names)
@@ -411,8 +449,7 @@ class IMRPhenomPTemplate(PrecessingTemplate):
     """
     IMRPhenomP precessing IMR model.
     """
-
-    __slots__ = PrecessingTemplate.param_names + ("bank", "chieff", "chipre", "_f_final", "_dur", "_mchirp", "_tau0")
+    __slots__ = PrecessingTemplate.param_names + ("bank", "chieff", "chipre", "_dur", "_mchirp", "_tau0")
     param_names = ("m1", "m2", "chieff", "chipre")
     param_formats = ("%.2f", "%.2f", "%.2f", "%.2f")
 
@@ -422,10 +459,11 @@ class IMRPhenomPTemplate(PrecessingTemplate):
         # derived quantities
         self.chieff, self.chipre = SimIMRPhenomPCalculateModelParameters(self.m1, self.m2, self.bank.flow, np.sin(self.iota), float(0), np.cos(self.iota), float(self.spin1x), float(self.spin1y), float(self.spin1z), float(self.spin2x), float(self.spin2y), float(self.spin2z))[:2] # FIXME are the other four parameters informative?
 
-        self._f_final = spawaveform.imrffinal(m1, m2, self.chieff)
         self._dur = self._imrdur()
         # FIXME: is this ffinal and dur appropriate for PhenomP?
 
+    def _get_f_final(self):
+        return spawaveform.imrffinal(self.m1, self.m2, self.chieff)
 
     def _imrdur(self):
         """
@@ -458,13 +496,11 @@ class IMRPhenomPTemplate(PrecessingTemplate):
         # project onto detector
         return project_hplus_hcross(hplus_fd, hcross_fd, self.theta, self.phi, self.psi)
 
-
-
 class SEOBNRv2Template(Template):
     param_names = ("m1", "m2", "spin1z", "spin2z")
     param_formats = ("%.2f", "%.2f", "%.2f", "%.2f")
 
-    __slots__ = ("m1", "m2", "spin1z", "spin2z", "bank", "_f_final", "_dur", "_mchirp", "_tau0", "_chi")
+    __slots__ = ("m1", "m2", "spin1z", "spin2z", "bank", "_dur", "_mchirp", "_tau0", "_chi")
 
     def __init__(self, m1, m2, spin1z, spin2z, bank):
         Template.__init__(self, m1, m2, bank)
@@ -476,10 +512,13 @@ class SEOBNRv2Template(Template):
 
         # derived quantities
         self._chi = lalsim.SimIMRPhenomBComputeChi(m1, m2, spin1z, spin2z)
-        self._f_final = lalsim.SimInspiralGetFrequency(m1*lal.MSUN_SI,
-                     m2*lal.MSUN_SI, 0., 0., spin1z, 0, 0, spin2z, lalsim.fSEOBNRv2RD)
         self._dur = self._imrdur()
         self._mchirp = compute_mchirp(m1, m2)
+
+    def _get_f_final(self):
+        return lalsim.SimInspiralGetFrequency(self.m1*lal.MSUN_SI,
+                                self.m2*lal.MSUN_SI, 0., 0., self.spin1z, 0, 0,
+                                self.spin2z, lalsim.fSEOBNRv2RD)
 
     @property
     def params(self):
@@ -546,7 +585,7 @@ class SEOBNRv2Template(Template):
         row.mchirp = self._mchirp
         row.eta = row.mass1 * row.mass2 / (row.mtotal * row.mtotal)
         row.tau0, row.tau3 = m1m2_to_tau0tau3(self.m1, self.m2, self.bank.flow)
-        row.f_final = self._f_final
+        row.f_final = self.f_final
         row.template_duration = self._dur
         row.sigmasq = self.sigmasq
 
@@ -571,7 +610,7 @@ class EOBNRv2Template(Template):
     param_names = ("m1", "m2")
     param_formats = ("%.2f", "%.2f")
 
-    __slots__ = ("m1", "m2", "bank", "_f_final", "_dur", "_mchirp", "_tau0")
+    __slots__ = ("m1", "m2", "bank", "_dur", "_mchirp", "_tau0")
 
     def __init__(self, m1, m2, bank):
         Template.__init__(self, m1, m2, bank)
@@ -581,9 +620,11 @@ class EOBNRv2Template(Template):
 
         # derived quantities
         # we'll just use the imrphenomb ffinal estimate for f_final
-        self._f_final = spawaveform.imrffinal(m1, m2, 0)
         self._dur = self._imrdur()
         self._mchirp = compute_mchirp(m1, m2)
+
+    def _get_f_final(self):
+        return spawaveform.imrffinal(self.m1, self.m2, 0.)
 
     @property
     def params(self):
@@ -642,7 +683,7 @@ class EOBNRv2Template(Template):
         row.mchirp = self._mchirp
         row.eta = row.mass1 * row.mass2 / (row.mtotal * row.mtotal)
         row.tau0, row.tau3 = m1m2_to_tau0tau3(self.m1, self.m2, self.bank.flow)
-        row.f_final = self._f_final
+        row.f_final = self.f_final
         row.template_duration = self._dur
         row.sigmasq = self.sigmasq
 
@@ -653,7 +694,7 @@ class SpinTaylorT4Template(Template):
     param_names = ("m1","m2","s1x","s1y","s1z","s2x","s2y","s2z","inclination","theta","phi","psi")
     param_formats = ("%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f")
 
-    __slots__ = ("m1","m2","s1x","s1y","s1z","s2x","s2y","s2z","inclination","theta","phi","psi","bank","_f_final","_dur","_mchirp", "_tau0")
+    __slots__ = ("m1","m2","s1x","s1y","s1z","s2x","s2y","s2z","inclination","theta","phi","psi","bank", "_dur","_mchirp", "_tau0")
 
     def __init__(self,m1,m2,s1x,s1y,s1z,s2x,s2y,s2z,inclination,theta,phi,psi,bank):
         Template.__init__(self, m1, m2, bank)
@@ -672,9 +713,11 @@ class SpinTaylorT4Template(Template):
         self.bank = bank
 
         # derived quantities
-        self._f_final = 6**-1.5 / (PI * (m1 + m2) * MTSUN_SI)  # ISCO
         self._dur = lalsim.SimInspiralTaylorF2ReducedSpinChirpTime(bank.flow, m1 * MSUN_SI, m2 * MSUN_SI, lalsim.SimInspiralTaylorF2ReducedSpinComputeChi(self.m1*MSUN_SI,self.m2*MSUN_SI,self.s1z,self.s2z), 7)
         self._mchirp = compute_mchirp(m1, m2)
+
+    def _get_f_final(self):
+        return 6**-1.5 / (PI * (self.m1 + self.m2) * MTSUN_SI)
 
     @property
     def params(self):
@@ -748,7 +791,7 @@ class SpinTaylorT5Template(Template):
     param_names = ("m1","m2","s1x","s1y","s1z","s2x","s2y","s2z","inclination","theta","phi","psi")
     param_formats = ("%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f")
 
-    __slots__ = ("m1","m2","s1x","s1y","s1z","s2x","s2y","s2z","inclination","theta","phi","psi","bank","_f_final","_dur","_mchirp", "_tau0")
+    __slots__ = ("m1","m2","s1x","s1y","s1z","s2x","s2y","s2z","inclination","theta","phi","psi","bank", "_dur","_mchirp", "_tau0")
 
     def __init__(self,m1,m2,s1x,s1y,s1z,s2x,s2y,s2z,inclination,theta,phi,psi,bank):
         Template.__init__(self, m1, m2, bank)
@@ -767,9 +810,11 @@ class SpinTaylorT5Template(Template):
         self.bank = bank
 
         # derived quantities
-        self._f_final = 6**-1.5 / (PI * (m1 + m2) * MTSUN_SI)  # ISCO
         self._dur = lalsim.SimInspiralTaylorF2ReducedSpinChirpTime(bank.flow, m1 * MSUN_SI, m2 * MSUN_SI, lalsim.SimInspiralTaylorF2ReducedSpinComputeChi(self.m1*MSUN_SI,self.m2*MSUN_SI,self.s1z,self.s2z), 7)
         self._mchirp = compute_mchirp(m1, m2)
+
+    def _get_f_final(self):
+        return 6**-1.5 / (PI * (self.m1 + self.m2) * MTSUN_SI)
 
     @property
     def params(self):
