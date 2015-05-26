@@ -126,7 +126,7 @@ resetDifferentialEvolutionBuffer(LALInferenceThreadState *thread) {
 
 
 void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
-    INT4 i, t; //indexes for for() loops
+    INT4 i, t=0; //indexes for for() loops
     INT4 runComplete = 0;
     REAL8 timestamp_epoch=0.0;
     INT4 MPIrank, MPIsize;
