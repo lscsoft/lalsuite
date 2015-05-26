@@ -1,5 +1,9 @@
 /*
 
+  Copyright (C) 2010 Shaun Hooper
+  Copyright (C) 2012-2014 Dave McKenzie, Qi Chu
+  Copyright (C) 2015 Dave McKenzie, Yan Wang
+
   This code relates to Infinite Impulse Response filters that correspond to an
   inspiral waveform.  The idea is that a sum a set of delayed first order IIR
   filters with one feedback coefficient (a1) and one feedforward (b0)
@@ -12,7 +16,6 @@
   To generate the IIR set of a1's, b0's and delays, you need to provide a
   amplitude and phase time series.
 
-  Created by Shaun Hooper 2010-05-28
 
 */
 
@@ -37,14 +40,14 @@ static REAL8 clogabs(COMPLEX16 z)
   return log(max) + 0.5 * log1p(u * u);
 }
 
-int XLALInspiralGenerateIIRSet(REAL8Vector *amp, REAL8Vector *phase, double epsilon, double alpha, double beta, double padding, COMPLEX16Vector **a1, COMPLEX16Vector **b0, INT4Vector **delay)
+int XLALInspiralGenerateIIRSet(REAL8Vector *amp, REAL8Vector *phase, double epsilon, double alpha, double beta, double padding, COMPLEX16Vector **a1, COMPLEX16Vector **b0, INT4Vector **delay, int iir_type_flag)
 {  
-	int j = amp->length-1, jstep, jstepThird, k;
-	int nfilters = 0, decimationFactor = 1;
-	double phase_tdot, phase_ddot, phase_dot;
+	/* default iir_type_flag = 0,
+	   other options TBD */
+	UINT8 j = amp->length-1, jstep, k, nfilters = 0;
+	// INT4 decimationFactor = 1;
+	REAL8 phase_tdot, phase_ddot, phase_dot, jstep_third, jstep_second;
 
-	//printf("This is confirming that the LALInspiralIIR.c code has been successfully modified");
-	/* FIXME: Add error checking for lengths of amp and phase */
 	if (amp->length != phase->length) 
 	         XLAL_ERROR(XLAL_EINVAL);
 
@@ -52,61 +55,59 @@ int XLALInspiralGenerateIIRSet(REAL8Vector *amp, REAL8Vector *phase, double epsi
 	*b0 = XLALCreateCOMPLEX16Vector(0);
 	*delay = XLALCreateINT4Vector(0);
 	
-	//printf("This is the modified code\n");
 
 	while (j > 3 ) {
-		//int prej = j;
-		/* Reset j so that the delay will be an integar number of decimated rate */
-		//j = amp->length-1 - (int) floor((amp->length-1-j)/(double) decimationFactor + 0.5)*decimationFactor;
 
-		/* Get second derivative term */
-		phase_ddot = (phase->data[j-2] - 2.0 * phase->data[j-1] + phase->data[j]) / (2.0 * LAL_PI);
-		phase_tdot = (phase->data[j-3] - 3.0 * phase->data[j-2] + 3.0 * phase->data[j-1] - phase->data[j]) / (2.0*LAL_PI);
+		/* Get derivative terms */
+		if (j  >  (phase->length - 3) ) {
+			phase_ddot = (phase->data[j-2] - 2.0 * phase->data[j-1] + phase->data[j]) / LAL_TWOPI;
+			phase_tdot = (phase->data[j-3] - 3.0 * phase->data[j-2] + 3.0 * phase->data[j-1] - phase->data[j]) / LAL_TWOPI;
+		}
+		else {
+			phase_ddot = (phase->data[j-1] - 2.0 * phase->data[j] + phase->data[j+1]) / LAL_TWOPI;
+			phase_tdot = ( -0.5 * phase->data[j-2] + phase->data[j-1] - phase->data[j+1] + 0.5 * phase->data[j+2]) / LAL_TWOPI; 
+		}
+
+
 		phase_ddot = fabs(phase_ddot);
 		phase_tdot = fabs(phase_tdot);
 
-		if (phase_ddot < 0 || phase_ddot > 8*epsilon){
-				j = j - 1;
-			continue;
-		}
 
-		jstep = (int) fabs(floor(sqrt(2.0 * epsilon / fabs(phase_ddot))+0.5));
-		jstepThird = (int) fabs(floor(pow(6.0 * epsilon / fabs(phase_tdot),1./3)+0.5));
-		jstep = abs(jstep);
-		jstepThird = abs(jstepThird);
+		jstep_second = floor(sqrt(2.0 * epsilon / phase_ddot) + 0.5);
+		jstep_third = floor(pow(6.0 * epsilon / phase_tdot, 1./3) + 0.5);
 
-		//jstepThird integer overflow??
-		if(jstep > jstepThird && jstepThird >0){
-		    jstep = jstepThird;
-		}
-		if(jstep == 0){
-		    jstep = 1;
-		}
-		k = (int ) floor((double ) j - alpha * (double ) jstep + 0.5);
-		if (k < 1){
-		    jstep = j;
-		    k = (int ) floor((double ) j - alpha * (double ) jstep + 0.5);
-		}
-		//printf("jstep: %d jstepThird: %d k: %d j:%d \n ", jstep, jstepThird, k, j);
-		
-
-		if(k == 0){
-		    k = 1;
-		}
-
-
-		if (k <= 2) break;
-		nfilters++;
-
-		if (k > (int) amp->length-3) {
-			phase_dot = (11.0/6.0*phase->data[k] - 3.0*phase->data[k-1] + 1.5*phase->data[k-2] - 1.0/3.0*phase->data[k-3]);
+		if(jstep_third > jstep_second){
+			jstep = (UINT8) jstep_second;
 		}
 		else {
-			phase_dot = (-phase->data[k+2] + 8 * (phase->data[k+1] - phase->data[k-1]) + phase->data[k-2]) / 12.0; // Five-point stencil first derivative of phase
+			jstep = (UINT8) jstep_third;
+		}
+
+		if(jstep < 2){
+		    jstep = 2;
+		}
+
+		k = (UINT8) floor((double ) j - alpha * (double ) jstep + 0.5);
+
+		if (k < 1){
+		    jstep = j;
+		    k = (UINT8 ) floor((double ) j - alpha * (double ) jstep + 0.5);
+		}
+		
+		nfilters++;
+
+		if (k > (UINT8) amp->length-3) {
+			phase_dot = (11.0/6.0*phase->data[k] - 3.0*phase->data[k-1] + 1.5*phase->data[k-2] - 1.0/3.0*phase->data[k-3]);
+		}
+		else if (k >= 2 ) {
+			phase_dot = (-phase->data[k+2] + 8.0 * (phase->data[k+1] - phase->data[k-1]) + phase->data[k-2]) / 12.0; // Five-point stencil first derivative of phase
+		}
+		else {
+			phase_dot = (-11.0/6.0*phase->data[k] + 3.0*phase->data[k+1] - 1.5*phase->data[k+2] + 1.0/3.0*phase->data[k+3])
 		}
 		//fprintf(stderr, "%3.0d, %6.0d, %3.0d, %11.2f, %11.8f\n",nfilters, amp->length-1-j, decimationFactor, ((double) (amp->length-1-j))/((double) decimationFactor), phase_dot/(2.0*LAL_PI)*2048.0);
-		decimationFactor = ((int ) pow(2.0,-ceil(log(2.0*padding*phase_dot/(2.0*LAL_PI))/log(2.0))));
-		if (decimationFactor < 1 ) decimationFactor = 1;
+		// decimationFactor = ((int ) pow(2.0,-ceil(log(2.0*padding*phase_dot/(2.0*LAL_PI))/log(2.0))));
+		// if (decimationFactor < 1 ) decimationFactor = 1;
 
 		//fprintf(stderr, "filter = %d, prej = %d, j = %d, k=%d, jstep = %d, decimation rate = %d, nFreq = %e, phase[k] = %e\n", nfilters, prej, j, k, jstep, decimationFactor, phase_dot/(2.0*LAL_PI), phase->data[k]);
 		/* FIXME: Should think about being smarter about allocating memory for these (linked list??) */
@@ -120,6 +121,7 @@ int XLALInspiralGenerateIIRSet(REAL8Vector *amp, REAL8Vector *phase, double epsi
 		(*delay)->data[nfilters-1] = amp->length - 1 - j;
 
 
+		if (k < 2) break;
 
 		/* Calculate the next data point step */
 		j -= jstep;
