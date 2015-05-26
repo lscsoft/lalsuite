@@ -524,6 +524,8 @@ class Overlap(InnerProduct):
         """
         Compute norm of a COMPLEX16Frequency Series
         """
+        if h.data.length != self.len1side:
+            print "Bad data length, needed %d, got %d" % (self.len1side, h.data.length)
         assert h.data.length == self.len1side
         assert abs(h.deltaF-self.deltaF) <= TOL_DF
         val = 0.
@@ -865,6 +867,9 @@ def hoft(P, Fp=None, Fc=None):
         lalsim.SimInspiralREAL8WaveTaper(ht.data, P.taper)
     if P.deltaF is not None:
         TDlen = int(1./P.deltaF * 1./P.deltaT)
+        if TDlen < ht.data.length:
+            print "TD length requirement not met: Needed at most %d (%f s), got %d (%f s)" % (TDlen, TDlen*P.deltaT, ht.data.length, ht.data.length*ht.deltaT)
+            P.print_params()
         assert TDlen >= ht.data.length
         ht = lal.ResizeREAL8TimeSeries(ht, 0, TDlen)
     return ht
