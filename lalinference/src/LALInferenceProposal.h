@@ -115,7 +115,6 @@ extern const char *const PSDFitJumpName;
 extern const char *const polarizationPhaseJumpName;
 extern const char *const polarizationCorrPhaseJumpName;
 extern const char *const extrinsicParamProposalName;
-extern const char *const KDNeighborhoodProposalName;
 extern const char *const frequencyBinJumpName;
 extern const char *const GlitchMorletJumpName;
 extern const char *const GlitchMorletReverseJumpName;
@@ -185,9 +184,6 @@ REAL8 LALInferenceSingleProposal(LALInferenceThreadState *thread, LALInferenceVa
  */
 REAL8 LALInferenceSingleAdaptProposal(LALInferenceThreadState *thread, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
-/** Increments the orbital phase by pi. */
-REAL8 LALInferenceOrbitalPhaseJump(LALInferenceThreadState *thread, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
-
 /** Polarization-phase exact degeneracy. */
 REAL8 LALInferencePolarizationPhaseJump(LALInferenceThreadState *thread, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
@@ -241,14 +237,6 @@ REAL8 LALInferenceSkyRingProposal(LALInferenceThreadState *thread, LALInferenceV
 REAL8 LALInferenceGlitchMorletProposal(LALInferenceThreadState *thread, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 REAL8 LALInferenceGlitchMorletReverseJump(LALInferenceThreadState *thread, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 REAL8 LALInferencePSDFitJump(LALInferenceThreadState *thread, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
-/**
- * Uses a kD tree containing the previously-output points to propose
- * the next sample.  The proposal chooses a stored point at random,
- * finds the kD cell that contains this point and about 64 others,
- * and then chooses the proposed point uniformly within the bounding
- * box of the points contained in this sell.
- */
-REAL8 LALInferenceKDNeighborhoodProposal(LALInferenceThreadState *thread, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
 /**
  * Proposal for the extrinsic parameters. Uses the sky reflection for 3
@@ -287,11 +275,11 @@ tagLALInferenceClusteredKDEProposal
 } LALInferenceClusteredKDE;
 
 /* Setup all clustered-KDE proposals with samples read from file. */
-void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceThreadState *thread);
+//void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceThreadState *thread);
 
 /* Setup all clustered-KDE proposals with samples read from file. */
 void LALInferenceSetupClusteredKDEProposalsFromASCII(LALInferenceThreadState *thread, FILE *input, INT4 burnin, REAL8 weight, INT4 ptmcmc);
- 
+
 /* Add a KDE proposal to the KDE proposal set. */
 void LALInferenceAddClusteredKDEProposalToSet(LALInferenceVariables *propArgs, LALInferenceClusteredKDE *kde);
 
@@ -331,9 +319,6 @@ INT4 LALInferenceComputeEffectiveSampleSize(LALInferenceThreadState *thread);
 
 /* Initialize differential evolution proposal */
 void LALInferenceSetupDifferentialEvolutionProposal(LALInferenceThreadState *thread);
-
-/* Initialize covariance eigenvector proposal. */
-void LALInferenceSetupCovarianceEigenvectorProposal(LALInferenceThreadState *thread);
 
 /** Helper function to setup the adaptive step proposals before the run */
 void LALInferenceSetupAdaptiveProposals(LALInferenceVariables *propArgs, LALInferenceVariables *params);

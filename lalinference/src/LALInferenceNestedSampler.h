@@ -93,12 +93,6 @@ INT4 LALInferenceNestedSamplingCachedSampler(LALInferenceRunState *runState);
  */
 void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState);
 
-/**
- * Setup a k-D tree from the current set of nested sampling live points for use
- * as a proposal distribution.
- */
-void LALInferenceSetupkDTreeNSLivePoints( LALInferenceRunState *runState );
-
 /** Project the sample in params onto the eigenvectors given in eigenvectors. */
 void LALInferenceProjectSampleOntoEigenvectors(LALInferenceVariables *params, gsl_matrix *eigenvectors, REAL8Vector **projection);
 

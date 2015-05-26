@@ -755,8 +755,6 @@ void LALInferenceSortVariablesByName(LALInferenceVariables *vars);
 INT4 LALInferenceThinnedBufferToArray(LALInferenceThreadState *thread, REAL8** DEarray, INT4 step);
 INT4 LALInferenceBufferToArray(LALInferenceThreadState *thread, REAL8** DEarray);
 
-void LALInferenceArrayToBuffer(LALInferenceRunState *state, REAL8 **array, INT4 nPoints);
-
 /** LALInference variables to an array, and vica versa */
 void LALInferenceCopyVariablesToArray(LALInferenceVariables *origin, REAL8 *target);
 
