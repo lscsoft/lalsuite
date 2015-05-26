@@ -393,7 +393,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
         /* Excute swap proposal. */
         runState->parallelSwap(runState, i, swapfile);
 
-        if (MPIrank==0 && t == 0 && i > Niter)
+        if (MPIrank==0 && i > Niter)
             runComplete=1;
     }// while (!runComplete)
 
