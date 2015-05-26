@@ -671,13 +671,20 @@ def Fcross(theta, phi, psi):
 #
 # Mass parameter conversion functions - note they assume m1 >= m2
 #
+def norm_sym_ratio(eta):
+    # FIXME: Replace with isclose when available
+    if eta > 0.25:
+        np.testing.assert_almost_equal(0.25, eta)
+        eta = 0.25
+    return sqrt(1 - 4.*eta)
+
 def mass1(Mc, eta):
     """Compute larger component mass from Mc, eta"""
-    return 0.5*Mc*eta**(-3./5.)*(1. + sqrt(1 - 4.*eta))
+    return 0.5*Mc*eta**(-3./5.)*(1. + norm_sym_ratio(eta))
 
 def mass2(Mc, eta):
     """Compute smaller component mass from Mc, eta"""
-    return 0.5*Mc*eta**(-3./5.)*(1. - sqrt(1 - 4.*eta))
+    return 0.5*Mc*eta**(-3./5.)*(1. - norm_sym_ratio(eta))
 
 def mchirp(m1, m2):
     """Compute chirp mass from component masses"""
@@ -689,8 +696,8 @@ def symRatio(m1, m2):
 
 def m1m2(Mc, eta):
     """Compute component masses from Mc, eta. Returns m1 >= m2"""
-    m1 = 0.5*Mc*eta**(-3./5.)*(1. + sqrt(1 - 4.*eta))
-    m2 = 0.5*Mc*eta**(-3./5.)*(1. - sqrt(1 - 4.*eta))
+    m1 = 0.5*Mc*eta**(-3./5.)*(1. + norm_sym_ratio(eta))
+    m2 = 0.5*Mc*eta**(-3./5.)*(1. - norm_sym_ratio(eta))
     return m1, m2
 
 def Mceta(m1, m2):
