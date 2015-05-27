@@ -44,6 +44,7 @@ int XLALStringToLowerCase(char * string);
 int XLALStringToUpperCase(char * string);
 int XLALStringCaseCompare(const char *s1, const char *s2);
 int XLALStringNCaseCompare(const char *s1, const char *s2, size_t n);
+char *XLALStringCaseSubstring(const char *haystack, const char *needle);
 char *XLALStringToken(char **s, const char *delim, int empty);
 
 /*@}*/
