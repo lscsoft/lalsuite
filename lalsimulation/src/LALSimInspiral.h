@@ -192,6 +192,10 @@ int checkSpinsZero(REAL8 s1x, REAL8 s1y, REAL8 s1z,
  returns 1 if x and y components of spins are zero, otherwise returns 0 */
 int checkTransverseSpinsZero(REAL8 s1x, REAL8 s1y, REAL8 s2x, REAL8 s2y);
 
+/* Internal utility function to check aligned spins very close to equal
+   returns 1 if z components of spins are very close to equal, otherwise returns 0 */
+int checkAlignedSpinsEqual(REAL8 s1z, REAL8 s2z);
+
 /* Internal utility function to check tidal parameters are zero
  returns 1 if both tidal parameters zero, otherwise returns 0 */
 int checkTidesZero(REAL8 lambda1, REAL8 lambda2);
@@ -253,9 +257,9 @@ typedef enum {
    SEOBNRv1,		/**< Spin-aligned EOBNR model */
    SEOBNRv2,		/**< Spin-aligned EOBNR model v2 */
    SEOBNRv3,		/**< Spin precessing EOBNR model v3 */
-   SEOBNRv1_ROM_SingleSpin, /**< Single-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv1 See [Purrer:2014fza] */
+   SEOBNRv1_ROM_EqualSpin, /**< Single-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv1 See [Purrer:2014fza] */
    SEOBNRv1_ROM_DoubleSpin, /**< Double-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv1 See [Purrer:2014fza] */
-   SEOBNRv2_ROM_SingleSpin, /**< Single-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv2 */
+   SEOBNRv2_ROM_EqualSpin, /**< Single-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv2 */
    SEOBNRv2_ROM_DoubleSpin, /**< Double-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv2 */
    HGimri,		/**< Time domain inspiral-merger-ringdown waveform for quasi-circular intermediate mass-ratio inspirals [Huerta & Gair arXiv:1009.1985]*/
    IMRPhenomA,		/**< Time domain (non-spinning) inspiral-merger-ringdown waveforms generated from the inverse FFT of IMRPhenomFA  */

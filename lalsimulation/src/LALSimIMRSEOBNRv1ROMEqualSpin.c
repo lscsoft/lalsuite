@@ -23,7 +23,7 @@
  *
  * \file
  *
- * \brief C code for SEOBNRv1 reduced order model (single spin version).
+ * \brief C code for SEOBNRv1 reduced order model (equal spin version).
  * See CQG 31 195010, 2014, arXiv:1402.4146 for details.
  *
  * The binary data files are available at https://dcc.ligo.org/T1400701-v1.
@@ -33,6 +33,8 @@
  *   q <= 100
  *   -1 <= chi <= 0.6
  *   Mtot >= 1.4Msun
+ *
+ *  chi = chi1 = chi2
  */
 
 #ifdef __GNUC__
@@ -137,7 +139,7 @@ static const double gPhi[] = {0.0001, 0.000101411, 0.000102849, 0.000104314, 0.0
   0.115873, 0.133047, 0.14};
 
 #ifdef LAL_PTHREAD_LOCK
-static pthread_once_t SEOBNRv1ROMSingleSpin_is_initialized = PTHREAD_ONCE_INIT;
+static pthread_once_t SEOBNRv1ROMEqualSpin_is_initialized = PTHREAD_ONCE_INIT;
 #endif
 
 /*************** type definitions ******************/
@@ -170,9 +172,9 @@ typedef struct tagSplineData
 
 /**************** Internal functions **********************/
 
-static void SEOBNRv1ROMSingleSpin_Init_LALDATA(void);
-static int SEOBNRv1ROMSingleSpin_Init(const char dir[]);
-static bool SEOBNRv1ROMSingleSpin_IsSetup(void);
+static void SEOBNRv1ROMEqualSpin_Init_LALDATA(void);
+static int SEOBNRv1ROMEqualSpin_Init(const char dir[]);
+static bool SEOBNRv1ROMEqualSpin_IsSetup(void);
 
 static int SEOBNRROMdata_Init(SEOBNRROMdata *romdata, const char dir[]);
 static void SEOBNRROMdata_Cleanup(SEOBNRROMdata *romdata);
@@ -183,7 +185,7 @@ static void SEOBNRROMdata_Cleanup(SEOBNRROMdata *romdata);
  * Construct 1D splines for amplitude and phase.
  * Compute strain waveform from amplitude and phase.
 */
-static int SEOBNRv1ROMSingleSpinCore(
+static int SEOBNRv1ROMEqualSpinCore(
   COMPLEX16FrequencySeries **hptilde,
   COMPLEX16FrequencySeries **hctilde,
   double phiRef,
@@ -226,9 +228,9 @@ static int TP_Spline_interpolation_2d(
 
 /********************* Definitions begin here ********************/
 
-/** Setup SEOBNRv1ROMSingleSpin model using data files installed in dir
+/** Setup SEOBNRv1ROMEqualSpin model using data files installed in dir
  */
-int SEOBNRv1ROMSingleSpin_Init(const char dir[]) {
+int SEOBNRv1ROMEqualSpin_Init(const char dir[]) {
   if(__lalsim_SEOBNRv1ROMSS_data.setup) {
     XLALPrintError("Error: SEOBNRROMdata was already set up!");
     XLAL_ERROR(XLAL_EFAILED);
@@ -244,8 +246,8 @@ int SEOBNRv1ROMSingleSpin_Init(const char dir[]) {
   }
 }
 
-/** Helper function to check if the SEOBNRv1ROMSingleSpin model has been initialised */
-bool SEOBNRv1ROMSingleSpin_IsSetup(void) {
+/** Helper function to check if the SEOBNRv1ROMEqualSpin model has been initialised */
+bool SEOBNRv1ROMEqualSpin_IsSetup(void) {
   if(__lalsim_SEOBNRv1ROMSS_data.setup)
     return true;
   else
@@ -386,7 +388,7 @@ int SEOBNRROMdata_Init(SEOBNRROMdata *romdata, const char dir[]) {
   /* Create storage for structures */
   if(romdata->setup)
   {
-    XLALPrintError("WARNING: You tried to setup the SEOBNRv1ROMSingleSpin model that was already initialised. Ignoring\n");
+    XLALPrintError("WARNING: You tried to setup the SEOBNRv1ROMEqualSpin model that was already initialised. Ignoring\n");
     return (XLAL_FAILURE);
   }
 
@@ -447,7 +449,7 @@ static size_t NextPow2(const size_t n) {
  * Construct 1D splines for amplitude and phase.
  * Compute strain waveform from amplitude and phase.
 */
-static int SEOBNRv1ROMSingleSpinCore(
+static int SEOBNRv1ROMEqualSpinCore(
   COMPLEX16FrequencySeries **hptilde,
   COMPLEX16FrequencySeries **hctilde,
   double phiRef,
@@ -656,7 +658,7 @@ static int SEOBNRv1ROMSingleSpinCore(
 }
 
 /** Compute waveform in LAL format at specified frequencies */
-int XLALSimIMRSEOBNRv1ROMSingleSpinFrequencySequence(
+int XLALSimIMRSEOBNRv1ROMEqualSpinFrequencySequence(
   struct tagCOMPLEX16FrequencySeries **hptilde, /**< Output: Frequency-domain waveform h+ */
   struct tagCOMPLEX16FrequencySeries **hctilde, /**< Output: Frequency-domain waveform hx */
   const REAL8Sequence *freqs,                   /**< Frequency points at which to evaluate the waveform (Hz) */
@@ -681,12 +683,12 @@ int XLALSimIMRSEOBNRv1ROMSingleSpinFrequencySequence(
 
   /* If either spin > 0.6, model not available, exit */
   if ( chi < -1.0 || chi > 0.6 ) {
-    XLALPrintError( "XLAL Error - %s: chi smaller than -1 or larger than 0.6!\nSEOBNRv1ROMSingleSpin is only available for spins in the range -1 <= a/M <= 0.6.\n", __func__);
+    XLALPrintError( "XLAL Error - %s: chi smaller than -1 or larger than 0.6!\nSEOBNRv1ROMEqualSpin is only available for spins in the range -1 <= a/M <= 0.6.\n", __func__);
     XLAL_ERROR( XLAL_EDOM );
   }
 
   if (q > 100) {
-    XLALPrintError( "XLAL Error - %s: q larger than 100!\nSEOBNRv1ROMSingleSpin is only available for spins in the range 1 <= q <= 100.\n", __func__);
+    XLALPrintError( "XLAL Error - %s: q larger than 100!\nSEOBNRv1ROMEqualSpin is only available for spins in the range 1 <= q <= 100.\n", __func__);
     XLAL_ERROR( XLAL_EDOM );
   }
 
@@ -697,21 +699,21 @@ int XLALSimIMRSEOBNRv1ROMSingleSpinFrequencySequence(
 
   // Load ROM data if not already loaded
 #ifdef LAL_PTHREAD_LOCK
-  (void) pthread_once(&SEOBNRv1ROMSingleSpin_is_initialized, SEOBNRv1ROMSingleSpin_Init_LALDATA);
+  (void) pthread_once(&SEOBNRv1ROMEqualSpin_is_initialized, SEOBNRv1ROMEqualSpin_Init_LALDATA);
 #else
-  SEOBNRv1ROMSingleSpin_Init_LALDATA();
+  SEOBNRv1ROMEqualSpin_Init_LALDATA();
 #endif
 
   // Call the internal core function with deltaF = 0 to indicate that freqs is non-uniformly
   // spaced and we want the strain only at these frequencies
-  int retcode = SEOBNRv1ROMSingleSpinCore(hptilde, hctilde,
+  int retcode = SEOBNRv1ROMEqualSpinCore(hptilde, hctilde,
             phiRef, fRef, distance, inclination, Mtot_sec, q, chi, freqs, 0);
 
   return(retcode);
 }
 
 /** Compute waveform in LAL format */
-int XLALSimIMRSEOBNRv1ROMSingleSpin(
+int XLALSimIMRSEOBNRv1ROMEqualSpin(
   struct tagCOMPLEX16FrequencySeries **hptilde, /**< Output: Frequency-domain waveform h+ */
   struct tagCOMPLEX16FrequencySeries **hctilde, /**< Output: Frequency-domain waveform hx */
   REAL8 phiRef,                                 /**< Phase at reference time */
@@ -740,12 +742,12 @@ int XLALSimIMRSEOBNRv1ROMSingleSpin(
 
   /* If either spin > 0.6, model not available, exit */
   if ( chi < -1.0 || chi > 0.6 ) {
-    XLALPrintError( "XLAL Error - %s: chi smaller than -1 or larger than 0.6!\nSEOBNRv1ROMSingleSpin is only available for spins in the range -1 <= a/M <= 0.6.\n", __func__);
+    XLALPrintError( "XLAL Error - %s: chi smaller than -1 or larger than 0.6!\nSEOBNRv1ROMEqualSpin is only available for spins in the range -1 <= a/M <= 0.6.\n", __func__);
     XLAL_ERROR( XLAL_EDOM );
   }
 
   if (q > 100) {
-    XLALPrintError( "XLAL Error - %s: q larger than 100!\nSEOBNRv1ROMSingleSpin is only available for spins in the range 1 <= q <= 100.\n", __func__);
+    XLALPrintError( "XLAL Error - %s: q larger than 100!\nSEOBNRv1ROMEqualSpin is only available for spins in the range 1 <= q <= 100.\n", __func__);
     XLAL_ERROR( XLAL_EDOM );
   }
 
@@ -756,9 +758,9 @@ int XLALSimIMRSEOBNRv1ROMSingleSpin(
 
   // Load ROM data if not already loaded
 #ifdef LAL_PTHREAD_LOCK
-  (void) pthread_once(&SEOBNRv1ROMSingleSpin_is_initialized, SEOBNRv1ROMSingleSpin_Init_LALDATA);
+  (void) pthread_once(&SEOBNRv1ROMEqualSpin_is_initialized, SEOBNRv1ROMEqualSpin_Init_LALDATA);
 #else
-  SEOBNRv1ROMSingleSpin_Init_LALDATA();
+  SEOBNRv1ROMEqualSpin_Init_LALDATA();
 #endif
 
   // Use fLow, fHigh, deltaF to compute freqs sequence
@@ -768,7 +770,7 @@ int XLALSimIMRSEOBNRv1ROMSingleSpin(
   freqs->data[0] = fLow;
   freqs->data[1] = fHigh;
 
-  int retcode = SEOBNRv1ROMSingleSpinCore(hptilde, hctilde,
+  int retcode = SEOBNRv1ROMEqualSpinCore(hptilde, hctilde,
             phiRef, fRef, distance, inclination, Mtot_sec, q, chi, freqs, deltaF);
 
   XLALDestroyREAL8Sequence(freqs);
@@ -776,11 +778,11 @@ int XLALSimIMRSEOBNRv1ROMSingleSpin(
   return(retcode);
 }
 
-/** Setup SEOBNRv1ROMSingleSpin model using data files installed in $LAL_DATA_PATH
+/** Setup SEOBNRv1ROMEqualSpin model using data files installed in $LAL_DATA_PATH
  */
-void SEOBNRv1ROMSingleSpin_Init_LALDATA(void)
+void SEOBNRv1ROMEqualSpin_Init_LALDATA(void)
 {
-  if (SEOBNRv1ROMSingleSpin_IsSetup()) return;
+  if (SEOBNRv1ROMEqualSpin_IsSetup()) return;
 
   // If we find one ROM datafile in a directory listed in LAL_DATA_PATH,
   // then we expect the remaining datafiles to also be there.
@@ -790,9 +792,9 @@ void SEOBNRv1ROMSingleSpin_Init_LALDATA(void)
   if (path==NULL)
     XLAL_ERROR_VOID(XLAL_EIO, "Unable to resolve data file %s in $LAL_DATA_PATH\n", datafile);
   char *dir = dirname(path);
-  int ret = SEOBNRv1ROMSingleSpin_Init(dir);
+  int ret = SEOBNRv1ROMEqualSpin_Init(dir);
   XLALFree(path);
 
   if(ret!=XLAL_SUCCESS)
-    XLAL_ERROR_VOID(XLAL_FAILURE, "Unable to find SEOBNRv1ROMSingleSpin data files in $LAL_DATA_PATH\n");
+    XLAL_ERROR_VOID(XLAL_FAILURE, "Unable to find SEOBNRv1ROMEqualSpin data files in $LAL_DATA_PATH\n");
 }
