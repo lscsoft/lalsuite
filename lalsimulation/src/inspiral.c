@@ -786,7 +786,7 @@ struct params parseargs(int argc, char **argv)
             p.f_min = atof(LALoptarg);
             break;
         case 'd':      /* distance */
-            p.distance = atof(LALoptarg);
+            p.distance = atof(LALoptarg) * 1e6 * LAL_PC_SI;
             break;
         case 'i':      /* inclination */
             p.inclination = atof(LALoptarg) * LAL_PI_180;
