@@ -493,7 +493,7 @@ int print_params(struct params p)
         int tideO = XLALSimInspiralGetTidalOrder(p.waveFlags);
         int axis = XLALSimInspiralGetFrameAxis(p.waveFlags);
         int modes = XLALSimInspiralGetModesChoice(p.waveFlags);
-        fprintf(stderr, "approximant:                                  %s\n", XLALGetStringFromApproximant(p.approx));
+        fprintf(stderr, "approximant:                                  %s\n", XLALSimInspiralGetStringFromApproximant(p.approx));
         if (p.phaseO == -1)
             fprintf(stderr, "phase post-Newtonian order:                   highest available\n");
         else
@@ -574,7 +574,8 @@ int usage(const char *program)
     fprintf(stderr, "recognized time-domain approximants:");
     for (a = 0, c = 0; a < NumApproximants; ++a) {
         if (XLALSimInspiralImplementedTDApproximants(a)) {
-            c += fprintf(stderr, "%s%s", c ? ", " : "\n\t", XLALGetStringFromApproximant(a));
+            const char *s = XLALSimInspiralGetStringFromApproximant(a);
+            c += fprintf(stderr, "%s%s", c ? ", " : "\n\t", s);
             if (c > 50)
                 c = 0;
         }
@@ -583,7 +584,8 @@ int usage(const char *program)
     fprintf(stderr, "recognized frequency-domain approximants:");
     for (a = 0, c = 0; a < NumApproximants; ++a) {
         if (XLALSimInspiralImplementedFDApproximants(a)) {
-            c += fprintf(stderr, "%s%s", c ? ", " : "\n\t", XLALGetStringFromApproximant(a));
+            const char *s = XLALSimInspiralGetStringFromApproximant(a);
+            c += fprintf(stderr, "%s%s", c ? ", " : "\n\t", s);
             if (c > 50)
                 c = 0;
         }
@@ -598,7 +600,7 @@ struct params parseargs(int argc, char **argv)
     char *kv;
     struct params p = {
         .verbose = 0,
-        .approx = XLALGetApproximantFromString(DEFAULT_APPROX),
+        .approx = XLALSimInspiralGetApproximantFromString(DEFAULT_APPROX),
         .condition = 0,
         .freq_dom = 0,
         .amp_phase = 0,
@@ -693,19 +695,19 @@ struct params parseargs(int argc, char **argv)
             p.amp_phase = 1;
             break;
         case 'a':      /* approximant */
-            p.approx = XLALGetApproximantFromString(LALoptarg);
+            p.approx = XLALSimInspiralGetApproximantFromString(LALoptarg);
             if ((int)p.approx == XLAL_FAILURE) {
                 fprintf(stderr, "error: invalid value %s for %s\n", LALoptarg, long_options[option_index].name);
                 exit(1);
             }
             break;
         case 'w':      /* waveform */
-            p.approx = XLALGetApproximantFromString(LALoptarg);
+            p.approx = XLALSimInspiralGetApproximantFromString(LALoptarg);
             if ((int)p.approx == XLAL_FAILURE) {
                 fprintf(stderr, "error: could not parse approximant from %s for %s\n", LALoptarg, long_options[option_index].name);
                 exit(1);
             }
-            p.phaseO = XLALGetOrderFromString(LALoptarg);
+            p.phaseO = XLALSimInspiralGetPNOrderFromString(LALoptarg);
             if ((int)p.approx == XLAL_FAILURE) {
                 fprintf(stderr, "error: could not parse order from %s for %s\n", LALoptarg, long_options[option_index].name);
                 exit(1);
@@ -792,7 +794,7 @@ struct params parseargs(int argc, char **argv)
         case 'A':      /* axis */
             if (p.waveFlags == NULL)
                 p.waveFlags = XLALSimInspiralCreateWaveformFlags();
-            XLALSimInspiralSetFrameAxis(p.waveFlags, XLALGetFrameAxisFromString(LALoptarg));
+            XLALSimInspiralSetFrameAxis(p.waveFlags, XLALSimInspiralGetFrameAxisFromString(LALoptarg));
             if ((int)XLALSimInspiralGetFrameAxis(p.waveFlags) == XLAL_FAILURE) {
                 fprintf(stderr, "error: invalid value %s for %s\n", LALoptarg, long_options[option_index].name);
                 exit(1);
@@ -801,8 +803,8 @@ struct params parseargs(int argc, char **argv)
         case 'n':      /* modes */
             if (p.waveFlags == NULL)
                 p.waveFlags = XLALSimInspiralCreateWaveformFlags();
-            XLALSimInspiralSetModesChoice(p.waveFlags, XLALGetHigherModesFromString(LALoptarg));
-            if ((int)XLALSimInspiralGetModesChoice(p.waveFlags) == XLAL_FAILURE) {
+            XLALSimInspiralSetModesChoice(p.waveFlags, XLALSimInspiralGetHigherModesFromString(LALoptarg));
+            if (XLALSimInspiralGetModesChoice(p.waveFlags) == 0) {
                 fprintf(stderr, "error: invalid value %s for %s\n", LALoptarg, long_options[option_index].name);
                 exit(1);
             }

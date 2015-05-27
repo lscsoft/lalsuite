@@ -1170,38 +1170,47 @@ int XLALSimInspiralImplementedFDApproximants(
     Approximant approximant /**< post-Newtonian approximant for use in waveform production */
     );
 
-/**
- * XLAL function to determine approximant from a string.  The string need not
- * match exactly, only contain a member of the Approximant enum.
- */
-int XLALGetApproximantFromString(const CHAR *inString);
 
-/**
- * XLAL function to determine string from approximant enum.
- * This function needs to be updated when new approximants are added.
- */
-const char* XLALGetStringFromApproximant(Approximant approximant);
+int XLALSimInspiralDecomposeWaveformString(int *approximant, int *order, int *axis, const char *waveform);
 
-/**
- * XLAL function to determine PN order from a string.  The string need not
- * match exactly, only contain a member of the LALPNOrder enum.
- */
-int XLALGetOrderFromString(const CHAR *inString);
+int XLALSimInspiralGetApproximantFromString(const char *waveform);
 
-/**
- * XLAL function to determine tapering flag from a string.  The string must
- * match exactly with a member of the LALSimInspiralApplyTaper enum.
- */
-int XLALGetTaperFromString(const CHAR *inString);
+/* DEPRECATED */
+int XLALGetApproximantFromString(const char *waveform);
 
-/** XLAL function to determine axis choice flag from a string */
-int XLALGetFrameAxisFromString(const CHAR *inString);
+int XLALSimInspiralGetPNOrderFromString(const char *waveform);
 
-/**
- * XLAL function to determine mode flag from a string.
- * Returns one of enum values as name matches case of enum.
- */
-int XLALGetHigherModesFromString(const CHAR *inString);
+/* DEPRECATED */
+int XLALGetOrderFromString(const char *waveform);
+
+int XLALSimInspiralGetFrameAxisFromString(const char *waveform);
+
+/* DEPRECATED */
+int XLALGetFrameAxisFromString(const char *waveform);
+
+int XLALSimInspiralGetTaperFromString(const char *string);
+
+/* DEPRECATED */
+int XLALGetTaperFromString(const char *string);
+
+int XLALSimInspiralGetHigherModesFromString(const char *string);
+
+/* DEPRECATED */
+int XLALGetHigherModesFromString(const char *string);
+
+const char * XLALSimInspiralGetStringFromApproximant(Approximant approximant);
+
+/* DEPRECATED */
+const char * XLALGetStringFromApproximant(Approximant approximant);
+
+const char * XLALSimInspiralGetStringFromPNOrder(LALPNOrder order);
+
+const char * XLALSimInspiralGetStringFromTaper(LALSimInspiralApplyTaper taper);
+
+const char * XLALSimInspiralGetStringFromFrameAxis(LALSimInspiralFrameAxis axis);
+
+const char * XLALSimInspiralGetStringFromModesChoice(LALSimInspiralModesChoice modes);
+
 
 /**
  * DEPRECATED: USE XLALSimInspiralChooseTDWaveform() INSTEAD

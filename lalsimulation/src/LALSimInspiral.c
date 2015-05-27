@@ -27,8 +27,10 @@
 
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimIMR.h>
+#include <lal/LALSimInspiralWaveformFlags.h>
 #include <lal/LALConstants.h>
 #include <lal/LALStdlib.h>
+#include <lal/LALString.h>
 #include <lal/Sequence.h>
 #include <lal/TimeSeries.h>
 #include <lal/FrequencySeries.h>
@@ -4059,6 +4061,527 @@ COMPLEX16TimeSeries *XLALSimInspiralChooseTDMode(
 }
 
 
+
+#define INITIALIZE_NAME(a) [a] = #a
+/* TODO: UPDATE ME WHENEVER A NEW APPROXIMANT IS ADDED */
+static const char *lalSimulationApproximantNames[] = {
+    INITIALIZE_NAME(TaylorT1),
+    INITIALIZE_NAME(TaylorT2),
+    INITIALIZE_NAME(TaylorT3),
+    INITIALIZE_NAME(TaylorF1),
+    INITIALIZE_NAME(TaylorF2),
+    INITIALIZE_NAME(TaylorR2F4),
+    INITIALIZE_NAME(TaylorF2RedSpin),
+    INITIALIZE_NAME(TaylorF2RedSpinTidal),
+    INITIALIZE_NAME(PadeT1),
+    INITIALIZE_NAME(PadeF1),
+    INITIALIZE_NAME(EOB),
+    INITIALIZE_NAME(BCV),
+    INITIALIZE_NAME(BCVSpin),
+    INITIALIZE_NAME(SpinTaylorT1),
+    INITIALIZE_NAME(SpinTaylorT2),
+    INITIALIZE_NAME(SpinTaylorT3),
+    INITIALIZE_NAME(SpinTaylorT4),
+    INITIALIZE_NAME(SpinTaylorT5),
+    INITIALIZE_NAME(SpinTaylorF2),
+    INITIALIZE_NAME(SpinTaylorFrameless),
+    INITIALIZE_NAME(SpinTaylor),
+    INITIALIZE_NAME(PhenSpinTaylor),
+    INITIALIZE_NAME(PhenSpinTaylorRD),
+    INITIALIZE_NAME(SpinQuadTaylor),
+    INITIALIZE_NAME(FindChirpSP),
+    INITIALIZE_NAME(FindChirpPTF),
+    INITIALIZE_NAME(GeneratePPN),
+    INITIALIZE_NAME(BCVC),
+    INITIALIZE_NAME(FrameFile),
+    INITIALIZE_NAME(AmpCorPPN),
+    INITIALIZE_NAME(NumRel),
+    INITIALIZE_NAME(NumRelNinja2),
+    INITIALIZE_NAME(Eccentricity),
+    INITIALIZE_NAME(EOBNR),
+    INITIALIZE_NAME(EOBNRv2),
+    INITIALIZE_NAME(EOBNRv2HM),
+    INITIALIZE_NAME(SEOBNRv1),
+    INITIALIZE_NAME(SEOBNRv2),
+    INITIALIZE_NAME(SEOBNRv3),
+    INITIALIZE_NAME(SEOBNRv1_ROM_SingleSpin),
+    INITIALIZE_NAME(SEOBNRv1_ROM_DoubleSpin),
+    INITIALIZE_NAME(SEOBNRv2_ROM_SingleSpin),
+    INITIALIZE_NAME(SEOBNRv2_ROM_DoubleSpin),
+    INITIALIZE_NAME(HGimri),
+    INITIALIZE_NAME(IMRPhenomA),
+    INITIALIZE_NAME(IMRPhenomB),
+    INITIALIZE_NAME(IMRPhenomFA),
+    INITIALIZE_NAME(IMRPhenomFB),
+    INITIALIZE_NAME(IMRPhenomC),
+    INITIALIZE_NAME(IMRPhenomP),
+    INITIALIZE_NAME(IMRPhenomFC),
+    INITIALIZE_NAME(TaylorEt),
+    INITIALIZE_NAME(TaylorT4),
+    INITIALIZE_NAME(TaylorN),
+    INITIALIZE_NAME(SpinTaylorT4Fourier),
+    INITIALIZE_NAME(SpinTaylorT2Fourier),
+    INITIALIZE_NAME(SpinDominatedWf),
+};
+#undef INITIALIZE_NAME
+
+/* TODO: UPDATE ME WHENEVER A NEW PN ORDER IS ADDED */
+static const char *lalSimulationPNOrderNames[] = {
+    [LAL_PNORDER_NEWTONIAN]         = "newtonian",
+    [LAL_PNORDER_HALF]              = "oneHalfPN",
+    [LAL_PNORDER_ONE]               = "onePN",
+    [LAL_PNORDER_ONE_POINT_FIVE]    = "onePointFivePN",
+    [LAL_PNORDER_TWO]               = "twoPN",
+    [LAL_PNORDER_TWO_POINT_FIVE]    = "twoPointFivePN",
+    [LAL_PNORDER_THREE]             = "threePN",
+    [LAL_PNORDER_THREE_POINT_FIVE]  = "threePointFivePN",
+    [LAL_PNORDER_PSEUDO_FOUR]       = "pseudoFourPN",
+};
+
+/* TODO: UPDATE ME WHENEVER A NEW TAPER IS ADDED */
+static const char *lalSimulationTaperNames[] = {
+    [LAL_SIM_INSPIRAL_TAPER_NONE]       = "TAPER_NONE",
+    [LAL_SIM_INSPIRAL_TAPER_START]      = "TAPER_START",
+    [LAL_SIM_INSPIRAL_TAPER_END]        = "TAPER_END",
+    [LAL_SIM_INSPIRAL_TAPER_STARTEND]   = "TAPER_STARTEND",
+};
+
+/* TODO: UPDATE ME WHENEVER A NEW FRAME AXIS IS ADDED */
+static const char *lalSimulationFrameAxisNames[] = {
+    [LAL_SIM_INSPIRAL_FRAME_AXIS_TOTAL_J]   = "TotalJ",
+    [LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L] = "OrbitalL",
+    [LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW]      = "View",
+};
+
+/* TODO: UPDATE ME WHENEVER A NEW MODES CHOICE IS ADDED */
+static const char *lalSimulationModesChoiceNames[] = {
+    [LAL_SIM_INSPIRAL_MODES_CHOICE_2AND3AND4AND5L] = "L2345",
+    [LAL_SIM_INSPIRAL_MODES_CHOICE_2AND3AND4L] = "L234",
+    [LAL_SIM_INSPIRAL_MODES_CHOICE_2AND3AND5L] = "L235",
+    [LAL_SIM_INSPIRAL_MODES_CHOICE_2AND4AND5L] = "L245",
+    [LAL_SIM_INSPIRAL_MODES_CHOICE_3AND4AND5L] = "L345",
+    [LAL_SIM_INSPIRAL_MODES_CHOICE_2AND3L] = "L23",
+    [LAL_SIM_INSPIRAL_MODES_CHOICE_2AND4L] = "L24",
+    [LAL_SIM_INSPIRAL_MODES_CHOICE_3AND4L] = "L34",
+    [LAL_SIM_INSPIRAL_MODES_CHOICE_2AND5L] = "L25",
+    [LAL_SIM_INSPIRAL_MODES_CHOICE_3AND5L] = "L35",
+    [LAL_SIM_INSPIRAL_MODES_CHOICE_4AND5L] = "L45",
+    [LAL_SIM_INSPIRAL_MODES_CHOICE_RESTRICTED] = "L2",
+    [LAL_SIM_INSPIRAL_MODES_CHOICE_3L] = "L3",
+    [LAL_SIM_INSPIRAL_MODES_CHOICE_4L] = "L4",
+    [LAL_SIM_INSPIRAL_MODES_CHOICE_5L] = "L5",
+    /* NOTE: cannot do the "ALL" case since its value is -1 */
+    // [LAL_SIM_INSPIRAL_MODES_CHOICE_ALL] = "ALL",
+};
+
+/* locates and deletes a substring in a list of substrings from a string, ignoring case;
+ * if multiple substrings in the string match, delete the longest one; here, deletion
+ * means replacing the substring with BEL characters */
+static int delete_substring_in_list_from_string(char *string, const char *list[], size_t size)
+{
+    int longest_position = -1;
+    int longest_offset = -1;
+    int longest_length = -1;
+    size_t i;
+
+    if (string == NULL || strlen(string) == 0) // no string to search
+        return -1;
+
+    for (i = 0; i < size; ++i) {
+        char *match;
+        if (list[i] == NULL) // no such element in list
+            continue;
+        if ((match = XLALStringCaseSubstring(string, list[i]))) {
+            int length = strlen(list[i]);
+            if (length > longest_length) {
+                longest_position = i;
+                longest_offset = match - string;
+                longest_length = length;
+            }
+        }
+    }
+
+    if (longest_position < 0) // failed to find a word
+        return -1;
+
+    /* delete word from string by replacing with BEL */
+    for (i = 0; i < (size_t)longest_length; ++i)
+        string[longest_offset + i] = '\b';
+
+    return longest_position;
+}
+
+/**
+ * @brief Parses a waveform string to determine approximant, PN order, and axis choice.
+ * @details
+ * A waveform string can contain substrings specifying the approximant,
+ * the PN order, and the frame axis.  This routine decomposes the waveform
+ * string to extract this information.  Here we assume that there are no
+ * extraneous characters in the waveform string that do not encode this
+ * information.  If extra characters are detected then this routine returns
+ * a failure code.
+ *
+ * If one of the output parameters is set to NULL, this routine does not
+ * return the value for that parameter, and does not fail if that parameter
+ * cannot be determined from the waveform string; however, the full waveform
+ * string must be valid.  If the axis parameter is not NULL but information
+ * about the frame axis is not found in the string then the default value
+ * axis is set to the default value LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW.
+ * However, if the approximant or order parameters are not NULL and
+ * the approximant and order cannot be determined from the waveform string,
+ * then this routine produces an error.
+ *
+ * Parsing is not case sensitive (using the "C" locale).
+ *
+ * @param[out] approximate The approximate value from Approximate enum.
+ * @param[out] order The PN order value from LALPNOrder enum.
+ * @param[out] axis The frame axis value from LALPNOrder enum.
+ * @param[in] waveform The waveform string.
+ * @retval 0 Success.
+ * @retval <0 Failure.
+ *
+ * @note
+ * Users of the SWIG-Python interface probably want to use the routines
+ * XLALSimInspiralGetApproximantFromString(),
+ * XLALSimInspiralGetPNOrderFromString(), and
+ * XLALSimInspiralGetFrameAxisFromString()
+ * since there is no way to disable required matching of the PN order
+ * with the SWIG-wrapped version of this routine.
+ *
+ * @bug
+ * The default frame axis should be LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L
+ * rather than LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW.
+ */
+int XLALSimInspiralDecomposeWaveformString(int *approximant, int *order, int *axis, const char *waveform)
+{
+    char *string;
+    int found_approximant, found_order, found_axis;
+    int failed = 0;
+
+    if (!waveform)
+        XLAL_ERROR(XLAL_EFAULT);
+
+    string = XLALStringDuplicate(waveform);
+
+#define DELETE_SUBSTRING_IN_LIST_FROM_STRING(string, list) delete_substring_in_list_from_string(string, list, sizeof(list)/sizeof(*list))
+    found_approximant = DELETE_SUBSTRING_IN_LIST_FROM_STRING(string, lalSimulationApproximantNames);
+    found_order       = DELETE_SUBSTRING_IN_LIST_FROM_STRING(string, lalSimulationPNOrderNames);
+    found_axis        = DELETE_SUBSTRING_IN_LIST_FROM_STRING(string, lalSimulationFrameAxisNames);
+#undef DELETE_SUBSTRING_IN_LIST_FROM_STRING
+
+    /* assign values to output parameters */
+    if (approximant) {
+        *approximant = found_approximant;
+        /* fail if couldn't find approximant */
+        if (found_approximant < 0)
+            failed = 1;
+    }
+    if (order) {
+        *order = found_order;
+        /* fail if couldn't find order */
+        if (found_order < 0)
+            failed = 1;
+    }
+    if (axis) {
+        *axis = found_axis;
+        /* set frame axis to view if couldn't find, but don't fail */
+        if (found_axis < 0)
+            *axis = LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW;
+    }
+
+    /* check to see if there are extra characters */
+    if (strspn(string, "\b") != strlen(string))
+        failed = 1;
+
+    XLALFree(string);
+
+    if (failed)
+        XLAL_ERROR(XLAL_EINVAL, "Invalid waveform string `%s'.", waveform);
+    return 0;
+}
+
+/**
+ * @brief Parses a waveform string to determine approximant.
+ * @details
+ * This routine uses XLALSimInspiralDecomposeWaveformString() to
+ * determine the approximant from the waveform string.
+ * @param[in] waveform The waveform string.
+ * @return The Approximant enum value, or -1 on error.
+ */
+int XLALSimInspiralGetApproximantFromString(const char *waveform)
+{
+    int approximant = -1;
+    if (XLALSimInspiralDecomposeWaveformString(&approximant, NULL, NULL, waveform) < 0)
+        XLAL_ERROR(XLAL_EFUNC);
+    return approximant;
+}
+
+/**
+ * @deprecated
+ * Like XLALSimInspiralGetApproximantFromString() but doesn't demand that the
+ * remainder of the waveform string be valid.
+ */
+int XLALGetApproximantFromString(const char *waveform)
+{
+    int approximant = -1;
+    int errnum = 0;
+    XLAL_PRINT_DEPRECATION_WARNING("XLALSimInspiralGetApproximantFromString");
+    XLAL_TRY(XLALSimInspiralDecomposeWaveformString(&approximant, NULL, NULL, waveform), errnum);
+    if (errnum && errnum != XLAL_EINVAL) // pass any error other than XLAL_EINVAL
+        XLAL_ERROR(errnum);
+    /* fail if approximant wasn't found */
+    if (approximant < 0)
+        XLAL_ERROR(XLAL_EINVAL, "Cannot parse approximant from string `%s'.", waveform);
+    return approximant;
+}
+
+/**
+ * @brief Parses a waveform string to determine PN order.
+ * @details
+ * This routine uses XLALSimInspiralDecomposeWaveformString() to
+ * determine the PN order from the waveform string.
+ * @param[in] waveform The waveform string.
+ * @return The LALPNOrder enum value, or -1 on error.
+ */
+int XLALSimInspiralGetPNOrderFromString(const char *waveform)
+{
+    int order = -1;
+    if (XLALSimInspiralDecomposeWaveformString(NULL, &order, NULL, waveform) < 0)
+        XLAL_ERROR(XLAL_EFUNC);
+    return order;
+}
+
+/**
+ * @deprecated
+ * Like XLALSimInspiralGetPNOrderFromString() but doesn't demand that the
+ * remainder of the waveform string be valid.
+ */
+int XLALGetOrderFromString(const char *waveform)
+{
+    int order = -1;
+    int errnum = 0;
+    XLAL_PRINT_DEPRECATION_WARNING("XLALSimInspiralGetPNOrderFromString");
+    XLAL_TRY(XLALSimInspiralDecomposeWaveformString(NULL, &order, NULL, waveform), errnum);
+    if (errnum && errnum != XLAL_EINVAL) // pass any error other than XLAL_EINVAL
+        XLAL_ERROR(errnum);
+    /* fail if order wasn't found */
+    if (order < 0)
+        XLAL_ERROR(XLAL_EINVAL, "Cannot parse approximant from string `%s'.", waveform);
+    return order;
+}
+
+/**
+ * @brief Parses a waveform string to determine frame axis.
+ * @details
+ * This routine uses XLALSimInspiralDecomposeWaveformString() to
+ * determine the frame axis from the waveform string.  If the
+ * frame axis cannot be determined, the value
+ * LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW is returned.
+ * @param[in] waveform The waveform string.
+ * @return The LALPNOrder enum value, or -1 on error.
+ * @bug
+ * The default should be LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L
+ * rather than LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW.
+ */
+int XLALSimInspiralGetFrameAxisFromString(const char *waveform)
+{
+    int axis = -1;
+    if (XLALSimInspiralDecomposeWaveformString(NULL, NULL, &axis, waveform) < 0)
+        XLAL_ERROR(XLAL_EFUNC);
+    return axis;
+}
+
+/**
+ * @deprecated
+ * Like XLALSimInspiralGetFrameAxisFromString() but doesn't demand that the
+ * remainder of the waveform string be valid.
+ * @bug
+ * The default should be LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L
+ * rather than LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW.
+ */
+int XLALGetFrameAxisFromString(const char *waveform)
+{
+    int axis = -1;
+    int errnum = 0;
+    XLAL_PRINT_DEPRECATION_WARNING("XLALSimInspiralGetFrameAxisFromString");
+    XLAL_TRY(XLALSimInspiralDecomposeWaveformString(NULL, NULL, &axis, waveform), errnum);
+    if (errnum && errnum != XLAL_EINVAL) // pass any error other than XLAL_EINVAL
+        XLAL_ERROR(errnum);
+    /* if axis wasn't found, use view */
+    if (axis < 0)
+        axis = LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW;
+    return axis;
+}
+
+/**
+ * @brief Parses a string to determine the LALSimInspiralApplyTaper enum value.
+ * @details
+ * Parses a string to determine the LALSimInspiralApplyTaper enum value.
+ * Parsing is not case sensitive (using the "C" locale).
+ * @param[in] string The string to be parsed.
+ * @return The LALSimInspiralApplyTaper enum value, or -1 on error.
+ */
+int XLALSimInspiralGetTaperFromString(const char *string)
+{
+    const char **list = lalSimulationTaperNames;
+    size_t size = sizeof(lalSimulationTaperNames)/sizeof(*lalSimulationTaperNames);
+    size_t i;
+
+    if (!string)
+        XLAL_ERROR(XLAL_EFAULT);
+
+    for (i = 0; i < size; ++i)
+        if (list[i])
+            if (XLALStringCaseCompare(string, list[i]) == 0) // found it
+                return i;
+
+    XLAL_ERROR(XLAL_EINVAL, "Invalid injection tapering string `%s'.", string);
+}
+
+/**
+ * @deprecated
+ * Use XLALSimInspiralGetTaperFromString() instead.
+ */
+int XLALGetTaperFromString(const char *string)
+{
+    XLAL_PRINT_DEPRECATION_WARNING("XLALSimInspiralGetTaperFromString");
+    return XLALSimInspiralGetTaperFromString(string);
+}
+
+/**
+ * @brief Parses a string to determine the LALSimInspiralModesChoice enum value.
+ * @details
+ * Parses a string to determine the LALSimInspiralModesChoice enum value.
+ * Parsing is not case sensitive (using the "C" locale).
+ * @param[in] string The string to be parsed.
+ * @return The LALSimInspiralModesChoice enum value, or 0 on error.
+ * @note The normal error code -1 is actually a valid mode choice
+ * so this routine returns 0 (which is not a valid modes choice)
+ * on error rather than -1.
+ */
+int XLALSimInspiralGetHigherModesFromString(const char *string)
+{
+    const char **list = lalSimulationModesChoiceNames;
+    size_t size = sizeof(lalSimulationModesChoiceNames)/sizeof(*lalSimulationModesChoiceNames);
+    size_t i;
+
+    if (!string)
+        XLAL_ERROR(XLAL_EFAULT);
+
+    /* the "ALL" case is a special case */
+    if (XLALStringCaseCompare(string, "ALL") == 0)
+        return LAL_SIM_INSPIRAL_MODES_CHOICE_ALL;
+
+    for (i = 0; i < size; ++i)
+        if (list[i])
+            if (XLALStringCaseCompare(string, list[i]) == 0) // found it
+                return i;
+
+    XLAL_ERROR_VAL(0, XLAL_EINVAL, "Invalid injection modes choice string `%s'.", string);
+}
+
+/**
+ * @deprecated
+ * Use XLALSimInspiralHigherModesFromString() instead.
+ */
+int XLALGetHigherModesFromString(const char *string)
+{
+    XLAL_PRINT_DEPRECATION_WARNING("XLALSimInspiralGetHigherModesFromString");
+    return XLALSimInspiralGetHigherModesFromString(string);
+}
+
+/**
+ * @brief Returns a string associated with an Approximant enum value.
+ * @param[in] approximant The Approximant enum value.
+ * @returns A constant string or NULL if there is an error.
+ */
+const char * XLALSimInspiralGetStringFromApproximant(Approximant approximant)
+{
+    const char *s;
+    if ((int)(approximant) < 0 || (int)(approximant) >= NumApproximants)
+        XLAL_ERROR_NULL(XLAL_EINVAL);
+    s = lalSimulationApproximantNames[approximant];
+    if (!s)
+        XLAL_ERROR_NULL(XLAL_EINVAL);
+    return s;
+}
+
+/**
+ * @deprecated
+ * Use XLALSimInspiralHigherModesFromString() instead.
+ */
+const char * XLALGetStringFromApproximant(Approximant approximant)
+{
+    XLAL_PRINT_DEPRECATION_WARNING("XLALSimInspiralGetStringFromApproximant");
+    return XLALSimInspiralGetStringFromApproximant(approximant);
+}
+
+/**
+ * @brief Returns a string associated with a LALPNOrder enum value.
+ * @param[in] order The LALPNOrder enum value.
+ * @returns A constant string or NULL if there is an error.
+ */
+const char * XLALSimInspiralGetStringFromPNOrder(LALPNOrder order)
+{
+    const char *s;
+    if ((int)(order) < 0 || (int)(order) >= LAL_PNORDER_NUM_ORDER)
+        XLAL_ERROR_NULL(XLAL_EINVAL);
+    s = lalSimulationPNOrderNames[order];
+    if (!s)
+        XLAL_ERROR_NULL(XLAL_EINVAL);
+    return s;
+}
+
+/**
+ * @brief Returns a string associated with a LALSimInspiralApplyTaper enum value.
+ * @param[in] order The LALSimInspiralApplyTaper enum value.
+ * @returns A constant string or NULL if there is an error.
+ */
+const char * XLALSimInspiralGetStringFromTaper(LALSimInspiralApplyTaper taper)
+{
+    const char *s;
+    if ((int)(taper) < 0 || (int)(taper) >= LAL_SIM_INSPIRAL_TAPER_NUM_OPTS)
+        XLAL_ERROR_NULL(XLAL_EINVAL);
+    s = lalSimulationTaperNames[taper];
+    if (!s)
+        XLAL_ERROR_NULL(XLAL_EINVAL);
+    return s;
+}
+
+/**
+ * @brief Returns a string associated with a LALSimInspiralFrameAxis enum value.
+ * @param[in] order The LALSimInspiralFrameAxis enum value.
+ * @returns A constant string or NULL if there is an error.
+ */
+const char * XLALSimInspiralGetStringFromFrameAxis(LALSimInspiralFrameAxis axis)
+{
+    const char *s;
+    if ((int)(axis) < 0 || (size_t)(axis) >= sizeof(lalSimulationFrameAxisNames)/sizeof(*lalSimulationFrameAxisNames))
+        XLAL_ERROR_NULL(XLAL_EINVAL);
+    s = lalSimulationFrameAxisNames[axis];
+    if (!s)
+        XLAL_ERROR_NULL(XLAL_EINVAL);
+    return s;
+}
+
+/**
+ * @brief Returns a string associated with a LALSimInspiralModesChoice enum value.
+ * @param[in] order The LALSimInspiralModesChoice enum value.
+ * @returns A constant string or NULL if there is an error.
+ */
+const char * XLALSimInspiralGetStringFromModesChoice(LALSimInspiralModesChoice modes)
+{
+    const char *s;
+    if (modes == LAL_SIM_INSPIRAL_MODES_CHOICE_ALL) // handle this case separately
+        return "ALL";
+    if ((int)(modes) < 0 || (size_t)(modes) >= sizeof(lalSimulationModesChoiceNames)/sizeof(*lalSimulationModesChoiceNames))
+        XLAL_ERROR_NULL(XLAL_EINVAL);
+    s = lalSimulationModesChoiceNames[modes];
+    if (!s)
+        XLAL_ERROR_NULL(XLAL_EINVAL);
+    return s;
+}
+
 /**
  * Checks whether the given approximant is implemented in lalsimulation's XLALSimInspiralChooseTDWaveform().
  *
@@ -4127,521 +4650,6 @@ int XLALSimInspiralImplementedFDApproximants(
         default:
             return 0;
     }
-}
-
-/**
- * XLAL function to determine approximant from a string.  The string need not
- * match exactly, only contain a member of the Approximant enum.
- */
-int XLALGetApproximantFromString(const CHAR *inString)
-{
-#ifndef LAL_NDEBUG
-  if ( !inString )
-    XLAL_ERROR( XLAL_EFAULT );
-#endif
-
-  if ( strstr(inString, "TaylorF2RedSpinTidal" ) )
-  {
-    return TaylorF2RedSpinTidal;
-  }
-  else if ( strstr(inString, "TaylorF2RedSpin" ) )
-  {
-    return TaylorF2RedSpin;
-  }
-  else if ( strstr(inString, "SpinTaylorF2" ) )
-  {
-    return SpinTaylorF2;
-  }
-  else if ( strstr(inString, "TaylorF2" ) )
-  {
-    return TaylorF2;
-  }
-  else if ( strstr(inString, "TaylorR2F4" ) )
-  {
-    return TaylorR2F4;
-  }
-  else if ( strstr(inString, "PhenSpinTaylorRD" ) )
-  {
-    return PhenSpinTaylorRD;
-  }
-  else if ( strstr(inString, "PhenSpinTaylor" ) )
-  {
-    return PhenSpinTaylor;
-  }
-  else if ( strstr(inString, "SpinTaylorT2Fourier" ) )
-  {
-    return SpinTaylorT2Fourier;
-  }
-  else if ( strstr(inString, "SpinTaylorT4Fourier" ) )
-  {
-    return SpinTaylorT4Fourier;
-  }
-  else if ( strstr(inString, "SpinTaylorT2" ) )
-  {
-    return SpinTaylorT2;
-  }
-  else if ( strstr(inString, "SpinTaylorT4" ) )
-  {
-    return SpinTaylorT4;
-
-  }
- else if ( strstr(inString, "SpinTaylorT1" ) )
-  {
-    return SpinTaylorT1;
-
-  }
-  else if ( strstr(inString, "SpinTaylorFrameless" ) )
-  {
-    return SpinTaylorFrameless;
-  }
-  else if ( strstr(inString, "SpinTaylorT3" ) )
-  {
-    return SpinTaylorT3;
-  }
-  else if ( strstr(inString, "SpinTaylor" ) )
-  {
-    return SpinTaylor;
-  }
-  else if ( strstr(inString, "SpinQuadTaylor" ) )
-  {
-    return SpinQuadTaylor;
-  }
-  else if ( strstr(inString, "TaylorT1" ) )
-  {
-    return TaylorT1;
-  }
-  else if ( strstr(inString, "TaylorT2" ) )
-  {
-    return TaylorT2;
-  }
-  else if ( strstr(inString, "TaylorT3" ) )
-  {
-    return TaylorT3;
-  }
-  else if ( strstr(inString, "TaylorT4" ) )
-  {
-    return TaylorT4;
-  }
-  else if ( strstr(inString, "IMRPhenomA" ) )
-  {
-    return IMRPhenomA;
-  }
-  else if ( strstr(inString, "IMRPhenomB" ) )
-  {
-    return IMRPhenomB;
-  }
-  else if ( strstr(inString, "IMRPhenomC" ) )
-  {
-    return IMRPhenomC;
-  }
-  else if ( strstr(inString, "IMRPhenomP" ) )
-  {
-    return IMRPhenomP;
-  }
-  else if ( strstr(inString, "SEOBNRv1_ROM_SingleSpin" ) )
-  {
-    return SEOBNRv1_ROM_SingleSpin;
-  }
-  else if ( strstr(inString, "SEOBNRv1_ROM_DoubleSpin" ) )
-  {
-    return SEOBNRv1_ROM_DoubleSpin;
-  }
-  else if ( strstr(inString, "SEOBNRv2_ROM_SingleSpin" ) )
-  {
-    return SEOBNRv2_ROM_SingleSpin;
-  }
-  else if ( strstr(inString, "SEOBNRv2_ROM_DoubleSpin" ) )
-  {
-    return SEOBNRv2_ROM_DoubleSpin;
-  }
-  else if ( strstr(inString, "IMRPhenomFA" ) )
-  {
-    return IMRPhenomFA;
-  }
-  else if ( strstr(inString, "IMRPhenomFB" ) )
-  {
-    return IMRPhenomFB;
-  }
-  else if ( strstr(inString, "IMRPhenomFC" ) )
-  {
-    return IMRPhenomFC;
-  }
-  else if ( strstr(inString, "SEOBNRv1" ) )
-  {
-    return SEOBNRv1;
-  }
-  else if ( strstr(inString, "SEOBNRv2" ) )
-  {
-    return SEOBNRv2;
-  }
-  else if ( strstr(inString, "SEOBNRv3" ) )
-  {
-    return SEOBNRv3;
-  }
-  else if ( strstr(inString, "HGimri" ) )
-  {
-    return HGimri;
-  }
-  else if ( strstr(inString, "EOBNRv2HM" ) )
-  {
-    return EOBNRv2HM;
-  }
-  else if ( strstr(inString, "EOBNRv2" ) )
-  {
-    return EOBNRv2;
-  }
-  else if ( strstr(inString, "EOBNR" ) )
-  {
-    return EOBNR;
-  }
-  else if ( strstr(inString, "EOB" ) )
-  {
-    return EOB;
-  }
-  else if ( strstr(inString, "AmpCorPPN" ) )
-  {
-    return AmpCorPPN;
-  }
-  else if ( strstr(inString, "GeneratePPN" ) )
-  {
-    return GeneratePPN;
-  }
-  else if ( strstr(inString, "NumRelNinja2" ) )
-  {
-    return NumRelNinja2;
-  }
-  else if ( strstr(inString, "NumRel" ) )
-  {
-    return NumRel;
-  }
-  else if ( strstr(inString, "Ninja2" ) )
-  {
-    return NumRelNinja2;
-  }
-  else if ( strstr(inString, "FindChirpSP" ) )
-  {
-    return FindChirpSP;
-  }
-  else if ( strstr(inString, "FindChirpPTF" ) )
-  {
-    return FindChirpPTF;
-  }
-  else if ( strstr(inString, "TaylorEt" ) )
-  {
-    return TaylorEt;
-  }
-  else if ( strstr(inString, "TaylorN" ) )
-  {
-    return TaylorN;
-  }
-  else if ( strstr(inString, "TaylorF1" ) )
-  {
-    return TaylorF1;
-  }
-  else if ( strstr(inString, "PadeT1" ) )
-  {
-    return PadeT1;
-  }
-  else if ( strstr(inString, "PadeF1" ) )
-  {
-    return PadeF1;
-  }
-  else if ( strstr(inString, "BCVSpin" ) )
-  {
-    return BCVSpin;
-  }
-  else if ( strstr(inString, "BCVC" ) )
-  {
-    return BCVC;
-  }
-  else if ( strstr(inString, "BCV" ) )
-  {
-    return BCV;
-  }
-  else if ( strstr(inString, "FrameFile" ) )
-  {
-    return FrameFile;
-  }
-  else if ( strstr(inString, "Eccentricity" ) )
-  {
-    return Eccentricity;
-  }
-  else if ( strstr(inString, "SpinDominatedWf" ) )
-  {
-    return SpinDominatedWf;
-  }
-  else
-  {
-    XLALPrintError( "Cannot parse approximant from string: %s \n", inString );
-    XLAL_ERROR( XLAL_EINVAL );
-  }
-}
-
-/**
- * XLAL function to determine string from approximant enum.
- * This function needs to be updated when new approximants are added.
- */
-const char* XLALGetStringFromApproximant(Approximant approximant)
-{
-  switch (approximant)
-  {
-    case TaylorF2RedSpinTidal:
-      return "TaylorF2RedSpinTidal";
-    case TaylorF2RedSpin:
-      return "TaylorF2RedSpin";
-    case TaylorF2:
-      return "TaylorF2";
-    case PhenSpinTaylor:
-      return "PhenSpinTaylor";
-    case TaylorR2F4:
-      return "TaylorR2F4";
-    case PhenSpinTaylorRD:
-      return "PhenSpinTaylorRD";
-    case SpinTaylorF2:
-      return "SpinTaylorF2";
-    case SpinTaylorT2:
-      return "SpinTaylorT2";
-    case SpinTaylorT4:
-      return "SpinTaylorT4";
-    case SpinTaylorT1:
-      return "SpinTaylorT1";
-    case SpinTaylorFrameless:
-      return "SpinTaylorFrameless";
-    case SpinTaylorT3:
-      return "SpinTaylorT3";
-    case SpinTaylor:
-      return "SpinTaylor";
-    case SpinQuadTaylor:
-      return "SpinQuadTaylor";
-    case TaylorT1:
-      return "TaylorT1";
-    case TaylorT2:
-      return "TaylorT2";
-    case TaylorT3:
-      return "TaylorT3";
-    case TaylorT4:
-      return "TaylorT4";
-    case IMRPhenomA:
-      return "IMRPhenomA";
-    case IMRPhenomB:
-      return "IMRPhenomB";
-    case IMRPhenomC:
-      return "IMRPhenomC";
-    case IMRPhenomP:
-      return "IMRPhenomP";
-    case SEOBNRv1_ROM_SingleSpin:
-      return "SEOBNRv1_ROM_SingleSpin";
-    case SEOBNRv1_ROM_DoubleSpin:
-      return "SEOBNRv1_ROM_DoubleSpin";
-    case SEOBNRv2_ROM_SingleSpin:
-      return "SEOBNRv2_ROM_SingleSpin";
-    case SEOBNRv2_ROM_DoubleSpin:
-      return "SEOBNRv2_ROM_DoubleSpin";
-    case IMRPhenomFA:
-      return "IMRPhenomFA";
-    case IMRPhenomFB:
-      return "IMRPhenomFB";
-    case IMRPhenomFC:
-      return "IMRPhenomFC";
-    case SEOBNRv1:
-      return "SEOBNRv1";
-    case SEOBNRv2:
-      return "SEOBNRv2";
-    case SEOBNRv3:
-      return "SEOBNRv3";
-    case EOBNRv2HM:
-      return "EOBNRv2HM";
-    case EOBNRv2:
-      return "EOBNRv2";
-    case EOBNR:
-      return "EOBNR";
-    case EOB:
-      return "EOB";
-    case AmpCorPPN:
-      return "AmpCorPPN";
-    case GeneratePPN:
-      return "GeneratePPN";
-    case NumRelNinja2:
-      return "NumRelNinja2";
-    case NumRel:
-      return "NumRel";
-    case FindChirpSP:
-      return "FindChirpSP";
-    case FindChirpPTF:  
-      return "FindChirpPTF";
-    case TaylorEt:
-      return "TaylorET";
-    case TaylorN:  
-      return "TaylorN";
-    case TaylorF1:
-      return "TaylorF1";
-    case PadeT1:
-      return "PadeT1";
-    case PadeF1:
-      return "PadeF1";
-    case BCVSpin:
-      return "BCVSpin";
-    case BCVC:
-      return "BCVC";
-    case BCV:
-      return "BCV";
-    case FrameFile:
-      return "FrameFile";
-    case Eccentricity:
-      return "Eccentricity";
-    case SpinTaylorT2Fourier:
-      return "SpinTaylorT2Fourier";
-    case SpinTaylorT4Fourier:
-      return "SpinTaylorT4Fourier";
-    case SpinDominatedWf:
-      return "SpinDominatedWf";
-    default:
-        XLALPrintError("Not a valid approximant\n");
-        XLAL_ERROR_NULL(XLAL_EINVAL);
-    }
-}
-
-/**
- * XLAL function to determine PN order from a string.  The string need not
- * match exactly, only contain a member of the LALPNOrder enum.
- */
-int XLALGetOrderFromString(const CHAR *inString)
-{
-
-#ifndef LAL_NDEBUG
-  if ( !inString )
-    XLAL_ERROR( XLAL_EFAULT );
-#endif
-
-  if ( strstr(inString, "newtonian") )
-  {
-    return LAL_PNORDER_NEWTONIAN;
-  }
-  else if ( strstr(inString, "oneHalfPN") )
-  {
-    return LAL_PNORDER_HALF;
-  }
-  else if ( strstr(inString, "onePN") )
-  {
-    return LAL_PNORDER_ONE;
-  }
-  else if ( strstr(inString, "onePointFivePN") )
-  {
-    return LAL_PNORDER_ONE_POINT_FIVE;
-  }
-  else if ( strstr(inString, "twoPN") )
-  {
-    return LAL_PNORDER_TWO;
-  }
-  else if ( strstr(inString, "twoPointFivePN") )
-  {
-    return LAL_PNORDER_TWO_POINT_FIVE;
-  }
-  else if (strstr(inString, "threePN") )
-  {
-    return LAL_PNORDER_THREE;
-  }
-  else if ( strstr(inString, "threePointFivePN") )
-  {
-    return LAL_PNORDER_THREE_POINT_FIVE;
-  }
-  else if ( strstr(inString, "pseudoFourPN") )
-  {
-    return LAL_PNORDER_PSEUDO_FOUR;
-  }
-  else
-  {
-    XLALPrintError( "Cannot parse order from string: %s\n", inString );
-    XLAL_ERROR( XLAL_EINVAL );
-  }
-}
-
-/**
- * XLAL function to determine tapering flag from a string.  The string must
- * match exactly with a member of the LALSimInspiralApplyTaper enum.
- */
-int XLALGetTaperFromString(const CHAR *inString)
-{
-  if ( ! strcmp( "TAPER_NONE", inString ) )
-  {
-    return LAL_SIM_INSPIRAL_TAPER_NONE;
-  }
-  else if ( ! strcmp( "TAPER_START", inString ) )
-  {
-    return LAL_SIM_INSPIRAL_TAPER_START;
-  }
-  else if ( ! strcmp( "TAPER_END", inString ) )
-  {
-    return LAL_SIM_INSPIRAL_TAPER_END;
-  }
-  else if ( ! strcmp( "TAPER_STARTEND", inString ) )
-  {
-    return LAL_SIM_INSPIRAL_TAPER_STARTEND;
-  }
-  else
-  {
-    XLALPrintError( "Invalid injection tapering option specified: %s\n", inString );
-    XLAL_ERROR( XLAL_EINVAL );
-  }
-}
-
-/**
- * XLAL function to determine axis choice flag from a string.
- * The string need not match exactly, only contain a member
- * of the LALSimInspiralFrameAxis enum.  Will return default case
- * 'View' (line of sight) if the string contains no match.
- */
-int XLALGetFrameAxisFromString(const CHAR *inString) 
-{
-  if (strstr(inString, "TotalJ"))
-    return LAL_SIM_INSPIRAL_FRAME_AXIS_TOTAL_J;
-  else if (strstr(inString, "OrbitalL"))
-    return LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L;
-  else
-    return LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW;
-}
-
-/**
- * XLAL function to determine modes choice from a string.
- */
-int XLALGetHigherModesFromString(const CHAR *inString)
-{
-  if (strstr(inString, "L2345"))
-    return  LAL_SIM_INSPIRAL_MODES_CHOICE_2AND3AND4AND5L;
-  else if (strstr(inString, "L234"))
-    return  LAL_SIM_INSPIRAL_MODES_CHOICE_2AND3AND4L;
-  else if (strstr(inString, "L235"))
-    return  LAL_SIM_INSPIRAL_MODES_CHOICE_2AND3AND5L;
-  else if (strstr(inString, "L245"))
-    return  LAL_SIM_INSPIRAL_MODES_CHOICE_2AND4AND5L;
-  else if (strstr(inString, "L345"))
-    return  LAL_SIM_INSPIRAL_MODES_CHOICE_3AND4AND5L;
-  else if (strstr(inString, "L23"))
-    return  LAL_SIM_INSPIRAL_MODES_CHOICE_2AND3L;
-  else if (strstr(inString, "L24"))
-    return  LAL_SIM_INSPIRAL_MODES_CHOICE_2AND4L;
-  else if (strstr(inString, "L34"))
-    return  LAL_SIM_INSPIRAL_MODES_CHOICE_3AND4L;
-  else if (strstr(inString, "L25"))
-    return  LAL_SIM_INSPIRAL_MODES_CHOICE_2AND5L;
-  else if (strstr(inString, "L35"))
-    return  LAL_SIM_INSPIRAL_MODES_CHOICE_3AND5L;
-  else if (strstr(inString, "L45"))
-    return  LAL_SIM_INSPIRAL_MODES_CHOICE_4AND5L;
-  else if (strstr(inString, "L2"))
-    return LAL_SIM_INSPIRAL_MODES_CHOICE_RESTRICTED;
-  else if (strstr(inString, "L3"))
-    return  LAL_SIM_INSPIRAL_MODES_CHOICE_3L;
-  else if (strstr(inString, "L4"))
-    return  LAL_SIM_INSPIRAL_MODES_CHOICE_4L;
-  else if (strstr(inString, "L5"))
-    return  LAL_SIM_INSPIRAL_MODES_CHOICE_5L;
-  else if (strstr(inString, "ALL"))
-    return  LAL_SIM_INSPIRAL_MODES_CHOICE_ALL;
-  else {
-    XLALPrintError(" Error: invalid value %s for mode choice\n",inString);
-    return 0;
-  }
 }
 
 int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
