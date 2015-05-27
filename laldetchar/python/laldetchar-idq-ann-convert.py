@@ -1,14 +1,17 @@
-# Young-Min Kim (young-min.kim@ligo.org)
-
-
-
-__author__ = "Young-Min Kim"
-__version__ = "$Revision$"[11:-2]
-__date__ = "$Date$"[7:-2]
-
-__prog__="auxmvc_convert_ann_files.py"
-__Id__ = "$Id$"
-
+# Copyright (C) 2015 Young-Min Kim
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the# Free Software Foundation; either version 3 of the License, or (at your# option
+# ) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 
 from optparse import *
@@ -18,6 +21,11 @@ import os
 import pdb
 import numpy
 from laldetchar.idq import auxmvc_utils
+from laldetchar import git_version
+
+__author__ = 'Young-Min Kim <young-min.kim@ligo.org>'
+__version__ = git_version.id
+__date__ = git_version.date
 
 def Rescale_attribute(MVSCTriggers, attr, new_min, new_max):
     variables=list(MVSCTriggers.dtype.names)
@@ -113,9 +121,11 @@ def ApplyLog_dt(MVSCTriggers):
 
 
 
-usage= """Load patfiles and rescale dt using proper function and rewrite pat files.."""
+description = """This program runs converting *.pat file to *.ann file for FANN training and evaluation."""
 
-parser=OptionParser(usage=usage, version = "Young-Min Kim")
+parser = OptionParser(version='Name: %%prog\n%s'%git_version.verbose_msg, 
+                                usage='%prog [options]', 
+                                description=description)
 parser.add_option("-v","--verbose",action="store_true",help="verbose mode for printing run processing.")
 #parser.add_option("-t","--pat-files", default=False, type="string", help="Provide training file names")
 parser.add_option("","--transform-dt-function", default="log", type="string", help="Set up a function applying dt. e.g. inverse,log. Default is log.")

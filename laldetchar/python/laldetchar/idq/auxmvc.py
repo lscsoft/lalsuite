@@ -639,9 +639,9 @@ class train_svm_job(auxmvc_analysis_job):
         """
     """
 
-        sections = ['svm_train']  # no section in configuration yet
+        sections = ['train_svm']  # no section in configuration yet
         exec_name = 'svm_train_cmd'
-        tag_base = 'svm_train'
+        tag_base = 'train_svm'
         auxmvc_analysis_job.__init__(self, cp, sections, exec_name,
                 tag_base=tag_base)
 
@@ -712,7 +712,7 @@ class convert_annfile_job(auxmvc_analysis_job):
     """
 
         sections = ['ann_convert']
-        exec_name = 'ConvertSprToFann'
+        exec_name = 'ConvertANNData'
         tag_base = 'ann_convert'
         auxmvc_analysis_job.__init__(
             self,
@@ -733,7 +733,7 @@ class convert_annfile_node(pipeline.CondorDAGNode):
     def __init__(
         self,
         job,
-        pat_file,
+        training_data_file,
         p_node=[],
         ):
         job.set_stdout_file('logs/'
@@ -743,11 +743,11 @@ class convert_annfile_node(pipeline.CondorDAGNode):
                             + os.path.split(training_data_file)[1].replace('.pat'
                             , '.err'))
         pipeline.CondorDAGNode.__init__(self, job)
-        self.add_input_file(pat_file)
-        self.pat_file = self.get_input_files()[0]
-        self.fann_file = pat_file.replace('.pat', '.ann')
+        self.add_input_file(training_data_file)
+        self.training_data_file = self.get_input_files()[0]
+        self.fann_file = training_data_file.replace('.pat', '.ann')
         self.add_output_file(self.fann_file)
-        self.add_file_arg(' %s' % self.pat_file)
+        self.add_file_arg(' %s' % self.training_data_file)
         for p in p_node:
             self.add_parent(p)
 
@@ -789,10 +789,10 @@ class train_ann_node(pipeline.CondorDAGNode):
         p_node=[],
         ):
         job.set_stdout_file('logs/'
-                            + os.path.split(training_data_file)[1].replace('.pat'
+                            + os.path.split(training_data_file)[1].replace('.ann'
                             , '.out'))
         job.set_stderr_file('logs/'
-                            + os.path.split(training_data_file)[1].replace('.pat'
+                            + os.path.split(training_data_file)[1].replace('.ann'
                             , '.err'))
         pipeline.CondorDAGNode.__init__(self, job)
         self.add_input_file(training_data_file)

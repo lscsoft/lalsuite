@@ -1,6 +1,18 @@
-### This code uses FANN library 
-### for Aritifical Neural Network analysis
-### written by Young-Min Kim (young-min.kim@ligo.org)
+# Copyright (C) 2015 Young-Min Kim
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the# Free Software Foundation; either version 3 of the License, or (at your# option
+# ) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 
 from pyfann import libfann
 from laldetchar.idq import auxmvc_utils
@@ -12,8 +24,17 @@ import sys
 import matplotlib
 import pdb
 import numpy
+from laldetchar import git_version
 
-parser=OptionParser(version="Young-Min Kim")
+__author__ = 'Young-Min Kim <young-min.kim@ligo.org>'
+__version__ = git_version.id
+__date__ = git_version.date
+
+description = """This program runs ANN evaluation tasks."""
+
+parser = OptionParser(version='Name: %%prog\n%s'%git_version.verbose_msg, 
+                                usage='%prog [options]', 
+                                description=description)
 parser.add_option("-v","--verbose",action="store_true",help="verbose mode for printing run processing.")
 parser.add_option("-e","--evaluation-file",action="store",type="string",help="Trigger file name to be used for evaluation")
 parser.add_option("-n","--network",action="store",type="string",help="Network file name to be used for evaluation ")
