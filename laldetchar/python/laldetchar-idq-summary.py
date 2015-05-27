@@ -144,7 +144,7 @@ sys.stderr = idq.LogFile(logger)
 #===================================================================================================
 ### check lockfile
 if opts.lockfile:
-    idq.dieiflocked( opts.lockfile )
+    lockfp = idq.dieiflocked( opts.lockfile )
 
 #===================================================================================================
 ### read global configuration file
@@ -1594,3 +1594,5 @@ segment lists -> a form to request segments?
     gpsstart += stride
 
 #===================================================================================================
+if opts.lockfile:
+    lockfp.close() ### unlock lockfile

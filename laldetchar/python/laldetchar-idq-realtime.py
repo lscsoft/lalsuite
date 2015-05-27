@@ -133,7 +133,7 @@ mainidqdir = config.get('general', 'idqdir') ### get the main directory where id
 if not opts.lockfile:
     opts.lockfile = "%s/.idq_realtime.lock"%mainidqdir
 
-idq.dieiflocked( opts.lockfile ) ### prevent multiple copies from running
+lockfp = idq.dieiflocked( opts.lockfile ) ### prevent multiple copies from running
 
 gchtag = "_glitch" ### used for xml filenames
 clntag = "_clean"
@@ -1136,4 +1136,7 @@ while t  < opts.endgps:
 ### loop exited, which means we must have run past options.gpsend
 logger.info('End real-time evaluation')
 logger.info('t + stride = %d > %d = endgps'%(t+stride, opts.endgps))
+
+### unlock file
+lockfp.close()
 

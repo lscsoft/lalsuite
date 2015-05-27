@@ -491,6 +491,8 @@ def dieiflocked(lockfile='.idq.lock'):
         import sys
         sys.exit('ERROR: cannot establish lock on \'%s\', possible duplicate process, exiting..'%lockfile)
 
+    return lockfp
+
 #=================================================
 ### reporting/logging utilities
 #=================================================
