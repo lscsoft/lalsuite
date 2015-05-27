@@ -40,13 +40,17 @@ static REAL8 clogabs(COMPLEX16 z)
   return log(max) + 0.5 * log1p(u * u);
 }
 
-int XLALInspiralGenerateIIRSet(REAL8Vector *amp, REAL8Vector *phase, double epsilon, double alpha, double beta, double padding, COMPLEX16Vector **a1, COMPLEX16Vector **b0, INT4Vector **delay, int iir_type_flag)
+int XLALInspiralGenerateIIRSet(REAL8Vector *amp, REAL8Vector *phase, double epsilon, double alpha, double beta, double padding, COMPLEX16Vector **a1, COMPLEX16Vector **b0, INT4Vector **delay, UINT8 iir_type_flag)
 {  
 	/* default iir_type_flag = 0,
 	   other options TBD */
-	UINT8 j = amp->length-1, jstep, k, nfilters = 0;
+	int j = amp->length-1, jstep, k, nfilters = 0;
 	// INT4 decimationFactor = 1;
 	REAL8 phase_tdot, phase_ddot, phase_dot, jstep_third, jstep_second;
+
+	// FIXME: currently used parameter
+	iir_type_flag = 1;
+	padding = 0.0;
 
 	if (amp->length != phase->length) 
 	         XLAL_ERROR(XLAL_EINVAL);
@@ -59,7 +63,7 @@ int XLALInspiralGenerateIIRSet(REAL8Vector *amp, REAL8Vector *phase, double epsi
 	while (j > 3 ) {
 
 		/* Get derivative terms */
-		if (j  >  (phase->length - 3) ) {
+		if (j  > (int) (phase->length - 3) ) {
 			phase_ddot = (phase->data[j-2] - 2.0 * phase->data[j-1] + phase->data[j]) / LAL_TWOPI;
 			phase_tdot = (phase->data[j-3] - 3.0 * phase->data[j-2] + 3.0 * phase->data[j-1] - phase->data[j]) / LAL_TWOPI;
 		}
@@ -75,35 +79,39 @@ int XLALInspiralGenerateIIRSet(REAL8Vector *amp, REAL8Vector *phase, double epsi
 
 		jstep_second = floor(sqrt(2.0 * epsilon / phase_ddot) + 0.5);
 		jstep_third = floor(pow(6.0 * epsilon / phase_tdot, 1./3) + 0.5);
-
+		// FIXME: check int_max > jstep*
 		if(jstep_third > jstep_second){
-			jstep = (UINT8) jstep_second;
+			jstep = (int) jstep_second;
 		}
 		else {
-			jstep = (UINT8) jstep_third;
+			jstep = (int) jstep_third;
 		}
 
 		if(jstep < 2){
 		    jstep = 2;
 		}
 
-		k = (UINT8) floor((double ) j - alpha * (double ) jstep + 0.5);
+		k = (int) floor((double ) j - alpha * (double ) jstep + 0.5);
 
 		if (k < 1){
 		    jstep = j;
-		    k = (UINT8 ) floor((double ) j - alpha * (double ) jstep + 0.5);
+		    k = (int ) floor((double ) j - alpha * (double ) jstep + 0.5);
 		}
 		
 		nfilters++;
 
-		if (k > (UINT8) amp->length-3) {
+		if (k < 0) {
+			XLAL_ERROR(XLAL_EINVAL);
+		}
+
+		if (k > (int) amp->length-3) {
 			phase_dot = (11.0/6.0*phase->data[k] - 3.0*phase->data[k-1] + 1.5*phase->data[k-2] - 1.0/3.0*phase->data[k-3]);
 		}
 		else if (k >= 2 ) {
 			phase_dot = (-phase->data[k+2] + 8.0 * (phase->data[k+1] - phase->data[k-1]) + phase->data[k-2]) / 12.0; // Five-point stencil first derivative of phase
 		}
 		else {
-			phase_dot = (-11.0/6.0*phase->data[k] + 3.0*phase->data[k+1] - 1.5*phase->data[k+2] + 1.0/3.0*phase->data[k+3])
+			phase_dot = (-11.0/6.0*phase->data[k] + 3.0*phase->data[k+1] - 1.5*phase->data[k+2] + 1.0/3.0*phase->data[k+3]);
 		}
 		//fprintf(stderr, "%3.0d, %6.0d, %3.0d, %11.2f, %11.8f\n",nfilters, amp->length-1-j, decimationFactor, ((double) (amp->length-1-j))/((double) decimationFactor), phase_dot/(2.0*LAL_PI)*2048.0);
 		// decimationFactor = ((int ) pow(2.0,-ceil(log(2.0*padding*phase_dot/(2.0*LAL_PI))/log(2.0))));
