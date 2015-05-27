@@ -412,7 +412,7 @@ fig.savefig(name+"_match_vs_tmpltM_vs_tmpltchi.png")
 
 fig = Figure()
 ax = fig.add_axes((0.1, 0.1, 0.85, 0.85), xscale="log", yscale="log")
-count, bin_edges = np.histogram(np.log(1 - match), bins=40)
+count, bin_edges = np.histogram(np.log(1 - match + 1e-5), bins=40) # fudge factor to avoid log(0)
 bin_centers = np.exp(-(bin_edges[:-1] * bin_edges[1:])**0.5)
 ax.plot(bin_centers, count, linewidth=2.5)
 ax.plot((1 - min_match, 1 - min_match), (1, 10**ceil(log10(count.max()))), "k--")

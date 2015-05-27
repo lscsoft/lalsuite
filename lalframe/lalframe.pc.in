@@ -12,6 +12,6 @@ LALFRAME_PYTHON_PATH=@pyexecdir@
 Name: LALFrame
 Description: LAL Frame Library Support
 Version: @VERSION@
-Requires: lal >= @LAL_VERSION@, libframe
+Requires: lal >= @LAL_VERSION@@PC_REQUIRES_FRAMEC@@PC_REQUIRES_FRAMEL@
 Libs: -L${libdir} -llalframe
 Cflags: -I${includedir}

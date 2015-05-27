@@ -27,7 +27,7 @@ except ImportError:
 
 from lal import PI, MTSUN_SI
 from lalinspiral import CreateSBankWorkspaceCache
-from lalinspiral.sbank.psds import get_neighborhood_ASD, get_neighborhood_PSD
+from lalinspiral.sbank.psds import get_neighborhood_ASD, get_neighborhood_PSD, get_PSD, get_neighborhood_df_fmax
 
 class lazy_nhoods(object):
     __slots__ = ("seq", "nhood_param")
@@ -43,12 +43,19 @@ class lazy_nhoods(object):
 
 class Bank(object):
 
-    def __init__(self, tmplt_class, noise_model, flow, use_metric=False, cache_waveforms=False, nhood_size=1.0, nhood_param="tau0"):
+    def __init__(self, tmplt_class, noise_model, flow, use_metric=False, cache_waveforms=False, nhood_size=1.0, nhood_param="tau0", coarse_match_df=None, iterative_match_df_max=None):
         self.tmplt_class = tmplt_class
         self.noise_model = noise_model
         self.flow = flow
         self.use_metric = use_metric
         self.cache_waveforms = cache_waveforms
+        self.coarse_match_df = coarse_match_df
+        self.iterative_match_df_max = iterative_match_df_max
+
+        if self.coarse_match_df and self.iterative_match_df_max and self.coarse_match_df < self.iterative_match_df_max:
+            # If this case occurs coarse_match_df offers no improvement, turn off
+            self.coarse_match_df = None
+
         self.nhood_size = nhood_size
         self.nhood_param = "_" + nhood_param
 
@@ -131,14 +138,46 @@ class Bank(object):
         tmpbank.sort(key=lambda b: abs( getattr(b, self.nhood_param) - prop_nhd))
 
         # set parameters of match calculation that are optimized for this block
-        df, PSD = get_neighborhood_PSD(tmpbank + [proposal], self.flow, self.noise_model)
+        df_end, f_max = get_neighborhood_df_fmax(tmpbank + [proposal], self.flow)
+        df_start = max(df_end, self.iterative_match_df_max)
 
         # find and test matches
         for tmplt in tmpbank:
+
             self._nmatch += 1
-            match = self.compute_match(tmplt, proposal, df, PSD=PSD)
+            df = df_start
+            match_last = 0
+
+            if self.coarse_match_df:
+                # Perform a match at high df to see if point can be quickly
+                # ruled out as already covering the proposal
+                PSD = get_PSD(self.coarse_match_df, self.flow, f_max, self.noise_model)
+                match = self.compute_match(tmplt, proposal, self.coarse_match_df,
+                                           PSD=PSD)
+                if (1 - match) > 4.0*(1 - min_match):
+                    continue
+
+            while df >= df_end:
+
+                PSD = get_PSD(df, self.flow, f_max, self.noise_model)
+                match = self.compute_match(tmplt, proposal, df, PSD=PSD)
+
+                # if the result is a really bad match, trust it isn't
+                # misrepresenting a good match
+                if (1 - match) > 4.0*(1 - min_match):
+                    break
+
+                # calculation converged
+                if match_last > 0 and abs(match_last - match) < 0.001:
+                    break
+
+                # otherwise, refine calculation
+                match_last = match
+                df /= 2.0
+
             if match > min_match:
                 return True
+
         return False
 
     def max_match(self, proposal):

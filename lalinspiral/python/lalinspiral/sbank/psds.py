@@ -83,6 +83,22 @@ def next_pow2(n):
 def prev_pow2(n):
     return 1 << int(log(n, 2))
 
+def get_neighborhood_df_fmax(waveforms, flow):
+    """
+    Return PSD that is optimized for this neighborhood, with small enough
+    df and big enough f_max to cover all waveforms.
+    """
+    max_dur = max(w._dur for w in waveforms)
+    assert 16384 * max_dur > 1   # chirp lasts long enough for one LIGO sample
+    if max_dur >= 1:
+        df = 1 / next_pow2(max_dur)
+    else:
+        df = prev_pow2(1 / max_dur)
+    max_ffinal = max(w._f_final for w in waveforms)
+    f_max = next_pow2(max_ffinal)  # will always be greater than 1
+    assert f_max - flow >= 2 * df  # need a few frequencies at least!
+    return df, f_max
+
 def get_neighborhood_PSD(waveforms, flow, noise_model):
     """
     Return PSD that is optimized for this neighborhood, with small enough
