@@ -50,7 +50,15 @@ int XLALInspiralGenerateIIRSet(REAL8Vector *amp, REAL8Vector *phase, double epsi
 
 	// FIXME: currently used parameter
 	iir_type_flag = 1;
-	padding = 0.0;
+	padding += 0.0;
+
+	if (iir_type_flag != 1 ) {
+		printf("warning: flag is not recognized");
+	}
+	
+	if (padding < 0.0) {
+		printf("warning: padding value %f is not supported yet ", padding);
+	}
 
 	if (amp->length != phase->length) 
 	         XLAL_ERROR(XLAL_EINVAL);
