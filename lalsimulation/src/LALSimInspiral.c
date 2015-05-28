@@ -4233,7 +4233,7 @@ static int delete_substring_in_list_from_string(char *string, const char *list[]
  *
  * Parsing is not case sensitive (using the "C" locale).
  *
- * @param[out] approximate The approximate value from Approximate enum.
+ * @param[out] approximant The approximate value from Approximate enum.
  * @param[out] order The PN order value from LALPNOrder enum.
  * @param[out] axis The frame axis value from LALPNOrder enum.
  * @param[in] waveform The waveform string.
@@ -4534,7 +4534,7 @@ const char * XLALSimInspiralGetStringFromPNOrder(LALPNOrder order)
 
 /**
  * @brief Returns a string associated with a LALSimInspiralApplyTaper enum value.
- * @param[in] order The LALSimInspiralApplyTaper enum value.
+ * @param[in] taper The LALSimInspiralApplyTaper enum value.
  * @returns A constant string or NULL if there is an error.
  */
 const char * XLALSimInspiralGetStringFromTaper(LALSimInspiralApplyTaper taper)
@@ -4550,7 +4550,7 @@ const char * XLALSimInspiralGetStringFromTaper(LALSimInspiralApplyTaper taper)
 
 /**
  * @brief Returns a string associated with a LALSimInspiralFrameAxis enum value.
- * @param[in] order The LALSimInspiralFrameAxis enum value.
+ * @param[in] axis The LALSimInspiralFrameAxis enum value.
  * @returns A constant string or NULL if there is an error.
  */
 const char * XLALSimInspiralGetStringFromFrameAxis(LALSimInspiralFrameAxis axis)
@@ -4566,7 +4566,7 @@ const char * XLALSimInspiralGetStringFromFrameAxis(LALSimInspiralFrameAxis axis)
 
 /**
  * @brief Returns a string associated with a LALSimInspiralModesChoice enum value.
- * @param[in] order The LALSimInspiralModesChoice enum value.
+ * @param[in] modes The LALSimInspiralModesChoice enum value.
  * @returns A constant string or NULL if there is an error.
  */
 const char * XLALSimInspiralGetStringFromModesChoice(LALSimInspiralModesChoice modes)
