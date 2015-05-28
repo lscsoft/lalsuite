@@ -250,8 +250,10 @@ LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runSt
     ProcessParamsTable *ppt;
     LALInferenceIFOData *ifo = runState->data;
 
+    /* This will copy any existing arguments over from runState. I (John) don't think this should be necessary
+     * as this function is used to initialise these arguments in the first place. */
     LALInferenceVariables *propArgs = XLALCalloc(1, sizeof(LALInferenceVariables));
-    LALInferenceCopyVariables(runState->proposalArgs, propArgs);
+    if(runState->proposalArgs && runState->proposalArgs->dimension>0) LALInferenceCopyVariables(runState->proposalArgs, propArgs);
 
     INT4 Nskip = 1;
     INT4 noise_only = 0;
