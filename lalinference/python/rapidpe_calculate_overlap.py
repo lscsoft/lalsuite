@@ -119,7 +119,6 @@ pts = amrlib.apply_transform(pts, intr_prms, args.distance_coordinates)
 #
 tree = BallTree(pts)
 
-# FIXME: add psd
 ovrlp = lalsimutils.Overlap(fLow=args.f_low, fMax=2000, deltaF=delta_f, psd=psd, analyticPSD_Q=False)
 
 idx_range = range(args.tmplt_start_index or 0, args.tmplt_end_index or len(tmplt_bank))
