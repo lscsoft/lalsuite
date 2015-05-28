@@ -279,7 +279,8 @@ def point_wise_gaussian_kde(
             print 'ERROR: pilot_x and pilot_y are not the same length'
             return False
         else:
-            pilot_interp = scipy.interpolate.InterpolatedUnivariateSpline(pilot_x, pilot_y, k=3)  # we automatically look for a cubic spline
+#            pilot_interp = scipy.interpolate.InterpolatedUnivariateSpline(pilot_x, pilot_y, k=3)  # we automatically look for a cubic spline
+            pilot_interp = scipy.interpolate.InterpolatedUnivariateSpline(pilot_x, pilot_y, k=1)  # we automatically look for a linear "spline". This is favored over cubic splines because it guarantees that all points are positive definite if all the samples are positive definite. We may sacrifice accuracy though...
     else:
         # pilot_interp is supplied
         # we require pilot_interp to be an intsance of scipy.interpolate.InterpolatedUnivariateSpline or scipy.interpolate.interp1d
@@ -294,6 +295,7 @@ def point_wise_gaussian_kde(
         eval = [eval]
 
     kde = []
+
     s_optimal = [__point_wise_optimal_s(o, scale, pilot_interp) for o in observ]  # we base the optimal bandwidth off the observed observations
     len_observ = len(observ)
     for e in eval:
@@ -312,10 +314,10 @@ def __point_wise_optimal_s(eval, scale, pdf):
   # n_samples is an int
   # pdf is an instance of scipy.interpolate.InterpolatedUnivariateSpline
 
-    if pdf(eval) != 0:
-        return scale * max([pdf(eval)[0], 0]) ** -0.5
+    if pdf(eval)[0] > 0:
+        return scale * pdf(eval)[0] ** -0.5
     else:
-        print 'ERROR: pilot_interp pdf vanishes. Optimal bandwidth is not defined'
+        print 'ERROR: pilot_interp pdf is not positive definite. Optimal bandwidth is not defined. This could be caused by a spline interpolation...'
         return False
 
 
