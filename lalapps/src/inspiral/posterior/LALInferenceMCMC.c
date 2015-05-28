@@ -291,15 +291,11 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
     ladder = LALInferenceBuildHybridTempLadder(runState, ndim);
     ntemp_per_thread = LALInferenceGetINT4Variable(runState->algorithmParams, "ntemp_per_thread");
 
-    /* Extract proposal arguments from command line and add a few more */
+    /* Add some settings settings to runstate proposal args so their copied to threads */
     LALInferenceAddINT4Variable(runState->proposalArgs, "de_skip",
                                 skip, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddINT4Variable(runState->proposalArgs, "output_snrs",
                                 outputSNRs, LALINFERENCE_PARAM_OUTPUT);
-
-    /* Add adaptation settings to proposal args */
-    LALInferenceAddINT4Variable(runState->proposalArgs, "de_skip", skip, LALINFERENCE_PARAM_OUTPUT);
-    LALInferenceAddINT4Variable(runState->proposalArgs, "output_snrs", outputSNRs, LALINFERENCE_PARAM_OUTPUT);
 
     /* Parse proposal args for runSTate and initialize the walkers on this MPI thread */
     LALInferenceInitCBCThreads(runState, ntemp_per_thread);
