@@ -256,12 +256,13 @@ print "Created a DAG named %s\n" % dag_name
 print "This will run %i instances of %s in parallel\n" % (len(tmplt_bnk), ile_sub_name)
 
 # FIXME: Adjust name on command line
-ppdag_name="posterior_pp"
-ppdag.set_dag_file(ppdag_name)
-ppdag.add_maxjobs_category("ANALYSIS", MAXJOBS["ANALYSIS"])
-ppdag.add_maxjobs_category("POST", MAXJOBS["POST"])
-ppdag.write_concrete_dag()
-if opts.write_script:
-    ppdag.write_script()
+if use_bayespe_postproc:
+    ppdag_name="posterior_pp"
+    ppdag.set_dag_file(ppdag_name)
+    ppdag.add_maxjobs_category("ANALYSIS", MAXJOBS["ANALYSIS"])
+    ppdag.add_maxjobs_category("POST", MAXJOBS["POST"])
+    ppdag.write_concrete_dag()
+    if opts.write_script:
+        ppdag.write_script()
 
 print "Created a postprocessing DAG named %s\n" % ppdag_name
