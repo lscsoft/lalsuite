@@ -741,7 +741,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
     {
         /* Trigger time = 2 seconds before end of segment (was 1 second, but Common Inputs for The Events are -6 +2*/
         memcpy(&segStart,&GPStrig,sizeof(LIGOTimeGPS));
-        REAL8 offset=SegmentLength+2.;
+        REAL8 offset=SegmentLength-2.;
         /* If we are using a burst approximant, put at the center */
         if ((ppt=LALInferenceGetProcParamVal(commandLine,"--approx"))){
           if (XLALCheckBurstApproximantFromString(ppt->value)) offset=SegmentLength/2.;
