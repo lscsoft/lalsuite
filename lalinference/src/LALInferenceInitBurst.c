@@ -111,7 +111,7 @@ LALInferenceTemplateFunction LALInferenceInitBurstTemplate(LALInferenceRunState 
     }
     else {
       XLALPrintError("Error: unknown template %s\n",ppt->value);
-      XLALPrintError(help);
+      XLALPrintError("%s\n",help);
       //XLAL_ERROR_VOID(XLAL_EINVAL);
     }
   }
