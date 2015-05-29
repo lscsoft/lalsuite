@@ -623,7 +623,10 @@ XLALComputeFaFb_Resamp ( ResampWorkspace *restrict ws,				//!< [in,out] pre-allo
   REAL8 dFreqFFT = dFreq / ws->decimateFFT;	// internally may be using higher frequency resolution dFreqFFT than requested
   REAL8 freqShift = remainder ( FreqOut0 - fHet, dFreq ); // frequency shift to closest bin
   REAL8 fMinFFT = fHet + freqShift - dFreqFFT * (ws->numSamplesFFT/2);	// we'll shift DC into the *middle bin* N/2  [N always even!]
+  XLAL_CHECK ( FreqOut0 >= fMinFFT, XLAL_EDOM, "Lowest output frequency outside the available frequency band: [FreqOut0 = %.16g] < [fMinFFT = %.16g]\n", FreqOut0, fMinFFT );
   UINT4 offset_bins = (UINT4) lround ( ( FreqOut0 - fMinFFT ) / dFreqFFT );
+  UINT4 maxOutputBin = offset_bins + (ws->numFreqBinsOut-1) * ws->decimateFFT;
+  XLAL_CHECK ( maxOutputBin < ws->numSamplesFFT, XLAL_EDOM, "Highest output frequency bin outside available band: [maxOutputBin = %d] >= [numSamplesFFT = %d]\n", maxOutputBin, ws->numSamplesFFT );
 
 #if COLLECT_TIMING
   // collect some internal timing info
