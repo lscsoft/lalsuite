@@ -224,10 +224,12 @@ main ( int argc, char *argv[] )
       // create per-segment input structs
       for ( INT4 l = 0; l < uvar->numSegments; l ++ )
         {
-          XLAL_CHECK ( (inputs->data[l] = XLALCreateFstatInput ( catalogs[l], minCoverFreq, maxCoverFreq, dFreq, ephem, &optionalArgs )) != NULL, XLAL_EFUNC );
-          if ( uvar->reuseInput && l == 0 ) {
+          if ( uvar->reuseInput && l > 0 ) {
             optionalArgs.prevInput = inputs->data[0];
+          } else {
+            optionalArgs.prevInput = NULL;
           }
+          XLAL_CHECK ( (inputs->data[l] = XLALCreateFstatInput ( catalogs[l], minCoverFreq, maxCoverFreq, dFreq, ephem, &optionalArgs )) != NULL, XLAL_EFUNC );
         }
 
       // ----- compute Fstatistics over segments
@@ -253,7 +255,6 @@ main ( int argc, char *argv[] )
                XLALGetFstatInputMethodName ( inputs->data[0] ), tauF1Buf_i, tauF1NoBuf_i, memSFTs, memMaxCompute  );
 
       XLALDestroyFstatInputVector ( inputs );
-
     } // for i < numTrials
 
   tauF1Buf   /= uvar->numTrials;
