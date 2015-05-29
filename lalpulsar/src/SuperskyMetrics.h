@@ -106,19 +106,15 @@ int XLALConvertSuperskyToPhysical(
 ///
 /// Set all-sky parameter-space bounds on a lattice tiling using the reduced supersky metric.
 ///
-/// The sky may be divided into \c patch_count_A patches along the reduced supersky coordinate
-/// \f$n_a\f$ by \c patch_count_B patches along the reduced supersky coordinate \f$n_b\f$. The
-/// patches are then indexed by \c patch_index_A and \c patch_index_B respectively.  Each patch
-/// covers the same area of the sky, and the sets of patches with constant \c patch_index_A (or
-/// constant \c patch_index_B) cover the same area of the sky for any value of \c patch_index_B
-/// (or any value of \c patch_index_A).
+/// The sky may be divided into \c patch_count patches of approximately equal area. Each patch is
+/// indexed by \c patch_index, from 0 to \c patch_count - 1. If possible, the extent of each patch
+/// in the reduced supersky coordinate \f$n_b\f$ will be set to \c patch_B_extent.
 ///
 int XLALSetSuperskyLatticeTilingAllSkyBounds(
   LatticeTiling *tiling,			///< [in] Lattice tiling
-  const size_t patch_count_A,			///< [in] Divide sky into this number of patches along reduced supersky coordinate \f$n_a\f$
-  const size_t patch_count_B,			///< [in] Divide sky into this number of patches along reduced supersky coordinate \f$n_b\f$
-  const size_t patch_index_A,			///< [in] Set bounds corresponding to this sky patch along reduced supersky coordinate \f$n_a\f$
-  const size_t patch_index_B			///< [in] Set bounds corresponding to this sky patch along reduced supersky coordinate \f$n_b\f$
+  const double patch_B_extent,			///< [in] Ideal extent of sky patch in \f$n_b\f$ coordinate
+  const UINT8 patch_count,			///< [in] Divide sky into this number of patches
+  const UINT8 patch_index			///< [in] Set bounds corresponding to this sky patch
   );
 
 ///
