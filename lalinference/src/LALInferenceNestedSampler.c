@@ -131,12 +131,13 @@ static void printAdaptiveJumpSizes(FILE *file, LALInferenceThreadState *threadSt
     LALInferenceVariableItem *this=threadState->currentParams->head;
     REAL8 *val=NULL;
     char tmpname[1000]="";
-    fprintf(file,"Adaptive proposal step size:\n");
-    while(this)
+    int first=1;
+	while(this)
     {
         sprintf(tmpname,"%s_%s",this->name,ADAPTSUFFIX);
         if(LALInferenceCheckVariable(threadState->proposalArgs,tmpname))
         {
+		    if(first) {fprintf(file,"Adaptive proposal step sizes:\n"); first=0;}
             val=(REAL8 *)LALInferenceGetVariable(threadState->proposalArgs,tmpname);
             fprintf(file,"%s: %lf\n",this->name,*val);
         }
