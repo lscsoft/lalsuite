@@ -185,6 +185,15 @@ int main(int argc, char *argv[]){
   deltaF = config.catalog->data[0].header.deltaF;
   REAL8 Tsft = 1.0 / deltaF;
 
+  if (XLALUserVarWasSet(&uvar.spacingF) && XLALUserVarWasSet(&uvar.mismatchF))
+      LogPrintf (LOG_CRITICAL, "spacingF and mismatchF are both set, use spacingF by default\n\n");
+  if (XLALUserVarWasSet(&uvar.spacingA) && XLALUserVarWasSet(&uvar.mismatchA))
+      LogPrintf (LOG_CRITICAL, "spacingA and mismatchA are both set, use spacingA by default\n\n");
+  if (XLALUserVarWasSet(&uvar.spacingT) && XLALUserVarWasSet(&uvar.mismatchT))
+      LogPrintf (LOG_CRITICAL, "spacingT and mismatchT are both set, use spacingT by default\n\n");
+  if (XLALUserVarWasSet(&uvar.spacingP) && XLALUserVarWasSet(&uvar.mismatchP))
+      LogPrintf (LOG_CRITICAL, "spacingP and mismatchP are both set, use spacingP by default\n\n");
+
   /* create the toplist */
   create_crossCorrBinary_toplist( &ccToplist, uvar.numCand);
   /* now read the data */
