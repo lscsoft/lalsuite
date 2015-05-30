@@ -1138,5 +1138,5 @@ logger.info('End real-time evaluation')
 logger.info('t + stride = %d > %d = endgps'%(t+stride, opts.endgps))
 
 ### unlock file
-lockfp.close()
-
+idq.release(lockfp)
+os.remove( opts.lockfile )

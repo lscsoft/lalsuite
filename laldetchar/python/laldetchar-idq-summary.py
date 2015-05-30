@@ -1595,4 +1595,5 @@ segment lists -> a form to request segments?
 
 #===================================================================================================
 if opts.lockfile:
-    lockfp.close() ### unlock lockfile
+    idq.release(lockfp) ### unlock lockfile
+    os.remove( opts.lockfile )

@@ -698,4 +698,5 @@ while gpsstart < gpsstop:
 
 #===================================================================================================
 if opts.lockfile:
-    lockfp.close() ### unlock lockfile
+    idq.release(lockfp) ### unlock lockfile
+    os.remove( opts.lockfile )

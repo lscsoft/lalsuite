@@ -488,10 +488,19 @@ def dieiflocked(lockfile='.idq.lock'):
     try:
         fcntl.lockf(lockfp, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except IOError:
+        lockfp.close()
         import sys
         sys.exit('ERROR: cannot establish lock on \'%s\', possible duplicate process, exiting..'%lockfile)
 
     return lockfp
+
+def release(lockfp):
+    """
+    try to release a lockfile
+    """
+    import fcntl
+    fcntl.lockf(lockfp, fcntl.LOCK_UN)
+    lockfp.close()
 
 #=================================================
 ### reporting/logging utilities
