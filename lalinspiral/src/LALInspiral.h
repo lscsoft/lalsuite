@@ -1934,8 +1934,7 @@ int XLALInspiralGenerateIIRSet(
 	double                  padding,
 	COMPLEX16Vector     **a1,
 	COMPLEX16Vector     **b0,
-	INT4Vector          **delay,
-	UINT8 iir_type_flag
+	INT4Vector          **delay
 	);
 
 int XLALInspiralIIRSetResponse(
