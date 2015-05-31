@@ -186,13 +186,13 @@ int main(int argc, char *argv[]){
   REAL8 Tsft = 1.0 / deltaF;
 
   if (XLALUserVarWasSet(&uvar.spacingF) && XLALUserVarWasSet(&uvar.mismatchF))
-      LogPrintf (LOG_CRITICAL, "spacingF and mismatchF are both set, use spacingF by default\n\n");
+    LogPrintf (LOG_CRITICAL, "spacingF and mismatchF are both set, use spacingF %.9g by default\n\n", uvar.spacingF);
   if (XLALUserVarWasSet(&uvar.spacingA) && XLALUserVarWasSet(&uvar.mismatchA))
-      LogPrintf (LOG_CRITICAL, "spacingA and mismatchA are both set, use spacingA by default\n\n");
+    LogPrintf (LOG_CRITICAL, "spacingA and mismatchA are both set, use spacingA %.9g by default\n\n", uvar.spacingA);
   if (XLALUserVarWasSet(&uvar.spacingT) && XLALUserVarWasSet(&uvar.mismatchT))
-      LogPrintf (LOG_CRITICAL, "spacingT and mismatchT are both set, use spacingT by default\n\n");
+    LogPrintf (LOG_CRITICAL, "spacingT and mismatchT are both set, use spacingT %.9g by default\n\n", uvar.spacingT);
   if (XLALUserVarWasSet(&uvar.spacingP) && XLALUserVarWasSet(&uvar.mismatchP))
-      LogPrintf (LOG_CRITICAL, "spacingP and mismatchP are both set, use spacingP by default\n\n");
+    LogPrintf (LOG_CRITICAL, "spacingP and mismatchP are both set, use spacingP %.9g by default\n\n", uvar.spacingP);
 
   /* create the toplist */
   create_crossCorrBinary_toplist( &ccToplist, uvar.numCand);
