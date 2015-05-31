@@ -156,7 +156,6 @@ typedef struct {
   REAL8 Alpha;                              /**< sky position alpha in radians */
   REAL8 Delta;                              /**< sky position delta in radians */
   REAL8 Tsft;                               /**< length of one SFT in seconds */
-  LIGOTimeGPS internalRefTime;	            /**< internal reference time used purely for F-stat computation (defaults to midTime) */
   DopplerRegion searchRegion;		    /**< parameter-space region to search over */
   DopplerFullScanState *scanState;          /**< current state of the Doppler-scan */
   PulsarDopplerParams stepSizes;	    /**< user-preferences on Doppler-param step-sizes */
@@ -257,7 +256,6 @@ typedef struct {
 
   INT4 RngMedWindow;		/**< running-median window for noise floor estimation */
   LIGOTimeGPS refTime;		/**< reference-time for definition of pulsar-parameters [GPS] */
-  LIGOTimeGPS internalRefTime;	/**< which reference time to use internally for template-grid */
 
   INT4 SSBprecision;		/**< full relativistic timing or Newtonian */
 
@@ -292,6 +290,10 @@ typedef struct {
   CHAR *outputTiming;		/**< output timing measurements and parameters into this file [append!]*/
 
   CHAR *FstatMethod;		//!< select which method/algorithm to use to compute the F-statistic
+
+  // ----- deprecated and obsolete variables, kept around for backwards-compatibility -----
+  LIGOTimeGPS internalRefTime;   /**< [DEPRECATED] internal reference time. Has no effect, XLALComputeFstat() now always uses midtime anyway ... */
+
 } UserInput_t;
 
 /*---------- Global variables ----------*/
@@ -470,9 +472,6 @@ int main(int argc,char *argv[])
   templateCounter = 0.0;
   clock0 = GETTIME();
 
-  /* fixed time-offset between internalRefTime and refTime */
-  REAL8 DeltaTRefInt = XLALGPSDiff ( &(GV.internalRefTime), &(GV.searchRegion.refTime) ); // tRefInt - tRef
-
   // ----- prepare timing info
   REAL8 tic0, tic, toc, timeOfLastProgressUpdate = 0;	// high-precision timing counters
   timingInfo_t XLAL_INIT_DECL(timing);			// timings of Fstatistic computation, transient Fstat-map, transient Bayes factor
@@ -492,13 +491,8 @@ int main(int argc,char *argv[])
 
       tic0 = tic = GETTIME();
 
-      /* use internalRefTime in order to safely computing F-statistic (avoid large |t - tRef|^s) */
-      PulsarDopplerParams internalDopplerpos = dopplerpos;
-      XLALExtrapolatePulsarSpins ( internalDopplerpos.fkdot, dopplerpos.fkdot, DeltaTRefInt );	// can't fail
-      internalDopplerpos.refTime = GV.internalRefTime;
-
       /* main function call: compute F-statistic for this template */
-      XLAL_CHECK_MAIN ( XLALComputeFstat ( &Fstat_res, GV.Fstat_in, &internalDopplerpos, GV.numFreqBins_FBand, GV.Fstat_what) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN ( XLALComputeFstat ( &Fstat_res, GV.Fstat_in, &dopplerpos, GV.numFreqBins_FBand, GV.Fstat_what) == XLAL_SUCCESS, XLAL_EFUNC );
 
       /* if single-only flag is given, add +4 to F-statistic */
       if ( uvar.SignalOnly ) {
@@ -540,7 +534,7 @@ int main(int argc,char *argv[])
           thisFCand.numDetectors = 0;
         }
         if (GV.Fstat_what & FSTATQ_FAFB) {
-          thisFCand.FaFb_refTime = Fstat_res->doppler.refTime; // this will be 'internal' reference time, used only for parameter estimation
+          thisFCand.FaFb_refTime = Fstat_res->refTimePhase; // 'internal' reference time, used only for global phase estimate
           thisFCand.Fa = Fstat_res->Fa[iFreq];
           thisFCand.Fb = Fstat_res->Fb[iFreq];
         } else {
@@ -1064,7 +1058,6 @@ initUserVars ( UserInput_t *uvar )
 
   XLALregSTRINGUserStruct(workingDir,     'w', UVAR_DEVELOPER, "Directory to use as work directory.");
   XLALregREALUserStruct( 	timerCount, 	 0,  UVAR_DEVELOPER, "N: Output progress/timer info every N seconds");
-  XLALregEPOCHUserStruct(internalRefTime, 	 0,  UVAR_DEVELOPER, "Internal reference epoch for Fstat-computation: use 'xx.yy[GPS|MJD]' format [Default: midTime]");
 
   XLALregBOOLUserStruct( 	projectMetric, 	 0,  UVAR_DEVELOPER, "Use projected metric on Freq=const subspact");
 
@@ -1080,10 +1073,11 @@ initUserVars ( UserInput_t *uvar )
 
   XLALregSTRINGUserStruct(outputTiming,         0,  UVAR_DEVELOPER, "Append timing measurements and parameters into this file");
 
-  // ---------- deprecated but still-supported options ----------
+  // ---------- deprecated but still-supported or tolerated options ----------
   XLALRegisterUvarMember ( RA,	STRING, 0, DEPRECATED, "Use --Alpha instead" );
   XLALRegisterUvarMember ( Dec, STRING, 0, DEPRECATED, "Use --Delta instead");
 
+  XLALRegisterUvarMember ( internalRefTime, EPOCH, 0, DEPRECATED, "HAS NO EFFECT and should no longer be used: XLALComputeFstat() now always uses midtime internally ... ");
   // ---------- obsolete and unsupported options ----------
 
   return XLAL_SUCCESS;
@@ -1403,18 +1397,6 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
     } /* for X < numDetectors */
   }
 
-  /* internal refTime is used for computing the F-statistic at, to avoid large (t - tRef)^2 values */
-  if ( XLALUserVarWasSet ( &uvar->internalRefTime ) )
-    {
-      cfg->internalRefTime = uvar->internalRefTime;
-    }
-  else
-    {
-      LIGOTimeGPS midTime = cfg->startTime;
-      XLALGPSAdd ( &midTime, 0.5 * XLALGPSDiff( &endTime, &cfg->startTime ) );	// mid-time of observation
-      cfg->internalRefTime = midTime;
-    }
-
   /* ----- set up scanline-window if requested for 1D local-maximum clustering on scanline ----- */
   XLAL_CHECK ( (cfg->scanlineWindow = XLALCreateScanlineWindow ( uvar->clusterOnScanline )) != NULL, XLAL_EFUNC );
 
@@ -1568,8 +1550,6 @@ XLALGetLogString ( const ConfigVariables *cfg )
   char bufGPS[32];
   XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, buf )) != NULL, XLAL_EFUNC );
   XLAL_CHECK_NULL ( snprintf ( buf, BUFLEN, "%%%% Total time spanned    = %.0f s (%.2f hours)\n", cfg->Tspan, cfg->Tspan/3600.0 ) < BUFLEN, XLAL_EBADLEN );
-  XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, buf )) != NULL, XLAL_EFUNC );
-  XLAL_CHECK_NULL ( snprintf (buf, BUFLEN, "%%%% InternalRefTime       = %s\n", XLALGPSToStr ( bufGPS, &(cfg->internalRefTime)) ) < BUFLEN, XLAL_EBADLEN );
   XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, buf )) != NULL, XLAL_EFUNC );
   XLAL_CHECK_NULL ( snprintf (buf, BUFLEN, "%%%% Pulsar-params refTime = %s\n", XLALGPSToStr ( bufGPS, &(cfg->searchRegion.refTime) )) < BUFLEN, XLAL_EBADLEN );
   XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, buf )) != NULL, XLAL_EFUNC );
