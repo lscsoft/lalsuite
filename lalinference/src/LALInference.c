@@ -536,7 +536,7 @@ void LALInferenceCopyVariables(LALInferenceVariables *origin, LALInferenceVariab
 }
 
 /** Prints a variable item to a string (must be pre-allocated!) */
-void LALInferencePrintVariableItem(char *out, LALInferenceVariableItem *ptr)
+void LALInferencePrintVariableItem(char *out,const LALInferenceVariableItem *const ptr)
 {
   if(ptr==NULL) {
     XLAL_ERROR_VOID(XLAL_EFAULT, "Null LALInferenceVariableItem pointer.");

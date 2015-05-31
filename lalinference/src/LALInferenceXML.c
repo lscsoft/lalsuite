@@ -52,7 +52,7 @@
  * \author John Veitch
  *
  */
-xmlNodePtr XLALInferenceVariablesArray2VOTTable(LALInferenceVariables **varsArray, UINT4 N, const char *tablename)
+xmlNodePtr XLALInferenceVariablesArray2VOTTable(LALInferenceVariables * const *const varsArray, UINT4 N, const char *tablename)
 {
   xmlNodePtr fieldNodeList=NULL;
   xmlNodePtr paramNodeList=NULL;
@@ -210,7 +210,7 @@ xmlNodePtr XLALInferenceVariablesArray2VOTTable(LALInferenceVariables **varsArra
   
 }
 
-xmlNodePtr XLALInferenceStateVariables2VOTResource(const LALInferenceRunState *state, const char *name)
+xmlNodePtr XLALInferenceStateVariables2VOTResource(LALInferenceRunState *const state, const char *name)
 {
 	xmlNodePtr algNode=NULL;
 	xmlNodePtr priorNode=NULL;
@@ -222,7 +222,7 @@ xmlNodePtr XLALInferenceStateVariables2VOTResource(const LALInferenceRunState *s
 		xmlNewProp(algNode, CAST_CONST_XMLCHAR("utype"), CAST_CONST_XMLCHAR("lalinference:state:algorithmparams"));
 		xmlAddChild(resNode,algNode);
 	}
-	priorNode=XLALInferenceVariableArray2VOTTable(&(state->priorArgs),1,"Prior Arguments");
+	priorNode=XLALInferenceVariablesArray2VOTTable(&(state->priorArgs),1,"Prior Arguments");
     if(priorNode){
 		xmlNewProp(priorNode, CAST_CONST_XMLCHAR("utype"), CAST_CONST_XMLCHAR("lalinference:state:priorparams"));
 		xmlAddChild(resNode,priorNode);
@@ -252,7 +252,7 @@ xmlNodePtr XLALInferenceStateVariables2VOTResource(const LALInferenceRunState *s
  * \author John Veitch
  *
  */
-xmlNodePtr XLALInferenceVariables2VOTParamNode (const LALInferenceVariables *const vars)
+xmlNodePtr XLALInferenceVariables2VOTParamNode (LALInferenceVariables *const vars)
 {
   
   /* set up local variables */
@@ -301,7 +301,7 @@ xmlNodePtr XLALInferenceVariables2VOTParamNode (const LALInferenceVariables *con
  *
  */
 
-xmlNodePtr LALInferenceVariableItem2VOTFieldNode(LALInferenceVariableItem *varitem)
+xmlNodePtr LALInferenceVariableItem2VOTFieldNode(LALInferenceVariableItem *const varitem)
 {
   VOTABLE_DATATYPE vo_type;
   CHAR *unitName={0};
@@ -323,7 +323,7 @@ xmlNodePtr LALInferenceVariableItem2VOTFieldNode(LALInferenceVariableItem *varit
   return(XLALCreateVOTFieldNode(varitem->name,unitName,vo_type,NULL));
 }
 
-xmlNodePtr LALInferenceVariableItem2VOTParamNode(LALInferenceVariableItem *varitem)
+xmlNodePtr LALInferenceVariableItem2VOTParamNode(LALInferenceVariableItem *const varitem)
 {
   VOTABLE_DATATYPE vo_type;
   CHAR *unitName={0};
@@ -351,7 +351,7 @@ xmlNodePtr LALInferenceVariableItem2VOTParamNode(LALInferenceVariableItem *varit
 /**
  * \brief Convert a \c LALInferenceVariableType into a VOType
  */
-VOTABLE_DATATYPE LALInferenceVariableType2VOT(const LALInferenceVariableType litype){
+VOTABLE_DATATYPE LALInferenceVariableType2VOT(LALInferenceVariableType litype){
   
   switch(litype){
     case LALINFERENCE_INT4_t: 		return VOT_INT4;
