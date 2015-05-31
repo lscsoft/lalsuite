@@ -214,20 +214,19 @@ xmlNodePtr XLALInferenceStateVariables2VOTResource(const LALInferenceRunState *s
 {
 	xmlNodePtr algNode=NULL;
 	xmlNodePtr priorNode=NULL;
-	xmlNodePtr propNode=NULL;
 	xmlNodePtr resNode=NULL;
 	/* Serialise various params to VOT Table nodes */
 	resNode=XLALCreateVOTResourceNode("lalinference:state",name,NULL);
-	
-	algNode=XLALCreateVOTTableNode("Algorithm Params",NULL,XLALInferenceVariables2VOTParamNode(state->algorithmParams),NULL);
-	xmlNewProp(algNode, CAST_CONST_XMLCHAR("utype"), CAST_CONST_XMLCHAR("lalinference:state:algorithmparams"));
-	if(algNode) xmlAddChild(resNode,algNode);
-	priorNode=XLALCreateVOTTableNode("Prior Arguments",NULL,XLALInferenceVariables2VOTParamNode(state->priorArgs),NULL);
-	xmlNewProp(priorNode, CAST_CONST_XMLCHAR("utype"), CAST_CONST_XMLCHAR("lalinference:state:priorparams"));
-	if(priorNode) xmlAddChild(resNode,priorNode);
-	propNode=XLALCreateVOTTableNode("Proposal Arguments",NULL,XLALInferenceVariables2VOTParamNode(state->proposalArgs),NULL);
-	xmlNewProp(propNode, CAST_CONST_XMLCHAR("utype"), CAST_CONST_XMLCHAR("lalinference:state:proposalparams"));
-	if(propNode) xmlAddChild(resNode,propNode);
+	algNode=XLALInferenceVariablesArray2VOTTable(&(state->algorithmParams),1, "Algorithm Params");
+	if(algNode) {
+		xmlNewProp(algNode, CAST_CONST_XMLCHAR("utype"), CAST_CONST_XMLCHAR("lalinference:state:algorithmparams"));
+		xmlAddChild(resNode,algNode);
+	}
+	priorNode=XLALInferenceVariableArray2VOTTable(&(state->priorArgs),1,"Prior Arguments");
+    if(priorNode){
+		xmlNewProp(priorNode, CAST_CONST_XMLCHAR("utype"), CAST_CONST_XMLCHAR("lalinference:state:priorparams"));
+		xmlAddChild(resNode,priorNode);
+	}
 	return(resNode);
 
 }
