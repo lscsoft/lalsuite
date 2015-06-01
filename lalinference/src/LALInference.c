@@ -452,6 +452,17 @@ int LALInferenceCheckVariableNonFixed(LALInferenceVariables *vars, const char *n
 
 }
 
+int LALInferenceCheckVariableToPrint(LALInferenceVariables *vars, const char *name)
+/* Checks for a writeable variable */
+{
+  LALInferenceParamVaryType type;
+  if(!LALInferenceCheckVariable(vars,name)) return 0;
+  type=LALInferenceGetVariableVaryType(vars,name);
+  if(type==LALINFERENCE_PARAM_CIRCULAR||type==LALINFERENCE_PARAM_LINEAR||type==LALINFERENCE_PARAM_OUTPUT) return 1;
+  else return 0;
+
+}
+
 int LALInferenceCheckVariable(LALInferenceVariables *vars,const char *name)
 /* Check for existance of name */
 {
@@ -833,7 +844,7 @@ void LALInferencePrintSampleNonFixed(FILE *fp,LALInferenceVariables *sample){
 	LALInferenceVariableItem *ptr=sample->head;
 	if(fp==NULL) return;
 	while(ptr!=NULL) {
-		if (LALInferenceCheckVariableNonFixed(sample, ptr->name) && ptr->type != LALINFERENCE_gslMatrix_t ) {
+		if (LALInferenceCheckVariableToPrint(sample, ptr->name) && ptr->type != LALINFERENCE_gslMatrix_t ) {
 			switch (ptr->type) {
 				case LALINFERENCE_INT4_t:
 					fprintf(fp, "%"LAL_INT4_FORMAT, *(INT4 *) ptr->value);
@@ -921,7 +932,7 @@ void LALInferenceReadSampleNonFixed(FILE *fp, LALInferenceVariables *p) {
 	break;
       default:
 	/* Pass on reading */
-	XLAL_ERROR_VOID(XLAL_EINVAL, "cannot read data type into LALINferenceVariables");
+	XLAL_ERROR_VOID(XLAL_EINVAL, "cannot read data type into LALInferenceVariables");
 	break;
       }
     }
@@ -1318,7 +1329,7 @@ int LALInferenceFprintParameterNonFixedHeaders(FILE *out, LALInferenceVariables 
   int i;//,j;
   //gsl_matrix *matrix = NULL;
   while (head != NULL) {
-    if (LALInferenceCheckVariableNonFixed(params, head->name)) {
+    if (LALInferenceCheckVariableToPrint(params, head->name)) {
       if(head->type==LALINFERENCE_gslMatrix_t)
       {
         /*

@@ -294,7 +294,7 @@ int  LALInferenceCheckVariable(LALInferenceVariables *vars,const char *name);
  * returns 1 or 0
  */
 int LALInferenceCheckVariableNonFixed(LALInferenceVariables *vars, const char *name);
-
+int LALInferenceCheckVariableToPrint(LALInferenceVariables *vars, const char *name);
 /**
  * Delete the variables in this structure.
  * Does not free the LALInferenceVariables itself
