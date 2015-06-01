@@ -53,14 +53,16 @@ def draw_posterior(data, log_wts, verbose=False):
     idx=filter(lambda i: selection[i], range(len(selection)))
     return data[idx,:]
     
-def draw_posterior_many(datas, Nlives,logLcol=-1, verbose=False):
+def draw_posterior_many(datas, Nlives,logLcols=None, verbose=False):
     """Draw samples from the posteriors represented by the
     (Nruns, Nsamples, Nparams)-shaped array datas, each sampled with
     the corresponding Nlive number of live points. Will draw without repetition,
     and weight according to the evidence in each input run"""
 
     # list of log_evidences, log_weights
-    log_evs,log_wts=zip(*[compute_weights(data[:,logLcol],Nlive) for data,Nlive in zip(datas, Nlives)])
+    if logLcols is None:
+        logLcols = [-1 for d in datas]
+    log_evs,log_wts=zip(*[compute_weights(data[:,logLcol],Nlive) for data,Nlive,logLcol in zip(datas, Nlives,logLcols)])
     if verbose: print 'Computed log_evidences: %s'%(str(log_evs))
 
     log_total_evidence=reduce(logaddexp, log_evs)
@@ -100,7 +102,7 @@ def draw_N_posterior(data,log_wts, N, verbose=False):
 
     return data[idxs-1, :]
 
-def draw_N_posterior_many(datas, Nlives, Npost, logLcol=-1, verbose=False):
+def draw_N_posterior_many(datas, Nlives, Npost, logLcols=None, verbose=False):
     """
     Draw Npost samples from the posteriors represented by the
     (Nruns, Nsamples, Nparams)-shaped array datas, each sampled with
@@ -108,7 +110,9 @@ def draw_N_posterior_many(datas, Nlives, Npost, logLcol=-1, verbose=False):
     of samples may not be exactly Npost due to rounding
     """
     # get log_evidences, log_weights.
-    log_evs,log_wts=zip(*[compute_weights(data[:,logLcol],Nlive) for data,Nlive in zip(datas, Nlives)])
+    if logLcols is None:
+        logLcols = [-1 for d in datas]
+    log_evs,log_wts=zip(*[compute_weights(data[:,logLcol],Nlive) for data,Nlive,logLcol in zip(datas, Nlives,logLcols)])
     
     log_total_evidence=reduce(logaddexp, log_evs)
     Ns=[int(round(Npost*exp(log_ev-log_total_evidence))) for log_ev in log_evs]
