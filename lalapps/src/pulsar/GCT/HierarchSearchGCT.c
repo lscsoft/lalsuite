@@ -150,10 +150,14 @@ typedef struct {
   UINT4 nf3dot;			/**< number of 3rd spindown Fstat bins */
   SSBprecision SSBprec;            /**< SSB transform precision */
   FstatMethodType Fmethod;         //!< which Fstat-method/algorithm to use
+  FstatMethodType FmethodRecalc;   //!< which Fstat-method/algorithm to use for the recalc step
   REAL8 mismatch1;                 /**< 'mismatch1' user-input needed here internally ... */
   UINT4 nSFTs;                     /**< total number of SFTs */
   LALStringVector *detectorIDs;    /**< vector of detector IDs */
   REAL4 NSegmentsInvX[PULSAR_MAX_DETECTORS]; /**< effective inverse number of segments per detector (needed for correct averaging in single-IFO F calculation) */
+  FstatInputVector* Fstat_in_vec;	/**< Original wide-parameter search: vector of Fstat input data structures for XLALComputeFstat(), one per stack */
+  FstatInputVector* Fstat_in_vec_recalc; /**< Recalculate the toplist: Vector of Fstat input data structures for XLALComputeFstat(), one per stack */
+
 } UsefulStageVariables;
 
 
@@ -183,7 +187,7 @@ typedef struct
 
 
 /* ------------------------ Functions -------------------------------- */
-void SetUpSFTs( LALStatus *status, FstatInputVector** p_Fstat_in_vec, UsefulStageVariables *in );
+void SetUpSFTs( LALStatus *status, UsefulStageVariables *in );
 void PrintFstatVec( LALStatus *status, FstatResults *in, FILE *fp, PulsarDopplerParams *thisPoint,
                     LIGOTimeGPS refTime, INT4 stackIndex);
 void PrintCatalogInfo( LALStatus *status, const SFTCatalog *catalog, FILE *fp );
@@ -255,7 +259,6 @@ int MAIN( int argc, char *argv[]) {
   UsefulStageVariables XLAL_INIT_DECL(usefulParams);
 
   /* F-statistic computation related stuff */
-  FstatInputVector* Fstat_in_vec = NULL;		// Vector of Fstat input data structures for XLALComputeFstat(), one per stack
   FstatResults* Fstat_res = NULL;			// Pointer to Fstat results structure, will be allocated by XLALComputeFstat()
   FstatQuantities Fstat_what = FSTATQ_2F;		// Quantities to be computed by XLALComputeFstat()
   UINT4 binsFstat1;
@@ -408,6 +411,7 @@ int MAIN( int argc, char *argv[]) {
   CHAR *uvar_outputTiming = NULL;
 
   CHAR *uvar_FstatMethod = XLALStringDuplicate("DemodBest");
+  CHAR *uvar_FstatMethodRecalc = XLALStringDuplicate("DemodBest");
 
   timingInfo_t XLAL_INIT_DECL(timing);
 
@@ -500,6 +504,7 @@ int MAIN( int argc, char *argv[]) {
   // --------------------------------------------
 
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "FstatMethod",  0, UVAR_OPTIONAL, XLALFstatMethodHelpString(), &uvar_FstatMethod ), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "FstatMethodRecalc", 0, UVAR_OPTIONAL, XLALFstatMethodHelpString(), &uvar_FstatMethodRecalc ), &status);
   /* developer user variables */
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed", 0, UVAR_DEVELOPER, "RngMed block size", &uvar_blocksRngMed), &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "SSBprecision", 0, UVAR_DEVELOPER, "Precision for SSB transform.", &uvar_SSBprecision),    &status);
@@ -743,10 +748,8 @@ int MAIN( int argc, char *argv[]) {
   usefulParams.SignalOnly = uvar_SignalOnly;
   usefulParams.SSBprec = uvar_SSBprecision;
 
-  if ( XLALParseFstatMethodString ( &usefulParams.Fmethod, uvar_FstatMethod ) != XLAL_SUCCESS ) {
-    XLALPrintError ("XLALParseFstatMethodString() failed.\n");
-    return( HIERARCHICALSEARCH_EBAD );
-  }
+  XLAL_CHECK_MAIN ( XLALParseFstatMethodString ( &usefulParams.Fmethod, uvar_FstatMethod ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( XLALParseFstatMethodString ( &usefulParams.FmethodRecalc, uvar_FstatMethodRecalc ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   usefulParams.mismatch1 = uvar_mismatch1;
 
@@ -812,7 +815,7 @@ int MAIN( int argc, char *argv[]) {
 
   /* for 1st stage: read sfts, calculate detector states */
   LogPrintf( LOG_NORMAL,"Reading input data ... ");
-  LAL_CALL( SetUpSFTs( &status, &Fstat_in_vec, &usefulParams ), &status);
+  LAL_CALL( SetUpSFTs( &status, &usefulParams ), &status);
   LogPrintfVerbatim ( LOG_NORMAL, " done.\n");
 
   /* some useful params computed by SetUpSFTs */
@@ -1437,7 +1440,7 @@ int MAIN( int argc, char *argv[]) {
                 if (doComputeFstats) { /* if first time through fine grid fdots loop */
 
                   timeFstatStart = XLALGetTimeOfDay();
-                  const int retn = XLALComputeFstat(&Fstat_res, Fstat_in_vec->data[k], &thisPoint, binsFstat1, Fstat_what);
+                  const int retn = XLALComputeFstat(&Fstat_res, usefulParams.Fstat_in_vec->data[k], &thisPoint, binsFstat1, Fstat_what);
                   if ( retn != XLAL_SUCCESS ) {
                     XLALPrintError ("%s: XLALComputeFstat() failed with errno=%d\n", __func__, xlalErrno );
                     return xlalErrno;
@@ -1657,7 +1660,11 @@ int MAIN( int argc, char *argv[]) {
     LogPrintf( LOG_NORMAL, "Recalculating statistics for the final toplist...\n");
     RecalcStatsParams XLAL_INIT_DECL(recalcParams);
     recalcParams.listEntryTypeName = "GCTtop";
-    recalcParams.Fstat_in_vec		= Fstat_in_vec;
+    if ( usefulParams.Fstat_in_vec_recalc != NULL ) {
+      recalcParams.Fstat_in_vec		= usefulParams.Fstat_in_vec_recalc;
+    } else {
+      recalcParams.Fstat_in_vec		= usefulParams.Fstat_in_vec;
+    }
     recalcParams.detectorIDs		= usefulParams.detectorIDs;
     recalcParams.startTstack		= usefulParams.startTstack;
     recalcParams.refTimeGPS		= refTimeGPS;
@@ -1699,7 +1706,7 @@ int MAIN( int argc, char *argv[]) {
       timing.FstatMethod = usefulParams.Fmethod;
 
       if ( uvar_outputTiming ) {
-        XLAL_CHECK ( write_TimingInfo ( uvar_outputTiming, &timing, Fstat_in_vec ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK ( write_TimingInfo ( uvar_outputTiming, &timing, usefulParams.Fstat_in_vec ) == XLAL_SUCCESS, XLAL_EFUNC );
       }
     } // if uvar_outputTiming
 
@@ -1739,7 +1746,8 @@ int MAIN( int argc, char *argv[]) {
     LALFree( fnameFstatVec1 );
   }
 
-  XLALDestroyFstatInputVector(Fstat_in_vec);
+  XLALDestroyFstatInputVector(usefulParams.Fstat_in_vec);
+  XLALDestroyFstatInputVector(usefulParams.Fstat_in_vec_recalc);
 
   XLALDestroyFstatResults(Fstat_res);
 
@@ -1807,7 +1815,6 @@ int MAIN( int argc, char *argv[]) {
  * detector-state
  */
 void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
-                FstatInputVector** p_Fstat_in_vec,	/**< pointer to vector of Fstat input data structures for XLALComputeFstat(), one per stack */
                 UsefulStageVariables *in		/**< input params */
                 )
 {
@@ -2017,11 +2024,18 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   const UINT4 numDetectors = in->detectorIDs->length;
 
   /* set up vector of Fstat input data structs */
-  (*p_Fstat_in_vec) = XLALCreateFstatInputVector( in->nStacks );
-  if ( (*p_Fstat_in_vec) == NULL ) {
+  in->Fstat_in_vec = XLALCreateFstatInputVector( in->nStacks );
+  if ( in->Fstat_in_vec == NULL ) {
     ABORT ( status, HIERARCHICALSEARCH_EMEM, HIERARCHICALSEARCH_MSGEMEM );
   }
-
+  // if using different Fstat-method for main search and recalc: set-up separate Fstat input
+  if ( in->Fmethod != in->FmethodRecalc )
+    {
+      in->Fstat_in_vec_recalc = XLALCreateFstatInputVector( in->nStacks );
+      if ( in->Fstat_in_vec == NULL ) {
+        ABORT ( status, HIERARCHICALSEARCH_EMEM, HIERARCHICALSEARCH_MSGEMEM );
+      }
+    }
 
   in->nSFTs = 0;
   for (UINT4 X = 0; X < numDetectors; X++) {
@@ -2033,6 +2047,8 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   optionalArgs.Dterms = in->Dterms;
   optionalArgs.runningMedianWindow = in->blocksRngMed;
   optionalArgs.FstatMethod = in->Fmethod;
+
+  FstatOptionalArgs XLAL_INIT_DECL(optionalArgsRecalc);
 
   /* loop over segments and read sfts */
   for (k = 0; k < in->nStacks; k++) {
@@ -2051,26 +2067,49 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
     }
 
     /* ----- create Fstat input data struct ----- */
-    (*p_Fstat_in_vec)->data[k] = XLALCreateFstatInput ( &catalogSeq.data[k], freqmin, freqmax, in->dFreqStack, in->edat, &optionalArgs );
-    if ( (*p_Fstat_in_vec)->data[k] == NULL ) {
+    if ( k == 0 ) {
+      optionalArgs.prevInput = NULL;
+    } else {
+      optionalArgs.prevInput = in->Fstat_in_vec->data[0];     // re-use shared workspace from first segment for all subsequent segments
+    }
+
+    in->Fstat_in_vec->data[k] = XLALCreateFstatInput ( &catalogSeq.data[k], freqmin, freqmax, in->dFreqStack, in->edat, &optionalArgs );
+    if ( in->Fstat_in_vec->data[k] == NULL ) {
       XLALPrintError("%s: XLALCreateFstatInput() failed with errno=%d", __func__, xlalErrno);
       ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
     }
-    // re-use shared workspace from first segment for all segments
-    if ( k == 0 ) {
-      optionalArgs.prevInput = (*p_Fstat_in_vec)->data[0];
-    }
-    if ( k == 0 ) {
-      LogPrintf (LOG_NORMAL, "FstatMethod used: '%s'\n", XLALGetFstatInputMethodName( (*p_Fstat_in_vec)->data[k] ) );
-    }
+    // ----- if recalc uses a different Fstat-method from main search, we'll setup its own Fstat setup struct
+    if ( in->Fstat_in_vec_recalc != NULL )
+      {
+        optionalArgsRecalc = optionalArgs;
+        optionalArgsRecalc.FstatMethod = in->FmethodRecalc;
+        if ( k == 0 ) {
+          optionalArgsRecalc.prevInput = NULL;
+        } else {
+          optionalArgsRecalc.prevInput = in->Fstat_in_vec_recalc->data[0];     // re-use shared workspace from first segment for all subsequent segments
+        }
 
+        in->Fstat_in_vec_recalc->data[k] = XLALCreateFstatInput ( &catalogSeq.data[k], freqmin, freqmax, in->dFreqStack, in->edat, &optionalArgsRecalc );
+        if ( in->Fstat_in_vec->data[k] == NULL ) {
+          XLALPrintError("%s: XLALCreateFstatInput() failed with errno=%d", __func__, xlalErrno);
+          ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
+        }
+      } // if Fstat_in_vec_recalc
+
+    if ( k == 0 )
+      {
+        LogPrintf (LOG_NORMAL, "Search FstatMethod used: '%s'\n", XLALGetFstatInputMethodName( in->Fstat_in_vec->data[0] ) );
+        LogPrintf (LOG_NORMAL, "Recalc FstatMethod used: '%s'\n", XLALGetFstatInputMethodName( in->Fstat_in_vec_recalc ? in->Fstat_in_vec_recalc->data[0] : in->Fstat_in_vec->data[0] ) );
+      }
+
+    // --------------------------------------------------
     /* get SFT detectors and timestamps */
-    const MultiLALDetector *multiIFO = XLALGetFstatInputDetectors( (*p_Fstat_in_vec)->data[k] );
+    const MultiLALDetector *multiIFO = XLALGetFstatInputDetectors( in->Fstat_in_vec->data[k] );
     if ( multiIFO == NULL ) {
       XLALPrintError("%s: XLALGetFstatInputDetectors() failed with errno=%d", __func__, xlalErrno);
       ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
     }
-    const MultiLIGOTimeGPSVector *multiTS = XLALGetFstatInputTimestamps( (*p_Fstat_in_vec)->data[k] );
+    const MultiLIGOTimeGPSVector *multiTS = XLALGetFstatInputTimestamps( in->Fstat_in_vec->data[k] );
     if ( multiTS == NULL ) {
       XLALPrintError("%s: XLALGetFstatInputTimestamps() failed with errno=%d", __func__, xlalErrno);
       ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
