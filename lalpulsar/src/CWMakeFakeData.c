@@ -504,7 +504,7 @@ XLALFindSmallestValidSamplingRate ( UINT4 *n1,				//< [out] minimal valid sampli
       // now reduce gap to remainder wrt Tsft
       INT4 gap_i = gap_i0 % Tsft;
 
-      if ( (gap_i * nCur) % Tsft == 0 ) {
+      if ( ((INT8)gap_i * nCur) % Tsft == 0 ) {
         continue;
       }
 
