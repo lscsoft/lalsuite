@@ -240,11 +240,12 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
   // start with an empty output time-series
   REAL4TimeSeries *Tseries_sum;
   {
-    UINT4 numSteps = (UINT4) ceil( fSamp * duration );
+    REAL8 numSteps = ceil ( fSamp * duration );
+    XLAL_CHECK ( numSteps < (REAL8)LAL_UINT4_MAX, XLAL_EDOM, "Sorry, time-series of %g samples too long to fit into REAL4TimeSeries (maxLen = %g)\n", numSteps, (REAL8)LAL_UINT4_MAX );
     REAL8 dt = 1.0 / fSamp;
     REAL8 fHeterodyne = fMin;	// heterodyne signals at lower end of frequency-band
     CHAR *detPrefix = XLALGetChannelPrefix ( site->frDetector.name );
-    XLAL_CHECK ( (Tseries_sum = XLALCreateREAL4TimeSeries ( detPrefix, &firstGPS, fHeterodyne, dt, &lalStrainUnit, numSteps )) != NULL, XLAL_EFUNC );
+    XLAL_CHECK ( (Tseries_sum = XLALCreateREAL4TimeSeries ( detPrefix, &firstGPS, fHeterodyne, dt, &lalStrainUnit, (UINT4)numSteps )) != NULL, XLAL_EFUNC );
     memset ( Tseries_sum->data->data, 0, Tseries_sum->data->length * sizeof(Tseries_sum->data->data[0]) );
     XLALFree ( detPrefix );
   } // generate empty timeseries
