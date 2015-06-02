@@ -250,8 +250,14 @@ log_and_show "Build start `date`"
 
 missing_wine_warning=false
 if [ ."$build_win32" = ."true" ] ; then
-    BUILD="${BUILD}_win32"
-    INSTALL="${INSTALL}_win32"
+    if echo "$LDFLAGS" | grep -w -e -m64 >/dev/null; then
+	platform=x86_64-pc-linux-gnu
+	BUILD="${BUILD}_win64"
+	INSTALL="${INSTALL}_win64"
+    else
+	BUILD="${BUILD}_win32"
+	INSTALL="${INSTALL}_win32"
+    fi
     export CC=${cross_prefix}-gcc
     export CXX=${cross_prefix}-g++
     export AR=${cross_prefix}-ar
@@ -290,6 +296,8 @@ else
 	Darwin)
             if echo "$LDFLAGS" | grep -w -e -m64 >/dev/null; then
 		platform=x86_64-apple-darwin
+		BUILD="${BUILD}_64"
+		INSTALL="${INSTALL}_64"
 	    else
 		platform=i686-apple-darwin
 	    fi
@@ -298,6 +306,8 @@ else
 	    LDFLAGS="-lpthread $LDFLAGS"
 	    if echo "$LDFLAGS" | grep -w -e -m64 >/dev/null; then
 	        platform=x86_64-pc-linux-gnu
+		BUILD="${BUILD}_64"
+		INSTALL="${INSTALL}_64"
 	    else
 	        platform=i686-pc-linux-gnu
 	    fi
