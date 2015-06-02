@@ -263,6 +263,8 @@ def mkdirs(path):
 def chooseEngineNode(name):
   if name=='lalinferencenest':
     return LALInferenceNestNode
+  if name=='lalinferenceburst':
+    return LALInferenceBurstNode
   if name=='lalinferencemcmc':
     return LALInferenceMCMCNode
   if name=='lalinferencebambi' or name=='lalinferencebambimpi':
@@ -512,7 +514,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
           self.add_node(skyareanode)
 
   def add_full_analysis(self,event):
-    if self.engine=='lalinferencenest':
+    if self.engine=='lalinferencenest' or  self.engine=='lalinferenceburst':
       result=self.add_full_analysis_lalinferencenest(event)
     elif self.engine=='lalinferencemcmc':
       result=self.add_full_analysis_lalinferencemcmc(event)
@@ -742,10 +744,6 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     enginenodes[0].finalize()
     enginenodes[0].set_psd_files()
     enginenodes[0].set_snr_file()
-    if event.GID is not None:
-      if self.config.has_option('analysis','upload-to-gracedb'):
-        if self.config.getboolean('analysis','upload-to-gracedb'):
-          self.add_gracedb_log_node(respagenode,event.GID)
     if self.config.getboolean('analysis','coherence-test') and len(enginenodes[0].ifos)>1:
         if self.site!='local':
           zipfilename='postproc_'+evstring+'.tar.gz'
@@ -796,8 +794,16 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     respagenode.set_bayes_coherent_noise(mergenode.get_B_file())
     if self.config.has_option('input','injection-file') and event.event_id is not None:
         respagenode.set_injection(self.config.get('input','injection-file'),event.event_id)
-    if event.GID is not None:
+    if self.config.has_option('analysis','upload-to-gracedb'):
+      if self.config.getboolean('analysis','upload-to-gracedb') and event.GID is not None:
         self.add_gracedb_log_node(respagenode,event.GID)
+      elif self.config.has_option('analysis','ugid'):
+        # LIB will want to upload info to gracedb but if we pass the gid in the usual way the pipeline
+        # will try to pull inspiral-only XML tables from the gdb page, failing. 
+        # To avoid that, LIB will read the gracedDB id to upload info to as an ugid=ID option
+        # in the analysis section.
+        ugid=self.config.get('analysis','ugid')
+        self.add_gracedb_log_node(respagenode,ugid)
     return True
 
   def add_full_analysis_lalinferencemcmc(self,event):
@@ -1152,7 +1158,7 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
       elif self.engine=='lalinferencebambimpi':
         exe=cp.get('condor','mpiwrapper')
         universe="vanilla"
-      elif self.engine=='lalinferencenest':
+      elif self.engine=='lalinferencenest' or self.engine=='lalinferenceburst':
         exe=cp.get('condor',self.engine)
         if site is not None and site!='local':
           universe='vanilla'
@@ -1222,7 +1228,7 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     """
     Over-load base class method to choose condor universe properly
     """
-    if self.engine=='lalinferencenest':
+    if self.engine=='lalinferencenest' or self.engine=='lalinferenceburst':
       if site is not None and site!='local':
         self.set_universe('vanilla')
       else:
@@ -1489,6 +1495,13 @@ class LALInferenceNestNode(EngineNode):
 
   def get_header_file(self):
     return self.headerfile
+
+class LALInferenceBurstNode(EngineNode,LALInferenceNestNode):
+  def __init__(self,li_job):
+    EngineNode.__init__(self,li_job)
+    self.engine='lalinferenceburst'
+    self.outfilearg='outfile'
+
 
 class LALInferenceMCMCNode(EngineNode):
   def __init__(self,li_job):
