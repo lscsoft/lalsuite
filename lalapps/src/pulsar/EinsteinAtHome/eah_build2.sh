@@ -514,6 +514,7 @@ if test -n "$build_binutils"; then
     log_and_do cd "$SOURCE/$binutils"
     log_and_do mkdir -p "$INSTALL/include/bfd"
     log_and_do cp -r include/* bfd/*.h "$BUILD/$binutils/binutils/config.h" "$INSTALL/include/bfd"
+    log_and_do rm -f "$INSTALL/include/bfd/getopt.h"
     if [ ."$build_win32" = ."true" ] ; then
 	log_and_do cd "$BUILD/$binutils"
 	log_and_do cp "intl/libintl.a" "$INSTALL/lib"
