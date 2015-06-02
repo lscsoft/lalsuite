@@ -85,6 +85,8 @@ typedef struct
   SFTCatalog *noiseCatalog; 			/**< catalog of noise-SFTs */
   MultiSFTCatalogView *multiNoiseCatalogView; 	/**< multi-IFO 'view' of noise-SFT catalogs */
   MultiREAL8TimeSeries *inputMultiTS;	/**< 'input' time-series to add other stuff to, and output as frames or SFTs */
+  REAL8 fminOut;				/**< Lowest frequency in output SFT (= heterodyning frequency) */
+  REAL8 BandOut;				/**< bandwidth of output SFT in Hz (= 1/2 sampling frequency) */
 
   transientWindow_t transientWindow;	/**< properties of transient-signal window */
   CHAR *VCSInfoString;          /**< LAL + LALapps Git version string */
@@ -196,8 +198,8 @@ main(int argc, char *argv[])
   DataParams.SFTWindowBeta      = uvar.SFTWindowBeta;
   if ( GV.inputMultiTS == NULL )
     {
-      DataParams.fMin               = uvar.fmin;
-      DataParams.Band               = uvar.Band;
+      DataParams.fMin               = GV.fminOut;
+      DataParams.Band               = GV.BandOut;
       DataParams.inputMultiTS       = NULL;
     }
   else // current limitation: FIXME
@@ -425,6 +427,11 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
   BOOLEAN haveOverlap = ( uvar->SFToverlap > 0 );
   XLAL_CHECK ( !haveOverlap || !( have_noiseSFTs || have_timestampsFiles ), XLAL_EINVAL, "--SFToverlap incompatible with {--noiseSFTs or --timestampsFiles}\n" );
 
+
+  // in general frequency-band taken from user-input (or its default values) [default can be overloaded by noiseSFTs, though]
+  cfg->fminOut = uvar->fmin;
+  cfg->BandOut = uvar->Band;
+
   // now handle the 3 mutually-exclusive cases: have_noiseSFTs || have_timestampsFiles || have_startTime (only)
   if ( have_noiseSFTs )
     {
@@ -448,6 +455,22 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
       XLAL_CHECK ( (cfg->multiTimestamps = XLALTimestampsFromMultiSFTCatalogView ( cfg->multiNoiseCatalogView )) != NULL, XLAL_EFUNC );
       // extract IFOs from multi-SFT catalog
       XLAL_CHECK ( XLALMultiLALDetectorFromMultiSFTCatalogView ( &(cfg->multiIFO), cfg->multiNoiseCatalogView ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+      // if user didn't specify a frequency range: extract the range from noise SFTs and use that one
+      UINT4 nSet = UVAR_SET2(fmin,Band);
+      XLAL_CHECK ( (nSet == 2) || (nSet == 0), XLAL_EINVAL, "Either none of both of 'fMin' and 'Band' need to be specified!\n");
+      // if not given by user: extract frequency start + band from noise SFT catalog
+      if ( nSet == 0 )
+        {
+          const SFTDescriptor *desc = &(cfg->multiNoiseCatalogView->data[0].data[0]);
+          REAL8 noise_fmin    = desc->header.f0;
+          REAL8 noise_dFreq   = desc->header.deltaF;
+          UINT4 noise_numBins = desc->numBins;
+          REAL8 noise_band    = (noise_numBins-1) * noise_dFreq;
+          // user give no input on {fmin,Band}: overload default values with noise-SFT values
+          cfg->fminOut = noise_fmin;
+          cfg->BandOut = noise_band;
+        }
 
     } // endif have_noiseSFTs
   else if ( have_timestampsFiles )
