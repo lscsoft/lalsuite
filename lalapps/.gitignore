@@ -108,6 +108,7 @@ src/inspiral/lalapps_ninja
 src/inspiral/lalapps_plot_hipe
 src/inspiral/lalapps_populate_chisq
 src/inspiral/lalapps_randombank
+src/inspiral/lalapps_siminspiral_to_frame
 src/inspiral/lalapps_sire
 src/inspiral/lalapps_siva
 src/inspiral/lalapps_skymap
@@ -146,11 +147,13 @@ src/lalapps/lalapps_tconvert
 src/lalapps/lalapps_version
 src/online/lalapps_online_datafind
 src/power/lalapps_binj
+src/power/lalapps_libbinj
 src/power/lalapps_power
 src/power/lalapps_power_likelihood_pipe
 src/power/lalapps_power_online_pipe
 src/power/lalapps_power_pipe
 src/power/sense_compare
+src/power/lalapps_simburst_to_frame
 src/pulsar/CreateEphemeris/lalapps_create_solar_system_ephemeris
 src/pulsar/CreateEphemeris/lalapps_create_time_correction_ephemeris
 src/pulsar/Fstatistic/lalapps_ComputeFstatMCUpperLimit
