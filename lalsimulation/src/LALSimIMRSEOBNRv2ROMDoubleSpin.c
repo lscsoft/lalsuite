@@ -786,6 +786,24 @@ static int SEOBNRv2ROMDoubleSpinCore(
   }
   int retcode=0;
 
+  // 'Nudge' parameter values to allowed boundary values if close by
+  if (eta > 0.25)  nudge(&eta, 0.25, 1e-6);
+  if (eta < 0.01)  nudge(&eta, 0.01, 1e-6);
+  if (chi1 < -1.0) nudge(&chi1, -1.0, 1e-6);
+  if (chi1 > 0.99) nudge(&chi1, 0.99, 1e-6);
+  if (chi2 < -1.0) nudge(&chi2, -1.0, 1e-6);
+  if (chi1 > 0.99) nudge(&chi2, 0.99, 1e-6);
+
+  if ( chi1 < -1.0 || chi2 < -1.0 || chi1 > 0.99 || chi2 > 0.99 ) {
+    XLALPrintError( "XLAL Error - %s: chi1 or chi2 smaller than -1 or larger than 0.99!\nSEOBNRv2ROMDoubleSpin is only available for spins in the range -1 <= a/M <= 0.99.\n", __func__);
+    XLAL_ERROR( XLAL_EDOM );
+  }
+
+  if (eta<0.01 || eta > 0.25) {
+    XLALPrintError( "XLAL Error - %s: eta (%f) smaller than 0.01 or unphysical!\nSEOBNRv2ROMDoubleSpin is only available for spins in the range 0.01 <= eta <= 0.25.\n", __func__,eta);
+    XLAL_ERROR( XLAL_EDOM );
+  }
+
   /* Select ROM submodel */
   SEOBNRROMdataDS_submodel *submodel;
   if (eta >= 0.242)
@@ -1021,16 +1039,6 @@ int XLALSimIMRSEOBNRv2ROMDoubleSpinFrequencySequence(
 
   if (!freqs) XLAL_ERROR(XLAL_EFAULT);
 
-  if ( chi1 < -1.0 || chi2 < -1.0 || chi1 > 0.99 || chi2 > 0.99 ) {
-    XLALPrintError( "XLAL Error - %s: chi1 or chi2 smaller than -1 or larger than 0.99!\nSEOBNRv2ROMDoubleSpin is only available for spins in the range -1 <= a/M <= 0.99.\n", __func__);
-    XLAL_ERROR( XLAL_EDOM );
-  }
-
-  if (eta<0.01 || eta > 0.25) {
-    XLALPrintError( "XLAL Error - %s: eta (%f) smaller than 0.01 or unphysical!\nSEOBNRv2ROMDoubleSpin is only available for spins in the range 0.01 <= eta <= 0.25.\n", __func__,eta);
-    XLAL_ERROR( XLAL_EDOM );
-  }
-
   // Load ROM data if not loaded already
 #ifdef LAL_PTHREAD_LOCK
   (void) pthread_once(&SEOBNRv2ROMDoubleSpin_is_initialized, SEOBNRv2ROMDoubleSpin_Init_LALDATA);
@@ -1083,16 +1091,6 @@ int XLALSimIMRSEOBNRv2ROMDoubleSpin(
   if(fRef==0.0)
     fRef=fLow;
 
-  if ( chi1 < -1.0 || chi2 < -1.0 || chi1 > 0.99 || chi2 > 0.99 ) {
-    XLALPrintError( "XLAL Error - %s: chi1 or chi2 smaller than -1 or larger than 0.99!\nSEOBNRv2ROMDoubleSpin is only available for spins in the range -1 <= a/M <= 0.99.\n", __func__);
-    XLAL_ERROR( XLAL_EDOM );
-  }
-
-  if (eta < 0.01 || eta > 0.25) {
-    XLALPrintError( "XLAL Error - %s: eta smaller than 0.01 or unphysical!\nSEOBNRv2ROMDoubleSpin is only available for spins in the range 0.01 <= eta <= 0.25.\n", __func__);
-    XLAL_ERROR( XLAL_EDOM );
-  }
-
   // Load ROM data if not loaded already
 #ifdef LAL_PTHREAD_LOCK
   (void) pthread_once(&SEOBNRv2ROMDoubleSpin_is_initialized, SEOBNRv2ROMDoubleSpin_Init_LALDATA);
@@ -1134,6 +1132,24 @@ static int SEOBNRv2ROMDoubleSpinTimeFrequencySetup(
   double Mtot = mass1 + mass2;
   double eta = mass1 * mass2 / (Mtot*Mtot);    /* Symmetric mass-ratio */
   *Mtot_sec = Mtot * LAL_MTSUN_SI; /* Total mass in seconds */
+
+  // 'Nudge' parameter values to allowed boundary values if close by
+  nudge(&eta, 0.25, 1e-6);
+  nudge(&eta, 0.01, 1e-6);
+  nudge(&chi1, -1.0, 1e-6);
+  nudge(&chi1, 0.99, 1e-6);
+  nudge(&chi2, -1.0, 1e-6);
+  nudge(&chi2, 0.99, 1e-6);
+
+  if ( chi1 < -1.0 || chi2 < -1.0 || chi1 > 0.99 || chi2 > 0.99 ) {
+    XLALPrintError( "XLAL Error - %s: chi1 or chi2 smaller than -1 or larger than 0.99!\nSEOBNRv2ROMDoubleSpin is only available for spins in the range -1 <= a/M <= 0.99.\n", __func__);
+    XLAL_ERROR( XLAL_EDOM );
+  }
+
+  if (eta<0.01 || eta > 0.25) {
+    XLALPrintError( "XLAL Error - %s: eta (%f) smaller than 0.01 or unphysical!\nSEOBNRv2ROMDoubleSpin is only available for spins in the range 0.01 <= eta <= 0.25.\n", __func__,eta);
+    XLAL_ERROR( XLAL_EDOM );
+  }
 
   // Load ROM data if not loaded already
 #ifdef LAL_PTHREAD_LOCK

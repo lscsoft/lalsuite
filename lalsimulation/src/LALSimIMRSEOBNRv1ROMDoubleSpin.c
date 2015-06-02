@@ -471,6 +471,25 @@ int SEOBNRv1ROMDoubleSpinCore(
   }
   int retcode=0;
 
+  // 'Nudge' parameter values to allowed boundary values if close by
+  if (q < 1.0)     nudge(&q, 1.0, 1e-6);
+  if (q > 10.0)    nudge(&q, 10.0, 1e-6);
+  if (chi1 < -1.0) nudge(&chi1, -1.0, 1e-6);
+  if (chi1 > 0.6)  nudge(&chi1, 0.6, 1e-6);
+  if (chi2 < -1.0) nudge(&chi2, -1.0, 1e-6);
+  if (chi2 > 0.6)  nudge(&chi2, 0.6, 1e-6);
+
+  /* If either spin > 0.6, model not available, exit */
+  if ( chi1 < -1.0 || chi2 < -1.0 || chi1 > 0.6 || chi2 > 0.6 ) {
+    XLALPrintError( "XLAL Error - %s: chi1 or chi2 smaller than -1 or larger than 0.6!\nSEOBNRv1ROMDoubleSpin is only available for spins in the range -1 <= a/M <= 0.6.\n", __func__);
+    XLAL_ERROR( XLAL_EDOM );
+  }
+
+  if (q > 10) {
+    XLALPrintError( "XLAL Error - %s: q larger than 10!\nSEOBNRv1ROMDoubleSpin is only available for spins in the range 1 <= q <= 10.\n", __func__);
+    XLAL_ERROR( XLAL_EDOM );
+  }
+
   /* Find frequency bounds */
   if (!freqs_in) XLAL_ERROR(XLAL_EFAULT);
   double fLow  = freqs_in->data[0];
@@ -687,18 +706,6 @@ int XLALSimIMRSEOBNRv1ROMDoubleSpinFrequencySequence(
   /* Total mass in seconds */
   double Mtot_sec = Mtot * LAL_MTSUN_SI;
 
-
-  /* If either spin > 0.6, model not available, exit */
-  if ( chi1 < -1.0 || chi2 < -1.0 || chi1 > 0.6 || chi2 > 0.6 ) {
-    XLALPrintError( "XLAL Error - %s: chi1 or chi2 smaller than -1 or larger than 0.6!\nSEOBNRv1ROMDoubleSpin is only available for spins in the range -1 <= a/M <= 0.6.\n", __func__);
-    XLAL_ERROR( XLAL_EDOM );
-  }
-
-  if (q > 10) {
-    XLALPrintError( "XLAL Error - %s: q larger than 10!\nSEOBNRv1ROMDoubleSpin is only available for spins in the range 1 <= q <= 10.\n", __func__);
-    XLAL_ERROR( XLAL_EDOM );
-  }
-
   // Load ROM data if not loaded already
 #ifdef LAL_PTHREAD_LOCK
   (void) pthread_once(&SEOBNRv1ROMDoubleSpin_is_initialized, SEOBNRv1ROMDoubleSpin_Init_LALDATA);
@@ -753,17 +760,6 @@ int XLALSimIMRSEOBNRv1ROMDoubleSpin(
 
   if(fRef==0.0)
     fRef=fLow;
-
-  /* If either spin > 0.6, model not available, exit */
-  if ( chi1 < -1.0 || chi2 < -1.0 || chi1 > 0.6 || chi2 > 0.6 ) {
-    XLALPrintError( "XLAL Error - %s: chi1 or chi2 smaller than -1 or larger than 0.6!\nSEOBNRv1ROMDoubleSpin is only available for spins in the range -1 <= a/M <= 0.6.\n", __func__);
-    XLAL_ERROR( XLAL_EDOM );
-  }
-
-  if (q > 10) {
-    XLALPrintError( "XLAL Error - %s: q larger than 10!\nSEOBNRv1ROMDoubleSpin is only available for spins in the range 1 <= q <= 10.\n", __func__);
-    XLAL_ERROR( XLAL_EDOM );
-  }
 
   // Load ROM data if not loaded already
 #ifdef LAL_PTHREAD_LOCK

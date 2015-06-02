@@ -400,13 +400,20 @@ static void Init_LALDATA(void)
 REAL8 XLALSimIMRSEOBNRv2ChirpTimeSingleSpin(
   const REAL8 m1_SI,    /**< Mass of companion 1 [kg] */
   const REAL8 m2_SI,    /**< Mass of companion 2 [kg] */
-  const REAL8 chi,      /**< Effective aligned spin */
+  const REAL8 chi_in,   /**< Effective aligned spin */
   const REAL8 f_min     /**< Starting frequency [Hz] */
 ) {
   const REAL8 m1 = m1_SI / LAL_MSUN_SI;
   const REAL8 m2 = m2_SI / LAL_MSUN_SI;
   const REAL8 Mtot = m1 + m2;
-  const REAL8 eta = m1*m2 / (Mtot*Mtot);
+  REAL8 eta = m1*m2 / (Mtot*Mtot);
+  REAL8 chi = chi_in;
+
+  // 'Nudge' parameter values to allowed boundary values if close by
+  nudge(&eta, 0.25, 1e-6);
+  nudge(&eta, 0.01, 1e-6);
+  nudge(&chi, -1.0, 1e-6);
+  nudge(&chi, 0.99, 1e-6);
 
   XLAL_PRINT_INFO("XLALSimIMRSEOBNRv2ChirpTimeSingleSpin(): (Mtot / Mtot0) * f_min = %g\n", (Mtot / Mtot0) * f_min);
 

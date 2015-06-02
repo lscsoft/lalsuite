@@ -523,6 +523,18 @@ int SEOBNRv2ROMEqualSpinCore(
     XLAL_ERROR(XLAL_EFAULT, "(*hptilde) and (*hctilde) are supposed to be NULL, but got %p and %p",(*hptilde),(*hctilde));
   int retcode=0;
 
+  // 'Nudge' parameter values to allowed boundary values if close by
+  if (eta > 0.25) nudge(&eta, 0.25, 1e-6);
+  if (eta < 0.01) nudge(&eta, 0.01, 1e-6);
+  if (chi < -1.0) nudge(&chi, -1.0, 1e-6);
+  if (chi > 0.99) nudge(&chi, 0.99, 1e-6);
+
+  if (chi < -1.0 || chi > 0.99)
+    XLAL_ERROR(XLAL_EDOM, "XLAL Error - %s: chi (%f) smaller than -1 or larger than 0.99!\nSEOBNRv2ROMEqualSpin is only available for spins in the range -1 <= a/M <= 0.99.\n", __func__,chi);
+
+  if (eta < 0.01 || eta > 0.25)
+    XLAL_ERROR(XLAL_EDOM, "XLAL Error - %s: eta (%f) smaller than 0.01 or unphysical!\nSEOBNRv2ROMEqualSpin is only available for spins in the range 0.01 <= eta <= 0.25.\n", __func__,eta);
+
   /* Find frequency bounds */
   if (!freqs_in) XLAL_ERROR(XLAL_EFAULT);
   double fLow  = freqs_in->data[0];
@@ -726,12 +738,6 @@ int XLALSimIMRSEOBNRv2ROMEqualSpinFrequencySequence(
 
   if (!freqs) XLAL_ERROR(XLAL_EFAULT);
 
-  if ( chi < -1.0 || chi > 0.99 )
-    XLAL_ERROR(XLAL_EDOM, "XLAL Error - %s: chi (%f) smaller than -1 or larger than 0.99!\nSEOBNRv2ROMEqualSpin is only available for spins in the range -1 <= a/M <= 0.99.\n", __func__,chi);
-
-  if (eta < 0.01 || eta > 0.25)
-    XLAL_ERROR(XLAL_EDOM, "XLAL Error - %s: eta (%f) smaller than 0.01 or unphysical!\nSEOBNRv2ROMEqualSpin is only available for spins in the range 0.01 <= eta <= 0.25.\n", __func__,eta);
-
   // Load ROM data if not loaded already
 #ifdef LAL_PTHREAD_LOCK
   (void) pthread_once(&SEOBNRv2ROMEqualSpin_is_initialized, SEOBNRv2ROMEqualSpin_Init_LALDATA);
@@ -773,12 +779,6 @@ int XLALSimIMRSEOBNRv2ROMEqualSpin(
   if(fRef==0.0)
     fRef=fLow;
 
-  if ( chi < -1.0 || chi > 0.99 )
-    XLAL_ERROR(XLAL_EDOM, "XLAL Error - %s: chi (%f) smaller than -1 or larger than 0.99!\nSEOBNRv2ROMEqualSpin is only available for spins in the range -1 <= a/M <= 0.99.\n", __func__,chi);
-
-  if (eta<0.01 || eta > 0.25)
-    XLAL_ERROR(XLAL_EDOM, "XLAL Error - %s: eta (%f) smaller than 0.01 or unphysical!\nSEOBNRv2ROMEqualSpin is only available for spins in the range 0.01 <= eta <= 0.25.\n", __func__,eta);
-
   // Load ROM data if not loaded already
 #ifdef LAL_PTHREAD_LOCK
   (void) pthread_once(&SEOBNRv2ROMEqualSpin_is_initialized, SEOBNRv2ROMEqualSpin_Init_LALDATA);
@@ -818,6 +818,18 @@ static int SEOBNRv2ROMEqualSpinTimeFrequencySetup(
   double Mtot = mass1 + mass2;
   double eta = mass1 * mass2 / (Mtot*Mtot);    /* Symmetric mass-ratio */
   *Mtot_sec = Mtot * LAL_MTSUN_SI; /* Total mass in seconds */
+
+  // 'Nudge' parameter values to allowed boundary values if close by
+  nudge(&eta, 0.25, 1e-6);
+  nudge(&eta, 0.01, 1e-6);
+  nudge(&chi, -1.0, 1e-6);
+  nudge(&chi, 0.99, 1e-6);
+
+  if (chi < -1.0 || chi > 0.99)
+    XLAL_ERROR(XLAL_EDOM, "XLAL Error - %s: chi (%f) smaller than -1 or larger than 0.99!\nSEOBNRv2ROMEqualSpin is only available for spins in the range -1 <= a/M <= 0.99.\n", __func__,chi);
+
+  if (eta < 0.01 || eta > 0.25)
+    XLAL_ERROR(XLAL_EDOM, "XLAL Error - %s: eta (%f) smaller than 0.01 or unphysical!\nSEOBNRv2ROMEqualSpin is only available for spins in the range 0.01 <= eta <= 0.25.\n", __func__,eta);
 
   // Load ROM data if not loaded already
 #ifdef LAL_PTHREAD_LOCK

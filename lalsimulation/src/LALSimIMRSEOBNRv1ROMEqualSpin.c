@@ -476,6 +476,28 @@ static int SEOBNRv1ROMEqualSpinCore(
   }
   int retcode=0;
 
+  // 'Nudge' parameter values to allowed boundary values if close by
+  if (q < 1.0)    nudge(&q, 1.0, 1e-6);
+  if (q > 100.0)  nudge(&q, 100.0, 1e-6);
+  if (chi < -1.0) nudge(&chi, -1.0, 1e-6);
+  if (chi > 0.6)  nudge(&chi, 0.6, 1e-6);
+
+  /* If either spin > 0.6, model not available, exit */
+  if ( chi < -1.0 || chi > 0.6 ) {
+    XLALPrintError( "XLAL Error - %s: chi smaller than -1 or larger than 0.6!\nSEOBNRv1ROMEqualSpin is only available for spins in the range -1 <= a/M <= 0.6.\n", __func__);
+    XLAL_ERROR( XLAL_EDOM );
+  }
+
+  if (q > 100) {
+    XLALPrintError( "XLAL Error - %s: q larger than 100!\nSEOBNRv1ROMEqualSpin is only available for spins in the range 1 <= q <= 100.\n", __func__);
+    XLAL_ERROR( XLAL_EDOM );
+  }
+
+  if (q >= 20 && q <= 40 && chi < -0.75 && chi > -0.9) {
+    XLALPrintWarning( "XLAL Warning - %s: q in [20,40] and chi in [-0.8]. The SEOBNRv1 model is not trustworthy in this region!\nSee Fig 15 in CQG 31 195010, 2014 for details.", __func__);
+    XLAL_ERROR( XLAL_EDOM );
+  }
+
   /* Find frequency bounds */
   if (!freqs_in) XLAL_ERROR(XLAL_EFAULT);
   double fLow  = freqs_in->data[0];
@@ -680,23 +702,6 @@ int XLALSimIMRSEOBNRv1ROMEqualSpinFrequencySequence(
   /* Total mass in seconds */
   double Mtot_sec = Mtot * LAL_MTSUN_SI;
 
-
-  /* If either spin > 0.6, model not available, exit */
-  if ( chi < -1.0 || chi > 0.6 ) {
-    XLALPrintError( "XLAL Error - %s: chi smaller than -1 or larger than 0.6!\nSEOBNRv1ROMEqualSpin is only available for spins in the range -1 <= a/M <= 0.6.\n", __func__);
-    XLAL_ERROR( XLAL_EDOM );
-  }
-
-  if (q > 100) {
-    XLALPrintError( "XLAL Error - %s: q larger than 100!\nSEOBNRv1ROMEqualSpin is only available for spins in the range 1 <= q <= 100.\n", __func__);
-    XLAL_ERROR( XLAL_EDOM );
-  }
-
-  if (q >= 20 && q <= 40 && chi < -0.75 && chi > -0.9) {
-    XLALPrintWarning( "XLAL Warning - %s: q in [20,40] and chi in [-0.8]. The SEOBNRv1 model is not trustworthy in this region!\nSee Fig 15 in CQG 31 195010, 2014 for details.", __func__);
-    XLAL_ERROR( XLAL_EDOM );
-  }
-
   // Load ROM data if not already loaded
 #ifdef LAL_PTHREAD_LOCK
   (void) pthread_once(&SEOBNRv1ROMEqualSpin_is_initialized, SEOBNRv1ROMEqualSpin_Init_LALDATA);
@@ -739,22 +744,6 @@ int XLALSimIMRSEOBNRv1ROMEqualSpin(
 
   if(fRef==0.0)
     fRef=fLow;
-
-  /* If either spin > 0.6, model not available, exit */
-  if ( chi < -1.0 || chi > 0.6 ) {
-    XLALPrintError( "XLAL Error - %s: chi smaller than -1 or larger than 0.6!\nSEOBNRv1ROMEqualSpin is only available for spins in the range -1 <= a/M <= 0.6.\n", __func__);
-    XLAL_ERROR( XLAL_EDOM );
-  }
-
-  if (q > 100) {
-    XLALPrintError( "XLAL Error - %s: q larger than 100!\nSEOBNRv1ROMEqualSpin is only available for spins in the range 1 <= q <= 100.\n", __func__);
-    XLAL_ERROR( XLAL_EDOM );
-  }
-
-  if (q >= 20 && q <= 40 && chi < -0.75 && chi > -0.9) {
-    XLALPrintWarning( "XLAL Warning - %s: q in [20,40] and chi in [-0.8]. The SEOBNRv1 model is not trustworthy in this region!\nSee Fig 15 in CQG 31 195010, 2014 for details.", __func__);
-    XLAL_ERROR( XLAL_EDOM );
-  }
 
   // Load ROM data if not already loaded
 #ifdef LAL_PTHREAD_LOCK
