@@ -17,20 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/**
- * @file
- * @author Jolien Creighton
- * @brief Provides a unified interface to frame libraries.
- * @details
- * This provides a unified interface for reading and writing data files
- * in the "Frame Format for Interferometric Gravitational Wave Detectors".
- * @sa <em>Specification of a Common Data Frame Format for Interferometric
- * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
- * @sa Virgo Frame Library [http://lappweb.in2p3.fr/virgo/FrameL].
- * @sa FrameCPP Library [http://www.ldas-sw.ligo.caltech.edu/doc/framecpp/html].
- */
-
 #include <stddef.h>
 #include <time.h>
 
@@ -43,6 +29,24 @@ extern "C" {
 #if 0
 }
 #endif
+
+/**
+ * @defgroup LALFrameU_h Header LALFrameU.h
+ * @ingroup lalframe_general
+ *
+ * @author Jolien Creighton
+ * @brief Provides a unified interface to frame libraries.
+ * @details
+ * This provides a unified interface for reading and writing data files
+ * in the "Frame Format for Interferometric Gravitational Wave Detectors".
+ * @sa <em>Specification of a Common Data Frame Format for Interferometric
+ * Gravitational Wave Detectors (IGWD)</em>
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * @sa Virgo Frame Library [http://lappweb.in2p3.fr/virgo/FrameL].
+ * @sa FrameCPP Library [http://www.ldas-sw.ligo.caltech.edu/doc/framecpp/html].
+ */
+/** @{ */
+
 struct tagLALFrameUFrameH;
 struct tagLALFrameUFrFile;
 struct tagLALFrameUFrTOC;
@@ -305,6 +309,8 @@ void XLALFrameUFrTOCFree(LALFrameUFrTOC * toc);
  */
 LALFrameUFrTOC *XLALFrameUFrTOCRead(LALFrameUFrFile * stream);
 
+/** @} */
+
 /**
  * @name FrTOC Query Routines
  * @{
@@ -461,7 +467,6 @@ size_t XLALFrameUFrTOCQueryDetectorN(const LALFrameUFrTOC * toc);
 const char *XLALFrameUFrTOCQueryDetectorName(const LALFrameUFrTOC * toc, size_t det);
 
 /** @} */
-/** @} */
 
 /**
  * @name FrameH Routines
@@ -518,6 +523,8 @@ LALFrameUFrameH *XLALFrameUFrameHRead(LALFrameUFrFile * stream, int pos);
  * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
  */
 int XLALFrameUFrameHWrite(LALFrameUFrFile * stream, LALFrameUFrameH * frame);
+
+/** @} */
 
 /**
  * @name FrameH Add Routines
@@ -679,7 +686,6 @@ double XLALFrameUFrameHQueryDt(const LALFrameUFrameH * frame);
 int XLALFrameUFrameHSetRun(LALFrameUFrameH * frame, int run);
 
 /** @} */
-/** @} */
 
 /**
  * @name FrChan Routines
@@ -762,6 +768,8 @@ LALFrameUFrChan *XLALFrameUFrSimChanAlloc(const char *name, int dtype, size_t nd
  */
 LALFrameUFrChan *XLALFrameUFrProcChanAlloc(const char *name, int type, int subtype, int dtype, size_t ndata);
 
+/** @} */
+
 /**
  * @name FrChan Query Routines
  * @{
@@ -840,7 +848,6 @@ int XLALFrameUFrChanSetSampleRate(LALFrameUFrChan * channel, double sampleRate);
 int XLALFrameUFrChanSetTimeOffset(LALFrameUFrChan * channel, double timeOffset);
 
 /** @} */
-/** @} */
 
 /**
  * @name FrVect Routines
@@ -886,6 +893,8 @@ int XLALFrameUFrChanVectorCompress(LALFrameUFrChan * channel, int compressLevel)
  * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
  */
 int XLALFrameUFrChanVectorExpand(LALFrameUFrChan * channel);
+
+/** @} */
 
 /**
  * @name FrVect Query Routines
@@ -1150,7 +1159,6 @@ int XLALFrameUFrChanVectorSetUnitY(LALFrameUFrChan * channel, const char *unit);
 /* TODO: a bunch more things to set coming up!!! */
 
 /** @} */
-/** @} */
 
 /**
  * @name FrDetector Routines
@@ -1215,6 +1223,8 @@ LALFrameUFrDetector *XLALFrameUFrDetectorRead(LALFrameUFrFile * stream, const ch
 LALFrameUFrDetector *XLALFrameUFrDetectorAlloc(const char *name,
     const char *prefix, double latitude, double longitude, double elevation,
     double azimuthX, double azimuthY, double altitudeX, double altitudeY, double midpointX, double midpointY, int localTime);
+
+/** @} */
 
 /**
  * @name FrDetector Query Routines
@@ -1405,7 +1415,6 @@ double XLALFrameUFrDetectorQueryArmYMidpoint(const LALFrameUFrDetector * detecto
 int XLALFrameUFrDetectorQueryLocalTime(const LALFrameUFrDetector * detector);
 
 /** @} */
-/** @} */
 
 /**
  * @name FrHistory Routines
@@ -1437,6 +1446,8 @@ void XLALFrameUFrHistoryFree(LALFrameUFrHistory * history);
  * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
  */
 LALFrameUFrHistory *XLALFrameUFrHistoryAlloc(const char *name, double gpssec, const char *comment);
+
+/** @} */
 
 /** @} */
 
