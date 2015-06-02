@@ -26,15 +26,28 @@
  * \brief C code for SEOBNRv1 reduced order model (equal spin version).
  * See CQG 31 195010, 2014, arXiv:1402.4146 for details.
  *
+ * This is a frequency domain model that approximates the time domain SEOBNRv1 model with equal spins.
+ * Note that SEOBNRv2 supersedes SEOBNRv1.
+ *
  * The binary data files are available at https://dcc.ligo.org/T1400701-v1.
  * Put the untared data into a location in your LAL_DATA_PATH.
  *
- * Parameter ranges:
- *   q <= 100
- *   -1 <= chi <= 0.6
- *   Mtot >= 1.4Msun
+ * @note Note that due to its construction the iFFT of the ROM has a small (~ 20 M) offset
+ * in the peak time that scales with total mass as compared to the time-domain SEOBNRv1 model.
  *
- *  chi = chi1 = chi2
+ * @note Due to non-smoothness in SEOBNRv1 at chi1=chi2 ~ -0.8 and 20 <= q <= 40 the
+ * ROM deviates from the SEOBNRv1 behavior there. See arXiv:1402.4146, Fig 7,
+ * Fig 11, and Fig 13 for details.
+ *
+ * @note Parameter ranges:
+ *   * 1 <= q <= 100
+ *   * -1 <= chi <= 0.6
+ *   * Mtot >= 1.4Msun
+ *
+ *  Equal spin chi = chi1 = chi2.
+ *  Asymmetric mass-ratio q = max(m1/m2, m2/m1).
+ *  Total mass Mtot.
+ *
  */
 
 #ifdef __GNUC__
@@ -679,7 +692,23 @@ static int SEOBNRv1ROMEqualSpinCore(
   return(XLAL_SUCCESS);
 }
 
-/** Compute waveform in LAL format at specified frequencies */
+/**
+ * Compute waveform in LAL format at specified frequencies for the SEOBNRv1_ROM_EqualSpin model.
+ *
+ * XLALSimIMRSEOBNRv1ROMEqualSpin() returns the plus and cross polarizations as a complex
+ * frequency series with equal spacing deltaF and contains zeros from zero frequency
+ * to the starting frequency and zeros beyond the cutoff frequency in the ringdown.
+ *
+ * In contrast, XLALSimIMRSEOBNRv1ROMEqualSpinFrequencySequence() returns a
+ * complex frequency series with entries exactly at the frequencies specified in
+ * the sequence freqs (which can be unequally spaced). No zeros are added.
+ *
+ * If XLALSimIMRSEOBNRv1ROMEqualSpinFrequencySequence() is called with frequencies that
+ * are beyond the maxium allowed geometric frequency for the ROM, zero strain is returned.
+ * It is not assumed that the frequency sequence is ordered.
+ *
+ * This function is designed as an entry point for reduced order quadratures.
+ */
 int XLALSimIMRSEOBNRv1ROMEqualSpinFrequencySequence(
   struct tagCOMPLEX16FrequencySeries **hptilde, /**< Output: Frequency-domain waveform h+ */
   struct tagCOMPLEX16FrequencySeries **hctilde, /**< Output: Frequency-domain waveform hx */
@@ -717,7 +746,13 @@ int XLALSimIMRSEOBNRv1ROMEqualSpinFrequencySequence(
   return(retcode);
 }
 
-/** Compute waveform in LAL format */
+/**
+ * Compute waveform in LAL format for the SEOBNRv1_ROM_EqualSpin model.
+ *
+ * Returns the plus and cross polarizations as a complex frequency series with
+ * equal spacing deltaF and contains zeros from zero frequency to the starting
+ * frequency fLow and zeros beyond the cutoff frequency in the ringdown.
+ */
 int XLALSimIMRSEOBNRv1ROMEqualSpin(
   struct tagCOMPLEX16FrequencySeries **hptilde, /**< Output: Frequency-domain waveform h+ */
   struct tagCOMPLEX16FrequencySeries **hctilde, /**< Output: Frequency-domain waveform hx */
