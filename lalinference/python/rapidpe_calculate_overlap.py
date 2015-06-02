@@ -38,6 +38,31 @@ def infer_flow(xmldoc):
 
     return None 
 
+def overlap(t1, t2, ovrlp, delta_f, f_low, approx1, approx2, t1_norm=None, t2_norm=None):
+    """
+    Calculate the overlap of template 1 using approx1 with template 2 using approx2 with frequency binning given by delta_f and beginning the integration at f_low. If t1_norm or t2_norm is given, it is not calculated, it is simply used and returned.
+    """
+
+    if isinstance(t1, lsctables.SnglInspiral):
+        h1 = generate_waveform_from_tmplt(t1, approx1, delta_f, f_low)
+    else:
+        h1 = t1
+
+    if isinstance(t2, lsctables.SnglInspiral):
+        h2 = generate_waveform_from_tmplt(t2, approx2, delta_f, f_low)
+    else:
+        h2 = t2
+
+    if t1_norm is None:
+        t1_norm = ovrlp.norm(h1)
+    if t2_norm is None:
+        t2_norm = ovrlp.norm(h2)
+
+    o12 = ovrlp.ip(h1, h2) / t1_norm / t2_norm
+
+    return o12, t1_norm, t2_norm
+
+
 # Adapted from similar code in gstlal.cbc_template_fir
 def generate_waveform_from_tmplt(tmplt, approximant, delta_f=0.125, f_low=40, amporder=-1, phaseorder=7):
 
@@ -155,7 +180,7 @@ pts = amrlib.apply_transform(pts, intr_prms, args.distance_coordinates)
 #
 tree = BallTree(pts)
 
-ovrlp = lalsimutils.Overlap(fLow=args.f_low, fMax=2000, deltaF=delta_f, psd=psd, analyticPSD_Q=False)
+ovrlp = lalsimutils.Overlap(fLow=f_low, fMax=2000, deltaF=delta_f, psd=psd, analyticPSD_Q=False)
 
 idx_range = range(args.tmplt_start_index or 0, args.tmplt_end_index or len(tmplt_bank))
 
@@ -177,10 +202,11 @@ for i1, pt in enumerate(pts):
     if os.path.exists(fname):
         continue
 
-    t1 = tmplt_bank[i1]
-    h1 = generate_waveform_from_tmplt(t1, args.approximant1, delta_f, args.f_low)
-    h1_norm = ovrlp.norm(h1)
     dist, idx = tree.query(pt, k=npts, return_distance=True)
+
+    t1 = tmplt_bank[i1]
+    h1 = generate_waveform_from_tmplt(t1, args.approximant1, delta_f, f_low)
+    h1_norm = ovrlp.norm(h1)
     if args.verbose:
         print "--- (%f, %f) / (%f, %f)" % (t1.mass1, t1.mass2, t1.mchirp, t1.eta)
 
@@ -188,12 +214,12 @@ for i1, pt in enumerate(pts):
     for d, i2 in numpy.vstack((dist, idx)).T:
         i2 = int(i2)
         t2 = tmplt_bank[i2]
-        h2 = generate_waveform_from_tmplt(t2, args.approximant2, delta_f, args.f_low)
-        h2_norm = ovrlp.norm(h2)
-        o12 = ovrlp.ip(h1, h2) / h1_norm / h2_norm
+
+        o12, _, _ = overlap(h1, t2, ovrlp, delta_f, f_low, args.approximant1, args.approximant2, t1_norm=h1_norm)
+        ovrlps.append(o12)
+
         if args.too_verbose:
             print d, t2.mass1, t2.mass2, t2.mchirp, t2.eta, o12
-        ovrlps.append(o12)
 
     opts = amrlib.apply_inv_transform(pts[idx][0], intr_prms, "mchirp_eta")
     opts = numpy.vstack((opts.T, ovrlps, idx[0]))
