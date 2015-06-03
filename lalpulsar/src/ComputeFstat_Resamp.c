@@ -266,6 +266,9 @@ XLALSetupFstatResamp ( void **method_data,
       TspanXMax = fmax ( TspanXMax, TspanX );
     }
   UINT4 decimateFFT = (UINT4)ceil ( TspanXMax / TspanFFT );	// larger than 1 means we need to artificially increase dFreqFFT by 'decimateFFT'
+  if ( decimateFFT > 1 ) {
+    XLALPrintWarning ("WARNING: Frequency spacing larger than 1/Tspan, we'll internally decimate FFT frequency bins by a factor of %" LAL_UINT4_FORMAT "\n", decimateFFT );
+  }
   TspanFFT *= decimateFFT;
 
   UINT4 numSamplesFFT = (UINT4) ceil ( TspanFFT / dt_DET );      // we use ceil() so that we artificially widen the band rather than reduce it
@@ -315,8 +318,20 @@ XLALSetupFstatResamp ( void **method_data,
   ResampWorkspace *ws = (ResampWorkspace*) common->workspace;
   if ( ws != NULL )
     {
-      XLAL_CHECK ( numSamplesFFT == ws->numSamplesFFT, XLAL_EINVAL, "Shared workspace with different numSamplesFFT = %d != %d\n", ws->numSamplesFFT, numSamplesFFT );
-      XLAL_CHECK ( decimateFFT   == ws->decimateFFT,   XLAL_EINVAL, "Shared workspace with different decimateFFT = %d != %d\n", ws->decimateFFT, decimateFFT );
+      if ( numSamplesFFT > ws->numSamplesFFT )
+        {
+          fftw_free ( ws->FabX_Raw );
+          XLAL_CHECK ( (ws->FabX_Raw = fftw_malloc ( numSamplesFFT * sizeof(COMPLEX8) )) != NULL, XLAL_ENOMEM );
+          fftw_free ( ws->TS_FFT );
+          XLAL_CHECK ( (ws->TS_FFT   = fftw_malloc ( numSamplesFFT * sizeof(COMPLEX8) )) != NULL, XLAL_ENOMEM );
+
+          LAL_FFTW_WISDOM_LOCK;
+          fftwf_destroy_plan ( ws->fftplan );
+          XLAL_CHECK ( (ws->fftplan = fftwf_plan_dft_1d ( numSamplesFFT, ws->TS_FFT, ws->FabX_Raw, FFTW_FORWARD, FFTW_MEASURE )) != NULL, XLAL_EFAILED, "fftwf_plan_dft_1d() failed\n");
+          LAL_FFTW_WISDOM_UNLOCK;
+          ws->numSamplesFFT = numSamplesFFT;
+          ws->decimateFFT = decimateFFT;
+        }
 
       // adjust maximal SRC-frame timeseries length, if necessary
       if ( numSamplesMax_SRC > ws->TStmp1_SRC->length ) {
