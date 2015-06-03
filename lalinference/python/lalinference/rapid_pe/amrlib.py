@@ -24,6 +24,9 @@ class Cell(object):
         else:
             self._center = [(a+b)/2.0 for a, b in self._bounds]
 
+    def area(self):
+        return numpy.abs(numpy.diff(self._bounds)).prod()
+
     def divide(self):
         """
         Subdivide once along each dimension, recursively.
