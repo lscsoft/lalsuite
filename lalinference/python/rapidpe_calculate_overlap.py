@@ -38,47 +38,6 @@ def infer_flow(xmldoc):
 
     return None 
 
-def overlap(t1, t2, ovrlp, delta_f, f_low, approx1, approx2, t1_norm=None, t2_norm=None):
-    """
-    Calculate the overlap of template 1 using approx1 with template 2 using approx2 with frequency binning given by delta_f and beginning the integration at f_low. If t1_norm or t2_norm is given, it is not calculated, it is simply used and returned.
-    """
-
-    if isinstance(t1, lsctables.SnglInspiral):
-        h1 = generate_waveform_from_tmplt(t1, approx1, delta_f, f_low)
-    else:
-        h1 = t1
-
-    if isinstance(t2, lsctables.SnglInspiral):
-        h2 = generate_waveform_from_tmplt(t2, approx2, delta_f, f_low)
-    else:
-        h2 = t2
-
-    if t1_norm is None:
-        t1_norm = ovrlp.norm(h1)
-    if t2_norm is None:
-        t2_norm = ovrlp.norm(h2)
-
-    o12 = ovrlp.ip(h1, h2) / t1_norm / t2_norm
-
-    return o12, t1_norm, t2_norm
-
-
-# Adapted from similar code in gstlal.cbc_template_fir
-def generate_waveform_from_tmplt(tmplt, approximant, delta_f=0.125, f_low=40, amporder=-1, phaseorder=7):
-
-    params = lalsimutils.ChooseWaveformParams(
-        deltaF = delta_f,
-        m1 = lal.MSUN_SI * tmplt.mass1, m2 = lal.MSUN_SI * tmplt.mass2,
-        s1x = tmplt.spin1x, s1y = tmplt.spin1y, s1z = tmplt.spin1z,
-        s2x = tmplt.spin2x, s2y = tmplt.spin2y, s2z = tmplt.spin2z,
-        fmin = f_low, fref = 0,
-        dist = 1.e6 * lal.PC_SI, # distance
-        ampO = amporder, phaseO = phaseorder,
-        approx = lalsimulation.GetApproximantFromString(str(approximant)),
-        taper = lalsimulation.SIM_INSPIRAL_TAPER_START # FIXME: don't hardcode
-    )
-    return lalsimutils.hoff(params, Fp=1, Fc=1)
-
 def parse_psd_file(filestr, fvals):
     """
     Map the user-provided PSD file string into a function to be called as PSD(f).
@@ -186,7 +145,7 @@ idx_range = range(args.tmplt_start_index or 0, args.tmplt_end_index or len(tmplt
 
 # FIXME:
 npts = len(tmplt_bank)
-#npts = 100
+npts = 1000
 for i1, pt in enumerate(pts):
     opt = amrlib.apply_inv_transform(pts[i1,numpy.newaxis].copy(), intr_prms, "mchirp_eta")[0]
     fname = "%s/%s_%d.json" % (bdir, wtype, i1)
@@ -205,7 +164,7 @@ for i1, pt in enumerate(pts):
     dist, idx = tree.query(pt, k=npts, return_distance=True)
 
     t1 = tmplt_bank[i1]
-    h1 = generate_waveform_from_tmplt(t1, args.approximant1, delta_f, f_low)
+    h1 = lalsimutils.generate_waveform_from_tmplt(t1, args.approximant1, delta_f, f_low)
     h1_norm = ovrlp.norm(h1)
     if args.verbose:
         print "--- (%f, %f) / (%f, %f)" % (t1.mass1, t1.mass2, t1.mchirp, t1.eta)
@@ -215,7 +174,7 @@ for i1, pt in enumerate(pts):
         i2 = int(i2)
         t2 = tmplt_bank[i2]
 
-        o12, _, _ = overlap(h1, t2, ovrlp, delta_f, f_low, args.approximant1, args.approximant2, t1_norm=h1_norm)
+        o12, _, _ = lalsimutils.overlap(h1, t2, ovrlp, delta_f, f_low, args.approximant1, args.approximant2, t1_norm=h1_norm)
         ovrlps.append(o12)
 
         if args.too_verbose:

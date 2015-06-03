@@ -648,6 +648,46 @@ class ComplexOverlap(InnerProduct):
             tShift[i] -= self.len2side * self.deltaT
         return tShift
 
+def overlap(t1, t2, ovrlp, delta_f, f_low, approx1, approx2, t1_norm=None, t2_norm=None):
+    """
+    Calculate the overlap of template 1 using approx1 with template 2 using approx2 with frequency binning given by delta_f and beginning the integration at f_low. If t1_norm or t2_norm is given, it is not calculated, it is simply used and returned.
+    """
+
+    if isinstance(t1, lsctables.SnglInspiral):
+        h1 = generate_waveform_from_tmplt(t1, approx1, delta_f, f_low)
+    else:
+        h1 = t1
+
+    if isinstance(t2, lsctables.SnglInspiral):
+        h2 = generate_waveform_from_tmplt(t2, approx2, delta_f, f_low)
+    else:
+        h2 = t2
+
+    if t1_norm is None:
+        t1_norm = ovrlp.norm(h1)
+    if t2_norm is None:
+        t2_norm = ovrlp.norm(h2)
+
+    o12 = ovrlp.ip(h1, h2) / t1_norm / t2_norm
+
+    return o12, t1_norm, t2_norm
+
+
+# Adapted from similar code in gstlal.cbc_template_fir
+def generate_waveform_from_tmplt(tmplt, approximant, delta_f=0.125, f_low=40, amporder=-1, phaseorder=7):
+
+    params = ChooseWaveformParams(
+        deltaF = delta_f,
+        m1 = lal.MSUN_SI * tmplt.mass1, m2 = lal.MSUN_SI * tmplt.mass2,
+        s1x = tmplt.spin1x, s1y = tmplt.spin1y, s1z = tmplt.spin1z,
+        s2x = tmplt.spin2x, s2y = tmplt.spin2y, s2z = tmplt.spin2z,
+        fmin = f_low, fref = 0,
+        dist = 1.e6 * lal.PC_SI, # distance
+        ampO = amporder, phaseO = phaseorder,
+        approx = lalsim.GetApproximantFromString(str(approximant)),
+        taper = lalsim.SIM_INSPIRAL_TAPER_START # FIXME: don't hardcode
+    )
+    return hoff(params, Fp=1, Fc=1)
 
 #
 # Antenna pattern functions
