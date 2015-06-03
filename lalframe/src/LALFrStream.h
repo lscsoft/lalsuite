@@ -38,7 +38,7 @@ extern "C" {
  *
  * \author Jolien D. E. Creighton
  *
- * \brief Low-level routines for manipulating frame data streams.
+ * \brief High-level routines for manipulating frame data streams.
  *
  * ### Synopsis ###
  *
@@ -50,7 +50,7 @@ extern "C" {
  * ### Description ###
  *
  * A frame stream is like a file stream except that it streams along the set
- * of frames in a set of frame files.  These routines are low-level routines
+ * of frames in a set of frame files.  These routines are high-level routines
  * that allow you to extract frame data.  Many of these routines have names
  * similar to the standard C file stream manipulation routines and perform
  * similar functions.

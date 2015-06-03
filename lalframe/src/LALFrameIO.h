@@ -30,6 +30,16 @@ extern "C" {
 #if 0
 }
 #endif
+
+/**
+ * @defgroup LALFrameIO_h Header LALFrameIO.h
+ * @ingroup lalframe_general
+ *
+ * @author Jolien Creighton
+ * @brief Provides an intermediate-level interface for working on individual frame-files.
+ */
+/**@{*/
+
 struct tagLALFrFile;
 
 /* alias some LALFrameU types */
@@ -188,6 +198,8 @@ int XLALFrWriteCOMPLEX8FrequencySeries(const COMPLEX8FrequencySeries *
     series, int fnum, int subtype);
 int XLALFrWriteCOMPLEX16FrequencySeries(const COMPLEX16FrequencySeries *
     series, int fnum, int subtype);
+
+/**@}*/
 
 #if 0
 {

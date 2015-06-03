@@ -35,7 +35,7 @@ extern "C" {
  * @ingroup lalframe_general
  *
  * @author Jolien Creighton
- * @brief Provides a unified interface to frame libraries.
+ * @brief Provides a unified low-level interface to frame libraries.
  * @details
  * This provides a unified interface for reading and writing data files
  * in the "Frame Format for Interferometric Gravitational Wave Detectors".
