@@ -607,7 +607,7 @@ else
     fi
 fi
 
-lalsuite_copts="--disable-gcc-flags --disable-debug --disable-frame --disable-metaio --disable-lalsimulation --disable-lalxml --enable-boinc --disable-silent-rules --without-simd $shared_copt $cross_copt --prefix=$INSTALL"
+lalsuite_copts="--disable-gcc-flags --disable-debug --disable-frame --disable-metaio --disable-lalsimulation --disable-lalxml --enable-boinc --disable-silent-rules $shared_copt $cross_copt --prefix=$INSTALL"
 if [ ."$build_win32" = ."true" ] ; then
     export BOINC_EXTRA_LIBS="-lpsapi"
 fi
