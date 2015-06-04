@@ -1493,7 +1493,7 @@ def retrieve_scisegs(segments_location, dq_name, start, stride, pad=0, sleep=0, 
 
     return good, covered
 
-def retrieve_kwtrig(gdsdir, kwbasename, t, stride, sleep=0, ntrials=1, logger=None):
+def retrieve_kwtrig(gdsdir, kwbasename, t, stride, sleep=0, ntrials=1, logger=None, delay=0):
     """
     looks for kwtriggers and includes logic about waiting.
     will wait "sleep" seconds between each check that the file has appeared. Will check "ntrials" times
@@ -1525,9 +1525,16 @@ def retrieve_kwtrig(gdsdir, kwbasename, t, stride, sleep=0, ntrials=1, logger=No
         return None
 
     if logger:
-        logger.info('  loading KW triggers')
+        logger.info('  loading KW triggers : %s'%kwfilename)
     else:
-        print '  loading KW triggers'
+        print '  loading KW triggers : %s'%kwfilename
+
+    if delay > 0:
+        if logger:
+            logger.info('    waiting %.3f seconds to ensure file is completely written'%delay)
+        else:
+            print '    waiting %.3f seconds to ensure file is completely written'%delay
+        time.sleep(delay)
 
     return event.loadkwm(kwfilename)
 
