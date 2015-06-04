@@ -44,45 +44,39 @@
 
 /** INCLUDES **/
 
-/* headers of our own code */
-#include <lal/LogPrintf.h>
+/* Funny thing is: __GLIBC__ is not yet defined here.
+   If you move features.h below where __GLIBC_ is defined, the the Linux build breaks.
+   This seems a problem specific to gcc-4.4 (headers), though, so the workaround is
+   limited to that version. */
+#if defined (__linux__) && defined (__GNUC__) && (__GNUC__ == 4) && (__GNUC_MINOR__ == 4)
+#include <features.h>
+#ifdef __GLIBC__
+#ifndef __USE_BSD
+#define __USE_BSD /* for stack_t */
+#endif
+#ifndef __USE_MISC
+#define __USE_MISC /* for SA_RESTART */
+#endif
+#endif/* __GLIBC__ */
+#endif
+
 #ifndef HIERARCHSEARCHGCT /* used for Hough HierarchicalSearch, not GCT */
 #include "HierarchicalSearch.h"
 #endif
-#include "hs_boinc_extras.h"
-#include "hs_boinc_options.h"
-
-/* avoid collision between LAL and Windows (U)INT8 */
-#ifdef INT8
-#undef INT8
-#endif
-#ifdef UINT8
-#undef UINT8
-#endif
-
-/* BOINC includes - need to be before the #defines in hs_boinc_extras.h */
-#include "boinc/boinc_api.h"
-#include "boinc/diagnostics.h"
-#ifdef HAVE_BOINC_ZIP
-#include "boinc/boinc_zip.h"
-#endif
-#include "boinc/svn_version.h"
-/* this ultimately needs to be fixed in boinc_api.h,
-   #include "app_ipc.h" must be moved outside the C++ section */
-extern int boinc_resolve_filename(const char*, char*, int len);
-
-/* our own win_lib includes patches for chdir() and sleep() */
-#ifdef _WIN32
-#include "win_lib.h"
-#endif
 
 /* probably already included by previous headers, but make sure they are included */
-#include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <time.h>
 #include <sys/time.h>
 #include <math.h>
+#include <signal.h>
+#include <stdlib.h>
+
+/* our own win_lib includes patches for chdir() and sleep() */
+#ifdef _WIN32
+#include "win_lib.h"
+#endif
 
 /* for finding out and logging the glibc version */
 #ifdef __GLIBC__
@@ -108,6 +102,22 @@ extern int boinc_resolve_filename(const char*, char*, int len);
 #if defined(__GLIBC__) && defined(__i386__) && defined(EXT_STACKTRACE)
 #include "erp_execinfo_plus.h"
 #endif
+
+/* BOINC includes - need to be before the #defines in hs_boinc_extras.h */
+#include "boinc/boinc_api.h"
+#include "boinc/diagnostics.h"
+#ifdef HAVE_BOINC_ZIP
+#include "boinc/boinc_zip.h"
+#endif
+#include "boinc/svn_version.h"
+/* this ultimately needs to be fixed in boinc_api.h,
+   #include "app_ipc.h" must be moved outside the C++ section */
+extern int boinc_resolve_filename(const char*, char*, int len);
+
+/* headers of our own code */
+#include "hs_boinc_extras.h"
+#include "hs_boinc_options.h"
+#include <lal/LogPrintf.h>
 
 #ifdef __APPLE__
 #include "EaH_Mac_Icon.h" 
