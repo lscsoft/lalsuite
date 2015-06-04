@@ -605,44 +605,27 @@ void merge_data( COMPLEX16Vector *data, UINT4Vector *segs ){
 
 
 /**
- * \brief Rescale the values output by the Nested Sampling algorithm
+ * \brief Gzip the nested sample files
  *
- * This function reads in the file of samples output from the Nested Sampling algorithm (in the file specified by \c
- * outfile) and scales them back to their true values. It removes the string variable "model" from the output and shifts
- * the logPrior and logLikelihood values to the end of the parameter list.
- *
- * Note: The output may soon be in an XML format, so this function will need to be amended.
+ * This function gzips the output nested sample files.
  *
  * \param runState [in] The analysis information structure
  */
-void rescale_output( LALInferenceRunState *runState ){
+void gzip_output( LALInferenceRunState *runState ){
   /* Single thread here */
   LALInferenceThreadState *threadState = runState->threads[0];
   /* Open original output output file */
-  CHAR *outfile, outfiletmp[256] = "";
-  CHAR outfilepars[256] = "", outfileparstmp[256] = "";
-  FILE *fp = NULL, *fptemp = NULL, *fppars = NULL, *fpparstmp = NULL;
-
-  LALStringVector *paramsStr = NULL;
-  UINT4Vector *paramsStrIdx = NULL;
-  UINT4 nonfixed = 0, k = 0;
-
+  CHAR *outfile = NULL;
   ProcessParamsTable *ppt1 = LALInferenceGetProcParamVal( runState->commandLine, "--outfile" );
 
   if( ppt1 ){
+    CHAR outfilepars[256] = "", outfileparstmp[256] = "";
+    FILE *fppars = NULL, *fpparstmp = NULL;
+    UINT4 nonfixed = 0;
+
     outfile = ppt1->value;
 
-    /* set temporary file for re-writing out samples */
-    sprintf(outfiletmp, "%s_tmp", outfile);
-
-    /* open temporary output file for reading */
-    if( (fptemp = fopen(outfiletmp, "w")) == NULL ){
-      XLALPrintError("Error... cannot open temporary output file %s.\n", outfile);
-      XLAL_ERROR_VOID(XLAL_EIO);
-    }
-
-    /* open file for printing out list of parameter names - this should already
-      exist */
+    /* open file for printing out list of parameter names - this should already exist */
     sprintf(outfilepars, "%s_params.txt", outfile);
     if( (fppars = fopen(outfilepars, "r")) == NULL ){
       XLALPrintError("Error... cannot open parameter name output file %s.\n", outfilepars);
@@ -658,16 +641,12 @@ void rescale_output( LALInferenceRunState *runState ){
     if ( LALInferenceGetProcParamVal( runState->commandLine, "--non-fixed-only" ) ){ nonfixed = 1; }
 
     CHAR v[128] = "";
-    UINT4 idx = 0, counter = 0;
     while( fscanf(fppars, "%s", v) != EOF ){
       /* if outputing only non-fixed values then only re-output names of those non-fixed things */
       if ( nonfixed ){
         if ( LALInferenceCheckVariable( threadState->currentParams, v ) ){
           if ( LALInferenceGetVariableVaryType( threadState->currentParams, v ) != LALINFERENCE_PARAM_FIXED ){
             fprintf(fpparstmp, "%s\t", v);
-            paramsStrIdx = XLALResizeUINT4Vector( paramsStrIdx, counter+1 );
-            paramsStrIdx->data[counter] = idx;
-            counter++;
           }
         }
       }
@@ -675,9 +654,6 @@ void rescale_output( LALInferenceRunState *runState ){
         /* re-output everything to a temporary file */
         fprintf(fpparstmp, "%s\t", v);
       }
-
-      paramsStr = XLALAppendString2Vector( paramsStr, v );
-      idx++;
     }
 
     fclose(fppars);
@@ -685,60 +661,6 @@ void rescale_output( LALInferenceRunState *runState ){
 
     /* move the temporary file name to the standard outfile_param name */
     rename( outfileparstmp, outfilepars );
-
-    CHAR *filebuf = NULL;
-    filebuf = XLALFileLoad( outfile );
-    TokenList *tlist = NULL;
-    if ( XLALCreateTokenList( &tlist, filebuf, "\n" ) != XLAL_SUCCESS ){
-      fprintf(stderr, "Error... could not convert data into separate lines.\n");
-      exit(3);
-    }
-
-    for ( k = 0; k < tlist->nTokens; k++ ){
-      UINT4 i = 0, j = 0;
-
-      TokenList *tline = NULL;
-      XLALCreateTokenList( &tline, tlist->tokens[k], " \t" );
-
-      /* scan through line, get value and reprint out scaled value to temporary file */
-      for( i = 0; i < paramsStrIdx->length; i++, j++ ){
-        CHAR scalename[VARNAME_MAX] = "";
-        CHAR scaleminname[VARNAME_MAX] = "";
-        REAL8 scalefac = 1., scalemin = 0.;
-
-        if ( !strcmp(paramsStr->data[paramsStrIdx->data[i]], "model") ){
-          j++;
-          continue;
-        }
-
-        sprintf(scalename, "%s_scale", paramsStr->data[paramsStrIdx->data[i]]);
-        sprintf(scaleminname, "%s_scale_min", paramsStr->data[paramsStrIdx->data[i]]);
-
-        if ( LALInferenceCheckVariable( threadState->model->ifo->params, scalename ) &&
-          LALInferenceCheckVariable( threadState->model->ifo->params, scaleminname ) ){
-          scalefac = *(REAL8 *)LALInferenceGetVariable( threadState->model->ifo->params, scalename );
-          scalemin = *(REAL8 *)LALInferenceGetVariable( threadState->model->ifo->params, scaleminname );
-
-          fprintf(fptemp, "%.12le\t", atof(tline->tokens[j])*scalefac + scalemin);
-        }
-        else{ fprintf(fptemp, "%.12le\t", atof(tline->tokens[j])); }
-      }
-
-      /* print out the last two items to be the logPrior and logLikelihood */
-      fprintf(fptemp, "\n");
-
-      XLALDestroyTokenList( tline );
-    }
-
-    fclose(fptemp);
-
-    XLALDestroyTokenList( tlist );
-    XLALDestroyStringVector( paramsStr );
-    XLALDestroyUINT4Vector( paramsStrIdx );
-    XLALFree( filebuf );
-
-    /* move the temporary file name to the standard outfile name */
-    rename( outfiletmp, outfile );
 
     /* gzip the output file if required */
     if( LALInferenceGetProcParamVal( runState->commandLine, "--gzip" ) ){
@@ -750,9 +672,10 @@ void rescale_output( LALInferenceRunState *runState ){
   }
 /* if we have XML enabled */
 #ifdef HAVE_LIBLALXML
-  ProcessParamsTable *ppt2 = LALInferenceGetProcParamVal( runState->commandLine, "--outXML" );
-  LALInferenceVariables **output_array = NULL;
-  UINT4 N_output_array = 0, i = 0;
+  ProcessParamsTable *ppt2 = LALInferenceGetProcParamVal( runState->commandLine, "--outxml" );
+  if(!ppt2){
+    ppt2=LALInferenceGetProcParamVal(runState->commandLine,"--outXML");
+  }
   CHAR *outVOTable = NULL;
 
   if ( !ppt2 && !ppt1 ){
@@ -765,75 +688,15 @@ void rescale_output( LALInferenceRunState *runState ){
   if( ppt2 ){
     outVOTable = ppt2->value;
 
-    if( LALInferenceCheckVariable(runState->algorithmParams,"outputarray")
-      && LALInferenceCheckVariable(runState->algorithmParams,"N_outputarray")){
-      output_array = *(LALInferenceVariables ***)LALInferenceGetVariable( runState->algorithmParams, "outputarray" );
-      N_output_array = *(UINT4 *)LALInferenceGetVariable( runState->algorithmParams, "N_outputarray" );
-    }
-
-    /* loop through output array and rescale values accordingly */
-    for( i = 0; i < N_output_array; i++ ){
-      LALInferenceVariableItem *scaleitem = NULL;
-
-      scaleitem = output_array[i]->head;
-
-      /* loop through tmparr parameters and scale if necessary */
-      for( ; scaleitem; scaleitem = scaleitem->next ){
-        CHAR scalename[VARNAME_MAX] = "";
-        CHAR scaleminname[VARNAME_MAX] = "";
-        REAL8 scalefac = 1., scalemin = 0., value = 0;
-
-        sprintf(scalename, "%s_scale", scaleitem->name);
-        sprintf(scaleminname, "%s_scale_min", scaleitem->name);
-
-        /* check if scale values are present */
-        if ( LALInferenceCheckVariable( threadState->model->ifo->params, scalename ) &&
-          LALInferenceCheckVariable( threadState->model->ifo->params, scaleminname ) ){
-          scalefac = *(REAL8 *)LALInferenceGetVariable( threadState->model->ifo->params, scalename );
-          scalemin = *(REAL8 *)LALInferenceGetVariable( threadState->model->ifo->params, scaleminname );
-
-          /* get the value and scale it */
-          value = *(REAL8 *)LALInferenceGetVariable( output_array[i], scaleitem->name );
-          value = value*scalefac + scalemin;
-
-          /* reset the value */
-          LALInferenceSetVariable( output_array[i], scaleitem->name, &value );
-
-          /* change type to be REAL8 */
-          scaleitem->type = LALINFERENCE_REAL8_t;
-        }
+    /* gzip the output file if required */
+    if( LALInferenceGetProcParamVal( runState->commandLine, "--gzip" ) ){
+      if ( XLALGzipTextFile( outVOTable ) != XLAL_SUCCESS ){
+        XLAL_PRINT_ERROR( "Error... Could not gzip the output file!\n" );
+        XLAL_ERROR_VOID( XLAL_EIO );
       }
-    }
-
-    if( output_array && outVOTable && N_output_array > 0 ){
-      xmlNodePtr votable = XLALInferenceVariablesArray2VOTTable( output_array, N_output_array, "Nested Samples");
-      xmlNewProp( votable, CAST_CONST_XMLCHAR("utype"), CAST_CONST_XMLCHAR("lalinference:results:nestedsamples") );
-
-      xmlNodePtr stateResource = XLALInferenceStateVariables2VOTResource(runState, "Run State Configuration");
-
-      xmlNodePtr nestResource = XLALCreateVOTResourceNode("lalinference:results", "Nested sampling run", votable);
-
-      if( stateResource ) { xmlAddChild( nestResource, stateResource ); }
-
-      CHAR *xmlString = XLALCreateVOTStringFromTree( nestResource );
-
-      /* Write to disk */
-      if ( (fp = fopen(outVOTable, "w")) == NULL ){
-        XLALPrintError("Error... can't open output XML file\n");
-        XLAL_ERROR_VOID(XLAL_EIO);
-      }
-
-      fprintf(fp, "%s", xmlString);
-      fclose(fp);
     }
   }
 
-    for(i=0;i<N_output_array;i++){
-        LALInferenceClearVariables(output_array[i]);
-        XLALFree(output_array[i]);
-    }
-    if(output_array) XLALFree(output_array);
-    
 #else
   if ( !ppt1 ){
     XLALPrintError("Error... --outfile not defined!\n");
