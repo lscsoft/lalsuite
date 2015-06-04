@@ -2425,9 +2425,9 @@ LALStringVector *XLALReadTEMPOCorFile( REAL8Array *cormat, CHAR *corfile ){
 
     /* convert some parameter names to a more common convention */
     if ( !XLALStringCaseCompare(tmpStr, "RAJ") ) /* convert RAJ to ra */
-      params = XLALAppendString2Vector( params, "ra" );
+      params = XLALAppendString2Vector( params, "RA" );
     else if ( !XLALStringCaseCompare(tmpStr, "DECJ") ) /* convert DECJ to dec */
-      params = XLALAppendString2Vector( params, "dec" );
+      params = XLALAppendString2Vector( params, "DEC" );
     else
       params = XLALAppendString2Vector( params, tmpStr );
   }
@@ -2477,6 +2477,8 @@ Parameters not in consistent order!\n");
 
   return params;
 }
+
+
 /* functions for converting times given in Terrestrial time TT or TDB in MJD to
 times in GPS - this is important for epochs given in .par files which are in
 TDB. TT and GPS are different by a factor of 51.184 secs, this is just the
