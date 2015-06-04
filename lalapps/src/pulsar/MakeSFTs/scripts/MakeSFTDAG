@@ -527,7 +527,7 @@ nodeCount         = 0L
 datafindFID = file('datafind.sub','w')
 datafindLogFile = subLogPath + '/' + 'datafind_' + dagFileName + '.log'
 datafindFID.write('universe = scheduler\n')
-datafindFID.write('executable = $ENV(LSC_DATAFIND_PATH)/ligo_data_find\n')
+datafindFID.write('executable = $ENV(LSC_DATAFIND_PATH)/gw_data_find\n')
 if not datafindMatch:
    dataFindMatchString = ''
 else:
