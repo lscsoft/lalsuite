@@ -20,7 +20,7 @@ __version__ = '$Revision$'
 # 06/29/2009 gam; Fix options and printing of extra debugging info.
 # 06/29/2009 gam; use ligolw_segment_query instead of LSCsegFind.
 # 08/25/2009 cg; added lines 643 to 652 so that a single frequency band of less than 10 Hz can be run.
-# 10/07/2009 gam; Add -I, --intersect-data option to run ligo_data_find with the --show-times option to find times data exist, and use LIGOtools segexpr to intersect this with the segments.
+# 10/07/2009 gam; Add -I, --intersect-data option to run gw_data_find with the --show-times option to find times data exist, and use LIGOtools segexpr to intersect this with the segments.
 # 10/07/2009 gam; Add -t, --segment-type option to give segment type to use with ligolw_segment_query if segment file is not given (default is IFO:DMT-SCIENCE:1)
 # 12/02/2009 gam; Change checked_freqBand to sft_freqBand, and make sure there are some extra bins in the SFTs to avoid problems at endFreq, since lalapps_spec_avg works on [startFreq,endFreq], not [startFreq,endFreq).
 #25/02/2010 cg; Added extra options to pass the path of ephemerides for source frequency calculations done in spec_avg.c
@@ -71,7 +71,7 @@ Usage: [options]
   -o, --sub-log-path         (optional) path to log files given in .sub files (default is $PWD/logs; this directory must exist and usually should be under a local file system.)
   -N, --channel-name         name of input time-domain channel to read from frames
   -i, --ifo                  (optional) ifo to use with ligolw_segment_query and MakeSFTDAG: e.g., H1, H2, L1, G1; PEM channels can start with H0, L0, or G0 (default: use start of channel name)
-  -I, --intersect-data       (optional) Run ligo_data_find with the --show-times option to find times data exist, and use LIGOtools segexpr to intersect this with the segments.
+  -I, --intersect-data       (optional) Run gw_data_find with the --show-times option to find times data exist, and use LIGOtools segexpr to intersect this with the segments.
   -u, --frame-struct-type    (optional) string specifying the input frame structure and data type. Must begin with ADC_ or PROC_ followed by REAL4, REAL8, INT2, INT4, or INT8; default: ADC_REAL4; -H is the same as PROC_REAL8.
   -F, --start-freq           (optional) start frequency of the SFTs (default is 48 Hz).
   -B, --band                 (optional) frequency band of the SFTs (default is 100 Hz).
@@ -520,19 +520,19 @@ if (createSFTs):
   #
 
   if intersectData:
-    # Get the segments the data exist from ligo_data_find
+    # Get the segments the data exist from gw_data_find
     dataFindSegmentFile = 'tmpDataFindSegs%stmp.txt' % tagString 
-    dataFindCommand = "ligo_data_find -s %d -e %d -o %s -t %s -u file --lal-cache --show-times > %s" % (analysisStartTime,analysisEndTime,site,inputDataType,dataFindSegmentFile)
+    dataFindCommand = "gw_data_find -s %d -e %d -o %s -t %s -u file --lal-cache --show-times > %s" % (analysisStartTime,analysisEndTime,site,inputDataType,dataFindSegmentFile)
     print >> sys.stdout,"Trying: ",dataFindCommand,"\n"
     try:
       dataFindExit = os.system(dataFindCommand)
       if (dataFindExit > 0):
-         print >> sys.stderr, 'ligo_data_find failed: %s \n' % dataFindExit
+         print >> sys.stderr, 'gw_data_find failed: %s \n' % dataFindExit
          sys.exit(1)
       else:
-         print >> sys.stderr, 'ligo_data_find succeeded! \n'
+         print >> sys.stderr, 'gw_data_find succeeded! \n'
     except:
-      print >> sys.stderr, 'ligo_data_find failed: %s \n' % dataFindExit
+      print >> sys.stderr, 'gw_data_find failed: %s \n' % dataFindExit
       sys.exit(1)
 
     # Intersect the segments to run on with the segments data exist
