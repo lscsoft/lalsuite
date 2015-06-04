@@ -224,8 +224,8 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   /* get SNR of highest likelihood point */
   get_loudest_snr( &runState );
 
-  /* re-read in output samples and rescale appropriately */
-  rescale_output( &runState );
+  /* gzip the output samples is required appropriately */
+  gzip_output( &runState );
 
   /* close timing file */
   if ( LALInferenceCheckVariable( runState.algorithmParams, "timefile" ) ){
