@@ -46,7 +46,9 @@
 
 /* headers of our own code */
 #include <lal/LogPrintf.h>
+#ifndef HIERARCHSEARCHGCT /* used for Hough HierarchicalSearch, not GCT */
 #include "HierarchicalSearch.h"
+#endif
 #include "hs_boinc_extras.h"
 #include "hs_boinc_options.h"
 
@@ -76,9 +78,11 @@ extern int boinc_resolve_filename(const char*, char*, int len);
 
 /* probably already included by previous headers, but make sure they are included */
 #include <stdlib.h>
+#include <unistd.h>
 #include <string.h>
 #include <time.h>
 #include <sys/time.h>
+#include <math.h>
 
 /* for finding out and logging the glibc version */
 #ifdef __GLIBC__
@@ -112,29 +116,12 @@ extern int boinc_resolve_filename(const char*, char*, int len);
 
 /*^* MACROS *^*/
 
-/* exit codes from deleted ComputeFStatistic.h */
-#define COMPUTEFSTAT_EXIT_OK              0  /* normal exit */
-#define COMPUTEFSTAT_EXIT_USAGE           7  /* user requested help */
-#define COMPUTEFSTAT_EXIT_READSFTFAIL     8  /* ReadSFT failed */
-#define COMPUTEFSTAT_EXIT_OPENFMAX        9  /* error opening Fmax file */
-#define COMPUTEFSTAT_EXIT_OPENFSTAT      10  /* error opening FStats file */
-#define COMPUTEFSTAT_EXIT_OPENFSTAT2     11  /* error opening FStats file for append (chkpt) */
-#define COMPUTEFSTAT_EXIT_WRITEFSTAT     12  /* error writing FStats file */
-#define COMPUTEFSTAT_EXIT_WRITEFAFB      13  /* writeFaFb failed */
-#define COMPUTEFSTAT_EXIT_ESTSIGPAR      14  /* EstimateSignalParameters failed */
-#define COMPUTEFSTAT_EXIT_NOMEM          15  /* out of memory */
-#define COMPUTEFSTAT_EXIT_CANTZIP        16  /* unable to zip Fstats file */
-#define COMPUTEFSTAT_EXIT_CANTUNZIP      17  /* unable to zip Fstats file */
-#define COMPUTEFSTAT_EXIT_CANTRENAME     18  /* unable to zip Fstats file */
-#define COMPUTEFSTAT_EXIT_NOPOLKADEL     19  /* no // found in command line */
-#define COMPUTEFSTAT_EXIT_USER           20  /* user asked for exit */
-#define COMPUTEFSTAT_EXIT_DEMOD          21  /* error in LAL-Demod */
-#define COMPUTEFSTAT_EXIT_BOINCRESOLVE   23  /* boinc_resolve_filename failed */
-#define COMPUTEFSTAT_EXIT_DLOPEN         24  /* problems with dynamic lib */
-#define COMPUTEFSTAT_EXIT_WORKER         25  /* can't start worker-thread */
-#define COMPUTEFSTAT_EXIT_UPSAMPLESFTFAIL 26 /* UpsampleSFT failed */
-#define COMPUTEFSTAT_EXIT_SIGNAL         30  /* Exit code will be 30 + signal number */
-#define COMPUTEFSTAT_EXIT_LALCALLERROR  100  /* added to LAL status for BOINC exit value */
+/* exit codes from ComputeFStatistic.h and HierarchicalSearch.h */
+#define HS_BOINC_EXIT_FILE            4 /* Could not create output file, was HIERARCHICALSEARCH_EFILE */
+#define HS_BOINC_EXIT_MEM            11 /* Out of memory, was HIERARCHICALSEARCH_EMEM */
+#define HS_BOINC_EXIT_SIGNAL         30 /* Exit code will be 30 + signal number, was COMPUTEFSTAT_EXIT_SIGNAL */
+#define HS_BOINC_EXIT_USER           20 /* user asked for exit, was COMPUTEFSTAT_EXIT_USER */
+#define HS_BOINC_EXIT_LALCALLERROR  100 /* added to LAL status for BOINC exit value, was COMPUTEFSTAT_EXIT_LALCALLERROR */
 
 #ifdef MAXPATHLEN
 #define MAX_PATH_LEN MAXPATHLEN
@@ -435,7 +422,7 @@ int BOINC_LAL_ErrHand (LALStatus  *status,
             id, func, file, line );
     ReportStatus(status);
     LogPrintf (LOG_CRITICAL, "BOINC_LAL_ErrHand(): now calling boinc_finish()\n");
-    boinc_finish(boinc_finish_status= COMPUTEFSTAT_EXIT_LALCALLERROR+status->statusCode );
+    boinc_finish(boinc_finish_status= HS_BOINC_EXIT_LALCALLERROR+status->statusCode );
   }
   /* should this call boinc_finish too?? */
   return 0;
@@ -501,7 +488,7 @@ static void sighandler(int sig)
     killcounter ++;
     if ( killcounter >= 4 ) {
       fputs("App got 4th SIGINT, guess you mean it.\nCalling boinc_finish().\n",stderr);
-      boinc_finish(boinc_finish_status=COMPUTEFSTAT_EXIT_USER);
+      boinc_finish(boinc_finish_status=HS_BOINC_EXIT_USER);
     }
     else
       return;
@@ -595,7 +582,7 @@ static void sighandler(int sig)
     exit(boinc_finish_status);
   }
   boinc_finish_in_sighabdler = 1;
-  boinc_finish(boinc_finish_status=COMPUTEFSTAT_EXIT_SIGNAL + sig);
+  boinc_finish(boinc_finish_status=HS_BOINC_EXIT_SIGNAL + sig);
   return;
 } /* sighandler */
 
@@ -887,7 +874,7 @@ static void worker (void) {
   rargv = (char**)calloc(1,argc*sizeof(char*));
   if(!rargv){
     LogPrintf(LOG_CRITICAL, "Out of memory\n");
-    boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EMEM);
+    boinc_finish(boinc_finish_status=HS_BOINC_EXIT_MEM);
   }
 
   /* the program name (argv[0]) remains the same in any case */
@@ -908,7 +895,7 @@ static void worker (void) {
       rargv[rarg] = (char*)calloc(MAX_PATH_LEN,sizeof(char));
       if(!rargv[rarg]){
 	LogPrintf(LOG_CRITICAL, "Out of memory\n");
-	boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EMEM);
+	boinc_finish(boinc_finish_status=HS_BOINC_EXIT_MEM);
       }
       rargv[rarg][0] = '@';
       if (boinc_resolve_filename(argv[arg]+1,rargv[rarg]+1,MAX_PATH_LEN-1)) {
@@ -918,7 +905,7 @@ static void worker (void) {
 	config_files = realloc(config_files, sizeof(char*) * (current_config_file + 1));
 	if(!config_files){
 	  LogPrintf(LOG_CRITICAL, "Out of memory\n");
-	  boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EMEM);
+	  boinc_finish(boinc_finish_status=HS_BOINC_EXIT_MEM);
 	}
 	config_files[current_config_file] = rargv[rarg];
 	if (current_config_file) {
@@ -935,11 +922,11 @@ static void worker (void) {
       rargv[rarg] = (char*)calloc(MAX_PATH_LEN,sizeof(char));
       if(!rargv[rarg]){
 	LogPrintf(LOG_CRITICAL, "Out of memory\n");
-	boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EMEM);
+	boinc_finish(boinc_finish_status=HS_BOINC_EXIT_MEM);
       }
       strncpy(rargv[rarg],argv[arg],l);
       if (resolve_and_unzip(argv[arg]+l, rargv[rarg]+l, MAX_PATH_LEN-l) < 0)
-	res = HIERARCHICALSEARCH_EFILE;
+	res = HS_BOINC_EXIT_FILE;
     }
 
     /* boinc_resolve and unzip segment list */
@@ -947,11 +934,11 @@ static void worker (void) {
       rargv[rarg] = (char*)calloc(MAX_PATH_LEN,sizeof(char));
       if(!rargv[rarg]){
 	LogPrintf(LOG_CRITICAL, "Out of memory\n");
-	boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EMEM);
+	boinc_finish(boinc_finish_status=HS_BOINC_EXIT_MEM);
       }
       strncpy(rargv[rarg],argv[arg],l);
       if (resolve_and_unzip(argv[arg]+l, rargv[rarg]+l, MAX_PATH_LEN-l) < 0)
-	res = HIERARCHICALSEARCH_EFILE;
+	res = HS_BOINC_EXIT_FILE;
     }
 
     /* boinc_resolve and unzip ephermeris files */
@@ -959,21 +946,21 @@ static void worker (void) {
       rargv[rarg] = (char*)calloc(MAX_PATH_LEN,sizeof(char));
       if(!rargv[rarg]){
 	LogPrintf(LOG_CRITICAL, "Out of memory\n");
-	boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EMEM);
+	boinc_finish(boinc_finish_status=HS_BOINC_EXIT_MEM);
       }
       strncpy(rargv[rarg],argv[arg],l);
       if (resolve_and_unzip(argv[arg]+l, rargv[rarg]+l, MAX_PATH_LEN-l) < 0)
-	res = HIERARCHICALSEARCH_EFILE;
+	res = HS_BOINC_EXIT_FILE;
     }
     else if (MATCH_START("--ephemS=",argv[arg],l)) {
       rargv[rarg] = (char*)calloc(MAX_PATH_LEN,sizeof(char));
       if(!rargv[rarg]){
 	LogPrintf(LOG_CRITICAL, "Out of memory\n");
-	boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EMEM);
+	boinc_finish(boinc_finish_status=HS_BOINC_EXIT_MEM);
       }
       strncpy(rargv[rarg],argv[arg],l);
       if (resolve_and_unzip(argv[arg]+l, rargv[rarg]+l, MAX_PATH_LEN-l) < 0)
-	res = HIERARCHICALSEARCH_EFILE;
+	res = HS_BOINC_EXIT_FILE;
     }
 
     /* boinc_resolve SFT files (no unzipping, but dealing with multiple files separated by ';' */
@@ -984,7 +971,7 @@ static void worker (void) {
       rargv[rarg] = (char*)calloc(MAX_PATH_LEN + chars, sizeof(char));
       if(!rargv[rarg]){
 	LogPrintf(LOG_CRITICAL, "Out of memory\n");
-	boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EMEM);
+	boinc_finish(boinc_finish_status=HS_BOINC_EXIT_MEM);
       }
 
       /* copy & skip the "[1|2]=" characters, too */
@@ -1014,7 +1001,7 @@ static void worker (void) {
 	rargv[rarg] = (char*)realloc(rargv[rarg], (MAX_PATH_LEN + chars) * sizeof(char));
 	if(!rargv[rarg]){
 	  LogPrintf(LOG_CRITICAL, "Out of memory\n");
-	  boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EMEM);
+	  boinc_finish(boinc_finish_status=HS_BOINC_EXIT_MEM);
 	}
 
 	/* put back the ';' in the original string and skip it for next iteration */
@@ -1069,7 +1056,7 @@ static void worker (void) {
 	  rargv[rarg] = (char*)calloc(s,sizeof(char));
 	  if(!rargv[rarg]){
 	    LogPrintf(LOG_CRITICAL, "Out of memory\n");
-	    boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EMEM);
+	    boinc_finish(boinc_finish_status=HS_BOINC_EXIT_MEM);
 	  }
 	  strncpy(rargv[rarg],argv[arg], (startc - argv[arg]));
 	  strncat(rargv[rarg],resultfile,s);
@@ -1078,7 +1065,7 @@ static void worker (void) {
 	{
 	  if(arg + 1 >= argc) {
 	    LogPrintf(LOG_CRITICAL,"ERROR in command line: no argument following %s option\n",argv[arg]);
-	    res = HIERARCHICALSEARCH_EFILE;
+	    res = HS_BOINC_EXIT_FILE;
 	  } else {
 	    rargv[rarg] = argv[arg]; /* copy the "-o" */
 	    arg++;                   /* grab next argument */
@@ -1173,12 +1160,12 @@ static void worker (void) {
   /* sanity checks */
   if (!resultfile[0] && !output_help && !output_version) {
       LogPrintf (LOG_CRITICAL, "ERROR: no result file has been specified\n");
-      res = HIERARCHICALSEARCH_EFILE;
+      res = HS_BOINC_EXIT_FILE;
   }
   if (bundle_size != current_config_file) {
     LogPrintf (LOG_CRITICAL, "ERROR: bundle size %d doesn't match number of config files %d\n",
 	       bundle_size, current_config_file);
-    res = HIERARCHICALSEARCH_EFILE;
+    res = HS_BOINC_EXIT_FILE;
   }
 
   LogPrintf (LOG_DEBUG, "Flags: "
@@ -1310,7 +1297,7 @@ static void worker (void) {
   char**rrargv = (char**)malloc(rargc * sizeof(char*));
   if(!rrargv){
     LogPrintf(LOG_CRITICAL, "Out of memory\n");
-    boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EMEM);
+    boinc_finish(boinc_finish_status=HS_BOINC_EXIT_MEM);
   }
 
   if (output_help || output_version || !resultfile_present) {
@@ -1376,7 +1363,7 @@ static void worker (void) {
 	  }
 	} else {
 	  LogPrintf(LOG_CRITICAL,"ERROR: out of memory, can't allocate lv_file\n");
-	  res = HIERARCHICALSEARCH_EMEM;
+	  res = HS_BOINC_EXIT_MEM;
 	}
       }
 
