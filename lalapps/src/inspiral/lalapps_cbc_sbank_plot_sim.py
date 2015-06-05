@@ -15,7 +15,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 from __future__ import division
-from math import ceil, log10
+from math import ceil, floor, log10
 import sys
 import os
 import numpy as np
@@ -76,13 +76,13 @@ with H5File(fname, "r") as h5file:
     tmplt_approx = find_process_param(pparams, pid, u"--template-approx")
 
     # get other useful quantities
-    pid = find_process_id(h5file["/process"], u"lalapps_cbc_sbank")
-    min_match = float(find_process_param(pparams, pid, u"--match-min"))
+    pid = find_process_id(h5file["/process"], u"lalapps_cbc_sbank_sim")
     flow = float(find_process_param(pparams, pid, u"--flow"))
 
 # derived quantities
 # NB: Named fields in dtypes (see ligolw_table_to_array in lalapps_cbc_sbank_sim)
 # allow dict-like access to columns: e.g. arr["mass1"].
+min_match = match[int(floor(len(match)*0.9))]
 inj_M = inj_arr["mass1"] + inj_arr["mass2"] #total mass
 inj_eta = inj_arr["mass1"] * inj_arr["mass2"] / (inj_arr["mass1"] + inj_arr["mass2"])**2
 tmplt_M = tmplt_arr["mass1"] + tmplt_arr["mass2"]
@@ -418,7 +418,7 @@ ax.plot(bin_centers, count, linewidth=2.5)
 ax.plot((1 - min_match, 1 - min_match), (1, 10**ceil(log10(count.max()))), "k--")
 ax.set_xlabel("mismatch (1 - fitting factor)")
 ax.set_ylabel("Number")
-ax.set_title(r'$N_\mathrm{inj}=%d$, $N_{\mathrm{FF} < %.2f} = %d$' % (len(match), min_match, (match < min_match).sum()))
+ax.set_title(r'$N_\mathrm{inj}=%d$, 10th percentile=%.2f' % (len(match), min_match,))
 ax.grid(True)
 canvas = FigureCanvas(fig)
 fig.savefig(name+"_match_hist.png")
