@@ -2705,7 +2705,8 @@ def execute_forest_train(training_samples_file, cache, cp, submit_dir ):
     train_forest_job = auxmvc.train_forest_job(cp)
 
     # construct name for trained forest file
-    trained_forest_filename = os.path.split(training_samples_file)[0] + '/mvsc/' + os.path.split(training_samples_file)[1].replace('.pat', '.spr')
+    #trained_forest_filename = os.path.split(training_samples_file)[0] + '/mvsc/' + os.path.split(training_samples_file)[1].replace('.pat', '.spr')
+    trained_forest_filename = submit_dir +'/' + os.path.split(training_samples_file)[1].replace('.pat', '.spr')
 
     # create node for this job
     train_forest_node = auxmvc.train_forest_node(train_forest_job, training_samples_file, trained_forest_filename)
@@ -2902,7 +2903,8 @@ def execute_ann_train( training_samples_file, cache, cp, submit_dir ):
     dag.add_node(convert_annfile_node)
 
     # construct name for trained ann file
-    training_samples_file_redirect = os.path.split(training_samples_file)[0] + '/ann/' + os.path.split(training_samples_file)[1].replace('.pat', '.ann')
+    #training_samples_file_redirect = os.path.split(training_samples_file)[0] + '/ann/' + os.path.split(training_samples_file)[1].replace('.pat', '.ann')
+    training_samples_file_redirect = submit_dir +'/' + os.path.split(training_samples_file)[1].replace('.pat', '.ann')
 
     trained_ann_filename = training_samples_file_redirect.replace('.ann','.net')
 
