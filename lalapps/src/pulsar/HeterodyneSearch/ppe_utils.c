@@ -607,7 +607,8 @@ void merge_data( COMPLEX16Vector *data, UINT4Vector *segs ){
 /**
  * \brief Gzip the nested sample files
  *
- * This function gzips the output nested sample files.
+ * This function gzips the output nested sample files. It will also strip unneccesary parameters
+ * from the header "_params.txt" file.
  *
  * \param runState [in] The analysis information structure
  */
@@ -617,7 +618,48 @@ void gzip_output( LALInferenceRunState *runState ){
   ProcessParamsTable *ppt1 = LALInferenceGetProcParamVal( runState->commandLine, "--outfile" );
 
   if( ppt1 ){
+    CHAR outfilepars[256] = "", outfileparstmp[256] = "";
+    FILE *fppars = NULL, *fpparstmp = NULL;
+    UINT4 nonfixed = 0;
+
     outfile = ppt1->value;
+
+    /* open file for printing out list of parameter names - this should already exist */
+    sprintf(outfilepars, "%s_params.txt", outfile);
+    if( (fppars = fopen(outfilepars, "r")) == NULL ){
+      XLALPrintError("Error... cannot open parameter name output file %s.\n", outfilepars);
+      XLAL_ERROR_VOID(XLAL_EIO);
+    }
+    /* read in the parameter names and remove the "model" value */
+    sprintf(outfileparstmp, "%s_params.txt_tmp", outfile);
+    if( (fpparstmp = fopen(outfileparstmp, "w")) == NULL ){
+      XLALPrintError("Error... cannot open parameter name output file %s.\n", outfileparstmp);
+      XLAL_ERROR_VOID(XLAL_EIO);
+    }
+
+    if ( LALInferenceGetProcParamVal( runState->commandLine, "--non-fixed-only" ) ){ nonfixed = 1; }
+
+    CHAR v[128] = "";
+    while( fscanf(fppars, "%s", v) != EOF ){
+      /* if outputing only non-fixed values then only re-output names of those non-fixed things */
+      if ( nonfixed ){
+        if ( LALInferenceCheckVariable( runState->currentParams, v ) ){
+          if ( LALInferenceGetVariableVaryType( runState->currentParams, v ) != LALINFERENCE_PARAM_FIXED ){
+            fprintf(fpparstmp, "%s\t", v);
+          }
+        }
+      }
+      else{
+        /* re-output everything but the "model" value to a temporary file */
+        if( strcmp(v, "model") ) { fprintf(fpparstmp, "%s\t", v); }
+      }
+    }
+
+    fclose(fppars);
+    fclose(fpparstmp);
+
+    /* move the temporary file name to the standard outfile_param name */
+    rename( outfileparstmp, outfilepars );
 
     /* gzip the output file if required */
     if( LALInferenceGetProcParamVal( runState->commandLine, "--gzip" ) ){
