@@ -1044,13 +1044,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
         }
       else if ( !strcmp ( uvar->window, "tukey" ) )
 	{
-	  if ( !XLALUserVarWasSet( &uvar->tukeyBeta ) )
-	    {
-	      uvar->tukeyBeta = 0.5;   /* If Tukey window specified, default transition fraction is 1/2 */
-	    }
-	  else if ( uvar->tukeyBeta < 0.0 || uvar->tukeyBeta > 1.0 ) {
-            XLAL_ERROR ( XLAL_EINVAL, "Tukey beta value '%f' was specified; must be between 0 and 1.\n\n", uvar->tukeyBeta );
-          }
+	  XLAL_CHECK ( (uvar->tukeyBeta >= 0.0) && (uvar->tukeyBeta <= 1.0), XLAL_EINVAL, "Tukey beta value '%f' must be between 0 and 1.\n\n", uvar->tukeyBeta );
           cfg->window = XLALCreateTukeyREAL4Window( lengthOfTimeSeries, uvar->tukeyBeta );
           XLAL_CHECK ( cfg->window != NULL, XLAL_EFUNC, "XLALCreateTukeyREAL4Window(%d, %g) failed\n", lengthOfTimeSeries, uvar->tukeyBeta );
 	}
