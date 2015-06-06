@@ -69,7 +69,7 @@ class Event():
 
 dummyCacheNames=['LALLIGO','LALVirgo','LALAdLIGO','LALAdVirgo']
 
-def readLValert(SNRthreshold=0,gid=None,flow=40.0,gracedb="gracedb",savepsdpath="./"):
+def readLValert(SNRthreshold=0,gid=None,flow=40.0,gracedb="gracedb",savepsdpath="./",downloadpsd=True):
   """
   Parse LV alert file, continaing coinc, sngl, coinc_event_map.
   and create a list of Events as input for pipeline
@@ -103,12 +103,14 @@ def readLValert(SNRthreshold=0,gid=None,flow=40.0,gracedb="gracedb",savepsdpath=
   trigSNR = coinctable[0].snr
   # Parse PSD
   srate_psdfile=16384
-  print "gracedb download %s psd.xml.gz" % gid
   cwd=os.getcwd()
   os.chdir(savepsdpath)
-  subprocess.call([gracedb,"download", gid ,"psd.xml.gz"])
-  xmlpsd = lalseries.read_psd_xmldoc(utils.load_filename('psd.xml.gz',contenthandler = lalseries.LIGOLWContentHandler))
-  ifos = xmlpsd.keys()
+  ifos=None
+  if downloadpsd:
+    print "gracedb download %s psd.xml.gz" % gid
+    subprocess.call([gracedb,"download", gid ,"psd.xml.gz"])
+    xmlpsd = lalseries.read_psd_xmldoc(utils.load_filename('psd.xml.gz',contenthandler = lalseries.LIGOLWContentHandler))
+    ifos = xmlpsd.keys()
   psdasciidic=None
   fhigh=None
   if os.path.exists("psd.xml.gz"):
@@ -544,13 +546,13 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       if self.config.has_option('lalinference','seglen'):
         seglen = self.config.getint('lalinference','seglen')
 
-      if os.path.exists("psd.xml.gz"):
+      if os.path.isfile(os.path.join(self.basepath,'psd.xml.gz')):
         psdlength = 0
       else:
         psdlength = 32*seglen
     else:
       seglen = max(e.duration for e in self.events)
-      if os.path.exists("psd.xml.gz"):
+      if os.path.isfile(os.path.join(self.basepath,'psd.xml.gz')):
         psdlength = 0
       else:
         psdlength = 32*seglen
@@ -678,7 +680,11 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       flow=40.0
       if self.config.has_option('lalinference','flow'):
         flow=min(ast.literal_eval(self.config.get('lalinference','flow')).values())
-      events = readLValert(gid=gid,flow=flow,gracedb=self.config.get('condor','gracedb'),savepsdpath=self.basepath)
+      downloadgracedbpsd=True
+      if self.config.has_option('input','ignore-gracedb-psd'):
+        if self.config.getboolean('input','ignore-gracedb-psd'):
+          downloadgracedbpsd=False
+      events = readLValert(gid=gid,flow=flow,gracedb=self.config.get('condor','gracedb'),savepsdpath=self.basepath,downloadpsd=downloadgracedbpsd)
     # pipedown-database
     else: gid=None
     if self.config.has_option('input','pipedown-db'):
@@ -742,10 +748,6 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     enginenodes[0].finalize()
     enginenodes[0].set_psd_files()
     enginenodes[0].set_snr_file()
-    if event.GID is not None:
-      if self.config.has_option('analysis','upload-to-gracedb'):
-        if self.config.getboolean('analysis','upload-to-gracedb'):
-          self.add_gracedb_log_node(respagenode,event.GID)
     if self.config.getboolean('analysis','coherence-test') and len(enginenodes[0].ifos)>1:
         if self.site!='local':
           zipfilename='postproc_'+evstring+'.tar.gz'
@@ -797,7 +799,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     if self.config.has_option('input','injection-file') and event.event_id is not None:
         respagenode.set_injection(self.config.get('input','injection-file'),event.event_id)
     if event.GID is not None:
-        self.add_gracedb_log_node(respagenode,event.GID)
+      if self.config.has_option('analysis','upload-to-gracedb'):
+        if self.config.getboolean('analysis','upload-to-gracedb'):
+          self.add_gracedb_log_node(respagenode,event.GID)
     return True
 
   def add_full_analysis_lalinferencemcmc(self,event):
