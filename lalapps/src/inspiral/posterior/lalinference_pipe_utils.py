@@ -511,7 +511,10 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     if self.config.has_option('condor','skyarea'):
       self.skyareajob=SkyAreaJob(self.config,os.path.join(self.basepath,'skyarea.sub'),self.logpath,dax=self.is_dax())
       respagenodes=filter(lambda x: isinstance(x,ResultsPageNode) ,self.get_nodes())
-      prefix='LALInference_'
+      if self.engine=='lalinferenceburst':
+          prefix='LIB_'
+      else:
+          prefix='LALInference_'
       for p in respagenodes:
           skyareanode=SkyAreaNode(self.skyareajob,prefix=prefix)
           skyareanode.add_resultspage_parent(p)
@@ -1151,18 +1154,20 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       prefix='LALInference'
     nodes=None
     if self.config.has_option('condor','skyarea'):
-      skynodes=filter(lambda x: isinstance(x,SkyAreaNode) ,self.get_nodes())
-      nodes=[]
-      for sk in skynodes:
-        if len(sk.ifos)>1:
-          node=GraceDBNode(self.gracedbjob,parent=sk,gid=gid)
-          #for p in sk.__parents:
-          #  if isinstance(p,ResultPageNode):
-          #    resultpagenode=p
-          node.set_filename(sk.outdir+'/%s_skymap.fits.gz'%prefix)
-          node.set_message('%s FITS sky map'%prefix)
-          self.add_node(node)
-          nodes.append(node)
+      if self.config.has_option('analysis','upload-to-gracedb'):
+        if self.config.getboolean('analysis','upload-to-gracedb'):
+          skynodes=filter(lambda x: isinstance(x,SkyAreaNode) ,self.get_nodes())
+          nodes=[]
+          for sk in skynodes:
+            if len(sk.ifos)>1:
+              node=GraceDBNode(self.gracedbjob,parent=sk,gid=gid)
+              #for p in sk.__parents:
+              #  if isinstance(p,ResultPageNode):
+              #    resultpagenode=p
+              node.set_filename(sk.outdir+'/%s_skymap.fits.gz'%prefix)
+              node.set_message('%s FITS sky map'%prefix)
+              self.add_node(node)
+              nodes.append(node)
     return nodes
 
   def add_rom_weights_node(self,ifo,parent=None):
@@ -1920,6 +1925,7 @@ class SkyAreaNode(pipeline.CondorDAGNode):
       self.add_parent(resultspagenode)
       self.set_fits_name()
       self.set_injection(resultspagenode.get_injection(),resultspagenode.get_event_number())
+      self.set_objid(resultspagenode.get_event_number())
   def set_ifos(self,ifos=None):
       self.ifos=ifos
 
