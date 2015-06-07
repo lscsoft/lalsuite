@@ -273,4 +273,4 @@ if use_bayespe_postproc:
     if opts.write_script:
         ppdag.write_script()
 
-print "Created a postprocessing DAG named %s\n" % ppdag_name
+    print "Created a postprocessing DAG named %s\n" % ppdag_name
