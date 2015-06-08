@@ -87,6 +87,7 @@ struct params {
     int verbose;
     FILE *fp;
     const LALDetector *detector;
+    int overhead;
     LIGOTimeGPS epoch;
     double ra;
     double dec;
@@ -94,8 +95,8 @@ struct params {
 };
 int printparams(struct params p);
 char *sitetime(char *s, size_t size, time_t * timer, int site);
-double strtora(const char *s);
-double strtodec(const char *s);
+double strtora(const char *s, int degrees);
+double strtodec(const char *s, int degrees);
 int fputra(double ra, FILE * fp);
 int fputdec(double ra, FILE * fp);
 struct params parseargs(int argc, char **argv);
@@ -123,7 +124,19 @@ int main(int argc, char *argv[])
     XLALGPSAddGPS(&hcross->epoch, &p.epoch);
 
     /* compute detector strain */
-    h = XLALSimDetectorStrainREAL8TimeSeries(hplus, hcross, p.ra, p.dec, p.psi, p.detector);
+    if (p.overhead) {
+        double cos2psi = cos(2.0 * p.psi);
+        double sin2psi = sin(2.0 * p.psi);
+        /* ra and dec are ignored parameters; psi is used to mix plus and
+         * cross polarizations; note sign convention has F+ = -1 and Fx = 0
+	 * for psi = 0, and F+ = 0, Fx = 1 for psi = 45 degrees:
+	 * see Sec. "The Gravitational Wave Tensor in the Earth Fixed Frame",
+	 * LIGO-T010110 https://dcc.ligo.org/LIGO-T010110/public */
+        h = XLALCreateREAL8TimeSeries("STRAIN", &hplus->epoch, hplus->f0, hplus->deltaT, &hplus->sampleUnits, hplus->data->length);
+        for (j = 0; j < h->data->length; ++j)
+            h->data->data[j] = -hplus->data->data[j] * cos2psi + hcross->data->data[j] * sin2psi;
+    } else
+        h = XLALSimDetectorStrainREAL8TimeSeries(hplus, hcross, p.ra, p.dec, p.psi, p.detector);
     for (j = 0; j < h->data->length; ++j) {
         LIGOTimeGPS t = h->epoch;
         fprintf(stdout, "%s\t%e\n", XLALGPSToStr(tstr, XLALGPSAdd(&t, j * h->deltaT)), h->data->data[j]);
@@ -140,82 +153,101 @@ int printparams(struct params p)
 {
     if (p.verbose) {
         char tstr[32];  // string to hold GPS time -- 31 characters is enough
-        LIGOTimeGPS epoch = p.epoch;
-        double longitude = p.detector->frDetector.vertexLongitudeRadians;
-        double latitude = p.detector->frDetector.vertexLatitudeRadians;
-        double gmst_rad = XLALGreenwichMeanSiderealTime(&p.epoch);
-        double lmst_rad = gmst_rad + longitude;
-        double ha = lmst_rad - p.ra;
-        double altitude = asin(sin(p.dec) * sin(latitude) + cos(p.dec) * cos(latitude) * cos(ha));
-        double azimuth = -atan2(cos(p.dec) * sin(ha), sin(p.dec) * cos(latitude) - cos(p.dec) * sin(latitude) * cos(ha));
-        double fplus, fcross;
-        double dt = XLALTimeDelayFromEarthCenter(p.detector->location, p.ra, p.dec, &p.epoch);
-        char date[64];
         struct tm utc = {.tm_sec = 0 };
         time_t timer;
-        XLALGPSAdd(&epoch, dt);
-        XLALGPSToUTC(&utc, round(XLALGPSGetREAL8(&p.epoch)));
-        timer = round(XLALGPSGetREAL8(&p.epoch)) + XLAL_EPOCH_UNIX_GPS;
-        XLALComputeDetAMResponse(&fplus, &fcross, p.detector->response, p.ra, p.dec, p.psi, gmst_rad);
-        strftime(date, sizeof(date), "%c %Z", &utc);
-        fputs("geocentric arrival time:      GPS = ", stderr);
-        fputs(XLALGPSToStr(tstr, &p.epoch), stderr);
-        fputs("\n", stderr);
-        fputs("coordinated universal time:   ", stderr);
-        fprintf(stderr, "%s", date);
-        fputs("\n", stderr);
-        fputs("Greenwich mean sidereal time: HH:MM:SS = ", stderr);
-        fputra(gmst_rad, stderr);
-        fprintf(stderr, " (%g deg)", fmod(gmst_rad, 2.0 * LAL_PI) / LAL_PI_180);
-        fputs("\n", stderr);
-        fputs("right ascension:              HH:MM:SS = ", stderr);
-        fputra(p.ra, stderr);
-        fprintf(stderr, " (%g deg)", p.ra / LAL_PI_180);
-        fputs("\n", stderr);
-        fputs("declination:                  DD:MM:SS = ", stderr);
-        fputdec(p.dec, stderr);
-        fprintf(stderr, " (%g deg)", p.dec / LAL_PI_180);
-        fputs("\n", stderr);
-        fputs("polarization angle:           ", stderr);
-        fprintf(stderr, "%g deg", p.psi / LAL_PI_180);
-        fputs("\n", stderr);
-        fputs("detector:                     ", stderr);
-        fprintf(stderr, "%s", p.detector->frDetector.name);
-        fputs("\n", stderr);
-        fputs("time delay from Earth center: ", stderr);
-        fprintf(stderr, "%+f s", dt);
-        fputs("\n", stderr);
-        fputs("arrival time at detector:     GPS = ", stderr);
-        fputs(XLALGPSToStr(tstr, &epoch), stderr);
-        fputs("\n", stderr);
-        fputs("local time:                   ", stderr);
-        fprintf(stderr, "%s", sitetime(tstr, sizeof(tstr), &timer, *p.detector->frDetector.prefix));
-        fputs("\n", stderr);
-        fputs("latitude North:               DD:MM:SS = ", stderr);
-        fputdec(latitude, stderr);
-        fprintf(stderr, " (%g deg)", latitude / LAL_PI_180);
-        fputs("\n", stderr);
-        fputs("longitude East:               HH:MM:SS = ", stderr);
-        fputra(longitude, stderr);
-        fprintf(stderr, " (%g deg)", longitude / LAL_PI_180);
-        fputs("\n", stderr);
-        fputs("local mean sidereal time:     HH:MM:SS = ", stderr);
-        fputra(lmst_rad, stderr);
-        fprintf(stderr, " (%g deg)", fmod(lmst_rad, 2.0 * LAL_PI) / LAL_PI_180);
-        fputs("\n", stderr);
-        fputs("hour angle:                   HH:MM:SS = ", stderr);
-        fputra(ha, stderr);
-        fprintf(stderr, " (%g deg)", fmod(ha, 2.0 * LAL_PI) / LAL_PI_180);
-        fputs("\n", stderr);
-        fputs("altitude:                     ", stderr);
-        fprintf(stderr, "%g deg", altitude / LAL_PI_180);
-        fputs("\n", stderr);
-        fputs("azimuth West of North:        ", stderr);
-        fprintf(stderr, "%g deg", azimuth / LAL_PI_180);
-        fputs("\n", stderr);
-        fputs("detector antenna response:    ", stderr);
-        fprintf(stderr, "F+ = %g, Fx = %g", fplus, fcross);
-        fputs("\n", stderr);
+        char date[64];
+        double gmst_rad = XLALGreenwichMeanSiderealTime(&p.epoch);
+        if (p.overhead) {
+            XLALGPSToUTC(&utc, round(XLALGPSGetREAL8(&p.epoch)));
+            timer = round(XLALGPSGetREAL8(&p.epoch)) + XLAL_EPOCH_UNIX_GPS;
+            strftime(date, sizeof(date), "%c %Z", &utc);
+            fputs("detector arrival time:        GPS = ", stderr);
+            fputs(XLALGPSToStr(tstr, &p.epoch), stderr);
+            fputs("\n", stderr);
+            fputs("coordinated universal time:   ", stderr);
+            fprintf(stderr, "%s", date);
+            fputs("\n", stderr);
+            fputs("Greenwich mean sidereal time: HH:MM:SS = ", stderr);
+            fputra(gmst_rad, stderr);
+            fprintf(stderr, " (%g deg, %g rad)", fmod(gmst_rad, 2.0 * LAL_PI) / LAL_PI_180, fmod(gmst_rad, 2.0 * LAL_PI));
+            fputs("\n", stderr);
+            fputs("polarization angle:           ", stderr);
+            fprintf(stderr, "%g deg, %g rad", p.psi / LAL_PI_180, p.psi);
+            fputs("\n", stderr);
+        } else {
+            LIGOTimeGPS epoch = p.epoch;
+            double longitude = p.detector->frDetector.vertexLongitudeRadians;
+            double latitude = p.detector->frDetector.vertexLatitudeRadians;
+            double lmst_rad = gmst_rad + longitude;
+            double ha = lmst_rad - p.ra;
+            double altitude = asin(sin(p.dec) * sin(latitude) + cos(p.dec) * cos(latitude) * cos(ha));
+            double azimuth = -atan2(cos(p.dec) * sin(ha), sin(p.dec) * cos(latitude) - cos(p.dec) * sin(latitude) * cos(ha));
+            double fplus, fcross;
+            double dt = XLALTimeDelayFromEarthCenter(p.detector->location, p.ra, p.dec, &p.epoch);
+            XLALGPSAdd(&epoch, dt);
+            XLALGPSToUTC(&utc, round(XLALGPSGetREAL8(&p.epoch)));
+            timer = round(XLALGPSGetREAL8(&p.epoch)) + XLAL_EPOCH_UNIX_GPS;
+            XLALComputeDetAMResponse(&fplus, &fcross, p.detector->response, p.ra, p.dec, p.psi, gmst_rad);
+            strftime(date, sizeof(date), "%c %Z", &utc);
+            fputs("geocentric arrival time:      GPS = ", stderr);
+            fputs(XLALGPSToStr(tstr, &p.epoch), stderr);
+            fputs("\n", stderr);
+            fputs("coordinated universal time:   ", stderr);
+            fprintf(stderr, "%s", date);
+            fputs("\n", stderr);
+            fputs("Greenwich mean sidereal time: HH:MM:SS = ", stderr);
+            fputra(gmst_rad, stderr);
+            fprintf(stderr, " (%g deg, %g rad)", fmod(gmst_rad, 2.0 * LAL_PI) / LAL_PI_180, fmod(gmst_rad, 2.0 * LAL_PI));
+            fputs("\n", stderr);
+            fputs("right ascension:              HH:MM:SS = ", stderr);
+            fputra(p.ra, stderr);
+            fprintf(stderr, " (%g deg, %g rad)", p.ra / LAL_PI_180, p.ra);
+            fputs("\n", stderr);
+            fputs("declination:                  DD:MM:SS = ", stderr);
+            fputdec(p.dec, stderr);
+            fprintf(stderr, " (%g deg, %g rad)", p.dec / LAL_PI_180, p.dec);
+            fputs("\n", stderr);
+            fputs("polarization angle:           ", stderr);
+            fprintf(stderr, "%g deg, %g rad", p.psi / LAL_PI_180, p.psi);
+            fputs("\n", stderr);
+            fputs("detector:                     ", stderr);
+            fprintf(stderr, "%s", p.detector->frDetector.name);
+            fputs("\n", stderr);
+            fputs("time delay from Earth center: ", stderr);
+            fprintf(stderr, "%+f s", dt);
+            fputs("\n", stderr);
+            fputs("arrival time at detector:     GPS = ", stderr);
+            fputs(XLALGPSToStr(tstr, &epoch), stderr);
+            fputs("\n", stderr);
+            fputs("local time:                   ", stderr);
+            fprintf(stderr, "%s", sitetime(tstr, sizeof(tstr), &timer, *p.detector->frDetector.prefix));
+            fputs("\n", stderr);
+            fputs("latitude North:               DD:MM:SS = ", stderr);
+            fputdec(latitude, stderr);
+            fprintf(stderr, " (%g deg, %g rad)", latitude / LAL_PI_180, latitude);
+            fputs("\n", stderr);
+            fputs("longitude East:               HH:MM:SS = ", stderr);
+            fputra(longitude, stderr);
+            fprintf(stderr, " (%g deg, %g rad)", longitude / LAL_PI_180, longitude);
+            fputs("\n", stderr);
+            fputs("local mean sidereal time:     HH:MM:SS = ", stderr);
+            fputra(lmst_rad, stderr);
+            fprintf(stderr, " (%g deg, %g rad)", fmod(lmst_rad, 2.0 * LAL_PI) / LAL_PI_180, fmod(lmst_rad, 2.0 * LAL_PI));
+            fputs("\n", stderr);
+            fputs("hour angle:                   HH:MM:SS = ", stderr);
+            fputra(ha, stderr);
+            fprintf(stderr, " (%g deg, %g rad)", fmod(ha, 2.0 * LAL_PI) / LAL_PI_180, fmod(ha, 2.0 * LAL_PI));
+            fputs("\n", stderr);
+            fputs("altitude:                     ", stderr);
+            fprintf(stderr, "%g deg, %g rad", altitude / LAL_PI_180, altitude);
+            fputs("\n", stderr);
+            fputs("azimuth West of North:        ", stderr);
+            fprintf(stderr, "%g deg, %g rad", azimuth / LAL_PI_180, azimuth);
+            fputs("\n", stderr);
+            fputs("detector antenna response:    ", stderr);
+            fprintf(stderr, "F+ = %g, Fx = %g", fplus, fcross);
+            fputs("\n", stderr);
+        }
     }
     return 0;
 }
@@ -309,7 +341,7 @@ int readdata(REAL8TimeSeries ** hplus, REAL8TimeSeries ** hcross, FILE * fp)
     return 0;
 }
 
-double strtora(const char *string)
+double strtora(const char *string, int degrees)
 {
     double h = 0, m = 0, s = 0;
     double ra;
@@ -319,7 +351,9 @@ double strtora(const char *string)
     if (strchr(string, ':'))
         c = sscanf(string, "%lf:%lf:%lf", &h, &m, &s);
     else {
-        ra = atof(string) * LAL_PI_180;
+        ra = atof(string);
+        if (degrees)
+            ra *= LAL_PI_180;
         goto done;
     }
 
@@ -338,7 +372,7 @@ double strtora(const char *string)
     return ra;
 }
 
-double strtodec(const char *string)
+double strtodec(const char *string, int degrees)
 {
     double d = 0, m = 0, s = 0;
     double dec;
@@ -348,7 +382,9 @@ double strtodec(const char *string)
     if (strchr(string, ':'))
         c = sscanf(string, "%lf:%lf:%lf", &d, &m, &s);
     else {
-        dec = atof(string) * LAL_PI_180;
+        dec = atof(string);
+        if (degrees)
+            dec *= LAL_PI_180;
         goto done;
     }
 
@@ -391,9 +427,14 @@ int fputdec(double dec, FILE * fp)
 struct params parseargs(int argc, char **argv)
 {
     LIGOTimeGPS invalid_epoch = INVALID_EPOCH;
+    char *ra_string = NULL;
+    char *dec_string = NULL;
+    char *psi_string = NULL;
+    int degrees = 1;
     struct params p = {
         .verbose = 0,
         .fp = stdin,
+        .overhead = 0,
         .detector = NULL,
         .epoch = invalid_epoch,
         .ra = HUGE_VAL,
@@ -403,6 +444,8 @@ struct params parseargs(int argc, char **argv)
     struct LALoption long_options[] = {
         {"help", no_argument, 0, 'h'},
         {"verbose", no_argument, 0, 'v'},
+        {"radians", no_argument, 0, 'r'},
+        {"overhead", no_argument, 0, 'O'},
         {"detector-prefix", required_argument, 0, 'D'},
         {"gps-time", required_argument, 0, 't'},
         {"right-ascension", required_argument, 0, 'a'},
@@ -415,7 +458,7 @@ struct params parseargs(int argc, char **argv)
         {"psi", required_argument, 0, 'p'},
         {0, 0, 0, 0}
     };
-    char args[] = "hvD:t:a:d:p:";
+    char args[] = "hvrOD:t:a:d:p:";
     int fail = 0;
     int d;
     while (1) {
@@ -438,6 +481,12 @@ struct params parseargs(int argc, char **argv)
         case 'v':      /* verbose */
             p.verbose = 1;
             break;
+        case 'r':      /* radians */
+            degrees = 0;
+            break;
+        case 'O':      /* overhead */
+            p.overhead = 1;
+            break;
         case 'D':      /* detector-prefix */
             for (d = 0; d < LAL_NUM_DETECTORS; ++d) {
                 if (strcmp(LALoptarg, lalCachedDetectors[d].frDetector.prefix) == 0) {
@@ -450,13 +499,13 @@ struct params parseargs(int argc, char **argv)
             XLALStrToGPS(&p.epoch, LALoptarg, NULL);
             break;
         case 'a':      /* right-ascension */
-            p.ra = strtora(LALoptarg);
+            ra_string = LALoptarg;
             break;
         case 'd':      /* right-ascension */
-            p.dec = strtodec(LALoptarg);
+            dec_string = LALoptarg;
             break;
         case 'p':      /* polarization-angle */
-            p.psi = atof(LALoptarg) * LAL_PI_180;
+            psi_string = LALoptarg;
             break;
         case '?':
         default:
@@ -483,6 +532,31 @@ struct params parseargs(int argc, char **argv)
     }
 
     /* make sure all required arguments have been specified */
+    if (XLALGPSCmp(&p.epoch, &invalid_epoch) == 0) {
+        fprintf(stderr, "error: unspecified arrival time\n");
+        fail = 1;
+    }
+
+    if (psi_string) {
+            p.psi = atof(psi_string);
+            if (degrees)
+                p.psi *= LAL_PI_180;
+    } else {
+        fprintf(stderr, "error: unspecified polarization angle\n");
+        fail = 1;
+    }
+
+    if (p.overhead) {
+        /* remaining parameters are ignored */
+        if (p.detector)
+            fprintf(stderr, "warning: ignoring detector for overhead injection\n");
+        if (ra_string)
+            fprintf(stderr, "warning: ignoring right ascension for overhead injection\n");
+        if (dec_string)
+            fprintf(stderr, "warning: ignoring declination for overhead injection\n");
+        goto done;
+    }
+
     if (p.detector == NULL) {
         fprintf(stderr, "error: unspecified detector prefix\n");
         fprintf(stderr, "recognized detector prefixes are:\n");
@@ -490,22 +564,22 @@ struct params parseargs(int argc, char **argv)
             fprintf(stderr, "\t%s: %s\n", lalCachedDetectors[d].frDetector.prefix, lalCachedDetectors[d].frDetector.name);
         fail = 1;
     }
-    if (XLALGPSCmp(&p.epoch, &invalid_epoch) == 0) {
-        fprintf(stderr, "error: unspecified arrival time\n");
-        fail = 1;
-    }
-    if (p.ra == HUGE_VAL) {
+
+    if (ra_string)
+        p.ra = strtora(ra_string, degrees);
+    else {
         fprintf(stderr, "error: unspecified right ascension\n");
         fail = 1;
     }
-    if (p.dec == HUGE_VAL) {
+    
+    if (dec_string)
+        p.dec = strtodec(dec_string, degrees);
+    else {
         fprintf(stderr, "error: unspecified declination\n");
         fail = 1;
     }
-    if (p.dec == HUGE_VAL) {
-        fprintf(stderr, "error: unspecified polarization angle\n");
-        fail = 1;
-    }
+
+done:
     if (fail)
         exit(1);
 
@@ -518,20 +592,22 @@ int usage(const char *program)
     fprintf(stderr, "\
 usage: %s [options] [file]\n\
 options:\n\
-        -h, --help     print this message and exit\n\
-        -v, --verbose  verbose output\n\
-        -D PREFIX, --detector-prefix=PREFIX\n\
-                (required) detector prefix (e.g., 'H1', 'L1', 'V1')\n\
-        -t EPOCH, --gps-time=EPOCH\n\
-                (required) time of arrival at earth geocenter:\n\
+        -h, --help      print this message and exit\n\
+        -v, --verbose   verbose output\n\
+        -r, --radians   use radians rather than decimal degrees\n\
+        -O, --overhead  signal from directly overhead\n\
+        -D PREFIX, --detector-prefix=PREFIX     (required unless overhead)\n\
+                detector prefix (e.g., 'H1', 'L1', 'V1')\n\
+        -t EPOCH, --gps-time=EPOCH              (required)\n\
+                time of arrival at earth geocenter (or at detector if overhead):\n\
                 this is added to the timestamp of the input data,\n\
                 which should be an waveform about time = 0\n\
-	-a RA, --right-ascension=RA\n\
-                (required) right ascension in H:M:S format or decimal degrees\n\
-        -d DEC, --declination=DEC\n\
-                (required) declination in D:M:S format or decimal degrees\n\
-	-p PSI, --polarization-angle=PSI\n\
-		(required) polarization angle in degrees\n\
+        -a RA, --right-ascension=RA             (required unless overhead)\n\
+                right ascension in H:M:S format or decimal degrees\n\
+        -d DEC, --declination=DEC               (required unless overhead)\n\
+                declination in D:M:S format or decimal degrees\n\
+        -p PSI, --polarization-angle=PSI        (required)\n\
+                polarization angle in degrees\n\
 ", program);
     /* *INDENT-ON* */
     return 0;

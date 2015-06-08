@@ -36,7 +36,7 @@ double (*psdfunc)(double);
 int (*opsdfunc)(REAL8FrequencySeries *, double);
 double srate = 16384; // sampling rate in Hertz
 double segdur = 4; // duration of a segment in seconds
-double tstart;
+LIGOTimeGPS tstart = LIGOTIMEGPSZERO;
 double duration;
 double overrideflow;
 double flow;
@@ -46,6 +46,7 @@ const char *detector;
 
 int usage(const char *program);
 int parseargs(int argc, char **argv);
+double zeronoise(double f);
 
 int main(int argc, char *argv[])
 {
@@ -55,7 +56,6 @@ int main(int argc, char *argv[])
 	size_t n;
 	REAL8FrequencySeries *psd = NULL;
 	REAL8TimeSeries *seg = NULL;
-	LIGOTimeGPS epoch;
 	gsl_rng *rng;
 
 	XLALSetErrorHandler(XLALAbortErrorHandler);
@@ -66,10 +66,29 @@ int main(int argc, char *argv[])
 	length = segdur * srate;
 	stride = length / 2;
 
-	XLALGPSSetREAL8(&epoch, tstart);
+	/* handle 0noise case first */
+	if (strcmp(detector, "0noise") == 0) {
+		/* just print out a bunch of zeros */
+		if (psdonly) {
+			double deltaF = srate / length;
+			size_t klow = flow / deltaF;
+			size_t k;
+			for (k = klow; k < length/2 - 1; ++k)
+				fprintf(stdout, "%e\t%e\n", k * deltaF, 0.0);
+		} else {
+			size_t j;
+			n = duration * srate;
+			for (j = 0; j < n; ++j) { 
+				LIGOTimeGPS t = tstart;
+				fprintf(stdout, "%s\t%e\n", XLALGPSToStr(tstr, XLALGPSAdd(&t, j/srate)), 0.0);
+			}
+		}
+		return 0;
+	}
+
 	gsl_rng_env_setup();
 	rng = gsl_rng_alloc(gsl_rng_default);
-	psd = XLALCreateREAL8FrequencySeries(detector, &epoch, 0.0, srate/length, &lalSecondUnit, length/2 + 1);
+	psd = XLALCreateREAL8FrequencySeries(detector, &tstart, 0.0, srate/length, &lalSecondUnit, length/2 + 1);
 	if (official && opsdfunc)
 		opsdfunc(psd, flow);
 	else
@@ -83,7 +102,7 @@ int main(int argc, char *argv[])
 	}
 
 	n = duration * srate;
-	seg = XLALCreateREAL8TimeSeries("STRAIN", &epoch, 0.0, 1.0/srate, &lalStrainUnit, length);
+	seg = XLALCreateREAL8TimeSeries("STRAIN", &tstart, 0.0, 1.0/srate, &lalStrainUnit, length);
 	XLALSimNoise(seg, 0, psd, rng); // first time to initialize
 	while (1) { // infinite loop
 		size_t j;
@@ -91,7 +110,7 @@ int main(int argc, char *argv[])
 			LIGOTimeGPS t = seg->epoch;
 			if (n == 0) // check if we're done
 				goto end;
-			printf("%s\t%e\n", XLALGPSToStr(tstr, XLALGPSAdd(&t, j * seg->deltaT)), seg->data->data[j]);
+			fprintf(stdout, "%s\t%e\n", XLALGPSToStr(tstr, XLALGPSAdd(&t, j * seg->deltaT)), seg->data->data[j]);
 		}
 		XLALSimNoise(seg, stride, psd, rng); // make more data
 	}
@@ -108,6 +127,7 @@ int parseargs( int argc, char **argv )
 {
 	struct LALoption long_options[] = {
 			{ "help", no_argument, 0, 'h' },
+			{ "0noise", no_argument, 0, '0' },
 			{ "aligo-nosrm", no_argument, 0, 'A' },
 			{ "aligo-zerodet-lowpower", no_argument, 0, 'B' },
 			{ "aligo-zerodet-highpower", no_argument, 0, 'C' },
@@ -118,7 +138,7 @@ int parseargs( int argc, char **argv )
 			{ "virgo", no_argument, 0, 'v' },
 			{ "advvirgo", no_argument, 0, 'V' },
 			{ "geo", no_argument, 0, 'g' },
-                       { "geohf", no_argument, 0, 'G' },
+			{ "geohf", no_argument, 0, 'G' },
 			{ "tama", no_argument, 0, 'T' },
 			{ "kagra", no_argument, 0, 'K' },
 			{ "official", no_argument, 0, 'O' },
@@ -130,7 +150,7 @@ int parseargs( int argc, char **argv )
 			{ "low-frequency", required_argument, 0, 'f' },
 			{ 0, 0, 0, 0 }
 		};
-	char args[] = "hIABCDEFOPvVgGTKs:t:r:d:f:";
+	char args[] = "hI0ABCDEFOPvVgGTKs:t:r:d:f:";
 	while (1) {
 		int option_index = 0;
 		int c;
@@ -150,6 +170,13 @@ int parseargs( int argc, char **argv )
 			case 'h': /* help */
 				usage(argv[0]);
 				exit(0);
+			case '0': /* 0noise */
+				/* psdfunc and opsdfunc are ignored so just choose anything */
+				psdfunc = XLALSimNoisePSDaLIGONoSRMLowPower;
+				opsdfunc = XLALSimNoisePSDaLIGONoSRMLowPowerGWINC;
+				flow = 9.0;
+				detector = "0noise";
+				break;
 			case 'A': /* aligo-nosrm */
 				psdfunc = XLALSimNoisePSDaLIGONoSRMLowPower;
 				opsdfunc = XLALSimNoisePSDaLIGONoSRMLowPowerGWINC;
@@ -228,8 +255,14 @@ int parseargs( int argc, char **argv )
 				psdonly = 1;
 				break;
 			case 's': /* start-time */
-				tstart = atof(LALoptarg);
-				break;
+				{
+					char *endp = NULL;
+					if (XLALStrToGPS(&tstart, LALoptarg, &endp) < 0 || strlen(endp)) {
+						fprintf(stderr, "could not parse GPS string `%s'\n", LALoptarg);
+						exit(1);
+					}
+					break;
+				}
 			case 't': /* duration */
 				duration = atof(LALoptarg);
 				break;
@@ -270,6 +303,7 @@ int usage( const char *program )
 	fprintf(stderr, "usage: %s [options]\n", program);
 	fprintf(stderr, "options:\n" );
 	fprintf(stderr, "\t-h, --help                   \tprint this message and exit\n");
+	fprintf(stderr, "\t-0, --0noise                 \tno noise (generates zeros)\n");
 	fprintf(stderr, "\t-A, --aligo-nosrm            \taLIGO no SRM noise\n");
 	fprintf(stderr, "\t-B, --aligo-zerodet-lowpower \taLIGO zero detuning low power noise\n");
 	fprintf(stderr, "\t-C, --aligo-zerodet-highpower\taLIGO zero detuning high power noise\n");
