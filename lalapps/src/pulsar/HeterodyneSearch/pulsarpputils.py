@@ -2232,30 +2232,22 @@ def read_pulsar_mcmc_file(cf):
   return cfdata
 
 
-# Function to convert nested sample files output from pulsar_parameter_estimation_nested into a
-# posterior object. The log(evidence ratio) (signal versus Gaussian noise) is also returned.
+# Function to convert nested sample files output from pulsar_parameter_estimation_nested, and already
+# parsed through lalapps_nest2pos into a posterior object. The log(evidence ratio) (signal versus Gaussian
+# noise) is also returned.
 #
 # The inputs are a list of nested sample files and the number of live points used to produce them.
 #
 # Any non-varying parameters in the files are removed from the posterior object. iota is converted
 # back into cos(iota), and if only C22 is varying then it is converted back into h0, and phi22
 # is converted back into phi0.
-def pulsar_nest_to_posterior(nestfiles, nlive):
+def pulsar_nest_to_posterior(nestfile):
   # combine multiple nested sample files for an IFO into a single posterior (copied from lalapps_nest2pos)
-  peparser = bppu.PEOutputParser('ns')
+  peparser = bppu.PEOutputParser('common')
 
-  # generate a random string for the posterior output file
-  import random
-  import string
-  posfilename = 'posterior_samples_'+''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))+'.dat'
-
-  nsResultsObject = peparser.parse(nestfiles, Nlive=nlive, posfilename=posfilename)
+  nsResultsObject = peparser.parse(nestfile)
 
   pos = bppu.Posterior( nsResultsObject, SimInspiralTableEntry=None, votfile=None )
-
-  # remove posterior samples file created by parser
-  if os.path.isfile(posfilename):
-    os.remove(posfilename)
 
   # convert iota back to cos(iota)
   # create 1D posterior class of cos(iota) values
@@ -2290,7 +2282,7 @@ def pulsar_nest_to_posterior(nestfiles, nlive):
     posphi22 = None
 
   # convert C22 back into h0, and phi22 back into phi0 if required
-  if posC22 != None:
+  if posC22 != None and posC22 == None:
     h0pos = None
     h0pos = bppu.PosteriorOneDPDF('h0', 2.*pos['c22'].samples)
 
@@ -2305,10 +2297,9 @@ def pulsar_nest_to_posterior(nestfiles, nlive):
       pos.pop('phi22')
 
   # get evidence (as in lalapps_nest2pos) (assume evidence in files suffixed '_B.txt')
-  Bs = map(np.loadtxt,[d.replace('.gz', '')+'_B.txt' for d in nestfiles])
-  meanB = reduce(np.logaddexp,[b[0] for b in Bs])-np.log(len(Bs))
+  B = np.loadtxt(nestfile.replace('.gz', '')+'_B.txt')
 
-  return pos, meanB
+  return pos, B[0]
 
 
 # function to add two exponentiated log values and return the log of the result

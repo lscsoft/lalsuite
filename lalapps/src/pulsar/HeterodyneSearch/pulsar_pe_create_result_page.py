@@ -514,14 +514,13 @@ performed for two interferometers (H1 and L1):
 MCMC directory containing chains for each IFO.")
 
   parser.add_option("-N", "--nested", dest="usenested",
-                    help="Input files will be from the nested sampling code.",
+                    help="Input files will be samples from the nested \
+sampling code and pre-converted into posterior samples through lalapps_nest2pos.",
                     action="store_true", default=False)
 
   parser.add_option("-f", "--nestedfiles", dest="nestedfiles",
                     action="append", help="If using nested sampling inputs \
-supply a comma separated list of nested sample files for each IFO. [Note: \
-there must be at least one accompanying header file list the parameters, \
-which has the suffix \"_params.txt\"")
+include one posterior sample file for each IFO.")
 
   parser.add_option("-l", "--Nlive", dest="nlive",
                     type="int", help="If using nested sampling inputs \
@@ -740,21 +739,15 @@ supply the number of live points used in their generation.")
           print >> sys.stderr, "No MCMC file %s" % cfile
           sys.exit(0)
   if usenested:
-    nfileslist = []
-
     if len(ifosNew) != len(nestedfiles):
       print >> sys.stderr, "Number of nested sampling file lists must be equal to number of IFOs."
       sys.exit(-1)
 
-    for filelist in nestedfiles:
-      nfiles = filelist.split(',')
-
-      nfileslist.append(nfiles)
-
-      for nfile in nfiles:
-        if not os.path.isfile(nfile):
-          print >> sys.stderr, "No nested sampling file %s" % nfile
-          sys.exit(0)
+    # check files exist
+    for nfile in nestedfiles:
+      if not os.path.isfile(nfile):
+        print >> sys.stderr, "No nested sampling file %s" % nfile
+        sys.exit(0)
 
   # check required parameters
   f0 = par['F0']
@@ -1065,7 +1058,7 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=50 )
       mcmcgr.append(grr)
 
     if usenested:
-      pos, ev = pppu.pulsar_nest_to_posterior(nfileslist[i], nlive)
+      pos, ev = pppu.pulsar_nest_to_posterior(nestedfiles[i])
       evidence.append(ev)
       mcmcgr = None
     else:
