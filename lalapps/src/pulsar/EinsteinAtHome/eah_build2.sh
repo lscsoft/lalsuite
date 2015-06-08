@@ -367,6 +367,14 @@ echo BUILD_INFO="\"$BUILD_INFO\"" >> "$LOGFILE"
 if [ ."$missing_wine_warning" = ."true" ] ; then
     log_and_show "WARNING: 'wine' not found, disabling check as it won't work"
 fi
+# augment wine's PATH such that
+#   /usr/lib/gcc/i686-w64-mingw32/4.8/libstdc++-6.dll
+# and
+#   /usr/i686-w64-mingw32/lib/libwinpthread-1.dll
+# are found
+# test -r ~/.wine/system.reg && !fgrep i686-w64-mingw32 ~/.wine/system.reg &&
+#   sed -i~ 's/^\("PATH"=.*\)"$/\1;Z:\\\\usr\\\\i686-w64-mingw32\\\\lib;Z:\\\\usr\\\\lib\\\\gcc\\\\i686-w64-mingw32\\\\4.8/' ~/.wine/system.reg
+# see https://fedoraproject.org/wiki/MinGW/Configure_wine
 
 if ! [ .$check_only = .true ]; then
 
