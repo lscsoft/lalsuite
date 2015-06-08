@@ -1157,7 +1157,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     nodes=[]
     node=GraceDBNode(self.gracedbjob,parent=respagenode,gid=gid,command='log')
     resurl=respagenode.webpath.replace(self.gracedbjob.basepath,self.gracedbjob.baseurl)
-    node.set_message('online parameter estimation results:  '+resurl+'/posplots.html')
+    #node.set_message('online parameter estimation results:  '+resurl+'/posplots.html')
+    node.set_message("\\\"\\\"online parameter estimation <a href="+resurl+"/posplots.html>results</a>\\\"\\\" ")
     self.add_node(node)
     nodes.append(node)
 
