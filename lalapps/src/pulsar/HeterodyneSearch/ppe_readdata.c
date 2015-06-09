@@ -884,6 +884,7 @@ void setup_from_par_file( LALInferenceRunState *runState )
   /* get the pulsar parameters */
   XLALReadTEMPOParFile( &pulsar, parFile );
   psr.equatorialCoords.longitude = pulsar.ra;
+
   psr.equatorialCoords.latitude = pulsar.dec;
   psr.equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
 
@@ -899,6 +900,15 @@ void setup_from_par_file( LALInferenceRunState *runState )
 
   /* Add initial (unchanging) variables for the model, initial (unity) scale factors, from the par file */
   add_initial_variables( runState->threads[0]->currentParams, scaletemp, pulsar );
+
+  /* check for binary model */
+  CHAR *binarymodel = NULL;
+  if ( LALInferenceCheckVariable( runState->currentParams, "model") ){
+    binarymodel = XLALStringDuplicate(*(CHAR**)LALInferenceGetVariable( runState->currentParams, "model" ));
+    
+    /* now remove from runState->params (as it conflict with calls to LALInferenceCompareVariablesin the proposal) */
+    LALInferenceRemoveVariable( runState->currentParams, "model" );
+  }
 
   /* Setup initial phase, and barycentring delays */
   LALInferenceIFOModel *ifo_model = runState->threads[0]->model->ifo;
@@ -926,6 +936,11 @@ void setup_from_par_file( LALInferenceRunState *runState )
         else if ( LALInferenceGetProcParamVal( runState->commandLine, "--biaxial" ) ){
           LALInferenceAddVariable( ifo_model->params, "biaxial", &dummyvar, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
         }
+      }
+
+      /* add binary model to the general parameters */
+      if ( binarymodel != NULL ){
+        LALInferenceAddVariable( ifo_model->params, "model", &binarymodel, LALINFERENCE_string_t, LALINFERENCE_PARAM_FIXED );
       }
 
       dts = get_ssb_delay( pulsar, ifo_model->times, ifo_model->ephem, ifo_model->tdat, ifo_model->ttype, data->detector, 0. );

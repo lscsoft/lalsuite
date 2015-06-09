@@ -134,9 +134,9 @@ void get_pulsar_model( LALInferenceModel *model ){
   pars.f5 = rescale_parameter( model, model->ifo, "F5" );
 
   /* check if there are binary parameters */
-  if( LALInferenceCheckVariable(model->params, "model") ){
+  if( LALInferenceCheckVariable(model->ifo->params, "model") ){
     /* binary system model - NOT pulsar model */
-    pars.model = *(CHAR**)LALInferenceGetVariable( model->params, "model" );
+    pars.model = *(CHAR**)LALInferenceGetVariable( model->ifo->params, "model" );
 
     pars.e = rescale_parameter( model, model->ifo, "ECC" );
     pars.w0 = rescale_parameter( model, model->ifo, "OM" );
