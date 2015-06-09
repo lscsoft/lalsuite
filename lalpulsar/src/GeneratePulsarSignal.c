@@ -382,10 +382,12 @@ XLALSignalToSFTs ( const REAL4TimeSeries *signalvec, 	/**< input time-series */
       /* Now window the current time series stretch, if necessary */
       if ( params->window )
         {
-	  const float A = 1.0 / sqrt(params->window->sumofsquares / params->window->data->length);
+          // the SFT normalization in case of windowing follows the conventions detailed in the SFTv2 specification,
+          // namely LIGO-T040164, and in particular Eqs.(3),(4) and (6) in T010095-00.pdf
+	  const float inv_sigma_win = 1.0 / sqrt ( params->window->sumofsquares / params->window->data->length );
 	  for( UINT4 idatabin = 0; idatabin < timeStretchCopy->length; idatabin++ )
             {
-              timeStretchCopy->data[idatabin] *= A * params->window->data->data[idatabin];
+              timeStretchCopy->data[idatabin] *= inv_sigma_win * params->window->data->data[idatabin];
             }
         } // if window
 
