@@ -1346,9 +1346,9 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALRegisterUvarMember ( Dec,		STRING,  0, DEPRECATED, "Use --Delta instead");
 
   // ----- deprecated and unsupported options [throw error if used] ----------
-  XLALRegisterUvarMember ( orbitTpSSBsec, INT4,  0, OBSOLETE, "Use --orbitTp instead");
-  XLALRegisterUvarMember ( orbitTpSSBnan, INT4,  0, OBSOLETE, "Use --orbitTp instead");
-  XLALRegisterUvarMember ( orbitTpSSBMJD, STRING,0, OBSOLETE, "Use --orbitTp instead");
+  XLALRegisterUvarMember ( orbitTpSSBsec, INT4,  0, DEFUNCT, "Obsolete, use --orbitTp instead");
+  XLALRegisterUvarMember ( orbitTpSSBnan, INT4,  0, DEFUNCT, "Obsolete, use --orbitTp instead");
+  XLALRegisterUvarMember ( orbitTpSSBMJD, STRING,0, DEFUNCT, "Obsolete, use --orbitTp instead");
 
   /* read cmdline & cfgfile  */
   ret = XLALUserVarReadAllInput ( argc, argv );
