@@ -225,6 +225,100 @@ UINT4Vector *chop_n_merge( LALInferenceIFOData *data, INT4 chunkMin, INT4 chunkM
 }
 
 
+/** \brief Randomise the data for use in Monte-Carlo studies
+ *
+ * Randomly permute the data whilst keeping noise stationarity properties. For each stationary chunk
+ * randomise the time position within the start and end data times, and then within each chunk
+ * perform a random permutation of the data.
+ */
+/*void randomise_data( LALInferenceIFOData *data, LALInferenceIFOModel *model, gsl_rng *r ){ */
+void randomise_data( LALInferenceIFOModel *model, gsl_rng *r ){
+  UINT4Vector *chunkLengths = NULL;
+  chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( model->params, "chunkLength" );
+  UINT4 nchunks = chunkLengths->length;
+  UINT4 length = model->times->length;
+  UINT4 count = 0, i = 0, j = 0, k = 0, chunkLength = 0;
+
+  /* get start and end times of data */
+  REAL8 starttime = XLALGPSGetREAL8( &model->times->data[0] );
+  REAL8 endtime = XLALGPSGetREAL8( &model->times->data[model->times->length-1] );
+  REAL8 dur = endtime - starttime;
+
+  REAL8 dt = LALInferenceGetREAL8Variable( model->params, "dt" ); /* time steps for data */
+  REAL8Vector *chunkstarts = NULL, *chunkdurs = NULL; /* original start times and durations of each chunk */
+  chunkstarts = XLALCreateREAL8Vector( nchunks );
+  chunkdurs = XLALCreateREAL8Vector( nchunks );
+
+  /* randomise the times within each chunk (this is simpler than randomising the data) */
+  for( i = 0, count = 0 ; i < length ; i += chunkLength, count++ ){
+    chunkLength = chunkLengths->data[count];
+    chunkstarts->data[count] = XLALGPSGetREAL8( &model->times->data[i] );
+    chunkdurs->data[count] = XLALGPSGetREAL8( &model->times->data[i+chunkLength-1] ) - chunkstarts->data[count];
+
+    gsl_ran_shuffle( r, &model->times->data[i], (size_t)chunkLength, sizeof(LIGOTimeGPS) );
+  }
+
+  if ( nchunks > 1 ){
+    /* randomise the stationary chunks */
+    gsl_permutation *p = gsl_permutation_alloc(nchunks);
+    gsl_permutation_init( p );
+    gsl_ran_shuffle(r, p->data, nchunks, sizeof(size_t));
+
+    /* total length of chunks */
+    REAL8 totLength = (REAL8)(i-1)*dt;
+    fprintf(stderr, "totlength = %lf, dur = %lf\n", totLength, dur);
+    /* split remaining times up randomly to get intervals between chunks */
+    REAL8 tremaining = dur - totLength;
+    fprintf(stderr, "t remaining = %lf\n", tremaining);
+    REAL8Vector *timeintervals = NULL;
+    timeintervals = XLALCreateREAL8Vector( nchunks-1 );
+    for ( i = 0; i < nchunks-1; i++ ){ timeintervals->data[i] = floor(tremaining*gsl_rng_uniform( r )); }
+
+    /* work through chunks and alter their times */
+    REAL8 sumlengths = 0.;
+    for ( i = 0; i < nchunks; i++ ){
+      chunkLength = chunkLengths->data[p->data[i]];
+      UINT4 chunkpos = 0;
+
+      for ( k = 0; k < p->data[i]; k++ ){ chunkpos += chunkLengths->data[k]; }
+
+      fprintf(stderr, "p->data[%d] = %zu, chunkstarts = %lf, chunksdurs = %lf\n", i, p->data[i], chunkstarts->data[p->data[i]], chunkdurs->data[p->data[i]]);
+
+      for ( j = chunkpos; j < chunkpos+chunkLength ; j++ ){
+        REAL8 tmptime = XLALGPSGetREAL8( &model->times->data[j] );
+        tmptime -= chunkstarts->data[p->data[i]];
+        tmptime += starttime;
+        tmptime += sumlengths;
+
+        XLALGPSSetREAL8( &model->times->data[j], tmptime );
+      }
+
+      if ( i < nchunks-1 ){
+        sumlengths += chunkdurs->data[p->data[i]];
+        /* add randomly distributed time interval between chunks */
+        sumlengths += timeintervals->data[i];
+      }
+    }
+
+    gsl_permutation_free( p );
+    XLALDestroyREAL8Vector( timeintervals );
+  }
+
+  XLALDestroyREAL8Vector( chunkstarts );
+  XLALDestroyREAL8Vector( chunkdurs );
+
+  /*FILE *fp = NULL;
+  fp = fopen("randomiseddata.txt", "w");
+  for ( i = 0; i < length; i++ ){
+    fprintf(fp, "%lf\t%le\t%le\n",  XLALGPSGetREAL8( &model->times->data[i]), creal(data->compTimeData->data->data[i]), cimag(data->compTimeData->data->data[i]) );
+  }
+  fclose(fp);
+
+  fprintf(stderr, "Data has been randomised!\n");
+  exit(0);*/
+}
+
+
 /**
  * \brief Subtract the running median from complex data
  *
@@ -650,8 +744,8 @@ void gzip_output( LALInferenceRunState *runState ){
         }
       }
       else{
-        /* re-output everything but the "model" value to a temporary file */
-        if( strcmp(v, "model") ) { fprintf(fpparstmp, "%s\t", v); }
+        /* re-output everything to a temporary file */
+        fprintf(fpparstmp, "%s\t", v);
       }
     }
 

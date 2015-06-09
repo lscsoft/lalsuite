@@ -573,7 +573,7 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
 
         // Note: j-1 because we added to j above (553)
         temptimes->data[j-1] = times;
-        
+
         /* reheterodyne data if required */
         if ( rehetfreq != 0 ) {
           /* create template */
@@ -798,6 +798,12 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
       LALInferenceAddVariable( modeltmp->params, "gaussianLikelihood", &gaussianLike, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
     }
 
+    /* check whether to randomise the data */
+    if ( LALInferenceGetProcParamVal( commandLine, "--randomise" ) ){
+      /* randomise_data( datatmp, modeltmp, runState->GSLrandom ); */
+      randomise_data( modeltmp, runState->GSLrandom );
+    }
+
     datatmp = datatmp->next;
     modeltmp = modeltmp->next;
   }
@@ -904,7 +910,7 @@ void setup_from_par_file( LALInferenceRunState *runState )
   CHAR *binarymodel = NULL;
   if ( LALInferenceCheckVariable( runState->currentParams, "model") ){
     binarymodel = XLALStringDuplicate(*(CHAR**)LALInferenceGetVariable( runState->currentParams, "model" ));
-    
+
     /* now remove from runState->params (as it conflict with calls to LALInferenceCompareVariablesin the proposal) */
     LALInferenceRemoveVariable( runState->currentParams, "model" );
   }

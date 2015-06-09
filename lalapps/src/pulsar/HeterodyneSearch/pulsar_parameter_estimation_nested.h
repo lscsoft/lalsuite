@@ -81,6 +81,7 @@
 #include <gsl/gsl_statistics_double.h>
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_sf_gamma.h>
+#include <gsl/gsl_randist.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -207,6 +208,8 @@ extern "C" {
                      otherwise the noise variance will be calculated from the data.\n"\
 " --nonGR             Set to allow non-GR polarisation modes and/or a variable\n\
                      speed of gravitational waves.\n"\
+" --randomise         Set this to randomise the data (through permutations of the\n\
+                     time stamps) for use in Monte-Carlo studies.\n"\
 "\n"\
 " Nested sampling parameters:\n"\
 " --Nlive             (INT4) no. of live points for nested sampling\n"\
