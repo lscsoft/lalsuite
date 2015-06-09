@@ -18,13 +18,6 @@
 */
 
 /* vim: set noet ts=4 sw=4: */
-/**
- * \file
- * \ingroup lal_support
- * \author Creighton, J. D. E.
- * \brief Routines for exporting time series as sound files.
- *
- */
 
 #include <math.h>
 #include <stdio.h>

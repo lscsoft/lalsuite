@@ -17,15 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/**
- * \file
- * \ingroup lal_support
- * \author Creighton, J. D. E.
- * \date 2007
- * \brief This header covers routines to create and manipulate LALCache
- * structures and to read LAL cache files.
- *
- */
 #ifndef _LALCACHE_H_
 #define _LALCACHE_H_
 
@@ -39,6 +30,23 @@ extern "C" {
 #if 0
 }       /* to match preceeding brace */
 #endif
+
+/**
+ * \defgroup LALCache_h Header LALCache.h
+ * \ingroup lal_support
+ * \author Creighton, J. D. E.
+ * \date 2007
+ *
+ * \brief This header covers routines to create and manipulate LALCache structures and to read LAL cache files.
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <lal/LALCache.h>
+ * \endcode
+ *
+ */
+/**@{*/
 struct tagLALCacheEntry;
 struct tagLALCache;
 
@@ -123,6 +131,8 @@ LALCacheEntry *XLALCacheEntrySeek(const LALCache * cache, double t);
 
 /** Open a file identified by an entry in a LALCache structure. */
 LALFILE *XLALCacheEntryOpen(const LALCacheEntry * entry);
+
+/**@}*/
 
 #if 0
 {       /* to match succeding brace */
