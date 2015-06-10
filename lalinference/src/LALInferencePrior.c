@@ -2166,12 +2166,13 @@ void LALInferenceDrawNameFromPrior( LALInferenceVariables *output,
       LALInferenceSetVariable(output, name, &val);
       break;
     }
-    case LALINFERENCE_gslMatrix_t:
+    //LALInferenceDrawFromPrior() does not handle gsl matrices properly at the moment
+    /*case LALINFERENCE_gslMatrix_t:
     {
       REAL8 val = tmp;
       LALInferenceSetVariable(output, name, &val);
       break;
-    }
+    }*/
     default:
       XLAL_ERROR_VOID(XLAL_EINVAL, "Trying to randomise a non-numeric parameter!");
       break;

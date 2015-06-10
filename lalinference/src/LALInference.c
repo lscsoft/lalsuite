@@ -1296,14 +1296,16 @@ int LALInferenceFprintParameterHeaders(FILE *out, LALInferenceVariables *params)
   while (head != NULL) {
       if(head->type==LALINFERENCE_gslMatrix_t)
       {
-          matrix = *((gsl_matrix **)head->value);
-          for(i=0; i<(int)matrix->size1; i++)
-          {
-              for(j=0; j<(int)matrix->size2; j++)
-              {
-                  fprintf(out, "%s%i%i\t", LALInferenceTranslateInternalToExternalParamName(head->name),i,j);
-              }
-          }
+	//Commented out since for now gsl matrices are used as nuisance parameters and not printed to the output files.
+	//We may implement a LALINFERENCE_PARAM_NUISANCE type
+	//matrix = *((gsl_matrix **)head->value);
+	//for(i=0; i<(int)matrix->size1; i++)
+	//{
+	//    for(j=0; j<(int)matrix->size2; j++)
+	//    {
+	//        fprintf(out, "%s%i%i\t", LALInferenceTranslateInternalToExternalParamName(head->name),i,j);
+	//    }
+	//}
       }
       else if(head->type==LALINFERENCE_UINT4Vector_t)
       {
