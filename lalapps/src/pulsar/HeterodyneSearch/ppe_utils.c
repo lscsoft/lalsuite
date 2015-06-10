@@ -228,7 +228,9 @@ UINT4Vector *chop_n_merge( LALInferenceIFOData *data, INT4 chunkMin, INT4 chunkM
 /** \brief Randomise the data for use in Monte-Carlo studies
  *
  * Randomly permute the data whilst keeping noise stationarity properties. For each stationary chunk
- * randomise the time position within the start and end data times, and then within each chunk
+ * randomise the time position within the start and end data times (a random time interval taken from
+ * the difference between the total chunk length and the full data span will be inserted between each
+ * randomised chunk to keep the same total data length), and within each chunk
  * perform a random permutation of the data.
  */
 /*void randomise_data( LALInferenceIFOData *data, LALInferenceIFOModel *model, gsl_rng *r ){ */
@@ -271,8 +273,9 @@ void randomise_data( LALInferenceIFOModel *model, gsl_rng *r ){
     REAL8 tremaining = dur - totLength;
     fprintf(stderr, "t remaining = %lf\n", tremaining);
     REAL8Vector *timeintervals = NULL;
-    timeintervals = XLALCreateREAL8Vector( nchunks-1 );
-    for ( i = 0; i < nchunks-1; i++ ){ timeintervals->data[i] = floor(tremaining*gsl_rng_uniform( r )); }
+    timeintervals = XLALCreateREAL8Vector( nchunks );
+    timeintervals->data[0] = 0.;
+    for ( i = 1; i < nchunks; i++ ){ timeintervals->data[i] = floor(tremaining*gsl_rng_uniform( r )); }
 
     /* work through chunks and alter their times */
     REAL8 sumlengths = 0.;
@@ -296,7 +299,7 @@ void randomise_data( LALInferenceIFOModel *model, gsl_rng *r ){
       if ( i < nchunks-1 ){
         sumlengths += chunkdurs->data[p->data[i]];
         /* add randomly distributed time interval between chunks */
-        sumlengths += timeintervals->data[i];
+        sumlengths += (timeintervals->data[i+1]-timeintervals->data[i]);
       }
     }
 
