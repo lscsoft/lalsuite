@@ -87,6 +87,23 @@ if __name__=='__main__':
     sys.exit(1)
 
   """
+  get the accounting group info
+  """
+  try:
+    # the accouting group
+    accgroup = cp.get('accounting', 'group')
+  except:
+    print >> sys.stderr, "Condor accounting group is required!"
+    sys.exit(1)
+
+  try:
+    # the accounting group user
+    accuser = cp.get('accounting', 'user')
+  except:
+    print >> sys.stderr, "Condor accounting group user is required!"
+    sys.exit(1)
+
+  """
   get the general inputs
   """
   try:
@@ -320,8 +337,8 @@ if __name__=='__main__':
   dag.set_dag_file(basename)
 
   # set up jobs
-  resultsjob = ppu.createresultspageJob(rexec, logdir)
-  collatejob = ppu.collateresultsJob(cexec, logdir)
+  resultsjob = ppu.createresultspageJob(rexec, logdir, accgroup, accuser)
+  collatejob = ppu.collateresultsJob(cexec, logdir, accgroup, accuser)
 
   inlimlist = False
   for lim in limlist:
@@ -436,6 +453,7 @@ if __name__=='__main__':
 
   # loop over pulsars in par file directory
   for pfile in param_files:
+    ishwinj = hwinj
     resultsnode = None
     resultsnode = ppu.createresultspageNode(resultsjob)
 
@@ -469,6 +487,10 @@ if __name__=='__main__':
             print >> sys.stderr, "Cannot get pulsar name from par file" % mcmcdir
             sys.exit(1)
 
+      # if name is one of the standard hardware injection names set hwinj to true
+      if not hwinj and 'PULSAR' in name:
+        ishwinj = True
+
       # assume that the nested sampling file for a pulsar contains its name
       ifofilelist = []
       for filelist in nestedfiles:
@@ -501,11 +523,9 @@ if __name__=='__main__':
     if epsoutr:
       resultsnode.set_epsout()
 
-    if hwinj:
-      resultsnode.set_hwinj()
+    resultsnode.set_hwinj(ishwinj)
 
-    if swinj:
-      resultsnode.set_swinj()
+    resultsnode.set_swinj(swinj)
 
     collatepage.add_parent(resultsnode)
 
