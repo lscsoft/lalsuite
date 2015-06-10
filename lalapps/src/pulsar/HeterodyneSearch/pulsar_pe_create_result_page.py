@@ -37,6 +37,7 @@ import subprocess as sp
 #related third party imports
 import numpy as np
 
+# need to set Agg here for use of stuff in pulsarpputils
 import matplotlib
 matplotlib.use("Agg")
 
@@ -522,10 +523,6 @@ sampling code and pre-converted into posterior samples through lalapps_nest2pos.
                     action="append", help="If using nested sampling inputs \
 include one posterior sample file for each IFO.")
 
-  parser.add_option("-l", "--Nlive", dest="nlive",
-                    type="int", help="If using nested sampling inputs \
-supply the number of live points used in their generation.")
-
   # get pulsar .par file
   parser.add_option("-p", "--parfile", dest="parfile", help="An "
                     "individual, TEMPO-style pulsar parameter file, used in "
@@ -608,13 +605,6 @@ supply the number of live points used in their generation.")
       sys.exit(0)
     else:
       nestedfiles = opts.nestedfiles
-
-    if not opts.__dict__['nlive']:
-      print >> sys.stderr, "Must specify number of live points."
-      parser.print_help()
-      sys.exit(0)
-    else:
-      nlive = opts.nlive
   else:
     print >> sys.stderr, "Must specify using either the MCMC or nested sampling inputs."
     parser.print_help()
@@ -1268,7 +1258,7 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=50 )
     psrshelf['confidenceregion'] = dict(zip(ifosNew, confidenceregion))
 
   # phi0
-  bounds = [0, 2*math.pi]
+  bounds = [0, math.pi]
   phi0Fig, ulvals = pppu.plot_posterior_hist( poslist, 'phi0', ifosNew, \
                                         bounds, histbins, \
                                         0, overplot=True, parfile=parinj )
@@ -1583,8 +1573,11 @@ pdisp) )
       dispfunc = paramdisp2.__dict__['DEFAULT']
 
     if (swinj or hwinj) and parinj:
-      poststatstext.append('<td rowspan="%d">%s</td>' % (len(ifosNew), \
+      try:
+        poststatstext.append('<td rowspan="%d">%s</td>' % (len(ifosNew), \
  dispfunc(str(par[param.upper()]))))
+      except:
+        poststatstext.append('<td rowspan="%d">*</td>' % len(ifosNew))    
 
     for i, ifo in enumerate(ifosNew):
       poststatstext.append('<td class="%s">%s</td>' % (ifo, ifo) )

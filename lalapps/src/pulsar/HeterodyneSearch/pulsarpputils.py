@@ -35,7 +35,7 @@ import struct
 import re
 
 import matplotlib
-#matplotlib.use("Agg")
+# matplotlib.use("Agg")
 
 from matplotlib import pyplot as plt
 from matplotlib import colors
@@ -2245,7 +2245,11 @@ def pulsar_nest_to_posterior(nestfile):
   # combine multiple nested sample files for an IFO into a single posterior (copied from lalapps_nest2pos)
   peparser = bppu.PEOutputParser('common')
 
-  nsResultsObject = peparser.parse(nestfile)
+  if '.gz' in nestfile:
+    import gzip
+    nsResultsObject = peparser.parse(gzip.open(nestfile, 'r'))
+  else:
+    nsResultsObject = peparser.parse(open(nestfile, 'r'))
 
   pos = bppu.Posterior( nsResultsObject, SimInspiralTableEntry=None, votfile=None )
 

@@ -549,7 +549,6 @@ class createresultspageNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.__mcmcdirs = []
     self.__donested = False
     self.__nestedfiles = []
-    self.__nlive = None
     self.__parfile = None
     self.__Bkfiles = []
     self.__priorfile = None
@@ -587,10 +586,6 @@ class createresultspageNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.add_macro('macrof', macroval)
     self.add_macro('macrom', '') # empty macro for mcmc directories
     self.__nestedfiles = val
-  def set_nlive(self,val):
-    # set number of nested sampling live points
-    self.add_var_opt('l', val, short=True)
-    self.__nlive = val
   def set_parfile(self,val):
     # set the pulsar parameter file
     self.add_var_opt('p', val, short=True)

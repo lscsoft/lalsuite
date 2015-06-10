@@ -41,6 +41,10 @@ from optparse import OptionParser
 
 import numpy as np
 
+# need to set Agg here for use of stuff in pulsarpputils
+import matplotlib
+matplotlib.use("Agg")
+
 from lalapps import pulsarpputils as pppu
 from lalapps import pulsar_pipeline_utils as ppu
 from glue import pipeline
@@ -168,13 +172,6 @@ if __name__=='__main__':
     nesteddirs = None
 
   if nesteddirs:
-    try:
-      # get the number of live points
-      nlive = cp.get('resultspages', 'nlive')
-    except:
-      print >> sys.stderr, "Number of live points must be specific!"
-      sys.exit(1)
-
     # list of file extensions that are not the nested sampling file
     nestednotfile = ['_params.txt', '_SNR', '_Znoise', '_B.txt']
 
@@ -470,7 +467,6 @@ if __name__=='__main__':
       resultsnode.set_mcmcdir(mcmcdirs)
     elif nesteddirs:
       resultsnode.set_donested()
-      resultsnode.set_nlive(nlive)
 
       # get pulsar name from par file
       psr = pppu.psr_par(pfile)
