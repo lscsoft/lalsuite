@@ -27,6 +27,44 @@ class Cell(object):
     def area(self):
         return numpy.abs(numpy.diff(self._bounds)).prod()
 
+    def divide_if(self, testfunc, depth=1):
+        """
+        Subdivide once along each dimension, recursively.
+        """
+        if depth < 1:
+            raise ArgumentError("Depth value must be greater than 0")
+    
+        # Base case: We're at the finest resolution, divide and check
+        if depth == 1:
+            cells = self.divide()
+            if testfunc(cells):
+                return cells
+            else:
+                return self
+        else:
+
+            daughters, divided = [], False
+            for d in self.divide():
+                # Recurse downward and get result which is returned
+                dcells = d.divide_if(testfunc, depth-1)
+
+                # We got the cell back, it didn't divide. So we preserve it to
+                # check if the parent cell should divide or not
+                if dcells == d:
+                    daughters.append(d)
+
+                # We got a set of divided cells, so we keep to pass back up
+                else:
+                    daughters.extend(dcells)
+                    divided = True
+
+            # No child (or below) of this cell was divided, pass ourself back
+            # up
+            if not divided and not testfunc(daughters):
+                return self
+
+        return daughters
+
     def divide(self):
         """
         Subdivide once along each dimension, recursively.
