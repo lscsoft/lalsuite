@@ -1194,8 +1194,7 @@ void LALInferenceTranslateExternalToInternalParamName(char *outName, const char 
 
 int LALInferenceFprintParameterHeaders(FILE *out, LALInferenceVariables *params) {
   LALInferenceVariableItem *head = params->head;
-  int i,j;
-  gsl_matrix *matrix = NULL;
+  int i;
   UINT4Vector *vector = NULL;
 
   while (head != NULL) {
