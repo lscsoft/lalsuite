@@ -537,8 +537,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
   if (LALInferenceGetProcParamVal(runState->commandLine, "--propTrack")){
     propTrack=1;
-    runState->preProposalParams = XLALCalloc(1, sizeof(LALInferenceVariableItem));
-    runState->proposedParams = XLALCalloc(1, sizeof(LALInferenceVariableItem));
+    runState->preProposalParams = XLALCalloc(1, sizeof(LALInferenceVariables));
+    runState->proposedParams = XLALCalloc(1, sizeof(LALInferenceVariables));
 
     UINT4 a=0;
     LALInferenceAddVariable(runState->proposalArgs, "accepted", &a, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
