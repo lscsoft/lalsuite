@@ -448,6 +448,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     self.prenodes={}
     self.datafind_job = pipeline.LSCDataFindJob(self.cachepath,self.logpath,self.config,dax=self.is_dax())
     self.datafind_job.add_opt('url-type','file')
+    if cp.has_option('analysis','accounting_group'):
+      self.datafind_job.add_condor_cmd('accounting_group',cp.get('analysis','accounting_group'))
     self.datafind_job.set_sub_file(os.path.abspath(os.path.join(self.basepath,'datafind.sub')))
     self.preengine_job = EngineJob(self.config, os.path.join(self.basepath,'prelalinference.sub'),self.logpath,ispreengine=True,dax=self.is_dax())
     self.preengine_job.set_grid_site('local')
