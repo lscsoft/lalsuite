@@ -65,6 +65,46 @@ class Cell(object):
 
         return daughters
 
+    def refine(self):
+        """
+        Refine each cell such that 2*dim new cells are created. In contrast to divide, refine will place the center of each new cell at the midpoint along the boundary of the mother cell. Its dimensions will be the half width from the center to the edge on each side, except for the dimension along the splitting axis, where the dimension will be twice the half width of the original cell in that dimension (and on that side).
+        """
+        cells = []
+        dim = len(self._bounds)
+
+        cntrs = []
+        # New centers are bounds of previous cell
+        for i in range(dim):
+            # Split left
+            cntr = copy.copy(self._center)
+            cntr[i] = self._bounds[i][0]
+            cntrs.append(cntr)
+
+            # Split right
+            cntr = copy.copy(self._center)
+            cntr[i] = self._bounds[i][1]
+            cntrs.append(cntr)
+
+        # Determine length of boundaries
+        bounds = []
+        for i, (lb, rb) in enumerate(self._bounds):
+            half_left = (self._center[i] - lb) / 2.0
+            half_right = (rb - self._center[i]) / 2.0
+            bounds.append( (half_left, half_right) )
+        bounds = numpy.array(bounds)
+
+        # Create each new cell
+        for i, ci in enumerate(cntrs):
+            cbnds = list(copy.copy(cntr))
+            for j in range(len(bounds)):
+                if i == j:
+                    cbnds[j] = (ci[j] - bounds[j,i%2], ci[j] + bounds[j,i%2])
+                else:
+                    cbnds[j] = (ci[j] - bounds[j,0], ci[j] + bounds[j,1])
+            cells.append(Cell(numpy.array(cbnds), numpy.array(ci)))
+
+        return cells
+
     def divide(self):
         """
         Subdivide once along each dimension, recursively.
