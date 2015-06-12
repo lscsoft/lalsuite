@@ -45,10 +45,12 @@
 #define localtime_r(timep, result) memcpy((result), localtime(timep), sizeof(struct tm))
 #endif
 
+/** @cond */
 struct tagLALFrFile {
     LALFrameUFrFile *file;
     LALFrameUFrTOC *toc;
 };
+/** @endcond */
 
 int XLALFrFileClose(LALFrFile * frfile)
 {

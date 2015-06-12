@@ -17,6 +17,42 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * @defgroup lalfr_split lalfr-split
+ * @ingroup lalframe_programs
+ *
+ * @brief Split a frame file into component frames
+ *
+ * ### Synopsis
+ *
+ *     lalfr-split [file [name]]
+ *     
+ * ### Description
+ *
+ * The `lalfr-split` utility reads the given `file` containing multiple frames
+ * and breaks it up into files each containing one frame.  If `file` is a
+ * single dash (`-`) or absent, `lalfr-split` reads from the standard input.
+ * If additional arguments are specified, the first is used as the name of the
+ * input  file which is to be split.  If a second additional argument is
+ * specified, it is used as a prefix for the names of  the  files  into which
+ * the  file is split.  In this case, each file into which the file is split is
+ * named by the prefix followed by a lexically ordered  suffix using  two
+ * characters in the range `a-z` followed by the extension `.gwf`.  If the name
+ * argument is not specified, the file is split into lexically ordered files
+ * named with the prefix `x` and with suffixes as above.
+ *
+ * ### Examples
+ *
+ * If `file.gwf` contains three frames then the command:
+ *
+ *     lalfr-split file.gwf
+ *
+ * produces three files, `xaa.gwf`, `xab.gwf`, and `xac.gwf`, each containing
+ * one of the three frames.
+ *
+ * @sa @ref lalfr_cat
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

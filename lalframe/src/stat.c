@@ -17,6 +17,45 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * @defgroup lalfr_stat lalfr-stat
+ * @ingroup lalframe_programs
+ *
+ * @brief Briefly describe frame files
+ *
+ * ### Synopsis
+ *
+ *     lalfr-stat [file ...]
+ *
+ * ### Description
+ *
+ * The `lalfr-stat` utility displays information about the file pointed to by
+ * `file`.  If `file` is a single dash (`-`) or absent, `lalfr-stat` reads from
+ * the standard input.
+ *
+ * For each `file`, `lalfr-stat` writes to standard output a line containing
+ * five columns.  The first column contains the detector site information for
+ * all detector structures contained in `file`.  The second column contains a
+ * file description that is parsed from the file name.  The third column
+ * contains the GPS second that is equal to or just before the beginning of the
+ * data contained in `file`.  The fourth column contains an integer duration in
+ * seconds such that the sum of columns three and four gives a GPS time after
+ * the data contained in the file.  The fifth column contains the URL of the
+ * file.
+ *
+ * If any of the above data is missing or unknown, the value in the column is
+ * given by `-`.
+ *
+ * ### Example
+ *
+ * The command:
+ *
+ *     lalfr-stat *.gwf > cache
+ *
+ * will produce a standard LAL cache file `cache` describing all the frames in
+ * the current directory.
+ */
+
 #define _BSD_SOURCE   /* for realpath() */
 #include <stdlib.h>
 #undef _BSD_SOURCE

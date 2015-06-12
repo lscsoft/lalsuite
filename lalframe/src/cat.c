@@ -17,6 +17,41 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * @defgroup lalfr_cat lalfr-cat
+ * @ingroup lalframe_programs
+ *
+ * @brief Concatenate frame files
+ *
+ * ### Synopsis
+ *
+ *     lalfr-cat [file ...]
+ * 
+ * ### Description
+ * 
+ * The `lalfr-cat` utility cuts reads frame files sequentially, writing them to
+ * the standard output.  The file operands are  processed  in  command-line
+ * order.  If file is a single dash (`-`) or absent, `lalfr-cat` reads from the
+ * standard input.
+ *
+ * ### Example
+ *
+ * The command:
+ *
+ *     lalfr-cat file1.gwf file2.gwf > file3.gwf
+ *
+ * will concatenate `file1.gwf` and `file2.gwf` to the file `file3.gwf`.
+ *
+ * The command:
+ *
+ *     lalfr-cat file1.gwf - file2.gwf
+ *
+ * will output to standard output the contents of frame file `file1.gwf`, the
+ * frame file received from standard input, and the contents of `file2.gwf`.
+ * 
+ * @sa @ref lalfr_split
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

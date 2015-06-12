@@ -17,6 +17,53 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * @defgroup lalfr_print lalfr-print
+ * @ingroup lalframe_programs
+ *
+ * @brief Prints channel data from frame files
+ *
+ * ### Synopsis
+ *
+ *     lalfr-print [file ...]
+ *
+ * ### Description
+ *
+ * The `lalfr-print` utility reads the contents of the channels from each
+ * `file` and prints the data to the standard output.  If `file` is a single
+ * dash (`-`) or absent, `lalfr-print` reads from the standard input.
+ *
+ * For each channel contained in `file`, the output is written in two-column
+ * format where the first column is the GPS time of each sample and the second
+ * column contains the corresponding sample values.  The columns are separated
+ * by a tab character (`\t`) and each line is separated by a newline character
+ * (`\n`).
+ *
+ * Each channel in `file` is written sequentially and are separated by a line
+ * containing a separator consisting of the character `#` followed by the name
+ * of the next channel to be written.  If more than one file argument is
+ * present then the separate files are processed sequentially and separated in
+ * the output by a line containing the separator `==> file <==` where `file` is
+ * the name of the current file being processed.
+ *
+ * ### Examples
+ *
+ * The command:
+ *
+ *     lalfr-print file.gwf
+ *
+ * prints to standard output all the channels contained in `file.gwf`.  If
+ * there are more than one channel present in that file, they can be split into
+ * separate files, each containing a single channel's data, with the command:
+ *
+ *     lalfr-print file.gwf | split -p '#'
+ *
+ * and the resulting files `xaa`, `xab`, etc., contain the data from each of
+ * the channels in `file.gwf`.
+ *
+ * @sa @ref lalfr_dump, @ref lalfr_fmt
+ */
+
 #include <inttypes.h>
 #include <math.h>
 #include <stdio.h>

@@ -17,6 +17,73 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * @defgroup lalfr_stream lalfr-stream
+ * @ingroup lalframe_programs
+ *
+ * @brief Output a frame data stream
+ *
+ * ### Synopsis
+ *
+ *     lalfr-stream --channel=channel --frame-cache=cachefile [--start-time=tstart] [--duration=deltat]
+ *
+ *     lalfr-stream --channel=channel --frame-glob=globstring [--start-time=tstart] [--duration=deltat]
+ *
+ * ### Description
+ *
+ * The `lalfr-stream` utility reads a requested interval
+ * [`tstart`,`tstart+deltat`) of `channel` data from frame files that are
+ * either indexed in the `cachefile` or matching the pattern `globstring`  as
+ * described by `glob(3)`.  If `tstart` is not specified, streaming begins  at
+ * the beginning of the available data.  If `deltat` is not specified,
+ * streaming continues until the end of the available data.  The output is
+ * written to the standard output in two-column ascii format data in which the
+ * first column contains the GPS times of each sample and  the  second column
+ * contains the corresponding sample values.
+ *
+ * ### Options
+ *
+ * <DL>
+ * <DT>`-h`, `--help`</DT>
+ * <DD>Prints the help message.</DD>
+ * <DT>`-c channel`, `--channel=channel`</DT>
+ * <DD>The channel name that is to be read.</DD>
+ * <DT>`-f cachefile`, `--frame-cache=cachefile`</DT>
+ * <DD>The cachefile indexing the frame files to be used.</DD>
+ * <DT>`-g globstring `, `--frame-glob=globstring`</DT>
+ * <DD>The globstring identifying the frame files to be used.</DD>
+ * <DT>`-s tstart`, `--start-time=tstart`</DT>
+ * <DD>The time `tstart` GPS seconds of the data to read.</DD>
+ * <DT>`-t deltat`, `--duration=deltat`</DT>
+ * <DD>The duration `deltat` in seconds of data to read.</DD>
+ * </DL>
+ *
+ * ### Environment
+ * 
+ * The `LAL_DEBUG_LEVEL` can used to control the error and warning reporting of
+ * `lalfr-stream`.  Common values are: `LAL_DEBUG_LEVEL=0` which suppresses
+ * error messages, `LAL_DEBUG_LEVEL=1`  which prints error messages alone,
+ * `LAL_DEBUG_LEVEL=3` which prints both error messages and warning messages,
+ * and `LAL_DEBUG_LEVEL=7` which additionally prints informational messages.
+ *
+ *
+ * ### Exit Status
+ *
+ * The `lalfr-stream` utility exits 0 on success, and >0 if an error occurs.
+ *
+ * ### Examples
+ * 
+ * The command:
+ * 
+ *     lalfr-stream -c H1:LSC-STRAIN -g "H-*.gwf" -s 1000000000 -t 1000
+ *
+ * will stream 1000 seconds of `H1:LSC-STRAIN` data beginning at GPS time
+ * 1000000000 from frame files matching `H-*.gwf` in the current directory.
+ *
+ * @sa @ref lalfr_vis
+ */
+
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>

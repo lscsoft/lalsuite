@@ -17,6 +17,49 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * @defgroup lalfr_fmt lalfr-fmt
+ * @ingroup lalframe_programs
+ *
+ * @brief Formats multicolumn text files into channels in a frame file
+ *
+ * ### Synopsis
+ *
+ *     lalfr-fmt [file ...]
+ *
+ * ### Description
+ *
+ * The `lalfr-fmt` utility reads each multicolumn input `file` file and formats
+ * the columns into different channels that are output as a frame file to the
+ * standard output.  The `file` operands are processed in command-line order.
+ * If `file` is a single dash (`-`) or absent, `lalfr-fmt` reads from the
+ * standard input.
+ * 
+ * If `file` contains only one column of data, each row is interpreted as a
+ * sample of a single channel having a sample rate of 16384 Hz.  If there are
+ * more than one column in `file` then the first column is interpreted as the
+ * GPS time of each sample.  The remaining columns then describe the samples
+ * for separate channels.  The output channels are named `C01`, `C02`, etc.
+ *
+ * ### Examples
+ *
+ * The command:
+ *
+ *     seq 0 0.02 99.98 | paste - - - - - | lalfr-fmt > file.gwf
+ *
+ * produces a frame file `file.gwf` containing four channels named `C01`,
+ * `C02`, `C03`, and `C04`, each with a sample rate of 10 Hz.
+ *
+ * The command:
+ *
+ *     lalsim-detector-noise -s 1000000000 -t 64 --aligo-zerodet-high-power | lalfr-fmt > noise.gwf
+ *
+ * produces a frame file `noise.gwf` containing 64 seconds of simulated aLIGO
+ * noise.
+ *
+ * @sa @ref lalfr_print
+ */
+
 #include <limits.h>
 #include <math.h>
 #include <stdio.h>
