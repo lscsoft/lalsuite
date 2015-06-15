@@ -58,12 +58,13 @@
 #include <lal/BinaryPulsarTiming.h>
 #include <lal/Window.h>
 #include <lal/LALString.h>
+#include <lal/LALCache.h>
 
 #include <lal/TransientCW_utils.h>
 #include <lal/CWMakeFakeData.h>
-
 #ifdef HAVE_LIBLALFRAME
 #include <lal/LALFrameIO.h>
+#include <lal/LALFrStream.h>
 #endif
 
 #include <lalapps.h>
@@ -83,9 +84,11 @@ typedef struct
 
   SFTCatalog *noiseCatalog; 			/**< catalog of noise-SFTs */
   MultiSFTCatalogView *multiNoiseCatalogView; 	/**< multi-IFO 'view' of noise-SFT catalogs */
+  MultiREAL8TimeSeries *inputMultiTS;	/**< 'input' time-series to add other stuff to, and output as frames or SFTs */
 
   transientWindow_t transientWindow;	/**< properties of transient-signal window */
   CHAR *VCSInfoString;          /**< LAL + LALapps Git version string */
+  CHAR *outFrameDir;			/**< output frame directory */
 } ConfigVars_t;
 
 // ----- User variables
@@ -95,12 +98,11 @@ typedef struct
 
   /* output */
   CHAR *outSFTdir;		/**< Output directory for SFTs */
-  CHAR *outLabel;		/**< 'misc' entry in SFT-filenames, description entry of frame filenames */
-
+  CHAR *outLabel;		/**< 'misc' entry in SFT-filenames, and description entry of output frame filenames */
+  CHAR *outFrameDir;		/**< directory for writing output timeseries in frame files */
   BOOLEAN outSingleSFT;	        /**< use to output a single concatenated SFT */
 
   CHAR *TDDfile;		/**< Filename for ASCII output time-series */
-  CHAR *TDDframedir;		/**< directory for frame file output time-series */
   CHAR *logfile;		/**< name of logfile */
 
   /* specify start + duration */
@@ -123,6 +125,9 @@ typedef struct
 
   CHAR *noiseSFTs;		/**< Glob-like pattern specifying noise-SFTs to be added to signal */
 
+  LALStringVector *inFrames;	/**< frame glob-patterns or cache files of time-series data to be added to output (one per IFO) */
+  LALStringVector *inFrChannels;/**< list of frame channels to read time-series data from (one per IFO) */
+
   /* Window function [OPTIONAL] */
   CHAR *SFTWindowType;		/**< Windowing function to apply to the SFT time series */
   REAL8 SFTWindowBeta;         	/**< 'beta' parameter required for certain window-types */
@@ -137,6 +142,8 @@ typedef struct
 
   INT4 randSeed;		/**< allow user to specify random-number seed for reproducible noise-realizations */
 
+  // ---------- DEPRECATED and DEFUNCT options ----------
+  CHAR *TDDframedir;		/**< DEPRECATED: use outFrameDir instead */
 } UserVariables_t;
 
 
@@ -173,7 +180,7 @@ main(int argc, char *argv[])
   XLAL_CHECK ( XLALInitMakefakedata ( &GV, &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   MultiSFTVector *mSFTs = NULL;
-  MultiREAL4TimeSeries *mTseries = NULL;
+  MultiREAL8TimeSeries *mTseries = NULL;
 
   PulsarParamsVector *injectionSources = NULL;
   if ( uvar.injectionSources ) {
@@ -181,14 +188,24 @@ main(int argc, char *argv[])
   }
 
   CWMFDataParams XLAL_INIT_DECL(DataParams);
-  DataParams.fMin               = uvar.fmin;
-  DataParams.Band               = uvar.Band;
   DataParams.multiIFO           = GV.multiIFO;
   DataParams.multiNoiseFloor    = GV.multiNoiseFloor;
   DataParams.multiTimestamps 	= (*GV.multiTimestamps);
   DataParams.randSeed           = uvar.randSeed;
   DataParams.SFTWindowType      = uvar.SFTWindowType;
   DataParams.SFTWindowBeta      = uvar.SFTWindowBeta;
+  if ( GV.inputMultiTS == NULL )
+    {
+      DataParams.fMin               = uvar.fmin;
+      DataParams.Band               = uvar.Band;
+      DataParams.inputMultiTS       = NULL;
+    }
+  else // current limitation: FIXME
+    {
+      DataParams.fMin               = 0;
+      DataParams.Band               = 0;
+      DataParams.inputMultiTS       = GV.inputMultiTS;
+    }
 
   XLAL_CHECK ( XLALCWMakeFakeMultiData ( &mSFTs, &mTseries, injectionSources, &DataParams, GV.edat ) == XLAL_SUCCESS, XLAL_EFUNC );
 
@@ -241,20 +258,15 @@ main(int argc, char *argv[])
    /* output ASCII time-series if requested */
   if ( uvar.TDDfile )
     {
-      FILE *fp;
       CHAR *fname = XLALCalloc (1, len = strlen(uvar.TDDfile) + 10 );
       XLAL_CHECK ( fname != NULL, XLAL_ENOMEM, "XLALCalloc(1,%zu) failed\n", len );
 
       for ( UINT4 X=0; X < mTseries->length; X ++ )
         {
-          const REAL4TimeSeries *TS = mTseries->data[X];
+          const REAL8TimeSeries *TS = mTseries->data[X];
           sprintf (fname, "%c%c-%s", TS->name[0], TS->name[1], uvar.TDDfile );
+          XLAL_CHECK ( XLALdumpREAL8TimeSeries ( fname, TS ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-          XLAL_CHECK ( (fp = fopen (fname, "wb")) != NULL, XLAL_EIO, "Failed to fopen TDDfile = '%s' for writing\n", fname );
-
-          XLAL_CHECK ( XLALWriteREAL4TimeSeries2fp ( fp, TS ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-	  fclose(fp);
         } // for X < numDet
 
       XLALFree (fname);
@@ -262,17 +274,17 @@ main(int argc, char *argv[])
 
   /* output time-series to frames if requested */
 #ifdef HAVE_LIBLALFRAME
-  if ( uvar.TDDframedir )
+  if ( GV.outFrameDir != NULL )
     {
       XLAL_CHECK ( XLALCheckValidDescriptionField ( uvar.outLabel ) == XLAL_SUCCESS, XLAL_EFUNC );
-      len = strlen(uvar.TDDframedir) + strlen(uvar.outLabel) + 100;
+      len = strlen(GV.outFrameDir) + strlen(uvar.outLabel) + 100;
       char *fname;
 
       char *hist = XLALUserVarGetLog (UVAR_LOGFMT_CMDLINE);
 
       for ( UINT4 X=0; X < mTseries->length; X ++ )
         {
-          REAL4TimeSeries *Tseries = mTseries->data[X];
+          REAL8TimeSeries *Tseries = mTseries->data[X];
 
           /* use standard frame output filename format */
           char IFO[2] = { Tseries->name[0], Tseries->name[1] };
@@ -280,7 +292,7 @@ main(int argc, char *argv[])
           REAL8 duration = Tseries->data->length * Tseries->deltaT;
           XLAL_CHECK ( (fname = LALCalloc (1, len )) != NULL, XLAL_ENOMEM );
           size_t written = snprintf ( fname, len, "%s/%c-%c%c_%s-%d-%d.gwf",
-                                      uvar.TDDframedir, IFO[0], IFO[0], IFO[1], uvar.outLabel, startTimeGPS.gpsSeconds, (int)duration );
+                                      GV.outFrameDir, IFO[0], IFO[0], IFO[1], uvar.outLabel, startTimeGPS.gpsSeconds, (int)duration );
           XLAL_CHECK ( written < len, XLAL_ESIZE, "Frame-filename exceeds expected maximal length (%zu): '%s'\n", len, fname );
 
           /* define the output frame */
@@ -293,7 +305,7 @@ main(int argc, char *argv[])
           XLAL_CHECK ( written < LALNameLength, XLAL_ESIZE, "Updated frame name exceeds max length (%d): '%s'\n", LALNameLength, buffer );
           strcpy ( Tseries->name, buffer );
 
-          XLAL_CHECK ( (XLALFrameAddREAL4TimeSeriesProcData ( outFrame, Tseries ) == XLAL_SUCCESS ) , XLAL_EFUNC );
+          XLAL_CHECK ( (XLALFrameAddREAL8TimeSeriesProcData ( outFrame, Tseries ) == XLAL_SUCCESS ) , XLAL_EFUNC );
 
           /* Here's where we add extra information into the frame - first we add the command line args used to generate it */
           XLALFrameAddFrHistory ( outFrame, __FILE__, hist );
@@ -312,11 +324,11 @@ main(int argc, char *argv[])
 
       XLALFree ( hist );
 
-    } /* if uvar.TDDframedir: outputting time-series to frames */
+    } /* if GV.outFrameDir: outputting time-series to frames */
 #endif // HAVE_LIBLALFRAME
 
   /* ---------- free memory ---------- */
-  XLALDestroyMultiREAL4TimeSeries ( mTseries );
+  XLALDestroyMultiREAL8TimeSeries ( mTseries );
   XLALDestroyMultiSFTVector ( mSFTs );
 
   XLALFreeMem ( &GV );	/* free the config-struct */
@@ -351,22 +363,36 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
     XLAL_CHECK ( XLALWriteMFDlog ( uvar->logfile, cfg ) == XLAL_SUCCESS, XLAL_EFUNC, "XLALWriteMFDlog() failed with xlalErrno = %d\n", xlalErrno );
   }
 
-   /* check for negative fMin and Band, which would break the fMin_eff, fBand_eff calculation below */
+  /* Init ephemerides */
+  XLAL_CHECK ( (cfg->edat = XLALInitBarycenter ( uvar->ephemEarth, uvar->ephemSun )) != NULL, XLAL_EFUNC );
+
+  /* check for negative fMin and Band, which would break the fMin_eff, fBand_eff calculation below */
   XLAL_CHECK ( uvar->fmin >= 0, XLAL_EDOM, "Invalid negative frequency fMin=%f!\n\n", uvar->fmin );
   XLAL_CHECK ( uvar->Band > 0, XLAL_EDOM, "Invalid non-positive frequency band Band=%f!\n\n", uvar->Band );
 
-  // ----- check user-input consistency:
-  // IFOs : either from --IFOs user-input, or from --noiseSFTs
-  BOOLEAN have_IFOs = (uvar->IFOs != NULL);
-  BOOLEAN have_noiseSFTs = (uvar->noiseSFTs != NULL);
-  XLAL_CHECK ( have_IFOs || have_noiseSFTs, XLAL_EINVAL, "Need one of --IFOs input or --noiseSFTs to determine detectors\n" );
-  XLAL_CHECK ( ! ( have_IFOs && have_noiseSFTs ), XLAL_EINVAL, "Allow only *one* of --IFOs or --noiseSFTs to determine detectors\n");
+  // ---------- check user-input consistency ----------
 
+  // ----- check if frames + frame channels given
+  BOOLEAN have_frames  = (uvar->inFrames != NULL);
+  BOOLEAN have_channels= (uvar->inFrChannels != NULL);
+  XLAL_CHECK ( !(have_frames || have_channels) || (have_frames && have_channels), XLAL_EINVAL, "Need both --inFrames and --inFrChannels, or NONE\n");
+
+  // ----- IFOs : only from one of {--IFOs, --noiseSFTs, --inFrChannels}: mutually exclusive
+  BOOLEAN have_IFOs      = (uvar->IFOs != NULL);
+  BOOLEAN have_noiseSFTs = (uvar->noiseSFTs != NULL);
+  XLAL_CHECK ( have_frames || have_IFOs || have_noiseSFTs, XLAL_EINVAL, "Need one of --IFOs, --noiseSFTs or --inFrChannels to determine detectors\n");
+
+  if ( have_frames ) {
+    XLAL_CHECK ( !have_IFOs && !have_noiseSFTs, XLAL_EINVAL, "If --inFrames given, cannot handle --IFOs or --noiseSFTs input\n");
+    XLAL_CHECK ( XLALParseMultiLALDetector ( &(cfg->multiIFO), uvar->inFrChannels ) == XLAL_SUCCESS, XLAL_EFUNC );
+  } else { // !have_frames
+    XLAL_CHECK ( !(have_IFOs && have_noiseSFTs), XLAL_EINVAL, "Cannot handle both --IFOs and --noiseSFTs input\n");
+  }
   if ( have_IFOs ) {
     XLAL_CHECK ( XLALParseMultiLALDetector ( &(cfg->multiIFO), uvar->IFOs ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
-  // TIMESTAMPS: either from --timestampsFiles, --startTime+duration, or --noiseSFTs
+  // ----- TIMESTAMPS: either from --timestampsFiles, --startTime+duration, or --noiseSFTs
   BOOLEAN have_startTime = XLALUserVarWasSet ( &uvar->startTime );
   BOOLEAN have_duration = XLALUserVarWasSet ( &uvar->duration );
   BOOLEAN have_timestampsFiles = ( uvar->timestampsFiles != NULL );
@@ -415,8 +441,6 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 
       XLAL_CHECK ( (cfg->multiTimestamps->length > 0) && (cfg->multiTimestamps->data != NULL), XLAL_EINVAL, "Got empty timestamps-list from XLALReadMultiTimestampsFiles()\n" );
 
-      XLAL_CHECK ( have_IFOs, XLAL_EINVAL, "Need --IFOs with --timestampsFiles\n" );	// paranoia check
-
       for ( UINT4 X=0; X < cfg->multiTimestamps->length; X ++ ) {
         cfg->multiTimestamps->data[X]->deltaT = uvar->Tsft;	// Tsft information not given by timestamps-file
       }
@@ -437,12 +461,45 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
     // values remain at their default sqrtSn[X] = 0;
   }
 
-  /* Init ephemerides */
-  XLAL_CHECK ( (cfg->edat = XLALInitBarycenter ( uvar->ephemEarth, uvar->ephemSun )) != NULL, XLAL_EFUNC );
+#ifdef HAVE_LIBLALFRAME
+  // if user requested time-series data from frames to be added: try to read the frames now
+  if ( have_frames )
+    {
+      UINT4 numDetectors = uvar->inFrChannels->length;
+      XLAL_CHECK ( uvar->inFrames->length == numDetectors, XLAL_EINVAL, "Need equal number of channel names (%d) as frame specifications (%d)\n", uvar->inFrChannels->length, numDetectors );
 
-#ifndef HAVE_LIBLALFRAME
+      XLAL_CHECK ( (cfg->inputMultiTS = XLALCalloc ( 1, sizeof(*cfg->inputMultiTS))) != NULL, XLAL_ENOMEM );
+      cfg->inputMultiTS->length = numDetectors;
+      XLAL_CHECK ( (cfg->inputMultiTS->data = XLALCalloc ( numDetectors, sizeof(cfg->inputMultiTS->data[0]) )) != NULL, XLAL_ENOMEM );
+      for ( UINT4 X = 0; X < numDetectors; X ++ )
+        {
+          const LIGOTimeGPSVector *timestampsX = cfg->multiTimestamps->data[X];
+          LALCache *cache;
+          XLAL_CHECK ( (cache = XLALCacheImport ( uvar->inFrames->data[X] )) != NULL, XLAL_EFUNC, "Failed to import cache file '%s'\n", uvar->inFrames->data[X] );
+          LALFrStream *stream;
+          XLAL_CHECK ( (stream = XLALFrStreamCacheOpen ( cache )) != NULL, XLAL_EFUNC, "Failed to open stream from cache file '%s'\n", uvar->inFrames->data[X] );
+          XLALDestroyCache ( cache );
+
+          LIGOTimeGPS *start = &timestampsX->data[0];
+          LIGOTimeGPS *end   = &timestampsX->data[timestampsX->length-1];
+          REAL8 duration = XLALGPSDiff ( end, start ) + timestampsX->deltaT;
+          const char *channel = uvar->inFrChannels->data[X];
+          size_t limit = 0;	// unlimited read
+          REAL8TimeSeries *ts;
+          XLAL_CHECK ( (ts = XLALFrStreamInputREAL8TimeSeries ( stream, channel, start, duration, limit )) != NULL,
+                       XLAL_EFUNC, "Frame reading failed for '%s'\n", uvar->inFrames->data[X] );
+          cfg->inputMultiTS->data[X] = ts;
+
+          XLAL_CHECK ( XLALFrStreamClose ( stream ) == XLAL_SUCCESS, XLAL_EFUNC, "Stream closing failed for cache file '%s'\n", uvar->inFrames->data[X] );
+        } // for X < numDetectors
+    } // if inFrames
+
+  // if user requested timeseries *output* to frame files, handle deprecated options
+  XLAL_CHECK ( !(uvar->TDDframedir && uvar->outFrameDir), XLAL_EINVAL, "Specify only ONE of {--TDDframedir or --outFrameDir} or NONE\n");
   if ( uvar->TDDframedir ) {
-    XLAL_ERROR ( XLAL_EINVAL, "--TDDframedir option not supported, code has to be compiled with lalframe\n" );
+    cfg->outFrameDir = uvar->TDDframedir;
+  } else if ( uvar->outFrameDir ) {
+    cfg->outFrameDir = uvar->outFrameDir;
   }
 #endif
 
@@ -478,11 +535,13 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
 
   /* output options */
   XLALregBOOLUserStruct (   outSingleSFT,       's', UVAR_OPTIONAL, "Write a single concatenated SFT file instead of individual files" );
-  XLALregSTRINGUserStruct ( outSFTdir,          'n', UVAR_OPTIONAL, "Output SFTs:  Output directory for SFTs");
+  XLALregSTRINGUserStruct ( outSFTdir,          'n', UVAR_OPTIONAL, "Output SFTs:  directory for output SFTs");
   XLALregSTRINGUserStruct(  outLabel,	         0, UVAR_OPTIONAL, "'misc' entry in SFT-filenames or 'description' entry of frame filenames" );
+#ifdef HAVE_LIBLALFRAME
+  XLALRegisterUvarMember ( outFrameDir,	STRING, 'F', OPTIONAL,      "Output Frames: directory for output timeseries frame files");
+#endif
 
   XLALregSTRINGUserStruct ( TDDfile,            't', UVAR_OPTIONAL, "Filename to output time-series into");
-  XLALregSTRINGUserStruct ( TDDframedir,	'F', UVAR_OPTIONAL, "Directory to output frame time-series into");
 
   XLALregSTRINGUserStruct ( logfile,            'l', UVAR_OPTIONAL, "Filename for log-output");
 
@@ -514,10 +573,28 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   /* noise */
   XLALregSTRINGUserStruct ( noiseSFTs,          'D', UVAR_OPTIONAL, "Noise-SFTs to be added to signal (Used also to set IFOs and timestamps)");
 
+#ifdef HAVE_LIBLALFRAME
+  XLALRegisterUvarMember ( inFrames, 	 STRINGVector,'C', OPTIONAL,  "CSV list (one per IFO) of input frame cache files");
+  XLALRegisterUvarMember ( inFrChannels, STRINGVector,'N', OPTIONAL,  "CSV list (one per IFO) of frame channels to read timeseries from");
+#endif
+
   XLALregBOOLUserStruct (  version,             'V', UVAR_SPECIAL, "Output version information");
 
-  /* ----- 'expert-user/developer' options ----- */
+  // ----- 'expert-user/developer' options ----- (only shown in help at lalDebugLevel >= warning)
   XLALregINTUserStruct (   randSeed,             0, UVAR_DEVELOPER, "Specify random-number seed for reproducible noise (0 means use /dev/urandom for seeding).");
+
+  // ----- deprecated but still supported options [throw warning if used] (only shown in help at lalDebugLevel >= info) ----------
+#ifdef HAVE_LIBLALFRAME
+  XLALRegisterUvarMember ( TDDframedir,	STRING,  0, DEPRECATED, "Use --outFrameDir instead");
+#endif
+
+  // ----- obsolete and unsupported options [throw error if used] (never shown in help) ----------
+#if !defined(HAVE_LIBLALFRAME)
+  XLALRegisterUvarMember ( outFrameDir,	 STRING,       'F', DEFUNCT, "Need to compile with lalframe support for this option to work");
+  XLALRegisterUvarMember ( TDDframedir,	 STRING,        0,  DEFUNCT, "Need to compile with lalframe support for this option to work");
+  XLALRegisterUvarMember ( inFrames,     STRINGVector, 'C', DEFUNCT, "Need to compile with lalframe support for this option to work");
+  XLALRegisterUvarMember ( inFrChannels, STRINGVector, 'N', DEFUNCT, "Need to compile with lalframe support for this option to work");
+#endif
 
   /* read cmdline & cfgfile  */
   ret = XLALUserVarReadAllInput ( argc, argv );
@@ -551,6 +628,9 @@ XLALFreeMem ( ConfigVars_t *cfg )
   // free noise-SFT catalog
   XLALDestroySFTCatalog ( cfg->noiseCatalog );
   XLALDestroyMultiSFTCatalogView ( cfg->multiNoiseCatalogView );
+
+  // free noise time-series data
+  XLALDestroyMultiREAL8TimeSeries ( cfg->inputMultiTS );
 
   /* Clean up earth/sun Ephemeris tables */
   XLALDestroyEphemerisData ( cfg->edat );

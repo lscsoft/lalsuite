@@ -185,7 +185,7 @@ typedef struct tagREAL4FrequencySeriesVector {
   REAL4FrequencySeries   *data;
 } REAL4FrequencySeriesVector;
 
-/** A collection of (multi-IFO) time-series */
+/** A collection of (multi-IFO) REAL4 time-series */
 typedef struct tagMultiREAL4TimeSeries {
 #ifdef SWIG /* SWIG interface directives */
   SWIGLAL(ARRAY_1D(MultiREAL4TimeSeries, REAL4TimeSeries*, data, UINT4, length));
@@ -194,6 +194,14 @@ typedef struct tagMultiREAL4TimeSeries {
   REAL4TimeSeries **data;	/**< vector of REAL4 timeseries */
 } MultiREAL4TimeSeries;
 
+/** A collection of (multi-IFO) REAL8 time-series */
+typedef struct tagMultiREAL8TimeSeries {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL(ARRAY_1D(MultiREAL8TimeSeries, REAL8TimeSeries*, data, UINT4, length));
+#endif /* SWIG */
+  UINT4 length;			/**< number of ifos */
+  REAL8TimeSeries **data;	/**< vector of REAL8 timeseries */
+} MultiREAL8TimeSeries;
 
 /** A vector of 'timestamps' of type LIGOTimeGPS */
 typedef struct tagLIGOTimeGPSVector {
