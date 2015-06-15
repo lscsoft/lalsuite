@@ -32,7 +32,6 @@ extern "C" {
 #endif
 
 struct tagLALFrFile;
-struct tagLALFrameUFrameH;
 
 /**
  * @defgroup LALFrameIO_h Header LALFrameIO.h
@@ -522,7 +521,7 @@ COMPLEX16FrequencySeries *XLALFrFileReadCOMPLEX16FrequencySeries(LALFrFile * frf
  * Gravitational Wave Detectors (IGWD)</em>
  * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
  */
-typedef struct tagLALFrameUFrameH LALFrameH;
+typedef LALFrameUFrameH LALFrameH;
 
 /**
  * @name Basic Frame Writing Routines
