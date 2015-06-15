@@ -268,10 +268,9 @@ void randomise_data( LALInferenceIFOModel *model, gsl_rng *r ){
 
     /* total length of chunks */
     REAL8 totLength = (REAL8)(i-1)*dt;
-    fprintf(stderr, "totlength = %lf, dur = %lf\n", totLength, dur);
+
     /* split remaining times up randomly to get intervals between chunks */
     REAL8 tremaining = dur - totLength;
-    fprintf(stderr, "t remaining = %lf\n", tremaining);
     REAL8Vector *timeintervals = NULL;
     timeintervals = XLALCreateREAL8Vector( nchunks );
     timeintervals->data[0] = 0.;
@@ -284,8 +283,6 @@ void randomise_data( LALInferenceIFOModel *model, gsl_rng *r ){
       UINT4 chunkpos = 0;
 
       for ( k = 0; k < p->data[i]; k++ ){ chunkpos += chunkLengths->data[k]; }
-
-      fprintf(stderr, "p->data[%d] = %zu, chunkstarts = %lf, chunksdurs = %lf\n", i, p->data[i], chunkstarts->data[p->data[i]], chunkdurs->data[p->data[i]]);
 
       for ( j = chunkpos; j < chunkpos+chunkLength ; j++ ){
         REAL8 tmptime = XLALGPSGetREAL8( &model->times->data[j] );

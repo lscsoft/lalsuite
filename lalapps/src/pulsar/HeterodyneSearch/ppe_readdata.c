@@ -772,7 +772,14 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
       else{ chunkLength = get_chunk_lengths( modeltmp, chunkMax ); }
     }
     /* use new change points analysis to get chunks */
-    else { chunkLength = chop_n_merge( datatmp, chunkMin, chunkMax ); }
+    else {
+      /* if sigma's have been input then there is just one chunk with a length of the full dataset */
+      if ( inputsigma ){
+        chunkLength = XLALCreateUINT4Vector( 1 );
+        chunkLength->data[0] = datatmp->varTimeData->data->length;
+      }
+      else{ chunkLength = chop_n_merge( datatmp, chunkMin, chunkMax ); }
+    }
 
     LALInferenceAddVariable( modeltmp->params, "chunkLength", &chunkLength, LALINFERENCE_UINT4Vector_t,
                              LALINFERENCE_PARAM_FIXED );
