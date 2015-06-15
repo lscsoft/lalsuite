@@ -628,7 +628,7 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
       /* check whether to randomise the data by shuffling the time stamps (this will preserve the order of
        * the data for working out stationary chunk, but randomise the signal) */
       if ( LALInferenceGetProcParamVal( commandLine, "--randomise" ) ){
-        gsl_ran_shuffle( runState->GSLrandom, &ifomodel->times->data, (size_t)datalength, sizeof(LIGOTimeGPS) );
+        gsl_ran_shuffle( runState->GSLrandom, &ifomodel->times->data[0], (size_t)datalength, sizeof(LIGOTimeGPS) );
       }
 
       /* add data sample interval */
