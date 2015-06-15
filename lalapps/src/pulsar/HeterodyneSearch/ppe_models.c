@@ -66,7 +66,7 @@ void get_pulsar_model( LALInferenceModel *model ){
   else if ( LALInferenceCheckVariable( model->ifo->params, "nonGR" ) ){
     /* speed of GWs as (1 - fraction of speed of light LAL_C_SI) */
     pars.cgw = rescale_parameter( model, model->ifo, "CGW" );
- 
+
     /* amplitudes for use with non-GR searches */
     /* tensor modes */
     pars.hPlus = rescale_parameter( model, model->ifo, "HPLUS" );
@@ -84,7 +84,7 @@ void get_pulsar_model( LALInferenceModel *model ){
     pars.psiVector = rescale_parameter( model, model->ifo, "PSIVECTOR" );
     pars.phi0Tensor = rescale_parameter( model, model->ifo, "PHI0TENSOR" );
     pars.psiTensor = rescale_parameter( model, model->ifo, "PSITENSOR" );
-    
+
     /* parameters that might be needed for particular models */
     pars.h0 = rescale_parameter( model, model->ifo, "H0" );
     pars.iota = rescale_parameter( model, model->ifo, "IOTA" );
@@ -93,7 +93,7 @@ void get_pulsar_model( LALInferenceModel *model ){
     if ( LALInferenceCheckVariable( model->ifo->params, "nonGRmodel" ) ){
       char* nonGRmodel;
       nonGRmodel = *(char**)LALInferenceGetVariable( model->ifo->params, "nonGRmodel" );
-      set_nonGR_model_parameters( &pars, nonGRmodel ); 
+      set_nonGR_model_parameters( &pars, nonGRmodel );
     }
   }
   else{
@@ -1198,6 +1198,10 @@ void response_lookup_table( REAL8 t0, LALDetAndSource detNSource, INT4 timeSteps
 
   INT4 j = 0, k = 0, nav = 0;
 
+  /* number of points to average */
+  if ( avedt == 60. ) { nav = 1; }
+  else{ nav = floor(avedt/60.) + 1; }
+
   /* set the polarisation angle to zero to get the a(t) and b(t) antenna pattern functions */
   detNSource.pSource->orientation = 0.0;
 
@@ -1208,9 +1212,6 @@ void response_lookup_table( REAL8 t0, LALDetAndSource detNSource, INT4 timeSteps
     bV->data[j] = 0.;
     aS->data[j] = 0.;
     bS->data[j] = 0.;
-
-    /* number of points to average */
-    nav = floor(avedt/60.) + 1;
 
     /* central time of lookup table point */
     T = t0 + (REAL8)j*LAL_DAYSID_SI / tsteps;

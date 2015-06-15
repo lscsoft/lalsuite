@@ -209,7 +209,8 @@ extern "C" {
 " --nonGR             Set to allow non-GR polarisation modes and/or a variable\n\
                      speed of gravitational waves.\n"\
 " --randomise         Set this to randomise the data (through permutations of the\n\
-                     time stamps) for use in Monte-Carlo studies.\n"\
+                     time stamps) for use in Monte-Carlo studies. NOTE: this will not\n\
+                     work if using the code to create injections.\n"\
 "\n"\
 " Nested sampling parameters:\n"\
 " --Nlive             (INT4) no. of live points for nested sampling\n"\

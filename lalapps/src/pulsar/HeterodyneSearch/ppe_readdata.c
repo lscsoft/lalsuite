@@ -604,6 +604,8 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
       ifomodel->times = NULL;
       ifomodel->times = XLALCreateTimestampVector( datalength );
 
+      UINT4 epochint = 0; /* index of the earliest time in the data */
+
       /* fill in time stamps as LIGO Time GPS Vector */
       REAL8 sampledt = INFINITY; /* sample interval */
       for ( k = 0; k < datalength; k++ ) {
@@ -615,11 +617,19 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
             sampledt = temptimes->data[k] - temptimes->data[k-1];
           }
         }
+
+        if ( temptimes->data[epochint] < temptimes->data[k] ){ epochint = k; }
       }
 
-      ifodata->compTimeData->epoch = ifomodel->times->data[0];
-      ifomodel->compTimeSignal->epoch = ifomodel->times->data[0];
-      ifodata->varTimeData->epoch = ifomodel->times->data[0];
+      ifodata->compTimeData->epoch = ifomodel->times->data[epochint];
+      ifomodel->compTimeSignal->epoch = ifomodel->times->data[epochint];
+      ifodata->varTimeData->epoch = ifomodel->times->data[epochint];
+
+      /* check whether to randomise the data by shuffling the time stamps (this will preserve the order of
+       * the data for working out stationary chunk, but randomise the signal) */
+      if ( LALInferenceGetProcParamVal( commandLine, "--randomise" ) ){
+        gsl_ran_shuffle( runState->GSLrandom, &ifomodel->times->data, (size_t)datalength, sizeof(LIGOTimeGPS) );
+      }
 
       /* add data sample interval */
       ppt = LALInferenceGetProcParamVal( commandLine, "--sample-interval" );
@@ -804,12 +814,6 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
     /* set whether using Gaussian likelihood */
     if ( gaussianLike ){
       LALInferenceAddVariable( modeltmp->params, "gaussianLikelihood", &gaussianLike, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
-    }
-
-    /* check whether to randomise the data */
-    if ( LALInferenceGetProcParamVal( commandLine, "--randomise" ) ){
-      /* randomise_data( datatmp, modeltmp, runState->GSLrandom ); */
-      randomise_data( modeltmp, runState->GSLrandom );
     }
 
     datatmp = datatmp->next;

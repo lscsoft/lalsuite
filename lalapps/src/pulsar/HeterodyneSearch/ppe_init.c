@@ -286,7 +286,7 @@ void setup_lookup_tables( LALInferenceRunState *runState, LALSource *source ){
 
     LALInferenceAddVariable( ifo_model->params, "timeSteps", &timeBins, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
 
-    t0 = XLALGPSGetREAL8( &ifo_model->times->data[0] );
+    t0 = XLALGPSGetREAL8( &data->compTimeData->epoch );
 
     sidDayFrac = XLALCreateREAL8Vector( ifo_model->times->length );
 
