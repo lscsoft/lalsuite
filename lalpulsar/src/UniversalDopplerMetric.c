@@ -134,9 +134,11 @@ static const struct {
   [DOPPLERCOORD_N3OY_ECL] = {"n3oy_ecl",SCALE_R/LAL_C_SI, "Y orbit-component of unconstrained super-sky position in ecliptic coordinates [Units: none]."},
   [DOPPLERCOORD_N3OZ_ECL] = {"n3oz_ecl",SCALE_R/LAL_C_SI, "Z orbit-component of unconstrained super-sky position in ecliptic coordinates [Units: none]."},
 
-  [DOPPLERCOORD_ASINI]    = {"asini",   1.,               "Projected semimajor axis of circular binary orbit [Units: s]."},
-  [DOPPLERCOORD_TASC]     = {"tasc",    1.,               "Time of ascension (NS crosses line of nodes moving away) for circular binary orbit [Units: s]."},
-  [DOPPLERCOORD_PORB]     = {"porb",    1.,               "Period of circular binary orbit [Units: s]."},
+  [DOPPLERCOORD_ASINI]    = {"asini",   1,                "Projected semimajor axis of binary orbit in small-eccentricy limit (ELL1 model) [Units: light seconds]."},
+  [DOPPLERCOORD_TASC]     = {"tasc",    1,                "Time of ascension (neutron star crosses line of nodes moving away from observer) for binary orbit (ELL1 model) [Units: GPS seconds]."},
+  [DOPPLERCOORD_PORB]     = {"porb",    1,                "Period of binary orbit (ELL1 model) [Units: s]."},
+  [DOPPLERCOORD_KAPPA]    = {"kappa", 	1,		  "Lagrange parameter 'kappa = ecc * cos(argp)', ('ecc' = eccentricity, 'argp' = argument of periapse) of binary orbit (ELL1 model) [Units: none]."},
+  [DOPPLERCOORD_ETA]      = {"eta",     1,                "Lagrange parameter 'eta = ecc * sin(argp) of binary orbit (ELL1 model) [Units: none]."}
 
 };
 
@@ -539,11 +541,18 @@ CW_Phi_i ( double tt, void *params )
     } /* if rOrb_n */
   EQU_VECT_TO_ECL( rr_ord_Ecl, rr_ord_Equ );	  /* convert into ecliptic coordinates */
 
-  /* Calculate orbital phase in radians (assumes circular orbit) */
+  // ---------- prepare shortcuts for binary orbital parameters ----------
+  // See Leaci, Prix, PRD91, 102003 (2015):  DOI:10.1103/PhysRevD.91.102003
   REAL8 orb_asini = par->dopplerPoint->asini;
   REAL8 orb_Omega = ( LAL_TWOPI / par->dopplerPoint->period );
-  REAL8 orb_phase = par->dopplerPoint->argp + orb_Omega * ( (tau*SCALE_T) - XLALGPSGetREAL8(&(par->dopplerPoint->tp)) );
-  REAL8 orb_phase = par->dopplerPoint->argp + orb_Omega * ( ttSI - XLALGPSGetREAL8 ( &(par->dopplerPoint->tp) ) );
+  REAL8 orb_kappa = par->dopplerPoint->ecc * cos ( par->dopplerPoint->argp );	// Eq.(33)
+  REAL8 orb_eta   = par->dopplerPoint->ecc * sin ( par->dopplerPoint->argp );	// Eq.(34)
+
+  REAL8 orb_phase = par->dopplerPoint->argp + orb_Omega * ( ttSI - XLALGPSGetREAL8 ( &(par->dopplerPoint->tp) ) ); // Eq.(35),(36)
+  REAL8 sinPsi  = sin ( orb_phase );
+  REAL8 cosPsi  = cos ( orb_phase );
+  REAL8 sin2Psi = sin ( 2.0 * orb_phase );
+  REAL8 cos2Psi = cos ( 2.0 * orb_phase );
 
   /* now compute the requested (possibly linear combination of) phase derivative(s) */
   REAL8 phase_deriv = 0.0;
@@ -648,16 +657,25 @@ CW_Phi_i ( double tt, void *params )
       ret = LAL_TWOPI * Freq * ecl_orbit_pos[2];
       break;
 
-    case DOPPLERCOORD_ASINI:	/**< Projected semimajor axis of circular binary orbit [Units: s]. */
-      ret = - LAL_TWOPI * Freq * sin(orb_phase);
+      // ---------- binary orbital parameters ----------
+      // Phase derivates taken from Eq.(39) in Leaci, Prix, PRD91, 102003 (2015):  DOI:10.1103/PhysRevD.91.102003
+    case DOPPLERCOORD_ASINI: /**< Projected semimajor axis of binary orbit in small-eccentricy limit (ELL1 model) [Units: light seconds]. */
+      ret = - LAL_TWOPI * Freq * ( sinPsi + 0.5 * orb_kappa * sin2Psi - 0.5 * orb_eta * cos2Psi );
       break;
-    case DOPPLERCOORD_TASC:	/**< Time of ascension (neutron star crosses line of nodes moving away from observer) for circular binary orbit [Units: s]. */
-      ret = LAL_TWOPI * Freq * orb_asini * orb_Omega * cos(orb_phase);
+    case DOPPLERCOORD_TASC: /**< Time of ascension (neutron star crosses line of nodes moving away from observer) for binary orbit (ELL1 model) [Units: GPS s]. */
+      ret = LAL_TWOPI * Freq * orb_asini * orb_Omega * ( cosPsi + orb_kappa * cos2Psi + orb_eta * sin2Psi );
       break;
-    case DOPPLERCOORD_PORB:	/**< Period of circular binary orbit [Units: s]. */
-      ret = Freq * orb_asini * orb_Omega * orb_phase * cos(orb_phase);
+    case DOPPLERCOORD_PORB: /**< Period of binary orbit (ELL1 model) [Units: s]. */
+      ret = Freq * orb_asini * orb_Omega * orb_phase *  ( cosPsi + orb_kappa * cos2Psi + orb_eta * sin2Psi );
+      break;
+    case DOPPLERCOORD_KAPPA: /**< Lagrange parameter 'kappa = ecc * cos(argp)', ('ecc' = eccentricity, 'argp' = argument of periapse) of binary orbit (ELL1 model) [Units: none] */
+      ret = - LAL_PI * Freq * orb_asini * sin2Psi;
+      break;
+    case DOPPLERCOORD_ETA: /**< Lagrange parameter 'eta = ecc * sin(argp) of binary orbit (ELL1 model) [Units: none] */
+      ret = LAL_PI * Freq * orb_asini * cos2Psi;
       break;
 
+      // ------------------------------------------------
     default:
       par->errnum = XLAL_EINVAL;
       XLALPrintError("%s: Unknown phase-derivative type '%d'\n", __func__, deriv );
@@ -890,7 +908,7 @@ XLALCovariance_Phi_ij ( const MultiLALDetector *multiIFO,		//!< [in] detectors t
 
   /* array of structs storing input and output info for GSL integration */
   UINT4 intN[Nseg][numDet];
-  typedef struct { 
+  typedef struct {
     intparams_t par;			/* integration parameters */
     double ti;				/* integration start time */
     double tf;				/* integration end time */
