@@ -83,6 +83,7 @@ typedef struct{
   CHAR    *pairListOutputFilename; /**< output filename to write list of sft index pairs */
   CHAR    *sftListOutputFilename;  /**< output filename to write list of sfts */
   CHAR    *sftListInputFilename;   /**< input filename to read in the  list of sfts and check the order of SFTs */
+  CHAR    *gammaAveOutputFilename; /**< output filename to write Gamma_ave = (aa+bb)/10 */
   CHAR    *toplistFilename;   /**< output filename containing candidates in toplist */
   BOOLEAN version;            /**<output version information*/
   CHAR    *logFilename;       /**< name of log file*/
@@ -136,7 +137,6 @@ int main(int argc, char *argv[]){
   REAL8 fMin, fMax; /* min and max frequencies read from SFTs */
   REAL8 deltaF; /* frequency resolution associated with time baseline of SFTs */
 
-  REAL8Vector *curlyGUnshifted = NULL;
   REAL8 diagff = 0; /*diagonal metric components*/
   REAL8 diagaa = 0;
   REAL8 diagTT = 0;
@@ -432,10 +432,26 @@ int main(int argc, char *argv[]){
   /* Get weighting factors for calculation of metric */
   /* note that the sigma-squared is now absorbed into the curly G
      because the AM coefficients are noise-weighted. */
-  if ( ( XLALCalculateAveCurlyGAmpUnshifted( &curlyGUnshifted, sftPairs, sftIndices, multiCoeffs)  != XLAL_SUCCESS ) ) {
+  REAL8Vector *GammaAve = NULL;
+  if ( ( XLALCalculateAveCurlyGAmpUnshifted( &GammaAve, sftPairs, sftIndices, multiCoeffs)  != XLAL_SUCCESS ) ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALCalculateAveCurlyGUnshifted() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
+
+#define PCC_GAMMA_HEADER "# The normalization Sinv_Tsft is %g #\n"
+#define PCC_GAMMA_BODY "%.10g\n"
+  if (XLALUserVarWasSet(&uvar.gammaAveOutputFilename)) { /* Write the aa+bb weight for each pair to a file, if a name was provided */
+    if((fp = fopen(uvar.gammaAveOutputFilename, "w")) == NULL) {
+      LogPrintf ( LOG_CRITICAL, "Can't write in Gamma_ave list \n");
+      XLAL_ERROR( XLAL_EFUNC );
+    }
+    fprintf(fp,PCC_GAMMA_HEADER, multiWeights->Sinv_Tsft); /*output the normalization factor to the header*/
+    for(j = 0; j < sftPairs->length; j++){
+      fprintf(fp,PCC_GAMMA_BODY, GammaAve->data[j]);
+    }
+    fclose(fp);
+  }
+
   /*initialize binary parameters structure*/
   XLAL_INIT_MEM(minBinaryTemplate);
   XLAL_INIT_MEM(maxBinaryTemplate);
@@ -464,7 +480,7 @@ int main(int argc, char *argv[]){
   thisBinaryTemplate.fkdot[0]=0.5*(minBinaryTemplate.fkdot[0] + maxBinaryTemplate.fkdot[0]);
 
   /*Get metric diagonal components, also estimate sensitivity i.e. E[rho]/(h0)^2 (4.13)*/
-  if ( (XLALFindLMXBCrossCorrDiagMetric(&estSens, &diagff, &diagaa, &diagTT, thisBinaryTemplate, curlyGUnshifted, sftPairs, sftIndices, inputSFTs, multiWeights /*, kappaValues*/)  != XLAL_SUCCESS ) ) {
+  if ( (XLALFindLMXBCrossCorrDiagMetric(&estSens, &diagff, &diagaa, &diagTT, thisBinaryTemplate, GammaAve, sftPairs, sftIndices, inputSFTs, multiWeights /*, kappaValues*/)  != XLAL_SUCCESS ) ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALFindLMXBCrossCorrDiagMetric() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
@@ -585,7 +601,7 @@ int main(int argc, char *argv[]){
 	XLAL_ERROR( XLAL_EFUNC );
       }
 
-      if ( (XLALCalculatePulsarCrossCorrStatistic( &ccStat, &evSquared, curlyGUnshifted, expSignalPhases, lowestBins, sincList, sftPairs, sftIndices, inputSFTs, multiWeights, uvar.numBins)  != XLAL_SUCCESS ) ) {
+      if ( (XLALCalculatePulsarCrossCorrStatistic( &ccStat, &evSquared, GammaAve, expSignalPhases, lowestBins, sincList, sftPairs, sftIndices, inputSFTs, multiWeights, uvar.numBins)  != XLAL_SUCCESS ) ) {
 	LogPrintf ( LOG_CRITICAL, "%s: XLALCalculatePulsarCrossCorrStatistic() failed with errno=%d\n", __func__, xlalErrno );
 	XLAL_ERROR( XLAL_EFUNC );
       }
@@ -658,7 +674,7 @@ int main(int argc, char *argv[]){
   XLALDestroyREAL8VectorSequence ( sincList );
   XLALDestroyMultiSSBtimes ( multiBinaryTimes );
   XLALDestroyMultiSSBtimes ( multiSSBTimes );
-  XLALDestroyREAL8Vector ( curlyGUnshifted );
+  XLALDestroyREAL8Vector ( GammaAve );
   XLALDestroySFTPairIndexList( sftPairs );
   XLALDestroySFTIndexList( sftIndices );
   XLALDestroyMultiAMCoeffs ( multiCoeffs );
@@ -773,6 +789,7 @@ int XLALInitUserVars (UserInput_t *uvar)
   XLALregSTRINGUserStruct( pairListOutputFilename, 0,  UVAR_OPTIONAL, "Name of file to which to write list of SFT pairs");
   XLALregSTRINGUserStruct( sftListOutputFilename, 0,  UVAR_OPTIONAL, "Name of file to which to write list of SFTs (for sanity checks)");
   XLALregSTRINGUserStruct( sftListInputFilename, 0,  UVAR_OPTIONAL, "Name of file to which to read in list of SFTs (for sanity checks)");
+  XLALregSTRINGUserStruct( gammaAveOutputFilename, 0,  UVAR_OPTIONAL, "Name of file to which to write aa+bb weights (for e.g., false alarm estimation)");
   XLALregSTRINGUserStruct( toplistFilename, 0,  UVAR_OPTIONAL, "Output filename containing candidates in toplist");
   XLALregSTRINGUserStruct( logFilename, 0,  UVAR_OPTIONAL, "Output a meta-data file for the search");
   XLALregBOOLUserStruct  ( version, 	   'V',  UVAR_SPECIAL, "Output version(VCS) information");
