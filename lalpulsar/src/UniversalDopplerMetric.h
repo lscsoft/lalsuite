@@ -145,6 +145,10 @@ typedef enum {
   DOPPLERCOORD_N3OY_ECL,	/**< Y orbit-component of unconstrained super-sky position in ecliptic coordinates [Units: none]. */
   DOPPLERCOORD_N3OZ_ECL,	/**< Z orbit-component of unconstrained super-sky position in ecliptic coordinates [Units: none]. */
 
+  DOPPLERCOORD_ASINI,		/**< Projected semimajor axis of circular binary orbit [Units: s]. */
+  DOPPLERCOORD_TASC,		/**< Time of ascension (neutron star crosses line of nodes moving away from observer) for circular binary orbit [Units: s]. */
+  DOPPLERCOORD_PORB,		/**< Period of circular binary orbit [Units: s]. */
+
   DOPPLERCOORD_LAST
 } DopplerCoordinateID;
 

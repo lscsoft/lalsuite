@@ -134,6 +134,10 @@ static const struct {
   [DOPPLERCOORD_N3OY_ECL] = {"n3oy_ecl",SCALE_R/LAL_C_SI, "Y orbit-component of unconstrained super-sky position in ecliptic coordinates [Units: none]."},
   [DOPPLERCOORD_N3OZ_ECL] = {"n3oz_ecl",SCALE_R/LAL_C_SI, "Z orbit-component of unconstrained super-sky position in ecliptic coordinates [Units: none]."},
 
+  [DOPPLERCOORD_ASINI]    = {"asini",   1.,               "Projected semimajor axis of circular binary orbit [Units: s]."},
+  [DOPPLERCOORD_TASC]     = {"tasc",    1.,               "Time of ascension (NS crosses line of nodes moving away) for circular binary orbit [Units: s]."},
+  [DOPPLERCOORD_PORB]     = {"porb",    1.,               "Period of circular binary orbit [Units: s]."},
+
 };
 
 /*---------- DEFINES ----------*/
@@ -535,6 +539,12 @@ CW_Phi_i ( double tt, void *params )
     } /* if rOrb_n */
   EQU_VECT_TO_ECL( rr_ord_Ecl, rr_ord_Equ );	  /* convert into ecliptic coordinates */
 
+  /* Calculate orbital phase in radians (assumes circular orbit) */
+  REAL8 orb_asini = par->dopplerPoint->asini;
+  REAL8 orb_Omega = ( LAL_TWOPI / par->dopplerPoint->period );
+  REAL8 orb_phase = par->dopplerPoint->argp + orb_Omega * ( (tau*SCALE_T) - XLALGPSGetREAL8(&(par->dopplerPoint->tp)) );
+  REAL8 orb_phase = par->dopplerPoint->argp + orb_Omega * ( ttSI - XLALGPSGetREAL8 ( &(par->dopplerPoint->tp) ) );
+
   /* now compute the requested (possibly linear combination of) phase derivative(s) */
   REAL8 phase_deriv = 0.0;
   for ( int coord = 0; coord < (int)par->coordSys->dim; ++coord ) {
@@ -636,6 +646,16 @@ CW_Phi_i ( double tt, void *params )
       break;
     case DOPPLERCOORD_N3OZ_ECL:	/**< Z orbit-component of unconstrained super-sky position in ecliptic coordinates [Units: none]. */
       ret = LAL_TWOPI * Freq * ecl_orbit_pos[2];
+      break;
+
+    case DOPPLERCOORD_ASINI:	/**< Projected semimajor axis of circular binary orbit [Units: s]. */
+      ret = - LAL_TWOPI * Freq * sin(orb_phase);
+      break;
+    case DOPPLERCOORD_TASC:	/**< Time of ascension (neutron star crosses line of nodes moving away from observer) for circular binary orbit [Units: s]. */
+      ret = LAL_TWOPI * Freq * orb_asini * orb_Omega * cos(orb_phase);
+      break;
+    case DOPPLERCOORD_PORB:	/**< Period of circular binary orbit [Units: s]. */
+      ret = Freq * orb_asini * orb_Omega * orb_phase * cos(orb_phase);
       break;
 
     default:
