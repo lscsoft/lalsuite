@@ -124,7 +124,7 @@ LIGOTimeGPS *XLALFrFileQueryGTime(LIGOTimeGPS * start, const LALFrFile * frfile,
  * @param[in] frfile Pointer to a #LALFrFile structure associated with a frame file.
  * @param[in] pos The index of the frame in the frame file.
  * @returns The duration of the frame file in seconds.
- * @retval #LAL_REAL8_FAIL_NAN Failure.
+ * @retval LAL_REAL8_FAIL_NAN Failure.
  */
 double XLALFrFileQueryDt(const LALFrFile * frfile, size_t pos);
 
