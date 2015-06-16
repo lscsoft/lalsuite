@@ -617,7 +617,7 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
           }
         }
 
-        if ( temptimes->data[epochint] < temptimes->data[k] ){ epochint = k; }
+        if ( temptimes->data[k] < temptimes->data[epochint] ){ epochint = k; }
       }
 
       ifodata->compTimeData->epoch = ifomodel->times->data[epochint];
