@@ -59,6 +59,7 @@ optp.add_option("--match-value", type=float, default=0.97, help="Use this as the
 
 # Options transferred to ILE
 optp.add_option("-C", "--channel-name", action="append", help="instrument=channel-name, e.g. H1=FAKE-STRAIN. Not required except to name the output file properly. Can be given multiple times for different instruments.")
+optp.add_option("-p", "--psd-file", action="append", help="instrument=psd-file-name e.g. H1=psd.xml.gz. Can be given multiple times for different instruments.")
 optp.add_option("-x", "--coinc-xml", help="gstlal_inspiral XML file containing coincidence information.")
 optp.add_option("-s", "--sim-xml", help="XML file containing injected event information.")
 
@@ -126,13 +127,30 @@ print "Computing marginalized likelihood in a neighborhood about intrinsic param
 #
 template_min_freq = 40.
 ip_min_freq = 40.
-eff_fisher_psd = lal.LIGOIPsd
-analyticPSD_Q = True
-# The next 4 lines set the maximum size of the region to explore
-min_mc_factor = 0.9
-max_mc_factor = 1.1
-min_eta = 0.05
-max_eta = 0.25
+if opts.psd_file is None:
+    eff_fisher_psd = lal.LIGOIPsd
+    analyticPSD_Q = True
+else:
+    psd_map = common_cl.parse_cf_key_value(opts.psd_file)
+    for inst, psdfile in psd_map.items():
+        if psdfile.has_key(inst):
+            psd_map[psdfile].add(inst)
+        else:
+            psd_map[psdfile] = set([inst])
+        del psd_map[inst]
+        
+    for psdf, insts in common_cl.parse_cf_key_value(opts.psd_file):
+        xmldoc = utils.load_filename(filestr, contenthandler=LIGOLWContentHandler)
+        # FIXME: How to handle multiple PSDs
+        for inst in insts:
+            eff_fisher_psd = read_psd_xmldoc(xmldoc)[inst]
+
+    analyticPSD_Q = False
+
+# The next 4 values set the maximum size of the region to explore
+min_mc_factor, max_mc_factor = 0.9, 1.1
+min_eta, max_eta = 0.05, 0,25
+
 # Control evaluation of the effective Fisher grid
 NMcs = 11
 NEtas = 11
