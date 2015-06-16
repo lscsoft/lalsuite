@@ -136,9 +136,10 @@ int XLALCreateSFTPairIndexList
    )
   ;
 
-int XLALCalculateAveCurlyGAmpUnshifted
+int XLALCalculateCrossCorrGammas
   (
-   REAL8Vector            **G_alpha,
+   REAL8Vector          **Gamma_ave,
+   REAL8Vector         **Gamma_circ,
    SFTPairIndexList  *pairIndexList,
    SFTIndexList          *indexList,
    MultiAMCoeffs       *multiCoeffs

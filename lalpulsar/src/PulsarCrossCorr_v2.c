@@ -253,39 +253,42 @@ int XLALCreateSFTPairIndexList
 /** Construct vector of G_alpha amplitudes for each SFT pair */
 /* This is averaged over unknown cosi and psi */
 /* Allocates memory as well */
-int XLALCalculateAveCurlyGAmpUnshifted
+int XLALCalculateCrossCorrGammas
   (
-   REAL8Vector            **G_alpha, /* Output: vector of sigma_alpha values */
+   REAL8Vector          **Gamma_ave, /* Output: vector of aa+bb values */
+   REAL8Vector         **Gamma_circ, /* Output: vector of ab-ba values */
    SFTPairIndexList  *pairIndexList, /* Input: list of SFT pairs */
    SFTIndexList          *indexList, /* Input: list of SFTs */
    MultiAMCoeffs       *multiCoeffs  /* Input: AM coefficients */
   )
 {
 
-  UINT8 j, numPairs;
-  UINT8 detInd1, detInd2;
-  UINT8 sftInd1, sftInd2;
-  UINT8 sftNum1, sftNum2;
-  REAL8Vector *ret = NULL;
+  UINT8 numPairs = pairIndexList->length;
 
-  numPairs = pairIndexList->length;
+  REAL8Vector *ret1 = NULL;
+  XLAL_CHECK ( ( ret1 = XLALCreateREAL8Vector ( numPairs ) ) != NULL, XLAL_EFUNC, "XLALCreateREAL8Vector ( %"LAL_UINT8_FORMAT" ) failed.", numPairs );
+  REAL8Vector *ret2 = NULL;
+  XLAL_CHECK ( ( ret2 = XLALCreateREAL8Vector ( numPairs ) ) != NULL, XLAL_EFUNC, "XLALCreateREAL8Vector ( %"LAL_UINT8_FORMAT" ) failed.", numPairs );
 
-  XLAL_CHECK ( ( ret = XLALCreateREAL8Vector ( numPairs ) ) != NULL, XLAL_EFUNC, "XLALCreateREAL8Vector ( %"LAL_UINT8_FORMAT" ) failed.", numPairs );
-
-  for (j=0; j < numPairs; j++) {
-    sftNum1 = pairIndexList->data[j].sftNum[0];
-    sftNum2 = pairIndexList->data[j].sftNum[1];
-    detInd1 = indexList->data[sftNum1].detInd;
-    detInd2 = indexList->data[sftNum2].detInd;
-    sftInd1 = indexList->data[sftNum1].sftInd;
-    sftInd2 = indexList->data[sftNum2].sftInd;
-    ret->data[j] = 0.1 * ( multiCoeffs->data[detInd1]->a->data[sftInd1]
+  for (UINT8 j=0; j < numPairs; j++) {
+    UINT8 sftNum1 = pairIndexList->data[j].sftNum[0];
+    UINT8 sftNum2 = pairIndexList->data[j].sftNum[1];
+    UINT8 detInd1 = indexList->data[sftNum1].detInd;
+    UINT8 detInd2 = indexList->data[sftNum2].detInd;
+    UINT8 sftInd1 = indexList->data[sftNum1].sftInd;
+    UINT8 sftInd2 = indexList->data[sftNum2].sftInd;
+    ret1->data[j] = 0.1 * ( multiCoeffs->data[detInd1]->a->data[sftInd1]
 			   * multiCoeffs->data[detInd2]->a->data[sftInd2]
 			   + multiCoeffs->data[detInd1]->b->data[sftInd1]
 			   * multiCoeffs->data[detInd2]->b->data[sftInd2] );
+    ret2->data[j] = 0.1 * ( multiCoeffs->data[detInd1]->a->data[sftInd1]
+			   * multiCoeffs->data[detInd2]->b->data[sftInd2]
+			   - multiCoeffs->data[detInd1]->b->data[sftInd1]
+			   * multiCoeffs->data[detInd2]->a->data[sftInd2] );
   }
 
-  (*G_alpha) = ret;
+  (*Gamma_ave) = ret1;
+  (*Gamma_circ) = ret2;
   return XLAL_SUCCESS;
 }
 

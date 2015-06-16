@@ -84,6 +84,7 @@ typedef struct{
   CHAR    *sftListOutputFilename;  /**< output filename to write list of sfts */
   CHAR    *sftListInputFilename;   /**< input filename to read in the  list of sfts and check the order of SFTs */
   CHAR    *gammaAveOutputFilename; /**< output filename to write Gamma_ave = (aa+bb)/10 */
+  CHAR    *gammaCircOutputFilename; /**< output filename to write Gamma_circ = (ab-ba)/10 */
   CHAR    *toplistFilename;   /**< output filename containing candidates in toplist */
   BOOLEAN version;            /**<output version information*/
   CHAR    *logFilename;       /**< name of log file*/
@@ -433,7 +434,8 @@ int main(int argc, char *argv[]){
   /* note that the sigma-squared is now absorbed into the curly G
      because the AM coefficients are noise-weighted. */
   REAL8Vector *GammaAve = NULL;
-  if ( ( XLALCalculateAveCurlyGAmpUnshifted( &GammaAve, sftPairs, sftIndices, multiCoeffs)  != XLAL_SUCCESS ) ) {
+  REAL8Vector *GammaCirc = NULL;
+  if ( ( XLALCalculateCrossCorrGammas( &GammaAve, &GammaCirc, sftPairs, sftIndices, multiCoeffs)  != XLAL_SUCCESS ) ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALCalculateAveCurlyGUnshifted() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
@@ -451,6 +453,19 @@ int main(int argc, char *argv[]){
     }
     fclose(fp);
   }
+  if (XLALUserVarWasSet(&uvar.gammaCircOutputFilename)) { /* Write the ab-ba weight for each pair to a file, if a name was provided */
+    if((fp = fopen(uvar.gammaCircOutputFilename, "w")) == NULL) {
+      LogPrintf ( LOG_CRITICAL, "Can't write in Gamma_circ list \n");
+      XLAL_ERROR( XLAL_EFUNC );
+    }
+    fprintf(fp,PCC_GAMMA_HEADER, multiWeights->Sinv_Tsft); /*output the normalization factor to the header*/
+    for(j = 0; j < sftPairs->length; j++){
+      fprintf(fp,PCC_GAMMA_BODY, GammaCirc->data[j]);
+    }
+    fclose(fp);
+  }
+
+  XLALDestroyREAL8Vector ( GammaCirc );
 
   /*initialize binary parameters structure*/
   XLAL_INIT_MEM(minBinaryTemplate);
@@ -790,6 +805,7 @@ int XLALInitUserVars (UserInput_t *uvar)
   XLALregSTRINGUserStruct( sftListOutputFilename, 0,  UVAR_OPTIONAL, "Name of file to which to write list of SFTs (for sanity checks)");
   XLALregSTRINGUserStruct( sftListInputFilename, 0,  UVAR_OPTIONAL, "Name of file to which to read in list of SFTs (for sanity checks)");
   XLALregSTRINGUserStruct( gammaAveOutputFilename, 0,  UVAR_OPTIONAL, "Name of file to which to write aa+bb weights (for e.g., false alarm estimation)");
+  XLALregSTRINGUserStruct( gammaCircOutputFilename, 0,  UVAR_OPTIONAL, "Name of file to which to write ab-ba weights (for e.g., systematic error)");
   XLALregSTRINGUserStruct( toplistFilename, 0,  UVAR_OPTIONAL, "Output filename containing candidates in toplist");
   XLALregSTRINGUserStruct( logFilename, 0,  UVAR_OPTIONAL, "Output a meta-data file for the search");
   XLALregBOOLUserStruct  ( version, 	   'V',  UVAR_SPECIAL, "Output version(VCS) information");
