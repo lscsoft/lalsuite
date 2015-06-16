@@ -90,14 +90,21 @@ if opts.uniform_spoked and opts.linear_spoked:
 #
 
 # Get end time from coinc inspiral table or command line
-xmldoc = None
+xmldoc, sim_row = None, None
 if opts.coinc_xml is not None:
     xmldoc = utils.load_filename(opts.coinc_xml, contenthandler=ligolw.LIGOLWContentHandler)
-    coinc_table = table.get_table(xmldoc, lsctables.CoincInspiralTable.tableName)
+    coinc_table = lsctables.CoincInspiralTable.get_table(xmldoc)
     assert len(coinc_table) == 1
     coinc_row = coinc_table[0]
     event_time = coinc_row.get_end()
     print "Coinc XML loaded, event time: %s" % str(coinc_row.get_end())
+elif opts.sim_xml is not None:
+    xmldoc = utils.load_filename(opts.sim_xml, contenthandler=ligolw.LIGOLWContentHandler)
+    sim_table = lsctables.SimInspiralTable.get_table(xmldoc)
+    assert len(sim_table) == 1
+    sim_row = sim_table[0]
+    event_time = sim_row.get_end()
+    print "Sim XML loaded, event time: %s" % str(coinc_row.get_end())
 elif opts.event_time is not None:
     event_time = glue.lal.LIGOTimeGPS(opts.event_time)
     print "Event time from command line: %s" % str(event_time)
@@ -176,12 +183,21 @@ else:
 param_names = ['Mc', 'eta']
 McSIG = lsu.mchirp(m1_SI, m2_SI)
 etaSIG = lsu.symRatio(m1_SI, m2_SI)
-PSIG = lsu.ChooseWaveformParams(
-        m1=m1_SI, m2=m2_SI,
-        lambda1=lambda1, lambda2=lambda2,
-        fmin=template_min_freq,
-        approx=lalsim.GetApproximantFromString(opts.approximant)
-        )
+if sim_row is not None:
+    PSIG = lsu.ChooseWaveformParams(
+            m1=m1_SI, m2=m2_SI,
+            lambda1=lambda1, lambda2=lambda2,
+            fmin=template_min_freq,
+            approx=lalsim.GetApproximantFromString(opts.approximant)
+            )
+    PSIG.copy_lsctables_sim_inspiral(sim_row)
+else:
+    PSIG = lsu.ChooseWaveformParams(
+            m1=m1_SI, m2=m2_SI,
+            lambda1=lambda1, lambda2=lambda2,
+            fmin=template_min_freq,
+            approx=lalsim.GetApproximantFromString(opts.approximant)
+            )
 # Find a deltaF sufficient for entire range to be explored
 PTEST = PSIG.copy()
 
