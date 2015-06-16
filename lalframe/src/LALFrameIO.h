@@ -49,7 +49,6 @@ struct tagLALFrFile;
 
 /**
  * @defgroup LALFrameIO_h_read Frame Reading Routines
- * @ingroup LALFrameIO_h
  * @brief Intermediate-level routines for reading frame files.
  * @details
  * These routines provide the intermediate-level routines for reading from
@@ -503,7 +502,6 @@ COMPLEX16FrequencySeries *XLALFrFileReadCOMPLEX16FrequencySeries(LALFrFile * frf
 
 /**
  * @defgroup LALFrameIO_h_write Frame Writing Routines
- * @ingroup LALFrameIO_h
  * @brief Intermediate-level routines for writing frame files.
  * @details
  * These routines provide the intermediate-level routines for writing
