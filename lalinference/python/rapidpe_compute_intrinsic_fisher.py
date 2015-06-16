@@ -49,14 +49,16 @@ __author__ = "Evan Ochsner <evano@gravity.phys.uwm.edu>, Chris Pankow <pankow@gr
 optp = OptionParser()
 # Options needed by this program only.
 optp.add_option("-X", "--mass-points-xml", action="store_true", help="Output mass points as a sim_inspiral table.")
+optp.add_option("--save-ellipsoid-data", action="store_true", help="Save the parameters and eigenvalues of the ellipsoid.")
+
 optp.add_option("-N", "--N-mass-pts", type=int, default=200, help="Number of intrinsic parameter (mass) values at which to compute marginalized likelihood. Default is 200.")
 optp.add_option("-t", "--N-tidal-pts", type=int, default=None, help="Number of intrinsic parameter (tidal) values at which to compute marginalized likelihood. Default is None, meaning 'don't grid in lambda'")
 optp.add_option("--linear-spoked", action="store_true", help="Place mass pts along spokes linear in radial distance (if omitted placement will be random and uniform in volume")
+optp.add_option("--uniform-spoked", action="store_true", help="Place mass pts along spokes uniform in radial distance (if omitted placement will be random and uniform in volume")
 optp.add_option("--match-value", type=float, default=0.97, help="Use this as the minimum match value. Default is 0.97")
-optp.add_option("--save-ellipsoid-data", action="store_true", help="Save the parameters and eigenvalues of the ellipsoid.")
 
 # Options transferred to ILE
-optp.add_option("-C", "--channel-name", action="append", help="instrument=channel-name, e.g. H1=FAKE-STRAIN. Can be given multiple times for different instruments.")
+optp.add_option("-C", "--channel-name", action="append", help="instrument=channel-name, e.g. H1=FAKE-STRAIN. Not required except to name the output file properly. Can be given multiple times for different instruments.")
 optp.add_option("-x", "--coinc-xml", help="gstlal_inspiral XML file containing coincidence information.")
 optp.add_option("-s", "--sim-xml", help="XML file containing injected event information.")
 
@@ -78,6 +80,9 @@ if opts.delta_eff_lambda and opts.eff_lambda is None:
     exit("If you specify delta_eff_lambda and not eff_lambda, you're gonna have a bad time.")
 if opts.N_tidal_pts is not None and (opts.delta_eff_lambda or opts.eff_lambda):
     exit("You asked for a specific value of lambda and gridding. You can't have it both ways.")
+
+if opts.uniform_spoked and opts.linear_spoked:
+    exit("Specify only one point placement scheme.")
 
 #
 # Get trigger information from coinc xml file
@@ -322,7 +327,10 @@ if opts.mass_points_xml:
             sim_insp.psi0, sim_insp.psi3 = opts.eff_lambda or l1, opts.delta_eff_lambda or 0
             sim_insp_tbl.append(sim_insp)
     xmldoc.childNodes[0].appendChild(sim_insp_tbl)
-    ifos = "".join([o.split("=")[0][0] for o in opts.channel_name])
+    if opts.channel_name:
+        ifos = "".join([o.split("=")[0][0] for o in opts.channel_name])
+    else:
+        ifos = "HLV"
     start = int(event_time)
     fname = "%s-MASS_POINTS-%d-1.xml.gz" % (ifos, start)
     utils.write_filename(xmldoc, fname, gz=True)
