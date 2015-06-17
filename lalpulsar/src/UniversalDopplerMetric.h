@@ -287,6 +287,10 @@ const CHAR *XLALDopplerCoordinateName ( DopplerCoordinateID coordID );
 const CHAR *XLALDopplerCoordinateHelp ( DopplerCoordinateID coordID );
 CHAR *XLALDopplerCoordinateHelpAll ( void );
 
+REAL8
+XLALComputePhaseDerivative ( REAL8 t, const PulsarDopplerParams *dopplerPoint, DopplerCoordinateID coordID, const EphemerisData *edat, const LALDetector *site, BOOLEAN includeRoemer );
+
+
 // destructor for vect3Dlist_t type
 void XLALDestroyVect3Dlist ( vect3Dlist_t *list );
 

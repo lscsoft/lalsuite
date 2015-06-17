@@ -427,6 +427,43 @@ CW_am1_am2_Phi_i_Phi_j ( double tt, void *params )
 } /* CW_am1_am2_Phi_i_Phi_j() */
 
 
+REAL8
+XLALComputePhaseDerivative ( REAL8 t,                                        ///< time 't' to compute derivative at: (effectively interpreted as SSB time if approxPhase given)
+                             const PulsarDopplerParams *dopplerPoint,        ///< phase-evolution ('doppler') parameters to compute phase-derivative at
+                             DopplerCoordinateID coordID,                    ///< coord-ID of coordinate wrt which to compute phase derivative
+                             const EphemerisData *edat,                      ///< ephemeris data
+                             const LALDetector *site,                        ///< optional detector (if NULL: use H1 as default)
+                             BOOLEAN includeRoemer			     ///< whether to include Roemer-delay correction 'tSSB = t + dRoemer(t)' or not
+                             )
+{
+  XLAL_CHECK_REAL8 ( dopplerPoint != NULL, XLAL_EINVAL );
+  XLAL_CHECK_REAL8 ( edat != NULL, XLAL_EINVAL );
+  XLAL_CHECK_REAL8 ( (coordID > DOPPLERCOORD_NONE) && (coordID < DOPPLERCOORD_LAST), XLAL_EINVAL );
+
+  const DopplerCoordinateSystem coordSys = {
+    .dim = 1,
+    .coordIDs = { coordID },
+  };
+
+  REAL8 refTime8 = XLALGPSGetREAL8 ( &(dopplerPoint->refTime) );
+
+ intparams_t params = {
+   .detMotionType = DETMOTION_SPIN | DETMOTION_ORBIT, // doesn't matter, dummy value
+   .coordSys = &coordSys,
+   .dopplerPoint = dopplerPoint,
+   .startTime = t,
+   .refTime = refTime8,
+   .Tspan = 0, // doesn't matter, dummy value
+   .site = site ? site : &lalCachedDetectors[LAL_LHO_4K_DETECTOR],	// fall back to H1 if passed as NULL
+   .edat = edat,
+   .approxPhase = includeRoemer,	// whether to include Roemer-delay correction tSSB = t + dRoemer(t)
+ };
+
+ double scale = DopplerCoordinates[coordID].scale;
+
+ return (REAL8) (scale * CW_Phi_i ( 0, &params ) );
+
+}  // XLALComputePhaseDerivativeSSB()
 
 /**
  * Partial derivative of continuous-wave (CW) phase, with respect
