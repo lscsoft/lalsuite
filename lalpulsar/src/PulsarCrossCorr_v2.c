@@ -402,6 +402,53 @@ int XLALCalculatePulsarCrossCorrStatistic
   *ccStat = 4 * multiWeights->Sinv_Tsft * nume / sqrt(*evSquared);
   return XLAL_SUCCESS;
 }
+
+/** calculate signal phase derivatives wrt Doppler coords, for each SFT */
+/* allocates memory as well */
+int XLALFindCrossCorrPhaseDerivatives
+  (
+   REAL8VectorSequence        **phaseDerivs, /**< Output: dPhi_K/dlambda_i; i is the "sequence" index, K is the "vector" index */
+   const PulsarDopplerParams  *dopplerPoint, /**< Input: pulsar/binary orbit paramaters */
+   const EphemerisData                *edat, /**< Input: Earth/Sun ephemeris */
+   SFTIndexList                  *indexList, /**< Input: list of SFT indices */
+   MultiSSBtimes                *multiTimes, /**< Input: barycentered times of SFTs */
+   const DopplerCoordinateSystem  *coordSys  /**< Input: coordinates with which to differentiate */
+   )
+{
+  XLAL_CHECK ( dopplerPoint != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( edat != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( indexList != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( multiTimes != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( coordSys != NULL, XLAL_EINVAL );
+
+  const UINT4 numCoords = coordSys->dim;
+  const UINT8 numSFTs = indexList->length;
+
+  REAL8VectorSequence *ret = NULL;
+
+  XLAL_CHECK ( ( ret = XLALCreateREAL8VectorSequence ( numCoords, numSFTs ) ) != NULL, XLAL_EFUNC, "XLALCreateREAL8VectorSequence ( %"LAL_UINT4_FORMAT", %"LAL_UINT8_FORMAT" ) failed.", numCoords,numSFTs );
+
+  for ( UINT4 coordNum=0; coordNum < numCoords; coordNum++ ) {
+    for ( UINT8 sftNum=0; sftNum < numSFTs; sftNum++ ) {
+      UINT8 detInd = indexList->data[sftNum].detInd;
+      UINT8 sftInd = indexList->data[sftNum].sftInd;
+      SSBtimes *times;
+      times = multiTimes->data[detInd];
+      REAL8 refTime8 = XLALGPSGetREAL8 ( &(times->refTime) );
+      UINT8 numSFTsDet = times->DeltaT->length;
+      XLAL_CHECK ( ( sftInd < numSFTsDet ), XLAL_EINVAL, "SFT asked for SFT index off end of list:\n sftNum=%"LAL_UINT8_FORMAT", detInd=%"LAL_UINT8_FORMAT", sftInd=%"LAL_UINT8_FORMAT", numSFTsDet=%"LAL_UINT8_FORMAT"\n", sftNum, detInd, sftInd, numSFTsDet );
+      REAL8 tSSB = refTime8 + times->DeltaT->data[sftInd];
+      ret->data[coordNum*numSFTs+sftNum] = XLALComputePhaseDerivative ( tSSB, dopplerPoint, (coordSys->coordIDs[coordNum]), edat, NULL, FALSE );
+      XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "XLALComputePhaseDerivative() failed with xlalErrno = %d\n", xlalErrno );
+    }
+  }
+
+  (*phaseDerivs) = ret;
+
+  return XLAL_SUCCESS;
+
+}
+
 /*calculate metric diagonal components, also include the estimation of sensitivity E[rho]/(h_0)^2*/
 int XLALFindLMXBCrossCorrDiagMetric
   (

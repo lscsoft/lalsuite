@@ -68,6 +68,7 @@ extern "C" {
 #include <lal/Sequence.h>
 #include <lal/SinCosLUT.h>
 #include <lal/LogPrintf.h>
+#include <lal/UniversalDopplerMetric.h>
 
 /* ******************************************************************
  *  Structure, enum, union, etc., typdefs.
@@ -162,6 +163,17 @@ int XLALCalculatePulsarCrossCorrStatistic
    )
   ;
 
+int XLALFindCrossCorrPhaseDerivatives
+  (
+   REAL8VectorSequence        **phaseDerivs,
+   const PulsarDopplerParams  *dopplerPoint,
+   const EphemerisData                *edat,
+   SFTIndexList                  *indexList,
+   MultiSSBtimes                *multiTimes,
+   const DopplerCoordinateSystem  *coordSys
+   )
+  ;
+
 int XLALFindLMXBCrossCorrDiagMetric
   (
    REAL8                      *hSens,
@@ -179,7 +191,6 @@ int XLALFindLMXBCrossCorrDiagMetric
    )
   ;
 
-  ;
 /*@}*/
 
 void XLALDestroySFTIndexList ( SFTIndexList *sftIndices );
