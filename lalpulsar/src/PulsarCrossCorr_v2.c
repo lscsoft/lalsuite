@@ -402,7 +402,7 @@ int XLALCalculatePulsarCrossCorrStatistic
   *ccStat = 4 * multiWeights->Sinv_Tsft * nume / sqrt(*evSquared);
   return XLAL_SUCCESS;
 }
-/*calculate metric diagnol components, also include the estimation of sensitivity E[rho]/(h_0)^2*/
+/*calculate metric diagonal components, also include the estimation of sensitivity E[rho]/(h_0)^2*/
 int XLALFindLMXBCrossCorrDiagMetric
   (
    REAL8                      *hSens, /* Output: sensitivity*/

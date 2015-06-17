@@ -18,16 +18,6 @@
  *  MA  02111-1307  USA
  */
 
-/**
- * \author B.Krishnan, S.Larson, J.T.Whelan, Y.Zhang
- * \date 2013, 2014
- * \file pulsar_crosscorr_v2.c
- * \ingroup lalapps_pulsar_crosscorr
- * \brief Perform CW cross-correlation search - version 2
- *
- */
-
-
 /*lalapps includes */
 #include <lalapps.h>
 #include <lal/UserInput.h>
@@ -42,6 +32,19 @@
 #include <lal/LALString.h>
 #include <lal/PulsarCrossCorr_v2.h>
 #include "CrossCorrToplist.h"
+
+/**
+ * \author B.Krishnan, S.Larson, J.T.Whelan, Y.Zhang
+ * \date 2013, 2014, 2015
+ * \addtogroup lalapps_pulsar_crosscorr
+ * \brief Perform CW cross-correlation search - version 2
+ *
+ * This carries out the cross-correlation search defined in
+ * \cite Dhurandhar2007, and specifically the implementation detailed
+ * in \cite Whelan2015 .  The SFT-normalization routines described in
+ * \cite T0900149-v5 are leveraged.
+ */
+/** @{ */
 
 /* introduce mismatch in f and all 5 binary parameters */
 
@@ -106,6 +109,7 @@ int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar);
 int XLALDestroyConfigVars (ConfigVariables *config);
 int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, BOOLEAN *firstPoint, PulsarDopplerParams *dopplerpos, PulsarDopplerParams *binaryTemplateSpacings, PulsarDopplerParams *minBinaryTemplate, PulsarDopplerParams *maxBinaryTemplate, UINT8 *fCount, UINT8 *aCount, UINT8 *tCount, UINT8 *pCount, UINT8 fSpacingNum, UINT8 aSpacingNum, UINT8 tSpacingNum, UINT8 pSpacingNum);
 
+/** @} */
 
 int main(int argc, char *argv[]){
 
