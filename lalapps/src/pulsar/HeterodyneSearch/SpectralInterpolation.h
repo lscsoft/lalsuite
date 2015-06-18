@@ -1,3 +1,6 @@
+#define _BSD_SOURCE   /* for alphasort() and scandir() */
+#include <dirent.h>
+#undef _BSD_SOURCE
 
 #include <sys/time.h>
 #include <lalapps.h>
@@ -16,7 +19,6 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <dirent.h>
 #include <lal/BinaryPulsarTiming.h>
 #include <gsl/gsl_sort_double.h>
 #include <gsl/gsl_statistics_double.h>
@@ -28,7 +30,7 @@
 #include <lal/AVFactories.h>
 #include <lal/LALBarycenter.h>
 #include <lal/LALInitBarycenter.h>
-#include <lal/SkyCoordinates.h> 
+#include <lal/SkyCoordinates.h>
 #include <lal/DetectorSite.h>
 #include <lal/DetResponse.h>
 #include <lal/BandPassTimeSeries.h>
@@ -162,5 +164,3 @@ INT4 remove_outliers_using_running_median_data(REAL8Vector *redata, REAL8Vector 
 REAL8Vector *subtract_running_median( REAL8Vector *data, REAL8Vector *timeStamp , UINT4 npoints);
 
 INT4 XLALFresnel(REAL8 *C, REAL8 *S, REAL8 x);
-
-
