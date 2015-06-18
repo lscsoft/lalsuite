@@ -124,8 +124,8 @@ void getLogLike(double *Cube, UNUSED int *ndim, UNUSED int *npars, double *lnew,
     LALInferenceVariables *newParams=NULL;
     newParams=calloc(1,sizeof(LALInferenceVariables));
     /* Make a copy of the parameters passed through currentParams */
-    LALInferenceCopyVariables(runStateGlobal->currentParams,newParams);
-    int i = runStateGlobal->CubeToPrior(runStateGlobal, newParams, runStateGlobal->model, Cube, context);
+    LALInferenceCopyVariables(runStateGlobal->threads[0]->currentParams,newParams);
+    int i = runStateGlobal->CubeToPrior(runStateGlobal, newParams, runStateGlobal->threads[0]->model, Cube, context);
 
     // if the parameters violate the prior then set likelihood to log(0);
     if( i == 0 )
@@ -137,7 +137,7 @@ void getLogLike(double *Cube, UNUSED int *ndim, UNUSED int *npars, double *lnew,
     }
 
     // calculate the loglike
-    *lnew=runStateGlobal->likelihood(newParams, runStateGlobal->data, runStateGlobal->model);
+    *lnew=runStateGlobal->likelihood(newParams, runStateGlobal->data, runStateGlobal->threads[0]->model);
     *lnew -= (*(REAL8 *)LALInferenceGetVariable(runStateGlobal->algorithmParams, "logZnoise"));
     LALInferenceClearVariables(newParams);
     free(newParams);
@@ -184,8 +184,8 @@ void getphysparams(double *Cube, UNUSED int *ndim, UNUSED int *nPar, void *conte
     // CubeToPrior function does this and physical params are in first ndim already
     LALInferenceVariables *newParams=NULL;
     newParams=calloc(1,sizeof(LALInferenceVariables));
-    LALInferenceCopyVariables(runStateGlobal->currentParams,newParams);
-    runStateGlobal->CubeToPrior(runStateGlobal, newParams, runStateGlobal->model, Cube, context);
+    LALInferenceCopyVariables(runStateGlobal->threads[0]->currentParams,newParams);
+    runStateGlobal->CubeToPrior(runStateGlobal, newParams, runStateGlobal->threads[0]->model, Cube, context);
     free(newParams);
 
     // Adjust time if necessary
@@ -203,8 +203,8 @@ void getallparams(double *Cube, UNUSED int *ndim, UNUSED int *nPar, void *contex
     // CubeToPrior function does this
     LALInferenceVariables *newParams=NULL;
     newParams=calloc(1,sizeof(LALInferenceVariables));
-    LALInferenceCopyVariables(runStateGlobal->currentParams,newParams);
-    runStateGlobal->CubeToPrior(runStateGlobal, newParams, runStateGlobal->model, Cube, context);
+    LALInferenceCopyVariables(runStateGlobal->threads[0]->currentParams,newParams);
+    runStateGlobal->CubeToPrior(runStateGlobal, newParams, runStateGlobal->threads[0]->model, Cube, context);
     free(newParams);
 }
 
@@ -276,8 +276,8 @@ void LALInferenceMultiNestAlgorithm(LALInferenceRunState *runState)
         Ntrain=50;
 
     INT4 SKY_FRAME=0;
-    if(LALInferenceCheckVariable(runState->currentParams,"SKY_FRAME"))
-      SKY_FRAME=*(INT4 *)LALInferenceGetVariable(runState->currentParams,"SKY_FRAME");
+    if(LALInferenceCheckVariable(runState->threads[0]->currentParams,"SKY_FRAME"))
+      SKY_FRAME=*(INT4 *)LALInferenceGetVariable(runState->threads[0]->currentParams,"SKY_FRAME");
     REAL8 tmin,tmax,tmid;
     if (SKY_FRAME==1)
     {
@@ -302,7 +302,7 @@ void LALInferenceMultiNestAlgorithm(LALInferenceRunState *runState)
 
     // find out the dimensionality of the problem
     int ND = 0;
-    LALInferenceVariableItem *item=runState->currentParams->head;
+    LALInferenceVariableItem *item=runState->threads[0]->currentParams->head;
     for(;item;item=item->next)
     {
         if(item->vary==LALINFERENCE_PARAM_LINEAR || item->vary==LALINFERENCE_PARAM_CIRCULAR)
@@ -320,10 +320,10 @@ void LALInferenceMultiNestAlgorithm(LALInferenceRunState *runState)
 
     if( ND==0 )
     {
-        double like = runState->likelihood(runState->currentParams,runState->data,runState->model);
+        double like = runState->likelihood(runState->threads[0]->currentParams,runState->data,runState->threads[0]->model);
         like -= (*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams, "logZnoise"));
         fprintf(stdout,"LOG-LIKELIHOOD VALUE RETURNED = %g\n",like);
-        double prior = runState->prior(runState,runState->currentParams,runState->model);
+        double prior = runState->prior(runState,runState->threads[0]->currentParams,runState->threads[0]->model);
         fprintf(stdout,"LOG-PRIOR VALUE RETURNED = %g\n",prior);
         fprintf(stdout,"LOG-POSTERIOR VALUE RETURNED = %g\n",like+prior);
         return;
@@ -342,13 +342,13 @@ void LALInferenceMultiNestAlgorithm(LALInferenceRunState *runState)
     double mntol = MNTol;
     int ndims = ND;
     int nPar = ndims + 3;
-    if (LALInferenceCheckVariable(runState->currentParams,"f_ref")) nPar++;  // add space for f_ref
+    if (LALInferenceCheckVariable(runState->threads[0]->currentParams,"f_ref")) nPar++;  // add space for f_ref
     if (SKY_FRAME==1) nPar += 3;
     int nClsPar = fmin(2,ND);
     int updInt = Ntrain;
     double Ztol = -1.e90;
     int pWrap[ndims];
-    item=runState->currentParams->head;
+    item=runState->threads[0]->currentParams->head;
     int k = -1;
     for(;item;item=item->next)
     {
@@ -495,8 +495,8 @@ Initialisation arguments:\n\
         LALInferenceInjectInspiralSignal(irs->data,commandLine);
         fprintf(stdout, " LALInferenceInjectInspiralSignal(): finished.\n");
 
-        irs->currentLikelihood=LALInferenceNullLogLikelihood(irs->data);
-        printf("Null Log Likelihood: %g\n", irs->currentLikelihood);
+        irs->threads[0]->currentLikelihood=LALInferenceNullLogLikelihood(irs->data);
+        printf("Null Log Likelihood: %g\n", irs->threads[0]->currentLikelihood);
         /* Apply calibration errors if desired*/
         LALInferenceApplyCalibrationErrors(irs,commandLine);
     }
@@ -730,7 +730,7 @@ Student T Likelihood Arguments:\n\
         if((ppt=LALInferenceGetProcParamVal(state->commandLine,df_argument_name)))
             dof=atof(ppt->value);
             sprintf(df_variable_name,"df_%s",ifo->name);
-            LALInferenceAddVariable(state->currentParams,df_variable_name,&dof,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
+            LALInferenceAddVariable(state->threads[0]->currentParams,df_variable_name,&dof,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
         fprintf(stdout,"Setting %lf degrees of freedom for %s\n",dof,ifo->name);
         ifo=ifo->next;
     }
@@ -739,8 +739,8 @@ Student T Likelihood Arguments:\n\
     state->likelihood = &LALInferenceFreqDomainStudentTLogLikelihood;
 
     /* Set the noise model evidence to the student t model value */
-    LALInferenceTemplateNullFreqdomain(state->model);
-    REAL8 noiseZ=LALInferenceFreqDomainStudentTLogLikelihood(state->currentParams,state->data,state->model);
+    LALInferenceTemplateNullFreqdomain(state->threads[0]->model);
+    REAL8 noiseZ=LALInferenceFreqDomainStudentTLogLikelihood(state->threads[0]->currentParams,state->data,state->threads[0]->model);
     LALInferenceAddVariable(state->algorithmParams,"logZnoise",&noiseZ,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
     fprintf(stdout,"Student-t Noise evidence %lf\n",noiseZ);
 
@@ -777,19 +777,19 @@ Arguments for each section follow:\n\n";
     /* Set up currentParams with variables to be used */
     /* Review task needs special priors */
     if(LALInferenceGetProcParamVal(procParams,"--correlatedGaussianLikelihood"))
-        state->model = LALInferenceInitModelReviewEvidence(state);
+        state->threads[0]->model = LALInferenceInitModelReviewEvidence(state);
     else if(LALInferenceGetProcParamVal(procParams,"--bimodalGaussianLikelihood"))
-        state->model = LALInferenceInitModelReviewEvidence_bimod(state);
+        state->threads[0]->model = LALInferenceInitModelReviewEvidence_bimod(state);
     else if(LALInferenceGetProcParamVal(procParams,"--rosenbrockLikelihood"))
-        state->model = LALInferenceInitModelReviewEvidence_banana(state);
+        state->threads[0]->model = LALInferenceInitModelReviewEvidence_banana(state);
     else
-        state->model = LALInferenceInitCBCModel(state);
+        state->threads[0]->model = LALInferenceInitCBCModel(state);
 
-    if (state->model) {
-        state->currentParams = XLALMalloc(sizeof(LALInferenceVariables));
-        memset(state->currentParams, 0, sizeof(LALInferenceVariables));
-        LALInferenceCopyVariables(state->model->params, state->currentParams);
-        state->templt = state->model->templt;
+    if (state->threads[0]->model) {
+        state->threads[0]->currentParams = XLALMalloc(sizeof(LALInferenceVariables));
+        memset(state->threads[0]->currentParams, 0, sizeof(LALInferenceVariables));
+        LALInferenceCopyVariables(state->threads[0]->model->params, state->threads[0]->currentParams);
+        /* state->templt = state->threads[0]->model->templt; */
     }
 
     /* Choose the likelihood */
