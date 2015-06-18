@@ -66,10 +66,14 @@ void LALInferenceInitCBCPrior(LALInferenceRunState *runState)
                LALInferenceGetProcParamVal(commandLine, "--rosenbrockLikelihood") ||
                LALInferenceGetProcParamVal(commandLine, "--analyticnullprior")) {
         runState->prior = &LALInferenceAnalyticNullPrior;
+        runState->CubeToPrior = &LALInferenceAnalyticCubeToPrior;
     } else if (LALInferenceGetProcParamVal(commandLine, "--nullprior")) {
         runState->prior = &LALInferenceNullPrior;
+        /* CubeToPrior missing for null prior */
     } else {
         runState->prior = &LALInferenceInspiralPrior;
+        runState->CubeToPrior = &LALInferenceInspiralCubeToPrior;
+
     }
 
     /* Set up malmquist prior */

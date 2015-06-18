@@ -57,10 +57,7 @@
        #error Do not know how to link to Fortran libraries, check symbol table for your platform (nm libnest3.a | grep nestrun) & edit example_eggbox_C++/eggbox.cc
 #endif
 
-void initializeMalmquistPrior(LALInferenceRunState *runState);
-LALInferenceRunState *initialize(ProcessParamsTable *commandLine);
 void initializeMN(LALInferenceRunState *runState);
-void initStudentt(LALInferenceRunState *state);
 
 /******** Defined for BAMBI (start) **********/
 
@@ -421,149 +418,6 @@ void LALInferenceMultiNestAlgorithm(LALInferenceRunState *runState)
 }
 
 
-LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
-/* calls the "ReadData()" function to gather data & PSD from files, */
-/* and initializes other variables accordingly.                     */
-{
-    char help[]="\
-Initialisation arguments:\n\
-(--verbose [N])\tOutput more info. N=1: errors, N=2 (default): warnings, N=3: info \n\
-(--randomseed seed           Random seed)\n\n";
-    LALInferenceRunState *irs=NULL;
-    ProcessParamsTable *ppt=NULL;
-
-    irs = XLALCalloc(1, sizeof(LALInferenceRunState));
-    irs->commandLine=commandLine;
-
-    /* Initialise parameters structure */
-    irs->algorithmParams=XLALCalloc(1,sizeof(LALInferenceVariables));
-    irs->priorArgs=XLALCalloc(1,sizeof(LALInferenceVariables));
-    irs->proposalArgs=XLALCalloc(1,sizeof(LALInferenceVariables));
-
-    INT4 verbose=0;
-    INT4 x=0;
-    ppt=LALInferenceGetProcParamVal(commandLine,"--verbose");
-    if(ppt) {
-      if(ppt->value){
-        x=atoi(ppt->value);
-        switch(x){
-         case 0:
-           verbose=LALNDEBUG; /* Nothing */
-           break;
-         case 1:
-           verbose=LALMSGLVL1; /* Only errors */
-           break;
-         case 2:
-           verbose=LALMSGLVL2; /* Errors and warnings */
-           break;
-         case 3:
-           verbose=LALMSGLVL3; /* Errors, warnings and info */
-           break;
-         default:
-           verbose=LALMSGLVL2;
-           break;
-       }
-      }
-      else verbose=LALMSGLVL2; /* Errors and warnings */
-      LALInferenceAddVariable(irs->algorithmParams,"verbose", &verbose , LALINFERENCE_INT4_t,
-                  LALINFERENCE_PARAM_FIXED);
-    }
-
-    /* read data from files */
-    /* (this will already initialise each LALIFOData's following elements:  */
-        ppt=LALInferenceGetProcParamVal(commandLine,"--help");
-        if(ppt)
-        {
-                fprintf(stdout,"%s",help);
-        irs->data = LALInferenceReadData(commandLine);
-                return(irs);
-        }
-    else
-    {   
-        LALInferenceCheckOptionsConsistency(commandLine);
-        fprintf(stdout, " readData(): started.\n");
-            irs->data = LALInferenceReadData(commandLine);
-    }
-
-    /*     fLow, fHigh, detector, timeToFreqFFTPlan, freqToTimeFFTPlan,     */
-    /*     window, oneSidedNoisePowerSpectrum, timeDate, freqData         ) */
-    fprintf(stdout, " LALInferenceReadData(): finished.\n");
-    if (irs->data != NULL) {
-        fprintf(stdout, " initialize(): successfully read data.\n");
-
-        fprintf(stdout, " LALInferenceInjectInspiralSignal(): started.\n");
-        LALInferenceInjectInspiralSignal(irs->data,commandLine);
-        fprintf(stdout, " LALInferenceInjectInspiralSignal(): finished.\n");
-
-        irs->threads[0]->currentLikelihood=LALInferenceNullLogLikelihood(irs->data);
-        printf("Null Log Likelihood: %g\n", irs->threads[0]->currentLikelihood);
-        /* Apply calibration errors if desired*/
-        LALInferenceApplyCalibrationErrors(irs,commandLine);
-    }
-    else
-    {
-        fprintf(stdout, " initialize(): no data read.\n");
-        exit(1);
-    }
-
-    /* set up GSL random number generator: */
-    unsigned long int randomseed;
-    struct timeval tv;
-    FILE *devrandom;
-    gsl_rng_env_setup();
-    irs->GSLrandom = gsl_rng_alloc(gsl_rng_mt19937);
-    /* (try to) get random seed from command line: */
-    ppt = LALInferenceGetProcParamVal(commandLine, "--randomseed");
-    if (ppt != NULL)
-        randomseed = atoi(ppt->value);
-    else { /* otherwise generate "random" random seed: */
-        if ((devrandom = fopen("/dev/random","r")) == NULL) {
-            gettimeofday(&tv, 0);
-            randomseed = tv.tv_sec + tv.tv_usec;
-        }
-        else {
-            if(1!=fread(&randomseed, sizeof(randomseed), 1, devrandom)){
-              fprintf(stderr,"Error: Unable to read random seed from /dev/random\n");
-              exit(1);
-            }
-            fclose(devrandom);
-        }
-    }
-    fprintf(stdout, " initialize(): random seed: %lu\n", randomseed);
-    gsl_rng_set(irs->GSLrandom, randomseed);
-
-    return(irs);
-}
-
-void initializeMalmquistPrior(LALInferenceRunState *runState)
-{
-  REAL8 malmquist_loudest = 0.0;
-  REAL8 malmquist_second_loudest = 5.0;
-  REAL8 malmquist_network = 0.0;
-  ProcessParamsTable *commandLine=runState->commandLine;
-  ProcessParamsTable *ppt=NULL;
-
-  ppt=LALInferenceGetProcParamVal(commandLine,"--malmquist-loudest-snr");
-  if(ppt)
-    malmquist_loudest = atof(ppt->value);
-  ppt=LALInferenceGetProcParamVal(commandLine,"--malmquist-second-loudest-snr");
-  if(ppt)
-    malmquist_second_loudest = atof(ppt->value);
-  ppt=LALInferenceGetProcParamVal(commandLine,"--malmquist-network-snr");
-  if(ppt)
-    malmquist_network = atof(ppt->value);
-  LALInferenceAddVariable(runState->priorArgs, "malmquist_loudest_snr", &malmquist_loudest, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-  LALInferenceAddVariable(runState->priorArgs, "malmquist_second_loudest_snr", &malmquist_second_loudest, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
-  LALInferenceAddVariable(runState->priorArgs, "malmquist_network_snr", &malmquist_network, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-  UINT4 malmquist=1;
-  LALInferenceAddVariable(runState->priorArgs, "malmquist", &malmquist, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
-  runState->prior=&LALInferenceInspiralPrior;
-  fprintf(stdout,"\nUsing Malmquist Prior with limits:\n");
-  fprintf(stdout,"Loudest SNR >= %lf\n",malmquist_loudest);
-  fprintf(stdout,"Second Loudest SNR >= %lf\n",malmquist_second_loudest);
-  fprintf(stdout,"Network SNR >= %lf\n",malmquist_network);
-}
-
 /***** Initialise MultiNest structures *****/
 /************************************************/
 void initializeMN(LALInferenceRunState *runState)
@@ -630,30 +484,6 @@ void initializeMN(LALInferenceRunState *runState)
     /* Set up the appropriate functions for MultiNest */
     runState->algorithm=&LALInferenceMultiNestAlgorithm;
 
-    /* Set up the prior function */
-    if(LALInferenceGetProcParamVal(commandLine,"--skyLocPrior")){
-        runState->prior=&LALInferenceInspiralSkyLocPrior;
-        runState->CubeToPrior = &LALInferenceInspiralSkyLocCubeToPrior;
-    } else if (LALInferenceGetProcParamVal(commandLine, "--AnalyticPrior")) {
-        runState->prior = &LALInferenceAnalyticNullPrior;
-        runState->CubeToPrior = &LALInferenceAnalyticCubeToPrior;
-    } else if (LALInferenceGetProcParamVal(commandLine, "--MalmquistPrior")){
-        runState->prior = &LALInferenceInspiralPrior;
-        runState->CubeToPrior = &LALInferenceInspiralCubeToPrior;
-        initializeMalmquistPrior(runState);
-    } else {
-        runState->prior = &LALInferenceInspiralPrior;
-        runState->CubeToPrior = &LALInferenceInspiralCubeToPrior;
-    }
-
-    if (LALInferenceGetProcParamVal(commandLine, "--correlatedGaussianLikelihood") ||
-        LALInferenceGetProcParamVal(commandLine, "--bimodalGaussianLikelihood") ||
-        LALInferenceGetProcParamVal(commandLine, "--rosenbrockLikelihood"))
-    {
-        runState->prior = &LALInferenceAnalyticNullPrior;
-        runState->CubeToPrior = &LALInferenceAnalyticCubeToPrior;
-    }
-
 
     /* Number of live points */
     //printf("set number of live points.\n");
@@ -697,55 +527,6 @@ void initializeMN(LALInferenceRunState *runState)
 
 }
 
-/** Initialise student-t extra variables, set likelihood */
-void initStudentt(LALInferenceRunState *state)
-{
-        char help[]="\
-Student T Likelihood Arguments:\n\
-(--studentTLikelihood)\tUse student-t likelihood function\n";
-
-    ProcessParamsTable *ppt=NULL;
-    LALInferenceIFOData *ifo=state->data;
-
-    /* Print command line arguments if help requested */
-        if(LALInferenceGetProcParamVal(state->commandLine,"--help"))
-        {
-                fprintf(stdout,"%s",help);
-        while(ifo) {
-            fprintf(stdout,"(--dof-%s DoF)\tDegrees of freedom for %s\n",ifo->name,ifo->name);
-            ifo=ifo->next;
-        }
-        return;
-        }
-    /* Don't do anything unless asked */
-    if(!LALInferenceGetProcParamVal(state->commandLine,"--studentTLikelihood")) return;
-
-    /* initialise degrees of freedom parameters for each IFO */
-    while(ifo){
-        CHAR df_argument_name[128];
-        CHAR df_variable_name[64];
-        REAL8 dof=10.0; /* Degrees of freedom parameter */
-
-        sprintf(df_argument_name,"--dof-%s",ifo->name);
-        if((ppt=LALInferenceGetProcParamVal(state->commandLine,df_argument_name)))
-            dof=atof(ppt->value);
-            sprintf(df_variable_name,"df_%s",ifo->name);
-            LALInferenceAddVariable(state->threads[0]->currentParams,df_variable_name,&dof,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
-        fprintf(stdout,"Setting %lf degrees of freedom for %s\n",dof,ifo->name);
-        ifo=ifo->next;
-    }
-
-    /* Set likelihood to student-t */
-    state->likelihood = &LALInferenceFreqDomainStudentTLogLikelihood;
-
-    /* Set the noise model evidence to the student t model value */
-    LALInferenceTemplateNullFreqdomain(state->threads[0]->model);
-    REAL8 noiseZ=LALInferenceFreqDomainStudentTLogLikelihood(state->threads[0]->currentParams,state->data,state->threads[0]->model);
-    LALInferenceAddVariable(state->algorithmParams,"logZnoise",&noiseZ,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
-    fprintf(stdout,"Student-t Noise evidence %lf\n",noiseZ);
-
-    return;
-}
 
 /*************** MAIN **********************/
 
@@ -763,41 +544,35 @@ Arguments for each section follow:\n\n";
     procParams=LALInferenceParseCommandLine(argc,argv);
 
     /* Print command line arguments if help requested */
-        if(LALInferenceGetProcParamVal(procParams,"--help")) fprintf(stdout,"%s",help);
+    if(LALInferenceGetProcParamVal(procParams,"--help")) fprintf(stdout,"%s",help);
 
-        /* initialise runstate based on command line */
+    /* initialise runstate based on command line */
     /* This includes reading in the data */
     /* And performing any injections specified */
     /* And allocating memory */
-    state = initialize(procParams);
-
+    state = LALInferenceInitRunState(procParams);
+    /* Perform injections if data successful read or created */
+    LALInferenceInjectInspiralSignal(state->data, state->commandLine);
+    
+    /* Set up prior */
+    LALInferenceInitCBCPrior(state);
+    
     /* Set up structures for MultiNest */
     initializeMN(state);
 
-    /* Set up currentParams with variables to be used */
-    /* Review task needs special priors */
-    if(LALInferenceGetProcParamVal(procParams,"--correlatedGaussianLikelihood"))
-        state->threads[0]->model = LALInferenceInitModelReviewEvidence(state);
-    else if(LALInferenceGetProcParamVal(procParams,"--bimodalGaussianLikelihood"))
-        state->threads[0]->model = LALInferenceInitModelReviewEvidence_bimod(state);
-    else if(LALInferenceGetProcParamVal(procParams,"--rosenbrockLikelihood"))
-        state->threads[0]->model = LALInferenceInitModelReviewEvidence_banana(state);
-    else
-        state->threads[0]->model = LALInferenceInitCBCModel(state);
-
-    if (state->threads[0]->model) {
-        state->threads[0]->currentParams = XLALMalloc(sizeof(LALInferenceVariables));
-        memset(state->threads[0]->currentParams, 0, sizeof(LALInferenceVariables));
-        LALInferenceCopyVariables(state->threads[0]->model->params, state->threads[0]->currentParams);
-        /* state->templt = state->threads[0]->model->templt; */
-    }
-
-    /* Choose the likelihood */
+    /* Set up thread structures */
+    LALInferenceInitCBCThreads(state,1);
+        
+    /* Choose the likelihood and set some auxiliary variables */
     LALInferenceInitLikelihood(state);
+    
 
     /* Exit if help requested */
     if(LALInferenceGetProcParamVal(state->commandLine,"--help")) exit(0);
 
+    /* write injection with noise evidence information from algorithm */
+    LALInferencePrintInjectionSample(state);
+    
     /* Call MultiNest algorithm */
     state->algorithm(state);
 
