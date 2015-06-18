@@ -876,7 +876,7 @@ int main( int argc, char **argv ){
                    fmod((fnew-SFTdat->data->f0),deltaf)>(0.99*deltaf)){
             for(dpNum=0;dpNum<dataLength;dpNum++ ){
 
-              if(( dpNum == (UINT4)( ROUND( inputParams.bandwidth/(2.*deltaf) ) ) )){
+              if( dpNum == (UINT4)( ROUND( inputParams.bandwidth/(2.*deltaf) ) ) ){
                 ReMu->data[dpNum] = cos(phaseShift-LAL_PI*dataFreqs->data[dpNum]/deltaf)/deltaf;
                 ImMu->data[dpNum] = sin(phaseShift-LAL_PI*dataFreqs->data[dpNum]/deltaf)/deltaf;
                 MuMu->data[dpNum] = 1/(deltaf*deltaf);
@@ -1466,7 +1466,7 @@ INT4 XLALFresnel(REAL8 *C, REAL8 *S, REAL8 x){
 
   INT4 k, n, odd;
   REAL8 a, absx, fact, sign, sum, sumc, sums, term, test;
-  complex b, cc, d, h, del, cs;
+  COMPLEX16 b, cc, d, h, del, cs;
 
   REAL8 FC = 0., FS = 0.;
 
