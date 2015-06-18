@@ -405,7 +405,7 @@ int XLALCalculatePulsarCrossCorrStatistic
 
 /** calculate signal phase derivatives wrt Doppler coords, for each SFT */
 /* allocates memory as well */
-int XLALFindCrossCorrPhaseDerivatives
+int XLALCalculateCrossCorrPhaseDerivatives
   (
    REAL8VectorSequence        **phaseDerivs, /**< Output: dPhi_K/dlambda_i; i is the "sequence" index, K is the "vector" index */
    const PulsarDopplerParams  *dopplerPoint, /**< Input: pulsar/binary orbit paramaters */
@@ -450,7 +450,7 @@ int XLALFindCrossCorrPhaseDerivatives
 }
 
 /*calculate metric diagonal components, also include the estimation of sensitivity E[rho]/(h_0)^2*/
-int XLALFindLMXBCrossCorrDiagMetric
+int XLALCalculateLMXBCrossCorrDiagMetric
   (
    REAL8                      *hSens, /* Output: sensitivity*/
    REAL8                       *g_ff, /* Output: Diagonal frequency metric element */

@@ -163,7 +163,7 @@ int XLALCalculatePulsarCrossCorrStatistic
    )
   ;
 
-int XLALFindCrossCorrPhaseDerivatives
+int XLALCalculateCrossCorrPhaseDerivatives
   (
    REAL8VectorSequence        **phaseDerivs,
    const PulsarDopplerParams  *dopplerPoint,
@@ -174,7 +174,7 @@ int XLALFindCrossCorrPhaseDerivatives
    )
   ;
 
-int XLALFindLMXBCrossCorrDiagMetric
+int XLALCalculateLMXBCrossCorrDiagMetric
   (
    REAL8                      *hSens,
    REAL8                       *g_ff,
