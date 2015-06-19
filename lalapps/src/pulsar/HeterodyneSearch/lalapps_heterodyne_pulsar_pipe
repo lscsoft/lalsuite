@@ -185,12 +185,27 @@ fh.close()
 dag = pipeline.CondorDAG(logfile)
 dag.set_dag_file(basename)
 
+# get the accounting group info
+try:
+  # the accouting group
+  accgroup = cp.get('accounting', 'group')
+except:
+  print >> sys.stderr, "Condor accounting group is required!"
+  sys.exit(1)
+
+try:
+  # the accounting group user
+  accuser = cp.get('accounting', 'user')
+except:
+  print >> sys.stderr, "Condor accounting group user is required!"
+  sys.exit(1)
+
 # create Condor Jobds that will be used in the dag
 # df_job = pipeline.LSCDataFindJob('cache','logs') # data find job
 univ = cp.get('condor', 'universe')
-coarse_job = ppu.heterodyneJob(cp.get('exec', 'heterodyne'),univ)
-fine_job = ppu.heterodyneJob(cp.get('exec', 'heterodyne'),univ)
-update_job = ppu.heterodyneJob(cp.get('exec', 'heterodyne'),univ)
+coarse_job = ppu.heterodyneJob(cp.get('exec', 'heterodyne'),univ, accgroup, accuser)
+fine_job = ppu.heterodyneJob(cp.get('exec', 'heterodyne'),univ, accgroup, accuser)
+update_job = ppu.heterodyneJob(cp.get('exec', 'heterodyne'),univ, accgroup, accuser)
 
 # set Condor .sub submit file names
 subsuffix = '.sub'

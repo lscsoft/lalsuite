@@ -23,11 +23,14 @@ class heterodyneJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
   A lalapps_heterodyne_pulsar job to coarse heterodyne the data.
   """
-  def __init__(self,execu,univ='standard'):
+  def __init__(self, execu, univ, accgroup, accuser):
     self.__executable = execu # gets the executable from .ini
     self.__universe = univ
     pipeline.CondorDAGJob.__init__(self, self.__universe, self.__executable)
     pipeline.AnalysisJob.__init__(self, None)
+
+    self.add_condor_cmd('accounting_group', accgroup)
+    self.add_condor_cmd('accounting_group_user', accuser)
 
     # set log files for job
     self.set_stdout_file('logs/heterodyne_pulsar-$(cluster).out')
