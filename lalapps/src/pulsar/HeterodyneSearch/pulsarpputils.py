@@ -34,12 +34,6 @@ import numpy as np
 import struct
 import re
 
-import matplotlib
-# matplotlib.use("Agg")
-
-from matplotlib import pyplot as plt
-from matplotlib import colors
-from matplotlib.mlab import specgram, find, psd
 from scipy.integrate import cumtrapz
 from scipy.interpolate import interp1d
 from scipy.stats import hmean
@@ -520,6 +514,9 @@ def plot_posterior_hist(poslist, param, ifos,
                         parambounds=[float("-inf"), float("inf")],
                         nbins=50, upperlimit=0, overplot=False,
                         parfile=None, mplparams=False):
+  import matplotlib
+  from matplotlib import pyplot as plt
+  
   # create list of figures
   myfigs = []
 
@@ -659,6 +656,9 @@ def upper_limit(pos, upperlimit=0.95, parambounds=[float("-inf"), float("inf")],
 # of bins
 def plot_posterior_chain(poslist, param, ifos, grr=None, withhist=0, \
                          mplparams=False):
+  import matplotlib
+  from matplotlib import pyplot as plt
+  
   try:
     from matplotlib import gridspec
   except:
@@ -834,6 +834,9 @@ def read_hist_from_file(histfile):
 # also be returned.
 def plot_2Dhist_from_file(histfile, ndimlabel, mdimlabel, margpars=True, \
                           mplparams=False):
+  import matplotlib
+  from matplotlib import pyplot as plt
+  
   # read in 2D h0 vs cos(iota) binary prior file
   xbins, ybins, histarr = read_hist_from_file(histfile)
 
@@ -966,6 +969,9 @@ def h0ul_from_prior_file(priorfile, ulval=0.95):
 # function to create a histogram plot of the 2D posterior
 def plot_posterior_hist2D(poslist, params, ifos, bounds=None, nbins=[50,50], \
                           parfile=None, overplot=False, mplparams=False):
+  import matplotlib
+  from matplotlib import pyplot as plt
+  
   if len(params) != 2:
     print >> sys.stderr, "Require 2 parameters"
     sys.exit(1)
@@ -1185,6 +1191,10 @@ def tukey_window(N, alpha=0.5):
 # spectrogram for each IFO
 def plot_Bks_ASDs( Bkdata, ifos, delt=86400, plotpsds=True,
                    plotfscan=False, removeoutlier=None, mplparams=False ):
+  import matplotlib
+  from matplotlib.mlab import specgram
+  from matplotlib import colors
+  
   # create list of figures
   Bkfigs = []
   psdfigs = []
@@ -1372,6 +1382,9 @@ Fs=Fs, window=win)
 # (if a list with previous value is given they will be plotted as well)
 #  - lims is a dictionary of lists for each IFO
 def plot_limits_hist(lims, param, ifos, prevlims=None, bins=20, overplot=False, mplparams=False):
+  import matplotlib
+  from matplotlib import pyplot as plt
+  
   if not mplparams:
     mplparams = { \
       'backend': 'Agg',
@@ -1528,6 +1541,9 @@ def plot_limits_hist(lims, param, ifos, prevlims=None, bins=20, overplot=False, 
 # overplot - set to true to plot different IFOs on same plot
 def plot_h0_lims(h0lims, f0gw, ifos, xlims=[10, 1500], ulesttop=None,
                  ulestbot=None, prevlim=None, prevlimf0gw=None, overplot=False, mplparams=False):
+  import matplotlib
+  from matplotlib import pyplot as plt
+  
   if not mplparams:
     mplparams = { \
       'backend': 'Agg',
