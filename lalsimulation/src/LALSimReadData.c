@@ -17,12 +17,10 @@
 *  MA  02111-1307  USA
 */
 
+#define _GNU_SOURCE   /* for realpath() */
+
 #include <config.h>
-
-#define _BSD_SOURCE   /* for realpath() */
 #include <stdlib.h>
-#undef _BSD_SOURCE
-
 #include <limits.h>
 #include <string.h>
 #ifdef HAVE_UNISTD_H

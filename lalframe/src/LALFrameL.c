@@ -17,11 +17,10 @@
 *  MA  02111-1307  USA
 */
 
-#define _BSD_SOURCE   /* for mkstemp() and strdup() */
-#include <stdlib.h>
-#undef _BSD_SOURCE
+#define _GNU_SOURCE   /* for mkstemp() and strdup() */
 
 #include <config.h>
+#include <stdlib.h>
 #include <math.h>
 #include <stdio.h>
 #include <string.h>

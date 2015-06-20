@@ -56,9 +56,9 @@
  * the current directory.
  */
 
-#define _BSD_SOURCE   /* for realpath() */
+#define _GNU_SOURCE   /* for realpath() */
+#include <config.h>
 #include <stdlib.h>
-#undef _BSD_SOURCE
 
 #include <ctype.h>
 #include <math.h>

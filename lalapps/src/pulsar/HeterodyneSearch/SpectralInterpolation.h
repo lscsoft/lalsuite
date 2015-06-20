@@ -1,6 +1,4 @@
-#define _BSD_SOURCE   /* for alphasort() and scandir() */
-#include <dirent.h>
-#undef _BSD_SOURCE
+#define _GNU_SOURCE   /* for alphasort() and scandir() */
 
 #include <sys/time.h>
 #include <lalapps.h>
@@ -19,6 +17,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <dirent.h>
 #include <lal/BinaryPulsarTiming.h>
 #include <gsl/gsl_sort_double.h>
 #include <gsl/gsl_statistics_double.h>
