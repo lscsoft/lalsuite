@@ -174,6 +174,18 @@ int XLALCalculateCrossCorrPhaseDerivatives
    )
   ;
 
+int XLALCalculateCrossCorrPhaseMetric
+  (
+   gsl_matrix                        **g_ij,
+   gsl_vector                       **eps_i,
+   REAL8                        *sumGammaSq,
+   const REAL8VectorSequence   *phaseDerivs,
+   const SFTPairIndexList    *pairIndexList,
+   const REAL8Vector             *Gamma_ave,
+   const REAL8Vector            *Gamma_circ,
+   const DopplerCoordinateSystem  *coordSys
+   );
+
 int XLALCalculateLMXBCrossCorrDiagMetric
   (
    REAL8                      *hSens,

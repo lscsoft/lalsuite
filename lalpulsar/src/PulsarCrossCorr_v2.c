@@ -449,6 +449,94 @@ int XLALCalculateCrossCorrPhaseDerivatives
 
 }
 
+/** calculate phase metric for CW cross-correlation search, as well as vector used for parameter offsets */
+/** This calculates the metric defined in (4.7) of Whelan et al 2015 and the parameter offset epsilon_i */
+/** (not including the cosi-dependent prefactor) in defined in (4.8) */
+/* allocates memory as well */
+int XLALCalculateCrossCorrPhaseMetric
+  (
+   gsl_matrix                        **g_ij, /**< Output: parameter space metric */
+   gsl_vector                       **eps_i, /**< Output: parameter offset vector from (4.8) of WSZP15 */
+   REAL8                        *sumGammaSq, /**< Output: sum of (Gamma_ave)^2 for normalization and sensitivity */
+   const REAL8VectorSequence   *phaseDerivs, /**< Input: dPhi_K/dlambda_i; i is the "sequence" index, K is the "vector" */
+   const SFTPairIndexList    *pairIndexList, /**< Input: list of SFT pairs */
+   const REAL8Vector             *Gamma_ave, /**< Input: vector of aa+bb values */
+   const REAL8Vector            *Gamma_circ, /**< Input: vector of ab-ba values */
+   const DopplerCoordinateSystem  *coordSys  /**< Input: coordinate directions for metric */
+   )
+{
+  XLAL_CHECK ( sumGammaSq != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( phaseDerivs != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( pairIndexList != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( Gamma_ave != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( Gamma_circ != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( coordSys != NULL, XLAL_EINVAL );
+
+  const UINT4 numCoords = coordSys->dim;
+  XLAL_CHECK ( ( phaseDerivs->length == numCoords ), XLAL_EINVAL, "Length mismatch: phaseDerivs->length=%"LAL_UINT4_FORMAT", numCoords=%"LAL_UINT4_FORMAT"\n", phaseDerivs->length, numCoords );
+  const UINT8 numSFTs = phaseDerivs->vectorLength;
+  const UINT8 numPairs = pairIndexList->length;
+  XLAL_CHECK ( ( Gamma_ave->length == numPairs ), XLAL_EINVAL, "Length mismatch: Gamma_ave->length=%"LAL_UINT4_FORMAT", numPairs=%"LAL_UINT8_FORMAT"\n", Gamma_ave->length, numPairs );
+  XLAL_CHECK ( ( Gamma_circ->length == numPairs ), XLAL_EINVAL, "Length mismatch: Gamma_circ->length=%"LAL_UINT4_FORMAT", numPairs=%"LAL_UINT8_FORMAT"\n", Gamma_circ->length, numPairs );
+
+  /* ---------- prepare output metric ---------- */
+  gsl_matrix *ret_g;
+  if ( (ret_g = gsl_matrix_calloc ( numCoords, numCoords )) == NULL ) {
+    XLALPrintError ("%s: gsl_matrix_calloc(%d, %d) failed.\n\n", __func__, numCoords, numCoords );
+    XLAL_ERROR ( XLAL_ENOMEM );
+
+  }
+  gsl_vector *ret_e;
+  if ( (ret_e = gsl_vector_calloc ( numCoords )) == NULL ) {
+    XLALPrintError ("%s: gsl_vector_calloc(%d) failed.\n\n", __func__, numCoords );
+    XLAL_ERROR ( XLAL_ENOMEM );
+  }
+
+  REAL8Vector *dDeltaPhi_i = NULL;
+  REAL8 denom = 0;
+  XLAL_CHECK ( ( dDeltaPhi_i = XLALCreateREAL8Vector ( numCoords ) ) != NULL, XLAL_EFUNC, "XLALCreateREAL8Vector ( %"LAL_UINT4_FORMAT" ) failed.", numCoords );
+  for ( UINT8 pairNum=0; pairNum < numPairs; pairNum++ ) {
+    UINT8 sftNum1 = pairIndexList->data[pairNum].sftNum[0];
+    UINT8 sftNum2 = pairIndexList->data[pairNum].sftNum[1];
+    REAL8 aveWeight = SQUARE(Gamma_ave->data[pairNum]);
+    denom += aveWeight;
+    REAL8 circWeight = Gamma_ave->data[pairNum] * Gamma_circ->data[pairNum];
+    for ( UINT4 i=0; i < numCoords; i++ ) {
+      dDeltaPhi_i->data[i] = phaseDerivs->data[i*numSFTs+sftNum1] - phaseDerivs->data[i*numSFTs+sftNum2];
+      REAL8 epsi = gsl_vector_get( ret_e, i );
+      epsi += circWeight * dDeltaPhi_i->data[i];
+      gsl_vector_set( ret_e, i, epsi );
+      for ( UINT4 j=0; j<=i; j++ ) { /* Doing the loop this way ensures dDeltaPhi_i[j] has been set */
+	REAL8 gij = gsl_matrix_get( ret_g, i, j );
+	gij += aveWeight * dDeltaPhi_i->data[i] * dDeltaPhi_i->data[j];
+	gsl_matrix_set ( ret_g, i, j, gij );
+      }
+    }
+  }
+
+  XLALDestroyREAL8Vector ( dDeltaPhi_i );
+
+  for ( UINT4 i=0; i < numCoords; i++ ) {
+    REAL8 epsi = gsl_vector_get( ret_e, i );
+    epsi /= denom;
+    gsl_vector_set( ret_e, i, epsi );
+    for ( UINT4 j=0; j<=i; j++ ) { /* Doing the loop the same way as above */
+      REAL8 gij = gsl_matrix_get( ret_g, i, j );
+      gij /= (2.*denom);
+      gsl_matrix_set ( ret_g, i, j, gij );
+      if ( i != j ) gsl_matrix_set ( ret_g, j, i, gij );
+    }
+  }
+
+  (*g_ij) = ret_g;
+  (*eps_i) = ret_e;
+  (*sumGammaSq) = denom;
+
+  return XLAL_SUCCESS;
+
+}
+
+
 /*calculate metric diagonal components, also include the estimation of sensitivity E[rho]/(h_0)^2*/
 int XLALCalculateLMXBCrossCorrDiagMetric
   (
