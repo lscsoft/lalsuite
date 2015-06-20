@@ -163,6 +163,7 @@ src/pulsar/Fstatistic/lalapps_synthesizeLVStats
 src/pulsar/Fstatistic/lalapps_synthesizeTransientStats
 src/pulsar/GCT/lalapps_HierarchSearchGCT
 src/pulsar/HeterodyneSearch/lalapps_CrabTNHeterodyne
+src/pulsar/HeterodyneSearch/lalapps_SplInter
 src/pulsar/HeterodyneSearch/lalapps_create_pulsar_signal_frame
 src/pulsar/HeterodyneSearch/lalapps_heterodyne_pulsar
 src/pulsar/HeterodyneSearch/lalapps_pulsar_parameter_estimation
