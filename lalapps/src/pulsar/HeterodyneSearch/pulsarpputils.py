@@ -610,9 +610,9 @@ def plot_posterior_hist(poslist, param, ifos,
   if parval:
     if not overplot:
       plt.hold(True)
-      plt.plot([parval, parval], [0, n.max()+0.1*n.max()], 'k--', linewidth=1.5)
+      plt.axvline(parval, color='k', ls='--', linewidth=1.5)
     else:
-      plt.plot([parval, parval], [0, max(ymax)], 'k--', linewidth=1.5)
+      plt.axvline(parval, color='k', ls='--', linewidth=1.5)
 
   if overplot:
     plt.ylim(0, max(ymax))

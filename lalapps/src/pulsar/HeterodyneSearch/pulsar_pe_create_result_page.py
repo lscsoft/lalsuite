@@ -1279,7 +1279,7 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=50 )
   cifigname = output_fig(ciFig[0], puldir, 'cipost', ftypes)
 
   # psi
-  bounds = [-math.pi/4, math.pi/4]
+  bounds = [0., math.pi/2.]
   psiFig, ulvals = pppu.plot_posterior_hist( poslist, 'psi', ifosNew, \
                                        bounds, histbins, \
                                        0, overplot=True, parfile=parinj )
