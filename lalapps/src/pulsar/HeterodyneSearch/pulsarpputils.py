@@ -1289,9 +1289,9 @@ Bk[:,2])))), 50)
       count = 0
 
       # zero pad the data and bin each point in the nearest 60s bin
-      datazeropad = np.zeros(math.ceil(totlen/sampledt)+1, dtype=complex)
+      datazeropad = np.zeros(int(math.ceil(totlen/sampledt))+1, dtype=complex)
 
-      idx = map(lambda x: math.floor((x/sampledt)+0.5), tms)
+      idx = map(lambda x: int(math.floor((x/sampledt)+0.5)), tms)
       for i in range(0, len(idx)):
         datazeropad[idx[i]] = complex(Bk[i,1], Bk[i,2])
 
