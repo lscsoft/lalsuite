@@ -1194,6 +1194,7 @@ def plot_Bks_ASDs( Bkdata, ifos, delt=86400, sampledt=60., plotpsds=True,
   import matplotlib
   from matplotlib.mlab import specgram
   from matplotlib import colors
+  from matplotlib import pyplot as plt
   
   # create list of figures
   Bkfigs = []
@@ -1299,7 +1300,7 @@ Bk[:,2])))), 50)
       Fs = 1./sampledt # sample rate in Hz
 
       fscan, freqs, t = specgram(datazeropad, NFFT=int(math.floor(delt/sampledt)), \
-Fs=Fs, window=win)
+Fs=Fs, window=win, noverlap=int(math.floor(delt/(2.*sampledt))))
 
       if plotpsds:
         fshape = fscan.shape
