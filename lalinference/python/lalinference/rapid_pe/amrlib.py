@@ -190,6 +190,25 @@ def transform_tau0tau3_m1m2(tau0, tau3, flow=40.):
     m1, m2 = m1m2(mt*eta**(3./5), eta)
     return m1 / __dim_mass, m2 / __dim_mass
 
+#
+# Coordinate transformation boundaries
+#
+
+__a0 = __prefac_0 * numpy.pi
+__a3 = __prefac_3 * numpy.pi
+def check_tau0tau3(tau0, tau3, flow=40):
+    A_0 = __a0 / (numpy.pi * flow)**(8./3)
+    A_3 = __a3 / (numpy.pi * flow)**(5./3)
+
+    # Lower bound (\eta > 1/4)
+    tau3_bnd = 4 * A_3 * (tau0 / 4 / A_0)**(2.0/5)
+
+    # Note, there are two other bounds, but we don't care about them so much
+    return tau3 > tau3_bnd
+
+def check_mchirpeta(mchirp, eta):
+    return eta <= 0.25 and mchirp >= 0
+
 VALID_TRANSFORMS_MASS = { \
     "mchirp_eta": transform_m1m2_mceta,
     "tau0_tau3": transform_m1m2_tau0tau3,
