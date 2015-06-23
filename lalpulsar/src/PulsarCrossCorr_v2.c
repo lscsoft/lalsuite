@@ -438,7 +438,7 @@ int XLALCalculateCrossCorrPhaseDerivatives
       UINT8 numSFTsDet = times->DeltaT->length;
       XLAL_CHECK ( ( sftInd < numSFTsDet ), XLAL_EINVAL, "SFT asked for SFT index off end of list:\n sftNum=%"LAL_UINT8_FORMAT", detInd=%"LAL_UINT8_FORMAT", sftInd=%"LAL_UINT8_FORMAT", numSFTsDet=%"LAL_UINT8_FORMAT"\n", sftNum, detInd, sftInd, numSFTsDet );
       REAL8 tSSB = refTime8 + times->DeltaT->data[sftInd];
-      ret->data[coordNum*numSFTs+sftNum] = XLALComputePhaseDerivative ( tSSB, dopplerPoint, (coordSys->coordIDs[coordNum]), edat, NULL, FALSE );
+      ret->data[coordNum*numSFTs+sftNum] = XLALComputePhaseDerivative ( tSSB, dopplerPoint, (coordSys->coordIDs[coordNum]), edat, NULL, 0 );
       XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "XLALComputePhaseDerivative() failed with xlalErrno = %d\n", xlalErrno );
     }
   }

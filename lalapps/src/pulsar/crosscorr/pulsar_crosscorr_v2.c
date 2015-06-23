@@ -135,7 +135,6 @@ int main(int argc, char *argv[]){
   PulsarDopplerParams thisBinaryTemplate, binaryTemplateSpacings;
   PulsarDopplerParams minBinaryTemplate, maxBinaryTemplate;
   SkyPosition XLAL_INIT_DECL(skyPos);
-  MultiSSBtimes *multiSSBTimes = NULL;
   MultiSSBtimes *multiBinaryTimes = NULL;
 
   INT4  k;
@@ -441,7 +440,7 @@ int main(int argc, char *argv[]){
   REAL8Vector *GammaAve = NULL;
   REAL8Vector *GammaCirc = NULL;
   if ( ( XLALCalculateCrossCorrGammas( &GammaAve, &GammaCirc, sftPairs, sftIndices, multiCoeffs)  != XLAL_SUCCESS ) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: XLALCalculateAveCurlyGUnshifted() failed with errno=%d\n", __func__, xlalErrno );
+    LogPrintf ( LOG_CRITICAL, "%s: XLALCalculateCrossCorrGammas() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
 
@@ -469,8 +468,6 @@ int main(int argc, char *argv[]){
     }
     fclose(fp);
   }
-
-  XLALDestroyREAL8Vector ( GammaCirc );
 
   /*initialize binary parameters structure*/
   XLAL_INIT_MEM(minBinaryTemplate);
@@ -563,12 +560,48 @@ int main(int argc, char *argv[]){
   thisBinaryTemplate.argp = 0.0;*/
   /* copy to dopplerpos */
 
-
   /* Calculate SSB times (can do this once since search is currently only for one sky position, and binary doppler shift is added later) */
+  MultiSSBtimes *multiSSBTimes = NULL;
   if ((multiSSBTimes = XLALGetMultiSSBtimes ( multiStates, skyPos, dopplerpos.refTime, SSBPREC_RELATIVISTICOPT )) == NULL){
     LogPrintf ( LOG_CRITICAL, "%s: XLALGetMultiSSBtimes() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
+
+  /* "New" general metric computation */
+  /* For now hard-code circular parameter space */
+
+  const DopplerCoordinateSystem coordSys = {
+    .dim = 4,
+    .coordIDs = { DOPPLERCOORD_FREQ,
+		  DOPPLERCOORD_ASINI,
+		  DOPPLERCOORD_TASC,
+		  DOPPLERCOORD_PORB, },
+  };
+
+  REAL8VectorSequence *phaseDerivs = NULL;
+  if ( ( XLALCalculateCrossCorrPhaseDerivatives ( &phaseDerivs, &thisBinaryTemplate, config.edat, sftIndices, multiSSBTimes, &coordSys )  != XLAL_SUCCESS ) ) {
+    LogPrintf ( LOG_CRITICAL, "%s: XLALCalculateCrossCorrPhaseDerivatives() failed with errno=%d\n", __func__, xlalErrno );
+    XLAL_ERROR( XLAL_EFUNC );
+  }
+
+  /* fill in metric and parameter offsets */
+  gsl_matrix *g_ij = NULL;
+  gsl_vector *eps_i = NULL;
+  REAL8 sumGammaSq = 0;
+  if ( ( XLALCalculateCrossCorrPhaseMetric ( &g_ij, &eps_i, &sumGammaSq, phaseDerivs, sftPairs, GammaAve, GammaCirc, &coordSys ) != XLAL_SUCCESS ) ) {
+    LogPrintf ( LOG_CRITICAL, "%s: XLALCalculateCrossCorrPhaseMetric() failed with errno=%d\n", __func__, xlalErrno );
+    XLAL_ERROR( XLAL_EFUNC );
+  }
+  XLALDestroyREAL8VectorSequence ( phaseDerivs );
+  XLALDestroyREAL8Vector ( GammaCirc );
+
+  if ((fp = fopen("gsldata.dat","w"))==NULL){
+    LogPrintf ( LOG_CRITICAL, "Can't write in gsl matrix file");
+    XLAL_ERROR( XLAL_EFUNC );
+  }
+
+  XLALfprintfGSLvector(fp, "%g", eps_i);
+  XLALfprintfGSLmatrix(fp, "%g", g_ij);
 
   /* Allocate structure for binary doppler-shifting information */
   if ((multiBinaryTimes = XLALDuplicateMultiSSBtimes ( multiSSBTimes )) == NULL){
