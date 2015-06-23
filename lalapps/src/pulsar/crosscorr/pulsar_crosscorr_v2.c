@@ -743,7 +743,7 @@ int XLALInitUserVars (UserInput_t *uvar)
   uvar->numBins = 1;
 
   /* default for reftime is in the middle */
-  uvar->refTime = 0.5*(uvar->startTime + uvar->endTime);
+  uvar->refTime = uvar->startTime + 0.5 * ( (REAL8) (uvar->endTime - uvar->startTime) );
 
   /* zero binary orbital parameters means not a binary */
   uvar->orbitAsiniSec = 0.0;
