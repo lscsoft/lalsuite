@@ -41,8 +41,7 @@
 #include <lal/LALInferenceTemplate.h>
 
 /* LIB imports*/
-#include <lal/LALSimBurst.h>
-#include <lal/LALSimBurstWaveformCache.h>
+#include <lal/LALInferenceBurstRoutines.h>
 
 
 #define PROGRAM_NAME "LALInferenceTemplate.c"
@@ -1170,7 +1169,7 @@ void LALInferenceTemplateXLALSimBurstChooseWaveform(LALInferenceModel *model)
 void LALInferenceTemplateXLALSimBurstSineGaussianF(LALInferenceModel *model)
 /*************************************************************************************************************************/
 /* Wrapper for LALSimulation waveforms:						                                                             */
-/* XLALSimBurstChooseFDWaveform() and XLALSimBurstChooseTDWaveform().                                              */
+/* XLALInferenceBurstChooseFDWaveform() and XLALInferenceBurstChooseTDWaveform().                                              */
 /*                                                                                                                       */
 /*  model->params parameters are:										                                         */
 /*  - "name" description; type OPTIONAL (default value)										                             */
@@ -1215,18 +1214,18 @@ void LALInferenceTemplateXLALSimBurstSineGaussianF(LALInferenceModel *model)
   }
 
   deltaF = model->deltaF;
-  XLAL_TRY(ret=XLALSimBurstSineGaussianFFast(&hptilde, &hctilde, quality,freq,hrss, alpha,deltaF,deltaT), errnum);
+  XLAL_TRY(ret=XLALInferenceBurstSineGaussianFFast(&hptilde, &hctilde, quality,freq,hrss, alpha,deltaF,deltaT), errnum);
   if (ret == XLAL_FAILURE)
       {
         XLALPrintError(" ERROR in LALInferenceTemplateXLALSimBurstChooseWaveform(). errnum=%d\n",errnum );
         return;
       }
 	if (hptilde==NULL || hptilde->data==NULL || hptilde->data->data==NULL ) {
-	  XLALPrintError(" ERROR in LALInferenceTemplateXLALSimBurstChooseWaveform: encountered unallocated 'hptilde'.\n");
+	  XLALPrintError(" ERROR in LALInferenceTemplateXLALInferenceBurstChooseWaveform: encountered unallocated 'hptilde'.\n");
 	  XLAL_ERROR_VOID(XLAL_EFAULT);
 	}
 	if (hctilde==NULL || hctilde->data==NULL || hctilde->data->data==NULL ) {
-	  XLALPrintError(" ERROR in LALInferenceTemplateXLALSimBurstChooseWaveform: encountered unallocated 'hctilde'.\n");
+	  XLALPrintError(" ERROR in LALInferenceTemplateXLALInferenceBurstChooseWaveform: encountered unallocated 'hctilde'.\n");
 	  XLAL_ERROR_VOID(XLAL_EFAULT);
 	}
   size_t lower =(size_t) ( hctilde->f0/hctilde->deltaF);    

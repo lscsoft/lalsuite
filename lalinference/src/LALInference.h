@@ -84,7 +84,7 @@
 #include <sys/time.h>
 
 /*LIB imports*/
-#include <lal/LALSimBurstWaveformCache.h>
+#include <lal/LALInferenceBurstRoutines.h>
 
 #define LALINFERENCE_HASHTABLE_SIZE 256 /* Max entries in hash table */
 

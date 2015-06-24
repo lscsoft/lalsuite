@@ -19,7 +19,7 @@ pkginclude_HEADERS = \
 	LALInferenceLikelihood.h \
 	LALInferenceNestedSampler.h \
 	LALInferencePrior.h \
-  LALInferenceReadBurstData.h \
+        LALInferenceReadBurstData.h \
 	LALInferenceReadData.h \
 	LALInferenceTemplate.h \
 	LALInferenceProposal.h \
@@ -31,6 +31,7 @@ pkginclude_HEADERS = \
 	LALInferenceRemoveLines.h \
 	LALInferenceCalibrationErrors.h \
 	LALInferenceGenerateROQ.h \
+        LALInferenceBurstRoutines.h \
 	$(BAYESTARHDR) \
 	$(XMLHDR)
 
@@ -53,6 +54,7 @@ liblalinference_la_SOURCES = \
 	LALInferenceRemoveLines.c \
 	LALInferenceCalibrationErrors.c \
 	LALInferenceGenerateROQ.c \
+        LALInferenceBurstRoutines.c \
 	DetectorFixedSkyCoords.c \
 	logaddexp.h \
 	$(BAYESTARSRC) \

@@ -77,7 +77,7 @@
 #include <lal/LALSimNoise.h>
 #include <LALInferenceRemoveLines.h>
 /* LIB deps */
-#include <lal/LALSimBurst.h>
+#include <lal/LALInferenceBurstRoutines.h>
 #include <lal/LIGOLwXMLBurstRead.h>
 
 struct fvec {

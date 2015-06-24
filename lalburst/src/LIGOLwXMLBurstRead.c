@@ -324,7 +324,7 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 			row->duration = env.ligo_lw.table.elt[column_pos.duration].data.real_8;
 			row->frequency = env.ligo_lw.table.elt[column_pos.frequency].data.real_8;
 			row->amplitude = env.ligo_lw.table.elt[column_pos.amplitude].data.real_8;
-		} else if(!strcmp(row->waveform, "Gaussian") ||!strcmp(row->waveform, "DampedSinusoid") || !strcmp(row->waveform, "DampedSinusoidF") ||!strcmp(row->waveform, "SineGaussian") || !strcmp(row->waveform, "SineGaussianF")) {
+		} else if(!strcmp(row->waveform, "SineGaussian")) {
 			if(column_pos.duration < 0 || column_pos.frequency < 0 || column_pos.bandwidth < 0 || column_pos.q < 0 || column_pos.pol_ellipse_angle < 0 || column_pos.pol_ellipse_e < 0 || column_pos.hrss < 0) {
 				XLALDestroySimBurst(row);
 				XLALDestroySimBurstTable(head);

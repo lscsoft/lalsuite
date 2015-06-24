@@ -103,6 +103,7 @@ LALInferenceModel *LALInferenceInitModelReviewEvidence_banana(LALInferenceRunSta
  **/
 void LALInferenceCheckOptionsConsistency(ProcessParamsTable *commandLine);
 
+void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState, LALInferenceVariables *currentParams);
 
 #endif
 

@@ -40,6 +40,7 @@
 #include <lal/GenerateBurst.h>
 #include <lal/LALSimBurst.h>
 #include <lal/LALInferenceCalibrationErrors.h>
+#include <lal/LALInferenceInit.h>
 
 /*
  * Initialize threads in memory, using LALInferenceInitBurstModel() to init models.
@@ -320,6 +321,9 @@ LALInferenceModel * LALInferenceInitBurstModel(LALInferenceRunState *state)
     exit(1);
   }
 
+    /* Handle, if present, requests for calibration parameters. */
+    LALInferenceInitCalibrationVariables(state, model->params);
+  
     REAL8 psiMin=0.0,psiMax=LAL_PI; 
     REAL8 raMin=0.0,raMax=LAL_TWOPI; 
     REAL8 decMin=-LAL_PI/2.0,decMax=LAL_PI/2.0; 
