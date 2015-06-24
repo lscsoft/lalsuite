@@ -1593,6 +1593,177 @@ def optimize(
 
 # =================================================
 
+def vetolist_safety(
+    __params,
+    output_dir='./',
+    source_dir='./',
+    verbose=False,
+    ):
+    """ an encapsulation of vetolist_eval.py 
+  __params is a params object
+  if present, expect numBins to be a non-negative integer corresponding to the number of bins in a round-robin analysis.
+    delegates job to mish_mash_eval() if numBins is present.
+  """
+
+    output_dir = __check_dirname(output_dir)
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    source_dir = __check_dirname(source_dir)
+
+    if vars(__params).has_key('channels'):
+        channels = event.loadlist(__params.channels)
+    else:
+        channels = __load_channels(__params.auxdir,
+                                   analysis_range=__params.analysis_range)
+
+  # we need the same channels list as for recalculate.py so we can associate numbers with channels
+
+    for remove in __params.notused:
+        channels = [channel for channel in channels
+                    if channel.find(remove) == -1]
+
+    vetolists = []  # a list of the finished vetolist files
+
+    for gwset in __params.gwsets:
+        gwset += '-' + str(__params.gwthr)
+        filename = output_dir + gwset + '.0' \
+            + '.vetolist.safety'
+        f = open(filename, 'w')
+        print >> f, \
+            '# %10s %7s %4s %-40s %4s %7s %11s %8s %6s %5s %8s %9s %9s %9s %9s %7s %12s %9s %11s' \
+            % (
+            'livetime',
+            '#gwtrg',
+            'bin',
+            'vchan',
+            'vthr',
+            'vwin',
+            'dsec',
+            '#auxtrg',
+            'vexp',
+            'vact',
+            'vsig',
+            'useP',
+            'eff',
+            'dt',
+            'eff/dt',
+            'c_vact',
+            'c_dsec',
+            'c_auxtrg',
+            '%s_exp' % __params.metric,
+            )
+
+        if verbose:
+            print '  %10s %7s %4s %-40s %4s %7s %11s %8s %6s %5s %8s %9s %9s %9s %9s %7s %12s %9s %11s' \
+                % (
+                'livetime',
+                '#gwtrg',
+                'bin',
+                'vchan',
+                'vthr',
+                'vwin',
+                'dsec',
+                '#auxtrg',
+                'vexp',
+                'vact',
+                'vsig',
+                'useP',
+                'eff',
+                'dt',
+                'eff/dt',
+                'c_vact',
+                'c_dsec',
+                'c_auxtrg',
+                '%s_exp' % __params.metric,
+                )
+
+    # load in stats.0 data
+
+        stats = event.load(source_dir + gwset + '.stats.0')
+
+    # sort so they are in the correct order
+        stats.sort(key=lambda line: line[sD['vthr']], reverse=True)  # this ordering should be consistent with standard ROC format (rank: low->high)
+        stats.sort(key=lambda line: line[sD[__params.metric]], reverse=True)
+
+        bin = 0  # put in place to match format for mish_mash_vetolists
+        c_vact = 0.
+        c_dsec = 0.
+        c_auxtrg = 0.
+        for line_idx in range(len(stats)):
+            line = stats[line_idx]
+            livetime = line[sD['livetime']]
+            ngwtrg = line[sD['#gwtrg']]
+            vchan = channels[int(line[sD['vchan']])]
+            vthr = line[sD['vthr']]
+            vwin = line[sD['vwin']]
+            dsec = line[sD['dsec']]
+            nauxtrg = line[sD['#auxtrg']]
+            vexp = line[sD['vexp']]
+            vact = line[sD['vact']]
+            vsig = line[sD['vsig']]
+            useP = line[sD['useP']]
+            eff = line[sD['eff']]
+            dt = line[sD['dt']]
+            effbydt = line[sD['eff/dt']]
+
+            c_vact += vact
+            c_dsec += dsec
+            c_auxtrg += nauxtrg
+            metric_exp = stats[line_idx][sD[__params.metric]]
+
+            print >> f, \
+                '%12.3f %7d %4d %-40s %4d %7.3f %11.3f %8d %6.2f %5d %8.2f %9.6f %9.5f %9.5f %9.4f %7d %12.3f %9d %11.4f' \
+                % (
+                livetime,
+                ngwtrg,
+                bin,
+                vchan,
+                vthr,
+                vwin,
+                dsec,
+                nauxtrg,
+                vexp,
+                vact,
+                vsig,
+                useP,
+                eff,
+                dt,
+                effbydt,
+                c_vact,
+                c_dsec,
+                c_auxtrg,
+                metric_exp,
+                )
+            if verbose:
+                print '%12.3f %7d %4d %-40s %4d %7.3f %11.3f %8d %6.2f %5d %8.2f %9.6f %9.5f %9.5f %9.4f %7d %12.3f %9d %11.4f' \
+                    % (
+                    livetime,
+                    ngwtrg,
+                    bin,
+                    vchan,
+                    vthr,
+                    vwin,
+                    dsec,
+                    nauxtrg,
+                    vexp,
+                    vact,
+                    vsig,
+                    useP,
+                    eff,
+                    dt,
+                    effbydt,
+                    c_vact,
+                    c_dsec,
+                    c_auxtrg,
+                    metric_exp,
+                    )
+
+        f.close()
+        vetolists.append(filename)
+
+    return vetolists
+
+###
 def vetolist_eval(
     run,
     __params,
@@ -2729,10 +2900,40 @@ def convergent_train(__params, output_dir="./", verbose=False, write_channels=Fa
     # we only write the channel list on the last iteration
     ### find the best possible order for these configurations
     ### more expensive than a simple recalculate run, but guaranteed to reach an optimal result
-    optimize( run, __params, source_dir=OVL_dir, output_dir=OVL_dir, track=True, verbose=verbose, write_channels=False)
+    optimize( run, __params, source_dir=OVL_dir, output_dir=OVL_dir, track=True, verbose=verbose, write_channels=write_channels)
 
     # generate vetolist
     vetolists = vetolist_eval(run, __params, output_dir=OVL_dir, source_dir=OVL_dir, verbose=verbose)
+
+    # generate standard ROC file
+    for v in vetolists:
+        v = v.split('/')[-1]
+        roc_filename = vetolist_to_ROC(v, source_dir=OVL_dir,
+                output_dir=OVL_dir, metric=__params.metric)
+
+    return vetolists
+
+###
+def safety(__params, output_dir="./", verbose=False, write_channels=False):
+    """
+    perform a safety study, applying all configurations independently and then ranking them by correlation.
+    outputs in vetolist format
+    """
+
+    # set up output directory
+    output_dir = __check_dirname(output_dir)
+    OVL_dir = output_dir + "ovl/"
+    if not os.path.exists(OVL_dir):
+        os.makedirs(OVL_dir)
+
+    # write params file into directory
+    write_params(__params, 'params.txt', params_dir=OVL_dir)
+
+    # perform one recalculate run
+    statsfiles = recalculate( 0, 0, __params, source_dir=OVL_dir, output_dir=OVL_dir, eval=False, verbose=verbose, write_channels=write_channels, track=True)[0]
+
+    # sort channels and write into vetolist format
+    vetolists = vetolist_safety(__params, output_dir=OVL_dir, source_dir=OVL_dir, verbose=verbose)
 
     # generate standard ROC file
     for v in vetolists:
