@@ -283,6 +283,8 @@ if calibration_lookback != "infinity":
 
 calibration_FAPthrs = [float(l) for l in config.get('calibration','FAP').split()]
 
+calibration_mode = config.get('calibration','mode')
+
 ### cache for uroc files
 calibration_cache = dict( (classifier, idq.Cachefile(idq.cache(calibrationdir, classifier, tag='_calibration%s'%usertag))) for classifier in classifiers+combiners )
 for cache in calibration_cache.values():
@@ -376,7 +378,7 @@ if initial_calibration:
     initial_calibration_lookback = config.get("calibration", "initial-lookback")
 
     calibration_start_time = t - calibration_stride
-    calibration_command = "%s --config %s -l %s -s %d -e %d --lookback %s --force"%(calibration_script, opts.config_file, calibration_log, calibration_start_time, t, initial_calibration_lookback)
+    calibration_command = "%s --config %s -l %s -s %d -e %d --lookback %s --mode %s --force"%(calibration_script, opts.config_file, calibration_log, calibration_start_time, t, initial_calibration_lookback, calibration_mode)
     ### we skip validation (no FAPthr arguments) for the initial job
 
     if opts.ignore_science_segments_calibration:
@@ -431,7 +433,7 @@ if opts.dont_cluster_summary:
 if opts.lock_summary:
     summary_template += " --lock-file %s/.idq_summary.lock"%mainidqdir
 
-calibration_template = "%s --config %s -l %s -s %d -e %d --lookback %d" 
+calibration_template = "%s --config %s -l %s -s %d -e %d --lookback %d --mode %s" 
 for fap in calibration_FAPthrs:
     calibration_template += " --FAPthr %.6e"%fap
 if opts.ignore_science_segments_calibration:
@@ -526,7 +528,7 @@ while t  < opts.endgps:
 
         logger.info('Begin: launching calibration script for period: %s - %s'%(calibration_start_time, calibration_stop_time))
 
-        calibration_command = calibration_template%(calibration_script, opts.config_file, calibration_log, calibration_start_time, calibration_stop_time, lookback)
+        calibration_command = calibration_template%(calibration_script, opts.config_file, calibration_log, calibration_start_time, calibration_stop_time, lookback, calibration_mode)
 
         logger.info('Submiting calibration script with the following options:')
         logger.info(calibration_command)
