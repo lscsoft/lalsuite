@@ -48,6 +48,12 @@ python/laldetchar-idq-svm-evaluate
 python/laldetchar-idq-svm-train
 python/laldetchar-idq-train
 python/laldetchar-segments-from-data
+python/laldetchar-idq-gst-sender
+python/laldetchar-idq-gst-relay
+python/laldetchar-idq-gst-listener
+python/laldetchar-idq-ann-convert
+python/laldetchar-idq-ann-evaluate
+python/laldetchar-idq-ann-train
 python/laldetchar/__init__.py
 python/laldetchar/_laldetchar*
 python/laldetchar/git_version.py
