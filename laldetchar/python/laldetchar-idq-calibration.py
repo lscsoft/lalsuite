@@ -70,6 +70,8 @@ parser.add_option('-k', '--lock-file', dest='lockfile', help='use custom lockfil
 
 parser.add_option('-l', '--log-file', default='idq_calibration.log', type='string', help='log file')
 
+parser.add_option("", "--mode", default="dat", type="string", help="the mode for how we compute the calibration, either \"dat\" or \"npy\". If mode=\"dat\", we pick up datfiles and perform a counting experiment to compute the rank->fap mapping. If mode=\"npy\", we pick up rank-frames and directly measure the deadtime to compute the rank->fap mapping. This only affects the roc and uroc files produced. All KDE files and FAPthr checks are the same regardless of mode")
+
 parser.add_option('-s', '--gpsstart', dest="gpsstart", default=-np.infty, type='float', help='gps start time')
 parser.add_option('-e', '--gpsstop', dest="gpsstop", default=np.infty, type='float', help='gps end time')
 
@@ -90,6 +92,9 @@ opts, args = parser.parse_args()
 
 if opts.lookback != "infinity":
     lookback = int(opts.lookback)
+
+if opts.mode not in ["dat", "npy"]:
+    raise ValueError("--mode=%s not understood"%opts.mode)
 
 #===================================================================================================
 ### setup logger to record processes
@@ -310,6 +315,7 @@ while gpsstart < gpsstop:
     #===============================================================================================
 
     ### find all *dat files, bin them according to classifier
+    ### needed for opts.mode=="dat" and KDE estimates
     logger.info('finding all *dat files')
     datsD = defaultdict( list )
     for dat in idq.get_all_files_in_range(realtimedir, gpsstart-lookback, gpsstart+stride, pad=0, suffix='.dat' ):
@@ -321,6 +327,20 @@ while gpsstart < gpsstop:
             datsD.pop(key) 
         else: ### throw out files that don't contain any science time
             datsD[key] = [ dat for dat in datsD[key] if event.livetime(event.andsegments([idqsegs, [idq.extract_start_stop(dat, suffix='.dat')]])) ]
+
+    if opts.mode=="npy": ### need rank files
+        ### find all *rank*npy.gz files, bin them according to classifier
+        logger.info('  finding all *rank*.npy.gz files')
+        ranksD = defaultdict( list )
+        for rank in [rank for rank in  idq.get_all_files_in_range(realtimedir, gpsstart-lookback, gpsstart+stride, pad=0, suffix='.npy.gz') if "rank" in rank]:
+            ranksD[idq.extract_fap_name( rank )].append( rank ) ### should just work...
+
+        ### throw away files we will never need
+        for key in ranksD.keys():
+            if key not in classifiers: ### throw away unwanted files
+                ranksD.pop(key)
+            else: ### keep only files that overlap with scisegs
+                ranksD[key] = [ rank for rank in ranksD[key] if event.livetime(event.andsegments([idqsegs, [idq.extract_start_stop(rank, suffix='.npy.gz')]])) ]
 
     #====================
     # update uroc for each classifier
@@ -384,21 +404,72 @@ while gpsstart < gpsstop:
 
         ### upsample to roc
         r, c, g = idq.resample_rcg(urank, r, c, g)
- 
-        ### dump uroc to file
-        uroc = idq.uroc(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
-        logger.info('  writing %s'%uroc)
-        idq.rcg_to_file(uroc, r, c, g)
-
         urocs[classifier] = (r, c, g)
 
-        if opts.force or ((c[-1] >= min_num_cln) and (g[-1] >= min_num_gch)):
-            ### update cache file
-            logger.info('  adding %s to %s'%(uroc, calibration_cache[classifier].name) )
-            calibration_cache[classifier].append( uroc )
+        if opts.mode == "dat": 
+            ### dump uroc to file
+            uroc = idq.uroc(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
+            logger.info('  writing %s'%uroc)
+            idq.rcg_to_file(uroc, r, c, g)
+
+            if opts.force or ((c[-1] >= min_num_cln) and (g[-1] >= min_num_gch)):
+                ### update cache file
+                logger.info('  adding %s to %s'%(uroc, calibration_cache[classifier].name) )
+                calibration_cache[classifier].append( uroc )
+
+            else:
+                logger.warning('WARNING: not enough samples to trust calibration. skipping calibration update for %s'%classifier)
+
+        elif opts.mode == "npy":
+            ### write list of dats to cache file
+            cache = idq.cache(output_dir, classifier, "_rankcache%s"%usertag)
+            logger.info('writing list of rank files to %s'%cache)
+            f = open(cache, 'w')
+            for rank in ranksD[classifier]:
+                print >>f, rank
+            f.close()
+
+            logger.info('  analyzing rank timeseries to obtain mapping from rank->fap')
+
+            ### load in timeseries
+            _times, timeseries = idq.combine_ts(ranksD[classifier], n=1)
+
+            times = []
+            ranks = []
+            for t, ts in zip(_times, timeseries):
+                _t, _ts = idq.timeseries_in_segments(t, ts, idqsegs)
+                if len(_ts):
+                    times.append( _t )
+                    ranks.append( _ts )
+
+            ### need to compute deadsecs for every rank in r -> function call (probably within calibration module)!
+            crank = []
+            for _r in r:
+
+                dsec = 0
+                for t, ts in zip(times, ranks):
+                    dt = t[1]-t[0] ### get time spacing.
+                    dsec += calibration.timeseries_to_livetime(dt, ts, _r)[0] # we don't care about segments, so just get livetime and smallest stated value
+                crank.append( dsec )
+ 
+            ### dump uroc file
+            uroc = idq.uroc(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
+            logger.info('  writing %s'%uroc)
+            idq.rcg_to_file(uroc, r, crank, g) ### use the amount of time identified via timeseries
+
+
+            logger.warning('  WARNING: interpretation of this for Binomial upper limits is more complicated... but that happens within laldetchar-idq-realtime. probably need to set an option in idq.ini that controls how we compute this mapping. reference this within laldetchar-idq-realtime when computing pt. estimates and upper limits. ')
+
+            if opts.force or ((c[-1] >= min_num_cln) and (g[-1] >= min_num_gch)):
+                ### update cache file
+                logger.info('  adding %s to %s'%(uroc, calibration_cache[classifier].name) )
+                calibration_cache[classifier].append( uroc )
+
+            else:
+                logger.warning('WARNING: not enough samples to trust calibration. skipping calibration update for %s'%classifier)
 
         else:
-            logger.warning('WARNING: not enough samples to trust calibration. skipping calibration update for %s'%classifier)
+            raise ValueError("mode=%s not understood"%opts.mode)
 
     #===============================================================================================
     # compute KDE estimates
