@@ -189,7 +189,7 @@ int read_fstat_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxby
 	}
 	else if (line[len-1] != '\n') {
 	  LogPrintf (LOG_CRITICAL, 
-		     "Line %d is too long or has no NEWLINE. First %lu chars are:\n'%s'\n",
+		     "Line %d is too long or has no NEWLINE. First %zu chars are:\n'%s'\n",
 		     lines,sizeof(line)-1, line);
 	  return -1;
 	}
@@ -227,7 +227,7 @@ int read_fstat_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxby
 	    ) {
 	    LogPrintf (LOG_CRITICAL, 
 		       "Line %d has invalid values.\n"
-		       "First %lu chars are:\n"
+		       "First %zu chars are:\n"
 		       "%s\n"
 		       "All fields should be finite\n"
 		       "1st field should be positive.\n" 
@@ -780,7 +780,7 @@ int write_hs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter, BOOLEA
   len = fwrite(tl->data, tl->size, tl->elems, fp);
   if(len != tl->elems) {
     LOGIOERROR("Couldn't write data to", tmpfilename);
-    LogPrintf(LOG_CRITICAL,"fwrite() returned %d, length was %lu\n", len, tl->elems);
+    LogPrintf(LOG_CRITICAL,"fwrite() returned %d, length was %zu\n", len, tl->elems);
     if(fclose(fp))
       LOGIOERROR("In addition: couldn't close", tmpfilename);
     return(-1);

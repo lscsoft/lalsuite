@@ -325,7 +325,7 @@ static void *PadAlloc(size_t * p, size_t n, int keep, const char *func)
     }
 
     if (lalDebugLevel & LALMEMINFOBIT) {
-        XLALPrintError("%s meminfo: allocating %ld bytes at address %p\n",
+        XLALPrintError("%s meminfo: allocating %zu bytes at address %p\n",
                       func, n, p + nprefix);
     }
 
@@ -369,7 +369,7 @@ static void *UnPadAlloc(void *p, int keep, const char *func)
     s = (char *) q;
 
     if (lalDebugLevel & LALMEMINFOBIT) {
-        XLALPrintError("%s meminfo: freeing %ld bytes at address %p\n",
+        XLALPrintError("%s meminfo: freeing %zu bytes at address %p\n",
                       func, n, p);
     }
 

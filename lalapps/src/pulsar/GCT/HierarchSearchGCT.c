@@ -2672,7 +2672,7 @@ XLALSetUpStacksFromSegmentList ( const SFTCatalog *catalog,	/**< complete list o
 
   /* set memory of output catalog sequence to maximum possible length */
   if ( (stacks = XLALCalloc ( 1, sizeof(*stacks) ) ) == NULL ) {
-    XLALPrintError ("%s: XLALCalloc(%lu) failed.\n", __func__, sizeof(*stacks) );
+    XLALPrintError ("%s: XLALCalloc(%zu) failed.\n", __func__, sizeof(*stacks) );
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
   stacks->length = numSegments;

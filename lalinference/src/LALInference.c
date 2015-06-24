@@ -3760,12 +3760,12 @@ void LALInferenceFprintSplineCalibrationHeader(FILE *output, LALInferenceRunStat
     UINT4 ncal = *(UINT4 *)LALInferenceGetVariable(runState->currentParams, "spcal_npts");
 
     for (i = 0; i < ncal; i++) {
-      snprintf(parname, VARNAME_MAX, "%sspcalamp%02ld", ifo->name, i);
+      snprintf(parname, VARNAME_MAX, "%sspcalamp%02zu", ifo->name, i);
       fprintf(output, "%s\t", parname);
     }
 
     for (i = 0; i < ncal; i++) {
-      snprintf(parname, VARNAME_MAX, "%sspcalphase%02ld", ifo->name, i);
+      snprintf(parname, VARNAME_MAX, "%sspcalphase%02zu", ifo->name, i);
       fprintf(output, "%s\t", parname);
     }
 

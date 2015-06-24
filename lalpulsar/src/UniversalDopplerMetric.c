@@ -1618,7 +1618,7 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
   coordSys = &(metricParams->coordSys);
 
   /* ----- create output structure ---------- */
-  XLAL_CHECK_NULL ( ( ret = XLALCalloc(1,sizeof(*ret))) != NULL, XLAL_ENOMEM, "%s: XLALCalloc(1,%lu) failed.\n", __func__, sizeof(*ret));
+  XLAL_CHECK_NULL ( ( ret = XLALCalloc(1,sizeof(*ret))) != NULL, XLAL_ENOMEM, "%s: XLALCalloc(1,%zu) failed.\n", __func__, sizeof(*ret));
   XLAL_CHECK_NULL ( ( ret->a_a_i = gsl_vector_calloc (dim)) != NULL, XLAL_ENOMEM, "%s: a_a_i = gsl_vector_calloc (%d) failed.\n", __func__, dim );
   XLAL_CHECK_NULL ( ( ret->a_b_i = gsl_vector_calloc (dim)) != NULL, XLAL_ENOMEM, "%s: a_b_i = gsl_vector_calloc (%d) failed.\n", __func__, dim );
   XLAL_CHECK_NULL ( ( ret->b_b_i = gsl_vector_calloc (dim)) != NULL, XLAL_ENOMEM, "%s: b_b_i = gsl_vector_calloc (%d) failed.\n", __func__, dim );
@@ -2096,7 +2096,7 @@ XLALComputeFmetricFromAtoms ( const FmetricAtoms_t *atoms, REAL8 cosi, REAL8 psi
 
   /* allocate output metric structure */
   if ( (metric = XLALCalloc ( 1, sizeof(*metric) )) == NULL ) {
-    XLALPrintError ("%s: XLALCalloc ( 1, %lu) failed.\n\n", __func__, sizeof(*metric) );
+    XLALPrintError ("%s: XLALCalloc ( 1, %zu) failed.\n\n", __func__, sizeof(*metric) );
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
   metric->gF_ij = gsl_matrix_calloc ( dim, dim );
@@ -2466,12 +2466,12 @@ XLALComputeOrbitalDerivatives ( UINT4 maxorder,			/**< [in] highest derivative-o
 
   /* allocate return list */
   if ( (ret = XLALCalloc ( 1, sizeof(*ret) )) == NULL ) {
-    XLALPrintError ("%s: failed to XLALCalloc(1,%lu)\n", __func__, sizeof(*ret) );
+    XLALPrintError ("%s: failed to XLALCalloc(1,%zu)\n", __func__, sizeof(*ret) );
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
   ret->length = maxorder + 1;
   if ( (ret->data = XLALCalloc ( ret->length, sizeof(*ret->data) )) == NULL ) {
-    XLALPrintError ("%s: failed to XLALCalloc(%d,%lu)\n", __func__, ret->length, sizeof(*ret->data) );
+    XLALPrintError ("%s: failed to XLALCalloc(%d,%zu)\n", __func__, ret->length, sizeof(*ret->data) );
     XLALFree ( ret );
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }

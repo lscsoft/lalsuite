@@ -67,7 +67,7 @@ XLALCreateSFT ( UINT4 numBins )
   SFTtype *sft;
 
   if ( (sft = XLALCalloc (1, sizeof(*sft) )) == NULL )
-    XLAL_ERROR_NULL ( XLAL_ENOMEM, "XLALCalloc (1, %lu) failed.\n", sizeof(*sft) );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM, "XLALCalloc (1, %zu) failed.\n", sizeof(*sft) );
 
   if ( numBins )
     {
@@ -432,12 +432,12 @@ XLALExtractMultiTimestampsFromSFTs ( const MultiSFTVector *multiSFTs )
   /* create output vector */
   MultiLIGOTimeGPSVector *ret = NULL;
   if ( (ret = XLALCalloc ( 1, sizeof(*ret) )) == NULL ) {
-    XLALPrintError ("%s: failed to XLALCalloc ( 1, %lu ).\n", __func__, sizeof(*ret));
+    XLALPrintError ("%s: failed to XLALCalloc ( 1, %zu ).\n", __func__, sizeof(*ret));
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
   if ( (ret->data = XLALCalloc ( numIFOs, sizeof(*ret->data) )) == NULL ) {
-    XLALPrintError ("%s: failed to XLALCalloc ( %d, %lu ).\n", __func__, numIFOs, sizeof(ret->data[0]) );
+    XLALPrintError ("%s: failed to XLALCalloc ( %d, %zu ).\n", __func__, numIFOs, sizeof(ret->data[0]) );
     XLALFree (ret);
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }

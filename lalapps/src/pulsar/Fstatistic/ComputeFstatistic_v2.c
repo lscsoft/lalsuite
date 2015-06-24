@@ -1989,7 +1989,7 @@ write_FstatCandidate_to_fp ( FILE *fp, const FstatCandidate *thisFCand )
           snprintf ( buf0, sizeof(buf0), " %.9g", thisFCand->twoFX[X] );
           UINT4 len1 = strlen ( extraStatsStr ) + strlen ( buf0 ) + 1;
           if ( len1 > sizeof ( extraStatsStr ) ) {
-            XLAL_ERROR ( XLAL_EINVAL, "assembled output string too long! (%d > %lu)\n", len1, sizeof(extraStatsStr ));
+            XLAL_ERROR ( XLAL_EINVAL, "assembled output string too long! (%d > %zu)\n", len1, sizeof(extraStatsStr ));
             break;      /* we can't really terminate with error in this function, but at least we avoid crashing */
           }
           strcat ( extraStatsStr, buf0 );
