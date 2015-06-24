@@ -97,6 +97,7 @@ typedef struct{
 typedef struct{
   SFTCatalog *catalog; /**< catalog of SFTs */
   EphemerisData *edat; /**< ephemeris data */
+  REAL8   refTime;     /**< reference time for pulsar phase definition */
 } ConfigVariables;
 
 #define TRUE (1==1)
@@ -541,7 +542,7 @@ int main(int argc, char *argv[]){
   minBinaryTemplate.period = uvar.orbitPSec + 0.5 * (uvar.orbitPSecBand - pSpacingNum * binaryTemplateSpacings.period);
 
   /* initialize the doppler scan struct which stores the current template information */
-  XLALGPSSetREAL8(&dopplerpos.refTime, uvar.refTime);
+  XLALGPSSetREAL8(&dopplerpos.refTime, config.refTime);
   dopplerpos.Alpha = uvar.alphaRad;
   dopplerpos.Delta = uvar.deltaRad;
   dopplerpos.fkdot[0] = minBinaryTemplate.fkdot[0];
@@ -729,8 +730,6 @@ int XLALInitUserVars (UserInput_t *uvar)
 
   /* initialize with some defaults */
   uvar->help = FALSE;
-  uvar->startTime = 814838413;	/* 1 Nov 2005, ~ start of S5 */
-  uvar->endTime = uvar->startTime + (INT4) round ( LAL_YRSID_SI ) ;	/* 1 year of data */
   uvar->maxLag = 0.0;
   uvar->inclAutoCorr = FALSE;
   uvar->fStart = 100.0;
@@ -739,11 +738,9 @@ int XLALInitUserVars (UserInput_t *uvar)
   /* uvar->fdotBand = 0.0; */
   uvar->alphaRad = 0.0;
   uvar->deltaRad = 0.0;
+  uvar->refTime = 0.0;
   uvar->rngMedBlock = 50;
   uvar->numBins = 1;
-
-  /* default for reftime is in the middle */
-  uvar->refTime = uvar->startTime + 0.5 * ( (REAL8) (uvar->endTime - uvar->startTime) );
 
   /* zero binary orbital parameters means not a binary */
   uvar->orbitAsiniSec = 0.0;
@@ -773,8 +770,8 @@ int XLALInitUserVars (UserInput_t *uvar)
 
   /* register  user-variables */
   XLALregBOOLUserStruct  ( help, 	   'h',  UVAR_HELP, "Print this message");
-  XLALregINTUserStruct   ( startTime,       0,  UVAR_OPTIONAL, "Desired start time of analysis in GPS seconds");
-  XLALregINTUserStruct   ( endTime,         0,  UVAR_OPTIONAL, "Desired end time of analysis in GPS seconds");
+  XLALregINTUserStruct   ( startTime,       0,  UVAR_REQUIRED, "Desired start time of analysis in GPS seconds");
+  XLALregINTUserStruct   ( endTime,         0,  UVAR_REQUIRED, "Desired end time of analysis in GPS seconds");
   XLALregREALUserStruct  ( maxLag,          0,  UVAR_OPTIONAL, "Maximum lag time in seconds between SFTs in correlation");
   XLALregBOOLUserStruct  ( inclAutoCorr,    0,  UVAR_OPTIONAL, "Include auto-correlation terms (an SFT with itself)");
   XLALregREALUserStruct  ( fStart,          0,  UVAR_OPTIONAL, "Start frequency in Hz");
@@ -835,8 +832,14 @@ int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar)
   constraints.timestamps = NULL;
   constraints.minStartTime = &startTime;
   constraints.maxStartTime = &endTime;
-  XLALGPSSet( constraints.minStartTime, uvar->startTime, 0);
-  XLALGPSSet( constraints.maxStartTime, uvar->endTime,0);
+  XLALGPSSet( constraints.minStartTime, uvar->startTime, 0 );
+  XLALGPSSet( constraints.maxStartTime, uvar->endTime, 0 );
+
+  if (XLALUserVarWasSet(&(uvar->refTime)))
+    config->refTime = uvar->refTime;
+  else
+    config->refTime = uvar->startTime + 0.5 * ( (REAL8) (uvar->endTime - uvar->startTime) );
+
 
   /* This check doesn't seem to work, since XLALGPSSet doesn't set its
      first argument.
