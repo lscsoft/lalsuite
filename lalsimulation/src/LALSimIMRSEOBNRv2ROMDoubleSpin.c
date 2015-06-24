@@ -940,8 +940,8 @@ static int SEOBNRv2ROMDoubleSpinCore(
   memset((*hptilde)->data->data, 0, npts * sizeof(COMPLEX16));
   memset((*hctilde)->data->data, 0, npts * sizeof(COMPLEX16));
 
-  XLALUnitDivide(&(*hptilde)->sampleUnits, &(*hptilde)->sampleUnits, &lalSecondUnit);
-  XLALUnitDivide(&(*hctilde)->sampleUnits, &(*hctilde)->sampleUnits, &lalSecondUnit);
+  XLALUnitMultiply(&(*hptilde)->sampleUnits, &(*hptilde)->sampleUnits, &lalSecondUnit);
+  XLALUnitMultiply(&(*hctilde)->sampleUnits, &(*hctilde)->sampleUnits, &lalSecondUnit);
 
   COMPLEX16 *pdata=(*hptilde)->data->data;
   COMPLEX16 *cdata=(*hctilde)->data->data;

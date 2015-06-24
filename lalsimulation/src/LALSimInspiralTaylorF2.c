@@ -118,7 +118,7 @@ int XLALSimInspiralTaylorF2Core(
     else { //otherwise allocate memory here
 	    htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", &tC, freqs->data[0], 0., &lalStrainUnit, freqs->length);
 	    if (!htilde) XLAL_ERROR(XLAL_EFUNC);
-	    XLALUnitDivide(&htilde->sampleUnits, &htilde->sampleUnits, &lalSecondUnit);
+	    XLALUnitMultiply(&htilde->sampleUnits, &htilde->sampleUnits, &lalSecondUnit);
     }
 
     /* phasing coefficients */
@@ -422,7 +422,7 @@ int XLALSimInspiralTaylorF2(
     htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", &tC, 0.0, deltaF, &lalStrainUnit, n);
     if (!htilde) XLAL_ERROR(XLAL_EFUNC);
     memset(htilde->data->data, 0, n * sizeof(COMPLEX16));
-    XLALUnitDivide(&htilde->sampleUnits, &htilde->sampleUnits, &lalSecondUnit);
+    XLALUnitMultiply(&htilde->sampleUnits, &htilde->sampleUnits, &lalSecondUnit);
 
     /* Fill with non-zero vals from fStart to f_max */
     iStart = (INT4) ceil(fStart / deltaF);

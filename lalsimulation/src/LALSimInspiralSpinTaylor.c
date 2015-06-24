@@ -3278,6 +3278,8 @@ static int XLALSimInspiralSpinTaylorDriverFourier(
     0., deltaF, &lalSecondUnit, iFirstSample+nFreqSamples);
     *hcross = XLALCreateCOMPLEX16FrequencySeries("CROSS POLARIZATION", &tStart,
     0., deltaF, &lalSecondUnit, iFirstSample+nFreqSamples);
+    XLALUnitMultiply(&(*hplus)->sampleUnits, &(*hplus)->sampleUnits, &lalStrainUnit);
+    XLALUnitMultiply(&(*hcross)->sampleUnits, &(*hcross)->sampleUnits, &lalStrainUnit);
 
     COMPLEX16FrequencySeries* hplustilde = *hplus;
     COMPLEX16FrequencySeries* hcrosstilde = *hcross;
