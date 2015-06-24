@@ -717,6 +717,8 @@ while gpsstart < gpsstop:
         logger.info('  plotting %s'%figname)
         fignames['fap'][classifier] = figname
         ax.plot(faircoin, faircoin, 'k--')
+        ax.set_xscale('log')
+        ax.set_yscale('log')
         ax.legend(loc='best')
         fig.savefig(figname)
         isp.close(fig)
@@ -730,6 +732,8 @@ while gpsstart < gpsstop:
         logger.info('  plotting %s'%figname)
         fignames['fapUL'][classifier] = figname
         ax.plot(faircoin, faircoin, 'k--')
+        ax.set_xscale('log')
+        ax.set_yscale('log')
         ax.legend(loc='best')
         fig.savefig(figname)
         isp.close(fig)
@@ -742,6 +746,8 @@ while gpsstart < gpsstop:
     logger.info('  plotting %s'%figname)
     fignames['fap']['overlay'] = figname
     ax.plot(faircoin, faircoin, 'k--')
+    ax.set_xscale('log')
+    ax.set_yscale('log')
     ax.legend(loc='best')
     fig.savefig(figname)
     isp.close(fig)
@@ -751,6 +757,8 @@ while gpsstart < gpsstop:
     logger.info('  plotting %s'%figname)
     fignames['fapUL']['overlay'] = figname
     ax.plot(faircoin, faircoin, 'k--')
+    ax.set_xscale('log')
+    ax.set_yscale('log')
     ax.legend(loc='best')
     fig.savefig(figname)
     isp.close(fig)
@@ -1569,7 +1577,7 @@ segment lists -> a form to request segments?
         index.init( title=title, header=header, footer=footer )
 
         ### iterate over existing subdirectories
-        for subdir in sorted(glob.glob("%s/*_*/"%summarydir)):
+        for subdir in sorted(glob.glob("%s/*_*/"%summarydir), reverse=True):
             sub = subdir.split('/')[-2]
             subindex = glob.glob("%s/summary-index*html"%subdir)
             if subindex:
