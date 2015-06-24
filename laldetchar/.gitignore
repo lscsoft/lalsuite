@@ -31,6 +31,9 @@ octave/
 python/laldetchar-hveto
 python/laldetchar-hveto-summary-page
 python/laldetchar-idq-add-excluded-vars
+python/laldetchar-idq-ann-convert
+python/laldetchar-idq-ann-evaluate
+python/laldetchar-idq-ann-train
 python/laldetchar-idq-build-auxmvc-vectors
 python/laldetchar-idq-calibration
 python/laldetchar-idq-convertkwtosb
