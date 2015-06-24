@@ -87,17 +87,14 @@
 " --bandwidth (-b)         width of frequency band around central frequency to\n\
                              use when performing the interpolation.\n\
                              (default 0.3Hz)\n"\
-" --min-seg-length (-M)    Minimum length of segments (default 5400s)\n"\
-" \nThe following are 'flags', and require no associated value:\n\n"\
-" --noise-output (-n)      flags whether to print noise output into the B_k output file\n\
-                             (default not to output)\n"\
-" --output-timing (-t)     flags whether to print timing information to stderr\n\
-                             (default not to output)\n"\
-" \nThe following are used in testing only, but are included here for completeness:\n\n"\
+" --min-seg-length (-M)    Minimum length of segments (default 1800s)\n"\
+" \nThe following flags are used in testing only, but are included here for completeness.\n\
+			   (defaults for all are not to set the flag) \n"\
 " --geocentreFlag (-g)     Flag to set the position of the ifo to be \n\
                              at the geocentre.\n"\
 " --baryFlag (-B)          Flag to set the position of the ifo to be \n\
                              at the solar system barycentre.\n"\
+" --output-timing (-t)     flags whether to print timing information to stderr\n"\
 "\n"
 
 #define XLAL_FRESNEL_EPS 6.0e-8
