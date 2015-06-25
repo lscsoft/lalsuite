@@ -51,6 +51,17 @@
 #include <lal/XLALError.h>
 #include <lal/LALString.h>
 
+/* Check that this file is being compiled for x86 */
+#if defined(__x86_64__) || defined(_M_X64)
+#define HAVE_X86   /* x86 64-bit */
+#elif defined(__i386) || defined(_M_IX86)
+#define HAVE_X86   /* x86 32-bit */
+#endif
+
+#if defined(HAVE_X86) && ( defined(__GNUC__) || defined(__clang__) )
+#include <cpuid.h>
+#endif
+
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
 #else
@@ -83,34 +94,18 @@ static int lalOnce = 1;
 #define LAL_ONCE(init) (lalOnce ? (init)(), lalOnce = 0 : 0)
 #endif
 
-/* Check that this file is being compiled for x86 */
-#if defined(__x86_64__) || defined(_M_X64)
-#define HAVE_X86   /* x86 64-bit */
-#elif defined(__i386) || defined(_M_IX86)
-#define HAVE_X86   /* x86 32-bit */
-#endif
-
 /*
  * Define interface to 'cpuid' instruction
  * input:  eax = functionnumber, ecx = 0
  * output: eax = output[0], ebx = output[1], ecx = output[2], edx = output[3]
  */
-static inline UNUSED void cpuid( int output[4], UNUSED int functionnumber ) {
+static inline UNUSED void cpuid( uint32_t output[4], UNUSED int functionnumber ) {
 
 #if defined(HAVE_X86)
 
 #if defined(__GNUC__) || defined(__clang__)
 
-  /* Use GNU/AT&T inline assembly */
-  int a, b, c, d;
-  __asm__("cpuid" \
-          : "=a"(a),"=b"(b),"=c"(c),"=d"(d) \
-          : "a"(functionnumber),"c"(0)
-         );
-  output[0] = a;
-  output[1] = b;
-  output[2] = c;
-  output[3] = d;
+  __get_cpuid(functionnumber, &output[0], &output[1], &output[2], &output[3]);
 
 #else
 
@@ -183,7 +178,7 @@ static inline UNUSED int64_t xgetbv( UNUSED int ctr ) {
 static LAL_SIMD_ISET detect_instruction_set(void) {
 
   /* cpuid results */
-  int abcd[4] = {0, 0, 0, 0};
+  uint32_t abcd[4] = {0, 0, 0, 0};
 
   LAL_SIMD_ISET iset = LAL_SIMD_ISET_FPU;
 
