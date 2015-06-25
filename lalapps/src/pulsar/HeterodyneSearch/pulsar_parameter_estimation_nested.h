@@ -224,11 +224,6 @@ extern "C" {
                      e.g. 0%%)\n"\
 " --temperature       (REAL8) temperature for covariance proposal\n\
                      distribution (DEFAULT = 0.1)\n"\
-" --kDTree            (UINT4) relative weight of using a k-D tree of the live\n\
-                     points to use as a proposal (DEFAULT = 0, e.g. 0%%)\n"\
-" --kDNCell           (INT4) maximum number of samples in a k-D tree cell\n"\
-" --kDUpdateFactor    (REAL8) how often the k-D tree gets updated as a\n\
-                     factor of the number of live points\n"\
 " --diffev            (UINT4) relative weight of using differential evolution\n\
                      of the live points as the proposal (DEFAULT = 0, e.g.\n\
                      0%%)\n"\

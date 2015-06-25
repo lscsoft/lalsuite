@@ -138,8 +138,7 @@ void initialise_algorithm( LALInferenceRunState *runState )
   runState->priorArgs = XLALCalloc( 1, sizeof(LALInferenceVariables) );
   runState->proposalArgs = XLALCalloc( 1, sizeof(LALInferenceVariables) );
   /* Initialise threads - single thread */
-  runState->threads=XLALCalloc(1,sizeof(LALInferenceThreadState *));
-  runState->threads[0]=LALInferenceInitThread();
+  runState->threads = LALInferenceInitThreads(1);
 
   ppt = LALInferenceGetProcParamVal( commandLine, "--verbose" );
   if( ppt ) {
@@ -189,7 +188,7 @@ void initialise_algorithm( LALInferenceRunState *runState )
 
   /* Set up the random number generator */
   gsl_rng_env_setup();
-  runState->GSLrandom = gsl_rng_alloc( gsl_rng_mt19937 );
+  runState->GSLrandom = gsl_rng_alloc( gsl_rng_mt19937 ); 
 
   /* (try to) get random seed from command line: */
   ppt = LALInferenceGetProcParamVal( commandLine, "--randomseed" );
@@ -207,6 +206,8 @@ void initialise_algorithm( LALInferenceRunState *runState )
       fclose( devrandom );
     }
   }
+
+  gsl_rng_set( runState->GSLrandom, randomseed );
 
   /* check if we want to time the program */
   ppt = LALInferenceGetProcParamVal( commandLine, "--time-it" );
@@ -228,8 +229,6 @@ void initialise_algorithm( LALInferenceRunState *runState )
       LALInferenceAddVariable( runState->algorithmParams, "timenum", &timenum, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
     }
   }
-
-  gsl_rng_set( runState->GSLrandom, randomseed );
 
   /* check whether to output all values or just the non-fixed values */
   if ( LALInferenceGetProcParamVal( commandLine, "--non-fixed-only" ) ){
@@ -800,22 +799,6 @@ void initialise_proposal( LALInferenceRunState *runState ){
                                    defrac);
   }
 
-  /* THIS FUNCTION DOES NOT EXIST ANY MORE! */
-  /*
-  if( kdfrac ){
-    ppt = LALInferenceGetProcParamVal( runState->commandLine, "--kDNCell" );
-    if( ppt ){
-      INT4 kdncells = atoi( ppt->value );
-
-      LALInferenceAddVariable( runState->proposalArgs, "KDNCell", &kdncells, LALINFERENCE_INT4_t,
-                               LALINFERENCE_PARAM_FIXED );
-    }
-
-    LALInferenceAddProposalToCycle( runState, KDNeighborhoodProposalName, &LALInferenceKDNeighborhoodProposal, kdfrac );
-
-    LALInferenceSetupkDTreeNSLivePoints( runState );
-  }
-  */
   if ( freqfrac ){
     LALInferenceAddProposalToCycle(
                                    cycle,
@@ -1488,20 +1471,17 @@ void LogNonFixedSampleToArray(LALInferenceRunState *state, LALInferenceVariables
   return;
 }
 
-void initialise_threads(LALInferenceRunState *state, INT4 nthreads)
-{
-    INT4 i,randomseed;
-    LALInferenceThreadState *thread;
-    state->threads=LALInferenceInitThreads(nthreads);
-    for (i=0; i<nthreads; i++)
-    {
-        thread=state->threads[i];
-        //LALInferenceCopyVariables(thread->model->params, thread->currentParams);
-        LALInferenceCopyVariables(state->priorArgs, thread->priorArgs);
-        LALInferenceCopyVariables(state->proposalArgs, thread->proposalArgs);
-        thread->GSLrandom = gsl_rng_alloc(gsl_rng_mt19937);
-        randomseed = gsl_rng_get(state->GSLrandom);
-        gsl_rng_set(thread->GSLrandom, randomseed);
-    }
-
+void initialise_threads(LALInferenceRunState *state, INT4 nthreads){
+  INT4 i,randomseed;
+  LALInferenceThreadState *thread;
+  for (i=0; i<nthreads; i++){
+    thread=state->threads[i];
+    //LALInferenceCopyVariables(thread->model->params, thread->currentParams);
+    LALInferenceCopyVariables(state->priorArgs, thread->priorArgs);
+    LALInferenceCopyVariables(state->proposalArgs, thread->proposalArgs);
+    thread->GSLrandom = gsl_rng_alloc(gsl_rng_mt19937);
+    randomseed = gsl_rng_get(state->GSLrandom);
+    gsl_rng_set(thread->GSLrandom, randomseed);
+  }
 }
+
