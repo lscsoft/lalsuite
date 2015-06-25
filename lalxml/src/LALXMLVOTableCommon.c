@@ -488,17 +488,17 @@ XLALCreateVOTTabledataNode ( xmlNode *fieldNodeList, 	/**< [in] linked list of F
 
     /* ---------- prepare column writing from varargs input list ---------- */
     if ( (dataColumns = XLALCalloc ( numFields, sizeof(*dataColumns) )) == NULL ) {
-      XLALPrintError ("%s: XLALCalloc ( %d, %" LAL_UINT4_FORMAT " ) failed.\n", __func__, numFields, sizeof(*dataColumns) );
+      XLALPrintError ("%s: XLALCalloc ( %" LAL_UINT4_FORMAT ", %zu ) failed.\n", __func__, numFields, sizeof(*dataColumns) );
       err = XLAL_ENOMEM;
       goto failed;
     }
     if ( (dataTypes = XLALCalloc ( numFields, sizeof(*dataTypes) )) == NULL ) {
-      XLALPrintError ("%s: XLALCalloc ( %d, %" LAL_UINT4_FORMAT " ) failed.\n", __func__, numFields, sizeof(*dataTypes) );
+      XLALPrintError ("%s: XLALCalloc ( %" LAL_UINT4_FORMAT ", %zu ) failed.\n", __func__, numFields, sizeof(*dataTypes) );
       err = XLAL_ENOMEM;
       goto failed;
     }
     if ( (dataFmts = XLALCalloc ( numFields, sizeof(char*) )) == NULL ) {
-      XLALPrintError ("%s: XLALCalloc ( %d, %" LAL_UINT4_FORMAT " ) failed.\n", __func__, numFields, sizeof(*dataTypes) );
+      XLALPrintError ("%s: XLALCalloc ( %" LAL_UINT4_FORMAT ", %zu ) failed.\n", __func__, numFields, sizeof(*dataTypes) );
       err = XLAL_ENOMEM;
       goto failed;
     }
@@ -1153,7 +1153,7 @@ XLALReadVOTAttributeFromNamedElement ( const xmlDocPtr xmlDocument,	/**< [in] Th
   /* copy attribute-content into a standard CHAR string, so caller can XLALFree() it */
   UINT4 len = strlen ( (const char*)xmlContent ) + 1;
   if ( (ret = XLALMalloc ( len * sizeof(*ret) )) == NULL ) {
-    XLALPrintError ("%s: failed to XLALMalloc (%" LAL_UINT4_FORMAT ")\n", __func__, len * sizeof(*ret) );
+    XLALPrintError ("%s: failed to XLALMalloc (%zu)\n", __func__, len * sizeof(*ret) );
     xmlFree ( xmlContent );
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
@@ -1652,7 +1652,7 @@ XMLCleanVOTTableWhitespace ( const char *xmlString )
   char *ret;
   /* ----- second pass: copy all chars skipping all ZEROS */
   if ( (ret = XLALMalloc ( (numChars + 1) * sizeof(char) )) == NULL ) {
-    XLALPrintError ("%s: XLALMalloc ( %" LAL_UINT4_FORMAT " ) failed.\n", __func__, numChars * sizeof(char));
+    XLALPrintError ("%s: XLALMalloc ( %zu ) failed.\n", __func__, numChars * sizeof(char));
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
