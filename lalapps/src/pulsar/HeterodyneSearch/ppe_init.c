@@ -1487,3 +1487,21 @@ void LogNonFixedSampleToArray(LALInferenceRunState *state, LALInferenceVariables
   }
   return;
 }
+
+void initialise_threads(LALInferenceRunState *state, INT4 nthreads)
+{
+    INT4 i,randomseed;
+    LALInferenceThreadState *thread;
+    state->threads=LALInferenceInitThreads(nthreads);
+    for (i=0; i<nthreads; i++)
+    {
+        thread=state->threads[i];
+        //LALInferenceCopyVariables(thread->model->params, thread->currentParams);
+        LALInferenceCopyVariables(state->priorArgs, thread->priorArgs);
+        LALInferenceCopyVariables(state->proposalArgs, thread->proposalArgs);
+        thread->GSLrandom = gsl_rng_alloc(gsl_rng_mt19937);
+        randomseed = gsl_rng_get(state->GSLrandom);
+        gsl_rng_set(thread->GSLrandom, randomseed);
+    }
+
+}

@@ -52,6 +52,7 @@ void add_correlation_matrix( LALInferenceVariables *ini,
 void sum_data( LALInferenceRunState *runState );
 void LogNonFixedSampleToFile(LALInferenceRunState *state, LALInferenceVariables *vars);
 void LogNonFixedSampleToArray(LALInferenceRunState *state, LALInferenceVariables *vars);
+void initialise_threads(LALInferenceRunState *state, INT4 nthreads);
 
 #ifdef __cplusplus
 }
