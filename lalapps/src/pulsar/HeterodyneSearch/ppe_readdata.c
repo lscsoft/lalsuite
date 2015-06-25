@@ -920,11 +920,11 @@ void setup_from_par_file( LALInferenceRunState *runState )
 
   /* check for binary model */
   CHAR *binarymodel = NULL;
-  if ( LALInferenceCheckVariable( runState->currentParams, "model") ){
-    binarymodel = XLALStringDuplicate(*(CHAR**)LALInferenceGetVariable( runState->currentParams, "model" ));
+  if ( LALInferenceCheckVariable( runState->threads[0]->currentParams, "model") ){
+    binarymodel = XLALStringDuplicate(*(CHAR**)LALInferenceGetVariable( runState->threads[0]->currentParams, "model" ));
 
-    /* now remove from runState->params (as it conflict with calls to LALInferenceCompareVariablesin the proposal) */
-    LALInferenceRemoveVariable( runState->currentParams, "model" );
+    /* now remove from runState->params (as it conflict with calls to LALInferenceCompareVariables in the proposal) */
+    LALInferenceRemoveVariable( runState->threads[0]->currentParams, "model" );
   }
 
   /* Setup initial phase, and barycentring delays */
