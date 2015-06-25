@@ -1232,7 +1232,7 @@ def plot_Bks_ASDs( Bkdata, ifos, delt=86400, sampledt=60., plotpsds=True,
       Bk = np.loadtxt(Bkdata[i])
     except:
       print "Could not open file ", Bkdata[i]
-      exit(-1)
+      sys.exit(-1)
 
     # should be three lines in file
     gpstime = []
@@ -1284,7 +1284,7 @@ Bk[:,2])))), 50)
       # check mindt is an integer and greater than 1
       if math.fmod(mindt, 1) != 0. or mindt < 1:
         print "Error time steps between data points must be integers"
-        exit(-1)
+        sys.exit(-1)
 
       count = 0
 
