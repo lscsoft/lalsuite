@@ -210,10 +210,12 @@ static int testPadding( void )
   // trial( LALFree( NULL ), SIGSEGV, "error: tried to free NULL pointer" );
 
   /* double free */
-  trial( p = LALMalloc( 2 * sizeof( *p ) ), 0, "" );
-  trial( LALFree( p ), 0, "" );
-  trial( LALFree( p ), SIGSEGV, "error: tried to free a freed pointer" );
-  trial( LALCheckMemoryLeaks(), 0, "" );
+  /* actually, this cannot be done robustly -- system can change values
+   * in unallocated space at will */
+  //trial( p = LALMalloc( 2 * sizeof( *p ) ), 0, "" );
+  //trial( LALFree( p ), 0, "" );
+  //trial( LALFree( p ), SIGSEGV, "error: tried to free a freed pointer" );
+  //trial( LALCheckMemoryLeaks(), 0, "" );
 
   /* wrong magic */
   trial( p = LALMalloc( 2 * sizeof( *p ) ), 0, "" );
