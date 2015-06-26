@@ -1413,6 +1413,9 @@ static void PrintNonFixedSample(FILE *fp, LALInferenceVariables *sample){
  */
 void LogSampleToFile(LALInferenceRunState *state, LALInferenceVariables *vars)
 {
+  /* Single thread only */
+  LALInferenceThreadState *threadState = state->threads[0];
+
   FILE *outfile=NULL;
   if(LALInferenceCheckVariable(state->algorithmParams,"outfile"))
     outfile=*(FILE **)LALInferenceGetVariable(state->algorithmParams,"outfile");
@@ -1435,10 +1438,10 @@ void LogSampleToFile(LALInferenceRunState *state, LALInferenceVariables *vars)
     sprintf(scaleminname, "%s_scale_min", scaleitem->name);
 
     /* check if scale values are present */
-    if ( LALInferenceCheckVariable( state->model->ifo->params, scalename ) &&
-      LALInferenceCheckVariable( state->model->ifo->params, scaleminname ) ){
-      scalefac = *(REAL8 *)LALInferenceGetVariable( state->model->ifo->params, scalename );
-      scalemin = *(REAL8 *)LALInferenceGetVariable( state->model->ifo->params, scaleminname );
+    if ( LALInferenceCheckVariable( threadState->model->ifo->params, scalename ) &&
+      LALInferenceCheckVariable( threadState->model->ifo->params, scaleminname ) ){
+      scalefac = *(REAL8 *)LALInferenceGetVariable( threadState->model->ifo->params, scalename );
+      scalemin = *(REAL8 *)LALInferenceGetVariable( threadState->model->ifo->params, scaleminname );
 
       /* get the value and scale it */
       value = *(REAL8 *)LALInferenceGetVariable( varscopy, scaleitem->name );
@@ -1477,6 +1480,9 @@ void LogSampleToFile(LALInferenceRunState *state, LALInferenceVariables *vars)
  */
 void LogSampleToArray(LALInferenceRunState *state, LALInferenceVariables *vars)
 {
+  /* Single thread only */
+  LALInferenceThreadState *threadState = state->threads[0];
+
   LALInferenceVariables **output_array=NULL;
   UINT4 N_output_array=0;
   LALInferenceSortVariablesByName(vars);
@@ -1498,10 +1504,10 @@ void LogSampleToArray(LALInferenceRunState *state, LALInferenceVariables *vars)
     sprintf(scaleminname, "%s_scale_min", scaleitem->name);
 
     /* check if scale values are present */
-    if ( LALInferenceCheckVariable( state->model->ifo->params, scalename ) &&
-      LALInferenceCheckVariable( state->model->ifo->params, scaleminname ) ){
-      scalefac = *(REAL8 *)LALInferenceGetVariable( state->model->ifo->params, scalename );
-      scalemin = *(REAL8 *)LALInferenceGetVariable( state->model->ifo->params, scaleminname );
+    if ( LALInferenceCheckVariable( threadState->model->ifo->params, scalename ) &&
+      LALInferenceCheckVariable( threadState->model->ifo->params, scaleminname ) ){
+      scalefac = *(REAL8 *)LALInferenceGetVariable( threadState->model->ifo->params, scalename );
+      scalemin = *(REAL8 *)LALInferenceGetVariable( threadState->model->ifo->params, scaleminname );
 
       /* get the value and scale it */
       value = *(REAL8 *)LALInferenceGetVariable( varscopy, scaleitem->name );
