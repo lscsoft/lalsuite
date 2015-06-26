@@ -45,6 +45,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <config.h>
+
 #include <lal/LALSIMD.h>
 #include <lal/LALConfig.h>
 #include <lal/LALError.h>
@@ -58,8 +60,9 @@
 #define HAVE_X86   /* x86 32-bit */
 #endif
 
-#if defined(HAVE_X86) && ( defined(__GNUC__) || defined(__clang__) )
+#if defined(HAVE_X86) && ( defined(__GNUC__) || defined(__clang__) ) && defined(HAVE_CPUID_H)
 #include <cpuid.h>
+#define HAVE__GET_CPUID 1
 #endif
 
 #ifdef __GNUC__
@@ -103,9 +106,13 @@ static inline UNUSED void cpuid( uint32_t output[4], UNUSED int functionnumber )
 
 #if defined(HAVE_X86)
 
-#if defined(__GNUC__) || defined(__clang__)
+#if HAVE__GET_CPUID
 
   __get_cpuid(functionnumber, &output[0], &output[1], &output[2], &output[3]);
+
+#elif defined(__GNUC__) || defined(__clang__)	// weird case: gcc|clang but NO cpuid.h file, can happen on Macs for old gcc's: give up here
+
+  output[0] = output[1] = output[2] = output[3] = 0;
 
 #else
 
@@ -121,15 +128,17 @@ static inline UNUSED void cpuid( uint32_t output[4], UNUSED int functionnumber )
     mov [esi+12], edx
   }
 
-#endif   /* inline assembly */
+#endif
 
-#else    /* !HAVE_X86 */
+#else    /* for non-X86 platforms */
 
   output[0] = output[1] = output[2] = output[3] = 0;
 
-#endif   /* HAVE_X86 */
+#endif
 
-}
+  return;
+
+} // cpuid()
 
 /*
  * Define interface to 'xgetbv' instruction

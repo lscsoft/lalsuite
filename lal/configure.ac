@@ -165,6 +165,7 @@ AC_HEADER_STDC
 AC_CHECK_HEADERS([sys/time.h sys/resource.h unistd.h malloc.h regex.h glob.h execinfo.h])
 AC_CHECK_HEADERS([stdint.h],,[AC_MSG_ERROR([could not find stdint.h])])
 AC_CHECK_HEADERS([inttypes.h],,[AC_MSG_ERROR([could not find inttypes.h])])
+AC_CHECK_HEADERS([cpuid.h])
 AC_MSG_CHECKING([for gethostname prototype in unistd.h])
 AC_EGREP_HEADER([gethostname],[unistd.h],AC_MSG_RESULT([yes])
 AC_DEFINE([HAVE_GETHOSTNAME_PROTOTYPE],[1],[Define if gethostname prototype is in unistd.h]),AC_MSG_RESULT([no]))
