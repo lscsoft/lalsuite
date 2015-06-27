@@ -394,7 +394,7 @@ void initializeMCMC(LALInferenceRunState *runState)
     }
 
   INT4 verbose=0,tmpi=0;
-  unsigned long randomseed=0;
+  unsigned int randomseed=0;
   REAL8 trigSNR = 0.0;
   REAL8 tempMin = 1.0;
   REAL8 tempMax = 50.0;
