@@ -33,7 +33,7 @@ class Cell(object):
         """
         if depth < 1:
             raise ArgumentError("Depth value must be greater than 0")
-    
+
         # Base case: We're at the finest resolution, divide and check
         if depth == 1:
             cells = self.divide()
@@ -76,12 +76,12 @@ class Cell(object):
         # New centers are bounds of previous cell
         for i in range(dim):
             # Split left
-            cntr = copy.copy(self._center)
+            cntr = numpy.copy(self._center)
             cntr[i] = self._bounds[i][0]
             cntrs.append(cntr)
 
             # Split right
-            cntr = copy.copy(self._center)
+            cntr = numpy.copy(self._center)
             cntr[i] = self._bounds[i][1]
             cntrs.append(cntr)
 
@@ -110,7 +110,7 @@ class Cell(object):
         Subdivide once along each dimension, recursively.
         """
         return self.__recursive_divide(len(self._bounds)-1)
-            
+
     def __recursive_divide(self, dim):
         """
         Do not call directly!
