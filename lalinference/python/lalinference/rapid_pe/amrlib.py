@@ -1,8 +1,30 @@
+import itertools
 import copy
 import numpy
 import lal
 from lalinference.rapid_pe import lalsimutils
+
 m1m2 = numpy.vectorize(lalsimutils.m1m2)
+
+#
+# Utility functions
+#
+
+ROU_MEMO = {}
+def nth_roots_of_unity(ndim):
+    if not ROU_MEMO.has_key(ndim):
+        tmp = numpy.cos(numpy.arange(0, 2*numpy.pi, numpy.pi/ndim))
+        # Avoid floating point error if possible
+        # FIXME: Any way to be exact with non-zero values?
+        tmp[numpy.isclose(tmp, 0.0)] = 0
+        # Remove non-unique values
+        ROU_MEMO[ndim] = numpy.array(tuple(set(tmp)))
+
+    return ROU_MEMO[ndim]
+
+def ndim_offsets(ndim):
+    for off in itertools.product(*numpy.tile(nth_roots_of_unity(ndim), (ndim, 1))):
+        yield numpy.array(off)
 
 #
 # Refinement strategies
@@ -64,6 +86,26 @@ class Cell(object):
                 return self
 
         return daughters
+
+    def refine2(self):
+        cells = []
+        extent = numpy.diff(self._bounds).flatten() / 2
+        # Iterate through all possible offsets for this dimension -- creating a
+        # new cell and translating it along this offset
+        # Note the factor of two required in the offset is preincluded above.
+        for offset in ndim_offsets(len(self._center)):
+            cell = Cell(numpy.copy(self._bounds))
+            cell.translate(offset * extent)
+            cells.append(cell)
+
+        return cells
+
+    def translate(self, offset):
+        """
+        Translate this cell's position and extent by offset.
+        """
+        self._bounds += offset
+        self._center += offset
 
     def refine(self):
         """
