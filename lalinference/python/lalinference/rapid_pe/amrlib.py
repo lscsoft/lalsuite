@@ -159,11 +159,25 @@ class Cell(object):
 #
 # Utilities
 #
-def prune_duplicate_pts(pts):
+def grid_to_indices(pts, region, grid_spacing):
+    """
+    Convert points in a grid to their 1-D indices according to the grid extent in region, and grid spacing.
+    """
+    extent = numpy.diff(region)[:,0]
+    pt_stride = numpy.round(extent / grid_spacing).astype(int)
+    # FIXME: Might be necessary for additional point on the right edge
+    # pt_stride += 1
+    idx = numpy.round((pts - region[:,0]) / grid_spacing).astype(int)
+    indices = numpy.sum(idx[:,:-1] * pt_stride[:-1], axis=1) + idx[:,-1]
+    return indices
+
+def prune_duplicate_pts(pts, region, grid_spacing):
     """
     Remove identical points from list.
     """
-    return numpy.array(list(set([tuple(pt) for pt in pts])))
+    ind = grid_to_indices(pts, region, grid_spacing)
+    _, ind = numpy.unique(ind, return_index=True)
+    return numpy.array(pts)[ind]
 
 #
 # Coordinate transformations
