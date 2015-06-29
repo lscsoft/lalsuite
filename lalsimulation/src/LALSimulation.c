@@ -196,16 +196,27 @@ REAL8TimeSeries * XLALSimQuasiPeriodicInjectionREAL8TimeSeries( REAL8TimeSeries 
  * the Nyquist frequency.
  * @n@n
  * The geometric delay and antenna response are only recalculated every 250
- * ms.  The Earth rotates through 7e-5 rad/s, therefore given a radius of
- * 6e6 m and c=3e8 m/s, the maximum geometric speed for points on the
- * surface is about 1.5 us/s.  Updating the detector response and geometric
- * delay every 250 ms means the antenna response is accurate to about +/-
- * 20 urad and the geometric delay to about +/- 300 ns (about 0.01 sample
- * at 32 kHz).  The mapping from UTC to sidereal time is only accurate to
- * +/- 900 ms, so assuming the Earth's orientation to be fixed for 250 ms
- * at a time is not the dominant source of Earth orientation error in these
- * calculations, but one should be aware of the periodic nature of the
- * updates if extreme phase stability is required.
+ * ms --- the Earth's rotation is modelled as discontinuous jumps occurring
+ * at a rate of 4 Hz.  The Earth rotates through 7e-5 rad/s, therefore
+ * given a radius of 6e6 m and c=3e8 m/s, the maximum geometric speed for
+ * points on the surface is about 1.5 us/s.  Updating the detector response
+ * and geometric delay every 250 ms means the antenna response is accurate
+ * to about +/- 20 urad and the geometric delay to about +/- 300 ns (about
+ * 0.01 sample at 32 kHz).  The mapping from UTC to sidereal time is only
+ * accurate to +/- 900 ms, so assuming the Earth's orientation to be fixed
+ * for 250 ms at a time is not the dominant source of Earth orientation
+ * error in these calculations, but one should be aware of the periodic
+ * nature of the updates if extreme phase stability is required.
+ * @n@n
+ * The output time series will not be padded to capture the interpolation
+ * kernel structure resulting from possible sharp edges at the start or end
+ * of the input time series data.  If the input time series have sharp
+ * features at the start or end or both then they should include sufficient
+ * padding to capture the ringing of the interpolation kernel.  There is a
+ * slight performance benefit in doing it this way for waveforms that don't
+ * require the padding, but because it means the calling code needs to
+ * understand technical details of the interpolation kernel this behaviour
+ * might change in the future so that padding is not required.
  */
 REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 	const REAL8TimeSeries *hplus,
