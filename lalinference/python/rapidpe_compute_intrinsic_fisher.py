@@ -40,6 +40,8 @@ lsctables.use_in(ligolw.LIGOLWContentHandler)
 from glue.ligolw.utils import process
 from glue import pipeline
 
+from pylal import series
+
 from lalinference.rapid_pe import lalsimutils as lsu
 from lalinference.rapid_pe import effectiveFisher as eff
 from lalinference.rapid_pe import common_cl
@@ -104,7 +106,7 @@ elif opts.sim_xml is not None:
     assert len(sim_table) == 1
     sim_row = sim_table[0]
     event_time = sim_row.get_end()
-    print "Sim XML loaded, event time: %s" % str(coinc_row.get_end())
+    print "Sim XML loaded, event time: %s" % str(sim_row.get_end())
 elif opts.event_time is not None:
     event_time = glue.lal.LIGOTimeGPS(opts.event_time)
     print "Event time from command line: %s" % str(event_time)
@@ -114,6 +116,8 @@ else:
 # get masses from sngl_inspiral_table
 if opts.mass1 is not None and opts.mass2 is not None:
     m1, m2 = opts.mass1, opts.mass2
+elif sim_row:
+    m1, m2 = sim_row.mass1, sim_row.mass2
 elif xmldoc is not None:
     sngl_inspiral_table = table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
     assert len(sngl_inspiral_table) == len(coinc_row.ifos.split(","))
@@ -129,34 +133,10 @@ m1_SI = m1 * lal.MSUN_SI
 m2_SI = m2 * lal.MSUN_SI
 print "Computing marginalized likelihood in a neighborhood about intrinsic parameters mass 1: %f, mass 2 %f" % (m1, m2)
 
-#
-# FIXME: Hardcoded values - eventually promote to command line arguments
-#
-template_min_freq = 40.
-ip_min_freq = 40.
-if opts.psd_file is None:
-    eff_fisher_psd = lal.LIGOIPsd
-    analyticPSD_Q = True
-else:
-    psd_map = common_cl.parse_cf_key_value(opts.psd_file)
-    for inst, psdfile in psd_map.items():
-        if psdfile.has_key(inst):
-            psd_map[psdfile].add(inst)
-        else:
-            psd_map[psdfile] = set([inst])
-        del psd_map[inst]
-        
-    for psdf, insts in common_cl.parse_cf_key_value(opts.psd_file):
-        xmldoc = utils.load_filename(filestr, contenthandler=LIGOLWContentHandler)
-        # FIXME: How to handle multiple PSDs
-        for inst in insts:
-            eff_fisher_psd = read_psd_xmldoc(xmldoc)[inst]
-
-    analyticPSD_Q = False
 
 # The next 4 values set the maximum size of the region to explore
 min_mc_factor, max_mc_factor = 0.9, 1.1
-min_eta, max_eta = 0.05, 0,25
+min_eta, max_eta = 0.05, 0.25
 
 # Control evaluation of the effective Fisher grid
 NMcs = 11
@@ -178,6 +158,12 @@ else:
     lambda1, lambda2 = 0, 0
 
 #
+# FIXME: Hardcoded values - eventually promote to command line arguments
+#
+template_min_freq = 40.
+ip_min_freq = 40.
+
+#
 # Setup signal and IP class
 #
 param_names = ['Mc', 'eta']
@@ -191,6 +177,9 @@ if sim_row is not None:
             approx=lalsim.GetApproximantFromString(opts.approximant)
             )
     PSIG.copy_lsctables_sim_inspiral(sim_row)
+    # FIXME: Not converting this causes segfaults with python's built in copying
+    # module
+    PSIG.tref = float(PSIG.tref)
 else:
     PSIG = lsu.ChooseWaveformParams(
             m1=m1_SI, m2=m2_SI,
@@ -211,6 +200,33 @@ deltaF_2 = lsu.findDeltaF(PTEST)
 PSIG.deltaF = min(deltaF_1, deltaF_2)
 
 PTMPLT = PSIG.copy()
+
+if opts.psd_file is None:
+    eff_fisher_psd = lal.LIGOIPsd
+    analyticPSD_Q = True
+else:
+    psd_map = common_cl.parse_cl_key_value(opts.psd_file)
+    for inst, psdfile in psd_map.items():
+        if psd_map.has_key(psdfile):
+            psd_map[psdfile].add(inst)
+        else:
+            psd_map[psdfile] = set([inst])
+        del psd_map[inst]
+
+    for psdf, insts in psd_map.iteritems():
+        xmldoc = utils.load_filename(psdf, contenthandler=series.LIGOLWContentHandler)
+        # FIXME: How to handle multiple PSDs
+        for inst in insts:
+            psd = series.read_psd_xmldoc(xmldoc)[inst]
+            psd_f_high = len(psd.data)*psd.deltaF
+            f = np.arange(0, psd_f_high, psd.deltaF)
+            fvals = np.arange(0, psd_f_high, PSIG.deltaF)
+
+            def anon_interp(newf):
+                return np.interp(newf, f, psd.data)
+            eff_fisher_psd = np.array(map(anon_interp, fvals))
+
+    analyticPSD_Q = False
 
 IP = lsu.Overlap(fLow = ip_min_freq,
         deltaF = PSIG.deltaF,
