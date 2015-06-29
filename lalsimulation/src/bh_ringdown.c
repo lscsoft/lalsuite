@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
 
 	XLALSimBlackHoleRingdown(&hplus, &hcross, &epoch, q, dt, M, a, e, r, i, l, m);
 
-	fprintf(stdout, "# time (s)\th_plus      \th_cross\n");
+	fprintf(stdout, "# time (s)\th_plus (strain)\th_cross (strain)\n");
 	for (j = 0; j < hplus->data->length; ++j)
 		fprintf(stdout, "%.9f\t%e\t%e\n", j*dt, hplus->data->data[j], hcross->data->data[j]);
 

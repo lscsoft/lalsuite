@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
 		XLALAudioAURecordREAL8TimeSeries(fp, h);
 	else { /* ascii file */
 		size_t j;
-		fprintf(fp, "# time (s)\th\n");
+		fprintf(fp, "# time (s)\t%s:STRAIN (strain)\n", detector.frDetector.prefix);
 		for (j = 0; j < h->data->length; ++j) {
 			LIGOTimeGPS t = h->epoch;
 			XLALGPSAdd(&t, j * h->deltaT);

@@ -43,6 +43,7 @@ double flow;
 int official;
 int psdonly;
 const char *detector;
+const char *prefix;
 
 int usage(const char *program);
 int parseargs(int argc, char **argv);
@@ -73,10 +74,12 @@ int main(int argc, char *argv[])
 			double deltaF = srate / length;
 			size_t klow = flow / deltaF;
 			size_t k;
+			fprintf(stdout, "# freq (s^-1)\tPSD (strain^2 s)\n");
 			for (k = klow; k < length/2 - 1; ++k)
 				fprintf(stdout, "%e\t%e\n", k * deltaF, 0.0);
 		} else {
 			size_t j;
+			fprintf(stdout, "# time (s)\tNOISE (strain)\n");
 			n = duration * srate;
 			for (j = 0; j < n; ++j) { 
 				LIGOTimeGPS t = tstart;
@@ -96,6 +99,7 @@ int main(int argc, char *argv[])
 	if (psdonly) { // output PSD and exit
 		size_t klow = flow / psd->deltaF;
 		size_t k;
+		fprintf(stdout, "# freq (s^-1)\tPSD (strain^2 s)\n");
 		for (k = klow; k < length/2 - 1; ++k)
 			fprintf(stdout, "%e\t%e\n", k * psd->deltaF, sqrt(psd->data->data[k]));
 		goto end;
@@ -104,6 +108,7 @@ int main(int argc, char *argv[])
 	n = duration * srate;
 	seg = XLALCreateREAL8TimeSeries("STRAIN", &tstart, 0.0, 1.0/srate, &lalStrainUnit, length);
 	XLALSimNoise(seg, 0, psd, rng); // first time to initialize
+	fprintf(stdout, "# time (s)\tNOISE (strain)\n");
 	while (1) { // infinite loop
 		size_t j;
 		for (j = 0; j < stride; ++j, --n) { // output first stride points

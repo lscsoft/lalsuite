@@ -135,8 +135,12 @@ int main(int argc, char *argv[])
         h = XLALCreateREAL8TimeSeries("STRAIN", &hplus->epoch, hplus->f0, hplus->deltaT, &hplus->sampleUnits, hplus->data->length);
         for (j = 0; j < h->data->length; ++j)
             h->data->data[j] = -hplus->data->data[j] * cos2psi + hcross->data->data[j] * sin2psi;
-    } else
+        fprintf(stdout, "# time (s)\tSTRAIN (strain)\n");
+    } else {
         h = XLALSimDetectorStrainREAL8TimeSeries(hplus, hcross, p.ra, p.dec, p.psi, p.detector);
+        fprintf(stdout, "# time (s)\t%s:STRAIN (strain)\n", p.detector->frDetector.prefix);
+    }
+
     for (j = 0; j < h->data->length; ++j) {
         LIGOTimeGPS t = h->epoch;
         fprintf(stdout, "%s\t%e\n", XLALGPSToStr(tstr, XLALGPSAdd(&t, j * h->deltaT)), h->data->data[j]);
