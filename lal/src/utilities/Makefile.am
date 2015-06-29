@@ -21,9 +21,7 @@ noinst_LTLIBRARIES = libutilities.la
 libutilities_la_SOURCES = \
 	CoarseGrainFrequencySeries.c \
 	DetInverse.c \
-	DetInverseInternal.c \
 	Eigen.c \
-	EigenInternal.c \
 	FindRoot.c \
 	HeapSort.c \
 	Integrate.c \

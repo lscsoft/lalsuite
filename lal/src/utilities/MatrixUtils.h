@@ -165,96 +165,11 @@ void
 LALDMatrixDeterminantErr( LALStatus *, REAL8 det[2], REAL8Array *matrix, REAL8Array *matrixErr );
 
 
-
-void
-LALSLUDecomp( LALStatus   *,
-	      INT2        *sgn,
-	      REAL4Array  *matrix,
-	      UINT4Vector *indx );
-
-void
-LALSLUBackSub( LALStatus   *,
-	       REAL4Vector *vector,
-	       REAL4Array  *matrix,
-	       UINT4Vector *indx );
-
-void
-LALDLUDecomp( LALStatus   *,
-	      INT2        *sgn,
-	      REAL8Array  *matrix,
-	      UINT4Vector *indx );
-
-void
-LALDLUBackSub( LALStatus   *,
-	       REAL8Vector *vector,
-	       REAL8Array  *matrix,
-	       UINT4Vector *indx );
-
-
-
-
-
-
-
-
 void
 LALSSymmetricEigenVectors( LALStatus *, REAL4Vector *values, REAL4Array *matrix );
 
 void
 LALDSymmetricEigenVectors( LALStatus *, REAL8Vector *values, REAL8Array *matrix );
-
-
-
-void
-LALSSymmetricToTriDiagonal( LALStatus   *,
-			    REAL4Vector *diag,
-			    REAL4Array  *matrix,
-			    REAL4Vector *offDiag );
-
-void
-LALSSymmetricToTriDiagonal2( LALStatus   *,
-			      REAL4Vector *diag,
-			      REAL4Array  *matrix,
-			      REAL4Vector *offDiag );
-
-void
-LALSTriDiagonalToDiagonal( LALStatus   *,
-			   REAL4Vector *diag,
-			   REAL4Array  *matrix,
-			   REAL4Vector *offDiag );
-
-void
-LALSTriDiagonalToDiagonal2( LALStatus   *,
-			    REAL4Vector *diag,
-			    REAL4Array  *matrix,
-			    REAL4Vector *offDiag );
-
-void
-LALDSymmetricToTriDiagonal( LALStatus   *,
-			    REAL8Vector *diag,
-			    REAL8Array  *matrix,
-			    REAL8Vector *offDiag );
-
-void
-LALDSymmetricToTriDiagonal2( LALStatus   *,
-			     REAL8Vector *diag,
-			     REAL8Array  *matrix,
-			     REAL8Vector *offDiag );
-
-void
-LALDTriDiagonalToDiagonal( LALStatus   *,
-			   REAL8Vector *diag,
-			   REAL8Array  *matrix,
-			   REAL8Vector *offDiag );
-
-void
-LALDTriDiagonalToDiagonal2( LALStatus   *,
-			    REAL8Vector *diag,
-			    REAL8Array  *matrix,
-			    REAL8Vector *offDiag );
-
-
-
 
 
 #ifdef  __cplusplus
