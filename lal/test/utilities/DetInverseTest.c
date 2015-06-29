@@ -412,7 +412,7 @@ main( int argc, char **argv )
 
 
   /*******************************************************************
-   * COMPUTE DETERMINANT (AND INVERSE)                               *
+   * COMPUTE INVERSE                                                 *
    *******************************************************************/
 
   if ( timing )
@@ -424,8 +424,6 @@ main( int argc, char **argv )
       SUB( LALSCreateArray( &stat, &sInverse, &dimLength ), &stat );
       SUB( LALSMatrixInverse( &stat, &sDet, sMatrix, sInverse ),
 	   &stat );
-    } else {
-      SUB( LALSMatrixDeterminant( &stat, &sDet, sMatrix ), &stat );
     }
   }
 

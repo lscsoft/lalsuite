@@ -2,7 +2,6 @@ include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 
 pkginclude_HEADERS = \
 	CoarseGrainFrequencySeries.h \
-	Dirichlet.h \
 	Factorial.h \
 	FindRoot.h \
 	Integrate.h \
@@ -23,7 +22,6 @@ libutilities_la_SOURCES = \
 	CoarseGrainFrequencySeries.c \
 	DetInverse.c \
 	DetInverseInternal.c \
-	Dirichlet.c \
 	Eigen.c \
 	EigenInternal.c \
 	FindRoot.c \
@@ -38,10 +36,6 @@ libutilities_la_SOURCES = \
 	Random.c \
 	RngMedBias.c \
 	SphericalHarmonics.c \
-	$(END_OF_LIST)
-
-noinst_HEADERS = \
-	MatrixOps_source.c \
 	$(END_OF_LIST)
 
 EXTRA_DIST = \

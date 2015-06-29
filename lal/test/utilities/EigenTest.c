@@ -431,9 +431,6 @@ main( int argc, char **argv )
     if ( vector ) {
       SUB( LALSSymmetricEigenVectors( &stat, sValues, sMatrix ),
 	   &stat );
-    } else {
-      SUB( LALSSymmetricEigenValues( &stat, sValues, sMatrix ),
-	   &stat );
     }
   }
 
@@ -442,9 +439,6 @@ main( int argc, char **argv )
     SUB( LALDCreateVector( &stat, &dValues, n ), &stat );
     if ( vector ) {
       SUB( LALDSymmetricEigenVectors( &stat, dValues, dMatrix ),
-	   &stat );
-    } else {
-      SUB( LALDSymmetricEigenValues( &stat, dValues, dMatrix ),
 	   &stat );
     }
   }

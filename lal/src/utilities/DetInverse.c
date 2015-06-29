@@ -31,8 +31,8 @@
  *
  * ### Description ###
  *
- * <tt>LALSMatrixDeterminant()</tt> and <tt>LALDMatrixDeterminant()</tt>
- * compute the determinant <tt>*det</tt> of the square matrix
+ * <tt>LALDMatrixDeterminant()</tt>
+ * computes the determinant <tt>*det</tt> of the square matrix
  * <tt>*matrix</tt>.  The internal computations will corrupt
  * <tt>*matrix</tt>; if you don't want the input matrix to be changed, make
  * a copy of it first.
@@ -45,8 +45,7 @@
  * will corrupt <tt>*matrix</tt>; if you don't want the input matrix to be
  * changed, make a copy of it first.
  *
- * <tt>LALSMatrixDeterminantErr()</tt> and
- * <tt>LALDMatrixDeterminantErr()</tt> compute the determinant
+ * <tt>LALDMatrixDeterminantErr()</tt> computes the determinant
  * <tt>det[0]</tt> of the square matrix <tt>*matrix</tt>.  If
  * <tt>*matrixErr</tt> is non-\c NULL, it stores uncertainties in the
  * corresponding components of <tt>*matrix</tt>, and the resulting
@@ -188,49 +187,6 @@
 
 /** \see See \ref DetInverse_c for documentation */
 void
-LALSMatrixDeterminant( LALStatus *stat, REAL4 *det, REAL4Array *matrix )
-{
-  INT2 sgn;                 /* sign of permutation. */
-  UINT4 n, i;               /* array dimension and index */
-  UINT4Vector *indx = NULL; /* permutation storage vector */
-
-  INITSTATUS(stat);
-  ATTATCHSTATUSPTR( stat );
-
-  /* Check dimension length.  All other argument testing is done by
-     the subroutines. */
-  ASSERT( det, stat, MATRIXUTILSH_ENUL, MATRIXUTILSH_MSGENUL );
-  ASSERT( matrix, stat, MATRIXUTILSH_ENUL, MATRIXUTILSH_MSGENUL );
-  ASSERT( matrix->dimLength, stat, MATRIXUTILSH_ENUL,
-	  MATRIXUTILSH_MSGENUL );
-  ASSERT( matrix->dimLength->data, stat, MATRIXUTILSH_ENUL,
-	  MATRIXUTILSH_MSGENUL );
-  n = matrix->dimLength->data[0];
-  ASSERT( n, stat, MATRIXUTILSH_EDIM, MATRIXUTILSH_MSGEDIM );
-
-  /* Allocate a vector to store the matrix permutation. */
-  TRY( LALU4CreateVector( stat->statusPtr, &indx, n ), stat );
-
-  /* Decompose the matrix. */
-  LALSLUDecomp( stat->statusPtr, &sgn, matrix, indx );
-  BEGINFAIL( stat ) {
-    TRY( LALU4DestroyVector( stat->statusPtr, &indx ), stat );
-  } ENDFAIL( stat );
-
-  /* Compute determinant. */
-  *det = sgn;
-  for ( i = 0; i < n; i++ )
-    *det *= matrix->data[i*(n+1)];
-
-  /* Clean up. */
-  TRY( LALU4DestroyVector( stat->statusPtr, &indx ), stat );
-  DETATCHSTATUSPTR( stat );
-  RETURN( stat );
-}
-
-
-/** \see See \ref DetInverse_c for documentation */
-void
 LALSMatrixInverse( LALStatus *stat, REAL4 *det, REAL4Array *matrix, REAL4Array *inverse )
 {
   INT2 sgn;                 /* sign of permutation. */
@@ -298,83 +254,6 @@ LALSMatrixInverse( LALStatus *stat, REAL4 *det, REAL4Array *matrix, REAL4Array *
   /* Clean up. */
   TRY( LALU4DestroyVector( stat->statusPtr, &indx ), stat );
   TRY( LALSDestroyVector( stat->statusPtr, &col ), stat );
-  DETATCHSTATUSPTR( stat );
-  RETURN( stat );
-}
-
-
-/** \see See \ref DetInverse_c for documentation */
-void
-LALSMatrixDeterminantErr( LALStatus *stat, REAL4 det[2], REAL4Array *matrix, REAL4Array *matrixErr )
-{
-  UINT4 n, i, j, k;        /* matrix dimension and indecies */
-  UINT4 ij, ik, kj;        /* array data indecies */
-  REAL4 var;               /* partial derivative of determinant */
-  REAL4Array *temp = NULL; /* internal copy of *matrix */
-
-  INITSTATUS(stat);
-  ATTATCHSTATUSPTR( stat );
-
-  /* Check input arguments. */
-  ASSERT( det, stat, MATRIXUTILSH_ENUL, MATRIXUTILSH_MSGENUL );
-  ASSERT( matrix, stat, MATRIXUTILSH_ENUL,
-	  MATRIXUTILSH_MSGENUL );
-  ASSERT( matrix->data, stat, MATRIXUTILSH_ENUL,
-	  MATRIXUTILSH_MSGENUL );
-  ASSERT( matrix->dimLength, stat, MATRIXUTILSH_ENUL,
-	  MATRIXUTILSH_MSGENUL );
-  ASSERT( matrix->dimLength->data, stat, MATRIXUTILSH_ENUL,
-	  MATRIXUTILSH_MSGENUL );
-  ASSERT( matrix->dimLength->length == 2, stat, MATRIXUTILSH_EDIM,
-	  MATRIXUTILSH_MSGEDIM );
-  n = matrix->dimLength->data[0];
-  ASSERT( matrix->dimLength->data[1] == n, stat, MATRIXUTILSH_EDIM,
-	  MATRIXUTILSH_MSGEDIM );
-  if ( matrixErr ) {
-    ASSERT( matrixErr->data, stat, MATRIXUTILSH_ENUL,
-	    MATRIXUTILSH_MSGENUL );
-    ASSERT( matrixErr->dimLength, stat, MATRIXUTILSH_ENUL,
-	    MATRIXUTILSH_MSGENUL );
-    ASSERT( matrixErr->dimLength->data, stat, MATRIXUTILSH_ENUL,
-	    MATRIXUTILSH_MSGENUL );
-    ASSERT( matrixErr->dimLength->length == 2, stat, MATRIXUTILSH_EDIM,
-	    MATRIXUTILSH_MSGEDIM );
-    ASSERT( matrixErr->dimLength->data[0] == n, stat, MATRIXUTILSH_EDIM,
-	    MATRIXUTILSH_MSGEDIM );
-    ASSERT( matrixErr->dimLength->data[1] == n, stat, MATRIXUTILSH_EDIM,
-	    MATRIXUTILSH_MSGEDIM );
-  }
-
-  /* Allocate internal copy, and compute determinant. */
-  TRY( LALSCreateArray( stat->statusPtr, &temp, matrix->dimLength ),
-       stat );
-  memcpy( temp->data, matrix->data, n*n*sizeof(REAL4) );
-  LALSMatrixDeterminant( stat->statusPtr, det, temp );
-  BEGINFAIL( stat ) {
-    TRY( LALSDestroyArray( stat->statusPtr, &temp ), stat );
-  } ENDFAIL( stat );
-  det[1] = 0.0;
-
-  /* Compute derivatives of determinant. */
-  if ( matrixErr ) {
-    for ( i = 0; i < n; i++ ) {
-      for ( j = 0, ij = i*n; j < n; j++, ij++ ) {
-	memcpy( temp->data, matrix->data, n*n*sizeof(REAL4) );
-	for ( k = 0, ik = i*n, kj = j; k < n; k++, ik++, kj += n )
-	  temp->data[ik] = temp->data[kj] = 0.0;
-	temp->data[ij] = matrixErr->data[ij];
-	LALSMatrixDeterminant( stat->statusPtr, &var, temp );
-	BEGINFAIL( stat ) {
-	  TRY( LALSDestroyArray( stat->statusPtr, &temp ), stat );
-	} ENDFAIL( stat );
-	det[1] += var*var;
-      }
-    }
-    det[1] = sqrt( det[1] );
-  }
-
-  /* Done. */
-  TRY( LALSDestroyArray( stat->statusPtr, &temp ), stat );
   DETATCHSTATUSPTR( stat );
   RETURN( stat );
 }

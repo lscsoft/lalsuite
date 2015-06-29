@@ -43,15 +43,6 @@
  * vector.  If you don't want the input matrix to be changed, make a copy
  * of it first.
  *
- * <tt>LALSSymmetricEigenValues()</tt> and
- * <tt>LALDSymmetricEigenValues()</tt> compute just the eigenvalues of the
- * square matrix <tt>*matrix</tt>, which is significantly faster than
- * computing the eigenvectors.  The eigenvalues are stored in
- * <tt>*values</tt>, which must be pre-allocated to the same length as each
- * of the dimensions of <tt>*matrix</tt>.  However, <tt>*matrix</tt> is still
- * used as auxiliary storage for the in-place algorithm; if you don't
- * want the input matrix to be changed, make a copy of it first.
- *
  * ### Algorithm ###
  *
  * A square matrix \f$\mathsf{M}^a{}_b\f$ is said to have an eigenvalue
@@ -181,44 +172,6 @@ LALSSymmetricEigenVectors( LALStatus *stat, REAL4Vector *values, REAL4Array *mat
 
 /** \see See \ref Eigen_c for documentation */
 void
-LALSSymmetricEigenValues( LALStatus *stat, REAL4Vector *values, REAL4Array *matrix )
-{
-  REAL4Vector *offDiag = NULL; /* off-diagonal line of
-                                  tri-diagonalized matrix */
-
-  INITSTATUS(stat);
-  ATTATCHSTATUSPTR( stat );
-
-  /* Check dimension length.  All other argument testing is done by
-     the subroutines. */
-  ASSERT( values, stat, MATRIXUTILSH_ENUL, MATRIXUTILSH_MSGENUL );
-  ASSERT( values->length, stat, MATRIXUTILSH_ENUL, MATRIXUTILSH_MSGENUL );
-
-  /* Allocate an off-diagonal vector for the tri-diagonal matrix. */
-  TRY( LALSCreateVector( stat->statusPtr, &offDiag, values->length ),
-       stat );
-
-  /* Call the subroutines. */
-  LALSSymmetricToTriDiagonal2( stat->statusPtr, values, matrix,
-			       offDiag );
-  BEGINFAIL( stat ) {
-    TRY( LALSDestroyVector( stat->statusPtr, &offDiag ), stat );
-  } ENDFAIL( stat );
-  LALSTriDiagonalToDiagonal2( stat->statusPtr, values, matrix,
-			      offDiag );
-  BEGINFAIL( stat ) {
-    TRY( LALSDestroyVector( stat->statusPtr, &offDiag ), stat );
-  } ENDFAIL( stat );
-
-  /* Clean up. */
-  TRY( LALSDestroyVector( stat->statusPtr, &offDiag ), stat );
-  DETATCHSTATUSPTR( stat );
-  RETURN( stat );
-}
-
-
-/** \see See \ref Eigen_c for documentation */
-void
 LALDSymmetricEigenVectors( LALStatus *stat, REAL8Vector *values, REAL8Array *matrix )
 {
   REAL8Vector *offDiag = NULL; /* off-diagonal line of
@@ -244,44 +197,6 @@ LALDSymmetricEigenVectors( LALStatus *stat, REAL8Vector *values, REAL8Array *mat
   } ENDFAIL( stat );
   LALDTriDiagonalToDiagonal( stat->statusPtr, values, matrix,
 			     offDiag );
-  BEGINFAIL( stat ) {
-    TRY( LALDDestroyVector( stat->statusPtr, &offDiag ), stat );
-  } ENDFAIL( stat );
-
-  /* Clean up. */
-  TRY( LALDDestroyVector( stat->statusPtr, &offDiag ), stat );
-  DETATCHSTATUSPTR( stat );
-  RETURN( stat );
-}
-
-
-/** \see See \ref Eigen_c for documentation */
-void
-LALDSymmetricEigenValues( LALStatus *stat, REAL8Vector *values, REAL8Array *matrix )
-{
-  REAL8Vector *offDiag = NULL; /* off-diagonal line of
-                                  tri-diagonalized matrix */
-
-  INITSTATUS(stat);
-  ATTATCHSTATUSPTR( stat );
-
-  /* Check dimension length.  All other argument testing is done by
-     the subroutines. */
-  ASSERT( values, stat, MATRIXUTILSH_ENUL, MATRIXUTILSH_MSGENUL );
-  ASSERT( values->length, stat, MATRIXUTILSH_ENUL, MATRIXUTILSH_MSGENUL );
-
-  /* Allocate an off-diagonal vector for the tri-diagonal matrix. */
-  TRY( LALDCreateVector( stat->statusPtr, &offDiag, values->length ),
-       stat );
-
-  /* Call the subroutines. */
-  LALDSymmetricToTriDiagonal2( stat->statusPtr, values, matrix,
-			       offDiag );
-  BEGINFAIL( stat ) {
-    TRY( LALDDestroyVector( stat->statusPtr, &offDiag ), stat );
-  } ENDFAIL( stat );
-  LALDTriDiagonalToDiagonal2( stat->statusPtr, values, matrix,
-			      offDiag );
   BEGINFAIL( stat ) {
     TRY( LALDDestroyVector( stat->statusPtr, &offDiag ), stat );
   } ENDFAIL( stat );

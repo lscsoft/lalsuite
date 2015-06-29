@@ -6,7 +6,6 @@ test_programs += CCoarseGrainFrequencySeriesTest
 test_programs += CSInterpolateTest
 test_programs += DCoarseGrainFrequencySeriesTest
 test_programs += DetInverseTest
-test_programs += DirichletTest
 test_programs += EigenTest
 test_programs += FindRootTest
 test_programs += IntegrateTest
