@@ -692,6 +692,19 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
             spin2x, spin2y, spin2z, f_start, f_max, f_ref, distance, inclination,lambda1, lambda2, model->waveFlags, nonGRparams, amporder, order,
             approximant,model->waveformCache, NULL), errnum);
 
+     
+    /* if the waveform failed to generate, fill the buffer with zeros
+     * so that the previous waveform is not left there
+     */
+    if (ret != XLAL_SUCCESS || hptilde == NULL || hctilde == NULL)
+    {
+	    XLALPrintError(" ERROR in XLALSimInspiralChooseWaveformFromCache(): error generating waveform. errnum=%d\n",errnum );
+	    for (i=0; i<model->freqhPlus->data->length; i++){
+	        model->freqhPlus->data->data[i] = 0.0;
+	        model->freqhCross->data->data[i] = 0.0;
+	    }
+	    XLAL_ERROR_VOID(XLAL_FAILURE);
+    }
 	if (hptilde==NULL || hptilde->data==NULL || hptilde->data->data==NULL ) {
 	  XLALPrintError(" ERROR in LALInferenceTemplateXLALSimInspiralChooseWaveform(): encountered unallocated 'hptilde'.\n");
 	  XLAL_ERROR_VOID(XLAL_EFAULT);
@@ -700,8 +713,8 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
 	  XLALPrintError(" ERROR in LALInferenceTemplateXLALSimInspiralChooseWaveform(): encountered unallocated 'hctilde'.\n");
 	  XLAL_ERROR_VOID(XLAL_EFAULT);
 	}
-      
-	COMPLEX16 *dataPtr = hptilde->data->data;
+	
+    COMPLEX16 *dataPtr = hptilde->data->data;
 
     for (i=0; i<model->freqhPlus->data->length; ++i) {
       dataPtr = hptilde->data->data;
