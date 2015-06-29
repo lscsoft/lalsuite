@@ -517,7 +517,6 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
   INT4 order=-1;
   INT4 amporder;
 
-  unsigned long	i;
   static int sizeWarning = 0;
   int ret=0;
   INT4 errnum=0;
@@ -699,10 +698,8 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
     if (ret != XLAL_SUCCESS || hptilde == NULL || hctilde == NULL)
     {
 	    XLALPrintError(" ERROR in XLALSimInspiralChooseWaveformFromCache(): error generating waveform. errnum=%d\n",errnum );
-	    for (i=0; i<model->freqhPlus->data->length; i++){
-	        model->freqhPlus->data->data[i] = 0.0;
-	        model->freqhCross->data->data[i] = 0.0;
-	    }
+	    memset(model->freqhPlus->data->data,0,sizeof(model->freqhPlus->data->data[0])*model->freqhPlus->data->length);
+	    memset(model->freqhCross->data->data,0,sizeof(model->freqhCross->data->data[0])*model->freqhCross->data->length);
 	    XLAL_ERROR_VOID(XLAL_FAILURE);
     }
 	if (hptilde==NULL || hptilde->data==NULL || hptilde->data->data==NULL ) {
@@ -713,25 +710,15 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
 	  XLALPrintError(" ERROR in LALInferenceTemplateXLALSimInspiralChooseWaveform(): encountered unallocated 'hctilde'.\n");
 	  XLAL_ERROR_VOID(XLAL_EFAULT);
 	}
-	
-    COMPLEX16 *dataPtr = hptilde->data->data;
 
-    for (i=0; i<model->freqhPlus->data->length; ++i) {
-      dataPtr = hptilde->data->data;
-      if(i < hptilde->data->length){
-        model->freqhPlus->data->data[i] = dataPtr[i];
-      }else{
-        model->freqhPlus->data->data[i] = 0.0;
-      }
-    }
-    for (i=0; i<model->freqhCross->data->length; ++i) {
-      dataPtr = hctilde->data->data;
-      if(i < hctilde->data->length){
-        model->freqhCross->data->data[i] = dataPtr[i];
-      }else{
-        model->freqhCross->data->data[i] = 0.0;
-      }
-    }
+    INT4 rem=0;
+    memcpy(model->freqhPlus->data->data,hptilde->data->data,sizeof(hptilde->data->data[0])*hptilde->data->length);
+    if( (rem=(model->freqhPlus->data->length - hptilde->data->length)) > 0)
+        memset(&(model->freqhPlus->data->data[hptilde->data->length]),0, rem*sizeof(hptilde->data->data[0]) );
+    
+    memcpy(model->freqhCross->data->data,hctilde->data->data,sizeof(hctilde->data->data[0])*hctilde->data->length);
+    if( (rem=(model->freqhCross->data->length - hctilde->data->length)) > 0)
+        memset(&(model->freqhCross->data->data[hctilde->data->length]),0, rem*sizeof(hctilde->data->data[0]) );
     
     
     /* Destroy the nonGr params */
@@ -749,14 +736,12 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
             amporder, order, approximant,model->waveformCache), errnum);
     XLALSimInspiralDestroyTestGRParam(nonGRparams);
     if (ret == XLAL_FAILURE || hplus == NULL || hcross == NULL)
-      {
-	XLALPrintError(" ERROR in XLALSimInspiralChooseWaveformFromCache(): error generating waveform. errnum=%d\n",errnum );
-	for (i=0; i<model->timehPlus->data->length; i++){
-	  model->timehPlus->data->data[i] = 0.0;
-	  model->timehCross->data->data[i] = 0.0;
-	}
-	return;
-      }
+    {
+            XLALPrintError(" ERROR in XLALSimInspiralChooseWaveformFromCache(): error generating waveform. errnum=%d\n",errnum );
+            memset(model->timehPlus->data->data,0,sizeof(model->timehPlus->data->data[0]) * model->timehPlus->data->length);
+            memset(model->timehCross->data->data,0,sizeof(model->timehCross->data->data[0]) * model->timehCross->data->length);
+            XLAL_ERROR_VOID(XLAL_FAILURE);
+    }
 
     /* The following complicated mess is a result of the following considerations:
        
