@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008 J. Creighton, K. Cannon
+ * Copyright (C) 2007--2015 J. Creighton, K. Cannon, K. Wette, R. Prix, A. Mercer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
