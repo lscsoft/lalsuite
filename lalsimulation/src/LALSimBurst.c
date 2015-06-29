@@ -289,10 +289,11 @@ int XLALGenerateImpulseBurst(
 	int length;
 	LIGOTimeGPS epoch;
 
-	/* length is 1353 samples, because it's 13:53 right now and it's an
-	 * odd integer */
+	/* length is 39 samples which is odd and one more than twice the
+	 * length of the interpolation kernel in
+	 * XLALSimDetectorStrainREAL8TimeSeries() at the time of writing */
 
-	length = 1353;
+	length = 39;
 
 	/* the middle sample is t = 0 */
 
