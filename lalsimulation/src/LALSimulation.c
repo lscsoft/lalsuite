@@ -17,7 +17,6 @@
  *  MA  02111-1307  USA
  */
 
-
 /*
  * ============================================================================
  *
@@ -42,7 +41,6 @@
 #include <lal/TimeFreqFFT.h>
 #include <lal/Window.h>
 #include "check_series_macros.h"
-
 
 /*
  * ============================================================================
@@ -72,15 +70,18 @@ static unsigned long round_up_to_power_of_two(unsigned long x)
 
 
 /**
- * Turn a detector prefix string into a LALDetector structure.  The first
- * two characters of the input string are used as the instrument name,
- * which allows channel names in the form "H1:LSC-STRAIN" to be used.  The
- * return value is a pointer into the lalCachedDetectors array, so
- * modifications to the contents are global.  Make a copy of the structure
- * if you want to modify it safely.
+ * @brief Turn a detector prefix string into a LALDetector structure.
+ * @details
+ * The first two characters of the input string are used as the instrument
+ * name, which allows channel names in the form `H1:LSC-STRAIN` to be used.
+ * The return value is a pointer into the lalCachedDetectors array, so
+ * modifications to the contents are global.  Make a copy of the structure if
+ * you want to modify it safely.
+ * @param[in] string The detector prefix string.
+ * @returns
+ * A cached LALDetector structure corresponding to the supplied prefix.
+ * @retval NULL Unrecognized prefix string.
  */
-
-
 const LALDetector *XLALDetectorPrefixToLALDetector(
 	const char *string
 )
@@ -162,33 +163,38 @@ REAL8TimeSeries * XLALSimQuasiPeriodicInjectionREAL8TimeSeries( REAL8TimeSeries 
 
 
 /**
- * Input
+ * @brief Transforms the waveform polarizations into a detector strain
+ * @details
+ * This routine takes the plus and cross waveform polarizations, along
+ * with the sky position, polarization angle, and detector structure,
+ * and computes the external strain on the detector.
  *
- * - h+ and hx time series for the injection with their epochs set to the
- * start of those time series at the geocentre (for simplicity the epochs
- * must be the same, and they must have the same length and sample rates),
+ * The input time series should have their epochs set to the start of
+ * those time series at the geocetre (for simplicity the epochs must be
+ * the same, and they must have the same length and sample rates)
  *
- * - the right ascension and declination of the source in radians.
+ * @param[in] hplus Pointer to a REAL8TimeSeries containing the plus polarization waveform
+ * @param[in] hcross Pointer to a REAL8TimeSeries containing the cross polarization waveform
+ * @param[in] right_ascension The right ascension of the source in radians
+ * @param[in] declination The declination of the source in radians
+ * @param[in] psi The polarization angle giving the orientation of the wave co-ordinate system in radians
+ * @param[in] detector Pointer to a LALDetector structure for the detector into which the injection is destined to be injected
  *
- * - the orientation of the wave co-ordinate system, psi, in radians.
- *
- * - the detector into which the injection is destined to be injected,
- *
- * Output
- *
+ * @returns
  * The strain time series as seen in the detector, with the epoch set to
  * the start of the time series at that detector.  The output time series
  * units are the same as the two input time series (which must both have
  * the same sample units).
  *
- * Notes
+ * @retval NULL Failure
  *
+ * @note
  * A 19-sample Welch-windowed sinc kernel is used for sub-sample
  * interpolation.  See XLALREAL8TimeSeriesInterpEval() for more
  * information, and consider the frequency response of this kernel when
  * using this function with injections whose frequency content approaches
  * the Nyquist frequency.
- *
+ * @n@n
  * The geometric delay and antenna response are only recalculated every 250
  * ms.  The Earth rotates through 7e-5 rad/s, therefore given a radius of
  * 6e6 m and c=3e8 m/s, the maximum geometric speed for points on the
@@ -201,8 +207,6 @@ REAL8TimeSeries * XLALSimQuasiPeriodicInjectionREAL8TimeSeries( REAL8TimeSeries 
  * calculations, but one should be aware of the periodic nature of the
  * updates if extreme phase stability is required.
  */
-
-
 REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 	const REAL8TimeSeries *hplus,
 	const REAL8TimeSeries *hcross,
@@ -312,6 +316,8 @@ error:
 
 
 /**
+ * @brief Adds a detector strain time series to detector data.
+ * @details
  * Essentially a wrapper for XLALAddREAL8TimeSeries(), but performs
  * sub-sample re-interpolation to adjust the source time series epoch to
  * lie on an integer sample boundary in the target time series.  This
@@ -320,14 +326,25 @@ error:
  * for the response function turns this feature off (i.e., uses a unit
  * response).
  *
- * NOTE:  the source time series is modified in place by this function!
- *
  * This function accepts source and target time series whose units are not
  * the same, and allows the two time series to be herterodyned (although it
  * currently requires them to have the same heterodyne frequency).
+ *
+ * @param[in,out] target Pointer to the time series into which the strain will
+ * be added
+ *
+ * @param[in,out] h Pointer to the time series containing the detector strain
+ * (the strain data is modified by this routine)
+ *
+ * @param[in] response Pointer to the response function transforming strain to
+ * detector output units, or NULL for unit response.
+ *
+ * @retval 0 Success
+ * @retval <0 Failure
+ *
+ * @attention
+ * The source time series is modified in place by this function!
  */
-
-
 int XLALSimAddInjectionREAL8TimeSeries(
 	REAL8TimeSeries *target,
 	REAL8TimeSeries *h,
@@ -541,8 +558,9 @@ int XLALSimAddInjectionREAL8TimeSeries(
 }
 
 
-
 /**
+ * @brief Adds a detector strain time series to detector data.
+ * @details
  * Essentially a wrapper for XLALAddREAL4TimeSeries(), but performs
  * sub-sample re-interpolation to adjust the source time series epoch to
  * lie on an integer sample boundary in the target time series.  This
@@ -551,14 +569,25 @@ int XLALSimAddInjectionREAL8TimeSeries(
  * for the response function turns this feature off (i.e., uses a unit
  * response).
  *
- * NOTE:  the source time series is modified in place by this function!
- *
  * This function accepts source and target time series whose units are not
  * the same, and allows the two time series to be herterodyned (although it
  * currently requires them to have the same heterodyne frequency).
+ *
+ * @param[in,out] target Pointer to the time series into which the strain will
+ * be added
+ *
+ * @param[in,out] h Pointer to the time series containing the detector strain
+ * (the strain data is modified by this routine)
+ *
+ * @param[in] response Pointer to the response function transforming strain to
+ * detector output units, or NULL for unit response.
+ *
+ * @retval 0 Success
+ * @retval <0 Failure
+ *
+ * @attention
+ * The source time series is modified in place by this function!
  */
-
-
 int XLALSimAddInjectionREAL4TimeSeries(
 	REAL4TimeSeries *target,
 	REAL4TimeSeries *h,
