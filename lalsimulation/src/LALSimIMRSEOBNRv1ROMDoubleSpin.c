@@ -497,7 +497,7 @@ int SEOBNRv1ROMDoubleSpinCore(
   }
 
   if (q > 10) {
-    XLALPrintError( "XLAL Error - %s: q larger than 10!\nSEOBNRv1ROMDoubleSpin is only available for spins in the range 1 <= q <= 10.\n", __func__);
+    XLALPrintError( "XLAL Error - %s: q=%lf larger than 10!\nSEOBNRv1ROMDoubleSpin is only available for q in the range 1 <= q <= 10.\n", __func__, q);
     XLAL_ERROR( XLAL_EDOM );
   }
 

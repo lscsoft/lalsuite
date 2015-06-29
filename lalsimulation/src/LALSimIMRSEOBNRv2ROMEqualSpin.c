@@ -541,7 +541,7 @@ int SEOBNRv2ROMEqualSpinCore(
     XLAL_ERROR(XLAL_EDOM, "XLAL Error - %s: chi (%f) smaller than -1 or larger than 0.99!\nSEOBNRv2ROMEqualSpin is only available for spins in the range -1 <= a/M <= 0.99.\n", __func__,chi);
 
   if (eta < 0.01 || eta > 0.25)
-    XLAL_ERROR(XLAL_EDOM, "XLAL Error - %s: eta (%f) smaller than 0.01 or unphysical!\nSEOBNRv2ROMEqualSpin is only available for spins in the range 0.01 <= eta <= 0.25.\n", __func__,eta);
+    XLAL_ERROR(XLAL_EDOM, "XLAL Error - %s: eta (%f) smaller than 0.01 or unphysical!\nSEOBNRv2ROMEqualSpin is only available for eta in the range 0.01 <= eta <= 0.25.\n", __func__,eta);
 
   /* Find frequency bounds */
   if (!freqs_in) XLAL_ERROR(XLAL_EFAULT);

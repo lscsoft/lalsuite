@@ -502,7 +502,7 @@ static int SEOBNRv1ROMEqualSpinCore(
   }
 
   if (q > 100) {
-    XLALPrintError( "XLAL Error - %s: q larger than 100!\nSEOBNRv1ROMEqualSpin is only available for spins in the range 1 <= q <= 100.\n", __func__);
+    XLALPrintError( "XLAL Error - %s: q=%lf larger than 100!\nSEOBNRv1ROMEqualSpin is only available for q in the range 1 <= q <= 100.\n", __func__,q);
     XLAL_ERROR( XLAL_EDOM );
   }
 
