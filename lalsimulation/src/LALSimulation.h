@@ -31,7 +31,7 @@
  * #include <lal/Date.h>
  * #include <lal/LALSimulation.h>
  * ...
- * LALDetector *detector;
+ * const LALDetector *detector;
  * REAL8TimeSeries *data;
  * REAL8TimeSeries *strain;
  * REAL8TimeSeries *hplus;
