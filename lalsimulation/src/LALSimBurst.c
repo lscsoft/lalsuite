@@ -66,8 +66,8 @@ static void gaussian_noise(REAL8TimeSeries * series, double rms, gsl_rng * rng)
 
 
 /*
- * compute semimajor and semiminor axes lenghts from eccentricity assuming
- * that a^2 + b^2 = 1.  eccentricity is as e = \sqrt{1 - (b / a)^2}.  from
+ * compute semimajor and semiminor axes lengths from eccentricity assuming
+ * that a^2 + b^2 = 1.  eccentricity is e = \sqrt{1 - (b / a)^2}.  from
  * those two constraints the following expressions are obtained.
  */
 
