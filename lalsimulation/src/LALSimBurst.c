@@ -45,13 +45,18 @@
 /*
  * ============================================================================
  *
- *          Fill a time series with stationary white Gaussian noise
+ *                              Static Functions
  *
  * ============================================================================
  */
 
 
-static void gaussian_noise(REAL8TimeSeries * series, REAL8 rms, gsl_rng * rng)
+/*
+ * Fill a time series with stationary white Gaussian noise
+ */
+
+
+static void gaussian_noise(REAL8TimeSeries * series, double rms, gsl_rng * rng)
 {
 	unsigned i;
 
