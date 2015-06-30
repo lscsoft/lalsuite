@@ -1028,7 +1028,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
       XLALREAL8ReverseFFT(dh_S, dh_S_tilde, data->margFFTPlan);
 
       if (margphi) {
-          dh_S_phase_tilde->data[i] = crect( creal(dh_S_tilde->data[0]), 0.0);
+          dh_S_phase_tilde->data[0] = crect( creal(dh_S_phase_tilde->data[0]), 0.0);
           XLALREAL8ReverseFFT(dh_S_phase, dh_S_phase_tilde, data->margFFTPlan);
       }
 
