@@ -365,6 +365,10 @@ int XLALGenerateImpulseBurst(
  * bandwidth
  * frequency domain Gaussian envelope is \f$\propto \exp ( -\frac{1}{2} (f - f_{0})^{2} / bandwidth^{2} )\f$
  * where f and bandwidth are in Hertz.
+ * eccentricity
+ * controls the relative amplitudes of the \f$h_{+}\f$ and \f$h_{\times}\f$
+ * components.  eccentricity=0 --> equal amplitudes, eccentricity=1 -->
+ * \f$h_{\times}=0\f$ (linearly polarized \f$h_{+}\f$).
  * int_hdot_squared
  * waveform is normalized so that \f$\int (\stackrel{.}{h}_{+}^{2} + \stackrel{.}{h}_{\times}^{2}) d t\f$
  * equals this
@@ -397,12 +401,14 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 	REAL8 duration,
 	REAL8 frequency,
 	REAL8 bandwidth,
+	REAL8 eccentricity,
 	REAL8 int_hdot_squared,
 	REAL8 delta_t,
 	gsl_rng *rng
 )
 {
 	int length;
+	double a, b;
 	LIGOTimeGPS epoch;
 	COMPLEX16FrequencySeries *tilde_hplus, *tilde_hcross;
 	REAL8Window *window;
@@ -499,7 +505,9 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 	 * time-domain window, with \sigma_{f} = \Delta f / 2.  the window
 	 * is created with its peak on the middle sample, which we need to
 	 * shift to the sample corresponding to the injection's centre
-	 * frequency. */
+	 * frequency.  we also apply the eccentricity amplitude adjustments
+	 * at this stage (last chance before the overall normalization is
+	 * computed). */
 
 	window = XLALCreateGaussREAL8Window(2 * tilde_hplus->data->length + 1, (tilde_hplus->data->length * tilde_hplus->deltaF) / (bandwidth / 2.0));
 	if(!window) {
@@ -511,9 +519,10 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 		XLAL_ERROR(XLAL_EFUNC);
 	}
 	XLALResizeREAL8Sequence(window->data, tilde_hplus->data->length - (unsigned) floor(frequency / tilde_hplus->deltaF + 0.5), tilde_hplus->data->length);
+	semi_major_minor_from_e(eccentricity, &a, &b);
 	for(i = 0; i < window->data->length; i++) {
-		tilde_hplus->data->data[i] *= window->data->data[i];
-		tilde_hcross->data->data[i] *= window->data->data[i];
+		tilde_hplus->data->data[i] *= a * window->data->data[i];
+		tilde_hcross->data->data[i] *= b * window->data->data[i];
 	}
 	XLALDestroyREAL8Window(window);
 
