@@ -191,7 +191,7 @@ class Template(object):
 
     def clear(self):
         self._wf = {}
-        self._metric = None
+
 
 class TaylorF2RedSpinTemplate(Template):
     param_names = ("m1", "m2", "chi")
