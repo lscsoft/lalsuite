@@ -660,21 +660,22 @@ double XLALSimBurstSineGaussianDuration(
  * hrss:  the root-sum-squares strain of the waveform (summed over both
  * polarizations).  See K. Riles, LIGO-T040055-00.pdf.
  *
- * eccentricity:  0 --> circularly polarized, 1 --> linearly polarized.
+ * eccentricity:  0 --> circularly polarized, 1 --> linearly polarized
+ * (\f$h_{\times} = 0\f$).
  *
- * polarization:  the angle from the + axis to the major axis of the
- * waveform ellipsoid.  with the eccentricity set to 1 (output is linearly
- * polarized):  0 --> output contains + polarization only;  pi/2 --> output
- * contains x polarization only.  with the eccentricity set to 0 (output is
- * circularly polarized), the polarization parameter is irrelevant.
+ * phase:  0 --> \f$h_{+}\f$ contains cosine-Gaussian and \f$h_{\times}\f$
+ * contains sine-Gaussian;  \f$\pi/2\f$ --> \f$h_{+}\f$ contains
+ * sine-Gaussian and \f$h_{\times}\f$ contains cosine-Gaussian.
  *
  * Output:
  *
- * h+ and hx time series containing a cosine-Gaussian in the + polarization
- * and a sine-Gaussian in the x polarization.  The Gaussian envelope peaks
- * in both at t = 0 as defined by epoch and deltaT.  Note that a Tukey
- * window with tapers covering 50% of the time series is applied to make
- * the waveform go to 0 smoothly at the start and end.
+ * h+ and hx time series containing add-mixtures of cosine-Gaussian and
+ * sine-Gaussian waveforms.  The Gaussian envelope peaks in both at t = 0
+ * as defined by epoch and deltaT.  Note that a Tukey window with tapers
+ * covering 50% of the time series is applied to make the waveform go to
+ * exactly 0 smoothly at the start and end.
+ *
+ * Linearly polarized waveforms are always in the \f$h_{+}\f$ component.
  */
 
 
@@ -685,24 +686,24 @@ int XLALSimBurstSineGaussian(
 	REAL8 centre_frequency,
 	REAL8 hrss,
 	REAL8 eccentricity,
-	REAL8 polarization,
+	REAL8 phase,
 	REAL8 delta_t
 )
 {
 	REAL8Window *window;
+	/* square integral of unit amplitude cosine- and sine-Gaussian
+	 * waveforms.  the sine-Gaussian case is derived in K. Riles,
+	 * LIGO-T040055-00.pdf, equation (7).  the cosine-Gaussian case is
+	 * obtained by replacing cos^2 with 1-sin^2, using equation (5) and
+	 * the result for sine-Gaussians. */
+	const double cgsq = Q / (4.0 * centre_frequency * sqrt(LAL_PI)) * (1.0 + exp(-Q * Q));
+	const double sgsq = Q / (4.0 * centre_frequency * sqrt(LAL_PI)) * (1.0 - exp(-Q * Q));
 	/* semimajor and semiminor axes of waveform ellipsoid. */
 	double a, b;
 	semi_major_minor_from_e(eccentricity, &a, &b);
-	/* rss of plus and cross polarizations */
-	const double hplusrss  = hrss * (a * cos(polarization) - b * sin(polarization));
-	const double hcrossrss = hrss * (b * cos(polarization) + a * sin(polarization));
-	/* rss of unit amplitude cosine- and sine-gaussian waveforms.  see
-	 * K. Riles, LIGO-T040055-00.pdf */
-	const double cgrss = sqrt((Q / (4.0 * centre_frequency * sqrt(LAL_PI))) * (1.0 + exp(-Q * Q)));
-	const double sgrss = sqrt((Q / (4.0 * centre_frequency * sqrt(LAL_PI))) * (1.0 - exp(-Q * Q)));
-	/* "peak" amplitudes of plus and cross */
-	const double h0plus  = hplusrss / cgrss;
-	const double h0cross = hcrossrss / sgrss;
+	/* peak amplitudes of plus and cross */
+	const double h0plus  = hrss * a / sqrt(cgsq * cos(phase) * cos(phase) + sgsq * sin(phase) * sin(phase));
+	const double h0cross = hrss * b / sqrt(cgsq * sin(phase) * sin(phase) + sgsq * cos(phase) * cos(phase));
 	LIGOTimeGPS epoch;
 	int length;
 	unsigned i;
@@ -743,8 +744,8 @@ int XLALSimBurstSineGaussian(
 		const double t = ((int) i - (length - 1) / 2) * delta_t;
 		const double phi = LAL_TWOPI * centre_frequency * t;
 		const double fac = exp(-0.5 * phi * phi / (Q * Q));
-		(*hplus)->data->data[i]  = h0plus * fac * cos(phi);
-		(*hcross)->data->data[i] = h0cross * fac * sin(phi);
+		(*hplus)->data->data[i]  = h0plus * fac * cos(phi - phase);
+		(*hcross)->data->data[i] = h0cross * fac * sin(phi - phase);
 	}
 
 	/* apply a Tukey window for continuity at the start and end of the

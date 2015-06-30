@@ -94,7 +94,7 @@ int XLALSimBurstSineGaussian(
 	REAL8 centre_frequency,
 	REAL8 hrss,
 	REAL8 eccentricity,
-	REAL8 polarization,
+	REAL8 phase,
 	REAL8 delta_t
 );
 
