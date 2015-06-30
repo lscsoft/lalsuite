@@ -2187,12 +2187,6 @@ int XLALSimInspiralTaylorF2Core(
         const INT4 amplitudeO                  /**< twice PN amplitude order */
         );
 
-/**
- * Computes the stationary phase approximation to the Fourier transform of
- * a chirp waveform with phase given by \eqref{eq_InspiralFourierPhase_f2}
- * and amplitude given by expanding \f$1/\sqrt{\dot{F}}\f$. If the PN order is
- * set to -1, then the highest implemented order is used.
- */
 int XLALSimInspiralTaylorF2(
 		COMPLEX16FrequencySeries **htilde, /**< FD waveform */
 		const REAL8 phi_ref,            /**< orbital reference phase (rad) */
