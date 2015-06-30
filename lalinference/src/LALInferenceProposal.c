@@ -722,13 +722,19 @@ REAL8 LALInferenceSingleProposal(LALInferenceThreadState *thread,
             sigma = 1.0;
         } else if (!strcmp(param->name, "time")) {
             sigma = 0.02;
+		} else if (!strcmp(param->name, "t0")) {
+		    sigma = 0.02;
         } else if (!strcmp(param->name, "phase")) {
             sigma = 0.6;
         } else if (!strcmp(param->name, "distance")) {
             sigma = 10.0;
         } else if (!strcmp(param->name, "declination")) {
             sigma = 0.3;
-        } else if (!strcmp(param->name, "rightascension")) {
+		} else if (!strcmp(param->name, "azimuth")) {
+			sigma = 0.6;
+		} else if (!strcmp(param->name, "cosalpha")) {
+			sigma = 0.1;
+		} else if (!strcmp(param->name, "rightascension")) {
             sigma = 0.6;
         } else if (!strcmp(param->name, "polarisation")) {
             sigma = 0.6;
@@ -745,7 +751,7 @@ REAL8 LALInferenceSingleProposal(LALInferenceThreadState *thread,
 
         *(REAL8 *)param->value += gsl_ran_ugaussian(GSLrandom)*sigma;
     } else {
-        if (!strcmp(param->name,"eta") || !strcmp(param->name,"q") || !strcmp(param->name,"time") || !strcmp(param->name,"a_spin2") || !strcmp(param->name,"a_spin1")){
+        if (!strcmp(param->name,"eta") || !strcmp(param->name,"q") || !strcmp(param->name,"time") || !strcmp(param->name,"t0") || !strcmp(param->name,"a_spin2") || !strcmp(param->name,"a_spin1")){
             *(REAL8 *)param->value += gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.001;
         } else if (!strcmp(param->name,"polarisation") || !strcmp(param->name,"phase") || !strcmp(param->name,"costheta_jn")){
             *(REAL8 *)param->value += gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.1;
@@ -1385,7 +1391,7 @@ REAL8 LALInferenceDrawApproxPrior(LALInferenceThreadState *thread,
 
     LALInferenceCopyVariables(currentParams, proposedParams);
 
-    const char *flat_params[] = {"q", "eta", "time", "phase", "polarisation",
+    const char *flat_params[] = {"q", "eta", "t0", "azimuth", "cosalpha", "time", "phase", "polarisation",
                                  "rightascension", "costheta_jn", "phi_jl",
                                  "phi12", "a_spin1", "a_spin2", NULL};
 
@@ -3057,7 +3063,7 @@ void LALInferenceSetupAdaptiveProposals(LALInferenceVariables *propArgs, LALInfe
     for(this=params->head; this; this=this->next) {
         char *name = this->name;
 
-        if (!strcmp(name, "eta") || !strcmp(name, "q") || !strcmp(name, "time") || !strcmp(name, "a_spin2") || !strcmp(name, "a_spin1")){
+        if (!strcmp(name, "eta") || !strcmp(name, "q") || !strcmp(name, "time") || !strcmp(name, "a_spin2") || !strcmp(name, "a_spin1") || !strcmp(name,"t0")){
             sigma = 0.001;
         } else if (!strcmp(name, "polarisation") || !strcmp(name, "phase") || !strcmp(name, "costheta_jn")){
             sigma = 0.1;
