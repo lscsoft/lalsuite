@@ -423,7 +423,7 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 	/* check input.  checking if sigma_t_squared < 0 is equivalent to
 	 * checking if duration * bandwidth < LAL_2_PI */
 
-	if(duration < 0 || bandwidth < 0 || sigma_t_squared < 0 || int_hdot_squared < 0 || delta_t <= 0) {
+	if(duration < 0 || bandwidth < 0 || eccentricity < 0 || eccentricity > 1 || sigma_t_squared < 0 || int_hdot_squared < 0 || delta_t <= 0) {
 		XLALPrintError("%s(): invalid input parameters\n", __func__);
 		*hplus = *hcross = NULL;
 		XLAL_ERROR(XLAL_EINVAL);
@@ -661,6 +661,14 @@ int XLALSimBurstSineGaussian(
 	LIGOTimeGPS epoch;
 	int length;
 	unsigned i;
+
+	/* check input. */
+
+	if(Q < 0 || centre_frequency < 0 || hrss < 0 || eccentricity < 0 || eccentricity > 1 || delta_t <= 0) {
+		XLALPrintError("%s(): invalid input parameters\n", __func__);
+		*hplus = *hcross = NULL;
+		XLAL_ERROR(XLAL_EINVAL);
+	}
 
 	/* length of the injection time series is 30 * the width of the
 	 * Gaussian envelope (sigma_t in the comments above), rounded to
