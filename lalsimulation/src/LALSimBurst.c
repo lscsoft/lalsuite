@@ -66,6 +66,22 @@ static void gaussian_noise(REAL8TimeSeries * series, double rms, gsl_rng * rng)
 
 
 /*
+ * compute semimajor and semiminor axes lenghts from eccentricity assuming
+ * that a^2 + b^2 = 1.  eccentricity is as e = \sqrt{1 - (b / a)^2}.  from
+ * those two constraints the following expressions are obtained.
+ */
+
+
+static void semi_major_minor_from_e(double e, double *a, double *b)
+{
+	double e2 = e * e;
+
+	*a = 1.0 / sqrt(2.0 - e2);
+	*b = *a * sqrt(1.0 - e2);
+}
+
+
+/*
  * ============================================================================
  *
  *                                 Utilities
@@ -620,9 +636,9 @@ int XLALSimBurstSineGaussian(
 )
 {
 	REAL8Window *window;
-	/* semimajor and semiminor axes of waveform ellipsoid */
-	const double a = 1.0 / sqrt(2.0 - eccentricity * eccentricity);
-	const double b = a * sqrt(1.0 - eccentricity * eccentricity);
+	/* semimajor and semiminor axes of waveform ellipsoid. */
+	double a, b;
+	semi_major_minor_from_e(eccentricity, &a, &b);
 	/* rss of plus and cross polarizations */
 	const double hplusrss  = hrss * (a * cos(polarization) - b * sin(polarization));
 	const double hcrossrss = hrss * (b * cos(polarization) + a * sin(polarization));
