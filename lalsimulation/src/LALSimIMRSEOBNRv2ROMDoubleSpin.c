@@ -970,8 +970,11 @@ static int SEOBNRv2ROMDoubleSpinCore(
   }
 
   /* Correct phasing so we coalesce at t=0 (with the definition of the epoch=-1/deltaF above) */
+  /* JV: Commented out this message as it pollutes the logs */
+  /*
   if (deltaF > 0)
     XLAL_PRINT_WARNING("Warning: Depending on specified frequency sequence correction to time of coalescence may not be accurate.\n");
+   */
 
   // Get SEOBNRv2 ringdown frequency for 22 mode
   // XLALSimInspiralGetFinalFreq wants masses in SI units, so unfortunately we need to convert back
