@@ -1549,6 +1549,31 @@ void LALInferenceNetworkSNR(LALInferenceVariables *currentParams,
     LALInferenceAddVariable(currentParams,"chirpmass",&mc,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
   }
 
+
+  INT4 SKY_FRAME=0;
+  if(LALInferenceCheckVariable(currentParams,"SKY_FRAME"))
+    SKY_FRAME=*(INT4 *)LALInferenceGetVariable(currentParams,"SKY_FRAME");
+  if(SKY_FRAME==0){
+    /* determine source's sky location & orientation parameters: */
+    ra        = *(REAL8*) LALInferenceGetVariable(currentParams, "rightascension"); /* radian      */
+    dec       = *(REAL8*) LALInferenceGetVariable(currentParams, "declination");    /* radian      */
+  }
+  else
+  {
+    if(Nifos<2){
+      fprintf(stderr,"ERROR: Cannot use --detector-frame with less than 2 detectors!\n");
+      exit(1);
+    }
+    REAL8 t0=LALInferenceGetREAL8Variable(currentParams,"t0");
+    REAL8 alph=acos(LALInferenceGetREAL8Variable(currentParams,"cosalpha"));
+    REAL8 theta=LALInferenceGetREAL8Variable(currentParams,"azimuth");
+    LALInferenceDetFrameToEquatorial(data->detector,data->next->detector,
+                                   t0,alph,theta,&GPSdouble,&ra,&dec);
+    LALInferenceAddVariable(currentParams,"rightascension",&ra,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddVariable(currentParams,"declination",&dec,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddVariable(currentParams,"time",&GPSdouble,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+  }
+
   /* determine source's sky location & orientation parameters: */
   ra        = *(REAL8*) LALInferenceGetVariable(currentParams, "rightascension"); /* radian      */
   dec       = *(REAL8*) LALInferenceGetVariable(currentParams, "declination");    /* radian      */
