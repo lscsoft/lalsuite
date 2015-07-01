@@ -492,7 +492,7 @@ void mcmc_step(LALInferenceRunState *runState, LALInferenceThreadState *thread) 
 void LALInferencePTswap(LALInferenceRunState *runState, INT4 i, FILE *swapfile) {
     INT4 MPIrank, MPIsize;
     MPI_Status MPIstatus;
-    INT4 nPar, n_local_threads, ntemps, Tskip;
+    INT4 nPar, adjNPar, n_local_threads, ntemps, Tskip;
     INT4 low;
     INT4 ind, cold_ind, hot_ind;
     INT4 cold_rank, hot_rank;
@@ -572,8 +572,6 @@ void LALInferencePTswap(LALInferenceRunState *runState, INT4 i, FILE *swapfile) 
                 }
             }
         } else {
-            nPar = LALInferenceGetVariableDimensionNonFixed(cold_thread->currentParams);
-
             if (MPIrank == cold_rank) {
                 cold_thread = runState->threads[cold_ind % n_local_threads];
 
@@ -596,13 +594,17 @@ void LALInferencePTswap(LALInferenceRunState *runState, INT4 i, FILE *swapfile) 
                     cold_thread->currentPrior = adjCurrentPrior;
 
                     /* Package and send parameters */
+                    nPar = LALInferenceGetVariableDimensionNonFixed(cold_thread->currentParams);
+                    MPI_Send(&nPar, 1, MPI_INT, hot_rank, PT_COM, MPI_COMM_WORLD);
+                    MPI_Recv(&adjNPar, 1, MPI_INT, hot_rank, PT_COM, MPI_COMM_WORLD, &MPIstatus);
+
                     REAL8 *parameters = XLALMalloc(nPar * sizeof(REAL8));
                     LALInferenceCopyVariablesToArray(cold_thread->currentParams, parameters);
                     MPI_Send(parameters, nPar, MPI_DOUBLE, hot_rank, PT_COM, MPI_COMM_WORLD);
 
                     /* Recieve and unpack parameters */
-                    REAL8 *adjParameters = XLALMalloc(nPar * sizeof(REAL8));
-                    MPI_Recv(adjParameters, nPar, MPI_DOUBLE, hot_rank, PT_COM, MPI_COMM_WORLD, &MPIstatus);
+                    REAL8 *adjParameters = XLALMalloc(adjNPar * sizeof(REAL8));
+                    MPI_Recv(adjParameters, adjNPar, MPI_DOUBLE, hot_rank, PT_COM, MPI_COMM_WORLD, &MPIstatus);
                     LALInferenceCopyArrayToVariables(adjParameters, cold_thread->currentParams);
 
                     XLALFree(parameters);
@@ -647,12 +649,16 @@ void LALInferencePTswap(LALInferenceRunState *runState, INT4 i, FILE *swapfile) 
                     hot_thread->currentPrior = adjCurrentPrior;
 
                     /* Package parameters */
+                    nPar = LALInferenceGetVariableDimensionNonFixed(hot_thread->currentParams);
+                    MPI_Recv(&adjNPar, 1, MPI_INT, cold_rank, PT_COM, MPI_COMM_WORLD, &MPIstatus);
+                    MPI_Send(&nPar, 1, MPI_INT, cold_rank, PT_COM, MPI_COMM_WORLD);
+
                     REAL8 *parameters = XLALMalloc(nPar * sizeof(REAL8));
                     LALInferenceCopyVariablesToArray(hot_thread->currentParams, parameters);
 
                     /* Swap parameters */
-                    REAL8 *adjParameters = XLALMalloc(nPar * sizeof(REAL8));
-                    MPI_Recv(adjParameters, nPar, MPI_DOUBLE, cold_rank, PT_COM, MPI_COMM_WORLD, &MPIstatus);
+                    REAL8 *adjParameters = XLALMalloc(adjNPar * sizeof(REAL8));
+                    MPI_Recv(adjParameters, adjNPar, MPI_DOUBLE, cold_rank, PT_COM, MPI_COMM_WORLD, &MPIstatus);
                     MPI_Send(parameters, nPar, MPI_DOUBLE, cold_rank, PT_COM, MPI_COMM_WORLD);
 
                     /* Unpack parameters */

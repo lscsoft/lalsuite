@@ -653,6 +653,7 @@ int main(int argc, char *argv[]){
     /* And performing any injections specified */
     /* And allocating memory */
     runState = LALInferenceInitRunState(procParams);
+
     /* Perform injections if data successful read or created */
     LALInferenceInjectInspiralSignal(runState->data, runState->commandLine);
 
@@ -680,6 +681,7 @@ int main(int argc, char *argv[]){
         return 0;
 
     /* Call MCMC algorithm */
+    if (mpirank == 0) printf("sampling...\n");
     runState->algorithm(runState);
 
     if (mpirank == 0) printf(" ========== main(): finished. ==========\n");
