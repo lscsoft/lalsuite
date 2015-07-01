@@ -102,6 +102,12 @@ LALInferenceRunState *LALInferenceInitRunState(ProcessParamsTable *command_line)
 void LALInferenceDrawThreads(LALInferenceRunState *run_state) {
     if (run_state == NULL)
         return;
+
+    if (run_state->threads == NULL) {
+        XLALPrintError("Error: LALInferenceDrawThreads expects initialized run_state->threads\n");
+        XLAL_ERROR_NULL(XLAL_EINVAL);
+    }
+
     LALInferenceThreadState *thread = run_state->threads[0];
     INT4 t;
 
@@ -128,20 +134,16 @@ void LALInferenceDrawThreads(LALInferenceRunState *run_state) {
     for (t = 0; t < run_state->nthreads; t++) {
         thread = run_state->threads[t];
 
-         LALInferenceDrawApproxPrior(thread,
+        LALInferenceDrawApproxPrior(thread,
                                     thread->currentParams,
                                     thread->currentParams);
 
-        //LALInferenceDrawFromPrior(thread->currentParams,run_state->priorArgs,run_state->GSLrandom);
         while (run_state->prior(run_state,
                                 thread->currentParams,
                                 thread->model) <= -DBL_MAX) {
             LALInferenceDrawApproxPrior(thread,
                                         thread->currentParams,
                                         thread->currentParams);
-
-          //LALInferenceDrawFromPrior(thread->currentParams,run_state->priorArgs,run_state->GSLrandom);
-
         }
 
         /* Make sure that our initial value is within the
@@ -149,9 +151,9 @@ void LALInferenceDrawThreads(LALInferenceRunState *run_state) {
         LALInferenceCyclicReflectiveBound(thread->currentParams, run_state->priorArgs);
 
         /* Initialize starting likelihood and prior */
-        thread->currentPrior  = run_state->prior(run_state,
-                                                 thread->currentParams,
-                                                 thread->model);
+        thread->currentPrior = run_state->prior(run_state,
+                                                thread->currentParams,
+                                                thread->model);
 
         thread->currentLikelihood = run_state->likelihood(thread->currentParams,
                                                           run_state->data,
