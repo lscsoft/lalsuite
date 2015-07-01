@@ -376,7 +376,7 @@ int XLALSimIMRSpinEOBWaveform(
  * See CQG 31 195010, 2014, arXiv:1402.4146 for details.
  */
 
-int XLALSimIMRSEOBNRv1ROMEqualSpin(
+int XLALSimIMRSEOBNRv1ROMEffectiveSpin(
     struct tagCOMPLEX16FrequencySeries **hptilde, /**< Output: Frequency-domain waveform h+ */
     struct tagCOMPLEX16FrequencySeries **hctilde, /**< Output: Frequency-domain waveform hx */
     REAL8 phiRef,                                 /**< Phase at reference frequency */
@@ -392,7 +392,7 @@ int XLALSimIMRSEOBNRv1ROMEqualSpin(
 );
 
 /** Compute waveform in LAL format at specified frequencies */
-int XLALSimIMRSEOBNRv1ROMEqualSpinFrequencySequence(
+int XLALSimIMRSEOBNRv1ROMEffectiveSpinFrequencySequence(
     struct tagCOMPLEX16FrequencySeries **hptilde, /**< Output: Frequency-domain waveform h+ */
     struct tagCOMPLEX16FrequencySeries **hctilde, /**< Output: Frequency-domain waveform hx */
     const REAL8Sequence *freqs,                   /**< Frequency points at which to evaluate the waveform (Hz) */
@@ -442,7 +442,7 @@ int XLALSimIMRSEOBNRv1ROMDoubleSpinFrequencySequence(
  * See CQG 31 195010, 2014, arXiv:1402.4146 for details.
  */
 
-int XLALSimIMRSEOBNRv2ROMEqualSpin(
+int XLALSimIMRSEOBNRv2ROMEffectiveSpin(
     struct tagCOMPLEX16FrequencySeries **hptilde, /**< Output: Frequency-domain waveform h+ */
     struct tagCOMPLEX16FrequencySeries **hctilde, /**< Output: Frequency-domain waveform hx */
     REAL8 phiRef,                                 /**< Phase at reference frequency */
@@ -458,7 +458,7 @@ int XLALSimIMRSEOBNRv2ROMEqualSpin(
 );
 
 /** Compute waveform in LAL format at specified frequencies */
-int XLALSimIMRSEOBNRv2ROMEqualSpinFrequencySequence(
+int XLALSimIMRSEOBNRv2ROMEffectiveSpinFrequencySequence(
   struct tagCOMPLEX16FrequencySeries **hptilde, /**< Output: Frequency-domain waveform h+ */
   struct tagCOMPLEX16FrequencySeries **hctilde, /**< Output: Frequency-domain waveform hx */
   const REAL8Sequence *freqs,                   /**< Frequency points at which to evaluate the waveform (Hz) */
@@ -475,7 +475,7 @@ int XLALSimIMRSEOBNRv2ROMEqualSpinFrequencySequence(
  * Compute the time at a given frequency. The origin of time is at the merger.
  * The allowed frequency range for the input is Mf in [0.0001, 0.3].
  */
-int XLALSimIMRSEOBNRv2ROMEqualSpinTimeOfFrequency(
+int XLALSimIMRSEOBNRv2ROMEffectiveSpinTimeOfFrequency(
   REAL8 *t,         /**< Output: time (s) at frequency */
   REAL8 frequency,  /**< Frequency (Hz) */
   REAL8 m1SI,       /**< Mass of companion 1 (kg) */
@@ -487,7 +487,7 @@ int XLALSimIMRSEOBNRv2ROMEqualSpinTimeOfFrequency(
  * Compute the frequency at a given time. The origin of time is at the merger.
  * The frequency range for the output is Mf in [0.0001, 0.3].
  */
-int XLALSimIMRSEOBNRv2ROMEqualSpinFrequencyOfTime(
+int XLALSimIMRSEOBNRv2ROMEffectiveSpinFrequencyOfTime(
   REAL8 *frequency,   /**< Output: Frequency (Hz) */
   REAL8 t,            /**< Time (s) at frequency */
   REAL8 m1SI,         /**< Mass of companion 1 (kg) */

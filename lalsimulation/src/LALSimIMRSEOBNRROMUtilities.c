@@ -25,7 +25,7 @@
  *
  * \brief Auxiliary functions for SEOBNRv1/v2 reduced order modeling codes in
  * LALSimIMRSEOBNRv2ROMDoubleSpin.c, LALSimIMRSEOBNRv1ROMDoubleSpin.c,
- * LALSimIMRSEOBNRv2ROMEqualSpin.c, LALSimIMRSEOBNRv1ROMEqualSpin.c,
+ * LALSimIMRSEOBNRv2ROMEffectiveSpin.c, LALSimIMRSEOBNRv1ROMEffectiveSpin.c,
  * LALSimIMRSEOBNRv2ChirpTime.c.
  *
  * Here I collect common auxiliary functions pertaining to reading

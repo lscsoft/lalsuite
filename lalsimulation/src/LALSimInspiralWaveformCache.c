@@ -997,7 +997,7 @@ int XLALSimInspiralChooseFDWaveformSequence(
             }
             break;
 
-        case SEOBNRv1_ROM_EqualSpin:
+        case SEOBNRv1_ROM_EffectiveSpin:
             /* Waveform-specific sanity checks */
             if( !XLALSimInspiralWaveformFlagsIsDefault(waveFlags) )
                 ABORT_NONDEFAULT_WAVEFORM_FLAGS(waveFlags);
@@ -1008,7 +1008,7 @@ int XLALSimInspiralChooseFDWaveformSequence(
             if( f_ref != 0.)
                 XLALPrintWarning("XLAL Warning - %s: This approximant does not use f_ref. The reference phase will be defined at coalescence.\n", __func__);
 
-            ret = XLALSimIMRSEOBNRv1ROMEqualSpinFrequencySequence(hptilde, hctilde, frequencies,
+            ret = XLALSimIMRSEOBNRv1ROMEffectiveSpinFrequencySequence(hptilde, hctilde, frequencies,
                     phiRef, f_ref, r, i, m1, m2, XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z));
             break;
 
@@ -1027,7 +1027,7 @@ int XLALSimInspiralChooseFDWaveformSequence(
                     phiRef, f_ref, r, i, m1, m2, S1z, S2z);
             break;
 
-        case SEOBNRv2_ROM_EqualSpin:
+        case SEOBNRv2_ROM_EffectiveSpin:
             /* Waveform-specific sanity checks */
             if( !XLALSimInspiralWaveformFlagsIsDefault(waveFlags) )
                 ABORT_NONDEFAULT_WAVEFORM_FLAGS(waveFlags);
@@ -1038,7 +1038,7 @@ int XLALSimInspiralChooseFDWaveformSequence(
             if( f_ref != 0.)
                 XLALPrintWarning("XLAL Warning - %s: This approximant does not use f_ref. The reference phase will be defined at coalescence.\n", __func__);
 
-            ret = XLALSimIMRSEOBNRv2ROMEqualSpinFrequencySequence(hptilde, hctilde, frequencies,
+            ret = XLALSimIMRSEOBNRv2ROMEffectiveSpinFrequencySequence(hptilde, hctilde, frequencies,
                     phiRef, f_ref, r, i, m1, m2, XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z));
             break;
 

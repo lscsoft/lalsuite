@@ -180,7 +180,7 @@ static const double gPhi[] = {0.0001,0.0001011603972084032,0.0001023387826723389
    0.22894501461505934,0.26395954156353574,0.3};
 
 #ifdef LAL_PTHREAD_LOCK
-static pthread_once_t SEOBNRv2ROMEqualSpin_is_initialized = PTHREAD_ONCE_INIT;
+static pthread_once_t SEOBNRv2ROMEffectiveSpin_is_initialized = PTHREAD_ONCE_INIT;
 #endif
 
 /*************** type definitions ******************/
@@ -213,9 +213,9 @@ typedef struct tagSplineData
 
 /**************** Internal functions **********************/
 
-static void SEOBNRv2ROMEqualSpin_Init_LALDATA(void);
-static int SEOBNRv2ROMEqualSpin_Init(const char dir[]);
-static bool SEOBNRv2ROMEqualSpin_IsSetup(void);
+static void SEOBNRv2ROMEffectiveSpin_Init_LALDATA(void);
+static int SEOBNRv2ROMEffectiveSpin_Init(const char dir[]);
+static bool SEOBNRv2ROMEffectiveSpin_IsSetup(void);
 
 static int SEOBNRROMdata_Init(SEOBNRROMdata *romdata, const char dir[]);
 static void SEOBNRROMdata_Cleanup(SEOBNRROMdata *romdata);
@@ -250,7 +250,7 @@ static int TP_Spline_interpolation_2d(
  * Construct 1D splines for amplitude and phase.
  * Compute strain waveform from amplitude and phase.
 */
-static int SEOBNRv2ROMEqualSpinCore(
+static int SEOBNRv2ROMEffectiveSpinCore(
   COMPLEX16FrequencySeries **hptilde,
   COMPLEX16FrequencySeries **hctilde,
   double phiRef,
@@ -268,7 +268,7 @@ static int SEOBNRv2ROMEqualSpinCore(
 );
 
 // Auxiliary function to perform setup of phase spline for t(f) and f(t) functions
-static int SEOBNRv2ROMEqualSpinTimeFrequencySetup(
+static int SEOBNRv2ROMEffectiveSpinTimeFrequencySetup(
   gsl_spline **spline_phi,                      // phase spline
   gsl_interp_accel **acc_phi,                   // phase spline accelerator
   REAL8 *Mf_final,                              // ringdown frequency in Mf
@@ -292,9 +292,9 @@ UNUSED static REAL8 Interpolate_Coefficent_Tensor(
 
 /********************* Definitions begin here ********************/
 
-/** Setup SEOBNRv2ROMEqualSpin model using data files installed in dir
+/** Setup SEOBNRv2ROMEffectiveSpin model using data files installed in dir
  */
-int SEOBNRv2ROMEqualSpin_Init(const char dir[]) {
+int SEOBNRv2ROMEffectiveSpin_Init(const char dir[]) {
   if(__lalsim_SEOBNRv2ROMSS_data.setup)
     XLAL_ERROR(XLAL_EFAILED, "Error: SEOBNRROMdata was already set up!");
 
@@ -308,8 +308,8 @@ int SEOBNRv2ROMEqualSpin_Init(const char dir[]) {
   }
 }
 
-/** Helper function to check if the SEOBNRv2ROMEqualSpin model has been initialised */
-bool SEOBNRv2ROMEqualSpin_IsSetup(void) {
+/** Helper function to check if the SEOBNRv2ROMEffectiveSpin model has been initialised */
+bool SEOBNRv2ROMEffectiveSpin_IsSetup(void) {
   if(__lalsim_SEOBNRv2ROMSS_data.setup)
     return true;
   else
@@ -444,7 +444,7 @@ int SEOBNRROMdata_Init(SEOBNRROMdata *romdata, const char dir[]) {
   /* Create storage for structures */
   if(romdata->setup)
   {
-    XLAL_PRINT_WARNING("WARNING: You tried to setup the SEOBNRv2ROMEqualSpin model that was already initialised. Ignoring");
+    XLAL_PRINT_WARNING("WARNING: You tried to setup the SEOBNRv2ROMEffectiveSpin model that was already initialised. Ignoring");
     return (XLAL_FAILURE);
   }
 
@@ -506,7 +506,7 @@ static size_t NextPow2(const size_t n) {
  * Construct 1D splines for amplitude and phase.
  * Compute strain waveform from amplitude and phase.
 */
-int SEOBNRv2ROMEqualSpinCore(
+int SEOBNRv2ROMEffectiveSpinCore(
   COMPLEX16FrequencySeries **hptilde,
   COMPLEX16FrequencySeries **hctilde,
   double phiRef,
@@ -538,10 +538,10 @@ int SEOBNRv2ROMEqualSpinCore(
   if (chi > 0.99) nudge(&chi, 0.99, 1e-6);
 
   if (chi < -1.0 || chi > 0.99)
-    XLAL_ERROR(XLAL_EDOM, "XLAL Error - %s: chi (%f) smaller than -1 or larger than 0.99!\nSEOBNRv2ROMEqualSpin is only available for spins in the range -1 <= a/M <= 0.99.\n", __func__,chi);
+    XLAL_ERROR(XLAL_EDOM, "XLAL Error - %s: chi (%f) smaller than -1 or larger than 0.99!\nSEOBNRv2ROMEffectiveSpin is only available for spins in the range -1 <= a/M <= 0.99.\n", __func__,chi);
 
   if (eta < 0.01 || eta > 0.25)
-    XLAL_ERROR(XLAL_EDOM, "XLAL Error - %s: eta (%f) smaller than 0.01 or unphysical!\nSEOBNRv2ROMEqualSpin is only available for eta in the range 0.01 <= eta <= 0.25.\n", __func__,eta);
+    XLAL_ERROR(XLAL_EDOM, "XLAL Error - %s: eta (%f) smaller than 0.01 or unphysical!\nSEOBNRv2ROMEffectiveSpin is only available for eta in the range 0.01 <= eta <= 0.25.\n", __func__,eta);
 
   /* Find frequency bounds */
   if (!freqs_in) XLAL_ERROR(XLAL_EFAULT);
@@ -724,23 +724,23 @@ int SEOBNRv2ROMEqualSpinCore(
 }
 
 /**
- * Compute waveform in LAL format at specified frequencies for the SEOBNRv2_ROM_EqualSpin model.
+ * Compute waveform in LAL format at specified frequencies for the SEOBNRv2_ROM_EffectiveSpin model.
  *
- * XLALSimIMRSEOBNRv2ROMEqualSpin() returns the plus and cross polarizations as a complex
+ * XLALSimIMRSEOBNRv2ROMEffectiveSpin() returns the plus and cross polarizations as a complex
  * frequency series with equal spacing deltaF and contains zeros from zero frequency
  * to the starting frequency and zeros beyond the cutoff frequency in the ringdown.
  *
- * In contrast, XLALSimIMRSEOBNRv2ROMEqualSpinFrequencySequence() returns a
+ * In contrast, XLALSimIMRSEOBNRv2ROMEffectiveSpinFrequencySequence() returns a
  * complex frequency series with entries exactly at the frequencies specified in
  * the sequence freqs (which can be unequally spaced). No zeros are added.
  *
- * If XLALSimIMRSEOBNRv2ROMEqualSpinFrequencySequence() is called with frequencies that
+ * If XLALSimIMRSEOBNRv2ROMEffectiveSpinFrequencySequence() is called with frequencies that
  * are beyond the maxium allowed geometric frequency for the ROM, zero strain is returned.
  * It is not assumed that the frequency sequence is ordered.
  *
  * This function is designed as an entry point for reduced order quadratures.
  */
-int XLALSimIMRSEOBNRv2ROMEqualSpinFrequencySequence(
+int XLALSimIMRSEOBNRv2ROMEffectiveSpinFrequencySequence(
   struct tagCOMPLEX16FrequencySeries **hptilde, /**< Output: Frequency-domain waveform h+ */
   struct tagCOMPLEX16FrequencySeries **hctilde, /**< Output: Frequency-domain waveform hx */
   const REAL8Sequence *freqs,                   /**< Frequency points at which to evaluate the waveform (Hz) */
@@ -764,27 +764,27 @@ int XLALSimIMRSEOBNRv2ROMEqualSpinFrequencySequence(
 
   // Load ROM data if not loaded already
 #ifdef LAL_PTHREAD_LOCK
-  (void) pthread_once(&SEOBNRv2ROMEqualSpin_is_initialized, SEOBNRv2ROMEqualSpin_Init_LALDATA);
+  (void) pthread_once(&SEOBNRv2ROMEffectiveSpin_is_initialized, SEOBNRv2ROMEffectiveSpin_Init_LALDATA);
 #else
-  SEOBNRv2ROMEqualSpin_Init_LALDATA();
+  SEOBNRv2ROMEffectiveSpin_Init_LALDATA();
 #endif
 
   // Call the internal core function with deltaF = 0 to indicate that freqs is non-uniformly
   // spaced and we want the strain only at these frequencies
-  int retcode = SEOBNRv2ROMEqualSpinCore(hptilde,hctilde,
+  int retcode = SEOBNRv2ROMEffectiveSpinCore(hptilde,hctilde,
             phiRef, fRef, distance, inclination, Mtot_sec, eta, chi, freqs, 0);
 
   return(retcode);
 }
 
 /**
- * Compute waveform in LAL format for the SEOBNRv2_ROM_EqualSpin model.
+ * Compute waveform in LAL format for the SEOBNRv2_ROM_EffectiveSpin model.
  *
  * Returns the plus and cross polarizations as a complex frequency series with
  * equal spacing deltaF and contains zeros from zero frequency to the starting
  * frequency fLow and zeros beyond the cutoff frequency in the ringdown.
  */
-int XLALSimIMRSEOBNRv2ROMEqualSpin(
+int XLALSimIMRSEOBNRv2ROMEffectiveSpin(
   struct tagCOMPLEX16FrequencySeries **hptilde, /**< Output: Frequency-domain waveform h+ */
   struct tagCOMPLEX16FrequencySeries **hctilde, /**< Output: Frequency-domain waveform hx */
   REAL8 phiRef,                                 /**< Phase at reference time */
@@ -811,9 +811,9 @@ int XLALSimIMRSEOBNRv2ROMEqualSpin(
 
   // Load ROM data if not loaded already
 #ifdef LAL_PTHREAD_LOCK
-  (void) pthread_once(&SEOBNRv2ROMEqualSpin_is_initialized, SEOBNRv2ROMEqualSpin_Init_LALDATA);
+  (void) pthread_once(&SEOBNRv2ROMEffectiveSpin_is_initialized, SEOBNRv2ROMEffectiveSpin_Init_LALDATA);
 #else
-  SEOBNRv2ROMEqualSpin_Init_LALDATA();
+  SEOBNRv2ROMEffectiveSpin_Init_LALDATA();
 #endif
 
   // Use fLow, fHigh, deltaF to compute freqs sequence
@@ -823,7 +823,7 @@ int XLALSimIMRSEOBNRv2ROMEqualSpin(
   freqs->data[0] = fLow;
   freqs->data[1] = fHigh;
 
-  int retcode = SEOBNRv2ROMEqualSpinCore(hptilde, hctilde,
+  int retcode = SEOBNRv2ROMEffectiveSpinCore(hptilde, hctilde,
             phiRef, fRef, distance, inclination, Mtot_sec, eta, chi, freqs, deltaF);
 
   XLALDestroyREAL8Sequence(freqs);
@@ -832,7 +832,7 @@ int XLALSimIMRSEOBNRv2ROMEqualSpin(
 }
 
 // Auxiliary function to perform setup of phase spline for t(f) and f(t) functions
-static int SEOBNRv2ROMEqualSpinTimeFrequencySetup(
+static int SEOBNRv2ROMEffectiveSpinTimeFrequencySetup(
   gsl_spline **spline_phi,                      // phase spline
   gsl_interp_accel **acc_phi,                   // phase spline accelerator
   REAL8 *Mf_final,                              // ringdown frequency in Mf
@@ -856,16 +856,16 @@ static int SEOBNRv2ROMEqualSpinTimeFrequencySetup(
   nudge(&chi, 0.99, 1e-6);
 
   if (chi < -1.0 || chi > 0.99)
-    XLAL_ERROR(XLAL_EDOM, "XLAL Error - %s: chi (%f) smaller than -1 or larger than 0.99!\nSEOBNRv2ROMEqualSpin is only available for spins in the range -1 <= a/M <= 0.99.\n", __func__,chi);
+    XLAL_ERROR(XLAL_EDOM, "XLAL Error - %s: chi (%f) smaller than -1 or larger than 0.99!\nSEOBNRv2ROMEffectiveSpin is only available for spins in the range -1 <= a/M <= 0.99.\n", __func__,chi);
 
   if (eta < 0.01 || eta > 0.25)
-    XLAL_ERROR(XLAL_EDOM, "XLAL Error - %s: eta (%f) smaller than 0.01 or unphysical!\nSEOBNRv2ROMEqualSpin is only available for spins in the range 0.01 <= eta <= 0.25.\n", __func__,eta);
+    XLAL_ERROR(XLAL_EDOM, "XLAL Error - %s: eta (%f) smaller than 0.01 or unphysical!\nSEOBNRv2ROMEffectiveSpin is only available for spins in the range 0.01 <= eta <= 0.25.\n", __func__,eta);
 
   // Load ROM data if not loaded already
 #ifdef LAL_PTHREAD_LOCK
-  (void) pthread_once(&SEOBNRv2ROMEqualSpin_is_initialized, SEOBNRv2ROMEqualSpin_Init_LALDATA);
+  (void) pthread_once(&SEOBNRv2ROMEffectiveSpin_is_initialized, SEOBNRv2ROMEffectiveSpin_Init_LALDATA);
 #else
-  SEOBNRv2ROMEqualSpin_Init_LALDATA();
+  SEOBNRv2ROMEffectiveSpin_Init_LALDATA();
 #endif
 
   SEOBNRROMdata *romdata=&__lalsim_SEOBNRv2ROMSS_data;
@@ -926,9 +926,9 @@ static int SEOBNRv2ROMEqualSpinTimeFrequencySetup(
  * The allowed frequency range for the starting frequency in geometric frequency is [0.0001, 0.3].
  * The SEOBNRv2 ringdown frequency can be obtained by calling XLALSimInspiralGetFinalFreq().
  *
- * See XLALSimIMRSEOBNRv2ROMEqualSpinFrequencyOfTime() for the inverse function.
+ * See XLALSimIMRSEOBNRv2ROMEffectiveSpinFrequencyOfTime() for the inverse function.
  */
-int XLALSimIMRSEOBNRv2ROMEqualSpinTimeOfFrequency(
+int XLALSimIMRSEOBNRv2ROMEffectiveSpinTimeOfFrequency(
   REAL8 *t,         /**< Output: time (s) at frequency */
   REAL8 frequency,  /**< Frequency (Hz) */
   REAL8 m1SI,       /**< Mass of companion 1 (kg) */
@@ -940,7 +940,7 @@ int XLALSimIMRSEOBNRv2ROMEqualSpinTimeOfFrequency(
   gsl_spline *spline_phi;
   gsl_interp_accel *acc_phi;
   double Mf_final, Mtot_sec;
-  int ret = SEOBNRv2ROMEqualSpinTimeFrequencySetup(&spline_phi, &acc_phi, &Mf_final, &Mtot_sec, m1SI, m2SI, chi);
+  int ret = SEOBNRv2ROMEffectiveSpinTimeFrequencySetup(&spline_phi, &acc_phi, &Mf_final, &Mtot_sec, m1SI, m2SI, chi);
   if(ret != 0)
     XLAL_ERROR(ret);
 
@@ -980,9 +980,9 @@ int XLALSimIMRSEOBNRv2ROMEqualSpinTimeOfFrequency(
  * ringdown frequency an error is thrown.
  * The SEOBNRv2 ringdown frequency can be obtained by calling XLALSimInspiralGetFinalFreq().
  *
- * See XLALSimIMRSEOBNRv2ROMEqualSpinTimeOfFrequency() for the inverse function.
+ * See XLALSimIMRSEOBNRv2ROMEffectiveSpinTimeOfFrequency() for the inverse function.
  */
-int XLALSimIMRSEOBNRv2ROMEqualSpinFrequencyOfTime(
+int XLALSimIMRSEOBNRv2ROMEffectiveSpinFrequencyOfTime(
   REAL8 *frequency,   /**< Output: Frequency (Hz) */
   REAL8 t,            /**< Time (s) at frequency */
   REAL8 m1SI,         /**< Mass of companion 1 (kg) */
@@ -994,7 +994,7 @@ int XLALSimIMRSEOBNRv2ROMEqualSpinFrequencyOfTime(
   gsl_spline *spline_phi;
   gsl_interp_accel *acc_phi;
   double Mf_final, Mtot_sec;
-  int ret = SEOBNRv2ROMEqualSpinTimeFrequencySetup(&spline_phi, &acc_phi, &Mf_final, &Mtot_sec, m1SI, m2SI, chi);
+  int ret = SEOBNRv2ROMEffectiveSpinTimeFrequencySetup(&spline_phi, &acc_phi, &Mf_final, &Mtot_sec, m1SI, m2SI, chi);
   if(ret != 0)
     XLAL_ERROR(ret);
 
@@ -1044,11 +1044,11 @@ int XLALSimIMRSEOBNRv2ROMEqualSpinFrequencyOfTime(
 }
 
 
-/** Setup SEOBNRv2ROMEqualSpin model using data files installed in $LAL_DATA_PATH
+/** Setup SEOBNRv2ROMEffectiveSpin model using data files installed in $LAL_DATA_PATH
  */
-void SEOBNRv2ROMEqualSpin_Init_LALDATA(void)
+void SEOBNRv2ROMEffectiveSpin_Init_LALDATA(void)
 {
-  if (SEOBNRv2ROMEqualSpin_IsSetup()) return;
+  if (SEOBNRv2ROMEffectiveSpin_IsSetup()) return;
 
   // If we find one ROM datafile in a directory listed in LAL_DATA_PATH,
   // then we expect the remaining datafiles to also be there.
@@ -1058,9 +1058,9 @@ void SEOBNRv2ROMEqualSpin_Init_LALDATA(void)
   if (path==NULL)
     XLAL_ERROR_VOID(XLAL_EIO, "Unable to resolve data file %s in $LAL_DATA_PATH\n", datafile);
   char *dir = dirname(path);
-  int ret = SEOBNRv2ROMEqualSpin_Init(dir);
+  int ret = SEOBNRv2ROMEffectiveSpin_Init(dir);
   XLALFree(path);
 
   if(ret!=XLAL_SUCCESS)
-    XLAL_ERROR_VOID(XLAL_FAILURE, "Unable to find SEOBNRv2ROMEqualSpin data files in $LAL_DATA_PATH\n");
+    XLAL_ERROR_VOID(XLAL_FAILURE, "Unable to find SEOBNRv2ROMEffectiveSpin data files in $LAL_DATA_PATH\n");
 }
