@@ -345,7 +345,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
 
                 LALInferencePrintMCMCSample(thread, runState->data, i, timestamp, threadoutputs[t]);
 
-                if (adaptVerbose && !no_adapt == 1) {
+                if (adaptVerbose && !no_adapt) {
                     fseek(statfile, 0L, SEEK_END);
                     fprintf(statfile,"%d\t",i);
                     REAL8 s_gamma = 0.0;
@@ -524,7 +524,7 @@ void LALInferencePTswap(LALInferenceRunState *runState, INT4 i, FILE *swapfile) 
         gsl_ran_shuffle(runState->GSLrandom, cold_inds, ntemps-1, sizeof(INT4));
     }
 
-    MPI_Bcast(&cold_inds, ntemps-1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(cold_inds, ntemps-1, MPI_INT, 0, MPI_COMM_WORLD);
 
     for (ind=0; ind < ntemps-1; ind++) {
         cold_ind = cold_inds[ind];
