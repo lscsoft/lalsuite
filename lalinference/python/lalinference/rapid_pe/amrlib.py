@@ -104,7 +104,7 @@ class Cell(object):
         """
         Translate this cell's position and extent by offset.
         """
-        self._bounds += offset
+        self._bounds += offset[:,numpy.newaxis]
         self._center += offset
 
     def refine(self):
