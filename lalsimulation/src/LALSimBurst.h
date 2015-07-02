@@ -75,6 +75,18 @@ int XLALGenerateStringCusp(
 );
 
 
+double XLALSimBurstSineGaussianQ(
+	double duration,
+	double centre_frequency
+);
+
+
+double XLALSimBurstSineGaussianDuration(
+	double Q,
+	double centre_frequency
+);
+
+
 int XLALSimBurstSineGaussian(
 	REAL8TimeSeries **hplus,
 	REAL8TimeSeries **hcross,

@@ -603,6 +603,51 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 
 
 /**
+ * The Q of a sine-Gaussian waveform from the duration and centre
+ * frequency.  The relationship is
+ *
+ * \f$Q = 2 \pi f_{0} \Delta t\f$
+ *
+ * The result becomes independent of duration at 0 Hz.
+ *
+ * See also:  XLALSimBurstSineGaussianDuration()
+ */
+
+
+double XLALSimBurstSineGaussianQ(
+	double duration,
+	double centre_frequency
+)
+{
+	return LAL_TWOPI * duration * centre_frequency;
+}
+
+
+/**
+ * The duration of a sine-Gaussian waveform from the Q and centre
+ * frequency.  The relationship is
+ *
+ * \f$Q = 2 \pi f_{0} \Delta t\f$
+ *
+ * The relationship is undefined at 0 Hz.
+ *
+ * See also:  XLALSimBurstSineGaussianQ()
+ */
+
+
+double XLALSimBurstSineGaussianDuration(
+	double Q,
+	double centre_frequency
+)
+{
+	double duration = Q / (LAL_TWOPI * centre_frequency);
+	if(!isfinite(duration))
+		XLAL_ERROR_REAL8(XLAL_EDOM);
+	return duration;
+}
+
+
+/**
  * Input:
  *
  * Q:  the "Q" of the waveform.  The Gaussian envelope is \f$exp(-1/2 t^{2} /
