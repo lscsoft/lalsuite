@@ -606,7 +606,19 @@ int SEOBNRv1ROMDoubleSpinCore(
   }
 
 
-  if (!(hptilde) || !(*hctilde)) XLAL_ERROR(XLAL_EFUNC);
+  if (!(*hptilde) || !(*hctilde))
+  {
+      XLALDestroyREAL8Sequence(freqs);
+
+      gsl_spline_free(spline_amp);
+      gsl_spline_free(spline_phi);
+      gsl_interp_accel_free(acc_amp);
+      gsl_interp_accel_free(acc_phi);
+      gsl_vector_free(amp_f);
+      gsl_vector_free(phi_f);
+      SEOBNRROMdataDS_coeff_Cleanup(romdata_coeff);
+      XLAL_ERROR(XLAL_EFUNC);
+  }
   memset((*hptilde)->data->data, 0, npts * sizeof(COMPLEX16));
   memset((*hctilde)->data->data, 0, npts * sizeof(COMPLEX16));
 
@@ -653,7 +665,18 @@ int SEOBNRv1ROMDoubleSpinCore(
   if (Mf_final > freqs->data[L-1])
     Mf_final = freqs->data[L-1];
   if (Mf_final < freqs->data[0])
-    XLAL_ERROR(XLAL_EDOM, "f_ringdown < f_min");
+  {
+      XLALDestroyREAL8Sequence(freqs);
+
+      gsl_spline_free(spline_amp);
+      gsl_spline_free(spline_phi);
+      gsl_interp_accel_free(acc_amp);
+      gsl_interp_accel_free(acc_phi);
+      gsl_vector_free(amp_f);
+      gsl_vector_free(phi_f);
+      SEOBNRROMdataDS_coeff_Cleanup(romdata_coeff);
+      XLAL_ERROR(XLAL_EDOM, "f_ringdown < f_min");
+  }
 
   // Time correction is t(f_final) = 1/(2pi) dphi/df (f_final)
   // We compute the dimensionless time correction t/M since we use geometric units.

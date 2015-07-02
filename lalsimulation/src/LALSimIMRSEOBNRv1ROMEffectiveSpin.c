@@ -615,7 +615,18 @@ static int SEOBNRv1ROMEffectiveSpinCore(
   }
 
 
-  if (!(hptilde) || !(*hctilde)) XLAL_ERROR(XLAL_EFUNC);
+  if (!(*hptilde) || !(*hctilde))
+  {
+      XLALDestroyREAL8Sequence(freqs);
+      gsl_spline_free(spline_amp);
+      gsl_spline_free(spline_phi);
+      gsl_interp_accel_free(acc_amp);
+      gsl_interp_accel_free(acc_phi);
+      gsl_vector_free(amp_f);
+      gsl_vector_free(phi_f);
+      SEOBNRROMdata_coeff_Cleanup(romdata_coeff);
+      XLAL_ERROR(XLAL_EFUNC);
+  }
   memset((*hptilde)->data->data, 0, npts * sizeof(COMPLEX16));
   memset((*hctilde)->data->data, 0, npts * sizeof(COMPLEX16));
 
@@ -649,8 +660,11 @@ static int SEOBNRv1ROMEffectiveSpinCore(
   }
 
   /* Correct phasing so we coalesce at t=0 (with the definition of the epoch=-1/deltaF above) */
+  /* JV: disable this so as not to clutter logs */
+  /*
   if (deltaF > 0)
     XLAL_PRINT_WARNING("Warning: Depending on specified frequency sequence correction to time of coalescence may not be accurate.\n");
+  */
 
   // Get SEOBNRv1 ringdown frequency for 22 mode
   // XLALSimInspiralGetFinalFreq wants masses in SI units, so unfortunately we need to convert back
@@ -664,7 +678,17 @@ static int SEOBNRv1ROMEffectiveSpinCore(
   if (Mf_final > freqs->data[L-1])
     Mf_final = freqs->data[L-1];
   if (Mf_final < freqs->data[0])
-    XLAL_ERROR(XLAL_EDOM, "f_ringdown < f_min");
+  {
+      XLALDestroyREAL8Sequence(freqs);
+      gsl_spline_free(spline_amp);
+      gsl_spline_free(spline_phi);
+      gsl_interp_accel_free(acc_amp);
+      gsl_interp_accel_free(acc_phi);
+      gsl_vector_free(amp_f);
+      gsl_vector_free(phi_f);
+      SEOBNRROMdata_coeff_Cleanup(romdata_coeff);
+      XLAL_ERROR(XLAL_EDOM, "f_ringdown < f_min");
+  }
 
   // Time correction is t(f_final) = 1/(2pi) dphi/df (f_final)
   // We compute the dimensionless time correction t/M since we use geometric units.

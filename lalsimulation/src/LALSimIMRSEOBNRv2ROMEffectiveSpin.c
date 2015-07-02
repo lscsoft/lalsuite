@@ -645,7 +645,17 @@ int SEOBNRv2ROMEffectiveSpinCore(
       freqs->data[i] = freqs_in->data[i] * Mtot_sec;
   }
 
-  if (!(hptilde) || !(*hctilde)) XLAL_ERROR(XLAL_EFUNC);
+  if (!(*hptilde) || !(*hctilde)) {
+      XLALDestroyREAL8Sequence(freqs);
+      gsl_spline_free(spline_amp);
+      gsl_spline_free(spline_phi);
+      gsl_interp_accel_free(acc_amp);
+      gsl_interp_accel_free(acc_phi);
+      gsl_vector_free(amp_f);
+      gsl_vector_free(phi_f);
+      SEOBNRROMdata_coeff_Cleanup(romdata_coeff);
+      XLAL_ERROR(XLAL_EFUNC);
+  }
   memset((*hptilde)->data->data, 0, npts * sizeof(COMPLEX16));
   memset((*hctilde)->data->data, 0, npts * sizeof(COMPLEX16));
 
@@ -679,8 +689,11 @@ int SEOBNRv2ROMEffectiveSpinCore(
   }
 
   /* Correct phasing so we coalesce at t=0 (with the definition of the epoch=-1/deltaF above) */
+  /* JV: Remove this as it clutters up output */
+  /*
   if (deltaF > 0)
     XLAL_PRINT_WARNING("Warning: Depending on specified frequency sequence correction to time of coalescence may not be accurate.\n");
+  */
 
   // Get SEOBNRv2 ringdown frequency for 22 mode
   // XLALSimInspiralGetFinalFreq wants masses in SI units, so unfortunately we need to convert back
@@ -695,7 +708,17 @@ int SEOBNRv2ROMEffectiveSpinCore(
   if (Mf_final > freqs->data[L-1])
     Mf_final = freqs->data[L-1];
   if (Mf_final < freqs->data[0])
-    XLAL_ERROR(XLAL_EDOM, "f_ringdown < f_min");
+  {
+      XLALDestroyREAL8Sequence(freqs);
+      gsl_spline_free(spline_amp);
+      gsl_spline_free(spline_phi);
+      gsl_interp_accel_free(acc_amp);
+      gsl_interp_accel_free(acc_phi);
+      gsl_vector_free(amp_f);
+      gsl_vector_free(phi_f);
+      SEOBNRROMdata_coeff_Cleanup(romdata_coeff);
+      XLAL_ERROR(XLAL_EDOM, "f_ringdown < f_min");
+  }
 
   // Time correction is t(f_final) = 1/(2pi) dphi/df (f_final)
   // We compute the dimensionless time correction t/M since we use geometric units.
@@ -954,8 +977,11 @@ int XLALSimIMRSEOBNRv2ROMEffectiveSpinTimeOfFrequency(
 
   double Mf = frequency * Mtot_sec;
   if (Mf < Mf_ROM_min || Mf > Mf_ROM_max)
-    XLAL_ERROR(XLAL_EDOM, "Frequency %g is outside allowed frequency range.\n", frequency);
-
+  {
+      gsl_spline_free(spline_phi);
+      gsl_interp_accel_free(acc_phi);
+      XLAL_ERROR(XLAL_EDOM, "Frequency %g is outside allowed frequency range.\n", frequency);
+  }
   // Compute time relative to origin at merger
   double time_M = gsl_spline_eval_deriv(spline_phi, frequency * Mtot_sec, acc_phi) / (2*LAL_PI) - t_corr;
   *t = time_M * Mtot_sec;
@@ -1026,7 +1052,11 @@ int XLALSimIMRSEOBNRv2ROMEffectiveSpinFrequencyOfTime(
   double t_rng_2 = exp(log_t_pts[0]);   // time of f_ringdown/2
   double t_min   = exp(log_t_pts[N-1]); // time of f_min
   if (t < t_rng_2 || t > t_min)
-    XLAL_ERROR(XLAL_EDOM, "The frequency of time %g is outside allowed frequency range.\n", t);
+  {
+      gsl_spline_free(spline_phi);
+      gsl_interp_accel_free(acc_phi);
+      XLAL_ERROR(XLAL_EDOM, "The frequency of time %g is outside allowed frequency range.\n", t);
+  }
 
   // create new spline for data
   gsl_interp_accel *acc = gsl_interp_accel_alloc();
