@@ -759,6 +759,7 @@ int XLALGenerateStringCusp(
 {
 	COMPLEX16FrequencySeries *tilde_h;
 	REAL8FFTPlan *plan;
+	REAL8Window *window;
 	LIGOTimeGPS epoch;
 	int length;
 	int i;
@@ -773,10 +774,10 @@ int XLALGenerateStringCusp(
 		XLAL_ERROR(XLAL_EINVAL);
 	}
 
-	/* length of the injection time series is 15 / f_low, rounded to
+	/* length of the injection time series is 20 / f_low, rounded to
 	 * the nearest odd integer */
 
-	length = (int) (15 / f_low / delta_t / 2.0);
+	length = (int) (20.0 / f_low / delta_t / 2.0);
 	length = 2 * length + 1;
 
 	/* the middle sample is t = 0 */
@@ -837,11 +838,20 @@ int XLALGenerateStringCusp(
 
 	(*hplus)->deltaT = (*hcross)->deltaT = delta_t;
 
-	/* apodize the time series */
-	/* FIXME:  use a Tukey window? */
+	/* apply a Tukey window for continuity at the start and end of the
+	 * injection.  the window's shape parameter sets what fraction of
+	 * the window is used by the tapers */
 
-	for(i = (*hplus)->data->length - 1; i >= 0; i--)
-		(*hplus)->data->data[i] -= (*hplus)->data->data[0];
+	window = XLALCreateTukeyREAL8Window((*hplus)->data->length, 0.5);
+	if(!window) {
+		XLALDestroyREAL8TimeSeries(*hplus);
+		XLALDestroyREAL8TimeSeries(*hcross);
+		*hplus = *hcross = NULL;
+		XLAL_ERROR(XLAL_EFUNC);
+	}
+	for(i = 0; i < (int) window->data->length; i++)
+		(*hplus)->data->data[i] *= window->data->data[i];
+	XLALDestroyREAL8Window(window);
 
 	/* done */
 
