@@ -105,7 +105,7 @@ void LALInferenceDrawThreads(LALInferenceRunState *run_state) {
 
     if (run_state->threads == NULL) {
         XLALPrintError("Error: LALInferenceDrawThreads expects initialized run_state->threads\n");
-        XLAL_ERROR_NULL(XLAL_EINVAL);
+        XLAL_ERROR_VOID(XLAL_EINVAL);
     }
 
     LALInferenceThreadState *thread = run_state->threads[0];
