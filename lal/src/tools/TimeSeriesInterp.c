@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Kipp Cannon
+ * Copyright (C) 2014,2015 Kipp Cannon
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -140,12 +140,6 @@ void XLALREAL8SequenceInterpDestroy(LALREAL8SequenceInterp *interp)
  */
 
 
-static int min(int a, int b)
-{
-	return a <= b ? a : b;
-}
-
-
 REAL8 XLALREAL8SequenceInterpEval(LALREAL8SequenceInterp *interp, double x)
 {
 	const REAL8 *data = interp->s->data;
@@ -159,7 +153,7 @@ REAL8 XLALREAL8SequenceInterpEval(LALREAL8SequenceInterp *interp, double x)
 	 * and only recompute the kernel if this quantity differs from the
 	 * one for which the kernel was computed by more than the no-op
 	 * threshold */
-	int start = min(lround(x), interp->s->length - 1);
+	int start = lround(x);
 	double residual = start - x;
 	REAL8 val;
 
@@ -167,7 +161,7 @@ REAL8 XLALREAL8SequenceInterpEval(LALREAL8SequenceInterp *interp, double x)
 		XLAL_ERROR_REAL8(XLAL_EDOM);
 
 	if(fabs(residual) < interp->noop_threshold)
-		return data[start];
+		return 0 <= start && start < (int) interp->s->length ? data[start] : 0.0;
 
 	start -= (interp->kernel_length - 1) / 2;
 
