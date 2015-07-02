@@ -503,7 +503,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     # Generate the DAG according to the config given
     for event in self.events: self.add_full_analysis(event)
     self.add_skyarea_followup()
-    self.add_gracedb_FITSskymap_upload(self.events[0],engine=self.engine)
+    if self.config.getboolean('analysis','upload-to-gracedb'):  self.add_gracedb_FITSskymap_upload(self.events[0],engine=self.engine)
     self.dagfilename="lalinference_%s-%s"%(self.config.get('input','gps-start-time'),self.config.get('input','gps-end-time'))
     self.set_dag_file(self.dagfilename)
     if self.is_dax():
