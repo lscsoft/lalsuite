@@ -257,11 +257,13 @@ int main(void)
 	double result;
 	XLALGPSAdd(&t, src->data->length * src->deltaT);
 	/* evalute at time of sample beyond end.  this should fail */
+	fprintf(stderr, "checking for out-of-bounds failure ...\n");
 	result = XLALREAL8TimeSeriesInterpEval(interp, &t);
 	if(!XLAL_IS_REAL8_FAIL_NAN(result)) {
 		fprintf(stderr, "error:  interpolator failed to report error beyond end of array\n");
 		exit(1);
-	}
+	} else
+		fprintf(stderr, "... passed\n");
 	/* this should work and return 0., not 1. and not 2 */
 	XLALGPSAdd(&t, -1e-9);
 	result = XLALREAL8TimeSeriesInterpEval(interp, &t);
