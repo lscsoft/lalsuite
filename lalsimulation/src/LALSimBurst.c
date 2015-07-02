@@ -404,14 +404,11 @@ int XLALGenerateImpulseBurst(
 	REAL8 delta_t
 )
 {
-	int length;
 	LIGOTimeGPS epoch;
-
-	/* length is 39 samples which is odd and one more than twice the
-	 * length of the interpolation kernel in
-	 * XLALSimDetectorStrainREAL8TimeSeries() at the time of writing */
-
-	length = 39;
+	/* length is 1 sample.  XLALSimDetectorStrainREAL8TimeSeries() will
+	 * add sufficient padding to accomodate the interpolation kernel on
+	 * either side */
+	int length = 1;
 
 	/* the middle sample is t = 0 */
 
