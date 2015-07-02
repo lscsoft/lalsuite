@@ -197,26 +197,23 @@ REAL8TimeSeries * XLALSimQuasiPeriodicInjectionREAL8TimeSeries( REAL8TimeSeries 
  * @n@n
  * The geometric delay and antenna response are only recalculated every 250
  * ms --- the Earth's rotation is modelled as discontinuous jumps occurring
- * at a rate of 4 Hz.  The Earth rotates through 7e-5 rad/s, therefore
- * given a radius of 6e6 m and c=3e8 m/s, the maximum geometric speed for
- * points on the surface is about 1.5 us/s.  Updating the detector response
- * and geometric delay every 250 ms means the antenna response is accurate
- * to about +/- 20 urad and the geometric delay to about +/- 300 ns (about
- * 0.01 sample at 32 kHz).  The mapping from UTC to sidereal time is only
- * accurate to +/- 900 ms, so assuming the Earth's orientation to be fixed
- * for 250 ms at a time is not the dominant source of Earth orientation
- * error in these calculations, but one should be aware of the periodic
- * nature of the updates if extreme phase stability is required.
+ * at a rate of 4 Hz.  The Earth rotates at 7e-5 rad/s, therefore given a
+ * radius of 6e6 m and c=3e8 m/s, the maximum geometric speed for points on
+ * the surface is about 1.5 us/s.  Updating the detector response and
+ * geometric delay every 250 ms means the antenna response is accurate to
+ * about +/- 20 urad and the geometric delay to about +/- 300 ns (about
+ * 0.01 sample at 32 kHz).  Because we use UTC (instead of UT1) sidereal
+ * time is only accurate to +/- 900 ms, so assuming the Earth's orientation
+ * to be fixed for 250 ms at a time is not the dominant source of Earth
+ * orientation error in these calculations, but one should be aware of the
+ * periodic nature of the updates if extreme phase stability is required.
  * @n@n
- * The output time series will not be padded to capture the interpolation
- * kernel structure resulting from possible sharp edges at the start or end
- * of the input time series data.  If the input time series have sharp
- * features at the start or end or both then they should include sufficient
- * padding to capture the ringing of the interpolation kernel.  There is a
- * slight performance benefit in doing it this way for waveforms that don't
- * require the padding, but because it means the calling code needs to
- * understand technical details of the interpolation kernel this behaviour
- * might change in the future so that padding is not required.
+ * The output time series is padded to capture the interpolation kernel
+ * structure resulting from possible sharp edges at the start or end of the
+ * input time series data.  Neglecting the padding for the interpolation
+ * kernel's impulse response, the output time series is, in general, not
+ * the same duration as the input time series due to Doppler compression or
+ * resulting from Earth rotation.
  */
 REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 	const REAL8TimeSeries *hplus,
@@ -236,14 +233,24 @@ REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 	double fplus = XLAL_REAL8_FAIL_NAN;
 	double fcross = XLAL_REAL8_FAIL_NAN;
 	double geometric_delay = XLAL_REAL8_FAIL_NAN;
+	LIGOTimeGPS t;	/* a time */
 	double dt;	/* an offset */
 	char *name;
 	REAL8TimeSeries *h = NULL;
 	unsigned i;
 
+	/* check input */
+
 	LAL_CHECK_VALID_SERIES(hplus, NULL);
 	LAL_CHECK_VALID_SERIES(hcross, NULL);
 	LAL_CHECK_CONSISTENT_TIME_SERIES(hplus, hcross, NULL);
+	/* test that the input's length can be treated as a signed valued
+	 * without overflow, and that adding the kernel length plus the an
+	 * Earth diameter's worth of samples won't overflow */
+	if((int) hplus->data->length < 0 || (int) (hplus->data->length + kernel_length + 2.0 * LAL_REARTH_SI / LAL_C_SI / hplus->deltaT) < 0) {
+		XLALPrintError("%s(): error: input series too long\n", __func__);
+		XLAL_ERROR_NULL(XLAL_EBADLEN);
+	}
 
 	/* generate name */
 
@@ -252,27 +259,55 @@ REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 		goto error;
 	sprintf(name, "%s injection", detector->frDetector.prefix);
 
-	/* allocate output time series.  include 2 and bit times the radius
-	 * of the Earth to accomodate Doppler-induced dilation of the
-	 * waveform */
+	/* allocate output time series.  the time series' duration is
+	 * adjusted to account for Doppler-induced dilation of the
+	 * waveform, and is padded to accomodate ringing of the
+	 * interpolation kernel.  the sign of dt follows from the
+	 * observation that time stamps in the output time series are
+	 * mapped to time stamps in the input time series by adding the
+	 * output of XLALTimeDelayFromEarthCenter(), so if that number is
+	 * larger at the start of the waveform than at the end then the
+	 * output time series must be longer than the input.  (the Earth's
+	 * rotation is not super-luminal so we don't have to account for
+	 * time reversals in the mapping) */
 
-	h = XLALCreateREAL8TimeSeries(name, &hplus->epoch, hplus->f0, hplus->deltaT, &hplus->sampleUnits, hplus->data->length + (unsigned) ceil(2.0625 * LAL_REARTH_SI / LAL_C_SI / hplus->deltaT));
+	/* time (at geocentre) of end of waveform */
+	t = hplus->epoch;
+	if(!XLALGPSAdd(&t, hplus->data->length * hplus->deltaT)) {
+		XLALFree(name);
+		goto error;
+	}
+	/* change in geometric delay from start to end */
+	dt = XLALTimeDelayFromEarthCenter(detector->location, right_ascension, declination, &hplus->epoch) - XLALTimeDelayFromEarthCenter(detector->location, right_ascension, declination, &t);
+	/* allocate */
+	h = XLALCreateREAL8TimeSeries(name, &hplus->epoch, hplus->f0, hplus->deltaT, &hplus->sampleUnits, (int) hplus->data->length + kernel_length - 1 + ceil(dt / hplus->deltaT));
 	XLALFree(name);
 	if(!h)
 		goto error;
 
-	/* add the detector's geometric delay.  round epoch to an integer
-	 * sample boundary so that XLALSimAddInjectionREAL8TimeSeries() can
-	 * use no-op code path.  note:  we assume a sample boundary occurs
-	 * on the integer second.  if this isn't the case (e.g, some GEO
+	/* shift the epoch so that the start of the input time series
+	 * passes through this detector at the time of the sample at offset
+	 * (kernel_length-1)/2   we assume the kernel is sufficiently short
+	 * that it doesn't matter whether we compute the geometric delay at
+	 * the start or middle of the kernel. */
+
+	geometric_delay = XLALTimeDelayFromEarthCenter(detector->location, right_ascension, declination, &h->epoch);
+	if(XLAL_IS_REAL8_FAIL_NAN(geometric_delay))
+		goto error;
+	if(!XLALGPSAdd(&h->epoch, geometric_delay - (kernel_length - 1) / 2 * h->deltaT))
+		goto error;
+
+	/* round epoch to an integer sample boundary so that
+	 * XLALSimAddInjectionREAL8TimeSeries() can use no-op code path.
+	 * note:  we assume a sample boundary occurs on the integer second.
+	 * if this isn't the case (e.g, time-shifted injections or some GEO
 	 * data) that's OK, but we might end up paying for a second
 	 * sub-sample time shift when adding the the time series into the
-	 * target data stream in XLALSimAddInjectionREAL8TimeSeries() */
+	 * target data stream in XLALSimAddInjectionREAL8TimeSeries().
+	 * don't bother checking for errors, this is changing the timestamp
+	 * by less than 1 sample, if we're that close to overflowing it'll
+	 * be caught in the loop below. */
 
-	dt = XLALTimeDelayFromEarthCenter(detector->location, right_ascension, declination, &h->epoch);
-	if(XLAL_IS_REAL8_FAIL_NAN(dt))
-		goto error;
-	XLALGPSAdd(&h->epoch, dt);
 	dt = XLALGPSModf(&dt, &h->epoch);
 	XLALGPSAdd(&h->epoch, round(dt / h->deltaT) * h->deltaT - dt);
 
@@ -285,8 +320,9 @@ REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 
 	for(i = 0; i < h->data->length; i++) {
 		/* time of sample in detector */
-		LIGOTimeGPS t = h->epoch;
-		XLALGPSAdd(&t, i * h->deltaT);
+		t = h->epoch;
+		if(!XLALGPSAdd(&t, i * h->deltaT))
+			goto error;
 
 		/* detector's response and geometric delay from geocentre
 		 * at that time */
@@ -297,17 +333,12 @@ REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 		if(XLAL_IS_REAL8_FAIL_NAN(fplus) || XLAL_IS_REAL8_FAIL_NAN(fcross) || XLAL_IS_REAL8_FAIL_NAN(geometric_delay))
 			goto error;
 
-		/* time of sample at geocentre.  skip if outside of input
-		 * domain */
-		XLALGPSAdd(&t, geometric_delay);
-		dt = XLALGPSDiff(&t, &hplus->epoch);
-		if(dt < 0.0 || dt >= hplus->data->length * hplus->deltaT) {
-			h->data->data[i] = 0.0;
-			continue;
-		}
+		/* time of sample at geocentre */
+		if(!XLALGPSAdd(&t, geometric_delay))
+			goto error;
 
 		/* evaluate linear combination of interpolators */
-		h->data->data[i] = fplus * XLALREAL8TimeSeriesInterpEval(hplusinterp, &t, 1) + fcross * XLALREAL8TimeSeriesInterpEval(hcrossinterp, &t, 1);
+		h->data->data[i] = fplus * XLALREAL8TimeSeriesInterpEval(hplusinterp, &t, 0) + fcross * XLALREAL8TimeSeriesInterpEval(hcrossinterp, &t, 0);
 		if(XLAL_IS_REAL8_FAIL_NAN(h->data->data[i]))
 			goto error;
 	}
