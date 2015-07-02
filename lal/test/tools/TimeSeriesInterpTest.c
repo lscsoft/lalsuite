@@ -247,7 +247,7 @@ int main(void)
 	 * doesn't return that value.
 	 */
 
-	src = new_series(1.0 / 16384, 257, 0.0);/* all 0s */
+	src = new_series(1.0 / 16384, 257, 2.0);/* all 2s */
 	src->data->length--;			/* fake the length */
 	src->data->data[src->data->length] = 1;	/* place a 1 beyond the end */
 
@@ -262,7 +262,7 @@ int main(void)
 		fprintf(stderr, "error:  interpolator failed to report error beyond end of array\n");
 		exit(1);
 	}
-	/* this should work and return 0., not 1. */
+	/* this should work and return 0., not 1. and not 2 */
 	XLALGPSAdd(&t, -1e-9);
 	result = XLALREAL8TimeSeriesInterpEval(interp, &t);
 	if(result != 0.) {
