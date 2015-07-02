@@ -700,6 +700,9 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
 	    XLALPrintError(" ERROR in XLALSimInspiralChooseWaveformFromCache(): error generating waveform. errnum=%d\n",errnum );
 	    memset(model->freqhPlus->data->data,0,sizeof(model->freqhPlus->data->data[0])*model->freqhPlus->data->length);
 	    memset(model->freqhCross->data->data,0,sizeof(model->freqhCross->data->data[0])*model->freqhCross->data->length);
+        if ( hptilde ) XLALDestroyCOMPLEX16FrequencySeries(hptilde);
+        if ( hctilde ) XLALDestroyCOMPLEX16FrequencySeries(hctilde);
+        XLALSimInspiralDestroyTestGRParam(nonGRparams);
 	    XLAL_ERROR_VOID(XLAL_FAILURE);
     }
 	if (hptilde==NULL || hptilde->data==NULL || hptilde->data->data==NULL ) {
@@ -740,6 +743,9 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
             XLALPrintError(" ERROR in XLALSimInspiralChooseWaveformFromCache(): error generating waveform. errnum=%d\n",errnum );
             memset(model->timehPlus->data->data,0,sizeof(model->timehPlus->data->data[0]) * model->timehPlus->data->length);
             memset(model->timehCross->data->data,0,sizeof(model->timehCross->data->data[0]) * model->timehCross->data->length);
+            if ( hplus ) XLALDestroyREAL8TimeSeries(hplus);
+            if ( hcross ) XLALDestroyREAL8TimeSeries(hcross);
+            XLALSimInspiralDestroyTestGRParam(nonGRparams);
             XLAL_ERROR_VOID(XLAL_FAILURE);
     }
 
@@ -861,6 +867,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
 
     LALInferenceSetVariable(model->params, "time", &injTc);
   }
+
   if ( hplus ) XLALDestroyREAL8TimeSeries(hplus);
   if ( hcross ) XLALDestroyREAL8TimeSeries(hcross);
   if ( hptilde ) XLALDestroyCOMPLEX16FrequencySeries(hptilde);
