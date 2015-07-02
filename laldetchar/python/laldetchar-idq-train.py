@@ -520,6 +520,8 @@ while gpsstart < gpsstop:
 
         if flavor in idq.mla_flavors and ptas_exit_status:
             logger.warning("WARNING: mla training samples could not be built. skipping %s training"%classifier)
+            if opts.force:
+                raise StandardError("mla training samples could not be built.")
             continue
 
         min_num_cln = float(classD['min_num_cln'])
