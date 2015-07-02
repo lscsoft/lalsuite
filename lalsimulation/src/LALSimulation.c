@@ -307,7 +307,7 @@ REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 		}
 
 		/* evaluate linear combination of interpolators */
-		h->data->data[i] = fplus * XLALREAL8TimeSeriesInterpEval(hplusinterp, &t) + fcross * XLALREAL8TimeSeriesInterpEval(hcrossinterp, &t);
+		h->data->data[i] = fplus * XLALREAL8TimeSeriesInterpEval(hplusinterp, &t, 1) + fcross * XLALREAL8TimeSeriesInterpEval(hcrossinterp, &t, 1);
 		if(XLAL_IS_REAL8_FAIL_NAN(h->data->data[i]))
 			goto error;
 	}

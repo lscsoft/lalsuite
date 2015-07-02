@@ -68,13 +68,13 @@ static void add_sine(REAL8TimeSeries *s, LIGOTimeGPS epoch, double ampl, double 
 }
 
 
-static void evaluate(REAL8TimeSeries *dst, LALREAL8TimeSeriesInterp *interp)
+static void evaluate(REAL8TimeSeries *dst, LALREAL8TimeSeriesInterp *interp, int bounds_check)
 {
 	unsigned i;
 
 	for(i = 0; i < dst->data->length; i++) {
 		LIGOTimeGPS t = t_i(dst, i);
-		dst->data->data[i] = XLALREAL8TimeSeriesInterpEval(interp, &t);
+		dst->data->data[i] = XLALREAL8TimeSeriesInterpEval(interp, &t, bounds_check);
 	}
 }
 
@@ -167,7 +167,7 @@ int main(void)
 	 * defeat the kernel caching mechanism so that we can watch the
 	 * behaviour of the kernel sample-by-sample */
 	interp = XLALREAL8TimeSeriesInterpCreate(src, 65535);
-	evaluate(dst, interp);
+	evaluate(dst, interp, 1);
 	XLALREAL8TimeSeriesInterpDestroy(interp);
 
 #if 0
@@ -213,7 +213,7 @@ int main(void)
 	add_sine(mdl, src->epoch, 1.0, f);
 
 	interp = XLALREAL8TimeSeriesInterpCreate(src, 9);
-	evaluate(dst, interp);
+	evaluate(dst, interp, 1);
 	XLALREAL8TimeSeriesInterpDestroy(interp);
 
 #if 0
@@ -258,15 +258,20 @@ int main(void)
 	XLALGPSAdd(&t, src->data->length * src->deltaT);
 	/* evalute at time of sample beyond end.  this should fail */
 	fprintf(stderr, "checking for out-of-bounds failure ...\n");
-	result = XLALREAL8TimeSeriesInterpEval(interp, &t);
+	result = XLALREAL8TimeSeriesInterpEval(interp, &t, 1);
 	if(!XLAL_IS_REAL8_FAIL_NAN(result)) {
 		fprintf(stderr, "error:  interpolator failed to report error beyond end of array\n");
 		exit(1);
 	} else
 		fprintf(stderr, "... passed\n");
-	/* this should work and return 0., not 1. and not 2 */
+	/* these should work and return 0., not 1. and not 2 */
+	result = XLALREAL8TimeSeriesInterpEval(interp, &t, 0);
+	if(result != 0.) {
+		fprintf(stderr, "error:  interpolator failed in final sample (expected %.16g got %.16g)\n", 0., result);
+		exit(1);
+	}
 	XLALGPSAdd(&t, -1e-9);
-	result = XLALREAL8TimeSeriesInterpEval(interp, &t);
+	result = XLALREAL8TimeSeriesInterpEval(interp, &t, 1);
 	if(result != 0.) {
 		fprintf(stderr, "error:  interpolator failed in final sample (expected %.16g got %.16g)\n", 0., result);
 		exit(1);
