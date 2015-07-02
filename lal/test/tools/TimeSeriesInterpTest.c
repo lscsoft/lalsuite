@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Kipp Cannon
+ * Copyright (C) 2014,2015 Kipp Cannon
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,10 +32,12 @@
 static LIGOTimeGPS gps_zero = LIGOTIMEGPSZERO;
 
 
-static REAL8TimeSeries *new_series(double deltaT, unsigned length)
+static REAL8TimeSeries *new_series(double deltaT, unsigned length, double fill)
 {
 	REAL8TimeSeries *new = XLALCreateREAL8TimeSeries("blah", &gps_zero, 0.0, deltaT, &lalDimensionlessUnit, length);
-	memset(new->data->data, 0, new->data->length * sizeof(*new->data->data));
+	unsigned i;
+	for(i = 0 ; i < new->data->length; i++)
+		new->data->data[i] = fill;
 	return new;
 }
 
@@ -117,6 +119,22 @@ static void minmax(const REAL8TimeSeries *s, double *min, double *max)
 }
 
 
+static void check_result(const REAL8TimeSeries *model, const REAL8TimeSeries *result, double rms_bound, double residual_min, double residual_max)
+{
+	REAL8TimeSeries *err = error(model, result);
+	double rms, min, max;
+	rms = RMS(err);
+	minmax(err, &min, &max);
+
+	fprintf(stderr, "error vector:  RMS=%g, min=%g, max=%g\n", rms, min, max);
+	XLALDestroyREAL8TimeSeries(err);
+	if(rms > rms_bound || min < residual_min || max > residual_max) {
+		fprintf(stderr, "error vector larger than allowed\n");
+		exit(1);
+	}
+}
+
+
 int main(void)
 {
 	REAL8TimeSeries *src, *dst, *mdl;
@@ -131,10 +149,10 @@ int main(void)
 
 	f = 4000.;	/* close to 50% of Nyquist */
 
-	src = new_series(1.0 / 16384, 1024 * 1024);
+	src = new_series(1.0 / 16384, 1024 * 1024, 0.0);
 	add_sine(src, src->epoch, 1.0, f);
 
-	mdl = new_series(1. / 1e8, round(1. / f * 1e8));
+	mdl = new_series(1. / 1e8, round(1. / f * 1e8), 0.0);
 	XLALGPSAdd(&mdl->epoch, src->data->length * src->deltaT * .4);
 	dst = copy_series(mdl);
 
@@ -170,19 +188,7 @@ int main(void)
 	}
 #endif
 
-	{
-	REAL8TimeSeries *err = error(mdl, dst);
-	double rms, min, max;
-	rms = RMS(err);
-	minmax(err, &min, &max);
-
-	fprintf(stderr, "error vector:  RMS=%g, min=%g, max=%g\n", rms, min, max);
-	XLALDestroyREAL8TimeSeries(err);
-	if(rms > 1.3e-10 || min < -3.6e-10 || max > +3.6e-10) {
-		fprintf(stderr, "error vector larger than allowed\n");
-		exit(1);
-	}
-	}
+	check_result(mdl, dst, 1.3e-10, -3.6e-10, +3.6e-10);
 
 	XLALDestroyREAL8TimeSeries(src);
 	XLALDestroyREAL8TimeSeries(dst);
@@ -195,10 +201,10 @@ int main(void)
 
 	f = 6500.;	/* about 80% of Nyquist */
 
-	src = new_series(1.0 / 16384, 256);
+	src = new_series(1.0 / 16384, 256, 0.0);
 	add_sine(src, src->epoch, 1.0, f);
 
-	mdl = new_series(1. / 1e8, round(3. / f * 1e8));
+	mdl = new_series(1. / 1e8, round(3. / f * 1e8), 0.0);
 	XLALGPSAdd(&mdl->epoch, src->data->length * src->deltaT * .4);
 	dst = copy_series(mdl);
 
@@ -228,19 +234,7 @@ int main(void)
 	}
 #endif
 
-	{
-	REAL8TimeSeries *err = error(mdl, dst);
-	double rms, min, max;
-	rms = RMS(err);
-	minmax(err, &min, &max);
-
-	fprintf(stderr, "error vector:  RMS=%g, min=%g, max=%g\n", rms, min, max);
-	XLALDestroyREAL8TimeSeries(err);
-	if(rms > 0.03 || min < -0.078 || max > +0.083) {
-		fprintf(stderr, "error vector larger than allowed\n");
-		exit(1);
-	}
-	}
+	check_result(mdl, dst, 0.03, -0.078, +0.083);
 
 	XLALDestroyREAL8TimeSeries(src);
 	XLALDestroyREAL8TimeSeries(dst);
@@ -253,16 +247,16 @@ int main(void)
 	 * doesn't return that value.
 	 */
 
-	src = new_series(1.0 / 16384, 257);
-	src->data->length--;
-	src->data->data[src->data->length] = 1;
+	src = new_series(1.0 / 16384, 257, 0.0);/* all 0s */
+	src->data->length--;			/* fake the length */
+	src->data->data[src->data->length] = 1;	/* place a 1 beyond the end */
 
 	interp = XLALREAL8TimeSeriesInterpCreate(src, 9);
 	{
 	LIGOTimeGPS t = src->epoch;
 	double result;
 	XLALGPSAdd(&t, src->data->length * src->deltaT);
-	/* this should fail */
+	/* evalute at time of sample beyond end.  this should fail */
 	result = XLALREAL8TimeSeriesInterpEval(interp, &t);
 	if(!XLAL_IS_REAL8_FAIL_NAN(result)) {
 		fprintf(stderr, "error:  interpolator failed to report error beyond end of array\n");
