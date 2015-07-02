@@ -715,13 +715,17 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
 	}
 
     INT4 rem=0;
-    memcpy(model->freqhPlus->data->data,hptilde->data->data,sizeof(hptilde->data->data[0])*hptilde->data->length);
-    if( (rem=(model->freqhPlus->data->length - hptilde->data->length)) > 0)
-        memset(&(model->freqhPlus->data->data[hptilde->data->length]),0, rem*sizeof(hptilde->data->data[0]) );
-    
-    memcpy(model->freqhCross->data->data,hctilde->data->data,sizeof(hctilde->data->data[0])*hctilde->data->length);
-    if( (rem=(model->freqhCross->data->length - hctilde->data->length)) > 0)
-        memset(&(model->freqhCross->data->data[hctilde->data->length]),0, rem*sizeof(hctilde->data->data[0]) );
+    UINT4 size=hptilde->data->length;
+    if(size>model->freqhPlus->data->length) size=model->freqhPlus->data->length;
+    memcpy(model->freqhPlus->data->data,hptilde->data->data,sizeof(hptilde->data->data[0])*size);
+    if( (rem=(model->freqhPlus->data->length - size)) > 0)
+        memset(&(model->freqhPlus->data->data[size]),0, rem*sizeof(hptilde->data->data[0]) );
+
+    size=hctilde->data->length;
+    if(size>model->freqhCross->data->length) size=model->freqhCross->data->length;
+    memcpy(model->freqhCross->data->data,hctilde->data->data,sizeof(hctilde->data->data[0])*size);
+    if( (rem=(model->freqhCross->data->length - size)) > 0)
+        memset(&(model->freqhCross->data->data[size]),0, rem*sizeof(hctilde->data->data[0]) );
     
     
     /* Destroy the nonGr params */
