@@ -145,7 +145,8 @@ int XLALBurstInjectSignals(
 	/* FIXME:  fix the const entanglement so as to get rid of this */
 	LALDetector detector_copy;
 	/* + and x time series for injection waveform */
-	REAL8TimeSeries *hplus, *hcross;
+	REAL8TimeSeries *hplus = NULL;
+	REAL8TimeSeries *hcross = NULL;
 	/* injection time series as added to detector's */
 	REAL8TimeSeries *h;
 	/* skip injections whose geocentre times are more than this many
@@ -211,6 +212,7 @@ int XLALBurstInjectSignals(
 		h = XLALSimDetectorStrainREAL8TimeSeries(hplus, hcross, sim_burst->ra, sim_burst->dec, sim_burst->psi, &detector_copy);
 		XLALDestroyREAL8TimeSeries(hplus);
 		XLALDestroyREAL8TimeSeries(hcross);
+		hplus = hcross = NULL;
 		if(!h)
 			XLAL_ERROR(XLAL_EFUNC);
 
