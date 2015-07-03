@@ -18,8 +18,9 @@
 
 
 #include <math.h>
-#include <lal/LALAtomicDatatypes.h>
 #include <lal/Date.h>
+#include <lal/LALAtomicDatatypes.h>
+#include <lal/LALStdio.h>
 #include <lal/XLALError.h>
 
 /**
@@ -38,11 +39,19 @@ INT8 XLALGPSToINT8NS( const LIGOTimeGPS *epoch )
 }
 
 
-/** Converts nano seconds stored as an INT8 to GPS time. */
+/**
+ * Converts nano seconds stored as an INT8 to GPS time.  Returns epoch on
+ * success, NULL on error.
+ */
 LIGOTimeGPS * XLALINT8NSToGPS( LIGOTimeGPS *epoch, INT8 ns )
 {
-  epoch->gpsSeconds     = ns / XLAL_BILLION_INT8;
+  INT8 gpsSeconds = ns / XLAL_BILLION_INT8;
+  epoch->gpsSeconds     = gpsSeconds;
   epoch->gpsNanoSeconds = ns % XLAL_BILLION_INT8;
+  if( (INT8) epoch->gpsSeconds != gpsSeconds ) {
+    XLALPrintError( "%s(): overflow: %" LAL_INT8_FORMAT, __func__, ns );
+    XLAL_ERROR_NULL( XLAL_EDOM );
+  }
   return epoch;
 }
 
@@ -102,6 +111,10 @@ REAL8 XLALGPSModf( REAL8 *iptr, const LIGOTimeGPS *epoch )
 /** Adds two GPS times. */
 LIGOTimeGPS * XLALGPSAddGPS( LIGOTimeGPS *epoch, const LIGOTimeGPS *dt )
 {
+  /* when GPS times are converted to 8-byte counts of nanoseconds their sum
+   * cannot overflow, however it might not be possible to convert the sum
+   * back to a LIGOTimeGPS without overflowing.  that is caught by the
+   * XLALINT8NSToGPS() function */
   return XLALINT8NSToGPS( epoch, XLALGPSToINT8NS( epoch ) + XLALGPSToINT8NS( dt ) );
 }
 
@@ -119,6 +132,10 @@ LIGOTimeGPS * XLALGPSAdd( LIGOTimeGPS *epoch, REAL8 dt )
 /** Difference between two GPS times.  Computes t1 - t0. */
 LIGOTimeGPS * XLALGPSSubGPS( LIGOTimeGPS *t1, const LIGOTimeGPS *t0 )
 {
+  /* when GPS times are converted to 8-byte counts of nanoseconds their
+   * difference cannot overflow, however it might not be possible to
+   * convert the difference back to a LIGOTimeGPS without overflowing.
+   * that is caught by the XLALINT8NSToGPS() function */
   return XLALINT8NSToGPS(t1, XLALGPSToINT8NS(t1) - XLALGPSToINT8NS(t0));
 }
 
