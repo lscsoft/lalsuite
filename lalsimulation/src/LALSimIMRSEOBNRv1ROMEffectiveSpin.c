@@ -762,6 +762,8 @@ int XLALSimIMRSEOBNRv1ROMEffectiveSpinFrequencySequence(
   SEOBNRv1ROMEffectiveSpin_Init_LALDATA();
 #endif
 
+  if(!SEOBNRv1ROMEffectiveSpin_IsSetup()) XLAL_ERROR(XLAL_EFAILED,"Error setting up SEOBNRv1ROMEffectiveSpin model - check your $LAL_DATA_PATH\n");
+
   // Call the internal core function with deltaF = 0 to indicate that freqs is non-uniformly
   // spaced and we want the strain only at these frequencies
   int retcode = SEOBNRv1ROMEffectiveSpinCore(hptilde, hctilde,

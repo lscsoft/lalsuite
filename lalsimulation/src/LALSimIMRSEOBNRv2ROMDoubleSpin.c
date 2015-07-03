@@ -1095,6 +1095,8 @@ int XLALSimIMRSEOBNRv2ROMDoubleSpinFrequencySequence(
   SEOBNRv2ROMDoubleSpin_Init_LALDATA();
 #endif
 
+  if(!SEOBNRv2ROMDoubleSpin_IsSetup()) XLAL_ERROR(XLAL_EFAILED,"Error setting up SEOBNRv2ROMDoubleSpin data - check your $LAL_DATA_PATH\n");
+
   // Call the internal core function with deltaF = 0 to indicate that freqs is non-uniformly
   // spaced and we want the strain only at these frequencies
   int retcode = SEOBNRv2ROMDoubleSpinCore(hptilde,hctilde,
