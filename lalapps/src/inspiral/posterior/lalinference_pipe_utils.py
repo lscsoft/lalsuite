@@ -276,7 +276,7 @@ def chooseEngineNode(name):
 def get_engine_name(cp):
     name=cp.get('analysis','engine')
     if name=='random':
-        engine_list=['lalinferencenest','lalinferencemcmc']#,'lalinferencebambimpi']
+        engine_list=['lalinferencenest','lalinferencemcmc','lalinferencebambimpi']
         if cp.has_option('input','gid'):
             gid=cp.get('input','gid')
             engine_number=int(''.join(i for i in gid if i.isdigit())) % 2
