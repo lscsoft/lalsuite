@@ -119,8 +119,14 @@ int XLALGenerateSimBurst(
 	 * times of the h+ and hx time series.  after this, their epochs
 	 * mark the start of those time series at the geocentre. */
 
-	XLALGPSAddGPS(&(*hcross)->epoch, &sim_burst->time_geocent_gps);
-	XLALGPSAddGPS(&(*hplus)->epoch, &sim_burst->time_geocent_gps);
+	if(!XLALGPSAddGPS(&(*hcross)->epoch, &sim_burst->time_geocent_gps) ||
+	   !XLALGPSAddGPS(&(*hplus)->epoch, &sim_burst->time_geocent_gps)) {
+		XLALPrintError("%s(): bad geocentre time or waveform too long\n", __func__);
+		XLALDestroyREAL8TimeSeries(*hcross);
+		XLALDestroyREAL8TimeSeries(*hplus);
+		*hplus = *hcross = NULL;
+		XLAL_ERROR(XLAL_EFUNC);
+	}
 
 	/* done */
 
