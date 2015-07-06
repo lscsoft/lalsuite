@@ -72,7 +72,6 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
 
 #include <lal/DetResponse.h>
 #include <lal/InspiralInjectionParams.h>
@@ -116,62 +115,6 @@ ignore_underflow (const char *reason, const char *file, int line, int gsl_errno)
 {
     if (gsl_errno != GSL_EUNDRFLW)
         old_handler(reason, file, line, gsl_errno);
-}
-
-
-/* For integers x and y, compute floor(x/y) using integer arithmetic. */
-static int divfloor(int x, int y)
-{
-    if (y < 0)
-    {
-        x = -x;
-        y = -y;
-    }
-
-    if (x >= 0)
-        return x / y;
-    else
-        return (x - y + 1) / y;
-}
-
-
-/* Raise a real number x to a half-integer power twon/2.
- * This method uses repeated multiplication and, if necessary, one square root,
- * which is hopefully more efficient than pow(). */
-static double pow_halfint(double x, int twon)
-{
-    double result = gsl_pow_int(x, divfloor(twon, 2));
-
-    if (GSL_IS_ODD(twon))
-        result *= sqrt(x);
-
-    return result;
-}
-
-
-/* Exponential integral for half-integers n/2, scaled by e^x.
- * Avoids underflow or overflow by using asymptotic approximations. */
-static double halfinteger_En_scaled(int twon, double x)
-{
-    if (x > 0.8 * GSL_LOG_DBL_MAX) {
-        return 1 / x;
-    } else if (x < 2 * GSL_SQRT_DBL_EPSILON) {
-        if (twon < 2) {
-            return gsl_sf_gamma(1 - 0.5 * twon) * pow_halfint(x, twon - 2);
-        } else if (twon == 2) {
-            return -log(M_SQRTPI * x);
-        } else /* n > 2 */ {
-            return 1 / (0.5 * twon - 1);
-        }
-    } else {
-        if (GSL_IS_EVEN(twon) && twon >= 0)
-        {
-            return gsl_sf_expint_En_scaled(twon / 2, x);
-        } else {
-            return gsl_sf_exp_mult(x, gsl_sf_gamma_inc(1 - 0.5 * twon, x)
-                * pow_halfint(x, twon - 2));
-        }
-    }
 }
 
 
@@ -239,6 +182,339 @@ static double complex eval_acor(
 }
 
 
+typedef struct {
+    size_t size;
+    double dx, xmin;
+    double y[];
+} cubic_interp;
+
+
+static double cubic_interp_eval(const cubic_interp *interp, double x)
+{
+    double i;
+    const double u = modf((x - interp->xmin) / interp->dx, &i);
+
+    #define CLAMP(m) ((size_t) ((m) <= 0 ? 0 : ((m) >= interp->size - 1 ? interp->size - 1 : m)))
+    const double y0 = interp->y[CLAMP(i - 1)];
+    const double y1 = interp->y[CLAMP(i)];
+    const double y2 = interp->y[CLAMP(i + 1)];
+    const double y3 = interp->y[CLAMP(i + 2)];
+    #undef CLAMP
+
+    return catrom(y0, y1, y2, y3, u);
+}
+
+
+typedef struct {
+    size_t xsize, ysize;
+    double xmin, ymin, dx, dy;
+    double z[];
+} bicubic_interp;
+
+
+static double bicubic_interp_eval(const bicubic_interp *interp, double x, double y)
+{
+    double i, j;
+    const double u = modf((x - interp->xmin) / interp->dx, &i);
+    const double v = modf((y - interp->ymin) / interp->dy, &j);
+    double z[4];
+
+    #define CLAMPX(m) ((size_t) ((m) <= 0 ? 0 : ((m) >= interp->xsize - 1 ? interp->xsize - 1 : m)))
+    #define CLAMPY(m) ((size_t) ((m) <= 0 ? 0 : ((m) >= interp->ysize - 1 ? interp->ysize - 1 : m)))
+    for (unsigned int k = 0; k < 4; k ++)
+    {
+        const size_t ii = CLAMPX(i + k - 1);
+        const double z0 = interp->z[ii * interp->xsize + CLAMPY(j - 1)];
+        const double z1 = interp->z[ii * interp->xsize + CLAMPY(j)];
+        const double z2 = interp->z[ii * interp->xsize + CLAMPY(j + 1)];
+        const double z3 = interp->z[ii * interp->xsize + CLAMPY(j + 2)];
+        z[k] = catrom(z0, z1, z2, z3, v);
+    }
+    #undef CLAMPX
+    #undef CLAMPY
+
+    return catrom(z[0], z[1], z[2], z[3], u);
+}
+
+
+struct log_radial_integrator_t {
+    bicubic_interp *region0;
+    cubic_interp *region1;
+    cubic_interp *region2;
+    double xmax, ymax, vmax;
+};
+
+
+typedef struct {
+    double scale;
+    double p;
+    double b;
+    int k;
+} radial_integrand_params;
+
+
+static double radial_integrand(double r, void *params)
+{
+    const radial_integrand_params *integrand_params = params;
+    const double scale = integrand_params->scale;
+    const double p = integrand_params->p;
+    const double b = integrand_params->b;
+    const int k = integrand_params->k;
+    return gsl_sf_exp_mult(
+        scale - gsl_pow_2(p / r - 0.5 * b / p),
+        gsl_sf_bessel_I0_scaled(b / r) * gsl_pow_int(r, k));
+}
+
+
+static double log_radial_integrand(double r, void *params)
+{
+    const radial_integrand_params *integrand_params = params;
+    const double scale = integrand_params->scale;
+    const double p = integrand_params->p;
+    const double b = integrand_params->b;
+    const int k = integrand_params->k;
+    return log(gsl_sf_bessel_I0_scaled(b / r) * gsl_pow_int(r, k))
+        + scale - gsl_pow_2(p / r - 0.5 * b / p);
+}
+
+
+static double log_radial_integral(double r1, double r2, double p, double b, int k)
+{
+    radial_integrand_params params = {0, p, b, k};
+    double breakpoints[5];
+    unsigned char nbreakpoints = 0;
+    double result, abserr, log_offset = -INFINITY;
+    int ret;
+
+    {
+        /* Calculate the approximate distance at which the integrand attains a
+         * maximum (middle) and a fraction eta of the maximum (left and right).
+         * This neglects the scaled Bessel function factors and the power-law
+         * distance prior. It assumes that the likelihood is approximately of
+         * the form
+         *
+         *    -p^2/r^2 + B/r.
+         *
+         * Then the middle breakpoint occurs at 1/r = -B/2A, and the left and
+         * right breakpoints occur when
+         *
+         *   A/r^2 + B/r = log(eta) - B^2/4A.
+         */
+
+        static const double eta = 0.01;
+        const double middle = 2 * gsl_pow_2(p) / b;
+        const double left = 1 / (1 / middle + sqrt(-log(eta)) / p);
+        const double right = 1 / (1 / middle - sqrt(-log(eta)) / p);
+
+        /* Use whichever of the middle, left, and right points lie within the
+         * integration limits as initial subdivisions for the adaptive
+         * integrator. */
+
+        breakpoints[nbreakpoints++] = r1;
+        if(left > breakpoints[nbreakpoints-1] && left < r2)
+            breakpoints[nbreakpoints++] = left;
+        if(middle > breakpoints[nbreakpoints-1] && middle < r2)
+            breakpoints[nbreakpoints++] = middle;
+        if(right > breakpoints[nbreakpoints-1] && right < r2)
+            breakpoints[nbreakpoints++] = right;
+        breakpoints[nbreakpoints++] = r2;
+    }
+
+    /* Re-scale the integrand so that the maximum value at any of the
+     * breakpoints is 1. Note that the initial value of the constant term
+     * is overwritten. */
+
+    for (unsigned char i = 0; i < nbreakpoints; i++)
+    {
+        double new_log_offset = log_radial_integrand(breakpoints[i], &params);
+        if (new_log_offset > log_offset)
+            log_offset = new_log_offset;
+    }
+
+    /* If the largest value of the log integrand was -INFINITY, then the
+     * integrand is 0 everywhere. Set log_offset to 0, because subtracting
+     * -INFINITY would make the integrand infinite. */
+    if (log_offset == -INFINITY)
+        log_offset = 0;
+
+    params.scale = -log_offset;
+
+    {
+        /* Maximum number of subdivisions for adaptive integration. */
+        static const size_t n = 64;
+
+        /* Allocate workspace on stack. Hopefully, a little bit faster than
+         * using the heap in multi-threaded code. */
+
+        double alist[n];
+        double blist[n];
+        double rlist[n];
+        double elist[n];
+        size_t order[n];
+        size_t level[n];
+        gsl_integration_workspace workspace = {
+            .alist = alist,
+            .blist = blist,
+            .rlist = rlist,
+            .elist = elist,
+            .order = order,
+            .level = level,
+            .limit = n
+        };
+
+        /* Set up integrand data structure. */
+        const gsl_function func = {radial_integrand, &params};
+
+        /* Perform adaptive Gaussian quadrature. */
+        ret = gsl_integration_qagp(&func, breakpoints, nbreakpoints,
+            DBL_MIN, 1e-8, n, &workspace, &result, &abserr);
+
+        /* FIXME: do we care to keep the error estimate around? */
+    }
+
+    /* FIXME: do something with ret */
+    (void)ret;
+
+    /* Done! */
+    return log_offset + log(result);
+}
+
+
+static const size_t default_log_radial_integrator_size = 400;
+
+
+log_radial_integrator *log_radial_integrator_init(double r1, double r2, int k, double pmax, size_t size)
+{
+    if (size <= 1)
+        GSL_ERROR_NULL("size must be > 1", GSL_EINVAL);
+
+    const double alpha = 4;
+    const double p0 = 0.5 * (k >= 0 ? r2 : r1);
+    const double xmax = log(pmax);
+    const double x0 = GSL_MIN_DBL(log(p0), xmax);
+    const double xmin = x0 - (1 + M_SQRT2) * alpha;
+    const double ymax = x0 + alpha;
+    const double ymin = 2 * x0 - M_SQRT2 * alpha - xmax;
+    const size_t len = size * size;
+    const double d = (xmax - xmin) / (size - 1); /* dx = dy = du */
+    const double umin = - (1 + M_SQRT1_2) * alpha;
+    const double vmax = x0 - M_SQRT1_2 * alpha;
+    /* const double umax = xmax - vmax; */ /* unused */
+
+    log_radial_integrator *integrator = malloc(sizeof(log_radial_integrator));
+    if (!integrator)
+        GSL_ERROR_NULL("not enough memory to allocate integrator", GSL_ENOMEM);
+    integrator->region0 = malloc(sizeof(bicubic_interp) + len * sizeof(double));
+    if (!integrator->region0)
+    {
+        free(integrator);
+        GSL_ERROR_NULL("not enough memory to allocate integrator", GSL_ENOMEM);
+    }
+    integrator->region1 = malloc(sizeof(cubic_interp) + size * sizeof(double));
+    if (!integrator->region1)
+    {
+        free(integrator->region0);
+        free(integrator);
+        GSL_ERROR_NULL("not enough memory to allocate integrator", GSL_ENOMEM);
+    }
+    integrator->region2 = malloc(sizeof(cubic_interp) + size * sizeof(double));
+    if (!integrator->region2)
+    {
+        free(integrator->region0);
+        free(integrator->region1);
+        free(integrator);
+        GSL_ERROR_NULL("not enough memory to allocate integrator", GSL_ENOMEM);
+    }
+
+    integrator->region0->xsize = integrator->region0->ysize = size;
+    integrator->region0->xmin = xmin;
+    integrator->region0->ymin = ymin;
+    integrator->region0->dx = integrator->region0->dy = d;
+
+    old_handler = gsl_set_error_handler(ignore_underflow);
+
+    #pragma omp parallel for
+    for (size_t i = 0; i < len; i ++)
+    {
+        const size_t ix = i / size;
+        const size_t iy = i % size;
+        const double x = xmin + ix * d;
+        const double y = ymin + iy * d;
+        const double p = exp(x);
+        const double r0 = exp(y);
+        const double b = 2 * gsl_pow_2(p) / r0;
+        /* Note: using this where p > r0; could reduce evaluations by half */
+        integrator->region0->z[i] = log_radial_integral(r1, r2, p, b, k);
+    }
+
+    gsl_set_error_handler(old_handler);
+
+    integrator->region1->size = size;
+    integrator->region1->xmin = xmin;
+    integrator->region1->dx = d;
+
+    for (size_t i = 0; i < size; i ++)
+    {
+        integrator->region1->y[i] = integrator->region0->z[i * size + (size - 1)];
+    }
+
+    integrator->region2->size = size;
+    integrator->region2->xmin = umin;
+    integrator->region2->dx = d;
+
+    for (size_t i = 0; i < size; i ++)
+    {
+        integrator->region2->y[i] = integrator->region0->z[i * size + (size - 1 - i)];
+    }
+
+    integrator->xmax = xmax;
+    integrator->ymax = ymax;
+    integrator->vmax = vmax;
+    return integrator;
+}
+
+
+void log_radial_integrator_free(log_radial_integrator *integrator)
+{
+    if (integrator)
+    {
+        free(integrator->region0);
+        integrator->region0 = NULL;
+        free(integrator->region1);
+        integrator->region1 = NULL;
+        free(integrator->region2);
+        integrator->region2 = NULL;
+        free(integrator);
+    }
+}
+
+
+double log_radial_integrator_eval(const log_radial_integrator *integrator, double p, double b)
+{
+    const double r0 = 2 * gsl_pow_2(p) / b;
+    const double x = log(p);
+    const double y = log(r0);
+    double result;
+    assert(x <= integrator->xmax);
+
+    if (y >= integrator->ymax)
+    {
+        result = cubic_interp_eval(integrator->region1, x);
+    } else {
+        const double v = 0.5 * (x + y);
+        if (v <= integrator->vmax)
+        {
+            const double u = 0.5 * (x - y);
+            result = cubic_interp_eval(integrator->region2, u);
+        } else {
+            result = bicubic_interp_eval(integrator->region0, x, y);
+        }
+    }
+
+    return result + gsl_pow_2(0.5 * b / p);
+}
+
+
 /* Find error in time of arrival. */
 static void toa_errors(
     double *dt,
@@ -296,97 +572,6 @@ static double complex signal_amplitude_model(
 
 static const unsigned int nglfixed = 10;
 static const unsigned int ntwopsi = 10;
-
-
-static double toa_phoa_snr_log_radial_integral(
-    double r1, double r2, double p2, double p, double b, int k,
-    const gsl_integration_glfixed_table *gltable)
-{
-    double result;
-
-    if (p2 == 0) {
-        /* note: p2 == 0 implies b == 0 */
-        assert(b == 0);
-        int k1 = k + 1;
-
-        if (k == -1)
-        {
-            result = log(log(r2 / r1));
-        } else {
-            result = log((gsl_pow_int(r2, k1) - gsl_pow_int(r1, k1)) / k1);
-        }
-    } else if (b == 0) {
-        int k1 = k + 1;
-        int k3 = k + 3;
-        double arg1 = p2 / gsl_pow_2(r1);
-        double arg2 = p2 / gsl_pow_2(r2);
-        double E1 = halfinteger_En_scaled(k3, arg1);
-        double E2 = halfinteger_En_scaled(k3, arg2);
-        result = log1p(
-            -gsl_sf_exp_mult(-(arg1 - arg2), gsl_pow_int(r1/r2, k1) * E1/E2))
-            + k1 * log(r2) - arg2 + log(E2) - M_LN2;
-    } else {
-        double one_by_ml_r = 0.5 * b / p2;
-        double ml_r = 1 / one_by_ml_r;
-        if (ml_r > r1 &&
-            ml_r < r2)
-        {
-            result = 0;
-            double Gmin = M_SQRTPI * gsl_cdf_ugaussian_Q(
-                M_SQRT2 * (p / r1 - 0.5 * b / p)) / p;
-            double Gmax = M_SQRTPI * gsl_cdf_ugaussian_Q(
-                M_SQRT2 * (p / r2 - 0.5 * b / p)) / p;
-            for (unsigned int iG = 0; iG < gltable->n; iG ++)
-            {
-                double G, Gweight;
-                {
-                    /* Look up Gauss-Legendre abscissa and weight. */
-                    int ret = gsl_integration_glfixed_point(
-                        Gmin, Gmax, iG, &G, &Gweight, gltable);
-
-                    /* Don't bother checking return value; the only
-                     * possible failure is in index bounds checking. */
-                    assert(ret == GSL_SUCCESS);
-                }
-                double r = 1 / (one_by_ml_r + M_SQRT1_2 / p
-                    * gsl_cdf_ugaussian_Qinv(p * G / M_SQRTPI));
-                result += Gweight * gsl_sf_bessel_I0_scaled(b / r)
-                    * gsl_pow_int(r * one_by_ml_r, k) * gsl_pow_2(r);
-            }
-            result = log(result) + 0.5 * b * one_by_ml_r + k * log(ml_r);
-        } else {
-            result = 0;
-            double rstar = k < 0 ? r1 : r2;
-            double one_by_rstar = 1 / rstar;
-            double log_scale =
-                (b - p2 * one_by_rstar) * one_by_rstar +
-                log(gsl_sf_bessel_I0_scaled(b * one_by_rstar)) +
-                k * log(rstar);
-
-            for (unsigned int ir = 0; ir < gltable->n; ir ++)
-            {
-                double r, rweight;
-                {
-                    /* Look up Gauss-Legendre abscissa and weight. */
-                    int ret = gsl_integration_glfixed_point(
-                        r1, r2, ir, &r,
-                        &rweight, gltable);
-
-                    /* Don't bother checking return value; the only
-                     * possible failure is in index bounds checking. */
-                    assert(ret == GSL_SUCCESS);
-                }
-                double one_by_r = 1 / r;
-                result += rweight
-                    * exp((b - p2 * one_by_r) * one_by_r - log_scale)
-                    * gsl_sf_bessel_I0_scaled(b * one_by_r) * gsl_pow_int(r, k);
-            }
-            result = log(result) + log_scale;
-        }
-    }
-
-    return result;
-}
 
 
 static double complex exp_i(double phi) {
@@ -586,11 +771,29 @@ double *bayestar_sky_map_toa_phoa_snr(
     for (unsigned int iifo = 0; iifo < nifos; iifo ++)
         exp_i_phoas[iifo] = exp_i(phoas[iifo]);
 
+    log_radial_integrator *integrator;
+    {
+        double pmax = 0;
+        for (unsigned int iifo = 0; iifo < nifos; iifo ++)
+        {
+            pmax += gsl_pow_2(horizons[iifo] / max_distance);
+        }
+        pmax = sqrt(0.5 * pmax);
+        integrator = log_radial_integrator_init(
+            min_distance, max_distance, prior_distance_power, pmax,
+            default_log_radial_integrator_size);
+        if (!integrator)
+            return NULL;
+    }
+
     static const unsigned char order0 = 4;
     unsigned char level = order0;
     adaptive_sky_map *map = adaptive_sky_map_alloc(order0);
     if (!map)
+    {
+        free(integrator);
         return NULL;
+    }
     const unsigned long npix0 = map->len;
 
     /* Look up Gauss-Legendre quadrature rule for integral over cos(i). */
@@ -684,9 +887,8 @@ double *bayestar_sky_map_toa_phoa_snr(
                             b = cabs(I0arg_complex_times_r);
                         }
 
-                        double result = toa_phoa_snr_log_radial_integral(
-                            min_distance, max_distance, p2, p, b,
-                            prior_distance_power, gltable);
+                        double result = log_radial_integrator_eval(
+                            integrator, p, b);
                         accum2 = logaddexp(accum2, result);
                     }
 
@@ -715,6 +917,8 @@ double *bayestar_sky_map_toa_phoa_snr(
         if (!map)
             return NULL;
     }
+
+    log_radial_integrator_free(integrator);
 
     /* Set error handler to ignore underflow errors, but invoke the user's
      * error handler for all other errors. */
@@ -850,38 +1054,6 @@ double bayestar_log_likelihood_toa_phoa_snr(
 /*
  * Unit tests
  */
-
-
-static void test_divfloor(int x, int y)
-{
-    int result = divfloor(x, y);
-    int expected = floor((double)x / y);
-    gsl_test_int(result, expected, "testing divfloor(%d, %d)", x, y);
-}
-
-
-static void test_pow_halfint(double x, int twon)
-{
-    double result = pow_halfint(x, twon);
-    double expected = pow(x, 0.5 * twon);
-    gsl_test_abs(result, expected, 1e-8, "testing pow_halfint(%g, %d)", x, twon);
-}
-
-
-static void test_halfinteger_En_scaled(int twon, double x)
-{
-    double expected, result = halfinteger_En_scaled(twon, x);
-
-    if (GSL_IS_EVEN(twon) && twon >= 0)
-    {
-        expected = gsl_sf_expint_En_scaled(twon / 2, x);
-    } else {
-        expected = gsl_sf_exp_mult(x, pow_halfint(x, twon - 2)
-            * gsl_sf_gamma_inc(1 - 0.5 * twon, x));
-    }
-
-    gsl_test_abs(result, expected, 1e-8, "testing E_{%d/2}(%g)", twon, x);
-}
 
 
 static void test_cabs2(double complex z)
@@ -1043,46 +1215,8 @@ static void test_signal_amplitude_model(
 }
 
 
-static void test_toa_phoa_snr_log_radial_integral(
-    double expected, double tol, double r1, double r2, double p2, double b, int k)
-{
-    /* Look up Gauss-Legendre quadrature rule for integral over cos(i). */
-    gsl_integration_glfixed_table *gltable
-        = gsl_integration_glfixed_table_alloc(nglfixed);
-
-    /* Don't bother checking the return value. GSL has static, precomputed
-     * values for certain orders, and for the order I have picked it will
-     * return a pointer to one of these. See:
-     *
-     * http://git.savannah.gnu.org/cgit/gsl.git/tree/integration/glfixed.c
-     */
-    assert(gltable);
-    assert(gltable->precomputed); /* We don't have to free it. */
-
-    double result = toa_phoa_snr_log_radial_integral(
-        r1, r2, p2, sqrt(p2), b, k, gltable);
-
-    gsl_test_rel(
-        result, expected, tol, "testing toa_phoa_snr_log_radial_integral("
-        "r1=%g, r2=%g, p2=%g, b=%g, k=%d)", r1, r2, p2, b, k);
-}
-
-
 int bayestar_test(void)
 {
-    for (int x = -512; x < 512; x ++)
-        for (int y = -512; y < 512; y ++)
-            if (y != 0)
-                test_divfloor(x, y);
-
-    for (int twon = -5; twon <= 5; twon ++)
-        for (double log10x = -2; log10x <= 2; log10x += 0.1)
-            test_pow_halfint(pow(10, log10x), twon);
-
-    for (int twon = -5; twon <= 5; twon ++)
-        for (double log10x = -2; log10x <= 2; log10x += 0.1)
-            test_halfinteger_En_scaled(twon, pow(10, log10x));
-
     for (double re = -1; re < 1; re += 0.1)
         for (double im = -1; im < 1; im += 0.1)
             test_cabs2(re + im * 1.0j);
@@ -1099,27 +1233,30 @@ int bayestar_test(void)
                          epoch += 3600000000000)
                         test_signal_amplitude_model(ra, dec, inc, pol, epoch, "H1");
 
-    /* Tests of radial integrand with p2=0, b=0. */
-    test_toa_phoa_snr_log_radial_integral(0, 0, 0, 1, 0, 0, 0);
-    test_toa_phoa_snr_log_radial_integral(0, 0, exp(1), exp(2), 0, 0, -1);
-    test_toa_phoa_snr_log_radial_integral(log(63), 0, 3, 6, 0, 0, 2);
-    /* Tests of radial integrand with p2>0, b=0 (from Mathematica). */
-    test_toa_phoa_snr_log_radial_integral(-0.480238, 1e-5, 1, 2, 1, 0, 0);
-    test_toa_phoa_snr_log_radial_integral(0.432919, 1e-5, 1, 2, 1, 0, 2);
-    test_toa_phoa_snr_log_radial_integral(-2.76076, 1e-5, 0, 1, 1, 0, 2);
-    test_toa_phoa_snr_log_radial_integral(61.07118, 1e-5, 0, 1e9, 1, 0, 2);
-    test_toa_phoa_snr_log_radial_integral(-112.23053, 1e-5, 0, 0.1, 1, 0, 2);
-    test_toa_phoa_snr_log_radial_integral(-1.00004e6, 1e-5, 0, 1e-3, 1, 0, 2);
-    /* Tests of radial integrand with p2>0, b>0 with ML peak outside
-     * of integration limits (true values from Mathematica NIntegrate). */
-    test_toa_phoa_snr_log_radial_integral(2.94548, 1e-4, 0, 4, 1, 1, 2);
-    test_toa_phoa_snr_log_radial_integral(2.94545, 1e-4, 0.5, 4, 1, 1, 2);
-    test_toa_phoa_snr_log_radial_integral(2.94085, 1e-4, 1, 4, 1, 1, 2);
-    /* Tests of radial integrand with p2>0, b>0 with ML peak outside
-     * of integration limits (true values from Mathematica NIntegrate). */
-    test_toa_phoa_snr_log_radial_integral(-2.43264, 1e-5, 0, 1, 1, 1, 2);
-    test_toa_phoa_snr_log_radial_integral(-2.43808, 1e-5, 0.5, 1, 1, 1, 2);
-    test_toa_phoa_snr_log_radial_integral(-0.707038, 1e-5, 1, 1.5, 1, 1, 2);
+    {
+        const double r1 = 0.0, r2 = 0.25, pmax = 1.0;
+        const int k = 2;
+        const double tol = 1e-5;
+        log_radial_integrator *integrator = log_radial_integrator_init(
+            r1, r2, k, pmax, default_log_radial_integrator_size);
+        old_handler = gsl_set_error_handler(ignore_underflow);
+        for (double p = 0.01; p <= pmax; p += 0.01)
+        {
+            for (double b = 0.0; b <= 2 * pmax; b += 0.01)
+            {
+                const double r0 = 2 * gsl_pow_2(p) / b;
+                const double x = log(p);
+                const double y = log(r0);
+                const double expected = exp(log_radial_integral(r1, r2, p, b, k));
+                const double result = exp(log_radial_integrator_eval(integrator, p, b) - gsl_pow_2(0.5 * b / p));
+                gsl_test_abs(
+                    result, expected, tol, "testing log_radial_integrator_eval("
+                    "r1=%g, r2=%g, p=%g, b=%g, k=%d, x=%g, y=%g)", r1, r2, p, b, k, x, y);
+            }
+        }
+        gsl_set_error_handler(old_handler);
+        log_radial_integrator_free(integrator);
+    }
 
     return gsl_test_summary();
 }
