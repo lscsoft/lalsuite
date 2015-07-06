@@ -1058,24 +1058,29 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                   freqDataFile=os.path.join(roqeventpath,'data-dump'+ifo+'-freqData.dat')
                 prenode.add_output_file(freqDataFile)
                 prenode.add_output_file(os.path.join(roqeventpath,'data-dump'+ifo+'-PSD.dat'))
-                if self.config.has_option('condor','computeroqweights'):
-                  computeroqweightsnode[ifo].add_var_arg('-d '+freqDataFile)
-                  computeroqweightsnode[ifo].add_input_file(freqDataFile)
-                  computeroqweightsnode[ifo].add_var_arg('-p '+os.path.join(roqeventpath,'data-dump'+ifo+'-PSD.dat'))
-                  computeroqweightsnode[ifo].add_input_file(os.path.join(roqeventpath,'data-dump'+ifo+'-PSD.dat'))
-                  computeroqweightsnode[ifo].add_var_arg('-o '+roqeventpath)
-                  computeroqweightsnode[ifo].add_output_file(os.path.join(roqeventpath,'weights_'+ifo+'.dat'))
                 if self.config.has_option('condor','bayesline'):
                   bayeslinenode[ifo]=self.add_bayesline_node(ifo,prenode)
                   bayeslinenode[ifo].add_var_arg('-i '+freqDataFile)
                   bayeslinenode[ifo].add_input_file(freqDataFile)
                   bayeslinenode[ifo].add_var_arg('-o '+os.path.join(roqeventpath,'BayesLine_PSD_'+ifo+'.dat'))
                   bayeslinenode[ifo].add_output_file(os.path.join(roqeventpath,'BayesLine_PSD_'+ifo+'.dat'))
+                if self.config.has_option('condor','computeroqweights'):
+                  computeroqweightsnode[ifo].add_var_arg('-d '+freqDataFile)
+                  computeroqweightsnode[ifo].add_input_file(freqDataFile)
+                  if self.config.has_option('condor','bayesline'):
+                    computeroqweightsnode[ifo].add_var_arg('-p '+os.path.join(roqeventpath,'BayesLine_PSD_'+ifo+'.dat'))
+                    computeroqweightsnode[ifo].add_input_file(os.path.join(roqeventpath,'BayesLine_PSD_'+ifo+'.dat'))
+                    computeroqweightsnode[ifo].add_parent(bayeslinenode[ifo])
+                  else:
+                    computeroqweightsnode[ifo].add_var_arg('-p '+os.path.join(roqeventpath,'data-dump'+ifo+'-PSD.dat'))
+                    computeroqweightsnode[ifo].add_input_file(os.path.join(roqeventpath,'data-dump'+ifo+'-PSD.dat'))
+                  computeroqweightsnode[ifo].add_var_arg('-o '+roqeventpath)
+                  computeroqweightsnode[ifo].add_output_file(os.path.join(roqeventpath,'weights_'+ifo+'.dat'))
               #self.prenodes[seg.id()]=(prenode,computeroqweightsnode)
-              if self.config.has_option('condor','computeroqweights'):
-                  self.prenodes[event.event_id]=(prenode,computeroqweightsnode)
               if self.config.has_option('condor','bayesline'):
                   self.prenodes[event.event_id]=(prenode,bayeslinenode)
+              if self.config.has_option('condor','computeroqweights'):
+                  self.prenodes[event.event_id]=(prenode,computeroqweightsnode)
 
       if self.config.has_option('condor','bayesline') or self.config.has_option('condor','computeroqweights'):
         #node.add_parent(self.prenodes[seg.id()][1][ifokey])
