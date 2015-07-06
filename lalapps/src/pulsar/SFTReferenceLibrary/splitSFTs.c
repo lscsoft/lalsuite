@@ -388,7 +388,7 @@ int main(int argc, char**argv) {
 
     /* get the detector name from SFT header if present there (in v2 SFTs),
        or else it needs to have been set on the command-line */
-    if(hd.detector && *hd.detector)
+    if(*hd.detector)
       detector = hd.detector;
 
     /* if no detector has been specified, issue an error */
