@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2013 Reinhard Prix
+*  Copyright (C) 2013, 2015 Reinhard Prix
 *  Copyright (C) 2008, 2010 Karl Wette
 *  Copyright (C) 2008 Chris Messenger
 *  Copyright (C) 2007 Badri Krishnan, Reinhard Prix
@@ -398,8 +398,8 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
   BOOLEAN have_timestampsFiles = ( uvar->timestampsFiles != NULL );
   // need BOTH startTime+duration or none
   XLAL_CHECK ( ( have_duration && have_startTime) || !( have_duration || have_startTime ), XLAL_EINVAL, "Need BOTH {--startTime,--duration} or NONE\n");
-  // at least one of {startTime,timestamps,noiseSFTs} required
-  XLAL_CHECK ( have_timestampsFiles || have_startTime || have_noiseSFTs, XLAL_EINVAL, "Need one of {--timestampsFiles, --startTime+duration, --noiseSFTs}\n" );
+  // at least one of {startTime,timestamps,noiseSFTs,inFrames} required
+  XLAL_CHECK ( have_timestampsFiles || have_startTime || have_noiseSFTs || have_frames, XLAL_EINVAL, "Need at least one of {--timestampsFiles, --startTime+duration, --noiseSFTs, --inFrames}\n" );
   // don't allow timestamps + {startTime+duration OR noiseSFTs}
   XLAL_CHECK ( !have_timestampsFiles || !(have_startTime||have_noiseSFTs), XLAL_EINVAL, "--timestampsFiles incompatible with {--noiseSFTs or --startTime+duration}\n");
   // note, however, that we DO allow --noiseSFTs and --startTime+duration, which will act as a constraint
@@ -449,9 +449,6 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
     {
       XLAL_CHECK ( ( cfg->multiTimestamps = XLALMakeMultiTimestamps ( uvar->startTime, uvar->duration, uvar->Tsft, uvar->SFToverlap, cfg->multiIFO.length )) != NULL, XLAL_EFUNC );
     } // endif have_startTime
-  else {
-    XLAL_ERROR (XLAL_EFAILED, "Something went wrong with my internal logic ..\n");
-  }
 
   // check if the user asked for Gaussian white noise to be produced (sqrtSn[X]!=0), otherwise leave noise-floors at 0
   if ( uvar->sqrtSX != NULL ) {
@@ -471,23 +468,49 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
       XLAL_CHECK ( (cfg->inputMultiTS = XLALCalloc ( 1, sizeof(*cfg->inputMultiTS))) != NULL, XLAL_ENOMEM );
       cfg->inputMultiTS->length = numDetectors;
       XLAL_CHECK ( (cfg->inputMultiTS->data = XLALCalloc ( numDetectors, sizeof(cfg->inputMultiTS->data[0]) )) != NULL, XLAL_ENOMEM );
+      if ( cfg->multiTimestamps == NULL )
+        {
+          XLAL_CHECK ( (cfg->multiTimestamps = XLALCalloc ( 1, sizeof(*cfg->multiTimestamps) )) != NULL, XLAL_ENOMEM );
+          XLAL_CHECK ( (cfg->multiTimestamps->data = XLALCalloc ( numDetectors, sizeof(cfg->multiTimestamps->data[0]))) != NULL, XLAL_ENOMEM );
+          cfg->multiTimestamps->length = numDetectors;
+        }
       for ( UINT4 X = 0; X < numDetectors; X ++ )
         {
           const LIGOTimeGPSVector *timestampsX = cfg->multiTimestamps->data[X];
           LALCache *cache;
           XLAL_CHECK ( (cache = XLALCacheImport ( uvar->inFrames->data[X] )) != NULL, XLAL_EFUNC, "Failed to import cache file '%s'\n", uvar->inFrames->data[X] );
+          // this is a sorted cache, so extract its time-range:
+          REAL8 cache_tStart = cache->list[0].t0;
+          REAL8 cache_tEnd   = cache->list[cache->length-1].t0 + cache->list[cache->length-1].dt;
+          REAL8 cache_duration = (cache_tEnd - cache_tStart);
+          LIGOTimeGPS ts_start;
+          REAL8 ts_duration;
+          // check that it's consistent with timestamps, if given, otherwise create timestamps from this
+          if ( timestampsX != NULL )	// FIXME: implicitly assumes timestamps are sorted, which is not guaranteed by timestamps-reading from file
+            {
+              REAL8 tStart = XLALGPSGetREAL8( &timestampsX->data[0] );
+              REAL8 tEnd   = XLALGPSGetREAL8( &timestampsX->data[timestampsX->length-1]) + timestampsX->deltaT;
+              XLAL_CHECK ( tStart >= cache_tStart && tEnd <= cache_tEnd, XLAL_EINVAL, "Detector X=%d: Requested timestamps-range [%.0f, %.0f]s outside of cache range [%.0f,%.0f]s\n",
+                           X, tStart, tEnd, cache_tStart, cache_tEnd );
+              XLALGPSSetREAL8 ( &ts_start, tStart );
+              ts_duration = (tEnd - tStart);
+            }
+          else
+            {
+              XLALGPSSetREAL8 ( &ts_start, (REAL8)cache_tStart + 1); // cache times can apparently be by rounded up or down by 1s, so shift by 1s to be safe
+              ts_duration = cache_duration - 1;
+              XLAL_CHECK ( (timestampsX = XLALMakeTimestamps ( ts_start, ts_duration, uvar->Tsft, uvar->SFToverlap ) ) != NULL, XLAL_EFUNC );
+            }
+          // ----- now open frame stream and read *all* the data within this time-range [FIXME] ----------
           LALFrStream *stream;
           XLAL_CHECK ( (stream = XLALFrStreamCacheOpen ( cache )) != NULL, XLAL_EFUNC, "Failed to open stream from cache file '%s'\n", uvar->inFrames->data[X] );
           XLALDestroyCache ( cache );
 
-          LIGOTimeGPS *start = &timestampsX->data[0];
-          LIGOTimeGPS *end   = &timestampsX->data[timestampsX->length-1];
-          REAL8 duration = XLALGPSDiff ( end, start ) + timestampsX->deltaT;
           const char *channel = uvar->inFrChannels->data[X];
           size_t limit = 0;	// unlimited read
           REAL8TimeSeries *ts;
-          XLAL_CHECK ( (ts = XLALFrStreamInputREAL8TimeSeries ( stream, channel, start, duration, limit )) != NULL,
-                       XLAL_EFUNC, "Frame reading failed for '%s'\n", uvar->inFrames->data[X] );
+          XLAL_CHECK ( (ts = XLALFrStreamInputREAL8TimeSeries ( stream, channel, &ts_start, ts_duration, limit )) != NULL,
+                       XLAL_EFUNC, "Frame reading failed for stream created for '%s': ts_start = {%d,%d}, duration=%.0f\n", uvar->inFrames->data[X], ts_start.gpsSeconds, ts_start.gpsNanoSeconds, ts_duration );
           cfg->inputMultiTS->data[X] = ts;
 
           XLAL_CHECK ( XLALFrStreamClose ( stream ) == XLAL_SUCCESS, XLAL_EFUNC, "Stream closing failed for cache file '%s'\n", uvar->inFrames->data[X] );
