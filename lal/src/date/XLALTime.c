@@ -103,10 +103,6 @@ REAL8 XLALGPSModf( REAL8 *iptr, const LIGOTimeGPS *epoch )
   return (REAL8)(rem) / XLAL_BILLION_REAL8;
 }
 
-/*
- * general purpose functions
- */
-
 
 /** Adds two GPS times. */
 LIGOTimeGPS * XLALGPSAddGPS( LIGOTimeGPS *epoch, const LIGOTimeGPS *dt )
@@ -173,7 +169,7 @@ int XLALGPSCmp( const LIGOTimeGPS *t0, const LIGOTimeGPS *t1 )
 }
 
 
-/**
+/*
  * Split a double-precision float into "large" and "small" parts.  The
  * results are stored in the hi and lo arguments, respectively.  hi and lo
  * are such that
