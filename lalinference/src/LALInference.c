@@ -1290,8 +1290,8 @@ void LALInferenceTranslateExternalToInternalParamName(char *outName, const char 
 
 int LALInferenceFprintParameterHeaders(FILE *out, LALInferenceVariables *params) {
   LALInferenceVariableItem *head = params->head;
-  int i,j;
-  gsl_matrix *matrix = NULL;
+  int i;//,j;
+  //gsl_matrix *matrix = NULL;
 
   while (head != NULL) {
       if(head->type==LALINFERENCE_gslMatrix_t)
