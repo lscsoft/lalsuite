@@ -24,11 +24,9 @@
 
 
 /*
- * \defgroup \DetInverseInternal_c Module DetInverseInternal.c
- * \ingroup MatrixUtils_h
- * \author Creighton, T. D.
+ * author Creighton, T. D.
  *
- * \brief Internal routines used to compute matrix determinants and inverses.
+ * Internal routines used to compute matrix determinants and inverses.
  *
  * ### Description ###
  *
@@ -532,11 +530,10 @@ LALDLUBackSub( LALStatus   *stat,
  * \f$(\mathsf{M}^{-1}){}^a{}_b\f$ can be computed by performing a
  * column-by-column backsubstitution of the identity matrix.
  *
- * The routines in \ref DetInverse_c simply call the routines in
- * \ref DetInverseInternal_c, first using <tt>LALSLUDecomp()</tt> or
+ * The routines in \ref DetInverse_c first use <tt>LALSLUDecomp()</tt> or
  * <tt>LALDLUDecomp()</tt> to perform an LU decomposition of the matrix,
- * then either computing the determinant from the diagonal elements, or
- * using <tt>LALSLUBackSub()</tt> or <tt>LALDLUBackSub()</tt> to determine
+ * then either compute the determinant from the diagonal elements, or
+ * use <tt>LALSLUBackSub()</tt> or <tt>LALDLUBackSub()</tt> to determine
  * the inverse by back-substitution of basis vectors.  The routines that
  * compute the determinant will also handle any singular matrix error
  * code returned by the LU decomposition routines, returning zero as the
@@ -552,9 +549,7 @@ LALDLUBackSub( LALStatus   *stat,
  * However, these routines also <em>permute the rows</em> of the input
  * matrix, and the information on this permutation is \e not returned
  * by the routines in \ref DetInverse_c, so the information in
- * <tt>*matrix</tt> will be irretrievably mangled.  If you want to do
- * further work with the LU-decomposed matrix, call the routines in
- * \ref DetInverseInternal_c directly.
+ * <tt>*matrix</tt> will be irretrievably mangled.
  *
  * Computing the determinant is dominated by the cost of doing the LU
  * decomposition, or of order \f$N^3/3\f$ operations.  Computing the inverse

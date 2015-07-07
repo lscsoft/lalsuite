@@ -33,8 +33,8 @@
  * ### Description ###
  *
  * This program computes the inverse and determinant of a square real
- * matrix using the routines in \ref DetInverse_c and
- * \ref DetInverseInternal_c.  The following option flags are accepted:
+ * matrix using the routines in \ref DetInverse_c.
+ * The following option flags are accepted:
  * <ul>
  * <li>[<tt>-n</tt>] Generates a random symmetric
  * \c size\f$\times\f$\c size metric.  If this option is not given,

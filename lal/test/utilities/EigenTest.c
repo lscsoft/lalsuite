@@ -33,8 +33,8 @@
  * ### Description ###
  *
  * This program computes the eigenvalues and eigenvectors of a symmetric
- * real matrix using the routines in \ref Eigen_c and
- * \ref EigenInternal_c.  The following option flags are accepted:
+ * real matrix using the routines in \ref Eigen_c.
+ * The following option flags are accepted:
  * <ul>
  * <li>[<tt>-n</tt>] Generates a random symmetric
  * \c size\f$\times\f$\c size metric.  If this option is not given,
