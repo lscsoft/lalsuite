@@ -162,7 +162,7 @@ def open_pipedown_database(database_filename,tmp_space):
     return (connection,working_filename)
 
 
-def get_zerolag_pipedown(database_connection, dumpfile=None, gpsstart=None, gpsend=None, max_cfar=-1):
+def get_zerolag_pipedown(database_connection, dumpfile=None, gpsstart=None, gpsend=None, max_cfar=-1, min_cfar=-1):
 	"""
 	Returns a list of Event objects
 	from pipedown data base. Can dump some stats to dumpfile if given,
@@ -185,6 +185,8 @@ def get_zerolag_pipedown(database_connection, dumpfile=None, gpsstart=None, gpse
 		get_coincs=get_coincs+' and coinc_inspiral.end_time+coinc_inspiral.end_time_ns*1.0e-9 < %f'%(gpsend)
 	if max_cfar !=-1:
 		get_coincs=get_coincs+' and coinc_inspiral.combined_far < %f'%(max_cfar)
+	if min_cfar != -1:
+		get_coincs=get_coincs+' and coinc_inspiral.combined_far > %f'%(min_cfar)
 	db_out=database_connection.cursor().execute(get_coincs)
     	extra={}
 	for (sngl_time, ifo, coinc_id, snr, chisq, cfar) in db_out:
@@ -705,6 +707,10 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         timeslidedump=self.config.get('input','time-slide-dump')
       else:
         timeslidedump=None
+      if self.config.has_option('input','min-cfar'):
+        mincfar=self.config.getfloat('input','min-cfar')
+      else:
+        mincfar=-1
       if self.config.has_option('input','max-cfar'):
 	maxcfar=self.config.getfloat('input','max-cfar')
       else:
@@ -712,7 +718,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       if self.config.get('input','timeslides').lower()=='true':
 	events=get_timeslides_pipedown(db_connection, gpsstart=gpsstart, gpsend=gpsend,dumpfile=timeslidedump,max_cfar=maxcfar)
       else:
-	events=get_zerolag_pipedown(db_connection, gpsstart=gpsstart, gpsend=gpsend, dumpfile=timeslidedump,max_cfar=maxcfar)
+	events=get_zerolag_pipedown(db_connection, gpsstart=gpsstart, gpsend=gpsend, dumpfile=timeslidedump,max_cfar=maxcfar,min_cfar=mincfar)
     if(selected_events is not None):
         used_events=[]
         for i in selected_events:
