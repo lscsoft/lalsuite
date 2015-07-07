@@ -290,7 +290,6 @@ LIGOTimeGPS *XLALGPSMultiply( LIGOTimeGPS *gps, REAL8 x )
 LIGOTimeGPS *XLALGPSDivide( LIGOTimeGPS *gps, REAL8 x )
 {
   LIGOTimeGPS quotient;
-  int keep_going;
   double residual;
 
   if(isnan(x)) {
@@ -303,17 +302,19 @@ LIGOTimeGPS *XLALGPSDivide( LIGOTimeGPS *gps, REAL8 x )
   }
 
   /* initial guess */
-  XLALGPSSetREAL8(&quotient, XLALGPSGetREAL8(gps) / x);
-  /* use Newton's method to iteratively solve for quotient */
-  keep_going = 100;
+  if(!XLALGPSSetREAL8(&quotient, XLALGPSGetREAL8(gps) / x))
+    XLAL_ERROR_NULL(XLAL_EFUNC);
+  /* use Newton's method to iteratively solve for quotient.  strictly
+   * speaking we're using Newton's method to solve for the inverse of
+   * XLALGPSMultiply(), which we assume implements multiplication. */
   do {
     LIGOTimeGPS workspace = quotient;
-    residual = XLALGPSDiff(gps, XLALGPSMultiply(&workspace, x)) / x;
-    XLALGPSAdd(&quotient, residual);
-    /* FIXME:  should check for overflow instead of too many iterations;
-     * would require error checking to be added to several other arithmetic
-     * functions first */
-  } while(fabs(residual) > 0.5e-9 && --keep_going);
+    if(!XLALGPSMultiply(&workspace, x))
+      XLAL_ERROR_NULL(XLAL_EFUNC);
+    residual = XLALGPSDiff(gps, &workspace) / x;
+    if(!XLALGPSAdd(&quotient, residual))
+      XLAL_ERROR_NULL(XLAL_EFUNC);
+  } while(fabs(residual) > 0.5e-9);
   *gps = quotient;
 
   return gps;
