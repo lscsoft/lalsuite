@@ -206,11 +206,13 @@ static void split_double(double x, double *hi, double *lo)
 }
 
 
-/** Multiply a GPS time by a number. */
+/**
+ * Multiply a GPS time by a number.  Computes gps * x and places the result
+ * in gps.  Returns gps on success, NULL on failure.
+ */
 LIGOTimeGPS *XLALGPSMultiply( LIGOTimeGPS *gps, REAL8 x )
 {
-  int seconds = gps->gpsSeconds;
-  int nanoseconds = gps->gpsNanoSeconds;
+  LIGOTimeGPS workspace = *gps;
   double slo, shi;
   double xlo, xhi;
   double addendlo[4], addendhi[4];
@@ -223,19 +225,19 @@ LIGOTimeGPS *XLALGPSMultiply( LIGOTimeGPS *gps, REAL8 x )
   /* ensure the seconds and nanoseconds components have the same sign so
    * that the addend fragments we compute below all have the same sign */
 
-  if(seconds < 0 && nanoseconds > 0) {
-    seconds += 1;
-    nanoseconds -= 1000000000;
-  } else if(seconds > 0 && nanoseconds < 0) {
-    seconds -= 1;
-    nanoseconds += 1000000000;
+  if(workspace.gpsSeconds < 0 && workspace.gpsNanoSeconds > 0) {
+    workspace.gpsSeconds += 1;
+    workspace.gpsNanoSeconds -= 1000000000;
+  } else if(workspace.gpsSeconds > 0 && workspace.gpsNanoSeconds < 0) {
+    workspace.gpsSeconds -= 1;
+    workspace.gpsNanoSeconds += 1000000000;
   }
 
   /* split seconds and multiplicand x into leading-order and low-order
    * components */
 
-  slo = seconds % (1<<16);
-  shi = seconds - slo;
+  slo = workspace.gpsSeconds % (1<<16);
+  shi = workspace.gpsSeconds - slo;
   split_double(x, &xhi, &xlo);
 
   /* the count of seconds and the multiplicand x have each been split into
@@ -256,12 +258,13 @@ LIGOTimeGPS *XLALGPSMultiply( LIGOTimeGPS *gps, REAL8 x )
 
   /* initialize result with the sum of components that contribute to the
    * fractional part */
-  XLALINT8NSToGPS(gps, nearbyint((addendlo[0] + addendlo[1] + addendlo[2] + addendlo[3]) * XLAL_BILLION_REAL8 + nanoseconds * x));
+  if(!XLALGPSSetREAL8(gps, addendlo[0] + addendlo[1] + addendlo[2] + addendlo[3] + workspace.gpsNanoSeconds * x / XLAL_BILLION_REAL8))
+    XLAL_ERROR_NULL(XLAL_EFUNC);
   /* now add the components that contribute only to the integer seconds
    * part */
-  gps->gpsSeconds += addendhi[0] + addendhi[1] + addendhi[2] + addendhi[3];
-
-  return gps;
+  if(!XLALGPSSetREAL8(&workspace, addendhi[0] + addendhi[1] + addendhi[2] + addendhi[3]))
+    XLAL_ERROR_NULL(XLAL_EFUNC);
+  return XLALGPSAddGPS(gps, &workspace);
 }
 
 
