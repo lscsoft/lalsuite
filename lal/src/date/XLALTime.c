@@ -140,12 +140,14 @@ LIGOTimeGPS * XLALGPSSubGPS( LIGOTimeGPS *t1, const LIGOTimeGPS *t0 )
 }
 
 
-/** Difference between two GPS times as double.  Computes t1 - t0. */
+/**
+ * Difference between two GPS times as double.  Returns t1 - t0.
+ */
 REAL8 XLALGPSDiff( const LIGOTimeGPS *t1, const LIGOTimeGPS *t0 )
 {
-  LIGOTimeGPS diff = *t1;
-
-  return XLALGPSGetREAL8(XLALGPSSubGPS(&diff, t0));
+  double hi = t1->gpsSeconds - t0->gpsSeconds;
+  double lo = t1->gpsNanoSeconds - t0->gpsNanoSeconds;
+  return hi + lo / XLAL_BILLION_REAL8;
 }
 
 
