@@ -274,11 +274,17 @@ def classifier_specific_config( config, classifier, flavor ):
         raise ValueError('classifier=%s section has no option=condor'%classifier)
     condor_section = config.get(classifier, 'condor')
     if not config.has_section(condor_section):
-        raise ValueError('config has not section=%s'%condor_section)
+        raise ValueError('config has no section=%s'%condor_section)
 
     cp.add_section('condor')
     for option, value in config.items(condor_section):
         cp.set('condor', option, value)
+
+    ### add accounting tags if present
+    if config.has_option('general', 'accounting_group'):
+        cp.set('condor', 'accounting_group', config.get('general', 'accounting_group') )
+    if config.has_option('general', 'accounting_group_user'):
+        cp.set('condor', 'accounting_group_user', config.get('general', 'accounting_group_user') )
 
     cp.add_section('idq_train')
     cp.set('idq_train', 'condorlogs', config.get('train', 'condorlogs'))
