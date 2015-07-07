@@ -158,7 +158,7 @@ def open_pipedown_database(database_filename,tmp_space):
     connection = sqlite3.connect(working_filename)
     if tmp_space:
 	dbtables.set_temp_store_directory(connection,tmp_space)
-    dbtables.DBTable_set_connection(connection)
+    #dbtables.DBTable_set_connection(connection)
     return (connection,working_filename)
 
 def get_zerolag_lloid(database_connection, dumpfile=None, gpsstart=None, gpsend=None, max_cfar=-1, min_cfar=-1):
