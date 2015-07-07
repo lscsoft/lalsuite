@@ -56,7 +56,10 @@ LIGOTimeGPS * XLALINT8NSToGPS( LIGOTimeGPS *epoch, INT8 ns )
 }
 
 
-/** Sets GPS time given GPS integer seconds and residual nanoseconds. */
+/**
+ * Sets GPS time given GPS integer seconds and residual nanoseconds.
+ * Returns epoch on success, or NULL on error.
+ */
 LIGOTimeGPS * XLALGPSSet( LIGOTimeGPS *epoch, INT4 gpssec, INT8 gpsnan )
 {
   return XLALINT8NSToGPS( epoch, XLAL_BILLION_INT8 * gpssec + gpsnan );
@@ -107,7 +110,10 @@ REAL8 XLALGPSModf( REAL8 *iptr, const LIGOTimeGPS *epoch )
 }
 
 
-/** Adds two GPS times. */
+/**
+ * Adds two GPS times.  Computes epoch + dt and places the result in epoch.
+ * Returns epoch on success, NULL on error.
+ */
 LIGOTimeGPS * XLALGPSAddGPS( LIGOTimeGPS *epoch, const LIGOTimeGPS *dt )
 {
   /* when GPS times are converted to 8-byte counts of nanoseconds their sum
@@ -118,7 +124,10 @@ LIGOTimeGPS * XLALGPSAddGPS( LIGOTimeGPS *epoch, const LIGOTimeGPS *dt )
 }
 
 
-/** Adds a double to a GPS time. */
+/**
+ * Adds a double to a GPS time.  Computes epoch + dt and places the result
+ * in epoch.  Returns epoch on success, NULL on error.
+ */
 LIGOTimeGPS * XLALGPSAdd( LIGOTimeGPS *epoch, REAL8 dt )
 {
   LIGOTimeGPS dt_gps;
@@ -128,7 +137,10 @@ LIGOTimeGPS * XLALGPSAdd( LIGOTimeGPS *epoch, REAL8 dt )
 }
 
 
-/** Difference between two GPS times.  Computes t1 - t0. */
+/**
+ * Difference between two GPS times.  Computes t1 - t0 and places the
+ * result in t1.  Returns t1 on success, NULL on error.
+ */
 LIGOTimeGPS * XLALGPSSubGPS( LIGOTimeGPS *t1, const LIGOTimeGPS *t0 )
 {
   /* when GPS times are converted to 8-byte counts of nanoseconds their
@@ -271,7 +283,10 @@ LIGOTimeGPS *XLALGPSMultiply( LIGOTimeGPS *gps, REAL8 x )
 }
 
 
-/** Divide a GPS time by a number. */
+/**
+ * Divide a GPS time by a number.  Computes gps / x and places the result
+ * in gps.  Returns gps on success, NULL on failure.
+ */
 LIGOTimeGPS *XLALGPSDivide( LIGOTimeGPS *gps, REAL8 x )
 {
   LIGOTimeGPS quotient;
