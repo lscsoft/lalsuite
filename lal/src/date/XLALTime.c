@@ -63,7 +63,10 @@ LIGOTimeGPS * XLALGPSSet( LIGOTimeGPS *epoch, INT4 gpssec, INT8 gpsnan )
 }
 
 
-/** Sets GPS time given GPS seconds as a REAL8. */
+/**
+ * Sets GPS time given GPS seconds as a REAL8.  Returns epoch on success,
+ * NULL on error.
+ */
 LIGOTimeGPS * XLALGPSSetREAL8( LIGOTimeGPS *epoch, REAL8 t )
 {
   INT4 gpssec = floor(t);
@@ -73,8 +76,8 @@ LIGOTimeGPS * XLALGPSSetREAL8( LIGOTimeGPS *epoch, REAL8 t )
     XLAL_ERROR_NULL(XLAL_EFPINVAL);
   }
   if(fabs(t) > 0x7fffffff) {
-    XLALPrintError("%s(): overflow %g", __func__, t);
-    XLAL_ERROR_NULL(XLAL_EFPINVAL);
+    XLALPrintError("%s(): overflow %.17g", __func__, t);
+    XLAL_ERROR_NULL(XLAL_EDOM);
   }
   /* use XLALGPSSet() to normalize the nanoseconds */
   return XLALGPSSet(epoch, gpssec, gpsnan);
