@@ -115,9 +115,9 @@ REAL8 XLALMeasureHPeak(const REAL8TimeSeries *series)
 
 
 /**
- * From two time series, s1 and s2, computes and returns
+ * From two time series, \f$s_{1}\f$ and \f$s_{2}\f$, computes and returns
  *
- * \f$\int s1(t) s2(t) d t\f$
+ * \f$\int s_{1}(t) s_{2}(t) \, \mathrm{d} t\f$
  */
 
 
@@ -155,9 +155,9 @@ REAL8 XLALMeasureIntS1S2DT(const REAL8TimeSeries *s1, const REAL8TimeSeries *s2)
  *
  * \f$\sqrt{\sum (h_{+}^{2} + h_{x}^{2}) \Delta t},\f$
  *
- * which is an approximation of
+ * which is an approximation of the square root of the square integral,
  *
- * \f$\sqrt{\int (h_{+}^{2} + h_{x}^{2}) d t}.\f$
+ * \f$\sqrt{\int (h_{+}^{2} + h_{x}^{2}) \, \mathrm{d} t}.\f$
  */
 
 
@@ -171,10 +171,10 @@ REAL8 XLALMeasureHrss(
 
 
 /**
- * Given the Fourier transform of a real-valued function h(t), compute and
- * return the integral of the square of its derivative:
+ * Given the Fourier transform of a real-valued function \f$h(t)\f$,
+ * compute and return the integral of the square of its derivative:
  *
- * \f$\int \stackrel{.}{h}^{2} d t\f$.
+ * \f$\int \stackrel{.}{h}^{2} \, \mathrm{d} t\f$.
  *
  * The normalization factors in this function assume that
  * XLALREAL8FreqTimeFFT() will be used to convert the frequency series to
@@ -223,12 +223,15 @@ REAL8 XLALMeasureIntHDotSquaredDT(const COMPLEX16FrequencySeries *fseries)
 
 
 /**
- * Given h+ and hx in the waveframe, compute and return E/r^2.  The return
- * value is in LAL's native units, computed by evaluating
+ * Given \f$h_{+}\f$ and \f$h_{\times}\f$ in the waveframe, compute and
+ * return \f$E/r^{2}\f$.  The return value is in LAL's native units,
+ * computed by evaluating
  *
- * \f$\int [ \stackrel{.}{h}_{+}^{2} + \stackrel{.}{h}_{\times}^{2} ] d t\f$
+ * \f$\int ( \stackrel{.}{h}_{+}^{2} + \stackrel{.}{h}_{\times}^{2} ) \,
+ * \mathrm{d} t\f$
  *
- * and multiplying by LAL_C_SI\f$^{3}\f$ / (4 LAL_G_SI).
+ * and multiplying by \f$\mathrm{LAL\_C\_SI}^{3} / (4
+ * \mathrm{LAL\_G\_SI})\f$.
  */
 
 
@@ -286,17 +289,28 @@ REAL8 XLALMeasureEoverRsquared(REAL8TimeSeries *hplus, REAL8TimeSeries *hcross)
 
 
 /**
- * Places a single non-zero sample into the middle of the time series.
+ * @brief Genereates a single-sample impulse waveform
  *
- * Parameters:
+ * @details
+ * Places a single non-zero sample into the middle of the time series.  The
+ * \f$h_{+}\f$ and \f$h_{\times}\f$ time series both have an odd number of
+ * samples all set to 0 except for a single sample with amplitude hpeak in
+ * the middle of the \f$h_{+}\f$ time series.
  *
- * hpeak:  amplitude of the impulse.
+ * @param[out] hplus Address of a REAL8TimeSeries pointer to be set to the
+ * address of the newly allocated \f$h_{+}\f$ time series.  Set to NULL on
+ * failure.
  *
- * Output:
+ * @param[out] hcross Address of a REAL8TimeSeries pointer to be set to the
+ * address of the newly allocated \f$h_{\times}\f$ time series.  Set to NULL
+ * on failure.
  *
- * The h+ and hx time series both have an odd number of samples all set to
- * 0 except for a single sample with amplitude hpeak in the middle of the
- * h+ time series.
+ * @param[in] hpeak Strain amplitude of the impulse.
+ *
+ * @param[in] delta_t Sample period of output time series.
+ *
+ * @retval 0 Success
+ * @retval <0 Failure
  */
 
 
@@ -356,42 +370,63 @@ int XLALGenerateImpulseBurst(
 
 
 /**
- * Parameters:
+ * @brief Generate a band- and time-limited white-noise burst waveform
+ * with Gaussian envelopes in the time and frequency domains.
  *
- * duration
- * time domain Gaussian envelope is \f$\propto \exp ( -\frac{1}{2} t^{2} / duration^{2} )\f$
- * where t and duration are in seconds.
- * frequency
- * bandwidth
- * frequency domain Gaussian envelope is \f$\propto \exp ( -\frac{1}{2} (f - f_{0})^{2} / bandwidth^{2} )\f$
- * where f and bandwidth are in Hertz.
- * eccentricity
- * controls the relative amplitudes of the \f$h_{+}\f$ and \f$h_{\times}\f$
- * components.  eccentricity=0 --> equal amplitudes, eccentricity=1 -->
- * \f$h_{\times}=0\f$ (linearly polarized \f$h_{+}\f$).
- * int_hdot_squared
- * waveform is normalized so that \f$\int (\stackrel{.}{h}_{+}^{2} + \stackrel{.}{h}_{\times}^{2}) d t\f$
- * equals this
- * delta_t
- * the sample rate of the time series to construct
- * rng
- * a GSL random number generator to be used to produce Gaussian random
- * variables
+ * @details
+ * Generates two time series containing \f$h_{+}(t)\f$ and \f$h_{x}(t)\f$,
+ * with the time-domain Gaussian envelope's peak located at \f$t = 0\f$ (as
+ * defined by the epoch and deltaT).  The \f$+\f$ and \f$\times\f$ time
+ * series are statistically independent.
  *
- * Output:
+ * @param[out] hplus Address of a REAL8TimeSeries pointer to be set to the
+ * address of the newly allocated \f$h_{+}\f$ time series.  Set to NULL on
+ * failure.
  *
- * Two time series containing h+(t) and hx(t), with the time-domain
- * Gaussian envelope's peak located at t = 0 (as defined by the epoch and
- * deltaT).  The + and x time series are two independent injections.
+ * @param[out] hcross Address of a REAL8TimeSeries pointer to be set to the
+ * address of the newly allocated \f$h_{\times}\f$ time series.  Set to NULL
+ * on failure.
  *
- * Note:  because the injection is constructed with a random number
- * generator, any changes to this function that change how random numbers
- * are chosen will indirectly have the effect of altering the relationship
- * between injection waveform and random number seed.  For example,
- * increasing the length of the time series will change the injection
- * waveforms.  There's nothing wrong with this, the waveforms are still
- * correct, but if there is a need to reproduce a waveform exactly then it
- * will be necessary to tag the code before making such changes.
+ * @param[in] duration Width of the Gaussian envelope in the time domain in
+ * seconds.  The time domain envelope is \f$\propto \exp ( -\frac{1}{2}
+ * t^{2} / \mathrm{duration}^{2} )\f$
+ *
+ * @param[in] frequency Centre frequency, \f$f_{0}\f$, of the Gaussian
+ * envelope in the frequency domain in Hertz.
+ *
+ * @param[in] bandwidth Width of the Gaussian envelope in the frequency
+ * domain in Hertz.  The frequency domain envelope is \f$\propto \exp (
+ * -\frac{1}{2} (f - f_{0})^{2} / \mathrm{bandwidth}^{2} )\f$
+ *
+ * @param[in] eccentricity controls the relative amplitudes of the
+ * \f$h_{+}\f$ and \f$h_{\times}\f$ components.  With eccentricity = 0 the
+ * two components have equal expected amplitudes ("circularly" polarized);
+ * with eccentricity = 1 the amplitude of the \f$h_{\times}\f$ component is
+ * 0 (linearly polarized).
+ *
+ * @param[in] int_hdot_squared The output is normalized so that \f$\int
+ * (\stackrel{.}{h}_{+}^{2} + \stackrel{.}{h}_{\times}^{2}) \, \mathrm{d}
+ * t\f$ equals this.  Note that the normalization is not on the expected
+ * amplitude of the waveform but on the realized amplitude of the waveform.
+ *
+ * @param[in] delta_t Sample period of output time series.
+ *
+ * @param[in] rng GSL random number generator instance.  Will be used to
+ * generate normally distributed random variables to seed the
+ * \f$h_{+}(t)\f$ and \f$h_{x}(t)\f$ components.
+ *
+ * @retval 0 Success
+ * @retval <0 Failure
+ *
+ * @note
+ * Because the injection is constructed with a random number generator, any
+ * changes to this function that change how random numbers are chosen will
+ * indirectly have the effect of altering the relationship between
+ * injection waveform and random number seed.  For example, increasing the
+ * length of the time series will change the injection waveforms.  There's
+ * nothing wrong with this, the waveforms are still correct, but if there
+ * is a need to reproduce a waveform exactly then it will be necessary to
+ * tag the code before making such changes.
  */
 
 
@@ -648,34 +683,57 @@ double XLALSimBurstSineGaussianDuration(
 
 
 /**
- * Input:
+ * @brief Generate sine- and cosine-Gaussian waveforms with various
+ * polarizations and phases.
  *
- * Q:  the "Q" of the waveform.  The Gaussian envelope is \f$exp(-1/2 t^{2} /
- * \sigma_{t}^{2})\f$ where \f$\sigma_{t} = Q / (2 \pi f)\f$.  High Q --> long
- * duration.
+ * @details
+ * Generates two time series, \f$h_{+}\f$ and \f$h_{\times}\f$, containing
+ * add-mixtures of cosine-Gaussian and sine-Gaussian waveforms.  The
+ * Gaussian envelope peaks in both at t = 0 as defined by epoch and deltaT.
+ * By setting the eccentricity and phase to appropriate values any
+ * linearly, elliptically, or cicularly polarized sine- or cosine-Gaussian
+ * waveform can be generated.  The dominant polarization is placed in the
+ * \f$h_{+}\f$ component.
  *
- * centre_frequency:   the frequency of the sinusoidal oscillations that
- * get multiplied by the Gaussian envelope.
+ * A Tukey window is applied to make the waveform go to 0 smoothly at the
+ * start and end.
  *
- * hrss:  the root-sum-squares strain of the waveform (summed over both
- * polarizations).  See K. Riles, LIGO-T040055-00.pdf.
+ * @param[out] hplus Address of a REAL8TimeSeries pointer to be set to the
+ * address of the newly allocated \f$h_{+}\f$ time series.  Set to NULL on
+ * failure.
  *
- * eccentricity:  0 --> circularly polarized, 1 --> linearly polarized
- * (\f$h_{\times} = 0\f$).
+ * @param[out] hcross Address of a REAL8TimeSeries pointer to be set to the
+ * address of the newly allocated \f$h_{\times}\f$ time series.  Set to NULL
+ * on failure.
  *
- * phase:  0 --> \f$h_{+}\f$ contains cosine-Gaussian and \f$h_{\times}\f$
- * contains sine-Gaussian;  \f$\pi/2\f$ --> \f$h_{+}\f$ contains
- * sine-Gaussian and \f$h_{\times}\f$ contains cosine-Gaussian.
+ * @param[in] Q The "Q" of the waveform.  The Gaussian envelope is
+ * \f$exp(-1/2 t^{2} / \sigma_{t}^{2})\f$ where \f$\sigma_{t} = Q / (2 \pi
+ * f)\f$.  See also XLALSimBurstSineGaussianQ() and
+ * XLALSimBurstSineGaussianDuration().
  *
- * Output:
+ * @param[in] centre_frequency The frequency of the sinusoidal oscillations
+ * that get multiplied by the Gaussian envelope.
  *
- * h+ and hx time series containing add-mixtures of cosine-Gaussian and
- * sine-Gaussian waveforms.  The Gaussian envelope peaks in both at t = 0
- * as defined by epoch and deltaT.  Note that a Tukey window with tapers
- * covering 50% of the time series is applied to make the waveform go to
- * exactly 0 smoothly at the start and end.
+ * @param[in] hrss the root-sum-squares strain of the waveform (summed over
+ * both polarizations).  See K. Riles, LIGO-T040055-00.pdf.  See also
+ * XLALMeasureHrss().
  *
- * Linearly polarized waveforms are always in the \f$h_{+}\f$ component.
+ * @param[in] eccentricity controls the relative amplitudes of the
+ * \f$h_{+}\f$ and \f$h_{\times}\f$ components.  With eccentricity = 0 the
+ * two components have equal amplitudes (circularly polarized); with
+ * eccentricity = 1 the amplitude of the \f$h_{\times}\f$ component is 0
+ * (linearly polarized).
+ *
+ * @param[in] phase The phase of the sinusoidal oscillations that get
+ * multiplied by the Gaussian envelope.  With phase = 0 \f$h_{+}\f$ is
+ * cosine-like and \f$h_{\times}\f$ is sine-like.  With phase =
+ * \f$\pi/2\f$, \f$h_{+}\f$ is sine-like and \f$h_{\times}\f$ is
+ * cosine-like.
+ *
+ * @param[in] delta_t Sample period of output time series.
+ *
+ * @retval 0 Success
+ * @retval <0 Failure
  */
 
 
@@ -779,19 +837,33 @@ int XLALSimBurstSineGaussian(
 
 
 /**
- * Input:
- * amplitude = waveform's amplitude parameter
- * f_high = high frequency cutoff
- * delta_t = sample period of output time series
+ * @brief Generates cosmic string cusp waveforms.
  *
- * Output:
- * h+(t) and hx(t), where the cusp waveform has been placed entirely
- * in the + polarization (the x polarization is zeroed), and the
- * waveform peaks at t = 0 (as defined by the epoch and deltaT).
+ * @details
+ * Generates the \f$h_{+}\f$ and \f$h_{\times}\f$ components of a cosmic
+ * string cusp waveform.  These waveforms are linearly polarized and placed
+ * in the \f$h_{+}\f$ compnent.  The \f$h_{\times}\f$ component is set to
+ * 0.  The waveform peaks at t = 0 (as defined by the epoch and deltaT).
  *
- * The low frequency cut-off is fixed at 1 Hz;  there's nothing special
- * about 1 Hz except that it is low compared to the frequency at which we
- * should be high-passing the data
+ * The low frequnecy cut-off is fixed at 1 Hz, and the output has a Tukey
+ * window applied to force it to go to 0 smoothly at the start and end.
+ *
+ * @param[out] hplus Address of a REAL8TimeSeries pointer to be set to the
+ * address of the newly allocated \f$h_{+}\f$ time series.  Set to NULL on
+ * failure.
+ *
+ * @param[out] hcross Address of a REAL8TimeSeries pointer to be set to the
+ * address of the newly allocated \f$h_{\times}\f$ time series.  Set to NULL
+ * on failure.
+ *
+ * @param[in] amplitude Waveform's amplitude parameter.
+ *
+ * @param[in] f_high High frequency cut-off.
+ *
+ * @param[in] delta_t Sample period of output time series.
+ *
+ * @retval 0 Success
+ * @retval <0 Failure
  */
 
 

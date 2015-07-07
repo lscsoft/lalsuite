@@ -1,5 +1,6 @@
 /*
- * Copyright (C) 2008 J. Creighton, K. Cannon
+ * Copyright (C) 2008 J. Creighton
+ * Copyright (C) 2008,2015 K. Cannon
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -15,6 +16,22 @@
  * with with program; see the file COPYING. If not, write to the Free
  * Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307  USA
+ */
+
+
+/**
+ * @author Kipp Cannon, Jolien Creighton
+ * @addtogroup LALSimBurst_h Header LALSimBurst.h
+ * @ingroup lalsimulation_general
+ * @brief Routines to generate burst waveforms.
+ * @details
+ * These routines generate several burst waveforms used in searches for
+ * gravitational waves, including sine-Gaussian waveforms, cosmic string
+ * cusp waveforms, and band- and time-limited white-noise burst waveforms.
+ * Also included are several general-purpose routines to measure the
+ * properties of gravitational wave waveforms like the "hrss" and peak
+ * strain.  These are useful for imposing normalizations and other
+ * diagnostic activities.
  */
 
 
@@ -43,6 +60,9 @@ extern "C" {
  *
  * ============================================================================
  */
+
+
+/** @{ */
 
 
 int XLALGenerateImpulseBurst(
@@ -124,12 +144,15 @@ int XLALSimUnicorn(
 );
 
 
-
 REAL8 XLALMeasureHPeak(const REAL8TimeSeries *);
 REAL8 XLALMeasureIntS1S2DT(const REAL8TimeSeries *, const REAL8TimeSeries *);
 REAL8 XLALMeasureHrss(const REAL8TimeSeries *, const REAL8TimeSeries *);
 REAL8 XLALMeasureIntHDotSquaredDT(const COMPLEX16FrequencySeries *);
 REAL8 XLALMeasureEoverRsquared(REAL8TimeSeries *, REAL8TimeSeries *);
+
+
+/** @} */
+
 
 #if 0
 { /* so that editors will match succeeding brace */
