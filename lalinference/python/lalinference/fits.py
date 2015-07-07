@@ -67,6 +67,7 @@ import tempfile
 import healpy as hp
 from glue.ligolw import lsctables
 from healpy.fitsfunc import getformat, pixelfunc, standard_column_names, pf, np
+import time
 import lal
 
 
@@ -197,16 +198,9 @@ def gps_to_iso8601(gps_time):
 
 def iso8601_to_gps(iso8601):
     """Convert an ISO 8601 date string to a floating-point GPS time in seconds."""
-    date, time = iso8601.split('T')
-    year, month, day = (int(datepart) for datepart in date.split('-'))
-    hour, minute, second = time.split(':')
-    hour = int(hour)
-    minute = int(minute)
-    second = float(second)
-    second_fraction, second = math.modf(second)
-    second = int(second)
-
-    tm = [year, month, day, hour, minute, second, -1, -1, -1]
+    iso8601, _, second_fraction = iso8601.partition('.')
+    second_fraction = float('0.' + second_fraction)
+    tm = time.strptime(iso8601, "%Y-%m-%dT%H:%M:%S")
     gps_seconds = lal.UTCToGPS(tm)
     return gps_seconds + second_fraction
 
