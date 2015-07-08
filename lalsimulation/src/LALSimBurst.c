@@ -91,7 +91,16 @@ static void semi_major_minor_from_e(double e, double *a, double *b)
 
 
 /**
- * Returns the strain of the sample with the largest magnitude.
+ * @brief Return the strain of the sample with the largest magnitude.
+ *
+ * @details
+ * The input must have non-zero length.
+ *
+ * @param[in] series A time series.
+ *
+ * @returns The strain of the sample with the largest magnitude.
+ *
+ * @retval XLAL_REAL8_FAIL_NAN Falure.
  */
 
 
@@ -115,9 +124,20 @@ REAL8 XLALMeasureHPeak(const REAL8TimeSeries *series)
 
 
 /**
+ * @brief Computes the integral of the product of two time series.
+ *
+ * @details
  * From two time series, \f$s_{1}\f$ and \f$s_{2}\f$, computes and returns
  *
- * \f$\int s_{1}(t) s_{2}(t) \, \mathrm{d} t\f$
+ * \f$\int s_{1}(t) s_{2}(t) \, \mathrm{d} t\f$.
+ *
+ * @param[in] s1 A time series.
+ *
+ * @param[in] s2 A time series.
+ *
+ * @returns The integral of the product.
+ *
+ * @retval XLAL_REAL8_FAIL_NAN Failure
  */
 
 
@@ -151,13 +171,26 @@ REAL8 XLALMeasureIntS1S2DT(const REAL8TimeSeries *s1, const REAL8TimeSeries *s2)
 
 
 /**
- * Returns what people call the "root-sum-square strain".  Infact, this is
+ * @brief Computes "root-sum-square strain", or \f$h_{\mathrm{rss}}\f$.
  *
- * \f$\sqrt{\sum (h_{+}^{2} + h_{x}^{2}) \Delta t},\f$
+ * @details In fact, this is
  *
- * which is an approximation of the square root of the square integral,
+ * \f$h_{\mathrm{rss}} = \sqrt{\sum (h_{+}^{2} + h_{x}^{2}) \Delta t},\f$
  *
- * \f$\sqrt{\int (h_{+}^{2} + h_{x}^{2}) \, \mathrm{d} t}.\f$
+ * (includes a factor of \f$\Delta t\f$), which is an approximation of the
+ * square root of the square integral,  \f$\sqrt{\int (h_{+}^{2} +
+ * h_{x}^{2}) \, \mathrm{d} t}\f$.
+ *
+ * The input time series must start and end at the same times and have the
+ * same sample rates.
+ *
+ * @param[in] hplus \f$h_{+}\f$ time series.
+ *
+ * @param[in] hcross \f$h_{\times}\f$ time series.
+ *
+ * @returns The \f$h_{\mathrm{rss}}\f$
+ *
+ * @retval XLAL_REAL8_FAIL_NAN Failure.
  */
 
 
@@ -171,14 +204,22 @@ REAL8 XLALMeasureHrss(
 
 
 /**
+ * @brief Computes the integral of the square of a real-valued time series'
+ * first derivative from its Fourier transform.
+ *
+ * @details
  * Given the Fourier transform of a real-valued function \f$h(t)\f$,
- * compute and return the integral of the square of its derivative:
+ * compute and return the integral of the square of its derivative, \f$\int
+ * \stackrel{.}{h}^{2} \, \mathrm{d} t\f$.  The normalization factors in
+ * this function assume that XLALREAL8FreqTimeFFT() will be used to convert
+ * the frequency series to the time domain.
  *
- * \f$\int \stackrel{.}{h}^{2} \, \mathrm{d} t\f$.
+ * @param[in] fseries The Fourier transform of a real-valued function of
+ * time.  See also XLALREAL8TimeFreqFFT().
  *
- * The normalization factors in this function assume that
- * XLALREAL8FreqTimeFFT() will be used to convert the frequency series to
- * the time domain.
+ * @returns \f$\int \stackrel{.}{h}^{2} \, \mathrm{d} t\f$
+ *
+ * @retval XLAL_REAL8_FAIL_NAN Failure.
  */
 
 
@@ -223,15 +264,33 @@ REAL8 XLALMeasureIntHDotSquaredDT(const COMPLEX16FrequencySeries *fseries)
 
 
 /**
+ * @brief Computes the areal energy density contained in a gravitational
+ * wave.
+ *
+ * @details
  * Given \f$h_{+}\f$ and \f$h_{\times}\f$ in the waveframe, compute and
- * return \f$E/r^{2}\f$.  The return value is in LAL's native units,
- * computed by evaluating
+ * return
  *
- * \f$\int ( \stackrel{.}{h}_{+}^{2} + \stackrel{.}{h}_{\times}^{2} ) \,
- * \mathrm{d} t\f$
+ * \f$\frac{E}{r^{2}} = \frac{c^{3}}{4 G} \int ( \stackrel{.}{h}_{+}^{2} +
+ * \stackrel{.}{h}_{\times}^{2} ) \, \mathrm{d} t.\f$
  *
- * and multiplying by \f$\mathrm{LAL\_C\_SI}^{3} / (4
- * \mathrm{LAL\_G\_SI})\f$.
+ * The input time series must start and end at the same times and have the
+ * same sample rates.  The square integrals of the derivatives are
+ * evaluated in the frequency domain so this function implicitly assumes
+ * the input time series are periodic on their intervals.  The calling code
+ * must ensure appropriate conditioning (e.g., tapering and padding) has
+ * been applied to the time series for this to be a good approximation.
+ * Waveforms that have been conditioned for use as software injections are
+ * almost certainly suitably conditioned for this function.
+ *
+ * @param[in] hplus The \f$h_{+}\f$ time series.
+ *
+ * @param[in] hcross The \f$h_{\times}\f$ time series.
+ *
+ * @returns
+ * Energy per unit area in Joules per square metre.
+ *
+ * @retval XLAL_REAL8_FAIL_NAN Falure.
  */
 
 
@@ -307,7 +366,7 @@ REAL8 XLALMeasureEoverRsquared(REAL8TimeSeries *hplus, REAL8TimeSeries *hcross)
  *
  * @param[in] hpeak Strain amplitude of the impulse.
  *
- * @param[in] delta_t Sample period of output time series.
+ * @param[in] delta_t Sample period of output time series in seconds.
  *
  * @retval 0 Success
  * @retval <0 Failure
@@ -379,6 +438,9 @@ int XLALGenerateImpulseBurst(
  * defined by the epoch and deltaT).  The \f$+\f$ and \f$\times\f$ time
  * series are statistically independent.
  *
+ * The product of the requested duration and bandwidth must be \f$ \Delta t
+ * \Delta f \geq 2\pi\f$.
+ *
  * @param[out] hplus Address of a REAL8TimeSeries pointer to be set to the
  * address of the newly allocated \f$h_{+}\f$ time series.  Set to NULL on
  * failure.
@@ -398,18 +460,21 @@ int XLALGenerateImpulseBurst(
  * domain in Hertz.  The frequency domain envelope is \f$\propto \exp (
  * -\frac{1}{2} (f - f_{0})^{2} / \mathrm{bandwidth}^{2} )\f$
  *
- * @param[in] eccentricity controls the relative amplitudes of the
- * \f$h_{+}\f$ and \f$h_{\times}\f$ components.  With eccentricity = 0 the
- * two components have equal expected amplitudes ("circularly" polarized);
- * with eccentricity = 1 the amplitude of the \f$h_{\times}\f$ component is
- * 0 (linearly polarized).
+ * @param[in] eccentricity The eccentricity, \f$\epsilon = \sqrt{1 -
+ * ({h_{0}}_{\times} / {h_{0}}_{+})^{2}}\f$, of the polarization ellipse
+ * setting the relative amplitudes of the \f$h_{+}\f$ and \f$h_{\times}\f$
+ * components' Gaussian envelopes.  With eccentricity = 0 the two
+ * components have equal amplitudes (circularly polarized); with
+ * eccentricity = 1 the amplitude of the \f$h_{\times}\f$ component is 0
+ * (linearly polarized).  Note that this controls the relationship between
+ * the expected amplitudes, not the realized amplitudes.
  *
  * @param[in] int_hdot_squared The output is normalized so that \f$\int
  * (\stackrel{.}{h}_{+}^{2} + \stackrel{.}{h}_{\times}^{2}) \, \mathrm{d}
  * t\f$ equals this.  Note that the normalization is not on the expected
  * amplitude of the waveform but on the realized amplitude of the waveform.
  *
- * @param[in] delta_t Sample period of output time series.
+ * @param[in] delta_t Sample period of output time series in seconds.
  *
  * @param[in] rng GSL random number generator instance.  Will be used to
  * generate normally distributed random variables to seed the
@@ -638,12 +703,22 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 
 
 /**
- * The Q of a sine-Gaussian waveform from the duration and centre
- * frequency.  The relationship is
+ * @brief Compute the Q of a sine-Gaussian waveform from the duration and
+ * centre frequency.
+ *
+ * @details The relationship is
  *
  * \f$Q = 2 \pi f_{0} \Delta t\f$
  *
  * The result becomes independent of duration at 0 Hz.
+ *
+ * @param[in] duration The duration, \f$\Delta t\f$, of the sine-Gaussian in
+ * seconds.
+ *
+ * @param[in] centre_frequency The centre frequency, \f$f_{0}\f$, of the
+ * sine-Gaussian in Hertz.
+ *
+ * @retval Q The \f$Q\f$ of the sine-Gaussian.
  *
  * See also:  XLALSimBurstSineGaussianDuration()
  */
@@ -659,12 +734,22 @@ double XLALSimBurstSineGaussianQ(
 
 
 /**
- * The duration of a sine-Gaussian waveform from the Q and centre
- * frequency.  The relationship is
+ * @brief Compute the duration of a sine-Gaussian waveform from the Q and centre
+ * frequency.
+ *
+ * @details The relationship is
  *
  * \f$Q = 2 \pi f_{0} \Delta t\f$
  *
  * The relationship is undefined at 0 Hz.
+ *
+ * @param[in] Q The \f$Q\f$ of the sine-Gaussian.
+ *
+ * @param[in] centre_frequency The centre frequency, \f$f_{0}\f$, of the
+ * sine-Gaussian in Hertz.
+ *
+ * @retval duration The duration of the sine-Gaussian, \f$\Delta t\f$, in
+ * seconds.
  *
  * See also:  XLALSimBurstSineGaussianQ()
  */
@@ -698,6 +783,9 @@ double XLALSimBurstSineGaussianDuration(
  * A Tukey window is applied to make the waveform go to 0 smoothly at the
  * start and end.
  *
+ * \anchor xlalsimburstsinegaussian_examples
+ * \image html lalsimburst_sinegaussianexamples.svg "Sine-Gaussian examples."
+ *
  * @param[out] hplus Address of a REAL8TimeSeries pointer to be set to the
  * address of the newly allocated \f$h_{+}\f$ time series.  Set to NULL on
  * failure.
@@ -707,30 +795,35 @@ double XLALSimBurstSineGaussianDuration(
  * on failure.
  *
  * @param[in] Q The "Q" of the waveform.  The Gaussian envelope is
- * \f$exp(-1/2 t^{2} / \sigma_{t}^{2})\f$ where \f$\sigma_{t} = Q / (2 \pi
- * f)\f$.  See also XLALSimBurstSineGaussianQ() and
- * XLALSimBurstSineGaussianDuration().
+ * \f$\propto \exp(-\frac{1}{2} t^{2} / \sigma_{t}^{2})\f$ where
+ * \f$\sigma_{t} = Q / (2 \pi f)\f$.  See also XLALSimBurstSineGaussianQ()
+ * and XLALSimBurstSineGaussianDuration().
  *
  * @param[in] centre_frequency The frequency of the sinusoidal oscillations
  * that get multiplied by the Gaussian envelope.
  *
- * @param[in] hrss the root-sum-squares strain of the waveform (summed over
- * both polarizations).  See K. Riles, LIGO-T040055-00.pdf.  See also
- * XLALMeasureHrss().
+ * @param[in] hrss The \f$h_{\mathrm{rss}}\f$ of the waveform to be
+ * generated.  See K. Riles, LIGO-T040055-00.pdf.  This function normalizes
+ * the waveform algebraically assuming it to be an ideal sine-Gaussian
+ * (continuous in time, with no time boundaries and no tapering window), so
+ * the actual numerical normalization might be slightly different.  See
+ * also XLALMeasureHrss().
  *
- * @param[in] eccentricity controls the relative amplitudes of the
- * \f$h_{+}\f$ and \f$h_{\times}\f$ components.  With eccentricity = 0 the
- * two components have equal amplitudes (circularly polarized); with
+ * @param[in] eccentricity The eccentricity, \f$\epsilon = \sqrt{1 -
+ * ({h_{0}}_{\times} / {h_{0}}_{+})^{2}}\f$, of the polarization ellipse
+ * setting the relative amplitudes of the \f$h_{+}\f$ and \f$h_{\times}\f$
+ * components' Gaussian envelopes.  With eccentricity = 0 the two
+ * components have equal amplitudes (circularly polarized); with
  * eccentricity = 1 the amplitude of the \f$h_{\times}\f$ component is 0
  * (linearly polarized).
  *
- * @param[in] phase The phase of the sinusoidal oscillations that get
- * multiplied by the Gaussian envelope.  With phase = 0 \f$h_{+}\f$ is
- * cosine-like and \f$h_{\times}\f$ is sine-like.  With phase =
- * \f$\pi/2\f$, \f$h_{+}\f$ is sine-like and \f$h_{\times}\f$ is
+ * @param[in] phase The phase, \f$\phi\f$, of the sinusoidal oscillations
+ * that get multiplied by the Gaussian envelope.  With \f$\phi=0\f$,
+ * \f$h_{+}\f$ is cosine-like and \f$h_{\times}\f$ is sine-like.  With
+ * \f$\phi=\pi/2\f$, \f$h_{+}\f$ is sine-like and \f$h_{\times}\f$ is
  * cosine-like.
  *
- * @param[in] delta_t Sample period of output time series.
+ * @param[in] delta_t Sample period of output time series in seconds.
  *
  * @retval 0 Success
  * @retval <0 Failure
@@ -847,8 +940,19 @@ int XLALSimBurstSineGaussian(
  * in the \f$h_{+}\f$ compnent.  The \f$h_{\times}\f$ component is set to
  * 0.  The waveform peaks at t = 0 (as defined by the epoch and deltaT).
  *
- * The low frequnecy cut-off is fixed at 1 Hz, and the output has a Tukey
- * window applied to force it to go to 0 smoothly at the start and end.
+ * In the frequency domain, the waveform is \f$A f^{-\frac{4}{3}}\f$ with a
+ * (non-physical) low-frequency cut-off and a (physical) high-frequency
+ * cut-off.
+ *
+ * \f$\tilde{h}_{+}(f) = A f^{-\frac{4}{3}} \times \left(1 + \frac{f_{\mathrm{low}}^{2}}{f^{2}}\right)^{-4} \begin{cases} \exp(1 - f/f_{\mathrm{high}}) & f > f_{\mathrm{high}} \\ 1 & f \leq f_{\mathrm{high}} \end{cases}\f$
+ *
+ * The output has a Tukey window applied to force it to go to 0 smoothly at
+ * the start and end.  The low frequnecy cut-off is fixed at
+ * \f$f_{\mathrm{low}} = 1 \mathrm{Hz}\f$, so these waveforms should be
+ * high-pass filtered before being used as injections or search templates.
+ *
+ * \anchor xlalgeneratestringcusp_examples
+ * \image html lalsimburst_stringcuspexamples.svg "String cusp examples."
  *
  * @param[out] hplus Address of a REAL8TimeSeries pointer to be set to the
  * address of the newly allocated \f$h_{+}\f$ time series.  Set to NULL on
@@ -858,11 +962,13 @@ int XLALSimBurstSineGaussian(
  * address of the newly allocated \f$h_{\times}\f$ time series.  Set to NULL
  * on failure.
  *
- * @param[in] amplitude Waveform's amplitude parameter.
+ * @param[in] amplitude Waveform's amplitude parameter, \f$A\f$, in units
+ * of \f$\mathrm{strain}\,\mathrm{s}^{-\frac{1}{3}}\f$.
  *
- * @param[in] f_high High frequency cut-off.
+ * @param[in] f_high High frequency cut-off, \f$f_{\mathrm{high}}\f$, in
+ * Hertz.
  *
- * @param[in] delta_t Sample period of output time series.
+ * @param[in] delta_t Sample period of output time series in seconds.
  *
  * @retval 0 Success
  * @retval <0 Failure
