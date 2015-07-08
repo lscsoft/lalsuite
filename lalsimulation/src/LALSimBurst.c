@@ -128,8 +128,9 @@ REAL8 XLALMeasureHPeak(const REAL8TimeSeries *series)
  *
  * @details
  * From two time series, \f$s_{1}\f$ and \f$s_{2}\f$, computes and returns
- *
- * \f$\int s_{1}(t) s_{2}(t) \diff t\f$.
+ * \f{equation}{
+ *    \int s_{1}(t) s_{2}(t) \diff t.
+ * \f}
  *
  * @param[in] s1 A time series.
  *
@@ -174,9 +175,10 @@ REAL8 XLALMeasureIntS1S2DT(const REAL8TimeSeries *s1, const REAL8TimeSeries *s2)
  * @brief Computes "root-sum-square strain", or \f$h_{\mathrm{rss}}\f$.
  *
  * @details In fact, this is
- *
- * \f$h_{\mathrm{rss}} = \sqrt{\sum (h_{+}^{2} + h_{x}^{2}) \Delta t},\f$
- *
+ * \f{equation}{
+ * h_{\mathrm{rss}}
+ *    = \sqrt{\sum (h_{+}^{2} + h_{x}^{2}) \Delta t},
+ * \f}
  * (includes a factor of \f$\Delta t\f$), which is an approximation of the
  * square root of the square integral,  \f$\sqrt{\int (h_{+}^{2} +
  * h_{x}^{2}) \diff t}\f$.
@@ -209,10 +211,13 @@ REAL8 XLALMeasureHrss(
  *
  * @details
  * Given the Fourier transform of a real-valued function \f$h(t)\f$,
- * compute and return the integral of the square of its derivative, \f$\int
- * \stackrel{.}{h}^{2} \diff t\f$.  The normalization factors in this
- * function assume that XLALREAL8FreqTimeFFT() will be used to convert the
- * frequency series to the time domain.
+ * compute and return the integral of the square of its derivative,
+ * \f{equation}{
+ * \int \stackrel{.}{h}^{2} \diff t.
+ * \f}
+ * The normalization factors in this function assume that
+ * XLALREAL8FreqTimeFFT() will be used to convert the frequency series to
+ * the time domain.
  *
  * @param[in] fseries The Fourier transform of a real-valued function of
  * time.  See also XLALREAL8TimeFreqFFT().
@@ -457,10 +462,6 @@ int XLALGenerateImpulseBurst(
  * defined by the epoch and deltaT).  The \f$+\f$ and \f$\times\f$ time
  * series are statistically independent.
  *
- * The product of the requested duration and bandwidth must be \f$ \Delta t
- * \Delta f \geq 2\pi\f$.
- *
-
 The construction of a BTLWNB waveform with duration \f$\Delta t\f$ and
 bandwidth \f$\Delta f\f$ centred on \f$f_{0}\f$ begins by populating a time
 series with independent Gaussian random numbers.  The origin of the time
@@ -535,10 +536,10 @@ and time-limited white noise burst waveform.  The injection generator
 produces both \f$h_{+}\f$ and \f$h_{\times}\f$ waveforms.  These are
 independent waveforms constructed by simply applying the time series
 construction algorithm twice.  The injection code uses a time series whose
-length is \f$30 \Delta t\f$ rounded to the nearest odd integer,
+length is \f$21 \Delta t\f$ rounded to the nearest odd integer,
 \f{equation}{
 L
-   = 2 \left\lfloor \frac{1}{2} \frac{30 \Delta t}{\delta t} \right\rfloor
+   = 2 \left\lfloor \frac{1}{2} \frac{21 \Delta t}{\delta t} \right\rfloor
    + 1
 \f}
 where \f$\delta t\f$ is the sample period of the time series.  The middle
@@ -649,18 +650,15 @@ injection must be constructed at the same sample rate for both instruments
 and then up- or down-sampled as needed when injected into the instrument's
 time series.
 
-An example of the output of this algorithm is shown in \ref power_fig5 "this figure"
-
-\anchor power_fig5
+\anchor xlalsimburstbtlwnb_examples
 \image html lalsimburst_btlwnbexamples.svg
-<center>Example of the \f$+\f$ and \f$\times\f$ polarizations of a band-
-and time-limited white-noise burst injection waveform.  The horizontal axis
-is time in seconds, the vertical axis is strain, and the plots show the
-full extent of the time series produced by the injection generator.  The
-waveform's paraters were \f$\Delta t = 0.05\f$ ms, \f$\Delta f = 8
-\frac{2}{\pi} / \Delta t\f$ (16 degrees of freedom per polarization), and
-\f$f_{0} = 100\f$ Hz.  The amplitude was normalized so that \f$\int
-(\dot{h}_{+}^{2} + \dot{h}_{\times}^{2}) \diff t = 1\f$.</center>
+Example of the \f$+\f$ and \f$\times\f$ polarizations of a band- and
+time-limited white-noise burst injection waveform.  The horizontal axis is
+time in seconds, the vertical axis is strain.  The waveform's parameters
+were \f$\Delta t = 50\,\mathrm{ms}\f$, \f$\Delta f = 8 \frac{2}{\pi} /
+\Delta t\f$ (16 degrees of freedom per polarization), and \f$f_{0} =
+100\,\mathrm{Hz}\f$.  The amplitude was normalized so that \f$\int
+(\dot{h}_{+}^{2} + \dot{h}_{\times}^{2}) \diff t = 1\f$.
 
  *
  * @param[out] hplus Address of a REAL8TimeSeries pointer to be set to the
@@ -931,9 +929,10 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
  * centre frequency.
  *
  * @details The relationship is
- *
- * \f$Q = 2 \pi f_{0} \Delta t\f$
- *
+ * \f{equation}{
+ * Q
+ *    = 2 \pi f_{0} \Delta t.
+ * \f}
  * The result becomes independent of duration at 0 Hz.
  *
  * @param[in] duration The duration, \f$\Delta t\f$, of the sine-Gaussian in
@@ -962,9 +961,10 @@ double XLALSimBurstSineGaussianQ(
  * frequency.
  *
  * @details The relationship is
- *
- * \f$Q = 2 \pi f_{0} \Delta t\f$
- *
+ * \f{equation}{
+ * Q
+ *    = 2 \pi f_{0} \Delta t.
+ * \f}
  * The relationship is undefined at 0 Hz.
  *
  * @param[in] Q The \f$Q\f$ of the sine-Gaussian.
@@ -1167,8 +1167,13 @@ int XLALSimBurstSineGaussian(
  * In the frequency domain, the waveform is \f$A f^{-\frac{4}{3}}\f$ with a
  * (non-physical) low-frequency cut-off and a (physical) high-frequency
  * cut-off.
- *
- * \f$\tilde{h}_{+}(f) = A f^{-\frac{4}{3}} \times \left(1 + \frac{f_{\mathrm{low}}^{2}}{f^{2}}\right)^{-4} \begin{cases} \exp(1 - f/f_{\mathrm{high}}) & f > f_{\mathrm{high}} \\ 1 & f \leq f_{\mathrm{high}} \end{cases}\f$
+ * \f{equation}{
+ * \tilde{h}_{+}(f)
+ *    = A f^{-\frac{4}{3}} \left(1 +
+ *    \frac{f_{\mathrm{low}}^{2}}{f^{2}}\right)^{-4} \begin{cases} \exp(1 -
+ *    f/f_{\mathrm{high}}) & f > f_{\mathrm{high}} \\ 1 & f \leq
+ *    f_{\mathrm{high}} \end{cases}
+ * \f}
  *
  * The output has a Tukey window applied to force it to go to 0 smoothly at
  * the start and end.  The low frequnecy cut-off is fixed at
