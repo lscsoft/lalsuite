@@ -32,6 +32,18 @@
  * properties of gravitational wave waveforms like the "hrss" and peak
  * strain.  These are useful for imposing normalizations and other
  * diagnostic activities.
+ *
+ * \f[
+ * \DeclareMathOperator{\order}{O}
+ * \newcommand{\Msol}{{M_{\Sol}}}
+ * \newcommand{\Sol}{\odot}
+ * \newcommand{\aye}{\mathrm{i}}
+ * \newcommand{\conj}[1]{#1^{*}}
+ * \newcommand{\diff}{\,\mathrm{d}}
+ * \newcommand{\ee}{\mathrm{e}}
+ * \newcommand{\magnitude}[1]{\left|#1\right|}
+ * \newcommand{\mean}[1]{\left\langle#1\right\rangle}
+ * \f]
  */
 
 
