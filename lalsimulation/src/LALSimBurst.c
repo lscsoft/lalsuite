@@ -774,11 +774,13 @@ int XLALSimBurstSineGaussian(
 		XLAL_ERROR(XLAL_EINVAL);
 	}
 
-	/* length of the injection time series is 30 * the width of the
+	/* length of the injection time series is 21 * the width of the
 	 * Gaussian envelope (sigma_t in the comments above), rounded to
-	 * the nearest odd integer */
+	 * the nearest odd integer.  experiments suggest that that's the
+	 * minimum length without the hrss of the output deviating from the
+	 * requested hrss by more than numerical noise. */
 
-	length = (int) floor(30.0 * Q / (LAL_TWOPI * centre_frequency) / delta_t / 2.0);
+	length = (int) floor(21.0 * Q / centre_frequency / LAL_TWOPI / delta_t / 2.0);
 	length = 2 * length + 1;
 
 	/* the middle sample is t = 0 */
@@ -892,10 +894,12 @@ int XLALGenerateStringCusp(
 		XLAL_ERROR(XLAL_EINVAL);
 	}
 
-	/* length of the injection time series is 20 / f_low, rounded to
-	 * the nearest odd integer */
+	/* length of the injection time series is 9 / f_low, rounded to
+	 * the nearest odd integer.  at that length the waveform's
+	 * amplitude has decayed to the level of numerical noise in the FFT
+	 * so there's no advantage in making it longer. */
 
-	length = (int) (20.0 / f_low / delta_t / 2.0);
+	length = (int) (9.0 / f_low / delta_t / 2.0);
 	length = 2 * length + 1;
 
 	/* the middle sample is t = 0 */
