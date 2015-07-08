@@ -935,7 +935,7 @@ int XLALGenerateStringCusp(
 		 * h_high, and phase shift to put waveform's peak on the
 		 * middle sample of the time series */
 
-		double amp = amplitude * pow((sqrt(1 + f_low * f_low / (f * f))), -8) * pow(f, -4.0 / 3.0) * (f > f_high ? exp(1 - f / f_high) : 1);
+		double amp = amplitude * pow(1. + f_low * f_low / (f * f), -4.) * pow(f, -4. / 3.) * (f > f_high ? exp(1. - f / f_high) : 1.);
 
 		tilde_h->data->data[i] = amp * cexp(-I * LAL_PI * i * (length - 1) / length);
 	}
