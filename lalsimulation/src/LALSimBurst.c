@@ -529,10 +529,12 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 		XLAL_ERROR(XLAL_EINVAL);
 	}
 
-	/* length of the injection time series is 30 * duration, rounded to
-	 * the nearest odd integer */
+	/* length of the injection time series is 21 * duration, rounded to
+	 * the nearest odd integer.  this length is chosen because it works
+	 * well for sine-Gaussians, but I have no metric for testing the
+	 * quality of the result here. */
 
-	length = (int) floor(30.0 * duration / delta_t / 2.0);
+	length = (int) floor(21.0 * duration / delta_t / 2.0);
 	length = 2 * length + 1;
 
 	/* the middle sample is t = 0 */
