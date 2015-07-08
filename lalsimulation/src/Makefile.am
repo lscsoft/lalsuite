@@ -168,6 +168,9 @@ pkgdata_DATA = \
 EXTRA_DIST = \
 	config.h.in \
 	LALSimulationConfig.h.in \
+	lalsimburst_btlwnbexamples.svg \
+	lalsimburst_sinegaussianexamples.svg \
+	lalsimburst_stringcuspexamples.svg \
 	$(NOISEPSDFILES) \
 	$(EOSDATAFILES)
 
