@@ -105,6 +105,10 @@ int XLALGenerateSimBurst(
 		XLALPrintInfo("%s(): sine-Gaussian @ %9d.%09u s (GPS): f = %.16g Hz, Q = %.16g, hrss = %.16g\n", __func__, sim_burst->time_geocent_gps.gpsSeconds, sim_burst->time_geocent_gps.gpsNanoSeconds, sim_burst->frequency, sim_burst->q, sim_burst->hrss);
 		if(XLALSimBurstSineGaussian(hplus, hcross, sim_burst->q, sim_burst->frequency, sim_burst->hrss, sim_burst->pol_ellipse_e, sim_burst->pol_ellipse_angle, delta_t))
 			XLAL_ERROR(XLAL_EFUNC);
+	} else if(!strcmp(sim_burst->waveform, "Gaussian")) {
+		XLALPrintInfo("%s(): Gaussian @ %9d.%09u s (GPS): duration = %.16g, hrss = %.16g\n", __func__, sim_burst->time_geocent_gps.gpsSeconds, sim_burst->time_geocent_gps.gpsNanoSeconds, sim_burst->duration, sim_burst->hrss);
+		if(XLALSimBurstGaussian(hplus, hcross, sim_burst->duration, sim_burst->hrss, delta_t))
+			XLAL_ERROR(XLAL_EFUNC);
 	} else if(!strcmp(sim_burst->waveform, "Impulse")) {
 		XLALPrintInfo("%s(): impulse @ %9d.%09u s (GPS): hpeak = %.16g\n", __func__, sim_burst->time_geocent_gps.gpsSeconds, sim_burst->time_geocent_gps.gpsNanoSeconds, sim_burst->amplitude);
 		if(XLALGenerateImpulseBurst(hplus, hcross, sim_burst->amplitude, delta_t))
