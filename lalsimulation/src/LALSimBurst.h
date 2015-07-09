@@ -131,6 +131,15 @@ int XLALSimBurstSineGaussian(
 );
 
 
+int XLALSimBurstGaussian(
+	REAL8TimeSeries **hplus,
+	REAL8TimeSeries **hcross,
+	REAL8 duration,
+	REAL8 hrss,
+	REAL8 delta_t
+);
+
+
 int XLALSimBurstImg(
 	REAL8TimeSeries **hplus,
 	REAL8TimeSeries **hcross, 

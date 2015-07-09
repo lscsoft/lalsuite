@@ -1137,6 +1137,113 @@ int XLALSimBurstSineGaussian(
 }
 
 
+/**
+ * @brief Generate Gaussian waveforms.
+ *
+ * @details
+ * The burst working group has traditionally treated these as a distinct
+ * class of waveform rather than, say, the low-frequency limit of the
+ * sine-Gaussian class of waveform.  Therefore, for convenience, a separate
+ * interface is provided to generate these waveforms.
+ *
+ * Generates two time series, \f$h_{+}\f$ and \f$h_{\times}\f$, containing
+ * a Gaussian in \f$h_{+}\f$.  \f$h_{\times}\f$ is set to 0.  The Gaussian
+ * peaks at t = 0 as defined by epoch and deltaT.  The degrees of freedom
+ * are the duration and the \f$h_{\mathrm{rss}}\f$.  The function is
+ * \f{equation}{
+ * h_{+}(t)
+ *    = \frac{h_{\mathrm{rss}}}{\sqrt{\sqrt{\pi} \Delta t}} \exp -\frac{1}{2} \frac{t^{2}}{\Delta t^{2}}.
+ * \f}
+ *
+ * A Tukey window is applied to make the waveform go to 0 smoothly at the
+ * start and end.
+ *
+ * @param[out] hplus Address of a REAL8TimeSeries pointer to be set to the
+ * address of the newly allocated \f$h_{+}\f$ time series.  Set to NULL on
+ * failure.
+ *
+ * @param[out] hcross Address of a REAL8TimeSeries pointer to be set to the
+ * address of the newly allocated \f$h_{\times}\f$ time series.  Set to NULL
+ * on failure.
+ *
+ * @param[in] duration The width of the Gaussian, \f$\Delta t\f$.
+ *
+ * @param[in] hrss The \f$h_{\mathrm{rss}}\f$ of the waveform to be
+ * generated.  This function normalizes the waveform algebraically assuming
+ * it to be an ideal Gaussian (continuous in time, with no time boundaries
+ * and no tapering window), so the actual numerical normalization might be
+ * slightly different.  See also XLALMeasureHrss().
+ *
+ * @param[in] delta_t Sample period of output time series in seconds.
+ *
+ * @retval 0 Success
+ * @retval <0 Failure
+ */
+
+
+int XLALSimBurstGaussian(
+	REAL8TimeSeries **hplus,
+	REAL8TimeSeries **hcross,
+	REAL8 duration,
+	REAL8 hrss,
+	REAL8 delta_t
+)
+{
+	REAL8Window *window;
+	const double h0plus  = hrss / sqrt(sqrt(LAL_PI) * duration);
+	LIGOTimeGPS epoch;
+	int i, length;
+
+	/* check input. */
+
+	if(duration < 0 || hrss < 0 || !isfinite(h0plus) || delta_t <= 0) {
+		XLALPrintError("%s(): invalid input parameters\n", __func__);
+		*hplus = *hcross = NULL;
+		XLAL_ERROR(XLAL_EINVAL);
+	}
+
+	/* length of the injection time series is 21 * the width of the
+	 * Gaussian envelope, because that's what works well for
+	 * sine-Gaussians */
+
+	length = (int) floor(21.0 * duration / delta_t / 2.0);
+	length = 2 * length + 1;
+
+	/* the middle sample is t = 0 */
+
+	if(!XLALGPSSetREAL8(&epoch, -(length - 1) / 2 * delta_t))
+		XLAL_ERROR(XLAL_EFUNC);
+
+	/* allocate the time series */
+
+	*hplus = XLALCreateREAL8TimeSeries("Gaussian +", &epoch, 0.0, delta_t, &lalStrainUnit, length);
+	*hcross = XLALCreateREAL8TimeSeries("Gaussian x", &epoch, 0.0, delta_t, &lalStrainUnit, length);
+	window = XLALCreateTukeyREAL8Window(length, 0.5);
+	if(!*hplus || !*hcross || !window) {
+		XLALDestroyREAL8TimeSeries(*hplus);
+		XLALDestroyREAL8TimeSeries(*hcross);
+		XLALDestroyREAL8Window(window);
+		*hplus = *hcross = NULL;
+		XLAL_ERROR(XLAL_EFUNC);
+	}
+
+	/* populate */
+
+	for(i = 0; i < (length - 1) / 2; i++) {
+		const double t = ((int) i - (length - 1) / 2) * delta_t;
+		(*hplus)->data->data[i] = (*hplus)->data->data[length - 1 - i] = h0plus * exp(-0.5 * t * t / (duration * duration)) * window->data->data[i];
+	}
+	(*hplus)->data->data[i] = h0plus;
+	memset((*hcross)->data->data, 0, (*hcross)->data->length * sizeof(*(*hcross)->data->data));
+
+	XLALDestroyREAL8Window(window);
+
+	/* done */
+
+	return 0;
+}
+
+
 /*
  * ============================================================================
  *
