@@ -654,13 +654,8 @@ time series.
 \anchor xlalsimburstbtlwnb_examples
 \image html lalsimburst_btlwnbexamples.svg
 Example of the \f$+\f$ and \f$\times\f$ polarizations of a band- and
-time-limited white-noise burst injection waveform.  The horizontal axis is
-time in seconds, the vertical axis is strain.  The waveform's parameters
-were \f$\Delta t = 50\,\mathrm{ms}\f$, \f$\Delta f = 8 \frac{2}{\pi} /
-\Delta t\f$ (16 degrees of freedom per polarization), and \f$f_{0} =
-100\,\mathrm{Hz}\f$.  The amplitude was normalized so that \f$\int
-(\dot{h}_{+}^{2} + \dot{h}_{\times}^{2}) \diff t = 1\f$.
-
+time-limited white-noise burst injection waveforms with different degrees
+of freedom.
  *
  * @param[out] hplus Address of a REAL8TimeSeries pointer to be set to the
  * address of the newly allocated \f$h_{+}\f$ time series.  Set to NULL on
@@ -713,6 +708,19 @@ were \f$\Delta t = 50\,\mathrm{ms}\f$, \f$\Delta f = 8 \frac{2}{\pi} /
  * nothing wrong with this, the waveforms are still correct, but if there
  * is a need to reproduce a waveform exactly then it will be necessary to
  * tag the code before making such changes.
+ *
+ * @warning
+ * The current algorithm's low degree-of-freedom limit yields
+ * cosine-Gaussians in both \f$h_{+}\f$ and \f$h_{\times}\f$.  This makes
+ * the ellipticity parameter nonsensical in this limit and one of the two
+ * (total) degrees of freedom degenerate with the \f$\psi\f$ parameter
+ * giving the orientation of the polarization axes about the light-of-sight
+ * to the source.  Expect this behaviour to change:  expect the
+ * construction to be modified to yield a sine-like component in the
+ * \f$h_{\times}\f$ polarization in the low degree-of-freedom limit, and a
+ * phase angle parameter to be added at that time as well.  Then this
+ * function will then yield exactly the same waveforms as
+ * XLALSimBurstSineGaussian() in the low degree-of-freedom limit.
  */
 
 
