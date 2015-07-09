@@ -415,7 +415,8 @@ int XLALGenerateImpulseBurst(
 
 	/* the middle sample is t = 0 */
 
-	XLALGPSSetREAL8(&epoch, -(length - 1) / 2 * delta_t);
+	if(!XLALGPSSetREAL8(&epoch, -(length - 1) / 2 * delta_t))
+		XLAL_ERROR(XLAL_EFUNC);
 
 	/* allocate the time series */
 
@@ -759,7 +760,8 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 
 	/* the middle sample is t = 0 */
 
-	XLALGPSSetREAL8(&epoch, -(length - 1) / 2 * delta_t);
+	if(!XLALGPSSetREAL8(&epoch, -(length - 1) / 2 * delta_t))
+		XLAL_ERROR(XLAL_EFUNC);
 
 	/* allocate the time series */
 
@@ -1102,7 +1104,8 @@ int XLALSimBurstSineGaussian(
 
 	/* the middle sample is t = 0 */
 
-	XLALGPSSetREAL8(&epoch, -(length - 1) / 2 * delta_t);
+	if(!XLALGPSSetREAL8(&epoch, -(length - 1) / 2 * delta_t))
+		XLAL_ERROR(XLAL_EFUNC);
 
 	/* allocate the time series */
 
@@ -1239,7 +1242,8 @@ int XLALGenerateStringCusp(
 
 	/* the middle sample is t = 0 */
 
-	XLALGPSSetREAL8(&epoch, -(length - 1) / 2 * delta_t);
+	if(!XLALGPSSetREAL8(&epoch, -(length - 1) / 2 * delta_t))
+		XLAL_ERROR(XLAL_EFUNC);
 
 	/* allocate time and frequency series and FFT plan */
 
