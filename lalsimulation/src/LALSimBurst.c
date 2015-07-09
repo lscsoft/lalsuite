@@ -1111,9 +1111,11 @@ int XLALSimBurstSineGaussian(
 
 	*hplus = XLALCreateREAL8TimeSeries("sine-Gaussian +", &epoch, 0.0, delta_t, &lalStrainUnit, length);
 	*hcross = XLALCreateREAL8TimeSeries("sine-Gaussian x", &epoch, 0.0, delta_t, &lalStrainUnit, length);
-	if(!*hplus || !*hcross) {
+	window = XLALCreateTukeyREAL8Window((*hplus)->data->length, 0.5);
+	if(!*hplus || !*hcross || !window) {
 		XLALDestroyREAL8TimeSeries(*hplus);
 		XLALDestroyREAL8TimeSeries(*hcross);
+		XLALDestroyREAL8Window(window);
 		*hplus = *hcross = NULL;
 		XLAL_ERROR(XLAL_EFUNC);
 	}
@@ -1124,26 +1126,12 @@ int XLALSimBurstSineGaussian(
 		const double t = ((int) i - (length - 1) / 2) * delta_t;
 		const double phi = LAL_TWOPI * centre_frequency * t;
 		const double fac = exp(-0.5 * phi * phi / (Q * Q));
-		(*hplus)->data->data[i]  = h0plus * fac * cos(phi - phase);
-		(*hcross)->data->data[i] = h0cross * fac * sin(phi - phase);
-	}
-
-	/* apply a Tukey window for continuity at the start and end of the
-	 * injection.  the window's shape parameter sets what fraction of
-	 * the window is used by the tapers */
-
-	window = XLALCreateTukeyREAL8Window((*hplus)->data->length, 0.5);
-	if(!window) {
-		XLALDestroyREAL8TimeSeries(*hplus);
-		XLALDestroyREAL8TimeSeries(*hcross);
-		*hplus = *hcross = NULL;
-		XLAL_ERROR(XLAL_EFUNC);
-	}
-	for(i = 0; i < window->data->length; i++) {
-		(*hplus)->data->data[i] *= window->data->data[i];
-		(*hcross)->data->data[i] *= window->data->data[i];
+		(*hplus)->data->data[i]  = h0plus * fac * cos(phi - phase) * window->data->data[i];
+		(*hcross)->data->data[i] = h0cross * fac * sin(phi - phase) * window->data->data[i];
 	}
 	XLALDestroyREAL8Window(window);
+
+	/* done */
 
 	return 0;
 }
