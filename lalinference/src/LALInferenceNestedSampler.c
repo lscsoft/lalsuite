@@ -1563,6 +1563,8 @@ static int WriteNSCheckPoint(CHAR *filename, LALInferenceRunState *runState, NSi
   }
   else
   {
+    if(setvbuf(progfile,NULL,_IOFBF,0x100000)) /* Set buffer to 1MB so as to not thrash NFS */
+      fprintf(stderr,"Warning: Unable to set resume file buffer!");
     UINT4 Nlive=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
     int retcode= _saveNSintegralState(progfile,s);
     if(retcode) {
