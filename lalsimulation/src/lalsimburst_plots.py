@@ -146,7 +146,8 @@ def btlwnb_example(axes1, axes2, f0, dof, duration, e):
 	axes1.grid(True)
 	axes2.grid(True)
 
-	bandwidth = dof * (2./math.pi) / duration
+	# dof/2 = dof/polarization
+	bandwidth = dof/2 * (2./math.pi) / duration
 
 	import lal
 	import lalburst
@@ -167,7 +168,7 @@ def btlwnb_example(axes1, axes2, f0, dof, duration, e):
 	axes1.set_ylim((-0.015, +0.015))
 	axes1.set_xlabel(r"Time (seconds)")
 	axes1.set_ylabel(r"Strain")
-	axes1.set_title(r"$\int(\dot{h}_{+}^{2} + \dot{h}_{\times}^{2})\,\mathrm{d}t = 1$, $f_{0} = %g\,\mathrm{Hz}$, $\Delta t = %g\,\mathrm{s}$, $%g\,\mathrm{DOF}/\mathrm{polarization}$ ($\Delta f = %g\,\mathrm{Hz}$), $\epsilon = %g$" % (f0, duration, dof, bandwidth, e))
+	axes1.set_title(r"$\int(\dot{h}_{+}^{2} + \dot{h}_{\times}^{2})\,\mathrm{d}t = 1$, $f_{0} = %g\,\mathrm{Hz}$, $\Delta t = %g\,\mathrm{s}$, $%g\,\mathrm{DOF}$ ($\Delta f = %g\,\mathrm{Hz}$), $\epsilon = %g$" % (f0, duration, dof, bandwidth, e))
 	axes1.legend()
 	axes2.plot(hc.data.data, hp.data.data, color = "k")
 	axes2.set_xlim((-0.015, +0.015))
@@ -181,9 +182,9 @@ if 1:
 	FigureCanvas(fig)
 	width = 200.
 	fig.set_size_inches(1.2 * width / 25.4, 2. * width / 25.4 / ((1 + math.sqrt(5)) / 2))
-	btlwnb_example(fig.add_subplot(3, 2,  1), fig.add_subplot(3, 2,  2), 250., 4., 0.008, 0.)
-	btlwnb_example(fig.add_subplot(3, 2,  3), fig.add_subplot(3, 2,  4), 250., 2., 0.008, 0.)
-	btlwnb_example(fig.add_subplot(3, 2,  5), fig.add_subplot(3, 2,  6), 250., 1., 0.008, 0.)
+	btlwnb_example(fig.add_subplot(3, 2,  1), fig.add_subplot(3, 2,  2), 250., 8., 0.008, 0.)
+	btlwnb_example(fig.add_subplot(3, 2,  3), fig.add_subplot(3, 2,  4), 250., 4., 0.008, 0.)
+	btlwnb_example(fig.add_subplot(3, 2,  5), fig.add_subplot(3, 2,  6), 250., 2., 0.008, 0.)
 	fig.tight_layout()
 	fig.savefig("lalsimburst_btlwnbexamples.svg")
 
