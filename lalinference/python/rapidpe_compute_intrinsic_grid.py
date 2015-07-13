@@ -375,23 +375,9 @@ grid = amrlib.prune_duplicate_pts(grid, init_region._bounds, spacing)
 #
 # Clean up
 #
+
 grid = numpy.array(grid)
-# Make sure the new grid points are physical
-# FIXME: Move to amrlib
-grid_check = numpy.array(grid).T
-if opts.distance_coordinates == "tau0_tau3":
-    bounds_mask = amrlib.check_tau0tau3(grid_check[m1_axis], grid_check[m2_axis])
-elif opts.distance_coordinates == "mchirp_eta":
-    bounds_mask = amrlib.check_mchirpeta(grid_check[m1_axis], grid_check[m2_axis])
-
-def check_spins(spin1, spin2):
-    b1 = numpy.sqrt(numpy.atleast_2d(spin1**2).sum(axis=0)) <= 1
-    b2 = numpy.sqrt(numpy.atleast_2d(spin2**2).sum(axis=0)) <= 1
-    return b1 & b2
-if "spin1z" in intr_prms or "spin2z" in intr_prms:
-    s1_axis, s2_axis = intr_prms.index("spin1z"), intr_prms.index("spin2z")
-    bounds_mask &= check_spins(grid_check[s1_axis], grid_check[s2_axis])
-
+bounds_mask = amrlib.check_grid(grid, intr_prms, opts.distance_coordinates)
 grid = grid[bounds_mask]
 print "%d cells after bounds checking" % len(grid)
 
