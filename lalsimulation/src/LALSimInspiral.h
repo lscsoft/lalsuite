@@ -1143,6 +1143,30 @@ int XLALSimInspiralPrecessingPTFQWaveforms(
 	);
 
 /**
+ * Function to specify the desired orientation of the spin components of
+ * a precessing binary.
+ */
+int XLALSimInspiralInitialConditionsPrecessingApproxs(
+		REAL8 *inc,	/**< inclination angle (returned) */
+		REAL8 *S1x,	/**< S1 x component (returned) */
+		REAL8 *S1y,	/**< S1 y component (returned) */
+		REAL8 *S1z,	/**< S1 z component (returned) */
+		REAL8 *S2x,	/**< S2 x component (returned) */
+		REAL8 *S2y,	/**< S2 y component (returned) */
+		REAL8 *S2z,	/**< S2 z component (returned) */
+		const REAL8 inclIn, /**< Inclination angle in input */
+		const REAL8 S1xIn,  /**< S1 x component */
+		const REAL8 S1yIn,  /**< S1 y component */
+		const REAL8 S1zIn,  /**< S1 z component */
+		const REAL8 S2xIn,  /**< S2 x component */
+		const REAL8 S2yIn,  /**< S2 y component */
+		const REAL8 S2zIn,  /**< S2 z component */
+		const REAL8 m1,	    /**< mass of body 1 (kg) */
+		const REAL8 m2,	    /**< mass of body 2 (kg) */
+		const REAL8 fRef,   /**< reference GW frequency (Hz) */
+		LALSimInspiralFrameAxis axisChoice  /**< Flag to identify axis wrt which spin components are given. Pass in NULL (or None in python) for default (view) */);
+
+/**
  * Compute the length of an inspiral waveform assuming the Taylor dEnergy and Flux equations
  */
 REAL8
@@ -2712,6 +2736,26 @@ int XLALSimInspiralSpinDominatedWaveformDriver(
  * https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/Waveforms/TransformPrecessingInitialConditions
  */
 int XLALSimInspiralTransformPrecessingInitialConditions(
+		REAL8 *incl,	/**< Inclination angle of L_N (returned) */
+		REAL8 *S1x,	/**< S1 x component (returned) */
+		REAL8 *S1y,	/**< S1 y component (returned) */
+		REAL8 *S1z,	/**< S1 z component (returned) */
+		REAL8 *S2x,	/**< S2 x component (returned) */
+		REAL8 *S2y,	/**< S2 y component (returned) */
+		REAL8 *S2z,	/**< S2 z component (returned) */
+		REAL8 thetaJN, 	/**< zenith angle between J and N (rad) */
+		REAL8 phiJL,  	/**< azimuthal angle of L_N on its cone about J (rad) */
+		REAL8 theta1,  	/**< zenith angle between S1 and LNhat (rad) */
+		REAL8 theta2,  	/**< zenith angle between S2 and LNhat (rad) */
+		REAL8 phi12,  	/**< difference in azimuthal angle btwn S1, S2 (rad) */
+		REAL8 chi1,	/**< dimensionless spin of body 1 */
+		REAL8 chi2,	/**< dimensionless spin of body 2 */
+		REAL8 m1,	/**< mass of body 1 (kg) */
+		REAL8 m2,	/**< mass of body 2 (kg) */
+		REAL8 fRef	/**< reference GW frequency (Hz) */
+		);
+
+int XLALSimInspiralTransformPrecessingNewInitialConditions(
 		REAL8 *incl,	/**< Inclination angle of L_N (returned) */
 		REAL8 *S1x,	/**< S1 x component (returned) */
 		REAL8 *S1y,	/**< S1 y component (returned) */

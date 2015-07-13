@@ -2042,7 +2042,7 @@ int XLALSimInspiralTransformPrecessingInitialConditions(
 	m2 *= LAL_G_SI / LAL_C_SI / LAL_C_SI / LAL_C_SI;
 	M = m1 + m2;
 	eta = m1 * m2 / M / M;
-	
+
 	/* Define S1, S2, J with proper magnitudes */
 	LNmag = pow(M, 5./3.) * eta * pow(omega0, -1./3.);
 	s1x = m1 * m1 * chi1 * s1hatx;
@@ -2130,6 +2130,306 @@ int XLALSimInspiralTransformPrecessingInitialConditions(
 }
 
 /**
+ * Function to specify the desired orientation of a precessing binary in terms
+ * of several angles and then compute the vector components with respect to
+ * orbital angular momentum as needed to specify binary configuration for
+ * ChooseTDWaveform.
+ *
+ * Input:
+ * thetaJN is the inclination between total angular momentum (J) and the
+ * direction of propagation (N)
+ * theta1 and theta2 are the inclinations of S1 and S2
+ * measured from the Newtonian orbital angular momentum (L_N)
+ * phi12 is the difference in azimuthal angles of S1 and S2.
+ * chi1, chi2 are the dimensionless spin magnitudes ( \f$0 \le chi1,2 \le 1\f$)
+ * phiJL is the azimuthal angle of L_N on its cone about J.
+ * m1, m2, f_ref are the component masses and reference GW frequency,
+ * they are needed to compute the magnitude of L_N, and thus J.
+ *
+ * Output:
+ * incl - inclination angle of L_N relative to N
+ * x, y, z components of E1 (unit vector in the initial orbital plane)
+ * x, y, z components S1 and S2 (unit spin vectors times their
+ * dimensionless spin magnitudes - i.e. they have unit magnitude for
+ * extremal BHs and smaller magnitude for slower spins).
+ *
+ * NOTE: Here the \"total\" angular momentum is computed as
+ * J = L_N + S1 + S2
+ * where L_N is the Newtonian orbital angular momentum. In fact, there are
+ * PN corrections to L which contribute to J that are NOT ACCOUNTED FOR
+ * in this function. This is done so the function does not need to know about
+ * the PN order of the system and to avoid subtleties with spin-orbit
+ * contributions to L. Also, it is believed that the difference in Jhat
+ * with or without these PN corrections to L is quite small.
+ *
+ * NOTE: fRef = 0 is not a valid choice. If you will pass fRef=0 into
+ * ChooseWaveform, then here pass in f_min, the starting GW frequency
+ */
+int XLALSimInspiralTransformPrecessingNewInitialConditions(
+		REAL8 *incl,	/**< Inclination angle of L_N (returned) */
+		REAL8 *S1x,	/**< S1 x component (returned) */
+		REAL8 *S1y,	/**< S1 y component (returned) */
+		REAL8 *S1z,	/**< S1 z component (returned) */
+		REAL8 *S2x,	/**< S2 x component (returned) */
+		REAL8 *S2y,	/**< S2 y component (returned) */
+		REAL8 *S2z,	/**< S2 z component (returned) */
+		const REAL8 thetaJN, 	/**< zenith angle between J and N (rad) */
+		const REAL8 phiJL,  	/**< azimuthal angle of L_N on its cone about J (rad) */
+		const REAL8 theta1,  	/**< zenith angle between S1 and LNhat (rad) */
+		const REAL8 theta2,  	/**< zenith angle between S2 and LNhat (rad) */
+		const REAL8 phi12,  	/**< difference in azimuthal angle btwn S1, S2 (rad) */
+		const REAL8 chi1,	/**< dimensionless spin of body 1 */
+		const REAL8 chi2,	/**< dimensionless spin of body 2 */
+		const REAL8 m1_SI,	/**< mass of body 1 (kg) */
+		const REAL8 m2_SI,	/**< mass of body 2 (kg) */
+		const REAL8 fRef	/**< reference GW frequency (Hz) */
+		)
+{
+	/* Check that fRef is sane */
+	if( fRef == 0. )
+	{
+		XLALPrintError("XLAL Error - %s: fRef=0 is invalid. Please pass in the starting GW frequency instead.\n", __func__);
+		XLAL_ERROR(XLAL_EINVAL);
+	}
+
+	REAL8 m1, m2, v0, theta0, phi0, Jnorm, tmp1, tmp2;
+	REAL8 Jhatx, Jhaty, Jhatz, LNhx, LNhy, LNhz, Jx, Jy, Jz, LNmag;
+	REAL8 s1hatx, s1haty, s1hatz, s2hatx, s2haty, s2hatz;
+	REAL8 s1x, s1y, s1z, s2x, s2y, s2z;
+
+	/* Starting frame: LNhat is along the z-axis and the unit
+	 * spin vectors are defined from the angles relative to LNhat.
+	 * Note that we put s1hat in the x-z plane, and phi12
+	 * sets the azimuthal angle of s2hat measured from the x-axis.
+	 */
+	LNhx = 0.;
+	LNhy = 0.;
+	LNhz = 1.;
+	s1hatx = sin(theta1);
+	s1haty = 0.;
+	s1hatz = cos(theta1);
+	s2hatx = sin(theta2) * cos(phi12);
+	s2haty = sin(theta2) * sin(phi12);
+	s2hatz = cos(theta2);
+
+	/* Define several internal variables needed for magnitudes */
+	m1 = m1_SI/LAL_MSUN_SI;
+	m2 = m2_SI/LAL_MSUN_SI;
+	// v parameter at reference point
+	v0 = pow( (m1+m2) * LAL_MTSUN_SI *LAL_PI * fRef, 1./3.);
+
+	/* Define S1, S2, J with proper magnitudes */
+	LNmag = m1 * m2 / v0;
+	s1x = m1 * m1 * chi1 * s1hatx;
+	s1y = m1 * m1 * chi1 * s1haty;
+	s1z = m1 * m1 * chi1 * s1hatz;
+	s2x = m2 * m2 * chi2 * s2hatx;
+	s2y = m2 * m2 * chi2 * s2haty;
+	s2z = m2 * m2 * chi2 * s2hatz;
+	Jx = s1x + s2x;
+	Jy = s1y + s2y;
+	Jz = LNmag * LNhz + s1z + s2z;
+
+	/* Normalize J to Jhat, find it's angles in starting frame */
+	Jnorm = sqrt( Jx*Jx + Jy*Jy + Jz*Jz);
+	Jhatx = Jx / Jnorm;
+	Jhaty = Jy / Jnorm;
+	Jhatz = Jz / Jnorm;
+	theta0 = acos(Jhatz);
+	phi0 = atan2(Jhaty, Jhatx);
+
+	/* Rotation 1: Rotate about z-axis by -phi0 to put Jhat in x-z plane */
+	ROTATEZ(-phi0, LNhx, LNhy, LNhz);
+	ROTATEZ(-phi0, s1hatx, s1haty, s1hatz);
+	ROTATEZ(-phi0, s2hatx, s2haty, s2hatz);
+	ROTATEZ(-phi0, Jhatx, Jhaty, Jhatz);
+
+	/* Rotation 2: Rotate about new y-axis by -theta0
+	 * to put Jhat along z-axis
+	 */
+	ROTATEY(-theta0, LNhx, LNhy, LNhz);
+	ROTATEY(-theta0, s1hatx, s1haty, s1hatz);
+	ROTATEY(-theta0, s2hatx, s2haty, s2hatz);
+	ROTATEY(-theta0, Jhatx, Jhaty, Jhatz);
+
+	/* Rotation 3: Rotate about new z-axis by phiJL to put L at desired
+	 * azimuth about J. Note that is currently in x-z plane towards -x
+	 * (i.e. azimuth=pi). Hence we rotate about z by phiJL - LAL_PI
+	 */
+	ROTATEZ(phiJL - LAL_PI, LNhx, LNhy, LNhz);
+	ROTATEZ(phiJL - LAL_PI, s1hatx, s1haty, s1hatz);
+	ROTATEZ(phiJL - LAL_PI, s2hatx, s2haty, s2hatz);
+	ROTATEZ(phiJL - LAL_PI, Jhatx, Jhaty, Jhatz);
+
+	/* The cosinus of the angle between L and N is the scalar
+         * product of the two vectors. We do need to perform additional
+         * rotation to compute it
+         */
+	*incl=acos(-sin(thetaJN)*LNhx+cos(thetaJN)*LNhz); //output
+
+	/* Rotation 4-5: Now J is along z and N in x-z plane, inclined from J
+         * by thetaJN. Now we bring L into the z axis to get
+         * spin components.
+	 */
+	REAL8 Nx=-sin(thetaJN);
+	REAL8 Ny=0.;
+	REAL8 Nz=cos(thetaJN);
+	REAL8 thetaLJ = acos(LNhz);
+	REAL8 phiLJ   = atan2(LNhy, LNhx);
+
+	/* As a check, one can rotateL too and verify
+           the incl angle obtained above.
+	  */
+	ROTATEZ(-phiLJ, Nx, Ny, Nz);
+	ROTATEZ(-phiLJ, s1hatx, s1haty, s1hatz);
+	ROTATEZ(-phiLJ, s2hatx, s2haty, s2hatz);
+	ROTATEZ(-phiLJ, LNhx, LNhy, LNhz);
+	ROTATEY(-thetaLJ, Nx, Ny, Nz);
+	ROTATEY(-thetaLJ, s1hatx, s1haty, s1hatz);
+	ROTATEY(-thetaLJ, s2hatx, s2haty, s2hatz);
+	ROTATEY(-thetaLJ, LNhx, LNhy, LNhz);
+
+	/* Rotation 6: Now L is along z and we have to bring N
+	 * in the x-z plane.
+	 */
+	REAL8 phiN = atan2(Ny, Nx);
+	ROTATEZ(-phiN, s1hatx, s1haty, s1hatz);
+	ROTATEZ(-phiN, s2hatx, s2haty, s2hatz);
+	ROTATEZ(-phiN, LNhx, LNhy, LNhz);
+	ROTATEZ(-phiN, Nx, Ny, LNz);
+
+	//One can make the following checks:
+	/*printf("LNhat should be along z, N in the x-z plane\n");
+	printf("LNhat: %12.4e  %12.4e  %12.4e\n",LNhx,LNhy,LNhz);
+	printf("N:     %12.4e  %12.4e  %12.4e\n",Nx,Ny,Nz);
+	printf("cos LN = %12.4e vs. %12.4e\n",cos(*incl),LNhx*Nx+LNhy*Ny+LNhz*Nz);
+	printf("S1L  %12.4e %12.4e\n",cos(theta1),s1hatz);
+	printf("S2L  %12.4e %12.4e\n",cos(theta2),s2hatz);
+	printf("S1S2 %12.4e %12.4e\n",sin(theta1)*sin(theta2)*cos(phi12)+cos(theta1)*cos(theta2),s1hatx*s2hatx+s1haty*s2haty+s1hatz*s2hatz);*/
+
+	/* Multiply spin unit vectors by chi magnitude (but NOT m_i^2) */
+	s1hatx *= chi1;
+	s1haty *= chi1;
+	s1hatz *= chi1;
+	s2hatx *= chi2;
+	s2haty *= chi2;
+	s2hatz *= chi2;
+
+	/* Set pointers to rotated spin vectors */
+	*S1x = s1hatx;
+	*S1y = s1haty;
+	*S1z = s1hatz;
+	*S2x = s2hatx;
+	*S2y = s2haty;
+	*S2z = s2hatz;
+
+	return XLAL_SUCCESS;
+}
+
+/**
+ * Function to specify the desired orientation of the spin components of
+ * a precessing binary.
+ *
+ * Input:
+ * x, y, z components S1 and S2 wrt
+ * * reference L for axisChoice    = LAL_SIM_INSPIRAL_FRAME_AXIS_TOTAL_J
+ * * toal J for axisChoice         = LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L
+ * * view direction for axisChoice = LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW (default)
+ * incl is the angle between
+ * * J and N (Jx \propto sin(inc), Jy=0) for axisChoice = LAL_SIM_INSPIRAL_FRAME_AXIS_TOTAL_J
+ * * L and N (Lx \propto sin(inc), Ly=0) for axisChoice = LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L
+ *                                                        LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW (default)
+ * m1, m2, f_ref are the component masses and reference GW frequency,
+ * they are needed to compute the magnitude of L_N
+ *
+ * Output:
+ * x, y, z components S1 and S2 wrt N
+ * inc angle between L and N
+ *
+ * NOTE: Here the \"total\" angular momentum is computed as
+ * J = L_N + S1 + S2
+ * where L_N is the Newtonian orbital angular momentum. In fact, there are
+ * PN corrections to L which contribute to J that are NOT ACCOUNTED FOR
+ * in this function.
+ */
+int XLALSimInspiralInitialConditionsPrecessingApproxs(
+		REAL8 *inc,	/**< inclination angle (returned) */
+		REAL8 *S1x,	/**< S1 x component (returned) */
+		REAL8 *S1y,	/**< S1 y component (returned) */
+		REAL8 *S1z,	/**< S1 z component (returned) */
+		REAL8 *S2x,	/**< S2 x component (returned) */
+		REAL8 *S2y,	/**< S2 y component (returned) */
+		REAL8 *S2z,	/**< S2 z component (returned) */
+		const REAL8 inclIn, /**< Inclination angle in input */
+		const REAL8 S1xIn,  /**< S1 x component */
+		const REAL8 S1yIn,  /**< S1 y component */
+		const REAL8 S1zIn,  /**< S1 z component */
+		const REAL8 S2xIn,  /**< S2 x component */
+		const REAL8 S2yIn,  /**< S2 y component */
+		const REAL8 S2zIn,  /**< S2 z component */
+		const REAL8 m1,	    /**< mass of body 1 (kg) */
+		const REAL8 m2,	    /**< mass of body 2 (kg) */
+		const REAL8 fRef,   /**< reference GW frequency (Hz) */
+		LALSimInspiralFrameAxis axisChoice  /**< Flag to identify axis wrt which spin components are given. Pass in NULL (or None in python) for default (view) */)
+{
+  REAL8 LNmag=0.;
+  REAL8 LNx,LNy,LNxy2,LNz;
+  REAL8 tmp1,tmp2;
+  switch (axisChoice) {
+  /* FRAME_AXIS_TOTAL_J is used by PhenSpin approximant only,
+   * (spins wrt to J, inclIn is the angle between J and N: if
+   * N=(0,0,1) Jhat=(sin(inclIn),0,cos(inclIn)))
+   */
+  case LAL_SIM_INSPIRAL_FRAME_AXIS_TOTAL_J:
+    LNmag= m1/LAL_MSUN_SI*m2/LAL_MSUN_SI / cbrt(LAL_PI*fRef*(m1+m2)/LAL_MSUN_SI*LAL_MTSUN_SI);
+    LNx  = -S1xIn*pow(m1/LAL_MSUN_SI,2)-S2xIn*pow(m2/LAL_MSUN_SI,2);
+    LNy  = -S1yIn*pow(m1/LAL_MSUN_SI,2)-S2yIn*pow(m2/LAL_MSUN_SI,2);
+    LNxy2= LNx*LNx+LNy*LNy;
+    LNz=0.;
+    if (LNmag*LNmag>=LNxy2) {
+      LNz=sqrt(LNmag*LNmag-LNxy2);
+      if ( LNz<(S1zIn*pow(m1/LAL_MSUN_SI,2)+S2zIn*pow(m2/LAL_MSUN_SI,2)) ) {
+	XLALPrintError("** LALSimIMRPSpinInspiralRD error *** for s1 (%12.4e  %12.4e  %12.4e)\n",S1xIn,S1yIn,S1zIn);
+	XLALPrintError("                                          s2 (%12.4e  %12.4e  %12.4e)\n",S2xIn,S2yIn,S2zIn);
+	XLALPrintError(" wrt to J for m: (%12.4e  %12.4e) and v= %12.4e\n",m1/LAL_MSUN_SI,m2/LAL_MSUN_SI,cbrt(LAL_PI*fRef*(m1+m2)/LAL_MSUN_SI*LAL_MTSUN_SI));
+	XLALPrintError(" it is impossible to determine the sign of LNhz\n");
+	XLAL_ERROR(XLAL_EDOM);
+      }
+    }
+    else {
+      XLALPrintError("** LALSimIMRPSpinInspiralRD error *** unphysical values of s1 (%12.4e  %12.4e  %12.4e)\n",S1xIn,S1yIn,S1zIn);
+      XLALPrintError("                                                           s2 (%12.4e  %12.4e  %12.4e)\n",S2xIn,S2yIn,S2zIn);
+      XLALPrintError(" wrt to J for m: (%12.4e  %12.4e) and v= %12.4e\n",m1/LAL_MSUN_SI,m2/LAL_MSUN_SI,cbrt(LAL_PI*fRef*(m1+m2)/LAL_MSUN_SI*LAL_MTSUN_SI));
+      XLAL_ERROR(XLAL_EDOM);
+    }
+    *S1x=S1xIn;
+    *S1y=S1yIn;
+    *S1z=S1zIn;
+    *S2x=S2xIn;
+    *S2y=S2yIn;
+    *S2z=S2zIn;
+    ROTATEY(inclIn,*S1x,*S1y,*S1z);
+    ROTATEY(inclIn,*S2x,*S2y,*S2z);
+    *inc=acos((-sin(inclIn)*LNx+cos(inclIn)*LNz)/LNmag);
+    break;
+  /* FRAME_AXIS_ORBITAL_L
+   * (spins wrt to L, inclIn is the angle between L and N: if
+   * N=(0,0,1) Lhat=(sin(inclIn),0,cos(inclIn)))
+   */
+  case LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L:
+    *S1x=S1xIn*cos(inclIn)+S1zIn*sin(inclIn);
+    *S1y=S1yIn;
+    *S1z=-S1xIn*sin(inclIn)+S1zIn*cos(inclIn);
+    break;
+  case LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW:
+  default:
+    break;
+  }
+
+  return XLAL_SUCCESS;
+}
+
+/**
  * DEPRECATED: USE XLALSimInspiralChooseTDWaveform() INSTEAD
  *
  * Chooses between different approximants when requesting a waveform to be generated
@@ -2204,6 +2504,7 @@ int XLALSimInspiralChooseTDWaveform(
     )
 {
     REAL8 LNhatx, LNhaty, LNhatz, E1x, E1y, E1z;
+    REAL8 tmp1, tmp2;
     int ret;
     /* N.B. the quadrupole of a spinning compact body labeled by A is 
      * Q_A = - quadparam_A chi_A^2 m_A^3 (see gr-qc/9709032)
@@ -2224,6 +2525,10 @@ int XLALSimInspiralChooseTDWaveform(
         XLALPrintError("XLAL Error - %s: Passed in non-NULL pointer to LALSimInspiralTestGRParam for an approximant that does not use LALSimInspiralTestGRParam\n", __func__);
         XLAL_ERROR(XLAL_EINVAL);
     }
+
+    /* Support variables for precessing wfs*/
+    REAL8 iTmp;
+    REAL8 fTmp;
 
     /* SEOBNR flag for model version. 1 for SEOBNRv1, 2 for SEOBNRv2 */
     UINT4 SpinAlignedEOBversion;
@@ -2384,12 +2689,14 @@ int XLALSimInspiralChooseTDWaveform(
         case SpinTaylorT2:
             /* Waveform-specific sanity checks */
             /* Sanity check unused fields of waveFlags */
-            if( !XLALSimInspiralFrameAxisIsDefault(
-                    XLALSimInspiralGetFrameAxis(waveFlags) ) )
-                ABORT_NONDEFAULT_FRAME_AXIS(waveFlags);
             if( !XLALSimInspiralModesChoiceIsDefault(
                     XLALSimInspiralGetModesChoice(waveFlags) ) )
                 ABORT_NONDEFAULT_MODES_CHOICE(waveFlags);
+	    spin1[0]=S1x; spin1[1]=S1y; spin1[2]=S1z;
+	    spin2[0]=S2x; spin2[1]=S2y; spin2[2]=S2z;
+	    iTmp=i;
+	    fTmp = (f_ref > 0.) ? f_ref : f_min;
+	    XLALSimInspiralInitialConditionsPrecessingApproxs(&i,&S1x,&S1y,&S1z,&S2x,&S2y,&S2z,iTmp,spin1[0],spin1[1],spin1[2],spin2[0],spin2[1],spin2[2],m1,m2,fTmp,XLALSimInspiralGetFrameAxis(waveFlags));
             LNhatx = sin(i);
             LNhaty = 0.;
             LNhatz = cos(i);
@@ -2422,9 +2729,11 @@ int XLALSimInspiralChooseTDWaveform(
             if( !XLALSimInspiralFrameAxisIsDefault(
                     XLALSimInspiralGetFrameAxis(waveFlags) ) )
                 ABORT_NONDEFAULT_FRAME_AXIS(waveFlags);
-            if( !XLALSimInspiralModesChoiceIsDefault(
-                    XLALSimInspiralGetModesChoice(waveFlags) ) )
-                ABORT_NONDEFAULT_MODES_CHOICE(waveFlags);
+	    spin1[0]=S1x; spin1[1]=S1y; spin1[2]=S1z;
+	    spin2[0]=S2x; spin2[1]=S2y; spin2[2]=S2z;
+	    iTmp=i;
+	    fTmp = (f_ref > 0.) ? f_ref : f_min;
+	    XLALSimInspiralInitialConditionsPrecessingApproxs(&i,&S1x,&S1y,&S1z,&S2x,&S2y,&S2z,iTmp,spin1[0],spin1[1],spin1[2],spin2[0],spin2[1],spin2[2],m1,m2,fTmp,XLALSimInspiralGetFrameAxis(waveFlags));
             LNhatx = sin(i);
             LNhaty = 0.;
             LNhatz = cos(i);
@@ -2448,12 +2757,11 @@ int XLALSimInspiralChooseTDWaveform(
 	 case SpinTaylorT1:
             /* Waveform-specific sanity checks */
             /* Sanity check unused fields of waveFlags */
-            if( !XLALSimInspiralFrameAxisIsDefault(
-                    XLALSimInspiralGetFrameAxis(waveFlags) ) )
-                ABORT_NONDEFAULT_FRAME_AXIS(waveFlags);
-            if( !XLALSimInspiralModesChoiceIsDefault(
-                    XLALSimInspiralGetModesChoice(waveFlags) ) )
-                ABORT_NONDEFAULT_MODES_CHOICE(waveFlags);
+	    spin1[0]=S1x; spin1[1]=S1y; spin1[2]=S1z;
+	    spin2[0]=S2x; spin2[1]=S2y; spin2[2]=S2z;
+	    iTmp=i;
+	    fTmp = (f_ref > 0.) ? f_ref : f_min;
+	    XLALSimInspiralInitialConditionsPrecessingApproxs(&i,&S1x,&S1y,&S1z,&S2x,&S2y,&S2z,iTmp,spin1[0],spin1[1],spin1[2],spin2[0],spin2[1],spin2[2],m1,m2,fTmp,XLALSimInspiralGetFrameAxis(waveFlags));
             LNhatx = sin(i);
             LNhaty = 0.;
             LNhatz = cos(i);
@@ -2489,6 +2797,7 @@ int XLALSimInspiralChooseTDWaveform(
                 XLALPrintError("XLAL Error : For the spindominatedwf approximant maximal phase correction is 2 PN\n");
                 XLAL_ERROR(XLAL_EDOM);
                 }
+		ROTATEY(i,S1x,S1y,S1z);
                 LNhatx = sin(i);
                 LNhaty = 0.;
                 LNhatz = cos(i);
@@ -2658,6 +2967,7 @@ int XLALSimInspiralChooseFDWaveform(
     )
 {
     REAL8 LNhatx, LNhaty, LNhatz;
+    REAL8 tmp1, tmp2;
     REAL8 E1x, E1y, E1z;
     REAL8 kMax;
     REAL8 v0, fStart;
@@ -2666,6 +2976,11 @@ int XLALSimInspiralChooseFDWaveform(
     REAL8 pfac, cfac;
     REAL8 quadparam1 = 1., quadparam2 = 1.; /* FIXME: This cannot yet be set in the interface */
     INT4 phiRefAtEnd;
+
+    /* Support variables for precessing wfs*/
+    REAL8 iTmp;
+    REAL8 fTmp;
+    REAL8 spin1[3],spin2[3];
 
     /* General sanity checks that will abort
      *
@@ -2773,6 +3088,8 @@ int XLALSimInspiralChooseFDWaveform(
                 ABORT_NONDEFAULT_MODES_CHOICE(waveFlags);
             if( S2z != 0. ) // This is a single-spin model
                 ABORT_NONZERO_SPINS(waveFlags);
+	    ROTATEY(i,S1x,S1y,S1z);
+	    ROTATEY(i,S2x,S2y,S2z);
             LNhatx = sin(i);
             LNhaty = 0.;
             LNhatz = cos(i);
@@ -2954,9 +3271,11 @@ int XLALSimInspiralChooseFDWaveform(
 
         case IMRPhenomP:
             /* Waveform-specific sanity checks */
-            if( !XLALSimInspiralFrameAxisIsDefault(
-                    XLALSimInspiralGetFrameAxis(waveFlags) ) ) /* Default is LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW : z-axis along direction of GW propagation (line of sight). */
-                ABORT_NONDEFAULT_FRAME_AXIS(waveFlags);
+	    spin1[0]=S1x; spin1[1]=S1y; spin1[2]=S1z;
+	    spin2[0]=S2x; spin2[1]=S2y; spin2[2]=S2z;
+	    iTmp=i;
+	    fTmp = (f_ref > 0.) ? f_ref : f_min;
+	    XLALSimInspiralInitialConditionsPrecessingApproxs(&i,&S1x,&S1y,&S1z,&S2x,&S2y,&S2z,iTmp,spin1[0],spin1[1],spin1[2],spin2[0],spin2[1],spin2[2],m1,m2,fTmp,XLALSimInspiralGetFrameAxis(waveFlags));
             if( !XLALSimInspiralModesChoiceIsDefault(          /* Default is (2,2) or l=2 modes. */
                     XLALSimInspiralGetModesChoice(waveFlags) ) )
                 ABORT_NONDEFAULT_MODES_CHOICE(waveFlags);
@@ -2990,6 +3309,8 @@ int XLALSimInspiralChooseFDWaveform(
             if( !XLALSimInspiralModesChoiceIsDefault(
                     XLALSimInspiralGetModesChoice(waveFlags) ) )
                 ABORT_NONDEFAULT_MODES_CHOICE(waveFlags);
+	    ROTATEY(i,S1x,S1y,S1z);
+	    ROTATEY(i,S2x,S2y,S2z);
             LNhatx = sin(i);
             LNhaty = 0.;
             LNhatz = cos(i);
@@ -3026,6 +3347,8 @@ int XLALSimInspiralChooseFDWaveform(
             if( !XLALSimInspiralModesChoiceIsDefault(
                     XLALSimInspiralGetModesChoice(waveFlags) ) )
                 ABORT_NONDEFAULT_MODES_CHOICE(waveFlags);
+	    ROTATEY(i,S1x,S1y,S1z);
+	    ROTATEY(i,S2x,S2y,S2z);
             LNhatx = sin(i);
             LNhaty = 0.;
             LNhatz = cos(i);
