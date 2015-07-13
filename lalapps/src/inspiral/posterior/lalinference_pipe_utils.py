@@ -487,10 +487,10 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     # Set up the segments
     if not (self.config.has_option('input','gps-start-time') and self.config.has_option('input','gps-end-time')) and len(self.times)>0:
       (mintime,maxtime)=self.get_required_data(self.times)
-    if not self.config.has_option('input','gps-start-time'):
-      self.config.set('input','gps-start-time',str(int(floor(mintime))))
-    if not self.config.has_option('input','gps-end-time'):
-      self.config.set('input','gps-end-time',str(int(ceil(maxtime))))
+      if not self.config.has_option('input','gps-start-time'):
+        self.config.set('input','gps-start-time',str(int(floor(mintime))))
+      if not self.config.has_option('input','gps-end-time'):
+        self.config.set('input','gps-end-time',str(int(ceil(maxtime))))
     self.add_science_segments()
 
     # Save the final configuration that is being used
@@ -618,7 +618,6 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     inputnames=['gps-time-file','injection-file','sngl-inspiral-file','coinc-inspiral-file','pipedown-db','gid']
     ReadInputFromList=sum([ 1 if self.config.has_option('input',name) else 0 for name in inputnames])
     if ReadInputFromList!=1 and (gpsstart is None or gpsend is None):
-        return []
         print 'Please specify only one input file'
         print 'Or specify gps-start-time and gps-end-time in the ini file'
         sys.exit(1)
