@@ -1340,7 +1340,7 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     self.set_sub_file(os.path.abspath(submitFile))
     self.add_condor_cmd('getenv','true')
     if self.engine=='lalinferencemcmc' or self.engine=='lalinferencebambimpi':
-      self.binary=cp.get('condor',self.engine)
+      self.binary=cp.get('condor',self.engine.replace('mpi',''))
       self.mpirun=cp.get('condor','mpirun')
       if cp.has_section('mpi'):
         if ispreengine is False:
