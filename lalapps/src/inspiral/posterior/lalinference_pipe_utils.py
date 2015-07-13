@@ -1650,7 +1650,6 @@ class LALInferenceMCMCNode(EngineNode):
     self.add_var_opt('mpirun',li_job.mpirun)
     self.add_var_opt('np',str(li_job.machine_count))
     self.add_var_opt('executable',li_job.binary)
-    self.add_pegasus_profile('condor','request_cpus',li_job.machine_count)
 
   def set_output_file(self,filename):
     self.posfile=filename
@@ -1670,8 +1669,6 @@ class LALInferenceBAMBINode(EngineNode):
       self.add_var_opt('mpirun',li_job.mpirun)
       self.add_var_opt('np',str(li_job.machine_count))
       self.add_var_opt('executable',li_job.binary)
-      self.add_pegasus_profile('condor','request_cpus',li_job.machine_count)
-
 
   def set_output_file(self,filename):
     self.fileroot=filename+'_'
