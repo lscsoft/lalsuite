@@ -19,6 +19,28 @@ def ndim_offsets(ndim):
 # Refinement strategies
 #
 
+# TODO: Optionally return cells
+def refine_regular_grid(grid, grid_spacing):
+    """
+    Given a regular grid in N dimensions with spacing given by grid_spacing, refine the grid by bisection along all dimensions. Returns the new grid and new spacing.
+
+    >>> region = Cell(numpy.array([(-1., 1.), (-2., 2.)]))
+    >>> grid, spacing = create_regular_grid_from_cell(region, side_pts=2)
+    >>> grid, spacing = refine_regular_grid(grid, spacing)
+    >>> print grid
+    [array([-2., -4.]), array([-2., -2.]), array([-1., -4.]), array([-1., -2.]), array([-2.,  0.]), array([-2.,  2.]), array([-1.,  0.]), array([-1.,  2.]), array([ 0., -4.]), array([ 0., -2.]), array([ 1., -4.]), array([ 1., -2.]), array([ 0.,  0.]), array([ 0.,  2.]), array([ 1.,  0.]), array([ 1.,  2.])]
+    >>> print spacing
+    [ 1.  2.]
+    """
+
+    # FIXME: We can probably allocate space ahead of time
+    new_pts = []
+    for cells in grid_to_cells(grid, grid_spacing):
+        for cell in cells.refine_full():
+            new_pts.append(cell._center)
+
+    return new_pts, grid_spacing / 2
+
 # Take midpoint between target point and neighbor
 def midpoint(pt1, pt2):
     diff = pt2 - pt1
@@ -201,7 +223,7 @@ class Cell(object):
         return Cell(numpy.array(cell_bounds), inpt_pt)
 
 #
-# Utilities
+# Gridding / cell utilities
 #
 def grid_to_indices(pts, region, grid_spacing):
     """
@@ -228,6 +250,116 @@ def prune_duplicate_pts(pts, region, grid_spacing):
     ind = grid_to_indices(pts, region, grid_spacing)
     _, ind = numpy.unique(ind, return_index=True)
     return numpy.array(pts)[ind]
+
+def create_regular_grid_from_cell(cell, side_pts=5, return_cells=False):
+    """
+    Given a region (amrlib.Cell), grid it with side_pts to a dimension. If return_cells is given, the divided cells will be returned rather than the grid points.
+
+    >>> import numpy
+    >>> region = Cell(numpy.array([(-1., 1.), (-2., 2.)]))
+    >>> grid, spacing = create_regular_grid_from_cell(region, side_pts=2)
+    >>> print grid
+    [[-1. -2.]
+     [-1.  2.]
+     [ 1. -2.]
+     [ 1.  2.]]
+    >>> print spacing
+    [ 2.  4.]
+    """
+
+    # TODO Recenter on trigger point
+
+    # This creates the logic to create points along a given axis
+    grid_pts = [slice(ls, rs, side_pts * 1j) for ls, rs in cell._bounds]
+    # This produces a representation of the points, but not in a tuple form
+    grid_pts = numpy.mgrid[grid_pts]
+    # This tuplizes them
+    grid_pts = numpy.array(zip(*[grid.flatten() for grid in grid_pts]))
+
+    # useful knowledge for later
+    grid_spacing = numpy.array([(rb - lb) / (side_pts - 1) for lb, rb in cell._bounds])
+    return grid_pts, grid_spacing
+
+# FIXME: This isn't currently used anywhere, unsure of it's usefulness
+def create_new_grid(cell, pts, max_level=6):
+    """
+    Subdivide until all cells are self contained - e.g. every cell contains no more than one pt from pts. If the number of divisions exceeds max_level, stop dividing.
+    """
+    cells = [cell]
+    i = 1
+    while True:
+        #print "Division level %d, ncells: %d" % (i, len(cells))
+        new_cells = []
+        for c in cells:
+            new_cells.extend(c.divide())
+
+        cell_centers = numpy.array([c._center for c in new_cells])
+        cell_tree = BallTree(cell_centers)
+        cells_occupied = set()
+        for j, pt in enumerate(pts[idx]):
+            cell_idx = cell_tree.query(pt, k=1, return_distance=False)[0]
+            selected_cell = tuple(cell_centers[cell_idx][0])
+            #print "Template falls in cell centered on %s. %d / %d pts checked" % (str(selected_cell), j+1, len(pts[idx]))
+            if selected_cell not in cells_occupied:
+                cells_occupied.add(selected_cell)
+            else:
+                break
+
+        if len(cells_occupied) == len(pts):
+            break
+
+        cells = new_cells
+        if i >= max_level:
+            break
+        i += 1
+    return cells
+
+# FIXME: Make into a generator
+def grid_to_cells(grid, grid_spacing):
+    return [Cell(
+            numpy.array([(c-sp/2, c+sp/2) for c, sp in zip(pt, grid_spacing)]),
+            pt) for pt in grid]
+
+#
+# Cell grid serialization and packing routines
+#
+
+def pack_grid_cells(cells, resolution):
+    """
+    Pack the cell centers (grid points) into a convienient numpy array. The resolution of the grid is prepended for later use.
+    """
+    return numpy.vstack((resolution, [c._center for c in cells]))
+
+def unpack_grid_cells(npy_cells):
+    """
+    Unpack the cell centers (grid points), the cell collection is returned.
+    """
+    res = npy_cells[0]
+    cells = []
+    for cntr in npy_cells[1:]:
+        cell = Cell(numpy.array((cntr - res / 2, cntr + res / 2)).T)
+        cells.append(cell)
+    return cells
+
+def serialize_grid_cells(level_dict, fname):
+    """
+    Given a dictionary of refinement levels, pack it up and save it to a numpy file.
+    FIXME: This can't yet distinguish the level of refinement. Need to teach it to pay attention to the resolution.
+    """
+    cell_block = numpy.array([level_dict[i] for i in sorted(level_dict)])
+    numpy.save(fname, cell_block)
+
+def deserialize_grid_cells(fname):
+    """
+    Unpacks a numpy file of level grid points and returns a cell collection.
+    FIXME: This can't yet distinguish the level of refinement. Need to teach it to pay attention to the resolution.
+    """
+    cell_block = numpy.load(fname)
+    cells = []
+    for level in cell_block:
+        cells.extend(unpack_grid_cells(level))
+    return cells
+
 
 #
 # Coordinate transformations
