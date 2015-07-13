@@ -194,13 +194,19 @@ def grid_to_indices(pts, region, grid_spacing):
     """
     Convert points in a grid to their 1-D indices according to the grid extent in region, and grid spacing.
     """
+    region[:,0] = region[:,0] - grid_spacing
+    region[:,1] = region[:,1] + grid_spacing
     extent = numpy.diff(region)[:,0]
     pt_stride = numpy.round(extent / grid_spacing).astype(int)
-    # FIXME: Might be necessary for additional point on the right edge
-    # pt_stride += 1
+    # Necessary for additional point on the right edge
+    pt_stride += 1
+    #print pt_stride
     idx = numpy.round((pts - region[:,0]) / grid_spacing).astype(int)
-    indices = numpy.sum(idx[:,:-1] * pt_stride[:-1], axis=1) + idx[:,-1]
-    return indices
+    indices = []
+    for i in idx:
+        indices.append(numpy.ravel_multi_index(i, pt_stride))
+        #print i, indices[-1]
+    return numpy.array(indices)
 
 def prune_duplicate_pts(pts, region, grid_spacing):
     """
