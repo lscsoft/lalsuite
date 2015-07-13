@@ -177,13 +177,15 @@ class Cell(object):
         # Find the extent of points in each dimension
         ext_right = numpy.max(pts, axis=0)
         ext_left = numpy.min(pts, axis=0)
-        for el, er, pt in zip(ext_left, ext_right, inpt_pt):
-            if symmetric:
+        if symmetric:
+            for el, er, pt in zip(ext_left, ext_right, inpt_pt):
                 max_ext = max(abs(pt - el), abs(pt - er))
                 bound = (pt - max_ext, pt + max_ext)
-            else:
+                cell_bounds.append(bound)
+        else:
+            for el, er in zip(ext_left, ext_right):
                 bound = (el, er)
-            cell_bounds.append(bound)
+                cell_bounds.append(bound)
 
         return Cell(numpy.array(cell_bounds), inpt_pt)
 
