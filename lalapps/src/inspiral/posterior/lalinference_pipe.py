@@ -111,6 +111,21 @@ else:
 # Create the DAX scripts
 if opts.dax:
   dag.prepare_dax(tmp_exec_dir=execdir,grid_site=site,peg_frame_cache=peg_frame_cache)
+  # Ugly hack to replace pegasus.transfer.links=true in the pegasus.properties files created by pipeline.py
+  # Turns off the creation of links for files on the local file system. We use pegasus.transfer.links=false
+  # to make sure we have a copy of the data in the runing directory (useful when the data comes from temporary
+  # low latency buffer).
+  if cp.has_option('analysis','pegasus.transfer.links'):
+    if cp.get('analysis','pegasus.transfer.links')=='false':
+      lines=[]
+      with open('pegasus.properties') as fin:
+        for line in fin:
+          line = line.replace('pegasus.transfer.links=true', 'pegasus.transfer.links=false')
+          lines.append(line)
+      with open('pegasus.properties','w') as fout:
+        for line in lines:
+          fout.write(line)
+
 dag.write_sub_files()
 dag.write_dag()
 dag.write_script()
