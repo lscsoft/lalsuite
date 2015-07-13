@@ -38,6 +38,13 @@ class Cell(object):
     def area(self):
         return numpy.abs(numpy.diff(self._bounds)).prod()
 
+    def __intersects_1d(self, s1, s2):
+        return s2[1] <= s1[0] > s2[0] or s2[1] < s1[1] > s2[0]
+
+    def intersects(self, other):
+        assert self._bounds.shape == other._bounds.shape
+        return all(self.__intersects_1d(s1, s2) for s1, s2 in zip(self._bounds, other._bounds))
+
     def divide_if(self, testfunc, depth=1):
         """
         Subdivide once along each dimension, recursively.
