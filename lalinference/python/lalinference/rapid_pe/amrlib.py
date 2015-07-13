@@ -83,7 +83,11 @@ class Cell(object):
 
         return daughters
 
-    def refine2(self):
+    def refine_full(self):
+        """
+        Refine each cell such that new cells are created along all permutations of a displacement vector with unit vectors in each dimension and the 0 vector.
+        """
+        # FIXME: needs "return center" argument
         cells = []
         extent = numpy.diff(self._bounds).flatten() / 2
         # Iterate through all possible offsets for this dimension -- creating a
