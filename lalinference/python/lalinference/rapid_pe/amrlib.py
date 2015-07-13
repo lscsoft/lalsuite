@@ -10,20 +10,9 @@ m1m2 = numpy.vectorize(lalsimutils.m1m2)
 # Utility functions
 #
 
-ROU_MEMO = {}
-def nth_roots_of_unity(ndim):
-    if not ROU_MEMO.has_key(ndim):
-        tmp = numpy.cos(numpy.arange(0, 2*numpy.pi, numpy.pi/ndim))
-        # Avoid floating point error if possible
-        # FIXME: Any way to be exact with non-zero values?
-        tmp[numpy.isclose(tmp, 0.0)] = 0
-        # Remove non-unique values
-        ROU_MEMO[ndim] = numpy.array(tuple(set(tmp)))
-
-    return ROU_MEMO[ndim]
-
+OFFSET_VECTORS = (1, -1, 0)
 def ndim_offsets(ndim):
-    for off in itertools.product(*numpy.tile(nth_roots_of_unity(ndim), (ndim, 1))):
+    for off in itertools.product(*numpy.tile(OFFSET_VECTORS, (ndim, 1))):
         yield numpy.array(off)
 
 #
