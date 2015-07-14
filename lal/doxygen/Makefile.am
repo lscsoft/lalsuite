@@ -55,6 +55,8 @@ html-local: Makefile $(CONFIG_CLEAN_FILES)
 	echo "=== Doxygen documentation was built successfully!"; \
 	echo "=== $(PACKAGE_NAME) main page is at file://$(abs_builddir)/out/index.html"
 
+check-local: html   # so that 'make check' will check that documentation builds
+
 install-html-local: html-local
 	$(AM_V_at)for dir in `cd out/ && find . -type d`; do \
 		echo " $(MKDIR_P) '$(DESTDIR)$(htmldir)/$${dir}'"; \
