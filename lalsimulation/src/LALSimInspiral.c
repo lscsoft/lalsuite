@@ -2333,12 +2333,12 @@ int XLALSimInspiralTransformPrecessingNewInitialConditions(
  * Input:
  * x, y, z components S1 and S2 wrt
  * * reference L for axisChoice    = LAL_SIM_INSPIRAL_FRAME_AXIS_TOTAL_J
- * * toal J for axisChoice         = LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L
+ * * total J for axisChoice         = LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L
  * * view direction for axisChoice = LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW (default)
  * incl is the angle between
- * * J and N (Jx \propto sin(inc), Jy=0) for axisChoice = LAL_SIM_INSPIRAL_FRAME_AXIS_TOTAL_J
- * * L and N (Lx \propto sin(inc), Ly=0) for axisChoice = LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L
- *                                                        LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW (default)
+ * * J and N (Jx \f$\propto sin(inc)\f$, Jy=0) for axisChoice = LAL_SIM_INSPIRAL_FRAME_AXIS_TOTAL_J
+ * * L and N (Lx \f$\propto sin(inc)\f$, Ly=0) for axisChoice = LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L
+ *                                                              LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW (default)
  * m1, m2, f_ref are the component masses and reference GW frequency,
  * they are needed to compute the magnitude of L_N
  *
