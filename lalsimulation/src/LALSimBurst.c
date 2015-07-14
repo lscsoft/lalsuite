@@ -1087,11 +1087,18 @@ int XLALSimBurstSineGaussian(
 	double a, b;
 	semi_major_minor_from_e(eccentricity, &a, &b);
 	/* peak amplitudes of plus and cross */
-	const double h0plus  = hrss * a / sqrt(cgsq * cos(phase) * cos(phase) + sgsq * sin(phase) * sin(phase));
-	const double h0cross = hrss * b / sqrt(cgsq * sin(phase) * sin(phase) + sgsq * cos(phase) * cos(phase));
+	double cosphase = cos(phase);
+	double sinphase = sin(phase);
+	const double h0plus  = hrss * a / sqrt(cgsq * cosphase * cosphase + sgsq * sinphase * sinphase);
+	const double h0cross = hrss * b / sqrt(cgsq * sinphase * sinphase + sgsq * cosphase * cosphase);
 	LIGOTimeGPS epoch;
 	int length;
 	unsigned i;
+	/* don't compute these in loops */
+	const double negative2Qsquared = -2. * Q * Q;
+	const double twopif0 = LAL_TWOPI * centre_frequency;
+	/* some pointers */
+	double *hp, *hc, *w;
 
 	/* check input. */
 
@@ -1130,12 +1137,15 @@ int XLALSimBurstSineGaussian(
 
 	/* populate */
 
+	hp = (*hplus)->data->data;
+	hc = (*hcross)->data->data;
+	w = window->data->data;
 	for(i = 0; i < (*hplus)->data->length; i++) {
 		const double t = ((int) i - (length - 1) / 2) * delta_t;
-		const double phi = LAL_TWOPI * centre_frequency * t;
-		const double fac = exp(-0.5 * phi * phi / (Q * Q));
-		(*hplus)->data->data[i]  = h0plus * fac * cos(phi - phase) * window->data->data[i];
-		(*hcross)->data->data[i] = h0cross * fac * sin(phi - phase) * window->data->data[i];
+		const double phi = twopif0 * t;
+		const double fac = exp(phi * phi / negative2Qsquared);
+		hp[i]  = h0plus * fac * cos(phi - phase) * w[i];
+		hc[i] = h0cross * fac * sin(phi - phase) * w[i];
 	}
 	XLALDestroyREAL8Window(window);
 
