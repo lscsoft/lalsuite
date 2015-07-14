@@ -44,6 +44,7 @@ html-local: Makefile $(CONFIG_CLEAN_FILES)
 	$(SED) -e 's/^/- /' $(abs_top_builddir)/AUTHORS >> autogen.dox; \
 	echo '*/' >> autogen.dox; \
 	$(MKDIR_P) out/ || exit 1; \
+	echo "=== Building Doxygen documentation for $(PACKAGE_NAME)..."; \
 	$(DOXYGEN) doxygen.cfg $(doxygen_redir) 2>&1; \
 	$(PYTHON) $(abs_srcdir)/check_tags.py $(abs_builddir)/out/$(PACKAGE).tag >> warnings.log || exit 1; \
 	$(SED) $(DOXYGEN_WARNING_REGEX) warnings.log > errors.log; \
