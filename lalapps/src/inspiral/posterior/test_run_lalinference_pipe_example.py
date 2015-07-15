@@ -120,7 +120,7 @@ lalinferenceargs = [ 'lalinference_pipe'
 		     , '--dax'
 		     , '--grid-site'
 		     , 'local'
-		     #, '--pegasus-submit'
+		     , '--pegasus-submit'
                      #, '--condor-submit'
 		     ]
 
