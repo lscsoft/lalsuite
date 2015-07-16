@@ -182,6 +182,29 @@ int XLALSimIMRPhenomCGenerateFD(
 );
 
 /**
+ * Driver routine to compute the spin-aligned, inspiral-merger-ringdown
+ * phenomenological waveform IMRPhenomD in the frequency domain.
+ *
+ * Reference:
+ * - Waveform: Eq.
+ * - Coefficients: Eq. and Table
+ *
+ * All input parameters should be in SI units. Angles should be in radians.
+ */
+int XLALSimIMRPhenomDGenerateFD(
+    COMPLEX16FrequencySeries **htilde, /**< FD waveform */
+    const REAL8 phi0,                  /**< orbital phase at peak (rad) */
+    const REAL8 deltaF,                /**< sampling interval (Hz) */
+    const REAL8 m1_SI,                 /**< mass of companion 1 (kg) */
+    const REAL8 m2_SI,                 /**< mass of companion 2 (kg) */
+    const REAL8 chi1,                  /**< aligned-spin of companion 1 */
+    const REAL8 chi2,                  /**< aligned-spin of companion 2 */
+    const REAL8 f_min,                 /**< starting GW frequency (Hz) */
+    const REAL8 f_max,                 /**< end frequency; 0 defaults to ringdown cutoff freq */
+    const REAL8 distance               /**< distance of source (m) */
+);
+
+/**
  * Driver routine to compute the plus and cross polarizations for the IMRPhenomP model
  * for precessing binaries in the frequency domain.
  *

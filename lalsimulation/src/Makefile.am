@@ -63,6 +63,7 @@ pkginclude_HEADERS = \
 	LALSimNoise.h \
 	LALSimReadData.h \
 	LALSimSGWB.h \
+	LALSimIMRPhenomD.h \
 	LALSimulationConfig.h \
 	LALSimulationVCSInfo.h \
 	LALSimulationVCSInfoHeader.h
@@ -87,6 +88,7 @@ noinst_HEADERS = \
 	LALSimNeutronStarEOSPiecewisePolytrope.c \
 	LALSimNeutronStarEOSTabular.c \
 	LALSimIMRPhenomC_internals.c \
+	LALSimIMRPhenomD_internals.c \
 	LALSimIMRPhenomP.c \
 	LALSimIMRSEOBNRROMUtilities.c
 
@@ -104,6 +106,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimIMRSEOBNRv2ChirpTime.c \
 	LALSimIMRPhenom.c \
 	LALSimIMRPhenomC.c \
+	LALSimIMRPhenomD.c \
 	LALSimIMRPhenomP.c \
 	LALSimIMRPSpinInspiralRD.c \
 	LALSimPhenSpinRingDown.c \
