@@ -98,7 +98,7 @@ LALFindChirpStoreEvent (
 
   /* point local pointer to event and params pointers */
   /* note: we expect the gps seconds to be set before calling this routine */
-  timeIndex = thisEvent->end_time.gpsSeconds;
+  timeIndex = thisEvent->end.gpsSeconds;
   deltaT = params->deltaT;
 
   /* set the event LIGO GPS time of the event */
@@ -106,10 +106,10 @@ LALFindChirpStoreEvent (
     (INT8) (input->segment->data->epoch.gpsSeconds);
   timeNS += (INT8) (input->segment->data->epoch.gpsNanoSeconds);
   timeNS += (INT8) (1e9 * timeIndex * deltaT);
-  thisEvent->end_time.gpsSeconds = (INT4) (timeNS/1000000000L);
-  thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS%1000000000L);
+  thisEvent->end.gpsSeconds = (INT4) (timeNS/1000000000L);
+  thisEvent->end.gpsNanoSeconds = (INT4) (timeNS%1000000000L);
   thisEvent->end_time_gmst = fmod(XLALGreenwichMeanSiderealTime(
-      &thisEvent->end_time), LAL_TWOPI) * 24.0 / LAL_TWOPI;	/* hours */
+      &thisEvent->end), LAL_TWOPI) * 24.0 / LAL_TWOPI;	/* hours */
   ASSERT( !XLAL_IS_REAL8_FAIL_NAN(thisEvent->end_time_gmst), status, LAL_FAIL_ERR, LAL_FAIL_MSG );
 
   /* set the impulse time for the event */
@@ -120,7 +120,7 @@ LALFindChirpStoreEvent (
       2 * sizeof(CHAR) );
   strncpy( thisEvent->channel, input->segment->data->name + 3,
       (LALNameLength - 3) * sizeof(CHAR) );
-  thisEvent->impulse_time = thisEvent->end_time;
+  thisEvent->impulse_time = thisEvent->end;
 
   /* record the coalescence phase of the chirp */
   thisEvent->coa_phase = (REAL4)

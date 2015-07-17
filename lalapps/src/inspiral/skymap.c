@@ -401,7 +401,7 @@ void load_metadata(NetworkProperties* network , int slot)
 	  exit(1);
         }
       network->wSw[slot] = a->sigmasq;
-      greenwich = fmod(XLALGreenwichMeanSiderealTime(&(a->end_time)), LAL_TWOPI);
+      greenwich = fmod(XLALGreenwichMeanSiderealTime(&(a->end)), LAL_TWOPI);
     }//end file if
 }// end load_metadata
 

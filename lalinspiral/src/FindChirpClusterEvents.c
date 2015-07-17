@@ -284,18 +284,18 @@ LALFindChirpClusterEvents (
             }
 
             /* record the data that we need for the clustering algorithm */
-            thisEvent->end_time.gpsSeconds = j;
+            thisEvent->end.gpsSeconds = j;
             thisEvent->snr = modqsq;
           }
           else if (  !(params->clusterMethod == FindChirpClustering_none) &&
-              j <= thisEvent->end_time.gpsSeconds + deltaEventIndex &&
+              j <= thisEvent->end.gpsSeconds + deltaEventIndex &&
              modqsq > thisEvent->snr )
           {
             /* if this is the same event, update the maximum */
-            thisEvent->end_time.gpsSeconds = j;
+            thisEvent->end.gpsSeconds = j;
             thisEvent->snr = modqsq;
           }
-          else if ( j > thisEvent->end_time.gpsSeconds + deltaEventIndex ||
+          else if ( j > thisEvent->end.gpsSeconds + deltaEventIndex ||
                 params->clusterMethod == FindChirpClustering_none  )
           {
             /* clean up this event */
@@ -303,12 +303,12 @@ LALFindChirpClusterEvents (
             if ( bankVetoData->length > 1 )
             {
               bvChisq = XLALComputeBankVeto( bankVetoData, subBankIndex,
-					     thisEvent->end_time.gpsSeconds, deltaT, &bvDOF);
+					     thisEvent->end.gpsSeconds, deltaT, &bvDOF);
             }
 
 	    if ( !writeCData ) {
 	      ccChisq = XLALComputeFullChisq(bankVetoData,input,params,q,
-                subBankIndex, thisEvent->end_time.gpsSeconds, &ccDOF, norm);
+                subBankIndex, thisEvent->end.gpsSeconds, &ccDOF, norm);
 	    }
 
             LALFindChirpStoreEvent(status->statusPtr, input, params,
@@ -342,7 +342,7 @@ LALFindChirpClusterEvents (
             }
 
             /* stick minimal data into the event */
-            thisEvent->end_time.gpsSeconds = j;
+            thisEvent->end.gpsSeconds = j;
             thisEvent->snr = modqsq;
           }
         } /* end if bank veto */
@@ -361,12 +361,12 @@ LALFindChirpClusterEvents (
     if ( bankVetoData->length > 1 )
     {
       bvChisq = XLALComputeBankVeto( bankVetoData, subBankIndex,
-				     thisEvent->end_time.gpsSeconds, deltaT, &bvDOF);
+				     thisEvent->end.gpsSeconds, deltaT, &bvDOF);
     }
 
     if ( !writeCData ) {
       ccChisq = XLALComputeFullChisq(bankVetoData, input,params,q,
-            subBankIndex, thisEvent->end_time.gpsSeconds, &ccDOF, norm);
+            subBankIndex, thisEvent->end.gpsSeconds, &ccDOF, norm);
     }
 
     LALFindChirpStoreEvent(status->statusPtr, input, params,

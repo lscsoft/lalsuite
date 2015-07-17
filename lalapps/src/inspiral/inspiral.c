@@ -2998,7 +2998,7 @@ int main( int argc, char *argv[] )
 
                   if ( vrbflg ) fprintf(stdout,
                       "GPS end time of trigger in s and ns are %d and %d; trigtime in (s) is %12.3f; lower and upper bounds in (s) is %12.3f, %12.3f\n",
-                      eventList->end_time.gpsSeconds,eventList->end_time.gpsNanoSeconds, trigTime, lowerBound, upperBound);
+                      eventList->end.gpsSeconds,eventList->end.gpsNanoSeconds, trigTime, lowerBound, upperBound);
 
 
                   if ( trigTime >= lowerBound && trigTime <= upperBound )
@@ -3014,10 +3014,10 @@ int main( int argc, char *argv[] )
                       LALCalloc(1, sizeof(SnglInspiralTable) );
                     tempTmplt->event_id = (EventIDColumn *)
                       LALCalloc(1, sizeof(EventIDColumn) );
-                    tempTmplt->end_time.gpsSeconds =
-                      eventList->end_time.gpsSeconds;
-                    tempTmplt->end_time.gpsNanoSeconds =
-                      eventList->end_time.gpsNanoSeconds;
+                    tempTmplt->end.gpsSeconds =
+                      eventList->end.gpsSeconds;
+                    tempTmplt->end.gpsNanoSeconds =
+                      eventList->end.gpsNanoSeconds;
                     if (eventList->event_id->id)
                       tempTmplt->event_id->id = eventList->event_id->id;
                     else tempTmplt->event_id->id = 0;
@@ -3034,8 +3034,8 @@ int main( int argc, char *argv[] )
                     }
 
 		    snprintf( cdataStr, LALNameLength*sizeof(CHAR),
-                         "%d_%d_%d_%d", tempTmplt->end_time.gpsSeconds,
-                         (tempTmplt->end_time.gpsNanoSeconds - (tempTmplt->end_time.gpsNanoSeconds % 1000000))/1000000,
+                         "%d_%d_%d_%d", tempTmplt->end.gpsSeconds,
+                         (tempTmplt->end.gpsNanoSeconds - (tempTmplt->end.gpsNanoSeconds % 1000000))/1000000,
                          temp_mass1, temp_mass2 );
 
 		    /* Add frame if cdataStr NOT present in cdataStrCat */
@@ -3562,7 +3562,7 @@ int main( int argc, char *argv[] )
       while ( event )
       {
         INT8 trigTimeNS;
-        trigTimeNS = XLALGPSToINT8NS( &(event->end_time) );
+        trigTimeNS = XLALGPSToINT8NS( &(event->end) );
 
         if ( trigTimeNS &&
             ((trigStartTimeNS && (trigTimeNS < trigStartTimeNS)) ||

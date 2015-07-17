@@ -299,7 +299,7 @@ tagSnglInspiralTable
   CHAR          ifo[LIGOMETA_IFO_MAX];
   CHAR          search[LIGOMETA_SEARCH_MAX];
   CHAR          channel[LIGOMETA_CHANNEL_MAX];
-  LIGOTimeGPS   end_time;
+  LIGOTimeGPS   end;
   REAL8         end_time_gmst;
   LIGOTimeGPS   impulse_time;
   REAL8         template_duration;

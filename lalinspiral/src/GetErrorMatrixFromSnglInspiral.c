@@ -210,8 +210,8 @@ gsl_vector * XLALGetPositionFromSnglInspiral( SnglInspiralTable *table )
   if ( !position )
     XLAL_ERROR_NULL( XLAL_ENOMEM );
 
-  endTime = (REAL8) table->end_time.gpsSeconds +
-        (REAL8) table->end_time.gpsNanoSeconds * 1.0e-9;
+  endTime = (REAL8) table->end.gpsSeconds +
+        (REAL8) table->end.gpsNanoSeconds * 1.0e-9;
 
   mtotal = (table->mtotal)*LAL_MTSUN_SI;
   fLow =  5.0 / (256.0 * table->eta * pow(mtotal, 5.0/3.0) * table->tau0 );

@@ -1603,7 +1603,7 @@ int main(int argc, char *argv[])
                     /* Also need to check for time here... */
                     INT8 trig_end_time_ns;
 
-                    trig_end_time_ns = XLALGPSToINT8NS(&(currentTrigger->end_time));
+                    trig_end_time_ns = XLALGPSToINT8NS(&(currentTrigger->end));
 
                     if (trig_end_time_ns >= (fcSegStartTimeNS+chunkOffset) && trig_end_time_ns < (fcSegEndTimeNS-chunkOffset))
                     {
@@ -1747,7 +1747,7 @@ int main(int argc, char *argv[])
                     if ((currentTrigger->mass1 == bankCurrent->mass1) && (currentTrigger->mass2 == bankCurrent->mass2)) {
                         INT8 trig_end_time_ns;
 
-                        trig_end_time_ns = XLALGPSToINT8NS(&(currentTrigger->end_time));
+                        trig_end_time_ns = XLALGPSToINT8NS(&(currentTrigger->end));
 
                         if (trig_end_time_ns >= (fcSegStartTimeNS+chunkOffset) && trig_end_time_ns < (fcSegEndTimeNS-chunkOffset))
                         {

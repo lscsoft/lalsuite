@@ -677,11 +677,11 @@ LALSnglInspiralTableFromLIGOLw (
         }
         else if ( tableDir[j].idx == 3 )
         {
-          thisEvent->end_time.gpsSeconds = i4colData;
+          thisEvent->end.gpsSeconds = i4colData;
         }
         else if ( tableDir[j].idx == 4 )
         {
-          thisEvent->end_time.gpsNanoSeconds = i4colData;
+          thisEvent->end.gpsNanoSeconds = i4colData;
         }
         else if ( tableDir[j].idx == 5 )
         {
