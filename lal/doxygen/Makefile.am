@@ -1,3 +1,6 @@
+TEST_EXTENSIONS = .sh
+SH_LOG_COMPILER = $(SHELL)
+
 if DOXYGEN
 
 if HAVE_GIT_REPO
@@ -55,7 +58,9 @@ html-local: Makefile $(CONFIG_CLEAN_FILES)
 	echo "=== Doxygen documentation was built successfully!"; \
 	echo "=== $(PACKAGE_NAME) main page is at file://$(abs_builddir)/out/index.html"
 
-check-local: html   # so that 'make check' will check that documentation builds
+TESTS = test_doxygen.sh
+test_doxygen.sh:
+	$(AM_V_at)echo "cd $(abs_builddir) && make html" >$@
 
 install-html-local: html-local
 	$(AM_V_at)for dir in `cd out/ && find . -type d`; do \
@@ -78,7 +83,8 @@ uninstall-local:
 	-rm -rf "$(DESTDIR)$(htmldir)/"
 
 clean-local:
-	-rm -rf autogen.dox out/
+	-rm -rf out/
+	-rm -f autogen.dox test_doxygen.sh
 
 EXTRA_DIST = \
 	check_tags.py \
