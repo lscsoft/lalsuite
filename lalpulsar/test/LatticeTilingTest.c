@@ -111,18 +111,11 @@ static int BasicTest(
     XLAL_CHECK( total == total_ref[i], XLAL_EFUNC, "ERROR: total = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = total_ref", total, total_ref[i] );
     printf( "Minimum/average/maximum number of points per pass:\n" );
     for( size_t j = 0; j < n; ++j ) {
-      UINT8 total_j = 0;
-      long min_pass = 0, max_pass = 0;
-      double avg_pass = 0;
-      XLAL_CHECK( XLALLatticeTilingStatistics( itr, j, &total_j, &min_pass, &avg_pass, &max_pass ) == XLAL_SUCCESS, XLAL_EFUNC );
-      printf( "   %li <= %0.3g <= %li (total=%" LAL_UINT8_FORMAT ")\n", min_pass, avg_pass, max_pass, total_j );
-      if( j <= i ) {
-        XLAL_CHECK( total_j == total_ref[j], XLAL_EFUNC, "ERROR: total = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = total_ref", total_j, total_ref[j] );
-      } else {
-        XLAL_CHECK( total_j == total_ref[i], XLAL_EFUNC, "ERROR: total = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = total_ref", total_j, total_ref[i] );
-        XLAL_CHECK( min_pass == 1 && max_pass == 1, XLAL_EFAILED );
-      }
-      XLAL_CHECK( min_pass <= avg_pass && avg_pass <= max_pass, XLAL_EFAILED );
+      const LatticeTilingStats *stats = XLALLatticeTilingStatistics( tiling, j );
+      XLAL_CHECK( stats != NULL, XLAL_EFUNC );
+      printf( "   %li <= %0.3g <= %li (total=%" LAL_UINT8_FORMAT ")\n", stats->min_points_pass, stats->avg_points_pass, stats->max_points_pass, stats->total_points );
+      XLAL_CHECK( stats->total_points == total_ref[j], XLAL_EFUNC, "ERROR: total = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = total_ref", stats->total_points, total_ref[j] );
+      XLAL_CHECK( stats->min_points_pass <= stats->avg_points_pass && stats->avg_points_pass <= stats->max_points_pass, XLAL_EFAILED );
     }
 
     // Get all points
