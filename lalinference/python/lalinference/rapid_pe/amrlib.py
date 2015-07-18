@@ -339,7 +339,7 @@ def unpack_grid_cells(npy_cells):
     for cntr in npy_cells[1:]:
         cell = Cell(numpy.array((cntr - res / 2, cntr + res / 2)).T)
         cells.append(cell)
-    return cells
+    return cells, res
 
 def serialize_grid_cells(level_dict, fname):
     """
@@ -357,8 +357,9 @@ def deserialize_grid_cells(fname):
     cell_block = numpy.load(fname)
     cells = []
     for level in cell_block:
-        cells.extend(unpack_grid_cells(level))
-    return cells
+        level_cells, res = unpack_grid_cells(level)
+        cells.extend(level_cells)
+    return cells, res
 
 
 #
