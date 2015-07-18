@@ -365,7 +365,7 @@ if opts.refine and opts.result_file is not None:
         #assert all([numpy.isclose(a, b) for a, b in zip(res, selected[idx[0][0]])])
         grid_idx.append(idx[0][0])
     selected = get_cr_from_grid(selected[grid_idx], results, cr_thr=0.9)
-    print "Selected %d cells from 90% confidence region" % len(selected)
+    print "Selected %d cells from %.2f%% confidence region" % (len(selected), 0.9)
 ####
 
 grid, spacing = amrlib.refine_regular_grid(selected, spacing)
