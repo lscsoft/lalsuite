@@ -356,6 +356,7 @@ if opts.refine and opts.result_file is not None:
     selected = numpy.array([c._center for c in prev_cells])
     # refinement already occurred once in the setup stage
     #spacing /= 2
+    selected = amrlib.apply_transform(selected, intr_prms, opts.distance_coordinates)
 
     grid_tree = BallTree(selected)
     grid_idx = []
@@ -366,7 +367,6 @@ if opts.refine and opts.result_file is not None:
         #assert all([numpy.isclose(a, b) for a, b in zip(res, selected[idx[0][0]])])
         grid_idx.append(idx[0][0])
     selected = get_cr_from_grid(selected[grid_idx], results, cr_thr=0.9)
-    selected = amrlib.apply_transform(selected, intr_prms, opts.distance_coordinates)
     print "Selected %d cells from %.2f%% confidence region" % (len(selected), 0.9)
 ####
 
