@@ -352,9 +352,10 @@ selected = grid[numpy.array(list(get_idx))]
 if opts.refine and opts.result_file is not None:
     # FIXME: temporary -- we shouldn't need to know the spacing of the initial
     # region
-    selected = numpy.array([c._center for c in amrlib.deserialize_grid_cells(opts.refine)])
+    prev_cells, spacing = amrlib.deserialize_grid_cells(opts.refine)
+    selected = numpy.array([c._center for c in prev_cells])
     # refinement already occurred once in the setup stage
-    spacing /= 2
+    #spacing /= 2
 
     grid_tree = BallTree(selected)
     grid_idx = []
@@ -393,6 +394,9 @@ if opts.setup:
     npy_grid = amrlib.pack_grid_cells(cells, spacing)
     # FIXME: specify level better
     amrlib.serialize_grid_cells({1: npy_grid}, opts.setup)
+else:
+    npy_grid = amrlib.pack_grid_cells(cells, spacing)
+    amrlib.serialize_grid_cells({2: npy_grid}, opts.refine)
 
 overlaps = eval_grid(t1, cells, intr_prms)
 
