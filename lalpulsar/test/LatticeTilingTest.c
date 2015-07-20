@@ -437,16 +437,17 @@ static int SuperskyTest(
   EphemerisData *edat =  XLALInitBarycenter( TEST_DATA_DIR "earth00-19-DE405.dat.gz",
                                              TEST_DATA_DIR "sun00-19-DE405.dat.gz" );
   XLAL_CHECK( edat != NULL, XLAL_EFUNC );
-  gsl_matrix *rssky_metric = NULL, *rssky_transf = NULL;
-  XLAL_CHECK( XLALComputeSuperskyMetrics( &rssky_metric, &rssky_transf, NULL, 0, &ref_time, &segments, freq, &detectors, NULL, DETMOTION_SPIN | DETMOTION_PTOLEORBIT, edat ) == XLAL_SUCCESS, XLAL_EFUNC );
+  gsl_matrix *rssky_metric = NULL;
+  SuperskyTransformData *ssky_data = NULL;
+  XLAL_CHECK( XLALComputeSuperskyMetrics( &rssky_metric, NULL, &ssky_data, 0, &ref_time, &segments, freq, &detectors, NULL, DETMOTION_SPIN | DETMOTION_PTOLEORBIT, edat ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLALSegListClear( &segments );
   XLALDestroyEphemerisData( edat );
 
   // Add bounds
   printf( "Bounds: supersky, freq=%0.3g, freqband=%0.3g\n", freq, freqband );
   XLAL_CHECK( XLALSetSuperskyLatticeTilingAllSkyBounds( tiling, 2.0, 1, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLALSetSuperskyLatticeTilingPhysicalSpinBound( tiling, rssky_transf, 0, freq, freq + freqband ) == XLAL_SUCCESS, XLAL_EFUNC );
-  GFMAT( rssky_transf );
+  XLAL_CHECK( XLALSetSuperskyLatticeTilingPhysicalSpinBound( tiling, ssky_data, 0, freq, freq + freqband ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLALFree( ssky_data );
 
   // Set metric
   printf( "Lattice type: %u\n", lattice );
