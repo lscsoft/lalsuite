@@ -338,25 +338,30 @@ static double EradRational(double eta, double chi1, double chi2) {
 }
 
 static double fring(double eta, double chi1, double chi2) {
+  double return_val;
+
   gsl_interp_accel *acc = gsl_interp_accel_alloc();
   gsl_spline *iFring = gsl_spline_alloc(gsl_interp_cspline, QNMData_length);
   gsl_spline_init(iFring, QNMData_a, QNMData_fring, QNMData_length);
 
-  return gsl_spline_eval(iFring, FinalSpin0714(eta, chi1, chi2), acc) / (1.0 - EradRational(eta, chi1, chi2));
+  return_val = gsl_spline_eval(iFring, FinalSpin0714(eta, chi1, chi2), acc) / (1.0 - EradRational(eta, chi1, chi2));
 
   gsl_spline_free(iFring);
   gsl_interp_accel_free(acc);
+  return return_val;
 }
 
 static double fdamp(double eta, double chi1, double chi2) {
+  double return_val;
   gsl_interp_accel *acc = gsl_interp_accel_alloc();
   gsl_spline *iFdamp = gsl_spline_alloc(gsl_interp_cspline, QNMData_length);
   gsl_spline_init(iFdamp, QNMData_a, QNMData_fdamp, QNMData_length);
 
-  return gsl_spline_eval(iFdamp, FinalSpin0714(eta, chi1, chi2), acc) / (1.0 - EradRational(eta, chi1, chi2));
+  return_val = gsl_spline_eval(iFdamp, FinalSpin0714(eta, chi1, chi2), acc) / (1.0 - EradRational(eta, chi1, chi2));
 
   gsl_spline_free(iFdamp);
   gsl_interp_accel_free(acc);
+  return return_val;
 }
 
 /******************************* Amplitude functions *******************************/
