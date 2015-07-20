@@ -1,7 +1,7 @@
 /*
  *
- *  LALInferenceEnsembleSampler:    Ensemble Markov-Chain Monte Carlo sampler for LALInference        
- *  LALInferenceEnsembleSampler.h:  main header file
+ *  LALInferenceKombineSampler:    Ensemble Markov-Chain Monte Carlo sampler for LALInference        
+ *  LALInferenceKombineSampler.h:  main header file
  *
  *  Copyright (C) 2014 Ben Farr
  *
@@ -23,7 +23,7 @@
  */
 
 /**
- * \file LALInferenceEnsembleSampler.h
+ * \file LALInferenceKombineSampler.h
  * \ingroup lalapps_inspiral
  * \brief Ensemble Markov-Chain Monte Carlo sampler written for LALInference.
  *

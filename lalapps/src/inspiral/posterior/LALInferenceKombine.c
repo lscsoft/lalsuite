@@ -1,5 +1,5 @@
 /*
- *  LALInferenceEnsemble.c:  Bayesian Followup function testing site
+ *  LALInferenceKombine.c:  Bayesian Followup function testing site
  *
  *  Copyright (C) 2014 Ben Farr
  *
@@ -23,7 +23,7 @@
 
 #include <stdio.h>
 #include <lal/LALInference.h>
-#include "LALInferenceEnsembleSampler.h"
+#include "LALInferenceKombineSampler.h"
 #include <lal/LALInferencePrior.h>
 #include <lal/LALInferenceProposal.h>
 #include <lal/LALInferenceLikelihood.h>

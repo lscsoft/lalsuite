@@ -1,5 +1,5 @@
 /*
- *  LALInferenceEnsembleSampler.c:  Bayesian Followup, ensemble-sampling algorithm.
+ *  LALInferenceKombineSampler.c:  Bayesian Followup, ensemble-sampling algorithm.
  *
  *  Copyright (C) 2014 Ben Farr
  *
@@ -22,13 +22,13 @@
 
 #include <mpi.h>
 #include <lal/LALInference.h>
-#include "LALInferenceEnsembleSampler.h"
+#include "LALInferenceKombineSampler.h"
 #include <lal/LALInferenceProposal.h>
 #include <lal/LALInferenceClusteredKDE.h>
 
 #include <LALAppsVCSInfo.h>
 
-#define PROGRAM_NAME "LALInferenceEnsembleSampler.c"
+#define PROGRAM_NAME "LALInferenceKombineSampler.c"
 #define CVS_ID_STRING "$Id$"
 #define CVS_REVISION "$Revision$"
 #define CVS_SOURCE "$Source$"
