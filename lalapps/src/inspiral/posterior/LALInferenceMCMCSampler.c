@@ -393,7 +393,10 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
         /* Excute swap proposal. */
         runState->parallelSwap(runState, i, swapfile);
 
-        if (MPIrank==0 && i > Niter)
+        /* Broadcast the root's decision on run completion */
+        MPI_Bcast(&runComplete, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+        if (i > Niter)
             runComplete=1;
     }// while (!runComplete)
 
