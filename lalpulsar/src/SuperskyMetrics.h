@@ -154,6 +154,17 @@ int XLALSetSuperskyLatticeTilingCoordinateSpinBound(
   const double bound2				///< [in] Second bound on frequency/spindown
   );
 
+///
+/// Fill a PulsarSpinRange with the physical frequency/spindown ranges covered by a reduced supersky
+/// lattice tiling.
+///
+int XLALSuperskyLatticePulsarSpinRange(
+  PulsarSpinRange *spin_range,			///< [in,out] Physical frequency/spindown range
+  LatticeTiling *tiling,			///< [in] Lattice tiling
+  const gsl_matrix *rssky_transf,		///< [in] Reduced supersky coordinate transform data
+  const LIGOTimeGPS *ref_time			///< [in] Reference time for the coordinate transform data
+  );
+
 /// @}
 
 #ifdef __cplusplus
