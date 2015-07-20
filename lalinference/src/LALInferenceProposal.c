@@ -3901,8 +3901,7 @@ REAL8 LALInferenceStoredClusteredKDEProposal(LALInferenceThreadState *thread, LA
  * @param maxACL UNDOCUMENTED
 */
 void LALInferenceComputeMaxAutoCorrLenFromDE(LALInferenceThreadState *thread, INT4* maxACL) {
-    INT4 nPar, nPoints;
-    INT4 Nskip = 1;
+    INT4 nPar, nPoints, nSkip;
     INT4 i;
     REAL8** DEarray;
     REAL8*  temp;
@@ -3912,7 +3911,7 @@ void LALInferenceComputeMaxAutoCorrLenFromDE(LALInferenceThreadState *thread, IN
     nPoints = thread->differentialPointsLength;
 
     /* Determine the number of iterations between each entry in the DE buffer */
-    Nskip = LALInferenceGetINT4Variable(thread->proposalArgs, "Nskip");
+    nSkip = thread->differentialPointsSkip;
 
     /* Prepare 2D array for DE points */
     DEarray = (REAL8**) XLALCalloc(nPoints, sizeof(REAL8*));
@@ -3921,7 +3920,7 @@ void LALInferenceComputeMaxAutoCorrLenFromDE(LALInferenceThreadState *thread, IN
         DEarray[i] = temp + (i*nPar);
 
     LALInferenceBufferToArray(thread, DEarray);
-    max_acl = Nskip * LALInferenceComputeMaxAutoCorrLen(DEarray[nPoints/2], nPoints-nPoints/2, nPar);
+    max_acl = nSkip * LALInferenceComputeMaxAutoCorrLen(DEarray[nPoints/2], nPoints-nPoints/2, nPar);
 
     if (max_acl == INFINITY)
         max_acl = INT_MAX;
