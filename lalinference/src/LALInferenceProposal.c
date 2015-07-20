@@ -1074,8 +1074,6 @@ REAL8 LALInferenceEnsembleWalkNames(LALInferenceThreadState *thread,
     size_t k, D, sample_size;
     LALInferenceVariableItem *item;
     LALInferenceVariables **dePts, **pointsPool;
-    INT4 *indeces, *all_indeces;
-    REAL8 *center_of_mass, *w, *univariate_normals;
     REAL8 tmp;
     REAL8 logPropRatio = 0.0;
 
@@ -1119,16 +1117,16 @@ REAL8 LALInferenceEnsembleWalkNames(LALInferenceThreadState *thread,
     if (dePts == NULL || nPts <= 1)
         return logPropRatio; /* Quit now, since we don't have any points to use. */
 
-    indeces = alloca(sample_size * sizeof(int));
-    all_indeces = alloca(nPts * sizeof(int));
+    INT4 indeces[sample_size];
+    INT4 all_indeces[nPts];
 
     for (i=0; i<nPts; i++)
         all_indeces[i] = i;
 
     gsl_ran_choose(rng, indeces, sample_size, all_indeces, nPts, sizeof(INT4));
 
-    center_of_mass = alloca(Ndim * sizeof(REAL8));
-    w = alloca(Ndim * sizeof(REAL8));
+    REAL8 center_of_mass[Ndim];
+    REAL8 w[Ndim];
 
     for (k=0; k<Ndim; k++) {
         center_of_mass[k] = 0.0;
@@ -1142,7 +1140,7 @@ REAL8 LALInferenceEnsembleWalkNames(LALInferenceThreadState *thread,
         }
     }
 
-    univariate_normals = alloca(D * sizeof(double));
+    REAL8 univariate_normals[D];
     for (i=0; i<sample_size; i++)
         univariate_normals[i] = gsl_ran_ugaussian(rng);
 
