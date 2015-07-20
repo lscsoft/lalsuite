@@ -188,7 +188,7 @@ void initialise_algorithm( LALInferenceRunState *runState )
 
   /* Set up the random number generator */
   gsl_rng_env_setup();
-  runState->GSLrandom = gsl_rng_alloc( gsl_rng_mt19937 ); 
+  runState->GSLrandom = gsl_rng_alloc( gsl_rng_mt19937 );
 
   /* (try to) get random seed from command line: */
   ppt = LALInferenceGetProcParamVal( commandLine, "--randomseed" );
@@ -262,7 +262,7 @@ void setup_lookup_tables( LALInferenceRunState *runState, LALSource *source ){
   ProcessParamsTable *commandLine = runState->commandLine;
   /* Single thread here */
   LALInferenceThreadState *threadState = runState->threads[0];
-  
+
   LALInferenceIFOData *data = runState->data;
   LALInferenceIFOModel *ifo_model = threadState->model->ifo;
 
@@ -1438,17 +1438,10 @@ void LogSampleToFile(LALInferenceRunState *state, LALInferenceVariables *vars)
     sprintf(scaleminname, "%s_scale_min", scaleitem->name);
 
     /* check if scale values are present */
-<<<<<<< HEAD
     if ( LALInferenceCheckVariable( threadState->model->ifo->params, scalename ) &&
       LALInferenceCheckVariable( threadState->model->ifo->params, scaleminname ) ){
       scalefac = *(REAL8 *)LALInferenceGetVariable( threadState->model->ifo->params, scalename );
       scalemin = *(REAL8 *)LALInferenceGetVariable( threadState->model->ifo->params, scaleminname );
-=======
-    if ( LALInferenceCheckVariable( state->model->ifo->params, scalename ) &&
-      LALInferenceCheckVariable( state->model->ifo->params, scaleminname ) ){
-      scalefac = *(REAL8 *)LALInferenceGetVariable( state->model->ifo->params, scalename );
-      scalemin = *(REAL8 *)LALInferenceGetVariable( state->model->ifo->params, scaleminname );
->>>>>>> master
 
       /* get the value and scale it */
       value = *(REAL8 *)LALInferenceGetVariable( varscopy, scaleitem->name );
@@ -1487,12 +1480,9 @@ void LogSampleToFile(LALInferenceRunState *state, LALInferenceVariables *vars)
  */
 void LogSampleToArray(LALInferenceRunState *state, LALInferenceVariables *vars)
 {
-<<<<<<< HEAD
   /* Single thread only */
   LALInferenceThreadState *threadState = state->threads[0];
 
-=======
->>>>>>> master
   LALInferenceVariables **output_array=NULL;
   UINT4 N_output_array=0;
   LALInferenceSortVariablesByName(vars);
@@ -1514,17 +1504,10 @@ void LogSampleToArray(LALInferenceRunState *state, LALInferenceVariables *vars)
     sprintf(scaleminname, "%s_scale_min", scaleitem->name);
 
     /* check if scale values are present */
-<<<<<<< HEAD
     if ( LALInferenceCheckVariable( threadState->model->ifo->params, scalename ) &&
       LALInferenceCheckVariable( threadState->model->ifo->params, scaleminname ) ){
       scalefac = *(REAL8 *)LALInferenceGetVariable( threadState->model->ifo->params, scalename );
       scalemin = *(REAL8 *)LALInferenceGetVariable( threadState->model->ifo->params, scaleminname );
-=======
-    if ( LALInferenceCheckVariable( state->model->ifo->params, scalename ) &&
-      LALInferenceCheckVariable( state->model->ifo->params, scaleminname ) ){
-      scalefac = *(REAL8 *)LALInferenceGetVariable( state->model->ifo->params, scalename );
-      scalemin = *(REAL8 *)LALInferenceGetVariable( state->model->ifo->params, scaleminname );
->>>>>>> master
 
       /* get the value and scale it */
       value = *(REAL8 *)LALInferenceGetVariable( varscopy, scaleitem->name );
@@ -1571,7 +1554,6 @@ void LogSampleToArray(LALInferenceRunState *state, LALInferenceVariables *vars)
   return;
 }
 
-<<<<<<< HEAD
 
 void initialise_threads(LALInferenceRunState *state, INT4 nthreads){
   INT4 i,randomseed;
@@ -1586,6 +1568,3 @@ void initialise_threads(LALInferenceRunState *state, INT4 nthreads){
     gsl_rng_set(thread->GSLrandom, randomseed);
   }
 }
-
-=======
->>>>>>> master
