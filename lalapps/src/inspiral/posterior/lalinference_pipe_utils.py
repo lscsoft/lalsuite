@@ -1672,7 +1672,9 @@ class LALInferenceBAMBINode(EngineNode):
     self.paramsfile=self.fileroot+'params.txt'
     self.Bfilename=self.fileroot+'evidence.dat'
     self.headerfile=self.paramsfile
-    self.add_file_opt(self.outfilearg,self.fileroot)
+    self.add_file_opt(self.outfilearg,self.fileroot,file_is_output_file=True)
+    self.add_output_file(self.Bfilename)
+    self.add_output_file(self.posfile)
 
   def get_B_file(self):
     return self.Bfilename
