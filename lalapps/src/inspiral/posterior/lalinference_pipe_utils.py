@@ -1049,8 +1049,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             else:
               fakecachefiles=ast.literal_eval(self.config.get('lalinference','fake-cache'))
               if self.config.has_option('condor','bayesline') or self.config.has_option('condor','computeroqweights'):
-                prenode.add_fake_ifo_data(ifo,seg,fakecachefiles[ifo],channels[ifo],timeslide=slide)
-              gotdata+=node.add_fake_ifo_data(ifo,seg,fakecachefiles[ifo],channels[ifo],timeslide=slide)
+                prenode.add_fake_ifo_data(ifo,seg,fakecachefiles[ifo],self.channels[ifo],timeslide=slide)
+              gotdata+=node.add_fake_ifo_data(ifo,seg,fakecachefiles[ifo],self.channels[ifo],timeslide=slide)
     if self.config.has_option('lalinference','psd-xmlfile'):
       psdpath=os.path.realpath(self.config.get('lalinference','psd-xmlfile'))
       node.psds=get_xml_psds(psdpath,ifos,os.path.join(self.basepath,'PSDs'),end_time=end_time)
