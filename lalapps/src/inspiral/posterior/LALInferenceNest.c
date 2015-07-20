@@ -66,7 +66,9 @@ int main(int argc, char *argv[]){
   /* And allocating memory */
   state = LALInferenceInitRunState(procParams);
   /* Perform injections if data successful read or created */
-  LALInferenceInjectInspiralSignal(state->data, state->commandLine);
+  if (state){
+    LALInferenceInjectInspiralSignal(state->data, state->commandLine);
+  }
 
   /* Set up the appropriate functions for the nested sampling algorithm */
   if (state){

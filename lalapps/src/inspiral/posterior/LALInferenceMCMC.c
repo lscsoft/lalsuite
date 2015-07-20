@@ -648,7 +648,9 @@ int main(int argc, char *argv[]){
     runState = LALInferenceInitRunState(procParams);
 
     /* Perform injections if data successful read or created */
-    LALInferenceInjectInspiralSignal(runState->data, runState->commandLine);
+    if (runState){
+      LALInferenceInjectInspiralSignal(runState->data, runState->commandLine);
+    }
 
     if (runState == NULL) {
         if (!LALInferenceGetProcParamVal(procParams, "--help")) {
