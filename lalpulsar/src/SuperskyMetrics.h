@@ -90,7 +90,8 @@ int XLALConvertPhysicalToSupersky(
   const SuperskyCoordinates out,		///< [in] Coordinate system of the output point
   gsl_vector *out_point,			///< [in/out] Output point in supersky coordinates
   const PulsarDopplerParams *in_phys,		///< [in] Input point in physical coordinates
-  const gsl_matrix *rssky_transf		///< [in] Reduced supersky coordinate transform data
+  const gsl_matrix *rssky_transf,		///< [in] Reduced supersky coordinate transform data
+  const LIGOTimeGPS *ref_time			///< [in] Reference time for the coordinate transform data
   );
 
 ///
@@ -100,7 +101,8 @@ int XLALConvertSuperskyToPhysical(
   PulsarDopplerParams *out_phys,		///< [in/out] Output point in physical coordinates
   const SuperskyCoordinates in,			///< [in] Coordinate system of the input point
   const gsl_vector *in_point,			///< [in] Input point in supersky coordinates
-  const gsl_matrix *rssky_transf		///< [in] Reduced supersky coordinate transform data
+  const gsl_matrix *rssky_transf,		///< [in] Reduced supersky coordinate transform data
+  const LIGOTimeGPS *ref_time			///< [in] Reference time for the coordinate transform data
   );
 
 ///
