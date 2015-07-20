@@ -104,6 +104,9 @@ extern "C++" {
 // Octave __pow__() operator takes 2 arguments, so we ignore the 3rd.
 %typemap(in, numinputs=0) void* SWIGLAL_OP_POW_3RDARG "";
 
+// Comparison operators.
+%typemap(in, numinputs=0, noblock=1) int SWIGLAL_CMP_OP_RETN_HACK "";
+
 // # General fragments, typemaps, and macros
 
 // SWIG conversion fragments and typemaps for GSL complex numbers.

@@ -510,23 +510,13 @@ void LALInferenceCopyVariables(LALInferenceVariables *origin, LALInferenceVariab
 
   /* Make sure the structure is initialised */
   if(!target) XLAL_ERROR_VOID(XLAL_EFAULT, "Unable to copy to uninitialised LALInferenceVariables structure.");
-  /* first dispose contents of "target" (if any): */
-  //LALInferenceClearVariables(target);
-  if(target->dimension==0) LALInferenceClearVariables(target);
-  LALInferenceVariableItem *this,*next;
-  for(this=target->head;this;this=next){
-    next=this->next;
-    if(!LALInferenceCheckVariable(origin,this->name)) {
-      LALInferenceRemoveVariable(target,this->name);
-    }
-  }
-  /* get the number of elements in origin */
-  dims = LALInferenceGetVariableDimension( origin );
-  if(target->dimension==0) LALInferenceClearVariables(target);
 
-  if ( !dims ){
-    XLAL_ERROR_VOID(XLAL_EFAULT, "Origin variables has zero dimensions!");
-  }
+  /* First clear the target */
+  LALInferenceClearVariables(target);
+
+  /* Now add the variables in reverse order, to preserve the
+   * ordering */
+  dims = LALInferenceGetVariableDimension( origin );
 
   /* then copy over elements of "origin" - due to how elements are added by
      LALInferenceAddVariable this has to be done in reverse order to preserve
@@ -605,7 +595,7 @@ void LALInferenceCopyVariables(LALInferenceVariables *origin, LALInferenceVariab
 }
 
 /** Prints a variable item to a string (must be pre-allocated!) */
-void LALInferencePrintVariableItem(char *out, LALInferenceVariableItem *ptr)
+void LALInferencePrintVariableItem(char *out,const LALInferenceVariableItem *const ptr)
 {
   if(ptr==NULL) {
     XLAL_ERROR_VOID(XLAL_EFAULT, "Null LALInferenceVariableItem pointer.");
@@ -615,13 +605,13 @@ void LALInferencePrintVariableItem(char *out, LALInferenceVariableItem *ptr)
   }
   switch (ptr->type) {
         case LALINFERENCE_INT4_t:
-          sprintf(out, "%d", *(INT4 *) ptr->value);
+          sprintf(out, "%" LAL_INT4_FORMAT, *(INT4 *) ptr->value);
           break;
         case LALINFERENCE_INT8_t:
           sprintf(out, "%" LAL_INT8_FORMAT, *(INT8 *) ptr->value);
           break;
         case LALINFERENCE_UINT4_t:
-          sprintf(out, "%ud", *(UINT4 *) ptr->value);
+          sprintf(out, "%" LAL_UINT4_FORMAT, *(UINT4 *) ptr->value);
           break;
         case LALINFERENCE_REAL4_t:
           sprintf(out, "%.15lf", *(REAL4 *) ptr->value);

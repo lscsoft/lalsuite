@@ -31,6 +31,7 @@ import numpy
 # LAL analysis stuff
 import lal
 from glue.ligolw import utils, lsctables, table, ligolw
+lsctables.use_in(ligolw.LIGOLWContentHandler)
 from glue.ligolw.utils import process
 import glue.lal
 import pylal
@@ -101,7 +102,7 @@ if opts.seed is not None:
 # Gather information about a injection put in the data
 #
 if opts.pin_to_sim is not None:
-    xmldoc = utils.load_filename(opts.pin_to_sim)
+    xmldoc = utils.load_filename(opts.pin_to_sim, contenthandler=ligolw.LIGOLWContentHandler)
     sim_table = lsctables.SimInspiralTable.get_table(xmldoc)
     assert len(sim_table) == 1
     sim_row = sim_table[0]
@@ -110,7 +111,7 @@ if opts.pin_to_sim is not None:
 # Gather information from the detection pipeline
 #
 if opts.coinc_xml is not None:
-    xmldoc = utils.load_filename(opts.coinc_xml)
+    xmldoc = utils.load_filename(opts.coinc_xml, contenthandler=ligolw.LIGOLWContentHandler)
     coinc_table = table.get_table(xmldoc, lsctables.CoincInspiralTable.tableName)
     assert len(coinc_table) == 1
     coinc_row = coinc_table[0]

@@ -87,6 +87,7 @@ typedef struct{
   CHAR *ephemSun;		/**< Sun ephemeris file to use */
   CHAR *IFO; /*detector */
   CHAR *logDir; /*directory for the log files */
+  CHAR *outputdir;
 } UserInput_t;
 
 UserInput_t uvar_struct;
@@ -486,8 +487,8 @@ int main(int argc, char **argv)
 	    /*if binary */
 	    if (pulparams[h].model != NULL) {
 	      /*fprintf(stderr, "You have a binary! %s", pulin);*/
-	      params.orbit->asini = pulparams[h].x;
-	      params.orbit->period = pulparams[h].Pb*86400;
+	      params.orbit.asini = pulparams[h].x;
+	      params.orbit.period = pulparams[h].Pb*86400;
 
 	      /*Taking into account ELL1 model option */
 	      if (strstr(pulparams[h].model,"ELL1") != NULL) {
@@ -496,26 +497,27 @@ int main(int argc, char **argv)
 		eps2 = pulparams[h].eps2;
 		w = atan2(eps1,eps2);
 		e = sqrt(eps1*eps1+eps2*eps2);
-		params.orbit->argp = w;
-		params.orbit->ecc = e;
+		params.orbit.argp = w;
+		params.orbit.ecc = e;
 	      }
 	      else {
-		params.orbit->argp = pulparams[h].w0;
-		params.orbit->ecc = pulparams[h].e;
+		params.orbit.argp = pulparams[h].w0;
+		params.orbit.ecc = pulparams[h].e;
 	      }
 	      if (strstr(pulparams[h].model,"ELL1") != NULL) {
 		REAL8 fe, uasc, Dt;
-		fe = sqrt((1.0-params.orbit->ecc)/(1.0+params.orbit->ecc));
-		uasc = 2.0*atan(fe*tan(params.orbit->argp/2.0));
-		Dt = (params.orbit->period/LAL_TWOPI)*(uasc-params.orbit->ecc*sin(uasc));
+		fe = sqrt((1.0-params.orbit.ecc)/(1.0+params.orbit.ecc));
+		uasc = 2.0*atan(fe*tan(params.orbit.argp/2.0));
+		Dt = (params.orbit.period/LAL_TWOPI)*(uasc-params.orbit.ecc*sin(uasc));
 		pulparams[h].T0 = pulparams[h].Tasc + Dt;
 	      }
 
-	      params.orbit->tp.gpsSeconds = (UINT4)floor(pulparams[h].T0);
-	      params.orbit->tp.gpsNanoSeconds = (UINT4)floor((pulparams[h].T0 - params.orbit->tp.gpsSeconds)*1e9);
+	      params.orbit.tp.gpsSeconds = (UINT4)floor(pulparams[h].T0);
+	      params.orbit.tp.gpsNanoSeconds = (UINT4)floor((pulparams[h].T0 - params.orbit.tp.gpsSeconds)*1e9);
 	    } /* if pulparams.model is BINARY */
-	    else
-	      params.orbit = NULL; /*if pulparams.model = NULL -- isolated pulsar*/
+	    else {
+	      XLAL_INIT_MEM(params.orbit); /*if pulparams.model = NULL -- isolated pulsar*/
+            }
 	    params.site = site;
 	    params.ephemerides = edat;
 	    params.startTimeGPS = epoch;

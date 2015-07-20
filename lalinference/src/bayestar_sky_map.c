@@ -72,6 +72,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
 
 #include <lal/DetResponse.h>
 #include <lal/InspiralInjectionParams.h>

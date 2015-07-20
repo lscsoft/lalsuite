@@ -191,6 +191,12 @@ REAL8 PulsarGetREAL8Param( const PulsarParameters *pars, const CHAR *name ){
 }
 
 
+REAL8 PulsarGetREAL8ParamOrZero( const PulsarParameters *pars, const CHAR *name ){
+  /* if parameter is there return it otherwise return zero */
+  return PulsarCheckParam(pars, name) ? PulsarGetREAL8Param(pars, name) : 0.;
+}
+
+
 CHAR* PulsarGetStringParam( const PulsarParameters *pars, const CHAR *name ){
   /* check type is a string */
   if ( PulsarGetParamType( pars, name ) == PULSARTYPE_string_t ){ return (CHAR *)PulsarGetParam( pars, name ); }
@@ -332,8 +338,8 @@ void PulsarAddParam( PulsarParameters *pars, const CHAR *name, void *value, Puls
   }
 
   /* If we get this far it is safe to create a new node for this variable */
-  PulsarParam *new = XLALCalloc( sizeof( PulsarParam ), 1 );
-
+  PulsarParam *new = XLALMalloc(sizeof(PulsarParam));
+  memset(new,0,sizeof(PulsarParam));
   if( new ) {
     new->value = (void *)XLALMalloc( PulsarTypeSize[type] );
     new->err = NULL;
@@ -358,7 +364,7 @@ void PulsarAddParam( PulsarParameters *pars, const CHAR *name, void *value, Puls
 
 
 /* Check for existance of name */
-int PulsarCheckParam( PulsarParameters *pars, const CHAR *name ){
+int PulsarCheckParam( const PulsarParameters *pars, const CHAR *name ){
   /* convert name to uppercase */
   CHAR upperName[PULSAR_PARNAME_MAX];
   XLALStringCopy( upperName, name, PULSAR_PARNAME_MAX );
@@ -938,7 +944,7 @@ PulsarParameters *XLALReadTEMPOParFileNew( const CHAR *pulsarAndPath ){
 
   /* check for linked parameters SINI and KIN */
   if ( PulsarCheckParam( par, "SINI" ) ){
-    CHAR* sini = *(CHAR **)PulsarGetParam( par, "SINI" );
+    CHAR* sini = XLALStringDuplicate(PulsarGetStringParam( par, "SINI" ));
     strtoupper( sini );
 
     REAL8 sinid;
@@ -947,7 +953,7 @@ PulsarParameters *XLALReadTEMPOParFileNew( const CHAR *pulsarAndPath ){
 
     if ( !strcmp(sini, "KIN") ){
       if ( PulsarCheckParam( par, "KIN" ) ){
-        sinid = sin(*(REAL8*)PulsarGetParam( par, "KIN" ));
+        sinid = sin(PulsarGetREAL8Param( par, "KIN" ));
         PulsarAddParam( par, "SINI", &sinid, PULSARTYPE_REAL8_t );
       }
       else{
@@ -959,6 +965,8 @@ PulsarParameters *XLALReadTEMPOParFileNew( const CHAR *pulsarAndPath ){
       sinid = atof(sini);
       PulsarAddParam( par, "SINI", &sinid, PULSARTYPE_REAL8_t );
     }
+
+    XLALFree(sini);
   }
 
   fclose(fp);
@@ -1085,6 +1093,9 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
 
   output->posepochErr=0.0;
   output->pepochErr=0.0;
+
+  output->startTime=0.0;
+  output->finishTime=1./0.;
 
   output->xpbdotErr=0.0;  /* (10^-12) */
 
@@ -1312,6 +1323,17 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
     }
     else if( !strcmp(val[i],"posepoch") || !strcmp(val[i],"POSEPOCH")){
       output->posepoch = XLALTTMJDtoGPS(atof(val[i+1]));
+      j++;
+      /* position epoch in GPS seconds TDB */
+    }
+    else if(!strcmp(val[i],"start") || !strcmp(val[i],"START")) {
+      output->startTime = XLALTTMJDtoGPS(atof(val[i+1])); /* convert all epochs to
+        from MJD to GPS seconds in TDB */
+      j++;
+
+    }
+    else if( !strcmp(val[i],"finish") || !strcmp(val[i],"FINISH")){
+      output->finishTime = XLALTTMJDtoGPS(atof(val[i+1]));
       j++;
       /* position epoch in GPS seconds TDB */
     }
@@ -2424,10 +2446,10 @@ LALStringVector *XLALReadTEMPOCorFile( REAL8Array *cormat, CHAR *corfile ){
     tmpparams = XLALAppendString2Vector( tmpparams, tmpStr );
 
     /* convert some parameter names to a more common convention */
-    if ( !strcasecmp(tmpStr, "RAJ") ) /* convert RAJ to ra */
-      params = XLALAppendString2Vector( params, "ra" );
-    else if ( !strcasecmp(tmpStr, "DECJ") ) /* convert DECJ to dec */
-      params = XLALAppendString2Vector( params, "dec" );
+    if ( !XLALStringCaseCompare(tmpStr, "RAJ") ) /* convert RAJ to ra */
+      params = XLALAppendString2Vector( params, "RA" );
+    else if ( !XLALStringCaseCompare(tmpStr, "DECJ") ) /* convert DECJ to dec */
+      params = XLALAppendString2Vector( params, "DEC" );
     else
       params = XLALAppendString2Vector( params, tmpStr );
   }
@@ -2477,6 +2499,8 @@ Parameters not in consistent order!\n");
 
   return params;
 }
+
+
 /* functions for converting times given in Terrestrial time TT or TDB in MJD to
 times in GPS - this is important for epochs given in .par files which are in
 TDB. TT and GPS are different by a factor of 51.184 secs, this is just the

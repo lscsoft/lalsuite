@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <unistd.h>
 
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
@@ -224,14 +225,27 @@ static LALCache *GlobFramesPWD(char *ifo)
 
 static REAL8TimeSeries *readTseries(LALCache *cache, CHAR *channel, LIGOTimeGPS start, REAL8 length)
 {
+    /* This function attempts to read the data from the given cache file. If it failes to open the data
+	 * it waits for a period and tries again, up to 5 times. This is an attempt to get around overloading
+	 * of file servers when many jobs are run at the time same */
 	LALStatus status;
+	UINT4 max_tries=5,tries=0,delay=5;
 	memset(&status,0,sizeof(status));
 	LALFrStream *stream = NULL;
 	REAL8TimeSeries *out = NULL;
 	if(cache==NULL) fprintf(stderr,"readTseries ERROR: Received NULL pointer for channel %s\n",channel);
-	stream = XLALFrStreamCacheOpen( cache );
+	for (tries=0,delay=5;tries<max_tries;tries++,delay*=2) {
+			stream = XLALFrStreamCacheOpen( cache );
+			if(stream) break;
+			sleep(delay);
+	}
 	if(stream==NULL) {fprintf(stderr,"readTseries ERROR: Unable to open stream from frame cache file\n"); exit(-1);}
-	out = XLALFrStreamInputREAL8TimeSeries( stream, channel, &start, length , 0 );
+
+	for (tries=0,delay=5;tries<max_tries;tries++,delay*=2) {
+			out = XLALFrStreamInputREAL8TimeSeries( stream, channel, &start, length , 0 );
+			if(out) break;
+			sleep(delay);
+	}
 	if(out==NULL) fprintf(stderr,"readTseries ERROR: unable to read channel %s at time %i\nCheck the specified data duration is not too long\n",channel,start.gpsSeconds);
 	LALFrClose(&status,&stream);
 	return out;

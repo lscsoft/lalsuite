@@ -174,12 +174,12 @@ XLALGenerateMultiFstatAtomVector ( const MultiDetectorStateSeries *multiDetState
   /* create multi-atoms vector */
   MultiFstatAtomVector *multiAtoms;
   if ( ( multiAtoms = XLALCalloc ( 1, sizeof(*multiAtoms) )) == NULL ) {
-    XLALPrintError ("%s: XLALCalloc ( 1, %lu) failed.\n", __func__, sizeof(*multiAtoms) );
+    XLALPrintError ("%s: XLALCalloc ( 1, %zu) failed.\n", __func__, sizeof(*multiAtoms) );
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
   multiAtoms->length = numDet;
   if ( ( multiAtoms->data = XLALCalloc ( numDet, sizeof(*multiAtoms->data) ) ) == NULL ) {
-    XLALPrintError ("%s: XLALCalloc ( %d, %lu) failed.\n", __func__, numDet, sizeof(*multiAtoms->data) );
+    XLALPrintError ("%s: XLALCalloc ( %d, %zu) failed.\n", __func__, numDet, sizeof(*multiAtoms->data) );
     XLALFree ( multiAtoms );
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }

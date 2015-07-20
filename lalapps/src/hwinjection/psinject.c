@@ -40,8 +40,9 @@
               by YYY.
 */
 
-#include <config.h>
+#define _GNU_SOURCE   /* for SA_RESTART */
 
+#include <config.h>
 #include <stdio.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -51,18 +52,25 @@
 #include <strings.h>
 #include <errno.h>
 #include <stdarg.h>
+#include <signal.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <time.h>
-#include <signal.h>
 #include <math.h>
 #include <sys/stat.h>
+
+#include <config.h>
 #ifdef ONLINE
 #include "SIStr.h"
 #endif
 
-#include <lal/LALFrameL.h>
+#include <lal/LALConstants.h>
 #include <lal/LALgetopt.h>
+
+#ifdef HAVE_LIBLALFRAME
+#include <lal/LALFrameL.h>
+#endif
+
 #include <lal/XLALError.h>
 #include <lalapps.h>
 
@@ -220,8 +228,10 @@ void usage(FILE *filep){
 	  "-p            Print the calibration line frequencies in Hz then exit(0)\n"
 	  "-I STRING     Detector: LHO, LLO, GEO, VIRGO, TAMA, CIT, ROME [REQUIRED]\n"
 	  "-A STRING     File containing detector actuation-function     [OPTIONAL]\n"
+#ifdef HAVE_LIBLALFRAME
           "-F INT        Keep N frame files on disk.  If N==0 write all frames immediately.\n"
 	  "-S INT        Number of 1-second frames per frame file (default 60).\n"
+#endif
           "-r INT        Sampling rate (NOTE: strain-generators must use the same!) (Default:16384)\n"
           "-z DOUBLE     Delay: shift CHANNEL signals by round[offset*samplingRate] samples forward (Default:0)\n"
           "--------------------------------------------------------------------------------\n"
@@ -349,6 +359,7 @@ int parseinput(int argc, char **argv){
       actuation = LALoptarg;
       break;
     case 'F':
+#ifdef HAVE_LIBLALFRAME
 	{
 	    int how_many = atoi(LALoptarg);
 	    if (how_many < 0) {
@@ -356,9 +367,14 @@ int parseinput(int argc, char **argv){
 		exit(1);
 	    }
 	    write_frames = 1 + how_many;
-	    break;
 	}
+#else
+          syserror(0,"%s: -F specified, but this binary was built without frame support.\n", argv[0] );
+          exit(1);
+#endif
+          break;
     case 'S':
+#ifdef HAVE_LIBLALFRAME
 	secs_per_framefile = atoi(LALoptarg);
         if (secs_per_framefile < 1) {
 	    syserror(0,"%s: fatal error, argument -S %d must be at least 1 second.\n", argv[0], secs_per_framefile);
@@ -367,7 +383,11 @@ int parseinput(int argc, char **argv){
         if (secs_per_framefile > 3600) {
 	    syserror(0,"%s: caution, argument -S %d seconds is more than one hour!\n", argv[0], secs_per_framefile);
 	}
-	break;
+#else
+          syserror(0,"%s: -S specified, but this binary was built without frame support.\n", argv[0] );
+          exit(1);
+#endif
+          break;
 
     case 'r':
       sampling_rate = atoi(LALoptarg);
@@ -506,7 +526,7 @@ int main(int argc, char *argv[]){
     }
 
     /* replace first NEWLINE to null terminate string */
-    if ((newlineloc=index(command, '\n')))
+    if ((newlineloc=strchr(command, '\n')))
 	*newlineloc='\0';
 
     /* append additional arguments to command line */
@@ -599,13 +619,6 @@ int main(int argc, char *argv[]){
     readfrombuff[i]=bufflen[i];
   }
 
-#if 0
-  /* are we writing frames? */
-  if (write_frames) {
-      /* put whatever is needed here to init frame lib */
-  }
-#endif
-
   /* are we calling the excitation engine directly? */
   if (channel) {
 
@@ -694,7 +707,7 @@ int main(int argc, char *argv[]){
 	  cycles3            = tlocal_fra*f_fra;
 	  cycles3           -= (int)cycles3;
 
-	  total[j]=calamp[line]*sin(2*M_PI*(cycles1+cycles2+cycles3));
+	  total[j]=calamp[line]*sin(2*LAL_PI*(cycles1+cycles2+cycles3));
 	}
       }
     }
@@ -726,8 +739,9 @@ int main(int argc, char *argv[]){
     }
 
     /* now output the total signal to frames */
-    if (write_frames) {
 
+    if (write_frames) {
+#ifdef HAVE_LIBLALFRAME
 	static int counter = 0;
 	static FrFile *oFile;
 
@@ -804,7 +818,10 @@ int main(int argc, char *argv[]){
 
 	/* increment counter for the next second */
 	counter++;
-
+#else
+	syserror(0, "ERROR: write_frames!=0, but binary was built without Frame support\n" );
+        exit(1);
+#endif
     } /* if (write_frames) */
 
     /* now output the total signal... */

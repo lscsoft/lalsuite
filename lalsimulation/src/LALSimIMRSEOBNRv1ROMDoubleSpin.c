@@ -26,13 +26,24 @@
  * \brief C code for SEOBNRv1 reduced order model (double spin version).
  * See CQG 31 195010, 2014, arXiv:1402.4146 for details.
  *
+ * This is a frequency domain model that approximates the time domain SEOBNRv1 model.
+ * Note that SEOBNRv2 supersedes SEOBNRv1.
+ *
  * The binary data files are available at https://dcc.ligo.org/T1400701-v1.
  * Put the untared data into a location in your LAL_DATA_PATH.
  *
- * Parameter ranges:
- *   q <= 10
- *   -1 <= chi_i <= 0.6
- *   Mtot >= 12Msun
+ * @note Note that due to its construction the iFFT of the ROM has a small (~ 20 M) offset
+ * in the peak time that scales with total mass as compared to the time-domain SEOBNRv1 model.
+ *
+ * @note Parameter ranges:
+ *   * q <= 10
+ *   * -1 <= chi_i <= 0.6
+ *   * Mtot >= 12Msun
+ *
+ *  Aligned component spins chi1, chi2.
+ *  Asymmetric mass-ratio q = max(m1/m2, m2/m1).
+ *  Total mass Mtot.
+ *
  */
 
 #ifdef __GNUC__
@@ -471,6 +482,25 @@ int SEOBNRv1ROMDoubleSpinCore(
   }
   int retcode=0;
 
+  // 'Nudge' parameter values to allowed boundary values if close by
+  if (q < 1.0)     nudge(&q, 1.0, 1e-6);
+  if (q > 10.0)    nudge(&q, 10.0, 1e-6);
+  if (chi1 < -1.0) nudge(&chi1, -1.0, 1e-6);
+  if (chi1 > 0.6)  nudge(&chi1, 0.6, 1e-6);
+  if (chi2 < -1.0) nudge(&chi2, -1.0, 1e-6);
+  if (chi2 > 0.6)  nudge(&chi2, 0.6, 1e-6);
+
+  /* If either spin > 0.6, model not available, exit */
+  if ( chi1 < -1.0 || chi2 < -1.0 || chi1 > 0.6 || chi2 > 0.6 ) {
+    XLALPrintError( "XLAL Error - %s: chi1 or chi2 smaller than -1 or larger than 0.6!\nSEOBNRv1ROMDoubleSpin is only available for spins in the range -1 <= a/M <= 0.6.\n", __func__);
+    XLAL_ERROR( XLAL_EDOM );
+  }
+
+  if (q > 10) {
+    XLALPrintError( "XLAL Error - %s: q=%lf larger than 10!\nSEOBNRv1ROMDoubleSpin is only available for q in the range 1 <= q <= 10.\n", __func__, q);
+    XLAL_ERROR( XLAL_EDOM );
+  }
+
   /* Find frequency bounds */
   if (!freqs_in) XLAL_ERROR(XLAL_EFAULT);
   double fLow  = freqs_in->data[0];
@@ -576,12 +606,24 @@ int SEOBNRv1ROMDoubleSpinCore(
   }
 
 
-  if (!(hptilde) || !(*hctilde)) XLAL_ERROR(XLAL_EFUNC);
+  if (!(*hptilde) || !(*hctilde))
+  {
+      XLALDestroyREAL8Sequence(freqs);
+
+      gsl_spline_free(spline_amp);
+      gsl_spline_free(spline_phi);
+      gsl_interp_accel_free(acc_amp);
+      gsl_interp_accel_free(acc_phi);
+      gsl_vector_free(amp_f);
+      gsl_vector_free(phi_f);
+      SEOBNRROMdataDS_coeff_Cleanup(romdata_coeff);
+      XLAL_ERROR(XLAL_EFUNC);
+  }
   memset((*hptilde)->data->data, 0, npts * sizeof(COMPLEX16));
   memset((*hctilde)->data->data, 0, npts * sizeof(COMPLEX16));
 
-  XLALUnitDivide(&(*hptilde)->sampleUnits, &(*hptilde)->sampleUnits, &lalSecondUnit);
-  XLALUnitDivide(&(*hctilde)->sampleUnits, &(*hctilde)->sampleUnits, &lalSecondUnit);
+  XLALUnitMultiply(&(*hptilde)->sampleUnits, &(*hptilde)->sampleUnits, &lalSecondUnit);
+  XLALUnitMultiply(&(*hctilde)->sampleUnits, &(*hctilde)->sampleUnits, &lalSecondUnit);
 
   COMPLEX16 *pdata=(*hptilde)->data->data;
   COMPLEX16 *cdata=(*hctilde)->data->data;
@@ -610,8 +652,6 @@ int SEOBNRv1ROMDoubleSpinCore(
   }
   
   /* Correct phasing so we coalesce at t=0 (with the definition of the epoch=-1/deltaF above) */
-  if (deltaF > 0)
-    XLAL_PRINT_WARNING("Warning: Depending on specified frequency sequence correction to time of coalescence may not be accurate.\n");
 
   // Get SEOBNRv1 ringdown frequency for 22 mode
   // XLALSimInspiralGetFinalFreq wants masses in SI units, so unfortunately we need to convert back
@@ -625,7 +665,18 @@ int SEOBNRv1ROMDoubleSpinCore(
   if (Mf_final > freqs->data[L-1])
     Mf_final = freqs->data[L-1];
   if (Mf_final < freqs->data[0])
-    XLAL_ERROR(XLAL_EDOM, "f_ringdown < f_min");
+  {
+      XLALDestroyREAL8Sequence(freqs);
+
+      gsl_spline_free(spline_amp);
+      gsl_spline_free(spline_phi);
+      gsl_interp_accel_free(acc_amp);
+      gsl_interp_accel_free(acc_phi);
+      gsl_vector_free(amp_f);
+      gsl_vector_free(phi_f);
+      SEOBNRROMdataDS_coeff_Cleanup(romdata_coeff);
+      XLAL_ERROR(XLAL_EDOM, "f_ringdown < f_min");
+  }
 
   // Time correction is t(f_final) = 1/(2pi) dphi/df (f_final)
   // We compute the dimensionless time correction t/M since we use geometric units.
@@ -653,7 +704,23 @@ int SEOBNRv1ROMDoubleSpinCore(
   return(XLAL_SUCCESS);
 }
 
-/** Compute waveform in LAL format at specified frequencies */
+/**
+ * Compute waveform in LAL format at specified frequencies for the SEOBNRv1_ROM_DoubleSpin model.
+ *
+ * XLALSimIMRSEOBNRv1ROMDoubleSpin() returns the plus and cross polarizations as a complex
+ * frequency series with equal spacing deltaF and contains zeros from zero frequency
+ * to the starting frequency and zeros beyond the cutoff frequency in the ringdown.
+ *
+ * In contrast, XLALSimIMRSEOBNRv1ROMDoubleSpinFrequencySequence() returns a
+ * complex frequency series with entries exactly at the frequencies specified in
+ * the sequence freqs (which can be unequally spaced). No zeros are added.
+ *
+ * If XLALSimIMRSEOBNRv1ROMDoubleSpinFrequencySequence() is called with frequencies that
+ * are beyond the maxium allowed geometric frequency for the ROM, zero strain is returned.
+ * It is not assumed that the frequency sequence is ordered.
+ *
+ * This function is designed as an entry point for reduced order quadratures.
+ */
 int XLALSimIMRSEOBNRv1ROMDoubleSpinFrequencySequence(
   struct tagCOMPLEX16FrequencySeries **hptilde, /**< Output: Frequency-domain waveform h+ */
   struct tagCOMPLEX16FrequencySeries **hctilde, /**< Output: Frequency-domain waveform hx */
@@ -687,24 +754,14 @@ int XLALSimIMRSEOBNRv1ROMDoubleSpinFrequencySequence(
   /* Total mass in seconds */
   double Mtot_sec = Mtot * LAL_MTSUN_SI;
 
-
-  /* If either spin > 0.6, model not available, exit */
-  if ( chi1 < -1.0 || chi2 < -1.0 || chi1 > 0.6 || chi2 > 0.6 ) {
-    XLALPrintError( "XLAL Error - %s: chi1 or chi2 smaller than -1 or larger than 0.6!\nSEOBNRv1ROMDoubleSpin is only available for spins in the range -1 <= a/M <= 0.6.\n", __func__);
-    XLAL_ERROR( XLAL_EDOM );
-  }
-
-  if (q > 10) {
-    XLALPrintError( "XLAL Error - %s: q larger than 10!\nSEOBNRv1ROMDoubleSpin is only available for spins in the range 1 <= q <= 10.\n", __func__);
-    XLAL_ERROR( XLAL_EDOM );
-  }
-
   // Load ROM data if not loaded already
 #ifdef LAL_PTHREAD_LOCK
   (void) pthread_once(&SEOBNRv1ROMDoubleSpin_is_initialized, SEOBNRv1ROMDoubleSpin_Init_LALDATA);
 #else
   SEOBNRv1ROMDoubleSpin_Init_LALDATA();
 #endif
+
+  if(!SEOBNRv1ROMDoubleSpin_IsSetup()) XLAL_ERROR(XLAL_EFAILED,"Error setting up SEOBNRv1ROMDoubleSpin - check your $LAL_DATA_PATH\n");
 
   // Call the internal core function with deltaF = 0 to indicate that freqs is non-uniformly
   // spaced and we want the strain only at these frequencies
@@ -714,7 +771,13 @@ int XLALSimIMRSEOBNRv1ROMDoubleSpinFrequencySequence(
   return(retcode);
 }
 
-/** Compute waveform in LAL format */
+/**
+ * Compute waveform in LAL format for the SEOBNRv1_ROM_DoubleSpin model.
+ *
+ * Returns the plus and cross polarizations as a complex frequency series with
+ * equal spacing deltaF and contains zeros from zero frequency to the starting
+ * frequency fLow and zeros beyond the cutoff frequency in the ringdown.
+ */
 int XLALSimIMRSEOBNRv1ROMDoubleSpin(
   struct tagCOMPLEX16FrequencySeries **hptilde, /**< Output: Frequency-domain waveform h+ */
   struct tagCOMPLEX16FrequencySeries **hctilde, /**< Output: Frequency-domain waveform hx */
@@ -753,17 +816,6 @@ int XLALSimIMRSEOBNRv1ROMDoubleSpin(
 
   if(fRef==0.0)
     fRef=fLow;
-
-  /* If either spin > 0.6, model not available, exit */
-  if ( chi1 < -1.0 || chi2 < -1.0 || chi1 > 0.6 || chi2 > 0.6 ) {
-    XLALPrintError( "XLAL Error - %s: chi1 or chi2 smaller than -1 or larger than 0.6!\nSEOBNRv1ROMDoubleSpin is only available for spins in the range -1 <= a/M <= 0.6.\n", __func__);
-    XLAL_ERROR( XLAL_EDOM );
-  }
-
-  if (q > 10) {
-    XLALPrintError( "XLAL Error - %s: q larger than 10!\nSEOBNRv1ROMDoubleSpin is only available for spins in the range 1 <= q <= 10.\n", __func__);
-    XLAL_ERROR( XLAL_EDOM );
-  }
 
   // Load ROM data if not loaded already
 #ifdef LAL_PTHREAD_LOCK

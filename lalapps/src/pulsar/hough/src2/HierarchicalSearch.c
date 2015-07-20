@@ -1005,7 +1005,7 @@ int MAIN( int argc, char *argv[]) {
 	  }
 	  else {
 	    fstatVector.data[k].data = LALRealloc( fstatVector.data[k].data, sizeof(REAL4Sequence));
-	    XLAL_CHECK( fstatVector.data[k].data != NULL, XLAL_ENOMEM, "Failed to re-allocate memory LALRealloc ( %lu )\n", sizeof(REAL4Sequence) );
+	    XLAL_CHECK( fstatVector.data[k].data != NULL, XLAL_ENOMEM, "Failed to re-allocate memory LALRealloc ( %zu )\n", sizeof(REAL4Sequence) );
 
 	    fstatVector.data[k].data->length = binsFstat1;
 	    fstatVector.data[k].data->data = LALRealloc( fstatVector.data[k].data->data, alloc_len = binsFstat1 * sizeof(REAL4));

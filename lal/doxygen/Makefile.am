@@ -1,3 +1,6 @@
+TEST_EXTENSIONS = .sh
+SH_LOG_COMPILER = $(SHELL)
+
 if DOXYGEN
 
 if HAVE_GIT_REPO
@@ -44,6 +47,7 @@ html-local: Makefile $(CONFIG_CLEAN_FILES)
 	$(SED) -e 's/^/- /' $(abs_top_builddir)/AUTHORS >> autogen.dox; \
 	echo '*/' >> autogen.dox; \
 	$(MKDIR_P) out/ || exit 1; \
+	echo "=== Building Doxygen documentation for $(PACKAGE_NAME)..."; \
 	$(DOXYGEN) doxygen.cfg $(doxygen_redir) 2>&1; \
 	$(PYTHON) $(abs_srcdir)/check_tags.py $(abs_builddir)/out/$(PACKAGE).tag >> warnings.log || exit 1; \
 	$(SED) $(DOXYGEN_WARNING_REGEX) warnings.log > errors.log; \
@@ -53,6 +57,10 @@ html-local: Makefile $(CONFIG_CLEAN_FILES)
 	rm -f errors.log doxygen_objdb_*.tmp doxygen_sqlite3.db; \
 	echo "=== Doxygen documentation was built successfully!"; \
 	echo "=== $(PACKAGE_NAME) main page is at file://$(abs_builddir)/out/index.html"
+
+TESTS = test_doxygen.sh
+test_doxygen.sh:
+	$(AM_V_at)echo "cd $(abs_builddir) && make html" >$@
 
 install-html-local: html-local
 	$(AM_V_at)for dir in `cd out/ && find . -type d`; do \
@@ -75,7 +83,8 @@ uninstall-local:
 	-rm -rf "$(DESTDIR)$(htmldir)/"
 
 clean-local:
-	-rm -rf autogen.dox out/
+	-rm -rf out/
+	-rm -f autogen.dox test_doxygen.sh
 
 EXTRA_DIST = \
 	check_tags.py \

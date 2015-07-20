@@ -105,17 +105,6 @@ XLALCWMakeFakeMultiData ( MultiSFTVector **multiSFTs,			///< [out] pointer to op
       outMTS->length = numDet;
     } // if multiTseries
 
-  /* if no user-specified seed available,
-   * use system clock to get seed
-   * if we would leave it as NULL here and only set it from time() later in XLALCreateRandomParams(),
-   * all IFOs with X > 0 would always have a constant noise realization!
-   */
-  INT4 seed = dataParams->randSeed;
-  while ( seed == 0 ) {
-    REAL8 currenttime = XLALGetCPUTime();
-    seed = round(1e9*(currenttime-floor(currenttime))); // use fractional part only of XLALGetCPUTime() result, because seed must be an INT4 and overflows otherwise
-  }
-
   for ( UINT4 X=0; X < numDet; X ++ )
     {
       /* detector params */
@@ -128,10 +117,8 @@ XLALCWMakeFakeMultiData ( MultiSFTVector **multiSFTs,			///< [out] pointer to op
       mTimestamps.length = 1;
       mTimestamps.data = &(multiTimestamps->data[X]); // such that pointer mTimestamps.data[0] = multiTimestamps->data[X]
       dataParamsX.multiTimestamps = mTimestamps;
-      /* increase seed in deterministic way: allows comparison w mfd_v4 !!
-       * this should be safe as long as the seed is 'randomized' e.g. by calling time()
-       */
-      dataParamsX.randSeed = seed + X;
+      // NOTE: seed=0 means randomize seed from /dev/urandom, otherwise we'll have to increment it for each detector here
+      dataParamsX.randSeed = (dataParams->randSeed == 0) ? 0 : (dataParams->randSeed + X);
 
       SFTVector **svp = NULL;
       REAL4TimeSeries **tsp = NULL;
@@ -240,11 +227,12 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
   // start with an empty output time-series
   REAL4TimeSeries *Tseries_sum;
   {
-    UINT4 numSteps = (UINT4) ceil( fSamp * duration );
+    REAL8 numSteps = ceil ( fSamp * duration );
+    XLAL_CHECK ( numSteps < (REAL8)LAL_UINT4_MAX, XLAL_EDOM, "Sorry, time-series of %g samples too long to fit into REAL4TimeSeries (maxLen = %g)\n", numSteps, (REAL8)LAL_UINT4_MAX );
     REAL8 dt = 1.0 / fSamp;
     REAL8 fHeterodyne = fMin;	// heterodyne signals at lower end of frequency-band
     CHAR *detPrefix = XLALGetChannelPrefix ( site->frDetector.name );
-    XLAL_CHECK ( (Tseries_sum = XLALCreateREAL4TimeSeries ( detPrefix, &firstGPS, fHeterodyne, dt, &lalStrainUnit, numSteps )) != NULL, XLAL_EFUNC );
+    XLAL_CHECK ( (Tseries_sum = XLALCreateREAL4TimeSeries ( detPrefix, &firstGPS, fHeterodyne, dt, &lalStrainUnit, (UINT4)numSteps )) != NULL, XLAL_EFUNC );
     memset ( Tseries_sum->data->data, 0, Tseries_sum->data->length * sizeof(Tseries_sum->data->data[0]) );
     XLALFree ( detPrefix );
   } // generate empty timeseries
@@ -504,7 +492,7 @@ XLALFindSmallestValidSamplingRate ( UINT4 *n1,				//< [out] minimal valid sampli
       // now reduce gap to remainder wrt Tsft
       INT4 gap_i = gap_i0 % Tsft;
 
-      if ( (gap_i * nCur) % Tsft == 0 ) {
+      if ( ((INT8)gap_i * nCur) % Tsft == 0 ) {
         continue;
       }
 

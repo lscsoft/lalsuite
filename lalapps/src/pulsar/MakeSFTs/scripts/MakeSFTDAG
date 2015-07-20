@@ -83,6 +83,8 @@ Usage: MakeSFTDAG [options]
   -m, --max-num-per-node     maximum number of SFTs to generate on one node
   -L, --max-length-all-jobs  maximum total amount of data to process, in seconds (optional and unused if a segment file is given)
   -g, --segment-file         (optional) alternative file with segments to use, rather than the input times.
+  -A, --accounting-group     (optional) accounting group tag to be added to the condor submit files.
+  -U, --accounting-group-user  (optional) accounting group albert.einstein username to be added to the condor submit files.  
   -q, --list-of-nodes        (optional) file with list of nodes on which to output SFTs.
   -Q, --node-path            (optional) path to nodes to output SFTs; the node name is appended to this path, followed by path given by the -p option;
                                         for example, if -q point to file with the list node1 node2 ... and the -Q /data/ -p /frames/S5/sfts/LHO options
@@ -112,7 +114,7 @@ def writeToDag(dagFID, nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, c
   dagFID.write('JOB %s MakeSFTs.sub\n' % MakeSFTs)
   dagFID.write('RETRY %s 5\n' % MakeSFTs)
   argList = '-f %s -t %s -p %s -C %s -s %s -e %s -N %s' %(filterKneeFreq, timeBaseline, outputSFTPath, cacheFile, startTimeThisNode, endTimeThisNode, channelName)
-  if sftVersion != 2: argList = argList + ' -v %s' % sftVersion
+  argList = argList + ' -v %s' % sftVersion
   if IFO != None: argList = argList + ' -i %s' % IFO
   if commentField != None: argList = argList + ' -c %s' % commentField
   if frameStructType != None: argList = argList + ' -u %s' % frameStructType
@@ -133,7 +135,7 @@ def writeToDag(dagFID, nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, c
 #
 
 # parse the command line options
-shortop = "s:e:a:b:f:t:G:d:x:M:y:k:T:p:C:O:o:N:i:w:P:u:v:c:F:B:D:X:m:L:g:q:Q:R:l:hSHZ"
+shortop = "s:e:a:b:f:t:G:d:x:M:y:k:T:p:C:O:o:N:i:w:P:u:v:c:F:B:D:X:m:L:g:q:Q:A:U:R:l:hSHZ"
 longop = [
   "help",
   "gps-start-time=",
@@ -167,6 +169,8 @@ longop = [
   "max-num-per-node=",
   "max-length-all-jobs=",
   "segment-file=",
+  "accounting-group=",
+  "accounting-group-user=",
   "list-of-nodes=",
   "node-path=",
   "output-jobs-per-node=",
@@ -215,6 +219,8 @@ maxNumPerNode = None
 maxLengthAllJobs = None
 segmentFile = None
 nodeListFile = None
+accountingGroup = None
+accountingGroupUser = None
 nodePath = None
 outputJobsPerNode = 0L
 useNodeList = False
@@ -293,6 +299,10 @@ for o, a in opts:
     segmentFile = a
   elif o in ("-q", "--list-of-nodes"):
     nodeListFile = a
+  elif o in ("-A", "--accounting-group"):
+    accountingGroup = a
+  elif o in ("-U", "--accounting-group-user"):
+    accountingGroupUser = a
   elif o in ("-Q", "--node-path"):
     nodePath = a
   elif o in ("-R", "--output-jobs-per-node"):
@@ -517,13 +527,17 @@ nodeCount         = 0L
 datafindFID = file('datafind.sub','w')
 datafindLogFile = subLogPath + '/' + 'datafind_' + dagFileName + '.log'
 datafindFID.write('universe = scheduler\n')
-datafindFID.write('executable = $ENV(LSC_DATAFIND_PATH)/ligo_data_find\n')
+datafindFID.write('executable = $ENV(LSC_DATAFIND_PATH)/gw_data_find\n')
 if not datafindMatch:
    dataFindMatchString = ''
 else:
    dataFindMatchString = '--match ' + datafindMatch
 datafindFID.write('arguments = -r $ENV(LIGO_DATAFIND_SERVER) --observatory $(observatory) --url-type file --gps-start-time $(gpsstarttime) --gps-end-time $(gpsendtime) --lal-cache --type $(inputdatatype) %s\n' % dataFindMatchString)
 datafindFID.write('getenv = True\n')
+if (accountingGroup != None):
+   datafindFID.write('accounting_group = %s\n' % accountingGroup)
+if (accountingGroupUser != None):
+   datafindFID.write('accounting_group_user = %s\n' % accountingGroupUser)
 datafindFID.write('log = %s\n' % datafindLogFile)
 datafindFID.write('error = %s/datafind_$(tagstring).err\n' % logPath)
 datafindFID.write('output = %s/$(observatory)-$(gpsstarttime)-$(gpsendtime).cache\n' % cachePath)
@@ -537,6 +551,10 @@ MakeSFTsLogFile = subLogPath + '/' + 'MakeSFTs_' + dagFileName + '.log'
 MakeSFTsFID.write('universe = vanilla\n')
 MakeSFTsFID.write('executable = $ENV(MAKESFTS_PATH)/lalapps_MakeSFTs\n')
 MakeSFTsFID.write('arguments = $(argList)\n')
+if (accountingGroup != None):
+   MakeSFTsFID.write('accounting_group = %s\n' % accountingGroup)
+if (accountingGroupUser != None):
+   MakeSFTsFID.write('accounting_group_user = %s\n' % accountingGroupUser)
 MakeSFTsFID.write('log = %s\n' % MakeSFTsLogFile)
 MakeSFTsFID.write('error = %s/MakeSFTs_$(tagstring).err\n' % logPath)
 MakeSFTsFID.write('output = %s/MakeSFTs_$(tagstring).out\n' % logPath)

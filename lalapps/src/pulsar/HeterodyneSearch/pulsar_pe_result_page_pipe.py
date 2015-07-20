@@ -41,6 +41,10 @@ from optparse import OptionParser
 
 import numpy as np
 
+# need to set Agg here for use of stuff in pulsarpputils
+import matplotlib
+matplotlib.use("Agg")
+
 from lalapps import pulsarpputils as pppu
 from lalapps import pulsar_pipeline_utils as ppu
 from glue import pipeline
@@ -84,6 +88,23 @@ if __name__=='__main__':
     cp.read(inifile)
   except:
     print >> sys.stderr, "Cannot read configuration file %s" % inifile
+    sys.exit(1)
+
+  """
+  get the accounting group info
+  """
+  try:
+    # the accouting group
+    accgroup = cp.get('accounting', 'group')
+  except:
+    print >> sys.stderr, "Condor accounting group is required!"
+    sys.exit(1)
+
+  try:
+    # the accounting group user
+    accuser = cp.get('accounting', 'user')
+  except:
+    print >> sys.stderr, "Condor accounting group user is required!"
     sys.exit(1)
 
   """
@@ -151,13 +172,6 @@ if __name__=='__main__':
     nesteddirs = None
 
   if nesteddirs:
-    try:
-      # get the number of live points
-      nlive = cp.get('resultspages', 'nlive')
-    except:
-      print >> sys.stderr, "Number of live points must be specific!"
-      sys.exit(1)
-
     # list of file extensions that are not the nested sampling file
     nestednotfile = ['_params.txt', '_SNR', '_Znoise', '_B.txt']
 
@@ -320,8 +334,8 @@ if __name__=='__main__':
   dag.set_dag_file(basename)
 
   # set up jobs
-  resultsjob = ppu.createresultspageJob(rexec, logdir)
-  collatejob = ppu.collateresultsJob(cexec, logdir)
+  resultsjob = ppu.createresultspageJob(rexec, logdir, accgroup, accuser)
+  collatejob = ppu.collateresultsJob(cexec, logdir, accgroup, accuser)
 
   inlimlist = False
   for lim in limlist:
@@ -436,6 +450,7 @@ if __name__=='__main__':
 
   # loop over pulsars in par file directory
   for pfile in param_files:
+    ishwinj = hwinj
     resultsnode = None
     resultsnode = ppu.createresultspageNode(resultsjob)
 
@@ -452,7 +467,6 @@ if __name__=='__main__':
       resultsnode.set_mcmcdir(mcmcdirs)
     elif nesteddirs:
       resultsnode.set_donested()
-      resultsnode.set_nlive(nlive)
 
       # get pulsar name from par file
       psr = pppu.psr_par(pfile)
@@ -468,6 +482,10 @@ if __name__=='__main__':
           except:
             print >> sys.stderr, "Cannot get pulsar name from par file" % mcmcdir
             sys.exit(1)
+
+      # if name is one of the standard hardware injection names set hwinj to true
+      if not hwinj and 'PULSAR' in name:
+        ishwinj = True
 
       # assume that the nested sampling file for a pulsar contains its name
       ifofilelist = []
@@ -501,11 +519,9 @@ if __name__=='__main__':
     if epsoutr:
       resultsnode.set_epsout()
 
-    if hwinj:
-      resultsnode.set_hwinj()
+    resultsnode.set_hwinj(ishwinj)
 
-    if swinj:
-      resultsnode.set_swinj()
+    resultsnode.set_swinj(swinj)
 
     collatepage.add_parent(resultsnode)
 

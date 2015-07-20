@@ -2540,8 +2540,6 @@ INT4 XLALSimIMREOBGenerateQNMFreqV2(
       break;
   }
 
-  spline = gsl_spline_alloc( gsl_interp_cspline, 107 );
-  acc    = gsl_interp_accel_alloc();
 
   totalMass = mass1 + mass2;
 
@@ -2550,6 +2548,9 @@ INT4 XLALSimIMREOBGenerateQNMFreqV2(
   {
     XLAL_ERROR( XLAL_EFUNC );
   }
+  
+  spline = gsl_spline_alloc( gsl_interp_cspline, 107 );
+  acc    = gsl_interp_accel_alloc();
 
   /* finalSpin interpolation is available only between -0.9996 and 0.9996 */
   /* Set finalSpin to +/- 0.9996 if it is out of this range */

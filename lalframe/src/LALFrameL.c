@@ -17,10 +17,12 @@
 *  MA  02111-1307  USA
 */
 
+#define _GNU_SOURCE   /* for mkstemp() and strdup() */
+
 #include <config.h>
+#include <stdlib.h>
 #include <math.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -30,6 +32,10 @@
 #include <lal/Date.h>
 #include <lal/XLALError.h>
 #include <lal/LALFrameL.h>
+
+#ifndef P_tmpdir
+#define P_tmpdir "/tmp"
+#endif
 
 #include <FrIO.h>
 

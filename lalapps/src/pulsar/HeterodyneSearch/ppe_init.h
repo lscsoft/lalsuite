@@ -52,7 +52,10 @@ void add_correlation_matrix( LALInferenceVariables *ini,
 void sum_data( LALInferenceRunState *runState );
 void LogSampleToFile(LALInferenceRunState *state, LALInferenceVariables *vars);
 void LogSampleToArray(LALInferenceRunState *state, LALInferenceVariables *vars);
+<<<<<<< HEAD
 void initialise_threads(LALInferenceRunState *state, INT4 nthreads);
+=======
+>>>>>>> master
 
 #ifdef __cplusplus
 }

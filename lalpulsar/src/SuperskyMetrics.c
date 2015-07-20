@@ -938,22 +938,66 @@ static double SuperskyBCoordBound(
 
 int XLALSetSuperskyLatticeTilingAllSkyBounds(
   LatticeTiling *tiling,
-  const size_t patch_count_A,
-  const size_t patch_count_B,
-  const size_t patch_index_A,
-  const size_t patch_index_B
+  const double patch_B_extent,
+  const UINT8 patch_count,
+  const UINT8 patch_index
   )
 {
 
   // Check input
   XLAL_CHECK( tiling != NULL, XLAL_EFAULT );
-  XLAL_CHECK( patch_count_A > 0, XLAL_EINVAL );
-  XLAL_CHECK( patch_count_B > 0, XLAL_EINVAL );
-  XLAL_CHECK( patch_index_A < patch_count_A, XLAL_EINVAL );
-  XLAL_CHECK( patch_index_B < patch_count_B, XLAL_EINVAL );
+  XLAL_CHECK( patch_B_extent > 0.0, XLAL_EINVAL );
+  XLAL_CHECK( patch_count > 0, XLAL_EINVAL );
+  XLAL_CHECK( patch_index < patch_count, XLAL_EINVAL );
 
-  // Allocate GSL root solver for finding reduced supersky A coordinate bounds
-  gsl_root_fsolver *GALLOC( skyA_bounds_fsolver, gsl_root_fsolver_alloc( gsl_root_fsolver_brent ) );
+  // Calculate patch indexes and counts in reduced supersky coordinate A and B directions.
+  // 'max_patch_B_extent' is used to calculate a minimum number of patches in the B coordinate
+  // direction, 'min_patch_count_B', which with 'patch_count' is used to calculate the number
+  // of patches in the A coordinate direction, 'patch_count_A'. The produce of these two counts
+  // will never exceed 'patch_count'; any excess patches are then added to 'min_patch_count_B'
+  // as required to make up 'patch_count'. For example, given
+  //   'patch_count' = 14, 'patch_count_A' = 4, 'min_patch_count_B' = 3,
+  // the number of patches is partitioned as [4, 4, 3, 3], i.e.
+  //   'patch_index_A' = 0, 'patch_count_B' = 4, 'patch_index_B' = 0 to 3
+  //   'patch_index_A' = 1, 'patch_count_B' = 4, 'patch_index_B' = 0 to 3
+  //   'patch_index_A' = 2, 'patch_count_B' = 3, 'patch_index_B' = 0 to 2
+  //   'patch_index_A' = 3, 'patch_count_B' = 3, 'patch_index_B' = 0 to 2
+
+  // Approximate minimum number of patches in B coordinate
+  const double approx_min_patch_count_B = 2.0 / patch_B_extent;
+
+  // Number of patches in A coordinate
+  const UINT8 patch_count_A = GSL_MAX( 1, lround( floor( patch_count / approx_min_patch_count_B ) ) );
+
+  // Actual minimum number of patches in B coordinate; note integer division equivalent to floor()
+  const UINT8 min_patch_count_B = patch_count / patch_count_A;
+
+  // Excess number of patches which must be added on to get 'patch_count'
+  INT8 patch_excess = patch_count - patch_count_A * min_patch_count_B;
+  XLAL_CHECK( patch_excess >= 0, XLAL_EFAILED );
+
+  // Initialise number of patches in B coordinate; if there are excess patches, add an extra patch
+  UINT8 patch_count_B = min_patch_count_B;
+  if( patch_excess > 0) {
+    ++patch_count_B;
+  }
+
+  // Initialise patch indexes in A and B coordinates
+  UINT8 patch_index_A = 0, patch_index_B = patch_index;
+
+  while( patch_index_B >= patch_count_B ) {
+
+    // Increase patch index in A coordinate, substract patch count in B coordinate from patch index
+    ++patch_index_A;
+    patch_index_B -= patch_count_B;
+
+    // Decrease number of excess patches; if zero, subtract extra patch from patch count in B coordinate
+    --patch_excess;
+    if( patch_excess == 0 ) {
+      --patch_count_B;
+    }
+
+  }
 
   // The reduced supersky A coordinate is bounded from 'skyA_bounds[0]' to 'skyA_bounds[1]'. The
   // value of 'skyA_bounds[i]' is chosen such that the fractional area of the sky (shaded # in the
@@ -977,10 +1021,13 @@ int XLALSetSuperskyLatticeTilingAllSkyBounds(
   //   'skyA_bounds[i]' = -1.0 + 2.0*'skyA_hemi' + 'x'
   // where 'skyA_hemi' is 0.0 for the left hemisphere and 1.0 for the right hemisphere.
 
+  // Allocate GSL root solver for finding reduced supersky A coordinate bounds
+  gsl_root_fsolver *GALLOC( skyA_bounds_fsolver, gsl_root_fsolver_alloc( gsl_root_fsolver_brent ) );
+
   // Compute the lower and upper bounds on reduced supersky A coordinate
   double skyA_bounds[2] = {0, 0};
   for( size_t i = 0; i < 2; ++i ) {
-    const size_t iA = patch_index_A + i;
+    const UINT8 iA = patch_index_A + i;
 
     // Treat special value of 'iA' where root-finding is not required separately
     if( iA == 0 ) {

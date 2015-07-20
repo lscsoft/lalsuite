@@ -64,12 +64,11 @@ int main(int argc, char *argv[])
   int telescope;
   int i=0, j=0, k=0, exceedPhaseErr=0;
 
-  double PPTime[10000]; /* Pulsar proper time - corrected for solar system and
- binary orbit delay times */
+  double PPTime[10000]; /* Pulsar proper time - corrected for solar system and binary orbit delay times */
   const double D = 2.41e-4; /* dispersion constant from TEMPO */
 
   /* Binary pulsar variables */
-  BinaryPulsarParams params;
+  PulsarParameters *params=NULL;
   BinaryPulsarInput input;
   BinaryPulsarOutput output;
 
@@ -173,12 +172,11 @@ int main(int argc, char *argv[])
   }
 
   /* read in binary params from par file */
-  XLALReadTEMPOParFile(&params, par.parfile);
+  params = XLALReadTEMPOParFileNew(par.parfile);
 
   if ( verbose ) fprintf(stderr, "I've read in the parameter file\n");
 
-  /* set telescope location - TEMPO2 defaults to Parkes, so use this
-x,y,z components are got from tempo */
+  /* set telescope location - TEMPO2 defaults to Parkes, so use this x,y,z components are got from tempo */
   if (telescope != 7){
     fprintf(stderr, "Error, TOA file not using the Parkes telescope!\n");
     exit(1);
@@ -212,18 +210,21 @@ x,y,z components are got from tempo */
 
   if ( verbose ) { fpout = fopen("pulsarPhase.txt", "w"); }
 
-  DM = params.DM;
+  DM = PulsarGetREAL8ParamOrZero( params, "DM" );
 
-  if( params.px != 0. ){
-    baryinput.dInv = ( 3600. / LAL_PI_180 )*params.px /
+  if ( PulsarCheckParam( params, "PX" ) ){
+    baryinput.dInv = ( 3600. / LAL_PI_180 )*PulsarGetREAL8Param( params, "PX" ) /
      (LAL_C_SI*LAL_PC_SI/LAL_LYR_SI);
   }
   else baryinput.dInv = 0.0;  /* no parallax */
 
-  if( params.units == NULL ) { ttype = TIMECORRECTION_TEMPO2; }
-  else if( !strcmp(params.units, "TDB") ) { ttype = TIMECORRECTION_TDB; }
-  else if( !strcmp(params.units, "TCB") ) { ttype = TIMECORRECTION_TCB; } /* same as TYPE_TEMPO2 */
+  CHAR *units = NULL;
+  if( PulsarCheckParam( params, "UNITS" ) ){ units = XLALStringDuplicate( PulsarGetStringParam( params, "UNITS" ) ); }
+  if( units == NULL ) { ttype = TIMECORRECTION_TEMPO2; }
+  else if( !strcmp(units, "TDB") ) { ttype = TIMECORRECTION_TDB; }
+  else if( !strcmp(units, "TCB") ) { ttype = TIMECORRECTION_TCB; } /* same as TYPE_TEMPO2 */
   else { ttype = TIMECORRECTION_TEMPO2; } /*default */
+  XLALFree(units);
 
   /* read in the time correction file */
   const char *tcFile = NULL;
@@ -236,14 +237,17 @@ x,y,z components are got from tempo */
 
   tdat = XLALInitTimeCorrections( tcFile );
 
+  REAL8 f0p = PulsarGetREAL8ParamOrZero(params, "F0");
+  REAL8 f1p = PulsarGetREAL8ParamOrZero(params, "F1");
+  REAL8 f2p = PulsarGetREAL8ParamOrZero(params, "F2");
+  REAL8 f3p = PulsarGetREAL8ParamOrZero(params, "F3");
+
   for(j=0;j<i;j++){
     double t; /* DM for current pulsar - make more general */
     double deltaD_f2;
     double phase;
     double tt0;
     double phaseWave = 0., tWave = 0.;
-
-    //fprintf(stderr, "TOA[%d] = %.15lf\n", j, TOA[j]);
 
     if (par.clock != NULL){
       while(MJD_tcorr[k] < TOA[j]){ k++; }
@@ -258,19 +262,16 @@ x,y,z components are got from tempo */
     /* convert time from UTC to GPS reference */
     t += (double)XLALGPSLeapSeconds( (UINT4)t );
 
-    baryinput.delta = params.dec + params.pmdec*(t-params.posepoch);
-    baryinput.alpha = params.ra + params.pmra*(t-params.posepoch)/cos(baryinput.delta);
-
     /* set pulsar position */
-    baryinput.delta = params.dec + params.pmdec*(t-params.posepoch);
-    baryinput.alpha = params.ra + params.pmra*(t-params.posepoch)/cos(baryinput.delta);
+    REAL8 posepoch = PulsarGetREAL8ParamOrZero(params, "POSEPOCH");
+    baryinput.delta = PulsarGetREAL8ParamOrZero(params, "DECJ") + PulsarGetREAL8ParamOrZero(params, "PMDEC")*(t-posepoch);
+    baryinput.alpha = PulsarGetREAL8ParamOrZero(params, "RAJ") + PulsarGetREAL8ParamOrZero(params, "PMRA")*(t-posepoch)/cos(baryinput.delta);
 
     /* recalculate the time delay at the dedispersed time */
     XLALGPSSetREAL8( &baryinput.tgps, t );
 
     /* calculate solar system barycentre time delay */
     XLALBarycenterEarthNew( &earth, &baryinput.tgps, edat, tdat, ttype );
-    //XLALBarycenterEarth( &earth, &baryinput.tgps, edat );
     XLALBarycenter( &emit, &baryinput, &earth );
 
     /* correct to infinite observation frequency for dispersion measure */
@@ -282,32 +283,34 @@ x,y,z components are got from tempo */
     /* calculate binary barycentre time delay */
     input.tb = t + (double)emit.deltaT;
 
-    if(params.model!=NULL){
-      XLALBinaryPulsarDeltaT(&output, &input, &params);
+    if( PulsarCheckParam(params, "BINARY") ){
+      XLALBinaryPulsarDeltaTNew(&output, &input, params);
 
       PPTime[j] = t + ((double)emit.deltaT + output.deltaT);
     }
     else { PPTime[j] = t + (double)emit.deltaT; }
 
     if(j==0){
-      T = PPTime[0] - params.pepoch;
-      f0 = params.f0 + params.f1*T + 0.5*params.f2*T*T + (1./6.)*params.f3*T*T*T;
-      f1 = params.f1 + params.f2*T + 0.5*params.f3*T*T;
-      f2 = params.f2 + params.f3*T;
-      f3 = params.f3;
+      T = PPTime[0] - PulsarGetREAL8ParamOrZero(params, "PEPOCH");
+      f0 = f0p + f1p*T + 0.5*f2p*T*T + (1./6.)*f3p*T*T*T;
+      f1 = f1p + f2p*T + 0.5*f3p*T*T;
+      f2 = f2p + f3p*T;
+      f3 = f3p;
     }
 
     tt0 = PPTime[j] - PPTime[0];
 
-    if( params.nwaves != 0 ){
-      REAL8 dtWave = (XLALGPSGetREAL8(&emit.te) - params.waveepoch)/86400.;
-      REAL8 om = params.wave_om;
+    if( PulsarCheckParam(params, "WAVE_OM") ){
+      REAL8 dtWave = (XLALGPSGetREAL8(&emit.te) - PulsarGetREAL8ParamOrZero(params, "WAVEEPOCH"))/86400.;
+      REAL8 om = PulsarGetREAL8ParamOrZero(params, "WAVE_OM");
 
-      for( k = 0; k < params.nwaves; k++ ){
-        tWave += params.waveSin[k]*sin(om*(REAL8)(k+1.)*dtWave) +
-          params.waveCos[k]*cos(om*(REAL8)(k+1.)*dtWave);
+      REAL8Vector *waveSin = PulsarGetREAL8VectorParam(params, "WAVESIN");
+      REAL8Vector *waveCos = PulsarGetREAL8VectorParam(params, "WAVECOS");
+
+      for( k = 0; k < (INT4)waveSin->length; k++ ){
+        tWave += waveSin->data[k]*sin(om*(REAL8)(k+1.)*dtWave) + waveCos->data[k]*cos(om*(REAL8)(k+1.)*dtWave);
       }
-      phaseWave = params.f0*tWave;
+      phaseWave = f0p*tWave;
     }
 
     phase = f0*tt0 + 0.5*f1*tt0*tt0 + f2*tt0*tt0*tt0/6.0 + f3*tt0*tt0*tt0*tt0/24.;
@@ -332,15 +335,7 @@ x,y,z components are got from tempo */
   XLALFree ( par.ephem );
   XLALFree ( par.clock );
 
-  // FIXME: I didn't find a destructor for BinaryPulsarParams read by XLALReadTEMPOParFile()
-  XLALFree ( params.name );
-  XLALFree ( params.jname );
-  XLALFree ( params.bname );
-  XLALFree ( params.model );
-  XLALFree ( params.ephem );
-  XLALFree ( params.units );
-  XLALFree ( params.sstr );
-
+  PulsarFreeParams( params );
 
   LALCheckMemoryLeaks();
 

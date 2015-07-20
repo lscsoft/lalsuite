@@ -865,36 +865,37 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 
   }
 
-  /* Write out the evidence */
-  fclose(fpout);
-  char bayesfile[FILENAME_MAX];
-  sprintf(bayesfile,"%s_B.txt",outfile);
-  fpout=fopen(bayesfile,"w");
-  fprintf(fpout,"%lf %lf %lf %lf\n",logZ-logZnoise,logZ,logZnoise,logLmax);
-  fclose(fpout);
-  double logB=logZ-logZnoise;
-  /* Pass output back through algorithmparams */
-  LALInferenceAddVariable(runState->algorithmParams,"logZ",(void *)&logZ,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
-  LALInferenceAddVariable(runState->algorithmParams,"logB",(void *)&logB,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
-  LALInferenceAddVariable(runState->algorithmParams,"logLmax",(void *)&logLmax,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+    /* Write out the evidence */
+    fclose(fpout);
+    char bayesfile[FILENAME_MAX];
+    sprintf(bayesfile,"%s_B.txt",outfile);
+    fpout=fopen(bayesfile,"w");
+    fprintf(fpout,"%lf %lf %lf %lf\n",logZ-logZnoise,logZ,logZnoise,logLmax);
+    fclose(fpout);
+    double logB=logZ-logZnoise;
+    /* Pass output back through algorithmparams */
+    LALInferenceAddVariable(runState->algorithmParams,"logZ",(void *)&logZ,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddVariable(runState->algorithmParams,"logB",(void *)&logB,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddVariable(runState->algorithmParams,"logLmax",(void *)&logLmax,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 
-  #ifdef HAVE_LIBLALXML
-  /* Write out the XML if requested */
-  LALInferenceVariables **output_array=NULL;
-  UINT4 N_output_array=0;
-  if(LALInferenceCheckVariable(runState->algorithmParams,"outputarray")
-     &&LALInferenceCheckVariable(runState->algorithmParams,"N_outputarray") )
-  {
-    output_array=*(LALInferenceVariables ***)LALInferenceGetVariable(runState->algorithmParams,"outputarray");
-    N_output_array=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"N_outputarray");
-  }
-  if(output_array && outVOTable && N_output_array>0){
-    xmlNodePtr votable=XLALInferenceVariablesArray2VOTTable(output_array, N_output_array, "Nested Samples");
-    xmlNewProp(votable, CAST_CONST_XMLCHAR("utype"), CAST_CONST_XMLCHAR("lalinference:results:nestedsamples"));
+    #ifdef HAVE_LIBLALXML
+    /* Write out the XML if requested */
+    LALInferenceVariables **output_array=NULL;
+
+    UINT4 N_output_array=0;
+    if(LALInferenceCheckVariable(runState->algorithmParams,"outputarray")
+      &&LALInferenceCheckVariable(runState->algorithmParams,"N_outputarray") )
+    {
+      output_array=*(LALInferenceVariables ***)LALInferenceGetVariable(runState->algorithmParams,"outputarray");
+      N_output_array=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"N_outputarray");
+    }
+    if(output_array && outVOTable && N_output_array>0){
+      xmlNodePtr votable=XLALInferenceVariablesArray2VOTTable(output_array, N_output_array, "Nested Samples");
+      xmlNewProp(votable, CAST_CONST_XMLCHAR("utype"), CAST_CONST_XMLCHAR("lalinference:nestedsampling:samples"));
 
     xmlNodePtr stateResource=XLALInferenceStateVariables2VOTResource(runState, "Run State Configuration");
 
-    xmlNodePtr nestResource=XLALCreateVOTResourceNode("lalinference:results","Nested sampling run",votable);
+    xmlNodePtr nestResource=XLALCreateVOTResourceNode("lalinference:nestedsampling","Nested sampling run",votable);
 
     if(stateResource)
       xmlAddChild(nestResource,stateResource);
@@ -1540,6 +1541,8 @@ static int WriteNSCheckPoint(CHAR *filename, LALInferenceRunState *runState, NSi
   }
   else
   {
+    if(setvbuf(progfile,NULL,_IOFBF,0x100000)) /* Set buffer to 1MB so as to not thrash NFS */
+      fprintf(stderr,"Warning: Unable to set resume file buffer!");
     UINT4 Nlive=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
     int retcode= _saveNSintegralState(progfile,s);
     if(retcode) {

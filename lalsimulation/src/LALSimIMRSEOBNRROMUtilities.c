@@ -1,9 +1,43 @@
+/*
+ *  Copyright (C) 2014 Michael Puerrer, John Veitch
+ *  Reduced Order Model for SEOBNR
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ *  MA  02111-1307  USA
+ */
+
+/**
+ * \author Michael Puerrer
+ *
+ * \file
+ *
+ * \brief Auxiliary functions for SEOBNRv1/v2 reduced order modeling codes in
+ * LALSimIMRSEOBNRv2ROMDoubleSpin.c, LALSimIMRSEOBNRv1ROMDoubleSpin.c,
+ * LALSimIMRSEOBNRv2ROMEffectiveSpin.c, LALSimIMRSEOBNRv1ROMEffectiveSpin.c,
+ * LALSimIMRSEOBNRv2ChirpTime.c.
+ *
+ * Here I collect common auxiliary functions pertaining to reading
+ * data stored in gsl binary vectors and matrices,
+ * parameter space interpolation with B-splines,
+ * a custom gsl error handler and adjustment of nearby parameter values.
+ */
+
 #include <stdio.h>
 #include <lal/XLALError.h>
-
-// TODO:
-// Also pull out: TP_Spline_interpolation_3d(), TP_Spline_interpolation_2d()
-// SplineData_Init() -- different signatures!
+#include <stdbool.h>
+#include <gsl/gsl_math.h>
 
 
 static void err_handler(const char *reason, const char *file, int line, int gsl_errno);
@@ -31,6 +65,9 @@ UNUSED static REAL8 Interpolate_Coefficent_Matrix(
   gsl_bspline_workspace *bwx,
   gsl_bspline_workspace *bwy
 );
+
+static bool approximately_equal(REAL8 x, REAL8 y, REAL8 epsilon);
+static void nudge(REAL8 *x, REAL8 X, REAL8 epsilon);
 
 
 // Definitions
@@ -170,5 +207,23 @@ static REAL8 Interpolate_Coefficent_Matrix(
   return sum;
 }
 
+// This function determines whether x and y are approximately equal to a relative accuracy epsilon.
+// Note that x and y are compared to relative accuracy, so this function is not suitable for testing whether a value is approximately zero.
+static bool approximately_equal(REAL8 x, REAL8 y, REAL8 epsilon) {
+  return !gsl_fcmp(x, y, epsilon);
+}
 
-
+// If x and X are approximately equal to relative accuracy epsilon then set x = X.
+// If X = 0 then use an absolute comparison.
+static void nudge(REAL8 *x, REAL8 X, REAL8 epsilon) {
+  if (X != 0.0) {
+    if (approximately_equal(*x, X, epsilon)) {
+      XLAL_PRINT_INFO("Nudging value %.15g to %.15g\n", *x, X);
+      *x = X;
+    }
+  }
+  else {
+    if (fabs(*x - X) < epsilon)
+      *x = X;
+  }
+}

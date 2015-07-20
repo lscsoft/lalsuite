@@ -18,19 +18,6 @@
 */
 
 /* vim: set noet ts=4 sw=4: */
-/**
- * \file
- * \ingroup lal_std
- * \author Creighton, J. D. E.
- * \brief Routines for exporting time series data as sound files.
- *
- * Supported formats are AU and WAVE.  AIFF is not supported at this time.
- *
- * This code is based on code written by Paul Bourke.  See:
- * http://local.wasp.uwa.edu.au/~pbourke/dataformats/au/
- * http://local.wasp.uwa.edu.au/~pbourke/dataformats/wave/
- *
- */
 
 #ifndef AUDIO_H
 #define AUDIO_H
@@ -43,6 +30,27 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
+/**
+ * \defgroup Audio_h Header Audio.h
+ * \ingroup lal_support
+ * \author Creighton, J. D. E.
+ *
+ * \brief Routines for exporting time series data as sound files.
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <lal/Audio.h>
+ * \endcode
+ *
+ * Supported formats are AU and WAVE.  AIFF is not supported at this time.
+ *
+ * This code is based on code written by Paul Bourke.  See:
+ * http://local.wasp.uwa.edu.au/~pbourke/dataformats/au/
+ * http://local.wasp.uwa.edu.au/~pbourke/dataformats/wave/
+ *
+ */
+/**@{*/
 /** Records a time series as a .wav audio file */
 int XLALAudioWAVRecordREAL4TimeSeries( FILE *fp, REAL4TimeSeries *series );
 
@@ -54,6 +62,8 @@ int XLALAudioAURecordREAL4TimeSeries( FILE *fp, REAL4TimeSeries *series );
 
 /** Records a time series as a .au audio file */
 int XLALAudioAURecordREAL8TimeSeries( FILE *fp, REAL8TimeSeries *series );
+
+/**@}*/
 
 #if 0
 { /* so that editors will match succeeding brace */

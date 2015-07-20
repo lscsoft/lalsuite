@@ -553,39 +553,38 @@ static int PhenomPCore(
 
   /* Correct phasing so we coalesce at t=0 (with the definition of the epoch=-1/deltaF above) */
   /* We apply the same time shift to hptilde and hctilde based on the overall phasing returned by PhenomPCoreOneFrequency */
-  if (deltaF<=0)
-    XLAL_PRINT_WARNING("Warning: Depending on specified frequency sequence correction to time of coalescence may not be accurate.\n");
-  /* Set up spline for phase */
-  gsl_interp_accel *acc = gsl_interp_accel_alloc();
-  gsl_spline *phiI = gsl_spline_alloc(gsl_interp_cspline, L_fCut);
+  if (deltaF>0) {
+    /* Set up spline for phase */
+    gsl_interp_accel *acc = gsl_interp_accel_alloc();
+    gsl_spline *phiI = gsl_spline_alloc(gsl_interp_cspline, L_fCut);
 
-  gsl_spline_init(phiI, freqs->data, phis, L_fCut);
+    gsl_spline_init(phiI, freqs->data, phis, L_fCut);
 
-  REAL8 f_final = PCparams->fRingDown; // This isn't quite the same as the SEOBNRv2 ringdown frequency
-  XLAL_PRINT_INFO("f_ringdown = %g\n", f_final);
+    REAL8 f_final = PCparams->fRingDown; // This isn't quite the same as the SEOBNRv2 ringdown frequency
+    XLAL_PRINT_INFO("f_ringdown = %g\n", f_final);
 
-  // Prevent gsl interpolation errors
-  if (f_final > freqs->data[L_fCut-1])
-    f_final = freqs->data[L_fCut-1];
-  if (f_final < freqs->data[0])
-    XLAL_ERROR(XLAL_EDOM, "f_ringdown < f_min\n");
+    // Prevent gsl interpolation errors
+    if (f_final > freqs->data[L_fCut-1])
+      f_final = freqs->data[L_fCut-1];
+    if (f_final < freqs->data[0])
+      XLAL_ERROR(XLAL_EDOM, "f_ringdown < f_min\n");
 
-  /* Time correction is t(f_final) = 1/(2pi) dphi/df (f_final) */
-  REAL8 t_corr = gsl_spline_eval_deriv(phiI, f_final, acc) / (2*LAL_PI);
-  XLAL_PRINT_INFO("t_corr = %g\n", t_corr);
+    /* Time correction is t(f_final) = 1/(2pi) dphi/df (f_final) */
+    REAL8 t_corr = gsl_spline_eval_deriv(phiI, f_final, acc) / (2*LAL_PI);
+    XLAL_PRINT_INFO("t_corr = %g\n", t_corr);
 
-  /* Now correct phase */
-  for (UINT4 i=0; i<L_fCut; i++) { // loop over frequency points in sequence
-    double f = freqs->data[i];
-    int j = i + offset; // shift index for frequency series if needed
-    ((*hptilde)->data->data)[j] *= cexp(-2*LAL_PI * I * f * t_corr);
-    ((*hctilde)->data->data)[j] *= cexp(-2*LAL_PI * I * f * t_corr);
+    /* Now correct phase */
+    for (UINT4 i=0; i<L_fCut; i++) { // loop over frequency points in sequence
+      double f = freqs->data[i];
+      int j = i + offset; // shift index for frequency series if needed
+      ((*hptilde)->data->data)[j] *= cexp(-2*LAL_PI * I * f * t_corr);
+      ((*hctilde)->data->data)[j] *= cexp(-2*LAL_PI * I * f * t_corr);
+    }
+
+    gsl_spline_free(phiI);
+    gsl_interp_accel_free(acc);
+    XLALFree(phis);
   }
-
-  gsl_spline_free(phiI);
-  gsl_interp_accel_free(acc);
-  XLALFree(phis);
-
   XLALFree(PCparams);
   XLALDestroyREAL8Sequence(freqs);
 

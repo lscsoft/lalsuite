@@ -79,11 +79,11 @@ __date__ = git_version.date
 
 #===================================================================================================
 ### hard coded magic numbers dependent on classifiers, ETG, etc
-traincache_nlines = { "ovl":1 , "forest": 1, "svm": 2}
+traincache_nlines = { "ovl":1 , "forest": 1, "svm": 2, "ann": 3}
 
-mla_flavors = ["forest", "svm"]
+mla_flavors = ["forest", "svm", "ann"]
 
-train_with_dag = ["forest", "svm"]
+train_with_dag = ["forest", "svm", "ann"]
 
 #===================================================================================================
 # DEPRECATED FUNCTIONS THAT SHOULD BE REMOVED
@@ -246,6 +246,27 @@ def classifier_specific_config( config, classifier, flavor ):
             if config.has_option(classifier, option):
                 cp.set( train_section, option, config.get(classifier, option) )
 
+    elif flavor == "ann":
+        convert_section = 'ann_convert'
+        eval_section = 'ann_evaluate'
+        train_section = 'train_ann'
+
+        cp.add_section(convert_section)
+        for option in "normalization-attributes transform-dt-function".split():
+            if config.has_option(classifier, option):
+                cp.set( convert_section, option, config.get(classifier, option) )
+
+        cp.add_section(eval_section)
+        for option in "training-machine".split():
+            if config.has_option(classifier, option):
+                cp.set( eval_section, option, config.get(classifier, option) )
+
+        cp.add_section(train_section)
+        for option in "training-machine hidden-neurons connection-rate steep-out max-epochs weights-min weights-max increase-factor desired-error".split():
+            if config.has_option(classifier, option):
+                cp.set( train_section, option, config.get(classifier, option) )
+
+
     else:
         raise ValueError('flavor=%s not understood for classifier=%s'%(flavor, classifier))
 
@@ -253,11 +274,17 @@ def classifier_specific_config( config, classifier, flavor ):
         raise ValueError('classifier=%s section has no option=condor'%classifier)
     condor_section = config.get(classifier, 'condor')
     if not config.has_section(condor_section):
-        raise ValueError('config has not section=%s'%condor_section)
+        raise ValueError('config has no section=%s'%condor_section)
 
     cp.add_section('condor')
     for option, value in config.items(condor_section):
         cp.set('condor', option, value)
+
+    ### add accounting tags if present
+    if config.has_option('general', 'accounting_group'):
+        cp.set('condor', 'accounting_group', config.get('general', 'accounting_group') )
+    if config.has_option('general', 'accounting_group_user'):
+        cp.set('condor', 'accounting_group_user', config.get('general', 'accounting_group_user') )
 
     cp.add_section('idq_train')
     cp.set('idq_train', 'condorlogs', config.get('train', 'condorlogs'))
@@ -399,6 +426,14 @@ def extract_trained_range(lines, flavor):
         svm_end_training_period = svm_start_training_period + int(svm_model.split('-')[-1].split('.')[0])
         trained_range = "%d_%d"%(svm_start_training_period,svm_end_training_period)
 
+    elif flavor == "ann":
+        trained_ann = lines[0]
+        ### getting start and end of training period from the name of the trained forest file
+        ann_start_training_period = int(trained_ann.split('-')[-2])
+        ann_end_training_period = ann_start_training_period + int(trained_ann.split('-')[-1].split('.')[0])
+        trained_range = "%d_%d"%(ann_start_training_period, ann_end_training_period)
+
+
     else:
         raise ValueError("do not know how to extract trained range for flavor=%s"%flavor)
 
@@ -459,8 +494,19 @@ def dieiflocked(lockfile='.idq.lock'):
     try:
         fcntl.lockf(lockfp, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except IOError:
+        lockfp.close()
         import sys
         sys.exit('ERROR: cannot establish lock on \'%s\', possible duplicate process, exiting..'%lockfile)
+
+    return lockfp
+
+def release(lockfp):
+    """
+    try to release a lockfile
+    """
+    import fcntl
+    fcntl.lockf(lockfp, fcntl.LOCK_UN)
+    lockfp.close()
 
 #=================================================
 ### reporting/logging utilities
@@ -1354,6 +1400,60 @@ def get_all_files_in_range(dirname, starttime, endtime, pad=0, suffix='.xml' ):
 
     return ret
 
+def extract_dmt_segments(xmlfiles, dq_name):
+    """
+....Loads the segments from the dmt xml files. Determines segments covered by dmt process from the file names
+....dq_name is the segment definer name.
+...."""
+
+    good = []
+    covered = []
+    lsctables.use_in(ligolw.LIGOLWContentHandler)
+    for file in xmlfiles:
+        print "load xmldoc"
+        xmldoc = ligolw_utils.load_filename(file, contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler))  # load file
+        print "Done: load xmldoc"
+        # get segment tables
+
+        sdef = table.get_table(xmldoc,
+                               lsctables.SegmentDefTable.tableName)
+        print "Done: get sdef"
+        seg = table.get_table(xmldoc, lsctables.SegmentTable.tableName)
+        print "Done: get seg"
+
+        # segment definer ID correspodning to dq_name
+        # FIX ME: in case of multiple segment versions this matching becomes ambiguous
+
+        dq_seg_def_id = next(a.segment_def_id for a in sdef if a.name
+                             == dq_name.split(":")[1])
+                             #== dq_name)
+        print "Done: dq_seg_def_id"
+
+        # get list of  segments
+
+        good.extend([[a.start_time, a.end_time] for a in seg
+                    if a.segment_def_id == dq_seg_def_id])
+        print "good"
+        print good
+
+    # coalesce segments....
+
+    good = event.fixsegments(good)
+    print "good=event.fixsegments(good)"
+    print good
+
+    # convert file names into segments
+
+    #covered = map(filename_to_segment, xmlfiles)
+    for xmlfile in xmlfiles:
+        covered.append(extract_start_stop(xmlfile,suffix='.xml'))
+
+    # coalesce segments
+
+    covered = event.fixsegments(covered)
+
+    return (good, covered)
+
 def get_scisegs(segments_location, dq_name, start, end, pad=0, logger=None):
     """
     finds and returns dq segments in this range
@@ -1399,7 +1499,7 @@ def retrieve_scisegs(segments_location, dq_name, start, stride, pad=0, sleep=0, 
 
     return good, covered
 
-def retrieve_kwtrig(gdsdir, kwbasename, t, stride, sleep=0, ntrials=1, logger=None):
+def retrieve_kwtrig(gdsdir, kwbasename, t, stride, sleep=0, ntrials=1, logger=None, delay=0):
     """
     looks for kwtriggers and includes logic about waiting.
     will wait "sleep" seconds between each check that the file has appeared. Will check "ntrials" times
@@ -1431,9 +1531,16 @@ def retrieve_kwtrig(gdsdir, kwbasename, t, stride, sleep=0, ntrials=1, logger=No
         return None
 
     if logger:
-        logger.info('  loading KW triggers')
+        logger.info('  loading KW triggers : %s'%kwfilename)
     else:
-        print '  loading KW triggers'
+        print '  loading KW triggers : %s'%kwfilename
+
+    if delay > 0:
+        if logger:
+            logger.info('    waiting %.3f seconds to ensure file is completely written'%delay)
+        else:
+            print '    waiting %.3f seconds to ensure file is completely written'%delay
+        time.sleep(delay)
 
     return event.loadkwm(kwfilename)
 
@@ -1917,6 +2024,18 @@ def evaluate(flavor, lines, dat, config, gps_start_time=-numpy.infty, gps_end_ti
             file.close()
             return 0
 
+    elif flavor == "ann":
+        pat = trgdict ### silly way I'm passing this
+        if len(auxmvc_vectors):
+            trained_ann = lines[0]
+            return ann_evaluate( pat, trained_ann, dat, config, gps_start_time=gps_start_time, gps_end_time=gps_end_time, dir=dir )[0]
+        else:
+            nonaux_vars = ['index', 'i', 'w', 'GPS_s', 'GPS_ms', 'signif', 'SNR', 'unclean', 'glitch-rank' ]
+            file = open(dat, 'w')
+            print >> file, 'GPS i w unclean signif SNR rank %s' % (' '.join([var for var in auxmvc_vectors.dtype.names if not var in nonaux_vars]))
+            file.close()
+            return 0
+
     else:
         raise ValueError("do not know how to execute for flavor=%s"%flavor)
 
@@ -1946,6 +2065,14 @@ def dag_train(flavor, pat, cache, config, train_dir='.', cwd='.'):
         os.chdir(cwd) ### switch back to the current directory
 
         return submit_dag_exit_status, "%s/%s"%(train_dir, dag_file)
+
+    elif flavor == "ann":
+        ### submit ann training job
+        (submit_dag_exit_status, dag_file, trained_file) = execute_ann_train(pat, cache.name, config, train_dir)
+        os.chdir(cwd) ### switch back to the current directory
+
+        return submit_dag_exit_status, "%s/%s"%(train_dir, dag_file)
+
 
     else:
         raise ValueError("do not know how to dag_train flavor=%s"%flavor)
@@ -2584,7 +2711,8 @@ def execute_forest_train(training_samples_file, cache, cp, submit_dir ):
     train_forest_job = auxmvc.train_forest_job(cp)
 
     # construct name for trained forest file
-    trained_forest_filename = os.path.split(training_samples_file)[0] + '/mvsc/' + os.path.split(training_samples_file)[1].replace('.pat', '.spr')
+    #trained_forest_filename = os.path.split(training_samples_file)[0] + '/mvsc/' + os.path.split(training_samples_file)[1].replace('.pat', '.spr')
+    trained_forest_filename = submit_dir +'/' + os.path.split(training_samples_file)[1].replace('.pat', '.spr')
 
     # create node for this job
     train_forest_node = auxmvc.train_forest_node(train_forest_job, training_samples_file, trained_forest_filename)
@@ -2706,5 +2834,118 @@ def execute_svm_train( cp, train_file, range_file, model_file, cache_file, submi
     exit_status = subprocess.Popen(dag_submit_cmd, cwd=submit_dir).wait() ### block!
 
     return (exit_status, dag_file, train_svm_node.get_output_files())
+
+#===================================================================================================
+# ANN WRAPPERS
+#===================================================================================================
+def ann_evaluate( patfile, trained_ann, ranked_file, cp, gps_start_time, gps_end_time, dir):
+    """
+    Submits job that evaluates samples of auxmvc feature vectors using random ann (ANN)
+    """
+
+    # initiate converting pat_file to ann file(FANN library type file) job
+    convert_annfile_job = auxmvc.convert_annfile_job(cp)
+
+    # create node for convert_annfile_job
+    convert_annfile_node = auxmvc.convert_annfile_node(convert_annfile_job, patfile)
+
+    # initiate use ann job
+    use_ann_job = auxmvc.use_ann_job(cp)
+
+    # create node for this job
+    use_ann_node = auxmvc.use_ann_node(use_ann_job, trained_ann, patfile, ranked_file)
+
+    # get full command line for convert_annfilejob
+    convert_annfile_command = auxmvc.construct_command(convert_annfile_node)
+
+    # submit process
+    #exit_status = submit_command(convert_annfile_command, 'ann_convert', dir)
+    exit_status = subprocess.Popen(convert_annfile_command, cwd=dir).wait() ### block
+
+    if exit_status == 0:
+        # get full command line for this job
+        use_ann_command = auxmvc.construct_command(use_ann_node)
+
+        # submit process
+        #exit_status = submit_command(use_ann_command, 'ann_evaluate', dir)
+        exit_status = subprocess.Popen(use_ann_command, cwd=dir).wait() ### block!
+
+        return (exit_status, use_ann_node.get_output_files())
+    else:
+        print "File conversion for ann is failed."
+        return (exit_status, use_ann_node.get_output_files())
+
+def execute_ann_train( training_samples_file, cache, cp, submit_dir ):
+    """
+    Builds small dag to train ANN and condor submits it.
+    """
+
+    # set current directory to submit_dir
+    os.chdir(submit_dir)
+
+    # set path to condor log
+    logpath = cp.get('idq_train', 'condorlogs')
+
+    # set basename for condor dag
+    basename = cp.get('general', 'ifo') + '_train_ann_' + cp.get('general', 'usertag') + '-' + training_samples_file.split('-')[-2] + '-' + training_samples_file.split('-')[-1].split('.')[0]
+
+    # creat directory for jobs .err and .out files
+    if not os.path.exists('logs'):
+        os.makedirs('logs')
+
+    # initiate dag
+    dag = auxmvc.auxmvc_DAG(basename, logpath)
+
+    # get dag file
+    dag_file = dag.get_dag_file()
+
+    # initiate convert_annfile_job
+    convert_annfile_job = auxmvc.convert_annfile_job(cp)
+
+    # create node for convert_annfile_job
+    convert_annfile_node = auxmvc.convert_annfile_node(convert_annfile_job, training_samples_file)
+
+    # append the node to dag
+    dag.add_node(convert_annfile_node)
+
+    # construct name for trained ann file
+    #training_samples_file_redirect = os.path.split(training_samples_file)[0] + '/ann/' + os.path.split(training_samples_file)[1].replace('.pat', '.ann')
+    training_samples_file_redirect = submit_dir +'/' + os.path.split(training_samples_file)[1].replace('.pat', '.ann')
+
+    trained_ann_filename = training_samples_file_redirect.replace('.ann','.net')
+
+    # initiate train ann job
+    train_ann_job = auxmvc.train_ann_job(cp)
+
+    # create node for this job
+    train_ann_node = auxmvc.train_ann_node(train_ann_job, training_samples_file_redirect, trained_ann_filename, p_node=[convert_annfile_node])
+
+    # append the node to dag
+    dag.add_node(train_ann_node)
+
+    # initiate add file to cache job
+    add_file_to_cache_job = auxmvc.add_file_to_cache_job(cp)
+
+    # create node for this job
+    add_file_to_cache_node = auxmvc.add_file_to_cache_node(add_file_to_cache_job, [train_ann_node.trained_ann], cache, p_node=[train_ann_node])
+
+    # add the node to dag
+    dag.add_node(add_file_to_cache_node)
+
+    # write dag
+
+    dag.write_sub_files()
+    dag.write_dag()
+    dag.write_script()
+
+    # condor dag submit command....
+
+    dag_submit_cmd = ['condor_submit_dag', dag_file]
+
+    # submit dag
+    #exit_status = submit_command(dag_submit_cmd, 'submit_ann_train_dag', submit_dir)
+    exit_status = subprocess.Popen(dag_submit_cmd, cwd=submit_dir).wait() ### block!
+
+    return (exit_status, dag_file, train_ann_node.get_output_files())
 
 ##@}

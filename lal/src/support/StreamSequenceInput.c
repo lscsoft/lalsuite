@@ -146,7 +146,7 @@ XLALCHARReadSequence( CHARSequence **sequence, FILE *stream )
     data = here->buf.CH;
     while ( !gzeof( gzstream ) && n )
 	{
-          CHAR thisChar = (CHAR)gzgetc( gzstream );
+          int thisChar = gzgetc( gzstream );
           if ( thisChar == -1 ) {
             break;
           }

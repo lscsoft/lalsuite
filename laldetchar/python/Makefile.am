@@ -29,6 +29,12 @@ pybin_scripts = \
 	laldetchar-idq-svm-train \
 	laldetchar-idq-train \
 	laldetchar-segments-from-data \
+	laldetchar-idq-ann-convert \
+	laldetchar-idq-ann-train \
+	laldetchar-idq-ann-evaluate \
+	laldetchar-idq-gst-sender \
+	laldetchar-idq-gst-relay \
+	laldetchar-idq-gst-listener \
 	$(END_OF_LIST)
 
 endif

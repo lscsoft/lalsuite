@@ -66,10 +66,17 @@ int main(int argc, char *argv[])
 
 	n = duration * srate;
 	seg = LALCalloc(numDetectors, sizeof(*seg));
-	for (i = 0; i < numDetectors; ++i)
-		seg[i] = XLALCreateREAL8TimeSeries("STRAIN", &epoch, 0.0, 1.0/srate, &lalStrainUnit, length);
+	printf("# time (s)");
+	for (i = 0; i < numDetectors; ++i) {
+		char name[LALNameLength];
+		snprintf(name, sizeof(name), "%s:STRAIN", detectors[i].frDetector.prefix);
+		seg[i] = XLALCreateREAL8TimeSeries(name, &epoch, 0.0, 1.0/srate, &lalStrainUnit, length);
+		printf("\t%s (strain)", name);
+	}
+	printf("\n");
 
 	XLALSimSGWB(seg, detectors, numDetectors, 0, OmegaGW, H0, rng); // first time to initilize
+
 	while (1) { // infinite loop
 		size_t j;
 		for (j = 0; j < stride; ++j, --n) { // output first stride points

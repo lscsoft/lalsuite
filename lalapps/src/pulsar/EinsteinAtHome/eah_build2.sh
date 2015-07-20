@@ -399,7 +399,9 @@ if test ."$build_zlib" = ."true"; then
     elif test -z "$noupdate"; then
         log_and_show "retrieving $zlib"
         download $zlib.tar.gz
-        log_and_do tar xzf "$zlib.tar.gz"
+        log_and_do cd "$BUILD"
+        log_and_do tar xzf "$SOURCE/$zlib.tar.gz"
+        log_and_do cd "$SOURCE"
     fi
 fi
 
@@ -452,7 +454,7 @@ if test ."$build_zlib" = ."true"; then
         log_and_show "using existing zlib"
     else
         log_and_show "compiling zlib"
-        log_and_do cd "$SOURCE/$zlib"
+        log_and_do cd "$BUILD/$zlib"
         if [ "$zlib_shared" = "--shared" -a "$zlib" = "zlib-1.2.3" ] && echo "$CFLAGS" | grep -w -e -m64 >/dev/null; then
             CC="gcc -m64" log_and_do "./configure" $zlib_shared --prefix="$INSTALL"
         else
@@ -582,6 +584,7 @@ else
             log_and_do make -f "$makefile"
 	    log_and_do make -f "$makefile" install
         fi
+        sed -i~ '/#include "boinc_win.h"/d' "$INSTALL/include/boinc/filesys.h"
     else
 	log_and_do cd "$SOURCE/boinc"
 	log_and_do ./_autosetup
@@ -594,6 +597,9 @@ else
 fi
 
 lalsuite_copts="--disable-gcc-flags --disable-debug --disable-frame --disable-metaio --disable-lalsimulation --disable-lalxml --enable-boinc --disable-silent-rules --without-simd $shared_copt $cross_copt --prefix=$INSTALL"
+if [ ."$build_win32" = ."true" ] ; then
+    export BOINC_EXTRA_LIBS="-lpsapi"
+fi
 if test -z "$rebuild_lal" && pkg-config --exists lal; then
     log_and_show "using existing lal"
 else
@@ -605,6 +611,7 @@ else
     log_and_dont_fail make uninstall
     log_and_do make
     log_and_do make install
+    log_and_do sed -i~ 's/.*typedef .* UINT8 *;.*/#define UINT8 uint64_t/;s/.*typedef .* INT8 *;.*/#define INT8 int64_t/' "$INSTALL/include/lal/LALAtomicDatatypes.h"
 fi
 
 if test -z "$rebuild_lal" && pkg-config --exists lalpulsar; then

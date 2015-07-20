@@ -35,6 +35,7 @@
 #include <lal/LALConstants.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALError.h>
+#include <lal/LALString.h>
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimIMR.h>
 
@@ -192,18 +193,18 @@ int output_td_waveform(REAL8TimeSeries * h_plus, REAL8TimeSeries * h_cross, stru
         /* extrapolate the end of the waveform using last and second last points */
         phi0 = 2 * phi->data[phi->length - 1] - phi->data[phi->length - 2];
         // phi0 = phi->data[phi->length - 1];
-        phi0 -= fmod(phi0 + copysign(M_PI, phi0), 2.0 * M_PI) - copysign(M_PI, phi0);
+        phi0 -= fmod(phi0 + copysign(LAL_PI, phi0), 2.0 * LAL_PI) - copysign(LAL_PI, phi0);
         for (j = 0; j < phi->length; ++j)
             phi->data[j] -= phi0;
 
-        fprintf(stdout, "# time (s)\t|h_+ - ih_x|\targ(h_+ - ih_x)\n");
+        fprintf(stdout, "# time (s)\th_abs (strain)\t h_arg (rad)\n");
         for (j = 0; j < h_plus->data->length; ++j)
             fprintf(stdout, "%.9f\t%e\t%e\n", t0 + j * h_plus->deltaT, amp->data[j], phi->data[j]);
 
         XLALDestroyREAL8Sequence(phi);
         XLALDestroyREAL8Sequence(amp);
     } else {
-        fprintf(stdout, "# time (s)\th_+         \th_x\n");
+        fprintf(stdout, "# time (s)\th_+ (strain)\th_x (strain)\n");
         for (j = 0; j < h_plus->data->length; ++j)
             fprintf(stdout, "%.9f\t%e\t%e\n", t0 + j * h_plus->deltaT, h_plus->data->data[j], h_cross->data->data[j]);
     }
@@ -235,16 +236,16 @@ int output_fd_waveform(COMPLEX16FrequencySeries * htilde_plus, COMPLEX16Frequenc
         /* make sure that unwound phases are in -pi to pi at fRef */
         kref = round((p.fRef > 0 ? p.fRef : p.f_min) / htilde_plus->deltaF);
         arg0 = arg_plus->data[kref];
-        arg0 -= fmod(arg0 + copysign(M_PI, arg0), 2.0 * M_PI) - copysign(M_PI, arg0);
+        arg0 -= fmod(arg0 + copysign(LAL_PI, arg0), 2.0 * LAL_PI) - copysign(LAL_PI, arg0);
         for (k = 0; k < arg_plus->length; ++k)
             arg_plus->data[k] -= arg0;
 
         arg0 = arg_cross->data[kref];
-        arg0 -= fmod(arg0 + copysign(M_PI, arg0), 2.0 * M_PI) - copysign(M_PI, arg0);
+        arg0 -= fmod(arg0 + copysign(LAL_PI, arg0), 2.0 * LAL_PI) - copysign(LAL_PI, arg0);
         for (k = 0; k < arg_cross->length; ++k)
             arg_cross->data[k] -= arg0;
 
-        fprintf(stdout, "# freq. (Hz)\tAbs h~_+ (s)\tArg h~_+    \tAbs h~_x (s)\tArg h~_x\n");
+        fprintf(stdout, "# freq (s^-1)\tabs_htilde_+ (strain s)\targ_htilde_+ (rad)\tabs_htilde_x (strain s)\targ_htilde_x (rad)\n");
         for (k = 0; k < htilde_plus->data->length; ++k)
             fprintf(stdout, "%f\t%e\t%e\t%e\t%e\n", k * htilde_plus->deltaF, abs_plus->data[k], arg_plus->data[k],
                 abs_cross->data[k], arg_cross->data[k]);
@@ -254,7 +255,7 @@ int output_fd_waveform(COMPLEX16FrequencySeries * htilde_plus, COMPLEX16Frequenc
         XLALDestroyREAL8Sequence(arg_plus);
         XLALDestroyREAL8Sequence(abs_plus);
     } else {
-        fprintf(stdout, "# freq. (Hz)\tRe h~_+ (s) \tIm h~_+  (s) \tRe h~_x (s) \tIm h~_x (s)\n");
+        fprintf(stdout, "# freq (s^-1)\treal_htilde_+ (strain s)\timag_htilde_+ (strain s)\treal_htilde_x (strain s)\timag_htilde_x (strain s)\n");
         for (k = 0; k < htilde_plus->data->length; ++k)
             fprintf(stdout, "%f\t%e\t%e\t%e\t%e\n", k * htilde_plus->deltaF, creal(htilde_plus->data->data[k]),
                 cimag(htilde_plus->data->data[k]), creal(htilde_cross->data->data[k]), cimag(htilde_cross->data->data[k]));
@@ -492,9 +493,7 @@ int print_params(struct params p)
         int tideO = XLALSimInspiralGetTidalOrder(p.waveFlags);
         int axis = XLALSimInspiralGetFrameAxis(p.waveFlags);
         int modes = XLALSimInspiralGetModesChoice(p.waveFlags);
-        char *s;
-        fprintf(stderr, "approximant:                                  %s\n", s = XLALGetStringFromApproximant(p.approx));
-        free(s);
+        fprintf(stderr, "approximant:                                  %s\n", XLALSimInspiralGetStringFromApproximant(p.approx));
         if (p.phaseO == -1)
             fprintf(stderr, "phase post-Newtonian order:                   highest available\n");
         else
@@ -575,9 +574,8 @@ int usage(const char *program)
     fprintf(stderr, "recognized time-domain approximants:");
     for (a = 0, c = 0; a < NumApproximants; ++a) {
         if (XLALSimInspiralImplementedTDApproximants(a)) {
-            char *s = XLALGetStringFromApproximant(a);
+            const char *s = XLALSimInspiralGetStringFromApproximant(a);
             c += fprintf(stderr, "%s%s", c ? ", " : "\n\t", s);
-            free(s);
             if (c > 50)
                 c = 0;
         }
@@ -586,9 +584,8 @@ int usage(const char *program)
     fprintf(stderr, "recognized frequency-domain approximants:");
     for (a = 0, c = 0; a < NumApproximants; ++a) {
         if (XLALSimInspiralImplementedFDApproximants(a)) {
-            char *s = XLALGetStringFromApproximant(a);
+            const char *s = XLALSimInspiralGetStringFromApproximant(a);
             c += fprintf(stderr, "%s%s", c ? ", " : "\n\t", s);
-            free(s);
             if (c > 50)
                 c = 0;
         }
@@ -603,7 +600,7 @@ struct params parseargs(int argc, char **argv)
     char *kv;
     struct params p = {
         .verbose = 0,
-        .approx = XLALGetApproximantFromString(DEFAULT_APPROX),
+        .approx = XLALSimInspiralGetApproximantFromString(DEFAULT_APPROX),
         .condition = 0,
         .freq_dom = 0,
         .amp_phase = 0,
@@ -698,19 +695,19 @@ struct params parseargs(int argc, char **argv)
             p.amp_phase = 1;
             break;
         case 'a':      /* approximant */
-            p.approx = XLALGetApproximantFromString(LALoptarg);
+            p.approx = XLALSimInspiralGetApproximantFromString(LALoptarg);
             if ((int)p.approx == XLAL_FAILURE) {
                 fprintf(stderr, "error: invalid value %s for %s\n", LALoptarg, long_options[option_index].name);
                 exit(1);
             }
             break;
         case 'w':      /* waveform */
-            p.approx = XLALGetApproximantFromString(LALoptarg);
+            p.approx = XLALSimInspiralGetApproximantFromString(LALoptarg);
             if ((int)p.approx == XLAL_FAILURE) {
                 fprintf(stderr, "error: could not parse approximant from %s for %s\n", LALoptarg, long_options[option_index].name);
                 exit(1);
             }
-            p.phaseO = XLALGetOrderFromString(LALoptarg);
+            p.phaseO = XLALSimInspiralGetPNOrderFromString(LALoptarg);
             if ((int)p.approx == XLAL_FAILURE) {
                 fprintf(stderr, "error: could not parse order from %s for %s\n", LALoptarg, long_options[option_index].name);
                 exit(1);
@@ -789,7 +786,7 @@ struct params parseargs(int argc, char **argv)
             p.f_min = atof(LALoptarg);
             break;
         case 'd':      /* distance */
-            p.distance = atof(LALoptarg);
+            p.distance = atof(LALoptarg) * 1e6 * LAL_PC_SI;
             break;
         case 'i':      /* inclination */
             p.inclination = atof(LALoptarg) * LAL_PI_180;
@@ -797,7 +794,7 @@ struct params parseargs(int argc, char **argv)
         case 'A':      /* axis */
             if (p.waveFlags == NULL)
                 p.waveFlags = XLALSimInspiralCreateWaveformFlags();
-            XLALSimInspiralSetFrameAxis(p.waveFlags, XLALGetFrameAxisFromString(LALoptarg));
+            XLALSimInspiralSetFrameAxis(p.waveFlags, XLALSimInspiralGetFrameAxisFromString(LALoptarg));
             if ((int)XLALSimInspiralGetFrameAxis(p.waveFlags) == XLAL_FAILURE) {
                 fprintf(stderr, "error: invalid value %s for %s\n", LALoptarg, long_options[option_index].name);
                 exit(1);
@@ -806,15 +803,15 @@ struct params parseargs(int argc, char **argv)
         case 'n':      /* modes */
             if (p.waveFlags == NULL)
                 p.waveFlags = XLALSimInspiralCreateWaveformFlags();
-            XLALSimInspiralSetModesChoice(p.waveFlags, XLALGetHigherModesFromString(LALoptarg));
-            if ((int)XLALSimInspiralGetModesChoice(p.waveFlags) == XLAL_FAILURE) {
+            XLALSimInspiralSetModesChoice(p.waveFlags, XLALSimInspiralGetHigherModesFromString(LALoptarg));
+            if (XLALSimInspiralGetModesChoice(p.waveFlags) == 0) {
                 fprintf(stderr, "error: invalid value %s for %s\n", LALoptarg, long_options[option_index].name);
                 exit(1);
             }
             break;
         case 'p':      /* nonGRpar */
-            while ((kv = strsep(&LALoptarg, ","))) {
-                char *key = strsep(&kv, "=");
+            while ((kv = XLALStringToken(&LALoptarg, ",", 0))) {
+                char *key = XLALStringToken(&kv, "=", 0);
                 if (kv == NULL || key == NULL || *key == '\0') {
                     fprintf(stderr, "error: invalid key-value pair for %s\n", long_options[option_index].name);
                     exit(1);

@@ -445,11 +445,11 @@ int XLALSimInspiralSpinTaylorF2(
     hplus = XLALCreateCOMPLEX16FrequencySeries("hplus: FD waveform", &tC, 0.0, deltaF, &lalStrainUnit, n);
     if (!hplus) XLAL_ERROR(XLAL_EFUNC);
     memset(hplus->data->data, 0, n * sizeof(COMPLEX16));
-    XLALUnitDivide(&hplus->sampleUnits, &hplus->sampleUnits, &lalSecondUnit);
+    XLALUnitMultiply(&hplus->sampleUnits, &hplus->sampleUnits, &lalSecondUnit);
     hcross = XLALCreateCOMPLEX16FrequencySeries("hcross: FD waveform", &tC, 0.0, deltaF, &lalStrainUnit, n);
     if (!hcross) XLAL_ERROR(XLAL_EFUNC);
     memset(hcross->data->data, 0, n * sizeof(COMPLEX16));
-    XLALUnitDivide(&hcross->sampleUnits, &hcross->sampleUnits, &lalSecondUnit);
+    XLALUnitMultiply(&hcross->sampleUnits, &hcross->sampleUnits, &lalSecondUnit);
 
     /* extrinsic parameters */
     amp0 = -4. * m1 * m2 / r * LAL_MRSUN_SI * LAL_MTSUN_SI * sqrt(LAL_PI/12.L);

@@ -382,10 +382,12 @@ XLALSignalToSFTs ( const REAL4TimeSeries *signalvec, 	/**< input time-series */
       /* Now window the current time series stretch, if necessary */
       if ( params->window )
         {
-	  const float A = 1.0 / sqrt(params->window->sumofsquares / params->window->data->length);
+          // the SFT normalization in case of windowing follows the conventions detailed in the SFTv2 specification,
+          // namely LIGO-T040164, and in particular Eqs.(3),(4) and (6) in T010095-00.pdf
+	  const float inv_sigma_win = 1.0 / sqrt ( params->window->sumofsquares / params->window->data->length );
 	  for( UINT4 idatabin = 0; idatabin < timeStretchCopy->length; idatabin++ )
             {
-              timeStretchCopy->data[idatabin] *= A * params->window->data->data[idatabin];
+              timeStretchCopy->data[idatabin] *= inv_sigma_win * params->window->data->data[idatabin];
             }
         } // if window
 
@@ -984,7 +986,8 @@ XLALGenerateLineFeature ( const PulsarSignalParams *params )
 /**
  * Generate Gaussian noise with standard-deviation sigma, add it to inSeries.
  *
- * NOTE2: if seed==0, then time(NULL) is used as random-seed!
+ * \note if seed==0, then an INT4 from /dev/urandom is read and used as random-seed, if
+ * this can't be opened or read, an error is returned in this case.
  *
  */
 int
@@ -996,6 +999,26 @@ XLALAddGaussianNoise ( REAL4TimeSeries *inSeries, REAL4 sigma, INT4 seed )
 
   REAL4Vector *v1;
   XLAL_CHECK ( (v1 = XLALCreateREAL4Vector ( numPoints )) != NULL, XLAL_EFUNC );
+
+  /*
+   * If seed=0, XLALCreateRandomParams() would resort to using time() with seconds-resolution
+   * to generate a seed, which is unsafe and could easily end up producing identical time-series
+   * on repeated or parallel calls on a cluster.
+   * Therefore we try to read an INT4 from /dev/urandom and use that as our seed.
+   * Note: /dev/random can be slow after the first few accesses, which is why we're using urandom instead.
+   * [Cryptographic safety isn't a concern here at all]
+   */
+  if ( seed == 0 )
+    {
+      FILE *devrandom;
+      XLAL_CHECK ( (devrandom = fopen ( "/dev/urandom", "rb" )) != NULL, XLAL_EIO );
+      if ( fread ( (void*)&seed, sizeof(INT4), 1, devrandom ) != 1 )
+        {
+          fclose ( devrandom );
+          XLAL_ERROR ( XLAL_EIO, "Failed to read 4-byte seed from '/dev/urandom'\n\n");
+        }
+      fclose ( devrandom );
+    } // if seed==0
 
   RandomParams *randpar;
   XLAL_CHECK ( (randpar = XLALCreateRandomParams ( seed )) != NULL, XLAL_EFUNC );

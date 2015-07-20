@@ -236,7 +236,7 @@ XLALNRInjectionFromSimInspiral(
   /* Add the modes together */
   XLALAddNumRelStrainModesREAL8(&plus, &cross, thisRow);
   /* Place at distance */
-  for (uint j = 0; j < plus->data->length; j++)
+  for (UINT4 j = 0; j < plus->data->length; j++)
   {
     plus->data->data[j]  /= thisRow->distance;
     cross->data->data[j] /= thisRow->distance;

@@ -927,6 +927,15 @@ void setup_from_par_file( LALInferenceRunState *runState )
     LALInferenceRemoveVariable( runState->threads[0]->currentParams, "model" );
   }
 
+  /* check for binary model */
+  CHAR *binarymodel = NULL;
+  if ( LALInferenceCheckVariable( runState->currentParams, "model") ){
+    binarymodel = XLALStringDuplicate(*(CHAR**)LALInferenceGetVariable( runState->currentParams, "model" ));
+
+    /* now remove from runState->params (as it conflict with calls to LALInferenceCompareVariablesin the proposal) */
+    LALInferenceRemoveVariable( runState->currentParams, "model" );
+  }
+
   /* Setup initial phase, and barycentring delays */
   LALInferenceIFOModel *ifo_model = runState->threads[0]->model->ifo;
   while( data ){

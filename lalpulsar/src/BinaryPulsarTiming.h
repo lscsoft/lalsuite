@@ -143,6 +143,10 @@ void XLALComputeKopeikinTerms( KopeikinTerms *kop,
                                BinaryPulsarParams *params,
                                BinaryPulsarInput *input );
 
+void XLALComputeKopeikinTermsNew( KopeikinTerms *kop,
+                                  PulsarParameters *params,
+                                  BinaryPulsarInput *input );
+
 /**
  * function to calculate the binary system delay
  */
@@ -150,6 +154,14 @@ void
 XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
                         BinaryPulsarInput    *input,
                         BinaryPulsarParams   *params );
+
+/**
+ * function to calculate the binary system delay using new parameter structure
+ */
+void
+XLALBinaryPulsarDeltaTNew( BinaryPulsarOutput   *output,
+                           BinaryPulsarInput    *input,
+                           PulsarParameters     *params );
 
 void
 LALBinaryPulsarDeltaT( LALStatus            *status,

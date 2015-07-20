@@ -26,6 +26,7 @@ pymodule_PYTHON = \
 	pdf_estimation.py \
 	svmkit.py \
 	calibration.py \
+	vetosrc.py \
 	$(END_OF_LIST)
 
 endif

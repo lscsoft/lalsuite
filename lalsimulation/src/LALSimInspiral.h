@@ -192,6 +192,10 @@ int checkSpinsZero(REAL8 s1x, REAL8 s1y, REAL8 s1z,
  returns 1 if x and y components of spins are zero, otherwise returns 0 */
 int checkTransverseSpinsZero(REAL8 s1x, REAL8 s1y, REAL8 s2x, REAL8 s2y);
 
+/* Internal utility function to check aligned spins very close to equal
+   returns 1 if z components of spins are very close to equal, otherwise returns 0 */
+int checkAlignedSpinsEqual(REAL8 s1z, REAL8 s2z);
+
 /* Internal utility function to check tidal parameters are zero
  returns 1 if both tidal parameters zero, otherwise returns 0 */
 int checkTidesZero(REAL8 lambda1, REAL8 lambda2);
@@ -253,9 +257,9 @@ typedef enum {
    SEOBNRv1,		/**< Spin-aligned EOBNR model */
    SEOBNRv2,		/**< Spin-aligned EOBNR model v2 */
    SEOBNRv3,		/**< Spin precessing EOBNR model v3 */
-   SEOBNRv1_ROM_SingleSpin, /**< Single-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv1 See [Purrer:2014fza] */
+   SEOBNRv1_ROM_EffectiveSpin, /**< Single-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv1 See [Purrer:2014fza] */
    SEOBNRv1_ROM_DoubleSpin, /**< Double-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv1 See [Purrer:2014fza] */
-   SEOBNRv2_ROM_SingleSpin, /**< Single-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv2 */
+   SEOBNRv2_ROM_EffectiveSpin, /**< Single-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv2 */
    SEOBNRv2_ROM_DoubleSpin, /**< Double-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv2 */
    HGimri,		/**< Time domain inspiral-merger-ringdown waveform for quasi-circular intermediate mass-ratio inspirals [Huerta & Gair arXiv:1009.1985]*/
    IMRPhenomA,		/**< Time domain (non-spinning) inspiral-merger-ringdown waveforms generated from the inverse FFT of IMRPhenomFA  */
@@ -263,6 +267,7 @@ typedef enum {
    IMRPhenomFA,		/**< Frequency domain (non-spinning) inspiral-merger-ringdown templates of Ajith et al [Ajith_2007kx] with phenomenological coefficients defined in the Table I of [Ajith_2007xh]*/
    IMRPhenomFB,		/**< Frequency domain (non-precessing spins) inspiral-merger-ringdown templates of Ajith et al [Ajith_2009bn] */
    IMRPhenomC,		/**< Frequency domain (non-precessing spins) inspiral-merger-ringdown templates of Santamaria et al [Santamaria:2010yb] with phenomenological coefficients defined in the Table II of [Santamaria:2010yb]*/
+   IMRPhenomD,		/**< Frequency domain (non-precessing spins) inspiral-merger-ringdown templates of ... [] with phenomenological coefficients defined in the Table X of [...]*/
    IMRPhenomP,		/**< Frequency domain (generic spins) inspiral-merger-ringdown templates of Hannam et al., arXiv:1308.3271 [gr-qc] */
    IMRPhenomFC,		/**< Frequency domain (non-precessing spins) inspiral-merger-ringdown templates of Santamaria et al [Santamaria:2010yb] with phenomenological coefficients defined in the Table II of [Santamaria:2010yb]*/
    TaylorEt,		/**< UNDOCUMENTED */
@@ -1139,6 +1144,30 @@ int XLALSimInspiralPrecessingPTFQWaveforms(
 	);
 
 /**
+ * Function to specify the desired orientation of the spin components of
+ * a precessing binary.
+ */
+int XLALSimInspiralInitialConditionsPrecessingApproxs(
+		REAL8 *inc,	/**< inclination angle (returned) */
+		REAL8 *S1x,	/**< S1 x component (returned) */
+		REAL8 *S1y,	/**< S1 y component (returned) */
+		REAL8 *S1z,	/**< S1 z component (returned) */
+		REAL8 *S2x,	/**< S2 x component (returned) */
+		REAL8 *S2y,	/**< S2 y component (returned) */
+		REAL8 *S2z,	/**< S2 z component (returned) */
+		const REAL8 inclIn, /**< Inclination angle in input */
+		const REAL8 S1xIn,  /**< S1 x component */
+		const REAL8 S1yIn,  /**< S1 y component */
+		const REAL8 S1zIn,  /**< S1 z component */
+		const REAL8 S2xIn,  /**< S2 x component */
+		const REAL8 S2yIn,  /**< S2 y component */
+		const REAL8 S2zIn,  /**< S2 z component */
+		const REAL8 m1,	    /**< mass of body 1 (kg) */
+		const REAL8 m2,	    /**< mass of body 2 (kg) */
+		const REAL8 fRef,   /**< reference GW frequency (Hz) */
+		LALSimInspiralFrameAxis axisChoice  /**< Flag to identify axis wrt which spin components are given. Pass in NULL (or None in python) for default (view) */);
+
+/**
  * Compute the length of an inspiral waveform assuming the Taylor dEnergy and Flux equations
  */
 REAL8
@@ -1170,38 +1199,47 @@ int XLALSimInspiralImplementedFDApproximants(
     Approximant approximant /**< post-Newtonian approximant for use in waveform production */
     );
 
-/**
- * XLAL function to determine approximant from a string.  The string need not
- * match exactly, only contain a member of the Approximant enum.
- */
-int XLALGetApproximantFromString(const CHAR *inString);
 
-/**
- * XLAL function to determine string from approximant enum.
- * This function needs to be updated when new approximants are added.
- */
-char* XLALGetStringFromApproximant(Approximant approximant);
+int XLALSimInspiralDecomposeWaveformString(int *approximant, int *order, int *axis, const char *waveform);
 
-/**
- * XLAL function to determine PN order from a string.  The string need not
- * match exactly, only contain a member of the LALPNOrder enum.
- */
-int XLALGetOrderFromString(const CHAR *inString);
+int XLALSimInspiralGetApproximantFromString(const char *waveform);
 
-/**
- * XLAL function to determine tapering flag from a string.  The string must
- * match exactly with a member of the LALSimInspiralApplyTaper enum.
- */
-int XLALGetTaperFromString(const CHAR *inString);
+/* DEPRECATED */
+int XLALGetApproximantFromString(const char *waveform);
 
-/** XLAL function to determine axis choice flag from a string */
-int XLALGetFrameAxisFromString(const CHAR *inString);
+int XLALSimInspiralGetPNOrderFromString(const char *waveform);
 
-/**
- * XLAL function to determine mode flag from a string.
- * Returns one of enum values as name matches case of enum.
- */
-int XLALGetHigherModesFromString(const CHAR *inString);
+/* DEPRECATED */
+int XLALGetOrderFromString(const char *waveform);
+
+int XLALSimInspiralGetFrameAxisFromString(const char *waveform);
+
+/* DEPRECATED */
+int XLALGetFrameAxisFromString(const char *waveform);
+
+int XLALSimInspiralGetTaperFromString(const char *string);
+
+/* DEPRECATED */
+int XLALGetTaperFromString(const char *string);
+
+int XLALSimInspiralGetHigherModesFromString(const char *string);
+
+/* DEPRECATED */
+int XLALGetHigherModesFromString(const char *string);
+
+const char * XLALSimInspiralGetStringFromApproximant(Approximant approximant);
+
+/* DEPRECATED */
+const char * XLALGetStringFromApproximant(Approximant approximant);
+
+const char * XLALSimInspiralGetStringFromPNOrder(LALPNOrder order);
+
+const char * XLALSimInspiralGetStringFromTaper(LALSimInspiralApplyTaper taper);
+
+const char * XLALSimInspiralGetStringFromFrameAxis(LALSimInspiralFrameAxis axis);
+
+const char * XLALSimInspiralGetStringFromModesChoice(LALSimInspiralModesChoice modes);
+
 
 /**
  * DEPRECATED: USE XLALSimInspiralChooseTDWaveform() INSTEAD
@@ -2174,12 +2212,6 @@ int XLALSimInspiralTaylorF2Core(
         const INT4 amplitudeO                  /**< twice PN amplitude order */
         );
 
-/**
- * Computes the stationary phase approximation to the Fourier transform of
- * a chirp waveform with phase given by \eqref{eq_InspiralFourierPhase_f2}
- * and amplitude given by expanding \f$1/\sqrt{\dot{F}}\f$. If the PN order is
- * set to -1, then the highest implemented order is used.
- */
 int XLALSimInspiralTaylorF2(
 		COMPLEX16FrequencySeries **htilde, /**< FD waveform */
 		const REAL8 phi_ref,            /**< orbital reference phase (rad) */
@@ -2705,6 +2737,26 @@ int XLALSimInspiralSpinDominatedWaveformDriver(
  * https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/Waveforms/TransformPrecessingInitialConditions
  */
 int XLALSimInspiralTransformPrecessingInitialConditions(
+		REAL8 *incl,	/**< Inclination angle of L_N (returned) */
+		REAL8 *S1x,	/**< S1 x component (returned) */
+		REAL8 *S1y,	/**< S1 y component (returned) */
+		REAL8 *S1z,	/**< S1 z component (returned) */
+		REAL8 *S2x,	/**< S2 x component (returned) */
+		REAL8 *S2y,	/**< S2 y component (returned) */
+		REAL8 *S2z,	/**< S2 z component (returned) */
+		REAL8 thetaJN, 	/**< zenith angle between J and N (rad) */
+		REAL8 phiJL,  	/**< azimuthal angle of L_N on its cone about J (rad) */
+		REAL8 theta1,  	/**< zenith angle between S1 and LNhat (rad) */
+		REAL8 theta2,  	/**< zenith angle between S2 and LNhat (rad) */
+		REAL8 phi12,  	/**< difference in azimuthal angle btwn S1, S2 (rad) */
+		REAL8 chi1,	/**< dimensionless spin of body 1 */
+		REAL8 chi2,	/**< dimensionless spin of body 2 */
+		REAL8 m1,	/**< mass of body 1 (kg) */
+		REAL8 m2,	/**< mass of body 2 (kg) */
+		REAL8 fRef	/**< reference GW frequency (Hz) */
+		);
+
+int XLALSimInspiralTransformPrecessingNewInitialConditions(
 		REAL8 *incl,	/**< Inclination angle of L_N (returned) */
 		REAL8 *S1x,	/**< S1 x component (returned) */
 		REAL8 *S1y,	/**< S1 y component (returned) */

@@ -470,13 +470,6 @@ REAL8 **parseMCMCoutput(char ***params, UINT4 *nInPar, UINT4 *nInSamps, char *in
         strcpy(header, str);
         word = strtok(header, " \t");
     }
-    /* Commented as always false */
-    /*
-    if (str == NULL) {
-        fprintf(stderr, "Couldn't find column headers in file %s\n",infileName);
-        exit(1);
-    }
-    */
 
     // Read in column names and check if they are parameters
     strcpy(header, str);

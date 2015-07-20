@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2014
 #
-# serial 79
+# serial 80
 
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
   # $0: check the version of $1, and store it in ${swig_version}
@@ -98,7 +98,7 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
       ])
       AC_MSG_RESULT([yes (${swig_version})])
     ],[
-      AC_PATH_PROGS_FEATURE_CHECK([SWIG],[swig swig2.0],[
+      AC_PATH_PROGS_FEATURE_CHECK([SWIG],[swig swig2.0 swig3.0],[
         AC_MSG_CHECKING([if ${ac_path_SWIG} version is at least ${swig_min_version}])
         _LALSUITE_CHECK_SWIG_VERSION([${ac_path_SWIG}])
         LALSUITE_VERSION_COMPARE([${swig_version}],[>=],[${swig_min_version}],[

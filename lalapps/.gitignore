@@ -18,6 +18,7 @@ doxygen/autogen.dox
 doxygen/doxygen.cfg
 doxygen/filter
 doxygen/out/
+doxygen/test_doxygen.*
 lalapps-*.tar.gz
 lalapps-user-env.csh
 lalapps-user-env.sh
@@ -166,6 +167,7 @@ src/pulsar/Fstatistic/lalapps_synthesizeLVStats
 src/pulsar/Fstatistic/lalapps_synthesizeTransientStats
 src/pulsar/GCT/lalapps_HierarchSearchGCT
 src/pulsar/HeterodyneSearch/lalapps_CrabTNHeterodyne
+src/pulsar/HeterodyneSearch/lalapps_SplInter
 src/pulsar/HeterodyneSearch/lalapps_create_pulsar_signal_frame
 src/pulsar/HeterodyneSearch/lalapps_heterodyne_pulsar
 src/pulsar/HeterodyneSearch/lalapps_pulsar_parameter_estimation
@@ -214,6 +216,7 @@ src/pulsar/Tools/lalapps_GetSFTVelocities
 src/pulsar/Tools/lalapps_PrintDetectorState
 src/pulsar/TwoSpect/lalapps_TwoSpect
 src/pulsar/TwoSpect/lalapps_TwoSpectTemplateBank
+src/pulsar/crosscorr/gsldata.dat
 src/pulsar/crosscorr/lalapps_pulsar_crosscorr
 src/pulsar/crosscorr/lalapps_pulsar_crosscorr_v2
 src/pulsar/crosscorr/toplist_crosscorr.dat

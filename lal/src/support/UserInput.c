@@ -490,8 +490,8 @@ XLALUserVarHelpString ( const CHAR *progname )
       if ( (ptr->category == UVAR_CATEGORY_DEPRECATED) && !showDeprecatedOptions ) {
 	continue;	// skip deprecated options if not requested
       }
-      if ( ptr->category == UVAR_CATEGORY_OBSOLETE ) {
-	continue;	// always skip obsolete options to hide them completely from help string
+      if ( ptr->category == UVAR_CATEGORY_DEFUNCT ) {
+	continue;	// always skip defunct options to hide them completely from help string
       }
 
       UINT4 len;
@@ -694,8 +694,8 @@ XLALUserVarReadAllInput ( int argc, char *argv[] )
       }
 
       // handle DEPREC_ERROR options by throwing an error:
-      if ( ptr->category == UVAR_CATEGORY_OBSOLETE && ptr->was_set ) {
-        XLAL_ERROR ( XLAL_EINVAL, "Option '%s' is OBSOLETE: %s\n", ptr->name, ptr->help );
+      if ( ptr->category == UVAR_CATEGORY_DEFUNCT && ptr->was_set ) {
+        XLAL_ERROR ( XLAL_EINVAL, "Option '%s' is DEFUNCT: %s\n", ptr->name, ptr->help );
       }
 
     } // while ptr = ptr->next

@@ -46,6 +46,7 @@ extern REAL8 Fstat_tauF1NoBuf;
 
 // Common input data for F-statistic methods
 typedef struct {
+  LIGOTimeGPS midTime;                                  // Mid-time of SFT data
   REAL8 dFreq;						// Requested spacing of \f$\mathcal{F}\f$-statistic frequency bins.
   MultiLALDetector detectors;				// List of detectors
   MultiLIGOTimeGPSVector *multiTimestamps;		// Multi-detector list of SFT timestamps

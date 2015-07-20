@@ -26,13 +26,23 @@
  * \brief C code for SEOBNRv2 reduced order model (double spin version).
  * See CQG 31 195010, 2014, arXiv:1402.4146 for details.
  *
+ * This is a frequency domain model that approximates the time domain SEOBNRv2 model.
+ *
  * The binary data files are available at https://dcc.ligo.org/T1400701-v1.
  * Put the untared data into a location in your LAL_DATA_PATH.
  *
- * Parameter ranges:
- *   0.01 <= eta <= 0.25
- *   -1 <= chi_i <= 0.99
- *   Mtot >= 12Msun
+ * @note Note that due to its construction the iFFT of the ROM has a small (~ 20 M) offset
+ * in the peak time that scales with total mass as compared to the time-domain SEOBNRv2 model.
+ *
+ * @note Parameter ranges:
+ *   * 0.01 <= eta <= 0.25
+ *   * -1 <= chi_i <= 0.99
+ *   * Mtot >= 12Msun
+ *
+ *  Aligned component spins chi1, chi2.
+ *  Symmetric mass-ratio eta = m1*m2/(m1+m2)^2.
+ *  Total mass Mtot.
+ *
  */
 
 #ifdef __GNUC__
@@ -786,6 +796,24 @@ static int SEOBNRv2ROMDoubleSpinCore(
   }
   int retcode=0;
 
+  // 'Nudge' parameter values to allowed boundary values if close by
+  if (eta > 0.25)  nudge(&eta, 0.25, 1e-6);
+  if (eta < 0.01)  nudge(&eta, 0.01, 1e-6);
+  if (chi1 < -1.0) nudge(&chi1, -1.0, 1e-6);
+  if (chi1 > 0.99) nudge(&chi1, 0.99, 1e-6);
+  if (chi2 < -1.0) nudge(&chi2, -1.0, 1e-6);
+  if (chi1 > 0.99) nudge(&chi2, 0.99, 1e-6);
+
+  if ( chi1 < -1.0 || chi2 < -1.0 || chi1 > 0.99 || chi2 > 0.99 ) {
+    XLALPrintError( "XLAL Error - %s: chi1 or chi2 smaller than -1 or larger than 0.99!\nSEOBNRv2ROMDoubleSpin is only available for spins in the range -1 <= a/M <= 0.99.\n", __func__);
+    XLAL_ERROR( XLAL_EDOM );
+  }
+
+  if (eta<0.01 || eta > 0.25) {
+    XLALPrintError( "XLAL Error - %s: eta (%f) smaller than 0.01 or unphysical!\nSEOBNRv2ROMDoubleSpin is only available for eta in the range 0.01 <= eta <= 0.25.\n", __func__,eta);
+    XLAL_ERROR( XLAL_EDOM );
+  }
+
   /* Select ROM submodel */
   SEOBNRROMdataDS_submodel *submodel;
   if (eta >= 0.242)
@@ -908,12 +936,23 @@ static int SEOBNRv2ROMDoubleSpinCore(
   }
 
 
-  if (!(hptilde) || !(*hctilde)) XLAL_ERROR(XLAL_EFUNC);
+  if (!(*hptilde) || !(*hctilde))
+  {
+      XLALDestroyREAL8Sequence(freqs);
+      gsl_spline_free(spline_amp);
+      gsl_spline_free(spline_phi);
+      gsl_interp_accel_free(acc_amp);
+      gsl_interp_accel_free(acc_phi);
+      gsl_vector_free(amp_f);
+      gsl_vector_free(phi_f);
+      SEOBNRROMdataDS_coeff_Cleanup(romdata_coeff);
+      XLAL_ERROR(XLAL_EFUNC);
+  }
   memset((*hptilde)->data->data, 0, npts * sizeof(COMPLEX16));
   memset((*hctilde)->data->data, 0, npts * sizeof(COMPLEX16));
 
-  XLALUnitDivide(&(*hptilde)->sampleUnits, &(*hptilde)->sampleUnits, &lalSecondUnit);
-  XLALUnitDivide(&(*hctilde)->sampleUnits, &(*hctilde)->sampleUnits, &lalSecondUnit);
+  XLALUnitMultiply(&(*hptilde)->sampleUnits, &(*hptilde)->sampleUnits, &lalSecondUnit);
+  XLALUnitMultiply(&(*hctilde)->sampleUnits, &(*hctilde)->sampleUnits, &lalSecondUnit);
 
   COMPLEX16 *pdata=(*hptilde)->data->data;
   COMPLEX16 *cdata=(*hctilde)->data->data;
@@ -942,8 +981,11 @@ static int SEOBNRv2ROMDoubleSpinCore(
   }
 
   /* Correct phasing so we coalesce at t=0 (with the definition of the epoch=-1/deltaF above) */
+  /* JV: Commented out this message as it pollutes the logs */
+  /*
   if (deltaF > 0)
     XLAL_PRINT_WARNING("Warning: Depending on specified frequency sequence correction to time of coalescence may not be accurate.\n");
+   */
 
   // Get SEOBNRv2 ringdown frequency for 22 mode
   // XLALSimInspiralGetFinalFreq wants masses in SI units, so unfortunately we need to convert back
@@ -958,8 +1000,17 @@ static int SEOBNRv2ROMDoubleSpinCore(
   if (Mf_final > freqs->data[L-1])
     Mf_final = freqs->data[L-1];
   if (Mf_final < freqs->data[0])
-    XLAL_ERROR(XLAL_EDOM, "f_ringdown < f_min");
-
+  {
+      XLALDestroyREAL8Sequence(freqs);
+      gsl_spline_free(spline_amp);
+      gsl_spline_free(spline_phi);
+      gsl_interp_accel_free(acc_amp);
+      gsl_interp_accel_free(acc_phi);
+      gsl_vector_free(amp_f);
+      gsl_vector_free(phi_f);
+      SEOBNRROMdataDS_coeff_Cleanup(romdata_coeff);
+      XLAL_ERROR(XLAL_EDOM, "f_ringdown < f_min");
+  }
   // Time correction is t(f_final) = 1/(2pi) dphi/df (f_final)
   // We compute the dimensionless time correction t/M since we use geometric units.
   REAL8 t_corr = gsl_spline_eval_deriv(spline_phi, Mf_final, acc_phi) / (2*LAL_PI);
@@ -986,7 +1037,23 @@ static int SEOBNRv2ROMDoubleSpinCore(
   return(XLAL_SUCCESS);
 }
 
-/** Compute waveform in LAL format at specified frequencies */
+/**
+ * Compute waveform in LAL format at specified frequencies for the SEOBNRv2_ROM_DoubleSpin model.
+ *
+ * XLALSimIMRSEOBNRv2ROMDoubleSpin() returns the plus and cross polarizations as a complex
+ * frequency series with equal spacing deltaF and contains zeros from zero frequency
+ * to the starting frequency and zeros beyond the cutoff frequency in the ringdown.
+ *
+ * In contrast, XLALSimIMRSEOBNRv2ROMDoubleSpinFrequencySequence() returns a
+ * complex frequency series with entries exactly at the frequencies specified in
+ * the sequence freqs (which can be unequally spaced). No zeros are added.
+ *
+ * If XLALSimIMRSEOBNRv2ROMDoubleSpinFrequencySequence() is called with frequencies that
+ * are beyond the maxium allowed geometric frequency for the ROM, zero strain is returned.
+ * It is not assumed that the frequency sequence is ordered.
+ *
+ * This function is designed as an entry point for reduced order quadratures.
+ */
 int XLALSimIMRSEOBNRv2ROMDoubleSpinFrequencySequence(
   struct tagCOMPLEX16FrequencySeries **hptilde, /**< Output: Frequency-domain waveform h+ */
   struct tagCOMPLEX16FrequencySeries **hctilde, /**< Output: Frequency-domain waveform hx */
@@ -1021,22 +1088,14 @@ int XLALSimIMRSEOBNRv2ROMDoubleSpinFrequencySequence(
 
   if (!freqs) XLAL_ERROR(XLAL_EFAULT);
 
-  if ( chi1 < -1.0 || chi2 < -1.0 || chi1 > 0.99 || chi2 > 0.99 ) {
-    XLALPrintError( "XLAL Error - %s: chi1 or chi2 smaller than -1 or larger than 0.99!\nSEOBNRv2ROMDoubleSpin is only available for spins in the range -1 <= a/M <= 0.99.\n", __func__);
-    XLAL_ERROR( XLAL_EDOM );
-  }
-
-  if (eta<0.01 || eta > 0.25) {
-    XLALPrintError( "XLAL Error - %s: eta (%f) smaller than 0.01 or unphysical!\nSEOBNRv2ROMDoubleSpin is only available for spins in the range 0.01 <= eta <= 0.25.\n", __func__,eta);
-    XLAL_ERROR( XLAL_EDOM );
-  }
-
   // Load ROM data if not loaded already
 #ifdef LAL_PTHREAD_LOCK
   (void) pthread_once(&SEOBNRv2ROMDoubleSpin_is_initialized, SEOBNRv2ROMDoubleSpin_Init_LALDATA);
 #else
   SEOBNRv2ROMDoubleSpin_Init_LALDATA();
 #endif
+
+  if(!SEOBNRv2ROMDoubleSpin_IsSetup()) XLAL_ERROR(XLAL_EFAILED,"Error setting up SEOBNRv2ROMDoubleSpin data - check your $LAL_DATA_PATH\n");
 
   // Call the internal core function with deltaF = 0 to indicate that freqs is non-uniformly
   // spaced and we want the strain only at these frequencies
@@ -1046,7 +1105,13 @@ int XLALSimIMRSEOBNRv2ROMDoubleSpinFrequencySequence(
   return(retcode);
 }
 
-/** Compute waveform in LAL format */
+/**
+ * Compute waveform in LAL format for the SEOBNRv2_ROM_DoubleSpin model.
+ *
+ * Returns the plus and cross polarizations as a complex frequency series with
+ * equal spacing deltaF and contains zeros from zero frequency to the starting
+ * frequency fLow and zeros beyond the cutoff frequency in the ringdown.
+ */
 int XLALSimIMRSEOBNRv2ROMDoubleSpin(
   struct tagCOMPLEX16FrequencySeries **hptilde, /**< Output: Frequency-domain waveform h+ */
   struct tagCOMPLEX16FrequencySeries **hctilde, /**< Output: Frequency-domain waveform hx */
@@ -1082,16 +1147,6 @@ int XLALSimIMRSEOBNRv2ROMDoubleSpin(
 
   if(fRef==0.0)
     fRef=fLow;
-
-  if ( chi1 < -1.0 || chi2 < -1.0 || chi1 > 0.99 || chi2 > 0.99 ) {
-    XLALPrintError( "XLAL Error - %s: chi1 or chi2 smaller than -1 or larger than 0.99!\nSEOBNRv2ROMDoubleSpin is only available for spins in the range -1 <= a/M <= 0.99.\n", __func__);
-    XLAL_ERROR( XLAL_EDOM );
-  }
-
-  if (eta < 0.01 || eta > 0.25) {
-    XLALPrintError( "XLAL Error - %s: eta smaller than 0.01 or unphysical!\nSEOBNRv2ROMDoubleSpin is only available for spins in the range 0.01 <= eta <= 0.25.\n", __func__);
-    XLAL_ERROR( XLAL_EDOM );
-  }
 
   // Load ROM data if not loaded already
 #ifdef LAL_PTHREAD_LOCK
@@ -1134,6 +1189,24 @@ static int SEOBNRv2ROMDoubleSpinTimeFrequencySetup(
   double Mtot = mass1 + mass2;
   double eta = mass1 * mass2 / (Mtot*Mtot);    /* Symmetric mass-ratio */
   *Mtot_sec = Mtot * LAL_MTSUN_SI; /* Total mass in seconds */
+
+  // 'Nudge' parameter values to allowed boundary values if close by
+  nudge(&eta, 0.25, 1e-6);
+  nudge(&eta, 0.01, 1e-6);
+  nudge(&chi1, -1.0, 1e-6);
+  nudge(&chi1, 0.99, 1e-6);
+  nudge(&chi2, -1.0, 1e-6);
+  nudge(&chi2, 0.99, 1e-6);
+
+  if ( chi1 < -1.0 || chi2 < -1.0 || chi1 > 0.99 || chi2 > 0.99 ) {
+    XLALPrintError( "XLAL Error - %s: chi1 or chi2 smaller than -1 or larger than 0.99!\nSEOBNRv2ROMDoubleSpin is only available for spins in the range -1 <= a/M <= 0.99.\n", __func__);
+    XLAL_ERROR( XLAL_EDOM );
+  }
+
+  if (eta<0.01 || eta > 0.25) {
+    XLALPrintError( "XLAL Error - %s: eta (%f) smaller than 0.01 or unphysical!\nSEOBNRv2ROMDoubleSpin is only available for spins in the range 0.01 <= eta <= 0.25.\n", __func__,eta);
+    XLAL_ERROR( XLAL_EDOM );
+  }
 
   // Load ROM data if not loaded already
 #ifdef LAL_PTHREAD_LOCK
@@ -1208,12 +1281,21 @@ static int SEOBNRv2ROMDoubleSpinTimeFrequencySetup(
 }
 
 /**
-* Compute the time at a given frequency. The origin of time is at the merger.
-* The allowed frequency range for the input is from Mf = 0.00053 to half the ringdown frequency.
-*/
+ * Compute the 'time' elapsed in the ROM waveform from a given starting frequency until the ringdown.
+ *
+ * The notion of elapsed 'time' (in seconds) is defined here as the difference of the
+ * frequency derivative of the frequency domain phase between the ringdown frequency
+ * and the starting frequency ('frequency' argument). This notion of time is similar to the
+ * chirp time, but it includes both the inspiral and the merger ringdown part of SEOBNRv2.
+ *
+ * The allowed frequency range for the starting frequency in geometric frequency is [0.00053, 0.135].
+ * The SEOBNRv2 ringdown frequency can be obtained by calling XLALSimInspiralGetFinalFreq().
+ *
+ * See XLALSimIMRSEOBNRv2ROMDoubleSpinFrequencyOfTime() for the inverse function.
+ */
 int XLALSimIMRSEOBNRv2ROMDoubleSpinTimeOfFrequency(
-  REAL8 *t,         /**< Output: time (s) at frequency */
-  REAL8 frequency,  /**< Frequency (Hz) */
+  REAL8 *t,         /**< Output: time (s) elapsed from starting frequency to ringdown */
+  REAL8 frequency,  /**< Starting frequency (Hz) */
   REAL8 m1SI,       /**< Mass of companion 1 (kg) */
   REAL8 m2SI,       /**< Mass of companion 2 (kg) */
   REAL8 chi1,       /**< Dimensionless aligned component spin 1 */
@@ -1249,8 +1331,11 @@ int XLALSimIMRSEOBNRv2ROMDoubleSpinTimeOfFrequency(
 
   double Mf = frequency * Mtot_sec;
   if (Mf < Mf_ROM_min || Mf > Mf_ROM_max)
-    XLAL_ERROR(XLAL_EDOM, "Frequency %g is outside allowed frequency range.\n", frequency);
-
+  {
+      gsl_spline_free(spline_phi);
+      gsl_interp_accel_free(acc_phi);
+      XLAL_ERROR(XLAL_EDOM, "Frequency %g is outside allowed frequency range.\n", frequency);
+  }
   // Compute time relative to origin at merger
   double time_M = gsl_spline_eval_deriv(spline_phi, frequency * Mtot_sec, acc_phi) / (2*LAL_PI) - t_corr;
   *t = time_M * Mtot_sec;
@@ -1262,8 +1347,20 @@ int XLALSimIMRSEOBNRv2ROMDoubleSpinTimeOfFrequency(
 }
 
 /**
- * Compute the frequency at a given time. The origin of time is at the merger.
- * The frequency range for the output is from Mf = 0.00053 to half the ringdown frequency.
+ * Compute the starting frequency so that the given amount of 'time' elapses in the ROM waveform
+ * from the starting frequency until the ringdown.
+ *
+ * The notion of elapsed 'time' (in seconds) is defined here as the difference of the
+ * frequency derivative of the frequency domain phase between the ringdown frequency
+ * and the starting frequency ('frequency' argument). This notion of time is similar to the
+ * chirp time, but it includes both the inspiral and the merger ringdown part of SEOBNRv2.
+ *
+ * If the frequency that corresponds to the specified elapsed time is lower than the
+ * geometric frequency Mf=0.00053 (ROM starting frequency) or above half of the SEOBNRv2
+ * ringdown frequency an error is thrown.
+ * The SEOBNRv2 ringdown frequency can be obtained by calling XLALSimInspiralGetFinalFreq().
+ *
+ * See XLALSimIMRSEOBNRv2ROMDoubleSpinTimeOfFrequency() for the inverse function.
  */
 int XLALSimIMRSEOBNRv2ROMDoubleSpinFrequencyOfTime(
   REAL8 *frequency,   /**< Output: Frequency (Hz) */
@@ -1321,8 +1418,11 @@ int XLALSimIMRSEOBNRv2ROMDoubleSpinFrequencyOfTime(
   double t_rng_2 = exp(log_t_pts[0]);   // time of f_ringdown/2
   double t_min   = exp(log_t_pts[N-1]); // time of f_min
   if (t < t_rng_2 || t > t_min)
-    XLAL_ERROR(XLAL_EDOM, "The frequency of time %g is outside allowed frequency range.\n", t);
-
+  {
+      gsl_spline_free(spline_phi);
+      gsl_interp_accel_free(acc_phi);
+      XLAL_ERROR(XLAL_EDOM, "The frequency of time %g is outside allowed frequency range.\n", t);
+  }
   // create new spline for data
   gsl_interp_accel *acc = gsl_interp_accel_alloc();
   gsl_spline *spline = gsl_spline_alloc(gsl_interp_cspline, N);

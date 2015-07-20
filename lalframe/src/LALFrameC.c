@@ -17,6 +17,9 @@
 *  MA  02111-1307  USA
 */
 
+#define _GNU_SOURCE   /* for mkstemp() */
+
+#include <stdlib.h>
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
@@ -25,6 +28,9 @@
 #include <lal/LALString.h>
 #include <lal/Date.h>
 
+#ifndef P_tmpdir
+#define P_tmpdir "/tmp"
+#endif
 
 /* suppress warnings from FrameC headers; remove this when headers are fixed */
 #if ((__GNUC__ * 100) + __GNUC_MINOR__) >= 402

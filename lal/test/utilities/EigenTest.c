@@ -33,8 +33,8 @@
  * ### Description ###
  *
  * This program computes the eigenvalues and eigenvectors of a symmetric
- * real matrix using the routines in \ref Eigen_c and
- * \ref EigenInternal_c.  The following option flags are accepted:
+ * real matrix using the routines in \ref Eigen_c.
+ * The following option flags are accepted:
  * <ul>
  * <li>[<tt>-n</tt>] Generates a random symmetric
  * \c size\f$\times\f$\c size metric.  If this option is not given,
@@ -431,9 +431,6 @@ main( int argc, char **argv )
     if ( vector ) {
       SUB( LALSSymmetricEigenVectors( &stat, sValues, sMatrix ),
 	   &stat );
-    } else {
-      SUB( LALSSymmetricEigenValues( &stat, sValues, sMatrix ),
-	   &stat );
     }
   }
 
@@ -442,9 +439,6 @@ main( int argc, char **argv )
     SUB( LALDCreateVector( &stat, &dValues, n ), &stat );
     if ( vector ) {
       SUB( LALDSymmetricEigenVectors( &stat, dValues, dMatrix ),
-	   &stat );
-    } else {
-      SUB( LALDSymmetricEigenValues( &stat, dValues, dMatrix ),
 	   &stat );
     }
   }

@@ -7,7 +7,8 @@ if LALFRAME
 frame_progs = \
 	lalapps_heterodyne_pulsar \
 	lalapps_pulsar_parameter_estimation \
-	lalapps_create_pulsar_signal_frame
+	lalapps_create_pulsar_signal_frame \
+	lalapps_SplInter
 
 TESTS = test_heterodyne_pulsar.sh
 
@@ -58,6 +59,10 @@ lalapps_CrabTNHeterodyne_SOURCES = \
 	CrabTNHeterodyne.c \
 	HeterodyneCrabPulsar.c \
 	HeterodyneCrabPulsar.h
+
+lalapps_SplInter_SOURCES = \
+	SpectralInterpolation.c \
+	SpectralInterpolation.h
 
 if HAVE_PYTHON
 pkgpython_DATA = \

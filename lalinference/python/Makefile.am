@@ -24,6 +24,7 @@ pybin_scripts = \
 	rapidpe_integrate_extrinsic_likelihood \
 	rapidpe_create_event_dag \
     rapidpe_compute_intrinsic_fisher \
+    rapidpe_compute_intrinsic_grid \
     rapidpe_calculate_overlap \
 	$(END_OF_LIST)
 

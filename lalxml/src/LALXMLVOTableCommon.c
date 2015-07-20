@@ -319,15 +319,14 @@ XLALCreateVOTResourceNode ( const char *type,			/**< [in] Type of the \c RESOURC
 
 
 /**
- * \brief Serialize a list of data-arrays into a VOTable \c TABLEDATA %node.
+ * \brief Create a VOTable \c TABLE %node from FIELDs, PARAMs and dataContent.
  *
- * Note: the variable-length argument pointers must be *void pointers*, and match in number,
- * and types with the FIELDs in fieldNodeList
+ * Note: the contents of dataContentNode must match in number and types with the FIELDs in fieldNodeList
  *
  * \return A \c xmlNodePtr that holds the new \c TABLEDATA %node (incl. all children and data).
  * In case of an error, a null-pointer is returned.\n
  *
- * Note: the input nodes 'fieldNodeList' and 'dataContentNode' become part of the returned table node
+ * Note: the input nodes 'fieldNodeList', 'paramNodeList' and 'dataContentNode' become part of the returned table node
  * and are *not* copied. Therefore they should NOT be free'ed individually by the caller!
  *
  * \b Important: the caller is responsible to free the allocated memory (when the
@@ -339,7 +338,8 @@ XLALCreateVOTResourceNode ( const char *type,			/**< [in] Type of the \c RESOURC
  */
 xmlNodePtr
 XLALCreateVOTTableNode ( const char *name,		/**< [in] optional name attribute to assign to this \c TABLE element (may be NULL) */
-                         xmlNode *fieldNodeList, 	/**< [in] linked list of \c xmlNodes that are to be assigned as FIELD children */
+                         xmlNode *fieldNodeList, 	/**< [in] linked list of \c xmlNodes that are to be assigned as FIELD children (may be NULL for no fields) */
+                         xmlNode *paramNodeList,  	/**< [in] linked list of \c xmlNodes that are to be assigned as PARAM children (may be NULL for no params) */
                          xmlNode *dataContentNode 	/**< [in] pointer to xmlNode to be inserted under the \<DATA\> element: TABLEDATA, BINARY or FITS */
                          )
 {
@@ -349,9 +349,15 @@ XLALCreateVOTTableNode ( const char *name,		/**< [in] optional name attribute to
     int err;
 
     /* input sanity check */
-    if ( !fieldNodeList ) {
-      XLALPrintError ("%s: invalid NULL input 'fieldNodeList'\n", __func__ );
+    if ( !fieldNodeList && !paramNodeList) {
+      XLALPrintError ("%s: must specify at least one FIELD or PARAM node to create table.\n",__func__);
       XLAL_ERROR_NULL ( XLAL_EINVAL );
+    }
+
+    if( !fieldNodeList && dataContentNode)
+    {
+      XLALPrintError("%s: cannot specify dataContentNode without FIELDs.\n",__func__);
+      XLAL_ERROR_NULL(XLAL_EINVAL);
     }
 
     /* create master node */
@@ -367,6 +373,19 @@ XLALCreateVOTTableNode ( const char *name,		/**< [in] optional name attribute to
       err = XLAL_EFAILED;
       goto failed;
     }
+
+    /* add PARAM children */
+    xmlChildNode = paramNodeList;
+    while(xmlChildNode)
+    {
+        if(!xmlAddChild(xmlTableNode, xmlChildNode))
+        {
+            XLALPrintError("%s: Couldn't add child PARAM node to TABLE node!\n",__func__);
+            err = XLAL_EFAILED;
+            goto failed;
+        }
+        xmlChildNode = xmlChildNode->next;
+    } /* while xmlChildNode */
 
     /* add FIELD children */
     xmlChildNode = fieldNodeList;	/* init to first field Node */
@@ -469,17 +488,17 @@ XLALCreateVOTTabledataNode ( xmlNode *fieldNodeList, 	/**< [in] linked list of F
 
     /* ---------- prepare column writing from varargs input list ---------- */
     if ( (dataColumns = XLALCalloc ( numFields, sizeof(*dataColumns) )) == NULL ) {
-      XLALPrintError ("%s: XLALCalloc ( %d, %lu ) failed.\n", __func__, numFields, sizeof(*dataColumns) );
+      XLALPrintError ("%s: XLALCalloc ( %" LAL_UINT4_FORMAT ", %zu ) failed.\n", __func__, numFields, sizeof(*dataColumns) );
       err = XLAL_ENOMEM;
       goto failed;
     }
     if ( (dataTypes = XLALCalloc ( numFields, sizeof(*dataTypes) )) == NULL ) {
-      XLALPrintError ("%s: XLALCalloc ( %d, %lu ) failed.\n", __func__, numFields, sizeof(*dataTypes) );
+      XLALPrintError ("%s: XLALCalloc ( %" LAL_UINT4_FORMAT ", %zu ) failed.\n", __func__, numFields, sizeof(*dataTypes) );
       err = XLAL_ENOMEM;
       goto failed;
     }
     if ( (dataFmts = XLALCalloc ( numFields, sizeof(char*) )) == NULL ) {
-      XLALPrintError ("%s: XLALCalloc ( %d, %lu ) failed.\n", __func__, numFields, sizeof(*dataTypes) );
+      XLALPrintError ("%s: XLALCalloc ( %" LAL_UINT4_FORMAT ", %zu ) failed.\n", __func__, numFields, sizeof(*dataTypes) );
       err = XLAL_ENOMEM;
       goto failed;
     }
@@ -1134,7 +1153,7 @@ XLALReadVOTAttributeFromNamedElement ( const xmlDocPtr xmlDocument,	/**< [in] Th
   /* copy attribute-content into a standard CHAR string, so caller can XLALFree() it */
   UINT4 len = strlen ( (const char*)xmlContent ) + 1;
   if ( (ret = XLALMalloc ( len * sizeof(*ret) )) == NULL ) {
-    XLALPrintError ("%s: failed to XLALMalloc (%lu)\n", __func__, len * sizeof(*ret) );
+    XLALPrintError ("%s: failed to XLALMalloc (%zu)\n", __func__, len * sizeof(*ret) );
     xmlFree ( xmlContent );
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
@@ -1633,7 +1652,7 @@ XMLCleanVOTTableWhitespace ( const char *xmlString )
   char *ret;
   /* ----- second pass: copy all chars skipping all ZEROS */
   if ( (ret = XLALMalloc ( (numChars + 1) * sizeof(char) )) == NULL ) {
-    XLALPrintError ("%s: XLALMalloc ( %lu ) failed.\n", __func__, numChars * sizeof(char));
+    XLALPrintError ("%s: XLALMalloc ( %zu ) failed.\n", __func__, numChars * sizeof(char));
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 

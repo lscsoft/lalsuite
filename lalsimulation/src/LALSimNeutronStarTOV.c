@@ -98,14 +98,14 @@ static int tov_ode(double h, const double *y, double *dy, void *params)
     /* Eq. (18) of Damour & Nagar PRD 80 084035 (2009). */
     double A = 1.0 / (1.0 - 2.0 * m / r);
     /* Eq. (28) of Damour & Nagar PRD 80 084035 (2009). */
-    double C1 = 2.0 / r + A * (2.0 * m / (r * r) + 4.0 * M_PI * r * (p - e));
+    double C1 = 2.0 / r + A * (2.0 * m / (r * r) + 4.0 * LAL_PI * r * (p - e));
     /* Eq. (29) of Damour & Nagar PRD 80 084035 (2009). */
     double C0 =
-        A * (-(2) * (2 + 1) / (r * r) + 4.0 * M_PI * (e + p) * dedp +
-        4.0 * M_PI * (5.0 * e + 9.0 * p)) - pow(2.0 * (m +
-            4.0 * M_PI * r * r * r * p) / (r * (r - 2.0 * m)), 2.0);
-    double dr = -r * (r - 2.0 * m) / (m + 4.0 * M_PI * r * r * r * p);
-    double dm = 4.0 * M_PI * r * r * e * dr;
+        A * (-(2) * (2 + 1) / (r * r) + 4.0 * LAL_PI * (e + p) * dedp +
+        4.0 * LAL_PI * (5.0 * e + 9.0 * p)) - pow(2.0 * (m +
+            4.0 * LAL_PI * r * r * r * p) / (r * (r - 2.0 * m)), 2.0);
+    double dr = -r * (r - 2.0 * m) / (m + 4.0 * LAL_PI * r * r * r * p);
+    double dm = 4.0 * LAL_PI * r * r * e * dr;
     double dH = b * dr;
     double db = -(C0 * H + C1 * b) * dr;
 
@@ -163,8 +163,8 @@ int XLALSimNeutronStarTOVODEIntegrate(double *radius, double *mass,
     double dh = -1e-3 * hc;
     double h0 = hc + dh;
     double h1 = 0.0 - dh;
-    double r0 = sqrt(-3.0 * dh / (2.0 * M_PI * (ec + 3.0 * pc)));
-    double m0 = 4.0 * M_PI * r0 * r0 * r0 * ec / 3.0;
+    double r0 = sqrt(-3.0 * dh / (2.0 * LAL_PI * (ec + 3.0 * pc)));
+    double m0 = 4.0 * LAL_PI * r0 * r0 * r0 * ec / 3.0;
     double H0 = r0 * r0;
     double b0 = 2.0 * r0;
 

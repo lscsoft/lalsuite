@@ -18,6 +18,7 @@
 *  MA  02111-1307  USA
 */
 
+#include <stdint.h>
 #include <string.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALString.h>
@@ -211,6 +212,31 @@ int XLALStringNCaseCompare(const char *s1, const char *s2, size_t n)
 
     return c1 - c2;
 
+}
+
+/**
+ * Locates substring needle in string haystack, ignoring case and without
+ * using locale-dependent functions.
+ */
+char * XLALStringCaseSubstring(const char *haystack, const char *needle)
+{
+    size_t haystack_length;
+    size_t needle_length = strlen(needle);
+
+    /* return haystack if needle is empty */
+    if (needle_length == 0)
+        return (char *)(intptr_t)(haystack);
+
+    haystack_length = strlen(haystack);
+    while (needle_length <= haystack_length) {
+        if (XLALStringNCaseCompare(haystack, needle, needle_length) == 0)
+            return (char *)(intptr_t)(haystack);
+        --haystack_length;
+        ++haystack;
+    }
+
+    /* needle not found in haystack */
+    return NULL;
 }
 
 /**

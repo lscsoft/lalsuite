@@ -142,6 +142,11 @@ typedef struct
   REAL8 f1dot;		/**< target 1. spindown-value df/dt */
   REAL8 f2dot;		/**< target 2. spindown-value d2f/dt2 */
   REAL8 f3dot;		/**< target 3. spindown-value d3f/dt3 */
+  REAL8 orbitasini;	/**< target projected semimajor axis of binary orbit [Units: light seconds] */
+  REAL8 orbitPeriod;	/**< target period of binary orbit [Units: s]. */
+  LIGOTimeGPS orbitTp;	/**< target time of periapse passage of the CW source in a binary orbit [Units: GPS seconds] */
+  REAL8 orbitArgp;	/**< target argument of periapse of binary orbit [Units: rad] */
+  REAL8 orbitEcc;	/**< target eccentricity of binary orbit [Units: none] */
 
   CHAR *ephemEarth;	/**< Earth ephemeris file to use */
   CHAR *ephemSun;	/**< Sun ephemeris file to use */
@@ -365,10 +370,16 @@ initUserVars (UserVariables_t *uvar)
   XLALregLISTUserStruct(sqrtSX,	 	 0,  UVAR_OPTIONAL, 	"[for F-metric weights] CSV list of detectors' noise-floors sqrt{Sn}");
   XLALregRAJUserStruct(Alpha,		'a', UVAR_OPTIONAL,	"Sky: equatorial J2000 right ascension (in radians or hours:minutes:seconds)");
   XLALregDECJUserStruct(Delta, 		'd', UVAR_OPTIONAL,	"Sky: equatorial J2000 declination (in radians or degrees:minutes:seconds)");
-  XLALregREALUserStruct(Freq, 		'f', UVAR_OPTIONAL, 	"target frequency");
-  XLALregREALUserStruct(f1dot, 		's', UVAR_OPTIONAL, 	"first spindown-value df/dt");
-  XLALregREALUserStruct(f2dot, 		 0 , UVAR_OPTIONAL, 	"second spindown-value d2f/dt2");
-  XLALregREALUserStruct(f3dot, 		 0 , UVAR_OPTIONAL, 	"third spindown-value d3f/dt3");
+  XLALregREALUserStruct(Freq, 		'f', UVAR_OPTIONAL, 	"Target frequency");
+  XLALregREALUserStruct(f1dot, 		's', UVAR_OPTIONAL, 	"First spindown-value df/dt");
+  XLALregREALUserStruct(f2dot, 		 0 , UVAR_OPTIONAL, 	"Second spindown-value d2f/dt2");
+  XLALregREALUserStruct(f3dot, 		 0 , UVAR_OPTIONAL, 	"Third spindown-value d3f/dt3");
+
+  XLALRegisterUvarMember ( orbitasini,	REAL8, 0, OPTIONAL, 	"Target projected semimajor axis of binary orbit (Units: light seconds)");
+  XLALRegisterUvarMember ( orbitPeriod,	REAL8, 0, OPTIONAL, 	"Target period of binary orbit (Units: s).");
+  XLALRegisterUvarMember ( orbitTp,	EPOCH, 0, OPTIONAL, 	"Target time of periapse passage of the CW source in a binary orbit (Units: GPS seconds)");
+  XLALRegisterUvarMember ( orbitArgp,	REAL8, 0, OPTIONAL, 	"Target argument of periapse of binary orbit (Units: rad)");
+  XLALRegisterUvarMember ( orbitEcc,	REAL8, 0, OPTIONAL, 	"Target eccentricity of binary orbit (Units: none)");
 
   XLALregEPOCHUserStruct(refTime,         0,  UVAR_OPTIONAL, 	"Reference epoch for phase-evolution parameters (format 'xx.yy[GPS|MJD]'). [0=startTime, default=mid-time]");
   XLALregEPOCHUserStruct(startTime,      't', UVAR_OPTIONAL, 	"Start time of observation (format 'xx.yy[GPS|MJD]')");
@@ -471,13 +482,17 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
     PulsarDopplerParams *dop = &(cfg->signalParams.Doppler);
     XLAL_INIT_MEM((*dop));
     dop->refTime = refTimeGPS;
-    dop->Alpha = uvar->Alpha;
-    dop->Delta = uvar->Delta;
+    dop->Alpha    = uvar->Alpha;
+    dop->Delta    = uvar->Delta;
     dop->fkdot[0] = uvar->Freq;
     dop->fkdot[1] = uvar->f1dot;
     dop->fkdot[2] = uvar->f2dot;
     dop->fkdot[3] = uvar->f3dot;
-    dop->asini = 0 /* isolated pulsar */;
+    dop->asini    = uvar->orbitasini;
+    dop->period   = uvar->orbitPeriod;
+    dop->tp       = uvar->orbitTp;
+    dop->ecc      = uvar->orbitEcc;
+    dop->argp     = uvar->orbitArgp;
   }
 
   /* ----- initialize IFOs and (Multi-)DetectorStateSeries  ----- */
@@ -502,7 +517,7 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
     size_t len = strlen ( app_name ) + 1;
 
     if ( (cfg->history = XLALCalloc ( 1, sizeof(*cfg->history))) == NULL ) {
-      LogPrintf (LOG_CRITICAL, "%s: XLALCalloc(1,%lu) failed.\n\n", __func__, sizeof(*cfg->history));
+      LogPrintf (LOG_CRITICAL, "%s: XLALCalloc(1,%zu) failed.\n\n", __func__, sizeof(*cfg->history));
       XLAL_ERROR ( XLAL_ENOMEM );
     }
 

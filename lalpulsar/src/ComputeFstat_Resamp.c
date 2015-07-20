@@ -82,6 +82,7 @@ typedef struct tagResampWorkspace
 
   // input padded timeseries ts(t) and output Fab(f) of length 'numSamplesFFT' and corresponding fftw plan
   UINT4 numSamplesFFT;		// allocated number of zero-padded SRC-frame time samples (related to dFreq)
+  UINT4 decimateFFT;		// output every n-th frequency bin, with n>1 iff (dFreq > 1/Tspan), and was internally decreased by n
   fftwf_plan fftplan;		// buffer FFT plan for given numSamplesOut length
   COMPLEX8 *TS_FFT;		// zero-padded, spindown-corr SRC-frame TS
   COMPLEX8 *FabX_Raw;		// raw full-band FFT result Fa,Fb
@@ -145,33 +146,6 @@ XLALComputeFaFb_Resamp ( ResampWorkspace *ws,
                          );
 
 // ==================== function definitions ====================
-
-///
-/// Create a new workspace with given time samples in SRC frame 'numSamplesSRC' (holds time-series for spindown-correction)
-/// and given total number of time-samples for FFTing (includes zero-padding for frequency-resolution)
-///
-static ResampWorkspace *
-XLALCreateResampWorkspace ( UINT4 numSamplesSRC,
-                           UINT4 numSamplesFFT
-                           )
-{
-  ResampWorkspace *ws;
-
-  XLAL_CHECK_NULL ( (ws = XLALCalloc ( 1, sizeof(*ws))) != NULL, XLAL_ENOMEM );
-  XLAL_CHECK_NULL ( (ws->TStmp1_SRC   = XLALCreateCOMPLEX8Vector ( numSamplesSRC )) != NULL, XLAL_EFUNC );
-  XLAL_CHECK_NULL ( (ws->TStmp2_SRC   = XLALCreateCOMPLEX8Vector ( numSamplesSRC )) != NULL, XLAL_EFUNC );
-  XLAL_CHECK_NULL ( (ws->SRCtimes_DET = XLALCreateREAL8Vector ( numSamplesSRC )) != NULL, XLAL_EFUNC );
-
-  XLAL_CHECK_NULL ( (ws->FabX_Raw = fftw_malloc ( numSamplesFFT * sizeof(COMPLEX8) )) != NULL, XLAL_ENOMEM );
-  XLAL_CHECK_NULL ( (ws->TS_FFT   = fftw_malloc ( numSamplesFFT * sizeof(COMPLEX8) )) != NULL, XLAL_ENOMEM );
-
-  LAL_FFTW_WISDOM_LOCK;
-  XLAL_CHECK_NULL ( (ws->fftplan = fftwf_plan_dft_1d ( numSamplesFFT, ws->TS_FFT, ws->FabX_Raw, FFTW_FORWARD, FFTW_MEASURE )) != NULL, XLAL_EFAILED, "fftwf_plan_dft_1d() failed\n");
-  LAL_FFTW_WISDOM_UNLOCK;
-  ws->numSamplesFFT = numSamplesFFT;
-
-  return ws;
-} // XLALCreateResampWorkspace()
 
 static void
 XLALDestroyResampWorkspace ( void *workspace )
@@ -282,6 +256,21 @@ XLALSetupFstatResamp ( void **method_data,
 
   // determine resampled timeseries parameters
   REAL8 TspanFFT = 1.0 / common->dFreq;
+
+  // check that TspanFFT >= TspanX for all detectors X, otherwise increase TspanFFT by an integer factor 'decimateFFT' such that this is true
+  REAL8 TspanXMax = 0;
+  for ( UINT4 X = 0; X < numDetectors; X ++ )
+    {
+      UINT4 numSamples_DETX = resamp->multiTimeSeries_DET->data[X]->data->length;
+      REAL8 TspanX = numSamples_DETX * dt_DET;
+      TspanXMax = fmax ( TspanXMax, TspanX );
+    }
+  UINT4 decimateFFT = (UINT4)ceil ( TspanXMax / TspanFFT );	// larger than 1 means we need to artificially increase dFreqFFT by 'decimateFFT'
+  if ( decimateFFT > 1 ) {
+    XLALPrintWarning ("WARNING: Frequency spacing larger than 1/Tspan, we'll internally decimate FFT frequency bins by a factor of %" LAL_UINT4_FORMAT "\n", decimateFFT );
+  }
+  TspanFFT *= decimateFFT;
+
   UINT4 numSamplesFFT = (UINT4) ceil ( TspanFFT / dt_DET );      // we use ceil() so that we artificially widen the band rather than reduce it
   // round numSamplesFFT to next power of 2
   numSamplesFFT = (UINT4) pow ( 2, ceil(log2(numSamplesFFT)));
@@ -323,26 +312,54 @@ XLALSetupFstatResamp ( void **method_data,
       numSamplesMax_SRC = MYMAX ( numSamplesMax_SRC, numSamples_SRCX );
     } // for X < numDetectors
 
+  XLAL_CHECK ( numSamplesFFT >= numSamplesMax_SRC, XLAL_EFAILED, "[numSamplesFFT = %d] < [numSamplesMax_SRC = %d]\n", numSamplesFFT, numSamplesMax_SRC );
+
   // ---- re-use shared workspace, or allocate here ----------
-  if ( common->workspace != NULL )
+  ResampWorkspace *ws = (ResampWorkspace*) common->workspace;
+  if ( ws != NULL )
     {
-      ResampWorkspace *sharedWorkspace = (ResampWorkspace*) common->workspace;
-      XLAL_CHECK ( numSamplesFFT == sharedWorkspace->numSamplesFFT, XLAL_EINVAL, "Shared workspace of different frequency resolution: numSamplesFFT = %d != %d\n",
-                   sharedWorkspace->numSamplesFFT, numSamplesFFT );
+      if ( numSamplesFFT > ws->numSamplesFFT )
+        {
+          fftw_free ( ws->FabX_Raw );
+          XLAL_CHECK ( (ws->FabX_Raw = fftw_malloc ( numSamplesFFT * sizeof(COMPLEX8) )) != NULL, XLAL_ENOMEM );
+          fftw_free ( ws->TS_FFT );
+          XLAL_CHECK ( (ws->TS_FFT   = fftw_malloc ( numSamplesFFT * sizeof(COMPLEX8) )) != NULL, XLAL_ENOMEM );
+
+          LAL_FFTW_WISDOM_LOCK;
+          fftwf_destroy_plan ( ws->fftplan );
+          XLAL_CHECK ( (ws->fftplan = fftwf_plan_dft_1d ( numSamplesFFT, ws->TS_FFT, ws->FabX_Raw, FFTW_FORWARD, FFTW_MEASURE )) != NULL, XLAL_EFAILED, "fftwf_plan_dft_1d() failed\n");
+          LAL_FFTW_WISDOM_UNLOCK;
+          ws->numSamplesFFT = numSamplesFFT;
+          ws->decimateFFT = decimateFFT;
+        }
 
       // adjust maximal SRC-frame timeseries length, if necessary
-      if ( numSamplesMax_SRC > sharedWorkspace->TStmp1_SRC->length ) {
-        XLAL_CHECK ( (sharedWorkspace->TStmp1_SRC->data = XLALRealloc ( sharedWorkspace->TStmp1_SRC->data,   numSamplesMax_SRC * sizeof(COMPLEX8) )) != NULL, XLAL_ENOMEM );
-        sharedWorkspace->TStmp1_SRC->length = numSamplesMax_SRC;
-        XLAL_CHECK ( (sharedWorkspace->TStmp2_SRC->data = XLALRealloc ( sharedWorkspace->TStmp2_SRC->data,   numSamplesMax_SRC * sizeof(COMPLEX8) )) != NULL, XLAL_ENOMEM );
-        sharedWorkspace->TStmp2_SRC->length = numSamplesMax_SRC;
-        XLAL_CHECK ( (sharedWorkspace->SRCtimes_DET->data = XLALRealloc ( sharedWorkspace->SRCtimes_DET->data, numSamplesMax_SRC * sizeof(REAL8) )) != NULL, XLAL_ENOMEM );
-        sharedWorkspace->SRCtimes_DET->length = numSamplesMax_SRC;
+      if ( numSamplesMax_SRC > ws->TStmp1_SRC->length ) {
+        XLAL_CHECK ( (ws->TStmp1_SRC->data = XLALRealloc ( ws->TStmp1_SRC->data,   numSamplesMax_SRC * sizeof(COMPLEX8) )) != NULL, XLAL_ENOMEM );
+        ws->TStmp1_SRC->length = numSamplesMax_SRC;
+        XLAL_CHECK ( (ws->TStmp2_SRC->data = XLALRealloc ( ws->TStmp2_SRC->data,   numSamplesMax_SRC * sizeof(COMPLEX8) )) != NULL, XLAL_ENOMEM );
+        ws->TStmp2_SRC->length = numSamplesMax_SRC;
+        XLAL_CHECK ( (ws->SRCtimes_DET->data = XLALRealloc ( ws->SRCtimes_DET->data, numSamplesMax_SRC * sizeof(REAL8) )) != NULL, XLAL_ENOMEM );
+        ws->SRCtimes_DET->length = numSamplesMax_SRC;
       }
     } // end: if shared workspace given
   else
     {
-      XLAL_CHECK ( ( common->workspace = XLALCreateResampWorkspace ( numSamplesMax_SRC, numSamplesFFT )) != NULL, XLAL_EFUNC );
+      XLAL_CHECK ( (ws = XLALCalloc ( 1, sizeof(*ws))) != NULL, XLAL_ENOMEM );
+      XLAL_CHECK ( (ws->TStmp1_SRC   = XLALCreateCOMPLEX8Vector ( numSamplesMax_SRC )) != NULL, XLAL_EFUNC );
+      XLAL_CHECK ( (ws->TStmp2_SRC   = XLALCreateCOMPLEX8Vector ( numSamplesMax_SRC )) != NULL, XLAL_EFUNC );
+      XLAL_CHECK ( (ws->SRCtimes_DET = XLALCreateREAL8Vector ( numSamplesMax_SRC )) != NULL, XLAL_EFUNC );
+
+      XLAL_CHECK ( (ws->FabX_Raw = fftw_malloc ( numSamplesFFT * sizeof(COMPLEX8) )) != NULL, XLAL_ENOMEM );
+      XLAL_CHECK ( (ws->TS_FFT   = fftw_malloc ( numSamplesFFT * sizeof(COMPLEX8) )) != NULL, XLAL_ENOMEM );
+
+      LAL_FFTW_WISDOM_LOCK;
+      XLAL_CHECK ( (ws->fftplan = fftwf_plan_dft_1d ( numSamplesFFT, ws->TS_FFT, ws->FabX_Raw, FFTW_FORWARD, FFTW_MEASURE )) != NULL, XLAL_EFAILED, "fftwf_plan_dft_1d() failed\n");
+      LAL_FFTW_WISDOM_UNLOCK;
+      ws->numSamplesFFT = numSamplesFFT;
+      ws->decimateFFT = decimateFFT;
+
+      common->workspace = ws;
     } // end: if we create our own workspace
 
 #if COLLECT_TIMING
@@ -618,9 +635,13 @@ XLALComputeFaFb_Resamp ( ResampWorkspace *restrict ws,				//!< [in,out] pre-allo
   REAL8 fHet   = TimeSeries_SRC_a->f0;
   REAL8 dt_SRC = TimeSeries_SRC_a->deltaT;
 
+  REAL8 dFreqFFT = dFreq / ws->decimateFFT;	// internally may be using higher frequency resolution dFreqFFT than requested
   REAL8 freqShift = remainder ( FreqOut0 - fHet, dFreq ); // frequency shift to closest bin
-  REAL8 fMinFFT = fHet + freqShift - dFreq * (ws->numSamplesFFT/2);	// we'll shift DC into the *middle bin* N/2  [N always even!]
-  UINT4 offset_bins = (UINT4) lround ( ( FreqOut0 - fMinFFT ) / dFreq );
+  REAL8 fMinFFT = fHet + freqShift - dFreqFFT * (ws->numSamplesFFT/2);	// we'll shift DC into the *middle bin* N/2  [N always even!]
+  XLAL_CHECK ( FreqOut0 >= fMinFFT, XLAL_EDOM, "Lowest output frequency outside the available frequency band: [FreqOut0 = %.16g] < [fMinFFT = %.16g]\n", FreqOut0, fMinFFT );
+  UINT4 offset_bins = (UINT4) lround ( ( FreqOut0 - fMinFFT ) / dFreqFFT );
+  UINT4 maxOutputBin = offset_bins + (ws->numFreqBinsOut-1) * ws->decimateFFT;
+  XLAL_CHECK ( maxOutputBin < ws->numSamplesFFT, XLAL_EDOM, "Highest output frequency bin outside available band: [maxOutputBin = %d] >= [numSamplesFFT = %d]\n", maxOutputBin, ws->numSamplesFFT );
 
 #if COLLECT_TIMING
   // collect some internal timing info
@@ -628,6 +649,9 @@ XLALComputeFaFb_Resamp ( ResampWorkspace *restrict ws,				//!< [in,out] pre-allo
   REAL8 tic,toc;
   tic = XLALGetCPUTime();
 #endif
+
+  XLAL_CHECK ( ws->numSamplesFFT >= TimeSeries_SRC_a->data->length, XLAL_EFAILED, "[numSamplesFFT = %d] < [len(TimeSeries_SRC_a) = %d]\n", ws->numSamplesFFT, TimeSeries_SRC_a->data->length );
+  XLAL_CHECK ( ws->numSamplesFFT >= TimeSeries_SRC_b->data->length, XLAL_EFAILED, "[numSamplesFFT = %d] < [len(TimeSeries_SRC_b) = %d]\n", ws->numSamplesFFT, TimeSeries_SRC_b->data->length );
 
   memset ( ws->TS_FFT, 0, ws->numSamplesFFT * sizeof(ws->TS_FFT[0]) );
   // ----- compute FaX_k
@@ -644,7 +668,7 @@ XLALComputeFaFb_Resamp ( ResampWorkspace *restrict ws,				//!< [in,out] pre-allo
   fftwf_execute ( ws->fftplan );
 
   for ( UINT4 k = 0; k < ws->numFreqBinsOut; k++ ) {
-    ws->FaX_k[k] = ws->FabX_Raw [ offset_bins + k ];
+    ws->FaX_k[k] = ws->FabX_Raw [ offset_bins + k * ws->decimateFFT ];
   }
 
 #if COLLECT_TIMING
@@ -667,7 +691,7 @@ XLALComputeFaFb_Resamp ( ResampWorkspace *restrict ws,				//!< [in,out] pre-allo
   fftwf_execute ( ws->fftplan );
 
   for ( UINT4 k = 0; k < ws->numFreqBinsOut; k++ ) {
-    ws->FbX_k[k] = ws->FabX_Raw [ offset_bins + k ];
+    ws->FbX_k[k] = ws->FabX_Raw [ offset_bins + k * ws->decimateFFT ];
   }
 
 #if COLLECT_TIMING
@@ -876,7 +900,6 @@ XLALBarycentricResampleMultiCOMPLEX8TimeSeries ( ResampMethodData *resamp,		// [
 
           REAL4 a_al = AMcoefX->a->data[alpha];
           REAL4 b_al = AMcoefX->b->data[alpha];
-          XLAL_CHECK ( a_al != 0 && b_al != 0, XLAL_EINVAL );
           for ( UINT4 j = 0; j < numSamplesSFT_SRC_al; j++ )
             {
               UINT4 iSRC_al_j  = iStart_SRC_al + j;

@@ -134,6 +134,12 @@ static const struct {
   [DOPPLERCOORD_N3OY_ECL] = {"n3oy_ecl",SCALE_R/LAL_C_SI, "Y orbit-component of unconstrained super-sky position in ecliptic coordinates [Units: none]."},
   [DOPPLERCOORD_N3OZ_ECL] = {"n3oz_ecl",SCALE_R/LAL_C_SI, "Z orbit-component of unconstrained super-sky position in ecliptic coordinates [Units: none]."},
 
+  [DOPPLERCOORD_ASINI]    = {"asini",   1,                "Projected semimajor axis of binary orbit in small-eccentricy limit (ELL1 model) [Units: light seconds]."},
+  [DOPPLERCOORD_TASC]     = {"tasc",    1,                "Time of ascension (neutron star crosses line of nodes moving away from observer) for binary orbit (ELL1 model) [Units: GPS seconds]."},
+  [DOPPLERCOORD_PORB]     = {"porb",    1,                "Period of binary orbit (ELL1 model) [Units: s]."},
+  [DOPPLERCOORD_KAPPA]    = {"kappa", 	1,		  "Lagrange parameter 'kappa = ecc * cos(argp)', ('ecc' = eccentricity, 'argp' = argument of periapse) of binary orbit (ELL1 model) [Units: none]."},
+  [DOPPLERCOORD_ETA]      = {"eta",     1,                "Lagrange parameter 'eta = ecc * sin(argp) of binary orbit (ELL1 model) [Units: none]."}
+
 };
 
 /*---------- DEFINES ----------*/
@@ -421,6 +427,43 @@ CW_am1_am2_Phi_i_Phi_j ( double tt, void *params )
 } /* CW_am1_am2_Phi_i_Phi_j() */
 
 
+REAL8
+XLALComputePhaseDerivative ( REAL8 t,                                        ///< time 't' to compute derivative at: (effectively interpreted as SSB time if approxPhase given)
+                             const PulsarDopplerParams *dopplerPoint,        ///< phase-evolution ('doppler') parameters to compute phase-derivative at
+                             DopplerCoordinateID coordID,                    ///< coord-ID of coordinate wrt which to compute phase derivative
+                             const EphemerisData *edat,                      ///< ephemeris data
+                             const LALDetector *site,                        ///< optional detector (if NULL: use H1 as default)
+                             BOOLEAN includeRoemer			     ///< whether to include Roemer-delay correction 'tSSB = t + dRoemer(t)' or not
+                             )
+{
+  XLAL_CHECK_REAL8 ( dopplerPoint != NULL, XLAL_EINVAL );
+  XLAL_CHECK_REAL8 ( edat != NULL, XLAL_EINVAL );
+  XLAL_CHECK_REAL8 ( (coordID > DOPPLERCOORD_NONE) && (coordID < DOPPLERCOORD_LAST), XLAL_EINVAL );
+
+  const DopplerCoordinateSystem coordSys = {
+    .dim = 1,
+    .coordIDs = { coordID },
+  };
+
+  REAL8 refTime8 = XLALGPSGetREAL8 ( &(dopplerPoint->refTime) );
+
+ intparams_t params = {
+   .detMotionType = DETMOTION_SPIN | DETMOTION_ORBIT, // doesn't matter, dummy value
+   .coordSys = &coordSys,
+   .dopplerPoint = dopplerPoint,
+   .startTime = t,
+   .refTime = refTime8,
+   .Tspan = 0, // doesn't matter, dummy value
+   .site = site ? site : &lalCachedDetectors[LAL_LHO_4K_DETECTOR],	// fall back to H1 if passed as NULL
+   .edat = edat,
+   .approxPhase = includeRoemer,	// whether to include Roemer-delay correction tSSB = t + dRoemer(t)
+ };
+
+ double scale = DopplerCoordinates[coordID].scale;
+
+ return (REAL8) (scale * CW_Phi_i ( 0, &params ) );
+
+}  // XLALComputePhaseDerivativeSSB()
 
 /**
  * Partial derivative of continuous-wave (CW) phase, with respect
@@ -535,6 +578,19 @@ CW_Phi_i ( double tt, void *params )
     } /* if rOrb_n */
   EQU_VECT_TO_ECL( rr_ord_Ecl, rr_ord_Equ );	  /* convert into ecliptic coordinates */
 
+  // ---------- prepare shortcuts for binary orbital parameters ----------
+  // See Leaci, Prix, PRD91, 102003 (2015):  DOI:10.1103/PhysRevD.91.102003
+  REAL8 orb_asini = par->dopplerPoint->asini;
+  REAL8 orb_Omega = ( LAL_TWOPI / par->dopplerPoint->period );
+  REAL8 orb_kappa = par->dopplerPoint->ecc * cos ( par->dopplerPoint->argp );	// Eq.(33)
+  REAL8 orb_eta   = par->dopplerPoint->ecc * sin ( par->dopplerPoint->argp );	// Eq.(34)
+
+  REAL8 orb_phase = par->dopplerPoint->argp + orb_Omega * ( ttSI - XLALGPSGetREAL8 ( &(par->dopplerPoint->tp) ) ); // Eq.(35),(36)
+  REAL8 sinPsi  = sin ( orb_phase );
+  REAL8 cosPsi  = cos ( orb_phase );
+  REAL8 sin2Psi = sin ( 2.0 * orb_phase );
+  REAL8 cos2Psi = cos ( 2.0 * orb_phase );
+
   /* now compute the requested (possibly linear combination of) phase derivative(s) */
   REAL8 phase_deriv = 0.0;
   for ( int coord = 0; coord < (int)par->coordSys->dim; ++coord ) {
@@ -638,6 +694,25 @@ CW_Phi_i ( double tt, void *params )
       ret = LAL_TWOPI * Freq * ecl_orbit_pos[2];
       break;
 
+      // ---------- binary orbital parameters ----------
+      // Phase derivates taken from Eq.(39) in Leaci, Prix, PRD91, 102003 (2015):  DOI:10.1103/PhysRevD.91.102003
+    case DOPPLERCOORD_ASINI: /**< Projected semimajor axis of binary orbit in small-eccentricy limit (ELL1 model) [Units: light seconds]. */
+      ret = - LAL_TWOPI * Freq * ( sinPsi + 0.5 * orb_kappa * sin2Psi - 0.5 * orb_eta * cos2Psi );
+      break;
+    case DOPPLERCOORD_TASC: /**< Time of ascension (neutron star crosses line of nodes moving away from observer) for binary orbit (ELL1 model) [Units: GPS s]. */
+      ret = LAL_TWOPI * Freq * orb_asini * orb_Omega * ( cosPsi + orb_kappa * cos2Psi + orb_eta * sin2Psi );
+      break;
+    case DOPPLERCOORD_PORB: /**< Period of binary orbit (ELL1 model) [Units: s]. */
+      ret = Freq * orb_asini * orb_Omega * orb_phase *  ( cosPsi + orb_kappa * cos2Psi + orb_eta * sin2Psi );
+      break;
+    case DOPPLERCOORD_KAPPA: /**< Lagrange parameter 'kappa = ecc * cos(argp)', ('ecc' = eccentricity, 'argp' = argument of periapse) of binary orbit (ELL1 model) [Units: none] */
+      ret = - LAL_PI * Freq * orb_asini * sin2Psi;
+      break;
+    case DOPPLERCOORD_ETA: /**< Lagrange parameter 'eta = ecc * sin(argp) of binary orbit (ELL1 model) [Units: none] */
+      ret = LAL_PI * Freq * orb_asini * cos2Psi;
+      break;
+
+      // ------------------------------------------------
     default:
       par->errnum = XLAL_EINVAL;
       XLALPrintError("%s: Unknown phase-derivative type '%d'\n", __func__, deriv );
@@ -870,7 +945,7 @@ XLALCovariance_Phi_ij ( const MultiLALDetector *multiIFO,		//!< [in] detectors t
 
   /* array of structs storing input and output info for GSL integration */
   UINT4 intN[Nseg][numDet];
-  typedef struct { 
+  typedef struct {
     intparams_t par;			/* integration parameters */
     double ti;				/* integration start time */
     double tf;				/* integration end time */
@@ -1543,7 +1618,7 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
   coordSys = &(metricParams->coordSys);
 
   /* ----- create output structure ---------- */
-  XLAL_CHECK_NULL ( ( ret = XLALCalloc(1,sizeof(*ret))) != NULL, XLAL_ENOMEM, "%s: XLALCalloc(1,%lu) failed.\n", __func__, sizeof(*ret));
+  XLAL_CHECK_NULL ( ( ret = XLALCalloc(1,sizeof(*ret))) != NULL, XLAL_ENOMEM, "%s: XLALCalloc(1,%zu) failed.\n", __func__, sizeof(*ret));
   XLAL_CHECK_NULL ( ( ret->a_a_i = gsl_vector_calloc (dim)) != NULL, XLAL_ENOMEM, "%s: a_a_i = gsl_vector_calloc (%d) failed.\n", __func__, dim );
   XLAL_CHECK_NULL ( ( ret->a_b_i = gsl_vector_calloc (dim)) != NULL, XLAL_ENOMEM, "%s: a_b_i = gsl_vector_calloc (%d) failed.\n", __func__, dim );
   XLAL_CHECK_NULL ( ( ret->b_b_i = gsl_vector_calloc (dim)) != NULL, XLAL_ENOMEM, "%s: b_b_i = gsl_vector_calloc (%d) failed.\n", __func__, dim );
@@ -2021,7 +2096,7 @@ XLALComputeFmetricFromAtoms ( const FmetricAtoms_t *atoms, REAL8 cosi, REAL8 psi
 
   /* allocate output metric structure */
   if ( (metric = XLALCalloc ( 1, sizeof(*metric) )) == NULL ) {
-    XLALPrintError ("%s: XLALCalloc ( 1, %lu) failed.\n\n", __func__, sizeof(*metric) );
+    XLALPrintError ("%s: XLALCalloc ( 1, %zu) failed.\n\n", __func__, sizeof(*metric) );
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
   metric->gF_ij = gsl_matrix_calloc ( dim, dim );
@@ -2391,12 +2466,12 @@ XLALComputeOrbitalDerivatives ( UINT4 maxorder,			/**< [in] highest derivative-o
 
   /* allocate return list */
   if ( (ret = XLALCalloc ( 1, sizeof(*ret) )) == NULL ) {
-    XLALPrintError ("%s: failed to XLALCalloc(1,%lu)\n", __func__, sizeof(*ret) );
+    XLALPrintError ("%s: failed to XLALCalloc(1,%zu)\n", __func__, sizeof(*ret) );
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
   ret->length = maxorder + 1;
   if ( (ret->data = XLALCalloc ( ret->length, sizeof(*ret->data) )) == NULL ) {
-    XLALPrintError ("%s: failed to XLALCalloc(%d,%lu)\n", __func__, ret->length, sizeof(*ret->data) );
+    XLALPrintError ("%s: failed to XLALCalloc(%d,%zu)\n", __func__, ret->length, sizeof(*ret->data) );
     XLALFree ( ret );
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }

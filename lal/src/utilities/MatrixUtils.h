@@ -145,83 +145,15 @@ extern "C" {
 /** \addtogroup MatrixOps_c */
 /*@{*/
 void
-LALI2MatrixAdd( LALStatus *, INT2Array *out, INT2Array *in1, INT2Array *in2 );
-void
-LALI4MatrixAdd( LALStatus *, INT4Array *out, INT4Array *in1, INT4Array *in2 );
-void
-LALI8MatrixAdd( LALStatus *, INT8Array *out, INT8Array *in1, INT8Array *in2 );
-void
-LALU2MatrixAdd( LALStatus *, UINT2Array *out, UINT2Array *in1, UINT2Array *in2 );
-void
-LALU4MatrixAdd( LALStatus *, UINT4Array *out, UINT4Array *in1, UINT4Array *in2 );
-void
-LALU8MatrixAdd( LALStatus *, UINT8Array *out, UINT8Array *in1, UINT8Array *in2 );
-void
-LALSMatrixAdd( LALStatus *, REAL4Array *out, REAL4Array *in1, REAL4Array *in2 );
-void
-LALDMatrixAdd( LALStatus *, REAL8Array *out, REAL8Array *in1, REAL8Array *in2 );
-void
-LALCMatrixAdd( LALStatus *, COMPLEX8Array *out, COMPLEX8Array *in1, COMPLEX8Array *in2 );
-void
-LALZMatrixAdd( LALStatus *, COMPLEX16Array *out, COMPLEX16Array *in1, COMPLEX16Array *in2 );
-
-void
-LALI2MatrixMultiply( LALStatus *, INT2Array *out, INT2Array *in1, INT2Array *in2 );
-void
-LALI4MatrixMultiply( LALStatus *, INT4Array *out, INT4Array *in1, INT4Array *in2 );
-void
-LALI8MatrixMultiply( LALStatus *, INT8Array *out, INT8Array *in1, INT8Array *in2 );
-void
-LALU2MatrixMultiply( LALStatus *, UINT2Array *out, UINT2Array *in1, UINT2Array *in2 );
-void
-LALU4MatrixMultiply( LALStatus *, UINT4Array *out, UINT4Array *in1, UINT4Array *in2 );
-void
-LALU8MatrixMultiply( LALStatus *, UINT8Array *out, UINT8Array *in1, UINT8Array *in2 );
-void
-LALSMatrixMultiply( LALStatus *, REAL4Array *out, REAL4Array *in1, REAL4Array *in2 );
-void
 LALDMatrixMultiply( LALStatus *, REAL8Array *out, REAL8Array *in1, REAL8Array *in2 );
-void
-LALCMatrixMultiply( LALStatus *, COMPLEX8Array *out, COMPLEX8Array *in1, COMPLEX8Array *in2 );
-void
-LALZMatrixMultiply( LALStatus *, COMPLEX16Array *out, COMPLEX16Array *in1, COMPLEX16Array *in2 );
 
-void
-LALI2MatrixTranspose( LALStatus *, INT2Array *out, INT2Array *in1 );
-void
-LALI4MatrixTranspose( LALStatus *, INT4Array *out, INT4Array *in1 );
-void
-LALI8MatrixTranspose( LALStatus *, INT8Array *out, INT8Array *in1 );
-void
-LALU2MatrixTranspose( LALStatus *, UINT2Array *out, UINT2Array *in1 );
-void
-LALU4MatrixTranspose( LALStatus *, UINT4Array *out, UINT4Array *in1 );
-void
-LALU8MatrixTranspose( LALStatus *, UINT8Array *out, UINT8Array *in1 );
-void
-LALSMatrixTranspose( LALStatus *, REAL4Array *out, REAL4Array *in1 );
 void
 LALDMatrixTranspose( LALStatus *, REAL8Array *out, REAL8Array *in1 );
-void
-LALCMatrixTranspose( LALStatus *, COMPLEX8Array *out, COMPLEX8Array *in1 );
-void
-LALZMatrixTranspose( LALStatus *, COMPLEX16Array *out, COMPLEX16Array *in1 );
-
-void
-LALCMatrixAdjoint( LALStatus *, COMPLEX8Array *out, COMPLEX8Array *in1 );
-void
-LALZMatrixAdjoint( LALStatus *, COMPLEX16Array *out, COMPLEX16Array *in1 );
 /*@}*/
 
 
 void
-LALSMatrixDeterminant( LALStatus *, REAL4 *det, REAL4Array *matrix );
-
-void
 LALSMatrixInverse( LALStatus *, REAL4 *det, REAL4Array *matrix, REAL4Array *inverse );
-
-void
-LALSMatrixDeterminantErr( LALStatus *, REAL4 det[2], REAL4Array *matrix, REAL4Array *matrixErr );
 
 void
 LALDMatrixDeterminant( LALStatus *, REAL8 *det, REAL8Array *matrix );
@@ -233,103 +165,11 @@ void
 LALDMatrixDeterminantErr( LALStatus *, REAL8 det[2], REAL8Array *matrix, REAL8Array *matrixErr );
 
 
-
-void
-LALSLUDecomp( LALStatus   *,
-	      INT2        *sgn,
-	      REAL4Array  *matrix,
-	      UINT4Vector *indx );
-
-void
-LALSLUBackSub( LALStatus   *,
-	       REAL4Vector *vector,
-	       REAL4Array  *matrix,
-	       UINT4Vector *indx );
-
-void
-LALDLUDecomp( LALStatus   *,
-	      INT2        *sgn,
-	      REAL8Array  *matrix,
-	      UINT4Vector *indx );
-
-void
-LALDLUBackSub( LALStatus   *,
-	       REAL8Vector *vector,
-	       REAL8Array  *matrix,
-	       UINT4Vector *indx );
-
-
-
-
-
-
-
-
 void
 LALSSymmetricEigenVectors( LALStatus *, REAL4Vector *values, REAL4Array *matrix );
 
 void
-LALSSymmetricEigenValues( LALStatus *, REAL4Vector *values, REAL4Array *matrix );
-
-void
 LALDSymmetricEigenVectors( LALStatus *, REAL8Vector *values, REAL8Array *matrix );
-
-void
-LALDSymmetricEigenValues( LALStatus *, REAL8Vector *values, REAL8Array *matrix );
-
-
-
-
-void
-LALSSymmetricToTriDiagonal( LALStatus   *,
-			    REAL4Vector *diag,
-			    REAL4Array  *matrix,
-			    REAL4Vector *offDiag );
-
-void
-LALSSymmetricToTriDiagonal2( LALStatus   *,
-			      REAL4Vector *diag,
-			      REAL4Array  *matrix,
-			      REAL4Vector *offDiag );
-
-void
-LALSTriDiagonalToDiagonal( LALStatus   *,
-			   REAL4Vector *diag,
-			   REAL4Array  *matrix,
-			   REAL4Vector *offDiag );
-
-void
-LALSTriDiagonalToDiagonal2( LALStatus   *,
-			    REAL4Vector *diag,
-			    REAL4Array  *matrix,
-			    REAL4Vector *offDiag );
-
-void
-LALDSymmetricToTriDiagonal( LALStatus   *,
-			    REAL8Vector *diag,
-			    REAL8Array  *matrix,
-			    REAL8Vector *offDiag );
-
-void
-LALDSymmetricToTriDiagonal2( LALStatus   *,
-			     REAL8Vector *diag,
-			     REAL8Array  *matrix,
-			     REAL8Vector *offDiag );
-
-void
-LALDTriDiagonalToDiagonal( LALStatus   *,
-			   REAL8Vector *diag,
-			   REAL8Array  *matrix,
-			   REAL8Vector *offDiag );
-
-void
-LALDTriDiagonalToDiagonal2( LALStatus   *,
-			    REAL8Vector *diag,
-			    REAL8Array  *matrix,
-			    REAL8Vector *offDiag );
-
-
-
 
 
 #ifdef  __cplusplus

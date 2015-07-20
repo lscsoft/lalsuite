@@ -172,7 +172,7 @@ test_XLALComputeDopplerMetrics ( void )
     .fkdot    = { Freq, f1dot },
   };
 
-  LALSegList segList;
+  LALSegList XLAL_INIT_DECL(segList);
   ret = XLALSegListInitSimpleSegments ( &segList, startTimeGPS, 1, Tseg );
   XLAL_CHECK ( ret == XLAL_SUCCESS, XLAL_EFUNC, "XLALSegListInitSimpleSegments() failed with xlalErrno = %d\n", xlalErrno );
 
@@ -387,12 +387,12 @@ test_XLALComputeDopplerMetrics ( void )
     pars2.approxPhase = 1;
 
     const UINT4 Nseg = 10;
-    LALSegList NsegList;
+    LALSegList XLAL_INIT_DECL(NsegList);
     ret = XLALSegListInitSimpleSegments ( &NsegList, startTimeGPS, Nseg, Tseg );
     XLAL_CHECK ( ret == XLAL_SUCCESS, XLAL_EFUNC, "XLALSegListInitSimpleSegments() failed with xlalErrno = %d\n", xlalErrno );
     pars2.segmentList = NsegList;
 
-    LALSegList segList_k;
+    LALSegList XLAL_INIT_DECL(segList_k);
     LALSeg segment_k;
     XLALSegListInit( &segList_k );	// prepare single-segment list containing segment k
     segList_k.arraySize = 1;
@@ -445,6 +445,74 @@ test_XLALComputeDopplerMetrics ( void )
     XLALDestroyDopplerPhaseMetric ( metric2P );
 
     XLALSegListClear ( &NsegList );
+  }
+
+
+  XLALPrintWarning("\n---------- ROUND 6: directed binary orbital metric ----------\n");
+  {
+    REAL8 Period = 68023.70496;
+    REAL8 Omega = LAL_TWOPI / Period;
+    REAL8 asini = 1.44;
+    REAL8 tAsc = 897753994;
+    REAL8 argp = 0;
+    LIGOTimeGPS tP; XLALGPSSetREAL8 ( &tP, tAsc + argp / Omega );
+
+    const PulsarDopplerParams dopScoX1 = {
+      .refTime  = startTimeGPS,
+      .Alpha    = Alpha,
+      .Delta    = Delta,
+      .fkdot    = { Freq },
+      .asini    = asini,
+      .period   = Period,
+      .tp       = tP
+    };
+    REAL8 TspanScoX1 = 20 * 19 * 3600;	// 20xPorb for long-segment regime
+    LALSegList XLAL_INIT_DECL(segListScoX1);
+    XLAL_CHECK ( XLALSegListInitSimpleSegments ( &segListScoX1, startTimeGPS, 1, TspanScoX1 ) == XLAL_SUCCESS, XLAL_EFUNC );
+    REAL8 tMid = XLALGPSGetREAL8(&startTimeGPS) + 0.5 * TspanScoX1;
+    REAL8 DeltaMidAsc = tMid - tAsc;
+    const DopplerCoordinateSystem coordSysScoX1 = { 6, { DOPPLERCOORD_FREQ, DOPPLERCOORD_ASINI, DOPPLERCOORD_TASC, DOPPLERCOORD_PORB, DOPPLERCOORD_KAPPA, DOPPLERCOORD_ETA } };
+    DopplerMetricParams pars_ScoX1 = {
+      .coordSys			= coordSysScoX1,
+      .detMotionType		= DETMOTION_SPIN | DETMOTION_ORBIT,
+      .segmentList		= segListScoX1,
+      .multiIFO			= multiIFO,
+      .multiNoiseFloor		= multiNoiseFloor,
+      .signalParams		= { .Amp = Amp, .Doppler = dopScoX1 },
+      .projectCoord		= - 1,	// -1==no projection
+      .approxPhase		= 1,
+    };
+    pars_ScoX1.multiIFO.length = 1;	// truncate to first detector
+    pars_ScoX1.multiNoiseFloor.length = 1;	// truncate to first detector
+
+    // compute metric using modern UniversalDopplerMetric module: (used in lalapps_FstatMetric_v2)
+    DopplerPhaseMetric *metric_ScoX1;
+    XLAL_CHECK ( (metric_ScoX1 = XLALComputeDopplerPhaseMetric ( &pars_ScoX1, edat )) != NULL, XLAL_EFUNC );
+
+    // compute analytic metric computed from Eq.(47) in Leaci,Prix PRD91, 102003 (2015):
+    gsl_matrix *g0_ij;
+    XLAL_CHECK ( (g0_ij = gsl_matrix_calloc ( 6, 6 )) != NULL, XLAL_ENOMEM, "Failed to gsl_calloc a 6x6 matrix\n");
+    gsl_matrix_set ( g0_ij, 0, 0, pow ( LAL_PI * TspanScoX1, 2 ) / 3.0 );
+    gsl_matrix_set ( g0_ij, 1, 1, 2.0 * pow ( LAL_PI * Freq, 2 ) );
+    gsl_matrix_set ( g0_ij, 2, 2, 2.0 * pow ( LAL_PI * Freq * asini * Omega, 2 ) );
+    gsl_matrix_set ( g0_ij, 3, 3, 0.5 * pow ( Omega, 4 ) * pow ( Freq * asini, 2 ) * ( pow ( TspanScoX1, 2 ) / 12.0 + pow ( DeltaMidAsc, 2 ) ) );
+    REAL8 gPAsc = LAL_PI * pow ( Freq * asini, 2 ) * pow ( Omega, 3 ) * DeltaMidAsc;
+    gsl_matrix_set ( g0_ij, 2, 3, gPAsc );
+    gsl_matrix_set ( g0_ij, 3, 2, gPAsc );
+    gsl_matrix_set ( g0_ij, 4, 4, 0.5 * pow ( LAL_PI * Freq * asini, 2 ) );
+    gsl_matrix_set ( g0_ij, 5, 5, 0.5 * pow ( LAL_PI * Freq * asini, 2 ) );
+
+    GPMAT ( metric_ScoX1->g_ij, "%0.4e" );
+    GPMAT ( g0_ij, "%0.4e" );
+
+    // compare metrics against each other
+    REAL8 diff, tolScoX1 = 0.05;
+    XLAL_CHECK ( (diff = XLALCompareMetrics ( metric_ScoX1->g_ij, g0_ij )) < tolScoX1, XLAL_ETOL, "Error(gNum,gAn)= %g exceeds tolerance of %g\n", diff, tolScoX1 );
+    XLALPrintWarning ("diff_Num_An = %e\n", diff );
+
+    gsl_matrix_free ( g0_ij );
+    XLALDestroyDopplerPhaseMetric ( metric_ScoX1 );
+    XLALSegListClear ( &segListScoX1 );
   }
 
 
@@ -577,6 +645,7 @@ test_XLALComputeOrbitalDerivatives ( void )
 
   UINT4 n;
   reltol = 1e-2;	/* 1% error should be enough to enforce order 0-2 are ~1e-5 - 1e-8, order 3-4 are ~ 5e-3*/
+  XLALPrintInfo ("\nComparing Earth orbital derivatives:\n");
   for ( n=0; n <= maxorder; n ++ )
     {
       for (i=0; i<3; i++) {

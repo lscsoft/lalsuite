@@ -1,12 +1,45 @@
+import itertools
 import copy
 import numpy
 import lal
 from lalinference.rapid_pe import lalsimutils
+
 m1m2 = numpy.vectorize(lalsimutils.m1m2)
+
+#
+# Utility functions
+#
+
+OFFSET_VECTORS = (1, -1, 0)
+def ndim_offsets(ndim):
+    for off in itertools.product(*numpy.tile(OFFSET_VECTORS, (ndim, 1))):
+        yield numpy.array(off)
 
 #
 # Refinement strategies
 #
+
+# TODO: Optionally return cells
+def refine_regular_grid(grid, grid_spacing):
+    """
+    Given a regular grid in N dimensions with spacing given by grid_spacing, refine the grid by bisection along all dimensions. Returns the new grid and new spacing.
+
+    >>> region = Cell(numpy.array([(-1., 1.), (-2., 2.)]))
+    >>> grid, spacing = create_regular_grid_from_cell(region, side_pts=2)
+    >>> grid, spacing = refine_regular_grid(grid, spacing)
+    >>> print grid
+    [array([-2., -4.]), array([-2., -2.]), array([-1., -4.]), array([-1., -2.]), array([-2.,  0.]), array([-2.,  2.]), array([-1.,  0.]), array([-1.,  2.]), array([ 0., -4.]), array([ 0., -2.]), array([ 1., -4.]), array([ 1., -2.]), array([ 0.,  0.]), array([ 0.,  2.]), array([ 1.,  0.]), array([ 1.,  2.])]
+    >>> print spacing
+    [ 1.  2.]
+    """
+
+    # FIXME: We can probably allocate space ahead of time
+    new_pts = []
+    for cells in grid_to_cells(grid, grid_spacing):
+        for cell in cells.refine_full():
+            new_pts.append(cell._center)
+
+    return new_pts, grid_spacing / 2
 
 # Take midpoint between target point and neighbor
 def midpoint(pt1, pt2):
@@ -24,12 +57,124 @@ class Cell(object):
         else:
             self._center = [(a+b)/2.0 for a, b in self._bounds]
 
+    def area(self):
+        return numpy.abs(numpy.diff(self._bounds)).prod()
+
+    def __intersects_1d(self, s1, s2):
+        return s2[1] <= s1[0] > s2[0] or s2[1] < s1[1] > s2[0]
+
+    def intersects(self, other):
+        assert self._bounds.shape == other._bounds.shape
+        return all(self.__intersects_1d(s1, s2) for s1, s2 in zip(self._bounds, other._bounds))
+
+    def divide_if(self, testfunc, depth=1):
+        """
+        Subdivide once along each dimension, recursively.
+        """
+        if depth < 1:
+            raise ArgumentError("Depth value must be greater than 0")
+
+        # Base case: We're at the finest resolution, divide and check
+        if depth == 1:
+            cells = self.divide()
+            if testfunc(cells):
+                return cells
+            else:
+                return self
+        else:
+
+            daughters, divided = [], False
+            for d in self.divide():
+                # Recurse downward and get result which is returned
+                dcells = d.divide_if(testfunc, depth-1)
+
+                # We got the cell back, it didn't divide. So we preserve it to
+                # check if the parent cell should divide or not
+                if dcells == d:
+                    daughters.append(d)
+
+                # We got a set of divided cells, so we keep to pass back up
+                else:
+                    daughters.extend(dcells)
+                    divided = True
+
+            # No child (or below) of this cell was divided, pass ourself back
+            # up
+            if not divided and not testfunc(daughters):
+                return self
+
+        return daughters
+
+    def refine_full(self):
+        """
+        Refine each cell such that new cells are created along all permutations of a displacement vector with unit vectors in each dimension and the 0 vector.
+        """
+        # FIXME: needs "return center" argument
+        cells = []
+        extent = numpy.diff(self._bounds).flatten() / 2
+        # Iterate through all possible offsets for this dimension -- creating a
+        # new cell and translating it along this offset
+        # Note the factor of two required in the offset is preincluded above.
+        for offset in ndim_offsets(len(self._center)):
+            cell = Cell(numpy.copy(self._bounds))
+            cell.translate(offset * extent)
+            cells.append(cell)
+
+        return cells
+
+    def translate(self, offset):
+        """
+        Translate this cell's position and extent by offset.
+        """
+        self._bounds += offset[:,numpy.newaxis]
+        self._center += offset
+
+    def refine(self):
+        """
+        Refine each cell such that 2*dim new cells are created. In contrast to divide, refine will place the center of each new cell at the midpoint along the boundary of the mother cell. Its dimensions will be the half width from the center to the edge on each side, except for the dimension along the splitting axis, where the dimension will be twice the half width of the original cell in that dimension (and on that side).
+        """
+        cells = []
+        dim = len(self._bounds)
+
+        cntrs = []
+        # New centers are bounds of previous cell
+        for i in range(dim):
+            # Split left
+            cntr = numpy.copy(self._center)
+            cntr[i] = self._bounds[i][0]
+            cntrs.append(cntr)
+
+            # Split right
+            cntr = numpy.copy(self._center)
+            cntr[i] = self._bounds[i][1]
+            cntrs.append(cntr)
+
+        # Determine length of boundaries
+        bounds = []
+        for i, (lb, rb) in enumerate(self._bounds):
+            half_left = (self._center[i] - lb) / 2.0
+            half_right = (rb - self._center[i]) / 2.0
+            bounds.append( (half_left, half_right) )
+        bounds = numpy.array(bounds)
+
+        # Create each new cell
+        for i, ci in enumerate(cntrs):
+            cbnds = list(copy.copy(cntr))
+            for j in range(len(bounds)):
+                if i == j:
+                    cbnds[j] = (ci[j] - bounds[j,i%2], ci[j] + bounds[j,i%2])
+                else:
+                    cbnds[j] = (ci[j] - bounds[j,0], ci[j] + bounds[j,1])
+            cells.append(Cell(numpy.array(cbnds), numpy.array(ci)))
+
+        return cells
+
     def divide(self):
         """
         Subdivide once along each dimension, recursively.
         """
         return self.__recursive_divide(len(self._bounds)-1)
-            
+
     def __recursive_divide(self, dim):
         """
         Do not call directly!
@@ -65,24 +210,157 @@ class Cell(object):
         # Find the extent of points in each dimension
         ext_right = numpy.max(pts, axis=0)
         ext_left = numpy.min(pts, axis=0)
-        for el, er, pt in zip(ext_left, ext_right, inpt_pt):
-            if symmetric:
+        if symmetric:
+            for el, er, pt in zip(ext_left, ext_right, inpt_pt):
                 max_ext = max(abs(pt - el), abs(pt - er))
                 bound = (pt - max_ext, pt + max_ext)
-            else:
+                cell_bounds.append(bound)
+        else:
+            for el, er in zip(ext_left, ext_right):
                 bound = (el, er)
-            cell_bounds.append(bound)
+                cell_bounds.append(bound)
 
         return Cell(numpy.array(cell_bounds), inpt_pt)
 
 #
-# Utilities
+# Gridding / cell utilities
 #
-def prune_duplicate_pts(pts):
+def grid_to_indices(pts, region, grid_spacing):
+    """
+    Convert points in a grid to their 1-D indices according to the grid extent in region, and grid spacing.
+    """
+    region[:,0] = region[:,0] - grid_spacing
+    region[:,1] = region[:,1] + grid_spacing
+    extent = numpy.diff(region)[:,0]
+    pt_stride = numpy.round(extent / grid_spacing).astype(int)
+    # Necessary for additional point on the right edge
+    pt_stride += 1
+    #print pt_stride
+    idx = numpy.round((pts - region[:,0]) / grid_spacing).astype(int)
+    indices = []
+    for i in idx:
+        indices.append(numpy.ravel_multi_index(i, pt_stride))
+        #print i, indices[-1]
+    return numpy.array(indices)
+
+def prune_duplicate_pts(pts, region, grid_spacing):
     """
     Remove identical points from list.
     """
-    return numpy.array(list(set([tuple(pt) for pt in pts])))
+    ind = grid_to_indices(pts, region, grid_spacing)
+    _, ind = numpy.unique(ind, return_index=True)
+    return numpy.array(pts)[ind]
+
+def create_regular_grid_from_cell(cell, side_pts=5, return_cells=False):
+    """
+    Given a region (amrlib.Cell), grid it with side_pts to a dimension. If return_cells is given, the divided cells will be returned rather than the grid points.
+
+    >>> import numpy
+    >>> region = Cell(numpy.array([(-1., 1.), (-2., 2.)]))
+    >>> grid, spacing = create_regular_grid_from_cell(region, side_pts=2)
+    >>> print grid
+    [[-1. -2.]
+     [-1.  2.]
+     [ 1. -2.]
+     [ 1.  2.]]
+    >>> print spacing
+    [ 2.  4.]
+    """
+
+    # TODO Recenter on trigger point
+
+    # This creates the logic to create points along a given axis
+    grid_pts = [slice(ls, rs, side_pts * 1j) for ls, rs in cell._bounds]
+    # This produces a representation of the points, but not in a tuple form
+    grid_pts = numpy.mgrid[grid_pts]
+    # This tuplizes them
+    grid_pts = numpy.array(zip(*[grid.flatten() for grid in grid_pts]))
+
+    # useful knowledge for later
+    grid_spacing = numpy.array([(rb - lb) / (side_pts - 1) for lb, rb in cell._bounds])
+    return grid_pts, grid_spacing
+
+# FIXME: This isn't currently used anywhere, unsure of it's usefulness
+def create_new_grid(cell, pts, max_level=6):
+    """
+    Subdivide until all cells are self contained - e.g. every cell contains no more than one pt from pts. If the number of divisions exceeds max_level, stop dividing.
+    """
+    cells = [cell]
+    i = 1
+    while True:
+        #print "Division level %d, ncells: %d" % (i, len(cells))
+        new_cells = []
+        for c in cells:
+            new_cells.extend(c.divide())
+
+        cell_centers = numpy.array([c._center for c in new_cells])
+        cell_tree = BallTree(cell_centers)
+        cells_occupied = set()
+        for j, pt in enumerate(pts[idx]):
+            cell_idx = cell_tree.query(pt, k=1, return_distance=False)[0]
+            selected_cell = tuple(cell_centers[cell_idx][0])
+            #print "Template falls in cell centered on %s. %d / %d pts checked" % (str(selected_cell), j+1, len(pts[idx]))
+            if selected_cell not in cells_occupied:
+                cells_occupied.add(selected_cell)
+            else:
+                break
+
+        if len(cells_occupied) == len(pts):
+            break
+
+        cells = new_cells
+        if i >= max_level:
+            break
+        i += 1
+    return cells
+
+# FIXME: Make into a generator
+def grid_to_cells(grid, grid_spacing):
+    return [Cell(
+            numpy.array([(c-sp/2, c+sp/2) for c, sp in zip(pt, grid_spacing)]),
+            pt) for pt in grid]
+
+#
+# Cell grid serialization and packing routines
+#
+
+def pack_grid_cells(cells, resolution):
+    """
+    Pack the cell centers (grid points) into a convienient numpy array. The resolution of the grid is prepended for later use.
+    """
+    return numpy.vstack((resolution, [c._center for c in cells]))
+
+def unpack_grid_cells(npy_cells):
+    """
+    Unpack the cell centers (grid points), the cell collection is returned.
+    """
+    res = npy_cells[0]
+    cells = []
+    for cntr in npy_cells[1:]:
+        cell = Cell(numpy.array((cntr - res / 2, cntr + res / 2)).T)
+        cells.append(cell)
+    return cells, res
+
+def serialize_grid_cells(level_dict, fname):
+    """
+    Given a dictionary of refinement levels, pack it up and save it to a numpy file.
+    FIXME: This can't yet distinguish the level of refinement. Need to teach it to pay attention to the resolution.
+    """
+    cell_block = numpy.array([level_dict[i] for i in sorted(level_dict)])
+    numpy.save(fname, cell_block)
+
+def deserialize_grid_cells(fname):
+    """
+    Unpacks a numpy file of level grid points and returns a cell collection.
+    FIXME: This can't yet distinguish the level of refinement. Need to teach it to pay attention to the resolution.
+    """
+    cell_block = numpy.load(fname)
+    cells = []
+    for level in cell_block:
+        level_cells, res = unpack_grid_cells(level)
+        cells.extend(level_cells)
+    return cells, res
+
 
 #
 # Coordinate transformations
@@ -108,6 +386,48 @@ def transform_tau0tau3_m1m2(tau0, tau3, flow=40.):
     eta = 1.0 / 8 / flow / tau3 * (tau0 / __prefac_tau / tau3)**(2./3)
     m1, m2 = m1m2(mt*eta**(3./5), eta)
     return m1 / __dim_mass, m2 / __dim_mass
+
+#
+# Coordinate transformation boundaries
+#
+
+__a0 = __prefac_0 * numpy.pi
+__a3 = __prefac_3 * numpy.pi
+def check_tau0tau3(tau0, tau3, flow=40):
+    A_0 = __a0 / (numpy.pi * flow)**(8./3)
+    A_3 = __a3 / (numpy.pi * flow)**(5./3)
+
+    # Lower bound (\eta > 1/4)
+    tau3_bnd = 4 * A_3 * (tau0 / 4 / A_0)**(2.0/5)
+
+    # Note, there are two other bounds, but we don't care about them so much
+    return tau3 > tau3_bnd
+
+def check_mchirpeta(mchirp, eta):
+    return eta <= 0.25 and mchirp >= 0
+
+def check_spins(spin1, spin2):
+    b1 = numpy.sqrt(numpy.atleast_2d(spin1**2).sum(axis=0)) <= 1
+    b2 = numpy.sqrt(numpy.atleast_2d(spin2**2).sum(axis=0)) <= 1
+    return b1 & b2
+
+# Make sure the new grid points are physical
+def check_grid(grid, intr_prms, distance_coordinates):
+    """
+    Check the validity of points in various coordinate spaces to ensure they are physical.
+    """
+    m1_axis, m2_axis = intr_prms.index("mass1"), intr_prms.index("mass2")
+    grid_check = numpy.array(grid).T
+    if distance_coordinates == "tau0_tau3":
+        bounds_mask = check_tau0tau3(grid_check[m1_axis], grid_check[m2_axis])
+    elif distance_coordinates == "mchirp_eta":
+        bounds_mask = check_mchirpeta(grid_check[m1_axis], grid_check[m2_axis])
+
+    # FIXME: Needs general spin
+    if "spin1z" in intr_prms or "spin2z" in intr_prms:
+        s1_axis, s2_axis = intr_prms.index("spin1z"), intr_prms.index("spin2z")
+        bounds_mask &= check_spins(grid_check[s1_axis], grid_check[s2_axis])
+    return bounds_mask
 
 VALID_TRANSFORMS_MASS = { \
     "mchirp_eta": transform_m1m2_mceta,

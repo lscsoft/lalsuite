@@ -56,6 +56,8 @@ optp.add_option("--disable-ile-postproc", action="store_true", help="Do not plot
 optp.add_option("--disable-bayes-postproc", action="store_true", help="Do not plot posteriors via cbcBayesPostProc.")
 optp.add_option("--n-copies", default=1, help="Number of copies of each integrator instance to run per mass point. Default is one.")
 optp.add_option("--write-script", action="store_true", help="In addition to the DAG, write a script to this filename to execute the workflow.")
+optp.add_option("--write-eff-lambda", action="store_true", help="Use psi0 column of template bank XML as effective lambda point to calculate in DAG.")
+optp.add_option("--write-deff-lambda", action="store_true", help="Use psi3 column of template bank XML as delta effective lambda point to calculate in DAG.")
 
 for cat, val in MAXJOBS.iteritems():
     optname = "--maxjobs-%s" % cat.lower().replace("_", "-")
@@ -104,7 +106,6 @@ elif xmldoc is not None:
         # NOTE: gstlal is exact match, but other pipelines may not be
         assert m1 is None or (sngl_row.mass1 == m1 and sngl_row.mass2 == m2)
         m1, m2 = sngl_row.mass1, sngl_row.mass2
-    event_time = glue.lal.LIGOTimeGPS(opts.event_time)
 else:
     raise ValueError("Need either --mass1 --mass2 or --coinc-xml to retrieve masses.")
 
@@ -163,7 +164,9 @@ ile_job_type, ile_sub_name = dagutils.write_integrate_likelihood_extrinsic_sub(
         convergence_tests_on=opts.convergence_tests_on,
         adapt_floor_level=opts.adapt_floor_level,
         adapt_weight_exponent=opts.adapt_weight_exponent,
-        skymap_file=opts.skymap_file
+        skymap_file=opts.skymap_file,
+        write_eff_lambda=opts.write_eff_lambda,
+        write_deff_lambda=opts.write_deff_lambda 
         )
 ile_job_type.write_sub_file()
 
@@ -194,14 +197,18 @@ sql_job_type, sql_job_name = dagutils.write_result_coalescence_sub(tag="coalesce
 sql_job_type.write_sub_file()
 
 # TODO: Mass index table
-# FIXME: Expanding intrinsic set will require modification here
-for i, (m1, m2) in enumerate([(tmplt.mass1, tmplt.mass2) for tmplt in tmplt_bnk]):
+#for i, (m1, m2) in enumerate([(tmplt.mass1, tmplt.mass2) for tmplt in tmplt_bnk]):
+for i, tmplt in enumerate(tmplt_bnk):
     mass_grouping = "MASS_SET_%d" % i
 
     ile_node = pipeline.CondorDAGNode(ile_job_type)
     ile_node.set_priority(JOB_PRIORITIES["ILE"])
-    ile_node.add_macro("macromass1", m1)
-    ile_node.add_macro("macromass2", m2)
+    ile_node.add_macro("macromass1", tmplt.mass1)
+    ile_node.add_macro("macromass2", tmplt.mass2)
+    if opts.write_eff_lambda:
+        ile_node.add_macro("macroefflambda", tmplt.psi0)
+    if opts.write_deff_lambda:
+        ile_node.add_macro("macrodefflambda", tmplt.psi3)
     if use_bayespe_postproc:
         # If we're using the Bayesian PE post processing script, dump the data
         ile_node.set_post_script(dagutils.which("process_ile_output"))
@@ -257,12 +264,13 @@ print "Created a DAG named %s\n" % dag_name
 print "This will run %i instances of %s in parallel\n" % (len(tmplt_bnk), ile_sub_name)
 
 # FIXME: Adjust name on command line
-ppdag_name="posterior_pp"
-ppdag.set_dag_file(ppdag_name)
-ppdag.add_maxjobs_category("ANALYSIS", MAXJOBS["ANALYSIS"])
-ppdag.add_maxjobs_category("POST", MAXJOBS["POST"])
-ppdag.write_concrete_dag()
-if opts.write_script:
-    ppdag.write_script()
+if use_bayespe_postproc:
+    ppdag_name="posterior_pp"
+    ppdag.set_dag_file(ppdag_name)
+    ppdag.add_maxjobs_category("ANALYSIS", MAXJOBS["ANALYSIS"])
+    ppdag.add_maxjobs_category("POST", MAXJOBS["POST"])
+    ppdag.write_concrete_dag()
+    if opts.write_script:
+        ppdag.write_script()
 
-print "Created a postprocessing DAG named %s\n" % ppdag_name
+    print "Created a postprocessing DAG named %s\n" % ppdag_name

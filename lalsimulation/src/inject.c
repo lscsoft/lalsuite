@@ -125,6 +125,7 @@ int main(int argc, char *argv[])
     }
 
     /* output results */
+    fprintf(stdout, "# time (s)\tSTRAIN (strain)\n");
     for (j = 0; j < h[0]->data->length; ++j) {
         LIGOTimeGPS t = h[0]->epoch;
         fprintf(stdout, "%s\t%e\n", XLALGPSToStr(tstr, XLALGPSAdd(&t, j * h[0]->deltaT)), h[0]->data->data[j]);

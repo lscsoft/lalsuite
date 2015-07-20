@@ -217,8 +217,8 @@ int XLALNextLatticeTilingPoint(
 
 ///
 /// Advance lattice tiling iterator, and optionally return the next set of points in \c points.
-/// Returns the number of points stored in \points if there are points remaining, 0 if there are
-/// no more points, and XLAL_FAILURE on error.
+/// Returns the number of points stored in \c points if there are points remaining, 0 if there
+/// are no more points, and XLAL_FAILURE on error.
 ///
 #ifdef SWIG // SWIG interface directives
 SWIGLAL( RETURN_VALUE( int, XLALNextLatticeTilingPoints ) );

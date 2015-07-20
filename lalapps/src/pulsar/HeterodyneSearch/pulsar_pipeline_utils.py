@@ -23,11 +23,14 @@ class heterodyneJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
   A lalapps_heterodyne_pulsar job to coarse heterodyne the data.
   """
-  def __init__(self,execu,univ='standard'):
+  def __init__(self, execu, univ, accgroup, accuser):
     self.__executable = execu # gets the executable from .ini
     self.__universe = univ
     pipeline.CondorDAGJob.__init__(self, self.__universe, self.__executable)
     pipeline.AnalysisJob.__init__(self, None)
+
+    self.add_condor_cmd('accounting_group', accgroup)
+    self.add_condor_cmd('accounting_group_user', accuser)
 
     # set log files for job
     self.set_stdout_file('logs/heterodyne_pulsar-$(cluster).out')
@@ -510,13 +513,15 @@ class createresultspageJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
   A job to create an individual pulsar results page
   """
-  def __init__(self,execu,logpath):
+  def __init__(self,execu,logpath,accgroup,accuser):
     self.__executable = execu
     self.__universe  = 'vanilla'
     pipeline.CondorDAGJob.__init__(self, self.__universe, self.__executable)
     pipeline.AnalysisJob.__init__(self, None)
 
     self.add_condor_cmd('getenv','True')
+    self.add_condor_cmd('accounting_group', accgroup)
+    self.add_condor_cmd('accounting_group_user', accuser)
 
     self.set_stdout_file(logpath+'/create_results_page-$(cluster).out')
     self.set_stderr_file(logpath+'/create_results_page-$(cluster).err')
@@ -527,6 +532,8 @@ class createresultspageJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.add_arg('$(macrobk)') # macro for Bk (fine heterodyne file) directories
     self.add_arg('$(macroi)') # macro for IFOs
     self.add_arg('$(macrof)') # macro for nested sampling files
+    self.add_arg('$(macrow)') # macro to say if a hardware injection
+    self.add_arg('$(macros)') # macro to say if a software injection
 
 class createresultspageNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
@@ -545,15 +552,12 @@ class createresultspageNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.__mcmcdirs = []
     self.__donested = False
     self.__nestedfiles = []
-    self.__nlive = None
     self.__parfile = None
     self.__Bkfiles = []
     self.__priorfile = None
     self.__ifos = []
     self.__histbins = None
     self.__epsout = False
-    self.__swinj = False
-    self.__hwinj = False
 
   def set_outpath(self,val):
     # set the detector
@@ -585,10 +589,6 @@ class createresultspageNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.add_macro('macrof', macroval)
     self.add_macro('macrom', '') # empty macro for mcmc directories
     self.__nestedfiles = val
-  def set_nlive(self,val):
-    # set number of nested sampling live points
-    self.add_var_opt('l', val, short=True)
-    self.__nlive = val
   def set_parfile(self,val):
     # set the pulsar parameter file
     self.add_var_opt('p', val, short=True)
@@ -621,27 +621,32 @@ class createresultspageNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     # set to output eps figs
     self.add_var_opt('e', '', short=True)
     self.__epsout = True
-  def set_swinj(self):
+  def set_swinj(self, isswinj):
     # set to say that analysing software injection
-    self.add_var_opt('s', '', short=True)
-    self.__swinj = True
-  def set_hwinj(self):
+    if isswinj:
+      self.add_macro('macros', '--sw-inj')
+    else:
+      self.add_macro('macros', '')
+  def set_hwinj(self, ishwinj):
     # set to say that analysing hardware injection
-    self.add_var_opt('w', '', short=True)
-    self.__hwinj = True
-
+    if ishwinj:
+      self.add_macro('macrow', '--hw-inj')
+    else:
+      self.add_macro('macrow', '')
 
 class collateresultsJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
   A job to collate all the individual pulsar results pages
   """
-  def __init__(self,execu,logpath):
+  def __init__(self,execu,logpath,accgroup,accuser):
     self.__executable = execu
     self.__universe  = 'vanilla'
     pipeline.CondorDAGJob.__init__(self, self.__universe, self.__executable)
     pipeline.AnalysisJob.__init__(self, None)
 
     self.add_condor_cmd('getenv','True')
+    self.add_condor_cmd('accounting_group', accgroup)
+    self.add_condor_cmd('accounting_group_user', accuser)
 
     self.set_stdout_file(logpath+'/collate_results-$(cluster).out')
     self.set_stderr_file(logpath+'/collate_results-$(cluster).err')

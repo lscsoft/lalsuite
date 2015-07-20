@@ -219,7 +219,7 @@ LIGOTimeGPS *XLALGPSMultiply( LIGOTimeGPS *gps, REAL8 x )
   /* split seconds and multiplicand x into leading-order and low-order
    * components */
 
-  slo = seconds % (1<<17);
+  slo = seconds % (1<<16);
   shi = seconds - slo;
   split_double(x, &xhi, &xlo);
 

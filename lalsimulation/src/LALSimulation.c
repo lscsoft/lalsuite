@@ -17,7 +17,6 @@
  *  MA  02111-1307  USA
  */
 
-
 /*
  * ============================================================================
  *
@@ -42,7 +41,6 @@
 #include <lal/TimeFreqFFT.h>
 #include <lal/Window.h>
 #include "check_series_macros.h"
-
 
 /*
  * ============================================================================
@@ -72,15 +70,18 @@ static unsigned long round_up_to_power_of_two(unsigned long x)
 
 
 /**
- * Turn a detector prefix string into a LALDetector structure.  The first
- * two characters of the input string are used as the instrument name,
- * which allows channel names in the form "H1:LSC-STRAIN" to be used.  The
- * return value is a pointer into the lalCachedDetectors array, so
- * modifications to the contents are global.  Make a copy of the structure
- * if you want to modify it safely.
+ * @brief Turn a detector prefix string into a LALDetector structure.
+ * @details
+ * The first two characters of the input string are used as the instrument
+ * name, which allows channel names in the form `H1:LSC-STRAIN` to be used.
+ * The return value is a pointer into the lalCachedDetectors array, so
+ * modifications to the contents are global.  Make a copy of the structure if
+ * you want to modify it safely.
+ * @param[in] string The detector prefix string.
+ * @returns
+ * A cached LALDetector structure corresponding to the supplied prefix.
+ * @retval NULL Unrecognized prefix string.
  */
-
-
 const LALDetector *XLALDetectorPrefixToLALDetector(
 	const char *string
 )
@@ -162,47 +163,58 @@ REAL8TimeSeries * XLALSimQuasiPeriodicInjectionREAL8TimeSeries( REAL8TimeSeries 
 
 
 /**
- * Input
+ * @brief Transforms the waveform polarizations into a detector strain
+ * @details
+ * This routine takes the plus and cross waveform polarizations, along
+ * with the sky position, polarization angle, and detector structure,
+ * and computes the external strain on the detector.
  *
- * - h+ and hx time series for the injection with their epochs set to the
- * start of those time series at the geocentre (for simplicity the epochs
- * must be the same, and they must have the same length and sample rates),
+ * The input time series should have their epochs set to the start of
+ * those time series at the geocetre (for simplicity the epochs must be
+ * the same, and they must have the same length and sample rates)
  *
- * - the right ascension and declination of the source in radians.
+ * @param[in] hplus Pointer to a REAL8TimeSeries containing the plus polarization waveform
+ * @param[in] hcross Pointer to a REAL8TimeSeries containing the cross polarization waveform
+ * @param[in] right_ascension The right ascension of the source in radians
+ * @param[in] declination The declination of the source in radians
+ * @param[in] psi The polarization angle giving the orientation of the wave co-ordinate system in radians
+ * @param[in] detector Pointer to a LALDetector structure for the detector into which the injection is destined to be injected
  *
- * - the orientation of the wave co-ordinate system, psi, in radians.
- *
- * - the detector into which the injection is destined to be injected,
- *
- * Output
- *
+ * @returns
  * The strain time series as seen in the detector, with the epoch set to
  * the start of the time series at that detector.  The output time series
  * units are the same as the two input time series (which must both have
  * the same sample units).
  *
- * Notes
+ * @retval NULL Failure
  *
+ * @note
  * A 19-sample Welch-windowed sinc kernel is used for sub-sample
  * interpolation.  See XLALREAL8TimeSeriesInterpEval() for more
  * information, and consider the frequency response of this kernel when
  * using this function with injections whose frequency content approaches
  * the Nyquist frequency.
- *
+ * @n@n
  * The geometric delay and antenna response are only recalculated every 250
- * ms.  The Earth rotates through 7e-5 rad/s, therefore given a radius of
- * 6e6 m and c=3e8 m/s, the maximum geometric speed for points on the
- * surface is about 1.5 us/s.  Updating the detector response and geometric
- * delay every 250 ms means the antenna response is accurate to about +/-
- * 20 urad and the geometric delay to about +/- 300 ns (about 0.01 sample
- * at 32 kHz).  The mapping from UTC to sidereal time is only accurate to
- * +/- 900 ms, so assuming the Earth's orientation to be fixed for 250 ms
- * at a time is not the dominant source of Earth orientation error in these
- * calculations, but one should be aware of the periodic nature of the
- * updates if extreme phase stability is required.
+ * ms --- the Earth's rotation is modelled as discontinuous jumps occurring
+ * at a rate of 4 Hz.  The Earth rotates at 7e-5 rad/s, therefore given a
+ * radius of 6e6 m and c=3e8 m/s, the maximum geometric speed for points on
+ * the surface is about 1.5 us/s.  Updating the detector response and
+ * geometric delay every 250 ms means the antenna response is accurate to
+ * about +/- 20 urad and the geometric delay to about +/- 300 ns (about
+ * 0.01 sample at 32 kHz).  Because we use UTC (instead of UT1) sidereal
+ * time is only accurate to +/- 900 ms, so assuming the Earth's orientation
+ * to be fixed for 250 ms at a time is not the dominant source of Earth
+ * orientation error in these calculations, but one should be aware of the
+ * periodic nature of the updates if extreme phase stability is required.
+ * @n@n
+ * The output time series is padded to capture the interpolation kernel
+ * structure resulting from possible sharp edges at the start or end of the
+ * input time series data.  Neglecting the padding for the interpolation
+ * kernel's impulse response, the output time series is, in general, not
+ * the same duration as the input time series due to Doppler compression or
+ * resulting from Earth rotation.
  */
-
-
 REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 	const REAL8TimeSeries *hplus,
 	const REAL8TimeSeries *hcross,
@@ -221,14 +233,24 @@ REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 	double fplus = XLAL_REAL8_FAIL_NAN;
 	double fcross = XLAL_REAL8_FAIL_NAN;
 	double geometric_delay = XLAL_REAL8_FAIL_NAN;
+	LIGOTimeGPS t;	/* a time */
 	double dt;	/* an offset */
 	char *name;
 	REAL8TimeSeries *h = NULL;
 	unsigned i;
 
+	/* check input */
+
 	LAL_CHECK_VALID_SERIES(hplus, NULL);
 	LAL_CHECK_VALID_SERIES(hcross, NULL);
 	LAL_CHECK_CONSISTENT_TIME_SERIES(hplus, hcross, NULL);
+	/* test that the input's length can be treated as a signed valued
+	 * without overflow, and that adding the kernel length plus the an
+	 * Earth diameter's worth of samples won't overflow */
+	if((int) hplus->data->length < 0 || (int) (hplus->data->length + kernel_length + 2.0 * LAL_REARTH_SI / LAL_C_SI / hplus->deltaT) < 0) {
+		XLALPrintError("%s(): error: input series too long\n", __func__);
+		XLAL_ERROR_NULL(XLAL_EBADLEN);
+	}
 
 	/* generate name */
 
@@ -237,27 +259,55 @@ REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 		goto error;
 	sprintf(name, "%s injection", detector->frDetector.prefix);
 
-	/* allocate output time series.  include 2 and bit times the radius
-	 * of the Earth to accomodate Doppler-induced dilation of the
-	 * waveform */
+	/* allocate output time series.  the time series' duration is
+	 * adjusted to account for Doppler-induced dilation of the
+	 * waveform, and is padded to accomodate ringing of the
+	 * interpolation kernel.  the sign of dt follows from the
+	 * observation that time stamps in the output time series are
+	 * mapped to time stamps in the input time series by adding the
+	 * output of XLALTimeDelayFromEarthCenter(), so if that number is
+	 * larger at the start of the waveform than at the end then the
+	 * output time series must be longer than the input.  (the Earth's
+	 * rotation is not super-luminal so we don't have to account for
+	 * time reversals in the mapping) */
 
-	h = XLALCreateREAL8TimeSeries(name, &hplus->epoch, hplus->f0, hplus->deltaT, &hplus->sampleUnits, hplus->data->length + (unsigned) ceil(2.0625 * LAL_REARTH_SI / LAL_C_SI / hplus->deltaT));
+	/* time (at geocentre) of end of waveform */
+	t = hplus->epoch;
+	if(!XLALGPSAdd(&t, hplus->data->length * hplus->deltaT)) {
+		XLALFree(name);
+		goto error;
+	}
+	/* change in geometric delay from start to end */
+	dt = XLALTimeDelayFromEarthCenter(detector->location, right_ascension, declination, &hplus->epoch) - XLALTimeDelayFromEarthCenter(detector->location, right_ascension, declination, &t);
+	/* allocate */
+	h = XLALCreateREAL8TimeSeries(name, &hplus->epoch, hplus->f0, hplus->deltaT, &hplus->sampleUnits, (int) hplus->data->length + kernel_length - 1 + ceil(dt / hplus->deltaT));
 	XLALFree(name);
 	if(!h)
 		goto error;
 
-	/* add the detector's geometric delay.  round epoch to an integer
-	 * sample boundary so that XLALSimAddInjectionREAL8TimeSeries() can
-	 * use no-op code path.  note:  we assume a sample boundary occurs
-	 * on the integer second.  if this isn't the case (e.g, some GEO
+	/* shift the epoch so that the start of the input time series
+	 * passes through this detector at the time of the sample at offset
+	 * (kernel_length-1)/2   we assume the kernel is sufficiently short
+	 * that it doesn't matter whether we compute the geometric delay at
+	 * the start or middle of the kernel. */
+
+	geometric_delay = XLALTimeDelayFromEarthCenter(detector->location, right_ascension, declination, &h->epoch);
+	if(XLAL_IS_REAL8_FAIL_NAN(geometric_delay))
+		goto error;
+	if(!XLALGPSAdd(&h->epoch, geometric_delay - (kernel_length - 1) / 2 * h->deltaT))
+		goto error;
+
+	/* round epoch to an integer sample boundary so that
+	 * XLALSimAddInjectionREAL8TimeSeries() can use no-op code path.
+	 * note:  we assume a sample boundary occurs on the integer second.
+	 * if this isn't the case (e.g, time-shifted injections or some GEO
 	 * data) that's OK, but we might end up paying for a second
 	 * sub-sample time shift when adding the the time series into the
-	 * target data stream in XLALSimAddInjectionREAL8TimeSeries() */
+	 * target data stream in XLALSimAddInjectionREAL8TimeSeries().
+	 * don't bother checking for errors, this is changing the timestamp
+	 * by less than 1 sample, if we're that close to overflowing it'll
+	 * be caught in the loop below. */
 
-	dt = XLALTimeDelayFromEarthCenter(detector->location, right_ascension, declination, &h->epoch);
-	if(XLAL_IS_REAL8_FAIL_NAN(dt))
-		goto error;
-	XLALGPSAdd(&h->epoch, dt);
 	dt = XLALGPSModf(&dt, &h->epoch);
 	XLALGPSAdd(&h->epoch, round(dt / h->deltaT) * h->deltaT - dt);
 
@@ -270,8 +320,9 @@ REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 
 	for(i = 0; i < h->data->length; i++) {
 		/* time of sample in detector */
-		LIGOTimeGPS t = h->epoch;
-		XLALGPSAdd(&t, i * h->deltaT);
+		t = h->epoch;
+		if(!XLALGPSAdd(&t, i * h->deltaT))
+			goto error;
 
 		/* detector's response and geometric delay from geocentre
 		 * at that time */
@@ -282,17 +333,12 @@ REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 		if(XLAL_IS_REAL8_FAIL_NAN(fplus) || XLAL_IS_REAL8_FAIL_NAN(fcross) || XLAL_IS_REAL8_FAIL_NAN(geometric_delay))
 			goto error;
 
-		/* time of sample at geocentre.  skip if outside of input
-		 * domain */
-		XLALGPSAdd(&t, geometric_delay);
-		dt = XLALGPSDiff(&t, &hplus->epoch);
-		if(dt < 0.0 || dt >= hplus->data->length * hplus->deltaT) {
-			h->data->data[i] = 0.0;
-			continue;
-		}
+		/* time of sample at geocentre */
+		if(!XLALGPSAdd(&t, geometric_delay))
+			goto error;
 
 		/* evaluate linear combination of interpolators */
-		h->data->data[i] = fplus * XLALREAL8TimeSeriesInterpEval(hplusinterp, &t) + fcross * XLALREAL8TimeSeriesInterpEval(hcrossinterp, &t);
+		h->data->data[i] = fplus * XLALREAL8TimeSeriesInterpEval(hplusinterp, &t, 0) + fcross * XLALREAL8TimeSeriesInterpEval(hcrossinterp, &t, 0);
 		if(XLAL_IS_REAL8_FAIL_NAN(h->data->data[i]))
 			goto error;
 	}
@@ -312,6 +358,8 @@ error:
 
 
 /**
+ * @brief Adds a detector strain time series to detector data.
+ * @details
  * Essentially a wrapper for XLALAddREAL8TimeSeries(), but performs
  * sub-sample re-interpolation to adjust the source time series epoch to
  * lie on an integer sample boundary in the target time series.  This
@@ -320,14 +368,25 @@ error:
  * for the response function turns this feature off (i.e., uses a unit
  * response).
  *
- * NOTE:  the source time series is modified in place by this function!
- *
  * This function accepts source and target time series whose units are not
  * the same, and allows the two time series to be herterodyned (although it
  * currently requires them to have the same heterodyne frequency).
+ *
+ * @param[in,out] target Pointer to the time series into which the strain will
+ * be added
+ *
+ * @param[in,out] h Pointer to the time series containing the detector strain
+ * (the strain data is modified by this routine)
+ *
+ * @param[in] response Pointer to the response function transforming strain to
+ * detector output units, or NULL for unit response.
+ *
+ * @retval 0 Success
+ * @retval <0 Failure
+ *
+ * @attention
+ * The source time series is modified in place by this function!
  */
-
-
 int XLALSimAddInjectionREAL8TimeSeries(
 	REAL8TimeSeries *target,
 	REAL8TimeSeries *h,
@@ -382,10 +441,11 @@ int XLALSimAddInjectionREAL8TimeSeries(
 		REAL8Window *window;
 		unsigned i;
 
-		/* extend the source time series by adding the "aperiodicity
-		 * padding" to the start and end.  for efficiency's sake, make sure
-		 * the new length is a power of two, and don't forget to adjust the
-		 * start index in the target time series. */
+		/* extend the source time series by adding the
+		 * "aperiodicity padding" to the start and end.  for
+		 * efficiency's sake, make sure the new length is a power
+		 * of two, and don't forget to adjust the start index in
+		 * the target time series. */
 
 		i = round_up_to_power_of_two(h->data->length + 2 * aperiodicity_suppression_buffer);
 		if(i < h->data->length) {
@@ -397,9 +457,9 @@ int XLALSimAddInjectionREAL8TimeSeries(
 		if(!XLALResizeREAL8TimeSeries(h, -(int) (i - h->data->length) / 2, i))
 			XLAL_ERROR(XLAL_EFUNC);
 
-		/* transform source time series to frequency domain.  the FFT
-		 * function populates the frequency series' metadata with the
-		 * appropriate values. */
+		/* transform source time series to frequency domain.  the
+		 * FFT function populates the frequency series' metadata
+		 * with the appropriate values. */
 
 		tilde_h = XLALCreateCOMPLEX16FrequencySeries(NULL, &h->epoch, 0, 0, &lalDimensionlessUnit, h->data->length / 2 + 1);
 		plan = XLALCreateForwardREAL8FFTPlan(h->data->length, 0);
@@ -415,8 +475,8 @@ int XLALSimAddInjectionREAL8TimeSeries(
 			XLAL_ERROR(XLAL_EFUNC);
 		}
 
-		/* apply sub-sample time correction and optional response function
-		 * */
+		/* apply sub-sample time correction and optional response
+		 * function */
 
 		for(i = 0; i < tilde_h->data->length; i++) {
 			const double f = tilde_h->f0 + i * tilde_h->deltaF;
@@ -426,20 +486,22 @@ int XLALSimAddInjectionREAL8TimeSeries(
 
 			fac = cexp(-I * LAL_TWOPI * f * start_sample_frac * target->deltaT);
 
-			/* divide the source by the response function.  if a
-			 * frequency is required that lies outside the domain of
-			 * definition of the response function, then the response
-			 * is assumed equal to its value at the nearest edge of the
-			 * domain of definition.  within the domain of definition,
-			 * frequencies are rounded to the nearest bin.  if the
-			 * response function is zero in some bin, then the source
-			 * data is zeroed in that bin (instead of dividing by 0).
-			 * */
+			/* divide the source by the response function.  if
+			 * a frequency is required that lies outside the
+			 * domain of definition of the response function,
+			 * then the response is assumed equal to its value
+			 * at the nearest edge of the domain of definition.
+			 * within the domain of definition, frequencies are
+			 * rounded to the nearest bin.  if the response
+			 * function is zero in some bin, then the source
+			 * data is zeroed in that bin (instead of dividing
+			 * by 0).  */
 
-			/* FIXME:  should we use GSL to construct an interpolator
-			 * for the modulus and phase as functions of frequency, and
-			 * use that to evaluate the response?  instead of rounding
-			 * to nearest bin? */
+			/* FIXME:  should we use GSL to construct an
+			 * interpolator for the modulus and phase as
+			 * functions of frequency, and use that to evaluate
+			 * the response?  instead of rounding to nearest
+			 * bin? */
 
 			if(response) {
 				int j = floor((f - response->f0) / response->deltaF + 0.5);
@@ -458,21 +520,22 @@ int XLALSimAddInjectionREAL8TimeSeries(
 			tilde_h->data->data[i] *= fac;
 		}
 
-		/* adjust DC and Nyquist components.  the DC component must always
-		 * be real-valued.  because we have adjusted the source time series
-		 * to have a length that is an even integer (we've made it a power
-		 * of 2) the Nyquist component must also be real valued. */
+		/* adjust DC and Nyquist components.  the DC component must
+		 * always be real-valued.  because we have adjusted the
+		 * source time series to have a length that is an even
+		 * integer (we've made it a power of 2) the Nyquist
+		 * component must also be real valued. */
 
 		if(response) {
-			/* a response function has been provided.  zero the DC and
-			 * Nyquist components */
+			/* a response function has been provided.  zero the
+			 * DC and Nyquist components */
 			if(tilde_h->f0 == 0.0)
 				tilde_h->data->data[0] = 0.0;
 			tilde_h->data->data[tilde_h->data->length - 1] = 0.0;
 		} else {
-			/* no response has been provided.  set the phase of the DC
-			 * component to 0, set the imaginary component of the
-			 * Nyquist to 0 */
+			/* no response has been provided.  set the phase of
+			 * the DC component to 0, set the imaginary
+			 * component of the Nyquist to 0 */
 			if(tilde_h->f0 == 0.0)
 				tilde_h->data->data[0] = cabs(tilde_h->data->data[0]);
 			tilde_h->data->data[tilde_h->data->length - 1] = creal(tilde_h->data->data[tilde_h->data->length - 1]);
@@ -491,13 +554,14 @@ int XLALSimAddInjectionREAL8TimeSeries(
 		if(i)
 			XLAL_ERROR(XLAL_EFUNC);
 
-		/* the deltaT can get "corrupted" by floating point round-off
-		 * during its trip through the frequency domain.  since this
-		 * function starts by confirming that the sample rate of the source
-		 * matches that of the target time series, we can use the target
-		 * series' sample rate to reset the source's sample rate to its
-		 * original value.  but we do a check to make sure we're not
-		 * masking a real bug */
+		/* the deltaT can get "corrupted" by floating point
+		 * round-off during its trip through the frequency domain.
+		 * since this function starts by confirming that the sample
+		 * rate of the source matches that of the target time
+		 * series, we can use the target series' sample rate to
+		 * reset the source's sample rate to its original value.
+		 * but we do a check to make sure we're not masking a real
+		 * bug */
 
 		if(fabs(h->deltaT - target->deltaT) / target->deltaT > 1e-12) {
 			XLALPrintError("%s(): error: oops, internal sample rate mismatch\n", __func__);
@@ -505,22 +569,24 @@ int XLALSimAddInjectionREAL8TimeSeries(
 		}
 		h->deltaT = target->deltaT;
 
-		/* set source epoch from target epoch and integer sample offset */
+		/* set source epoch from target epoch and integer sample
+		 * offset */
 
 		h->epoch = target->epoch;
 		XLALGPSAdd(&h->epoch, start_sample_int * target->deltaT);
 
-		/* clip half of the "aperiodicity padding" from the start and end
-		 * of the source time series in a continuing effort to suppress
-		 * aperiodicity artifacts. */
+		/* clip half of the "aperiodicity padding" from the start
+		 * and end of the source time series in a continuing effort
+		 * to suppress aperiodicity artifacts. */
 
 		if(!XLALResizeREAL8TimeSeries(h, aperiodicity_suppression_buffer / 2, h->data->length - aperiodicity_suppression_buffer))
 			XLAL_ERROR(XLAL_EFUNC);
 
-		/* apply a Tukey window whose tapers lie within the remaining
-		 * aperiodicity padding. leaving one sample of the aperiodicty
-		 * padding untouched on each side of the original time series
-		 * because the data might have been shifted into it */
+		/* apply a Tukey window whose tapers lie within the
+		 * remaining aperiodicity padding. leaving one sample of
+		 * the aperiodicty padding untouched on each side of the
+		 * original time series because the data might have been
+		 * shifted into it */
 
 		window = XLALCreateTukeyREAL8Window(h->data->length, (double) (aperiodicity_suppression_buffer - 2) / h->data->length);
 		if(!window)
@@ -541,8 +607,9 @@ int XLALSimAddInjectionREAL8TimeSeries(
 }
 
 
-
 /**
+ * @brief Adds a detector strain time series to detector data.
+ * @details
  * Essentially a wrapper for XLALAddREAL4TimeSeries(), but performs
  * sub-sample re-interpolation to adjust the source time series epoch to
  * lie on an integer sample boundary in the target time series.  This
@@ -551,14 +618,25 @@ int XLALSimAddInjectionREAL8TimeSeries(
  * for the response function turns this feature off (i.e., uses a unit
  * response).
  *
- * NOTE:  the source time series is modified in place by this function!
- *
  * This function accepts source and target time series whose units are not
  * the same, and allows the two time series to be herterodyned (although it
  * currently requires them to have the same heterodyne frequency).
+ *
+ * @param[in,out] target Pointer to the time series into which the strain will
+ * be added
+ *
+ * @param[in,out] h Pointer to the time series containing the detector strain
+ * (the strain data is modified by this routine)
+ *
+ * @param[in] response Pointer to the response function transforming strain to
+ * detector output units, or NULL for unit response.
+ *
+ * @retval 0 Success
+ * @retval <0 Failure
+ *
+ * @attention
+ * The source time series is modified in place by this function!
  */
-
-
 int XLALSimAddInjectionREAL4TimeSeries(
 	REAL4TimeSeries *target,
 	REAL4TimeSeries *h,

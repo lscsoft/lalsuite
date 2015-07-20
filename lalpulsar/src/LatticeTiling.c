@@ -307,22 +307,29 @@ static void LT_GetExtremalBounds(
 
 ///
 /// Fast-forward a lattice tiling iterator over its highest tiled dimension.
+/// Return the number of points fast-forwarded over.
 ///
-static void LT_FastForwardIterator(
+static long LT_FastForwardIterator(
   LatticeTilingIterator *itr		///< [in] Lattice tiling iterator
   )
 {
 
   const size_t tn = itr->tiling->tiled_ndim;
 
-  // Get integer point and upper bound in highest tiled dimension
-  const long int_point = gsl_vector_long_get( itr->int_point, tn - 1 );
-  const long int_upper = gsl_vector_long_get( itr->int_upper, tn - 1 );
+  // Get current iteration direction in highest tiled dimension
+  const long direction = gsl_vector_long_get( itr->direction, tn - 1 );
 
-  // Set integer point in highest tiled dimension to upper bound, so that the next call
-  // to XLALNextLatticeTilingPoint() will advance the next-highest tiled dimension
-  gsl_vector_long_set( itr->int_point, tn - 1, int_upper );
-  itr->index += int_upper - int_point;
+  // Get integer point and upper/lower bound in highest tiled dimension
+  const long int_point = gsl_vector_long_get( itr->int_point, tn - 1 );
+  const long int_bound = gsl_vector_long_get( ( direction > 0 ) ? itr->int_upper : itr->int_lower, tn - 1 );
+
+  // Set integer point in highest tiled dimension to upper/lower bound, so that the next
+  // call to XLALNextLatticeTilingPoint() will advance the next-highest tiled dimension
+  const long num_ff_points = labs( int_bound - int_point );
+  gsl_vector_long_set( itr->int_point, tn - 1, int_bound );
+  itr->index += num_ff_points;
+
+  return num_ff_points;
 
 }
 
@@ -360,7 +367,7 @@ static int LT_ComputeStatistics(
   }
 
   // Clone iterator
-  LatticeTilingIterator *itr_clone = XLALCreateLatticeTilingIterator( itr->tiling, itr->itr_ndim, TILING_ORDER_POSITIVE );
+  LatticeTilingIterator *itr_clone = XLALCreateLatticeTilingIterator( itr->tiling, itr->itr_ndim, itr->order );
   XLAL_CHECK( itr_clone != NULL, XLAL_EFUNC );
 
   // Start iterator at first point
@@ -398,11 +405,8 @@ static int LT_ComputeStatistics(
       t_max_points[tj] = GSL_MAX( t_max_points[tj], num_points );
     }
 
-    // Fast-forward iterator over highest tiled dimension.
-    const long int_point = gsl_vector_long_get( itr_clone->int_point, tn - 1 );
-    const long int_upper = gsl_vector_long_get( itr_clone->int_upper, tn - 1 );
-    t_num_points[tn - 1] += int_upper - int_point;
-    LT_FastForwardIterator( itr_clone );
+    // Fast-forward iterator over highest tiled dimension
+    t_num_points[tn - 1] += LT_FastForwardIterator( itr_clone );
 
   }
 
@@ -1190,10 +1194,8 @@ int XLALNextLatticeTilingPoint(
     gsl_vector_long_set_zero( itr->int_point );
     gsl_vector_set_zero( itr->phys_point );
 
-    // Initialise iteration order to -1 for negative order. When resetting dimensions (below):
-    // - TILING_ORDER_POSITIVE ignores this value and sets direction to 1 for positive order
-    // - TILING_ORDER_ALTERNATING flips this value to 1 for an initial positive order
-    gsl_vector_long_set_all( itr->direction, -1 );
+    // Initialise iteration order to 1 for negative order.
+    gsl_vector_long_set_all( itr->direction, 1 );
 
     // Initialise index
     itr->index = 0;
@@ -1203,9 +1205,6 @@ int XLALNextLatticeTilingPoint(
 
     // All dimensions need to be reset
     reset_ti = 0;
-
-    // Iterator is in progress
-    itr->state = 1;
 
   } else {			// Iterator is in progress
 
@@ -1310,22 +1309,16 @@ int XLALNextLatticeTilingPoint(
       long direction = gsl_vector_long_get( itr->direction, ti );
       if( itr->order == TILING_ORDER_ALTERNATING ) {
 
-        // Only switch direction for iterated-over dimensions; otherwise use a positive direction
-        if( ti < itr->tiled_itr_ndim ) {
-
-          // Only switch direction if there is more than one point in this dimension; otherwise keep the same direction
-          if( int_lower_i < int_upper_i ) {
-            direction = -direction;
-          }
-
-        } else {
-          direction = 1;
+        // Only switch direction:
+        // - if iterator is in progress
+        // - for iterated-over dimensions
+        // - if there is more than one point in this dimension
+        if( ( itr->state > 0 ) && ( ti < itr->tiled_itr_ndim ) && ( int_lower_i < int_upper_i ) ) {
+          direction = -direction;
+          gsl_vector_long_set( itr->direction, ti, direction );
         }
 
-      } else {
-        direction = 1;
       }
-      gsl_vector_long_set( itr->direction, ti, direction );
 
       // Set integer point to lower or bound, depending on current direction
       gsl_vector_long_set( itr->int_point, ti, ( direction > 0 ) ? int_lower_i : int_upper_i );
@@ -1345,6 +1338,9 @@ int XLALNextLatticeTilingPoint(
     ++ti;
 
   }
+
+  // Iterator is in progress
+  itr->state = 1;
 
   // Optionally, copy current physical point
   if( point != NULL ) {

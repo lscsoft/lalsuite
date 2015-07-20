@@ -17,12 +17,13 @@
 *  MA  02111-1307  USA
 */
 
-#include <limits.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#define _GNU_SOURCE   /* for realpath() */
 
 #include <config.h>
+#include <stdlib.h>
+#include <limits.h>
+#include <stdio.h>
+#include <string.h>
 
 #ifdef HAVE_REGEX_H
 #include <regex.h>

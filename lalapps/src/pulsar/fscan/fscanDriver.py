@@ -20,7 +20,7 @@ __version__ = '$Revision$'
 # 06/29/2009 gam; Fix options and printing of extra debugging info.
 # 06/29/2009 gam; use ligolw_segment_query instead of LSCsegFind.
 # 08/25/2009 cg; added lines 643 to 652 so that a single frequency band of less than 10 Hz can be run.
-# 10/07/2009 gam; Add -I, --intersect-data option to run ligo_data_find with the --show-times option to find times data exist, and use LIGOtools segexpr to intersect this with the segments.
+# 10/07/2009 gam; Add -I, --intersect-data option to run gw_data_find with the --show-times option to find times data exist, and use LIGOtools segexpr to intersect this with the segments.
 # 10/07/2009 gam; Add -t, --segment-type option to give segment type to use with ligolw_segment_query if segment file is not given (default is IFO:DMT-SCIENCE:1)
 # 12/02/2009 gam; Change checked_freqBand to sft_freqBand, and make sure there are some extra bins in the SFTs to avoid problems at endFreq, since lalapps_spec_avg works on [startFreq,endFreq], not [startFreq,endFreq).
 #25/02/2010 cg; Added extra options to pass the path of ephemerides for source frequency calculations done in spec_avg.c
@@ -71,13 +71,17 @@ Usage: [options]
   -o, --sub-log-path         (optional) path to log files given in .sub files (default is $PWD/logs; this directory must exist and usually should be under a local file system.)
   -N, --channel-name         name of input time-domain channel to read from frames
   -i, --ifo                  (optional) ifo to use with ligolw_segment_query and MakeSFTDAG: e.g., H1, H2, L1, G1; PEM channels can start with H0, L0, or G0 (default: use start of channel name)
-  -I, --intersect-data       (optional) Run ligo_data_find with the --show-times option to find times data exist, and use LIGOtools segexpr to intersect this with the segments.
+  -I, --intersect-data       (optional) Run gw_data_find with the --show-times option to find times data exist, and use LIGOtools segexpr to intersect this with the segments.
   -u, --frame-struct-type    (optional) string specifying the input frame structure and data type. Must begin with ADC_ or PROC_ followed by REAL4, REAL8, INT2, INT4, or INT8; default: ADC_REAL4; -H is the same as PROC_REAL8.
   -F, --start-freq           (optional) start frequency of the SFTs (default is 48 Hz).
   -B, --band                 (optional) frequency band of the SFTs (default is 100 Hz).
   -b, --sub-band             (optional) divide frequency band into sub bands of this size (default is 10 Hz).
   -O, --plot-output-path     (optional) if given then Matlab jobs run and put output plots and data in this directory.
   -m, --matlab-path          (optional) Path to matlab installation, e.g., /ldcg/matlab_r2008a. (Required if --plot-output-path is given.)
+  -A, --accounting-group     (optional) accounting group tag to be added to the condor submit files.
+  -U, --accounting-group-user  (optional) accounting group albert.einstein username to be added to the condor submit files.
+  -n, --max-jobs             (optional) gives -maxjobs to use with condor_submit_dag. (Default is -maxjobs 2.)
+  -w, --window-type          (optional) type of windowing of time-domain to do before generating SFTs (1 = Tukey given by Matlab, 2 = Tukey given in lalapps/src/pulsar/make_sfts.c, 3 = Hann given by Matlab; default is 3)
   -W, --html-filename        (optional) path and filename of output html file that displays output plots and data.
   -r  --html-reference-path  (optional) path to already existing reference output plots and data for display on html page.
   -e  --html-ref-ifo-epoch   (optional) string that give ifo and GPS start and end times of reference plots, e.g.,H1_840412814_845744945.
@@ -102,7 +106,7 @@ Usage: [options]
 ####################################
 # PARSE COMMAND LINE OPTIONS 
 #
-shortop = "s:L:G:d:x:M:k:T:p:f:o:N:i:w:P:u:v:c:F:B:b:O:m:W:r:e:q:y:D:X:g:t:l:J:j:E:z:hSHZCRI" #cg; shortop is a string.
+shortop = "s:L:G:d:x:M:k:T:p:f:o:N:i:P:u:v:c:F:B:b:O:m:A:U:n:w:W:r:e:q:y:D:X:g:t:l:J:j:E:z:hSHZCRI" #cg; shortop is a string.
 longop = [  #cg; longopt is a list
   "help",
   "analysis-start-time=",
@@ -123,7 +127,6 @@ longop = [  #cg; longopt is a list
   "ifo=",
   "intersect-data",
   "frame-struct-type=",
-  "window-type=",
   "overlap-fraction=",
   "sft-version=",
   "comment-field=",
@@ -132,6 +135,10 @@ longop = [  #cg; longopt is a list
   "sub-band=",
   "plot-output-path=",
   "matlab-path=",
+  "accounting-group=",
+  "accounting-group-user=",
+  "max-jobs=",  
+  "window-type=",
   "html-filename=",
   "html-reference-path=",
   "html-ref-ifo-epoch=",
@@ -181,7 +188,6 @@ segIFO = None
 intersectData = False
 makeSFTIFO = None
 frameStructType = None
-windowType = 1
 overlapFraction = 0.0
 sftVersion = 1
 commentField = None
@@ -189,6 +195,10 @@ startFreq = 48.0
 freqBand = 50.0
 freqSubBand = 10.0
 plotOutputPath = None
+accountingGroup = "ligo.prod.o1.detchar.linefind.fscan"
+accountingGroupUser = "gregory.mendell"
+maxJobs = 2
+windowType = 3
 matlabPath = None
 makeMatlabPlots = False
 htmlFilename = None
@@ -249,8 +259,6 @@ for o, a in opts:
     intersectData = True
   elif o in ("-u", "--frame-struct-type"):
     frameStructType = a
-  elif o in ("-w", "--window-type"):
-    windowType = int(a)
   elif o in ("-P", "--overlap-fraction"):
     overlapFraction = float(a)
   elif o in ("-v", "--sft-version"):
@@ -265,6 +273,14 @@ for o, a in opts:
     plotOutputPath = a
   elif o in ("-m", "--matlab-path"):
     matlabPath = a
+  elif o in ("-A", "--accounting-group"):
+    accountingGroup = a
+  elif o in ("-U", "--accounting-group-user"):
+    accountingGroupUser = a
+  elif o in ("-n", "--max-jobs"):
+    maxJobs = int(a)
+  elif o in ("-w", "--window-type"):
+    windowType = int(a)
   elif o in ("-W", "--html-filename"):
     htmlFilename = a
   elif o in ("-r", "--html-reference-path"):
@@ -504,19 +520,19 @@ if (createSFTs):
   #
 
   if intersectData:
-    # Get the segments the data exist from ligo_data_find
+    # Get the segments the data exist from gw_data_find
     dataFindSegmentFile = 'tmpDataFindSegs%stmp.txt' % tagString 
-    dataFindCommand = "ligo_data_find -s %d -e %d -o %s -t %s -u file --lal-cache --show-times > %s" % (analysisStartTime,analysisEndTime,site,inputDataType,dataFindSegmentFile)
+    dataFindCommand = "gw_data_find -s %d -e %d -o %s -t %s -u file --lal-cache --show-times > %s" % (analysisStartTime,analysisEndTime,site,inputDataType,dataFindSegmentFile)
     print >> sys.stdout,"Trying: ",dataFindCommand,"\n"
     try:
       dataFindExit = os.system(dataFindCommand)
       if (dataFindExit > 0):
-         print >> sys.stderr, 'ligo_data_find failed: %s \n' % dataFindExit
+         print >> sys.stderr, 'gw_data_find failed: %s \n' % dataFindExit
          sys.exit(1)
       else:
-         print >> sys.stderr, 'ligo_data_find succeeded! \n'
+         print >> sys.stderr, 'gw_data_find succeeded! \n'
     except:
-      print >> sys.stderr, 'ligo_data_find failed: %s \n' % dataFindExit
+      print >> sys.stderr, 'gw_data_find failed: %s \n' % dataFindExit
       sys.exit(1)
 
     # Intersect the segments to run on with the segments data exist
@@ -577,13 +593,17 @@ if (createSFTs):
      sft_freqBand = 2
   else:
      sft_freqBand = freqBand + 1;
-  makeDAGCommand = 'MakeSFTDAG -f %s -G %s -d %s -x %d -k %d -T %d -F %d -B %d -p %s -N %s -m 1 -o %s -X %s -Z -g %s -v %d' % (sftDAGFile,tagString,inputDataType,extraDatafindTime,filterKneeFreq,timeBaseline,startFreq,sft_freqBand,pathToSFTs,channelName,subLogPath,miscDesc,segmentFile,sftVersion)
+  makeDAGCommand = 'MakeSFTDAG -f %s -G %s -d %s -x %d -k %d -T %d -F %d -B %d -p %s -N %s -m 1 -o %s -X %s -Z -g %s -v %d -w %d' % (sftDAGFile,tagString,inputDataType,extraDatafindTime,filterKneeFreq,timeBaseline,startFreq,sft_freqBand,pathToSFTs,channelName,subLogPath,miscDesc,segmentFile,sftVersion,windowType)
   if (useHoT):
      makeDAGCommand = makeDAGCommand + ' -H'
   if (makeSFTIFO != None):
      makeDAGCommand = makeDAGCommand + ' -i %s' % makeSFTIFO
   if (frameStructType != None):
      makeDAGCommand = makeDAGCommand + ' -u %s' % frameStructType
+  if (accountingGroup != None):
+     makeDAGCommand = makeDAGCommand + ' -A %s' % accountingGroup
+  if (accountingGroupUser != None):
+     makeDAGCommand = makeDAGCommand + ' -U %s' % accountingGroupUser   
   print >> sys.stdout,"Trying: ",makeDAGCommand,"\n"
   try:
     makeDAGExit = os.system(makeDAGCommand)
@@ -648,6 +668,10 @@ spectrumAverageLogFile = subLogPath + '/' + 'spectrumAverage_' + dagFileName + '
 spectrumAverageFID.write('universe = vanilla\n') #cg; write these followig lines into the file.
 spectrumAverageFID.write('executable = $ENV(SPECAVG_PATH)/lalapps_spec_avg\n')
 spectrumAverageFID.write('arguments = $(argList)\n')
+if (accountingGroup != None):
+   spectrumAverageFID.write('accounting_group = %s\n' % accountingGroup)
+if (accountingGroupUser != None):
+   spectrumAverageFID.write('accounting_group_user = %s\n' % accountingGroupUser)
 spectrumAverageFID.write('log = %s\n' % spectrumAverageLogFile)
 spectrumAverageFID.write('error = %s/spectrumAverage_$(tagstring).err\n' % logPath)
 spectrumAverageFID.write('output = %s/spectrumAverage_$(tagstring).out\n' % logPath)
@@ -665,6 +689,10 @@ if (makeMatlabPlots):
   runMatlabScriptFID.write('executable = $ENV(PLOTSPECAVGOUTPUT_PATH)/run_plotSpecAvgOutput.sh\n')
   runMatlabScriptFID.write('getenv = True\n')
   runMatlabScriptFID.write('arguments = $(argList)\n')
+  if (accountingGroup != None):
+     runMatlabScriptFID.write('accounting_group = %s\n' % accountingGroup)
+  if (accountingGroupUser != None):
+     runMatlabScriptFID.write('accounting_group_user = %s\n' % accountingGroupUser)
   runMatlabScriptFID.write('log = %s\n' % runMatlabScriptLogFile)
   runMatlabScriptFID.write('error = %s/runMatlabPlotScript_$(tagstring).err\n' % logPath)
   runMatlabScriptFID.write('output = %s/runMatlabPlotScript_$(tagstring).out\n' % logPath)
@@ -940,7 +968,7 @@ if (htmlFilename != None):
 ###################################################
 # SUBMIT THE .dag FILE TO CONDOR; RUN condor_submit_dag
 #
-runDAGCommand = 'condor_submit_dag %s' % dagFileName
+runDAGCommand = 'condor_submit_dag -maxjobs %d %s' % (maxJobs,dagFileName)
 print >> sys.stdout,"Trying: ",runDAGCommand,"\n"
 if (runCondorSubmitDag):
    try:

@@ -19,6 +19,9 @@
  *  MA  02111-1307  USA
  */
 
+#define _GNU_SOURCE   /* for alphasort() and scandir() */
+#include <dirent.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -30,7 +33,6 @@
 #include <time.h>
 #include <signal.h>
 #include <math.h>
-#include <dirent.h>
 #include <sys/stat.h>
 
 /*LAL Functions */

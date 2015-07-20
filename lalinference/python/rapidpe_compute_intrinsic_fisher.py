@@ -40,6 +40,8 @@ lsctables.use_in(ligolw.LIGOLWContentHandler)
 from glue.ligolw.utils import process
 from glue import pipeline
 
+from pylal import series
+
 from lalinference.rapid_pe import lalsimutils as lsu
 from lalinference.rapid_pe import effectiveFisher as eff
 from lalinference.rapid_pe import common_cl
@@ -49,14 +51,17 @@ __author__ = "Evan Ochsner <evano@gravity.phys.uwm.edu>, Chris Pankow <pankow@gr
 optp = OptionParser()
 # Options needed by this program only.
 optp.add_option("-X", "--mass-points-xml", action="store_true", help="Output mass points as a sim_inspiral table.")
+optp.add_option("--save-ellipsoid-data", action="store_true", help="Save the parameters and eigenvalues of the ellipsoid.")
+
 optp.add_option("-N", "--N-mass-pts", type=int, default=200, help="Number of intrinsic parameter (mass) values at which to compute marginalized likelihood. Default is 200.")
 optp.add_option("-t", "--N-tidal-pts", type=int, default=None, help="Number of intrinsic parameter (tidal) values at which to compute marginalized likelihood. Default is None, meaning 'don't grid in lambda'")
 optp.add_option("--linear-spoked", action="store_true", help="Place mass pts along spokes linear in radial distance (if omitted placement will be random and uniform in volume")
+optp.add_option("--uniform-spoked", action="store_true", help="Place mass pts along spokes uniform in radial distance (if omitted placement will be random and uniform in volume")
 optp.add_option("--match-value", type=float, default=0.97, help="Use this as the minimum match value. Default is 0.97")
-optp.add_option("--save-ellipsoid-data", action="store_true", help="Save the parameters and eigenvalues of the ellipsoid.")
 
 # Options transferred to ILE
-optp.add_option("-C", "--channel-name", action="append", help="instrument=channel-name, e.g. H1=FAKE-STRAIN. Can be given multiple times for different instruments.")
+optp.add_option("-C", "--channel-name", action="append", help="instrument=channel-name, e.g. H1=FAKE-STRAIN. Not required except to name the output file properly. Can be given multiple times for different instruments.")
+optp.add_option("-p", "--psd-file", action="append", help="instrument=psd-file-name e.g. H1=psd.xml.gz. Can be given multiple times for different instruments.")
 optp.add_option("-x", "--coinc-xml", help="gstlal_inspiral XML file containing coincidence information.")
 optp.add_option("-s", "--sim-xml", help="XML file containing injected event information.")
 
@@ -79,19 +84,29 @@ if opts.delta_eff_lambda and opts.eff_lambda is None:
 if opts.N_tidal_pts is not None and (opts.delta_eff_lambda or opts.eff_lambda):
     exit("You asked for a specific value of lambda and gridding. You can't have it both ways.")
 
+if opts.uniform_spoked and opts.linear_spoked:
+    exit("Specify only one point placement scheme.")
+
 #
 # Get trigger information from coinc xml file
 #
 
 # Get end time from coinc inspiral table or command line
-xmldoc = None
+xmldoc, sim_row = None, None
 if opts.coinc_xml is not None:
     xmldoc = utils.load_filename(opts.coinc_xml, contenthandler=ligolw.LIGOLWContentHandler)
-    coinc_table = table.get_table(xmldoc, lsctables.CoincInspiralTable.tableName)
+    coinc_table = lsctables.CoincInspiralTable.get_table(xmldoc)
     assert len(coinc_table) == 1
     coinc_row = coinc_table[0]
     event_time = coinc_row.get_end()
     print "Coinc XML loaded, event time: %s" % str(coinc_row.get_end())
+elif opts.sim_xml is not None:
+    xmldoc = utils.load_filename(opts.sim_xml, contenthandler=ligolw.LIGOLWContentHandler)
+    sim_table = lsctables.SimInspiralTable.get_table(xmldoc)
+    assert len(sim_table) == 1
+    sim_row = sim_table[0]
+    event_time = sim_row.get_end()
+    print "Sim XML loaded, event time: %s" % str(sim_row.get_end())
 elif opts.event_time is not None:
     event_time = glue.lal.LIGOTimeGPS(opts.event_time)
     print "Event time from command line: %s" % str(event_time)
@@ -101,6 +116,8 @@ else:
 # get masses from sngl_inspiral_table
 if opts.mass1 is not None and opts.mass2 is not None:
     m1, m2 = opts.mass1, opts.mass2
+elif sim_row:
+    m1, m2 = sim_row.mass1, sim_row.mass2
 elif xmldoc is not None:
     sngl_inspiral_table = table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
     assert len(sngl_inspiral_table) == len(coinc_row.ifos.split(","))
@@ -109,7 +126,6 @@ elif xmldoc is not None:
         # NOTE: gstlal is exact match, but other pipelines may not be
         assert m1 is None or (sngl_row.mass1 == m1 and sngl_row.mass2 == m2)
         m1, m2 = sngl_row.mass1, sngl_row.mass2
-    event_time = glue.lal.LIGOTimeGPS(opts.event_time)
 else:
     raise ValueError("Need either --mass1 --mass2 or --coinc-xml to retrieve masses.")
 
@@ -117,18 +133,11 @@ m1_SI = m1 * lal.MSUN_SI
 m2_SI = m2 * lal.MSUN_SI
 print "Computing marginalized likelihood in a neighborhood about intrinsic parameters mass 1: %f, mass 2 %f" % (m1, m2)
 
-#
-# FIXME: Hardcoded values - eventually promote to command line arguments
-#
-template_min_freq = 40.
-ip_min_freq = 40.
-eff_fisher_psd = lal.LIGOIPsd
-analyticPSD_Q = True
-# The next 4 lines set the maximum size of the region to explore
-min_mc_factor = 0.9
-max_mc_factor = 1.1
-min_eta = 0.05
-max_eta = 0.25
+
+# The next 4 values set the maximum size of the region to explore
+min_mc_factor, max_mc_factor = 0.9, 1.1
+min_eta, max_eta = 0.05, 0.25
+
 # Control evaluation of the effective Fisher grid
 NMcs = 11
 NEtas = 11
@@ -149,17 +158,35 @@ else:
     lambda1, lambda2 = 0, 0
 
 #
+# FIXME: Hardcoded values - eventually promote to command line arguments
+#
+template_min_freq = 40.
+ip_min_freq = 40.
+
+#
 # Setup signal and IP class
 #
 param_names = ['Mc', 'eta']
 McSIG = lsu.mchirp(m1_SI, m2_SI)
 etaSIG = lsu.symRatio(m1_SI, m2_SI)
-PSIG = lsu.ChooseWaveformParams(
-        m1=m1_SI, m2=m2_SI,
-        lambda1=lambda1, lambda2=lambda2,
-        fmin=template_min_freq,
-        approx=lalsim.GetApproximantFromString(opts.approximant)
-        )
+if sim_row is not None:
+    PSIG = lsu.ChooseWaveformParams(
+            m1=m1_SI, m2=m2_SI,
+            lambda1=lambda1, lambda2=lambda2,
+            fmin=template_min_freq,
+            approx=lalsim.GetApproximantFromString(opts.approximant)
+            )
+    PSIG.copy_lsctables_sim_inspiral(sim_row)
+    # FIXME: Not converting this causes segfaults with python's built in copying
+    # module
+    PSIG.tref = float(PSIG.tref)
+else:
+    PSIG = lsu.ChooseWaveformParams(
+            m1=m1_SI, m2=m2_SI,
+            lambda1=lambda1, lambda2=lambda2,
+            fmin=template_min_freq,
+            approx=lalsim.GetApproximantFromString(opts.approximant)
+            )
 # Find a deltaF sufficient for entire range to be explored
 PTEST = PSIG.copy()
 
@@ -173,6 +200,33 @@ deltaF_2 = lsu.findDeltaF(PTEST)
 PSIG.deltaF = min(deltaF_1, deltaF_2)
 
 PTMPLT = PSIG.copy()
+
+if opts.psd_file is None:
+    eff_fisher_psd = lal.LIGOIPsd
+    analyticPSD_Q = True
+else:
+    psd_map = common_cl.parse_cl_key_value(opts.psd_file)
+    for inst, psdfile in psd_map.items():
+        if psd_map.has_key(psdfile):
+            psd_map[psdfile].add(inst)
+        else:
+            psd_map[psdfile] = set([inst])
+        del psd_map[inst]
+
+    for psdf, insts in psd_map.iteritems():
+        xmldoc = utils.load_filename(psdf, contenthandler=series.LIGOLWContentHandler)
+        # FIXME: How to handle multiple PSDs
+        for inst in insts:
+            psd = series.read_psd_xmldoc(xmldoc)[inst]
+            psd_f_high = len(psd.data)*psd.deltaF
+            f = np.arange(0, psd_f_high, psd.deltaF)
+            fvals = np.arange(0, psd_f_high, PSIG.deltaF)
+
+            def anon_interp(newf):
+                return np.interp(newf, f, psd.data)
+            eff_fisher_psd = np.array(map(anon_interp, fvals))
+
+    analyticPSD_Q = False
 
 IP = lsu.Overlap(fLow = ip_min_freq,
         deltaF = PSIG.deltaF,
@@ -323,7 +377,10 @@ if opts.mass_points_xml:
             sim_insp.psi0, sim_insp.psi3 = opts.eff_lambda or l1, opts.delta_eff_lambda or 0
             sim_insp_tbl.append(sim_insp)
     xmldoc.childNodes[0].appendChild(sim_insp_tbl)
-    ifos = "".join([o.split("=")[0][0] for o in opts.channel_name])
+    if opts.channel_name:
+        ifos = "".join([o.split("=")[0][0] for o in opts.channel_name])
+    else:
+        ifos = "HLV"
     start = int(event_time)
     fname = "%s-MASS_POINTS-%d-1.xml.gz" % (ifos, start)
     utils.write_filename(xmldoc, fname, gz=True)

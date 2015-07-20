@@ -17,6 +17,36 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * @defgroup lalfr_dump lalfr-dump
+ * @ingroup lalframe_programs
+ *
+ * @brief Prints channel and detector metadata from frame files
+ *
+ * ### Synopsis
+ *
+ *     lalfr-dump [file ...]
+ *
+ * ### Description
+ *
+ * The `lalfr-dump` utility dumps information about the contents of each `file`
+ * to the standard output.  The `file` operands are processed in command-line
+ * order.  If `file` is a single dash (`-`) or absent, `lalfr-dump` reads from
+ * the standard input.  Content dumped includes the detector structures
+ * contained and information about the data channels present.
+ *
+ * ### Example
+ *
+ * The command:
+ *
+ *     lalfr-dump file.gwf
+ *
+ * outputs information about the detector structures and channels con tained in
+ * the `file.gwf`.
+ *
+ * @sa @ref lalfr_print
+ */
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>

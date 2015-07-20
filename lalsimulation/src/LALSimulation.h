@@ -16,6 +16,41 @@
  *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
+/**
+ * @author Kipp Cannon, Jolien Creighton, Teviet Creighton
+ * @addtogroup LALSimulation_h	Header LALSimulation.h
+ * @ingroup lalsimulation_general
+ * @brief Routines to calculate detector strain for general waveforms.
+ * @details
+ * These routines compute the external strain on a detector caused by
+ * a general waveform and inject these waveforms into time series.
+ *
+ * The following example illustrates the basic usage of these routines.
+ *
+ * @code
+ * #include <lal/Date.h>
+ * #include <lal/LALSimulation.h>
+ * ...
+ * LALDetector *detector;
+ * REAL8TimeSeries *data;
+ * REAL8TimeSeries *strain;
+ * REAL8TimeSeries *hplus;
+ * REAL8TimeSeries *hcross;
+ * LIGOTimeGPS geocentric_arrival_time;
+ * double right_ascension, declination, psi;
+ * ...
+ * // get detector data
+ * // generate waveform hplus and hcross
+ * // set geocentric_arrival_time for the injection
+ * // set right_ascension, declination, and psi for the injection
+ * ...
+ * XLALGPSAddGPS(&hplus->epoch, &geocentric_arrival_time);
+ * XLALGPSAddGPS(&hcross->epoch, &geocentric_arrival_time);
+ * detector = XLALDetectorPrefixToLALDetector(data->name);
+ * strain = XLALSimDetectorStrainREAL8TimeSeries(hplus, hcross, right_ascension, declination, psi, detector);
+ * XLALSimAddInjectionREAL8TimeSeries(data, strain, NULL);
+ * @endcode
+ */
 
 #ifndef _LALSIMULATION_H
 #define _LALSIMULATION_H
@@ -29,10 +64,10 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-const LALDetector *XLALDetectorPrefixToLALDetector(
-	const char *string
-);
+/** @{ */
 
+
+const LALDetector *XLALDetectorPrefixToLALDetector(const char *string);
 
 REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 	const REAL8TimeSeries *hplus,
@@ -42,7 +77,6 @@ REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 	REAL8 psi,
 	const LALDetector *detector
 );
-
 
 int XLALSimAddInjectionREAL8TimeSeries(
 	REAL8TimeSeries *target,
@@ -99,6 +133,8 @@ int XLALSimInjectLWLDetectorStrainREAL4TimeSeries(
 	LALDetector *detector,
 	const COMPLEX8FrequencySeries *response
 );
+
+/** @} */
 
 #if 0
 { /* so that editors will match succeeding brace */

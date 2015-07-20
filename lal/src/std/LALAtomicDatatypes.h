@@ -55,10 +55,12 @@ typedef unsigned char BOOLEAN;	/**< Boolean logical type, see \ref LALDatatypes 
 /* Integer types */
 typedef int16_t  INT2;		/**< Two-byte signed integer */
 typedef int32_t  INT4;		/**< Four-byte signed integer. */
-typedef int64_t  INT8;		/**< Eight-byte signed integer; on some platforms this is equivalent to <tt>long int</tt> instead. */
 typedef uint16_t UINT2;		/**< Two-byte unsigned integer. */
 typedef uint32_t UINT4;		/**< Four-byte unsigned integer. */
+#ifndef _NO_INT8_BY_LAL
+typedef int64_t  INT8;		/**< Eight-byte signed integer; on some platforms this is equivalent to <tt>long int</tt> instead. */
 typedef uint64_t UINT8;		/**< Eight-byte unsigned integer; on some platforms this is equivalent to <tt>unsigned long int</tt> instead. */
+#endif
 
 /** MACRO to initialize arbitrary variable 'x' to zero */
 #define XLAL_INIT_MEM(x) memset(&(x), 0, sizeof((x)))

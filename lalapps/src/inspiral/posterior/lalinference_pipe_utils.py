@@ -158,11 +158,54 @@ def open_pipedown_database(database_filename,tmp_space):
     connection = sqlite3.connect(working_filename)
     if tmp_space:
 	dbtables.set_temp_store_directory(connection,tmp_space)
-    dbtables.DBTable_set_connection(connection)
+    #dbtables.DBTable_set_connection(connection)
     return (connection,working_filename)
 
+def get_zerolag_lloid(database_connection, dumpfile=None, gpsstart=None, gpsend=None, max_cfar=-1, min_cfar=-1):
+	"""
+	Returns a list of Event objects
+	from pipedown data base. Can dump some stats to dumpfile if given,
+	and filter by gpsstart and gpsend to reduce the nunmber or specify
+	max_cfar to select by combined FAR
+	"""
+	output={}
+	if gpsstart is not None: gpsstart=float(gpsstart)
+	if gpsend is not None: gpsend=float(gpsend)
+	# Get coincs
+	get_coincs = "SELECT sngl_inspiral.end_time+sngl_inspiral.end_time_ns*1e-9,sngl_inspiral.ifo,coinc_event.coinc_event_id,sngl_inspiral.snr,sngl_inspiral.chisq,coinc_inspiral.combined_far \
+		FROM sngl_inspiral join coinc_event_map on (coinc_event_map.table_name=='sngl_inspiral' and coinc_event_map.event_id ==\
+		sngl_inspiral.event_id) join coinc_event on (coinc_event.coinc_event_id==coinc_event_map.coinc_event_id) \
+		join coinc_inspiral on (coinc_event.coinc_event_id==coinc_inspiral.coinc_event_id) \
+        WHERE coinc_event.time_slide_id=='time_slide:time_slide_id:1'\
+		"
+	if gpsstart is not None:
+		get_coincs=get_coincs+' and coinc_inspiral.end_time+coinc_inspiral.end_time_ns*1.0e-9 > %f'%(gpsstart)
+	if gpsend is not None:
+		get_coincs=get_coincs+' and coinc_inspiral.end_time+coinc_inspiral.end_time_ns*1.0e-9 < %f'%(gpsend)
+	if max_cfar !=-1:
+		get_coincs=get_coincs+' and coinc_inspiral.combined_far < %f'%(max_cfar)
+	if min_cfar != -1:
+		get_coincs=get_coincs+' and coinc_inspiral.combined_far > %f'%(min_cfar)
+	db_out=database_connection.cursor().execute(get_coincs)
+    	extra={}
+	for (sngl_time, ifo, coinc_id, snr, chisq, cfar) in db_out:
+      		coinc_id=int(coinc_id.split(":")[-1])
+	  	if not coinc_id in output.keys():
+			output[coinc_id]=Event(trig_time=sngl_time,timeslide_dict={},event_id=int(coinc_id))
+			extra[coinc_id]={}
+		output[coinc_id].timeslides[ifo]=0
+		output[coinc_id].ifos.append(ifo)
+		extra[coinc_id][ifo]={'snr':snr,'chisq':chisq,'cfar':cfar}
+	if dumpfile is not None:
+		fh=open(dumpfile,'w')
+		for co in output.keys():
+			for ifo in output[co].ifos:
+				fh.write('%s %s %s %s %s %s %s\n'%(str(co),ifo,str(output[co].trig_time),str(output[co].timeslides[ifo]),str(extra[co][ifo]['snr']),str(extra[co][ifo]['chisq']),str(extra[co][ifo]['cfar'])))
+		fh.close()
+	return output.values()
 
-def get_zerolag_pipedown(database_connection, dumpfile=None, gpsstart=None, gpsend=None, max_cfar=-1):
+
+def get_zerolag_pipedown(database_connection, dumpfile=None, gpsstart=None, gpsend=None, max_cfar=-1, min_cfar=-1):
 	"""
 	Returns a list of Event objects
 	from pipedown data base. Can dump some stats to dumpfile if given,
@@ -185,6 +228,8 @@ def get_zerolag_pipedown(database_connection, dumpfile=None, gpsstart=None, gpse
 		get_coincs=get_coincs+' and coinc_inspiral.end_time+coinc_inspiral.end_time_ns*1.0e-9 < %f'%(gpsend)
 	if max_cfar !=-1:
 		get_coincs=get_coincs+' and coinc_inspiral.combined_far < %f'%(max_cfar)
+	if min_cfar != -1:
+		get_coincs=get_coincs+' and coinc_inspiral.combined_far > %f'%(min_cfar)
 	db_out=database_connection.cursor().execute(get_coincs)
     	extra={}
 	for (sngl_time, ifo, coinc_id, snr, chisq, cfar) in db_out:
@@ -450,6 +495,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     self.prenodes={}
     self.datafind_job = pipeline.LSCDataFindJob(self.cachepath,self.logpath,self.config,dax=self.is_dax())
     self.datafind_job.add_opt('url-type','file')
+    if cp.has_option('analysis','accounting_group'):
+      self.datafind_job.add_condor_cmd('accounting_group',cp.get('analysis','accounting_group'))
     self.datafind_job.set_sub_file(os.path.abspath(os.path.join(self.basepath,'datafind.sub')))
     self.preengine_job = EngineJob(self.config, os.path.join(self.basepath,'prelalinference.sub'),self.logpath,ispreengine=True,dax=self.is_dax())
     self.preengine_job.set_grid_site('local')
@@ -503,7 +550,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     # Generate the DAG according to the config given
     for event in self.events: self.add_full_analysis(event)
     self.add_skyarea_followup()
-    self.add_gracedb_FITSskymap_upload(self.events[0],engine=self.engine)
+    if self.config.getboolean('analysis','upload-to-gracedb'):  self.add_gracedb_FITSskymap_upload(self.events[0],engine=self.engine)
     self.dagfilename="lalinference_%s-%s"%(self.config.get('input','gps-start-time'),self.config.get('input','gps-end-time'))
     self.set_dag_file(self.dagfilename)
     if self.is_dax():
@@ -617,7 +664,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       gpsstart=self.config.getfloat('input','gps-start-time')
     if self.config.has_option('input','gps-end-time'):
       gpsend=self.config.getfloat('input','gps-end-time')
-    inputnames=['gps-time-file','injection-file','sngl-inspiral-file','coinc-inspiral-file','pipedown-db','gid']
+    inputnames=['gps-time-file','injection-file','sngl-inspiral-file','coinc-inspiral-file','pipedown-db','gid','gstlal-db']
     ReadInputFromList=sum([ 1 if self.config.has_option('input',name) else 0 for name in inputnames])
     if ReadInputFromList!=1 and (gpsstart is None or gpsend is None):
         return []
@@ -696,15 +743,26 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         if self.config.getboolean('input','ignore-gracedb-psd'):
           downloadgracedbpsd=False
       events = readLValert(gid=gid,flow=flow,gracedb=self.config.get('condor','gracedb'),savepsdpath=self.basepath,downloadpsd=downloadgracedbpsd)
-    # pipedown-database
     else: gid=None
-    if self.config.has_option('input','pipedown-db'):
-      db_connection = open_pipedown_database(self.config.get('input','pipedown-db'),None)[0]
+    # pipedown-database
+    if self.config.has_option('input','gstlal-db'):
+            queryfunc=get_zerolag_lloid
+            dbname=self.config.get('input','gstlal-db')
+    elif self.config.has_option('input','pipedown-db'):
+            queryfunc=get_zerolag_pipedown
+            dbname=self.config.get('input','pipedown-db')
+    else: dbname=None
+    if dbname:
+      db_connection = open_pipedown_database(dbname,None)[0]
       # Timeslides
       if self.config.has_option('input','time-slide-dump'):
         timeslidedump=self.config.get('input','time-slide-dump')
       else:
         timeslidedump=None
+      if self.config.has_option('input','min-cfar'):
+        mincfar=self.config.getfloat('input','min-cfar')
+      else:
+        mincfar=-1
       if self.config.has_option('input','max-cfar'):
 	maxcfar=self.config.getfloat('input','max-cfar')
       else:
@@ -712,7 +770,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       if self.config.get('input','timeslides').lower()=='true':
 	events=get_timeslides_pipedown(db_connection, gpsstart=gpsstart, gpsend=gpsend,dumpfile=timeslidedump,max_cfar=maxcfar)
       else:
-	events=get_zerolag_pipedown(db_connection, gpsstart=gpsstart, gpsend=gpsend, dumpfile=timeslidedump,max_cfar=maxcfar)
+	events=queryfunc(db_connection, gpsstart=gpsstart, gpsend=gpsend, dumpfile=timeslidedump,max_cfar=maxcfar,min_cfar=mincfar)
     if(selected_events is not None):
         used_events=[]
         for i in selected_events:
@@ -1290,7 +1348,7 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     self.set_sub_file(os.path.abspath(submitFile))
     self.add_condor_cmd('getenv','true')
     if self.engine=='lalinferencemcmc' or self.engine=='lalinferencebambimpi':
-      self.binary=cp.get('condor',self.engine)
+      self.binary=cp.get('condor',self.engine.replace('mpi',''))
       self.mpirun=cp.get('condor','mpirun')
       if cp.has_section('mpi'):
         if ispreengine is False:
@@ -1512,7 +1570,7 @@ class EngineNode(pipeline.CondorDAGNode):
         self.add_var_opt('%s-channel'%(ifo),self.channels[ifo])
         if self.flows: self.add_var_opt('%s-flow'%(ifo),self.flows[ifo])
         if self.fhighs: self.add_var_opt('%s-fhigh'%(ifo),self.fhighs[ifo])
-        if self.psds: 
+        if self.psds:
             self.add_var_opt('%s-psd'%(ifo),self.psds[ifo])
             #self.add_input_file(self.psds[ifo])
         if any(self.timeslides): self.add_var_opt('%s-timeslide'%(ifo),self.timeslides[ifo])
@@ -1607,7 +1665,6 @@ class LALInferenceMCMCNode(EngineNode):
     self.add_var_opt('mpirun',li_job.mpirun)
     self.add_var_opt('np',str(li_job.machine_count))
     self.add_var_opt('executable',li_job.binary)
-    self.add_pegasus_profile('condor','request_cpus',li_job.machine_count)
 
   def set_output_file(self,filename):
     self.posfile=filename
@@ -1627,8 +1684,6 @@ class LALInferenceBAMBINode(EngineNode):
       self.add_var_opt('mpirun',li_job.mpirun)
       self.add_var_opt('np',str(li_job.machine_count))
       self.add_var_opt('executable',li_job.binary)
-      self.add_pegasus_profile('condor','request_cpus',li_job.machine_count)
-
 
   def set_output_file(self,filename):
     self.fileroot=filename+'_'

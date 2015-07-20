@@ -144,7 +144,7 @@ sys.stderr = idq.LogFile(logger)
 #===================================================================================================
 ### check lockfile
 if opts.lockfile:
-    idq.dieiflocked( opts.lockfile )
+    lockfp = idq.dieiflocked( opts.lockfile )
 
 #===================================================================================================
 ### read global configuration file
@@ -717,6 +717,8 @@ while gpsstart < gpsstop:
         logger.info('  plotting %s'%figname)
         fignames['fap'][classifier] = figname
         ax.plot(faircoin, faircoin, 'k--')
+        ax.set_xscale('log')
+        ax.set_yscale('log')
         ax.legend(loc='best')
         fig.savefig(figname)
         isp.close(fig)
@@ -730,6 +732,8 @@ while gpsstart < gpsstop:
         logger.info('  plotting %s'%figname)
         fignames['fapUL'][classifier] = figname
         ax.plot(faircoin, faircoin, 'k--')
+        ax.set_xscale('log')
+        ax.set_yscale('log')
         ax.legend(loc='best')
         fig.savefig(figname)
         isp.close(fig)
@@ -742,6 +746,8 @@ while gpsstart < gpsstop:
     logger.info('  plotting %s'%figname)
     fignames['fap']['overlay'] = figname
     ax.plot(faircoin, faircoin, 'k--')
+    ax.set_xscale('log')
+    ax.set_yscale('log')
     ax.legend(loc='best')
     fig.savefig(figname)
     isp.close(fig)
@@ -751,6 +757,8 @@ while gpsstart < gpsstop:
     logger.info('  plotting %s'%figname)
     fignames['fapUL']['overlay'] = figname
     ax.plot(faircoin, faircoin, 'k--')
+    ax.set_xscale('log')
+    ax.set_yscale('log')
     ax.legend(loc='best')
     fig.savefig(figname)
     isp.close(fig)
@@ -1123,17 +1131,18 @@ while gpsstart < gpsstop:
                 figax = isp.rates( ranges, effs[:,ind], color=c[cind], label='%s fap<=%.3e'%(classifier, fap), figax=figax)
                 eff_fap_overlay_figax[ind] = isp.rates( ranges, effs[:,ind], color=color, label=classifier, figax=eff_fap_overlay_figax[ind])
                 cind = (cind+1)%len(c)
-
-            fig, ax = figax
-            ax.set_ylim(ymin=0, ymax=1)
-            ax.set_ylabel('Glitch Detection Efficiency')
-            ax.legend(loc='lower left')
+            if figax:
+                fig, ax = figax
+                ax.set_ylim(ymin=0, ymax=1)
+                ax.set_ylabel('Glitch Detection Efficiency')
+                ax.legend(loc='lower left')
 
             figname = isp.ratefig(output_dir, ifo, "_%s%s_eff"%(classifier, usertag), trend_start, gpsstart+stride-trend_start)
             trending['effatfap'][classifier].append( figname )
             logger.info('  plotting %s'%figname)
-            fig.savefig(figname)
-            isp.close(fig)
+            if figax:
+                fig.savefig(figname)
+                isp.close(fig)
 
         ### clean/glitch rates overlay
         fig, ax = trg_rate_overlay_figax
@@ -1568,7 +1577,7 @@ segment lists -> a form to request segments?
         index.init( title=title, header=header, footer=footer )
 
         ### iterate over existing subdirectories
-        for subdir in sorted(glob.glob("%s/*_*/"%summarydir)):
+        for subdir in sorted(glob.glob("%s/*_*/"%summarydir), reverse=True):
             sub = subdir.split('/')[-2]
             subindex = glob.glob("%s/summary-index*html"%subdir)
             if subindex:
@@ -1593,3 +1602,6 @@ segment lists -> a form to request segments?
     gpsstart += stride
 
 #===================================================================================================
+if opts.lockfile:
+    idq.release(lockfp) ### unlock lockfile
+    os.remove( opts.lockfile )

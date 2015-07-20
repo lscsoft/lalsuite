@@ -73,7 +73,7 @@ xmlNodePtr XLALPulsarSpins2VOTNode(const PulsarSpins *const spins, const char *n
         XLAL_ERROR_NULL(XLAL_EINVAL);
     }
     if(sizeof(*spins)/sizeof(REAL8) != PULSAR_MAX_SPINS) {
-        XLALPrintError("Invalid input parameter: spins (actual size %lu differs from defined size %i)\n", sizeof(*spins)/sizeof(REAL8), PULSAR_MAX_SPINS);
+        XLALPrintError("Invalid input parameter: spins (actual size %zu differs from defined size %i)\n", sizeof(*spins)/sizeof(REAL8), PULSAR_MAX_SPINS);
         XLAL_ERROR_NULL(XLAL_EINVAL);
     }
     if(!name || strlen(name) <= 0) {

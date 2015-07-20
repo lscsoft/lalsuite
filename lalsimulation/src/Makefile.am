@@ -63,6 +63,7 @@ pkginclude_HEADERS = \
 	LALSimNoise.h \
 	LALSimReadData.h \
 	LALSimSGWB.h \
+	LALSimIMRPhenomD.h \
 	LALSimulationConfig.h \
 	LALSimulationVCSInfo.h \
 	LALSimulationVCSInfoHeader.h
@@ -87,6 +88,7 @@ noinst_HEADERS = \
 	LALSimNeutronStarEOSPiecewisePolytrope.c \
 	LALSimNeutronStarEOSTabular.c \
 	LALSimIMRPhenomC_internals.c \
+	LALSimIMRPhenomD_internals.c \
 	LALSimIMRPhenomP.c \
 	LALSimIMRSEOBNRROMUtilities.c
 
@@ -97,13 +99,14 @@ liblalsimulation_la_SOURCES = \
 	LALSimBurstImg.c \
 	LALSimIMREOBNRv2.c \
 	LALSimIMRSpinAlignedEOB.c \
-	LALSimIMRSEOBNRv1ROMSingleSpin.c \
+	LALSimIMRSEOBNRv1ROMEffectiveSpin.c \
 	LALSimIMRSEOBNRv1ROMDoubleSpin.c \
-	LALSimIMRSEOBNRv2ROMSingleSpin.c \
+	LALSimIMRSEOBNRv2ROMEffectiveSpin.c \
 	LALSimIMRSEOBNRv2ROMDoubleSpin.c \
 	LALSimIMRSEOBNRv2ChirpTime.c \
 	LALSimIMRPhenom.c \
 	LALSimIMRPhenomC.c \
+	LALSimIMRPhenomD.c \
 	LALSimIMRPhenomP.c \
 	LALSimIMRPSpinInspiralRD.c \
 	LALSimPhenSpinRingDown.c \
@@ -168,6 +171,9 @@ pkgdata_DATA = \
 EXTRA_DIST = \
 	config.h.in \
 	LALSimulationConfig.h.in \
+	lalsimburst_btlwnbexamples.svg \
+	lalsimburst_sinegaussianexamples.svg \
+	lalsimburst_stringcuspexamples.svg \
 	$(NOISEPSDFILES) \
 	$(EOSDATAFILES)
 

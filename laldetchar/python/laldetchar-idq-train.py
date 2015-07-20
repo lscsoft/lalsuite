@@ -94,7 +94,7 @@ sys.stderr = idq.LogFile(logger)
 #===================================================================================================
 ### check lockfile
 if opts.lockfile:
-    idq.dieiflocked( opts.lockfile )
+    lockfp = idq.dieiflocked( opts.lockfile )
 
 #===================================================================================================
 ### read global configuration file
@@ -520,6 +520,8 @@ while gpsstart < gpsstop:
 
         if flavor in idq.mla_flavors and ptas_exit_status:
             logger.warning("WARNING: mla training samples could not be built. skipping %s training"%classifier)
+            if opts.force:
+                raise StandardError("mla training samples could not be built.")
             continue
 
         min_num_cln = float(classD['min_num_cln'])
@@ -696,3 +698,7 @@ while gpsstart < gpsstop:
     ### continue onto the next stride
     gpsstart += stride
 
+#===================================================================================================
+if opts.lockfile:
+    idq.release(lockfp) ### unlock lockfile
+    os.remove( opts.lockfile )

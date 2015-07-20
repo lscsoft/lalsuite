@@ -18,13 +18,16 @@
 */
 
 #include <config.h>
+
+#ifdef HAVE_UNISTD_H
+#define _GNU_SOURCE   /* for gethostname() */
+#include <unistd.h>
+#endif
+
 #include <ctype.h>
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
 
 #include <lal/LALDatatypes.h>
 #include <lal/LALDetectors.h>
@@ -41,10 +44,12 @@
 #define localtime_r(timep, result) memcpy((result), localtime(timep), sizeof(struct tm))
 #endif
 
+/** @cond */
 struct tagLALFrFile {
     LALFrameUFrFile *file;
     LALFrameUFrTOC *toc;
 };
+/** @endcond */
 
 int XLALFrFileClose(LALFrFile * frfile)
 {

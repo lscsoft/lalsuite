@@ -28,14 +28,13 @@
 
 /* some more functions with just different names */
 #define fsync _commit
-#define snprintf _snprintf
 
 /* functions actually implemented in win_lib.cpp */
 #ifdef __cplusplus
 extern "C" {
 #endif
   /* sleep function implemented in win_lib.c */
-  extern void sleep(unsigned int s);
+  extern unsigned int sleep(unsigned int s);
   /* quick fix for LAL now using finite without checking if we have it... */
   extern int finite(double x);
   /* get a "signaling" NaN */
