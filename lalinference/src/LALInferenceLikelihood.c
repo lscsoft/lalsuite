@@ -1336,7 +1336,7 @@ REAL8 LALInferenceFastSineGaussianLogLikelihood(LALInferenceVariables *currentPa
 
   int Nifos=0;
   for(dataPtr=data;dataPtr;dataPtr=dataPtr->next) Nifos++;
-  void **generatedFreqModels=alloca((1+Nifos)*sizeof(void *));
+  void *generatedFreqModels[1+Nifos];
   for(i=0;i<=Nifos;i++) generatedFreqModels[i]=NULL;
 
   if(LALInferenceCheckVariable(currentParams, "loghrss")){

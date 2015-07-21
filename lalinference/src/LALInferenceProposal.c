@@ -47,6 +47,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALInferenceClusteredKDE.h>
 #include <lal/LALInferenceNestedSampler.h>
+#include <alloca.h>
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
