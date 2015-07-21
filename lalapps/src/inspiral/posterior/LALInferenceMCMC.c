@@ -168,6 +168,9 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
     /* Store flags to keep from checking the command line all the time */
     LALInferenceVariables *algorithm_params = runState->algorithmParams;
 
+    /* Step counter */
+    INT4 step = 0;
+
     /* Print more stuff */
     INT4 verbose = 0;
     if (LALInferenceGetProcParamVal(command_line, "--verbose"))
@@ -180,9 +183,6 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
     INT4 propTrack = 0;
     if (LALInferenceGetProcParamVal(command_line, "--prop-track"))
         propTrack = 1;
-
-    /* Step counter */
-    INT4 step = 0;
 
     /* Keep track of time if benchmarking */
     INT4 benchmark = 0;
@@ -263,6 +263,7 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
         outputSNRs = 1;
 
     /* Save everything in the run state */
+    LALInferenceAddINT4Variable(algorithm_params, "step", step, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddINT4Variable(algorithm_params, "verbose", verbose, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddINT4Variable(algorithm_params, "prop_verbose", propVerbose, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddINT4Variable(algorithm_params, "prop_track", propTrack, LALINFERENCE_PARAM_OUTPUT);
