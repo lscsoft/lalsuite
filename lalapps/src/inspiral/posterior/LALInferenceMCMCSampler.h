@@ -72,7 +72,7 @@ void LALInferenceLadderUpdate(LALInferenceRunState *runState, INT4 sourceChainFl
 
 /* Data IO routines */
 FILE** LALInferencePrintPTMCMCHeadersOrResume(LALInferenceRunState *runState);
-void LALInferencePrintPTMCMCHeaderFiles(LALInferenceRunState *runState, FILE **files);
+void LALInferencePrintPTMCMCHeaderFile(LALInferenceRunState *runState, LALInferenceThreadState *thread, FILE *threadoutput);
 void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState);
 void LALInferenceDataDump(LALInferenceIFOData *data, LALInferenceModel *model);
 void LALInferencePrintMCMCSample(LALInferenceThreadState *thread, LALInferenceIFOData *data, INT4 iteration, REAL8 timestamp, FILE *threadoutput);

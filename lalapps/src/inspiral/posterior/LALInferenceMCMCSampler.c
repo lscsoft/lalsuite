@@ -1000,6 +1000,8 @@ FILE **LALInferencePrintPTMCMCHeadersOrResume(LALInferenceRunState *runState) {
             LALInferenceSetVariable(runState->algorithmParams, "step", &step);
 
             fclose(threadoutput);
+
+            threadoutput = fopen(outFileName, "a");
         } else {
             threadoutput = fopen(outFileName,"w");
             if(threadoutput == NULL){
@@ -1007,13 +1009,8 @@ FILE **LALInferencePrintPTMCMCHeadersOrResume(LALInferenceRunState *runState) {
                 XLALPrintError("Output file error. Please check that the specified path exists. (in %s, line %d)\n",__FILE__, __LINE__);
                 XLAL_ERROR_NULL(XLAL_EIO);
             }
-        }
 
-        threadoutput = fopen(outFileName, "a");
-        if (threadoutput == NULL) {
-            XLALErrorHandler = XLALExitErrorHandler;
-            XLALPrintError("Output file error. Please check that the specified path exists. (in %s, line %d)\n",__FILE__, __LINE__);
-            XLAL_ERROR_NULL(XLAL_EIO);
+            LALInferencePrintPTMCMCHeaderFile(runState, thread, threadoutput);
         }
 
         if(setvbuf(threadoutput,NULL,_IOFBF,0x100000)) /* Set buffer to 1MB so as to not thrash NFS */
@@ -1024,25 +1021,19 @@ FILE **LALInferencePrintPTMCMCHeadersOrResume(LALInferenceRunState *runState) {
         XLALFree(outFileName);
     }
 
-    LALInferencePrintPTMCMCHeaderFiles(runState, threadoutputs);
-
     return threadoutputs;
 }
 
-void LALInferencePrintPTMCMCHeaderFiles(LALInferenceRunState *runState, FILE **threadoutputs) {
-    INT4 MPIrank, t, n_local_threads, nthreads;
+void LALInferencePrintPTMCMCHeaderFile(LALInferenceRunState *runState, LALInferenceThreadState *thread, FILE *threadoutput) {
+    INT4 MPIrank, nthreads;
     INT4 randomseed, nPar, Niter;
     REAL8 timestamp;
     LALInferenceIFOData *ifodata1;
     struct timeval tv;
     char *arg_str;
-    FILE* threadoutput;
-    LALInferenceThreadState *thread;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
-    thread = runState->threads[0];
 
-    n_local_threads = runState->nthreads;
     nthreads = LALInferenceGetINT4Variable(runState->algorithmParams, "ntemp");
 
     randomseed = LALInferenceGetINT4Variable(runState->algorithmParams, "random_seed");
@@ -1086,102 +1077,94 @@ void LALInferencePrintPTMCMCHeaderFiles(LALInferenceRunState *runState, FILE **t
     if(LALInferenceGetProcParamVal(runState->commandLine, "--benchmark"))
         benchmark = 1;
 
-    if(!LALInferenceGetProcParamVal(runState->commandLine, "--resume")) {
-        for(t=0; t<n_local_threads; t++) {
-            thread = runState->threads[t];
-            threadoutput = threadoutputs[t];
+    /* Print version info */
+    fprintf(threadoutput, "  LALInference version:%s,%s,%s,%s,%s\n", lalAppsVCSId,lalAppsVCSDate,lalAppsVCSBranch,lalAppsVCSAuthor,lalAppsVCSStatus);
+    fprintf(threadoutput,"  %s\n", arg_str);
 
-            /* Print version info */
-            fprintf(threadoutput, "  LALInference version:%s,%s,%s,%s,%s\n", lalAppsVCSId,lalAppsVCSDate,lalAppsVCSBranch,lalAppsVCSAuthor,lalAppsVCSStatus);
-            fprintf(threadoutput,"  %s\n", arg_str);
+    /* Print algorithm parameters */
+    fprintf(threadoutput, "%10s  %6s  %20s  %6s %6s  %10s  %12s  %9s  %9s %8s %8s\n",
+            "nIter", "seed", "null_likelihood", "Ndet", "nTemps",
+            "Tchain", "NetworkSNR", "Waveform", "pNorder", "Npar", "f_ref");
+    fprintf(threadoutput, "%10d  %u  %20.10lf  %6d %6d %12.1f %14.6f  %9i  %12.1f  %8i %12.1f\n",
+            Niter, randomseed, thread->nullLikelihood, nIFO, nthreads,
+            thread->temperature, networkSNR, waveform, pnorder, nPar, f_ref);
 
-            /* Print algorithm parameters */
-            fprintf(threadoutput, "%10s  %6s  %20s  %6s %6s  %10s  %12s  %9s  %9s %8s %8s\n",
-                    "nIter", "seed", "null_likelihood", "Ndet", "nTemps",
-                    "Tchain", "NetworkSNR", "Waveform", "pNorder", "Npar", "f_ref");
-            fprintf(threadoutput, "%10d  %u  %20.10lf  %6d %6d %12.1f %14.6f  %9i  %12.1f  %8i %12.1f\n",
-                    Niter, randomseed, thread->nullLikelihood, nIFO, nthreads,
-                    thread->temperature, networkSNR, waveform, pnorder, nPar, f_ref);
-
-            /* Print detector-specific settings */
-            fprintf(threadoutput, "\n%16s  %16s  %10s  %10s  %20s  %15s  %12s\n",
-                    "Detector", "SNR", "f_low", "f_high",
-                    "Sample_start", "Sample_length", "Sample_rate");
-            ifodata1=runState->data;
-            while(ifodata1){
-                fprintf(threadoutput, "%16s  %16.8lf  %10.2lf  %10.2lf  %20.8lf  %15.7lf  %.1f\n",
-                        ifodata1->detector->frDetector.name, ifodata1->SNR, ifodata1->fLow, ifodata1->fHigh,
-                        XLALGPSGetREAL8(&(ifodata1->epoch)), atof(LALInferenceGetProcParamVal(runState->commandLine,"--seglen")->value),
-                        SampleRate);
-                ifodata1=ifodata1->next;
-            }
-
-            /* Print column header */
-            fprintf(threadoutput, "\n\n%31s\n","");
-            fprintf(threadoutput, "cycle\tlogpost\tlogprior\t");
-            LALInferenceFprintParameterNonFixedHeaders(threadoutput, thread->currentParams);
-
-            /* Check for spline calibration parameters */
-            if (LALInferenceCheckVariable(thread->currentParams, "spcal_active") &&
-                (LALInferenceGetUINT4Variable(thread->currentParams, "spcal_active")))
-                LALInferenceFprintSplineCalibrationHeader(threadoutput, thread);
-
-            /* Print the likelihood and SNR of each individual detector */
-            fprintf(threadoutput, "logl\t");
-            LALInferenceIFOData *headIFO = runState->data;
-            while (headIFO != NULL) {
-                fprintf(threadoutput, "logl");
-                fprintf(threadoutput, "%s",headIFO->name);
-                fprintf(threadoutput, "\t");
-                headIFO = headIFO->next;
-            }
-            if (LALInferenceGetProcParamVal(runState->commandLine, "--output-SNRs")) {
-                headIFO = runState->data;
-                while (headIFO != NULL) {
-                    fprintf(threadoutput, "SNR");
-                    fprintf(threadoutput, "%s",headIFO->name);
-                    fprintf(threadoutput, "\t");
-                    headIFO = headIFO->next;
-                }
-                fprintf(threadoutput, "SNR\t");
-            }
-
-            /* Print the cumulative runtime at each sample */
-            if (benchmark)
-                fprintf(threadoutput, "timestamp\t");
-            fprintf(threadoutput,"\n");
-
-            /* Print the starting values */
-            fprintf(threadoutput, "%d\t%f\t%f\t", 0,
-                    (thread->currentLikelihood - thread->nullLikelihood) + thread->currentPrior,
-                    thread->currentPrior);
-
-            LALInferencePrintSampleNonFixed(threadoutput, thread->currentParams);
-            if (LALInferenceCheckVariable(thread->currentParams, "spcal_active") &&
-                (LALInferenceGetUINT4Variable(thread->currentParams, "spcal_active")))
-                LALInferencePrintSplineCalibration(threadoutput, thread);
-
-            fprintf(threadoutput, "%f\t", thread->currentLikelihood - thread->nullLikelihood);
-            headIFO = runState->data;
-            UINT4 i = 0;
-            while (headIFO != NULL) {
-                fprintf(threadoutput, "%f\t", thread->currentIFOLikelihoods[i] - headIFO->nullloglikelihood);
-                headIFO = headIFO->next;
-                i++;
-            }
-            if(benchmark) {
-                gettimeofday(&tv, NULL);
-                timestamp = tv.tv_sec + tv.tv_usec/1E6;
-                LALInferenceAddVariable(runState->algorithmParams, "timestamp_epoch", &timestamp, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-                fprintf(threadoutput, "%f\t", 0.0);
-            }
-            fprintf(threadoutput,"\n");
-        }
+    /* Print detector-specific settings */
+    fprintf(threadoutput, "\n%16s  %16s  %10s  %10s  %20s  %15s  %12s\n",
+            "Detector", "SNR", "f_low", "f_high",
+            "Sample_start", "Sample_length", "Sample_rate");
+    ifodata1=runState->data;
+    while(ifodata1){
+        fprintf(threadoutput, "%16s  %16.8lf  %10.2lf  %10.2lf  %20.8lf  %15.7lf  %.1f\n",
+                ifodata1->detector->frDetector.name, ifodata1->SNR, ifodata1->fLow, ifodata1->fHigh,
+                XLALGPSGetREAL8(&(ifodata1->epoch)), atof(LALInferenceGetProcParamVal(runState->commandLine,"--seglen")->value),
+                SampleRate);
+        ifodata1=ifodata1->next;
     }
+
+    /* Print column header */
+    fprintf(threadoutput, "\n\n%31s\n","");
+    fprintf(threadoutput, "cycle\tlogpost\tlogprior\t");
+    LALInferenceFprintParameterNonFixedHeaders(threadoutput, thread->currentParams);
+
+    /* Check for spline calibration parameters */
+    if (LALInferenceCheckVariable(thread->currentParams, "spcal_active") &&
+        (LALInferenceGetUINT4Variable(thread->currentParams, "spcal_active")))
+        LALInferenceFprintSplineCalibrationHeader(threadoutput, thread);
+
+    /* Print the likelihood and SNR of each individual detector */
+    fprintf(threadoutput, "logl\t");
+    LALInferenceIFOData *headIFO = runState->data;
+    while (headIFO != NULL) {
+        fprintf(threadoutput, "logl");
+        fprintf(threadoutput, "%s",headIFO->name);
+        fprintf(threadoutput, "\t");
+        headIFO = headIFO->next;
+    }
+    if (LALInferenceGetProcParamVal(runState->commandLine, "--output-SNRs")) {
+        headIFO = runState->data;
+        while (headIFO != NULL) {
+            fprintf(threadoutput, "SNR");
+            fprintf(threadoutput, "%s",headIFO->name);
+            fprintf(threadoutput, "\t");
+            headIFO = headIFO->next;
+        }
+        fprintf(threadoutput, "SNR\t");
+    }
+
+    /* Print the cumulative runtime at each sample */
+    if (benchmark)
+        fprintf(threadoutput, "timestamp\t");
+    fprintf(threadoutput,"\n");
+
+    /* Print the starting values */
+    fprintf(threadoutput, "%d\t%f\t%f\t", 0,
+            (thread->currentLikelihood - thread->nullLikelihood) + thread->currentPrior,
+            thread->currentPrior);
+
+    LALInferencePrintSampleNonFixed(threadoutput, thread->currentParams);
+    if (LALInferenceCheckVariable(thread->currentParams, "spcal_active") &&
+        (LALInferenceGetUINT4Variable(thread->currentParams, "spcal_active")))
+        LALInferencePrintSplineCalibration(threadoutput, thread);
+
+    fprintf(threadoutput, "%f\t", thread->currentLikelihood - thread->nullLikelihood);
+    headIFO = runState->data;
+    UINT4 i = 0;
+    while (headIFO != NULL) {
+        fprintf(threadoutput, "%f\t", thread->currentIFOLikelihoods[i] - headIFO->nullloglikelihood);
+        headIFO = headIFO->next;
+        i++;
+    }
+    if(benchmark) {
+        gettimeofday(&tv, NULL);
+        timestamp = tv.tv_sec + tv.tv_usec/1E6;
+        LALInferenceAddVariable(runState->algorithmParams, "timestamp_epoch", &timestamp, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+        fprintf(threadoutput, "%f\t", 0.0);
+    }
+    fprintf(threadoutput,"\n");
 }
 
 void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
-    INT4 n_local_threads, single_thread = 1;
     ProcessParamsTable *ppt;
     LALInferenceThreadState *thread = runState->threads[0];
 
@@ -1333,11 +1316,7 @@ void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
         thread->currentLikelihood = runState->likelihood(thread->currentParams, runState->data, thread->model);
         thread->currentPrior = runState->prior(runState, thread->currentParams, thread->model);
 
-        n_local_threads = runState->nthreads;
-
-        LALInferenceSetVariable(runState->algorithmParams, "nthreads", &single_thread);
-        LALInferencePrintPTMCMCHeaderFiles(runState, &out);
-        LALInferenceSetVariable(runState->algorithmParams, "nthreads", &n_local_threads);
+        LALInferencePrintPTMCMCHeaderFile(runState, thread, out);
 
         fclose(out);
 
