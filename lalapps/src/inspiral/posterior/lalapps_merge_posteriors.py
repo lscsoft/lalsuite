@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 
 # resample posteriors (C) John Veitch, 2015
 
-from numpy import genfromtext,vstack,log
+from numpy import vstack,log
 from optparse import OptionParser
 import sys
 import os
@@ -10,7 +9,7 @@ from pylal import bayespputils as bppu
 
 from lalapps.nest2pos import draw_posterior, draw_N_posterior
 
-usage='''%prog [-o output.dat] [-N NPOS] -p pos1.dat -w weight1 [-p pos2.dat -w weight2 ...]
+usage='''%prog [-N NPOS]-o output.dat -p pos1.dat -w weight1 [-p pos2.dat -w weight2 ...]
 %prog takes a list of posterior files and weights and draws samples from the combined,
 reweighted distribution
 '''
@@ -33,14 +32,16 @@ if __name__=='__main__':
     if len(opts.posterior)==0:
         sys.stderr.write('No input files given\n')
         sys.exit(1)
-    if len(opts.weights) != len(opts.posterior):
+    if len(opts.weight) != len(opts.posterior):
         sys.stderr.write('Error: must specify same number of weights and posteriors\n')
         sys.exit(1)
 
     # Create posterior samples for each input file
     datas=map(load_data,opts.posterior)
-    weights = [ log(x) for _ in d for d in datas]
-    bigdata=vstack(datas)
+    weights=[]
+    for d,w in zip(datas,opts.weight):
+        weights.extend([log(w) for _ in xrange(len(d))])
+    bigdata=vstack([d.samples()[0] for d in datas])
     
     # Call reweighting function
     if opts.npos is not None:
@@ -54,5 +55,4 @@ if __name__=='__main__':
     if opts.output is not None:
         outObj.write_to_file(opts.output)
 
-    return
 
