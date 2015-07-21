@@ -52,7 +52,8 @@ pybin_scripts = \
 	lalapps_merge_nested_sampling_runs \
 	lalinference_pp_pipe \
 	lalapps_compute_roq_weights \
-	lalapps_merge_posteriors
+	lalapps_merge_posteriors \
+	lalapps_test_run_lalinference_pipe_example
 pkgpython_PYTHON = \
 	nest_utils.py \
 	combine_evidence.py \
