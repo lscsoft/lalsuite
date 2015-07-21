@@ -438,19 +438,22 @@ int LALInferenceInspiralPriorTest(void)
 
 	REAL8 result;
 	LALInferenceRunState *runState = XLALCalloc(1, sizeof(LALInferenceRunState));
+    LALInferenceThreadState *thread = XLALCalloc(1, sizeof(LALInferenceThreadState));
+    runState->threads = XLALCalloc(1, sizeof(LALInferenceThreadState*));
+    runState->threads[0] = thread;
 	LALInferenceVariables *params = XLALCalloc(1, sizeof(LALInferenceVariables));
 	LALInferenceVariables *priorArgs = XLALCalloc(1, sizeof(LALInferenceVariables));
 
 	// Standard null reference check.
 	int failed = 1;
 	runState->priorArgs = NULL;
-    runState->model = NULL;
-	XLAL_TRY(result = LALInferenceInspiralPrior(runState, params, runState->model), errnum);
+    thread->model = NULL;
+	XLAL_TRY(result = LALInferenceInspiralPrior(runState, params, thread->model), errnum);
 	failed &= !XLAL_IS_REAL8_FAIL_NAN(result) || errnum != XLAL_EFAULT;
 	runState->priorArgs = priorArgs;
-	XLAL_TRY(result = LALInferenceInspiralPrior(NULL, params, runState->model), errnum);
+	XLAL_TRY(result = LALInferenceInspiralPrior(NULL, params, thread->model), errnum);
 	failed &= !XLAL_IS_REAL8_FAIL_NAN(result) || errnum != XLAL_EFAULT;
-	XLAL_TRY(result = LALInferenceInspiralPrior(runState, NULL, runState->model), errnum);
+	XLAL_TRY(result = LALInferenceInspiralPrior(runState, NULL, thread->model), errnum);
 	failed &= !XLAL_IS_REAL8_FAIL_NAN(result) || errnum != XLAL_EFAULT;
 	if (failed)
 		TEST_FAIL("Null reference check failed.");
@@ -501,7 +504,7 @@ int LALInferenceInspiralPriorTest(void)
 	LALInferenceDrawFromPrior(params, priorArgs, rng);
 
 	// Check that we get a finite log prior.
-	XLAL_TRY(result = LALInferenceInspiralPrior(runState, params, runState->model), errnum);
+	XLAL_TRY(result = LALInferenceInspiralPrior(runState, params, thread->model), errnum);
 
 	if (XLAL_IS_REAL8_FAIL_NAN(result) || errnum != XLAL_SUCCESS)
 	{
@@ -516,7 +519,7 @@ int LALInferenceInspiralPriorTest(void)
 	LALInferenceGetMinMaxPrior(priorArgs, "distance", &min, &max);
 	value = max + (max - min) / 2;
 	LALInferenceSetVariable(params, "distance", &value);
-	XLAL_TRY(result = LALInferenceInspiralPrior(runState, params, runState->model), errnum);
+	XLAL_TRY(result = LALInferenceInspiralPrior(runState, params, thread->model), errnum);
 	if (XLAL_IS_REAL8_FAIL_NAN(result) || errnum != XLAL_SUCCESS)
 	{
 		TEST_FAIL("Could not generate inspiral prior; XLAL error: %s", XLALErrorString(errnum));
@@ -539,7 +542,7 @@ int LALInferenceInspiralPriorTest(void)
 	LALInferenceSetVariable(params, "chirpmass", &Mc);
 	REAL8 logMc = log(Mc);
 	LALInferenceSetVariable(params, "logmc", &logMc);
-	XLAL_TRY(result = LALInferenceInspiralPrior(runState, params, runState->model), errnum);
+	XLAL_TRY(result = LALInferenceInspiralPrior(runState, params, thread->model), errnum);
 	if (XLAL_IS_REAL8_FAIL_NAN(result) || errnum != XLAL_SUCCESS)
 	{
 		TEST_FAIL("Could not generate inspiral prior; XLAL error: %s", XLALErrorString(errnum));
