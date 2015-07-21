@@ -40,7 +40,8 @@ if __name__=='__main__':
     datas=map(load_data,opts.posterior)
     weights=[]
     for d,w in zip(datas,opts.weight):
-        weights.extend([log(w) for _ in xrange(len(d))])
+        theseweights = (log(w) + logl + logp for logl,logp in zip(d['logl'].samples,d['logprior'].samples))
+        weights.extend(theseweights)
     bigdata=vstack([d.samples()[0] for d in datas])
     
     # Call reweighting function
