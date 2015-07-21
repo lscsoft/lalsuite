@@ -257,6 +257,9 @@ INT4 init_ensemble(LALInferenceRunState *run_state) {
         }
     }
 
+    /* Step counter */
+    INT4 step = 0;
+
     /* Number of steps between ensemble updates */
     INT4 nsteps = 10000;
     ppt = LALInferenceGetProcParamVal(command_line, "--nsteps");
@@ -280,26 +283,48 @@ INT4 init_ensemble(LALInferenceRunState *run_state) {
     if (LALInferenceGetProcParamVal(command_line, "--cyclic-reflective-kde"))
         cyclic_reflective = 1;
 
+    /* Print more stuff */
+    INT4 verbose = 0;
+    if (LALInferenceGetProcParamVal(command_line, "--verbose"))
+        verbose = 1;
+
+    /* Keep track of time if benchmarking */
+    INT4 benchmark = 0;
+    if (LALInferenceGetProcParamVal(command_line, "--benchmark"))
+        benchmark = 1;
+
     /* Save everything in the run state */
     LALInferenceVariables *algorithm_params = run_state->algorithmParams;
 
-    LALInferenceAddVariable(algorithm_params, "cyclic_reflective", &cyclic_reflective,
-                            LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddINT4Variable(algorithm_params, "step",
+                                step, LALINFERENCE_PARAM_OUTPUT);
 
-    LALInferenceAddVariable(algorithm_params, "nchains", &nwalkers_per_thread,
-                            LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddINT4Variable(algorithm_params, "verbose",
+                                verbose, LALINFERENCE_PARAM_OUTPUT);
 
-    LALInferenceAddVariable(algorithm_params, "nwalkers", &nwalkers,
-                            LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddINT4Variable(algorithm_params, "benchmark",
+                                benchmark, LALINFERENCE_PARAM_OUTPUT);
 
-    LALInferenceAddVariable(algorithm_params, "nsteps", &nsteps,
-                            LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddINT4Variable(algorithm_params, "mpirank",
+                                mpi_rank, LALINFERENCE_PARAM_OUTPUT);
 
-    LALInferenceAddVariable(algorithm_params, "skip", &skip,
-                            LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddINT4Variable(algorithm_params, "cyclic_reflective",
+                                cyclic_reflective, LALINFERENCE_PARAM_OUTPUT);
 
-    LALInferenceAddVariable(algorithm_params, "update_interval", &update_interval,
-                            LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddINT4Variable(algorithm_params, "nwalkers_per_thread",
+                                nwalkers_per_thread, LALINFERENCE_PARAM_OUTPUT);
+
+    LALInferenceAddINT4Variable(algorithm_params, "nwalkers",
+                                nwalkers, LALINFERENCE_PARAM_OUTPUT);
+
+    LALInferenceAddINT4Variable(algorithm_params, "nsteps",
+                                nsteps, LALINFERENCE_PARAM_OUTPUT);
+
+    LALInferenceAddINT4Variable(algorithm_params, "skip",
+                                skip, LALINFERENCE_PARAM_OUTPUT);
+
+    LALInferenceAddINT4Variable(algorithm_params, "update_interval",
+                                update_interval, LALINFERENCE_PARAM_OUTPUT);
 
     /* Initialize the walkers on this MPI thread */
     LALInferenceInitCBCThreads(run_state, nwalkers_per_thread);
