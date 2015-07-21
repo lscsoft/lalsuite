@@ -37,16 +37,15 @@
 #endif
 
 
-void init_mpi_randomstate(LALInferenceRunState *run_state);
-void init_sampler(LALInferenceRunState *run_state);
-void on_your_marks(LALInferenceRunState *run_state);
-void sample_prior(LALInferenceRunState *run_state);
-void init_ensemble(LALInferenceRunState *run_state);
+INT4 init_mpi_randomstate(LALInferenceRunState *run_state);
+INT4 on_your_marks(LALInferenceRunState *run_state);
+INT4 sample_prior(LALInferenceRunState *run_state);
+INT4 init_ensemble(LALInferenceRunState *run_state);
 
 /* Set the starting seed of rank 0, and give the rest of the threads
     a seed based on it.  This is a cut-and-paste from PTMCMC, which needs
     to be unified in LALInference when MPI-enabled.*/
-void init_mpi_randomstate(LALInferenceRunState *run_state) {
+INT4 init_mpi_randomstate(LALInferenceRunState *run_state) {
     INT4 i, randomseed;
     INT4 mpi_rank;
 
@@ -69,11 +68,11 @@ void init_mpi_randomstate(LALInferenceRunState *run_state) {
 
      gsl_rng_set(run_state->GSLrandom, randomseed);
 
-     return;
+     return XLAL_SUCCESS;
 }
 
 /* Initialize ensemble randomly or from file */
-void on_your_marks(LALInferenceRunState *run_state) {
+INT4 on_your_marks(LALInferenceRunState *run_state) {
     LALInferenceVariableItem *item;
     ProcessParamsTable *ppt = NULL;
     REAL8 *sampleArray = NULL;
@@ -171,17 +170,6 @@ void on_your_marks(LALInferenceRunState *run_state) {
     } else
         LALInferenceDrawThreads(run_state);
 
-    /* Initialize starting likelihood and prior */
-    for (walker = 0; walker < nwalkers_per_thread; walker++) {
-        thread = run_state->threads[walker];
-
-        thread->currentPrior = run_state->prior(run_state,
-                                                thread->currentParams,
-                                                thread->model);
-
-        thread->currentLikelihood = 0.0;
-    }
-
     /* Distribute ensemble according to prior when randomly initializing */
     if (!LALInferenceGetProcParamVal(command_line, "--init-samples") &&
         !LALInferenceGetProcParamVal(command_line, "--skip-prior")) {
@@ -203,26 +191,29 @@ void on_your_marks(LALInferenceRunState *run_state) {
         thread->currentLikelihood = run_state->likelihood(thread->currentParams,
                                     run_state->data,
                                     thread->model);
+
+    return XLAL_SUCCESS;
 }
 
 /********** Initialise MCMC structures *********/
 
-void init_ensemble(LALInferenceRunState *run_state) {
+INT4 init_ensemble(LALInferenceRunState *run_state) {
     char help[]="\
-                 ---------------------------------------------------------------------------------------------------\n\
-                 --- General Algorithm Parameters ------------------------------------------------------------------\n\
-                 ---------------------------------------------------------------------------------------------------\n\
-                 (--nwalkers n)                   Number of MCMC walkers to sample with (1000).\n\
-                 (--nsteps n)                     Total number of steps for all walkers to make (10000).\n\
-                 (--skip n)                       Number of steps between writing samples to file (100).\n\
-                 (--update-interval n)            Number of steps between ensemble updates (100).\n\
-                 (--randomseed seed)              Random seed of sampling distribution (random).\n\
-                 \n\
-                 ---------------------------------------------------------------------------------------------------\n\
-                 --- Output ----------------------------------------------------------------------------------------\n\
-                 ---------------------------------------------------------------------------------------------------\n\
-                 (--data-dump)                    Output waveforms to file.\n\
-                 (--outfile file)                 Write output files <file>.<chain_number> (ensemble.output.<random_seed>.<mpi_thread>).\n";
+    ----------------------------------------------\n\
+    --- General Algorithm Parameters -------------\n\
+    ----------------------------------------------\n\
+    (--nwalkers n)        Number of MCMC walkers to sample with (1000).\n\
+    (--nsteps n)          Total number of steps for all walkers to make (10000).\n\
+    (--skip n)            Number of steps between writing samples to file (100).\n\
+    (--update-interval n) Number of steps between ensemble updates (100).\n\
+    (--randomseed seed)   Random seed of sampling distribution (random).\n\
+    \n\
+    ----------------------------------------------\n\
+    --- Output -----------------------------------\n\
+    ----------------------------------------------\n\
+    (--data-dump)         Output waveforms to file.\n\
+    (--outfile file)      Write output files <file>.<chain_number>\n\
+                            (ensemble.output.<random_seed>.<mpi_thread>).\n";
     INT4 mpi_rank, mpi_size, i;
     ProcessParamsTable *command_line=NULL, *ppt=NULL;
     LALInferenceThreadState *thread;
@@ -234,7 +225,11 @@ void init_ensemble(LALInferenceRunState *run_state) {
     if (run_state == NULL || LALInferenceGetProcParamVal(run_state->commandLine, "--help")) {
         if (mpi_rank == 0)
             printf("%s", help);
-        return;
+
+        /* Print other help messages */
+        LALInferenceInitCBCThreads(NULL, 0);
+
+        return XLAL_FAILURE;
     }
 
     command_line = run_state->commandLine;
@@ -318,11 +313,13 @@ void init_ensemble(LALInferenceRunState *run_state) {
         thread->id = mpi_rank*nwalkers_per_thread + i;
         thread->proposalArgs = LALInferenceParseProposalArgs(run_state);
     }
+
+    return XLAL_SUCCESS;
 }
 
 
 /* Sample the prior. Useful for defining an initial state for the ensemble */
-void sample_prior(LALInferenceRunState *run_state) {
+INT4 sample_prior(LALInferenceRunState *run_state) {
     INT4 update_interval, nprior_steps, nsteps;
 
     LALInferenceVariables *algorithm_params = run_state->algorithmParams;
@@ -344,6 +341,8 @@ void sample_prior(LALInferenceRunState *run_state) {
     /* Restore algorithm parameters and likelihood function */
     LALInferenceSetVariable(algorithm_params, "nsteps", &nsteps);
     LALInferenceInitLikelihood(run_state);
+
+    return XLAL_SUCCESS;
 }
 
 int main(int argc, char *argv[]){
@@ -356,7 +355,7 @@ int main(int argc, char *argv[]){
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
 
     if (mpi_rank == 0)
-        printf(" ========== lalinference_ensemble ==========\n");
+        printf(" ========== lalinference_kombine ==========\n");
 
     /* Read command line and parse */
     proc_params = LALInferenceParseCommandLine(argc, argv);
@@ -364,6 +363,9 @@ int main(int argc, char *argv[]){
     /* Initialise run_state based on command line. This includes allocating
      *   memory, reading data, and performing any injections specified. */
     run_state = LALInferenceInitRunState(proc_params);
+
+    /* Build the ensemble based on command line args */
+    init_ensemble(run_state);
 
     if (run_state == NULL) {
         if (LALInferenceGetProcParamVal(proc_params, "--help")) {
@@ -375,8 +377,8 @@ int main(int argc, char *argv[]){
         }
     }
 
-    /* Build the ensemble based on command line args */
-    init_ensemble(run_state);
+    /* Perform injections if data successful read or created */
+    LALInferenceInjectInspiralSignal(run_state->data, run_state->commandLine);
 
     /* Choose the prior */
     LALInferenceInitCBCPrior(run_state);
@@ -396,5 +398,5 @@ int main(int argc, char *argv[]){
     /* Close down MPI parallelization and return */
     MPI_Finalize();
 
-    return 0;
+    return XLAL_SUCCESS;
 }

@@ -440,48 +440,50 @@ void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, ProcessPar
 }
 
 #define USAGE "\
-               ---------------------------------------------------------------------------------------------------\n\
-               --- Data Parameters -------------------------------------------------------------------------------\n\
-               ---------------------------------------------------------------------------------------------------\n\
-               --ifo IFO1 [--ifo IFO2 ...]    IFOs can be H1,L1,V1\n\
-               --IFO1-cache cache1 [--IFO2-cache2 cache2 ...]    cache files\n\
-                                         (LALLIGO, LALAdLIGO, LALVirgo to simulate these detectors using lal;\n\
-                                         LALSimLIGO, LALSimAdLIGO, LALSimVirgo, LALSimAdVirgo to use lalsimuation)\n\
-               --psdstart GPStime               GPS start time of PSD estimation data\n\
-               --psdlength length               length of PSD estimation data in seconds\n\
-               --seglen length                  length of segments for PSD estimation and analysis in seconds\n\
-               (--dont-dump-extras              If given, won't save PSD and SNR files\n\
-               (--trigtime GPStime)             GPS time of the trigger to analyse\n\
-                                                (optional when using --margtime or --margtimephi)\n\
-               (--segment-start)                GPS time of the start of the segment\n\
-                                                (optional with --trigtime, default: seglen-2 s before --trigtime)\n\
-               (--srate rate)                   Downsample data to rate in Hz (4096.0,)\n\
-               (--padding PAD [sec]             Override default 0.4 seconds padding\n\
-               (--injectionsrate rate)          Downsample injection signal to rate in Hz (--srate)\n\
-               (--IFO1-flow freq1 [--IFO2-flow freq2 ...])          Specify lower frequency cutoff\n\
-                                                                    for overlap integral (40.0)\n\
-               (--IFO1-fhigh freq1 [--IFO2-fhigh freq2 ...])        Specify higher frequency cutoff \n\
-                                                                    for overlap integral (Nyquist freq 0.5*srate)\n\
-               (--IFO1-channel chan1 [--IFO2-channel chan2 ...])    Specify channel names when reading cache files\n\
-               (--IFO1-psd psd1-ascii.txt [--IFO2-psd psd2-ascii.txt ...])    Read in PSD from ascii file.\n\
-                                                This is not equivalent to using --IFO1-cache interp:file.txt since\n\
-                                                the former won't use the ascii psd to generate fake noise. \n\
-               (--dataseed number)              Specify random seed to use when generating data\n\
-               (--lalinspiralinjection)         Enables injections via the LALInspiral package\n\
-               (--inj-fref)                     Reference frequency of parameters in injection XML (default 100Hz)\n\
-               (--inj-lambda1)                  value of lambda1 to be injected, LALSimulation only (0)\n\
-               (--inj-lambda2)                  value of lambda2 to be injected, LALSimulation only (0)\n\
-               (--inj-lambdaT                   value of lambdaT to be injected (0)\n\
-               (--inj-dlambdaT                  value of dlambdaT to be injected (0)\n\
-               (--inj-spinOrder PNorder)        Specify twice the injection PN order (e.g. 5 <==> 2.5PN)\n\
-                                                of spin effects effects to use, only for LALSimulation\n\
-                                                (default: -1 <==> Use all spin effects).\n\
-               (--inj-tidalOrder PNorder)       Specify twice the injection PN order (e.g. 10 <==> 5PN)\n\
-                                                of tidal effects to use, only for LALSimulation\n\
-                                                (default: -1 <==> Use all tidal effects).\n\
-               (--0noise)                       Sets the noise realisation to be identically zero\n\
-                                                (for the fake caches above only)\n\
-               \n"
+    ----------------------------------------------\n\
+    --- Data Parameters --------------------------\n\
+    ----------------------------------------------\n\
+    --ifo IFO1 [--ifo IFO2 ...] IFOs can be H1,L1,V1\n\
+    --IFO1-cache cache1         Cache files \n\
+    [--IFO2-cache2 cache2 ...]      lal PSDs: LAL{Ad}LIGO, LALVirgo\n\
+                                    lalsimuation PSDs: LALSim{Ad}LIGO, LALSim{Ad}Virgo\n\
+    --psdstart GPStime          GPS start time of PSD estimation data\n\
+    --psdlength length          Length of PSD estimation data in seconds\n\
+    --seglen length             Length of segments for PSD estimation and analysis in seconds\n\
+    (--dont-dump-extras)        If given, won't save PSD and SNR files\n\
+    (--trigtime GPStime)        GPS time of the trigger to analyse\n\
+                                    (optional when using --margtime or --margtimephi)\n\
+    (--segment-start)           GPS time of the start of the segment\n\
+                                     (optional with --trigtime,\n\
+                                      default: seglen-2 s before --trigtime)\n\
+    (--srate rate)              Downsample data to rate in Hz (4096.0,)\n\
+    (--padding PAD [sec]        Override default 0.4 seconds padding\n\
+    (--injectionsrate rate)     Downsample injection signal to rate in Hz (--srate)\n\
+    (--IFO1-flow freq1          Specify lower frequency cutoff for overlap integral (40.0)\n\
+     [--IFO2-flow freq2 ...])\n\
+    (--IFO1-fhigh freq1         Specify higher frequency cutoff for overlap integral (Nyquist\n\
+     [--IFO2-fhigh freq2 ...])      freq 0.5*srate)\n\
+    (--IFO1-channel chan1       Specify channel names when reading cache files\n\
+     [--IFO2-channel chan2 ...])\n\
+    (--IFO1-psd psd1-ascii.txt        Read in PSD from ascii file. This is not equivalent \n\
+     [--IFO2-psd psd2-ascii.txt ...])     to using --IFO1-cache interp:file.txt since the former\n\
+                                          won't use the ascii psd to generate fake noise. \n\
+    (--dataseed number)         Specify random seed to use when generating data\n\
+    (--lalinspiralinjection)    Enables injections via the LALInspiral package\n\
+    (--inj-fref)                Reference frequency of parameters in injection XML (default 100Hz)\n\
+    (--inj-lambda1)             value of lambda1 to be injected, LALSimulation only (0)\n\
+    (--inj-lambda2)             value of lambda2 to be injected, LALSimulation only (0)\n\
+    (--inj-lambdaT              value of lambdaT to be injected (0)\n\
+    (--inj-dlambdaT             value of dlambdaT to be injected (0)\n\
+    (--inj-spinOrder PNorder)   Specify twice the injection PN order (e.g. 5 <==> 2.5PN)\n\
+                                    of spin effects effects to use, only for LALSimulation\n\
+                                    (default: -1 <==> Use all spin effects).\n\
+    (--inj-tidalOrder PNorder)  Specify twice the injection PN order (e.g. 10 <==> 5PN)\n\
+                                    of tidal effects to use, only for LALSimulation\n\
+                                    (default: -1 <==> Use all tidal effects).\n\
+    (--0noise)                  Sets the noise realisation to be identically zero\n\
+                                    (for the fake caches above only)\n\
+    \n"
 
 LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 /* Read in the data and store it in a LALInferenceIFOData structure */

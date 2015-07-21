@@ -88,48 +88,48 @@ void init_mpi_randomstate(LALInferenceRunState *run_state) {
 
 INT4 init_ptmcmc(LALInferenceRunState *runState) {
   char help[]="\
-               ---------------------------------------------------------------------------------------------------\n\
-               --- MCMC Algorithm Parameters ---------------------------------------------------------------------\n\
-               ---------------------------------------------------------------------------------------------------\n\
-               (--nsteps n)                     Maximum number of steps to take (1e7)\n\
-               (--neff N)                       Number of independent samples to collect (nsteps)\n\
-               (--skip n)                       Number of steps between writing samples to file (100)\n\
-               (--adapt-tau)                    Adaptation decay power, results in adapt length of 10^tau (5)\n\
-               (--no-adapt)                     Do not adapt run\n\
-               (--randomseed seed)              Random seed of sampling distribution (random)\n\
-               \n\
-               ---------------------------------------------------------------------------------------------------\n\
-               --- Parallel Tempering Algorithm Parameters -------------------------------------------------------\n\
-               ---------------------------------------------------------------------------------------------------\n\
-               (--temp-skip N)                  Number of steps between temperature swap proposals (100)\n\
-               (--tempKill N)                   Iteration number to stop temperature swapping (Niter)\n\
-               (--ntemp N)                      Number of temperature chains in ladder (as many as needed)\n\
-               (--temp-min T)                   Lowest temperature for parallel tempering (1.0)\n\
-               (--temp-max T)                   Highest temperature for parallel tempering (50.0)\n\
-               (--anneal)                       Anneal hot temperature linearly to T=1.0\n\
-               (--annealStart N)                Iteration number to start annealing (5*10^5)\n\
-               (--annealLength N)               Number of iterations to anneal all chains to T=1.0 (1*10^5)\n\
-               \n\
-               ---------------------------------------------------------------------------------------------------\n\
-               --- Noise Model -----------------------------------------------------------------------------------\n\
-               ---------------------------------------------------------------------------------------------------\n\
-               (--psdFit)                       Run with PSD fitting\n\
-               (--psdNblock)                    Number of noise parameters per IFO channel (8)\n\
-               (--psdFlatPrior)                 Use flat prior on psd parameters (Gaussian)\n\
-               (--glitchFit)                    Run with glitch fitting\n\
-               (--glitchNmax)                   Maximum number of glitch basis functions per IFO (20)\n\
-               \n\
-               ---------------------------------------------------------------------------------------------------\n\
-               --- Output ----------------------------------------------------------------------------------------\n\
-               ---------------------------------------------------------------------------------------------------\n\
-               (--data-dump)                    Output waveforms to file\n\
-               (--adapt-verbose)                Output parameter jump sizes and acceptance rate stats to file\n\
-               (--temp-verbose)                 Output temperature swapping stats to file\n\
-               (--prop-verbose)                 Output proposal stats to file\n\
-               (--prop-track)                   Output proposal parameters\n\
-               (--outfile file)                 Write output files <file>.<chain_number> \n\
-                                                (PTMCMC.output.<random_seed>.<mpi_thread>)\n\
-               \n";
+    ----------------------------------------------\n\
+    --- MCMC Algorithm Parameters ----------------\n\
+    ----------------------------------------------\n\
+    (--nsteps n)        Maximum number of steps to take (1e7)\n\
+    (--neff N)          Number of independent samples to collect (nsteps)\n\
+    (--skip n)          Number of steps between writing samples to file (100)\n\
+    (--adapt-tau)       Adaptation decay power, results in adapt length of 10^tau (5)\n\
+    (--no-adapt)        Do not adapt run\n\
+    (--randomseed seed) Random seed of sampling distribution (random)\n\
+    \n\
+    ----------------------------------------------\n\
+    --- Parallel Tempering Algorithm Parameters --\n\
+    ----------------------------------------------\n\
+    (--temp-skip N)     Number of steps between temperature swap proposals (100)\n\
+    (--tempKill N)      Iteration number to stop temperature swapping (Niter)\n\
+    (--ntemp N)         Number of temperature chains in ladder (as many as needed)\n\
+    (--temp-min T)      Lowest temperature for parallel tempering (1.0)\n\
+    (--temp-max T)      Highest temperature for parallel tempering (50.0)\n\
+    (--anneal)          Anneal hot temperature linearly to T=1.0\n\
+    (--annealStart N)   Iteration number to start annealing (5*10^5)\n\
+    (--annealLength N)  Number of iterations to anneal all chains to T=1.0 (1*10^5)\n\
+    \n\
+    ----------------------------------------------\n\
+    --- Noise Model ------------------------------\n\
+    ----------------------------------------------\n\
+    (--psdFit)          Run with PSD fitting\n\
+    (--psdNblock)       Number of noise parameters per IFO channel (8)\n\
+    (--psdFlatPrior)    Use flat prior on psd parameters (Gaussian)\n\
+    (--glitchFit)       Run with glitch fitting\n\
+    (--glitchNmax)      Maximum number of glitch basis functions per IFO (20)\n\
+    \n\
+    ----------------------------------------------\n\
+    --- Output -----------------------------------\n\
+    ----------------------------------------------\n\
+    (--data-dump)       Output waveforms to file\n\
+    (--adapt-verbose)   Output parameter jump sizes and acceptance rate stats to file\n\
+    (--temp-verbose)    Output temperature swapping stats to file\n\
+    (--prop-verbose)    Output proposal stats to file\n\
+    (--prop-track)      Output proposal parameters\n\
+    (--outfile file)    Write output files <file>.<chain_number> \n\
+                            (PTMCMC.output.<random_seed>.<mpi_thread>)\n\
+    \n";
     INT4 mpi_rank, mpi_size;
     INT4 ntemp_per_thread;
     INT4 noAdapt, adaptTau, adaptLength;
@@ -283,7 +283,7 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
     LALInferenceAddINT4Variable(algorithm_params, "adapt_verbose", adapt_verbose, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddINT4Variable(algorithm_params, "output_snrs", outputSNRs, LALINFERENCE_PARAM_OUTPUT);
 
-    /* Make a single model just to cound dimensions */
+    /* Make a single model just to count dimensions */
     model = LALInferenceInitCBCModel(runState);
     ndim = LALInferenceGetVariableDimensionNonFixed(model->params);
 
@@ -292,10 +292,8 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
     ntemp_per_thread = LALInferenceGetINT4Variable(runState->algorithmParams, "ntemp_per_thread");
 
     /* Add some settings settings to runstate proposal args so their copied to threads */
-    LALInferenceAddINT4Variable(runState->proposalArgs, "de_skip",
-                                skip, LALINFERENCE_PARAM_OUTPUT);
-    LALInferenceAddINT4Variable(runState->proposalArgs, "output_snrs",
-                                outputSNRs, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddINT4Variable(runState->proposalArgs, "de_skip", skip, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddINT4Variable(runState->proposalArgs, "output_snrs", outputSNRs, LALINFERENCE_PARAM_OUTPUT);
 
     /* Parse proposal args for runSTate and initialize the walkers on this MPI thread */
     LALInferenceInitCBCThreads(runState, ntemp_per_thread);
