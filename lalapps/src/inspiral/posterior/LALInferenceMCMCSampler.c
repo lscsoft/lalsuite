@@ -1114,6 +1114,7 @@ void LALInferencePrintPTMCMCHeaderFile(LALInferenceRunState *runState, LALInfere
 
     /* Print the likelihood and SNR of each individual detector */
     fprintf(threadoutput, "logl\t");
+    fprintf(threadoutput, "deltalogl\t");
     LALInferenceIFOData *headIFO = runState->data;
     while (headIFO != NULL) {
         fprintf(threadoutput, "logl");
@@ -1147,6 +1148,7 @@ void LALInferencePrintPTMCMCHeaderFile(LALInferenceRunState *runState, LALInfere
         (LALInferenceGetUINT4Variable(thread->currentParams, "spcal_active")))
         LALInferencePrintSplineCalibration(threadoutput, thread);
 
+    fprintf(threadoutput, "%f\t", thread->currentLikelihood);
     fprintf(threadoutput, "%f\t", thread->currentLikelihood - thread->nullLikelihood);
     headIFO = runState->data;
     UINT4 i = 0;
@@ -1356,6 +1358,7 @@ void LALInferencePrintMCMCSample(LALInferenceThreadState *thread, LALInferenceIF
         LALInferencePrintSplineCalibration(threadoutput, thread);
     }
 
+    fprintf(threadoutput,"%f\t", thread->currentLikelihood);
     fprintf(threadoutput,"%f\t", thread->currentLikelihood - thread->nullLikelihood);
 
     ifo = 0;
