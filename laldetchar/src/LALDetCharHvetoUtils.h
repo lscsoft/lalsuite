@@ -36,11 +36,11 @@ LALGHashTable* XLALGetChannelList(LALGSequence *trig_sequence);
 LALGSequence* XLALPopulateTrigSequenceFromFile(LALGSequence* trig_sequence, const char* fname, double min_snr, char* ignore_list);
 
 #ifdef SWIG   // SWIG interface directives
-SWIGLAL(ACQUIRES_OWNERSHIP(SnglBurst*, tbl));
+SWIGLAL(OWNS_THIS_ARG(SnglBurst*, tbl));
 #endif
 LALGSequence* XLALPopulateTrigSequenceFromTrigList(LALGSequence* trig_sequence, SnglBurst* tbl);
 #ifdef SWIG   // SWIG interface directives
-SWIGLAL_CLEAR(ACQUIRES_OWNERSHIP(SnglBurst*, tbl));
+SWIGLAL_CLEAR(OWNS_THIS_ARG(SnglBurst*, tbl));
 #endif
 
 #ifdef  __cplusplus

@@ -1826,20 +1826,20 @@ require:
 #define %swiglal_public_clear_VARIABLE_ARGUMENT_LIST(FUNCTION, TYPE, ENDVALUE)
 
 ///
-/// The <b>SWIGLAL(RETURNS_PROPERTY(...))</b> macro is used when a function returns an object whose
+/// The <b>SWIGLAL(OWNED_BY_1ST_ARG(...))</b> macro is used when a function returns an object whose
 /// memory is owned by the object supplied as the first argument to the function.  Typically this
 /// occurs when the function is returning some property of its first argument. The macro applies a
 /// typemap which calles \c swiglal_store_parent() to store a reference to the first argument as the
 /// \c parent of the return argument, so that the parent will not be destroyed as long as the return
 /// value is in scope.
 ///
-%define %swiglal_public_RETURNS_PROPERTY(TYPE, ...)
-%swiglal_map_ab(%swiglal_apply, SWIGTYPE* SWIGLAL_RETURNS_PROPERTY, TYPE, __VA_ARGS__);
+%define %swiglal_public_OWNED_BY_1ST_ARG(TYPE, ...)
+%swiglal_map_ab(%swiglal_apply, SWIGTYPE* SWIGLAL_OWNED_BY_1ST_ARG, TYPE, __VA_ARGS__);
 %enddef
-%define %swiglal_public_clear_RETURNS_PROPERTY(TYPE, ...)
+%define %swiglal_public_clear_OWNED_BY_1ST_ARG(TYPE, ...)
 %swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
 %enddef
-%typemap(out, noblock=1) SWIGTYPE* SWIGLAL_RETURNS_PROPERTY {
+%typemap(out, noblock=1) SWIGTYPE* SWIGLAL_OWNED_BY_1ST_ARG {
 %#ifndef swiglal_no_1starg
   %swiglal_store_parent($1, 0, swiglal_1starg());
 %#endif
@@ -1847,14 +1847,14 @@ require:
 }
 
 ///
-/// The <b>SWIGLAL(ACQUIRES_OWNERSHIP(...))</b> macro indicates that a function will acquire
+/// The <b>SWIGLAL(OWNS_THIS_ARG(...))</b> macro indicates that a function will acquire
 /// ownership of a particular argument, e.g. by storing that argument in some container, and that
 /// therefore the SWIG object wrapping that argument should no longer own its memory.
 ///
-%define %swiglal_public_ACQUIRES_OWNERSHIP(TYPE, ...)
+%define %swiglal_public_OWNS_THIS_ARG(TYPE, ...)
 %swiglal_map_ab(%swiglal_apply, SWIGTYPE* DISOWN, TYPE, __VA_ARGS__);
 %enddef
-%define %swiglal_public_clear_ACQUIRES_OWNERSHIP(TYPE, ...)
+%define %swiglal_public_clear_OWNS_THIS_ARG(TYPE, ...)
 %swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
 %enddef
 
@@ -1900,7 +1900,7 @@ typedef struct {} NAME;
 /// adds a method <i>Base* cast2Base()</i> method to Derived. Obviously this should be a valid cast
 /// for the given types! The SWIG-wrapped object returned by the <i>cast2...()</i> methods will
 /// remain in scope as long as the struct that was cast from, by using a typemap similar to that of
-/// the SWIGLAL(RETURNS_PROPERTY(...)) macro.
+/// the SWIGLAL(OWNED_BY_1ST_ARG(...)) macro.
 ///
 %typemap(out, noblock=1) SWIGTYPE* SWIGLAL_RETURNS_SELF {
 %#ifndef swiglal_no_1starg

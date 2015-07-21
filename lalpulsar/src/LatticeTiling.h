@@ -74,6 +74,18 @@ typedef enum tagTilingOrder {
 } TilingOrder;
 
 ///
+/// Statistics related to the number/value of lattice tiling points in a dimension.
+///
+typedef struct tagLatticeTilingStats {
+  UINT8 total_points;			///< Total number of points up to this dimension
+  long min_points_pass;			///< Minimum number of points per pass in this dimension
+  double avg_points_pass;		///< Average number of points per pass in this dimension
+  long max_points_pass;			///< Maximum number of points per pass in this dimension
+  double min_value_pass;		///< Minimum value of points in this dimension
+  double max_value_pass;		///< Maximum value of points in this dimension
+} LatticeTilingStats;
+
+///
 /// Function which returns a bound on a dimension of the lattice tiling.
 ///
 typedef double( *LatticeTilingBound )(
@@ -172,6 +184,14 @@ REAL8 XLALLatticeTilingStepSizes(
   );
 
 ///
+/// Return statistics related to the number/value of lattice tiling points in a dimension.
+///
+const LatticeTilingStats* XLALLatticeTilingStatistics(
+  LatticeTiling *tiling,		///< [in] Lattice tiling
+  const size_t dim			///< [in] Dimension in which to return statistics
+  );
+
+///
 /// Generate random points within the parameter space of the lattice tiling.  Points can be scaled
 /// to fill the parameter space exactly (<tt>scale == 0</tt>), fill a subset of the parameter space
 /// (<tt>-1 < scale < 0</tt>), or fill outside the parameter space (<tt>scale > 0</tt>).
@@ -186,8 +206,11 @@ int XLALRandomLatticeTilingPoints(
 ///
 /// Create a new lattice tiling iterator.
 ///
+#ifdef SWIG // SWIG interface directives
+SWIGLAL( OWNED_BY_1ST_ARG( int, XLALCreateLatticeTilingIterator ) );
+#endif
 LatticeTilingIterator *XLALCreateLatticeTilingIterator(
-  const LatticeTiling *tiling,		///< [in] Lattice tiling
+  LatticeTiling *tiling,		///< [in] Lattice tiling
   const size_t itr_ndim,		///< [in] Number of parameter-space dimensions to iterate over
   const TilingOrder order		///< [in] Order in which to iterate over lattice tiling points
   );
@@ -237,22 +260,13 @@ UINT8 XLALTotalLatticeTilingPoints(
   );
 
 ///
-/// Return statistics related to the number of lattice tiling points in a dimension.
-///
-int XLALLatticeTilingStatistics(
-  LatticeTilingIterator *itr,		///< [in] Lattice tiling iterator
-  const size_t dim,			///< [in] Dimension in which to return ranges
-  UINT8 *total_points,			///< [out] Total number of points up to this dimension
-  long *min_points_pass,		///< [out] Minimum number of points per pass in this dimension
-  double *avg_points_pass,		///< [out] Average number of points per pass in this dimension
-  long *max_points_pass			///< [out] Maximum number of points per pass in this dimension
-  );
-
-///
 /// Create a new lattice tiling locator. If <tt>bound_ndim > 0</tt>, an index trie is internally built.
 ///
+#ifdef SWIG // SWIG interface directives
+SWIGLAL( OWNED_BY_1ST_ARG( int, XLALCreateLatticeTilingLocator ) );
+#endif
 LatticeTilingLocator *XLALCreateLatticeTilingLocator(
-  const LatticeTiling *tiling,		///< [in] Lattice tiling
+  LatticeTiling *tiling,		///< [in] Lattice tiling
   const size_t bound_ndim		///< [in] Number of parameter-space dimensions to enforce bounds over
   );
 

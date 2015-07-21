@@ -33,6 +33,7 @@
 #include <lal/SuperskyMetrics.h>
 #include <lal/LALConstants.h>
 #include <lal/MetricUtils.h>
+#include <lal/ExtrapolatePulsarSpins.h>
 
 #include "GSLHelpers.h"
 
@@ -831,7 +832,8 @@ int XLALConvertPhysicalToSupersky(
   const SuperskyCoordinates out,
   gsl_vector *out_point,
   const PulsarDopplerParams *in_phys,
-  const gsl_matrix *rssky_transf
+  const gsl_matrix *rssky_transf,
+  const LIGOTimeGPS *ref_time
   )
 {
 
@@ -839,6 +841,7 @@ int XLALConvertPhysicalToSupersky(
   XLAL_CHECK( SC_PHYS < out && out < SC_MAX, XLAL_EINVAL );
   XLAL_CHECK( out_point != NULL, XLAL_EFAULT );
   XLAL_CHECK( in_phys != NULL, XLAL_EFAULT );
+  XLAL_CHECK( ref_time != NULL, XLAL_EFAULT );
 
   // Deduce number of sky coordinates, and frequency/spindown coordinates
   const size_t ssize = ( out == SC_USSKY ) ? 3 : 2;
@@ -846,11 +849,18 @@ int XLALConvertPhysicalToSupersky(
   const size_t fsize = out_point->size - ssize;
   XLAL_CHECK( fsize <= PULSAR_MAX_SPINS, XLAL_EFAILED );
 
+  // Transform input physical point to reference time of coordinate transform data
+  PulsarDopplerParams in_phys_ref = *in_phys;
+  {
+    const REAL8 dtau = XLALGPSDiff ( ref_time, &in_phys_ref.refTime );
+    XLAL_CHECK ( XLALExtrapolatePulsarSpins ( in_phys_ref.fkdot, in_phys_ref.fkdot, dtau ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
   // Copy input physical point to array
   double in_point[2 + fsize];
-  in_point[0] = in_phys->Alpha;
-  in_point[1] = in_phys->Delta;
-  memcpy( &in_point[2], in_phys->fkdot, fsize * sizeof( in_point[0] ) );
+  in_point[0] = in_phys_ref.Alpha;
+  in_point[1] = in_phys_ref.Delta;
+  memcpy( &in_point[2], in_phys_ref.fkdot, fsize * sizeof( in_point[0] ) );
 
   // Convert input physical point to output supersky coordinate point
   gsl_matrix_view out_point_view = gsl_matrix_view_vector( out_point, out_point->size, 1 );
@@ -867,7 +877,8 @@ int XLALConvertSuperskyToPhysical(
   PulsarDopplerParams *out_phys,
   const SuperskyCoordinates in,
   const gsl_vector *in_point,
-  const gsl_matrix *rssky_transf
+  const gsl_matrix *rssky_transf,
+  const LIGOTimeGPS *ref_time
   )
 {
 
@@ -875,6 +886,7 @@ int XLALConvertSuperskyToPhysical(
   XLAL_CHECK( out_phys != NULL, XLAL_EFAULT );
   XLAL_CHECK( SC_PHYS < in && in < SC_MAX, XLAL_EINVAL );
   XLAL_CHECK( in_point != NULL, XLAL_EFAULT );
+  XLAL_CHECK( ref_time != NULL, XLAL_EFAULT );
 
   // Deduce number of sky coordinates, and frequency/spindown coordinates
   const size_t ssize = ( in == SC_USSKY ) ? 3 : 2;
@@ -894,6 +906,9 @@ int XLALConvertSuperskyToPhysical(
   out_phys->Alpha = out_point[0];
   out_phys->Delta = out_point[1];
   memcpy( out_phys->fkdot, &out_point[2], fsize * sizeof( out_point[0] ) );
+
+  // Set output physical point reference time to that of of coordinate transform data
+  out_phys->refTime = *ref_time;
 
   return XLAL_SUCCESS;
 
@@ -1120,7 +1135,7 @@ int XLALSetSuperskyLatticeTilingSkyPointBounds(
   PulsarDopplerParams XLAL_INIT_DECL( doppler );
   doppler.Alpha = alpha;
   doppler.Delta = delta;
-  XLAL_CHECK( XLALConvertPhysicalToSupersky( SC_RSSKY, rssky_point, &doppler, rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALConvertPhysicalToSupersky( SC_RSSKY, rssky_point, &doppler, rssky_transf, &doppler.refTime ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Set the parameter-space bounds on 2-dimensional reduced supersky A and B coordinates
   for( size_t i = 0; i < 2; ++i ) {
@@ -1217,6 +1232,89 @@ int XLALSetSuperskyLatticeTilingCoordinateSpinBound(
 
   // Set the parameter-space bound on reduced supersky frequency/spindown coordinate
   XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, dim, bound1, bound2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  return XLAL_SUCCESS;
+
+}
+
+int XLALSuperskyLatticePulsarSpinRange(
+  PulsarSpinRange *spin_range,
+  LatticeTiling *tiling,
+  const gsl_matrix *rssky_transf,
+  const LIGOTimeGPS *ref_time
+  )
+{
+
+  // Check input
+  XLAL_CHECK( spin_range != NULL, XLAL_EFAULT );
+  XLAL_CHECK( tiling != NULL, XLAL_EFAULT );
+  XLAL_CHECK( rssky_transf != NULL, XLAL_EFAULT );
+  XLAL_CHECK( ref_time != NULL, XLAL_EFAULT );
+
+  // Get rectange containing range reduced supersky coordinates
+  double skyA_rect[4], skyB_rect[4];
+  {
+    const LatticeTilingStats *stats = XLALLatticeTilingStatistics( tiling, 0 );
+    XLAL_CHECK( stats != NULL, XLAL_EFUNC );
+    skyA_rect[0] = stats->min_value_pass;
+    skyA_rect[1] = stats->max_value_pass;
+    skyA_rect[2] = stats->max_value_pass;
+    skyA_rect[3] = stats->min_value_pass;
+  }
+  {
+    const LatticeTilingStats *stats = XLALLatticeTilingStatistics( tiling, 1 );
+    XLAL_CHECK( stats != NULL, XLAL_EFUNC );
+    skyB_rect[0] = stats->min_value_pass;
+    skyB_rect[1] = stats->min_value_pass;
+    skyB_rect[2] = stats->max_value_pass;
+    skyB_rect[3] = stats->max_value_pass;
+  }
+
+  // Get range of physical frequency/spindowns
+  const size_t smax = rssky_transf->size1 - 4;
+  for( size_t i = 0; i < 4; ++i ) {
+
+    // Construct reduced supersky point
+    double in_rssky[3 + smax];
+    in_rssky[0] = skyA_rect[i];
+    in_rssky[1] = skyB_rect[i];
+    for( size_t s = 0; s <= smax; ++s ) {
+      const size_t dim = ( s == 0 ) ? ( 2 + smax ) : ( 1 + s );
+      const LatticeTilingStats *stats = XLALLatticeTilingStatistics( tiling, dim );
+      XLAL_CHECK( stats != NULL, XLAL_EFUNC );
+      in_rssky[dim] = stats->min_value_pass;
+    }
+
+    // Convert reduced supersky point to physical coordinates
+    gsl_vector_view in_rssky_view = gsl_vector_view_array( in_rssky, 3 + smax );
+    PulsarDopplerParams XLAL_INIT_DECL( out_phys );
+    XLAL_CHECK( XLALConvertSuperskyToPhysical( &out_phys, SC_RSSKY, &in_rssky_view.vector, rssky_transf, ref_time ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    // Store minimum/maximum physical frequency/spindown in 'spin_range'
+    for( size_t s = 0; s <= smax; ++s ) {
+      if( i == 0 || out_phys.fkdot[s] < spin_range->fkdot[s] ) {
+        spin_range->fkdot[s] = out_phys.fkdot[s];
+      }
+      if( i == 0 || out_phys.fkdot[s] > spin_range->fkdotBand[s] ) {
+        spin_range->fkdotBand[s] = out_phys.fkdot[s];
+      }
+    }
+
+  }
+  for( size_t s = 0; s <= smax; ++s ) {
+    spin_range->fkdotBand[s] -= spin_range->fkdot[s];
+  }
+
+  // Adjust 'spin_range' bands to include width of supersky frequency/spindown parameter space
+  for( size_t s = 0; s <= smax; ++s ) {
+    const size_t dim = ( s == 0 ) ? ( 2 + smax ) : ( 1 + s );
+    const LatticeTilingStats *stats = XLALLatticeTilingStatistics( tiling, dim );
+    XLAL_CHECK( stats != NULL, XLAL_EFUNC );
+    spin_range->fkdotBand[s] += stats->max_value_pass - stats->min_value_pass;
+  }
+
+  // Set reference time of 'spin_range' to that of coordinate transform data
+  spin_range->refTime = *ref_time;
 
   return XLAL_SUCCESS;
 
