@@ -842,14 +842,20 @@ static int SEOBNRv2ROMDoubleSpinCore(
   // Enforce allowed geometric frequency range
   if (fLow_geom < Mf_ROM_min)
     XLAL_ERROR(XLAL_EDOM, "Starting frequency Mflow=%g is smaller than lowest frequency in ROM Mf=%g. Starting at lowest frequency in ROM.\n", fLow_geom, Mf_ROM_min);
-  if (fHigh_geom == 0 || fHigh_geom > Mf_ROM_max)
+  if (fHigh_geom == 0)
     fHigh_geom = Mf_ROM_max;
+  else if (fHigh_geom > Mf_ROM_max) {
+    XLALPrintWarning("Maximal frequency Mf_high=%g is greater than highest ROM frequency Mf_ROM_Max=%g. Using Mf_high=Mf_ROM_Max.", fHigh_geom, Mf_ROM_max);
+    fHigh_geom = Mf_ROM_max;
+  }
   else if (fHigh_geom < Mf_ROM_min)
     XLAL_ERROR(XLAL_EDOM, "End frequency %g is smaller than starting frequency %g!\n", fHigh_geom, fLow_geom);
-  if (fRef_geom > Mf_ROM_max)
+  if (fRef_geom > Mf_ROM_max) {
+    XLALPrintWarning("Reference frequency Mf_ref=%g is greater than maximal frequency in ROM Mf=%g. Starting at maximal frequency in ROM.\n", fRef_geom, Mf_ROM_max);
     fRef_geom = Mf_ROM_max; // If fref > fhigh we reset fref to default value of cutoff frequency.
+  }
   if (fRef_geom < Mf_ROM_min) {
-    XLALPrintWarning("Reference frequency Mf_ref=%g is smaller than lowest frequency in ROM Mf=%g. Starting at lowest frequency in ROM.\n", fLow_geom, Mf_ROM_min);
+    XLALPrintWarning("Reference frequency Mf_ref=%g is smaller than lowest frequency in ROM Mf=%g. Starting at lowest frequency in ROM.\n", fRef_geom, Mf_ROM_min);
     fRef_geom = Mf_ROM_min;
   }
 
@@ -881,7 +887,7 @@ static int SEOBNRv2ROMDoubleSpinCore(
 
   if(retcode!=0) {
     SEOBNRROMdataDS_coeff_Cleanup(romdata_coeff);
-    XLAL_ERROR(retcode);
+    XLAL_ERROR(retcode, "Parameter-space interpolation failed.");
   }
 
   // Compute function values of amplitude an phase on sparse frequency points by evaluating matrix vector products
@@ -946,7 +952,7 @@ static int SEOBNRv2ROMDoubleSpinCore(
       gsl_vector_free(amp_f);
       gsl_vector_free(phi_f);
       SEOBNRROMdataDS_coeff_Cleanup(romdata_coeff);
-      XLAL_ERROR(XLAL_EFUNC);
+      XLAL_ERROR(XLAL_EFUNC, "Waveform allocation failed.");
   }
   memset((*hptilde)->data->data, 0, npts * sizeof(COMPLEX16));
   memset((*hctilde)->data->data, 0, npts * sizeof(COMPLEX16));
@@ -981,11 +987,6 @@ static int SEOBNRv2ROMDoubleSpinCore(
   }
 
   /* Correct phasing so we coalesce at t=0 (with the definition of the epoch=-1/deltaF above) */
-  /* JV: Commented out this message as it pollutes the logs */
-  /*
-  if (deltaF > 0)
-    XLAL_PRINT_WARNING("Warning: Depending on specified frequency sequence correction to time of coalescence may not be accurate.\n");
-   */
 
   // Get SEOBNRv2 ringdown frequency for 22 mode
   // XLALSimInspiralGetFinalFreq wants masses in SI units, so unfortunately we need to convert back
@@ -1014,11 +1015,10 @@ static int SEOBNRv2ROMDoubleSpinCore(
   // Time correction is t(f_final) = 1/(2pi) dphi/df (f_final)
   // We compute the dimensionless time correction t/M since we use geometric units.
   REAL8 t_corr = gsl_spline_eval_deriv(spline_phi, Mf_final, acc_phi) / (2*LAL_PI);
-  XLAL_PRINT_INFO("t_corr [s] = %g\n", t_corr * Mtot_sec);
 
   // Now correct phase
   for (UINT4 i=0; i<freqs->length; i++) { // loop over frequency points in sequence
-    double f = freqs->data[i];
+    double f = freqs->data[i] - fRef_geom;
     int j = i + offset; // shift index for frequency series if needed
     pdata[j] *= cexp(-2*LAL_PI * I * f * t_corr);
     cdata[j] *= cexp(-2*LAL_PI * I * f * t_corr);
@@ -1057,7 +1057,7 @@ static int SEOBNRv2ROMDoubleSpinCore(
 int XLALSimIMRSEOBNRv2ROMDoubleSpinFrequencySequence(
   struct tagCOMPLEX16FrequencySeries **hptilde, /**< Output: Frequency-domain waveform h+ */
   struct tagCOMPLEX16FrequencySeries **hctilde, /**< Output: Frequency-domain waveform hx */
-  const REAL8Sequence *freqs,                   /**< Frequency points at which to evaluate the waveform (Hz) */
+  const REAL8Sequence *freqs,                   /**< Frequency points at which to evaluate the waveform (Hz), need to be strictly monotonically increasing */
   REAL8 phiRef,                                 /**< Orbital phase at reference time */
   REAL8 fRef,                                   /**< Reference frequency (Hz); 0 defaults to fLow */
   REAL8 distance,                               /**< Distance of source (m) */
@@ -1110,12 +1110,13 @@ int XLALSimIMRSEOBNRv2ROMDoubleSpinFrequencySequence(
  *
  * Returns the plus and cross polarizations as a complex frequency series with
  * equal spacing deltaF and contains zeros from zero frequency to the starting
- * frequency fLow and zeros beyond the cutoff frequency in the ringdown.
+ * frequency fLow and zeros beyond the cutoff frequency fHigh to the next power of 2 in
+ * the size of the frequency series.
  */
 int XLALSimIMRSEOBNRv2ROMDoubleSpin(
   struct tagCOMPLEX16FrequencySeries **hptilde, /**< Output: Frequency-domain waveform h+ */
   struct tagCOMPLEX16FrequencySeries **hctilde, /**< Output: Frequency-domain waveform hx */
-  REAL8 phiRef,                                 /**< Phase at reference time */
+  REAL8 phiRef,                                 /**< Orbtial phase at reference frequency*/
   REAL8 deltaF,                                 /**< Sampling frequency (Hz) */
   REAL8 fLow,                                   /**< Starting GW frequency (Hz) */
   REAL8 fHigh,                                  /**< End frequency; 0 defaults to Mf=0.14 */
@@ -1154,6 +1155,8 @@ int XLALSimIMRSEOBNRv2ROMDoubleSpin(
 #else
   SEOBNRv2ROMDoubleSpin_Init_LALDATA();
 #endif
+
+  if(!SEOBNRv2ROMDoubleSpin_IsSetup()) XLAL_ERROR(XLAL_EFAILED,"Error setting up SEOBNRv2ROMDoubleSpin data - check your $LAL_DATA_PATH\n");
 
   // Use fLow, fHigh, deltaF to compute freqs sequence
   // Instead of building a full sequency we only transfer the boundaries and let
@@ -1282,6 +1285,7 @@ static int SEOBNRv2ROMDoubleSpinTimeFrequencySetup(
 
 /**
  * Compute the 'time' elapsed in the ROM waveform from a given starting frequency until the ringdown.
+ * UNREVIEWED!
  *
  * The notion of elapsed 'time' (in seconds) is defined here as the difference of the
  * frequency derivative of the frequency domain phase between the ringdown frequency
@@ -1349,6 +1353,7 @@ int XLALSimIMRSEOBNRv2ROMDoubleSpinTimeOfFrequency(
 /**
  * Compute the starting frequency so that the given amount of 'time' elapses in the ROM waveform
  * from the starting frequency until the ringdown.
+ * UNREVIEWED!
  *
  * The notion of elapsed 'time' (in seconds) is defined here as the difference of the
  * frequency derivative of the frequency domain phase between the ringdown frequency
