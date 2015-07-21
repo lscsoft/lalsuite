@@ -1375,7 +1375,6 @@ UINT8 XLALTotalLatticeTilingPoints(
   }
 
   // Get lattice tiling statistics for highest iterated dimension
-  printf("DEBUG %zu\n", itr->itr_ndim - 1);
   const LatticeTilingStats *stats = XLALLatticeTilingStatistics( itr->tiling, itr->itr_ndim - 1 );
   XLAL_CHECK_VAL( 0, stats != NULL, XLAL_EFUNC );
 
