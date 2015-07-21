@@ -654,7 +654,6 @@ int main(int argc, char *argv[]){
         if (!LALInferenceGetProcParamVal(procParams, "--help")) {
             fprintf(stderr, "run_state not allocated (%s, line %d).\n",
                     __FILE__, __LINE__);
-            exit(1);
         }
     }
 
@@ -671,7 +670,7 @@ int main(int argc, char *argv[]){
     LALInferenceDrawThreads(runState);
 
     if (runState == NULL)
-        return 0;
+        return XLAL_FAILURE;
 
     /* Call MCMC algorithm */
     if (mpirank == 0) printf("sampling...\n");
@@ -680,5 +679,5 @@ int main(int argc, char *argv[]){
     if (mpirank == 0) printf(" ========== main(): finished. ==========\n");
     MPI_Finalize();
 
-    return 0;
+    return XLAL_SUCCESS;
 }

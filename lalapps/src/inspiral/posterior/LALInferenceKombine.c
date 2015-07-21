@@ -393,23 +393,24 @@ int main(int argc, char *argv[]){
     init_ensemble(run_state);
 
     if (run_state == NULL) {
-        if (LALInferenceGetProcParamVal(proc_params, "--help")) {
-            exit(0);
-        } else {
+        if (!LALInferenceGetProcParamVal(proc_params, "--help")) {
             fprintf(stderr, "run_state not allocated (%s, line %d).\n",
                     __FILE__, __LINE__);
-            exit(1);
         }
     }
 
     /* Perform injections if data successful read or created */
-    LALInferenceInjectInspiralSignal(run_state->data, run_state->commandLine);
+    if (run_state)
+        LALInferenceInjectInspiralSignal(run_state->data, run_state->commandLine);
 
     /* Choose the prior */
     LALInferenceInitCBCPrior(run_state);
 
     /* Choose the likelihood */
     LALInferenceInitLikelihood(run_state);
+
+    if (run_state == NULL)
+        return XLAL_FAILURE;
 
     /* Setup the initial state of the walkers */
     on_your_marks(run_state);
