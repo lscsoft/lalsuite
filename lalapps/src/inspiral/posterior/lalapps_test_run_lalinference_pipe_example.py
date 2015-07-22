@@ -3,6 +3,7 @@ import argparse
 import shutil
 import distutils.spawn
 import os
+import subprocess
 import lalinference
 
 parser = argparse.ArgumentParser(description="Runs test runs of lalinference using lalinference_pipe_example.ini.")
@@ -36,6 +37,8 @@ if args.output == None:
     args.output=default_outputdir
 else:
     args.output=os.path.abspath(args.output)
+
+args.injection_file=os.path.abspath(args.injection_file)
 
 backup_file=args.output+'/'+os.path.basename(args.ini_file)+'.bak'
 ini_file=args.output+'/'+os.path.basename(args.ini_file)
@@ -82,10 +85,6 @@ def replace(line):
         return line.replace(line.split('=')[-1],args.engine)
     if 'nparallel=' in line:
         return '# '+line
-    if 'webdir=' in line:
-        return line.replace(line.split('=')[-1],os.getcwd()+'/webdir/')
-    if 'baseurl=' in line:
-        return line.replace(line.split('=')[-1],'file://'+os.getcwd()+'./webdir/')
     if 'accounting_group=' in line:
         return line.replace('#','').strip()+'\n'
     return line
@@ -106,16 +105,20 @@ shutil.copy(ini_file,args.output+'/fiducialBNS/'+os.path.basename(ini_file)+'.ba
 shutil.copy(ini_file,args.output+'/fiducialBNS/')
 
 def replace_fiducial(line):
+    if 'webdir=' in line:
+        return line.replace(line.split('=')[-1],os.getcwd()+'/webdir/')
+    if 'baseurl=' in line:
+        return line.replace(line.split('=')[-1],'file://'+os.getcwd()+'./webdir/')
     if 'fake-cache=' in line:
         return line.replace(line,"fake-cache={'H1':'LALSimAdLIGO','L1':'LALSimAdLIGO','V1':'LALSimAdVirgo'}")
     if 'ignore-science-segments=' in line:
-        return 'ignore-science-segments=True'
+        return 'ignore-science-segments=True\n'
     if 'dataseed=' in line:
         return line.replace('#','').strip()+'\n'
     if 'margphi=' in line:
         return line.replace('#','').strip()+'\n'
     if 'amporder=' in line:
-        return 'amporder=0'
+        return 'amporder=0\n'
     if 'parname-max' in line:
         return line+'distance-max=500\n'
     if 'deltaLogL=' in line:
@@ -134,14 +137,14 @@ lalinferenceargs = [ 'lalinference_pipe'
 		     , './run'
 		     , '-p'
 		     , './daglog'
-		     , ini_file
+		     , args.output+'/fiducialBNS/'+os.path.basename(ini_file)
 		     , '--dax'
 		     , '--grid-site'
 		     , 'local'
 		     , '--pegasus-submit'
 		     ]
 
-os.execlp('lalinference_pipe', *lalinferenceargs)
+subprocess.call(lalinferenceargs)
 
 ###################################################
 
@@ -153,24 +156,28 @@ shutil.copy(ini_file,args.output+'/GraceDB/'+os.path.basename(ini_file)+'.bak')
 shutil.copy(ini_file,args.output+'/GraceDB/')
 
 def replace_GraceDB(line):
+    if 'webdir=' in line:
+        return line.replace(line.split('=')[-1],os.getcwd()+'/webdir/')
+    if 'baseurl=' in line:
+        return line.replace(line.split('=')[-1],'file://'+os.getcwd()+'./webdir/')
     if 'ifos=' in line:
-        return "ifos=['H1','L1']"
+        return "ifos=['H1','L1']\n"
     if 'upload-to-gracedb=' in line:
-        return 'upload-to-gracedb=True\npegasus.transfer.links=false'
+        return 'upload-to-gracedb=True\npegasus.transfer.links=false\n'
     if 'ignore-science-segments=' in line:
-        return 'ignore-science-segments=True'
+        return 'ignore-science-segments=True\n'
     if 'bayesline=' in line:
         return line.replace('#','').strip()+'\n'
     if 'skyarea=' in line:
         return line.replace('#','').strip()+'\n'
     if 'types=' in line:
-        return "types={'H1':'H1_HOFT_C00','L1':'L1_HOFT_C00','V1':'V1Online'}"
+        return "types={'H1':'H1_HOFT_C00','L1':'L1_HOFT_C00','V1':'V1Online'}\n"
     if 'channels=' in line:
-        return "channels={'H1':'H1:GDS-CALIB_STRAIN','L1':'L1:GDS-CALIB_STRAIN','V1':'V1:FAKE_h_16384Hz_4R'}"
+        return "channels={'H1':'H1:GDS-CALIB_STRAIN','L1':'L1:GDS-CALIB_STRAIN','V1':'V1:FAKE_h_16384Hz_4R'}\n"
     if 'margphi=' in line:
         return line.replace('#','').strip()+'\n'
     if 'amporder=' in line:
-        return 'amporder=0\npsdFit=\ndifferential-buffer-limit=1000000'
+        return 'amporder=0\npsdFit=\ndifferential-buffer-limit=1000000\n'
     if 'parname-max' in line:
         return line+'distance-max=300\n'
     if 'deltaLogL=' in line:
@@ -184,16 +191,16 @@ with open(args.output+'/GraceDB/'+os.path.basename(ini_file),'w') as fout:
 
 lalinferenceargs = [ 'lalinference_pipe'
 		     , '--gid'
-		     , T169545
+		     , 'T169545'
 		     , '-r'
 		     , './run'
 		     , '-p'
 		     , './daglog'
-		     , ini_file
+		     , args.output+'/GraceDB/'+os.path.basename(ini_file)
 		     , '--dax'
 		     , '--grid-site'
 		     , 'local'
 		     , '--pegasus-submit'
 		     ]
 
-os.execlp('lalinference_pipe', *lalinferenceargs)
+subprocess.call(lalinferenceargs)
