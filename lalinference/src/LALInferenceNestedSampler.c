@@ -63,6 +63,9 @@ static int ReadNSCheckPoint(CHAR *filename, LALInferenceRunState *runState, NSin
 /** Read the given filename to populate a given LALInferenceRunState and NSintegralState */
 static int WriteNSCheckPoint(CHAR *filename, LALInferenceRunState *runState, NSintegralState *s);
 
+/** Sync the live points to the differential evolution buffer */
+static int syncLivePointsDifferentialPoints(LALInferenceRunState *state, LALInferenceThreadState *thread);
+
 /* This is checked by the main loop to determine when to checkpoint */
 static volatile sig_atomic_t __ns_saveStateFlag = 0;
 /* This indicates the main loop should terminate */
@@ -615,8 +618,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 
   /* Use the live points as differential evolution points */
   /* Single thread here */
-  threadState->differentialPoints=runState->livePoints;
-  threadState->differentialPointsLength=(size_t) Nlive;
+  syncLivePointsDifferentialPoints(runState,threadState);
   threadState->differentialPointsSkip=1;
 
   if(!LALInferenceCheckVariable(runState->algorithmParams,"Nmcmc")){
@@ -823,6 +825,9 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 
     /* Update NMCMC from ACF */
     UpdateNMCMC(runState);
+
+    /* Sync the live points to differential points */
+    syncLivePointsDifferentialPoints(runState,threadState);
 
     /* Output some information */
     if(verbose){
@@ -1600,4 +1605,18 @@ static int ReadNSCheckPoint(CHAR *filename, LALInferenceRunState *runState, NSin
     fclose(progfile);
     return 0;
   }
+}
+
+static int syncLivePointsDifferentialPoints(LALInferenceRunState *state, LALInferenceThreadState *thread)
+{
+    INT4 N = LALInferenceGetINT4Variable(state->algorithmParams,"Nlive");
+    if(!thread->differentialPoints) thread->differentialPoints=XLALCalloc(N,sizeof(LALInferenceVariables *));
+    
+    for(INT4 i=0;i<N;i++)
+    {
+        if(!thread->differentialPoints[i]) thread->differentialPoints[i]=XLALCalloc(1,sizeof(LALInferenceVariables));
+        LALInferenceCopyVariables(state->livePoints[i],thread->differentialPoints[i]);
+    }
+    thread->differentialPointsLength=N;
+    return(XLAL_SUCCESS);
 }
