@@ -71,7 +71,7 @@ dummyCacheNames=['LALLIGO','LALVirgo','LALAdLIGO','LALAdVirgo']
 
 def readLValert(SNRthreshold=0,gid=None,flow=40.0,gracedb="gracedb",savepsdpath="./",downloadpsd=True):
   """
-  Parse LV alert file, continaing coinc, sngl, coinc_event_map.
+  Parse LV alert file, containing coinc, sngl, coinc_event_map.
   and create a list of Events as input for pipeline
   Based on Chris Pankow's script
   """
@@ -110,6 +110,8 @@ def readLValert(SNRthreshold=0,gid=None,flow=40.0,gracedb="gracedb",savepsdpath=
     print "gracedb download %s psd.xml.gz" % gid
     subprocess.call([gracedb,"download", gid ,"psd.xml.gz"])
     xmlpsd = lalseries.read_psd_xmldoc(utils.load_filename('psd.xml.gz',contenthandler = lalseries.LIGOLWContentHandler))
+    # Note: This finds the active IFOs by looking for available PSDs
+    # Is there another way of getting this info?
     ifos = xmlpsd.keys()
   psdasciidic=None
   fhigh=None
@@ -123,13 +125,10 @@ def readLValert(SNRthreshold=0,gid=None,flow=40.0,gracedb="gracedb",savepsdpath=
   coinc_map = lsctables.CoincMapTable.get_table(xmldoc)
   for coinc in coinc_events:
     these_sngls = [e for e in sngl_events if e.event_id in [c.event_id for c in coinc_map if c.coinc_event_id == coinc.coinc_event_id] ]
-    #if these_sngls[0].template_duration:
-      #dur = min([e.template_duration for e in these_sngls]) + 2.0 # Add 2s padding CAREFULL, DEPENDS ON THE LOW FREQUENCY CUTOFF OF THE DETECTION PIPELINE
-      #srate = pow(2.0, ceil( log(max([e.f_final]), 2) ) ) # Round up to power of 2
-    #else:
     dur=[]
     srate=[]
     for e in these_sngls:
+      # Review: Replace this with a call to LALSimulation function at some point
       p=Popen(["lalapps_chirplen","--flow",str(flow),"-m1",str(e.mass1),"-m2",str(e.mass2)],stdout=PIPE, stderr=PIPE, stdin=PIPE)
       strlen = p.stdout.read()
       dur.append(pow(2.0, ceil( log(max(8.0,float(strlen.splitlines()[2].split()[5]) + 2.0), 2) ) ) )
@@ -666,11 +665,10 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       gpsend=self.config.getfloat('input','gps-end-time')
     inputnames=['gps-time-file','injection-file','sngl-inspiral-file','coinc-inspiral-file','pipedown-db','gid','gstlal-db']
     ReadInputFromList=sum([ 1 if self.config.has_option('input',name) else 0 for name in inputnames])
+    # If no input events given, just return an empty list (e.g. for PP pipeline)
     if ReadInputFromList!=1 and (gpsstart is None or gpsend is None):
         return []
-        print 'Please specify only one input file'
-        print 'Or specify gps-start-time and gps-end-time in the ini file'
-        sys.exit(1)
+    # Review: Clean up this section
     if self.config.has_option('input','events'):
       selected_events=self.config.get('input','events')
       print 'Selected events %s'%(str(selected_events))
@@ -681,6 +679,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
           selected_events=self.select_events()
     else:
         selected_events=None
+
     # No input file given, analyse the entire time stretch between gpsstart and gpsend
     if self.config.has_option('input','analyse-all-time') and self.config.getboolean('input','analyse-all-time')==True:
         print 'Setting up for analysis of continuous time stretch %f - %f'%(gpsstart,gpsend)
@@ -716,7 +715,6 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       from pylal import SimInspiralUtils
       injTable=SimInspiralUtils.ReadSimInspiralFromFiles([self.config.get('input','injection-file')])
       events=[Event(SimInspiral=inj) for inj in injTable]
-      #shutil.copy(self.config.get('input','injection-file'),self.basepath)
       self.add_pfn_cache([create_pfn_tuple(self.config.get('input','injection-file'))])
     # SnglInspiral Table
     if self.config.has_option('input','sngl-inspiral-file'):
@@ -724,15 +722,12 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       trigTable=SnglInspiralUtils.ReadSnglInspiralFromFiles([self.config.get('input','sngl-inspiral-file')])
       events=[Event(SnglInspiral=trig) for trig in trigTable]
       self.add_pfn_cache([create_pfn_tuple(self.config.get('input','sngl-inspiral-file'))])
-      #shutil.copy(self.config.get('input','sngl-inspiral-file'),self.basepath)
     if self.config.has_option('input','coinc-inspiral-file'):
       from pylal import CoincInspiralUtils
       coincTable = CoincInspiralUtils.readCoincInspiralFromFiles([self.config.get('input','coinc-inspiral-file')])
       events = [Event(CoincInspiral=coinc) for coinc in coincTable]
       self.add_pfn_cache([create_pfn_tuple(self.config.get('input','coinc-inspiral-file'))])
-      #shutil.copy(self.config.get('input','coinc-inspiral-file'),self.basepath)
     # LVAlert CoincInspiral Table
-    #if self.config.has_option('input','lvalert-file'):
     if self.config.has_option('input','gid'):
       gid=self.config.get('input','gid')
       flow=40.0
@@ -861,7 +856,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
           zipfilename='postproc_'+evstring+'.tar.gz'
         else:
           zipfilename=None
-        respagenode=self.add_results_page_node(outdir=pagedir,parent=mergenode,gzip_output=zipfilename,ifos=enginenodes[0].ifos)
+        # Note: Disabled gzip_output for now. Possibly need it for future Pegasus use
+        respagenode=self.add_results_page_node(outdir=pagedir,parent=mergenode,gzip_output=None,ifos=enginenodes[0].ifos)
         respagenode.set_psd_files(enginenodes[0].get_psd_files())
         respagenode.set_snr_file(enginenodes[0].get_snr_file())
     respagenode.set_bayes_coherent_noise(mergenode.get_B_file())
@@ -1315,6 +1311,7 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
           if cp.has_option('engine','resume'):
             universe='vanilla'
           else:
+            # This will go away, since condor_compile will not be supported in future
             universe='standard'
       else:
         print 'LALInferencePipe: Unknown engine node type %s!'%(self.engine)

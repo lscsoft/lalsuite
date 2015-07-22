@@ -610,8 +610,6 @@ main(int argc, char **argv)
 	   &stat );
       SUB( LALSimulateCoherentGW( &stat, &signalvec, &waveform,
 				  &detector ), &stat );
-      SUB( LALSI2InjectTimeSeries( &stat, &output, &signalvec, params ),
-	   &stat );
       SUB( LALSDestroyVectorSequence( &stat, &( waveform.a->data ) ),
 	   &stat );
       SUB( LALSDestroyVector( &stat, &( waveform.f->data ) ), &stat );
