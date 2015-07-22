@@ -52,6 +52,10 @@ cp=ConfigParser.ConfigParser()
 cp.optionxform = str
 cp.readfp(open(inifile))
 
+if opts.condor_submit and opts.pegasus_submit:
+    print 'Error: Please only specify one of --condor-submit or --pegasus-submit'
+    sys.exit(1)
+
 if opts.run_path is not None:
   cp.set('paths','basedir',os.path.abspath(opts.run_path))
 
@@ -130,7 +134,9 @@ dag.write_sub_files()
 dag.write_dag()
 dag.write_script()
 os.chdir(olddir)
-# End of program
+
+# Tell user about output, and submit it if requested
+
 print 'Successfully created DAG file.'
 fulldagpath=os.path.join(cp.get('paths','basedir'),dag.get_dag_file())
 if not opts.dax:
