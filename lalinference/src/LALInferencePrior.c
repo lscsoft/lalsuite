@@ -134,6 +134,47 @@ void LALInferenceInitLIBPrior(LALInferenceRunState *runState)
     }
 }
 
+static REAL8 LALInferenceConstantCalibrationPrior(LALInferenceRunState *runState, LALInferenceVariables *params) {
+
+  LALInferenceIFOData *ifo = NULL;
+  REAL8 ampWidth = -1.0;
+  REAL8 phaseWidth = -1.0;
+  REAL8 logPrior = 0.0;
+
+  if (runState->commandLine == NULL || !(LALInferenceGetProcParamVal(runState->commandLine, "--MarginalizeConstantCalAmp"))|| !(LALInferenceGetProcParamVal(runState->commandLine, "--MarginalizeConstantCalPha"))) {
+    return logPrior;
+  }
+
+  ifo = runState->data;
+  do {
+
+    if((LALInferenceGetProcParamVal(runState->commandLine, "--MarginalizeConstantCalAmp"))){
+      ampWidth = *(REAL8 *)LALInferenceGetVariable(runState->priorArgs, "constcal_amp_uncertainty");
+      if (ampWidth>0){
+	      char ampVarName[VARNAME_MAX];
+	      REAL8 amp = 0.0;
+	      snprintf(ampVarName, VARNAME_MAX, "calamp_%s", ifo->name);
+	      amp = *(REAL8*)LALInferenceGetVariable(params, ampVarName);
+	      logPrior += -log(2.0*M_PI) - log(ampWidth) - 0.5*amp*amp/ampWidth/ampWidth;
+      }
+    }
+    if((LALInferenceGetProcParamVal(runState->commandLine, "--MarginalizeConstantCalPha"))){
+      phaseWidth = *(REAL8 *)LALInferenceGetVariable(runState->priorArgs, "constcal_phase_uncertainty");
+      if (phaseWidth>0){
+	      char phaseVarName[VARNAME_MAX];
+	      REAL8 phase = 0.0;
+	      snprintf(phaseVarName, VARNAME_MAX, "calpha_%s", ifo->name);   
+	      phase = *(REAL8 *)LALInferenceGetVariable(params, phaseVarName);
+	      logPrior += -log(2.0*M_PI) - log(phaseWidth) - 0.5*phase*phase/phaseWidth/phaseWidth;
+      }
+    }
+   
+    ifo = ifo->next;
+  } while (ifo);
+
+  return logPrior;
+}
+
 static REAL8 LALInferenceSplineCalibrationPrior(LALInferenceRunState *runState, LALInferenceVariables *params) {
   LALInferenceIFOData *ifo = NULL;
   REAL8 ampWidth = -1.0;
@@ -426,7 +467,7 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
 
   /* Calibration priors. */
   logPrior += LALInferenceSplineCalibrationPrior(runState, params);
-
+  logPrior += LALInferenceConstantCalibrationPrior(runState, params);
   /* Evaluate PSD prior (returns 0 if no PSD model) */
   logPrior += LALInferencePSDPrior(runState, params);
 
@@ -1251,7 +1292,7 @@ REAL8 LALInferenceInspiralSkyLocPrior(LALInferenceRunState *runState, LALInferen
 
   /* Calibration parameters */
   logPrior += LALInferenceSplineCalibrationPrior(runState, params);
-
+  logPrior += LALInferenceConstantCalibrationPrior(runState, params);
   return(logPrior);
 }
 
