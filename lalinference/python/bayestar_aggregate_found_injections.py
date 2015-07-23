@@ -54,6 +54,10 @@ if __name__ == '__main__':
                 type=float, metavar="PERCENT",
                 help="Report the area of the smallest contour and the number of modes "
                 + "containing this much probability. Can be repeated mulitple times"),
+            Option("-a", "--area", default=[], action="append",
+                type=float, metavar="DEG2",
+                help="Report the largest probability contained within any region"
+                + "of this area in square degrees. Can be repeated multiple times."),
             Option("--modes", default=False, action="store_true",
                 help="Compute number of disjoint modes [default: %default]")
         ]
@@ -77,11 +81,12 @@ from lalinference import fits
 from lalinference.bayestar import postprocess
 
 
-def startup(dbfilename, opts_contour, opts_modes):
-    global db, contours, modes
+def startup(dbfilename, opts_contour, opts_modes, opts_area):
+    global db, contours, modes, areas
     db = command.sqlite3_connect_nocreate(dbfilename)
     contours = opts_contour
     modes = opts_modes
+    areas = opts_area
 
 
 def process(fitsfilename):
@@ -103,15 +108,16 @@ def process(fitsfilename):
         WHERE cem1.table_name = 'sim_inspiral'
         AND cem2.table_name = 'coinc_event' AND cem2.event_id = ?""",
         (coinc_event_id,)).fetchone()
-    searched_area, searched_prob, offset, searched_modes, contour_areas, contour_modes = postprocess.find_injection(
-        sky_map, true_ra, true_dec, contours=[0.01 * p for p in contours], modes=modes, nest=metadata['nest'])
+    searched_area, searched_prob, offset, searched_modes, contour_areas, area_probs, contour_modes = postprocess.find_injection(
+        sky_map, true_ra, true_dec, contours=[0.01 * p for p in contours],
+        areas=areas, modes=modes, nest=metadata['nest'])
 
     if snr is None:
         snr = float('nan')
     if far is None:
         far = float('nan')
 
-    ret = [coinc_event_id, simulation_id, far, snr, searched_area, searched_prob, offset, runtime] + contour_areas
+    ret = [coinc_event_id, simulation_id, far, snr, searched_area, searched_prob, offset, runtime] + contour_areas + area_probs
     if modes:
         ret += [searched_modes] + contour_modes
     return ret
@@ -122,7 +128,7 @@ if __name__ == '__main__':
     progress = ProgressBar()
 
     progress.update(-1, 'spawning {0} workers'.format(opts.jobs))
-    startupargs = (dbfilename, opts.contour, opts.modes)
+    startupargs = (dbfilename, opts.contour, opts.modes, opts.area)
     if opts.jobs == 1:
         from itertools import imap
     else:
@@ -135,7 +141,7 @@ if __name__ == '__main__':
 
     colnames = ['coinc_event_id', 'simulation_id', 'far', 'snr', 'searched_area',
         'searched_prob', 'offset', 'runtime'] + ["area({0:g})".format(p)
-        for p in contours]
+        for p in contours] + ["prob({0:g})".format(a) for a in areas]
     if modes:
         colnames += ['searched_modes'] + ["modes({0:g})".format(p) for p in contours]
     print(*colnames, sep="\t", file=outfile)
