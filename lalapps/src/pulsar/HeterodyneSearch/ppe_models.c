@@ -476,6 +476,15 @@ REAL8Vector *get_ssb_delay( BinaryPulsarParams pars, LIGOTimeGPSVector *datatime
 
   T0 = pars.pepoch;
 
+  /* make sure ra and dec are wrapped withing 0--2pi and -pi.2--pi/2 respectively */
+  pars.ra = fmod(pars.ra, LAL_TWOPI);
+  REAL8 absdec = fabs(pars.dec);
+  if ( absdec > LAL_PI_2 ){
+    UINT4 nwrap = floor((absdec+LAL_PI_2)/LAL_PI);
+    pars.dec = (pars.dec > 0 ? 1. : -1.)*(nwrap%2 == 1 ? -1. : 1.)*(fmod(absdec + LAL_PI_2, LAL_PI) - LAL_PI_2);
+    pars.ra = fmod(pars.ra + (REAL8)nwrap*LAL_PI, LAL_TWOPI); /* move RA by pi */
+  }
+
   #pragma omp parallel for shared(baryfail) private(bary)
   for( i=0; i<length; i++){
     if ( !baryfail ){ /* need this to quickly exit loop while using openmp (as can't use break statements) */
