@@ -856,22 +856,16 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 	 * at this stage (last chance before the overall normalization is
 	 * computed). */
 
-	window = XLALCreateGaussREAL8Window(2 * tilde_hplus->data->length + 1, (tilde_hplus->data->length * tilde_hplus->deltaF) / (bandwidth / 2.0));
-	if(!window) {
-		XLALDestroyCOMPLEX16FrequencySeries(tilde_hplus);
-		XLALDestroyCOMPLEX16FrequencySeries(tilde_hcross);
-		XLALDestroyREAL8TimeSeries(*hplus);
-		XLALDestroyREAL8TimeSeries(*hcross);
-		*hplus = *hcross = NULL;
-		XLAL_ERROR(XLAL_EFUNC);
-	}
-	XLALResizeREAL8Sequence(window->data, tilde_hplus->data->length - (unsigned) floor(frequency / tilde_hplus->deltaF + 0.5), tilde_hplus->data->length);
 	semi_major_minor_from_e(eccentricity, &a, &b);
-	for(i = 0; i < window->data->length; i++) {
-		tilde_hplus->data->data[i] *= a * window->data->data[i];
-		tilde_hcross->data->data[i] *= b * window->data->data[i];
+	{
+	double beta = -0.5 / (bandwidth * bandwidth / 4.);
+	for(i = 0; i < tilde_hplus->data->length; i++) {
+		double f = (tilde_hplus->f0 + i * tilde_hplus->deltaF) - frequency;
+		double w = f == 0. ? 1. : exp(f * f * beta);
+		tilde_hplus->data->data[i] *= a * w;
+		tilde_hcross->data->data[i] *= b * w;
 	}
-	XLALDestroyREAL8Window(window);
+	}
 
 	/* normalize the waveform to achieve the desired \int
 	 * \f$(\stackrel{.}{h}_{+}^{2} + \stackrel{.}{h}_{\times}^{2}) dt\f$ */
