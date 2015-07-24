@@ -767,7 +767,7 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 	/* check input.  checking if sigma_t_squared < 0 is equivalent to
 	 * checking if duration * bandwidth < LAL_2_PI */
 
-	if(duration < 0 || bandwidth < 0 || eccentricity < 0 || eccentricity > 1 || sigma_t_squared < 0 || int_hdot_squared < 0 || delta_t <= 0) {
+	if(duration < 0 || frequency < 0 || bandwidth < 0 || eccentricity < 0 || eccentricity > 1 || sigma_t_squared < 0 || int_hdot_squared < 0 || delta_t <= 0) {
 		XLALPrintError("%s(): invalid input parameters\n", __func__);
 		*hplus = *hcross = NULL;
 		XLAL_ERROR(XLAL_EINVAL);
@@ -805,10 +805,10 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 	gaussian_noise(*hcross, 1, rng);
 
 	/* apply the time-domain Gaussian window.  the window function's
-	 * shape parameter is ((length - 1) * delta_t / 2) / \sigma_{t} where
+	 * shape parameter is ((length - 1) / 2) / (\sigma_{t} / delta_t) where
 	 * \sigma_{t} is the compensated time-domain window duration */
 
-	window = XLALCreateGaussREAL8Window((*hplus)->data->length, (((*hplus)->data->length - 1) * delta_t / 2) / sqrt(sigma_t_squared));
+	window = XLALCreateGaussREAL8Window((*hplus)->data->length, (((*hplus)->data->length - 1) / 2) / (sqrt(sigma_t_squared) / delta_t));
 	if(!window) {
 		XLALDestroyREAL8TimeSeries(*hplus);
 		XLALDestroyREAL8TimeSeries(*hcross);
