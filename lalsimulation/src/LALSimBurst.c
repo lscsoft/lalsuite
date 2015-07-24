@@ -30,8 +30,9 @@
 #include <math.h>
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
-#include <lal/LALSimBurst.h>
 #include <lal/LALConstants.h>
+#include <lal/LALDatatypes.h>
+#include <lal/LALSimBurst.h>
 #include <lal/FrequencySeries.h>
 #include <lal/Sequence.h>
 #include <lal/TimeFreqFFT.h>
@@ -96,28 +97,45 @@ static void semi_major_minor_from_e(double e, double *a, double *b)
  * @details
  * The input must have non-zero length.
  *
- * @param[in] series A time series.
+ * @param[in] hplus A time series.
  *
- * @returns The strain of the sample with the largest magnitude.
+ * @param[in] hcross A time series.  Optional.  Pass NULL to disregard.
+ *
+ * @param[out] index The index of the peak sample will be written to this address.  Optional.  NULL to disregard.
+ *
+ * @returns The strain of the sample with the largest magnitude.  The \f$+\f$ polarization amplitude is in the real component, the imaginary component contains the \f$\times\f$ polarization's amplitude (or is 0 if hcross is not supplied).
  *
  * @retval XLAL_REAL8_FAIL_NAN Falure.
  */
 
 
-REAL8 XLALMeasureHPeak(const REAL8TimeSeries *series)
+COMPLEX16 XLALMeasureHPeak(const REAL8TimeSeries *hplus, const REAL8TimeSeries *hcross, unsigned *index)
 {
-	double hpeak;
+	double complex hpeak;
+	double abs_hpeak;
 	unsigned i;
 
-	if(!series->data->length) {
+	/* check input */
+
+	if(hcross) {
+		LAL_CHECK_CONSISTENT_TIME_SERIES(hplus, hcross, XLAL_REAL8_FAIL_NAN);
+	}
+	if(!hplus->data->length) {
 		XLALPrintError("%s(): length must be > 0\n", __func__);
 		XLAL_ERROR_REAL8(XLAL_EBADLEN);
 	}
 
-	hpeak = series->data->data[0];
-	for(i = 1; i < series->data->length; i++)
-		if(fabs(series->data->data[i]) > fabs(hpeak))
-			hpeak = series->data->data[i];
+	/* find peak */
+
+	hpeak = hplus->data->data[0] + I * (hcross ? hcross->data->data[0] : 0.);
+	abs_hpeak = cabs(hpeak);
+	for(i = 1; i < hplus->data->length; i++)
+		if(cabs(hplus->data->data[i] + I * (hcross ? hcross->data->data[i] : 0.)) > abs_hpeak) {
+			hpeak = hplus->data->data[i] + I * (hcross ? hcross->data->data[i] : 0.);
+			abs_hpeak = cabs(hpeak);
+			if(index)
+				*index = i;
+		}
 
 	return hpeak;
 }
