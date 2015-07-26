@@ -674,7 +674,7 @@ int XLALConvertSuperskyCoordinates(
   // Check input
   XLAL_CHECK( out < SC_MAX, XLAL_EINVAL );
   XLAL_CHECK( in < SC_MAX, XLAL_EINVAL );
-  XLAL_CHECK( out_points != NULL && *out_points != NULL, XLAL_EFAULT );
+  XLAL_CHECK( out_points != NULL, XLAL_EFAULT );
   XLAL_CHECK( in_points != NULL, XLAL_EINVAL );
   XLAL_CHECK( rssky_transf != NULL || ( out != SC_RSSKY && in != SC_RSSKY ), XLAL_EINVAL );
 
@@ -683,12 +683,16 @@ int XLALConvertSuperskyCoordinates(
   XLAL_CHECK( in_points->size1 > in_ssize, XLAL_EINVAL );
   const size_t fsize = in_points->size1 - in_ssize;
 
-  // Resize output points matrix, if required
+  // Resize or allocate output points matrix, if required
   const size_t out_ssize = ( out == SC_USSKY ) ? 3 : 2;
   const size_t out_rows = fsize + out_ssize;
-  XLAL_CHECK( ( *out_points )->size1 == out_rows, XLAL_EINVAL );
-  if( ( *out_points )->size2 != in_points->size2 ) {
-    gsl_matrix_free( *out_points );
+  if( *out_points != NULL ) {
+    if( ( *out_points )->size1 != out_rows || ( *out_points )->size2 != in_points->size2 ) {
+      gsl_matrix_free( *out_points );
+      *out_points = NULL;
+    }
+  }
+  if( *out_points == NULL ) {
     GAMAT( *out_points, out_rows, in_points->size2 );
   }
 
