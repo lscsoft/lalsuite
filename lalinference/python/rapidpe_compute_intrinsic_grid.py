@@ -317,6 +317,7 @@ ovrlp = numpy.array(ovrlp[m_idx])[sort_order]
 pts = pts[sort_order]
 m_idx = sort_order[m_idx]
 
+"""
 if results is None:
     # Initial gridding
     init_region, idx = determine_region(pt, pts, ovrlp, opts.overlap_threshold)
@@ -324,6 +325,9 @@ else:
     # FIXME: This needs to be recalculated for the spacing, we should just save
     # and retrieve it in the grid file as necessary
     init_region, idx = determine_region(pt, res_pts, results, 0)
+"""
+
+init_region, idx = determine_region(pt, pts, ovrlp, opts.overlap_threshold)
 
 ####### BEGIN INITIAL GRID CODE #########
 
