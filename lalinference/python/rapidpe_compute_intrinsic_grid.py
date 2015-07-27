@@ -266,9 +266,10 @@ if opts.result_file:
     # Normalize
     # FIXME: If we have more than 1 copies -- This is tricky because we need to
     # pare down the duplicate sngl rows too
-    total_evid = numpy.exp([s.snr for s in results]).sum()
+    maxlnevid = numpy.max([s.snr for s in results])
+    total_evid = numpy.exp([s.snr - maxlnevid for s in results]).sum()
     for res in results:
-        res.snr = numpy.exp(res.snr)/total_evid
+        res.snr = numpy.exp(res.snr - maxlnevid)/total_evid
 
     res_pts = numpy.array([tuple(getattr(t, a) for a in intr_prms) for t in results])
     res_pts = amrlib.apply_transform(res_pts, intr_prms, opts.distance_coordinates)
