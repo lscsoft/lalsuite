@@ -1354,6 +1354,42 @@ int XLALNextLatticeTilingPoints(
 
 }
 
+UINT8 XLALLatticeTilingPointsInPass(
+  LatticeTilingIterator *itr,
+  const size_t dim,
+  const bool ignore
+  )
+{
+
+  // Check input
+  XLAL_CHECK_VAL( 0, itr != NULL, XLAL_EFAULT );
+  XLAL_CHECK_VAL( 0, itr->state > 0, XLAL_EINVAL );
+  XLAL_CHECK_VAL( 0, dim < itr->tiling->ndim, XLAL_EINVAL );
+
+  // If this is a tiled dimension, return the number of remaining points in this pass
+  for( size_t ti = 0; ti < itr->tiling->tiled_ndim; ++ti ) {
+
+    // Skip dimensions not being iterated over, unless 'ignore' is true
+    if( ignore || ti < itr->tiled_itr_ndim ) {
+
+      // If this tiled dimension matches 'dim'
+      const size_t i = itr->tiling->tiled_idx[ti];
+      if( i == dim ) {
+
+        // Return number of points in current pass
+        return itr->int_upper[ti] - itr->int_lower[ti] + 1;
+
+      }
+
+    }
+
+  }
+
+  // This is either a non-tiled or a non-iterated dimension
+  return 1;
+
+}
+
 UINT8 XLALTotalLatticeTilingPoints(
   LatticeTilingIterator *itr
   )
