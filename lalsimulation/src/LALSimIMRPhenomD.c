@@ -171,11 +171,11 @@ static int IMRPhenomDGenerateFD(
 
   REAL8 chi1, chi2;
   if (m1>m2) { // swap spins
-    chi1 = chi2_in;
-    chi2 = chi1_in;
-  } else {
     chi1 = chi1_in;
     chi2 = chi2_in;
+  } else {
+    chi1 = chi2_in;
+    chi2 = chi1_in;
   }
 
   /* Compute the amplitude pre-factor */
