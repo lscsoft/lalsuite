@@ -1116,7 +1116,7 @@ int XLALSimIMRSEOBNRv2ROMDoubleSpinFrequencySequence(
 int XLALSimIMRSEOBNRv2ROMDoubleSpin(
   struct tagCOMPLEX16FrequencySeries **hptilde, /**< Output: Frequency-domain waveform h+ */
   struct tagCOMPLEX16FrequencySeries **hctilde, /**< Output: Frequency-domain waveform hx */
-  REAL8 phiRef,                                 /**< Orbtial phase at reference frequency*/
+  REAL8 phiRef,                                 /**< Orbital phase at reference frequency*/
   REAL8 deltaF,                                 /**< Sampling frequency (Hz) */
   REAL8 fLow,                                   /**< Starting GW frequency (Hz) */
   REAL8 fHigh,                                  /**< End frequency; 0 defaults to Mf=0.14 */

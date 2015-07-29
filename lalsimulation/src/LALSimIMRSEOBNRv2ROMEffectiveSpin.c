@@ -842,7 +842,7 @@ int XLALSimIMRSEOBNRv2ROMEffectiveSpin(
   SEOBNRv2ROMEffectiveSpin_Init_LALDATA();
 #endif
 
-  if(!SEOBNRv2ROMEffectiveSpin_IsSetup()) XLAL_ERROR(XLAL_EFAILED,"Error setting up SEOBNRv2ROMDoubleSpin data - check your $LAL_DATA_PATH\n");
+  if(!SEOBNRv2ROMEffectiveSpin_IsSetup()) XLAL_ERROR(XLAL_EFAILED,"Error setting up SEOBNRv2ROMEffectiveSpin data - check your $LAL_DATA_PATH\n");
 
   // Use fLow, fHigh, deltaF to compute freqs sequence
   // Instead of building a full sequency we only transfer the boundaries and let
