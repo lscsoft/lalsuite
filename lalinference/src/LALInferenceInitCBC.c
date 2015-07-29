@@ -1474,7 +1474,6 @@ void LALInferenceInitSpinVariables(LALInferenceRunState *state, LALInferenceMode
   }
 
   SpinSupport spin_support=XLALSimInspiralGetSpinSupportFromApproximant(approx);
-  LALSimInspiralFrameAxis frame_axis=LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW;
 
   /* Now check what the approx can do and eventually change user's choices to comply.
    * Also change the reference frame -- For the moment use default as the corresponding patch to LALSimulation has not been finished yet */
@@ -1484,13 +1483,7 @@ void LALInferenceInitSpinVariables(LALInferenceRunState *state, LALInferenceMode
     singleSpin=1;
   else if (spin_support==LAL_SIM_INSPIRAL_ALIGNEDSPIN){
     spinAligned=1;
-    /* Restore this line when LALSim has routine to convert frames:
-     * frame_axis= LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L;
-     */
   }
-
-  /* Add the frame to waveFlagas */
-  XLALSimInspiralSetFrameAxis(model->waveFlags,frame_axis);
 
   if (spinAligned){
   /* If spin aligned the magnitude is in the range [-1,1] */
