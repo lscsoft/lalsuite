@@ -1651,9 +1651,9 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
       if(ppt) {
           if (!strcmp(ppt->value, "view"))
               XLALSimInspiralSetFrameAxis(waveFlags, LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW);
-          else if (!strcmp(ppt->value, "orbital-l"))
+          else if (!strcmp(ppt->value, "orbital"))
               XLALSimInspiralSetFrameAxis(waveFlags, LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L);
-          else if (!strcmp(ppt->value, "total-j"))
+          else if (!strcmp(ppt->value, "total"))
               XLALSimInspiralSetFrameAxis(waveFlags, LAL_SIM_INSPIRAL_FRAME_AXIS_TOTAL_J);
       }
 
