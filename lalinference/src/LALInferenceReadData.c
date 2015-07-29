@@ -1645,6 +1645,18 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
       }
 
       LALSimInspiralWaveformFlags *waveFlags = XLALSimInspiralCreateWaveformFlags();
+
+      /* Set the spin-frame convention */
+      ppt = LALInferenceGetProcParamVal(commandLine,"--inj-spin-frame");
+      if(ppt) {
+          if (!strcmp(ppt->value, "view"))
+              XLALSimInspiralSetFrameAxis(waveFlags, LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW);
+          else if (!strcmp(ppt->value, "orbital-l"))
+              XLALSimInspiralSetFrameAxis(waveFlags, LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L);
+          else if (!strcmp(ppt->value, "total-j"))
+              XLALSimInspiralSetFrameAxis(waveFlags, LAL_SIM_INSPIRAL_FRAME_AXIS_TOTAL_J);
+      }
+
       LALSimInspiralSpinOrder spinO = -1;
       if(LALInferenceGetProcParamVal(commandLine,"--inj-spinOrder")) {
         spinO = atoi(LALInferenceGetProcParamVal(commandLine,"--inj-spinOrder")->value);
@@ -2315,6 +2327,17 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
 
   /* Set up wave flags */
   LALSimInspiralWaveformFlags *waveFlags = XLALSimInspiralCreateWaveformFlags();
+
+  /* Set the spin-frame convention */
+  ppt = LALInferenceGetProcParamVal(commandLine,"--inj-spin-frame");
+  if(ppt) {
+      if (!strcmp(ppt->value, "view"))
+          XLALSimInspiralSetFrameAxis(waveFlags, LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW);
+      else if (!strcmp(ppt->value, "orbital-l"))
+          XLALSimInspiralSetFrameAxis(waveFlags, LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L);
+      else if (!strcmp(ppt->value, "total-j"))
+          XLALSimInspiralSetFrameAxis(waveFlags, LAL_SIM_INSPIRAL_FRAME_AXIS_TOTAL_J);
+  }
 
   LALSimInspiralSpinOrder spinO = LAL_SIM_INSPIRAL_SPIN_ORDER_ALL;
   if(LALInferenceGetProcParamVal(commandLine, "--inj-spinOrder")) {

@@ -650,12 +650,12 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
       if(fTemp==0.0)
         fTemp = f_start;
 
-      XLAL_TRY(ret=XLALSimInspiralTransformPrecessingInitialConditions(
+      XLAL_TRY(ret=XLALSimInspiralTransformPrecessingNewInitialConditions(
                     &inclination, &spin1x, &spin1y, &spin1z, &spin2x, &spin2y, &spin2z,
                     thetaJN, phiJL, tilt1, tilt2, phi12, a_spin1, a_spin2, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, fTemp), errnum);
       if (ret == XLAL_FAILURE)
       {
-        XLALPrintError(" ERROR in XLALSimInspiralTransformPrecessingInitialConditions(): error converting angles. errnum=%d\n",errnum );
+        XLALPrintError(" ERROR in XLALSimInspiralTransformPrecessingNewInitialConditions(): error converting angles. errnum=%d\n",errnum );
         return;
       }
   }
