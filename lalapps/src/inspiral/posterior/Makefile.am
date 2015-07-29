@@ -14,6 +14,7 @@ pulsar_progs = lalinference_nest #lalinference_mcmcmpi
 pulsar_progs+=lalinference_burst
 lalinference_nest_SOURCES = LALInferenceNest.c
 lalinference_burst_SOURCES= LALInferenceBurst.c
+lalinference_datadump_SOURCES= LALInferenceDataDump.c
 if HAVE_BAMBI
 if !HAVE_BAMBI_MPI
 pulsar_progs += lalinference_bambi
