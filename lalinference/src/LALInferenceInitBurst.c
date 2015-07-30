@@ -42,6 +42,11 @@
 #include <lal/LALInferenceCalibrationErrors.h>
 #include <lal/LALInferenceInit.h>
 
+
+LALInferenceModel *LALInferenceInitModelReviewBurstEvidence_unimod(LALInferenceRunState *state);
+LALInferenceModel *LALInferenceInitModelReviewBurstEvidence_bimod(LALInferenceRunState *state);
+
+
 /*
  * Initialize threads in memory, using LALInferenceInitBurstModel() to init models.
  */
@@ -205,14 +210,24 @@ LALInferenceModel * LALInferenceInitBurstModel(LALInferenceRunState *state)
       fprintf(stdout,"%s",help);
       return(NULL);
     }
+  ProcessParamsTable *commandLine=state->commandLine;
 
-  
+  /* Over-ride prior bounds if analytic test */
+  if (LALInferenceGetProcParamVal(commandLine, "--correlatedGaussianLikelihood"))
+  {
+    return(LALInferenceInitModelReviewBurstEvidence_unimod(state));
+  }
+  else if (LALInferenceGetProcParamVal(commandLine, "--bimodalGaussianLikelihood"))
+  {
+    return(LALInferenceInitModelReviewBurstEvidence_bimod(state));
+  }
+ 
+ 
   fprintf(stderr,"Using LALInferenceBurstVariables!\n");
 
   LALStatus status;
   SimBurst *BinjTable=NULL;
   SimInspiralTable *inj_table=NULL;
-	ProcessParamsTable *commandLine=state->commandLine;
 	REAL8 endtime=-1;
 	REAL8 endtime_from_inj=-1;
   ProcessParamsTable *ppt=NULL;
@@ -237,7 +252,7 @@ LALInferenceModel * LALInferenceInitBurstModel(LALInferenceRunState *state)
     UINT4 malmquistflag=1;
     LALInferenceAddVariable(model->params, "malmquistPrior",&malmquistflag,LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
   }
-    
+
   /* We may have used a CBC injection... test */
   ppt=LALInferenceGetProcParamVal(commandLine,"--trigtime");
   if (ppt)
@@ -395,17 +410,7 @@ LALInferenceModel * LALInferenceInitBurstModel(LALInferenceRunState *state)
     else
       LALInferenceRegisterUniformVariableREAL8(state, model->params, "loghrss",  zero,loghrssMin, loghrssMax,   LALINFERENCE_PARAM_LINEAR);
     
-    LALInferenceRegisterUniformVariableREAL8(state,model->params, "alpha", zero,0.0,2*LAL_PI ,LALINFERENCE_PARAM_CIRCULAR);
-    ppt=LALInferenceGetProcParamVal(commandLine,"--cross_only");
-    if (ppt){
-      printf("Fixing alpha to Pi/2 in template ---> only cross polarization will be used\n");
-      LALInferenceRegisterUniformVariableREAL8(state,model->params, "alpha", LAL_PI/2.0,0.0,2*LAL_PI ,LALINFERENCE_PARAM_FIXED);
-    }
-    ppt=LALInferenceGetProcParamVal(commandLine,"--plus_only");
-    if (ppt){
-        printf("Fixing alpha to 0 in template ---> only plus polarization will be used\n");
-        LALInferenceRegisterUniformVariableREAL8(state,model->params, "alpha", 0.0,0.0,2*LAL_PI, LALINFERENCE_PARAM_FIXED);
-    }
+    LALInferenceRegisterUniformVariableREAL8(state,model->params, "polar_angle", zero,0.0,2*LAL_PI ,LALINFERENCE_PARAM_CIRCULAR);
     LALInferenceAddVariable(model->params, "LAL_APPROXIMANT", &approx,        LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
     
   /* Store a variable in case we are using a FastSG likelihood */
@@ -467,3 +472,114 @@ LALInferenceModel * LALInferenceInitBurstModel(LALInferenceRunState *state)
 
   return (model);
 }
+
+
+
+LALInferenceModel *LALInferenceInitModelReviewBurstEvidence_unimod(LALInferenceRunState *state)
+{
+  ProcessParamsTable *commandLine=state->commandLine;
+  ProcessParamsTable *ppt=NULL;
+  char **strings=NULL;
+  char *pinned_params=NULL;
+  UINT4 N=0,i,j;
+  if((ppt=LALInferenceGetProcParamVal(commandLine,"--pinparams"))){
+    pinned_params=ppt->value;
+    LALInferenceVariables tempParams;
+    memset(&tempParams,0,sizeof(tempParams));
+    LALInferenceParseCharacterOptionString(pinned_params,&strings,&N);
+  }
+  LALInferenceModel *model = XLALCalloc(1, sizeof(LALInferenceModel));
+  model->params = XLALCalloc(1, sizeof(LALInferenceVariables));
+
+  UINT4 nifo=0;
+  LALInferenceIFOData *dataPtr = state->data;
+  while (dataPtr != NULL)
+  {
+    dataPtr = dataPtr->next;
+    nifo++;
+  }
+
+  model->ifo_SNRs = XLALCalloc(nifo, sizeof(REAL8));
+  model->ifo_loglikelihoods = XLALCalloc(nifo, sizeof(REAL8));
+
+  i=0;
+  
+  struct varSettings {const char *name; REAL8 val, min, max;};
+ 
+  struct varSettings setup[]=
+  {
+    {.name="time", .val=0.001, .min=-0.006410, .max=0.008410},
+    {.name="frequency", .val=210., .min=205.560916, .max=216.439084},
+    {.name="quality", .val=6.03626, .min=5.252647, .max=6.747353},
+    {.name="loghrss", .val=-46., .min=-46.964458, .max=-45.035542},
+    {.name="polarisation", .val=0.73, .min=0.425622, .max=0.974378},
+    {.name="rightascension", .val=LAL_PI, .min=2.864650, .max=3.418535},
+    {.name="declination", .val=0.04, .min=-0.306437, .max=0.306437},
+    {.name="alpha", .val=0.58, .min=0.224279, .max=0.775721},
+    {.name="polar_eccentricity",.val=0.3,.min=0.0760747287,.max=0.4239252713},
+    {.name="END", .val=0., .min=0., .max=0.}
+  };
+  
+  while(strcmp("END",setup[i].name))
+  {
+    LALInferenceParamVaryType type=LALINFERENCE_PARAM_CIRCULAR;
+    /* Check if it is to be fixed */
+    for(j=0;j<N;j++) if(!strcmp(setup[i].name,strings[j])) {type=LALINFERENCE_PARAM_FIXED; printf("Fixing parameter %s\n",setup[i].name); break;}
+    LALInferenceRegisterUniformVariableREAL8(state, model->params, setup[i].name, setup[i].val, setup[i].min, setup[i].max, type);
+    i++;
+  }
+  return(model);
+}
+
+LALInferenceModel *LALInferenceInitModelReviewBurstEvidence_bimod(LALInferenceRunState *state)
+{
+  ProcessParamsTable *commandLine=state->commandLine;
+  ProcessParamsTable *ppt=NULL;
+  char **strings=NULL;
+  char *pinned_params=NULL;
+  UINT4 N=0,i,j;
+  if((ppt=LALInferenceGetProcParamVal(commandLine,"--pinparams"))){
+    pinned_params=ppt->value;
+    LALInferenceVariables tempParams;
+    memset(&tempParams,0,sizeof(tempParams));
+    LALInferenceParseCharacterOptionString(pinned_params,&strings,&N);
+  }
+  LALInferenceModel *model = XLALCalloc(1, sizeof(LALInferenceModel));
+  model->params = XLALCalloc(1, sizeof(LALInferenceVariables));
+  UINT4 nifo=0;
+  LALInferenceIFOData *dataPtr = state->data;
+  while (dataPtr != NULL)
+  {
+    dataPtr = dataPtr->next;
+    nifo++;
+  }
+  model->ifo_SNRs = XLALCalloc(nifo, sizeof(REAL8));
+  model->ifo_loglikelihoods = XLALCalloc(nifo, sizeof(REAL8));
+  i=0;
+  
+  struct varSettings {const char *name; REAL8 val, min, max;};
+ 
+  struct varSettings setup[]=
+  {
+    {.name="time", .val=0.0061, .min= -0.006410, .max=0.020266},
+    {.name="frequency", .val=215., .min=205.560916, .max=225.141619},
+    {.name="quality", .val=6.50, .min=5.252647, .max=7.943119},
+    {.name="loghrss", .val=-45., .min=-46.964458, .max=-43.492410},
+    {.name="polarisation", .val=0.93, .min=0.425622,.max=1.413383},
+    {.name="rightascension", .val=LAL_PI, .min=2.864650, .max=3.861644},
+    {.name="declination", .val=0.0, .min=-0.306437, .max=0.796736},
+    {.name="alpha", .val=0.75, .min=0.224279, .max=1.216874},
+    {.name="polar_eccentricity",.val=0.4,.min=0.076075,.max=0.702206},
+    {.name="END", .val=0., .min=0., .max=0.}
+  };
+  while(strcmp("END",setup[i].name))
+  {
+    LALInferenceParamVaryType type=LALINFERENCE_PARAM_CIRCULAR;
+    /* Check if it is to be fixed */
+    for(j=0;j<N;j++) if(!strcmp(setup[i].name,strings[j])) {type=LALINFERENCE_PARAM_FIXED; printf("Fixing parameter %s\n",setup[i].name); break;}
+    LALInferenceRegisterUniformVariableREAL8(state, model->params, setup[i].name, setup[i].val, setup[i].min, setup[i].max, type);
+    i++;
+  }
+  return(model);
+}
+
