@@ -51,6 +51,7 @@ int XLALCheckBurstApproximantFromString(const CHAR *inString);
 /** Enum that specifies the PN approximant to be used in computing the waveform.
 */
 typedef enum {
+   SineGaussianFFast,
    SineGaussianF,
    SineGaussian,
    GaussianF,
@@ -71,32 +72,45 @@ BurstApproximant approximant /**< Burst approximant (see enum in LALInferenceBur
     );    
     /** Enumeration to specify time or frequency domain */
 
+int XLALInferenceBurstSineGaussian(
+	REAL8TimeSeries **hplus,
+	REAL8TimeSeries **hcross,
+	REAL8 Q,
+	REAL8 centre_frequency,
+	REAL8 hrss,
+	REAL8 eccentricity,
+	REAL8 phase,
+	REAL8 delta_t // 1 over srate
+);
+
 int XLALInferenceBurstSineGaussianF(
 	COMPLEX16FrequencySeries **hplus,
 	COMPLEX16FrequencySeries **hcross,
 	REAL8 Q,
 	REAL8 centre_frequency,
 	REAL8 hrss,
-  REAL8 alpha,
+	REAL8 eccentricity,
+        REAL8 phase,
 	REAL8 deltaF,
     REAL8 deltaT
+);
+
+int XLALInferenceBurstSineGaussianFFast(
+  COMPLEX16FrequencySeries **hplus,
+  COMPLEX16FrequencySeries **hcross,
+  REAL8 Q,
+  REAL8 centre_frequency,
+  REAL8 hrss,
+  REAL8 eccentricity,
+  REAL8 phase,  
+  REAL8 deltaF,
+  REAL8 deltaT
 );
 
 int XLALInferenceBurstGaussianF(
 	COMPLEX16FrequencySeries **hplus,
 	COMPLEX16FrequencySeries **hcross,
 	REAL8 duration,
-	REAL8 hrss,
-	REAL8 alpha,
-	REAL8 deltaF,
-  REAL8 deltaT
-);
-
-int XLALInferenceBurstSineGaussianFFast(
-	COMPLEX16FrequencySeries **hplus,
-	COMPLEX16FrequencySeries **hcross,
-	REAL8 Q,
-	REAL8 centre_frequency,
 	REAL8 hrss,
 	REAL8 alpha,
 	REAL8 deltaF,
