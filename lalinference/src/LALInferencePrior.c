@@ -130,8 +130,19 @@ void LALInferenceInitLIBPrior(LALInferenceRunState *runState)
     ProcessParamsTable *ppt = NULL;
     if ((ppt=LALInferenceGetProcParamVal(commandLine,"--approx"))){
       if ((XLALCheckBurstApproximantFromString(ppt->value)))
-        runState->prior = &LALInferenceSineGaussianPrior;
-    }
+      {
+         /* Choose the proper prior */
+         if (LALInferenceGetProcParamVal(commandLine, "--correlatedGaussianLikelihood") ||
+         LALInferenceGetProcParamVal(commandLine, "--bimodalGaussianLikelihood") ||
+         LALInferenceGetProcParamVal(commandLine, "--analyticnullprior")) {
+            runState->prior = &LALInferenceAnalyticNullPrior;
+         } else if (LALInferenceGetProcParamVal(commandLine, "--nullprior")) {
+            runState->prior = &LALInferenceNullPrior;
+         } else {
+           runState->prior = &LALInferenceSineGaussianPrior;
+         }
+      }
+    }  
 }
 
 static REAL8 LALInferenceConstantCalibrationPrior(LALInferenceRunState *runState, LALInferenceVariables *params) {
