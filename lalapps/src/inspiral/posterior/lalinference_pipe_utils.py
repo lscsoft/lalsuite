@@ -549,7 +549,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     # Generate the DAG according to the config given
     for event in self.events: self.add_full_analysis(event)
     self.add_skyarea_followup()
-    if self.config.getboolean('analysis','upload-to-gracedb'):  self.add_gracedb_FITSskymap_upload(self.events[0],engine=self.engine)
+    if self.config.has_option('analysis','upload-to-gracedb'):
+      if self.config.getboolean('analysis','upload-to-gracedb'):
+        self.add_gracedb_FITSskymap_upload(self.events[0],engine=self.engine)
     self.dagfilename="lalinference_%s-%s"%(self.config.get('input','gps-start-time'),self.config.get('input','gps-end-time'))
     self.set_dag_file(self.dagfilename)
     if self.is_dax():
@@ -663,7 +665,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       gpsstart=self.config.getfloat('input','gps-start-time')
     if self.config.has_option('input','gps-end-time'):
       gpsend=self.config.getfloat('input','gps-end-time')
-    inputnames=['gps-time-file','injection-file','sngl-inspiral-file','coinc-inspiral-file','pipedown-db','gid','gstlal-db']
+    inputnames=['gps-time-file','burst-injection-file','injection-file','sngl-inspiral-file','coinc-inspiral-file','pipedown-db','gid','gstlal-db']
     ReadInputFromList=sum([ 1 if self.config.has_option('input',name) else 0 for name in inputnames])
     # If no input events given, just return an empty list (e.g. for PP pipeline)
     if ReadInputFromList!=1 and (gpsstart is None or gpsend is None):
@@ -716,6 +718,15 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       injTable=SimInspiralUtils.ReadSimInspiralFromFiles([self.config.get('input','injection-file')])
       events=[Event(SimInspiral=inj) for inj in injTable]
       self.add_pfn_cache([create_pfn_tuple(self.config.get('input','injection-file'))])
+    # SimBurst Table
+    if self.config.has_option('input','burst-injection-file'):
+      #from pylal import SimBurstUtils
+      injfile=self.config.get('input','burst-injection-file')
+      #xmldoc = utils.load_filename(injfile,contenthandler=ExtractSimBurstTableLIGOLWContentHandler)
+      #injTable=table.get_table(xmldoc,lsctables.SimBurstTable.tableName)
+      injTable=lsctables.SimBurstTable.get_table(ligolw_utils.load_filename(injfile))
+      events=[Event(SimBurst=inj) for inj in injTable]
+      self.add_pfn_cache([create_pfn_tuple(self.config.get('input','burst-injection-file'))])
     # SnglInspiral Table
     if self.config.has_option('input','sngl-inspiral-file'):
       from pylal import SnglInspiralUtils
@@ -845,6 +856,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             subresnode.set_bayes_coherent_noise(pmergenode.get_B_file())
             if self.config.has_option('input','injection-file') and event.event_id is not None:
                 subresnode.set_injection(self.config.get('input','injection-file'),event.event_id)
+            elif self.config.has_option('input','burst-injection-file') and event.event_id is not None:
+                subresnode.set_injection(self.config.get('input','burst-injection-file'),event.event_id)
         coherence_node=CoherenceTestNode(self.coherence_test_job,outfile=os.path.join(self.basepath,'coherence_test','coherence_test_%s_%s.dat'%(myifos,evstring)))
         coherence_node.add_coherent_parent(mergenode)
         map(coherence_node.add_incoherent_parent, par_mergenodes)
@@ -863,6 +876,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     respagenode.set_bayes_coherent_noise(mergenode.get_B_file())
     if self.config.has_option('input','injection-file') and event.event_id is not None:
         respagenode.set_injection(self.config.get('input','injection-file'),event.event_id)
+    elif self.config.has_option('input','burst-injection-file') and event.event_id is not None:
+        respagenode.set_injection(self.config.get('input','burst-injection-file'),event.event_id)
+
     if self.config.has_option('analysis','upload-to-gracedb'):
       if self.config.getboolean('analysis','upload-to-gracedb') and event.GID is not None:
         self.add_gracedb_log_node(respagenode,event.GID)
@@ -902,6 +918,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     respagenode.set_snr_file(enginenodes[0].get_snr_file())
     if self.config.has_option('input','injection-file') and event.event_id is not None:
         respagenode.set_injection(self.config.get('input','injection-file'),event.event_id)
+    if self.config.has_option('input','burst-injection-file') and event.event_id is not None:
+        respagenode.set_injection(self.config.get('input','burst-injection-file'),event.event_id)
     map(respagenode.add_engine_parent, enginenodes)
     if event.GID is not None:
       if self.config.has_option('analysis','upload-to-gracedb'):
@@ -930,7 +948,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     respagenode.set_header_file(enginenodes[0].get_header_file())
     if self.config.has_option('input','injection-file') and event.event_id is not None:
         respagenode.set_injection(self.config.get('input','injection-file'),event.event_id)
-
+    elif self.config.has_option('input','burst-injection-file') and event.event_id is not None:
+        respagenode.set_injection(self.config.get('input','burst-injection-file'),event.event_id)
     map(respagenode.add_engine_parent, enginenodes)
     if event.GID is not None:
       if self.config.has_option('analysis','upload-to-gracedb'):
@@ -1152,6 +1171,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     if self.config.has_option('input','injection-file'):
        node.set_injection(self.config.get('input','injection-file'),event.event_id)
        prenode.set_injection(self.config.get('input','injection-file'),event.event_id)
+    if self.config.has_option('input','burst-injection-file'):
+       node.set_injection(self.config.get('input','burst-injection-file'),event.event_id)
+       prenode.set_injection(self.config.get('input','burst-injection-file'),event.event_id)
     if self.config.has_option('lalinference','seglen'):
       node.set_seglen(self.config.getint('lalinference','seglen'))
     elif  self.config.has_option('engine','seglen'):
@@ -1648,7 +1670,12 @@ class LALInferenceBurstNode(EngineNode,LALInferenceNestNode):
     EngineNode.__init__(self,li_job)
     self.engine='lalinferenceburst'
     self.outfilearg='outfile'
-
+  def set_injection(self,injfile,event):
+    """
+    Set a software injection to be performed.
+    """
+    self.add_file_opt('binj',injfile)
+    self.set_event_number(event)
 
 class LALInferenceMCMCNode(EngineNode):
   def __init__(self,li_job):
