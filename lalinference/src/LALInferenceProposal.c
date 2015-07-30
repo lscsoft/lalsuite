@@ -878,7 +878,7 @@ REAL8 LALInferenceEnsembleStretchIntrinsic(LALInferenceThreadState *thread,
                                            LALInferenceVariables *proposedParams) {
     REAL8 logPropRatio;
     const char *names[] = {"chirpmass", "q", "eta", "m1", "m2", "a_spin1", "a_spin2",
-                           "tilt_spin1", "tilt_spin2", "phi12", "frequency", "quality", "duration","alpha","phase", NULL};
+                           "tilt_spin1", "tilt_spin2", "phi12", "frequency", "quality", "duration","polar_angle","phase", "polar_eccentricity", NULL};
 
     logPropRatio = LALInferenceEnsembleStretchNames(thread, currentParams, proposedParams, names);
 
@@ -1028,7 +1028,7 @@ REAL8 LALInferenceEnsembleWalkIntrinsic(LALInferenceThreadState *thread,
                                         LALInferenceVariables *proposedParams) {
     REAL8 logPropRatio;
     const char *names[] = {"chirpmass", "q", "eta", "m1", "m2", "a_spin1", "a_spin2",
-                           "tilt_spin1", "tilt_spin2", "phi12", "phase","frequency", "quality", "duration","alpha", NULL};
+                           "tilt_spin1", "tilt_spin2", "phi12", "phase","frequency", "quality", "duration","polar_angle", "polar_eccentricity", NULL};
 
     logPropRatio = LALInferenceEnsembleWalkNames(thread, currentParams, proposedParams, names);
 
@@ -1254,7 +1254,7 @@ REAL8 LALInferenceDifferentialEvolutionIntrinsic(LALInferenceThreadState *thread
                                                  LALInferenceVariables *proposedParams) {
     REAL8 logPropRatio;
     const char *names[] = {"chirpmass", "q", "eta", "m1", "m2", "a_spin1", "a_spin2",
-                           "tilt_spin1", "tilt_spin2", "phi12","frequency", "quality", "duration","alpha", "phase",  NULL};
+                           "tilt_spin1", "tilt_spin2", "phi12","frequency", "quality", "duration","polar_angle", "phase", "polar_eccentricity", NULL};
 
     logPropRatio = LALInferenceDifferentialEvolutionNames(thread, currentParams, proposedParams, names);
 
