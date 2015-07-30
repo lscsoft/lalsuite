@@ -173,13 +173,18 @@ void LALInferenceInitLikelihood(LALInferenceRunState *runState)
            }
    } else if ( LALInferenceCheckVariable(thread->currentParams, "logdistance")){
        REAL8 logd = LALInferenceGetREAL8Variable(thread->currentParams, "logdistance");
+       LALInferenceParamVaryType logd_type;
        REAL8 bigD = INFINITY;
+
+       logd_type = LALInferenceGetVariableVaryType(thread->currentParams, "logdistance");
 
        /* Don't store to cache, since distance scaling won't work */
        LALSimInspiralWaveformCache *cache = thread->model->waveformCache;
        thread->model->waveformCache = NULL;
 
-       LALInferenceSetVariable(thread->currentParams, "logdistance", &bigD);
+       /* Remove log distance and add again, otherwise if it's fixed it won't be set */
+       LALInferenceRemoveVariable(thread->currentParams, "logdistance");
+       LALInferenceAddREAL8Variable(thread->currentParams, "logdistance", bigD, LALINFERENCE_PARAM_LINEAR);
        nullLikelihood = runState->likelihood(thread->currentParams, runState->data, thread->model);
 
        thread->model->waveformCache = cache;
@@ -191,7 +196,8 @@ void LALInferenceInitLikelihood(LALInferenceRunState *runState)
            i++;
        }
 
-       LALInferenceSetVariable(thread->currentParams, "logdistance", &logd);
+       LALInferenceRemoveVariable(thread->currentParams, "logdistance");
+       LALInferenceAddREAL8Variable(thread->currentParams, "logdistance", logd, logd_type);
    }
 
    INT4 t;

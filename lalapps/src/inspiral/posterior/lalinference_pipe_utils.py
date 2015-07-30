@@ -1308,7 +1308,7 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
       roqpath=os.path.join(basepath,'ROQdata')
       self.roqpath=roqpath
       mkdirs(roqpath)
-      self.engine='lalinferencemcmc'
+      self.engine='lalinferencedatadump'
       exe=cp.get('condor',self.engine)
       if cp.has_option('engine','site'):
         if self.site is not None and self.site!='local':
