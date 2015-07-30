@@ -50,6 +50,7 @@ pybin_scripts = \
 	lalinference_pipe \
 	lalapps_nest2pos \
 	lalapps_merge_nested_sampling_runs \
+        lalinference_burst_pp_pipe \
 	lalinference_pp_pipe \
 	lalapps_compute_roq_weights \
 	lalapps_merge_posteriors \
