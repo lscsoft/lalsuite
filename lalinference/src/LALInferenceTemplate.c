@@ -893,8 +893,7 @@ void LALInferenceTemplateXLALSimBurstChooseWaveform(LALInferenceModel *model)
 /*	"frequency" central frequency, REAL8                                                                          */
 /*   "Q" quality, REAL8 (optional, depending on the WF)                                              */
 /*   "duration" duration, REAL8 (optional, depending on the WF)                                      */
-/*   "alpha"  ellipticity, REAL8 (optional, depending on the WF)                                     */
-/*   "polar_angle" ellipticity polar angle, REAL8 (optional, together with polar_eccentricity may replace alpha)*/
+/*   "polar_angle" ellipticity polar angle, REAL8 */
 /*   "polar_eccentricity" ellipticity ellipse eccentricity, REAL8 (optional)                                     */
 /*                                                                                                                      */
 /*************************************************************************************************************************/
@@ -917,7 +916,7 @@ void LALInferenceTemplateXLALSimBurstChooseWaveform(LALInferenceModel *model)
   duration=0.0,
   f_low, f_max,
   hrss=1.0,
-  polar_ecc=1.0,polar_angle=LAL_PI/2.,alpha=LAL_PI/2.; 
+  polar_ecc=1.0,polar_angle=LAL_PI/2.; 
   LALSimBurstExtraParam *extraParams = NULL;
   
   if (LALInferenceCheckVariable(model->params, "LAL_APPROXIMANT"))
@@ -947,7 +946,7 @@ void LALInferenceTemplateXLALSimBurstChooseWaveform(LALInferenceModel *model)
         hrss=*(REAL8*) LALInferenceGetVariable(model->params, "hrss");
     } else if (LALInferenceCheckVariable(model->params,"loghrss"))
         hrss=exp(*(REAL8*) LALInferenceGetVariable(model->params, "hrss"));
-  */
+  
   if(LALInferenceCheckVariable(model->params,"alpha"))
     {
       alpha=*(REAL8*) LALInferenceGetVariable(model->params, "alpha");
@@ -955,7 +954,7 @@ void LALInferenceTemplateXLALSimBurstChooseWaveform(LALInferenceModel *model)
       else XLALSimBurstAddExtraParam(&extraParams,"alpha",alpha);
       polar_angle=alpha;
   } 
-
+  */
   /* If someone wants to use old parametrization, allow for */
   if(LALInferenceCheckVariable(model->params,"polar_angle"))
     polar_angle=*(REAL8*) LALInferenceGetVariable(model->params, "polar_angle");
@@ -1182,8 +1181,7 @@ void LALInferenceTemplateXLALSimBurstSineGaussianF(LALInferenceModel *model)
 /*	"frequency" central frequency, REAL8                                                                          */
 /*   "Q" quality, REAL8 (optional, depending on the WF)                                              */
 /*   "duration" duration, REAL8 (optional, depending on the WF)                                      */
-/*   "alpha"  ellipticity, REAL8 (optional, depending on the WF)                                     */
-/*   "polar_angle" ellipticity polar angle, REAL8 (optional, together with polar_eccentricity may replace alpha)*/
+/*   "polar_angle" ellipticity polar angle, REAL8 */
 /*   "polar_eccentricity" ellipticity ellipse eccentricity, REAL8 (optional)                                     */
 /*                                                                                                                      */
 /*************************************************************************************************************************/
@@ -1201,7 +1199,7 @@ void LALInferenceTemplateXLALSimBurstSineGaussianF(LALInferenceModel *model)
   REAL8 deltaT,deltaF, 
   freq=0.0,
   quality=0.0,tau=0.0,
-  hrss=1.0, alpha=LAL_PI/2.; 
+  hrss=1.0; 
 
   freq=*(REAL8*) LALInferenceGetVariable(model->params, "frequency");
   quality=*(REAL8*) LALInferenceGetVariable(model->params, "quality");
@@ -1210,7 +1208,8 @@ void LALInferenceTemplateXLALSimBurstSineGaussianF(LALInferenceModel *model)
     tau=*(REAL8*) LALInferenceGetVariable(model->params, "duration");
     quality=tau*freq*LAL_SQRT2*LAL_PI;
   }
-  alpha=*(REAL8*) LALInferenceGetVariable(model->params, "alpha");
+  //alpha=*(REAL8*) LALInferenceGetVariable(model->params, "alpha");
+  REAL8 polar_angle=*(REAL8*) LALInferenceGetVariable(model->params, "polar_angle");
   /* If someone wants to use old parametrization, allow for */
   REAL8 polar_ecc=*(REAL8*) LALInferenceGetVariable(model->params, "polar_eccentricity");
   
@@ -1226,7 +1225,7 @@ void LALInferenceTemplateXLALSimBurstSineGaussianF(LALInferenceModel *model)
   }
 
   deltaF = model->deltaF;
-  XLAL_TRY(ret=XLALInferenceBurstSineGaussianFFast(&hptilde, &hctilde, quality,freq,hrss, polar_ecc, alpha,deltaF,deltaT), errnum);
+  XLAL_TRY(ret=XLALInferenceBurstSineGaussianFFast(&hptilde, &hctilde, quality,freq,hrss, polar_ecc, polar_angle,deltaF,deltaT), errnum);
   if (ret == XLAL_FAILURE)
       {
         XLALPrintError(" ERROR in LALInferenceTemplateXLALSimBurstChooseWaveform(). errnum=%d\n",errnum );
