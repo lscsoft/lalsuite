@@ -24,9 +24,9 @@ def ndim_offsets(ndim):
 #
 
 # TODO: Optionally return cells
-def refine_regular_grid(grid, grid_spacing):
+def refine_regular_grid(grid, grid_spacing, return_cntr=False):
     """
-    Given a regular grid in N dimensions with spacing given by grid_spacing, refine the grid by bisection along all dimensions. Returns the new grid and new spacing.
+    Given a regular grid in N dimensions with spacing given by grid_spacing, refine the grid by bisection along all dimensions. Returns the new grid and new spacing. The grid will not contain the center point by default (since it is assumed the point already exists in the unrefined grid, but this behavior can be changed by setting return_cntr to True.
 
     >>> region = Cell(numpy.array([(-1., 1.), (-2., 2.)]))
     >>> grid, spacing = create_regular_grid_from_cell(region, side_pts=2)
@@ -40,7 +40,7 @@ def refine_regular_grid(grid, grid_spacing):
     # FIXME: We can probably allocate space ahead of time
     new_pts = []
     for cells in grid_to_cells(grid, grid_spacing):
-        for cell in cells.refine_full():
+        for cell in cells.refine_full(return_cntr=return_cntr):
             new_pts.append(cell._center)
 
     return new_pts, grid_spacing / 2
@@ -53,13 +53,14 @@ def midpoint(pt1, pt2):
 
 class Cell(object):
     def __init__(self, boundaries, center=None):
-        self._bounds = boundaries
+        self._bounds = boundaries.copy()
         if center is not None:
-            self._center = center
+            self._center = center.copy()
             assert len(self._center) == len(self._bounds)
             assert all([b[0] < c < b[1] for c, b in zip(self._center, self._bounds)])
         else:
-            self._center = [(a+b)/2.0 for a, b in self._bounds]
+            #self._center = [(a+b)/2.0 for a, b in self._bounds]
+            self._center = (self._bounds[:,0] + self._bounds[:,1])/2.0
 
     def area(self):
         return numpy.abs(numpy.diff(self._bounds)).prod()
@@ -109,7 +110,7 @@ class Cell(object):
 
         return daughters
 
-    def refine_full(self):
+    def refine_full(self, return_cntr=True):
         """
         Refine each cell such that new cells are created along all permutations of a displacement vector with unit vectors in each dimension and the 0 vector.
         """
@@ -120,7 +121,14 @@ class Cell(object):
         # new cell and translating it along this offset
         # Note the factor of two required in the offset is preincluded above.
         for offset in ndim_offsets(len(self._center)):
+            if not return_cntr and numpy.abs(offset).sum() == 0.0:
+                continue
             cell = Cell(numpy.copy(self._bounds))
+            # Shrink cell
+            cell._bounds -= cell._center[:,numpy.newaxis]
+            cell._bounds /= 2
+            cell._bounds += cell._center[:,numpy.newaxis]
+            # translate to new offset
             cell.translate(offset * extent)
             cells.append(cell)
 
@@ -233,6 +241,7 @@ def grid_to_indices(pts, region, grid_spacing):
     """
     Convert points in a grid to their 1-D indices according to the grid extent in region, and grid spacing.
     """
+    region = region.copy() # avoid referencing
     region[:,0] = region[:,0] - grid_spacing
     region[:,1] = region[:,1] + grid_spacing
     extent = numpy.diff(region)[:,0]
