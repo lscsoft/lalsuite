@@ -379,10 +379,11 @@ LALInferenceModel * LALInferenceInitBurstModel(LALInferenceRunState *state)
       exit(1);
     }
 
-    ppt=LALInferenceGetProcParamVal(commandLine,"--approx");
-    if (!strcmp("SineGaussian",ppt->value) || !strcmp("SineGaussianF",ppt->value)|| !strcmp("SineGaussianFFast",ppt->value)|| !strcmp("DampedSinusoid",ppt->value) || !strcmp("DampedSinusoidF",ppt->value)){
+    ppt=LALInferenceGetProcParamVal(commandLine,"--approx");    
+    if (!strcmp("SineGaussian",ppt->value) || !strcmp("SineGaussianF",ppt->value)|| !strcmp("DampedSinusoid",ppt->value) || !strcmp("DampedSinusoidF",ppt->value)){
       LALInferenceRegisterUniformVariableREAL8(state, model->params, "frequency",  zero, ffMin, ffMax,   LALINFERENCE_PARAM_LINEAR);
       LALInferenceRegisterUniformVariableREAL8(state, model->params, "quality",  zero,qMin, qMax,   LALINFERENCE_PARAM_LINEAR);
+      LALInferenceRegisterUniformVariableREAL8(state, model->params,"polar_eccentricity",  zero,0.0,1.0,   LALINFERENCE_PARAM_LINEAR);
     }
     else if (!strcmp("Gaussian",ppt->value) || !strcmp("GaussianF",ppt->value)){
       LALInferenceRegisterUniformVariableREAL8(state, model->params,"duration", zero, durMin,durMax, LALINFERENCE_PARAM_LINEAR);
@@ -406,7 +407,13 @@ LALInferenceModel * LALInferenceInitBurstModel(LALInferenceRunState *state)
         LALInferenceRegisterUniformVariableREAL8(state,model->params, "alpha", 0.0,0.0,2*LAL_PI, LALINFERENCE_PARAM_FIXED);
     }
     LALInferenceAddVariable(model->params, "LAL_APPROXIMANT", &approx,        LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
-
+    
+  /* Store a variable in case we are using a FastSG likelihood */
+  ppt=LALInferenceGetProcParamVal(commandLine,"--fastSineGaussianLikelihood");
+  UINT4 using_sgf=0;
+  if (ppt)
+    using_sgf=1;
+  LALInferenceAddVariable(model->params, "USING_FAST_SGF", &using_sgf,        LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
   /* Set model sampling rates to be consistent with data */
   model->deltaT = state->data->timeData->deltaT;
   model->deltaF = state->data->freqData->deltaF;
