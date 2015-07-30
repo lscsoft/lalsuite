@@ -140,7 +140,7 @@ void LALInferenceInitLikelihood(LALInferenceRunState *runState)
      fprintf(stderr, "Using ROQ likelihood.\n");
      runState->likelihood=&LALInferenceROQLogLikelihood;
    } else if (LALInferenceGetProcParamVal(commandLine, "--fastSineGaussianLikelihood")){
-      fprintf(stderr, "Using Fast SineGaussian likelihood for LIB.\n");
+      fprintf(stderr, "WARNING: Using Fast SineGaussian likelihood and WF for LIB.\n");
       runState->likelihood=&LALInferenceFastSineGaussianLogLikelihood;
    } else {
     runState->likelihood=&LALInferenceUndecomposedFreqDomainLogLikelihood;
@@ -1492,6 +1492,7 @@ REAL8 LALInferenceFastSineGaussianLogLikelihood(LALInferenceVariables *currentPa
     loglikelihood += model->ifo_loglikelihoods[ifo];
 
   } /* end loop over detectors */
+ // printf("%10.10e\n",loglikelihood);
   return(loglikelihood);
 }
 
