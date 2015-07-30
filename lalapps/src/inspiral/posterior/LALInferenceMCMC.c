@@ -198,7 +198,12 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
     /* Number of independent samples to collect.  Default behavior (Neff=0)
         is to not calculate Neff and just got *nsteps* iterations. */
     INT4 neff = nsteps;
-    ppt = LALInferenceGetProcParamVal(command_line, "--neff");
+    ppt = LALInferenceGetProcParamVal(command_line, "--Neff");
+    if (ppt) {
+        printf("WARNING: --Neff has been deprecated in favor of --neff\n");
+    } else {
+        ppt = LALInferenceGetProcParamVal(command_line, "--neff");
+    }
     if (ppt)
         neff = atoi(ppt->value);
 
