@@ -1238,6 +1238,8 @@ const char *LALInferenceTranslateInternalToExternalParamName(const char *inName)
     return "psi";
   } else if (!strcmp(inName, "distance")) {
     return "dist";
+  } else if (!strcmp(inName, "polar_angle")) {
+    return "alpha";
   } else {
     return inName;
   }
@@ -1272,6 +1274,8 @@ void LALInferenceTranslateExternalToInternalParamName(char *outName, const char 
     strcpy(outName, "phi_jl");
   } else if (!strcmp(inName, "dist")) {
     strcpy(outName, "distance");
+  } else if (!strcmp(inName, "alpha")) {
+    strcpy(outName, "polar_angle");
   } else {
     strcpy(outName, inName);
   }
