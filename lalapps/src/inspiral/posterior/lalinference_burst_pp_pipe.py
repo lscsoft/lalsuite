@@ -82,6 +82,10 @@ if prior_cp.get('analysis','engine')=='lalinferencenest':
   prior_cp.set('engine','sampleprior',str(20*opts.trials)) # more samples drawn since not all will end up in posterior
   prior_cp.set('engine','zeroLogLike','')
   prior_cp.set('engine','nlive',str(20*opts.trials))
+if prior_cp.get('analysis','engine')=='lalinferenceburst':
+  prior_cp.set('engine','sampleprior',str(20*opts.trials)) # more samples drawn since not all will end up in posterior
+  prior_cp.set('engine','zeroLogLike','')
+  prior_cp.set('engine','nlive',str(20*opts.trials))
 elif prior_cp.get('analysis','engine')=='lalinferencemcmc':
   prior_cp.set('engine','Neff',str(opts.trials))
   prior_cp.set('engine','zeroLogLike','')
@@ -126,6 +130,8 @@ else:
 approx=prior_cp.get('engine','approx')
 prior2injexe=prior_cp.get('condor','pos_to_sim_burst')
 prior2injjob=pipeline.CondorDAGJob('vanilla',prior2injexe)
+if main_cp.has_option('analysis','accounting_group'):
+  prior2injjob.add_condor_cmd('accounting_group',main_cp.get('analysis','accounting_group'))
 prior2injjob.set_sub_file(convertsub)
 prior2injjob.set_stderr_file(converterr)
 prior2injjob.set_stdout_file(convertout)
@@ -170,6 +176,8 @@ ppjob.set_sub_file(ppsub)
 ppjob.set_stderr_file(pperr)
 ppjob.set_stdout_file(ppout)
 ppjob.add_condor_cmd('getenv','True')
+if main_cp.has_option('analysis','accounting_group'):
+  ppjob.add_condor_cmd('accounting_group',main_cp.get('analysis','accounting_group'))
 
 ppnode=pipeline.CondorDAGNode(ppjob)
 ppnode.add_var_opt('injXML',injfile)
