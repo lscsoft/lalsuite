@@ -339,8 +339,8 @@ REAL8 LALInferenceCorrelatedAnalyticLogLikelihood(LALInferenceVariables *current
     cbc=0;
   }
   const INT4 DIM = tmpdim;
-  static gsl_matrix *LUCM = NULL;
-  static gsl_permutation *LUCMPerm = NULL;
+  gsl_matrix *LUCM = NULL;
+  gsl_permutation *LUCMPerm = NULL;
   INT4 mode = 0;
 
   REAL8 x[DIM];
