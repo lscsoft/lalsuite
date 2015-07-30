@@ -354,6 +354,7 @@ REAL8 *LALInferenceBuildHybridTempLadder(LALInferenceRunState *runState, INT4 nd
     ntemp = LALInferenceGetINT4Variable(runState->algorithmParams, "ntemp");
     tempMin = LALInferenceGetREAL8Variable(runState->algorithmParams, "temp_min");
     tempMax = LALInferenceGetREAL8Variable(runState->algorithmParams, "temp_max");
+    trigSNR = LALInferenceGetREAL8Variable(runState->algorithmParams, "trigger_snr");
 
     /* Targeted max 'experienced' log(likelihood) of hottest chain */
     targetHotLike = ndim/2.;
@@ -362,8 +363,7 @@ REAL8 *LALInferenceBuildHybridTempLadder(LALInferenceRunState *runState, INT4 nd
     if (LALInferenceGetProcParamVal(runState->commandLine,"--temp-max")) {
         if (MPIrank==0)
             fprintf(stdout,"Using tempMax specified by commandline: %f.\n", tempMax);
-    } else if (LALInferenceGetProcParamVal(runState->commandLine,"--trigger-snr")) {        //--trigSNR given, choose ladderMax to get targetHotLike
-        trigSNR = LALInferenceGetREAL8Variable(runState->algorithmParams, "trigger_snr");
+    } else if (trigSNR > 0) {
         networkSNRsqrd = trigSNR * trigSNR;
         tempMax = networkSNRsqrd/(2*targetHotLike);
 
