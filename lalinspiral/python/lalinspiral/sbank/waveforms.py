@@ -185,7 +185,9 @@ class Template(object):
             if ASD is None:
                 ASD = PSD**0.5
             if wf.data.length > len(ASD):
-                raise ValueError("waveform has length greater than ASD; cannot whiten")
+                ASD2 = np.ones(wf.data.length) * np.inf
+                ASD2[:len(ASD)] = ASD
+                ASD = ASD2
             arr_view = wf.data.data
 
             # whiten

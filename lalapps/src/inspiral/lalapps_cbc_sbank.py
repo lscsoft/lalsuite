@@ -168,7 +168,7 @@ def parse_command_line():
     # noise model options
     #
     parser.add_option("--noise-model", choices=noise_models.keys(), metavar='|'.join(noise_models.keys()), default="aLIGOZeroDetHighPower", help="Choose a noise model for the PSD from a set of available analytical model.")
-    parser.add_option("--reference-psd", help="Read PSD from an xml file instead of using analytical noise model.", metavar="FILE")
+    parser.add_option("--reference-psd", help="Read PSD from an xml file instead of using analytical noise model. The PSD is assumed to be infinite beyond the maximum frequency contained in the file. This effectively sets the upper frequency cutoff to that frequency, unless a smaller frequency is given via --fhigh-max.", metavar="FILE")
 
     #
     # match calculation options
@@ -273,8 +273,22 @@ waveform = waveforms[opts.approximant]
 if opts.reference_psd is not None:
     psd = read_psd(opts.reference_psd)[opts.instrument]
     f_orig = psd.f0 + np.arange(len(psd.data)) * psd.deltaF
+    f_max_orig = max(f_orig)
+    if opts.fhigh_max:
+        if opts.fhigh_max > f_max_orig:
+            print >> sys.stderr, "Warning: requested fhigh-max (%.3f Hz) exceeds limits of PSD (%.3f Hz). Using PSD limit instead!" \
+                    % (opts.fhigh_max, f_max_orig)
+            opts.fhigh_max = float(f_max_orig)
+    else:
+        print >> sys.stderr, "Warning: fhigh-max not specified, using maximum frequency in the PSD (%.3f Hz)" \
+                % f_max_orig
+        opts.fhigh_max = float(f_max_orig)
+
     interpolator = UnivariateSpline(f_orig, np.log(psd.data), s=0)
-    noise_model = lambda g: np.exp(interpolator(g))
+
+    # spline extrapolation may lead to unexpected results,
+    # so set the PSD to infinity above the max original frequency
+    noise_model = lambda g: np.where(g < f_max_orig, np.exp(interpolator(g)), np.inf)
 else:
     noise_model = noise_models[opts.noise_model]
 
