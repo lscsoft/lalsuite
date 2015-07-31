@@ -1074,6 +1074,14 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=50 )
     md = pos.medians # medians of posteriors
     cc, hn = corrcoef(pos) # correlation coefficients of posteriors
 
+    if hwinj: # use phi0 as GW phase if using hardware injections
+      try:
+        phi0new = bppu.PosteriorOneDPDF('phi0', 2.*pos['phi0'].samples)
+        pos.pop('phi0')
+        pos.append(phi0new)
+      except:
+        print "No PHI0 parameter for hardware injection"
+
     poslist.append(pos) # append posterior object to list
 
     max_pos.append(mP)
@@ -1157,6 +1165,13 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=50 )
   parinj = None
   if swinj or hwinj:
     parinj = par
+
+    # if hardware injection set phi0 to be GW phase
+    try:
+      phi0val = 2.*parinj['PHI0']
+      setattr(parinj, 'PHI0', phi0val)
+    except:
+      print "No PHI0 for hardware injection"
 
   # output the MAIN posterior plots
   # h0
@@ -1271,7 +1286,10 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=50 )
     psrshelf['confidenceregion'] = dict(zip(ifosNew, confidenceregion))
 
   # phi0
-  bounds = [0, math.pi]
+  if hwinj:
+    bounds = [0., 2.*math.pi] #  use 0 to 2pi range for hardware injection
+  else:
+    bounds = [0, math.pi]
   phi0Fig, ulvals = pppu.plot_posterior_hist( poslist, 'phi0', ifosNew, \
                                         bounds, histbins, \
                                         0, overplot=True, parfile=parinj )
