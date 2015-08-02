@@ -107,56 +107,13 @@ int main(int argc, char *argv[])
    fprintf(stderr, "Program executed on %s", asctime(ptm));
    fprintf(LOG, "Program executed on %s", asctime(ptm));
 
-   //Set vectormath
-   //if (uvar.vectorMath==1) XLAL_CHECK( XLALVectorDeviceSet(VECTORDEVICE_SSE) == XLAL_SUCCESS, XLAL_EFUNC );
-   //else if (uvar.vectorMath==2) XLAL_CHECK( XLALVectorDeviceSet(VECTORDEVICE_AVX) == XLAL_SUCCESS, XLAL_EFUNC );
-   //else XLAL_CHECK( XLALVectorDeviceSet(VECTORDEVICE_FPU) == XLAL_SUCCESS, XLAL_EFUNC );
-
    //Print the output directory
    fprintf(stderr, "Output directory: %s\n", uvar.outdirectory);
    fprintf(LOG, "Output directory: %s\n", uvar.outdirectory);
 
    //Set up the MultiLALDetector structure
-   for (ii=0; ii<(INT4)uvar.IFO->length; ii++) {
-      if (ii==0) {
-         fprintf(LOG,"IFO = %s", uvar.IFO->data[ii]);
-         fprintf(stderr,"IFO = %s", uvar.IFO->data[ii]);
-      } else {
-         fprintf(LOG,"%s", uvar.IFO->data[ii]);
-         fprintf(stderr,"%s", uvar.IFO->data[ii]);
-      }
-      if (ii < (INT4)uvar.IFO->length-1) {
-         fprintf(LOG, ",");
-         fprintf(stderr, ",");
-      } else {
-         fprintf(LOG, "\n");
-         fprintf(stderr, "\n");
-      }
-   }
    MultiLALDetector *detectors = NULL;
-   XLAL_CHECK( (detectors = XLALMalloc(sizeof(MultiLALDetector))) != NULL, XLAL_ENOMEM );
-   //XLAL_CHECK( XLALParseMultiLALDetector(detectors, uvar.IFO) == XLAL_SUCCESS, XLAL_EFUNC );
-   detectors->length = uvar.IFO->length;
-   for (ii=0; ii<(INT4)detectors->length; ii++) {
-      if (strcmp("H1", uvar.IFO->data[ii])==0) {
-         detectors->sites[ii] = lalCachedDetectors[LAL_LHO_4K_DETECTOR]; //H1
-      } else if (strcmp("L1",uvar.IFO->data[ii])==0) {
-         detectors->sites[ii] = lalCachedDetectors[LAL_LLO_4K_DETECTOR]; //L1
-      } else if (strcmp("V1", uvar.IFO->data[ii])==0) {
-         detectors->sites[ii] = lalCachedDetectors[LAL_VIRGO_DETECTOR];  //V1
-      } else if (strcmp("H2", uvar.IFO->data[ii])==0) {
-         detectors->sites[ii] = lalCachedDetectors[LAL_LHO_2K_DETECTOR]; //H2
-      } else if (strcmp("H2r", uvar.IFO->data[ii])==0) {
-         LALDetector H2 = lalCachedDetectors[LAL_LHO_2K_DETECTOR]; //H2 rotated
-         H2.frDetector.xArmAzimuthRadians -= 0.25*LAL_PI;
-         H2.frDetector.yArmAzimuthRadians -= 0.25*LAL_PI;
-         memset(&(H2.frDetector.name), 0, sizeof(CHAR)*LALNameLength);
-         snprintf(H2.frDetector.name, LALNameLength, "%s", "LHO_2k_rotatedPiOver4");
-         XLAL_CHECK( (XLALCreateDetector(&(detectors->sites[ii]), &(H2.frDetector), LALDETECTORTYPE_IFODIFF)) != NULL, XLAL_EFUNC );
-      } else {
-         XLAL_ERROR(XLAL_EINVAL, "Not using valid interferometer! Expected 'H1', 'H2', 'H2r' (rotated H2), 'L1', or 'V1' not %s.\n", uvar.IFO->data[ii]);
-      }
-   }
+   XLAL_CHECK( (detectors = setupMultiLALDetector(uvar.IFO)) != NULL, XLAL_EFUNC );
 
    //Allocate GSL RNG
    gsl_rng *rng = NULL;
@@ -186,6 +143,8 @@ int main(int argc, char *argv[])
    fprintf(stderr, "Running median blocksize = %d\n", uvar.blksize);
    fprintf(stderr, "FFT plan flag = %d\n", uvar.FFTplanFlag);
    fprintf(stderr, "RNG seed: %d\n", uvar.randSeed);
+   fprintf(LOG, "FAR for templates = %g\n", uvar.tmplfar);
+   fprintf(stderr, "FAR for templates = %g\n", uvar.tmplfar);
 
    //Initialize ephemeris data structure
    EphemerisData *edat = NULL;
@@ -234,8 +193,6 @@ int main(int argc, char *argv[])
    //Basic units
    REAL4 tempfspan = uvar.fspan + 2.0*uvar.dfmax + (uvar.blksize-1 + 12)/uvar.Tsft;     //= fspan+2*dfmax+extrabins + running median blocksize-1 (Hz)
    INT4 tempnumfbins = (INT4)round(tempfspan*uvar.Tsft)+1;                        //= number of bins in tempfspan
-   fprintf(LOG, "FAR for templates = %g\n", uvar.tmplfar);
-   fprintf(stderr, "FAR for templates = %g\n", uvar.tmplfar);
    
    //Determine band size to get the SFT data (remember to get extra bins because of the running median and the bin shifts due to detector velocity) with nudge of 0.1/Tsft for rounding issues
    REAL8 minfbin = round(uvar.fmin*uvar.Tsft - uvar.dfmax*uvar.Tsft - 0.5*(uvar.blksize-1) - (REAL8)(maxbinshift) - 6.0)/uvar.Tsft + 0.1/uvar.Tsft;
@@ -243,7 +200,7 @@ int main(int argc, char *argv[])
 
    //Allocate memory for ffdata structure
    ffdataStruct *ffdata = NULL;
-   XLAL_CHECK( (ffdata = new_ffdata(&uvar)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (ffdata = createffdata(&uvar)) != NULL, XLAL_EFUNC );
 
    //Maximum number of IHS values to sum = twice the maximum modulation depth
    //Minimum number of IHS values to sum = twice the minimum modulation depth
@@ -251,41 +208,85 @@ int main(int argc, char *argv[])
    fprintf(LOG, "Maximum row width to be searched = %d\n", maxrows);
    fprintf(stderr, "Maximum row width to be searched = %d\n", maxrows);
 
-   //TF normalization
-   ffdata->tfnormalization = 2.0/uvar.Tsft/(uvar.avesqrtSh*uvar.avesqrtSh);
+   //parse noise list
+   MultiNoiseFloor multiNoiseFloor;
+   XLAL_CHECK ( XLALParseMultiNoiseFloor(&multiNoiseFloor, uvar.avesqrtSh, uvar.IFO->length ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-   //Read in the T-F data from SFTs or generate SFTs
-   REAL4Vector *tfdata = NULL;
+   //TF normalization
+   ffdata->tfnormalization = 2.0/uvar.Tsft/(multiNoiseFloor.sqrtSn[0]*multiNoiseFloor.sqrtSn[0]);
+
+   //Read in the data from SFTs or generate SFTs
    MultiSFTVector *multiSFTvector = NULL;
-   if (!XLALUserVarWasSet(&uvar.injectionSources) && XLALUserVarWasSet(&uvar.inputSFTs) && detectors->length<2 && !uvar.gaussNoiseWithSFTgaps && !XLALUserVarWasSet(&uvar.timestampsFile)) XLAL_CHECK( (tfdata = readInSFTs(&uvar, ffdata->tfnormalization, minfbin, maxfbin)) != NULL, XLAL_EFUNC );
-   else if (!XLALUserVarWasSet(&uvar.injectionSources) && XLALUserVarWasSet(&uvar.inputSFTs) && !uvar.gaussNoiseWithSFTgaps && !XLALUserVarWasSet(&uvar.timestampsFile)) XLAL_CHECK( (multiSFTvector = getMultiSFTVector(&uvar, minfbin, maxfbin)) != NULL, XLAL_EFUNC );
-   else {
-      XLAL_CHECK( (multiSFTvector = generateSFTdata(&uvar, detectors, edat, maxbinshift, rng)) != NULL, XLAL_EFUNC );
-      //Convert SFTs to powers
-      if (detectors->length==1) {
-         XLAL_CHECK( (tfdata = convertSFTdataToPowers(multiSFTvector->data[0], &uvar, ffdata->tfnormalization)) != NULL, XLAL_EFUNC );
-         XLALDestroyMultiSFTVector(multiSFTvector);
-      }
-   } // end load data or generate data
+   if (!XLALUserVarWasSet(&uvar.injectionSources) && XLALUserVarWasSet(&uvar.inputSFTs) && !uvar.gaussNoiseWithSFTgaps && !XLALUserVarWasSet(&uvar.timestampsFile) && !XLALUserVarWasSet(&uvar.segmentFile)) XLAL_CHECK( (multiSFTvector = getMultiSFTVector(&uvar, minfbin, maxfbin)) != NULL, XLAL_EFUNC );
+   else XLAL_CHECK( (multiSFTvector = generateSFTdata(&uvar, detectors, edat, maxbinshift, rng)) != NULL, XLAL_EFUNC );
+
+   //Get timestamps of SFTs and determine joint timestamps
+   MultiLIGOTimeGPSVector *multiSFTtimestamps = NULL;
+   XLAL_CHECK( (multiSFTtimestamps = XLALExtractMultiTimestampsFromSFTs(multiSFTvector)) != NULL, XLAL_EFUNC );
+   LIGOTimeGPSVector *jointSFTtimestamps = NULL;
+   XLAL_CHECK( (jointSFTtimestamps = jointTimestampsFromMultiTimestamps(multiSFTtimestamps)) != NULL, XLAL_EFUNC );
+   XLALDestroyMultiTimestamps(multiSFTtimestamps);
 
    //Print SFT times, if requested by user
-   if (uvar.printSFTtimes) {
-      CHARVector *outputfile = NULL;
-      XLAL_CHECK( (outputfile = XLALCreateCHARVector(strlen(uvar.outdirectory)+25)) != NULL, XLAL_EFUNC );
-      for (ii=0; ii<(INT4)detectors->length; ii++) {
-         sprintf(outputfile->data, "%s/%s-%s", uvar.outdirectory, uvar.IFO->data[ii], "inputSFTtimes.dat");
-         FILE *INSFTTIMES = NULL;
-         XLAL_CHECK( (INSFTTIMES = fopen(outputfile->data, "w")) != NULL, XLAL_EIO, "Couldn't fopen %s for writing input SFT start times", outputfile->data );
-         if (detectors->length==1) {
-            INT4 sftlength = tfdata->length/ffdata->numffts;
-            for (jj=0; jj<ffdata->numffts; jj++) if (tfdata->data[jj*sftlength]!=0.0) fprintf(INSFTTIMES, "%9d 0\n", (INT4)round(uvar.t0+jj*(uvar.Tsft-uvar.SFToverlap)));
-         } else {
-            for (jj=0; jj<(INT4)(multiSFTvector->data[ii]->length); jj++) fprintf(INSFTTIMES, "%9d 0\n", (INT4)round(XLALGPSGetREAL8(&(multiSFTvector->data[ii]->data[jj].epoch))));
-         }
-         fclose(INSFTTIMES);
+   if (uvar.printSFTtimes) XLAL_CHECK( printSFTtimestamps2File(multiSFTvector, &uvar) == XLAL_SUCCESS, XLAL_EFUNC );
+
+   //Next the running mean is calculated and we need each detector SFT data converted to powers for this step
+   //Calculate the running mean values of the SFTs (output here is smaller than the data read in for the SFTs). Here,
+   //numfbins needs to be the bins you expect to come out of the running means -- the band you are going
+   //to search!
+   REAL4VectorAligned *tfdata = NULL, *oneSFTbackgroundRatio = NULL;
+   REAL4VectorAlignedArray *backgrounds = NULL, *backgroundRatioMeans = NULL;
+   XLAL_CHECK( (oneSFTbackgroundRatio = XLALCreateREAL4VectorAligned(ffdata->numfbins+2*maxbinshift, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (backgrounds = createREAL4VectorAlignedArray(detectors->length, ffdata->numffts*(ffdata->numfbins+2*maxbinshift), 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (backgroundRatioMeans = createREAL4VectorAlignedArray(detectors->length, ffdata->numffts, 32)) != NULL, XLAL_EFUNC );
+   for (ii=0; ii<(INT4)detectors->length; ii++) {
+      memset(backgrounds->data[ii]->data, 0, sizeof(REAL4)*backgrounds->data[ii]->length);
+      memset(backgroundRatioMeans->data[ii]->data, 0, sizeof(REAL4)*backgroundRatioMeans->data[ii]->length);
+
+      REAL4VectorAligned *tmpTFdata = NULL;
+      XLAL_CHECK( (tmpTFdata = convertSFTdataToPowers(multiSFTvector->data[ii], &uvar, 2.0/(multiNoiseFloor.sqrtSn[0]*multiNoiseFloor.sqrtSn[0])/uvar.Tsft)) != NULL, XLAL_EFUNC );
+      if (!uvar.signalOnly) XLAL_CHECK( tfRngMeans(backgrounds->data[ii], tmpTFdata, ffdata->numffts, ffdata->numfbins+2*maxbinshift, uvar.blksize) == XLAL_SUCCESS, XLAL_EFUNC );
+      else memset(backgrounds->data[ii]->data, 0, sizeof(REAL4)*backgrounds->data[ii]->length);
+      if (detectors->length==1) {
+         XLAL_CHECK( (tfdata = XLALCreateREAL4VectorAligned(tmpTFdata->length, 32)) != NULL, XLAL_EFUNC );
+         memcpy(tfdata->data, tmpTFdata->data, sizeof(REAL4)*tmpTFdata->length);
+         XLALDestroyMultiSFTVector(multiSFTvector);
       }
-      XLALDestroyCHARVector(outputfile);
+      XLALDestroyREAL4VectorAligned(tmpTFdata);
    }
+   //Replace any zeros in detector 0 with data from first detector available
+   XLAL_CHECK( replaceTFdataWithSubsequentTFdata(backgrounds, ffdata->numffts) == XLAL_SUCCESS, XLAL_EFUNC );
+   //copy background data from detector 0
+   REAL4VectorAligned *background = NULL, *background0 = NULL;
+   XLAL_CHECK( (background = XLALCreateREAL4VectorAligned(ffdata->numffts*(ffdata->numfbins+2*maxbinshift), 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (background0 = XLALCreateREAL4VectorAligned(ffdata->numffts*(ffdata->numfbins+2*maxbinshift), 32)) != NULL, XLAL_EFUNC );
+   if (!uvar.signalOnly) {
+      memcpy(background->data, backgrounds->data[0]->data, sizeof(REAL4)*backgrounds->data[0]->length);
+      memcpy(background0->data, backgrounds->data[0]->data, sizeof(REAL4)*backgrounds->data[0]->length);
+   } else {
+      memset(background->data, 0, sizeof(REAL4)*background->length);
+      memset(background0->data, 0, sizeof(REAL4)*background->length);
+   }
+   //compute ratios, this only gets executed if detectors->length>1
+   for (ii=1; ii<(INT4)detectors->length; ii++) {
+      for (jj=0; jj<ffdata->numffts; jj++) {
+         if (backgrounds->data[ii]->data[jj*(ffdata->numfbins+2*maxbinshift)]!=0.0) {
+            memcpy(oneSFTbackgroundRatio->data, &(backgrounds->data[0]->data[jj*(ffdata->numfbins+2*maxbinshift)]), sizeof(REAL4)*oneSFTbackgroundRatio->length);
+            for (UINT4 kk=0; kk<oneSFTbackgroundRatio->length; kk++) oneSFTbackgroundRatio->data[kk] /= backgrounds->data[ii]->data[jj*(ffdata->numfbins+2*maxbinshift) + kk];
+            backgroundRatioMeans->data[ii]->data[jj] = calcMean(oneSFTbackgroundRatio);
+            XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
+         }
+         else backgroundRatioMeans->data[ii]->data[jj] = 0.0;
+      }
+   }
+   XLALDestroyREAL4VectorAligned(oneSFTbackgroundRatio);
+   destroyREAL4VectorAlignedArray(backgrounds);
+
+   //Background scaling and normalization
+   REAL4VectorAligned *backgroundScaling = NULL;
+   XLAL_CHECK( (backgroundScaling = XLALCreateREAL4VectorAligned(background->length, 32)) != NULL, XLAL_EFUNC );
+   memset(backgroundScaling->data, 0, sizeof(REAL4)*backgroundScaling->length);
+   for (ii=0; ii<(INT4)background->length; ii++) if (background->data[ii] != 0.0) backgroundScaling->data[ii] = 1.0;
 
    //Line detection only if there is valid noise to be looking at
    INT4Vector *lines = NULL;
@@ -294,8 +295,6 @@ int main(int argc, char *argv[])
       lines = detectLines_simple(tfdata, ffdata, &uvar);
       XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
       if (lines!=NULL) {
-         fprintf(LOG, "WARNING: %d line(s) found.\n", lines->length);
-         fprintf(stderr, "WARNING: %d line(s) found.\n", lines->length);
          if ((REAL4)lines->length/(ffdata->numfbins + 2*maxbinshift) >= 0.1) {
             heavilyContaminatedBand = 1;
             fprintf(LOG, "WARNING: Band is heavily contaminated by artifacts.\n");
@@ -303,19 +302,8 @@ int main(int argc, char *argv[])
          }
       }
    }
-
    //If the band is heavily contaminated by lines, don't do any follow up.
    if (heavilyContaminatedBand) uvar.IHSonly = 1;
-
-   //Calculate the running mean values of the SFTs (output here is smaller than initialTFdata). Here,
-   //numfbins needs to be the bins you expect to come out of the running means -- the band you are going
-   //to search!
-   REAL4Vector *background = NULL;
-   if (detectors->length==1) {
-      XLAL_CHECK( (background = XLALCreateREAL4Vector(ffdata->numffts*(ffdata->numfbins+2*maxbinshift))) != NULL, XLAL_EFUNC );
-      if (!uvar.signalOnly) XLAL_CHECK( tfRngMeans(background, tfdata, ffdata->numffts, ffdata->numfbins+2*maxbinshift, uvar.blksize) == XLAL_SUCCESS, XLAL_EFUNC );
-      else memset(background->data, 0, sizeof(REAL4)*background->length);
-   }
 
    //TEST: Try cleaning lines
    /* XLAL_CHECK( cleanLines(tfdata, background, lines, &uvar) == XLAL_SUCCESS, XLAL_EFUNC ); */
@@ -364,75 +352,75 @@ int main(int argc, char *argv[])
    }
 
    //Need to reduce the original TF data to remove the excess bins used for running median calculation. Normalize the TF as the same as the background was normalized
-   REAL4Vector *usableTFdata = NULL;
+   REAL4VectorAligned *usableTFdata = NULL;
    if (detectors->length==1) {
-      XLAL_CHECK( (usableTFdata = XLALCreateREAL4Vector(background->length)) != NULL, XLAL_EFUNC );
+      XLAL_CHECK( (usableTFdata = XLALCreateREAL4VectorAligned(background->length, 32)) != NULL, XLAL_EFUNC );
       for (ii=0; ii<ffdata->numffts; ii++) memcpy(&(usableTFdata->data[ii*(ffdata->numfbins+2*maxbinshift)]), &(tfdata->data[ii*(tempnumfbins+2*maxbinshift) + (INT4)round(0.5*(uvar.blksize-1))]), sizeof(REAL4)*(ffdata->numfbins+2*maxbinshift));
-      for (ii=0; ii<(INT4)usableTFdata->length; ii++) {
-         if (usableTFdata->data[ii]!=0.0) {
-            usableTFdata->data[ii] *= backgroundmeannormfactor;
-            background->data[ii] *= backgroundmeannormfactor;
-         }
-      }
+      XLAL_CHECK( XLALVectorScaleREAL4(usableTFdata->data, backgroundmeannormfactor, usableTFdata->data, usableTFdata->length) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( XLALVectorScaleREAL4(background->data, backgroundmeannormfactor, background->data, background->length) == XLAL_SUCCESS, XLAL_EFUNC );
       //At this point the TF plane and the running median calculation are the same size=numffts*(numfbins + 2*maxbinshift)
       //We can delete the originally loaded SFTs since we have the usableTFdata saved
-      XLALDestroyREAL4Vector(tfdata);
+      XLALDestroyREAL4VectorAligned(tfdata);
    }
 
    //Print out data product if requested
-   if (uvar.printData && detectors->length==1) {
-      CHARVector *outputfile = NULL;
-      XLAL_CHECK( (outputfile = XLALCreateCHARVector(strlen(uvar.outdirectory)+15)) != NULL, XLAL_EFUNC );
-      sprintf(outputfile->data, "%s/%s", uvar.outdirectory, "tfdata.dat");
-      XLAL_CHECK( printREAL4Vector2File(usableTFdata, outputfile->data) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLALDestroyCHARVector(outputfile);
-   }
+   if (uvar.printData && detectors->length==1) XLAL_CHECK( printREAL4Vector2File((REAL4Vector*)usableTFdata, uvar.outdirectory, "tfdata.dat") == XLAL_SUCCESS, XLAL_EFUNC );
 
    //Do mean subtraction of TFdata here--modifies the usableTFdata vector!!!
-   if (detectors->length==1) XLAL_CHECK( tfMeanSubtract(usableTFdata, background, ffdata->numffts, ffdata->numfbins+2*maxbinshift) == XLAL_SUCCESS, XLAL_EFUNC );
+   if (detectors->length==1) XLAL_CHECK( tfMeanSubtract(usableTFdata, background, backgroundScaling, ffdata->numffts, ffdata->numfbins+2*maxbinshift) == XLAL_SUCCESS, XLAL_EFUNC );
 
-   //Initialize reused values
+   //Initialize IHS structures
    ihsMaximaStruct *ihsmaxima = NULL;
    ihsfarStruct *ihsfarstruct = NULL;
-   REAL4VectorAligned *aveNoise = NULL;
-   INT4Vector *binshifts = NULL;
-   LIGOTimeGPS tStart;
-   MultiLIGOTimeGPSVector *multiTimestamps = NULL;
-   MultiDetectorStateSeries *multiStateSeries = NULL;
+   XLAL_CHECK( (ihsmaxima = createihsMaxima(ffdata->numfbins, maxrows)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (ihsfarstruct = createihsfarStruct(maxrows, &uvar)) != NULL, XLAL_EFUNC );
+
+   //If necessary, read in template bank file
    TwoSpectTemplateVector *templateVec = NULL;
-   candidateVector *gaussCandidates1 = NULL, *gaussCandidates2 = NULL, *gaussCandidates3 = NULL, *gaussCandidates4 = NULL, *exactCandidates1 = NULL, *exactCandidates2 = NULL, *ihsCandidates = NULL;
-   UpperLimitVector *upperlimits = NULL;
-   REAL4FFTPlan *secondFFTplan = NULL;
-   XLAL_CHECK( (ihsmaxima = new_ihsMaxima(ffdata->numfbins, maxrows)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK( (ihsfarstruct = new_ihsfarStruct(maxrows, &uvar)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK( (aveNoise = XLALCreateREAL4VectorAligned(ffdata->numfprbins, 32)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK( (binshifts = XLALCreateINT4Vector(ffdata->numffts)) != NULL, XLAL_EFUNC );
-   XLALGPSSetREAL8 ( &tStart, uvar.t0 );
-   XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC, "XLALGPSSetREAL8 failed\n" );
-   XLAL_CHECK( (multiTimestamps = XLALMakeMultiTimestamps(tStart, uvar.Tobs, uvar.Tsft, uvar.SFToverlap, detectors->length)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK( (multiStateSeries = XLALGetMultiDetectorStates(multiTimestamps, detectors, edat, uvar.SFToverlap)) != NULL, XLAL_EFUNC );
    if (XLALUserVarWasSet(&(uvar.templatebankfile))) {
       XLAL_CHECK( (templateVec = readTwoSpectTemplateVector(uvar.templatebankfile)) != NULL, XLAL_EFUNC );
       XLAL_CHECK( templateVec->Tsft==uvar.Tsft && templateVec->SFToverlap==uvar.SFToverlap && templateVec->Tobs==uvar.Tobs, XLAL_EINVAL, "Template bank %s doesn't match input parameters\n", uvar.templatebankfile );
    }
-   XLAL_CHECK( (gaussCandidates1 = new_candidateVector(100)) != NULL, XLAL_EFUNC, "new_CandidateVector(%d) failed\n", 100 );
-   XLAL_CHECK( (gaussCandidates2 = new_candidateVector(100)) != NULL, XLAL_EFUNC, "new_CandidateVector(%d) failed\n", 100 );
-   XLAL_CHECK( (gaussCandidates3 = new_candidateVector(100)) != NULL, XLAL_EFUNC, "new_CandidateVector(%d) failed\n", 100 );
-   XLAL_CHECK( (gaussCandidates4 = new_candidateVector(100)) != NULL, XLAL_EFUNC, "new_CandidateVector(%d) failed\n", 100 );
-   XLAL_CHECK( (exactCandidates1 = new_candidateVector(100)) != NULL, XLAL_EFUNC, "new_CandidateVector(%d) failed\n", 100 );
-   XLAL_CHECK( (exactCandidates2 = new_candidateVector(100)) != NULL, XLAL_EFUNC, "new_CandidateVector(%d) failed\n", 100 );
-   XLAL_CHECK( (ihsCandidates = new_candidateVector(100)) != NULL, XLAL_EFUNC, "new_CandidateVector(%d) failed\n", 100 );
-   XLAL_CHECK( (upperlimits = new_UpperLimitVector(1)) != NULL, XLAL_EFUNC, "new_UpperLimitVector(%d) failed.\n", 1 );
-   XLAL_CHECK( (secondFFTplan = XLALCreateForwardREAL4FFTPlan(ffdata->numffts, uvar.FFTplanFlag)) != NULL, XLAL_EFUNC );
+
+   //Initialize candidate vectors and upper limits
+   candidateVector *gaussCandidates1 = NULL, *gaussCandidates2 = NULL, *gaussCandidates3 = NULL, *gaussCandidates4 = NULL, *exactCandidates1 = NULL, *exactCandidates2 = NULL, *ihsCandidates = NULL;
+   UpperLimitVector *upperlimits = NULL;
+   XLAL_CHECK( (gaussCandidates1 = createcandidateVector(100)) != NULL, XLAL_EFUNC, "createCandidateVector(%d) failed\n", 100 );
+   XLAL_CHECK( (gaussCandidates2 = createcandidateVector(100)) != NULL, XLAL_EFUNC, "createCandidateVector(%d) failed\n", 100 );
+   XLAL_CHECK( (gaussCandidates3 = createcandidateVector(100)) != NULL, XLAL_EFUNC, "createCandidateVector(%d) failed\n", 100 );
+   XLAL_CHECK( (gaussCandidates4 = createcandidateVector(100)) != NULL, XLAL_EFUNC, "createCandidateVector(%d) failed\n", 100 );
+   XLAL_CHECK( (exactCandidates1 = createcandidateVector(100)) != NULL, XLAL_EFUNC, "createCandidateVector(%d) failed\n", 100 );
+   XLAL_CHECK( (exactCandidates2 = createcandidateVector(100)) != NULL, XLAL_EFUNC, "createCandidateVector(%d) failed\n", 100 );
+   XLAL_CHECK( (ihsCandidates = createcandidateVector(100)) != NULL, XLAL_EFUNC, "createCandidateVector(%d) failed\n", 100 );
+   XLAL_CHECK( (upperlimits = createUpperLimitVector(1)) != NULL, XLAL_EFUNC, "createUpperLimitVector(%d) failed.\n", 1 );
+
+   //Initialize timestamps and state series and set refTime
+   LIGOTimeGPS tStart;
+   MultiLIGOTimeGPSVector *multiTimestamps = NULL;
+   MultiDetectorStateSeries *multiStateSeries = NULL;
+   XLALGPSSetREAL8 ( &tStart, uvar.t0 );
+   XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC, "XLALGPSSetREAL8 failed\n" );
+   XLAL_CHECK( (multiTimestamps = XLALMakeMultiTimestamps(tStart, uvar.Tobs, uvar.Tsft, uvar.SFToverlap, detectors->length)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (multiStateSeries = XLALGetMultiDetectorStates(multiTimestamps, detectors, edat, uvar.SFToverlap)) != NULL, XLAL_EFUNC );
    LIGOTimeGPS refTime = multiTimestamps->data[0]->data[0];
+
+   //Initialize second FFT plan
+   REAL4FFTPlan *secondFFTplan = NULL;
+   XLAL_CHECK( (secondFFTplan = XLALCreateForwardREAL4FFTPlan(ffdata->numffts, uvar.FFTplanFlag)) != NULL, XLAL_EFUNC );
+
+   //Initialize aveNoise and binshifts vectors
+   REAL4VectorAligned *aveNoise = NULL;
+   INT4Vector *binshifts = NULL;
+   XLAL_CHECK( (aveNoise = XLALCreateREAL4VectorAligned(ffdata->numfprbins, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (binshifts = XLALCreateINT4Vector(ffdata->numffts)) != NULL, XLAL_EFUNC );
+
+   //Create exponentially distributed random values for background noise estimate to sample from
+   REAL4VectorAligned *expRandVals = NULL;
+   XLAL_CHECK( (expRandVals = expRandNumVector(100*ffdata->numffts, 1.0, rng)) != NULL, XLAL_EFUNC );
 
    //Initialize to -1.0 for far just at the start
    ihsfarstruct->ihsfar->data[0] = -1.0;
    REAL4 antweightsrms = 0.0;
-
-   //Davies' algorithm uses an internal error code
-   //Later upgrade: remove this because we do our own error handling
-   INT4 proberrcode = 0;
 
    //Set TF normalization
    if (detectors->length==1) ffdata->tfnormalization *= 0.5*uvar.Tsft;
@@ -443,7 +431,28 @@ int main(int argc, char *argv[])
    SkyPosition skypos0 = {0.0, 0.0, COORDINATESYSTEM_EQUATORIAL};
    REAL4VectorAligned *antweightsforihs2h0 = NULL;
    XLAL_CHECK( (antweightsforihs2h0 = XLALCreateREAL4VectorAligned(ffdata->numffts, 32)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK( CompAntennaPatternWeights((REAL4Vector*)antweightsforihs2h0, skypos0, uvar.t0, uvar.Tsft, uvar.SFToverlap, uvar.Tobs, 0, 0.0, lalCachedDetectors[LAL_LHO_4K_DETECTOR]) == XLAL_SUCCESS, XLAL_EFUNC );
+   if (XLALUserVarWasSet(&uvar.assumeNScosi) && XLALUserVarWasSet(&uvar.assumeNSpsi)) XLAL_CHECK( CompAntennaPatternWeights2(antweightsforihs2h0, skypos0, multiTimestamps->data[0], lalCachedDetectors[LAL_LHO_4K_DETECTOR], &uvar.assumeNScosi, &uvar.assumeNSpsi) == XLAL_SUCCESS, XLAL_EFUNC );
+   else if (XLALUserVarWasSet(&uvar.assumeNScosi)) XLAL_CHECK( CompAntennaPatternWeights2(antweightsforihs2h0, skypos0, multiTimestamps->data[0], lalCachedDetectors[LAL_LHO_4K_DETECTOR], &uvar.assumeNScosi, NULL) == XLAL_SUCCESS, XLAL_EFUNC );
+   else {
+      REAL8 cosi = 1.0, psi = 0.0;
+      XLAL_CHECK( CompAntennaPatternWeights2(antweightsforihs2h0, skypos0, multiTimestamps->data[0], lalCachedDetectors[LAL_LHO_4K_DETECTOR], &cosi, &psi) == XLAL_SUCCESS, XLAL_EFUNC );
+   }
+   REAL4VectorAligned *backgroundScalingForihs2h0 = NULL;
+   if (detectors->length>1) {
+      XLAL_CHECK( (backgroundScalingForihs2h0 = XLALCreateREAL4VectorAligned(backgroundScaling->length, 32)) != NULL, XLAL_EFUNC );
+      MultiSSBtimes *multissb = NULL;
+      XLAL_CHECK( (multissb = XLALGetMultiSSBtimes(multiStateSeries, skypos0, refTime, SSBPREC_RELATIVISTICOPT)) != NULL, XLAL_EFUNC );
+      MultiAMCoeffs *multiAMcoefficients = NULL;
+      XLAL_CHECK( (multiAMcoefficients = XLALComputeMultiAMCoeffs(multiStateSeries, NULL, skypos0)) != NULL, XLAL_EFUNC );
+      REAL4VectorAligned *tmpTFdata = NULL;
+      REAL8 *cosi = NULL, *psi = NULL;
+      if (XLALUserVarWasSet(&uvar.assumeNScosi)) cosi = &uvar.assumeNScosi;
+      if (XLALUserVarWasSet(&uvar.assumeNSpsi)) psi = &uvar.assumeNSpsi;
+      XLAL_CHECK( (tmpTFdata = coherentlyAddSFTs(multiSFTvector, multissb, multiAMcoefficients, jointSFTtimestamps, backgroundRatioMeans, uvar.cosiSignCoherent, cosi, psi, &uvar, backgroundScalingForihs2h0)) != NULL, XLAL_EFUNC );
+      XLALDestroyREAL4VectorAligned(tmpTFdata);
+      XLALDestroyMultiAMCoeffs(multiAMcoefficients);
+      XLALDestroyMultiSSBtimes(multissb);
+   }
 
    //Set skycounter to -1 at the start
    INT4 skycounter = -1;
@@ -458,13 +467,7 @@ int main(int argc, char *argv[])
       fprintf(stderr, "Sky location: RA = %g, DEC = %g\n", dopplerpos.Alpha, dopplerpos.Delta);
       skycounter++;
 
-      SkyPosition skypos;
-      skypos.longitude = dopplerpos.Alpha;
-      skypos.latitude = dopplerpos.Delta;
-      skypos.system = COORDINATESYSTEM_EQUATORIAL;
-
-      MultiSSBtimes *multissb = NULL;
-      XLAL_CHECK( (multissb = XLALGetMultiSSBtimes(multiStateSeries, skypos, refTime, SSBPREC_RELATIVISTICOPT)) != NULL, XLAL_EFUNC );
+      SkyPosition skypos = {dopplerpos.Alpha, dopplerpos.Delta, COORDINATESYSTEM_EQUATORIAL};
 
       //Compute antenna pattern weights. If antennaOff input flag is given, then set all values equal to 1.0
       REAL4VectorAligned *antweights = NULL;
@@ -472,27 +475,35 @@ int main(int argc, char *argv[])
       memset(antweights->data, 0, antweights->length*sizeof(REAL4));
       if (uvar.antennaOff) for (ii=0; ii<(INT4)antweights->length; ii++) antweights->data[ii] = 1.0;
       else {
-         if (XLALUserVarWasSet(&uvar.linPolAngle)) XLAL_CHECK( CompAntennaPatternWeights((REAL4Vector*)antweights, skypos, uvar.t0, uvar.Tsft, uvar.SFToverlap, uvar.Tobs, 1, uvar.linPolAngle, detectors->sites[0]) == XLAL_SUCCESS, XLAL_EFUNC );
-         else XLAL_CHECK( CompAntennaPatternWeights((REAL4Vector*)antweights, skypos, uvar.t0, uvar.Tsft, uvar.SFToverlap, uvar.Tobs, 0, 0.0, detectors->sites[0]) == XLAL_SUCCESS, XLAL_EFUNC );
+         if (XLALUserVarWasSet(&uvar.assumeNScosi) && XLALUserVarWasSet(&uvar.assumeNSpsi)) XLAL_CHECK( CompAntennaPatternWeights2(antweights, skypos, multiTimestamps->data[0], detectors->sites[0], &uvar.assumeNScosi, &uvar.assumeNSpsi) == XLAL_SUCCESS, XLAL_EFUNC );
+         else if (XLALUserVarWasSet(&uvar.assumeNScosi)) XLAL_CHECK( CompAntennaPatternWeights2(antweights, skypos, multiTimestamps->data[0], detectors->sites[0], &uvar.assumeNScosi, NULL) == XLAL_SUCCESS, XLAL_EFUNC );
+         else {
+            REAL8 cosi = 1.0, psi = 0.0;
+            XLAL_CHECK( CompAntennaPatternWeights2(antweights, skypos, multiTimestamps->data[0], detectors->sites[0], &cosi, &psi) == XLAL_SUCCESS, XLAL_EFUNC );
+         }
       }
 
+      //Get SSB times
+      MultiSSBtimes *multissb = NULL;
+      XLAL_CHECK( (multissb = XLALGetMultiSSBtimes(multiStateSeries, skypos, refTime, SSBPREC_RELATIVISTICOPT)) != NULL, XLAL_EFUNC );
+
       //Compute the bin shifts for each SFT
-      XLAL_CHECK( CompBinShifts2(binshifts, multissb->data[0], uvar.fmin + 0.5*uvar.fspan, uvar.Tsft, uvar.dopplerMultiplier) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( CompBinShifts(binshifts, multissb->data[0], uvar.fmin + 0.5*uvar.fspan, uvar.Tsft, uvar.dopplerMultiplier) == XLAL_SUCCESS, XLAL_EFUNC );
 
       //Coherent combination
       if (detectors->length>=2) {
-          //TF normalization
-         ffdata->tfnormalization = 2.0/uvar.Tsft/(uvar.avesqrtSh*uvar.avesqrtSh);
+          //TF normalization must be reset every time
+         ffdata->tfnormalization = 2.0/uvar.Tsft/(multiNoiseFloor.sqrtSn[0]*multiNoiseFloor.sqrtSn[0]);
 
          //Get multiAMcoefficients
          MultiAMCoeffs *multiAMcoefficients = NULL;
          XLAL_CHECK( (multiAMcoefficients = XLALComputeMultiAMCoeffs(multiStateSeries, NULL, skypos)) != NULL, XLAL_EFUNC );
 
          //Coherenly combine the SFT data
-         if (XLALUserVarWasSet(&uvar.assumeNScosi) && XLALUserVarWasSet(&uvar.assumeNSpsi)) XLAL_CHECK( (tfdata = coherentlyAddSFTs(multiSFTvector, multissb, multiAMcoefficients, uvar.cosiSignCoherent, &uvar.assumeNScosi, &uvar.assumeNSpsi, &uvar)) != NULL, XLAL_EFUNC );
-         else if (XLALUserVarWasSet(&uvar.assumeNScosi) && !XLALUserVarWasSet(&uvar.assumeNSpsi)) XLAL_CHECK( (tfdata = coherentlyAddSFTs(multiSFTvector, multissb, multiAMcoefficients, uvar.cosiSignCoherent, &uvar.assumeNScosi, NULL, &uvar)) != NULL, XLAL_EFUNC );
-         else if (!XLALUserVarWasSet(&uvar.assumeNScosi) && XLALUserVarWasSet(&uvar.assumeNSpsi)) XLAL_CHECK( (tfdata = coherentlyAddSFTs(multiSFTvector, multissb, multiAMcoefficients, uvar.cosiSignCoherent, NULL, &uvar.assumeNSpsi, &uvar)) != NULL, XLAL_EFUNC );
-         else XLAL_CHECK( (tfdata = coherentlyAddSFTs(multiSFTvector, multissb, multiAMcoefficients, uvar.cosiSignCoherent, NULL, NULL, &uvar)) != NULL, XLAL_EFUNC );
+         REAL8 *cosi = NULL, *psi = NULL;
+         if (XLALUserVarWasSet(&uvar.assumeNScosi)) cosi = &uvar.assumeNScosi;
+         if (XLALUserVarWasSet(&uvar.assumeNSpsi)) psi = &uvar.assumeNSpsi;
+         XLAL_CHECK( (tfdata = coherentlyAddSFTs(multiSFTvector, multissb, multiAMcoefficients, jointSFTtimestamps, backgroundRatioMeans, uvar.cosiSignCoherent, cosi, psi, &uvar, backgroundScaling)) != NULL, XLAL_EFUNC );
 
          XLALDestroyMultiAMCoeffs(multiAMcoefficients);
 
@@ -503,8 +514,6 @@ int main(int argc, char *argv[])
             lines = detectLines_simple(tfdata, ffdata, &uvar);
             XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
             if (lines!=NULL) {
-               fprintf(LOG, "WARNING: %d line(s) found.\n", lines->length);
-               fprintf(stderr, "WARNING: %d line(s) found.\n", lines->length);
                if ((REAL4)lines->length/(ffdata->numfbins + 2*maxbinshift) >= 0.1) {
                   heavilyContaminatedBand = 1;
                   fprintf(LOG, "WARNING: Band is heavily contaminated by artifacts.\n");
@@ -514,10 +523,8 @@ int main(int argc, char *argv[])
          }
          if (heavilyContaminatedBand) uvar.IHSonly = 1;
 
-         //Compute background
-         XLAL_CHECK( (background = XLALCreateREAL4Vector(ffdata->numffts*(ffdata->numfbins+2*maxbinshift))) != NULL, XLAL_EFUNC );
-         if (!uvar.signalOnly) XLAL_CHECK( tfRngMeans(background, tfdata, ffdata->numffts, ffdata->numfbins+2*maxbinshift, uvar.blksize) == XLAL_SUCCESS, XLAL_EFUNC );
-         else memset(background->data, 0, sizeof(REAL4)*background->length);
+         //Copy background from storage
+         memcpy(background->data, background0->data, sizeof(REAL4)*background->length);
 
          if (!uvar.signalOnly) {
             XLAL_CHECK( (sftexist = existingSFTs(tfdata, (UINT4)ffdata->numffts)) != NULL, XLAL_EFUNC );
@@ -548,27 +555,17 @@ int main(int argc, char *argv[])
             ffdata->tfnormalization *= backgroundmeannormfactor;
          }
 
-         XLAL_CHECK( (usableTFdata = XLALCreateREAL4Vector(background->length)) != NULL, XLAL_EFUNC );
+         XLAL_CHECK( (usableTFdata = XLALCreateREAL4VectorAligned(background->length, 32)) != NULL, XLAL_EFUNC );
          for (ii=0; ii<ffdata->numffts; ii++) memcpy(&(usableTFdata->data[ii*(ffdata->numfbins+2*maxbinshift)]), &(tfdata->data[ii*(tempnumfbins+2*maxbinshift) + (INT4)round(0.5*(uvar.blksize-1))]), sizeof(REAL4)*(ffdata->numfbins+2*maxbinshift));
-         for (ii=0; ii<(INT4)usableTFdata->length; ii++) {
-            if (usableTFdata->data[ii]!=0.0) {
-               usableTFdata->data[ii] *= backgroundmeannormfactor;
-               background->data[ii] *= backgroundmeannormfactor;
-            }
-         }
-         XLALDestroyREAL4Vector(tfdata);
+         XLAL_CHECK( XLALVectorScaleREAL4(usableTFdata->data, backgroundmeannormfactor, usableTFdata->data, usableTFdata->length) == XLAL_SUCCESS, XLAL_EFUNC );
+         XLAL_CHECK( XLALVectorScaleREAL4(background->data, backgroundmeannormfactor, background->data, background->length) == XLAL_SUCCESS, XLAL_EFUNC );
+         XLALDestroyREAL4VectorAligned(tfdata);
 
          //Print out data product if requested
-         if (uvar.printData) {
-            CHARVector *outputfile = NULL;
-            XLAL_CHECK( (outputfile = XLALCreateCHARVector(strlen(uvar.outdirectory)+15)) != NULL, XLAL_EFUNC );
-            sprintf(outputfile->data, "%s/%s", uvar.outdirectory, "tfdata.dat");
-            XLAL_CHECK( printREAL4Vector2File(usableTFdata, outputfile->data) == XLAL_SUCCESS, XLAL_EFUNC );
-            XLALDestroyCHARVector(outputfile);
-         }
+         if (uvar.printData) XLAL_CHECK( printREAL4Vector2File((REAL4Vector*)usableTFdata, uvar.outdirectory, "tfdata.dat") == XLAL_SUCCESS, XLAL_EFUNC );
 
          //Mean subtraction
-         XLAL_CHECK( tfMeanSubtract(usableTFdata, background, ffdata->numffts, ffdata->numfbins+2*maxbinshift) == XLAL_SUCCESS, XLAL_EFUNC );
+         XLAL_CHECK( tfMeanSubtract(usableTFdata, background, backgroundScaling, ffdata->numffts, ffdata->numfbins+2*maxbinshift) == XLAL_SUCCESS, XLAL_EFUNC );
 
          ffdata->tfnormalization *= 0.5*uvar.Tsft;
       }
@@ -587,30 +584,27 @@ int main(int argc, char *argv[])
 
       //Calculate antenna RMS value
       REAL4 currentAntWeightsRMS = 0.0;
-      XLAL_CHECK( calcRms(&currentAntWeightsRMS, (REAL4Vector*)antweights) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( calcRms(&currentAntWeightsRMS, antweights) == XLAL_SUCCESS, XLAL_EFUNC );
 
       //Slide SFTs here -- need to slide the data and the estimated background
-      REAL4Vector *TFdata_slided = NULL, *background_slided = NULL;
-      XLAL_CHECK( (TFdata_slided = XLALCreateREAL4Vector(ffdata->numffts*ffdata->numfbins)) != NULL, XLAL_EFUNC );
-      XLAL_CHECK( (background_slided = XLALCreateREAL4Vector(TFdata_slided->length)) != NULL, XLAL_EFUNC );
+      REAL4VectorAligned *TFdata_slided = NULL, *background_slided = NULL, *backgroundScaling_slided = NULL, *backgroundScalingForihs2h0_slided;
+      XLAL_CHECK( (TFdata_slided = XLALCreateREAL4VectorAligned(ffdata->numffts*ffdata->numfbins, 32)) != NULL, XLAL_EFUNC );
+      XLAL_CHECK( (background_slided = XLALCreateREAL4VectorAligned(TFdata_slided->length, 32)) != NULL, XLAL_EFUNC );
+      XLAL_CHECK( (backgroundScaling_slided = XLALCreateREAL4VectorAligned(TFdata_slided->length, 32)) != NULL, XLAL_EFUNC );
+      XLAL_CHECK( (backgroundScalingForihs2h0_slided = XLALCreateREAL4VectorAligned(TFdata_slided->length, 32)) != NULL, XLAL_EFUNC );
       XLAL_CHECK( slideTFdata(TFdata_slided, &uvar, usableTFdata, binshifts) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK( slideTFdata(background_slided, &uvar, background, binshifts) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( slideTFdata(backgroundScaling_slided, &uvar, backgroundScaling, binshifts) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( slideTFdata(backgroundScalingForihs2h0_slided, &uvar, backgroundScalingForihs2h0, binshifts) == XLAL_SUCCESS, XLAL_EFUNC );
 
       if (detectors->length>1) {
-         XLALDestroyREAL4Vector(usableTFdata);
-         XLALDestroyREAL4Vector(background);
+         XLALDestroyREAL4VectorAligned(usableTFdata);
       }
 
       //Print out data product if requested
       if (uvar.printData) {
-         CHARVector *outputfile = NULL;
-         XLAL_CHECK( (outputfile = XLALCreateCHARVector(strlen(uvar.outdirectory)+20)) != NULL, XLAL_EFUNC );
-         sprintf(outputfile->data, "%s/%s", uvar.outdirectory, "tfbackground.dat");
-         XLAL_CHECK( printREAL4Vector2File(background_slided, outputfile->data) == XLAL_SUCCESS, XLAL_EFUNC );
-         memset(outputfile->data, 0, outputfile->length*sizeof(CHAR));
-         sprintf(outputfile->data, "%s/%s", uvar.outdirectory, "tfdata_slided.dat");
-         XLAL_CHECK( printREAL4Vector2File(TFdata_slided, outputfile->data) == XLAL_SUCCESS, XLAL_EFUNC );
-         XLALDestroyCHARVector(outputfile);
+         XLAL_CHECK( printREAL4Vector2File((REAL4Vector*)background_slided, uvar.outdirectory, "tfbackground.dat") == XLAL_SUCCESS, XLAL_EFUNC );
+         XLAL_CHECK( printREAL4Vector2File((REAL4Vector*)TFdata_slided, uvar.outdirectory, "tfdata_slided.dat") == XLAL_SUCCESS, XLAL_EFUNC );
       }
 
       //Check the RMS of the antenna weights; if a deviation of more than 1%, then reset the IHS FAR
@@ -622,61 +616,31 @@ int main(int argc, char *argv[])
 
       //Antenna normalization for different sky locations
       REAL8 skypointffnormalization = 1.0;
-      XLAL_CHECK( ffPlaneNoise(aveNoise, &uvar, sftexist, background_slided, (REAL4Vector*)antweightsforihs2h0, secondFFTplan, &(skypointffnormalization), rng) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( ffPlaneNoise(aveNoise, &uvar, sftexist, background_slided, antweightsforihs2h0, backgroundScalingForihs2h0_slided, secondFFTplan, expRandVals, rng, &(skypointffnormalization)) == XLAL_SUCCESS, XLAL_EFUNC );
 
       //Average noise floor of FF plane for each 1st FFT frequency bin
       ffdata->ffnormalization = 1.0;
-      XLAL_CHECK( ffPlaneNoise(aveNoise, &uvar, sftexist, background_slided, (REAL4Vector*)antweights, secondFFTplan, &(ffdata->ffnormalization), rng) == XLAL_SUCCESS, XLAL_EFUNC );
-      if (uvar.printData) {
-         CHARVector *outputfile = NULL;
-         XLAL_CHECK( (outputfile = XLALCreateCHARVector(strlen(uvar.outdirectory)+20)) != NULL, XLAL_EFUNC );
-         sprintf(outputfile->data, "%s/%s", uvar.outdirectory, "ffbackground.dat");
-         XLAL_CHECK( printREAL4Vector2File((REAL4Vector*)aveNoise, outputfile->data) == XLAL_SUCCESS, XLAL_EFUNC );
-         XLALDestroyCHARVector(outputfile);
-      }
+      XLAL_CHECK( ffPlaneNoise(aveNoise, &uvar, sftexist, background_slided, antweights, backgroundScaling_slided, secondFFTplan, expRandVals, rng, &(ffdata->ffnormalization)) == XLAL_SUCCESS, XLAL_EFUNC );
+      if (uvar.printData) XLAL_CHECK( printREAL4Vector2File((REAL4Vector*)aveNoise, uvar.outdirectory, "ffbackground.dat") == XLAL_SUCCESS, XLAL_EFUNC );
 
       //Compute the weighted TF data
-      REAL4Vector *TFdata_weighted = NULL;
-      XLAL_CHECK( (TFdata_weighted = XLALCreateREAL4Vector(ffdata->numffts*ffdata->numfbins)) != NULL, XLAL_EFUNC );
-      XLAL_CHECK( tfWeight(TFdata_weighted, TFdata_slided, background_slided, antweights, indexValuesOfExistingSFTs, &uvar) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLALDestroyREAL4Vector(TFdata_slided);
+      REAL4VectorAligned *TFdata_weighted = NULL;
+      XLAL_CHECK( (TFdata_weighted = XLALCreateREAL4VectorAligned(ffdata->numffts*ffdata->numfbins, 32)) != NULL, XLAL_EFUNC );
+      XLAL_CHECK( tfWeight(TFdata_weighted, TFdata_slided, background_slided, antweights, backgroundScaling_slided, indexValuesOfExistingSFTs, &uvar) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLALDestroyREAL4VectorAligned(TFdata_slided);
       XLALDestroyREAL4VectorAligned(antweights);
 
       //Print out data product if requested
-      if (uvar.printData) {
-         CHARVector *outputfile = NULL;
-         XLAL_CHECK( (outputfile = XLALCreateCHARVector(strlen(uvar.outdirectory)+20)) != NULL, XLAL_EFUNC );
-         sprintf(outputfile->data, "%s/%s", uvar.outdirectory, "procTFdata.dat");
-         XLAL_CHECK( printREAL4Vector2File(TFdata_weighted, outputfile->data) == XLAL_SUCCESS, XLAL_EFUNC );
-         XLALDestroyCHARVector(outputfile);
-      }
+      if (uvar.printData) XLAL_CHECK( printREAL4Vector2File((REAL4Vector*)TFdata_weighted, uvar.outdirectory, "procTFdata.dat") == XLAL_SUCCESS, XLAL_EFUNC );
 
       //Calculation of average TF noise per frequency bin ratio to total mean
       //this block of code does not avoid lines when computing the average F-bin ratio. Upper limits remain virtually unchanged
       //when comaring runs that have line finding enabled or disabled
-      REAL4Vector *aveTFnoisePerFbinRatio = NULL, *TSofPowers = NULL;
-      XLAL_CHECK( (aveTFnoisePerFbinRatio = XLALCreateREAL4Vector(ffdata->numfbins)) != NULL, XLAL_EFUNC );
-      XLAL_CHECK( (TSofPowers = XLALCreateREAL4Vector(ffdata->numffts)) != NULL, XLAL_EFUNC );
-      memset(TSofPowers->data, 0, sizeof(REAL4)*TSofPowers->length);
-      for (ii=0; ii<ffdata->numfbins; ii++) {
-         REAL4 totalweightval = 0.0;
-         for (jj=0; jj<ffdata->numffts; jj++) {
-            if (background_slided->data[jj*ffdata->numfbins + ii]!=0.0) {
-               TSofPowers->data[jj] = 1.0/(background_slided->data[jj*ffdata->numfbins + ii]);
-               totalweightval += 1.0/(background_slided->data[jj*ffdata->numfbins + ii]*background_slided->data[jj*ffdata->numfbins + ii]);
-            }
-         }
-         aveTFnoisePerFbinRatio->data[ii] = 0.0;
-         for (jj=0; jj<ffdata->numffts; jj++) aveTFnoisePerFbinRatio->data[ii] += TSofPowers->data[jj];
-         aveTFnoisePerFbinRatio->data[ii] = (aveTFnoisePerFbinRatio->data[ii]/totalweightval);
-      }
-      REAL4 aveTFaveinv = 1.0/calcMean(aveTFnoisePerFbinRatio);
-      for (ii=0; ii<ffdata->numfbins; ii++) {
-         aveTFnoisePerFbinRatio->data[ii] *= aveTFaveinv;
-         //fprintf(stderr, "%f\n", aveTFnoisePerFbinRatio->data[ii]);
-      }
-      XLALDestroyREAL4Vector(TSofPowers);
-      XLALDestroyREAL4Vector(background_slided);
+      REAL4VectorAligned *aveTFnoisePerFbinRatio = NULL;
+      XLAL_CHECK( (aveTFnoisePerFbinRatio = calcAveTFnoisePerFbinRatio(background_slided, backgroundScaling_slided, ffdata->numffts)) != NULL, XLAL_EFUNC );
+      XLALDestroyREAL4VectorAligned(background_slided);
+      XLALDestroyREAL4VectorAligned(backgroundScaling_slided);
+      XLALDestroyREAL4VectorAligned(backgroundScalingForihs2h0_slided);
 
       //Do the second FFT
       XLAL_CHECK( makeSecondFFT(ffdata, TFdata_weighted, secondFFTplan) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -689,17 +653,10 @@ int main(int argc, char *argv[])
       secFFTmean = calcMean(ffdata->ffdata);
       XLAL_CHECK( calcStddev(&secFFTsigma, ffdata->ffdata) == XLAL_SUCCESS, XLAL_EFUNC );
 
-      XLALDestroyREAL4Vector(TFdata_weighted);
-      TFdata_weighted = NULL;
+      XLALDestroyREAL4VectorAligned(TFdata_weighted);
 
       //Print out data product if requested
-      if (uvar.printData) {
-         CHARVector *outputfile = NULL;
-         XLAL_CHECK( (outputfile = XLALCreateCHARVector(strlen(uvar.outdirectory)+10)) != NULL, XLAL_EFUNC );
-         sprintf(outputfile->data, "%s/%s", uvar.outdirectory, "ffdata.dat");
-         XLAL_CHECK( printREAL4Vector2File(ffdata->ffdata, outputfile->data) == XLAL_SUCCESS, XLAL_EFUNC );
-         XLALDestroyCHARVector(outputfile);
-      }
+      if (uvar.printData) XLAL_CHECK( printREAL4Vector2File((REAL4Vector*)(ffdata->ffdata), uvar.outdirectory, "ffdata.dat") == XLAL_SUCCESS, XLAL_EFUNC );
 
       fprintf(LOG, "2nd FFT ave = %g, 2nd FFT stddev = %g, expected ave = 1.0\n", secFFTmean, secFFTsigma);
       fprintf(stderr, "2nd FFT ave = %g, 2nd FFT stddev = %g, expected ave = 1.0\n", secFFTmean, secFFTsigma);
@@ -717,10 +674,10 @@ int main(int argc, char *argv[])
          loadCandidateData(&(exactCandidates1->data[0]), uvar.templateTestF, uvar.templateTestP, uvar.templateTestDf, dopplerpos.Alpha, dopplerpos.Delta, 0.0, 0.0, 0.0, 0, 0.0, -1);
 
          //Resize the output candidate vector if necessary
-         if (exactCandidates2->numofcandidates == exactCandidates2->length-1) XLAL_CHECK( (exactCandidates2 = resize_candidateVector(exactCandidates2, 2*exactCandidates2->length)) != NULL, XLAL_EFUNC );
+         if (exactCandidates2->numofcandidates == exactCandidates2->length-1) XLAL_CHECK( (exactCandidates2 = resizecandidateVector(exactCandidates2, 2*exactCandidates2->length)) != NULL, XLAL_EFUNC );
 
          //Analyze the template stored in the test candidate
-         XLAL_CHECK( analyzeOneTemplate(&(exactCandidates2->data[exactCandidates2->numofcandidates]), &(exactCandidates1->data[0]), ffdata, (REAL4Vector*)aveNoise, aveTFnoisePerFbinRatio, &uvar, sftexist, secondFFTplan, rng, !uvar.gaussTemplatesOnly) == XLAL_SUCCESS, XLAL_EFUNC );
+         XLAL_CHECK( analyzeOneTemplate(&(exactCandidates2->data[exactCandidates2->numofcandidates]), &(exactCandidates1->data[0]), ffdata, aveNoise, aveTFnoisePerFbinRatio, &uvar, sftexist, secondFFTplan, rng, !uvar.gaussTemplatesOnly) == XLAL_SUCCESS, XLAL_EFUNC );
          (exactCandidates2->numofcandidates)++;
 
          //Rescale the h0 output from the normaliztions and amount of observation time present
@@ -731,32 +688,36 @@ int main(int argc, char *argv[])
          loadCandidateData(&cand, uvar.templateTestF, uvar.templateTestP, uvar.templateTestDf, dopplerpos.Alpha, dopplerpos.Delta, 0.0, 0.0, 0.0, 0, 0.0, -1);
          TwoSpectParamSpaceSearchVals paramspace = {uvar.templateTestF-2.0/uvar.Tsft, uvar.templateTestF+2.0/uvar.Tsft, 21, 5, 5, 0.5, uvar.templateTestDf-2.0/uvar.Tsft,
                                                     uvar.templateTestDf+2.0/uvar.Tsft, 21};
-         XLAL_CHECK( bruteForceTemplateTest(&(exactCandidates2), cand, &paramspace, &uvar, ffdata->ffdata, sftexist, (REAL4Vector*)aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, rng, 1) == XLAL_SUCCESS, XLAL_EFUNC );
+         XLAL_CHECK( bruteForceTemplateTest(&(exactCandidates2), cand, &paramspace, &uvar, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, rng, 1) == XLAL_SUCCESS, XLAL_EFUNC );
          for (ii=0; ii<(INT4)exactCandidates2->numofcandidates; ii++) exactCandidates2->data[ii].h0 /= sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25);
       }
 
       //If the user wants to do a template search, that is done here
       if (uvar.templateSearch) {
          //fprintf(stderr, "Calling templateSearch\n (in development, last edited 2014-06-09)\n");
-         XLAL_CHECK( templateSearch_scox1Style(&exactCandidates2, uvar.fmin, uvar.fspan, uvar.templateSearchP, uvar.templateSearchAsini, uvar.templateSearchAsiniSigma, skypos, &uvar, ffdata->ffdata, sftexist, (REAL4Vector*)aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, rng, 1) == XLAL_SUCCESS, XLAL_EFUNC );
+         XLAL_CHECK( templateSearch_scox1Style(&exactCandidates2, uvar.fmin, uvar.fspan, uvar.templateSearchP, uvar.templateSearchAsini, uvar.templateSearchAsiniSigma, skypos, &uvar, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, rng, 1) == XLAL_SUCCESS, XLAL_EFUNC );
          //fprintf(stderr, "Done calling templateSearch\n");
          for (ii=0; ii<(INT4)exactCandidates2->numofcandidates; ii++) exactCandidates2->data[ii].h0 /= sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25);
       }
 
       //Template bank analysis
       if (XLALUserVarWasSet(&(uvar.templatebankfile))) {
-         INT4 numofnewcandidates = 0;
-         XLAL_CHECK( (numofnewcandidates = testTwoSpectTemplateVector(&exactCandidates2, templateVec, ffdata, (REAL4Vector*)aveNoise, aveTFnoisePerFbinRatio, skypos, &uvar, rng)) >= 0, XLAL_EFUNC );
-         for (ii=0; ii<numofnewcandidates; ii++) {
-            /* TwoSpectParamSpaceSearchVals paramspace = {exactCandidates2->data[exactCandidates2->numofcandidates-ii-1].fsig-0.5/uvar.Tsft,
-                                                       exactCandidates2->data[exactCandidates2->numofcandidates-ii-1].fsig+0.5/uvar.Tsft, 9, 4, 4, 0.4,
-                                                       exactCandidates2->data[exactCandidates2->numofcandidates-ii-1].moddepth-0.5/uvar.Tsft,
-                                                       exactCandidates2->data[exactCandidates2->numofcandidates-ii-1].moddepth+0.5/uvar.Tsft, 9};
-            XLAL_CHECK( bruteForceTemplateSearch(&(exactCandidates2->data[exactCandidates2->numofcandidates-ii-1]),
-                                                 exactCandidates2->data[exactCandidates2->numofcandidates-ii-1], &paramspace, &uvar, ffdata->ffdata, sftexist,
-                                                 (REAL4Vector*)aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, rng, 1) == XLAL_SUCCESS, XLAL_EFUNC ); */
-            exactCandidates2->data[exactCandidates2->numofcandidates-ii-1].h0 /= sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25); //Scaling here
+         candidateVector *candVec = NULL, *subsetVec = NULL;
+         XLAL_CHECK( (candVec = createcandidateVector(50)) != NULL, XLAL_EFUNC );
+         XLAL_CHECK( (subsetVec = createcandidateVector(10)) != NULL, XLAL_EFUNC );
+         XLAL_CHECK( testTwoSpectTemplateVector(candVec, templateVec, ffdata, aveNoise, aveTFnoisePerFbinRatio, skypos, &uvar, rng, 10) == XLAL_SUCCESS, XLAL_EFUNC );
+         XLAL_CHECK( analyzeCandidatesTemplateFromVector(subsetVec, candVec, templateVec, ffdata, aveNoise, aveTFnoisePerFbinRatio, &uvar, rng, 500) == XLAL_SUCCESS, XLAL_EFUNC );
+         for (ii=0; ii<(INT4)subsetVec->length; ii++) {
+            if (exactCandidates2->numofcandidates==exactCandidates2->length) {
+               XLAL_CHECK( (exactCandidates2 = resizecandidateVector(exactCandidates2, 2*exactCandidates2->length)) != NULL, XLAL_EFUNC );
+            }
+            loadCandidateData(&(exactCandidates2->data[exactCandidates2->numofcandidates]), subsetVec->data[ii].fsig, subsetVec->data[ii].period, subsetVec->data[ii].moddepth, subsetVec->data[ii].ra, subsetVec->data[ii].dec, subsetVec->data[ii].stat, subsetVec->data[ii].h0, subsetVec->data[ii].prob, subsetVec->data[ii].proberrcode, subsetVec->data[ii].normalization, subsetVec->data[ii].templateVectorIndex);
+            exactCandidates2->data[exactCandidates2->numofcandidates+ii].h0 /= sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25); //Scaling here
+            (exactCandidates2->numofcandidates)++;
          }
+
+         destroycandidateVector(candVec);
+         destroycandidateVector(subsetVec);
       }
 
       if (uvar.signalOnly) return 0;
@@ -766,10 +727,10 @@ int main(int argc, char *argv[])
       candidateVector *ihsCandidates_reduced = NULL;
       if (!XLALUserVarWasSet(&uvar.templatebankfile) && !uvar.templateTest && !uvar.templateSearch && !uvar.bruteForceTemplateTest) {
          //If the false alarm thresholds need to be computed
-         if (ihsfarstruct->ihsfar->data[0]<0.0) XLAL_CHECK( genIhsFar(ihsfarstruct, &uvar, maxrows, (REAL4Vector*)aveNoise, rng) == XLAL_SUCCESS, XLAL_EFUNC );
+         if (ihsfarstruct->ihsfar->data[0]<0.0) XLAL_CHECK( genIhsFar(ihsfarstruct, &uvar, maxrows, aveNoise, rng) == XLAL_SUCCESS, XLAL_EFUNC );
 
          //Run the IHS algorithm on the data
-         XLAL_CHECK( runIHS(ihsmaxima, ffdata, ihsfarstruct, &uvar, maxrows, (REAL4Vector*)aveNoise, aveTFnoisePerFbinRatio) == XLAL_SUCCESS, XLAL_EFUNC );
+         XLAL_CHECK( runIHS(ihsmaxima, ffdata, ihsfarstruct, &uvar, maxrows, aveNoise, aveTFnoisePerFbinRatio) == XLAL_SUCCESS, XLAL_EFUNC );
 
          //Find any IHS candidates
          XLAL_CHECK( findIHScandidates(&ihsCandidates, ihsfarstruct, &uvar, ffdata, ihsmaxima, aveTFnoisePerFbinRatio, trackedlines) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -783,7 +744,7 @@ int main(int argc, char *argv[])
                loadCandidateData(&(ihsCandidates->data[ii]), ihsCandidates_reduced->data[ii].fsig, ihsCandidates_reduced->data[ii].period, ihsCandidates_reduced->data[ii].moddepth, dopplerpos.Alpha, dopplerpos.Delta, ihsCandidates_reduced->data[ii].stat, ihsCandidates_reduced->data[ii].h0, ihsCandidates_reduced->data[ii].prob, 0, ihsCandidates_reduced->data[ii].normalization, ihsCandidates_reduced->data[ii].templateVectorIndex);
                (ihsCandidates->numofcandidates)++;
             }
-            free_candidateVector(ihsCandidates_reduced);
+            destroycandidateVector(ihsCandidates_reduced);
          }
       }
       //End of the IHS step
@@ -792,7 +753,7 @@ int main(int argc, char *argv[])
       //First check to see if the IHSonly or templateTest or templateSearch was given
       if (uvar.IHSonly && !uvar.templateTest && !uvar.templateSearch && !XLALUserVarWasSet(&uvar.templatebankfile)) {
          //Check the length of the exactCandidates2 vector is large enough and resize if necessary
-         if (exactCandidates2->length < exactCandidates2->numofcandidates+ihsCandidates->numofcandidates) XLAL_CHECK( (exactCandidates2 = resize_candidateVector(exactCandidates2, exactCandidates2->numofcandidates+ihsCandidates->numofcandidates)) != NULL, XLAL_EFUNC );
+         if (exactCandidates2->length < exactCandidates2->numofcandidates+ihsCandidates->numofcandidates) XLAL_CHECK( (exactCandidates2 = resizecandidateVector(exactCandidates2, exactCandidates2->numofcandidates+ihsCandidates->numofcandidates)) != NULL, XLAL_EFUNC );
 
          //Use the typical list
          INT4 numofcandidatesalready = exactCandidates2->numofcandidates;
@@ -805,7 +766,7 @@ int main(int argc, char *argv[])
       } else if (!uvar.templateTest && !uvar.templateSearch && !XLALUserVarWasSet(&uvar.templatebankfile)) {
 
          //Test the IHS candidates against Gaussian templates in this function
-         XLAL_CHECK( testIHScandidates(&gaussCandidates1, ihsCandidates, ffdata, (REAL4Vector*)aveNoise, aveTFnoisePerFbinRatio, skypos, &uvar, rng) == XLAL_SUCCESS, XLAL_EFUNC );
+         XLAL_CHECK( testIHScandidates(&gaussCandidates1, ihsCandidates, ffdata, aveNoise, aveTFnoisePerFbinRatio, skypos, &uvar, rng) == XLAL_SUCCESS, XLAL_EFUNC );
 
          for (ii=0; ii<(INT4)gaussCandidates1->numofcandidates; ii++) fprintf(stderr, "Candidate %d: f0=%g, P=%g, df=%g\n", ii, gaussCandidates1->data[ii].fsig, gaussCandidates1->data[ii].period, gaussCandidates1->data[ii].moddepth);
       } /* if IHSonly is not given && templateTest not given and templateSearch not given */
@@ -817,7 +778,7 @@ int main(int argc, char *argv[])
       //Search the candidates further if the number of candidates passing the first Gaussian template test is greater than 0
       if (gaussCandidates1->numofcandidates>0) {
          //Start clustering! Note that the clustering algorithm takes care of the period range of parameter space
-         XLAL_CHECK( clusterCandidates(&gaussCandidates2, gaussCandidates1, ffdata, &uvar, (REAL4Vector*)aveNoise, aveTFnoisePerFbinRatio, sftexist, rng, 0) == XLAL_SUCCESS, XLAL_EFUNC );
+         XLAL_CHECK( clusterCandidates(&gaussCandidates2, gaussCandidates1, ffdata, &uvar, aveNoise, aveTFnoisePerFbinRatio, sftexist, rng, 0) == XLAL_SUCCESS, XLAL_EFUNC );
 
          for (ii=0; ii<(INT4)gaussCandidates2->numofcandidates; ii++) fprintf(stderr, "Candidate %d: f0=%g, P=%g, df=%g\n", ii, gaussCandidates2->data[ii].fsig, gaussCandidates2->data[ii].period, gaussCandidates2->data[ii].moddepth);
 
@@ -827,12 +788,12 @@ int main(int argc, char *argv[])
          //Start detailed Gaussian template search!
          for (ii=0; ii<(INT4)gaussCandidates2->numofcandidates; ii++) {
 
-            if (gaussCandidates3->numofcandidates == gaussCandidates3->length-1) XLAL_CHECK( (gaussCandidates3 = resize_candidateVector(gaussCandidates3, 2*gaussCandidates3->length)) != NULL, XLAL_EFUNC );
+            if (gaussCandidates3->numofcandidates == gaussCandidates3->length-1) XLAL_CHECK( (gaussCandidates3 = resizecandidateVector(gaussCandidates3, 2*gaussCandidates3->length)) != NULL, XLAL_EFUNC );
 
             TwoSpectParamSpaceSearchVals paramspace = {gaussCandidates2->data[ii].fsig-1.0/uvar.Tsft, gaussCandidates2->data[ii].fsig+1.0/uvar.Tsft,5, 2, 2, 1.0,
                                                        gaussCandidates2->data[ii].moddepth-1.0/uvar.Tsft, gaussCandidates2->data[ii].moddepth+1.0/uvar.Tsft, 5};
             XLAL_CHECK( bruteForceTemplateSearch(&(gaussCandidates3->data[gaussCandidates3->numofcandidates]), gaussCandidates2->data[ii], &paramspace, &uvar, ffdata->ffdata, 
-                                                 sftexist, (REAL4Vector*)aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, rng, 0) == XLAL_SUCCESS, XLAL_EFUNC );
+                                                 sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, rng, 0) == XLAL_SUCCESS, XLAL_EFUNC );
             gaussCandidates3->numofcandidates++;
 
          } /* for ii < numofcandidates */
@@ -843,7 +804,7 @@ int main(int argc, char *argv[])
          gaussCandidates2->numofcandidates = 0;
 
          //Start clustering!
-         XLAL_CHECK( clusterCandidates(&gaussCandidates4, gaussCandidates3, ffdata, &uvar, (REAL4Vector*)aveNoise, aveTFnoisePerFbinRatio, sftexist, rng, 0) == XLAL_SUCCESS, XLAL_EFUNC );
+         XLAL_CHECK( clusterCandidates(&gaussCandidates4, gaussCandidates3, ffdata, &uvar, aveNoise, aveTFnoisePerFbinRatio, sftexist, rng, 0) == XLAL_SUCCESS, XLAL_EFUNC );
 
          for (ii=0; ii<(INT4)gaussCandidates4->numofcandidates; ii++) fprintf(stderr, "Candidate %d: f0=%g, P=%g, df=%g\n", ii, gaussCandidates4->data[ii].fsig, gaussCandidates4->data[ii].period, gaussCandidates4->data[ii].moddepth);
 
@@ -852,41 +813,14 @@ int main(int argc, char *argv[])
 
          //Initial check using "exact" template
          for (ii=0; ii<(INT4)gaussCandidates4->numofcandidates; ii++) {
-            //Allocate the template memory
-            TwoSpectTemplate *template = NULL;
-            XLAL_CHECK( (template = new_TwoSpectTemplate(uvar.maxTemplateLength)) != NULL, XLAL_EFUNC );
-
-            //Produce either the Gaussian template or exact template
-            if (!uvar.gaussTemplatesOnly) XLAL_CHECK( makeTemplate(template, gaussCandidates4->data[ii], &uvar, sftexist, secondFFTplan) == XLAL_SUCCESS, XLAL_EFUNC );
-            else XLAL_CHECK( makeTemplateGaussians(template, gaussCandidates4->data[ii], &uvar) == XLAL_SUCCESS, XLAL_EFUNC );
-
-            //Produce the FAR threshold, if requested
-            farStruct *farval = NULL;
-            if (uvar.calcRthreshold) {
-               XLAL_CHECK( (farval = new_farStruct()) != NULL, XLAL_EFUNC );
-               XLAL_CHECK( numericFAR(farval, template, uvar.tmplfar, (REAL4Vector*)aveNoise, aveTFnoisePerFbinRatio, &uvar, rng, uvar.BrentsMethod) == XLAL_SUCCESS, XLAL_EFUNC );
-            }
-
-            //Calculate R, false alarm probability and h0 estimate
-            REAL8 R = calculateR(ffdata->ffdata, template, (REAL4Vector*)aveNoise, aveTFnoisePerFbinRatio);
-            XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
-            REAL8 h0 = 0.0;
-            REAL8 prob = probR(template, (REAL4Vector*)aveNoise, aveTFnoisePerFbinRatio, R, &uvar, rng, &proberrcode);
-            XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
-            if ( R > 0.0 ) h0 = 2.7426*pow(R/(uvar.Tsft*uvar.Tobs),0.25);
+            candidate cand;
+            XLAL_CHECK( analyzeOneTemplate(&cand, &(gaussCandidates4->data[ii]), ffdata, aveNoise, aveTFnoisePerFbinRatio, &uvar, sftexist, secondFFTplan, rng, 1) == XLAL_SUCCESS, XLAL_EFUNC );
 
             //Check that we are above threshold before storing the candidate
-            if ((!uvar.calcRthreshold && prob<log10(uvar.tmplfar)) || (uvar.calcRthreshold && R>farval->far)) {
-               if (exactCandidates1->numofcandidates == exactCandidates1->length-1) XLAL_CHECK( (exactCandidates1 = resize_candidateVector(exactCandidates1, 2*exactCandidates1->length)) != NULL, XLAL_EFUNC );
-               loadCandidateData(&exactCandidates1->data[exactCandidates1->numofcandidates], gaussCandidates4->data[ii].fsig, gaussCandidates4->data[ii].period, gaussCandidates4->data[ii].moddepth, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, R, h0, prob, proberrcode, gaussCandidates4->data[ii].normalization, gaussCandidates4->data[ii].templateVectorIndex);
+            if (cand.prob<log10(uvar.tmplfar)) {
+               if (exactCandidates1->numofcandidates == exactCandidates1->length-1) XLAL_CHECK( (exactCandidates1 = resizecandidateVector(exactCandidates1, 2*exactCandidates1->length)) != NULL, XLAL_EFUNC );
+               loadCandidateData(&exactCandidates1->data[exactCandidates1->numofcandidates], cand.fsig, cand.period, cand.moddepth, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, cand.stat, cand.h0, cand.prob, cand.proberrcode, cand.normalization, cand.templateVectorIndex);
                exactCandidates1->numofcandidates++;
-            }
-
-            free_TwoSpectTemplate(template);
-            template = NULL;
-            if (uvar.calcRthreshold) {
-               free_farStruct(farval);
-               farval = NULL;
             }
          } /* for ii < numofcandidates */
          fprintf(LOG, "Number of candidates confirmed with exact templates = %d\n", exactCandidates1->numofcandidates);
@@ -900,12 +834,12 @@ int main(int argc, char *argv[])
          //Start detailed "exact" template search!
          for (ii=0; ii<(INT4)exactCandidates1->numofcandidates; ii++) {
 
-            if (exactCandidates2->numofcandidates == exactCandidates2->length-1) XLAL_CHECK( (exactCandidates2 = resize_candidateVector(exactCandidates2, 2*exactCandidates2->length)) != NULL, XLAL_EFUNC );
+            if (exactCandidates2->numofcandidates == exactCandidates2->length-1) XLAL_CHECK( (exactCandidates2 = resizecandidateVector(exactCandidates2, 2*exactCandidates2->length)) != NULL, XLAL_EFUNC );
 
             TwoSpectParamSpaceSearchVals paramspace = {exactCandidates1->data[ii].fsig-0.5/uvar.Tsft, exactCandidates1->data[ii].fsig+0.5/uvar.Tsft, 3, 1, 1, 1.0,
                                                        exactCandidates1->data[ii].moddepth-0.5/uvar.Tsft, exactCandidates1->data[ii].moddepth+0.5/uvar.Tsft, 3};
-            if (!uvar.gaussTemplatesOnly) XLAL_CHECK( bruteForceTemplateSearch(&(exactCandidates2->data[exactCandidates2->numofcandidates]), exactCandidates1->data[ii], &paramspace,&uvar, ffdata->ffdata, sftexist, (REAL4Vector*)aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, rng, 1) == XLAL_SUCCESS, XLAL_EFUNC );
-            else XLAL_CHECK( bruteForceTemplateSearch(&(exactCandidates2->data[exactCandidates2->numofcandidates]), exactCandidates1->data[ii], &paramspace, &uvar, ffdata->ffdata, sftexist, (REAL4Vector*)aveNoise, aveTFnoisePerFbinRatio, secondFFTplan,rng, 0) == XLAL_SUCCESS, XLAL_EFUNC );
+            if (!uvar.gaussTemplatesOnly) XLAL_CHECK( bruteForceTemplateSearch(&(exactCandidates2->data[exactCandidates2->numofcandidates]), exactCandidates1->data[ii], &paramspace,&uvar, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, rng, 1) == XLAL_SUCCESS, XLAL_EFUNC );
+            else XLAL_CHECK( bruteForceTemplateSearch(&(exactCandidates2->data[exactCandidates2->numofcandidates]), exactCandidates1->data[ii], &paramspace, &uvar, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan,rng, 0) == XLAL_SUCCESS, XLAL_EFUNC );
             exactCandidates2->data[exactCandidates2->numofcandidates].h0 /= sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25);  //Scaling here
             exactCandidates2->numofcandidates++;
 
@@ -931,11 +865,11 @@ int main(int argc, char *argv[])
 
          for (ii=0; ii<(INT4)upperlimits->data[upperlimits->length-1].ULval->length; ii++) upperlimits->data[upperlimits->length-1].ULval->data[ii] /= sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25);  //Compensation for different duty cycle and antenna pattern weights
 
-         XLAL_CHECK( (upperlimits = resize_UpperLimitVector(upperlimits, upperlimits->length+1)) != NULL, XLAL_EFUNC );
+         XLAL_CHECK( (upperlimits = resizeUpperLimitVector(upperlimits, upperlimits->length+1)) != NULL, XLAL_EFUNC );
       } /* if producing UL */
 
       //Destroy stuff
-      XLALDestroyREAL4Vector(aveTFnoisePerFbinRatio);
+      XLALDestroyREAL4VectorAligned(aveTFnoisePerFbinRatio);
       XLALDestroyREAL4VectorSequence(trackedlines);
       if (detectors->length>1 && !uvar.signalOnly) {
          XLALDestroyINT4Vector(sftexist);
@@ -967,38 +901,44 @@ int main(int argc, char *argv[])
    //Destroy varaibles
    if (detectors->length>1) {
       XLALDestroyMultiSFTVector(multiSFTvector);
+      XLALDestroyREAL4VectorAligned(backgroundScalingForihs2h0);
    } else {
-      XLALDestroyREAL4Vector(background);
-      XLALDestroyREAL4Vector(usableTFdata);
+      XLALDestroyREAL4VectorAligned(usableTFdata);
       if (!uvar.signalOnly) {
          XLALDestroyINT4Vector(sftexist);
          XLALDestroyINT4Vector(indexValuesOfExistingSFTs);
       }
    }
-   if (XLALUserVarWasSet(&(uvar.templatebankfile))) free_TwoSpectTemplateVector(templateVec);
+   if (XLALUserVarWasSet(&(uvar.templatebankfile))) destroyTwoSpectTemplateVector(templateVec);
    XLALFree(detectors);
    gsl_rng_free(rng);
+   XLALDestroyREAL4VectorAligned(background);
+   XLALDestroyREAL4VectorAligned(background0);
    XLALDestroyREAL4VectorAligned(antweightsforihs2h0);
    XLALDestroyREAL4VectorAligned(aveNoise);
+   XLALDestroyREAL4VectorAligned(expRandVals);
+   XLALDestroyREAL4VectorAligned(backgroundScaling);
+   destroyREAL4VectorAlignedArray(backgroundRatioMeans);
    XLALDestroyINT4Vector(binshifts);
    XLALDestroyMultiTimestamps(multiTimestamps);
+   XLALDestroyTimestampVector(jointSFTtimestamps);
    XLALDestroyMultiDetectorStateSeries(multiStateSeries);
-   free_ffdata(ffdata);
-   free_ihsfarStruct(ihsfarstruct);
-   free_ihsMaxima(ihsmaxima);
+   destroyffdata(ffdata);
+   destroyihsfarStruct(ihsfarstruct);
+   destroyihsMaxima(ihsmaxima);
    XLALDestroyREAL4FFTPlan(secondFFTplan);
    XLALDestroyEphemerisData(edat);
    XLALDestroyUserVars();
    XLALDestroyCHARVector(ULFILENAME);
    XLALDestroyCHARVector(LOGFILENAME);
-   free_UpperLimitVector(upperlimits);
-   free_candidateVector(ihsCandidates);
-   free_candidateVector(gaussCandidates1);
-   free_candidateVector(gaussCandidates2);
-   free_candidateVector(gaussCandidates3);
-   free_candidateVector(gaussCandidates4);
-   free_candidateVector(exactCandidates1);
-   free_candidateVector(exactCandidates2);
+   destroyUpperLimitVector(upperlimits);
+   destroycandidateVector(ihsCandidates);
+   destroycandidateVector(gaussCandidates1);
+   destroycandidateVector(gaussCandidates2);
+   destroycandidateVector(gaussCandidates3);
+   destroycandidateVector(gaussCandidates4);
+   destroycandidateVector(exactCandidates1);
+   destroycandidateVector(exactCandidates2);
    FreeDopplerSkyScan(&status, &scan);
    if (lines!=NULL) XLALDestroyINT4Vector(lines);
 
@@ -1024,7 +964,7 @@ int main(int argc, char *argv[])
  * \param [in] params Pointer to the UserInput_t
  * \return Pointer to new ffdataStruct
  */
-ffdataStruct * new_ffdata(UserInput_t *params)
+ffdataStruct * createffdata(const UserInput_t *params)
 {
 
    XLAL_CHECK_NULL( params != NULL, XLAL_EINVAL );
@@ -1037,24 +977,24 @@ ffdataStruct * new_ffdata(UserInput_t *params)
    ffdata->numfprbins = (INT4)floorf(ffdata->numffts*0.5) + 1;
    ffdata->tfnormalization = ffdata->ffnormalization = 0.0;
 
-   XLAL_CHECK_NULL ( (ffdata->ffdata = XLALCreateREAL4Vector(ffdata->numfbins * ffdata->numfprbins)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL ( (ffdata->ffdata = XLALCreateREAL4VectorAligned(ffdata->numfbins * ffdata->numfprbins, 32)) != NULL, XLAL_EFUNC );
 
    return ffdata;
 
-} /* new_ffdata() */
+} // createffdata()
 
 
 /**
  * Free the frequency-frequency data structure
  * \param [in] data Pointer to the ffdataStruct
  */
-void free_ffdata(ffdataStruct *data)
+void destroyffdata(ffdataStruct *data)
 {
-
-   XLALDestroyREAL4Vector(data->ffdata);
-   XLALFree((ffdataStruct*)data);
-
-} /* free_ffdata() */
+   if (data) {
+      XLALDestroyREAL4VectorAligned(data->ffdata);
+      XLALFree((ffdataStruct*)data);
+   }
+} // destroyffdata()
 
 
 /**
@@ -1065,12 +1005,12 @@ void free_ffdata(ffdataStruct *data)
  * 3. Divide RMS values by running median. Lines stick out by being >>1
  * 4. Add up number of lines above threshold and report
  *
- * \param [in] TFdata Pointer to REAL4Vector of SFT powers
+ * \param [in] TFdata Pointer to REAL4VectorAligned of SFT powers
  * \param [in] ffdata Pointer to ffdataStruct
  * \param [in] params Pointer to UserInput_t
  * \return Pointer to INT4Vector of bin number of the lines
  */
-INT4Vector * detectLines_simple(REAL4Vector *TFdata, ffdataStruct *ffdata, UserInput_t *params)
+INT4Vector * detectLines_simple(const REAL4VectorAligned *TFdata, const ffdataStruct *ffdata, const UserInput_t *params)
 {
 
    XLAL_CHECK_NULL( TFdata != NULL && ffdata != NULL && params != NULL, XLAL_EINVAL );
@@ -1089,9 +1029,9 @@ INT4Vector * detectLines_simple(REAL4Vector *TFdata, ffdataStruct *ffdata, UserI
    LALRunningMedianPar block = {blksize};
 
    //Compute weights
-   REAL4Vector *sftdata = NULL, *weights = NULL;
-   XLAL_CHECK_NULL( (sftdata = XLALCreateREAL4Vector(totalnumfbins)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK_NULL( (weights = XLALCreateREAL4Vector(ffdata->numffts)) != NULL, XLAL_EFUNC );
+   REAL4VectorAligned *sftdata = NULL, *weights = NULL;
+   XLAL_CHECK_NULL( (sftdata = XLALCreateREAL4VectorAligned(totalnumfbins, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (weights = XLALCreateREAL4VectorAligned(ffdata->numffts, 32)) != NULL, XLAL_EFUNC );
    memset(weights->data, 0, ffdata->numffts*sizeof(REAL4));
    REAL4 sumweights = 0.0;
    for (INT4 ii=0; ii<ffdata->numffts; ii++) {
@@ -1104,13 +1044,13 @@ INT4Vector * detectLines_simple(REAL4Vector *TFdata, ffdataStruct *ffdata, UserI
       }
    }
    REAL4 invsumweights = 1.0/sumweights;
-   XLALDestroyREAL4Vector(sftdata);
+   XLALDestroyREAL4VectorAligned(sftdata);
 
    //Compute RMS for each frequency bin as a function of time
-   REAL4Vector *testRMSvals = NULL, *testRngMedian = NULL, *testTSofPowers = NULL;
-   XLAL_CHECK_NULL( (testRMSvals = XLALCreateREAL4Vector(totalnumfbins)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK_NULL( (testRngMedian = XLALCreateREAL4Vector(totalnumfbins-(blksize-1))) != NULL, XLAL_EFUNC );
-   XLAL_CHECK_NULL( (testTSofPowers = XLALCreateREAL4Vector(ffdata->numffts)) != NULL, XLAL_EFUNC );
+   REAL4VectorAligned *testRMSvals = NULL, *testRngMedian = NULL, *testTSofPowers = NULL;
+   XLAL_CHECK_NULL( (testRMSvals = XLALCreateREAL4VectorAligned(totalnumfbins, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (testRngMedian = XLALCreateREAL4VectorAligned(totalnumfbins-(blksize-1), 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (testTSofPowers = XLALCreateREAL4VectorAligned(ffdata->numffts, 32)) != NULL, XLAL_EFUNC );
 
    for (UINT4 ii=0; ii<testRMSvals->length; ii++) {
       for (INT4 jj=0; jj<ffdata->numffts; jj++) testTSofPowers->data[jj] = TFdata->data[jj*testRMSvals->length + ii]*weights->data[jj]*invsumweights;
@@ -1118,7 +1058,7 @@ INT4Vector * detectLines_simple(REAL4Vector *TFdata, ffdataStruct *ffdata, UserI
    }
 
    //Running median of RMS values
-   LALSRunningMedian2(&status, testRngMedian, testRMSvals, block);
+   LALSRunningMedian2(&status, (REAL4Vector*)testRngMedian, (REAL4Vector*)testRMSvals, block);
    XLAL_CHECK_NULL( status.statusCode == 0, XLAL_EFUNC );
 
    //Determine which bins are above the threshold and store the bin number of the line
@@ -1132,16 +1072,18 @@ INT4Vector * detectLines_simple(REAL4Vector *TFdata, ffdataStruct *ffdata, UserI
    }
 
    //Destroy stuff
-   XLALDestroyREAL4Vector(testTSofPowers);
-   XLALDestroyREAL4Vector(testRngMedian);
-   XLALDestroyREAL4Vector(testRMSvals);
-   XLALDestroyREAL4Vector(weights);
+   XLALDestroyREAL4VectorAligned(testTSofPowers);
+   XLALDestroyREAL4VectorAligned(testRngMedian);
+   XLALDestroyREAL4VectorAligned(testRMSvals);
+   XLALDestroyREAL4VectorAligned(weights);
 
    fprintf(stderr, "done\n");
 
+   fprintf(stderr, "WARNING: %d line(s) found.\n", lines->length);
+
    return lines;
 
-}
+} // detectLines_simple()
 
 /**
  * Track the lines for the sky position
@@ -1151,7 +1093,7 @@ INT4Vector * detectLines_simple(REAL4Vector *TFdata, ffdataStruct *ffdata, UserI
  * \param [in] df        Spacing of frequency bins (typically 1/Tsft)
  * \return Pointer to REAL4VectorSequence containing lower/mid/upper frequency for each line
  */
-REAL4VectorSequence * trackLines(INT4Vector *lines, INT4Vector *binshifts, REAL4 minfbin, REAL4 df)
+REAL4VectorSequence * trackLines(const INT4Vector *lines, const INT4Vector *binshifts, const REAL4 minfbin, const REAL4 df)
 {
 
    XLAL_CHECK_NULL( lines != NULL && binshifts != NULL, XLAL_EINVAL );
@@ -1164,7 +1106,7 @@ REAL4VectorSequence * trackLines(INT4Vector *lines, INT4Vector *binshifts, REAL4
    //REAL4 df = 1.0/params->Tsft;
    //REAL4 minfbin = (REAL4)(round(params->fmin*params->Tsft - params->dfmax*params->Tsft - 6.0 - 0.5*(params->blksize-1) - (REAL8)(maxbinshift))/params->Tsft);
 
-   INT4 maxshiftindex = 0, minshiftindex = 0;
+   UINT4 maxshiftindex = 0, minshiftindex = 0;
    min_max_index_INT4Vector(binshifts, &minshiftindex, &maxshiftindex);
    INT4 maxshift = binshifts->data[maxshiftindex], minshift = binshifts->data[minshiftindex];
 
@@ -1180,7 +1122,7 @@ REAL4VectorSequence * trackLines(INT4Vector *lines, INT4Vector *binshifts, REAL4
 
    return output;
 
-}
+} // trackLines()
 
 
 /**
@@ -1192,7 +1134,7 @@ REAL4VectorSequence * trackLines(INT4Vector *lines, INT4Vector *binshifts, REAL4
  * \param [in]     rng        Pointer to gsl_rng
  * \return Status value
  */
-INT4 cleanLines(REAL4Vector *TFdata, REAL4Vector *background, INT4Vector *lines, UserInput_t *params, gsl_rng *rng)
+INT4 cleanLines(REAL4VectorAligned *TFdata, const REAL4VectorAligned *background, const INT4Vector *lines, const UserInput_t *params, const gsl_rng *rng)
 {
 
    if (lines==NULL) return XLAL_SUCCESS;
@@ -1220,17 +1162,49 @@ INT4 cleanLines(REAL4Vector *TFdata, REAL4Vector *background, INT4Vector *lines,
 
    return XLAL_SUCCESS;
 
-}
+} // cleanLines()
 
+/**
+ * Calculate the ratio of the average SFT noise to the mean of the average SFT noise
+ * \param [in] background        Pointer to REAL4VectorAligned of the running means
+ * \param [in] backgroundScaling Pointer to REAL4VectorAligned of background scaling values
+ * \param [in] numffts           Number of SFTs in the total observation time
+ * \return Pointer to REAL4VectorAligned of the ratio of values to the band mean
+ */
+REAL4VectorAligned * calcAveTFnoisePerFbinRatio(const REAL4VectorAligned *background, const REAL4VectorAligned *backgroundScaling, const UINT4 numffts)
+{
+   XLAL_CHECK_NULL( background!=NULL, XLAL_EINVAL );
+   UINT4 numfbins = background->length/numffts;
+   REAL4VectorAligned *aveTFnoisePerFbinRatio = NULL, *TSofPowers = NULL;
+   XLAL_CHECK_NULL( (aveTFnoisePerFbinRatio = XLALCreateREAL4VectorAligned(numfbins, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (TSofPowers = XLALCreateREAL4VectorAligned(numffts, 32)) != NULL, XLAL_EFUNC );
+   memset(TSofPowers->data, 0, sizeof(REAL4)*TSofPowers->length);
+   for (UINT4 ii=0; ii<numfbins; ii++) {
+      REAL4 totalweightval = 0.0;
+      for (UINT4 jj=0; jj<numffts; jj++) {
+         if (background->data[jj*numfbins + ii]!=0.0) {
+            TSofPowers->data[jj] = 1.0/(background->data[jj*numfbins + ii]*backgroundScaling->data[jj*numfbins+ii]);
+            totalweightval += 1.0/(background->data[jj*numfbins + ii]*background->data[jj*numfbins + ii]*backgroundScaling->data[jj*numfbins+ii]*backgroundScaling->data[jj*numfbins+ii]);
+         }
+      }
+      aveTFnoisePerFbinRatio->data[ii] = 0.0;
+      for (UINT4 jj=0; jj<numffts; jj++) aveTFnoisePerFbinRatio->data[ii] += TSofPowers->data[jj];
+      aveTFnoisePerFbinRatio->data[ii] /= totalweightval;
+   }
+   REAL4 aveTFaveinv = 1.0/calcMean(aveTFnoisePerFbinRatio);
+   for (UINT4 ii=0; ii<numfbins; ii++) aveTFnoisePerFbinRatio->data[ii] *= aveTFaveinv;
+   XLALDestroyREAL4VectorAligned(TSofPowers);
+   return aveTFnoisePerFbinRatio;
+}
 
 /**
  * Compute the second Fourier transform for TwoSpect
  * \param [out] output Pointer to the ffdataStruct to the containers for the second FFT
- * \param [in]  tfdata Pointer REAL4Vector of mean subtracted and weighted data
+ * \param [in]  tfdata Pointer REAL4VectorAligned of mean subtracted and weighted data
  * \param [in]  plan   Pointer to REAL4FFTPlan
  * \return Status value
  */
-INT4 makeSecondFFT(ffdataStruct *output, REAL4Vector *tfdata, REAL4FFTPlan *plan)
+INT4 makeSecondFFT(ffdataStruct *output, REAL4VectorAligned *tfdata, const REAL4FFTPlan *plan)
 {
 
    XLAL_CHECK( output != NULL && tfdata != NULL && plan != NULL, XLAL_EINVAL );
@@ -1240,20 +1214,24 @@ INT4 makeSecondFFT(ffdataStruct *output, REAL4Vector *tfdata, REAL4FFTPlan *plan
    REAL8 winFactor = 8.0/3.0;
 
    //Do the second FFT
-   REAL4Vector *x = NULL, *psd = NULL;
+   REAL4VectorAligned *x = NULL, *psd = NULL, *windowData = NULL;
    REAL4Window *win = NULL;
-   XLAL_CHECK( (x = XLALCreateREAL4Vector(output->numffts)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK( (psd = XLALCreateREAL4Vector((UINT4)floor(x->length*0.5)+1)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (x = XLALCreateREAL4VectorAligned(output->numffts, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (psd = XLALCreateREAL4VectorAligned((UINT4)floor(x->length*0.5)+1, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK( (win = XLALCreateHannREAL4Window(x->length)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (windowData = XLALCreateREAL4VectorAligned(win->data->length, 32)) != NULL, XLAL_EFUNC );
+   memcpy(windowData->data, win->data->data, sizeof(REAL4)*windowData->length);
 
    for (INT4 ii=0; ii<output->numfbins; ii++) {
 
       //Next, loop over times and pick the right frequency bin for each FFT and window
       //for (UINT4 jj=0; jj<x->length; jj++) x->data[jj] = tfdata->data[ii + jj*output->numfbins] * win->data->data[jj];
-      fastSSVectorMultiply_with_stride_and_offset(x, tfdata, win->data, output->numfbins, 1, ii, 0);
+      //fastSSVectorMultiply_with_stride_and_offset(x, tfdata, windowData, output->numfbins, 1, ii, 0);
+      for (UINT4 jj=0; jj<x->length; jj++) x->data[jj] = tfdata->data[ii + jj*output->numfbins];
+      XLAL_CHECK( XLALVectorMultiplyREAL4(x->data, x->data, windowData->data, x->length) == XLAL_SUCCESS, XLAL_EFUNC );
 
       //Make the FFT
-      XLAL_CHECK( XLALREAL4PowerSpectrum(psd, x, plan) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( XLALREAL4PowerSpectrum((REAL4Vector*)psd, (REAL4Vector*)x, plan) == XLAL_SUCCESS, XLAL_EFUNC );
 
       //Fix beginning and end values if even, otherwise just the beginning if odd
       if (GSL_IS_EVEN(x->length)==1) {
@@ -1273,8 +1251,9 @@ INT4 makeSecondFFT(ffdataStruct *output, REAL4Vector *tfdata, REAL4FFTPlan *plan
    } /* for ii < numfbins */
 
    //Destroy stuff
-   XLALDestroyREAL4Vector(x);
-   XLALDestroyREAL4Vector(psd);
+   XLALDestroyREAL4VectorAligned(x);
+   XLALDestroyREAL4VectorAligned(psd);
+   XLALDestroyREAL4VectorAligned(windowData);
    XLALDestroyREAL4Window(win);
 
    fprintf(stderr, "done\n");
@@ -1286,21 +1265,21 @@ INT4 makeSecondFFT(ffdataStruct *output, REAL4Vector *tfdata, REAL4FFTPlan *plan
 
 /**
  * Determine the average of the noise power in each frequency bin across the band
- * \param [in] backgrnd Pointer to REAL4Vector of the running mean values
+ * \param [in] backgrnd Pointer to REAL4VectorAligned of the running mean values
  * \param [in] numfbins Number of frequency bins in the SFTs
  * \param [in] numffts  Number of SFTs in the observation time
  * \param [in] binmin   Minimum SFT bin to look at with this algorithm
  * \param [in] binmax   Maximum SFT bin to look at with this algorithm
  * \return The average of the noise power across the frequency band
  */
-REAL4 avgTFdataBand(REAL4Vector *backgrnd, INT4 numfbins, INT4 numffts, INT4 binmin, INT4 binmax)
+REAL4 avgTFdataBand(const REAL4VectorAligned *backgrnd, UINT4 numfbins, UINT4 numffts, UINT4 binmin, UINT4 binmax)
 {
 
-   XLAL_CHECK_REAL4( backgrnd != NULL && numfbins > 0 && numffts > 0 && binmin >= 0 && binmax > binmin, XLAL_EINVAL );
+   XLAL_CHECK_REAL4( backgrnd != NULL && binmax > binmin, XLAL_EINVAL );
 
-   REAL4Vector *aveNoiseInTime = NULL, *rngMeansOverBand = NULL;
-   XLAL_CHECK_REAL4( (aveNoiseInTime = XLALCreateREAL4Vector(numffts)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK_REAL4( (rngMeansOverBand = XLALCreateREAL4Vector((UINT4)(binmax-binmin))) != NULL, XLAL_EFUNC );
+   REAL4VectorAligned *aveNoiseInTime = NULL, *rngMeansOverBand = NULL;
+   XLAL_CHECK_REAL4( (aveNoiseInTime = XLALCreateREAL4VectorAligned(numffts, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_REAL4( (rngMeansOverBand = XLALCreateREAL4VectorAligned(binmax-binmin, 32)) != NULL, XLAL_EFUNC );
 
    for (UINT4 ii=0; ii<aveNoiseInTime->length; ii++) {
       memcpy(rngMeansOverBand->data, &(backgrnd->data[ii*numfbins + binmin]), sizeof(*rngMeansOverBand->data)*rngMeansOverBand->length);
@@ -1310,8 +1289,8 @@ REAL4 avgTFdataBand(REAL4Vector *backgrnd, INT4 numfbins, INT4 numffts, INT4 bin
    REAL4 avgTFdata = calcMean(aveNoiseInTime);
 
    //Destroy stuff
-   XLALDestroyREAL4Vector(aveNoiseInTime);
-   XLALDestroyREAL4Vector(rngMeansOverBand);
+   XLALDestroyREAL4VectorAligned(aveNoiseInTime);
+   XLALDestroyREAL4VectorAligned(rngMeansOverBand);
 
    return avgTFdata;
 
@@ -1327,14 +1306,14 @@ REAL4 avgTFdataBand(REAL4Vector *backgrnd, INT4 numfbins, INT4 numffts, INT4 bin
  * \param [in] binmax   Maximum SFT bin to look at with this algorithm
  * \return The RMS of the noise power across the frequency band
  */
-REAL4 rmsTFdataBand(REAL4Vector *backgrnd, INT4 numfbins, INT4 numffts, INT4 binmin, INT4 binmax)
+REAL4 rmsTFdataBand(const REAL4VectorAligned *backgrnd, UINT4 numfbins, UINT4 numffts, UINT4 binmin, UINT4 binmax)
 {
 
-   XLAL_CHECK_REAL4( backgrnd != NULL && numfbins > 0 && numffts > 0 && binmin >= 0 && binmax > binmin, XLAL_EINVAL );
+   XLAL_CHECK_REAL4( backgrnd != NULL && binmax > binmin, XLAL_EINVAL );
 
-   REAL4Vector *aveNoiseInTime = NULL, *rngMeansOverBand = NULL;
-   XLAL_CHECK_REAL4( (aveNoiseInTime = XLALCreateREAL4Vector(numffts)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK_REAL4( (rngMeansOverBand = XLALCreateREAL4Vector((UINT4)(binmax-binmin))) != NULL, XLAL_EFUNC );
+   REAL4VectorAligned *aveNoiseInTime = NULL, *rngMeansOverBand = NULL;
+   XLAL_CHECK_REAL4( (aveNoiseInTime = XLALCreateREAL4VectorAligned(numffts, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_REAL4( (rngMeansOverBand = XLALCreateREAL4VectorAligned(binmax-binmin, 32)) != NULL, XLAL_EFUNC );
 
    for (UINT4 ii=0; ii<aveNoiseInTime->length; ii++) {
       memcpy(rngMeansOverBand->data, &(backgrnd->data[ii*numfbins + binmin]), sizeof(*rngMeansOverBand->data)*rngMeansOverBand->length);
@@ -1345,8 +1324,8 @@ REAL4 rmsTFdataBand(REAL4Vector *backgrnd, INT4 numfbins, INT4 numffts, INT4 bin
    XLAL_CHECK_REAL4( calcRms(&rmsTFdata, aveNoiseInTime) == XLAL_SUCCESS, XLAL_EFUNC );
 
    //Destroy stuff
-   XLALDestroyREAL4Vector(aveNoiseInTime);
-   XLALDestroyREAL4Vector(rngMeansOverBand);
+   XLALDestroyREAL4VectorAligned(aveNoiseInTime);
+   XLALDestroyREAL4VectorAligned(rngMeansOverBand);
 
    return rmsTFdata;
 
@@ -1355,20 +1334,22 @@ REAL4 rmsTFdataBand(REAL4Vector *backgrnd, INT4 numfbins, INT4 numffts, INT4 bin
 
 /**
  * Measure of the average noise power in each 2nd FFT frequency bin
- * \param [out]    aveNoise      Pointer to REAL4VectorAligned of the expected 2nd FFT powers
- * \param [in]     params        Pointer to UserInput_t
- * \param [in]     sftexist      Pointer to INT4Vector of SFTs existing or not
- * \param [in]     backgrnd      Pointer to REAL4Vector of running means
- * \param [in]     antweights    Pointer to REAL4Vector of antenna pattern weights
- * \param [in]     plan          Pointer to REAL4FFTPlan
- * \param [in,out] normalization Pointer to REAL8 value of the normalization for the 2nd FFT
- * \param [in]     rng           Pointer to gsl_rng
+ * \param [out]    aveNoise          Pointer to REAL4VectorAligned of the expected 2nd FFT powers
+ * \param [in]     params            Pointer to UserInput_t
+ * \param [in]     sftexist          Pointer to INT4Vector of SFTs existing or not
+ * \param [in]     backgrnd          Pointer to REAL4VectorAligned of running means
+ * \param [in]     antweights        Pointer to REAL4VectorAligned of antenna pattern weights
+ * \param [in]     backgroundScaling Pointer to REAL4VectorAligned of background scaling values
+ * \param [in]     plan              Pointer to REAL4FFTPlan
+ * \param [in]     expDistVals       Pointer to REAL4VectorAligned of precomputed exponentially distributed random values to sample from
+ * \param [in]     rng               Pointer to gsl_rng
+ * \param [in,out] normalization     Pointer to REAL8 value of the normalization for the 2nd FFT
  * \return Status value
  */
-INT4 ffPlaneNoise(REAL4VectorAligned *aveNoise, UserInput_t *params, INT4Vector *sftexist, REAL4Vector *backgrnd, REAL4Vector *antweights, REAL4FFTPlan *plan, REAL8 *normalization, gsl_rng *rng)
+INT4 ffPlaneNoise(REAL4VectorAligned *aveNoise, const UserInput_t *params, const INT4Vector *sftexist, const REAL4VectorAligned *backgrnd, const REAL4VectorAligned *antweights, const REAL4VectorAligned *backgroundScaling, const REAL4FFTPlan *plan, const REAL4VectorAligned *expDistVals, const gsl_rng *rng, REAL8 *normalization)
 {
 
-   XLAL_CHECK( aveNoise != NULL && params != NULL && sftexist != NULL && backgrnd != NULL && antweights != NULL && plan != NULL && normalization != NULL, XLAL_EINVAL );
+   XLAL_CHECK( aveNoise != NULL && params != NULL && sftexist != NULL && backgrnd != NULL && antweights != NULL && backgroundScaling != NULL && plan != NULL && normalization != NULL, XLAL_EINVAL );
 
    fprintf(stderr, "Computing noise background estimate... ");
 
@@ -1392,19 +1373,30 @@ INT4 ffPlaneNoise(REAL4VectorAligned *aveNoise, UserInput_t *params, INT4Vector 
       REAL8 dutyfactor = 0.0, dutyfactorincrement = 1.0/(REAL8)numffts;
 
       //Average each SFT across the frequency band, also compute normalization factor
-      REAL4Vector *rngMeansOverBand = NULL;
-      REAL4VectorAligned *aveNoiseInTime = NULL;
+      REAL4VectorAligned *rngMeansOverBand = NULL, *backgroundScalingOverBand = NULL, *aveNoiseInTime = NULL, *aveBackgroundScalingInTime = NULL, *scaledAveNoiseInTime = NULL;
+      XLAL_CHECK( (rngMeansOverBand = XLALCreateREAL4VectorAligned(numfbins, 32)) != NULL, XLAL_EFUNC );
+      XLAL_CHECK( (backgroundScalingOverBand = XLALCreateREAL4VectorAligned(numfbins, 32)) != NULL, XLAL_EFUNC );
       XLAL_CHECK( (aveNoiseInTime = XLALCreateREAL4VectorAligned(numffts, 32)) != NULL, XLAL_EFUNC );
-      XLAL_CHECK( (rngMeansOverBand = XLALCreateREAL4Vector(numfbins)) != NULL, XLAL_EFUNC );
+      XLAL_CHECK( (aveBackgroundScalingInTime = XLALCreateREAL4VectorAligned(numffts, 32)) != NULL, XLAL_EFUNC );
+      XLAL_CHECK( (scaledAveNoiseInTime = XLALCreateREAL4VectorAligned(numffts, 32)) != NULL, XLAL_EFUNC );
 
       memset(aveNoiseInTime->data, 0, sizeof(REAL4)*numffts);
+      memset(aveBackgroundScalingInTime->data, 0, sizeof(REAL4)*numffts);
       for (UINT4 ii=0; ii<aveNoiseInTime->length; ii++) {
          if (sftexist->data[ii]!=0) {
             memcpy(rngMeansOverBand->data, &(backgrnd->data[ii*numfbins]), sizeof(*rngMeansOverBand->data)*rngMeansOverBand->length);
             XLAL_CHECK( calcMedian(&(aveNoiseInTime->data[ii]), rngMeansOverBand) == XLAL_SUCCESS, XLAL_EFUNC );
 
-            if (!params->noiseWeightOff) sumofweights += (antweights->data[ii]*antweights->data[ii])/(aveNoiseInTime->data[ii]*aveNoiseInTime->data[ii]);
-            else sumofweights += (antweights->data[ii]*antweights->data[ii]);
+            memcpy(backgroundScalingOverBand->data, &(backgroundScaling->data[ii*numfbins]), sizeof(REAL4)*backgroundScalingOverBand->length);
+            aveBackgroundScalingInTime->data[ii] = calcMean(backgroundScalingOverBand);
+            XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
+
+            XLAL_CHECK( XLALVectorMultiplyREAL4(backgroundScalingOverBand->data, backgroundScalingOverBand->data, backgroundScalingOverBand->data, backgroundScalingOverBand->length) == XLAL_SUCCESS, XLAL_EFUNC );
+            REAL4 bandMeanBackgroundScalingSq = calcMean(backgroundScalingOverBand);
+            XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
+
+            if (!params->noiseWeightOff) sumofweights += (antweights->data[ii]*antweights->data[ii]*bandMeanBackgroundScalingSq)/(aveNoiseInTime->data[ii]*aveNoiseInTime->data[ii]);
+            else sumofweights += (antweights->data[ii]*antweights->data[ii]*bandMeanBackgroundScalingSq);
 
             dutyfactor += dutyfactorincrement;
          }
@@ -1421,16 +1413,13 @@ INT4 ffPlaneNoise(REAL4VectorAligned *aveNoise, UserInput_t *params, INT4Vector 
 
       for (UINT4 ii=0; ii<x->length; ii++) {
          if (aveNoiseInTime->data[ii] != 0.0) {
-            if (!params->noiseWeightOff) multiplicativeFactor->data[ii] = win->data->data[ii]*antweights->data[ii]/aveNoiseInTime->data[ii]*invsumofweights;
+            if (!params->noiseWeightOff) multiplicativeFactor->data[ii] = win->data->data[ii]*antweights->data[ii]/(aveNoiseInTime->data[ii]*aveNoiseInTime->data[ii])*invsumofweights;
             else multiplicativeFactor->data[ii] = win->data->data[ii]*antweights->data[ii]*invsumofweights;
          }
       }
 
-      //Create exponentially distributed values from which to resample for measuring the background distribution
-      //Every simulation of background noise samples a subset of these 100*numffts values
-      REAL4VectorAligned *randVals = NULL;
-      XLAL_CHECK( (randVals = XLALCreateREAL4VectorAligned(100*numffts, 32)) != NULL, XLAL_EFUNC );
-      for (UINT4 ii=0; ii<randVals->length; ii++) randVals->data[ii] = expRandNum(1.0, rng);
+      //Multiply the aveNoiseInTime by aveBackgroundScalingInTime
+      XLAL_CHECK( XLALVectorMultiplyREAL4(scaledAveNoiseInTime->data, aveNoiseInTime->data, aveBackgroundScalingInTime->data, aveNoiseInTime->length) == XLAL_SUCCESS, XLAL_EFUNC );
 
       //New version. Computes expected background with correlation estimate from Hann windowed and overlapped (must be 50% or 0%) SFTs
       REAL8 correlationfactor = 0.0;
@@ -1454,10 +1443,8 @@ INT4 ffPlaneNoise(REAL4VectorAligned *aveNoise, UserInput_t *params, INT4Vector 
             }
          } // for jj < x->length */
 
-         XLAL_CHECK( sampleREAL4Vector((REAL4Vector*)x, (REAL4Vector*)randVals, rng) == XLAL_SUCCESS, XLAL_EFUNC );
-         if (params->vectorMath==1) XLAL_CHECK( sseSSVectorMultiply(x, x, aveNoiseInTime) == XLAL_SUCCESS, XLAL_EFUNC );
-         else if (params->vectorMath==2) XLAL_CHECK( avxSSVectorMultiply(x, x, aveNoiseInTime) == XLAL_SUCCESS, XLAL_EFUNC );
-         else for (UINT4 jj=0; jj<x->length; jj++) x->data[jj] *= aveNoiseInTime->data[jj];
+         XLAL_CHECK( sampleREAL4VectorAligned(x, expDistVals, rng) == XLAL_SUCCESS, XLAL_EFUNC );
+         XLAL_CHECK( XLALVectorMultiplyREAL4(x->data, x->data, scaledAveNoiseInTime->data, x->length) == XLAL_SUCCESS, XLAL_EFUNC );
          for (UINT4 jj=0; jj<x->length; jj++) {
             if (sftexist->data[jj] != 0) {
                if (jj>0 && sftexist->data[jj-1]!=0) {
@@ -1466,7 +1453,7 @@ INT4 ffPlaneNoise(REAL4VectorAligned *aveNoise, UserInput_t *params, INT4Vector 
                }
             }
          }
-         for (UINT4 jj=0; jj<x->length; jj++) if (sftexist->data[jj] != 0) x->data[jj] = x->data[jj]/aveNoiseInTime->data[jj] - 1.0;
+         for (UINT4 jj=0; jj<x->length; jj++) if (sftexist->data[jj] != 0) x->data[jj] = x->data[jj] - scaledAveNoiseInTime->data[jj];
 
          //Reverse the correlations, comment this out below!
          /* memset(x->data, 0, sizeof(REAL4)*x->length);
@@ -1487,25 +1474,19 @@ INT4 ffPlaneNoise(REAL4VectorAligned *aveNoise, UserInput_t *params, INT4Vector 
             } */
 
          //Window and rescale because of antenna and noise weights
-         if (params->vectorMath==1) XLAL_CHECK( sseSSVectorMultiply(x, x, multiplicativeFactor) == XLAL_SUCCESS, XLAL_EFUNC );
-         else if (params->vectorMath==2) XLAL_CHECK( avxSSVectorMultiply(x, x, multiplicativeFactor) == XLAL_SUCCESS, XLAL_EFUNC );
-         else for (UINT4 jj=0; jj<x->length; jj++) x->data[jj] *= multiplicativeFactor->data[jj];
+         XLAL_CHECK( XLALVectorMultiplyREAL4(x->data, x->data, multiplicativeFactor->data, x->length) == XLAL_SUCCESS, XLAL_EFUNC );
 
          //Do the FFT
          XLAL_CHECK( XLALREAL4PowerSpectrum((REAL4Vector*)psd, (REAL4Vector*)x, plan) == XLAL_SUCCESS, XLAL_EFUNC );
 
          //Sum into the bins
-         if (params->vectorMath==1) XLAL_CHECK( sseSSVectorSum(aveNoise, aveNoise, psd) == XLAL_SUCCESS, XLAL_EFUNC );
-         else if (params->vectorMath==2) XLAL_CHECK( avxSSVectorSum(aveNoise, aveNoise, psd) == XLAL_SUCCESS, XLAL_EFUNC );
-         else for (UINT4 jj=0; jj<aveNoise->length; jj++) aveNoise->data[jj] += psd->data[jj];
+         XLAL_CHECK( XLALVectorAddREAL4(aveNoise->data, aveNoise->data, psd->data, psd->length) == XLAL_SUCCESS, XLAL_EFUNC );
       } /* for ii < 1000 */
 
       //Average and rescale
       //REAL4 averageRescaleFactor = 2.5e-4*psdfactor*(1.0+2.0*corrfactorsquared);
       REAL4 averageRescaleFactor = 1.0e-3*psdfactor; //*(1.0+2.0*corrfactorsquared);
-      if (params->vectorMath==1) XLAL_CHECK( sseScaleREAL4Vector(aveNoise, aveNoise, averageRescaleFactor) == XLAL_SUCCESS, XLAL_EFUNC );
-      else if (params->vectorMath==2) XLAL_CHECK( avxScaleREAL4Vector(aveNoise, aveNoise, averageRescaleFactor) == XLAL_SUCCESS, XLAL_EFUNC );
-      else for (UINT4 ii=0; ii<aveNoise->length; ii++) aveNoise->data[ii] *= averageRescaleFactor;
+      XLAL_CHECK( XLALVectorScaleREAL4(aveNoise->data, averageRescaleFactor, aveNoise->data, aveNoise->length) == XLAL_SUCCESS, XLAL_EFUNC );
 
       //Fix 0th and end bins (0 only for odd x->length, 0 and end for even x->length)
       if (GSL_IS_EVEN(x->length)==1) {
@@ -1516,7 +1497,7 @@ INT4 ffPlaneNoise(REAL4VectorAligned *aveNoise, UserInput_t *params, INT4Vector 
       }
 
       //Compute normalization
-      *(normalization) = 1.0/(calcMean((REAL4Vector*)aveNoise));
+      *(normalization) = 1.0/(calcMean(aveNoise));
       for (UINT4 ii=0; ii<aveNoise->length; ii++) aveNoise->data[ii] *= *(normalization);
 
       //Extra factor for normalization to 1.0 (empirically determined) (Old method)
@@ -1533,12 +1514,16 @@ INT4 ffPlaneNoise(REAL4VectorAligned *aveNoise, UserInput_t *params, INT4Vector 
       XLALDestroyREAL4VectorAligned(psd);
       XLALDestroyREAL4Window(win);
       XLALDestroyREAL4VectorAligned(aveNoiseInTime);
-      XLALDestroyREAL4Vector(rngMeansOverBand);
+      XLALDestroyREAL4VectorAligned(aveBackgroundScalingInTime);
+      XLALDestroyREAL4VectorAligned(scaledAveNoiseInTime);
+      XLALDestroyREAL4VectorAligned(rngMeansOverBand);
+      XLALDestroyREAL4VectorAligned(backgroundScalingOverBand);
       XLALDestroyREAL4VectorAligned(multiplicativeFactor);
-      XLALDestroyREAL4VectorAligned(randVals);
    } else {
-     *(normalization) = 1.0;
+      *(normalization) = 1.0;
    }
+
+   //fprintf(stderr, "Noise average = %g ", calcMean((REAL4Vector*)aveNoise));
 
    fprintf(stderr, "done\n");
 
@@ -1546,6 +1531,45 @@ INT4 ffPlaneNoise(REAL4VectorAligned *aveNoise, UserInput_t *params, INT4Vector 
 
 } /* ffPlaneNoise() */
 
+/**
+ * \param [in] IFO Pointer to LALStringVector of the IFO names like H1/L1/V1/etc.
+ * \return Pointer to MultiLALDetector
+ */
+MultiLALDetector * setupMultiLALDetector(LALStringVector *IFO)
+{
+   XLAL_CHECK_NULL( IFO!=NULL, XLAL_EINVAL );
+   for (UINT4 ii=0; ii<IFO->length; ii++) {
+      if (ii==0) fprintf(stderr,"IFO = %s", IFO->data[ii]);
+      else fprintf(stderr,"%s", IFO->data[ii]);
+      if (ii < IFO->length-1) fprintf(stderr, ",");
+      else fprintf(stderr, "\n");
+   }
+   MultiLALDetector *detectors = NULL;
+   XLAL_CHECK_NULL( (detectors = XLALMalloc(sizeof(MultiLALDetector))) != NULL, XLAL_ENOMEM );
+   //XLAL_CHECK_NULL( XLALParseMultiLALDetector(detectors, IFO) == XLAL_SUCCESS, XLAL_EFUNC ); //Normally use this but we need the special use case of H2r
+   detectors->length = IFO->length;
+   for (UINT4 ii=0; ii<detectors->length; ii++) {
+      if (strcmp("H1", IFO->data[ii])==0) {
+         detectors->sites[ii] = lalCachedDetectors[LAL_LHO_4K_DETECTOR]; //H1
+      } else if (strcmp("L1", IFO->data[ii])==0) {
+         detectors->sites[ii] = lalCachedDetectors[LAL_LLO_4K_DETECTOR]; //L1
+      } else if (strcmp("V1", IFO->data[ii])==0) {
+         detectors->sites[ii] = lalCachedDetectors[LAL_VIRGO_DETECTOR];  //V1
+      } else if (strcmp("H2", IFO->data[ii])==0) {
+         detectors->sites[ii] = lalCachedDetectors[LAL_LHO_2K_DETECTOR]; //H2
+      } else if (strcmp("H2r", IFO->data[ii])==0) {
+         LALDetector H2 = lalCachedDetectors[LAL_LHO_2K_DETECTOR]; //H2 rotated
+         H2.frDetector.xArmAzimuthRadians -= 0.25*LAL_PI;
+         H2.frDetector.yArmAzimuthRadians -= 0.25*LAL_PI;
+         memset(&(H2.frDetector.name), 0, sizeof(CHAR)*LALNameLength);
+         snprintf(H2.frDetector.name, LALNameLength, "%s", "LHO_2k_rotatedPiOver4");
+         XLAL_CHECK_NULL( (XLALCreateDetector(&(detectors->sites[ii]), &(H2.frDetector), LALDETECTORTYPE_IFODIFF)) != NULL, XLAL_EFUNC );
+      } else {
+         XLAL_ERROR_NULL( XLAL_EINVAL, "Not using valid interferometer! Expected 'H1', 'H2', 'H2r' (rotated H2), 'L1', or 'V1' not %s.\n", IFO->data[ii] );
+      }
+   }
+   return detectors;
+}
 
 INT4 readTwoSpectInputParams(UserInput_t *uvar, int argc, char *argv[])
 {
@@ -1587,7 +1611,7 @@ INT4 readTwoSpectInputParams(UserInput_t *uvar, int argc, char *argv[])
    XLALregREALUserStruct(t0,                            0 , UVAR_REQUIRED,  "Start time of the search (in GPS seconds)");
    XLALregREALUserStruct(fmin,                          0 , UVAR_REQUIRED,  "Minimum frequency of band (Hz)");
    XLALregREALUserStruct(fspan,                         0 , UVAR_REQUIRED,  "Frequency span of band (Hz)");
-   XLALregREALUserStruct(avesqrtSh,                     0 , UVAR_REQUIRED,  "Expected average of square root of Sh");
+   XLALregLISTUserStruct(avesqrtSh,                     0 , UVAR_REQUIRED,  "CSV list of expected average of square root of Sh for each detector");
    XLALregREALUserStruct(Pmin,                          0 , UVAR_REQUIRED,  "Minimum period to be searched (in seconds)");
    XLALregREALUserStruct(Pmax,                          0 , UVAR_REQUIRED,  "Maximum period to be searched (in seconds)");
    XLALregREALUserStruct(dfmin,                         0 , UVAR_REQUIRED,  "Minimum modulation depth to search (Hz)");
@@ -1760,17 +1784,22 @@ INT4 readTwoSpectInputParams(UserInput_t *uvar, int argc, char *argv[])
 
 /**
  * Print REAL4Vector values to an ASCII file
- * \param [in] vector   Pointer to the REAL4Vector to be printed
- * \param [in] filename CHAR array of the file path and name
+ * \param [in] vector    Pointer to the REAL4Vector to be printed
+ * \param [in] directory CHAR array of the file path
+ * \param [in] filename  CHAR array of the file name
  * \return Status value
  */
-INT4 printREAL4Vector2File(REAL4Vector *vector, CHAR *filename)
+INT4 printREAL4Vector2File(const REAL4Vector *vector, const CHAR *directory, const CHAR *filename)
 {
 
+   CHARVector *outputfile = NULL;
+   XLAL_CHECK( (outputfile = XLALCreateCHARVector(strlen(directory)+strlen(filename)+3)) != NULL, XLAL_EFUNC );
+   sprintf(outputfile->data, "%s/%s", directory, filename);
    FILE *OUTPUT = NULL;
-   XLAL_CHECK( (OUTPUT = fopen(filename, "w")) != NULL, XLAL_EIO, "Couldn't fopen %s for writing.\n", filename );
+   XLAL_CHECK( (OUTPUT = fopen(outputfile->data, "w")) != NULL, XLAL_EIO, "Couldn't fopen %s/%s for writing.\n", directory, filename );
    for (UINT4 ii=0; ii<vector->length; ii++) fprintf(OUTPUT, "%g\n", vector->data[ii]);
    fclose(OUTPUT);
+   XLALDestroyCHARVector(outputfile);
 
    return XLAL_SUCCESS;
 

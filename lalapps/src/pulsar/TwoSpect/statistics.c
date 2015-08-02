@@ -37,11 +37,20 @@
  * \param [in] ptrToGenerator Pointer to a gsl_rng generator
  * \return A random value drawn from the exponential distribution
  */
-REAL8 expRandNum(REAL8 mu, gsl_rng *ptrToGenerator)
+REAL8 expRandNum(const REAL8 mu, const gsl_rng *ptrToGenerator)
 {
    XLAL_CHECK_REAL8( mu > 0.0 && ptrToGenerator != NULL, XLAL_EINVAL );
    return gsl_ran_exponential(ptrToGenerator, mu);
 } /* expRandNum() */
+
+REAL4VectorAligned * expRandNumVector(const UINT4 length, const REAL8 mu, const gsl_rng *ptrToGenerator)
+{
+   XLAL_CHECK_NULL( mu>0.0 && ptrToGenerator!=NULL, XLAL_EINVAL );
+   REAL4VectorAligned *output = NULL;
+   XLAL_CHECK_NULL( (output = XLALCreateREAL4VectorAligned(length, 32)) != NULL, XLAL_EFUNC );
+   for (UINT4 ii=0; ii<length; ii++) output->data[ii] = (REAL4)expRandNum(mu, ptrToGenerator);
+   return output;
+}
 
 /* Critical values of KS test (from Bickel and Doksum). Does not apply directly (mean determined from distribution)
  alpha=0.01
@@ -56,17 +65,17 @@ REAL8 expRandNum(REAL8 mu, gsl_rng *ptrToGenerator)
 /**
  * KS test of data against an expected exponential distribution
  * \param [out] ksvalue Pointer to the KS value
- * \param [in]  vector  Pointer to the REAL4Vector to compare against an exponential distribution
+ * \param [in]  vector  Pointer to the REAL4VectorAligned to compare against an exponential distribution
  * \return Status value
  */
-INT4 ks_test_exp(REAL8 *ksvalue, REAL4Vector *vector)
+INT4 ks_test_exp(REAL8 *ksvalue, const REAL4VectorAligned *vector)
 {
 
    INT4 ii;
 
    //First the mean value needs to be calculated from the median value
-   REAL4Vector *tempvect = NULL;
-   XLAL_CHECK( (tempvect = XLALCreateREAL4Vector(vector->length)) != NULL, XLAL_EFUNC );
+   REAL4VectorAligned *tempvect = NULL;
+   XLAL_CHECK( (tempvect = XLALCreateREAL4VectorAligned(vector->length, 32)) != NULL, XLAL_EFUNC );
    memcpy(tempvect->data, vector->data, sizeof(REAL4)*vector->length);
    sort_float_ascend(tempvect);  //tempvect becomes sorted
    REAL4 vector_median = 0.0;
@@ -87,7 +96,7 @@ INT4 ks_test_exp(REAL8 *ksvalue, REAL4Vector *vector)
    }
 
    //Destroy stuff
-   XLALDestroyREAL4Vector(tempvect);
+   XLALDestroyREAL4VectorAligned(tempvect);
 
    return XLAL_SUCCESS;
 
@@ -106,16 +115,16 @@ n                                                               n>80
 /**
  * Kuiper's test of data against an expected exponential distribution
  * \param [out] kuipervalue Pointer to the Kuiper's test value
- * \param [in]  vector      Pointer to the REAL4Vector to compare against an exponential distribution
+ * \param [in]  vector      Pointer to the REAL4VectorAligned to compare against an exponential distribution
  * \return Status value
  */
-INT4 kuipers_test_exp(REAL8 *kuipervalue, REAL4Vector *vector)
+INT4 kuipers_test_exp(REAL8 *kuipervalue, const REAL4VectorAligned *vector)
 {
 
    INT4 ii;
 
-   REAL4Vector *tempvect = NULL;
-   XLAL_CHECK( (tempvect = XLALCreateREAL4Vector(vector->length)) != NULL, XLAL_EFUNC );
+   REAL4VectorAligned *tempvect = NULL;
+   XLAL_CHECK( (tempvect = XLALCreateREAL4VectorAligned(vector->length, 32)) != NULL, XLAL_EFUNC );
 
    memcpy(tempvect->data, vector->data, sizeof(REAL4)*vector->length);
 
@@ -142,7 +151,7 @@ INT4 kuipers_test_exp(REAL8 *kuipervalue, REAL4Vector *vector)
    }
    *kuipervalue = hival + loval;
 
-   XLALDestroyREAL4Vector(tempvect);
+   XLALDestroyREAL4VectorAligned(tempvect);
 
    return XLAL_SUCCESS;
 
@@ -150,16 +159,16 @@ INT4 kuipers_test_exp(REAL8 *kuipervalue, REAL4Vector *vector)
 
 
 /**
- * Sort a REAL4Vector, keeping the smallest of the values in the output vector
- * \param [out] output Pointer to a REAL4Vector containing the output vector
- * \param [in]  input  Pointer to the REAL4Vector from which to find the smallest values
+ * Sort a REAL4VectorAligned, keeping the smallest of the values in the output vector
+ * \param [out] output Pointer to a REAL4VectorAligned containing the output vector
+ * \param [in]  input  Pointer to the REAL4VectorAligned from which to find the smallest values
  * \return Status value
  */
-INT4 sort_float_smallest(REAL4Vector *output, REAL4Vector *input)
+INT4 sort_float_smallest(REAL4VectorAligned *output, const REAL4VectorAligned *input)
 {
    //Copy of the input vector
-   REAL4Vector *tempvect = NULL;
-   XLAL_CHECK( (tempvect = XLALCreateREAL4Vector(input->length)) != NULL, XLAL_EFUNC );
+   REAL4VectorAligned *tempvect = NULL;
+   XLAL_CHECK( (tempvect = XLALCreateREAL4VectorAligned(input->length, 32)) != NULL, XLAL_EFUNC );
    memcpy(tempvect->data, input->data, sizeof(REAL4)*input->length);
 
    //qsort rearranges original vector, so sort the copy of the input vector
@@ -167,7 +176,7 @@ INT4 sort_float_smallest(REAL4Vector *output, REAL4Vector *input)
 
    memcpy(output->data, tempvect->data, sizeof(REAL4)*output->length);
 
-   XLALDestroyREAL4Vector(tempvect);
+   XLALDestroyREAL4VectorAligned(tempvect);
 
    return XLAL_SUCCESS;
 
@@ -186,60 +195,61 @@ void sort_double_ascend(REAL8Vector *vector)
 
 
 /**
- * Sort a REAL4Vector in ascending order, modifying the input vector
- * \param [in,out] vector Pointer to a REAL4Vector to be sorted
+ * Sort a REAL4VectorAligned in ascending order, modifying the input vector
+ * \param [in,out] vector Pointer to a REAL4VectorAligned to be sorted
  * \return Status value
  */
-void sort_float_ascend(REAL4Vector *vector)
+void sort_float_ascend(REAL4VectorAligned *vector)
 {
    qsort(vector->data, vector->length, sizeof(REAL4), qsort_REAL4_compar);
 } /* sort_float_ascend() */
 
 
 /**
- * Sample a number (sampleSize) of values from a REAL4Vector (input) randomly
- * \param [out] output     Pointer to output REAL4Vector with length less than input
- * \param [in]  input      Pointer to a REAL4Vector to be sampled from
+ * Sample a number (sampleSize) of values from a REAL4VectorAligned (input) randomly
+ * \param [out] output     Pointer to output REAL4VectorAligned with length less than input
+ * \param [in]  input      Pointer to a REAL4VectorAligned to be sampled from
  * \param [in]  rng        Pointer to a gsl_rng generator
- * \return Newly allocated REAL4Vector of sampled values from the input vector
+ * \return Newly allocated REAL4VectorAligned of sampled values from the input vector
  */
-INT4 sampleREAL4Vector(REAL4Vector *output, REAL4Vector *input, gsl_rng *rng)
+INT4 sampleREAL4VectorAligned(REAL4VectorAligned *output, const REAL4VectorAligned *input, const gsl_rng *rng)
 {
    XLAL_CHECK( output!=NULL && input!=NULL && output->length<input->length, XLAL_EINVAL );
    for (UINT4 ii=0; ii<output->length; ii++) output->data[ii] = input->data[(INT4)floor(gsl_rng_uniform(rng)*input->length)];
    return XLAL_SUCCESS;
-} /* sampleREAL4Vector() */
+} /* sampleREAL4VectorAligned() */
 
 /**
- * Sample a number (sampleSize) of values from an alignedREAL4VectorArray (input) randomly from vector 0 up to numberofvectors without accepting any values of zero
+ * Sample a number (sampleSize) of values from an REAL4VectorAlignedArray (input) randomly from vector 0 up to numberofvectors without accepting any values of zero
  * Needs this numberofvectors limit because of the IHS algorithm
- * \param [in] input           Pointer to a alignedREAL4VectorArray to be sampled from
+ * \param [in] input           Pointer to a REAL4VectorAlignedArray to be sampled from
  * \param [in] numberofvectors Number of vectors from the start from which to sample from
  * \param [in] sampleSize      Integer value for the length of the output vector
  * \param [in] rng             Pointer to a gsl_rng generator
- * \return Newly allocated REAL4Vector of sampled values from the input vector
+ * \return Newly allocated REAL4VectorAligned of sampled values from the input vector
  */
-REAL4Vector * sampleAlignedREAL4VectorArray_nozerosaccepted(alignedREAL4VectorArray *input, INT4 numberofvectors, INT4 sampleSize, gsl_rng *rng)
+REAL4VectorAligned * sampleREAL4VectorAlignedArray_nozerosaccepted(const REAL4VectorAlignedArray *input, const UINT4 numberofvectors, const UINT4 sampleSize, const gsl_rng *rng)
 {
+   XLAL_CHECK_NULL( input != NULL, XLAL_EINVAL );
 
-   REAL4Vector *output = NULL;
-   XLAL_CHECK_NULL( (output = XLALCreateREAL4Vector(sampleSize)) != NULL, XLAL_EFUNC );
+   REAL4VectorAligned *output = NULL;
+   XLAL_CHECK_NULL( (output = XLALCreateREAL4VectorAligned(sampleSize, 32)) != NULL, XLAL_EFUNC );
 
-   for (INT4 ii=0; ii<sampleSize; ii++) {
-      output->data[ii] = input->data[(INT4)floor(gsl_rng_uniform(rng)*numberofvectors)]->data[(INT4)floor(gsl_rng_uniform(rng)*input->data[0]->length)];
-      while (output->data[ii]==0.0) output->data[ii] = input->data[(INT4)floor(gsl_rng_uniform(rng)*numberofvectors)]->data[(INT4)floor(gsl_rng_uniform(rng)*input->data[0]->length)];
+   for (UINT4 ii=0; ii<sampleSize; ii++) {
+      output->data[ii] = input->data[(UINT4)floor(gsl_rng_uniform(rng)*numberofvectors)]->data[(UINT4)floor(gsl_rng_uniform(rng)*input->data[0]->length)];
+      while (output->data[ii]==0.0) output->data[ii] = input->data[(UINT4)floor(gsl_rng_uniform(rng)*numberofvectors)]->data[(UINT4)floor(gsl_rng_uniform(rng)*input->data[0]->length)];
    }
 
    return output;
 
-} /* sampleREAL4VectorSequence_nozerosaccepted() */
+} /* sampleREAL4VectorAlignedArray_nozerosaccepted() */
 
 /**
- * Compute the mean value of a REAL4Vector, computed via recursion like in GSL
- * \param [in] vector Pointer to a REAL4Vector of values
+ * Compute the mean value of a REAL4VectorAligned, computed via recursion like in GSL
+ * \param [in] vector Pointer to a REAL4VectorAligned of values
  * \return The mean value
  */
-REAL4 calcMean(REAL4Vector *vector)
+REAL4 calcMean(const REAL4VectorAligned *vector)
 {
 
    //Calculate mean from recurrance relation. Same as GSL
@@ -252,11 +262,11 @@ REAL4 calcMean(REAL4Vector *vector)
 
 
 /**
- * Compute the mean value of a REAL4Vector without accepting values of zero
- * \param [in] vector Pointer to a REAL4Vector of values
+ * Compute the mean value of a REAL4VectorAligned without accepting values of zero
+ * \param [in] vector Pointer to a REAL4VectorAligned of values
  * \return The mean value
  */
-REAL4 calcMean_ignoreZeros(REAL4Vector *vector)
+REAL4 calcMean_ignoreZeros(const REAL4VectorAligned *vector)
 {
 
    INT4 values = 0;
@@ -275,7 +285,7 @@ REAL4 calcMean_ignoreZeros(REAL4Vector *vector)
 
 
 /**
- * \brief Compute the harmonic mean value of a REAL4Vector of SFT values
+ * \brief Compute the harmonic mean value of a REAL4VectorAligned of SFT values
  *
  * The harmonic mean is computed from the mean values of the SFTs
  * \param [out] harmonicMean Pointer to the output REAL4 harmonic mean value
@@ -284,14 +294,14 @@ REAL4 calcMean_ignoreZeros(REAL4Vector *vector)
  * \param [in]  numffts      Number of SFTs during the observation time
  * \return Status value
  */
-INT4 calcHarmonicMean(REAL4 *harmonicMean, REAL4Vector *vector, INT4 numfbins, INT4 numffts)
+INT4 calcHarmonicMean(REAL4 *harmonicMean, const REAL4VectorAligned *vector, const UINT4 numfbins, const UINT4 numffts)
 {
 
-   INT4 values = 0;
-   REAL4Vector *tempvect = NULL;
-   XLAL_CHECK( (tempvect = XLALCreateREAL4Vector(numfbins)) != NULL, XLAL_EFUNC );
+   UINT4 values = 0;
+   REAL4VectorAligned *tempvect = NULL;
+   XLAL_CHECK( (tempvect = XLALCreateREAL4VectorAligned(numfbins, 32)) != NULL, XLAL_EFUNC );
 
-   for (INT4 ii=0; ii<numffts; ii++) {
+   for (UINT4 ii=0; ii<numffts; ii++) {
       if (vector->data[ii*numfbins]!=0.0) {
          memcpy(tempvect->data, &(vector->data[ii*numfbins]), sizeof(REAL4)*numfbins);
          *harmonicMean += 1.0/calcMean(tempvect);
@@ -301,7 +311,7 @@ INT4 calcHarmonicMean(REAL4 *harmonicMean, REAL4Vector *vector, INT4 numfbins, I
    if (values>0) *harmonicMean = (REAL4)values/(*harmonicMean);
    else *harmonicMean = 0.0;
 
-   XLALDestroyREAL4Vector(tempvect);
+   XLALDestroyREAL4VectorAligned(tempvect);
 
    return XLAL_SUCCESS;
 
@@ -309,12 +319,12 @@ INT4 calcHarmonicMean(REAL4 *harmonicMean, REAL4Vector *vector, INT4 numfbins, I
 
 
 /**
- * Compute the standard deviation of a REAL4Vector
+ * Compute the standard deviation of a REAL4VectorAligned
  * \param [out] sigma  Pointer to the output standard deviation value
- * \param [in]  vector Pointer to a REAL4Vector of values
+ * \param [in]  vector Pointer to a REAL4VectorAligned of values
  * \return Status value
  */
-INT4 calcStddev(REAL4 *sigma, REAL4Vector *vector)
+INT4 calcStddev(REAL4 *sigma, const REAL4VectorAligned *vector)
 {
 
    double *gslarray = NULL;
@@ -330,12 +340,12 @@ INT4 calcStddev(REAL4 *sigma, REAL4Vector *vector)
 
 
 /**
- * Compute the standard deviation of a REAL4Vector ignoring zero values
+ * Compute the standard deviation of a REAL4VectorAligned ignoring zero values
  * \param [out] sigma  Pointer to the output standard deviation value
- * \param [in]  vector Pointer to a REAL4Vector of values
+ * \param [in]  vector Pointer to a REAL4VectorAligned of values
  * \return Status value
  */
-INT4 calcStddev_ignoreZeros(REAL4 *sigma, REAL4Vector *vector)
+INT4 calcStddev_ignoreZeros(REAL4 *sigma, const REAL4VectorAligned *vector)
 {
 
    REAL4 meanval = calcMean_ignoreZeros(vector);
@@ -364,21 +374,20 @@ INT4 calcStddev_ignoreZeros(REAL4 *sigma, REAL4Vector *vector)
 
 
 /**
- * Compute the RMS value of a REAL4Vector
+ * Compute the RMS value of a REAL4VectorAligned
  * \param [out] rms    Pointer to the output RMS value
- * \param [in]  vector Pointer to a REAL4Vector of values
+ * \param [in]  vector Pointer to a REAL4VectorAligned of values
  * \return Status value
  */
-INT4 calcRms(REAL4 *rms, REAL4Vector *vector)
+INT4 calcRms(REAL4 *rms, const REAL4VectorAligned *vector)
 {
 
-   REAL4Vector *sqvector = NULL;
-   XLAL_CHECK( (sqvector = XLALCreateREAL4Vector(vector->length)) != NULL, XLAL_EFUNC );
-   sqvector = XLALSSVectorMultiply(sqvector, vector, vector);
-   XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
+   REAL4VectorAligned *sqvector = NULL;
+   XLAL_CHECK( (sqvector = XLALCreateREAL4VectorAligned(vector->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( XLALVectorMultiplyREAL4(sqvector->data, vector->data, vector->data, vector->length) == XLAL_SUCCESS, XLAL_EFUNC );
    *rms = sqrtf(calcMean(sqvector));
 
-   XLALDestroyREAL4Vector(sqvector);
+   XLALDestroyREAL4VectorAligned(sqvector);
 
    return XLAL_SUCCESS;
 
@@ -390,7 +399,7 @@ INT4 calcRms(REAL4 *rms, REAL4Vector *vector)
  * \param [in] vector Pointer to a REAL8Vector of values
  * \return Mean value
  */
-REAL8 calcMeanD(REAL8Vector *vector)
+REAL8 calcMeanD(const REAL8Vector *vector)
 {
    REAL8 meanval = gsl_stats_mean((double*)vector->data, 1, vector->length);
    return meanval;
@@ -402,7 +411,7 @@ REAL8 calcMeanD(REAL8Vector *vector)
  * \param [in] vector Pointer to a REAL8Vector of values
  * \return Standard deviation value
  */
-REAL8 calcStddevD(REAL8Vector *vector)
+REAL8 calcStddevD(const REAL8Vector *vector)
 {
    REAL8 stddev = gsl_stats_sd((double*)vector->data, 1, vector->length);
    return stddev;
@@ -410,14 +419,14 @@ REAL8 calcStddevD(REAL8Vector *vector)
 
 
 /**
- * Determine the index value of the maximum value in a REAL4Vector
- * \param [in] vector Pointer to REAL4Vector of values
+ * Determine the index value of the maximum value in a REAL4VectorAligned
+ * \param [in] vector Pointer to REAL4VectorAligned of values
  * \return Index value of the largest element
  */
-INT4 max_index(REAL4Vector *vector)
+UINT4 max_index(const REAL4VectorAligned *vector)
 {
 
-   INT4 indexval = 0;
+   UINT4 indexval = 0;
    REAL4 maxval = vector->data[0];
 
    for (INT4 ii=1; ii<(INT4)vector->length; ii++) {
@@ -436,30 +445,29 @@ INT4 max_index(REAL4Vector *vector)
  * \param [in] vector Pointer to REAL8Vector of values
  * \return Index value of the largest element
  */
-INT4 max_index_double(REAL8Vector *vector)
+UINT4 max_index_double(const REAL8Vector *vector)
 {
-   INT4 indexval = gsl_stats_max_index(vector->data, 1, vector->length);
+   UINT4 indexval = (UINT4)gsl_stats_max_index(vector->data, 1, vector->length);
    return indexval;
 } /* max_index_double() */
 
 
 /**
- * Determine the index value of the maximum value between elements of a REAL4Vector (inclusive)
- * \param [in] vector        Pointer to REAL4Vector of values
- * \param [in] startlocation Index value to start from in the REAL4Vector
- * \param [in] lastlocation  Index value to end at in the REAL4Vector
+ * Determine the index value of the maximum value between elements of a REAL4VectorAligned (inclusive)
+ * \param [in] vector        Pointer to REAL4VectorAligned of values
+ * \param [in] startlocation Index value to start from in the REAL4VectorAligned
+ * \param [in] lastlocation  Index value to end at in the REAL4VectorAligned
  * \return Index value of the largest element
  */
-INT4 max_index_in_range(REAL4Vector *vector, INT4 startlocation, INT4 lastlocation)
+UINT4 max_index_in_range(const REAL4VectorAligned *vector, const UINT4 startlocation, const UINT4 lastlocation)
 {
+   UINT4 last = lastlocation;
+   if (last>=vector->length) last = vector->length-1;
 
-   if (startlocation<0) startlocation = 0;
-   if (lastlocation>=(INT4)vector->length) lastlocation = (INT4)vector->length-1;
-
-   INT4 indexval = startlocation;
+   UINT4 indexval = startlocation;
    REAL4 maxval = vector->data[startlocation];
 
-   for (INT4 ii=startlocation+1; ii<=lastlocation; ii++) {
+   for (UINT4 ii=startlocation+1; ii<=last; ii++) {
       if (vector->data[ii]>maxval) {
          maxval = vector->data[ii];
          indexval = ii;
@@ -470,31 +478,6 @@ INT4 max_index_in_range(REAL4Vector *vector, INT4 startlocation, INT4 lastlocati
 
 } /* max_index_in_range() */
 
-
-/**
- * Determine the index value of the maximum value between elements of a REAL4Vector in a REAL4VectorSequence (inclusive)
- * \param [in] vectorsequence Pointer to REAL4VectorSequence
- * \param [in] vectornum      Vector number in the REAL4VectorSequence
- * \return Index value of the largest element
- */
-INT4 max_index_from_vector_in_REAL4VectorSequence(REAL4VectorSequence *vectorsequence, INT4 vectornum)
-{
-
-   INT4 indexval = 0;
-   REAL4 maxval = vectorsequence->data[vectornum*vectorsequence->vectorLength];
-
-   for (INT4 ii=1; ii<(INT4)vectorsequence->vectorLength; ii++) {
-      if (vectorsequence->data[vectornum*vectorsequence->vectorLength+ii]>maxval) {
-         maxval = vectorsequence->data[vectornum*vectorsequence->vectorLength+ii];
-         indexval = ii;
-      }
-   }
-
-   return indexval;
-
-} /* max_index_from_vector_in_REAL4VectorSequence() */
-
-
 /**
  * Determine the index value of the maximum and minimum values in an INT4Vector
  * \param [in]  inputvector   Pointer to INT4Vector
@@ -502,7 +485,7 @@ INT4 max_index_from_vector_in_REAL4VectorSequence(REAL4VectorSequence *vectorseq
  * \param [out] max_index_out Pointer to index value of largest element
  * \return Status value
  */
-INT4 min_max_index_INT4Vector(INT4Vector *inputvector, INT4 *min_index_out, INT4 *max_index_out)
+INT4 min_max_index_INT4Vector(const INT4Vector *inputvector, UINT4 *min_index_out, UINT4 *max_index_out)
 {
 
    *min_index_out = 0, *max_index_out = 0;
@@ -526,16 +509,16 @@ INT4 min_max_index_INT4Vector(INT4Vector *inputvector, INT4 *min_index_out, INT4
 
 
 /**
- * Calculate the median value from a REAL4Vector
+ * Calculate the median value from a REAL4VectorAligned
  * \param [out] median Pointer to the median value
- * \param [in]  vector Pointer to a REAL4Vector
+ * \param [in]  vector Pointer to a REAL4VectorAligned
  * \return Status value
  */
-INT4 calcMedian(REAL4 *median, REAL4Vector *vector)
+INT4 calcMedian(REAL4 *median, const REAL4VectorAligned *vector)
 {
    //Make a copy of the original vector
-   REAL4Vector *tempvect = NULL;
-   XLAL_CHECK( (tempvect = XLALCreateREAL4Vector(vector->length)) != NULL, XLAL_EFUNC );
+   REAL4VectorAligned *tempvect = NULL;
+   XLAL_CHECK( (tempvect = XLALCreateREAL4VectorAligned(vector->length, 32)) != NULL, XLAL_EFUNC );
    memcpy(tempvect->data, vector->data, sizeof(REAL4)*vector->length);
 
    //qsort() on the copied data
@@ -544,7 +527,7 @@ INT4 calcMedian(REAL4 *median, REAL4Vector *vector)
    if (tempvect->length % 2 != 1) *median = 0.5*(tempvect->data[(INT4)(0.5*tempvect->length)-1] + tempvect->data[(INT4)(0.5*tempvect->length)]);
    else *median = tempvect->data[(INT4)(0.5*tempvect->length)];
 
-   XLALDestroyREAL4Vector(tempvect);
+   XLALDestroyREAL4VectorAligned(tempvect);
 
    return XLAL_SUCCESS;
 

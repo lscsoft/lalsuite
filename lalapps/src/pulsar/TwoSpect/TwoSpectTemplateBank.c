@@ -55,7 +55,7 @@ INT4 main(int argc, char *argv[])
 
    if (XLALUserVarWasSet(&uvar.filename)) XLAL_CHECK( writeTwoSpectTemplateVector(vector, uvar.filename) == XLAL_SUCCESS, XLAL_EFUNC );
 
-   free_TwoSpectTemplateVector(vector);
+   destroyTwoSpectTemplateVector(vector);
    XLALDestroyUserVars();
    
    return 0;

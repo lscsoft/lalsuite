@@ -23,22 +23,22 @@
 #include "TwoSpectTypes.h"
 
 struct gsl_probR_pars {
-   TwoSpectTemplate *template;
-   REAL4Vector *ffplanenoise;
-   REAL4Vector *fbinaveratios;
-   REAL4 threshold;
-   UserInput_t *inputParams;
-   gsl_rng *rng;
+   const TwoSpectTemplate *template;
+   const REAL4VectorAligned *ffplanenoise;
+   const REAL4VectorAligned *fbinaveratios;
+   const REAL4 threshold;
+   const UserInput_t *inputParams;
+   const gsl_rng *rng;
    INT4 errcode;
 };
 
-farStruct * new_farStruct(void);
-void free_farStruct(farStruct *farstruct);
-INT4 estimateFAR(farStruct *output, TwoSpectTemplate *template, INT4 trials, REAL8 thresh, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios);
-INT4 numericFAR(farStruct *output, TwoSpectTemplate *template, REAL8 thresh, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios, UserInput_t *inputParams, gsl_rng *rng, INT4 method);
-REAL8 probR(TwoSpectTemplate *template, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios, REAL8 R, UserInput_t *params, gsl_rng *rng, INT4 *errcode);
-REAL8 gsl_probR(REAL8 R, void *pars);
-REAL8 gsl_dprobRdR(REAL8 R, void *pars);
-void gsl_probRandDprobRdR(REAL8 R, void *pars, REAL8 *probabilityR, REAL8 *dprobRdR);
+farStruct * createfarStruct(void);
+void destroyfarStruct(farStruct *farstruct);
+INT4 estimateFAR(farStruct *output, const TwoSpectTemplate *template, const UINT4 trials, const REAL8 thresh, const REAL4VectorAligned *ffplanenoise, const REAL4VectorAligned *fbinaveratios);
+INT4 numericFAR(farStruct *output, const TwoSpectTemplate *template, const REAL8 thresh, const REAL4VectorAligned *ffplanenoise, const REAL4VectorAligned *fbinaveratios, const UserInput_t *inputParams, const gsl_rng *rng, const INT4 method);
+REAL8 probR(const TwoSpectTemplate *template, const REAL4VectorAligned *ffplanenoise, const REAL4VectorAligned *fbinaveratios, const REAL8 R, const UserInput_t *params, const gsl_rng *rng, INT4 *errcode);
+REAL8 gsl_probR(const REAL8 R, void *pars);
+REAL8 gsl_dprobRdR(const REAL8 R, void *pars);
+void gsl_probRandDprobRdR(const REAL8 R, void *pars, REAL8 *probabilityR, REAL8 *dprobRdR);
 
 #endif
