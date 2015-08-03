@@ -176,7 +176,6 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
     INT4 adaptLength = LALInferenceGetINT4Variable(runState->algorithmParams, "adaptLength"); // Number of iterations to adapt before turning off
 
     /* File outputs */
-    FILE *threadoutput = NULL;
     FILE *statfile = NULL;
     FILE *swapfile = NULL;
     char statfilename[256];
@@ -347,9 +346,14 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
                 LALInferencePrintMCMCSample(thread, runState->data, *step, timestamp, threadoutputs[t]);
 
                 if (adaptVerbose && !no_adapt) {
-                    fseek(statfile, 0L, SEEK_END);
-                    fprintf(statfile,"%d\t",*step);
                     REAL8 s_gamma = 0.0;
+
+                    sprintf(statfilename, "PTMCMC.statistics.%u.%2.2d",
+                            randomseed, n_local_threads*MPIrank+t);
+                    statfile = fopen(statfilename, "a");
+
+                    fprintf(statfile,"%d\t",*step);
+
                     if (LALInferenceCheckVariable(thread->proposalArgs, "s_gamma"))
                         s_gamma = LALInferenceGetREAL8Variable(thread->proposalArgs, "s_gamma");
                     fprintf(statfile,"%f\t",s_gamma);
@@ -360,6 +364,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
                         REAL8 *sigma=(REAL8 *)LALInferenceGetVariable(thread->proposalArgs,tmpname);
                         fprintf(statfile,"%g\t",*sigma);
                     }
+
                     for(LALInferenceVariableItem *item=thread->currentParams->head;item;item=item->next){
                         char tmpname[MAX_STRLEN]="";
                         sprintf(tmpname,"%s_%s",item->name,ACCEPTSUFFIX);
@@ -368,8 +373,9 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
                         REAL8 *nproposed=(REAL8 *)LALInferenceGetVariable(thread->proposalArgs,tmpname);
                         fprintf(statfile,"%f\t",*naccepted/( *nproposed==0 ? 1.0 : *nproposed ));
                     }
+
                     fprintf(statfile,"\n");
-                    fflush(statfile);
+                    fclose(statfile);
                 }
 
                 if (propVerbose){
@@ -391,8 +397,17 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
             }
         }
 
+        /* Open swap file if going verbose */
+        if (tempVerbose) {
+            sprintf(swapfilename, "PTMCMC.tempswaps.%u.%2.2d", randomseed, n_local_threads*MPIrank+t);
+            swapfile = fopen(swapfilename, "w");
+        }
+
         /* Excute swap proposal. */
         runState->parallelSwap(runState, *step, swapfile);
+
+        if (tempVerbose)
+            fclose(swapfile);
 
         /* Broadcast the root's decision on run completion */
         MPI_Bcast(&runComplete, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -400,15 +415,6 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
         if (*step > Niter)
             runComplete=1;
     }// while (!runComplete)
-
-    fclose(threadoutput);
-
-    if(MPIrank == 0){
-        if (adaptVerbose)
-            fclose(statfile);
-        if (tempVerbose)
-            fclose(swapfile);
-    }
 }
 
 void mcmc_step(LALInferenceRunState *runState, LALInferenceThreadState *thread) {
