@@ -318,7 +318,7 @@ def get_atnf_info(par):
           psrname = psrname + '*'
 
         atnfurl = \
-'http://www.atnf.csiro.au/people/pulsar/psrcat/proc_form.php?version=1.47&Dist=Dist&Assoc=\
+'http://www.atnf.csiro.au/people/pulsar/psrcat/proc_form.php?version=1.53&Dist=Dist&Assoc=\
 Assoc&Age_i=Age_i&startUserDefined=true&c1_val=&c2_val=&c3_val=&c4_val=&\
 sort_attr=&sort_order=asc&condition=&pulsar_names=' + psrname + \
 '&ephemeris=selected&submit_ephemeris=\
