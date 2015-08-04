@@ -545,7 +545,7 @@ LALH5Dataset * XLALH5DatasetAlloc(LALH5File *file, const char *name, LALTYPECODE
 	if (dset->space_id < 0) {
 		H5Tclose(dset->dtype_id);
 		LALFree(dset);
-		XLAL_ERROR_NULL(XLAL_EIO, "Could not create dataspace for dataset `%s'", dset);
+		XLAL_ERROR_NULL(XLAL_EIO, "Could not create dataspace for dataset `%s'", name);
 	}
 
 	/* create dataset */
