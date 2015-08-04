@@ -863,7 +863,7 @@ UINT4Vector * XLALH5DatasetQueryDims(LALH5Dataset *dset)
 int XLALH5DatasetQueryData(void *data, LALH5Dataset *dset)
 {
 #ifndef HAVE_HDF5
-	XLAL_ERROR_NULL(XLAL_EFAILED, "HDF5 support not implemented");
+	XLAL_ERROR(XLAL_EFAILED, "HDF5 support not implemented");
 #else
 	if (data == NULL || dset == NULL)
 		XLAL_ERROR(XLAL_EFAULT);
@@ -1212,7 +1212,7 @@ int XLALH5DatasetQueryScalarAttributeValue(void *value, LALH5Dataset *dset, cons
 int XLALH5DatasetQueryStringAttributeValue(char *value, size_t size, LALH5Dataset *dset, const char *key)
 {
 #ifndef HAVE_HDF5
-	XLAL_ERROR_NULL(XLAL_EFAILED, "HDF5 support not implemented");
+	XLAL_ERROR(XLAL_EFAILED, "HDF5 support not implemented");
 #else
 	char *str;
 	hid_t attr_id;
