@@ -99,8 +99,8 @@ static int BasicTest(
 
   for( size_t i = 0; i < n; ++i ) {
 
-    // Create lattice tiling iterator (using positive order) and locator over 'i+1' dimensions
-    LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator( tiling, i+1, TILING_ORDER_POSITIVE );
+    // Create lattice tiling iterator and locator over 'i+1' dimensions
+    LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator( tiling, i+1, TILING_ITR_DEFAULT );
     XLAL_CHECK( itr != NULL, XLAL_EFUNC );
     LatticeTilingLocator *loc = XLALCreateLatticeTilingLocator( tiling, i+1 );
     XLAL_CHECK( loc != NULL, XLAL_EFUNC );
@@ -156,7 +156,7 @@ static int BasicTest(
   for( size_t i = 0; i < n; ++i ) {
 
     // Create lattice tiling iterator (using alternating order) over 'i+1' dimensions
-    LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator( tiling, i+1, TILING_ORDER_ALTERNATING );
+    LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator( tiling, i+1, TILING_ITR_ALT_ORDER );
     XLAL_CHECK( itr != NULL, XLAL_EFUNC );
 
     // Count number of points
@@ -188,8 +188,8 @@ static int MismatchTest(
 
   const size_t n = XLALTotalLatticeTilingDimensions( tiling );
 
-  // Create lattice tiling iterator (using alternating order) and locator
-  LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator( tiling, n, TILING_ORDER_ALTERNATING );
+  // Create lattice tiling iterator and locator
+  LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator( tiling, n, TILING_ITR_DEFAULT );
   XLAL_CHECK( itr != NULL, XLAL_EFUNC );
   LatticeTilingLocator *loc = XLALCreateLatticeTilingLocator( tiling, n );
   XLAL_CHECK( loc != NULL, XLAL_EFUNC );

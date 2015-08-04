@@ -65,13 +65,13 @@ typedef enum tagTilingLattice {
 } TilingLattice;
 
 ///
-/// Order in which to iterate over lattice tiling points with a lattice tiling iterator.
+/// Flags which determine behaviour of a lattice tiling iterator.
 ///
-typedef enum tagTilingOrder {
-  TILING_ORDER_POSITIVE,		///< Iterate in positive order (i.e. lower bound to upper bound)
-  TILING_ORDER_ALTERNATING,		///< Alternate between positive and negative order (i.e. upper bound to lower bound) after every pass over each dimension
-  TILING_ORDER_MAX
-} TilingOrder;
+typedef enum tagTilingIteratorFlags {
+  TILING_ITR_DEFAULT = 0x0,		///< Default iterator behaviour
+  TILING_ITR_ALT_ORDER = 0x1,		///< Alternate between positive and negative order (i.e. upper bound to lower bound) after every pass over each dimension
+  TILING_ITR_MAX = 0x2
+} TilingIteratorFlags;
 
 ///
 /// Statistics related to the number/value of lattice tiling points in a dimension.
@@ -212,7 +212,7 @@ SWIGLAL( OWNED_BY_1ST_ARG( int, XLALCreateLatticeTilingIterator ) );
 LatticeTilingIterator *XLALCreateLatticeTilingIterator(
   LatticeTiling *tiling,		///< [in] Lattice tiling
   const size_t itr_ndim,		///< [in] Number of parameter-space dimensions to iterate over
-  const TilingOrder order		///< [in] Order in which to iterate over lattice tiling points
+  const TilingIteratorFlags flags	///< [in] Flags which determine behaviour of iterator
   );
 
 ///
