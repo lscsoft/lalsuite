@@ -276,6 +276,14 @@ if test "${boinc}" = "true"; then
   AC_SUBST(BOINC_LIBS)
 fi
 
+# check for hdf5 support
+HDF5_ENABLE_VAL="DISABLED"
+AX_LIB_HDF5()
+if test "${with_hdf5}" = "yes"; then
+  AC_DEFINE([LAL_HDF5_ENABLED],[1],[Define if using HDF5 library])
+  HDF5_ENABLE_VAL="ENABLED"
+fi
+
 # configure SWIG wrapping modules
 LALSUITE_USE_SWIG
 
@@ -321,6 +329,7 @@ LAL has now been successfully configured:
 * Python support is $PYTHON_ENABLE_VAL
 * CUDA support is $CUDA_ENABLE_VAL
 * BOINC support is $BOINC_ENABLE_VAL
+* HDF5 support is $HDF5_ENABLE_VAL
 * SWIG bindings for Octave are $SWIG_BUILD_OCTAVE_ENABLE_VAL
 * SWIG bindings for Python are $SWIG_BUILD_PYTHON_ENABLE_VAL
 * Doxygen documentation is $DOXYGEN_ENABLE_VAL
