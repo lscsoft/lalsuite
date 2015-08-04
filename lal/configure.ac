@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LAL],[6.14.0.1],[lal-discuss@ligo.org])
+AC_INIT([LAL],[6.15.0],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h src/LALConfig.h])
 AC_CONFIG_SRCDIR([src/std/LALStdio.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -72,7 +72,7 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[10])
+AC_SUBST([LIBCURRENT],[11])
 AC_SUBST([LIBREVISION],[0])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
@@ -91,7 +91,7 @@ AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT_SUPPORT],[6])
+AC_SUBST([LIBCURRENT_SUPPORT],[7])
 AC_SUBST([LIBREVISION_SUPPORT],[0])
 AC_SUBST([LIBAGE_SUPPORT],[0])
 AC_SUBST([LIBVERSION_SUPPORT],[${LIBCURRENT_SUPPORT}:${LIBREVISION_SUPPORT}:${LIBAGE_SUPPORT}])

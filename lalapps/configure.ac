@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALApps],[6.16.0.1],[lal-discuss@ligo.org])
+AC_INIT([LALApps],[6.17.0],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_SRCDIR([src/lalapps/lalapps.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -343,15 +343,15 @@ if test "${boinc}" = "true" ; then
 fi
 
 # check for lal libararies and headers
-LALSUITE_CHECK_LIB([LAL],[6.14.0],[LALVersion],[lal/LALStdio.h])
-LALSUITE_CHECK_LIB([LALSupport],[6.14.0],[XLALCacheImport],[lal/LALCache.h])
-LALSUITE_CHECK_OPT_LIB([LALFrame],[1.2.0],[LALFrOpen],[lal/LALFrameL.h])
+LALSUITE_CHECK_LIB([LAL],[6.15.0],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSupport],[6.15.0],[XLALCacheImport],[lal/LALCache.h])
+LALSUITE_CHECK_OPT_LIB([LALFrame],[1.3.0],[LALFrOpen],[lal/LALFrameL.h])
 LALSUITE_CHECK_OPT_LIB([LALMetaIO],[1.2.0],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
-LALSUITE_CHECK_OPT_LIB([LALXML],[1.1.3],[XLALXMLFilePrintElements],[lal/LALXML.h])
-LALSUITE_CHECK_OPT_LIB([LALSimulation],[1.3.0],[XLALSimDetectorStrainREAL8TimeSeries],[lal/LALSimulation.h])
-LALSUITE_CHECK_OPT_LIB([LALBurst],[1.2.0],[XLALEPSearch],[lal/EPSearch.h])
-LALSUITE_CHECK_OPT_LIB([LALInspiral],[1.6.0],[LALInspiralParameterCalc],[lal/LALInspiral.h])
-LALSUITE_CHECK_OPT_LIB([LALPulsar],[1.11.0],[XLALComputeFstat],[lal/ComputeFstat.h])
+LALSUITE_CHECK_OPT_LIB([LALXML],[1.2.0],[XLALXMLFilePrintElements],[lal/LALXML.h])
+LALSUITE_CHECK_OPT_LIB([LALSimulation],[1.4.0],[XLALSimDetectorStrainREAL8TimeSeries],[lal/LALSimulation.h])
+LALSUITE_CHECK_OPT_LIB([LALBurst],[1.4.0],[XLALEPSearch],[lal/EPSearch.h])
+LALSUITE_CHECK_OPT_LIB([LALInspiral],[1.7.0],[LALInspiralParameterCalc],[lal/LALInspiral.h])
+LALSUITE_CHECK_OPT_LIB([LALPulsar],[1.12.0],[XLALComputeFstat],[lal/ComputeFstat.h])
 LALSUITE_CHECK_OPT_LIB([LALInference],[1.5.0],[LALInferenceAddVariable],[lal/LALInference.h])
 LALSUITE_CHECK_OPT_LIB([LALStochastic],[1.1.4],[LALStochasticOptimalFilter],[lal/StochasticCrossCorrelation.h])
 
