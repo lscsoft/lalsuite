@@ -139,17 +139,6 @@ int XLALInferenceBurstDampedSinusoidF(
     REAL8 deltaT
 );
 
-int XLALInferenceBurstSineGaussianFast(
-	REAL8TimeSeries **hplus,
-	REAL8TimeSeries **hcross,
-	REAL8 Q,
-	REAL8 centre_frequency,
-	REAL8 hrss,
-	REAL8 eccentricity,
-	REAL8 polarization,
-	REAL8 delta_t
-);
-
 int XLALInferenceBurstGaussian(
 	REAL8TimeSeries **hplus,
 	REAL8TimeSeries **hcross,
