@@ -147,9 +147,9 @@ static float complex generate_complex_data(void)
 			return 1; \
 		if ((c = strcmp(s1->name, s2->name))) \
 			return c; \
-		if ((c = s1->deltaT > s2->deltaT - s1->deltaT < s2->deltaT)) \
+		if ((c = (s1->deltaT > s2->deltaT) - (s1->deltaT < s2->deltaT))) \
 			return c; \
-		if ((c = s1->f0 > s2->f0 - s1->f0 < s2->f0)) \
+		if ((c = (s1->f0 > s2->f0) - (s1->f0 < s2->f0))) \
 			return c; \
 		if (XLALUnitCompare(&s1->sampleUnits, &s2->sampleUnits)) \
 			return 1; \
@@ -163,9 +163,9 @@ static float complex generate_complex_data(void)
 			return 1; \
 		if ((c = strcmp(s1->name, s2->name))) \
 			return c; \
-		if ((c = s1->deltaF > s2->deltaF - s1->deltaF < s2->deltaF)) \
+		if ((c = (s1->deltaF > s2->deltaF) - (s1->deltaF < s2->deltaF))) \
 			return c; \
-		if ((c = s1->f0 > s2->f0 - s1->f0 < s2->f0)) \
+		if ((c = (s1->f0 > s2->f0) - (s1->f0 < s2->f0))) \
 			return c; \
 		if (XLALUnitCompare(&s1->sampleUnits, &s2->sampleUnits)) \
 			return 1; \
