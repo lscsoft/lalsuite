@@ -344,7 +344,6 @@ void LALInferenceApplyCalibrationErrors(LALInferenceRunState *state, ProcessPara
       fprintf(stdout,"No --AddCalibrationErrors option give. Not applying calibration errors in injection...\n"); 
       return;
     }
-    if(!state->GSLrandom)  {fprintf(stderr,"The random seed has not be initialized... Exiting..."); exit(1);}
 
     /* Set calibration seed for random errors */
     if(!LALInferenceGetProcParamVal(commandLine,"--dataseed")){

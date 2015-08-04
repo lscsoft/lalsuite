@@ -1794,7 +1794,7 @@ sizeof(CHAR)*LIGOMETA_PROGRAM_MAX);
       }
       else {
         // TODO: Perhaps this should be a warning?
-        XLAL_ERROR_NULL(XLAL_EINVAL, "Orphaned first command line argument: \"%s\".", argv[i]);
+        XLAL_ERROR_NULL(XLAL_EINVAL, "Orphaned last command line argument: \"%s\".", argv[i]);
         state = 4;
       }
     }
