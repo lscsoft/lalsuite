@@ -1382,6 +1382,19 @@ UINT8 XLALTotalLatticeTilingPoints(
 
 }
 
+UINT8 XLALCurrentLatticeTilingIndex(
+  LatticeTilingIterator *itr
+  )
+{
+
+  // Check input
+  XLAL_CHECK_VAL( 0, itr != NULL, XLAL_EFAULT );
+  XLAL_CHECK_VAL( 0, itr->state > 0, XLAL_EINVAL );
+
+  return itr->index;
+
+}
+
 LatticeTilingLocator *XLALCreateLatticeTilingLocator(
   LatticeTiling *tiling,
   const size_t bound_ndim

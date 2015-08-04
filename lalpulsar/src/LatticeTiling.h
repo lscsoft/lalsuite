@@ -260,6 +260,13 @@ UINT8 XLALTotalLatticeTilingPoints(
   );
 
 ///
+/// Return the index of the current point in the lattice tiling iterator.
+///
+UINT8 XLALCurrentLatticeTilingIndex(
+  LatticeTilingIterator *itr		///< [in] Lattice tiling iterator
+  );
+
+///
 /// Create a new lattice tiling locator. If <tt>bound_ndim > 0</tt>, an index trie is internally built.
 ///
 #ifdef SWIG // SWIG interface directives

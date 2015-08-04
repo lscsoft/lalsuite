@@ -109,6 +109,13 @@ static int BasicTest(
     const UINT8 total = XLALTotalLatticeTilingPoints( itr );
     printf( "Number of lattice points in %zu dimensions: %" LAL_UINT8_FORMAT "\n", i+1, total );
     XLAL_CHECK( total == total_ref[i], XLAL_EFUNC, "ERROR: total = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = total_ref", total, total_ref[i] );
+    for( UINT8 index = 0; XLALNextLatticeTilingPoint(itr, NULL) > 0; ++index ) {
+      const UINT8 itr_index = XLALCurrentLatticeTilingIndex( itr );
+      XLAL_CHECK( index == itr_index, XLAL_EFUNC, "ERROR: index = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = itr_index", index, itr_index );
+    }
+    XLAL_CHECK( XLALResetLatticeTilingIterator( itr ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    // Check tiling statistics
     printf( "Minimum/average/maximum number of points per pass:\n" );
     for( size_t j = 0; j < n; ++j ) {
       const LatticeTilingStats *stats = XLALLatticeTilingStatistics( tiling, j );
