@@ -16,6 +16,83 @@
 *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 *  MA  02111-1307  USA
 */
+/**
+ * @addtogroup LALFrStream_c
+ * @brief Provides routines for opening, closing, positioning, and performing
+ * other manipulations on a #LALFrStream.
+ *
+ * @details
+ * A frame stream is like a file stream except that it streams along the set
+ * of frames in a set of frame files.  These routines are high-level routines
+ * that allow you to extract frame data.  Many of these routines have names
+ * similar to the standard C file stream manipulation routines and perform
+ * similar functions.
+ *
+ * The routines XLALFrStreamOpen() and XLALFrStreamClose() are used to open
+ * and close a frame stream.  The stream is created by XLALFrStreamOpen(),
+ * and must be a pointer to NULL before it is opened.  It must have
+ * been created prior to calling XLALFrStreamClose(), and after this call,
+ * the stream will be a pointer to  NULL.  The routine
+ * XLALFrStreamOpen() requires the user to specify the directory name of the
+ * frame files and the head names.  If the directory is  NULL, the
+ * routine uses the current director (.).  The head names specifies
+ * which files are the wanted files in the specified directory.  Wildcards are
+ * allowed.  For example, to get LLO frames only, the head names could be set
+ * to L-*.gwf.  If the head name is  NULL, the default value
+ * *.gwf is used.  The routine XLALFrStreamCacheOpen() is like
+ * XLALFrStreamOpen() except that the list of frame files is taken from a
+ * frame file cache.  [In fact, XLALFrStreamOpen() simply uses
+ * XLALFrCacheGenerate() and XLALFrStreamCacheOpen() to create the
+ * stream.]
+ *
+ * The routine XLALFrStreamSetMode() is used to change the operating mode
+ * of a frame stream, which determines how the routines try to accomodate
+ * gaps in data and requests for times when there is no data (e.g., before
+ * the beginning of the data, after the end of the data, or in some missing
+ * data).
+ * The default mode, which is given the value
+ * #LAL_FR_STREAM_DEFAULT_MODE, prints warnings if a time requested
+ * corresponds to a time when there is no data (but then skips to the first
+ * avaliable data) and prints an info message when a gap in the data occurs
+ * (but then skips beyond the gap).  This default mode is equal to the
+ * combination
+ * #LAL_FR_STREAM_VERBOSE_MODE | #LAL_FR_STREAM_IGNOREGAP_MODE | #LAL_FR_STREAM_IGNORETIME_MODE
+ * where  #LAL_FR_STREAM_VERBOSE_MODE is equal to the combination
+ * #LAL_FR_STREAM_TIMEWARN_MODE | #LAL_FR_STREAM_GAPINFO_MODE.  Use
+ * #LAL_FR_STREAM_VERBOSE_MODE to print out warnings when requesting times
+ * with no data and print out an info message when a gap in the data is
+ * encountered.  Unless the mode is supplemented with
+ * #LAL_FR_STREAM_IGNOREGAP_MODE, gaps encountered in the data will cause
+ * a routine to exit with a non-zero status code; similarly,
+ * #LAL_FR_STREAM_IGNORETIME_MODE prevents routines from failing if a time
+ * when there is not data is requested.  Set the mode to
+ * #LAL_FR_STREAM_SILENT_MODE to suppress the warning and info messages but
+ * still cause routines to fail when data is not available.
+ * Note: the default value  #LAL_FR_STREAM_DEFAULT_MODE is assumed initially,
+ * but this is not necessarily the recommended mode --- it is adopted for
+ * compatibility reasons.
+ *
+ * The routine XLALFrStreamEnd() determines if the end-of-frame-data flag for
+ * the data stream has been set.
+ *
+ * The routine XLALFrStreamNext() advances the frame stream to the
+ * beginning of the next frame.
+ *
+ * The routine XLALFrStreamRewind() rewinds the frame stream to the first
+ * frame.
+ *
+ * The routine XLALFrStreamSeek() sets the frame stream to a specified time,
+ * or the earliest time after the specified time if that time is not available
+ * (e.g., if it is before the beginning of the frame stream or if it is in a
+ * gap in the frame data).  The routine XLALFrStreamTell() returns the
+ * current time within the frame stream.
+ *
+ * The routine XLALFrStreamGetpos() returns a structure containing the
+ * current frame stream position.  The frame stream can later be restored to
+ * this position using XLALFrStreamSetpos().
+ *
+ * @{
+ */
 
 #include <config.h>
 #ifndef HAVE_GETHOSTNAME_PROTOTYPE
@@ -35,6 +112,7 @@ int gethostname(char *name, int len);
 #include <lal/LALFrStream.h>
 
 /* INTERNAL ROUTINES */
+/** @cond */
 
 static int XLALFrStreamFileClose(LALFrStream * stream)
 {
@@ -71,8 +149,24 @@ static int XLALFrStreamFileOpen(LALFrStream * stream, UINT4 fnum)
     return 0;
 }
 
+/** @endcond */
+
 /* EXPORTED ROUTINES */
 
+/**
+ * @name Routines to Open, Close and Get/Set Modes of a LALFrStream
+ * @{
+ */
+
+/**
+ * @brief Closes a LALFrStream
+ * @details
+ * This routine closes all file pointers and deallocates memory associated
+ * with a given #LALFrStream.  It performs no action if @p stream is NULL.
+ * @param stream Pointer to the #LALFrStream structure to be closed.
+ * @retval 0 Success.
+ * @retval <0 Failure.
+ */
 int XLALFrStreamClose(LALFrStream * stream)
 {
     if (stream) {
@@ -83,6 +177,15 @@ int XLALFrStreamClose(LALFrStream * stream)
     return 0;
 }
 
+/**
+ * @brief Opens a LALFrStream associated with a LALCache
+ * @details
+ * This routine creates a #LALFrStream that is a stream associated with
+ * the frame files contained in a LALCache.
+ * @param cache Pointer to a LALCache structure describing the frame files to stream.
+ * @returns Pointer to a newly created #LALFrStream structure.
+ * @retval NULL Failure.
+ */
 LALFrStream *XLALFrStreamCacheOpen(LALCache * cache)
 {
     LALFrStream *stream;
@@ -132,6 +235,21 @@ LALFrStream *XLALFrStreamCacheOpen(LALCache * cache)
     return stream;
 }
 
+/**
+ * @brief Opens a LALFrStream for specified frame files.
+ * @details
+ * This routine creates a #LALFrStream that is a stream associated with
+ * the frame files in the specified directory matching the specified pattern.
+ * The directory containing the frame files is specified by the parameter
+ * @p dirname, or the current directory (@p .) if NULL.  Files matching
+ * @p pattern will included in the stream.  Wildcards are allowed.  For
+ * example, to get LLO frames only, @p pattern could be set to `L-*.gwf`.
+ * If @p pattern is NULL, the default value `*.gwf` is used.
+ * @param dirname String containing the director name containing the frame files
+ * @param pattern Pattern matching the desired frame files.
+ * @returns Pointer to a newly created #LALFrStream structure.
+ * @retval NULL Failure.
+ */
 LALFrStream *XLALFrStreamOpen(const char *dirname, const char *pattern)
 {
     LALFrStream *stream;
@@ -149,11 +267,63 @@ LALFrStream *XLALFrStreamOpen(const char *dirname, const char *pattern)
     return stream;
 }
 
+/**
+ * @brief Returns the current operating mode of a LALFrStream
+ * @details
+ * The operating mode of a #LALFrStream determines how routines try
+ * to accommodate gaps in data and requests for times when there is
+ * no data (e.g., before the beginning of the data, after the end of
+ * the data, or in some period of missing data).  See XLALFrStreamSetMode()
+ * for a description of the #LALFrStreamMode modes.
+ * @param stream Pointer to a #LALFrStream structure whose mode will be
+ * determined.
+ * @returns
+ * The current #LALFrStreamMode mode, which is a bit field flag of indicating
+ * the current operating modes of the #LALFrStream.
+ */
 int XLALFrStreamGetMode(LALFrStream * stream)
 {
     return stream->mode;
 }
 
+/**
+ * @brief Change the operating mode of a LALFrStream
+ * @details
+ * The operating mode of a #LALFrStream determines how routines try
+ * to accommodate gaps in data and requests for times when there is
+ * no data (e.g., before the beginning of the data, after the end of
+ * the data, or in some period of missing data).
+ *
+ * The default #LALFrStreamMode mode, which is given the value
+ * #LAL_FR_STREAM_DEFAULT_MODE, prints warnings if a time requested
+ * corresponds to a time when there is no data (but then skips to the first
+ * avaliable data) and prints an info message when a gap in the data occurs
+ * (but then skips beyond the gap).  This default mode is equal to the
+ * combination
+ * #LAL_FR_STREAM_VERBOSE_MODE | #LAL_FR_STREAM_IGNOREGAP_MODE | #LAL_FR_STREAM_IGNORETIME_MODE
+ * where  #LAL_FR_STREAM_VERBOSE_MODE is equal to the combination
+ * #LAL_FR_STREAM_TIMEWARN_MODE | #LAL_FR_STREAM_GAPINFO_MODE.  Use
+ * #LAL_FR_STREAM_VERBOSE_MODE to print out warnings when requesting times
+ * with no data and print out an info message when a gap in the data is
+ * encountered.  Unless the mode is supplemented with
+ * #LAL_FR_STREAM_IGNOREGAP_MODE, gaps encountered in the data will cause
+ * a routine to exit with a non-zero status code; similarly,
+ * #LAL_FR_STREAM_IGNORETIME_MODE prevents routines from failing if a time
+ * when there is not data is requested.  Set the mode to
+ * #LAL_FR_STREAM_SILENT_MODE to suppress the warning and info messages but
+ * still cause routines to fail when data is not available.
+ * To enable frame file checksum checking, set the #LAL_FR_STREAM_CHECKSUM_MODE
+ * bit.
+ *
+ * @note The default value  #LAL_FR_STREAM_DEFAULT_MODE is assumed initially,
+ * but this is not necessarily the recommended mode --- it is adopted for
+ * compatibility reasons.
+ *
+ * @param stream Pointer to a #LALFrStream structure whose mode will be changed.
+ * @param mode Bit lag field specifying the operating modes.
+ * @retval 0 Success.
+ * @retval <0 Current file does not pass frame file checksum.
+ */
 int XLALFrStreamSetMode(LALFrStream * stream, int mode)
 {
     stream->mode = mode;
@@ -163,27 +333,81 @@ int XLALFrStreamSetMode(LALFrStream * stream, int mode)
     return 0;
 }
 
+/** @} */
+
+/**
+ * @name Routines for Positioning and Manipulating the State of a LALFrStream
+ * @{
+ */
+
+/**
+ * @brief Gets the current state of a LALFrStream
+ * @details
+ * Gets the #LALFrStreamState state value in a #LALFrStream structure.  The
+ * value returned is a bit field specifying the combination of states described
+ * by the #LALFrStreamState bits.
+ * @param stream Pointer to a #LALFrStream structure whose state will be returned.
+ * @returns
+ * The #LALFrStreamState state of the #LALFrStream.
+ */
 int XLALFrStreamState(LALFrStream * stream)
 {
     return stream->state;
 }
 
+/**
+ * @brief Checks to see if a LALFrStream is at the end of the stream
+ * @details
+ * Determines if the #LAL_FR_STREAM_END bit is set in the #LALFrStreamState
+ * state value in a #LALFrStream structure, indicating that the stream is
+ * at the end.
+ * @param stream Pointer to a #LALFrStream structure.
+ * @retval 0 The #LAL_FR_STREAM_END bit is not set in @p stream.
+ * @retval 1 The #LAL_FR_STREAM_END bit is set in @p stream.
+ */ 
 int XLALFrStreamEnd(LALFrStream * stream)
 {
     return stream->state & LAL_FR_STREAM_END;
 }
 
+/**
+ * @brief Checks to see if a LALFrStream has encountered an error
+ * @details
+ * Determines if the #LAL_FR_STREAM_ERR bit is set in the #LALFrStreamState
+ * state value in a #LALFrStream structure, indicating that there has been
+ * an error in the stream.
+ * @param stream Pointer to a #LALFrStream structure.
+ * @retval 0 The #LAL_FR_STREAM_ERR bit is not set in @p stream.
+ * @retval 1 The #LAL_FR_STREAM_ERR bit is set in @p stream.
+ */ 
 int XLALFrStreamError(LALFrStream * stream)
 {
     return stream->state & LAL_FR_STREAM_ERR;
 }
 
+/**
+ * @brief Resets the state of a LALFrStream
+ * @details
+ * Sets the #LALFrStreamState state of a #LALFrStream structure to the
+ * value #LAL_FR_STREAM_OK.
+ * @param stream Pointer to a #LALFrStream structure.
+ * @retval 0 Success.
+ */ 
 int XLALFrStreamClearErr(LALFrStream * stream)
 {
     stream->state = LAL_FR_STREAM_OK;
     return 0;
 }
 
+/**
+ * @brief Rewinds a LALFrStream stream
+ * @details
+ * Rewinds a #LALFrStream stream to the beginning and resets the state
+ * to #LAL_FR_STREAM_OK.
+ * @param stream Pointer to a #LALFrStream structure.
+ * @retval 0 Success.
+ * @retval <0 Failure.
+ */
 int XLALFrStreamRewind(LALFrStream * stream)
 {
     XLALFrStreamFileClose(stream);
@@ -193,6 +417,23 @@ int XLALFrStreamRewind(LALFrStream * stream)
     return 0;
 }
 
+/**
+ * @brief Advance a LALFrStream stream to the beginning of the next frame
+ * @details
+ * The position of a LALFrStream is advanced so that the next read will
+ * be at the next frame.  If the stream is at the end, the #LAL_FR_STREAM_END
+ * bit of the LALFrStreamState state is set, and the routine returns the
+ * return code 1.  If there is a gap in the data before the next frame,
+ * the #LAL_FR_STREAM_GAP bit of the LALFrStreamState state is set, and the
+ * routine returns the return code 2.  If, however, the
+ * #LAL_FR_STREAM_IGNOREGAP_MODE bit is not set in the LALFrStreamMode mode
+ * then the routine produces an error if a gap is encountered.
+ * @param stream Pointer to a #LALFrStream structure.
+ * @retval 2 Gap in the data is encountered.
+ * @retval 1 End of stream encountered.
+ * @retval 0 Normal success.
+ * @retval <0 Failure.
+ */
 int XLALFrStreamNext(LALFrStream * stream)
 {
     /* timing accuracy: tenth of a sample interval for a 16kHz fast channel */
@@ -275,6 +516,29 @@ int XLALFrStreamNext(LALFrStream * stream)
     return 0;
 }
 
+/**
+ * @brief Seeks a LALFrStream stream to data at a given time
+ * @details
+ * The position of a LALFrStream is set so that the net read will
+ * be at the specified time.  #LAL_FR_STREAM_END and #LAL_FR_STREAM_GAP
+ * bits are turned off in the #LALFrStreamState state.  If the time is before
+ * the beginning of the stream, the stream position is set to the beginning of
+ * the stream and the routine returns with code 1.  If the time is after the
+ * end of the stream, the #LAL_FR_STREAM_END bit is set in the
+ * #LALFrStreamState state, and the routine returns with code 2.  If the time
+ * is in a gap in the data, the #LAL_FR_STREAM_GAP bit is set in the
+ * #LALFrStreamState state, the position is advanced to the next data, and the
+ * routine returns with code 3.  If, however, the
+ * #LAL_FR_STREAM_IGNORETIME_MODE bit is not set in the LALFrStreamMode mode
+ * then these conditions result in an error.
+ * @param stream Pointer to a #LALFrStream structure.
+ * @param epoch The LIGOTimeGPS time of the next data to read.
+ * @retval 3 Time requested is in a gap in the data.
+ * @retval 2 Time requested is after the end of the stream.
+ * @retval 1 Time requested is before the beginning of the stream.
+ * @retval 0 Normal success.
+ * @retval <0 Failure.
+ */
 int XLALFrStreamSeek(LALFrStream * stream, const LIGOTimeGPS * epoch)
 {
     double twant = XLALGPSGetREAL8(epoch);
@@ -389,6 +653,26 @@ int XLALFrStreamSeek(LALFrStream * stream, const LIGOTimeGPS * epoch)
     return 0;
 }
 
+/**
+ * @brief Seeks a LALFrStream stream by a time offset
+ * @details
+ * The position of a LALFrStream is set so that the net read will
+ * be at the specified time offset.  The offset @p dt is a number of
+ * seconds relative to the @p whence postion, which can be
+ * @p SEEK_SET to seek relative to the beginning of the stream,
+ * @p SEEK_CUR to seek relative to the current position of the stream,
+ * or @p SEEK_END to seek relative to the end of the stream.
+ * The return codes and conditions are the same as XLALFrStreamSeek().
+ * @param stream Pointer to a #LALFrStream structure.
+ * @param dt The offset time in seconds.
+ * @param whence The position whence to seek: one of @p SEEK_SET, @p SEEK_CUR,
+ * or @p SEEK_END.
+ * @retval 3 Time requested is in a gap in the data.
+ * @retval 2 Time requested is after the end of the stream.
+ * @retval 1 Time requested is before the beginning of the stream.
+ * @retval 0 Normal success.
+ * @retval <0 Failure.
+ */
 int XLALFrStreamSeekO(LALFrStream * stream, double dt, int whence)
 {
     LIGOTimeGPS epoch;
@@ -422,12 +706,33 @@ int XLALFrStreamSeekO(LALFrStream * stream, double dt, int whence)
     return 0;
 }
 
+/**
+ * @brief Tells the current time of the current position of a LALFrStream
+ * stream
+ * @param[out] epoch Pointer to a LIGOTimeGPS structure that will contain the
+ * time of the current position of the stream.
+ * @param[in] stream Pointer to a #LALFrStream structure.
+ * @retval 0 Success.
+ */
 int XLALFrStreamTell(LIGOTimeGPS * epoch, LALFrStream * stream)
 {
     *epoch = stream->epoch;
     return 0;
 }
 
+/**
+ * @brief Gets the current position of a LALFrStream stream
+ * @details
+ * The XLALFrStreamGetpos() and XLALFrStreamSetpos() provide the ability
+ * to save the position of a #LALFrStream stream and to return the stream
+ * to that previously saved position.  This can be useful, e.g., when reading
+ * several different channels from the data files.
+ * @param[out] position Pointer to a #LALFrStreamPos structure that will save
+ * the current position.
+ * @param[in] stream Pointer to a #LALFrStream structure.
+ * time of the current position of the stream.
+ * @retval 0 Success.
+ */
 int XLALFrStreamGetpos(LALFrStreamPos * position, LALFrStream * stream)
 {
     position->epoch = stream->epoch;
@@ -436,6 +741,18 @@ int XLALFrStreamGetpos(LALFrStreamPos * position, LALFrStream * stream)
     return 0;
 }
 
+/**
+ * @brief Sets the current position of a LALFrStream stream
+ * @details
+ * The XLALFrStreamGetpos() and XLALFrStreamSetpos() provide the ability
+ * to save the position of a #LALFrStream stream and to return the stream
+ * to that previously saved position.  This can be useful, e.g., when reading
+ * several different channels from the data files.
+ * @param[in, out] stream Pointer to a #LALFrStream structure.
+ * @param[in] position Pointer to a #LALFrStreamPos structure that has a
+ * previously saved position.
+ * @retval 0 Success.
+ */
 int XLALFrStreamSetpos(LALFrStream * stream, const LALFrStreamPos * position)
 {
     /* clear EOF or GAP states; preserve ERR state */
@@ -462,3 +779,7 @@ int XLALFrStreamSetpos(LALFrStream * stream, const LALFrStreamPos * position)
     }
     return 0;
 }
+
+/** @} */
+
+/** @} */

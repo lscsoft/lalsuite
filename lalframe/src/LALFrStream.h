@@ -43,7 +43,6 @@ extern "C" {
  * ### Synopsis ###
  *
  * \code
- * #include <stdio.h>
  * #include <lal/LALFrStream.h>
  * \endcode
  *
@@ -53,71 +52,17 @@ extern "C" {
  * of frames in a set of frame files.  These routines are high-level routines
  * that allow you to extract frame data.  Many of these routines have names
  * similar to the standard C file stream manipulation routines and perform
- * similar functions.
+ * similar functions.  These routines are found in Module LALFrameStream.c.
  *
- * The routines XLALFrStreamOpen() and XLALFrStreamClose() are used to open
- * and close a frame stream.  The stream is created by XLALFrStreamOpen(),
- * and must be a pointer to NULL before it is opened.  It must have
- * been created prior to calling XLALFrStreamClose(), and after this call,
- * the stream will be a pointer to  NULL.  The routine
- * XLALFrStreamOpen() requires the user to specify the directory name of the
- * frame files and the head names.  If the directory is  NULL, the
- * routine uses the current director (.).  The head names specifies
- * which files are the wanted files in the specified directory.  Wildcards are
- * allowed.  For example, to get LLO frames only, the head names could be set
- * to L-*.gwf.  If the head name is  NULL, the default value
- * *.gwf is used.  The routine XLALFrStreamCacheOpen() is like
- * XLALFrStreamOpen() except that the list of frame files is taken from a
- * frame file cache.  [In fact, XLALFrStreamOpen() simply uses
- * XLALFrCacheGenerate() and XLALFrStreamCacheOpen() to create the
- * stream.]
+ * Routines for reading data from a frame stream, either in sequential
+ * or random-access mode, are found in Module LALFrameStreamRead.c.
  *
- * The routine XLALFrStreamSetMode() is used to change the operating mode
- * of a frame stream, which determines how the routines try to accomodate
- * gaps in data and requests for times when there is no data (e.g., before
- * the beginning of the data, after the end of the data, or in some missing
- * data).  The default mode, which is given the value
- * #LAL_FR_STREAM_DEFAULT_MODE, prints warnings if a time requested
- * corresponds to a time when there is no data (but then skips to the first
- * avaliable data) and prints an info message when a gap in the data occurs
- * (but then skips beyond the gap).  This default mode is equal to the
- * combination
- * #LAL_FR_STREAM_VERBOSE_MODE | #LAL_FR_STREAM_IGNOREGAP_MODE | #LAL_FR_STREAM_IGNORETIME_MODE
- * where  #LAL_FR_STREAM_VERBOSE_MODE is equal to the combination
- * #LAL_FR_STREAM_TIMEWARN_MODE | #LAL_FR_STREAM_GAPINFO_MODE.  Use
- * #LAL_FR_STREAM_VERBOSE_MODE to print out warnings when requesting times
- * with no data and print out an info message when a gap in the data is
- * encountered.  Unless the mode is supplemented with
- * #LAL_FR_STREAM_IGNOREGAP_MODE, gaps encountered in the data will cause
- * a routine to exit with a non-zero status code; similarly,
- * #LAL_FR_STREAM_IGNORETIME_MODE prevents routines from failing if a time
- * when there is not data is requested.  Set the mode to
- * #LAL_FR_STREAM_SILENT_MODE to suppress the warning and info messages but
- * still cause routines to fail when data is not available.
- * Note: the default value  #LAL_FR_STREAM_DEFAULT_MODE is assumed initially,
- * but this is not necessarily the recommended mode --- it is adopted for
- * compatibility reasons.
- *
- * The routine XLALFrStreamEnd() determines if the end-of-frame-data flag for
- * the data stream has been set.
- *
- * The routine XLALFrStreamNext() advances the frame stream to the
- * beginning of the next frame.
- *
- * The routine XLALFrStreamRewind() rewinds the frame stream to the first
- * frame.
- *
- * The routine XLALFrStreamSeek() sets the frame stream to a specified time,
- * or the earliest time after the specified time if that time is not available
- * (e.g., if it is before the beginning of the frame stream or if it is in a
- * gap in the frame data).  The routine XLALFrStreamTell() returns the
- * current time within the frame stream.
- *
- * The routine XLALFrStreamGetpos() returns a structure containing the
- * current frame stream position.  The frame stream can later be restored to
- * this position using XLALFrStreamSetpos().
+ * @{
+ * @defgroup LALFrStream_c     Module LALFrStream.c
+ * @defgroup LALFrStreamRead_c Module LALFrStreamRead.c
+ * @}
+ * @{
  */
-/** @{ */
 
 /** Enum listing different stream states */
 typedef enum {
@@ -166,11 +111,14 @@ typedef struct tagLALFrStreamPos {
   INT4 pos;		/**< the position within the frame file that was open when the record was made */
 } LALFrStreamPos;
 
+/** @} */
+
 LALFrStream *XLALFrStreamCacheOpen(LALCache * cache);
 LALFrStream *XLALFrStreamOpen(const char *dirname, const char *pattern);
 int XLALFrStreamClose(LALFrStream * stream);
 int XLALFrStreamGetMode(LALFrStream * stream);
 int XLALFrStreamSetMode(LALFrStream * stream, int mode);
+
 int XLALFrStreamState(LALFrStream * stream);
 int XLALFrStreamEnd(LALFrStream * stream);
 int XLALFrStreamError(LALFrStream * stream);
@@ -291,10 +239,12 @@ COMPLEX16FrequencySeries
     *XLALFrStreamInputCOMPLEX16FrequencySeries(LALFrStream * stream,
     const char *chname, const LIGOTimeGPS * epoch);
 
+
+
 /* ---------- LEGACY CODE ---------- */
 
-/**\name Legacy Error Codes */
-/**@{*/
+/*\name Legacy Error Codes */
+/*@{*/
 #define FRAMESTREAMH_ENULL 00001
 #define FRAMESTREAMH_ENNUL 00002
 #define FRAMESTREAMH_EALOC 00004
@@ -329,24 +279,24 @@ typedef enum {
     LAL_ADC_CHAN, LAL_SIM_CHAN, LAL_PROC_CHAN
 } FrChanType;
 
-/** @name for backwards compatability
+/* @name for backwards compatability
  *
  * These are the various types of channel that can be specified for read/write.
  * They are "post-processed data" (ProcDataChannel), "ADC data"
  * (ADCDataChannel), and "simulated data" (SimDataChannel).
  */
-/**@{*/
+/*@{*/
 #define ChannelType FrChanType
 #define ProcDataChannel LAL_PROC_CHAN
 #define ADCDataChannel  LAL_ADC_CHAN
 #define SimDataChannel  LAL_SIM_CHAN
-/**@}*/
+/*@}*/
 
 #ifdef SWIG /* SWIG interface directives */
 SWIGLAL(IMMUTABLE_MEMBERS(tagFrChanIn, name));
 #endif /* SWIG */
 
-/**
+/*
  * This structure specifies the channel to read as input.
  */
 typedef struct tagFrChanIn {
@@ -357,7 +307,7 @@ typedef struct tagFrChanIn {
 #ifdef SWIG /* SWIG interface directives */
 SWIGLAL(IMMUTABLE_MEMBERS(tagFrOutPar, source, description));
 #endif /* SWIG */
-/**
+/*
  *
  * This structure specifies the parameters for output of data to a frame.
  * The output frame file name will be
@@ -372,7 +322,7 @@ typedef struct tagFrOutPar {
   UINT4 run;			/**< the number this data run */
 } FrOutPar;
 
-/** @name Legacy API
+/* @name Legacy API
  * @{
  */
 void
@@ -494,9 +444,8 @@ void LALFrWriteCOMPLEX8FrequencySeries(LALStatus * status,
 
 void LALFrWriteCOMPLEX16FrequencySeries(LALStatus * status,
     COMPLEX16FrequencySeries * series, FrOutPar * params, INT4 subtype);
-/**@}*/
+/*@}*/
 
-/** @} */
 
 #if 0
 {       /* so that editors will match succeeding brace */
