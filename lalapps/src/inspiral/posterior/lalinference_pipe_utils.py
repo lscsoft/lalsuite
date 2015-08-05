@@ -27,9 +27,10 @@ class Event():
   Represents a unique event to run on
   """
   new_id=itertools.count().next
-  def __init__(self,trig_time=None,SimInspiral=None,SnglInspiral=None,CoincInspiral=None,event_id=None,timeslide_dict=None,GID=None,ifos=None, duration=None,srate=None,trigSNR=None,fhigh=None):
+  def __init__(self,trig_time=None,SimInspiral=None,SimBurst=None,SnglInspiral=None,CoincInspiral=None,event_id=None,timeslide_dict=None,GID=None,ifos=None, duration=None,srate=None,trigSNR=None,fhigh=None):
     self.trig_time=trig_time
     self.injection=SimInspiral
+    self.burstinjection=SimBurst
     self.sngltrigger=SnglInspiral
     if timeslide_dict is None:
       self.timeslides={}
@@ -52,6 +53,9 @@ class Event():
     if self.injection is not None:
         self.trig_time=self.injection.get_end()
         if event_id is None: self.event_id=int(str(self.injection.simulation_id).split(':')[2])
+    if self.burstinjection is not None:
+        self.trig_time=self.burstinjection.get_end()
+        if event_id is None: self.event_id=int(str(self.burstinjection.simulation_id).split(':')[2])
     if self.sngltrigger is not None:
         self.trig_time=self.sngltrigger.get_end()
         self.event_id=int(str(self.sngltrigger.event_id).split(':')[2])
@@ -721,10 +725,14 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     # SimBurst Table
     if self.config.has_option('input','burst-injection-file'):
       #from pylal import SimBurstUtils
+      from glue.ligolw import lsctables
+      from glue.ligolw import utils
+      from glue.ligolw import ligolw
       injfile=self.config.get('input','burst-injection-file')
-      #xmldoc = utils.load_filename(injfile,contenthandler=ExtractSimBurstTableLIGOLWContentHandler)
-      #injTable=table.get_table(xmldoc,lsctables.SimBurstTable.tableName)
-      injTable=lsctables.SimBurstTable.get_table(ligolw_utils.load_filename(injfile))
+      class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
+	pass
+      lsctables.use_in(LIGOLWContentHandler)
+      injTable=lsctables.SimBurstTable.get_table(utils.load_filename(injfile,contenthandler = LIGOLWContentHandler))
       events=[Event(SimBurst=inj) for inj in injTable]
       self.add_pfn_cache([create_pfn_tuple(self.config.get('input','burst-injection-file'))])
     # SnglInspiral Table
