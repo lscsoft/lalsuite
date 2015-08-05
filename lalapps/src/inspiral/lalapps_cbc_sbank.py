@@ -99,6 +99,23 @@ lalapps_cbc_sbank --approximant TaylorF2RedSpin --aligned-spin --use-metric \\
         --user-tag BNS-TaylorF2RedSpin-aLIGOZeroDetHighPower --verbose
 
 
+** Example (not necessarily effectual ;) aligned-spin template bank covering
+BNS, NSBH and BBH systems. Objects lighter than 2 solar masses are considered
+neutron stars. Objects heavier than 2 solar masses are considered black holes.
+Use appropriate spin limits based on the type of the object.
+
+lalapps_cbc_sbank --approximant TaylorF2RedSpin --aligned-spin --use-metric \\
+        --mass1-min 1 --mass1-max 10 \\
+        --mass2-min 1 --mass2-max 10 \\
+        --mtotal-max 10 \\
+        --ns-bh-boundary-mass 2 \\
+        --bh-spin-min -0.98 --bh-spin-max 0.98 \\
+        --ns-spin-min -0.4 --ns-spin-max 0.4 \\
+        --match-min 0.97 --flow 30 --noise-model aLIGOZeroDetHighPower \\
+        --instrument H1 --gps-start-time 961545543 --gps-end-time 962150343 \\
+        --user-tag combined-TaylorF2RedSpin-aLIGOZeroDetHighPower --verbose
+
+
 For large parameter spaces with many templates, it is recommended that
 you split the space into smaller sub-regions and ligolw_add the
 resulting banks. One can also seed the template placement process with
@@ -152,11 +169,16 @@ def parse_command_line():
     #
     # spin parameter options
     #
-    parser.add_option("--spin1-min", help="Set minimum allowed value for the spin of the first component. If spins are aligned, this parameter is interpreted as the projection of the spin vector along the orbital angualr momentum and can be positive or negative. If the spins are not aligned, this parameter is interpreted as the magnitude of the spin vector and must be positive.", type="float", default = -1.0, metavar="SPIN")
-    parser.add_option("--spin1-max", help="Set maximum allowed value for the spin of the first component.", type="float", default = 1.0, metavar="SPIN")
+    parser.add_option("--spin1-min", help="Set minimum allowed value for the spin of the first component. If spins are aligned, this parameter is interpreted as the projection of the spin vector along the orbital angualr momentum and can be positive or negative. If the spins are not aligned, this parameter is interpreted as the magnitude of the spin vector and must be positive.", type="float", default = None, metavar="SPIN")
+    parser.add_option("--spin1-max", help="Set maximum allowed value for the spin of the first component.", type="float", default = None, metavar="SPIN")
     parser.add_option("--spin2-min", help="Set minimum allowed value for the spin of the second component. If not specified, the spin2 limits will equal the spin1 limits.", type="float", default = None, metavar="SPIN")
     parser.add_option("--spin2-max", help="Set maximum allowed value for the spin of the second component.", type="float", default = None, metavar="SPIN")
     parser.add_option("--aligned-spin", action="store_true", default=False, help="Only generate templates whose spins are parallel to the orbital angular momentum.")
+    parser.add_option("--ns-bh-boundary-mass", type=float, metavar="MASS", help="Use spin bounds based on whether the object is a black hole or a neutron star. Objects with mass smaller (larger) than the given value are considered NSs (BHs) and use spin bounds given by --ns-spin-{min,max} (--bh-spin-{min,max}) rather than --spin{1,2}-{min,max}.")
+    parser.add_option("--bh-spin-min", type=float, metavar="SPIN", help="Minimum spin for black holes when using --ns-bh-boundary-mass.")
+    parser.add_option("--bh-spin-max", type=float, metavar="SPIN", help="Maximum spin for black holes when using --ns-bh-boundary-mass.")
+    parser.add_option("--ns-spin-min", type=float, metavar="SPIN", help="Minimum spin for neutron stars when using --ns-bh-boundary-mass.")
+    parser.add_option("--ns-spin-max", type=float, metavar="SPIN", help="Maximum spin for neutron stars when using --ns-bh-boundary-mass.")
 
     #
     # initial condition options
@@ -215,17 +237,43 @@ def parse_command_line():
     if opts.qmin < 1:
         parser.error("Mass ratio is assumed to be >= 1.")
 
-    if not opts.spin2_min:
-        opts.spin2_min = opts.spin1_min
+    numeric_spin_opt_presence = [getattr(opts, x + '_' + y) is not None \
+                                 for x in ['spin1', 'spin2'] for y in ['min', 'max']]
+    all_numeric_spin_opts = False not in numeric_spin_opt_presence
+    any_numeric_spin_opts = True in numeric_spin_opt_presence
 
-    if not opts.spin2_max:
-        opts.spin2_max = opts.spin1_max
+    nsbh_spin_opt_presence = [getattr(opts, x + '_' + y) is not None \
+                              for x in ['bh_spin', 'ns_spin'] for y in ['min', 'max']]
+    all_nsbh_spin_opts = False not in nsbh_spin_opt_presence
+    any_nsbh_spin_opts = True in nsbh_spin_opt_presence
 
-    if not -1 <= opts.spin1_min <= opts.spin1_max <=1:
-        raise ValueError("unphysical spin bounds: [%.2f, %.2f]" % (opts.spin1_min, opts.spin1_max))
+    if any_numeric_spin_opts and any_nsbh_spin_opts:
+        parser.error("conflicting specification of spin bounds")
+    if any_nsbh_spin_opts and opts.ns_bh_boundary_mass is None:
+        parser.error("NSBH spin bounds require --ns-bh-boundary-mass")
+    if opts.ns_bh_boundary_mass is not None and not any_nsbh_spin_opts:
+        parser.error("--ns-bh-boundary-mass requires NSBH spin bounds (--bh-spin-* etc)")
 
-    if not -1 <= opts.spin2_min <= opts.spin2_max <=1:
-        raise ValueError("unphysical spin bounds: [%.2f, %.2f]" % (opts.spin2_min, opts.spin2_max))
+    if all_numeric_spin_opts:
+        if not -1 <= opts.spin1_min <= opts.spin1_max <=1:
+            parser.error("unphysical spin1 bounds: [%.2f, %.2f]" % (opts.spin1_min, opts.spin1_max))
+        if not -1 <= opts.spin2_min <= opts.spin2_max <=1:
+            parser.error("unphysical spin2 bounds: [%.2f, %.2f]" % (opts.spin2_min, opts.spin2_max))
+    elif all_nsbh_spin_opts:
+        if not -1 <= opts.bh_spin_min <= opts.bh_spin_max <= 1:
+            parser.error("unphysical BH spin bounds: [%.2f, %.2f]" % (opts.bh_spin_min, opts.bs_spin_max))
+        if not -1 <= opts.ns_spin_min <= opts.ns_spin_max <= 1:
+            parser.error("unphysical NS spin bounds: [%.2f, %.2f]" % (opts.ns_spin_min, opts.ns_spin_max))
+    else:
+        # default spin bounds
+        if opts.spin1_min is None:
+            opts.spin1_min = -1
+        if opts.spin1_max is None:
+            opts.spin1_max = 1
+        if opts.spin2_min is None:
+            opts.spin2_min = opts.spin1_min
+        if opts.spin2_max is None:
+            opts.spin2_max = opts.spin1_max
 
     if opts.approximant in ["TaylorF2RedSpin", "IMRPhenomB","SEOBNRv1"] and not opts.aligned_spin:
         parser.error("--aligned-spin is required for the %s approximant" % opts.approximant)
@@ -366,14 +414,20 @@ process = ligolw_process.register_to_xmldoc(xmldoc, "lalapps_cbc_sbank",
 #
 # populate params dictionary to be passed to the generators
 #
+
 params = {'mass1': (opts.mass1_min, opts.mass1_max),
           'mass2': (opts.mass2_min, opts.mass2_max),
           'mtotal': (opts.mtotal_min, opts.mtotal_max),
           'mratio': (opts.qmin, opts.qmax),
-          'mchirp': (opts.mchirp_min, opts.mchirp_max),
-	  'spin1': (opts.spin1_min, opts.spin1_max),
-	  'spin2': (opts.spin2_min, opts.spin2_max)
-	  }
+          'mchirp': (opts.mchirp_min, opts.mchirp_max)}
+
+if opts.ns_bh_boundary_mass is not None:
+    params['ns_bh_boundary_mass'] = opts.ns_bh_boundary_mass
+    params['bh_spin'] = (opts.bh_spin_min, opts.bh_spin_max)
+    params['ns_spin'] = (opts.ns_spin_min, opts.ns_spin_max)
+else:
+    params['spin1'] = (opts.spin1_min, opts.spin1_max)
+    params['spin2'] = (opts.spin2_min, opts.spin2_max)
 
 # get the correct generator for the chosen approximant
 proposal = proposals[opts.approximant](opts.flow, **params)
