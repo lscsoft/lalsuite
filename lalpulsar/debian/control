@@ -28,7 +28,7 @@ Description: LSC Algorithm Library Pulsar
 Package: lalpulsar-dev
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, libgsl0-dev (>= 1.9),
-  libfftw3-dev, lalpulsar (= ${binary:Version})
+  libfftw3-dev, lalpulsar (= ${binary:Version}),
   lal-dev (>= 6.15.0~),
   lalxml-dev (>= 1.2.0~),
 Description: LSC Algorithm Library Pulsar Developers
