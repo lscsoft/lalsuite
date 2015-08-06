@@ -133,6 +133,51 @@ void  fill_IFO_Pha_vars_from_IFOname(REAL8 * stddev,REAL8* fbin, char* ifoname){
         }
     }
 
+/**
+ * Parse the calibration command line looking for options of the kind ---IFO-option value
+ * Unlike the correnspoding option in ReadData, this one does not have a preset list of names to lookup, but instead uses the option "name"
+ * It is necessary to use this method instead of the old method for the pipeline to work in DAX mode. Warning: do not mix options between
+ * the old and new style.
+ */
+static INT4 getNamedDataOptionsByDetectors(ProcessParamsTable *commandLine, char ***ifos, char ***out, const char *name, UINT4 *N)
+{
+    /* Check that the input has no lists with [ifo,ifo] */
+    ProcessParamsTable *this=commandLine;
+    UINT4 i=0;
+    *out=*ifos=NULL;
+    *N=0;
+    char tmp[128];
+    if(!this) {fprintf(stderr,"No command line arguments given!\n"); exit(1);}
+    /* Construct a list of IFOs */
+    for(this=commandLine;this;this=this->next)
+    {
+        if(!strcmp(this->param,"--ifo"))
+        {
+            (*N)++;
+            *ifos=XLALRealloc(*ifos,*N*sizeof(char *));
+            (*ifos)[*N-1]=XLALStringDuplicate(this->value);
+        }
+    }
+    *out=XLALCalloc(*N,sizeof(char *));
+    
+    UINT4 found=0;
+    /* For each IFO, fetch the other options if available */
+    for(i=0;i<*N;i++)
+    {
+        /* Channel */
+        sprintf(tmp,"--%s-%s",(*ifos)[i],name);
+        this=LALInferenceGetProcParamVal(commandLine,tmp);
+        (*out)[i]=this?XLALStringDuplicate(this->value):NULL;
+	if (this) found++;
+     
+    }
+    if (found==*N)
+      return(1);
+    else
+      return 0;
+}
+
+
 void CreateRandomAmplitudeCalibrationErrors(REAL8 * ampcoeffs, int calib_seed_ampli, char* ifoname){
 
     /* GSL generator */
@@ -306,12 +351,12 @@ void LALInferenceApplyCalibrationErrors(LALInferenceRunState *state, ProcessPara
 ------------------------------------------------------------------------------------------------------------------\n\
 (--AddCalibrationErrors) Adds calibration errors into the f domain datastream (that includes both noise and signal)\n\
 (--RandomCE) Add a random realization of phase and amplitude CE, using the S6/VSR2-3 error budget as an indication of the 1-sigma errors\n\
-(--ConstantCE) Assumes calibration errors are constant over the bandwidth (requires ConstantCalAmp and ConstantCalPha)\n\
-(--ConstantCalAmp [IFO1err,IFO2err,IFO3err]) List of constant amplitude CE. 0.0 means no error, 0.1 means 10 percent\n\
-(--ConstantCalPha [IFO1err,IFO2err,IFO3err]) List of constant phase CE. 0.0 means no error, 5 means a  5 degree shift \n\
-(--RandomLinearCE ) Assumes CE are given by a contant plateau plus a random jittering of a few percent.\n\t\t After a given frequency f CE increase linearly with a given slope (requires RandomLinearCalAmp and RandomLinearCalPha)\n\
-(--RandomLinearCalAmp [IF01_c,IFO1_f,IFO1_slope, ...] ) Add on the i-th IFO's stream errors on the form (IFOi_c + jitter) for f<IFOi_f and (IFOi_c-f)*IFOi_slope for f>IFOi_f\n\
-(--RandomLinearCalPha [IF01_c, IFO1_f,IFO1_slope, ...] ) Add on the i-th IFO's stream errors on the form (IFOi_c + jitter) for f<IFOi_f and (IFOi_c-f)*IFOi_slope for f>IFOi_f\n\
+(--ConstantCE) Assumes calibration errors are constant over the bandwidth (requires --IFO-constant_calamp and --IFO-constant_calpha for each ifo)\n\
+(--IFO-constant_calamp Constant amplitude CE for instrument IFO. 0.0 means no error, 0.1 means 10 percent\n\
+(--IFO-constant_calpha Constant phase CE for instrument IFO. 0.0 means no error, 5 means a  5 degree shift \n\
+(--RandomLinearCE ) Assumes CE are given by a contant plateau plus a random jittering of a few percent.\n\t\t After a given frequency f CE increase linearly with a given slope (requires --IFO-calamp_plateau, --IFO-calamp_knee, --IFO-calamp_slope AND similar with calamp<->calpha. Phase Errors in degree, Amp errors are relative (0.05=5%) \n\
+(--IFO-calamp_plateau, --IFO-calamp_knee, --IFO-calamp_slope) Add on the i-th IFO's stream amplitude errors on the form (IFOi_c + jitter) for f<IFOi_f and (IFOi_c-f)*IFOi_slope for f>IFOi_f\n\
+(--IFO-calpha_plateau, --IFO-calpha_knee, --IFO-calpha_slope) Add on the i-th IFO's stream phase errors on the form (IFOi_c + jitter) for f<IFOi_f and (IFOi_c-f)*IFOi_slope for f>IFOi_f\n\
  * Constant Calibration Model \n\
   (--MarginalizeConstantCalAmp ) If given, will add a constant value of Amplitude CE per each IFO on the top of the CBC parameters.\n\
   (--MarginalizeConstantCalPha ) If given, will add a constant value of Phase CE per each IFO on the top of the CBC parameters.\n\
@@ -337,7 +382,7 @@ void LALInferenceApplyCalibrationErrors(LALInferenceRunState *state, ProcessPara
       return;
     }
 
-    ProcessParamsTable *ppt=NULL;
+    //ProcessParamsTable *ppt=NULL;
 
     if(!LALInferenceGetProcParamVal(commandLine,"--AddCalibrationErrors")) 
     {
@@ -365,7 +410,7 @@ void LALInferenceApplyCalibrationErrors(LALInferenceRunState *state, ProcessPara
     LALInferenceIFOData * tmpdata=state->data;
     int num_ifos=0;
     int i;
-    UINT4 unum_ifos=(UINT4) num_ifos;
+    //UINT4 unum_ifos=(UINT4) num_ifos;
 
     while (tmpdata!=NULL) {
       num_ifos++;
@@ -400,41 +445,60 @@ void LALInferenceApplyCalibrationErrors(LALInferenceRunState *state, ProcessPara
     }
     else if (LALInferenceGetProcParamVal(commandLine,"--ConstantCE")){
       /* NOTE: If we want to apply constant CE we simply have to set ampCoeffs and phaseCoeffs in such a way that the 0th element is non null, while the others are zero.     */ 
-        ppt=LALInferenceGetProcParamVal(commandLine,"--ConstantCalAmp");
-        if(!ppt) ppt=LALInferenceGetProcParamVal(commandLine,"--constantcalamp");
-        if (!ppt){ fprintf(stderr,"Must provide a list of constant amplitude calibration errors. E.g: --constantcalamp [1.1,1.2,0.9]. Exiting... \n"); exit(1);}
-        else
-          fprintf(stdout,"Applying constant amplitude calibration errors. \n");
-
-        char** calamps;
-        LALInferenceParseCharacterOptionString(ppt->value,&calamps,&unum_ifos);
-        ppt=LALInferenceGetProcParamVal(commandLine,"--ConstantCalPha");
-        if(!ppt) ppt=LALInferenceGetProcParamVal(commandLine,"--constantcalpha");
-        if (!ppt){ fprintf(stderr,"Must provide a list of constant phase calibration errors [Degs]. E.g: --constantcalpha [4.0,2.2,0.1]. Exiting... \n"); exit(1);}
-        else
-          fprintf(stdout,"Applying constant phase calibration errors. \n");
-          
-        char** calphases;               
-        LALInferenceParseCharacterOptionString(ppt->value,&calphases,&unum_ifos);
-
+        
+	char **plateau=NULL;
+        char plateau_option[] = "constant_calamp";
+	char **pplateau=NULL;
+        char pplateau_option[] = "constant_calpha";
+	char **IFOnames=NULL;
+	UINT4 Nifo;
+	INT4 rlceops= getNamedDataOptionsByDetectors(commandLine, &IFOnames,&plateau ,plateau_option, &Nifo);
+	if (!rlceops){
+	  fprintf(stderr,"Must provide a --IFO-constant_calamp option for each IFO if --ConstantCE is given\n");
+	  exit(1);
+	}
+	fprintf(stdout,"Applying constant amplitude calibration errors. \n");
+	rlceops= getNamedDataOptionsByDetectors(commandLine, &IFOnames,&pplateau ,pplateau_option, &Nifo);
+	if (!rlceops){
+	  fprintf(stderr,"Must provide a --IFO-constant_calpha option for each IFO if --ConstantCE is given\n");
+	  exit(1);
+	}
+	fprintf(stdout,"Applying constant phase calibration errors. \n");
         for(i=0;i<num_ifos;i++){
-            (ampCoeffs[i])[0]=atof(calamps[i]);
-            (phaseCoeffs[i])[0]=atof(calphases[i])*LAL_PI/180.0;
+            (ampCoeffs[i])[0]=atof(plateau[i]);
+            (phaseCoeffs[i])[0]=atof(pplateau[i])*LAL_PI/180.0;
          }
+	for(i=0;i<num_ifos;i++) {
+	  if(plateau) if (plateau[i]) XLALFree(plateau[i]);
+	  if(pplateau) if (pplateau[i]) XLALFree(pplateau[i]);
+	}
     }
     else if (LALInferenceGetProcParamVal(commandLine,"--RandomLinearCE")){
-	
-      ppt=LALInferenceGetProcParamVal(commandLine,"--RandomLinearCalAmp");
-      if (!ppt){ 
-        fprintf(stderr,"Must provide a list of coefficients with random linear amplitude calibration errors. E.g: --RandomLinearCalamp [1.1,1000,0.5, 0.95, 1100,0.5,...]. Exiting... \n"); 
-        exit(1);
+      char **plateau=NULL;
+      char plateau_option[] = "calamp_plateau";
+      char **knee=NULL;
+      char knee_option[] = "calamp_knee";     
+      char **slope=NULL;
+      char slope_option[] = "calamp_slope";
+      char **IFOnames=NULL;
+      UINT4 Nifo;
+      INT4 rlceops= getNamedDataOptionsByDetectors(commandLine, &IFOnames,&plateau ,plateau_option, &Nifo);
+      if (!rlceops){
+	fprintf(stderr,"Must provide a --IFO-calamp_plateau option for each IFO if --RandomLinearCE is given\n");
+	exit(1);
       }
-      else
-        fprintf(stdout,"Applying quasi constant amplitude calibration errors. \n");
-
-      char** calamps;
-      UINT4 threeTimesNIFO=3*unum_ifos;
-      LALInferenceParseCharacterOptionString(ppt->value,&calamps,&threeTimesNIFO);
+      rlceops= getNamedDataOptionsByDetectors(commandLine, &IFOnames,&knee ,knee_option, &Nifo);
+      if (!rlceops){
+	fprintf(stderr,"Must provide a --IFO-calamp_knee option for each IFO if --RandomLinearCE is given\n");
+	exit(1);
+      }
+      rlceops= getNamedDataOptionsByDetectors(commandLine, &IFOnames,&slope ,slope_option, &Nifo);
+      if (!rlceops){
+	fprintf(stderr,"Must provide a --IFO-calamp_slope option for each IFO if --RandomLinearCE is given\n");
+	exit(1);
+      }
+      
+      fprintf(stdout,"Applying quasi constant amplitude calibration errors. \n");
       i=0;
       tmpdata=state->data;
       while (tmpdata!=NULL){
@@ -447,23 +511,44 @@ void LALInferenceApplyCalibrationErrors(LALInferenceRunState *state, ProcessPara
         LALUniformDeviate(&status,&tmpampli,datarandparam);
         calib_seed_ampli+=floor(1E6*tmpampli);
         /* Consant plateau, knee, slope*/
-        (ampCoeffs[i])[Npoints]=atof(calamps[i*3]);
-        (ampCoeffs[i])[Npoints+1]=atof(calamps[i*3+1]);
-        (ampCoeffs[i])[Npoints+2]=atof(calamps[i*3+2]);
+        (ampCoeffs[i])[Npoints]=atof(plateau[i]);
+        (ampCoeffs[i])[Npoints+1]=atof(knee[i]);
+        (ampCoeffs[i])[Npoints+2]=atof(slope[i]);
         (ampCoeffs[i])[Npoints+3]=-300;
         i++;
         tmpdata=tmpdata->next;
-       }
-      ppt=LALInferenceGetProcParamVal(commandLine,"--RandomLinearCalPha");
-      if (!ppt){ 
-        fprintf(stderr,"Must provide a list of coefficients with random linear phase calibration errors. E.g: --RandomLinearCalpha [5,1000,0.1, 3, 1100,0.01,...]. Exiting... \n"); 
-        exit(1);
       }
-      else
-        fprintf(stdout,"Applying quasi constant phase calibration errors. \n");
-        
-      char** calphas;
-      LALInferenceParseCharacterOptionString(ppt->value,&calphas,&threeTimesNIFO);
+      for(i=0;i<num_ifos;i++) {
+	if(plateau) if (plateau[i]) XLALFree(plateau[i]);
+	if(knee) if (knee[i]) XLALFree(knee[i]);
+	if(slope) if (slope[i]) XLALFree(slope[i]);
+      }
+
+      char **pplateau=NULL;
+      char pplateau_option[] = "calpha_plateau";
+      char **pknee=NULL;
+      char pknee_option[] = "calpha_knee";     
+      char **pslope=NULL;
+      char pslope_option[] = "calpha_slope";
+
+      rlceops= getNamedDataOptionsByDetectors(commandLine, &IFOnames,&pplateau ,pplateau_option, &Nifo);
+      if (!rlceops){
+	fprintf(stderr,"Must provide a --IFO-calpha_plateau option for each IFO if --RandomLinearCE is given\n");
+	exit(1);
+      }
+      rlceops= getNamedDataOptionsByDetectors(commandLine, &IFOnames,&pknee ,pknee_option, &Nifo);
+      if (!rlceops){
+	fprintf(stderr,"Must provide a --IFO-calpha_knee option for each IFO if --RandomLinearCE is given\n");
+	exit(1);
+      }
+      rlceops= getNamedDataOptionsByDetectors(commandLine, &IFOnames,&pslope ,pslope_option, &Nifo);
+      if (!rlceops){
+	fprintf(stderr,"Must provide a --IFO-calpha_slope option for each IFO if --RandomLinearCE is given\n");
+	exit(1);
+      }
+      
+      fprintf(stdout,"Applying quasi constant phase calibration errors. \n");
+      
       i=0;
       tmpdata=state->data;
       while (tmpdata!=NULL){
@@ -478,15 +563,20 @@ void LALInferenceApplyCalibrationErrors(LALInferenceRunState *state, ProcessPara
         calib_seed_phase+=floor(1E6*tmpphase);
         /* Consant plateau, knee, slope*/
         // user gave degrees, convert to radiands
-        (phaseCoeffs[i])[Npoints]=LAL_PI/180.*atof(calphas[i*3]);
+        (phaseCoeffs[i])[Npoints]=LAL_PI/180.*atof(pplateau[i]);
         // transition frequency (Hz)
-        (phaseCoeffs[i])[Npoints+1]=atof(calphas[i*3+1]);
+        (phaseCoeffs[i])[Npoints+1]=atof(pknee[i]);
         // slope. After the transition freq the errors go like f^slope
-        (phaseCoeffs[i])[Npoints+2]=atof(calphas[i*3+2]);
+        (phaseCoeffs[i])[Npoints+2]=atof(pslope[i]);
         (phaseCoeffs[i])[Npoints+3]=-300;
         i++;
         tmpdata=tmpdata->next;
-       }
+      }
+      for(i=0;i<num_ifos;i++) {
+	if(pplateau) if (pplateau[i]) XLALFree(pplateau[i]);
+	if(pknee) if (pknee[i]) XLALFree(pknee[i]);
+	if(pslope) if (pslope[i]) XLALFree(pslope[i]);
+      }
     }
     else{
       fprintf(stderr, "Must provide a calibration error flag together with --AddCalibrationErrors\n");

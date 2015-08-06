@@ -323,6 +323,51 @@ static INT4 getDataOptionsByDetectors(ProcessParamsTable *commandLine, char ***i
     return(1);
 }
 
+/**
+ * Parse the command line looking for options of the kind ---IFO-name value
+ * Unlike the function above, this one does not have a preset list of names to lookup, but instead uses the option "name"
+ * It is necessary to use this method instead of the old method for the pipeline to work in DAX mode. Warning: do not mix options between
+ * the old and new style.
+ * Return 0 if the number of options --IFO-name doesn't much the number of ifos, 1 otherwise. Fills in the pointer out with the values that were found.
+ */
+static INT4 getNamedDataOptionsByDetectors(ProcessParamsTable *commandLine, char ***ifos, char ***out, const char *name, UINT4 *N)
+{
+    /* Check that the input has no lists with [ifo,ifo] */
+    ProcessParamsTable *this=commandLine;
+    UINT4 i=0;
+    *out=*ifos=NULL;
+    *N=0;
+    char tmp[128];
+    if(!this) {fprintf(stderr,"No command line arguments given!\n"); exit(1);}
+    /* Construct a list of IFOs */
+    for(this=commandLine;this;this=this->next)
+    {
+        if(!strcmp(this->param,"--ifo"))
+        {
+            (*N)++;
+            *ifos=XLALRealloc(*ifos,*N*sizeof(char *));
+            (*ifos)[*N-1]=XLALStringDuplicate(this->value);
+        }
+    }
+    *out=XLALCalloc(*N,sizeof(char *));
+    
+    UINT4 found=0;
+    /* For each IFO, fetch the other options if available */
+    for(i=0;i<*N;i++)
+    {
+        /* Channel */
+        sprintf(tmp,"--%s-%s",(*ifos)[i],name);
+        this=LALInferenceGetProcParamVal(commandLine,tmp);
+        (*out)[i]=this?XLALStringDuplicate(this->value):NULL;
+	if (this) found++;
+     
+    }
+    if (found==*N)
+      return(1);
+    else
+      return 0;
+}
+
 void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, ProcessParamsTable *commandLine);
 void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, ProcessParamsTable *commandLine){
 
@@ -2851,52 +2896,44 @@ void LALInferenceInjectFromMDC(ProcessParamsTable *commandLine, LALInferenceIFOD
     UINT4 j=0;
     LALInferenceIFOData *data=IFOdata;
     REAL8 prefactor =1.0;
-    ppt=LALInferenceGetProcParamVal(commandLine,"--MDC-prefactor");
+    ppt=LALInferenceGetProcParamVal(commandLine,"--mdc-prefactor");
     if (ppt){
 
         prefactor=atof(ppt->value);
         fprintf(stdout,"Using prefactor=%f to scale the MDC injection\n",prefactor);
     }
+
+    ppt=LALInferenceGetProcParamVal(commandLine,"--inj");
+    if (ppt){
+
+        fprintf(stderr,"You cannot use both injfile (--inj) and MDCs (--inject_from_mdc) Exiting... \n");
+        exit(1);
+
+    }
+    ppt=LALInferenceGetProcParamVal(commandLine,"--binj");
+    if (ppt){
+
+        fprintf(stderr,"You cannot use both injfile (--binj) and MDCs (--inject_from_mdc) Exiting... \n");
+        exit(1);
+
+    }
+    
     REAL8 tmp=0.0;
     REAL8 net_snr=0.0;
     while (data) {nIFO++; data=data->next;}
     UINT4 Nmdc=0,Nchannel=0;
-
-    ppt=LALInferenceGetProcParamVal(commandLine,"--MDC-cache");
-    if (!ppt){
-
-        fprintf(stderr,"You must provide the path of an MDC lal cache file for each IFO, using --MDC-cache [ XXX, YYY, ZZZ]\n");
-        exit(1);
-
-        }
-    ppt=LALInferenceGetProcParamVal(commandLine,"--inj");
-    if (ppt){
-
-        fprintf(stderr,"You cannot use both injfile (--inj) and MDCs (--MDC-cache) Exiting... \n");
-        exit(1);
-
-        }
-
-    ppt=LALInferenceGetProcParamVal(commandLine,"--MDC-cache");
-    LALInferenceParseCharacterOptionString(ppt->value,&mdc_caches,&Nmdc);
-
-    if (Nmdc!= nIFO){
-        fprintf(stderr, "You have to provide an MDC cache file for each IFO\n");
-        exit(1);
-        }
-    else printf("got %i ifos and %i MDC cache files\n",nIFO,Nmdc);
-
-
-    ppt=LALInferenceGetProcParamVal(commandLine,"--MDC-channel");
-    if (ppt){
-
-        LALInferenceParseCharacterOptionString(ppt->value,&mdc_channels,&Nchannel);
-        if (Nchannel!=Nmdc){
-            fprintf(stderr,"You must provide a channel name for eache mdc frame, using --MDC-channel [X, Y, Z] . Exiting...\n");
-            exit(1);
-            }
+    
+    char mdc_caches_name[] = "injcache";
+    char mdc_channels_name[] = "injchannel";
+    char **IFOnames=NULL;
+    INT4 rlceops= getNamedDataOptionsByDetectors(commandLine, &IFOnames,&mdc_caches ,mdc_caches_name, &Nmdc);
+    if (!rlceops){
+      fprintf(stderr,"Must provide a --IFO-injcache option for each IFO if --inject_from_mdc is given\n");
+      exit(1);
     }
-    else{
+    
+    rlceops= getNamedDataOptionsByDetectors(commandLine, &IFOnames,&mdc_channels ,mdc_channels_name, &Nchannel);
+    if (!rlceops){
         fprintf(stdout,"WARNING: You did not provide the name(s) of channel(s) to use with the injection mdc. Using the default which may not be what you want!\n");
         mdc_channels=  malloc((nIFO+1)*sizeof(char*));
         data=IFOdata;
