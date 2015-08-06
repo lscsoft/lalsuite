@@ -319,6 +319,8 @@ def chooseEngineNode(name):
     return LALInferenceMCMCNode
   if name=='lalinferencebambi' or name=='lalinferencebambimpi':
     return LALInferenceBAMBINode
+  if name=='lalinferencedatadump':
+    return LALInferenceDataDumpNode
   return EngineNode
 
 def get_engine_name(cp):
@@ -1316,15 +1318,8 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
       roqpath=os.path.join(basepath,'ROQdata')
       self.roqpath=roqpath
       mkdirs(roqpath)
-      self.engine='lalinferencedatadump'
       exe=cp.get('condor',self.engine)
-      if cp.has_option('engine','site'):
-        if self.site is not None and self.site!='local':
-          universe='vanilla'
-        else:
-          universe="standard"
-      else:
-        universe='vanilla'
+      universe='vanilla'
     else:
       if self.engine=='lalinferencemcmc':
         exe=cp.get('condor','mpiwrapper')
@@ -1391,10 +1386,10 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
       self.add_condor_cmd('request_cpus',self.machine_count)
       self.add_condor_cmd('request_memory',str(float(self.machine_count)*float(self.machine_memory)))
     if cp.has_section(self.engine):
-      if ispreengine is False:
+      if not ispreengine:
         self.add_ini_opts(cp,self.engine)
     if  cp.has_section('engine'):
-      if ispreengine is False:
+      if not ispreengine:
         self.add_ini_opts(cp,'engine')
     self.set_stdout_file(os.path.join(logdir,'lalinference-$(cluster)-$(process)-$(node).out'))
     self.set_stderr_file(os.path.join(logdir,'lalinference-$(cluster)-$(process)-$(node).err'))
@@ -1702,6 +1697,14 @@ class LALInferenceMCMCNode(EngineNode):
 
   def get_pos_file(self):
     return self.posfile
+
+class LALInferenceDataDumpNode(EngineNode):
+  def __init__(self,li_job):
+    EngineNode.__init__(self,li_job)
+    self.engine='lalinferencedatadump'
+    self.outfilearg='outfile'
+  def set_output_file(self,filename):
+    pass
 
 class LALInferenceBAMBINode(EngineNode):
   def __init__(self,li_job):
