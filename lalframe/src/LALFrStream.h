@@ -61,6 +61,8 @@ extern "C" {
  * @defgroup LALFrStream_c     Module LALFrStream.c
  * @defgroup LALFrStreamRead_c Module LALFrStreamRead.c
  * @}
+ *
+ * @addtogroup LALFrStream_c
  * @{
  */
 
