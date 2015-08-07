@@ -103,13 +103,19 @@ static int BasicTest(
     GFMAT( metric );
   }
 
+  // Create lattice tiling locator
+  LatticeTilingLocator *loc = XLALCreateLatticeTilingLocator( tiling );
+  XLAL_CHECK( loc != NULL, XLAL_EFUNC );
+  if ( lalDebugLevel & LALINFOBIT ) {
+    printf( "Index trie:\n" );
+    XLAL_CHECK( XLALPrintLatticeTilingIndexTrie( loc, stdout ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
   for( size_t i = 0; i < n; ++i ) {
 
     // Create lattice tiling iterator and locator over 'i+1' dimensions
     LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator( tiling, i+1, TILING_ITR_DEFAULT );
     XLAL_CHECK( itr != NULL, XLAL_EFUNC );
-    LatticeTilingLocator *loc = XLALCreateLatticeTilingLocator( tiling, i+1 );
-    XLAL_CHECK( loc != NULL, XLAL_EFUNC );
 
     // Count number of points
     const UINT8 total = XLALTotalLatticeTilingPoints( itr );
@@ -138,30 +144,23 @@ static int BasicTest(
 
     // Get nearest point to each template; should be template itself
     gsl_matrix *GAMAT( nearest, n, total );
-    UINT8Vector *indexes = XLALCreateUINT8Vector( total );
-    XLAL_CHECK( indexes != NULL, XLAL_ENOMEM );
-    XLAL_CHECK( XLALNearestLatticeTilingPoints( loc, points, &nearest, NULL, &indexes ) == XLAL_SUCCESS, XLAL_EFUNC );
+    UINT8VectorSequence *indexes = XLALCreateUINT8VectorSequence( total, n );
+    XLAL_CHECK( XLALNearestLatticeTilingPoints( loc, points, i+1, &nearest, &indexes ) == XLAL_SUCCESS, XLAL_EFUNC );
     UINT8 failed = 0;
     for( UINT8 j = 0; j < total; ++j ) {
-      if( indexes->data[j] != j ) {
+      const UINT8 index_j = indexes->data[j*n + i];
+      if( index_j != j ) {
         ++failed;
-        XLALPrintError( "ERROR: indexes->data[j] = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT "\n", indexes->data[j], j );
+        XLALPrintError( "ERROR: index_j = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT "\n", index_j, j );
       }
     }
     if( failed > 0 ) {
       XLAL_ERROR( XLAL_EFAILED, "ERROR: number of failed index lookups = %" LAL_UINT8_FORMAT " > 0", failed );
     }
 
-    if ( lalDebugLevel & LALINFOBIT ) {
-      // Print index trie
-      printf( "Index trie in %zu dimensions:\n", i+1 );
-      XLAL_CHECK( XLALPrintLatticeTilingIndexTrie( loc, stdout ) == XLAL_SUCCESS, XLAL_EFUNC );
-    }
-
     // Cleanup
     XLALDestroyLatticeTilingIterator( itr );
-    XLALDestroyLatticeTilingLocator( loc );
-    XLALDestroyUINT8Vector( indexes );
+    XLALDestroyUINT8VectorSequence( indexes );
     GFMAT( points, nearest );
 
   }
@@ -183,6 +182,7 @@ static int BasicTest(
 
   // Cleanup
   XLALDestroyLatticeTiling( tiling );
+  XLALDestroyLatticeTilingLocator( loc );
   LALCheckMemoryLeaks();
   printf( "\n" );
 
@@ -204,7 +204,7 @@ static int MismatchTest(
   // Create lattice tiling iterator and locator
   LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator( tiling, n, TILING_ITR_DEFAULT );
   XLAL_CHECK( itr != NULL, XLAL_EFUNC );
-  LatticeTilingLocator *loc = XLALCreateLatticeTilingLocator( tiling, n );
+  LatticeTilingLocator *loc = XLALCreateLatticeTilingLocator( tiling );
   XLAL_CHECK( loc != NULL, XLAL_EFUNC );
 
   // Count number of points
@@ -233,7 +233,7 @@ static int MismatchTest(
       XLAL_CHECK( XLALRandomLatticeTilingPoints( tiling, 0.0, rng, injections ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       // Find nearest lattice template points
-      XLAL_CHECK( XLALNearestLatticeTilingPoints( loc, injections, &nearest, NULL, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( XLALNearestLatticeTilingPoints( loc, injections, 0, &nearest, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       // Compute mismatch between injections
       gsl_matrix_sub( nearest, injections );
@@ -299,7 +299,7 @@ static int MismatchTest(
   {
     gsl_matrix *GAMAT( injections, 3, 10 );
     gsl_matrix *GAMAT( nearest, n, total );
-    UINT8Vector *indexes = XLALCreateUINT8Vector( total );
+    UINT8VectorSequence *indexes = XLALCreateUINT8VectorSequence( total, n );
     XLAL_CHECK( indexes != NULL, XLAL_ENOMEM );
     RandomParams *rng = XLALCreateRandomParams( total );
     XLAL_CHECK( rng != NULL, XLAL_EFUNC );
@@ -308,11 +308,11 @@ static int MismatchTest(
     XLAL_CHECK( XLALRandomLatticeTilingPoints( tiling, 5.0, rng, injections ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Find nearest lattice template points
-    XLAL_CHECK( XLALNearestLatticeTilingPoints( loc, injections, &nearest, NULL, &indexes ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALNearestLatticeTilingPoints( loc, injections, n, &nearest, &indexes ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Cleanup
     GFMAT( injections, nearest );
-    XLALDestroyUINT8Vector( indexes );
+    XLALDestroyUINT8VectorSequence( indexes );
     XLALDestroyRandomParams( rng );
 
   }

@@ -78,9 +78,9 @@ typedef enum tagTilingIteratorFlags {
 ///
 typedef struct tagLatticeTilingStats {
   UINT8 total_points;			///< Total number of points up to this dimension
-  long min_points_pass;			///< Minimum number of points per pass in this dimension
+  INT8 min_points_pass;			///< Minimum number of points per pass in this dimension
   double avg_points_pass;		///< Average number of points per pass in this dimension
-  long max_points_pass;			///< Maximum number of points per pass in this dimension
+  INT8 max_points_pass;			///< Maximum number of points per pass in this dimension
   double min_value_pass;		///< Minimum value of points in this dimension
   double max_value_pass;		///< Maximum value of points in this dimension
 } LatticeTilingStats;
@@ -267,14 +267,13 @@ UINT8 XLALCurrentLatticeTilingIndex(
   );
 
 ///
-/// Create a new lattice tiling locator. If <tt>bound_ndim > 0</tt>, an index trie is internally built.
+/// Create a new lattice tiling locator. If there are tiled dimensions, an index trie is internally built.
 ///
 #ifdef SWIG // SWIG interface directives
 SWIGLAL( OWNED_BY_1ST_ARG( int, XLALCreateLatticeTilingLocator ) );
 #endif
 LatticeTilingLocator *XLALCreateLatticeTilingLocator(
-  LatticeTiling *tiling,		///< [in] Lattice tiling
-  const size_t bound_ndim		///< [in] Number of parameter-space dimensions to enforce bounds over
+  LatticeTiling *tiling			///< [in] Lattice tiling
   );
 
 ///
@@ -286,22 +285,22 @@ void XLALDestroyLatticeTilingLocator(
 
 ///
 /// Locate the nearest points in a lattice tiling to a given set of points. Return the nearest
-/// points in \c nearest_point, and optionally: their generating integers in \c nearest_int_point,
-/// and their unique index <i>over the bound-enforced dimensions</i> in \c nearest_index (requires
-/// \c loc to have been created with an index trie).
+/// points in \c nearest_point. For dimensions less than \c seqidx_ndim, \c nearest_idxs will
+/// optionally return a sequential index running over parameter space; for dimensions greater to
+/// equal to \c seqidx_ndim, \c nearest_idxs will return an index only into the current pass.
 ///
 #ifdef SWIG // SWIG interface directives
 SWIGLAL( INOUT_STRUCTS( gsl_matrix **, nearest_points ) );
-SWIGLAL( INOUT_STRUCTS( gsl_matrix_long **, nearest_int_points ) );
-SWIGLAL( INOUT_STRUCTS( UINT8Vector **, nearest_indexes ) );
+SWIGLAL( INOUT_STRUCTS( UINT8VectorSequence **, nearest_idxs ) );
 #endif
 int XLALNearestLatticeTilingPoints(
   const LatticeTilingLocator *loc,	///< [in] Lattice tiling locator
   const gsl_matrix *points,		///< [in] Columns are set of points for which to find nearest points
+  const size_t seqidx_ndim,		///< [in] Number of dimensions in which to return sequential indexes
   gsl_matrix **nearest_points,		///< [out] Columns are the corresponding nearest points
-  gsl_matrix_long **nearest_int_points,	///< [out] Columns are the generating integers of the nearest points
-  UINT8Vector **nearest_indexes		///< [out] Unique tiling indexes of nearest points
+  UINT8VectorSequence **nearest_idxs	///< [out] Columns are the (sequential) indexes of the nearest points
   );
+
 
 ///
 /// Print the internal index trie of a lattice tiling locator to the given file pointer.
