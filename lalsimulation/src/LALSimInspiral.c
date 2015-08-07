@@ -433,6 +433,7 @@ double XLALSimInspiralGetFinalFreq(
         case TaylorT2:
         case TaylorT3:
         case TaylorT4:
+	case EccentricFD:
             /* Check that spins are zero */
             if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
             {
@@ -3024,6 +3025,30 @@ int XLALSimInspiralChooseFDWaveform(
     switch (approximant)
     {
         /* inspiral-only models */
+	case EccentricFD:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralFrameAxisIsDefault(
+                    XLALSimInspiralGetFrameAxis(waveFlags) ) )
+                ABORT_NONDEFAULT_FRAME_AXIS(waveFlags);
+            if( !XLALSimInspiralModesChoiceIsDefault(
+                    XLALSimInspiralGetModesChoice(waveFlags) ) )
+                ABORT_NONDEFAULT_MODES_CHOICE(waveFlags);
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+                ABORT_NONZERO_TRANSVERSE_SPINS(waveFlags);
+            /* Call the waveform driver routine */
+            /* Note that for generic inclined eccentric waveforms
+ *             * it is not possible to decompose hc(f) \propto I * hp(f)
+ *                         * we call both polarizations independently
+ *                                     */
+            /*ret = XLALSimInspiralEFD(hptilde, hctilde, phiRef, deltaF, m1, m2,
+ *             f_min, f_max, i, r, lambda1, lambda2, phaseO);*/
+            ret = XLALSimInspiralEFD(hptilde, hctilde, phiRef, deltaF, m1, m2,
+            f_min, f_max, i, r,  (REAL8) XLALSimInspiralGetTestGRParam( nonGRparams, "inclination_azimuth"),
+             (REAL8) XLALSimInspiralGetTestGRParam( nonGRparams, "e_min"),
+              phaseO);
+            if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
+            break;
+
         case TaylorF2:
             /* Waveform-specific sanity checks */
             if( !XLALSimInspiralFrameAxisIsDefault(
@@ -4453,6 +4478,7 @@ static const char *lalSimulationApproximantNames[] = {
     INITIALIZE_NAME(AmpCorPPN),
     INITIALIZE_NAME(NumRel),
     INITIALIZE_NAME(NumRelNinja2),
+    INITIALIZE_NAME(EccentricFD),
     INITIALIZE_NAME(Eccentricity),
     INITIALIZE_NAME(EOBNR),
     INITIALIZE_NAME(EOBNRv2),
@@ -4998,6 +5024,7 @@ int XLALSimInspiralImplementedFDApproximants(
         case SEOBNRv2_ROM_DoubleSpin:
         //case TaylorR2F4:
         case TaylorF2:
+	case EccentricFD:
         case SpinTaylorF2:
         case TaylorF2RedSpin:
         case TaylorF2RedSpinTidal:
@@ -5055,6 +5082,7 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case TaylorT2:
     case TaylorT3:
     case TaylorT4:
+    case EccentricFD:
     case IMRPhenomA:
     case EOBNRv2HM:
     case EOBNRv2:
@@ -5135,6 +5163,7 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
       testGR_accept=LAL_SIM_INSPIRAL_NO_TESTGR_PARAMS;
       break;
     case SpinTaylorF2:
+    case EccentricFD:
     case Eccentricity:
     case PhenSpinTaylor:
     case PhenSpinTaylorRD:

@@ -222,6 +222,7 @@ typedef enum {
    TaylorF1,		/**< The stationary phase approximation that correctly represents, in the Fourier domain,
                          * the waveform given by \c TaylorT1 approximant (see \cite dis2000 for details);
                          * Outputs a frequency-domain wave. */
+   EccentricFD,         /** Frequency domain waveform in the SPA to describe low eccentricity systems */
    TaylorF2,		/**< The standard stationary phase approximation; Outputs a frequency-domain wave. */
    TaylorR2F4,		/**< A frequency domain model closely related to TaylorT4 */
    TaylorF2RedSpin,		/**< TaylorF2 waveforms for non-precessing spins, defined in terms of a single (reduced-spin) parameter [Ajith_2011ec]*/
@@ -2234,7 +2235,21 @@ int XLALSimInspiralTaylorF2(
 		const INT4 amplitudeO           /**< twice PN amplitude order */
 		);
 
-
+int XLALSimInspiralEFD(
+                COMPLEX16FrequencySeries **hptilde, /**< FD plus polarization */
+                COMPLEX16FrequencySeries **hctilde, /**< FD cross polarization */
+                const REAL8 phiRef,                 /**< Orbital coalescence phase (rad) */
+                const REAL8 deltaF,                 /**< Frequency resolution */
+                const REAL8 m1_SI,                  /**< Mass of companion 1 (kg) */
+                const REAL8 m2_SI,                  /**< Mass of companion 2 (kg) */
+                const REAL8 fStart,                 /**< Start GW frequency (Hz) */
+                const REAL8 fEnd,                   /**< Highest GW frequency (Hz): end at Schwarzschild ISCO */
+                const REAL8 i,                      /**< Polar inclination of source (rad) */
+                const REAL8 r,                      /**< Distance of source (m) */
+                const REAL8 inclination_azimuth,    /**< Azimuthal component of inclination angles [0, 2 M_PI] */
+                const REAL8 e_min,                  /**< Initial eccentricity at frequency f_min: range [0, 0.4]*/
+                int phaseO                          /**< Twice PN phase order */
+                );
 
 int XLALSimInspiralSpinTaylorF2(
     COMPLEX16FrequencySeries **hplus_out,  /**< FD hplus waveform */
