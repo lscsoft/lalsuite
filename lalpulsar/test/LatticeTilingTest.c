@@ -61,7 +61,7 @@ const double A3s_mism_hist[MISM_HIST_BINS+1] = {
 };
 
 static int BasicTest(
-  const size_t n,
+  size_t n,
   const TilingLattice lattice,
   const UINT8 total_ref_0,
   const UINT8 total_ref_1,
@@ -72,14 +72,20 @@ static int BasicTest(
 
   const UINT8 total_ref[4] = {total_ref_0, total_ref_1, total_ref_2, total_ref_3};
 
+  // 'n == 0' denotes a single-point template bank
+  const bool single_point = ( n == 0 );
+  if( single_point ) {
+    n = 4;
+  }
+
   // Create lattice tiling
-  printf( "Number of dimensions: %zu\n", n );
+  printf( "Number of dimensions: %zu%s\n", n, single_point ? " (single point)" : "" );
   LatticeTiling *tiling = XLALCreateLatticeTiling( n );
   XLAL_CHECK( tiling != NULL, XLAL_EFUNC );
 
   // Add bounds
   for( size_t i = 0; i < n; ++i ) {
-    XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, i, 0.0, pow( 100.0, 1.0/n ) ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, i, 0.0, single_point ? 0.0 : pow( 100.0, 1.0/n ) ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
   // Set metric to the Lehmer matrix
@@ -470,6 +476,7 @@ int main( void )
 {
 
   // Perform basic tests
+  XLAL_CHECK_MAIN( BasicTest( 0, TILING_LATTICE_ANSTAR,  1,   1,   1,    1 ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( BasicTest( 1, TILING_LATTICE_CUBIC,  93,   0,   0,    0 ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( BasicTest( 1, TILING_LATTICE_ANSTAR, 93,   0,   0,    0 ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( BasicTest( 2, TILING_LATTICE_CUBIC,  13, 190,   0,    0 ) == XLAL_SUCCESS, XLAL_EFUNC );

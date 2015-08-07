@@ -1165,11 +1165,14 @@ int XLALNextLatticeTilingPoint(
   if( itr->state == 0 ) {	// Iterator has been initialised
 
     // Initialise lattice point
-    gsl_vector_long_set_zero( itr->int_point );
     gsl_vector_set_zero( itr->phys_point );
+    if( tn > 0 ) {
+      gsl_vector_long_set_zero( itr->int_point );
 
-    // Initialise iteration order to 1 for negative order.
-    gsl_vector_long_set_all( itr->direction, 1 );
+      // Initialise iteration order to 1 for negative order.
+      gsl_vector_long_set_all( itr->direction, 1 );
+
+    }
 
     // Initialise index
     itr->index = 0;
