@@ -677,6 +677,8 @@ int XLALConvertSuperskyCoordinates(
   XLAL_CHECK( out_points != NULL, XLAL_EFAULT );
   XLAL_CHECK( in_points != NULL, XLAL_EINVAL );
   XLAL_CHECK( rssky_transf != NULL || ( out != SC_RSSKY && in != SC_RSSKY ), XLAL_EINVAL );
+  XLAL_CHECK( rssky_transf == NULL || rssky_transf->size1 > 3, XLAL_ESIZE );
+  XLAL_CHECK( rssky_transf == NULL || rssky_transf->size2 == 3, XLAL_ESIZE );
 
   // Deduce number of input sky coordinates, and frequency/spindown coordinates
   const size_t in_ssize = ( in == SC_USSKY ) ? 3 : 2;
@@ -1187,7 +1189,8 @@ int XLALSetSuperskyLatticeTilingPhysicalSpinBound(
   // Check input
   XLAL_CHECK( tiling != NULL, XLAL_EFAULT );
   XLAL_CHECK( rssky_transf != NULL, XLAL_EFAULT );
-  XLAL_CHECK( rssky_transf->size1 > 3, XLAL_EINVAL );
+  XLAL_CHECK( rssky_transf->size1 > 3, XLAL_ESIZE );
+  XLAL_CHECK( rssky_transf->size2 == 3, XLAL_ESIZE );
   XLAL_CHECK( isfinite( bound1 ), XLAL_EINVAL );
   XLAL_CHECK( isfinite( bound2 ), XLAL_EINVAL );
   const size_t smax = rssky_transf->size1 - 4;
@@ -1227,7 +1230,8 @@ int XLALSetSuperskyLatticeTilingCoordinateSpinBound(
   // Check input
   XLAL_CHECK( tiling != NULL, XLAL_EFAULT );
   XLAL_CHECK( rssky_transf != NULL, XLAL_EFAULT );
-  XLAL_CHECK( rssky_transf->size1 > 3, XLAL_EINVAL );
+  XLAL_CHECK( rssky_transf->size1 > 3, XLAL_ESIZE );
+  XLAL_CHECK( rssky_transf->size2 == 3, XLAL_ESIZE );
   XLAL_CHECK( isfinite( bound1 ), XLAL_EINVAL );
   XLAL_CHECK( isfinite( bound2 ), XLAL_EINVAL );
   const size_t smax = rssky_transf->size1 - 4;
@@ -1253,6 +1257,8 @@ int XLALSuperskyLatticePulsarSpinRange(
   XLAL_CHECK( spin_range != NULL, XLAL_EFAULT );
   XLAL_CHECK( tiling != NULL, XLAL_EFAULT );
   XLAL_CHECK( rssky_transf != NULL, XLAL_EFAULT );
+  XLAL_CHECK( rssky_transf->size1 > 3, XLAL_ESIZE );
+  XLAL_CHECK( rssky_transf->size2 == 3, XLAL_ESIZE );
   XLAL_CHECK( ref_time != NULL, XLAL_EFAULT );
 
   // Get rectange containing range reduced supersky coordinates
