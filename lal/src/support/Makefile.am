@@ -63,7 +63,7 @@ liblalsupport_la_SOURCES = \
 liblalsupport_la_LIBADD = ../liblal.la $(ZLIB_LIBS) $(HDF5_LIBS)
 liblalsupport_la_CFLAGS = $(AM_CFLAGS) $(ZLIB_CFLAGS) $(HDF5_CFLAGS)
 liblalsupport_la_CPPFLAGS = $(AM_CPPFLAGS) $(HDF5_CPPFLAGS)
-liblalsupport_la_LDFLAGS = $(AM_LDFLAGS) $(HDF_LDFLAGS) -version-info $(LIBVERSION_SUPPORT)
+liblalsupport_la_LDFLAGS = $(AM_LDFLAGS) $(HDF5_LDFLAGS) -version-info $(LIBVERSION_SUPPORT)
 
 noinst_HEADERS = \
 	H5FileIOArrayHL_source.c \
