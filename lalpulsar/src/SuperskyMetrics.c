@@ -690,7 +690,7 @@ int XLALConvertSuperskyCoordinates(
   const size_t out_rows = fsize + out_ssize;
   if( *out_points != NULL ) {
     if( ( *out_points )->size1 != out_rows || ( *out_points )->size2 != in_points->size2 ) {
-      gsl_matrix_free( *out_points );
+      GFMAT( *out_points );
       *out_points = NULL;
     }
   }
