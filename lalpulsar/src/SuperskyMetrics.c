@@ -926,23 +926,21 @@ int XLALConvertSuperskyToPhysical(
 
 }
 
-static double SuperskyAHemiFracRoot(
-  double x,
-  void *params
-  )
-{
+// Structure which stores bounds data for PhysicalSkyBound()
+#define MAX_PHYS_SKY_BOUND_DATA 6
+typedef struct {
+  double max_A;
+  int type;
+  double r;
+  double na0;
+  bool altroot;
+  double angle0;
+  double C;
+  double S;
+  double Z;
+} PhysicalSkyBoundData;
 
-  // Fractional area of reduced supersky hemisphere to left of line of constant 'x'
-  const double frac = LAL_PI + x * sqrt( 1 - x*x ) - acos( x );
-
-  // Target fractional area we are trying to find 'x' to satisfy
-  const double target_frac = *( ( double * ) params );
-
-  return frac - target_frac;
-
-}
-
-static double SuperskyBCoordBound(
+static double PhysicalSkyBound(
   const void *data,
   const size_t dim UNUSED,
   const gsl_vector *point
@@ -950,213 +948,511 @@ static double SuperskyBCoordBound(
 {
 
   // Get bounds data
-  const double semiB = *( ( const double * ) data );
+  const PhysicalSkyBoundData *bdata = ( const PhysicalSkyBoundData * ) data;
 
-  // Get 2-dimensional reduced supersky A coordinate
+  // Decode the reduced supersky coordinates to get
+  //   na = as[0] = Q_na . n
   const double A = gsl_vector_get( point, 0 );
-  const double dA = fabs( A ) - 1.0;
+  const double rssky[2] = { A, 0 };
+  gsl_vector_const_view rssky_view = gsl_vector_const_view_array( rssky, 2 );
+  double as[3];
+  SM_ReducedToAligned( as, &rssky_view.vector );
+  const double na = as[0];
 
-  // Set bound on 2-dimensional reduced supersky B coordinate
-  const double bound = semiB * RE_SQRT( 1.0 - SQR( dA ) );
+  // Absolute limiting bound on 'nb = +/- sqrt(1 - na^2)'
+  const double limit = RE_SQRT( 1 - SQR( na ) );
 
-  return bound;
+  // Loop over bounds to find bound which currently applies, based on 'max_A'
+  double bound = GSL_NAN;
+  for( size_t i = 0; i < MAX_PHYS_SKY_BOUND_DATA; ++i) {
+    const PhysicalSkyBoundData b = bdata[i];
+    if( A <= b.max_A ) {
+
+      if( b.type != 0 ) {
+
+        // Set bound 'nb = +/- sqrt(1 - na^2)'
+        bound = b.type * limit;
+
+      } else {
+
+        // Set bound 'nb' to either a constant right ascension or constant declination bound,
+        // depending on bounds data set by XLALSetSuperskyLatticeTilingPhysicalSkyBounds()
+        const double c = ( na - b.na0 ) / b.r;
+        double angle = asin( GSL_MAX( -1, GSL_MIN( c, 1 ) ) );
+        if( b.altroot ) {
+          angle = LAL_PI - angle;
+        }
+        angle -= b.angle0;
+        bound = b.C*cos(angle) + b.S*sin(angle) + b.Z;
+
+      }
+
+      break;
+
+    }
+  }
+
+  return GSL_MAX( -limit, GSL_MIN( bound, limit ) );
 
 }
 
-int XLALSetSuperskyLatticeTilingAllSkyBounds(
+int XLALSetSuperskyLatticeTilingPhysicalSkyBounds(
   LatticeTiling *tiling,
-  const double patch_B_extent,
-  const UINT8 patch_count,
-  const UINT8 patch_index
+  gsl_matrix *rssky_metric,
+  gsl_matrix *rssky_transf,
+  const double alpha1,
+  const double alpha2,
+  const double delta1,
+  const double delta2
   )
 {
 
-  // Check input
-  XLAL_CHECK( tiling != NULL, XLAL_EFAULT );
-  XLAL_CHECK( patch_B_extent > 0.0, XLAL_EINVAL );
-  XLAL_CHECK( patch_count > 0, XLAL_EINVAL );
-  XLAL_CHECK( patch_index < patch_count, XLAL_EINVAL );
-
-  // Calculate patch indexes and counts in reduced supersky coordinate A and B directions.
-  // 'max_patch_B_extent' is used to calculate a minimum number of patches in the B coordinate
-  // direction, 'min_patch_count_B', which with 'patch_count' is used to calculate the number
-  // of patches in the A coordinate direction, 'patch_count_A'. The produce of these two counts
-  // will never exceed 'patch_count'; any excess patches are then added to 'min_patch_count_B'
-  // as required to make up 'patch_count'. For example, given
-  //   'patch_count' = 14, 'patch_count_A' = 4, 'min_patch_count_B' = 3,
-  // the number of patches is partitioned as [4, 4, 3, 3], i.e.
-  //   'patch_index_A' = 0, 'patch_count_B' = 4, 'patch_index_B' = 0 to 3
-  //   'patch_index_A' = 1, 'patch_count_B' = 4, 'patch_index_B' = 0 to 3
-  //   'patch_index_A' = 2, 'patch_count_B' = 3, 'patch_index_B' = 0 to 2
-  //   'patch_index_A' = 3, 'patch_count_B' = 3, 'patch_index_B' = 0 to 2
-
-  // Approximate minimum number of patches in B coordinate
-  const double approx_min_patch_count_B = 2.0 / patch_B_extent;
-
-  // Number of patches in A coordinate
-  const UINT8 patch_count_A = GSL_MAX( 1, lround( floor( patch_count / approx_min_patch_count_B ) ) );
-
-  // Actual minimum number of patches in B coordinate; note integer division equivalent to floor()
-  const UINT8 min_patch_count_B = patch_count / patch_count_A;
-
-  // Excess number of patches which must be added on to get 'patch_count'
-  INT8 patch_excess = patch_count - patch_count_A * min_patch_count_B;
-  XLAL_CHECK( patch_excess >= 0, XLAL_EFAILED );
-
-  // Initialise number of patches in B coordinate; if there are excess patches, add an extra patch
-  UINT8 patch_count_B = min_patch_count_B;
-  if( patch_excess > 0) {
-    ++patch_count_B;
-  }
-
-  // Initialise patch indexes in A and B coordinates
-  UINT8 patch_index_A = 0, patch_index_B = patch_index;
-
-  while( patch_index_B >= patch_count_B ) {
-
-    // Increase patch index in A coordinate, substract patch count in B coordinate from patch index
-    ++patch_index_A;
-    patch_index_B -= patch_count_B;
-
-    // Decrease number of excess patches; if zero, subtract extra patch from patch count in B coordinate
-    --patch_excess;
-    if( patch_excess == 0 ) {
-      --patch_count_B;
-    }
-
-  }
-
-  // The reduced supersky A coordinate is bounded from 'skyA_bounds[0]' to 'skyA_bounds[1]'. The
-  // value of 'skyA_bounds[i]' is chosen such that the fractional area of the sky (shaded # in the
-  // diagram) to the left of the line A = 'skyA_bounds[i]' (dotted : vertical line in the diagram)
-  // is equal to
-  //   2*pi * ('patch_index_A' + 'i') / 'patch_count_A'.
-  // This divides the sky into equal-area bands at constant 'patch_index_A'.
-  //
-  //        ______:____________
-  // B = 1_|   ___:_   _____   |
-  //       |  /###: \ /     \  |
-  //     0-| |####:  |       | |
-  //      _|  \###:_/ \_____/  |
-  //    -1 |_.____:__._______._|
-  //         '    :  '       '
-  //    A = -2       0       2
-  //
-  // To find 'skyA_bounds[i]', we numerically solve for 'x' in [-1.0, 1.0] such that
-  //   int_{-1}^{x} 2*sqrt(1 - x'^2) dx' = pi + x*sqrt(1 - x^2) - acos(x) = 'skyA_frac'
-  // where 'skyA_frac' is the fractional area of one sky hemisphere. The bound is then given by
-  //   'skyA_bounds[i]' = -1.0 + 2.0*'skyA_hemi' + 'x'
-  // where 'skyA_hemi' is 0.0 for the left hemisphere and 1.0 for the right hemisphere.
-
-  // Allocate GSL root solver for finding reduced supersky A coordinate bounds
-  gsl_root_fsolver *GALLOC( skyA_bounds_fsolver, gsl_root_fsolver_alloc( gsl_root_fsolver_brent ) );
-
-  // Compute the lower and upper bounds on reduced supersky A coordinate
-  double skyA_bounds[2] = {0, 0};
-  for( size_t i = 0; i < 2; ++i ) {
-    const UINT8 iA = patch_index_A + i;
-
-    // Treat special value of 'iA' where root-finding is not required separately
-    if( iA == 0 ) {
-      skyA_bounds[i] = -2.0;
-      continue;
-    }
-    if( patch_count_A % 2 == 0 && iA == patch_count_A/2 ) {
-      skyA_bounds[i] = 0.0;
-      continue;
-    }
-    if( iA == patch_count_A ) {
-      skyA_bounds[i] = 2.0;
-      continue;
-    }
-
-    // Compute which hemisphere 'skyA_bounds[i]' is in ('skyA_hemi'), and
-    // the fractional area of the hemisphere ('skyA_frac')
-    double skyA_hemi = 0;
-    double skyA_frac = LAL_PI * modf( 2.0 * ( ( double ) iA ) / patch_count_A, &skyA_hemi );
-
-    // Initialise GSL root finder function and set parameter to 'skyA_frac'
-    gsl_function skyA_bounds_fsolver_F = { .function = &SuperskyAHemiFracRoot, .params = &skyA_frac };
-
-    // Set GSL root finder bounds on 'x' to [-1.0, 1.0] and solve for 'x'
-    GCALL( gsl_root_fsolver_set( skyA_bounds_fsolver, &skyA_bounds_fsolver_F, -1.0, 1.0 ) );
-    double x = -1.0;
-    const double epsabs = 1e-4;
-    int status = GSL_CONTINUE;
-    int iterations = 100;
-    while( status == GSL_CONTINUE && iterations-- > 0 ) {
-      GCALL( gsl_root_fsolver_iterate( skyA_bounds_fsolver ) );
-      x = gsl_root_fsolver_root( skyA_bounds_fsolver );
-      const double x_lower = gsl_root_fsolver_x_lower( skyA_bounds_fsolver );
-      const double x_upper = gsl_root_fsolver_x_upper( skyA_bounds_fsolver );
-      status = gsl_root_test_interval( x_lower, x_upper, epsabs, 0.0 );
-    }
-    XLAL_CHECK( status == GSL_SUCCESS, XLAL_EMAXITER, "GSL root solver failed to converge: x=%0.6g, f(x)=%0.6g, epsabs=%0.6g", x, GSL_FN_EVAL(&skyA_bounds_fsolver_F, x), epsabs );
-
-    // Set 'skyA_bounds[i]' from 'skyA_hemi' and 'x'
-    skyA_bounds[i] = -1.0 + 2.0*skyA_hemi + x;
-
-  }
-
-  // Set the parameter-space bound on reduced supersky A coordinate
-  XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, 0, skyA_bounds[0], skyA_bounds[1] ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLALSetLatticeTilingBoundPadding( tiling, 0, patch_index_A == 0, patch_index_A == patch_count_A - 1 ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  // The reduced supersky B coordinate is bounded from below and above by ellipses, with semi-major
-  // axes (in A) of 1.0, and semi-minor axes (in B) given by 'semiB', which has values:
-  //   lower 'semiB' = -1.0 + 2.0 *   'patch_index_B'       / 'patch_count_B'
-  //   upper 'semiB' = -1.0 + 2.0 * ( 'patch_index_B' + 1 ) / 'patch_count_B'
-  // This divides the sky into equal-area bands at constant 'patch_index_B'.
-
-  // Allocate memory
-  const size_t data_len = sizeof( double );
-  double *data_lower = XLALMalloc( data_len );
-  XLAL_CHECK( data_lower != NULL, XLAL_ENOMEM );
-  double *data_upper = XLALMalloc( data_len );
-  XLAL_CHECK( data_upper != NULL, XLAL_ENOMEM );
-
-  // Set the parameter-space bound on reduced supersky B coordinate
-  data_lower[0] = -1.0 + 2.0 * ( ( double ) patch_index_B + 0 ) / patch_count_B;
-  data_upper[0] = -1.0 + 2.0 * ( ( double ) patch_index_B + 1 ) / patch_count_B;
-  XLAL_CHECK( XLALSetLatticeTilingBound( tiling, 1, SuperskyBCoordBound, data_len, data_lower, data_upper ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLALSetLatticeTilingBoundPadding( tiling, 1, patch_index_B == 0, patch_index_B == patch_count_B - 1 ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  // Cleanup
-  gsl_root_fsolver_free( skyA_bounds_fsolver );
-
-  return XLAL_SUCCESS;
-
-}
-
-int XLALSetSuperskyLatticeTilingSkyPointBounds(
-  LatticeTiling *tiling,
-  const gsl_matrix *rssky_transf,
-  const double alpha,
-  const double delta
-  )
-{
 
   // Check input
   XLAL_CHECK( tiling != NULL, XLAL_EFAULT );
+  XLAL_CHECK( rssky_metric != NULL, XLAL_EFAULT );
+  XLAL_CHECK( gsl_matrix_get( rssky_metric, 0, 1 ) == 0, XLAL_EINVAL );
+  XLAL_CHECK( gsl_matrix_get( rssky_metric, 1, 0 ) == 0, XLAL_EINVAL );
   XLAL_CHECK( rssky_transf != NULL, XLAL_EFAULT );
+  XLAL_CHECK( rssky_metric->size1 + 1 == rssky_transf->size1, XLAL_ESIZE );
+  XLAL_CHECK( rssky_transf->size2 == 3, XLAL_ESIZE );
+  XLAL_CHECK( fabs( alpha1 - alpha2 ) <= LAL_PI || ( fabs( alpha1 - alpha2 ) >= LAL_TWOPI && fabs( delta1 ) >= LAL_PI_2 && fabs( delta2 ) >= LAL_PI_2 ), XLAL_EINVAL );
+  XLAL_CHECK( -LAL_PI_2 <= delta1 && delta1 <= LAL_PI_2, XLAL_EINVAL );
+  XLAL_CHECK( -LAL_PI_2 <= delta2 && delta2 <= LAL_PI_2, XLAL_EINVAL );
 
-  // Allocate memory
-  gsl_vector *GAVEC( rssky_point, rssky_transf->size1 - 1 );
+  // If parameter space is a single point:
+  if( alpha1 == alpha2 && delta1 == delta2 ) {
 
-  // Convert right ascension and declination to reduced supersky coordinates
-  PulsarDopplerParams XLAL_INIT_DECL( doppler );
-  doppler.Alpha = alpha;
-  doppler.Delta = delta;
-  XLAL_CHECK( XLALConvertPhysicalToSupersky( SC_RSSKY, rssky_point, &doppler, rssky_transf, &doppler.refTime ) == XLAL_SUCCESS, XLAL_EFUNC );
+    // Convert physical point to reduced supersky coordinates A and B
+    double rssky_point[rssky_metric->size1];
+    gsl_vector_view rssky_point_view = gsl_vector_view_array( rssky_point, rssky_metric->size1 );
+    PulsarDopplerParams XLAL_INIT_DECL( phys_point );
+    phys_point.Alpha = alpha1;
+    phys_point.Delta = delta1;
+    XLAL_CHECK( XLALConvertPhysicalToSupersky( SC_RSSKY, &rssky_point_view.vector, &phys_point, rssky_transf, &phys_point.refTime ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  // Set the parameter-space bounds on 2-dimensional reduced supersky A and B coordinates
-  for( size_t i = 0; i < 2; ++i ) {
-    const double rssky_point_i = gsl_vector_get( rssky_point, i );
-    XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, i, rssky_point_i, rssky_point_i ) == XLAL_SUCCESS, XLAL_EFUNC );
+    // Set the parameter-space bounds on reduced supersky sky coordinates A and B
+    for( size_t dim = 0; dim < 2; ++dim ) {
+      XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, dim, rssky_point[dim], rssky_point[dim] ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+
+    return XLAL_SUCCESS;
+
   }
 
-  // Cleanup
-  GFVEC( rssky_point );
+  // Allocate and initialise bounds data
+  const size_t data_len = MAX_PHYS_SKY_BOUND_DATA * sizeof( PhysicalSkyBoundData );
+  PhysicalSkyBoundData *data_lower = XLALCalloc( 1, data_len );
+  XLAL_CHECK( data_lower != NULL, XLAL_ENOMEM );
+  PhysicalSkyBoundData *data_upper = XLALCalloc( 1, data_len );
+  XLAL_CHECK( data_upper != NULL, XLAL_ENOMEM );
+  for( size_t i = 0; i < MAX_PHYS_SKY_BOUND_DATA; ++i) {
+    data_lower[i].max_A = data_upper[i].max_A = GSL_NEGINF;
+  }
+
+  // Special bounds data representing the lower/upper circular bounds on reduced supersky coordinate B
+  const PhysicalSkyBoundData lower_circular = { .type = -1 };
+  const PhysicalSkyBoundData upper_circular = { .type = 1 };
+
+  // If parameter space is the entire sky:
+  if( fabs( alpha1 - alpha2 ) >= LAL_TWOPI ) {
+
+    // Set bounds data to lower/upper circular bounds
+    data_lower[0] = lower_circular; data_lower[0].max_A = GSL_POSINF;
+    data_upper[0] = upper_circular; data_upper[0].max_A = GSL_POSINF;
+
+    // Set the parameter-space bounds on reduced supersky sky coordinates A and B
+    XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, 0, -2, 2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALSetLatticeTilingBound( tiling, 1, PhysicalSkyBound, data_len, data_lower, data_upper ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    return XLAL_SUCCESS;
+
+  }
+
+  // Determine the right-handed angle of rotation 'phi' in the reduced supersky
+  // plane 'nc = 0' to apply to the matrix
+  //   Q^T = [Q_na; Q_nb; Q_nc] = rssky_transf[0:2, 0:2]
+  // such that the physical sky point 'alpha = min(alpha1,alpha2), delta = 0' is
+  // mapped to the reduced supersky point 'A = B = 0'. This will transform the
+  // physical sky region '[alpha1,alpha2] x [delta1,delta2]' such that moving from
+  // 'delta1' to 'delta2' will run through the 'A' coordinate, and moving from
+  // 'alpha1' to 'alpha2' will roughly run through the 'B' coordinate:
+  //          __________________________________________
+  //   B = 1_|         _____             _____         |
+  //         |      .-'     '-.       .-'     '-.      |
+  //         |    .'           '.   .'           '.    |
+  //         |   /               \ /               \   |
+  //         |  ;                 ;                 ;  |     \.
+  //       0-|  |                 |                 |  |      |---> ~direction of delta
+  //         |  ;                 ;                 ;  |  <__/
+  //         |   \               / \               /   |  ~direction of alpha
+  //         |    '.           .'   '.           .'    |
+  //        _|      '-._____.-'       '-._____.-'      |
+  //      -1 |__.________.________.________.________.__|
+  //            '        '        '        '        '
+  //       A = -2       -1        0        1        2
+  // where '#' indicates the area being tiled.
+  double phi = 0;
+  {
+    const double alpha = GSL_MIN( alpha1, alpha2 );
+    const double cos_alpha = cos(alpha);
+    const double sin_alpha = sin(alpha);
+    const double Q_na_0 = gsl_matrix_get( rssky_transf, 0, 0 );
+    const double Q_na_1 = gsl_matrix_get( rssky_transf, 0, 1 );
+    const double Q_nb_0 = gsl_matrix_get( rssky_transf, 1, 0 );
+    const double Q_nb_1 = gsl_matrix_get( rssky_transf, 1, 1 );
+    const double na = Q_na_0*cos_alpha + Q_na_1*sin_alpha;
+    const double nb = Q_nb_0*cos_alpha + Q_nb_1*sin_alpha;
+    phi = atan2( -nb, na );
+    const double na_rot = na*cos(phi) + nb*sin(phi);
+    if( na_rot < 0 ) {
+      phi -= LAL_PI;
+    } else if( na_rot > 0 ) {
+      phi += LAL_PI;
+    }
+  }
+  const double cos_phi = cos(phi);
+  const double sin_phi = sin(phi);
+
+  // Apply the right-handed rotation matrix
+  //   R = [cos(phi), -sin(phi), 0; sin(phi), cos(phi), 0; 0, 0, 1]
+  // to the reduced supersky coordinate transform data
+  //   rssky_transf = [Q^T; Delta^s]
+  // where 'Q' is the sky alignment matrix and 'Delta^s' are the sky offset vectors.
+  // The correct transformation to apply is:
+  //   Q^T ==> R * Q^T, Delta^s ==> Delta^s . R^T
+  for( size_t j = 0; j < 3; ++j ) {
+    const double Q_na_j = gsl_matrix_get( rssky_transf, 0, j );
+    const double Q_nb_j = gsl_matrix_get( rssky_transf, 1, j );
+    const double Q_na_j_rot = Q_na_j*cos_phi - Q_nb_j*sin_phi;
+    const double Q_nb_j_rot = Q_nb_j*cos_phi + Q_na_j*sin_phi;
+    gsl_matrix_set( rssky_transf, 0, j, Q_na_j_rot );
+    gsl_matrix_set( rssky_transf, 1, j, Q_nb_j_rot );
+  }
+  for( size_t i = 3; i < rssky_transf->size1; ++i ) {
+    const double Delta_0 = gsl_matrix_get( rssky_transf, i, 0 );
+    const double Delta_1 = gsl_matrix_get( rssky_transf, i, 1 );
+    const double Delta_0_rot = Delta_0*cos_phi - Delta_1*sin_phi;
+    const double Delta_1_rot = Delta_1*cos_phi + Delta_0*sin_phi;
+    gsl_matrix_set( rssky_transf, i, 0, Delta_0_rot );
+    gsl_matrix_set( rssky_transf, i, 1, Delta_1_rot );
+  }
+
+  // Apply 'R' to the sky-sky block of the reduced supersky metric
+  //   g_nn = [g_na_na, 0; 0, g_nb_nb]
+  // to compensate for the changes to the coordinate transform data.
+  // The correct transformation to apply is:
+  //   Lambda ==> R * Lambda * R^T
+  // where 'Lambda' re-introduces the supressed 'nc' coordinate dimension
+  //   Lambda = [g_na_na, 0, 0; 0, g_nb_nb, 0; 0, 0, 0]
+  // but since 'R' is a rotation in the 'nc = 0' plane, the metric in
+  // this dimension need not be known, and thus can be assumed to be zero.
+  {
+    const double g_na_na = gsl_matrix_get( rssky_metric, 0, 0 );
+    const double g_nb_nb = gsl_matrix_get( rssky_metric, 1, 1 );
+    const double g_na_na_rot = g_na_na*SQR(cos_phi) + g_nb_nb*SQR(sin_phi);
+    const double g_na_nb_rot = (g_na_na - g_nb_nb)*cos_phi*sin_phi;
+    const double g_nb_nb_rot = g_na_na*SQR(sin_phi) + g_nb_nb*SQR(cos_phi);
+    gsl_matrix_set( rssky_metric, 0, 0, g_na_na_rot );
+    gsl_matrix_set( rssky_metric, 0, 1, g_na_nb_rot );
+    gsl_matrix_set( rssky_metric, 1, 0, g_na_nb_rot );
+    gsl_matrix_set( rssky_metric, 1, 1, g_nb_nb_rot );
+  }
+
+  // Get components of the vectors 'Q_na', 'Q_nb', and 'Q_nc' from coordinate transform data
+  const double Q_na[3] = { gsl_matrix_get( rssky_transf, 0, 0 ), gsl_matrix_get( rssky_transf, 0, 1 ), gsl_matrix_get( rssky_transf, 0, 2 ) };
+  const double Q_nb[3] = { gsl_matrix_get( rssky_transf, 1, 0 ), gsl_matrix_get( rssky_transf, 1, 1 ), gsl_matrix_get( rssky_transf, 1, 2 ) };
+  const double Q_nc[3] = { gsl_matrix_get( rssky_transf, 2, 0 ), gsl_matrix_get( rssky_transf, 2, 1 ), gsl_matrix_get( rssky_transf, 2, 2 ) };
+
+  // Determine the minimum and maximum right ascension and declination
+  const double alphas[2] = { GSL_MIN( alpha1, alpha2 ), GSL_MAX( alpha1, alpha2 ) };
+  const double deltas[2] = { GSL_MIN( delta1, delta2 ), GSL_MAX( delta1, delta2 ) };
+
+  // Create bound data for declination bounds, at constant minimum/maximum right ascension:
+  // Given known 'na' from previous bound, and known minimum/maximum 'alpha', solve
+  //   na = ( Q_na[0]*cos(alpha) + Q_na[1]*sin(alpha) )*cos(delta) + Q_na[2]*sin(delta)
+  // for
+  //   delta = asin( ( na - na0 ) / r ) - angle0
+  // and compute
+  //   nb = C*cos(delta) + S*sin(delta) + Z
+  PhysicalSkyBoundData const_alpha[2];
+  for( size_t i = 0; i < 2; ++i ) {
+    XLAL_INIT_MEM( const_alpha[i] );
+    const_alpha[i].type = 0;
+    const double cos_alpha = cos(alphas[i]);
+    const double sin_alpha = sin(alphas[i]);
+    const double x = Q_na[2];
+    const double y = Q_na[0]*cos_alpha + Q_na[1]*sin_alpha;
+    const_alpha[i].na0 = 0;
+    const_alpha[i].r = sqrt( SQR(x) + SQR(y) );
+    const_alpha[i].angle0 = atan2( y, x );
+    const_alpha[i].C = Q_nb[0]*cos_alpha + Q_nb[1]*sin_alpha;
+    const_alpha[i].S = Q_nb[2];
+    const_alpha[i].Z = 0;
+  }
+
+  // Create bound data for right ascension bounds, at constant minimum/maximum declination:
+  // Given known 'na' from previous bound, and known minimum/maximum 'delta', solve
+  //   na = ( Q_na[0]*cos(alpha) + Q_na[1]*sin(alpha) )*cos(delta) + Q_na[2]*sin(delta)
+  // for
+  //   alpha = asin( ( na - na0 ) / r ) - angle0
+  // and compute
+  //   nb = C*cos(alpha) + S*sin(alpha) + Z
+  PhysicalSkyBoundData const_delta[2];
+  for( size_t j = 0; j < 2; ++j ) {
+    XLAL_INIT_MEM( const_delta[j] );
+    const_delta[j].type = 0;
+    const double cos_delta = cos(deltas[j]);
+    const double sin_delta = sin(deltas[j]);
+    const double x = Q_na[1]*cos_delta;
+    const double y = Q_na[0]*cos_delta;
+    const_delta[j].na0 = Q_na[2]*sin_delta;
+    const_delta[j].r = sqrt( SQR(x) + SQR(y) );
+    const_delta[j].angle0 = atan2( y, x );
+    const_delta[j].C = Q_nb[0]*cos_delta;
+    const_delta[j].S = Q_nb[1]*cos_delta;
+    const_delta[j].Z = Q_nb[2]*sin_delta;
+  }
+
+  // Determine corner points in reduced supersky coordinate A of the region
+  //   '[min(alpha),max(alpha)] x [min(delta),max(delta)]'
+  double corner_A[2][2];
+  for( size_t i = 0; i < 2; ++i ) {
+    for( size_t j = 0; j < 2; ++j ) {
+      double rssky_point[rssky_metric->size1];
+      gsl_vector_view rssky_point_view = gsl_vector_view_array( rssky_point, rssky_metric->size1 );
+      PulsarDopplerParams XLAL_INIT_DECL( phys_point );
+      phys_point.Alpha = alphas[i];
+      phys_point.Delta = deltas[j];
+      XLAL_CHECK( XLALConvertPhysicalToSupersky( SC_RSSKY, &rssky_point_view.vector, &phys_point, rssky_transf, &phys_point.refTime ) == XLAL_SUCCESS, XLAL_EFUNC );
+      corner_A[i][j] = rssky_point[0];
+    }
+  }
+
+  // Use corner points to classify parameter space into different shapes and set bounds data
+  double min_A = GSL_NEGINF, max_A = GSL_POSINF;
+  if( corner_A[1][0] < 0 && corner_A[1][1] <= 0 ) {
+
+    if( corner_A[1][1] < corner_A[1][0] ) {
+
+      //          __________________________________________  Lower bound(s) on B:
+      //   B = 1_|         _____             _____         |  0 = right ascension bound at max(delta) until max_A
+      //         |      .-'     '-.       .-'     '-.      |
+      //         |    .'           '.   .'           '.    |  Upper bound(s) on B:
+      //         |   /               \ /               \   |  0 = declination bound at max(alpha) until corner_A[1][0]
+      //         |  ;          __2_   ;                 ;  |  1 = right ascension bound at min(delta) until corner_A[0][0]
+      //       0-|  |         /####|  |                 |  |  2 = declination bound at min(alpha) until max_A
+      //         |  ;      _1-#####;  ;                 ;  |
+      //         |   \   0/#######/  / \               /   |
+      //         |    '. /###0##.' .'   '.           .'    |
+      //        _|      '-._____.-'       '-._____.-'      |
+      //      -1 |__.________.________.________.________.__|
+      //            '        '        '        '        '
+      //       A = -2       -1        0        1        2
+      min_A = corner_A[1][1]; max_A = corner_A[0][1];
+      data_lower[0] = const_delta[1]; data_lower[0].max_A = GSL_POSINF;
+      data_upper[0] = const_alpha[1]; data_upper[0].max_A = corner_A[1][0];
+      data_upper[1] = const_delta[0]; data_upper[1].max_A = corner_A[0][0];
+      data_upper[2] = const_alpha[0]; data_upper[2].max_A = GSL_POSINF; data_upper[2].altroot = true;
+
+    } else {
+
+      //          __________________________________________  Lower bound(s) on B:
+      //   B = 1_|         _____             _____         |  0 = declination bound at max(alpha) until corner_A[1][1]
+      //         |      .-'     '-.       .-'     '-.      |  1 = right ascension bound at max(delta) until max_A
+      //         |    .'           '.   .'           '.    |
+      //         |   /               \ /               \   |  Upper bound(s) on B:
+      //         |  ;          __1_   ;                 ;  |  0 = right ascension bound at min(delta) until corner_A[0][0]
+      //       0-|  |        0/####|  |                 |  |  1 = declination bound at min(alpha) until max_A
+      //         |  ;        -#####;  ;                 ;  |
+      //         |   \      0\####/  / \               /   |
+      //         |    '.      \1.' .'   '.           .'    |
+      //        _|      '-._____.-'       '-._____.-'      |
+      //      -1 |__.________.________.________.________.__|
+      //            '        '        '        '        '
+      //       A = -2       -1        0        1        2
+      min_A = corner_A[1][0]; max_A = corner_A[0][1];
+      data_lower[0] = const_alpha[1]; data_lower[0].max_A = corner_A[1][1]; data_lower[0].altroot = true;
+      data_lower[1] = const_delta[1]; data_lower[1].max_A = GSL_POSINF;
+      data_upper[0] = const_delta[0]; data_upper[0].max_A = corner_A[0][0];
+      data_upper[1] = const_alpha[0]; data_upper[1].max_A = GSL_POSINF; data_upper[1].altroot = true;
+
+    }
+
+  } else if( 0 <= corner_A[1][0] && 0 < corner_A[1][1] ) {
+
+    if( corner_A[1][1] < corner_A[1][0] ) {
+
+      //          __________________________________________  Lower bound(s) on B:
+      //   B = 1_|         _____             _____         |  0 = right ascension bound at min(delta) until max_A
+      //         |      .-'     '-.       .-'     '-.      |
+      //         |    .'           '.   .'           '.    |  Upper bound(s) on B:
+      //         |   /               \ /               \   |  0 = declination bound at min(alpha) until corner_A[0][1]
+      //         |  ;                 ;   _0__          ;  |  1 = right ascension bound at max(delta) until corner_A[1][1x]
+      //       0-|  |                 |  |####\         |  |  2 = declination bound at max(alpha) until max_A
+      //         |  ;                 ;  ;#####-1_      ;  |
+      //         |   \               / \  \#######\2   /   |
+      //         |    '.           .'   '. '.##0###\ .'    |
+      //        _|      '-._____.-'       '-._____.-'      |
+      //      -1 |__.________.________.________.________.__|
+      //            '        '        '        '        '
+      //       A = -2       -1        0        1        2
+      min_A = corner_A[0][0]; max_A = corner_A[1][0];
+      data_lower[0] = const_delta[0]; data_lower[0].max_A = GSL_POSINF;
+      data_upper[0] = const_alpha[0]; data_upper[0].max_A = corner_A[0][1];
+      data_upper[1] = const_delta[1]; data_upper[1].max_A = corner_A[1][1];
+      data_upper[2] = const_alpha[1]; data_upper[2].max_A = GSL_POSINF; data_upper[2].altroot = true;
+
+    } else {
+
+      //          __________________________________________  Lower bound(s) on B:
+      //   B = 1_|         _____             _____         |  0 = right ascension bound at min(delta) until corner_A[1][0]
+      //         |      .-'     '-.       .-'     '-.      |  1 = declination bound at max(alpha) until max_A
+      //         |    .'           '.   .'           '.    |
+      //         |   /               \ /               \   |  Upper bound(s) on B:
+      //         |  ;                 ;   _0__          ;  |  0 = declination bound at min(alpha) until corner_A[0][1]
+      //       0-|  |                 |  |####\1        |  |  1 = right ascension bound at max(delta) until max_A
+      //         |  ;                 ;  ;#####-        ;  |
+      //         |   \               / \  \####/1      /   |
+      //         |    '.           .'   '. \0.'      .'    |
+      //        _|      '-._____.-'       '-._____.-'      |
+      //      -1 |__.________.________.________.________.__|
+      //            '        '        '        '        '
+      //       A = -2       -1        0        1        2
+      min_A = corner_A[0][0]; max_A = corner_A[1][1];
+      data_lower[0] = const_delta[0]; data_lower[0].max_A = corner_A[1][0];
+      data_lower[1] = const_alpha[1]; data_lower[1].max_A = GSL_POSINF;
+      data_upper[0] = const_alpha[0]; data_upper[0].max_A = corner_A[0][1];
+      data_upper[1] = const_delta[1]; data_upper[1].max_A = GSL_POSINF;
+
+    }
+
+  } else {
+
+    // This parameter space straddles both reduced supersky hemispheres
+    // Find the value of 'na' where this occurs at max(alpha) by solving
+    //   nc = ( Q_nc[0]*cos(max(alpha)) + Q_nc[1]*sin(max(alpha)) )*cos(delta) + Q_nc[2]*sin(delta)
+    // for delta, then computing
+    //   na = ( Q_na[0]*cos(alpha) + Q_na[1]*sin(alpha) )*cos(delta) + Q_na[2]*sin(delta)
+    const double cos_alpha_split = cos(alphas[1]);
+    const double sin_alpha_split = sin(alphas[1]);
+    const double delta_split = -1 * atan2( Q_nc[0]*cos_alpha_split + Q_nc[1]*sin_alpha_split, Q_nc[2] );
+    const double na_split = ( Q_na[0]*cos_alpha_split + Q_na[1]*sin_alpha_split )*cos(delta_split) + Q_na[2]*sin(delta_split);
+    const double split_A[2] = { -1 - na_split, 1 + na_split };
+
+    if( split_A[0] < corner_A[1][0] ) {
+      if( corner_A[1][1] < split_A[1] ) {
+
+        //          __________________________________________  Lower bound(s) on B:
+        //   B = 1_|         _____             _____         |  0 = lower circular bound until max_A
+        //         |      .-'     '-.       .-'     '-.      |
+        //         |    .'           '.   .'           '.    |  Upper bound(s) on B:
+        //         |   /               \ /               \   |  0 = declination bound at max(alpha) until corner_A[1][0]
+        //         |  ;            __2__;___3___          ;  |  1 = right ascension bound at min(delta) until corner_A[0][0]
+        //       0-|  |           /#####|#######\         |  |  2 = declination bound at min(alpha) until A = 0
+        //         |  ;      ___1-######;########-4_      ;  |  3 = declination bound at min(alpha) until corner_A[0][1]
+        //         |   \    /##########/ \##########\    /   |  4 = right ascension bound at max(delta) until corner_A[1][1]
+        //         |    '.0/#########.'   '.#########\5.'    |  5 = declination bound at max(alpha) until max_A
+        //        _|      '-.##0##.-'       '-.##0##.-'      |
+        //      -1 |__.________.________.________.________.__|
+        //            '        '        '        '        '
+        //       A = -2       -1        0        1        2
+        min_A = split_A[0]; max_A = split_A[1];
+        data_lower[0] = lower_circular; data_lower[0].max_A = GSL_POSINF;
+        data_upper[0] = const_alpha[1]; data_upper[0].max_A = corner_A[1][0];
+        data_upper[1] = const_delta[0]; data_upper[1].max_A = corner_A[0][0];
+        data_upper[2] = const_alpha[0]; data_upper[2].max_A = 0; data_upper[2].altroot = true;
+        data_upper[3] = const_alpha[0]; data_upper[3].max_A = corner_A[0][1];
+        data_upper[4] = const_delta[1]; data_upper[4].max_A = corner_A[1][1];
+        data_upper[5] = const_alpha[1]; data_upper[5].max_A = GSL_POSINF; data_upper[5].altroot = true;
+
+      } else {
+
+        //          __________________________________________  Lower bound(s) on B:
+        //   B = 1_|         _____             _____         |  0 = lower circular bound until split_A[1]
+        //         |      .-'     '-.       .-'     '-.      |  1 = declination bound at max(alpha) until max_A
+        //         |    .'           '.   .'           '.    |
+        //         |   /               \ /               \   |  Upper bound(s) on B:
+        //         |  ;            __2__;___3___          ;  |  0 = declination bound at max(alpha) until corner_A[1][0]
+        //       0-|  |           /#####|#######\         |  |  1 = right ascension bound at min(delta) until corner_A[0][0]
+        //         |  ;      ___1-######;########-4_      ;  |  2 = declination bound at min(alpha) until A = 0
+        //         |   \    /##########/ \##########/    /   |  3 = declination bound at min(alpha) until corner_A[0][1]
+        //         |    '.0/#########.'   '.#######/1  .'    |  4 = right ascension bound at max(delta) until max_A
+        //        _|      '-.##0##.-'       '-.#0#/_.-'      |
+        //      -1 |__.________.________.________.________.__|
+        //            '        '        '        '        '
+        //       A = -2       -1        0        1        2
+        min_A = split_A[0]; max_A = corner_A[1][1];
+        data_lower[0] = lower_circular; data_lower[0].max_A = split_A[1];
+        data_lower[1] = const_alpha[1]; data_lower[1].max_A = GSL_POSINF;
+        data_upper[0] = const_alpha[1]; data_upper[0].max_A = corner_A[1][0];
+        data_upper[1] = const_delta[0]; data_upper[1].max_A = corner_A[0][0];
+        data_upper[2] = const_alpha[0]; data_upper[2].max_A = 0; data_upper[2].altroot = true;
+        data_upper[3] = const_alpha[0]; data_upper[3].max_A = corner_A[0][1];
+        data_upper[4] = const_delta[1]; data_upper[4].max_A = GSL_POSINF;
+
+      }
+
+    } else {
+      if( corner_A[1][1] < split_A[1] ) {
+
+        //          __________________________________________  Lower bound(s) on B:
+        //   B = 1_|         _____             _____         |  0 = declination bound at max(alpha) until split_A[0]
+        //         |      .-'     '-.       .-'     '-.      |  1 = lower circular bound until split_A[1]
+        //         |    .'           '.   .'           '.    |
+        //         |   /               \ /               \   |  Upper bound(s) on B:
+        //         |  ;            __1__;___2___          ;  |  0 = right ascension bound at min(delta) until corner_A[0][0]
+        //       0-|  |           /#####|#######\         |  |  1 = declination bound at min(alpha) until A = 0
+        //         |  ;      ___0-######;########-3_      ;  |  2 = declination bound at min(alpha) until corner_A[0][1]
+        //         |   \    \##########/ \##########\    /   |  3 = right ascension bound at max(delta) until corner_A[1][1]
+        //         |    '.  0\#######.'   '.#########\4.'    |  4 = declination bound at max(alpha) until max_A
+        //        _|      '-._'.#1.-'       '-.##1##.-'      |
+        //      -1 |__.________.________.________.________.__|
+        //            '        '        '        '        '
+        //       A = -2       -1        0        1        2
+        min_A = corner_A[1][0]; max_A = split_A[1];
+        data_lower[0] = const_alpha[1]; data_lower[0].max_A = split_A[0]; data_lower[0].altroot = true;
+        data_lower[1] = lower_circular; data_lower[1].max_A = GSL_POSINF;
+        data_upper[0] = const_delta[0]; data_upper[0].max_A = corner_A[0][0];
+        data_upper[1] = const_alpha[0]; data_upper[1].max_A = 0; data_upper[1].altroot = true;
+        data_upper[2] = const_alpha[0]; data_upper[2].max_A = corner_A[0][1];
+        data_upper[3] = const_delta[1]; data_upper[3].max_A = corner_A[1][1];
+        data_upper[4] = const_alpha[1]; data_upper[4].max_A = GSL_POSINF; data_upper[4].altroot = true;
+
+      } else {
+
+        //          __________________________________________  Lower bound(s) on B:
+        //   B = 1_|         _____             _____         |  0 = declination bound at max(alpha) until split_A[0]
+        //         |      .-'     '-.       .-'     '-.      |  1 = lower circular bound until split_A[1]
+        //         |    .'           '.   .'           '.    |  2 = declination bound at max(alpha) until max_A
+        //         |   /               \ /               \   |
+        //         |  ;            __1__;___2___          ;  |  Upper bound(s) on B:
+        //       0-|  |           /#####|#######\         |  |  0 = right ascension bound at min(delta) until corner_A[0][0]
+        //         |  ;      ___0-######;########-3_      ;  |  1 = declination bound at min(alpha) until A = 0
+        //         |   \    \##########/ \##########/    /   |  2 = declination bound at min(alpha) until corner_A[0][1]
+        //         |    '.  0\#######.'   '.#######/2  .'    |  3 = right ascension bound at max(delta) until max_A
+        //        _|      '-._'.#1.-'       '-.#1.'_.-'      |
+        //      -1 |__.________.________.________.________.__|
+        //            '        '        '        '        '
+        //       A = -2       -1        0        1        2
+        min_A = corner_A[1][0]; max_A = corner_A[1][1];
+        data_lower[0] = const_alpha[1]; data_lower[0].max_A = split_A[0]; data_lower[0].altroot = true;
+        data_lower[1] = lower_circular; data_lower[1].max_A = split_A[1];
+        data_lower[2] = const_alpha[1]; data_lower[2].max_A = GSL_POSINF;
+        data_upper[0] = const_delta[0]; data_upper[0].max_A = corner_A[0][0];
+        data_upper[1] = const_alpha[0]; data_upper[1].max_A = 0; data_upper[1].altroot = true;
+        data_upper[2] = const_alpha[0]; data_upper[2].max_A = corner_A[0][1];
+        data_upper[3] = const_delta[1]; data_upper[3].max_A = GSL_POSINF;
+
+      }
+    }
+
+  }
+
+
+  // Set the parameter-space bounds on reduced supersky sky coordinates A and B
+  XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, 0, min_A, max_A ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetLatticeTilingBound( tiling, 1, PhysicalSkyBound, data_len, data_lower, data_upper ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
 

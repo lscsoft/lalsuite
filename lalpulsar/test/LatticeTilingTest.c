@@ -457,7 +457,7 @@ static int SuperskyTest(
 
   // Add bounds
   printf( "Bounds: supersky, freq=%0.3g, freqband=%0.3g\n", freq, freqband );
-  XLAL_CHECK( XLALSetSuperskyLatticeTilingAllSkyBounds( tiling, 2.0, 1, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetSuperskyLatticeTilingPhysicalSkyBounds( tiling, rssky_metric, rssky_transf, 0, LAL_TWOPI, -LAL_PI_2, LAL_PI_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK( XLALSetSuperskyLatticeTilingPhysicalSpinBound( tiling, rssky_transf, 0, freq, freq + freqband ) == XLAL_SUCCESS, XLAL_EFUNC );
   GFMAT( rssky_transf );
 
