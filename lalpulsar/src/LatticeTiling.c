@@ -45,8 +45,8 @@ typedef struct tagLT_Bound {
   size_t data_len;			///< Length of arbitrary data describing parameter-space bounds
   void *data_lower;			///< Arbitrary data describing lower parameter-space bound
   void *data_upper;			///< Arbitrary data describing upper parameter-space bound
-  bool pad_lower;			///< Whether lower parameter space bound should be padded
-  bool pad_upper;			///< Whether upper parameter space bound should be padded
+  UINT4 pad_lower;			///< Multiple of lower parameter space bound padding to apply
+  UINT4 pad_upper;			///< Multiple of upper parameter space bound padding to apply
 } LT_Bound;
 
 ///
@@ -243,14 +243,10 @@ static void LT_GetExtremalBounds(
 
     }
 
-    // Add padding of half the metric ellipse bounding box in this dimension
+    // Add padding of (multiples of) half the metric ellipse bounding box in this dimension
     const double phys_bbox_dim = 0.5 * gsl_vector_get( tiling->phys_bbox, dim );
-    if( tiling->bounds[dim].pad_lower ) {
-      *phys_lower -= phys_bbox_dim;
-    }
-    if( tiling->bounds[dim].pad_upper ) {
-      *phys_upper += phys_bbox_dim;
-    }
+    *phys_lower -= tiling->bounds[dim].pad_lower * phys_bbox_dim;
+    *phys_upper += tiling->bounds[dim].pad_upper * phys_bbox_dim;
 
   }
 
@@ -495,8 +491,8 @@ int XLALSetLatticeTilingBound(
   tiling->bounds[dim].data_len = data_len;
   tiling->bounds[dim].data_lower = data_lower;
   tiling->bounds[dim].data_upper = data_upper;
-  tiling->bounds[dim].pad_lower = true;
-  tiling->bounds[dim].pad_upper = true;
+  tiling->bounds[dim].pad_lower = 1;
+  tiling->bounds[dim].pad_upper = 1;
 
   return XLAL_SUCCESS;
 
@@ -505,8 +501,8 @@ int XLALSetLatticeTilingBound(
 int XLALSetLatticeTilingBoundPadding(
   LatticeTiling *tiling,
   const size_t dim,
-  bool pad_lower,
-  bool pad_upper
+  UINT4 pad_lower,
+  UINT4 pad_upper
   )
 {
 

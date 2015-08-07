@@ -134,8 +134,8 @@ int XLALSetLatticeTilingBound(
 int XLALSetLatticeTilingBoundPadding(
   LatticeTiling *tiling,		///< [in] Lattice tiling
   const size_t dim,			///< [in] Dimension on which bound applies
-  bool pad_lower,			///< [in] Whether lower parameter space bound should be padded
-  bool pad_upper			///< [in] Whether upper parameter space bound should be padded
+  UINT4 pad_lower,			///< [in] Multiple of lower parameter space bound padding to apply
+  UINT4 pad_upper			///< [in] Multiple of upper parameter space bound padding to apply
   );
 
 ///
