@@ -22,7 +22,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <malloc.h>
 #include <complex.h>
 #include <lal/Date.h>
 #include <lal/FrequencySeries.h>
