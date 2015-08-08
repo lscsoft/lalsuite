@@ -2413,17 +2413,31 @@ int XLALSimInspiralInitialConditionsPrecessingApproxs(
     ROTATEY(inclIn,*S2x,*S2y,*S2z);
     *inc=acos((-sin(inclIn)*LNx+cos(inclIn)*LNz)/LNmag);
     break;
-  /* FRAME_AXIS_ORBITAL_L
+  /* FRAME_AXIS_VIEW (OLD default)
+   * (spins wrt to view direction, inclIn is the angle between L and N: if
+   * N=(0,0,1) Lhat=(sin(inclIn),0,cos(inclIn)) )
+   */
+  case LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW:
+    *S1x=S1xIn;
+    *S1y=S1yIn;
+    *S1z=S1zIn;
+    *S2x=S2xIn;
+    *S2y=S2yIn;
+    *S2z=S2zIn;
+    *inc=inclIn;
+    break;
+  /* FRAME_AXIS_ORBITAL_L (default)
    * (spins wrt to L, inclIn is the angle between L and N: if
-   * N=(0,0,1) Lhat=(sin(inclIn),0,cos(inclIn)))
+   * LNhat=(0,0,1) N=(-sin(inclIn),0,cos(inclIn)) )
    */
   case LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L:
+  default:
     *S1x=S1xIn*cos(inclIn)+S1zIn*sin(inclIn);
     *S1y=S1yIn;
     *S1z=-S1xIn*sin(inclIn)+S1zIn*cos(inclIn);
-    break;
-  case LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW:
-  default:
+    *S2x=S2xIn*cos(inclIn)+S2zIn*sin(inclIn);
+    *S2y=S2yIn;
+    *S2z=-S2xIn*sin(inclIn)+S2zIn*cos(inclIn);
     break;
   }
 
