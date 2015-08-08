@@ -132,7 +132,7 @@ static int BasicTest(
     for( size_t j = 0; j < n; ++j ) {
       const LatticeTilingStats *stats = XLALLatticeTilingStatistics( tiling, j );
       XLAL_CHECK( stats != NULL, XLAL_EFUNC );
-      printf( "   %li <= %0.3g <= %li (total=%" LAL_UINT8_FORMAT ")\n", stats->min_points_pass, stats->avg_points_pass, stats->max_points_pass, stats->total_points );
+      printf( "   %" LAL_INT8_FORMAT " <= %0.3g <= %" LAL_INT8_FORMAT " (total=%" LAL_UINT8_FORMAT ")\n", stats->min_points_pass, stats->avg_points_pass, stats->max_points_pass, stats->total_points );
       XLAL_CHECK( stats->total_points == total_ref[j], XLAL_EFUNC, "ERROR: total = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = total_ref", stats->total_points, total_ref[j] );
       XLAL_CHECK( stats->min_points_pass <= stats->avg_points_pass && stats->avg_points_pass <= stats->max_points_pass, XLAL_EFAILED );
     }
