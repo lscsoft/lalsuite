@@ -1225,23 +1225,30 @@ INT4 LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
     UINT4 ifo=0;
     REAL8 counter=1.;
     UINT4 BAILOUT=100*testnumber; /* If no acceptance after 100 tries, will exit and the sampler will try a different starting point */
+    const char *extra_names[]={"logL","optimal_snr","matched_filter_snr","deltalogL"}; /* Names for parameters to be stripped when sampling prior */
+    UINT4 Nnames = 4;
     do{
         counter=counter-1.;
         subchain_length=0;
+        for(UINT4 i=0;i<Nnames;i++)
+        {
+          if(LALInferenceCheckVariable(runState->currentParams,extra_names[i]))
+            LALInferenceRemoveVariable(runState->currentParams,extra_names[i]);
+        }
         /* Draw an independent sample from the prior */
         do{
             sub_accepted+=LALInferenceMCMCSamplePrior(runState);
             subchain_length++;
             counter+=(1.-sloppyfraction);
         }while(counter<1);
-	/* Check that there was at least one accepted point */
-	if(sub_accepted==0) {
-	    tries++;
-	    sub_iter+=subchain_length;
-	    mcmc_iter++;
-            LALInferenceCopyVariables(&oldParams,runState->currentParams);
-            runState->currentLikelihood=logLold;
-	    continue;
+        /* Check that there was at least one accepted point */
+        if(sub_accepted==0) {
+          tries++;
+          sub_iter+=subchain_length;
+          mcmc_iter++;
+          LALInferenceCopyVariables(&oldParams,runState->currentParams);
+          runState->currentLikelihood=logLold;
+          continue;
         }
         tries=0;
         mcmc_iter++;

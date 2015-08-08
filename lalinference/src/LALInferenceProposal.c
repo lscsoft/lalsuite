@@ -87,6 +87,7 @@ const char *const ensembleWalkIntrinsicName = "EnsembleWalkIntrinsic";
 const char *const ensembleWalkExtrinsicName = "EnsembleWalkExtrinsic";
 const char *const clusteredKDEProposalName = "ClusteredKDEProposal";
 const char *const splineCalibrationProposalName = "SplineCalibration";
+const char *const distanceLikelihoodProposalName = "DistanceLikelihood";
 
 static int
 same_detector_location(LALInferenceIFOData *d1, LALInferenceIFOData *d2) {
@@ -382,6 +383,11 @@ void LALInferenceSetupDefaultNSProposal(LALInferenceRunState *runState, LALInfer
     LALInferenceAddProposalToCycle(runState, splineCalibrationProposalName, &LALInferenceSplineCalibrationProposal, SMALLWEIGHT);
   }
 
+  /* Distance proposal */
+  if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-distance")){
+    LALInferenceAddProposalToCycle(runState, distanceLikelihoodProposalName, &LALInferenceDistanceLikelihoodProposal, SMALLWEIGHT);
+  }
+  
   LALInferenceRandomizeProposalCycle(runState);
   LALInferenceZeroProposalStats(runState);
 }
@@ -502,6 +508,10 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *curr
       if (LALInferenceGetProcParamVal(runState->commandLine,"--ptmcmc-samples") || LALInferenceGetProcParamVal(runState->commandLine,"--ascii-samples")) {
           LALInferenceSetupClusteredKDEProposalsFromFile(runState);
       }
+  }
+  /* Distance proposal */
+  if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-distance")){
+    LALInferenceAddProposalToCycle(runState, distanceLikelihoodProposalName, &LALInferenceDistanceLikelihoodProposal, SMALLWEIGHT);
   }
 
   LALInferenceRandomizeProposalCycle(runState);
@@ -2949,6 +2959,85 @@ reflected_extrinsic_parameters(LALInferenceRunState *runState, const REAL8 ra, c
 
 }
 
+REAL8 LALInferenceDistanceLikelihoodProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams)
+{
+  const char *propName = distanceLikelihoodProposalName;
+  LALInferenceSetVariable(runState->proposalArgs,LALInferenceCurrentProposalName,&propName);
+  LALInferenceCopyVariables(currentParams,proposedParams);
+  REAL8 old_d=0.0;
+  DistanceParam distParam;
+  
+  if (LALInferenceCheckVariable(proposedParams, "distance")) {
+    distParam = USES_DISTANCE_VARIABLE;
+    old_d = LALInferenceGetREAL8Variable(proposedParams,"distance");
+  } else if (LALInferenceCheckVariable(proposedParams, "logdistance")) {
+    distParam = USES_LOG_DISTANCE_VARIABLE;
+    old_d = exp(LALInferenceGetREAL8Variable(proposedParams,"logdistance"));
+  } else {
+    XLAL_ERROR_REAL8(XLAL_FAILURE, "could not find 'distance' or 'logdistance' in current params");
+  }
+  if(!LALInferenceCheckVariable(proposedParams,"optimal_snr") || !LALInferenceCheckVariable(proposedParams,"matched_filter_snr"))
+    /* Force a likelihood calculation to generate the parameters */
+    runState->likelihood(proposedParams,runState->data,runState->model);
+
+  REAL8 OptimalSNR = LALInferenceGetREAL8Variable(proposedParams,"optimal_snr");
+  REAL8 MatchedFilterSNR = LALInferenceGetREAL8Variable(proposedParams,"matched_filter_snr");
+  REAL8 d_inner_h = MatchedFilterSNR * OptimalSNR;
+
+  /* Get params of sampling distribution */
+  REAL8 xmean = d_inner_h/(OptimalSNR*OptimalSNR*old_d);
+  REAL8 xsigma = 1.0/(OptimalSNR*old_d);
+  REAL8 old_x = 1.0/old_d;
+  
+  /* Sample new x, cutting off the part of the Gaussian that extends
+     to new_x < 0.  (Since the proposal density remains fixed for new
+     and old x, this just introduces a constant normalisation factor
+     that cancels in the proposal ratio.) */
+  REAL8 new_x;
+  do {
+    new_x = xmean + gsl_ran_gaussian(runState->GSLrandom,xsigma);
+  } while (new_x <= 0.0);
+  REAL8 new_d = 1.0/new_x;
+  
+  /* Adjust SNRs */
+  OptimalSNR*= new_x / old_x;
+  
+  LALInferenceSetVariable(proposedParams,"optimal_snr",&OptimalSNR);
+  
+  REAL8 logxdjac;
+  /* Set distance */
+  if(distParam == USES_DISTANCE_VARIABLE)
+  {
+    /* The natural proposal density is in x, but we need to compute
+       the proposal ratio density in d.  So, we need a factor of 
+       
+       |dx_old/dd_old| / |dx_new/dd_new| = d_new^2 / d_old^2
+
+       to correct the x proposal density.
+    */
+    LALInferenceSetVariable(proposedParams,"distance",&new_d);
+    logxdjac = 2.0*log(new_d) - 2.0*log(old_d);
+  }
+  else
+  {
+    /* The natural proposal density is in x, but we need to compute
+       the proposal ratio in log(d).  So, we need a factor of
+
+       |dx_old/dlog(d_old)| / |dx_new/dlog(d_new)| = d_new / d_old
+
+       to correct the x proposal density.
+     */
+    REAL8 new_logd = log(new_d);
+    LALInferenceSetVariable(proposedParams,"logdistance",&new_logd);
+    logxdjac = log(new_d) - log(old_d);
+  }
+  /* Proposal ratio is not symmetric */
+  /* P.R. = p(xold|xmean,xsigma) / p(xnew|xmean,xsigma) * jacobian */
+  REAL8 log_p_reverse = -0.5*(old_x-xmean)*(old_x-xmean)/(xsigma*xsigma);
+  REAL8 log_p_forward = -0.5*(new_x-xmean)*(new_x-xmean)/(xsigma*xsigma);
+  return(log_p_reverse - log_p_forward + logxdjac);
+  
+}
 
 REAL8 LALInferenceExtrinsicParamProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams) {
   const char *propName = extrinsicParamProposalName;
