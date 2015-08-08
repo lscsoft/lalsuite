@@ -399,7 +399,7 @@ static void LT_PrintIndexTrie(
   double phys_upper = phys_lower + phys_from_int_i_i * ( trie->int_upper - trie->int_lower );
 
   // Print information on the current trie trie dimension
-  fprintf( file, "dim: #%zu/%zu   int: [%+5li,%+5li]   phys: [%+10g,%+10g]   seqidx:%lu\n",
+  fprintf( file, "dim: #%zu/%zu   int: [%+5" LAL_INT8_FORMAT ",%+5" LAL_INT8_FORMAT "]   phys: [%+10g,%+10g]   seqidx:%" LAL_UINT8_FORMAT "\n",
            ti + 1, tn, trie->int_lower, trie->int_upper, phys_lower, phys_upper, trie->seqidx );
 
   // If this is not the highest dimension, loop over this dimension
