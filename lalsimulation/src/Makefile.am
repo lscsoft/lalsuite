@@ -129,6 +129,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimInspiralTaylorT2.c \
 	LALSimInspiralTaylorT3.c \
 	LALSimInspiralTaylorT4.c \
+	LALSimInspiralEccentricTD.c \
 	LALSimInspiralSpinTaylorT5.c \
 	LALSimInspiralSpinDominatedWaveform.c \
 	LALSimInspiralTaylorLength.c \

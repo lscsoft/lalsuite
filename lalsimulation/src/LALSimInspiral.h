@@ -273,6 +273,7 @@ typedef enum {
    IMRPhenomFC,		/**< Frequency domain (non-precessing spins) inspiral-merger-ringdown templates of Santamaria et al [Santamaria:2010yb] with phenomenological coefficients defined in the Table II of [Santamaria:2010yb]*/
    TaylorEt,		/**< UNDOCUMENTED */
    TaylorT4,		/**< UNDOCUMENTED */
+   EccentricTD,		/**< Time domain Taylor T4 approximant including orbital eccentricity effects */
    TaylorN,		/**< UNDOCUMENTED */
    SpinTaylorT4Fourier, /**< Frequency domain (generic spins) inspiral only waveforms based on TaylorT4, arXiv: 1408.5158 */
    SpinTaylorT2Fourier, /**< Frequency domain (generic spins) inspiral only waveforms based on TaylorT2, arXiv: 1408.5158 */
@@ -1005,6 +1006,51 @@ int XLALSimInspiralPNPolarizationWaveforms(
         REAL8 i,                  /**< inclination of source (rad) */
         int ampO                  /**< twice PN order of the amplitude */
         );
+
+
+
+
+/**
+ * Given time series for a binary's orbital dynamical variables,
+ * computes the radial and angular orbital motion; then constructs
+ * the waveform polarizations h+ and hx in terms of the relative
+ * separation r, the `true anomaly` phi and their time derivatives.
+ * NB: Valid only for non-spinning binaries in inspiralling!
+ * and precessing eccentric orbits!
+ *
+ * Implements Equations (3.7a) - (3.7c) and Equations (B2a) - (B2d), (B4a), (B4b) of:
+ * Sashwat Tanay, Maria Haney, and Achamveedu Gopakumar,
+ * \"Frequency and time domain inspiral waveforms from comparable 
+ * mass compact binaries in eccentric orbits\", (2015);
+ * arXiv:TBD
+ * https://dcc.ligo.org/P1500148-v1
+ * 
+ * (note that above equations use x = v^2 as the PN expansion parameter)
+ * 
+ * as well as Equations (6a) and (6b) of:
+ * Thibault Damour, Achamveedu Gopakumar, and Bala R. Iyer,
+ * \"Phasing of gravitational waves from inspiralling eccentric 
+ * binaries\", Phys. Rev. D 70 064028 (2004);
+ * arXiv:gr-qc/0404128.
+ *
+ */
+
+int XLALSimInspiralPNPolarizationWaveformsEccentric(
+        REAL8TimeSeries **hplus,  /**< +-polarization waveform [returned] */
+        REAL8TimeSeries **hcross, /**< x-polarization waveform [returned] */
+        REAL8TimeSeries *V,       /**< post-Newtonian (PN) parameter */
+	REAL8TimeSeries *Ecc,
+	REAL8TimeSeries *U,
+        REAL8TimeSeries *Phi,     /**< orbital phase */
+        REAL8 m1,                 /**< mass of companion 1 (kg) */
+        REAL8 m2,                 /**< mass of companion 2 (kg) */
+        REAL8 r,                  /**< distance of source (m) */
+        REAL8 i,                  /**< inclination of source (rad) */
+        int ampO,                  /**< twice PN order of the amplitude */
+	int ph_O
+        );
+
+
 
 /**
  * Computes polarizations h+ and hx for a spinning, precessing binary
@@ -2166,6 +2212,120 @@ int XLALSimInspiralTaylorEtPNRestricted(
 	       	REAL8 i,                  /**< inclination of source (rad) */
 	       	int O                     /**< twice post-Newtonian phase order */
 		);
+
+
+
+/* EccentricTD functions */
+
+/**
+ * Evolves a post-Newtonian orbit using the eccentric Taylor T4 method.
+ *
+ * See:
+ *  Sashwat Tanay, Maria Haney, and Achamveedu Gopakumar,
+ * \"Frequency and time domain inspiral waveforms from comparable 
+ * mass compact binaries in eccentric orbits\", (2015);
+ * arXiv:TBD
+ * https://dcc.ligo.org/P1500148-v1
+ */
+
+int XLALSimInspiralEccentricTDPNEvolveOrbit(
+		REAL8TimeSeries **v,            /**< post-Newtonian parameter [returned] */
+		REAL8TimeSeries **et,
+		REAL8TimeSeries **l,
+		REAL8TimeSeries **lambda,          /**< orbital phase [returned] */
+		REAL8TimeSeries **u,
+		REAL8TimeSeries **phi,
+		REAL8 phiRef,                   /**< reference orbital phase (rad) */
+		REAL8 deltaT,                   /**< sampling interval (s) */
+		REAL8 m1,                       /**< mass of companion 1 (kg) */
+		REAL8 m2,                       /**< mass of companion 2 (kg) */
+		REAL8 f_min,                    /**< start frequency (Hz) */
+		REAL8 fRef,                     /**< reference frequency (Hz) */
+		REAL8 e_min,			/**< initial orbital eccentricity at f_min */
+		int O                           /**< twice post-Newtonian order */
+		);
+
+/**
+ * Driver routine to compute the post-Newtonian inspiral waveform.
+ *
+ * This routine allows the user to specify different PN orders
+ * for phasing calcuation vs. amplitude calculations.
+ * 
+ * Note that at present phasing calculations for eccentric waveforms are implemented 
+ * up to 2PN order, while amplitude calculations are accurate up to Newtonian 
+ * (quadrupolar) order.
+ * Higher-order contributions to phasing and amplitude calculations will be implemented
+ * in the near future.
+ */
+
+int XLALSimInspiralEccentricTDPNGenerator(
+		REAL8TimeSeries **hplus,        /**< +-polarization waveform */
+		REAL8TimeSeries **hcross,       /**< x-polarization waveform */
+		REAL8 phiRef,                   /**< reference orbital phase (rad) */
+		REAL8 deltaT,                   /**< sampling interval (s) */
+		REAL8 m1,                       /**< mass of companion 1 (kg) */
+		REAL8 m2,                       /**< mass of companion 2 (kg) */
+		REAL8 f_min,                    /**< starting GW frequency (Hz) */
+		REAL8 fRef,                     /**< reference GW frequency (Hz) */
+		REAL8 r,                        /**< distance of source (m) */
+		REAL8 i,                        /**< inclination of source (rad) */
+		REAL8 e_min,			/**< initial orbital eccentricity at f_min */
+		int amplitudeO,                 /**< twice post-Newtonian amplitude order */
+		int phaseO                      /**< twice post-Newtonian phase order */
+		);
+
+/**
+ * Driver routine to compute the post-Newtonian inspiral waveform.
+ *
+ * This routine uses the same PN order for phasing and amplitude
+ * (unless the order is -1 in which case the highest available
+ * order is used for both of these -- which might not be the same).
+ * 
+ * Note that amplitudes of eccentric waveforms are at present Newtonian order by default.
+ * Amplitude corrections will be implemented in the near future.
+ */
+
+int XLALSimInspiralEccentricTDPN(
+		REAL8TimeSeries **hplus,        /**< +-polarization waveform */
+		REAL8TimeSeries **hcross,       /**< x-polarization waveform */
+		REAL8 phiRef,                   /**< reference orbital phase (rad) */
+		REAL8 deltaT,                   /**< sampling interval (Hz) */
+		REAL8 m1,                       /**< mass of companion 1 (kg) */
+		REAL8 m2,                       /**< mass of companion 2 (kg) */
+		REAL8 f_min,                    /**< start frequency (Hz) */
+		REAL8 fRef,                     /**< reference frequency (Hz) */
+		REAL8 r,                        /**< distance of source (m) */
+		REAL8 i,                        /**< inclination of source (rad) */
+		REAL8 e_min,			/**< initial orbital eccentricity at f_min */
+		int O                           /**< twice post-Newtonian order */
+		);
+
+/**
+ * Driver routine to compute the restricted post-Newtonian inspiral waveform.
+ *
+ * This routine computes the phasing to the specified order, but
+ * only computes the amplitudes to the Newtonian (quadrupole) order.
+ * 
+ * Note that amplitudes of eccentric waveforms are at present Newtonian order by default.
+ * Amplitude corrections will be implemented in the near future.
+ */
+
+int XLALSimInspiralEccentricTDPNRestricted(
+		REAL8TimeSeries **hplus,        /**< +-polarization waveform */
+		REAL8TimeSeries **hcross,       /**< x-polarization waveform */
+		REAL8 phiRef,                   /**< reference orbital phase (rad) */
+		REAL8 deltaT,                   /**< sampling interval (s) */
+		REAL8 m1,                       /**< mass of companion 1 (kg) */
+		REAL8 m2,                       /**< mass of companion 2 (kg) */
+		REAL8 f_min,                    /**< start frequency (Hz) */
+		REAL8 fRef,                     /**< reference frequency (Hz) */
+		REAL8 r,                        /**< distance of source (m) */
+		REAL8 i,                        /**< inclination of source (rad) */
+		REAL8 e_min,			/**< initial orbital eccentricity at f_min */
+		int O                           /**< twice post-Newtonian phase order */
+		);
+
+
 
 /**
  * Structure for passing around PN phasing coefficients.

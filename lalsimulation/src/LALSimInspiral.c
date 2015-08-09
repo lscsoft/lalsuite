@@ -433,6 +433,13 @@ double XLALSimInspiralGetFinalFreq(
         case TaylorT2:
         case TaylorT3:
         case TaylorT4:
+	case EccentricTD:
+	    /* Check that spins are zero */
+	    if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
+	    {	
+		XLALPrintError("Non-zero spins were given, but this is a non-spinning approximant.\n");
+		XLAL_ERROR(XLAL_EINVAL);
+	    }
 	case EccentricFD:
             /* Check that spins are zero */
             if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
@@ -1163,6 +1170,334 @@ int XLALSimInspiralPNPolarizationWaveforms(
     } /* end loop over time series samples idx */
     return XLAL_SUCCESS;
 }
+
+
+
+
+
+/**
+ * Given time series for a binary's orbital dynamical variables,
+ * computes the radial and angular orbital motion; then constructs
+ * the waveform polarizations h+ and hx in terms of the relative
+ * separation r, the `true anomaly` phi and their time derivatives.
+ * NB: Valid only for non-spinning binaries in inspiralling!
+ * and precessing eccentric orbits!
+ *
+ * Implements Equations (3.7a) - (3.7c) and Equations (B2a) - (B2d), (B4a), (B4b) of:
+ * Sashwat Tanay, Maria Haney, and Achamveedu Gopakumar,
+ * \"Frequency and time domain inspiral waveforms from comparable 
+ * mass compact binaries in eccentric orbits\", (2015);
+ * arXiv:TBD
+ * https://dcc.ligo.org/P1500148-v1
+ * 
+ * (note that above equations use x = v^2 as the PN expansion parameter)
+ * 
+ * as well as Equations (6a) and (6b) of:
+ * Thibault Damour, Achamveedu Gopakumar, and Bala R. Iyer,
+ * \"Phasing of gravitational waves from inspiralling eccentric 
+ * binaries\", Phys. Rev. D 70 064028 (2004);
+ * arXiv:gr-qc/0404128.
+ *
+ */
+
+int XLALSimInspiralPNPolarizationWaveformsEccentric(
+	REAL8TimeSeries **hplus,  /**< +-polarization waveform [returned] */
+	REAL8TimeSeries **hcross, /**< x-polarization waveform [returned] */
+	REAL8TimeSeries *V,       /**< post-Newtonian (PN) parameter */
+	REAL8TimeSeries *Ecc,     /**< orbital eccentricity */
+	REAL8TimeSeries *U,       /**< eccentric anomaly of quasi-Keplerian orbit */
+	REAL8TimeSeries *Phi,     /**< orbital phase */
+	REAL8 m1,                 /**< mass of companion 1 (kg) */
+	REAL8 m2,                 /**< mass of companion 2 (kg) */
+	REAL8 r,                  /**< distance of source (m) */
+	REAL8 i,                  /**< inclination of source (rad) */
+	int ampO,                 /**< twice PN order of the amplitude */
+	int ph_O
+	)
+{
+    REAL8 mt, eta, dist, ampfac, phi, v, et, u;
+    REAL8 dt, OTS;
+    REAL8 CF_rdot, CF_rphidot, CF_Z, r_sc, rdot_sc, phidot;
+    REAL8 rdot, rphidot, Z;
+    REAL8 hp0;
+    REAL8 hc0;
+    REAL8 ci, si, ci2, si2;
+    INT4 idx, len;
+
+    /* Sanity check input time series */
+    LAL_CHECK_VALID_SERIES(V, XLAL_FAILURE);
+    LAL_CHECK_VALID_SERIES(Ecc, XLAL_FAILURE);
+    LAL_CHECK_VALID_SERIES(U, XLAL_FAILURE);
+    LAL_CHECK_VALID_SERIES(Phi, XLAL_FAILURE);
+    LAL_CHECK_CONSISTENT_TIME_SERIES(V, Ecc, XLAL_FAILURE);
+    LAL_CHECK_CONSISTENT_TIME_SERIES(V, U, XLAL_FAILURE);
+    LAL_CHECK_CONSISTENT_TIME_SERIES(V, Phi, XLAL_FAILURE);
+    
+    /* Allocate polarization vectors and set to 0 */
+    *hplus = XLALCreateREAL8TimeSeries( "H_PLUS", &V->epoch, 0.0, 
+            V->deltaT, &lalStrainUnit, V->data->length );
+    *hcross = XLALCreateREAL8TimeSeries( "H_CROSS", &V->epoch, 0.0, 
+            V->deltaT, &lalStrainUnit, V->data->length );
+    if ( ! hplus || ! hcross )
+        XLAL_ERROR(XLAL_EFUNC);
+    memset((*hplus)->data->data, 0, (*hplus)->data->length 
+            * sizeof(*(*hplus)->data->data));
+    memset((*hcross)->data->data, 0, (*hcross)->data->length 
+            * sizeof(*(*hcross)->data->data));
+
+    mt = (m1 + m2)/LAL_MSUN_SI;
+    eta = m1 * m2 / pow(m1 + m2, 2.0); // symmetric mass ratio - '\nu' in the paper
+    dist = r / LAL_C_SI;   // r (m) / c (m/s) --> dist in units of seconds
+    /* convert mass from kg to s, so ampfac ~ M/dist is dimensionless */
+    ampfac = mt * LAL_MTSUN_SI * eta / dist;
+    
+    /* 
+     * cosines and sines of inclination between 
+     * line of sight (N) and binary orbital angular momentum (L_N)
+     */
+    ci = cos(i);  	si = sin(i);
+    ci2 = ci*ci;
+    si2 = si*si;
+
+    /* loop over time steps and compute first radial and angular orbital variables, 
+     * then the waveform polarizations h+ and hx */
+    len = V->data->length;
+    for(idx = 0; idx < len; idx++)
+    {
+        /* Abbreviated names in lower case for time series at this sample */
+        phi = Phi->data->data[idx]; 	et = Ecc->data->data[idx];	u = U->data->data[idx];	v = V->data->data[idx];   
+
+	/* Some abbreviated functions in terms of u and et. */
+	dt	= 1. - et * cos(u);
+	OTS	= sqrt(1. - et * et);
+	
+	/*
+         * First set the functions for the dimensionless orbital variables 
+	 * (1/c)*dr/dt, (r/c)*dphi/dt, Z = G*m/(r*c^2) to 0. 
+	 * Then use a switch to set proper non-zero values 
+         * up to order ph_O for the contributions to the dimensionless variables. Note we
+         * fall through the PN orders and break only after Newt. order
+         */
+	
+	rdot = rphidot = Z = 0;
+	
+	/* Common factors in PN accurate expressions for orbital variables */
+	CF_rdot = et * v*sin(u)/dt;
+	CF_rphidot = OTS * v / dt;
+	CF_Z = pow(v, 2.0) / dt;
+	
+	switch( ph_O )
+        {
+	    /* case LAL_PNORDER_FOUR: */
+            case 8:
+                XLALPrintError("XLAL Error - %s: dynamical variables not known "
+                        "to PN order %d\n", __func__, ph_O );
+                XLAL_ERROR(XLAL_EINVAL);
+                break;
+            /* case LAL_PNORDER_THREE_POINT_FIVE: */
+            case 7:
+                XLALPrintError("XLAL Error - %s: dynamical variables not known "
+                        "to PN order %d\n", __func__, ph_O );
+                XLAL_ERROR(XLAL_EINVAL);
+                break;
+            /* case LAL_PNORDER_THREE: */
+            case 6:
+		XLALPrintError("XLAL Error - %s: dynamical variables not yet implemented "
+                        "to PN order %d\n", __func__, ph_O );
+                XLAL_ERROR(XLAL_EINVAL);
+                break;
+            /* case LAL_PNORDER_TWO_POINT_FIVE: */
+            case 5:
+		XLALPrintError("XLAL Error - %s: dynamical variables not yet implemented "
+                        "to PN order %d\n", __func__, ph_O );
+                XLAL_ERROR(XLAL_EINVAL);
+                break;
+	    case -1: // Highest known PN order - move if higher terms added!
+            /* case LAL_PNORDER_TWO: */
+            case 4:
+		r_sc 	= 1.
+			  //==============================================================================
+			  + ((-24. + dt * (18. - 7. * eta) + 9. * eta + pow(et, 2.0) * (24. - 9. * eta 
+			  + dt * (-6. + 7. * eta))) * pow(v, 2.0)) / (6. * dt * pow(OTS, 2.0))
+			  //==============================================================================
+			  + ((-288. + 765. * eta - 27. * pow(eta,  2.0) 
+			  + pow(et, 4.0) * (261. * eta - 27 * pow(eta, 2.0)) 
+			  + pow(et, 2.0) * (288. - 1026. * eta + 54. * pow(eta, 2.0)) 
+			  + (-540. + pow(et, 2.0) * (540. - 216. * eta) 
+			  + 216. * eta) * OTS + dt * (648. - 567. * eta + 35. * pow(eta, 2.0) 
+			  + pow(et, 2.0) * (468. + 150. * eta - 70. * pow(eta, 2.0)) 
+			  + pow(et, 4.0) * (72. - 231. * eta + 35. * pow(eta, 2.0)) 
+			  + (180. - 72. * eta + pow(et, 2.0) * (-180. + 72. * eta)) * OTS)) * pow(v, 4.0)) 
+			  / (72. * dt * pow(OTS, 4.0));
+			  //==============================================================================
+		phidot = 1.
+			  //===========================================================================================
+			  + (-1. + dt + pow(et, 2.0)) * (-4. + eta) * pow(v, 2.0) / (dt * pow(OTS, 2.0))
+			  //===========================================================================================
+			  + (-6. * pow(1. - pow(et, 2.0), 3.0) * eta * (3. + 2. * eta) 
+			  + pow(dt, 3.0) * (42. + 22. * eta + 8.* pow(eta, 2.0)
+			  + pow(et, 2.0) * (-147. + 8. * eta - 14. * pow(eta, 2.0))) 
+			  + dt * (108. + 63. * eta + 33. * pow(eta, 2.0) 
+			  + pow(et, 2.0) * (-216. - 126. * eta - 66. * pow(eta, 2.0)) 
+			  + pow(et, 4.0) * (108. + 63. * eta + 33. * pow(eta, 2.0))) 
+			  + pow(dt, 2.0) * (-240. - 31. * eta - 29. * pow(eta, 2.0) 
+			  + pow(et, 4.0) * (-48. + 17. * eta - 17. * pow(eta, 2.0)) 
+			  + pow(et, 2.0) * (288. + 14. * eta + 46. * pow(eta,2))) 
+			  + 18. * pow(dt, 2.0) * (-2. + dt + 2. * pow(et, 2.0)) * (-5. + 2. * eta) * OTS) * pow(v, 4.0) 
+			  / (12. * pow(dt, 3.0) * pow(OTS, 4.0));
+			  //===========================================================================================
+		rdot_sc = 1.
+			  //==========================================================================================
+			  + (-7. * eta + pow(et, 2.0) * (-6. + 7. * eta)) * pow(v, 2.0) / (6. * pow(OTS, 2.0))
+			  //==========================================================================================
+			  + (-135. * eta + 9. * pow(eta, 2.0) + pow(et, 2.0) * (405. * eta - 27. * pow(eta, 2.0)) 
+			  + pow(et, 6.0) * (135. * eta - 9. * pow(eta, 2.0)) 
+			  + pow(et, 4.0) * (-405. * eta + 27 * pow(eta, 2.0)) 
+			  + dt * (-540. + 351. * eta - 9. * pow(eta, 2.0) 
+			  + pow(et, 4.0) * (-540. + 351. * eta - 9. * pow(eta, 2.0))
+			  + pow(et, 2.0) * (1080. - 702. * eta + 18. * pow(eta, 2.0))) 
+			  + pow(dt, 3.0) * (-324. + 189. * eta + 35. * pow(eta, 2.0) 
+			  + pow(et, 2.0) * (-234. + 366. * eta - 70. * pow(eta, 2.0)) 
+			  + pow(et, 4.0) * (72. - 231. * eta + 35. * pow(eta, 2.0))) 
+			  - 36 * pow(dt, 2.0) * (3. + dt) * (1 - pow(et, 2.0)) * (-5. + 2. * eta) * OTS) * pow(v, 4.0) 
+			  / (72. * pow(dt, 3.0) * pow(OTS, 4.0));
+			  //==========================================================================================		
+                break;
+            /* case LAL_PNORDER_ONE_POINT_FIVE: */
+            case 3:
+		r_sc 	= 1.
+			  //===========================================================================
+			  + ((-24. + dt * (18. - 7. * eta) + 9. * eta + pow(et, 2.0) * (24. - 9. * eta 
+			  + dt * (-6. + 7. * eta))) * pow(v, 2.0)) / (6. * dt * pow(OTS, 2.0));
+			  //===========================================================================
+		phidot	= 1.
+			  //==============================================================================
+			  + (-1. + dt + pow(et, 2.0)) * (-4. + eta) * pow(v, 2.0) / (dt * pow(OTS, 2.0));
+			  //==============================================================================
+		rdot_sc = 1.
+			  //====================================================================================
+			  + (-7. * eta + pow(et, 2.0) * (-6. + 7. * eta)) * pow(v, 2.0) / (6. * pow(OTS, 2.0));
+			  //====================================================================================
+                break;
+            /* case LAL_PNORDER_ONE: */
+            case 2:
+		r_sc 	= 1.
+			  //===========================================================================
+			  + ((-24. + dt * (18. - 7. * eta) + 9. * eta + pow(et, 2.0) * (24. - 9. * eta 
+			  + dt * (-6. + 7. * eta))) * pow(v, 2.0)) / (6. * dt * pow(OTS, 2.0));
+			  //===========================================================================
+		phidot	= 1.
+			  //==============================================================================
+			  + (-1. + dt + pow(et, 2.0)) * (-4. + eta) * pow(v, 2.0) / (dt * pow(OTS, 2.0));
+			  //==============================================================================
+		rdot_sc = 1.
+			  //====================================================================================
+			  + (-7. * eta + pow(et, 2.0) * (-6. + 7. * eta)) * pow(v, 2.0) / (6. * pow(OTS, 2.0));
+			  //====================================================================================
+                break;
+            /*case LAL_PNORDER_HALF:*/
+            case 1:
+		r_sc	= 1.;
+		phidot	= 1.;
+		rdot_sc = 1.;
+                break;
+	    /*case LAL_PNORDER_NEWTONIAN:*/
+            case 0:
+                r_sc	= 1.;
+		phidot	= 1.;
+		rdot_sc = 1.;
+                break;
+            default:
+                XLALPrintError("XLAL Error - %s: Invalid phase PN order %s\n",
+                        __func__, ph_O );
+                XLAL_ERROR(XLAL_EINVAL);
+                break;
+        }
+        
+        /* Dimensionless rdot/c, (r/c)*phidot, Z = G*m/(r*c^2) entering the h+/x coefficients*/
+        rdot = CF_rdot * rdot_sc;
+	rphidot = CF_rphidot * r_sc * phidot;
+        Z = CF_Z/r_sc;
+	
+        /*
+         * First set all h+/x coefficients to 0. Then use a switch to
+         * set proper non-zero values up to order ampO. Note we
+         * fall through the PN orders and break only after Newt. order
+         */
+        hp0 = 0.;
+        hc0 = 0.;
+
+        switch( ampO )
+        {
+            /* case LAL_PNORDER_THREE_POINT_FIVE: */
+            case 7:
+                XLALPrintError("XLAL Error - %s: Amp. corrections not known "
+                        "to PN order %d\n", __func__, ampO );
+                XLAL_ERROR(XLAL_EINVAL);
+                break;
+            /* case LAL_PNORDER_THREE: */
+            case 6:
+		XLALPrintError("XLAL Error - %s: Amp. corrections not known "
+                        "to PN order %d\n", __func__, ampO );
+                XLAL_ERROR(XLAL_EINVAL);
+                break;
+            /* case LAL_PNORDER_TWO_POINT_FIVE: */
+            case 5:
+		XLALPrintError("XLAL Error - %s: Amp. corrections not known "
+                        "to PN order %d\n", __func__, ampO );
+                XLAL_ERROR(XLAL_EINVAL);
+                break;
+            /* case LAL_PNORDER_TWO: */
+            case 4:
+		XLALPrintError("XLAL Error - %s: Amp. corrections not known "
+                        "to PN order %d\n", __func__, ampO );
+                XLAL_ERROR(XLAL_EINVAL);
+                break;
+            /* case LAL_PNORDER_ONE_POINT_FIVE: */
+            case 3:
+		XLALPrintError("XLAL Error - %s: Amp. corrections not known "
+                        "to PN order %d\n", __func__, ampO );
+                XLAL_ERROR(XLAL_EINVAL);
+                break;
+            /* case LAL_PNORDER_ONE: */
+            case 2:
+		XLALPrintError("XLAL Error - %s: Amp. corrections not yet implemented "
+                        "to PN order %d\n", __func__, ampO );
+                XLAL_ERROR(XLAL_EINVAL);
+                break;
+            /*case LAL_PNORDER_HALF:*/
+            case 1:
+		XLALPrintError("XLAL Error - %s: Amp. corrections not yet implemented "
+                        "to PN order %d\n", __func__, ampO );
+                XLAL_ERROR(XLAL_EINVAL);
+                break;
+	    case -1: // Highest known PN order - move if higher terms added!
+	    /*case LAL_PNORDER_NEWTONIAN:*/
+            case 0:
+		  hp0 = - (si2 * (-pow(rphidot, 2.0) - pow(rdot, 2.0) + Z))
+			- (1. + ci2) * ((pow(rphidot, 2.0) - pow(rdot, 2.0) + Z) * cos(2. * phi)
+			+ (2. * rphidot * rdot) * sin(2. * phi));
+		  hc0 = - 2. * ci * (-2. * rphidot * rdot * cos(2. * phi)
+			  + (pow(rphidot, 2.0) - pow(rdot, 2.0) + Z) * sin(2. * phi));
+                break;
+            default:
+                XLALPrintError("XLAL Error - %s: Invalid amp. PN order %s\n",
+                        __func__, ampO );
+                XLAL_ERROR(XLAL_EINVAL);
+                break;
+        } /* End switch on ampO */
+
+        /* Fill the output polarization arrays */
+	  (*hplus)->data->data[idx] = ampfac*hp0;
+	  (*hcross)->data->data[idx] = ampfac*hc0;
+
+    } /* end loop over time series samples idx */
+    return XLAL_SUCCESS;
+}
+
+
+
+
 
 /**
  * Computes polarizations h+ and hx for a spinning, precessing binary
@@ -2651,6 +2986,25 @@ int XLALSimInspiralChooseTDWaveform(
                     deltaT, m1, m2, f_min, f_ref, r, i, lambda1, lambda2,
                     XLALSimInspiralGetTidalOrder(waveFlags), amplitudeO, phaseO);
             break;
+
+	case EccentricTD:
+	    /* Waveform-specific sanity checks */
+	    if( !XLALSimInspiralFrameAxisIsDefault( XLALSimInspiralGetFrameAxis(waveFlags)) )
+    		ABORT_NONDEFAULT_FRAME_AXIS(waveFlags);
+	    if( !XLALSimInspiralModesChoiceIsDefault( XLALSimInspiralGetModesChoice(waveFlags)) )
+    		ABORT_NONDEFAULT_MODES_CHOICE(waveFlags);
+	    if( !XLALSimInspiralSpinOrderIsDefault( XLALSimInspiralGetSpinOrder(waveFlags)) )
+    	    	ABORT_NONDEFAULT_SPIN_ORDER(waveFlags);
+	    if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
+    		ABORT_NONZERO_SPINS(waveFlags);
+	    if( !checkTidesZero(lambda1, lambda2) )
+    		ABORT_NONZERO_TIDES(waveFlags);
+	    /* Call the waveform driver routine */
+	    ret = XLALSimInspiralEccentricTDPNGenerator(hplus, hcross, phiRef,
+        	    deltaT, m1, m2, f_min, f_ref, r, i, (REAL8) XLALSimInspiralGetTestGRParam( nonGRparams, "e_min"), 
+		    amplitudeO, phaseO);
+	    if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
+	    break;
 
         /* non-spinning inspiral-merger-ringdown models */
         case IMRPhenomA:
@@ -4515,6 +4869,7 @@ static const char *lalSimulationApproximantNames[] = {
     INITIALIZE_NAME(IMRPhenomFC),
     INITIALIZE_NAME(TaylorEt),
     INITIALIZE_NAME(TaylorT4),
+    INITIALIZE_NAME(EccentricTD),
     INITIALIZE_NAME(TaylorN),
     INITIALIZE_NAME(SpinTaylorT4Fourier),
     INITIALIZE_NAME(SpinTaylorT2Fourier),
@@ -4995,6 +5350,7 @@ int XLALSimInspiralImplementedTDApproximants(
         case TaylorT2:
         case TaylorT3:
         case TaylorT4:
+	case EccentricTD:
         case EOBNRv2:
         case IMRPhenomA:
         case EOBNRv2HM:
@@ -5096,6 +5452,7 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case TaylorT2:
     case TaylorT3:
     case TaylorT4:
+    case EccentricTD:
     case EccentricFD:
     case IMRPhenomA:
     case EOBNRv2HM:
@@ -5181,6 +5538,7 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case Eccentricity:
     case PhenSpinTaylor:
     case PhenSpinTaylorRD:
+    case EccentricTD:
       testGR_accept=LAL_SIM_INSPIRAL_TESTGR_PARAMS;
       break;
     default:
