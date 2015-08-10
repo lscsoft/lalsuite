@@ -147,6 +147,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimSGWBORF.c \
 	LALSimUnicorn.c \
 	check_series_macros.h \
+	check_waveform_macros.h \
 	unicorn.xpm \
 	LALSimInspiralHGimri.c
 

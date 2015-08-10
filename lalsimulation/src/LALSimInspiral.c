@@ -42,6 +42,7 @@
 
 #include "LALSimInspiralPNCoefficients.c"
 #include "check_series_macros.h"
+#include "check_waveform_macros.h"
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
@@ -75,58 +76,6 @@
 	vz = tmp2
 
 
-/* Internal utility function to check all spin components are zero
-   returns 1 if all spins zero, otherwise returns 0 */
-int checkSpinsZero(REAL8 s1x, REAL8 s1y, REAL8 s1z,
-        REAL8 s2x, REAL8 s2y, REAL8 s2z)
-{
-    if( s1x != 0. || s1y != 0. || s1z != 0.
-            || s2x != 0. || s2y != 0. || s2z != 0. )
-        return 0;
-    else
-        return 1;
-}
-
-/* Internal utility function to check that the second body's spin components are zero.
-   Returns 1 if all components are zero, otherwise returns 0 */
-int checkCOSpinZero(REAL8 s2x, REAL8 s2y, REAL8 s2z)
-{
-    if (s2x != 0. || s2y != 0. || s2z != 0.)
-	return 0;
-    else
-	return 1;
-}
-
-/* Internal utility function to check transverse spins are zero
-   returns 1 if x and y components of spins are zero, otherwise returns 0 */
-int checkTransverseSpinsZero(REAL8 s1x, REAL8 s1y, REAL8 s2x, REAL8 s2y)
-{
-    if( s1x != 0. || s1y != 0. || s2x != 0. || s2y != 0. )
-        return 0;
-    else
-        return 1;
-}
-
-/* Internal utility function to check aligned spins very close to equal
-   returns 1 if z components of spins are very close to equal, otherwise returns 0 */
-int checkAlignedSpinsEqual(REAL8 s1z, REAL8 s2z)
-{
-    const REAL8 eps = 1e-6;
-    if( fabs(s1z - s2z) > eps)
-        return 0;
-    else
-        return 1;
-}
-
-/* Internal utility function to check tidal parameters are zero
-   returns 1 if both tidal parameters zero, otherwise returns 0 */
-int checkTidesZero(REAL8 lambda1, REAL8 lambda2)
-{
-    if( lambda1 != 0. || lambda2 != 0. )
-        return 0;
-    else
-        return 1;
-}
 
 /* 
  * certain approximants adopt the convention that f_ref=0 refers to the start

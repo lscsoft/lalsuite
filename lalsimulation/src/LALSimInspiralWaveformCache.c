@@ -25,6 +25,8 @@
 #include <lal/Sequence.h>
 #include <lal/LALConstants.h>
 
+#include "check_waveform_macros.h"
+
 /**
  * Bitmask enumerating which parameters have changed, to determine
  * if the requested waveform can be transformed from a cached waveform
