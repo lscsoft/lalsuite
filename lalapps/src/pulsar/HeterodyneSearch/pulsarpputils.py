@@ -516,7 +516,7 @@ def plot_posterior_hist(poslist, param, ifos,
                         parfile=None, mplparams=False):
   import matplotlib
   from matplotlib import pyplot as plt
-  
+
   # create list of figures
   myfigs = []
 
@@ -658,7 +658,7 @@ def plot_posterior_chain(poslist, param, ifos, grr=None, withhist=0, \
                          mplparams=False):
   import matplotlib
   from matplotlib import pyplot as plt
-  
+
   try:
     from matplotlib import gridspec
   except:
@@ -836,7 +836,7 @@ def plot_2Dhist_from_file(histfile, ndimlabel, mdimlabel, margpars=True, \
                           mplparams=False):
   import matplotlib
   from matplotlib import pyplot as plt
-  
+
   # read in 2D h0 vs cos(iota) binary prior file
   xbins, ybins, histarr = read_hist_from_file(histfile)
 
@@ -971,7 +971,7 @@ def plot_posterior_hist2D(poslist, params, ifos, bounds=None, nbins=[50,50], \
                           parfile=None, overplot=False, mplparams=False):
   import matplotlib
   from matplotlib import pyplot as plt
-  
+
   if len(params) != 2:
     print >> sys.stderr, "Require 2 parameters"
     sys.exit(1)
@@ -1195,7 +1195,7 @@ def plot_Bks_ASDs( Bkdata, ifos, delt=86400, sampledt=60., plotpsds=True,
   from matplotlib.mlab import specgram
   from matplotlib import colors
   from matplotlib import pyplot as plt
-  
+
   # create list of figures
   Bkfigs = []
   psdfigs = []
@@ -1385,7 +1385,7 @@ Fs=Fs, window=win, noverlap=int(math.floor(delt/(2.*sampledt))))
 def plot_limits_hist(lims, param, ifos, prevlims=None, bins=20, overplot=False, mplparams=False):
   import matplotlib
   from matplotlib import pyplot as plt
-  
+
   if not mplparams:
     mplparams = { \
       'backend': 'Agg',
@@ -1544,7 +1544,7 @@ def plot_h0_lims(h0lims, f0gw, ifos, xlims=[10, 1500], ulesttop=None,
                  ulestbot=None, prevlim=None, prevlimf0gw=None, overplot=False, mplparams=False):
   import matplotlib
   from matplotlib import pyplot as plt
-  
+
   if not mplparams:
     mplparams = { \
       'backend': 'Agg',
@@ -1847,15 +1847,11 @@ def heterodyned_pinsf_pulsar(starttime, duration, dt, detector, pardict):
   return ts, s
 
 
-# function to get the antenna response for a given detector. This is based on
-# the response function in pylal/antenna.py. It takes in a GPS time, right
-# ascension (rads), declination (rads), polarisation angle (rads) and a
-# detector name e.g. H1, L1, V1. The plus and cross polarisations are returned.
+# function to get the antenna response for a given detector. It takes in a GPS time or list (or numpy array)
+# of GPS times, right  ascension (rads), declination (rads), polarisation angle (rads) and a detector name
+# e.g. H1, L1, V1. The plus and cross polarisations are returned.
 def antenna_response( gpsTime, ra, dec, psi, det ):
   import lal
-
-  gps = lal.LIGOTimeGPS( gpsTime )
-  gmst_rad = lal.GreenwichMeanSiderealTime(gps)
 
   # create detector-name map
   detMap = {'H1': lal.LALDetectorIndexLHODIFF, \
@@ -1875,13 +1871,36 @@ def antenna_response( gpsTime, ra, dec, psi, det ):
 
   # get detector
   detval = lal.CachedDetectors[detector]
-
   response = detval.response
 
-  # actual computation of antenna factors
-  fp, fc = lal.ComputeDetAMResponse(response, ra, dec, psi, gmst_rad)
+  # check if gpsTime is just a float or int, and if so convert into an array
+  if isinstance(gpsTime, float) or isinstance(gpsTime, int):
+    gpsTime = np.array([gpsTime])
+  else: # make sure it's a numpy array
+    gpsTime = np.copy(gpsTime)
 
-  return fp, fc
+  # if gpsTime is a list of regularly spaced values then use ComputeDetAMResponseSeries
+  if len(gpsTime) == 1 or np.unique(np.diff(gpsTime)).size == 1:
+    gpsStart = lal.LIGOTimeGPS( gpsTime[0] )
+    dt = 0.
+    if len(gpsTime) > 1:
+      dt = gpsTime[1]-gpsTime[0]
+    fp, fc = lal.ComputeDetAMResponseSeries(response, ra, dec, psi, gpsStart, dt, len(gpsTime))
+
+    # return elements from Time Series
+    return fp.data.data, fc.data.data
+  else: # we'll have to work out the value at each point in the time series
+    fp = np.zeros(len(gpsTime))
+    fc = np.zeros(len(gpsTime))
+
+    for i in range(len(gpsTime)):
+      gps = lal.LIGOTimeGPS( gpsTime[0] )
+      gmst_rad = lal.GreenwichMeanSiderealTime(gps)
+
+      # actual computation of antenna factors
+      fp[i], fc[i] = lal.ComputeDetAMResponse(response, ra, dec, psi, gmst_rad)
+
+    return fp, fc
 
 
 # a function to inject a heterodyned pulsar signal into noise of a
@@ -2325,9 +2344,339 @@ def pulsar_nest_to_posterior(nestfile):
 
 # function to add two exponentiated log values and return the log of the result
 def logplus(x, y):
-  if np.isinf(x) and np.isinf(y) and x < 0 and y < 0:
-    return float("-inf")
-  if x > y:
-    return x + math.log(1. + math.exp(y-x))
+  return np.logaddexp(x, y)
+
+
+def logtrapz(lnf, dx):
+  """
+  Perform trapezium rule integration for the logarithm of a function on a regular grid.
+
+  Inputs
+  ------
+  lnf - a numpy array of values that are the natural logarithm of a function
+  dx  - a float giving the step size between values in the function
+
+  Returns
+  -------
+  The natural logarithm of the area under the function.
+  """
+
+  from scipy.misc import logsumexp
+
+  return np.log(dx/2.) + logsumexp([logsumexp(lnf[:-1]), logsumexp(lnf[1:])])
+
+
+# function to marginalise over a parameter
+def marginalise(like, pname, pnames, ranges):
+  # like - a copy of the loglikelihood array
+  # pname - the parameter to marginalise over
+  # pnames - a copy of the list of parameters that haven't been marginalised over
+  # ranges - a copy of the dictionary of ranges that haven't been marginalised over
+
+  places = ranges[pname]
+  axis = pnames.index(pname)
+
+  # perform marginalisation
+  if len(places) > 1:
+    x = np.apply_along_axis(logtrapz, axis, like, places[1]-places[0])
+  elif len(places) == 1:
+    # no marginalisation required just remove the specific singleton dimension via reshaping
+    z = like.shape
+    q = np.arange(0,len(z)).astype(int) != axis
+    newshape = tuple((np.array(list(z)))[q])
+    x = np.reshape(like, newshape)
+
+  # remove name from pnames and ranges
+  del ranges[pname]
+  pnames.remove(pname)
+
+  return x
+
+
+# return the log marginal posterior on a given parameter (if 'all' marginalise over all parameters)
+def marginal(lnlike, pname, pnames, ranges):
+  from copy import deepcopy
+
+  # make copies of everything
+  lnliketmp = deepcopy(lnlike)
+  pnamestmp = deepcopy(pnames)
+  rangestmp = deepcopy(ranges)
+
+  for name in pnames:
+    if name != pname:
+      lnliketmp = marginalise(lnliketmp, name, pnamestmp, rangestmp)
+
+  return lnliketmp
+
+
+# a function to chop the data time series, ts, up into contigous segments with a maximum length, chunkMax
+def get_chunk_lengths( ts, chunkMax ):
+  i = j = count = 0
+
+  length = len(ts)
+
+  chunkLengths = []
+
+  dt = np.min(np.diff(ts)) # the time steps in the data
+
+  # create vector of data segment length
+  while True:
+    count += 1 # counter
+
+    # break clause
+    if i > length - 2:
+      # set final value of chunkLength
+      chunkLengths.append(count)
+      break
+
+    i += 1
+
+    t1 = ts[i-1]
+    t2 = ts[i]
+
+    # if consecutive points are within two sample times of each other count as in the same chunk
+    if t2 - t1 > 2.*dt or count == chunkMax:
+      chunkLengths.append(count)
+      count = 0 # reset counter
+
+      j += 1
+
+  return chunkLengths
+
+
+def pulsar_posterior_grid(dets, ts, data, ra, dec, sigmas=None, paramranges={}, datachunks=30, chunkmin=5,
+                          ngrid=50):
+  """
+  Inputs
+  ------
+         dets - a list of strings containing the detectors being used in the likelihood calculation
+           ts - a dictionary of 1d numpy arrays containing the GPS times of the data for each detector
+         data - a dictionary of 1d numpy arrays containing the complex data values for each detector
+           ra - the right ascension (in rads) of the source
+          dec - the declination (in rads) of the source
+       sigmas - a dictionary of 1d numpy arrays containing the times series of standard deviation
+                values for each detector. If this is not given a Student's t likelihood will be used,
+                but if it is given a Gaussian likelihood will be used (default: None)
+  paramranges - a dictionary of tuples for each parameter ('h0', 'phi0', 'psi' and 'cosiota') giving
+                the lower and upper ranges of the parameter grid and the number of grid points. If not
+                given then defaults will be used.
+   datachunks - in the calculation split the data into stationary chunks with a maximum length given
+                by this value. If set to 0 or inf then the data will not be split. (default: 30)
+     chunkmin - this is the shortest chunk length allowed to be included in the likelihood calculation
+                (default: 5)
+        ngrid - the number of grid points to use for each dimension of the likelihood calculation. This
+                is used if the values are not specified in the paramranges argument (default: 50)
+
+  Returns
+  -------
+  L           - The 4d posterior over all parameters
+  h0pdf       - The 1d marginal posterior for h0
+  phi0pdf     - The 1d marginal posterior for phi0
+  psipdf      - The 1d marginal posterior for psi
+  cosiotapdf  - The 1d marginal posterior for cosiota
+  lingrids    - A dictionary of the grid points for each parameter
+  evrat       - The log odds ratio for a signal versus Gaussian noise
+
+  An example would be:
+  # set the detectors
+  dets = ['H1', 'L1']
+
+  # set the time series and data
+  ts = {}
+  data = {}
+  for det in dets:
+    ts[det] = np.arange(900000000., 921000843., 60.)
+    data[det] = np.random.randn(len(ts[det]))
+
+  # set the parameter ranges
+  ra = 0.2
+  dec = -0.8
+  paramranges = {}
+  paramranges['h0'] = (0., 2., 50)
+  paramranges['psi'] = (0., np.pi/2., 50)
+  paramranges['phi0'] = (0., np.pi, 50)
+  paramranges['cosiota'] = (-1., 1., 50)
+
+  L, h0pdf, phi0pdf, psipdf, cosiotapdf, grid, evrat = pulsar_posterior_grid(dets, ts, data, ra, dec,
+                                                                             paramranges=paramranges)
+  """
+
+  # import numpy
+  import numpy as np
+  import sys
+
+  # set the likelihood to either Student's or Gaussian
+  if sigmas == None:
+    liketype = 'studentst'
   else:
-    return y + math.log(1. + math.exp(x-y))
+    liketype = 'gaussian'
+
+  # if dets is just a single string
+  if not isinstance(dets, list):
+    if isinstance(dets, basestring):
+      dets = [dets] # make into list
+    else:
+      print >> sys.stderr, 'Detector not, or incorrectly, set'
+      return
+
+  # allowed list of detectors
+  alloweddets = ['H1', 'L1', 'V1', 'G1', 'T1', 'H2']
+
+  # check consistency of arguments
+  for det in dets:
+    if det not in alloweddets:
+      print >> sys.stderr, 'Detector not in list of allowed detectors (' + ','.join(alloweddets) + ')'
+      return
+
+    # checks on time stamps
+    if det not in ts:
+      print >> sys.stderr, 'No time stamps given for detector %s' % det
+      return
+
+    # checks on data
+    if det not in data:
+      print >> sys.stderr, 'No data time series given for detector %s' % det
+      return
+
+    # checks on sigmas
+    if sigmas != None:
+      if det not in sigmas:
+        print >> sys.stderr, 'No sigma time series given for detector %s' % det
+        return
+
+    # check length consistency
+    if len(ts[det]) != len(data[det]):
+      print >> sys.stderr, 'Length of times stamps array and data array are inconsistent for %s' % det
+
+    if sigmas != None:
+      if len(ts['det']) != len(sigmas['det']):
+        print >> sys.stderr, 'Length of times stamps array and sigma array are inconsistent for %s' % det
+
+  # setup grid on parameter space
+  params = ['h0', 'phi0', 'psi', 'cosiota']
+  defaultranges = {} # default ranges for use if not specified
+  defaultranges['phi0'] = (0., np.pi, ngrid) # 0 to pi for phi0
+  defaultranges['psi'] = (0., np.pi/2., ngrid) # 0 to pi/2 for psi
+  defaultranges['cosiota'] = (-1., 1., ngrid) # -1 to 1 for cos(iota)
+  # 0 to 2 times the max standard deviation of the data (scaled to the data length)
+  defaultranges['h0'] = (0., 2.*np.max([np.std(data[dv]) for dv in data])* \
+    np.sqrt(1440./np.max([len(ts[dtx]) for dtx in ts])), ngrid)
+  lingrids = {}
+  shapetuple = ()
+  for param in params:
+    if param in paramranges:
+      if len(paramranges[param]) != 3:
+        paramranges[param] = defaultranges[param] # set to default range
+      else:
+        if paramranges[param][1] < paramranges[param][0] or paramranges[param][2] < 1:
+          print >> sys.stderr, "Parameter ranges wrong for %s, reverting to defaults" % param
+          paramranges[param] = defaultranges[param]
+    else: # use defaults
+      paramranges[param] = defaultranges[param]
+
+    lingrids[param] = np.linspace(paramranges[param][0], paramranges[param][1], paramranges[param][2])
+    shapetuple += (paramranges[param][2],)
+
+  # set up meshgrid on parameter space
+  [H0S, PHI0S, PSIS, COSIS] = np.meshgrid(lingrids['h0'], lingrids['phi0'], lingrids['psi'],
+                                          lingrids['cosiota'], indexing='ij')
+
+  APLUS = (1.+COSIS**2)/2.
+  ACROSS = COSIS
+  SINPHI = np.sin(PHI0S)
+  COSPHI = np.cos(PHI0S)
+  SIN2PSI = np.sin(2.*PSIS)
+  COS2PSI = np.cos(2.*PSIS)
+
+  # initialise loglikelihood
+  like = np.zeros(shapetuple)
+  noiselike = 0.
+
+  # get flat prior
+  logprior = 0.
+  for p in params:
+    logprior -= np.log(paramranges[p][1]-paramranges[p][0])
+
+  # loop over detectors and calculate the log likelihood
+  for det in dets:
+    if liketype == 'gaussian':
+      nstd = sigmas[det]
+    else:
+      nstd = np.ones(len(ts[det]))
+
+    # get the antenna pattern
+    [As, Bs] = antenna_response( ts[det], ra, dec, 0.0, det )
+
+    # split the data into chunks if required
+    if np.isfinite(datachunks) and datachunks > 0:
+      chunklengths = get_chunk_lengths(ts[det], datachunks)
+    else:
+      chunklengths = [len(ts[det])]
+
+    startidx = 0
+    for cl in chunklengths:
+      endidx = startidx + cl
+
+      # check for shortest allowed chunks
+      if cl < chunkmin:
+        continue
+
+      thisdata = data[det][startidx:endidx]/nstd[startidx:endidx]
+      ast = As[startidx:endidx]/nstd[startidx:endidx]
+      bst = Bs[startidx:endidx]/nstd[startidx:endidx]
+
+      startidx += cl # updated start index
+
+      A = np.sum(ast**2)
+      B = np.sum(bst**2)
+      AB = 2.*np.dot(ast, bst)
+
+      dA1real = np.dot(thisdata.real, ast)
+      dA1imag = np.dot(thisdata.imag, ast)
+
+      dB1real = np.dot(thisdata.real, bst)
+      dB1imag = np.dot(thisdata.imag, bst)
+
+      dd1real = np.sum(thisdata.real**2)
+      dd1imag = np.sum(thisdata.imag**2)
+
+      hr2 = (H0S/2.)**2 * (APLUS**2 * COSPHI**2 * ( A*COS2PSI**2 + B*SIN2PSI**2 + AB*COS2PSI*SIN2PSI ) + \
+          ACROSS**2 * SINPHI**2 * ( B*COS2PSI**2 + A*SIN2PSI**2 - AB*COS2PSI*SIN2PSI ) + \
+          2.*APLUS*ACROSS*SINPHI*COSPHI* ((AB/2.)*(COS2PSI**2 - SIN2PSI**2) - A*COS2PSI*SIN2PSI + \
+          B*COS2PSI*SIN2PSI))
+
+      hi2 = (H0S/2.)**2 * (APLUS**2 * SINPHI**2 * ( A*COS2PSI**2 + B*SIN2PSI**2 + AB*COS2PSI*SIN2PSI ) + \
+          ACROSS**2 * COSPHI**2 * ( B*COS2PSI**2 + A*SIN2PSI**2 - AB*COS2PSI*SIN2PSI ) - \
+          2.*APLUS*ACROSS*SINPHI*COSPHI* ((AB/2.)*(COS2PSI**2 - SIN2PSI**2) - A*COS2PSI*SIN2PSI + \
+          B*COS2PSI*SIN2PSI))
+
+      d1hr = (H0S/2.)*(APLUS*COSPHI*(dA1real * COS2PSI + dB1real * SIN2PSI) + \
+          ACROSS*SINPHI*(dB1real*COS2PSI - dA1real*SIN2PSI))
+      d1hi = (H0S/2.)*(APLUS*SINPHI*(dA1imag * COS2PSI + dB1imag * SIN2PSI) - \
+          ACROSS*COSPHI*(dB1imag*COS2PSI - dA1imag*SIN2PSI))
+
+      if liketype == 'gaussian':
+        like -= 0.5*(dd1real + hr2 - 2.*d1hr + dd1imag + hi2 - 2.*d1hi)
+        like += logprior
+        noiselike -= 0.5*(dd1real + dd1imag)
+      else:
+        like -= len(thisdata)*np.log(dd1real + hr2 - 2.*d1hr + dd1imag + hi2 - 2.*d1hi)
+        like += logprior
+        noiselike -= len(thisdata)*np.log(dd1real + dd1imag)
+
+
+  # get signal evidence
+  sigev = marginal(like, 'all', params, lingrids)
+
+  # normalise posterior
+  like -= sigev
+
+  # get marginal posteriors for each parameter
+  posts = {}
+  for p in params:
+    posts[p] = np.exp(marginal(like, p, params, lingrids))
+
+  # odds ratio for signal versus noise
+  evrat = sigev - noiselike
+
+  return like, posts['h0'], posts['phi0'], posts['psi'], posts['cosiota'], lingrids, evrat
