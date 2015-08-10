@@ -128,6 +128,30 @@ int checkTidesZero(REAL8 lambda1, REAL8 lambda2)
         return 1;
 }
 
+/* 
+ * certain approximants adopt the convention that f_ref=0 refers to the start
+ * of the waveform while other approximants adopt the convention that f_ref=0
+ * refers to the end of the waveform. in the former case, this routine will
+ * return the explicit value of f_ref, which will be f_min.
+ */
+static double fixReferenceFrequency(double f_ref, double f_min, Approximant approximant)
+{
+    if (f_ref == 0)
+        switch (approximant) {
+        case SpinTaylorT1:
+        case SpinTaylorT2:
+        case SpinTaylorT3:
+        case SpinTaylorT4:
+        case SpinTaylorT2Fourier:
+        case SpinTaylorT4Fourier:
+        case SpinTaylorF2:
+        case IMRPhenomP:
+            return f_min;
+        default:
+            break;
+        }
+    return f_ref;
+}
 
 /**
  * @brief Routine to compute an overestimate of the inspiral time from a given frequency.
@@ -1408,7 +1432,7 @@ int XLALSimInspiralPNPolarizationWaveformsEccentric(
 		rdot_sc = 1.;
                 break;
             default:
-                XLALPrintError("XLAL Error - %s: Invalid phase PN order %s\n",
+                XLALPrintError("XLAL Error - %s: Invalid phase PN order %d\n",
                         __func__, ph_O );
                 XLAL_ERROR(XLAL_EINVAL);
                 break;
@@ -1481,7 +1505,7 @@ int XLALSimInspiralPNPolarizationWaveformsEccentric(
 			  + (pow(rphidot, 2.0) - pow(rdot, 2.0) + Z) * sin(2. * phi));
                 break;
             default:
-                XLALPrintError("XLAL Error - %s: Invalid amp. PN order %s\n",
+                XLALPrintError("XLAL Error - %s: Invalid amp. PN order %d\n",
                         __func__, ampO );
                 XLAL_ERROR(XLAL_EINVAL);
                 break;
@@ -2878,7 +2902,6 @@ int XLALSimInspiralChooseTDWaveform(
 
     /* Support variables for precessing wfs*/
     REAL8 iTmp;
-    REAL8 fTmp;
 
     /* SEOBNR flag for model version. 1 for SEOBNRv1, 2 for SEOBNRv2 */
     UINT4 SpinAlignedEOBversion;
@@ -2905,6 +2928,11 @@ int XLALSimInspiralChooseTDWaveform(
     if( f_min > 40.000001 )
         XLALPrintWarning("XLAL Warning - %s: Large value of fmin = %e requested.\nCheck for errors, the signal will start in band.\n", __func__, f_min);
 
+    /* adjust the reference frequency for certain precessing approximants:
+     * if that approximate interprets f_ref==0 to be f_min, set f_ref=f_min;
+     * otherwise do nothing */
+    f_ref = fixReferenceFrequency(f_ref, f_min, approximant);
+ 
     switch (approximant)
     {
         /* non-spinning inspiral-only models */
@@ -3064,8 +3092,7 @@ int XLALSimInspiralChooseTDWaveform(
 	    spin1[0]=S1x; spin1[1]=S1y; spin1[2]=S1z;
 	    spin2[0]=S2x; spin2[1]=S2y; spin2[2]=S2z;
 	    iTmp=i;
-	    fTmp = (f_ref > 0.) ? f_ref : f_min;
-	    XLALSimInspiralInitialConditionsPrecessingApproxs(&i,&S1x,&S1y,&S1z,&S2x,&S2y,&S2z,iTmp,spin1[0],spin1[1],spin1[2],spin2[0],spin2[1],spin2[2],m1,m2,fTmp,XLALSimInspiralGetFrameAxis(waveFlags));
+	    XLALSimInspiralInitialConditionsPrecessingApproxs(&i,&S1x,&S1y,&S1z,&S2x,&S2y,&S2z,iTmp,spin1[0],spin1[1],spin1[2],spin2[0],spin2[1],spin2[2],m1,m2,f_ref,XLALSimInspiralGetFrameAxis(waveFlags));
             LNhatx = sin(i);
             LNhaty = 0.;
             LNhatz = cos(i);
@@ -3101,8 +3128,7 @@ int XLALSimInspiralChooseTDWaveform(
 	    spin1[0]=S1x; spin1[1]=S1y; spin1[2]=S1z;
 	    spin2[0]=S2x; spin2[1]=S2y; spin2[2]=S2z;
 	    iTmp=i;
-	    fTmp = (f_ref > 0.) ? f_ref : f_min;
-	    XLALSimInspiralInitialConditionsPrecessingApproxs(&i,&S1x,&S1y,&S1z,&S2x,&S2y,&S2z,iTmp,spin1[0],spin1[1],spin1[2],spin2[0],spin2[1],spin2[2],m1,m2,fTmp,XLALSimInspiralGetFrameAxis(waveFlags));
+	    XLALSimInspiralInitialConditionsPrecessingApproxs(&i,&S1x,&S1y,&S1z,&S2x,&S2y,&S2z,iTmp,spin1[0],spin1[1],spin1[2],spin2[0],spin2[1],spin2[2],m1,m2,f_ref,XLALSimInspiralGetFrameAxis(waveFlags));
             LNhatx = sin(i);
             LNhaty = 0.;
             LNhatz = cos(i);
@@ -3129,8 +3155,7 @@ int XLALSimInspiralChooseTDWaveform(
 	    spin1[0]=S1x; spin1[1]=S1y; spin1[2]=S1z;
 	    spin2[0]=S2x; spin2[1]=S2y; spin2[2]=S2z;
 	    iTmp=i;
-	    fTmp = (f_ref > 0.) ? f_ref : f_min;
-	    XLALSimInspiralInitialConditionsPrecessingApproxs(&i,&S1x,&S1y,&S1z,&S2x,&S2y,&S2z,iTmp,spin1[0],spin1[1],spin1[2],spin2[0],spin2[1],spin2[2],m1,m2,fTmp,XLALSimInspiralGetFrameAxis(waveFlags));
+	    XLALSimInspiralInitialConditionsPrecessingApproxs(&i,&S1x,&S1y,&S1z,&S2x,&S2y,&S2z,iTmp,spin1[0],spin1[1],spin1[2],spin2[0],spin2[1],spin2[2],m1,m2,f_ref,XLALSimInspiralGetFrameAxis(waveFlags));
             LNhatx = sin(i);
             LNhaty = 0.;
             LNhatz = cos(i);
@@ -3348,7 +3373,6 @@ int XLALSimInspiralChooseFDWaveform(
 
     /* Support variables for precessing wfs*/
     REAL8 iTmp;
-    REAL8 fTmp;
     REAL8 spin1[3],spin2[3];
 
     /* General sanity checks that will abort
@@ -3380,6 +3404,11 @@ int XLALSimInspiralChooseFDWaveform(
         XLALPrintWarning("XLAL Warning - %s: Small value of fmin = %e requested...Check for errors, this could create a very long waveform.\n", __func__, f_min);
     if( f_min > 40.000001 )
         XLALPrintWarning("XLAL Warning - %s: Large value of fmin = %e requested...Check for errors, the signal will start in band.\n", __func__, f_min);
+
+    /* adjust the reference frequency for certain precessing approximants:
+     * if that approximate interprets f_ref==0 to be f_min, set f_ref=f_min;
+     * otherwise do nothing */
+    f_ref = fixReferenceFrequency(f_ref, f_min, approximant);
 
     /* The non-precessing waveforms return h(f) for optimal orientation
      * (i=0, Fp=1, Fc=0; Lhat pointed toward the observer)
@@ -3689,8 +3718,7 @@ int XLALSimInspiralChooseFDWaveform(
 	    spin1[0]=S1x; spin1[1]=S1y; spin1[2]=S1z;
 	    spin2[0]=S2x; spin2[1]=S2y; spin2[2]=S2z;
 	    iTmp=i;
-	    fTmp = (f_ref > 0.) ? f_ref : f_min;
-	    XLALSimInspiralInitialConditionsPrecessingApproxs(&i,&S1x,&S1y,&S1z,&S2x,&S2y,&S2z,iTmp,spin1[0],spin1[1],spin1[2],spin2[0],spin2[1],spin2[2],m1,m2,fTmp,XLALSimInspiralGetFrameAxis(waveFlags));
+	    XLALSimInspiralInitialConditionsPrecessingApproxs(&i,&S1x,&S1y,&S1z,&S2x,&S2y,&S2z,iTmp,spin1[0],spin1[1],spin1[2],spin2[0],spin2[1],spin2[2],m1,m2,f_ref,XLALSimInspiralGetFrameAxis(waveFlags));
             if( !XLALSimInspiralModesChoiceIsDefault(          /* Default is (2,2) or l=2 modes. */
                     XLALSimInspiralGetModesChoice(waveFlags) ) )
                 ABORT_NONDEFAULT_MODES_CHOICE(waveFlags);
@@ -3995,6 +4023,11 @@ int XLALSimInspiralTD(
     double s;
     int retval;
 
+    /* adjust the reference frequency for certain precessing approximants:
+     * if that approximate interprets f_ref==0 to be f_min, set f_ref=f_min;
+     * otherwise do nothing */
+    f_ref = fixReferenceFrequency(f_ref, f_min, approximant);
+
     /* apply redshift correction to dimensionful source-frame quantities */
     if (z != 0.0) {
         m1 *= (1.0 + z);
@@ -4203,6 +4236,11 @@ int XLALSimInspiralFD(
     double chirplen, deltaT;
     int chirplen_exp;
     int retval;
+
+    /* adjust the reference frequency for certain precessing approximants:
+     * if that approximate interprets f_ref==0 to be f_min, set f_ref=f_min;
+     * otherwise do nothing */
+    f_ref = fixReferenceFrequency(f_ref, f_min, approximant);
 
     /* apply redshift correction to dimensionful source-frame quantities */
     if (z != 0.0) {
