@@ -124,6 +124,7 @@ else:
 #
 # Set masses
 #
+sngl_inspiral_table = None
 if opts.mass1 is not None and opts.mass2 is not None:
     m1, m2 = opts.mass1, opts.mass2
 elif opts.coinc_xml is not None:
@@ -170,6 +171,13 @@ P = lalsimutils.ChooseWaveformParams(
     lambda1 = lambda1,
     lambda2 = lambda2
 )
+
+# Set spin values if appropriate
+if opts.coinc_xml is not None:
+    xmldoc = utils.load_filename(opts.coinc_xml, contenthandler=ligolw.LIGOLWContentHandler)
+    sngl_inspiral_table = table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
+    for a in ("spin1x","spin1y","spin1z","spin2x","spin2y","spin2z"):
+        setattr(P, a, getattr(sngl_inspiral_table[0], a))
 
 # User requested bounds for data segment
 if opts.data_start_time is not None and opts.data_end_time is not None:
