@@ -38,7 +38,7 @@
 #define UNUSED
 #endif
 
-/**
+/*
  * This structure contains the intrinsic parameters and angular velocity
  * co-efficient for the evolution equations for angular velocity, 
  * orbital eccentricity and the mean anomaly of the quasi-Keplerian orbit.
@@ -58,17 +58,17 @@ tagexpnCoeffsEccTaylorT4 {
    REAL8 nu,m,m1,m2,mu;
 }expnCoeffsEccTaylorT4;
 
-/**
+/*
  * 
  */
 
 typedef REAL8 (SimInspiralEvolutionEquations4)(
-   REAL8 v,			/**< post-Newtonian parameter */
-   REAL8 et, 			/**< orbital eccentricity */
+   REAL8 v,			/* post-Newtonian parameter */
+   REAL8 et, 			/* orbital eccentricity */
    expnCoeffsEccTaylorT4 *ak	
 );
 
-/**
+/*
  * This strucuture contains pointers to the functions for calculating
  * the post-Newtonian accurate evolution equations at the desired order. They can be set by
  * XLALSimInspiralEccTaylorT4Setup by passing an appropriate PN order.
@@ -82,7 +82,7 @@ tagexpnFuncEccTaylorT4
    SimInspiralEvolutionEquations4 *meananom4;
 } expnFuncEccTaylorT4;
 
-/**
+/*
  * Computes the rate of increase of the orbital velocity for a post-Newtonian
  * inspiral in an eccentric orbit.
  *
@@ -98,9 +98,9 @@ tagexpnFuncEccTaylorT4
 
 static REAL8 
 XLALSimInspiralOrbitalVelocityEvolution4_0PN(
-	REAL8 v,		/**< post-Newtonian parameter */
-	REAL8 et,		/**< orbital eccentricity */
-	expnCoeffsEccTaylorT4 *ak	/**< PN co-efficients and intrinsic parameters */
+	REAL8 v,		/* post-Newtonian parameter */
+	REAL8 et,		/* orbital eccentricity */
+	expnCoeffsEccTaylorT4 *ak	/* PN co-efficients and intrinsic parameters */
 	)
 {
 	REAL8 ans;
@@ -121,9 +121,9 @@ XLALSimInspiralOrbitalVelocityEvolution4_0PN(
 
 static REAL8 
 XLALSimInspiralOrbitalVelocityEvolution4_2PN(
-	REAL8 v,		/**< post-Newtonian parameter */
-	REAL8 et,		/**< orbital eccentricity */
-	expnCoeffsEccTaylorT4 *ak	/**< PN co-efficients and intrinsic parameters */
+	REAL8 v,		/* post-Newtonian parameter */
+	REAL8 et,		/* orbital eccentricity */
+	expnCoeffsEccTaylorT4 *ak	/* PN co-efficients and intrinsic parameters */
 	)
 {
 	REAL8 ans;
@@ -147,9 +147,9 @@ XLALSimInspiralOrbitalVelocityEvolution4_2PN(
 
 static REAL8 
 XLALSimInspiralOrbitalVelocityEvolution4_3PN(
-	REAL8 v,		/**< post-Newtonian parameter */
-	REAL8 et,		/**< orbital eccentricity */
-	expnCoeffsEccTaylorT4 *ak	/**< PN co-efficients and intrinsic parameters */
+	REAL8 v,		/* post-Newtonian parameter */
+	REAL8 et,		/* orbital eccentricity */
+	expnCoeffsEccTaylorT4 *ak	/* PN co-efficients and intrinsic parameters */
 	)
 {
 	REAL8 ans;
@@ -180,9 +180,9 @@ XLALSimInspiralOrbitalVelocityEvolution4_3PN(
 
 static REAL8 
 XLALSimInspiralOrbitalVelocityEvolution4_4PN(
-	REAL8 v,		/**< post-Newtonian parameter */
-	REAL8 et,		/**< orbital eccentricity */
-	expnCoeffsEccTaylorT4 *ak	/**< PN co-efficients and intrinsic parameters */
+	REAL8 v,		/* post-Newtonian parameter */
+	REAL8 et,		/* orbital eccentricity */
+	expnCoeffsEccTaylorT4 *ak	/* PN co-efficients and intrinsic parameters */
 	)
 {
 	REAL8 ans;
@@ -219,7 +219,7 @@ XLALSimInspiralOrbitalVelocityEvolution4_4PN(
 	return ans;
 }
 
-/**
+/*
  * Computes the rate of increase of the orbital eccentricity for a post-Newtonian
  * inspiral in an eccentric orbit.
  *
@@ -235,9 +235,9 @@ XLALSimInspiralOrbitalVelocityEvolution4_4PN(
 
 static REAL8 
 XLALSimInspiralOrbitalEccentricityEvolution4_0PN(
-	REAL8 v,		/**< post-Newtonian parameter */
-	REAL8 et,		/**< orbital eccentricity */
-	expnCoeffsEccTaylorT4 *ak	/**< PN co-efficients and intrinsic parameters */
+	REAL8 v,		/* post-Newtonian parameter */
+	REAL8 et,		/* orbital eccentricity */
+	expnCoeffsEccTaylorT4 *ak	/* PN co-efficients and intrinsic parameters */
 	)
 {
 	REAL8 ans;
@@ -258,9 +258,9 @@ XLALSimInspiralOrbitalEccentricityEvolution4_0PN(
 
 static REAL8 
 XLALSimInspiralOrbitalEccentricityEvolution4_2PN(
-	REAL8 v,		/**< post-Newtonian parameter */
-	REAL8 et,		/**< orbital eccentricity */
-	expnCoeffsEccTaylorT4 *ak	/**< PN co-efficients and intrinsic parameters */
+	REAL8 v,		/* post-Newtonian parameter */
+	REAL8 et,		/* orbital eccentricity */
+	expnCoeffsEccTaylorT4 *ak	/* PN co-efficients and intrinsic parameters */
 	)
 {
 	REAL8 ans;
@@ -284,9 +284,9 @@ XLALSimInspiralOrbitalEccentricityEvolution4_2PN(
 
 static REAL8 
 XLALSimInspiralOrbitalEccentricityEvolution4_3PN(
-	REAL8 v,		/**< post-Newtonian parameter */
-	REAL8 et,		/**< orbital eccentricity */
-	expnCoeffsEccTaylorT4 *ak	/**< PN co-efficients and intrinsic parameters */
+	REAL8 v,		/* post-Newtonian parameter */
+	REAL8 et,		/* orbital eccentricity */
+	expnCoeffsEccTaylorT4 *ak	/* PN co-efficients and intrinsic parameters */
 	)
 {
 	REAL8 ans;
@@ -322,9 +322,9 @@ XLALSimInspiralOrbitalEccentricityEvolution4_3PN(
 
 static REAL8 
 XLALSimInspiralOrbitalEccentricityEvolution4_4PN(
-	REAL8 v,		/**< post-Newtonian parameter */
-	REAL8 et,		/**< orbital eccentricity */
-	expnCoeffsEccTaylorT4 *ak	/**< PN co-efficients and intrinsic parameters */
+	REAL8 v,		/* post-Newtonian parameter */
+	REAL8 et,		/* orbital eccentricity */
+	expnCoeffsEccTaylorT4 *ak	/* PN co-efficients and intrinsic parameters */
 	)
 {
 	REAL8 ans;
@@ -364,7 +364,7 @@ XLALSimInspiralOrbitalEccentricityEvolution4_4PN(
 	return ans;
 }
 
-/**
+/*
  * Computes the rate of increase of the mean anomaly for a post-Newtonian
  * inspiral in an eccentric orbit.
  *
@@ -380,9 +380,9 @@ XLALSimInspiralOrbitalEccentricityEvolution4_4PN(
 
 static REAL8 
 XLALSimInspiralMeanAnomalyEvolution4_0PN(
-	REAL8 v,		/**< post-Newtonian parameter */
-	REAL8 UNUSED et,	/**< orbital eccentricity */
-	expnCoeffsEccTaylorT4 *ak	/**< PN co-efficients and intrinsic parameters */
+	REAL8 v,		/* post-Newtonian parameter */
+	REAL8 UNUSED et,	/* orbital eccentricity */
+	expnCoeffsEccTaylorT4 *ak	/* PN co-efficients and intrinsic parameters */
 	)
 {
 	REAL8 ans;
@@ -400,9 +400,9 @@ XLALSimInspiralMeanAnomalyEvolution4_0PN(
 
 static REAL8 
 XLALSimInspiralMeanAnomalyEvolution4_2PN(
-	REAL8 v,		/**< post-Newtonian parameter */
-	REAL8 et,		/**< orbital eccentricity */
-	expnCoeffsEccTaylorT4 *ak	/**< PN co-efficients and intrinsic parameters */
+	REAL8 v,		/* post-Newtonian parameter */
+	REAL8 et,		/* orbital eccentricity */
+	expnCoeffsEccTaylorT4 *ak	/* PN co-efficients and intrinsic parameters */
 	)
 {
 	REAL8 ans;
@@ -425,9 +425,9 @@ XLALSimInspiralMeanAnomalyEvolution4_2PN(
 
 static REAL8 
 XLALSimInspiralMeanAnomalyEvolution4_4PN(
-	REAL8 v,		/**< post-Newtonian parameter */
-	REAL8 et,		/**< orbital eccentricity */
-	expnCoeffsEccTaylorT4 *ak	/**< PN co-efficients and intrinsic parameters */
+	REAL8 v,		/* post-Newtonian parameter */
+	REAL8 et,		/* orbital eccentricity */
+	expnCoeffsEccTaylorT4 *ak	/* PN co-efficients and intrinsic parameters */
 	)
 {
 	REAL8 ans;
@@ -462,7 +462,7 @@ typedef struct
     expnCoeffsEccTaylorT4 ak;
 }XLALSimInspiralEccTaylorT4PNEvolveOrbitParams;
 
-/**
+/*
  * This function is used in the call to the GSL integrator.
  * 
  * Implements Equation (3.17b) of: Sashwat Tanay, Maria Haney, and Achamveedu Gopakumar,
@@ -483,7 +483,7 @@ XLALSimInspiralEccTaylorT4PNEvolveOrbitIntegrand(double UNUSED t, const double y
 	return GSL_SUCCESS;
 }
 
-/**
+/*
  * Set up the expnCoeffsEccTaylorT4 and expnFuncEccTaylorT4 structures for
  * generating the eccentric TaylorT4 waveform and select the post-Newtonian
  * functions corresponding to the desired order.
@@ -493,11 +493,11 @@ XLALSimInspiralEccTaylorT4PNEvolveOrbitIntegrand(double UNUSED t, const double y
 
 static int 
 XLALSimInspiralEccTaylorT4Setup(
-    expnCoeffsEccTaylorT4 *ak,         /**< coefficients for TaylorT4 evolution [modified] */
-    expnFuncEccTaylorT4 *f,            /**< functions for TaylorT4 evolution [modified] */
-    REAL8 m1,                       /**< mass of companion 1 */
-    REAL8 m2,                       /**< mass of companion 2 */
-    int O                           /**< twice post-Newtonian order */
+    expnCoeffsEccTaylorT4 *ak,         /* coefficients for TaylorT4 evolution [modified] */
+    expnFuncEccTaylorT4 *f,            /* functions for TaylorT4 evolution [modified] */
+    REAL8 m1,                       /* mass of companion 1 */
+    REAL8 m2,                       /* mass of companion 2 */
+    int O                           /* twice post-Newtonian order */
 )
 {
     ak->m1 = m1;
@@ -564,7 +564,7 @@ XLALSimInspiralEccTaylorT4Setup(
   return 0;
 }
 
-/**
+/*
  * Given time series of the mean anomaly the orbital eccentricity of a quasi-Keplerian orbit,
  * solves Kepler equation using a modified version of Mikkola's method.
  * 
@@ -578,10 +578,10 @@ XLALSimInspiralEccTaylorT4Setup(
  */
 
 static int XLALSimInspiralKeplerEquationSolver(
-		REAL8TimeSeries **V,		/**< post-Newtonian parameter */
-		REAL8TimeSeries **ECC,		/**< orbital eccentricity */
-		REAL8TimeSeries *TIME,		/**< mean anomaly of quasi-Keplerian orbit */
-		REAL8TimeSeries *U		/**< eccentric anomaly of quasi-Keplerian orbit [returned] */
+		REAL8TimeSeries **V,		/* post-Newtonian parameter */
+		REAL8TimeSeries **ECC,		/* orbital eccentricity */
+		REAL8TimeSeries *TIME,		/* mean anomaly of quasi-Keplerian orbit */
+		REAL8TimeSeries *U		/* eccentric anomaly of quasi-Keplerian orbit [returned] */
 	   ){
   
   UINT4 len, k = 0;
@@ -662,7 +662,7 @@ static int XLALSimInspiralKeplerEquationSolver(
 
 }
 
-/**
+/*
  * Given time series for orbital velocity, orbital eccentricity as well as mean
  * and eccentric anomaly of the quasi-Keplerian orbit, computes the PN-contributions
  * to the 2PN-accurate Kepler equation.
@@ -677,11 +677,11 @@ static int XLALSimInspiralKeplerEquationSolver(
 
 static int XLALSimInspiralKeplerEquationLHS_PN(
 		expnCoeffsEccTaylorT4 *ak,
-		REAL8TimeSeries **V,		/**< post-Newtonian parameter */
-		REAL8TimeSeries *U,		/**< eccentric anomaly of quasi-Keplerian orbit */
-		REAL8TimeSeries **ECC,		/**< orbital eccentricity */
-		REAL8TimeSeries **TIME,		/**< mean anomaly l of quasi-Keplerian orbit */
-		REAL8TimeSeries *L2		/**< LHS of 2PN-accurate Kepler equation, i.e., l - l_2PN [returned] */
+		REAL8TimeSeries **V,		/* post-Newtonian parameter */
+		REAL8TimeSeries *U,		/* eccentric anomaly of quasi-Keplerian orbit */
+		REAL8TimeSeries **ECC,		/* orbital eccentricity */
+		REAL8TimeSeries **TIME,		/* mean anomaly l of quasi-Keplerian orbit */
+		REAL8TimeSeries *L2		/* LHS of 2PN-accurate Kepler equation, i.e., l - l_2PN [returned] */
 	    ){
   
   UINT4 len, k = 0;
@@ -715,7 +715,7 @@ static int XLALSimInspiralKeplerEquationLHS_PN(
   
 }
 
-/**
+/*
  * Given time series for orbital velocity, orbital eccentricity and mean 
  * anomaly of the quasi-Keplerian orbit, computes the periodic contribution W 
  * to the phase split, i.e., phi = lambda + W.
@@ -731,10 +731,10 @@ static int XLALSimInspiralKeplerEquationLHS_PN(
 
 static int XLALSimInspiralPhaseContributionW(
 		expnCoeffsEccTaylorT4 *ak,
-		REAL8TimeSeries **V,		/**< post-Newtonian parameter */
-		REAL8TimeSeries **ECC,		/**< orbital eccentricity */
-		REAL8TimeSeries **U,		/**< eccentric anomaly of quasi-Keplerian orbit */
-		REAL8TimeSeries *W		/**< periodic contribution to phase split [returned] */
+		REAL8TimeSeries **V,		/* post-Newtonian parameter */
+		REAL8TimeSeries **ECC,		/* orbital eccentricity */
+		REAL8TimeSeries **U,		/* eccentric anomaly of quasi-Keplerian orbit */
+		REAL8TimeSeries *W		/* periodic contribution to phase split [returned] */
 	   ){
     
   UINT4 len, k = 0;

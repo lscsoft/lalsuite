@@ -1212,7 +1212,7 @@ int XLALSimInspiralPNPolarizationWaveformsEccentric(
 	REAL8 r,                  /**< distance of source (m) */
 	REAL8 i,                  /**< inclination of source (rad) */
 	int ampO,                 /**< twice PN order of the amplitude */
-	int ph_O
+	int ph_O                  /**< twice PN order of the phase */
 	)
 {
     REAL8 mt, eta, dist, ampfac, phi, v, et, u;

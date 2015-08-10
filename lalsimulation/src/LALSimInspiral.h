@@ -1010,43 +1010,18 @@ int XLALSimInspiralPNPolarizationWaveforms(
 
 
 
-/**
- * Given time series for a binary's orbital dynamical variables,
- * computes the radial and angular orbital motion; then constructs
- * the waveform polarizations h+ and hx in terms of the relative
- * separation r, the `true anomaly` phi and their time derivatives.
- * NB: Valid only for non-spinning binaries in inspiralling!
- * and precessing eccentric orbits!
- *
- * Implements Equations (3.7a) - (3.7c) and Equations (B2a) - (B2d), (B4a), (B4b) of:
- * Sashwat Tanay, Maria Haney, and Achamveedu Gopakumar,
- * \"Frequency and time domain inspiral waveforms from comparable 
- * mass compact binaries in eccentric orbits\", (2015);
- * arXiv:TBD
- * https://dcc.ligo.org/P1500148-v1
- * 
- * (note that above equations use x = v^2 as the PN expansion parameter)
- * 
- * as well as Equations (6a) and (6b) of:
- * Thibault Damour, Achamveedu Gopakumar, and Bala R. Iyer,
- * \"Phasing of gravitational waves from inspiralling eccentric 
- * binaries\", Phys. Rev. D 70 064028 (2004);
- * arXiv:gr-qc/0404128.
- *
- */
-
 int XLALSimInspiralPNPolarizationWaveformsEccentric(
-        REAL8TimeSeries **hplus,  /**< +-polarization waveform [returned] */
-        REAL8TimeSeries **hcross, /**< x-polarization waveform [returned] */
-        REAL8TimeSeries *V,       /**< post-Newtonian (PN) parameter */
+        REAL8TimeSeries **hplus,
+        REAL8TimeSeries **hcross,
+        REAL8TimeSeries *V,
 	REAL8TimeSeries *Ecc,
 	REAL8TimeSeries *U,
-        REAL8TimeSeries *Phi,     /**< orbital phase */
-        REAL8 m1,                 /**< mass of companion 1 (kg) */
-        REAL8 m2,                 /**< mass of companion 2 (kg) */
-        REAL8 r,                  /**< distance of source (m) */
-        REAL8 i,                  /**< inclination of source (rad) */
-        int ampO,                  /**< twice PN order of the amplitude */
+        REAL8TimeSeries *Phi,
+        REAL8 m1,
+        REAL8 m2,
+        REAL8 r,
+        REAL8 i,
+        int ampO,
 	int ph_O
         );
 
