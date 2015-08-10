@@ -219,7 +219,7 @@ grid_section.add_option("-T", "--overlap-threshold", type=float, help="Threshold
 optp.add_option_group(grid_section)
 
 refine_section = OptionGroup(optp, "refine options", "Options for refining a pre-existing grid.")
-grid_section.add_option("--refine", help="Refine a prexisting grid. Pass this option the grid points from previous levels (or the --setup) option.")
+refine_section.add_option("--refine", help="Refine a prexisting grid. Pass this option the grid points from previous levels (or the --setup) option.")
 refine_section.add_option("-r", "--result-file", help="XML file containing newest result to refine.")
 optp.add_option_group(refine_section)
 
@@ -352,7 +352,7 @@ selected = grid[numpy.array(list(get_idx))]
 
 #### BEGIN REFINEMENT OF RESULTS #########
 
-if opts.refine and opts.result_file is not None:
+if opts.result_file is not None:
     # FIXME: temporary -- we shouldn't need to know the spacing of the initial
     # region
     prev_cells, spacing = amrlib.deserialize_grid_cells(opts.refine)
@@ -367,13 +367,15 @@ if opts.refine and opts.result_file is not None:
     for res in res_pts:
         dist, idx = grid_tree.query(res, k=1)
         # Stupid floating point inexactitude...
-        #assert all([numpy.isclose(a, b) for a, b in zip(res, selected[idx[0][0]])])
+        #print res, selected[idx[0][0]]
+        #assert numpy.allclose(res, selected[idx[0][0]])
         grid_idx.append(idx[0][0])
-    selected = get_cr_from_grid(selected[grid_idx], results, cr_thr=0.9)
-    print "Selected %d cells from %.2f%% confidence region" % (len(selected), 0.9)
-####
 
-grid, spacing = amrlib.refine_regular_grid(selected, spacing)
+    if opts.refine:
+        selected = get_cr_from_grid(selected[grid_idx], results, cr_thr=opts.overlap_threshold)
+        print "Selected %d cells from %3.2f%% confidence region" % (len(selected), opts.overlap_threshold*100)
+
+grid, spacing = amrlib.refine_regular_grid(selected, spacing, return_cntr=opts.setup)
 print "%d cells after refinement" % len(grid)
 grid = amrlib.prune_duplicate_pts(grid, init_region._bounds, spacing)
 
@@ -399,7 +401,9 @@ if opts.setup:
     amrlib.serialize_grid_cells({1: npy_grid}, opts.setup)
 else:
     npy_grid = amrlib.pack_grid_cells(cells, spacing)
-    amrlib.serialize_grid_cells({2: npy_grid}, opts.refine)
+    # FIXME: -1 will mean "whatever the next level is"
+    #amrlib.serialize_grid_cells({-1: npy_grid}, opts.refine)
+    amrlib.serialize_grid_cells({1: npy_grid}, opts.refine)
 
 overlaps = eval_grid(t1, cells, intr_prms)
 
