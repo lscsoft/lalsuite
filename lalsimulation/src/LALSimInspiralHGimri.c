@@ -40,14 +40,15 @@
 #define GPC_sec ((REAL8)(pc*pow(10.,9.)/c))
 
 //Function prototypes
-REAL8 XLALHGimri_AngMomFlux(REAL8 q, REAL8 r, REAL8 nu);
-INT4 XLALHGimri_PlusEquations(const gsl_vector * x, void *params, gsl_vector * f);
-INT4 XLALHGimri_CrossEquations(const gsl_vector * z, void *params, gsl_vector * g);
-REAL8 XLALHGimri_dFdr(REAL8 E, REAL8 Lz, REAL8 a, REAL8 r);
-REAL8 XLALHGimri_initialP(REAL8 p0, void *params);
-REAL8 XLALHGimri_dLzdr(REAL8 q, REAL8 r);
-INT4 HGimri_start(REAL8 m, REAL8 M, REAL8 q, REAL8 D, REAL8 Sdotn, REAL8 phi0, REAL8 p0, REAL8Sequence *hplus, REAL8Sequence *hcross, REAL8 dt, UINT4 Npts);
-INT4 XLALHGimri_generator(REAL8TimeSeries **hplus,REAL8TimeSeries **hcross,REAL8 phi0,REAL8 dt,REAL8 m1,REAL8 m2,REAL8 f_min,REAL8 r,REAL8 inc,REAL8 s1z);
+static REAL8 XLALHGimri_AngMomFlux(REAL8 q, REAL8 r, REAL8 nu);
+static INT4 XLALHGimri_PlusEquations(const gsl_vector * x, void *params, gsl_vector * f);
+static INT4 XLALHGimri_CrossEquations(const gsl_vector * z, void *params, gsl_vector * g);
+static REAL8 XLALHGimri_dFdr(REAL8 E, REAL8 Lz, REAL8 a, REAL8 r);
+static REAL8 XLALHGimri_initialP(REAL8 p0, void *params);
+static REAL8 XLALHGimri_dLzdr(REAL8 q, REAL8 r);
+static INT4 HGimri_start(REAL8 m, REAL8 M, REAL8 q, REAL8 D, REAL8 Sdotn, REAL8 phi0, REAL8 p0, REAL8Sequence *hplus, REAL8Sequence *hcross, REAL8 dt, UINT4 Npts);
+
+INT4 XLALHGimriGenerator(REAL8TimeSeries **hplus,REAL8TimeSeries **hcross,REAL8 phi0,REAL8 dt,REAL8 m1,REAL8 m2,REAL8 f_min,REAL8 r,REAL8 inc,REAL8 s1z);
 
 //Data type to hold current simulation regime
 enum stage {INSPIRAL, TRANSITION, PLUNGE, FINALPLUNGE};
@@ -78,7 +79,7 @@ struct pParams {
 	REAL8 f_min;		//Desired initial GW frequency
 	};
 
-REAL8 XLALHGimri_initialP(REAL8 p0, void *params) {
+static REAL8 XLALHGimri_initialP(REAL8 p0, void *params) {
 
 	//====================================================
 	// Root-finding function used to find initial radius p
@@ -106,7 +107,7 @@ REAL8 XLALHGimri_initialP(REAL8 p0, void *params) {
 	}
 
 
-REAL8 XLALHGimri_AngMomFlux(REAL8 q, REAL8 r, REAL8 nu) {
+static REAL8 XLALHGimri_AngMomFlux(REAL8 q, REAL8 r, REAL8 nu) {
 
 	//===================================================================
 	// Angular momentum flux from Gair & Glampedakis 2006 (gr-qc/0510129).
@@ -220,7 +221,7 @@ REAL8 XLALHGimri_AngMomFlux(REAL8 q, REAL8 r, REAL8 nu) {
 
 	}
 
-INT4 XLALHGimri_PlusEquations(const gsl_vector * x, void *params, gsl_vector * f) {
+static INT4 XLALHGimri_PlusEquations(const gsl_vector * x, void *params, gsl_vector * f) {
 
 	//=============================================================================
 	// Used by gsl_multiroots to match plus-polarized plunge waveform onto ringdown.
@@ -309,7 +310,7 @@ INT4 XLALHGimri_PlusEquations(const gsl_vector * x, void *params, gsl_vector * f
 	}
 
 
-INT4 XLALHGimri_CrossEquations(const gsl_vector * z, void *params, gsl_vector * g) {
+static INT4 XLALHGimri_CrossEquations(const gsl_vector * z, void *params, gsl_vector * g) {
 
 	//=============================================================================
 	// Used by gsl_multiroots to match cross-polarized plunge waveform onto ringdown.
@@ -396,7 +397,7 @@ INT4 XLALHGimri_CrossEquations(const gsl_vector * z, void *params, gsl_vector * 
         return GSL_SUCCESS;
 	}
 
-REAL8 XLALHGimri_dLzdr(REAL8 q, REAL8 r) {
+static REAL8 XLALHGimri_dLzdr(REAL8 q, REAL8 r) {
 
 	//==============================================
 	//Partial derivative (\partial L_z)/(\partial r)
@@ -412,7 +413,7 @@ REAL8 XLALHGimri_dLzdr(REAL8 q, REAL8 r) {
 
 	}
 
-REAL8 XLALHGimri_dFdr(REAL8 E, REAL8 Lz, REAL8 a, REAL8 r) {
+static REAL8 XLALHGimri_dFdr(REAL8 E, REAL8 Lz, REAL8 a, REAL8 r) {
 
 	//==================================================
 	// Dimensionless (\partial F)/(\partial r), where F=R/(V_t)^2 and
@@ -429,7 +430,7 @@ REAL8 XLALHGimri_dFdr(REAL8 E, REAL8 Lz, REAL8 a, REAL8 r) {
 	return ( dRdr/pow(Vt,2.) - 2.*R*dVtdr/pow(Vt,3.) );
 	}
 
-INT4 HGimri_start(REAL8 m, REAL8 M, REAL8 q, REAL8 D, REAL8 Sdotn, REAL8 phi0, REAL8 p0,
+static INT4 HGimri_start(REAL8 m, REAL8 M, REAL8 q, REAL8 D, REAL8 Sdotn, REAL8 phi0, REAL8 p0,
 	REAL8Sequence *hplus, REAL8Sequence *hcross, REAL8 dt, UINT4 Npts) {
 
 	//====================================================================================================
@@ -1104,7 +1105,7 @@ INT4 HGimri_start(REAL8 m, REAL8 M, REAL8 q, REAL8 D, REAL8 Sdotn, REAL8 phi0, R
 // Generator function for the Huerta-Gair IMRI model.
 //===================================================
 
-INT4 XLALHGimri_generator(
+INT4 XLALHGimriGenerator(
 	REAL8TimeSeries **hplus,
 	REAL8TimeSeries **hcross,
 	REAL8 phi0,			//Initial phi

@@ -31,6 +31,13 @@
 #endif
 
 /**
+ * @addtogroup LALSimInspiralPNMode_c
+ * @brief Routines for Mode Decompositions of Post-Newtonian Waveforms
+ *
+ * @{
+ */
+
+/**
  * Computes h(2,2) mode of spherical harmonic decomposition of
  * the post-Newtonian inspiral waveform.
  *
@@ -1663,3 +1670,4 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode60(
     return hlm;
 }
 
+/** @} */
