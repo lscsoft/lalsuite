@@ -122,6 +122,20 @@ int XLALSetSuperskyLatticeTilingPhysicalSkyBounds(
   );
 
 ///
+/// Set parameter-space bounds on an equal-area fraction of the physical sky \f$(\alpha, \delta)\f$
+/// for a lattice tiling using the reduced supersky metric. The metric and coordinate transform data
+/// must be supplied, since they will be transformed such that the physical sky patch maps to a region
+/// in the reduced supersky coordinates \f$(n_a,n_b)\f$ which may be covered by the lattice tiling.
+///
+int XLALSetSuperskyLatticeTilingPhysicalSkyPatch(
+  LatticeTiling *tiling,			///< [in] Lattice tiling
+  gsl_matrix *rssky_metric,			///< [in] Reduced supersky metric
+  gsl_matrix *rssky_transf,			///< [in] Reduced supersky metric coordinate transform data
+  const UINT8 patch_count,			///< [in] Number of equal-area patches to divide sky into
+  const UINT8 patch_index			///< [in] Index of the patch for which to set bounds
+  );
+
+///
 /// Set parameter-space bounds on the physical frequency/spindowns \f$f^{(s)}\f$ for a lattice
 /// tiling using the reduced supersky metric.
 ///

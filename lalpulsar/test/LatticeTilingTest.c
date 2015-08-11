@@ -418,6 +418,7 @@ static int SuperskyTest(
   const double T,
   const double max_mismatch,
   const TilingLattice lattice,
+  const UINT8 patch_count,
   const double freq,
   const double freqband,
   const UINT8 total_ref,
@@ -457,7 +458,7 @@ static int SuperskyTest(
 
   // Add bounds
   printf( "Bounds: supersky, freq=%0.3g, freqband=%0.3g\n", freq, freqband );
-  XLAL_CHECK( XLALSetSuperskyLatticeTilingPhysicalSkyBounds( tiling, rssky_metric, rssky_transf, 0, LAL_TWOPI, -LAL_PI_2, LAL_PI_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetSuperskyLatticeTilingPhysicalSkyPatch( tiling, rssky_metric, rssky_transf, patch_count, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK( XLALSetSuperskyLatticeTilingPhysicalSpinBound( tiling, rssky_transf, 0, freq, freq + freqband ) == XLAL_SUCCESS, XLAL_EFUNC );
   GFMAT( rssky_transf );
 
@@ -500,7 +501,9 @@ int main( void )
   XLAL_CHECK_MAIN( MismatchAgeBrakeTest( TILING_LATTICE_ANSTAR, 300, 1.0e-5, 37022, A3s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Perform mismatch tests with the reduced supersky parameter space and metric
-  XLAL_CHECK_MAIN( SuperskyTest( 2.0, 0.5, TILING_LATTICE_ANSTAR, 50, 1e-4, 111520, A3s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( SuperskyTest( 1.5, 0.8, TILING_LATTICE_ANSTAR,  1, 50, 1e-4, 31752, A3s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( SuperskyTest( 1.5, 0.8, TILING_LATTICE_ANSTAR,  3, 50, 1e-4, 17754, A3s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( SuperskyTest( 1.5, 0.8, TILING_LATTICE_ANSTAR, 17, 50, 1e-4,  6991, A3s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return EXIT_SUCCESS;
 
