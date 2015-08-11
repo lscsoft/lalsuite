@@ -18,29 +18,6 @@
  */
 
 
-/**
- * \author Michael Puerrer, Sebastian Khan, Frank Ohme
- *
- * \file
- *
- * \brief C code for IMRPhenomD phenomenological waveform model.
- * See ... for details.
- *
- * This is an aligned-spin frequency domain model.
- *
- * @note The model was calibrated to mass-ratios [1:1,1:4,1:8,1:18].
- * * Along the mass-ratio 1:1 line it was calibrated to spins  [-0.95, +0.98].
- * * Along the mass-ratio 1:4 line it was calibrated to spins  [-0.75, +0.75].
- * * Along the mass-ratio 1:8 line it was calibrated to spins  [-0.85, +0.85].
- * * Along the mass-ratio 1:18 line it was calibrated to spins [-0.8, +0.4].
- * The calibration points will be given in forthcoming papers.
- *
- * @note The model is usable outside this parameter range,
- * and in tests to date gives sensible physical results,
- * but conclusive statements on the physical fidelity of
- * the model for these parameters await comparisons against further
- * numerical-relativity simulations.
- */
 
 #include <math.h>
 #include <complex.h>
@@ -59,7 +36,7 @@
 #define omp ignore
 #endif
 
-/**
+/*
  * private function prototypes; all internal functions use solar masses.
  *
  */
@@ -76,6 +53,35 @@ static int IMRPhenomDGenerateFD(
     const REAL8 f_max,                 /**< end frequency */
     const REAL8 distance               /**< distance to source (m) */
 );
+
+/**
+ * @addtogroup LALSimIMRPhenom_c
+ * @{
+ *
+ * @name Routines for IMR Phenomenological Model "D"
+ * @{
+ *
+ * @author Michael Puerrer, Sebastian Khan, Frank Ohme
+ *
+ * @brief C code for IMRPhenomD phenomenological waveform model.
+ * See ... for details.
+ *
+ * This is an aligned-spin frequency domain model.
+ *
+ * @note The model was calibrated to mass-ratios [1:1,1:4,1:8,1:18].
+ * * Along the mass-ratio 1:1 line it was calibrated to spins  [-0.95, +0.98].
+ * * Along the mass-ratio 1:4 line it was calibrated to spins  [-0.75, +0.75].
+ * * Along the mass-ratio 1:8 line it was calibrated to spins  [-0.85, +0.85].
+ * * Along the mass-ratio 1:18 line it was calibrated to spins [-0.8, +0.4].
+ * The calibration points will be given in forthcoming papers.
+ *
+ * @note The model is usable outside this parameter range,
+ * and in tests to date gives sensible physical results,
+ * but conclusive statements on the physical fidelity of
+ * the model for these parameters await comparisons against further
+ * numerical-relativity simulations.
+ */
+
 
 /**
  * Driver routine to compute the spin-aligned, inspiral-merger-ringdown
@@ -146,10 +152,14 @@ int XLALSimIMRPhenomDGenerateFD(
   return status;
 }
 
-/***********************************************************************************/
+/** @} */
+
+/** @} */
+
+/* *********************************************************************************/
 /* The following private function generates IMRPhenomD frequency-domain waveforms  */
 /* given coefficients */
-/***********************************************************************************/
+/* *********************************************************************************/
 
 static int IMRPhenomDGenerateFD(
     COMPLEX16FrequencySeries **htilde, /**< FD waveform */

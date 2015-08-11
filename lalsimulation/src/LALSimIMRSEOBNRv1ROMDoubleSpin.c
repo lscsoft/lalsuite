@@ -18,33 +18,6 @@
  *  MA  02111-1307  USA
  */
 
-/**
- * \author Michael Puerrer, John Veitch
- *
- * \file
- *
- * \brief C code for SEOBNRv1 reduced order model (double spin version).
- * See CQG 31 195010, 2014, arXiv:1402.4146 for details.
- *
- * This is a frequency domain model that approximates the time domain SEOBNRv1 model.
- * Note that SEOBNRv2 supersedes SEOBNRv1.
- *
- * The binary data files are available at https://dcc.ligo.org/T1400701-v1.
- * Put the untared data into a location in your LAL_DATA_PATH.
- *
- * @note Note that due to its construction the iFFT of the ROM has a small (~ 20 M) offset
- * in the peak time that scales with total mass as compared to the time-domain SEOBNRv1 model.
- *
- * @note Parameter ranges:
- *   * q <= 10
- *   * -1 <= chi_i <= 0.6
- *   * Mtot >= 12Msun
- *
- *  Aligned component spins chi1, chi2.
- *  Asymmetric mass-ratio q = max(m1/m2, m2/m1).
- *  Total mass Mtot.
- *
- */
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
@@ -202,13 +175,13 @@ static int TP_Spline_interpolation_3d(
   REAL8 *amp_pre            // Output: interpolated amplitude prefactor
 );
 
-/**
+/*
  * Core function for computing the ROM waveform.
  * Interpolate projection coefficient data and evaluate coefficients at desired (q, chi).
  * Construct 1D splines for amplitude and phase.
  * Compute strain waveform from amplitude and phase.
 */
-int SEOBNRv1ROMDoubleSpinCore(
+static int SEOBNRv1ROMDoubleSpinCore(
   COMPLEX16FrequencySeries **hptilde,
   COMPLEX16FrequencySeries **hctilde,
   double phiRef,
@@ -232,7 +205,7 @@ int SEOBNRv1ROMDoubleSpinCore(
 
 /** Setup SEOBNRv1ROMDoubleSpin model using data files installed in dir
  */
-int SEOBNRv1ROMDoubleSpin_Init(const char dir[]) {
+static int SEOBNRv1ROMDoubleSpin_Init(const char dir[]) {
   if(__lalsim_SEOBNRv1ROMDS_data.setup) {
     XLALPrintError("Error: SEOBNRROMdata was already set up!");
     XLAL_ERROR(XLAL_EFAILED);
@@ -249,7 +222,7 @@ int SEOBNRv1ROMDoubleSpin_Init(const char dir[]) {
 }
 
 /** Helper function to check if the SEOBNRv1ROMDoubleSpin model has been initialised */
-bool SEOBNRv1ROMDoubleSpin_IsSetup(void) {
+static bool SEOBNRv1ROMDoubleSpin_IsSetup(void) {
   if(__lalsim_SEOBNRv1ROMDS_data.setup)
     return true;
   else
@@ -382,7 +355,7 @@ static int TP_Spline_interpolation_3d(
 }
 
 /* Set up a new ROM model, using data contained in dir */
-int SEOBNRROMdataDS_Init(SEOBNRROMdataDS *romdata, const char dir[]) {
+static int SEOBNRROMdataDS_Init(SEOBNRROMdataDS *romdata, const char dir[]) {
   // set up ROM
   int ncx = 41+2;       // points in q
   int ncy = 21+2;       // points in chi1
@@ -413,7 +386,7 @@ int SEOBNRROMdataDS_Init(SEOBNRROMdataDS *romdata, const char dir[]) {
 }
 
 /* Deallocate contents of the given SSEOBNRROMdata structure */
-void SEOBNRROMdataDS_Cleanup(SEOBNRROMdataDS *romdata) {
+static void SEOBNRROMdataDS_Cleanup(SEOBNRROMdataDS *romdata) {
   if(romdata->cvec_amp) gsl_vector_free(romdata->cvec_amp);
   if(romdata->cvec_phi) gsl_vector_free(romdata->cvec_phi);
   if(romdata->Bamp) gsl_matrix_free(romdata->Bamp);
@@ -448,13 +421,13 @@ static size_t NextPow2(const size_t n) {
   return 1 << (size_t) ceil(log2(n));
 }
 
-/**
+/*
  * Core function for computing the ROM waveform.
  * Interpolate projection coefficient data and evaluate coefficients at desired (q, chi).
  * Construct 1D splines for amplitude and phase.
  * Compute strain waveform from amplitude and phase.
 */
-int SEOBNRv1ROMDoubleSpinCore(
+static int SEOBNRv1ROMDoubleSpinCore(
   COMPLEX16FrequencySeries **hptilde,
   COMPLEX16FrequencySeries **hctilde,
   double phiRef,
@@ -710,6 +683,36 @@ int SEOBNRv1ROMDoubleSpinCore(
 }
 
 /**
+ * @addtogroup LALSimIMRSEOBNRv1ROMDoubleSpin_c
+ *
+ * @author Michael Puerrer, John Veitch
+ *
+ * @brief C code for SEOBNRv1 reduced order model (double spin version).
+ * See CQG 31 195010, 2014, arXiv:1402.4146 for details.
+ *
+ * This is a frequency domain model that approximates the time domain SEOBNRv1 model.
+ * Note that SEOBNRv2 supersedes SEOBNRv1.
+ *
+ * The binary data files are available at https://dcc.ligo.org/T1400701-v1.
+ * Put the untared data into a location in your LAL_DATA_PATH.
+ *
+ * @note Note that due to its construction the iFFT of the ROM has a small (~ 20 M) offset
+ * in the peak time that scales with total mass as compared to the time-domain SEOBNRv1 model.
+ *
+ * @note Parameter ranges:
+ *   * q <= 10
+ *   * -1 <= chi_i <= 0.6
+ *   * Mtot >= 12Msun
+ *
+ *  Aligned component spins chi1, chi2.
+ *  Asymmetric mass-ratio q = max(m1/m2, m2/m1).
+ *  Total mass Mtot.
+ *
+ * @{
+ */
+
+
+/**
  * Compute waveform in LAL format at specified frequencies for the SEOBNRv1_ROM_DoubleSpin model.
  *
  * XLALSimIMRSEOBNRv1ROMDoubleSpin() returns the plus and cross polarizations as a complex
@@ -846,9 +849,11 @@ int XLALSimIMRSEOBNRv1ROMDoubleSpin(
   return(retcode);
 }
 
-/** Setup SEOBNRv1ROMDoubleSpin model using data files installed in $LAL_DATA_PATH
+/** @} */
+
+/* Setup SEOBNRv1ROMDoubleSpin model using data files installed in $LAL_DATA_PATH
  */
-void SEOBNRv1ROMDoubleSpin_Init_LALDATA(void)
+static void SEOBNRv1ROMDoubleSpin_Init_LALDATA(void)
 {
   if (SEOBNRv1ROMDoubleSpin_IsSetup()) return;
 

@@ -20,15 +20,6 @@
  *  MA  02111-1307  USA
  */
 
-/**
- * \author Michael Puerrer, Alejandro Bohe
- *
- * \file
- *
- * \brief Functions for producing PhenomP waveforms for precessing binaries,
- * as described in Hannam et al., arXiv:1308.3271 [gr-qc].
- */
-
 #include <stdlib.h>
 #include <math.h>
 #include <gsl/gsl_errno.h>
@@ -53,10 +44,10 @@
 #endif
 
 
-/**************************** PhenomP internal function prototypes *****************************/
+/* ************************** PhenomP internal function prototypes *****************************/
 
 /* PhenomC parameters for modified ringdown: Uses final spin formula of Barausse & Rezzolla, Astrophys.J.Lett.704:L40-L44, 2009 */
-BBHPhenomCParams *ComputeIMRPhenomCParamsRDmod(
+static BBHPhenomCParams *ComputeIMRPhenomCParamsRDmod(
   const REAL8 m1,   /**< Mass of companion 1 (solar masses) */
   const REAL8 m2,   /**< Mass of companion 2 (solar masses) */
   const REAL8 chi,  /**< Reduced aligned spin of the binary chi = (m1*chi1 + m2*chi2)/M */
@@ -128,12 +119,12 @@ static int PhenomPCoreOneFrequency(
 );
 
 /* Simple 2PN version of L, without any spin terms expressed as a function of v */
-REAL8 L2PNR(
+static REAL8 L2PNR(
   const REAL8 v,   /**< Cubic root of (Pi * Frequency (geometric)) */
   const REAL8 eta  /**< Symmetric mass-ratio */
 );
 
-void WignerdCoefficients(
+static void WignerdCoefficients(
   const REAL8 v,          /**< Cubic root of (Pi * Frequency (geometric)) */
   const REAL8 SL,         /**< Dimensionfull aligned spin */
   const REAL8 eta,        /**< Symmetric mass-ratio */
@@ -142,19 +133,21 @@ void WignerdCoefficients(
   REAL8 *sin_beta_half    /**< Output: sin(beta/2) */
 );
 
-REAL8 FinalSpinBarausse2009_all_spin_on_larger_BH(
+static REAL8 FinalSpinBarausse2009_all_spin_on_larger_BH(
   const REAL8 nu,     /**< Symmetric mass-ratio */
   const REAL8 chi,    /**< Reduced aligned spin of the binary chi = (m1*chi1 + m2*chi2)/M */
   const REAL8 chip    /**< Dimensionless spin in the orbital plane */
 );
 
-REAL8 FinalSpinBarausse2009_aligned_spin_equally_distributed(
+#if 0
+static REAL8 FinalSpinBarausse2009_aligned_spin_equally_distributed(
   const REAL8 nu,     /**< Symmetric mass-ratio */
   const REAL8 chi,    /**< Reduced aligned spin of the binary chi = (m1*chi1 + m2*chi2)/M */
   const REAL8 chip    /**< Dimensionless spin in the orbital plane */
 );
+#endif
 
-REAL8 FinalSpinBarausse2009(  /* Barausse & Rezzolla, Astrophys.J.Lett.704:L40-L44, 2009, arXiv:0904.2577 */
+static REAL8 FinalSpinBarausse2009(  /* Barausse & Rezzolla, Astrophys.J.Lett.704:L40-L44, 2009, arXiv:0904.2577 */
   const REAL8 nu,               /**< Symmetric mass-ratio */
   const REAL8 a1,               /**< |a_1| norm of dimensionless spin vector for BH 1 */
   const REAL8 a2,               /**< |a_2| norm of dimensionless spin vector for BH 2 */
@@ -165,7 +158,20 @@ REAL8 FinalSpinBarausse2009(  /* Barausse & Rezzolla, Astrophys.J.Lett.704:L40-L
 
 static size_t NextPow2(const size_t n); /* Return the closest higher power of 2. */
 
-/*************************************** Implementation ****************************************/
+/* ************************************* Implementation ****************************************/
+
+/**
+ * @addtogroup LALSimIMRPhenom_c
+ * @{
+ *
+ * @name Routines for IMR Phenomenological Model "P"
+ * @{
+ *
+ * @author Michael Puerrer, Alejandro Bohe
+ *
+ * @brief Functions for producing PhenomP waveforms for precessing binaries,
+ * as described in Hannam et al., arXiv:1308.3271 [gr-qc].
+ */
 
 int XLALSimIMRPhenomPCalculateModelParameters(
     REAL8 *chi_eff,                 /**< Output: Effective aligned spin */
@@ -327,6 +333,9 @@ int XLALSimIMRPhenomPFrequencySequence(
 
   return(retcode);
 }
+
+/** @} */
+/** @} */
 
 /* Internal core function to calculate PhenomP polarizations for a sequence of frequences. */
 static int PhenomPCore(
@@ -594,10 +603,10 @@ static int PhenomPCore(
     return XLAL_SUCCESS;
 }
 
-/******************************* PhenomP internal functions *********************************/
+/* ***************************** PhenomP internal functions *********************************/
 
 /* Internal core function to calculate PhenomP polarizations for a single frequency. */
-int PhenomPCoreOneFrequency(
+static int PhenomPCoreOneFrequency(
   const REAL8 fHz,                        /**< Frequency (Hz) */
   const REAL8 eta,                        /**< Symmetric mass ratio */
   const REAL8 chi_eff,                    /**< Dimensionless effective total aligned spin */
@@ -717,7 +726,7 @@ int PhenomPCoreOneFrequency(
 }
 
 
-void ComputeNNLOanglecoeffs(
+static void ComputeNNLOanglecoeffs(
   NNLOanglecoeffs *angcoeffs, /**< Output: Structure to store results */
   const REAL8 q,              /**< Mass-ratio (convention q>1) */
   const REAL8 chil,           /**< Dimensionless aligned spin of the largest BH */
@@ -800,7 +809,7 @@ void ComputeNNLOanglecoeffs(
 }
 
 
-REAL8 L2PNR(
+static REAL8 L2PNR(
   const REAL8 v,   /**< Cubic root of (Pi * Frequency (geometric)) */
   const REAL8 eta) /**< Symmetric mass-ratio */
 {
@@ -820,7 +829,7 @@ REAL8 L2PNR(
       ((7 - 10*eta - 9*eta2)*v4)/(2.*(1 - ((3 - eta)*v2)/3. + (4.75 + eta/9.)*eta*v4)));
 }
 
-void WignerdCoefficients(
+static void WignerdCoefficients(
   const REAL8 v,        /**< Cubic root of (Pi * Frequency (geometric)) */
   const REAL8 SL,       /**< Dimensionfull aligned spin */
   const REAL8 eta,      /**< Symmetric mass-ratio */
@@ -836,7 +845,7 @@ void WignerdCoefficients(
   *sin_beta_half = sqrt(1.0 - 1.0/(1.0 + s2/4.0));   /* sin(beta/2) */
 }
 
-REAL8 FinalSpinBarausse2009_all_spin_on_larger_BH(
+static REAL8 FinalSpinBarausse2009_all_spin_on_larger_BH(
   const REAL8 nu,     /**< Symmetric mass-ratio */
   const REAL8 chi,    /**< Reduced aligned spin of the binary chi = (m1*chi1 + m2*chi2)/M */
   const REAL8 chip)   /**< Dimensionless spin in the orbital plane */
@@ -860,7 +869,8 @@ REAL8 FinalSpinBarausse2009_all_spin_on_larger_BH(
   return FinalSpinBarausse2009(nu, a1, a2, cos_alpha, cos_beta_tilde, cos_gamma_tilde);
 }
 
-REAL8 FinalSpinBarausse2009_aligned_spin_equally_distributed(
+#if 0
+static REAL8 FinalSpinBarausse2009_aligned_spin_equally_distributed(
   const REAL8 nu,     /**< Symmetric mass-ratio */
   const REAL8 chi,    /**< Reduced aligned spin of the binary chi = (m1*chi1 + m2*chi2)/M */
   const REAL8 chip)   /**< Dimensionless spin in the orbital plane */
@@ -883,9 +893,9 @@ REAL8 FinalSpinBarausse2009_aligned_spin_equally_distributed(
 
   return FinalSpinBarausse2009(nu, a1, a2, cos_alpha, cos_beta_tilde, cos_gamma_tilde);
 }
+#endif
 
-
-REAL8 FinalSpinBarausse2009(  /* Barausse & Rezzolla, Astrophys.J.Lett.704:L40-L44, 2009, arXiv:0904.2577 */
+static REAL8 FinalSpinBarausse2009(  /* Barausse & Rezzolla, Astrophys.J.Lett.704:L40-L44, 2009, arXiv:0904.2577 */
   const REAL8 nu,               /**< Symmetric mass-ratio */
   const REAL8 a1,               /**< |a_1| norm of dimensionless spin vector for BH 1 */
   const REAL8 a2,               /**< |a_2| norm of dimensionless spin vector for BH 2 */
@@ -926,7 +936,7 @@ REAL8 FinalSpinBarausse2009(  /* Barausse & Rezzolla, Astrophys.J.Lett.704:L40-L
 
 
 /* PhenomC parameters for modified ringdown: Uses final spin formula of Barausse & Rezzolla, Astrophys.J.Lett.704:L40-L44, 2009 */
-BBHPhenomCParams *ComputeIMRPhenomCParamsRDmod(
+static BBHPhenomCParams *ComputeIMRPhenomCParamsRDmod(
   const REAL8 m1,   /**< Mass of companion 1 (solar masses) */
   const REAL8 m2,   /**< Mass of companion 2 (solar masses) */
   const REAL8 chi,  /**< Reduced aligned spin of the binary chi = (m1*chi1 + m2*chi2)/M */
