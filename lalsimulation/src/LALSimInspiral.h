@@ -40,9 +40,20 @@ extern "C" {
  * @brief Routines for generating binary inspiral gravitational waveforms.
  *
  * @{
- * @defgroup LALSimInspiral_c         Module LALSimInspiral.c
- * @defgroup LALSimInspiralPNMode_c   Module LALSimInspiralPNMode.c
- * @defgroup LALSimInspiralTaylorT1_c Module LALSimInspiralTaylorT1.c
+ * @defgroup LALSimInspiral_c                      Module LALSimInspiral.c
+ * @defgroup LALSimInspiralPNMode_c                Module LALSimInspiralPNMode.c
+ * @defgroup LALSimInspiralTaylorT1_c              Module LALSimInspiralTaylorT1.c
+ * @defgroup LALSimInspiralTaylorT2_c              Module LALSimInspiralTaylorT2.c
+ * @defgroup LALSimInspiralTaylorT3_c              Module LALSimInspiralTaylorT3.c
+ * @defgroup LALSimInspiralTaylorT4_c              Module LALSimInspiralTaylorT4.c
+ * @defgroup LALSimInspiralTaylorEt_c              Module LALSimInspiralTaylorEt.c
+ * @defgroup LALSimInspiralTaylorF2_c              Module LALSimInspiralTaylorF2.c
+ * @defgroup LALSimInspiralSpinTaylor_c            Module LALSimInspiralSpinTaylor.c
+ * @defgroup LALSimInspiralEccentricTD_c           Module LALSimInspiralEccentricTD.c
+ * @defgroup LALSimInspiralEccentricityFD_c        Module LALSimInspiralEccentricityFD.c
+ * @defgroup LALSimInspiralSpinDominatedWaveform_c Module LALSimInspiralSpinDominatedWaveform.c
+ * @defgroup LALSimInspiralTaylorF2ReducedSpin_c   Module LALSimInspiralTaylorF2ReducedSpin.c
+ * @defgroup LALSimInspiralWaveformTaper_c         Module LALSimInspiralWaveformTaper.c
  * @}
  *
  * @addtogroup LALSimInspiral_h
@@ -277,6 +288,8 @@ int XLALSimInspiralTransformPrecessingNewInitialConditions(REAL8 *incl, REAL8 *S
 /* routines for generating PN modes based on orbital data */
 /* in module LALSimInspiralPNMode.c */
 
+COMPLEX16TimeSeries *XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(REAL8TimeSeries *v, REAL8TimeSeries *phi, REAL8 v0, REAL8 m1, REAL8 m2, REAL8 r, int O, int l, int m);
+
 COMPLEX16TimeSeries *XLALSimInspiralPNMode22(REAL8TimeSeries *V, REAL8TimeSeries *Phi, REAL8 v0, REAL8 m1, REAL8 m2, REAL8 r, int O);
 COMPLEX16TimeSeries *XLALSimInspiralPNMode21(REAL8TimeSeries *V, REAL8TimeSeries *Phi, REAL8 v0, REAL8 m1, REAL8 m2, REAL8 r, int O);
 COMPLEX16TimeSeries *XLALSimInspiralPNMode20(REAL8TimeSeries *V, REAL8TimeSeries *Phi, REAL8 v0, REAL8 m1, REAL8 m2, REAL8 r, int O);
@@ -306,15 +319,6 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode63(REAL8TimeSeries *V, REAL8TimeSeries
 COMPLEX16TimeSeries *XLALSimInspiralPNMode62(REAL8TimeSeries *V, REAL8TimeSeries *Phi, REAL8 v0, REAL8 m1, REAL8 m2, REAL8 r, int O);
 COMPLEX16TimeSeries *XLALSimInspiralPNMode61(REAL8TimeSeries *V, REAL8TimeSeries *Phi, REAL8 v0, REAL8 m1, REAL8 m2, REAL8 r, int O);
 COMPLEX16TimeSeries *XLALSimInspiralPNMode60(REAL8TimeSeries *V, REAL8TimeSeries *Phi, REAL8 v0, REAL8 m1, REAL8 m2, REAL8 r, int O);
-
-/* TODO move this routine to PNMode.c */
-COMPLEX16TimeSeries *XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(REAL8TimeSeries *v, REAL8TimeSeries *phi, REAL8 v0, REAL8 m1, REAL8 m2, REAL8 r, int O, int l, int m);
-
-
-
-
-
-/* specific waveform generator routines */
 
 
 /* TaylorT1 functions */
@@ -371,11 +375,6 @@ int XLALSimInspiralTaylorEtPN(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross,
 int XLALSimInspiralTaylorEtPNRestricted(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 phic, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 f_min, REAL8 r, REAL8 i, int O);
 
 
-/* in module ??? */
-
-int XLALSimInspiralEccentricTDPNRestricted(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 phiRef, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 f_min, REAL8 fRef, REAL8 r, REAL8 i, REAL8 e_min, int O);
-
-
 /* HGimri functions */
 /* in module LALSimInspiralHGimri.c */
 
@@ -390,56 +389,46 @@ int XLALSimInspiralTaylorF2Core(COMPLEX16FrequencySeries **htilde, const REAL8Se
 int XLALSimInspiralTaylorF2(COMPLEX16FrequencySeries **htilde, const REAL8 phi_ref, const REAL8 deltaF, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 S1z, const REAL8 S2z, const REAL8 fStart, const REAL8 fEnd, const REAL8 f_ref, const REAL8 r, const REAL8 quadparam1, const REAL8 quadparam2, const REAL8 lambda1, const REAL8 lambda2, const LALSimInspiralSpinOrder spinO, LALSimInspiralTidalOrder tideO, const INT4 phaseO, const INT4 amplitudeO);
 
 
-/* precessing waveform functions */
-
-/* SpinTaylor T1/T2/T4/T5 */
+/* SpinTaylor precessing waveform functions */
+/* in module LALSimInspiralSpinTaylor.c */
 
 int XLALSimInspiralSpinTaylorPNEvolveOrbit(REAL8TimeSeries **V, REAL8TimeSeries **Phi, REAL8TimeSeries **S1x, REAL8TimeSeries **S1y, REAL8TimeSeries **S1z, REAL8TimeSeries **S2x, REAL8TimeSeries **S2y, REAL8TimeSeries **S2z, REAL8TimeSeries **LNhatx, REAL8TimeSeries **LNhaty, REAL8TimeSeries **LNhatz, REAL8TimeSeries **E1x, REAL8TimeSeries **E1y, REAL8TimeSeries **E1z, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fEnd, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z, REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz, REAL8 e1x, REAL8 e1y, REAL8 e1z, REAL8 lambda1, REAL8 lambda2, REAL8 quadparam1, REAL8 quadparam2, LALSimInspiralSpinOrder spinO, LALSimInspiralTidalOrder tideO, INT4 phaseO, Approximant approx);
 int XLALSimInspiralSpinTaylorT1(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 phiRef, REAL8 v0, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fRef, REAL8 r, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z, REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz, REAL8 e1x, REAL8 e1y, REAL8 e1z, REAL8 lambda1, REAL8 lambda2, REAL8 quadparam1, REAL8 quadparam2, LALSimInspiralSpinOrder spinO, LALSimInspiralTidalOrder tideO, int phaseO, int amplitudeO);
 int XLALSimInspiralSpinTaylorT2(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 phiRef, REAL8 v0, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fRef, REAL8 r, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z, REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz, REAL8 e1x, REAL8 e1y, REAL8 e1z, REAL8 lambda1, REAL8 lambda2, REAL8 quadparam1, REAL8 quadparam2, LALSimInspiralSpinOrder spinO, LALSimInspiralTidalOrder tideO, int phaseO, int amplitudeO);
 int XLALSimInspiralSpinTaylorT4(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 phiRef, REAL8 v0, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fRef, REAL8 r, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z, REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz, REAL8 e1x, REAL8 e1y, REAL8 e1z, REAL8 lambda1, REAL8 lambda2, REAL8 quadparam1, REAL8 quadparam2, LALSimInspiralSpinOrder spinO, LALSimInspiralTidalOrder tideO, int phaseO, int amplitudeO);
 int XLALSimInspiralSpinTaylorT5(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 phiRef, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 r, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z, REAL8 incAngle, int phaseO, int amplitudeO);
-
-/* SpinTaylor F2 */
-
-int XLALSimInspiralSpinTaylorF2(COMPLEX16FrequencySeries **hplus_out, COMPLEX16FrequencySeries **hcross_out, REAL8 phi_ref, REAL8 deltaF, REAL8 m1_SI, REAL8 m2_SI, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz, const REAL8 fStart, const REAL8 fEnd, const REAL8 f_ref, const REAL8 r, LALSimInspiralTestGRParam *moreParams, const LALSimInspiralSpinOrder spinO, const INT4 phaseO, const INT4 amplitudeO);
-
-/* SpinTaylor T2Fourier and T4Fourier */
-
+int XLALSimInspiralSpinTaylorT4PTFQVecs(REAL8TimeSeries **Q1, REAL8TimeSeries **Q2, REAL8TimeSeries **Q3, REAL8TimeSeries **Q4, REAL8TimeSeries **Q5, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 chi1, REAL8 kappa, REAL8 fStart, REAL8 lambda1, REAL8 lambda2, LALSimInspiralSpinOrder spinO, LALSimInspiralTidalOrder tideO, int phaseO);
 int XLALSimInspiralSpinTaylorT2Fourier(COMPLEX16FrequencySeries **hplus, COMPLEX16FrequencySeries **hcross, REAL8 fMin, REAL8 fMax, REAL8 deltaF, INT4 kMax, REAL8 phiRef, REAL8 v0, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fRef, REAL8 r, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z, REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz, REAL8 e1x, REAL8 e1y, REAL8 e1z, REAL8 lambda1, REAL8 lambda2, REAL8 quadparam1, REAL8 quadparam2, LALSimInspiralSpinOrder spinO, LALSimInspiralTidalOrder tideO, INT4 phaseO, INT4 amplitudeO, INT4 phiRefAtEnd);
 int XLALSimInspiralSpinTaylorT4Fourier(COMPLEX16FrequencySeries **hplus, COMPLEX16FrequencySeries **hcross, REAL8 fMin, REAL8 fMax, REAL8 deltaF, INT4 kMax, REAL8 phiRef, REAL8 v0, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fRef, REAL8 r, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z, REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz, REAL8 e1x, REAL8 e1y, REAL8 e1z, REAL8 lambda1, REAL8 lambda2, REAL8 quadparam1, REAL8 quadparam2, LALSimInspiralSpinOrder spinO, LALSimInspiralTidalOrder tideO, INT4 phaseO, INT4 amplitudeO, INT4 phiRefAtEnd);
-
-
-/* physical template family functions */
-
-/* routines for precessing waveforms from orbital data */
-int XLALSimInspiralSpinTaylorT4PTFQVecs(REAL8TimeSeries **Q1, REAL8TimeSeries **Q2, REAL8TimeSeries **Q3, REAL8TimeSeries **Q4, REAL8TimeSeries **Q5, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 chi1, REAL8 kappa, REAL8 fStart, REAL8 lambda1, REAL8 lambda2, LALSimInspiralSpinOrder spinO, LALSimInspiralTidalOrder tideO, int phaseO);
-/* TODO: MOVE ROUTINES TO LALSimInspiralSpinTaylor ? */
+int XLALSimInspiralSpinTaylorF2(COMPLEX16FrequencySeries **hplus_out, COMPLEX16FrequencySeries **hcross_out, REAL8 phi_ref, REAL8 deltaF, REAL8 m1_SI, REAL8 m2_SI, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz, const REAL8 fStart, const REAL8 fEnd, const REAL8 f_ref, const REAL8 r, LALSimInspiralTestGRParam *moreParams, const LALSimInspiralSpinOrder spinO, const INT4 phaseO, const INT4 amplitudeO);
 int XLALSimInspiralPrecessingPTFQWaveforms(REAL8TimeSeries **Q1, REAL8TimeSeries **Q2, REAL8TimeSeries **Q3, REAL8TimeSeries **Q4, REAL8TimeSeries **Q5, REAL8TimeSeries *V, REAL8TimeSeries *Phi, REAL8TimeSeries *S1x, REAL8TimeSeries *S1y, REAL8TimeSeries *S1z, REAL8TimeSeries *S2x, REAL8TimeSeries *S2y, REAL8TimeSeries *S2z, REAL8TimeSeries *LNhatx, REAL8TimeSeries *LNhaty, REAL8TimeSeries *LNhatz, REAL8TimeSeries *E1x, REAL8TimeSeries *E1y, REAL8TimeSeries *E1z, REAL8 m1, REAL8 m2, REAL8 r);
 int XLALSimInspiralInitialConditionsPrecessingApproxs(REAL8 *inc, REAL8 *S1x, REAL8 *S1y, REAL8 *S1z, REAL8 *S2x, REAL8 *S2y, REAL8 *S2z, const REAL8 inclIn, const REAL8 S1xIn, const REAL8 S1yIn, const REAL8 S1zIn, const REAL8 S2xIn, const REAL8 S2yIn, const REAL8 S2zIn, const REAL8 m1, const REAL8 m2, const REAL8 fRef, LALSimInspiralFrameAxis axisChoice);
 
 
-/* eccentric waveform functions */
-
 /* time domain eccentric functions */
+/* in module LALSimInspiralEccentricTD.c */
 
 int XLALSimInspiralEccentricTDPNEvolveOrbit(REAL8TimeSeries **v, REAL8TimeSeries **et, REAL8TimeSeries **l, REAL8TimeSeries **lambda, REAL8TimeSeries **u, REAL8TimeSeries **phi, REAL8 phiRef, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 f_min, REAL8 fRef, REAL8 e_min, int O);
 int XLALSimInspiralEccentricTDPNGenerator(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 phiRef, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 f_min, REAL8 fRef, REAL8 r, REAL8 i, REAL8 e_min, int amplitudeO, int phaseO);
 int XLALSimInspiralEccentricTDPN(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 phiRef, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 f_min, REAL8 fRef, REAL8 r, REAL8 i, REAL8 e_min, int O);
+int XLALSimInspiralEccentricTDPNRestricted(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 phiRef, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 f_min, REAL8 fRef, REAL8 r, REAL8 i, REAL8 e_min, int O);
 
 
 /* frequency domain eccentric functions */
+/* in module LALSimInspiralEccentricityFD.c */
 
 int XLALSimInspiralEFD(COMPLEX16FrequencySeries **hptilde, COMPLEX16FrequencySeries **hctilde, const REAL8 phiRef, const REAL8 deltaF, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 fStart, const REAL8 fEnd, const REAL8 i, const REAL8 r, const REAL8 inclination_azimuth, const REAL8 e_min, int phaseO);
 
 
 /* spin-dominated waveform functions */
+/* in module LALSimInspiralSpinDominatedWaveform.c */
 
 int XLALSimInspiralSpinDominatedWaveformInterfaceTD(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fRef, REAL8 D, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz, int phaseO, int amplitudeO, REAL8 phiRef);
 int XLALSimInspiralSpinDominatedWaveformDriver(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 totalmass, REAL8 nu, REAL8 chi1, REAL8 D, REAL8 kappa1, REAL8 beta1, REAL8 theta, REAL8 fStart, REAL8 fRef, int phaseO, int amplitudeO, REAL8 deltaT, REAL8 phiRef, REAL8 phin0);
 
 
 /* TaylorF2 Reduced Spin routines */
+/* in module LALSimInspiralTaylorF2ReducedSpin.c */
 
 int XLALSimInspiralTaylorF2ReducedSpin(COMPLEX16FrequencySeries **htilde, const REAL8 phic, const REAL8 deltaF, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 chi, const REAL8 fStart, const REAL8 fEnd, const REAL8 r, const INT4 phaseO, const INT4 ampO);
 int XLALSimInspiralTaylorF2ReducedSpinTidal(COMPLEX16FrequencySeries **htilde, const REAL8 phic, const REAL8 deltaF, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 chi, const REAL8 lam1, const REAL8 lam2, const REAL8 fStart, const REAL8 fEnd, const REAL8 r, const INT4 phaseO, const INT4 ampO);
@@ -450,16 +439,14 @@ int XLALSimInspiralTaylorF2RedSpinMetricMChirpEtaChi(REAL8 *gamma00, REAL8 *gamm
 gsl_matrix *XLALSimInspiralTaylorF2RedSpinFisherMatrixChirpTimes(const REAL8 theta0, const REAL8 theta3, const REAL8 theta3s, const REAL8 fLow, const REAL8 df, REAL8Vector *momI_0, REAL8Vector *momI_2, REAL8Vector *momI_3, REAL8Vector *momI_4, REAL8Vector *momI_5, REAL8Vector *momI_6, REAL8Vector *momI_7, REAL8Vector *momI_8, REAL8Vector *momI_9, REAL8Vector *momI_10, REAL8Vector *momI_11, REAL8Vector *momI_12, REAL8Vector *momI_13, REAL8Vector *momI_14, REAL8Vector *momI_15, REAL8Vector *momI_16, REAL8Vector *momJ_5, REAL8Vector *momJ_6, REAL8Vector *momJ_7, REAL8Vector *momJ_8, REAL8Vector *momJ_9, REAL8Vector *momJ_10, REAL8Vector *momJ_11, REAL8Vector *momJ_12, REAL8Vector *momJ_13, REAL8Vector *momJ_14, REAL8Vector *momK_10, REAL8Vector *momK_11, REAL8Vector *momK_12);
 int XLALSimInspiralTaylorF2RedSpinMetricChirpTimes(REAL8 *gamma00, REAL8 *gamma01, REAL8 *gamma02, REAL8 *gamma11, REAL8 *gamma12, REAL8 *gamma22, const REAL8 theta0, const REAL8 theta3, const REAL8 theta3s, const REAL8 fLow, const REAL8 df, REAL8Vector *momI_0, REAL8Vector *momI_2, REAL8Vector *momI_3, REAL8Vector *momI_4, REAL8Vector *momI_5, REAL8Vector *momI_6, REAL8Vector *momI_7, REAL8Vector *momI_8, REAL8Vector *momI_9, REAL8Vector *momI_10, REAL8Vector *momI_11, REAL8Vector *momI_12, REAL8Vector *momI_13, REAL8Vector *momI_14, REAL8Vector *momI_15, REAL8Vector *momI_16, REAL8Vector *momJ_5, REAL8Vector *momJ_6, REAL8Vector *momJ_7, REAL8Vector *momJ_8, REAL8Vector *momJ_9, REAL8Vector *momJ_10, REAL8Vector *momJ_11, REAL8Vector *momJ_12, REAL8Vector *momJ_13, REAL8Vector *momJ_14, REAL8Vector *momK_10, REAL8Vector *momK_11, REAL8Vector *momK_12);
 int XLALSimInspiralTaylorF2RedSpinComputeNoiseMoments(REAL8Vector *momI_0, REAL8Vector *momI_2, REAL8Vector *momI_3, REAL8Vector *momI_4, REAL8Vector *momI_5, REAL8Vector *momI_6, REAL8Vector *momI_7, REAL8Vector *momI_8, REAL8Vector *momI_9, REAL8Vector *momI_10, REAL8Vector *momI_11, REAL8Vector *momI_12, REAL8Vector *momI_13, REAL8Vector *momI_14, REAL8Vector *momI_15, REAL8Vector *momI_16, REAL8Vector *momJ_5, REAL8Vector *momJ_6, REAL8Vector *momJ_7, REAL8Vector *momJ_8, REAL8Vector *momJ_9, REAL8Vector *momJ_10, REAL8Vector *momJ_11, REAL8Vector *momJ_12, REAL8Vector *momJ_13, REAL8Vector *momJ_14, REAL8Vector *momK_10, REAL8Vector *momK_11, REAL8Vector *momK_12, REAL8Vector *Sh, REAL8 fLow, REAL8 df);
-
 void XLALSimInspiralTaylorF2RedSpinChirpTimesFromMchirpEtaChi(double *theta0, double *theta3, double *theta3s, double mc, double eta, double chi, double fLow);
-
 void XLALSimInspiralTaylorF2RedSpinMchirpEtaChiFromChirpTimes(double *mc, double *eta, double *chi, double theta0, double theta3, double theta3s, double fLow);
 
+/* waveform tapering routines */
+/* in module LALSimInspiralWaveformTaper.c */
 
-/* module LALSimInspiralWaveformTaper.c */
-
-int XLALSimInspiralREAL4WaveTaper(REAL4Vector *signalvec, LALSimInspiralApplyTaper  bookends);
-int XLALSimInspiralREAL8WaveTaper(REAL8Vector *signalvec, LALSimInspiralApplyTaper  bookends);
+int XLALSimInspiralREAL4WaveTaper(REAL4Vector *signalvec, LALSimInspiralApplyTaper bookends);
+int XLALSimInspiralREAL8WaveTaper(REAL8Vector *signalvec, LALSimInspiralApplyTaper bookends);
 
 #if 0
 { /* so that editors will match succeeding brace */

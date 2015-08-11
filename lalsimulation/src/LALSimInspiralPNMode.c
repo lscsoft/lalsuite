@@ -32,10 +32,100 @@
 
 /**
  * @addtogroup LALSimInspiralPNMode_c
- * @brief Routines for Mode Decompositions of Post-Newtonian Waveforms
+ * @brief Routines for mode decompositions of post-Newtonian waveforms
  *
  * @{
  */
+
+/**
+ * Computes h(l,m) mode timeseries of spherical harmonic decomposition of
+ * the post-Newtonian inspiral waveform.
+ *
+ * See Eqns. (79)-(116) of:
+ * Lawrence E. Kidder, \"Using Full Information When Computing Modes of
+ * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
+ * Orbit\", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
+ */
+COMPLEX16TimeSeries *XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(
+		REAL8TimeSeries *v,   /**< post-Newtonian parameter */
+	       	REAL8TimeSeries *phi, /**< orbital phase */
+	       	REAL8 v0,             /**< tail gauge parameter (default = 1) */
+	       	REAL8 m1,             /**< mass of companion 1 (kg) */
+	       	REAL8 m2,             /**< mass of companion 2 (kg) */
+	       	REAL8 r,              /**< distance of source (m) */
+	       	int O,                /**< twice post-Newtonain order */
+	       	int l,                /**< mode number l */
+	       	int m                 /**< mode number m */
+		)
+{
+	LAL_CHECK_VALID_SERIES(v, NULL);
+	LAL_CHECK_VALID_SERIES(phi, NULL);
+	LAL_CHECK_CONSISTENT_TIME_SERIES(v, phi, NULL);
+	COMPLEX16TimeSeries *hlm;
+	UINT4 j;
+	if ( l == 2 && abs(m) == 2 )
+		hlm = XLALSimInspiralPNMode22(v, phi, v0, m1, m2, r, O);
+	else if ( l == 2 && abs(m) == 1 )
+		hlm = XLALSimInspiralPNMode21(v, phi, v0, m1, m2, r, O);
+	else if ( l == 2 && m == 0 )
+		hlm = XLALSimInspiralPNMode20(v, phi, v0, m1, m2, r, O);
+	else if ( l == 3 && abs(m) == 3 )
+		hlm = XLALSimInspiralPNMode33(v, phi, v0, m1, m2, r, O);
+	else if ( l == 3 && abs(m) == 2 )
+		hlm = XLALSimInspiralPNMode32(v, phi, v0, m1, m2, r, O);
+	else if ( l == 3 && abs(m) == 1 )
+		hlm = XLALSimInspiralPNMode31(v, phi, v0, m1, m2, r, O);
+	else if ( l == 3 && m == 0 )
+		hlm = XLALSimInspiralPNMode30(v, phi, v0, m1, m2, r, O);
+	else if ( l == 4 && abs(m) == 4 )
+		hlm = XLALSimInspiralPNMode44(v, phi, v0, m1, m2, r, O);
+	else if ( l == 4 && abs(m) == 3 )
+		hlm = XLALSimInspiralPNMode43(v, phi, v0, m1, m2, r, O);
+	else if ( l == 4 && abs(m) == 2 )
+		hlm = XLALSimInspiralPNMode42(v, phi, v0, m1, m2, r, O);
+	else if ( l == 4 && abs(m) == 1 )
+		hlm = XLALSimInspiralPNMode41(v, phi, v0, m1, m2, r, O);
+	else if ( l == 4 && m == 0 )
+		hlm = XLALSimInspiralPNMode40(v, phi, v0, m1, m2, r, O);
+	else if ( l == 5 && abs(m) == 5 )
+		hlm = XLALSimInspiralPNMode55(v, phi, v0, m1, m2, r, O);
+	else if ( l == 5 && abs(m) == 4 )
+		hlm = XLALSimInspiralPNMode54(v, phi, v0, m1, m2, r, O);
+	else if ( l == 5 && abs(m) == 3 )
+		hlm = XLALSimInspiralPNMode53(v, phi, v0, m1, m2, r, O);
+	else if ( l == 5 && abs(m) == 2 )
+		hlm = XLALSimInspiralPNMode52(v, phi, v0, m1, m2, r, O);
+	else if ( l == 5 && abs(m) == 1 )
+		hlm = XLALSimInspiralPNMode51(v, phi, v0, m1, m2, r, O);
+	else if ( l == 5 && m == 0 )
+		hlm = XLALSimInspiralPNMode50(v, phi, v0, m1, m2, r, O);
+	else if ( l == 6 && abs(m) == 6 )
+		hlm = XLALSimInspiralPNMode66(v, phi, v0, m1, m2, r, O);
+	else if ( l == 6 && abs(m) == 5 )
+		hlm = XLALSimInspiralPNMode65(v, phi, v0, m1, m2, r, O);
+	else if ( l == 6 && abs(m) == 4 )
+		hlm = XLALSimInspiralPNMode64(v, phi, v0, m1, m2, r, O);
+	else if ( l == 6 && abs(m) == 3 )
+		hlm = XLALSimInspiralPNMode63(v, phi, v0, m1, m2, r, O);
+	else if ( l == 6 && abs(m) == 2 )
+		hlm = XLALSimInspiralPNMode62(v, phi, v0, m1, m2, r, O);
+	else if ( l == 6 && abs(m) == 1 )
+		hlm = XLALSimInspiralPNMode61(v, phi, v0, m1, m2, r, O);
+	else if ( l == 6 && m == 0 )
+		hlm = XLALSimInspiralPNMode60(v, phi, v0, m1, m2, r, O);
+	else {
+		XLALPrintError("XLAL Error - %s: Unsupported mode l=%d, m=%d\n", __func__, l, m );
+		XLAL_ERROR_NULL(XLAL_EINVAL);
+	}
+	if ( !hlm )
+		XLAL_ERROR_NULL(XLAL_EFUNC);
+	if ( m < 0 ) {
+		REAL8 sign = l % 2 ? -1.0 : 1.0;
+		for ( j = 0; j < hlm->data->length; ++j )
+			hlm->data->data[j] = sign * conj(hlm->data->data[j]);
+	}
+	return hlm;
+}
 
 /**
  * Computes h(2,2) mode of spherical harmonic decomposition of

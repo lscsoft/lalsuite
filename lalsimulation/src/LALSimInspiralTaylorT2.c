@@ -563,7 +563,7 @@ XLALSimInspiralPhasing2_7PN (
 }
 
 
-/**
+/*
  * Set up the expnCoeffsTaylorT3 and expnFuncTaylorT3 structures for
  * generating a TaylorT3 waveform.
  *
@@ -721,6 +721,16 @@ static int XLALSimInspiralTaylorT2Setup(
   return XLAL_SUCCESS;
 }
 
+/**
+ * @addtogroup LALSimInspiralTaylorT2_c
+ * @brief Routines for generating TaylorT2 waveforms.
+ * @sa
+ * Section IIIC of Alessandra Buonanno, Bala R Iyer, Evan
+ * Ochsner, Yi Pan, and B S Sathyaprakash, "Comparison of post-Newtonian
+ * templates for compact binary inspiral signals in gravitational-wave
+ * detectors", Phys. Rev. D 80, 084043 (2009), arXiv:0907.0700v1
+ * @{
+ */
 
 /**
  * Computes a post-Newtonian orbit using the Taylor T2 method.
@@ -1166,3 +1176,5 @@ int XLALSimInspiralTaylorT2PNRestricted(
 	return XLALSimInspiralTaylorT2PNGenerator(hplus, hcross, phiRef, 1.0,
 			deltaT, m1, m2, f_min, fRef, r, i, lambda1, lambda2, tideO, 0, O);
 }
+
+/** @} */

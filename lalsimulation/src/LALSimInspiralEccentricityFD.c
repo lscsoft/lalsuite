@@ -478,6 +478,12 @@ return 0;
 
 
 
+/**
+ * @addtogroup LALSimInspiralEccentricityFD_c
+ * @brief Routines to generate frequency-domain eccentric inspiral waveforms.
+ * @{
+ */
+
 
 int XLALSimInspiralEFD(
         COMPLEX16FrequencySeries **hptilde,    /**< FD plus polarization */
@@ -635,3 +641,5 @@ int XLALSimInspiralEFD(
     return XLAL_SUCCESS;
 
 }
+
+/** @} */

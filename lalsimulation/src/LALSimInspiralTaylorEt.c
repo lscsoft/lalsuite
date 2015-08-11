@@ -41,7 +41,7 @@
 #define UNUSED
 #endif
 
-/**
+/*
  * This structure contains the intrinsic parameters and post-newtonian
  * co-efficients for the denergy/dv and flux expansions.
  * These are computed by XLALSimInspiralTaylorT1Setup routine.
@@ -74,7 +74,7 @@ typedef REAL8 (SimInspiralTaylorEtVOfZeta)(
 	expnCoeffsTaylorEt *ak
 );
 
-/**
+/*
  * This strucuture contains pointers to the functions for calculating
  * the post-newtonian terms at the desired order. They can be set by
  * XLALSimInspiralTaylorT1Setup by passing an appropriate PN order.
@@ -88,7 +88,7 @@ typedef struct
 } expnFuncTaylorEt;
 
 
-/**
+/*
  * Computes v(zeta) for a post-Newtonian inspiral.
  *
  * Implements the square root of Equation 3.11 of: Alessandra Buonanno, Bala R
@@ -144,7 +144,7 @@ XLALSimInspiralTaylorEtVOfZeta_6PN(
 }
 
 
-/**
+/*
  * Computes the rate of increase of the phase for a post-Newtonian
  * inspiral.
  *
@@ -204,7 +204,7 @@ XLALSimInspiralTaylorEtPhasing_6PN(
 }
 
 
-/**
+/*
  * Computes the rate of increase of zeta for a post-Newtonian
  * inspiral.
  *
@@ -324,7 +324,7 @@ typedef struct
 	expnCoeffsTaylorEt ak;
 }XLALSimInspiralTaylorEtPNEvolveOrbitParams;
 
-/**
+/*
  * This function is used in the zeta intialization.
  */
 typedef struct
@@ -343,7 +343,7 @@ XLALSimInspiralTaylorEtPhasingWrapper(
 	return wrapperparams->f_target - wrapperparams->eoparams->dphase(zeta, &(wrapperparams->eoparams->ak));
 }
 
-/**
+/*
  * This function is used in the call to the GSL integrator.
  */
 static int 
@@ -356,7 +356,7 @@ XLALSimInspiralTaylorEtPNEvolveOrbitIntegrand(double UNUSED t, const double y[],
 }
 
 
-/**
+/*
  * Set up the expnCoeffsTaylorEt and expnFuncTaylorEt structures for
  * generating a TaylorEt waveform and select the post-newtonian
  * functions corresponding to the desired order.
@@ -451,6 +451,16 @@ XLALSimInspiralTaylorEtSetup(
 	return 0;
 }
 
+/**
+ * @addtogroup LALSimInspiralTaylorEt_c
+ * @brief Routines for generating TaylorEt waveforms.
+ * @sa
+ * Section IIIE of Alessandra Buonanno, Bala R Iyer, Evan
+ * Ochsner, Yi Pan, and B S Sathyaprakash, "Comparison of post-Newtonian
+ * templates for compact binary inspiral signals in gravitational-wave
+ * detectors", Phys. Rev. D 80, 084043 (2009), arXiv:0907.0700v1
+ * @{
+ */
 
 /**
  * Evolves a post-Newtonian orbit using the Taylor Et method.
@@ -647,6 +657,7 @@ int XLALSimInspiralTaylorEtPNRestricted(
 	return XLALSimInspiralTaylorEtPNGenerator(hplus, hcross, phic, 1.0, deltaT, m1, m2, f_min, r, i, 0, O);
 }
 
+/** @} */
 
 #if 0
 #include <lal/PrintFTSeries.h>

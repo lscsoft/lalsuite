@@ -39,6 +39,16 @@
 #define omp ignore
 #endif
 
+/**
+ * @addtogroup LALSimInspiralTaylorF2_c
+ * @brief Routines for generating TaylorF2 waveforms.
+ * @sa
+ * Section IIIF of Alessandra Buonanno, Bala R Iyer, Evan
+ * Ochsner, Yi Pan, and B S Sathyaprakash, "Comparison of post-Newtonian
+ * templates for compact binary inspiral signals in gravitational-wave
+ * detectors", Phys. Rev. D 80, 084043 (2009), arXiv:0907.0700v1
+ * @{
+ */
 
 /** \brief Returns structure containing TaylorF2 phasing coefficients for given
  *  physical parameters.
@@ -446,3 +456,5 @@ int XLALSimInspiralTaylorF2(
 
     return ret;
 }
+
+/** @} */

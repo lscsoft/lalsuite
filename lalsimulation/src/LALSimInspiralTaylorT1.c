@@ -266,7 +266,11 @@ XLALSimInspiralTaylorT1Setup(
 /**
  * @addtogroup LALSimInspiralTaylorT1_c
  * @brief Routines for generating TaylorT1 waveforms.
- *
+ * @sa
+ * Section IIIA of Alessandra Buonanno, Bala R Iyer, Evan
+ * Ochsner, Yi Pan, and B S Sathyaprakash, "Comparison of post-Newtonian
+ * templates for compact binary inspiral signals in gravitational-wave
+ * detectors", Phys. Rev. D 80, 084043 (2009), arXiv:0907.0700v1
  * @{
  */
 

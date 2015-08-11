@@ -17,10 +17,21 @@
 *  MA  02111-1307  USA
 */
 
+
+#include <LALSimInspiral.h>
+#include <lal/LALError.h>
+#include <stdio.h>
+#include <math.h>
+
+/* hard-coded resampling filter length, see LALSimulation.c
+ * the filter is 19 samples long, resampling can produce ringing 
+ * up to 9 samples away from an abrupt jump 
+ */
+const UINT4 LALSIMULATION_RINGING_EXTENT = 9;
+
 /**
+ * \addtogroup LALSimInspiralWaveformTaper_c
  * \author  McKechan D J A
- * \file
- * \ingroup LALSimInspiral_h
  *
  * \brief The code \c XLALInspiralREAL4WaveformTaper() and
  * \c XLALInspiralREAL8WaveTaper() impose a smooth time tapering at the
@@ -54,18 +65,8 @@
  *
  * ### Notes ###
  *
+ * \{
  */
-
-#include <LALSimInspiral.h>
-#include <lal/LALError.h>
-#include <stdio.h>
-#include <math.h>
-
-/* hard-coded resampling filter length, see LALSimulation.c
- * the filter is 19 samples long, resampling can produce ringing 
- * up to 9 samples away from an abrupt jump 
- */
-const UINT4 LALSIMULATION_RINGING_EXTENT = 9;
 
 int XLALSimInspiralREAL4WaveTaper(
 		REAL4Vector              *signalvec,	/**< pointer to waveform vector */
@@ -368,3 +369,5 @@ int XLALSimInspiralREAL8WaveTaper(
 
   return XLAL_SUCCESS;
 }
+
+/** \} */

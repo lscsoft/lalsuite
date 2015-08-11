@@ -450,7 +450,7 @@ XLALSimInspiralMeanAnomalyEvolution4_4PN(
 	return ans;
 }
 
-/**
+/*
  * 
  */
 
@@ -790,6 +790,12 @@ static int XLALSimInspiralPhaseContributionW(
 }
 
 /**
+ * @addtogroup LALSimInspiralEccentricTD_c
+ * @brief Routines to generate time-domain eccentric inspiral waveforms.
+ * @{
+ */
+
+/**
  * Evolves a post-Newtonian orbit using the eccentric Taylor T4 method.
  *
  * See:
@@ -1003,7 +1009,6 @@ int XLALSimInspiralEccentricTDPNEvolveOrbit(
  * This routine allows the user to specify different PN orders
  * for phasing calculation vs. amplitude calculations.
  */
-
 int XLALSimInspiralEccentricTDPNGenerator(
 		REAL8TimeSeries **hplus,        /**< +-polarization waveform */
 		REAL8TimeSeries **hcross,       /**< x-polarization waveform */
@@ -1090,7 +1095,6 @@ int XLALSimInspiralEccentricTDPNGenerator(
  * Higher-order contributions to phasing and amplitude calculations will be implemented
  * in the near future.
  */
-
 int XLALSimInspiralEccentricTDPN(
 		REAL8TimeSeries **hplus,        /**< +-polarization waveform */
 		REAL8TimeSeries **hcross,       /**< x-polarization waveform */
@@ -1140,6 +1144,7 @@ int XLALSimInspiralEccentricTDPNRestricted(
 			deltaT, m1, m2, f_min, fRef, r, i, e_min, 0, O);
 }
 
+/** @} */
 
 #if 0
 #include <lal/PrintFTSeries.h>

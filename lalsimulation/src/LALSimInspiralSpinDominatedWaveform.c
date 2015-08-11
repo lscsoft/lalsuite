@@ -43,7 +43,7 @@
 #endif
 
 
-/**
+/*
  * Structure containing the prefered variabloes for Spin-Dominated waveforms.
  */
 typedef struct tagLALSDWaveformParams {
@@ -68,14 +68,14 @@ typedef struct tagLALSDWaveformParams {
 
 static INT4 XLALSpinDominatedWaveformStoppingTest(UNUSED REAL8 t, const REAL8 values[], REAL8 dvalues[], UNUSED void *mparams);
 static INT4 XLALSpinDominatedWaveformDerivatives(UNUSED REAL8 t, const REAL8 values[], REAL8 dvalues[], void *mparams);
-int XLALSpinDominatedWaveformConstantCoefficients (LALSDWaveformParams * params);
+static int XLALSpinDominatedWaveformConstantCoefficients (LALSDWaveformParams * params);
 
-/**
+/*
  * Function for allocating memory for a matrix
  */
-REAL8 * XLALDmatrix(INT8 nrh, INT8 nch);
+static REAL8 * XLALDmatrix(INT8 nrh, INT8 nch);
 
-REAL8 * XLALDmatrix(INT8 nrh, INT8 nch){
+static REAL8 * XLALDmatrix(INT8 nrh, INT8 nch){
 INT8 size = (nrh)*(nch)*sizeof(REAL8);
 REAL8 *ptr = (REAL8 *)LALMalloc(size);
 if (ptr != NULL) return ptr;
@@ -86,17 +86,17 @@ return NULL;
 /**
  * Function for freeing memory for a matrix
  */
-void XLALFreeDmatrix(REAL8 *m);
+static void XLALFreeDmatrix(REAL8 *m);
 
-void XLALFreeDmatrix(REAL8 *m){
+static void XLALFreeDmatrix(REAL8 *m){
 LALFree(m);
 }
 
-/**
+/*
  * Function for calculating the constant coefficients of Spin-Dominated waveforms
  * See tables 1 to 5 in the appendix of Arxiv:1209.1722
  */
-int XLALSpinDominatedWaveformConstantCoefficients (LALSDWaveformParams * params){
+static int XLALSpinDominatedWaveformConstantCoefficients (LALSDWaveformParams * params){
 
 int i,j;
 REAL8 *acoeff0pn, *b0coeff0pn, *d0coeff0pn, *acoeff0_5pn, *b0coeff0_5pn, *d0coeff0_5pn, *acoeff1pn, *b0coeff1pn, *d0coeff1pn, *b1coeff1pn, *d1coeff1pn,	*acoeff1_5pn, *b0coeff1_5pn, *d0coeff1_5pn, *b1coeff1_5pn, *d1coeff1_5pn;
@@ -560,13 +560,13 @@ XLALFreeDmatrix(d1coeff1_5pn);
 return XLAL_SUCCESS;
 }
 
-/**
+/*
 * Function building the wavefrom from the calculated parameters at a given time
 * For the formulae see the appendix of Arxiv:1209.1722
 */
-int XLALSpinDominatedWaveformBuild (LALSDWaveformParams *params, REAL8 expr[], REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, int idx);
+static int XLALSpinDominatedWaveformBuild (LALSDWaveformParams *params, REAL8 expr[], REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, int idx);
 
-int XLALSpinDominatedWaveformBuild (
+static int XLALSpinDominatedWaveformBuild (
 	LALSDWaveformParams *params,  		/**< The SDW parameters */
 	REAL8 expr[], 				/**< The 3 time dependent variables of the waveform at the time indexed by idx */
 	REAL8TimeSeries **hplus,        	/**< +-polarization waveform */
@@ -684,8 +684,15 @@ XLALFreeDmatrix(waveampcoeffs);
 return XLAL_SUCCESS;
 }
 
+
 /**
- * Interface routine, calculating the prefered variables for the Spin-dominated waveforms
+ * @addtogroup LALSimInspiralSpinDominatedWaveform_c
+ * @brief Routines to generate spin-dominanted precessing inspiral waveforms.
+ * @{
+ */
+
+/**
+ * Interface routine, calculating the preferred variables for the Spin-dominated waveforms
  */
 int XLALSimInspiralSpinDominatedWaveformInterfaceTD(
 	REAL8TimeSeries **hplus,        /**< +-polarization waveform */
@@ -889,7 +896,9 @@ XLALDestroyREAL8TimeSeries(psi);
 return intLen;
 }
 
-/**
+/** @} */
+
+/*
  * Function calculating the derivatives of the three time dependent variables of the Spin-Dominated waveforms (SDW)
  * The first paramter is \f$\phi_n\f$, Eq 27 of Arxiv:1005.5330, taken for 1 spin case, and integrated over an orbital period.
  * The second parameter is \f$\omega\f$, the derivative is taken from Arxiv: astro-ph/0504538, up to 2 PN orders with 1 spin. (In order to stay consistent with SDW)
@@ -946,7 +955,8 @@ dvalues[2]=values[1];
 return GSL_SUCCESS;
 } /* end of XLALSpinDominatedWaveformDerivatives */
 
-/**
+
+/*
 * Stopping test for the Spin-Dominated waveforms. Using MECO, or the desired ending frequency. The maximum value of the PN parameter is set to 0.8.
 */
 static INT4 XLALSpinDominatedWaveformStoppingTest(UNUSED REAL8 t, const REAL8 values[], REAL8 dvalues[], UNUSED void *mparams) {
