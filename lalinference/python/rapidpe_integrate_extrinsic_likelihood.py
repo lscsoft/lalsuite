@@ -535,7 +535,6 @@ if opts.output_file:
     process.register_to_xmldoc(xmldoc, sys.argv[0], opts.__dict__)
     if opts.save_samples:
         samples = sampler._rvs
-        # FIXME: Does sim insp do kpc or mpc
         samples["distance"] = samples["distance"]
         if not opts.time_marginalization:
             samples["t_ref"] += float(fiducial_epoch)
@@ -549,13 +548,17 @@ if opts.output_file:
             samples["latitude"] = samples["declination"]
             samples["longitude"] = samples["right_ascension"]
         samples["loglikelihood"] = numpy.log(samples["integrand"])
-        samples["mass1"] = numpy.ones(samples["psi"].shape)*opts.mass1
-        samples["mass2"] = numpy.ones(samples["psi"].shape)*opts.mass2
+        samples["mass1"] = numpy.empty(samples["psi"].shape)
+        samples["mass2"] = numpy.empty(samples["psi"].shape)
+        samples["mass1"].fill(opts.mass1)
+        samples["mass2"].fill(opts.mass2)
         if opts.eff_lambda is not None or opts.deff_lambda is not None:
             # FIXME: the column mapping isn't working right, we need to fix that
             # rather than give these weird names
-            samples["psi0"] = numpy.ones(samples["psi"].shape)*opts.eff_lambda
-            samples["psi3"] = numpy.ones(samples["psi"].shape)*(opts.deff_lambda or 0)
+            samples["psi0"] = numpy.ones(samples["psi"].shape)
+            samples["psi3"] = numpy.ones(samples["psi"].shape)
+            samples["psi0"].fill(opts.eff_lambda)
+            samples["psi3"].fill(opts.deff_lambda)
         xmlutils.append_samples_to_xmldoc(xmldoc, samples)
     # FIXME: likelihood or loglikehood
     # FIXME: How to encode variance?
