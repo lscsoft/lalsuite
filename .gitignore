@@ -2,6 +2,7 @@
 *.swp
 *.trs
 *~
+*.dSYM
 .DS_Store
 .dirstamp
 /Makefile
