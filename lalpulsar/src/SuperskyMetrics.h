@@ -53,7 +53,7 @@ typedef enum {
 /// the unrestricted supersky metric (3-dimensional sky).
 ///
 #ifdef SWIG // SWIG interface directives
-SWIGLAL( INOUT_STRUCTS( gsl_matrix **, p_rssky_metric, p_rssky_transf, p_ussky_metric ) );
+SWIGLAL(INOUT_STRUCTS(gsl_matrix **, p_rssky_metric, p_rssky_transf, p_ussky_metric));
 #endif
 int XLALComputeSuperskyMetrics(
   gsl_matrix **p_rssky_metric,			///< [out] Output reduced supersky metric, appropriately averaged over segments
@@ -73,7 +73,7 @@ int XLALComputeSuperskyMetrics(
 /// Convert a series of points between supersky coordinate systems.
 ///
 #ifdef SWIG // SWIG interface directives
-SWIGLAL( INOUT_STRUCTS( gsl_matrix **, out_points ) );
+SWIGLAL(INOUT_STRUCTS(gsl_matrix **, out_points));
 #endif
 int XLALConvertSuperskyCoordinates(
   const SuperskyCoordinates out,		///< [in] Coordinate system of the output points
