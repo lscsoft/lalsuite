@@ -19,5 +19,6 @@ config.cache
 config.log
 config.status
 configure
+cscope.*
 lalsuite-*.tar.gz
 tags
