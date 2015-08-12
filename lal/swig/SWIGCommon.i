@@ -989,7 +989,7 @@ if (strides[I-1] == 0) {
 /// default a view is attempted only for pointers to <tt>const NAME*</tt>, since it is reasonable to
 /// assume the called C code will not try to re-allocate or free constant memory. When it is known
 /// that the called C function will not try to re-allocate or free a particular argument, the
-/// <b>SWIGLAL(VIEWIN_STRUCTS(NAME, ...))</b> macro can be used to apply the typemap to pointers to
+/// <b>SWIGLAL(VIEWIN_ARRAYS(NAME, ...))</b> macro can be used to apply the typemap to pointers to
 /// (non-<tt>const</tt>) \c NAME*.
 ///
 /// <ul><li>
@@ -1043,7 +1043,7 @@ if (strides[I-1] == 0) {
 /// </li><li>
 
 /// Typemap which attempts to view pointers to non-<tt>const</tt> \c NAME*.
-%typemap(in, noblock=1) NAME* SWIGLAL_VIEWIN_STRUCT (void *argp = 0, int res = 0, NAME temp) %{
+%typemap(in, noblock=1) NAME* SWIGLAL_VIEWIN_ARRAY (void *argp = 0, int res = 0, NAME temp) %{
   res = SWIG_ConvertPtr($input, &argp, $descriptor, 0 /*$disown*/ | %convertptr_flags);
   if (!SWIG_IsOK(res)) {
     typedef struct { SIZET NI; TYPE* DATA; } sizchk_t;
@@ -1125,7 +1125,7 @@ if (strides[I-1] == 0) {
 /// </li><li>
 
 /// Typemap which attempts to view pointers to non-<tt>const</tt> \c NAME*.
-%typemap(in, noblock=1) NAME* SWIGLAL_VIEWIN_STRUCT (void *argp = 0, int res = 0, NAME temp) %{
+%typemap(in, noblock=1) NAME* SWIGLAL_VIEWIN_ARRAY (void *argp = 0, int res = 0, NAME temp) %{
   res = SWIG_ConvertPtr($input, &argp, $descriptor, 0 /*$disown*/ | %convertptr_flags);
   if (!SWIG_IsOK(res)) {
     typedef struct { SIZET NI; SIZET NJ; TYPE* DATA; } sizchk_t;
@@ -1159,13 +1159,13 @@ if (strides[I-1] == 0) {
 ///
 
 ///
-/// The <b>SWIGLAL(VIEWIN_STRUCTS(NAME, ...))</b> macro can be used to apply the above input view
+/// The <b>SWIGLAL(VIEWIN_ARRAYS(NAME, ...))</b> macro can be used to apply the above input view
 /// typemaps to pointers to (non-<tt>const</tt>) \c NAME*.
 ///
-%define %swiglal_public_VIEWIN_STRUCTS(NAME, ...)
-%swiglal_map_ab(%swiglal_apply, NAME* SWIGLAL_VIEWIN_STRUCT, NAME*, __VA_ARGS__);
+%define %swiglal_public_VIEWIN_ARRAYS(NAME, ...)
+%swiglal_map_ab(%swiglal_apply, NAME* SWIGLAL_VIEWIN_ARRAY, NAME*, __VA_ARGS__);
 %enddef
-%define %swiglal_public_clear_VIEWIN_STRUCTS(NAME, ...)
+%define %swiglal_public_clear_VIEWIN_ARRAYS(NAME, ...)
 %swiglal_map_a(%swiglal_clear, NAME*, __VA_ARGS__);
 %enddef
 

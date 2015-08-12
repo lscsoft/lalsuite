@@ -178,7 +178,7 @@ typedef struct {
 /// </li><li>
 
 /// Typemap which attempts to view pointers to non-\c const GSL vector.
-%typemap(in, noblock=1) gsl_vector##NAME* SWIGLAL_VIEWIN_STRUCT (void *argp = 0, int res = 0, gsl_vector##NAME##_view temp) %{
+%typemap(in, noblock=1) gsl_vector##NAME* SWIGLAL_VIEWIN_ARRAY (void *argp = 0, int res = 0, gsl_vector##NAME##_view temp) %{
   res = SWIG_ConvertPtr($input, &argp, $descriptor, 0 /*$disown*/ | %convertptr_flags);
   if (!SWIG_IsOK(res)) {
     if (!($disown)) {
@@ -272,7 +272,7 @@ typedef struct {
 /// </li><li>
 
 /// Typemap which attempts to view pointers to non-\c const GSL matrix.
-%typemap(in, noblock=1) gsl_matrix##NAME* SWIGLAL_VIEWIN_STRUCT (void *argp = 0, int res = 0, gsl_matrix##NAME##_view temp) %{
+%typemap(in, noblock=1) gsl_matrix##NAME* SWIGLAL_VIEWIN_ARRAY (void *argp = 0, int res = 0, gsl_matrix##NAME##_view temp) %{
   res = SWIG_ConvertPtr($input, &argp, $descriptor, 0 /*$disown*/ | %convertptr_flags);
   if (!SWIG_IsOK(res)) {
     if (!($disown)) {

@@ -72,132 +72,132 @@ void swig_lal_test_copyin_array2(INT4 INPUT[3][2], INT4 scale, INT4 OUTPUT[3][2]
 // Test input views of array structs.
 BOOLEAN swig_lal_test_viewin_REAL4Vector(REAL4Vector* copyout, const REAL4Vector* viewin);
 #ifdef SWIG
-SWIGLAL(VIEWIN_STRUCTS(REAL4Vector, viewin, viewout));
+SWIGLAL(VIEWIN_ARRAYS(REAL4Vector, viewin, viewout));
 #endif // SWIG
 BOOLEAN swig_lal_test_viewinout_REAL4Vector(REAL4Vector* viewout, REAL4Vector* viewin);
 #ifdef SWIG
-SWIGLAL_CLEAR(VIEWIN_STRUCTS(REAL4Vector, viewin, viewout));
+SWIGLAL_CLEAR(VIEWIN_ARRAYS(REAL4Vector, viewin, viewout));
 #endif // SWIG
 BOOLEAN swig_lal_test_viewin_REAL8Vector(REAL8Vector* copyout, const REAL8Vector* viewin);
 #ifdef SWIG
-SWIGLAL(VIEWIN_STRUCTS(REAL8Vector, viewin, viewout));
+SWIGLAL(VIEWIN_ARRAYS(REAL8Vector, viewin, viewout));
 #endif // SWIG
 BOOLEAN swig_lal_test_viewinout_REAL8Vector(REAL8Vector* viewout, REAL8Vector* viewin);
 #ifdef SWIG
-SWIGLAL_CLEAR(VIEWIN_STRUCTS(REAL8Vector, viewin, viewout));
+SWIGLAL_CLEAR(VIEWIN_ARRAYS(REAL8Vector, viewin, viewout));
 #endif // SWIG
 BOOLEAN swig_lal_test_viewin_COMPLEX8Vector(COMPLEX8Vector* copyout, const COMPLEX8Vector* viewin);
 #ifdef SWIG
-SWIGLAL(VIEWIN_STRUCTS(COMPLEX8Vector, viewin, viewout));
+SWIGLAL(VIEWIN_ARRAYS(COMPLEX8Vector, viewin, viewout));
 #endif // SWIG
 BOOLEAN swig_lal_test_viewinout_COMPLEX8Vector(COMPLEX8Vector* viewout, COMPLEX8Vector* viewin);
 #ifdef SWIG
-SWIGLAL_CLEAR(VIEWIN_STRUCTS(COMPLEX8Vector, viewin, viewout));
+SWIGLAL_CLEAR(VIEWIN_ARRAYS(COMPLEX8Vector, viewin, viewout));
 #endif // SWIG
 BOOLEAN swig_lal_test_viewin_COMPLEX16Vector(COMPLEX16Vector* copyout, const COMPLEX16Vector* viewin);
 #ifdef SWIG
-SWIGLAL(VIEWIN_STRUCTS(COMPLEX16Vector, viewin, viewout));
+SWIGLAL(VIEWIN_ARRAYS(COMPLEX16Vector, viewin, viewout));
 #endif // SWIG
 BOOLEAN swig_lal_test_viewinout_COMPLEX16Vector(COMPLEX16Vector* viewout, COMPLEX16Vector* viewin);
 #ifdef SWIG
-SWIGLAL_CLEAR(VIEWIN_STRUCTS(COMPLEX16Vector, viewin, viewout));
+SWIGLAL_CLEAR(VIEWIN_ARRAYS(COMPLEX16Vector, viewin, viewout));
 #endif // SWIG
 BOOLEAN swig_lal_test_viewin_REAL4VectorSequence(REAL4VectorSequence* copyout, const REAL4VectorSequence* viewin);
 #ifdef SWIG
-SWIGLAL(VIEWIN_STRUCTS(REAL4VectorSequence, viewin, viewout));
+SWIGLAL(VIEWIN_ARRAYS(REAL4VectorSequence, viewin, viewout));
 #endif // SWIG
 BOOLEAN swig_lal_test_viewinout_REAL4VectorSequence(REAL4VectorSequence* viewout, REAL4VectorSequence* viewin);
 #ifdef SWIG
-SWIGLAL_CLEAR(VIEWIN_STRUCTS(REAL4VectorSequence, viewin, viewout));
+SWIGLAL_CLEAR(VIEWIN_ARRAYS(REAL4VectorSequence, viewin, viewout));
 #endif // SWIG
 BOOLEAN swig_lal_test_viewin_REAL8VectorSequence(REAL8VectorSequence* copyout, const REAL8VectorSequence* viewin);
 #ifdef SWIG
-SWIGLAL(VIEWIN_STRUCTS(REAL8VectorSequence, viewin, viewout));
+SWIGLAL(VIEWIN_ARRAYS(REAL8VectorSequence, viewin, viewout));
 #endif // SWIG
 BOOLEAN swig_lal_test_viewinout_REAL8VectorSequence(REAL8VectorSequence* viewout, REAL8VectorSequence* viewin);
 #ifdef SWIG
-SWIGLAL_CLEAR(VIEWIN_STRUCTS(REAL8VectorSequence, viewin, viewout));
+SWIGLAL_CLEAR(VIEWIN_ARRAYS(REAL8VectorSequence, viewin, viewout));
 #endif // SWIG
 BOOLEAN swig_lal_test_viewin_COMPLEX8VectorSequence(COMPLEX8VectorSequence* copyout, const COMPLEX8VectorSequence* viewin);
 #ifdef SWIG
-SWIGLAL(VIEWIN_STRUCTS(COMPLEX8VectorSequence, viewin, viewout));
+SWIGLAL(VIEWIN_ARRAYS(COMPLEX8VectorSequence, viewin, viewout));
 #endif // SWIG
 BOOLEAN swig_lal_test_viewinout_COMPLEX8VectorSequence(COMPLEX8VectorSequence* viewout, COMPLEX8VectorSequence* viewin);
 #ifdef SWIG
-SWIGLAL_CLEAR(VIEWIN_STRUCTS(COMPLEX8VectorSequence, viewin, viewout));
+SWIGLAL_CLEAR(VIEWIN_ARRAYS(COMPLEX8VectorSequence, viewin, viewout));
 #endif // SWIG
 BOOLEAN swig_lal_test_viewin_COMPLEX16VectorSequence(COMPLEX16VectorSequence* copyout, const COMPLEX16VectorSequence* viewin);
 #ifdef SWIG
-SWIGLAL(VIEWIN_STRUCTS(COMPLEX16VectorSequence, viewin, viewout));
+SWIGLAL(VIEWIN_ARRAYS(COMPLEX16VectorSequence, viewin, viewout));
 #endif // SWIG
 BOOLEAN swig_lal_test_viewinout_COMPLEX16VectorSequence(COMPLEX16VectorSequence* viewout, COMPLEX16VectorSequence* viewin);
 #ifdef SWIG
-SWIGLAL_CLEAR(VIEWIN_STRUCTS(COMPLEX16VectorSequence, viewin, viewout));
+SWIGLAL_CLEAR(VIEWIN_ARRAYS(COMPLEX16VectorSequence, viewin, viewout));
 #endif // SWIG
 #ifdef SWIGLAL_HAVE_LIBGSL
 BOOLEAN swig_lal_test_viewin_gsl_vector_float(gsl_vector_float* copyout, const gsl_vector_float* viewin);
 #ifdef SWIG
-SWIGLAL(VIEWIN_STRUCTS(gsl_vector_float, viewin, viewout));
+SWIGLAL(VIEWIN_ARRAYS(gsl_vector_float, viewin, viewout));
 #endif // SWIG
 BOOLEAN swig_lal_test_viewinout_gsl_vector_float(gsl_vector_float* viewout, gsl_vector_float* viewin);
 #ifdef SWIG
-SWIGLAL_CLEAR(VIEWIN_STRUCTS(gsl_vector_float, viewin, viewout));
+SWIGLAL_CLEAR(VIEWIN_ARRAYS(gsl_vector_float, viewin, viewout));
 #endif // SWIG
 BOOLEAN swig_lal_test_viewin_gsl_vector(gsl_vector* copyout, const gsl_vector* viewin);
 #ifdef SWIG
-SWIGLAL(VIEWIN_STRUCTS(gsl_vector, viewin, viewout));
+SWIGLAL(VIEWIN_ARRAYS(gsl_vector, viewin, viewout));
 #endif // SWIG
 BOOLEAN swig_lal_test_viewinout_gsl_vector(gsl_vector* viewout, gsl_vector* viewin);
 #ifdef SWIG
-SWIGLAL_CLEAR(VIEWIN_STRUCTS(gsl_vector, viewin, viewout));
+SWIGLAL_CLEAR(VIEWIN_ARRAYS(gsl_vector, viewin, viewout));
 #endif // SWIG
 BOOLEAN swig_lal_test_viewin_gsl_vector_complex_float(gsl_vector_complex_float* copyout, const gsl_vector_complex_float* viewin);
 #ifdef SWIG
-SWIGLAL(VIEWIN_STRUCTS(gsl_vector_complex_float, viewin, viewout));
+SWIGLAL(VIEWIN_ARRAYS(gsl_vector_complex_float, viewin, viewout));
 #endif // SWIG
 BOOLEAN swig_lal_test_viewinout_gsl_vector_complex_float(gsl_vector_complex_float* viewout, gsl_vector_complex_float* viewin);
 #ifdef SWIG
-SWIGLAL_CLEAR(VIEWIN_STRUCTS(gsl_vector_complex_float, viewin, viewout));
+SWIGLAL_CLEAR(VIEWIN_ARRAYS(gsl_vector_complex_float, viewin, viewout));
 #endif // SWIG
 BOOLEAN swig_lal_test_viewin_gsl_vector_complex(gsl_vector_complex* copyout, const gsl_vector_complex* viewin);
 #ifdef SWIG
-SWIGLAL(VIEWIN_STRUCTS(gsl_vector_complex, viewin, viewout));
+SWIGLAL(VIEWIN_ARRAYS(gsl_vector_complex, viewin, viewout));
 #endif // SWIG
 BOOLEAN swig_lal_test_viewinout_gsl_vector_complex(gsl_vector_complex* viewout, gsl_vector_complex* viewin);
 #ifdef SWIG
-SWIGLAL_CLEAR(VIEWIN_STRUCTS(gsl_vector_complex, viewin, viewout));
+SWIGLAL_CLEAR(VIEWIN_ARRAYS(gsl_vector_complex, viewin, viewout));
 #endif // SWIG
 BOOLEAN swig_lal_test_viewin_gsl_matrix_float(gsl_matrix_float* copyout, const gsl_matrix_float* viewin);
 #ifdef SWIG
-SWIGLAL(VIEWIN_STRUCTS(gsl_matrix_float, viewin, viewout));
+SWIGLAL(VIEWIN_ARRAYS(gsl_matrix_float, viewin, viewout));
 #endif // SWIG
 BOOLEAN swig_lal_test_viewinout_gsl_matrix_float(gsl_matrix_float* viewout, gsl_matrix_float* viewin);
 #ifdef SWIG
-SWIGLAL_CLEAR(VIEWIN_STRUCTS(gsl_matrix_float, viewin, viewout));
+SWIGLAL_CLEAR(VIEWIN_ARRAYS(gsl_matrix_float, viewin, viewout));
 #endif // SWIG
 BOOLEAN swig_lal_test_viewin_gsl_matrix(gsl_matrix* copyout, const gsl_matrix* viewin);
 #ifdef SWIG
-SWIGLAL(VIEWIN_STRUCTS(gsl_matrix, viewin, viewout));
+SWIGLAL(VIEWIN_ARRAYS(gsl_matrix, viewin, viewout));
 #endif // SWIG
 BOOLEAN swig_lal_test_viewinout_gsl_matrix(gsl_matrix* viewout, gsl_matrix* viewin);
 #ifdef SWIG
-SWIGLAL_CLEAR(VIEWIN_STRUCTS(gsl_matrix, viewin, viewout));
+SWIGLAL_CLEAR(VIEWIN_ARRAYS(gsl_matrix, viewin, viewout));
 #endif // SWIG
 BOOLEAN swig_lal_test_viewin_gsl_matrix_complex_float(gsl_matrix_complex_float* copyout, const gsl_matrix_complex_float* viewin);
 #ifdef SWIG
-SWIGLAL(VIEWIN_STRUCTS(gsl_matrix_complex_float, viewin, viewout));
+SWIGLAL(VIEWIN_ARRAYS(gsl_matrix_complex_float, viewin, viewout));
 #endif // SWIG
 BOOLEAN swig_lal_test_viewinout_gsl_matrix_complex_float(gsl_matrix_complex_float* viewout, gsl_matrix_complex_float* viewin);
 #ifdef SWIG
-SWIGLAL_CLEAR(VIEWIN_STRUCTS(gsl_matrix_complex_float, viewin, viewout));
+SWIGLAL_CLEAR(VIEWIN_ARRAYS(gsl_matrix_complex_float, viewin, viewout));
 #endif // SWIG
 BOOLEAN swig_lal_test_viewin_gsl_matrix_complex(gsl_matrix_complex* copyout, const gsl_matrix_complex* viewin);
 #ifdef SWIG
-SWIGLAL(VIEWIN_STRUCTS(gsl_matrix_complex, viewin, viewout));
+SWIGLAL(VIEWIN_ARRAYS(gsl_matrix_complex, viewin, viewout));
 #endif // SWIG
 BOOLEAN swig_lal_test_viewinout_gsl_matrix_complex(gsl_matrix_complex* viewout, gsl_matrix_complex* viewin);
 #ifdef SWIG
-SWIGLAL_CLEAR(VIEWIN_STRUCTS(gsl_matrix_complex, viewin, viewout));
+SWIGLAL_CLEAR(VIEWIN_ARRAYS(gsl_matrix_complex, viewin, viewout));
 #endif // SWIG
 #endif // SWIGLAL_HAVE_LIBGSL
 
