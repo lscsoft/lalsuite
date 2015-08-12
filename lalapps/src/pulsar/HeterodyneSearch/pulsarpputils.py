@@ -2549,7 +2549,7 @@ def pulsar_posterior_grid(dets, ts, data, ra, dec, sigmas=None, paramranges={}, 
       print >> sys.stderr, 'Length of times stamps array and data array are inconsistent for %s' % det
 
     if sigmas != None:
-      if len(ts['det']) != len(sigmas['det']):
+      if len(ts[det]) != len(sigmas[det]):
         print >> sys.stderr, 'Length of times stamps array and sigma array are inconsistent for %s' % det
 
   # setup grid on parameter space
