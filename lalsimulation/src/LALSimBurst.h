@@ -22,7 +22,7 @@
 /**
  * @author Kipp Cannon, Jolien Creighton
  * @addtogroup LALSimBurst_h Header LALSimBurst.h
- * @ingroup lalsimulation_general
+ * @ingroup lalsimulation_burst
  * @brief Routines to generate burst waveforms.
  * @details
  * These routines generate several burst waveforms used in searches for

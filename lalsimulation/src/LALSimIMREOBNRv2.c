@@ -27,9 +27,10 @@
 #include <lal/LALSimIMR.h>
 #include <lal/Date.h>
 #include <lal/TimeSeries.h>
+#include <lal/LALSimSphHarmMode.h>
+#include <lal/LALSimBlackHoleRingdown.h>
 #include <gsl/gsl_sf_gamma.h>
 #include "LALSimIMREOBNRv2.h"
-#include "LALSimBlackHoleRingdown.h"
 
 /* Include all the static function files we need */
 #include "LALSimIMREOBFactorizedWaveform.c"

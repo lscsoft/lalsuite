@@ -18,37 +18,6 @@
  *  MA  02111-1307  USA
  */
 
-/**
- * \author Michael Puerrer, John Veitch
- *
- * \file
- *
- * \brief C code for SEOBNRv1 reduced order model (equal spin version).
- * See CQG 31 195010, 2014, arXiv:1402.4146 for details.
- *
- * This is a frequency domain model that approximates the time domain SEOBNRv1 model with equal spins.
- * Note that SEOBNRv2 supersedes SEOBNRv1.
- *
- * The binary data files are available at https://dcc.ligo.org/T1400701-v1.
- * Put the untared data into a location in your LAL_DATA_PATH.
- *
- * @note Note that due to its construction the iFFT of the ROM has a small (~ 20 M) offset
- * in the peak time that scales with total mass as compared to the time-domain SEOBNRv1 model.
- *
- * @note Due to non-smoothness in SEOBNRv1 at chi1=chi2 ~ -0.8 and 20 <= q <= 40 the
- * ROM deviates from the SEOBNRv1 behavior there. See arXiv:1402.4146, Fig 7,
- * Fig 11, and Fig 13 for details.
- *
- * @note Parameter ranges:
- *   * 1 <= q <= 100
- *   * -1 <= chi <= 0.6
- *   * Mtot >= 1.4Msun
- *
- *  Equal spin chi = chi1 = chi2.
- *  Asymmetric mass-ratio q = max(m1/m2, m2/m1).
- *  Total mass Mtot.
- *
- */
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
@@ -243,7 +212,7 @@ static int TP_Spline_interpolation_2d(
 
 /** Setup SEOBNRv1ROMEffectiveSpin model using data files installed in dir
  */
-int SEOBNRv1ROMEffectiveSpin_Init(const char dir[]) {
+static int SEOBNRv1ROMEffectiveSpin_Init(const char dir[]) {
   if(__lalsim_SEOBNRv1ROMSS_data.setup) {
     XLALPrintError("Error: SEOBNRROMdata was already set up!");
     XLAL_ERROR(XLAL_EFAILED);
@@ -260,7 +229,7 @@ int SEOBNRv1ROMEffectiveSpin_Init(const char dir[]) {
 }
 
 /** Helper function to check if the SEOBNRv1ROMEffectiveSpin model has been initialised */
-bool SEOBNRv1ROMEffectiveSpin_IsSetup(void) {
+static bool SEOBNRv1ROMEffectiveSpin_IsSetup(void) {
   if(__lalsim_SEOBNRv1ROMSS_data.setup)
     return true;
   else
@@ -390,7 +359,7 @@ static int TP_Spline_interpolation_2d(
 }
 
 /* Set up a new ROM model, using data contained in dir */
-int SEOBNRROMdata_Init(SEOBNRROMdata *romdata, const char dir[]) {
+static int SEOBNRROMdata_Init(SEOBNRROMdata *romdata, const char dir[]) {
   // set up ROM
   int ncx = 159;    // points in q
   int ncy = 49;     // points in chi
@@ -421,7 +390,7 @@ int SEOBNRROMdata_Init(SEOBNRROMdata *romdata, const char dir[]) {
 
 
 /* Deallocate contents of the given SEOBNRROMdata structure */
-void SEOBNRROMdata_Cleanup(SEOBNRROMdata *romdata) {
+static void SEOBNRROMdata_Cleanup(SEOBNRROMdata *romdata) {
   if(romdata->cvec_amp) gsl_vector_free(romdata->cvec_amp);
   if(romdata->cvec_phi) gsl_vector_free(romdata->cvec_phi);
   if(romdata->Bamp) gsl_matrix_free(romdata->Bamp);
@@ -717,6 +686,39 @@ static int SEOBNRv1ROMEffectiveSpinCore(
 }
 
 /**
+ * @addtogroup LALSimIMRSEOBNRv1ROMEffectiveSpin_c
+ *
+ * @author Michael Puerrer, John Veitch
+ *
+ * @brief C code for SEOBNRv1 reduced order model (equal spin version).
+ * See CQG 31 195010, 2014, arXiv:1402.4146 for details.
+ *
+ * This is a frequency domain model that approximates the time domain SEOBNRv1 model with equal spins.
+ * Note that SEOBNRv2 supersedes SEOBNRv1.
+ *
+ * The binary data files are available at https://dcc.ligo.org/T1400701-v1.
+ * Put the untared data into a location in your LAL_DATA_PATH.
+ *
+ * @note Note that due to its construction the iFFT of the ROM has a small (~ 20 M) offset
+ * in the peak time that scales with total mass as compared to the time-domain SEOBNRv1 model.
+ *
+ * @note Due to non-smoothness in SEOBNRv1 at chi1=chi2 ~ -0.8 and 20 <= q <= 40 the
+ * ROM deviates from the SEOBNRv1 behavior there. See arXiv:1402.4146, Fig 7,
+ * Fig 11, and Fig 13 for details.
+ *
+ * @note Parameter ranges:
+ *   * 1 <= q <= 100
+ *   * -1 <= chi <= 0.6
+ *   * Mtot >= 1.4Msun
+ *
+ *  Equal spin chi = chi1 = chi2.
+ *  Asymmetric mass-ratio q = max(m1/m2, m2/m1).
+ *  Total mass Mtot.
+ *
+ * @{
+ */
+
+/**
  * Compute waveform in LAL format at specified frequencies for the SEOBNRv1_ROM_EffectiveSpin model.
  *
  * XLALSimIMRSEOBNRv1ROMEffectiveSpin() returns the plus and cross polarizations as a complex
@@ -831,9 +833,11 @@ int XLALSimIMRSEOBNRv1ROMEffectiveSpin(
   return(retcode);
 }
 
+/** @} */
+
 /** Setup SEOBNRv1ROMEffectiveSpin model using data files installed in $LAL_DATA_PATH
  */
-void SEOBNRv1ROMEffectiveSpin_Init_LALDATA(void)
+static void SEOBNRv1ROMEffectiveSpin_Init_LALDATA(void)
 {
   if (SEOBNRv1ROMEffectiveSpin_IsSetup()) return;
 

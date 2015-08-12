@@ -47,6 +47,9 @@
  * Ochsner, Yi Pan, and B S Sathyaprakash, "Comparison of post-Newtonian
  * templates for compact binary inspiral signals in gravitational-wave
  * detectors", Phys. Rev. D 80, 084043 (2009), arXiv:0907.0700v1
+ *
+ * @review TaylorF2 routines reviewed on YYYY-MM-DD by XXX (hash)
+ *
  * @{
  */
 

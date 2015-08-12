@@ -21,10 +21,9 @@
 #define _LALSIMINSPIRAL_H
 
 #include <lal/LALDatatypes.h>
-#include <lal/LALSimInspiralWaveformFlags.h>
+#include <lal/LALSimSphHarmSeries.h>
 #include <lal/LALSimInspiralTestGRParams.h>
-#include <lal/LALSimInspiralSphHarmSeries.h>
-#include <lal/TimeSeries.h>
+#include <lal/LALSimInspiralWaveformFlags.h>
 #include <gsl/gsl_matrix.h>
 
 #if defined(__cplusplus)
@@ -35,7 +34,7 @@ extern "C" {
 
 /**
  * @defgroup LALSimInspiral_h Header LALSimInspiral.h
- * @ingroup lalsimulation_general
+ * @ingroup lalsimulation_inspiral
  *
  * @brief Routines for generating binary inspiral gravitational waveforms.
  *
@@ -53,6 +52,8 @@ extern "C" {
  * @defgroup LALSimInspiralEccentricityFD_c        Module LALSimInspiralEccentricityFD.c
  * @defgroup LALSimInspiralSpinDominatedWaveform_c Module LALSimInspiralSpinDominatedWaveform.c
  * @defgroup LALSimInspiralTaylorF2ReducedSpin_c   Module LALSimInspiralTaylorF2ReducedSpin.c
+ * @defgroup LALSimInspiralWaveformFlags_c         Module LALSimInspiralWaveformFlags.c
+ * @defgroup LALSimInspiralTestGRParams_c          Module LALSimInspiralTestGRParams.c
  * @defgroup LALSimInspiralWaveformTaper_c         Module LALSimInspiralWaveformTaper.c
  * @}
  *
@@ -235,12 +236,6 @@ int XLALSimInspiralPolarizationsFromSphHarmTimeSeries(REAL8TimeSeries **hp, REAL
 int XLALSimInspiralPNPolarizationWaveformsEccentric(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8TimeSeries *V, REAL8TimeSeries *Ecc, REAL8TimeSeries *U, REAL8TimeSeries *Phi, REAL8 m1, REAL8 m2, REAL8 r, REAL8 i, int ampO, int ph_O);
 int XLALSimInspiralPrecessingPolarizationWaveforms(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8TimeSeries *V, REAL8TimeSeries *Phi, REAL8TimeSeries *S1x, REAL8TimeSeries *S1y, REAL8TimeSeries *S1z, REAL8TimeSeries *S2x, REAL8TimeSeries *S2y, REAL8TimeSeries *S2z, REAL8TimeSeries *LNhatx, REAL8TimeSeries *LNhaty, REAL8TimeSeries *LNhatz, REAL8TimeSeries *E1x, REAL8TimeSeries *E1y, REAL8TimeSeries *E1z, REAL8 m1, REAL8 m2, REAL8 r, REAL8 v0, INT4 ampO);
 int XLALSimInspiralPrecessingPolarizationWaveformHarmonic(COMPLEX16 *hplus, COMPLEX16 *hcross, REAL8 v, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z, REAL8 lnhx, REAL8 lnhy, REAL8 lnhz, REAL8 e1x, REAL8 e1y, REAL8 e1z, REAL8 dm, REAL8 eta, REAL8 v0, INT4 n, INT4 ampO);
-
-/* routines for generating waveforms from mode data */
-/* FIXME: these are not inspiral-specific routines; move elsewhere? */
-int XLALSimAddMode(REAL8TimeSeries *hplus, REAL8TimeSeries *hcross, COMPLEX16TimeSeries *hmode, REAL8 theta, REAL8 phi, int l, int m, int sym);
-int XLALSimAddModeFromModes(REAL8TimeSeries *hplus, REAL8TimeSeries *hcross, SphHarmTimeSeries *hmode, REAL8 theta, REAL8 phi);
-int XLALSimNewTimeSeriesFromModes(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, SphHarmTimeSeries *hmode, REAL8 theta, REAL8 phi);
 
 /* approximant, order, axis, and modes handling routines */
 int XLALSimInspiralImplementedTDApproximants(Approximant approximant);

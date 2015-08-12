@@ -18,33 +18,6 @@
  *  MA  02111-1307  USA
  */
 
-/**
- * \author Michael Puerrer, John Veitch
- *
- * \file
- *
- * \brief C code for SEOBNRv2 reduced order model (equal spin version).
- * See CQG 31 195010, 2014, arXiv:1402.4146 for details.
- *
- * This is a frequency domain model that approximates the time domain SEOBNRv2 model with equal spins.
- *
- * The binary data files are available at https://dcc.ligo.org/T1400701-v1.
- * Put the untared data into a location in your LAL_DATA_PATH.
- *
- * @note Note that due to its construction the iFFT of the ROM has a small (~ 20 M) offset
- * in the peak time that scales with total mass as compared to the time-domain SEOBNRv2 model.
- *
- * @note Parameter ranges:
- *   * 0.01 <= eta <= 0.25
- *   * -1 <= chi <= 0.99
- *   * Mtot >= 1.4Msun
- *
- *  Equal spin chi = chi1 = chi2 in terms of aligned component spins chi1, chi2.
- *  Symmetric mass-ratio eta = m1*m2/(m1+m2)^2.
- *  Total mass Mtot.
- *
- */
-
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
 #else
@@ -294,7 +267,7 @@ UNUSED static REAL8 Interpolate_Coefficent_Tensor(
 
 /** Setup SEOBNRv2ROMEffectiveSpin model using data files installed in dir
  */
-int SEOBNRv2ROMEffectiveSpin_Init(const char dir[]) {
+static int SEOBNRv2ROMEffectiveSpin_Init(const char dir[]) {
   if(__lalsim_SEOBNRv2ROMSS_data.setup)
     XLAL_ERROR(XLAL_EFAILED, "Error: SEOBNRROMdata was already set up!");
 
@@ -309,7 +282,7 @@ int SEOBNRv2ROMEffectiveSpin_Init(const char dir[]) {
 }
 
 /** Helper function to check if the SEOBNRv2ROMEffectiveSpin model has been initialised */
-bool SEOBNRv2ROMEffectiveSpin_IsSetup(void) {
+static bool SEOBNRv2ROMEffectiveSpin_IsSetup(void) {
   if(__lalsim_SEOBNRv2ROMSS_data.setup)
     return true;
   else
@@ -433,7 +406,7 @@ static int TP_Spline_interpolation_2d(
 }
 
 /* Set up a new ROM model, using data contained in dir */
-int SEOBNRROMdata_Init(SEOBNRROMdata *romdata, const char dir[]) {
+static int SEOBNRROMdata_Init(SEOBNRROMdata *romdata, const char dir[]) {
   // set up ROM
   int ncx = 50;     // points in eta + 2
   int ncy = 50;     // points in chi + 2
@@ -464,7 +437,7 @@ int SEOBNRROMdata_Init(SEOBNRROMdata *romdata, const char dir[]) {
 
 
 /* Deallocate contents of the given SEOBNRROMdata structure */
-void SEOBNRROMdata_Cleanup(SEOBNRROMdata *romdata) {
+static void SEOBNRROMdata_Cleanup(SEOBNRROMdata *romdata) {
   if(romdata->cvec_amp) gsl_vector_free(romdata->cvec_amp);
   if(romdata->cvec_phi) gsl_vector_free(romdata->cvec_phi);
   if(romdata->Bamp) gsl_matrix_free(romdata->Bamp);
@@ -506,7 +479,7 @@ static size_t NextPow2(const size_t n) {
  * Construct 1D splines for amplitude and phase.
  * Compute strain waveform from amplitude and phase.
 */
-int SEOBNRv2ROMEffectiveSpinCore(
+static int SEOBNRv2ROMEffectiveSpinCore(
   COMPLEX16FrequencySeries **hptilde,
   COMPLEX16FrequencySeries **hctilde,
   double phiRef,
@@ -747,6 +720,35 @@ int SEOBNRv2ROMEffectiveSpinCore(
 }
 
 /**
+ * @addtogroup LALSimIMRSEOBNRv2ROMEffectiveSpin_c
+ *
+ * @author Michael Puerrer, John Veitch
+ *
+ * @brief C code for SEOBNRv2 reduced order model (equal spin version).
+ * See CQG 31 195010, 2014, arXiv:1402.4146 for details.
+ *
+ * This is a frequency domain model that approximates the time domain SEOBNRv2 model with equal spins.
+ *
+ * The binary data files are available at https://dcc.ligo.org/T1400701-v1.
+ * Put the untared data into a location in your LAL_DATA_PATH.
+ *
+ * @note Note that due to its construction the iFFT of the ROM has a small (~ 20 M) offset
+ * in the peak time that scales with total mass as compared to the time-domain SEOBNRv2 model.
+ *
+ * @note Parameter ranges:
+ *   * 0.01 <= eta <= 0.25
+ *   * -1 <= chi <= 0.99
+ *   * Mtot >= 1.4Msun
+ *
+ *  Equal spin chi = chi1 = chi2 in terms of aligned component spins chi1, chi2.
+ *  Symmetric mass-ratio eta = m1*m2/(m1+m2)^2.
+ *  Total mass Mtot.
+ *
+ * @{
+ */
+
+
+/**
  * Compute waveform in LAL format at specified frequencies for the SEOBNRv2_ROM_EffectiveSpin model.
  *
  * XLALSimIMRSEOBNRv2ROMEffectiveSpin() returns the plus and cross polarizations as a complex
@@ -857,90 +859,6 @@ int XLALSimIMRSEOBNRv2ROMEffectiveSpin(
   XLALDestroyREAL8Sequence(freqs);
 
   return(retcode);
-}
-
-// Auxiliary function to perform setup of phase spline for t(f) and f(t) functions
-static int SEOBNRv2ROMEffectiveSpinTimeFrequencySetup(
-  gsl_spline **spline_phi,                      // phase spline
-  gsl_interp_accel **acc_phi,                   // phase spline accelerator
-  REAL8 *Mf_final,                              // ringdown frequency in Mf
-  REAL8 *Mtot_sec,                              // total mass in seconds
-  REAL8 m1SI,                                   // Mass of companion 1 (kg)
-  REAL8 m2SI,                                   // Mass of companion 2 (kg)
-  REAL8 chi                                     // Effective aligned spin
-)
-{
-  /* Get masses in terms of solar mass */
-  double mass1 = m1SI / LAL_MSUN_SI;
-  double mass2 = m2SI / LAL_MSUN_SI;
-  double Mtot = mass1 + mass2;
-  double eta = mass1 * mass2 / (Mtot*Mtot);    /* Symmetric mass-ratio */
-  *Mtot_sec = Mtot * LAL_MTSUN_SI; /* Total mass in seconds */
-
-  // 'Nudge' parameter values to allowed boundary values if close by
-  nudge(&eta, 0.25, 1e-6);
-  nudge(&eta, 0.01, 1e-6);
-  nudge(&chi, -1.0, 1e-6);
-  nudge(&chi, 0.99, 1e-6);
-
-  if (chi < -1.0 || chi > 0.99)
-    XLAL_ERROR(XLAL_EDOM, "XLAL Error - %s: chi (%f) smaller than -1 or larger than 0.99!\nSEOBNRv2ROMEffectiveSpin is only available for spins in the range -1 <= a/M <= 0.99.\n", __func__,chi);
-
-  if (eta < 0.01 || eta > 0.25)
-    XLAL_ERROR(XLAL_EDOM, "XLAL Error - %s: eta (%f) smaller than 0.01 or unphysical!\nSEOBNRv2ROMEffectiveSpin is only available for spins in the range 0.01 <= eta <= 0.25.\n", __func__,eta);
-
-  // Load ROM data if not loaded already
-#ifdef LAL_PTHREAD_LOCK
-  (void) pthread_once(&SEOBNRv2ROMEffectiveSpin_is_initialized, SEOBNRv2ROMEffectiveSpin_Init_LALDATA);
-#else
-  SEOBNRv2ROMEffectiveSpin_Init_LALDATA();
-#endif
-
-  SEOBNRROMdata *romdata=&__lalsim_SEOBNRv2ROMSS_data;
-
-  /* Internal storage for w.f. coefficiencts */
-  SEOBNRROMdata_coeff *romdata_coeff=NULL;
-  SEOBNRROMdata_coeff_Init(&romdata_coeff);
-  REAL8 amp_pre;
-
-  /* Interpolate projection coefficients and evaluate them at (eta,chi) */
-  int retcode=TP_Spline_interpolation_2d(
-    eta,                       // Input: eta-value for which projection coefficients should be evaluated
-    chi,                       // Input: chi-value for which projection coefficients should be evaluated
-    romdata->cvec_amp,         // Input: data for spline coefficients for amplitude
-    romdata->cvec_phi,         // Input: data for spline coefficients for phase
-    romdata->cvec_amp_pre,     // Input: data for spline coefficients for amplitude prefactor
-    romdata_coeff->c_amp,      // Output: interpolated projection coefficients for amplitude
-    romdata_coeff->c_phi,      // Output: interpolated projection coefficients for phase
-    &amp_pre                   // Output: interpolated amplitude prefactor
-  );
-
-  if(retcode!=0) {
-    SEOBNRROMdata_coeff_Cleanup(romdata_coeff);
-    XLAL_ERROR(retcode);
-  }
-
-  // Compute function values of phase on sparse frequency points by evaluating matrix vector products
-  // phi_pts = B_phi^T . c_phi
-  gsl_vector* phi_f = gsl_vector_alloc(nk_phi);
-  gsl_blas_dgemv(CblasTrans, 1.0, romdata->Bphi, romdata_coeff->c_phi, 0.0, phi_f);
-
-  // Setup 1d phase spline in frequency
-  *acc_phi = gsl_interp_accel_alloc();
-  *spline_phi = gsl_spline_alloc(gsl_interp_cspline, nk_phi);
-  gsl_spline_init(*spline_phi, gPhi, gsl_vector_const_ptr(phi_f,0), nk_phi);
-
-  // Get SEOBNRv2 ringdown frequency for 22 mode
-  double q = (1.0 + sqrt(1.0 - 4.0*eta) - 2.0*eta) / (2.0*eta);
-  double Mtot_SI = *Mtot_sec / LAL_MTSUN_SI * LAL_MSUN_SI;
-  double m1_SI = Mtot_SI * 1.0/(1.0+q);
-  double m2_SI = Mtot_SI * q/(1.0+q);
-  *Mf_final = XLALSimInspiralGetFinalFreq(m1_SI, m2_SI, 0,0,chi, 0,0,chi, SEOBNRv2) * (*Mtot_sec);
-
-  gsl_vector_free(phi_f);
-  SEOBNRROMdata_coeff_Cleanup(romdata_coeff);
-
-  return(XLAL_SUCCESS);
 }
 
 /**
@@ -1080,10 +998,96 @@ int XLALSimIMRSEOBNRv2ROMEffectiveSpinFrequencyOfTime(
   return(XLAL_SUCCESS);
 }
 
+/** @} */
+
+// Auxiliary function to perform setup of phase spline for t(f) and f(t) functions
+static int SEOBNRv2ROMEffectiveSpinTimeFrequencySetup(
+  gsl_spline **spline_phi,                      // phase spline
+  gsl_interp_accel **acc_phi,                   // phase spline accelerator
+  REAL8 *Mf_final,                              // ringdown frequency in Mf
+  REAL8 *Mtot_sec,                              // total mass in seconds
+  REAL8 m1SI,                                   // Mass of companion 1 (kg)
+  REAL8 m2SI,                                   // Mass of companion 2 (kg)
+  REAL8 chi                                     // Effective aligned spin
+)
+{
+  /* Get masses in terms of solar mass */
+  double mass1 = m1SI / LAL_MSUN_SI;
+  double mass2 = m2SI / LAL_MSUN_SI;
+  double Mtot = mass1 + mass2;
+  double eta = mass1 * mass2 / (Mtot*Mtot);    /* Symmetric mass-ratio */
+  *Mtot_sec = Mtot * LAL_MTSUN_SI; /* Total mass in seconds */
+
+  // 'Nudge' parameter values to allowed boundary values if close by
+  nudge(&eta, 0.25, 1e-6);
+  nudge(&eta, 0.01, 1e-6);
+  nudge(&chi, -1.0, 1e-6);
+  nudge(&chi, 0.99, 1e-6);
+
+  if (chi < -1.0 || chi > 0.99)
+    XLAL_ERROR(XLAL_EDOM, "XLAL Error - %s: chi (%f) smaller than -1 or larger than 0.99!\nSEOBNRv2ROMEffectiveSpin is only available for spins in the range -1 <= a/M <= 0.99.\n", __func__,chi);
+
+  if (eta < 0.01 || eta > 0.25)
+    XLAL_ERROR(XLAL_EDOM, "XLAL Error - %s: eta (%f) smaller than 0.01 or unphysical!\nSEOBNRv2ROMEffectiveSpin is only available for spins in the range 0.01 <= eta <= 0.25.\n", __func__,eta);
+
+  // Load ROM data if not loaded already
+#ifdef LAL_PTHREAD_LOCK
+  (void) pthread_once(&SEOBNRv2ROMEffectiveSpin_is_initialized, SEOBNRv2ROMEffectiveSpin_Init_LALDATA);
+#else
+  SEOBNRv2ROMEffectiveSpin_Init_LALDATA();
+#endif
+
+  SEOBNRROMdata *romdata=&__lalsim_SEOBNRv2ROMSS_data;
+
+  /* Internal storage for w.f. coefficiencts */
+  SEOBNRROMdata_coeff *romdata_coeff=NULL;
+  SEOBNRROMdata_coeff_Init(&romdata_coeff);
+  REAL8 amp_pre;
+
+  /* Interpolate projection coefficients and evaluate them at (eta,chi) */
+  int retcode=TP_Spline_interpolation_2d(
+    eta,                       // Input: eta-value for which projection coefficients should be evaluated
+    chi,                       // Input: chi-value for which projection coefficients should be evaluated
+    romdata->cvec_amp,         // Input: data for spline coefficients for amplitude
+    romdata->cvec_phi,         // Input: data for spline coefficients for phase
+    romdata->cvec_amp_pre,     // Input: data for spline coefficients for amplitude prefactor
+    romdata_coeff->c_amp,      // Output: interpolated projection coefficients for amplitude
+    romdata_coeff->c_phi,      // Output: interpolated projection coefficients for phase
+    &amp_pre                   // Output: interpolated amplitude prefactor
+  );
+
+  if(retcode!=0) {
+    SEOBNRROMdata_coeff_Cleanup(romdata_coeff);
+    XLAL_ERROR(retcode);
+  }
+
+  // Compute function values of phase on sparse frequency points by evaluating matrix vector products
+  // phi_pts = B_phi^T . c_phi
+  gsl_vector* phi_f = gsl_vector_alloc(nk_phi);
+  gsl_blas_dgemv(CblasTrans, 1.0, romdata->Bphi, romdata_coeff->c_phi, 0.0, phi_f);
+
+  // Setup 1d phase spline in frequency
+  *acc_phi = gsl_interp_accel_alloc();
+  *spline_phi = gsl_spline_alloc(gsl_interp_cspline, nk_phi);
+  gsl_spline_init(*spline_phi, gPhi, gsl_vector_const_ptr(phi_f,0), nk_phi);
+
+  // Get SEOBNRv2 ringdown frequency for 22 mode
+  double q = (1.0 + sqrt(1.0 - 4.0*eta) - 2.0*eta) / (2.0*eta);
+  double Mtot_SI = *Mtot_sec / LAL_MTSUN_SI * LAL_MSUN_SI;
+  double m1_SI = Mtot_SI * 1.0/(1.0+q);
+  double m2_SI = Mtot_SI * q/(1.0+q);
+  *Mf_final = XLALSimInspiralGetFinalFreq(m1_SI, m2_SI, 0,0,chi, 0,0,chi, SEOBNRv2) * (*Mtot_sec);
+
+  gsl_vector_free(phi_f);
+  SEOBNRROMdata_coeff_Cleanup(romdata_coeff);
+
+  return(XLAL_SUCCESS);
+}
+
 
 /** Setup SEOBNRv2ROMEffectiveSpin model using data files installed in $LAL_DATA_PATH
  */
-void SEOBNRv2ROMEffectiveSpin_Init_LALDATA(void)
+static void SEOBNRv2ROMEffectiveSpin_Init_LALDATA(void)
 {
   if (SEOBNRv2ROMEffectiveSpin_IsSetup()) return;
 

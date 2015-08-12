@@ -34,6 +34,7 @@
 #include <lal/LALAdaptiveRungeKutta4.h>
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimIMR.h>
+#include <lal/LALSimSphHarmMode.h>
 #include <lal/Date.h>
 
 //#include "LALSimIMRPhenSpin.h"
@@ -1310,6 +1311,289 @@ static REAL8TimeSeries *appendTSandFree(REAL8TimeSeries *start, REAL8TimeSeries 
     return start;
 }
 
+
+static INT4 XLALSimIMRHybridRingdownWave(
+    REAL8Vector                 *rdwave1,   /**< Real part of ringdown */
+    REAL8Vector                 *rdwave2,   /**< Imaginary part of ringdown */
+    const REAL8                 dt,         /**< Sampling interval */
+    const REAL8                 mass1,      /**< First component mass (in Solar masses) */
+    const REAL8                 mass2,      /**< Second component mass (in Solar masses) */
+    REAL8VectorSequence         *inspwave1, /**< Values and derivatives of real part of inspiral waveform */
+    REAL8VectorSequence         *inspwave2, /**< Values and derivatives of Imaginary part of inspiral waveform */
+    COMPLEX16Vector             *modefreqs, /**< Complex frequencies of ringdown (scaled by total mass) */
+    REAL8Vector                 *matchrange /**< Times which determine the comb size for ringdown attachment */
+)
+{
+
+  /* XLAL error handling */
+  INT4 errcode = XLAL_SUCCESS;
+
+  /* For checking GSL return codes */
+  INT4 gslStatus;
+
+  UINT4 i, j, k, nmodes = 8;
+
+  /* Sampling rate from input */
+  REAL8 t1, t2, t3, t4, t5, rt;
+  gsl_matrix *coef;
+  gsl_vector *hderivs;
+  gsl_vector *x;
+  gsl_permutation *p;
+  REAL8Vector *modeamps;
+  INT4 s;
+  REAL8 tj=0.;
+  REAL8 m;
+
+  /* mass in geometric units */
+  m  = (mass1 + mass2) * LAL_MTSUN_SI;
+  t5 = (matchrange->data[0] - matchrange->data[1]) * m;
+  rt = -t5 / 5.;
+
+  t4 = t5 + rt;
+  t3 = t4 + rt;
+  t2 = t3 + rt;
+  t1 = t2 + rt;
+
+  //  printf(" ** t1 %12.4e  t5 %12.4e\n",t1,t5);
+
+  if ( inspwave1->length != 2 || inspwave2->length != 2 ||
+          modefreqs->length != nmodes )
+  {
+    XLAL_ERROR( XLAL_EBADLEN );
+  }
+
+  /* Solving the linear system for QNMs amplitude coefficients using gsl routine */
+  /* Initiate matrices and supporting variables */
+  XLAL_CALLGSL( coef = (gsl_matrix *) gsl_matrix_alloc(2 * nmodes, 2 * nmodes) );
+  XLAL_CALLGSL( hderivs = (gsl_vector *) gsl_vector_alloc(2 * nmodes) );
+  XLAL_CALLGSL( x = (gsl_vector *) gsl_vector_alloc(2 * nmodes) );
+  XLAL_CALLGSL( p = (gsl_permutation *) gsl_permutation_alloc(2 * nmodes) );
+
+  /* Check all matrices and variables were allocated */
+  if ( !coef || !hderivs || !x || !p )
+  {
+    if (coef)    gsl_matrix_free(coef);
+    if (hderivs) gsl_vector_free(hderivs);
+    if (x)       gsl_vector_free(x);
+    if (p)       gsl_permutation_free(p);
+
+    XLAL_ERROR( XLAL_ENOMEM );
+  }
+
+  /* Define the linear system Ax=y */
+  /* Matrix A (2*n by 2*n) has block symmetry. Define half of A here as "coef" */
+  /* Define y here as "hderivs" */
+  for (i = 0; i < nmodes; ++i)
+  {
+         gsl_matrix_set(coef, 0, i, 1);
+         gsl_matrix_set(coef, 1, i, - cimag(modefreqs->data[i]));
+         gsl_matrix_set(coef, 2, i, exp(-cimag(modefreqs->data[i])*t1) * cos(creal(modefreqs->data[i])*t1));
+         gsl_matrix_set(coef, 3, i, exp(-cimag(modefreqs->data[i])*t2) * cos(creal(modefreqs->data[i])*t2));
+         gsl_matrix_set(coef, 4, i, exp(-cimag(modefreqs->data[i])*t3) * cos(creal(modefreqs->data[i])*t3));
+         gsl_matrix_set(coef, 5, i, exp(-cimag(modefreqs->data[i])*t4) * cos(creal(modefreqs->data[i])*t4));
+         gsl_matrix_set(coef, 6, i, exp(-cimag(modefreqs->data[i])*t5) * cos(creal(modefreqs->data[i])*t5));
+         gsl_matrix_set(coef, 7, i, exp(-cimag(modefreqs->data[i])*t5) *
+                         (-cimag(modefreqs->data[i]) * cos(creal(modefreqs->data[i])*t5)
+                           -creal(modefreqs->data[i]) * sin(creal(modefreqs->data[i])*t5) ));
+         gsl_matrix_set(coef, 8, i, 0);
+         gsl_matrix_set(coef, 9, i, -creal(modefreqs->data[i]));
+         gsl_matrix_set(coef, 10, i, -exp(-cimag(modefreqs->data[i])*t1) * sin(creal(modefreqs->data[i])*t1));
+         gsl_matrix_set(coef, 11, i, -exp(-cimag(modefreqs->data[i])*t2) * sin(creal(modefreqs->data[i])*t2));
+         gsl_matrix_set(coef, 12, i, -exp(-cimag(modefreqs->data[i])*t3) * sin(creal(modefreqs->data[i])*t3));
+         gsl_matrix_set(coef, 13, i, -exp(-cimag(modefreqs->data[i])*t4) * sin(creal(modefreqs->data[i])*t4));
+         gsl_matrix_set(coef, 14, i, -exp(-cimag(modefreqs->data[i])*t5) * sin(creal(modefreqs->data[i])*t5));
+         gsl_matrix_set(coef, 15, i, -exp(-cimag(modefreqs->data[i])*t5) *
+                         ( cimag(modefreqs->data[i]) * sin(creal(modefreqs->data[i])*t5)
+                           -creal(modefreqs->data[i]) * cos(creal(modefreqs->data[i])*t5)));
+  }
+
+  gsl_vector_set(hderivs, 0, inspwave1->data[5]);
+  gsl_vector_set(hderivs, 0 + nmodes, inspwave2->data[5]);
+  gsl_vector_set(hderivs, 1, inspwave1->data[11]);
+  gsl_vector_set(hderivs, 1 + nmodes, inspwave2->data[11]);
+  gsl_vector_set(hderivs, 2, inspwave1->data[4]);
+  gsl_vector_set(hderivs, 2 + nmodes, inspwave2->data[4]);
+  gsl_vector_set(hderivs, 3, inspwave1->data[3]);
+  gsl_vector_set(hderivs, 3 + nmodes, inspwave2->data[3]);
+  gsl_vector_set(hderivs, 4, inspwave1->data[2]);
+  gsl_vector_set(hderivs, 4 + nmodes, inspwave2->data[2]);
+  gsl_vector_set(hderivs, 5, inspwave1->data[1]);
+  gsl_vector_set(hderivs, 5 + nmodes, inspwave2->data[1]);
+  gsl_vector_set(hderivs, 6, inspwave1->data[0]);
+  gsl_vector_set(hderivs, 6 + nmodes, inspwave2->data[0]);
+  gsl_vector_set(hderivs, 7, inspwave1->data[6]);
+  gsl_vector_set(hderivs, 7 + nmodes, inspwave2->data[6]);
+
+  /* Complete the definition for the rest half of A */
+  for (i = 0; i < nmodes; ++i)
+  {
+         for (k = 0; k < nmodes; ++k)
+         {
+           gsl_matrix_set(coef, i, k + nmodes, - gsl_matrix_get(coef, i + nmodes, k));
+           gsl_matrix_set(coef, i + nmodes, k + nmodes, gsl_matrix_get(coef, i, k));
+         }
+  }
+
+#if DEBUG_RD
+  printf("\nRingdown matching matrix:\n");
+  for (i = 0; i < 16; ++i) {
+    for (j = 0; j < 16; ++j) {
+      printf("%8.1e ",gsl_matrix_get(coef,i,j));
+    }
+    printf(" | %8.1e\n",gsl_vector_get(hderivs,i));
+  }
+#endif
+
+  /* Call gsl LU decomposition to solve the linear system */
+  XLAL_CALLGSL( gslStatus = gsl_linalg_LU_decomp(coef, p, &s) );
+  if ( gslStatus == GSL_SUCCESS )
+  {
+    XLAL_CALLGSL( gslStatus = gsl_linalg_LU_solve(coef, p, hderivs, x) );
+  }
+  if ( gslStatus != GSL_SUCCESS )
+  {
+    gsl_matrix_free(coef);
+    gsl_vector_free(hderivs);
+    gsl_vector_free(x);
+    gsl_permutation_free(p);
+    XLAL_ERROR( XLAL_EFUNC );
+  }
+
+  /* Putting solution to an XLAL vector */
+  modeamps = XLALCreateREAL8Vector(2 * nmodes);
+
+  if ( !modeamps )
+  {
+    gsl_matrix_free(coef);
+    gsl_vector_free(hderivs);
+    gsl_vector_free(x);
+    gsl_permutation_free(p);
+    XLAL_ERROR( XLAL_ENOMEM );
+  }
+
+  for (i = 0; i < nmodes; ++i)
+  {
+         modeamps->data[i] = gsl_vector_get(x, i);
+         modeamps->data[i + nmodes] = gsl_vector_get(x, i + nmodes);
+  }
+
+#if DEBUG_RD
+  for (i = 0; i < nmodes; ++i)
+  {
+    printf("%d: om %12.4e  1/tau %12.4e  A %12.4e  B %12.4e \n",i,creal(modefreqs->data[i]),cimag(modefreqs->data[i]),modeamps->data[i],modeamps->data[i + nmodes]);
+  }
+#endif
+
+  /* Free all gsl linear algebra objects */
+  gsl_matrix_free(coef);
+  gsl_vector_free(hderivs);
+  gsl_vector_free(x);
+  gsl_permutation_free(p);
+
+  //double tOffset=(matchrange->data[2]-matchrange->data[1])*m;
+
+  /* Build ring-down waveforms */
+
+  FILE *frd=fopen("checkrdPS.dat","w");
+  double a1=0.;
+  double a2=0.;
+  INT4 jdx;
+  for (jdx = -5; jdx < 0; ++jdx) {
+    tj = jdx * dt;
+    a1=0.;
+    a2=0.;
+    for (i = 0; i < nmodes; ++i) {
+      a1 += exp(- tj * cimag(modefreqs->data[i]))
+	* ( modeamps->data[i] * cos(tj * creal(modefreqs->data[i]))
+	    +   modeamps->data[i + nmodes] * sin(tj * creal(modefreqs->data[i])) );
+      a2 += exp(- tj * cimag(modefreqs->data[i]))
+	* (- modeamps->data[i] * sin(tj * creal(modefreqs->data[i]))
+	   +   modeamps->data[i + nmodes] * cos(tj * creal(modefreqs->data[i])) );
+    }
+    fprintf(frd," %d  %12.4e  %12.4e  %12.4e\n",jdx,matchrange->data[1]*m+tj,.631*a1,.631*a2);
+  }
+  for (j = 0; j < rdwave1->length; ++j) {
+    tj = j * dt;
+    rdwave1->data[j] = 0;
+    rdwave2->data[j] = 0;
+    for (i = 0; i < nmodes; ++i) {
+      rdwave1->data[j] += exp(- tj * cimag(modefreqs->data[i]))
+	* ( modeamps->data[i] * cos(tj * creal(modefreqs->data[i]))
+	    +   modeamps->data[i + nmodes] * sin(tj * creal(modefreqs->data[i])) );
+      rdwave2->data[j] += exp(- tj * cimag(modefreqs->data[i]))
+	* (- modeamps->data[i] * sin(tj * creal(modefreqs->data[i]))
+	   +   modeamps->data[i + nmodes] * cos(tj * creal(modefreqs->data[i])) );
+    }
+    if (j<20) fprintf(frd," %d  %12.4e  %12.4e  %12.4e\n",j,matchrange->data[1]*m+tj,.631*rdwave1->data[j],.631*rdwave2->data[j]);
+  }
+  fclose(frd);
+
+  XLALDestroyREAL8Vector(modeamps);
+  return errcode;
+}
+
+static INT4 XLALUpSampling(REAL8Vector* vHi, REAL8 dtHi, REAL8Vector* v, REAL8 dt)
+{
+  UINT4 idx;
+  gsl_interp_accel *acc;
+  gsl_spline *spline;
+  INT4 gslStatus;
+
+  double *x   = (double *) LALMalloc(v->length * sizeof(double));
+  double *xHi = (double *) LALMalloc(vHi->length * sizeof(double));
+
+  if ( !x || !xHi ) {
+    XLALPrintError("** LALSimIMRPSpinInspiralRD ERROR **: allocation failed in interpolation routine\n");
+    XLAL_ERROR( XLAL_ENOMEM );
+  }
+
+  for (idx = 0; idx < v->length; idx++) x[idx] = idx*dt;
+  for (idx = 0; idx < vHi->length; idx++) xHi[idx] = idx*dtHi;
+  /*  printf("First point %12.4e %12.4e\n",x[0],xHi[0]);
+  printf("Last point %12.4e %12.4e\n",x[v->length-1],xHi[vHi->length-1]);
+  printf(" dt %12.4e %d, dt %12.4e %d\n",dt,v->length,dtHi,vHi->length);*/
+
+  XLAL_CALLGSL( acc = (gsl_interp_accel*) gsl_interp_accel_alloc() );
+  XLAL_CALLGSL( spline = (gsl_spline*) gsl_spline_alloc(gsl_interp_cspline, v->length) );
+  if ( !acc || !spline )
+  {
+    if ( acc )    gsl_interp_accel_free(acc);
+    if ( spline ) gsl_spline_free(spline);
+    LALFree( x );
+    XLAL_ERROR( XLAL_ENOMEM );
+  }
+
+  /* Gall gsl spline interpolation */
+  XLAL_CALLGSL( gslStatus = gsl_spline_init(spline, x, v->data, v->length) );
+  if ( gslStatus != GSL_SUCCESS )
+  {
+    gsl_spline_free(spline);
+    gsl_interp_accel_free(acc);
+    LALFree( x );
+    XLAL_ERROR( XLAL_EFUNC );
+  }
+
+  /* Getting first and second order time derivatives from gsl interpolations */
+  for (idx = 0; idx < vHi->length; idx++) {
+    vHi->data[idx]=gsl_spline_eval(spline, xHi[idx], acc);
+    // printf("      vHi[%d]  %12.4e\n",idx,vHi->data[idx]);
+  }
+
+  /* Free gsl variables */
+  gsl_spline_free(spline);
+  gsl_interp_accel_free(acc);
+  LALFree(x);
+  LALFree(xHi);
+
+  return 0;
+}
+
+
+/**
+ * @addtogroup LALSimIMRPSpinInspiralRD_c
+ * @{
+ */
+
 /**
  * Driver routine to compute the PhenSpin Inspiral waveform
  * without ring-down
@@ -1673,286 +1957,9 @@ INT4 XLALSimIMRPhenSpinFinalMassSpin(REAL8 *finalMass,
   return errcode;
 } /* End of XLALSimIMRPhenSpinFinalMassSpin*/
 
-static INT4 XLALSimIMRHybridRingdownWave(
-    REAL8Vector                 *rdwave1,   /**< Real part of ringdown */
-    REAL8Vector                 *rdwave2,   /**< Imaginary part of ringdown */
-    const REAL8                 dt,         /**< Sampling interval */
-    const REAL8                 mass1,      /**< First component mass (in Solar masses) */
-    const REAL8                 mass2,      /**< Second component mass (in Solar masses) */
-    REAL8VectorSequence         *inspwave1, /**< Values and derivatives of real part of inspiral waveform */
-    REAL8VectorSequence         *inspwave2, /**< Values and derivatives of Imaginary part of inspiral waveform */
-    COMPLEX16Vector             *modefreqs, /**< Complex frequencies of ringdown (scaled by total mass) */
-    REAL8Vector                 *matchrange /**< Times which determine the comb size for ringdown attachment */
-)
-{
-
-  /* XLAL error handling */
-  INT4 errcode = XLAL_SUCCESS;
-
-  /* For checking GSL return codes */
-  INT4 gslStatus;
-
-  UINT4 i, j, k, nmodes = 8;
-
-  /* Sampling rate from input */
-  REAL8 t1, t2, t3, t4, t5, rt;
-  gsl_matrix *coef;
-  gsl_vector *hderivs;
-  gsl_vector *x;
-  gsl_permutation *p;
-  REAL8Vector *modeamps;
-  INT4 s;
-  REAL8 tj=0.;
-  REAL8 m;
-
-  /* mass in geometric units */
-  m  = (mass1 + mass2) * LAL_MTSUN_SI;
-  t5 = (matchrange->data[0] - matchrange->data[1]) * m;
-  rt = -t5 / 5.;
-
-  t4 = t5 + rt;
-  t3 = t4 + rt;
-  t2 = t3 + rt;
-  t1 = t2 + rt;
-
-  //  printf(" ** t1 %12.4e  t5 %12.4e\n",t1,t5);
-
-  if ( inspwave1->length != 2 || inspwave2->length != 2 ||
-          modefreqs->length != nmodes )
-  {
-    XLAL_ERROR( XLAL_EBADLEN );
-  }
-
-  /* Solving the linear system for QNMs amplitude coefficients using gsl routine */
-  /* Initiate matrices and supporting variables */
-  XLAL_CALLGSL( coef = (gsl_matrix *) gsl_matrix_alloc(2 * nmodes, 2 * nmodes) );
-  XLAL_CALLGSL( hderivs = (gsl_vector *) gsl_vector_alloc(2 * nmodes) );
-  XLAL_CALLGSL( x = (gsl_vector *) gsl_vector_alloc(2 * nmodes) );
-  XLAL_CALLGSL( p = (gsl_permutation *) gsl_permutation_alloc(2 * nmodes) );
-
-  /* Check all matrices and variables were allocated */
-  if ( !coef || !hderivs || !x || !p )
-  {
-    if (coef)    gsl_matrix_free(coef);
-    if (hderivs) gsl_vector_free(hderivs);
-    if (x)       gsl_vector_free(x);
-    if (p)       gsl_permutation_free(p);
-
-    XLAL_ERROR( XLAL_ENOMEM );
-  }
-
-  /* Define the linear system Ax=y */
-  /* Matrix A (2*n by 2*n) has block symmetry. Define half of A here as "coef" */
-  /* Define y here as "hderivs" */
-  for (i = 0; i < nmodes; ++i)
-  {
-         gsl_matrix_set(coef, 0, i, 1);
-         gsl_matrix_set(coef, 1, i, - cimag(modefreqs->data[i]));
-         gsl_matrix_set(coef, 2, i, exp(-cimag(modefreqs->data[i])*t1) * cos(creal(modefreqs->data[i])*t1));
-         gsl_matrix_set(coef, 3, i, exp(-cimag(modefreqs->data[i])*t2) * cos(creal(modefreqs->data[i])*t2));
-         gsl_matrix_set(coef, 4, i, exp(-cimag(modefreqs->data[i])*t3) * cos(creal(modefreqs->data[i])*t3));
-         gsl_matrix_set(coef, 5, i, exp(-cimag(modefreqs->data[i])*t4) * cos(creal(modefreqs->data[i])*t4));
-         gsl_matrix_set(coef, 6, i, exp(-cimag(modefreqs->data[i])*t5) * cos(creal(modefreqs->data[i])*t5));
-         gsl_matrix_set(coef, 7, i, exp(-cimag(modefreqs->data[i])*t5) *
-                         (-cimag(modefreqs->data[i]) * cos(creal(modefreqs->data[i])*t5)
-                           -creal(modefreqs->data[i]) * sin(creal(modefreqs->data[i])*t5) ));
-         gsl_matrix_set(coef, 8, i, 0);
-         gsl_matrix_set(coef, 9, i, -creal(modefreqs->data[i]));
-         gsl_matrix_set(coef, 10, i, -exp(-cimag(modefreqs->data[i])*t1) * sin(creal(modefreqs->data[i])*t1));
-         gsl_matrix_set(coef, 11, i, -exp(-cimag(modefreqs->data[i])*t2) * sin(creal(modefreqs->data[i])*t2));
-         gsl_matrix_set(coef, 12, i, -exp(-cimag(modefreqs->data[i])*t3) * sin(creal(modefreqs->data[i])*t3));
-         gsl_matrix_set(coef, 13, i, -exp(-cimag(modefreqs->data[i])*t4) * sin(creal(modefreqs->data[i])*t4));
-         gsl_matrix_set(coef, 14, i, -exp(-cimag(modefreqs->data[i])*t5) * sin(creal(modefreqs->data[i])*t5));
-         gsl_matrix_set(coef, 15, i, -exp(-cimag(modefreqs->data[i])*t5) *
-                         ( cimag(modefreqs->data[i]) * sin(creal(modefreqs->data[i])*t5)
-                           -creal(modefreqs->data[i]) * cos(creal(modefreqs->data[i])*t5)));
-  }
-
-  gsl_vector_set(hderivs, 0, inspwave1->data[5]);
-  gsl_vector_set(hderivs, 0 + nmodes, inspwave2->data[5]);
-  gsl_vector_set(hderivs, 1, inspwave1->data[11]);
-  gsl_vector_set(hderivs, 1 + nmodes, inspwave2->data[11]);
-  gsl_vector_set(hderivs, 2, inspwave1->data[4]);
-  gsl_vector_set(hderivs, 2 + nmodes, inspwave2->data[4]);
-  gsl_vector_set(hderivs, 3, inspwave1->data[3]);
-  gsl_vector_set(hderivs, 3 + nmodes, inspwave2->data[3]);
-  gsl_vector_set(hderivs, 4, inspwave1->data[2]);
-  gsl_vector_set(hderivs, 4 + nmodes, inspwave2->data[2]);
-  gsl_vector_set(hderivs, 5, inspwave1->data[1]);
-  gsl_vector_set(hderivs, 5 + nmodes, inspwave2->data[1]);
-  gsl_vector_set(hderivs, 6, inspwave1->data[0]);
-  gsl_vector_set(hderivs, 6 + nmodes, inspwave2->data[0]);
-  gsl_vector_set(hderivs, 7, inspwave1->data[6]);
-  gsl_vector_set(hderivs, 7 + nmodes, inspwave2->data[6]);
-
-  /* Complete the definition for the rest half of A */
-  for (i = 0; i < nmodes; ++i)
-  {
-         for (k = 0; k < nmodes; ++k)
-         {
-           gsl_matrix_set(coef, i, k + nmodes, - gsl_matrix_get(coef, i + nmodes, k));
-           gsl_matrix_set(coef, i + nmodes, k + nmodes, gsl_matrix_get(coef, i, k));
-         }
-  }
-
-#if DEBUG_RD
-  printf("\nRingdown matching matrix:\n");
-  for (i = 0; i < 16; ++i) {
-    for (j = 0; j < 16; ++j) {
-      printf("%8.1e ",gsl_matrix_get(coef,i,j));
-    }
-    printf(" | %8.1e\n",gsl_vector_get(hderivs,i));
-  }
-#endif
-
-  /* Call gsl LU decomposition to solve the linear system */
-  XLAL_CALLGSL( gslStatus = gsl_linalg_LU_decomp(coef, p, &s) );
-  if ( gslStatus == GSL_SUCCESS )
-  {
-    XLAL_CALLGSL( gslStatus = gsl_linalg_LU_solve(coef, p, hderivs, x) );
-  }
-  if ( gslStatus != GSL_SUCCESS )
-  {
-    gsl_matrix_free(coef);
-    gsl_vector_free(hderivs);
-    gsl_vector_free(x);
-    gsl_permutation_free(p);
-    XLAL_ERROR( XLAL_EFUNC );
-  }
-
-  /* Putting solution to an XLAL vector */
-  modeamps = XLALCreateREAL8Vector(2 * nmodes);
-
-  if ( !modeamps )
-  {
-    gsl_matrix_free(coef);
-    gsl_vector_free(hderivs);
-    gsl_vector_free(x);
-    gsl_permutation_free(p);
-    XLAL_ERROR( XLAL_ENOMEM );
-  }
-
-  for (i = 0; i < nmodes; ++i)
-  {
-         modeamps->data[i] = gsl_vector_get(x, i);
-         modeamps->data[i + nmodes] = gsl_vector_get(x, i + nmodes);
-  }
-
-#if DEBUG_RD
-  for (i = 0; i < nmodes; ++i)
-  {
-    printf("%d: om %12.4e  1/tau %12.4e  A %12.4e  B %12.4e \n",i,creal(modefreqs->data[i]),cimag(modefreqs->data[i]),modeamps->data[i],modeamps->data[i + nmodes]);
-  }
-#endif
-
-  /* Free all gsl linear algebra objects */
-  gsl_matrix_free(coef);
-  gsl_vector_free(hderivs);
-  gsl_vector_free(x);
-  gsl_permutation_free(p);
-
-  //double tOffset=(matchrange->data[2]-matchrange->data[1])*m;
-
-  /* Build ring-down waveforms */
-
-  FILE *frd=fopen("checkrdPS.dat","w");
-  double a1=0.;
-  double a2=0.;
-  INT4 jdx;
-  for (jdx = -5; jdx < 0; ++jdx) {
-    tj = jdx * dt;
-    a1=0.;
-    a2=0.;
-    for (i = 0; i < nmodes; ++i) {
-      a1 += exp(- tj * cimag(modefreqs->data[i]))
-	* ( modeamps->data[i] * cos(tj * creal(modefreqs->data[i]))
-	    +   modeamps->data[i + nmodes] * sin(tj * creal(modefreqs->data[i])) );
-      a2 += exp(- tj * cimag(modefreqs->data[i]))
-	* (- modeamps->data[i] * sin(tj * creal(modefreqs->data[i]))
-	   +   modeamps->data[i + nmodes] * cos(tj * creal(modefreqs->data[i])) );
-    }
-    fprintf(frd," %d  %12.4e  %12.4e  %12.4e\n",jdx,matchrange->data[1]*m+tj,.631*a1,.631*a2);
-  }
-  for (j = 0; j < rdwave1->length; ++j) {
-    tj = j * dt;
-    rdwave1->data[j] = 0;
-    rdwave2->data[j] = 0;
-    for (i = 0; i < nmodes; ++i) {
-      rdwave1->data[j] += exp(- tj * cimag(modefreqs->data[i]))
-	* ( modeamps->data[i] * cos(tj * creal(modefreqs->data[i]))
-	    +   modeamps->data[i + nmodes] * sin(tj * creal(modefreqs->data[i])) );
-      rdwave2->data[j] += exp(- tj * cimag(modefreqs->data[i]))
-	* (- modeamps->data[i] * sin(tj * creal(modefreqs->data[i]))
-	   +   modeamps->data[i + nmodes] * cos(tj * creal(modefreqs->data[i])) );
-    }
-    if (j<20) fprintf(frd," %d  %12.4e  %12.4e  %12.4e\n",j,matchrange->data[1]*m+tj,.631*rdwave1->data[j],.631*rdwave2->data[j]);
-  }
-  fclose(frd);
-
-  XLALDestroyREAL8Vector(modeamps);
-  return errcode;
-}
-
-static INT4 XLALUpSampling(REAL8Vector* vHi, REAL8 dtHi, REAL8Vector* v, REAL8 dt)
-{
-  UINT4 idx;
-  gsl_interp_accel *acc;
-  gsl_spline *spline;
-  INT4 gslStatus;
-
-  double *x   = (double *) LALMalloc(v->length * sizeof(double));
-  double *xHi = (double *) LALMalloc(vHi->length * sizeof(double));
-
-  if ( !x || !xHi ) {
-    XLALPrintError("** LALSimIMRPSpinInspiralRD ERROR **: allocation failed in interpolation routine\n");
-    XLAL_ERROR( XLAL_ENOMEM );
-  }
-
-  for (idx = 0; idx < v->length; idx++) x[idx] = idx*dt;
-  for (idx = 0; idx < vHi->length; idx++) xHi[idx] = idx*dtHi;
-  /*  printf("First point %12.4e %12.4e\n",x[0],xHi[0]);
-  printf("Last point %12.4e %12.4e\n",x[v->length-1],xHi[vHi->length-1]);
-  printf(" dt %12.4e %d, dt %12.4e %d\n",dt,v->length,dtHi,vHi->length);*/
-
-  XLAL_CALLGSL( acc = (gsl_interp_accel*) gsl_interp_accel_alloc() );
-  XLAL_CALLGSL( spline = (gsl_spline*) gsl_spline_alloc(gsl_interp_cspline, v->length) );
-  if ( !acc || !spline )
-  {
-    if ( acc )    gsl_interp_accel_free(acc);
-    if ( spline ) gsl_spline_free(spline);
-    LALFree( x );
-    XLAL_ERROR( XLAL_ENOMEM );
-  }
-
-  /* Gall gsl spline interpolation */
-  XLAL_CALLGSL( gslStatus = gsl_spline_init(spline, x, v->data, v->length) );
-  if ( gslStatus != GSL_SUCCESS )
-  {
-    gsl_spline_free(spline);
-    gsl_interp_accel_free(acc);
-    LALFree( x );
-    XLAL_ERROR( XLAL_EFUNC );
-  }
-
-  /* Getting first and second order time derivatives from gsl interpolations */
-  for (idx = 0; idx < vHi->length; idx++) {
-    vHi->data[idx]=gsl_spline_eval(spline, xHi[idx], acc);
-    // printf("      vHi[%d]  %12.4e\n",idx,vHi->data[idx]);
-  }
-
-  /* Free gsl variables */
-  gsl_spline_free(spline);
-  gsl_interp_accel_free(acc);
-  LALFree(x);
-  LALFree(xHi);
-
-  return 0;
-}
-
 /**
  * Driver routine for generating PhenSpinRD waveforms
  */
-
 INT4 XLALSimIMRPhenSpinInspiralRDGenerator(REAL8TimeSeries **hPlus,               /**< +-polarization waveform [returned] */
                                           REAL8TimeSeries **hCross,              /**< x-polarization waveform [returned] */
                                           REAL8 phi_start,                       /**< start phase */
@@ -2669,3 +2676,5 @@ INT4 XLALSimIMRPhenSpinInspiralRDGenerator(REAL8TimeSeries **hPlus,             
 
   return count;
 } /* End of XLALSimIMRPhenSpinInspiralRDGenerator*/
+
+/** @} */

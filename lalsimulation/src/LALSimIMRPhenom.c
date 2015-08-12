@@ -1191,6 +1191,7 @@ static gsl_matrix *XLALSimIMRPhenomBProjectExtrinsicParam(
  * @addtogroup LALSimIMRPhenom_c
  * @brief Routines to produce IMRPhenom-family of phenomenological
  * inspiral-merger-ringdown waveforms.
+ * @review IMRPhenomB routines reviewed on YYYY-MM-DD by XXX (hash).
  * @{
  */
 

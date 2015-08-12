@@ -17,24 +17,6 @@
  *  MA  02111-1307  USA
  */
 
-/**
- * \author Michael Puerrer
- *
- * \file
- *
- * \brief C code for SEOBNRv2 chirp time interpolant
- *
- * Parameter ranges:
- *   0.01 <= eta <= 0.25
- *   -1 <= chi <= 0.99
- *   Mtot >= 12Msun
- *   10 <= fmin <= 1823
- *
- * Download the data file SEOBNRv2ChirpTimeSS.dat from 
- * https://dcc.ligo.org/LIGO-G1500097 and point LAL_DATA_PATH to it.
- *
- */
-
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
 #else
@@ -392,6 +374,25 @@ static void Init_LALDATA(void)
 }
 
 /**
+ * @addtogroup LALSimIMRSEOBNRv2ChirpTime_c
+ *
+ * @author Michael Puerrer
+ *
+ * @brief C code for SEOBNRv2 chirp time interpolant
+ *
+ * Parameter ranges:
+ *   0.01 <= eta <= 0.25
+ *   -1 <= chi <= 0.99
+ *   Mtot >= 12Msun
+ *   10 <= fmin <= 1823
+ *
+ * Download the data file SEOBNRv2ChirpTimeSS.dat from 
+ * https://dcc.ligo.org/LIGO-G1500097 and point LAL_DATA_PATH to it.
+ *
+ * @{
+ */
+
+/**
  * Compute SEOBNRv2 chirp time from an interpolant assuming a single-spin.
  *
  * The chirp time is currently measured from the starting frequency f_min
@@ -453,3 +454,5 @@ REAL8 XLALSimIMRSEOBNRv2ChirpTimeSingleSpin(
     fmin_pts
   );
 }
+
+/** @} */

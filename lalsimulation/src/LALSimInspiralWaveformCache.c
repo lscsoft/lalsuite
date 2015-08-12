@@ -101,6 +101,12 @@ static int StoreFDHCache(LALSimInspiralWaveformCache *cache,
         Approximant approximant,
         REAL8Sequence *frequencies);
 
+
+/**
+ * @addtogroup LALSimInspiralWaveformCache_h
+ * @{
+ */
+
 /**
  * Chooses between different approximants when requesting a waveform to be generated
  * Returns the waveform in the time domain.
@@ -664,6 +670,8 @@ void XLALDestroySimInspiralWaveformCache(LALSimInspiralWaveformCache *cache)
         XLALFree(cache);
     }
 }
+
+/** @} */
 
 /**
  * Function to compare the requested arguments to those stored in the cache,
