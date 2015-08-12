@@ -2657,13 +2657,13 @@ def pulsar_posterior_grid(dets, ts, data, ra, dec, sigmas=None, paramranges={}, 
 
       if liketype == 'gaussian':
         like -= 0.5*(dd1real + hr2 - 2.*d1hr + dd1imag + hi2 - 2.*d1hi)
-        like += logprior
         noiselike -= 0.5*(dd1real + dd1imag)
       else:
         like -= len(thisdata)*np.log(dd1real + hr2 - 2.*d1hr + dd1imag + hi2 - 2.*d1hi)
-        like += logprior
         noiselike -= len(thisdata)*np.log(dd1real + dd1imag)
 
+  # convert to posterior
+  like += logprior
 
   # get signal evidence
   sigev = marginal(like, 'all', params, lingrids)
