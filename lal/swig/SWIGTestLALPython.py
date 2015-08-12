@@ -15,8 +15,8 @@ if hasattr(numpy, "ComplexWarning"):
 print("checking module load ...")
 import lal
 from lal import globalvar as lalglobalvar
-lal_c_si = lal.C_SI;
-lal_180_pi = lal.LAL_180_PI;
+lal_c_si = lal.C_SI
+lal_180_pi = lal.LAL_180_PI
 print("PASSED module load")
 
 # check memory allocation
@@ -915,11 +915,11 @@ assert(isinstance(lal.Unit(u1), lal.Unit))
 assert(u1 == lal.NewtonUnit and isinstance(u1, lal.Unit))
 assert(str(u1) == "m kg s^-2")
 u2 = lal.MeterUnit * lal.KiloGramUnit / lal.SecondUnit ** 2
-assert(u1 == u2 and isinstance(u2, lal.Unit));
+assert(u1 == u2 and isinstance(u2, lal.Unit))
 u2 = lal.MeterUnit**(1,2) * lal.KiloGramUnit**(1,2) * lal.SecondUnit ** -1
-assert(u1**(1,2) == u2 and isinstance(u2, lal.Unit));
+assert(u1**(1,2) == u2 and isinstance(u2, lal.Unit))
 try:
-    lal.SecondUnit ** (1,0);
+    lal.SecondUnit ** (1,0)
     expected_exception = True
 except:
     pass
