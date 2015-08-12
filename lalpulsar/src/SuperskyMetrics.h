@@ -105,6 +105,10 @@ int XLALConvertSuperskyToPhysical(
   const LIGOTimeGPS *ref_time			///< [in] Reference time for the coordinate transform data
   );
 
+#ifdef SWIG // SWIG interface directives
+SWIGLAL(COPYINOUT_ARRAYS(gsl_matrix, rssky_metric, rssky_transf));
+#endif // SWIG
+
 ///
 /// Set parameter-space bounds on the physical sky position \f$(\alpha, \delta)\f$ for a lattice
 /// tiling using the reduced supersky metric. The metric and coordinate transform data must be supplied,
@@ -134,6 +138,10 @@ int XLALSetSuperskyLatticeTilingPhysicalSkyPatch(
   const UINT8 patch_count,			///< [in] Number of equal-area patches to divide sky into
   const UINT8 patch_index			///< [in] Index of the patch for which to set bounds
   );
+
+#ifdef SWIG // SWIG interface directives
+SWIGLAL_CLEAR(COPYINOUT_ARRAYS(gsl_matrix, rssky_metric, rssky_transf));
+#endif // SWIG
 
 ///
 /// Set parameter-space bounds on the physical frequency/spindowns \f$f^{(s)}\f$ for a lattice
