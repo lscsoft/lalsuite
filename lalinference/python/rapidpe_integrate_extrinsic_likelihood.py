@@ -357,7 +357,7 @@ else:
         left_limit = param_limits["right_ascension"][0], \
         right_limit =  param_limits["right_ascension"][1], \
         prior_pdf = mcsampler.uniform_samp_phase, \
-        adaptive_sampling = True or not opts.no_adapt)
+        adaptive_sampling = not opts.no_adapt)
 
     #
     # declination - angle in radians from the north pole piercing the celestial
@@ -370,7 +370,7 @@ else:
         left_limit = param_limits["declination"][0], \
         right_limit = param_limits["declination"][1], \
         prior_pdf = mcsampler.uniform_samp_dec, \
-        adaptive_sampling = True or not opts.no_adapt)
+        adaptive_sampling = not opts.no_adapt)
 
 #
 # Determine pinned and non-pinned parameters
