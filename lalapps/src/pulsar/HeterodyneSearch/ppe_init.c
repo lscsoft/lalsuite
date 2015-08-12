@@ -1566,5 +1566,10 @@ void initialise_threads(LALInferenceRunState *state, INT4 nthreads){
     thread->GSLrandom = gsl_rng_alloc(gsl_rng_mt19937);
     randomseed = gsl_rng_get(state->GSLrandom);
     gsl_rng_set(thread->GSLrandom, randomseed);
+
+    /* Explicitly zero out DE, in case it's not used later */
+    thread->differentialPoints = NULL;
+    thread->differentialPointsLength = 0;
+    thread->differentialPointsSize = 0;
   }
 }
