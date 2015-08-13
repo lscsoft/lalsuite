@@ -135,8 +135,8 @@ int XLALSetSuperskyLatticeTilingPhysicalSkyPatch(
   LatticeTiling *tiling,			///< [in] Lattice tiling
   gsl_matrix *rssky_metric,			///< [in] Reduced supersky metric
   gsl_matrix *rssky_transf,			///< [in] Reduced supersky metric coordinate transform data
-  const UINT8 patch_count,			///< [in] Number of equal-area patches to divide sky into
-  const UINT8 patch_index			///< [in] Index of the patch for which to set bounds
+  const UINT4 patch_count,			///< [in] Number of equal-area patches to divide sky into
+  const UINT4 patch_index			///< [in] Index of the patch for which to set bounds
   );
 
 #ifdef SWIG // SWIG interface directives

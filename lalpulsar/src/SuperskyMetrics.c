@@ -1527,8 +1527,8 @@ int XLALSetSuperskyLatticeTilingPhysicalSkyPatch(
   LatticeTiling *tiling,
   gsl_matrix *rssky_metric,
   gsl_matrix *rssky_transf,
-  const UINT8 patch_count,
-  const UINT8 patch_index
+  const UINT4 patch_count,
+  const UINT4 patch_index
   )
 {
 
@@ -1545,17 +1545,17 @@ int XLALSetSuperskyLatticeTilingPhysicalSkyPatch(
 
   // Number of patch divisions in 'alpha'; for less than 4 patches, divide only in 'alpha' to prevent
   // 'alpha' range in [pi,2*pi], which XLALSetSuperskyLatticeTilingPhysicalSkyBounds() cannot handle
-  const UINT8 alpha_count = (patch_count < 4) ? patch_count : lround(ceil(sqrt(patch_count)));
+  const UINT4 alpha_count = (patch_count < 4) ? patch_count : ((UINT4) ceil(sqrt(patch_count)));
 
   // Mininum number of patch divisions in 'sin(delta)'; note integer division equivalent to floor()
-  const UINT8 min_sdelta_count = patch_count / alpha_count;
+  const UINT4 min_sdelta_count = patch_count / alpha_count;
 
   // Excess number of patches, which must be added on to get 'patch_count'
-  INT8 patch_excess = patch_count - alpha_count * min_sdelta_count;
+  INT4 patch_excess = patch_count - alpha_count * min_sdelta_count;
   XLAL_CHECK(patch_excess >= 0, XLAL_EFAILED);
 
   // Initialise number of patch divisions in 'sin(delta)'; if there are excess patches, add an extra patch
-  UINT8 sdelta_count = min_sdelta_count;
+  UINT4 sdelta_count = min_sdelta_count;
   if (patch_excess > 0) {
     ++sdelta_count;
   }
@@ -1572,7 +1572,7 @@ int XLALSetSuperskyLatticeTilingPhysicalSkyPatch(
   //   patch_count=7 patch_index=4 | alpha_index=3--5 sdelta_count=2 sdelta_index=1
   //   patch_count=7 patch_index=5 | alpha_index=5--7 sdelta_count=2 sdelta_index=0
   //   patch_count=7 patch_index=6 | alpha_index=5--7 sdelta_count=2 sdelta_index=1
-  UINT8 alpha_index1 = 0, alpha_index2 = sdelta_count, sdelta_index = patch_index;
+  UINT4 alpha_index1 = 0, alpha_index2 = sdelta_count, sdelta_index = patch_index;
   while (sdelta_index >= sdelta_count) {
 
     // Decrease index in 'sin(delta)'; we are done when 'sdelta_index' < 'sdelta_count'
