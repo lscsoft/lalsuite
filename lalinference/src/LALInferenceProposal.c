@@ -1076,101 +1076,86 @@ REAL8 LALInferenceEnsembleWalkNames(LALInferenceThreadState *thread,
                                     LALInferenceVariables *currentParams,
                                     LALInferenceVariables *proposedParams,
                                     const char **names) {
-    size_t i, N, Ndim, nPts;
-    size_t k, D, sample_size;
-    LALInferenceVariableItem *item;
-    LALInferenceVariables **dePts, **pointsPool;
-    REAL8 tmp;
-    REAL8 logPropRatio = 0.0;
+  size_t i;
+  LALInferenceVariableItem *item;
+  REAL8 logPropRatio = 0.0;
+  LALInferenceCopyVariables(currentParams, proposedParams);
 
-    LALInferenceCopyVariables(currentParams, proposedParams);
+  size_t N = LALInferenceGetVariableDimension(currentParams) + 1; /* More names than we need. */
+  const char* local_names[N];
+  if (names == NULL) {
+    names = local_names;
 
-    gsl_rng *rng = thread->GSLrandom;
+    item = currentParams->head;
+    i = 0;
+    while (item != NULL) {
+      if (item->vary != LALINFERENCE_PARAM_FIXED && item->vary != LALINFERENCE_PARAM_OUTPUT && item->type==LALINFERENCE_REAL8_t ) {
+        names[i] = item->name;
+        i++;
+      }
 
-    if (names == NULL) {
-        N = LALInferenceGetVariableDimension(currentParams) + 1; /* More names than we need. */
-        names = alloca(N*sizeof(char *)); /* Hope we have alloca---saves
-                                             having to deallocate after
-                                             proposal. */
-
-        item = currentParams->head;
-        i = 0;
-        while (item != NULL) {
-            if (LALInferenceCheckVariableNonFixed(currentParams, item->name) && item->type==LALINFERENCE_REAL8_t ) {
-                names[i] = item->name;
-                i++;
-            }
-            item = item->next;
-        }
-        names[i]=NULL; /* Terminate */
+      item = item->next;
     }
+    names[i]=NULL; /* Terminate */
+  }
 
 
-    Ndim = 0;
-    for(Ndim=0, i=0; names[i] != NULL; i++ ) {
-        if(LALInferenceCheckVariableNonFixed(proposedParams, names[i]))
-            Ndim++;
+  size_t Ndim = 0;
+  for(Ndim=0,i=0; names[i] != NULL; i++ ) {
+    if(LALInferenceCheckVariableNonFixed(proposedParams,names[i]))
+      Ndim++;
+  }
+
+  LALInferenceVariables **pointsPool = thread->differentialPoints;
+  size_t k=0;
+  size_t sample_size=3;
+
+  LALInferenceVariables **dePts = thread->differentialPoints;
+  size_t nPts = thread->differentialPointsLength;
+
+  if (dePts == NULL || nPts <= 1) {
+    logPropRatio = 0.0;
+    return logPropRatio; /* Quit now, since we don't have any points to use. */
+  }
+
+  UINT4 indices[sample_size];
+  UINT4 all_indices[nPts];
+
+  for (i=0;i<nPts;i++) all_indices[i]=i;
+  gsl_ran_choose(thread->GSLrandom,indices, sample_size, all_indices, nPts, sizeof(UINT4));
+
+  double w=0.0;
+  double univariate_normals[sample_size];
+  for(i=0;i<sample_size;i++) univariate_normals[i] = gsl_ran_ugaussian(thread->GSLrandom);
+  
+  /* Note: Simplified this loop on master 2015-08-12, take this version when rebasing */
+  for(k=0;names[k]!=NULL;k++)
+  {
+    if(!LALInferenceCheckVariableNonFixed(proposedParams,names[k]) || LALInferenceGetVariableType(proposedParams,names[k])!=LALINFERENCE_REAL8_t) continue;
+    REAL8 centre_of_mass=0.0;
+    /* Compute centre of mass */
+    for(i=0;i<sample_size;i++)
+    {
+      centre_of_mass+=LALInferenceGetREAL8Variable(pointsPool[indices[i]],names[k])/((REAL8)sample_size);
     }
-
-    pointsPool = thread->differentialPoints;
-    k=0;
-    D = Ndim;
-    sample_size = 3;
-
-    dePts = thread->differentialPoints;
-    nPts = thread->differentialPointsLength;
-
-    if (dePts == NULL || nPts <= 1)
-        return logPropRatio; /* Quit now, since we don't have any points to use. */
-
-    INT4 indeces[sample_size];
-    INT4 all_indeces[nPts];
-
-    for (i=0; i<nPts; i++)
-        all_indeces[i] = i;
-
-    gsl_ran_choose(rng, indeces, sample_size, all_indeces, nPts, sizeof(INT4));
-
-    REAL8 center_of_mass[Ndim];
-    REAL8 w[Ndim];
-
-    for (k=0; k<Ndim; k++) {
-        center_of_mass[k] = 0.0;
-        w[k] = 0.0;
+    /* Compute offset */
+    for(i=0,w=0.0;i<sample_size;i++)
+    {
+      w+= univariate_normals[i] * (LALInferenceGetREAL8Variable(pointsPool[indices[i]],names[k]) - centre_of_mass);
     }
+    REAL8 tmp = LALInferenceGetREAL8Variable(proposedParams,names[k]) + w;
+    LALInferenceSetVariable(proposedParams,names[k],&tmp);
+  }
 
-    for (i=0; i<sample_size; i++) {
-        for(k=0; names[k]!=NULL; k++) {
-            if (LALInferenceCheckVariableNonFixed(proposedParams, names[k]))
-                center_of_mass[k] += LALInferenceGetREAL8Variable(pointsPool[indeces[i]], names[k])/((REAL8)sample_size);
-        }
-    }
+  logPropRatio = 0.0;
 
-    REAL8 univariate_normals[D];
-    for (i=0; i<sample_size; i++)
-        univariate_normals[i] = gsl_ran_ugaussian(rng);
-
-    for (i=0; i<sample_size; i++) {
-        for(k=0; names[k]!=NULL; k++) {
-            if (LALInferenceCheckVariableNonFixed(proposedParams, names[k]) )
-                w[k]+= (LALInferenceGetREAL8Variable(pointsPool[indeces[i]], names[k]) - center_of_mass[k]) * univariate_normals[i];
-        }
-    }
-
-    for (k=0; names[k]!=NULL; k++) {
-        if (LALInferenceCheckVariableNonFixed(proposedParams, names[k]) ) {
-            tmp = LALInferenceGetREAL8Variable(proposedParams, names[k]) + w[k];
-            LALInferenceSetVariable(proposedParams, names[k], &tmp);
-        }
-    }
-
-    return logPropRatio;
+  return logPropRatio;
 }
 
 REAL8 LALInferenceDifferentialEvolutionNames(LALInferenceThreadState *thread,
-                                             LALInferenceVariables *currentParams,
-                                             LALInferenceVariables *proposedParams,
-                                             const char **names) {
+                                    LALInferenceVariables *currentParams,
+                                    LALInferenceVariables *proposedParams,
+                                    const char **names) {
     size_t i, j, N, Ndim, nPts;
     LALInferenceVariableItem *item;
     LALInferenceVariables **dePts;
