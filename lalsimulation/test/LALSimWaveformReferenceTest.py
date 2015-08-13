@@ -88,8 +88,8 @@ def generatePolarizationTest(datasets):
                              approxstr, parstring))
             hpmean = np.abs(hpref).mean()
             hcmean = np.abs(hcref).mean()
-            self.assertTrue(np.allclose(hp.data.data / hpmean, hpref / hpmean))
-            self.assertTrue(np.allclose(hc.data.data / hcmean, hcref / hcmean))
+            self.assertTrue(np.allclose(hp.data.data / hpmean, hpref / hpmean), self.errmsg('hplus', approxstr, parstring))
+            self.assertTrue(np.allclose(hc.data.data / hcmean, hcref / hcmean), self.errmsg('hcross', approxstr, parstring))
 
     return test_approx
 
