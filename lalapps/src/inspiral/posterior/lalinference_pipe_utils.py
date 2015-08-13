@@ -1107,7 +1107,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     prenode.set_max_psdlength(self.config.getint('input','max-psd-length'))
     prenode.set_padding(self.config.getint('input','padding'))
     #prenode[ifo].set_output_file('/dev/null')
-    prenode.add_var_arg('--Niter 1')
+    prenode.add_var_arg('--nsteps 1')
     prenode.add_var_arg('--outfile '+roqeventpath+'data-dump')
     prenode.add_var_arg('--data-dump')
     if self.config.has_option('lalinference','seglen'):
