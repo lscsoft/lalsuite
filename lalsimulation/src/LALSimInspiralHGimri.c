@@ -1070,12 +1070,12 @@ static INT4 HGimri_start(REAL8 m, REAL8 M, REAL8 q, REAL8 D, REAL8 Sdotn, REAL8 
 
 		//NOTE: final_q and the ringdown frequencies wi are nondimensionalized by final_mass. Their direct product is therefore already
 		//dimensionless. When multiplying the wi's by dt, however, factors of (M/final_mass), however, are needed to properly rescale the wi's.
-		hp0 = exp(-(i-(i_lightring-1))*dt*(wi0*(m+M)/final_mass))*( aone-(2./9.)*final_q*w0*atwo )*( a0n*cos(w0*(i-(i_lightring-1))*(dt*(m+M)/final_mass)) - a0p*sin(w0*(i-(i_lightring-1))*(dt*(m+M)/final_mass)));
-		hp1 = exp(-(i-(i_lightring-1))*dt*(wi1*(m+M)/final_mass))*( aone-(2./9.)*final_q*w1*atwo )*( a1n*cos(w1*(i-(i_lightring-1))*(dt*(m+M)/final_mass)) - a1p*sin(w1*(i-(i_lightring-1))*(dt*(m+M)/final_mass)));
-		hp2 = exp(-(i-(i_lightring-1))*dt*(wi2*(m+M)/final_mass))*( aone-(2./9.)*final_q*w2*atwo )*( a2n*cos(w2*(i-(i_lightring-1))*(dt*(m+M)/final_mass)) - a2p*sin(w2*(i-(i_lightring-1))*(dt*(m+M)/final_mass)));
-		hc0 = exp(-(i-(i_lightring-1))*dt*(wi0*(m+M)/final_mass))*( aone-(2./9.)*final_q*w0*atwo )*( a0c*cos(w0*(i-(i_lightring-1))*(dt*(m+M)/final_mass)) + a0cp*sin(w0*(i-(i_lightring-1))*(dt*(m+M)/final_mass)));
-		hc1 = exp(-(i-(i_lightring-1))*dt*(wi1*(m+M)/final_mass))*( aone-(2./9.)*final_q*w1*atwo )*( a1c*cos(w1*(i-(i_lightring-1))*(dt*(m+M)/final_mass)) + a1cp*sin(w1*(i-(i_lightring-1))*(dt*(m+M)/final_mass)));
-		hc2 = exp(-(i-(i_lightring-1))*dt*(wi2*(m+M)/final_mass))*( aone-(2./9.)*final_q*w2*atwo )*( a2c*cos(w2*(i-(i_lightring-1))*(dt*(m+M)/final_mass)) + a2cp*sin(w2*(i-(i_lightring-1))*(dt*(m+M)/final_mass)));
+		hp0 = exp(-(i-(i_lightring-1.))*dt*(wi0*(m+M)/final_mass))*( aone-(2./9.)*final_q*w0*atwo )*( a0n*cos(w0*(i-(i_lightring-1.))*(dt*(m+M)/final_mass)) - a0p*sin(w0*(i-(i_lightring-1.))*(dt*(m+M)/final_mass)));
+		hp1 = exp(-(i-(i_lightring-1.))*dt*(wi1*(m+M)/final_mass))*( aone-(2./9.)*final_q*w1*atwo )*( a1n*cos(w1*(i-(i_lightring-1.))*(dt*(m+M)/final_mass)) - a1p*sin(w1*(i-(i_lightring-1.))*(dt*(m+M)/final_mass)));
+		hp2 = exp(-(i-(i_lightring-1.))*dt*(wi2*(m+M)/final_mass))*( aone-(2./9.)*final_q*w2*atwo )*( a2n*cos(w2*(i-(i_lightring-1.))*(dt*(m+M)/final_mass)) - a2p*sin(w2*(i-(i_lightring-1.))*(dt*(m+M)/final_mass)));
+		hc0 = exp(-(i-(i_lightring-1.))*dt*(wi0*(m+M)/final_mass))*( aone-(2./9.)*final_q*w0*atwo )*( a0c*cos(w0*(i-(i_lightring-1.))*(dt*(m+M)/final_mass)) + a0cp*sin(w0*(i-(i_lightring-1.))*(dt*(m+M)/final_mass)));
+		hc1 = exp(-(i-(i_lightring-1.))*dt*(wi1*(m+M)/final_mass))*( aone-(2./9.)*final_q*w1*atwo )*( a1c*cos(w1*(i-(i_lightring-1.))*(dt*(m+M)/final_mass)) + a1cp*sin(w1*(i-(i_lightring-1.))*(dt*(m+M)/final_mass)));
+		hc2 = exp(-(i-(i_lightring-1.))*dt*(wi2*(m+M)/final_mass))*( aone-(2./9.)*final_q*w2*atwo )*( a2c*cos(w2*(i-(i_lightring-1.))*(dt*(m+M)/final_mass)) + a2cp*sin(w2*(i-(i_lightring-1.))*(dt*(m+M)/final_mass)));
 
 		//Get hplus and hcross
 		hp_ringdown	= (hp0+hp1+hp2);
