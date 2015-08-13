@@ -17,6 +17,67 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * @defgroup lalsim_sgwb lalsim-sgwb
+ * @ingroup lalsimulation_programs
+ *
+ * @brief Simulates a stochastic gravitational wave background
+ *
+ * ### Synopsis
+ *
+ *     lalsim-sgwb [options]
+ *
+ * ### Description
+ *
+ * The `lalsim-sgwb` utility produces a continuous stream of simulated detector
+ * stochastic gravitational wave background noise for a specified interval of
+ * time, for the specified detectors, and for a specified flat spectral energy
+ * density.  The output is written to the standard output in multi-column ascii
+ * format data in which the first column contains the GPS times of each sample
+ * and the remaining columns contain the (correlated) noise strain values
+ * in the various detectors.
+ *
+ * ### Options
+ *
+ * <DL>
+ * <DT>`-h`, `--help`</DT>                   	<DD>print a help message and exit</DD>
+ * <DT>`-G`, `--geo`</DT>                    	<DD>include GEO</DD>
+ * <DT>`-H`, `--hanford`</DT>                	<DD>include LHO</DD>
+ * <DT>`-L`, `--livingston`</DT>             	<DD>include LLO</DD>
+ * <DT>`-V`, `--virgo`</DT>                  	<DD>include Virgo</DD>
+ * <DT>`-s`, `--start-time` GPSSTART</DT>    	<DD>GPS start time (s)</DD>
+ * <DT>`-t`, `--duration`   DURATION</DT>    	<DD>(required) duration of data to produce (s)</DD>
+ * <DT>`-r`, `--sample-rate` SRATE</DT>            	<DD>sample rate (Hz) [16384]</DD>
+ * <DT>`-W`, `--Omega0`     OMEGA0</DT>      	<DD>(required) flat spectral energy density</DD>
+ * <DT>`-f`, `--low-frequency` FLOW</DT>     	<DD>low frequency cutoff (Hz) (default = 10 Hz)</DD>
+ * </DL>
+ *
+ * ### Environment
+ *
+ * The `LAL_DEBUG_LEVEL` can used to control the error and warning reporting of
+ * `lalsim-sgwb`.  Common values are: `LAL_DEBUG_LEVEL=0` which suppresses
+ * error messages, `LAL_DEBUG_LEVEL=1`  which prints error messages alone,
+ * `LAL_DEBUG_LEVEL=3` which prints both error messages and warning messages,
+ * and `LAL_DEBUG_LEVEL=7` which additionally prints informational messages.
+ *
+ * The `GSL_RNG_SEED` and `GSL_RNG_TYPE` environment variables can be used
+ * to set the random number generator seed and type respectively.
+ *
+ * ### Exit Status
+ *
+ * The `lalsim-sgwb` utility exits 0 on success, and >0 if an error occurs.
+ *
+ * ### Example
+ *
+ * The command:
+ *
+ *     lalsim-sgwb -H -L -V -W 1e-6 -s 1000000000 -t 1000
+ *
+ * will stream 1000 seconds of stochastic gravitational-wave background
+ * strain noise in the LHO, LLO, and Virgo detectors having
+ * \f$ {\Omega_0=10^{-6}} \f$ .
+ */
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -195,10 +256,10 @@ int usage( const char *program )
 	fprintf(stderr, "\t-H, --hanford                \tinclude LHO\n");
 	fprintf(stderr, "\t-L, --livingston             \tinclude LLO\n");
 	fprintf(stderr, "\t-V, --virgo                  \tinclude Virgo\n");
-	fprintf(stderr, "\t-s, --start-time GPSSTART    \tGPS start time (s)\n");
-	fprintf(stderr, "\t-t, --duration   DURATION    \t(required) duration of data to produce (s)\n");
-	fprintf(stderr, "\t-r, --sample-rate            \tsample rate (Hz) [16384]\n");
-	fprintf(stderr, "\t-W, --Omega0     OMEGA0      \t(required) flat spectral energy density\n");
+	fprintf(stderr, "\t-s, --start-time    GPSSTART \tGPS start time (s)\n");
+	fprintf(stderr, "\t-t, --duration      DURATION \t(required) duration of data to produce (s)\n");
+	fprintf(stderr, "\t-r, --sample-rate   SRATE    \tsample rate (Hz) [16384]\n");
+	fprintf(stderr, "\t-W, --Omega0        OMEGA0   \t(required) flat spectral energy density\n");
 	fprintf(stderr, "\t-f, --low-frequency FLOW     \tlow frequency cutoff (Hz) (default = 10 Hz)\n");
 	return 0;
 }

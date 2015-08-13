@@ -17,6 +17,147 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * @defgroup lalsim_inspiral lalsim-inspiral
+ * @ingroup lalsimulation_programs
+ *
+ * @brief Simulates a gravitational waveform from binary inspiral
+ *
+ * ### Synopsis
+ *
+ *     lalsim-inspiral [options]
+ *
+ * ### Description
+ *
+ * The `lalsim-inspiral` utility produces a stream of a simulated
+ * gravitational waveform from a binary inspiral.  The output data is
+ * the gravitational waveform polarizations in the time domain, or
+ * in the frequency domain if the `-F` option is specified.  If the
+ * option `-Q` is specified, the output data is in amplitude and phase.
+ * This program uses XLALSimInspiralChooseTDWaveform() or
+ * XLALSimInspiralChooseFDWaveform() unless the `-c` waveform contitioning
+ * option is given, in which case it uses XLALSimInspiralTD() or
+ * XLALSimInspiralFD().  The output is written to standard output as a
+ * multicolumn ascii format.  The first column gives the time or frequency
+ * corresponding to each sample and the remaining columns give the
+ * gravitational waveform values for the two polarizations (real and
+ * imaginary parts, or amplitude and phase when complex).
+ *
+ * ### Options
+ * [default values in brackets]
+ *
+ * <DL>
+ * <DT>`-h`, `--help`
+ * <DD>print a help message and exit</DD>
+ * <DT>`-v`, `--verbose`
+ * <DD>verbose output</DD>
+ * <DT>`-F`, `--frequency-domain`
+ * <DD>output data in frequency domain</DD>
+ * <DT>`-c`, `--condition-waveform`
+ * <DD>apply waveform conditioning</DD>
+ * <DT>`-Q`, `--amp-phase`
+ * <DD>output data as amplitude and phase</DD>
+ * <DT>`-a` APPROX, `--approximant=`APPROX 
+ * <DD>approximant [TaylorT1]</DD>
+ * <DT>`-w` WAVEFORM, `--waveform=`WAVEFORM 
+ * <DD>waveform string giving both approximant and order</DD>
+ * <DT>`-d` domain, `--domain=`DOMAIN      
+ * <DD>domain for waveform generation when both are available {"time", "freq"}
+ * [use natural domain for output]</DD>
+ * <DT>`-O` PHASEO, `--phase-order=`PHASEO 
+ * <DD>twice pN order of phase (-1 == highest) [-1]</DD>
+ * <DT>`-o` AMPO, `--amp-order=`AMPO       
+ * <DD>twice pN order of amplitude (-1 == highest) [0]</DD>
+ * <DT>`-q` PHIREF, `--phiRef=`PHIREF      
+ * <DD>reference phase in degrees [0]</DD>
+ * <DT>`-R` SRATE, `--sample-rate=`SRATE   
+ * <DD>sample rate in Hertz [16384]</DD>
+ * <DT>`-M` M1, `--m1=`M1                  
+ * <DD>mass of primary in solar masses [1.4]</DD>
+ * <DT>`-m` M2, `--m2=`M2                  
+ * <DD>mass of secondary in solar masses [1.4]</DD>
+ * <DT>`-d` D, `--distance=`D              
+ * <DD>distance in Mpc [1]</DD>
+ * <DT>`-i` IOTA, `--inclination=`IOTA     
+ * <DD>inclination in degrees [0]</DD>
+ * <DT>`-X` S1X, `--spin1x=`S1X            
+ * <DD>x-component of dimensionless spin of primary [0]</DD>
+ * <DT>`-Y` S1Y, `--spin1y=`S1Y            
+ * <DD>y-component of dimensionless spin of primary [0]</DD>
+ * <DT>`-Z` S1Z, `--spin1z=`S1Z            
+ * <DD>z-component of dimensionless spin of primary [0]</DD>
+ * <DT>`-x` S2X, `--spin2x=`S2X            
+ * <DD>x-component of dimensionless spin of secondary [0]</DD>
+ * <DT>`-y` S2Y, `--spin2y=`S2Y            
+ * <DD>y-component of dimensionless spin of secondary [0]</DD>
+ * <DT>`-z` S2Z, `--spin2z=`S2Z            
+ * <DD>z-component of dimensionless spin of secondary [0]</DD>
+ * <DT>`-L` LAM1, `--tidal-lambda1=`LAM1   
+ * <DD>dimensionless tidal deformability of primary [0]</DD>
+ * <DT>`-l` LAM2, `--tidal-lambda2=`LAM2   
+ * <DD>dimensionless tidal deformability of secondary [0]</DD>
+ * <DT>`-s` SPINO, `--spin-order=`SPINO    
+ * <DD>twice pN order of spin effects (-1 == all) [-1]</DD>
+ * <DT>`-t` TIDEO, `--tidal-order=`TIDEO   
+ * <DD>twice pN order of tidal effects (-1 == all) [-1]</DD>
+ * <DT>`-f` FMIN, `--f-min=`FMIN           
+ * <DD>frequency to start waveform in Hertz [40]</DD>
+ * <DT>`-r` FREF, `--fRef=`FREF            
+ * <DD>reference frequency in Hertz [0]</DD>
+ * <DT>`-A` AXIS, `--axis=`AXIS            
+ * <DD>axis for PhenSpin {View, TotalJ, OrbitalL} [OrbitalL]</DD>
+ * <DT>`-n` MODES, `--modes=`MODES         
+ * <DD>allowed l modes {L2, L23, ..., ALL} [L2]</DD>
+ * <DT>`-p` KEY1`=`VAL1`,`KEY2`=`VAL2,...,
+ * `--nonGRpar=`KEY1`=`VAL1`,`KEY2`=`VAL2,...</DT>
+ * <DD>extra parameters as a key-value pair</DD>
+ * </DL>
+ *
+ * ### Environment
+ *
+ * The `LAL_DEBUG_LEVEL` can used to control the error and warning reporting of
+ * `lalsim-inspiral`.  Common values are: `LAL_DEBUG_LEVEL=0` which suppresses
+ * error messages, `LAL_DEBUG_LEVEL=1`  which prints error messages alone,
+ * `LAL_DEBUG_LEVEL=3` which prints both error messages and warning messages,
+ * and `LAL_DEBUG_LEVEL=7` which additionally prints informational messages.
+ *
+ * ### Exit Status
+ *
+ * The `lalsim-inspiral` utility exits 0 on success, and >0 if an error occurs.
+ *
+ * ### Example
+ *
+ * The command:
+ *
+ *     lalsim-inspiral --approx=TaylorT3
+ *
+ * produces a three-column ascii output to standard output; the rows are
+ * samples (at the default rate of 16384 Hz), and the three columns are
+ * 1. the time of each sample, 2. the plus-polarization strain, and 3.
+ * the cross-polarization strain.  The waveform produced is for the
+ * TaylorT3 post-Newtonian approximant for the default parameters of a
+ * 1.4 solar mass + 1.4 solar mass binary inspiral at 1 Mpc distance.
+ *
+ * The command:
+ *
+ *     lalsim-inspiral --m1=10 --m2=10 --approx=TaylorF2 --frequency-domain
+ *
+ * produces a frequency-domain waveform for a 10 solar mass + 10 solar mass
+ * binary inspiral at 1 Mpc distance using the TaylorF2 approximant.  The five
+ * columns written to standard output are the frequency of each sample, the
+ * real part of the plus-polarization, the imaginary part of the
+ * plus-polarization, the real part of the cross-polarization, and the
+ * imaginary part of the cross-polarization.
+ *
+ * The command:
+ *
+ *     lalsim-inspiral --m1=10 --m2=10 --approx=TaylorF2 --condition
+ *
+ * produces the same waveform as in the previous example, but in the
+ * time domain and conditioned so that it is suitable for injection
+ * into detector data.
+ */
+
 #include <complex.h>
 #include <math.h>
 #include <stdio.h>

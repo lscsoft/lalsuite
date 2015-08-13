@@ -17,6 +17,114 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * @defgroup lalsim_detector_noise lalsim-detector-noise
+ * @ingroup lalsimulation_programs
+ *
+ * @brief Simulates detector noise
+ *
+ * ### Synopsis
+ *
+ *     lalsim-detector-noise [options]
+ *
+ * ### Description
+ *
+ * The `lalsim-detector-noise` utility produces a continuous stream of
+ * simulated detector noise for a specified interval of time and for
+ * a specified noise PSD.  Alternatively, `lalsim-detector-noise` outputs
+ * a requested noise PSD.  The output is written to the standard output
+ * in two-column ascii format data in which the first column contains either
+ * the GPS times of each sample or the frequency of each PSD component,
+ * and the second column contains the value of that sample.
+ *
+ * ### Options
+ *
+ * <DL>
+ * <DT>`-h`, `--help`</DT>
+ * <DD>print this message and exit</DD>
+ * <DT>`-0`, `--0noise`</DT>
+ * <DD>no noise (generates zeros)</DD>
+ * <DT>`-A`, `--aligo-nosrm`</DT>
+ * <DD>aLIGO no SRM noise</DD>
+ * <DT>`-B`, `--aligo-zerodet-lowpower`</DT>
+ * <DD>aLIGO zero detuning low power noise</DD>
+ * <DT>`-C`, `--aligo-zerodet-highpower`</DT>
+ * <DD>aLIGO zero detuning high power noise</DD>
+ * <DT>`-D`, `--aligo-nsnsopt`</DT>
+ * <DD>aLIGO NSNS optimized noise</DD>
+ * <DT>`-E`, `--aligo-bhbh20deg`</DT>
+ * <DD>aLIGO BHBH optimized 20 deg detuning noise</DD>
+ * <DT>`-F`, `--aligo-highfreq`</DT>
+ * <DD>aLIGO kHz narrowband noise</DD>
+ * <DT>`-I`, `--iligo-srd`</DT>
+ * <DD>iLIGO SRD noise power</DD>
+ * <DT>`-v`, `--virgo`</DT>
+ * <DD>initial Virgo noise power</DD>
+ * <DT>`-V`, `--advvirgo`</DT>
+ * <DD>Advanced Virgo noise power</DD>
+ * <DT>`-g`, `--geo`</DT>
+ * <DD>GEO600 noise power</DD>
+ * <DT>`-G`, `--geohf`</DT>
+ * <DD>GEO-HF noise power</DD>
+ * <DT>`-T`, `--tama`</DT>
+ * <DD>TAMA300 noise power</DD>
+ * <DT>`-K`, `--kagra`</DT>
+ * <DD>KAGRA noise power</DD>
+ * <DT>`-O`, `--official`</DT>
+ * <DD>use official data files</DD>
+ * <DT>`-P`, `--psd-only`</DT>
+ * <DD>output PSD only</DD>
+ * <DT>`-s`, `--start-time` GPSSTART</DT>
+ * <DD>GPS start time (s)</DD>
+ * <DT>`-t`, `--duration` DURATION</DT>
+ * <DD>(required) duration of data to produce (s)</DD>
+ * <DT>`-r`, `--sample-rate` SRATE</DT>
+ * <DD>sample rate (Hz) [16384]</DD>
+ * <DT>`-d`, `--segment-duration` SEGDUR</DT>
+ * <DD>segment duration (s) [4]</DD>
+ * <DT>`-f`, `--low-frequency` FLOW</DT>
+ * <DD>override default low frequency (Hz)</DD>
+ * </DL>
+ *
+ * ### Environment
+ *
+ * The `LAL_DEBUG_LEVEL` can used to control the error and warning reporting of
+ * `lalsim-detector-noise`.  Common values are: `LAL_DEBUG_LEVEL=0` which
+ * suppresses error messages, `LAL_DEBUG_LEVEL=1`  which prints error messages
+ * alone, `LAL_DEBUG_LEVEL=3` which prints both error messages and warning
+ * messages, and `LAL_DEBUG_LEVEL=7` which additionally prints informational
+ * messages.
+ *
+ * The `GSL_RNG_SEED` and `GSL_RNG_TYPE` environment variables can be used
+ * to set the random number generator seed and type respectively.
+ *
+ * ### Exit Status
+ *
+ * The `lalsim-detector-noise` utility exits 0 on success, and >0 if an error
+ * occurs.
+ *
+ * ### Example
+ *
+ * The command:
+ *
+ *     lalsim-detector-noise --aligo-zerodet-highpower -s 1000000000 -t 1000
+ *
+ * will stream 1000 seconds of aLIGO zero detuning high power noise
+ * beginning at GPS time 1000000000.
+ *
+ * The command:
+ *
+ *     lalsim-detector-noise --iligo-srd -P
+ *
+ * outputs the Initial LIGO PSD.
+ *
+ * The command:
+ *
+ *     lalsim-detector-noise -0 -s 1000000000 -t 1000
+ *
+ * will stream 1000 seconds of zero-noise beginning at GPS time 1000000000.
+ */
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -324,10 +432,10 @@ int usage( const char *program )
 	fprintf(stderr, "\t-K, --kagra                  \tKAGRA noise power\n");
 	fprintf(stderr, "\t-O, --official               \tuse official data files\n");
 	fprintf(stderr, "\t-P, --psd-only               \toutput PSD only\n");
-	fprintf(stderr, "\t-s, --start-time             \tGPS start time (s)\n");
-	fprintf(stderr, "\t-t, --duration               \t(required) duration of data to produce (s)\n");
-	fprintf(stderr, "\t-r, --sample-rate            \tsample rate (Hz) [16384]\n");
-	fprintf(stderr, "\t-d, --segment-duration       \tsegment duration (s) [4]\n");
-	fprintf(stderr, "\t-f, --low-frequency          \toverride default low frequency (Hz)\n");
+	fprintf(stderr, "\t-s, --start-time GPSSTART    \tGPS start time (s)\n");
+	fprintf(stderr, "\t-t, --duration DURATION      \t(required) duration of data to produce (s)\n");
+	fprintf(stderr, "\t-r, --sample-rate SRATE      \tsample rate (Hz) [16384]\n");
+	fprintf(stderr, "\t-d, --segment-duration SEGDUR\tsegment duration (s) [4]\n");
+	fprintf(stderr, "\t-f, --low-frequency FLOW     \toverride default low frequency (Hz)\n");
 	return 0;
 }

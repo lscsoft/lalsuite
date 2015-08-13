@@ -39,4 +39,6 @@
 
 \defgroup lalsimulation_python		Python Packages
 
+\defgroup lalsimulation_programs	Programs
+
 */

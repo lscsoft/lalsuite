@@ -26,6 +26,96 @@
  * lalsim-detector-strain --detector-prefix H1 --gps-time 1079467252.35 --ra 180 --dec -46.45515 --psi -324 --verbose waveform.dat
  */
 
+/**
+ * @defgroup lalsim_detector_strain lalsim-detector-strain
+ * @ingroup lalsimulation_programs
+ *
+ * @brief Computes the strain on a detector given a gravitational waveform
+ *
+ * ### Synopsis
+ *
+ *     lalsim-detector-strain [options] [file]
+ *
+ * ### Description
+ *
+ * The `lalsim-detector-strain` utility converts a gravitational waveform
+ * in `file` or standard input if `file` is absent into an induced detector
+ * strain on a specified detector.  The input data should be in a
+ * three-column ascii format with the first column being the time of each
+ * sample, the second column being the plus-polarization of the gravitational
+ * waveform, and the third column being the cross-polarization of the
+ * gravitational waveform.  The timestamps on the input file should be
+ * centered time 0 (conventions vary: some waveforms will end near time 0;
+ * others will be centered on time 0).  The output is written to standard
+ * output in two column ascii format where the first column is the GPS
+ * timestamp of each sample and the second column is the strain induced on
+ * the detector.
+ *
+ * ### Options
+ *
+ * <DL>
+ * <DT>`-h`, `--help`</DT>
+ * <DD>print a help message and exit</DD>
+ * <DT>`-v`, `--verbose`</DT>
+ * <DD>verbose output</DD>
+ * <DT>`-r`, `--radians`</DT>
+ * <DD>use radians rather than decimal degrees</DD>
+ * <DT>`-O`, `--overhead`</DT>
+ * <DD>signal from directly overhead</DD>
+ * <DT>`-D` PREFIX, `--detector-prefix=`PREFIX</DT>
+ * <DD>(required unless overhead) detector prefix (e.g., 'H1', 'L1', 'V1')</DD>
+ * <DT>`-t` EPOCH, `--gps-time=`EPOCH</DT>
+ * <DD>(required) time of arrival at earth geocenter (or at detector if
+ * overhead): this is added to the timestamp of the input data, which should be
+ * an waveform about time = 0</DD>
+ * <DT>`-a` RA, `--right-ascension=`RA</DT>
+ * <DD>(required unless overhead) right ascension in H:M:S format or decimal
+ * degrees</DD>
+ * <DT>`-d` DEC, `--declination=`DEC</DT>
+ * <DD>(required unless overhead) declination in D:M:S format or decimal
+ * degrees</DD>
+ * <DT>`-p` PSI,` --polarization-angle=`PSI</DT>
+ * <DD>(required) polarization angle in degrees</DD>
+ * </DL>
+ *
+ * ### Environment
+ *
+ * The `LAL_DEBUG_LEVEL` can used to control the error and warning reporting of
+ * `lalsim-detector-strain`.  Common values are: `LAL_DEBUG_LEVEL=0` which
+ * suppresses error messages, `LAL_DEBUG_LEVEL=1`  which prints error messages
+ * alone, `LAL_DEBUG_LEVEL=3` which prints both error messages and warning
+ * messages, and `LAL_DEBUG_LEVEL=7` which additionally prints informational
+ * messages.
+ *
+ * ### Exit Status
+ *
+ * The `lalsim-detector-strain` utility exits 0 on success, and >0 if an error
+ * occurs.
+ *
+ * ### Example
+ *
+ * The command:
+ *
+ *     lalsim-inspiral | lalsim-detector-strain -D H1 -a 1:23:45 -d 45.0 -p 30.0 -t 1000000000
+ *
+ * outputs to standard output in two-column ascii format the strain induced
+ * on the LHO observatory detector from a 1.4 solar mass + 1.4 solar mass
+ * binary inspiral at 1 Mpc distance originating from source at
+ * right-ascension 1h 23m 45s, declination 45 degrees, and polarization angle
+ * 30 degrees that arrives at the geocenter at GPS time 1000000000.  The
+ * first column contains the GPS time of each sample and the second column
+ * contains the induced detector strain at that time.
+ *
+ * The command:
+ *
+ *     lalsim-inspiral | lalsim-detector-strain -O -p 0.0 -t 1000000000
+ *
+ * produces a similar output, but now for a signal coming from directly
+ * overhead of a arbitrary detector with polarization angle 0 (optimally
+ * oriented); the GPS arrival time is now at the detector location.
+ */
+
+
 #include <limits.h>
 #include <math.h>
 #include <stdio.h>

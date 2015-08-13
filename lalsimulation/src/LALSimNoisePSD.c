@@ -62,8 +62,24 @@
 #define LAL_ALIGO_THERMAL_COAT_FREQ_SI 1e4
 #define LAL_ALIGO_THERMAL_COAT_QUAL 6e6
 
+/* prefix for noise psd files provided by LIGO-T0900288 */
+#define T0900288 "LIGO-T0900288-v3-"
+
+/* prefix for noise psd files provided by LIGO-T0900288 */
+#define P1200087 "LIGO-P1200087-v18-"
 
 
+/**
+ * @addtogroup LALSimNoisePSD_c
+ * @brief Routines to compute noise power spectral densities for
+ * gravitational-wave detectors.
+ * @{
+ */
+
+/**
+ * @name Routines to Generate Component Noise PSDs
+ * @{
+ */
 
 /**
  * Provides a rather ad-hoc estimate of the seismic noise power spectral density
@@ -81,7 +97,7 @@
  * \f]
  * is the displacement power spectrum of ground motion.
  *
- * Warning: the transfer function is only correct at frequencies above the
+ * @warning The transfer function is only correct at frequencies above the
  * specified characteristic pendulum and stack frequencies.
  */
 double XLALSimNoisePSDSeismic(
@@ -114,7 +130,7 @@ double XLALSimNoisePSDSeismic(
  * S_h(f) = L^{-2} \frac{2 k T}{\pi^3 f_0^3 M Q} \left( \frac{f_0}{f} \right)^5.
  * \f]
  *
- * Warning: this only describes the broadband noise at frequencies above the
+ * @warning This only describes the broadband noise at frequencies above the
  * pendulum frequency; it does not have the correct noise near the resonances.
  */
 double XLALSimNoisePSDSuspTherm(
@@ -142,7 +158,7 @@ double XLALSimNoisePSDSuspTherm(
  * S_h(f) = L^{-2} \frac{2 k T}{\pi^3 f_0^3 M Q} \frac{f_0}{f}
  * \f]
  *
- * Warning: this only describes the broadband noise at frequencies below the
+ * @warning This only describes the broadband noise at frequencies below the
  * resonance frequency; it does not have the correct noise near the resonances.
  */
 double XLALSimNoisePSDMirrorTherm(
@@ -195,7 +211,7 @@ double XLALSimNoisePSDShot(
  * effective losses in A_BS if needed.) A fixed photdiode quantum efficiency of
  * eta = 0.9 is used.
  *
- * Note: this code is adapted from GWINC.
+ * @note This code is adapted from GWINC.
  */
 double XLALSimNoisePSDQuantum(
 	double f,		/**< frequency (Hz) */
@@ -273,13 +289,12 @@ double XLALSimNoisePSDQuantum(
 	return n;
 }
 
+/** @} */
 
-/*
- *
- * FIRST GENERATION DETECTORS
- *
+/**
+ * @name Noise PSD Routines for First-Generation Detectors
+ * @{
  */
-
 
 /**
  * Provides the noise power spectrum based on a phenomenological fit
@@ -310,8 +325,9 @@ double XLALSimNoisePSDiLIGOSRD(double f /**< frequency (Hz) */)
 /**
  * Provides the seismic noise power spectrum for iLIGO.
  *
- * Note: only valit for f > 10 Hz.
+ * @note
  * This is mostly a phenomenological fit.
+ * Only valid for f > 10 Hz.
  */
 double XLALSimNoisePSDiLIGOSeismic(double f /**< frequency (Hz) */)
 {
@@ -329,7 +345,7 @@ double XLALSimNoisePSDiLIGOSeismic(double f /**< frequency (Hz) */)
 /**
  * Provides the thermal noise (suspension + coating) power spectrum for iLIGO.
  *
- * Note: this is a phenomenological fit to the broadband component.
+ * @note This is a phenomenological fit to the broadband component.
  */
 double XLALSimNoisePSDiLIGOThermal(double f /**< frequency (Hz) */)
 {
@@ -354,7 +370,7 @@ double XLALSimNoisePSDiLIGOThermal(double f /**< frequency (Hz) */)
 /**
  * Provides the shot noise power spectrum for iLIGO.
  *
- * Note: the effective quantum efficiency is one-third the actual quantum
+ * @note The effective quantum efficiency is one-third the actual quantum
  * efficiency owing to the RF readout scheme.  A fiducial value of 250 W
  * of power on the beamsplitter is used.
  */
@@ -375,7 +391,7 @@ double XLALSimNoisePSDiLIGOShot(double f /**< frequency (Hz) */)
 /**
  * Provides the shot noise power spectrum for eLIGO.
  *
- * Note: A fiducial value of 250 W of power on the beamsplitter is used.
+ * @note A fiducial value of 250 W of power on the beamsplitter is used.
  */
 double XLALSimNoisePSDeLIGOShot(double f /**< frequency (Hz) */)
 {
@@ -394,7 +410,7 @@ double XLALSimNoisePSDeLIGOShot(double f /**< frequency (Hz) */)
 /**
  * Provides the noise power spectrum for a model of the iLIGO detector.
  *
- * Warning: not all noise sources are correctly accounted for (in particular,
+ * @warning Not all noise sources are correctly accounted for (in particular,
  * there is no actuation noise modelled) so this noise spectrum does not
  * correspond to the S5 spectrum.
  */
@@ -415,7 +431,7 @@ double XLALSimNoisePSDiLIGOModel(double f /**< frequency (Hz) */)
 /**
  * Provides the noise power spectrum for a model of the eLIGO detector.
  *
- * Warning: not all noise sources are correctly accounted for so this noise
+ * @warning Not all noise sources are correctly accounted for so this noise
  * spectrum does not correspond to the S6 spectrum.
  */
 double XLALSimNoisePSDeLIGOModel(double f /**< frequency (Hz) */)
@@ -442,7 +458,7 @@ double XLALSimNoisePSDeLIGOModel(double f /**< frequency (Hz) */)
  * \f}
  * where \f$s_0=10.2e-46\f$.
  *
- * Warning: This comes from the deprecated function LALVIRGOPsd in the lal
+ * @warning This comes from the deprecated function LALVIRGOPsd in the lal
  * noisemodels package, which comes with no reference to the curve. An updated
  * version of this model, with a reference would be welcomed.
  */
@@ -511,17 +527,17 @@ double XLALSimNoisePSDTAMA(double f /**< frequency (Hz) */)
   return 75.e-46*(seismic + thermal + shot);
 }
 
-/*
- *
- * SECOND GENERATION DETECTORS
- *
- */
+/** @} */
 
+/**
+ * @name Noise PSD Routines for Second Generation Detectors
+ * @{
+ */
 
 /**
  * Provides the thermal noise (suspension + coating) power spectrum for aLIGO.
  *
- * Note: this is a phenomenological fit to the broadband component.
+ * @note This is a phenomenological fit to the broadband component.
  */
 double XLALSimNoisePSDaLIGOThermal(double f /**< frequency (Hz) */)
 {
@@ -762,7 +778,7 @@ double XLALSimNoisePSDaLIGOQuantumHighFrequency(double f /**< frequency (Hz) */)
  * See: LIGO-T0900288-v3 and LIGO-T070247-01.
  * This configuration is labelled No SRM.
  *
- * Warning: This includes only thermal and quantum noise.  It is only valid
+ * @warning This includes only thermal and quantum noise.  It is only valid
  * above around 9 Hz.
  */
 double XLALSimNoisePSDaLIGONoSRMLowPower(double f /**< frequency (Hz) */)
@@ -784,7 +800,7 @@ double XLALSimNoisePSDaLIGONoSRMLowPower(double f /**< frequency (Hz) */)
  * See: LIGO-T0900288-v3 and LIGO-T070247-01.
  * This configuration is the same a No SRM but with 125 W laser power.
  *
- * Warning: This includes only thermal and quantum noise.  It is only valid
+ * @warning This includes only thermal and quantum noise.  It is only valid
  * above around 9 Hz.
  */
 double XLALSimNoisePSDaLIGONoSRMHighPower(double f /**< frequency (Hz) */)
@@ -806,7 +822,7 @@ double XLALSimNoisePSDaLIGONoSRMHighPower(double f /**< frequency (Hz) */)
  * See: LIGO-T0900288-v3 and LIGO-T070247-01.
  * This configuration is labelled Zero Detune, Low Power.
  *
- * Warning: This includes only thermal and quantum noise.  It is only valid
+ * @warning This includes only thermal and quantum noise.  It is only valid
  * above around 9 Hz.
  */
 double XLALSimNoisePSDaLIGOZeroDetLowPower(double f /**< frequency (Hz) */)
@@ -828,7 +844,7 @@ double XLALSimNoisePSDaLIGOZeroDetLowPower(double f /**< frequency (Hz) */)
  * See: LIGO-T0900288-v3 and LIGO-T070247-01.
  * This configuration is labelled Zero Detune, High Power.
  *
- * Warning: This includes only thermal and quantum noise.  It is only valid
+ * @warning This includes only thermal and quantum noise.  It is only valid
  * above around 9 Hz.
  */
 double XLALSimNoisePSDaLIGOZeroDetHighPower(double f /**< frequency (Hz) */)
@@ -850,7 +866,7 @@ double XLALSimNoisePSDaLIGOZeroDetHighPower(double f /**< frequency (Hz) */)
  * See: LIGO-T0900288-v3 and LIGO-T070247-01.
  * This configuration is labelled NS-NS Opt.
  *
- * Warning: This includes only thermal and quantum noise.  It is only valid
+ * @warning This includes only thermal and quantum noise.  It is only valid
  * above around 9 Hz.
  */
 double XLALSimNoisePSDaLIGONSNSOpt(double f /**< frequency (Hz) */)
@@ -873,7 +889,7 @@ double XLALSimNoisePSDaLIGONSNSOpt(double f /**< frequency (Hz) */)
  * See: LIGO-T0900288-v3 and LIGO-T070247-01.
  * This configuration is labelled BHBH 20-degree Detune.
  *
- * Warning: This includes only thermal and quantum noise.  It is only valid
+ * @warning This includes only thermal and quantum noise.  It is only valid
  * above around 9 Hz.
  */
 double XLALSimNoisePSDaLIGOBHBH20Deg(double f /**< frequency (Hz) */)
@@ -896,7 +912,7 @@ double XLALSimNoisePSDaLIGOBHBH20Deg(double f /**< frequency (Hz) */)
  * See: LIGO-T0900288-v3 and LIGO-T070247-01.
  * This configuration is labelled High Freq.
  *
- * Warning: This includes only thermal and quantum noise.  It is only valid
+ * @warning This includes only thermal and quantum noise.  It is only valid
  * above around 9 Hz.
  */
 double XLALSimNoisePSDaLIGOHighFrequency(double f /**< frequency (Hz) */)
@@ -954,6 +970,12 @@ double XLALSimNoisePSDAdvVirgo(double f /**< frequency (Hz) */)
   return asd*asd;
 }
 
+/** @} */
+
+/**
+ * @name Noise PSD Utility Routines
+ * @{
+ */
 
 /**
  * Evaluates a power spectral density function, psdfunc, at the frequencies required
@@ -1047,8 +1069,12 @@ int XLALSimNoisePSDFromFile(
 	return 0;
 }
 
-/* prefix for noise psd files provided by LIGO-T0900288 */
-#define T0900288 "LIGO-T0900288-v3-"
+/** @} */
+
+/**
+ * @name Noise PSDs from LIGO-T0900288
+ * @{
+ */
 
 /**
  * Returns a frequency series psd with low frequency cutoff flow corresponding
@@ -1122,8 +1148,12 @@ int XLALSimNoisePSDaLIGOHighFrequencyGWINC(
 	return XLALSimNoisePSDFromFile(psd, flow, T0900288 "High_Freq.txt");
 }
 
-/* prefix for noise psd files provided by LIGO-T0900288 */
-#define P1200087 "LIGO-P1200087-v18-"
+/** @} */
+
+/**
+ * @name Noise PSDs from LIGO-P1200087
+ * @{
+ */
 
 /**
  * Returns a frequency series psd with low frequency cutoff flow corresponding
@@ -1332,6 +1362,10 @@ int XLALSimNoisePSDAdVBNSOptimizedSensitivityP1200087(
 	return XLALSimNoisePSDFromFile(psd, flow,
 		P1200087 "AdV_BNS_OPTIMIZED.txt");
 }
+
+/** @} */
+
+/** @} */
 
 /*
  *

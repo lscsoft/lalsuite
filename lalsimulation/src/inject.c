@@ -17,6 +17,61 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * @defgroup lalsim_inject lalsim-inject
+ * @ingroup lalsimulation_programs
+ *
+ * @brief Injects an induced gravitational wave strain into detector data
+ *
+ * ### Synopsis
+ *
+ *     lalsim-inject [options] targetfile injectfile1 [injectfile2 ...]
+ *
+ * ### Description
+ *
+ * The `lalsim-inject` utility takes gravitational wave detector data
+ * contained in `targetfile` and adds to it the gravitational wave
+ * induced strain data in `injectfile1` ....  The result is written
+ * to standard output.  All input and output is two-column ascii format
+ * data where the first column contains the GPS timestamp of each sample
+ * and the second column contains the detector strain value.
+ *
+ * ### Options
+ *
+ * <DL>
+ * <DT>`-h`, `--help`    <DD>print a help message and exit</DD>
+ * <DT>`-v`, `--verbose` <DD>verbose output</DD>
+ * </DL>
+ *
+ * ### Environment
+ *
+ * The `LAL_DEBUG_LEVEL` can used to control the error and warning reporting of
+ * `lalsim-inject`.  Common values are: `LAL_DEBUG_LEVEL=0` which suppresses
+ * error messages, `LAL_DEBUG_LEVEL=1`  which prints error messages alone,
+ * `LAL_DEBUG_LEVEL=3` which prints both error messages and warning messages,
+ * and `LAL_DEBUG_LEVEL=7` which additionally prints informational messages.
+ *
+ * ### Exit Status
+ *
+ * The `lalsim-inject` utility exits 0 on success, and >0 if an error occurs.
+ *
+ * ### Example
+ *
+ * The following set of commands produces 16 seconds of simulated detector
+ * noise for the LHO detector starting at GPS time 1000000000; produces a
+ * synthetic binary neutron star signal in the LHO detector that has a
+ * geocentric end time of 1000000008; and adds the signal to the noise:
+ *
+ *
+ *     lalsim-detector-noise --aligo-zerodet-highpower -s 1000000000 -t 16 > noise
+ *     lalsim-inspiral | lalsim-detector-strain -D H1 -a 1:23:45 -d 45.0 -p 30.0 -t 1000000008 > signal
+ *     lalsim-inject noise signal > output
+ *
+ * The resulting file `output` contains the simulated signal contained in file
+ * `signal` injected into the simulated noise contained in file `noise`.
+ */
+
+
 #include <math.h>
 #include <limits.h>
 #include <stdio.h>
