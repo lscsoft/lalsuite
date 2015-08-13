@@ -543,6 +543,10 @@ int XLALComputeSuperskyMetrics(
   // Size of the frequency+spindowns block
   const size_t fsize = 1 + spindowns;
 
+  // Fiducial frequency at which to numerically calculate metrics, which
+  // are then rescaled to input 'fiducial_freq' based on known scalings
+  const double fiducial_calc_freq = 100.0;
+
   // Build coordinate system for the unrestricted supersky metric and orbital metric
   DopplerCoordinateSystem XLAL_INIT_DECL(ucoords);
   DopplerCoordinateSystem XLAL_INIT_DECL(ocoords);
@@ -571,7 +575,7 @@ int XLALComputeSuperskyMetrics(
   }
 
   // Compute the unrestricted supersky metric
-  gsl_matrix *ussky_metric = SM_ComputePhaseMetric(&ucoords, ref_time, segments, fiducial_freq, detectors, detector_weights, detector_motion, ephemerides);
+  gsl_matrix *ussky_metric = SM_ComputePhaseMetric(&ucoords, ref_time, segments, fiducial_calc_freq, detectors, detector_weights, detector_motion, ephemerides);
   XLAL_CHECK(ussky_metric != NULL, XLAL_EFUNC);
 
   // Compute the reduced supersky metric and coordinate transform data
@@ -583,7 +587,7 @@ int XLALComputeSuperskyMetrics(
     gsl_matrix *GAMAT(interm_ssky_metric, 3 + fsize, 3 + fsize);
 
     // Compute the orbital metric in ecliptic coordinates
-    gsl_matrix *orbital_metric = SM_ComputePhaseMetric(&ocoords, ref_time, segments, fiducial_freq, detectors, detector_weights, detector_motion, ephemerides);
+    gsl_matrix *orbital_metric = SM_ComputePhaseMetric(&ocoords, ref_time, segments, fiducial_calc_freq, detectors, detector_weights, detector_motion, ephemerides);
     XLAL_CHECK(orbital_metric != NULL, XLAL_EFUNC);
 
     // Compute the reduced supersky metric from the unrestricted supersky metric and the orbital metric
@@ -602,6 +606,23 @@ int XLALComputeSuperskyMetrics(
     *p_ussky_metric = ussky_metric;
   } else {
     GFMAT(ussky_metric);
+  }
+
+  // Rescale metrics to input 'fiducial_freq' based on known scalings
+  const double fiducial_scale = fiducial_freq / fiducial_calc_freq;
+  if (p_ussky_metric != NULL) {
+    gsl_matrix_view sky_sky = gsl_matrix_submatrix(*p_ussky_metric, 0, 0, 3, 3);
+    gsl_matrix_scale(&sky_sky.matrix, SQR(fiducial_scale));
+    gsl_matrix_view sky_freq = gsl_matrix_submatrix(*p_ussky_metric, 0, 3, 3, fsize);
+    gsl_matrix_scale(&sky_freq.matrix, fiducial_scale);
+    gsl_matrix_view freq_sky = gsl_matrix_submatrix(*p_ussky_metric, 3, 0, fsize, 3);
+    gsl_matrix_scale(&freq_sky.matrix, fiducial_scale);
+  }
+  if (p_rssky_metric != NULL) {
+    gsl_matrix_view sky_sky = gsl_matrix_submatrix(*p_rssky_metric, 0, 0, 2, 2);
+    gsl_matrix_scale(&sky_sky.matrix, SQR(fiducial_scale));
+    gsl_matrix_view sky_offsets = gsl_matrix_submatrix(*p_rssky_transf, 3, 0, fsize, 3);
+    gsl_matrix_scale(&sky_offsets.matrix, fiducial_scale);
   }
 
   return XLAL_SUCCESS;
