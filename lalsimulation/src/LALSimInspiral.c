@@ -507,9 +507,6 @@ int XLALSimInspiralChooseTDWaveform(
         case SpinTaylorT2:
             /* Waveform-specific sanity checks */
             /* Sanity check unused fields of waveFlags */
-            if( !XLALSimInspiralModesChoiceIsDefault(
-                    XLALSimInspiralGetModesChoice(waveFlags) ) )
-                ABORT_NONDEFAULT_MODES_CHOICE(waveFlags);
 	    spin1[0]=S1x; spin1[1]=S1y; spin1[2]=S1z;
 	    spin2[0]=S2x; spin2[1]=S2y; spin2[2]=S2z;
 	    iTmp=i;
@@ -543,9 +540,6 @@ int XLALSimInspiralChooseTDWaveform(
         case SpinTaylorT4:
             /* Waveform-specific sanity checks */
             /* Sanity check unused fields of waveFlags */
-            if( !XLALSimInspiralFrameAxisIsDefault(
-                    XLALSimInspiralGetFrameAxis(waveFlags) ) )
-                ABORT_NONDEFAULT_FRAME_AXIS(waveFlags);
 	    spin1[0]=S1x; spin1[1]=S1y; spin1[2]=S1z;
 	    spin2[0]=S2x; spin2[1]=S2y; spin2[2]=S2z;
 	    iTmp=i;
