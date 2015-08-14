@@ -129,14 +129,19 @@ class Bank(object):
 
     def covers(self, proposal, min_match):
         """
-        Return True if any template in the bank has match with proposal
-        greater than min_match.
+        Return (max_match, template) where max_match is either (i) the
+        best found match if max_match < min_match or (ii) the match of
+        the first template found with match >= min_match.  template is
+        the Template() object which yields max_match.
         """
+        max_match = 0
+        template = None
+
         # find templates in the bank "near" this tmplt
         prop_nhd = getattr(proposal, self.nhood_param)
         low, high = _find_neighborhood(self._nhoods, prop_nhd, self.nhood_size)
         tmpbank = self._templates[low:high]
-        if not tmpbank: return False
+        if not tmpbank: return (max_match, template)
 
         # sort the bank by its nearness to tmplt in mchirp
         # NB: This sort comes up as a dominating cost if you profile,
@@ -171,6 +176,11 @@ class Bank(object):
                 PSD = get_PSD(df, self.flow, f_max, self.noise_model)
                 match = self.compute_match(tmplt, proposal, df, PSD=PSD)
 
+                # record match and template params for highest match
+                if match > max_match:
+                    max_match = match
+                    template = tmplt
+
                 # if the result is a really bad match, trust it isn't
                 # misrepresenting a good match
                 if (1 - match) > 4.0*(1 - min_match):
@@ -185,9 +195,9 @@ class Bank(object):
                 df /= 2.0
 
             if match > min_match:
-                return True
+                return (match, tmplt)
 
-        return False
+        return (max_match, template)
 
     def max_match(self, proposal):
         match, best_tmplt_ind = self.argmax_match(proposal)

@@ -367,19 +367,23 @@ proposal = proposals[opts.approximant](opts.flow, **params)
 
 # For robust convergence, ensure that an average of kmax/len(ks) of
 # the last len(ks) proposals have been rejected by SBank.
-ks = deque(10*[0], maxlen=10)
+ks = deque(10*[1], maxlen=10)
 k = 0 # k is nprop per iteration
 nprop = 1  # count total number of proposed templates
-status_format = "bank size: %d\tproposed: %d\t" + "\t".join("%s: %s" % name_format for name_format in zip(waveform.param_names, waveform.param_formats))
+status_format = "\t".join("%s: %s" % name_format for name_format in zip(waveform.param_names, waveform.param_formats))
 while ((k + float(sum(ks)))/len(ks) < opts.convergence_threshold) and len(bank) < opts.templates_max:
     tmplt = waveform(*proposal.next(), bank=bank)
     k += 1
     nprop += 1
-    if not bank.covers(tmplt, opts.match_min):
+    match, matcher = bank.covers(tmplt, opts.match_min)
+    if match < opts.match_min:
         bank.insort(tmplt)
-        if opts.verbose:
-            print >>sys.stdout, status_format % ((len(bank), k) + tmplt.params)
         ks.append(k)
+        if opts.verbose:
+            print "\nbank size: %d\t\tproposed: %d\trejection rate: %.6f / (%.6f)" % (len(bank), k, 1 - float(len(ks))/float(sum(ks)), 1 - 1./opts.convergence_threshold )
+            print >>sys.stdout, "accepted:\t\t", status_format % tmplt.params
+            if matcher is not None:
+                print >>sys.stdout, "max match (%.4f):\t" % match, status_format % matcher.params
         k = 0
 
         # Add to single inspiral table. Do not store templates that
@@ -403,9 +407,10 @@ while ((k + float(sum(ks)))/len(ks) < opts.convergence_threshold) and len(bank) 
         tmplt.clear()
 
 
-print "total number of proposed templates: %d" % nprop
-print "total number of match calculations: %d" % bank._nmatch
-print "final bank size: %d" % len(bank)
+if opts.verbose:
+    print "\ntotal number of proposed templates: %d" % nprop
+    print "total number of match calculations: %d" % bank._nmatch
+    print "final bank size: %d" % len(bank)
 
 bank.clear()  # clear caches
 
