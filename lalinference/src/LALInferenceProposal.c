@@ -324,7 +324,7 @@ LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runSt
     LALInferenceAddINT4Variable(propArgs, "nUniqueDet", nUniqueDet, LALINFERENCE_PARAM_FIXED);
 
     LALDetector *detectors = XLALCalloc(nDet, sizeof(LALDetector));
-    for (i=0,ifo=runState->data; i<nDet; i++)
+    for (i=0,ifo=runState->data; i<nDet; i++,ifo=ifo->next)
         detectors[i] = *(ifo->detector);
     LALInferenceAddVariable(propArgs, "detectors", &detectors, LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_FIXED);
 
