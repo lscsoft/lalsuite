@@ -939,6 +939,10 @@ int XLALSimInspiralChooseFDWaveformSequence(
     REAL8 quadparam1 = 1., quadparam2 = 1.; /* FIXME: This cannot yet be set in the interface */
     REAL8 LNhatx, LNhaty, LNhatz;
 
+    /* Support variables for precessing wfs*/
+    REAL8 iTmp;
+    REAL8 spin1[3],spin2[3];
+
     /* General sanity checks that will abort
      *
      * If non-GR approximants are added, include them in
@@ -1007,6 +1011,7 @@ int XLALSimInspiralChooseFDWaveformSequence(
             }
             break;
 
+        /* inspiral-merger-ringdown models */
         case SEOBNRv1_ROM_EffectiveSpin:
             /* Waveform-specific sanity checks */
             if( !XLALSimInspiralWaveformFlagsIsDefault(waveFlags) )
@@ -1067,8 +1072,12 @@ int XLALSimInspiralChooseFDWaveformSequence(
                     phiRef, f_ref, r, i, m1, m2, S1z, S2z);
             break;
 
-        /* inspiral-merger-ringdown models */
         case IMRPhenomP:
+	    spin1[0]=S1x; spin1[1]=S1y; spin1[2]=S1z;
+	    spin2[0]=S2x; spin2[1]=S2y; spin2[2]=S2z;
+	    iTmp=i;
+	    XLALSimInspiralInitialConditionsPrecessingApproxs(&i,&S1x,&S1y,&S1z,&S2x,&S2y,&S2z,iTmp,spin1[0],spin1[1],spin1[2],spin2[0],spin2[1],spin2[2],m1,m2,f_ref,XLALSimInspiralGetFrameAxis(waveFlags));
+
             /* Waveform-specific sanity checks */
             if( !XLALSimInspiralFrameAxisIsDefault(
                     XLALSimInspiralGetFrameAxis(waveFlags) ) ) /* Default is LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW : z-axis along direction of GW propagation (line of sight). */
