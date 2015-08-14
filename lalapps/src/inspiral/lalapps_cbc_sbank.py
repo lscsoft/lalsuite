@@ -293,8 +293,6 @@ if opts.bank_seed is None:
 else:
     # seed bank with input bank. we do not prune the bank
     # for overcoverage, but take it as is
-    if opts.verbose:
-        print>>sys.stdout,"Seeding the template bank..."
     tmpdoc = utils.load_filename(opts.bank_seed, contenthandler=ContentHandler)
     sngl_inspiral = table.get_table(tmpdoc, lsctables.SnglInspiralTable.tableName)
     bank = Bank.from_sngls(sngl_inspiral, waveform, noise_model, opts.flow, opts.use_metric, opts.cache_waveforms, opts.neighborhood_size, opts.neighborhood_param, coarse_match_df=opts.coarse_match_df, iterative_match_df_max=opts.iterative_match_df_max, fhigh_max=opts.fhigh_max)
@@ -302,8 +300,7 @@ else:
     tmpdoc.unlink()
     del sngl_inspiral, tmpdoc
     if opts.verbose:
-        print>>sys.stdout,"\tseed bank size: %d"%len(bank)
-        print>>sys.stdout,"Filling regions of parameter space not covered by bank seed..."
+        print>>sys.stdout,"Initialized the template bank to seed file %s with %d precomputed templates." % (opts.bank_seed, len(bank))
 
 
 #
@@ -313,10 +310,10 @@ if opts.checkpoint and os.path.exists( fout + "_checkpoint.gz" ):
 
     xmldoc = utils.load_filename(fout + "_checkpoint.gz", contenthandler=ContentHandler)
     tbl = table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
-    [bank.insort(t) for t in Bank.from_sngls(tbl, waveform, noise_model, opts.flow, opts.use_metric, opts.cache_waveforms, opts.neighborhood_size, opts.neighborhood_param)]
+    [bank.insort(t) for t in Bank.from_sngls(tbl, waveform, noise_model, opts.flow, opts.use_metric, opts.cache_waveforms, opts.neighborhood_size, opts.neighborhood_param, coarse_match_df=opts.coarse_match_df, iterative_match_df_max=opts.iterative_match_df_max, fhigh_max=opts.fhigh_max)]
 
     if opts.verbose:
-        print >>sys.stdout,"Found checkpoint file with %d precomputed templates." % len(tbl)
+        print >>sys.stdout,"Found checkpoint file %s with %d precomputed templates." % (fout + "_checkpoint.gz", len(tbl))
         print >>sys.stdout, "Resuming from checkpoint with %d total templates..." % len(bank)
 
     # reset rng state
