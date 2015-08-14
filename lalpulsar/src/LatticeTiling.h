@@ -257,8 +257,7 @@ int XLALNextLatticeTilingPoints(
 ///
 UINT8 XLALLatticeTilingPointsInPass(
   LatticeTilingIterator *itr,		///< [in] Lattice tiling iterator
-  const size_t dim,			///< [in] Dimension in which to return remaining points
-  const bool ignore			///< [in] If true, ignore whether this dimension is iterated over
+  const size_t dim			///< [in] Dimension in which to return remaining points
   );
 
 ///
