@@ -132,11 +132,11 @@
  *     lalsim-inspiral --approx=TaylorT3
  *
  * produces a three-column ascii output to standard output; the rows are
- * samples (at the default rate of 16384 Hz), and the three columns are
- * 1. the time of each sample, 2. the plus-polarization strain, and 3.
- * the cross-polarization strain.  The waveform produced is for the
- * TaylorT3 post-Newtonian approximant for the default parameters of a
- * 1.4 solar mass + 1.4 solar mass binary inspiral at 1 Mpc distance.
+ * samples (at the default rate of 16384 Hz), and the three columns are 1. the
+ * time of each sample, 2. the plus-polarization strain, and 3.  the
+ * cross-polarization strain.  The waveform produced is for the TaylorT3
+ * post-Newtonian approximant for the default parameters of a 1.4 solar mass +
+ * 1.4 solar mass binary inspiral at 1 Mpc distance.
  *
  * The command:
  *
