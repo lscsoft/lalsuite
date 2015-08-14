@@ -720,7 +720,11 @@ static int SEOBNRv2ROMEffectiveSpinCore(
 }
 
 /**
- * @addtogroup LALSimIMRSEOBNRv2ROMEffectiveSpin_c
+ * @addtogroup LALSimIMRSEOBNRROM_c
+ *
+ * @{
+ *
+ * @name SEOBNRv2 Reduced Order Model (Effective Spin)
  *
  * @author Michael Puerrer, John Veitch
  *
@@ -998,6 +1002,7 @@ int XLALSimIMRSEOBNRv2ROMEffectiveSpinFrequencyOfTime(
   return(XLAL_SUCCESS);
 }
 
+/** @} */
 /** @} */
 
 // Auxiliary function to perform setup of phase spline for t(f) and f(t) functions

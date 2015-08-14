@@ -1101,6 +1101,12 @@ static INT4 HGimri_start(REAL8 m, REAL8 M, REAL8 q, REAL8 D, REAL8 Sdotn, REAL8 
 	}
 
 
+/**
+ * @addtogroup LALSimInspiralHGimri_c
+ * @brief Routines for generating the Huerta-Gair Intermediate-Mass-Ratio Inspiral model.
+ * @{
+ */
+
 //===================================================
 // Generator function for the Huerta-Gair IMRI model.
 //===================================================
@@ -1223,3 +1229,5 @@ INT4 XLALHGimriGenerator(
 	return 0;
 
 	}
+
+/** @} */

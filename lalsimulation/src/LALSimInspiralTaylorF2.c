@@ -40,8 +40,9 @@
 #endif
 
 /**
- * @addtogroup LALSimInspiralTaylorF2_c
- * @brief Routines for generating TaylorF2 waveforms.
+ * @addtogroup LALSimInspiralTaylorXX_c
+ * @{
+ * @name Routines for TaylorF2 Waveforms
  * @sa
  * Section IIIF of Alessandra Buonanno, Bala R Iyer, Evan
  * Ochsner, Yi Pan, and B S Sathyaprakash, "Comparison of post-Newtonian
@@ -460,4 +461,5 @@ int XLALSimInspiralTaylorF2(
     return ret;
 }
 
+/** @} */
 /** @} */

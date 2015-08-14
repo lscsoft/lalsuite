@@ -452,8 +452,9 @@ XLALSimInspiralTaylorEtSetup(
 }
 
 /**
- * @addtogroup LALSimInspiralTaylorEt_c
- * @brief Routines for generating TaylorEt waveforms.
+ * @addtogroup LALSimInspiralTaylorXX_c
+ * @{
+ * @name Routines for TaylorEt Waveforms
  * @sa
  * Section IIIE of Alessandra Buonanno, Bala R Iyer, Evan
  * Ochsner, Yi Pan, and B S Sathyaprakash, "Comparison of post-Newtonian
@@ -657,6 +658,7 @@ int XLALSimInspiralTaylorEtPNRestricted(
 	return XLALSimInspiralTaylorEtPNGenerator(hplus, hcross, phic, 1.0, deltaT, m1, m2, f_min, r, i, 0, O);
 }
 
+/** @} */
 /** @} */
 
 #if 0

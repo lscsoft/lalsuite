@@ -3548,6 +3548,7 @@ int XLALSimInspiralImplementedTDApproximants(
         case TaylorT4:
 	case EccentricTD:
         case EOBNRv2:
+        case HGimri:
         case IMRPhenomA:
         case EOBNRv2HM:
         case SpinTaylorT2:
@@ -3560,7 +3561,7 @@ int XLALSimInspiralImplementedTDApproximants(
         case SEOBNRv1:
         case SpinDominatedWf:
         case SEOBNRv2:
-        case SEOBNRv3:
+        // case SEOBNRv3:
             return 1;
 
         default:

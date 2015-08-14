@@ -683,7 +683,11 @@ static int SEOBNRv1ROMDoubleSpinCore(
 }
 
 /**
- * @addtogroup LALSimIMRSEOBNRv1ROMDoubleSpin_c
+ * @addtogroup LALSimIMRSEOBNRROM_c
+ *
+ * @{
+ *
+ * @name SEOBNRv1 Reduced Order Model (Double Spin)
  *
  * @author Michael Puerrer, John Veitch
  *
@@ -849,6 +853,7 @@ int XLALSimIMRSEOBNRv1ROMDoubleSpin(
   return(retcode);
 }
 
+/** @} */
 /** @} */
 
 /* Setup SEOBNRv1ROMDoubleSpin model using data files installed in $LAL_DATA_PATH

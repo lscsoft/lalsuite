@@ -1011,7 +1011,11 @@ static int SEOBNRv2ROMDoubleSpinCore(
 }
 
 /**
- * @addtogroup LALSimIMRSEOBNRv2ROMDoubleSpin_c
+ * @addtogroup LALSimIMRSEOBNRROM_c
+ *
+ * @{
+ *
+ * @name SEOBNRv2 Reduced Order Model (Double Spin)
  *
  * @author Michael Puerrer, John Veitch
  *
@@ -1334,6 +1338,7 @@ int XLALSimIMRSEOBNRv2ROMDoubleSpinFrequencyOfTime(
   return(XLAL_SUCCESS);
 }
 
+/** @} */
 /** @} */
 
 // Auxiliary function to perform setup of phase spline for t(f) and f(t) functions

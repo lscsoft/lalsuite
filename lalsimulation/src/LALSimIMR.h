@@ -39,10 +39,7 @@ extern "C" {
  * @defgroup LALSimIMRPhenom_c                   LALSimIMRPhenom.c
  * @defgroup LALSimIMREOBNRv2_c                  LALSimIMREOBNRv2.c
  * @defgroup LALSimIMRSpinAlignedEOB_c           LALSimIMRSpinAlignedEOB.c
- * @defgroup LALSimIMRSEOBNRv1ROMEffectiveSpin_c LALSimIMRSEOBNRv1ROMEffectiveSpin.c
- * @defgroup LALSimIMRSEOBNRv1ROMDoubleSpin_c    LALSimIMRSEOBNRv1ROMDoubleSpin.c
- * @defgroup LALSimIMRSEOBNRv2ROMEffectiveSpin_c LALSimIMRSEOBNRv2ROMEffectiveSpin.c
- * @defgroup LALSimIMRSEOBNRv2ROMDoubleSpin_c    LALSimIMRSEOBNRv2ROMDoubleSpin.c
+ * @defgroup LALSimIMRSEOBNRROM_c                LALSimIMRSEOBNRvxROMXXX.c
  * @defgroup LALSimIMRSEOBNRv2ChirpTime_c        LALSimIMRSEOBNRv2ChirpTime.c
  * @defgroup LALSimIMRPSpinInspiralRD_c          LALSimIMRPSpinInspiralRD.c
  * @}

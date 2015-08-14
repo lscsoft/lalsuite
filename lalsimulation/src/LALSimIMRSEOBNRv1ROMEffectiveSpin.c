@@ -686,7 +686,14 @@ static int SEOBNRv1ROMEffectiveSpinCore(
 }
 
 /**
- * @addtogroup LALSimIMRSEOBNRv1ROMEffectiveSpin_c
+ * @addtogroup LALSimIMRSEOBNRROM_c
+ *
+ * @brief Functions for producing SEOBNRv1 and v2 waveforms
+ * using reduced order models.
+ *
+ * @{
+ *
+ * @name SEOBNRv1 Reduced Order Model (Effective Spin)
  *
  * @author Michael Puerrer, John Veitch
  *
@@ -833,6 +840,7 @@ int XLALSimIMRSEOBNRv1ROMEffectiveSpin(
   return(retcode);
 }
 
+/** @} */
 /** @} */
 
 /** Setup SEOBNRv1ROMEffectiveSpin model using data files installed in $LAL_DATA_PATH

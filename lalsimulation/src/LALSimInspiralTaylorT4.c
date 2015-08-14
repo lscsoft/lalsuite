@@ -421,8 +421,9 @@ XLALSimInspiralTaylorT4Setup(
 }
 
 /**
- * @addtogroup LALSimInspiralTaylorT4_c
- * @brief Routines for generating TaylorT4 waveforms.
+ * @addtogroup LALSimInspiralTaylorXX_c
+ * @{
+ * @name Routines for TaylorT4 Waveforms
  * @sa
  * Section IIIB of Alessandra Buonanno, Bala R Iyer, Evan
  * Ochsner, Yi Pan, and B S Sathyaprakash, "Comparison of post-Newtonian
@@ -815,6 +816,7 @@ int XLALSimInspiralTaylorT4PNRestricted(
 			deltaT, m1, m2, f_min, fRef, r, i, lambda1, lambda2, tideO, 0, O);
 }
 
+/** @} */
 /** @} */
 
 #if 0

@@ -33,6 +33,83 @@ extern "C" {
 #endif
 
 /**
+ * @addtogroup lalsimulation_inspiral
+ * @details
+ * Various types of inspiral approximants are supported for producing
+ * waveforms in the time- or frequency-domains.  The high-level routines
+ * for generating simulated inspiral waveforms are
+ * XLALSimInspiralChooseTDWaveform() (for time-domain waveforms) and
+ * XLALSimInspiralChooseFDWaveform() (for frequency-domain waveforms).
+ * The following examples show their basic usage.
+ *
+ * Generate a time-domain waveform:
+ * @code
+ * #include <lal/LALSimInspiral.h>
+ * #include <lal/LALConstants.h>
+ * ...
+ * double phiRef = 0;             // gravitational wave phase at end
+ * double deltaT = 1.0/16384.0;   // series sampling interval
+ * double m1 = 1.4 * LAL_MSUN_SI; // mass of body 1
+ * double m2 = 1.4 * LAL_MSUN_SI; // mass of body 2
+ * double S1x = 0.0;              // x-component of dimensionless spin of body 1
+ * double S1y = 0.0;              // y-component of dimensionless spin of body 1
+ * double S1z = 0.0;              // z-component of dimensionless spin of body 1
+ * double S2x = 0.0;              // x-component of dimensionless spin of body 2
+ * double S2y = 0.0;              // y-component of dimensionless spin of body 2
+ * double S2z = 0.0;              // z-component of dimensionless spin of body 2
+ * double f_min = 40.0;           // start frequency of inspiral
+ * double f_ref = 0.0;            // reference frequency: 0 means waveform end
+ * double r = 1e6 * LAL_PC_SI;    // distance
+ * double i = 0.0;                // inclination
+ * double lambda1 = 0.0;          // dimensionless tidal parameter of body 1
+ * double lambda2 = 0.0;          // dimensionless tidal parameter of body 2
+ * LALSimInspiralWaveformFlags *waveFlags = NULL;  // no extra flags
+ * LALSimInspiralTestGRParam *nonGRparams = NULL;  // no non-GR parameters
+ * int amplitudeO = -1;           // amplitude pN order: -1 means include all
+ * int phaseO = -1;               // phase pN order: -1 means include all
+ * Approximant approximant = TaylorT2;  // post-Newtonian approximant
+ * REAL8TimeSeries *hplus = NULL;  // plus polarization to be returned
+ * REAL8TimeSeries *hcross = NULL; // cross polarization to be returned
+ * ...
+ * XLALSimInspiralChooseTDWaveform(&hplus, &hcross, phiRef, deltaT, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_ref, r, i, lambda1, lambda2, waveFlags, nonGRparams, amplitudeO, phaseO, approximant);
+ * @endcode
+ *
+ * Generate a frequency-domain waveform:
+ * @code
+ * #include <lal/LALSimInspiral.h>
+ * #include <lal/LALConstants.h>
+ * ...
+ * double phiRef = 0;             // gravitational wave phase at end
+ * double deltaF = 1.0/64.0;      // series sampling interval
+ * double m1 = 1.4 * LAL_MSUN_SI; // mass of body 1
+ * double m2 = 1.4 * LAL_MSUN_SI; // mass of body 2
+ * double S1x = 0.0;              // x-component of dimensionless spin of body 1
+ * double S1y = 0.0;              // y-component of dimensionless spin of body 1
+ * double S1z = 0.0;              // z-component of dimensionless spin of body 1
+ * double S2x = 0.0;              // x-component of dimensionless spin of body 2
+ * double S2y = 0.0;              // y-component of dimensionless spin of body 2
+ * double S2z = 0.0;              // z-component of dimensionless spin of body 2
+ * double f_min = 40.0;           // start frequency of inspiral
+ * double f_max = 0.0;            // end frequency of inspiral: 0 means use default
+ * double f_ref = 0.0;            // reference frequency: 0 means waveform end
+ * double r = 1e6 * LAL_PC_SI;    // distance
+ * double i = 0.0;                // inclination
+ * double lambda1 = 0.0;          // dimensionless tidal parameter of body 1
+ * double lambda2 = 0.0;          // dimensionless tidal parameter of body 2
+ * LALSimInspiralWaveformFlags *waveFlags = NULL;  // no extra flags
+ * LALSimInspiralTestGRParam *nonGRparams = NULL;  // no non-GR parameters
+ * int amplitudeO = -1;           // amplitude pN order: -1 means include all
+ * int phaseO = -1;               // phase pN order: -1 means include all
+ * Approximant approximant = TaylorF2;  // post-Newtonian approximant
+ * COMPLEX16FrequencySeries *hptilde = NULL;  // plus polarization to be returned
+ * COMPLEX16FrequencySeries *hctilde = NULL; // cross polarization to be returned
+ * ...
+ * XLALSimInspiralChooseFDWaveform(&hptilde, &hctilde, phiRef, deltaF, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_max, f_ref, r, i, lambda1, lambda2, waveFlags, nonGRparams, amplitudeO, phaseO, approximant);
+ * @endcode
+ *
+ */
+
+/**
  * @defgroup LALSimInspiral_h Header LALSimInspiral.h
  * @ingroup lalsimulation_inspiral
  *
@@ -41,17 +118,13 @@ extern "C" {
  * @{
  * @defgroup LALSimInspiral_c                      Module LALSimInspiral.c
  * @defgroup LALSimInspiralPNMode_c                Module LALSimInspiralPNMode.c
- * @defgroup LALSimInspiralTaylorT1_c              Module LALSimInspiralTaylorT1.c
- * @defgroup LALSimInspiralTaylorT2_c              Module LALSimInspiralTaylorT2.c
- * @defgroup LALSimInspiralTaylorT3_c              Module LALSimInspiralTaylorT3.c
- * @defgroup LALSimInspiralTaylorT4_c              Module LALSimInspiralTaylorT4.c
- * @defgroup LALSimInspiralTaylorEt_c              Module LALSimInspiralTaylorEt.c
- * @defgroup LALSimInspiralTaylorF2_c              Module LALSimInspiralTaylorF2.c
+ * @defgroup LALSimInspiralTaylorXX_c              Module LALSimInspiralTaylorXX.c
  * @defgroup LALSimInspiralSpinTaylor_c            Module LALSimInspiralSpinTaylor.c
  * @defgroup LALSimInspiralEccentricTD_c           Module LALSimInspiralEccentricTD.c
  * @defgroup LALSimInspiralEccentricityFD_c        Module LALSimInspiralEccentricityFD.c
  * @defgroup LALSimInspiralSpinDominatedWaveform_c Module LALSimInspiralSpinDominatedWaveform.c
  * @defgroup LALSimInspiralTaylorF2ReducedSpin_c   Module LALSimInspiralTaylorF2ReducedSpin.c
+ * @defgroup LALSimInspiralHGimri_c                Module LALSimInspiralHGimri.c
  * @defgroup LALSimInspiralWaveformFlags_c         Module LALSimInspiralWaveformFlags.c
  * @defgroup LALSimInspiralTestGRParams_c          Module LALSimInspiralTestGRParams.c
  * @defgroup LALSimInspiralWaveformTaper_c         Module LALSimInspiralWaveformTaper.c
@@ -72,73 +145,133 @@ typedef enum {
    TaylorT1, 		/**< Time domain Taylor approximant in which the energy and flux are both kept
                          * as Taylor expansions and a first order ordinary differential equation is solved
                          * or the GW phase as a function of \f$t\f$; Outputs a time-domain wave.
+                         * @remarks Implemented in lalsimulation (time domain).
                          */
    TaylorT2,		/**< Time domain Taylor approximant in which the phase evolution \f$\varphi(t)\f$ is
                          * obtained by iteratively solving post-Newtonian expansions \f$\varphi(v)\f$ and \f$t(v)\f$;
                          * Outputs a time-domain wave.
+                         * @remarks Implemented in lalsimulation (time domain).
                          */
    TaylorT3,		/**< Time domain Taylor approximant in which phase is explicitly given as a function
                          * of time; outputs a time-domain wave.
+                         * @remarks Implemented in lalsimulation (time domain).
                          */
    TaylorF1,		/**< The stationary phase approximation that correctly represents, in the Fourier domain,
                          * the waveform given by \c TaylorT1 approximant (see \cite dis2000 for details);
-                         * Outputs a frequency-domain wave. */
-   EccentricFD,         /** Frequency domain waveform in the SPA to describe low eccentricity systems */
-   TaylorF2,		/**< The standard stationary phase approximation; Outputs a frequency-domain wave. */
-   TaylorR2F4,		/**< A frequency domain model closely related to TaylorT4 */
-   TaylorF2RedSpin,		/**< TaylorF2 waveforms for non-precessing spins, defined in terms of a single (reduced-spin) parameter [Ajith_2011ec]*/
-   TaylorF2RedSpinTidal,	/**< TaylorF2 waveforms for non-precessing spins, defined in terms of a single (reduced-spin) parameter [Ajith_2011ec] plus tidal terms (http://arxiv.org/abs/1101.1673) */
-   PadeT1,		/**< Time-domain P-approximant; Outputs a time-domain wave. */
-   PadeF1,		/**< Frequency-domain P-approximant (not yet implemented). */
-   EOB,			/**< Effective one-body waveform; Outputs a time-domain wave. */
-   BCV,			/**< Detection template family of Buonanno, Chen and Vallisneri \cite BCV03; Outputs a frequency-domain wave. */
-   BCVSpin,		/**< Detection template family of Buonanno, Chen and Vallisneri including  spin effects \cite BCV03b; Outputs a frequency-domain wave. */
-   SpinTaylorT1,	/**< Spinning case T1 models */
-   SpinTaylorT2,	/**< Spinning case T2 models */
-   SpinTaylorT3,	/**< Spinning case T3 models */
-   SpinTaylorT4,	/**< Spinning case T4 models (lalsimulation's equivalent of SpinTaylorFrameless) */
-   SpinTaylorT5,       /**< Spinning case T5. Ref. Sec III of P. Ajith, Phys Rev D (2011)  */
-   SpinTaylorF2,	/**< Spinning case F2 models (single spin only) */
-   SpinTaylorFrameless,	/**< Spinning case PN models (replace SpinTaylor by removing the coordinate singularity) */
-   SpinTaylor,		/**< Spinning case PN models (should replace SpinTaylorT3 in the future) */
-   PhenSpinTaylor,      /**< Inspiral part of the PhenSpinTaylorRD. */
-   PhenSpinTaylorRD,	/**< Phenomenological waveforms, interpolating between a T4 spin-inspiral and the ringdown. */
-   SpinQuadTaylor,	/**< Spinning case PN models with quadrupole-monopole and self-spin interaction. */
-   FindChirpSP,		/**< The stationary phase templates implemented by FindChirpSPTemplate in the findchirp package (equivalent to TaylorF2 at twoPN order). */
-   FindChirpPTF,	/**< UNDOCUMENTED */
-   GeneratePPN,		/**< The time domain templates generated by LALGeneratePPNInspiral() in the inject package (equivalent to TaylorT3 at twoPN order). */
-   BCVC,		/**< UNDOCUMENTED */
-   FrameFile,		/**< The waveform contains arbitrary data read from a frame file. */
-   AmpCorPPN,		/**< UNDOCUMENTED */
-   NumRel,		/**< UNDOCUMENTED */
-   NumRelNinja2,	/**< The waveform contains REAL8 data generated by lalapps_fr_ninja from a file in the format described in arXiv:0709.0093v3 */
-   Eccentricity,	/**< UNDOCUMENTED */
-   EOBNR,		/**< UNDOCUMENTED */
-   EOBNRv2,		/**< UNDOCUMENTED */
-   EOBNRv2HM,		/**< UNDOCUMENTED */
-   SEOBNRv1,		/**< Spin-aligned EOBNR model */
-   SEOBNRv2,		/**< Spin-aligned EOBNR model v2 */
-   SEOBNRv3,		/**< Spin precessing EOBNR model v3 */
-   SEOBNRv1_ROM_EffectiveSpin, /**< Single-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv1 See [Purrer:2014fza] */
-   SEOBNRv1_ROM_DoubleSpin, /**< Double-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv1 See [Purrer:2014fza] */
-   SEOBNRv2_ROM_EffectiveSpin, /**< Single-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv2 */
-   SEOBNRv2_ROM_DoubleSpin, /**< Double-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv2 */
-   HGimri,		/**< Time domain inspiral-merger-ringdown waveform for quasi-circular intermediate mass-ratio inspirals [Huerta & Gair arXiv:1009.1985]*/
-   IMRPhenomA,		/**< Time domain (non-spinning) inspiral-merger-ringdown waveforms generated from the inverse FFT of IMRPhenomFA  */
-   IMRPhenomB,		/**< Time domain (non-precessing spins) inspiral-merger-ringdown waveforms generated from the inverse FFT of IMRPhenomFB */
-   IMRPhenomFA,		/**< Frequency domain (non-spinning) inspiral-merger-ringdown templates of Ajith et al [Ajith_2007kx] with phenomenological coefficients defined in the Table I of [Ajith_2007xh]*/
-   IMRPhenomFB,		/**< Frequency domain (non-precessing spins) inspiral-merger-ringdown templates of Ajith et al [Ajith_2009bn] */
-   IMRPhenomC,		/**< Frequency domain (non-precessing spins) inspiral-merger-ringdown templates of Santamaria et al [Santamaria:2010yb] with phenomenological coefficients defined in the Table II of [Santamaria:2010yb]*/
-   IMRPhenomD,		/**< Frequency domain (non-precessing spins) inspiral-merger-ringdown templates of ... [] with phenomenological coefficients defined in the Table X of [...]*/
-   IMRPhenomP,		/**< Frequency domain (generic spins) inspiral-merger-ringdown templates of Hannam et al., arXiv:1308.3271 [gr-qc] */
-   IMRPhenomFC,		/**< Frequency domain (non-precessing spins) inspiral-merger-ringdown templates of Santamaria et al [Santamaria:2010yb] with phenomenological coefficients defined in the Table II of [Santamaria:2010yb]*/
-   TaylorEt,		/**< UNDOCUMENTED */
-   TaylorT4,		/**< UNDOCUMENTED */
-   EccentricTD,		/**< Time domain Taylor T4 approximant including orbital eccentricity effects */
-   TaylorN,		/**< UNDOCUMENTED */
-   SpinTaylorT4Fourier, /**< Frequency domain (generic spins) inspiral only waveforms based on TaylorT4, arXiv: 1408.5158 */
-   SpinTaylorT2Fourier, /**< Frequency domain (generic spins) inspiral only waveforms based on TaylorT2, arXiv: 1408.5158 */
-   SpinDominatedWf,     /**< Time domain, inspiral only, 1 spin, precessing waveform, Tapai et al, arXiv: 1209.1722 */
+                         * Outputs a frequency-domain wave.
+                         * @attention Not implemented in lalsimulation. */
+   EccentricFD,         /**< Frequency domain waveform in the SPA to describe low eccentricity systems.
+                         * @remarks Implemented in lalsimulation (frequency domain). */
+   TaylorF2,		/**< The standard stationary phase approximation; Outputs a frequency-domain wave.
+                         * @remarks Implemented in lalsimulation (frequency domain). */
+   TaylorR2F4,		/**< A frequency domain model closely related to TaylorT4
+                         * @attention Not implemented in lalsimulation. */
+   TaylorF2RedSpin,		/**< TaylorF2 waveforms for non-precessing spins, defined in terms of a single (reduced-spin) parameter [Ajith_2011ec].
+                                 * @remarks Implemented in lalsimulation (frequency domain). */
+   TaylorF2RedSpinTidal,	/**< TaylorF2 waveforms for non-precessing spins, defined in terms of a single (reduced-spin) parameter [Ajith_2011ec] plus tidal terms (http://arxiv.org/abs/1101.1673).
+                                 * @remarks Implemented in lalsimulation (frequency domain).  */
+   PadeT1,		/**< Time-domain P-approximant; Outputs a time-domain wave.
+                         * @attention Not implemented in lalsimulation. */
+   PadeF1,		/**< Frequency-domain P-approximant (not yet implemented).
+                         * @attention Not implemented in lalsimulation. */
+   EOB,			/**< Effective one-body waveform; Outputs a time-domain wave.
+                         * @attention Not implemented in lalsimulation. */
+   BCV,			/**< Detection template family of Buonanno, Chen and Vallisneri \cite BCV03; Outputs a frequency-domain wave.
+                         * @attention Not implemented in lalsimulation. */
+   BCVSpin,		/**< Detection template family of Buonanno, Chen and Vallisneri including  spin effects \cite BCV03b; Outputs a frequency-domain wave.
+                         * @attention Not implemented in lalsimulation. */
+   SpinTaylorT1,	/**< Spinning case T1 models.
+                         * @remarks Implemented in lalsimulation (time domain). */
+   SpinTaylorT2,	/**< Spinning case T2 models.
+                         * @remarks Implemented in lalsimulation (time domain). */
+   SpinTaylorT3,	/**< Spinning case T3 models
+                         * @attention Not implemented in lalsimulation. */
+   SpinTaylorT4,	/**< Spinning case T4 models (lalsimulation's equivalent of SpinTaylorFrameless).
+                         * @remarks Implemented in lalsimulation (time domain). */
+   SpinTaylorT5,       /**< Spinning case T5. Ref. Sec III of P. Ajith, Phys Rev D (2011)
+                         * @attention Not implemented in lalsimulation.  */
+   SpinTaylorF2,	/**< Spinning case F2 models (single spin only).
+                         * @remarks Implemented in lalsimulation (frequency domain). */
+   SpinTaylorFrameless,	/**< Spinning case PN models (replace SpinTaylor by removing the coordinate singularity)
+                         * @attention Not implemented in lalsimulation. */
+   SpinTaylor,		/**< Spinning case PN models (should replace SpinTaylorT3 in the future)
+                         * @attention Not implemented in lalsimulation. */
+   PhenSpinTaylor,      /**< Inspiral part of the PhenSpinTaylorRD.
+                         * @remarks Implemented in lalsimulation (time domain). */
+   PhenSpinTaylorRD,	/**< Phenomenological waveforms, interpolating between a T4 spin-inspiral and the ringdown.
+                         * @remarks Implemented in lalsimulation (time domain). */
+   SpinQuadTaylor,	/**< Spinning case PN models with quadrupole-monopole and self-spin interaction.
+                         * @attention Not implemented in lalsimulation. */
+   FindChirpSP,		/**< The stationary phase templates implemented by FindChirpSPTemplate in the findchirp package (equivalent to TaylorF2 at twoPN order).
+                         * @attention Not implemented in lalsimulation. */
+   FindChirpPTF,	/**< UNDOCUMENTED
+                         * @attention Not implemented in lalsimulation. */
+   GeneratePPN,		/**< The time domain templates generated by LALGeneratePPNInspiral() in the inject package (equivalent to TaylorT3 at twoPN order).
+                         * @attention Not implemented in lalsimulation. */
+   BCVC,		/**< UNDOCUMENTED
+                         * @attention Not implemented in lalsimulation. */
+   FrameFile,		/**< The waveform contains arbitrary data read from a frame file.
+                         * @attention Not implemented in lalsimulation. */
+   AmpCorPPN,		/**< UNDOCUMENTED
+                         * @attention Not implemented in lalsimulation. */
+   NumRel,		/**< UNDOCUMENTED
+                         * @attention Not implemented in lalsimulation. */
+   NumRelNinja2,	/**< The waveform contains REAL8 data generated by lalapps_fr_ninja from a file in the format described in arXiv:0709.0093v3
+                         * @attention Not implemented in lalsimulation. */
+   Eccentricity,	/**< UNDOCUMENTED
+                         * @attention Not implemented in lalsimulation. */
+   EOBNR,		/**< UNDOCUMENTED
+                         * @attention Not implemented in lalsimulation. */
+   EOBNRv2,		/**< UNDOCUMENTED
+                         * @remarks Implemented in lalsimulation (time domain). */
+   EOBNRv2HM,		/**< UNDOCUMENTED
+                         * @remarks Implemented in lalsimulation (time domain). */
+   SEOBNRv1,		/**< Spin-aligned EOBNR model
+                         * @remarks Implemented in lalsimulation (time domain). */
+   SEOBNRv2,		/**< Spin-aligned EOBNR model v2
+                         * @remarks Implemented in lalsimulation (time domain). */
+   SEOBNRv3,		/**< Spin precessing EOBNR model v3
+                         * @todo Fix implementation in lalsimulation (time domain). */
+   SEOBNRv1_ROM_EffectiveSpin, /**< Single-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv1 See [Purrer:2014fza]
+                                * @remarks Implemented in lalsimulation (frequency domain). */
+   SEOBNRv1_ROM_DoubleSpin, /**< Double-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv1 See [Purrer:2014fza]
+                             * @remarks Implemented in lalsimulation (frequency domain). */
+   SEOBNRv2_ROM_EffectiveSpin, /**< Single-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv2
+                                * @remarks Implemented in lalsimulation (frequency domain). */
+   SEOBNRv2_ROM_DoubleSpin, /**< Double-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv2
+                             * @remarks Implemented in lalsimulation (frequency domain). */
+   HGimri,		/**< Time domain inspiral-merger-ringdown waveform for quasi-circular intermediate mass-ratio inspirals [Huerta & Gair arXiv:1009.1985]
+                         * @remarks Implemented in lalsimulation (time domain). */
+   IMRPhenomA,		/**< Time domain (non-spinning) inspiral-merger-ringdown waveforms generated from the inverse FFT of IMRPhenomFA.
+                         * @remarks Implemented in lalsimulation (time domain and frequency domain). */
+   IMRPhenomB,		/**< Time domain (non-precessing spins) inspiral-merger-ringdown waveforms generated from the inverse FFT of IMRPhenomFB.
+                         * @remarks Implemented in lalsimulation (time domain and frequency domain). */
+   IMRPhenomFA,		/**< Frequency domain (non-spinning) inspiral-merger-ringdown templates of Ajith et al [Ajith_2007kx] with phenomenological coefficients defined in the Table I of [Ajith_2007xh]
+                         * @attention Not implemented in lalsimulation.*/
+   IMRPhenomFB,		/**< Frequency domain (non-precessing spins) inspiral-merger-ringdown templates of Ajith et al [Ajith_2009bn]
+                         * @attention Not implemented in lalsimulation. */
+   IMRPhenomC,		/**< Frequency domain (non-precessing spins) inspiral-merger-ringdown templates of Santamaria et al [Santamaria:2010yb] with phenomenological coefficients defined in the Table II of [Santamaria:2010yb].
+                         * @remarks Implemented in lalsimulation (time domain and frequency domain). */
+   IMRPhenomD,		/**< Frequency domain (non-precessing spins) inspiral-merger-ringdown templates of ... [] with phenomenological coefficients defined in the Table X of [...].
+                         * @remarks Implemented in lalsimulation (frequency domain). */
+   IMRPhenomP,		/**< Frequency domain (generic spins) inspiral-merger-ringdown templates of Hannam et al., arXiv:1308.3271 [gr-qc].
+                         * @remarks Implemented in lalsimulation (frequency domain).  */
+   IMRPhenomFC,		/**< Frequency domain (non-precessing spins) inspiral-merger-ringdown templates of Santamaria et al [Santamaria:2010yb] with phenomenological coefficients defined in the Table II of [Santamaria:2010yb]
+                         * @attention Not implemented in lalsimulation.*/
+   TaylorEt,		/**< UNDOCUMENTED
+                         * @remarks Implemented in lalsimulation (time domain). */
+   TaylorT4,		/**< UNDOCUMENTED
+                         * @remarks Implemented in lalsimulation (time domain). */
+   EccentricTD,		/**< Time domain Taylor T4 approximant including orbital eccentricity effects
+                         * @remarks Implemented in lalsimulation (time domain). */
+   TaylorN,		/**< UNDOCUMENTED
+                         * @attention Not implemented in lalsimulation. */
+   SpinTaylorT4Fourier, /**< Frequency domain (generic spins) inspiral only waveforms based on TaylorT4, arXiv: 1408.5158
+                         * @remarks Implemented in lalsimulation (frequency domain). */
+   SpinTaylorT2Fourier, /**< Frequency domain (generic spins) inspiral only waveforms based on TaylorT2, arXiv: 1408.5158
+                         * @remarks Implemented in lalsimulation (frequency domain). */
+   SpinDominatedWf,     /**< Time domain, inspiral only, 1 spin, precessing waveform, Tapai et al, arXiv: 1209.1722
+                         * @remarks Implemented in lalsimulation (time domain). */
    NumApproximants	/**< Number of elements in enum, useful for checking bounds */
  } Approximant;
 

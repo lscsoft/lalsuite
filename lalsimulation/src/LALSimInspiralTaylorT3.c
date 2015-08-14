@@ -755,8 +755,9 @@ static int XLALSimInspiralTaylorT3Setup(
 }
 
 /**
- * @addtogroup LALSimInspiralTaylorT3_c
- * @brief Routines for generating TaylorT3 waveforms.
+ * @addtogroup LALSimInspiralTaylorXX_c
+ * @{
+ * @name Routines for TaylorT3 Waveforms
  * @sa
  * Section IIID of Alessandra Buonanno, Bala R Iyer, Evan
  * Ochsner, Yi Pan, and B S Sathyaprakash, "Comparison of post-Newtonian
@@ -1199,4 +1200,5 @@ int XLALSimInspiralTaylorT3PNRestricted(
 			tideO, 0, O);
 }
 
+/** @} */
 /** @} */
