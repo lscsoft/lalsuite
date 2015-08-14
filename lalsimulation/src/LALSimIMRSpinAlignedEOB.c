@@ -721,7 +721,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   integrator->retries = 1;
 
   retLen = XLALAdaptiveRungeKutta4( integrator, &seobParams, values->data, 0., 20./mTScaled, deltaT/mTScaled, &dynamics );
-  if ( retLen == XLAL_FAILURE )
+  if ( retLen == XLAL_FAILURE || dynamics == NULL )
   {
     XLAL_ERROR( XLAL_EFUNC );
   }
@@ -775,7 +775,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   integrator->stop = XLALSpinAlignedHiSRStopCondition;
 
   retLen = XLALAdaptiveRungeKutta4( integrator, &seobParams, values->data, 0., 20./mTScaled, deltaTHigh/mTScaled, &dynamicsHi );
-  if ( retLen == XLAL_FAILURE )
+  if ( retLen == XLAL_FAILURE || dynamicsHi == NULL )
   {
     XLAL_ERROR( XLAL_EFUNC );
   }
